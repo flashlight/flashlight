@@ -9,9 +9,7 @@ Install [Doxygen](http://www.doxygen.nl/manual/install.html).
 Install sphinx, breathe and the theme:
 
 ```
-pip install git+https://github.com/sphinx-doc/sphinx
-pip install breathe
-pip install sphinx_rtd_theme
+pip install -r requirements.txt
 ```
 
 ### Build the Docs
