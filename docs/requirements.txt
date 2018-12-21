@@ -1,0 +1,3 @@
+git+https://github.com/sphinx-doc/sphinx
+breathe
+sphinx_rtd_theme
