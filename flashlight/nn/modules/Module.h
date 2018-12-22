@@ -25,7 +25,7 @@
 namespace fl {
 
 /**
- * A abstract computation unit capable of forward computation. Also
+ * An abstract computation unit capable of forward computation. Also
  * contains a collection of parameters that can be mutated, and will be
  * serialized and deserialized with the module.
  */
@@ -139,6 +139,10 @@ class Module {
   virtual ~Module() = default;
 };
 
+/**
+ * An extension of `Module` which supports only unary operation on a single
+ * `Variable`.
+ */
 class UnaryModule : public Module {
  public:
   UnaryModule();
@@ -157,6 +161,11 @@ class UnaryModule : public Module {
   FL_SAVE_LOAD_WITH_BASE(Module)
 };
 
+/**
+ * An extension of `Module` which supports only forward computation on a pair of
+ * `Variable`s with a single `Variable` as output. Loss functions which take as
+ * input an data and target pair are usually derived from it.
+ */
 class BinaryModule : public Module {
  public:
   BinaryModule();

@@ -13,6 +13,14 @@ Module
    :protected-members:
    :undoc-members:
 
+.. doxygenclass:: fl::UnaryModule
+   :members:
+   :undoc-members:
+
+.. doxygenclass:: fl::BinaryModule
+   :members:
+   :undoc-members:
+
 Container
 ^^^^^^^^^
 .. doxygenclass:: fl::Container
@@ -101,11 +109,6 @@ WeightNorm
 
 Losses
 ------
-
-Loss
-^^^^
-.. doxygenclass:: fl::Loss
-   :members:
 
 AdaptiveSoftMaxLoss
 ^^^^^^^^^^^^^^^^^^^
