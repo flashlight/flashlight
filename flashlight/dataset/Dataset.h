@@ -10,6 +10,7 @@
 #include <cstring>
 #include <memory>
 #include <vector>
+#include <functional>
 
 #include <arrayfire.h>
 
