@@ -14,5 +14,8 @@ All the documentation (including installation instructions) can be found
 
 See the [CONTRIBUTING](CONTRIBUTING.md) file for how to help out.
 
+## Acknowledgment
+Some of flashlight's code is derived from [arrayfire-ml](https://github.com/arrayfire/arrayfire-ml/) repository.
+
 ## License
 flashlight is MIT-licensed, as found in the [LICENSE](LICENSE) file.
