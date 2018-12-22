@@ -19,7 +19,7 @@ namespace fl {
  * Initialize the distributed environment. Note that `worldSize`, `worldRank`
  * are ignored if DistributedInit::MPI is used.
  *
- * @param initMethod Intialization method used for setting up the rendezvous
+ * @param initMethod Initialization method used for setting up the rendezvous
  * @param worldSize Total number of processes in the communication group
  *`@param worldRank 0-indexed rank of the current process
  * @param params Additional parameters (if any) needed for initialization

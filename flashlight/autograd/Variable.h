@@ -91,7 +91,7 @@ class Variable {
    * Creates a Variable which wraps the array and inputs specified
    * @param[in] data array to the stored in the Variable
    * @param[in] inputs a vector specifying inputs for this Variable
-   * @param[in] gradFunc function specifyign how to calculate gradient of the
+   * @param[in] gradFunc function specifying how to calculate gradient of the
    * input Variables
    */
   Variable(af::array data, std::vector<Variable> inputs, GradFunc gradFunc);
@@ -131,7 +131,7 @@ class Variable {
   bool isGradAvailable() const;
 
   /**
-   * Returns the dimesion of the array wrapped by the Variable
+   * Returns the dimension of the array wrapped by the Variable
    */
   af::dim4 dims() const;
 
@@ -222,7 +222,7 @@ class Variable {
 
   /**
    * Run backward pass on the Variable.  Gradient of all the inputs
-   * in the computation graph leading upto the Variable on which the function is
+   * in the computation graph leading up to the Variable on which the function is
    * computed.
    * @param[in] grad gradient w.r.t to the Variable
    * @param[in] retainGraph If False, clears the input Variables stored
@@ -232,7 +232,7 @@ class Variable {
 
   /**
    * Run backward pass on the Variable. Gradient of all the inputs
-   * in the computation graph leading upto the Variable on which the function is
+   * in the computation graph leading up to the Variable on which the function is
    * computed. Gradient w.r.t the all the elements in the variable is set to 1.0
    * @param[in] retainGraph If False, clears the input Variables stored
    * by the Variable

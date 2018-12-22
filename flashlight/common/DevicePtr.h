@@ -13,11 +13,11 @@ namespace fl {
 
 /**
  * DevicePtr provides a wrapper for accessing device pointer of an Arrayfire
- * array in a safer way.  After calliing `device()` on arrayfire array to get
+ * array in a safer way.  After calling `device()` on arrayfire array to get
  * device pointer, the memory is not free until `unlock()` is called -
  * 'http://arrayfire.org/docs/group__device__func__device.htm'.
  * DevicePtr provides a std::lock_guard style API which calls the `unlock()`
- * function in its desctructor after getting device pointer.
+ * function in its destructor after getting device pointer.
  * Example Usage :
  * \code{.cpp}
  * auto A = af::array(10, 10);
@@ -63,7 +63,7 @@ class DevicePtr {
   DevicePtr& operator=(DevicePtr&& other) = delete;
 
   /**
-    `.unlock()` is called on the underlying array in desctructor
+    `.unlock()` is called on the underlying array in destructor
   */
   ~DevicePtr();
 

@@ -17,7 +17,7 @@ namespace fl {
  * A view into a dataset, where a given number of samples are prefetched in
  * advance in a ThreadPool. PrefetchDataset should be used when there is a
  * sequential access to the underlying dataset. Otherwise, there will a lot of
- * cache misses leading to a degarded performance.
+ * cache misses leading to a degraded performance.
  *
  * Example:
   \code{.cpp}

@@ -37,7 +37,7 @@ int main() {
 
   const int inputIdx = 0, targetIdx = 1;
 
-  // Model defintion - 2-layer Perceptron with ReLU activation
+  // Model definition - 2-layer Perceptron with ReLU activation
   auto model = std::make_shared<Sequential>();
   model->add(Linear(nFeat, 100));
   model->add(ReLU());

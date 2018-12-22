@@ -24,7 +24,7 @@ int main() {
   TensorDataset data({X, Y});
   const int inputIdx = 0, targetIdx = 1;
 
-  // Model defintion - 2-layer Perceptron with ReLU activation
+  // Model definition - 2-layer Perceptron with ReLU activation
   Sequential model;
   model.add(Linear(nFeat, 100));
   model.add(ReLU());

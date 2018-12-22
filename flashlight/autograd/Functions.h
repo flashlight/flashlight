@@ -181,7 +181,7 @@ Variable operator<=(const Variable& lhs, const double& rhs);
 Variable operator&&(const Variable& lhs, const Variable& rhs);
 
 /**
- * [Non-differentiable] Element-wise lodical not of a Variable.
+ * [Non-differentiable] Element-wise logical not of a Variable.
  * \f[ out_i = !var_i \f]
  */
 Variable operator!(const Variable& input);
@@ -296,20 +296,20 @@ Variable transpose(const Variable& input);
 /**
  * Repeats the tensor `input` along certain dimensions so as to match the shape
  * of `reference`. The dimensions to be repeated along are automatically
- * infered.
+ * inferred.
  */
 Variable tileAs(const Variable& input, const Variable& reference);
 
 /**
  * Repeats the tensor `input` along certain dimensions so as to match the shape
  * in the descriptor `rdims`. The dimensions to be repeated along are
- * automatically infered.
+ * automatically inferred.
  */
 Variable tileAs(const Variable& input, const af::dim4& rdims);
 
 /**
  * Sums up the tensor `input` along certain dimensions so as to match the shape
- * of `reference`. The dimensions to be summed along are automatically infered.
+ * of `reference`. The dimensions to be summed along are automatically inferred.
  * Note that after summation, the shape of those dimensions will be 1.
  */
 Variable sumAs(const Variable& input, const Variable& reference);
@@ -317,7 +317,7 @@ Variable sumAs(const Variable& input, const Variable& reference);
 /**
  * Sums up the tensor `input` along certain dimensions so as to match the shape
  * in the descriptor `rdims`. The dimensions to be summed along are
- * automatically infered. Note that after summation, the shape of those
+ * automatically inferred. Note that after summation, the shape of those
  * dimensions will be 1.
  */
 Variable sumAs(const Variable& input, const af::dim4& rdims);
@@ -549,7 +549,7 @@ Variable pool2d(
     PoolingMode mode = PoolingMode::MAX);
 
 /**
- * Applies a softmax function on Variable `input` along dimention `dim`, so that
+ * Applies a softmax function on Variable `input` along dimension `dim`, so that
  * the elements of the dimensional `dim` in output lie in the range (0,1) and
  * sum to 1.
  * \f[ out(x_{i}) = \frac{exp(x_i)}{\sum_j exp(x_j)} \f]
@@ -557,7 +557,7 @@ Variable pool2d(
 Variable softmax(const Variable& input, const int dim);
 
 /**
- * Applies a log(softmax(x)) function on Variable `input` along dimention `dim`
+ * Applies a log(softmax(x)) function on Variable `input` along dimension `dim`
  * \f[
  *    out(x_{i}) = log \Big( \frac{exp(x_i)}{\sum_j exp(x_j)} \Big)
  * \f]

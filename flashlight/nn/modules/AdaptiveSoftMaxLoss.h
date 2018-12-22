@@ -65,7 +65,7 @@ class AdaptiveSoftMaxLoss : public BinaryModule {
    * first tail bucket will contain `50 - 5 = 45` targets (subtracting the size
    * of the head bucket), the second tail bucket will contain `100 - 50 = 50`
    * targets (subtracting the size of the first tail bucket). Cutoffs must be
-   * specified to accomadate all targets: any remaining targets are not assigned
+   * specified to accommodate all targets: any remaining targets are not assigned
    * to an 'overflow' bucket.
    * @param div_value determines the number of hidden units in the intermediate
    * layer for each tail bucket:

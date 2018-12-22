@@ -86,7 +86,7 @@ class BinaryCrossEntropy : public BinaryModule {
    * Perform forward loss computation with an additional weight tensor.
    *
    * @param inputs a tensor with the predicted values
-   * @param targets a tensor with the taret values
+   * @param targets a tensor with the target values
    * @param weights a rescaling weight given to the loss of each element.
    */
   Variable forward(
