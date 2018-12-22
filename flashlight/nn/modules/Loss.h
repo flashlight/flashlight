@@ -21,32 +21,6 @@
 namespace fl {
 
 /**
- * A module denoting some loss computation.
- */
-class Loss : public Container {
- public:
-  Loss() = default;
-
-  /**
-   * Forward computation for the loss. With an input and a target.
-   *
-   * @param inputs a tensor with the the predicted values
-   * @param targets a tensor with the target values
-   */
-  virtual Variable forward(const Variable& inputs, const Variable& targets) = 0;
-
-  /// @private
-  Variable forward(const Variable& inputs) override;
-
-  Variable operator()(const Variable& inputs, const Variable& targets);
-
-  virtual ~Loss() = default;
-
- private:
-  FL_SAVE_LOAD_WITH_BASE(Container)
-};
-
-/**
  * Computes the [mean squared
  error](https://en.wikipedia.org/wiki/Mean_squared_error) between elements
  * across two tensors:
@@ -56,7 +30,7 @@ class Loss : public Container {
  * for input tensor \f$x\f$ and target tensor \f$y\f$ each of which contain
  \f$n\f$ elements.
  */
-class MeanSquaredError : public Loss {
+class MeanSquaredError : public BinaryModule {
  public:
   MeanSquaredError() = default;
 
@@ -65,7 +39,7 @@ class MeanSquaredError : public Loss {
   std::string prettyString() const override;
 
  private:
-  FL_SAVE_LOAD_WITH_BASE(Loss)
+  FL_SAVE_LOAD_WITH_BASE(BinaryModule)
 };
 
 /**
@@ -78,7 +52,7 @@ class MeanSquaredError : public Loss {
  * for input tensor \f$x\f$ and target tensor \f$y\f$ each of which contain
  \f$n\f$ elements.
  */
-class MeanAbsoluteError : public Loss {
+class MeanAbsoluteError : public BinaryModule {
  public:
   MeanAbsoluteError() = default;
 
@@ -87,7 +61,7 @@ class MeanAbsoluteError : public Loss {
   std::string prettyString() const override;
 
  private:
-  FL_SAVE_LOAD_WITH_BASE(Loss)
+  FL_SAVE_LOAD_WITH_BASE(BinaryModule)
 };
 
 /**
@@ -100,11 +74,11 @@ class MeanAbsoluteError : public Loss {
  *
  * Both the inputs and the targets are expected to be between 0 and 1.
  */
-class BinaryCrossEntropy : public Loss {
+class BinaryCrossEntropy : public BinaryModule {
  public:
   BinaryCrossEntropy() = default;
 
-  using Loss::forward;
+  using BinaryModule::forward;
 
   Variable forward(const Variable& inputs, const Variable& targets) override;
 
@@ -123,7 +97,7 @@ class BinaryCrossEntropy : public Loss {
   std::string prettyString() const override;
 
  private:
-  FL_SAVE_LOAD_WITH_BASE(Loss)
+  FL_SAVE_LOAD_WITH_BASE(BinaryModule)
 };
 
 /**
@@ -146,11 +120,11 @@ class BinaryCrossEntropy : public Loss {
  * reshaped to the target dimensions, giving a loss for each example. See
  * `ReduceMode`.
  */
-class CategoricalCrossEntropy : public Loss {
+class CategoricalCrossEntropy : public BinaryModule {
  private:
   ReduceMode reduction_;
 
-  FL_SAVE_LOAD_WITH_BASE(Loss, reduction_)
+  FL_SAVE_LOAD_WITH_BASE(BinaryModule, reduction_)
 
  public:
   /**
@@ -182,7 +156,6 @@ typedef MeanAbsoluteError L1Loss;
 
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::Loss)
 CEREAL_REGISTER_TYPE(fl::MeanSquaredError)
 CEREAL_REGISTER_TYPE(fl::MeanAbsoluteError)
 CEREAL_REGISTER_TYPE(fl::BinaryCrossEntropy)

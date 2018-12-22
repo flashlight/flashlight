@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <stdexcept>
+
 #include "MergeDataset.h"
 
 namespace fl {
@@ -18,9 +20,9 @@ MergeDataset::MergeDataset(
 }
 
 std::vector<af::array> MergeDataset::get(const int64_t idx) const {
-  FL_ASSERT(
-      idx >= 0 && idx < size(),
-      "Invalid value of idx. idx should be in [0, size())");
+  if (!(idx >= 0 && idx < size())) {
+    throw std::out_of_range("MergeDataset idx out of range");
+  }
 
   std::vector<af::array> result;
   for (auto dataset : datasets_) {

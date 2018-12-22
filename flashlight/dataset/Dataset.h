@@ -15,12 +15,6 @@
 
 #include "DatasetIterator.h"
 
-#ifndef FL_ASSERT
-#define FL_ASSERT(__cond, __msg) \
-  if (!(__cond))                 \
-  throw af::exception(__msg, __FILE__, __LINE__, af_err::AF_ERR_ARG)
-#endif
-
 namespace fl {
 
 /**

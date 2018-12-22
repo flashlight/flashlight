@@ -15,10 +15,10 @@
 
 #include <algorithm>
 #include <array>
+#include <stdexcept>
 
 #include <af/internal.h>
 
-#include <flashlight/common/Exception.h>
 #include "Functions.h"
 #include "Variable.h"
 
@@ -426,11 +426,10 @@ Variable sumAs(const Variable& input, const Variable& reference) {
 
 Variable concatenate(const std::vector<Variable>& concatInputs, int dim) {
   if (concatInputs.empty()) {
-    AFML_THROW_ERR(
-        "[Variable concatenate] Need at least one variable.", AF_ERR_ARG);
+    throw std::invalid_argument("cannot concatenate zero variables");
   }
   if (dim < 0 || dim > 3) {
-    AFML_THROW_ERR("[Variable concatenate] Invalid dimension.", AF_ERR_ARG);
+    throw std::invalid_argument("invalid dimension to concatenate along");
   }
   auto dims = concatInputs[0].dims();
   int concat_size = dims[dim];
@@ -438,10 +437,8 @@ Variable concatenate(const std::vector<Variable>& concatInputs, int dim) {
     concat_size += concatInputs[i].dims(dim);
     for (int d = 0; d < 4; d++) {
       if (dim != d && concatInputs[i].dims(d) != dims[d]) {
-        AFML_THROW_ERR(
-            "[Variable concatenate] Mismatch in dimension "
-            "not being concatenated.",
-            AF_ERR_ARG);
+        throw std::invalid_argument(
+            "mismatch in dimension not being concatenated");
       }
     }
   }
@@ -531,8 +528,10 @@ Variable var(
   for (auto ax : axes) {
     n *= input.dims(ax);
   }
-  AFML_ASSERT(
-      isbiased || n > 1, "Division by zero when computing var", AF_ERR_SIZE)
+  if (!isbiased && n == 1) {
+    throw std::invalid_argument(
+        "cannot compute unbiased variance with only one sample");
+  }
   auto val = 1.0 / (isbiased ? n : n - 1);
   result = val * (result - n * avg * avg);
   auto gradFunc =
@@ -688,15 +687,13 @@ Variable moddims(const Variable& input, const af::dim4& dims) {
     }
   }
 
-  AFML_ASSERT(
-      n_infer <= 1,
-      "[Variable moddims] Only infer a single dimension",
-      AF_ERR_ARG);
+  if (n_infer > 1) {
+    throw std::invalid_argument("too many dimensions for moddims to infer");
+  }
 
-  AFML_ASSERT(
-      infer_dims.elements() == input.elements(),
-      "[Variable moddims] Number of elements must match.",
-      AF_ERR_ARG);
+  if (infer_dims.elements() != input.elements()) {
+    throw std::invalid_argument("mismatched # of elements in moddims");
+  }
 
   auto result = af::moddims(input.array(), infer_dims);
 
@@ -760,15 +757,13 @@ Variable categoricalCrossEntropy(
   // target -- [X1, X2, X3, 1]
   for (int i = 1; i < 4; i++) {
     if (input.dims(i) != targets.dims(i - 1)) {
-      AFML_THROW_ERR(
-          "[categoricalCrossEntropy] Size mismatch between input and target.",
-          AF_ERR_ARG);
+      throw std::invalid_argument(
+          "dimension mismatch in categorical cross entropy");
     }
   }
   if (targets.dims(3) != 1) {
-    AFML_THROW_ERR(
-        "[categoricalCrossEntropy] Size mismatch between input and target.",
-        AF_ERR_ARG);
+    throw std::invalid_argument(
+        "dimension mismatch in categorical cross entropy");
   }
 
   int categories = input.dims(0);
@@ -789,7 +784,8 @@ Variable categoricalCrossEntropy(
   } else if (reduction == ReduceMode::SUM) {
     result = af::sum(result, 1);
   } else {
-    AFML_THROW_ERR("[nLLLoss] Invalid reduction method.", AF_ERR_ARG);
+    throw std::invalid_argument(
+        "unknown reduction method for categorical cross entropy");
   }
 
   af::dim4 in_dims = input.dims();
@@ -898,7 +894,7 @@ linear(const Variable& input, const Variable& weight, const Variable& bias) {
 Variable gatedlinearunit(const Variable& input, const int dim) {
   auto in_size = input.dims(dim);
   if (in_size % 2 == 1) {
-    AFML_THROW_ERR("Halving dimension needs to be even for GLU.", AF_ERR_ARG);
+    throw std::invalid_argument("halving dimension must be even for GLU");
   }
   std::array<af::seq, 4> fhalf = {af::span, af::span, af::span, af::span};
   fhalf[dim] = af::seq(in_size / 2);
@@ -928,7 +924,7 @@ Variable gatedlinearunit(const Variable& input, const int dim) {
 
 Variable embedding(const Variable& input, const Variable& embeddings) {
   if (input.numdims() >= 4) {
-    AFML_THROW_ERR("[embedding] Input must have 3 or fewer dims.", AF_ERR_ARG);
+    throw std::invalid_argument("embedding input must have 3 or fewer dims");
   }
 
   auto idxs = af::flat(input.array());

@@ -18,14 +18,14 @@ namespace fl {
  * output from lookup of shape
  * [`embedding_dim`, \f$B_1\f$, \f$B_2\f$ (optional), \f$B_3\f$ (optional)].
  */
-class Embedding : public Module {
+class Embedding : public UnaryModule {
  private:
   Embedding() = default; // Intentionally private
 
   int embeddingDim_;
   int numEmbeddings_;
 
-  FL_SAVE_LOAD_WITH_BASE(Module, embeddingDim_, numEmbeddings_)
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule, embeddingDim_, numEmbeddings_)
 
   void initialize();
 

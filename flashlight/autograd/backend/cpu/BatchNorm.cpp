@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <flashlight/autograd/Functions.h>
+#include <stdexcept>
 
+#include <flashlight/autograd/Functions.h>
 #include <flashlight/autograd/Variable.h>
-#include <flashlight/common/Exception.h>
 
 namespace fl {
 
@@ -22,7 +22,7 @@ Variable batchnorm(
     bool /* train */,
     double /* momentum */,
     double /* epsilon */) {
-  AFML_THROW_ERR("CPU BatchNorm is not implemented yet.", AF_ERR_NOT_SUPPORTED);
+  throw std::runtime_error("batchnorm not yet implemented on CPU");
 }
 
 } // namespace fl

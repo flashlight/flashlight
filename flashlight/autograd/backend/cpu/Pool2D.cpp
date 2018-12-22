@@ -5,11 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <stdexcept>
+
 #include <flashlight/autograd/Functions.h>
 #include <flashlight/autograd/Utils.h>
 #include <flashlight/autograd/Variable.h>
 #include <flashlight/common/DevicePtr.h>
-#include <flashlight/common/Exception.h>
 
 namespace fl {
 
@@ -22,7 +23,7 @@ Variable pool2d(
     int px,
     int py,
     PoolingMode mode) {
-  AFML_THROW_ERR("CPU Pool2D is not yet supported.", AF_ERR_NOT_SUPPORTED);
+  throw std::runtime_error("pool2d not yet implemented on CPU");
 }
 
 } // namespace fl

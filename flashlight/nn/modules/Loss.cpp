@@ -13,22 +13,13 @@
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
 
+#include <stdexcept>
+
 #include "Loss.h"
 
 #include <flashlight/autograd/Functions.h>
-#include <flashlight/common/Exception.h>
 
 namespace fl {
-
-Variable Loss::forward(const Variable& inputs) {
-  (void)inputs;
-  AFML_THROW_ERR(
-      "Loss module requires both inputs and targets", AF_ERR_NOT_SUPPORTED);
-}
-
-Variable Loss::operator()(const Variable& inputs, const Variable& targets) {
-  return this->forward(inputs, targets);
-}
 
 Variable MeanSquaredError::forward(
     const Variable& inputs,
@@ -71,7 +62,8 @@ std::string BinaryCrossEntropy::prettyString() const {
 }
 
 Variable CategoricalCrossEntropy::forward(
-    const Variable& inputs, const Variable& targets) {
+    const Variable& inputs,
+    const Variable& targets) {
   return categoricalCrossEntropy(inputs, targets, reduction_);
 }
 

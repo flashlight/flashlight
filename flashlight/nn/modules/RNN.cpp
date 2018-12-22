@@ -5,11 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <stdexcept>
+
 #include "RNN.h"
 
 #include <flashlight/autograd/Functions.h>
-#include <flashlight/nn/Utils.h>
 #include <flashlight/nn/Init.h>
+#include <flashlight/nn/Utils.h>
 
 namespace fl {
 
@@ -38,32 +40,54 @@ void RNN::initialize() {
   params_ = {w};
 }
 
+std::vector<Variable> RNN::forward(const std::vector<Variable>& inputs) {
+  if (inputs.size() < 1 || inputs.size() > 3) {
+    throw std::invalid_argument("Invalid inputs size");
+  }
+
+  const auto& input = inputs[0];
+  const auto& hiddenState = inputs.size() >= 2 ? inputs[1] : Variable();
+  const auto& cellState = inputs.size() == 3 ? inputs[2] : Variable();
+
+  float dropProb = train_ ? dropProb_ : 0.0;
+  auto rnnRes =
+      rnn(input,
+          hiddenState,
+          cellState,
+          params_[0],
+          hiddenSize_,
+          numLayers_,
+          mode_,
+          bidirectional_,
+          dropProb);
+
+  std::vector<Variable> output(1, std::get<0>(rnnRes));
+  if (inputs.size() >= 2) {
+    output.push_back(std::get<1>(rnnRes));
+  }
+  if (inputs.size() == 3) {
+    output.push_back(std::get<2>(rnnRes));
+  }
+  return output;
+}
+
 Variable RNN::forward(const Variable& input) {
-  return std::get<0>(forward(input, Variable(), Variable()));
+  return forward(std::vector<Variable>{input}).front();
 }
 
 std::tuple<Variable, Variable> RNN::forward(
     const Variable& input,
     const Variable& hidden_state) {
-  auto out = forward(input, hidden_state, Variable());
-  return std::make_tuple(std::get<0>(out), std::get<1>(out));
+  auto res = forward(std::vector<Variable>{input, hidden_state});
+  return std::make_tuple(res[0], res[1]);
 }
 
 std::tuple<Variable, Variable, Variable> RNN::forward(
     const Variable& input,
     const Variable& hidden_state,
     const Variable& cell_state) {
-  float drop_prob = train_ ? dropProb_ : 0.0;
-  return rnn(
-      input,
-      hidden_state,
-      cell_state,
-      params_[0],
-      hiddenSize_,
-      numLayers_,
-      mode_,
-      bidirectional_,
-      drop_prob);
+  auto res = forward(std::vector<Variable>{input, hidden_state, cell_state});
+  return std::make_tuple(res[0], res[1], res[2]);
 }
 
 std::string RNN::prettyString() const {

@@ -10,6 +10,9 @@
  * Implementation details, only to be included from Serialization.h
  */
 
+#include <stdexcept>
+#include <utility>
+
 #pragma once
 
 namespace fl {

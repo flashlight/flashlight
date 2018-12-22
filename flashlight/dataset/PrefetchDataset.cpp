@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <stdexcept>
 
 #include "PrefetchDataset.h"
 
@@ -18,11 +19,13 @@ PrefetchDataset::PrefetchDataset(
       numThreads_(numThreads),
       prefetchSize_(prefetchSize),
       curIdx_(-1) {
-  FL_ASSERT(dataset_, "dataset cannot be null");
-  FL_ASSERT(
-      (numThreads_ > 0 && prefetchSize_ > 0) ||
-          (numThreads_ == 0 && prefetchSize_ == 0),
-      "Invalid value for numThreads/prefetchSize specified");
+  if (!dataset_) {
+    throw std::invalid_argument("dataset to be prefetched is null");
+  }
+  if (!(numThreads_ > 0 && prefetchSize_ > 0) &&
+      !(numThreads_ == 0 && prefetchSize_ == 0)) {
+    throw std::invalid_argument("invalid numThreads or prefetchSize");
+  }
   if (numThreads_ > 0) {
     auto deviceId = af::getDevice();
     threadPool_ = std::unique_ptr<ThreadPool>(new ThreadPool(
@@ -32,9 +35,10 @@ PrefetchDataset::PrefetchDataset(
 }
 
 std::vector<af::array> PrefetchDataset::get(int64_t idx) const {
-  FL_ASSERT(
-      idx >= 0 && idx < size(),
-      "Invalid value of idx. idx should be in [0, size())");
+  if (!(idx >= 0 && idx < size())) {
+    throw std::out_of_range("PrefetchDataset idx out of range");
+  }
+
   if (numThreads_ == 0) {
     return dataset_->get(idx);
   }

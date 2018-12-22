@@ -8,7 +8,6 @@
 #include "View.h"
 
 #include <flashlight/autograd/Functions.h>
-#include <flashlight/common/Exception.h>
 #include <flashlight/nn/Init.h>
 
 namespace fl {

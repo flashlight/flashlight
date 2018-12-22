@@ -29,11 +29,11 @@ namespace fl {
  * \f$\frac{1}{1 - p}\f$. Thus, with the same network, at test time,
  * evaluating the module gives the identity.
  */
-class Dropout : public Module {
+class Dropout : public UnaryModule {
  private:
   double ratio_;
 
-  FL_SAVE_LOAD_WITH_BASE(Module, ratio_)
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule, ratio_)
 
  public:
   /**

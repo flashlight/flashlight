@@ -7,11 +7,11 @@
 
 #pragma once
 
+#include <stdexcept>
+
 #include <flashlight/autograd/Functions.h>
-#include <flashlight/common/Exception.h>
 #include <flashlight/nn/Init.h>
 #include "Container.h"
-
 #include "Conv2D.h"
 #include "Linear.h"
 
@@ -71,8 +71,7 @@ class WeightNorm : public Container {
     } else if (parent_params.size() == 1) {
       params_ = {v, g};
     } else {
-      AFML_THROW_ERR(
-          "[WeightNorm] Only support Linear and Conv2D.\n", AF_ERR_ARG);
+      throw std::invalid_argument("WeightNorm only supports Linear and Conv2D");
     }
   }
 
@@ -80,7 +79,7 @@ class WeightNorm : public Container {
 
   void setParams(const Variable& var, int position) override;
 
-  Variable forward(const Variable& input) override;
+  std::vector<Variable> forward(const std::vector<Variable>& inputs) override;
 
   std::string prettyString() const override;
 };

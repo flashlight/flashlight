@@ -5,10 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <stdexcept>
+
 #include "AdaptiveSoftMaxLoss.h"
 
 #include <flashlight/autograd/Functions.h>
-#include <flashlight/common/Exception.h>
 #include <flashlight/nn/Init.h>
 
 namespace fl {
@@ -18,9 +19,12 @@ AdaptiveSoftMaxLoss::AdaptiveSoftMaxLoss(
     const std::vector<int>& cutoff,
     float div_value,
     ReduceMode reduction)
-    : Loss(), cutoff_(cutoff), reduction_(reduction), divValue_(div_value) {
+    : BinaryModule(),
+      cutoff_(cutoff),
+      reduction_(reduction),
+      divValue_(div_value) {
   if (cutoff_.empty()) {
-    AFML_THROW_ERR("[AdaptiveSoftMax] Invalid cutoff.\n", AF_ERR_ARG);
+    throw std::invalid_argument("invalid cutoff for AdaptiveSoftMaxLoss");
   }
 
   int output_size = cutoff_[0] + cutoff_.size() - 1;
@@ -63,11 +67,10 @@ Variable AdaptiveSoftMaxLoss::forward(
     const Variable& input,
     const Variable& targets) {
   if (input.numdims() != 2) {
-    AFML_THROW_ERR("[AdaptiveSoftMaxLoss] Only support 2-D inputs", AF_ERR_ARG);
+    throw std::invalid_argument("AdaptiveSoftMaxLoss only supports 2D inputs");
   }
   if (targets.numdims() != 1) {
-    AFML_THROW_ERR(
-        "[AdaptiveSoftMaxLoss] Only support 1-D targets.", AF_ERR_ARG);
+    throw std::invalid_argument("AdaptiveSoftMaxLoss only supports 1D targets");
   }
 
   std::vector<af::array> masks(cutoff_.size() - 1);
@@ -88,11 +91,10 @@ Variable AdaptiveSoftMaxLoss::forward(
     auto selected_input = embedding(Variable(masks[i], false), input);
     auto tail_output = matmul(params_[1 + i * 2], selected_input);
     tail_output = matmul(params_[2 + i * 2], tail_output);
-    res = res +
+    res =
+        res +
         categoricalCrossEntropy(
-              logSoftmax(tail_output, 0),
-              target_chunks[i + 1],
-              ReduceMode::SUM);
+            logSoftmax(tail_output, 0), target_chunks[i + 1], ReduceMode::SUM);
   }
   if (reduction_ == ReduceMode::MEAN) {
     res = res / input.dims(1);
@@ -125,8 +127,8 @@ Variable AdaptiveSoftMaxLoss::getLogProb(const Variable& inputs) const {
   // return -- [C_out, .. , N]
   auto input_size = inputs.dims(0);
   if (input_size != params_[0].dims(1)) {
-    AFML_THROW_ERR(
-        "[AdaptiveSoftMaxLoss] Input dimension doesn\'t match", AF_ERR_ARG);
+    throw std::invalid_argument(
+        "invalid input dimension for AdaptiveSoftMaxLoss");
   }
 
   auto inputs_flattened = moddims(inputs, af::dim4(input_size, -1, 1, 1));
@@ -143,8 +145,8 @@ Variable AdaptiveSoftMaxLoss::predict(const Variable& inputs) const {
   // return -- [1, .. , N]
   auto input_size = inputs.dims(0);
   if (input_size != params_[0].dims(1)) {
-    AFML_THROW_ERR(
-        "[AdaptiveSoftMaxLoss] Input dimension doesn\'t match", AF_ERR_ARG);
+    throw std::invalid_argument(
+        "invalid input dimension for AdaptiveSoftMaxLoss");
   }
 
   auto inputs_flattened = moddims(inputs, af::dim4(input_size, -1, 1, 1));

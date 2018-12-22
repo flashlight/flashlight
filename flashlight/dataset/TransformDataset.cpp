@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <stdexcept>
+
 #include "TransformDataset.h"
 
 namespace fl {
@@ -13,17 +15,19 @@ TransformDataset::TransformDataset(
     std::shared_ptr<const Dataset> dataset,
     const std::vector<TransformFunction>& transformfns)
     : dataset_(dataset), transformFns_(transformfns) {
-  FL_ASSERT(dataset_, "Dataset shouldn't be a nullptr");
+  if (!dataset_) {
+    throw std::invalid_argument("dataset to be transformed is null");
+  }
 }
 
 std::vector<af::array> TransformDataset::get(const int64_t idx) const {
-  FL_ASSERT(
-      idx >= 0 && idx < size(),
-      "Invalid value of idx. idx should be in [0, size())");
+  if (!(idx >= 0 && idx < size())) {
+    throw std::out_of_range("TransformDataset idx out of range");
+  }
 
   auto result = dataset_->get(idx);
 
-  for (int64_t i = 0 ; i < result.size(); ++i) {
+  for (int64_t i = 0; i < result.size(); ++i) {
     if (i >= transformFns_.size()) {
       break;
     }

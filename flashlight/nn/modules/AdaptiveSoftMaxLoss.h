@@ -25,13 +25,13 @@ namespace fl {
  * low-frequency inputs are approximated with lower rank matrices so as to speed
  * up computation.
  */
-class AdaptiveSoftMaxLoss : public Loss {
+class AdaptiveSoftMaxLoss : public BinaryModule {
  private:
   std::vector<int> cutoff_;
   ReduceMode reduction_;
   float divValue_;
 
-  FL_SAVE_LOAD_WITH_BASE(Loss, cutoff_, reduction_, divValue_)
+  FL_SAVE_LOAD_WITH_BASE(BinaryModule, cutoff_, reduction_, divValue_)
 
   void setTargets(
       const Variable& targets,

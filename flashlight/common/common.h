@@ -9,7 +9,6 @@
 
 #include "Defines.h"
 #include "DevicePtr.h"
-#include "Exception.h"
 #include "Serialization.h"
 #include "Utils.h"
 #include "threadpool/ThreadPool.h"

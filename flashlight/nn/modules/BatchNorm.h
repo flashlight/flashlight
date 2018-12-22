@@ -23,7 +23,7 @@ namespace fl {
  * added to the variance to avoid divide-by-zero, and \f$\gamma\f$ and
  * \f$\beta\f$ are learnable parameters for affine transformation.
  */
-class BatchNorm : public Module {
+class BatchNorm : public UnaryModule {
  private:
   BatchNorm() = default; // intentionally private
 
@@ -35,7 +35,7 @@ class BatchNorm : public Module {
   bool affine_, trackStats_;
 
   FL_SAVE_LOAD_WITH_BASE(
-      Module,
+      UnaryModule,
       featAxes_,
       featSize_,
       numBatchesTracked_,

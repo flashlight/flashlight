@@ -24,14 +24,14 @@ namespace fl {
  * This layer takes in an input of shape [`input_size`, *, *, *] and transforms
  * it to an output of shape [`output_size`, *, *, *].
  */
-class Linear : public Module {
+class Linear : public UnaryModule {
  private:
   Linear() = default; // Intentionally private
 
   int nIn_, nOut_;
   bool bias_;
 
-  FL_SAVE_LOAD_WITH_BASE(Module, nIn_, nOut_, bias_)
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule, nIn_, nOut_, bias_)
 
   void initialize();
 

@@ -5,10 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <stdexcept>
+
 #include "Conv2D.h"
 
 #include <flashlight/autograd/Functions.h>
-#include <flashlight/common/Exception.h>
 #include <flashlight/nn/Init.h>
 #include <flashlight/nn/Utils.h>
 
@@ -47,7 +48,7 @@ Conv2D::Conv2D(
     IntOrPadMode px,
     IntOrPadMode py,
     int groups)
-    : Module({w}),
+    : UnaryModule({w}),
       nIn_(w.dims(2)),
       nOut_(w.dims(3)),
       xFilter_(w.dims(0)),
@@ -67,7 +68,7 @@ Conv2D::Conv2D(
     IntOrPadMode px,
     IntOrPadMode py,
     int groups)
-    : Module({w, b}),
+    : UnaryModule({w, b}),
       nIn_(w.dims(2)),
       nOut_(w.dims(3)),
       xFilter_(w.dims(0)),
@@ -79,23 +80,21 @@ Conv2D::Conv2D(
       bias_(true),
       groups_(groups) {
   if (b.dims(2) != w.dims(3)) {
-    AFML_THROW_ERR(
-        "Conv2D: Output channel dimension mismatch "
-        "between weight and bias.",
-        AF_ERR_ARG);
+    throw std::invalid_argument(
+        "output channel dimension mismatch between Conv2D weight and bias");
   }
   if (b.elements() != b.dims(2)) {
-    AFML_THROW_ERR(
-        "Conv2D: Bias must have non-singleton "
-        "dimension only along its third-dimension",
-        AF_ERR_ARG);
+    throw std::invalid_argument(
+        "only 3rd dimension of Conv2D bias may be non-singleton");
   }
 }
 
 Variable Conv2D::forward(const Variable& input) {
   auto px = detail::derivePadding(input.dims(0), xFilter_, xStride_, xPad_);
   auto py = detail::derivePadding(input.dims(1), yFilter_, yStride_, yPad_);
-  AFML_ASSERT(px >= 0 && py >= 0, "Invalid padding ", AF_ERR_ARG);
+  if (!(px >= 0 && py >= 0)) {
+    throw std::invalid_argument("invalid padding for Conv2D");
+  }
   if (bias_) {
     return conv2d(
         input, params_[0], params_[1], xStride_, yStride_, px, py, groups_);

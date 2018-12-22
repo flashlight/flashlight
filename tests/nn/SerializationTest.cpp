@@ -214,7 +214,8 @@ TEST(SerializationTest, WeightNormLinear) {
   ASSERT_TRUE(wlin2);
 
   ASSERT_TRUE(allParamsClose(*wlin2, *wlin));
-  ASSERT_TRUE(allClose(wlin2->forward(in), wlin->forward(in)));
+  ASSERT_TRUE(
+      allClose(wlin2->forward({in}).front(), wlin->forward({in}).front()));
 }
 
 TEST(SerializationTest, WeightNormConvSeq) {
@@ -226,7 +227,6 @@ TEST(SerializationTest, WeightNormConvSeq) {
   seq->add(std::make_shared<GatedLinearUnit>(2));
   seq->add(std::make_shared<WeightNorm>(Conv2D(45, 100, 3, 3), 3));
   seq->add(std::make_shared<GatedLinearUnit>(2));
-
 }
 
 TEST(SerializationTest, AdaptiveSoftMaxLoss) {
@@ -302,9 +302,9 @@ TEST(SerializationTest, LeNet) {
 
   leNet->add(Linear(84, 10));
 
-  save(getTmpPath("LeNet"), static_cast<ModulePtr>(leNet));
+  save(getTmpPath("LeNet"), leNet);
 
-  ModulePtr leNet2;
+  std::shared_ptr<Sequential> leNet2;
   load(getTmpPath("LeNet"), leNet2);
   ASSERT_TRUE(leNet2);
 
@@ -364,7 +364,7 @@ TEST(SerializationTest, ContainerWithParams) {
   ASSERT_TRUE(allParamsClose(*seq, *seq2));
 
   auto in = input(af::randu(10, 10));
-  ASSERT_TRUE(allClose(seq->forward(in), seq2->forward(in)));
+  ASSERT_TRUE(allClose(seq->forward(in), seq2->forward({in}).front()));
 }
 
 int main(int argc, char** argv) {

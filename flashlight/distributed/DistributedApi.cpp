@@ -7,7 +7,6 @@
 
 #include "DistributedApi.h"
 
-#include <flashlight/common/Exception.h>
 
 namespace fl {
 

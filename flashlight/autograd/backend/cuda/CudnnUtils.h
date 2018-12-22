@@ -12,7 +12,6 @@
 
 #include <flashlight/autograd/Variable.h>
 #include <flashlight/common/Defines.h>
-#include <flashlight/common/Exception.h>
 
 namespace fl {
 
@@ -96,15 +95,9 @@ class RNNDescriptor {
   ~RNNDescriptor();
 };
 
-#define CUDNN_CHECK_ERR(expression)                                     \
-  {                                                                     \
-    cudnnStatus_t status = (expression);                                \
-    if (status != CUDNN_STATUS_SUCCESS) {                               \
-      AFML_THROW_ERR(                                                   \
-          std::string("Cudnn Exception") + cudnnGetErrorString(status), \
-          AF_ERR_RUNTIME);                                              \
-    }                                                                   \
-  }
+#define CUDNN_CHECK_ERR(expr) ::fl::cudnnCheckErr((expr))
+
+void cudnnCheckErr(cudnnStatus_t status);
 
 cudnnDataType_t cudnnMapToType(const af::dtype& t);
 

@@ -12,8 +12,7 @@
 namespace fl {
 
 /**
- * Dataset created by unpacking tensors along the last non-singleton
- dimension.
+ * Dataset created by unpacking tensors along the last non-singleton dimension.
  *
  * The size of the dataset is determined by the size along that dimension.
  * Hence, it must be the same across all `int64_t`s in the input.

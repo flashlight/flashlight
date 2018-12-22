@@ -73,24 +73,6 @@ elseif (FLASHLIGHT_USE_UNIFIED AND NOT ArrayFire_Unified_FOUND)
   message(FATAL_ERROR "ArrayFire Unified not found: cannot build unified backend")
 endif()
 
-# TODO(@jacobkahn): remove these when glog is purged
-# Find GLog
-find_package(GLOG REQUIRED)
-if (GLOG_FOUND)
-  message(STATUS "GLOG found")
-else()
-  message(FATAL_ERROR "GLOG not found")
-endif()
-
-# TODO(@jacobkahn): remove these when glog is purged
-# Find GFlags
-find_package(GFLAGS REQUIRED)
-if (GFLAGS_FOUND)
-  message(STATUS "GFLAGS found")
-else()
-  message(FATAL_ERROR "GFLAGS not found")
-endif()
-
 # Find cereal
 find_package(cereal REQUIRED)
 if (cereal_FOUND)
@@ -169,16 +151,13 @@ set(
   Distributed
   Meter
   NN
-  Optim  
+  Optim
   )
 
 target_link_libraries(
   flashlight
   PUBLIC # export dependency library and include paths for each module
   ${FLASHLIGHT_MODULES}
-  # TODO(@jacobkahn) remove this once glog is purged
-  ${GLOG_LIBRARIES}
-  ${GFLAGS_LIBRARIES}
   )
 
 # Internal includes are impl defined as <flashlight...>
@@ -186,9 +165,6 @@ target_include_directories(
   flashlight
   PRIVATE
   ${CMAKE_SOURCE_DIR}
-  # TODO(@jacobkahn) remove these once glog is purged
-  ${GLOG_INCLUDE_DIRS}
-  ${GFLAGS_INCLUDE_DIRS}
 )
 
 # Link appropriate ArrayFire backend, set global compile time macros
@@ -275,11 +251,11 @@ install(
   flashlightTargets
   NAMESPACE
   flashlight::
-  DESTINATION 
+  DESTINATION
   ${FL_INSTALL_CMAKE_DIR}
   COMPONENT
   cmake)
-     
+
 # Move headers
 install(
   DIRECTORY
@@ -312,7 +288,7 @@ configure_package_config_file(
   PATH_VARS INCLUDE_DIRS CMAKE_DIR
   )
 install(FILES
-  ${PROJECT_BINARY_DIR}/cmake/install/flashlightConfig.cmake 
+  ${PROJECT_BINARY_DIR}/cmake/install/flashlightConfig.cmake
   DESTINATION ${FL_INSTALL_CMAKE_DIR}
   COMPONENT cmake
   )

@@ -13,29 +13,30 @@
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
 
+#include <stdexcept>
+
 #include "Linear.h"
 
 #include <flashlight/autograd/Functions.h>
-#include <flashlight/common/Exception.h>
-#include <flashlight/nn/Utils.h>
 #include <flashlight/nn/Init.h>
+#include <flashlight/nn/Utils.h>
 
 namespace fl {
 
 Linear::Linear(int input_size, int output_size, bool bias)
-    : Module(), nIn_(input_size), nOut_(output_size), bias_(bias) {
+    : UnaryModule(), nIn_(input_size), nOut_(output_size), bias_(bias) {
   initialize();
 }
 
 Linear::Linear(const Variable& w)
-    : Module({w}), nIn_(w.dims(1)), nOut_(w.dims(0)), bias_(false) {}
+    : UnaryModule({w}), nIn_(w.dims(1)), nOut_(w.dims(0)), bias_(false) {}
 
 Linear::Linear(const Variable& w, const Variable& b)
-    : Module({w, b}), nIn_(w.dims(1)), nOut_(w.dims(0)), bias_(true) {
-  AFML_ASSERT(
-      b.dims(0) == w.dims(0),
-      "nn:Linear: Dimension mismatch between weight and bias.",
-      AF_ERR_ARG);
+    : UnaryModule({w, b}), nIn_(w.dims(1)), nOut_(w.dims(0)), bias_(true) {
+  if (b.dims(0) != w.dims(0)) {
+    throw std::invalid_argument(
+        "dimension mismatch between Linear weight and bias");
+  }
 }
 
 Variable Linear::forward(const Variable& input) {

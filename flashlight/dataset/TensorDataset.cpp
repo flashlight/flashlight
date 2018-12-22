@@ -6,6 +6,7 @@
  */
 
 #include <array>
+#include <stdexcept>
 
 #include "TensorDataset.h"
 
@@ -13,19 +14,25 @@ namespace fl {
 
 TensorDataset::TensorDataset(const std::vector<af::array>& datatensors)
     : dataTensors_(datatensors), size_(0) {
-  FL_ASSERT(!dataTensors_.empty(), "Empty data tensors map.");
+  if (dataTensors_.empty()) {
+    throw std::invalid_argument("no tensors passed to TensorDataset");
+  }
   for (const auto& tensor : dataTensors_) {
-    auto lastdim = tensor.numdims() - 1;
-    FL_ASSERT(lastdim >= 0, "tensor can't be zero-dimensional.");
+    auto ndims = tensor.numdims();
+    if (ndims <= 1) {
+      throw std::invalid_argument(
+          "tensor for TensorDataset can't be 1-D or empty");
+    }
+    auto lastdim = ndims - 1;
     int64_t cursz = tensor.dims(lastdim);
     size_ = std::max(size_, cursz);
   }
 }
 
 std::vector<af::array> TensorDataset::get(const int64_t idx) const {
-  FL_ASSERT(
-      idx >= 0 && idx < size(),
-      "Invalid value of idx. idx should be in [0, size())");
+  if (!(idx >= 0 && idx < size())) {
+    throw std::out_of_range("TensorDataset idx out of range");
+  }
   std::vector<af::array> result(dataTensors_.size());
   for (int64_t i = 0; i < dataTensors_.size(); ++i) {
     std::array<af::seq, 4> sel{af::span, af::span, af::span, af::span};

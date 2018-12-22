@@ -5,34 +5,20 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <flashlight/distributed/DistributedApi.h>
-
 #include <algorithm>
 #include <cstring>
+#include <stdexcept>
 
 #include <af/cuda.h>
-#include <glog/logging.h>
 #include <mpi.h>
 #include <nccl.h>
 
 #include <flashlight/common/CudaUtils.h>
+#include <flashlight/distributed/DistributedApi.h>
 #include <flashlight/distributed/backend/utils/FileStore.h>
 
-#define NCCLCHECK(cmd)                                               \
-  do {                                                               \
-    ncclResult_t r = cmd;                                            \
-    if (r != ncclSuccess) {                                          \
-      LOG(FATAL) << "Failed, NCCL error: " << ncclGetErrorString(r); \
-    }                                                                \
-  } while (0)
-
-#define MPICHECK(cmd)                           \
-  do {                                          \
-    int e = cmd;                                \
-    if (e != MPI_SUCCESS) {                     \
-      LOG(FATAL) << "Failed, MPI error: " << e; \
-    }                                           \
-  } while (0)
+#define NCCLCHECK(expr) ::fl::detail::ncclCheck((expr))
+#define MPICHECK(expr) ::fl::detail::mpiCheck((expr))
 
 namespace fl {
 
@@ -68,12 +54,16 @@ bool isNonNegativeInteger(const std::string& s) {
 }
 } // namespace
 
+void ncclCheck(ncclResult_t r);
+
+void mpiCheck(int ec);
+
 void allreduceCuda(void* ptr, size_t count, ncclDataType_t ncclType);
 } // namespace detail
 
 void allReduce(af::array& arr) {
   if (!isDistributedInit()) {
-    LOG(FATAL) << "Distributed environment not initialized";
+    throw std::runtime_error("distributed environment not initialized");
   }
   void* arrPtr = arr.device<void>();
   switch (arr.type()) {
@@ -90,7 +80,7 @@ void allReduce(af::array& arr) {
       detail::allreduceCuda(arrPtr, arr.elements(), ncclInt64);
       break;
     default:
-      LOG(FATAL) << "Unsupported Arrayfire type for allreduce with Nccl";
+      throw std::runtime_error("unsupported data type for allreduce with NCCL");
   }
   arr.unlock();
 }
@@ -115,7 +105,8 @@ void distributedInit(
     int worldSize,
     const std::unordered_map<std::string, std::string>& params /* = {} */) {
   if (isDistributedInit()) {
-    LOG(FATAL) << "Distributed init is being called more than once";
+    std::cerr << "warning: fl::distributedInit() called more than once\n";
+    return;
   }
   if (initMethod == DistributedInit::MPI) {
     detail::NcclContext::getInstance().initWithMPI(params);
@@ -126,13 +117,43 @@ void distributedInit(
     detail::DistributedInfo::getInstance().initMethod_ =
         DistributedInit::FILE_SYSTEM;
   } else {
-    LOG(FATAL) << "Unknown init method for distributed";
+    throw std::runtime_error(
+        "unsupported distributed init method for NCCL backend");
   }
   detail::DistributedInfo::getInstance().isInitialized_ = true;
   detail::DistributedInfo::getInstance().backend_ = DistributedBackend::NCCL;
+  if (getWorldRank() == 0) {
+    std::cout << "Initialized NCCL " << NCCL_MAJOR << "." << NCCL_MINOR
+              << " successfully!\n";
+  }
 }
 
 namespace detail {
+
+void ncclCheck(ncclResult_t r) {
+  if (r == ncclSuccess) {
+    return;
+  }
+  const char* err = ncclGetErrorString(r);
+  if (r == ncclInvalidArgument) {
+    throw std::invalid_argument(err);
+  } else if (r == ncclInvalidUsage) {
+    throw std::logic_error(err);
+  } else {
+    throw std::runtime_error(err);
+  }
+}
+
+void mpiCheck(int ec) {
+  if (ec == MPI_SUCCESS) {
+    return;
+  } else {
+    char buf[MPI_MAX_ERROR_STRING];
+    int resultlen;
+    MPI_Error_string(ec, buf, &resultlen);
+    throw std::runtime_error(buf);
+  }
+}
 
 void allreduceCuda(void* ptr, size_t count, ncclDataType_t ncclType) {
   // TODO: Run NCCL and AF in different streams
@@ -176,7 +197,8 @@ void NcclContext::initWithMPI(
   if (maxDevicePerNode == params.end() ||
       !isNonNegativeInteger(maxDevicePerNode->second) ||
       std::stoi(maxDevicePerNode->second) == 0) {
-    LOG(FATAL) << "Invalid params for distributed environment initialization";
+    throw std::invalid_argument(
+        "invalid MaxDevicePerNode for NCCL initWithMPI");
   }
 
   ncclUniqueId id;
@@ -192,11 +214,6 @@ void NcclContext::initWithMPI(
 
   // initializing NCCL
   NCCLCHECK(ncclCommInitRank(&comm_, worldSize_, id, worldRank_));
-
-  if (worldRank_ == 0) {
-    LOG(INFO) << "Initialized NCCL successfully! Compiled with NCCL "
-              << NCCL_MAJOR << "." << NCCL_MINOR;
-  }
 }
 
 void NcclContext::initWithFileSystem(
@@ -206,8 +223,12 @@ void NcclContext::initWithFileSystem(
   auto filePath = params.find(DistributedConstants::kFilePath);
   auto maxDevicePerNode = params.find(DistributedConstants::kMaxDevicePerNode);
 
-  if (filePath == params.end() || maxDevicePerNode == params.end()) {
-    LOG(FATAL) << "Invalid params for distributed environment initialization";
+  if (filePath == params.end() || filePath->second.empty()) {
+    throw std::invalid_argument("invalid FilePath for NCCL initWithFileSystem");
+  }
+  if (maxDevicePerNode == params.end()) {
+    throw std::invalid_argument(
+        "invalid MaxDevicePerNode for NCCL initWithFileSystem");
   }
 
   worldRank_ = worldRank;
@@ -221,8 +242,6 @@ void NcclContext::initWithFileSystem(
   if (worldRank_ == 0) {
     ncclGetUniqueId(&id);
   }
-  LOG_IF(FATAL, filePath->second.empty())
-      << "Invalid args. Failed to initialize NCCL context.";
 
   auto fs = FileStore(filePath->second);
   if (worldRank_ == 0) {
@@ -237,11 +256,6 @@ void NcclContext::initWithFileSystem(
 
   // initializing NCCL
   NCCLCHECK(ncclCommInitRank(&comm_, worldSize_, id, worldRank_));
-
-  if (worldRank_ == 0) {
-    LOG(INFO) << "Initialized NCCL successfully! Compiled with NCCL "
-              << NCCL_MAJOR << "." << NCCL_MINOR;
-  }
 }
 
 NcclContext::~NcclContext() {

@@ -71,7 +71,7 @@ class Variable {
   using GradFunc = std::function<
       void(std::vector<Variable>& inputs, const Variable& grad_output)>;
 
-  using GradHook = std::function<void(Variable* grad)>;
+  using GradHook = std::function<void(Variable& grad)>;
 
   /**
    * Creates an empty Variable. The underlying array is empty and

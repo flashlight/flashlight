@@ -10,9 +10,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <fstream>
+#include <stdexcept>
 #include <thread>
-
-#include <glog/logging.h>
 
 namespace {
 static std::string encodeName(const std::string& name) {
@@ -51,19 +50,24 @@ void FileStore::set(const std::string& key, const std::vector<char>& data) {
     // using an API that fails if the file exists (not provided by STL). If
     // created successfully, rename the temp file as below.
     std::ifstream ifs(path.c_str());
-    LOG_IF(FATAL, ifs.is_open()) << "File already exists: " << path;
+    if (ifs.is_open()) {
+      throw std::runtime_error("FileStore set: file already exists: " + path);
+    }
   }
 
   {
     std::ofstream ofs(tmp.c_str(), std::ios::out | std::ios::trunc);
-    LOG_IF(FATAL, !ofs.is_open())
-        << "File cannot be created: " << tmp << " (" << ofs.rdstate() << ")";
+    if (!ofs.is_open()) {
+      throw std::runtime_error("FileStore set: file create failed: " + tmp);
+    }
     ofs.write(data.data(), data.size());
   }
 
   // Atomically move result to final location
   auto rv = rename(tmp.c_str(), path.c_str());
-  LOG_IF(FATAL, rv != 0) << "Error while renaming";
+  if (rv != 0) {
+    throw std::runtime_error("FileStore set: rename failed");
+  }
 }
 
 std::vector<char> FileStore::get(const std::string& key) {
@@ -74,12 +78,15 @@ std::vector<char> FileStore::get(const std::string& key) {
   wait(key);
 
   std::ifstream ifs(path.c_str(), std::ios::in);
-  LOG_IF(FATAL, !ifs) << "File cannot be opened: " << path << " ("
-                      << ifs.rdstate() << ")";
+  if (!ifs) {
+    throw std::runtime_error("FileStore get: file open failed: " + path);
+  }
 
   ifs.seekg(0, std::ios::end);
   size_t n = ifs.tellg();
-  LOG_IF(FATAL, n == 0);
+  if (n == 0) {
+    throw std::runtime_error("FileStore get: file is empty: " + path);
+  }
   result.resize(n);
   ifs.seekg(0);
   ifs.read(result.data(), n);
@@ -98,7 +105,9 @@ bool FileStore::check(const std::string& key) {
   if (fd == -1) {
     // Only deal with files that don't exist.
     // Anything else is a problem.
-    LOG_IF(FATAL, errno != ENOENT);
+    if (errno != ENOENT) {
+      throw std::runtime_error("FileStore check: file open failed: " + path);
+    }
 
     // path doesn't exist; return early
     return false;
@@ -115,7 +124,7 @@ void FileStore::wait(const std::string& key) {
     const auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
         std::chrono::steady_clock::now() - start);
     if (elapsed > FileStore::kDefaultTimeout) {
-      LOG(FATAL) << "Wait timeout for key: " << key;
+      throw std::runtime_error("FileStore timed out for key: " + key);
     }
     /* sleep override */
     std::this_thread::sleep_for(std::chrono::milliseconds(10));

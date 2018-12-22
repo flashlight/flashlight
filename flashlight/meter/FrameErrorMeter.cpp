@@ -5,8 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <stdexcept>
+
 #include "FrameErrorMeter.h"
-#include <flashlight/common/Exception.h>
 
 namespace fl {
 FrameErrorMeter::FrameErrorMeter(bool accuracy /* = false */)
@@ -20,14 +21,13 @@ void FrameErrorMeter::reset() {
 }
 
 void FrameErrorMeter::add(const af::array& output, const af::array& target) {
-  AFML_ASSERT(
-      output.dims() == target.dims(),
-      "target and output dimensions do not match",
-      -1);
-  AFML_ASSERT(
-      target.numdims() == 1,
-      "output, target must be 1 dimensional",
-      target.numdims());
+  if (output.dims() != target.dims()) {
+    throw std::invalid_argument("dimension mismatch in FrameErrorMeter");
+  }
+  if (target.numdims() != 1) {
+    throw std::invalid_argument(
+        "output/target must be 1-dimensional for FrameErrorMeter");
+  }
 
   sum_ += af::count<int64_t>(output != target);
   n_ += target.dims(0);

@@ -5,8 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <stdexcept>
+
 #include "MSEMeter.h"
-#include <flashlight/common/Exception.h>
 
 namespace fl {
 MSEMeter::MSEMeter() {
@@ -19,8 +20,9 @@ void MSEMeter::reset() {
 }
 
 void MSEMeter::add(const af::array& output, const af::array& target) {
-  AFML_ASSERT(
-      output.dims() == target.dims(), "Dimension mismatch in MSEMeter", -1);
+  if (output.dims() != target.dims()) {
+    throw std::invalid_argument("dimension mismatch in MSEMeter");
+  }
   ++curN_;
   curValue_ = (curValue_ * (curN_ - 1) +
                af::sum<double>((output - target) * (output - target))) /

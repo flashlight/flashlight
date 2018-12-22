@@ -7,10 +7,6 @@
 
 #include "Utils.h"
 
-#include <af/internal.h>
-
-#include "Exception.h"
-
 namespace fl {
 
 bool allClose(
@@ -29,11 +25,4 @@ bool allClose(
   return af::max<double>(af::abs(a - b)) < absTolerance;
 }
 
-namespace detail {
-
-void assertLinear(const af::array& arr) {
-  AFML_ASSERT(af::isLinear(arr), "Array is not linear", AF_ERR_ARG);
-}
-
-} // namespace detail
 } // namespace fl

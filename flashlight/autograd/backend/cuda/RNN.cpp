@@ -11,7 +11,6 @@
 
 #include <flashlight/autograd/Variable.h>
 #include <flashlight/common/DevicePtr.h>
-#include <flashlight/common/Exception.h>
 #include "CudnnUtils.h"
 
 namespace {
@@ -36,7 +35,9 @@ void rnn_backward(
     RnnMode mode,
     bool bidirectional,
     float drop_prob) {
-  AFML_ASSERT(inputs.size() == 4, "RNN wrong # of inputs", AF_ERR_ARG);
+  if (inputs.size() != 4) {
+    throw std::invalid_argument("wrong # of inputs for RNN");
+  }
   auto input = inputs[0];
   auto hx = inputs[1];
   auto cx = inputs[2];
@@ -218,19 +219,17 @@ std::tuple<Variable, Variable, Variable> rnn(
   TensorDescriptorArray x_descs(
       seq_length, x.type(), {1, 1, input_size, batch_size});
 
-  AFML_ASSERT(
-      hx.isempty() ||
-          (hx.dims(0) == hidden_size && hx.dims(1) == batch_size &&
-           hx.dims(2) == total_layers),
-      "Invalid hidden state size.",
-      AF_ERR_ARG);
+  if (!hx.isempty() &&
+      !(hx.dims(0) == hidden_size && hx.dims(1) == batch_size &&
+        hx.dims(2) == total_layers)) {
+    throw std::invalid_argument("invalid hidden state dims for RNN");
+  }
 
-  AFML_ASSERT(
-      cx.isempty() ||
-          (mode == RnnMode::LSTM && cx.dims(0) == hidden_size &&
-           cx.dims(1) == batch_size && cx.dims(2) == total_layers),
-      "Invalid cell state size.",
-      AF_ERR_ARG);
+  if (!cx.isempty() &&
+      !(mode == RnnMode::LSTM && cx.dims(0) == hidden_size &&
+        cx.dims(1) == batch_size && cx.dims(2) == total_layers)) {
+    throw std::invalid_argument("invalid cell state dims for RNN");
+  }
 
   af::dim4 h_dims = {1, hidden_size, batch_size, total_layers};
   TensorDescriptor hx_desc(x.type(), h_dims);
@@ -245,10 +244,10 @@ std::tuple<Variable, Variable, Variable> rnn(
       x_descs.descriptors[0],
       &param_size,
       cudnnMapToType(weights.array().type())));
-  AFML_ASSERT(
-      param_size == weights.array().bytes(),
-      "Invalid number of parameters or incorrect input shape.",
-      AF_ERR_ARG);
+  if (param_size != weights.array().bytes()) {
+    throw std::invalid_argument(
+        "invalid # of parameters or wrong input shape for RNN");
+  }
   FilterDescriptor w_desc(weights);
 
   af::array y(out_size, batch_size, seq_length, input.type());

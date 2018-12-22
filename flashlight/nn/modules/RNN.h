@@ -84,13 +84,18 @@ class RNN : public Module {
       bool bidirectional = false,
       float drop_prob = 0.0);
 
-  /** Forward the RNN Layer.
-   * @param input Should be of shape [\f$X_{in}\f$, \f$N\f$, \f$T\f$]
-   * @returns An output Variable of shape [\f$X_{out}\f$, \f$N\f$, \f$T\f$]
-   */
-  Variable forward(const Variable& input) override;
+  std::vector<Variable> forward(const std::vector<Variable>& inputs) override;
 
   using Module::operator();
+
+  /** Forward the RNN Layer.
+   * @param input Should be of shape [\f$X_{in}\f$, \f$N\f$, \f$T\f$]
+   * @returns a single output Variable with shape [\f$X_{out}\f$, \f$N\f$,
+   * \f$T\f$]
+   */
+  Variable forward(const Variable& input);
+
+  Variable operator()(const Variable& input);
 
   /** Forward the RNN Layer.
    * @param input Should be of shape [\f$X_{in}\f$, \f$N\f$, \f$T\f$]

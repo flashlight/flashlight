@@ -22,6 +22,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <stdexcept>
 
 #include <arrayfire.h>
 #include <flashlight/flashlight.h>

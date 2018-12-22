@@ -25,13 +25,13 @@ namespace fl {
    std::cout << var.dims() << std::endl;
  * \endcode
  */
-class Reorder : public Module {
+class Reorder : public UnaryModule {
  private:
   Reorder() = default;
 
   int dim0_, dim1_, dim2_, dim3_;
 
-  FL_SAVE_LOAD_WITH_BASE(Module, dim0_, dim1_, dim2_, dim3_)
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule, dim0_, dim1_, dim2_, dim3_)
 
  public:
   /** Construct a Reorder layer. The dimension values must not repeat and must

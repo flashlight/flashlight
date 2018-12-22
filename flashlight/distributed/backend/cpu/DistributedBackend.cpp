@@ -7,11 +7,12 @@
 
 #include <flashlight/distributed/DistributedApi.h>
 
+#include <iostream>
 #include <list>
 #include <memory>
 #include <mutex>
+#include <stdexcept>
 
-#include <glog/logging.h>
 #include <gloo/allreduce_halving_doubling.h>
 #include <gloo/config.h>
 #include <gloo/mpi/context.h>
@@ -70,12 +71,13 @@ void distributedInit(
     int /* worldSize */,
     const std::unordered_map<std::string, std::string>& /* params = {} */) {
   if (isDistributedInit()) {
-    LOG(FATAL) << "Distributed init is being called more than once";
+    std::cerr << "warning: fl::distributedInit() called more than once\n";
+    return;
   }
 
   if (initMethod != DistributedInit::MPI) {
-    LOG(FATAL)
-        << "Setting up Gloo environment is supported only for MPI for now.";
+    throw std::runtime_error(
+        "unsupported distributed init method for gloo backend");
   }
 
   // using MPI
@@ -89,17 +91,17 @@ void distributedInit(
   glooContext_ = gloo::mpi::Context::createManaged();
   glooContext_->setTimeout(gloo::kNoTimeout);
   glooContext_->connectFullMesh(glooDev);
-  if (glooContext_->rank == 0) {
-    LOG(INFO) << "Initialized Gloo successfully!";
-  }
 
   detail::DistributedInfo::getInstance().backend_ = DistributedBackend::GLOO;
   detail::DistributedInfo::getInstance().isInitialized_ = true;
+  if (glooContext_->rank == 0) {
+    std::cout << "Initialized Gloo successfully!\n";
+  }
 }
 
 void allReduce(af::array& arr) {
   if (!isDistributedInit()) {
-    LOG(FATAL) << "Distributed environment not initialized";
+    throw std::runtime_error("distributed environment not initialized");
   }
   size_t arrSize = arr.elements() * af::getSizeOf(arr.type());
   if (arrSize > cacheArr_.elements()) {
@@ -122,7 +124,7 @@ void allReduce(af::array& arr) {
       detail::allreduceGloo(static_cast<int64_t*>(cacheArrPtr), arr.elements());
       break;
     default:
-      LOG(FATAL) << "Unimplemented Arrayfire type for allreduce with gloo";
+      throw std::runtime_error("unsupported data type for allreduce with gloo");
   }
   memcpy(arrPtr, cacheArrPtr, arrSize);
   arr.unlock();

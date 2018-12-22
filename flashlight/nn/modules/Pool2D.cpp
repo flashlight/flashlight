@@ -5,10 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <stdexcept>
+
 #include "Pool2D.h"
 
 #include <flashlight/autograd/Functions.h>
-#include <flashlight/common/Exception.h>
 #include <flashlight/nn/Init.h>
 #include <flashlight/nn/Utils.h>
 
@@ -36,7 +37,9 @@ Variable Pool2D::forward(const Variable& input) {
   auto px = detail::derivePadding(input.dims(0), xFilter_, xStride_, xPad_);
   auto py = detail::derivePadding(input.dims(1), yFilter_, yStride_, yPad_);
 
-  AFML_ASSERT(px >= 0 && py >= 0, "Invalid padding ", AF_ERR_ARG);
+  if (!(px >= 0 && py >= 0)) {
+    throw std::invalid_argument("invalid padding for Pool2D");
+  }
 
   return pool2d(input, xFilter_, yFilter_, xStride_, yStride_, px, py, mode_);
 }

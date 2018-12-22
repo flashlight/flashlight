@@ -4,7 +4,6 @@
 # Ubuntu           16.04
 # CUDA             9.2
 # CuDNN            7-dev
-# glog             lastest  (apt)
 # boost            latest   (apt)
 # arrayfire        3.6.1    (git, CUDA backend)
 # googletest       master   (git)
@@ -35,16 +34,13 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         g++ \
         # for Cereal
         libboost-all-dev \
-        # glogs: for flashlight logging
-        libgoogle-glog-dev \
-        # for Cereal 
         gcc-multilib g++-multilib \
         # nccl: for flashlight
         libnccl2 libnccl-dev && \
 # ==================================================================
 # arrayfire https://github.com/arrayfire/arrayfire/wiki/
 # ------------------------------------------------------------------
-    cd /tmp && git clone --recursive https://github.com/arrayfire/arrayfire.git && \    
+    cd /tmp && git clone --recursive https://github.com/arrayfire/arrayfire.git && \
     cd arrayfire && git checkout b443e14 && \
     mkdir build && cd build && \
     cmake .. -DCMAKE_BUILD_TYPE=Release -DAF_BUILD_CPU=OFF -DAF_BUILD_OPENCL=OFF -DAF_BUILD_EXAMPLES=OFF && \
@@ -52,7 +48,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     make install && \
 # ==================================================================
 # GoogleTest https://github.com/google/googletest/
-# ------------------------------------------------------------------   
+# ------------------------------------------------------------------
     cd /tmp && git clone --recursive https://github.com/google/googletest && \
     cd googletest && \
     mkdir build && cd build && \
@@ -84,7 +80,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     mkdir -p build && cd build && \
     cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CUDA &&  \
     make -j8  && \
-    make install && \ 
+    make install && \
 # ========================================================= =========
 # config & cleanup
 # ------------------------------------------------------------------
@@ -92,4 +88,3 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     apt-get clean && \
     apt-get autoremove && \
     rm -rf /var/lib/apt/lists/* /tmp/* ~/*
-

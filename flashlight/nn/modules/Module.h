@@ -18,6 +18,7 @@
 #include <flashlight/autograd/Variable.h>
 #include <flashlight/common/Serialization.h>
 
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -115,7 +116,8 @@ class Module {
    * @return a `Variable` tensor containing the result of the forward
    * computation
    */
-  virtual Variable forward(const Variable& input) = 0;
+  virtual std::vector<Variable> forward(
+      const std::vector<Variable>& inputs) = 0;
 
   /**
    * Overload for forward computation for the module.
@@ -125,7 +127,7 @@ class Module {
    * @return a `Variable` tensor containing the result of the forward
    * computation
    */
-  Variable operator()(const Variable& input);
+  std::vector<Variable> operator()(const std::vector<Variable>& inputs);
 
   /**
    * Generates a stringified representation of the module.
@@ -137,4 +139,42 @@ class Module {
   virtual ~Module() = default;
 };
 
+class UnaryModule : public Module {
+ public:
+  UnaryModule();
+
+  explicit UnaryModule(const std::vector<Variable>& params);
+
+  std::vector<Variable> forward(const std::vector<Variable>& inputs) override;
+
+  virtual Variable forward(const Variable& input) = 0;
+
+  Variable operator()(const Variable& input);
+
+  virtual ~UnaryModule() = default;
+
+ private:
+  FL_SAVE_LOAD_WITH_BASE(Module)
+};
+
+class BinaryModule : public Module {
+ public:
+  BinaryModule();
+
+  explicit BinaryModule(const std::vector<Variable>& params);
+
+  std::vector<Variable> forward(const std::vector<Variable>& inputs) override;
+
+  virtual Variable forward(const Variable& input1, const Variable& input2) = 0;
+
+  Variable operator()(const Variable& input1, const Variable& input2);
+
+  virtual ~BinaryModule() = default;
+
+ private:
+  FL_SAVE_LOAD_WITH_BASE(Module)
+};
 } // namespace fl
+
+CEREAL_REGISTER_TYPE(fl::UnaryModule)
+CEREAL_REGISTER_TYPE(fl::BinaryModule)

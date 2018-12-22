@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <flashlight/common/Exception.h>
 #include "Module.h"
 
 namespace fl {
@@ -24,7 +23,7 @@ namespace fl {
     \endcode
  * Note this module cannot be serialized.
  */
-class Transform : public Module {
+class Transform : public UnaryModule {
  private:
   Transform() = default; // Intentionally private
 
@@ -56,14 +55,12 @@ class Transform : public Module {
 
 template <class Archive>
 void Transform::save(Archive& /* ar */, const uint32_t /* version */) const {
-  AFML_THROW_ERR(
-      "Transform module does not support serialization.", AF_ERR_NOT_SUPPORTED);
+  throw std::runtime_error("Transform module does not support serialization");
 }
 
 template <class Archive>
 void Transform::load(Archive& /* ar */, const uint32_t /* version */) {
-  AFML_THROW_ERR(
-      "Transform module does not support serialization.", AF_ERR_NOT_SUPPORTED);
+  throw std::runtime_error("Transform module does not support serialization");
 }
 
 } // namespace fl

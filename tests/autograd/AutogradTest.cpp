@@ -15,6 +15,7 @@
 
 #include <array>
 #include <functional>
+#include <stdexcept>
 
 #include <flashlight/autograd/autograd.h>
 #include <flashlight/common/common.h>
@@ -228,7 +229,7 @@ TEST(AutogradTest, MultiplyAdd) {
   ASSERT_TRUE(allClose(dy.array(), 2 * y.array() + x.array()));
 }
 
-TEST(AutogradTest, DISABLED_NoCalcGrad) {
+TEST(AutogradTest, NoCalcGrad) {
   auto x = Variable(af::randu(5), false);
   auto y = Variable(af::randu(5), true);
   auto z = x * x + x * y + y * y;
@@ -236,13 +237,7 @@ TEST(AutogradTest, DISABLED_NoCalcGrad) {
   z.backward(dz);
   auto dy = y.grad();
   ASSERT_TRUE(allClose(dy.array(), 2 * y.array() + x.array()));
-  bool exceptionFound = false;
-  try {
-    auto dx = x.grad();
-  } catch (af::exception& ex) {
-    exceptionFound = true;
-  }
-  ASSERT_TRUE(exceptionFound);
+  ASSERT_THROW(x.grad(), std::logic_error);
 }
 
 TEST(AutogradTest, MultiplySub) {
@@ -680,7 +675,7 @@ void test_rnn_impl(RnnMode mode) {
       n_params = 168;
       break;
     default:
-      AFML_THROW_ERR("Invalid Rnn mode for the test", AF_ERR_ARG);
+      throw std::invalid_argument("invalid RNN mode for the test");
   }
 
   auto w = Variable(af::randu(n_params, af::dtype::f64), true);

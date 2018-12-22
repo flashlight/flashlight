@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <stdexcept>
+
 #include <flashlight/autograd/Functions.h>
 #include <flashlight/autograd/Variable.h>
-#include <flashlight/common/Exception.h>
 
 namespace fl {
 
@@ -22,7 +23,7 @@ std::tuple<Variable, Variable, Variable> rnn(
     RnnMode /* mode */,
     bool /* bidirectional */,
     float /* dropout */) {
-  AFML_THROW_ERR("CPU RNN is not yet supported.", AF_ERR_NOT_SUPPORTED);
+  throw std::runtime_error("rnn not yet implemented on CPU");
 }
 
 } // namespace fl

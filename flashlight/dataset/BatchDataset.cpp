@@ -9,6 +9,7 @@
 
 #include <math.h>
 #include <array>
+#include <stdexcept>
 
 namespace fl {
 BatchDataset::BatchDataset(
@@ -22,8 +23,12 @@ BatchDataset::BatchDataset(
       batchPolicy_(policy),
       permutationFn_(permutationfn),
       batchFn_(batchfn) {
-  FL_ASSERT(dataset_, "Dataset shouldn't be a nullptr");
-  FL_ASSERT(batchSize_ > 0, "Batch size must be > 0");
+  if (!dataset_) {
+    throw std::invalid_argument("dataset to be batched is null");
+  }
+  if (batchSize_ <= 0) {
+    throw std::invalid_argument("invalid batch size");
+  }
   preBatchSize_ = dataset_->size();
   switch (batchPolicy_) {
     case BatchDatasetPolicy::INCLUDE_LAST:
@@ -33,20 +38,21 @@ BatchDataset::BatchDataset(
       size_ = floor(static_cast<double>(preBatchSize_) / batchSize_);
       break;
     case BatchDatasetPolicy::DIVISIBLE_ONLY:
-      FL_ASSERT(
-          size_ % batchSize_ == 0,
-          "Dataset size must be divisible by batchsize in DIVISIBLE_ONLY mode");
+      if (size_ % batchSize_ != 0) {
+        throw std::invalid_argument(
+            "dataset is not evenly divisible into batches");
+      }
       size_ = ceil(static_cast<double>(preBatchSize_) / batchSize_);
       break;
     default:
-      FL_ASSERT(false, "Unexpected policy for BatchDataset");
+      throw std::invalid_argument("unknown BatchDatasetPolicy");
   }
 }
 
 std::vector<af::array> BatchDataset::get(const int64_t idx) const {
-  FL_ASSERT(
-      idx >= 0 && idx < size(),
-      "Invalid value of idx. idx should be in [0, size())");
+  if (!(idx >= 0 && idx < size())) {
+    throw std::out_of_range("BatchDataset idx out of range");
+  }
 
   std::vector<std::vector<af::array>> buffer;
 
@@ -80,14 +86,17 @@ af::array BatchDataset::makeBatch(const std::vector<af::array>& data) const {
   }
   auto dims = data[0].dims();
 
-  // assertions
   for (const auto& d : data) {
-    FL_ASSERT(d.dims() == dims, "Arrays should have same dims to batch.");
+    if (d.dims() != dims) {
+      throw std::invalid_argument("dimension mismatch while batching dataset");
+    }
   }
 
   dim_t ndims = (data[0].elements() > 1) ? dims.ndims() : 0;
 
-  FL_ASSERT(ndims < 4, "Number of dims has to be < 4 for batching.");
+  if (ndims >= 4) {
+    throw std::invalid_argument("# of dims must be < 4 for batching");
+  }
   dims[ndims] = data.size();
   auto batcharr = af::array(dims, data[0].type());
 

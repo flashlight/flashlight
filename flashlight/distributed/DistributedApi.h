@@ -12,9 +12,6 @@
 
 #include <flashlight/autograd/Variable.h>
 #include <flashlight/common/Defines.h>
-#include <glog/logging.h>
-
-#define LOG_MASTER(lvl) LOG_IF(lvl, (fl::getWorldRank() == 0))
 
 namespace fl {
 

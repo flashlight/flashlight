@@ -16,12 +16,12 @@
 #pragma once
 
 #include <memory>
+#include <stdexcept>
 #include <unordered_map>
 
 #include <cereal/types/tuple.hpp>
 #include <cereal/types/unordered_map.hpp>
 
-#include <flashlight/common/Exception.h>
 #include "Module.h"
 
 namespace fl {
@@ -69,7 +69,7 @@ class Container : public Module {
   template <typename T>
   void add(std::shared_ptr<T> module) {
     if (!module) {
-      AFML_THROW_ERR("[Container] Module to add is null", AF_ERR_ARG);
+      throw std::invalid_argument("can't add null Module to Container");
     }
     modules_.emplace_back(module);
     for (int i = 0; i < module->params().size(); i++) {
@@ -153,7 +153,11 @@ class Sequential : public Container {
    * @return a `Variable` tensor containing the result of the forward
    * computation
    */
-  Variable forward(const Variable& input) override;
+  std::vector<Variable> forward(const std::vector<Variable>& input) override;
+
+  Variable forward(const Variable& input);
+
+  Variable operator()(const Variable& input);
 
   /**
    * Generates a stringified representation of the `Sequential` by concatenating

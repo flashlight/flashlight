@@ -24,10 +24,4 @@ bool allClose(
     const af::array& b,
     double absTolerance = 1e-5);
 
-namespace detail {
-
-void assertLinear(const af::array& arr);
-
-}
-
 } // namespace fl

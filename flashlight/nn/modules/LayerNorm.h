@@ -22,7 +22,7 @@ namespace fl {
  * added to the variance to avoid divide-by-zero, and \f$\gamma\f$ and
  * \f$\beta\f$ are learnable parameters for affine transformation.
  */
-class LayerNorm : public Module {
+class LayerNorm : public UnaryModule {
  private:
   LayerNorm() = default;
 
@@ -30,7 +30,7 @@ class LayerNorm : public Module {
   double epsilon_;
   bool affine_;
 
-  FL_SAVE_LOAD_WITH_BASE(Module, featAxes_, epsilon_, affine_)
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule, featAxes_, epsilon_, affine_)
 
   void initialize();
 

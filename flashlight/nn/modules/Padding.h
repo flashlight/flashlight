@@ -18,14 +18,14 @@ namespace fl {
  * Adds a padding of value `val` before and after each dimension
  * \f$i\f$ of size specified by the tuple `padi` to the input.
  */
-class Padding : public Module {
+class Padding : public UnaryModule {
  private:
   Padding() = default; // intentionally private
 
   std::vector<std::pair<int, int>> m_pad;
   double m_val;
 
-  FL_SAVE_LOAD_WITH_BASE(Module, m_pad, m_val)
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule, m_pad, m_val)
 
  public:
   /**

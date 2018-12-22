@@ -5,12 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <flashlight/autograd/Functions.h>
-
 #include <algorithm>
+#include <stdexcept>
 
 #include <cudnn.h>
 
+#include <flashlight/autograd/Functions.h>
 #include <flashlight/autograd/Variable.h>
 #include <flashlight/common/DevicePtr.h>
 #include "CudnnUtils.h"
@@ -42,12 +42,15 @@ Variable batchnorm(
 
   // assuming no duplicates
   bool axes_continuous = (axes.size() == (max_axis - min_axis + 1));
+  if (!axes_continuous) {
+    throw std::invalid_argument("unsupported axis config for cuDNN batchnorm");
+  }
 
-  if (axes_continuous && (min_axis == 0)) {
+  if (min_axis == 0) {
     mode = CUDNN_BATCHNORM_PER_ACTIVATION;
     in_desc_dims = af::dim4(1, 1, nfeatures, input.elements() / nfeatures);
     wt_desc_dims = af::dim4(1, 1, nfeatures);
-  } else if (axes_continuous) {
+  } else {
     mode = CUDNN_BATCHNORM_SPATIAL;
 #if CUDNN_VERSION >= 7003
     if (train) {
@@ -61,8 +64,6 @@ Variable batchnorm(
     in_desc_dims = af::dim4(
         1, input.elements() / (nfeatures * batchsz), nfeatures, batchsz);
     wt_desc_dims = af::dim4(1, 1, nfeatures);
-  } else {
-    AFML_THROW_ERR("Unsupported BatchNorm config for CuDNN", AF_ERR_ARG);
   }
 
   const void* one = kOne(input.type());
@@ -132,10 +133,10 @@ Variable batchnorm(
   auto gradFunc =
       [train, save_mean, save_var, mode, in_desc_dims, wt_desc_dims, epsilon](
           std::vector<Variable>& inputs, const Variable& grad_output) {
-        AFML_ASSERT(
-            train,
-            "backward algorithm supported only for train",
-            AF_ERR_NOT_SUPPORTED);
+        if (!train) {
+          throw std::logic_error(
+              "can't compute batchnorm grad when train was not specified");
+        }
 
         auto& in = inputs[0];
         auto wt = inputs[1].isempty()

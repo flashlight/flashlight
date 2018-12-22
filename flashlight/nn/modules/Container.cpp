@@ -55,12 +55,27 @@ void Container::setParams(const Variable& var, int position) {
 
 Sequential::Sequential() = default;
 
-Variable Sequential::forward(const Variable& input) {
-  Variable output = input;
+std::vector<Variable> Sequential::forward(const std::vector<Variable>& input) {
+  auto output = input;
   for (auto& module : modules_) {
     output = module->forward(output);
   }
   return output;
+}
+
+Variable Sequential::forward(const Variable& input) {
+  std::vector<Variable> output = {input};
+  for (auto& module : modules_) {
+    output = module->forward(output);
+  }
+  if (output.size() != 1) {
+    throw std::invalid_argument("Module output size is not 1");
+  }
+  return output.front();
+}
+
+Variable Sequential::operator()(const Variable& input) {
+  return this->forward(input);
 }
 
 std::string Sequential::prettyString() const {

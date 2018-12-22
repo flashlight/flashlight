@@ -5,10 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "WeightNorm.h"
+#include <stdexcept>
 
 #include "Conv2D.h"
 #include "Linear.h"
+#include "WeightNorm.h"
 
 namespace fl {
 
@@ -16,7 +17,7 @@ void WeightNorm::transformDims() {
   normDim_.clear();
   int v_numdims = params_[0].array().numdims();
   if (dim_ < 0 || dim_ > v_numdims) {
-    AFML_THROW_ERR("[WeightNorm] Wrong dim to norm.\n", AF_ERR_ARG);
+    throw std::invalid_argument("invalid dimension for WeightNorm");
   }
   for (int i = 0; i < v_numdims; i++) {
     if (i != dim_) {
@@ -43,11 +44,11 @@ void WeightNorm::setParams(const Variable& var, int position) {
   }
 }
 
-Variable WeightNorm::forward(const Variable& input) {
+std::vector<Variable> WeightNorm::forward(const std::vector<Variable>& inputs) {
   if (train_) {
     computeWeight();
   }
-  return modules_[0]->forward(input);
+  return modules_[0]->forward(inputs);
 }
 
 void WeightNorm::eval() {

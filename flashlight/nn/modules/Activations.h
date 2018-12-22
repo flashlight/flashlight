@@ -24,7 +24,7 @@ namespace fl {
  * function](https://en.wikipedia.org/wiki/Sigmoid_function) element-wise to a
  * `Variable`: \f[\text{sigmoid}(x) = \frac{1}{1 + e^{-x}}\f]
  */
-class Sigmoid : public Module {
+class Sigmoid : public UnaryModule {
  public:
   Sigmoid();
 
@@ -33,14 +33,14 @@ class Sigmoid : public Module {
   std::string prettyString() const override;
 
  private:
-  FL_SAVE_LOAD_WITH_BASE(Module)
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule)
 };
 
 /**
  * Applies the [natural logarithm](https://en.wikipedia.org/wiki/Logarithm)
  * element-wise to a `Variable`.
  */
-class Log : public Module {
+class Log : public UnaryModule {
  public:
   Log();
 
@@ -49,7 +49,7 @@ class Log : public Module {
   std::string prettyString() const override;
 
  private:
-  FL_SAVE_LOAD_WITH_BASE(Module)
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule)
 };
 
 /**
@@ -58,7 +58,7 @@ class Log : public Module {
  * element-wise to a `Variable`:
  *\f[\text{tanh}(x) = \frac{e^x - e^{-x}}{e^x +  e^{-x}}\f]
  */
-class Tanh : public Module {
+class Tanh : public UnaryModule {
  public:
   Tanh();
 
@@ -67,7 +67,7 @@ class Tanh : public Module {
   std::string prettyString() const override;
 
  private:
-  FL_SAVE_LOAD_WITH_BASE(Module)
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule)
 };
 
 /**
@@ -80,7 +80,7 @@ class Tanh : public Module {
     \end{cases}
     \f]
  */
-class HardTanh : public Module {
+class HardTanh : public UnaryModule {
  public:
   HardTanh();
 
@@ -89,7 +89,7 @@ class HardTanh : public Module {
   std::string prettyString() const override;
 
  private:
-  FL_SAVE_LOAD_WITH_BASE(Module)
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule)
 };
 
 /**
@@ -98,7 +98,7 @@ class HardTanh : public Module {
  * element-wise to a `Variable`:
  * \f[ ReLU(x) = \max(0, x) \f]
  */
-class ReLU : public Module {
+class ReLU : public UnaryModule {
  public:
   ReLU();
 
@@ -107,7 +107,7 @@ class ReLU : public Module {
   std::string prettyString() const override;
 
  private:
-  FL_SAVE_LOAD_WITH_BASE(Module)
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule)
 };
 
 /**
@@ -128,11 +128,11 @@ class ReLU : public Module {
  * where \f$\text{slope}\f$ is a constant by which the input will
  * be multiplied if less than zero.
  */
-class LeakyReLU : public Module {
+class LeakyReLU : public UnaryModule {
  private:
   double m_slope;
 
-  FL_SAVE_LOAD_WITH_BASE(Module, m_slope)
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule, m_slope)
 
  public:
   /**
@@ -164,11 +164,11 @@ class LeakyReLU : public Module {
  * where \f$\text{value}\f$ is a learned parameter whose initialization can be
  * tuned.
  */
-class PReLU : public Module {
+class PReLU : public UnaryModule {
  private:
   PReLU() = default; // Intentionally private
 
-  FL_SAVE_LOAD_WITH_BASE(Module)
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule)
 
  public:
   /**
@@ -212,11 +212,11 @@ class PReLU : public Module {
    \f]
  * where \f$\alpha\f$ is a tunable parameter.
  */
-class ELU : public Module {
+class ELU : public UnaryModule {
  private:
   double m_alpha;
 
-  FL_SAVE_LOAD_WITH_BASE(Module, m_alpha)
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule, m_alpha)
 
  public:
   ELU(double alpha = 1.0);
@@ -239,11 +239,11 @@ class ELU : public Module {
    \f]
  * where \f$\text{threshold}\f$ is a tunable parameter.
  */
-class ThresholdReLU : public Module {
+class ThresholdReLU : public UnaryModule {
  private:
   double m_threshold;
 
-  FL_SAVE_LOAD_WITH_BASE(Module, m_threshold)
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule, m_threshold)
 
  public:
   /**
@@ -267,11 +267,11 @@ class ThresholdReLU : public Module {
  * first half of the input, \f$x_j\f$ is the second half, and
  * \f$\sigma(x)\f$ is the sigmoid function.
  */
-class GatedLinearUnit : public Module {
+class GatedLinearUnit : public UnaryModule {
  private:
   int dim_;
 
-  FL_SAVE_LOAD_WITH_BASE(Module, dim_)
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule, dim_)
 
  public:
   /**
@@ -294,11 +294,11 @@ class GatedLinearUnit : public Module {
    \log{\left (\frac{e^{x_i} }{ \sum_j e^{x_j}} \right)}
    \f]
  */
-class LogSoftmax : public Module {
+class LogSoftmax : public UnaryModule {
  private:
   int dim_;
 
-  FL_SAVE_LOAD_WITH_BASE(Module, dim_)
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule, dim_)
 
  public:
   /**

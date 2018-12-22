@@ -23,6 +23,7 @@
  */
 #include <iomanip>
 #include <iostream>
+#include <stdexcept>
 #include <unordered_map>
 #include <vector>
 
@@ -86,8 +87,12 @@ class RnnLm : public Container {
     add(LogSoftmax());
   }
 
-  Variable forward(const Variable& input) override {
-    return std::get<0>(forward(input, Variable(), Variable()));
+  std::vector<Variable> forward(const std::vector<Variable>& inputs) override {
+    auto inSz = inputs.size();
+    if (inSz < 1 || inSz > 3) {
+      throw std::invalid_argument("Invalid inputs size");
+    }
+    return rnn(inputs);
   }
 
   std::tuple<Variable, Variable, Variable>

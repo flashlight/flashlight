@@ -8,6 +8,7 @@
 #include "CudnnUtils.h"
 
 #include <array>
+#include <stdexcept>
 #include <unordered_map>
 
 #include <af/cuda.h>
@@ -57,6 +58,19 @@ struct CudnnDropoutStruct {
 
 namespace fl {
 
+void cudnnCheckErr(cudnnStatus_t status) {
+  if (status == CUDNN_STATUS_SUCCESS) {
+    return;
+  }
+  const char* err = cudnnGetErrorString(status);
+  switch (status) {
+    case CUDNN_STATUS_BAD_PARAM:
+      throw std::invalid_argument(err);
+    default:
+      throw std::runtime_error(err);
+  }
+}
+
 cudnnDataType_t cudnnMapToType(const af::dtype& t) {
   switch (t) {
     case af::dtype::f32:
@@ -64,9 +78,7 @@ cudnnDataType_t cudnnMapToType(const af::dtype& t) {
     case af::dtype::f64:
       return CUDNN_DATA_DOUBLE;
     default:
-      AFML_THROW_ERR("Unsupported type for Cuda!", AF_ERR_ARG);
-      return CUDNN_DATA_FLOAT; // return so that compiler doesn't
-                               // complain
+      throw std::invalid_argument("unsupported data type for cuDNN");
   }
 }
 
@@ -79,9 +91,7 @@ cudnnPoolingMode_t cudnnMapToPoolingMode(const PoolingMode mode) {
     case PoolingMode::AVG_EXCLUDE_PADDING:
       return CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING;
     default:
-      AFML_THROW_ERR("Unsupported Pooling mode!", AF_ERR_ARG);
-      return CUDNN_POOLING_MAX; // return so that compiler doesn't
-                                // compain
+      throw std::invalid_argument("unsupported pooling mode for cuDNN");
   }
 }
 
@@ -96,8 +106,7 @@ cudnnRNNMode_t cudnnMapToRNNMode(const RnnMode mode) {
     case RnnMode::GRU:
       return CUDNN_GRU;
     default:
-      AFML_THROW_ERR("Unsupported RNN mode!", AF_ERR_ARG);
-      return CUDNN_RNN_RELU;
+      throw std::invalid_argument("unsupported RNN mode for cuDNN");
   }
 }
 
@@ -339,8 +348,7 @@ const void* kOne(const af::dtype t) {
     case af::dtype::f64:
       return &kDoubleOne;
     default:
-      AFML_THROW_ERR("Unsupported type for Cuda!", AF_ERR_ARG);
-      return &kFloatOne; // return so that compiler doesn't complain
+      throw std::invalid_argument("unsupported data type for cuDNN");
   }
 }
 
@@ -351,8 +359,7 @@ const void* kZero(const af::dtype t) {
     case af::dtype::f64:
       return &kDoubleZero;
     default:
-      AFML_THROW_ERR("Unsupported type for Cuda!", AF_ERR_ARG);
-      return &kFloatZero; // return so that compiler doesn't complain
+      throw std::invalid_argument("unsupported data type for cuDNN");
   }
 }
 

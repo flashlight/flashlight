@@ -8,12 +8,15 @@
 #include "ConcatDataset.h"
 
 #include <algorithm>
+#include <stdexcept>
 
 namespace fl {
 ConcatDataset::ConcatDataset(
     const std::vector<std::shared_ptr<const Dataset>>& datasets)
     : datasets_(datasets), size_(0) {
-  FL_ASSERT(!datasets.empty(), "Empty dataset vector given.");
+  if (datasets.empty()) {
+    throw std::invalid_argument("cannot concat 0 datasets");
+  }
   cumulativedatasetsizes_.emplace_back(0);
   for (auto dataset : datasets_) {
     size_ += dataset->size();
@@ -22,9 +25,9 @@ ConcatDataset::ConcatDataset(
 }
 
 std::vector<af::array> ConcatDataset::get(const int64_t idx) const {
-  FL_ASSERT(
-      idx >= 0 && idx < size(),
-      "Invalid value of idx. idx should be in [0, size())");
+  if (!(idx >= 0 && idx < size())) {
+    throw std::out_of_range("ConcatDataset idx out of range");
+  }
 
   // get sample from correct dataset
   int64_t datasetidx =

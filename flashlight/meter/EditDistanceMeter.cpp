@@ -6,9 +6,9 @@
  */
 
 #include "EditDistanceMeter.h"
-#include <flashlight/common/Exception.h>
 
 #include <array>
+#include <stdexcept>
 
 namespace fl {
 EditDistanceMeter::EditDistanceMeter() {
@@ -23,10 +23,14 @@ void EditDistanceMeter::reset() {
 }
 
 void EditDistanceMeter::add(const af::array& output, const af::array& target) {
-  AFML_ASSERT(
-      target.numdims() == 1, "target must be 1 dimensional", target.numdims());
-  AFML_ASSERT(
-      output.numdims() == 1, "output must be 1 dimensional", output.numdims());
+  if (target.numdims() != 1) {
+    throw std::invalid_argument(
+        "target must be 1-dimensional for EditDistanceMeter");
+  }
+  if (output.numdims() != 1) {
+    throw std::invalid_argument(
+        "output must be 1-dimensional for EditDistanceMeter");
+  }
   int len1 = output.dims(0);
   int len2 = target.dims(0);
 

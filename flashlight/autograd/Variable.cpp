@@ -16,11 +16,11 @@
 #include "Variable.h"
 
 #include <algorithm>
+#include <cassert>
 #include <functional>
+#include <stdexcept>
 #include <unordered_set>
 #include <utility>
-
-#include <flashlight/common/Exception.h>
 
 namespace fl {
 
@@ -67,13 +67,13 @@ af::array& Variable::array() const {
 }
 
 Variable& Variable::grad() const {
-  AFML_ASSERT(
-      sharedGrad_->calcGrad, "Gradient calclation disabled.", AF_ERR_RUNTIME);
+  if (!sharedGrad_->calcGrad) {
+    throw std::logic_error("gradient calculation disabled for this Variable");
+  }
 
-  AFML_ASSERT(
-      sharedGrad_->grad,
-      "Gradient hasn't been calculated yet.",
-      AF_ERR_RUNTIME);
+  if (!sharedGrad_->grad) {
+    throw std::logic_error("gradient not calculated yet for this Variable");
+  }
 
   return *sharedGrad_->grad;
 }
@@ -164,14 +164,16 @@ void Variable::clearGradHook() {
 
 void Variable::applyGradHook() {
   if (sharedGrad_->onGradAvailable) {
-    sharedGrad_->onGradAvailable(sharedGrad_->grad.get());
+    assert(sharedGrad_->grad);
+    sharedGrad_->onGradAvailable(*sharedGrad_->grad);
   }
 }
 
 void Variable::calcGradInputs(bool retainGraph) {
   if (sharedGrad_->gradFunc) {
-    AFML_ASSERT(
-        sharedGrad_->grad, "Gradient hasn't been calculated yet.", AF_ERR_ARG);
+    if (!sharedGrad_->grad) {
+      throw std::logic_error("gradient was not propagated to this Variable");
+    }
 
     sharedGrad_->gradFunc(sharedGrad_->inputs, *sharedGrad_->grad);
   }

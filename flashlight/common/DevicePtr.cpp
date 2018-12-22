@@ -5,9 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <stdexcept>
+
 #include "DevicePtr.h"
 
-#include "Utils.h"
+#include <af/internal.h>
 
 namespace fl {
 
@@ -15,7 +17,10 @@ DevicePtr::DevicePtr(const af::array& in) : arr_(&in) {
   if (arr_->isempty()) {
     ptr_ = nullptr;
   } else {
-    detail::assertLinear(in);
+    if (!af::isLinear(in)) {
+      throw std::invalid_argument(
+          "can't get device pointer of non-contiguous array");
+    }
     ptr_ = arr_->device<void>();
   }
 }

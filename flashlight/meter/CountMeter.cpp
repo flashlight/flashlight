@@ -5,8 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <stdexcept>
+
 #include "CountMeter.h"
-#include <flashlight/common/Exception.h>
 
 namespace fl {
 
@@ -19,7 +20,9 @@ void CountMeter::reset() {
 }
 
 void CountMeter::add(intl id, intl val) {
-  AFML_ASSERT(id >= 0 && id < numCount_, "Invalid value of idx", id);
+  if (!(id >= 0 && id < numCount_)) {
+    throw std::invalid_argument("invalid idx to update count for");
+  }
   countVal_[id] += val;
 }
 

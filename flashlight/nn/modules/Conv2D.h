@@ -31,7 +31,7 @@ namespace fl {
  * \f[X_{out} = \lceil{\frac{X_{in}}{X_{stride}}}\rceil,
  *  Y_{out} = \lceil{\frac{Y_{in}}{Y_{stride}}}\rceil\f]
  */
-class Conv2D : public Module {
+class Conv2D : public UnaryModule {
  private:
   Conv2D() = default; // intentionally private
 
@@ -43,7 +43,7 @@ class Conv2D : public Module {
   int groups_;
 
   FL_SAVE_LOAD_WITH_BASE(
-      Module,
+      UnaryModule,
       nIn_,
       nOut_,
       xFilter_,

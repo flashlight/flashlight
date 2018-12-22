@@ -23,13 +23,13 @@ namespace fl {
  * shape `(10, 20, 30, 40)` and a `View` with shape `(-1, 0, 100)`, the output
  * tensor will have shape `(120, 20, 100)`.
  */
-class View : public Module {
+class View : public UnaryModule {
  private:
   View() = default; // Intentionally private
 
   af::dim4 dims_;
 
-  FL_SAVE_LOAD_WITH_BASE(Module, dims_)
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule, dims_)
 
  public:
   /**
