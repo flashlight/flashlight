@@ -8,7 +8,6 @@ include(CTest)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/")
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF) # no compiler extensions like gnu++11
 set(FLASHLIGHT_PROJECT_COMPONENT_SRC_DIR "${CMAKE_SOURCE_DIR}/flashlight") # module root
 
 # ----------------------------- Configuration -----------------------------
