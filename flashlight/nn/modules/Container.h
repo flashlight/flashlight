@@ -88,7 +88,7 @@ class Container : public Module {
   ModulePtr module(int id);
 
   /**
-   * Get pointers to each of `Module` in the `Container`.
+   * Returns pointers to each of `Module` in the `Container`.
    *
    * @return an ordered vector of pointers for each module.
    */
