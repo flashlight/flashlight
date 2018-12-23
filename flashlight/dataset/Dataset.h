@@ -8,6 +8,7 @@
 #pragma once
 
 #include <cstring>
+#include <functional>
 #include <memory>
 #include <vector>
 
