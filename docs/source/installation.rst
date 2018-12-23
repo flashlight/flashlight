@@ -59,11 +59,11 @@ Build Options
 +=========================+===================+===============+
 | FLASHLIGHT_BACKEND      | CUDA, CPU, OPENCL | CUDA          |
 +-------------------------+-------------------+---------------+
-| BUILD_DISTRIBUTED       | ON, OFF           | ON            |
+| FL_BUILD_DISTRIBUTED    | ON, OFF           | ON            |
 +-------------------------+-------------------+---------------+
-| BUILD_TESTS             | ON, OFF           | ON            |
+| FL_BUILD_TESTS          | ON, OFF           | ON            |
 +-------------------------+-------------------+---------------+
-| BUILD_EXAMPLES          | ON, OFF           | ON            |
+| FL_BUILD_EXAMPLES       | ON, OFF           | ON            |
 +-------------------------+-------------------+---------------+
 | CMAKE_BUILD_TYPE        | CMake build types | Debug         |
 +-------------------------+-------------------+---------------+
