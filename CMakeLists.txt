@@ -81,7 +81,7 @@ else()
 endif()
 
 # -------------------- Locate Backend-specific Dependencies --------------------
-find_package(CUDA 9.2) # CUDA 9.2 is required for >= ArrayFire 3.6.1
+find_package(CUDA 9.2 QUIET) # CUDA 9.2 is required for >= ArrayFire 3.6.1
 if (CUDA_FOUND)
   message(STATUS "CUDA found (library: ${CUDA_LIBRARIES} include: ${CUDA_INCLUDE_DIRS})")
 else()
@@ -101,7 +101,7 @@ else()
   endif ()
 endif()
 
-find_package(MKL)
+find_package(MKL QUIET)
 if (MKL_FOUND)
   message(STATUS "MKL found")
 else()
@@ -111,7 +111,7 @@ else()
   endif()
 endif()
 
-find_package(MKLDNN)
+find_package(MKLDNN QUIET)
 if (MKLDNN_FOUND)
   message(STATUS "MKLDNN found")
 else()

@@ -16,7 +16,7 @@ set(MKLDNN_INCLUDE_DIR)
 find_package(BLAS)
 
 if (NOT MKL_FOUND)
-  message(FATAL_ERROR "Cannot build MKLDNN without MKL in current configuration.")
+  message(STATUS "Attempting to build MKLDNN without MKL in current configuration.")
   # TODO(@jacobkahn) support building MKLDNN with standalone Intel libmklml
 endif()
 
@@ -35,8 +35,7 @@ find_path(
 if (MKLDNN_INCLUDE_DIR)
   message(STATUS "MKLDNN headers found in ${MKLDNN_INCLUDE_DIR}")
 else()
-  message(FATAL_ERROR "MKLDNN headers not found; please set CMAKE_INCLUDE_PATH or
-MKLDNN_ROOT")
+  message(STATUS "MKLDNN headers not found; please set CMAKE_INCLUDE_PATH or MKLDNN_ROOT")
 endif()
 
 # Find library
@@ -54,8 +53,7 @@ find_library(
 if (MKLDNN_LIBRARY)
   message(STATUS "Using MKLDNN library found in ${MKLDNN_LIBRARY}")
 else()
-  message(FATAL_ERROR "MKLDNN library not found; please set CMAKE_LIBRARY_PATH o
-r MKLDNN_LIBRARY")
+  message(STATUS "MKLDNN library not found; please set CMAKE_LIBRARY_PATH or MKLDNN_LIBRARY")
 endif()
 
 set(MKLDNN_LIBRARIES ${MKLDNN_LIBRARY})
