@@ -7,7 +7,7 @@ In the `make install` step, examples are placed in `<prefix>/share/flashlight/ex
 ## Building In-Source
 Building in-source is simple; examples are built by default. Binaries are placed in `build/examples`.
 
-To disable building examples in source, simply make sure `FL_BUILD_EXAMPLES` is `OFF`. Even though examples won't be built, the install step will still place source files in `examples/` in the isntall target directory mentioned above.
+To disable building examples in source, simply make sure `FL_BUILD_EXAMPLES` is `OFF`. Even though examples won't be built, the install step will still place source files in `examples/` in the install target directory mentioned above.
 
 ## Building as a Standalone Project
 Examples can also be built as standalone projects outside of the `build` directory. After the installation step, simply copy the example source path to a suitable directory, and build:

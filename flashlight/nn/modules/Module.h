@@ -77,7 +77,7 @@ class Module {
   virtual void train();
 
   /**
-   * Switches the module to evalulation mode. Changes all parameters so that
+   * Switches the module to evaluation mode. Changes all parameters so that
    * gradient calculation will be disabled for any calls to `forward`.
    */
   virtual void eval();
