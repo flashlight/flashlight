@@ -222,8 +222,8 @@ class Variable {
 
   /**
    * Run backward pass on the Variable.  Gradient of all the inputs
-   * in the computation graph leading up to the Variable on which the function is
-   * computed.
+   * in the computation graph leading up to the Variable on which the function
+   * is computed.
    * @param[in] grad gradient w.r.t to the Variable
    * @param[in] retainGraph If False, clears the input Variables stored
    * by the Variable
@@ -232,8 +232,9 @@ class Variable {
 
   /**
    * Run backward pass on the Variable. Gradient of all the inputs
-   * in the computation graph leading up to the Variable on which the function is
-   * computed. Gradient w.r.t the all the elements in the variable is set to 1.0
+   * in the computation graph leading up to the Variable on which the function
+   * is computed. Gradient w.r.t the all the elements in the variable is set
+   * to 1.0
    * @param[in] retainGraph If False, clears the input Variables stored
    * by the Variable
    */
