@@ -45,7 +45,7 @@ else()
 endif()
 
 # MPI
-find_package(MPI)
+find_package(MPI QUIET)
 
 if (MPI_C_FOUND AND MPI_CXX_FOUND)
   message(STATUS "MPI_CXX found")
@@ -60,7 +60,10 @@ if (MPI_C_FOUND AND MPI_CXX_FOUND)
   message(STATUS "MPI_C LINK flags path: " ${MPI_C_LINK_FLAGS})
   message(STATUS "MPI_C libraries: " ${MPI_C_LIBRARIES})
 else()
-  message(FATAL_ERROR "MPI_CXX not found")
+  message(STATUS "MPI not found")
+  if (FL_BUILD_DISTRIBUTED)
+    message(FATAL_ERROR "MPI_C and MPI_CXX not found; required to build flashlight distributed")
+  endif()
 endif()
 
 

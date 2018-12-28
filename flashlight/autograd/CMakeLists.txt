@@ -17,12 +17,16 @@ target_sources(
   Autograd
   INTERFACE
   $<BUILD_INTERFACE:${AUTOGRAD_SOURCES}>
-)
+  )
+
+# A native threading library is needed for all backends
+find_package(Threads REQUIRED)
 
 target_link_libraries(
   Autograd
   INTERFACE
   Common
+  Threads::Threads
 )
 
 target_include_directories(
@@ -55,6 +59,7 @@ if (FLASHLIGHT_USE_CPU)
     INTERFACE
     ArrayFire::afcpu
     ${MKLDNN_LIBRARIES}
+    ${MKL_LIBRARIES}
     )
 
   target_include_directories(
@@ -63,6 +68,7 @@ if (FLASHLIGHT_USE_CPU)
     ${FLASHLIGHT_INCLUDE_DIR}
     ${ArrayFire_INCLUDE_DIRS}
     ${MKLDNN_INCLUDE_DIR}
+    ${MKL_INCLUDE_DIR}
     )
 endif ()
 

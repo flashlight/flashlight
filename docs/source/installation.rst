@@ -20,7 +20,7 @@ Build Requirements
 Dependencies
 ------------
 
-flashlight can be built with either a CUDA, CPU (coming soon), or OpenCL (coming soon) backend. Requirements vary depending on which backend is selected.
+flashlight can be built with either a CUDA, CPU (in development), or OpenCL (coming soon) backend. Requirements vary depending on which backend is selected.
 
 - For all backends, `ArrayFire <https://github.com/arrayfire/arrayfire/wiki>`_ >= 3.6.1 is required. flashlight has been tested with `ArrayFire 3.6.1 <https://github.com/arrayfire/arrayfire/releases/tag/v3.6.1>`_.
 - The following dependencies are `downloaded, built, and installed automatically` with flashlight:
@@ -46,7 +46,16 @@ CUDA Backend Dependencies
 CPU Backend Dependencies
 ------------------------
 
-The CPU backend is not currently supported.
+The CPU backend is currently under active development. Required dependencies include:
+
+- Intel's `Math Kernel Library <https://software.intel.com/en-us/mkl>`_ >= 2017. flashlight has been tested with MKL 2017.
+- Intel's `MKL-DNN <https://github.com/intel/mkl-dnn/>`_ framework, which is best linked directly to MKL for better performance.
+
+In order for the flashlight build to properly find MKL, in most cases, the environment variable ``MKLROOT`` must be set to a directory where the MKL installation is located. This should be done in the same shell session where ``cmake`` is to be run when building flashlight. On most Linux-based systems, the correct command will be:
+
+.. code-block:: shell
+
+   export MKLROOT=/opt/intel/mkl
 
 OpenCL Backend Dependencies
 ---------------------------

@@ -30,7 +30,6 @@ target_link_libraries(
   Common
   INTERFACE
   ${ArrayFire_LIBRARIES}
-  ${CUDA_LIBRARIES}
 )
 
 target_include_directories(
@@ -38,5 +37,9 @@ target_include_directories(
   INTERFACE
   ${ArrayFire_INCLUDE_DIRS}
   ${CEREAL_INCLUDE_DIR} # pulled in - see cmake/BuildCereal.cmake
-  ${CUDA_INCLUDE_DIRS}
 )
+
+if (FLASHLIGHT_USE_CUDA)
+  target_link_libraries(Common INTERFACE ${CUDA_LIBRARIES})
+  target_include_directories(Common INTERFACE ${CUDA_INCLUDE_DIRS})
+endif()
