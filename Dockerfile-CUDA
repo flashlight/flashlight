@@ -32,9 +32,6 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         nano \
         htop \
         g++ \
-        # for Cereal
-        libboost-all-dev \
-        gcc-multilib g++-multilib \
         # nccl: for flashlight
         libnccl2 libnccl-dev && \
 # ==================================================================
@@ -63,15 +60,6 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     cd openmpi-4.0.0 && \
     ./configure --prefix=/usr/local && \
     make all install && \
-# ==================================================================
-# Cereal http://uscilab.github.io/cereal/
-# ------------------------------------------------------------------
-    cd /tmp && git clone --recursive https://github.com/USCiLab/cereal && \
-    cd cereal && git checkout v1.2.2 && \
-    mkdir build && cd build && \
-    cmake .. && \
-    make -j8 && \
-    make install && \
 # ==================================================================
 # flashlight with GPU backend
 # ------------------------------------------------------------------

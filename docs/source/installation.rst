@@ -20,11 +20,14 @@ Build Requirements
 Dependencies
 ------------
 
-flashlight can be built with either a CUDA, CPU (coming soon), or OpenCL (coming soon) backend. Requirements vary depending on which backend is selected. All dependencies must be built/installed before building flashlight.
+flashlight can be built with either a CUDA, CPU (coming soon), or OpenCL (coming soon) backend. Requirements vary depending on which backend is selected.
 
 - For all backends, `ArrayFire <https://github.com/arrayfire/arrayfire/wiki>`_ >= 3.6.1 is required. flashlight has been tested with `ArrayFire 3.6.1 <https://github.com/arrayfire/arrayfire/releases/tag/v3.6.1>`_.
-- `Cereal <https://github.com/USCiLab/cereal>`_ is required for serialization -- the `develop` branch must be used.
-- If building tests, `Google Test <https://github.com/google/googletest>`_ >= 1.8.0 is required -- Google Test is downloaded and built when building flashlight with tests.
+- The following dependencies are `downloaded, built, and installed automatically` with flashlight:
+
+  - `Cereal <https://github.com/USCiLab/cereal>`_ is required for serialization -- the `develop` branch must be used.
+  - If building tests, `Google Test <https://github.com/google/googletest>`_ >= 1.8.0 is required.
+    
 
 Distributed Training Dependencies
 ---------------------------------

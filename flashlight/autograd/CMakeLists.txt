@@ -30,7 +30,6 @@ target_include_directories(
   INTERFACE
   ${FLASHLIGHT_INCLUDE_DIR}
   ${ArrayFire_INCLUDE_DIRS}
-  ${CEREAL_INCLUDE_DIRS}
 )
 
 # ----------------------------- Autograd Backends -----------------------------
@@ -64,7 +63,6 @@ if (FLASHLIGHT_USE_CPU)
     ${FLASHLIGHT_INCLUDE_DIR}
     ${ArrayFire_INCLUDE_DIRS}
     ${MKLDNN_INCLUDE_DIR}
-    ${CEREAL_INCLUDE_DIRS}
     )
 endif ()
 
@@ -102,7 +100,6 @@ if (FLASHLIGHT_USE_CUDA)
     ${CUDA_INCLUDE_DIRS}
     ${CUDNN_INCLUDE_DIRS}
     ${ArrayFire_INCLUDE_DIRS}
-    ${CEREAL_INCLUDE_DIRS}
    )
 endif ()
 
@@ -137,5 +134,5 @@ if (FLASHLIGHT_USE_OPENCL)
     ${FLASHLIGHT_INCLUDE_DIR}
     ${OpenCL_INCLUDE_DIRS}
     ${ArrayFire_INCLUDE_DIRS}
-    ${CEREAL_INCLUDE_DIRS})
+    )
 endif ()

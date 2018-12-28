@@ -10,6 +10,17 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(FLASHLIGHT_PROJECT_COMPONENT_SRC_DIR "${CMAKE_SOURCE_DIR}/flashlight") # module root
 
+# Default directories for installation
+set(FL_INSTALL_INC_DIR "include" CACHE PATH "Install path for headers")
+set(FL_INSTALL_INC_DIR_HEADER_LOC ${FL_INSTALL_INC_DIR}/flashlight)
+set(FL_INSTALL_LIB_DIR "lib" CACHE PATH "Install path for libraries")
+set(FL_INSTALL_BIN_DIR "bin" CACHE PATH "Install path for binaries")
+# Other assets
+set(FL_INSTALL_ASSETS_BASE_DIR "share/flashlight")
+set(FL_INSTALL_CMAKE_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/cmake" CACHE PATH "Install path for CMake files")
+set(FL_INSTALL_EXAMPLES_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/examples" CACHE PATH "Install path for example files")
+set(FL_INSTALL_DOC_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/doc" CACHE PATH "Install path for documentation")
+
 # ----------------------------- Configuration -----------------------------
 # Arrayfire ML Backend
 set(FLASHLIGHT_BACKEND "CUDA" CACHE STRING "Backend with which to build Arrayfire ML")
@@ -72,13 +83,21 @@ elseif (FLASHLIGHT_USE_UNIFIED AND NOT ArrayFire_Unified_FOUND)
   message(FATAL_ERROR "ArrayFire Unified not found: cannot build unified backend")
 endif()
 
-# Find cereal
-find_package(cereal REQUIRED)
-if (cereal_FOUND)
-  message(STATUS "cereal found")
-else()
-  message(FATAL_ERROR "cereal not found")
-endif()
+# Download/build Cereal
+set(CEREAL_INSTALL_PATH ${FL_INSTALL_INC_DIR_HEADER_LOC}/cereal)
+include(${CMAKE_MODULE_PATH}/BuildCereal.cmake)
+# Move cereal headers
+install(DIRECTORY ${CEREAL_SOURCE_DIR}/include/cereal
+  DESTINATION ${CEREAL_INSTALL_PATH}
+  COMPONENT cereal
+  FILES_MATCHING
+  PATTERN "*.hpp"
+  PATTERN "*.h"
+  PATTERN ".git" EXCLUDE
+  )
+install(FILES ${CEREAL_SOURCE_DIR}/LICENSE ${CEREAL_SOURCE_DIR}/README.md
+  DESTINATION ${CEREAL_INSTALL_PATH}
+  )
 
 # -------------------- Locate Backend-specific Dependencies --------------------
 # TODO: rather than conditionally searching for backend-specific dependencies,
@@ -221,16 +240,6 @@ include(${FLASHLIGHT_PROJECT_COMPONENT_SRC_DIR}/optim/CMakeLists.txt)
 
 # ------------------------------- Install/Export -------------------------------
 
-# Default directories for installation
-set(FL_INSTALL_INC_DIR "include" CACHE PATH "Install path for headers")
-set(FL_INSTALL_LIB_DIR "lib" CACHE PATH "Install path for libraries")
-set(FL_INSTALL_BIN_DIR "bin" CACHE PATH "Install path for binaries")
-# Other assets
-set(FL_INSTALL_ASSETS_BASE_DIR "share/flashlight")
-set(FL_INSTALL_CMAKE_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/cmake" CACHE PATH "Install path for CMake files")
-set(FL_INSTALL_EXAMPLES_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/examples" CACHE PATH "Install path for example files")
-set(FL_INSTALL_DOC_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/doc" CACHE PATH "Install path for documentation")
-
 # Main target
 install(
   TARGETS flashlight ${FLASHLIGHT_MODULES}
@@ -264,7 +273,7 @@ install(
   COMPONENT
   headers
   DESTINATION
-  ${FL_INSTALL_INC_DIR}/flashlight
+  ${FL_INSTALL_INC_DIR_HEADER_LOC}
   FILES_MATCHING # preserve directory structure
   PATTERN  "*.h"
   )

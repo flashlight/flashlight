@@ -15,7 +15,10 @@ endif()
 add_library(
   Common
   INTERFACE
-)
+  )
+
+# Don't build until cereal is properly included
+add_dependencies(Common cereal)
 
 target_sources(
   Common
@@ -34,6 +37,6 @@ target_include_directories(
   Common
   INTERFACE
   ${ArrayFire_INCLUDE_DIRS}
-  ${CEREAL_INCLUDE_DIRS}
+  ${CEREAL_INCLUDE_DIR} # pulled in - see cmake/BuildCereal.cmake
   ${CUDA_INCLUDE_DIRS}
 )

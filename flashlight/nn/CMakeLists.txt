@@ -6,6 +6,8 @@ add_library(
   INTERFACE
   )
 
+add_dependencies(NN cereal)
+
 set(
   NN_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/Init.cpp
@@ -56,5 +58,5 @@ target_include_directories(
   NN
   INTERFACE
   ${ArrayFire_INCLUDE_DIRS}
-  ${CEREAL_INCLUDE_DIRS}
+  ${CEREAL_INCLUDE_DIR} # pulled in - see cmake/BuildCereal.cmake
   )

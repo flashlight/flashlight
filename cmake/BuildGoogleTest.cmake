@@ -1,4 +1,4 @@
-include (ExternalProject)
+include(ExternalProject)
 
 set(gtest_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/googletest/src/googletest/googletest/include)
 set(gtest_URL https://github.com/google/googletest.git)
