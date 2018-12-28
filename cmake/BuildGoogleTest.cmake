@@ -25,9 +25,12 @@ set(GTEST_SOURCE_DIR ${source_dir})
 ExternalProject_Get_Property(gtest binary_dir)
 set(GTEST_BINARY_DIR ${binary_dir})
 
+# Include Threads/pthread to avoid linker issues
+find_package(Threads)
 # Library and include dirs
 set(GTEST_LIBRARIES
   "${GTEST_BINARY_DIR}/${CMAKE_CFG_INTDIR}/googletest/${CMAKE_STATIC_LIBRARY_PREFIX}gtest${CMAKE_STATIC_LIBRARY_SUFFIX}"
   "${GTEST_BINARY_DIR}/${CMAKE_CFG_INTDIR}/googletest/${CMAKE_STATIC_LIBRARY_PREFIX}gtest_main${CMAKE_STATIC_LIBRARY_SUFFIX}"
+  Threads::Threads
 )
 set(GTEST_INCLUDE_DIR ${GTEST_SOURCE_DIR}/googletest/include)
