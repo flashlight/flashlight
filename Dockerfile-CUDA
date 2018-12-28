@@ -4,17 +4,15 @@
 # Ubuntu           16.04
 # CUDA             9.2
 # CuDNN            7-dev
-# boost            latest   (apt)
 # arrayfire        3.6.1    (git, CUDA backend)
 # googletest       master   (git)
 # OpenMPI          4.0.0    (bin)
-# Cereal           1.2.2    (git)
 # flashlight       master   (git, CUDA backend)
 # ==================================================================
 
 FROM nvidia/cuda:9.2-cudnn7-devel-ubuntu16.04
 RUN mkdir /tmp/flashlight
-COPY ../flashlight /tmp/flashlight
+COPY . /tmp/flashlight
 
 RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     rm -rf /var/lib/apt/lists/* \
@@ -32,6 +30,8 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         nano \
         htop \
         g++ \
+        # ssh for OpenMPI
+        openssh-server openssh-client \
         # nccl: for flashlight
         libnccl2 libnccl-dev && \
 # ==================================================================
@@ -63,12 +63,14 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
 # ==================================================================
 # flashlight with GPU backend
 # ------------------------------------------------------------------
-# cd /tmp && git clone --recursive https://github.com/facebookresearch/flashlight.git && \
-    cd /tmp/flashlight && \
-    mkdir -p build && cd build && \
-    cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CUDA &&  \
-    make -j8  && \
-    make install && \
+    # If the driver is not found (during docker build) the cuda driver api need to be linked against the
+    # libcuda.so stub located in the lib[64]/stubs directory
+    ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/libcuda.so.1 && \
+    # to link correctly OpenMPI
+    ldconfig && \
+    cd /tmp/flashlight && mkdir -p build && \
+    cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CUDA && \
+    make -j8 && make install && \
 # ========================================================= =========
 # config & cleanup
 # ------------------------------------------------------------------

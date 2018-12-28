@@ -22,7 +22,12 @@ using namespace fl;
 namespace {
 
 std::string getTmpPath(const std::string& key) {
-  return std::string("/tmp/test_") + std::string(getenv("USER")) + key +
+  char* user = getenv("USER");
+  std::string userstr = "unknown";
+  if (user != nullptr) {
+    userstr = std::string(user);
+  }
+  return std::string("/tmp/test_") + userstr + key +
       std::string(".mdl");
 }
 

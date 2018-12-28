@@ -107,15 +107,24 @@ Building on Windows
 -------------------
 Building flashlight on Windows is not supported at this time (coming soon).
 
-Building flashlight with Docker
-------------
- - Install `Docker <https://docs.docker.com/engine/installation/>`_  and `nvidia-docker <https://github.com/NVIDIA/nvidia-docker/>`_
- - run container
 
- ::
- 
-     docker run --runtime=nvidia --rm -itd --ipc=host --name flashlight facebookreasearch/flashlight:cuda000
-     docker exec -it flashlight bash
+Building/running flashlight with Docker
+-------------------------------
+ - Install `Docker <https://docs.docker.com/engine/installation/>`_  and `nvidia-docker <https://github.com/NVIDIA/nvidia-docker/>`_
+ - run docker container with CUDA backend
+
+.. code-block:: shell
+
+ sudo docker run --runtime=nvidia --rm -itd --ipc=host --name flashlight wave2letter/flashlight:cuda-latest
+ sudo docker exec -it flashlight bash
+
+ - build docker image from the source
+
+.. code-block:: shell
+
+ git clone --recursive https://github.com/facebookresearch/flashlight.git
+ cd flashlight
+ sudo docker build -f ./Dockerfile-CUDA -t flashlight .
 
 
 Building Your Project with flashlight
