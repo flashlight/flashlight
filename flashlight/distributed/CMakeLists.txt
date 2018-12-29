@@ -96,6 +96,12 @@ if (USE_NCCL)
     ${MPI_CXX_INCLUDE_PATH}
     ${NCCL_INCLUDE_DIRS}
     )
+
+  target_compile_definitions(
+    Distributed
+    INTERFACE
+    "-DNO_NCCL_COMM_DESTROY_HANDLE"
+    )
 endif ()
 
 # Distributed

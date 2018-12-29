@@ -106,7 +106,13 @@ if (FLASHLIGHT_USE_CUDA)
     ${CUDA_INCLUDE_DIRS}
     ${CUDNN_INCLUDE_DIRS}
     ${ArrayFire_INCLUDE_DIRS}
-   )
+    )
+
+  target_compile_definitions(
+    Autograd
+    INTERFACE
+    "-DNO_CUDNN_DESTROY_HANDLE"
+    )
 endif ()
 
 
