@@ -13,7 +13,6 @@ A C++ library for machine learning.
    :caption: USAGE
    :maxdepth: 1
 
-   quick_start
    autograd
    linearregression
    mnist

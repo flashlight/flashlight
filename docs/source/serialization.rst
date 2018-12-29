@@ -1,14 +1,12 @@
 Serialization API
 =================
 
-flashlight uses `cereal <http://uscilab.github.io/cereal/>`_ library for serialization.
-It provides :ref:`utility macros and functions<serial>` to easily define serialization
-of classes and save/load modules, variables, STL containers and many other common C++ types.
+flashlight uses the `cereal <http://uscilab.github.io/cereal/>`_ library for serialization. It provides :ref:`utility macros and functions<serial>` to easily define serialization properties for arbitrary classes and save or load modules, variables, standard library containers, and many other common C++ types.
 
 Serializing Objects
 ^^^^^^^^^^^^^^^^^^^
 
-To serialize, use `save` function
+To serialize individual instances on the fly, use `save` function:
 
 ::
 
@@ -18,7 +16,7 @@ To serialize, use `save` function
 
   fl::save("<filepath>", module, config);
 
-To deserialize, use `load` function
+To deserialize, use `load` function:
 
 ::
 
@@ -28,11 +26,11 @@ To deserialize, use `load` function
 
   fl::load("<filepath>", module, config);
 
+
 Serializing Classes
 ^^^^^^^^^^^^^^^^^^^
 
-If you define a new class the needs to support serialization, flashlight provides easy-to-use macros
-to avoid writing boilerplate code required by `cereal` library. Here is an example -
+If we define a new class that needs to support serialization, flashlight provides easy-to-use macros to avoid writing boilerplate code as required by ``cereal``. For example:
 
 ::
 
@@ -74,13 +72,14 @@ to avoid writing boilerplate code required by `cereal` library. Here is an examp
   CEREAL_REGISTER_TYPE(Cat)
 
 .. note::
-  In the above example, if you instead use `FL_SAVE_LOAD(name_, isHungry_)` for `Cat` class,
-  `CEREAL_REGISTER_POLYMORPHIC_RELATION(Cat, Animal)` should be `declared in Cat.h <http://uscilab.github.io/cereal/polymorphism.html>`_.
+  In the example above, if instead using ``FL_SAVE_LOAD(name_, isHungry_)`` for `Cat`,
+  `CEREAL_REGISTER_POLYMORPHIC_RELATION(Cat, Animal) must be `declared in Cat.h <http://uscilab.github.io/cereal/polymorphism.html>`_.
 
-Custom Serialization of Classes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Here we provide an example to show how to define custom save/load function for class serialization
+Custom Serialization
+^^^^^^^^^^^^^^^^^^^^
+
+flashlight also supports defining custom serializers. For example:
 
 ::
 
@@ -115,8 +114,8 @@ Here we provide an example to show how to define custom save/load function for c
 
 .. warning::
 
-  While `serializing smart pointers <https://uscilab.github.io/cereal/pointers.html>`_, `cereal` library makes sure the
-  underlying data object is saved only once.
+  When `serializing smart pointers <https://uscilab.github.io/cereal/pointers.html>`_, ``cereal`` will only save data from the underlying object once.
+
   ::
 
     template <class Archive>
@@ -129,11 +128,11 @@ Here we provide an example to show how to define custom save/load function for c
       ar(v); // `v` is NOT saved
     }
 
+
 Versioning
 ^^^^^^^^^^
 
-flashlight supports versioning for save/load functions so that it is easier to maintain
-backward compatibility.
+flashlight supports versioning for saving and loading to make maintaining backward compatibility easier:
 
 ::
 

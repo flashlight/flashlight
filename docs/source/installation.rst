@@ -2,20 +2,20 @@ Building and Installing
 =======================
 Currently, flashlight must be built and installed from source.
 
-The installation creates ``libflashlight``, which contains the entire flashlight library. Headers are contained in ``flashlight/``, which is placed in the specified ``include`` directory after install.
+Building/installing flashlight creates ``libflashlight``, which contains the entire flashlight library. Headers are contained in ``flashlight/``, which is placed in the specified ``include`` directory after install.
 
 First, clone flashlight from `its repository on Github <https://github.com/facebookresearch/flashlight>`_:
 
 ::
 
-   git clone --recursive https://github.com/facebookresearch/flashlight.git
+   git clone https://github.com/facebookresearch/flashlight.git
 
 
 Build Requirements
 ~~~~~~~~~~~~~~~~~~
 
 - A C++ compiler with good C++ 11 support (e.g. g++ >= 4.8)
-- `cmake <https://cmake.org/>`_ -- version 3.5.1 or later, and ``make``
+- `cmake <https://cmake.org/>`_ -- version 3.5.1 or later, and ``mke``
 
 Dependencies
 ------------
@@ -27,21 +27,21 @@ flashlight can be built with either a CUDA, CPU (in development), or OpenCL (com
 
   - `Cereal <https://github.com/USCiLab/cereal>`_ is required for serialization -- the `develop` branch must be used.
   - If building tests, `Google Test <https://github.com/google/googletest>`_ >= 1.8.0 is required.
-    
+
 
 Distributed Training Dependencies
 ---------------------------------
 Building with distributed training is optional. See ``Build Options`` below.
 
 - Regardless of backend, running with distributed training requires an MPI installation. `OpenMPI <https://www.open-mpi.org/>`_ is recommended if supported on your OS.
-- If building the CUDA backend, `NVIDIA's NCCL library <https://developer.nvidia.com/nccl>`_ is required. Flashlight has been tested with NCCL >= 2.2.13.
+- If building the CUDA backend, `NVIDIA's NCCL library <https://developer.nvidia.com/nccl>`_ is required. Flashlight has been tested with NCCL 2.2.13.
 - If building with the CPU backend, `Facebook's Gloo library <https://github.com/facebookincubator/gloo>`_ is required, and must be built with MPI.
 
 CUDA Backend Dependencies
 -------------------------
 
-- CUDA >= 9.2 is required. Using `CUDA 9.2 <https://developer.nvidia.com/cuda-92-download-archive>`_ is recommended.
-- CUDNN >= 7.2.1 is required. Using `CUDNN 7.2.1 <https://developer.nvidia.com/rdp/cudnn-archive>`_ is recommended.
+- CUDA >= 9.2 is required. flashlight has been tested with `CUDA 9.2 <https://developer.nvidia.com/cuda-92-download-archive>`_.
+- CUDNN >= 7.2.1 is required. flashlight has been tested with `CUDNN 7.2.1 <https://developer.nvidia.com/rdp/cudnn-archive>`_.
 
 CPU Backend Dependencies
 ------------------------
@@ -81,14 +81,15 @@ Build Options
 +-------------------------+-------------------+---------------+
 
 
-Building on Linux
------------------
+Building on Linux or MacOS
+--------------------------
 flashlight has been thoroughly tested on Ubuntu 16.04 and above, CentOS 7.5, and macOS 10.14, but has good compatability with older operating systems.
 
-Building on Linux is simple:
+Building on Linux and MacOS is simple:
 
 .. code-block:: shell
 
+  # in the flashlight project directory:
   mkdir -p build
   cd build
   cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=[backend] # valid backend
@@ -107,25 +108,28 @@ Building on Windows
 -------------------
 Building flashlight on Windows is not supported at this time (coming soon).
 
+<<<<<<< dest:   2072563d0e47 - ksenks: [DataFetch] Example of Query Fragment ...
 
-Building/running flashlight with Docker
--------------------------------
+Building/Running flashlight with Docker
+---------------------------------------
+flashlight and its dependencies can also be built with the provided Dockerfile. Only the CUDA backend is supported with Docker at this time.
+
+To build flashlight with Docker:
  - Install `Docker <https://docs.docker.com/engine/installation/>`_  and `nvidia-docker <https://github.com/NVIDIA/nvidia-docker/>`_
- - run docker container with CUDA backend
+ - Run the given Dockerfile in a new container:
 
 .. code-block:: shell
 
- sudo docker run --runtime=nvidia --rm -itd --ipc=host --name flashlight wave2letter/flashlight:cuda-latest
- sudo docker exec -it flashlight bash
+sudo docker run --runtime=nvidia --rm -itd --ipc=host --name flashlight wave2letter/flashlight:cuda-latest
+sudo docker exec -it flashlight bash
 
- - build docker image from the source
+ - Build Docker image from source:
 
 .. code-block:: shell
 
- git clone --recursive https://github.com/facebookresearch/flashlight.git
- cd flashlight
- sudo docker build -f ./Dockerfile-CUDA -t flashlight .
-
+git clone --recursive https://github.com/facebookresearch/flashlight.git
+cd flashlight
+sudo docker build -f ./Dockerfile-CUDA -t flashlight .
 
 Building Your Project with flashlight
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -175,8 +179,9 @@ We can link flashlight with the following CMake configuration:
   target_link_libraries(
     myProject
     PRIVATE
+     # assumes flashlight was built with the CUDA backend
     ArrayFire::afcuda
-    flashlight::flashlight # assumes flashlight was built with the CUDA backend
+    flashlight::flashlight
   )
 
 The above will automatically link all flashlight backend-specific dependencies and will add the correct directories to the target's (``myProject``'s) include directories.

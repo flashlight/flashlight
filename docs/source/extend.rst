@@ -3,9 +3,7 @@ Extending flashlight
 
 Extending Modules
 -----------------
-flashlight provides a flexible API to describe new modules. It is simple to extend
-flashlight to describe complex neural architectures. Here, we show how one
-can describe a ResNet 2-layer Block as a Module in flashlight.
+flashlight provides a flexible API to describe new Modules so as to create complex neural architectures. Below, we detail creating ResNet 2-layer block by extending flashlight's ``Module``.
 
 ::
 
@@ -23,13 +21,14 @@ can describe a ResNet 2-layer Block as a Module in flashlight.
     }
 
     // Custom forward pass
-    fl::Variable forward(const fl::Variable& input) override {
+    std::vector<fl::Variable> forward(const std::vector<fl::Variable>& input) override {
+      auto input = inputs[0];
       auto c1 = get(0);
       auto c2 = get(1);
       auto relu = fl::ReLU();
       auto out = relu(c1->forward(input));
       out = c2->forward(input) + input;
-      return relu(out);
+      return {relu(out)};
     }
 
     std::string prettyString() const override {
@@ -46,17 +45,11 @@ can describe a ResNet 2-layer Block as a Module in flashlight.
 Writing Custom Kernels
 ----------------------
 
-While the Arrayfire (tensor backend of flashlight) provides fast array operations,
-there could still be cases where one would want to write custom kernels for
-better performance or take advantage of NN Accelerator libraries like
-`mkl-dnn <https://github.com/intel/mkl-dnn>`_, `cuDNN <https://developer.nvidia.com/cudnn/>`_,
-`MIOpen <https://github.com/ROCmSoftwarePlatform/MIOpen>`_.
+While ArrayFire provides fast array operations, writing custom kernels is sometimes necessary for performance reasons. flashlight uses custom kernels with neural network accelerator libraries such as `mkl-dnn <https://github.com/intel/mkl-dnn>`_, `cuDNN <https://developer.nvidia.com/cudnn/>`_; others, such as `MIOpen <https://github.com/ROCmSoftwarePlatform/MIOpen>`_, can be easily wrapped.
 
-flashlight makes it easy to do this. Users can make use of `DevicePtr` class to
-get device pointer of array and work on the pointers.
+flashlight makes this easy with a ``DevicePtr``, which gives raw pointers for underlying ArrayFire arrays enabling them to be operated on with APIs that read of write from raw pointers.
 
-Here, we show an example of how one could use `warp-ctc <https://github.com/baidu-research/warp-ctc>`_
-to implement `ConnectionistTemporalCriterion <https://en.wikipedia.org/wiki/Connectionist_temporal_classification>`_ Loss.
+Here, we show an example of how one could use Baidu Research's `warp-ctc <https://github.com/baidu-research/warp-ctc>`_ to implement the `Connectionist Temporal Criterion <https://en.wikipedia.org/wiki/Connectionist_temporal_classification>`_  loss function.
 
 ::
 

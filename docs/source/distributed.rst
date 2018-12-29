@@ -1,24 +1,18 @@
 Distributed Training
 ====================
 
-flashlight provides a easy-to-use API to perform distributed training. It  uses
-`Gloo <https://github.com/facebookincubator/gloo>`_ for CPU backend and
-`Nccl <https://developer.nvidia.com/nccl>`_ for Cuda backend. In this
-tutorial, we will give a brief overview of it.
+flashlight provides an easy-to-use API for distributed training. It uses `Facebook's Gloo library <https://github.com/facebookincubator/gloo>`_ when using the CPU backend, and `NVIDIA's NCCL library <https://developer.nvidia.com/nccl>`_ when using the CUDA backend. In the sections below, we briefly detail the API and document its use.
+
+See ``examples/DistributedTraining.cpp`` for examples.
 
 Setup
 -----
-The first step in setting up distributed environment is to initialize it so that all
-the participating processes can perform the initial coordination step. flashlight supports
-multiple initialization methods.
+To initialize the distributed environment, participating process must first perform an initial coordination step. flashlight supports multiple initialization methods, detailed below.
 
 DistributedInit::MPI
 ####################
 
-This initialization can be used if the processes are spawned using `MPI <https://en.wikipedia.org/wiki/Message_Passing_Interface>`_.
-These jobs are typically started using the command :code:`mpirun -n <NUM_PROC> [...]`.
-MPI will be used to assign ranks for the processes and broadcast necessary information
-for initial coordination steps.
+Use this initialization if spawning processes using `MPI <https://en.wikipedia.org/wiki/Message_Passing_Interface>`_. MPI jobs are typically started from the command line using :code:`mpirun -n <NUM_PROC> [...]`. MPI will assign ranks for each process so that information can be broadcast for initial coordination.
 
 ::
 
@@ -26,15 +20,13 @@ for initial coordination steps.
       fl::DistributedInit::MPI,
       -1, // worldRank - unused. Automatically derived from `MPI_Comm_Rank`
       -1, // worldRank - unused. Automatically derived from `MPI_Comm_Size`
-      {} // param
+      {}  // params
   );
 
 DistributedInit::FILE_SYSTEM
 ############################
 
-This initialization can be used if all the participating processes have access to a
-shared flle. The shared file will be used to setup the initial coordination step among
-the processes.
+Use this initialization if all participating devices and processes have access to a shared filesystem. A shared file in that filesystem is used to initially coordinate participating processes. This shared file is specified via the ``fl::DistributedConstants::kFilePath`` key in the parameter map:
 
 ::
 
@@ -44,8 +36,7 @@ the processes.
       4, // worldSize
       {{fl::DistributedConstants::kFilePath, "/path/to/shared/filesystem/file"}});
 
-When using cuda backend, an additional param `fl::DistributedConstants::kMaxDevicePerNode`
-is required which specifies maximum number of GPU devices per node to derive device-id.
+When using the CUDA backend, ``fl::DistributedConstants::kMaxDevicePerNode`` must be passed as an additional required value in the parameter map to specify maximum number of GPU devices per node from which to derive a ``device-id``.
 
 ::
 
@@ -58,7 +49,10 @@ is required which specifies maximum number of GPU devices per node to derive dev
   std::cout << size; // 4
 
 
-Now, we'll take a look at how to compute allReduce on an Arrayfire array.
+Synchronizing Parameters
+########################
+
+Now, we demonstrate the implementation of a `data parallel <https://en.wikipedia.org/wiki/Data_parallelism>`_ model; during training, data is equally distributed amongst all devices, and each device completes full forward and backward passes independently, before synchronizing state via an ``allReduce`` operation. Below, we call ``allReduce`` on an ArrayFire array:
 
 ::
 
@@ -71,16 +65,29 @@ Now, we'll take a look at how to compute allReduce on an Arrayfire array.
   //    6.0000     6.0000     6.0000
   //    6.0000     6.0000     6.0000
 
+flashlight's distributed API also includes specific functions to synchronize ``Module`` parameters and register them for gradient synchronization. ``allReduceParameters`` synchronizes parameters of a ``Module`` across all processes (which is important in the case of random initialization), and ``distributeModuleGrads`` registers gradients in the ``Module`` for synchronization after each iteration of the backward pass:
+
+::
+
+  auto model = std::make_shared<Sequential>();
+  // (add other modules to the Sequential)
+  
+  // synchronize parameters across processes
+  fl::allReduceParameters(model);
+  // add a hook to synchronize gradients of model parameters as they're computed
+  fl::distributedModuleGrads(model, 1.0 / worldSize)
+  // ...
+  
 
 Distributed Training
 --------------------
-In this section, we will extend the Perceptron training example to run
-data-parallel distributed training using synchronous SGD.
+In this section, we build on the :ref:`Perceptron training example <linearregression>` to run
+data-parallel distributed training using synchronous `stochastic gradient descent <https://en.wikipedia.org/wiki/Stochastic_gradient_descent>`_ (SGD).
 
-First things first - initialize the distributed environment
+First things first - initialize the distributed environment:
 ::
 
-  // Uses MPI (Run with `mpirun -n 2`) , CUDA backend
+  // Uses MPI (Run with `mpirun -n 2`), CUDA backend
   fl::distributedInit(
       fl::DistributedInit::MPI,
       -1, // worldRank - unused. Automatically derived from `MPI_Comm_Rank`
@@ -93,7 +100,7 @@ First things first - initialize the distributed environment
   bool isMaster = (worldRank == 0);
   af::setSeed(worldRank);
 
-Create the dataset. The samples are divided equally among all the processes.
+Create the dataset. Samples are divided equally among all processes.
 ::
 
   // Create dataset
@@ -106,8 +113,7 @@ Create the dataset. The samples are divided equally among all the processes.
   TensorDataset data({X, Y});
   const int inputIdx = 0, targetIdx = 1;
 
-Create the module and synchronize it's parameters. Also, registe
-
+Create a ``Module``, synchronize its parameters, and register gradients for synchronization:
 ::
 
   // Model defintion - 2-layer Perceptron with ReLU activation
@@ -118,15 +124,13 @@ Create the module and synchronize it's parameters. Also, registe
   // MSE loss
   auto loss = MeanSquaredError();
 
-  // synchronize parameters of the model so that the parameters in each process
-  // is the same
+  // synchronize parameters across processes
   fl::allReduceParameters(model);
 
-  // Add a hook to synchronize gradients of model parameters as they are
-  // computed
+  // register gradients for synchronization
   fl::distributeModuleGrads(model, 1.0 / worldSize);
 
-Create Optimizer, Meter and run the training.
+Create an ``Optimizer`` and ``Meter`` and start training:
 ::
 
   // Optimizer definition
@@ -191,11 +195,4 @@ Create Optimizer, Meter and run the training.
   // Epoch: 100 Mean Squared Error: 0.922085
   // [Multi-layer Perceptron] Done!
 
-The above code runs in 3min 17sec while using distributed traininig with 2 GPUs
-while takes 5min 30sec without distributed training using Tesla M40 GPU(s).
-
-Conclusion
-----------
-
-In this tutorial, we have shown how to flashlight to do distributed trainining.
-All the source can be found in `examples/DistributedTraining.cpp`
+On NVIDIA Tesla M40 GPUs, the above code runs in 3min 17sec while using distributed traininig with two GPUs, and runs in 5min 30sec without distributed training.

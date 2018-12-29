@@ -1,16 +1,12 @@
 Introduction to Autograd
 ========================
 
-This tutorial gives a brief overview of Variable and Functions which are the core
-components flashlight's automatic differentiation library. We recommend reading the
-`Getting Started <http://arrayfire.org/docs/gettingstarted.htm>`_ section from Arrayfire
-before starting this tutorial so that you are familiar with its syntax.
+This tutorial gives a brief overview of ``Variable`` and ``Functions``, the core components flashlight's automatic differentiation system. We recommend reading ArrayFire's `Getting Started <http://arrayfire.org/docs/gettingstarted.htm>`_ section before starting this tutorial so that you are familiar with ArrayFire's syntax and API.
 
 Variable
 --------
 
-A Variable is a wrapper around an Arrayfire array which is central to array
-operations in flashlight.
+``Variable`` is a wrapper around an ArrayFire ``array``. flashlight's automatic differentiation system works with ``Variable`` directly.
 
 ::
 
@@ -27,8 +23,8 @@ operations in flashlight.
   std::cout << A.type() // type of the Variable
   // 0 <- corresponds to float32 enum
 
-The second parameter to Variable constructor `isCalcGrad` specifies whether we
-want to compute the gradient for this Variable.
+The second parameter to ``Variable``'s constructor (``isCalcGrad``) specifies whether we
+want to compute the gradient for a ``Variable``.
 
 .. figure:: images/variable.png
    :width: 340px
@@ -37,16 +33,11 @@ want to compute the gradient for this Variable.
    :alt: variable design
 
 
-The above figure shows the high-level design of a Variable class. SharedData and
-SharedGrad are stored as shared pointers inside the Variable. SharedData stores
-the array object while SharedGrad stores the gradient, the inputs etc. The additional
-members stored in Variable class help in facilitating easy differentiation,
-which we'll go through in the following sections.
+The figure above details the high-level design of ``Variable``. ``SharedData`` and
+``SharedGrad`` are shared pointer members of ``Variable``. ``SharedData`` points to the underlying ArrayFire ``array``, while ``SharedGrad`` stores gradients with respect to other ``Variable``. The additional members facilitate a simple differentiation API which is discussed in the following sections.
 
-We note that copying a Variable makes a shallow copy and both objects will
-refer to the same underlying data like array, grad etc...
-
-The complete documentation of the Variable API can be found :ref:`here<variable>`.
+It should be noted that copying a ``Variable`` creates a shallow copy; both objects will still
+refer to the same underlying ArrayFire ``array``.
 
 ::
 
@@ -60,11 +51,12 @@ The complete documentation of the Variable API can be found :ref:`here<variable>
       2.0000     2.0000
       2.0000     2.0000
 
+Complete documentation for the ``Variable`` API can be found :ref:`here<variable>`.
 
 Functions
 ---------
 
-Similar to Arrayfire arrays, Variables can be used to perform array operations.
+Similar to ArrayFire arrays, ``Variable`` can be used to perform array operations directly.
 
 ::
 
@@ -87,19 +79,12 @@ Similar to Arrayfire arrays, Variables can be used to perform array operations.
 
 A complete list of functions can be found :ref:`here<functions>`.
 
-Autograd
---------
+Automatic Differentiation
+-------------------------
 
-If at least one of the inputs require gradient, each output Variable stores its
-input Variables to keep track of computation graph and gradFunc, a lambda function
-to calculate the gradient of its inputs given the gradient with respect to the output
-Variable.
+Given a ``Variable`` in a computation graph with some input dependencies, if at least one of its inputs requires a gradient, each preceeding ``Variable`` in the graph must keep track of its inputs, and a method by which to compute its gradient. The latter is accomplished via ``gradFunc``, a lambda function that takes the gradient of a ``Variable``'s outputs and computes the gradient with respect to its inputs.
 
-To compute the gradient of a Variable with respect to all its inputs recursively
-in the computation graph, we call the `backward()` function on the Variable. This
-will sort the Variables in the computation graph in a topological order and compute
-the gradient by chain rule. For example, calling `expVar.backward()` will calculate
-the gradient of `expVar` with respect to its input Variable `var`.
+To recursively compute the gradient of a ``Variable`` with respect to all of its inputs in the computation graph, we call the ``backward()`` function on the Variable. This iteratively computes the gradients for each ``Variable`` through the computational graph using a topological ordering by repeatedly applying the chain rule. For instance, given some ``Variable expVar`` with some input ``Variable var``, calling ``expVar.backward()`` computes the gradient of ``expVar`` with respect to ``var``.
 
 ::
 
@@ -130,9 +115,9 @@ the gradient of `expVar` with respect to its input Variable `var`.
   //     2.0000     2.0000     2.0000
 
 .. warning::
-  Calling `B.grad()` will throw an exception here since `isCalcGrad` is set to `false`
+  Calling ``B.grad()`` will throw an exception here since ``isCalcGrad`` is set to ``false``
 
-TODO: Add step-by-step execution details on an example computation graph
+``TODO``: Add step-by-step execution details on an example computation graph
 
 Various Optimizations
 ---------------------
@@ -140,9 +125,7 @@ Various Optimizations
 JIT Compiler
 ############
 
-Arrayfire (array backend for flashlight) uses a JIT compiler to combine many light
-weight functions into a single kernel launch. Here is a very simple example which
-illustrates this.
+ArrayFire uses a JIT compiler to combine many small function calls into a single kernel call. Below is a simple example:
 
 ::
 
@@ -154,13 +137,12 @@ illustrates this.
   D.eval(); // only 'D' is allocated, Total Memory : 8 MB
 
 
-This helps in improving performance and reducing memory usage. Visit the ArrayFire
-docs for more details about the `ArrayFire JIT <https://arrayfire.com/performance-improvements-to-jit-in-arrayfire-v3-4/>`_.
+The JIT both improves performance and reduces memory usage. For further documentation, see docs for the `ArrayFire JIT <https://arrayfire.com/performance-improvements-to-jit-in-arrayfire-v3-4/>`_.
 
-In-place Operations and More
+In-Place Operations and More
 ############################
 
-Since the flashlight uses `shared_ptr` semantics for storing its internal array, any
+Since the flashlight uses ``shared_ptr`` semantics for storing its internal ArrayFire array, any
 array is automatically deleted when the Variable goes out of scope.
 
 ::
@@ -170,12 +152,7 @@ array is automatically deleted when the Variable goes out of scope.
   auto C =  fl::transpose(A); // Total Memory: 12 MB
   C = fl::matmul(C, fl::transpose(B)); // Total Memory: 12 MB. Previous 'C' goes out of scope
 
-We have carefully optimized memory needed during the forward and backward passes of
-the computation graph. Some functions in autograd do not need to keep their input
-data in order to compute their gradient. E.g. `sum (+)`, `transpose` etc.
-For these functions, the output Variable doesn't store the 'SharedData' member
-of the input Variables that are not needed so that the underlying array can be
-freed if it is not referenced in other places.
+We have carefully optimized memory usage for forward and backward passes over the computation graph. Some autograd functions do not need to keep their input data after the forwad pass in order to compute their gradient during the backward pass (e.g. ``sum (+)``, ``transpose``). For these operations, the resulting ``Variable`` need not store its input Variables' ``SharedData``; thus, the underlying array can be freed, as it is not referenced elsewhere.
 
 ::
 
@@ -185,15 +162,11 @@ freed if it is not referenced in other places.
   // Intermediate arrays are not stored. Total Memory: 8 MB
   auto C =  fl::transpose(fl::transpose(A));
 
-Retain Graph
-############
+Retaining the Computation Graph
+###############################
 
-The `backward()` function takes an additional boolean parameter `retainGraph`
-which is `false` by default. Keeping this `false` will make sure we clear the Variables
-as soon as they are not required while performing the backward pass. This helps in
-reducing peak memory usage while computing backward pass. It is not recommended to
-set `retainGraph` to `true` unless you need to inspect intermediate values in the
-backward graph or need to retain the full backward graph for other purposes.
+The ``backward()`` function takes an additional boolean parameter, ``retainGraph``,
+which is ``false`` by default. When the argument is ``false``, each `Variable` that is not required is cleared from the computation graph while the backard pass is being computed as soon as it is no longer depended upon in the graph. This reduces peak memory usage while computing gradients. Setting ``retainGraph`` to ``true`` is not recommended unless intermediate values in the backward graph must be inspected.
 
 ::
 
@@ -226,7 +199,5 @@ backward graph or need to retain the full backward graph for other purposes.
 
   }
 
-
-
-For example in the above graph, the intermediate Variable E can be deleted as
-soon as the gradients of D are computed.
+For example, in the above graph, the intermediate Variable ``E`` can be deleted as
+soon as the gradients of ``D`` are computed.

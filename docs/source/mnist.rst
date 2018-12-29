@@ -1,14 +1,14 @@
 Example: MNIST
 ==============
 
-In this example we will show how to build a simple convolutional network and
-train it on `MNIST <http://yann.lecun.com/exdb/mnist/>`_. Download and unpack
-the dataset before running.
+In this example, we demonstrate how to implement a simple convolutional network and train it on the `MNIST <http://yann.lecun.com/exdb/mnist/>`_ dataset. Download and unpack the dataset before running.
+
+The full source for the below example can be found in ``examples/Mnist.cpp``.
 
 Data
 ----
 
-The first step is loading the data
+First, we load the data using ``TensorDataset`` and ``BatchDataset``:
 
 ::
 
@@ -32,10 +32,11 @@ The first step is loading the data
       std::make_shared<TensorDataset>(std::vector<af::array>{val_x, val_y}),
       batch_size);
 
+
 Model
 -----
 
-The next step is to construct the model.
+Now, we construct the model:
 
 ::
 
@@ -63,11 +64,11 @@ The next step is to construct the model.
   model.add(Linear(1024, 10));
   model.add(LogSoftmax());
 
+
 Training
 --------
 
-First we make an optimizer, and then run the training loop for a specified
-number of epochs (passes over the full dataset).
+First, create an optimizer and run a training loop for a specified number of iterations (enough to pass over the full dataset).
 
 ::
 
@@ -111,11 +112,7 @@ number of epochs (passes over the full dataset).
 Evaluation
 ----------
 
-The evaluation loop looks a lot like training except without the weight
-updates. We just have to be sure to set the model into ``eval`` mode so that
-things like Dropout are turned off. Also when we put a model in ``eval`` mode
-temporary state needed for the backward pass is not recorded, so this will
-require much less memory.
+The evaluation loop is similar to the training loop except that it omits updates to model parameters. When evaluating a model, we use ``eval`` mode on the ``Module`` which disables components that should not run at evaluation time (e.g. dropout), and disables gradient computation to save memory.
 
 ::
 
@@ -150,7 +147,7 @@ require much less memory.
     return std::make_pair(loss, error);
   }
 
-And then we can compute and report the test error
+Compute and report the test error:
 
 ::
 
@@ -172,7 +169,7 @@ And then we can compute and report the test error
 Running the Example
 -------------------
 
-To run the example, build ``Mnist.cpp`` (which is automatically built with flashlight by default), then run
+To run the example, build ``Mnist.cpp`` (which is automatically built with flashlight examples by default), then run
 
 ::
    ./Mnist [path to dataset]
@@ -180,14 +177,3 @@ To run the example, build ``Mnist.cpp`` (which is automatically built with flash
 After training we should see an output close to
 
     Test Loss: 0.0373 Test Error (%): 1.1
-
-
-Conclusion
-----------
-
-Here is the complete `source code <todolinktomnist.com>`_ for loading the MNIST
-dataset, training and evaluating the model. We've used a number of helpful
-flashlight libraries which make this code simple including the ``Sequential``
-container, the ``BatchDataset`` and ``DatasetIterator`` classes, and some
-derived ``Meter`` classes to keep track of useful stats.
-

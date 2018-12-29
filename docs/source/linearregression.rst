@@ -1,22 +1,16 @@
 Example: Linear Regression, Perceptron
 ======================================
 
-In this tutorial, we will go through how to train a linear regression model
-in flashlight. We will also extend it to train a simple Neural Network model,
-two-layer Perceptron network to improve performance. We will also learn about
-using :ref:`Modules<modules>`, :ref:`Datasets<datasets>`, :ref:`Meters<meters>`,
-:ref:`Optimizers<optimizers>` classes which greatly simplifies the amount of  boilerplate
-code that needs to be written for machine learning training.
+In this tutorial, we demonstrate how to train a simple linear regression model in flashlight. We then extend our implementation to a neural network vis-a-vis an implementation of a multi-layer perceptron to improve model performance. We show how to use :ref:`Modules<modules>`, :ref:`Datasets<datasets>`, :ref:`Meters<meters>`, and :ref:`Optimizers<optimizers>` in practice to reduce the amount of required boilerplate code for training.
 
-This tutorial is meant to be a quick introduction to using flashlight for machine
-learning related tasks. We do not use any validation sets to measure performance
-for the sake of code simplicity.
+This is meant to be a quick introduction to using flashlight for machine learning-related tasks; for the sake of simplicity, we do not use a validation set to measure performance.
 
-Data creation
+Full code for the below examples can be found in ``examples/LinearRegression.cpp`` and ``examples/Perceptron.cpp``.
+
+Data Creation
 -------------
 
-We will generate use artificially generated data for this tutorial. Input
-consists of 10000 10D-samples generated randomly.
+We artificially generate data for this tutorial. Our input consists of 10000 samples of randomly-generated 10D vectors.
 
 ::
 
@@ -29,7 +23,7 @@ consists of 10000 10D-samples generated randomly.
 Linear Regression
 -----------------
 
-Initialize weight, bias and few other training params.
+First, we initialize our model parameters (weight and bias) along with the number of epochs in training, and the learning rate for our ``Optimizer``.
 
 ::
 
@@ -38,7 +32,7 @@ Initialize weight, bias and few other training params.
   auto weight = fl::Variable(af::randu(1, nFeat), true /* isCalcGrad */);
   auto bias = fl::Variable(af::constant(0.0, 1), true /* isCalcGrad */);
 
-Run linear regression using stochastic gradient descent
+Now, run linear regression using stochastic gradient descent:
 
 ::
 
@@ -89,26 +83,21 @@ Run linear regression using stochastic gradient descent
   // Epoch: 100 Mean Squared Error: 18.3789
   // [LinearRegression] Done!
 
-As you can see, Linear Regression model doesn't perform very well on this dataset
-since target is non-linear transformation on input.
+Our regression model doesn't perform well on this dataset; ``target`` is the result of a non-linear transformation of the input.
 
 Multi-Layer Perceptron
 ----------------------
 
-Now we'll train a model using Multi-Layer Perceptron. Unlike the previous
-example on Linear Regression, we will use some abstraction in the training
-pipeline using :ref:`Modules<modules>`, :ref:`Datasets<datasets>`, :ref:`Meters<meters>`,
-:ref:`Optimizers<optimizers>` to greatly simplify the code. It is highly recommended
-to use these abstractions to avoid any possible user errors.
+Next, we implement and train a multi-layer perceptron. Here, we take advantage of abstractions on flashlight's training pipeline: :ref:`Modules<modules>`, :ref:`Datasets<datasets>`, :ref:`Meters<meters>`, and :ref:`Optimizers<optimizers>`, which greatly simplify our implementation and make it less error-prone.
 
-Create `TensorDataset` to simplify the code for iterating over samples.
+Here, we create a `TensorDataset` to reduce boilerplate for iterating over samples:
 
 ::
 
   TensorDataset data({X, Y});
   const int inputIdx = 0, targetIdx = 1;
 
-The network is described using `Sequential` to easily keep track of params.
+We compose components of the network into a `Sequential` container to easily keep track of parameters and take advantage of other abstractions:
 
 ::
 
@@ -120,8 +109,7 @@ The network is described using `Sequential` to easily keep track of params.
   // MSE loss
   auto loss = MeanSquaredError();
 
-`SGDOptimizer` class helps to avoid writing all the standard parameter updating code for
-Stochastic Gradient Descent .
+We create an `SGDOptimizer`, which eliminates repetitive code for parameter updates during stochastic gradient descent:
 
 ::
 
@@ -130,14 +118,14 @@ Stochastic Gradient Descent .
   const float momentum = 0.9;
   auto sgd = SGDOptimizer(model.params(), learningRate, momentum);
 
-`AverageValueMeter` helps to keep track of metrics while training.
+`AverageValueMeter` helps to keep track of metrics while training:
 
 ::
 
   // Meter definition
   AverageValueMeter meter;
 
-Start training ...
+We're ready to start training:
 
 ::
 
@@ -181,10 +169,3 @@ Start training ...
   // Epoch: 99 Mean Squared Error: 0.8187
   // Epoch: 100 Mean Squared Error: 0.813558
   // [Multi-layer Perceptron] Done!
-
-Conclusion
-----------
-
-In this tutorial, we have shown how to flashlight to train very simple machine
-learning models. All the source can be found in `examples/LinearRegression.cpp`,
-`examples/Perceptron.cpp`,
