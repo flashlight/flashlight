@@ -26,10 +26,16 @@ target_sources(
   $<BUILD_INTERFACE:${COMMON_SRCS}>
 )
 
+# A native threading library is needed for ThreadPool
+# (see flashlight/common/threadpool/ThreadPool.h)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
 target_link_libraries(
   Common
   INTERFACE
   ${ArrayFire_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT} # threading library
 )
 
 target_include_directories(

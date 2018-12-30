@@ -19,14 +19,10 @@ target_sources(
   $<BUILD_INTERFACE:${AUTOGRAD_SOURCES}>
   )
 
-# A native threading library is needed for all backends
-find_package(Threads REQUIRED)
-
 target_link_libraries(
   Autograd
   INTERFACE
   Common
-  Threads::Threads
 )
 
 target_include_directories(

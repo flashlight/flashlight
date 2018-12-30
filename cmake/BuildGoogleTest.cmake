@@ -3,7 +3,7 @@ include(ExternalProject)
 set(gtest_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/googletest/src/googletest/googletest/include)
 set(gtest_URL https://github.com/google/googletest.git)
 set(gtest_BUILD ${CMAKE_CURRENT_BINARY_DIR}/googletest/)
-set(gtest_TAG 0fe96607d85cf3a25ac40da369db62bbee2939a5) # release 1.8.0
+set(gtest_TAG 2fe3bd994b3189899d93f1d5a881e725e046fdc2) # release 1.8.1
 
 # Download googletest
 ExternalProject_Add(
@@ -25,12 +25,9 @@ set(GTEST_SOURCE_DIR ${source_dir})
 ExternalProject_Get_Property(gtest binary_dir)
 set(GTEST_BINARY_DIR ${binary_dir})
 
-# Include Threads/pthread to avoid linker issues
-find_package(Threads)
 # Library and include dirs
 set(GTEST_LIBRARIES
   "${GTEST_BINARY_DIR}/${CMAKE_CFG_INTDIR}/googletest/${CMAKE_STATIC_LIBRARY_PREFIX}gtest${CMAKE_STATIC_LIBRARY_SUFFIX}"
   "${GTEST_BINARY_DIR}/${CMAKE_CFG_INTDIR}/googletest/${CMAKE_STATIC_LIBRARY_PREFIX}gtest_main${CMAKE_STATIC_LIBRARY_SUFFIX}"
-  Threads::Threads
 )
 set(GTEST_INCLUDE_DIR ${GTEST_SOURCE_DIR}/googletest/include)

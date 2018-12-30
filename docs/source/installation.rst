@@ -151,10 +151,10 @@ Once flashlight is built and installed, including it in another project is simpl
     * #      ####### #    #  ####  #    # ###### #  ####  #    #   #
     */
    int main() {
-     fl::Variable v(af::array(1), true);
+     fl::Variable v(af::constant(1, 1), true);
      auto result = v + 10;
      std::cout << "Hello World!" << std::endl;
-     af::print("Array value is ", result.array());
+     af::print("Array value is ", result.array()); // 10.000
      return 0;
    }
 
