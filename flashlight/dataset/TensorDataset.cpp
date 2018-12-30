@@ -19,9 +19,8 @@ TensorDataset::TensorDataset(const std::vector<af::array>& datatensors)
   }
   for (const auto& tensor : dataTensors_) {
     auto ndims = tensor.numdims();
-    if (ndims <= 1) {
-      throw std::invalid_argument(
-          "tensor for TensorDataset can't be 1-D or empty");
+    if (ndims == 0) {
+      throw std::invalid_argument("tensor for TensorDataset can't be empty");
     }
     auto lastdim = ndims - 1;
     int64_t cursz = tensor.dims(lastdim);

@@ -9,7 +9,7 @@ Contact: vineelkpratap@fb.com, awni@fb.com, jacobkahn@fb.com, qiantong@fb.com, j
 flashlight is being very actively developed. See [CONTRIBUTING](CONTRIBUTING.md) for more on how to help out.
 
 ## Acknowledgments
-Some of flashlight is derived from [arrayfire-ml](https://github.com/arrayfire/arrayfire-ml/).
+Some of flashlight's code is derived from [arrayfire-ml](https://github.com/arrayfire/arrayfire-ml/).
 
 ## License
 flashlight is under an MIT-license. See [LICENSE](LICENSE).
