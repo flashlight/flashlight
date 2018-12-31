@@ -111,13 +111,12 @@ class ReLU : public UnaryModule {
 };
 
 /**
- * Applies the [leaky rectified linear
- * unit](https://en.wikipedia.org/wiki/Rectifier_(neural_networks))
- function from [Maas et
- al
- (2013)](https://ai.stanford.edu/~amaas/papers/relu_hybrid_icml2013_final.pdf),
- _Rectifier Nonlinearities Improve Neural Network Acoustic Models_. Applied
- function element-wise to a `Variable`:
+ * Applies the [leaky rectified linear unit](
+ * https://en.wikipedia.org/wiki/Rectifier_(neural_networks))
+ * function from [Maas et al (2013)](
+ * https://ai.stanford.edu/~amaas/papers/relu_hybrid_icml2013_final.pdf),
+ * _Rectifier Nonlinearities Improve Neural Network Acoustic Models_.
+ * Applied function element-wise to a `Variable`:
  * \f[
    \text{LeakyRELU}(x) =
     \begin{cases}
@@ -149,11 +148,12 @@ class LeakyReLU : public UnaryModule {
 };
 
 /**
- * Applies the [pramaeterized rectified linear
- unit](https://en.wikipedia.org/wiki/Rectifier_(neural_networks))
- function from [He et al (2015)](https://arxiv.org/pdf/1502.01852.pdf), _Delving
- Deep into Rectifiers: Surpassing Human-Level Performance on ImageNet
- Classification_. Applied element-wise to a `Variable`, given some input size:
+ * Applies the [pramaeterized rectified linear unit](
+ * https://en.wikipedia.org/wiki/Rectifier_(neural_networks)) function
+ * from [He et al (2015)](https://arxiv.org/pdf/1502.01852.pdf),
+ * _Delving Deep into Rectifiers: Surpassing Human-Level Performance on
+ * ImageNet Classification_. Applied element-wise to a `Variable`, given
+ * some input size:
  * \f[
    \text{PReLU}(x) =
    \begin{cases}
@@ -197,12 +197,11 @@ class PReLU : public UnaryModule {
 };
 
 /**
- * Applies the [exponential linear
- unit](https://en.wikipedia.org/wiki/Rectifier_(neural_networks)) function
- from [Clevert et al (2015)](https://arxiv.org/pdf/1511.07289v1.pdf): _Fast and
- Accurate Deep Network Learning by Exponential Linear Units (ELUs)_. Applied
- element-wise to a `Variable`:
- *
+ * Applies the [exponential linear unit](
+ * https://en.wikipedia.org/wiki/Rectifier_(neural_networks)) function
+ * from [Clevert et al (2015)](https://arxiv.org/pdf/1511.07289v1.pdf):
+ * _Fast and Accurate Deep Network Learning by Exponential Linear Units
+ * (ELUs)_. Applied element-wise to a `Variable`:
  * \f[
    \text{ELU}(x) =
    \begin{cases}
@@ -259,9 +258,9 @@ class ThresholdReLU : public UnaryModule {
 };
 
 /**
- * Creates a Gated Linear Unit from
- [Dauphin et al  (2017)](https://arxiv.org/pdf/1612.08083.pdf): _Language
- Modeling with Gated Convolutional Networks_.
+ * Creates a Gated Linear Unit from [Dauphin et al  (2017)](
+ * https://arxiv.org/pdf/1612.08083.pdf): _Language Modeling with Gated
+ * Convolutional Networks_.
  * \f[\text{GLU}(x) = x_i \otimes \sigma(x_j)\f]
  * where \f$\otimes\f$ denotes the element-wise product \f$x_i\f$ is the
  * first half of the input, \f$x_j\f$ is the second half, and

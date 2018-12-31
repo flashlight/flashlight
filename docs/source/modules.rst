@@ -38,7 +38,38 @@ Layers
 
 Activations
 ^^^^^^^^^^^
-.. doxygenfile:: Activations.h
+.. doxygenclass:: fl::Sigmoid
+  :members:
+
+.. doxygenclass:: fl::Tanh
+  :members:
+
+.. doxygenclass:: fl::HardTanh
+  :members:
+
+.. doxygenclass:: fl::ReLU
+  :members:
+
+.. doxygenclass:: fl::LeakyReLU
+  :members:
+
+.. doxygenclass:: fl::PReLU
+  :members:
+
+.. doxygenclass:: fl::ELU
+  :members:
+
+.. doxygenclass:: fl::ThresholdReLU
+  :members:
+
+.. doxygenclass:: fl::GatedLinearUnit
+  :members:
+
+.. doxygenclass:: fl::LogSoftmax
+  :members:
+
+.. doxygenclass:: fl::Log
+  :members:
 
 BatchNorm
 ^^^^^^^^^

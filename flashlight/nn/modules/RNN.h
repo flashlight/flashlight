@@ -19,8 +19,8 @@ namespace fl {
  * If the RNN mode is RELU then \f$\sigma\f$ will be a `ReLU`. If the
  * RNN mode is TANH then it will be a `Tanh` function.
  *
- * Gated Recurrent Units (GRU) are supported (GRU). For details see the
- * original [GRU paper](https://arxiv.org/abs/1406.1078) or the [Wikipedia
+ * Gated Recurrent Units (GRU) are supported. For details see the original [GRU
+ * paper](https://arxiv.org/abs/1406.1078) or the [Wikipedia
  * page](https://en.wikipedia.org/wiki/Gated_recurrent_unit).
  *
  * LSTM cells are also supported (LSTM). The LSTM cell uses a forget
