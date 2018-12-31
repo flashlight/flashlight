@@ -108,8 +108,6 @@ Building on Windows
 -------------------
 Building flashlight on Windows is not supported at this time (coming soon).
 
-<<<<<<< dest:   2072563d0e47 - ksenks: [DataFetch] Example of Query Fragment ...
-
 Building/Running flashlight with Docker
 ---------------------------------------
 flashlight and its dependencies can also be built with the provided Dockerfile. Only the CUDA backend is supported with Docker at this time.
