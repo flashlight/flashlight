@@ -118,16 +118,16 @@ To build flashlight with Docker:
 
 .. code-block:: shell
 
-sudo docker run --runtime=nvidia --rm -itd --ipc=host --name flashlight wave2letter/flashlight:cuda-latest
-sudo docker exec -it flashlight bash
+ sudo docker run --runtime=nvidia --rm -itd --ipc=host --name flashlight wave2letter/flashlight:cuda-latest
+ sudo docker exec -it flashlight bash
 
  - Build Docker image from source:
 
 .. code-block:: shell
 
-git clone --recursive https://github.com/facebookresearch/flashlight.git
-cd flashlight
-sudo docker build -f ./Dockerfile-CUDA -t flashlight .
+ git clone --recursive https://github.com/facebookresearch/flashlight.git
+ cd flashlight
+ sudo docker build -f ./Dockerfile-CUDA -t flashlight .
 
 Building Your Project with flashlight
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
