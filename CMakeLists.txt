@@ -187,7 +187,6 @@ target_include_directories(
   ${CMAKE_SOURCE_DIR}
 )
 
-# Link appropriate ArrayFire backend, set global compile time macros
 if (FLASHLIGHT_USE_UNIFIED)
   # For flashlight, nn ops use CUDA in unified mode
   target_compile_definitions(
@@ -198,13 +197,13 @@ if (FLASHLIGHT_USE_UNIFIED)
   target_link_libraries(flashlight ArrayFire::af)
 elseif (FLASHLIGHT_USE_CPU)
   target_compile_definitions(flashlight PRIVATE FLASHLIGHT_BUILD_CPU_BACKEND=1)
-  target_link_libraries(flashlight PRIVATE ArrayFire::afcpu)
+  target_link_libraries(flashlight PUBLIC ArrayFire::afcpu)
 elseif (FLASHLIGHT_USE_CUDA)
   target_compile_definitions(flashlight PRIVATE FLASHLIGHT_BUILD_CUDA_BACKEND=1)
-  target_link_libraries(flashlight PRIVATE ArrayFire::afcuda)
+  target_link_libraries(flashlight PUBLIC ArrayFire::afcuda)
 elseif (FLASHLIGHT_USE_OPENCL)
   target_compile_definitions(flashlight PRIVATE FLASHLIGHT_BUILD_OPENCL_BACKEND=1)
-  target_link_libraries(flashlight PRIVATE ArrayFire::afopencl)
+  target_link_libraries(flashlight PUBLIC ArrayFire::afopencl)
 else()
   message(FATAL_ERROR "flashlight backend ill-specified")
 endif()

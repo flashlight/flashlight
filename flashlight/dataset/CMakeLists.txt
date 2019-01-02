@@ -24,9 +24,3 @@ target_sources(
   INTERFACE
   $<BUILD_INTERFACE:${DATASET_SOURCES}>
   )
-
-target_link_libraries(
-  Dataset
-  INTERFACE
-  ${ArrayFire_LIBRARIES}
-)

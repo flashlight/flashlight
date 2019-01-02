@@ -21,9 +21,3 @@ target_sources(
   $<BUILD_INTERFACE:${METER_SOURCES}>
   )
 
-target_link_libraries(
-  Meter
-  INTERFACE
-  ${ArrayFire_LIBRARIES}
-)
-

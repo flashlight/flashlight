@@ -152,7 +152,7 @@ Once flashlight is built and installed, including it in another project is simpl
      fl::Variable v(af::constant(1, 1), true);
      auto result = v + 10;
      std::cout << "Hello World!" << std::endl;
-     af::print("Array value is ", result.array()); // 10.000
+     af::print("Array value is ", result.array()); // 11.000
      return 0;
    }
 
@@ -177,8 +177,7 @@ We can link flashlight with the following CMake configuration:
   target_link_libraries(
     myProject
     PRIVATE
-     # assumes flashlight was built with the CUDA backend
-    ArrayFire::afcuda
+     # the correct ArrayFire backend is transitively included by flashlight
     flashlight::flashlight
   )
 

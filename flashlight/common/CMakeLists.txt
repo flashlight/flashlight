@@ -34,14 +34,12 @@ find_package(Threads REQUIRED)
 target_link_libraries(
   Common
   INTERFACE
-  ${ArrayFire_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT} # threading library
 )
 
 target_include_directories(
   Common
   INTERFACE
-  ${ArrayFire_INCLUDE_DIRS}
   ${CEREAL_INCLUDE_DIR} # pulled in - see cmake/BuildCereal.cmake
 )
 

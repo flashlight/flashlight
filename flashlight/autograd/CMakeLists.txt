@@ -29,7 +29,6 @@ target_include_directories(
   Autograd
   INTERFACE
   ${FLASHLIGHT_INCLUDE_DIR}
-  ${ArrayFire_INCLUDE_DIRS}
 )
 
 # ----------------------------- Autograd Backends -----------------------------
@@ -53,7 +52,6 @@ if (FLASHLIGHT_USE_CPU)
   target_link_libraries(
     Autograd
     INTERFACE
-    ArrayFire::afcpu
     ${MKLDNN_LIBRARIES}
     ${MKL_LIBRARIES}
     )
@@ -62,7 +60,6 @@ if (FLASHLIGHT_USE_CPU)
     Autograd
     INTERFACE
     ${FLASHLIGHT_INCLUDE_DIR}
-    ${ArrayFire_INCLUDE_DIRS}
     ${MKLDNN_INCLUDE_DIR}
     ${MKL_INCLUDE_DIR}
     )
@@ -90,7 +87,6 @@ if (FLASHLIGHT_USE_CUDA)
   target_link_libraries(
     Autograd
     INTERFACE
-    ArrayFire::afcuda
     ${CUDA_LIBRARIES}
     ${CUDNN_LIBRARIES}
     )
@@ -101,7 +97,6 @@ if (FLASHLIGHT_USE_CUDA)
     ${FLASHLIGHT_INCLUDE_DIR}
     ${CUDA_INCLUDE_DIRS}
     ${CUDNN_INCLUDE_DIRS}
-    ${ArrayFire_INCLUDE_DIRS}
     )
 
   target_compile_definitions(
@@ -132,7 +127,6 @@ if (FLASHLIGHT_USE_OPENCL)
   target_link_libraries(
     Autograd
     INTERFACE
-    ArrayFire::afopencl
     ${OpenCL_LIBRARIES}
     )
 
@@ -141,6 +135,5 @@ if (FLASHLIGHT_USE_OPENCL)
     INTERFACE
     ${FLASHLIGHT_INCLUDE_DIR}
     ${OpenCL_INCLUDE_DIRS}
-    ${ArrayFire_INCLUDE_DIRS}
     )
 endif ()
