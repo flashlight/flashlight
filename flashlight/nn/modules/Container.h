@@ -174,5 +174,4 @@ class Sequential : public Container {
 } // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::Container)
-
 CEREAL_REGISTER_TYPE(fl::Sequential)

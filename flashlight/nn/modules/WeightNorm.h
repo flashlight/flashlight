@@ -29,9 +29,11 @@ namespace fl {
  * Accelerate Training of Deep Neural Networks](
  * https://arxiv.org/abs/1602.07868)
  */
-class WeightNorm : public Container {
+class WeightNorm : public Module {
  private:
   WeightNorm() = default;
+
+  std::shared_ptr<Module> module_;
 
   // Computes the norm over all dimensions except dim_
   int dim_;
@@ -58,22 +60,24 @@ class WeightNorm : public Container {
    * @param dim The dimension to normalize.
    */
   template <class T>
-  WeightNorm(std::shared_ptr<T> module, int dim) : dim_(dim) {
-    add(module);
+  WeightNorm(std::shared_ptr<T> module, int dim)
+      : module_(module), dim_(dim) {
 
-    auto parent_params = modules_[0]->params();
-    auto v = parent_params[0];
+    auto module_params = module_->params();
+    auto v = module_params[0];
     transformDims();
     auto g = Variable(norm(v, normDim_).array(), true);
-    if (parent_params.size() == 2) {
-      auto b = parent_params[1];
+    if (module_params.size() == 2) {
+      auto b = module_params[1];
       params_ = {v, g, b};
-    } else if (parent_params.size() == 1) {
+    } else if (module_params.size() == 1) {
       params_ = {v, g};
     } else {
       throw std::invalid_argument("WeightNorm only supports Linear and Conv2D");
     }
   }
+
+  void train() override;
 
   void eval() override;
 
@@ -86,20 +90,20 @@ class WeightNorm : public Container {
 
 template <class Archive>
 void WeightNorm::save(Archive& ar, const uint32_t /* version */) const {
-  // Not saving weight since it can inferred from from v and g.
-  auto wt = modules_[0]->param(0);
-  modules_[0]->setParams(Variable(), 0);
-  ar(cereal::base_class<Container>(this), dim_, normDim_);
-  modules_[0]->setParams(wt, 0);
+  // Not saving weight since it can be inferred from from v and g.
+  auto wt = module_->param(0);
+  module_->setParams(Variable(), 0);
+  ar(cereal::base_class<Module>(this), module_, dim_, normDim_);
+  module_->setParams(wt, 0);
 }
 
 template <class Archive>
 void WeightNorm::load(Archive& ar, const uint32_t /* version */) {
-  ar(cereal::base_class<Container>(this), dim_, normDim_);
+  ar(cereal::base_class<Module>(this), module_, dim_, normDim_);
   computeWeight();
 }
 
 } // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::WeightNorm)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(fl::Container, fl::WeightNorm)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(fl::Module, fl::WeightNorm)

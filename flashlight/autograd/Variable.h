@@ -348,6 +348,9 @@ class Variable {
     GradFunc gradFunc{nullptr};
     /// Function applied to gradient after it's computed during bwd pass
     GradHook onGradAvailable{nullptr};
+
+   private:
+    FL_SAVE_LOAD(calcGrad);
   };
 
   std::shared_ptr<SharedData> sharedData_{std::make_shared<SharedData>()};
@@ -356,7 +359,7 @@ class Variable {
   // NB: array only; we don't try to serialize the autograd graph
   // Saving the sharedData ptr helps to avoid saving variables which share the
   // same underlying tensor twice
-  FL_SAVE_LOAD(sharedData_, sharedGrad_->calcGrad)
+  FL_SAVE_LOAD(sharedData_, sharedGrad_)
 };
 
 } // namespace fl

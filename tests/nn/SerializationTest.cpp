@@ -351,6 +351,24 @@ TEST(SerializationTest, VariableTwice) {
       static_cast<int64_t>(fileStat.st_size), paramsizebytes({v}) * kThreshold);
 }
 
+TEST(SerializationTest, ContainerBackward) {
+  auto seq = std::make_shared<Sequential>();
+  seq->add(Linear(10, 20));
+  seq->add(ReLU());
+  seq->add(Linear(20, 30));
+  save(getTmpPath("ContainerBackward"), static_cast<ModulePtr>(seq));
+
+  ModulePtr seq2;
+  load(getTmpPath("ContainerBackward"), seq2);
+
+  auto in = input(af::randu(10, 10));
+  auto output = seq2->forward({in}).front();
+  output.backward();
+  for (auto& p : seq2->params()) {
+    ASSERT_TRUE(p.isGradAvailable());
+  }
+}
+
 TEST(SerializationTest, ContainerWithParams) {
   auto seq = std::make_shared<ContainerTestClass>();
   seq->addParam(Variable(af::randu(5, 5), true));
