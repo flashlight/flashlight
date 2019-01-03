@@ -15,7 +15,7 @@ Build Requirements
 ~~~~~~~~~~~~~~~~~~
 
 - A C++ compiler with good C++ 11 support (e.g. g++ >= 4.8)
-- `cmake <https://cmake.org/>`_ -- version 3.5.1 or later, and ``mke``
+- `cmake <https://cmake.org/>`_ -- version 3.5.1 or later, and ``make``
 
 Dependencies
 ------------
