@@ -181,7 +181,6 @@ TEST(ModuleTest, RNNFwd) {
   int input_size = 4;
   int batch_size = 5;
   int seq_length = 6;
-  bool bidirectional = false;
 
   auto in = Variable(
       af::randu(input_size, batch_size, seq_length, af::dtype::f64), true);
@@ -193,18 +192,12 @@ TEST(ModuleTest, RNNFwd) {
   for (int i = 0; i < w.elements(); ++i) {
     w.array()(i) = (i + 1) * 0.01;
   }
-  auto out =
-      rnn(in,
-          Variable(),
-          Variable(),
-          w,
-          hidden_size,
-          num_layers,
-          mode,
-          bidirectional,
-          0.0);
+  auto rnn = RNN(input_size, hidden_size, num_layers, mode);
+  rnn.setParams(w, 0);
+
+  auto out = rnn(in);
   af::dim4 expected_dims(3, 5, 6);
-  ASSERT_EQ(std::get<0>(out).dims(), expected_dims);
+  ASSERT_EQ(out.dims(), expected_dims);
   // Calculated from Lua Torch Cudnn implementation
   std::array<double, 90> expected_out = {
       1.5418,  1.6389,  1.7361,  1.5491,  1.6472,  1.7452,  1.5564,  1.6554,
@@ -222,7 +215,7 @@ TEST(ModuleTest, RNNFwd) {
 
   auto expected_outVar =
       Variable(af::array(expected_dims, expected_out.data()), true);
-  ASSERT_TRUE(allClose(std::get<0>(out), expected_outVar, 1E-4));
+  ASSERT_TRUE(allClose(out, expected_outVar, 1E-4));
 }
 
 TEST(ModuleTest, ViewFwd) {

@@ -113,9 +113,7 @@ class RNN : public Module {
 
   std::tuple<Variable, Variable> operator()(
       const Variable& input,
-      const Variable& hidden_state) {
-    return forward(input, hidden_state);
-  }
+      const Variable& hidden_state);
 
   /** Forward the RNN Layer.
    * @param input Should be of shape [\f$X_{in}\f$, \f$N\f$, \f$T\f$]
@@ -139,9 +137,7 @@ class RNN : public Module {
   std::tuple<Variable, Variable, Variable> operator()(
       const Variable& input,
       const Variable& hidden_state,
-      const Variable& cell_state) {
-    return forward(input, hidden_state, cell_state);
-  }
+      const Variable& cell_state);
 
   std::string prettyString() const override;
 };
