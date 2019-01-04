@@ -113,15 +113,21 @@ Building/Running flashlight with Docker
 flashlight and its dependencies can also be built with the provided Dockerfile. Only the CUDA backend is supported with Docker at this time.
 
 To build flashlight with Docker:
- - Install `Docker <https://docs.docker.com/engine/installation/>`_  and `nvidia-docker <https://github.com/NVIDIA/nvidia-docker/>`_
- - Run the given Dockerfile in a new container:
+- Install `Docker <https://docs.docker.com/engine/installation/>`_  and `nvidia-docker <https://github.com/NVIDIA/nvidia-docker/>`_
+- Run the given Dockerfile in a new container:
 
 .. code-block:: shell
 
- sudo docker run --runtime=nvidia --rm -itd --ipc=host --name flashlight wave2letter/flashlight:cuda-latest
+ sudo docker run --runtime=nvidia --rm -itd --ipc=host --name flashlight flml/flashlight:cuda-latest
  sudo docker exec -it flashlight bash
 
- - Build Docker image from source:
+- to run tests inside a container
+
+.. code-block:: shell
+
+ cd /root/flashlight/build && make test
+
+- Build Docker image from source:
 
 .. code-block:: shell
 
@@ -159,7 +165,7 @@ Once flashlight is built and installed, including it in another project is simpl
 We can link flashlight with the following CMake configuration:
 
 .. code-block:: shell
-   
+
   # CMake 3.5.1+ is recommended
   cmake_minimum_required(VERSION 3.5.1)
   # C++ 11 is required
@@ -173,7 +179,7 @@ We can link flashlight with the following CMake configuration:
 
   find_package(flashlight REQUIRED)
   # ...
-  
+
   target_link_libraries(
     myProject
     PRIVATE

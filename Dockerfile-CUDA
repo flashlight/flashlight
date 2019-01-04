@@ -5,14 +5,11 @@
 # CUDA             9.2
 # CuDNN            7-dev
 # arrayfire        3.6.1    (git, CUDA backend)
-# googletest       master   (git)
-# OpenMPI          4.0.0    (bin)
+# OpenMPI          4.0.0    (.gz)
 # flashlight       master   (git, CUDA backend)
 # ==================================================================
 
 FROM nvidia/cuda:9.2-cudnn7-devel-ubuntu16.04
-RUN mkdir /tmp/flashlight
-COPY . /tmp/flashlight
 
 RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     rm -rf /var/lib/apt/lists/* \
@@ -44,15 +41,6 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     make -j8 && \
     make install && \
 # ==================================================================
-# GoogleTest https://github.com/google/googletest/
-# ------------------------------------------------------------------
-    cd /tmp && git clone --recursive https://github.com/google/googletest && \
-    cd googletest && \
-    mkdir build && cd build && \
-    cmake .. && \
-    make -j8 && \
-    make install && \
-# ==================================================================
 # OpenMPI https://www.open-mpi.org/
 # ------------------------------------------------------------------
     cd /tmp && wget https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.0.tar.gz && \
@@ -61,20 +49,23 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     ./configure --prefix=/usr/local && \
     make all install && \
 # ==================================================================
-# flashlight with GPU backend
-# ------------------------------------------------------------------
-    # If the driver is not found (during docker build) the cuda driver api need to be linked against the
-    # libcuda.so stub located in the lib[64]/stubs directory
-    ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/libcuda.so.1 && \
-    # to link correctly OpenMPI
-    ldconfig && \
-    cd /tmp/flashlight && mkdir -p build && \
-    cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CUDA && \
-    make -j8 && make install && \
-# ========================================================= =========
 # config & cleanup
 # ------------------------------------------------------------------
+    # at least to link correctly OpenMPI
     ldconfig && \
     apt-get clean && \
     apt-get autoremove && \
     rm -rf /var/lib/apt/lists/* /tmp/* ~/*
+
+RUN mkdir /root/flashlight
+COPY . /root/flashlight
+
+# ==================================================================
+# flashlight with GPU backend
+# ------------------------------------------------------------------
+# If the driver is not found (during docker build) the cuda driver api need to be linked against the
+# libcuda.so stub located in the lib[64]/stubs directory
+RUN ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/libcuda.so.1 && \
+    cd /root/flashlight && mkdir -p build && \
+    cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CUDA && \
+    make -j8 && make install
