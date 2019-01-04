@@ -6,7 +6,7 @@
  */
 
 #pragma once
-#include "Dataset.h"
+#include "flashlight/dataset/Dataset.h"
 
 namespace fl {
 

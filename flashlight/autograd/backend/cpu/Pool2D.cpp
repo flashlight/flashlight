@@ -7,10 +7,10 @@
 
 #include <stdexcept>
 
-#include <flashlight/autograd/Functions.h>
-#include <flashlight/autograd/Utils.h>
-#include <flashlight/autograd/Variable.h>
-#include <flashlight/common/DevicePtr.h>
+#include "flashlight/autograd/Functions.h"
+#include "flashlight/autograd/Utils.h"
+#include "flashlight/autograd/Variable.h"
+#include "flashlight/common/DevicePtr.h"
 
 namespace fl {
 

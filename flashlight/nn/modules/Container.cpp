@@ -13,9 +13,9 @@
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
 
-#include "Container.h"
+#include "flashlight/nn/modules/Container.h"
 
-#include <flashlight/autograd/Variable.h>
+#include "flashlight/autograd/Variable.h"
 
 namespace fl {
 

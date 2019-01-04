@@ -5,13 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <flashlight/autograd/Functions.h>
+#include "flashlight/autograd/Functions.h"
 
 #include <cudnn.h>
 
-#include <flashlight/autograd/Variable.h>
-#include <flashlight/common/DevicePtr.h>
-#include "CudnnUtils.h"
+#include "flashlight/autograd/Variable.h"
+#include "flashlight/common/DevicePtr.h"
+#include "flashlight/autograd/backend/cuda/CudnnUtils.h"
 
 namespace {
 struct RNNGradData {

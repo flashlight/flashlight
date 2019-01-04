@@ -15,9 +15,9 @@
 
 #include <stdexcept>
 
-#include "Loss.h"
+#include "flashlight/nn/modules/Loss.h"
 
-#include <flashlight/autograd/Functions.h>
+#include "flashlight/autograd/Functions.h"
 
 namespace fl {
 

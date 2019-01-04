@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "AverageValueMeter.h"
+#include "flashlight/meter/AverageValueMeter.h"
 
 #include <array>
 

@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include "Dataset.h"
+#include "flashlight/dataset/Dataset.h"
 
-#include <flashlight/common/threadpool/ThreadPool.h>
+#include "flashlight/common/threadpool/ThreadPool.h"
 
 namespace fl {
 

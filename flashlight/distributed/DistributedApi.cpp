@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "DistributedApi.h"
+#include "flashlight/distributed/DistributedApi.h"
 
 
 namespace fl {

@@ -8,7 +8,7 @@
 #include <array>
 #include <stdexcept>
 
-#include "TensorDataset.h"
+#include "flashlight/dataset/TensorDataset.h"
 
 namespace fl {
 

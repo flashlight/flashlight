@@ -7,11 +7,11 @@
 
 #include <stdexcept>
 
-#include "RNN.h"
+#include "flashlight/nn/modules/RNN.h"
 
-#include <flashlight/autograd/Functions.h>
-#include <flashlight/nn/Init.h>
-#include <flashlight/nn/Utils.h>
+#include "flashlight/autograd/Functions.h"
+#include "flashlight/nn/Init.h"
+#include "flashlight/nn/Utils.h"
 
 namespace fl {
 

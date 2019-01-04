@@ -7,11 +7,11 @@
 
 #include <stdexcept>
 
-#include "Pool2D.h"
+#include "flashlight/nn/modules/Pool2D.h"
 
-#include <flashlight/autograd/Functions.h>
-#include <flashlight/nn/Init.h>
-#include <flashlight/nn/Utils.h>
+#include "flashlight/autograd/Functions.h"
+#include "flashlight/nn/Init.h"
+#include "flashlight/nn/Utils.h"
 
 namespace fl {
 

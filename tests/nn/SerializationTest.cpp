@@ -14,8 +14,8 @@
 
 #include <arrayfire.h>
 
-#include <flashlight/autograd/autograd.h>
-#include <flashlight/nn/nn.h>
+#include "flashlight/autograd/autograd.h"
+#include "flashlight/nn/nn.h"
 
 using namespace fl;
 

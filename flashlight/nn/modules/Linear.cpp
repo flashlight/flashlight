@@ -15,11 +15,11 @@
 
 #include <stdexcept>
 
-#include "Linear.h"
+#include "flashlight/nn/modules/Linear.h"
 
-#include <flashlight/autograd/Functions.h>
-#include <flashlight/nn/Init.h>
-#include <flashlight/nn/Utils.h>
+#include "flashlight/autograd/Functions.h"
+#include "flashlight/nn/Init.h"
+#include "flashlight/nn/Utils.h"
 
 namespace fl {
 

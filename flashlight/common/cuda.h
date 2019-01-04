@@ -7,4 +7,4 @@
 
 #pragma once
 
-#include "CudaUtils.h"
+#include "flashlight/common/CudaUtils.h"

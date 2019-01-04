@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "Padding.h"
+#include "flashlight/nn/modules/Padding.h"
 
-#include <flashlight/autograd/Functions.h>
+#include "flashlight/autograd/Functions.h"
 
 namespace fl {
 

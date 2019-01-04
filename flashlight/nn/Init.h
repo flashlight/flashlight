@@ -24,8 +24,8 @@
 
 #pragma once
 
-#include <flashlight/autograd/Variable.h>
-#include <flashlight/common/Defines.h>
+#include "flashlight/autograd/Variable.h"
+#include "flashlight/common/Defines.h"
 
 namespace fl {
 

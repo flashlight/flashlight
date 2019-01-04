@@ -9,7 +9,7 @@
 
 #include <memory>
 
-#include <flashlight/nn/modules/Module.h>
+#include "flashlight/nn/modules/Module.h"
 
 namespace fl {
 

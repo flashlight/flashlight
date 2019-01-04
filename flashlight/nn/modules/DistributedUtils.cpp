@@ -7,9 +7,9 @@
 
 #include <stdexcept>
 
-#include "DistributedUtils.h"
+#include "flashlight/nn/modules/DistributedUtils.h"
 
-#include <flashlight/distributed/distributed.h>
+#include "flashlight/distributed/distributed.h"
 
 namespace fl {
 

@@ -154,4 +154,4 @@ void load(Archive& ar, af::array& arr, const uint32_t /* version */);
 
 } // namespace cereal
 
-#include "Serialization-inl.h"
+#include "flashlight/common/Serialization-inl.h"

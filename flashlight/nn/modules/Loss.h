@@ -15,8 +15,8 @@
 
 #pragma once
 
-#include <flashlight/common/Defines.h>
-#include "Container.h"
+#include "flashlight/common/Defines.h"
+#include "flashlight/nn/modules/Container.h"
 
 namespace fl {
 

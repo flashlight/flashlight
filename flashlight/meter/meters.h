@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include "AverageValueMeter.h"
-#include "CountMeter.h"
-#include "EditDistanceMeter.h"
-#include "FrameErrorMeter.h"
-#include "MSEMeter.h"
-#include "TimeMeter.h"
+#include "flashlight/meter/AverageValueMeter.h"
+#include "flashlight/meter/CountMeter.h"
+#include "flashlight/meter/EditDistanceMeter.h"
+#include "flashlight/meter/FrameErrorMeter.h"
+#include "flashlight/meter/MSEMeter.h"
+#include "flashlight/meter/TimeMeter.h"

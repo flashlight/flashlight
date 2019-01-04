@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "Variable.h"
+#include "flashlight/autograd/Variable.h"
 
 namespace fl {
 

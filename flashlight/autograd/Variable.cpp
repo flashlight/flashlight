@@ -13,7 +13,7 @@
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
 
-#include "Variable.h"
+#include "flashlight/autograd/Variable.h"
 
 #include <algorithm>
 #include <cassert>

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "FileStore.h"
+#include "flashlight/distributed/backend/utils/FileStore.h"
 
 #include <fcntl.h>
 #include <unistd.h>

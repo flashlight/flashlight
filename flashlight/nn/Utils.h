@@ -14,7 +14,7 @@
 
 #include <af/dim4.hpp>
 
-#include <flashlight/common/Defines.h>
+#include "flashlight/common/Defines.h"
 
 namespace fl {
 namespace detail {

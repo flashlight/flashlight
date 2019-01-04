@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "CudnnUtils.h"
+#include "flashlight/autograd/backend/cuda/CudnnUtils.h"
 
 #include <array>
 #include <stdexcept>
@@ -14,8 +14,8 @@
 #include <af/cuda.h>
 #include <af/internal.h>
 
-#include <flashlight/common/CudaUtils.h>
-#include <flashlight/common/DevicePtr.h>
+#include "flashlight/common/CudaUtils.h"
+#include "flashlight/common/DevicePtr.h"
 
 namespace {
 

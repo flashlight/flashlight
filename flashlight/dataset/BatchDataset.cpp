@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "BatchDataset.h"
+#include "flashlight/dataset/BatchDataset.h"
 
 #include <math.h>
 #include <array>

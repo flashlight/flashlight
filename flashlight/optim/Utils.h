@@ -9,7 +9,7 @@
 
 #include <vector>
 
-#include <flashlight/autograd/Variable.h>
+#include "flashlight/autograd/Variable.h"
 
 namespace fl {
 

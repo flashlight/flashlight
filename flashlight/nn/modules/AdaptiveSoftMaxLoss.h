@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "Loss.h"
+#include "flashlight/nn/modules/Loss.h"
 
 namespace fl {
 

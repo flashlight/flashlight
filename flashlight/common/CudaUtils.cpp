@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "CudaUtils.h"
+#include "flashlight/common/CudaUtils.h"
 
 #include <af/device.h>
 

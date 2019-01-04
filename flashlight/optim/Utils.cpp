@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "Utils.h"
+#include "flashlight/optim/Utils.h"
 
 namespace fl {
 

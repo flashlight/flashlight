@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "Embedding.h"
+#include "flashlight/nn/modules/Embedding.h"
 
-#include <flashlight/autograd/Functions.h>
-#include <flashlight/nn/Init.h>
+#include "flashlight/autograd/Functions.h"
+#include "flashlight/nn/Init.h"
 
 namespace fl {
 

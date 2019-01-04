@@ -18,11 +18,11 @@
 // PyTorch - https://git.io/fNx6T
 
 
-#include "Init.h"
+#include "flashlight/nn/Init.h"
 
 #include <cmath>
 
-#include "Utils.h"
+#include "flashlight/nn/Utils.h"
 
 namespace fl {
 

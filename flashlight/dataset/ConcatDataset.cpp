@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "ConcatDataset.h"
+#include "flashlight/dataset/ConcatDataset.h"
 
 #include <algorithm>
 #include <stdexcept>

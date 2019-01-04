@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "Module.h"
+#include "flashlight/nn/modules/Module.h"
 
 namespace fl {
 

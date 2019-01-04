@@ -7,7 +7,7 @@
 
 #include <stdexcept>
 
-#include "CountMeter.h"
+#include "flashlight/meter/CountMeter.h"
 
 namespace fl {
 

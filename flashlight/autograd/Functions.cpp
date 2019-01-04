@@ -19,8 +19,8 @@
 
 #include <af/internal.h>
 
-#include "Functions.h"
-#include "Variable.h"
+#include "flashlight/autograd/Functions.h"
+#include "flashlight/autograd/Variable.h"
 
 namespace fl {
 namespace detail {

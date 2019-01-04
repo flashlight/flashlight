@@ -13,8 +13,8 @@
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
 
-#include <flashlight/nn/nn.h>
-#include <flashlight/optim/optim.h>
+#include "flashlight/nn/nn.h"
+#include "flashlight/optim/optim.h"
 
 #include <array>
 #include <iostream>

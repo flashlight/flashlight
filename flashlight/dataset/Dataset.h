@@ -14,7 +14,7 @@
 
 #include <arrayfire.h>
 
-#include "DatasetIterator.h"
+#include "flashlight/dataset/DatasetIterator.h"
 
 namespace fl {
 

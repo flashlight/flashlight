@@ -16,6 +16,6 @@
 
 #pragma once
 
-#include "Init.h"
-#include "Utils.h"
-#include "modules/modules.h"
+#include "flashlight/nn/Init.h"
+#include "flashlight/nn/Utils.h"
+#include "flashlight/nn/modules/modules.h"

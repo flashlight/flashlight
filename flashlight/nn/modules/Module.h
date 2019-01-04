@@ -15,8 +15,8 @@
 
 #pragma once
 
-#include <flashlight/autograd/Variable.h>
-#include <flashlight/common/Serialization.h>
+#include "flashlight/autograd/Variable.h"
+#include "flashlight/common/Serialization.h"
 
 #include <stdexcept>
 #include <string>

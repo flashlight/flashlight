@@ -9,7 +9,7 @@
 
 #include <iterator>
 
-#include "arrayfire.h"
+#include <arrayfire.h>
 
 namespace fl {
 namespace detail {

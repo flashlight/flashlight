@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <flashlight/distributed/DistributedApi.h>
+#include "flashlight/distributed/DistributedApi.h"
 
 #include <iostream>
 #include <list>
@@ -19,7 +19,7 @@
 #include <gloo/transport/tcp/device.h>
 #include <mpi.h>
 
-#include <flashlight/distributed/backend/utils/LRUCache.h>
+#include "flashlight/distributed/backend/utils/LRUCache.h"
 
 namespace {
 std::shared_ptr<gloo::mpi::Context> glooContext_;

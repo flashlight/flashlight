@@ -13,9 +13,9 @@
 #include <mpi.h>
 #include <nccl.h>
 
-#include <flashlight/common/CudaUtils.h>
-#include <flashlight/distributed/DistributedApi.h>
-#include <flashlight/distributed/backend/utils/FileStore.h>
+#include "flashlight/common/CudaUtils.h"
+#include "flashlight/distributed/DistributedApi.h"
+#include "flashlight/distributed/backend/utils/FileStore.h"
 
 #define NCCLCHECK(expr) ::fl::detail::ncclCheck((expr))
 #define MPICHECK(expr) ::fl::detail::mpiCheck((expr))

@@ -7,13 +7,13 @@
 
 #pragma once
 
-#include "BatchDataset.h"
-#include "ConcatDataset.h"
-#include "Dataset.h"
-#include "DatasetIterator.h"
-#include "MergeDataset.h"
-#include "PrefetchDataset.h"
-#include "ResampleDataset.h"
-#include "ShuffleDataset.h"
-#include "TensorDataset.h"
-#include "TransformDataset.h"
+#include "flashlight/dataset/BatchDataset.h"
+#include "flashlight/dataset/ConcatDataset.h"
+#include "flashlight/dataset/Dataset.h"
+#include "flashlight/dataset/DatasetIterator.h"
+#include "flashlight/dataset/MergeDataset.h"
+#include "flashlight/dataset/PrefetchDataset.h"
+#include "flashlight/dataset/ResampleDataset.h"
+#include "flashlight/dataset/ShuffleDataset.h"
+#include "flashlight/dataset/TensorDataset.h"
+#include "flashlight/dataset/TransformDataset.h"

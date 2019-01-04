@@ -7,7 +7,7 @@
 
 #include <stdexcept>
 
-#include "MSEMeter.h"
+#include "flashlight/meter/MSEMeter.h"
 
 namespace fl {
 MSEMeter::MSEMeter() {

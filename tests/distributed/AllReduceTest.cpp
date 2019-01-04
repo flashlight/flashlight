@@ -10,7 +10,7 @@
 
 #include <gtest/gtest.h>
 
-#include <flashlight/distributed/distributed.h>
+#include "flashlight/distributed/distributed.h"
 
 using namespace fl;
 

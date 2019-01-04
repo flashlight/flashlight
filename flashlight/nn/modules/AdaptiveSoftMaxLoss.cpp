@@ -7,10 +7,10 @@
 
 #include <stdexcept>
 
-#include "AdaptiveSoftMaxLoss.h"
+#include "flashlight/nn/modules/AdaptiveSoftMaxLoss.h"
 
-#include <flashlight/autograd/Functions.h>
-#include <flashlight/nn/Init.h>
+#include "flashlight/autograd/Functions.h"
+#include "flashlight/nn/Init.h"
 
 namespace fl {
 

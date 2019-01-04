@@ -25,7 +25,7 @@
 #include <stdexcept>
 
 #include <arrayfire.h>
-#include <flashlight/flashlight.h>
+#include "flashlight/flashlight.h"
 
 using namespace af;
 using namespace fl;

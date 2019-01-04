@@ -13,10 +13,10 @@
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
 
-#include "Activations.h"
+#include "flashlight/nn/modules/Activations.h"
 
-#include <flashlight/autograd/Functions.h>
-#include <flashlight/nn/Init.h>
+#include "flashlight/autograd/Functions.h"
+#include "flashlight/nn/Init.h"
 
 namespace fl {
 

@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "Defines.h"
-#include "DevicePtr.h"
-#include "Serialization.h"
-#include "Utils.h"
-#include "threadpool/ThreadPool.h"
+#include "flashlight/common/Defines.h"
+#include "flashlight/common/DevicePtr.h"
+#include "flashlight/common/Serialization.h"
+#include "flashlight/common/Utils.h"
+#include "flashlight/common/threadpool/ThreadPool.h"

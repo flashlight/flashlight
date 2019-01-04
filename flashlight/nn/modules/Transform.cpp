@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "Transform.h"
+#include "flashlight/nn/modules/Transform.h"
 
-#include <flashlight/autograd/Variable.h>
+#include "flashlight/autograd/Variable.h"
 
 namespace fl {
 

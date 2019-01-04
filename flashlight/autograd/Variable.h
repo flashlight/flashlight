@@ -21,7 +21,7 @@
 #include <vector>
 
 #include <arrayfire.h>
-#include <flashlight/common/Serialization.h>
+#include "flashlight/common/Serialization.h"
 
 namespace fl {
 

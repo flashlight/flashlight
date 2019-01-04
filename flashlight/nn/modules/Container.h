@@ -22,7 +22,7 @@
 #include <cereal/types/tuple.hpp>
 #include <cereal/types/unordered_map.hpp>
 
-#include "Module.h"
+#include "flashlight/nn/modules/Module.h"
 
 namespace fl {
 

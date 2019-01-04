@@ -7,9 +7,9 @@
 
 #include <stdexcept>
 
-#include "Conv2D.h"
-#include "Linear.h"
-#include "WeightNorm.h"
+#include "flashlight/nn/modules/Conv2D.h"
+#include "flashlight/nn/modules/Linear.h"
+#include "flashlight/nn/modules/WeightNorm.h"
 
 namespace fl {
 

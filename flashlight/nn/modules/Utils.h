@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include "Module.h"
+#include "flashlight/nn/modules/Module.h"
 
-#include <flashlight/common/Defines.h>
+#include "flashlight/common/Defines.h"
 
 namespace fl {
 

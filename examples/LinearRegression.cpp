@@ -7,7 +7,7 @@
 
 #include <iostream>
 
-#include <flashlight/flashlight.h>
+#include "flashlight/flashlight.h"
 
 int main() {
   af::info();

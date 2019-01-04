@@ -7,7 +7,7 @@
 
 #include <stdexcept>
 
-#include "PrefetchDataset.h"
+#include "flashlight/dataset/PrefetchDataset.h"
 
 namespace fl {
 

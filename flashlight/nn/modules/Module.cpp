@@ -15,11 +15,11 @@
 
 #include <stdexcept>
 
-#include "Module.h"
+#include "flashlight/nn/modules/Module.h"
 
 #include <cereal/cereal.hpp>
 
-#include <flashlight/nn/Init.h>
+#include "flashlight/nn/Init.h"
 
 namespace fl {
 
