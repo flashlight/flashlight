@@ -42,19 +42,23 @@ Now, we construct the model:
 
   Sequential model;
   auto pad = PaddingMode::SAME;
-  model.add(Conv2D(1 /* input channels */,
-                   32 /* output channels */,
-                   5 /* kernel width */,
-                   5 /* kernel height */,
-                   1 /* stride x */,
-                   1 /* stride y */,
-                   pad /* padding mode */));
+  model.add(View(af::dim4(IM_DIM, IM_DIM, 1, -1)));
+  model.add(Conv2D(
+      1 /* input channels */,
+      32 /* output channels */,
+      5 /* kernel width */,
+      5 /* kernel height */,
+      1 /* stride x */,
+      1 /* stride y */,
+      pad /* padding mode */,
+      pad /* padding mode */));
   model.add(ReLU());
-  model.add(Pool2D(2 /* kernel width */,
-                   2 /* kernel height */,
-                   2 /* stride x */,
-                   2 /* stride y */));
-  model.add(Conv2D(32, 64, 5, 5, 1, 1, pad));
+  model.add(Pool2D(
+      2 /* kernel width */,
+      2 /* kernel height */,
+      2 /* stride x */,
+      2 /* stride y */));
+  model.add(Conv2D(32, 64, 5, 5, 1, 1, pad, pad));
   model.add(ReLU());
   model.add(Pool2D(2, 2, 2, 2));
   model.add(View({7 * 7 * 64, -1}));
