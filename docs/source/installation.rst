@@ -41,7 +41,7 @@ CUDA Backend Dependencies
 -------------------------
 
 - CUDA >= 9.2 is required. flashlight has been tested with `CUDA 9.2 <https://developer.nvidia.com/cuda-92-download-archive>`_.
-- CUDNN >= 7.2.1 is required. flashlight has been tested with `CUDNN 7.2.1 <https://developer.nvidia.com/rdp/cudnn-archive>`_.
+- CUDNN >= 7.1.2 is required. flashlight has been tested with `CUDNN 7.1.2 <https://developer.nvidia.com/rdp/cudnn-archive>`_.
 
 CPU Backend Dependencies
 ------------------------

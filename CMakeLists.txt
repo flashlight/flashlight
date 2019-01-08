@@ -113,7 +113,7 @@ if (FLASHLIGHT_USE_CUDA)
      message(FATAL_ERROR "CUDA required to build CUDA backend")
    endif()
    
-   find_package(CUDNN 7.2 QUIET) # CUDNN 7.2 works with CUDA 9.2
+   find_package(CUDNN 7.1 QUIET) # CUDNN 7.1 works with CUDA 9.2
    if (CUDNN_FOUND)
      message(STATUS "CUDNN found (library: ${CUDNN_LIBRARIES} include: ${CUDNN_INCLUDE_DIRS})")
    else()
