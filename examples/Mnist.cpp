@@ -80,6 +80,7 @@ int main(int argc, char** argv) {
   if (argc != 2) {
     throw af::exception("You must pass a data directory.");
   }
+  af::setSeed(1);
   std::string data_dir = argv[1];
 
   float learning_rate = 1e-2;

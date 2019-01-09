@@ -12,6 +12,8 @@
 #include <arrayfire.h>
 #include <mkldnn.hpp>
 
+#include <flashlight/common/Defines.h>
+
 namespace fl {
 namespace detail {
 
@@ -72,6 +74,27 @@ mkldnn::memory mkldnnAlignOrdering(
     std::vector<mkldnn::primitive>& net,
     const mkldnn::memory& memory,
     const mkldnn::memory::primitive_desc& desc);
+
+/**
+ * Given a flashlight pooling mode, returns the corresponding mkldnn pooling
+ * mode.
+ */
+mkldnn::algorithm mkldnnMapToPoolingMode(const PoolingMode mode);
+
+/**
+ * Maps an ArrayFire array datatype into the corresponding MKL-DNN datatype.
+ *
+ * Needs to be explicitly inlined due to a bug with MKL-DNN.
+ */
+inline mkldnn::memory::data_type mkldnnMapToType(const af::dtype t) {
+  if (t == af::dtype::f32) {
+    return mkldnn::memory::data_type::f32;
+  } else if (t == af::dtype::f64) {
+    throw std::invalid_argument("float64 is not supported by MKL-DNN");
+  } else {
+    throw std::invalid_argument("data type not supported with MKL-DNN");
+  }
+}
 
 } // namespace detail
 } // namespace fl

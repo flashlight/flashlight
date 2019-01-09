@@ -7,6 +7,8 @@
 
 #include "flashlight/autograd/backend/cpu/MkldnnUtils.h"
 
+#include <flashlight/common/Defines.h>
+
 namespace fl {
 namespace detail {
 
@@ -45,6 +47,19 @@ mkldnn::memory mkldnnAlignOrdering(
     net.push_back(mkldnn::reorder(memory, memoryOut));
   }
   return memoryOut;
+}
+
+mkldnn::algorithm mkldnnMapToPoolingMode(const PoolingMode mode) {
+  switch (mode) {
+    case PoolingMode::MAX:
+      return mkldnn::pooling_max;
+    case PoolingMode::AVG_INCLUDE_PADDING:
+      return mkldnn::pooling_avg_include_padding;
+    case PoolingMode::AVG_EXCLUDE_PADDING:
+      return mkldnn::pooling_avg_exclude_padding;
+    default:
+      throw std::invalid_argument("unsupported pooling mode for cuDNN");
+  }
 }
 
 } // namespace detail

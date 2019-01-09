@@ -17,9 +17,9 @@
 #include <functional>
 #include <stdexcept>
 
+#include <gtest/gtest.h>
 #include "flashlight/autograd/autograd.h"
 #include "flashlight/common/common.h"
-#include <gtest/gtest.h>
 
 using namespace fl;
 
@@ -32,7 +32,8 @@ bool jacobianTestImpl(
     float precision = 1E-5,
     float perturbation = 1E-4) {
   auto fwd_jacobian =
-      af::array(func(input).elements(), input.elements(), af::dtype::f64);
+      af::array(func(input).elements(), input.elements(), af::dtype::f32);
+
   for (int i = 0; i < input.elements(); ++i) {
     af::array orig = input.array()(i);
     input.array()(i) = orig - perturbation;
@@ -46,7 +47,7 @@ bool jacobianTestImpl(
   }
 
   auto bwd_jacobian =
-      af::array(func(input).elements(), input.elements(), af::dtype::f64);
+      af::array(func(input).elements(), input.elements(), af::dtype::f32);
   auto dout =
       Variable(af::constant(0, func(input).dims(), input.type()), false);
   for (int i = 0; i < dout.elements(); ++i) {
@@ -560,7 +561,7 @@ TEST(AutogradTest, BinaryCrossEntropy) {
 TEST(AutogradTest, CrossEntropy) {
   auto in = Variable(af::randu(7, 10, 1, 1, af::dtype::f64), true);
   af::dim4 dims(10, 1, 1, 1);
-  auto y = Variable(af::constant(1.0, dims, af::dtype::f32), false);
+  auto y = Variable(af::constant(1.0, dims, af::dtype::f64), false);
 
   auto func_crossent_mean = [&](Variable& input) {
     return categoricalCrossEntropy(input, y);

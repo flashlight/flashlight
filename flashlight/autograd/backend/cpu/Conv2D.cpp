@@ -14,8 +14,8 @@
 
 #include "flashlight/autograd/Functions.h"
 #include "flashlight/autograd/Variable.h"
-#include "flashlight/common/DevicePtr.h"
 #include "flashlight/autograd/backend/cpu/MkldnnUtils.h"
+#include "flashlight/common/DevicePtr.h"
 
 using namespace mkldnn;
 
@@ -24,15 +24,10 @@ namespace fl {
 namespace {
 
 // Input, output: WHCN; weights: WHIO
-constexpr size_t kInputWIdx = 0;
-constexpr size_t kInputHIdx = 1;
-constexpr size_t kKernelWIdx = 0;
-constexpr size_t kKernelHIdx = 1;
-constexpr size_t kOutputChannelSizeIdx = 2;
-constexpr size_t kInputBatchSizeIdx = 3;
-constexpr size_t kInputChannelSizeIdx = 2;
-constexpr size_t kOutputWIdx = 0;
-constexpr size_t kOutputHIdx = 1;
+constexpr size_t kWIdx = 0;
+constexpr size_t kHIdx = 1;
+constexpr size_t kIOChannelSizeIdx = 2;
+constexpr size_t kIOBatchSizeIdx = 3;
 constexpr size_t kWeightOutputChannelSizeIdx = 3;
 
 } // namespace
@@ -59,21 +54,21 @@ Variable conv2d(
     int py,
     int groups) {
   auto output = af::array(
-      (input.dims(kInputWIdx) + (2 * px) - weights.dims(kKernelWIdx)) / sx + 1,
-      (input.dims(kInputHIdx) + (2 * py) - weights.dims(kKernelHIdx)) / sy + 1,
+      (input.dims(kWIdx) + (2 * px) - weights.dims(kWIdx)) / sx + 1,
+      (input.dims(kHIdx) + (2 * py) - weights.dims(kHIdx)) / sy + 1,
       weights.dims(kWeightOutputChannelSizeIdx),
-      input.dims(kInputBatchSizeIdx));
+      input.dims(kIOBatchSizeIdx));
   auto hasBias = bias.elements() > 0;
 
   // flashlight input, weight, and output shapes in column-major:
-  // Input is WHCN
-  // Weights are WHIO
-  // Output is WHCN
+  // - Input is WHCN
+  // - Weights are WHIO
+  // - Output is WHCN
   // Since ArrayFire is column major, getting a raw pointer (1D representation)
   // of these shapes and viewing as if the representation is row major
   // transposes along all axis into NCHW for the input and output and OIHW for
   // the weights - these are the shapes we use for the convolution.
-  auto dataType = memory::data_type::f32; // float 32 by default, configurable
+  auto dataType = detail::mkldnnMapToType(input.type());
   // Use memory::format::any for memory formatting even if convolution inputs
   // are shaped a particular way.
   auto formatAny = memory::format::any;
@@ -87,30 +82,30 @@ Variable conv2d(
   /********************************* Forward *******************************/
   // Create memory dims
   memory::dims mInputDims =
-      detail::convertAfToMklDnnDims({input.dims(kInputBatchSizeIdx),
-                                     input.dims(kInputChannelSizeIdx),
-                                     input.dims(kInputHIdx),
-                                     input.dims(kInputWIdx)});
+      detail::convertAfToMklDnnDims({input.dims(kIOBatchSizeIdx),
+                                     input.dims(kIOChannelSizeIdx),
+                                     input.dims(kHIdx),
+                                     input.dims(kWIdx)});
   memory::dims mWeightDims;
   if (groups == 1) {
     mWeightDims = detail::convertAfToMklDnnDims(
         {weights.dims(kWeightOutputChannelSizeIdx),
-         input.dims(kInputChannelSizeIdx),
-         weights.dims(kKernelHIdx),
-         weights.dims(kKernelWIdx)});
+         input.dims(kIOChannelSizeIdx),
+         weights.dims(kHIdx),
+         weights.dims(kWIdx)});
   } else {
     mWeightDims = detail::convertAfToMklDnnDims(
         {groups,
          weights.dims(kWeightOutputChannelSizeIdx) / groups,
-         input.dims(kInputChannelSizeIdx) / groups,
-         weights.dims(kKernelHIdx),
-         weights.dims(kKernelWIdx)});
+         input.dims(kIOChannelSizeIdx) / groups,
+         weights.dims(kHIdx),
+         weights.dims(kWIdx)});
   }
   memory::dims mOutputDims =
-      detail::convertAfToMklDnnDims({input.dims(kInputBatchSizeIdx),
+      detail::convertAfToMklDnnDims({input.dims(kIOBatchSizeIdx),
                                      weights.dims(kWeightOutputChannelSizeIdx),
-                                     output.dims(kOutputHIdx),
-                                     output.dims(kOutputWIdx)});
+                                     output.dims(kHIdx),
+                                     output.dims(kWIdx)});
   memory::dims mBiasDims = detail::convertAfToMklDnnDims(
       {weights.dims(kWeightOutputChannelSizeIdx)});
   memory::dims mStrideDims = {sy, sx};
