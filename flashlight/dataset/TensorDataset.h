@@ -37,9 +37,9 @@ class TensorDataset : public Dataset {
    */
   explicit TensorDataset(const std::vector<af::array>& datatensors);
 
-  virtual int64_t size() const override;
+  int64_t size() const override;
 
-  virtual std::vector<af::array> get(const int64_t idx) const override;
+  std::vector<af::array> get(const int64_t idx) const override;
 
  private:
   std::vector<af::array> dataTensors_;

@@ -59,11 +59,11 @@ class LMDataset : public Dataset {
       int time_steps,
       Preprocessor& preproc);
 
-  virtual int64_t size() const override {
+  int64_t size() const override {
     return (data.dims(1) - 1) / time_steps;
   }
 
-  virtual std::vector<af::array> get(const int64_t idx) const override;
+  std::vector<af::array> get(const int64_t idx) const override;
 
  private:
   int time_steps;

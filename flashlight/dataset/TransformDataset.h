@@ -44,9 +44,9 @@ class TransformDataset : public Dataset {
       std::shared_ptr<const Dataset> dataset,
       const std::vector<TransformFunction>& transformfns);
 
-  virtual int64_t size() const override;
+  int64_t size() const override;
 
-  virtual std::vector<af::array> get(const int64_t idx) const override;
+  std::vector<af::array> get(const int64_t idx) const override;
 
  private:
   std::shared_ptr<const Dataset> dataset_;

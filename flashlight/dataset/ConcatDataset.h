@@ -43,9 +43,9 @@ class ConcatDataset : public Dataset {
   explicit ConcatDataset(
       const std::vector<std::shared_ptr<const Dataset>>& datasets);
 
-  virtual int64_t size() const override;
+  int64_t size() const override;
 
-  virtual std::vector<af::array> get(const int64_t idx) const override;
+  std::vector<af::array> get(const int64_t idx) const override;
 
  private:
   std::vector<std::shared_ptr<const Dataset>> datasets_;

@@ -61,9 +61,9 @@ class BatchDataset : public Dataset {
       PermutationFunction permutationfn = nullptr,
       BatchFunction batchfn = nullptr);
 
-  virtual int64_t size() const override;
+  int64_t size() const override;
 
-  virtual std::vector<af::array> get(const int64_t idx) const override;
+  std::vector<af::array> get(const int64_t idx) const override;
 
  private:
   std::shared_ptr<const Dataset> dataset_;

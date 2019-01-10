@@ -50,7 +50,7 @@ class Transform : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
-  virtual std::string prettyString() const override;
+  std::string prettyString() const override;
 };
 
 template <class Archive>

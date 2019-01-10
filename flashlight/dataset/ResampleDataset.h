@@ -56,9 +56,9 @@ class ResampleDataset : public Dataset {
       std::shared_ptr<const Dataset> dataset,
       const PermutationFunction& resamplefn);
 
-  virtual int64_t size() const override;
+  int64_t size() const override;
 
-  virtual std::vector<af::array> get(const int64_t idx) const override;
+  std::vector<af::array> get(const int64_t idx) const override;
 
   /**
    * Changes the permutation used to resample the dataset.
