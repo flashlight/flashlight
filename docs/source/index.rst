@@ -19,6 +19,7 @@ A C++ library for machine learning.
    distributed
    serialization
    extend
+   debugging
 
 .. toctree::
    :caption: API REFERENCE
