@@ -35,9 +35,7 @@ PrefetchDataset::PrefetchDataset(
 }
 
 std::vector<af::array> PrefetchDataset::get(int64_t idx) const {
-  if (!(idx >= 0 && idx < size())) {
-    throw std::out_of_range("PrefetchDataset idx out of range");
-  }
+  checkIndexBounds(idx);
 
   if (numThreads_ == 0) {
     return dataset_->get(idx);

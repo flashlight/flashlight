@@ -60,9 +60,7 @@ void ResampleDataset::resample(std::vector<int64_t> resamplevec) {
 }
 
 std::vector<af::array> ResampleDataset::get(const int64_t idx) const {
-  if (!(idx >= 0 && idx < size())) {
-    throw std::out_of_range("ResampleDataset idx out of range");
-  }
+  checkIndexBounds(idx);
   return dataset_->get(resampleVec_[idx]);
 }
 

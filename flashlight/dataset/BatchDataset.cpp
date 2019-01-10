@@ -50,9 +50,7 @@ BatchDataset::BatchDataset(
 }
 
 std::vector<af::array> BatchDataset::get(const int64_t idx) const {
-  if (!(idx >= 0 && idx < size())) {
-    throw std::out_of_range("BatchDataset idx out of range");
-  }
+  checkIndexBounds(idx);
 
   std::vector<std::vector<af::array>> buffer;
 

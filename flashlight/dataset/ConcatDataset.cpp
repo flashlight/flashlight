@@ -25,9 +25,7 @@ ConcatDataset::ConcatDataset(
 }
 
 std::vector<af::array> ConcatDataset::get(const int64_t idx) const {
-  if (!(idx >= 0 && idx < size())) {
-    throw std::out_of_range("ConcatDataset idx out of range");
-  }
+  checkIndexBounds(idx);
 
   // get sample from correct dataset
   int64_t datasetidx =

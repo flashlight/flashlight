@@ -21,9 +21,7 @@ TransformDataset::TransformDataset(
 }
 
 std::vector<af::array> TransformDataset::get(const int64_t idx) const {
-  if (!(idx >= 0 && idx < size())) {
-    throw std::out_of_range("TransformDataset idx out of range");
-  }
+  checkIndexBounds(idx);
 
   auto result = dataset_->get(idx);
 

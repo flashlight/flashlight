@@ -20,9 +20,7 @@ MergeDataset::MergeDataset(
 }
 
 std::vector<af::array> MergeDataset::get(const int64_t idx) const {
-  if (!(idx >= 0 && idx < size())) {
-    throw std::out_of_range("MergeDataset idx out of range");
-  }
+  checkIndexBounds(idx);
 
   std::vector<af::array> result;
   for (auto dataset : datasets_) {

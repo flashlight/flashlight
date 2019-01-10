@@ -29,9 +29,7 @@ TensorDataset::TensorDataset(const std::vector<af::array>& datatensors)
 }
 
 std::vector<af::array> TensorDataset::get(const int64_t idx) const {
-  if (!(idx >= 0 && idx < size())) {
-    throw std::out_of_range("TensorDataset idx out of range");
-  }
+  checkIndexBounds(idx);
   std::vector<af::array> result(dataTensors_.size());
   for (int64_t i = 0; i < dataTensors_.size(); ++i) {
     std::array<af::seq, 4> sel{af::span, af::span, af::span, af::span};
