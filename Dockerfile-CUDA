@@ -4,8 +4,8 @@
 # Ubuntu           16.04
 # CUDA             9.2
 # CuDNN            7-dev
-# arrayfire        3.6.1    (git, CUDA backend)
-# OpenMPI          4.0.0    (.gz)
+# arrayfire        3.6.2    (git, CUDA backend)
+# OpenMPI          latest   (apt)
 # flashlight       master   (git, CUDA backend)
 # ==================================================================
 
@@ -29,29 +29,22 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         g++ \
         # ssh for OpenMPI
         openssh-server openssh-client \
+        # OpenMPI
+        libopenmpi-dev libomp-dev \
         # nccl: for flashlight
         libnccl2 libnccl-dev && \
 # ==================================================================
 # arrayfire https://github.com/arrayfire/arrayfire/wiki/
 # ------------------------------------------------------------------
     cd /tmp && git clone --recursive https://github.com/arrayfire/arrayfire.git && \
-    cd arrayfire && git checkout b443e14 && \
+    cd arrayfire && git checkout v3.6.2 && \
     mkdir build && cd build && \
-    cmake .. -DCMAKE_BUILD_TYPE=Release -DAF_BUILD_CPU=OFF -DAF_BUILD_OPENCL=OFF -DAF_BUILD_EXAMPLES=OFF && \
+    CXXFLAGS=-DOS_LNX cmake .. -DCMAKE_BUILD_TYPE=Release -DAF_BUILD_CPU=OFF -DAF_BUILD_OPENCL=OFF -DAF_BUILD_EXAMPLES=OFF && \
     make -j8 && \
     make install && \
 # ==================================================================
-# OpenMPI https://www.open-mpi.org/
-# ------------------------------------------------------------------
-    cd /tmp && wget https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.0.tar.gz && \
-    gunzip -c openmpi-4.0.0.tar.gz | tar xf - && \
-    cd openmpi-4.0.0 && \
-    ./configure --prefix=/usr/local && \
-    make all install && \
-# ==================================================================
 # config & cleanup
 # ------------------------------------------------------------------
-    # at least to link correctly OpenMPI
     ldconfig && \
     apt-get clean && \
     apt-get autoremove && \

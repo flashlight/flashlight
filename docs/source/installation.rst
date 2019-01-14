@@ -110,15 +110,20 @@ Building flashlight on Windows is not supported at this time (coming soon).
 
 Building/Running flashlight with Docker
 ---------------------------------------
-flashlight and its dependencies can also be built with the provided Dockerfile. Only the CUDA backend is supported with Docker at this time.
+flashlight and its dependencies can also be built with the provided Dockerfile.
 
 To build flashlight with Docker:
-- Install `Docker <https://docs.docker.com/engine/installation/>`_  and `nvidia-docker <https://github.com/NVIDIA/nvidia-docker/>`_
+
+- Install `Docker <https://docs.docker.com/engine/installation/>`_
+- For CUDA backend install `nvidia-docker <https://github.com/NVIDIA/nvidia-docker/>`_
 - Run the given Dockerfile in a new container:
 
 .. code-block:: shell
-
+ # for CUDA backend
  sudo docker run --runtime=nvidia --rm -itd --ipc=host --name flashlight flml/flashlight:cuda-latest
+ # for CPU backend
+ sudo docker run --rm -itd --name flashlight flml/flashlight:cpu-latest
+ # go to terminal in the container
  sudo docker exec -it flashlight bash
 
 - to run tests inside a container
@@ -133,7 +138,10 @@ To build flashlight with Docker:
 
  git clone --recursive https://github.com/facebookresearch/flashlight.git
  cd flashlight
+ # for CUDA backend
  sudo docker build -f ./Dockerfile-CUDA -t flashlight .
+ # for CPU backend
+ sudo docker build -f ./Dockerfile-CPU -t flashlight .
 
 Building Your Project with flashlight
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
