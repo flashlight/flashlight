@@ -20,8 +20,8 @@ namespace fl {
  * and generates an output of shape [\f$X_{out}\f$, \f$Y_{out}\f$,
  * \f$C_{out}\f$, \f$N\f$]
  * where \f$C_{out}\f$ is the number of output channels,
- *  \f[X_{out} = \frac{X_{in} + 2 \times X_{pad} - 1}{X_{stride}} + 1\f] and
- *  \f[Y_{out} = \frac{Y_{in} + 2 \times Y_{pad} - 1}{Y_{stride}} + 1\f]
+ * \f[X_{out} = \frac{X_{in} + 2 \times X_{pad} - X_{filter}}{X_{stride}} + 1\f]
+ * \f[Y_{out} = \frac{Y_{in} + 2 \times Y_{pad} - Y_{filter}}{Y_{stride}} + 1\f]
  *
  * Two modes for zero-padding are supported:
  *
