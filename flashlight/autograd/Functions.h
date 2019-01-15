@@ -37,13 +37,13 @@ class Variable;
 Variable operator+(const Variable& lhs, const Variable& rhs);
 
 /**
- * Adds a scaler to each element in the Variable.
+ * Adds a scalar to each element in the Variable.
  * \f[ out_i = value + var_i \f]
  */
 Variable operator+(const double& lhs, const Variable& rhs);
 
 /**
- * Adds a scaler to each element in the Variable.
+ * Adds a scalar to each element in the Variable.
  * \f[ out_i = var_i + value \f]
  */
 Variable operator+(const Variable& lhs, const double& rhs);
@@ -73,13 +73,13 @@ Variable operator*(const Variable& lhs, const double& rhs);
 Variable operator-(const Variable& lhs, const Variable& rhs);
 
 /**
- * Subtracts a scaler from each element in the Variable.
+ * Subtracts a scalar from each element in the Variable.
  * \f[ out_i = var_i - value \f]
  */
 Variable operator-(const double& lhs, const Variable& rhs);
 
 /**
- * Subtracts each element in the Variable from a scaler.
+ * Subtracts each element in the Variable from a scalar.
  * \f[ out_i = value - var_i \f]
  */
 Variable operator-(const Variable& lhs, const double& rhs);
@@ -97,7 +97,7 @@ Variable operator/(const Variable& lhs, const Variable& rhs);
 Variable operator/(const double& lhs, const Variable& rhs);
 
 /**
- * Divides a scaler by each element in the Variable.
+ * Divides a scalar by each element in the Variable.
  * \f[ out_i = \frac{value}{var_i} \f]
  */
 Variable operator/(const Variable& lhs, const double& rhs);
@@ -109,13 +109,13 @@ Variable operator/(const Variable& lhs, const double& rhs);
 Variable operator>(const Variable& lhs, const Variable& rhs);
 
 /**
- * [Non-differentiable] Element-wise comparison of a Variable and a scaler.
+ * [Non-differentiable] Element-wise comparison of a Variable and a scalar.
  * \f[ out_i = value > var_i \f]
  */
 Variable operator>(const double& lhs, const Variable& rhs);
 
 /**
- * [Non-differentiable] Element-wise comparison of a Variable and a scaler.
+ * [Non-differentiable] Element-wise comparison of a Variable and a scalar.
  * \f[ out_i = var_i > value \f]
  */
 Variable operator>(const Variable& lhs, const double& rhs);
@@ -127,13 +127,13 @@ Variable operator>(const Variable& lhs, const double& rhs);
 Variable operator<(const Variable& lhs, const Variable& rhs);
 
 /**
- * [Non-differentiable] Element-wise comparison of a Variable and a scaler.
+ * [Non-differentiable] Element-wise comparison of a Variable and a scalar.
  * \f[ out_i = value < var_i \f]
  */
 Variable operator<(const double& lhs, const Variable& rhs);
 
 /**
- * [Non-differentiable] Element-wise comparison of a Variable and a scaler.
+ * [Non-differentiable] Element-wise comparison of a Variable and a scalar.
  * \f[ out_i = var_i < value \f]
  */
 Variable operator<(const Variable& lhs, const double& rhs);
@@ -145,13 +145,13 @@ Variable operator<(const Variable& lhs, const double& rhs);
 Variable operator>=(const Variable& lhs, const Variable& rhs);
 
 /**
- * [Non-differentiable] Element-wise comparison of a Variable and a scaler.
+ * [Non-differentiable] Element-wise comparison of a Variable and a scalar.
  * \f[ out_i = value >= var_i \f]
  */
 Variable operator>=(const double& lhs, const Variable& rhs);
 
 /**
- * [Non-differentiable] Element-wise comparison of a Variable and a scaler.
+ * [Non-differentiable] Element-wise comparison of a Variable and a scalar.
  * \f[ out_i = var_i >= value \f]
  */
 Variable operator>=(const Variable& lhs, const double& rhs);
@@ -163,13 +163,13 @@ Variable operator>=(const Variable& lhs, const double& rhs);
 Variable operator<=(const Variable& lhs, const Variable& rhs);
 
 /**
- * [Non-differentiable] Element-wise comparison of a Variable and a scaler.
+ * [Non-differentiable] Element-wise comparison of a Variable and a scalar.
  * \f[ out_i = value <= var_i \f]
  */
 Variable operator<=(const double& lhs, const Variable& rhs);
 
 /**
- * [Non-differentiable] Element-wise comparison of a Variable and a scaler.
+ * [Non-differentiable] Element-wise comparison of a Variable and a scalar.
  * \f[ out_i = value <= var_i \f]
  */
 Variable operator<=(const Variable& lhs, const double& rhs);
@@ -408,7 +408,7 @@ Variable abs(const Variable& input);
 Variable flat(const Variable& input);
 
 /**
- * Modifys the input dimensions without changing the data order. The shape of
+ * Modifies the input dimensions without changing the data order. The shape of
  * the output Variable is specified in descriptor `dims`.
  */
 Variable moddims(const Variable& input, const af::dim4& dims);
@@ -574,11 +574,9 @@ Variable logSoftmax(const Variable& input, const int dim);
  * Both the inputs and the targets are expected to be between 0 and 1.
  *
  * @param inputs a tensor with the predicted values
- * @param targets a tensor with the taret values
+ * @param targets a tensor with the target values
  */
-Variable binaryCrossEntropy(
-    const Variable& inputs,
-    const Variable& targets);
+Variable binaryCrossEntropy(const Variable& inputs, const Variable& targets);
 
 /**
  * Computes the categorical cross entropy loss. The input is expected to
@@ -674,8 +672,8 @@ std::tuple<Variable, Variable, Variable> rnn(
  * Looks up embeddings in a fixed dictionary and size.
  * @param input a Variable of a list of indices with shape [\f$B_1\f$,
  * \f$B_2\f$, \f$B_3\f$]
- * @param embeddings a Variable of a embedding matrix with shape [\f$D\f$,
- * \f$N\f$], where \f$N\f$ is the number of items nad \f$D\f$ is the embedding
+ * @param embeddings a Variable of an embedding matrix with shape [\f$D\f$,
+ * \f$N\f$], where \f$N\f$ is the number of items and \f$D\f$ is the embedding
  * size.
  * @return a Variable of embeddings with shape [\f$D\f$, \f$B_1\f$, \f$B_2\f$,
  * \f$B_3\f$]
@@ -704,7 +702,7 @@ Variable embedding(const Variable& input, const Variable& embeddings);
  * @param running_var a buffer storing intermediate variances during training
  * @param axes dimensions to perform normalization on. If having size greater
  * than one, reduce over all of them.
- * @param train a flag indicating if running in training mode ot not
+ * @param train a flag indicating if running in training mode
  * @param momentum value of momentum
  * @param epsilon value of \f$\epsilon\f$
 
