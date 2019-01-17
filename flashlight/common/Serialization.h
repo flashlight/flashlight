@@ -17,6 +17,8 @@
 #include <iostream>
 #include <type_traits>
 
+#include <af/array.h>
+#include <af/dim4.hpp>
 #include <cereal/access.hpp>
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/base_class.hpp>
@@ -121,13 +123,16 @@ namespace detail {
 template <typename T>
 struct Versioned;
 
+template <typename S, typename T>
+struct SerializeAs;
+
 struct AfArraySerializeProxy;
 
 } // namespace detail
 
 /**
- * Serialize an expression iff the version is in a certain range.
- * Only intended to wrap arguments of FL_SAVE_LOAD* macros.
+ * Serialize an expression iff the version is in the given range (inclusive).
+ * Only intended to wrap arguments of `FL_SAVE_LOAD*` macros.
  *
  * Example: if we have field `x` in version 0, and add field `y` in version 1,
  * we might write: `FL_SAVE_LOAD(x, fl::versioned(y, 1))`.
@@ -135,6 +140,32 @@ struct AfArraySerializeProxy;
 template <typename T>
 detail::Versioned<T>
 versioned(T&& t, uint32_t minVersion, uint32_t maxVersion = UINT32_MAX);
+
+/**
+ * Serialize an object of type T as another type S using static_cast on-the-fly.
+ * Only intended to wrap arguments of `FL_SAVE_LOAD*` macros.
+ *
+ * Example: `FL_SAVE_LOAD(fl::serializeAs<double>(x))`
+ */
+template <typename S, typename T>
+detail::SerializeAs<S, T> serializeAs(T&& t);
+
+/**
+ * Serialize an object of type T as another type S using the provided
+ * conversion functions on-the-fly.  Only intended to wrap arguments of
+ * `FL_SAVE_LOAD*` macros.
+ *
+ * Note: Technically, T will be a reference type; let T0 be the decayed type.
+ *
+ * @param t object to be serialized
+ * @param saveConverter callable with signature S(const T0&)
+ * @param loadConverter callable with signature T0(S)
+ *
+ * Example: please see tests/common/SerializationTest.cpp
+ */
+template <typename S, typename T, typename SaveConvFn, typename LoadConvFn>
+detail::SerializeAs<S, T>
+serializeAs(T&& t, SaveConvFn saveConverter, LoadConvFn loadConverter);
 
 } // namespace fl
 

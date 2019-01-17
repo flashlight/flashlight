@@ -17,6 +17,13 @@
 
 namespace fl {
 namespace detail {
+
+template <typename T>
+using IsOutputArchive = std::is_base_of<cereal::detail::OutputArchiveBase, T>;
+
+template <typename T>
+using IsInputArchive = std::is_base_of<cereal::detail::InputArchiveBase, T>;
+
 /**
  * Wrapper indicating that an expression should be serialized only if the
  * version is in a certain range.
@@ -28,21 +35,60 @@ struct Versioned {
   uint32_t maxVersion;
 };
 
+template <typename S, typename T>
+struct SerializeAs {
+  using T0 = typename std::decay<T>::type;
+  T&& ref;
+  std::function<S(const T0&)> saveConverter;
+  std::function<T0(S)> loadConverter;
+};
+
 // 0 arguments (no-op).
 template <typename Archive>
 void applyArchive(Archive& ar, const uint32_t version) {}
 
-// 1 argument, not version-restricted.
+// 1 argument, general case.
 template <typename Archive, typename Arg>
 void applyArchive(Archive& ar, const uint32_t version, Arg&& arg) {
-  ar(arg);
+  ar(std::forward<Arg>(arg));
 }
 
 // 1 argument, version-restricted.
-template <typename Archive, typename Arg>
-void applyArchive(Archive& ar, const uint32_t version, Versioned<Arg> varg) {
+template <typename Archive, typename T>
+void applyArchive(Archive& ar, const uint32_t version, Versioned<T> varg) {
   if (version >= varg.minVersion && version <= varg.maxVersion) {
-    ar(std::forward<Arg>(varg.ref));
+    applyArchive(ar, version, std::forward<T>(varg.ref));
+  }
+}
+
+// 1 argument, with conversion, saving.
+template <
+    typename Archive,
+    typename S,
+    typename T,
+    typename std::enable_if<IsOutputArchive<Archive>::value, int>::type = 0>
+void applyArchive(Archive& ar, const uint32_t version, SerializeAs<S, T> arg) {
+  if (arg.saveConverter) {
+    applyArchive(ar, version, arg.saveConverter(arg.ref));
+  } else {
+    applyArchive(ar, version, static_cast<const S&>(arg.ref));
+  }
+}
+
+// 1 argument, with conversion, loading.
+template <
+    typename Archive,
+    typename S,
+    typename T,
+    typename std::enable_if<IsInputArchive<Archive>::value, int>::type = 0>
+void applyArchive(Archive& ar, const uint32_t version, SerializeAs<S, T> arg) {
+  using T0 = typename std::remove_reference<T>::type;
+  S s;
+  applyArchive(ar, version, s);
+  if (arg.loadConverter) {
+    arg.ref = arg.loadConverter(std::move(s));
+  } else {
+    arg.ref = static_cast<T0>(std::move(s));
   }
 }
 
@@ -53,15 +99,28 @@ void applyArchive(
     const uint32_t version,
     Arg&& arg,
     Args&&... args) {
-  applyArchive(ar, version, arg);
+  applyArchive(ar, version, std::forward<Arg>(arg));
   applyArchive(ar, version, std::forward<Args>(args)...);
 }
+
 } // namespace detail
 
 template <typename T>
 detail::Versioned<T>
 versioned(T&& t, uint32_t minVersion, uint32_t maxVersion) {
   return detail::Versioned<T>{std::forward<T>(t), minVersion, maxVersion};
+}
+
+template <typename S, typename T>
+detail::SerializeAs<S, T> serializeAs(T&& t) {
+  return detail::SerializeAs<S, T>{std::forward<T>(t), nullptr, nullptr};
+}
+
+template <typename S, typename T, typename SaveConvFn, typename LoadConvFn>
+detail::SerializeAs<S, T>
+serializeAs(T&& t, SaveConvFn saveConverter, LoadConvFn loadConverter) {
+  return detail::SerializeAs<S, T>{
+      std::forward<T>(t), std::move(saveConverter), std::move(loadConverter)};
 }
 
 template <typename... Args>
