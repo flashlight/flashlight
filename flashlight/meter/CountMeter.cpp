@@ -6,28 +6,28 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <algorithm>
 #include <stdexcept>
 
 #include "flashlight/meter/CountMeter.h"
 
 namespace fl {
 
-CountMeter::CountMeter(intl num) : numCount_(num) {
-  reset();
+CountMeter::CountMeter(int num) : counts_(num, 0) {}
+
+void CountMeter::add(int id, int64_t val) {
+  if (!(id >= 0 && id < counts_.size())) {
+    throw std::out_of_range("invalid id to update count for");
+  }
+  counts_[id] += val;
+}
+
+std::vector<int64_t> CountMeter::value() {
+  return counts_;
 }
 
 void CountMeter::reset() {
-  countVal_ = std::vector<intl>(numCount_, 0.0);
+  std::fill(counts_.begin(), counts_.end(), 0);
 }
 
-void CountMeter::add(intl id, intl val) {
-  if (!(id >= 0 && id < numCount_)) {
-    throw std::invalid_argument("invalid idx to update count for");
-  }
-  countVal_[id] += val;
-}
-
-std::vector<intl> CountMeter::value() {
-  return countVal_;
-}
 } // namespace fl

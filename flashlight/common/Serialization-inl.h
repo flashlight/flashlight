@@ -162,10 +162,10 @@ namespace detail {
  * For more info, see https://github.com/USCiLab/cereal/issues/132
  * and https://en.cppreference.com/w/cpp/language/implicit_conversion
  */
-struct AfArraySerializeProxy {
-  /* implicit */ AfArraySerializeProxy(const af::array& a) : val(a) {}
-  /* implicit */ AfArraySerializeProxy(af::array&& a) : val(std::move(a)) {}
-  af::array val;
+template <typename T>
+struct CerealSave {
+  /* implicit */ CerealSave(const T& x) : val(x) {}
+  const T& val;
 };
 } // namespace detail
 } // namespace fl
@@ -174,16 +174,30 @@ namespace cereal {
 
 // no versioning; simple and unlikely to ever change
 template <class Archive>
-void serialize(Archive& ar, af::dim4& dims) {
-  ar(dims[0], dims[1], dims[2], dims[3]);
+void save(Archive& ar, const fl::detail::CerealSave<af::dim4>& dims_) {
+  const auto& dims = dims_.val;
+  int64_t x;
+  for (int i = 0; i < 4; ++i) {
+    x = dims[i];
+    ar(x);
+  }
+}
+
+template <class Archive>
+void load(Archive& ar, af::dim4& dims) {
+  int64_t x;
+  for (int i = 0; i < 4; ++i) {
+    ar(x);
+    dims[i] = x;
+  }
 }
 
 template <class Archive>
 void save(
     Archive& ar,
-    const fl::detail::AfArraySerializeProxy& proxy,
+    const fl::detail::CerealSave<af::array>& arr_,
     const uint32_t /* version */) {
-  const auto& arr = proxy.val;
+  const auto& arr = arr_.val;
   if (arr.issparse()) {
     throw cereal::Exception(
         "Serialzation of sparse af::array is not supported yet!");

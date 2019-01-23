@@ -233,7 +233,7 @@ TEST(ModuleTest, DropoutFwd) {
   auto out = module(in);
 
   ASSERT_NEAR(
-      af::count<intl>(out.array() == 0.0),
+      af::count<int>(out.array() == 0.0),
       in.elements() / 2,
       in.elements() / 16); // Check enough zeroes
 

@@ -29,8 +29,8 @@ class BatchNorm : public UnaryModule {
   BatchNorm() = default; // intentionally private
 
   std::vector<int> featAxes_;
-  intl featSize_;
-  intl numBatchesTracked_;
+  int featSize_;
+  int numBatchesTracked_;
   Variable runningMean_, runningVar_;
   double momentum_, epsilon_;
   bool affine_, trackStats_;
@@ -38,8 +38,8 @@ class BatchNorm : public UnaryModule {
   FL_SAVE_LOAD_WITH_BASE(
       UnaryModule,
       featAxes_,
-      featSize_,
-      numBatchesTracked_,
+      fl::serializeAs<int64_t>(featSize_),
+      fl::serializeAs<int64_t>(numBatchesTracked_),
       runningMean_,
       runningVar_,
       momentum_,
@@ -78,7 +78,7 @@ class BatchNorm : public UnaryModule {
    */
   BatchNorm(
       int feat_axis,
-      intl feat_size,
+      int feat_size,
       double momentum = 0.1,
       double eps = 1e-5,
       bool affine = true,
@@ -111,7 +111,7 @@ class BatchNorm : public UnaryModule {
    */
   BatchNorm(
       const std::vector<int>& feat_axes,
-      intl feat_size,
+      int feat_size,
       double momentum = 0.1,
       double eps = 1e-5,
       bool affine = true,

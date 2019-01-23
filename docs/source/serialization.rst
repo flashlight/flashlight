@@ -71,6 +71,12 @@ If we define a new class that needs to support serialization, flashlight provide
 
   CEREAL_REGISTER_TYPE(Cat)
 
+
+For additional guidlines, check out `flashlight/common/Serialization.h`.
+To summarize, save() shouldn't mutate, load() may assume output is default-
+constructed, and one shouldn't save `long`, `size_t`, `dim_t` etc. due to
+differing sizes on 32-bit vs 64-bit platforms.
+
 .. note::
   In the example above, if instead using ``FL_SAVE_LOAD(name_, isHungry_)`` for `Cat`,
   `CEREAL_REGISTER_POLYMORPHIC_RELATION(Cat, Animal) must be `declared in Cat.h <http://uscilab.github.io/cereal/polymorphism.html>`_.

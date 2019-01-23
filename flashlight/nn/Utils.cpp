@@ -13,25 +13,30 @@
 namespace fl {
 
 namespace detail {
-size_t getNumRnnParams(
+int64_t getNumRnnParams(
     int input_size,
     int hidden_size,
     int num_layers,
     RnnMode mode,
     bool bidirectional) {
   int bidir_mul = (bidirectional ? 2 : 1);
-  size_t n_params =
-      /* hidden-to-hidden */
-      hidden_size * hidden_size * num_layers +
-      /* hidden biases */
-      hidden_size * num_layers +
-      /* input-to-hidden */
-      input_size * hidden_size +
-      bidir_mul * (num_layers - 1) * hidden_size * hidden_size +
-      /* input biases */
-      hidden_size * num_layers;
 
-  n_params *= bidir_mul;
+  int64_t i = input_size;
+  int64_t h = hidden_size;
+  int64_t n = num_layers;
+  int64_t b = bidir_mul;
+
+  int64_t n_params =
+      /* hidden-to-hidden */
+      h * h * n +
+      /* hidden biases */
+      h * n +
+      /* input-to-hidden */
+      i * h + b * (n - 1) * h * h +
+      /* input biases */
+      h * n;
+
+  n_params *= b;
 
   switch (mode) {
     case RnnMode::LSTM:

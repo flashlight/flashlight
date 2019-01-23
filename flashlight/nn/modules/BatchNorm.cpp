@@ -15,7 +15,7 @@ namespace fl {
 
 BatchNorm::BatchNorm(
     int feat_axis,
-    intl feat_size,
+    int feat_size,
     double momentum /* = 0.1 */,
     double eps /*  = 1e-5*/,
     bool affine /*  = true*/,
@@ -30,7 +30,7 @@ BatchNorm::BatchNorm(
 
 BatchNorm::BatchNorm(
     const std::vector<int>& feat_axes,
-    intl feat_size,
+    int feat_size,
     double momentum /* = 0.1*/,
     double eps /* = 1e-5 */,
     bool affine /* = true*/,

@@ -19,7 +19,8 @@
 
 namespace fl {
 namespace detail {
-size_t getNumRnnParams(
+
+int64_t getNumRnnParams(
     int input_size,
     int hidden_size,
     int num_layers,
@@ -28,11 +29,7 @@ size_t getNumRnnParams(
 
 std::pair<dim_t, dim_t> computeFans(af::dim4 dims);
 
-int derivePadding(
-    int inSz,
-    int filterSz,
-    int stride,
-    int pad);
+int derivePadding(int inSz, int filterSz, int stride, int pad);
 
 } // namespace detail
 } // namespace fl

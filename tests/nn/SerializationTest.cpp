@@ -28,26 +28,8 @@ std::string getTmpPath(const std::string& key) {
   if (user != nullptr) {
     userstr = std::string(user);
   }
-  return std::string("/tmp/test_") + userstr + key +
-      std::string(".mdl");
+  return std::string("/tmp/test_") + userstr + key + std::string(".mdl");
 }
-
-struct VersionTestClass0 {
-  VersionTestClass0() {}
-  explicit VersionTestClass0(int x0) : x(x0) {}
-
-  int x{5};
-  FL_SAVE_LOAD(x)
-};
-
-struct VersionTestClass1 {
-  VersionTestClass1() {}
-  VersionTestClass1(int x0, int y0) : x(x0), y(y0) {}
-
-  int x{5};
-  int y{7};
-  FL_SAVE_LOAD(x, versioned(y, 1))
-};
 
 class ContainerTestClass : public Sequential {
  public:
@@ -80,46 +62,7 @@ const float kThreshold = 1.01; // within 1%
 
 } // namespace
 
-CEREAL_CLASS_VERSION(VersionTestClass1, 1)
 CEREAL_REGISTER_TYPE(ContainerTestClass)
-
-TEST(SerializationTest, Versioning) {
-  // VersionTestClass1 models a newer version of VersionTestClass0.
-  // Normally they would be the same class, but in tests we need it this way.
-  auto path = getTmpPath("Versioning");
-  // Save version 0, then load version 0
-  {
-    VersionTestClass0 v0(3);
-    save(path, v0);
-  }
-  {
-    VersionTestClass0 v0;
-    load(path, v0);
-    ASSERT_EQ(v0.x, 3);
-  }
-  // Save version 1, then load version 1
-  {
-    VersionTestClass1 v1(3, 4);
-    save(path, v1);
-  }
-  {
-    VersionTestClass1 v1;
-    load(path, v1);
-    ASSERT_EQ(v1.x, 3);
-    ASSERT_EQ(v1.y, 4);
-  }
-  // Save version 0, then load version 1
-  {
-    VersionTestClass0 v0(3);
-    save(path, v0);
-  }
-  {
-    VersionTestClass1 v1;
-    load(path, v1);
-    ASSERT_EQ(v1.x, 3);
-    ASSERT_EQ(v1.y, 7);
-  }
-}
 
 TEST(SerializationTest, Variable) {
   auto testimpl = [](const af::array& arr, bool calc_grad) {

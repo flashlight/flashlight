@@ -33,7 +33,7 @@ RNN::RNN(
 }
 
 void RNN::initialize() {
-  dim_t n_params = detail::getNumRnnParams(
+  int64_t n_params = detail::getNumRnnParams(
       inputSize_, hiddenSize_, numLayers_, mode_, bidirectional_);
 
   double stdv = std::sqrt(1.0 / (double)hiddenSize_);

@@ -72,7 +72,9 @@ void load(std::istream& istr, Args&... args);
  * - For simplicity, `load()` may assume that the initial state of the
  *   object is default-constructed. Conversely, one must only call `load()`
  *   on a default-constructed object.
- *
+ * - Avoid serializing `long`, `size_t`, and ArrayFire's `dim_t` since these
+ *   types have platform-dependent sizes. Fixed-size types like `int64_t` are
+ *   always fine. `int`, `long long` should be fine on virtually all platforms.
  */
 
 /**
@@ -127,7 +129,8 @@ struct Versioned;
 template <typename S, typename T>
 struct SerializeAs;
 
-struct AfArraySerializeProxy;
+template <typename T>
+struct CerealSave;
 
 } // namespace detail
 
@@ -173,12 +176,15 @@ serializeAs(T&& t, SaveConvFn saveConverter, LoadConvFn loadConverter);
 namespace cereal {
 
 template <class Archive>
-void serialize(Archive& ar, af::dim4& dims);
+void save(Archive& ar, const fl::detail::CerealSave<af::dim4>& dims);
+
+template <class Archive>
+void load(Archive& ar, af::dim4& dims);
 
 template <class Archive>
 void save(
     Archive& ar,
-    const fl::detail::AfArraySerializeProxy& proxy,
+    const fl::detail::CerealSave<af::array>& arr,
     const uint32_t /* version */);
 
 template <class Archive>

@@ -30,7 +30,7 @@ Variable batchnorm(
     double epsilon) {
   auto output = af::array(input.dims(), input.type());
 
-  intl nfeatures = 1;
+  int nfeatures = 1;
   for (auto ax : axes) {
     nfeatures *= input.dims(ax);
   }
@@ -58,7 +58,7 @@ Variable batchnorm(
       mode = CUDNN_BATCHNORM_SPATIAL_PERSISTENT;
     }
 #endif
-    intl batchsz = 1;
+    int batchsz = 1;
     for (int i = max_axis + 1; i < 4; ++i) {
       batchsz *= input.dims(i);
     }
