@@ -86,14 +86,14 @@ class Container : public Module {
    * @param id the index of the module to return
    * @return a pointer to the requested module
    */
-  ModulePtr module(int id);
+  ModulePtr module(int id) const;
 
   /**
    * Returns pointers to each of `Module` in the `Container`.
    *
    * @return an ordered vector of pointers for each module.
    */
-  std::vector<ModulePtr> modules();
+  std::vector<ModulePtr> modules() const;
 
   /**
    * Switches all modules in the `Container` into train mode. See `Module`.

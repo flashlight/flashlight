@@ -22,11 +22,11 @@ namespace fl {
 
 Container::Container() = default;
 
-ModulePtr Container::module(int id) {
+ModulePtr Container::module(int id) const {
   return modules_[id];
 }
 
-std::vector<ModulePtr> Container::modules() {
+std::vector<ModulePtr> Container::modules() const {
   return modules_;
 }
 

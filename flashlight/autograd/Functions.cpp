@@ -432,6 +432,9 @@ Variable concatenate(const std::vector<Variable>& concatInputs, int dim) {
   if (dim < 0 || dim > 3) {
     throw std::invalid_argument("invalid dimension to concatenate along");
   }
+  if (concatInputs.size() == 1) {
+    return concatInputs[0];
+  }
   auto dims = concatInputs[0].dims();
   int concat_size = dims[dim];
   for (int i = 1; i < concatInputs.size(); i++) {
