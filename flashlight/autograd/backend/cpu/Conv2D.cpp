@@ -118,11 +118,17 @@ Variable conv2d(
   auto weightMD = memory::desc({mWeightDims}, dataType, formatWeight);
   auto biasMD = memory::desc({mBiasDims}, dataType, formatAny);
 
+  // Choose a mode based on whether gradients are needed
+  auto forwardMode =
+      (input.isCalcGrad() || weights.isCalcGrad() || bias.isCalcGrad())
+      ? prop_kind::forward_training
+      : prop_kind::forward_inference;
+
   // Convolution descriptor
   std::shared_ptr<convolution_forward::desc> fwdDescriptor;
   if (hasBias) {
     fwdDescriptor = std::make_shared<convolution_forward::desc>(
-        prop_kind::forward_training,
+        forwardMode,
         convolution_direct,
         inputMD,
         weightMD,
@@ -134,7 +140,7 @@ Variable conv2d(
         padding_kind::zero);
   } else {
     fwdDescriptor = std::make_shared<convolution_forward::desc>(
-        prop_kind::forward_training,
+        forwardMode,
         convolution_direct,
         inputMD,
         weightMD,

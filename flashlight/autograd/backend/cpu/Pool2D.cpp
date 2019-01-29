@@ -78,10 +78,14 @@ Variable pool2d(
   auto outputMemoryInit = memory(
       {{{outputDims}, dataType, formatNCHW}, mkldnnEngine}, outputRaw.get());
 
+  // Choose a mode based on whether gradients are needed
+  auto forwardMode =
+      input.isCalcGrad() ? prop_kind::forward : prop_kind::forward_inference;
+
   // Descriptors
   auto poolingMode = detail::mkldnnMapToPoolingMode(mode);
   auto desc = pooling_forward::desc(
-      prop_kind::forward, // using training mode requires a workspace
+      forwardMode,
       poolingMode,
       inputMD,
       outputMD,
@@ -104,11 +108,19 @@ Variable pool2d(
       memory::primitive_desc(outputPrimDesc)) {
     outputMemory = memory(outputPrimDesc);
   }
-  // Workspace and layer
-  auto workspaceMemory = memory(primDesc.workspace_primitive_desc());
-  auto pooling =
-      pooling_forward(primDesc, inputMemory, outputMemory, workspaceMemory);
-  network.push_back(pooling);
+  // Workspace and layer (only training mode requires a workspace)
+  std::shared_ptr<memory> workspaceMemory; // no default ctors
+  std::shared_ptr<pooling_forward> pooling;
+  if (input.isCalcGrad()) {
+    workspaceMemory =
+        std::make_shared<memory>(primDesc.workspace_primitive_desc());
+    pooling = std::make_shared<pooling_forward>(
+        primDesc, inputMemory, outputMemory, *workspaceMemory);
+  } else {
+    pooling =
+        std::make_shared<pooling_forward>(primDesc, inputMemory, outputMemory);
+  }
+  network.push_back(*pooling);
 
   // Add output reordering if needed
   if (outputMemory != outputMemoryInit) {
@@ -123,7 +135,8 @@ Variable pool2d(
        inputDimsRaw, // need to pass if inputs are empty
        primDesc, // forward desc
        poolingMode,
-       workspaceMemory, // needed for backwards pass
+       // needed for backwards pass. null in inference mode
+       workspaceMemory,
        // dims
        inputDims,
        outputDims,
@@ -181,7 +194,7 @@ Variable pool2d(
         auto poolBwd = pooling_backward(
             bwdPrimDesc,
             gradOutputMemory,
-            workspaceMemory, // workspace memory from forward
+            *workspaceMemory, // workspace memory from forward
             gradInputMemoryInit);
         networkBackward.push_back(poolBwd);
 
