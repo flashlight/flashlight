@@ -33,9 +33,9 @@ Distributed Training Dependencies
 ---------------------------------
 Building with distributed training is optional. See ``Build Options`` below.
 
-- Regardless of backend, running with distributed training requires an MPI installation. `OpenMPI <https://www.open-mpi.org/>`_ is recommended if supported on your OS.
+- Regardless of backend, running with distributed training requires an MPI installation. `OpenMPI <https://www.open-mpi.org/>`_ is recommended if supported on your OS. On most Linux-based systems, ``sudo apt-get install openmpi-bin openmpi-common libopenmpi-dev`` is sufficient.
 - If building the CUDA backend, `NVIDIA's NCCL library <https://developer.nvidia.com/nccl>`_ is required. Flashlight has been tested with NCCL 2.2.13.
-- If building with the CPU backend, `Facebook's Gloo library <https://github.com/facebookincubator/gloo>`_ is required, and must be built with MPI.
+- If building with the CPU backend, `Facebook's Gloo library <https://github.com/facebookincubator/gloo>`_ is required, and must be built with MPI; after installing OpenMPI, pass the ``-DUSE_MPI=ON`` flag to ``cmake`` when building Gloo. 
 
 CUDA Backend Dependencies
 -------------------------
