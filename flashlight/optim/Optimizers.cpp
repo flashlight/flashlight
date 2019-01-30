@@ -94,6 +94,22 @@ void SGDOptimizer::step() {
   }
 }
 
+std::string SGDOptimizer::prettyString() const {
+  std::ostringstream ss;
+  ss << "SGD";
+
+  if (wd_ != 0) {
+    ss << " (weight decay=" << wd_ << ")";
+  }
+  if (useNesterov_ && mu_ != 0) {
+    ss << " (Nesterov momentum=" << mu_ << ")";
+  } else if (mu_ != 0) {
+    ss << " (momentum=" << mu_ << ")";
+  }
+
+  return ss.str();
+}
+
 AdamOptimizer::AdamOptimizer(
     const vector<Variable>& parameters,
     double learning_rate,
@@ -159,6 +175,17 @@ void AdamOptimizer::step() {
   }
 }
 
+std::string AdamOptimizer::prettyString() const {
+  std::ostringstream ss;
+  ss << "Adam";
+
+  if (wd_ != 0) {
+    ss << " (weight decay=" << wd_ << ")";
+  }
+
+  return ss.str();
+}
+
 RMSPropOptimizer::RMSPropOptimizer(
     const vector<Variable>& parameters,
     double learning_rate,
@@ -221,6 +248,21 @@ void RMSPropOptimizer::step() {
 
     af::eval(data);
   }
+}
+
+std::string RMSPropOptimizer::prettyString() const {
+  std::ostringstream ss;
+  ss << "RMSProp";
+
+  if (wd_ != 0) {
+    ss << " (weight decay=" << wd_ << ")";
+  }
+
+  if (useFirst_) {
+    ss << " (use first moment)";
+  }
+
+  return ss.str();
 }
 
 } // namespace fl

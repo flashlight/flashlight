@@ -32,6 +32,44 @@ TEST(OptimTest, GradNorm) {
   ASSERT_TRUE(allClose(max_norm, clipped));
 }
 
+TEST(SerializationTest, OptimizerSerialize) {
+  char* user = getenv("USER");
+  std::string userstr = "unknown";
+  if (user != nullptr) {
+    userstr = std::string(user);
+  }
+  const std::string path = "/tmp/" + userstr + "_optm";
+
+  std::vector<Variable> parameters;
+  for (int i = 0; i < 5; i++) {
+    auto v = Variable(af::randn(10, 10, 10, f64), true);
+    v.addGrad(Variable(af::randn(10, 10, 10, f64), false));
+    parameters.push_back(v);
+  }
+
+  std::shared_ptr<FirstOrderOptimizer> opt;
+  opt = std::make_shared<AdamOptimizer>(parameters, 0.0001);
+  opt->step();
+
+  save(
+    path, parameters, static_cast<std::shared_ptr<FirstOrderOptimizer>>(opt));
+
+  std::vector<Variable> parameters2;
+  std::shared_ptr<FirstOrderOptimizer> opt2;
+  load(path, parameters2, opt2);
+
+  for (int i = 0; i < 5; i++) {
+    parameters2[i].addGrad(Variable(parameters[i].grad().array(), false));
+  }
+
+  opt->step();
+  opt2->step();
+
+  for (int i = 0; i < 5; i++) {
+    ASSERT_TRUE(allClose(parameters[i].array(), parameters2[i].array()));
+  }
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

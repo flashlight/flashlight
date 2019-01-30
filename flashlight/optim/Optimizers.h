@@ -38,9 +38,17 @@ namespace fl {
  * \endcode
  */
 class FirstOrderOptimizer {
+ private:
+   /**
+    * Serialize the module's parameters.
+    */
+   FL_SAVE_LOAD(lr_, parameters_)
+
  protected:
   std::vector<Variable> parameters_;
   double lr_;
+
+  FirstOrderOptimizer() = default;
 
  public:
   /** The `FirstOrderOptimizer` base class constructor.
@@ -67,6 +75,13 @@ class FirstOrderOptimizer {
    */
   void zeroGrad();
 
+  /**
+   * Generates a stringified representation of the optimizer.
+   *
+   * @return a string containing the optimizer label
+   */
+  virtual std::string prettyString() const = 0;
+
   virtual ~FirstOrderOptimizer() = default;
 };
 
@@ -83,6 +98,16 @@ class FirstOrderOptimizer {
  * \f]
  */
 class SGDOptimizer : public FirstOrderOptimizer {
+ private:
+   FL_SAVE_LOAD_WITH_BASE(
+       FirstOrderOptimizer,
+       useNesterov_,
+       mu_,
+       wd_,
+       velocities_)
+
+  SGDOptimizer() = default; // Intentionally private
+
   bool useNesterov_;
   double mu_;
   double wd_;
@@ -103,7 +128,10 @@ class SGDOptimizer : public FirstOrderOptimizer {
       double momentum = 0,
       double weight_decay = 0,
       bool use_nesterov = false);
+
   void step() override;
+
+  std::string prettyString() const override;
 };
 
 /** An implementation of the Adam optimizer.
@@ -112,6 +140,19 @@ class SGDOptimizer : public FirstOrderOptimizer {
  *    https://arxiv.org/abs/1412.6980).
  */
 class AdamOptimizer : public FirstOrderOptimizer {
+  private:
+    FL_SAVE_LOAD_WITH_BASE(
+        FirstOrderOptimizer,
+        beta1_,
+        beta2_,
+        eps_,
+        wd_,
+        count_,
+        biasedFirst_,
+        biasedSecond_)
+
+    AdamOptimizer() = default; // Intentionally private
+
   double beta1_;
   double beta2_;
   double eps_;
@@ -137,7 +178,10 @@ class AdamOptimizer : public FirstOrderOptimizer {
       double beta2 = 0.999,
       double epsilon = 1e-8,
       double weight_decay = 0);
+
   void step() override;
+
+  std::string prettyString() const override;
 };
 
 /** An implementation of the RMSProp optimizer. For more details see Geoff
@@ -145,6 +189,19 @@ class AdamOptimizer : public FirstOrderOptimizer {
  * http://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf).
  */
 class RMSPropOptimizer : public FirstOrderOptimizer {
+  private:
+    FL_SAVE_LOAD_WITH_BASE(
+        FirstOrderOptimizer,
+        useFirst_,
+        rho_,
+        eps_,
+        wd_,
+        first_,
+        second_)
+
+    RMSPropOptimizer() = default; // Intentionally private
+
+
   bool useFirst_;
   double rho_;
   double eps_;
@@ -171,7 +228,14 @@ class RMSPropOptimizer : public FirstOrderOptimizer {
       double epsilon = 1e-8,
       double weight_decay = 0,
       bool use_first = false);
+
   void step() override;
+
+  std::string prettyString() const override;
 };
 
 } // namespace fl
+
+CEREAL_REGISTER_TYPE(fl::SGDOptimizer)
+CEREAL_REGISTER_TYPE(fl::AdamOptimizer)
+CEREAL_REGISTER_TYPE(fl::RMSPropOptimizer)
