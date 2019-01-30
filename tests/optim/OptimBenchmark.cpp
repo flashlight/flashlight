@@ -67,10 +67,17 @@ double rmsprop() {
   return optloop(opt, w);
 }
 
+double adadelta() {
+  auto w = Variable(af::randn(1, 10), true);
+  auto opt = AdadeltaOptimizer({w});
+  return optloop(opt, w);
+}
+
 int main() {
   af::info();
   TIME(sgd);
   TIME(adam);
   TIME(rmsprop);
+  TIME(adadelta);
   return 0;
 }

@@ -53,10 +53,10 @@ class FirstOrderOptimizer {
  public:
   /** The `FirstOrderOptimizer` base class constructor.
    * @param parameters The parameters from e.g. `model.parameters()`
-   * @param learning_rate The learning rate.
+   * @param learningRate The learning rate.
    */
   FirstOrderOptimizer(
-      const std::vector<Variable>& parameters, double learning_rate);
+      const std::vector<Variable>& parameters, double learningRate);
 
   virtual void step() = 0;
 
@@ -116,18 +116,18 @@ class SGDOptimizer : public FirstOrderOptimizer {
  public:
   /** SGDOptimizer constructor.
    * @param parameters The parameters from e.g. `model.parameters()`
-   * @param learning_rate The learning rate.
+   * @param learningRate The learning rate.
    * @param momentum The momentum.
-   * @param weight_decay The amount of L2 weight decay to use for all the
+   * @param weightDecay The amount of L2 weight decay to use for all the
    * parameters.
-   * @param use_nesterov Whether or not to use nesterov style momentum.
+   * @param useNesterov Whether or not to use nesterov style momentum.
    */
   SGDOptimizer(
       const std::vector<Variable>& parameters,
-      double learning_rate,
+      double learningRate,
       double momentum = 0,
-      double weight_decay = 0,
-      bool use_nesterov = false);
+      double weightDecay = 0,
+      bool useNesterov = false);
 
   void step() override;
 
@@ -164,20 +164,20 @@ class AdamOptimizer : public FirstOrderOptimizer {
  public:
   /** Construct an Adam optimizer.
    * @param parameters The parameters from e.g. `model.parameters()`.
-   * @param learning_rate The learning rate.
+   * @param learningRate The learning rate.
    * @param beta1 Adam hyperparameter \f$ \beta_1 \f$.
    * @param beta2 Adam hyperparameter \f$ \beta_2 \f$.
    * @param epsilon A small value used for numerical stability.
-   * @param weight_decay The amount of L2 weight decay to use for all the
+   * @param weightDecay The amount of L2 weight decay to use for all the
    * parameters.
    */
   AdamOptimizer(
       const std::vector<Variable>& parameters,
-      double learning_rate,
+      double learningRate,
       double beta1 = 0.9,
       double beta2 = 0.999,
       double epsilon = 1e-8,
-      double weight_decay = 0);
+      double weightDecay = 0);
 
   void step() override;
 
@@ -212,10 +212,10 @@ class RMSPropOptimizer : public FirstOrderOptimizer {
  public:
   /** Construct an RMSProp optimizer.
    * @param parameters The parameters from e.g. `model.parameters()`.
-   * @param learning_rate The learning rate.
+   * @param learningRate The learning rate.
    * @param rho The weight in the term \f$ rho * m + (1-rho) * g^2 \f$.
    * @param epsilon A small value used for numerical stability.
-   * @param weight_decay The amount of L2 weight decay to use for all the
+   * @param weightDecay The amount of L2 weight decay to use for all the
    * parameters.
    * @param use_first Use the first moment in the update. When `true` keep
    * a running mean of the gradient and subtract it from the running mean of
@@ -223,11 +223,56 @@ class RMSPropOptimizer : public FirstOrderOptimizer {
    */
   RMSPropOptimizer(
       const std::vector<Variable>& parameters,
-      double learning_rate,
+      double learningRate,
       double rho = 0.99,
       double epsilon = 1e-8,
-      double weight_decay = 0,
+      double weightDecay = 0,
       bool use_first = false);
+
+  void step() override;
+
+  std::string prettyString() const override;
+};
+
+/** An implementation of the Adadelta optimizer.
+ * For more details see the paper
+ * [Adadelta: An Adaptive Learning Rate Method](
+ *    https://arxiv.org/pdf/1212.5701.pdf).
+ */
+class AdadeltaOptimizer : public FirstOrderOptimizer {
+  private:
+    FL_SAVE_LOAD_WITH_BASE(
+        FirstOrderOptimizer,
+        rho_,
+        eps_,
+        wd_,
+        accGrad_,
+        accDelta_)
+
+    AdadeltaOptimizer() = default; // Intentionally private
+
+  double rho_;
+  double eps_;
+  double wd_;
+  std::vector<af::array> accGrad_;
+  std::vector<af::array> accDelta_;
+
+ public:
+   /** Construct an Adadelta optimizer.
+    * @param parameters The parameters from e.g. `model.parameters()`.
+    * @param learningRate The learning rate for scaling delta. The original
+    * paper does not include this term (i.e. learningRate = 1.0).
+    * @param rho The decay rate for accumulating squared gradients and deltas.
+    * @param epsilon A small value used for numerical stability.
+    * @param weightDecay The amount of L2 weight decay to use for all the
+    * parameters.
+    */
+  explicit AdadeltaOptimizer(
+      const std::vector<Variable>& parameters,
+      double learningRate = 1.0,
+      double rho = 0.9,
+      double epsilon = 1e-8,
+      double weightDecay = 0);
 
   void step() override;
 
@@ -239,3 +284,4 @@ class RMSPropOptimizer : public FirstOrderOptimizer {
 CEREAL_REGISTER_TYPE(fl::SGDOptimizer)
 CEREAL_REGISTER_TYPE(fl::AdamOptimizer)
 CEREAL_REGISTER_TYPE(fl::RMSPropOptimizer)
+CEREAL_REGISTER_TYPE(fl::AdadeltaOptimizer)

@@ -32,8 +32,8 @@ using std::vector;
 namespace fl {
 
 FirstOrderOptimizer::FirstOrderOptimizer(
-    const vector<Variable>& parameters, double learning_rate)
-    : parameters_(parameters.begin(), parameters.end()), lr_(learning_rate) {}
+    const vector<Variable>& parameters, double learningRate)
+    : parameters_(parameters.begin(), parameters.end()), lr_(learningRate) {}
 
 void FirstOrderOptimizer::zeroGrad() {
   for (auto& parameter : parameters_) {
@@ -43,19 +43,19 @@ void FirstOrderOptimizer::zeroGrad() {
 
 SGDOptimizer::SGDOptimizer(
     const vector<Variable>& parameters,
-    double learning_rate,
+    double learningRate,
     double momentum /* = 0 */,
-    double weight_decay /* = 0 */,
-    bool use_nesterov /* = false */)
-    : FirstOrderOptimizer(parameters, learning_rate),
-      useNesterov_(use_nesterov),
+    double weightDecay /* = 0 */,
+    bool useNesterov /* = false */)
+    : FirstOrderOptimizer(parameters, learningRate),
+      useNesterov_(useNesterov),
       mu_(momentum),
-      wd_(weight_decay),
+      wd_(weightDecay),
       velocities_() {
   if (momentum != 0) {
     velocities_.reserve(parameters.size());
     for (const auto& parameter : parameters_) {
-      velocities_.push_back(
+      velocities_.emplace_back(
           af::constant(0, parameter.dims(), parameter.type()));
       velocities_.back().eval();
     }
@@ -112,16 +112,16 @@ std::string SGDOptimizer::prettyString() const {
 
 AdamOptimizer::AdamOptimizer(
     const vector<Variable>& parameters,
-    double learning_rate,
+    double learningRate,
     double beta1 /* = 0.9 */,
     double beta2 /* = 0.999 */,
     double epsilon /* = 1e-8 */,
-    double weight_decay /* = 0 */)
-    : FirstOrderOptimizer(parameters, learning_rate),
+    double weightDecay /* = 0 */)
+    : FirstOrderOptimizer(parameters, learningRate),
       beta1_(beta1),
       beta2_(beta2),
       eps_(epsilon),
-      wd_(weight_decay),
+      wd_(weightDecay),
       count_(0),
       biasedFirst_(),
       biasedSecond_() {
@@ -129,9 +129,9 @@ AdamOptimizer::AdamOptimizer(
   biasedSecond_.reserve(parameters.size());
 
   for (const auto& parameter : parameters_) {
-    biasedFirst_.push_back(
+    biasedFirst_.emplace_back(
         af::constant(0, parameter.dims(), parameter.type()));
-    biasedSecond_.push_back(
+    biasedSecond_.emplace_back(
         af::constant(0, parameter.dims(), parameter.type()));
 
     biasedFirst_.back().eval();
@@ -153,23 +153,23 @@ void AdamOptimizer::step() {
       data = data - wd_ * data;
     }
 
-    af::array& biased_first = biasedFirst_[i];
-    af::array& biased_second = biasedSecond_[i];
+    af::array& biasedFirst = biasedFirst_[i];
+    af::array& biasedSecond = biasedSecond_[i];
 
-    biased_first = beta1_ * biased_first + (1 - beta1_) * grad;
-    biased_second = beta2_ * biased_second + (1 - beta2_) * grad * grad;
+    biasedFirst = beta1_ * biasedFirst + (1 - beta1_) * grad;
+    biasedSecond = beta2_ * biasedSecond + (1 - beta2_) * grad * grad;
 
-    af::eval(biased_first);
-    af::eval(biased_second);
+    af::eval(biasedFirst);
+    af::eval(biasedSecond);
 
     count_++;
 
-    double corrected_bias1 = 1 - std::pow(beta1_, count_);
-    double corrected_bias2 = 1 - std::pow(beta2_, count_);
-    double corrected_lr = lr_ * std::sqrt(corrected_bias2) / corrected_bias1;
+    double correctedBias1 = 1 - std::pow(beta1_, count_);
+    double correctedBias2 = 1 - std::pow(beta2_, count_);
+    double correctedLr = lr_ * std::sqrt(correctedBias2) / correctedBias1;
 
     data = data -
-        (corrected_lr * biased_first) / (af::sqrt(biased_second) + eps_);
+        (correctedLr * biasedFirst) / (af::sqrt(biasedSecond) + eps_);
 
     af::eval(data);
   }
@@ -188,16 +188,16 @@ std::string AdamOptimizer::prettyString() const {
 
 RMSPropOptimizer::RMSPropOptimizer(
     const vector<Variable>& parameters,
-    double learning_rate,
+    double learningRate,
     double rho /* = 0.99 */,
     double epsilon /* = 1e-8 */,
-    double weight_decay /* = 0 */,
+    double weightDecay /* = 0 */,
     bool use_first /* = false */)
-    : FirstOrderOptimizer(parameters, learning_rate),
+    : FirstOrderOptimizer(parameters, learningRate),
       useFirst_(use_first),
       rho_(rho),
       eps_(epsilon),
-      wd_(weight_decay),
+      wd_(weightDecay),
       first_(),
       second_() {
   if (useFirst_) {
@@ -207,11 +207,11 @@ RMSPropOptimizer::RMSPropOptimizer(
 
   for (const auto& parameter : parameters_) {
     if (useFirst_) {
-      first_.push_back(af::constant(0, parameter.dims(), parameter.type()));
+      first_.emplace_back(af::constant(0, parameter.dims(), parameter.type()));
       first_.back().eval();
     }
 
-    second_.push_back(af::constant(0, parameter.dims(), parameter.type()));
+    second_.emplace_back(af::constant(0, parameter.dims(), parameter.type()));
     second_.back().eval();
   }
 }
@@ -260,6 +260,73 @@ std::string RMSPropOptimizer::prettyString() const {
 
   if (useFirst_) {
     ss << " (use first moment)";
+  }
+
+  return ss.str();
+}
+
+AdadeltaOptimizer::AdadeltaOptimizer(
+    const std::vector<Variable>& parameters,
+    double learningRate /* = 1.0 */,
+    double rho /* = 0.9 */,
+    double epsilon /* = 1e-8 */,
+    double weightDecay /* = 0 */)
+    : FirstOrderOptimizer(parameters, learningRate),
+      rho_(rho),
+      eps_(epsilon),
+      wd_(weightDecay),
+      accGrad_(),
+      accDelta_() {
+  accGrad_.reserve(parameters.size());
+  accDelta_.reserve(parameters.size());
+
+  for (const auto& parameter : parameters_) {
+    accGrad_.emplace_back(
+        af::constant(0, parameter.dims(), parameter.type()));
+    accDelta_.emplace_back(
+        af::constant(0, parameter.dims(), parameter.type()));
+
+    accGrad_.back().eval();
+    accDelta_.back().eval();
+  }
+}
+
+void AdadeltaOptimizer::step() {
+  for (size_t i = 0; i < parameters_.size(); i++) {
+    if (!parameters_[i].isGradAvailable()) {
+      continue;
+    }
+
+    const af::array& grad = parameters_[i].grad().array();
+    af::array& data = parameters_[i].array();
+
+    if (wd_ != 0) {
+      // Weight decay term
+      data = data - wd_ * data;
+    }
+
+    af::array& accGrad = accGrad_[i];
+    af::array& accDelta = accDelta_[i];
+
+    accGrad = rho_ * accGrad + (1 - rho_) * grad * grad;
+    af::eval(accGrad);
+
+    auto delta = af::sqrt(accDelta + eps_) / af::sqrt(accGrad + eps_) * grad;
+
+    data = data - lr_ * delta;
+    af::eval(data);
+
+    accDelta = rho_ * accDelta + (1 - rho_) * delta * delta;
+    af::eval(accDelta);
+  }
+}
+
+std::string AdadeltaOptimizer::prettyString() const {
+  std::ostringstream ss;
+  ss << "Adadelta";
+
+  if (wd_ != 0) {
+    ss << " (weight decay=" << wd_ << ")";
   }
 
   return ss.str();
