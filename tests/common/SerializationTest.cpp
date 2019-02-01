@@ -197,7 +197,7 @@ struct WeirdTransform {
 
   template <class Archive>
   void load(Archive& ar) {
-    typename std::decay<T>::type y;
+    fl::cpp::decay_t<T> y;
     ar(y);
     x = y + 3;
   }

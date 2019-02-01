@@ -20,6 +20,7 @@
 #include <gloo/transport/tcp/device.h>
 #include <mpi.h>
 
+#include "flashlight/common/CppBackports.h"
 #include "flashlight/distributed/backend/utils/LRUCache.h"
 
 namespace {
@@ -56,11 +57,11 @@ inline void allreduceGloo(T* ptr, size_t s) {
     using Allreduce = gloo::AllreduceHalvingDoubling<T>;
     algorithm = glooCache_.put(
         key,
-        std::unique_ptr<Allreduce>(new Allreduce(
+        cpp::make_unique<Allreduce>(
             globalContext(),
             std::vector<T*>({ptr}),
             s,
-            gloo::ReductionFunction<T>::sum)));
+            gloo::ReductionFunction<T>::sum));
   }
   algorithm->run();
 }

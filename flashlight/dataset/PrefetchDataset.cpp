@@ -10,6 +10,8 @@
 
 #include "flashlight/dataset/PrefetchDataset.h"
 
+#include "flashlight/common/CppBackports.h"
+
 namespace fl {
 
 PrefetchDataset::PrefetchDataset(
@@ -29,9 +31,9 @@ PrefetchDataset::PrefetchDataset(
   }
   if (numThreads_ > 0) {
     auto deviceId = af::getDevice();
-    threadPool_ = std::unique_ptr<ThreadPool>(new ThreadPool(
+    threadPool_ = cpp::make_unique<ThreadPool>(
         numThreads_,
-        [deviceId](int /* threadId */) { af::setDevice(deviceId); }));
+        [deviceId](int /* threadId */) { af::setDevice(deviceId); });
   }
 }
 

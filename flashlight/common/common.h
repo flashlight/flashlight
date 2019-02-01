@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "flashlight/common/CppBackports.h"
 #include "flashlight/common/Defines.h"
 #include "flashlight/common/DevicePtr.h"
 #include "flashlight/common/Serialization.h"

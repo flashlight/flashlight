@@ -14,6 +14,8 @@
 #include <stdexcept>
 #include <utility>
 
+#include "flashlight/common/CppBackports.h"
+
 #pragma once
 
 namespace fl {
@@ -38,7 +40,7 @@ struct Versioned {
 
 template <typename S, typename T>
 struct SerializeAs {
-  using T0 = typename std::decay<T>::type;
+  using T0 = cpp::decay_t<T>;
   T&& ref;
   std::function<S(const T0&)> saveConverter;
   std::function<T0(S)> loadConverter;
@@ -67,7 +69,7 @@ template <
     typename Archive,
     typename S,
     typename T,
-    typename std::enable_if<IsOutputArchive<Archive>::value, int>::type = 0>
+    cpp::enable_if_t<IsOutputArchive<Archive>::value, int> = 0>
 void applyArchive(Archive& ar, const uint32_t version, SerializeAs<S, T> arg) {
   if (arg.saveConverter) {
     applyArchive(ar, version, arg.saveConverter(arg.ref));
@@ -81,9 +83,9 @@ template <
     typename Archive,
     typename S,
     typename T,
-    typename std::enable_if<IsInputArchive<Archive>::value, int>::type = 0>
+    cpp::enable_if_t<IsInputArchive<Archive>::value, int> = 0>
 void applyArchive(Archive& ar, const uint32_t version, SerializeAs<S, T> arg) {
-  using T0 = typename std::remove_reference<T>::type;
+  using T0 = cpp::remove_reference_t<T>;
   S s;
   applyArchive(ar, version, s);
   if (arg.loadConverter) {
