@@ -34,14 +34,6 @@ namespace fl {
  */
 class Conv2D : public UnaryModule {
  private:
-  Conv2D() = default; // intentionally private
-
-  int nIn_, nOut_; // in/op channels
-  int xFilter_, yFilter_; // filter dims
-  int xStride_, yStride_; // stride
-  int xPad_, yPad_; // padding
-  bool bias_;
-  int groups_;
 
   FL_SAVE_LOAD_WITH_BASE(
       UnaryModule,
@@ -57,6 +49,15 @@ class Conv2D : public UnaryModule {
       groups_)
 
   void initialize();
+
+protected:
+  Conv2D() = default;
+  int nIn_, nOut_; // in/op channels
+  int xFilter_, yFilter_; // filter dims
+  int xStride_, yStride_; // stride
+  int xPad_, yPad_; // padding
+  bool bias_;
+  int groups_;
 
  public:
   /**
