@@ -52,16 +52,14 @@ if (FLASHLIGHT_USE_CPU)
   target_link_libraries(
     Autograd
     INTERFACE
-    ${MKLDNN_LIBRARIES}
-    ${MKL_LIBRARIES}
+    ${MKLDNN_LIBRARIES} # also contains MKL or mklml libraries
     )
 
   target_include_directories(
     Autograd
     INTERFACE
     ${FLASHLIGHT_INCLUDE_DIR}
-    ${MKLDNN_INCLUDE_DIR}
-    ${MKL_INCLUDE_DIR}
+    ${MKLDNN_INCLUDE_DIR} # includes MKL headers if found
     )
 endif ()
 

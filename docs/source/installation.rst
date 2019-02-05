@@ -48,10 +48,9 @@ CPU Backend Dependencies
 
 The CPU backend is currently under active development. Required dependencies include:
 
-- Intel's `Math Kernel Library <https://software.intel.com/en-us/mkl>`_ >= 2017. flashlight has been tested with MKL 2017.
-- Intel's `MKL-DNN <https://github.com/intel/mkl-dnn/>`_ framework, which is best linked directly to MKL for better performance.
+- Intel's `MKL-DNN <https://github.com/intel/mkl-dnn/>`_ framework. While not required, using Intel's `Math Kernel Library <https://software.intel.com/en-us/mkl>`_ >= 2017 `when building and installing MKL-DNN <https://github.com/intel/mkl-dnn/#using-intel-mkl-optional>`_ is highly recommended for better performance. flashlight has been tested with MKL-DNN linked to MKL >= 2017.
 
-In order for the flashlight build to properly find MKL, in most cases, the environment variable ``MKLROOT`` must be set to a directory where the MKL installation is located. This should be done in the same shell session where ``cmake`` is to be run when building flashlight. On most Linux-based systems, the correct command will be:
+If building MKL-DNN and flashlight with MKL, the flashlight build needs to be able to find it. The environment variable ``MKLROOT`` must be set to a directory where the MKL installation is located. This should be done in the same shell session where ``cmake`` is to be run when building flashlight. On most Linux-based systems, the correct command will be:
 
 .. code-block:: shell
 
