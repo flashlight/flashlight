@@ -212,6 +212,12 @@ Variable exp(const Variable& input);
 Variable log(const Variable& input);
 
 /**
+ * Computes natural logarithm of (1 + element) for each element in a Variable.
+ * \f[ out_i = log(1.0 + var_i) \f]
+ */
+Variable log1p(const Variable& input);
+
+/**
  * Computes sine of each element in a Variable.
  * \f[ out_i = sin(var_i) \f]
  */

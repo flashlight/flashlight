@@ -324,6 +324,16 @@ Variable log(const Variable& input) {
   return Variable(result, {input}, gradFunc);
 }
 
+Variable log1p(const Variable& input) {
+  auto result = log1p(input.array());
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& grad_output) {
+    inputs[0].addGrad(
+        Variable((grad_output / (1.0 + inputs[0])).array(), false));
+  };
+  return Variable(result, {input}, gradFunc);
+}
+
 Variable sin(const Variable& input) {
   auto result = sin(input.array());
   auto gradFunc = [](std::vector<Variable>& inputs,

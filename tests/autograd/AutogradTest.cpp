@@ -412,6 +412,21 @@ TEST(AutogradTest, Sum) {
   ASSERT_TRUE(allClose(dx.array(), af::sum(y.array(), 1)));
 }
 
+TEST(AutogradTest, Log1p) {
+  auto x = Variable(af::randu(5), true);
+  auto y = log1p(x);
+
+  auto xCopy = Variable(x.array(), true);
+  auto yExp = log(1 + xCopy);
+
+  y.backward();
+  yExp.backward();
+
+  ASSERT_TRUE(allClose(y.array(), yExp.array()));
+  ASSERT_TRUE(allClose(y.grad().array(), yExp.grad().array()));
+  ASSERT_TRUE(allClose(x.grad().array(), xCopy.grad().array()));
+}
+
 TEST(AutogradTest, Sqrt) {
   auto x = Variable(af::randu(5, 3, af::dtype::f64), true);
   auto func_sqrt = [](Variable& in) { return fl::sqrt(in); };
