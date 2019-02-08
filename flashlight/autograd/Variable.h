@@ -243,8 +243,8 @@ class Variable {
 
   /**
    * Return a column from an array based on `index`. This can
-   * also be seen as the results of doing
-   * `input(af::span, index, index, af::span)`
+   * also be seen as the result of doing
+   * `input(af::span, index, af::span, af::span)`
    * @param[in] index index of the row
    * @return Variable storing the result
    */
@@ -252,7 +252,7 @@ class Variable {
 
   /**
    * Returns a sequence of colums from an array based on `first` and `last`
-   * indices. This can also be seen as the results of doing
+   * indices. This can also be seen as the result of doing
    * `input(af::span, af::seq(first, last), af::span, af::span)`
    * @param[in] first start index of the rows
    * @param[in] last end index of the rows
@@ -262,7 +262,7 @@ class Variable {
 
   /**
    * Returns a row from an array based on `index`. This can
-   * also be seen as the results of doing
+   * also be seen as the result of doing
    * `input(index, af::span, af::span, af::span)`
    * @param[in] index index of the slice
    * @return Variable storing the result
@@ -271,7 +271,7 @@ class Variable {
 
   /**
    * Returns a sequence of rows from an array based on `first` and `last`
-   * indices. This can also be seen as the results of doing
+   * indices. This can also be seen as the result of doing
    * `input(af::seq(first, last), af::span, af::span, af::span)`
    * @param[in] first start index of the rows
    * @param[in] last end index of the rows
@@ -281,7 +281,7 @@ class Variable {
 
   /**
    * Return slice in volume from an array based on `index`. This can
-   * also be seen as the results of doing
+   * also be seen as the result of doing
    * `input(af::span, af::span, index, af::span)`
    * @param[in] index index of the slice
    * @return Variable storing the result
@@ -290,7 +290,7 @@ class Variable {
 
   /**
    * Return slices in volume from an array based on `first` and `last` indices.
-   * This can also be seen as the results of doing `input(af::span, af::span,
+   * This can also be seen as the result of doing `input(af::span, af::span,
    * af::seq(first, last), af::span)`
    * @param[in] first start index of the slices
    * @param[in] last end index of the slices
