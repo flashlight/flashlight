@@ -10,6 +10,10 @@
 
 #include <af/cuda.h>
 
+/// usage: `FL_CUDA_CHECK(cudaError_t err[, const char* prefix])`
+#define FL_CUDA_CHECK(...) \
+  ::fl::cuda::detail::check(__VA_ARGS__, __FILE__, __LINE__)
+
 namespace fl {
 namespace cuda {
 
@@ -18,6 +22,14 @@ namespace cuda {
  * for the device it's called on (with that device id)
  */
 cudaStream_t getActiveStream();
+
+namespace detail {
+
+void check(cudaError_t err, const char* file, int line);
+
+void check(cudaError_t err, const char* prefix, const char* file, int line);
+
+} // namespace detail
 
 } // namespace cuda
 } // namespace fl
