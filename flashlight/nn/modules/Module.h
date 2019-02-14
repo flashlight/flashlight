@@ -110,12 +110,12 @@ class Module {
   void zeroGrad();
 
   /**
-   * Performs forward computation for the module, given some input.
+   * Performs forward computation for the module, given some inputs.
    *
-   * @param input the value on which to compute forward computation for the
+   * @param inputs the values to compute forward computation for the
    * module.
-   * @return a `Variable` tensor containing the result of the forward
-   * computation
+   * @return a vector of `Variable` tensors containing the result of 
+   * the forward computation
    */
   virtual std::vector<Variable> forward(
       const std::vector<Variable>& inputs) = 0;
@@ -123,10 +123,10 @@ class Module {
   /**
    * Overload for forward computation for the module.
    *
-   * @param input the value on which to compute forward computation for the
+   * @param inputs the values to compute forward computation for the
    * module.
-   * @return a `Variable` tensor containing the result of the forward
-   * computation
+   * @return a vector of `Variable` tensors containing the result of 
+   * the forward computation
    */
   std::vector<Variable> operator()(const std::vector<Variable>& inputs);
 
