@@ -31,14 +31,28 @@ std::vector<ModulePtr> Container::modules() const {
 }
 
 void Container::train() {
-  Module::train();
+  train_ = true;
+
+  for (int i = 0; i < params_.size(); ++i) {
+    if (childParamIdx_.find(i) == childParamIdx_.end()) {
+      params_[i].setCalcGrad(true);
+    }
+  }
+
   for (auto& module : modules_) {
     module->train();
   }
 }
 
 void Container::eval() {
-  Module::eval();
+  train_ = false;
+
+  for (int i = 0; i < params_.size(); ++i) {
+    if (childParamIdx_.find(i) == childParamIdx_.end()) {
+      params_[i].setCalcGrad(false);
+    }
+  }
+
   for (auto& module : modules_) {
     module->eval();
   }
