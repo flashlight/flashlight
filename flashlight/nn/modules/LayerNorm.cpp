@@ -30,22 +30,28 @@ LayerNorm::LayerNorm(
 Variable LayerNorm::forward(const Variable& input) {
   Variable dummy_in_mean, dummy_in_var;
 
+  auto weight = Variable();
+  auto bias = Variable();
+
+  if (affine_) {
+    af::dim4 tiledims(1, 1, 1, 1);
+    for (int ax : featAxes_) {
+      tiledims[ax] = input.dims(ax);
+    }
+    weight = tile(params_[0], tiledims);
+    bias = tile(params_[1], tiledims);
+  }
+
   auto out = batchnorm(
       input,
-      Variable(),
-      Variable(),
+      weight,
+      bias,
       dummy_in_mean,
       dummy_in_var,
       featAxes_,
       true,
       0.0,
       epsilon_);
-
-  if (affine_) {
-    auto weight = tileAs(params_[0], out.dims());
-    auto bias = tileAs(params_[1], out.dims());
-    out = out * weight + bias;
-  }
 
   return out;
 }

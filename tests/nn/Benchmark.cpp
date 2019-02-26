@@ -119,11 +119,33 @@ double batchNorm() {
   return timeit(bn_fn);
 }
 
+double layerNorm() {
+  // Takes around 7.8 ms on Tesla M40 with cudnn torch
+  int N = 8;
+  int C = 512;
+  int H = 32;
+  int W = 32;
+  Variable input(af::randu(W, H, C, N, f32), true);
+  Variable dout(af::randu(W, H, C, N, f32), true);
+  LayerNorm ln(3);
+
+  auto ln_fn = [&]() {
+    ln.zeroGrad();
+    input.zeroGrad();
+    auto output = ln(input);
+    output.backward(dout);
+  };
+
+  return timeit(ln_fn);
+}
+
+
 int main() {
   af::info();
   TIME(alexnet);
   TIME(embedding);
   TIME(linear);
   TIME(batchNorm);
+  TIME(layerNorm);
   return 0;
 }
