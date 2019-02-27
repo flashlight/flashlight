@@ -9,6 +9,7 @@
 #include "flashlight/common/CudaUtils.h"
 
 #include <sstream>
+#include <stdexcept>
 
 #include <af/device.h>
 
@@ -30,7 +31,7 @@ void check(cudaError_t err, const char* prefix, const char* file, int line) {
   if (err != cudaSuccess) {
     std::ostringstream ess;
     ess << prefix << '[' << file << ':' << line
-       << "] CUDA error: " << cudaGetErrorString(err);
+        << "] CUDA error: " << cudaGetErrorString(err);
     throw std::runtime_error(ess.str());
   }
 }
