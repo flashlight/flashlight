@@ -259,11 +259,11 @@ TEST(ModuleTest, PaddingFwd) {
 
 TEST(ModuleTest, LayerNormFwd) {
   double eps = 1E-5;
-  std::vector<int> feat_axes = {1};
-  auto input = Variable(af::randu(4, 3, 10), true);
+  std::vector<int> feat_axes = {0, 1, 2};
+  auto input = Variable(af::randu(4, 4, 3, 10), true);
 
-  auto sample_mean = mean(input, {0, 2});
-  auto sample_var = var(input, {0, 2}, true);
+  auto sample_mean = mean(input, {3});
+  auto sample_var = var(input, {3}, true);
   auto true_out = (input - tileAs(sample_mean, input)) /
       tileAs(fl::sqrt(sample_var + eps), input);
 

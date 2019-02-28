@@ -824,11 +824,11 @@ TEST(AutogradTest, Embedding) {
 
 TEST(AutogradTest, BatchnormEvalModeOutputSingleAxis) {
   int feat_dims = 3;
-  std::vector<int> feat_axes = {2};
+  std::vector<int> featAxes = {2};
   // input order: HWCN, following the docs
   auto input = Variable(af::randu(13, 13, feat_dims, 16), false);
-  auto running_mean = Variable(af::randu(feat_dims, input.type()), false);
-  auto running_var = Variable(af::randu(feat_dims, input.type()), false);
+  auto runningMean = Variable(af::randu(feat_dims, input.type()), false);
+  auto runningVar = Variable(af::randu(feat_dims, input.type()), false);
   auto weight = Variable(af::randu(feat_dims, input.type()), false);
   auto bias = Variable(af::randu(feat_dims, input.type()), false);
 
@@ -836,24 +836,24 @@ TEST(AutogradTest, BatchnormEvalModeOutputSingleAxis) {
       input,
       weight,
       bias,
-      running_mean,
-      running_var,
-      feat_axes,
+      runningMean,
+      runningVar,
+      featAxes,
       false,
       0.0,
       1E-5));
   for (int i = 0; i < feat_dims; ++i) {
     std::array<af::index, 4> sel = {af::span, af::span, i, af::span};
-    auto this_input = input.array()(sel[0], sel[1], sel[2], sel[3]);
-    auto this_mean = running_mean.array()(i).scalar<float>();
-    auto this_var = running_var.array()(i).scalar<float>();
-    auto this_weight = weight.array()(i).scalar<float>();
-    auto this_bias = bias.array()(i).scalar<float>();
+    auto thisInput = input.array()(sel[0], sel[1], sel[2], sel[3]);
+    auto thisMean = runningMean.array()(i).scalar<float>();
+    auto thisVar = runningVar.array()(i).scalar<float>();
+    auto thisWeight = weight.array()(i).scalar<float>();
+    auto thisBias = bias.array()(i).scalar<float>();
 
-    auto expected_out = (this_input - this_mean) / sqrt(this_var + 1E-5);
-    expected_out = expected_out * this_weight + this_bias;
+    auto expectedOut = (thisInput - thisMean) / sqrt(thisVar + 1E-5);
+    expectedOut = expectedOut * thisWeight + thisBias;
     ASSERT_TRUE(allClose(
-        out.array()(sel[0], sel[1], sel[2], sel[3]), expected_out, 1E-5));
+        out.array()(sel[0], sel[1], sel[2], sel[3]), expectedOut, 1E-5));
   }
 
   // test on empty weigts and bias
@@ -861,67 +861,167 @@ TEST(AutogradTest, BatchnormEvalModeOutputSingleAxis) {
       input,
       Variable(),
       Variable(),
-      running_mean,
-      running_var,
-      feat_axes,
+      runningMean,
+      runningVar,
+      featAxes,
       false,
       0.0,
       1E-5));
   for (int i = 0; i < feat_dims; ++i) {
     std::array<af::index, 4> sel = {af::span, af::span, i, af::span};
-    auto this_input = input.array()(sel[0], sel[1], sel[2], sel[3]);
-    auto this_mean = running_mean.array()(i).scalar<float>();
-    auto this_var = running_var.array()(i).scalar<float>();
+    auto thisInput = input.array()(sel[0], sel[1], sel[2], sel[3]);
+    auto thisMean = runningMean.array()(i).scalar<float>();
+    auto thisVar = runningVar.array()(i).scalar<float>();
 
-    auto expected_out = (this_input - this_mean) / sqrt(this_var + 1E-5);
+    auto expectedOut = (thisInput - thisMean) / sqrt(thisVar + 1E-5);
     ASSERT_TRUE(allClose(
-        out.array()(sel[0], sel[1], sel[2], sel[3]), expected_out, 1E-5));
+        out.array()(sel[0], sel[1], sel[2], sel[3]), expectedOut, 1E-5));
+  }
+}
+
+TEST(AutogradTest, BatchnormEvalModeOutputMultipleAxis) {
+  // input order: HWCN, following the docs
+  std::vector<int> featAxes = {0, 1, 2};
+  auto input = Variable(af::randu(13, 13, 4, 16), false);
+
+  auto nfeatures = 1;
+  for (auto ax : featAxes) {
+    nfeatures *= input.dims(ax);
+  }
+  auto runningMean = Variable(af::randu(nfeatures, input.type()), false);
+  auto runningVar = Variable(af::randu(nfeatures, input.type()), false);
+  auto weight = Variable(af::randu(nfeatures, input.type()), false);
+  auto bias = Variable(af::randu(nfeatures, input.type()), false);
+
+  auto out = (batchnorm(
+      input,
+      weight,
+      bias,
+      runningMean,
+      runningVar,
+      featAxes,
+      false,
+      0.0,
+      1E-5));
+  for (int i = 0; i < nfeatures; ++i) {
+    std::array<af::index, 4> sel = {
+        i % 13, (i / 13) % 13, (i / 13) / 13, af::span};
+    auto thisInput = input.array()(sel[0], sel[1], sel[2], sel[3]);
+    auto thisMean = runningMean.array()(i).scalar<float>();
+    auto thisVar = runningVar.array()(i).scalar<float>();
+    auto thisWeight = weight.array()(i).scalar<float>();
+    auto thisBias = bias.array()(i).scalar<float>();
+
+    auto expectedOut = (thisInput - thisMean) / sqrt(thisVar + 1e-5);
+    expectedOut = expectedOut * thisWeight + thisBias;
+    ASSERT_TRUE(allClose(
+        out.array()(sel[0], sel[1], sel[2], sel[3]), expectedOut, 1e-5));
+  }
+
+  // test on empty weigts and bias
+  out = (batchnorm(
+      input,
+      Variable(),
+      Variable(),
+      runningMean,
+      runningVar,
+      featAxes,
+      false,
+      0.0,
+      1E-5));
+  for (int i = 0; i < nfeatures; ++i) {
+    std::array<af::index, 4> sel = {
+        i % 13, (i / 13) % 13, (i / 13) / 13, af::span};
+    auto thisInput = input.array()(sel[0], sel[1], sel[2], sel[3]);
+    auto thisMean = runningMean.array()(i).scalar<float>();
+    auto thisVar = runningVar.array()(i).scalar<float>();
+
+    auto expectedOut = (thisInput - thisMean) / sqrt(thisVar + 1e-5);
+    ASSERT_TRUE(allClose(
+        out.array()(sel[0], sel[1], sel[2], sel[3]), expectedOut, 1e-5));
   }
 }
 
 TEST(AutogradTest, BatchnormTrainModeOutputSingleAxis) {
-  int num_feat = 3;
-  std::vector<int> feat_axes = {2};
+  int numFeat = 3;
+  std::vector<int> featAxes = {2};
   double epsilon = 1E-5;
-  auto input = Variable(af::randu(13, 13, num_feat, 8), true);
-  auto weight = Variable(af::randu(num_feat), true);
-  auto bias = Variable(af::randu(num_feat), true);
-  auto running_mean = Variable(af::randu(num_feat), false);
-  auto running_var = Variable(af::randu(num_feat), false);
+  auto input = Variable(af::randu(13, 13, numFeat, 8), true);
+  auto weight = Variable(af::randu(numFeat), true);
+  auto bias = Variable(af::randu(numFeat), true);
+  auto runningMean = Variable(af::randu(numFeat), false);
+  auto runningVar = Variable(af::randu(numFeat), false);
 
   auto out = batchnorm(
       input,
       weight,
       bias,
-      running_mean,
-      running_var,
-      feat_axes,
+      runningMean,
+      runningVar,
+      featAxes,
       true,
       0.0,
       epsilon);
 
-  auto todim = af::dim4(1, 1, num_feat);
+  auto todim = af::dim4(1, 1, numFeat);
   std::vector<int> nrm_axes = {0, 1, 3};
   auto avg = moddims(mean(input, nrm_axes), todim);
   auto variance =
       moddims(var(input, nrm_axes, true /* population var */), todim);
-  auto expected_out = (input - tileAs(avg, input)) /
+  auto expectedOut = (input - tileAs(avg, input)) /
       fl::sqrt(tileAs(variance, input) + epsilon);
-  expected_out = expected_out * tileAs(moddims(weight, todim), input) +
+  expectedOut = expectedOut * tileAs(moddims(weight, todim), input) +
       tileAs(moddims(bias, todim), input);
-  ASSERT_TRUE(allClose(out.array(), expected_out.array(), 1E-5));
+  ASSERT_TRUE(allClose(out.array(), expectedOut.array(), 1e-5));
+}
+
+TEST(AutogradTest, BatchnormTrainModeOutputMultipleAxis) {
+  std::vector<int> featAxes = {0, 1, 2};
+  auto input = Variable(af::randu(13, 13, 4, 8), true);
+
+  auto nfeatures = 1;
+  for (auto ax : featAxes) {
+    nfeatures *= input.dims(ax);
+  }
+  auto weight = Variable(af::randu(nfeatures), true);
+  auto bias = Variable(af::randu(nfeatures), true);
+  auto runningMean = Variable(af::randu(nfeatures), false);
+  auto runningVar = Variable(af::randu(nfeatures), false);
+
+  auto out = batchnorm(
+      input, weight, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5);
+
+  auto todim = af::dim4(nfeatures);
+  std::vector<int> nrm_axes = {3};
+  auto avg = moddims(mean(input, nrm_axes), todim);
+  auto variance = moddims(var(input, nrm_axes, true), todim);
+
+  for (int i = 0; i < nfeatures; ++i) {
+    std::array<af::index, 4> sel = {
+        i % 13, (i / 13) % 13, (i / 13) / 13, af::span};
+    auto thisInput = input.array()(sel[0], sel[1], sel[2], sel[3]);
+    auto thisMean = avg(i).scalar<float>();
+    auto thisVar = variance(i).scalar<float>();
+    auto thisWeight = weight.array()(i).scalar<float>();
+    auto thisBias = bias.array()(i).scalar<float>();
+
+    auto expectedOut = (thisInput - thisMean) / sqrt(thisVar + 1e-5);
+    expectedOut = expectedOut * thisWeight + thisBias;
+    ASSERT_TRUE(allClose(
+        out.array()(sel[0], sel[1], sel[2], sel[3]), expectedOut, 1e-5));
+  }
 }
 
 TEST(AutogradTest, BatchnormJacobian) {
   // Jacobian Test with  train_mode = true;
 
-  int num_feat = 3;
-  std::vector<int> feat_axes = {2};
-  auto input = Variable(af::randu(8, 8, num_feat, 16, af::dtype::f32), true);
-  auto running_mean = Variable(af::randu(num_feat, af::dtype::f32), false);
-  auto running_var = Variable(af::randu(num_feat, af::dtype::f32), false);
-  auto weight = Variable(af::randu(num_feat, af::dtype::f32), true);
-  auto bias = Variable(af::randu(num_feat, af::dtype::f32), true);
+  int numFeat = 3;
+  std::vector<int> featAxes = {2};
+  auto input = Variable(af::randu(8, 8, numFeat, 16, af::dtype::f32), true);
+  auto runningMean = Variable(af::randu(numFeat, af::dtype::f32), false);
+  auto runningVar = Variable(af::randu(numFeat, af::dtype::f32), false);
+  auto weight = Variable(af::randu(numFeat, af::dtype::f32), true);
+  auto bias = Variable(af::randu(numFeat, af::dtype::f32), true);
 
   // Observation:
   // When testing on MKL-DNN backend, precision 1E-2 is a good choice.
@@ -929,68 +1029,78 @@ TEST(AutogradTest, BatchnormJacobian) {
 
   auto func_bn_in = [&](Variable& in) {
     return (batchnorm(
-        in,
-        weight,
-        bias,
-        running_mean,
-        running_var,
-        feat_axes,
-        true,
-        0.0,
-        1E-5));
+        in, weight, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_bn_in, input, 1E-2, 1E-4));
+  ASSERT_TRUE(jacobianTestImpl(func_bn_in, input, 1e-2, 1e-4));
 
   auto func_bn_wt = [&](Variable& wt) {
     return (batchnorm(
-        input,
-        wt,
-        bias,
-        running_mean,
-        running_var,
-        feat_axes,
-        true,
-        0.0,
-        1E-5));
+        input, wt, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_bn_wt, weight, 1E-2, 1E-4));
+  ASSERT_TRUE(jacobianTestImpl(func_bn_wt, weight, 1e-2, 1e-4));
 
   auto func_bn_bs = [&](Variable& bs) {
     return (batchnorm(
-        input,
-        weight,
-        bs,
-        running_mean,
-        running_var,
-        feat_axes,
-        true,
-        0.0,
-        1E-5));
+        input, weight, bs, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_bn_bs, bias, 1E-2, 1E-4));
+  ASSERT_TRUE(jacobianTestImpl(func_bn_bs, bias, 1e-2, 1e-4));
+}
+
+TEST(AutogradTest, BatchnormJacobianMultipleAxies) {
+  // Jacobian Test with  train_mode = true;
+  std::vector<int> featAxes = {0, 1, 2};
+  auto input = Variable(af::randu(8, 8, 3, 16, af::dtype::f32), true);
+  auto nfeatures = 1;
+  for (auto ax : featAxes) {
+    nfeatures *= input.dims(ax);
+  }
+  auto runningMean = Variable(af::randu(nfeatures, af::dtype::f32), false);
+  auto runningVar = Variable(af::randu(nfeatures, af::dtype::f32), false);
+  auto weight = Variable(af::randu(nfeatures, af::dtype::f32), true);
+  auto bias = Variable(af::randu(nfeatures, af::dtype::f32), true);
+
+  // Observation:
+  // When testing on MKL-DNN backend, precision 1E-2 is a good choice.
+  // Higher precision may lead to testing failure on some elements.
+
+  auto func_bn_in = [&](Variable& in) {
+    return (batchnorm(
+        in, weight, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
+  };
+  ASSERT_TRUE(jacobianTestImpl(func_bn_in, input, 1e-2, 1e-4));
+
+  auto func_bn_wt = [&](Variable& wt) {
+    return (batchnorm(
+        input, wt, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
+  };
+  ASSERT_TRUE(jacobianTestImpl(func_bn_wt, weight, 1e-2, 1e-4));
+
+  auto func_bn_bs = [&](Variable& bs) {
+    return (batchnorm(
+        input, weight, bs, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
+  };
+  ASSERT_TRUE(jacobianTestImpl(func_bn_bs, bias, 1e-2, 1e-4));
 }
 
 TEST(AutogradTest, LayerNormJacobian) {
-  double eps = 1E-5;
-  std::vector<int> feat_axes = {1};
-  auto input = Variable(af::randu(4, 3, 10), true);
-
-  Variable dummy_in_mean, dummy_in_var;
+  double eps = 1e-5;
+  std::vector<int> featAxes = {0, 1, 2, 3};
+  auto input = Variable(af::randu(7, 7, 3, 10), true);
+  auto nfeatures = 1;
+  for (auto ax : featAxes) {
+    nfeatures *= input.dims(ax);
+  }
+  auto runningMean = Variable(af::randu(nfeatures, af::dtype::f32), false);
+  auto runningVar = Variable(af::randu(nfeatures, af::dtype::f32), false);
+  auto weight = Variable(af::randu(nfeatures, af::dtype::f32), true);
+  auto bias = Variable(af::randu(nfeatures, af::dtype::f32), true);
 
   auto func_ln_in = [&](Variable& in) {
     return batchnorm(
-        in,
-        Variable(),
-        Variable(),
-        dummy_in_mean,
-        dummy_in_var,
-        feat_axes,
-        true,
-        0.9,
-        1E-5);
+        in, weight, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5);
   };
 
-  ASSERT_TRUE(jacobianTestImpl(func_ln_in, input, 1E-2, 1E-4));
+  ASSERT_TRUE(jacobianTestImpl(func_ln_in, input, 1e-2, 1e-4));
 }
 
 int main(int argc, char** argv) {

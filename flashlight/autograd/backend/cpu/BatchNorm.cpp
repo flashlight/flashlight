@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <algorithm>
 #include <stdexcept>
 
 #include <arrayfire.h>
@@ -44,6 +45,22 @@ Variable batchnorm(
     nfeatures *= input.dims(ax);
   }
 
+  if (running_var.isempty()) {
+    running_var = Variable(af::constant(1.0, nfeatures, input.type()), false);
+  }
+
+  if (running_mean.isempty()) {
+    running_mean = Variable(af::constant(0.0, nfeatures, input.type()), false);
+  }
+
+  // Check if axes is valid
+  auto max_axis = *std::max_element(axes.begin(), axes.end());
+  auto min_axis = *std::min_element(axes.begin(), axes.end());
+  bool axesContinuous = (axes.size() == (max_axis - min_axis + 1));
+  if (!axesContinuous) {
+    throw std::invalid_argument("axis array should be continuous");
+  }
+
   auto dType = detail::mkldnnMapToType(input.type());
   auto mkldnnEngine = detail::MkldnnEngine::getInstance().getEngine();
   auto formatX = mkldnn::memory::format::x;
@@ -72,12 +89,23 @@ Variable batchnorm(
   /****************************************************************************/
   // Prepare the fwd operator descriptor
 
-  // Input & output same dim
+  auto rawDims = std::vector<int> {
+    (int)input.dims(kWIdx),
+    (int)input.dims(kHIdx),
+    (int)input.dims(kChannelSizeIdx),
+    (int)input.dims(kBatchSizeIdx)
+  };
+  if (axes.size() > 1) {
+    // if norm on multiple axes, we view all axes as on channel axis
+    for (auto ax : axes) {
+      rawDims[ax] = (ax != kChannelSizeIdx) ? 1 : nfeatures;
+    }
+  }
   auto inputOutputDims = detail::convertAfToMklDnnDims({
-      input.dims(kBatchSizeIdx),
-      input.dims(kChannelSizeIdx),
-      input.dims(kHIdx),
-      input.dims(kWIdx),
+      rawDims[kBatchSizeIdx],
+      rawDims[kChannelSizeIdx],
+      rawDims[kHIdx],
+      rawDims[kWIdx],
   });
   auto inputOutputMemDesc =
       mkldnn::memory::desc({inputOutputDims}, dType, formatNCHW);
