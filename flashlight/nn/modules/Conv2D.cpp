@@ -27,6 +27,8 @@ Conv2D::Conv2D(
     int sy,
     IntOrPadMode px,
     IntOrPadMode py,
+    int dx,
+    int dy,
     bool bias,
     int groups)
     : nIn_(nin),
@@ -37,6 +39,8 @@ Conv2D::Conv2D(
       yStride_(sy),
       xPad_(px.padVal),
       yPad_(py.padVal),
+      xDilation_(dx),
+      yDilation_(dy),
       bias_(bias),
       groups_(groups) {
   initialize();
@@ -48,6 +52,8 @@ Conv2D::Conv2D(
     int sy,
     IntOrPadMode px,
     IntOrPadMode py,
+    int dx,
+    int dy,
     int groups)
     : UnaryModule({w}),
       nIn_(w.dims(2)),
@@ -58,6 +64,8 @@ Conv2D::Conv2D(
       yStride_(sy),
       xPad_(px.padVal),
       yPad_(py.padVal),
+      xDilation_(dx),
+      yDilation_(dy),
       bias_(false),
       groups_(groups) {}
 
@@ -68,6 +76,8 @@ Conv2D::Conv2D(
     int sy,
     IntOrPadMode px,
     IntOrPadMode py,
+    int dx,
+    int dy,
     int groups)
     : UnaryModule({w, b}),
       nIn_(w.dims(2)),
@@ -78,6 +88,8 @@ Conv2D::Conv2D(
       yStride_(sy),
       xPad_(px.padVal),
       yPad_(py.padVal),
+      xDilation_(dx),
+      yDilation_(dy),
       bias_(true),
       groups_(groups) {
   if (b.dims(2) != w.dims(3)) {
@@ -98,9 +110,27 @@ Variable Conv2D::forward(const Variable& input) {
   }
   if (bias_) {
     return conv2d(
-        input, params_[0], params_[1], xStride_, yStride_, px, py, groups_);
+        input,
+        params_[0],
+        params_[1],
+        xStride_,
+        yStride_,
+        px,
+        py,
+        xDilation_,
+        yDilation_,
+        groups_);
   } else {
-    return conv2d(input, params_[0], xStride_, yStride_, px, py, groups_);
+    return conv2d(
+        input,
+        params_[0],
+        xStride_,
+        yStride_,
+        px,
+        py,
+        xDilation_,
+        yDilation_,
+        groups_);
   }
 }
 
@@ -132,7 +162,9 @@ std::string Conv2D::prettyString() const {
   } else {
     ss << yPad_;
   }
+  ss << ", " << xDilation_ << ", " << yDilation_;
   ss << ")";
+
   if (bias_) {
     ss << " (with bias)";
   } else {

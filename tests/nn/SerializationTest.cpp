@@ -212,7 +212,7 @@ TEST(SerializationTest, PrettyString) {
   std::string expectedstr =
       "Sequential [input -> (0) -> (1) -> (2) -> (3) "
       "-> (4) -> (5) -> (6) -> output]"
-      "(0): Conv2D (3->64, 5x5, 1, 1, 0, 0) (with bias)"
+      "(0): Conv2D (3->64, 5x5, 1, 1, 0, 0, 1, 1) (with bias)"
       "(1): Pool2D-max (3x3, 2,2, 1,1)"
       "(2): ReLU"
       "(3): Dropout (0.400000)"

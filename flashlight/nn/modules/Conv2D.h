@@ -21,8 +21,10 @@ namespace fl {
  * and generates an output of shape [\f$X_{out}\f$, \f$Y_{out}\f$,
  * \f$C_{out}\f$, \f$N\f$]
  * where \f$C_{out}\f$ is the number of output channels,
- * \f[X_{out} = \frac{X_{in} + 2 \times X_{pad} - X_{filter}}{X_{stride}} + 1\f]
- * \f[Y_{out} = \frac{Y_{in} + 2 \times Y_{pad} - Y_{filter}}{Y_{stride}} + 1\f]
+ * \f[X_{out} = \frac{X_{in} + 2 \times X_{pad} - (1 + (X_{filter} - 1) \times
+ * X_{dilation})}{X_{stride}} + 1\f]
+ * \f[Y_{out} = \frac{Y_{in} + 2 \times Y_{pad} - (1 + (Y_{filter} - 1) \times
+ * Y_{dilation})}{Y_{stride}} + 1\f]
  *
  * Two modes for zero-padding are supported:
  *
@@ -34,7 +36,6 @@ namespace fl {
  */
 class Conv2D : public UnaryModule {
  private:
-
   FL_SAVE_LOAD_WITH_BASE(
       UnaryModule,
       nIn_,
@@ -45,17 +46,20 @@ class Conv2D : public UnaryModule {
       yStride_,
       xPad_,
       yPad_,
+      fl::versioned(xDilation_, 1),
+      fl::versioned(yDilation_, 1),
       bias_,
       groups_)
 
   void initialize();
 
-protected:
+ protected:
   Conv2D() = default;
   int nIn_, nOut_; // in/op channels
   int xFilter_, yFilter_; // filter dims
   int xStride_, yStride_; // stride
   int xPad_, yPad_; // padding
+  int xDilation_{1}, yDilation_{1}; // dilation
   bool bias_;
   int groups_;
 
@@ -75,6 +79,10 @@ protected:
    * @param py the amount of zero-padding added to the both sides of the second
    *  dimension of the input. Accepts a non-negative integer value or an enum
    * fl::PaddingMode
+   * @param dx dilation of the convolution along the first kernel dimension. A
+   *  dilation of 1 is equivalent to a standard convolution along this axis.
+   * @param dy dilation of the convolution along the second kernel dimension. A
+   *  dilation of 1 is equivalent to a standard convolution along this axis.
    * @param bias a boolean value that controls whether to add a learnable bias
    *  to the output
    * @param groups the number of groups that the input and output channels
@@ -91,6 +99,8 @@ protected:
       int sy = 1,
       detail::IntOrPadMode px = 0,
       detail::IntOrPadMode py = 0,
+      int dx = 1,
+      int dy = 1,
       bool bias = true,
       int groups = 1);
 
@@ -108,6 +118,10 @@ protected:
    * @param py the amount of zero-padding added to the both sides of the second
    *  dimension of the input. Accepts a non-negative integer value or an enum
    * fl::PaddingMode
+   * @param dx dilation of the convolution along the first kernel dimension. A
+   *  dilation of 1 is equivalent to a standard convolution along this axis.
+   * @param dy dilation of the convolution along the second kernel dimension. A
+   *  dilation of 1 is equivalent to a standard convolution along this axis.
    * @param groups the number of groups that the input and output channels
    *  are divided into for restricting the connectivity between input and output
    *  channels. If `groups` > 1, the the output channels in the i-th group will
@@ -119,6 +133,8 @@ protected:
       int sy = 1,
       detail::IntOrPadMode px = 0,
       detail::IntOrPadMode py = 0,
+      int dx = 1,
+      int dy = 1,
       int groups = 1);
 
   /**
@@ -137,6 +153,10 @@ protected:
    * @param py the amount of zero-padding added to the both sides of the second
    *  dimension of the input. Accepts a non-negative integer value or an enum
    * fl::PaddingMode
+   * @param dx dilation of the convolution along the first kernel dimension. A
+   *  dilation of 1 is equivalent to a standard convolution along this axis.
+   * @param dy dilation of the convolution along the second kernel dimension. A
+   *  dilation of 1 is equivalent to a standard convolution along this axis.
    * @param groups the number of groups that the input and output channels
    *  are divided into for restricting the connectivity between input and output
    *  channels. If `groups` > 1, the the output channels in the i-th group will
@@ -149,6 +169,8 @@ protected:
       int sy = 1,
       detail::IntOrPadMode px = 0,
       detail::IntOrPadMode py = 0,
+      int dx = 1,
+      int dy = 1,
       int groups = 1);
 
   Variable forward(const Variable& input) override;
@@ -159,3 +181,4 @@ protected:
 } // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::Conv2D)
+CEREAL_CLASS_VERSION(fl::Conv2D, 1)

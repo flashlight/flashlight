@@ -477,6 +477,10 @@ linear(const Variable& input, const Variable& weight, const Variable& bias);
  * dimension
  * @param py number of positions of zero-padding on both sides in the second
  * dimension
+ * @param dx dilation along the first kernel dimension. A dilation of 1
+ * is equivalent to a standard convolution along this axis.
+ * @param dy dilation along the second kernel dimension. A dilation of 1
+ * is equivalent to a standard convolution along this axis.
  * @param groups number of filter groups
  * @return a Variable with shape [\f$X_{out}\f$, \f$Y_{out}\f$, \f$C_{out}\f$,
  * \f$N\f$]]
@@ -488,6 +492,8 @@ Variable conv2d(
     int sy = 1,
     int px = 0,
     int py = 0,
+    int dx = 1,
+    int dy = 1,
     int groups = 1);
 
 /**
@@ -513,6 +519,10 @@ Variable conv2d(
  * dimension
  * @param py number of positions of zero-padding on both sides in the second
  * dimension
+ * @param dx dilation along the first kernel dimension. A dilation of 1
+ * is equivalent to a standard convolution along this axis.
+ * @param dy dilation along the second kernel dimension. A dilation of 1
+ * is equivalent to a standard convolution along this axis.
  * @param groups number of filter groups
  * @param bias a Variable with shape [\f$C_{out}\f$]
  * @return a Variable with shape [\f$X_{out}\f$, \f$Y_{out}\f$, \f$C_{out}\f$,
@@ -526,6 +536,8 @@ Variable conv2d(
     int sy = 1,
     int px = 0,
     int py = 0,
+    int dx = 1,
+    int dy = 1,
     int groups = 1);
 
 /**

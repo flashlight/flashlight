@@ -314,12 +314,14 @@ ConvDescriptor::ConvDescriptor(
     int py,
     int sx,
     int sy,
+    int dx,
+    int dy,
     int groups) {
   CUDNN_CHECK_ERR(cudnnCreateConvolutionDescriptor(&descriptor));
   cudnnDataType_t cudnntype = cudnnMapToType(type);
   std::array<int, 2> padding = {(int)py, (int)px};
   std::array<int, 2> stride = {(int)sy, (int)sx};
-  std::array<int, 2> dilation = {1, 1};
+  std::array<int, 2> dilation = {(int)dy, (int)dx};
 
   CUDNN_CHECK_ERR(cudnnSetConvolutionNdDescriptor(
       descriptor,

@@ -55,6 +55,8 @@ class ConvDescriptor {
       int py,
       int sx,
       int sy,
+      int dx,
+      int dy,
       int groups = 1);
   cudnnConvolutionDescriptor_t descriptor;
   ~ConvDescriptor();

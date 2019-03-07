@@ -12,8 +12,8 @@
 
 #include "flashlight/autograd/Functions.h"
 #include "flashlight/autograd/Variable.h"
-#include "flashlight/common/DevicePtr.h"
 #include "flashlight/autograd/backend/cuda/CudnnUtils.h"
+#include "flashlight/common/DevicePtr.h"
 
 namespace {
 
@@ -39,9 +39,11 @@ Variable conv2d(
     int sy,
     int px,
     int py,
+    int dx,
+    int dy,
     int groups) {
   auto dummy_bias = Variable(af::array(), false);
-  return conv2d(input, weights, dummy_bias, sx, sy, px, py, groups);
+  return conv2d(input, weights, dummy_bias, sx, sy, px, py, dx, dy, groups);
 }
 
 Variable conv2d(
@@ -52,12 +54,14 @@ Variable conv2d(
     int sy,
     int px,
     int py,
+    int dx,
+    int dy,
     int groups) {
   auto has_bias = bias.elements() > 0;
 
   auto in_desc = TensorDescriptor(input);
   auto wt_desc = FilterDescriptor(weights);
-  auto conv_desc = ConvDescriptor(input.type(), px, py, sx, sy, groups);
+  auto conv_desc = ConvDescriptor(input.type(), px, py, sx, sy, dx, dy, groups);
 
   std::array<int, 4> odims;
   CUDNN_CHECK_ERR(cudnnGetConvolutionNdForwardOutputDim(
@@ -129,7 +133,7 @@ Variable conv2d(
           out_raw.get()));
     }
   }
-  auto gradFunc = [sx, sy, px, py, has_bias, groups](
+  auto gradFunc = [sx, sy, px, py, dx, dy, has_bias, groups](
                       std::vector<Variable>& inputs,
                       const Variable& grad_output) {
     auto& in = inputs[0];
@@ -164,7 +168,7 @@ Variable conv2d(
       }
     }
     auto w_desc = FilterDescriptor(wt);
-    auto c_desc = ConvDescriptor(in.type(), px, py, sx, sy, groups);
+    auto c_desc = ConvDescriptor(in.type(), px, py, sx, sy, dx, dy, groups);
 
     cudnnConvolutionBwdDataAlgo_t bwd_data_algo;
     CUDNN_CHECK_ERR(cudnnGetConvolutionBackwardDataAlgorithm(

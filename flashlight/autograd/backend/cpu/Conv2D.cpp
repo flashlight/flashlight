@@ -40,9 +40,11 @@ Variable conv2d(
     int sy,
     int px,
     int py,
+    int dx,
+    int dy,
     int groups) {
   auto dummy_bias = Variable(af::array(), false);
-  return conv2d(input, weights, dummy_bias, sx, sy, px, py, groups);
+  return conv2d(input, weights, dummy_bias, sx, sy, px, py, dx, dy, groups);
 }
 
 Variable conv2d(
@@ -53,10 +55,18 @@ Variable conv2d(
     int sy,
     int px,
     int py,
+    int dx,
+    int dy,
     int groups) {
   auto output = af::array(
-      (input.dims(kWIdx) + (2 * px) - weights.dims(kWIdx)) / sx + 1,
-      (input.dims(kHIdx) + (2 * py) - weights.dims(kHIdx)) / sy + 1,
+      1 +
+          (input.dims(kWIdx) + (2 * px) -
+           (1 + (weights.dims(kWIdx) - 1) * dx)) /
+              sx,
+      1 +
+          (input.dims(kHIdx) + (2 * py) -
+           (1 + (weights.dims(kHIdx) - 1) * dy)) /
+              sy,
       weights.dims(kWeightOutputChannelSizeIdx),
       input.dims(kIOBatchSizeIdx));
   auto hasBias = bias.elements() > 0;
@@ -65,10 +75,11 @@ Variable conv2d(
   // - Input is WHCN
   // - Weights are WHIO
   // - Output is WHCN
-  // Since ArrayFire is column major, getting a raw pointer (1D representation)
-  // of these shapes and viewing as if the representation is row major
-  // transposes along all axis into NCHW for the input and output and OIHW for
-  // the weights - these are the shapes we use for the convolution.
+  // Since ArrayFire is column major, getting a raw pointer (1D
+  // representation) of these shapes and viewing as if the representation is
+  // row major transposes along all axis into NCHW for the input and output
+  // and OIHW for the weights - these are the shapes we use for the
+  // convolution.
   auto dataType = detail::mkldnnMapToType(input.type());
   // Use memory::format::any for memory formatting even if convolution inputs
   // are shaped a particular way.
@@ -111,6 +122,9 @@ Variable conv2d(
       {weights.dims(kWeightOutputChannelSizeIdx)});
   memory::dims mStrideDims = {sy, sx};
   memory::dims mPaddingDims = {py, px};
+  // NB: MKL-DNN treats a dilation of 0 as a standard convolution and indexes
+  // larger dilations accordingly. See https://git.io/fhAT2 for more.
+  memory::dims mDilationDims = {dy - 1, dx - 1};
 
   // Create memory descriptors. using format::any gives the best performance
   auto inputMD = memory::desc({mInputDims}, dataType, formatAny);
@@ -135,6 +149,7 @@ Variable conv2d(
         biasMD,
         outputMD,
         mStrideDims,
+        mDilationDims,
         mPaddingDims,
         mPaddingDims,
         padding_kind::zero);
@@ -146,6 +161,7 @@ Variable conv2d(
         weightMD,
         outputMD,
         mStrideDims,
+        mDilationDims,
         mPaddingDims,
         mPaddingDims,
         padding_kind::zero);
@@ -223,6 +239,7 @@ Variable conv2d(
                    mOutputDims,
                    mBiasDims,
                    mStrideDims,
+                   mDilationDims,
                    mPaddingDims,
                    // Memory descriptors
                    inputMD,
@@ -249,6 +266,7 @@ Variable conv2d(
           weightMD,
           outputMD,
           mStrideDims,
+          mDilationDims,
           mPaddingDims,
           mPaddingDims,
           padding_kind::zero);
@@ -328,6 +346,7 @@ Variable conv2d(
             biasMD,
             outputMD,
             mStrideDims,
+            mDilationDims,
             mPaddingDims,
             mPaddingDims,
             padding_kind::zero);
@@ -338,6 +357,7 @@ Variable conv2d(
             weightMD,
             outputMD,
             mStrideDims,
+            mDilationDims,
             mPaddingDims,
             mPaddingDims,
             padding_kind::zero);

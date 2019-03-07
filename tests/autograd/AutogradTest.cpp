@@ -496,16 +496,17 @@ TEST(AutogradTest, Convolve) {
   auto bs = Variable(af::randu(1, 1, 6, 1, af::dtype::f32), true);
   int px = 2, py = 1;
   int sx = 1, sy = 1;
+  int dx = 1, dy = 1;
   auto func_conv_in = [&](Variable& input) {
-    return conv2d(input, wt, bs, sx, sy, px, py);
+    return conv2d(input, wt, bs, sx, sy, px, py, dx, dy);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_in, in, 0.06));
   auto func_conv_wt = [&](Variable& weight) {
-    return conv2d(in, weight, bs, sx, sy, px, py);
+    return conv2d(in, weight, bs, sx, sy, px, py, dx, dy);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_wt, wt, 0.05));
   auto func_conv_bs = [&](Variable& bias) {
-    return conv2d(in, wt, bias, sx, sy, px, py);
+    return conv2d(in, wt, bias, sx, sy, px, py, dx, dy);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_bs, bs, 0.02));
 }
@@ -522,17 +523,38 @@ TEST(AutogradTest, ConvolveFilterGroups) {
 
   int px = 2, py = 1;
   int sx = 1, sy = 1;
-
+  int dx = 1, dy = 1;
   auto func_conv_in = [&](Variable& input) {
-    return conv2d(input, wt, bs, sx, sy, px, py, groups);
+    return conv2d(input, wt, bs, sx, sy, px, py, dx, dy, groups);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_in, in, 0.06));
   auto func_conv_wt = [&](Variable& weight) {
-    return conv2d(in, weight, bs, sx, sy, px, py, groups);
+    return conv2d(in, weight, bs, sx, sy, px, py, dx, dy, groups);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_wt, wt, 0.05));
   auto func_conv_bs = [&](Variable& bias) {
-    return conv2d(in, wt, bias, sx, sy, px, py, groups);
+    return conv2d(in, wt, bias, sx, sy, px, py, dx, dy, groups);
+  };
+  ASSERT_TRUE(jacobianTestImpl(func_conv_bs, bs, 0.02));
+}
+
+TEST(AutogradTest, ConvolveDilation) {
+  auto in = Variable(af::randu(10, 9, 8, 7, af::dtype::f32), true);
+  auto wt = Variable(af::randu(4, 3, 8, 6, af::dtype::f32), true);
+  auto bs = Variable(af::randu(1, 1, 6, 1, af::dtype::f32), true);
+  int px = 2, py = 1;
+  int sx = 1, sy = 1;
+  int dx = 2, dy = 1;
+  auto func_conv_in = [&](Variable& input) {
+    return conv2d(input, wt, bs, sx, sy, px, py, dx, dy);
+  };
+  ASSERT_TRUE(jacobianTestImpl(func_conv_in, in, 0.06));
+  auto func_conv_wt = [&](Variable& weight) {
+    return conv2d(in, weight, bs, sx, sy, px, py, dx, dy);
+  };
+  ASSERT_TRUE(jacobianTestImpl(func_conv_wt, wt, 0.05));
+  auto func_conv_bs = [&](Variable& bias) {
+    return conv2d(in, wt, bias, sx, sy, px, py, dx, dy);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_bs, bs, 0.02));
 }
