@@ -336,6 +336,26 @@ Variable sumAs(const Variable& input, const af::dim4& rdims);
 Variable concatenate(const std::vector<Variable>& concatInputs, int dim);
 
 /**
+ * Splits a Variable into equally sized chunks (if possible)
+ *
+ * @param input a Variable to split
+ * @param splitSize size of each split. If input dimension is not evenly
+ * divisible, last chunk of smaller splitSize will be included.
+ * @param dim dimension along which to split the Variable
+ */
+std::vector<Variable> split(const Variable& input, dim_t splitSize, int dim);
+
+/**
+ * Splits a Variable into smaller chunks.
+ *
+ * @param input a Variable to split
+ * @param splitSizes vector of integers specifying the sizes for each split
+ * @param dim dimension along which to split the Variable
+ */
+std::vector<Variable>
+split(const Variable& input, const std::vector<dim_t>& splitSizes, int dim);
+
+/**
  * Repeats the tensor `input` along specific dimensions. The number of
  * repetition along each dimension is specified in descriptor `dims`.
  */

@@ -32,7 +32,7 @@ bool jacobianTestImpl(
     Variable& input,
     float precision = 1E-5,
     float perturbation = 1E-4) {
-  auto fwd_jacobian =
+  auto fwdJacobian =
       af::array(func(input).elements(), input.elements(), af::dtype::f32);
 
   for (int i = 0; i < input.elements(); ++i) {
@@ -43,11 +43,11 @@ bool jacobianTestImpl(
     input.array()(i) = orig + perturbation;
     auto outb = func(input).array();
     input.array()(i) = orig;
-    fwd_jacobian(af::span, i) =
+    fwdJacobian(af::span, i) =
         af::moddims((outb - outa), outa.elements()) * 0.5 / perturbation;
   }
 
-  auto bwd_jacobian =
+  auto bwdJacobian =
       af::array(func(input).elements(), input.elements(), af::dtype::f32);
   auto dout =
       Variable(af::constant(0, func(input).dims(), input.type()), false);
@@ -56,11 +56,11 @@ bool jacobianTestImpl(
     input.zeroGrad();
     auto out = func(input);
     out.backward(dout);
-    bwd_jacobian(i, af::span) =
+    bwdJacobian(i, af::span) =
         af::moddims(input.grad().array(), input.elements());
     dout.array()(i) = 0;
   }
-  return allClose(fwd_jacobian, bwd_jacobian, precision);
+  return allClose(fwdJacobian, bwdJacobian, precision);
 }
 
 } // namespace
@@ -330,6 +330,34 @@ TEST(AutogradTest, Concatenate) {
     return concatenate({x1, x2, in, x4}, 2);
   };
   ASSERT_TRUE(jacobianTestImpl(func_concatenate_t2, x3));
+}
+
+
+TEST(AutogradTest, Split) {
+  // check output
+  auto x = Variable(af::range(af::dim4(7, 2)), true);
+  auto yVec = split(x, 1, 0);
+  ASSERT_EQ(yVec.size(), 7);
+  ASSERT_EQ(yVec[0].dims(), af::dim4(1, 2));
+  ASSERT_EQ(yVec[2].dims(), af::dim4(1, 2));
+  ASSERT_TRUE(af::allTrue<bool>(yVec[6].array() == 6));
+
+  auto a = Variable(af::range(af::dim4(5, 3), 1), true);
+  auto bVec = split(a, {2, 1}, 1);
+  ASSERT_EQ(bVec.size(), 2);
+  ASSERT_EQ(bVec[0].dims(), af::dim4(5, 2));
+  ASSERT_EQ(bVec[1].dims(), af::dim4(5, 1));
+  ASSERT_TRUE(
+      af::allTrue<bool>(bVec[0].array() == af::range(af::dim4(5, 2), 1)));
+  ASSERT_TRUE(af::allTrue<bool>(bVec[1].array() == 2));
+
+  // check exception handling
+  ASSERT_THROW(split(a, {2, 2}, 0), std::invalid_argument);
+
+  // check gradient
+  auto gradFunc = [](Variable& in) { return split(in, 2, 1)[0]; };
+  auto input = Variable(af::randu(2, 3, af::dtype::f64), true);
+  ASSERT_TRUE(jacobianTestImpl(gradFunc, input));
 }
 
 TEST(AutogradTest, TileAs) {

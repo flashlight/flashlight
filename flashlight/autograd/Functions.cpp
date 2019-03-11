@@ -490,6 +490,42 @@ Variable concatenate(const std::vector<Variable>& concatInputs, int dim) {
   return Variable(result, inputs_nodata, gradFunc);
 }
 
+std::vector<Variable> split(const Variable& input, dim_t splitSize, int dim) {
+  if (splitSize <= 0) {
+    throw std::invalid_argument("split size must be a positive integer");
+  }
+  auto dimSize = input.dims(dim);
+  std::vector<dim_t> splitSizes(dimSize / splitSize, splitSize);
+
+  if (dimSize % splitSize > 0) {
+    splitSizes.push_back(dimSize % splitSize);
+  }
+  return split(input, splitSizes, dim);
+}
+
+std::vector<Variable>
+split(const Variable& input, const std::vector<dim_t>& splitSizes, int dim) {
+  auto dimSize = input.dims(dim);
+  auto N = splitSizes.size();
+
+  std::vector<Variable> outputs(N);
+  std::array<af::seq, 4> sel = {af::span, af::span, af::span, af::span};
+  int start = 0;
+  for (int i = 0; i < N; ++i) {
+    if (splitSizes[i] <= 0) {
+      throw std::invalid_argument("elements in split sizes has to be positive");
+    }
+    int end = start + splitSizes[i];
+    sel[dim] = af::seq(start, end - 1);
+    outputs[i] = input(sel[0], sel[1], sel[2], sel[3]);
+    start = end;
+  }
+  if (start != dimSize) {
+    throw std::invalid_argument("sum of split sizes must match split dim");
+  }
+  return outputs;
+}
+
 Variable tile(const Variable& input, const af::dim4& dims) {
   auto result = tile(input.array(), dims);
   af::dim4 idims = input.dims();
