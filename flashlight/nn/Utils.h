@@ -29,7 +29,7 @@ int64_t getNumRnnParams(
 
 std::pair<dim_t, dim_t> computeFans(af::dim4 dims);
 
-int derivePadding(int inSz, int filterSz, int stride, int pad);
+int derivePadding(int inSz, int filterSz, int stride, int pad, int dilation);
 
 } // namespace detail
 } // namespace fl

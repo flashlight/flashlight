@@ -67,17 +67,13 @@ std::pair<dim_t, dim_t> computeFans(af::dim4 dims) {
   return {fan_in, fan_out};
 }
 
-int derivePadding(
-    int inSz,
-    int filterSz,
-    int stride,
-    int pad) {
+int derivePadding(int inSz, int filterSz, int stride, int pad, int dilation) {
   if (pad == static_cast<int>(PaddingMode::SAME)) {
     int newPad;
     if (inSz % stride == 0) {
-      newPad = filterSz - stride;
+      newPad = (filterSz - 1) * dilation - stride + 1;
     } else {
-      newPad = filterSz - (inSz % stride);
+      newPad = (filterSz - 1) * dilation - (inSz % stride) + 1;
     }
     newPad = (newPad + 1) / 2; // equal pad on both sides
     return std::max(newPad, 0);

@@ -59,6 +59,8 @@ TEST(ModuleTest, ConvPadding) {
   auto conv1 = Conv2D(30, 100, 3, 5, 2, 1, PaddingMode::SAME, 0, true, 1);
   auto conv2 = Conv2D(
       30, 100, 3, 5, 2, 1, PaddingMode::SAME, PaddingMode::SAME, true, 1);
+  auto conv3 =
+      Conv2D(30, 100, 10, 10, 1, 1, PaddingMode::SAME, PaddingMode::SAME, 4, 4);
   auto input = Variable(af::randu(32, 32, 30, 2), false);
 
   auto conv1Op = conv1(input);
@@ -66,6 +68,10 @@ TEST(ModuleTest, ConvPadding) {
 
   auto conv2Op = conv2(input);
   ASSERT_EQ(conv2Op.dims(), af::dim4(16, 32, 100, 2));
+
+  // test dilation
+  auto conv3Op = conv3(input);
+  ASSERT_EQ(conv3Op.dims(), af::dim4(32, 32, 100, 2));
 }
 
 TEST(ModuleTest, GLUFwd) {

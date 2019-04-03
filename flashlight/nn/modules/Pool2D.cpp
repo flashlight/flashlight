@@ -35,8 +35,10 @@ Pool2D::Pool2D(
       mode_(mode) {}
 
 Variable Pool2D::forward(const Variable& input) {
-  auto px = detail::derivePadding(input.dims(0), xFilter_, xStride_, xPad_);
-  auto py = detail::derivePadding(input.dims(1), yFilter_, yStride_, yPad_);
+  auto px = detail::derivePadding(
+      input.dims(0), xFilter_, xStride_, xPad_, /* dilation= */ 1);
+  auto py = detail::derivePadding(
+      input.dims(1), yFilter_, yStride_, yPad_, /* dilation= */ 1);
 
   if (!(px >= 0 && py >= 0)) {
     throw std::invalid_argument("invalid padding for Pool2D");
