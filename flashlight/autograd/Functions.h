@@ -418,7 +418,7 @@ Variable matmulTN(const Variable& lhs, const Variable& rhs);
  * \f$B_1\f$ or \f$B_2\f$ is greater than 1.
 
  * @param lhs a Variable with shape [\f$M\f$, \f$N\f$, \f$B_1\f$, \f$B_2\f$]
- * @param rhs a Variable with shape [\f$N\f$, \f$K\f$, \f$B_1\f$, \f$B_2\f$]
+ * @param rhs a Variable with shape [\f$K\f$, \f$N\f$, \f$B_1\f$, \f$B_2\f$]
  * @return a Variable with shape [\f$M\f$, \f$K\f$, \f$B_1\f$, \f$B_2\f$]
  */
 Variable matmulNT(const Variable& lhs, const Variable& rhs);
