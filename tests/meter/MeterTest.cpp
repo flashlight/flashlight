@@ -50,12 +50,20 @@ TEST(MeterTest, AverageValueMeter) {
   auto val = meter.value();
   ASSERT_EQ(val[0], 3.0);
   ASSERT_EQ(val[1], 1.0);
+  ASSERT_EQ(val[2], 3);
+
+  std::array<float, 3> a{2.0, 3.0, 4.0};
+  meter.add(af::array(3, a.data()));
+  val = meter.value();
+  ASSERT_EQ(val[0], 3.0);
+  ASSERT_EQ(val[1], 0.8);
+  ASSERT_EQ(val[2], 6);
 }
 
 TEST(MeterTest, MSEMeter) {
   MSEMeter meter;
   std::array<int, 5> a{1, 2, 3, 4, 5};
-  std::array<int, 6> b{4, 5, 6, 7, 8};
+  std::array<int, 5> b{4, 5, 6, 7, 8};
   meter.add(af::array(5, a.data()), af::array(5, b.data()));
   auto val = meter.value();
   ASSERT_EQ(val, 45.0);

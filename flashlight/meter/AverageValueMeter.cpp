@@ -28,6 +28,12 @@ void AverageValueMeter::add(const double val, int64_t n /*= 1*/) {
   curN_ += n;
 }
 
+void AverageValueMeter::add(const af::array& vals) {
+  curSum_ += af::sum<double>(vals);
+  curVar_ += af::sum<double>(vals * vals);
+  curN_ += vals.dims(0);
+}
+
 std::vector<double> AverageValueMeter::value() {
   double mean = (curN_ > 0) ? curSum_ / curN_ : 0;
   double var = (curN_ > 1) ? (curVar_ - curN_ * mean * mean) / (curN_ - 1) : 0;

@@ -36,6 +36,9 @@ class AverageValueMeter {
   /** Updates counters with the given value `val` and its repetition `n`. */
   void add(const double val, int64_t n = 1);
 
+  /** Updates counters with all values in `vals`. */
+  void add(const af::array& vals);
+
   /** Returns a vector of three values:
    * - `mean`: \f$ \frac{\sum_{i = 1}^n x_i}{n} \f$
    * - `variance`: \f$ \frac{\sum_{i = 1}^n (x_i - mean)^2}{n - 1} \f$
