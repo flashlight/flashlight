@@ -73,7 +73,7 @@ class FirstOrderOptimizer {
   /** Zero the gradients for all the parameters being optimized. Typically
    * this will be called after every call to step().
    */
-  void zeroGrad();
+  virtual void zeroGrad();
 
   /**
    * Generates a stringified representation of the optimizer.
