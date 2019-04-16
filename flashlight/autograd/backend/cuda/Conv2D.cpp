@@ -180,6 +180,12 @@ Variable conv2d(
         bwd_data_pref,
         bwd_data_mem_limit,
         &bwd_data_algo));
+#ifndef FL_CUDNN_ALLOW_ALGO_1
+    // Blacklist ALGO_1. Seems to produce erroneous results on Tesla P100 GPUs.
+    if (bwd_data_algo == CUDNN_CONVOLUTION_BWD_DATA_ALGO_1) {
+      bwd_data_algo = CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
+    }
+#endif
 
     size_t wspace_bwd_data_bytes = 0;
     if (in.isCalcGrad()) {
@@ -202,6 +208,12 @@ Variable conv2d(
         bwd_filter_pref,
         bwd_filter_mem_limit,
         &bwd_filter_algo));
+#ifndef FL_CUDNN_ALLOW_ALGO_1
+    // Blacklist ALGO_1 here as well, to be safe.
+    if (bwd_filter_algo == CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1) {
+      bwd_filter_algo = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
+    }
+#endif
 
     size_t wspace_bwd_filter_bytes = 0;
     if (wt.isCalcGrad()) {
