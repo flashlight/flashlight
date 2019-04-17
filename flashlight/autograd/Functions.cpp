@@ -942,34 +942,36 @@ linear(const Variable& input, const Variable& weight, const Variable& bias) {
 }
 
 Variable gatedlinearunit(const Variable& input, const int dim) {
-  auto in_size = input.dims(dim);
+  auto in_dims = input.dims();
+  auto in_type = input.type();
+  auto in_size = in_dims[dim];
   if (in_size % 2 == 1) {
     throw std::invalid_argument("halving dimension must be even for GLU");
   }
-  std::array<af::seq, 4> fhalf = {af::span, af::span, af::span, af::span};
+
+  std::array<af::seq, 4> fhalf, shalf;
+  fhalf.fill(af::span);
+  shalf.fill(af::span);
   fhalf[dim] = af::seq(in_size / 2);
-  std::array<af::seq, 4> shalf = {af::span, af::span, af::span, af::span};
   shalf[dim] = af::seq(in_size / 2, in_size - 1);
+  af::array fhalfout = input.array()(fhalf[0], fhalf[1], fhalf[2], fhalf[3]);
+  af::array shalfout = input.array()(shalf[0], shalf[1], shalf[2], shalf[3]);
+  // Temporary workaround for indexing bug present in ArrayFire 3.6.1.
+  fhalfout = af::moddims(fhalfout, fhalfout.dims());
+  shalfout = af::moddims(shalfout, shalfout.dims());
+  shalfout = af::sigmoid(shalfout);
 
-  auto result = input.array()(fhalf[0], fhalf[1], fhalf[2], fhalf[3]) *
-      sigmoid(input.array()(shalf[0], shalf[1], shalf[2], shalf[3]));
-
-  auto gradFunc = [fhalf, shalf](
+  auto gradFunc = [fhalf, shalf, fhalfout, shalfout, in_dims, in_type](
                       std::vector<Variable>& inputs,
                       const Variable& grad_output) {
-    auto& input = inputs[0];
-    auto grad_glu = af::array(input.dims(), input.type());
-    auto shalfout =
-        sigmoid(input.array()(shalf[0], shalf[1], shalf[2], shalf[3]));
+    auto grad_glu = af::array(in_dims, in_type);
     grad_glu(fhalf[0], fhalf[1], fhalf[2], fhalf[3]) =
         shalfout * grad_output.array();
-    grad_glu(shalf[0], shalf[1], shalf[2], shalf[3]) = shalfout *
-        (1.0 - shalfout) *
-        input.array()(fhalf[0], fhalf[1], fhalf[2], fhalf[3]) *
-        grad_output.array();
+    grad_glu(shalf[0], shalf[1], shalf[2], shalf[3]) =
+        shalfout * (1.0 - shalfout) * fhalfout * grad_output.array();
     inputs[0].addGrad(Variable(grad_glu, false));
   };
-  return Variable(result, {input}, gradFunc);
+  return Variable(fhalfout * shalfout, {input.withoutData()}, gradFunc);
 }
 
 Variable embedding(const Variable& input, const Variable& embeddings) {
