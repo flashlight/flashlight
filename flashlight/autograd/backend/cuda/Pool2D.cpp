@@ -9,8 +9,8 @@
 #include "flashlight/autograd/Functions.h"
 
 #include "flashlight/autograd/Variable.h"
-#include "flashlight/common/DevicePtr.h"
 #include "flashlight/autograd/backend/cuda/CudnnUtils.h"
+#include "flashlight/common/DevicePtr.h"
 
 namespace fl {
 
@@ -55,8 +55,8 @@ Variable pool2d(
         resultraw.get()));
   }
   auto gradFunc = [wx, wy, sx, sy, px, py, mode, output](
-                       std::vector<Variable>& inputs,
-                       const Variable& grad_output) {
+                      std::vector<Variable>& inputs,
+                      const Variable& grad_output) {
     auto& in = inputs[0];
     if (!in.isCalcGrad()) {
       return;
@@ -72,7 +72,6 @@ Variable pool2d(
     const void* zerog = kZero(in.type());
 
     {
-
       DevicePtr inraw(in.array());
       DevicePtr outraw(output);
       DevicePtr gradresultraw(grad_output.array());

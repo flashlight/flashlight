@@ -332,7 +332,6 @@ TEST(AutogradTest, Concatenate) {
   ASSERT_TRUE(jacobianTestImpl(func_concatenate_t2, x3));
 }
 
-
 TEST(AutogradTest, Split) {
   // check output
   auto x = Variable(af::range(af::dim4(7, 2)), true);

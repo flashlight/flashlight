@@ -14,7 +14,6 @@
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
 
-
 #pragma once
 
 #include "flashlight/nn/Init.h"

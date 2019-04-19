@@ -75,7 +75,6 @@ class BatchDataset : public Dataset {
   int64_t preBatchSize_; // Size of the dataset before batching
   int64_t size_;
 
-  af::array makeBatch(
-      const std::vector<af::array>& data) const;
+  af::array makeBatch(const std::vector<af::array>& data) const;
 };
 } // namespace fl

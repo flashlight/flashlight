@@ -18,7 +18,6 @@
 // Keras - https://git.io/fNxKN
 // PyTorch - https://git.io/fNx6T
 
-
 #include "flashlight/nn/Init.h"
 
 #include <cmath>

@@ -89,12 +89,10 @@ Variable batchnorm(
   /****************************************************************************/
   // Prepare the fwd operator descriptor
 
-  auto rawDims = std::vector<int> {
-    (int)input.dims(kWIdx),
-    (int)input.dims(kHIdx),
-    (int)input.dims(kChannelSizeIdx),
-    (int)input.dims(kBatchSizeIdx)
-  };
+  auto rawDims = std::vector<int>{(int)input.dims(kWIdx),
+                                  (int)input.dims(kHIdx),
+                                  (int)input.dims(kChannelSizeIdx),
+                                  (int)input.dims(kBatchSizeIdx)};
   if (axes.size() > 1) {
     // if norm on multiple axes, we view all axes as on channel axis
     for (auto ax : axes) {

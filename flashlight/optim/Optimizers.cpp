@@ -14,7 +14,6 @@
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
 
-
 #include "flashlight/optim/Optimizers.h"
 
 #include <cmath>
@@ -32,7 +31,8 @@ using std::vector;
 namespace fl {
 
 FirstOrderOptimizer::FirstOrderOptimizer(
-    const vector<Variable>& parameters, double learningRate)
+    const vector<Variable>& parameters,
+    double learningRate)
     : parameters_(parameters.begin(), parameters.end()), lr_(learningRate) {}
 
 void FirstOrderOptimizer::zeroGrad() {
@@ -168,8 +168,7 @@ void AdamOptimizer::step() {
     double correctedBias2 = 1 - std::pow(beta2_, count_);
     double correctedLr = lr_ * std::sqrt(correctedBias2) / correctedBias1;
 
-    data = data -
-        (correctedLr * biasedFirst) / (af::sqrt(biasedSecond) + eps_);
+    data = data - (correctedLr * biasedFirst) / (af::sqrt(biasedSecond) + eps_);
 
     af::eval(data);
   }
@@ -281,10 +280,8 @@ AdadeltaOptimizer::AdadeltaOptimizer(
   accDelta_.reserve(parameters.size());
 
   for (const auto& parameter : parameters_) {
-    accGrad_.emplace_back(
-        af::constant(0, parameter.dims(), parameter.type()));
-    accDelta_.emplace_back(
-        af::constant(0, parameter.dims(), parameter.type()));
+    accGrad_.emplace_back(af::constant(0, parameter.dims(), parameter.type()));
+    accDelta_.emplace_back(af::constant(0, parameter.dims(), parameter.type()));
 
     accGrad_.back().eval();
     accDelta_.back().eval();

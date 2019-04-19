@@ -139,7 +139,6 @@ double layerNorm() {
   return timeit(ln_fn);
 }
 
-
 int main() {
   af::info();
   TIME(alexnet);

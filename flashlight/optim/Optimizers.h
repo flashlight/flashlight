@@ -14,7 +14,6 @@
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
 
-
 #pragma once
 
 #include <vector>
@@ -39,10 +38,10 @@ namespace fl {
  */
 class FirstOrderOptimizer {
  private:
-   /**
-    * Serialize the module's parameters.
-    */
-   FL_SAVE_LOAD(lr_, parameters_)
+  /**
+   * Serialize the module's parameters.
+   */
+  FL_SAVE_LOAD(lr_, parameters_)
 
  protected:
   std::vector<Variable> parameters_;
@@ -56,7 +55,8 @@ class FirstOrderOptimizer {
    * @param learningRate The learning rate.
    */
   FirstOrderOptimizer(
-      const std::vector<Variable>& parameters, double learningRate);
+      const std::vector<Variable>& parameters,
+      double learningRate);
 
   virtual void step() = 0;
 
@@ -99,12 +99,12 @@ class FirstOrderOptimizer {
  */
 class SGDOptimizer : public FirstOrderOptimizer {
  private:
-   FL_SAVE_LOAD_WITH_BASE(
-       FirstOrderOptimizer,
-       useNesterov_,
-       mu_,
-       wd_,
-       velocities_)
+  FL_SAVE_LOAD_WITH_BASE(
+      FirstOrderOptimizer,
+      useNesterov_,
+      mu_,
+      wd_,
+      velocities_)
 
   SGDOptimizer() = default; // Intentionally private
 
@@ -140,18 +140,18 @@ class SGDOptimizer : public FirstOrderOptimizer {
  *    https://arxiv.org/abs/1412.6980).
  */
 class AdamOptimizer : public FirstOrderOptimizer {
-  private:
-    FL_SAVE_LOAD_WITH_BASE(
-        FirstOrderOptimizer,
-        beta1_,
-        beta2_,
-        eps_,
-        wd_,
-        count_,
-        biasedFirst_,
-        biasedSecond_)
+ private:
+  FL_SAVE_LOAD_WITH_BASE(
+      FirstOrderOptimizer,
+      beta1_,
+      beta2_,
+      eps_,
+      wd_,
+      count_,
+      biasedFirst_,
+      biasedSecond_)
 
-    AdamOptimizer() = default; // Intentionally private
+  AdamOptimizer() = default; // Intentionally private
 
   double beta1_;
   double beta2_;
@@ -189,18 +189,17 @@ class AdamOptimizer : public FirstOrderOptimizer {
  * http://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf).
  */
 class RMSPropOptimizer : public FirstOrderOptimizer {
-  private:
-    FL_SAVE_LOAD_WITH_BASE(
-        FirstOrderOptimizer,
-        useFirst_,
-        rho_,
-        eps_,
-        wd_,
-        first_,
-        second_)
+ private:
+  FL_SAVE_LOAD_WITH_BASE(
+      FirstOrderOptimizer,
+      useFirst_,
+      rho_,
+      eps_,
+      wd_,
+      first_,
+      second_)
 
-    RMSPropOptimizer() = default; // Intentionally private
-
+  RMSPropOptimizer() = default; // Intentionally private
 
   bool useFirst_;
   double rho_;
@@ -240,16 +239,16 @@ class RMSPropOptimizer : public FirstOrderOptimizer {
  *    https://arxiv.org/pdf/1212.5701.pdf).
  */
 class AdadeltaOptimizer : public FirstOrderOptimizer {
-  private:
-    FL_SAVE_LOAD_WITH_BASE(
-        FirstOrderOptimizer,
-        rho_,
-        eps_,
-        wd_,
-        accGrad_,
-        accDelta_)
+ private:
+  FL_SAVE_LOAD_WITH_BASE(
+      FirstOrderOptimizer,
+      rho_,
+      eps_,
+      wd_,
+      accGrad_,
+      accDelta_)
 
-    AdadeltaOptimizer() = default; // Intentionally private
+  AdadeltaOptimizer() = default; // Intentionally private
 
   double rho_;
   double eps_;
@@ -258,15 +257,15 @@ class AdadeltaOptimizer : public FirstOrderOptimizer {
   std::vector<af::array> accDelta_;
 
  public:
-   /** Construct an Adadelta optimizer.
-    * @param parameters The parameters from e.g. `model.parameters()`.
-    * @param learningRate The learning rate for scaling delta. The original
-    * paper does not include this term (i.e. learningRate = 1.0).
-    * @param rho The decay rate for accumulating squared gradients and deltas.
-    * @param epsilon A small value used for numerical stability.
-    * @param weightDecay The amount of L2 weight decay to use for all the
-    * parameters.
-    */
+  /** Construct an Adadelta optimizer.
+   * @param parameters The parameters from e.g. `model.parameters()`.
+   * @param learningRate The learning rate for scaling delta. The original
+   * paper does not include this term (i.e. learningRate = 1.0).
+   * @param rho The decay rate for accumulating squared gradients and deltas.
+   * @param epsilon A small value used for numerical stability.
+   * @param weightDecay The amount of L2 weight decay to use for all the
+   * parameters.
+   */
   explicit AdadeltaOptimizer(
       const std::vector<Variable>& parameters,
       double learningRate = 1.0,

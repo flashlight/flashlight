@@ -57,7 +57,6 @@ class EditDistanceMeter {
    */
   void add(const af::array& output, const af::array& target);
 
-
   /** Updates all the counters with inputs sharing the same meaning. */
   void add(
       const int64_t n,

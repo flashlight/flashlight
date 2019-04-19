@@ -13,17 +13,17 @@
 
 namespace fl {
 
-View::View(af::dim4 dims) :dims_(dims) {}
+View::View(af::dim4 dims) : dims_(dims) {}
 
 Variable View::forward(const Variable& input) {
-  af::dim4 dims =dims_;
+  af::dim4 dims = dims_;
 
   return moddims(input, dims);
 }
 
 std::string View::prettyString() const {
   std::ostringstream ss;
-  ss << "View (" <<dims_ << ")";
+  ss << "View (" << dims_ << ")";
   return ss.str();
 }
 

@@ -61,9 +61,7 @@ class WeightNorm : public Module {
    * @param dim The dimension to normalize.
    */
   template <class T>
-  WeightNorm(std::shared_ptr<T> module, int dim)
-      : module_(module), dim_(dim) {
-
+  WeightNorm(std::shared_ptr<T> module, int dim) : module_(module), dim_(dim) {
     auto module_params = module_->params();
     auto v = module_params[0];
     transformDims();

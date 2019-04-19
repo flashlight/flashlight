@@ -17,5 +17,5 @@
 #pragma once
 
 #include "flashlight/autograd/Functions.h"
-#include "flashlight/autograd/Variable.h"
 #include "flashlight/autograd/Utils.h"
+#include "flashlight/autograd/Variable.h"

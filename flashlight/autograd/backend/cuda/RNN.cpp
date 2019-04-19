@@ -11,8 +11,8 @@
 #include <cudnn.h>
 
 #include "flashlight/autograd/Variable.h"
-#include "flashlight/common/DevicePtr.h"
 #include "flashlight/autograd/backend/cuda/CudnnUtils.h"
+#include "flashlight/common/DevicePtr.h"
 
 namespace {
 struct RNNGradData {
@@ -100,7 +100,6 @@ void rnn_backward(
   DevicePtr reserve_space_raw(reserve_space);
 
   {
-
     DevicePtr dy_raw(dy); // Has to be set to 0 if empty
     DevicePtr dhy_raw(dhy);
     DevicePtr dcy_raw(dcy);
@@ -318,17 +317,17 @@ std::tuple<Variable, Variable, Variable> rnn(
   auto grad_data = std::make_shared<RNNGradData>();
 
   auto gradFunc = [y,
-                    workspace_size,
-                    reserve_size,
-                    reserve_space,
-                    num_layers,
-                    hidden_size,
-                    mode,
-                    bidirectional,
-                    drop_prob,
-                    grad_data](
-                       std::vector<Variable>& inputs,
-                       const Variable& /* grad_output */) {
+                   workspace_size,
+                   reserve_size,
+                   reserve_space,
+                   num_layers,
+                   hidden_size,
+                   mode,
+                   bidirectional,
+                   drop_prob,
+                   grad_data](
+                      std::vector<Variable>& inputs,
+                      const Variable& /* grad_output */) {
     rnn_backward(
         inputs,
         grad_data,

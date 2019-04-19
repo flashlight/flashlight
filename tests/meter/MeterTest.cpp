@@ -38,8 +38,7 @@ TEST(MeterTest, FrameErrorMeter) {
   meter.add(af::array(5, a.data()), af::array(5, b.data()));
   ASSERT_EQ(meter.value(), 40.0); // 2 / 5
   meter.add(af::array(4, a.data() + 1), af::array(4, b.data() + 2));
-  ASSERT_LT(
-      fabs(55.5555555 - meter.value()), 1e-5); // 2 + 3 / 5 + 4
+  ASSERT_LT(fabs(55.5555555 - meter.value()), 1e-5); // 2 + 3 / 5 + 4
 }
 
 TEST(MeterTest, AverageValueMeter) {

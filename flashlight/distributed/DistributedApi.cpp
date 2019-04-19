@@ -8,7 +8,6 @@
 
 #include "flashlight/distributed/DistributedApi.h"
 
-
 namespace fl {
 
 bool isDistributedInit() {

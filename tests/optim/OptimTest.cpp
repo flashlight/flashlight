@@ -8,8 +8,8 @@
 
 #include <gtest/gtest.h>
 
-#include "flashlight/optim/optim.h"
 #include "flashlight/common/common.h"
+#include "flashlight/optim/optim.h"
 
 using namespace fl;
 
@@ -52,7 +52,7 @@ TEST(SerializationTest, OptimizerSerialize) {
   opt->step();
 
   save(
-    path, parameters, static_cast<std::shared_ptr<FirstOrderOptimizer>>(opt));
+      path, parameters, static_cast<std::shared_ptr<FirstOrderOptimizer>>(opt));
 
   std::vector<Variable> parameters2;
   std::shared_ptr<FirstOrderOptimizer> opt2;

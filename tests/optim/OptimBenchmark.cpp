@@ -10,8 +10,8 @@
 #include <iostream>
 
 #include "flashlight/autograd/autograd.h"
-#include "flashlight/optim/optim.h"
 #include "flashlight/common/common.h"
+#include "flashlight/optim/optim.h"
 
 using namespace fl;
 
@@ -40,10 +40,10 @@ double optloop(FirstOrderOptimizer& opt, const Variable& w) {
   auto input = Variable(af::randn(10, 10), false);
   auto fn = [&]() {
     for (int it = 0; it < 100; it++) {
-        opt.zeroGrad();
-        auto loss = fl::matmul(w, input);
-        loss.backward();
-        opt.step();
+      opt.zeroGrad();
+      auto loss = fl::matmul(w, input);
+      loss.backward();
+      opt.step();
     }
   };
   return timeit(fn);

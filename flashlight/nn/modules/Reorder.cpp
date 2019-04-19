@@ -23,8 +23,7 @@ Variable Reorder::forward(const Variable& input) {
 std::string Reorder::prettyString() const {
   std::ostringstream ss;
   ss << "Reorder";
-  ss << " (" << dim0_ << "," << dim1_ << "," << dim2_ << "," << dim3_
-     << ")";
+  ss << " (" << dim0_ << "," << dim1_ << "," << dim2_ << "," << dim3_ << ")";
   return ss.str();
 }
 
