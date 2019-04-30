@@ -31,7 +31,7 @@ void AverageValueMeter::add(const double val, int64_t n /*= 1*/) {
 void AverageValueMeter::add(const af::array& vals) {
   curSum_ += af::sum<double>(vals);
   curVar_ += af::sum<double>(vals * vals);
-  curN_ += vals.dims(0);
+  curN_ += vals.elements();
 }
 
 std::vector<double> AverageValueMeter::value() {
