@@ -10,6 +10,7 @@
 
 #include <memory>
 
+#include "flashlight/distributed/distributed.h"
 #include "flashlight/nn/modules/Module.h"
 
 namespace fl {
@@ -23,7 +24,8 @@ namespace fl {
  */
 void distributeModuleGrads(
     std::shared_ptr<const Module> module,
-    double scale = 1.0);
+    std::shared_ptr<Reducer> reducer =
+        std::make_shared<InlineReducer>(1.0 / getWorldSize()));
 
 /**
  * Traverses the network and averages its parameters with allreduce.

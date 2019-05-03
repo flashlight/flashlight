@@ -29,6 +29,22 @@ TEST(Distributed, AllReduce) {
   ASSERT_TRUE(af::allTrue<bool>(var.array() == expected_val));
 }
 
+TEST(Distributed, InlineReducer) {
+  auto rank = getWorldRank();
+  auto size = getWorldSize();
+
+  Variable var(af::constant(rank, 10), false);
+
+  auto reducer = std::make_shared<InlineReducer>(1.0 / size);
+  reducer->add(var);
+
+  // The reducer scales down by a factor of 1 / size
+  auto arr = var.array() * (size * 2);
+
+  float expected_val = size * (size - 1.0);
+  ASSERT_TRUE(af::allTrue<bool>(arr == expected_val));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
 

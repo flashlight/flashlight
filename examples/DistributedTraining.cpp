@@ -52,7 +52,7 @@ int main() {
 
   // Add a hook to synchronize gradients of model parameters as they are
   // computed
-  fl::distributeModuleGrads(model, 1.0 / worldSize);
+  fl::distributeModuleGrads(model);
 
   // Optimizer definition
   const float learningRate = 0.0001;

@@ -8,15 +8,16 @@
 
 #include <stdexcept>
 
-#include "flashlight/nn/modules/DistributedUtils.h"
-
 #include "flashlight/distributed/distributed.h"
+#include "flashlight/nn/modules/DistributedUtils.h"
 
 namespace fl {
 
-void distributeModuleGrads(std::shared_ptr<const Module> module, double scale) {
+void distributeModuleGrads(
+    std::shared_ptr<const Module> module,
+    std::shared_ptr<Reducer> reducer) {
   for (auto& param : module->params()) {
-    param.registerGradHook([scale](Variable& grad) { allReduce(grad, scale); });
+    param.registerGradHook([reducer](Variable& grad) { reducer->add(grad); });
   }
 }
 
