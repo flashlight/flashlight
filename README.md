@@ -10,6 +10,8 @@ maximum portability, and has an emphasis on efficiency and scale.
 All documentation (including build/install instructions) can be found
 [here](https://fl.readthedocs.io/en/latest/)
 
+Experimental and in-progress project components are located in `flashlight/contrib`. Breaking changes may be made to APIs therein.
+
 Contact: vineelkpratap@fb.com, awni@fb.com, jacobkahn@fb.com, qiantong@fb.com,
 jcai@fb.com,  gab@fb.com, vitaliy888@fb.com, locronan@fb.com
 

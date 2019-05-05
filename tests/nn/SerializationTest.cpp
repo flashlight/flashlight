@@ -11,9 +11,8 @@
 #include <memory>
 #include <string>
 
-#include <gtest/gtest.h>
-
 #include <arrayfire.h>
+#include <gtest/gtest.h>
 
 #include "flashlight/autograd/autograd.h"
 #include "flashlight/nn/nn.h"

@@ -46,7 +46,7 @@ else ()
 endif ()
 
 # Distributed Training Backend
-set(FL_BUILD_DISTRIBUTED "ON" CACHE STRING "Whether to build and link the distributed backend with flashlight")
+set(FL_BUILD_DISTRIBUTED ON CACHE BOOL "Whether to build and link the distributed backend with flashlight")
 # If building with CUDA, use NCCL to on; if using CPU or OpenCL, use GLOO
 set(USE_NCCL FALSE)
 set(USE_GLOO FALSE)
@@ -169,6 +169,7 @@ set_target_properties(
   CXX_STANDARD 11
   )
 
+
 set(
   FLASHLIGHT_MODULES
   Autograd
@@ -179,6 +180,13 @@ set(
   NN
   Optim
   )
+
+# Build and link resources from `flashlight/contrib`.
+set(FL_BUILD_CONTRIB ON CACHE BOOL "Whether to build and link additional flashlight contrib resources.")
+if (FL_BUILD_CONTRIB)
+  include(${FLASHLIGHT_PROJECT_COMPONENT_SRC_DIR}/contrib/CMakeLists.txt)
+  set(FLASHLIGHT_MODULES ${FLASHLIGHT_MODULES} Contrib ${FLASHLIGHT_CONTRIB_LIBS})
+endif()
 
 target_link_libraries(
   flashlight

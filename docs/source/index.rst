@@ -34,6 +34,7 @@ A C++ library for machine learning.
    meters
    serial
    common
+   contrib
 
 Indices
 -------
