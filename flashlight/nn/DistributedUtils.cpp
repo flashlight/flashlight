@@ -6,10 +6,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <stdexcept>
+#include "flashlight/nn/DistributedUtils.h"
 
-#include "flashlight/distributed/distributed.h"
-#include "flashlight/nn/modules/DistributedUtils.h"
+#include <stdexcept>
 
 namespace fl {
 

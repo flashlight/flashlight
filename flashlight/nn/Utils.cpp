@@ -8,9 +8,27 @@
 
 #include "flashlight/nn/Utils.h"
 
+#include "flashlight/autograd/Utils.h"
 #include "flashlight/common/Utils.h"
 
 namespace fl {
+
+bool allParamsClose(
+    const Module& a,
+    const Module& b,
+    double absTolerance /* = 1e-5 */) {
+  if (a.params().size() != b.params().size()) {
+    return false;
+  }
+  const auto aParams = a.params();
+  const auto bParams = b.params();
+  for (int p = 0; p < aParams.size(); ++p) {
+    if (!allClose(aParams[p], bParams[p], absTolerance)) {
+      return false;
+    }
+  }
+  return true;
+}
 
 namespace detail {
 int64_t getNumRnnParams(

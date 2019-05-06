@@ -30,13 +30,12 @@ set(
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Transform.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/View.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/WeightNorm.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Utils.cpp # utils
   )
 
 if (FL_BUILD_DISTRIBUTED)
   set(
     NN_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/DistributedUtils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/DistributedUtils.cpp
     ${NN_SOURCES}
   )
 endif ()

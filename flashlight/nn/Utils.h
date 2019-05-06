@@ -16,8 +16,23 @@
 #include <af/dim4.hpp>
 
 #include "flashlight/common/Defines.h"
+#include "flashlight/nn/modules/Module.h"
 
 namespace fl {
+
+/**
+ * Returns true if the parameters of two modules are of same type and are
+ * element-wise equal within given tolerance limit.
+ *
+ * @param [a,b] input Modules to compare
+ * @param absTolerance absolute tolerance allowed
+ *
+ */
+bool allParamsClose(
+    const Module& a,
+    const Module& b,
+    double absTolerance = 1e-5);
+
 namespace detail {
 
 int64_t getNumRnnParams(
@@ -30,6 +45,14 @@ int64_t getNumRnnParams(
 std::pair<dim_t, dim_t> computeFans(af::dim4 dims);
 
 int derivePadding(int inSz, int filterSz, int stride, int pad, int dilation);
+
+/// used for Conv2D and Pool2D params
+struct IntOrPadMode {
+  /* implicit */ IntOrPadMode(int val) : padVal(val) {}
+  /* implicit */ IntOrPadMode(PaddingMode mode)
+      : padVal(static_cast<int>(mode)) {}
+  const int padVal;
+};
 
 } // namespace detail
 } // namespace fl

@@ -10,7 +10,7 @@
 
 #include "flashlight/common/Defines.h"
 #include "flashlight/nn/modules/Module.h"
-#include "flashlight/nn/modules/Utils.h"
+#include "flashlight/nn/Utils.h"
 
 namespace fl {
 
