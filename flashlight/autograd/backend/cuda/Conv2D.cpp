@@ -7,6 +7,7 @@
  */
 
 #include <array>
+#include <stdexcept>
 
 #include <cudnn.h>
 
@@ -16,18 +17,146 @@
 #include "flashlight/common/DevicePtr.h"
 
 namespace {
+constexpr size_t kWorkspaceSizeLimitBytes = 512 * 1024 * 1024; // 512 MB
+constexpr cudnnConvolutionFwdAlgo_t kFwdDefaultAlgo =
+    CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM;
+constexpr cudnnConvolutionBwdDataAlgo_t kBwdDataDefaultAlgo =
+    CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
+constexpr cudnnConvolutionBwdFilterAlgo_t kBwdFilterDefaultAlgo =
+    CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
 
-const cudnnConvolutionFwdPreference_t fwd_pref =
-    CUDNN_CONVOLUTION_FWD_PREFER_FASTEST;
-const cudnnConvolutionBwdDataPreference_t bwd_data_pref =
-    CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST;
-const cudnnConvolutionBwdFilterPreference_t bwd_filter_pref =
-    CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST;
+// Get the algorithm which gives best performance.
+// Since cuDNN doesn't support memory limits, we manually choose an algorithm
+// which requires less than a specific workspace size.
+template <typename T>
+T getBestAlgorithm(const std::vector<T>& algoPerfs) {
+  for (const auto& algoPerf : algoPerfs) {
+    if (algoPerf.status == CUDNN_STATUS_SUCCESS &&
+        algoPerf.memory < kWorkspaceSizeLimitBytes) {
+      return algoPerf;
+    }
+  }
+  throw std::runtime_error("Error while finding cuDNN Conv Algorithm.");
+}
 
-const size_t fwd_mem_limit = 0;
-const size_t bwd_data_mem_limit = 0;
-const size_t bwd_filter_mem_limit = 0;
+cudnnConvolutionFwdAlgoPerf_t getFwdAlgo(
+    const cudnnTensorDescriptor_t& xDesc,
+    const cudnnFilterDescriptor_t& wDesc,
+    const cudnnConvolutionDescriptor_t& convDesc,
+    const cudnnTensorDescriptor_t& yDesc) {
+  int numFwdAlgoRequested, numFwdAlgoReturned;
 
+  CUDNN_CHECK_ERR(cudnnGetConvolutionForwardAlgorithmMaxCount(
+      fl::getCudnnHandle(), &numFwdAlgoRequested));
+
+  std::vector<cudnnConvolutionFwdAlgoPerf_t> fwdAlgoPerfs(numFwdAlgoRequested);
+  CUDNN_CHECK_ERR(cudnnGetConvolutionForwardAlgorithm_v7(
+      fl::getCudnnHandle(),
+      xDesc,
+      wDesc,
+      convDesc,
+      yDesc,
+      numFwdAlgoRequested,
+      &numFwdAlgoReturned,
+      fwdAlgoPerfs.data()));
+
+  return getBestAlgorithm(fwdAlgoPerfs);
+}
+
+cudnnConvolutionBwdDataAlgoPerf_t getBwdDataAlgo(
+    const cudnnTensorDescriptor_t& xDesc,
+    const cudnnFilterDescriptor_t& wDesc,
+    const cudnnConvolutionDescriptor_t& convDesc,
+    const cudnnTensorDescriptor_t& yDesc,
+    bool isStrided) {
+  int numBwdDataAlgoRequested, numBwdDataAlgoReturned;
+
+  CUDNN_CHECK_ERR(cudnnGetConvolutionBackwardDataAlgorithmMaxCount(
+      fl::getCudnnHandle(), &numBwdDataAlgoRequested));
+
+  std::vector<cudnnConvolutionBwdDataAlgoPerf_t> bwdDataAlgoPerfs(
+      numBwdDataAlgoRequested);
+  CUDNN_CHECK_ERR(cudnnGetConvolutionBackwardDataAlgorithm_v7(
+      fl::getCudnnHandle(),
+      wDesc,
+      yDesc,
+      convDesc,
+      xDesc,
+      numBwdDataAlgoRequested,
+      &numBwdDataAlgoReturned,
+      bwdDataAlgoPerfs.data()));
+
+  auto bestAlgo = getBestAlgorithm(bwdDataAlgoPerfs);
+
+  // We use a few hacks here to resolve some cuDNN bugs
+  // 1: blacklist BWD_DATA_ALGO_1
+  // Seems to produce erroneous results on Tesla P100 GPUs.
+  // 2: blacklist FFT algorithms for strided dgrad -
+  // https://github.com/pytorch/pytorch/issues/16610
+  bool isAlgoBlacklisted = false;
+#ifndef FL_CUDNN_ALLOW_ALGO_1
+  if (bestAlgo.algo == CUDNN_CONVOLUTION_BWD_DATA_ALGO_1) {
+    isAlgoBlacklisted = true;
+  }
+#endif
+#if CUDNN_VERSION < 7500
+  if (isStrided &&
+      (bestAlgo.algo == CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT_TILING ||
+       bestAlgo.algo == CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT)) {
+    isAlgoBlacklisted = true;
+  }
+#endif
+  if (isAlgoBlacklisted) {
+    for (const auto& algoPerf : bwdDataAlgoPerfs) {
+      if (algoPerf.algo == kBwdDataDefaultAlgo) {
+        return algoPerf;
+      }
+    }
+  }
+  return bestAlgo;
+}
+
+cudnnConvolutionBwdFilterAlgoPerf_t getBwdFilterAlgo(
+    const cudnnTensorDescriptor_t& xDesc,
+    const cudnnFilterDescriptor_t& wDesc,
+    const cudnnConvolutionDescriptor_t& convDesc,
+    const cudnnTensorDescriptor_t& yDesc) {
+  int numBwdFilterAlgoRequested, numBwdFilterAlgoReturned;
+
+  CUDNN_CHECK_ERR(cudnnGetConvolutionBackwardFilterAlgorithmMaxCount(
+      fl::getCudnnHandle(), &numBwdFilterAlgoRequested));
+
+  std::vector<cudnnConvolutionBwdFilterAlgoPerf_t> bwdFilterAlgoPerfs(
+      numBwdFilterAlgoRequested);
+  CUDNN_CHECK_ERR(cudnnGetConvolutionBackwardFilterAlgorithm_v7(
+      fl::getCudnnHandle(),
+      xDesc,
+      yDesc,
+      convDesc,
+      wDesc,
+      numBwdFilterAlgoRequested,
+      &numBwdFilterAlgoReturned,
+      bwdFilterAlgoPerfs.data()));
+  auto bestAlgo = getBestAlgorithm(bwdFilterAlgoPerfs);
+
+  // We use a few hacks here to resolve some cuDNN bugs
+  // 1: blacklist BWD_FILTER_ALGO_1
+  // We do the blacklist here just to be safe as we did in BWD_DATA_ALGO_1
+  bool isAlgoBlacklisted = false;
+#ifndef FL_CUDNN_ALLOW_ALGO_1
+  if (bestAlgo.algo == CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1) {
+    isAlgoBlacklisted = true;
+  }
+#endif
+  if (isAlgoBlacklisted) {
+    for (const auto& algoPerf : bwdFilterAlgoPerfs) {
+      if (algoPerf.algo == kBwdFilterDefaultAlgo) {
+        return algoPerf;
+      }
+    }
+  }
+  return bestAlgo;
+}
 } // namespace
 
 namespace fl {
@@ -57,50 +186,51 @@ Variable conv2d(
     int dx,
     int dy,
     int groups) {
-  auto has_bias = bias.elements() > 0;
+  auto hasBias = bias.elements() > 0;
 
-  auto in_desc = TensorDescriptor(input);
-  auto wt_desc = FilterDescriptor(weights);
-  auto conv_desc = ConvDescriptor(input.type(), px, py, sx, sy, dx, dy, groups);
+  auto inDesc = TensorDescriptor(input);
+  auto wtDesc = FilterDescriptor(weights);
+  auto convDesc = ConvDescriptor(input.type(), px, py, sx, sy, dx, dy, groups);
 
   std::array<int, 4> odims;
   CUDNN_CHECK_ERR(cudnnGetConvolutionNdForwardOutputDim(
-      conv_desc.descriptor,
-      in_desc.descriptor,
-      wt_desc.descriptor,
+      convDesc.descriptor,
+      inDesc.descriptor,
+      wtDesc.descriptor,
       4,
       odims.data()));
   auto output = af::array(odims[3], odims[2], odims[1], odims[0], input.type());
-  auto out_desc = TensorDescriptor(output);
+  auto outDesc = TensorDescriptor(output);
 
   auto handle = getCudnnHandle();
 
-  cudnnConvolutionFwdAlgo_t fwd_algo;
-  CUDNN_CHECK_ERR(cudnnGetConvolutionForwardAlgorithm(
-      handle,
-      in_desc.descriptor,
-      wt_desc.descriptor,
-      conv_desc.descriptor,
-      out_desc.descriptor,
-      fwd_pref,
-      fwd_mem_limit,
-      &fwd_algo));
+  auto fwdAlgoBestPerf = getFwdAlgo(
+      inDesc.descriptor,
+      wtDesc.descriptor,
+      convDesc.descriptor,
+      outDesc.descriptor);
 
-  size_t wspace_fwd_bytes = 0;
-  CUDNN_CHECK_ERR(cudnnGetConvolutionForwardWorkspaceSize(
-      handle,
-      in_desc.descriptor,
-      wt_desc.descriptor,
-      conv_desc.descriptor,
-      out_desc.descriptor,
-      fwd_algo,
-      &wspace_fwd_bytes));
-  auto wspace = af::array(wspace_fwd_bytes, af::dtype::b8);
+  af::array wspace;
+
+  try {
+    wspace = af::array(fwdAlgoBestPerf.memory, af::dtype::b8);
+  } catch (const std::exception& e) {
+    fwdAlgoBestPerf.algo = kFwdDefaultAlgo;
+    CUDNN_CHECK_ERR(cudnnGetConvolutionForwardWorkspaceSize(
+        handle,
+        inDesc.descriptor,
+        wtDesc.descriptor,
+        convDesc.descriptor,
+        outDesc.descriptor,
+        fwdAlgoBestPerf.algo,
+        &fwdAlgoBestPerf.memory));
+    wspace = af::array(fwdAlgoBestPerf.memory, af::dtype::b8);
+  }
   {
-    DevicePtr in_raw(input.array());
-    DevicePtr wt_raw(weights.array());
-    DevicePtr out_raw(output);
-    DevicePtr wspace_raw(wspace);
+    DevicePtr inPtr(input.array());
+    DevicePtr wtPtr(weights.array());
+    DevicePtr outPtr(output);
+    DevicePtr wspacePtr(wspace);
 
     const void* one = kOne(input.type());
     const void* zero = kZero(input.type());
@@ -108,179 +238,165 @@ Variable conv2d(
     CUDNN_CHECK_ERR(cudnnConvolutionForward(
         handle,
         one,
-        in_desc.descriptor,
-        in_raw.get(),
-        wt_desc.descriptor,
-        wt_raw.get(),
-        conv_desc.descriptor,
-        fwd_algo,
-        wspace_raw.get(),
-        wspace_fwd_bytes,
+        inDesc.descriptor,
+        inPtr.get(),
+        wtDesc.descriptor,
+        wtPtr.get(),
+        convDesc.descriptor,
+        fwdAlgoBestPerf.algo,
+        wspacePtr.get(),
+        fwdAlgoBestPerf.memory,
         zero,
-        out_desc.descriptor,
-        out_raw.get()));
-    if (has_bias) {
-      auto bs_desc = TensorDescriptor(bias);
-      DevicePtr bs_raw(bias.array());
+        outDesc.descriptor,
+        outPtr.get()));
+
+    if (hasBias) {
+      auto bsDesc = TensorDescriptor(bias);
+      DevicePtr bsPtr(bias.array());
 
       CUDNN_CHECK_ERR(cudnnAddTensor(
           handle,
           one,
-          bs_desc.descriptor,
-          bs_raw.get(),
+          bsDesc.descriptor,
+          bsPtr.get(),
           one,
-          out_desc.descriptor,
-          out_raw.get()));
+          outDesc.descriptor,
+          outPtr.get()));
     }
   }
-  auto gradFunc = [sx, sy, px, py, dx, dy, has_bias, groups](
+  auto gradFunc = [sx, sy, px, py, dx, dy, hasBias, groups](
                       std::vector<Variable>& inputs,
-                      const Variable& grad_output) {
+                      const Variable& gradOutput) {
     auto& in = inputs[0];
     auto& wt = inputs[1];
 
-    auto i_desc = TensorDescriptor(in);
-    auto o_desc = TensorDescriptor(grad_output);
+    auto iDesc = TensorDescriptor(in);
+    auto oDesc = TensorDescriptor(gradOutput);
 
     auto hndl = getCudnnHandle();
 
     const void* oneg = kOne(in.type());
     const void* zerog = kZero(in.type());
     {
-      DevicePtr grad_result_raw(grad_output.array());
+      DevicePtr gradResultPtr(gradOutput.array());
 
-      if (has_bias && inputs[2].isCalcGrad()) {
+      if (hasBias && inputs[2].isCalcGrad()) {
         auto& bs = inputs[2];
-        auto grad_bias = Variable(af::array(bs.dims(), bs.type()), false);
+        auto gradBias = Variable(af::array(bs.dims(), bs.type()), false);
         {
-          DevicePtr gradbiasraw(grad_bias.array());
-          auto b_desc = TensorDescriptor(bs);
+          DevicePtr gradBiasPtr(gradBias.array());
+          auto bDesc = TensorDescriptor(bs);
           CUDNN_CHECK_ERR(cudnnConvolutionBackwardBias(
               hndl,
               oneg,
-              o_desc.descriptor,
-              grad_result_raw.get(),
+              oDesc.descriptor,
+              gradResultPtr.get(),
               zerog,
-              b_desc.descriptor,
-              gradbiasraw.get()));
+              bDesc.descriptor,
+              gradBiasPtr.get()));
         }
-        bs.addGrad(grad_bias);
+        bs.addGrad(gradBias);
       }
     }
-    auto w_desc = FilterDescriptor(wt);
-    auto c_desc = ConvDescriptor(in.type(), px, py, sx, sy, dx, dy, groups);
+    auto wDesc = FilterDescriptor(wt);
+    auto cDesc = ConvDescriptor(in.type(), px, py, sx, sy, dx, dy, groups);
 
-    cudnnConvolutionBwdDataAlgo_t bwd_data_algo;
-    CUDNN_CHECK_ERR(cudnnGetConvolutionBackwardDataAlgorithm(
-        hndl,
-        w_desc.descriptor,
-        o_desc.descriptor,
-        c_desc.descriptor,
-        i_desc.descriptor,
-        bwd_data_pref,
-        bwd_data_mem_limit,
-        &bwd_data_algo));
-#ifndef FL_CUDNN_ALLOW_ALGO_1
-    // Blacklist ALGO_1. Seems to produce erroneous results on Tesla P100 GPUs.
-    if (bwd_data_algo == CUDNN_CONVOLUTION_BWD_DATA_ALGO_1) {
-      bwd_data_algo = CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
-    }
-#endif
+    DevicePtr iPtr(in.array());
+    DevicePtr wPtr(wt.array());
 
-    size_t wspace_bwd_data_bytes = 0;
     if (in.isCalcGrad()) {
-      CUDNN_CHECK_ERR(cudnnGetConvolutionBackwardDataWorkspaceSize(
-          hndl,
-          w_desc.descriptor,
-          o_desc.descriptor,
-          c_desc.descriptor,
-          i_desc.descriptor,
-          bwd_data_algo,
-          &wspace_bwd_data_bytes));
-    }
-    cudnnConvolutionBwdFilterAlgo_t bwd_filter_algo;
-    CUDNN_CHECK_ERR(cudnnGetConvolutionBackwardFilterAlgorithm(
-        hndl,
-        i_desc.descriptor,
-        o_desc.descriptor,
-        c_desc.descriptor,
-        w_desc.descriptor,
-        bwd_filter_pref,
-        bwd_filter_mem_limit,
-        &bwd_filter_algo));
-#ifndef FL_CUDNN_ALLOW_ALGO_1
-    // Blacklist ALGO_1 here as well, to be safe.
-    if (bwd_filter_algo == CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1) {
-      bwd_filter_algo = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
-    }
-#endif
+      bool isStrided = (dx * dy) > 1;
+      auto bwdDataAlgoBestPerf = getBwdDataAlgo(
+          iDesc.descriptor,
+          wDesc.descriptor,
+          cDesc.descriptor,
+          oDesc.descriptor,
+          isStrided);
+      af::array ws;
 
-    size_t wspace_bwd_filter_bytes = 0;
-    if (wt.isCalcGrad()) {
-      CUDNN_CHECK_ERR(cudnnGetConvolutionBackwardFilterWorkspaceSize(
-          hndl,
-          i_desc.descriptor,
-          o_desc.descriptor,
-          c_desc.descriptor,
-          w_desc.descriptor,
-          bwd_filter_algo,
-          &wspace_bwd_filter_bytes));
-    }
-    auto wspace_bwd_bytes =
-        std::max(wspace_bwd_filter_bytes, wspace_bwd_data_bytes);
-
-    auto ws = af::array(wspace_bwd_bytes, af::dtype::b8);
-
-    DevicePtr i_raw(in.array());
-    DevicePtr w_raw(wt.array());
-    DevicePtr ws_raw(ws);
-    if (in.isCalcGrad()) {
-      auto grad_input = Variable(af::array(in.dims(), in.type()), false);
+      try {
+        ws = af::array(bwdDataAlgoBestPerf.memory, af::dtype::b8);
+      } catch (const std::exception& e) {
+        bwdDataAlgoBestPerf.algo = kBwdDataDefaultAlgo;
+        CUDNN_CHECK_ERR(cudnnGetConvolutionBackwardDataWorkspaceSize(
+            hndl,
+            wDesc.descriptor,
+            oDesc.descriptor,
+            cDesc.descriptor,
+            iDesc.descriptor,
+            bwdDataAlgoBestPerf.algo,
+            &bwdDataAlgoBestPerf.memory));
+        ws = af::array(bwdDataAlgoBestPerf.memory, af::dtype::b8);
+      }
+      auto gradInput = Variable(af::array(in.dims(), in.type()), false);
       {
-        DevicePtr grad_input_raw(grad_input.array());
-        DevicePtr grad_result_raw(grad_output.array());
+        DevicePtr gradInputPtr(gradInput.array());
+        DevicePtr gradResultPtr(gradOutput.array());
+        DevicePtr wsPtr(ws);
         CUDNN_CHECK_ERR(cudnnConvolutionBackwardData(
             hndl,
             oneg,
-            w_desc.descriptor,
-            w_raw.get(),
-            o_desc.descriptor,
-            grad_result_raw.get(),
-            c_desc.descriptor,
-            bwd_data_algo,
-            ws_raw.get(),
-            wspace_bwd_bytes,
+            wDesc.descriptor,
+            wPtr.get(),
+            oDesc.descriptor,
+            gradResultPtr.get(),
+            cDesc.descriptor,
+            bwdDataAlgoBestPerf.algo,
+            wsPtr.get(),
+            bwdDataAlgoBestPerf.memory,
             zerog,
-            i_desc.descriptor,
-            grad_input_raw.get()));
+            iDesc.descriptor,
+            gradInputPtr.get()));
       }
-      in.addGrad(grad_input);
+      in.addGrad(gradInput);
     }
     if (wt.isCalcGrad()) {
-      auto grad_weight = Variable(af::array(wt.dims(), wt.type()), false);
+      auto bwdFilterAlgoBestPerf = getBwdFilterAlgo(
+          iDesc.descriptor,
+          wDesc.descriptor,
+          cDesc.descriptor,
+          oDesc.descriptor);
+      af::array ws;
+
+      try {
+        ws = af::array(bwdFilterAlgoBestPerf.memory, af::dtype::b8);
+      } catch (const std::exception& e) {
+        bwdFilterAlgoBestPerf.algo = kBwdFilterDefaultAlgo;
+        CUDNN_CHECK_ERR(cudnnGetConvolutionBackwardFilterWorkspaceSize(
+            hndl,
+            iDesc.descriptor,
+            oDesc.descriptor,
+            cDesc.descriptor,
+            wDesc.descriptor,
+            bwdFilterAlgoBestPerf.algo,
+            &bwdFilterAlgoBestPerf.memory));
+        ws = af::array(bwdFilterAlgoBestPerf.memory, af::dtype::b8);
+      }
+      auto gradWeight = Variable(af::array(wt.dims(), wt.type()), false);
       {
-        DevicePtr grad_weight_raw(grad_weight.array());
-        DevicePtr grad_result_raw(grad_output.array());
+        DevicePtr gradWeightPtr(gradWeight.array());
+        DevicePtr gradResultPtr(gradOutput.array());
+        DevicePtr wsPtr(ws);
         CUDNN_CHECK_ERR(cudnnConvolutionBackwardFilter(
             hndl,
             oneg,
-            i_desc.descriptor,
-            i_raw.get(),
-            o_desc.descriptor,
-            grad_result_raw.get(),
-            c_desc.descriptor,
-            bwd_filter_algo,
-            ws_raw.get(),
-            wspace_bwd_bytes,
+            iDesc.descriptor,
+            iPtr.get(),
+            oDesc.descriptor,
+            gradResultPtr.get(),
+            cDesc.descriptor,
+            bwdFilterAlgoBestPerf.algo,
+            wsPtr.get(),
+            bwdFilterAlgoBestPerf.memory,
             zerog,
-            w_desc.descriptor,
-            grad_weight_raw.get()));
+            wDesc.descriptor,
+            gradWeightPtr.get()));
       }
-      wt.addGrad(grad_weight);
+      wt.addGrad(gradWeight);
     }
   };
 
-  if (has_bias) {
+  if (hasBias) {
     return Variable(output, {input, weights, bias}, gradFunc);
   }
   return Variable(output, {input, weights}, gradFunc);
