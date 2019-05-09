@@ -35,9 +35,9 @@ Pool2D::Pool2D(
       mode_(mode) {}
 
 Variable Pool2D::forward(const Variable& input) {
-  auto px = detail::derivePadding(
+  auto px = derivePadding(
       input.dims(0), xFilter_, xStride_, xPad_, /* dilation= */ 1);
-  auto py = detail::derivePadding(
+  auto py = derivePadding(
       input.dims(1), yFilter_, yStride_, yPad_, /* dilation= */ 1);
 
   if (!(px >= 0 && py >= 0)) {

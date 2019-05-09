@@ -85,6 +85,8 @@ std::pair<dim_t, dim_t> computeFans(af::dim4 dims) {
   return {fan_in, fan_out};
 }
 
+} // namespace detail
+
 int derivePadding(int inSz, int filterSz, int stride, int pad, int dilation) {
   if (pad == static_cast<int>(PaddingMode::SAME)) {
     int newPad;
@@ -99,5 +101,5 @@ int derivePadding(int inSz, int filterSz, int stride, int pad, int dilation) {
 
   return pad;
 }
-} // namespace detail
+
 } // namespace fl

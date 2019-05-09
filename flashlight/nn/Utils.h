@@ -44,8 +44,6 @@ int64_t getNumRnnParams(
 
 std::pair<dim_t, dim_t> computeFans(af::dim4 dims);
 
-int derivePadding(int inSz, int filterSz, int stride, int pad, int dilation);
-
 /// used for Conv2D and Pool2D params
 struct IntOrPadMode {
   /* implicit */ IntOrPadMode(int val) : padVal(val) {}
@@ -55,4 +53,6 @@ struct IntOrPadMode {
 };
 
 } // namespace detail
+
+int derivePadding(int inSz, int filterSz, int stride, int pad, int dilation);
 } // namespace fl
