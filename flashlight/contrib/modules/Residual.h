@@ -69,6 +69,8 @@ class Residual : public Container {
  public:
   Residual() = default;
 
+  std::unordered_set<int> getProjectionsIndices() const;
+
   /**
    * Adds a scaling factor to all residual connections connecting to a layer
    * given by some index index. Given some scale \f$ \alpha \f$, the input to

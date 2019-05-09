@@ -13,6 +13,10 @@
 
 namespace fl {
 
+std::unordered_set<int> Residual::getProjectionsIndices() const {
+  return projectionsIndices_;
+}
+
 void Residual::addScale(int beforeLayer, float scale) {
   int nLayers = modules_.size() - projectionsIndices_.size();
   if (beforeLayer < 1 || beforeLayer > nLayers + 1) {
