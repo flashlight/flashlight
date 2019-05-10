@@ -8,5 +8,6 @@
 
 #pragma once
 
+#include "flashlight/distributed/reducers/CoalescingReducer.h"
 #include "flashlight/distributed/reducers/InlineReducer.h"
 #include "flashlight/distributed/reducers/Reducer.h"

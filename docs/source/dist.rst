@@ -17,3 +17,7 @@ Reducers
 .. doxygenclass:: fl::InlineReducer
    :members:
    :undoc-members:
+
+.. doxygenclass:: fl::CoalescingReducer
+   :members:
+   :undoc-members:

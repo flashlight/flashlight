@@ -10,6 +10,7 @@ set(
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/distributed/DistributedApi.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/distributed/backend/utils/FileStore.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/distributed/reducers/InlineReducer.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/distributed/reducers/CoalescingReducer.cpp
   )
 
 # Build sources only in distributed mode. Distributed headers will be included regardless,

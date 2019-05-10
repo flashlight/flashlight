@@ -27,6 +27,11 @@ int main() {
   bool isMaster = (worldRank == 0);
   af::setSeed(worldRank);
 
+  auto reducer = std::make_shared<fl::CoalescingReducer>(
+      /*scale=*/1.0 / worldSize,
+      /*async=*/true,
+      /*contiguous=*/true);
+
   // Create dataset
   const int nSamples = 10000 / worldSize;
   const int nFeat = 10;
@@ -52,7 +57,7 @@ int main() {
 
   // Add a hook to synchronize gradients of model parameters as they are
   // computed
-  fl::distributeModuleGrads(model);
+  fl::distributeModuleGrads(model, reducer);
 
   // Optimizer definition
   const float learningRate = 0.0001;
@@ -81,6 +86,7 @@ int main() {
 
       // Backward propagation
       l.backward();
+      reducer->finalize();
 
       // Update parameters
       sgd.step();

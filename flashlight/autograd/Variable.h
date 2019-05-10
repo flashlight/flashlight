@@ -155,6 +155,12 @@ class Variable {
   dim_t elements() const;
 
   /**
+   * Returns the total number of bytes stored in array wrapped by the
+   * Variable
+   */
+  size_t bytes() const;
+
+  /**
    * Returns the number of dimension of array wrapped by the Variable
    */
   unsigned numdims() const;

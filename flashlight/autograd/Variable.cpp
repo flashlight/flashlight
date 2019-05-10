@@ -114,6 +114,10 @@ dim_t Variable::elements() const {
   return array().elements();
 }
 
+size_t Variable::bytes() const {
+  return array().bytes();
+}
+
 unsigned Variable::numdims() const {
   return array().numdims();
 }

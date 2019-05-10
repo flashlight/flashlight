@@ -51,7 +51,7 @@ TEST(Distributed, AllReduceAsync) {
 
   Variable var(af::constant(rank, 10), false);
 
-  allReduce(var, 2.0, /* async = */ true);
+  allReduce(var, 2.0, /*async=*/true);
   syncDistributed();
 
   float expected_val = size * (size - 1.0);
@@ -68,7 +68,7 @@ TEST(Distributed, AllReduceSetAsync) {
     vars.push_back(Variable(af::constant(rank + 1, vSize), false));
   }
 
-  allReduceMultiple(vars, 2.0, /* async = */ true, /* contiguous = */ true);
+  allReduceMultiple(vars, 2.0, /*async=*/true, /*contiguous=*/true);
   syncDistributed();
 
   float expected_val = size * (size + 1.0);
@@ -83,9 +83,36 @@ TEST(Distributed, AllReduceSetAsync) {
   }
   if (size > 1) {
     ASSERT_THROW(
-        allReduceMultiple(
-            vars, 2.0, /* async = */ true, /* contiguous = */ true),
+        allReduceMultiple(vars, 2.0, /*async=*/true, /*contiguous=*/true),
         std::runtime_error);
+  }
+}
+
+TEST(Distributed, CoalescingReducer) {
+  auto rank = getWorldRank();
+  auto size = getWorldSize();
+
+  auto s = std::make_shared<fl::CoalescingReducer>(
+      /* scale = */ 1.0 / size, /*async=*/true, /*contiguous=*/true);
+
+  size_t vSize = (1 << 20);
+  std::vector<Variable> vars;
+  for (size_t i = 0; i < 1000; ++i) {
+    vars.push_back(Variable(af::constant(rank + 1, vSize), false));
+  }
+
+  for (size_t i = 0; i < vars.size(); ++i) {
+    s->add(vars[i]);
+    if ((i + 1) % 10 == 0) {
+      s->finalize();
+    }
+  }
+
+  float expected_val = size * (size + 1.0);
+  for (auto var : vars) {
+    // The reducer scales down by a factor of 1 / size
+    auto arr = var.array() * (size * 2);
+    ASSERT_TRUE(af::allTrue<bool>(arr == expected_val));
   }
 }
 

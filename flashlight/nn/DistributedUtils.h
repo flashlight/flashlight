@@ -19,8 +19,9 @@ namespace fl {
  * Registers a module for allreduce synchronization with a gradient hook on it
  * parameter Variables.
  *
- * @param module a module whose parameter gradients will be synchronized
- * @param scale scale gradients after allreduce by this factor
+ * @param[in] module a module whose parameter gradients will be synchronized
+ * @param[in] a ``Reducer`` instance to which gradients will be immediately
+ * added when available
  */
 void distributeModuleGrads(
     std::shared_ptr<const Module> module,
