@@ -18,11 +18,32 @@ DistributedBackend distributedBackend() {
   return detail::DistributedInfo::getInstance().backend_;
 }
 
-void allReduce(Variable& var, double scale /*= 1.0 */) {
+void allReduce(
+    Variable& var,
+    double scale /* = 1.0 */,
+    bool async /* = false */) {
   if (getWorldSize() > 1) {
-    allReduce(var.array());
+    allReduce(var.array(), async);
   }
   var.array() *= scale;
+}
+
+void allReduceMultiple(
+    std::vector<Variable> vars,
+    double scale /* = 1.0 */,
+    bool async /* = false */,
+    bool contiguous /* = false */) {
+  // return a vector of pointers to avoid copying
+  std::vector<af::array*> arrs;
+  for (auto& var : vars) {
+    arrs.push_back(&var.array());
+  }
+  if (getWorldSize() > 1) {
+    allReduceMultiple(arrs, async, contiguous);
+  }
+  for (auto& var : vars) {
+    var.array() *= scale;
+  }
 }
 
 namespace detail {

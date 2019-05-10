@@ -101,9 +101,13 @@ void distributedInit(
   }
 }
 
-void allReduce(af::array& arr) {
+void allReduce(af::array& arr, bool async /* = false */) {
   if (!isDistributedInit()) {
     throw std::runtime_error("distributed environment not initialized");
+  }
+  if (async) {
+    throw std::runtime_error(
+        "Asynchronous allReduce not yet supported for Gloo backend");
   }
   size_t arrSize = arr.elements() * af::getSizeOf(arr.type());
   if (arrSize > cacheArr_.elements()) {
@@ -131,6 +135,20 @@ void allReduce(af::array& arr) {
   memcpy(arrPtr, cacheArrPtr, arrSize);
   arr.unlock();
   cacheArr_.unlock();
+}
+
+// Not yet supported
+void allReduceMultiple(
+    std::vector<af::array*> arrs,
+    bool async /* = false */,
+    bool contiguous /* = false */) {
+  throw std::runtime_error(
+      "allReduceMultiple not yet supported for Gloo backend");
+}
+
+void syncDistributed() {
+  throw std::runtime_error(
+      "Asynchronous allReduce not yet supported for Gloo backend");
 }
 
 int getWorldRank() {

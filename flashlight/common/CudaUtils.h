@@ -23,7 +23,24 @@ namespace cuda {
  */
 cudaStream_t getActiveStream();
 
+/**
+ * Synchronizes (blocks) a CUDA stream on another. That is, records a snapshot
+ * of any operations currently enqueued on CUDA stream blockOn using a CUDA
+ * Event, and forces blockee to wait on those events to complete before
+ * beginning any future-enqueued operations. Does so without blocking the host
+ * CPU thread.
+ *
+ * @param[in] blockee the CUDA stream to be blocked
+ * @param[in] blockOn the CUDA stream to block on, whose events will be waited
+ * on to complete before the blockee starts execution of its enqueued events
+ */
+void synchronizeStreams(cudaStream_t blockee, cudaStream_t blockOn);
+
 namespace detail {
+
+// Flags for CUDA Event creation. Timing creates overhead, so disable.
+constexpr unsigned int kCudaEventDefaultFlags =
+    cudaEventDefault | cudaEventDisableTiming;
 
 void check(cudaError_t err, const char* file, int line);
 

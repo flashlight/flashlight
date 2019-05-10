@@ -10,6 +10,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "flashlight/autograd/Variable.h"
 #include "flashlight/common/Defines.h"
@@ -56,17 +57,71 @@ int getWorldSize();
 /**
  * Synchronizes a the array wrapped by the Variable with allreduce.
  *
- * @param var a variable whose array will be synchronized
- * @param scale scale the Variable after allreduce by this factor
+ * @param[in] var a variable whose array will be synchronized
+ * @param[in] scale scale the Variable after allreduce by this factor
+ * @param[in] async perform the allReduce operation asynchronously in a separate
+ * compute stream to the ArrayFire compute stream. NB: if true,
+ * ``syncDistributed`` *must* be called in order to ensure the ArrayFire CUDA
+ * stream waits until ``allReduce`` is complete and uses updated values.
  */
-void allReduce(Variable& var, double scale = 1.0);
+void allReduce(Variable& var, double scale = 1.0, bool async = false);
 
 /**
  * Synchronizes a single Arrayfire array with allreduce.
  *
  * @param arr an array which will be synchronized
+ * @param[in] async perform the allReduce operation asynchronously in a separate
+ * compute stream to the ArrayFire compute stream. NB: if used,
+ * ``syncDistributed`` *must* be called in order to ensure the ArrayFire CUDA
+ * stream waits until ``allReduce`` is complete and uses updated values.
  */
-void allReduce(af::array& arr);
+void allReduce(af::array& arr, bool async = false);
+
+/**
+ * Synchronizes a the arrays wrapped by a vector of Variables with allreduce.
+ *
+ * @param[in] vars `Variable`s whose arrays will be synchronized
+ * @param[in] scale scale the Variable after allreduce by this factor
+ * @param[in] async perform the allReduce operation asynchronously in a separate
+ * compute stream to the ArrayFire compute stream. NB: if used,
+ * ``syncDistributed`` *must* be called in order to ensure the ArrayFire CUDA
+ * stream waits until ``allReduce`` is complete and uses updated values.
+ * @param[in] contiguous copy data for each Variable into a contiguous buffer
+ * before performing the allReduce operation
+ */
+void allReduceMultiple(
+    std::vector<Variable> vars,
+    double scale = 1.0,
+    bool async = false,
+    bool contiguous = false);
+
+/**
+ * Synchronizes a vector of pointers to arrays with allreduce.
+ *
+ * @param[in] arrs a vector of pointers to arrays which will be synchronized
+ * @param[in] async perform the allReduce operation asynchronously in a separate
+ * compute stream to the ArrayFire compute stream. NB: if used,
+ * ``syncDistributed`` *must* be called in order to ensure the ArrayFire CUDA
+ * stream waits until ``allReduce`` is complete and uses updated values.
+ * @param[in] contiguous copy data for each Variable into a contiguous buffer
+ * before performing the allReduce operation
+ */
+void allReduceMultiple(
+    std::vector<af::array*> arrs,
+    bool async = false,
+    bool contiguous = false);
+
+/**
+ * Synchronizes operations in the ArrayFire compute stream with operations in
+ * the distributed compute stream, if applicable. That is, all operations in the
+ * ArrayFire compute stream will not be executed until operations currently
+ * enqueued on the distributed compute stream are finished executing.
+ *
+ * Note that if asynchronous allReduce is not used, this operation will be a
+ * no-op, since no operations will be enqueued on the distributed compute
+ * stream.
+ */
+void syncDistributed();
 
 namespace detail {
 class DistributedInfo {

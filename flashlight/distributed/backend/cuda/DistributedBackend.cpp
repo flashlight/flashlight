@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <mutex>
 #include <stdexcept>
 
 #include <af/cuda.h>
@@ -15,6 +16,8 @@
 #include <nccl.h>
 
 #include "flashlight/common/CudaUtils.h"
+#include "flashlight/common/Defines.h"
+#include "flashlight/common/DevicePtr.h"
 #include "flashlight/distributed/DistributedApi.h"
 #include "flashlight/distributed/backend/utils/FileStore.h"
 
@@ -26,6 +29,10 @@ namespace fl {
 namespace detail {
 
 namespace {
+
+// We need to pass this flag to our dedicated NCCL CUDA stream, else activity in
+// the stream will be precluded from running in parallel with the default stream
+constexpr unsigned int kDefaultStreamFlags = cudaStreamNonBlocking;
 
 constexpr const char* kNcclKey = "ncclUniqueId";
 
@@ -42,10 +49,20 @@ class NcclContext {
   ncclComm_t& getComm();
   int getWorldSize() const;
   int getWorldRank() const;
+  cudaStream_t getReductionStream() const;
+  cudaStream_t getWorkerStream() const;
+  void* getCoalesceBuffer();
 
  private:
   ncclComm_t comm_;
   int worldSize_, worldRank_;
+  // CUDA stream in which NCCL calls run if in async mode
+  cudaStream_t reductionStream_;
+  // CUDA stream in which cudaMemcpyAsync calls run if in contiguous mode
+  cudaStream_t workerStream_;
+  // Buffer for storing copied gradients contiguously; exists on device memory
+  void* coalesceBuffer_{nullptr};
+  std::once_flag allocBuffer_;
 };
 
 bool isNonNegativeInteger(const std::string& s) {
@@ -53,37 +70,160 @@ bool isNonNegativeInteger(const std::string& s) {
                          return !std::isdigit(c);
                        }) == s.end();
 }
+
+ncclDataType_t getNcclTypeForArray(const af::array& arr) {
+  switch (arr.type()) {
+    case af::dtype::f32:
+      return ncclFloat32;
+    case af::dtype::f64:
+      return ncclFloat64;
+    case af::dtype::s32:
+      return ncclInt32;
+    case af::dtype::s64:
+      return ncclInt64;
+      break;
+    default:
+      throw std::runtime_error("unsupported data type for allreduce with NCCL");
+  }
+}
+
 } // namespace
 
 void ncclCheck(ncclResult_t r);
 
 void mpiCheck(int ec);
 
-void allreduceCuda(void* ptr, size_t count, ncclDataType_t ncclType);
+void allreduceCuda(
+    void* ptr,
+    size_t count,
+    ncclDataType_t ncclType,
+    bool async,
+    bool contiguous);
 } // namespace detail
 
-void allReduce(af::array& arr) {
+void allReduce(af::array& arr, bool async /* = false */) {
   if (!isDistributedInit()) {
     throw std::runtime_error("distributed environment not initialized");
   }
+  ncclDataType_t type = detail::getNcclTypeForArray(arr);
   void* arrPtr = arr.device<void>();
-  switch (arr.type()) {
-    case af::dtype::f32:
-      detail::allreduceCuda(arrPtr, arr.elements(), ncclFloat32);
-      break;
-    case af::dtype::f64:
-      detail::allreduceCuda(arrPtr, arr.elements(), ncclFloat64);
-      break;
-    case af::dtype::s32:
-      detail::allreduceCuda(arrPtr, arr.elements(), ncclInt32);
-      break;
-    case af::dtype::s64:
-      detail::allreduceCuda(arrPtr, arr.elements(), ncclInt64);
-      break;
-    default:
-      throw std::runtime_error("unsupported data type for allreduce with NCCL");
-  }
+  detail::allreduceCuda(
+      arrPtr, arr.elements(), type, async, /* contiguous = */ false);
   arr.unlock();
+}
+
+void allReduceMultiple(
+    std::vector<af::array*> arrs,
+    bool async /* = false */,
+    bool contiguous /* = false */) {
+  // Fast paths
+  if (arrs.size() == 0) {
+    return;
+  }
+
+  if (!contiguous) {
+    // Use nccl groups to do everything in a single kernel launch
+    ncclGroupStart();
+    for (auto& arr : arrs) {
+      allReduce(*arr);
+    }
+    ncclGroupEnd();
+    return;
+  }
+
+  // We can only do a contiguous set reduction if all arrays in the set are of
+  // the same type, else fail
+  ncclDataType_t ncclType = detail::getNcclTypeForArray(*arrs[0]);
+  for (auto& arr : arrs) {
+    if (detail::getNcclTypeForArray(*arr) != ncclType) {
+      throw std::runtime_error(
+          "Cannot perform contiguous set allReduce on a set of tensors "
+          "of different types");
+    }
+  }
+  // Size of each element in each tensor in bytes
+  size_t typeSize = af::getSizeOf(arrs[0]->type());
+
+  // Device ptrs from each array
+  std::vector<std::pair<void*, size_t>> arrPtrs(arrs.size());
+  size_t totalEls{0};
+  for (auto& arr : arrs) {
+    totalEls += arr->elements();
+    arrPtrs.push_back(std::make_pair(arr->device<void>(), arr->bytes()));
+  }
+
+  // Make sure our coalesce buffer is large enough. Since we're initializing our
+  // coalescing cache to the same size, if we're using contiguous sync, it
+  // should never be larger since we flush if adding an additional buffer would
+  // exceed the max cache size
+  if (totalEls * typeSize > DistributedConstants::kCoalesceCacheSize) {
+    throw std::runtime_error(
+        "Total coalesce buffer size is larger than existing buffer size");
+  }
+
+  cudaStream_t workerStream =
+      detail::NcclContext::getInstance().getWorkerStream();
+  // Block the copy worker stream on the ArrayFire CUDA stream
+  cuda::synchronizeStreams(workerStream, cuda::getActiveStream());
+
+  // In the worker stream, coalesce gradients into one large buffer so we
+  // only need to call allReduce
+  void* coalesceBuffer = detail::NcclContext::getInstance().getCoalesceBuffer();
+  auto* cur = reinterpret_cast<char*>(coalesceBuffer);
+  for (auto& entry : arrPtrs) {
+    FL_CUDA_CHECK(cudaMemcpyAsync(
+        cur,
+        entry.first,
+        entry.second,
+        cudaMemcpyDeviceToDevice,
+        workerStream));
+    cur += entry.second;
+  }
+
+  // Now, call allReduce once on the entire copy buffer
+  detail::allreduceCuda(coalesceBuffer, totalEls, ncclType, async, contiguous);
+
+  // Block the worker stream's copy operations on allReduce operations that are
+  // currently enqueued in the reduction stream
+  cudaStream_t syncStream;
+  if (async) {
+    syncStream = detail::NcclContext::getInstance().getReductionStream();
+  } else {
+    syncStream = cuda::getActiveStream();
+  }
+  cuda::synchronizeStreams(workerStream, syncStream);
+
+  // Enqueue operations in the stream to copy back to each respective array from
+  // the coalesce buffer
+  cur = reinterpret_cast<char*>(coalesceBuffer);
+  for (auto& entry : arrPtrs) {
+    FL_CUDA_CHECK(cudaMemcpyAsync(
+        entry.first,
+        cur,
+        entry.second,
+        cudaMemcpyDeviceToDevice,
+        workerStream));
+    cur += entry.second;
+  }
+
+  for (auto& arr : arrs) {
+    arr->unlock();
+  }
+}
+
+/**
+ * Block future operations in the AF Stream on operations currently running in
+ * the NCCL CUDA stream.
+ */
+void syncDistributed() {
+  // If the worker or reduction streams have nothing enqueued, the AF CUDA
+  // stream will proceed without waiting for anything
+  cuda::synchronizeStreams(
+      cuda::getActiveStream(),
+      detail::NcclContext::getInstance().getWorkerStream());
+  cuda::synchronizeStreams(
+      cuda::getActiveStream(),
+      detail::NcclContext::getInstance().getReductionStream());
 }
 
 int getWorldRank() {
@@ -156,9 +296,39 @@ void mpiCheck(int ec) {
   }
 }
 
-void allreduceCuda(void* ptr, size_t count, ncclDataType_t ncclType) {
-  // TODO: Run NCCL and AF in different streams
-  auto s = cuda::getActiveStream(); // assumes current device id
+void allreduceCuda(
+    void* ptr,
+    size_t count,
+    ncclDataType_t ncclType,
+    bool async,
+    bool contiguous) {
+  cudaStream_t syncStream;
+  if (async) {
+    syncStream = detail::NcclContext::getInstance().getReductionStream();
+  } else {
+    // AF CUDA stream
+    syncStream = cuda::getActiveStream(); // assumes current device id
+  }
+
+  // Synchronize with whatever CUDA stream is performing operations needed
+  // pre-reduction. If we're in contiguous mode, we need the reduction stream to
+  // wait for the copy in the worker stream to complete. If we're not in
+  // contiguous mode, we need to wait for the JIT eval triggered by acquisition
+  // of the af::array's device pointer to complete, which will occur in the AF
+  // CUDA stream.
+  if (contiguous) {
+    // block future reduction stream ops on the copy-worker stream
+    cuda::synchronizeStreams(
+        syncStream, detail::NcclContext::getInstance().getWorkerStream());
+  } else {
+    // block future reduction stream ops on the AF CUDA stream
+    if (async) {
+      cuda::synchronizeStreams(syncStream, cuda::getActiveStream());
+    }
+    // don't synchronize streams if not async and not contiguous - the AF CUDA
+    // stream does everything
+  }
+
   NCCLCHECK(ncclAllReduce(
       ptr,
       ptr,
@@ -166,7 +336,7 @@ void allreduceCuda(void* ptr, size_t count, ncclDataType_t ncclType) {
       ncclType,
       ncclSum,
       detail::NcclContext::getInstance().getComm(),
-      s));
+      syncStream));
 }
 namespace {
 
@@ -180,6 +350,22 @@ int NcclContext::getWorldSize() const {
 
 int NcclContext::getWorldRank() const {
   return worldRank_;
+}
+
+cudaStream_t NcclContext::getReductionStream() const {
+  return reductionStream_;
+}
+
+cudaStream_t NcclContext::getWorkerStream() const {
+  return workerStream_;
+}
+
+void* NcclContext::getCoalesceBuffer() {
+  std::call_once(allocBuffer_, [&]() {
+    FL_CUDA_CHECK(
+        cudaMalloc(&coalesceBuffer_, DistributedConstants::kCoalesceCacheSize));
+  });
+  return coalesceBuffer_;
 }
 
 /* static */ NcclContext& NcclContext::getInstance() {
@@ -215,6 +401,14 @@ void NcclContext::initWithMPI(
 
   // initializing NCCL
   NCCLCHECK(ncclCommInitRank(&comm_, worldSize_, id, worldRank_));
+
+  // initialize dedicated NCCL CUDA stream if using async allReduce
+  FL_CUDA_CHECK(cudaStreamCreateWithFlags(
+      &reductionStream_, detail::kDefaultStreamFlags));
+  // initialize a third dedicated stream to asynchronously copy gradients
+  // into a coalesced form if using a contiguous allReduce
+  FL_CUDA_CHECK(
+      cudaStreamCreateWithFlags(&workerStream_, detail::kDefaultStreamFlags));
 }
 
 void NcclContext::initWithFileSystem(
@@ -257,6 +451,14 @@ void NcclContext::initWithFileSystem(
 
   // initializing NCCL
   NCCLCHECK(ncclCommInitRank(&comm_, worldSize_, id, worldRank_));
+
+  // initialize dedicated NCCL CUDA stream if using async allReduce
+  FL_CUDA_CHECK(cudaStreamCreateWithFlags(
+      &reductionStream_, detail::kDefaultStreamFlags));
+  // initialize a third dedicated stream to asynchronously copy gradients
+  // into a coalesced form if using a contiguous allReduce
+  FL_CUDA_CHECK(
+      cudaStreamCreateWithFlags(&workerStream_, detail::kDefaultStreamFlags));
 }
 
 NcclContext::~NcclContext() {
@@ -266,6 +468,28 @@ NcclContext::~NcclContext() {
   // finalizing NCCL
   NCCLCHECK(ncclCommDestroy(comm_));
 #endif
+
+  // Destroying the dedicated NCCL CUDA stream is a bit odd since the stream
+  // lives in a global NcclContext singleton. The CUDA driver shuts down when
+  // exit(0) is called, but the context may not be destroyed until
+  // afterwards, and destroying streams when the driver has already shut down is
+  // ungraceful. Manually destroying streams races against the driver, but in
+  // all cases, streams are destroyed when the driver shuts down, so don't
+  // destroy the stream by default.
+#ifdef CUDA_STREAM_POOL_DESTROY_ON_SHUTDOWN
+  FL_CUDA_CHECK(cudaStreamDestroy(reductionStream_));
+  FL_CUDA_CHECK(cudaStreamDestroy(workerStream_));
+#endif
+
+  // The CUDA driver has already shut down before we can free, so don't free by
+  // default, as driver shutdown will clean up this memory anyways.
+#ifdef CUDA_CONTIGUOUS_BUFFER_FREE_ON_SHUTDOWN
+  // Free the coalesce buffer if it was allocated
+  if (coalesceBuffer_ != nullptr) {
+    FL_CUDA_CHECK(cudaFree(coalesceBuffer_));
+  }
+#endif
+
   if (DistributedInfo::getInstance().initMethod_ == DistributedInit::MPI) {
     // finalizing MPI
     MPICHECK(MPI_Finalize());

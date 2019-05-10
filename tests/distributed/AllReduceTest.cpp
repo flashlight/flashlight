@@ -45,6 +45,50 @@ TEST(Distributed, InlineReducer) {
   ASSERT_TRUE(af::allTrue<bool>(arr == expected_val));
 }
 
+TEST(Distributed, AllReduceAsync) {
+  auto rank = getWorldRank();
+  auto size = getWorldSize();
+
+  Variable var(af::constant(rank, 10), false);
+
+  allReduce(var, 2.0, /* async = */ true);
+  syncDistributed();
+
+  float expected_val = size * (size - 1.0);
+  ASSERT_TRUE(af::allTrue<bool>(var.array() == expected_val));
+}
+
+TEST(Distributed, AllReduceSetAsync) {
+  auto rank = getWorldRank();
+  auto size = getWorldSize();
+
+  size_t vSize = (1 << 20);
+  std::vector<Variable> vars;
+  for (size_t i = 0; i < 5; ++i) {
+    vars.push_back(Variable(af::constant(rank + 1, vSize), false));
+  }
+
+  allReduceMultiple(vars, 2.0, /* async = */ true, /* contiguous = */ true);
+  syncDistributed();
+
+  float expected_val = size * (size + 1.0);
+  for (auto var : vars) {
+    ASSERT_TRUE(af::allTrue<bool>(var.array() == expected_val));
+  }
+
+  // Exceed the size of the contiguous buffer without caching, and trigger a
+  // contiguous sync with a tensor that is too large
+  for (size_t i = 0; i < 25; ++i) {
+    vars.push_back(Variable(af::constant(rank, vSize), false));
+  }
+  if (size > 1) {
+    ASSERT_THROW(
+        allReduceMultiple(
+            vars, 2.0, /* async = */ true, /* contiguous = */ true),
+        std::runtime_error);
+  }
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
 

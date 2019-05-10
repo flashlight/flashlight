@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include <cstdlib>
+
 namespace fl {
 
 /**
@@ -65,6 +67,8 @@ enum class DistributedInit {
 struct DistributedConstants {
   static constexpr const char* kMaxDevicePerNode = "MAX_DEVICE_PER_NODE";
   static constexpr const char* kFilePath = "FILE_PATH";
+  static constexpr const std::size_t kCoalesceCacheSize =
+      ((size_t)(20) << 20); // 20 MB
 };
 
 } // namespace fl
