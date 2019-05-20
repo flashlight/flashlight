@@ -5,7 +5,7 @@ project(flashlight)
 include(CTest)
 
 # ----------------------------- Setup -----------------------------
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/")
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(FLASHLIGHT_PROJECT_COMPONENT_SRC_DIR "${CMAKE_SOURCE_DIR}/flashlight") # module root
@@ -22,8 +22,8 @@ set(FL_INSTALL_EXAMPLES_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/examples" CACHE PATH 
 set(FL_INSTALL_DOC_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/doc" CACHE PATH "Install path for documentation")
 
 # ----------------------------- Configuration -----------------------------
-# Arrayfire ML Backend
-set(FLASHLIGHT_BACKEND "CUDA" CACHE STRING "Backend with which to build Arrayfire ML")
+# Flashlight backend
+set(FLASHLIGHT_BACKEND "CUDA" CACHE STRING "Backend with which to build flashlight")
 # Select from exactly one backend
 set_property(CACHE FLASHLIGHT_BACKEND PROPERTY STRINGS UNIFIED CPU CUDA OPENCL)
 # Map to flags
@@ -112,7 +112,7 @@ if (FLASHLIGHT_USE_CUDA)
      message(STATUS "CUDA not found")
      message(FATAL_ERROR "CUDA required to build CUDA backend")
    endif()
-   
+
    find_package(CUDNN 7.1 QUIET) # CUDNN 7.1 works with CUDA 9.2
    if (CUDNN_FOUND)
      message(STATUS "CUDNN found (library: ${CUDNN_LIBRARIES} include: ${CUDNN_INCLUDE_DIRS})")
@@ -158,6 +158,24 @@ if (FLASHLIGHT_USE_OPENCL)
   endif()
 endif()
 
+# Set up variables to link the right ArrayFire backend
+if (FLASHLIGHT_USE_UNIFIED)
+  set(FL_AF_BACKEND "af")
+elseif (FLASHLIGHT_USE_CPU)
+  set(FL_AF_BACKEND "afcpu")
+elseif (FLASHLIGHT_USE_CUDA)
+  set(FL_AF_BACKEND "afcuda")
+elseif (FLASHLIGHT_USE_OPENCL)
+  set(FL_AF_BACKEND "afopencl")
+else()
+  message(FATAL_ERROR "flashlight backend ill-specified")
+endif()
+
+# Dummy target just for ArrayFire dependency.
+# This lets libraries depending on flashlight detect which backend was used.
+set(FL_BACKEND_DUMMY "BACKEND_${FLASHLIGHT_BACKEND}")
+add_library(${FL_BACKEND_DUMMY} INTERFACE)
+target_link_libraries(${FL_BACKEND_DUMMY} INTERFACE ArrayFire::${FL_AF_BACKEND})
 
 # -------------------------------- Main Library --------------------------------
 add_library(flashlight "")
@@ -169,9 +187,9 @@ set_target_properties(
   CXX_STANDARD 11
   )
 
-
 set(
   FLASHLIGHT_MODULES
+  ${FL_BACKEND_DUMMY}
   Autograd
   Common
   Dataset
@@ -200,27 +218,6 @@ target_include_directories(
   PRIVATE
   ${CMAKE_SOURCE_DIR}
 )
-
-if (FLASHLIGHT_USE_UNIFIED)
-  # For flashlight, nn ops use CUDA in unified mode
-  target_compile_definitions(
-    flashlight
-    PRIVATE
-    BUILD_ARRAYFIRE_UNIFIED_BACKEND=1
-    RUN_UNIFIED_BACKEND_TESTS=1)
-  target_link_libraries(flashlight ArrayFire::af)
-elseif (FLASHLIGHT_USE_CPU)
-  target_compile_definitions(flashlight PRIVATE FLASHLIGHT_BUILD_CPU_BACKEND=1)
-  target_link_libraries(flashlight PUBLIC ArrayFire::afcpu)
-elseif (FLASHLIGHT_USE_CUDA)
-  target_compile_definitions(flashlight PRIVATE FLASHLIGHT_BUILD_CUDA_BACKEND=1)
-  target_link_libraries(flashlight PUBLIC ArrayFire::afcuda)
-elseif (FLASHLIGHT_USE_OPENCL)
-  target_compile_definitions(flashlight PRIVATE FLASHLIGHT_BUILD_OPENCL_BACKEND=1)
-  target_link_libraries(flashlight PUBLIC ArrayFire::afopencl)
-else()
-  message(FATAL_ERROR "flashlight backend ill-specified")
-endif()
 
 # -------------------------------- Components --------------------------------
 # NOTE: each module is built as an interface library, but can't be built
