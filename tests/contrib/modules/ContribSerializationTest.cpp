@@ -50,6 +50,23 @@ TEST(ModuleTest, ResidualSerialization) {
   ASSERT_TRUE(allClose(outputl, output));
 }
 
+TEST(ModuleTest, AsymmetricConv1DSerialization) {
+  int c = 32;
+  auto model = std::make_shared<AsymmetricConv1D>(c, c, 5, 1, -1, 0, 1);
+
+  save(getTmpPath("AsymmetricConv1D"), model);
+
+  std::shared_ptr<AsymmetricConv1D> loaded;
+  load(getTmpPath("AsymmetricConv1D"), loaded);
+
+  auto input = Variable(af::randu(12, 10, 3, 4), false);
+  auto output = model->forward(input);
+  auto outputl = loaded->forward(input);
+
+  ASSERT_TRUE(allParamsClose(*loaded, *model));
+  ASSERT_TRUE(allClose(outputl, output));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

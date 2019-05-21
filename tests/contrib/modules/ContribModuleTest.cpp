@@ -92,6 +92,29 @@ TEST(ModuleTest, ResidualFwdWithProjection) {
   ASSERT_TRUE(allClose(outputRes, outputTrue));
 }
 
+TEST(ModuleTest, AsymmetricConv1DFwd) {
+  int batchsize = 10;
+  int timesteps = 120;
+  int c = 32;
+
+  auto conv = AsymmetricConv1D(c, c, 5, 1, -1, 0, 1); // use only past
+  auto input = Variable(af::randu(timesteps, 1, c, batchsize), false);
+
+  auto output = conv.forward(input);
+
+  ASSERT_EQ(output.dims(0), timesteps);
+  ASSERT_EQ(output.dims(1), 1);
+  ASSERT_EQ(output.dims(2), c);
+
+  auto convFuture = AsymmetricConv1D(c, c, 5, 1, -1, 1, 1); // use only future
+  auto outputFuture = convFuture.forward(input);
+  ASSERT_EQ(outputFuture.dims(0), timesteps);
+  ASSERT_EQ(outputFuture.dims(1), 1);
+  ASSERT_EQ(outputFuture.dims(2), c);
+
+  ASSERT_FALSE(allClose(output, outputFuture));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
