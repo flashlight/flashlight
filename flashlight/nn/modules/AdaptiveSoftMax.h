@@ -7,18 +7,18 @@
  */
 
 #pragma once
-
-#include "flashlight/nn/modules/Loss.h"
+#include "flashlight/common/Defines.h"
+#include "flashlight/nn/modules/Container.h"
 
 namespace fl {
 
 /**
  * An efficient approximation of the softmax function and negative
- * log-likelihood loss. Computes the Adaptive Softmax, as given by [Grave et al
- * (2017)](https://arxiv.org/pdf/1609.04309.pdf): _Efficient softmax
- * approximation for GPUs_. Efficient when the number of classes over which the
- * softmax is being computed is very high and the label distribution is highly
- * imbalanced.
+ * log-likelihood loss (see AdaptiveSoftmaxLoss). Computes the Adaptive Softmax,
+ * as given by [Grave et al (2017)](https://arxiv.org/pdf/1609.04309.pdf):
+ * _Efficient softmax approximation for GPUs_. Efficient when the number of
+ * classes over which the softmax is being computed is very high and the label
+ * distribution is highly imbalanced.
  *
  * Adaptive softmax buckets the inputs based on their frequency, where clusters
  * may be different number of targets each. For each minibatch, only clusters
@@ -26,18 +26,11 @@ namespace fl {
  * low-frequency inputs are approximated with lower rank matrices so as to speed
  * up computation.
  */
-class AdaptiveSoftMaxLoss : public BinaryModule {
+class AdaptiveSoftMax : public UnaryModule {
  private:
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule, cutoff_, divValue_)
   std::vector<int> cutoff_;
-  ReduceMode reduction_;
   float divValue_;
-
-  FL_SAVE_LOAD_WITH_BASE(BinaryModule, cutoff_, reduction_, divValue_)
-
-  void setTargets(
-      const Variable& targets,
-      std::vector<af::array>& masks,
-      std::vector<Variable>& target_chunks) const;
 
   /**
    * Compute the output of the entire distribution.
@@ -48,14 +41,14 @@ class AdaptiveSoftMaxLoss : public BinaryModule {
    * @returns `Variable` containing the log probabilities over the full
    * distribution
    */
-  Variable getFullLogProb(const Variable& inputs, const Variable& head_output)
+  Variable getFullLogProb(const Variable& inputs, const Variable& headOutput)
       const;
 
  public:
-  AdaptiveSoftMaxLoss() = default;
+  AdaptiveSoftMax() = default;
 
   /**
-   * Create an `AdaptiveSoftMaxLoss` with given parameters
+   * Create an `AdaptiveSoftMax` with given parameters
    *
    * @param input_size the size of the input tensor, which doesn't has to be the
    * number of classes.
@@ -73,15 +66,11 @@ class AdaptiveSoftMaxLoss : public BinaryModule {
    * \f[
    *    \left\lfloor \frac{input\_size}{div\_value^{idx}} \right\rfloor
    * \f]
-   * @param reduction the reduction mode - see `ReductionMode`
    */
-  AdaptiveSoftMaxLoss(
-      int input_size,
+  AdaptiveSoftMax(
+      int inputSize,
       const std::vector<int>& cutoff,
-      float div_value = 4,
-      ReduceMode reduction = ReduceMode::MEAN);
-
-  Variable forward(const Variable& inputs, const Variable& targets) override;
+      float divValue = 4);
 
   /**
    * Computes log-probabilities across all classes for some input.
@@ -92,7 +81,7 @@ class AdaptiveSoftMaxLoss : public BinaryModule {
    * [\f$C\f$, \f$B_1\f$, \f$B_2\f$, \f$B_3\f$], where \f$C\f$ is the number of
    * classes.
    */
-  Variable getLogProb(const Variable& inputs) const;
+  Variable forward(const Variable& inputs) override;
 
   /**
    * Computes the class with highest probability for each example in a given
@@ -104,10 +93,11 @@ class AdaptiveSoftMaxLoss : public BinaryModule {
    * containing the classes with the highest probabilities, over each sample.
    */
   Variable predict(const Variable& inputs) const;
+  std::vector<int> getCutoff() const;
 
   std::string prettyString() const override;
 };
 
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::AdaptiveSoftMaxLoss)
+CEREAL_REGISTER_TYPE(fl::AdaptiveSoftMax)

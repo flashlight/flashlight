@@ -184,7 +184,8 @@ TEST(SerializationTest, AdaptiveSoftMaxLoss) {
   auto target = input(g_target);
 
   std::vector<int> cutoff{{1, 3}};
-  auto asml = std::make_shared<AdaptiveSoftMaxLoss>(5, cutoff);
+  auto activation = std::make_shared<AdaptiveSoftMax>(5, cutoff);
+  auto asml = std::make_shared<AdaptiveSoftMaxLoss>(activation);
 
   save(getTmpPath("AdaptiveSoftMaxLoss"), asml);
 
@@ -193,7 +194,19 @@ TEST(SerializationTest, AdaptiveSoftMaxLoss) {
   ASSERT_TRUE(asml2);
 
   ASSERT_TRUE(allParamsClose(*asml2, *asml));
+  auto activation2 = asml2->getActivation();
+  ASSERT_TRUE(allParamsClose(*activation2, *activation));
+  ASSERT_TRUE(allClose(activation2->forward(in), activation->forward(in)));
   ASSERT_TRUE(allClose(asml2->forward(in, target), asml->forward(in, target)));
+
+  auto activation3 = std::make_shared<AdaptiveSoftMax>(5, cutoff);
+  auto asml3 = std::make_shared<AdaptiveSoftMaxLoss>(activation3);
+  int index = 0;
+  for (auto param : asml->params()) {
+    asml3->setParams(param, index);
+    index++;
+  }
+  ASSERT_TRUE(allParamsClose(*asml3->getActivation(), *activation));
 }
 
 TEST(SerializationTest, PrettyString) {

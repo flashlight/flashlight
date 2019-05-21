@@ -17,6 +17,7 @@
 #pragma once
 
 #include "flashlight/common/Defines.h"
+#include "flashlight/nn/modules/AdaptiveSoftMax.h"
 #include "flashlight/nn/modules/Container.h"
 
 namespace fl {
@@ -151,6 +152,62 @@ class CategoricalCrossEntropy : public BinaryModule {
   std::string prettyString() const override;
 };
 
+/**
+ * An efficient approximation of the softmax function and negative
+ * log-likelihood loss. Computes the Adaptive Softmax, as given by [Grave et al
+ * (2017)](https://arxiv.org/pdf/1609.04309.pdf): _Efficient softmax
+ * approximation for GPUs_. Efficient when the number of classes over which the
+ * softmax is being computed is very high and the label distribution is highly
+ * imbalanced.
+ *
+ * Adaptive softmax buckets the inputs based on their frequency, where clusters
+ * may be different number of targets each. For each minibatch, only clusters
+ * for which at least one target is present are evaluated. Forward pass for
+ * low-frequency inputs are approximated with lower rank matrices so as to speed
+ * up computation.
+ */
+class AdaptiveSoftMaxLoss : public BinaryModule {
+ private:
+  FL_SAVE_LOAD_WITH_BASE(BinaryModule, activation_, reduction_)
+  std::shared_ptr<AdaptiveSoftMax> activation_;
+  ReduceMode reduction_;
+
+  void setTargets(
+      const Variable& targets,
+      std::vector<af::array>& masks,
+      std::vector<Variable>& target_chunks,
+      std::vector<int>& cutoff) const;
+
+ public:
+  AdaptiveSoftMaxLoss() = default;
+
+  /**
+   * Create an `AdaptiveSoftMaxLoss` with given parameters
+   *
+   * @param reduction the reduction mode - see `ReductionMode` See
+   * documentation on `ReduceMode` for available options.
+   */
+  explicit AdaptiveSoftMaxLoss(
+      std::shared_ptr<AdaptiveSoftMax> activation,
+      ReduceMode reduction = ReduceMode::MEAN);
+  std::shared_ptr<AdaptiveSoftMax> getActivation() const;
+
+  /**
+   * Computes the categorical cross entropy loss for some input and target
+   * tensors (uses adaptive softmax function to do this efficiently)
+   *
+   * @param inputs a `Variable` with shape [\f$C\f$, \f$B_1\f$, \f$B_2\f$,
+   * \f$B_3\f$] where \f$C\f$ is the number of classes.
+   * @param targets an integer `Variable` with shape [\f$B_1\f$, \f$B_2\f$,
+   * \f$B_3\f$]. The values must be in [\f$0\f$, \f$C - 1\f$]
+   */
+  Variable forward(const Variable& inputs, const Variable& targets) override;
+
+  void setParams(const Variable& var, int position) override;
+
+  std::string prettyString() const override;
+};
+
 typedef MeanSquaredError MSE;
 typedef MeanAbsoluteError MAE;
 typedef MeanAbsoluteError L1Loss;
@@ -161,3 +218,4 @@ CEREAL_REGISTER_TYPE(fl::MeanSquaredError)
 CEREAL_REGISTER_TYPE(fl::MeanAbsoluteError)
 CEREAL_REGISTER_TYPE(fl::BinaryCrossEntropy)
 CEREAL_REGISTER_TYPE(fl::CategoricalCrossEntropy)
+CEREAL_REGISTER_TYPE(fl::AdaptiveSoftMaxLoss)

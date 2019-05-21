@@ -9,7 +9,7 @@
 #pragma once
 
 #include "flashlight/nn/modules/Activations.h"
-#include "flashlight/nn/modules/AdaptiveSoftMaxLoss.h"
+#include "flashlight/nn/modules/AdaptiveSoftMax.h"
 #include "flashlight/nn/modules/BatchNorm.h"
 #include "flashlight/nn/modules/Container.h"
 #include "flashlight/nn/modules/Conv2D.h"
