@@ -102,4 +102,34 @@ int derivePadding(int inSz, int filterSz, int stride, int pad, int dilation) {
   return pad;
 }
 
+af::array padSequence(
+    std::vector<af::array> inputs,
+    double padValue /* = 0.0 */,
+    dim_t batchDim /* = -1 */) {
+  af::dim4 maxDims;
+  for (const auto& in : inputs) {
+    for (int d = 0; d < AF_MAX_DIMS; ++d) {
+      maxDims[d] = std::max(maxDims[d], in.dims(d));
+    }
+  }
+
+  if (batchDim < 0) {
+    batchDim = maxDims.ndims();
+  }
+  if (maxDims[batchDim] > 1) {
+    throw std::invalid_argument("no singleton dim available for batching");
+  }
+  maxDims[batchDim] = inputs.size();
+  auto padSeq = af::constant(padValue, maxDims);
+  std::array<af::seq, AF_MAX_DIMS> sel;
+  for (int i = 0; i < inputs.size(); ++i) {
+    for (int d = 0; d < AF_MAX_DIMS; ++d) {
+      sel[d] = af::seq(inputs[i].dims(d));
+    }
+    sel[batchDim] = af::seq(i, i);
+    padSeq(sel[0], sel[1], sel[2], sel[3]) = inputs[i];
+  }
+  return padSeq;
+}
+
 } // namespace fl
