@@ -59,7 +59,7 @@ TEST(ModuleTest, AsymmetricConv1DSerialization) {
   std::shared_ptr<AsymmetricConv1D> loaded;
   load(getTmpPath("AsymmetricConv1D"), loaded);
 
-  auto input = Variable(af::randu(12, 10, 3, 4), false);
+  auto input = Variable(af::randu(25, 10, c, 4), false);
   auto output = model->forward(input);
   auto outputl = loaded->forward(input);
 

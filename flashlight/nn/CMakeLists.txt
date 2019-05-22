@@ -13,7 +13,7 @@ set(
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/Init.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/Utils.cpp # utils
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Activations.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/AdaptiveSoftMaxLoss.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/AdaptiveSoftMax.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/BatchNorm.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Container.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Conv2D.cpp

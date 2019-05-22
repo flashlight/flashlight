@@ -27,7 +27,12 @@ int main(int /* unused */, const char** /* unused */) {
 
   Sequential model;
   model.add(Linear(feature_dim, feature_dim));
-  auto criterion = AdaptiveSoftMaxLoss(feature_dim, {1, categories});
+
+  std::vector<int> cutoff = {1, categories};
+  auto asActivation =
+      std::make_shared<AdaptiveSoftMax>(feature_dim, cutoff);
+
+  AdaptiveSoftMaxLoss criterion(asActivation);
   auto sgd_m = SGDOptimizer(model.params(), 1e-2);
   auto sgd_c = SGDOptimizer(criterion.params(), 1e-2);
 
@@ -69,13 +74,13 @@ int main(int /* unused */, const char** /* unused */) {
   af_print(loss);
 
   // accuracy
-  auto log_prob = criterion.getLogProb(result).array();
+  auto log_prob = criterion.getActivation()->forward(result).array();
   af::array max_value, prediction;
   af::max(max_value, prediction, log_prob, 0);
   auto accuracy = mean(prediction == af::transpose(label));
   af_print(accuracy);
 
-  auto pred = criterion.predict(result).array();
+  auto pred = asActivation->predict(result).array();
   accuracy = mean(pred == af::transpose(label));
   af_print(accuracy);
 
