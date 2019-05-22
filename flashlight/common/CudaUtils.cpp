@@ -21,9 +21,10 @@ cudaStream_t getActiveStream() {
   return afcu::getStream(af_id);
 }
 
-void synchronizeStreams(cudaStream_t blockee, cudaStream_t blockOn) {
-  cudaEvent_t event;
-  FL_CUDA_CHECK(cudaEventCreate(&event, detail::kCudaEventDefaultFlags));
+void synchronizeStreams(
+    cudaStream_t blockee,
+    cudaStream_t blockOn,
+    cudaEvent_t event) {
   FL_CUDA_CHECK(cudaEventRecord(event, blockOn));
   FL_CUDA_CHECK(cudaStreamWaitEvent(blockee, event, 0));
 }

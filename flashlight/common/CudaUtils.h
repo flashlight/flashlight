@@ -33,8 +33,13 @@ cudaStream_t getActiveStream();
  * @param[in] blockee the CUDA stream to be blocked
  * @param[in] blockOn the CUDA stream to block on, whose events will be waited
  * on to complete before the blockee starts execution of its enqueued events
+ * @param[in] event an existing CUDA event to use to record events on blockOn
+ * CUDA stream
  */
-void synchronizeStreams(cudaStream_t blockee, cudaStream_t blockOn);
+void synchronizeStreams(
+    cudaStream_t blockee,
+    cudaStream_t blockOn,
+    cudaEvent_t event);
 
 namespace detail {
 
