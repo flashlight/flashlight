@@ -111,10 +111,9 @@ void allReduce(af::array& arr, bool async /* = false */) {
     throw std::runtime_error("distributed environment not initialized");
   }
   ncclDataType_t type = detail::getNcclTypeForArray(arr);
-  void* arrPtr = arr.device<void>();
+  DevicePtr arrPtr(arr);
   detail::allreduceCuda(
-      arrPtr, arr.elements(), type, async, /* contiguous = */ false);
-  arr.unlock();
+      arrPtr.get(), arr.elements(), type, async, /* contiguous = */ false);
 }
 
 void allReduceMultiple(
@@ -150,11 +149,12 @@ void allReduceMultiple(
   size_t typeSize = af::getSizeOf(arrs[0]->type());
 
   // Device ptrs from each array
-  std::vector<std::pair<void*, size_t>> arrPtrs(arrs.size());
+  std::vector<std::pair<DevicePtr, size_t>> arrPtrs;
+  arrPtrs.reserve(arrs.size());
   size_t totalEls{0};
   for (auto& arr : arrs) {
     totalEls += arr->elements();
-    arrPtrs.push_back(std::make_pair(arr->device<void>(), arr->bytes()));
+    arrPtrs.emplace_back(std::pair(DevicePtr(*arr), arr->bytes()));
   }
 
   // Make sure our coalesce buffer is large enough. Since we're initializing our
@@ -179,7 +179,7 @@ void allReduceMultiple(
   for (auto& entry : arrPtrs) {
     FL_CUDA_CHECK(cudaMemcpyAsync(
         cur,
-        entry.first,
+        entry.first.get(),
         entry.second,
         cudaMemcpyDeviceToDevice,
         workerStream));
@@ -204,16 +204,12 @@ void allReduceMultiple(
   cur = reinterpret_cast<char*>(coalesceBuffer);
   for (auto& entry : arrPtrs) {
     FL_CUDA_CHECK(cudaMemcpyAsync(
-        entry.first,
+        entry.first.get(),
         cur,
         entry.second,
         cudaMemcpyDeviceToDevice,
         workerStream));
     cur += entry.second;
-  }
-
-  for (auto& arr : arrs) {
-    arr->unlock();
   }
 }
 

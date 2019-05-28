@@ -21,6 +21,7 @@
 #include <mpi.h>
 
 #include "flashlight/common/CppBackports.h"
+#include "flashlight/common/DevicePtr.h"
 #include "flashlight/distributed/backend/utils/LRUCache.h"
 
 namespace {
@@ -113,28 +114,30 @@ void allReduce(af::array& arr, bool async /* = false */) {
   if (arrSize > cacheArr_.elements()) {
     cacheArr_ = af::array(arrSize, af::dtype::b8);
   }
-  void* arrPtr = arr.device<void>();
-  void* cacheArrPtr = cacheArr_.device<void>();
-  memcpy(cacheArrPtr, arrPtr, arrSize);
+  DevicePtr arrPtr(arr);
+  DevicePtr cacheArrPtr(cacheArr_);
+  memcpy(cacheArrPtr.get(), arrPtr.get(), arrSize);
   switch (arr.type()) {
     case af::dtype::f32:
-      detail::allreduceGloo(static_cast<float*>(cacheArrPtr), arr.elements());
+      detail::allreduceGloo(
+          static_cast<float*>(cacheArrPtr.get()), arr.elements());
       break;
     case af::dtype::f64:
-      detail::allreduceGloo(static_cast<double*>(cacheArrPtr), arr.elements());
+      detail::allreduceGloo(
+          static_cast<double*>(cacheArrPtr.get()), arr.elements());
       break;
     case af::dtype::s32:
-      detail::allreduceGloo(static_cast<int*>(cacheArrPtr), arr.elements());
+      detail::allreduceGloo(
+          static_cast<int*>(cacheArrPtr.get()), arr.elements());
       break;
     case af::dtype::s64:
-      detail::allreduceGloo(static_cast<int64_t*>(cacheArrPtr), arr.elements());
+      detail::allreduceGloo(
+          static_cast<int64_t*>(cacheArrPtr.get()), arr.elements());
       break;
     default:
       throw std::runtime_error("unsupported data type for allreduce with gloo");
   }
-  memcpy(arrPtr, cacheArrPtr, arrSize);
-  arr.unlock();
-  cacheArr_.unlock();
+  memcpy(arrPtr.get(), cacheArrPtr.get(), arrSize);
 }
 
 // Not yet supported
