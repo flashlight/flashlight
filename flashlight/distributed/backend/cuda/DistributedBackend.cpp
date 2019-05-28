@@ -154,7 +154,7 @@ void allReduceMultiple(
   size_t totalEls{0};
   for (auto& arr : arrs) {
     totalEls += arr->elements();
-    arrPtrs.emplace_back(std::pair(DevicePtr(*arr), arr->bytes()));
+    arrPtrs.emplace_back(std::make_pair(DevicePtr(*arr), arr->bytes()));
   }
 
   // Make sure our coalesce buffer is large enough. Since we're initializing our
