@@ -1,64 +1,19 @@
 # ==================================================================
 # module list
 # ------------------------------------------------------------------
-# Ubuntu           16.04
-# CUDA             9.2
-# CuDNN            7-dev
-# arrayfire        3.6.2    (git, CUDA backend)
-# OpenMPI          latest   (apt)
 # flashlight       master   (git, CUDA backend)
 # ==================================================================
 
-FROM nvidia/cuda:9.2-cudnn7-devel-ubuntu16.04
-
-RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
-    rm -rf /var/lib/apt/lists/* \
-           /etc/apt/sources.list.d/cuda.list \
-           /etc/apt/sources.list.d/nvidia-ml.list && \
-    apt-get update && \
-    DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
-        build-essential \
-        ca-certificates \
-        cmake \
-        wget \
-        git \
-        vim \
-        emacs \
-        nano \
-        htop \
-        g++ \
-        # ssh for OpenMPI
-        openssh-server openssh-client \
-        # OpenMPI
-        libopenmpi-dev libomp-dev \
-        # nccl: for flashlight
-        libnccl2 libnccl-dev && \
-# ==================================================================
-# arrayfire https://github.com/arrayfire/arrayfire/wiki/
-# ------------------------------------------------------------------
-    cd /tmp && git clone --recursive https://github.com/arrayfire/arrayfire.git && \
-    cd arrayfire && git checkout v3.6.2 && \
-    mkdir build && cd build && \
-    CXXFLAGS=-DOS_LNX cmake .. -DCMAKE_BUILD_TYPE=Release -DAF_BUILD_CPU=OFF -DAF_BUILD_OPENCL=OFF -DAF_BUILD_EXAMPLES=OFF && \
-    make -j8 && \
-    make install && \
-# ==================================================================
-# config & cleanup
-# ------------------------------------------------------------------
-    ldconfig && \
-    apt-get clean && \
-    apt-get autoremove && \
-    rm -rf /var/lib/apt/lists/* /tmp/* ~/*
-
-RUN mkdir /root/flashlight
-COPY . /root/flashlight
+FROM flml/flashlight:cuda-base-latest
 
 # ==================================================================
 # flashlight with GPU backend
 # ------------------------------------------------------------------
-# If the driver is not found (during docker build) the cuda driver api need to be linked against the
-# libcuda.so stub located in the lib[64]/stubs directory
-RUN ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/libcuda.so.1 && \
-    cd /root/flashlight && mkdir -p build && \
+# Setup and build flashlight
+RUN mkdir /root/flashlight
+
+COPY . /root/flashlight
+
+RUN cd /root/flashlight && mkdir -p build && \
     cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CUDA && \
     make -j8 && make install
