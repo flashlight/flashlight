@@ -40,7 +40,7 @@ Variable batchnorm(
     double epsilon) {
   auto output = af::array(input.dims(), input.type());
 
-  intl nfeatures = 1;
+  int nfeatures = 1;
   for (auto ax : axes) {
     nfeatures *= input.dims(ax);
   }
