@@ -9,6 +9,7 @@ set(
   DATASET_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/dataset/BatchDataset.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/dataset/BatchDataset.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/dataset/BlobDataset.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/dataset/ConcatDataset.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/dataset/DatasetIterator.h
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/dataset/MergeDataset.cpp

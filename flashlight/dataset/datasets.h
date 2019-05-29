@@ -9,6 +9,7 @@
 #pragma once
 
 #include "flashlight/dataset/BatchDataset.h"
+#include "flashlight/dataset/BlobDataset.h"
 #include "flashlight/dataset/ConcatDataset.h"
 #include "flashlight/dataset/Dataset.h"
 #include "flashlight/dataset/DatasetIterator.h"

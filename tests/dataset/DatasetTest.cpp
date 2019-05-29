@@ -147,6 +147,140 @@ TEST(DatasetTest, DatasetIterator) {
   ASSERT_EQ(idx, transformds.size());
 }
 
+TEST(DatasetTest, BlobDataset) {
+  std::vector<std::vector<af::array>> data;
+
+  auto fillup = [&data](BlobDataset& blob) {
+    for (int64_t i = 0; i < 100; i++) {
+      std::vector<af::array> sample;
+      for (int64_t j = 0; j < i % 4; j++) {
+        af::array tensor;
+        if (j % 2 == 0) {
+          tensor = af::randu(100, 3, 100);
+        } else {
+          tensor = af::randu(100, 200);
+        }
+        sample.push_back(tensor);
+      }
+      data.push_back(sample);
+      blob.add(sample);
+    }
+  };
+
+  auto check = [&data](BlobDataset& blob) {
+    ASSERT_EQ(data.size(), blob.size());
+    for (int64_t i = 0; i < blob.size(); i++) {
+      auto blob_sample = blob.get(i);
+      auto dat_sample = data.at(i);
+      ASSERT_EQ(dat_sample.size(), blob_sample.size());
+      for (int64_t j = 0; j < blob_sample.size(); j++) {
+        ASSERT_EQ(
+            af::norm(af::flat(dat_sample.at(j))),
+            af::norm(af::flat(blob_sample.at(j))));
+      }
+    }
+  };
+
+  // check read-write capabilities
+  {
+    BlobDataset blob("data.blob", true, true);
+    fillup(blob);
+    check(blob);
+
+    fillup(blob);
+    check(blob);
+
+    blob.sync();
+    fillup(blob);
+    check(blob);
+    blob.sync();
+    check(blob);
+  }
+
+  // check everything is correct after re-opening
+  {
+    BlobDataset blob("data.blob");
+    check(blob);
+  }
+
+  // multi-threaded read
+  {
+    std::vector<std::vector<af::array>> thdata(data.size());
+    auto blob = std::make_shared<BlobDataset>("data.blob");
+    std::vector<std::thread> workers;
+    const int nworker = 10;
+    int nperworker = data.size() / nworker;
+    for (int i = 0; i < nworker; i++) {
+      auto device = af::getDevice();
+      workers.push_back(std::thread([i, blob, nperworker, device, &thdata]() {
+        af::setDevice(device);
+        for (int j = 0; j < nperworker; j++) {
+          thdata[i * nperworker + j] = blob->get(i * nperworker + j);
+        }
+      }));
+    }
+    for (int i = 0; i < nworker; i++) {
+      workers[i].join();
+    }
+    ASSERT_EQ(data.size(), thdata.size());
+    for (int64_t i = 0; i < data.size(); i++) {
+      auto thdata_sample = thdata.at(i);
+      auto data_sample = data.at(i);
+      ASSERT_EQ(data_sample.size(), thdata_sample.size());
+      for (int64_t j = 0; j < thdata_sample.size(); j++) {
+        ASSERT_TRUE(thdata_sample.at(j).dims() == data_sample.at(j).dims());
+        ASSERT_EQ(
+            af::norm(af::flat(data_sample.at(j))),
+            af::norm(af::flat(thdata_sample.at(j))));
+      }
+    }
+  }
+
+  // multi-threaded write
+  {
+    // add an index
+    for (int i = 0; i < data.size(); i++) {
+      data[i].push_back(af::constant(i, 1, f32));
+    }
+    {
+      auto blob = std::make_shared<BlobDataset>("data.blob", true, true);
+      std::vector<std::thread> workers;
+      const int nworker = 10;
+      int nperworker = data.size() / nworker;
+      auto device = af::getDevice();
+      for (int i = 0; i < nworker; i++) {
+        workers.push_back(std::thread([i, blob, nperworker, device, &data]() {
+          af::setDevice(device);
+          for (int j = 0; j < nperworker; j++) {
+            blob->add(data[i * nperworker + j]);
+          }
+        }));
+      }
+      for (int i = 0; i < nworker; i++) {
+        workers[i].join();
+      }
+      blob->sync();
+    }
+    {
+      auto blob = std::make_shared<BlobDataset>("data.blob");
+      ASSERT_EQ(data.size(), blob->size());
+      for (int64_t i = 0; i < data.size(); i++) {
+        auto blob_sample = blob->get(i);
+        auto idx = (int)blob_sample.back().scalar<float>();
+        ASSERT_TRUE(idx >= 0 && idx < data.size());
+        auto data_sample = data.at(idx);
+        ASSERT_EQ(data_sample.size(), blob_sample.size());
+        for (int64_t j = 0; j < blob_sample.size(); j++) {
+          ASSERT_TRUE(data_sample.at(j).dims() == blob_sample.at(j).dims());
+          ASSERT_EQ(
+              af::norm(af::flat(data_sample.at(j))),
+              af::norm(af::flat(blob_sample.at(j))));
+        }
+      }
+    }
+  }
+}
+
 TEST(DatasetTest, PrefetchDatasetCorrectness) {
   std::vector<af::array> tensormap = {af::randu(100, 200, 300)};
   auto tensords = std::make_shared<TensorDataset>(tensormap);
