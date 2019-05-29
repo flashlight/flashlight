@@ -32,7 +32,8 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         # OpenMPI
         libopenmpi-dev libomp-dev \
         # nccl: for flashlight
-        libnccl2 libnccl-dev && \
+        libnccl2 libnccl-dev \
+        libglfw3-dev && \
 # ==================================================================
 # arrayfire https://github.com/arrayfire/arrayfire/wiki/
 # ------------------------------------------------------------------

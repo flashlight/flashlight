@@ -16,7 +16,7 @@ jobs:
           command: |
             mkdir -p build && cd build
             cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CUDA
-            make -j8 && make install
+            make && make install
   build-cpu:
     docker:
       - image: flml/flashlight:cpu-base-latest
@@ -26,4 +26,4 @@ jobs:
           command: |
             export MKLROOT=/opt/intel/mkl && mkdir -p build && cd build
             cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CPU
-            make -j8 && make install
+            make && make install
