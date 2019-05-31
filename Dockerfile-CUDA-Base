@@ -6,7 +6,6 @@
 # CuDNN            7-dev
 # arrayfire        3.6.4    (git, CUDA backend)
 # OpenMPI          latest   (apt)
-# flashlight       master   (git, CUDA backend)
 # ==================================================================
 
 FROM nvidia/cuda:9.2-cudnn7-devel-ubuntu16.04
