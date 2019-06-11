@@ -52,6 +52,10 @@ std::vector<Variable> WeightNorm::forward(const std::vector<Variable>& inputs) {
   return module_->forward(inputs);
 }
 
+ModulePtr WeightNorm::module() const {
+  return module_;
+}
+
 void WeightNorm::train() {
   Module::train();
   module_->train();
