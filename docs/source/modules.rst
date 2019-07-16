@@ -170,15 +170,10 @@ Initialization
 --------------
 .. doxygenfile:: nn/Init.h
 
-Serialization
--------------
-.. doxygenclass:: fl::Serializer
-    :members:
-
 Utils
 --------------
-.. doxygenfile:: modules/Utils.h
+.. doxygenfile:: nn/Utils.h
 
 DistributedUtils
 ----------------
-.. doxygenfile:: modules/DistributedUtils.h
+.. doxygenfile:: nn/DistributedUtils.h
