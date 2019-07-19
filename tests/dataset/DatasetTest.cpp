@@ -147,11 +147,11 @@ TEST(DatasetTest, DatasetIterator) {
   ASSERT_EQ(idx, transformds.size());
 }
 
-TEST(DatasetTest, BlobDataset) {
+TEST(DatasetTest, FileBlobDataset) {
   std::vector<std::vector<af::array>> data;
 
-  auto fillup = [&data](BlobDataset& blob) {
-    for (int64_t i = 0; i < 100; i++) {
+  auto fillup = [&data](FileBlobDataset& blob) {
+    for (int64_t i = 0; i < 20; i++) {
       std::vector<af::array> sample;
       for (int64_t j = 0; j < i % 4; j++) {
         af::array tensor;
@@ -165,50 +165,83 @@ TEST(DatasetTest, BlobDataset) {
       data.push_back(sample);
       blob.add(sample);
     }
+    blob.flush();
   };
 
-  auto check = [&data](BlobDataset& blob) {
+  auto check = [&data](FileBlobDataset& blob) {
     ASSERT_EQ(data.size(), blob.size());
     for (int64_t i = 0; i < blob.size(); i++) {
       auto blob_sample = blob.get(i);
       auto dat_sample = data.at(i);
       ASSERT_EQ(dat_sample.size(), blob_sample.size());
       for (int64_t j = 0; j < blob_sample.size(); j++) {
-        ASSERT_EQ(
-            af::norm(af::flat(dat_sample.at(j))),
-            af::norm(af::flat(blob_sample.at(j))));
+        ASSERT_TRUE(
+            af::norm(
+                af::flat(dat_sample.at(j)) - af::flat(blob_sample.at(j))) <=
+            1e-05);
       }
     }
   };
 
   // check read-write capabilities
   {
-    BlobDataset blob("data.blob", true, true);
+    FileBlobDataset blob("/tmp/data.blob", true, true);
+    fillup(blob);
+    check(blob);
     fillup(blob);
     check(blob);
 
+    blob.writeIndex();
     fillup(blob);
     check(blob);
 
-    blob.sync();
-    fillup(blob);
+    blob.writeIndex();
     check(blob);
-    blob.sync();
+
+    FileBlobDataset blobcopy("/tmp/data-copy.blob", true, true);
+    blobcopy.add(blob);
+    blobcopy.add(blob, 1048576);
+    auto datadup = data;
+    data.insert(data.end(), datadup.begin(), datadup.end());
+    blobcopy.writeIndex();
+    check(blobcopy);
+    data = datadup;
     check(blob);
+
+    // check hostTransform
+    for (auto& vec : data) {
+      if (vec.size() > 0) {
+        vec[0] += 1;
+      }
+    }
+    blob.setHostTransform(
+        0, [](void* ptr, af::dim4 size, af::dtype /* type */) {
+          float* ptr_f = (float*)ptr;
+          for (int64_t i = 0; i < size.elements(); i++) {
+            ptr_f[i] += 1;
+          }
+          return af::array(size, ptr_f);
+        });
+    check(blob);
+    for (auto& vec : data) {
+      if (vec.size() > 0) {
+        vec[0] -= 1;
+      }
+    }
   }
 
   // check everything is correct after re-opening
   {
-    BlobDataset blob("data.blob");
+    FileBlobDataset blob("/tmp/data.blob");
     check(blob);
   }
 
   // multi-threaded read
   {
     std::vector<std::vector<af::array>> thdata(data.size());
-    auto blob = std::make_shared<BlobDataset>("data.blob");
+    auto blob = std::make_shared<FileBlobDataset>("/tmp/data.blob");
     std::vector<std::thread> workers;
-    const int nworker = 10;
+    const int nworker = 4;
     int nperworker = data.size() / nworker;
     for (int i = 0; i < nworker; i++) {
       auto device = af::getDevice();
@@ -229,9 +262,10 @@ TEST(DatasetTest, BlobDataset) {
       ASSERT_EQ(data_sample.size(), thdata_sample.size());
       for (int64_t j = 0; j < thdata_sample.size(); j++) {
         ASSERT_TRUE(thdata_sample.at(j).dims() == data_sample.at(j).dims());
-        ASSERT_EQ(
-            af::norm(af::flat(data_sample.at(j))),
-            af::norm(af::flat(thdata_sample.at(j))));
+        ASSERT_TRUE(
+            af::norm(
+                af::flat(data_sample.at(j)) - af::flat(thdata_sample.at(j))) <=
+            1e-05);
       }
     }
   }
@@ -243,7 +277,8 @@ TEST(DatasetTest, BlobDataset) {
       data[i].push_back(af::constant(i, 1, f32));
     }
     {
-      auto blob = std::make_shared<BlobDataset>("data.blob", true, true);
+      auto blob =
+          std::make_shared<FileBlobDataset>("/tmp/data.blob", true, true);
       std::vector<std::thread> workers;
       const int nworker = 10;
       int nperworker = data.size() / nworker;
@@ -259,10 +294,10 @@ TEST(DatasetTest, BlobDataset) {
       for (int i = 0; i < nworker; i++) {
         workers[i].join();
       }
-      blob->sync();
+      blob->writeIndex();
     }
     {
-      auto blob = std::make_shared<BlobDataset>("data.blob");
+      auto blob = std::make_shared<FileBlobDataset>("/tmp/data.blob");
       ASSERT_EQ(data.size(), blob->size());
       for (int64_t i = 0; i < data.size(); i++) {
         auto blob_sample = blob->get(i);
@@ -272,9 +307,10 @@ TEST(DatasetTest, BlobDataset) {
         ASSERT_EQ(data_sample.size(), blob_sample.size());
         for (int64_t j = 0; j < blob_sample.size(); j++) {
           ASSERT_TRUE(data_sample.at(j).dims() == blob_sample.at(j).dims());
-          ASSERT_EQ(
-              af::norm(af::flat(data_sample.at(j))),
-              af::norm(af::flat(blob_sample.at(j))));
+          ASSERT_TRUE(
+              af::norm(
+                  af::flat(data_sample.at(j)) - af::flat(blob_sample.at(j))) <=
+              1e-05);
         }
       }
     }

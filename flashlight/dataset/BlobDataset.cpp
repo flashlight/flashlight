@@ -14,37 +14,47 @@ namespace fl {
 
 const int64_t magicNumber = 0x31626f6c423a6c66;
 
-void BlobDatasetEntry::write(std::ostream& file) const {
-  std::array<int64_t, 6> data;
-  data[0] = static_cast<int64_t>(type);
-  for (int i = 0; i < 4; i++) {
-    data[i + 1] = dims[i];
-  }
-  data[5] = offset;
-  file.write((char*)&data, sizeof(int64_t) * 6);
+BlobDatasetEntryBuffer::BlobDatasetEntryBuffer() {}
+
+void BlobDatasetEntryBuffer::clear() {
+  data_.clear();
 }
 
-void BlobDatasetEntry::read(std::istream& file) {
-  std::array<int64_t, 6> data;
-  file.read((char*)&data, sizeof(int64_t) * 6);
-  type = static_cast<af::dtype>(data[0]);
-  for (int i = 0; i < 4; i++) {
-    dims[i] = data[i + 1];
-  }
-  offset = data[5];
+int64_t BlobDatasetEntryBuffer::size() const {
+  return data_.size() / nFieldPerEntry_;
 }
 
-BlobDataset::BlobDataset(const std::string& name, bool rw, bool truncate) {
-  std::ios_base::openmode mode =
-      (rw ? std::ios_base::in | std::ios_base::out : std::ios_base::in);
-  if (rw && truncate) {
-    mode |= std::ios_base::trunc;
-  }
-  fs_.exceptions(
-      std::ifstream::eofbit | std::ifstream::failbit | std::ifstream::badbit);
-  fs_.open(name, mode);
-  readIndex();
+void BlobDatasetEntryBuffer::resize(int64_t size) {
+  data_.resize(size * nFieldPerEntry_);
 }
+
+BlobDatasetEntry BlobDatasetEntryBuffer::get(const int64_t idx) const {
+  BlobDatasetEntry e;
+  e.type = static_cast<af::dtype>(data_[idx * nFieldPerEntry_]);
+  for (int i = 0; i < 4; i++) {
+    e.dims[i] = data_[idx * nFieldPerEntry_ + i + 1];
+  }
+  e.offset = data_[idx * nFieldPerEntry_ + 5];
+  return e;
+}
+
+void BlobDatasetEntryBuffer::add(const BlobDatasetEntry& e) {
+  data_.push_back(static_cast<int64_t>(e.type));
+  for (int i = 0; i < 4; i++) {
+    data_.push_back(e.dims[i]);
+  }
+  data_.push_back(e.offset);
+}
+
+char* BlobDatasetEntryBuffer::data() {
+  return (char*)data_.data();
+}
+
+int64_t BlobDatasetEntryBuffer::bytes() const {
+  return data_.size() * sizeof(int64_t);
+};
+
+BlobDataset::BlobDataset() {}
 
 int64_t BlobDataset::size() const {
   return offsets_.size();
@@ -53,109 +63,191 @@ int64_t BlobDataset::size() const {
 std::vector<af::array> BlobDataset::get(const int64_t idx) const {
   std::vector<af::array> sample;
   for (int64_t i = 0; i < sizes_.at(idx); i++) {
-    auto entry = entries_.at(offsets_.at(idx) + i);
-    sample.push_back(readArray(entry));
+    auto entry = entries_.get(offsets_.at(idx) + i);
+    sample.push_back(readArray(entry, i));
+  }
+  return sample;
+};
+
+std::vector<std::vector<uint8_t>> BlobDataset::rawGet(const int64_t idx) const {
+  std::vector<std::vector<uint8_t>> sample;
+  for (int64_t i = 0; i < sizes_.at(idx); i++) {
+    auto entry = entries_.get(offsets_.at(idx) + i);
+    sample.push_back(readRawArray(entry));
   }
   return sample;
 };
 
 void BlobDataset::add(const std::vector<af::array>& sample) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  offsets_.push_back(entries_.size());
-  sizes_.push_back(sample.size());
-  for (const auto& array : sample) {
-    auto e = writeArray(array);
-    entries_.push_back(e);
+  int64_t entryOffset;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    entryOffset = entries_.size();
+    offsets_.push_back(entries_.size());
+    sizes_.push_back(sample.size());
+    for (const auto& array : sample) {
+      BlobDatasetEntry e;
+      e.type = array.type();
+      e.dims = array.dims();
+      e.offset = indexOffset_;
+      indexOffset_ += array.bytes();
+      entries_.add(e);
+    }
+  }
+  for (int64_t i = 0; i < sample.size(); i++) {
+    auto& array = sample[i];
+    const auto& e = entries_.get(entryOffset + i);
+    writeArray(e, array);
   }
 }
 
-af::array BlobDataset::readArray(const BlobDatasetEntry& e) const {
+void BlobDataset::add(const BlobDataset& blob, int64_t chunkSize) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (chunkSize <= 0) {
+    throw std::runtime_error("chunkSize must be positive");
+  }
+  sizes_.insert(sizes_.end(), blob.sizes_.begin(), blob.sizes_.end());
+  std::vector<int64_t> offsets = blob.offsets_;
+  for (auto& offset : offsets) {
+    offset += entries_.size();
+  }
+  offsets_.insert(offsets_.end(), offsets.begin(), offsets.end());
+  for (int64_t i = 0; i < blob.entries_.size(); i++) {
+    auto e = blob.entries_.get(i);
+    e.offset += indexOffset_ - 2 * sizeof(int64_t);
+    entries_.add(e);
+  }
+  int64_t blobOffset = 2 * sizeof(int64_t);
+  int64_t copySize = blob.indexOffset_ - blobOffset;
+  int64_t nChunk = copySize / chunkSize;
+  int64_t remainCopySize = copySize - nChunk * chunkSize;
+  std::vector<char> buffer;
+  auto copyChunk = [&buffer, &blob, this, &blobOffset](int64_t size) {
+    buffer.resize(size);
+    blob.readData(blobOffset, buffer.data(), size);
+    blobOffset += size;
+    this->writeData(indexOffset_, buffer.data(), size);
+    this->indexOffset_ += size;
+  };
+  for (int64_t i = 0; i < nChunk; i++) {
+    copyChunk(chunkSize);
+  }
+  if (remainCopySize > 0) {
+    copyChunk(remainCopySize);
+  }
+}
+
+std::vector<uint8_t> BlobDataset::readRawArray(
+    const BlobDatasetEntry& e) const {
+  std::vector<uint8_t> buffer;
   if (e.dims.elements() > 0) {
-    std::vector<uint8_t> buffer(af::getSizeOf(e.type) * e.dims.elements());
-    {
-      std::lock_guard<std::mutex> lock(mutex_);
-      fs_.seekg(e.offset, std::ios_base::beg);
-      fs_.read((char*)buffer.data(), af::getSizeOf(e.type) * e.dims.elements());
+    buffer.resize(af::getSizeOf(e.type) * e.dims.elements());
+    readData(
+        e.offset,
+        (char*)buffer.data(),
+        af::getSizeOf(e.type) * e.dims.elements());
+  }
+  return buffer;
+}
+
+af::array BlobDataset::readArray(const BlobDatasetEntry& e, int i) const {
+  if (e.dims.elements() > 0) {
+    auto buffer = readRawArray(e);
+    auto keyval = hostTransforms_.find(i);
+    if (keyval == hostTransforms_.end()) {
+      af_array c_array;
+      af_err status = af_create_array(
+          &c_array, buffer.data(), e.dims.ndims(), e.dims.get(), e.type);
+      if (status != AF_SUCCESS) {
+        throw af::exception(
+            "unable to create array", __FILE__, __LINE__, status);
+      }
+      return af::array(c_array);
+    } else {
+      return keyval->second(buffer.data(), e.dims, e.type);
     }
-    af_array c_array;
-    af_err status = af_create_array(
-        &c_array, buffer.data(), e.dims.ndims(), e.dims.get(), e.type);
-    if (status != AF_SUCCESS) {
-      throw af::exception("unable to create array", __FILE__, __LINE__, status);
-    }
-    return af::array(c_array);
   } else {
     return af::array();
   }
 }
 
-BlobDatasetEntry BlobDataset::writeArray(const af::array& array) {
-  BlobDatasetEntry e;
-  e.type = array.type();
-  e.dims = array.dims();
-  e.offset = indexOffset_;
+void BlobDataset::writeArray(
+    const BlobDatasetEntry& e,
+    const af::array& array) {
   std::vector<uint8_t> buffer(array.bytes());
   array.host(buffer.data());
-  fs_.seekg(e.offset, std::ios_base::beg);
-  fs_.write((char*)buffer.data(), af::getSizeOf(e.type) * e.dims.elements());
-  indexOffset_ = fs_.tellp();
-  return e;
+  writeData(e.offset, (char*)buffer.data(), buffer.size());
 }
 
-void BlobDataset::sync() {
+void BlobDataset::writeIndex() {
   std::lock_guard<std::mutex> lock(mutex_);
 
-  fs_.seekp(0, std::ios_base::beg);
-  fs_.write((char*)&magicNumber, sizeof(int64_t));
-  fs_.write((char*)&indexOffset_, sizeof(int64_t));
-  fs_.seekp(indexOffset_, std::ios_base::beg);
+  int64_t offset = 0;
+  offset += writeData(offset, (char*)&magicNumber, sizeof(int64_t));
+  writeData(offset, (char*)&indexOffset_, sizeof(int64_t));
 
+  offset = indexOffset_;
   int64_t size = offsets_.size();
-  int64_t entries_size = entries_.size();
-  fs_.write((char*)&size, sizeof(int64_t));
-  fs_.write((char*)&entries_size, sizeof(int64_t));
-  fs_.write((char*)sizes_.data(), sizeof(int64_t) * size);
-  fs_.write((char*)offsets_.data(), sizeof(int64_t) * size);
-  for (int64_t i = 0; i < entries_size; i++) {
-    entries_[i].write(fs_);
-  }
-
-  fs_.flush();
+  int64_t entriesSize = entries_.size();
+  offset += writeData(offset, (char*)&size, sizeof(int64_t));
+  offset += writeData(offset, (char*)&entriesSize, sizeof(int64_t));
+  offset += writeData(offset, (char*)sizes_.data(), sizeof(int64_t) * size);
+  offset += writeData(offset, (char*)offsets_.data(), sizeof(int64_t) * size);
+  writeData(offset, entries_.data(), entries_.bytes());
+  flushData();
 }
 
 void BlobDataset::readIndex() {
+  std::lock_guard<std::mutex> lock(mutex_);
+
   entries_.clear();
 
-  fs_.seekg(0, std::ios_base::end);
-  if (fs_.tellg() == 0) {
+  if (isEmptyData()) {
     // skip magic number and index location
     indexOffset_ = 2 * sizeof(int64_t);
     return;
   }
 
-  fs_.seekg(0, std::ios_base::beg);
   int64_t magicNumberCheck = 0;
-  fs_.read((char*)&magicNumberCheck, sizeof(int64_t));
+  int64_t offset = readData(0, (char*)&magicNumberCheck, sizeof(int64_t));
   if (magicNumber != magicNumberCheck) {
     throw af::exception(
-        "File is not a fl::BlobDataset", __FILE__, __LINE__, AF_ERR_RUNTIME);
+        "Not a fl::BlobDataset", __FILE__, __LINE__, AF_ERR_RUNTIME);
   }
-  fs_.read((char*)&indexOffset_, sizeof(int64_t));
-  fs_.seekg(indexOffset_, std::ios_base::beg);
+  readData(offset, (char*)&indexOffset_, sizeof(int64_t));
+  offset = indexOffset_;
 
   int64_t size;
-  int64_t entries_size;
-  fs_.read((char*)&size, sizeof(int64_t));
-  fs_.read((char*)&entries_size, sizeof(int64_t));
+  int64_t entriesSize;
+  offset += readData(offset, (char*)&size, sizeof(int64_t));
+  offset += readData(offset, (char*)&entriesSize, sizeof(int64_t));
   sizes_.resize(size);
   offsets_.resize(size);
-  entries_.resize(entries_size);
+  entries_.resize(entriesSize);
 
-  fs_.read((char*)sizes_.data(), sizeof(int64_t) * size);
-  fs_.read((char*)offsets_.data(), sizeof(int64_t) * size);
-  for (int64_t i = 0; i < entries_size; i++) {
-    entries_[i].read(fs_);
-  }
+  offset += readData(offset, (char*)sizes_.data(), sizeof(int64_t) * size);
+  offset += readData(offset, (char*)offsets_.data(), sizeof(int64_t) * size);
+  readData(offset, entries_.data(), entries_.bytes());
 }
+
+void BlobDataset::flush() {
+  flushData();
+}
+
+void BlobDataset::setHostTransform(
+    int field,
+    std::function<af::array(void*, af::dim4, af::dtype)> func) {
+  hostTransforms_[field] = func;
+}
+
+std::vector<BlobDatasetEntry> BlobDataset::getEntries(const int64_t idx) const {
+  std::vector<BlobDatasetEntry> entries;
+  for (int64_t i = 0; i < sizes_.at(idx); i++) {
+    entries.push_back(entries_.get(offsets_.at(idx) + i));
+  }
+  return entries;
+}
+
+BlobDataset::~BlobDataset() {}
 
 } // namespace fl

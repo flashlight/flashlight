@@ -13,6 +13,7 @@
 #include "flashlight/dataset/ConcatDataset.h"
 #include "flashlight/dataset/Dataset.h"
 #include "flashlight/dataset/DatasetIterator.h"
+#include "flashlight/dataset/FileBlobDataset.h"
 #include "flashlight/dataset/MergeDataset.h"
 #include "flashlight/dataset/PrefetchDataset.h"
 #include "flashlight/dataset/ResampleDataset.h"
