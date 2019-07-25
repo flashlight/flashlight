@@ -1,4 +1,7 @@
+<img align="left" width="45" height="70" src="flashlight_logo.png" alt="flashlight_logo"/>
+
 # flashlight
+
 [![CircleCI](https://circleci.com/gh/facebookresearch/flashlight.svg?style=svg)](https://circleci.com/gh/facebookresearch/flashlight)
 
 flashlight is a fast, flexible machine learning library written entirely in C++
