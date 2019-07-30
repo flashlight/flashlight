@@ -66,7 +66,9 @@ Variable batchnorm(
   auto formatX = mkldnn::memory::format::x;
   auto format2d = mkldnn::memory::format::nc;
   // MKL-DNN requires NCHW order, and it thinks data are in ROW-MAJOR layout.
-  // The input tesor is in WHCN order and layout in COLUMN-MAJOR (arrayfire).
+  // The input tesor is in WHCN order and layout in COLUMN-MAJOR 
+  // (although arrayfire is HWCN, flashlight assumes WHCN. As long as we are consistent
+  // with this assumption, it is fine.)
   // Thus, MKL-DNN can access the required element correctly.
   auto formatNCHW = mkldnn::memory::format::nchw;
 
