@@ -71,6 +71,16 @@ std::string ReLU::prettyString() const {
   return "ReLU";
 }
 
+ReLU6::ReLU6() = default;
+
+Variable ReLU6::forward(const Variable& input) {
+  return clamp(input, 0.0, 6.0);
+}
+
+std::string ReLU6::prettyString() const {
+  return "ReLU6";
+}
+
 LeakyReLU::LeakyReLU(double slope) : m_slope(slope) {}
 
 Variable LeakyReLU::forward(const Variable& input) {

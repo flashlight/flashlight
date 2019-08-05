@@ -112,6 +112,24 @@ class ReLU : public UnaryModule {
 };
 
 /**
+ * Applies the [rectified linear
+ * unit capped at
+ * 6](http://www.cs.utoronto.ca/~kriz/conv-cifar10-aug2010.pdf(neural_networks))
+ * function element-wise to a `Variable`: \f[ ReLU6(x) = \min(\max(0, x), 6) \f]
+ */
+class ReLU6 : public UnaryModule {
+ public:
+  ReLU6();
+
+  Variable forward(const Variable& input) override;
+
+  std::string prettyString() const override;
+
+ private:
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule)
+};
+
+/**
  * Applies the [leaky rectified linear unit](
  * https://en.wikipedia.org/wiki/Rectifier_(neural_networks))
  * function from [Maas et al (2013)](
@@ -318,6 +336,7 @@ class LogSoftmax : public UnaryModule {
 CEREAL_REGISTER_TYPE(fl::Sigmoid)
 CEREAL_REGISTER_TYPE(fl::Tanh)
 CEREAL_REGISTER_TYPE(fl::ReLU)
+CEREAL_REGISTER_TYPE(fl::ReLU6)
 CEREAL_REGISTER_TYPE(fl::LeakyReLU)
 CEREAL_REGISTER_TYPE(fl::PReLU)
 CEREAL_REGISTER_TYPE(fl::ELU)
