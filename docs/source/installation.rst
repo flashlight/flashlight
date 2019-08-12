@@ -14,7 +14,7 @@ First, clone flashlight from `its repository on Github <https://github.com/faceb
 Build Requirements
 ~~~~~~~~~~~~~~~~~~
 
-- A C++ compiler with good C++ 11 support (e.g. g++ >= 4.8)
+- A C++ compiler with good C++11 support (e.g. g++ >= 4.8)
 - `cmake <https://cmake.org/>`_ -- version 3.5.1 or later, and ``make``
 
 Dependencies
@@ -22,9 +22,9 @@ Dependencies
 
 flashlight can be built with either a CUDA, CPU (in development), or OpenCL (coming soon) backend. Requirements vary depending on which backend is selected.
 
-- For all backends, `ArrayFire <https://github.com/arrayfire/arrayfire/wiki>`_ >= 3.6.1 is required. flashlight has been tested with `ArrayFire 3.6.1 <https://github.com/arrayfire/arrayfire/releases/tag/v3.6.1>`_.
+- For all backends, `ArrayFire <https://github.com/arrayfire/arrayfire/wiki>`_ >= 3.6.2 is required. flashlight has been tested with `ArrayFire 3.6.2 <https://github.com/arrayfire/arrayfire/releases/tag/v3.6.2>`_ and 3.6.4.
+  - Currently we recommend using either 3.6.2 or master, due to an indexing bug present in 3.6.4.
 - The following dependencies are `downloaded, built, and installed automatically` with flashlight:
-
   - `Cereal <https://github.com/USCiLab/cereal>`_ is required for serialization -- the `develop` branch must be used.
   - If building tests, `Google Test <https://github.com/google/googletest>`_ >= 1.8.0 is required.
 
@@ -40,7 +40,7 @@ Building with distributed training is optional. See ``Build Options`` below.
 CUDA Backend Dependencies
 -------------------------
 
-- CUDA >= 9.2 is required. flashlight has been tested with `CUDA 9.2 <https://developer.nvidia.com/cuda-92-download-archive>`_.
+- CUDA >= 9.2 is required. flashlight has been tested with `CUDA 9.2 <https://developer.nvidia.com/cuda-92-download-archive>`_ and less extensively with CUDA 10.0.
 - CUDNN >= 7.1.2 is required. flashlight has been tested with `CUDNN 7.1.2 <https://developer.nvidia.com/rdp/cudnn-archive>`_.
 
 CPU Backend Dependencies
