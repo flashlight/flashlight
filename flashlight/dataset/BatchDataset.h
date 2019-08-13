@@ -53,14 +53,13 @@ class BatchDataset : public Dataset {
    * @param[in] batchsize The desired batch size.
    * @param[in] policy How to handle the last batch if sizes are indivisible.
    * @param[in] permutationfn A permutation to be performed prior to batching.
-   * @param[in] batchfn A custom batch function to use.
+   * @param[in] batchfns Custom batch function to use for difference indices.
    */
   BatchDataset(
       std::shared_ptr<const Dataset> dataset,
       int64_t batchsize,
       BatchDatasetPolicy policy = BatchDatasetPolicy::INCLUDE_LAST,
-      PermutationFunction permutationfn = nullptr,
-      BatchFunction batchfn = nullptr);
+      const std::vector<BatchFunction>& batchfns = {});
 
   int64_t size() const override;
 
@@ -70,11 +69,13 @@ class BatchDataset : public Dataset {
   std::shared_ptr<const Dataset> dataset_;
   int64_t batchSize_;
   BatchDatasetPolicy batchPolicy_;
-  PermutationFunction permutationFn_;
-  BatchFunction batchFn_;
+  std::vector<BatchFunction> batchFns_;
+
   int64_t preBatchSize_; // Size of the dataset before batching
   int64_t size_;
 
-  af::array makeBatch(const std::vector<af::array>& data) const;
+  af::array makeBatch(
+      const std::vector<af::array>& data,
+      const BatchFunction& batchFn) const;
 };
 } // namespace fl

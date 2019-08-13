@@ -63,3 +63,7 @@ PrefetchDataset
 .. doxygenclass:: fl::PrefetchDataset
    :members:
    :undoc-members:
+
+Utils
+-----
+.. doxygenfile:: dataset/Utils.h

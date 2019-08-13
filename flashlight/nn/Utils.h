@@ -58,8 +58,8 @@ int derivePadding(int inSz, int filterSz, int stride, int pad, int dilation);
 
 /// packs a list of arrays (possibly of different dimensions) to a single array
 /// by padding them to same dimensions
-af::array padSequence(
-    std::vector<af::array> inputs,
+af::array join(
+    const std::vector<af::array>& inputs,
     double padValue = 0.0,
     dim_t batchDim = -1);
 

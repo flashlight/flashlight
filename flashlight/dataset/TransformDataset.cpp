@@ -27,8 +27,8 @@ std::vector<af::array> TransformDataset::get(const int64_t idx) const {
   auto result = dataset_->get(idx);
 
   for (int64_t i = 0; i < result.size(); ++i) {
-    if (i >= transformFns_.size()) {
-      break;
+    if (i >= transformFns_.size() || !transformFns_[i]) {
+      continue;
     }
     result[i] = transformFns_[i](result[i]);
   }

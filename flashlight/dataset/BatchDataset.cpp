@@ -17,13 +17,11 @@ BatchDataset::BatchDataset(
     std::shared_ptr<const Dataset> dataset,
     int64_t batchsize,
     BatchDatasetPolicy policy /* = BatchDatasetPolicy::INCLUDE_LAST */,
-    PermutationFunction permutationfn /* = nullptr */,
-    BatchFunction batchfn /* = nullptr */)
+    const std::vector<BatchFunction>& batchfns /* = {} */)
     : dataset_(dataset),
       batchSize_(batchsize),
       batchPolicy_(policy),
-      permutationFn_(permutationfn),
-      batchFn_(batchfn) {
+      batchFns_(batchfns) {
   if (!dataset_) {
     throw std::invalid_argument("dataset to be batched is null");
   }
@@ -59,8 +57,7 @@ std::vector<af::array> BatchDataset::get(const int64_t idx) const {
   int64_t end = std::min(start + batchSize_, preBatchSize_);
 
   for (int64_t batchidx = start; batchidx < end; ++batchidx) {
-    auto fds =
-        dataset_->get(permutationFn_ ? permutationFn_(batchidx) : batchidx);
+    auto fds = dataset_->get(batchidx);
     if (buffer.size() < fds.size()) {
       buffer.resize(fds.size());
     }
@@ -70,14 +67,17 @@ std::vector<af::array> BatchDataset::get(const int64_t idx) const {
   }
   std::vector<af::array> result(buffer.size());
   for (int64_t i = 0; i < buffer.size(); ++i) {
-    result[i] = makeBatch(buffer[i]);
+    result[i] =
+        makeBatch(buffer[i], (i < batchFns_.size()) ? batchFns_[i] : nullptr);
   }
   return result;
 }
 
-af::array BatchDataset::makeBatch(const std::vector<af::array>& data) const {
-  if (batchFn_) {
-    return batchFn_(data);
+af::array BatchDataset::makeBatch(
+    const std::vector<af::array>& data,
+    const BatchFunction& batchFn) const {
+  if (batchFn) {
+    return batchFn(data);
   }
   // Using default batching function
   if (data.empty()) {

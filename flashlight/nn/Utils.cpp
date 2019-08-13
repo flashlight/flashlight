@@ -102,14 +102,21 @@ int derivePadding(int inSz, int filterSz, int stride, int pad, int dilation) {
   return pad;
 }
 
-af::array padSequence(
-    std::vector<af::array> inputs,
+af::array join(
+    const std::vector<af::array>& inputs,
     double padValue /* = 0.0 */,
     dim_t batchDim /* = -1 */) {
+  if (inputs.empty()) {
+    return af::array();
+  }
   af::dim4 maxDims;
+  af::dtype type = inputs[0].type();
   for (const auto& in : inputs) {
     for (int d = 0; d < AF_MAX_DIMS; ++d) {
       maxDims[d] = std::max(maxDims[d], in.dims(d));
+      if (in.type() != type) {
+        throw std::invalid_argument("all arrays should of same type for join");
+      }
     }
   }
 
@@ -120,7 +127,7 @@ af::array padSequence(
     throw std::invalid_argument("no singleton dim available for batching");
   }
   maxDims[batchDim] = inputs.size();
-  auto padSeq = af::constant(padValue, maxDims);
+  auto padSeq = af::constant(padValue, maxDims, type);
   std::array<af::seq, AF_MAX_DIMS> sel;
   for (int i = 0; i < inputs.size(); ++i) {
     for (int d = 0; d < AF_MAX_DIMS; ++d) {
