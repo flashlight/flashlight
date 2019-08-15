@@ -51,6 +51,12 @@ class Dataset {
   using BatchFunction = std::function<af::array(const std::vector<af::array>&)>;
 
   /**
+   * A function to transform data from host to array.
+   */
+  using DataTransformFunction =
+      std::function<af::array(void*, af::dim4, af::dtype)>;
+
+  /**
    * @return The size of the dataset.
    */
   virtual int64_t size() const = 0;

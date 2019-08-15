@@ -84,8 +84,7 @@ class BlobDataset : public Dataset {
   std::vector<int64_t> sizes_;
   std::vector<int64_t> offsets_;
   int64_t indexOffset_;
-  std::unordered_map<int, std::function<af::array(void*, af::dim4, af::dtype)>>
-      hostTransforms_;
+  std::unordered_map<int, DataTransformFunction> hostTransforms_;
   mutable std::mutex mutex_;
 
   std::vector<uint8_t> readRawArray(const BlobDatasetEntry& e) const;

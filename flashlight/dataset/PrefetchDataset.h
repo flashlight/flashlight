@@ -8,6 +8,9 @@
 
 #pragma once
 
+#include <future>
+#include <queue>
+
 #include "flashlight/dataset/Dataset.h"
 
 #include "flashlight/common/threadpool/ThreadPool.h"
@@ -54,10 +57,11 @@ class PrefetchDataset : public Dataset {
  protected:
   std::shared_ptr<const Dataset> dataset_;
   int64_t numThreads_, prefetchSize_;
-  std::unique_ptr<ThreadPool> threadPool_;
 
+ private:
+  std::unique_ptr<ThreadPool> threadPool_;
   // state variables
-  mutable std::queue<std::future<std::vector<af::array>>> prefetchCache_;
+  mutable std::queue<std::future<std::string>> prefetchCache_;
   mutable int64_t curIdx_;
 };
 

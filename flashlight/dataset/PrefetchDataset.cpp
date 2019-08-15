@@ -8,9 +8,9 @@
 
 #include <stdexcept>
 
-#include "flashlight/dataset/PrefetchDataset.h"
-
 #include "flashlight/common/CppBackports.h"
+#include "flashlight/common/Serialization.h"
+#include "flashlight/dataset/PrefetchDataset.h"
 
 namespace fl {
 
@@ -56,11 +56,20 @@ std::vector<af::array> PrefetchDataset::get(int64_t idx) const {
     if (fetchIdx >= size()) {
       break;
     }
-    prefetchCache_.emplace(threadPool_->enqueue(
-        [this, fetchIdx]() { return this->dataset_->get(fetchIdx); }));
+    prefetchCache_.emplace(threadPool_->enqueue([this, fetchIdx]() {
+      auto sample = this->dataset_->get(fetchIdx);
+      std::ostringstream oss;
+      fl::save(oss, sample);
+      return oss.str();
+    }));
   }
 
-  auto curSample = prefetchCache_.front().get();
+  auto curSampleStr = prefetchCache_.front().get();
+  std::istringstream iss(curSampleStr);
+
+  std::vector<af::array> curSample;
+  fl::load(iss, curSample);
+
   prefetchCache_.pop();
   curIdx_ = idx + 1;
   return curSample;
