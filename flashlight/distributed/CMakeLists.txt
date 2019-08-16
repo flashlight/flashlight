@@ -8,7 +8,7 @@ add_library(
 set(
   DISTRIBUTED_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/distributed/DistributedApi.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/distributed/backend/utils/FileStore.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/distributed/FileStore.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/distributed/reducers/InlineReducer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/distributed/reducers/CoalescingReducer.cpp
   )
@@ -76,11 +76,11 @@ if (USE_NCCL)
     DISTRIBUTED_NCCL_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/distributed/backend/cuda/DistributedBackend.cpp
     )
-  
+
   target_sources(
     Distributed
     INTERFACE
-    $<BUILD_INTERFACE:${DISTRIBUTED_NCCL_SOURCES}>  
+    $<BUILD_INTERFACE:${DISTRIBUTED_NCCL_SOURCES}>
     )
 
   target_link_libraries(
@@ -125,7 +125,7 @@ if (USE_GLOO)
     ${MPI_C_LIBRARIES}
     ${Gloo_LIBRARY}
     )
- 
+
   target_include_directories(
     Distributed
     INTERFACE

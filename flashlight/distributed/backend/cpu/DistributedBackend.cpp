@@ -22,7 +22,7 @@
 
 #include "flashlight/common/CppBackports.h"
 #include "flashlight/common/DevicePtr.h"
-#include "flashlight/distributed/backend/utils/LRUCache.h"
+#include "flashlight/distributed/LRUCache.h"
 
 namespace {
 std::shared_ptr<gloo::mpi::Context> glooContext_;

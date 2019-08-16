@@ -19,7 +19,7 @@
 #include "flashlight/common/Defines.h"
 #include "flashlight/common/DevicePtr.h"
 #include "flashlight/distributed/DistributedApi.h"
-#include "flashlight/distributed/backend/utils/FileStore.h"
+#include "flashlight/distributed/FileStore.h"
 
 #define NCCLCHECK(expr) ::fl::detail::ncclCheck((expr))
 #define MPICHECK(expr) ::fl::detail::mpiCheck((expr))
