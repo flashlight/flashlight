@@ -12,7 +12,6 @@
 #include <stdexcept>
 #include <unordered_map>
 
-#include <af/cuda.h>
 #include <af/internal.h>
 
 #include "flashlight/common/CudaUtils.h"

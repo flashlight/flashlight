@@ -11,7 +11,6 @@
 #include <mutex>
 #include <stdexcept>
 
-#include <af/cuda.h>
 #include <mpi.h>
 #include <nccl.h>
 

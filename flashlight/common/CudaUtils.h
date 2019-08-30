@@ -8,6 +8,10 @@
 
 #pragma once
 
+#include <cuda.h>
+#include <cuda_runtime.h>
+#include <cublas_v2.h>
+
 #include <af/cuda.h>
 
 /// usage: `FL_CUDA_CHECK(cudaError_t err[, const char* prefix])`
