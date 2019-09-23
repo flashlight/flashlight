@@ -15,6 +15,7 @@
 #include "flashlight/autograd/Variable.h"
 #include "flashlight/autograd/backend/cuda/CudnnUtils.h"
 #include "flashlight/common/DevicePtr.h"
+#include "flashlight/nn/Utils.h"
 
 namespace fl {
 
@@ -28,6 +29,8 @@ Variable batchnorm(
     bool train,
     double momentum,
     double epsilon) {
+  typeTrace("Batchnorm FWD - input", input.type());
+
   auto output = af::array(input.dims(), input.type());
 
   int nfeatures = 1;
@@ -66,26 +69,40 @@ Variable batchnorm(
         1, input.elements() / (nfeatures * batchsz), nfeatures, batchsz);
     wt_desc_dims = af::dim4(1, 1, nfeatures);
   }
-
-  const void* one = kOne(input.type());
-  const void* zero = kZero(input.type());
-
-  auto weight_nonempty = weight.isempty()
+  auto weightNonempty = weight.isempty()
       ? Variable(af::constant(1.0, wt_desc_dims, input.type()), false)
       : weight;
-  auto bias_nonempty = bias.isempty()
+  auto biasNonempty = bias.isempty()
       ? Variable(af::constant(0.0, wt_desc_dims, input.type()), false)
       : bias;
 
+  af::array weightArray;
+  if (weightNonempty.type() == f32) {
+    weightArray = weightNonempty.array();
+  } else {
+    weightArray = weightNonempty.array().as(f32);
+  }
+
+  af::array biasArray;
+  if (biasNonempty.type() == f32) {
+    biasArray = biasNonempty.array();
+  } else {
+    biasArray = biasNonempty.array().as(f32);
+  }
+
+  auto scalarsType = input.type() == f16 ? f32 : input.type();
+  const void* one = kOne(scalarsType);
+  const void* zero = kZero(scalarsType);
+
   auto in_desc = TensorDescriptor(input.type(), in_desc_dims);
-  auto wt_desc = TensorDescriptor(weight_nonempty.type(), wt_desc_dims);
+  auto wt_desc = TensorDescriptor(weightArray.type(), wt_desc_dims);
 
   af::array save_mean, save_var;
   {
     DevicePtr in_raw(input.array());
     DevicePtr out_raw(output);
-    DevicePtr wt_raw(weight_nonempty.array());
-    DevicePtr bs_raw(bias_nonempty.array());
+    DevicePtr wt_raw(weightArray);
+    DevicePtr bs_raw(biasArray);
     DevicePtr run_mean_raw(running_mean.array());
     DevicePtr run_var_raw(running_var.array());
 
@@ -134,6 +151,8 @@ Variable batchnorm(
   auto gradFunc =
       [train, save_mean, save_var, mode, in_desc_dims, wt_desc_dims, epsilon](
           std::vector<Variable>& inputs, const Variable& grad_output) {
+        typeTrace("Batchnorm BWD - upstream grad", grad_output.type());
+        typeTrace("Batchnorm BWD - input", inputs[0].type());
         if (!train) {
           throw std::logic_error(
               "can't compute batchnorm grad when train was not specified");
@@ -145,25 +164,42 @@ Variable batchnorm(
             : inputs[1];
         auto& bs = inputs[2];
 
-        const void* one1 = kOne(in.type());
-        const void* zero0 = kZero(in.type());
+        af::array grad_output_array;
+        if (grad_output.type() == in.type()) {
+          grad_output_array = grad_output.array();
+        } else {
+          grad_output_array = grad_output.array().as(in.type());
+        }
+
+        af::array wt_array;
+        if (wt.type() == f32) {
+          wt_array = wt.array();
+        } else {
+          wt_array = wt.array().as(f32);
+        }
+
+        auto scalarsType = in.type() == f16 ? f32 : in.type();
+        const void* one1 = kOne(scalarsType);
+        const void* zero0 = kZero(scalarsType);
 
         auto i_desc = TensorDescriptor(in.type(), in_desc_dims);
-        auto w_desc = TensorDescriptor(wt.type(), wt_desc_dims);
+        auto w_desc = TensorDescriptor(wt_array.type(), wt_desc_dims);
         // CuDNN doesn't support calculating only the gradients
         // required for batchnorm
         auto grad_in = Variable(af::array(in.dims(), in.type()), false);
-        auto grad_wt = Variable(af::array(wt.dims(), wt.type()), false);
-        auto grad_bs = Variable(af::array(wt.dims(), wt.type()), false);
+        auto grad_wt =
+            Variable(af::array(wt_array.dims(), wt_array.type()), false);
+        auto grad_bs =
+            Variable(af::array(wt_array.dims(), wt_array.type()), false);
         {
           DevicePtr i_raw(in.array());
-          DevicePtr w_raw(wt.array());
+          DevicePtr w_raw(wt_array);
 
           DevicePtr grad_in_raw(grad_in.array());
           DevicePtr grad_wt_raw(grad_wt.array());
           DevicePtr grad_bs_raw(grad_bs.array());
 
-          DevicePtr grad_op_raw(grad_output.array());
+          DevicePtr grad_op_raw(grad_output_array);
 
           DevicePtr save_mean_raw(save_mean);
           DevicePtr save_var_raw(save_var);

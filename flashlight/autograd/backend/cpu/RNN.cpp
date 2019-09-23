@@ -13,7 +13,9 @@
 
 namespace fl {
 
-// TODO, implement RNN
+// TODO, implement RNN, also check to ensure there will appropriate checks to
+// guard the use of half precision in case CPU implementation doesn't support
+// it.
 std::tuple<Variable, Variable, Variable> rnn(
     const Variable& /* input */,
     const Variable& /* hidden_state */,

@@ -532,15 +532,45 @@ TEST(AutogradTest, Convolve) {
   int sx = 1, sy = 1;
   int dx = 1, dy = 1;
   auto func_conv_in = [&](Variable& input) {
-    return conv2d(input, wt, bs, sx, sy, px, py, dx, dy);
+    return conv2d(
+        input,
+        wt,
+        bs,
+        sx,
+        sy,
+        px,
+        py,
+        dx,
+        dy,
+        /* groups */ 1);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_in, in, 0.06));
   auto func_conv_wt = [&](Variable& weight) {
-    return conv2d(in, weight, bs, sx, sy, px, py, dx, dy);
+    return conv2d(
+        in,
+        weight,
+        bs,
+        sx,
+        sy,
+        px,
+        py,
+        dx,
+        dy,
+        /* groups */ 1);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_wt, wt, 0.05));
   auto func_conv_bs = [&](Variable& bias) {
-    return conv2d(in, wt, bias, sx, sy, px, py, dx, dy);
+    return conv2d(
+        in,
+        wt,
+        bias,
+        sx,
+        sy,
+        px,
+        py,
+        dx,
+        dy,
+        /* groups */ 1);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_bs, bs, 0.02));
 }
@@ -580,15 +610,45 @@ TEST(AutogradTest, ConvolveDilation) {
   int sx = 1, sy = 1;
   int dx = 2, dy = 1;
   auto func_conv_in = [&](Variable& input) {
-    return conv2d(input, wt, bs, sx, sy, px, py, dx, dy);
+    return conv2d(
+        input,
+        wt,
+        bs,
+        sx,
+        sy,
+        px,
+        py,
+        dx,
+        dy,
+        /* groups */ 1);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_in, in, 0.06));
   auto func_conv_wt = [&](Variable& weight) {
-    return conv2d(in, weight, bs, sx, sy, px, py, dx, dy);
+    return conv2d(
+        in,
+        weight,
+        bs,
+        sx,
+        sy,
+        px,
+        py,
+        dx,
+        dy,
+        /* groups */ 1);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_wt, wt, 0.05));
   auto func_conv_bs = [&](Variable& bias) {
-    return conv2d(in, wt, bias, sx, sy, px, py, dx, dy);
+    return conv2d(
+        in,
+        wt,
+        bias,
+        sx,
+        sy,
+        px,
+        py,
+        dx,
+        dy,
+        /* groups */ 1);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_bs, bs, 0.02));
 }
@@ -708,19 +768,46 @@ TEST(AutogradTest, WeightNormConv) {
 
   auto func_weightNorm_in = [&](Variable& input) {
     auto w = v * tileAs(g / norm(v, norm_dim), v);
-    return conv2d(input, w);
+    return conv2d(
+        input,
+        w,
+        /* sx */ 1,
+        /* sy */ 1,
+        /* px */ 0,
+        /* py */ 0,
+        /* dx */ 1,
+        /* dy */ 1,
+        /* groups */ 1);
   };
   ASSERT_TRUE(jacobianTestImpl(func_weightNorm_in, in, 1E-1));
 
   auto func_weightNorm_v = [&](Variable& input) {
     auto w = input * tileAs(g / norm(input, norm_dim), input);
-    return conv2d(in, w);
+    return conv2d(
+        in,
+        w,
+        /* sx */ 1,
+        /* sy */ 1,
+        /* px */ 0,
+        /* py */ 0,
+        /* dx */ 1,
+        /* dy */ 1,
+        /* groups */ 1);
   };
   ASSERT_TRUE(jacobianTestImpl(func_weightNorm_v, v, 1E-1));
 
   auto func_weightNorm_g = [&](Variable& input) {
     auto w = v * tileAs(input / norm(v, norm_dim), v);
-    return conv2d(in, w);
+    return conv2d(
+        in,
+        w,
+        /* sx */ 1,
+        /* sy */ 1,
+        /* px */ 0,
+        /* py */ 0,
+        /* dx */ 1,
+        /* dy */ 1,
+        /* groups */ 1);
   };
   ASSERT_TRUE(jacobianTestImpl(func_weightNorm_g, g, 1E-1));
 }

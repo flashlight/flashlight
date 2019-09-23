@@ -25,6 +25,7 @@ set(
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Module.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Padding.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Pool2D.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/PrecisionCast.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Reorder.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/RNN.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Transform.cpp

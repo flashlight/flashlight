@@ -22,6 +22,7 @@
 #include <vector>
 
 #include <arrayfire.h>
+#include "flashlight/common/Defines.h"
 #include "flashlight/common/Serialization.h"
 
 namespace fl {
@@ -115,6 +116,18 @@ class Variable {
    * @return a reference to the underlying Arrayfire array.
    */
   af::array& array() const;
+
+  /**
+   * Casts the variable to the given data type.
+   *
+   * @param[in] type target data type
+   */
+  __forceinline void cast(af::dtype type) {
+    if (this->type() == type) {
+      return;
+    }
+    array() = array().as(type);
+  }
 
   /**
    * @return a reference to the underlying gradient Variable.
@@ -269,7 +282,7 @@ class Variable {
   Variable col(int index) const;
 
   /**
-   * Returns a sequence of colums from an array based on `first` and `last`
+   * Returns a sequence of columns from an array based on `first` and `last`
    * indices. This can also be seen as the result of doing
    * `input(af::span, af::seq(first, last), af::span, af::span)`
    * @param[in] first start index of the rows
