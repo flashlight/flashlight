@@ -14,7 +14,8 @@
 namespace fl {
 
 /**
- * A view into a dataset, with indices permuted.
+ * A view into a dataset, with indices remapped.
+ * Note: the mapping doesn't have to be bijective.
  *
  * Example:
   \code{.cpp}
@@ -33,37 +34,42 @@ namespace fl {
 class ResampleDataset : public Dataset {
  public:
   /**
-   * Constructs a ResampleDataset with the identity permutation.
+   * Constructs a ResampleDataset with the identity mapping:
+   * `ResampleDataset(ds)->get(i) == ds->get(i)`
    * @param[in] dataset The underlying dataset.
    */
   explicit ResampleDataset(std::shared_ptr<const Dataset> dataset);
 
   /**
-   * Constructs a ResampleDataset with permutation specified by a vector.
+   * Constructs a ResampleDataset with mapping specified by a vector:
+   * `ResampleDataset(ds, v)->get(i) == ds->get(v[i])`
    * @param[in] dataset The underlying dataset.
-   * @param[in] resamplevec The vector specifying the permutation.
+   * @param[in] resamplevec The vector specifying the mapping.
    */
   ResampleDataset(
       std::shared_ptr<const Dataset> dataset,
       std::vector<int64_t> resamplevec);
 
   /**
-   * Constructs a ResampleDataset with permutation specified by a function.
+   * Constructs a ResampleDataset with mapping specified by a function:
+   * `ResampleDataset(ds, fn)->get(i) == ds->get(fn(i))`
    * The function should be deterministic.
    * @param[in] dataset The underlying dataset.
-   * @param[in] resamplefn The function specifying the permutation.
+   * @param[in] resamplefn The function specifying the mapping.
+   * @param[in] n The size of the new dataset (if -1, uses previous size)
    */
   ResampleDataset(
       std::shared_ptr<const Dataset> dataset,
-      const PermutationFunction& resamplefn);
+      const PermutationFunction& resamplefn,
+      int n = -1);
 
   int64_t size() const override;
 
   std::vector<af::array> get(const int64_t idx) const override;
 
   /**
-   * Changes the permutation used to resample the dataset.
-   * @param[in] resamplevec The vector specifying the new permutation.
+   * Changes the mapping used to resample the dataset.
+   * @param[in] resamplevec The vector specifying the new mapping.
    */
   void resample(std::vector<int64_t> resamplevec);
 

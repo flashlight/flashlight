@@ -50,13 +50,13 @@ ResampleDataset::ResampleDataset(
 
 ResampleDataset::ResampleDataset(
     std::shared_ptr<const Dataset> dataset,
-    const PermutationFunction& fn)
-    : ResampleDataset(dataset, makePermutationFromFn(dataset->size(), fn)) {}
+    const PermutationFunction& fn,
+    int n)
+    : ResampleDataset(
+          dataset,
+          makePermutationFromFn(n == -1 ? dataset->size() : n, fn)) {}
 
 void ResampleDataset::resample(std::vector<int64_t> resamplevec) {
-  if (size() != resamplevec.size()) {
-    throw std::invalid_argument("wrong vector size for `resample`");
-  }
   resampleVec_ = std::move(resamplevec);
 }
 
@@ -66,7 +66,7 @@ std::vector<af::array> ResampleDataset::get(const int64_t idx) const {
 }
 
 int64_t ResampleDataset::size() const {
-  return dataset_->size();
+  return resampleVec_.size();
 }
 
 } // namespace fl

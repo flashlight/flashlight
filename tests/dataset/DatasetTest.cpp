@@ -99,14 +99,20 @@ TEST(DatasetTest, ResampleDataset) {
   std::vector<af::array> tensormap = {af::randu(100, 200, 300)};
   auto tensords = std::make_shared<TensorDataset>(tensormap);
   auto permfn = [](int64_t n) { return (n + 5) % 300; };
-  ResampleDataset resampleleds(tensords, permfn);
+  ResampleDataset resampleds(tensords, permfn);
 
   // Check `size` method
-  ASSERT_EQ(resampleleds.size(), 300);
+  ASSERT_EQ(resampleds.size(), 300);
 
-  auto ff1 = resampleleds.get(10);
+  auto ff1 = resampleds.get(10);
   ASSERT_TRUE(allClose(ff1[0], tensormap[0](af::span, af::span, 15)));
   ASSERT_FALSE(allClose(ff1[0], tensormap[0](af::span, af::span, 10)));
+
+  resampleds.resample({3, 3, 3, 4, 5});
+  ASSERT_EQ(resampleds.size(), 5);
+
+  auto ff2 = resampleds.get(1);
+  ASSERT_TRUE(allClose(ff2[0], tensormap[0](af::span, af::span, 3)));
 }
 
 TEST(DatasetTest, ConcatDataset) {
