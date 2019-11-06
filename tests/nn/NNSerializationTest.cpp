@@ -63,7 +63,7 @@ const float kThreshold = 1.01; // within 1%
 
 CEREAL_REGISTER_TYPE(ContainerTestClass)
 
-TEST(SerializationTest, Variable) {
+TEST(NNSerializationTest, Variable) {
   auto testimpl = [](const af::array& arr, bool calc_grad) {
     Variable a(arr, calc_grad);
     std::stringstream ss;
@@ -92,7 +92,7 @@ TEST(SerializationTest, Variable) {
   testimpl(af::randu(2, 3, 4, 9, af::dtype::c64), true);
 }
 
-TEST(SerializationTest, Linear) {
+TEST(NNSerializationTest, Linear) {
   auto wt = param(af::randu(4, 3));
   auto bs = param(af::randu(4));
   auto in = input(af::randu(3, 2));
@@ -108,7 +108,7 @@ TEST(SerializationTest, Linear) {
   ASSERT_TRUE(allClose(lin2->forward(in), lin->forward(in)));
 }
 
-TEST(SerializationTest, Conv2D) {
+TEST(NNSerializationTest, Conv2D) {
   auto wt = param(af::randu(5, 5, 2, 4));
   auto bs = param(af::randu(1, 1, 4, 1));
   auto in = input(af::randu(25, 25, 2, 5));
@@ -124,7 +124,7 @@ TEST(SerializationTest, Conv2D) {
   ASSERT_TRUE(allClose(conv2->forward(in), conv->forward(in)));
 }
 
-TEST(SerializationTest, Pool2D) {
+TEST(NNSerializationTest, Pool2D) {
   auto in = input(af::randu(8, 8));
   auto pool = std::make_shared<Pool2D>(2, 3, 1, 1, 1, 1, PoolingMode::MAX);
 
@@ -138,7 +138,7 @@ TEST(SerializationTest, Pool2D) {
   ASSERT_TRUE(allClose(pool2->forward(in), pool->forward(in)));
 }
 
-TEST(SerializationTest, BaseModule) {
+TEST(NNSerializationTest, BaseModule) {
   auto in = input(af::randu(8, 8));
   ModulePtr dout = std::make_shared<Dropout>(0.75);
 
@@ -151,7 +151,7 @@ TEST(SerializationTest, BaseModule) {
   ASSERT_TRUE(allParamsClose(*dout2, *dout));
 }
 
-TEST(SerializationTest, WeightNormLinear) {
+TEST(NNSerializationTest, WeightNormLinear) {
   auto in = input(af::randn(2, 10, 1, 1));
   auto wlin = std::make_shared<WeightNorm>(Linear(2, 3), 0);
 
@@ -166,7 +166,7 @@ TEST(SerializationTest, WeightNormLinear) {
       allClose(wlin2->forward({in}).front(), wlin->forward({in}).front()));
 }
 
-TEST(SerializationTest, WeightNormConvSeq) {
+TEST(NNSerializationTest, WeightNormConvSeq) {
   auto in = input(af::randn(70, 70, 30, 2));
   auto seq = std::make_shared<Sequential>();
   seq->add(std::make_shared<WeightNorm>(Conv2D(30, 80, 3, 3), 3));
@@ -177,7 +177,7 @@ TEST(SerializationTest, WeightNormConvSeq) {
   seq->add(std::make_shared<GatedLinearUnit>(2));
 }
 
-TEST(SerializationTest, AdaptiveSoftMaxLoss) {
+TEST(NNSerializationTest, AdaptiveSoftMaxLoss) {
   auto in = input(af::randu(5, 10));
   std::vector<int> h_target{1, 1, 1, 2, 2, 2, 0, 0, 0, 0};
   af::array g_target(10, h_target.data());
@@ -209,7 +209,7 @@ TEST(SerializationTest, AdaptiveSoftMaxLoss) {
   ASSERT_TRUE(allParamsClose(*asml3->getActivation(), *activation));
 }
 
-TEST(SerializationTest, PrettyString) {
+TEST(NNSerializationTest, PrettyString) {
   Sequential seq;
   seq.add(Conv2D(3, 64, 5, 5));
   seq.add(Pool2D(3, 3, 2, 2, 1, 1));
@@ -242,7 +242,7 @@ TEST(SerializationTest, PrettyString) {
   ASSERT_EQ(expectedstr, prettystr);
 }
 
-TEST(SerializationTest, LeNet) {
+TEST(NNSerializationTest, LeNet) {
   auto leNet = std::make_shared<Sequential>();
 
   leNet->add(Conv2D(3, 6, 5, 5));
@@ -276,7 +276,7 @@ TEST(SerializationTest, LeNet) {
 }
 
 // Make sure serialized file size if not too high
-TEST(SerializationTest, FileSize) {
+TEST(NNSerializationTest, FileSize) {
   auto conv = std::make_shared<Conv2D>(300, 600, 10, 10);
   save(getTmpPath("FileSize"), conv);
   ASSERT_LT(filesizebytes(), paramsizebytes(conv->params()) * kThreshold);
@@ -294,7 +294,7 @@ TEST(SerializationTest, FileSize) {
   ASSERT_LT(filesizebytes(), paramsizebytes(seq.params()) * kThreshold);
 }
 
-TEST(SerializationTest, VariableTwice) {
+TEST(NNSerializationTest, VariableTwice) {
   Variable v(af::array(1000, 1000), false);
   auto v2 = v; // The array for this variable shouldn't be saved again
 
@@ -307,7 +307,7 @@ TEST(SerializationTest, VariableTwice) {
       static_cast<int64_t>(fileStat.st_size), paramsizebytes({v}) * kThreshold);
 }
 
-TEST(SerializationTest, ContainerBackward) {
+TEST(NNSerializationTest, ContainerBackward) {
   auto seq = std::make_shared<Sequential>();
   seq->add(Linear(10, 20));
   seq->add(ReLU());
@@ -325,7 +325,7 @@ TEST(SerializationTest, ContainerBackward) {
   }
 }
 
-TEST(SerializationTest, ContainerWithParams) {
+TEST(NNSerializationTest, ContainerWithParams) {
   auto seq = std::make_shared<ContainerTestClass>();
   seq->addParam(Variable(af::randu(5, 5), true));
   seq->add(WeightNorm(Linear(10, 20), 0));

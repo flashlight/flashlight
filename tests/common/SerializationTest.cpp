@@ -49,6 +49,11 @@ struct Basic {
 
   FL_SAVE_LOAD(x, y, s, v)
 
+  Basic() = default;
+
+  Basic(int x, double y, std::string s, std::vector<int> v)
+      : x(x), y(y), s(std::move(s)), v(std::move(v)) {}
+
   bool operator==(const Basic& o) const {
     return std::tie(x, y, s, v) == std::tie(o.x, o.y, o.s, o.v);
   }
@@ -68,6 +73,11 @@ struct BasicV1 {
   std::vector<int> v;
 
   FL_SAVE_LOAD(x, y, fl::versioned(z, 1), s, v)
+
+  BasicV1() = default;
+
+  BasicV1(int x, double y, float z, std::string s, std::vector<int> v)
+      : x(x), y(y), z(z), s(std::move(s)), v(std::move(v)) {}
 
   bool operator==(const BasicV1& o) const {
     return std::tie(x, y, z, s, v) == std::tie(o.x, o.y, o.z, o.s, o.v);
@@ -89,7 +99,7 @@ TEST(SerializationTest, Versions) {
   ASSERT_EQ(v0.v, v1.v);
 }
 
-// useless in practice, works for testing
+// sanity check for testing -- useless in practice
 struct NestedVersioned {
   int x{1};
   int y{2};
@@ -106,7 +116,11 @@ struct NestedVersioned {
 CEREAL_CLASS_VERSION(NestedVersioned, 2)
 
 TEST(SerializationTest, NestedVersioned) {
-  NestedVersioned t0{5, 6, 7, 8};
+  NestedVersioned t0;
+  t0.x = 5;
+  t0.y = 6;
+  t0.z = 7;
+  t0.w = 8;
   NestedVersioned t1;
   loadFromString(saveToString(t0), t1);
   ASSERT_EQ(t1.x, 5);
@@ -173,7 +187,8 @@ struct SerializeNoOpTemporaryInspect {
 };
 
 TEST(SerializationTest, TemporaryNoOp) {
-  SerializeNoOpTemporary t0{3};
+  SerializeNoOpTemporary t0;
+  t0.x = 3;
   auto s = saveToString(t0); // saves 4
 
   SerializeNoOpTemporaryInspect ins;

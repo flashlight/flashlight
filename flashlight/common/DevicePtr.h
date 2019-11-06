@@ -13,8 +13,8 @@
 namespace fl {
 
 /**
- * DevicePtr provides a wrapper for accessing device pointer of an Arrayfire
- * array in a safer way.  After calling `device()` on arrayfire array to get
+ * DevicePtr provides an RAII wrapper for accessing the device pointer of an
+ * ArrayFire array. After calling `device()` on arrayfire array to get
  * device pointer, the memory is not free until `unlock()` is called -
  * 'http://arrayfire.org/docs/group__device__func__device.htm'.
  * DevicePtr provides a `std::unique_lock` style API which calls the `unlock()`
@@ -35,46 +35,36 @@ namespace fl {
 class DevicePtr {
  public:
   /**
+   * Creates a null DevicePtr.
+   */
+  DevicePtr() : ptr_(nullptr) {}
+
+  /**
    * @param in input array to get device pointer
    */
   explicit DevicePtr(const af::array& in);
-
-  /**
-   * Move construction is allowed
-   */
-  DevicePtr(DevicePtr&& d) = default;
-
-  /**
-   * Move assignment is allowed
-   */
-  DevicePtr& operator=(DevicePtr&& other) = default;
-
-  /**
-   * Get device pointer of the array
-   */
-  void* get() const;
-
-  /**
-   * Copy constructor is deleted
-   */
-  DevicePtr(const DevicePtr& other) = delete;
-
-  /**
-    Copy assignment operator is deleted
-  */
-  DevicePtr& operator=(const DevicePtr& other) = delete;
-
-  bool operator==(const DevicePtr& other) const {
-    return get() == other.get();
-  }
 
   /**
    *`.unlock()` is called on the underlying array in destructor
    */
   ~DevicePtr();
 
+  DevicePtr(const DevicePtr& other) = delete;
+
+  DevicePtr& operator=(const DevicePtr& other) = delete;
+
+  DevicePtr(DevicePtr&& d) noexcept;
+
+  DevicePtr& operator=(DevicePtr&& other) noexcept;
+
+  bool operator==(const DevicePtr& other) const {
+    return get() == other.get();
+  }
+
+  void* get() const;
+
  private:
-  const af::array* arr_;
+  af_array arr_;
   void* ptr_;
 };
 
