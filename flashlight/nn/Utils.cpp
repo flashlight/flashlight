@@ -6,6 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <array>
+
 #include "flashlight/nn/Utils.h"
 
 #include "flashlight/autograd/Utils.h"
