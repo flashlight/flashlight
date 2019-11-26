@@ -58,7 +58,7 @@ Variable LayerNorm::forward(const Variable& input) {
 
 void LayerNorm::initialize() {
   if (affine_) {
-    auto wt = uniform(1, 0.0, 1.0, af::dtype::f32, true);
+    auto wt = constant(1.0, 1, af::dtype::f32, true);
     auto bs = constant(0.0, 1, af::dtype::f32, true);
     params_ = {wt, bs};
   }
