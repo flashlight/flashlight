@@ -44,7 +44,7 @@ If we define a new class that needs to support serialization, flashlight provide
    public:
     Animal(const std::string& name) : name_(name) {}
 
-    inline virtual std::string whoAmI() {
+    virtual std::string whoAmI() {
       return "Reporting from Base class - Animal.";
     }
 
@@ -64,7 +64,7 @@ If we define a new class that needs to support serialization, flashlight provide
     Cat(const std::string& name, bool isHungry)
         : Animal(name), isHungry_(isHungry) {}
 
-    inline virtual std::string whoAmI() override {
+    virtual std::string whoAmI() override {
       return "Hello! I'm a cat.";
     }
   };
