@@ -18,7 +18,6 @@
 
 #include "flashlight/nn/modules/Module.h"
 
-#include <cereal/cereal.hpp>
 
 #include "flashlight/nn/Init.h"
 
