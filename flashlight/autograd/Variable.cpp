@@ -16,6 +16,7 @@
 
 #include "flashlight/autograd/Variable.h"
 
+#include <af/internal.h>
 #include <algorithm>
 #include <cassert>
 #include <functional>
@@ -104,6 +105,19 @@ af::dim4 Variable::dims() const {
 
 bool Variable::isempty() const {
   return array().isempty();
+}
+
+bool Variable::isLinear() const {
+  return af::isLinear(array());
+}
+
+Variable Variable::linear() const {
+  if (!isempty() && !isLinear()) {
+    auto linearArray = af::array(dims(), type());
+    af::copy(linearArray, array(), af::span);
+    array() = linearArray;
+  }
+  return *this;
 }
 
 af::dtype Variable::type() const {

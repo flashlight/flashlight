@@ -142,6 +142,18 @@ class Variable {
   bool isempty() const;
 
   /**
+   * Returns whether the array wrapped by the Variable is contiguous in memory
+   * in C order.
+   */
+  bool isLinear() const;
+
+  /**
+   * Returns a Variable with contiguous array containing the same data as self
+   * array.
+   */
+  Variable linear() const;
+
+  /**
    * Returns the type of the array wrapped by the Variable
    * (e.g. f32 for float, f64 for double).
    * Full list: http://arrayfire.org/docs/defines_8h.htm (search dtype)
