@@ -8,58 +8,70 @@
 
 #include "flashlight/nn/modules/LayerNorm.h"
 
+#include <numeric>
+#include <stdexcept>
+
 #include "flashlight/autograd/Functions.h"
 #include "flashlight/nn/Init.h"
 
 namespace fl {
 
 LayerNorm::LayerNorm(
-    int feat_axis,
+    int axis,
     double eps /*  = 1e-5*/,
-    bool affine /*  = true*/)
-    : LayerNorm(std::vector<int>({feat_axis}), eps, affine) {}
+    bool affine /*  = true*/,
+    int axisSize /* = kLnVariableAxisSize */)
+    : LayerNorm(std::vector<int>({axis}), eps, affine, axisSize) {}
 
 LayerNorm::LayerNorm(
-    const std::vector<int>& feat_axes,
+    const std::vector<int>& axis,
     double eps /* = 1e-5 */,
-    bool affine /* = true*/)
-    : featAxes_(feat_axes), epsilon_(eps), affine_(affine) {
+    bool affine /* = true */,
+    int axisSize /* = kLnVariableAxisSize */)
+    : epsilon_(eps), affine_(affine), axisSize_(axisSize) {
+  for (int d = 0; d < AF_MAX_DIMS; ++d) {
+    if (std::find(axis.begin(), axis.end(), d) == axis.end()) {
+      axisComplement_.push_back(d);
+    }
+  }
   initialize();
 }
 
 Variable LayerNorm::forward(const Variable& input) {
-  Variable dummy_in_mean, dummy_in_var;
-
-  auto weight = Variable();
-  auto bias = Variable();
-
-  if (affine_) {
-    af::dim4 tiledims(1, 1, 1, 1);
-    for (int ax : featAxes_) {
-      tiledims[ax] = input.dims(ax);
+  std::vector<int> axis;
+  for (int d = 0; d < AF_MAX_DIMS; ++d) {
+    if (std::find(axisComplement_.begin(), axisComplement_.end(), d) ==
+        axisComplement_.end()) {
+      axis.push_back(d);
     }
-    weight = tile(params_[0], tiledims);
-    bias = tile(params_[1], tiledims);
   }
 
-  auto out = batchnorm(
-      input,
-      weight,
-      bias,
-      dummy_in_mean,
-      dummy_in_var,
-      featAxes_,
-      true,
-      0.0,
-      epsilon_);
+  auto mean = fl::tileAs(fl::mean(input, axis), input);
+  auto stddev =
+      fl::tileAs(fl::sqrt(fl::var(input, axis, true) + epsilon_), input);
 
-  return out;
+  auto output = (input - mean) / stddev;
+
+  if (!affine_) {
+    return output;
+  }
+  Variable weight = params_[0], bias = params_[1];
+  if (axisSize_ != kLnVariableAxisSize) {
+    af::dim4 featDims(1, 1, 1, 1);
+    for (auto i : axis) {
+      featDims[i] = input.dims(i);
+    }
+    weight = fl::moddims(params_[0], featDims);
+    bias = fl::moddims(params_[1], featDims);
+  }
+  return tileAs(weight, input) * output + tileAs(bias, input);
 }
 
 void LayerNorm::initialize() {
   if (affine_) {
-    auto wt = constant(1.0, 1, af::dtype::f32, true);
-    auto bs = constant(0.0, 1, af::dtype::f32, true);
+    auto paramDim = (axisSize_ == kLnVariableAxisSize) ? 1 : axisSize_;
+    auto wt = constant(1.0, paramDim, af::dtype::f32, true);
+    auto bs = constant(0.0, paramDim, af::dtype::f32, true);
     params_ = {wt, bs};
   }
 }
@@ -67,11 +79,14 @@ void LayerNorm::initialize() {
 std::string LayerNorm::prettyString() const {
   std::ostringstream ss;
   ss << "LayerNorm";
-  ss << " ( axes : { ";
-  for (auto x : featAxes_) {
-    ss << x << " ";
+  ss << " ( axis : { ";
+  for (int d = 0; d < AF_MAX_DIMS; ++d) {
+    if (std::find(axisComplement_.begin(), axisComplement_.end(), d) ==
+        axisComplement_.end()) {
+      ss << d << " ";
+    }
   }
-  ss << "} )";
+  ss << "} , size : " << axisSize_ << ")";
   return ss.str();
 }
 

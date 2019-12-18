@@ -265,7 +265,7 @@ TEST(ModuleTest, PaddingFwd) {
 
 TEST(ModuleTest, LayerNormFwd) {
   double eps = 1E-5;
-  std::vector<int> feat_axes = {0, 1, 2};
+  std::vector<int> feat_axes = {3};
   auto input = Variable(af::randu(4, 4, 3, 10), true);
 
   auto sample_mean = mean(input, {3});

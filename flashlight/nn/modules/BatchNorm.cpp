@@ -14,46 +14,46 @@
 namespace fl {
 
 BatchNorm::BatchNorm(
-    int feat_axis,
-    int feat_size,
+    int featAxis,
+    int featSize,
     double momentum /* = 0.1 */,
     double eps /*  = 1e-5*/,
     bool affine /*  = true*/,
-    bool track_stats /*  = true*/)
+    bool trackStats /*  = true*/)
     : BatchNorm(
-          std::vector<int>(1, feat_axis),
-          feat_size,
+          std::vector<int>(1, featAxis),
+          featSize,
           momentum,
           eps,
           affine,
-          track_stats) {}
+          trackStats) {}
 
 BatchNorm::BatchNorm(
-    const std::vector<int>& feat_axes,
-    int feat_size,
+    const std::vector<int>& featAxis,
+    int featSize,
     double momentum /* = 0.1*/,
     double eps /* = 1e-5 */,
     bool affine /* = true*/,
-    bool track_stats /* = true*/)
-    : featAxes_(feat_axes),
-      featSize_(feat_size),
+    bool trackStats /* = true*/)
+    : featAxis_(featAxis),
+      featSize_(featSize),
       numBatchesTracked_(0),
       momentum_(momentum),
       epsilon_(eps),
       affine_(affine),
-      trackStats_(track_stats) {
+      trackStats_(trackStats) {
   initialize();
 }
 
 Variable BatchNorm::forward(const Variable& input) {
-  double avg_factor = 0.0;
+  double avgFactor = 0.0;
 
   if (train_ && trackStats_) {
     ++numBatchesTracked_;
     if (momentum_ < 0) { // cumulative moving average
-      avg_factor = 1.0 / numBatchesTracked_;
+      avgFactor = 1.0 / numBatchesTracked_;
     } else { // exponential moving average
-      avg_factor = momentum_;
+      avgFactor = momentum_;
     }
   }
 
@@ -63,9 +63,9 @@ Variable BatchNorm::forward(const Variable& input) {
       params_.empty() ? Variable() : params_[1],
       runningMean_,
       runningVar_,
-      featAxes_,
+      featAxis_,
       train_ || (!trackStats_),
-      avg_factor,
+      avgFactor,
       epsilon_);
 }
 
@@ -85,8 +85,8 @@ void BatchNorm::initialize() {
 std::string BatchNorm::prettyString() const {
   std::ostringstream ss;
   ss << "BatchNorm";
-  ss << " ( axes : { ";
-  for (auto x : featAxes_) {
+  ss << " ( axis : { ";
+  for (auto x : featAxis_) {
     ss << x << " ";
   }
   ss << "}, size : " << featSize_ << " )";
