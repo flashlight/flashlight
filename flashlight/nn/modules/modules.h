@@ -24,5 +24,6 @@
 #include "flashlight/nn/modules/RNN.h"
 #include "flashlight/nn/modules/Reorder.h"
 #include "flashlight/nn/modules/Transform.h"
+#include "flashlight/nn/Utils.h"
 #include "flashlight/nn/modules/View.h"
 #include "flashlight/nn/modules/WeightNorm.h"

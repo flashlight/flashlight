@@ -115,6 +115,23 @@ TEST(ModuleTest, AsymmetricConv1DFwd) {
   ASSERT_FALSE(allClose(output, outputFuture));
 }
 
+TEST(ModuleTest, TransformerFwd) {
+  int batchsize = 10;
+  int timesteps = 120;
+  int c = 32;
+  int nheads = 4;
+
+  auto tr =
+      Transformer(c, c / nheads, c, nheads, timesteps, 0.2, 0.1, false, false);
+  auto input = Variable(af::randu(c, timesteps, batchsize, 1), false);
+
+  auto output = tr.forward({input});
+
+  ASSERT_EQ(output[0].dims(0), c);
+  ASSERT_EQ(output[0].dims(1), timesteps);
+  ASSERT_EQ(output[0].dims(2), batchsize);
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
