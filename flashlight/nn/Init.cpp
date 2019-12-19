@@ -18,10 +18,10 @@
 // Keras - https://git.io/fNxKN
 // PyTorch - https://git.io/fNx6T
 
-#include "flashlight/nn/Init.h"
-
 #include <cmath>
 
+#include "flashlight/autograd/Functions.h"
+#include "flashlight/nn/Init.h"
 #include "flashlight/nn/Utils.h"
 
 namespace fl {
@@ -38,48 +38,6 @@ Variable noGrad(const af::array& arr) {
 
 Variable param(const af::array& arr) {
   return Variable(arr, true);
-}
-
-Variable uniform(
-    int output_size,
-    int input_size,
-    double min,
-    double max,
-    af::dtype type,
-    bool calc_grad) {
-  return uniform(af::dim4(output_size, input_size), min, max, type, calc_grad);
-}
-
-Variable
-uniform(af::dim4 dims, double min, double max, af::dtype type, bool calc_grad) {
-  af::array result = af::randu(dims, type);
-  if (min != 0 || max != 1) {
-    result = (max - min) * result + min;
-  }
-  return Variable(result, calc_grad);
-}
-
-Variable normal(
-    int output_size,
-    int input_size,
-    double stdv,
-    double mean,
-    af::dtype type,
-    bool calc_grad) {
-  return normal(af::dim4(output_size, input_size), stdv, mean, type, calc_grad);
-}
-
-Variable normal(
-    af::dim4 dims,
-    double stdv,
-    double mean,
-    af::dtype type,
-    bool calc_grad) {
-  af::array result = af::randn(dims, type);
-  if (mean != 0 || stdv != 1) {
-    result = stdv * result + mean;
-  }
-  return Variable(result, calc_grad);
 }
 
 Variable kaimingUniform(
@@ -133,28 +91,6 @@ Variable glorotNormal(af::dim4 dims, af::dtype type, bool calc_grad) {
   dim_t fan_out = fans.second;
   double stdv = std::sqrt(2.0 / (double)(fan_in + fan_out));
   return normal(dims, stdv, 0, type, calc_grad);
-}
-
-Variable constant(
-    double val,
-    int output_size,
-    int input_size,
-    af::dtype type,
-    bool calc_grad) {
-  return constant(val, af::dim4(output_size, input_size), type, calc_grad);
-}
-
-Variable constant(double val, af::dim4 dims, af::dtype type, bool calc_grad) {
-  return Variable(af::constant(val, dims, type), calc_grad);
-}
-
-Variable
-identity(int output_size, int input_size, af::dtype type, bool calc_grad) {
-  return identity(af::dim4(output_size, input_size), type, calc_grad);
-}
-
-Variable identity(af::dim4 dims, af::dtype type, bool calc_grad) {
-  return Variable(af::identity(dims, type), calc_grad);
 }
 
 } // namespace fl

@@ -25,8 +25,7 @@ Dropout::Dropout(double drop_ratio) : ratio_(drop_ratio) {}
 
 Variable Dropout::forward(const Variable& input) {
   if (train_) {
-    return (uniform(input.dims(), 0.0, 1.0, f32, false) > ratio_) *
-        (1.0 / (1.0 - ratio_)) * input;
+    return dropout(input, ratio_);
   } else {
     return input;
   }
