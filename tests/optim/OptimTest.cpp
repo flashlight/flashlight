@@ -68,6 +68,24 @@ TEST(SerializationTest, OptimizerSerialize) {
   for (int i = 0; i < 5; i++) {
     ASSERT_TRUE(allClose(parameters[i].array(), parameters2[i].array()));
   }
+
+  opt = std::make_shared<NovogradOptimizer>(parameters, 0.01);
+  opt->step();
+
+  save(
+      path, parameters, static_cast<std::shared_ptr<FirstOrderOptimizer>>(opt));
+  load(path, parameters2, opt2);
+
+  for (int i = 0; i < 5; i++) {
+    parameters2[i].addGrad(Variable(parameters[i].grad().array(), false));
+  }
+
+  opt->step();
+  opt2->step();
+
+  for (int i = 0; i < 5; i++) {
+    ASSERT_TRUE(allClose(parameters[i].array(), parameters2[i].array()));
+  }
 }
 
 int main(int argc, char** argv) {

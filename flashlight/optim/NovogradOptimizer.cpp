@@ -14,7 +14,7 @@
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
 
-#include "flashlight/optim/AdadeltaOptimizer.h"
+#include "flashlight/optim/NovogradOptimizer.h"
 
 #include <cmath>
 
@@ -22,31 +22,34 @@ using std::vector;
 
 namespace fl {
 
-AdadeltaOptimizer::AdadeltaOptimizer(
-    const std::vector<Variable>& parameters,
-    double learningRate /* = 1.0 */,
-    double rho /* = 0.9 */,
+NovogradOptimizer::NovogradOptimizer(
+    const vector<Variable>& parameters,
+    double learningRate,
+    double beta1 /* = 0.9 */,
+    double beta2 /* = 0.999 */,
     double epsilon /* = 1e-8 */,
     double weightDecay /* = 0 */)
     : FirstOrderOptimizer(parameters, learningRate),
-      rho_(rho),
+      beta1_(beta1),
+      beta2_(beta2),
       eps_(epsilon),
       wd_(weightDecay),
-      accGrad_(),
-      accDelta_() {
+      accGradNorm_(),
+      accGrad_() {
+  accGradNorm_.reserve(1);
   accGrad_.reserve(parameters.size());
-  accDelta_.reserve(parameters.size());
 
   for (const auto& parameter : parameters_) {
-    accGrad_.emplace_back(af::constant(0, parameter.dims(), parameter.type()));
-    accDelta_.emplace_back(af::constant(0, parameter.dims(), parameter.type()));
+    accGradNorm_.emplace_back(af::constant(0, af::dim4(1), parameter.type()));
+    accGrad_.emplace_back(
+        af::constant(0, parameter.dims(), parameter.type()));
 
+    accGradNorm_.back().eval();
     accGrad_.back().eval();
-    accDelta_.back().eval();
   }
 }
 
-void AdadeltaOptimizer::step() {
+void NovogradOptimizer::step() {
   for (size_t i = 0; i < parameters_.size(); i++) {
     if (!parameters_[i].isGradAvailable()) {
       continue;
@@ -55,37 +58,30 @@ void AdadeltaOptimizer::step() {
     const af::array& grad = parameters_[i].grad().array();
     af::array& data = parameters_[i].array();
 
-    if (wd_ != 0) {
-      // Weight decay term
-      data = data - wd_ * data;
-    }
+    auto gradNorm = af::sum<float>(grad * grad);
 
+    af::array& accGradNorm = accGradNorm_[i];
     af::array& accGrad = accGrad_[i];
-    af::array& accDelta = accDelta_[i];
 
-    accGrad = rho_ * accGrad + (1 - rho_) * grad * grad;
+    accGradNorm = beta2_ * accGradNorm + (1 - beta2_) * gradNorm;
+    af::eval(accGradNorm);
+    accGrad = beta1_ * accGrad +
+        (1 - beta1_) *
+            (grad / (af::sqrt(accGradNorm).scalar<float>() + eps_) + wd_ * data);
     af::eval(accGrad);
 
-    auto delta = af::sqrt(accDelta + eps_) / af::sqrt(accGrad + eps_) * grad;
+    data = data - (lr_ * accGrad);
 
-    data = data - lr_ * delta;
     af::eval(data);
-
-    accDelta = rho_ * accDelta + (1 - rho_) * delta * delta;
-    af::eval(accDelta);
   }
 }
 
-std::string AdadeltaOptimizer::prettyString() const {
+std::string NovogradOptimizer::prettyString() const {
   std::ostringstream ss;
-  ss << "Adadelta";
+  ss << "Novograd";
 
   if (wd_ != 0) {
     ss << " (weight decay=" << wd_ << ")";
-  }
-  ss << " (rho=" << rho_ << ")";
-  if (eps_ != 0) {
-    ss << " (epsilon=" << eps_ << ")";
   }
 
   return ss.str();

@@ -16,8 +16,11 @@
 
 #pragma once
 
+#include "flashlight/optim/AMSgradOptimizer.h"
 #include "flashlight/optim/AdadeltaOptimizer.h"
+#include "flashlight/optim/AdagradOptimizer.h"
 #include "flashlight/optim/AdamOptimizer.h"
+#include "flashlight/optim/NovogradOptimizer.h"
 #include "flashlight/optim/Optimizers.h"
 #include "flashlight/optim/RMSPropOptimizer.h"
 #include "flashlight/optim/SGDOptimizer.h"

@@ -20,11 +20,6 @@
 
 using std::vector;
 
-// References:
-// SGD and Momentum: http://cs231n.github.io/neural-networks-3/#sgd
-// Adam: https://arxiv.org/pdf/1412.6980.pdf
-// RMSProp: https://arxiv.org/pdf/1308.0850v5.pdf
-
 // Comparision between various update rules:
 // https://www.quora.com/What-are-differences-between-update-rules-like-AdaDelta-RMSProp-AdaGrad-and-AdaM
 
