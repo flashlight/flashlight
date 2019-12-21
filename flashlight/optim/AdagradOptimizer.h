@@ -37,7 +37,7 @@ class AdagradOptimizer : public FirstOrderOptimizer {
 
   AdagradOptimizer() = default; // Intentionally private
 
-  double eps_;
+  float eps_;
   std::vector<af::array>
       variance_; // store sum_{tau=0}^{tau=t} grad_tau*grad_tau
 
@@ -49,8 +49,8 @@ class AdagradOptimizer : public FirstOrderOptimizer {
    */
   explicit AdagradOptimizer(
       const std::vector<Variable>& parameters,
-      double learningRate = 1.0,
-      double epsilon = 1e-8);
+      float learningRate = 1.0,
+      float epsilon = 1e-8);
 
   void step() override;
 

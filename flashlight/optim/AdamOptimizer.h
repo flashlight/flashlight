@@ -34,20 +34,20 @@ class AdamOptimizer : public FirstOrderOptimizer {
  private:
   FL_SAVE_LOAD_WITH_BASE(
       FirstOrderOptimizer,
-      beta1_,
-      beta2_,
-      eps_,
-      wd_,
+      fl::serializeAs<double>(beta1_),
+      fl::serializeAs<double>(beta2_),
+      fl::serializeAs<double>(eps_),
+      fl::serializeAs<double>(wd_),
       count_,
       biasedFirst_,
       biasedSecond_)
 
   AdamOptimizer() = default; // Intentionally private
 
-  double beta1_;
-  double beta2_;
-  double eps_;
-  double wd_;
+  float beta1_;
+  float beta2_;
+  float eps_;
+  float wd_;
   int count_;
   std::vector<af::array> biasedFirst_;
   std::vector<af::array> biasedSecond_;
@@ -64,11 +64,11 @@ class AdamOptimizer : public FirstOrderOptimizer {
    */
   AdamOptimizer(
       const std::vector<Variable>& parameters,
-      double learningRate,
-      double beta1 = 0.9,
-      double beta2 = 0.999,
-      double epsilon = 1e-8,
-      double weightDecay = 0);
+      float learningRate,
+      float beta1 = 0.9,
+      float beta2 = 0.999,
+      float epsilon = 1e-8,
+      float weightDecay = 0);
 
   void step() override;
 

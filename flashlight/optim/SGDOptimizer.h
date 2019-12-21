@@ -40,15 +40,15 @@ class SGDOptimizer : public FirstOrderOptimizer {
   FL_SAVE_LOAD_WITH_BASE(
       FirstOrderOptimizer,
       useNesterov_,
-      mu_,
-      wd_,
+      fl::serializeAs<double>(mu_),
+      fl::serializeAs<double>(wd_),
       velocities_)
 
   SGDOptimizer() = default; // Intentionally private
 
   bool useNesterov_;
-  double mu_;
-  double wd_;
+  float mu_;
+  float wd_;
   std::vector<af::array> velocities_;
 
  public:
@@ -62,9 +62,9 @@ class SGDOptimizer : public FirstOrderOptimizer {
    */
   SGDOptimizer(
       const std::vector<Variable>& parameters,
-      double learningRate,
-      double momentum = 0,
-      double weightDecay = 0,
+      float learningRate,
+      float momentum = 0,
+      float weightDecay = 0,
       bool useNesterov = false);
 
   void step() override;

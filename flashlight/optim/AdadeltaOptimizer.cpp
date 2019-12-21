@@ -24,10 +24,10 @@ namespace fl {
 
 AdadeltaOptimizer::AdadeltaOptimizer(
     const std::vector<Variable>& parameters,
-    double learningRate /* = 1.0 */,
-    double rho /* = 0.9 */,
-    double epsilon /* = 1e-8 */,
-    double weightDecay /* = 0 */)
+    float learningRate /* = 1.0 */,
+    float rho /* = 0.9 */,
+    float epsilon /* = 1e-8 */,
+    float weightDecay /* = 0 */)
     : FirstOrderOptimizer(parameters, learningRate),
       rho_(rho),
       eps_(epsilon),

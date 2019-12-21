@@ -35,18 +35,18 @@ class RMSPropOptimizer : public FirstOrderOptimizer {
   FL_SAVE_LOAD_WITH_BASE(
       FirstOrderOptimizer,
       useFirst_,
-      rho_,
-      eps_,
-      wd_,
+      fl::serializeAs<double>(rho_),
+      fl::serializeAs<double>(eps_),
+      fl::serializeAs<double>(wd_),
       first_,
       second_)
 
   RMSPropOptimizer() = default; // Intentionally private
 
   bool useFirst_;
-  double rho_;
-  double eps_;
-  double wd_;
+  float rho_;
+  float eps_;
+  float wd_;
   std::vector<af::array> first_;
   std::vector<af::array> second_;
 
@@ -64,10 +64,10 @@ class RMSPropOptimizer : public FirstOrderOptimizer {
    */
   RMSPropOptimizer(
       const std::vector<Variable>& parameters,
-      double learningRate,
-      double rho = 0.99,
-      double epsilon = 1e-8,
-      double weightDecay = 0,
+      float learningRate,
+      float rho = 0.99,
+      float epsilon = 1e-8,
+      float weightDecay = 0,
       bool use_first = false);
 
   void step() override;

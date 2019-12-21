@@ -43,12 +43,11 @@ class NovogradOptimizer : public FirstOrderOptimizer {
 
   NovogradOptimizer() = default; // Intentionally private
 
-  double beta1_;
-  double beta2_;
-  double eps_;
-  double wd_;
-  int count_;
-  std::vector<af::array> accGradNorm_;
+  float beta1_;
+  float beta2_;
+  float eps_;
+  float wd_;
+  std::vector<double> accGradNorm_;
   std::vector<af::array> accGrad_;
 
  public:
@@ -63,11 +62,11 @@ class NovogradOptimizer : public FirstOrderOptimizer {
    */
   explicit NovogradOptimizer(
       const std::vector<Variable>& parameters,
-      double learningRate,
-      double beta1 = 0.95,
-      double beta2 = 0.98,
-      double epsilon = 1e-8,
-      double weightDecay = 0);
+      float learningRate,
+      float beta1 = 0.95,
+      float beta2 = 0.98,
+      float epsilon = 1e-8,
+      float weightDecay = 0);
 
   void step() override;
 

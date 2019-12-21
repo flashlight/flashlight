@@ -44,10 +44,10 @@ class AMSgradOptimizer : public FirstOrderOptimizer {
 
   AMSgradOptimizer() = default; // Intentionally private
 
-  double beta1_;
-  double beta2_;
-  double eps_;
-  double wd_;
+  float beta1_;
+  float beta2_;
+  float eps_;
+  float wd_;
   std::vector<af::array> biasedFirst_;
   std::vector<af::array> biasedSecond_;
   std::vector<af::array> maxExpAvgSq_;
@@ -64,11 +64,11 @@ class AMSgradOptimizer : public FirstOrderOptimizer {
    */
   AMSgradOptimizer(
       const std::vector<Variable>& parameters,
-      double learningRate,
-      double beta1 = 0.9,
-      double beta2 = 0.999,
-      double epsilon = 1e-8,
-      double weightDecay = 0);
+      float learningRate,
+      float beta1 = 0.9,
+      float beta2 = 0.999,
+      float epsilon = 1e-8,
+      float weightDecay = 0);
 
   void step() override;
 

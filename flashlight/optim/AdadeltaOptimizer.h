@@ -34,17 +34,17 @@ class AdadeltaOptimizer : public FirstOrderOptimizer {
  private:
   FL_SAVE_LOAD_WITH_BASE(
       FirstOrderOptimizer,
-      rho_,
-      eps_,
-      wd_,
+      fl::serializeAs<double>(rho_),
+      fl::serializeAs<double>(eps_),
+      fl::serializeAs<double>(wd_),
       accGrad_,
       accDelta_)
 
   AdadeltaOptimizer() = default; // Intentionally private
 
-  double rho_;
-  double eps_;
-  double wd_;
+  float rho_;
+  float eps_;
+  float wd_;
   std::vector<af::array> accGrad_;
   std::vector<af::array> accDelta_;
 
@@ -60,10 +60,10 @@ class AdadeltaOptimizer : public FirstOrderOptimizer {
    */
   explicit AdadeltaOptimizer(
       const std::vector<Variable>& parameters,
-      double learningRate = 1.0,
-      double rho = 0.9,
-      double epsilon = 1e-8,
-      double weightDecay = 0);
+      float learningRate = 1.0,
+      float rho = 0.9,
+      float epsilon = 1e-8,
+      float weightDecay = 0);
 
   void step() override;
 

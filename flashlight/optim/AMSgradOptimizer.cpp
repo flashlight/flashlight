@@ -24,11 +24,11 @@ namespace fl {
 
 AMSgradOptimizer::AMSgradOptimizer(
     const vector<Variable>& parameters,
-    double learningRate,
-    double beta1 /* = 0.9 */,
-    double beta2 /* = 0.999 */,
-    double epsilon /* = 1e-8 */,
-    double weightDecay /* = 0 */)
+    float learningRate,
+    float beta1 /* = 0.9 */,
+    float beta2 /* = 0.999 */,
+    float epsilon /* = 1e-8 */,
+    float weightDecay /* = 0 */)
     : FirstOrderOptimizer(parameters, learningRate),
       beta1_(beta1),
       beta2_(beta2),

@@ -24,10 +24,10 @@ namespace fl {
 
 RMSPropOptimizer::RMSPropOptimizer(
     const vector<Variable>& parameters,
-    double learningRate,
-    double rho /* = 0.99 */,
-    double epsilon /* = 1e-8 */,
-    double weightDecay /* = 0 */,
+    float learningRate,
+    float rho /* = 0.99 */,
+    float epsilon /* = 1e-8 */,
+    float weightDecay /* = 0 */,
     bool use_first /* = false */)
     : FirstOrderOptimizer(parameters, learningRate),
       useFirst_(use_first),

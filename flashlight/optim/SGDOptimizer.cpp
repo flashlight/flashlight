@@ -24,9 +24,9 @@ namespace fl {
 
 SGDOptimizer::SGDOptimizer(
     const vector<Variable>& parameters,
-    double learningRate,
-    double momentum /* = 0 */,
-    double weightDecay /* = 0 */,
+    float learningRate,
+    float momentum /* = 0 */,
+    float weightDecay /* = 0 */,
     bool useNesterov /* = false */)
     : FirstOrderOptimizer(parameters, learningRate),
       useNesterov_(useNesterov),

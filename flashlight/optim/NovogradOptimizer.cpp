@@ -24,11 +24,11 @@ namespace fl {
 
 NovogradOptimizer::NovogradOptimizer(
     const vector<Variable>& parameters,
-    double learningRate,
-    double beta1 /* = 0.9 */,
-    double beta2 /* = 0.999 */,
-    double epsilon /* = 1e-8 */,
-    double weightDecay /* = 0 */)
+    float learningRate,
+    float beta1 /* = 0.9 */,
+    float beta2 /* = 0.999 */,
+    float epsilon /* = 1e-8 */,
+    float weightDecay /* = 0 */)
     : FirstOrderOptimizer(parameters, learningRate),
       beta1_(beta1),
       beta2_(beta2),
@@ -40,11 +40,9 @@ NovogradOptimizer::NovogradOptimizer(
   accGrad_.reserve(parameters.size());
 
   for (const auto& parameter : parameters_) {
-    accGradNorm_.emplace_back(af::constant(0, af::dim4(1), parameter.type()));
-    accGrad_.emplace_back(
-        af::constant(0, parameter.dims(), parameter.type()));
+    accGradNorm_.emplace_back(0.0);
+    accGrad_.emplace_back(af::constant(0, parameter.dims(), parameter.type()));
 
-    accGradNorm_.back().eval();
     accGrad_.back().eval();
   }
 }
@@ -57,17 +55,15 @@ void NovogradOptimizer::step() {
 
     const af::array& grad = parameters_[i].grad().array();
     af::array& data = parameters_[i].array();
-
-    auto gradNorm = af::sum<float>(grad * grad);
-
-    af::array& accGradNorm = accGradNorm_[i];
     af::array& accGrad = accGrad_[i];
 
-    accGradNorm = beta2_ * accGradNorm + (1 - beta2_) * gradNorm;
-    af::eval(accGradNorm);
+    double gradNorm = af::sum<double>(grad * grad);
+
+    accGradNorm_[i] = beta2_ * accGradNorm_[i] + (1 - beta2_) * gradNorm;
     accGrad = beta1_ * accGrad +
         (1 - beta1_) *
-            (grad / (af::sqrt(accGradNorm).scalar<float>() + eps_) + wd_ * data);
+            (grad / (static_cast<float>(std::sqrt(accGradNorm_[i]) + eps_)) +
+             wd_ * data);
     af::eval(accGrad);
 
     data = data - (lr_ * accGrad);

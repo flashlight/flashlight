@@ -24,8 +24,8 @@ namespace fl {
 
 AdagradOptimizer::AdagradOptimizer(
     const std::vector<Variable>& parameters,
-    double learningRate /* = 1.0 */,
-    double epsilon /* = 1e-8 */)
+    float learningRate /* = 1.0 */,
+    float epsilon /* = 1e-8 */)
     : FirstOrderOptimizer(parameters, learningRate), eps_(epsilon) {
   variance_.reserve(parameters.size());
   for (const auto& param : parameters_) {
