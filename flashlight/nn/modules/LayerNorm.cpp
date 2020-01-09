@@ -72,17 +72,16 @@ Variable LayerNorm::forward(const Variable& input) {
     for (int d = 0; d < AF_MAX_DIMS; ++d) {
       if (std::find(axisComplement_.begin(), axisComplement_.end(), d) ==
           axisComplement_.end()) {
-        inNormAxes.push_back(i);
         reorderDims[i++] = d;
       }
     }
     for (auto n : axisComplement_) {
+      inNormAxes.push_back(i);
       reorderDims[i++] = n;
     }
     inputToBn = reorder(
         input, reorderDims[0], reorderDims[1], reorderDims[2], reorderDims[3]);
   }
-
   auto output = batchnorm(
       inputToBn,
       weight,
