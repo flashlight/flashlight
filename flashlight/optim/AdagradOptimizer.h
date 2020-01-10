@@ -33,11 +33,12 @@ namespace fl {
  */
 class AdagradOptimizer : public FirstOrderOptimizer {
  private:
-  FL_SAVE_LOAD_WITH_BASE(FirstOrderOptimizer, eps_, variance_)
+  FL_SAVE_LOAD_WITH_BASE(FirstOrderOptimizer, eps_, wd_, variance_)
 
   AdagradOptimizer() = default; // Intentionally private
 
   float eps_;
+  float wd_;
   std::vector<af::array>
       variance_; // store sum_{tau=0}^{tau=t} grad_tau*grad_tau
 
@@ -50,7 +51,8 @@ class AdagradOptimizer : public FirstOrderOptimizer {
   explicit AdagradOptimizer(
       const std::vector<Variable>& parameters,
       float learningRate = 1.0,
-      float epsilon = 1e-8);
+      float epsilon = 1e-8,
+      float weightDecay = 0);
 
   void step() override;
 

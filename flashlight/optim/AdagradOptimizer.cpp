@@ -25,8 +25,11 @@ namespace fl {
 AdagradOptimizer::AdagradOptimizer(
     const std::vector<Variable>& parameters,
     float learningRate /* = 1.0 */,
-    float epsilon /* = 1e-8 */)
-    : FirstOrderOptimizer(parameters, learningRate), eps_(epsilon) {
+    float epsilon /* = 1e-8 */,
+    float weightDecay /* = 0 */)
+    : FirstOrderOptimizer(parameters, learningRate),
+      eps_(epsilon),
+      wd_(weightDecay) {
   variance_.reserve(parameters.size());
   for (const auto& param : parameters_) {
     variance_.push_back(af::constant(0, param.dims(), param.type()));
@@ -43,6 +46,11 @@ void AdagradOptimizer::step() {
     const af::array& grad = parameters_[i].grad().array();
     af::array& data = parameters_[i].array();
     af::array& variance = variance_[i];
+
+    if (wd_ != 0) {
+      // Weight decay term
+      data = data - wd_ * data;
+    }
 
     variance = variance + grad * grad;
     af::eval(variance);
