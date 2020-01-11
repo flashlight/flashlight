@@ -132,6 +132,23 @@ TEST(ModuleTest, TransformerFwd) {
   ASSERT_EQ(output[0].dims(2), batchsize);
 }
 
+TEST(ModuleTest, PositionEmbeddingFwd) {
+  int batchsize = 10;
+  int timesteps = 120;
+  int csz = 256;
+
+  auto posemb = PositionEmbedding(csz, timesteps, 0.5);
+  auto input = Variable(af::randu(csz, timesteps, batchsize, 1), false);
+
+  auto output = posemb.forward({input});
+
+  ASSERT_EQ(output[0].dims(0), csz);
+  ASSERT_EQ(output[0].dims(1), timesteps);
+  ASSERT_EQ(output[0].dims(2), batchsize);
+
+  ASSERT_FALSE(allClose(output[0], input));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
