@@ -3,6 +3,8 @@
 # flashlight
 
 [![CircleCI](https://circleci.com/gh/facebookresearch/flashlight.svg?style=svg)](https://circleci.com/gh/facebookresearch/flashlight)
+[![](https://github.com/facebookresearch/flashlight/workflows/Publish%20Docker%20images/badge.svg)](https://hub.docker.com/r/flml/flashlight/tags)
+
 
 flashlight is a fast, flexible machine learning library written entirely in C++
 from the Facebook AI Research Speech team and the creators of Torch and
