@@ -14,6 +14,7 @@ set(
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/dataset/DatasetIterator.h
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/dataset/Utils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/dataset/FileBlobDataset.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/dataset/ImageDataset.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/dataset/MergeDataset.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/dataset/PrefetchDataset.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/dataset/ResampleDataset.cpp
