@@ -1,4 +1,4 @@
-name: Publish CUDA Docker images
+name: Publish Docker images
 on: 
   push:
     branches:
