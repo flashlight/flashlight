@@ -38,6 +38,23 @@ class Sigmoid : public UnaryModule {
 };
 
 /**
+ * Applies the [mish
+ * function]() element-wise to a
+ * `Variable`: \f[\text{mish}(x) = x*tanh(log(1 + e^x))\f]
+ */
+class Mish : public UnaryModule {
+ public:
+  Mish();
+
+  Variable forward(const Variable& input) override;
+
+  std::string prettyString() const override;
+
+ private:
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule)
+};
+
+/**
  * Applies the [natural logarithm](https://en.wikipedia.org/wiki/Logarithm)
  * element-wise to a `Variable`.
  */

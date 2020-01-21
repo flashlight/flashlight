@@ -41,6 +41,9 @@ Activations
 .. doxygenclass:: fl::Sigmoid
   :members:
 
+.. doxygenclass:: fl::Mish
+  :members:
+
 .. doxygenclass:: fl::Tanh
   :members:
 

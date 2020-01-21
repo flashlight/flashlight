@@ -31,6 +31,16 @@ std::string Sigmoid::prettyString() const {
   return "Sigmoid";
 }
 
+Mish::Mish() = default;
+
+Variable Mish::forward(const Variable& input) {
+  return input * tanh(log1p(exp(input)));
+}
+
+std::string Mish::prettyString() const {
+  return "Mish";
+}
+
 Log::Log() = default;
 
 Variable Log::forward(const Variable& input) {
