@@ -9,6 +9,7 @@
 #include "flashlight/nn/modules/LayerNorm.h"
 
 #include <algorithm>
+#include <array>
 #include <numeric>
 #include <stdexcept>
 
