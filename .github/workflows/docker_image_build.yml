@@ -1,0 +1,46 @@
+name: Publish Docker images
+on: 
+  push:
+    branches:
+      - master
+jobs:
+  cuda_image_build:
+    name: CUDA image build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Build the CUDA Docker image
+      run: docker build . --file Dockerfile-CUDA --tag flml/flashlight:cuda-latest
+    - name: Docker login
+      env:
+          USER: ${{ secrets.DOCKER_USERNAME }}
+          PASSWORD: ${{ secrets.DOCKER_PASSWORD }}  
+      run: docker login -u=$USER -p=$PASSWORD
+    - name: Push image with the latest tag
+      run: docker push flml/flashlight:cuda-latest
+    - name: Tag revision
+      run: docker tag flml/flashlight:cuda-latest flml/flashlight:cuda-`git rev-parse --short HEAD`
+    - name: Push image with the revision tag
+      run: docker push flml/flashlight:cuda-`git rev-parse --short HEAD` 
+    - name: Docker logout
+      run: docker logout
+  cpu_image_build:
+    name: CPU image build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Build the CPU Docker image
+      run: docker build . --file Dockerfile-CPU --tag flml/flashlight:cpu-latest
+    - name: Docker login
+      env:
+          USER: ${{ secrets.DOCKER_USERNAME }}
+          PASSWORD: ${{ secrets.DOCKER_PASSWORD }}  
+      run: docker login -u=$USER -p=$PASSWORD
+    - name: Push image with the latest tag
+      run: docker push flml/flashlight:cpu-latest
+    - name: Tag revision
+      run: docker tag flml/flashlight:cpu-latest flml/flashlight:cpu-`git rev-parse --short HEAD`
+    - name: Push image with the revision tag
+      run: docker push flml/flashlight:cpu-`git rev-parse --short HEAD` 
+    - name: Docker logout
+      run: docker logout
