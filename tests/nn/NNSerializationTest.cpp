@@ -217,6 +217,7 @@ TEST(NNSerializationTest, PrettyString) {
   seq.add(Dropout(0.4));
   seq.add(Linear(5, 10, false));
   seq.add(Tanh());
+  seq.add(Mish());
   seq.add(LeakyReLU(0.2));
 
   auto prettystr = seq.prettyString();
@@ -230,7 +231,8 @@ TEST(NNSerializationTest, PrettyString) {
       "(3): Dropout (0.400000)"
       "(4): Linear (5->10) (without bias)"
       "(5): Tanh"
-      "(6): LeakyReLU (0.200000)";
+      "(6): Mish"
+      "(7): LeakyReLU (0.200000)";
 
   auto remove_ws = [](std::string& str) {
     str.erase(remove_if(str.begin(), str.end(), isspace), str.end());
