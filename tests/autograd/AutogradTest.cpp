@@ -21,6 +21,7 @@
 #include <gtest/gtest.h>
 #include "flashlight/autograd/autograd.h"
 #include "flashlight/common/common.h"
+#include "flashlight/nn/nn.h"
 
 using namespace fl;
 
@@ -298,6 +299,20 @@ TEST(AutogradTest, Sigmoid) {
   ASSERT_TRUE(allClose(dx.array(), (y.array() * (1 - y.array()))));
   ASSERT_TRUE(allClose(
       dx.array(), (af::sigmoid(x.array()) * (1 - af::sigmoid(x.array())))));
+}
+
+TEST(AutogradTest, Mish) {
+  auto x = Variable(af::randu(5), true);
+  auto layer = Mish();
+  auto y = layer.forward(x);
+  auto dy = Variable(af::constant(1.0, 5), false);
+  y.backward(dy);
+  auto dx = x.grad();
+  auto e = exp(x.array());
+  auto delta = 2*e + e*e + 2;
+  auto omega = 4*(x.array() + 1) + 4*pow(e, 2) + pow(e, 3) + e*(4*x.array() + 6);
+  auto true_grad = e * omega/pow(delta, 2);
+  ASSERT_TRUE(allClose(dx.array(), true_grad));
 }
 
 TEST(AutogradTest, Tanh) {
