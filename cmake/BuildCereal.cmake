@@ -1,6 +1,5 @@
 include(ExternalProject)
 
-set(cereal_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/cereal/include)
 set(cereal_URL https://github.com/USCiLab/cereal.git)
 set(cereal_BUILD ${CMAKE_CURRENT_BINARY_DIR}/cereal)
 set(cereal_TAG 319ce5f5ee5b76cb80617156bf7c95474a2938b1) # `develop` branch, commit
@@ -25,7 +24,7 @@ ExternalProject_Get_Property(cereal binary_dir)
 set(CEREAL_BINARY_DIR ${binary_dir})
 
 # Include dir. dependent on build or install
-set(CEREAL_INCLUDE_DIR
+set(cereal_INCLUDE_DIRS
   $<BUILD_INTERFACE:${CEREAL_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CEREAL_INSTALL_PATH}> # see root CMakeLists.txt
   )

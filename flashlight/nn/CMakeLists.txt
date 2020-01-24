@@ -57,5 +57,5 @@ target_include_directories(
   NN
   INTERFACE
   ${ArrayFire_INCLUDE_DIRS}
-  ${CEREAL_INCLUDE_DIR} # pulled in - see cmake/BuildCereal.cmake
+  ${cereal_INCLUDE_DIRS} # pulled in - see cmake/BuildCereal.cmake
   )

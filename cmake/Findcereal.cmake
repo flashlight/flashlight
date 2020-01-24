@@ -5,20 +5,26 @@
 # CEREAL_INCLUDE_DIRS - directories with Cereal headers
 # CEREAL_DEFINITIONS - Cereal compiler flags
 
-find_path(CEREAL_INCLUDE_DIR
-  cereal
-	HINTS
-    "$ENV{CEREAL_ROOT}/include"
-    "/usr/include"
-    "$ENV{PROGRAMFILES}/cereal/include"
-)
+find_path(cereal_header_paths_tmp
+  NAMES
+    cereal.hpp
+  PATH_SUFFIXES
+  include
+  cereal/include
+	PATHS
+    ${CEREAL_ROOT_DIR}
+    ${CEREAL_ROOT_DIR}/include
+    ${CEREAL_ROOT_DIR}/cereal/include
+    $ENV{CEREAL_ROOT_DIR}
+    $ENV{CEREAL_ROOT_DIR}/include
+    $ENV{CEREAL_ROOT_DIR}/cereal
+    )
 
-set(CEREAL_INCLUDE_DIRS ${CEREAL_INCLUDE_DIR})
+get_filename_component(cereal_INCLUDE_DIRS ${cereal_header_paths_tmp} PATH)
 
-if (CEREAL_INCLUDE_DIRS)
-  set(cereal_FOUND TRUE)
-  message(STATUS "cereal found (include: ${CEREAL_INCLUDE_DIRS})")
-else()
-  set(cereal_FOUND TRUE)
-  message(STATUS "cereal not found")
-endif()
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(cereal
+  REQUIRED_VARS cereal_INCLUDE_DIRS
+  )
+
+mark_as_advanced(cereal_FOUND)

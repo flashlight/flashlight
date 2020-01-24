@@ -83,21 +83,26 @@ elseif (FLASHLIGHT_USE_UNIFIED AND NOT ArrayFire_Unified_FOUND)
   message(FATAL_ERROR "ArrayFire Unified not found: cannot build unified backend")
 endif()
 
-# Download/build Cereal
+# Find/download/build Cereal
 set(CEREAL_INSTALL_PATH ${FL_INSTALL_INC_DIR_HEADER_LOC}/cereal)
-include(${CMAKE_MODULE_PATH}/BuildCereal.cmake)
-# Move cereal headers
-install(DIRECTORY ${CEREAL_SOURCE_DIR}/include/cereal
-  DESTINATION ${CEREAL_INSTALL_PATH}
-  COMPONENT cereal
-  FILES_MATCHING
-  PATTERN "*.hpp"
-  PATTERN "*.h"
-  PATTERN ".git" EXCLUDE
-  )
-install(FILES ${CEREAL_SOURCE_DIR}/LICENSE ${CEREAL_SOURCE_DIR}/README.md
-  DESTINATION ${CEREAL_INSTALL_PATH}
-  )
+# If cereal is found in a user-defined location, use it rather than
+find_package(cereal)
+if (NOT cereal_FOUND)
+  message(STATUS "cereal NOT found. Will download from source")
+  include(${CMAKE_MODULE_PATH}/BuildCereal.cmake)
+  # Move cereal headers
+  install(DIRECTORY ${CEREAL_SOURCE_DIR}/include/cereal
+    DESTINATION ${CEREAL_INSTALL_PATH}
+    COMPONENT cereal
+    FILES_MATCHING
+    PATTERN "*.hpp"
+    PATTERN "*.h"
+    PATTERN ".git" EXCLUDE
+    )
+  install(FILES ${CEREAL_SOURCE_DIR}/LICENSE ${CEREAL_SOURCE_DIR}/README.md
+    DESTINATION ${CEREAL_INSTALL_PATH}
+    )
+endif()
 
 # -------------------- Locate Backend-specific Dependencies --------------------
 # TODO: rather than conditionally searching for backend-specific dependencies,
