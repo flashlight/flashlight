@@ -76,6 +76,8 @@ af::array glorotNormal(
 
 namespace fl {
 
+using detail::computeFans;
+
 Variable input(const af::array& arr) {
   return Variable(arr, false);
 }
@@ -143,6 +145,7 @@ normal(af::dim4 dims, double stdv, double mean, af::dtype type, bool calcGrad) {
 Variable kaimingUniform(
     af::dim4 shape,
     int fanIn,
+    float gain,
     af::dtype type /* = af::dtype::f32 */,
     bool calcGrad /* = true */) {
   return Variable(af::kaimingUniform(shape, fanIn, type), calcGrad);
@@ -151,6 +154,7 @@ Variable kaimingUniform(
 Variable kaimingNormal(
     af::dim4 shape,
     int fanIn,
+    float gain,
     af::dtype type /* = af::dtype::f32 */,
     bool calcGrad /* = true */) {
   return Variable(af::kaimingNormal(shape, fanIn, type), calcGrad);
