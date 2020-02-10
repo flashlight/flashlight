@@ -18,7 +18,6 @@
 
 #include <cmath>
 
-using std::vector;
 
 namespace fl {
 
