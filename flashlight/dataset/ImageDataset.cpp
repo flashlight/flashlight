@@ -1,10 +1,13 @@
 #include <arrayfire.h>
 #include <stdlib.h>
+#include <iostream>
 
 #include "flashlight/dataset/Dataset.h"
 #include "flashlight/dataset/ImageDataset.h"
 #include "flashlight/dataset/MergeDataset.h"
 #include "flashlight/dataset/TransformDataset.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "flashlight/dataset/stb_image.h"
 
 
 namespace {
@@ -47,8 +50,27 @@ ImageDataset::ImageDataset(
  ) {
   auto images = std::make_shared<Loader<std::string>>(
       filepaths, [](const std::string& filepath) {
-        return af::loadimage(filepath.c_str(), true);
+	int width, height, channels;
+	unsigned char *img = stbi_load(filepath.c_str(), &width, &height, &channels, 3);
+	if (img) {
+		af::array result = af::array(width, height, channels, img).as(f32);
+		// TODO Ensure RGB matches pytorch means / stds
+		if (channels == 1) {
+			result = af::tile(result, 2, 3);
+		// TODO  why do we find 4 channels?
+		} else if (channels == 4) {
+			result = result(af::span, af::span, af::seq(0, 2));
+		}
+		stbi_image_free(img);
+		result = af::reorder(result, 1, 0, 2);
+		return result;
+	} else {
+		std::cout << " channels " << channels << std::endl;
+		std::cout << "filepath:  " << filepath << std::endl;
+		return af::constant(0, 244, 244, 3);
+	}
       });
+
 
   auto transformed = std::make_shared<TransformDataset>(
       TransformDataset(images, {compose(transformfns)})

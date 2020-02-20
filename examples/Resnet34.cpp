@@ -36,8 +36,8 @@ class DistributedDataset : public Dataset {
       return (idx * world_size) + world_rank;
     };
     ds_ = std::make_shared<ResampleDataset>(
-        shuffle_, permfn, shuffle_->size() / world_size);
-    ds_ = std::make_shared<PrefetchDataset>(ds_, num_threads, prefetch_size);
+	shuffle_, permfn, shuffle_->size() / world_size);
+    //ds_ = std::make_shared<PrefetchDataset>(ds_, num_threads, prefetch_size);
     ds_ = std::make_shared<BatchDataset>(ds_, batch_size);
   }
 
@@ -97,8 +97,8 @@ int main(int argc, const char** argv) {
   }
   const std::string imagenet_base = argv[1];
 
-  int device = argc > 2 ? atoi(argv[2]) : 0;
-  af::setDevice(device);
+  int world_rank = argc > 2 ? atoi(argv[2]) : 0;
+  af::setDevice(world_rank);
 
   const std::string label_path = imagenet_base + "labels.txt";
   const std::string train_list = imagenet_base + "train";
@@ -118,21 +118,21 @@ int main(int argc, const char** argv) {
   ////////////////////////
   af::info();
   fl::distributedInit(
-        fl::DistributedInit::FILE_SYSTEM,
-        0,
-        1,
-        {{fl::DistributedConstants::kMaxDevicePerNode,
-          std::to_string(8)},
-         {fl::DistributedConstants::kFilePath, "/tmp/"}});
+	fl::DistributedInit::FILE_SYSTEM,
+	world_rank,
+	8,
+	{{fl::DistributedConstants::kMaxDevicePerNode,
+	  std::to_string(8)},
+	 {fl::DistributedConstants::kFilePath, "/checkpoint/padentomasello/tmp/3"}});
   auto world_size = fl::getWorldSize();
-  auto world_rank = fl::getWorldRank();
+  world_rank = fl::getWorldRank();
   std::cout << "WorldRank" << world_rank << "world_size " << world_size << std::endl;
-  af::setSeed(world_rank);
+  af::setSeed(world_size);
 
   auto reducer = std::make_shared<fl::CoalescingReducer>(
-      /*scale=*/1.0 / world_size,
-      /*async=*/true,
-      /*contiguous=*/true);
+      1.0 / world_size,
+      true,
+      true);
 
 
   //////////////////////////
@@ -143,8 +143,8 @@ int main(int argc, const char** argv) {
   auto labels = imagenetLabels(label_path);
   std::vector<Dataset::TransformFunction> train_transforms = {
       ImageDataset::randomCropTransform(224, 224),
-      // Some images are smaller than 224, in which case randomCrop will return
-      // the entire image and we still need to resize.
+      //// Some images are smaller than 224, in which case randomCrop will return
+      //// the entire image and we still need to resize.
       ImageDataset::resizeTransform(224),
       ImageDataset::normalizeImage(mean, std),
       ImageDataset::horizontalFlipTransform()
@@ -153,11 +153,12 @@ int main(int argc, const char** argv) {
       ImageDataset::resizeTransform(224),
       ImageDataset::normalizeImage(mean, std)
   };
-  const int64_t prefetch_threads = 12;
+  const int64_t prefetch_threads = 4;
   const int64_t prefetch_size = batch_size;
+  auto test = std::make_shared<ImageDataset>(
+          imagenetDataset(train_list, labels, train_transforms));
   auto train_ds = DistributedDataset(
-      std::make_shared<ImageDataset>(
-          imagenetDataset(train_list, labels, train_transforms)),
+      test,
       world_rank,
       world_size,
       batch_size,
