@@ -61,8 +61,8 @@ ImageDataset::ImageDataset(
 		} else if (channels == 4) {
 			result = result(af::span, af::span, af::seq(0, 2));
 		}
-		stbi_image_free(img);
 		result = af::reorder(result, 1, 0, 2);
+		stbi_image_free(img);
 		return result;
 	} else {
 		std::cout << " channels " << channels << std::endl;

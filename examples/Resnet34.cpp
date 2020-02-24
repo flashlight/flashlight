@@ -123,7 +123,7 @@ int main(int argc, const char** argv) {
 	8,
 	{{fl::DistributedConstants::kMaxDevicePerNode,
 	  std::to_string(8)},
-	 {fl::DistributedConstants::kFilePath, "/checkpoint/padentomasello/tmp/3"}});
+	 {fl::DistributedConstants::kFilePath, "/checkpoint/padentomasello/tmp/4"}});
   auto world_size = fl::getWorldSize();
   world_rank = fl::getWorldRank();
   std::cout << "WorldRank" << world_rank << "world_size " << world_size << std::endl;
@@ -216,11 +216,11 @@ int main(int argc, const char** argv) {
       top5_meter.add(output.array(), target.array());
       top1_meter.add(output.array(), target.array());
 
+      opt.zeroGrad();
       // Backprop, update the weights and then zero the gradients.
       loss.backward();
       reducer->finalize();
       opt.step();
-      opt.zeroGrad();
 
       // Compute and record the prediction error.
       double train_loss = train_loss_meter.value()[0];
@@ -237,8 +237,8 @@ int main(int argc, const char** argv) {
         top1_meter.reset();
         train_loss_meter.reset();
       }
-      time_meter.resume();
     }
+    time_meter.resume();
     time_meter.stop();
 
     // Evaluate on the dev set.
@@ -249,5 +249,8 @@ int main(int argc, const char** argv) {
               << " Validation Loss: " << val_loss
               << " Validation Top5 Error (%): " << val_top5_err
               << " Validation Top1 Error (%): " << val_top1_err << std::endl;
+      if(world_rank == 0) {
+	      fl::save("model-" + std::to_string(e), model);
+      }
   }
 }
