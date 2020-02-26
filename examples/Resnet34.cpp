@@ -37,7 +37,7 @@ class DistributedDataset : public Dataset {
     };
     ds_ = std::make_shared<ResampleDataset>(
 	shuffle_, permfn, shuffle_->size() / world_size);
-    //ds_ = std::make_shared<PrefetchDataset>(ds_, num_threads, prefetch_size);
+    ds_ = std::make_shared<PrefetchDataset>(ds_, num_threads, prefetch_size);
     ds_ = std::make_shared<BatchDataset>(ds_, batch_size);
   }
 
@@ -98,6 +98,7 @@ int main(int argc, const char** argv) {
   const std::string imagenet_base = argv[1];
 
   int world_rank = argc > 2 ? atoi(argv[2]) : 0;
+  int world_size = argc > 3 ? atoi(argv[3]) : 1;
   af::setDevice(world_rank);
 
   const std::string label_path = imagenet_base + "labels.txt";
@@ -120,12 +121,11 @@ int main(int argc, const char** argv) {
   fl::distributedInit(
 	fl::DistributedInit::FILE_SYSTEM,
 	world_rank,
-	8,
+	world_size,
 	{{fl::DistributedConstants::kMaxDevicePerNode,
 	  std::to_string(8)},
-	 {fl::DistributedConstants::kFilePath, "/checkpoint/padentomasello/tmp/4"}});
-  auto world_size = fl::getWorldSize();
-  world_rank = fl::getWorldRank();
+	 {fl::DistributedConstants::kFilePath, "/checkpoint/padentomasello/tmp/" + std::to_string(world_size)}});
+
   std::cout << "WorldRank" << world_rank << "world_size " << world_size << std::endl;
   af::setSeed(world_size);
 
@@ -142,18 +142,19 @@ int main(int argc, const char** argv) {
   const std::vector<float> std = {0.229, 0.224, 0.225};
   auto labels = imagenetLabels(label_path);
   std::vector<Dataset::TransformFunction> train_transforms = {
-      ImageDataset::randomCropTransform(224, 224),
       //// Some images are smaller than 224, in which case randomCrop will return
       //// the entire image and we still need to resize.
       ImageDataset::resizeTransform(224),
+      ImageDataset::randomCropTransform(224, 224),
       ImageDataset::normalizeImage(mean, std),
       ImageDataset::horizontalFlipTransform()
   };
   std::vector<Dataset::TransformFunction> val_transforms = {
-      ImageDataset::resizeTransform(224),
+      ImageDataset::resizeTransform(256),
+      ImageDataset::centerCrop(224),
       ImageDataset::normalizeImage(mean, std)
   };
-  const int64_t prefetch_threads = 4;
+  const int64_t prefetch_threads = 1;
   const int64_t prefetch_size = batch_size;
   auto test = std::make_shared<ImageDataset>(
           imagenetDataset(train_list, labels, train_transforms));
@@ -167,12 +168,14 @@ int main(int argc, const char** argv) {
 
   auto val_ds = DistributedDataset(
       std::make_shared<ImageDataset>(
-          imagenetDataset(val_list, labels, val_transforms)),
+          imagenetDataset(train_list, labels, val_transforms)),
       world_rank,
       world_size,
       batch_size,
       prefetch_threads,
       prefetch_size);
+
+  //val_ds = train_ds;
 
   //////////////////////////
   //  Load model and optimizer
@@ -190,7 +193,7 @@ int main(int argc, const char** argv) {
 
   // The main training loop
   for (int e = 0; e < epochs; e++) {
-    train_ds.resample();
+    //train_ds.resample();
     AverageValueMeter train_loss_meter;
     TimeMeter time_meter;
     TopKMeter top5_meter(5, true);
@@ -227,7 +230,7 @@ int main(int argc, const char** argv) {
       if (++idx % 10 == 0) {
         double time = time_meter.value();
         double sample_per_second = (idx * batch_size * world_size) / time;
-        std::cout << "Epoch " << e << std::setprecision(3) << " Batch: " << idx
+        std::cout << "Epoch " << e << std::setprecision(5) << " Batch: " << idx
                   << " Samples per second " << sample_per_second
                   << ": Avg Train Loss: " << train_loss
                   << ": Train Top5 Error( %): " << top5_meter.value()
@@ -245,12 +248,12 @@ int main(int argc, const char** argv) {
     double val_loss, val_top1_err, val_top5_err;
     std::tie(val_loss, val_top5_err, val_top1_err) = eval_loop(model, val_ds);
 
-    std::cout << "Epoch " << e << std::setprecision(3)
+    std::cout << "Epoch " << e << std::setprecision(5)
               << " Validation Loss: " << val_loss
               << " Validation Top5 Error (%): " << val_top5_err
               << " Validation Top1 Error (%): " << val_top1_err << std::endl;
-      if(world_rank == 0) {
-	      fl::save("model-" + std::to_string(e), model);
-      }
+  if(world_rank == 0) {
+	  fl::save("model-" + std::to_string(e), model);
+  }
   }
 }

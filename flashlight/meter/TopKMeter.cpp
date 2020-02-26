@@ -18,9 +18,9 @@ void TopKMeter::add(const af::array& output, const af::array& target) {
   topk(max_vals, max_ids, output, k_, 0);
   match = batchFunc(
       max_ids, af::moddims(target, {1, target.dims(0), 1, 1}), af::operator==);
+  const af::array correct = af::anyTrue(match, 0);
 
-  uint64_t count = af::count<uint64_t>(af::anyTrue(match, 0));
-
+  uint64_t count = af::count<uint64_t>(correct);
   sum_ += count;
   n_ += target.dims(0);
 }
@@ -31,8 +31,8 @@ void TopKMeter::reset() {
 }
 
 double TopKMeter::value() {
-  double error = (n_ > 0) ? (static_cast<double>(sum_ * 100.0) / n_) : 0.0;
-  double val = (accuracy_ ? (100.0 - error) : error);
+  double accuracy = (n_ > 0) ? (static_cast<double>(sum_ * 100.0) / n_) : 0.0;
+  double val = (!accuracy_ ? (100.0 - accuracy) : accuracy);
   return val;
 }
 

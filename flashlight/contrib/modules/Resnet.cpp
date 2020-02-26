@@ -2,6 +2,8 @@
 
 namespace fl {
 
+ConvBnAct::ConvBnAct() = default;
+
 ConvBnAct::ConvBnAct(
     const int in_c,
     const int out_c,
@@ -22,6 +24,8 @@ ConvBnAct::ConvBnAct(
     add(std::make_shared<fl::ReLU>());
   }
 }
+
+ResNetBlock::ResNetBlock() = default;
 
 ResNetBlock::ResNetBlock(const int in_c, const int out_c, bool downsample)
     : downsample_(downsample) {
@@ -49,10 +53,7 @@ std::string ResNetBlock::prettyString() const {
   return "2-Layer ResNetBlock Conv3x3";
 }
 
-template <class Archive>
-void ResNetBlock::serialize(Archive& ar) {
-  ar(cereal::base_class<Container>(this));
-}
+ResNetStage::ResNetStage() = default;
 
 ResNetStage::ResNetStage(
     const int in_c,

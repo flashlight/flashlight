@@ -48,6 +48,8 @@ class ImageDataset : public Dataset {
 
   static TransformFunction resizeTransform(const uint64_t resize);
 
+  static TransformFunction centerCrop(const int size);
+
   static TransformFunction horizontalFlipTransform(const float p = 0.5);
 
   static TransformFunction compose(

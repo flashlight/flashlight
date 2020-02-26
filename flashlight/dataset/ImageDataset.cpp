@@ -51,17 +51,16 @@ ImageDataset::ImageDataset(
   auto images = std::make_shared<Loader<std::string>>(
       filepaths, [](const std::string& filepath) {
 	int width, height, channels;
-	unsigned char *img = stbi_load(filepath.c_str(), &width, &height, &channels, 3);
+	int desired_no_channels = 3;
+	unsigned char *img = stbi_load(
+      filepath.c_str(), 
+      &width, 
+      &height, 
+      &channels, 
+      desired_no_channels
+  );
 	if (img) {
-		af::array result = af::array(width, height, channels, img).as(f32);
-		// TODO Ensure RGB matches pytorch means / stds
-		if (channels == 1) {
-			result = af::tile(result, 2, 3);
-		// TODO  why do we find 4 channels?
-		} else if (channels == 4) {
-			result = result(af::span, af::span, af::seq(0, 2));
-		}
-		result = af::reorder(result, 1, 0, 2);
+		af::array result = af::array(width, height, desired_no_channels, img).as(f32);
 		stbi_image_free(img);
 		return result;
 	} else {
@@ -93,7 +92,17 @@ int64_t ImageDataset::size() const {
 
 Dataset::TransformFunction ImageDataset::resizeTransform(const uint64_t resize) {
   return [resize](const af::array& in) {
-    return af::resize(in, resize, resize, AF_INTERP_BILINEAR);
+    int th, tw;
+    int w = in.dims(0);
+    int h = in.dims(1);
+    if (h > w) {
+      th = (resize * h) / w;
+      tw = resize;
+    } else {
+      th = resize;
+      tw = (resize * w) / h;
+    }
+    return af::resize(in, tw, th, AF_INTERP_BILINEAR);
   };
 }
 
@@ -107,6 +116,20 @@ Dataset::TransformFunction ImageDataset::compose(
     return out;
   };
 }
+Dataset::TransformFunction ImageDataset::centerCrop(
+    const int size) {
+  return [size](const af::array& in) {
+    const int w = in.dims(0);
+    const int h = in.dims(1);
+    const int cropTop = (h - size) / 2;
+    const int cropLeft = (w - size) / 2;
+    const af::array result = in(
+        af::seq(cropLeft, cropLeft + size - 1),//            
+        af::seq(cropTop, cropTop + size - 1),//          
+        af::span);
+    return result;
+  };
+};
 
 Dataset::TransformFunction ImageDataset::horizontalFlipTransform(
     const float p) {
@@ -127,15 +150,12 @@ Dataset::TransformFunction ImageDataset::randomCropTransform(
     af::array out = in;
     const uint64_t w = in.dims(0);
     const uint64_t h = in.dims(1);
-    if (w <= tw || h <= th) {
-      out = out(af::span, af::span, af::span, af::span);
-    } else {
-      int x = rand() % (w - tw);
-      int y = rand() % (h - th);
-      out = out(
-          af::seq(x, x + tw - 1), af::seq(y, y + th - 1), af::span, af::span);
-    }
-    return out;
+  int x = rand() % (w - tw + 1);
+	int y = rand() % (h - th + 1);
+	out = out(
+  af::seq(x, x + tw - 1), af::seq(y, y + th - 1), af::span, af::span);
+  std::cout << out.dims() << std::endl;
+  return out;
   };
 };
 
