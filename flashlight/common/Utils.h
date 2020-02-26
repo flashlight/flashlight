@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include <string>
+
 #include <arrayfire.h>
 
 namespace fl {
@@ -24,5 +26,10 @@ bool allClose(
     const af::array& a,
     const af::array& b,
     double absTolerance = 1e-5);
+
+// Returns high resolution time formatted as:
+// MMDD HH MM SS UUUUUU
+// 0206 08:42:42.123456
+std::string dateTimeWithMicroSeconds();
 
 } // namespace fl
