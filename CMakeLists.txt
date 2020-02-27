@@ -199,6 +199,7 @@ set(
   Common
   Dataset
   Distributed
+  Memory
   Meter
   NN
   Optim
@@ -246,6 +247,9 @@ include(${FLASHLIGHT_PROJECT_COMPONENT_SRC_DIR}/distributed/CMakeLists.txt)
 
 # Meter
 include(${FLASHLIGHT_PROJECT_COMPONENT_SRC_DIR}/meter/CMakeLists.txt)
+
+# Memory
+include(${FLASHLIGHT_PROJECT_COMPONENT_SRC_DIR}/memory/CMakeLists.txt)
 
 # NN
 include(${FLASHLIGHT_PROJECT_COMPONENT_SRC_DIR}/nn/CMakeLists.txt)

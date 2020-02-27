@@ -32,4 +32,8 @@ bool allClose(
 // 0206 08:42:42.123456
 std::string dateTimeWithMicroSeconds();
 
+// Returns round-up result of integer division.
+// throws invalid_argument exception on zero denominator.
+size_t divRoundUp(size_t numerator, size_t denominator);
+
 } // namespace fl

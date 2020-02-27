@@ -62,4 +62,15 @@ std::string dateTimeWithMicroSeconds() {
   return buffer;
 }
 
+size_t divRoundUp(size_t numerator, size_t denominator) {
+  if (!numerator) {
+    return 0;
+  }
+  if (!denominator) {
+    throw std::invalid_argument(
+        std::string("divRoundUp() zero denominator error"));
+  }
+  return (numerator + denominator - 1) / denominator;
+}
+
 } // namespace fl
