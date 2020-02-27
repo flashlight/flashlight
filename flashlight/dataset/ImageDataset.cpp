@@ -12,6 +12,20 @@
 
 namespace {
 
+af::array resizeSmallest(const af::array in, const int resize) {
+    int th, tw;
+    int w = in.dims(0);
+    int h = in.dims(1);
+    if (h > w) {
+      th = (resize * h) / w;
+      tw = resize;
+    } else {
+      th = resize;
+      tw = (resize * w) / h;
+    }
+    return af::resize(in, tw, th, AF_INTERP_BILINEAR);
+}
+
 /*
  * Generic class for loading data from a vector of type T into an vector of
  * arrayfire arrays
@@ -92,17 +106,7 @@ int64_t ImageDataset::size() const {
 
 Dataset::TransformFunction ImageDataset::resizeTransform(const uint64_t resize) {
   return [resize](const af::array& in) {
-    int th, tw;
-    int w = in.dims(0);
-    int h = in.dims(1);
-    if (h > w) {
-      th = (resize * h) / w;
-      tw = resize;
-    } else {
-      th = resize;
-      tw = (resize * w) / h;
-    }
-    return af::resize(in, tw, th, AF_INTERP_BILINEAR);
+    return resizeSmallest(in, resize);
   };
 }
 
@@ -143,6 +147,15 @@ Dataset::TransformFunction ImageDataset::horizontalFlipTransform(
   };
 };
 
+Dataset::TransformFunction ImageDataset::randomResizeTransform(
+    const int low, const int high) {
+  return [low, high](const af::array& in) {
+    const float scale = float(rand()) / float(RAND_MAX);
+    const int resize = low + (high - low) *  scale;
+    return resizeSmallest(in, resize);
+  };
+};
+
 Dataset::TransformFunction ImageDataset::randomCropTransform(
     const int th,
     const int tw) {
@@ -154,7 +167,6 @@ Dataset::TransformFunction ImageDataset::randomCropTransform(
 	int y = rand() % (h - th + 1);
 	out = out(
   af::seq(x, x + tw - 1), af::seq(y, y + th - 1), af::span, af::span);
-  std::cout << out.dims() << std::endl;
   return out;
   };
 };

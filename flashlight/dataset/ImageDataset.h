@@ -44,6 +44,8 @@ class ImageDataset : public Dataset {
       const std::vector<float>& mean_,
       const std::vector<float>& std_);
 
+  static TransformFunction randomResizeTransform(const int low, const int high);
+
   static TransformFunction randomCropTransform(const int th, const int tw);
 
   static TransformFunction resizeTransform(const uint64_t resize);

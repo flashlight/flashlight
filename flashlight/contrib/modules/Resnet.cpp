@@ -27,9 +27,11 @@ ConvBnAct::ConvBnAct(
 
 ResNetBlock::ResNetBlock() = default;
 
-ResNetBlock::ResNetBlock(const int in_c, const int out_c, bool downsample)
-    : downsample_(downsample) {
-  const int stride = (downsample_) ? 2 : 1;
+ResNetBlock::ResNetBlock(const int in_c, const int out_c, bool downsample) {
+  const int stride = (downsample) ? 2 : 1;
+  if (downsample) {
+    downsample_ = std::make_shared<ConvBnAct>(in_c, out_c, 1, 1, stride, stride, true, false);
+  }
   add(std::make_shared<ConvBnAct>(in_c, out_c, 3, 3, stride, stride));
   add(std::make_shared<ConvBnAct>(out_c, out_c, 3, 3, 1, 1, true, false));
   add(std::make_shared<ReLU>());
@@ -42,11 +44,13 @@ std::vector<fl::Variable> ResNetBlock::forward(
   auto relu = module(2);
   auto out = c1->forward(inputs);
   out = c2->forward(out);
+  std::vector<fl::Variable> shortcut;
   if (downsample_) {
-    return relu->forward(out);
+    shortcut = downsample_->forward(inputs);
   } else {
-    return {relu->forward({out[0] + inputs[0]})};
+    shortcut = inputs;
   }
+  return relu->forward({out[0] + shortcut[0]});
 }
 
 std::string ResNetBlock::prettyString() const {

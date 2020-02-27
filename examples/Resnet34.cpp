@@ -144,7 +144,7 @@ int main(int argc, const char** argv) {
   std::vector<Dataset::TransformFunction> train_transforms = {
       //// Some images are smaller than 224, in which case randomCrop will return
       //// the entire image and we still need to resize.
-      ImageDataset::resizeTransform(224),
+      ImageDataset::randomResizeTransform(256, 480),
       ImageDataset::randomCropTransform(224, 224),
       ImageDataset::normalizeImage(mean, std),
       ImageDataset::horizontalFlipTransform()

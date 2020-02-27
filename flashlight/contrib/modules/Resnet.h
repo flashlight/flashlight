@@ -24,7 +24,7 @@ class ConvBnAct : public Sequential {
 
 class ResNetBlock : public Container {
  private:
-  bool downsample_;
+   std::shared_ptr<ConvBnAct> downsample_;
   FL_SAVE_LOAD_WITH_BASE(Container)
  public:
   ResNetBlock();
