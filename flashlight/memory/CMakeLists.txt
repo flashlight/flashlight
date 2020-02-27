@@ -9,6 +9,7 @@ set(
   MEMORY_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/memory/allocator/MemoryAllocator.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/memory/allocator/freelist/FreeList.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/memory/allocator/memorypool/MemoryPool.cpp
 )
 
 target_link_libraries(
