@@ -37,7 +37,7 @@ class DistributedDataset : public Dataset {
     };
     ds_ = std::make_shared<ResampleDataset>(
 	shuffle_, permfn, shuffle_->size() / world_size);
-    ds_ = std::make_shared<PrefetchDataset>(ds_, num_threads, prefetch_size);
+    //ds_ = std::make_shared<PrefetchDataset>(ds_, num_threads, prefetch_size);
     ds_ = std::make_shared<BatchDataset>(ds_, batch_size);
   }
 
@@ -142,14 +142,16 @@ int main(int argc, const char** argv) {
   const std::vector<float> std = {0.229, 0.224, 0.225};
   auto labels = imagenetLabels(label_path);
   std::vector<Dataset::TransformFunction> train_transforms = {
-      //// Some images are smaller than 224, in which case randomCrop will return
-      //// the entire image and we still need to resize.
+      // randomly resize shortest side of image between 256 to 480 for scale 
+      // invariance
       ImageDataset::randomResizeTransform(256, 480),
       ImageDataset::randomCropTransform(224, 224),
       ImageDataset::normalizeImage(mean, std),
-      ImageDataset::horizontalFlipTransform()
+      // Randomly flip image with probability of 0.5
+      ImageDataset::horizontalFlipTransform(0.5)
   };
   std::vector<Dataset::TransformFunction> val_transforms = {
+      // Resize shortest side to 256, then take a center crop
       ImageDataset::resizeTransform(256),
       ImageDataset::centerCrop(224),
       ImageDataset::normalizeImage(mean, std)
@@ -181,6 +183,11 @@ int main(int argc, const char** argv) {
   //  Load model and optimizer
   /////////////////////////
   auto model = std::make_shared<Sequential>(resnet34());
+  const int checkpoint_epoch = 0;
+  const std::string checkpoint = "/private/home/padentomasello/code/flashlight/build/model-" + std::to_string(checkpoint_epoch);
+  if (checkpoint_epoch > 0) {
+    fl::load(checkpoint, model);
+  }
   // synchronize parameters of the model so that the parameters in each process
   // is the same
   fl::allReduceParameters(model);
@@ -191,14 +198,32 @@ int main(int argc, const char** argv) {
 
   SGDOptimizer opt(model->params(), learning_rate, momentum, weight_decay);
 
+  auto lrScheduler = [&opt](int epoch) {
+    // Adjust learning rate every 30 epoch
+    if ( ((epoch + 1) % 30) == 0 ) {
+      const double lr = opt.getLr() * 0.1;
+      std::cout << "Setting learning rate to: " << lr << std::endl;
+      opt.setLr(lr);
+    }
+  };
+
+  auto saveModel = [world_rank, &model](int epoch) {
+    if(world_rank == 0) {
+      std::string modelPath = "model-" + std::to_string(epoch);
+      std::cout <<  "Saving model to file: " << modelPath << std::endl;
+      fl::save(modelPath, model);
+    }
+  };
+
   // The main training loop
+  TimeMeter time_meter;
+  TopKMeter top5_meter(5, true);
+  TopKMeter top1_meter(1, true);
+  AverageValueMeter train_loss_meter;
   for (int e = 0; e < epochs; e++) {
-    //train_ds.resample();
-    AverageValueMeter train_loss_meter;
-    TimeMeter time_meter;
-    TopKMeter top5_meter(5, true);
-    TopKMeter top1_meter(1, true);
-    //train_shuffled_ds->resample();
+    train_ds.resample();
+    lrScheduler(e);
+    saveModel(e);
 
     // Get an iterator over the data
     time_meter.resume();
@@ -252,8 +277,5 @@ int main(int argc, const char** argv) {
               << " Validation Loss: " << val_loss
               << " Validation Top5 Error (%): " << val_top5_err
               << " Validation Top1 Error (%): " << val_top1_err << std::endl;
-  if(world_rank == 0) {
-	  fl::save("model-" + std::to_string(e), model);
-  }
   }
 }
