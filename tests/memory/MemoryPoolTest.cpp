@@ -127,8 +127,8 @@ TEST(MemoryPool, ExponentialDistribution) {
   const size_t arenaBlockSize = 10; // Random value
   void* arena = (void*)0x1000;
   // arenaSizeInBytes is chosen to be just large enough to avoid OOM with
-  // a small safety margin.  const size_t arenaSizeInBytes = nAllocations *
-  // arenaBlockSize;
+  // a small safety margin.  
+  const size_t arenaSizeInBytes = nAllocations * arenaBlockSize;
   MemoryPool allocator(
       "ExponentialDistribution", arena, arenaSizeInBytes, arenaBlockSize);
   const MemoryAllocator::Stats initialStats = allocator.getStats();
