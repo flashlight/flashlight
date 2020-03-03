@@ -177,18 +177,12 @@ int main(int argc, const char** argv) {
       prefetch_threads,
       prefetch_size);
 
-  //val_ds = train_ds;
 
   //////////////////////////
   //  Load model and optimizer
   /////////////////////////
   auto model = std::make_shared<Sequential>(resnet34());
-  const int checkpoint_epoch = 0;
-  const std::string checkpoint = "/private/home/padentomasello/code/flashlight/build/model-" + std::to_string(checkpoint_epoch);
-  if (checkpoint_epoch > 0) {
-    fl::load(checkpoint, model);
-  }
-  // synchronize parameters of the model so that the parameters in each process
+  // synchronize parameters of tje model so that the parameters in each process
   // is the same
   fl::allReduceParameters(model);
 
@@ -207,13 +201,24 @@ int main(int argc, const char** argv) {
     }
   };
 
-  auto saveModel = [world_rank, &model](int epoch) {
+
+  // Small utility functions to load and save models
+  std::string checkpointPrefix = "/private/home/padentomasello/code/flashlight/build/model-";
+  auto saveModel = [world_rank, &model, &checkpointPrefix](int epoch) {
     if(world_rank == 0) {
-      std::string modelPath = "model-" + std::to_string(epoch);
+      std::string modelPath = checkpointPrefix + std::to_string(epoch);
       std::cout <<  "Saving model to file: " << modelPath << std::endl;
       fl::save(modelPath, model);
     }
   };
+  auto loadModel = [&model, &checkpointPrefix](int epoch) {
+      std::string modelPath = checkpointPrefix + std::to_string(epoch);
+      std::cout <<  "Loading model from file: " << modelPath << std::endl;
+      fl::load(modelPath, model);
+  };
+
+  saveModel(0);
+  loadModel(0);
 
   // The main training loop
   TimeMeter time_meter;

@@ -4,6 +4,30 @@ namespace fl {
 
 ConvBnAct::ConvBnAct() = default;
 
+//Sequential convBnAct(
+      //const int in_c,
+      //const int out_c,
+      //const int kw,
+      //const int kh,
+      //const int sx ,
+      //const int sy,
+      //bool bn,
+      //bool act
+    //) {
+  //Sequential mod;
+  //const auto pad = PaddingMode::SAME;
+  //const bool bias = !bn;
+  //mod.add(std::make_shared<fl::Conv2D>(
+      //in_c, out_c, kw, kh, sx, sy, pad, pad, 1, 1, bias));
+  //if (bn) {
+    //mod.add(std::make_shared<fl::BatchNorm>(2, out_c));
+  //}
+  //if (act) {
+    //mod.add(std::make_shared<fl::ReLU>());
+  //}
+  //return mod;
+//}
+
 ConvBnAct::ConvBnAct(
     const int in_c,
     const int out_c,

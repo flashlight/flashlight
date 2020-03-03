@@ -4,7 +4,7 @@
 
 namespace fl {
 
-class ConvBnAct : public Sequential {
+class ConvBnAct : public fl::Sequential {
  public:
   ConvBnAct();
   explicit ConvBnAct(
@@ -18,14 +18,24 @@ class ConvBnAct : public Sequential {
       bool act = true);
 
  private:
-  FL_SAVE_LOAD_WITH_BASE(Sequential)
+  FL_SAVE_LOAD_WITH_BASE(fl::Sequential)
 };
 
+//Sequential convBnAct(
+      //const int in_channels,
+      //const int out_channels,
+      //const int kw,
+      //const int kh,
+      //const int sx = 1,
+      //const int sy = 1,
+      //bool bn = true,
+      //bool act = true
+    //);
 
-class ResNetBlock : public Container {
+class ResNetBlock : public fl::Container {
  private:
    std::shared_ptr<ConvBnAct> downsample_;
-  FL_SAVE_LOAD_WITH_BASE(Container)
+   FL_SAVE_LOAD_WITH_BASE(fl::Container, downsample_)
  public:
   ResNetBlock();
   explicit ResNetBlock(
@@ -40,9 +50,7 @@ class ResNetBlock : public Container {
 
 };
 
-//CEREAL_REGISTER_TYPE(ResNetBlock)
-
-class ResNetStage : public Sequential {
+class ResNetStage : public fl::Sequential {
  public:
   ResNetStage();
   explicit ResNetStage(
@@ -50,11 +58,12 @@ class ResNetStage : public Sequential {
       const int out_channels,
       const int num_blocks,
       bool downsample);
-  FL_SAVE_LOAD_WITH_BASE(Sequential)
+  FL_SAVE_LOAD_WITH_BASE(fl::Sequential)
 };
 
 
 Sequential resnet34();
+
 
 } // namespace fl
 CEREAL_REGISTER_TYPE(fl::ConvBnAct)
