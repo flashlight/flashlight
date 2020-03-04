@@ -12,23 +12,9 @@
 
 namespace {
 
-af::array resizeSmallest(const af::array in, const int resize) {
-    int th, tw;
-    int w = in.dims(0);
-    int h = in.dims(1);
-    if (h > w) {
-      th = (resize * h) / w;
-      tw = resize;
-    } else {
-      th = resize;
-      tw = (resize * w) / h;
-    }
-    return af::resize(in, tw, th, AF_INTERP_BILINEAR);
-}
-
 /*
- * Generic class for loading data from a vector of type T into an vector of
- * arrayfire arrays
+ * Small generic utility class for loading data from a vector of type T into an 
+ * vector of arrayfire arrays
  */
 template <typename T>
 class Loader : public fl::Dataset {
@@ -52,46 +38,68 @@ public:
   LoadFunc loadfn_;
 };
 
+/*
+ * Resizes the smallest length edge of an image to be resize while keeping 
+ * the aspect ratio
+ */
+af::array resizeSmallest(const af::array in, const int resize) {
+    const int w = in.dims(0);
+    const int h = in.dims(1);
+    int th, tw;
+    if (h > w) {
+      th = (resize * h) / w;
+      tw = resize;
+    } else {
+      th = resize;
+      tw = (resize * w) / h;
+    }
+    return af::resize(in, tw, th, AF_INTERP_BILINEAR);
+}
+
+/*
+ * Loads a jpeg from filepath fp. Note: It will automatically convert from any
+ * numnber of channels to create an array with 3 channels
+ */
+af::array loadJpeg(const std::string& fp) {
+	int w, h, c;
+  // STB image will automatically return desired_no_channels. 
+  // NB: c will be the original number of channels
+	int desired_no_channels = 3;
+	unsigned char *img = stbi_load(fp.c_str(), &w, &h, &c, desired_no_channels);
+	if (img) {
+		af::array result = af::array(w, h, desired_no_channels, img).as(f32);
+		stbi_image_free(img);
+		return result;
+	} else {
+    throw std::invalid_argument("Could not load from filepath" + fp);
+	}
+}
+
+af::array loadLabel(const uint64_t x) {
+  return af::constant(x, 1, 1, 1, 1, u64); 
+}
+
 }
 
 namespace fl {
-
 
 ImageDataset::ImageDataset(
     std::vector<std::string> filepaths,
     std::vector<uint64_t> labels,
     std::vector<TransformFunction>& transformfns
  ) {
-  auto images = std::make_shared<Loader<std::string>>(
-      filepaths, [](const std::string& filepath) {
-	int width, height, channels;
-	int desired_no_channels = 3;
-	unsigned char *img = stbi_load(
-      filepath.c_str(), 
-      &width, 
-      &height, 
-      &channels, 
-      desired_no_channels
-  );
-	if (img) {
-		af::array result = af::array(width, height, desired_no_channels, img).as(f32);
-		stbi_image_free(img);
-		return result;
-	} else {
-		std::cout << " channels " << channels << std::endl;
-		std::cout << "filepath:  " << filepath << std::endl;
-		return af::constant(0, 244, 244, 3);
-	}
-      });
 
+  // Create image loader and apply transforms
+  auto images = std::make_shared<Loader<std::string>>(filepaths, loadJpeg);
+  // TransformDataset will apply each transform in a vector to the respective af::array
+  // Thus, we need to `compose` all of the transforms so are each aplied
+  std::vector<TransformFunction> transforms = { compose(transformfns) };
+  auto transformed = std::make_shared<TransformDataset>(images, transforms);
 
-  auto transformed = std::make_shared<TransformDataset>(
-      TransformDataset(images, {compose(transformfns)})
-  );
+  // Create label loader
+  auto targets = std::make_shared<Loader<uint64_t>>(labels, loadLabel);
 
-  auto targets = std::make_shared<Loader<uint64_t>>(
-      labels,
-      [](const uint64_t x) { return af::constant(x, 1, 1, 1, 1, u64); });
+  // Merge image and labels
   ds_ = std::make_shared<MergeDataset>(MergeDataset({transformed, targets}));
 }
 
@@ -120,18 +128,19 @@ Dataset::TransformFunction ImageDataset::compose(
     return out;
   };
 }
+
 Dataset::TransformFunction ImageDataset::centerCrop(
     const int size) {
   return [size](const af::array& in) {
     const int w = in.dims(0);
     const int h = in.dims(1);
-    const int cropTop = (h - size) / 2;
     const int cropLeft = (w - size) / 2;
-    const af::array result = in(
-        af::seq(cropLeft, cropLeft + size - 1),//            
-        af::seq(cropTop, cropTop + size - 1),//          
-        af::span);
-    return result;
+    const int cropTop = (h - size) / 2;
+    return in(
+        af::seq(cropLeft, cropLeft + size - 1),
+        af::seq(cropTop, cropTop + size - 1),
+        af::span
+    );
   };
 };
 
@@ -157,14 +166,14 @@ Dataset::TransformFunction ImageDataset::randomResizeTransform(
 };
 
 Dataset::TransformFunction ImageDataset::randomCropTransform(
-    const int th,
-    const int tw) {
+    const int tw,
+    const int th) {
   return [th, tw](const af::array& in) {
     af::array out = in;
     const uint64_t w = in.dims(0);
     const uint64_t h = in.dims(1);
-  int x = rand() % (w - tw + 1);
-	int y = rand() % (h - th + 1);
+  const int x = rand() % (w - tw + 1);
+	const int y = rand() % (h - th + 1);
 	out = out(
   af::seq(x, x + tw - 1), af::seq(y, y + th - 1), af::span, af::span);
   return out;
@@ -172,12 +181,12 @@ Dataset::TransformFunction ImageDataset::randomCropTransform(
 };
 
 Dataset::TransformFunction ImageDataset::normalizeImage(
-    const std::vector<float>& mean_,
-    const std::vector<float>& std_) {
-  const af::array mean(1, 1, 3, 1, mean_.data());
-  const af::array std(1, 1, 3, 1, std_.data());
+    const std::vector<float>& meanVector,
+    const std::vector<float>& stdVector) {
+  const af::array mean(1, 1, 3, 1, meanVector.data());
+  const af::array std(1, 1, 3, 1, stdVector.data());
   return [mean, std](const af::array& in) {
-    auto out = in / 255.0f;
+    af::array out = in / 255.0f;
     out = af::batchFunc(out, mean, af::operator-);
     out = af::batchFunc(out, std, af::operator/);
     return out;

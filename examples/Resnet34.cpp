@@ -135,6 +135,8 @@ int main(int argc, const char** argv) {
       true);
 
 
+
+
   //////////////////////////
   //  Create datasets
   /////////////////////////
@@ -192,12 +194,13 @@ int main(int argc, const char** argv) {
 
   SGDOptimizer opt(model->params(), learning_rate, momentum, weight_decay);
 
-  auto lrScheduler = [&opt](int epoch) {
+  auto lrScheduler = [&opt, &learning_rate](int epoch) {
     // Adjust learning rate every 30 epoch
-    if ( ((epoch + 1) % 30) == 0 ) {
-      const double lr = opt.getLr() * 0.1;
-      std::cout << "Setting learning rate to: " << lr << std::endl;
-      opt.setLr(lr);
+    const float scale = pow(0.1, (epoch / 30));
+    const double newLr = learning_rate * scale;
+    if (newLr != opt.getLr()) {
+      std::cout << "Setting learning rate to: " << newLr << std::endl;
+      opt.setLr(newLr);
     }
   };
 
@@ -211,14 +214,16 @@ int main(int argc, const char** argv) {
       fl::save(modelPath, model);
     }
   };
+
   auto loadModel = [&model, &checkpointPrefix](int epoch) {
       std::string modelPath = checkpointPrefix + std::to_string(epoch);
       std::cout <<  "Loading model from file: " << modelPath << std::endl;
       fl::load(modelPath, model);
   };
-
-  saveModel(0);
-  loadModel(0);
+  int checkpointEpoch = 4;
+  if (checkpointEpoch > 0) {
+    loadModel(checkpointEpoch);
+  }
 
   // The main training loop
   TimeMeter time_meter;
@@ -228,7 +233,6 @@ int main(int argc, const char** argv) {
   for (int e = 0; e < epochs; e++) {
     train_ds.resample();
     lrScheduler(e);
-    saveModel(e);
 
     // Get an iterator over the data
     time_meter.resume();
@@ -282,5 +286,6 @@ int main(int argc, const char** argv) {
               << " Validation Loss: " << val_loss
               << " Validation Top5 Error (%): " << val_top5_err
               << " Validation Top1 Error (%): " << val_top1_err << std::endl;
+    saveModel(e);
   }
 }
