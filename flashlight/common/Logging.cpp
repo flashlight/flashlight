@@ -87,6 +87,7 @@ Logging::~Logging() {
   if (level_ <= Logging::maxLoggingLevel_) {
     stringStream_ << std::endl;
     (*outputStreamPtr_) << stringStream_.str();
+    outputStreamPtr_->flush();
     if (level_ == LogLevel::FATAL) {
       exit(-1);
     }
@@ -153,6 +154,7 @@ VerboseLogging::~VerboseLogging() {
   if (level_ <= VerboseLogging::maxLoggingLevel_) {
     stringStream_ << std::endl;
     std::cout << stringStream_.str();
+    std::cout.flush();
   }
 }
 
