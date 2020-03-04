@@ -1,3 +1,7 @@
+#include <thread>
+#include <chrono>
+
+#include <cudnn.h>
 #include <arrayfire.h>
 #include <stdlib.h>
 #include <iostream>
@@ -61,6 +65,20 @@ af::array resizeSmallest(const af::array in, const int resize) {
  * numnber of channels to create an array with 3 channels
  */
 af::array loadJpeg(const std::string& fp) {
+  af::array img;
+  try {
+    img = af::loadImageNative(fp.c_str());
+  } catch (...){
+    img = af::constant(0, 224, 244, 3);
+    std::cout << "Filepath " << fp << std::endl;
+  }
+  if (img.dims(2) == 3) {
+    return img;
+  } else if (img.dims(2) == 1) {
+    img = af::tile(img, 2, 3);
+    return img;
+  }
+  /*
 	int w, h, c;
   // STB image will automatically return desired_no_channels. 
   // NB: c will be the original number of channels
@@ -73,6 +91,7 @@ af::array loadJpeg(const std::string& fp) {
 	} else {
     throw std::invalid_argument("Could not load from filepath" + fp);
 	}
+  */
 }
 
 af::array loadLabel(const uint64_t x) {
@@ -105,6 +124,16 @@ ImageDataset::ImageDataset(
 
 std::vector<af::array> ImageDataset::get(const int64_t idx) const {
   checkIndexBounds(idx);
+    size_t free;
+    size_t total;
+    cudaMemGetInfo(&free, &total);
+    auto limit = 1000 << 20;
+    while(free <= limit) {
+      std::cout<< "Device OOO, garbage collecting: " << std::this_thread::get_id()<<" :: "<< std::endl;
+      af::deviceGC();
+      std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+      cudaMemGetInfo(&free, &total);
+    }
   return ds_->get(idx);
 }
 

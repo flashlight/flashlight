@@ -1,12 +1,13 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
- * All rights reserved.
+ * Copyright (c) Facebook, Inc. and its affiliates.  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
 #include <exception>
 #include <iomanip>
+
+#include <cudnn.h>
 
 #include "flashlight/contrib/modules/Resnet.h"
 #include "flashlight/dataset/BatchDataset.h"
@@ -37,7 +38,7 @@ class DistributedDataset : public Dataset {
     };
     ds_ = std::make_shared<ResampleDataset>(
 	shuffle_, permfn, shuffle_->size() / world_size);
-    //ds_ = std::make_shared<PrefetchDataset>(ds_, num_threads, prefetch_size);
+    ds_ = std::make_shared<PrefetchDataset>(ds_, num_threads, prefetch_size);
     ds_ = std::make_shared<BatchDataset>(ds_, batch_size);
   }
 
@@ -68,6 +69,7 @@ std::tuple<double, double, double> eval_loop(
 
   // Place the model in eval mode.
   model->eval();
+  int idx = 0;
   for (auto& example : dataset) {
     auto inputs = noGrad(example[ImageDataset::INPUT_IDX]);
     auto output = model->forward(inputs);
@@ -79,8 +81,14 @@ std::tuple<double, double, double> eval_loop(
     loss_meter.add(loss.array().scalar<float>());
     top5_meter.add(output.array(), target.array());
     top1_meter.add(output.array(), target.array());
+    idx++;
+    if (idx % 10 == 0) {
+        af::deviceGC();
+    }
   }
   // Place the model back into train mode.
+  af::deviceGC();
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
   model->train();
 
   double top1_error = top1_meter.value();
@@ -158,7 +166,7 @@ int main(int argc, const char** argv) {
       ImageDataset::centerCrop(224),
       ImageDataset::normalizeImage(mean, std)
   };
-  const int64_t prefetch_threads = 1;
+  const int64_t prefetch_threads = 10;
   const int64_t prefetch_size = batch_size;
   auto test = std::make_shared<ImageDataset>(
           imagenetDataset(train_list, labels, train_transforms));
@@ -172,7 +180,7 @@ int main(int argc, const char** argv) {
 
   auto val_ds = DistributedDataset(
       std::make_shared<ImageDataset>(
-          imagenetDataset(train_list, labels, val_transforms)),
+          imagenetDataset(val_list, labels, val_transforms)),
       world_rank,
       world_size,
       batch_size,
@@ -196,17 +204,15 @@ int main(int argc, const char** argv) {
 
   auto lrScheduler = [&opt, &learning_rate](int epoch) {
     // Adjust learning rate every 30 epoch
-    const float scale = pow(0.1, (epoch / 30));
-    const double newLr = learning_rate * scale;
-    if (newLr != opt.getLr()) {
+    if (epoch == 60 || epoch == 90) {
+      const float newLr = opt.getLr() * 0.1;
       std::cout << "Setting learning rate to: " << newLr << std::endl;
       opt.setLr(newLr);
     }
   };
 
-
   // Small utility functions to load and save models
-  std::string checkpointPrefix = "/private/home/padentomasello/code/flashlight/build/model-";
+  std::string checkpointPrefix = "/private/home/padentomasello/code/flashlight/build/model-af";
   auto saveModel = [world_rank, &model, &checkpointPrefix](int epoch) {
     if(world_rank == 0) {
       std::string modelPath = checkpointPrefix + std::to_string(epoch);
@@ -220,17 +226,34 @@ int main(int argc, const char** argv) {
       std::cout <<  "Loading model from file: " << modelPath << std::endl;
       fl::load(modelPath, model);
   };
-  int checkpointEpoch = 4;
+  int checkpointEpoch = -1;
   if (checkpointEpoch > 0) {
     loadModel(checkpointEpoch);
   }
 
+#if 0
+  for (int i = 0; i < epochs; i++) {
+    int idx = 0;
+    for (auto& example : train_ds) {
+      auto test = example[ImageDataset::INPUT_IDX].scalar<float>();
+      if (test == 0.0) {
+        std::cout << "Impossible " << std::endl;
+      }
+      if (idx % 10) {
+        std::cout << "Epoch" << i << "Idx " << idx << std::endl;
+      }
+      idx++;
+    }
+}
+#endif
+
+#if 1
   // The main training loop
   TimeMeter time_meter;
   TopKMeter top5_meter(5, true);
   TopKMeter top1_meter(1, true);
   AverageValueMeter train_loss_meter;
-  for (int e = 0; e < epochs; e++) {
+  for (int e = (checkpointEpoch + 1); e < epochs; e++) {
     train_ds.resample();
     lrScheduler(e);
 
@@ -249,6 +272,7 @@ int main(int argc, const char** argv) {
 
       // Compute and record the loss.
       auto loss = categoricalCrossEntropy(output, target);
+
       train_loss_meter.add(loss.array());
       top5_meter.add(output.array(), target.array());
       top1_meter.add(output.array(), target.array());
@@ -262,6 +286,7 @@ int main(int argc, const char** argv) {
       // Compute and record the prediction error.
       double train_loss = train_loss_meter.value()[0];
       if (++idx % 10 == 0) {
+        af::deviceGC();
         double time = time_meter.value();
         double sample_per_second = (idx * batch_size * world_size) / time;
         std::cout << "Epoch " << e << std::setprecision(5) << " Batch: " << idx
@@ -287,5 +312,8 @@ int main(int argc, const char** argv) {
               << " Validation Top5 Error (%): " << val_top5_err
               << " Validation Top1 Error (%): " << val_top1_err << std::endl;
     saveModel(e);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    af::deviceGC();
   }
+#endif
 }

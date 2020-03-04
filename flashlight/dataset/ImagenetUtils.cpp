@@ -17,10 +17,28 @@ inline std::vector<std::string> glob(const std::string& pat) {
   return ret;
 }
 
+/*
+ * Assumes images are in a directory where the parent folder represents 
+ * thier class
+ */
 std::string labelFromFilePath(std::string fp) {
   auto parent_path = fp.substr(0, fp.rfind("/"));
   return parent_path.substr(parent_path.rfind("/") + 1);
 }
+
+std::vector<uint64_t> labelTargets(
+    std::vector<std::string>& filepaths,
+    std::unordered_map<std::string, uint32_t>& labelMap
+    ) {
+  auto getLabelTargets = [&labelMap](const std::string& s) {
+    const std::string label = labelFromFilePath(s);
+    return labelMap.at(label);
+  };
+  std::vector<uint64_t> labels(filepaths.size());
+  std::transform(filepaths.begin(), filepaths.end(), labels.begin(), getLabelTargets);
+  return labels;
+}
+
 
 } // namespace
 
@@ -55,14 +73,7 @@ ImageDataset imagenetDataset(
   if (filepaths.size() == 0) {
     throw std::runtime_error("Could not file any files in " + fp);
   }
-  std::vector<uint64_t> labels(filepaths.size());
-
-  auto parseLabels = [labelIdxs](const std::string& s) {
-    uint64_t label = labelIdxs.at(labelFromFilePath(s));
-    return label;
-  };
-  std::transform(
-      filepaths.begin(), filepaths.end(), labels.begin(), parseLabels);
+  auto labels = labelTargets(filepaths, labelIdxs);
   return ImageDataset(filepaths, labels, transformfns);
 }
 } // namespace fl
