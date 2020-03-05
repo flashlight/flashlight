@@ -227,7 +227,7 @@ int main(int argc, const char** argv) {
       fl::load(modelPath, model);
   };
   int checkpointEpoch = -1;
-  if (checkpointEpoch > 0) {
+  if (checkpointEpoch >= 0) {
     loadModel(checkpointEpoch);
   }
 
@@ -300,7 +300,7 @@ int main(int argc, const char** argv) {
         train_loss_meter.reset();
       }
     }
-    time_meter.resume();
+    time_meter.reset();
     time_meter.stop();
 
     // Evaluate on the dev set.
