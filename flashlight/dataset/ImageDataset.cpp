@@ -11,7 +11,7 @@
 #include "flashlight/dataset/MergeDataset.h"
 #include "flashlight/dataset/TransformDataset.h"
 #define STB_IMAGE_IMPLEMENTATION
-#include "flashlight/dataset/stb_image.h"
+//#include "flashlight/dataset/stb_image.h"
 
 
 namespace {
@@ -72,11 +72,15 @@ af::array loadJpeg(const std::string& fp) {
     img = af::constant(0, 224, 244, 3);
     std::cout << "Filepath " << fp << std::endl;
   }
+  if(img.type() != u8) {
+    std::cout << img.type() << std::endl;
+  }
   if (img.dims(2) == 3) {
     return img;
   } else if (img.dims(2) == 1) {
     img = af::tile(img, 2, 3);
-    return img;
+    auto img2 = af::colorSpace(img, AF_RGB, AF_GRAY);
+    return img2;
   }
   /*
 	int w, h, c;
@@ -215,7 +219,7 @@ Dataset::TransformFunction ImageDataset::normalizeImage(
   const af::array mean(1, 1, 3, 1, meanVector.data());
   const af::array std(1, 1, 3, 1, stdVector.data());
   return [mean, std](const af::array& in) {
-    af::array out = in / 255.0f;
+    af::array out = in.as(f32) / 255.0f;
     out = af::batchFunc(out, mean, af::operator-);
     out = af::batchFunc(out, std, af::operator/);
     return out;

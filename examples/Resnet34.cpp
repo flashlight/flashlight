@@ -109,7 +109,7 @@ int main(int argc, const char** argv) {
 
   int world_rank = argc > 2 ? atoi(argv[2]) : 0;
   int world_size = argc > 3 ? atoi(argv[3]) : 1;
-  af::setDevice(1);
+  af::setDevice(world_rank);
 
   const std::string label_path = imagenet_base + "labels.txt";
   const std::string train_list = imagenet_base + "train";
@@ -118,7 +118,7 @@ int main(int argc, const char** argv) {
   /////////////////////////
   // Hyperparaters
   ////////////////////////
-  const int batch_size = 128;
+  const int batch_size = 256;
   const float learning_rate = 0.1f;
   const float momentum = 0.9f;
   const float weight_decay = 0.0001f;
@@ -266,6 +266,7 @@ int main(int argc, const char** argv) {
     time_meter.resume();
     int idx = 0;
     for (auto& example : train_ds) {
+      opt.zeroGrad();
       // Make a Variable from the input array.
       auto inputs = noGrad(example[ImageDataset::INPUT_IDX]);
 
@@ -282,7 +283,6 @@ int main(int argc, const char** argv) {
       top5_meter.add(output.array(), target.array());
       top1_meter.add(output.array(), target.array());
 
-      opt.zeroGrad();
       // Backprop, update the weights and then zero the gradients.
       loss.backward();
 
@@ -290,6 +290,7 @@ int main(int argc, const char** argv) {
       reducer->finalize();
 #endif
       opt.step();
+      af::deviceGC();
 
       // Compute and record the prediction error.
       double train_loss = train_loss_meter.value()[0];
@@ -321,6 +322,5 @@ int main(int argc, const char** argv) {
               << " Validation Top1 Error (%): " << val_top1_err << std::endl;
     saveModel(e);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    af::deviceGC();
   }
 }
