@@ -21,6 +21,8 @@
 #include "flashlight/nn/nn.h"
 #include "flashlight/optim/optim.h"
 
+//#define DISTRIBUTED 0
+
 using namespace fl;
 
 class DistributedDataset : public Dataset {
@@ -107,7 +109,7 @@ int main(int argc, const char** argv) {
 
   int world_rank = argc > 2 ? atoi(argv[2]) : 0;
   int world_size = argc > 3 ? atoi(argv[3]) : 1;
-  af::setDevice(world_rank);
+  af::setDevice(1);
 
   const std::string label_path = imagenet_base + "labels.txt";
   const std::string train_list = imagenet_base + "train";
@@ -126,6 +128,7 @@ int main(int argc, const char** argv) {
   // Setup distributed training
   ////////////////////////
   af::info();
+#ifdef DISTRIBUTED
   fl::distributedInit(
 	fl::DistributedInit::FILE_SYSTEM,
 	world_rank,
@@ -141,6 +144,7 @@ int main(int argc, const char** argv) {
       1.0 / world_size,
       true,
       true);
+#endif
 
 
 
@@ -194,11 +198,13 @@ int main(int argc, const char** argv) {
   auto model = std::make_shared<Sequential>(resnet34());
   // synchronize parameters of tje model so that the parameters in each process
   // is the same
+#ifdef DISTRIBUTED
   fl::allReduceParameters(model);
 
   // Add a hook to synchronize gradients of model parameters as they are
   // computed
   fl::distributeModuleGrads(model, reducer);
+#endif 
 
   SGDOptimizer opt(model->params(), learning_rate, momentum, weight_decay);
 
@@ -247,7 +253,6 @@ int main(int argc, const char** argv) {
 }
 #endif
 
-#if 1
   // The main training loop
   TimeMeter time_meter;
   TopKMeter top5_meter(5, true);
@@ -280,7 +285,10 @@ int main(int argc, const char** argv) {
       opt.zeroGrad();
       // Backprop, update the weights and then zero the gradients.
       loss.backward();
+
+#ifdef DISTRIBUTED
       reducer->finalize();
+#endif
       opt.step();
 
       // Compute and record the prediction error.
@@ -315,5 +323,4 @@ int main(int argc, const char** argv) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     af::deviceGC();
   }
-#endif
 }

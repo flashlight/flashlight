@@ -41,7 +41,7 @@ class ResNetBlock : public fl::Container {
   explicit ResNetBlock(
       const int in_channels,
       const int out_channels,
-      bool downsample = false);
+      const int stride=1);
 
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;
@@ -57,7 +57,7 @@ class ResNetStage : public fl::Sequential {
       const int in_channels,
       const int out_channels,
       const int num_blocks,
-      bool downsample);
+      const int stride);
   FL_SAVE_LOAD_WITH_BASE(fl::Sequential)
 };
 
