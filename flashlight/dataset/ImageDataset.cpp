@@ -127,7 +127,7 @@ std::vector<af::array> ImageDataset::get(const int64_t idx) const {
     size_t free;
     size_t total;
     cudaMemGetInfo(&free, &total);
-    auto limit = 1000 << 20;
+    auto limit = 10 << 20;
     while(free <= limit) {
       std::cout<< "Device OOO, garbage collecting: " << std::this_thread::get_id()<<" :: "<< std::endl;
       af::deviceGC();

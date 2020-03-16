@@ -120,7 +120,7 @@ int main(int argc, const char** argv) {
   const float learning_rate = 0.1f;
   const float momentum = 0.9f;
   const float weight_decay = 0.0001f;
-  const int epochs = 100;
+  const int epochs = 150;
 
   /////////////////////////
   // Setup distributed training
@@ -204,7 +204,7 @@ int main(int argc, const char** argv) {
 
   auto lrScheduler = [&opt, &learning_rate](int epoch) {
     // Adjust learning rate every 30 epoch
-    if (epoch == 60 || epoch == 90) {
+    if (epoch == 60 || epoch == 90 || epoch == 120) {
       const float newLr = opt.getLr() * 0.1;
       std::cout << "Setting learning rate to: " << newLr << std::endl;
       opt.setLr(newLr);
@@ -212,7 +212,7 @@ int main(int argc, const char** argv) {
   };
 
   // Small utility functions to load and save models
-  std::string checkpointPrefix = "/private/home/padentomasello/code/flashlight/build/model-af";
+  std::string checkpointPrefix = "/private/home/padentomasello/code/flashlight/build/model-max";
   auto saveModel = [world_rank, &model, &checkpointPrefix](int epoch) {
     if(world_rank == 0) {
       std::string modelPath = checkpointPrefix + std::to_string(epoch);
