@@ -23,7 +23,7 @@ MemoryPool::MemoryPool(
     void* arena,
     size_t arenaSizeInBytes,
     size_t blockSize)
-    : name_(std::move(name)),
+    : MemoryAllocator(std::move(name)),
       arena_(arena),
       arenaSizeInBytes_(arenaSizeInBytes),
       arenaSizeInBlocks_(arenaSizeInBytes_ / blockSize),
@@ -124,7 +124,7 @@ std::string MemoryPool::prettyString() const {
   const Stats stats = getStats();
 
   std::stringstream stream;
-  stream << "MemoryPool{name_=" << name_ << " stats=" << stats.prettyString();
+  stream << "MemoryPool{name=" << getName() << " stats=" << stats.prettyString();
   stream << " freeListSize_=" << freeListSize_ << "}";
 
   return stream.str();

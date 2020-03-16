@@ -8,10 +8,17 @@
 
 #include <iostream>
 #include <sstream>
+#include <utility>
 
 #include "flashlight/memory/allocator/MemoryAllocator.h"
 
 namespace fl {
+
+MemoryAllocator::MemoryAllocator(std::string name) : name_(std::move(name)) {}
+
+const std::string& MemoryAllocator::getName() const {
+  return name_;
+}
 
 namespace {
 
@@ -60,8 +67,9 @@ std::string MemoryAllocator::CommonStats::prettyString() const {
 std::string MemoryAllocator::Stats::prettyString() const {
   std::stringstream stream;
 
-  stream << "Stats{arena=" << arena << " blockSize=" << blockSize
-         << " allocationsCount=";
+  stream << "Stats{arena=" << arena << " blockSize=";
+  formatMemorysize(stream, blockSize);
+  stream << " allocationsCount=";
   formatCount(stream, allocationsCount);
   stream << " deAllocationsCount=";
   formatCount(stream, deAllocationsCount);

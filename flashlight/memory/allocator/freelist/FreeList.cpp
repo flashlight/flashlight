@@ -14,7 +14,9 @@
 #include <sstream>
 #include <stdexcept>
 #include <unordered_map>
+#include <utility>
 
+#include "flashlight/common/Histogram.h"
 #include "flashlight/common/Logging.h"
 #include "flashlight/common/Utils.h"
 
@@ -22,6 +24,7 @@ namespace fl {
 
 // prettyString() will show up to the first kPrettyStringMaxChunks chunks.
 constexpr size_t kPrettyStringMaxChunks = 3;
+constexpr size_t kHistBucketCountPrettyString = 15;
 
 FreeList::Chunk::Chunk(size_t blockStartIndex, size_t sizeInBlocks)
     : blockStartIndex_(blockStartIndex),
@@ -42,7 +45,7 @@ FreeList::FreeList(
     void* arena,
     size_t arenaSizeInBytes,
     size_t blockSize)
-    : name_(name),
+    : MemoryAllocator(std::move(name)),
       arena_(arena),
       arenaSizeInBytes_(arenaSizeInBytes),
       arenaSizeInBlocks_(arenaSizeInBytes / blockSize),
@@ -89,7 +92,7 @@ void* FreeList::allocate(size_t size) {
   historyOfAllocationRequestInBlocks_.push_back(nBlocksNeed);
 
   VLOG(2) << "FreeList::allocate(size=" << size << ") return ptr=" << ptr
-          << " name_=" << name_ << " nBlocksNeed=" << nBlocksNeed;
+          << " name=" << getName() << " nBlocksNeed=" << nBlocksNeed;
 
   ++totalNumberOfAllocations_;
 
@@ -120,7 +123,7 @@ FreeList::Chunk* FreeList::getChunkAndRemoveFromMap(
     chunk = chunkItr->second;
     pointerToAllocatedChunkMap_.erase(chunkItr);
   } else {
-    throwGetChunkError(ptr, callerNameForErrorMessage, name_);
+    throwGetChunkError(ptr, callerNameForErrorMessage, getName());
   }
   return chunk;
 }
@@ -130,14 +133,14 @@ const FreeList::Chunk* FreeList::getChunk(
     const std::string& callerNameForErrorMessage) const {
   const auto chunkItr = pointerToAllocatedChunkMap_.find(ptr);
   if (chunkItr == pointerToAllocatedChunkMap_.end()) {
-    throwGetChunkError(ptr, callerNameForErrorMessage, name_);
+    throwGetChunkError(ptr, callerNameForErrorMessage, getName());
   }
   return chunkItr->second;
 }
 
 void FreeList::free(void* ptr) {
   Chunk* chunk = getChunkAndRemoveFromMap(ptr, __PRETTY_FUNCTION__);
-  VLOG(2) << "FreeList::free(ptr=" << ptr << ") name_=" << name_
+  VLOG(2) << "FreeList::free(ptr=" << ptr << ") name=" << getName()
           << " chunk=" << chunk->prettyString();
 
   // stats
@@ -152,19 +155,33 @@ void FreeList::free(void* ptr) {
 std::string FreeList::prettyString() const {
   const Stats stats = getStats();
   std::stringstream stream;
-  stream << "FreeList{name_=" << name_ << " stats=" << stats.prettyString()
+  stream << "FreeList{name=" << getName() << " stats=" << stats.prettyString()
          << " largestChunkInBlocks_=" << largestChunkInBlocks_
          << " totalNumberOfChunks_=" << totalNumberOfChunks_
          << " numberOfAllocatedChunks=" << pointerToAllocatedChunkMap_.size()
          << " freeListSize_=" << freeListSize_ << " freeList_={";
   int chunkNum = 0;
-  for (Chunk* cur = freeList_; cur && (chunkNum < kPrettyStringMaxChunks);
+  for (Chunk *cur = freeList_; cur && (chunkNum < kPrettyStringMaxChunks);
        cur = cur->next_, ++chunkNum) {
     stream << cur->prettyString() << " ";
   }
   if (freeListSize_ > kPrettyStringMaxChunks) {
     stream << "... not showing the next_ "
            << (freeListSize_ - kPrettyStringMaxChunks) << " chunks.";
+  }
+  {
+    std::vector<size_t> cureentAllocationSize(
+        pointerToAllocatedChunkMap_.size());
+    for (const auto& ptrAndChunk : pointerToAllocatedChunkMap_) {
+      cureentAllocationSize.push_back(ptrAndChunk.second->sizeInBytes_);
+    }
+    HistogramStats<size_t> hist = FixedBucketSizeHistogram<size_t>(
+        cureentAllocationSize.begin(),
+        cureentAllocationSize.end(),
+        kHistBucketCountPrettyString);
+    stream << std::endl << "Currently allocated:\n";
+    stream << hist.prettyString();
+    stream << std::endl;
   }
   stream << "}";
 
@@ -187,7 +204,7 @@ FreeList::Chunk* FreeList::findBestFit(size_t nBlocksNeed) {
 
   if (bestFit) {
     VLOG(3) << "FreeList::findBestFit(nBlocksNeed=" << nBlocksNeed << ")"
-            << " name_=" << name_ << " return " << bestFit->prettyString()
+            << " name=" << getName() << " return " << bestFit->prettyString()
             << ")";
   } else {
     std::stringstream ss;
@@ -222,7 +239,7 @@ void FreeList::chopChunkIfNeeded(FreeList::Chunk* chunk, size_t nBlocksNeed) {
     ++totalNumberOfChunks_;
 
     VLOG(3) << "FreeList::chopChunkIfNeeded(chunk=" << origChunk.prettyString()
-            << " nBlocksNeed=" << nBlocksNeed << ") name_=" << name_
+            << " nBlocksNeed=" << nBlocksNeed << ") name=" << getName()
             << " newChunk=" << newChunk->prettyString();
   }
 }

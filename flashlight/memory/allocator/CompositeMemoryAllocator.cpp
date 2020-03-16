@@ -15,10 +15,12 @@
 #include <sstream>
 #include <stdexcept>
 
+#include "flashlight/common/Histogram.h"
 #include "flashlight/common/Logging.h"
 
 namespace fl {
-constexpr size_t numberOfAllocationsBetweenPrettyString = 1000;
+constexpr size_t kHistBucketCountPrettyString = 50;
+constexpr const char* const kAllocatorName = "composite";
 
 std::string CompositeMemoryAllocator::AllocatorAndCriteria::prettyString()
     const {
@@ -30,7 +32,8 @@ std::string CompositeMemoryAllocator::AllocatorAndCriteria::prettyString()
 }
 
 CompositeMemoryAllocator::CompositeMemoryAllocator()
-    : totalNumberOfAllocations_(0),
+    : MemoryAllocator(kAllocatorName),
+      totalNumberOfAllocations_(0),
       arenaSizeInBlocks_(0),
       arenaSizeInBytes_(0) {}
 
@@ -54,7 +57,7 @@ void* CompositeMemoryAllocator::allocate(size_t size) {
     if (allocatorsAndCriterias_[i].maxAllocationSize >= size) {
       try {
         ptr = allocatorsAndCriterias_[i].allocator->allocate(size);
-        ptrToAllocatorsAndCriteriasIndex_[ptr] = i;
+        ptrToAllocation_[ptr] = {size, i};
         VLOG(2) << "CompositeMemoryAllocator::allocate(size=" << size
                 << ") i=" << i << " ptr=" << ptr;
       } catch (std::exception ex) {
@@ -74,22 +77,22 @@ void* CompositeMemoryAllocator::allocate(size_t size) {
     for (const std::exception& ex : exceptions) {
       stream << '{' << ex.what() << "},";
     }
-    stream << "}";
+    stream << '}' << std::endl;
+    stream << "Allocator's state at time of OOM:" << std::endl
+           << prettyString();
+    LOG(ERROR) << stream.str();
     throw std::invalid_argument(stream.str());
   }
 
   ++totalNumberOfAllocations_;
-  if (!(totalNumberOfAllocations_ % numberOfAllocationsBetweenPrettyString)) {
-    LOG(INFO) << prettyString();
-  }
-
   return ptr;
 }
 
 void CompositeMemoryAllocator::free(void* ptr) {
-  auto itr = ptrToAllocatorsAndCriteriasIndex_.find(ptr);
-  if (itr != ptrToAllocatorsAndCriteriasIndex_.end()) {
-    allocatorsAndCriterias_[itr->second].allocator->free(ptr);
+  auto itr = ptrToAllocation_.find(ptr);
+  if (itr != ptrToAllocation_.end()) {
+    allocatorsAndCriterias_[itr->second.allocatorsAndCriteriasIndex]
+        .allocator->free(ptr);
   } else {
     std::stringstream ss;
     ss << "CompositeMemoryAllocator::free(ptr=" << ptr
@@ -108,16 +111,59 @@ std::string CompositeMemoryAllocator::prettyString() const {
        allocatorsAndCriterias_) {
     stream << allocatorAndCriteria.prettyString() << std::endl;
   }
+  {
+    std::vector<size_t> currentAllocationSize(ptrToAllocation_.size());
+    for (const auto& ptrAndAllocation : ptrToAllocation_) {
+      currentAllocationSize.push_back(ptrAndAllocation.second.size);
+    }
+    HistogramStats<size_t> hist = FixedBucketSizeHistogram<size_t>(
+        currentAllocationSize.begin(),
+        currentAllocationSize.end(),
+        kHistBucketCountPrettyString);
+    stream << std::endl << "Currently allocated:" << std::endl;
+    stream << hist.prettyString();
+    stream << std::endl;
+
+    if (!hist.buckets.empty()) {
+      const HistogramBucket<size_t>& largestCountBucket = hist.buckets[0];
+      HistogramStats<size_t> hiResHist = FixedBucketSizeHistogram<size_t>(
+          currentAllocationSize.begin(),
+          currentAllocationSize.end(),
+          kHistBucketCountPrettyString,
+          largestCountBucket.startInclusive,
+          largestCountBucket.endExclusive);
+
+      stream << std::endl << "Currently allocated hi-resolution:" << std::endl;
+      stream << hiResHist.prettyString();
+      stream << std::endl;
+
+      if (!hiResHist.buckets.empty()) {
+        const HistogramBucket<size_t>& largestCountBucket =
+            hiResHist.buckets[0];
+        HistogramStats<size_t> doubleHiResHist =
+            FixedBucketSizeHistogram<size_t>(
+                currentAllocationSize.begin(),
+                currentAllocationSize.end(),
+                kHistBucketCountPrettyString,
+                largestCountBucket.startInclusive,
+                largestCountBucket.endExclusive);
+
+        stream << std::endl
+               << "Currently allocated double hi-resolution:" << std::endl;
+        stream << doubleHiResHist.prettyString();
+        stream << std::endl;
+      }
+    }
+  }
 
   stream << "}";
   return stream.str();
 }
 
 size_t CompositeMemoryAllocator::getAllocatedSizeInBytes(void* ptr) const {
-  auto itr = ptrToAllocatorsAndCriteriasIndex_.find(ptr);
-  if (itr != ptrToAllocatorsAndCriteriasIndex_.end()) {
-    return allocatorsAndCriterias_[itr->second]
-        .allocator->getAllocatedSizeInBytes(ptr);
+  auto itr = ptrToAllocation_.find(ptr);
+  if (itr != ptrToAllocation_.end()) {
+    return itr->second.size;
   } else {
     std::stringstream ss;
     ss << "CompositeMemoryAllocator::getAllocatedSizeInBytes(ptr=" << ptr

@@ -17,6 +17,7 @@ namespace fl {
 // collections, and giving information about allocated pointers.
 class MemoryAllocator {
  public:
+  MemoryAllocator(std::string name);
   virtual ~MemoryAllocator() = default;
 
   virtual void* allocate(size_t size) = 0;
@@ -50,5 +51,10 @@ class MemoryAllocator {
   virtual size_t getAllocatedSizeInBytes(void* ptr) const = 0;
 
   virtual std::string prettyString() const = 0;
+
+  const std::string& getName() const;
+
+ protected:
+  const std::string name_;
 };
 } // namespace fl

@@ -37,7 +37,7 @@ class CompositeMemoryAllocator : public MemoryAllocator {
       return (maxAllocationSize < other.maxAllocationSize);
     }
 
-    // Dumps prettyString() of self followd by prettyString() of internal
+    // Dumps prettyString() of self followed by prettyString() of internal
     // allocators. Example with 3 freelist allocators:
     // CompositeMemoryAllocator{totalNumberOfAllocations_=9 numberOfAllocators=3
     // allcatorsAndCriterias={CompositeMemoryAllocator{ maxAllocationSize=4
@@ -88,11 +88,16 @@ class CompositeMemoryAllocator : public MemoryAllocator {
   void add(AllocatorAndCriteria allocatorAndCriteria);
 
  private:
+  // Allocation used for keeping track of allocated memory objects. It is
+  // used by free() to know to which allocator we want to return that memory
+  // and for stats calculations.
+  struct Allocation {
+    size_t size;
+    size_t allocatorsAndCriteriasIndex;
+  };
+
   std::vector<AllocatorAndCriteria> allocatorsAndCriterias_;
-  // ptrToAllocatorsAndCriteriasIndex_ keeps track of allocated memory objects.
-  // It is used by free() to know to which allocator we want to return that
-  // memory and by getAllocatedSizeInBytes().
-  std::unordered_map<void*, size_t> ptrToAllocatorsAndCriteriasIndex_;
+  std::unordered_map<void*, Allocation> ptrToAllocation_;
   size_t totalNumberOfAllocations_;
   size_t arenaSizeInBlocks_;
   size_t arenaSizeInBytes_;

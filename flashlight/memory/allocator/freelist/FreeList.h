@@ -93,7 +93,6 @@ class FreeList : public MemoryAllocator {
   const Chunk* getChunk(void* ptr, const std::string& callerNameForErrorMessage)
       const;
 
-  const std::string name_;
   void* const arena_;
   const size_t arenaSizeInBytes_;
   const size_t arenaSizeInBlocks_;
