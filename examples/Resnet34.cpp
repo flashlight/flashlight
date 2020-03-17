@@ -21,7 +21,7 @@
 #include "flashlight/nn/nn.h"
 #include "flashlight/optim/optim.h"
 
-#define DISTRIBUTED 0
+#define DISTRIBUTED 1
 
 using namespace fl;
 
@@ -110,6 +110,10 @@ int main(int argc, const char** argv) {
   int world_rank = argc > 2 ? atoi(argv[2]) : 0;
   int world_size = argc > 3 ? atoi(argv[3]) : 1;
   af::setDevice(world_rank);
+  if (world_size > 1 && !DISTRIBUTED) {
+    std::cout << "Not built for distributed!" << std::endl;
+    return -1;
+  }
 
   const std::string label_path = imagenet_base + "labels.txt";
   const std::string train_list = imagenet_base + "train";
@@ -128,7 +132,7 @@ int main(int argc, const char** argv) {
   // Setup distributed training
   ////////////////////////
   af::info();
-#ifdef DISTRIBUTED
+#if DISTRIBUTED
   fl::distributedInit(
 	fl::DistributedInit::FILE_SYSTEM,
 	world_rank,
@@ -170,7 +174,7 @@ int main(int argc, const char** argv) {
       ImageDataset::centerCrop(224),
       ImageDataset::normalizeImage(mean, std)
   };
-  const int64_t prefetch_threads = 10;
+  const int64_t prefetch_threads = 48;
   const int64_t prefetch_size = batch_size;
   auto test = std::make_shared<ImageDataset>(
           imagenetDataset(train_list, labels, train_transforms));
@@ -198,7 +202,7 @@ int main(int argc, const char** argv) {
   auto model = std::make_shared<Sequential>(resnet34());
   // synchronize parameters of tje model so that the parameters in each process
   // is the same
-#ifdef DISTRIBUTED
+#if DISTRIBUTED
   fl::allReduceParameters(model);
 
   // Add a hook to synchronize gradients of model parameters as they are
@@ -237,7 +241,7 @@ int main(int argc, const char** argv) {
     loadModel(checkpointEpoch);
   }
 
-#if 0
+#if 1
   for (int i = 0; i < epochs; i++) {
     int idx = 0;
     for (auto& example : train_ds) {
@@ -253,6 +257,7 @@ int main(int argc, const char** argv) {
 }
 #endif
 
+#if 0
   // The main training loop
   TimeMeter time_meter;
   TopKMeter top5_meter(5, true);
@@ -306,7 +311,7 @@ int main(int argc, const char** argv) {
         top5_meter.reset();
         top1_meter.reset();
         train_loss_meter.reset();
-        af::deviceGC();
+        //af::deviceGC();
       }
     }
     time_meter.reset();
@@ -323,4 +328,5 @@ int main(int argc, const char** argv) {
     saveModel(e);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
+#endif
 }

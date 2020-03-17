@@ -65,9 +65,10 @@ af::array resizeSmallest(const af::array in, const int resize) {
  * numnber of channels to create an array with 3 channels
  */
 af::array loadJpeg(const std::string& fp) {
-  /**
+#if 1
   af::array img;
   try {
+    //return af::loadImage(fp.c_str(), true);
     img = af::loadImageNative(fp.c_str());
   } catch (...){
     img = af::constant(0, 224, 244, 3);
@@ -83,7 +84,7 @@ af::array loadJpeg(const std::string& fp) {
     auto img2 = af::colorSpace(img, AF_RGB, AF_GRAY);
     return img2;
   }
-  */
+#else
 	int w, h, c;
   // STB image will automatically return desired_no_channels. 
   // NB: c will be the original number of channels
@@ -91,12 +92,13 @@ af::array loadJpeg(const std::string& fp) {
 	unsigned char *img = stbi_load(fp.c_str(), &w, &h, &c, desired_no_channels);
 	if (img) {
 		af::array result = af::array(desired_no_channels, w, h, img).as(f32);
-    result = af::reorder(result, 1, 2, 0);
+    result = af::reorder(result, (1, 2, 0));
 		stbi_image_free(img);
 		return result;
 	} else {
     throw std::invalid_argument("Could not load from filepath" + fp);
 	}
+#endif
 }
 
 af::array loadLabel(const uint64_t x) {
@@ -129,16 +131,16 @@ ImageDataset::ImageDataset(
 
 std::vector<af::array> ImageDataset::get(const int64_t idx) const {
   checkIndexBounds(idx);
-    size_t free;
-    size_t total;
-    cudaMemGetInfo(&free, &total);
-    auto limit = 10 << 20;
-    while(free <= limit) {
-      std::cout<< "Device OOO, garbage collecting: " << std::this_thread::get_id()<<" :: "<< std::endl;
-      af::deviceGC();
-      std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-      cudaMemGetInfo(&free, &total);
-    }
+    //size_t free;
+    //size_t total;
+    //cudaMemGetInfo(&free, &total);
+    //auto limit = 10 << 20;
+    //while(free <= limit) {
+      //std::cout<< "Device OOO, garbage collecting: " << std::this_thread::get_id()<<" :: "<< std::endl;
+      //af::deviceGC();
+      //std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+      //cudaMemGetInfo(&free, &total);
+    //}
   return ds_->get(idx);
 }
 
