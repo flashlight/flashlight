@@ -21,7 +21,7 @@
 #include "flashlight/nn/nn.h"
 #include "flashlight/optim/optim.h"
 
-//#define DISTRIBUTED 0
+#define DISTRIBUTED 0
 
 using namespace fl;
 
@@ -141,7 +141,7 @@ int main(int argc, const char** argv) {
   af::setSeed(world_size);
 
   auto reducer = std::make_shared<fl::CoalescingReducer>(
-      1.0 / world_size,
+      1.0 / world_size * 2, // Account for batch size being 128 instead of 256
       true,
       true);
 #endif
