@@ -118,7 +118,7 @@ int main(int argc, const char** argv) {
   /////////////////////////
   // Hyperparaters
   ////////////////////////
-  const int batch_size = 256;
+  const int batch_size = 128;
   const float learning_rate = 0.1f;
   const float momentum = 0.9f;
   const float weight_decay = 0.0001f;
@@ -290,7 +290,6 @@ int main(int argc, const char** argv) {
       reducer->finalize();
 #endif
       opt.step();
-      af::deviceGC();
 
       // Compute and record the prediction error.
       double train_loss = train_loss_meter.value()[0];
@@ -307,6 +306,7 @@ int main(int argc, const char** argv) {
         top5_meter.reset();
         top1_meter.reset();
         train_loss_meter.reset();
+        af::deviceGC();
       }
     }
     time_meter.reset();
