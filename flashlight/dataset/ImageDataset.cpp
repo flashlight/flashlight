@@ -11,7 +11,7 @@
 #include "flashlight/dataset/MergeDataset.h"
 #include "flashlight/dataset/TransformDataset.h"
 #define STB_IMAGE_IMPLEMENTATION
-//#include "flashlight/dataset/stb_image.h"
+#include "flashlight/dataset/stb_image.h"
 
 
 namespace {
@@ -65,6 +65,7 @@ af::array resizeSmallest(const af::array in, const int resize) {
  * numnber of channels to create an array with 3 channels
  */
 af::array loadJpeg(const std::string& fp) {
+  /**
   af::array img;
   try {
     img = af::loadImageNative(fp.c_str());
@@ -82,7 +83,7 @@ af::array loadJpeg(const std::string& fp) {
     auto img2 = af::colorSpace(img, AF_RGB, AF_GRAY);
     return img2;
   }
-  /*
+  */
 	int w, h, c;
   // STB image will automatically return desired_no_channels. 
   // NB: c will be the original number of channels
@@ -95,7 +96,6 @@ af::array loadJpeg(const std::string& fp) {
 	} else {
     throw std::invalid_argument("Could not load from filepath" + fp);
 	}
-  */
 }
 
 af::array loadLabel(const uint64_t x) {
