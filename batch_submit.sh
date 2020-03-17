@@ -21,6 +21,7 @@
 #SBATCH --gres=gpu:8
 #SBATCH --cpus-per-task 10
 #SBATCH --time=72:00:00
+#SBATCH --mem=450G
 
 
 ### Section 2: Setting environment variables for the job
