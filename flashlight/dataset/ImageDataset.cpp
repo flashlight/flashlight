@@ -65,7 +65,7 @@ af::array resizeSmallest(const af::array in, const int resize) {
  * numnber of channels to create an array with 3 channels
  */
 af::array loadJpeg(const std::string& fp) {
-#if 1
+#if 0
   af::array img;
   try {
     //return af::loadImage(fp.c_str(), true);
