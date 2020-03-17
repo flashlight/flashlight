@@ -46,7 +46,7 @@ git clone git@github.com:padentomasello/flashlight.git
 cd flashlight && git fetch && git checkout $1
 mkdir build && cd build
 CMAKE_PREFIX_PATH=~/code/arrayfire/build-3.7 cmake ..  -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CUDA
-make -j $(nproc)
+make -j $(nproc) Resnet34
 
 ### Section 3:
 ### Run your job. Note that we are not passing any additional
