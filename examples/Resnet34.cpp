@@ -174,7 +174,7 @@ int main(int argc, const char** argv) {
       ImageDataset::centerCrop(224),
       ImageDataset::normalizeImage(mean, std)
   };
-  const int64_t prefetch_threads = 48;
+  const int64_t prefetch_threads = 10;
   const int64_t prefetch_size = batch_size;
   auto test = std::make_shared<ImageDataset>(
           imagenetDataset(train_list, labels, train_transforms));
@@ -241,7 +241,7 @@ int main(int argc, const char** argv) {
     loadModel(checkpointEpoch);
   }
 
-#if 1
+#if 0
   for (int i = 0; i < epochs; i++) {
     int idx = 0;
     for (auto& example : train_ds) {
@@ -255,9 +255,8 @@ int main(int argc, const char** argv) {
       idx++;
     }
 }
-#endif
 
-#if 0
+#else
   // The main training loop
   TimeMeter time_meter;
   TopKMeter top5_meter(5, true);
@@ -299,7 +298,7 @@ int main(int argc, const char** argv) {
       // Compute and record the prediction error.
       double train_loss = train_loss_meter.value()[0];
       if (++idx % 10 == 0) {
-        af::deviceGC();
+        //af::deviceGC();
         double time = time_meter.value();
         double sample_per_second = (idx * batch_size * world_size) / time;
         std::cout << "Epoch " << e << std::setprecision(5) << " Batch: " << idx
