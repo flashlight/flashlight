@@ -297,7 +297,7 @@ int main(int argc, const char** argv) {
 
       // Compute and record the prediction error.
       double train_loss = train_loss_meter.value()[0];
-      if (++idx % 10 == 0) {
+      if (++idx % 50 == 0) {
         //af::deviceGC();
         double time = time_meter.value();
         double sample_per_second = (idx * batch_size * world_size) / time;
@@ -310,7 +310,7 @@ int main(int argc, const char** argv) {
         top5_meter.reset();
         top1_meter.reset();
         train_loss_meter.reset();
-        //af::deviceGC();
+        af::deviceGC();
       }
     }
     time_meter.reset();

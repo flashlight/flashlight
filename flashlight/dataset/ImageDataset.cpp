@@ -86,7 +86,7 @@ af::array loadJpeg(const std::string& fp) {
   }
 #else
 	int w, h, c;
-  // STB image will automatically return desired_no_channels. 
+  // STB image will automatically return desired_no_channels.
   // NB: c will be the original number of channels
 	int desired_no_channels = 3;
 	unsigned char *img = stbi_load(fp.c_str(), &w, &h, &c, desired_no_channels);
@@ -101,7 +101,7 @@ af::array loadJpeg(const std::string& fp) {
 }
 
 af::array loadLabel(const uint64_t x) {
-  return af::constant(x, 1, 1, 1, 1, u64); 
+  return af::constant(x, 1, 1, 1, 1, u64);
 }
 
 }
