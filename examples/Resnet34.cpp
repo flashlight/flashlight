@@ -145,7 +145,7 @@ int main(int argc, const char** argv) {
   af::setSeed(world_size);
 
   auto reducer = std::make_shared<fl::CoalescingReducer>(
-      1.0 / world_size * 2, // Account for batch size being 128 instead of 256
+      1.0 / world_size,
       true,
       true);
 #endif
@@ -160,7 +160,7 @@ int main(int argc, const char** argv) {
   const std::vector<float> std = {0.229, 0.224, 0.225};
   auto labels = imagenetLabels(label_path);
   std::vector<Dataset::TransformFunction> train_transforms = {
-      // randomly resize shortest side of image between 256 to 480 for scale 
+      // randomly resize shortest side of image between 256 to 480 for scale
       // invariance
       ImageDataset::randomResizeTransform(256, 480),
       ImageDataset::randomCropTransform(224, 224),
@@ -208,7 +208,7 @@ int main(int argc, const char** argv) {
   // Add a hook to synchronize gradients of model parameters as they are
   // computed
   fl::distributeModuleGrads(model, reducer);
-#endif 
+#endif
 
   SGDOptimizer opt(model->params(), learning_rate, momentum, weight_decay);
 
