@@ -172,7 +172,7 @@ int main(int argc, const char** argv) {
   };
   const uint64_t miniBatchSize = batch_size / world_size;
   const int64_t prefetch_threads = 10;
-  const int64_t prefetch_size = miniBatchSize * 3;
+  const int64_t prefetch_size = miniBatchSize * 2;
   auto test = std::make_shared<ImageDataset>(
           imagenetDataset(train_list, labels, train_transforms));
   auto train_ds = DistributedDataset(
