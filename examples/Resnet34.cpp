@@ -118,7 +118,7 @@ int main(int argc, const char** argv) {
   /////////////////////////
   // Hyperparaters
   ////////////////////////
-  const int batch_size = 128;
+  const int batch_size = 256;
   const float learning_rate = 0.1f;
   const float momentum = 0.9f;
   const float weight_decay = 0.0001f;
@@ -141,7 +141,7 @@ int main(int argc, const char** argv) {
   af::setSeed(world_size);
 
   auto reducer = std::make_shared<fl::CoalescingReducer>(
-      1.0 / world_size,
+      1.0,
       true,
       true);
 #endif
@@ -170,15 +170,16 @@ int main(int argc, const char** argv) {
       ImageDataset::centerCrop(224),
       ImageDataset::normalizeImage(mean, std)
   };
+  const uint64_t miniBatchSize = batch_size / world_size;
   const int64_t prefetch_threads = 10;
-  const int64_t prefetch_size = batch_size;
+  const int64_t prefetch_size = miniBatchSize * 3;
   auto test = std::make_shared<ImageDataset>(
           imagenetDataset(train_list, labels, train_transforms));
   auto train_ds = DistributedDataset(
       test,
       world_rank,
       world_size,
-      batch_size,
+      miniBatchSize,
       prefetch_threads,
       prefetch_size);
 
@@ -187,7 +188,7 @@ int main(int argc, const char** argv) {
           imagenetDataset(val_list, labels, val_transforms)),
       world_rank,
       world_size,
-      batch_size,
+      miniBatchSize,
       prefetch_threads,
       prefetch_size);
 
@@ -210,7 +211,7 @@ int main(int argc, const char** argv) {
 
   auto lrScheduler = [&opt, &learning_rate](int epoch) {
     // Adjust learning rate every 30 epoch
-    if (epoch == 60 || epoch == 90 || epoch == 120) {
+    if (epoch > 0 && epoch % 30 == 0) {
       const float newLr = opt.getLr() * 0.1;
       std::cout << "Setting learning rate to: " << newLr << std::endl;
       opt.setLr(newLr);
@@ -295,7 +296,7 @@ int main(int argc, const char** argv) {
       double train_loss = train_loss_meter.value()[0];
       if (++idx % 50 == 0) {
         double time = time_meter.value();
-        double sample_per_second = (idx * batch_size * world_size) / time;
+        double sample_per_second = (idx * batch_size) / time;
         std::cout << "Epoch " << e << std::setprecision(5) << " Batch: " << idx
                   << " Samples per second " << sample_per_second
                   << ": Avg Train Loss: " << train_loss
