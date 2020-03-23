@@ -121,7 +121,9 @@ ResNetStage::ResNetStage(
 Sequential resnet34() {
   Sequential model;
   // conv1 -> 244x244x3 -> 112x112x64
-  model.add(ConvBnAct(3, 64, 7, 7, 2, 2));
+  model.add(Conv2D(3, 64, 7, 7, 2, 2));
+  model.add(BatchNorm(2, 64));
+  model.add(ReLU());
   // maxpool -> 112x122x64 -> 56x56x64
   model.add(Pool2D(3, 3, 2, 2, 1, 1, PoolingMode::MAX));
   // conv2_x -> 56x56x64 -> 56x56x64
@@ -134,7 +136,8 @@ Sequential resnet34() {
   model.add(ResNetStage(256, 512, 3, 2));
   // pool 7x7x64 ->
   model.add(Pool2D(7, 7, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
-  model.add(ConvBnAct(512, 1000, 1, 1, 1, 1, false, false));
+  model.add(View({512, -1, 1, 0}));
+  model.add(Linear(512, 1000, true));
   model.add(View({1000, -1}));
   model.add(LogSoftmax());
   return model;

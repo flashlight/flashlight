@@ -84,12 +84,8 @@ std::tuple<double, double, double> eval_loop(
     top5_meter.add(output.array(), target.array());
     top1_meter.add(output.array(), target.array());
     idx++;
-    if (idx % 10 == 0) {
-        af::deviceGC();
-    }
   }
   // Place the model back into train mode.
-  af::deviceGC();
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   model->train();
 
@@ -290,7 +286,7 @@ int main(int argc, const char** argv) {
       // Backprop, update the weights and then zero the gradients.
       loss.backward();
 
-#ifdef DISTRIBUTED
+#if DISTRIBUTED
       reducer->finalize();
 #endif
       opt.step();
@@ -298,7 +294,6 @@ int main(int argc, const char** argv) {
       // Compute and record the prediction error.
       double train_loss = train_loss_meter.value()[0];
       if (++idx % 50 == 0) {
-        //af::deviceGC();
         double time = time_meter.value();
         double sample_per_second = (idx * batch_size * world_size) / time;
         std::cout << "Epoch " << e << std::setprecision(5) << " Batch: " << idx
@@ -310,7 +305,6 @@ int main(int argc, const char** argv) {
         top5_meter.reset();
         top1_meter.reset();
         train_loss_meter.reset();
-        af::deviceGC();
       }
     }
     time_meter.reset();
