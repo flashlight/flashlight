@@ -59,7 +59,10 @@ jobs:
             sudo docker exec -it flashlight bash -c "\
             cd /flashlight && pwd && ls && mkdir -p build && cd build && \
             cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CUDA && \
-            make -j$(nproc) && make install && make test"
+            make -j$(nproc) && make install && make test && \
+            pip install torch==1.2.0 packaging==19.1 && \
+            export KENLM_ROOT_DIR=/root/kenlm && \
+            cd /root/wav2letter/bindings/python && pip install -e ."
   build-cpu:
     docker:
       - image: flml/flashlight:cpu-base-latest
@@ -71,6 +74,9 @@ jobs:
             export MKLROOT=/opt/intel/mkl && mkdir -p build && cd build
             cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CPU
             make -j1 && make install
+            pip install torch==1.2.0 packaging==19.1
+            export USE_CUDA=0 && export KENLM_ROOT_DIR=/root/kenlm
+            cd /root/wav2letter/bindings/python && pip install -e .
 workflows:
   version: 2
   build_and_install:
