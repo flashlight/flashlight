@@ -206,10 +206,22 @@ set(
   )
 
 # Build and link resources from `flashlight/contrib`.
-set(FL_BUILD_CONTRIB ON CACHE BOOL "Whether to build and link additional flashlight contrib resources.")
+set(FL_BUILD_CONTRIB ON CACHE BOOL
+    "Build and link additional flashlight contrib resources.")
 if (FL_BUILD_CONTRIB)
+  message(STATUS "Will build flashlight contrib assets.")
   include(${FLASHLIGHT_PROJECT_COMPONENT_SRC_DIR}/contrib/CMakeLists.txt)
   set(FLASHLIGHT_MODULES ${FLASHLIGHT_MODULES} Contrib ${FLASHLIGHT_CONTRIB_LIBS})
+endif()
+
+# Build and link resources from `flashlight/experimental`.
+set(FL_BUILD_EXPERIMENTAL OFF CACHE BOOL
+    "Build and link additional internal flashlight experimental resources.")
+if (FL_BUILD_EXPERIMENTAL)
+  message(STATUS "Will build flashlight experimental assets.")
+  include(${FLASHLIGHT_PROJECT_COMPONENT_SRC_DIR}/experimental/CMakeLists.txt)
+  set(FLASHLIGHT_MODULES ${FLASHLIGHT_MODULES} FlExperimental
+      ${FLASHLIGHT_EXPERIMENTAL_LIBS})
 endif()
 
 target_link_libraries(
