@@ -1,0 +1,35 @@
+# flashlight
+#
+# IMPORTED targets
+# ^^^^^^^^^^^^^^^^
+#
+# Configuration file for flashlight. Provides the following
+# `IMPORTED` targets:
+#
+# ``flashlight::flashlight``
+#   The complete flashlight library.
+#
+# The above targets can be linked with your build using ``target_link_library``.
+# Example:
+#
+#   add_executable(myexecutable mySource.cpp)
+#   target_link_library(myexecutable PRIVATE flashlight::flashlight)
+#
+# The above properly links flashlight with myexecutable. No call to
+# ``target_include_directories`` is required.
+#
+
+@PACKAGE_INIT@
+
+# Library/main target
+if(NOT TARGET flashlight::flashlight)
+  if(EXISTS @PACKAGE_CMAKE_DIR@/flashlightTargets.cmake)
+    include(@PACKAGE_CMAKE_DIR@/flashlightTargets.cmake)
+  endif()
+endif()
+
+# For legacy configurations
+set(flashlight_LIBRARIES flashlight::flashlight)
+if (EXISTS @PACKAGE_INCLUDE_DIRS@)
+  set(flashlight_INCLUDE_DIRS @PACKAGE_INCLUDE_DIRS@)
+endif()

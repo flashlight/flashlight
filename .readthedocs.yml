@@ -1,0 +1,16 @@
+# .readthedocs.yml for flashlight
+# Read the Docs configuration file
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+
+# Required
+version: 2
+
+# Build documentation with Sphinx
+sphinx:
+  configuration: docs/source/conf.py
+
+# Python version and requirements for build
+python:
+  version: 3.7
+  install:
+    - requirements: docs/requirements.txt
