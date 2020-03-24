@@ -5,15 +5,21 @@ project(flashlight-experimental)
 # Experimental projects to build.
 # To add your experimental project:
 # - Add a subdirectory in `src/experimental`
-# - Add a CMakeLists.txt file in that subdirectory which builds your targets
-#   (this target can link to other dependencies, e.g. flashlight::flashlight)
-# - Add a call to add_subdirectory below for your experimental
+# - Add a CMakeLists.txt file in that directory which builds your targets
+#   (this will be automatically linked to the rest of flashlight, but can
+#    also be linked to other dependencies)
+# - Add a call to `include` below for your experimental
 #   projects directory - for example:
 #
-#   add_subdirectory
+#   include(${CMAKE_CURRENT_LIST_DIR}/[some_project_dir]/CMakeLists.txt)
 #
+# Add includes here:
+
+
 # - Also add your project's target name `FLASHLIGHT_EXPERIMENTAL_LIBS`
 #   call below if you want your code to be installed with flashlight.
+# - Note that experimental targets MUST be `INTERFACE` targets for
+#   them to be installable with flashlight.
 set(
   FLASHLIGHT_EXPERIMENTAL_LIBS
   # Experimental project target names go here
