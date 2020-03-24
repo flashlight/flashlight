@@ -122,7 +122,7 @@ int main(int argc, const char** argv) {
   const float learning_rate = 0.1f;
   const float momentum = 0.9f;
   const float weight_decay = 0.0001f;
-  const int epochs = 150;
+  const int epochs = 300;
 
   /////////////////////////
   // Setup distributed training
@@ -174,7 +174,7 @@ int main(int argc, const char** argv) {
   const int64_t prefetch_threads = 10;
   const int64_t prefetch_size = miniBatchSize * 2;
   auto test = std::make_shared<ImageDataset>(
-          imagenetDataset(train_list, labels, train_transforms));
+          imagenetDataset(train_list, labels, val_transforms));
   auto train_ds = DistributedDataset(
       test,
       world_rank,
@@ -199,13 +199,6 @@ int main(int argc, const char** argv) {
   auto model = std::make_shared<Sequential>(resnet34());
   // synchronize parameters of tje model so that the parameters in each process
   // is the same
-#if DISTRIBUTED
-  fl::allReduceParameters(model);
-
-  // Add a hook to synchronize gradients of model parameters as they are
-  // computed
-  fl::distributeModuleGrads(model, reducer);
-#endif
 
   SGDOptimizer opt(model->params(), learning_rate, momentum, weight_decay);
 
@@ -237,6 +230,14 @@ int main(int argc, const char** argv) {
   if (checkpointEpoch >= 0) {
     loadModel(checkpointEpoch);
   }
+
+#if DISTRIBUTED
+  fl::allReduceParameters(model);
+
+  // Add a hook to synchronize gradients of model parameters as they are
+  // computed
+  fl::distributeModuleGrads(model, reducer);
+#endif
 
 #if 0
   for (int i = 0; i < epochs; i++) {

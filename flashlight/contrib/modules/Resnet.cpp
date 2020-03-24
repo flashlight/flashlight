@@ -1,5 +1,7 @@
 #include "flashlight/contrib/modules/Resnet.h"
 
+#include "flashlight/nn/Init.h"
+
 
 namespace fl {
 
@@ -8,7 +10,16 @@ namespace {
 Conv2D conv3x3(const int in_c, const int out_c, const int stride,
     const int groups) {
   const auto pad = PaddingMode::SAME;
-  return Conv2D(in_c, out_c, 3, 3, stride, stride, pad, pad, 1, 1, false);
+  auto conv = Conv2D(in_c, out_c, 3, 3, stride, stride, pad, pad, 1, 1, false);
+  conv.setParams(kaimingNormal(af::dim4(3, 3, in_c, out_c)), 0);
+  return conv;
+}
+
+BatchNorm batchNorm(const int channels) {
+    auto bn = BatchNorm(2, channels);
+    bn.setParams(constant(1.0, channels, af::dtype::f32, true), 0);
+    bn.setParams(constant(0.0, channels, af::dtype::f32, true), 1);
+    return bn;
 }
 
 }
@@ -50,11 +61,16 @@ ConvBnAct::ConvBnAct(
     bool act) {
   const auto pad = PaddingMode::SAME;
   const bool bias = !bn;
-  add(std::make_shared<fl::Conv2D>(
-      in_c, out_c, kw, kh, sx, sy, pad, pad, 1, 1, bias));
+
+  auto conv1 = Conv2D(in_c, out_c, kw, kh, sx, sy, pad, pad, 1, 1, bias);
+  conv1.setParams(kaimingNormal(af::dim4(kw, kw, in_c, out_c)), 0);
+  add(conv1);
   if (bn) {
-    add(std::make_shared<fl::BatchNorm>(2, out_c));
-  }
+    auto bn = BatchNorm(2, out_c);
+    bn.setParams(constant(1.0, out_c, af::dtype::f32, true), 0);
+    bn.setParams(constant(0.0, out_c, af::dtype::f32, true), 1);
+    add(bn);
+  }   
   if (act) {
     add(std::make_shared<fl::ReLU>());
   }
@@ -67,10 +83,10 @@ ResNetBlock::ResNetBlock(const int in_c, const int out_c, const int stride) {
     downsample_ = std::make_shared<ConvBnAct>(in_c, out_c, 1, 1, stride, stride, true, false);
   }
   add(std::make_shared<Conv2D>(conv3x3(in_c, out_c, stride, 1)));
-  add(std::make_shared<BatchNorm>(2, out_c));
+  add(std::make_shared<BatchNorm>(batchNorm(out_c)));
   add(std::make_shared<ReLU>());
   add(std::make_shared<Conv2D>(conv3x3(out_c, out_c, 1, 1)));
-  add(std::make_shared<BatchNorm>(2, out_c));
+  add(std::make_shared<BatchNorm>(batchNorm(out_c)));
   add(std::make_shared<ReLU>());
   //add(std::make_shared<ConvBnAct>(in_c, out_c, 3, 3, stride, stride));
   //add(std::make_shared<ConvBnAct>(out_c, out_c, 3, 3, 1, 1, true, false));
@@ -121,7 +137,9 @@ ResNetStage::ResNetStage(
 Sequential resnet34() {
   Sequential model;
   // conv1 -> 244x244x3 -> 112x112x64
+
   model.add(ConvBnAct(3, 64, 7, 7, 2, 2));
+  
   // maxpool -> 112x122x64 -> 56x56x64
   model.add(Pool2D(3, 3, 2, 2, -1, -1, PoolingMode::MAX));
   // conv2_x -> 56x56x64 -> 56x56x64
@@ -134,7 +152,8 @@ Sequential resnet34() {
   model.add(ResNetStage(256, 512, 3, 2));
   // pool 7x7x64 ->
   model.add(Pool2D(7, 7, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
-  model.add(ConvBnAct(512, 1000, 1, 1, 1, 1, false, false));
+  model.add(View({512, -1, 1, 0}));
+  model.add(Linear(512, 1000, true));
   model.add(View({1000, -1}));
   model.add(LogSoftmax());
   return model;
