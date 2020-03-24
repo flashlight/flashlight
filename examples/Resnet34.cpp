@@ -174,7 +174,7 @@ int main(int argc, const char** argv) {
   const int64_t prefetch_threads = 10;
   const int64_t prefetch_size = miniBatchSize * 2;
   auto test = std::make_shared<ImageDataset>(
-          imagenetDataset(train_list, labels, val_transforms));
+          imagenetDataset(train_list, labels, train_transforms));
   auto train_ds = DistributedDataset(
       test,
       world_rank,
