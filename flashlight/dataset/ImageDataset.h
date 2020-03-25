@@ -52,6 +52,13 @@ class ImageDataset : public Dataset {
    */
   static TransformFunction randomResizeTransform(const int low, const int high);
 
+  static TransformFunction randomResizeCropTransform(
+    const int resize,
+    const float scaleLow,
+    const float scaleHigh,
+    const float ratioLow,
+    const float ratioHigh);
+
   /*
    * Randomly crop an image with target height of @param th and a target width of 
    * @params tw

@@ -1,7 +1,6 @@
 /**
  * Copyright (c) Facebook, Inc. and its affiliates.  * All rights reserved.
- *
- * This source code is licensed under the BSD-style license found in the
+ * * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
 #include <exception>
@@ -158,8 +157,7 @@ int main(int argc, const char** argv) {
   std::vector<Dataset::TransformFunction> train_transforms = {
       // randomly resize shortest side of image between 256 to 480 for scale
       // invariance
-      ImageDataset::randomResizeTransform(256, 480),
-      ImageDataset::randomCropTransform(224, 224),
+      ImageDataset::randomResizeCropTransform(224, 0.08, 1.0, 3./.4, 4./3.),
       ImageDataset::normalizeImage(mean, std),
       // Randomly flip image with probability of 0.5
       ImageDataset::horizontalFlipTransform(0.5)

@@ -1,5 +1,6 @@
 #include <thread>
 #include <chrono>
+#include <random>
 
 #include <cudnn.h>
 #include <arrayfire.h>
@@ -17,7 +18,7 @@
 namespace {
 
 /*
- * Small generic utility class for loading data from a vector of type T into an 
+ * Small generic utility class for loading data from a vector of type T into an
  * vector of arrayfire arrays
  */
 template <typename T>
@@ -42,11 +43,27 @@ public:
   LoadFunc loadfn_;
 };
 
+class RandomFloatBetween
+{
+public:
+  RandomFloatBetween() = default;
+  RandomFloatBetween(float low, float high) :
+    random_engine_{std::make_shared<std::mt19937>(std::random_device{}())},
+    distribution_(low, high) {}
+
+  float operator()() {
+    return distribution_(*random_engine_.get());
+  }
+private:
+  std::shared_ptr<std::mt19937> random_engine_;
+  std::uniform_real_distribution<float> distribution_;
+};
+
 /*
- * Resizes the smallest length edge of an image to be resize while keeping 
+ * Resizes the smallest length edge of an image to be resize while keeping
  * the aspect ratio
  */
-af::array resizeSmallest(const af::array in, const int resize) {
+af::array resizeSmallest(const af::array& in, const int resize) {
     const int w = in.dims(0);
     const int h = in.dims(1);
     int th, tw;
@@ -60,30 +77,52 @@ af::array resizeSmallest(const af::array in, const int resize) {
     return af::resize(in, tw, th, AF_INTERP_BILINEAR);
 }
 
+af::array resize(const af::array& in, const int resize) {
+  return af::resize(in, resize, resize, AF_INTERP_BILINEAR);
+}
+
+af::array crop(
+    const af::array& in,
+    const int x,
+    const int y,
+    const int w,
+    const int h) {
+	return in(af::seq(x, x + w - 1), af::seq(y, y + h - 1), af::span, af::span);
+}
+
+af::array centerCrop2(const af::array& in, const int size) {
+    const int w = in.dims(0);
+    const int h = in.dims(1);
+    const int cropLeft = (w - size) / 2;
+    const int cropTop = (h - size) / 2;
+    return crop(in, cropLeft, cropTop, size, size);
+}
+
 /*
  * Loads a jpeg from filepath fp. Note: It will automatically convert from any
  * numnber of channels to create an array with 3 channels
  */
 af::array loadJpeg(const std::string& fp) {
 #if 0
-  af::array img;
-  try {
-    //return af::loadImage(fp.c_str(), true);
-    img = af::loadImageNative(fp.c_str());
-  } catch (...){
-    img = af::constant(0, 224, 244, 3);
-    std::cout << "Filepath " << fp << std::endl;
-  }
-  if(img.type() != u8) {
-    std::cout << img.type() << std::endl;
-  }
-  if (img.dims(2) == 3) {
-    return img;
-  } else if (img.dims(2) == 1) {
-    img = af::tile(img, 2, 3);
-    auto img2 = af::colorSpace(img, AF_RGB, AF_GRAY);
-    return img2;
-  }
+  return af::loadImage(fp.c_str(), true);
+  //af::array img;
+  //try {
+    ////return af::loadImage(fp.c_str(), true);
+    //img = af::loadImageNative(fp.c_str());
+  //} catch (...){
+    //img = af::constant(0, 224, 244, 3);
+    //std::cout << "Filepath " << fp << std::endl;
+  //}
+  //if(img.type() != u8) {
+    //std::cout << img.type() << std::endl;
+  //}
+  //if (img.dims(2) == 3) {
+    //return img;
+  //} else if (img.dims(2) == 1) {
+    //img = af::tile(img, 2, 3);
+    //auto img2 = af::colorSpace(img, AF_RGB, AF_GRAY);
+    //return img2;
+  //}
 #else
 	int w, h, c;
   // STB image will automatically return desired_no_channels.
@@ -130,16 +169,6 @@ ImageDataset::ImageDataset(
 
 std::vector<af::array> ImageDataset::get(const int64_t idx) const {
   checkIndexBounds(idx);
-    //size_t free;
-    //size_t total;
-    //cudaMemGetInfo(&free, &total);
-    //auto limit = 10 << 20;
-    //while(free <= limit) {
-      //std::cout<< "Device OOO, garbage collecting: " << std::this_thread::get_id()<<" :: "<< std::endl;
-      //af::deviceGC();
-      //std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-      //cudaMemGetInfo(&free, &total);
-    //}
   return ds_->get(idx);
 }
 
@@ -167,15 +196,7 @@ Dataset::TransformFunction ImageDataset::compose(
 Dataset::TransformFunction ImageDataset::centerCrop(
     const int size) {
   return [size](const af::array& in) {
-    const int w = in.dims(0);
-    const int h = in.dims(1);
-    const int cropLeft = (w - size) / 2;
-    const int cropTop = (h - size) / 2;
-    return in(
-        af::seq(cropLeft, cropLeft + size - 1),
-        af::seq(cropTop, cropTop + size - 1),
-        af::span
-    );
+    return centerCrop2(in, size);
   };
 };
 
@@ -190,6 +211,35 @@ Dataset::TransformFunction ImageDataset::horizontalFlipTransform(
     return out;
   };
 };
+
+Dataset::TransformFunction ImageDataset::randomResizeCropTransform(
+    const int size,
+    const float scaleLow,
+    const float scaleHigh,
+    const float ratioLow,
+    const float ratioHigh) {
+   auto scaleDist = RandomFloatBetween(scaleLow, scaleHigh);
+   auto ratioDist = RandomFloatBetween(log(ratioLow), log(ratioHigh));
+  return [ size, scaleDist, ratioDist] (const af::array& in) mutable {
+    const int w = in.dims(0);
+    const int h = in.dims(1);
+    const float area = w * h;
+    for(int i = 0; i < 10; i++) {
+      const float scale = scaleDist();
+      const float ratio = ratioDist();
+      const float targetArea = scale * area;
+      const float targetRatio = exp(ratio);
+      const int tw = round(sqrt(targetArea * targetRatio));
+      const int th = round(sqrt(targetArea / targetRatio));
+      if (0 < tw && tw <= w && 0 < th && th <= h) {
+        const int x = rand() % (w - tw + 1);
+        const int y = rand() % (h - th + 1);
+        return resize(crop(in, x, y, tw, th), size);
+      }
+    }
+    return centerCrop2(resizeSmallest(in, size), size);;
+  };
+}
 
 Dataset::TransformFunction ImageDataset::randomResizeTransform(
     const int low, const int high) {
@@ -207,11 +257,9 @@ Dataset::TransformFunction ImageDataset::randomCropTransform(
     af::array out = in;
     const uint64_t w = in.dims(0);
     const uint64_t h = in.dims(1);
-  const int x = rand() % (w - tw + 1);
-	const int y = rand() % (h - th + 1);
-	out = out(
-  af::seq(x, x + tw - 1), af::seq(y, y + th - 1), af::span, af::span);
-  return out;
+    const int x = rand() % (w - tw + 1);
+    const int y = rand() % (h - th + 1);
+    return crop(in, x, y, tw, th);
   };
 };
 
