@@ -292,16 +292,28 @@ int main(int argc, const char** argv) {
       opt.step();
 
       // Compute and record the prediction error.
-      double train_loss = train_loss_meter.value()[0];
       if (++idx % 50 == 0) {
+        double train_loss = train_loss_meter.value()[0];
         double time = time_meter.value();
-        double sample_per_second = (idx * batch_size) / time;
-        std::cout << "Epoch " << e << std::setprecision(5) << " Batch: " << idx
-                  << " Samples per second " << sample_per_second
-                  << ": Avg Train Loss: " << train_loss
-                  << ": Train Top5 Error( %): " << top5_meter.value()
-                  << ": Train Top1 Error( %): " << top1_meter.value()
-                  << std::endl;
+        double sample_per_second = ((idx * miniBatchSize) / time);
+        double top5 = top5_meter.value();
+        double top1 = top1_meter.value();
+        af::array train_loss_arr = af::array(1, &train_loss);
+        af::array top1_arr = af::array(1, &top1);
+        af::array top5_arr = af::array(1, &top5);
+        af::array samples_per_second_arr = af::array(1, &sample_per_second);
+        std::vector<af::array*> metric_arrays = {
+          &train_loss_arr, &top1_arr, &top5_arr, &samples_per_second_arr
+        };
+        fl::allReduceMultiple(metric_arrays, false, false);
+        if (world_rank == 0) {
+          std::cout << "Epoch " << e << std::setprecision(5) << " Batch: " << idx
+                    << " Samples per second " << samples_per_second_arr.scalar<double>()
+                    << ": Avg Train Loss: " << train_loss_arr.scalar<double>() / world_size
+                    << ": Train Top5 Error( %): " << top5_arr.scalar<double>() / world_size
+                    << ": Train Top1 Error( %): " << top1_arr.scalar<double>() / world_size
+                    << std::endl;
+        }
         top5_meter.reset();
         top1_meter.reset();
         train_loss_meter.reset();

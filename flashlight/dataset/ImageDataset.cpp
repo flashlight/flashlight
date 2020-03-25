@@ -43,8 +43,8 @@ public:
   LoadFunc loadfn_;
 };
 
-class RandomFloatBetween
-{
+class RandomFloatBetween {
+
 public:
   RandomFloatBetween() = default;
   RandomFloatBetween(float low, float high) :
