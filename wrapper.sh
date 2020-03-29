@@ -16,6 +16,6 @@ echo $SLURM_LOCALID
 mkdir -p /checkpoint/padentomasello/tmp/$SLURM_NTASKS/
 rm /checkpoint/padentomasello/tmp/$SLURM_NTASKS/10210577316483720853
 BUILD_DIR=/scratch/slurm_tmpdir/$SLURM_JOB_ID/$1
-AF_MAX_BUFFERS=4000 $BUILD_DIR/flashlight/build/examples/Resnet34 /datasets01_101/imagenet_full_size/061417/ $SLURM_LOCALID $SLURM_NTASKS
+AF_MAX_BUFFERS=3000 $BUILD_DIR/flashlight/build/examples/Resnet34 /datasets01_101/imagenet_full_size/061417/ $SLURM_LOCALID $SLURM_NTASKS
 
 # Your CUDA enabled program here

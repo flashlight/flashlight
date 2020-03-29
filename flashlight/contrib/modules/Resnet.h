@@ -86,4 +86,6 @@ Sequential resnet50();
 } // namespace fl
 //CEREAL_REGISTER_TYPE(fl::ConvBnAct)
 //CEREAL_REGISTER_TYPE(fl::BasicBlock)
+//CEREAL_REGISTER_TYPE(fl::Bottleneck)
 //CEREAL_REGISTER_TYPE(fl::ResNetStage<fl::BasicBlock>)
+//CEREAL_REGISTER_TYPE(fl::ResNetStage<fl::Bottleneck>)
