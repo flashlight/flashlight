@@ -158,9 +158,9 @@ int main(int argc, const char** argv) {
       // randomly resize shortest side of image between 256 to 480 for scale
       // invariance
       ImageDataset::randomResizeCropTransform(224, 0.08, 1.0, 3./.4, 4./3.),
-      ImageDataset::normalizeImage(mean, std),
       // Randomly flip image with probability of 0.5
-      ImageDataset::horizontalFlipTransform(0.5)
+      ImageDataset::horizontalFlipTransform(0.5),
+      ImageDataset::normalizeImage(mean, std)
   };
   std::vector<Dataset::TransformFunction> val_transforms = {
       // Resize shortest side to 256, then take a center crop
@@ -194,7 +194,7 @@ int main(int argc, const char** argv) {
   //////////////////////////
   //  Load model and optimizer
   /////////////////////////
-  auto model = std::make_shared<Sequential>(resnet34());
+  auto model = std::make_shared<Sequential>(resnet50());
   // synchronize parameters of tje model so that the parameters in each process
   // is the same
 
