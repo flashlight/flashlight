@@ -330,7 +330,7 @@ int main(int argc, const char** argv) {
               << " Validation Loss: " << val_loss
               << " Validation Top5 Error (%): " << val_top5_err
               << " Validation Top1 Error (%): " << val_top1_err << std::endl;
-    saveModel(e);
+    //saveModel(e);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 #endif
