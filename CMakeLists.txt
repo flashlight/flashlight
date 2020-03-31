@@ -60,7 +60,13 @@ endif ()
 
 # ------------------------ Global External Dependencies ------------------------
 # ArrayFire
-find_package(ArrayFire 3.6.1 REQUIRED)
+find_package(ArrayFire REQUIRED)
+if (ArrayFire_FOUND AND ArrayFire_VERSION VERSION_LESS 3.7.1)
+  message(FATAL_ERROR "ArrayFire versions < 3.7.1 are no longer supported "
+    "with flashlight. To build flashlight with a version of ArrayFire "
+    "< 3.7.1, use commit <= [FILL ME IN ONCE LANDED].")
+endif()
+
 if (ArrayFire_FOUND)
   message(STATUS "ArrayFire found (include: ${ArrayFire_INCLUDE_DIRS}, library: ${ArrayFire_LIBRARIES})")
   if (FLASHLIGHT_USE_UNIFIED)
