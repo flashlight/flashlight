@@ -42,8 +42,6 @@ int64_t getNumRnnParams(
     RnnMode mode,
     bool bidirectional);
 
-std::pair<dim_t, dim_t> computeFans(af::dim4 dims);
-
 /// used for Conv2D and Pool2D params
 struct IntOrPadMode {
   /* implicit */ IntOrPadMode(int val) : padVal(val) {}
