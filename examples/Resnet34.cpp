@@ -117,7 +117,7 @@ int main(int argc, const char** argv) {
   /////////////////////////
   // Hyperparaters
   ////////////////////////
-  const int batch_size = 128;
+  const int batch_size = 256;
   const float learning_rate = 0.1f;
   const float momentum = 0.9f;
   const float weight_decay = 0.0000f;
