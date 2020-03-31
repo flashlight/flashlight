@@ -47,17 +47,22 @@ ConvBnAct::ConvBnAct(
   const bool bias = !bn;
 
   auto conv1 = Conv2D(in_c, out_c, kw, kh, sx, sy, pad, pad, 1, 1, bias);
-  conv1.setParams(kaimingNormal(af::dim4(kw, kw, in_c, out_c)), 0);
-  add(conv1);
-  if (bn) {
-    auto bn = BatchNorm(2, out_c);
-    bn.setParams(constant(1.0, out_c, af::dtype::f32, true), 0);
-    bn.setParams(constant(0.0, out_c, af::dtype::f32, true), 1);
-    add(bn);
-  }   
-  if (act) {
-    add(std::make_shared<fl::ReLU>());
-  }
+  conv1.setParams(
+      kaimingNormal(af::dim4(kw, kw, in_c, out_c), f32,
+        true, 
+        false
+        ), 
+    0);
+  //add(conv1);
+  //if (bn) {
+    //auto bn = BatchNorm(2, out_c);
+    //bn.setParams(constant(1.0, out_c, af::dtype::f32, true), 0);
+    //bn.setParams(constant(0.0, out_c, af::dtype::f32, true), 1);
+    //add(bn);
+  //}   
+  //if (act) {
+    //add(std::make_shared<fl::ReLU>());
+  //}
 }
 
 
@@ -171,23 +176,32 @@ ResNetStage<Block>::ResNetStage(
 Sequential resnet50() {
   Sequential model;
   // conv1 -> 244x244x3 -> 112x112x64
-  model.add(ConvBnAct(3, 64, 7, 7, 2, 2));
+  auto conv1 = Conv2D(3, 64, 7, 7, 2, 2, -1, -1);
+  conv1.setParams(
+      kaimingNormal(af::dim4(7, 7, 3, 64), f32,
+        true, 
+        false
+        ), 
+  0);
+  af_print(conv1.param(0).row(0).array());
+  model.add(conv1);
+  //model.add(ConvBnAct(3, 64, 7, 7, 2, 2));
   // maxpool -> 112x122x64 -> 56x56x64
-  model.add(Pool2D(3, 3, 2, 2, 1, 1, PoolingMode::MAX));
-  // conv2_x -> 56x56x64 -> 56x56x64
-  model.add(ResNetStage<Bottleneck>(64, 64, 3, 1));
-  // conv3_x -> 56x56x64 -> 28x28x128
-  model.add(ResNetStage<Bottleneck>(64 * 4, 128, 4, 2));
-  // conv4_x -> 28x28x128 -> 14x14x256
-  model.add(ResNetStage<Bottleneck>(128 * 4, 256, 6, 2));
-  // conv5_x -> 14x14x256 -> 7x7x256
-  model.add(ResNetStage<Bottleneck>(256 * 4, 512, 3, 2));
-  // pool 7x7x64 ->
-  model.add(Pool2D(7, 7, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
-  model.add(View({512 * 4, -1, 1, 0}));
-  model.add(Linear(512 * 4, 1000, true));
-  model.add(View({1000, -1}));
-  model.add(LogSoftmax());
+  //model.add(Pool2D(3, 3, 2, 2, 1, 1, PoolingMode::MAX));
+  //// conv2_x -> 56x56x64 -> 56x56x64
+  //model.add(ResNetStage<Bottleneck>(64, 64, 3, 1));
+  //// conv3_x -> 56x56x64 -> 28x28x128
+  //model.add(ResNetStage<Bottleneck>(64 * 4, 128, 4, 2));
+  //// conv4_x -> 28x28x128 -> 14x14x256
+  //model.add(ResNetStage<Bottleneck>(128 * 4, 256, 6, 2));
+  //// conv5_x -> 14x14x256 -> 7x7x256
+  //model.add(ResNetStage<Bottleneck>(256 * 4, 512, 3, 2));
+  //// pool 7x7x64 ->
+  //model.add(Pool2D(7, 7, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
+  //model.add(View({512 * 4, -1, 1, 0}));
+  //model.add(Linear(512 * 4, 1000, true));
+  //model.add(View({1000, -1}));
+  //model.add(LogSoftmax());
   return model;
 }
 

@@ -75,7 +75,8 @@ Variable kaimingUniform(
     int input_size,
     int output_size,
     af::dtype type = f32,
-    bool calc_grad = true);
+    bool calc_grad = true,
+    bool fan_in = true);
 
 /**
  * Creates a `Variable` representing a tensor of up to rank 4 with arbitrary
@@ -93,7 +94,7 @@ Variable kaimingUniform(
  * accordingly.
  */
 Variable
-kaimingUniform(af::dim4 dims, af::dtype type = f32, bool calc_grad = true);
+kaimingUniform(af::dim4 dims, af::dtype type = f32, bool calc_grad = true, bool fan_in=true);
 
 /**
  * Creates a `Variable` representing a tensor with dimensions `[input_size,
@@ -115,7 +116,8 @@ Variable kaimingNormal(
     int input_size,
     int output_size,
     af::dtype type = f32,
-    bool calc_grad = true);
+    bool calc_grad = true,
+    bool fan_in = true);
 
 /**
  * Creates a `Variable` representing a tensor of up to rank 4 with arbitrary
@@ -133,7 +135,7 @@ Variable kaimingNormal(
  * accordingly.
  */
 Variable
-kaimingNormal(af::dim4 dims, af::dtype type = f32, bool calc_grad = true);
+kaimingNormal(af::dim4 dims, af::dtype type = f32, bool calc_grad = true, bool fan_in = true);
 
 /**
  * Creates a `Variable` representing a tensor with dimensions `[input_size,

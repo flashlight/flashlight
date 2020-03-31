@@ -41,9 +41,10 @@ Variable param(const af::array& arr) {
 Variable kaimingUniform(
     af::dim4 shape,
     int fanIn,
+    float gain,
     af::dtype type /* = af::dtype::f32 */,
     bool calcGrad /* = true */) {
-  double stdv = std::sqrt(1.0 / (double)fanIn);
+  double stdv = gain / std::sqrt((double)fanIn);
   double limit = std::sqrt(3.0) * stdv;
   return uniform(shape, -limit, limit, type, calcGrad);
 }
@@ -51,9 +52,10 @@ Variable kaimingUniform(
 Variable kaimingNormal(
     af::dim4 shape,
     int fanIn,
+    float gain,
     af::dtype type /* = af::dtype::f32 */,
     bool calcGrad /* = true */) {
-  double stdv = std::sqrt(1.0 / (double)fanIn);
+  double stdv = gain / std::sqrt((double)fanIn);
   return normal(shape, stdv, 0, type, calcGrad);
 }
 
