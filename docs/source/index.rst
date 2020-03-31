@@ -31,6 +31,7 @@ A C++ library for machine learning.
    optimization
    data_loading
    dist
+   memory
    meters
    serial
    common
