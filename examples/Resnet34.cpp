@@ -20,7 +20,7 @@
 #include "flashlight/nn/nn.h"
 #include "flashlight/optim/optim.h"
 
-#define DISTRIBUTED 0
+#define DISTRIBUTED 1
 
 using namespace fl;
 
@@ -117,7 +117,7 @@ int main(int argc, const char** argv) {
   /////////////////////////
   // Hyperparaters
   ////////////////////////
-  const int batch_size = 256;
+  const int batch_size = 128;
   const float learning_rate = 0.1f;
   const float momentum = 0.9f;
   const float weight_decay = 0.0000f;
@@ -305,7 +305,9 @@ int main(int argc, const char** argv) {
         std::vector<af::array*> metric_arrays = {
           &train_loss_arr, &top1_arr, &top5_arr, &samples_per_second_arr
         };
+#if DISTRIBUTED
         fl::allReduceMultiple(metric_arrays, false, false);
+#endif
         if (world_rank == 0) {
           std::cout << "Epoch " << e << std::setprecision(5) << " Batch: " << idx
                     << " Samples per second " << samples_per_second_arr.scalar<double>()

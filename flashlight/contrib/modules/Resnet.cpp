@@ -1,7 +1,8 @@
 #include "flashlight/contrib/modules/Resnet.h"
 
-#include "flashlight/nn/Init.h"
+#include <math.h>
 
+#include "flashlight/nn/Init.h"
 
 namespace fl {
 
@@ -11,7 +12,11 @@ Conv2D conv3x3(const int in_c, const int out_c, const int stride,
     const int groups) {
   const auto pad = PaddingMode::SAME;
   auto conv = Conv2D(in_c, out_c, 3, 3, stride, stride, pad, pad, 1, 1, false, groups);
-  conv.setParams(kaimingNormal(af::dim4(3, 3, in_c / groups, out_c)), 0);
+  const int fanOut = out_c * 3 * 3;
+  const float gain = std::sqrt(2.f);
+  conv.setParams(
+      kaimingNormal(af::dim4(3, 3, in_c / groups, out_c), fanOut, gain),
+  0);
   return conv;
 }
 
@@ -19,7 +24,11 @@ Conv2D conv1x1(const int in_c, const int out_c, const int stride,
     const int groups) {
   const auto pad = PaddingMode::SAME;
   auto conv = Conv2D(in_c, out_c, 1, 1, stride, stride, pad, pad, 1, 1, false, groups);
-  conv.setParams(kaimingNormal(af::dim4(1, 1, in_c / groups, out_c)), 0);
+  const int fanOut = out_c * 1 * 1;
+  const float gain = std::sqrt(2.f);
+  conv.setParams(
+      kaimingNormal(af::dim4(1, 1, in_c / groups, out_c), fanOut, gain),
+  0);
   return conv;
 }
 
@@ -47,22 +56,18 @@ ConvBnAct::ConvBnAct(
   const bool bias = !bn;
 
   auto conv1 = Conv2D(in_c, out_c, kw, kh, sx, sy, pad, pad, 1, 1, bias);
-  conv1.setParams(
-      kaimingNormal(af::dim4(kw, kw, in_c, out_c), f32,
-        true, 
-        false
-        ), 
-    0);
-  //add(conv1);
-  //if (bn) {
-    //auto bn = BatchNorm(2, out_c);
-    //bn.setParams(constant(1.0, out_c, af::dtype::f32, true), 0);
-    //bn.setParams(constant(0.0, out_c, af::dtype::f32, true), 1);
-    //add(bn);
-  //}   
-  //if (act) {
-    //add(std::make_shared<fl::ReLU>());
-  //}
+  const int fanOut = out_c * kw * kh;
+  const float gain = std::sqrt(2.f);
+  conv1.setParams(kaimingNormal(af::dim4(kw, kh, in_c, out_c), fanOut, gain), 0);
+  add(conv1); if (bn) {
+    auto bn = BatchNorm(2, out_c);
+    bn.setParams(constant(1.0, out_c, af::dtype::f32, true), 0);
+    bn.setParams(constant(0.0, out_c, af::dtype::f32, true), 1);
+    add(bn);
+  }   
+  if (act) {
+    add(std::make_shared<fl::ReLU>());
+  }
 }
 
 
@@ -117,7 +122,7 @@ Bottleneck::Bottleneck(const int in_c, const int width, const int stride) {
   add(std::make_shared<Conv2D>(conv1x1(in_c, width, 1, 1)));
   add(std::make_shared<BatchNorm>(batchNorm(width)));
   add(std::make_shared<ReLU>());
-  add(std::make_shared<Conv2D>(conv3x3(width, width, stride, width)));
+  add(std::make_shared<Conv2D>(conv3x3(width, width, stride, 1)));
   add(std::make_shared<BatchNorm>(batchNorm(width)));
   add(std::make_shared<ReLU>());
   add(std::make_shared<Conv2D>(conv1x1(width, width * 4, 1, 1)));
@@ -176,39 +181,34 @@ ResNetStage<Block>::ResNetStage(
 Sequential resnet50() {
   Sequential model;
   // conv1 -> 244x244x3 -> 112x112x64
-  auto conv1 = Conv2D(3, 64, 7, 7, 2, 2, -1, -1);
-  conv1.setParams(
-      kaimingNormal(af::dim4(7, 7, 3, 64), f32,
-        true, 
-        false
-        ), 
-  0);
-  af_print(conv1.param(0).row(0).array());
-  model.add(conv1);
-  //model.add(ConvBnAct(3, 64, 7, 7, 2, 2));
+  model.add(ConvBnAct(3, 64, 7, 7, 2, 2));
   // maxpool -> 112x122x64 -> 56x56x64
-  //model.add(Pool2D(3, 3, 2, 2, 1, 1, PoolingMode::MAX));
+  model.add(Pool2D(3, 3, 2, 2, 1, 1, PoolingMode::MAX));
   //// conv2_x -> 56x56x64 -> 56x56x64
-  //model.add(ResNetStage<Bottleneck>(64, 64, 3, 1));
+  model.add(ResNetStage<Bottleneck>(64, 64, 3, 1));
   //// conv3_x -> 56x56x64 -> 28x28x128
-  //model.add(ResNetStage<Bottleneck>(64 * 4, 128, 4, 2));
+  model.add(ResNetStage<Bottleneck>(64 * 4, 128, 4, 2));
   //// conv4_x -> 28x28x128 -> 14x14x256
-  //model.add(ResNetStage<Bottleneck>(128 * 4, 256, 6, 2));
+  model.add(ResNetStage<Bottleneck>(128 * 4, 256, 6, 2));
   //// conv5_x -> 14x14x256 -> 7x7x256
-  //model.add(ResNetStage<Bottleneck>(256 * 4, 512, 3, 2));
+  model.add(ResNetStage<Bottleneck>(256 * 4, 512, 3, 2));
   //// pool 7x7x64 ->
-  //model.add(Pool2D(7, 7, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
-  //model.add(View({512 * 4, -1, 1, 0}));
-  //model.add(Linear(512 * 4, 1000, true));
-  //model.add(View({1000, -1}));
-  //model.add(LogSoftmax());
+  model.add(Pool2D(7, 7, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
+  model.add(View({512 * 4, -1, 1, 0}));
+  auto linear = Linear(512 * 4, 1000, true);
+  const float alpha = 5.0f;
+  const float linearGain = std::sqrt(2.0 / (1 + alpha));
+  linear.setParams(
+      kaimingNormal(af::dim4(1000, 512*4), 512*4, linearGain), 0);
+  model.add(linear);
+  model.add(View({1000, -1}));
+  model.add(LogSoftmax());
   return model;
 }
 
 Sequential resnet34() {
   Sequential model;
   // conv1 -> 244x244x3 -> 112x112x64
-
   model.add(ConvBnAct(3, 64, 7, 7, 2, 2));
   
   // maxpool -> 112x122x64 -> 56x56x64
@@ -224,7 +224,12 @@ Sequential resnet34() {
   // pool 7x7x64 ->
   model.add(Pool2D(7, 7, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
   model.add(View({512, -1, 1, 0}));
-  model.add(Linear(512, 1000, true));
+  auto linear = Linear(512, 1000, true);
+  const float alpha = 5.0f;
+  const float linearGain = std::sqrt(2.0 / (1 + alpha));
+  linear.setParams(
+      kaimingNormal(af::dim4(1000, 512), 512, linearGain), 0);
+  model.add(linear);
   model.add(View({1000, -1}));
   model.add(LogSoftmax());
   return model;
