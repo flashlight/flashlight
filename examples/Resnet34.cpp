@@ -197,7 +197,7 @@ int main(int argc, const char** argv) {
   //////////////////////////
   //  Load model and optimizer
   /////////////////////////
-  auto model = std::make_shared<Sequential>(resnet50());
+  auto model = std::make_shared<Sequential>(resnet34());
   // synchronize parameters of tje model so that the parameters in each process
   // is the same
 
