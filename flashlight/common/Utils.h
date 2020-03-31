@@ -12,6 +12,16 @@
 
 #include <arrayfire.h>
 
+#define AF_CHECK(fn)                                                        \
+  do {                                                                      \
+    af_err __err = fn;                                                      \
+    if (__err == AF_SUCCESS) {                                              \
+      break;                                                                \
+    }                                                                       \
+    throw af::exception(                                                    \
+        "AF memory error", __PRETTY_FUNCTION__, __FILE__, __LINE__, __err); \
+  } while (0)
+
 namespace fl {
 
 /**

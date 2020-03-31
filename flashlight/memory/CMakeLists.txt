@@ -7,6 +7,9 @@ add_library(
 
 set(
   MEMORY_SOURCES
+  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/memory/MemoryManagerAdapter.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/memory/MemoryManagerInstaller.cpp
+  # Allocators
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/memory/allocator/MemoryAllocator.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/memory/allocator/freelist/FreeList.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/memory/allocator/memorypool/MemoryPool.cpp
@@ -14,14 +17,14 @@ set(
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/memory/allocator/ConfigurableMemoryAllocator.cpp
 )
 
-target_link_libraries(
-  Memory
-  INTERFACE
-  Common
-)
-
 target_sources(
   Memory
   INTERFACE
   $<BUILD_INTERFACE:${MEMORY_SOURCES}>
+)
+
+target_link_libraries(
+  Memory
+  INTERFACE
+  Common
 )
