@@ -104,6 +104,7 @@ int main(int argc, const char** argv) {
 
   int world_rank = argc > 2 ? atoi(argv[2]) : 0;
   int world_size = argc > 3 ? atoi(argv[3]) : 1;
+  int miniBatchSize = argc > 4 ? atoi(argv[4]) : 32;
   af::setDevice(world_rank);
   if (world_size > 1 && !DISTRIBUTED) {
     std::cout << "Not built for distributed!" << std::endl;
@@ -117,7 +118,8 @@ int main(int argc, const char** argv) {
   /////////////////////////
   // Hyperparaters
   ////////////////////////
-  const int batch_size = 256;
+  //const int batch_size = 256;
+  //const int miniBatchSize = 128;
   const float learning_rate = 0.1f;
   const float momentum = 0.9f;
   const float weight_decay = 0.0001f;
@@ -168,7 +170,8 @@ int main(int argc, const char** argv) {
       ImageDataset::centerCrop(224),
       ImageDataset::normalizeImage(mean, std)
   };
-  const uint64_t miniBatchSize = batch_size / world_size;
+  //const uint64_t miniBatchSize = batch_size / world_size;
+  const int batch_size = miniBatchSize * world_size;
   const int64_t prefetch_threads = 10;
   const int64_t prefetch_size = miniBatchSize * 2;
   auto test = std::make_shared<ImageDataset>(
