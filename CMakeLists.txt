@@ -263,6 +263,9 @@ include(${FLASHLIGHT_PROJECT_COMPONENT_SRC_DIR}/dataset/CMakeLists.txt)
 # Dataset
 include(${FLASHLIGHT_PROJECT_COMPONENT_SRC_DIR}/distributed/CMakeLists.txt)
 
+# Memory
+include(${FLASHLIGHT_PROJECT_COMPONENT_SRC_DIR}/memory/CMakeLists.txt)
+
 # Meter
 include(${FLASHLIGHT_PROJECT_COMPONENT_SRC_DIR}/meter/CMakeLists.txt)
 
