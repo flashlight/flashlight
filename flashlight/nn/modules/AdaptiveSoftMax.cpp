@@ -26,18 +26,19 @@ AdaptiveSoftMax::AdaptiveSoftMax(
 
   int outputSize = cutoff_[0] + cutoff_.size() - 1;
 
-  auto head = kaimingUniform(outputSize, inputSize);
-  params_.push_back(head);
+  // TODO add this back once initialization has landed
+  //auto head = kaimingUniform(outputSize, inputSize);
+  //params_.push_back(head);
 
-  int denominator = 1;
-  for (int i = 0; i < cutoff_.size() - 1; i++) {
-    denominator *= divValue_;
-    int hiddenSize = inputSize / denominator;
-    auto tail1 = kaimingUniform(hiddenSize, inputSize);
-    auto tail2 = kaimingUniform(cutoff_[i + 1] - cutoff_[i], hiddenSize);
-    params_.push_back(tail1);
-    params_.push_back(tail2);
-  }
+  //int denominator = 1;
+  //for (int i = 0; i < cutoff_.size() - 1; i++) {
+    //denominator *= divValue_;
+    //int hiddenSize = inputSize / denominator;
+    //auto tail1 = kaimingUniform(hiddenSize, inputSize);
+    //auto tail2 = kaimingUniform(cutoff_[i + 1] - cutoff_[i], hiddenSize);
+    //params_.push_back(tail1);
+    //params_.push_back(tail2);
+  //}
 }
 
 Variable AdaptiveSoftMax::getFullLogProb(
