@@ -384,7 +384,13 @@ Variable norm(const Variable& input, const std::vector<int>& axes);
 /**
  * Computes variance of the tensor `input` along dimensions specified in
  * descriptor `axes`. If `axes` has size greater than 1, reduce over all of
- * them.
+ * them. Uses population variance if `isbiased` is `true`, otherwise, uses
+ * sample variance.
+ *
+ * NB: the behavior of `fl::var` differs from that of `af::var`. In ArrayFire
+ * versions >= 3.7.0, if `isbiased` is `true` the variance computation uses
+ * sample variance; if `false`, population variance is used. For versions of
+ * ArrayFire before v3.7.0, the reverse is true.
  */
 Variable var(
     const Variable& input,

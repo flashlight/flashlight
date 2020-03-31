@@ -480,7 +480,14 @@ TEST(AutogradTest, Variance) {
   auto x = Variable(af::randu(5, 6, 7, 8, af::dtype::f64), true);
   std::vector<bool> biased = {true, false};
   for (auto b : biased) {
-    auto expected_var = var(x.array(), b, 1);
+    // Behavior of the bias parameter in af::var was changed in
+    // https://git.io/Jv5gF and is different in ArrayFire v3.7. If isbiased is
+    // true, sample variance rather than population variance is used. The
+    // flashlight API implements the opposite behavior to be consistent with
+    // other libraries.
+    bool afVarBiasArg = !b;
+
+    auto expected_var = af::var(x.array(), afVarBiasArg, 1);
     auto calculated_var = var(x, {1}, b);
     ASSERT_TRUE(allClose(calculated_var.array(), expected_var));
 
