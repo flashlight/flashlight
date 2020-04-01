@@ -20,7 +20,15 @@
 #include "flashlight/nn/nn.h"
 #include "flashlight/optim/optim.h"
 
-#define DISTRIBUTED 1
+#define DISTRIBUTED 0
+
+namespace {
+
+af::array zeros(const af::array& in) {
+  return af::constant(0.0, in.dims());
+}
+
+}
 
 using namespace fl;
 
@@ -33,14 +41,16 @@ class DistributedDataset : public Dataset {
       int64_t batch_size,
       int64_t num_threads,
       int64_t prefetch_size) {
-    shuffle_ = std::make_shared<ShuffleDataset>(base);
-    auto permfn = [world_size, world_rank](int64_t idx) {
-      return (idx * world_size) + world_rank;
+    ds_ = base;
+    //shuffle_ = std::make_shared<ShuffleDataset>(base);
+    auto permfn = [world_size, world_rank, &base](int64_t idx) {
+      return (idx * 1187) % base->size();
     };
-    ds_ = std::make_shared<ResampleDataset>(
-	shuffle_, permfn, shuffle_->size() / world_size);
-    ds_ = std::make_shared<PrefetchDataset>(ds_, num_threads, prefetch_size);
-    ds_ = std::make_shared<BatchDataset>(ds_, batch_size);
+    ds_ = std::make_shared<ResampleDataset>(ds_, permfn, 10);
+    //ds_ = std::make_shared<PrefetchDataset>(ds_, num_threads, prefetch_size);
+    if (batch_size > 1) {
+      ds_ = std::make_shared<BatchDataset>(ds_, batch_size);
+    }
   }
 
   std::vector<af::array> get(const int64_t idx) const override {
@@ -49,7 +59,11 @@ class DistributedDataset : public Dataset {
   }
 
   void resample() {
+    if (shuffle_) {
     shuffle_->resample();
+    } else {
+      std::cerr << " Dataset not build with shuffling!" << std::endl;
+}
   }
 
   int64_t size() const override {
@@ -123,7 +137,7 @@ int main(int argc, const char** argv) {
   const float learning_rate = 0.1f;
   const float momentum = 0.9f;
   const float weight_decay = 0.0001f;
-  const int epochs = 300;
+  const int epochs = 1;
 
   /////////////////////////
   // Setup distributed training
@@ -155,14 +169,21 @@ int main(int argc, const char** argv) {
   /////////////////////////
   const std::vector<float> mean = {0.485, 0.456, 0.406};
   const std::vector<float> std = {0.229, 0.224, 0.225};
+  //const std::vector<float> mean = {0.406, 0.456, 0.485};
+  //const std::vector<float> std = {0.225, 0.224, 0.229};
   auto labels = imagenetLabels(label_path);
   std::vector<Dataset::TransformFunction> train_transforms = {
       // randomly resize shortest side of image between 256 to 480 for scale
       // invariance
-      ImageDataset::randomResizeCropTransform(224, 0.08, 1.0, 3./.4, 4./3.),
-      // Randomly flip image with probability of 0.5
-      ImageDataset::horizontalFlipTransform(0.5),
-      ImageDataset::normalizeImage(mean, std)
+      //ImageDataset::randomResizeCropTransform(224, 0.08, 1.0, 3./.4, 4./3.),
+      //// Randomly flip image with probability of 0.5
+      //ImageDataset::horizontalFlipTransform(0.5),
+      //ImageDataset::normalizeImage(mean, std)
+      ImageDataset::resizeTransform(256),
+      ImageDataset::centerCrop(224),
+      [](const af::array& in) { return in.as(f32); },
+      zeros,
+      //ImageDataset::normalizeImage(mean, std)
   };
   std::vector<Dataset::TransformFunction> val_transforms = {
       // Resize shortest side to 256, then take a center crop
@@ -201,7 +222,8 @@ int main(int argc, const char** argv) {
   // synchronize parameters of tje model so that the parameters in each process
   // is the same
 
-  SGDOptimizer opt(model->params(), learning_rate, momentum, weight_decay);
+  //SGDOptimizer opt(model->params(), learning_rate, momentum, weight_decay);
+  SGDOptimizer opt(model->params(), 0.1);
 
   auto lrScheduler = [&opt, &learning_rate](int epoch) {
     // Adjust learning rate every 30 epoch
@@ -261,6 +283,7 @@ int main(int argc, const char** argv) {
   TopKMeter top5_meter(5, true);
   TopKMeter top1_meter(1, true);
   AverageValueMeter train_loss_meter;
+  model->eval();
   for (int e = (checkpointEpoch + 1); e < epochs; e++) {
     train_ds.resample();
     lrScheduler(e);
@@ -281,6 +304,7 @@ int main(int argc, const char** argv) {
 
       // Compute and record the loss.
       auto loss = categoricalCrossEntropy(output, target);
+      std::cout << " loss " << loss.array().scalar<float>() << std::endl;
 
       train_loss_meter.add(loss.array());
       top5_meter.add(output.array(), target.array());
@@ -295,7 +319,7 @@ int main(int argc, const char** argv) {
       opt.step();
 
       // Compute and record the prediction error.
-      if (++idx % 50 == 0) {
+      if (++idx % 1 == 0) {
         double train_loss = train_loss_meter.value()[0];
         double time = time_meter.value();
         double sample_per_second = ((idx * miniBatchSize) / time);
@@ -319,11 +343,11 @@ int main(int argc, const char** argv) {
                     << ": Train Top1 Error( %): " << top1_arr.scalar<double>() / world_size
                     << std::endl;
         }
-        top5_meter.reset();
-        top1_meter.reset();
-        train_loss_meter.reset();
       }
     }
+    top5_meter.reset();
+    top1_meter.reset();
+    train_loss_meter.reset();
     time_meter.reset();
     time_meter.stop();
 

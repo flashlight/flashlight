@@ -21,8 +21,10 @@ void TopKMeter::add(const af::array& output, const af::array& target) {
   const af::array correct = af::anyTrue(match, 0);
 
   uint64_t count = af::count<uint64_t>(correct);
-  sum_ += count;
-  n_ += target.dims(0);
+  const int batchsize = target.dims(0);
+  const float accuracy = static_cast<float>(count) * 100.f;
+  sum_ += accuracy;
+  n_ += batchsize;
 }
 
 void TopKMeter::reset() {
@@ -31,7 +33,7 @@ void TopKMeter::reset() {
 }
 
 double TopKMeter::value() {
-  double accuracy = (n_ > 0) ? (static_cast<double>(sum_ * 100.0) / n_) : 0.0;
+  double accuracy = (n_ > 0) ? (static_cast<double>(sum_) / n_) : 0.0;
   double val = (!accuracy_ ? (100.0 - accuracy) : accuracy);
   return val;
 }

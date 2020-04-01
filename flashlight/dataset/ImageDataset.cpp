@@ -31,6 +31,7 @@ public:
      : list_(list), loadfn_(loadfn) {}
 
  std::vector<af::array> get(const int64_t idx) const override {
+   std::cout << "Getting idx" << idx << std::endl;
    return {loadfn_(list_[idx])};
   }
 
@@ -74,6 +75,7 @@ af::array resizeSmallest(const af::array& in, const int resize) {
       th = resize;
       tw = (resize * w) / h;
     }
+    //return af::resize(in, tw, th, AF_INTERP_BICUBIC);
     return af::resize(in, tw, th, AF_INTERP_BILINEAR);
 }
 
@@ -124,6 +126,7 @@ af::array loadJpeg(const std::string& fp) {
     //return img2;
   //}
 #else
+  std::cout << "Filepath " << fp << std::endl;
 	int w, h, c;
   // STB image will automatically return desired_no_channels.
   // NB: c will be the original number of channels
@@ -272,6 +275,7 @@ Dataset::TransformFunction ImageDataset::normalizeImage(
     af::array out = in.as(f32) / 255.0f;
     out = af::batchFunc(out, mean, af::operator-);
     out = af::batchFunc(out, std, af::operator/);
+    //af_print(out(af::span, 0, 0))
     return out;
   };
 };

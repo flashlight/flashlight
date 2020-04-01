@@ -206,12 +206,50 @@ Sequential resnet50() {
   return model;
 }
 
+Variable readDump(const std::string fp, af::dim4 dims) {
+  const int size = dims.elements();
+  std::vector<float> vec(size);
+  std::ifstream infile;
+  infile.open(fp, std::ios::binary);
+  infile.read((char *) vec.data(), dims.elements() * sizeof(float));
+  infile.close();
+  auto a = af::array(dims, vec.data());
+  af_print(a);
+  return param(a);
+}
+
+Sequential resnet34() {
+  Sequential model;
+  // conv1 -> 244x244x3 -> 112x112x64
+  auto conv1 = Conv2D(3, 64, 7, 7, 2, 2, 3, 3, 1, 1, false, 1);
+  auto param = conv1.param(0);
+  conv1.setParams(
+      readDump("/private/home/padentomasello/tmp/pytorch_dump/conv1-0.bin", param.dims())
+        , 0);
+  model.add(conv1);
+  
+  // pool 7x7x64 ->
+  model.add(Pool2D(112, 112, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
+  model.add(View({64, -1, 1, 0}));
+  auto linear = Linear(64, 1000, true);
+  linear.setParams(readDump("/private/home/padentomasello/tmp/pytorch_dump/linear-0.bin", linear.param(0).dims()), 0);
+  linear.setParams(readDump("/private/home/padentomasello/tmp/pytorch_dump/linear-1.bin", linear.param(1).dims()), 1);
+  //const float alpha = 5.0f;
+  //const float linearGain = std::sqrt(2.0 / (1 + alpha));
+  //linear.setParams(
+      //kaimingNormal(af::dim4(1000, 64), 64, linearGain), 0);
+  model.add(linear);
+  model.add(View({1000, -1}));
+  model.add(LogSoftmax());
+  return model;
+};
+
+/*
 Sequential resnet34() {
   Sequential model;
   // conv1 -> 244x244x3 -> 112x112x64
   model.add(ConvBnAct(3, 64, 7, 7, 2, 2));
   
-  // maxpool -> 112x122x64 -> 56x56x64
   model.add(Pool2D(3, 3, 2, 2, 1, 1, PoolingMode::MAX));
   // conv2_x -> 56x56x64 -> 56x56x64
   model.add(ResNetStage<BasicBlock>(64, 64, 3, 1));
@@ -234,5 +272,6 @@ Sequential resnet34() {
   model.add(LogSoftmax());
   return model;
 };
+*/
 
 }; // namespace fl
