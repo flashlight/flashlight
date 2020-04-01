@@ -64,7 +64,7 @@ find_package(ArrayFire REQUIRED)
 if (ArrayFire_FOUND AND ArrayFire_VERSION VERSION_LESS 3.7.1)
   message(FATAL_ERROR "ArrayFire versions < 3.7.1 are no longer supported "
     "with flashlight. To build flashlight with a version of ArrayFire "
-    "< 3.7.1, use commit <= [FILL ME IN ONCE LANDED].")
+    "< 3.7.1, use commit <= 5518d91b7f4fd5b400cbc802cfbecc0df57836bd.")
 endif()
 
 if (ArrayFire_FOUND)
