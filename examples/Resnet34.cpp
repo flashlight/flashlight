@@ -180,19 +180,19 @@ int main(int argc, const char** argv) {
       //// Randomly flip image with probability of 0.5
       //ImageDataset::horizontalFlipTransform(0.5),
       //ImageDataset::normalizeImage(mean, std)
-      ImageDataset::resizeTransform(256),
-      ImageDataset::centerCrop(224),
-      [](const af::array& in) { return in.as(f32); },
-      [](const af::array& in) { return af::constant(1.0, in.dims()); },
+      ImageDataset::resizeTransform(224),
+      //ImageDataset::centerCrop(224),
+      [](const af::array& in) { return in.as(f32) / 255.f; },
+      [](const af::array& in) { return af::constant(0.0, in.dims()); },
       //zeros
       //ImageDataset::normalizeImage(mean, std)
   };
   std::vector<Dataset::TransformFunction> val_transforms = {
       // Resize shortest side to 256, then take a center crop
-      ImageDataset::resizeTransform(256),
-      ImageDataset::centerCrop(224),
-      [](const af::array& in) { return in.as(f32); },
-      [](const af::array& in) { return af::constant(1.0, in.dims()); },
+      ImageDataset::resizeTransform(224),
+      //ImageDataset::centerCrop(224),
+      [](const af::array& in) { return in.as(f32) / 255.f;},
+      [](const af::array& in) { return af::constant(0.0, in.dims()); },
       //zeros
       //ImageDataset::normalizeImage(mean, std)
   };

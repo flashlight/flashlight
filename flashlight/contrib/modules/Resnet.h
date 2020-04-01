@@ -45,7 +45,7 @@ class Bottleneck : public fl::Container {
 
 class BasicBlock : public fl::Container {
  private:
-   std::shared_ptr<ConvBnAct> downsample_;
+   std::shared_ptr<Sequential> downsample_;
    FL_SAVE_LOAD_WITH_BASE(fl::Container, downsample_)
  public:
   BasicBlock();

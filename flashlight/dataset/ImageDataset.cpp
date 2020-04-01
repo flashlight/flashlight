@@ -94,8 +94,8 @@ af::array crop(
 af::array centerCrop2(const af::array& in, const int size) {
     const int w = in.dims(0);
     const int h = in.dims(1);
-    const int cropLeft = (w - size) / 2;
-    const int cropTop = (h - size) / 2;
+    const int cropLeft = round((float(w) - size) / 2.);
+    const int cropTop = round((float(h) - size) / 2.);
     return crop(in, cropLeft, cropTop, size, size);
 }
 
@@ -128,7 +128,7 @@ af::array loadJpeg(const std::string& fp) {
 	int w, h, c;
   // STB image will automatically return desired_no_channels.
   // NB: c will be the original number of channels
-  //std::cout << " filepath " << fp << std::endl;
+  std::cout << " filepath " << fp << std::endl;
 	int desired_no_channels = 3;
 	unsigned char *img = stbi_load(fp.c_str(), &w, &h, &c, desired_no_channels);
 	if (img) {
@@ -180,6 +180,7 @@ int64_t ImageDataset::size() const {
 
 Dataset::TransformFunction ImageDataset::resizeTransform(const uint64_t resize) {
   return [resize](const af::array& in) {
+    return af::resize(in, resize, resize, AF_INTERP_BILINEAR);
     return resizeSmallest(in, resize);
   };
 }

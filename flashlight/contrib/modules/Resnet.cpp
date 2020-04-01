@@ -8,6 +8,38 @@ namespace fl {
 
 namespace {
 
+Variable readDump(const std::string name, const int modIdx, const int paramIdx, af::dim4 dims) {
+  static std::string pytorchDump = "/private/home/padentomasello/tmp/pytorch_dump/";
+  std::stringstream ss;
+  ss << pytorchDump << name << modIdx << "-" << paramIdx << ".bin";
+  const std::string fp = ss.str();
+  const int size = dims.elements();
+  std::ifstream infile(fp, std::ios::binary);
+  if(!infile) {
+      throw std::invalid_argument("Could not read from fp" + fp);
+  }
+  std::vector<float> vec(dims.elements());
+  infile.read((char*) vec.data(), dims.elements() * sizeof(float));
+  if(!infile) {
+    throw std::invalid_argument("Could not read from fp" + fp);
+  }
+  infile.close();
+  auto a = af::array(dims, vec.data());
+  return param(a);
+  //if (dims.ndims() == 2) {
+  //auto a = af::reorder(af::array(dims[1], dims[0], vec.data()), 1, 0);
+  ////af_print(a);
+  //return param(a);
+  //} else {
+  //auto a = af::array(dims, vec.data());
+  ////af_print(a(af::span, af::span, 0, 0));
+  //return param(a);
+  //}
+};
+
+static int moduleCounter = 0;
+static std::string pytorchDump = "/private/home/padentomasello/tmp/pytorch_dump/";
+
 Conv2D conv3x3(const int in_c, const int out_c, const int stride,
     const int groups) {
   const auto pad = PaddingMode::SAME;
@@ -15,8 +47,9 @@ Conv2D conv3x3(const int in_c, const int out_c, const int stride,
   const int fanOut = out_c * 3 * 3;
   const float gain = std::sqrt(2.f);
   conv.setParams(
-      kaimingNormal(af::dim4(3, 3, in_c / groups, out_c), fanOut, gain),
+      readDump("conv", moduleCounter, 0, conv.param(0).dims()),
   0);
+  moduleCounter++;
   return conv;
 }
 
@@ -26,16 +59,18 @@ Conv2D conv1x1(const int in_c, const int out_c, const int stride,
   auto conv = Conv2D(in_c, out_c, 1, 1, stride, stride, pad, pad, 1, 1, false, groups);
   const int fanOut = out_c * 1 * 1;
   const float gain = std::sqrt(2.f);
-  conv.setParams(
-      kaimingNormal(af::dim4(1, 1, in_c / groups, out_c), fanOut, gain),
-  0);
+  conv.setParams(readDump("conv", moduleCounter, 0, conv.param(0).dims()), 0);
+  //conv.setParams(
+      //kaimingNormal(af::dim4(1, 1, in_c / groups, out_c), fanOut, gain),
+  //0);
   return conv;
 }
 
 BatchNorm batchNorm(const int channels) {
     auto bn = BatchNorm(2, channels);
-    bn.setParams(constant(1.0, channels, af::dtype::f32, true), 0);
-    bn.setParams(constant(0.0, channels, af::dtype::f32, true), 1);
+    bn.setParams(readDump("bn" , moduleCounter, 0, bn.param(0).dims()), 0);
+    bn.setParams(readDump("bn" , moduleCounter, 1, bn.param(1).dims()), 0);
+    moduleCounter++;
     return bn;
 }
 
@@ -43,39 +78,42 @@ BatchNorm batchNorm(const int channels) {
 
 ConvBnAct::ConvBnAct() = default;
 
-ConvBnAct::ConvBnAct(
-    const int in_c,
-    const int out_c,
-    const int kw,
-    const int kh,
-    const int sx,
-    const int sy,
-    bool bn,
-    bool act) {
-  const auto pad = PaddingMode::SAME;
-  const bool bias = !bn;
+//ConvBnAct::ConvBnAct(
+    //const int in_c,
+    //const int out_c,
+    //const int kw,
+    //const int kh,
+    //const int sx,
+    //const int sy,
+    //bool bn,
+    //bool act) {
+  //const auto pad = PaddingMode::SAME;
+  //const bool bias = !bn;
 
-  auto conv1 = Conv2D(in_c, out_c, kw, kh, sx, sy, pad, pad, 1, 1, bias);
-  const int fanOut = out_c * kw * kh;
-  const float gain = std::sqrt(2.f);
-  conv1.setParams(kaimingNormal(af::dim4(kw, kh, in_c, out_c), fanOut, gain), 0);
-  add(conv1); if (bn) {
-    auto bn = BatchNorm(2, out_c);
-    bn.setParams(constant(1.0, out_c, af::dtype::f32, true), 0);
-    bn.setParams(constant(0.0, out_c, af::dtype::f32, true), 1);
-    add(bn);
-  }   
-  if (act) {
-    add(std::make_shared<fl::ReLU>());
-  }
-}
+  //auto conv1 = Conv2D(in_c, out_c, kw, kh, sx, sy, pad, pad, 1, 1, bias);
+  //const int fanOut = out_c * kw * kh;
+  //const float gain = std::sqrt(2.f);
+  //conv1.setParams(kaimingNormal(af::dim4(kw, kh, in_c, out_c), fanOut, gain), 0);
+  //add(conv1); if (bn) {
+    //auto bn = BatchNorm(2, out_c);
+    //bn.setParams(constant(1.0, out_c, af::dtype::f32, true), 0);
+    //bn.setParams(constant(0.0, out_c, af::dtype::f32, true), 1);
+    //add(bn);
+  //}   
+  //if (act) {
+    //add(std::make_shared<fl::ReLU>());
+  //}
+//}
 
 
 BasicBlock::BasicBlock() = default;
 
 BasicBlock::BasicBlock(const int in_c, const int out_c, const int stride) {
   if (in_c != out_c || stride == 2) {
-    downsample_ = std::make_shared<ConvBnAct>(in_c, out_c, 1, 1, stride, stride, true, false);
+    Sequential downsample;
+    downsample.add(conv1x1(in_c, out_c, stride, 1));
+    downsample.add(batchNorm(out_c));
+    downsample_ = std::make_shared<Sequential>(downsample);
   }
   add(std::make_shared<Conv2D>(conv3x3(in_c, out_c, stride, 1)));
   add(std::make_shared<BatchNorm>(batchNorm(out_c)));
@@ -117,7 +155,7 @@ Bottleneck::Bottleneck() = default;
 
 Bottleneck::Bottleneck(const int in_c, const int width, const int stride) {
   if (in_c != (width * 4) || stride == 2) {
-    downsample_ = std::make_shared<ConvBnAct>(in_c, width * 4, 1, 1, stride, stride, true, false);
+    //downsample_ = std::make_shared<ConvBnAct>(in_c, width * 4, 1, 1, stride, stride, true, false);
   }
   add(std::make_shared<Conv2D>(conv1x1(in_c, width, 1, 1)));
   add(std::make_shared<BatchNorm>(batchNorm(width)));
@@ -181,7 +219,7 @@ ResNetStage<Block>::ResNetStage(
 Sequential resnet50() {
   Sequential model;
   // conv1 -> 244x244x3 -> 112x112x64
-  model.add(ConvBnAct(3, 64, 7, 7, 2, 2));
+  //model.add(ConvBnAct(3, 64, 7, 7, 2, 2));
   // maxpool -> 112x122x64 -> 56x56x64
   model.add(Pool2D(3, 3, 2, 2, 1, 1, PoolingMode::MAX));
   //// conv2_x -> 56x56x64 -> 56x56x64
@@ -206,48 +244,44 @@ Sequential resnet50() {
   return model;
 }
 
-Variable readDump(const std::string fp, af::dim4 dims) {
-  const int size = dims.elements();
-  std::vector<float> vec(size);
-  std::ifstream infile;
-  infile.open(fp, std::ios::binary);
-  infile.read((char *) vec.data(), dims.elements() * sizeof(float));
-  infile.close();
-  if (dims.ndims() == 2) {
-  auto a = af::reorder(af::array(dims[1], dims[0], vec.data()), 1, 0);
-  //af_print(a);
-  return param(a);
-  } else {
-  auto a = af::array(dims, vec.data());
-  //af_print(a(af::span, af::span, 0, 0));
-  return param(a);
-
-}
-}
-
 Sequential resnet34() {
   Sequential model;
+
+
   // conv1 -> 244x244x3 -> 112x112x64
   auto conv1 = Conv2D(3, 64, 7, 7, 2, 2, 3, 3, 1, 1, false, 1);
   auto param = conv1.param(0);
-  conv1.setParams(
-      readDump("/private/home/padentomasello/tmp/pytorch_dump/conv1-0.bin", param.dims())
-        , 0);
+  conv1.setParams(readDump("conv", moduleCounter, 0, param.dims()) , 0);
+  moduleCounter++;
   model.add(conv1);
+  //model.add(batchNorm(64));
+  //model.add(ReLU());
   
   // pool 7x7x64 ->
   model.add(Pool2D(112, 112, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
+  //model.add(ResNetStage<BasicBlock>(64, 64, 3, 1));
+
+
+
+
+
   model.add(View({64, -1, 1, 0}));
   auto linear = Linear(64, 1000, true);
-  linear.setParams(readDump("/private/home/padentomasello/tmp/pytorch_dump/linear-0.bin", linear.param(0).dims()), 0);
-  linear.setParams(readDump("/private/home/padentomasello/tmp/pytorch_dump/linear-1.bin", linear.param(1).dims()), 1);
+  linear.setParams(readDump("fc", moduleCounter, 0, linear.param(0).dims()), 0);
+  linear.setParams(readDump("fc", moduleCounter, 1, linear.param(1).dims()), 1);
+  //linear.setParams(readDump("/private/home/padentomasello/tmp/pytorch_dump/fc" + str(moduleCounter) + "1.bin", linear.param(1).dims()), 1);
+  //linear.setParams(readDump("/private/home/padentomasello/tmp/pytorch_dump/linear-1.bin", linear.param(1).dims()), 1);
   //const float alpha = 5.0f;
   //const float linearGain = std::sqrt(2.0 / (1 + alpha));
-  //linear.setParams(
-      //kaimingNormal(af::dim4(1000, 64), 64, linearGain), 0);
+  //linear.setParams( //kaimingNormal(af::dim4(1000, 64), 64, linearGain), 0);
   model.add(linear);
   model.add(View({1000, -1}));
   model.add(LogSoftmax());
+  int i = 0;
+  for(auto module : model.modules()) {
+    std::cout << module->prettyString() << std::endl;
+    std::cout << ++i << std::endl;
+  }
   return model;
 };
 
