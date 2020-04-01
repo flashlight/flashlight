@@ -31,7 +31,6 @@ public:
      : list_(list), loadfn_(loadfn) {}
 
  std::vector<af::array> get(const int64_t idx) const override {
-   std::cout << "Getting idx" << idx << std::endl;
    return {loadfn_(list_[idx])};
   }
 
@@ -126,10 +125,10 @@ af::array loadJpeg(const std::string& fp) {
     //return img2;
   //}
 #else
-  std::cout << "Filepath " << fp << std::endl;
 	int w, h, c;
   // STB image will automatically return desired_no_channels.
   // NB: c will be the original number of channels
+  //std::cout << " filepath " << fp << std::endl;
 	int desired_no_channels = 3;
 	unsigned char *img = stbi_load(fp.c_str(), &w, &h, &c, desired_no_channels);
 	if (img) {

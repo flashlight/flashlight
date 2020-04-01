@@ -93,6 +93,7 @@ std::tuple<double, double, double> eval_loop(
 
     // Compute and record the loss.
     auto loss = categoricalCrossEntropy(output, target);
+    //std::cout << " loss " << std::endl;
     loss_meter.add(loss.array().scalar<float>());
     top5_meter.add(output.array(), target.array());
     top1_meter.add(output.array(), target.array());
@@ -137,7 +138,7 @@ int main(int argc, const char** argv) {
   const float learning_rate = 0.1f;
   const float momentum = 0.9f;
   const float weight_decay = 0.0001f;
-  const int epochs = 1;
+  const int epochs = 2;
 
   /////////////////////////
   // Setup distributed training
@@ -182,14 +183,18 @@ int main(int argc, const char** argv) {
       ImageDataset::resizeTransform(256),
       ImageDataset::centerCrop(224),
       [](const af::array& in) { return in.as(f32); },
-      zeros,
+      [](const af::array& in) { return af::constant(1.0, in.dims()); },
+      //zeros
       //ImageDataset::normalizeImage(mean, std)
   };
   std::vector<Dataset::TransformFunction> val_transforms = {
       // Resize shortest side to 256, then take a center crop
       ImageDataset::resizeTransform(256),
       ImageDataset::centerCrop(224),
-      ImageDataset::normalizeImage(mean, std)
+      [](const af::array& in) { return in.as(f32); },
+      [](const af::array& in) { return af::constant(1.0, in.dims()); },
+      //zeros
+      //ImageDataset::normalizeImage(mean, std)
   };
   //const uint64_t miniBatchSize = batch_size / world_size;
   const int batch_size = miniBatchSize * world_size;
@@ -283,7 +288,6 @@ int main(int argc, const char** argv) {
   TopKMeter top5_meter(5, true);
   TopKMeter top1_meter(1, true);
   AverageValueMeter train_loss_meter;
-  model->eval();
   for (int e = (checkpointEpoch + 1); e < epochs; e++) {
     train_ds.resample();
     lrScheduler(e);
