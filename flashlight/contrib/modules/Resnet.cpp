@@ -215,11 +215,11 @@ Variable readDump(const std::string fp, af::dim4 dims) {
   infile.close();
   if (dims.ndims() == 2) {
   auto a = af::reorder(af::array(dims[1], dims[0], vec.data()), 1, 0);
-  af_print(a);
+  //af_print(a);
   return param(a);
   } else {
   auto a = af::array(dims, vec.data());
-  af_print(a);
+  //af_print(a(af::span, af::span, 0, 0));
   return param(a);
 
 }

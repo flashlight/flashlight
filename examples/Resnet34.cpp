@@ -289,6 +289,7 @@ int main(int argc, const char** argv) {
   TopKMeter top1_meter(1, true);
   AverageValueMeter train_loss_meter;
   for (int e = (checkpointEpoch + 1); e < epochs; e++) {
+    //model->eval();
     train_ds.resample();
     lrScheduler(e);
 
