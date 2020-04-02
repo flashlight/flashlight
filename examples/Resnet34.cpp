@@ -230,8 +230,8 @@ int main(int argc, const char** argv) {
   // synchronize parameters of tje model so that the parameters in each process
   // is the same
 
-  //SGDOptimizer opt(model->params(), learning_rate, momentum, weight_decay);
-  SGDOptimizer opt(model->params(), 0.1);
+  SGDOptimizer opt(model->params(), learning_rate, momentum, weight_decay);
+  //SGDOptimizer opt(model->params(), 0.1);
 
   auto lrScheduler = [&opt, &learning_rate](int epoch) {
     // Adjust learning rate every 30 epoch

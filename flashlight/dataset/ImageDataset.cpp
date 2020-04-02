@@ -3,6 +3,7 @@
 #include <random>
 #include <iomanip>
 #include <fstream>
+#include <numeric>
 
 #include <cudnn.h>
 #include <arrayfire.h>
@@ -166,6 +167,24 @@ af::array loadNpArray(const uint64_t x) {
   return af::array(af::dim4(224, 224, 3), vec.data());
 }
 
+af::array loadNpLabel(const uint64_t x) {
+  std::string pytorchDump = "/private/home/padentomasello/tmp/pytorch_dump/label";
+  std::stringstream ss;
+  ss << pytorchDump << x << ".bin";
+  const std::string fp = ss.str();
+  std::ifstream infile(fp, std::ios::binary);
+  if(!infile) {
+      throw std::invalid_argument("Could not read from fp" + fp);
+  }
+  std::vector<uint64_t> vec(1);
+  infile.read((char*) vec.data(), vec.size() * sizeof(uint64_t));
+  if(!infile) {
+    throw std::invalid_argument("Could not read from fp" + fp);
+  }
+  infile.close(); 
+  return af::constant(vec[0], 1, 1, 1, 1, u64);
+}
+
 }
 
 namespace fl {
@@ -178,14 +197,16 @@ ImageDataset::ImageDataset(
 
   // Create image loader and apply transforms
   //auto images = std::make_shared<Loader<std::string>>(filepaths, loadJpeg);
-  auto images = std::make_shared<Loader<int>>(std::vector<int>{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, loadNpArray);
+  std::vector<int> indices(100);
+  std::iota(indices.begin(), indices.end(), 0);
+  auto images = std::make_shared<Loader<int>>(indices, loadNpArray);
   // TransformDataset will apply each transform in a vector to the respective af::array
   // Thus, we need to `compose` all of the transforms so are each aplied
   //std::vector<TransformFunction> transforms = { compose(transformfns) };
   //auto transformed = std::make_shared<TransformDataset>(images, transforms);
 
   // Create label loader
-  auto targets = std::make_shared<Loader<uint64_t>>(std::vector<uint64_t>{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, loadLabel);
+  auto targets = std::make_shared<Loader<int>>(indices, loadNpLabel);
 
   // Merge image and labels
   ds_ = std::make_shared<MergeDataset>(MergeDataset({images, targets}));
