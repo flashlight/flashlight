@@ -104,18 +104,18 @@ ConvBnAct::ConvBnAct() = default;
 BasicBlock::BasicBlock() = default;
 
 BasicBlock::BasicBlock(const int in_c, const int out_c, const int stride) {
-  if (in_c != out_c || stride == 2) {
-    Sequential downsample;
-    downsample.add(conv1x1(in_c, out_c, stride, 1));
-    downsample.add(batchNorm(out_c));
-    downsample_ = std::make_shared<Sequential>(downsample);
-  }
   add(std::make_shared<Conv2D>(conv3x3(in_c, out_c, stride, 1)));
   add(std::make_shared<BatchNorm>(batchNorm(out_c)));
   add(std::make_shared<ReLU>());
   add(std::make_shared<Conv2D>(conv3x3(out_c, out_c, 1, 1)));
   add(std::make_shared<BatchNorm>(batchNorm(out_c)));
   add(std::make_shared<ReLU>());
+  if (in_c != out_c || stride == 2) {
+    Sequential downsample;
+    downsample.add(conv1x1(in_c, out_c, stride, 1));
+    downsample.add(batchNorm(out_c));
+    downsample_ = std::make_shared<Sequential>(downsample);
+  }
 }
 
 std::vector<fl::Variable> BasicBlock::forward(
@@ -252,13 +252,19 @@ Sequential resnet34() {
   model.add(batchNorm(64));
   model.add(ReLU());
   model.add(Pool2D(3, 3, 2, 2, 1, 1, PoolingMode::MAX));
-  model.add(ResNetStage<BasicBlock>(64, 64, 1, 1));
-  // pool 7x7x64 ->
-  //
-  model.add(Pool2D(56, 56, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
+
+  model.add(ResNetStage<BasicBlock>(64, 64, 3, 1));
+
+  model.add(ResNetStage<BasicBlock>(64, 128, 4, 2));
+  // conv4_x -> 28x28x128 -> 14x14x256
+  model.add(ResNetStage<BasicBlock>(128, 256, 6, 2));
+  // conv5_x -> 14x14x256 -> 7x7x256
+  model.add(ResNetStage<BasicBlock>(256, 512, 3, 2));
+
+  model.add(Pool2D(7, 7, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
   //model.add(Pool2D(56, 56, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
-  model.add(View({64, -1, 1, 0}));
-  auto linear = Linear(64, 1000, true);
+  model.add(View({512, -1, 1, 0}));
+  auto linear = Linear(512, 1000, true);
   linear.setParams(readDump("fc", moduleCounter, 0, linear.param(0).dims()), 0);
   linear.setParams(readDump("fc", moduleCounter, 1, linear.param(1).dims()), 1);
   //linear.setParams(readDump("/private/home/padentomasello/tmp/pytorch_dump/fc" + str(moduleCounter) + "1.bin", linear.param(1).dims()), 1);
