@@ -291,7 +291,6 @@ int main(int argc, const char** argv) {
   TopKMeter top5_meter(5, true);
   TopKMeter top1_meter(1, true);
   AverageValueMeter train_loss_meter;
-  model->eval();
   for (int e = (checkpointEpoch + 1); e < epochs; e++) {
     train_ds.resample();
     lrScheduler(e);
@@ -324,7 +323,7 @@ int main(int argc, const char** argv) {
 #if DISTRIBUTED
       reducer->finalize();
 #endif
-      //opt.step();
+      opt.step();
 
       // Compute and record the prediction error.
       if (++idx % 1 == 0) {
