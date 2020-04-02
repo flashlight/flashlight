@@ -14,6 +14,7 @@ Variable readDump(const std::string name, const int modIdx, const int paramIdx, 
   ss << pytorchDump << name << modIdx << "-" << paramIdx << ".bin";
   const std::string fp = ss.str();
   const int size = dims.elements();
+  std::cout << "Reading from " << fp << std::endl;;
   std::ifstream infile(fp, std::ios::binary);
   if(!infile) {
       throw std::invalid_argument("Could not read from fp" + fp);
@@ -25,16 +26,13 @@ Variable readDump(const std::string name, const int modIdx, const int paramIdx, 
   }
   infile.close();
   auto a = af::array(dims, vec.data());
+  if (dims.ndims() > 2) {
+    af_print(a(af::span, af::span, 0, 0));
+  }
+  if(dims.ndims() == 2) {
+    af_print(a(af::span, 0))
+  }
   return param(a);
-  //if (dims.ndims() == 2) {
-  //auto a = af::reorder(af::array(dims[1], dims[0], vec.data()), 1, 0);
-  ////af_print(a);
-  //return param(a);
-  //} else {
-  //auto a = af::array(dims, vec.data());
-  ////af_print(a(af::span, af::span, 0, 0));
-  //return param(a);
-  //}
 };
 
 static int moduleCounter = 0;
@@ -44,8 +42,6 @@ Conv2D conv3x3(const int in_c, const int out_c, const int stride,
     const int groups) {
   const auto pad = PaddingMode::SAME;
   auto conv = Conv2D(in_c, out_c, 3, 3, stride, stride, pad, pad, 1, 1, false, groups);
-  const int fanOut = out_c * 3 * 3;
-  const float gain = std::sqrt(2.f);
   conv.setParams(
       readDump("conv", moduleCounter, 0, conv.param(0).dims()),
   0);
@@ -57,9 +53,8 @@ Conv2D conv1x1(const int in_c, const int out_c, const int stride,
     const int groups) {
   const auto pad = PaddingMode::SAME;
   auto conv = Conv2D(in_c, out_c, 1, 1, stride, stride, pad, pad, 1, 1, false, groups);
-  const int fanOut = out_c * 1 * 1;
-  const float gain = std::sqrt(2.f);
   conv.setParams(readDump("conv", moduleCounter, 0, conv.param(0).dims()), 0);
+  moduleCounter++;
   //conv.setParams(
       //kaimingNormal(af::dim4(1, 1, in_c / groups, out_c), fanOut, gain),
   //0);
@@ -69,7 +64,7 @@ Conv2D conv1x1(const int in_c, const int out_c, const int stride,
 BatchNorm batchNorm(const int channels) {
     auto bn = BatchNorm(2, channels);
     bn.setParams(readDump("bn" , moduleCounter, 0, bn.param(0).dims()), 0);
-    bn.setParams(readDump("bn" , moduleCounter, 1, bn.param(1).dims()), 0);
+    bn.setParams(readDump("bn" , moduleCounter, 1, bn.param(1).dims()), 1);
     moduleCounter++;
     return bn;
 }
@@ -258,13 +253,8 @@ Sequential resnet34() {
   //model.add(ReLU());
   
   // pool 7x7x64 ->
+  //
   model.add(Pool2D(112, 112, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
-  //model.add(ResNetStage<BasicBlock>(64, 64, 3, 1));
-
-
-
-
-
   model.add(View({64, -1, 1, 0}));
   auto linear = Linear(64, 1000, true);
   linear.setParams(readDump("fc", moduleCounter, 0, linear.param(0).dims()), 0);

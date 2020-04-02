@@ -46,7 +46,7 @@ class DistributedDataset : public Dataset {
     auto permfn = [world_size, world_rank, &base](int64_t idx) {
       return (idx * 1187) % base->size();
     };
-    ds_ = std::make_shared<ResampleDataset>(ds_, permfn, 10);
+    //ds_ = std::make_shared<ResampleDataset>(ds_, permfn, 10);
     //ds_ = std::make_shared<PrefetchDataset>(ds_, num_threads, prefetch_size);
     if (batch_size > 1) {
       ds_ = std::make_shared<BatchDataset>(ds_, batch_size);
@@ -173,6 +173,7 @@ int main(int argc, const char** argv) {
   //const std::vector<float> mean = {0.406, 0.456, 0.485};
   //const std::vector<float> std = {0.225, 0.224, 0.229};
   auto labels = imagenetLabels(label_path);
+  auto toTensor = [](const af::array& in) { return in / 255.f; };
   std::vector<Dataset::TransformFunction> train_transforms = {
       // randomly resize shortest side of image between 256 to 480 for scale
       // invariance
@@ -180,19 +181,21 @@ int main(int argc, const char** argv) {
       //// Randomly flip image with probability of 0.5
       //ImageDataset::horizontalFlipTransform(0.5),
       //ImageDataset::normalizeImage(mean, std)
-      ImageDataset::resizeTransform(224),
-      //ImageDataset::centerCrop(224),
-      [](const af::array& in) { return in.as(f32) / 255.f; },
-      [](const af::array& in) { return af::constant(0.0, in.dims()); },
+      //ImageDataset::resizeTransform(224),
+      ImageDataset::centerCrop(224),
+      toTensor,
+      //[](const af::array& in) { return in.as(f32) / 255.f; },
+      //[](const af::array& in) { return in.as(f32) / 255.f; },
+      //[](const af::array& in) { return af::constant(0.01, in.dims()); },
       //zeros
       //ImageDataset::normalizeImage(mean, std)
   };
   std::vector<Dataset::TransformFunction> val_transforms = {
       // Resize shortest side to 256, then take a center crop
-      ImageDataset::resizeTransform(224),
-      //ImageDataset::centerCrop(224),
-      [](const af::array& in) { return in.as(f32) / 255.f;},
-      [](const af::array& in) { return af::constant(0.0, in.dims()); },
+      ImageDataset::centerCrop(224),
+      toTensor,
+      //[](const af::array& in) { return in.as(f32) / 255.f;},
+      //[](const af::array& in) { return af::constant(0.01, in.dims()); },
       //zeros
       //ImageDataset::normalizeImage(mean, std)
   };
@@ -288,8 +291,8 @@ int main(int argc, const char** argv) {
   TopKMeter top5_meter(5, true);
   TopKMeter top1_meter(1, true);
   AverageValueMeter train_loss_meter;
+  model->eval();
   for (int e = (checkpointEpoch + 1); e < epochs; e++) {
-    //model->eval();
     train_ds.resample();
     lrScheduler(e);
 
@@ -321,7 +324,7 @@ int main(int argc, const char** argv) {
 #if DISTRIBUTED
       reducer->finalize();
 #endif
-      opt.step();
+      //opt.step();
 
       // Compute and record the prediction error.
       if (++idx % 1 == 0) {

@@ -1,6 +1,8 @@
 #include <thread>
 #include <chrono>
 #include <random>
+#include <iomanip>
+#include <fstream>
 
 #include <cudnn.h>
 #include <arrayfire.h>
@@ -128,13 +130,14 @@ af::array loadJpeg(const std::string& fp) {
 	int w, h, c;
   // STB image will automatically return desired_no_channels.
   // NB: c will be the original number of channels
-  std::cout << " filepath " << fp << std::endl;
+  //std::cout << " filepath " << fp << std::endl;
 	int desired_no_channels = 3;
 	unsigned char *img = stbi_load(fp.c_str(), &w, &h, &c, desired_no_channels);
 	if (img) {
 		af::array result = af::array(desired_no_channels, w, h, img);
 		stbi_image_free(img);
-    return af::reorder(result, 1, 2, 0);
+    return af::reorder(result, 2, 1, 0);
+    //return result;
 	} else {
     throw std::invalid_argument("Could not load from filepath" + fp);
 	}
@@ -142,7 +145,25 @@ af::array loadJpeg(const std::string& fp) {
 }
 
 af::array loadLabel(const uint64_t x) {
-  return af::constant(x, 1, 1, 1, 1, u64);
+  return af::constant(0.0, 1, 1, 1, 1, f32);
+}
+
+af::array loadNpArray(const uint64_t x) {
+  std::string pytorchDump = "/private/home/padentomasello/tmp/pytorch_dump/image";
+  std::stringstream ss;
+  ss << pytorchDump << x << ".bin";
+  const std::string fp = ss.str();
+  std::ifstream infile(fp, std::ios::binary);
+  if(!infile) {
+      throw std::invalid_argument("Could not read from fp" + fp);
+  }
+  std::vector<float> vec(224 * 224 *3);
+  infile.read((char*) vec.data(), vec.size() * sizeof(float));
+  if(!infile) {
+    throw std::invalid_argument("Could not read from fp" + fp);
+  }
+  infile.close();
+  return af::array(af::dim4(224, 224, 3), vec.data());
 }
 
 }
@@ -156,17 +177,18 @@ ImageDataset::ImageDataset(
  ) {
 
   // Create image loader and apply transforms
-  auto images = std::make_shared<Loader<std::string>>(filepaths, loadJpeg);
+  //auto images = std::make_shared<Loader<std::string>>(filepaths, loadJpeg);
+  auto images = std::make_shared<Loader<int>>(std::vector<int>{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, loadNpArray);
   // TransformDataset will apply each transform in a vector to the respective af::array
   // Thus, we need to `compose` all of the transforms so are each aplied
-  std::vector<TransformFunction> transforms = { compose(transformfns) };
-  auto transformed = std::make_shared<TransformDataset>(images, transforms);
+  //std::vector<TransformFunction> transforms = { compose(transformfns) };
+  //auto transformed = std::make_shared<TransformDataset>(images, transforms);
 
   // Create label loader
-  auto targets = std::make_shared<Loader<uint64_t>>(labels, loadLabel);
+  auto targets = std::make_shared<Loader<uint64_t>>(std::vector<uint64_t>{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, loadLabel);
 
   // Merge image and labels
-  ds_ = std::make_shared<MergeDataset>(MergeDataset({transformed, targets}));
+  ds_ = std::make_shared<MergeDataset>(MergeDataset({images, targets}));
 }
 
 std::vector<af::array> ImageDataset::get(const int64_t idx) const {
@@ -272,7 +294,7 @@ Dataset::TransformFunction ImageDataset::normalizeImage(
   const af::array mean(1, 1, 3, 1, meanVector.data());
   const af::array std(1, 1, 3, 1, stdVector.data());
   return [mean, std](const af::array& in) {
-    af::array out = in.as(f32) / 255.0f;
+    af::array out = in.as(f32);
     out = af::batchFunc(out, mean, af::operator-);
     out = af::batchFunc(out, std, af::operator/);
     //af_print(out(af::span, 0, 0))
