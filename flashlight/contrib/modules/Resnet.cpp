@@ -252,7 +252,7 @@ Sequential resnet34() {
   model.add(batchNorm(64));
   model.add(ReLU());
   model.add(Pool2D(3, 3, 2, 2, 1, 1, PoolingMode::MAX));
-  //model.add(ResNetStage<BasicBlock>(64, 64, 3, 1));
+  model.add(ResNetStage<BasicBlock>(64, 64, 1, 1));
   // pool 7x7x64 ->
   //
   model.add(Pool2D(56, 56, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
