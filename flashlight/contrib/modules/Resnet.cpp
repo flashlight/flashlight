@@ -249,12 +249,14 @@ Sequential resnet34() {
   conv1.setParams(readDump("conv", moduleCounter, 0, param.dims()) , 0);
   moduleCounter++;
   model.add(conv1);
-  //model.add(batchNorm(64));
-  //model.add(ReLU());
-  
+  model.add(batchNorm(64));
+  model.add(ReLU());
+  //model.add(Pool2D(3, 3, 2, 2, 1, 1, PoolingMode::MAX));
+  //model.add(ResNetStage<BasicBlock>(64, 64, 3, 1));
   // pool 7x7x64 ->
   //
   model.add(Pool2D(112, 112, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
+  //model.add(Pool2D(56, 56, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
   model.add(View({64, -1, 1, 0}));
   auto linear = Linear(64, 1000, true);
   linear.setParams(readDump("fc", moduleCounter, 0, linear.param(0).dims()), 0);
