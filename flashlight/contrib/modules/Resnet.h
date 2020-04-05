@@ -59,9 +59,9 @@ class BasicBlock : public fl::Container {
 
   std::string prettyString() const override;
 
-  void eval() override;
+  //void eval() override;
 
-  void train() override;
+  //void train() override;
 
   int static expansion() {
     return 1;

@@ -94,7 +94,7 @@ BasicBlock::BasicBlock(const int in_c, const int out_c, const int stride) {
     Sequential downsample;
     downsample.add(conv1x1(in_c, out_c, stride, 1));
     downsample.add(batchNorm(out_c));
-    downsample_ = std::make_shared<Sequential>(downsample);
+    add(downsample);
   }
 }
 
@@ -121,27 +121,27 @@ std::vector<fl::Variable> BasicBlock::forward(
   //return relu2->forward({out[0]});
 
   std::vector<fl::Variable> shortcut;
-  if (downsample_) {
-    shortcut = downsample_->forward(inputs);
+  if (modules().size() > 6) {
+    shortcut = module(6)->forward(inputs);
   } else {
     shortcut = inputs;
   }
   return relu2->forward({out[0] + shortcut[0]});
 }
 
-void BasicBlock::train() {
-  Container::train();
-  if (downsample_) {
-    downsample_->train();
-  }
-}
+//void BasicBlock::train() {
+  //Container::train();
+  //if (downsample_) {
+    //downsample_->train();
+  //}
+//}
 
-void BasicBlock::eval() {
-  Container::eval();
-  if (downsample_) {
-    downsample_->eval();
-  }
-}
+//void BasicBlock::eval() {
+  //Container::eval();
+  //if (downsample_) {
+    //downsample_->eval();
+  //}
+//}
 
 std::string BasicBlock::prettyString() const {
   return "2-Layer BasicBlock Conv3x3";
