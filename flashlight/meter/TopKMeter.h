@@ -37,7 +37,7 @@ class TopKMeter {
 
  private:
   int k_;
-  float sum_;
+  double sum_;
   int64_t n_;
   bool accuracy_;
 };

@@ -146,13 +146,13 @@ af::array loadJpeg(const std::string& fp) {
 }
 
 af::array loadLabel(const uint64_t x) {
-  return af::constant(0.0, 1, 1, 1, 1, f32);
+  return af::constant(x, 1, 1, 1, 1, u64);
 }
 
-af::array loadNpArray(const uint64_t x) {
-  std::string pytorchDump = "/private/home/padentomasello/tmp/pytorch_dump/image";
+af::array loadNpArray(const uint64_t x, const std::string pytorchDump) {
+  //std::string pytorchDump = "/private/home/padentomasello/tmp/pytorch_dump/save2/image";
   std::stringstream ss;
-  ss << pytorchDump << x << ".bin";
+  ss << pytorchDump << "image" << x << ".bin";
   const std::string fp = ss.str();
   std::ifstream infile(fp, std::ios::binary);
   if(!infile) {
@@ -167,27 +167,46 @@ af::array loadNpArray(const uint64_t x) {
   return af::array(af::dim4(224, 224, 3), vec.data());
 }
 
-af::array loadNpLabel(const uint64_t x) {
-  std::string pytorchDump = "/private/home/padentomasello/tmp/pytorch_dump/label";
+af::array loadNpLabel(const uint64_t x, const std::string pytorchDump) {
+  //std::string pytorchDump = "/private/home/padentomasello/tmp/pytorch_dump/save2/label";
   std::stringstream ss;
-  ss << pytorchDump << x << ".bin";
+  ss << pytorchDump << "label" << x << ".bin";
   const std::string fp = ss.str();
   std::ifstream infile(fp, std::ios::binary);
   if(!infile) {
       throw std::invalid_argument("Could not read from fp" + fp);
   }
-  std::vector<uint64_t> vec(1);
-  infile.read((char*) vec.data(), vec.size() * sizeof(uint64_t));
+  std::vector<int64_t> vec(1);
+  infile.read((char*) vec.data(), vec.size() * sizeof(int64_t));
   if(!infile) {
     throw std::invalid_argument("Could not read from fp" + fp);
   }
   infile.close(); 
-  return af::constant(vec[0], 1, 1, 1, 1, u64);
+  return af::constant(vec[0], 1, 1, 1, 1, s64);
 }
 
 }
 
 namespace fl {
+
+NumpyDataset::NumpyDataset(int n, const std::string fp) : n_(n) {
+  std::vector<int> indices(n_);
+  std::iota(indices.begin(), indices.end(), 0);
+  auto targets = std::make_shared<Loader<int>>(indices, [fp](const uint64_t x) {
+      return loadNpLabel(x, fp); });
+  auto images = std::make_shared<Loader<int>>(indices, [fp](const uint64_t x) {
+      return loadNpArray(x, fp); });
+  ds_ = std::make_shared<MergeDataset>(MergeDataset({images, targets}));
+}
+
+int64_t NumpyDataset::size() const {
+  return n_;
+}
+
+std::vector<af::array> NumpyDataset::get(const int64_t idx) const {
+  checkIndexBounds(idx);
+  return ds_->get(idx);
+}
 
 ImageDataset::ImageDataset(
     std::vector<std::string> filepaths,
@@ -196,20 +215,22 @@ ImageDataset::ImageDataset(
  ) {
 
   // Create image loader and apply transforms
-  //auto images = std::make_shared<Loader<std::string>>(filepaths, loadJpeg);
-  std::vector<int> indices(100);
-  std::iota(indices.begin(), indices.end(), 0);
-  auto images = std::make_shared<Loader<int>>(indices, loadNpArray);
+  //std::vector<int> indices(90000);
+  //std::iota(indices.begin(), indices.end(), 0);
+  //auto targets = std::make_shared<Loader<int>>(indices, loadNpLabel);
+  //auto images = std::make_shared<Loader<int>>(indices, loadNpArray);
+  //auto transformed = images;
   // TransformDataset will apply each transform in a vector to the respective af::array
   // Thus, we need to `compose` all of the transforms so are each aplied
-  //std::vector<TransformFunction> transforms = { compose(transformfns) };
-  //auto transformed = std::make_shared<TransformDataset>(images, transforms);
+  auto images = std::make_shared<Loader<std::string>>(filepaths, loadJpeg);
+  std::vector<TransformFunction> transforms = { compose(transformfns) };
+  auto transformed = std::make_shared<TransformDataset>(images, transforms);
 
+  auto targets = std::make_shared<Loader<uint64_t>>(labels, loadLabel);
   // Create label loader
-  auto targets = std::make_shared<Loader<int>>(indices, loadNpLabel);
 
   // Merge image and labels
-  ds_ = std::make_shared<MergeDataset>(MergeDataset({images, targets}));
+  ds_ = std::make_shared<MergeDataset>(MergeDataset({transformed, targets}));
 }
 
 std::vector<af::array> ImageDataset::get(const int64_t idx) const {

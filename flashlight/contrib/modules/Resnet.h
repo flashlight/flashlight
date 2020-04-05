@@ -59,6 +59,10 @@ class BasicBlock : public fl::Container {
 
   std::string prettyString() const override;
 
+  void eval() override;
+
+  void train() override;
+
   int static expansion() {
     return 1;
   }
@@ -80,6 +84,7 @@ class ResNetStage : public fl::Sequential {
 
 
 Sequential resnet34();
+Sequential resnet34small();
 Sequential resnet50();
 
 

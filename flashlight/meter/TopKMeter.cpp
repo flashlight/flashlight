@@ -22,7 +22,7 @@ void TopKMeter::add(const af::array& output, const af::array& target) {
 
   uint64_t count = af::count<uint64_t>(correct);
   const int batchsize = target.dims(0);
-  const float accuracy = static_cast<float>(count) * 100.f;
+  const double accuracy = static_cast<double>(count) * 100.f;
   sum_ += accuracy;
   n_ += batchsize;
 }

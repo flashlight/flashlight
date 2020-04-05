@@ -22,11 +22,10 @@
 
 #define DISTRIBUTED 0
 
-namespace {
+#define TRAIN 0
+#define CACHE 1
 
-af::array zeros(const af::array& in) {
-  return af::constant(0.0, in.dims());
-}
+namespace {
 
 }
 
@@ -43,11 +42,12 @@ class DistributedDataset : public Dataset {
       int64_t prefetch_size) {
     ds_ = base;
     //shuffle_ = std::make_shared<ShuffleDataset>(base);
-    auto permfn = [world_size, world_rank, &base](int64_t idx) {
-      return (idx * 1187) % base->size();
-    };
-    //ds_ = std::make_shared<ResampleDataset>(ds_, permfn, 10);
-    //ds_ = std::make_shared<PrefetchDataset>(ds_, num_threads, prefetch_size);
+    //ds_ = shuffle_;
+    //auto permfn = [world_size, world_rank, &base](int64_t idx) {
+      //return (idx * 1187) % base->size();
+    //};
+    //ds_ = std::make_shared<ResampleDataset>(ds_, permfn, 1024);
+    ds_ = std::make_shared<PrefetchDataset>(ds_, num_threads, prefetch_size);
     if (batch_size > 1) {
       ds_ = std::make_shared<BatchDataset>(ds_, batch_size);
     }
@@ -101,7 +101,6 @@ std::tuple<double, double, double> eval_loop(
   }
   // Place the model back into train mode.
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  model->train();
 
   double top1_error = top1_meter.value();
   double top5_error = top5_meter.value();
@@ -138,7 +137,7 @@ int main(int argc, const char** argv) {
   const float learning_rate = 0.1f;
   const float momentum = 0.9f;
   const float weight_decay = 0.0001f;
-  const int epochs = 2;
+  const int epochs = 1;
 
   /////////////////////////
   // Setup distributed training
@@ -168,6 +167,29 @@ int main(int argc, const char** argv) {
   //////////////////////////
   //  Create datasets
   /////////////////////////
+  const int batch_size = miniBatchSize * world_size;
+  const int64_t prefetch_threads = 10;
+  const int64_t prefetch_size = miniBatchSize * 2;
+#if CACHE
+  auto test = std::make_shared<NumpyDataset>(1024, "/private/home/padentomasello/tmp/pytorch_dump/save/train/");
+  auto train_ds = DistributedDataset(
+      test,
+      world_rank,
+      world_size,
+      miniBatchSize,
+      prefetch_threads,
+      prefetch_size);
+
+  auto test_val = std::make_shared<NumpyDataset>(128, "/private/home/padentomasello/tmp/pytorch_dump/save/val/");
+  //test_val = std::make_shared<ImageDataset>(imagenetDataset(val_list, labels, val_transforms);
+  auto val_ds = DistributedDataset(
+      test_val,
+      world_rank,
+      world_size,
+      miniBatchSize,
+      prefetch_threads,
+      prefetch_size);
+#else
   const std::vector<float> mean = {0.485, 0.456, 0.406};
   const std::vector<float> std = {0.229, 0.224, 0.225};
   //const std::vector<float> mean = {0.406, 0.456, 0.485};
@@ -181,57 +203,41 @@ int main(int argc, const char** argv) {
       //// Randomly flip image with probability of 0.5
       //ImageDataset::horizontalFlipTransform(0.5),
       //ImageDataset::normalizeImage(mean, std)
-      //ImageDataset::resizeTransform(224),
+      ImageDataset::resizeTransform(256),
       ImageDataset::centerCrop(224),
       toTensor,
       //[](const af::array& in) { return in.as(f32) / 255.f; },
       //[](const af::array& in) { return in.as(f32) / 255.f; },
       //[](const af::array& in) { return af::constant(0.01, in.dims()); },
       //zeros
-      //ImageDataset::normalizeImage(mean, std)
+      ImageDataset::normalizeImage(mean, std)
   };
   std::vector<Dataset::TransformFunction> val_transforms = {
       // Resize shortest side to 256, then take a center crop
+      ImageDataset::resizeTransform(256),
       ImageDataset::centerCrop(224),
       toTensor,
       //[](const af::array& in) { return in.as(f32) / 255.f;},
       //[](const af::array& in) { return af::constant(0.01, in.dims()); },
       //zeros
-      //ImageDataset::normalizeImage(mean, std)
+      ImageDataset::normalizeImage(mean, std)
   };
   //const uint64_t miniBatchSize = batch_size / world_size;
-  const int batch_size = miniBatchSize * world_size;
-  const int64_t prefetch_threads = 10;
-  const int64_t prefetch_size = miniBatchSize * 2;
-  auto test = std::make_shared<ImageDataset>(
-          imagenetDataset(train_list, labels, train_transforms));
-  auto train_ds = DistributedDataset(
-      test,
-      world_rank,
-      world_size,
-      miniBatchSize,
-      prefetch_threads,
-      prefetch_size);
-
-  auto val_ds = DistributedDataset(
-      std::make_shared<ImageDataset>(
-          imagenetDataset(val_list, labels, val_transforms)),
-      world_rank,
-      world_size,
-      miniBatchSize,
-      prefetch_threads,
-      prefetch_size);
+  //auto test = std::make_shared<ImageDataset>(
+          //imagenetDataset(train_list, labels, train_transforms));
+#endif
 
 
   //////////////////////////
   //  Load model and optimizer
   /////////////////////////
-  auto model = std::make_shared<Sequential>(resnet34());
+  //auto model = std::make_shared<Sequential>(resnet34());
+  auto model = std::make_shared<Sequential>(resnet34small());
   // synchronize parameters of tje model so that the parameters in each process
   // is the same
 
-  SGDOptimizer opt(model->params(), learning_rate, momentum, weight_decay);
-  //SGDOptimizer opt(model->params(), 0.1);
+  //SGDOptimizer opt(model->params(), learning_rate, momentum, weight_decay);
+  SGDOptimizer opt(model->params(), 0.1);
 
   auto lrScheduler = [&opt, &learning_rate](int epoch) {
     // Adjust learning rate every 30 epoch
@@ -294,6 +300,11 @@ int main(int argc, const char** argv) {
   for (int e = (checkpointEpoch + 1); e < epochs; e++) {
     train_ds.resample();
     lrScheduler(e);
+    if (TRAIN) {
+      model->train();
+    } else {
+      model->eval();
+    }
 
     // Get an iterator over the data
     time_meter.resume();
@@ -318,12 +329,15 @@ int main(int argc, const char** argv) {
       top1_meter.add(output.array(), target.array());
 
       // Backprop, update the weights and then zero the gradients.
-      loss.backward();
 
 #if DISTRIBUTED
       reducer->finalize();
 #endif
+
+#if TRAIN
+      loss.backward();
       opt.step();
+#endif
 
       // Compute and record the prediction error.
       if (++idx % 1 == 0) {
@@ -343,7 +357,7 @@ int main(int argc, const char** argv) {
         fl::allReduceMultiple(metric_arrays, false, false);
 #endif
         if (world_rank == 0) {
-          std::cout << "Epoch " << e << std::setprecision(5) << " Batch: " << idx
+          std::cout << "Epoch " << e << std::setprecision(6) << " Batch: " << idx
                     << " Samples per second " << samples_per_second_arr.scalar<double>()
                     << ": Avg Train Loss: " << train_loss_arr.scalar<double>() / world_size
                     << ": Train Top5 Error( %): " << top5_arr.scalar<double>() / world_size
@@ -362,7 +376,7 @@ int main(int argc, const char** argv) {
     double val_loss, val_top1_err, val_top5_err;
     std::tie(val_loss, val_top5_err, val_top1_err) = eval_loop(model, val_ds);
 
-    std::cout << "Epoch " << e << std::setprecision(5)
+    std::cout << "Epoch " << e << std::setprecision(6)
               << " Validation Loss: " << val_loss
               << " Validation Top5 Error (%): " << val_top5_err
               << " Validation Top1 Error (%): " << val_top1_err << std::endl;
