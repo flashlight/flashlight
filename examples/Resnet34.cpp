@@ -20,12 +20,25 @@
 #include "flashlight/nn/nn.h"
 #include "flashlight/optim/optim.h"
 
+#include <gflags/gflags.h>
+
+DEFINE_double(lr, 0.1f, "Learning rate");
+DEFINE_double(momentum, 0.9f, "Momentum");
+
+DEFINE_double(wd, 1e-4f, "Weight decay");
+DEFINE_uint64(epochs, 50, "Epochs");
+DEFINE_uint64(world_rank, 0, "Epochs");
+DEFINE_uint64(world_size, 1, "Epochs");
+DEFINE_uint64(batch_size, 32, "Epochs");
+
+
 #define DISTRIBUTED 0
 
-#define TRAIN 0
-#define CACHE 1
+#define TRAIN 1
+#define CACHE 0
 
 namespace {
+
 
 }
 
@@ -39,8 +52,14 @@ class DistributedDataset : public Dataset {
       int64_t world_size,
       int64_t batch_size,
       int64_t num_threads,
-      int64_t prefetch_size) {
+      int64_t prefetch_size,
+      bool shuffle) {
     ds_ = base;
+    if (shuffle) {
+      shuffle_ = std::make_shared<ShuffleDataset>(ds_);
+      ds_ = shuffle_;
+    }
+
     //shuffle_ = std::make_shared<ShuffleDataset>(base);
     //ds_ = shuffle_;
     //auto permfn = [world_size, world_rank, &base](int64_t idx) {
@@ -60,7 +79,7 @@ class DistributedDataset : public Dataset {
 
   void resample() {
     if (shuffle_) {
-    shuffle_->resample();
+      shuffle_->resample();
     } else {
       std::cerr << " Dataset not build with shuffling!" << std::endl;
 }
@@ -109,16 +128,17 @@ std::tuple<double, double, double> eval_loop(
 };
 
 
-int main(int argc, const char** argv) {
+int main(int argc, char** argv) {
   if (argc < 2) {
     std::cout << "Must specify imagenet data location" << std::endl;
     return -1;
   }
   const std::string imagenet_base = argv[1];
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-  int world_rank = argc > 2 ? atoi(argv[2]) : 0;
-  int world_size = argc > 3 ? atoi(argv[3]) : 1;
-  int miniBatchSize = argc > 4 ? atoi(argv[4]) : 32;
+  int world_rank = FLAGS_world_rank;
+  int world_size = FLAGS_world_size;
+  int miniBatchSize = FLAGS_batch_size;
   af::setDevice(world_rank);
   if (world_size > 1 && !DISTRIBUTED) {
     std::cout << "Not built for distributed!" << std::endl;
@@ -134,10 +154,10 @@ int main(int argc, const char** argv) {
   ////////////////////////
   //const int batch_size = 256;
   //const int miniBatchSize = 128;
-  const float learning_rate = 0.1f;
-  const float momentum = 0.9f;
-  const float weight_decay = 0.0001f;
-  const int epochs = 1;
+  const float learning_rate = FLAGS_lr;
+  const float momentum = FLAGS_momentum;
+  const float weight_decay = FLAGS_wd;
+  const int epochs = FLAGS_epochs;
 
   /////////////////////////
   // Setup distributed training
@@ -178,7 +198,8 @@ int main(int argc, const char** argv) {
       world_size,
       miniBatchSize,
       prefetch_threads,
-      prefetch_size);
+      prefetch_size,
+      false);
 
   auto test_val = std::make_shared<NumpyDataset>(128, "/private/home/padentomasello/tmp/pytorch_dump/save/val/");
   //test_val = std::make_shared<ImageDataset>(imagenetDataset(val_list, labels, val_transforms);
@@ -188,7 +209,8 @@ int main(int argc, const char** argv) {
       world_size,
       miniBatchSize,
       prefetch_threads,
-      prefetch_size);
+      prefetch_size,
+      false);
 #else
   const std::vector<float> mean = {0.485, 0.456, 0.406};
   const std::vector<float> std = {0.229, 0.224, 0.225};
@@ -223,8 +245,26 @@ int main(int argc, const char** argv) {
       ImageDataset::normalizeImage(mean, std)
   };
   //const uint64_t miniBatchSize = batch_size / world_size;
-  //auto test = std::make_shared<ImageDataset>(
-          //imagenetDataset(train_list, labels, train_transforms));
+  auto test = std::make_shared<ImageDataset>(
+          imagenetDataset(train_list, labels, train_transforms));
+  //auto test = std::make_shared<NumpyDataset>(1024, "/private/home/padentomasello/tmp/pytorch_dump/save/train/");
+  auto train_ds = DistributedDataset(
+      test,
+      world_rank,
+      world_size,
+      miniBatchSize,
+      prefetch_threads,
+      prefetch_size, true);
+
+  //auto test_val = std::make_shared<NumpyDataset>(128, "/private/home/padentomasello/tmp/pytorch_dump/save/val/");
+  auto test_val = std::make_shared<ImageDataset>(imagenetDataset(val_list, labels, val_transforms));
+  auto val_ds = DistributedDataset(
+      test_val,
+      world_rank,
+      world_size,
+      miniBatchSize,
+      prefetch_threads,
+      prefetch_size, true);
 #endif
 
 
@@ -237,7 +277,7 @@ int main(int argc, const char** argv) {
   // is the same
 
   //SGDOptimizer opt(model->params(), learning_rate, momentum, weight_decay);
-  SGDOptimizer opt(model->params(), 0.1);
+  SGDOptimizer opt(model->params(), learning_rate);
 
   auto lrScheduler = [&opt, &learning_rate](int epoch) {
     // Adjust learning rate every 30 epoch
@@ -322,7 +362,6 @@ int main(int argc, const char** argv) {
 
       // Compute and record the loss.
       auto loss = categoricalCrossEntropy(output, target);
-      std::cout << " loss " << loss.array().scalar<float>() << std::endl;
 
       train_loss_meter.add(loss.array());
       top5_meter.add(output.array(), target.array());
@@ -340,7 +379,7 @@ int main(int argc, const char** argv) {
 #endif
 
       // Compute and record the prediction error.
-      if (++idx % 1 == 0) {
+      if (++idx % 10 == 0) {
         double train_loss = train_loss_meter.value()[0];
         double time = time_meter.value();
         double sample_per_second = ((idx * miniBatchSize) / time);

@@ -16,7 +16,7 @@ Variable readDump(const std::string name, const int modIdx, const std::string pa
   ss << pytorchDump << name << modIdx << "-" << param_name << ".bin";
   const std::string fp = ss.str();
   const int size = dims.elements();
-  std::cout << "Reading from " << fp << std::endl;;
+  //std::cout << "Reading from " << fp << std::endl;;
   std::ifstream infile(fp, std::ios::binary);
   if(!infile) {
       throw std::invalid_argument("Could not read from fp" + fp);
@@ -61,16 +61,16 @@ BatchNorm batchNorm(const int channels) {
     auto bn = BatchNorm(2, channels);
     auto weight = readDump<float>("bn" , moduleCounter, "0", bn.param(0).dims());
     auto bias = readDump<float>("bn" , moduleCounter, "1", bn.param(1).dims());
-    af_print(weight.array());
-    af_print(bias.array());
+    //af_print(weight.array());
+    //af_print(bias.array());
     bn.setParams(weight, 0);
     bn.setParams(bias, 1);
     auto runningMean = noGrad(readDump<float>("bn" , moduleCounter, "running_mean", af::dim4(channels)).array());
     auto runningVar = noGrad(readDump<float>("bn" , moduleCounter, "running_var", af::dim4(channels)).array());
     auto num_traced = readDump<int>("bn" , moduleCounter, "num_batches_tracked", af::dim4(1)).array().scalar<int>();
-    af_print(runningMean.array());
-    af_print(runningVar.array());
-    std::cout << "num_traced" << num_traced << std::endl;
+    //af_print(runningMean.array());
+    //af_print(runningVar.array());
+    //std::cout << "num_traced" << num_traced << std::endl;
     bn.setRunningStats(runningMean, runningVar, num_traced);
     moduleCounter++;
     return bn;
@@ -278,10 +278,11 @@ Sequential resnet34small() {
   model.add(View({1000, -1}));
   model.add(LogSoftmax());
   int i = 0;
-  for(auto module : model.modules()) {
-    std::cout << module->prettyString() << std::endl;
-    std::cout << ++i << std::endl;
-  }
+  std::cout << model.prettyString();
+  //for(auto module : model.modules()) {
+    //std::cout << module->prettyString() << std::endl;
+    //std::cout << ++i << std::endl;
+  //}
   return model;
 };
 
@@ -322,10 +323,10 @@ Sequential resnet34() {
   model.add(View({1000, -1}));
   model.add(LogSoftmax());
   int i = 0;
-  for(auto module : model.modules()) {
-    std::cout << module->prettyString() << std::endl;
-    std::cout << ++i << std::endl;
-  }
+  //for(auto module : model.modules()) {
+    //std::cout << module->prettyString() << std::endl;
+    //std::cout << ++i << std::endl;
+  //}
   return model;
 };
 

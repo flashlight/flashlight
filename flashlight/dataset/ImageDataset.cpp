@@ -137,7 +137,7 @@ af::array loadJpeg(const std::string& fp) {
 	if (img) {
 		af::array result = af::array(desired_no_channels, w, h, img);
 		stbi_image_free(img);
-    return af::reorder(result, 2, 1, 0);
+    return af::reorder(result, 1, 2, 0);
     //return result;
 	} else {
     throw std::invalid_argument("Could not load from filepath" + fp);
