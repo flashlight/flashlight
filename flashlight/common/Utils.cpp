@@ -73,6 +73,8 @@ size_t divRoundUp(size_t numerator, size_t denominator) {
         std::string("divRoundUp() zero denominator error"));
   }
   return (numerator + denominator - 1) / denominator;
+}
+
 af::dtype stringToAfType(const std::string& typeName) {
   std::unordered_map<std::string, af::dtype> strToType = {
       {"f32", f32},
