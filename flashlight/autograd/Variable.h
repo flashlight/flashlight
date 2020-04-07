@@ -121,14 +121,13 @@ class Variable {
    * Casts the variable to the given data type.
    *
    * @param[in] type target data type
-   * @param[in] castGrad determines if the gradient should be casted in case it
-   * exists.
+   *
    */
-  __forceinline void inPlaceCast(af::dtype type, bool castGrad = true) {
+  void inPlaceCast(af::dtype type) {
     if (this->type() != type) {
       array() = array().as(type);
     }
-    if (castGrad && sharedGrad_->grad && grad().type() != type) {
+    if (sharedGrad_->grad && grad().type() != type) {
       grad().array() = grad().array().as(type);
     }
   }
@@ -139,15 +138,13 @@ class Variable {
    * change the current variable.
    *
    * @param[in] type target data type
-   * @param[in] castGrad determines if the gradient should be casted in case it
-   * exists.
    *
    * @return returns the casted variable.
    */
-  Variable as(af::dtype type, bool castGrad = true) {
+  Variable as(af::dtype type) {
     auto output = withoutData();
     output.array() = array().as(type);
-    if (castGrad && sharedGrad_->grad) {
+    if (sharedGrad_->grad) {
       output.grad().array() = grad().array().as(type);
     }
     return output;

@@ -20,7 +20,7 @@ double clipGradNorm(const std::vector<Variable>& parameters, double max_norm) {
     // This cast can be removed when the support is added.
     // https://github.com/arrayfire/arrayfire/blob/v3.7.1/src/api/c/norm.cpp#L128
     if (p.grad().type() == f16) {
-      p.grad().inPlaceCast(f32, false);
+      p.grad().inPlaceCast(f32);
     }
     const auto& grad = p.grad().array();
     grad_norm += std::pow(af::norm(af::flat(grad)), 2);
