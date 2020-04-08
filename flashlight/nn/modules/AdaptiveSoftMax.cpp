@@ -26,15 +26,19 @@ AdaptiveSoftMax::AdaptiveSoftMax(
 
   int outputSize = cutoff_[0] + cutoff_.size() - 1;
 
-  auto head = kaimingUniform(outputSize, inputSize);
+  auto head =
+      kaimingUniform(af::dim4(outputSize, inputSize), inputSize /* fanIn */);
   params_.push_back(head);
 
   int denominator = 1;
   for (int i = 0; i < cutoff_.size() - 1; i++) {
     denominator *= divValue_;
     int hiddenSize = inputSize / denominator;
-    auto tail1 = kaimingUniform(hiddenSize, inputSize);
-    auto tail2 = kaimingUniform(cutoff_[i + 1] - cutoff_[i], hiddenSize);
+    auto tail1 =
+        kaimingUniform(af::dim4(hiddenSize, inputSize), inputSize /* fanIn */);
+    auto tail2 = kaimingUniform(
+        af::dim4(cutoff_[i + 1] - cutoff_[i], hiddenSize),
+        hiddenSize /* fanIn */);
     params_.push_back(tail1);
     params_.push_back(tail2);
   }

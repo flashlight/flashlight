@@ -26,8 +26,6 @@
 
 namespace fl {
 
-using detail::computeFans;
-
 Variable input(const af::array& arr) {
   return Variable(arr, false);
 }
@@ -41,56 +39,43 @@ Variable param(const af::array& arr) {
 }
 
 Variable kaimingUniform(
-    int output_size,
-    int input_size,
-    af::dtype type,
-    bool calc_grad) {
-  return kaimingUniform(af::dim4(output_size, input_size), type, calc_grad);
-}
-
-Variable kaimingUniform(af::dim4 dims, af::dtype type, bool calc_grad) {
-  dim_t fan_in = computeFans(dims).first;
-  double stdv = std::sqrt(1.0 / (double)fan_in);
+    af::dim4 shape,
+    int fanIn,
+    af::dtype type /* = af::dtype::f32 */,
+    bool calcGrad /* = true */) {
+  double stdv = std::sqrt(1.0 / static_cast<double>(fanIn));
   double limit = std::sqrt(3.0) * stdv;
-  return uniform(dims, -limit, limit, type, calc_grad);
+  return uniform(shape, -limit, limit, type, calcGrad);
 }
 
-Variable
-kaimingNormal(int output_size, int input_size, af::dtype type, bool calc_grad) {
-  return kaimingNormal(af::dim4(output_size, input_size), type, calc_grad);
+Variable kaimingNormal(
+    af::dim4 shape,
+    int fanIn,
+    af::dtype type /* = af::dtype::f32 */,
+    bool calcGrad /* = true */) {
+  double stdv = std::sqrt(1.0 / static_cast<double>(fanIn));
+  return normal(shape, stdv, 0, type, calcGrad);
 }
 
-Variable kaimingNormal(af::dim4 dims, af::dtype type, bool calc_grad) {
-  dim_t fan_in = computeFans(dims).first;
-  double stdv = std::sqrt(1.0 / (double)fan_in);
-  return normal(dims, stdv, 0, type, calc_grad);
-}
-
-Variable
-glorotUniform(int output_size, int input_size, af::dtype type, bool calc_grad) {
-  return glorotUniform(af::dim4(output_size, input_size), type, calc_grad);
-}
-
-Variable glorotUniform(af::dim4 dims, af::dtype type, bool calc_grad) {
-  auto fans = computeFans(dims);
-  dim_t fan_in = fans.first;
-  dim_t fan_out = fans.second;
-  double stdv = std::sqrt(2.0 / (double)(fan_in + fan_out));
+Variable glorotUniform(
+    af::dim4 shape,
+    int fanIn,
+    int fanOut,
+    af::dtype type /* = af::dtype::f32 */,
+    bool calcGrad /* = true */) {
+  double stdv = std::sqrt(2.0 / static_cast<double>(fanIn + fanOut));
   double limit = std::sqrt(3.0) * stdv;
-  return uniform(dims, -limit, limit, type, calc_grad);
+  return uniform(shape, -limit, limit, type, calcGrad);
 }
 
-Variable
-glorotNormal(int output_size, int input_size, af::dtype type, bool calc_grad) {
-  return glorotNormal(af::dim4(output_size, input_size), type, calc_grad);
-}
-
-Variable glorotNormal(af::dim4 dims, af::dtype type, bool calc_grad) {
-  auto fans = computeFans(dims);
-  dim_t fan_in = fans.first;
-  dim_t fan_out = fans.second;
-  double stdv = std::sqrt(2.0 / (double)(fan_in + fan_out));
-  return normal(dims, stdv, 0, type, calc_grad);
+Variable glorotNormal(
+    af::dim4 shape,
+    int fanIn,
+    int fanOut,
+    af::dtype type /* = af::dtype::f32 */,
+    bool calcGrad /* = true */) {
+  double stdv = std::sqrt(2.0 / static_cast<double>(fanIn + fanOut));
+  return normal(fanIn, stdv, 0, type, calcGrad);
 }
 
 } // namespace fl
