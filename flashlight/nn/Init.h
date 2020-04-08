@@ -56,165 +56,94 @@ Variable noGrad(const af::array& arr);
 Variable param(const af::array& arr);
 
 /**
- * Creates a `Variable` representing a tensor with dimensions `[input_size,
- * output_size]` where elements are uniformly distributed according to the
- * method outlined in [He et al (2015)](https://arxiv.org/abs/1502.01852):
- * _Delving Deep into Rectifiers: Surpassing Human-Level Performance on
- * ImageNet Classification._
+ * Creates a `Variable` representing a tensor with given input dimensions where
+ * elements are uniformly distributed according to the method outlined in [He et
+ * al (2015)](https://arxiv.org/abs/1502.01852): _Delving Deep into Rectifiers:
+ * Surpassing Human-Level Performance on ImageNet Classification._
  *
- * @param input_size the second dimension for the output tensor shape
- * @param output_size the first dimension of the output tensor shape
+ * @param shape the shape of output Variable
+ * @param fanIn number of input units in the Variable
  * @param type the ArrayFire datatype for which to create the tensor
- * @param calc_grad flag denoting whether gradient calculation on the resulting
+ * @param calcGrad flag denoting whether gradient calculation on the resulting
  * `Variable` should be enabled
  *
  * @return A `Variable` containing a tensor with random values distributed
  * accordingly.
  */
 Variable kaimingUniform(
-    int input_size,
-    int output_size,
-    af::dtype type = f32,
-    bool calc_grad = true);
-
+    af::dim4 shape,
+    int fanIn,
+    af::dtype type = af::dtype::f32,
+    bool calcGrad = true);
 /**
- * Creates a `Variable` representing a tensor of up to rank 4 with arbitrary
- * dimensions, where elements are uniformly distributed according to the method
+ * Creates a `Variable` representing a tensor with given input dimensions where
+ * elements are normally distributed according to the method
  * outlined in [He et al (2015)](https://arxiv.org/abs/1502.01852):
  * _Delving Deep into Rectifiers: Surpassing Human-Level Performance on
  * ImageNet Classification._
  *
- * @param dims an ArrayFire tensor shape
+ * @param shape the shape of output Variable
+ * @param fanIn number of input units in the Variable
  * @param type the ArrayFire datatype for which to create the tensor
- * @param calc_grad flag denoting whether gradient calculation on the resulting
- * `Variable` should be enabled
- *
- * @return A `Variable` containing a tensor with random values distributed
- * accordingly.
- */
-Variable
-kaimingUniform(af::dim4 dims, af::dtype type = f32, bool calc_grad = true);
-
-/**
- * Creates a `Variable` representing a tensor with dimensions `[input_size,
- * output_size]` where elements are normally distributed according to the method
- * outlined in [He et al (2015)](https://arxiv.org/abs/1502.01852):
- * _Delving Deep into Rectifiers: Surpassing Human-Level Performance on
- * ImageNet Classification._
- *
- * @param input_size the second dimension for the output tensor shape
- * @param output_size the first dimension of the output tensor shape
- * @param type the ArrayFire datatype for which to create the tensor
- * @param calc_grad flag denoting whether gradient calculation on the resulting
+ * @param calcGrad flag denoting whether gradient calculation on the resulting
  * `Variable` should be enabled
  *
  * @return A `Variable` containing a tensor with random values distributed
  * accordingly.
  */
 Variable kaimingNormal(
-    int input_size,
-    int output_size,
-    af::dtype type = f32,
-    bool calc_grad = true);
+    af::dim4 shape,
+    int fanIn,
+    af::dtype type = af::dtype::f32,
+    bool calcGrad = true);
 
 /**
- * Creates a `Variable` representing a tensor of up to rank 4 with arbitrary
- * dimensions, where elements are normally distributed according to the method
- * outlined in [He et al (2015)](https://arxiv.org/abs/1502.01852):
- * _Delving Deep into Rectifiers: Surpassing Human-Level Performance on
- * ImageNet Classification._
- *
- * @param dims an ArrayFire tensor shape
- * @param type the ArrayFire datatype for which to create the tensor
- * @param calc_grad flag denoting whether gradient calculation on the resulting
- * `Variable` should be enabled
- *
- * @return A `Variable` containing a tensor with random values distributed
- * accordingly.
- */
-Variable
-kaimingNormal(af::dim4 dims, af::dtype type = f32, bool calc_grad = true);
-
-/**
- * Creates a `Variable` representing a tensor with dimensions `[input_size,
- * output_size]` where elements are uniformly distributed according to the
+ * Creates a `Variable` representing a tensor with given input dimensions where
+ * elements are uniformly distributed according to the
  * method outlined in [Glorot and Bengio
  * (2010)](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf):
  * _Understanding the difficulty of training deep feedforward neural networks_.
  *
- * @param input_size the second dimension for the output tensor shape
- * @param output_size the first dimension of the output tensor shape
- * @param type the ArrayFire datatype for which to create the tensor
- * @param calc_grad flag denoting whether gradient calculation on the resulting
+ * @param shape the shape of output Variable
+ * @param fanIn number of input units in the Variable
+ * @param fanOut number of output units in the Variable
+ * @param type the ArrayFire datatype with which to create the tensor
+ * @param calcGrad flag denoting whether gradient calculation on the resulting
  * `Variable` should be enabled
  *
  * @return A `Variable` containing a tensor with random values distributed
  * accordingly.
  */
 Variable glorotUniform(
-    int input_size,
-    int output_size,
-    af::dtype type = f32,
-    bool calc_grad = true);
+    af::dim4 shape,
+    int fanIn,
+    int fanOut,
+    af::dtype type = af::dtype::f32,
+    bool calcGrad = true);
 
 /**
- * Creates a `Variable` representing a tensor of up to rank 4 with arbitrary
- * dimensions, where elements are uniformly distributed according to the
- * method outlined in [Glorot and Bengio
- * (2010)](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf):
- * _Understanding the difficulty of training deep feedforward neural networks_.
- *
- * @param dims an ArrayFire tensor shape
- * @param type the ArrayFire datatype for which to create the tensor
- * @param calc_grad flag denoting whether gradient calculation on the resulting
- * `Variable` should be enabled
- *
- * @return A `Variable` containing a tensor with random values distributed
- * accordingly.
- */
-Variable
-glorotUniform(af::dim4 dims, af::dtype type = f32, bool calc_grad = true);
-
-/**
- * Creates a `Variable` representing a tensor with dimensions `[input_size,
- * output_size]` where elements are normally distributed according to the
+ * Creates a `Variable` representing a tensor with given input dimensions where
+ * elements are normally distributed according to the
  * method outlined in [Glorot and Bengio
  * (2010)](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf):
  * _Understanding the difficulty of training deep feedforward neural
  * networks._
  *
- * @param input_size the second dimension for the output tensor shape
- * @param output_size the first dimension of the output tensor shape
+ * @param shape the shape of output Variable
+ * @param fanIn number of input units in the Variable
+ * @param fanOut number of output units in the Variable
  * @param type the ArrayFire datatype for which to create the tensor
- * @param calc_grad flag denoting whether gradient calculation on the resulting
+ * @param calcGrad flag denoting whether gradient calculation on the resulting
  * `Variable` should be enabled
  *
  * @return A `Variable` containing a tensor with random values distributed
  * accordingly.
  */
 Variable glorotNormal(
-    int input_size,
-    int output_size,
-    af::dtype type = f32,
-    bool calc_grad = true);
-
-/**
- * Creates a `Variable` representing a tensor of up to rank 4 with arbitrary
- * dimensions, where elements are normally distributed according to the
- * method outlined in [Glorot and Bengio
- * (2010)](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf):
- * _Understanding the difficulty of training deep feedforward neural
- * networks._
- *
- * @param dims an ArrayFire tensor shape
- * @param type the ArrayFire datatype for which to create the tensor
- * @param calc_grad flag denoting whether gradient calculation on the resulting
- * `Variable` should be enabled
- *
- * @return A `Variable` containing a tensor with random values distributed
- * accordingly.
- */
-Variable
-glorotNormal(af::dim4 dims, af::dtype type = f32, bool calc_grad = true);
+    af::dim4 shape,
+    int fanIn,
+    int fanOut,
+    af::dtype type = af::dtype::f32,
+    bool calcGrad = true);
 
 } // namespace fl
