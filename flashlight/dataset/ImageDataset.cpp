@@ -9,6 +9,11 @@
 #include <arrayfire.h>
 #include <stdlib.h>
 #include <iostream>
+extern "C" {
+#include <jpeglib.h>
+}
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 #include "flashlight/dataset/Dataset.h"
 #include "flashlight/dataset/ImageDataset.h"
@@ -108,44 +113,117 @@ af::array centerCrop2(const af::array& in, const int size) {
  */
 af::array loadJpeg(const std::string& fp) {
 #if 0
-  return af::loadImage(fp.c_str(), true);
-  //af::array img;
-  //try {
-    ////return af::loadImage(fp.c_str(), true);
-    //img = af::loadImageNative(fp.c_str());
-  //} catch (...){
-    //img = af::constant(0, 224, 244, 3);
-    //std::cout << "Filepath " << fp << std::endl;
-  //}
-  //if(img.type() != u8) {
-    //std::cout << img.type() << std::endl;
-  //}
-  //if (img.dims(2) == 3) {
-    //return img;
-  //} else if (img.dims(2) == 1) {
+  //return af::loadImage(fp.c_str(), true);
+  af::array img;
+  try {
+    return af::loadImage(fp.c_str(), true);
+    img = af::loadImageNative(fp.c_str());
+  } catch (...){
+    img = af::constant(0, 224, 244, 3);
+    std::cout << "Filepath " << fp << std::endl;
+  }
+  if(img.type() != u8) {
+    std::cout << img.type() << std::endl;
+  }
+  if (img.dims(2) == 3) {
+    return img;
+  } else if (img.dims(2) == 1) {
     //img = af::tile(img, 2, 3);
-    //auto img2 = af::colorSpace(img, AF_RGB, AF_GRAY);
-    //return img2;
-  //}
-#else
+    auto img2 = af::colorSpace(img, AF_RGB, AF_GRAY);
+    return img2;
+  }
+#elif 1
 	int w, h, c;
   // STB image will automatically return desired_no_channels.
   // NB: c will be the original number of channels
   //std::cout << " filepath " << fp << std::endl;
 	int desired_no_channels = 3;
+	//unsigned char *img = stbi_load("/datasets01_101/imagenet_full_size/061417/train/n01440764/n01440764_10026.JPEG", &w, &h, &c, desired_no_channels);
 	unsigned char *img = stbi_load(fp.c_str(), &w, &h, &c, desired_no_channels);
+  if(c == 1) {
+    //std::cout << "Found grayscale image! " << fp << std::endl;
+  }
 	if (img) {
 		af::array result = af::array(desired_no_channels, w, h, img);
+    if (c == 1) {
+      //std::cout << "filepath grayscale! " << std::endl;
+    }
 		stbi_image_free(img);
     return af::reorder(result, 1, 2, 0);
     //return result;
 	} else {
     throw std::invalid_argument("Could not load from filepath" + fp);
 	}
+#elif 0
+  struct jpeg_decompress_struct cinfo;
+	struct jpeg_error_mgr jerr;
+
+	JSAMPROW row_pointer[1];
+
+	FILE *infile = fopen( fp.c_str(), "rb" );
+	unsigned long location = 0;
+	int i = 0;
+
+	if ( !infile )
+	{
+		printf("Error opening jpeg file %s\n!", fp.c_str() );
+		return -1;
+	}
+
+	cinfo.err = jpeg_std_error( &jerr );
+
+	jpeg_create_decompress( &cinfo );
+
+	jpeg_stdio_src( &cinfo, infile );
+
+	jpeg_read_header( &cinfo, TRUE );
+
+
+	jpeg_start_decompress( &cinfo );
+  if (cinfo.num_components == 1) {
+    std::cout << "cinfo.num_components" << cinfo.num_components << std::endl;
+  }
+
+	auto raw_image = (unsigned char*)malloc( cinfo.output_width*cinfo.output_height*cinfo.num_components );
+
+	row_pointer[0] = (unsigned char *)malloc( cinfo.output_width*cinfo.num_components );
+
+	while( cinfo.output_scanline < cinfo.image_height )
+	{
+		jpeg_read_scanlines( &cinfo, row_pointer, 1 );
+		for( i=0; i<cinfo.image_width*cinfo.num_components;i++)
+			raw_image[location++] = row_pointer[0][i];
+	}
+
+	jpeg_finish_decompress( &cinfo );
+	jpeg_destroy_decompress( &cinfo );
+  auto output = af::array(af::dim4(cinfo.num_components, cinfo.output_width, cinfo.output_height), raw_image);
+  auto channels = cinfo.num_components;
+  output = af::reorder(output, 1, 2, 0);
+  //if (cinfo.num_components == 1) {
+    //output = af::colorSpace(output, AF_RGB, AF_GRAY);
+  //}
+	free( row_pointer[0] );
+	fclose( infile );
+  return output;
+#elif 1
+  cv::Mat mat = cv::imread("/private/home/padentomasello/tmp/test.jpeg", cv::IMREAD_UNCHANGED);
+  if (!mat.data) {
+    std::cout << "Could not read!" << fp << std::endl;
+  }
+  cv::MatSize size = mat.size;
+  //std::cout << mat.at(0) << std::endl;
+  std::cout << size[0] << std::endl;
+  std::cout << "mat " << mat << std::endl;
+  //img = af::array(mat.ptr<float>(), dim4(s.height, s.width, s.));
+  auto img = af::constant(0, 224, 244, 3);
+  return img;
+
 #endif
 }
 
 af::array loadLabel(const uint64_t x) {
+
   return af::constant(x, 1, 1, 1, 1, u64);
 }
 
@@ -181,7 +259,7 @@ af::array loadNpLabel(const uint64_t x, const std::string pytorchDump) {
   if(!infile) {
     throw std::invalid_argument("Could not read from fp" + fp);
   }
-  infile.close(); 
+  infile.close();
   return af::constant(vec[0], 1, 1, 1, 1, s64);
 }
 

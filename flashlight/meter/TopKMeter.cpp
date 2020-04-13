@@ -1,3 +1,4 @@
+#include <iostream>
 #include "flashlight/meter/TopKMeter.h"
 
 namespace fl {
@@ -23,6 +24,7 @@ void TopKMeter::add(const af::array& output, const af::array& target) {
   uint64_t count = af::count<uint64_t>(correct);
   const int batchsize = target.dims(0);
   const double accuracy = static_cast<double>(count) * 100.f;
+  std::cout << "BatchLoss for k" << k_ << "Loss" << accuracy / batchsize << std::endl;
   sum_ += accuracy;
   n_ += batchsize;
 }

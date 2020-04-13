@@ -34,7 +34,7 @@ DEFINE_uint64(batch_size, 32, "Epochs");
 
 #define DISTRIBUTED 0
 
-#define TRAIN 1
+#define TRAIN 0
 #define CACHE 0
 
 namespace {
@@ -63,7 +63,7 @@ class DistributedDataset : public Dataset {
     //shuffle_ = std::make_shared<ShuffleDataset>(base);
     //ds_ = shuffle_;
     //auto permfn = [world_size, world_rank, &base](int64_t idx) {
-      //return (idx * 1187) % base->size();
+      //return (idx * 2731) % base->size();
     //};
     //ds_ = std::make_shared<ResampleDataset>(ds_, permfn, 1024);
     ds_ = std::make_shared<PrefetchDataset>(ds_, num_threads, prefetch_size);
@@ -254,7 +254,7 @@ int main(int argc, char** argv) {
       world_size,
       miniBatchSize,
       prefetch_threads,
-      prefetch_size, true);
+      prefetch_size, false);
 
   //auto test_val = std::make_shared<NumpyDataset>(128, "/private/home/padentomasello/tmp/pytorch_dump/save/val/");
   auto test_val = std::make_shared<ImageDataset>(imagenetDataset(val_list, labels, val_transforms));
@@ -264,7 +264,7 @@ int main(int argc, char** argv) {
       world_size,
       miniBatchSize,
       prefetch_threads,
-      prefetch_size, true);
+      prefetch_size, false);
 #endif
 
 
@@ -362,6 +362,7 @@ int main(int argc, char** argv) {
 
       // Compute and record the loss.
       auto loss = categoricalCrossEntropy(output, target);
+      //std::cout << loss << std::endl;
 
       train_loss_meter.add(loss.array());
       top5_meter.add(output.array(), target.array());
@@ -379,7 +380,7 @@ int main(int argc, char** argv) {
 #endif
 
       // Compute and record the prediction error.
-      if (++idx % 10 == 0) {
+      if (++idx % 1 == 0) {
         double train_loss = train_loss_meter.value()[0];
         double time = time_meter.value();
         double sample_per_second = ((idx * miniBatchSize) / time);

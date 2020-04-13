@@ -12,16 +12,25 @@ if (NOT TARGET ArrayFire)
 endif ()
 
 find_package(GFLAGS REQUIRED)
+find_package(JPEG REQUIRED)
+message("JPEG" ${JPEG_LIBRARIES})
 
 function(build_example SRCFILE)
   get_filename_component(src_name ${SRCFILE} NAME_WE)
   set(target "${src_name}")
   add_executable(${target} ${SRCFILE})
   if (TARGET flashlight)
-    target_link_libraries(${target} PRIVATE flashlight ${GFLAGS_LIBRARIES})
-    target_include_directories(${target} PRIVATE ${CMAKE_SOURCE_DIR})
+    target_link_libraries(${target} PRIVATE 
+      flashlight 
+      ${GFLAGS_LIBRARIES}
+      ${JPEG_LIBRARIES}
+      )
+    target_include_directories(${target} 
+      PRIVATE 
+      ${CMAKE_SOURCE_DIR}
+      )
   else ()
-    target_link_libraries(${target} PRIVATE flashlight::flashlight ${GFLAGS_LIBRARIES})
+    target_link_libraries(${target} PRIVATE flashlight::flashlight ${GFLAGS_LIBRARIES}, ${JPEG_LIBRARIES})
   endif()
 endfunction(build_example)
 
