@@ -22,25 +22,28 @@
 
 #include <gflags/gflags.h>
 
+DEFINE_string(data_dir, "/datasets01_101/imagenet_full_size/061417/", "Directory of imagenet data");
 DEFINE_double(lr, 0.1f, "Learning rate");
 DEFINE_double(momentum, 0.9f, "Momentum");
 
 DEFINE_double(wd, 1e-4f, "Weight decay");
 DEFINE_uint64(epochs, 50, "Epochs");
-DEFINE_uint64(world_rank, 0, "Epochs");
-DEFINE_uint64(world_size, 1, "Epochs");
-DEFINE_uint64(batch_size, 32, "Epochs");
-
-
-#define DISTRIBUTED 0
-
-#define TRAIN 0
-#define CACHE 0
-
-namespace {
-
-
-}
+DEFINE_int64(
+    world_rank,
+    0,
+    "rank of the process (Used if rndv_filepath is not empty)");
+DEFINE_int64(
+    world_size,
+    1,
+    "total number of the process (Used if rndv_filepath is not empty)");
+DEFINE_string(
+    rndv_filepath,
+    "",
+    "Shared file path used for setting up rendezvous."
+    "If empty, uses MPI to initialize.");
+DEFINE_uint64(batch_size, 256, "Total batch size across all gpus");
+DEFINE_string(checkpointpath, "/tmp/model", "Checkpointing prefix path");
+DEFINE_int64(checkpoint, -1, "Load from checkpoint");
 
 using namespace fl;
 
@@ -60,13 +63,14 @@ class DistributedDataset : public Dataset {
       ds_ = shuffle_;
     }
 
-    //shuffle_ = std::make_shared<ShuffleDataset>(base);
-    //ds_ = shuffle_;
-    //auto permfn = [world_size, world_rank, &base](int64_t idx) {
-      //return (idx * 2731) % base->size();
-    //};
-    //ds_ = std::make_shared<ResampleDataset>(ds_, permfn, 1024);
-    ds_ = std::make_shared<PrefetchDataset>(ds_, num_threads, prefetch_size);
+    auto permfn = [world_size, world_rank, &base](int64_t idx) {
+      return (idx * world_size) + world_rank;
+    };
+    ds_ = std::make_shared<ResampleDataset>(ds_, permfn, ds_->size() / world_size);
+
+    if (num_threads > 0) {
+      ds_ = std::make_shared<PrefetchDataset>(ds_, num_threads, prefetch_size);
+    }
     if (batch_size > 1) {
       ds_ = std::make_shared<BatchDataset>(ds_, batch_size);
     }
@@ -133,153 +137,84 @@ int main(int argc, char** argv) {
     std::cout << "Must specify imagenet data location" << std::endl;
     return -1;
   }
-  const std::string imagenet_base = argv[1];
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-  int world_rank = FLAGS_world_rank;
-  int world_size = FLAGS_world_size;
-  int miniBatchSize = FLAGS_batch_size;
-  af::setDevice(world_rank);
-  if (world_size > 1 && !DISTRIBUTED) {
-    std::cout << "Not built for distributed!" << std::endl;
-    return -1;
-  }
+  af::setDevice(FLAGS_world_rank);
 
-  const std::string label_path = imagenet_base + "labels.txt";
-  const std::string train_list = imagenet_base + "train";
-  const std::string val_list = imagenet_base + "val";
-
-  /////////////////////////
-  // Hyperparaters
-  ////////////////////////
-  //const int batch_size = 256;
-  //const int miniBatchSize = 128;
-  const float learning_rate = FLAGS_lr;
-  const float momentum = FLAGS_momentum;
-  const float weight_decay = FLAGS_wd;
-  const int epochs = FLAGS_epochs;
+  const std::string label_path = FLAGS_data_dir + "labels.txt";
+  const std::string train_list = FLAGS_data_dir + "train";
+  const std::string val_list = FLAGS_data_dir + "val";
 
   /////////////////////////
   // Setup distributed training
   ////////////////////////
   af::info();
-#if DISTRIBUTED
   fl::distributedInit(
 	fl::DistributedInit::FILE_SYSTEM,
-	world_rank,
-	world_size,
+	FLAGS_world_rank,
+	FLAGS_world_size,
 	{{fl::DistributedConstants::kMaxDevicePerNode,
 	  std::to_string(8)},
-	 {fl::DistributedConstants::kFilePath, "/checkpoint/padentomasello/tmp/" + std::to_string(world_size)}});
+	 {fl::DistributedConstants::kFilePath, FLAGS_rndv_filepath}});
 
-  std::cout << "WorldRank" << world_rank << "world_size " << world_size << std::endl;
-  af::setSeed(world_size);
+  af::setSeed(FLAGS_world_size);
 
   auto reducer = std::make_shared<fl::CoalescingReducer>(
-      1.0 / world_size,
+      1.0 / FLAGS_world_size,
       true,
       true);
-#endif
-
-
 
 
   //////////////////////////
   //  Create datasets
   /////////////////////////
-  const int batch_size = miniBatchSize * world_size;
+  const int batch_size_per_gpu = FLAGS_batch_size / FLAGS_world_size;
   const int64_t prefetch_threads = 10;
-  const int64_t prefetch_size = miniBatchSize * 2;
-#if CACHE
-  auto test = std::make_shared<NumpyDataset>(1024, "/private/home/padentomasello/tmp/pytorch_dump/save/train/");
-  auto train_ds = DistributedDataset(
-      test,
-      world_rank,
-      world_size,
-      miniBatchSize,
-      prefetch_threads,
-      prefetch_size,
-      false);
-
-  auto test_val = std::make_shared<NumpyDataset>(128, "/private/home/padentomasello/tmp/pytorch_dump/save/val/");
-  //test_val = std::make_shared<ImageDataset>(imagenetDataset(val_list, labels, val_transforms);
-  auto val_ds = DistributedDataset(
-      test_val,
-      world_rank,
-      world_size,
-      miniBatchSize,
-      prefetch_threads,
-      prefetch_size,
-      false);
-#else
+  const int64_t prefetch_size = batch_size_per_gpu * 2;
   const std::vector<float> mean = {0.485, 0.456, 0.406};
   const std::vector<float> std = {0.229, 0.224, 0.225};
-  //const std::vector<float> mean = {0.406, 0.456, 0.485};
-  //const std::vector<float> std = {0.225, 0.224, 0.229};
   auto labels = imagenetLabels(label_path);
-  auto toTensor = [](const af::array& in) { return in / 255.f; };
   std::vector<Dataset::TransformFunction> train_transforms = {
-      // randomly resize shortest side of image between 256 to 480 for scale
-      // invariance
-      //ImageDataset::randomResizeCropTransform(224, 0.08, 1.0, 3./.4, 4./3.),
+      ImageDataset::randomResizeCropTransform(224, 0.08, 1.0, 3./.4, 4./3.),
       //// Randomly flip image with probability of 0.5
-      //ImageDataset::horizontalFlipTransform(0.5),
-      //ImageDataset::normalizeImage(mean, std)
-      ImageDataset::resizeTransform(256),
+      ImageDataset::horizontalFlipTransform(0.5),
       ImageDataset::centerCrop(224),
-      toTensor,
-      //[](const af::array& in) { return in.as(f32) / 255.f; },
-      //[](const af::array& in) { return in.as(f32) / 255.f; },
-      //[](const af::array& in) { return af::constant(0.01, in.dims()); },
-      //zeros
       ImageDataset::normalizeImage(mean, std)
   };
   std::vector<Dataset::TransformFunction> val_transforms = {
       // Resize shortest side to 256, then take a center crop
       ImageDataset::resizeTransform(256),
       ImageDataset::centerCrop(224),
-      toTensor,
-      //[](const af::array& in) { return in.as(f32) / 255.f;},
-      //[](const af::array& in) { return af::constant(0.01, in.dims()); },
-      //zeros
       ImageDataset::normalizeImage(mean, std)
   };
-  //const uint64_t miniBatchSize = batch_size / world_size;
   auto test = std::make_shared<ImageDataset>(
           imagenetDataset(train_list, labels, train_transforms));
-  //auto test = std::make_shared<NumpyDataset>(1024, "/private/home/padentomasello/tmp/pytorch_dump/save/train/");
   auto train_ds = DistributedDataset(
       test,
-      world_rank,
-      world_size,
-      miniBatchSize,
+      FLAGS_world_rank,
+      FLAGS_world_size,
+      batch_size_per_gpu,
       prefetch_threads,
-      prefetch_size, false);
+      prefetch_size, true);
 
-  //auto test_val = std::make_shared<NumpyDataset>(128, "/private/home/padentomasello/tmp/pytorch_dump/save/val/");
   auto test_val = std::make_shared<ImageDataset>(imagenetDataset(val_list, labels, val_transforms));
   auto val_ds = DistributedDataset(
       test_val,
-      world_rank,
-      world_size,
-      miniBatchSize,
+      FLAGS_world_rank,
+      FLAGS_world_size,
+      batch_size_per_gpu,
       prefetch_threads,
       prefetch_size, false);
-#endif
 
 
   //////////////////////////
   //  Load model and optimizer
   /////////////////////////
-  //auto model = std::make_shared<Sequential>(resnet34());
-  auto model = std::make_shared<Sequential>(resnet34small());
-  // synchronize parameters of tje model so that the parameters in each process
-  // is the same
+  auto model = std::make_shared<Sequential>(resnet34());
 
-  //SGDOptimizer opt(model->params(), learning_rate, momentum, weight_decay);
-  SGDOptimizer opt(model->params(), learning_rate);
+  SGDOptimizer opt(model->params(), FLAGS_lr, FLAGS_momentum, FLAGS_wd);
 
-  auto lrScheduler = [&opt, &learning_rate](int epoch) {
+  auto lrScheduler = [&opt](int epoch) {
     // Adjust learning rate every 30 epoch
     if (epoch > 0 && epoch % 30 == 0) {
       const float newLr = opt.getLr() * 0.1;
@@ -288,69 +223,41 @@ int main(int argc, char** argv) {
     }
   };
 
-  // Small utility functions to load and save models
-  std::string checkpointPrefix = "/private/home/padentomasello/code/flashlight/build/model-max";
-  auto saveModel = [world_rank, &model, &checkpointPrefix](int epoch) {
-    if(world_rank == 0) {
-      std::string modelPath = checkpointPrefix + std::to_string(epoch);
+  // Small utility function to save models
+  std::string checkpointPrefix = "/private/home/padentomasello/code/flashlight/build/model-";
+  auto saveModel = [&model, &checkpointPrefix](int epoch) {
+    if(FLAGS_world_rank == 0) {
+      std::string modelPath = FLAGS_checkpointpath + std::to_string(epoch);
       std::cout <<  "Saving model to file: " << modelPath << std::endl;
       fl::save(modelPath, model);
     }
   };
 
-  auto loadModel = [&model, &checkpointPrefix](int epoch) {
-      std::string modelPath = checkpointPrefix + std::to_string(epoch);
-      std::cout <<  "Loading model from file: " << modelPath << std::endl;
-      fl::load(modelPath, model);
-  };
-  int checkpointEpoch = -1;
-  if (checkpointEpoch >= 0) {
-    loadModel(checkpointEpoch);
+  if (FLAGS_checkpoint >= 0) {
+    std::string modelPath = checkpointPrefix + std::to_string(FLAGS_checkpoint);
+    fl::load(modelPath, model);
   }
 
-#if DISTRIBUTED
   fl::allReduceParameters(model);
 
   // Add a hook to synchronize gradients of model parameters as they are
   // computed
   fl::distributeModuleGrads(model, reducer);
-#endif
 
-#if 0
-  for (int i = 0; i < epochs; i++) {
-    int idx = 0;
-    for (auto& example : train_ds) {
-      auto test = example[ImageDataset::INPUT_IDX].scalar<float>();
-      if (test == 0.0) {
-        std::cout << "Impossible " << std::endl;
-      }
-      if (idx % 10) {
-        std::cout << "Epoch" << i << "Idx " << idx << std::endl;
-      }
-      idx++;
-    }
-}
-
-#else
   // The main training loop
   TimeMeter time_meter;
   TopKMeter top5_meter(5, true);
   TopKMeter top1_meter(1, true);
   AverageValueMeter train_loss_meter;
-  for (int e = (checkpointEpoch + 1); e < epochs; e++) {
+  model->train();
+  for (int e = (FLAGS_checkpoint + 1); e < FLAGS_epochs; e++) {
     train_ds.resample();
     lrScheduler(e);
-    if (TRAIN) {
-      model->train();
-    } else {
-      model->eval();
-    }
 
     // Get an iterator over the data
     time_meter.resume();
     int idx = 0;
     for (auto& example : train_ds) {
-      opt.zeroGrad();
       // Make a Variable from the input array.
       auto inputs = noGrad(example[ImageDataset::INPUT_IDX]);
 
@@ -369,21 +276,16 @@ int main(int argc, char** argv) {
       top1_meter.add(output.array(), target.array());
 
       // Backprop, update the weights and then zero the gradients.
-
-#if DISTRIBUTED
       reducer->finalize();
-#endif
-
-#if TRAIN
       loss.backward();
       opt.step();
-#endif
+      opt.zeroGrad();
 
       // Compute and record the prediction error.
-      if (++idx % 1 == 0) {
+      if (++idx % 10 == 0) {
         double train_loss = train_loss_meter.value()[0];
         double time = time_meter.value();
-        double sample_per_second = ((idx * miniBatchSize) / time);
+        double sample_per_second = ((idx * FLAGS_batch_size) / time);
         double top5 = top5_meter.value();
         double top1 = top1_meter.value();
         af::array train_loss_arr = af::array(1, &train_loss);
@@ -393,15 +295,13 @@ int main(int argc, char** argv) {
         std::vector<af::array*> metric_arrays = {
           &train_loss_arr, &top1_arr, &top5_arr, &samples_per_second_arr
         };
-#if DISTRIBUTED
         fl::allReduceMultiple(metric_arrays, false, false);
-#endif
-        if (world_rank == 0) {
+        if (FLAGS_world_rank == 0) {
           std::cout << "Epoch " << e << std::setprecision(6) << " Batch: " << idx
                     << " Samples per second " << samples_per_second_arr.scalar<double>()
-                    << ": Avg Train Loss: " << train_loss_arr.scalar<double>() / world_size
-                    << ": Train Top5 Error( %): " << top5_arr.scalar<double>() / world_size
-                    << ": Train Top1 Error( %): " << top1_arr.scalar<double>() / world_size
+                    << ": Avg Train Loss: " << train_loss_arr.scalar<double>() / FLAGS_world_size
+                    << ": Train Top5 Error( %): " << top5_arr.scalar<double>() / FLAGS_world_size
+                    << ": Train Top1 Error( %): " << top1_arr.scalar<double>() / FLAGS_world_size
                     << std::endl;
         }
       }
@@ -423,5 +323,4 @@ int main(int argc, char** argv) {
     //saveModel(e);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
-#endif
 }

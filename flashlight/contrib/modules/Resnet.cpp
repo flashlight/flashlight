@@ -335,7 +335,7 @@ Sequential resnet34() {
   Sequential model;
   // conv1 -> 244x244x3 -> 112x112x64
   model.add(ConvBnAct(3, 64, 7, 7, 2, 2));
-  
+
   model.add(Pool2D(3, 3, 2, 2, 1, 1, PoolingMode::MAX));
   // conv2_x -> 56x56x64 -> 56x56x64
   model.add(ResNetStage<BasicBlock>(64, 64, 3, 1));

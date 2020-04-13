@@ -180,9 +180,6 @@ af::array loadJpeg(const std::string& fp) {
 
 
 	jpeg_start_decompress( &cinfo );
-  if (cinfo.num_components == 1) {
-    std::cout << "cinfo.num_components" << cinfo.num_components << std::endl;
-  }
 
 	auto raw_image = (unsigned char*)malloc( cinfo.output_width*cinfo.output_height*cinfo.num_components );
 
@@ -206,19 +203,6 @@ af::array loadJpeg(const std::string& fp) {
 	free( row_pointer[0] );
 	fclose( infile );
   return output;
-#elif 1
-  cv::Mat mat = cv::imread("/private/home/padentomasello/tmp/test.jpeg", cv::IMREAD_UNCHANGED);
-  if (!mat.data) {
-    std::cout << "Could not read!" << fp << std::endl;
-  }
-  cv::MatSize size = mat.size;
-  //std::cout << mat.at(0) << std::endl;
-  std::cout << size[0] << std::endl;
-  std::cout << "mat " << mat << std::endl;
-  //img = af::array(mat.ptr<float>(), dim4(s.height, s.width, s.));
-  auto img = af::constant(0, 224, 244, 3);
-  return img;
-
 #endif
 }
 
@@ -414,7 +398,7 @@ Dataset::TransformFunction ImageDataset::normalizeImage(
   const af::array mean(1, 1, 3, 1, meanVector.data());
   const af::array std(1, 1, 3, 1, stdVector.data());
   return [mean, std](const af::array& in) {
-    af::array out = in.as(f32);
+    af::array out = in.as(f32) / 255.f;
     out = af::batchFunc(out, mean, af::operator-);
     out = af::batchFunc(out, std, af::operator/);
     //af_print(out(af::span, 0, 0))
