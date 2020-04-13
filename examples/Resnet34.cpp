@@ -178,7 +178,6 @@ int main(int argc, char** argv) {
       ImageDataset::randomResizeCropTransform(224, 0.08, 1.0, 3./.4, 4./3.),
       //// Randomly flip image with probability of 0.5
       ImageDataset::horizontalFlipTransform(0.5),
-      ImageDataset::centerCrop(224),
       ImageDataset::normalizeImage(mean, std)
   };
   std::vector<Dataset::TransformFunction> val_transforms = {
