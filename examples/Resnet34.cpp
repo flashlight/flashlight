@@ -175,7 +175,9 @@ int main(int argc, char** argv) {
   const std::vector<float> std = {0.229, 0.224, 0.225};
   auto labels = imagenetLabels(label_path);
   std::vector<Dataset::TransformFunction> train_transforms = {
-      ImageDataset::randomResizeCropTransform(224, 0.08, 1.0, 3./.4, 4./3.),
+      //ImageDataset::randomResizeCropTransform(224, 0.08, 1.0, 3./.4, 4./3.),
+      ImageDataset::randomResizeTransform(256, 480),
+      ImageDataset::randomCropTransform(224, 224),
       //// Randomly flip image with probability of 0.5
       ImageDataset::horizontalFlipTransform(0.5),
       ImageDataset::normalizeImage(mean, std)
