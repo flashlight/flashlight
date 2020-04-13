@@ -298,7 +298,7 @@ int main(int argc, char** argv) {
         fl::allReduceMultiple(metric_arrays, false, false);
         if (FLAGS_world_rank == 0) {
           std::cout << "Epoch " << e << std::setprecision(6) << " Batch: " << idx
-                    << " Samples per second " << samples_per_second_arr.scalar<double>()
+                    << " Samples per second " << samples_per_second_arr.scalar<double>() / FLAGS_world_size
                     << ": Avg Train Loss: " << train_loss_arr.scalar<double>() / FLAGS_world_size
                     << ": Train Top5 Error( %): " << top5_arr.scalar<double>() / FLAGS_world_size
                     << ": Train Top1 Error( %): " << top1_arr.scalar<double>() / FLAGS_world_size
