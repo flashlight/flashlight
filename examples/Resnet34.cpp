@@ -46,8 +46,6 @@ DEFINE_uint64(batch_size, 256, "Total batch size across all gpus");
 DEFINE_string(checkpointpath, "/tmp/model", "Checkpointing prefix path");
 DEFINE_int64(checkpoint, -1, "Load from checkpoint");
 
-#define DISTRIBUTED 1
-
 
 using namespace fl;
 
@@ -130,11 +128,6 @@ int main(int argc, char** argv) {
 
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-  if (FLAGS_world_size > 1 && !DISTRIBUTED) {
-    std::cout << "Not built for distributed!" << std::endl;
-    return -1;
-  }
-
   const std::string label_path = FLAGS_data_dir + "labels.txt";
   const std::string train_list = FLAGS_data_dir + "train";
   const std::string val_list = FLAGS_data_dir + "val";
@@ -152,7 +145,6 @@ int main(int argc, char** argv) {
   // Setup distributed training
   ////////////////////////
   af::info();
-#if DISTRIBUTED
   fl::distributedInit(
 	fl::DistributedInit::FILE_SYSTEM,
 	FLAGS_world_rank,
@@ -169,7 +161,6 @@ int main(int argc, char** argv) {
       1.0 / FLAGS_world_size * 2, // Account for batch size being 128 instead of 256
       true,
       true);
-#endif
 
 
 
@@ -225,13 +216,11 @@ int main(int argc, char** argv) {
   auto model = std::make_shared<Sequential>(resnet34());
   // synchronize parameters of tje model so that the parameters in each process
   // is the same
-#if DISTRIBUTED
   fl::allReduceParameters(model);
 
   // Add a hook to synchronize gradients of model parameters as they are
   // computed
   fl::distributeModuleGrads(model, reducer);
-#endif 
 
   SGDOptimizer opt(model->params(), learning_rate, momentum, weight_decay);
 
@@ -264,22 +253,6 @@ int main(int argc, char** argv) {
     loadModel(checkpointEpoch);
   }
 
-#if 0
-  for (int i = 0; i < epochs; i++) {
-    int idx = 0;
-    for (auto& example : train_ds) {
-      auto test = example[ImageDataset::INPUT_IDX].scalar<float>();
-      if (test == 0.0) {
-        std::cout << "Impossible " << std::endl;
-      }
-      if (idx % 10) {
-        std::cout << "Epoch" << i << "Idx " << idx << std::endl;
-      }
-      idx++;
-    }
-}
-
-#else
   // The main training loop
   TimeMeter time_meter;
   TopKMeter top5_meter(5, true);
@@ -313,9 +286,7 @@ int main(int argc, char** argv) {
       // Backprop, update the weights and then zero the gradients.
       loss.backward();
 
-#ifdef DISTRIBUTED
       reducer->finalize();
-#endif
       opt.step();
 
       // Compute and record the prediction error.
@@ -339,7 +310,6 @@ int main(int argc, char** argv) {
     time_meter.reset();
     time_meter.stop();
 
-    // Evaluate on the dev set.
     double val_loss, val_top1_err, val_top5_err;
     std::tie(val_loss, val_top5_err, val_top1_err) = eval_loop(model, val_ds);
 
@@ -350,5 +320,4 @@ int main(int argc, char** argv) {
     saveModel(e);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
-#endif
 }
