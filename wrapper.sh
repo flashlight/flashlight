@@ -12,9 +12,8 @@ set -x
 echo $SLURMD_NODENAME $SLURM_JOB_ID $CUDA_VISIBLE_DEVICES
 echo $SLURM_NTASKS
 echo $SLURM_LOCALID
-rm /tmp/rndv/
-mkdir -p /tmp/rndv
 BUILD_DIR=/scratch/slurm_tmpdir/$SLURM_JOB_ID/$1
-AF_MAX_BUFFERS=3000 $BUILD_DIR/flashlight/build/examples/Resnet34 --world_rank $SLURM_LOCALID --world_size $SLURM_NTASKS --rndv_filepath /tmp/rndv/
+mkdir -p $BUILD_DIR/rndv/
+AF_MAX_BUFFERS=3000 $BUILD_DIR/flashlight/build/examples/Resnet34 --world_rank $SLURM_LOCALID --world_size $SLURM_NTASKS --rndv_filepath $BUILD_DIR/rndv
 
 # Your CUDA enabled program here

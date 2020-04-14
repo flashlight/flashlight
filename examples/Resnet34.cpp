@@ -39,7 +39,7 @@ DEFINE_int64(
     "total number of the process (Used if rndv_filepath is not empty)");
 DEFINE_string(
     rndv_filepath,
-    "",
+    "/tmp/",
     "Shared file path used for setting up rendezvous."
     "If empty, uses MPI to initialize.");
 DEFINE_uint64(batch_size, 256, "Total batch size across all gpus");
@@ -108,13 +108,7 @@ std::tuple<double, double, double> eval_loop(
     top5_meter.add(output.array(), target.array());
     top1_meter.add(output.array(), target.array());
     idx++;
-    if (idx % 10 == 0) {
-        af::deviceGC();
-    }
   }
-  // Place the model back into train mode.
-  af::deviceGC();
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
   model->train();
 
   double top1_error = top1_meter.value();
@@ -133,15 +127,6 @@ int main(int argc, char** argv) {
   const std::string val_list = FLAGS_data_dir + "val";
 
   /////////////////////////
-  // Hyperparaters
-  ////////////////////////
-  const int FLAGS_batch_size = 128;
-  const float learning_rate = 0.1f;
-  const float momentum = 0.9f;
-  const float weight_decay = 0.0001f;
-  const int epochs = 150;
-
-  /////////////////////////
   // Setup distributed training
   ////////////////////////
   af::info();
@@ -151,19 +136,16 @@ int main(int argc, char** argv) {
 	FLAGS_world_size,
 	{{fl::DistributedConstants::kMaxDevicePerNode,
 	  std::to_string(8)},
-	 {fl::DistributedConstants::kFilePath, "/checkpoint/padentomasello/tmp/" + std::to_string(FLAGS_world_size)}});
+	 {fl::DistributedConstants::kFilePath, FLAGS_rndv_filepath}});
 
-  std::cout << "WorldRank" << FLAGS_world_rank << "world_size " << FLAGS_world_size << std::endl;
+  std::cout << "WorldRank " << FLAGS_world_rank << " world_size " << FLAGS_world_size << std::endl;
   af::setDevice(FLAGS_world_rank);
   af::setSeed(FLAGS_world_size);
 
   auto reducer = std::make_shared<fl::CoalescingReducer>(
-      1.0 / FLAGS_world_size * 2, // Account for batch size being 128 instead of 256
+      1.0 / FLAGS_world_size,
       true,
       true);
-
-
-
 
   //////////////////////////
   //  Create datasets
@@ -190,10 +172,9 @@ int main(int argc, char** argv) {
   const int64_t batch_size_per_gpu = FLAGS_batch_size / FLAGS_world_size;
   const int64_t prefetch_threads = 10;
   const int64_t prefetch_size = FLAGS_batch_size;
-  auto test = std::make_shared<ImageDataset>(
-          imagenetDataset(train_list, labels, train_transforms));
   auto train_ds = DistributedDataset(
-      test,
+      std::make_shared<ImageDataset>(
+          imagenetDataset(train_list, labels, train_transforms)),
       FLAGS_world_rank,
       FLAGS_world_size,
       batch_size_per_gpu,
@@ -209,7 +190,6 @@ int main(int argc, char** argv) {
       prefetch_threads,
       prefetch_size);
 
-
   //////////////////////////
   //  Load model and optimizer
   /////////////////////////
@@ -222,9 +202,9 @@ int main(int argc, char** argv) {
   // computed
   fl::distributeModuleGrads(model, reducer);
 
-  SGDOptimizer opt(model->params(), learning_rate, momentum, weight_decay);
+  SGDOptimizer opt(model->params(), FLAGS_lr, FLAGS_momentum, FLAGS_wd);
 
-  auto lrScheduler = [&opt, &learning_rate](int epoch) {
+  auto lrScheduler = [&opt](int epoch) {
     // Adjust learning rate every 30 epoch
     if (epoch == 60 || epoch == 90 || epoch == 120) {
       const float newLr = opt.getLr() * 0.1;
@@ -234,23 +214,21 @@ int main(int argc, char** argv) {
   };
 
   // Small utility functions to load and save models
-  std::string checkpointPrefix = "/private/home/padentomasello/code/flashlight/build/model-max";
-  auto saveModel = [&model, &checkpointPrefix](int epoch) {
+  auto saveModel = [&model](int epoch) {
     if(FLAGS_world_rank == 0) {
-      std::string modelPath = checkpointPrefix + std::to_string(epoch);
+      std::string modelPath = FLAGS_checkpointpath + std::to_string(epoch);
       std::cout <<  "Saving model to file: " << modelPath << std::endl;
       fl::save(modelPath, model);
     }
   };
 
-  auto loadModel = [&model, &checkpointPrefix](int epoch) {
-      std::string modelPath = checkpointPrefix + std::to_string(epoch);
+  auto loadModel = [&model](int epoch) {
+      std::string modelPath = FLAGS_checkpointpath + std::to_string(epoch);
       std::cout <<  "Loading model from file: " << modelPath << std::endl;
       fl::load(modelPath, model);
   };
-  int checkpointEpoch = -1;
-  if (checkpointEpoch >= 0) {
-    loadModel(checkpointEpoch);
+  if (FLAGS_checkpoint >= 0) {
+    loadModel(FLAGS_checkpoint);
   }
 
   // The main training loop
@@ -258,7 +236,7 @@ int main(int argc, char** argv) {
   TopKMeter top5_meter(5, true);
   TopKMeter top1_meter(1, true);
   AverageValueMeter train_loss_meter;
-  for (int e = (checkpointEpoch + 1); e < epochs; e++) {
+  for (int e = (FLAGS_checkpoint); e < FLAGS_epochs; e++) {
     train_ds.resample();
     lrScheduler(e);
 
@@ -292,7 +270,6 @@ int main(int argc, char** argv) {
       // Compute and record the prediction error.
       double train_loss = train_loss_meter.value()[0];
       if (++idx % 50 == 0) {
-        //af::deviceGC();
         double time = time_meter.value();
         double sample_per_second = (idx * FLAGS_batch_size) / time;
         std::cout << "Epoch " << e << std::setprecision(5) << " Batch: " << idx
@@ -318,6 +295,5 @@ int main(int argc, char** argv) {
               << " Validation Top5 Error (%): " << val_top5_err
               << " Validation Top1 Error (%): " << val_top1_err << std::endl;
     saveModel(e);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 }
