@@ -1,6 +1,7 @@
 /**
  * Copyright (c) Facebook, Inc. and its affiliates.  * All rights reserved.
- * * This source code is licensed under the BSD-style license found in the
+ *
+ * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
 #include <exception>
@@ -45,6 +46,9 @@ DEFINE_uint64(batch_size, 256, "Total batch size across all gpus");
 DEFINE_string(checkpointpath, "/tmp/model", "Checkpointing prefix path");
 DEFINE_int64(checkpoint, -1, "Load from checkpoint");
 
+#define DISTRIBUTED 1
+
+
 using namespace fl;
 
 class DistributedDataset : public Dataset {
@@ -55,25 +59,15 @@ class DistributedDataset : public Dataset {
       int64_t world_size,
       int64_t batch_size,
       int64_t num_threads,
-      int64_t prefetch_size,
-      bool shuffle) {
-    ds_ = base;
-    if (shuffle) {
-      shuffle_ = std::make_shared<ShuffleDataset>(ds_);
-      ds_ = shuffle_;
-    }
-
-    auto permfn = [world_size, world_rank, &base](int64_t idx) {
+      int64_t prefetch_size) {
+    shuffle_ = std::make_shared<ShuffleDataset>(base);
+    auto permfn = [world_size, world_rank](int64_t idx) {
       return (idx * world_size) + world_rank;
     };
-    ds_ = std::make_shared<ResampleDataset>(ds_, permfn, ds_->size() / world_size);
-
-    if (num_threads > 0) {
-      ds_ = std::make_shared<PrefetchDataset>(ds_, num_threads, prefetch_size);
-    }
-    if (batch_size > 1) {
-      ds_ = std::make_shared<BatchDataset>(ds_, batch_size);
-    }
+    ds_ = std::make_shared<ResampleDataset>(
+	shuffle_, permfn, shuffle_->size() / world_size);
+    ds_ = std::make_shared<PrefetchDataset>(ds_, num_threads, prefetch_size);
+    ds_ = std::make_shared<BatchDataset>(ds_, batch_size);
   }
 
   std::vector<af::array> get(const int64_t idx) const override {
@@ -82,11 +76,7 @@ class DistributedDataset : public Dataset {
   }
 
   void resample() {
-    if (shuffle_) {
-      shuffle_->resample();
-    } else {
-      std::cerr << " Dataset not build with shuffling!" << std::endl;
-}
+    shuffle_->resample();
   }
 
   int64_t size() const override {
@@ -116,14 +106,18 @@ std::tuple<double, double, double> eval_loop(
 
     // Compute and record the loss.
     auto loss = categoricalCrossEntropy(output, target);
-    //std::cout << " loss " << std::endl;
     loss_meter.add(loss.array().scalar<float>());
     top5_meter.add(output.array(), target.array());
     top1_meter.add(output.array(), target.array());
     idx++;
+    if (idx % 10 == 0) {
+        af::deviceGC();
+    }
   }
   // Place the model back into train mode.
+  af::deviceGC();
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  model->train();
 
   double top1_error = top1_meter.value();
   double top5_error = top5_meter.value();
@@ -133,54 +127,67 @@ std::tuple<double, double, double> eval_loop(
 
 
 int main(int argc, char** argv) {
-  if (argc < 2) {
-    std::cout << "Must specify imagenet data location" << std::endl;
-    return -1;
-  }
+
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-  af::setDevice(FLAGS_world_rank);
+  if (FLAGS_world_size > 1 && !DISTRIBUTED) {
+    std::cout << "Not built for distributed!" << std::endl;
+    return -1;
+  }
 
   const std::string label_path = FLAGS_data_dir + "labels.txt";
   const std::string train_list = FLAGS_data_dir + "train";
   const std::string val_list = FLAGS_data_dir + "val";
 
   /////////////////////////
+  // Hyperparaters
+  ////////////////////////
+  const int FLAGS_batch_size = 128;
+  const float learning_rate = 0.1f;
+  const float momentum = 0.9f;
+  const float weight_decay = 0.0001f;
+  const int epochs = 150;
+
+  /////////////////////////
   // Setup distributed training
   ////////////////////////
   af::info();
+#if DISTRIBUTED
   fl::distributedInit(
 	fl::DistributedInit::FILE_SYSTEM,
 	FLAGS_world_rank,
 	FLAGS_world_size,
 	{{fl::DistributedConstants::kMaxDevicePerNode,
 	  std::to_string(8)},
-	 {fl::DistributedConstants::kFilePath, FLAGS_rndv_filepath}});
+	 {fl::DistributedConstants::kFilePath, "/checkpoint/padentomasello/tmp/" + std::to_string(FLAGS_world_size)}});
 
+  std::cout << "WorldRank" << FLAGS_world_rank << "world_size " << FLAGS_world_size << std::endl;
+  af::setDevice(FLAGS_world_rank);
   af::setSeed(FLAGS_world_size);
 
   auto reducer = std::make_shared<fl::CoalescingReducer>(
-      1.0 / FLAGS_world_size,
+      1.0 / FLAGS_world_size * 2, // Account for batch size being 128 instead of 256
       true,
       true);
+#endif
+
+
 
 
   //////////////////////////
   //  Create datasets
   /////////////////////////
-  const int batch_size_per_gpu = FLAGS_batch_size / FLAGS_world_size;
-  const int64_t prefetch_threads = 10;
-  const int64_t prefetch_size = batch_size_per_gpu * 2;
   const std::vector<float> mean = {0.485, 0.456, 0.406};
   const std::vector<float> std = {0.229, 0.224, 0.225};
   auto labels = imagenetLabels(label_path);
   std::vector<Dataset::TransformFunction> train_transforms = {
-      //ImageDataset::randomResizeCropTransform(224, 0.08, 1.0, 3./.4, 4./3.),
+      // randomly resize shortest side of image between 256 to 480 for scale 
+      // invariance
       ImageDataset::randomResizeTransform(256, 480),
       ImageDataset::randomCropTransform(224, 224),
-      //// Randomly flip image with probability of 0.5
-      ImageDataset::horizontalFlipTransform(0.5),
-      ImageDataset::normalizeImage(mean, std)
+      ImageDataset::normalizeImage(mean, std),
+      // Randomly flip image with probability of 0.5
+      ImageDataset::horizontalFlipTransform(0.5)
   };
   std::vector<Dataset::TransformFunction> val_transforms = {
       // Resize shortest side to 256, then take a center crop
@@ -188,6 +195,10 @@ int main(int argc, char** argv) {
       ImageDataset::centerCrop(224),
       ImageDataset::normalizeImage(mean, std)
   };
+
+  const int64_t batch_size_per_gpu = FLAGS_batch_size / FLAGS_world_size;
+  const int64_t prefetch_threads = 10;
+  const int64_t prefetch_size = FLAGS_batch_size;
   auto test = std::make_shared<ImageDataset>(
           imagenetDataset(train_list, labels, train_transforms));
   auto train_ds = DistributedDataset(
@@ -196,62 +207,85 @@ int main(int argc, char** argv) {
       FLAGS_world_size,
       batch_size_per_gpu,
       prefetch_threads,
-      prefetch_size, true);
+      prefetch_size);
 
-  auto test_val = std::make_shared<ImageDataset>(imagenetDataset(val_list, labels, val_transforms));
   auto val_ds = DistributedDataset(
-      test_val,
+      std::make_shared<ImageDataset>(
+          imagenetDataset(val_list, labels, val_transforms)),
       FLAGS_world_rank,
       FLAGS_world_size,
       batch_size_per_gpu,
       prefetch_threads,
-      prefetch_size, false);
+      prefetch_size);
 
 
   //////////////////////////
   //  Load model and optimizer
   /////////////////////////
   auto model = std::make_shared<Sequential>(resnet34());
+  // synchronize parameters of tje model so that the parameters in each process
+  // is the same
+#if DISTRIBUTED
+  fl::allReduceParameters(model);
 
-  SGDOptimizer opt(model->params(), FLAGS_lr, FLAGS_momentum, FLAGS_wd);
+  // Add a hook to synchronize gradients of model parameters as they are
+  // computed
+  fl::distributeModuleGrads(model, reducer);
+#endif 
 
-  auto lrScheduler = [&opt](int epoch) {
+  SGDOptimizer opt(model->params(), learning_rate, momentum, weight_decay);
+
+  auto lrScheduler = [&opt, &learning_rate](int epoch) {
     // Adjust learning rate every 30 epoch
-    if (epoch > 0 && epoch % 30 == 0) {
+    if (epoch == 60 || epoch == 90 || epoch == 120) {
       const float newLr = opt.getLr() * 0.1;
       std::cout << "Setting learning rate to: " << newLr << std::endl;
       opt.setLr(newLr);
     }
   };
 
-  // Small utility function to save models
-  std::string checkpointPrefix = "/private/home/padentomasello/code/flashlight/build/model-";
+  // Small utility functions to load and save models
+  std::string checkpointPrefix = "/private/home/padentomasello/code/flashlight/build/model-max";
   auto saveModel = [&model, &checkpointPrefix](int epoch) {
     if(FLAGS_world_rank == 0) {
-      std::string modelPath = FLAGS_checkpointpath + std::to_string(epoch);
+      std::string modelPath = checkpointPrefix + std::to_string(epoch);
       std::cout <<  "Saving model to file: " << modelPath << std::endl;
       fl::save(modelPath, model);
     }
   };
 
-  if (FLAGS_checkpoint >= 0) {
-    std::string modelPath = checkpointPrefix + std::to_string(FLAGS_checkpoint);
-    fl::load(modelPath, model);
+  auto loadModel = [&model, &checkpointPrefix](int epoch) {
+      std::string modelPath = checkpointPrefix + std::to_string(epoch);
+      std::cout <<  "Loading model from file: " << modelPath << std::endl;
+      fl::load(modelPath, model);
+  };
+  int checkpointEpoch = -1;
+  if (checkpointEpoch >= 0) {
+    loadModel(checkpointEpoch);
   }
 
-  fl::allReduceParameters(model);
+#if 0
+  for (int i = 0; i < epochs; i++) {
+    int idx = 0;
+    for (auto& example : train_ds) {
+      auto test = example[ImageDataset::INPUT_IDX].scalar<float>();
+      if (test == 0.0) {
+        std::cout << "Impossible " << std::endl;
+      }
+      if (idx % 10) {
+        std::cout << "Epoch" << i << "Idx " << idx << std::endl;
+      }
+      idx++;
+    }
+}
 
-  // Add a hook to synchronize gradients of model parameters as they are
-  // computed
-  fl::distributeModuleGrads(model, reducer);
-
+#else
   // The main training loop
   TimeMeter time_meter;
   TopKMeter top5_meter(5, true);
   TopKMeter top1_meter(1, true);
   AverageValueMeter train_loss_meter;
-  model->train();
-  for (int e = (FLAGS_checkpoint + 1); e < FLAGS_epochs; e++) {
+  for (int e = (checkpointEpoch + 1); e < epochs; e++) {
     train_ds.resample();
     lrScheduler(e);
 
@@ -259,6 +293,7 @@ int main(int argc, char** argv) {
     time_meter.resume();
     int idx = 0;
     for (auto& example : train_ds) {
+      opt.zeroGrad();
       // Make a Variable from the input array.
       auto inputs = noGrad(example[ImageDataset::INPUT_IDX]);
 
@@ -270,46 +305,37 @@ int main(int argc, char** argv) {
 
       // Compute and record the loss.
       auto loss = categoricalCrossEntropy(output, target);
-      //std::cout << loss << std::endl;
 
       train_loss_meter.add(loss.array());
       top5_meter.add(output.array(), target.array());
       top1_meter.add(output.array(), target.array());
 
       // Backprop, update the weights and then zero the gradients.
-      reducer->finalize();
       loss.backward();
+
+#ifdef DISTRIBUTED
+      reducer->finalize();
+#endif
       opt.step();
-      opt.zeroGrad();
 
       // Compute and record the prediction error.
-      if (++idx % 10 == 0) {
-        double train_loss = train_loss_meter.value()[0];
+      double train_loss = train_loss_meter.value()[0];
+      if (++idx % 50 == 0) {
+        //af::deviceGC();
         double time = time_meter.value();
-        double sample_per_second = ((idx * FLAGS_batch_size) / time);
-        double top5 = top5_meter.value();
-        double top1 = top1_meter.value();
-        af::array train_loss_arr = af::array(1, &train_loss);
-        af::array top1_arr = af::array(1, &top1);
-        af::array top5_arr = af::array(1, &top5);
-        af::array samples_per_second_arr = af::array(1, &sample_per_second);
-        std::vector<af::array*> metric_arrays = {
-          &train_loss_arr, &top1_arr, &top5_arr, &samples_per_second_arr
-        };
-        fl::allReduceMultiple(metric_arrays, false, false);
-        if (FLAGS_world_rank == 0) {
-          std::cout << "Epoch " << e << std::setprecision(6) << " Batch: " << idx
-                    << " Samples per second " << samples_per_second_arr.scalar<double>() / FLAGS_world_size
-                    << ": Avg Train Loss: " << train_loss_arr.scalar<double>() / FLAGS_world_size
-                    << ": Train Top5 Error( %): " << top5_arr.scalar<double>() / FLAGS_world_size
-                    << ": Train Top1 Error( %): " << top1_arr.scalar<double>() / FLAGS_world_size
-                    << std::endl;
-        }
+        double sample_per_second = (idx * FLAGS_batch_size) / time;
+        std::cout << "Epoch " << e << std::setprecision(5) << " Batch: " << idx
+                  << " Samples per second " << sample_per_second
+                  << ": Avg Train Loss: " << train_loss
+                  << ": Train Top5 Error( %): " << top5_meter.value()
+                  << ": Train Top1 Error( %): " << top1_meter.value()
+                  << std::endl;
+        top5_meter.reset();
+        top1_meter.reset();
+        train_loss_meter.reset();
+        af::deviceGC();
       }
     }
-    top5_meter.reset();
-    top1_meter.reset();
-    train_loss_meter.reset();
     time_meter.reset();
     time_meter.stop();
 
@@ -317,11 +343,12 @@ int main(int argc, char** argv) {
     double val_loss, val_top1_err, val_top5_err;
     std::tie(val_loss, val_top5_err, val_top1_err) = eval_loop(model, val_ds);
 
-    std::cout << "Epoch " << e << std::setprecision(6)
+    std::cout << "Epoch " << e << std::setprecision(5)
               << " Validation Loss: " << val_loss
               << " Validation Top5 Error (%): " << val_top5_err
               << " Validation Top1 Error (%): " << val_top1_err << std::endl;
-    //saveModel(e);
+    saveModel(e);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
+#endif
 }
