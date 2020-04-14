@@ -236,7 +236,7 @@ int main(int argc, char** argv) {
   TopKMeter top5_meter(5, true);
   TopKMeter top1_meter(1, true);
   AverageValueMeter train_loss_meter;
-  for (int e = (FLAGS_checkpoint); e < FLAGS_epochs; e++) {
+  for (int e = (FLAGS_checkpoint + 1); e < FLAGS_epochs; e++) {
     train_ds.resample();
     lrScheduler(e);
 
