@@ -9,11 +9,6 @@
 #include <arrayfire.h>
 #include <stdlib.h>
 #include <iostream>
-extern "C" {
-#include <jpeglib.h>
-}
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
 
 #include "flashlight/dataset/Dataset.h"
 #include "flashlight/dataset/ImageDataset.h"
@@ -51,21 +46,10 @@ public:
   LoadFunc loadfn_;
 };
 
-class RandomFloatBetween {
-
-public:
-  RandomFloatBetween() = default;
-  RandomFloatBetween(float low, float high) :
-    random_engine_{std::make_shared<std::mt19937>(std::random_device{}())},
-    distribution_(low, high) {}
-
-  float operator()() {
-    return distribution_(*random_engine_.get());
-  }
-private:
-  std::shared_ptr<std::mt19937> random_engine_;
-  std::uniform_real_distribution<float> distribution_;
-};
+float randomFloat(float a, float b) {
+  float r = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+  return a + (b - a) * r;
+}
 
 /*
  * Resizes the smallest length edge of an image to be resize while keeping
@@ -82,7 +66,6 @@ af::array resizeSmallest(const af::array& in, const int resize) {
       th = resize;
       tw = (resize * w) / h;
     }
-    //return af::resize(in, tw, th, AF_INTERP_BICUBIC);
     return af::resize(in, tw, th, AF_INTERP_BILINEAR);
 }
 
@@ -112,184 +95,43 @@ af::array centerCrop2(const af::array& in, const int size) {
  * numnber of channels to create an array with 3 channels
  */
 af::array loadJpeg(const std::string& fp) {
-#if 0
-  //return af::loadImage(fp.c_str(), true);
-  af::array img;
-  try {
-    return af::loadImage(fp.c_str(), true);
-    img = af::loadImageNative(fp.c_str());
-  } catch (...){
-    img = af::constant(0, 224, 244, 3);
-    std::cout << "Filepath " << fp << std::endl;
-  }
-  if(img.type() != u8) {
-    std::cout << img.type() << std::endl;
-  }
-  if (img.dims(2) == 3) {
-    return img;
-  } else if (img.dims(2) == 1) {
-    //img = af::tile(img, 2, 3);
-    auto img2 = af::colorSpace(img, AF_RGB, AF_GRAY);
-    return img2;
-  }
-#elif 1
 	int w, h, c;
   // STB image will automatically return desired_no_channels.
   // NB: c will be the original number of channels
-  //std::cout << " filepath " << fp << std::endl;
 	int desired_no_channels = 3;
-	//unsigned char *img = stbi_load("/datasets01_101/imagenet_full_size/061417/train/n01440764/n01440764_10026.JPEG", &w, &h, &c, desired_no_channels);
 	unsigned char *img = stbi_load(fp.c_str(), &w, &h, &c, desired_no_channels);
-  if(c == 1) {
-    //std::cout << "Found grayscale image! " << fp << std::endl;
-  }
 	if (img) {
 		af::array result = af::array(desired_no_channels, w, h, img);
-    if (c == 1) {
-      //std::cout << "filepath grayscale! " << std::endl;
-    }
 		stbi_image_free(img);
     return af::reorder(result, 1, 2, 0);
-    //return result;
 	} else {
     throw std::invalid_argument("Could not load from filepath" + fp);
 	}
-#elif 0
-  struct jpeg_decompress_struct cinfo;
-	struct jpeg_error_mgr jerr;
-
-	JSAMPROW row_pointer[1];
-
-	FILE *infile = fopen( fp.c_str(), "rb" );
-	unsigned long location = 0;
-	int i = 0;
-
-	if ( !infile )
-	{
-		printf("Error opening jpeg file %s\n!", fp.c_str() );
-		return -1;
-	}
-
-	cinfo.err = jpeg_std_error( &jerr );
-
-	jpeg_create_decompress( &cinfo );
-
-	jpeg_stdio_src( &cinfo, infile );
-
-	jpeg_read_header( &cinfo, TRUE );
-
-
-	jpeg_start_decompress( &cinfo );
-
-	auto raw_image = (unsigned char*)malloc( cinfo.output_width*cinfo.output_height*cinfo.num_components );
-
-	row_pointer[0] = (unsigned char *)malloc( cinfo.output_width*cinfo.num_components );
-
-	while( cinfo.output_scanline < cinfo.image_height )
-	{
-		jpeg_read_scanlines( &cinfo, row_pointer, 1 );
-		for( i=0; i<cinfo.image_width*cinfo.num_components;i++)
-			raw_image[location++] = row_pointer[0][i];
-	}
-
-	jpeg_finish_decompress( &cinfo );
-	jpeg_destroy_decompress( &cinfo );
-  auto output = af::array(af::dim4(cinfo.num_components, cinfo.output_width, cinfo.output_height), raw_image);
-  auto channels = cinfo.num_components;
-  output = af::reorder(output, 1, 2, 0);
-  //if (cinfo.num_components == 1) {
-    //output = af::colorSpace(output, AF_RGB, AF_GRAY);
-  //}
-	free( row_pointer[0] );
-	fclose( infile );
-  return output;
-#endif
 }
 
 af::array loadLabel(const uint64_t x) {
-
   return af::constant(x, 1, 1, 1, 1, u64);
-}
-
-af::array loadNpArray(const uint64_t x, const std::string pytorchDump) {
-  //std::string pytorchDump = "/private/home/padentomasello/tmp/pytorch_dump/save2/image";
-  std::stringstream ss;
-  ss << pytorchDump << "image" << x << ".bin";
-  const std::string fp = ss.str();
-  std::ifstream infile(fp, std::ios::binary);
-  if(!infile) {
-      throw std::invalid_argument("Could not read from fp" + fp);
-  }
-  std::vector<float> vec(224 * 224 *3);
-  infile.read((char*) vec.data(), vec.size() * sizeof(float));
-  if(!infile) {
-    throw std::invalid_argument("Could not read from fp" + fp);
-  }
-  infile.close();
-  return af::array(af::dim4(224, 224, 3), vec.data());
-}
-
-af::array loadNpLabel(const uint64_t x, const std::string pytorchDump) {
-  //std::string pytorchDump = "/private/home/padentomasello/tmp/pytorch_dump/save2/label";
-  std::stringstream ss;
-  ss << pytorchDump << "label" << x << ".bin";
-  const std::string fp = ss.str();
-  std::ifstream infile(fp, std::ios::binary);
-  if(!infile) {
-      throw std::invalid_argument("Could not read from fp" + fp);
-  }
-  std::vector<int64_t> vec(1);
-  infile.read((char*) vec.data(), vec.size() * sizeof(int64_t));
-  if(!infile) {
-    throw std::invalid_argument("Could not read from fp" + fp);
-  }
-  infile.close();
-  return af::constant(vec[0], 1, 1, 1, 1, s64);
 }
 
 }
 
 namespace fl {
 
-NumpyDataset::NumpyDataset(int n, const std::string fp) : n_(n) {
-  std::vector<int> indices(n_);
-  std::iota(indices.begin(), indices.end(), 0);
-  auto targets = std::make_shared<Loader<int>>(indices, [fp](const uint64_t x) {
-      return loadNpLabel(x, fp); });
-  auto images = std::make_shared<Loader<int>>(indices, [fp](const uint64_t x) {
-      return loadNpArray(x, fp); });
-  ds_ = std::make_shared<MergeDataset>(MergeDataset({images, targets}));
-}
-
-int64_t NumpyDataset::size() const {
-  return n_;
-}
-
-std::vector<af::array> NumpyDataset::get(const int64_t idx) const {
-  checkIndexBounds(idx);
-  return ds_->get(idx);
-}
 
 ImageDataset::ImageDataset(
     std::vector<std::string> filepaths,
     std::vector<uint64_t> labels,
     std::vector<TransformFunction>& transformfns
  ) {
-
   // Create image loader and apply transforms
-  //std::vector<int> indices(90000);
-  //std::iota(indices.begin(), indices.end(), 0);
-  //auto targets = std::make_shared<Loader<int>>(indices, loadNpLabel);
-  //auto images = std::make_shared<Loader<int>>(indices, loadNpArray);
-  //auto transformed = images;
   // TransformDataset will apply each transform in a vector to the respective af::array
   // Thus, we need to `compose` all of the transforms so are each aplied
   auto images = std::make_shared<Loader<std::string>>(filepaths, loadJpeg);
   std::vector<TransformFunction> transforms = { compose(transformfns) };
   auto transformed = std::make_shared<TransformDataset>(images, transforms);
 
-  auto targets = std::make_shared<Loader<uint64_t>>(labels, loadLabel);
   // Create label loader
+  auto targets = std::make_shared<Loader<uint64_t>>(labels, loadLabel);
 
   // Merge image and labels
   ds_ = std::make_shared<MergeDataset>(MergeDataset({transformed, targets}));
@@ -347,15 +189,13 @@ Dataset::TransformFunction ImageDataset::randomResizeCropTransform(
     const float scaleHigh,
     const float ratioLow,
     const float ratioHigh) {
-   auto scaleDist = RandomFloatBetween(scaleLow, scaleHigh);
-   auto ratioDist = RandomFloatBetween(log(ratioLow), log(ratioHigh));
-  return [ size, scaleDist, ratioDist] (const af::array& in) mutable {
+  return [=] (const af::array& in) mutable {
     const int w = in.dims(0);
     const int h = in.dims(1);
     const float area = w * h;
     for(int i = 0; i < 10; i++) {
-      const float scale = scaleDist();
-      const float ratio = ratioDist();
+      const float scale = randomFloat(scaleLow, scaleHigh);
+      const float ratio = randomFloat(log(ratioLow), log(ratioHigh));;
       const float targetArea = scale * area;
       const float targetRatio = exp(ratio);
       const int tw = round(sqrt(targetArea * targetRatio));
@@ -401,7 +241,6 @@ Dataset::TransformFunction ImageDataset::normalizeImage(
     af::array out = in.as(f32) / 255.f;
     out = af::batchFunc(out, mean, af::operator-);
     out = af::batchFunc(out, std, af::operator/);
-    //af_print(out(af::span, 0, 0))
     return out;
   };
 };
