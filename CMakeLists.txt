@@ -182,11 +182,12 @@ else()
   message(FATAL_ERROR "flashlight backend ill-specified")
 endif()
 
-# Dummy target just for ArrayFire dependency.
-# This lets libraries depending on flashlight detect which backend was used.
-set(FL_BACKEND_DUMMY "BACKEND_${FLASHLIGHT_BACKEND}")
-add_library(${FL_BACKEND_DUMMY} INTERFACE)
-target_link_libraries(${FL_BACKEND_DUMMY} INTERFACE ArrayFire::${FL_AF_BACKEND})
+# Link ArrayFire. Use a dummy interface library so the lib target can be
+# exported and projects depending on projects can discern which AF
+# (and FL) backend was built.
+set(FL_BACKEND "BACKEND_${FLASHLIGHT_BACKEND}")
+add_library(${FL_BACKEND} INTERFACE)
+target_link_libraries(${FL_BACKEND} INTERFACE ArrayFire::${FL_AF_BACKEND})
 
 # -------------------------------- Main Library --------------------------------
 add_library(flashlight "")
@@ -200,7 +201,7 @@ set_target_properties(
 
 set(
   FLASHLIGHT_MODULES
-  ${FL_BACKEND_DUMMY}
+  ${FL_BACKEND}
   Autograd
   Common
   Dataset

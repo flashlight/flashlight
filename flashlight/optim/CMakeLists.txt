@@ -30,9 +30,3 @@ target_link_libraries(
   INTERFACE
   Common
 )
-
-target_include_directories(
-  Optim
-  INTERFACE
-  ${ArrayFire_INCLUDE_DIRS}
-  )
