@@ -12,7 +12,6 @@ set(
   ${FL_CONTRIB_ROOT_PATH}/modules/AsymmetricConv1D.cpp
   ${FL_CONTRIB_ROOT_PATH}/modules/PositionEmbedding.cpp
   ${FL_CONTRIB_ROOT_PATH}/modules/Residual.cpp
-  ${FL_CONTRIB_ROOT_PATH}/modules/Resnet.cpp
   ${FL_CONTRIB_ROOT_PATH}/modules/Transformer.cpp
   )
 

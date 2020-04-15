@@ -2,7 +2,7 @@
 #include <fstream>
 #include <glob.h>
 
-#include "flashlight/dataset/ImagenetUtils.h"
+#include "vision/dataset/ImagenetUtils.h"
 
 namespace {
 

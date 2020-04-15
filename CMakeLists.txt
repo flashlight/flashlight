@@ -19,6 +19,7 @@ set(FL_INSTALL_BIN_DIR "bin" CACHE PATH "Install path for binaries")
 set(FL_INSTALL_ASSETS_BASE_DIR "share/flashlight")
 set(FL_INSTALL_CMAKE_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/cmake" CACHE PATH "Install path for CMake files")
 set(FL_INSTALL_EXAMPLES_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/examples" CACHE PATH "Install path for example files")
+set(FL_INSTALL_VISION_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/vision" CACHE PATH "Install path for vision files")
 set(FL_INSTALL_DOC_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/doc" CACHE PATH "Install path for documentation")
 
 # ----------------------------- Configuration -----------------------------
@@ -331,4 +332,9 @@ endif ()
 option(FL_BUILD_EXAMPLES "Build examples for flashlight" ON)
 if (FL_BUILD_EXAMPLES)
   add_subdirectory(${CMAKE_SOURCE_DIR}/examples)
+endif ()
+
+option(FL_BUILD_VISION "Build examples for flashlight" ON)
+if (FL_BUILD_VISION)
+  add_subdirectory(${CMAKE_SOURCE_DIR}/vision)
 endif ()

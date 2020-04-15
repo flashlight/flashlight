@@ -66,6 +66,6 @@ Sequential resnet34();
 
 
 } // namespace fl
-CEREAL_REGISTER_TYPE(fl::ConvBnAct)
-CEREAL_REGISTER_TYPE(fl::ResNetBlock)
-CEREAL_REGISTER_TYPE(fl::ResNetStage)
+//CEREAL_REGISTER_TYPE(fl::ConvBnAct)
+//CEREAL_REGISTER_TYPE(fl::ResNetBlock)
+//CEREAL_REGISTER_TYPE(fl::ResNetStage)

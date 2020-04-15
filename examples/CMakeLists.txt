@@ -11,26 +11,15 @@ if (NOT TARGET ArrayFire)
   find_package(ArrayFire)
 endif ()
 
-find_package(GFLAGS REQUIRED)
-find_package(JPEG REQUIRED)
-message("JPEG" ${JPEG_LIBRARIES})
-
 function(build_example SRCFILE)
   get_filename_component(src_name ${SRCFILE} NAME_WE)
   set(target "${src_name}")
   add_executable(${target} ${SRCFILE})
   if (TARGET flashlight)
-    target_link_libraries(${target} PRIVATE 
-      flashlight 
-      ${GFLAGS_LIBRARIES}
-      ${JPEG_LIBRARIES}
-      )
-    target_include_directories(${target} 
-      PRIVATE 
-      ${CMAKE_SOURCE_DIR}
-      )
+    target_link_libraries(${target} PRIVATE flashlight)
+    target_include_directories(${target} PRIVATE ${CMAKE_SOURCE_DIR})
   else ()
-    target_link_libraries(${target} PRIVATE flashlight::flashlight ${GFLAGS_LIBRARIES}, ${JPEG_LIBRARIES})
+    target_link_libraries(${target} PRIVATE flashlight::flashlight)
   endif()
 endfunction(build_example)
 
@@ -43,7 +32,4 @@ build_example(Xor.cpp)
 build_example(AdaptiveClassification.cpp)
 if (FL_BUILD_DISTRIBUTED OR TARGET flashlight::Distributed)
   build_example(DistributedTraining.cpp)
-endif ()
-if (FL_BUILD_CONTRIB)
-  build_example(Resnet34.cpp)
 endif ()

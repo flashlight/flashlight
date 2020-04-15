@@ -9,10 +9,10 @@
 
 #include <cudnn.h>
 
-#include "flashlight/contrib/modules/Resnet.h"
+#include "vision/models/Resnet.h"
 #include "flashlight/dataset/BatchDataset.h"
 #include "flashlight/dataset/Dataset.h"
-#include "flashlight/dataset/ImagenetUtils.h"
+#include "vision/dataset/ImagenetUtils.h"
 #include "flashlight/dataset/PrefetchDataset.h"
 #include "flashlight/dataset/ShuffleDataset.h"
 #include "flashlight/meter/AverageValueMeter.h"

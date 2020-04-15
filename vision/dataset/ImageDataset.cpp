@@ -1,3 +1,6 @@
+#include "vision/dataset/ImageDataset.h"
+
+#include <iostream>
 #include <thread>
 #include <chrono>
 #include <random>
@@ -8,14 +11,12 @@
 #include <cudnn.h>
 #include <arrayfire.h>
 #include <stdlib.h>
-#include <iostream>
 
 #include "flashlight/dataset/Dataset.h"
-#include "flashlight/dataset/ImageDataset.h"
 #include "flashlight/dataset/MergeDataset.h"
 #include "flashlight/dataset/TransformDataset.h"
 #define STB_IMAGE_IMPLEMENTATION
-#include "flashlight/dataset/stb_image.h"
+#include "vision/dataset/stb_image.h"
 
 
 namespace {

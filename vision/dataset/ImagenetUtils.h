@@ -1,6 +1,6 @@
 #pragma once
 
-#include "flashlight/dataset/ImageDataset.h"
+#include "vision/dataset/ImageDataset.h"
 /**
  * Utilities for creating an ImageDataset with imagenet data
  * The jpegs must be placed in subdirectories representing their class in a

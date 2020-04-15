@@ -1,4 +1,4 @@
-#include "flashlight/contrib/modules/Resnet.h"
+#include "vision/models/Resnet.h"
 
 
 namespace fl {
