@@ -334,7 +334,7 @@ if (FL_BUILD_EXAMPLES)
   add_subdirectory(${CMAKE_SOURCE_DIR}/examples)
 endif ()
 
-option(FL_BUILD_VISION "Build examples for flashlight" ON)
+option(FL_BUILD_VISION "Build examples for flashlight" OFF)
 if (FL_BUILD_VISION)
   add_subdirectory(${CMAKE_SOURCE_DIR}/vision)
 endif ()
