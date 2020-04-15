@@ -251,6 +251,8 @@ class MockTestMemoryManager : public TestMemoryManager {
   std::shared_ptr<TestMemoryManager> real_;
 };
 
+} // namespace
+
 /**
  * Tests `MemoryManagerAdapter`, `MemoryManagerInstaller`, and
  * `MemoryManagerDeviceInterface`. By doing the following:
@@ -419,4 +421,7 @@ TEST(MemoryAdapter, AdapterInstallerDeviceInterfaceTest) {
   af::free(p);
 }
 
-} // namespace
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
