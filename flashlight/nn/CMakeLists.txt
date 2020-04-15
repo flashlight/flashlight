@@ -56,6 +56,5 @@ target_link_libraries(
 target_include_directories(
   NN
   INTERFACE
-  ${ArrayFire_INCLUDE_DIRS}
   ${cereal_INCLUDE_DIRS} # pulled in - see cmake/BuildCereal.cmake
   )
