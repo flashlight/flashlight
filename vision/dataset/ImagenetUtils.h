@@ -27,6 +27,9 @@
  */
 namespace fl {
 
+/* Given the path to the imagenet labels file labels.txt,
+ * create a map with a unique id for each label that can be used for training
+ */
 std::unordered_map<std::string, uint32_t> imagenetLabels(
     const std::string& label_file);
 

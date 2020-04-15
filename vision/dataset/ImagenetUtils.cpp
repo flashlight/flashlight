@@ -26,6 +26,10 @@ std::string labelFromFilePath(std::string fp) {
   return parent_path.substr(parent_path.rfind("/") + 1);
 }
 
+/*
+ * Given a vector of filepaths, and a dictionary of labels to labelIdx,
+ * return a vector of label targets
+ */
 std::vector<uint64_t> labelTargets(
     std::vector<std::string>& filepaths,
     std::unordered_map<std::string, uint32_t>& labelMap
