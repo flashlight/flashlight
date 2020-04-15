@@ -1,13 +1,22 @@
 cmake_minimum_required(VERSION 3.5.1)
 
-# Download and build googletest
-include(${CMAKE_MODULE_PATH}/BuildGoogleTest.cmake)
+find_package(GTest 1.8.1)
+
+if (NOT TARGET gtest AND NOT GTEST_FOUND)
+  message(STATUS "googletest not found - will download and build from source")
+  # Download and build googletest
+  include(${CMAKE_MODULE_PATH}/BuildGoogleTest.cmake)
+else()
+  message(STATUS "gtest found: (include: ${GTEST_INCLUDE_DIRS}, lib: ${GTEST_BOTH_LIBRARIES}")
+endif()
 
 function(build_test SRCFILE)
   get_filename_component(src_name ${SRCFILE} NAME_WE)
   set(target "${src_name}")
   add_executable(${target} ${SRCFILE})
-  add_dependencies(${target} gtest) # make sure gtest is built first
+  if (TARGET gtest)
+    add_dependencies(${target} gtest) # make sure gtest is built first
+  endif()
   target_link_libraries(
     ${target}
     PRIVATE
