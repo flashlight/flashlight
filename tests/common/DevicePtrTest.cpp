@@ -58,3 +58,8 @@ TEST(DevicePtrTest, Move) {
   EXPECT_FALSE(isLockedArray(x));
   EXPECT_FALSE(isLockedArray(y));
 }
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
