@@ -31,9 +31,8 @@ constexpr cudnnConvolutionBwdFilterAlgo_t kBwdFilterDefaultAlgo =
 template <typename T>
 T getBestAlgorithm(const std::vector<T>& algoPerfs) {
   for (const auto& algoPerf : algoPerfs) {
-    if (algoPerf.status == CUDNN_STATUS_SUCCESS) {
-    //if (algoPerf.status == CUDNN_STATUS_SUCCESS &&
-        //algoPerf.memory < kWorkspaceSizeLimitBytes) {
+    if (algoPerf.status == CUDNN_STATUS_SUCCESS &&
+        algoPerf.memory < kWorkspaceSizeLimitBytes) {
       return algoPerf;
     }
   }

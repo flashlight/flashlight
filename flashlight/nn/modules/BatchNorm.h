@@ -117,8 +117,6 @@ class BatchNorm : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
-  void setRunningStats(const Variable& mean, const Variable var, const int num_batches);
-
   std::string prettyString() const override;
 };
 

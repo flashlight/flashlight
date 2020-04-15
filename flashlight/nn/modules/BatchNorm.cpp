@@ -45,12 +45,6 @@ BatchNorm::BatchNorm(
   initialize();
 }
 
-void BatchNorm::setRunningStats(const Variable& mean, const Variable var, const int num_batches) {
-  runningMean_ = mean;
-  runningVar_ = var;
-  numBatchesTracked_ = num_batches;
-}
-
 Variable BatchNorm::forward(const Variable& input) {
   double avgFactor = 0.0;
 
@@ -63,7 +57,7 @@ Variable BatchNorm::forward(const Variable& input) {
     }
   }
 
-  auto out =  batchnorm(
+  return batchnorm(
       input,
       params_.empty() ? Variable() : params_[0],
       params_.empty() ? Variable() : params_[1],
@@ -73,7 +67,6 @@ Variable BatchNorm::forward(const Variable& input) {
       train_ || (!trackStats_),
       avgFactor,
       epsilon_);
-  return out;
 }
 
 void BatchNorm::initialize() {

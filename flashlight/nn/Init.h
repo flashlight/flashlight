@@ -71,13 +71,11 @@ Variable param(const af::array& arr);
  * @return A `Variable` containing a tensor with random values distributed
  * accordingly.
  */
-//Variable kaimingUniform(
-    //int input_size,
-    //int output_size,
-    //float gain = 1.0f,
-    //af::dtype type = f32,
-    //bool calc_grad = true,
-    //bool fan_in = true);
+Variable kaimingUniform(
+    int input_size,
+    int output_size,
+    af::dtype type = f32,
+    bool calc_grad = true);
 
 /**
  * Creates a `Variable` representing a tensor of up to rank 4 with arbitrary
@@ -94,12 +92,8 @@ Variable param(const af::array& arr);
  * @return A `Variable` containing a tensor with random values distributed
  * accordingly.
  */
-Variable kaimingUniform(
-    af::dim4 shape,
-    int fanIn,
-    float gain = 1.0f,
-    af::dtype type = af::dtype::f32,
-    bool calcGrad = true);
+Variable
+kaimingUniform(af::dim4 dims, af::dtype type = f32, bool calc_grad = true);
 
 /**
  * Creates a `Variable` representing a tensor with dimensions `[input_size,
@@ -118,11 +112,10 @@ Variable kaimingUniform(
  * accordingly.
  */
 Variable kaimingNormal(
-    af::dim4 shape,
-    int fanIn,
-    float gain = 1.0f,
-    af::dtype type = af::dtype::f32,
-    bool calcGrad = true);
+    int input_size,
+    int output_size,
+    af::dtype type = f32,
+    bool calc_grad = true);
 
 /**
  * Creates a `Variable` representing a tensor of up to rank 4 with arbitrary
@@ -139,8 +132,8 @@ Variable kaimingNormal(
  * @return A `Variable` containing a tensor with random values distributed
  * accordingly.
  */
-//Variable
-//kaimingNormal(af::dim4 dims, af::dtype type = f32, bool calc_grad = true);
+Variable
+kaimingNormal(af::dim4 dims, af::dtype type = f32, bool calc_grad = true);
 
 /**
  * Creates a `Variable` representing a tensor with dimensions `[input_size,

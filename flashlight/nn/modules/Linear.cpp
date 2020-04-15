@@ -48,10 +48,10 @@ Variable Linear::forward(const Variable& input) {
 }
 
 void Linear::initialize() {
-  int fanIn = nIn_;
-  auto w = kaimingUniform(af::dim4(nOut_, nIn_), fanIn);
+  auto w = kaimingUniform(nOut_, nIn_);
   if (bias_) {
-    double bound = std::sqrt(1.0 / fanIn);
+    int fan_in = detail::computeFans(w.dims()).first;
+    double bound = std::sqrt(1.0 / fan_in);
     auto b = uniform(af::dim4(nOut_), -bound, bound);
     params_ = {w, b};
   } else {
