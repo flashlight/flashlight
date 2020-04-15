@@ -73,7 +73,7 @@ class ImageDataset : public Dataset {
   /*
    * Take a center crop of an image so its size is @param size
    */
-  static TransformFunction centerCrop(const int size);
+  static TransformFunction centerCropTransform(const int size);
 
   /*
    * Flip an image horizontally with a probability @param p

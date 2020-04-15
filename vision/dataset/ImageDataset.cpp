@@ -1,20 +1,16 @@
 #include "vision/dataset/ImageDataset.h"
 
-#include <iostream>
-#include <thread>
-#include <chrono>
-#include <random>
-#include <iomanip>
-#include <fstream>
-#include <numeric>
-
-#include <cudnn.h>
 #include <arrayfire.h>
-#include <stdlib.h>
+
+#include <fstream>
+#include <iostream>
+#include <numeric>
+#include <random>
 
 #include "flashlight/dataset/Dataset.h"
 #include "flashlight/dataset/MergeDataset.h"
 #include "flashlight/dataset/TransformDataset.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "vision/dataset/stb_image.h"
 
@@ -83,11 +79,11 @@ af::array crop(
 	return in(af::seq(x, x + w - 1), af::seq(y, y + h - 1), af::span, af::span);
 }
 
-af::array centerCrop2(const af::array& in, const int size) {
+af::array centerCrop(const af::array& in, const int size) {
     const int w = in.dims(0);
     const int h = in.dims(1);
-    const int cropLeft = round((float(w) - size) / 2.);
-    const int cropTop = round((float(h) - size) / 2.);
+    const int cropLeft = round((static_cast<float>(w) - size) / 2.);
+    const int cropTop = round((static_cast<float>(h) - size) / 2.);
     return crop(in, cropLeft, cropTop, size, size);
 }
 
@@ -149,7 +145,6 @@ int64_t ImageDataset::size() const {
 
 Dataset::TransformFunction ImageDataset::resizeTransform(const uint64_t resize) {
   return [resize](const af::array& in) {
-    return af::resize(in, resize, resize, AF_INTERP_BILINEAR);
     return resizeSmallest(in, resize);
   };
 }
@@ -165,10 +160,10 @@ Dataset::TransformFunction ImageDataset::compose(
   };
 }
 
-Dataset::TransformFunction ImageDataset::centerCrop(
+Dataset::TransformFunction ImageDataset::centerCropTransform(
     const int size) {
   return [size](const af::array& in) {
-    return centerCrop2(in, size);
+    return centerCrop(in, size);
   };
 };
 
@@ -176,7 +171,7 @@ Dataset::TransformFunction ImageDataset::horizontalFlipTransform(
     const float p) {
   return [p](const af::array& in) {
     af::array out = in;
-    if (float(rand()) / float(RAND_MAX) > p) {
+    if (static_cast<float>(rand()) / static_cast<float>(RAND_MAX) > p) {
       const uint64_t w = in.dims(0);
       out = out(af::seq(w - 1, 0, -1), af::span, af::span, af::span);
     }
@@ -207,14 +202,15 @@ Dataset::TransformFunction ImageDataset::randomResizeCropTransform(
         return resize(crop(in, x, y, tw, th), size);
       }
     }
-    return centerCrop2(resizeSmallest(in, size), size);;
+    return centerCrop(resizeSmallest(in, size), size);;
   };
 }
 
 Dataset::TransformFunction ImageDataset::randomResizeTransform(
     const int low, const int high) {
   return [low, high](const af::array& in) {
-    const float scale = float(rand()) / float(RAND_MAX);
+    const float scale =
+      static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
     const int resize = low + (high - low) *  scale;
     return resizeSmallest(in, resize);
   };

@@ -7,21 +7,13 @@
 #include <exception>
 #include <iomanip>
 
-#include <cudnn.h>
-
-#include "vision/models/Resnet.h"
-#include "flashlight/dataset/BatchDataset.h"
-#include "flashlight/dataset/Dataset.h"
-#include "vision/dataset/ImagenetUtils.h"
-#include "flashlight/dataset/PrefetchDataset.h"
-#include "flashlight/dataset/ShuffleDataset.h"
-#include "flashlight/meter/AverageValueMeter.h"
-#include "flashlight/meter/TimeMeter.h"
-#include "flashlight/meter/TopKMeter.h"
-#include "flashlight/nn/nn.h"
-#include "flashlight/optim/optim.h"
-
 #include <gflags/gflags.h>
+
+#include "flashlight/dataset/datasets.h"
+#include "flashlight/meter/meters.h"
+#include "flashlight/optim/optim.h"
+#include "vision/dataset/ImagenetUtils.h"
+#include "vision/models/Resnet.h"
 
 DEFINE_string(data_dir, "/datasets01_101/imagenet_full_size/061417/", "Directory of imagenet data");
 DEFINE_double(lr, 0.1f, "Learning rate");
@@ -165,7 +157,7 @@ int main(int argc, char** argv) {
   std::vector<Dataset::TransformFunction> val_transforms = {
       // Resize shortest side to 256, then take a center crop
       ImageDataset::resizeTransform(256),
-      ImageDataset::centerCrop(224),
+      ImageDataset::centerCropTransform(224),
       ImageDataset::normalizeImage(mean, std)
   };
 
@@ -281,7 +273,6 @@ int main(int argc, char** argv) {
         top5_meter.reset();
         top1_meter.reset();
         train_loss_meter.reset();
-        af::deviceGC();
       }
     }
     time_meter.reset();
