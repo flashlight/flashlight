@@ -6,17 +6,6 @@
 
 namespace fl {
 
-class NumpyDataset : public Dataset {
-  public:
-    NumpyDataset(int n, const std::string fp);
-
-    std::vector<af::array> get(const int64_t idx) const override;
-    int64_t size() const override;
-  private:
-    int n_;
-    std::shared_ptr<Dataset> ds_;
-};
-
 /**
  * Creates a dataset from loadings JPEGs from files.
  * Example:
