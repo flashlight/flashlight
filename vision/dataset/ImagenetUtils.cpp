@@ -77,7 +77,6 @@ ImageDataset imagenetDataset(
   if (filepaths.size() == 0) {
     throw std::runtime_error("Could not file any files in " + fp);
   }
-  auto labels = labelTargets(filepaths, labelIdxs);
-  return ImageDataset(filepaths, labels, transformfns);
+  return ImageDataset(filepaths, transformfns);
 }
 } // namespace fl

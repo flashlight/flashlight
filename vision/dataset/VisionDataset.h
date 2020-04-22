@@ -6,7 +6,7 @@ namespace fl {
 
 class VisionDataset : public Dataset {
   public:
-    VisionDataset(std::vector<TransformFunction>& transformfns);
+    VisionDataset(const std::vector<TransformFunction>& transformfns);
 
   static TransformFunction normalizeImage(
       const std::vector<float>& mean_,
@@ -53,8 +53,8 @@ class VisionDataset : public Dataset {
    */
   static TransformFunction compose(
       std::vector<TransformFunction>& transformfns);
-  private:
-      std::vector<TransformFunction>& transformfns_;
+  protected:
+      const std::vector<TransformFunction>& transformfns_;
 };
 
 }

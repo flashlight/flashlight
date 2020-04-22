@@ -53,7 +53,7 @@ af::array centerCrop(const af::array& in, const int size) {
 
 namespace fl {
 
-VisionDataset::VisionDataset(std::vector<TransformFunction>& transforms) 
+VisionDataset::VisionDataset(const std::vector<TransformFunction>& transforms) 
   : transformfns_(transforms) {
 }
 

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <algorithm>
+#include <fstream>
+#include <glob.h>
 #include "vision/dataset/VisionDataset.h"
 
 #include <unordered_map>
@@ -32,10 +35,13 @@ class ImageDataset : public VisionDataset {
    * @param[transformfns] Image transformations
    */
   ImageDataset(
-      std::vector<std::string> filepaths,
-      std::vector<TransformFunction>& transformfns);
+      const std::vector<std::string>& filepaths,
+      const std::vector<TransformFunction>& transformfns);
 
-  ImageDataset(std::string& dir);
+  ImageDataset(
+      const std::string& dir,
+      const std::vector<TransformFunction>& transformfns);
+
 
   std::vector<af::array> get(const int64_t idx) const override;
 
@@ -46,7 +52,8 @@ class ImageDataset : public VisionDataset {
   static const uint64_t TARGET_IDX = 1;
 
  private:
-  std::shared_ptr<Dataset> ds_;
+  std::vector<std::string> filepaths_;
+  std::vector<uint64_t> labels_;
 };
 
 } // namespace fl

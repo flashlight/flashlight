@@ -56,7 +56,7 @@ class DistributedDataset : public Dataset {
       return (idx * world_size) + world_rank;
     };
     ds_ = std::make_shared<ResampleDataset>(
-	shuffle_, permfn, shuffle_->size() / world_size);
+  shuffle_, permfn, shuffle_->size() / world_size);
     ds_ = std::make_shared<PrefetchDataset>(ds_, num_threads, prefetch_size);
     ds_ = std::make_shared<BatchDataset>(ds_, batch_size);
   }
@@ -167,7 +167,7 @@ int main(int argc, char** argv) {
   const int64_t prefetch_size = FLAGS_batch_size;
   auto train_ds = DistributedDataset(
       std::make_shared<ImageDataset>(
-          imagenetDataset(train_list, labels, train_transforms)),
+          ImageDataset(train_list, train_transforms)),
       FLAGS_world_rank,
       FLAGS_world_size,
       batch_size_per_gpu,
@@ -176,7 +176,7 @@ int main(int argc, char** argv) {
 
   auto val_ds = DistributedDataset(
       std::make_shared<ImageDataset>(
-          imagenetDataset(val_list, labels, val_transforms)),
+          ImageDataset(val_list, val_transforms)),
       FLAGS_world_rank,
       FLAGS_world_size,
       batch_size_per_gpu,

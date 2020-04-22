@@ -65,37 +65,78 @@ af::array loadLabel(const uint64_t x) {
   return af::constant(x, 1, 1, 1, 1, u64);
 }
 
+inline std::vector<std::string> glob(const std::string& pat) {
+  glob_t result;
+  glob(pat.c_str(), GLOB_TILDE, nullptr, &result);
+  std::vector<std::string> ret;
+  for (unsigned int i = 0; i < result.gl_pathc; ++i) {
+    ret.push_back(std::string(result.gl_pathv[i]));
+  }
+  globfree(&result);
+  return ret;
+}
+
+/*
+ * Assumes images are in a directory where the parent folder represents 
+ * thier class
+ */
+std::string labelFromFilePath(std::string fp) {
+  auto parent_path = fp.substr(0, fp.rfind("/"));
+  return parent_path.substr(parent_path.rfind("/") + 1);
+}
+
+/*
+ * Given a vector of filepaths, and a dictionary of labels to labelIdx,
+ * return a vector of label targets
+ */
+std::vector<uint64_t> labelTargets(
+    const std::vector<std::string>& filepaths
+    ) {
+  std::unordered_map<std::string, uint32_t> labelMap;
+  auto getLabelTargets = [&labelMap](const std::string& s) {
+    const std::string label = labelFromFilePath(s);
+    if (labelMap.find(label) == labelMap.end()) {
+      labelMap[label] = labelMap.size();
+    } 
+    return labelMap[label];
+  };
+  std::vector<uint64_t> labels(filepaths.size());
+  std::transform(filepaths.begin(), filepaths.end(), labels.begin(), getLabelTargets);
+  return labels;
+}
+
 }
 
 namespace fl {
 
 
 ImageDataset::ImageDataset(
-    std::vector<std::string> filepaths,
-    std::vector<uint64_t> labels,
-    std::vector<TransformFunction>& transformfns
- ) : VisionDataset(transformfns) {
-  // Create image loader and apply transforms
-  // TransformDataset will apply each transform in a vector to the respective af::array
-  // Thus, we need to `compose` all of the transforms so are each aplied
-  auto images = std::make_shared<Loader<std::string>>(filepaths, loadJpeg);
-  std::vector<TransformFunction> transforms = { compose(transformfns) };
-  auto transformed = std::make_shared<TransformDataset>(images, transforms);
+    const std::vector<std::string>& filepaths,
+    const std::vector<TransformFunction>& transformfns
+ ) : VisionDataset(transformfns), filepaths_(filepaths), labels_(labelTargets(filepaths_)) {
+  if(filepaths_.size() != labels_.size()) {
+    throw std::runtime_error("Filepaths size does not match label size");
+  }
+}
 
-  // Create label loader
-  auto targets = std::make_shared<Loader<uint64_t>>(labels, loadLabel);
-
-  // Merge image and labels
-  ds_ = std::make_shared<MergeDataset>(MergeDataset({transformed, targets}));
+ImageDataset::ImageDataset(
+    const std::string& dir,
+    const std::vector<TransformFunction>& transformfns
+ ) : ImageDataset(glob(dir + "/**/*.JPEG"), transformfns) {
 }
 
 std::vector<af::array> ImageDataset::get(const int64_t idx) const {
   checkIndexBounds(idx);
-  return ds_->get(idx);
+  auto img = loadJpeg(filepaths_[idx]);
+  for (auto fn : transformfns_) {
+    img = fn(img);
+  }
+  auto target = loadLabel(labels_[idx]);
+  return { img, target };
 }
 
 int64_t ImageDataset::size() const {
-  return ds_->size();
+  return filepaths_.size();
 }
 
 
