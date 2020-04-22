@@ -13,6 +13,7 @@
 #include "flashlight/meter/meters.h"
 #include "flashlight/optim/optim.h"
 #include "vision/dataset/ImagenetUtils.h"
+#include "vision/dataset/VisionDataset.h"
 #include "vision/models/Resnet.h"
 
 DEFINE_string(data_dir, "/datasets01_101/imagenet_full_size/061417/", "Directory of imagenet data");
@@ -148,17 +149,17 @@ int main(int argc, char** argv) {
   std::vector<Dataset::TransformFunction> train_transforms = {
       // randomly resize shortest side of image between 256 to 480 for scale 
       // invariance
-      ImageDataset::randomResizeTransform(256, 480),
-      ImageDataset::randomCropTransform(224, 224),
-      ImageDataset::normalizeImage(mean, std),
+      VisionDataset::randomResizeTransform(256, 480),
+      VisionDataset::randomCropTransform(224, 224),
+      VisionDataset::normalizeImage(mean, std),
       // Randomly flip image with probability of 0.5
-      ImageDataset::horizontalFlipTransform(0.5)
+      VisionDataset::horizontalFlipTransform(0.5)
   };
   std::vector<Dataset::TransformFunction> val_transforms = {
       // Resize shortest side to 256, then take a center crop
-      ImageDataset::resizeTransform(256),
-      ImageDataset::centerCropTransform(224),
-      ImageDataset::normalizeImage(mean, std)
+      VisionDataset::resizeTransform(256),
+      VisionDataset::centerCropTransform(224),
+      VisionDataset::normalizeImage(mean, std)
   };
 
   const int64_t batch_size_per_gpu = FLAGS_batch_size / FLAGS_world_size;
