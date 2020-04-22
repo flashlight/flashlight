@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include <memory.h>
-
 #include "flashlight/common/Defines.h"
 #include "flashlight/nn/Utils.h"
 #include "flashlight/nn/modules/Module.h"

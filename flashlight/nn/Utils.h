@@ -21,11 +21,13 @@
 #include "flashlight/common/Utils.h"
 #include "flashlight/nn/modules/Module.h"
 
+namespace {
 #ifdef TRACE_PRECISION
 constexpr bool trace = true;
 #else
 constexpr bool trace = false;
 #endif
+}
 
 namespace fl {
 

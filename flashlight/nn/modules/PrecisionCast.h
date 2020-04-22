@@ -16,8 +16,24 @@ class PrecisionCast : public Module {
   PrecisionCast() = default;
   FL_SAVE_LOAD_WITH_BASE(Module, targetType_)
  public:
+ /**
+  * Constructor of the Cast Module (PrecisionCast class).
+  * 
+  * @param targetType An ArrayFire type that specifies the target type of the 
+  * cast. Inputs to the the `forward` function will be casted to `targetType`.
+  */ 
   PrecisionCast(af::dtype targetType);
+
+  /**
+   * Casts every input variable according to the `targetType_`. The value of 
+   * `targetType_` is set during the initialization of the module.
+   * 
+   * @param inputs A reference to the vector containing the input variables.
+   * 
+   * @return A vector that contains the casted variables. 
+   */ 
   std::vector<Variable> forward(const std::vector<Variable>& inputs) override;
+
   Variable forward(const Variable& input);
   Variable operator()(const Variable& input);
   std::string prettyString() const override;
