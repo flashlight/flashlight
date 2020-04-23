@@ -4,17 +4,20 @@
 
 #include "vision/dataset/ImagenetUtils.h"
 
+#include "vision/dataset/ImageDataset.h"
+#include "vision/dataset/Utils.h"
+#include "flashlight/dataset/datasets.h"
+
 namespace {
 
-inline std::vector<std::string> glob(const std::string& pat) {
-  glob_t result;
-  glob(pat.c_str(), GLOB_TILDE, nullptr, &result);
-  std::vector<std::string> ret;
-  for (unsigned int i = 0; i < result.gl_pathc; ++i) {
-    ret.push_back(std::string(result.gl_pathv[i]));
-  }
-  globfree(&result);
-  return ret;
+using namespace fl::cv::dataset;
+
+using LabelLoader = Loader<uint64_t>;
+
+LabelLoader labelLoader(std::vector<uint64_t> labels) {
+  return LabelLoader(labels, [](uint64_t x) {
+      return af::constant(x, 1, 1, 1, 1, u64);
+  });
 }
 
 /*
@@ -31,12 +34,15 @@ std::string labelFromFilePath(std::string fp) {
  * return a vector of label targets
  */
 std::vector<uint64_t> labelTargets(
-    std::vector<std::string>& filepaths,
-    std::unordered_map<std::string, uint32_t>& labelMap
+    const std::vector<std::string>& filepaths
     ) {
+  std::unordered_map<std::string, uint32_t> labelMap;
   auto getLabelTargets = [&labelMap](const std::string& s) {
     const std::string label = labelFromFilePath(s);
-    return labelMap.at(label);
+    if (labelMap.find(label) == labelMap.end()) {
+      labelMap[label] = labelMap.size();
+    } 
+    return labelMap[label];
   };
   std::vector<uint64_t> labels(filepaths.size());
   std::transform(filepaths.begin(), filepaths.end(), labels.begin(), getLabelTargets);
@@ -44,9 +50,16 @@ std::vector<uint64_t> labelTargets(
 }
 
 
+LabelLoader labelsFromSubDir(std::vector<std::string> fps) {
+  std::vector<uint64_t> targets = labelTargets(fps);
+  return labelLoader(targets);
+}
+
 } // namespace
 
 namespace fl {
+namespace cv {
+namespace dataset {
 
 std::unordered_map<std::string, uint32_t> imagenetLabels(
     const std::string& label_file) {
@@ -69,14 +82,24 @@ std::unordered_map<std::string, uint32_t> imagenetLabels(
   return labels;
 }
 
-ImageDataset imagenetDataset(
-    const std::string& fp,
-    std::unordered_map<std::string, uint32_t>& labelIdxs,
+std::shared_ptr<Dataset> imagenet(
+    const std::string& img_dir,
     std::vector<Dataset::TransformFunction>& transformfns) {
-  auto filepaths = glob(fp + "/**/*.JPEG");
-  if (filepaths.size() == 0) {
-    throw std::runtime_error("Could not file any files in " + fp);
-  }
-  return ImageDataset(filepaths, transformfns);
+
+  std::vector<std::string> filepaths = glob("/**/*.JPEG");
+
+  auto images = std::make_shared<FilepathLoader>(jpegLoader(filepaths));
+  // TransformDataset will apply each transform in a vector to the respective af::array
+  // Thus, we need to `compose` all of the transforms so are each aplied
+  std::vector<Dataset::TransformFunction> transforms = { VisionDataset::compose(transformfns) };	
+  auto transformed = std::make_shared<TransformDataset>(images, transforms);
+
+  auto target_ds = std::make_shared<LabelLoader>(labelsFromSubDir(filepaths));
+  return std::make_shared<MergeDataset>(MergeDataset({transformed, target_ds}));
 }
-} // namespace fl
+
+
+
+} // namespace dataset
+} // namespace cv
+} // namespace flashlight

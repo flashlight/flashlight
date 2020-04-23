@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vision/dataset/ImageDataset.h"
+#include "flashlight/dataset/datasets.h"
 /**
  * Utilities for creating an ImageDataset with imagenet data
  * The jpegs must be placed in subdirectories representing their class in a
@@ -26,6 +27,8 @@
  *
  */
 namespace fl {
+namespace cv {
+namespace dataset {
 
 /* Given the path to the imagenet labels file labels.txt,
  * create a map with a unique id for each label that can be used for training
@@ -51,9 +54,10 @@ std::unordered_map<std::string, uint32_t> imagenetLabels(
  * std::cout << sample[1].dims() << std::endl; // {1, 1, 1, 1}
  *
  */
-ImageDataset imagenetDataset(
+std::shared_ptr<Dataset> imagenet(
     const std::string& fp,
-    std::unordered_map<std::string, uint32_t>& labelIdxs,
     std::vector<Dataset::TransformFunction>& transformfns);
 
+} // namespace dataset
+} // namespace cv
 } // namespace fl

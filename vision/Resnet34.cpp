@@ -90,10 +90,10 @@ std::tuple<double, double, double> eval_loop(
   model->eval();
   int idx = 0;
   for (auto& example : dataset) {
-    auto inputs = noGrad(example[ImageDataset::INPUT_IDX]);
+    auto inputs = noGrad(example[cv::dataset::INPUT_IDX]);
     auto output = model->forward(inputs);
 
-    auto target = noGrad(example[ImageDataset::TARGET_IDX]);
+    auto target = noGrad(example[cv::dataset::TARGET_IDX]);
 
     // Compute and record the loss.
     auto loss = categoricalCrossEntropy(output, target);
@@ -145,7 +145,6 @@ int main(int argc, char** argv) {
   /////////////////////////
   const std::vector<float> mean = {0.485, 0.456, 0.406};
   const std::vector<float> std = {0.229, 0.224, 0.225};
-  auto labels = imagenetLabels(label_path);
   std::vector<Dataset::TransformFunction> train_transforms = {
       // randomly resize shortest side of image between 256 to 480 for scale 
       // invariance
@@ -166,8 +165,7 @@ int main(int argc, char** argv) {
   const int64_t prefetch_threads = 10;
   const int64_t prefetch_size = FLAGS_batch_size;
   auto train_ds = DistributedDataset(
-      std::make_shared<ImageDataset>(
-          ImageDataset(train_list, train_transforms)),
+      cv::dataset::imagenet(train_list, train_transforms),
       FLAGS_world_rank,
       FLAGS_world_size,
       batch_size_per_gpu,
@@ -175,8 +173,7 @@ int main(int argc, char** argv) {
       prefetch_size);
 
   auto val_ds = DistributedDataset(
-      std::make_shared<ImageDataset>(
-          ImageDataset(val_list, val_transforms)),
+      cv::dataset::imagenet(val_list, val_transforms),
       FLAGS_world_rank,
       FLAGS_world_size,
       batch_size_per_gpu,
@@ -239,13 +236,13 @@ int main(int argc, char** argv) {
     for (auto& example : train_ds) {
       opt.zeroGrad();
       // Make a Variable from the input array.
-      auto inputs = noGrad(example[ImageDataset::INPUT_IDX]);
+      auto inputs = noGrad(example[cv::dataset::INPUT_IDX]);
 
       // Get the activations from the model.
       auto output = model->forward(inputs);
 
       // Make a Variable from the target array.
-      auto target = noGrad(example[ImageDataset::TARGET_IDX]);
+      auto target = noGrad(example[cv::dataset::TARGET_IDX]);
 
       // Compute and record the loss.
       auto loss = categoricalCrossEntropy(output, target);
