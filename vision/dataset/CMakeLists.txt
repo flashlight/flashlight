@@ -8,8 +8,8 @@ add_library(
 set(
   DATASET_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/ImageDataset.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/VisionDataset.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ImagenetUtils.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/Transforms.cpp
   )
 
 target_sources(

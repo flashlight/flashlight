@@ -1,11 +1,10 @@
-#include <algorithm>
-#include <fstream>
-#include <glob.h>
-
 #include "vision/dataset/ImagenetUtils.h"
+
+#include <algorithm>
 
 #include "vision/dataset/ImageDataset.h"
 #include "vision/dataset/Utils.h"
+#include "vision/dataset/Transforms.h"
 #include "flashlight/dataset/datasets.h"
 
 namespace {
@@ -86,19 +85,17 @@ std::shared_ptr<Dataset> imagenet(
     const std::string& img_dir,
     std::vector<Dataset::TransformFunction>& transformfns) {
 
-  std::vector<std::string> filepaths = glob("/**/*.JPEG");
+  std::vector<std::string> filepaths = glob(img_dir + "/**/*.JPEG");
 
   auto images = std::make_shared<FilepathLoader>(jpegLoader(filepaths));
   // TransformDataset will apply each transform in a vector to the respective af::array
   // Thus, we need to `compose` all of the transforms so are each aplied
-  std::vector<Dataset::TransformFunction> transforms = { VisionDataset::compose(transformfns) };	
+  std::vector<ImageTransform> transforms = { compose(transformfns) };
   auto transformed = std::make_shared<TransformDataset>(images, transforms);
 
   auto target_ds = std::make_shared<LabelLoader>(labelsFromSubDir(filepaths));
   return std::make_shared<MergeDataset>(MergeDataset({transformed, target_ds}));
 }
-
-
 
 } // namespace dataset
 } // namespace cv

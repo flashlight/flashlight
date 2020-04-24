@@ -1,14 +1,5 @@
 #include "vision/dataset/ImageDataset.h"
 
-#include <arrayfire.h>
-
-#include <fstream>
-#include <iostream>
-
-#include "flashlight/dataset/Dataset.h"
-#include "flashlight/dataset/MergeDataset.h"
-#include "flashlight/dataset/TransformDataset.h"
-
 #define STB_IMAGE_IMPLEMENTATION
 #include "vision/dataset/stb_image.h"
 
@@ -39,7 +30,6 @@ af::array loadJpeg(const std::string& fp) {
 FilepathLoader jpegLoader(std::vector<std::string> fps) {
   return FilepathLoader(fps, loadJpeg);
 }
-
 
 } // namespace dataset
 } // namespace cv

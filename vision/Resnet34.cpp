@@ -13,7 +13,8 @@
 #include "flashlight/meter/meters.h"
 #include "flashlight/optim/optim.h"
 #include "vision/dataset/ImagenetUtils.h"
-#include "vision/dataset/VisionDataset.h"
+#include "vision/dataset/Transforms.h"
+#include "vision/dataset/Utils.h"
 #include "vision/models/Resnet.h"
 
 DEFINE_string(data_dir, "/datasets01_101/imagenet_full_size/061417/", "Directory of imagenet data");
@@ -41,43 +42,8 @@ DEFINE_int64(checkpoint, -1, "Load from checkpoint");
 
 
 using namespace fl;
+using namespace cv::dataset;
 
-class DistributedDataset : public Dataset {
- public:
-  DistributedDataset(
-      std::shared_ptr<Dataset> base,
-      int64_t world_rank,
-      int64_t world_size,
-      int64_t batch_size,
-      int64_t num_threads,
-      int64_t prefetch_size) {
-    shuffle_ = std::make_shared<ShuffleDataset>(base);
-    auto permfn = [world_size, world_rank](int64_t idx) {
-      return (idx * world_size) + world_rank;
-    };
-    ds_ = std::make_shared<ResampleDataset>(
-  shuffle_, permfn, shuffle_->size() / world_size);
-    ds_ = std::make_shared<PrefetchDataset>(ds_, num_threads, prefetch_size);
-    ds_ = std::make_shared<BatchDataset>(ds_, batch_size);
-  }
-
-  std::vector<af::array> get(const int64_t idx) const override {
-    checkIndexBounds(idx);
-    return ds_->get(idx);
-  }
-
-  void resample() {
-    shuffle_->resample();
-  }
-
-  int64_t size() const override {
-    return ds_->size();
-  }
-
- private:
-  std::shared_ptr<Dataset> ds_;
-  std::shared_ptr<ShuffleDataset> shuffle_;
-};
 
 std::tuple<double, double, double> eval_loop(
     std::shared_ptr<Sequential> model,
@@ -145,20 +111,20 @@ int main(int argc, char** argv) {
   /////////////////////////
   const std::vector<float> mean = {0.485, 0.456, 0.406};
   const std::vector<float> std = {0.229, 0.224, 0.225};
-  std::vector<Dataset::TransformFunction> train_transforms = {
+  std::vector<ImageTransform> train_transforms = {
       // randomly resize shortest side of image between 256 to 480 for scale 
       // invariance
-      VisionDataset::randomResizeTransform(256, 480),
-      VisionDataset::randomCropTransform(224, 224),
-      VisionDataset::normalizeImage(mean, std),
+      randomResizeTransform(256, 480),
+      randomCropTransform(224, 224),
+      normalizeImage(mean, std),
       // Randomly flip image with probability of 0.5
-      VisionDataset::horizontalFlipTransform(0.5)
+      horizontalFlipTransform(0.5)
   };
-  std::vector<Dataset::TransformFunction> val_transforms = {
+  std::vector<ImageTransform> val_transforms = {
       // Resize shortest side to 256, then take a center crop
-      VisionDataset::resizeTransform(256),
-      VisionDataset::centerCropTransform(224),
-      VisionDataset::normalizeImage(mean, std)
+      resizeTransform(256),
+      centerCropTransform(224),
+      normalizeImage(mean, std)
   };
 
   const int64_t batch_size_per_gpu = FLAGS_batch_size / FLAGS_world_size;

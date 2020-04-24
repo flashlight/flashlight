@@ -1,8 +1,9 @@
-#include "vision/dataset/VisionDataset.h"
+#include "vision/dataset/Transforms.h"
 
 #include <random>
 #include <numeric>
 
+// TODO maybe move these into a Functional namespace
 namespace {
 
 float randomFloat(float a, float b) {
@@ -52,19 +53,17 @@ af::array centerCrop(const af::array& in, const int size) {
 }
 
 namespace fl {
+namespace cv {
+namespace dataset {
 
-VisionDataset::VisionDataset(const std::vector<TransformFunction>& transforms) 
-  : transformfns_(transforms) {
-}
-
-Dataset::TransformFunction VisionDataset::resizeTransform(const uint64_t resize) {
+ImageTransform resizeTransform(const uint64_t resize) {
   return [resize](const af::array& in) {
     return resizeSmallest(in, resize);
   };
 }
 
-Dataset::TransformFunction VisionDataset::compose(
-    std::vector<TransformFunction>& transformfns) {
+ImageTransform compose(
+    std::vector<ImageTransform>& transformfns) {
   return [transformfns](const af::array& in) {
     af::array out = in;
     for(auto fn: transformfns) {
@@ -74,14 +73,14 @@ Dataset::TransformFunction VisionDataset::compose(
   };
 }
 
-Dataset::TransformFunction VisionDataset::centerCropTransform(
+ImageTransform centerCropTransform(
     const int size) {
   return [size](const af::array& in) {
     return centerCrop(in, size);
   };
 };
 
-Dataset::TransformFunction VisionDataset::horizontalFlipTransform(
+ImageTransform horizontalFlipTransform(
     const float p) {
   return [p](const af::array& in) {
     af::array out = in;
@@ -93,7 +92,7 @@ Dataset::TransformFunction VisionDataset::horizontalFlipTransform(
   };
 };
 
-Dataset::TransformFunction VisionDataset::randomResizeCropTransform(
+ImageTransform randomResizeCropTransform(
     const int size,
     const float scaleLow,
     const float scaleHigh,
@@ -120,7 +119,7 @@ Dataset::TransformFunction VisionDataset::randomResizeCropTransform(
   };
 }
 
-Dataset::TransformFunction VisionDataset::randomResizeTransform(
+ImageTransform randomResizeTransform(
     const int low, const int high) {
   return [low, high](const af::array& in) {
     const float scale =
@@ -130,7 +129,7 @@ Dataset::TransformFunction VisionDataset::randomResizeTransform(
   };
 };
 
-Dataset::TransformFunction VisionDataset::randomCropTransform(
+ImageTransform randomCropTransform(
     const int tw,
     const int th) {
   return [th, tw](const af::array& in) {
@@ -143,7 +142,7 @@ Dataset::TransformFunction VisionDataset::randomCropTransform(
   };
 };
 
-Dataset::TransformFunction VisionDataset::normalizeImage(
+ImageTransform normalizeImage(
     const std::vector<float>& meanVector,
     const std::vector<float>& stdVector) {
   const af::array mean(1, 1, 3, 1, meanVector.data());
@@ -156,4 +155,6 @@ Dataset::TransformFunction VisionDataset::normalizeImage(
   };
 };
 
-}
+} // namespace dataset
+} // namespace cv
+} // namespace fl
