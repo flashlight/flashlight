@@ -47,7 +47,9 @@ else()
   set(CUDNN_ROOT_DIR "" CACHE PATH "Folder contains NVIDIA cuDNN")
 endif()
 
-if ($ENV{USE_STATIC_CUDNN})
+option(USE_STATIC_CUDNN "Use statically-linked cuDNN library" OFF)
+
+if (USE_STATIC_CUDNN)
   # Windows not yet supported by FL and it is unknown if static cudnn works correctly on MacOS: supporting only Linux at the moment.
   # CMAKE_SYSTEM_NAME is supposed to resolve to "Linux", "Windows", or "Darwin"
   if (NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
@@ -127,7 +129,7 @@ find_package_handle_standard_args(
   )
 
 if(CUDNN_FOUND)
-  if($ENV{USE_STATIC_CUDNN})
+  if(USE_STATIC_CUDNN)
     set(CUDNN_LIBRARIES ${CUDNN_LIBRARY} ${CULIBOS_LIBRARY})
   else()
     set(CUDNN_LIBRARIES ${CUDNN_LIBRARY})
