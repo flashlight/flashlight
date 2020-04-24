@@ -31,6 +31,12 @@ FilepathLoader jpegLoader(std::vector<std::string> fps) {
   return FilepathLoader(fps, loadJpeg);
 }
 
+//std::shared_ptr<Dataset> imageTransform(std::shared_ptr<Dataset> ds,
+    //std::vector<ImageTransform>& transforms) {
+  //std::vector<ImageTransform> composed = { compose(transforms) };
+  //return std::make_shared<TransformDataset(ds, composed);
+//}
+
 } // namespace dataset
 } // namespace cv
 } // namespace fl

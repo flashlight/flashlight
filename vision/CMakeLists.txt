@@ -38,3 +38,25 @@ if(TARGET flashlight)
 else()
   target_link_libraries(${target} PRIVATE ${VISION_MODULES} flashlight::flashlight ${GFLAGS_LIBRARIES})
 endif()
+
+function(build_train SRCFILE)
+  get_filename_component(src_name ${SRCFILE} NAME_WE)
+  set(target "${src_name}")
+  add_executable(${target} ${SRCFILE})
+  if(TARGET flashlight)
+    target_link_libraries(${target} PRIVATE
+      flashlight
+      ${GFLAGS_LIBRARIES}
+      ${VISION_MODULES}
+    )
+    target_include_directories(${target}
+      PRIVATE
+      ${CMAKE_SOURCE_DIR}
+    )
+  else()
+    target_link_libraries(${target} PRIVATE ${VISION_MODULES} flashlight::flashlight ${GFLAGS_LIBRARIES})
+  endif()
+endfunction(build_train)
+
+build_train(Detr.cpp)
+
