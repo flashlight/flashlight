@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5.1)
 
-find_package(GTest 1.8.1)
+find_package(GTest 1.10.0)
 
 if (NOT TARGET gtest AND NOT GTEST_FOUND)
   message(STATUS "googletest not found - will download and build from source")
