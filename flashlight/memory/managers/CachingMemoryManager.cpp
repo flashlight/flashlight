@@ -70,8 +70,8 @@ CachingMemoryManager::CachingMemoryManager(
     std::shared_ptr<MemoryManagerDeviceInterface> deviceInterface)
     : MemoryManagerAdapter(deviceInterface) {
   for (int i = 0; i < numDevices; ++i) {
-    deviceMemInfos_.insert(
-        {i, fl::cpp::make_unique<CachingMemoryManager::DeviceMemoryInfo>(i)});
+    deviceMemInfos_.emplace(
+        i, fl::cpp::make_unique<CachingMemoryManager::DeviceMemoryInfo>(i));
   }
 }
 
@@ -85,9 +85,9 @@ void CachingMemoryManager::addMemoryManagement(int device) {
   if (deviceMemInfos_.find(device) != deviceMemInfos_.end()) {
     return;
   }
-  deviceMemInfos_.insert(
-      {device,
-       fl::cpp::make_unique<CachingMemoryManager::DeviceMemoryInfo>(device)});
+  deviceMemInfos_.emplace(
+      device,
+      fl::cpp::make_unique<CachingMemoryManager::DeviceMemoryInfo>(device));
 }
 
 void CachingMemoryManager::removeMemoryManagement(int device) {
