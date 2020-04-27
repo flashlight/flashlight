@@ -15,9 +15,11 @@
 
 using namespace fl;
 
-const std::string kSkipDistributedTestsFlag = "-Distributed.*";
-
 TEST(Distributed, AllReduce) {
+  if (!isDistributedInit()) {
+    GTEST_SKIP() << "Distributed initialization failed or not enabled.";
+  }
+
   auto rank = getWorldRank();
   auto size = getWorldSize();
 
@@ -30,6 +32,10 @@ TEST(Distributed, AllReduce) {
 }
 
 TEST(Distributed, InlineReducer) {
+  if (!isDistributedInit()) {
+    GTEST_SKIP() << "Distributed initialization failed or not enabled.";
+  }
+
   auto rank = getWorldRank();
   auto size = getWorldSize();
 
@@ -46,6 +52,10 @@ TEST(Distributed, InlineReducer) {
 }
 
 TEST(Distributed, AllReduceAsync) {
+  if (!isDistributedInit()) {
+    GTEST_SKIP() << "Distributed initialization failed or not enabled.";
+  }
+
   auto rank = getWorldRank();
   auto size = getWorldSize();
 
@@ -59,6 +69,10 @@ TEST(Distributed, AllReduceAsync) {
 }
 
 TEST(Distributed, AllReduceSetAsync) {
+  if (!isDistributedInit()) {
+    GTEST_SKIP() << "Distributed initialization failed or not enabled.";
+  }
+
   auto rank = getWorldRank();
   auto size = getWorldSize();
 
@@ -89,6 +103,10 @@ TEST(Distributed, AllReduceSetAsync) {
 }
 
 TEST(Distributed, CoalescingReducer) {
+  if (!isDistributedInit()) {
+    GTEST_SKIP() << "Distributed initialization failed or not enabled.";
+  }
+
   auto rank = getWorldRank();
   auto size = getWorldSize();
 
@@ -127,9 +145,9 @@ int main(int argc, char** argv) {
         {{DistributedConstants::kMaxDevicePerNode, "8"}});
   } catch (const std::exception& ex) {
     // Don't run the test if distributed initialization fails
-    std::cerr << "Distributed initialization failed: " << ex.what()
-              << std::endl;
-    testing::GTEST_FLAG(filter) = kSkipDistributedTestsFlag;
+    std::cerr
+        << "Distributed initialization failed; tests will be skipped. Reason: "
+        << ex.what() << std::endl;
   }
 
   return RUN_ALL_TESTS();
