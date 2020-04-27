@@ -16,6 +16,15 @@
 
 namespace fl {
 
+// Warpper to af::getMemStepSize(). getMemStepSize() is defined only when
+// ArrayFire is not using a custom memory manager. This function ignores the
+// call when a custom memory manager is installed.
+size_t afGetMemStepSize();
+// Warpper to af::setMemStepSize(). setMemStepSize() is defined only when
+// ArrayFire is not using a custom memory manager. This function ignores the
+// call when a custom memory manager is installed.
+void afSetMemStepSize(size_t size);
+
 /**
  * Manages memory managers and abstracts away parts of the ArrayFire C memory
  * manager API that enables setting active memory managers in ArrayFire.
@@ -43,7 +52,7 @@ class MemoryManagerInstaller {
    * installed.
    */
   MemoryManagerInstaller(std::shared_ptr<MemoryManagerAdapter> managerImpl);
-  ~MemoryManagerInstaller() = default;
+  ~MemoryManagerInstaller();
 
   /**
    * Gets the memory manager adapter used in this instance.
@@ -73,9 +82,17 @@ class MemoryManagerInstaller {
    */
   static MemoryManagerAdapter* getImpl(af_memory_manager manager);
 
+  /**
+   * Returns the currently installed custom memory manager, or null if none is
+   * installed.
+   */
+  static MemoryManagerAdapter* currentlyInstalledMemoryManager();
+
  private:
   // The given memory manager implementation
   std::shared_ptr<MemoryManagerAdapter> impl_;
+  // Points to the impl_ of the most recently installed manager.
+  static std::shared_ptr<MemoryManagerAdapter> currentlyInstalledMemoryManager_;
 };
 
 } // namespace fl

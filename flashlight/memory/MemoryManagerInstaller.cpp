@@ -11,9 +11,13 @@
 #include <cstdint>
 #include <stdexcept>
 
+#include "flashlight/common/Logging.h"
 #include "flashlight/common/Utils.h"
 
 namespace fl {
+
+std::shared_ptr<MemoryManagerAdapter>
+    MemoryManagerInstaller::currentlyInstalledMemoryManager_;
 
 MemoryManagerAdapter* MemoryManagerInstaller::getImpl(
     af_memory_manager manager) {
@@ -53,12 +57,13 @@ MemoryManagerInstaller::MemoryManagerInstaller(
     return AF_SUCCESS;
   };
   AF_CHECK(af_memory_manager_set_shutdown_fn(interface, shutdownFn));
-  auto allocFn = [](af_memory_manager manager,
-                    void** ptr,
-                    /* bool */ int userLock,
-                    const unsigned ndims,
-                    dim_t* dims,
-                    const unsigned elSize) {
+  auto allocFn = [](
+      af_memory_manager manager,
+      void** ptr,
+      /* bool */ int userLock,
+      const unsigned ndims,
+      dim_t* dims,
+      const unsigned elSize) {
     MemoryManagerAdapter* m = MemoryManagerInstaller::getImpl(manager);
     *ptr = m->alloc(userLock, ndims, dims, elSize);
     // Log
@@ -125,12 +130,12 @@ MemoryManagerInstaller::MemoryManagerInstaller(
   };
   AF_CHECK(af_memory_manager_set_get_memory_pressure_fn(
       interface, getMemoryPressureFn));
-  auto jitTreeExceedsMemoryPressureFn =
-      [](af_memory_manager manager, int* out, size_t bytes) {
-        *out = (int)MemoryManagerInstaller::getImpl(manager)
-                   ->jitTreeExceedsMemoryPressure(bytes);
-        return AF_SUCCESS;
-      };
+  auto jitTreeExceedsMemoryPressureFn = [](
+      af_memory_manager manager, int* out, size_t bytes) {
+    *out = (int)MemoryManagerInstaller::getImpl(manager)
+               ->jitTreeExceedsMemoryPressure(bytes);
+    return AF_SUCCESS;
+  };
   AF_CHECK(af_memory_manager_set_jit_tree_exceeds_memory_pressure_fn(
       interface, jitTreeExceedsMemoryPressureFn));
   auto addMemoryManagementFn = [](af_memory_manager manager, int device) {
@@ -187,12 +192,52 @@ MemoryManagerInstaller::MemoryManagerInstaller(
       std::move(setMemoryPressureThresholdFn);
 }
 
+MemoryManagerInstaller::~MemoryManagerInstaller() {
+  try {
+    AF_CHECK(af_unset_memory_manager());
+    AF_CHECK(af_unset_memory_manager_pinned());
+  } catch (std::exception& e) {
+    LOG(ERROR)
+        << "MemoryManagerInstaller::~MemoryManagerInstaller() failed to unset ArrayFire memory manager with error="
+        << e.what();
+    exit(-1);
+  }
+  currentlyInstalledMemoryManager_ = nullptr;
+}
+
 void MemoryManagerInstaller::setAsMemoryManager() {
   AF_CHECK(af_set_memory_manager(impl_->getHandle()));
+  currentlyInstalledMemoryManager_ = impl_;
 }
 
 void MemoryManagerInstaller::setAsMemoryManagerPinned() {
   AF_CHECK(af_set_memory_manager_pinned(impl_->getHandle()));
+  currentlyInstalledMemoryManager_ = impl_;
+}
+
+MemoryManagerAdapter*
+MemoryManagerInstaller::currentlyInstalledMemoryManager() {
+  return currentlyInstalledMemoryManager_.get();
+}
+
+size_t afGetMemStepSize() {
+  MemoryManagerAdapter* customMemoryManager =
+      MemoryManagerInstaller::currentlyInstalledMemoryManager();
+  if (customMemoryManager) {
+    return customMemoryManager->getMemStepSize();
+  } else {
+    return af::getMemStepSize();
+  }
+}
+
+void afSetMemStepSize(size_t size) {
+  MemoryManagerAdapter* customMemoryManager =
+      MemoryManagerInstaller::currentlyInstalledMemoryManager();
+  if (customMemoryManager) {
+    customMemoryManager->setMemStepSize(size);
+  } else {
+    af::setMemStepSize(size);
+  }
 }
 
 } // namespace fl

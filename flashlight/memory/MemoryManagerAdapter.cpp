@@ -35,8 +35,10 @@ MemoryManagerAdapter::MemoryManagerAdapter(
 
 MemoryManagerAdapter::~MemoryManagerAdapter() {
   // Flush the log buffer and log stream
-  *logStream_ << logStreamBuffer_.str();
-  logStream_->flush();
+  if (logStream_) {
+    *logStream_ << logStreamBuffer_.str();
+    logStream_->flush();
+  }
 
   af_release_memory_manager(interface_);
 }
@@ -61,5 +63,11 @@ void MemoryManagerAdapter::setLogFlushInterval(size_t interval) {
 const af_memory_manager MemoryManagerAdapter::getHandle() const {
   return interface_;
 }
+
+size_t MemoryManagerAdapter::getMemStepSize() {
+  return -1; //  -1 denotes stepsize is not used by the custom memory manager
+}
+
+void MemoryManagerAdapter::setMemStepSize(size_t size) {}
 
 } // namespace fl
