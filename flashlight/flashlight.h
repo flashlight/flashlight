@@ -12,6 +12,7 @@
 #include "flashlight/common/common.h"
 #include "flashlight/dataset/datasets.h"
 #include "flashlight/distributed/distributed.h"
+#include "flashlight/memory/memory.h"
 #include "flashlight/meter/meters.h"
 #include "flashlight/nn/nn.h"
 #include "flashlight/optim/optim.h"

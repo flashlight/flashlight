@@ -11,3 +11,6 @@
 #include "flashlight/memory/MemoryManagerAdapter.h"
 #include "flashlight/memory/MemoryManagerDeviceInterface.h"
 #include "flashlight/memory/MemoryManagerInstaller.h"
+
+#include "flashlight/memory/managers/DefaultMemoryManager.h"
+#include "flashlight/memory/managers/CachingMemoryManager.h"

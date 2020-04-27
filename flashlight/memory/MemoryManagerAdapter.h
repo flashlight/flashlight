@@ -88,6 +88,9 @@ class MemoryManagerAdapter {
   virtual void addMemoryManagement(int device) = 0;
   virtual void removeMemoryManagement(int device) = 0;
 
+  virtual size_t getMemStepSize();
+  virtual void setMemStepSize(size_t size);
+
   /**
    * Logs information to the `MemoryManagerAdapters`'s log stream. If logging
    * mode is enabled, function calls to virtual base class methods are logged.

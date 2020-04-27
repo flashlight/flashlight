@@ -11,6 +11,7 @@ set(
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/memory/MemoryManagerInstaller.cpp
   # Managers
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/memory/managers/DefaultMemoryManager.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/memory/managers/CachingMemoryManager.cpp
   # Allocators
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/memory/allocator/MemoryAllocator.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/memory/allocator/freelist/FreeList.cpp
