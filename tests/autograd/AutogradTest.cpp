@@ -390,6 +390,11 @@ TEST(AutogradTest, Tile) {
   auto dx = x.grad();
   ASSERT_TRUE(allClose(dy.array(), af::tile(x.array(), 1, 3)));
   ASSERT_TRUE(allClose(dx.array(), af::sum(y.array(), 1)));
+
+  // Jacobian
+  auto input = Variable(af::randu(10, 1, 5), true);
+  auto func_tile = [](Variable& in) { return tile(in, {1, 2}); };
+  ASSERT_TRUE(jacobianTestImpl(func_tile, input, 1E-4, 1E-3));
 }
 
 TEST(AutogradTest, Clamp) {

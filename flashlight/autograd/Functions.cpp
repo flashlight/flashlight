@@ -29,6 +29,12 @@ af::array tileAs(const af::array& input, const af::dim4& rdims) {
   af::dim4 dims(1, 1, 1, 1);
   af::dim4 idims = input.dims();
   for (int i = 0; i < 4; i++) {
+    if (rdims[i] % idims[i] != 0) {
+      std::stringstream ss;
+      ss << "Invalid dims for tileAs for input dims " << idims
+         << " to output dims " << rdims;
+      throw std::invalid_argument(ss.str());
+    }
     dims[i] = rdims[i] / idims[i];
   }
   return tile(input, dims);
@@ -39,6 +45,12 @@ af::array sumAs(const af::array& input, const af::dim4& rdims) {
   auto result = input;
   for (int i = 0; i < 4; i++) {
     if (idims[i] != rdims[i]) {
+      if (rdims[i] != 1) {
+        std::stringstream ss;
+        ss << "Invalid dims for sumAs for input dims " << idims
+           << " to output dims " << rdims;
+        throw std::invalid_argument(ss.str());
+      }
       result = sum(result, i);
     }
   }
@@ -817,6 +829,12 @@ Variable categoricalCrossEntropy(
   }
 
   int categories = input.dims(0);
+  if (af::anyTrue<bool>(
+          (targets.array() < 0) || (targets.array() >= categories))) {
+    throw std::invalid_argument(
+        "target contains elements out of valid range [0, num_categories) "
+        "in categorical cross entropy");
+  }
   int num_elems = input.elements() / categories;
   af::array A = af::range(af::dim4(categories, num_elems));
   af::array B = af::moddims(targets.array(), af::dim4(1, targets.elements()));
