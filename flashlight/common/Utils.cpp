@@ -9,6 +9,7 @@
 #include <chrono>
 #include <cstdio>
 #include <ctime>
+#include <stdexcept>
 
 #include "flashlight/common/Utils.h"
 
