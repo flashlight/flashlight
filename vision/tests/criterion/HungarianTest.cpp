@@ -220,6 +220,19 @@ TEST(HungarianTest, Step1234645) {
   }
 }
 
+TEST(HungarianTest, HungarianPipeline) {
+  int N = 3;
+  std::vector<float> costsVec(N * N);
+  for(int r = 0; r < N; r++) {
+    for(int c = 0; c < N; c++) {
+      costsVec[r * N + c] = (1 + r) * (1 + c);
+    }
+  }
+  hungarian(costsVec.data(), N, N);
+  af_print(af::array(af::dim4(N, N), costsVec.data()));
+
+}
+
 //TEST(HungarianTest, MinLinesCoverage) {
 
   //std::vector<float> costsVec = {

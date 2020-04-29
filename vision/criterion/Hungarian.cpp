@@ -1,6 +1,7 @@
 #include <limits>
 #include <assert.h>
 
+
 void findUncoveredZero(float* costs, int* colCover, int* rowCover, int nrows, int ncols, 
     int* row, int* col) {
   bool done = false;
@@ -37,7 +38,7 @@ int findStarInRow(int* marks, int row, int nrows, int ncols) {
 }
 
 // M x N matrix M = nrows, N = ncols
-void step_one(float* costs, const int nrows, const int ncols) {
+int step_one(float* costs, const int nrows, const int ncols) {
   for (int r = 0; r < nrows; r++) {
     float min_val = std::numeric_limits<float>::max();
     for (int c = 0; c < ncols; c++) {
@@ -50,10 +51,11 @@ void step_one(float* costs, const int nrows, const int ncols) {
       costs[c * nrows + r] -= min_val;
     }
   }
+  return 2;
 }
 
 // Iterate through rows, and mark 0s if they have not already been covered by a previous marking
-void step_two(float* costs, int* marks, int* colCover, int* rowCover, const int nrows, const int ncols) {
+int step_two(float* costs, int* marks, int* colCover, int* rowCover, const int nrows, const int ncols) {
   for(int r = 0; r < nrows; r++) {
     for(int c = 0; c < ncols; c++) {
       float cost = costs[c * nrows + r];
@@ -70,6 +72,7 @@ void step_two(float* costs, int* marks, int* colCover, int* rowCover, const int 
   for(int c = 0; c < ncols; c++) {
     colCover[c] = 0;
   }
+  return 3;
 }
 
 int step_three(int* marks, int* colCover, int* rowCover, int nrows, int ncols) {
@@ -227,5 +230,43 @@ int step_six(float* costs, int* marks, int* colCover, int* rowCover, int nrows, 
   }
   return 4;
 }
+#include <arrayfire.h>
 
+void hungarian(float* costs, int M, int N) {
+  assert(M == N);
+  std::vector<int> rowCover(M);
+  std::vector<int> marks(M * N);
+  std::vector<int> colCover(N);
+  std::vector<int> paths(N * N * 2);
+  int firstPathRow, firstPathCol;
+  bool done = false;
+  int step = 1;
+  while(!done) {
+    switch(step) {
+      case 1:
+        step = step_one(costs, M, N);
+        break;
+      case 2:
+        step = step_two(costs, marks.data(), colCover.data(), rowCover.data(), M, N);
+        break;
+      case 3:
+        step = step_three(marks.data(), colCover.data(), rowCover.data(), M, N);
+        break;
+      case 4:
+        step = step_four(costs, marks.data(), colCover.data(), rowCover.data(), M, N, &firstPathRow, 
+            &firstPathCol);
+        break;
+      case 5:
+        step = step_five(costs, marks.data(), colCover.data(), rowCover.data(), paths.data(), firstPathRow, firstPathCol, M, N);
+        break;
+      case 6:
+        step = step_six(costs, marks.data(), colCover.data(), rowCover.data(), M, N);
+        break;
+      case 7:
+        done = true;
+        break;
+    }
+  }
+  af_print(af::array(af::dim4(N, N), marks.data()));
+}
 
