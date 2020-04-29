@@ -322,11 +322,11 @@ install(FILES
 # --------------------------- Configure Examples/Tests ---------------------------
 
 # Build tests
-option(FL_BUILD_TESTS "Build tests for flashlight" ON)
-if (FL_BUILD_TESTS)
-  enable_testing()
-  add_subdirectory(${CMAKE_SOURCE_DIR}/tests)
-endif ()
+#option(FL_BUILD_TESTS "Build tests for flashlight" ON)
+#if (FL_BUILD_TESTS)
+  #enable_testing()
+  #add_subdirectory(${CMAKE_SOURCE_DIR}/tests)
+#endif ()
 
 # Build examples
 option(FL_BUILD_EXAMPLES "Build examples for flashlight" ON)

@@ -60,3 +60,6 @@ endfunction(build_train)
 
 build_train(Detr.cpp)
 
+enable_testing()
+add_subdirectory(${VISION_PROJECT_COMPONENT_SRC_DIR}/tests)
+
