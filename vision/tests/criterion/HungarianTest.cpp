@@ -152,7 +152,9 @@ TEST(HungarianTest, Step123464) {
   step_four(costsVec.data(), marks.data(), colCover.data(), rowCover.data(), N, N);
   int nextStep = step_six(costsVec.data(), marks.data(), colCover.data(), rowCover.data(), N, N);
   EXPECT_EQ(nextStep, 4);
-  nextStep = step_four(costsVec.data(), marks.data(), colCover.data(), rowCover.data(), N, N);
+  int firstPathRow, firstPathCol;
+  nextStep = step_four(costsVec.data(), marks.data(), colCover.data(), rowCover.data(), N, N, 
+      &firstPathRow, &firstPathCol);
   for(int i; i < N; i++) {
     EXPECT_EQ(expRowCover[i], rowCover[i]) << "Row cover differ at  index " << i;
   }
@@ -162,8 +164,50 @@ TEST(HungarianTest, Step123464) {
   for(int i; i < N * N; i++) {
     EXPECT_EQ(expMarks[i], marks[i]) << "Col cover differ at index " << i;
   }
+  EXPECT_EQ(firstPathRow, 1);
+  EXPECT_EQ(firstPathCol, 0);
   EXPECT_EQ(nextStep, 5);
 }
+
+//TEST(HungarianTest, Step1234645) {
+  //int N = 3;
+  //std::vector<float> costsVec(N * N);
+  //for(int r = 0; r < N; r++) {
+    //for(int c = 0; c < N; c++) {
+      //costsVec[r * N + c] = (1 + r) * (1 + c);
+    //}
+  //}
+
+  //std::vector<int> marks(N * N);
+  //std::vector<int> rowCover(N);
+  //std::vector<int> colCover(N);
+  //std::vector<int> expColCover = {
+    //0, 0, 0
+  //};
+  //std::vector<int> expRowCover = {
+    //1, 0, 0
+  //};
+  //std::vector<int> expMarks = {
+    //1, 2, 0, 2, 0, 0, 0, 0, 0
+  //};
+  //step_one(costsVec.data(), N, N);
+  //step_two(costsVec.data(), marks.data(), colCover.data(), rowCover.data(), N, N);
+  //step_three(marks.data(), colCover.data(), rowCover.data(), N, N);
+  //step_four(costsVec.data(), marks.data(), colCover.data(), rowCover.data(), N, N);
+  //int nextStep = step_six(costsVec.data(), marks.data(), colCover.data(), rowCover.data(), N, N);
+  //EXPECT_EQ(nextStep, 4);
+  //nextStep = step_four(costsVec.data(), marks.data(), colCover.data(), rowCover.data(), N, N);
+  //for(int i; i < N; i++) {
+    //EXPECT_EQ(expRowCover[i], rowCover[i]) << "Row cover differ at  index " << i;
+  //}
+  //for(int i; i < N; i++) {
+    //EXPECT_EQ(expColCover[i], colCover[i]) << "Col cover differ at index " << i;
+  //}
+  //for(int i; i < N * N; i++) {
+    //EXPECT_EQ(expMarks[i], marks[i]) << "Col cover differ at index " << i;
+  //}
+  //EXPECT_EQ(nextStep, 5);
+//}
 
 //TEST(HungarianTest, MinLinesCoverage) {
 

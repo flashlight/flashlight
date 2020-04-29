@@ -95,7 +95,8 @@ int step_three(int* marks, int* colCover, int* rowCover, int nrows, int ncols) {
 // Find a noncovered zero and "prime it". If there are no uncovered zeros in the row containing
 // this zero, go to 5. Otherwise, cover this row, and uncovered column containing starred zero.
 // Continue until there are no more uncovered zeros left. Then go to 6. 
-int step_four(float* costs, int* marks, int* colCover, int* rowCover, int nrows, int ncols) {
+int step_four(float* costs, int* marks, int* colCover, int* rowCover, int nrows, int ncols, int* firstPathRow,
+    int* firstPathRow) {
   bool done = false;
   while(!done) {
     int row, col;
@@ -111,6 +112,8 @@ int step_four(float* costs, int* marks, int* colCover, int* rowCover, int nrows,
         rowCover[row] = 1;
         colCover[col] = 0;
       } else {
+        *firstPathRow = row;
+        *firstPathCol = col;
         done = true;
         return 5;
       }
