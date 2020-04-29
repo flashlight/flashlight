@@ -234,7 +234,6 @@ int step_six(float* costs, int* marks, int* colCover, int* rowCover, int nrows, 
 void hungarian(float* costs, int* assignments, int M, int N) {
   assert(M == N);
   std::vector<int> rowCover(M);
-  std::vector<int> marks(M * N);
   std::vector<int> colCover(N);
   std::vector<int> paths(N * N * 2);
   int firstPathRow, firstPathCol;
@@ -246,26 +245,25 @@ void hungarian(float* costs, int* assignments, int M, int N) {
         step = step_one(costs, M, N);
         break;
       case 2:
-        step = step_two(costs, marks.data(), colCover.data(), rowCover.data(), M, N);
+        step = step_two(costs, assignments, colCover.data(), rowCover.data(), M, N);
         break;
       case 3:
-        step = step_three(marks.data(), colCover.data(), rowCover.data(), M, N);
+        step = step_three(assignments, colCover.data(), rowCover.data(), M, N);
         break;
       case 4:
-        step = step_four(costs, marks.data(), colCover.data(), rowCover.data(), M, N, &firstPathRow, 
+        step = step_four(costs, assignments, colCover.data(), rowCover.data(), M, N, &firstPathRow, 
             &firstPathCol);
         break;
       case 5:
-        step = step_five(costs, marks.data(), colCover.data(), rowCover.data(), paths.data(), firstPathRow, firstPathCol, M, N);
+        step = step_five(costs, assignments, colCover.data(), rowCover.data(), paths.data(), firstPathRow, firstPathCol, M, N);
         break;
       case 6:
-        step = step_six(costs, marks.data(), colCover.data(), rowCover.data(), M, N);
+        step = step_six(costs, assignments, colCover.data(), rowCover.data(), M, N);
         break;
       case 7:
         done = true;
         break;
     }
   }
-  af_print(af::array(af::dim4(N, N), marks.data()));
 }
 
