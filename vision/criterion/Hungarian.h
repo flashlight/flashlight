@@ -16,6 +16,8 @@ public:
   std::string prettyString() const override;
 
 private:
+
+  af::array getCostMatrix(const af::array& input, const af::arrray& target);
   float cost_class_;
   float cost_bbox_;
   float cost_giou;
