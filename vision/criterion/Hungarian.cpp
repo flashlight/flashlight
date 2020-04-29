@@ -230,9 +230,8 @@ int step_six(float* costs, int* marks, int* colCover, int* rowCover, int nrows, 
   }
   return 4;
 }
-#include <arrayfire.h>
 
-void hungarian(float* costs, int M, int N) {
+void hungarian(float* costs, int* assignments, int M, int N) {
   assert(M == N);
   std::vector<int> rowCover(M);
   std::vector<int> marks(M * N);

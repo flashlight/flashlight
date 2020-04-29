@@ -221,78 +221,24 @@ TEST(HungarianTest, Step1234645) {
 }
 
 TEST(HungarianTest, HungarianPipeline) {
-  int N = 3;
+  int M = 3; // Rows
+  int N = 3; // Columns
   std::vector<float> costsVec(N * N);
-  for(int r = 0; r < N; r++) {
+  for(int r = 0; r < M; r++) {
     for(int c = 0; c < N; c++) {
       costsVec[r * N + c] = (1 + r) * (1 + c);
     }
   }
-  hungarian(costsVec.data(), N, N);
-  af_print(af::array(af::dim4(N, N), costsVec.data()));
+  std::vector<int> expAssignment = {
+    0, 0, 1, 0, 1, 0, 1, 0, 0, 0
+  };
+  std::vector<int> assignment(N * M);
+  hungarian(costsVec.data(), assignment.data(), N, M);
+  for(int c = 0; c < N; c++) {
+    for(int r = 0; r < M; r++) {
+      EXPECT_EQ(assignment[c * M + r], expAssignment[c * M + r]) 
+        << "Assignment differs at row " << r << " and col " << col;
+    }
+  }
 
 }
-
-//TEST(HungarianTest, MinLinesCoverage) {
-
-  //std::vector<float> costsVec = {
-    //0., 1., 1., 1.,
-    //1., 1., 1., 0.,
-    //0., 1., 1., 1,
-    //1., 0., 0., 1.,
-  //};
-
-  ////std::vector<float> costsVec = {
-    ////1, 2, 3, 4, 
-    ////5, 6, 7, 8, 
-    ////9, 10, 11, 12, 
-    ////13, 14, 15, 16,
-  ////};
-  //af::array costs(af::dim4(4, 4), costsVec.data());
-  //af::array masks = af::constant(0.0f, af::dim4(4, 4));
-  //af::array assignments = af::constant(0, af::dim4(4, 4));
-  //af_print(costs > 0);
-  //af_print(costs(costs > 0));
-  //costs = costs.T();
-  //af::array min_vals, min_idxs;
-  ////topk(min_vals, min_idxs, costs, 1, AF_TOPK_MAX);
-  //for(int i = 0; i < 4; i++) {
-    //af_print(costs);
-    //af_print(assignments);
-    //af_print(masks);
-    //af_print(costs(i, af::span));
-    //af::min(min_vals, min_idxs, (masks + costs)(i, af::span), 1);    
-    //if (min_vals.scalar<float>() == 0.0f) {
-      //af_print(costs(i, af::span) == 0);
-      //af_print(costs(af::span, min_idxs) == 0);
-      //masks(af::span, min_idxs) = 1 - costs(af::span, min_idxs);
-      //masks(i, af::span) = 1 - costs(i, af::span);
-      //assignments(i, min_idxs) = 1;
-    //}
-  //}
-  //masks = masks - assignments;
-  //af::array rowLines = af::constant<bool>(false, 4, b8);
-  //af::array colLines = af::constant<bool>(false, 4, b8);
-  //af_print(assignments);
-  //af_print(masks);
-  //auto iota = af::iota(4, u32);
-  //af::array rows = iota(!(af::anyTrue(assignments, 1)));
-  //af_print(rows);
-
-  //while(rows.dims(0) > 0) {
-    //af_print(rows);
-    //rowLines(rows) = true;
-    //af::array cols = iota(masks(rows, af::span) == 1);
-    //if (cols.dims(0) == 0) {
-      //break;
-    //}
-    //colLines(cols) = true;
-    //af_print(cols);
-    //rows = iota(assignments(af::span, cols) == 1);
-    //af_print(rows);
-  //}
-  //rowLines = !rowLines;
-  //af_print(rowLines);
-  //af_print(colLines);
-
-//}
