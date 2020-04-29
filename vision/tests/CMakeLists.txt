@@ -14,6 +14,7 @@ function(build_test SRCFILE)
     ${target}
     PRIVATE
     flashlight
+    flashlightVision
     ${GTEST_LIBRARIES}
     )
   target_include_directories(

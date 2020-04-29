@@ -15,13 +15,33 @@ endif ()
 
 find_package(GFLAGS REQUIRED)
 
+add_library(flashlightVision "")
+
 set(VISION_MODULES
   VisionDatasets
   VisionModels
+  VisionCriterion
+)
+
+target_link_libraries(
+  flashlightVision
+  PUBLIC # export dependency library and include paths for each module
+  ${VISION_MODULES}
+  flashlight
+  )
+
+# Internal includes are impl defined as <flashlight...>
+target_include_directories(
+  flashlightVision
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}
 )
 
 add_subdirectory(${VISION_PROJECT_COMPONENT_SRC_DIR}/dataset)
 add_subdirectory(${VISION_PROJECT_COMPONENT_SRC_DIR}/models)
+add_subdirectory(${VISION_PROJECT_COMPONENT_SRC_DIR}/criterion)
+
+
 
 set(target "Resnet34")
 add_executable(${target} "Resnet34.cpp")
