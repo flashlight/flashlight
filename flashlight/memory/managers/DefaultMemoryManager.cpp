@@ -260,7 +260,7 @@ void DefaultMemoryManager::unlock(void* ptr, bool userUnlock) {
         current.totalBytes -= iter->second.bytes;
       }
     } else {
-      current.freeMap[bytes].emplace_back(ptr);
+      current.freeMap.at(bytes).emplace_back(ptr);
     }
     current.lockedMap.erase(iter);
   }
