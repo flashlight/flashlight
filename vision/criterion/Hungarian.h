@@ -17,7 +17,7 @@ public:
 
 private:
 
-  af::array getCostMatrix(const af::array& input, const af::arrray& target);
+  af::array getCostMatrix(const af::array& input, const af::array& target);
   float cost_class_;
   float cost_bbox_;
   float cost_giou;

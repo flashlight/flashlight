@@ -14,6 +14,7 @@
 #include "flashlight/optim/optim.h"
 #include "vision/dataset/ImagenetUtils.h"
 #include "vision/dataset/Coco.h"
+#include "vision/dataset/BoxUtils.h"
 #include "vision/dataset/Transforms.h"
 #include "vision/dataset/Utils.h"
 #include "vision/models/Resnet.h"
@@ -83,6 +84,7 @@ int main(int argc, char** argv) {
   const int64_t prefetch_size = FLAGS_batch_size;
   std::string coco_list = "/private/home/padentomasello/data/coco/train.lst";
   auto coco = cv::dataset::coco(coco_list, val_transforms);
-  coco->get(0);
+  auto first = coco->get(0)[1];
+  af_print(first);
   return 0;
 }

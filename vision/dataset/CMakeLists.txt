@@ -10,6 +10,7 @@ set(
   ${CMAKE_CURRENT_SOURCE_DIR}/ImageDataset.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ImagenetUtils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Coco.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/BoxUtils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Transforms.cpp
   )
 

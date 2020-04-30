@@ -58,7 +58,7 @@ BBoxLoader bboxLoader(std::vector<BBoxVector> bboxes) {
       const int num_elements = bbox.size();
       // Bounding box coordinates + class label
       const int num_bboxes = num_elements / kElementsPerBbox;
-      auto arr = af::array(num_bboxes, kElementsPerBbox, bbox.data());
+      auto arr = af::array(kElementsPerBbox, num_bboxes, bbox.data());
       af_print(arr);
       return arr;
   });
@@ -70,6 +70,7 @@ BBoxLoader bboxLoader(std::vector<BBoxVector> bboxes) {
 namespace fl {
 namespace cv {
 namespace dataset {
+
 
 
 std::shared_ptr<Dataset> coco(

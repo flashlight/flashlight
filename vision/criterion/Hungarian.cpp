@@ -1,8 +1,11 @@
 #include "Hungarian.h"
 
+namespace {
 
 float bbox_loss(const af::array& input, const af::array& target) {
-  return (target - input).sum();
+  return af::sum((target - input)).scalar<float>();
+}
+
 }
 
 namespace fl {
@@ -16,29 +19,16 @@ HungarianMatcher::HungarianMatcher(
 };
 
 Variable HungarianMatcher::forward(const Variable& input, const Variable& target) {
-  costs = getCostMatrix(input.array(), target.array());
+  af::array costs = box_iou(input.array(), target.array();
 
   return input;
 };
 
 std::string HungarianMatcher::prettyString() const {
   return "HungarianMatcher";
-}
+};
 
-af::array getCostMatrix(const af::array& input, const af::array& target) {
-  // input [5, N]
-  // target [5, N]
-  cost = af::constant(0, input.dims(1), target.dims(1));
-  for(int i = 0; i < input.dims(1); i++) {
-    af::array avec = input(af::span, i);
-    for(int j = 0; j < target.dims(1); j++) {
-      array bvec = b(span, j);
-      cost(i, j) = bbox_loss(avec, bvec);
-    }
-  }
-}
   
-}
 
 
 
