@@ -47,7 +47,6 @@ class PositionEmbedding : public Container {
 
   double dropout_;
 
-  friend class cereal::access;
   PositionEmbedding();
 };
 
