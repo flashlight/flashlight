@@ -19,7 +19,7 @@ HungarianMatcher::HungarianMatcher(
 };
 
 Variable HungarianMatcher::forward(const Variable& input, const Variable& target) {
-  af::array costs = box_iou(input.array(), target.array();
+  //af::array costs = box_iou(input.array(), target.array());
 
   return input;
 };

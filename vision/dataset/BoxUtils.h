@@ -1,4 +1,5 @@
 #include <arrayfire.h>
+#include <tuple>
 
 namespace fl {
 namespace cv {
@@ -19,7 +20,9 @@ af::array cartesian(const af::array& x, const af::array& y, af::batchFunc_t fn);
 // with bboxes 1 of length N
 // and bboxes 2 of length M
 // returns and N * M matrix where A(i, j) is cost of bboxes2[i], and bboxes2[j]
-af::array box_iou(const af::array& bboxes1, const af::array& bboxes2);
+std::tuple<af::array, af::array> box_iou(const af::array& bboxes1, const af::array& bboxes2);
+
+af::array generalized_box_iou(const af::array& bboxes1, const af::array& bboxes2);
 
 } // namespace dataset
 } // namespace cv
