@@ -13,6 +13,7 @@
 #include <stdexcept>
 #include <utility>
 #include <algorithm>
+#include <utility>
 
 #include "flashlight/common/CppBackports.h"
 #include "flashlight/common/Logging.h"
@@ -76,7 +77,7 @@ std::unique_ptr<MemoryAllocator> CreateMemoryAllocator(
         {subArenaConfig.maxAllocationSize, std::move(subAllocator)});
     subArenaAddress = static_cast<char*>(subArenaAddress) + subAreanSize;
   }
-  return compositeAllocator;
+  return std::move(compositeAllocator);
 }
 
 }; // namespace fl
