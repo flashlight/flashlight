@@ -51,7 +51,9 @@ class MemoryManagerInstaller {
    * @param[in] managerImpl a pointer to the `MemoryManagerAdapter` to be
    * installed.
    */
-  MemoryManagerInstaller(std::shared_ptr<MemoryManagerAdapter> managerImpl);
+  MemoryManagerInstaller(
+      std::shared_ptr<MemoryManagerAdapter> managerImpl,
+      bool unsetOnDestruction = true);
   ~MemoryManagerInstaller();
 
   /**
@@ -91,6 +93,9 @@ class MemoryManagerInstaller {
  private:
   // The given memory manager implementation
   std::shared_ptr<MemoryManagerAdapter> impl_;
+  // Whether or not to unset the AF memory manager when the installer is
+  // destroyed, which reset the default AF memory manager
+  bool unsetOnDestruction_;
   // Points to the impl_ of the most recently installed manager.
   static std::shared_ptr<MemoryManagerAdapter> currentlyInstalledMemoryManager_;
 };

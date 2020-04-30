@@ -9,6 +9,7 @@ set(
   MEMORY_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/memory/MemoryManagerAdapter.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/memory/MemoryManagerInstaller.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/memory/MemoryInit.cpp
   # Managers
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/memory/managers/DefaultMemoryManager.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/memory/managers/CachingMemoryManager.cpp

@@ -28,19 +28,15 @@ class CachingMemoryManagerTest : public ::testing::Test {
         std::make_shared<fl::MemoryManagerDeviceInterface>();
     auto adapter_ = std::make_shared<fl::CachingMemoryManager>(
         af::getDeviceCount(), deviceInterface_);
-    installer_ = fl::cpp::make_unique<fl::MemoryManagerInstaller>(adapter_);
-    installer_->setAsMemoryManager();
+    auto installer = fl::cpp::make_unique<fl::MemoryManagerInstaller>(
+        adapter_, /*unsetOnDestruction=*/false);
+    installer->setAsMemoryManager();
   }
 
   virtual void TearDown() override {
     af_unset_memory_manager();
   }
-
-  static std::unique_ptr<fl::MemoryManagerInstaller> installer_;
 };
-
-std::unique_ptr<fl::MemoryManagerInstaller>
-    CachingMemoryManagerTest::installer_ = nullptr;
 
 TEST_F(CachingMemoryManagerTest, BasicOps) {
   // This test checks if the basic math operations like additions,
