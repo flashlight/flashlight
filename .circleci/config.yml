@@ -57,9 +57,10 @@ jobs:
             sudo docker exec -it flashlight bash -c "mkdir /flashlight"
             sudo docker cp . flashlight:/flashlight
             sudo docker exec -it flashlight bash -c "\
-            apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends g++-4.8 && \
+            apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5 && \
             cd /flashlight && pwd && ls && mkdir -p build && cd build && \
-            export CXX=/usr/bin/g++-4.8 && cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CUDA && \
+            export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5 && \
+            cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CUDA && \
             make -j$(nproc) && make install && make test"
   build-cpu:
     docker:
@@ -69,8 +70,8 @@ jobs:
       - run:
           name: Build flashlight with CPU backend
           command: |
-            apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends g++-4.8
-            export MKLROOT=/opt/intel/mkl && export CXX=/usr/bin/g++-4.8 && mkdir -p build && cd build
+            apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5
+            export MKLROOT=/opt/intel/mkl && export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5 && mkdir -p build && cd build
             cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CPU
             make -j1 && make install
 workflows:

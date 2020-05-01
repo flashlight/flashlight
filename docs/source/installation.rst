@@ -14,7 +14,7 @@ First, clone flashlight from `its repository on Github <https://github.com/faceb
 Build Requirements
 ~~~~~~~~~~~~~~~~~~
 
-- A C++ compiler with good C++11 support (e.g. g++ >= 4.8)
+- A C++ compiler with good C++11 support (e.g. g++ >= 5)
 - `cmake <https://cmake.org/>`_ -- version 3.5.1 or later, and ``make``
 
 Dependencies
@@ -30,7 +30,7 @@ flashlight can be built with either a CUDA, CPU (in development), or OpenCL (com
 
   - `Cereal <https://github.com/USCiLab/cereal>`_ is required for serialization -- the `develop` branch must be used.
 
-  - If building tests, `Google Test <https://github.com/google/googletest>`_ >= 1.8.0 is required.
+  - If building tests, `Google Test <https://github.com/google/googletest>`_ >= 1.10.0 is required.
 
 
 Distributed Training Dependencies
