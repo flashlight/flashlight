@@ -36,11 +36,8 @@ class CachingMemoryManagerTest : public ::testing::Test {
     af_unset_memory_manager();
   }
 
-  static std::unique_ptr<fl::MemoryManagerInstaller> installer_;
+  std::unique_ptr<fl::MemoryManagerInstaller> installer_;
 };
-
-std::unique_ptr<fl::MemoryManagerInstaller>
-    CachingMemoryManagerTest::installer_ = nullptr;
 
 TEST_F(CachingMemoryManagerTest, BasicOps) {
   // This test checks if the basic math operations like additions,
@@ -115,7 +112,7 @@ TEST_F(CachingMemoryManagerTest, LargeNumberOfAllocs) {
   // array of variable sizes
 
   af::array a;
-  for (int i = 0; i < 10000; ++i) {
+  for (int i = 0; i < 5000; ++i) {
     auto dimsArr = (af::randu(4, af::dtype::s32)) % 100 + 100;
     std::vector<int> dims(4);
     dimsArr.as(af::dtype::s32).host(dims.data());
