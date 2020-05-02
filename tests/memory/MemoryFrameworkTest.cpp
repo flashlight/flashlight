@@ -270,7 +270,7 @@ class MockTestMemoryManager : public TestMemoryManager {
  * - Unsetting of the custom memory manager and restoration of the default
  *   memory manager
  */
-TEST(MemoryAdapter, AdapterInstallerDeviceInterfaceTest) {
+TEST(MemoryFramework, AdapterInstallerDeviceInterfaceTest) {
   std::stringstream logStream;
   std::stringstream mockLogStream;
   {
@@ -379,11 +379,15 @@ TEST(MemoryAdapter, AdapterInstallerDeviceInterfaceTest) {
     // shutdown is called for each device with that current device set
     EXPECT_CALL(*mockMemoryManager, shutdown())
         .Times(Exactly(af::getDeviceCount()));
-    af_unset_memory_manager();
+    MemoryManagerInstaller::unsetMemoryManager();
+    // Test that unsetting a memory manager via the global singleton restores
+    // the default ArrayFire memory manager
+    auto* manager = MemoryManagerInstaller::currentlyInstalledMemoryManager();
+    ASSERT_EQ(manager, nullptr);
 
     // Any allocations made should not call the custom memory manager since
-    // we've called `af_unset_memory_manager()` above, which restores the
-    // default memory manager as the primary memory manager.
+    // we've called `MemoryManagerInstaller::unsetMemoryManager()` above, which
+    // restores the default memory manager as the primary memory manager.
     EXPECT_CALL(*mockMemoryManager, alloc(_, _, _, _)).Times(Exactly(0));
     EXPECT_CALL(*mockMemoryManager, unlock(_, _)).Times(Exactly(0));
     dim_t cDim = 4;
