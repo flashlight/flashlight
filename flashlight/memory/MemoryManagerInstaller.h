@@ -11,6 +11,7 @@
 #include <af/memory.h>
 
 #include <memory>
+#include <mutex>
 
 #include "flashlight/memory/MemoryManagerAdapter.h"
 
@@ -51,8 +52,9 @@ class MemoryManagerInstaller {
    * @param[in] managerImpl a pointer to the `MemoryManagerAdapter` to be
    * installed.
    */
-  MemoryManagerInstaller(std::shared_ptr<MemoryManagerAdapter> managerImpl);
-  ~MemoryManagerInstaller();
+  explicit MemoryManagerInstaller(
+      std::shared_ptr<MemoryManagerAdapter> managerImpl);
+  ~MemoryManagerInstaller() = default;
 
   /**
    * Gets the memory manager adapter used in this instance.
@@ -88,11 +90,33 @@ class MemoryManagerInstaller {
    */
   static MemoryManagerAdapter* currentlyInstalledMemoryManager();
 
+  /**
+   * Initializes and installs the memory manager defaulted to on startup.
+   *
+   * Uses a `CachingMemoryManager` by default. Only sets the memory manager -
+   * doesn't set an AF pinned memory manager.
+   *
+   * @return a pointer to the `MemoryManagerInstaller` for the default memory
+   * manager.
+   */
+  static bool installDefaultMemoryManager();
+
+  /**
+   * Unsets the currently-set custom ArrayFire memory manager. If no custom
+   * memory manager is set, results in a noop, since the default memory manager
+   * is set, and unsetting it would result in shutdown/destruction.
+   */
+  static void unsetMemoryManager();
+
  private:
   // The given memory manager implementation
   std::shared_ptr<MemoryManagerAdapter> impl_;
   // Points to the impl_ of the most recently installed manager.
   static std::shared_ptr<MemoryManagerAdapter> currentlyInstalledMemoryManager_;
+  // Used to gate global initialization of the default memory manager
+  static std::once_flag startupMemoryInitialize_;
+  // Installer for the default memory manager installed on startup
+  static std::shared_ptr<MemoryManagerInstaller> startupMemoryManagerInstaller_;
 };
 
 } // namespace fl

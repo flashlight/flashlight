@@ -30,7 +30,7 @@ MemoryManagerAdapter::MemoryManagerAdapter(
 
   // Create handle and set payload to point to this instance
   AF_CHECK(af_create_memory_manager(&interface_));
-  af_memory_manager_set_payload(interface_, (void*)this);
+  AF_CHECK(af_memory_manager_set_payload(interface_, (void*)this));
 }
 
 MemoryManagerAdapter::~MemoryManagerAdapter() {
@@ -40,7 +40,9 @@ MemoryManagerAdapter::~MemoryManagerAdapter() {
     logStream_->flush();
   }
 
-  af_release_memory_manager(interface_);
+  if (interface_) {
+    af_release_memory_manager(interface_); // nothrow
+  }
 }
 
 void MemoryManagerAdapter::setLogStream(std::ostream* logStream) {
