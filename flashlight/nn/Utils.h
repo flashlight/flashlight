@@ -13,12 +13,39 @@
 
 #pragma once
 
+#include <iomanip>
+
 #include <af/dim4.hpp>
 
 #include "flashlight/common/Defines.h"
+#include "flashlight/common/Utils.h"
 #include "flashlight/nn/modules/Module.h"
 
+namespace {
+#ifdef TRACE_PRECISION
+constexpr bool trace = true;
+#else
+constexpr bool trace = false;
+#endif
+}
+
 namespace fl {
+
+/**
+ * Prints the type of input variable to a given layer. Template set will have a
+ * zero overhead when `TRACE_PRECISION` is not defined.
+ *
+ * @param[in] layerName name of the layer.
+ * @param[in] inputType variable type
+ */
+template <bool cond = trace, typename std::enable_if<cond>::type* = nullptr>
+__forceinline void typeTrace(const char* layerName, af::dtype inputType) {
+  std::cout << std::setw(30) << layerName << ": " << afTypeToString(inputType)
+            << std::endl;
+}
+
+template <bool cond = trace, typename std::enable_if<!cond>::type* = nullptr>
+__forceinline void typeTrace(const char* layerName, af::dtype inputType) {}
 
 /**
  * Returns true if the parameters of two modules are of same type and are

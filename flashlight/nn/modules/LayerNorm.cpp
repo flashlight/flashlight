@@ -50,8 +50,8 @@ Variable LayerNorm::forward(const Variable& input) {
     for (int ax : axisComplement_) {
       tiledims[ax] = input.dims(ax);
     }
-    weight = tile(params_[0], tiledims);
-    bias = tile(params_[1], tiledims);
+    weight = tile(params_[0], tiledims, input.type());
+    bias = tile(params_[1], tiledims, input.type());
   } else if (affine_) {
     weight = params_[0];
     bias = params_[1];

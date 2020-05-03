@@ -23,7 +23,6 @@ struct RNNGradData {
 } // namespace
 
 namespace fl {
-
 void rnn_backward(
     std::vector<Variable>& inputs,
     const std::shared_ptr<struct RNNGradData> grad_data,
@@ -39,10 +38,35 @@ void rnn_backward(
   if (inputs.size() != 4) {
     throw std::invalid_argument("wrong # of inputs for RNN");
   }
+  typeTrace("RNN BWD - input", inputs[0].type());
+  typeTrace("RNN BWD - hx", inputs[1].type());
+  typeTrace("RNN BWD - cx", inputs[2].type());
+
   auto input = inputs[0];
   auto hx = inputs[1];
   auto cx = inputs[2];
   auto weights = inputs[3];
+
+  af::array hxArray;
+  if (hx.type() == input.type()) {
+    hxArray = hx.array();
+  } else {
+    hxArray = hx.array().as(input.type());
+  }
+
+  af::array cxArray;
+  if (cx.type() == input.type()) {
+    cxArray = cx.array();
+  } else {
+    cxArray = cx.array().as(input.type());
+  }
+
+  af::array weightsArray;
+  if (weights.type() == input.type()) {
+    weightsArray = weights.array();
+  } else {
+    weightsArray = weights.array().as(input.type());
+  }
 
   if (!(input.isCalcGrad() || hx.isCalcGrad() || cx.isCalcGrad() ||
         weights.isCalcGrad())) {
@@ -62,6 +86,13 @@ void rnn_backward(
   DropoutDescriptor dropout(drop_prob);
   RNNDescriptor rnn_desc(
       input.type(), hidden_size, num_layers, mode, bidirectional, dropout);
+  if (input.type() == f16) {
+    CUDNN_CHECK_ERR(cudnnSetRNNMatrixMathType(
+        rnn_desc.descriptor, CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION));
+  } else {
+    CUDNN_CHECK_ERR(
+        cudnnSetRNNMatrixMathType(rnn_desc.descriptor, CUDNN_DEFAULT_MATH));
+  }
 
   TensorDescriptorArray y_descs(
       seq_length, y.type(), {1, 1, out_size, batch_size});
@@ -75,12 +106,12 @@ void rnn_backward(
   TensorDescriptor hx_desc(x.type(), h_dims);
   TensorDescriptor cx_desc(x.type(), h_dims);
 
-  Variable dhx(af::array(hx.dims(), hx.type()), false);
-  Variable dcx(af::array(cx.dims(), cx.type()), false);
+  Variable dhx(af::array(hxArray.dims(), hxArray.type()), false);
+  Variable dcx(af::array(cxArray.dims(), cxArray.type()), false);
   TensorDescriptor dhx_desc(x.type(), h_dims);
   TensorDescriptor dcx_desc(x.type(), h_dims);
 
-  FilterDescriptor w_desc(weights);
+  FilterDescriptor w_desc(weightsArray);
 
   Variable dx(af::array(input.dims(), input.type()), false);
   TensorDescriptorArray dx_descs(
@@ -104,10 +135,10 @@ void rnn_backward(
     DevicePtr dhy_raw(dhy);
     DevicePtr dcy_raw(dcy);
 
-    DevicePtr w_raw(weights.array());
+    DevicePtr w_raw(weightsArray);
 
-    DevicePtr hx_raw(hx.array());
-    DevicePtr cx_raw(cx.array());
+    DevicePtr hx_raw(hxArray);
+    DevicePtr cx_raw(cxArray);
 
     DevicePtr dx_raw(dx.array());
     DevicePtr dhx_raw(dhx.array());
@@ -157,16 +188,24 @@ void rnn_backward(
   }
 
   if (weights.isCalcGrad()) {
+    if (input.type() == f16) {
+      CUDNN_CHECK_ERR(cudnnSetRNNMatrixMathType(
+          rnn_desc.descriptor, CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION));
+    } else {
+      CUDNN_CHECK_ERR(
+          cudnnSetRNNMatrixMathType(rnn_desc.descriptor, CUDNN_DEFAULT_MATH));
+    }
     TensorDescriptorArray x_descs(
         seq_length, x.type(), {1, 1, input_size, batch_size});
-    Variable dw(af::constant(0, weights.dims(), weights.type()), false);
+    Variable dw(
+        af::constant(0, weightsArray.dims(), weightsArray.type()), false);
 
     FilterDescriptor dw_desc(dw);
 
     {
       DevicePtr x_raw(x);
       DevicePtr dw_raw(dw.array());
-      DevicePtr hx_raw(hx.array());
+      DevicePtr hx_raw(hxArray);
 
       CUDNN_CHECK_ERR(cudnnRNNBackwardWeights(
           handle,
@@ -199,13 +238,36 @@ std::tuple<Variable, Variable, Variable> rnn(
     RnnMode mode,
     bool bidirectional,
     float drop_prob) {
+  typeTrace("RNN FWD - input", input.type());
+  typeTrace("RNN FWD - hx", hidden_state.type());
+  typeTrace("RNN FWD - cx", cell_state.type());
+
   auto& x = input.array();
-  auto& hx = hidden_state.array();
-  auto& cx = cell_state.array();
+
+  af::array hxArray;
+  if (hidden_state.type() == input.type()) {
+    hxArray = hidden_state.array();
+  } else {
+    hxArray = hidden_state.array().as(input.type());
+  }
+
+  af::array cxArray;
+  if (cell_state.type() == input.type()) {
+    cxArray = cell_state.array();
+  } else {
+    cxArray = cell_state.array().as(input.type());
+  }
 
   DropoutDescriptor dropout(drop_prob);
   RNNDescriptor rnn_desc(
       input.type(), hidden_size, num_layers, mode, bidirectional, dropout);
+  if (input.type() == f16) {
+    CUDNN_CHECK_ERR(cudnnSetRNNMatrixMathType(
+        rnn_desc.descriptor, CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION));
+  } else {
+    CUDNN_CHECK_ERR(
+        cudnnSetRNNMatrixMathType(rnn_desc.descriptor, CUDNN_DEFAULT_MATH));
+  }
 
   auto dims = x.dims();
 
@@ -219,15 +281,15 @@ std::tuple<Variable, Variable, Variable> rnn(
   TensorDescriptorArray x_descs(
       seq_length, x.type(), {1, 1, input_size, batch_size});
 
-  if (!hx.isempty() &&
-      !(hx.dims(0) == hidden_size && hx.dims(1) == batch_size &&
-        hx.dims(2) == total_layers)) {
+  if (!hxArray.isempty() &&
+      !(hxArray.dims(0) == hidden_size && hxArray.dims(1) == batch_size &&
+        hxArray.dims(2) == total_layers)) {
     throw std::invalid_argument("invalid hidden state dims for RNN");
   }
 
-  if (!cx.isempty() &&
-      !(mode == RnnMode::LSTM && cx.dims(0) == hidden_size &&
-        cx.dims(1) == batch_size && cx.dims(2) == total_layers)) {
+  if (!cxArray.isempty() &&
+      !(mode == RnnMode::LSTM && cxArray.dims(0) == hidden_size &&
+        cxArray.dims(1) == batch_size && cxArray.dims(2) == total_layers)) {
     throw std::invalid_argument("invalid cell state dims for RNN");
   }
 
@@ -261,6 +323,7 @@ std::tuple<Variable, Variable, Variable> rnn(
   if (mode == RnnMode::LSTM) {
     cy = af::array(hy.dims(), x.type());
   }
+
   TensorDescriptor cy_desc(x.type(), h_dims);
 
   size_t workspace_size;
@@ -282,8 +345,8 @@ std::tuple<Variable, Variable, Variable> rnn(
   af::array reserve_space(reserve_size, af::dtype::b8);
   {
     DevicePtr x_raw(x);
-    DevicePtr hx_raw(hx);
-    DevicePtr cx_raw(cx);
+    DevicePtr hx_raw(hxArray);
+    DevicePtr cx_raw(cxArray);
     DevicePtr w_raw(weights.array());
     DevicePtr y_raw(y);
     DevicePtr hy_raw(hy);

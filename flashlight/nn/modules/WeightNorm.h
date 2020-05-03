@@ -63,6 +63,7 @@ class WeightNorm : public Module {
   template <class T>
   WeightNorm(std::shared_ptr<T> module, int dim) : module_(module), dim_(dim) {
     auto module_params = module_->params();
+
     auto v = module_params[0];
     transformDims();
     auto g = Variable(norm(v, normDim_).array(), true);
@@ -77,10 +78,10 @@ class WeightNorm : public Module {
   }
 
   /**
-    * Returns a pointer to the inner `Module` normalized by this `WeightNorm`.
-    *
-    * @return a module pointer.
-    */
+   * Returns a pointer to the inner `Module` normalized by this `WeightNorm`.
+   *
+   * @return a module pointer.
+   */
   ModulePtr module() const;
 
   void train() override;

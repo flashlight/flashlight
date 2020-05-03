@@ -22,6 +22,7 @@
 #include <vector>
 
 #include <arrayfire.h>
+#include "flashlight/common/Defines.h"
 #include "flashlight/common/Serialization.h"
 
 namespace fl {
@@ -115,6 +116,39 @@ class Variable {
    * @return a reference to the underlying Arrayfire array.
    */
   af::array& array() const;
+
+  /**
+   * Casts the variable to the given data type.
+   *
+   * @param[in] type target data type
+   *
+   */
+  void inPlaceCast(af::dtype type) {
+    if (this->type() != type) {
+      array() = array().as(type);
+    }
+    if (sharedGrad_->grad && grad().type() != type) {
+      grad().array() = grad().array().as(type);
+    }
+  }
+
+  /**
+   * Creates a new variable based on the current variable whose type will be
+   * adjusted based on the input type. Unlike `inPlaceCast`, `as` does not
+   * change the current variable.
+   *
+   * @param[in] type target data type
+   *
+   * @return returns the casted variable.
+   */
+  Variable as(af::dtype type) {
+    auto output = withoutData();
+    output.array() = array().as(type);
+    if (sharedGrad_->grad) {
+      output.grad().array() = grad().array().as(type);
+    }
+    return output;
+  }
 
   /**
    * @return a reference to the underlying gradient Variable.
@@ -269,7 +303,7 @@ class Variable {
   Variable col(int index) const;
 
   /**
-   * Returns a sequence of colums from an array based on `first` and `last`
+   * Returns a sequence of columns from an array based on `first` and `last`
    * indices. This can also be seen as the result of doing
    * `input(af::span, af::seq(first, last), af::span, af::span)`
    * @param[in] first start index of the rows

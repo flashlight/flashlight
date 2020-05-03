@@ -8,11 +8,10 @@
 
 #include <stdexcept>
 
-#include "flashlight/nn/modules/Conv2D.h"
-
 #include "flashlight/autograd/Functions.h"
 #include "flashlight/nn/Init.h"
 #include "flashlight/nn/Utils.h"
+#include "flashlight/nn/modules/Conv2D.h"
 
 namespace fl {
 
@@ -103,6 +102,8 @@ Conv2D::Conv2D(
 }
 
 Variable Conv2D::forward(const Variable& input) {
+  typeTrace("Conv 2D FWD", input.type());
+
   auto px = derivePadding(input.dims(0), xFilter_, xStride_, xPad_, xDilation_);
   auto py = derivePadding(input.dims(1), yFilter_, yStride_, yPad_, yDilation_);
   if (!(px >= 0 && py >= 0)) {

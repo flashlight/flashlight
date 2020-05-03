@@ -16,10 +16,9 @@
 
 #include <stdexcept>
 
-#include "flashlight/nn/modules/Module.h"
-
-
+#include "flashlight/common/Utils.h"
 #include "flashlight/nn/Init.h"
+#include "flashlight/nn/modules/Module.h"
 
 namespace fl {
 
