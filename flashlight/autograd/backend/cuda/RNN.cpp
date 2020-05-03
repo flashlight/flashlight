@@ -38,9 +38,6 @@ void rnn_backward(
   if (inputs.size() != 4) {
     throw std::invalid_argument("wrong # of inputs for RNN");
   }
-  typeTrace("RNN BWD - input", inputs[0].type());
-  typeTrace("RNN BWD - hx", inputs[1].type());
-  typeTrace("RNN BWD - cx", inputs[2].type());
 
   auto input = inputs[0];
   auto hx = inputs[1];
@@ -238,10 +235,6 @@ std::tuple<Variable, Variable, Variable> rnn(
     RnnMode mode,
     bool bidirectional,
     float drop_prob) {
-  typeTrace("RNN FWD - input", input.type());
-  typeTrace("RNN FWD - hx", hidden_state.type());
-  typeTrace("RNN FWD - cx", cell_state.type());
-
   auto& x = input.array();
 
   af::array hxArray;

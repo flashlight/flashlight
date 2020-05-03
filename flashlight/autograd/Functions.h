@@ -21,7 +21,6 @@
 #include <arrayfire.h>
 
 #include "flashlight/common/Defines.h"
-#include "flashlight/nn/Utils.h"
 
 namespace fl {
 namespace detail {

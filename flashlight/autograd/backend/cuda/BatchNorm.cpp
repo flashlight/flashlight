@@ -15,7 +15,6 @@
 #include "flashlight/autograd/Variable.h"
 #include "flashlight/autograd/backend/cuda/CudnnUtils.h"
 #include "flashlight/common/DevicePtr.h"
-#include "flashlight/nn/Utils.h"
 
 namespace fl {
 
@@ -29,8 +28,6 @@ Variable batchnorm(
     bool train,
     double momentum,
     double epsilon) {
-  typeTrace("Batchnorm FWD - input", input.type());
-
   auto output = af::array(input.dims(), input.type());
 
   int nfeatures = 1;
@@ -151,8 +148,6 @@ Variable batchnorm(
   auto gradFunc =
       [train, save_mean, save_var, mode, in_desc_dims, wt_desc_dims, epsilon](
           std::vector<Variable>& inputs, const Variable& grad_output) {
-        typeTrace("Batchnorm BWD - upstream grad", grad_output.type());
-        typeTrace("Batchnorm BWD - input", inputs[0].type());
         if (!train) {
           throw std::logic_error(
               "can't compute batchnorm grad when train was not specified");
