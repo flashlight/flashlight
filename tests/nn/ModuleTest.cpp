@@ -309,6 +309,19 @@ TEST(ModuleTest, TransformFwd) {
       allClose(l.forward(inVar).array(), af::constant(0.0, inVar.dims())));
 }
 
+TEST(ModuleTest, PrecisionCastFwd) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half precision not available on this device";
+  }
+
+  auto in = Variable(af::constant(1.0, 3, 3), true);
+  auto precisionCast = PrecisionCast(af::dtype::f16);
+  auto out = precisionCast.forward(in);
+
+  ASSERT_EQ(out.type(), af::dtype::f16);
+  ASSERT_TRUE(allClose(in.array(), out.as(af::dtype::f32).array()));
+}
+
 TEST(ModuleTest, ContainerReplaceParam) {
   auto seq = ContainerTestClass();
   seq.addParam(Variable(af::randu(5, 5), true));

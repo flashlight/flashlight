@@ -231,6 +231,97 @@ TEST(AutogradTest, MultiplyAdd) {
   ASSERT_TRUE(allClose(dy.array(), 2 * y.array() + x.array()));
 }
 
+TEST(AutogradTest, CastingAs) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  int refCount = 0;
+  // Casting in place should reset refcounts
+  auto in = af::randu({5, 5});
+  auto var = Variable(in, true);
+  af_get_data_ref_count(&refCount, var.array().get());
+  ASSERT_EQ(refCount, 2);
+  auto varF16 = var.as(af::dtype::f16);
+  af_get_data_ref_count(&refCount, varF16.array().get());
+  ASSERT_EQ(refCount, 1);
+  varF16.backward();
+  af_get_data_ref_count(&refCount, varF16.grad().array().get());
+  ASSERT_EQ(refCount, 1);
+  ASSERT_EQ(varF16.grad().type(), af::dtype::f16);
+  ASSERT_EQ(var.grad().type(), af::dtype::f32);
+
+  ASSERT_NE(varF16.type(), in.type());
+  ASSERT_TRUE(allClose(varF16.array(), in.as(af::dtype::f16)));
+}
+
+TEST(AutogradTest, CastingAsInPlace) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  int refCount = 0;
+  auto a = Variable(af::randu({4, 4}), true);
+  af_get_data_ref_count(&refCount, a.array().get());
+  ASSERT_EQ(refCount, 1);
+  a = a.as(af::dtype::f16);
+  af_get_data_ref_count(&refCount, a.array().get());
+  ASSERT_EQ(refCount, 1);
+
+  ASSERT_EQ(a.type(), af::dtype::f16);
+  auto b = Variable(af::randu({4, 4}, af::dtype::f16), true);
+  auto c = b + a;
+  c.backward();
+  ASSERT_EQ(a.grad().type(), af::dtype::f16);
+
+  a = a.as(af::dtype::f32);
+  af_get_data_ref_count(&refCount, a.array().get());
+  ASSERT_EQ(refCount, 1);
+  ASSERT_FALSE(a.isGradAvailable());
+}
+
+TEST(AutogradTest, CastingAsDifferentGradTypes) {
+  auto f32 = Variable(af::randu({5, 5}), true);
+  auto f16 = Variable(af::randu({5, 5}, af::dtype::f16), true);
+  auto res = f32 + f16;
+  // Computing gradients with mixed types fails
+  ASSERT_THROW(res.backward(), std::invalid_argument);
+}
+
+TEST(AutogradTest, CastingAsGrad) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  // compare to f32 case
+  auto x = Variable(af::constant(2.0, 5), true);
+  auto y = Variable(af::constant(3.0, 5), true);
+  auto z = x * x + x * y + y * y;
+  auto dz = Variable(af::constant(1.0, 5), false);
+  z.backward(dz);
+  auto dx = x.grad();
+  auto dy = y.grad();
+
+  // f16 -- cast gradients in both directions
+  auto x32 = Variable(af::constant(2.0, 5), true);
+  auto y32 = Variable(af::constant(3.0, 5), true);
+  auto xf16 = x32.as(af::dtype::f16);
+  auto yf16 = y32.as(af::dtype::f16);
+  auto zf16 = xf16 * xf16 + xf16 * yf16 + yf16 * yf16;
+  auto zf32 = zf16.as(af::dtype::f32);
+  zf32.backward(dz);
+
+  ASSERT_EQ(xf16.grad().type(), af::dtype::f16);
+  ASSERT_EQ(yf16.grad().type(), af::dtype::f16);
+  ASSERT_EQ(zf16.grad().type(), af::dtype::f16);
+  ASSERT_EQ(x32.grad().type(), af::dtype::f32);
+  ASSERT_EQ(y32.grad().type(), af::dtype::f32);
+  ASSERT_TRUE(allClose(dx.array(), xf16.grad().array().as(af::dtype::f32)));
+  ASSERT_TRUE(allClose(dy.array(), y32.grad().array().as(af::dtype::f32)));
+  ASSERT_TRUE(allClose(dx.array(), x32.grad().array()));
+  ASSERT_TRUE(allClose(dy.array(), y32.grad().array()));
+}
+
 TEST(AutogradTest, NoCalcGrad) {
   auto x = Variable(af::randu(5), false);
   auto y = Variable(af::randu(5), true);
