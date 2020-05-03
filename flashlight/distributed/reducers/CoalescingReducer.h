@@ -10,6 +10,8 @@
 
 #include <vector>
 
+#include <arrayfire.h>
+
 #include "flashlight/distributed/reducers/Reducer.h"
 
 namespace fl {
@@ -41,6 +43,9 @@ class CoalescingReducer : public Reducer {
   std::vector<Variable> cache_;
   /// The current cache size, in bytes
   std::size_t currCacheSize_{0};
+  /// The type in which to synchronize tensors. Tensors not of this type are
+  /// cast accordingly before synchronization
+  af::dtype syncType_;
 
  public:
   /**
@@ -52,8 +57,15 @@ class CoalescingReducer : public Reducer {
    * runs asynchronously to the AF stream.
    * @param[in] contiguous forces synchronization of the set of Variables
    * to occur in a contiguous buffer, which may improve performance.
+   * @param[in] syncType the type to which all synchronized `Variable`s will be
+   * cast. All added tensors must be cast to the same type since `allReduce`
+   * only supports reductions over a single type.
    */
-  CoalescingReducer(double scale, bool async, bool contiguous);
+  CoalescingReducer(
+      double scale,
+      bool async,
+      bool contiguous,
+      af::dtype syncType);
 
   /**
    * Destroy the Reducer. Calls `finalize()` before returning.
