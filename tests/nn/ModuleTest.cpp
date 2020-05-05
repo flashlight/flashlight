@@ -341,6 +341,27 @@ TEST(ModuleTest, ContainerReplaceParam) {
   ASSERT_TRUE(allClose(seq.param(6), new_param));
 }
 
+TEST(ModuleTest, AdaptiveSoftMaxPredict) {
+  // test predict gives the same as argmax along probs
+  int N = 5;
+  int C = 5;
+  int T = 10;
+  int B = 5;
+
+  auto x = input(af::randu(N, T, B, af::dtype::f32));
+  auto y = Variable((af::randu(T, B, af::dtype::u32) % C).as(s32), false);
+
+  std::vector<int> cutoff{{C / 2, C}};
+  auto activation = std::make_shared<AdaptiveSoftMax>(N, cutoff);
+
+  auto probs = activation->forward(x);
+  auto result1 = activation->predict(x).array();
+  af::array tmpValue, result2;
+  af::max(tmpValue, result2, probs.array(), 0);
+
+  ASSERT_TRUE(allClose(result1, result2));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

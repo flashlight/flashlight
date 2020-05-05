@@ -91,20 +91,20 @@ Variable AdaptiveSoftMax::predict(const Variable& inputs) const {
   }
 
   auto inputsFlattened = moddims(inputs, af::dim4(inputSize, -1, 1, 1));
-  auto headOutput = logSoftmax(matmul(params_[0], inputsFlattened), 0);
+  auto headOutput = matmul(params_[0], inputsFlattened);
   af::array maxValue, prediction;
   af::max(maxValue, prediction, headOutput.array(), 0);
 
   auto notInShortlist = (prediction >= cutoff_[0]);
-  Variable ret;
-  if (!af::anyTrue<bool>(notInShortlist)) {
-    ret = Variable(prediction, false);
-  } else {
-    auto logProb = getFullLogProb(inputs, headOutput);
-    af::max(maxValue, prediction, logProb.array(), 0);
-    ret = Variable(prediction, false);
+  Variable ret = Variable(prediction, false);
+  if (af::anyTrue<bool>(notInShortlist)) {
+    headOutput = logSoftmax(headOutput, 0);
+    auto logProbTailPositions = getFullLogProb(
+      inputsFlattened(af::span, notInShortlist), headOutput(af::span, notInShortlist));
+    af::array maxValueTailPositions, predictionTailPositions;
+    af::max(maxValueTailPositions, predictionTailPositions, logProbTailPositions.array(), 0);
+    ret.array()(notInShortlist) = predictionTailPositions;
   }
-
   return moddims(
       ret,
       af::dim4(ret.dims(0), inputs.dims(1), inputs.dims(2), inputs.dims(3)));
