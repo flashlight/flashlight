@@ -9,6 +9,7 @@ add_library(
 set(
   CRITERION_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/Hungarian.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/SetCriterion.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/HungarianLib.cpp
 )
 

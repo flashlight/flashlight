@@ -28,6 +28,8 @@ endfunction(build_test)
 
 set(FLASHLIGHT_TEST_DIR ${CMAKE_SOURCE_DIR}/vision/tests)
 if (FL_BUILD_TESTS)
+  build_test(${FLASHLIGHT_TEST_DIR}/criterion/SetCriterionTest.cpp)
   build_test(${FLASHLIGHT_TEST_DIR}/criterion/HungarianTest.cpp)
+  build_test(${FLASHLIGHT_TEST_DIR}/criterion/HungarianMatcherTest.cpp)
   build_test(${FLASHLIGHT_TEST_DIR}/dataset/BoxUtilsTest.cpp)
 endif ()

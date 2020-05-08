@@ -7,8 +7,8 @@
 using namespace fl::cv;
 
 TEST(HungarianTest, DiagnalAssignments) {
-  int M = 3; // Rows
-  int N = 3; // Columns
+  int M = 4; // Rows
+  int N = 4; // Columns
   std::vector<float> costsVec(N * N);
   for(int r = 0; r < M; r++) {
     for(int c = 0; c < N; c++) {
@@ -17,10 +17,10 @@ TEST(HungarianTest, DiagnalAssignments) {
   }
 
   std::vector<int> expRowIdxs = {
-    0, 1, 2
+    0, 1, 2, 3
   };
   std::vector<int> expColIdxs = {
-    2, 1, 0
+    3, 2, 1, 0
   };
   std::vector<int> rowIdxs(N);
   std::vector<int> colIdxs(M);
@@ -198,19 +198,98 @@ TEST(HungarianTest, 6x6Example2) {
   }
 }
 
-af::array cxcywh_to_xyxy(af::array bbox) {
-  af::array transformed = af::constant(0, bbox.dims());
-  for(int i = 0; i < bbox.dims(1); i++) {
-    float x_c = bbox(i, 0);
-    float y_c = bbox(i, 1);
-    float w = bbox(i, 2);
-    float h = bbox(i, 3);
-    transformed(0, i) = x_c - 0.5 * w;
-    transformed(1, i) = y_c - 0.5 * h;
-    transformed(2, i) = x_c + 0.5 * w;
-    transformed(3, i) = y_c + 0.5 * h;
-  }
+//af::array cxcywh_to_xyxy(af::array bbox) {
+  //af::array transformed = af::constant(0, bbox.dims());
+  //for(int i = 0; i < bbox.dims(1); i++) {
+    //float x_c = bbox(i, 0);
+    //float y_c = bbox(i, 1);
+    //float w = bbox(i, 2);
+    //float h = bbox(i, 3);
+    //transformed(0, i) = x_c - 0.5 * w;
+    //transformed(1, i) = y_c - 0.5 * h;
+    //transformed(2, i) = x_c + 0.5 * w;
+    //transformed(3, i) = y_c + 0.5 * h;
+  //}
 
+//}
+TEST(HungarianTest, NonSquare2) {
+  int M = 1; // Rows
+  int N = 2; // Columns
+  std::vector<float> costsVec = {
+    0,
+    0.5
+  };
+  
+  std::vector<int> expRowIdxs = {
+    0
+  };
+  std::vector<int> expColIdxs = {
+    1
+  };
+
+  const int num_indices = std::min(N, M);
+  std::vector<int> rowIdxs(num_indices, -1);
+  std::vector<int> colIdxs(num_indices, -1);
+  hungarian(costsVec.data(), rowIdxs.data(), colIdxs.data(), M, N);
+  for(int i = 0; i < num_indices; i++) {
+      EXPECT_EQ(rowIdxs[i], expRowIdxs[i]) 
+        << "Assignment differs at index " << i;
+      EXPECT_EQ(colIdxs[i], colIdxs[i]) 
+        << "Assignment differs at index " << i;
+  }
 }
 
-TEST(BBox_Ops, cxcywh_to_xyxy)
+TEST(HungarianTest, NonSquare) {
+  int M = 1; // Rows
+  int N = 2; // Columns
+  std::vector<float> costsVec = {
+    0.5,
+    0
+  };
+  
+  std::vector<int> expRowIdxs = {
+    0
+  };
+  std::vector<int> expColIdxs = {
+    0
+  };
+
+  const int num_indices = std::min(N, M);
+  std::vector<int> rowIdxs(num_indices, -1);
+  std::vector<int> colIdxs(num_indices, -1);
+  hungarian(costsVec.data(), rowIdxs.data(), colIdxs.data(), M, N);
+  for(int i = 0; i < num_indices; i++) {
+      EXPECT_EQ(rowIdxs[i], expRowIdxs[i]) 
+        << "Assignment differs at index " << i;
+      EXPECT_EQ(colIdxs[i], colIdxs[i]) 
+        << "Assignment differs at index " << i;
+  }
+}
+
+TEST(HungarianTest, NonSquare3) {
+  int M = 2; // Rows
+  int N = 3; // Columns
+  std::vector<float> costsVec = {
+    0, 0.5,
+    0.5, 2,
+    2, 3,
+  };
+  
+  std::vector<int> expRowIdxs = {
+    0, 1,
+  };
+  std::vector<int> expColIdxs = {
+    1, 0
+  };
+
+  const int num_indices = std::min(N, M);
+  std::vector<int> rowIdxs(num_indices, -1);
+  std::vector<int> colIdxs(num_indices, -1);
+  hungarian(costsVec.data(), rowIdxs.data(), colIdxs.data(), M, N);
+  for(int i = 0; i < num_indices; i++) {
+      EXPECT_EQ(rowIdxs[i], expRowIdxs[i]) 
+        << "Assignment differs at index " << i;
+      EXPECT_EQ(colIdxs[i], colIdxs[i]) 
+        << "Assignment differs at index " << i;
+  }
+}

@@ -262,7 +262,7 @@ namespace fl {
 namespace cv {
 
 void hungarian(float* costs, int* assignments, int M, int N) {
-  assert(M == N);
+  assert(N >= M);
   std::vector<int> rowCover(M);
   std::vector<int> colCover(N);
   std::vector<int> paths(N * N * 2);
