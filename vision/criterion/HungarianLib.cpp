@@ -262,6 +262,7 @@ namespace fl {
 namespace cv {
 
 void hungarian(float* costs, int* assignments, int M, int N) {
+  // Ensure there are more rows than columns
   assert(N >= M);
   std::vector<int> rowCover(M);
   std::vector<int> colCover(N);

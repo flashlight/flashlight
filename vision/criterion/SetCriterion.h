@@ -30,7 +30,10 @@ public:
       const Variable& predBoxes, 
       const Variable& predLogits,
       const Variable& targetBoxes, 
-      const Variable& targetClasses);
+      const Variable& targetClasses,
+      const std::vector<std::pair<af::array, af::array>>& indices, 
+      const int numBoxes
+      );
 
   LossDict lossCardinality(
       const Variable& predBoxes, 

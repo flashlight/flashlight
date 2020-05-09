@@ -103,6 +103,19 @@ af::array flatten(const af::array& x, int start, int stop) {
   for(int i = start; i <= stop; i++) {
     flattened_dims = flattened_dims * dims[i];
   }
+
+
+  /*
+  for(int i = 0; i < start; i++) {
+    new_dims[i] = dims[i];
+  }
+  new_dims[start] = flattened_dims;
+  for(int i = stop; i < (4 - stop); i++) {
+    new_dims[i] = dims[i + stop]
+  }
+  return new_dims;
+  */
+
   new_dims[0] = flattened_dims;
   for(int i = 1; i < (4 - stop); i++) {
     new_dims[i] = dims[i + stop];
@@ -214,8 +227,15 @@ af::array generalized_box_iou(const af::array& bboxes1, const af::array& bboxes2
   auto rb = cartesian(bboxes1.rows(2, 3), bboxes2.rows(2, 3), af::max);
   auto wh = af::max((rb - lt), 0.0);
   auto area = wh.row(0) * wh.row(1);
+  af_print(iou);
+  af_print(area);
   area = flatten(area, 0, 1);
+  af_print(area);
   return iou - (area - uni) / area;
+}
+
+Variable l1_loss(const Variable& input, const Variable& target) {
+  return abs(input - target);
 }
 
 } // namespace dataset
