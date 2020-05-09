@@ -69,14 +69,22 @@ af::array ravelIndices(
     return applyStrides(idxs, stride);
 }
 
+//af::array lookup(
+    //const af::array& in,
+    //af::array idx,
+    //const int dim
+//) { 
+  //std::vector<af::array> idxs(4);
+  //idxs[dim] = idx;
+  //return lookup(in, idxs);
+//}
+
 
 af::array lookup(
     const af::array& in,
-    af::array idx0,
-    af::array idx1,
-    af::array idx2,
-    af::array idx3) {
-  auto linearIndices = ravelIndices({idx0, idx1, idx2, idx3}, in.dims());
+    const std::vector<af::array>& idxs,
+    ) {
+  auto linearIndices = ravelIndices(idxs, in.dims());
   af::array output = af::constant(0.0, linearIndices.dims());
   output(af::seq(linearIndices.elements())) = in(linearIndices);
   return output;
@@ -84,13 +92,11 @@ af::array lookup(
 
 fl::Variable lookup(
     const fl::Variable& in,
-    af::array idx0,
-    af::array idx1,
-    af::array idx2,
-    af::array idx3) {
+    std::vector<af::array>& idxs,
+ ) {
   auto idims = in.dims();
-  auto result = lookup(in.array(), idx0, idx1, idx2, idx3);
-  auto gradFunction = [idx0, idx1, idx2, idx3, idims](std::vector<Variable>& inputs,
+  auto result = lookup(in.array(), idxs);
+  auto gradFunction = [idxs](std::vector<Variable>& inputs,
                                               const Variable& grad_output) {
         af_print(grad_output.array());
         if (!inputs[0].isGradAvailable()) {
@@ -98,7 +104,7 @@ fl::Variable lookup(
           inputs[0].addGrad(Variable(grad, false));
         }
         auto grad = fl::Variable(af::constant(0, idims), false);
-        auto linearIndices = ravelIndices({idx0, idx1, idx2, idx3}, idims);
+        auto linearIndices = ravelIndices(idxs, idims);
         // TODO Can parallize this if needed but does not work for duplicate keys
         for(int i = 0; i < linearIndices.elements(); i++) {
           af::array index = linearIndices(i);
