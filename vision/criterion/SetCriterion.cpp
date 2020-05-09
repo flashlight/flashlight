@@ -1,5 +1,11 @@
 #include "SetCriterion.h"
+
+#include <assert.h>
 #include <iostream>
+#include <numeric>
+
+#include <af/array.h>
+#include <af/internal.h>
 
 #include "vision/dataset/BoxUtils.h"
 
@@ -13,25 +19,54 @@ af::array span(const af::dim4 inDims, const int index) {
   return af::iota(dims);
 }
 
-af::dim4 strides(const af::dim4 dims) {
+af::dim4 calcStrides(const af::dim4 dims) {
+  af::dim4 oDims;
   return { 1, dims[0], dims[0] * dims[1], dims[0] * dims[1] * dims[2] };
+};
+
+af::dim4 calcOutDims(std::vector<af::array>& coords) {
+    af::dim4 oDims = {1, 1, 1, 1};
+    for(auto coord : coords) {
+      auto iDims = coord.dims();
+      for(int i = 0; i < 4; i++) {
+        if(iDims[i] > 1 && oDims[i] == 1) {
+          oDims[i] = iDims[i];
+        }
+        assert(iDims[i] == 1 || iDims[i] == oDims[i]);
+      }
+    }
+    return oDims;
 }
 
-af::array computeLinearIndex(
-    af::array idx0,
-    af::array idx1,
-    af::array idx2,
-    af::array idx3,
+af::array applyStrides(std::vector<af::array>& coords, af::dim4 strides) {
+  auto oDims = coords[0].dims();
+  return std::inner_product(
+        coords.begin(), coords.end(), strides.get(), af::constant(0, oDims),
+        [](const af::array& x, const af::array y) { return x + y; },
+        [](const af::array& x, int y) { return x * y; }
+  );
+}
+
+
+af::array ravelIndices(
+    std::vector<af::array> idxs,
     const af::dim4 dims) {
-    idx0 = (idx0.isempty()) ? span(dims, 0) : idx0;
-    idx1 = (idx1.isempty()) ? span(dims, 1) : idx1;
-    idx2 = (idx2.isempty()) ? span(dims, 2) : idx2;
-    idx3 = (idx3.isempty()) ? span(dims, 3) : idx3;
-    af::dim4 stride = strides(dims);
-    af::array linearIndices = batchFunc(idx0 * stride[0], idx1 * stride[1], af::operator+);
-    linearIndices = batchFunc(linearIndices, idx2 * stride[2], af::operator+);
-    linearIndices = batchFunc(linearIndices, idx3 * stride[3], af::operator+);
-    return linearIndices;
+
+    // Create index spanning column if empty
+    for(int i = 0; i < 4; i++) {
+      idxs[i] = (idxs[i].isempty()) ? span(dims, i) : idxs[i];
+    }
+
+    auto oDims = calcOutDims(idxs);
+    auto stride = calcStrides(dims);
+
+    // Broad cast to output dimensions
+    std::transform(idxs.begin(), idxs.end(), idxs.begin(), 
+        [&oDims](const af::array& idx) 
+        { return detail::tileAs(idx, oDims); }
+    );
+
+    return applyStrides(idxs, stride);
 }
 
 
@@ -41,7 +76,7 @@ af::array lookup(
     af::array idx1,
     af::array idx2,
     af::array idx3) {
-  auto linearIndices = computeLinearIndex(idx0, idx1, idx2, idx3, in.dims());
+  auto linearIndices = ravelIndices({idx0, idx1, idx2, idx3}, in.dims());
   af::array output = af::constant(0.0, linearIndices.dims());
   output(af::seq(linearIndices.elements())) = in(linearIndices);
   return output;
@@ -63,7 +98,7 @@ fl::Variable lookup(
           inputs[0].addGrad(Variable(grad, false));
         }
         auto grad = fl::Variable(af::constant(0, idims), false);
-        auto linearIndices = computeLinearIndex(idx0, idx1, idx2, idx3, idims);
+        auto linearIndices = ravelIndices({idx0, idx1, idx2, idx3}, idims);
         // TODO Can parallize this if needed but does not work for duplicate keys
         for(int i = 0; i < linearIndices.elements(); i++) {
           af::array index = linearIndices(i);
@@ -150,16 +185,9 @@ SetCriterion::LossDict SetCriterion::lossLabels(
   auto srcLogits = lookup(predLogits, af::array(), srcIdx.second, af::array(), af::array());
   auto tgtClasses = lookup(targetClasses, af::array(), tgtIdx.second, af::array(), af::array());
 
-  af_print(srcLogits.array());
-  af_print(tgtClasses.array());
-
-  af_print(srcLogits.array());
-  af_print(tgtClasses.array());
   auto tgtDims = tgtClasses.dims();
   tgtClasses =  moddims(tgtClasses, { tgtDims[1], tgtDims[2], tgtDims[3] });
-  af_print(tgtClasses.array());
   auto loss_ce = categoricalCrossEntropy(logSoftmax(srcLogits, 0), tgtClasses);
-  af_print(loss_ce.array())
   return { {"loss_ce", loss_ce} };
 }
 
