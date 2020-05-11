@@ -13,6 +13,7 @@ set(
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/meter/FrameErrorMeter.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/meter/MSEMeter.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/meter/TimeMeter.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/meter/TopKMeter.cpp
   )
 
 target_sources(
