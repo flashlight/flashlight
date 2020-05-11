@@ -24,7 +24,8 @@ af::dim4 calcStrides(const af::dim4 dims) {
   return { 1, dims[0], dims[0] * dims[1], dims[0] * dims[1] * dims[2] };
 };
 
-af::dim4 calcOutDims(std::vector<af::array>& coords) {
+af::dim4 calcOutDims(
+    const std::vector<af::array>& coords) {
     af::dim4 oDims = {1, 1, 1, 1};
     for(auto coord : coords) {
       auto iDims = coord.dims();
@@ -38,7 +39,9 @@ af::dim4 calcOutDims(std::vector<af::array>& coords) {
     return oDims;
 }
 
-af::array applyStrides(std::vector<af::array>& coords, af::dim4 strides) {
+af::array applyStrides(
+    const std::vector<af::array>& coords, 
+    af::dim4 strides) {
   auto oDims = coords[0].dims();
   return std::inner_product(
         coords.begin(), coords.end(), strides.get(), af::constant(0, oDims),
@@ -47,42 +50,43 @@ af::array applyStrides(std::vector<af::array>& coords, af::dim4 strides) {
   );
 }
 
-
-af::array ravelIndices(
-    std::vector<af::array> idxs,
-    const af::dim4 dims) {
-
-    // Create index spanning column if empty
+std::vector<af::array> spanIfEmpty(
+    const std::vector<af::array>& coords,
+    af::dim4 dims) {
+  std::vector<af::array> result(coords.size());
     for(int i = 0; i < 4; i++) {
-      idxs[i] = (idxs[i].isempty()) ? span(dims, i) : idxs[i];
+      result[i] = (coords[i].isempty()) ? span(dims, i) : coords[i];
     }
+    return result;
+}
 
-    auto oDims = calcOutDims(idxs);
-    auto stride = calcStrides(dims);
-
-    // Broad cast to output dimensions
-    std::transform(idxs.begin(), idxs.end(), idxs.begin(), 
+// Then, broadcast the indices
+std::vector<af::array> broadcastCoords(
+    const std::vector<af::array>& input
+    ) {
+    std::vector<af::array> result(input.size());
+    auto oDims = calcOutDims(input);
+    std::transform(input.begin(), input.end(), result.begin(), 
         [&oDims](const af::array& idx) 
         { return detail::tileAs(idx, oDims); }
     );
+    return result;
 
-    return applyStrides(idxs, stride);
 }
 
-//af::array lookup(
-    //const af::array& in,
-    //af::array idx,
-    //const int dim
-//) { 
-  //std::vector<af::array> idxs(4);
-  //idxs[dim] = idx;
-  //return lookup(in, idxs);
-//}
+af::array ravelIndices(
+    const std::vector<af::array>& input_coords,
+    const af::dim4 in_dims) {
 
+  std::vector<af::array> coords;
+  coords = spanIfEmpty(input_coords, in_dims); 
+  coords = broadcastCoords(coords);
+  return applyStrides(coords, calcStrides(in_dims));
+}
 
-af::array lookup(
+af::array index(
     const af::array& in,
-    const std::vector<af::array>& idxs,
+    const std::vector<af::array> idxs
     ) {
   auto linearIndices = ravelIndices(idxs, in.dims());
   af::array output = af::constant(0.0, linearIndices.dims());
@@ -90,13 +94,27 @@ af::array lookup(
   return output;
 }
 
-fl::Variable lookup(
+
+af::array index(
+    const af::array& in,
+    af::array idx,
+    const int dim
+) { 
+  std::vector<af::array> idxs(4);
+  idxs[dim] = idx;
+  return index(in, idxs);
+}
+
+
+
+
+fl::Variable index(
     const fl::Variable& in,
-    std::vector<af::array>& idxs,
+    std::vector<af::array> idxs
  ) {
   auto idims = in.dims();
-  auto result = lookup(in.array(), idxs);
-  auto gradFunction = [idxs](std::vector<Variable>& inputs,
+  auto result = index(in.array(), idxs);
+  auto gradFunction = [idxs, idims](std::vector<Variable>& inputs,
                                               const Variable& grad_output) {
         af_print(grad_output.array());
         if (!inputs[0].isGradAvailable()) {
@@ -114,6 +132,16 @@ fl::Variable lookup(
   };
   return fl::Variable(result, { in.withoutData() }, gradFunction);
 }
+
+fl::Variable index(
+    const fl::Variable& in,
+    const af::array idx,
+    const int dim) {
+  std::vector<af::array> idxs(4);
+  idxs[dim] = idx;
+  return index(in, idxs);
+}
+
 }
 
 namespace fl {
@@ -161,14 +189,14 @@ SetCriterion::LossDict SetCriterion::lossBoxes(
 
   auto srcIdx = this->getSrcPermutationIdx(indices);
   auto tgtIdx = this->getTgtPermutationIdx(indices);
-  auto srcBoxes = lookup(predBoxes, af::array(), srcIdx.second, af::array(), af::array());
-  auto tgtBoxes = lookup(targetBoxes, af::array(), tgtIdx.second, af::array(), af::array());
+  auto srcBoxes = index(predBoxes, srcIdx.second, 1);
+  auto tgtBoxes = index(targetBoxes, tgtIdx.second, 1);
 
   auto cost_giou =  0 - dataset::generalized_box_iou(srcBoxes, tgtBoxes);
   auto dims = cost_giou.dims();
   // Extract diagnal
   auto rng = af::range(dims[0]);
-  cost_giou = lookup(cost_giou, rng, rng, af::array(), af::array());
+  cost_giou = index(cost_giou, { rng, rng, af::array(), af::array() });
   //cost_giou = sum(cost_giou) / numBoxes;
 
   auto loss_bbox = cv::dataset::l1_loss(srcBoxes, tgtBoxes);
@@ -188,8 +216,8 @@ SetCriterion::LossDict SetCriterion::lossLabels(
   auto srcIdx = this->getSrcPermutationIdx(indices);
   auto tgtIdx = this->getTgtPermutationIdx(indices);
 
-  auto srcLogits = lookup(predLogits, af::array(), srcIdx.second, af::array(), af::array());
-  auto tgtClasses = lookup(targetClasses, af::array(), tgtIdx.second, af::array(), af::array());
+  auto srcLogits = index(predLogits, srcIdx.second, 1);
+  auto tgtClasses = index(targetClasses,  tgtIdx.second, 1);
 
   auto tgtDims = tgtClasses.dims();
   tgtClasses =  moddims(tgtClasses, { tgtDims[1], tgtDims[2], tgtDims[3] });
