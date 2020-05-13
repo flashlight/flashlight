@@ -23,14 +23,14 @@ public:
   std::vector<af::array> match(
       const Variable& predBoxes, 
       const Variable& predLogits,
-      const Variable& targetBoxes, 
-      const Variable& targetClasses);
+      const std::vector<Variable>& targetBoxes, 
+      const std::vector<Variable>& targetClasses);
 
   LossDict lossLabels(
       const Variable& predBoxes, 
       const Variable& predLogits,
-      const Variable& targetBoxes, 
-      const Variable& targetClasses,
+      const std::vector<Variable>& targetBoxes, 
+      const std::vector<Variable>& targetClasses,
       const std::vector<std::pair<af::array, af::array>>& indices, 
       const int numBoxes
       );
@@ -38,28 +38,28 @@ public:
   LossDict lossCardinality(
       const Variable& predBoxes, 
       const Variable& predLogits,
-      const Variable& targetBoxes, 
-      const Variable& targetClasses);
+      const std::vector<Variable>& targetBoxes, 
+      const std::vector<Variable>& targetClasses);
 
   LossDict lossBoxes(
       const Variable& predBoxes, 
       const Variable& predLogits,
-      const Variable& targetBoxes, 
-      const Variable& targetClasses, 
+      const std::vector<Variable>& targetBoxes, 
+      const std::vector<Variable>& targetClasses, 
       const std::vector<std::pair<af::array, af::array>>& indices, 
       const int numBoxes);
 
   LossDict lossMasks(
       const Variable& predBoxes, 
       const Variable& predLogits,
-      const Variable& targetBoxes, 
-      const Variable& targetClasses);
+      const std::vector<Variable>& targetBoxes, 
+      const std::vector<Variable>& targetClasses);
 
   LossDict forward(
       const Variable& predBoxes, 
       const Variable& predLogits,
-      const Variable& targetBoxes, 
-      const Variable& targetClasses);
+      const std::vector<Variable>& targetBoxes, 
+      const std::vector<Variable>& targetClasses);
 private:
   std::pair<af::array, af::array> getSrcPermutationIdx(
       const std::vector<std::pair<af::array, af::array>>& indices);

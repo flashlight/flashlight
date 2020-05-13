@@ -3,11 +3,12 @@
 #include <assert.h>
 #include <iostream>
 #include <numeric>
+#include <algorithm>
 
 #include <af/array.h>
-#include <af/internal.h>
 
 #include "vision/dataset/BoxUtils.h"
+#include "flashlight/autograd/autograd.h"
 
 namespace {
 
@@ -162,11 +163,10 @@ SetCriterion::SetCriterion(
 SetCriterion::LossDict SetCriterion::forward(
     const Variable& predBoxes,
     const Variable& predLogits,
-    const Variable& targetBoxes,
-    const Variable& targetClasses) {
+    const std::vector<Variable>& targetBoxes,
+    const std::vector<Variable>& targetClasses) {
 
-      auto indices = matcher_.forward(predBoxes.array(),
-          predLogits.array(), targetBoxes.array(), targetClasses.array());
+      auto indices = matcher_.forward(predBoxes, predLogits, targetBoxes, targetClasses);
 
       // TODO get number of boxes
       int numBoxes = 10;
@@ -182,24 +182,30 @@ SetCriterion::LossDict SetCriterion::forward(
 SetCriterion::LossDict SetCriterion::lossBoxes(
     const Variable& predBoxes,
     const Variable& predLogits,
-    const Variable& targetBoxes,
-    const Variable& targetClasses,
+    const std::vector<Variable>& targetBoxes,
+    const std::vector<Variable>& targetClasses,
     const std::vector<std::pair<af::array, af::array>>& indices,
     const int numBoxes) {
 
   auto srcIdx = this->getSrcPermutationIdx(indices);
   auto tgtIdx = this->getTgtPermutationIdx(indices);
   auto srcBoxes = index(predBoxes, srcIdx.second, 1);
-  auto tgtBoxes = index(targetBoxes, tgtIdx.second, 1);
+  // TODO concat target boxes
+  auto tgtBoxes = index(targetBoxes[0], tgtIdx.second, 1);
 
-  auto cost_giou =  0 - dataset::generalized_box_iou(srcBoxes, tgtBoxes);
+  auto cost_giou =  dataset::generalized_box_iou(
+      dataset::cxcywh_to_xyxy(srcBoxes), 
+      dataset::cxcywh_to_xyxy(tgtBoxes)
+  );
   auto dims = cost_giou.dims();
   // Extract diagnal
   auto rng = af::range(dims[0]);
-  cost_giou = index(cost_giou, { rng, rng, af::array(), af::array() });
+  cost_giou = 1 - index(cost_giou, { rng, rng, af::array(), af::array() });
+  // TODO 
   //cost_giou = sum(cost_giou) / numBoxes;
 
   auto loss_bbox = cv::dataset::l1_loss(srcBoxes, tgtBoxes);
+  // TODO
   //loss_bbox = sum(loss_bbox) / numBoxes;
 
   return { {"loss_giou", cost_giou}, {"loss_bbox", loss_bbox }};
@@ -208,8 +214,8 @@ SetCriterion::LossDict SetCriterion::lossBoxes(
 SetCriterion::LossDict SetCriterion::lossLabels(
     const Variable& predBoxes,
     const Variable& predLogits,
-    const Variable& targetBoxes,
-    const Variable& targetClasses,
+    const std::vector<Variable>& targetBoxes,
+    const std::vector<Variable>& targetClasses,
     const std::vector<std::pair<af::array, af::array>>& indices,
     const int numBoxes) {
 
@@ -217,7 +223,7 @@ SetCriterion::LossDict SetCriterion::lossLabels(
   auto tgtIdx = this->getTgtPermutationIdx(indices);
 
   auto srcLogits = index(predLogits, srcIdx.second, 1);
-  auto tgtClasses = index(targetClasses,  tgtIdx.second, 1);
+  auto tgtClasses = index(targetClasses[0],  tgtIdx.second, 1);
 
   auto tgtDims = tgtClasses.dims();
   tgtClasses =  moddims(tgtClasses, { tgtDims[1], tgtDims[2], tgtDims[3] });

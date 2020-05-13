@@ -16,10 +16,10 @@ public:
       const float cost_giou);
 
   std::vector<std::pair<af::array, af::array>> forward(
-      const af::array& predBoxes,
-      const af::array& predLogits,
-      const af::array& targetBoxes,
-      const af::array& targetClasses) const;
+      const Variable& predBoxes,
+      const Variable& predLogits,
+      const std::vector<Variable>& targetBoxes,
+      const std::vector<Variable>& targetClasses) const;
 
 
 private:
@@ -28,14 +28,14 @@ private:
   float cost_giou_;
 
    std::pair<af::array, af::array> matchBatch(
-       const af::array& predBoxes, 
-       const af::array& predLogits,
-       const af::array& targetBoxes, 
-       const af::array& targetClasses) const;
+       const Variable& predBoxes, 
+       const Variable& predLogits,
+       const Variable& targetBoxes, 
+       const Variable& targetClasses) const;
 
   af::array getCostMatrix(
-      const af::array& input, 
-      const af::array& target);
+      const Variable& input, 
+      const Variable& target);
 
 };
 

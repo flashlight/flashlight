@@ -2,6 +2,8 @@
 #include "vision/dataset/BoxUtils.h"
 #include "vision/criterion/HungarianLib.h"
 
+#include "flashlight/autograd/Functions.h"
+
 namespace {
 
 std::pair<af::array, af::array> hungarian(af::array& cost) {
@@ -29,51 +31,51 @@ HungarianMatcher::HungarianMatcher(
 };
 
 std::pair<af::array, af::array> HungarianMatcher::matchBatch(
-    const af::array& predBoxes, 
-    const af::array& predLogits,
-    const af::array& targetBoxes, 
-    const af::array& targetClasses) const {
+    const Variable& predBoxes, 
+    const Variable& predLogits,
+    const Variable& targetBoxes, 
+    const Variable& targetClasses) const {
 
-  af_print(targetClasses);
-  af_print(targetBoxes);
   auto mask = targetClasses >= 0;
-  af_print(targetBoxes(af::span, mask));
 
   // Create an M X N cost matrix where M is the number of targets and N is the number of preds
   
   // Class cost
-  auto outProbs = softmax(fl::input(predLogits), 0).array();
-  auto cost_class = 1 - outProbs(targetClasses, af::span);
+  auto outProbs = softmax(predLogits, 0);
+  auto cost_class = 1 - outProbs(targetClasses.array(), af::span);
 
   // Generalized IOU loss
-  auto cost_giou =  -dataset::generalized_box_iou(targetBoxes, predBoxes);
+  auto cost_giou =  0 - dataset::generalized_box_iou(
+      dataset::cxcywh_to_xyxy(predBoxes), 
+      dataset::cxcywh_to_xyxy(targetBoxes)
+  );
 
   // Bbox Cost
   auto cost_bbox = dataset::cartesian(targetBoxes, predBoxes,
-      [](const af::array& x, const af::array& y) {
-        return af::sum(af::abs(x - y));
+      [](const Variable& x, const Variable& y) {
+        return sum(abs(x - y), {0});
     });
   cost_bbox = dataset::flatten(cost_bbox, 0, 1);
 
 
   auto cost = cost_bbox_ * cost_bbox + cost_class_ * cost_class + cost_giou_ * cost_giou;
-  return ::hungarian(cost);
+  return ::hungarian(cost.array());
 
 
 }
 
 std::vector<std::pair<af::array, af::array>> HungarianMatcher::forward(
-    const af::array& predBoxes,
-    const af::array& predLogits,
-    const af::array& targetBoxes,
-    const af::array& targetClasses) const {
+    const Variable& predBoxes,
+    const Variable& predLogits,
+    const std::vector<Variable>& targetBoxes,
+    const std::vector<Variable>& targetClasses) const {
   std::vector<std::pair<af::array, af::array>> results;
   for(int b = 0; b < predBoxes.dims(2); b++) {
     auto result = matchBatch(
       predBoxes(af::span, af::span, b),
       predLogits(af::span, af::span, b),
-      targetBoxes(af::span, af::span, b),
-      targetClasses(af::span, af::span, b));
+      targetBoxes[b],
+      targetClasses[b]);
     results.emplace_back(result);
   }
   return results;
