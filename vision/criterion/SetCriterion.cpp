@@ -227,7 +227,9 @@ SetCriterion::LossDict SetCriterion::lossLabels(
 
   auto tgtDims = tgtClasses.dims();
   tgtClasses =  moddims(tgtClasses, { tgtDims[1], tgtDims[2], tgtDims[3] });
-  auto loss_ce = categoricalCrossEntropy(logSoftmax(srcLogits, 0), tgtClasses);
+  auto softmaxed = logSoftmax(srcLogits, 0)
+  af_print(softmaxed.array());
+  auto loss_ce = categoricalCrossEntropy(softmaxed, tgtClasses);
   return { {"loss_ce", loss_ce} };
 }
 

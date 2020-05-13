@@ -196,7 +196,7 @@ TEST(SetCriterion, PytorchRepro) {
   SetCriterion::LossDict losses;
   auto crit = SetCriterion(10, matcher, af::array(), 0.0, losses);
   auto loss = crit.forward(predBoxes, predLogits, targetBoxes, targetClasses);
-  EXPECT_EQ(loss["loss_giou"].scalar<float>, 0.0);
+  EXPECT_EQ(loss["loss_giou"].scalar<float>(), 0.0);
   for(auto it : loss) {
     std::cout << it.first;
     af_print(it.second.array());
