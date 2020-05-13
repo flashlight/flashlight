@@ -3,6 +3,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "vision/dataset/stb_image.h"
 
+#include <iostream>
+
 
 namespace fl {
 namespace cv {
@@ -13,6 +15,7 @@ namespace dataset {
  * numnber of channels to create an array with 3 channels
  */
 af::array loadJpeg(const std::string& fp) {
+  std::cout << "Filepath " << fp << std::endl;
 	int w, h, c;
   // STB image will automatically return desired_no_channels.
   // NB: c will be the original number of channels

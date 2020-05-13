@@ -11,8 +11,8 @@ public:
   HungarianMatcher() = default;
 
   HungarianMatcher(
-      const float cost_class, 
-      const float cost_bbox, 
+      const float cost_class,
+      const float cost_bbox,
       const float cost_giou);
 
   std::vector<std::pair<af::array, af::array>> forward(

@@ -12,6 +12,7 @@
 using namespace fl;
 using namespace fl::cv;
 
+/*
 TEST(HungarianMatcher, Test1) {
   const int NUM_CLASSES = 2;
   const int NUM_TARGETS = 2;
@@ -191,6 +192,55 @@ TEST(HungarianMatcher, TestClass) {
       EXPECT_EQ(colIds(i).scalar<int>(), colRowIds[i + b * NUM_TARGETS]) << "i" << i << " b" << b << std::endl;
     }
   }
+}
+*/
+
+TEST(HungarianMatcher, TestClass) {
+  const int NUM_CLASSES = 2;
+  const int NUM_TARGETS = 3;
+  const int NUM_PREDS = 2;
+  const int NUM_BATCHES = 2;
+  std::vector<float> predBoxesVec = {
+    1, 1, 2, 2, // 1
+    1, 1, 2, 2, // 0
+    1, 1, 2, 2, // 0
+    1, 1, 2, 2 // 1
+  };
+
+  std::vector<float> targetBoxesVec = { 
+    1, 1, 2, 2, // 0
+    1, 1, 2, 2, // 1
+    -1, -1, -1, -1, // 1
+    1, 1, 2, 2, // 0
+    1, 1, 2, 2 // 1
+    -1, -1, -1, -1, // 1
+  };
+  std::vector<float> targetLensVec = { 
+   2, 2
+  };
+  std::vector<float> predLogitsVec = { 
+    1, 2,  // Class 2
+    2, 1,  // Class 1
+    2, 1,  // Class 2
+    1, 2  // Class 1
+  };
+  std::vector<float> targetClassVec = { 0, 1 , -1, 0, 1, -1};
+  std::vector<float> expRowIds = { 0, 1, 0, 1 };
+  std::vector<float> colRowIds = { 1, 0, 0, 1 };
+  auto predBoxes = af::array(4, NUM_PREDS, NUM_BATCHES, predBoxesVec.data());
+  auto predLogits = af::array(NUM_CLASSES, NUM_PREDS, NUM_BATCHES, predLogitsVec.data());
+  auto targetBoxes = af::array(4, NUM_TARGETS, NUM_BATCHES, targetBoxesVec.data());
+  auto targetClasses = af::array(1, NUM_TARGETS, NUM_BATCHES, targetClassVec.data());
+  auto targetLens = af::array(NUM_BATCHES, targetLensVec.data());
+  auto matcher = HungarianMatcher(1, 1, 1);
+  auto costs = matcher.forward(predBoxes, predLogits, targetBoxes, targetClasses);
+  //for(int b = 0; b < NUM_BATCHES; b++) {
+    //auto colIds = costs[b].second;
+    //af_print(colIds);
+    //for(int i = 0; i < NUM_TARGETS; i++) {
+      //EXPECT_EQ(colIds(i).scalar<int>(), colRowIds[i + b * NUM_TARGETS]) << "i" << i << " b" << b << std::endl;
+    //}
+  //}
 }
 
 

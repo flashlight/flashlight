@@ -34,6 +34,11 @@ std::pair<af::array, af::array> HungarianMatcher::matchBatch(
     const af::array& targetBoxes, 
     const af::array& targetClasses) const {
 
+  af_print(targetClasses);
+  af_print(targetBoxes);
+  auto mask = targetClasses >= 0;
+  af_print(targetBoxes(af::span, mask));
+
   // Create an M X N cost matrix where M is the number of targets and N is the number of preds
   
   // Class cost

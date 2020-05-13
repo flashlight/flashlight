@@ -84,7 +84,18 @@ int main(int argc, char** argv) {
   const int64_t prefetch_size = FLAGS_batch_size;
   std::string coco_list = "/private/home/padentomasello/data/coco/train.lst";
   auto coco = cv::dataset::coco(coco_list, val_transforms);
-  auto first = coco->get(0)[1];
-  af_print(first);
+  std::cout << "Here " << std::endl;
+  auto first = coco->get(0).images;
+  //af_print(first);
+  auto second = coco->get(0).target_boxes;
+  //auto second = coco->get(0).target_labels;
+  std::cout << second.size() << std::endl;
+  af_print(second[0]);
+  af_print(second[1]);
+  auto target_classes = coco->get(0).target_labels;
+  af_print(target_classes[0]);
+  af_print(target_classes[1]);
+
+  //af_print(second);
   return 0;
 }
