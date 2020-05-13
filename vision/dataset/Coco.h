@@ -67,11 +67,9 @@ public:
 
     int64_t start = batchSize_ * idx;
     int64_t end = std::min(start + batchSize_, preBatchSize_);
-    std::cout << " start " << start << " end " << end << std::endl;
 
     for (int64_t batchidx = start; batchidx < end; ++batchidx) {
       auto fds = dataset_->get(batchidx);
-      std::cout << "fds " << fds.size() << std::endl;
       buffer.emplace_back(fds);
     }
     return batchFn_(buffer);
