@@ -248,6 +248,13 @@ void CachingMemoryManager::mallocWithRetry(size_t size, void** ptr) {
       signalMemoryCleanup();
       ++memoryInfo.stats_.totalNativeMallocs_;
       *ptr = this->deviceInterface->nativeAlloc(size);
+    } catch (af::exception& ex) {
+      std::cerr << "Unable to allocate memory with native alloc for size " +
+              std::to_string(size) + " bytes with AF error '" + ex.what()
+                << "'";
+      if (ex.err() == AF_ERR_NO_MEM)
+        throw std::bad_alloc();
+      throw std::runtime_error(ex.what());
     } catch (std::exception& ex) {
       // DEBUG: throw std::runtime_error doesn't work.
       std::cerr << "Unable to allocate memory with native alloc for size " +

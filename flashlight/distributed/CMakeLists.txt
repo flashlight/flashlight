@@ -50,6 +50,7 @@ endif()
 find_package(MPI QUIET)
 
 if (MPI_C_FOUND AND MPI_CXX_FOUND)
+  message(STATUS "MPI_VERSION found: ${MPI_VERSION}.${MPI_C_VERSION_MAJOR}.${MPI_C_VERSION_MINOR}")
   message(STATUS "MPI_CXX found")
   message(STATUS "MPI_CXX compile flags: " ${MPI_CXX_COMPILE_FLAGS})
   message(STATUS "MPI_CXX include path: " ${MPI_CXX_INCLUDE_PATH})
