@@ -16,7 +16,6 @@
 #include <utility>
 
 #include "flashlight/common/CppBackports.h"
-#include "flashlight/common/Logging.h"
 #include "flashlight/common/Utils.h"
 #include "flashlight/memory/allocator/CompositeMemoryAllocator.h"
 #include "flashlight/memory/allocator/freelist/FreeList.h"

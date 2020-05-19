@@ -16,10 +16,8 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/common/CppBackports.h"
-#include "flashlight/common/Logging.h"
 #include "flashlight/memory/memory.h"
 
-using namespace fl;
 
 class CachingMemoryManagerTest : public ::testing::Test {
  protected:
