@@ -177,15 +177,19 @@ class CategoricalCrossEntropy : public BinaryModule {
  */
 class AdaptiveSoftMaxLoss : public BinaryModule {
  private:
-  FL_SAVE_LOAD_WITH_BASE(BinaryModule, activation_, reduction_)
+  FL_SAVE_LOAD_WITH_BASE(
+      BinaryModule,
+      activation_,
+      reduction_,
+      fl::versioned(ignoreIndex_, 1))
   std::shared_ptr<AdaptiveSoftMax> activation_;
   ReduceMode reduction_;
+  int ignoreIndex_{-1};
 
-  void setTargets(
-      const Variable& targets,
-      std::vector<af::array>& masks,
-      std::vector<Variable>& target_chunks,
-      std::vector<int>& cutoff) const;
+  Variable cast(
+      const Variable& input,
+      const af::dim4& outDims,
+      const af::array& indices);
 
  public:
   AdaptiveSoftMaxLoss() = default;
@@ -195,10 +199,14 @@ class AdaptiveSoftMaxLoss : public BinaryModule {
    *
    * @param reduction the reduction mode - see `ReductionMode` See
    * documentation on `ReduceMode` for available options.
+   * @param ignoreIndex a target value that is ignored and does not contribute
+   * to the loss or the input gradient. If `reduce` is MEAN, the loss is
+   * averaged over non-ignored targets.
    */
   explicit AdaptiveSoftMaxLoss(
       std::shared_ptr<AdaptiveSoftMax> activation,
-      ReduceMode reduction = ReduceMode::MEAN);
+      ReduceMode reduction = ReduceMode::MEAN,
+      int ignoreIndex = -1);
   std::shared_ptr<AdaptiveSoftMax> getActivation() const;
 
   /**
@@ -229,3 +237,4 @@ CEREAL_REGISTER_TYPE(fl::BinaryCrossEntropy)
 CEREAL_REGISTER_TYPE(fl::CategoricalCrossEntropy)
 CEREAL_REGISTER_TYPE(fl::AdaptiveSoftMaxLoss)
 CEREAL_CLASS_VERSION(fl::CategoricalCrossEntropy, 1)
+CEREAL_CLASS_VERSION(fl::AdaptiveSoftMaxLoss, 1)
