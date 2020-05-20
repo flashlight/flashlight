@@ -58,8 +58,8 @@ std::vector<BBoxVector> parseBoundingBoxes(const std::string& list_file) {
   return labels;
 }
 
-BBoxLoader bboxLoader(std::vector<BBoxVector> bboxes) {
-  return BBoxLoader(bboxes, [](BBoxVector bbox) {
+std::shared_ptr<const Dataset> bboxLoader(std::vector<BBoxVector> bboxes) {
+  return std::make_shared<BBoxLoader>(bboxes, [](BBoxVector bbox) {
       const int num_elements = bbox.size();
       // Bounding box coordinates + class label
       const int num_bboxes = num_elements / kElementsPerBbox;
@@ -69,15 +69,19 @@ BBoxLoader bboxLoader(std::vector<BBoxVector> bboxes) {
   });
 }
 
-BBoxLoader classLoader(std::vector<BBoxVector> bboxes) {
-  return BBoxLoader(bboxes, [](BBoxVector bbox) {
-      const int num_elements = bbox.size();
-      const int num_bboxes = num_elements / kElementsPerBbox;
-      af::array full = af::array(kElementsPerBbox, num_bboxes, bbox.data());
-      af::array result = full(4, af::span);
-      return result;
-  });
-}
+//BBoxLoader bboxLoader(std::vector<BBoxVector> bboxes) {
+  //return BBoxLoader(bboxes, [](BBoxVector bbox) {
+      //const int num_elements = bbox.size();
+      //// Bounding box coordinates + class label
+      //const int num_bboxes = num_elements / kElementsPerBbox;
+      //af::array full = af::array(kElementsPerBbox, num_bboxes, bbox.data());
+      //af::array result = full(af::seq(0, 3), af::span);
+      //return result;
+  //});
+//}
+//
+//
+
 
 af::array makeBatch(
     const std::vector<af::array>& data
@@ -127,6 +131,29 @@ CocoData cocoBatchFunc(const std::vector<std::vector<af::array>>& batches) {
   return { img, target_bboxes, target_classes };
 }
 
+std::shared_ptr<Dataset> transform(
+    std::shared_ptr<Dataset> in,
+    std::vector<ImageTransform> transforms) {
+  return std::make_shared<TransformDataset>(in, transforms);
+}
+std::shared_ptr<Dataset> merge(const std::vector<std::shared_ptr<const Dataset>>& in) {
+  return std::make_shared<MergeDataset>(in);
+}
+
+std::shared_ptr<Dataset> classLoader(std::vector<BBoxVector> bboxes) {
+  return std::make_shared<BBoxLoader>(bboxes, [](BBoxVector bbox) {
+      const int num_elements = bbox.size();
+      const int num_bboxes = num_elements / kElementsPerBbox;
+      af::array full = af::array(kElementsPerBbox, num_bboxes, bbox.data());
+      af::array result = full(4, af::span);
+      return result;
+  });
+}
+
+std::shared_ptr<Dataset> jpegLoader2(std::vector<std::string> fps) {
+  return std::make_shared<FilepathLoader>(fps, loadJpeg);
+}
+
 }
 
 
@@ -140,7 +167,7 @@ CocoDataset::CocoDataset(const std::string& list_file,
       ) {
     auto images = getImages(list_file, transformfns);
     auto labels = getLabels(list_file);
-    auto merged = std::make_shared<MergeDataset>(MergeDataset({images, labels}));
+    auto merged = merge({images, labels});
     batched_ = std::make_shared<BatchTransformDataset<CocoData>>(
         merged, 2, BatchDatasetPolicy::INCLUDE_LAST, cocoBatchFunc);
 
@@ -149,21 +176,20 @@ CocoDataset::CocoDataset(const std::string& list_file,
 void CocoDataset::resample() {
 }
 
+
 std::shared_ptr<Dataset> CocoDataset::getImages(
     const std::string list_file, 
     std::vector<ImageTransform>& transformfns) {
   const std::vector<std::string> filepaths = parseImageFilepaths(list_file);
-  auto images = std::make_shared<FilepathLoader>(jpegLoader(filepaths));
-  std::vector<ImageTransform> transforms = { compose(transformfns) };
-  auto transformed = std::make_shared<TransformDataset>(images, transforms);
-  return transformed;
+  auto images = jpegLoader2(filepaths);
+  return transform(images, transformfns);
 }
 
 std::shared_ptr<Dataset> CocoDataset::getLabels(std::string list_file) {
     const std::vector<BBoxVector> bboxes = parseBoundingBoxes(list_file);
-    auto bboxLabels = std::make_shared<BBoxLoader>(bboxLoader(bboxes));
-    auto classLabels = std::make_shared<BBoxLoader>(classLoader(bboxes));
-    return std::make_shared<MergeDataset>(MergeDataset({bboxLabels, classLabels}));
+    auto bboxLabels = bboxLoader(bboxes);
+    auto classLabels = classLoader(bboxes);
+    return merge({bboxLabels, classLabels});
 }
 
 

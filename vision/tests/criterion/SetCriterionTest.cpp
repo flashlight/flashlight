@@ -1,4 +1,5 @@
 #include "vision/criterion/SetCriterion.h"
+#include "vision/nn/Transformer.h"
 
 #include <gtest/gtest.h>
 

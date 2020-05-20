@@ -30,7 +30,7 @@ fl::Variable cxcywh_to_xyxy(const Variable& bboxes) {
 
 fl::Variable flatten(const fl::Variable& x, int start, int stop) {
   auto dims = x.dims();
-  af::dim4 new_dims = dims;
+  af::dim4 new_dims = { 1, 1, 1, 1};
   int flattened_dims = 1;
   for(int i = start; i <= stop; i++) {
     flattened_dims = flattened_dims * dims[i];
@@ -42,6 +42,7 @@ fl::Variable flatten(const fl::Variable& x, int start, int stop) {
   for(int i = start + 1; i < (4 - stop); i++) {
     new_dims[i] = dims[i + stop];
   }
+  std::cout << "New dims " << new_dims << std::endl;
   return fl::moddims(x, new_dims);
 };
 

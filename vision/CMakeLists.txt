@@ -19,6 +19,7 @@ add_library(flashlightVision "")
 
 set(VISION_MODULES
   VisionDatasets
+  VisionNN
   VisionModels
   VisionCriterion
 )
@@ -38,6 +39,7 @@ target_include_directories(
 )
 
 add_subdirectory(${VISION_PROJECT_COMPONENT_SRC_DIR}/dataset)
+add_subdirectory(${VISION_PROJECT_COMPONENT_SRC_DIR}/nn)
 add_subdirectory(${VISION_PROJECT_COMPONENT_SRC_DIR}/models)
 add_subdirectory(${VISION_PROJECT_COMPONENT_SRC_DIR}/criterion)
 
