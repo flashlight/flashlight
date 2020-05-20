@@ -7,6 +7,7 @@
 namespace {
 
 std::pair<af::array, af::array> hungarian(af::array& cost) {
+    cost = cost.T();
     const int M = cost.dims(0);
     const int N = cost.dims(1);
     std::vector<float> costHost(cost.elements());
@@ -36,13 +37,13 @@ std::pair<af::array, af::array> HungarianMatcher::matchBatch(
     const Variable& targetBoxes, 
     const Variable& targetClasses) const {
 
-  auto mask = targetClasses >= 0;
 
   // Create an M X N cost matrix where M is the number of targets and N is the number of preds
   
   // Class cost
   auto outProbs = softmax(predLogits, 0);
-  auto cost_class = 1 - outProbs(targetClasses.array(), af::span);
+  auto cost_class = transpose((1 - outProbs(targetClasses.array(), af::span)));
+  //auto cost_class = (1 - outProbs(targetClasses.array(), af::span));
 
   // Generalized IOU loss
   auto cost_giou =  0 - dataset::generalized_box_iou(
@@ -51,12 +52,11 @@ std::pair<af::array, af::array> HungarianMatcher::matchBatch(
   );
 
   // Bbox Cost
-  auto cost_bbox = dataset::cartesian(targetBoxes, predBoxes,
+  Variable cost_bbox = dataset::cartesian(predBoxes, targetBoxes,
       [](const Variable& x, const Variable& y) {
         return sum(abs(x - y), {0});
     });
   cost_bbox = dataset::flatten(cost_bbox, 0, 1);
-
 
   auto cost = cost_bbox_ * cost_bbox + cost_class_ * cost_class + cost_giou_ * cost_giou;
   return ::hungarian(cost.array());

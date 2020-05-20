@@ -95,6 +95,15 @@ af::array index(
   return output;
 }
 
+void assign(
+    af::array& out,
+    const af::array& in,
+    const std::vector<af::array> idxs
+    ) {
+  auto linearIndices = ravelIndices(idxs, in.dims());
+  out(linearIndices) = in(af::seq(linearIndices.elements()));
+}
+
 
 af::array index(
     const af::array& in,
@@ -117,7 +126,6 @@ fl::Variable index(
   auto result = index(in.array(), idxs);
   auto gradFunction = [idxs, idims](std::vector<Variable>& inputs,
                                               const Variable& grad_output) {
-        af_print(grad_output.array());
         if (!inputs[0].isGradAvailable()) {
           auto grad = af::constant(0.0, idims);
           inputs[0].addGrad(Variable(grad, false));
@@ -168,8 +176,12 @@ SetCriterion::LossDict SetCriterion::forward(
 
       auto indices = matcher_.forward(predBoxes, predLogits, targetBoxes, targetClasses);
 
-      // TODO get number of boxes
-      int numBoxes = 10;
+      int numBoxes = std::accumulate(targetBoxes.begin(), targetBoxes.end(), 0,
+          [](int curr, const Variable& label) { return curr + label.dims(1);  }
+      );
+      // TODO clamp number of boxes based on world size
+      // https://github.com/fairinternal/detection-transformer/blob/master/models/detr.py#L168
+
       LossDict losses;
 
       auto labelLoss = lossLabels(predBoxes, predLogits, targetBoxes, targetClasses, indices, numBoxes);
@@ -188,25 +200,35 @@ SetCriterion::LossDict SetCriterion::lossBoxes(
     const int numBoxes) {
 
   auto srcIdx = this->getSrcPermutationIdx(indices);
-  auto tgtIdx = this->getTgtPermutationIdx(indices);
-  auto srcBoxes = index(predBoxes, srcIdx.second, 1);
-  // TODO concat target boxes
-  auto tgtBoxes = index(targetBoxes[0], tgtIdx.second, 1);
+  auto colIdxs = af::moddims(srcIdx.second, { 1, srcIdx.second.dims(0) });
+  auto batchIdxs = af::moddims(srcIdx.first, {1, srcIdx.first.dims(0) });
+  auto srcBoxes = index(predBoxes, { af::array(), colIdxs, batchIdxs, af::array() });
+
+
+  int i = 0;
+  std::vector<Variable> permuted(targetBoxes.size());
+  for(auto idx: indices) {
+    auto targetIdxs = idx.first;
+    auto reordered = targetBoxes[i](af::span, targetIdxs);
+    permuted[i] = reordered;
+    i += 1;
+  }
+  auto tgtBoxes = fl::concatenate(permuted, 1);
+
 
   auto cost_giou =  dataset::generalized_box_iou(
       dataset::cxcywh_to_xyxy(srcBoxes), 
       dataset::cxcywh_to_xyxy(tgtBoxes)
   );
-  auto dims = cost_giou.dims();
+
   // Extract diagnal
+  auto dims = cost_giou.dims();
   auto rng = af::range(dims[0]);
   cost_giou = 1 - index(cost_giou, { rng, rng, af::array(), af::array() });
-  // TODO 
-  //cost_giou = sum(cost_giou) / numBoxes;
+  cost_giou = sum(cost_giou, { 0 } ) / numBoxes;
 
   auto loss_bbox = cv::dataset::l1_loss(srcBoxes, tgtBoxes);
-  // TODO
-  //loss_bbox = sum(loss_bbox) / numBoxes;
+  loss_bbox = sum(loss_bbox, { 0 } ) / numBoxes;
 
   return { {"loss_giou", cost_giou}, {"loss_bbox", loss_bbox }};
 }
@@ -219,17 +241,21 @@ SetCriterion::LossDict SetCriterion::lossLabels(
     const std::vector<std::pair<af::array, af::array>>& indices,
     const int numBoxes) {
 
-  auto srcIdx = this->getSrcPermutationIdx(indices);
-  auto tgtIdx = this->getTgtPermutationIdx(indices);
+  auto target_classes_full = af::constant(predLogits.dims(0) - 1, 
+      { predLogits.dims(1), predLogits.dims(2), predLogits.dims(3) } , f32);
 
-  auto srcLogits = index(predLogits, srcIdx.second, 1);
-  auto tgtClasses = index(targetClasses[0],  tgtIdx.second, 1);
+  int i = 0;
+  for(auto idx: indices) {
+    auto targetIdxs = idx.first;
+    auto srcIdxs = idx.second;
+    auto reordered = targetClasses[i](targetIdxs);
+    target_classes_full(srcIdxs, i) = targetClasses[i].array()(targetIdxs);
+    i += 1;
+  }
 
-  auto tgtDims = tgtClasses.dims();
-  tgtClasses =  moddims(tgtClasses, { tgtDims[1], tgtDims[2], tgtDims[3] });
-  auto softmaxed = logSoftmax(srcLogits, 0)
-  af_print(softmaxed.array());
-  auto loss_ce = categoricalCrossEntropy(softmaxed, tgtClasses);
+  auto softmaxed = logSoftmax(predLogits, 0);
+  auto loss_ce = categoricalCrossEntropy(
+      softmaxed, fl::Variable(target_classes_full, false));
   return { {"loss_ce", loss_ce} };
 }
 
@@ -253,19 +279,33 @@ std::pair<af::array, af::array> SetCriterion::getTgtPermutationIdx(
 
 std::pair<af::array, af::array> SetCriterion::getSrcPermutationIdx(
     const std::vector<std::pair<af::array, af::array>>& indices) {
-  long batchSize = static_cast<long>(indices.size());
-  auto batchIdxs = af::constant(-1, {1, 1, batchSize});
-  auto first = indices[0].first;
-  auto dims = first.dims();
-  auto srcIdxs = af::constant(-1, {1, dims[0], batchSize});
-  int idx = 0;
-  for(auto pair : indices) {
-    af_print(pair.second);
-    batchIdxs(0, 0, idx) = af::constant(idx, { 1 });
-    srcIdxs(af::span, af::span, idx) = pair.second;
-    idx++;
-  }
-  return std::make_pair(batchIdxs, srcIdxs);
+
+  std::vector<fl::Variable> srcIdxs(indices.size());
+  std::transform(indices.begin(), indices.end(), srcIdxs.begin(),
+      [](std::pair<af::array, af::array> idxs) { return Variable(idxs.second, false); } 
+  );
+
+  std::vector<fl::Variable> batchIdxs(indices.size());
+  for(uint64_t i = 0; i < indices.size(); i ++) {
+    auto result = af::constant(i, indices[i].second.dims(), s32);
+    batchIdxs[i] = Variable(result, false);;
+  };
+
+  auto srcIdx = concatenate(srcIdxs, 0);
+  auto batchIdx = concatenate(batchIdxs, 0);
+  return { batchIdx.array(), srcIdx.array() };
+  //long batchSize = static_cast<long>(indices.size());
+  //auto batchIdxs = af::constant(-1, {1, 1, batchSize});
+  //auto first = indices[0].first;
+  //auto dims = first.dims();
+  //auto srcIdxs = af::constant(-1, {1, dims[0], batchSize});
+  //int idx = 0;
+  //for(auto pair : indices) {
+    //batchIdxs(0, 0, idx) = af::constant(idx, { 1 });
+    //srcIdxs(af::span, af::span, idx) = pair.second;
+    //idx++;
+  //}
+  //return std::make_pair(batchIdxs, srcIdxs);
 }
 
 }// end namespace cv
