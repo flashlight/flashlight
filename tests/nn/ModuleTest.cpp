@@ -362,6 +362,58 @@ TEST(ModuleTest, AdaptiveSoftMaxPredict) {
   ASSERT_TRUE(allClose(result1, result2));
 }
 
+TEST(ModuleTest, AdaptiveSoftMaxLossBatchFwd) {
+  // test batching
+  int N = 5;
+  int C = 3;
+  int T = 10;
+  int B = 5;
+
+  auto x = input(af::randu(N, T, B, af::dtype::f32));
+  auto y = Variable((af::randu(T, B, af::dtype::u32) % C).as(s32), false);
+
+  std::vector<int> cutoff{{C / 2, C}};
+  auto activation = std::make_shared<AdaptiveSoftMax>(N, cutoff);
+  auto asml =
+      std::make_shared<AdaptiveSoftMaxLoss>(activation, ReduceMode::NONE);
+  auto batchOutVar = asml->forward(x, y);
+
+  auto singleOut = af::constant(0, T, B);
+  for (int i = 0; i < B; ++i) {
+    auto singleOutVar = asml->forward(x(af::span, af::span, i), y(af::span, i));
+    singleOut(af::span, i) = singleOutVar.array();
+  }
+
+  ASSERT_TRUE(allClose(batchOutVar.array(), singleOut));
+}
+
+TEST(ModuleTest, AdaptiveSoftMaxLossIgnoreIndex) {
+  // test batching
+  int N = 5;
+  int C = 3;
+  int T = 10;
+  int B = 5;
+
+  auto x = input(af::randu(N, T, B, af::dtype::f32));
+  auto y = Variable((af::randu(T, B, af::dtype::u32) % C).as(s32), false);
+  auto ignoreIdx = y(0, 0).scalar<int>();
+  auto ignoreCount = af::sum<int>(y.array() != ignoreIdx);
+
+  std::vector<int> cutoff{{C / 2, C}};
+  auto activation = std::make_shared<AdaptiveSoftMax>(N, cutoff);
+  auto asml1 = std::make_shared<AdaptiveSoftMaxLoss>(
+      activation, ReduceMode::SUM, ignoreIdx);
+  auto asml2 = std::make_shared<AdaptiveSoftMaxLoss>(
+      activation, ReduceMode::MEAN, ignoreIdx);
+
+  auto lossSum = asml1->forward(x, y);
+  auto lossMean = asml2->forward(x, y);
+  ASSERT_NEAR(
+      af::sum<float>(lossSum.array()),
+      af::sum<float>(lossMean.array()) * ignoreCount,
+      1E-5);
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
