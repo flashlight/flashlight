@@ -636,19 +636,36 @@ TEST(AutogradTest, BinaryCrossEntropy) {
 }
 
 TEST(AutogradTest, CrossEntropy) {
-  auto in = Variable(af::randu(7, 10, 1, 1, af::dtype::f64), true);
-  af::dim4 dims(10, 1, 1, 1);
-  auto y = Variable(af::constant(1.0, dims, af::dtype::f64), false);
+  auto x = Variable(af::randu(7, 10, 4, af::dtype::f64), true);
+  auto y = Variable((af::randu(10, 4, af::dtype::u32) % 7).as(s32), false);
+  auto ignoreIdx = y(0, 0).scalar<int>();
 
-  auto func_crossent_mean = [&](Variable& input) {
-    return categoricalCrossEntropy(input, y);
-  };
-  ASSERT_TRUE(jacobianTestImpl(func_crossent_mean, in, 1E-5));
+  std::vector<ReduceMode> modes = {
+      ReduceMode::NONE, ReduceMode::SUM, ReduceMode::MEAN};
+  for (auto mode : modes) {
+    auto func = [&](Variable& input) {
+      return categoricalCrossEntropy(input, y, mode);
+    };
+    ASSERT_TRUE(jacobianTestImpl(func, x, 1E-5));
+    auto funcIgnore = [&](Variable& input) {
+      return categoricalCrossEntropy(input, y, mode, ignoreIdx);
+    };
+    ASSERT_TRUE(jacobianTestImpl(funcIgnore, x, 1E-5));
+  }
 
-  auto func_crossent_noreduce = [&](Variable& input) {
-    return categoricalCrossEntropy(input, y, ReduceMode::NONE);
-  };
-  ASSERT_TRUE(jacobianTestImpl(func_crossent_noreduce, in, 1E-5));
+  auto lossSum = categoricalCrossEntropy(x, y, ReduceMode::SUM);
+  auto lossMean = categoricalCrossEntropy(x, y, ReduceMode::MEAN);
+  ASSERT_NEAR((lossSum / lossMean).scalar<double>(), 40, 1e-5);
+
+  auto lossSumIgnore =
+      categoricalCrossEntropy(x, y, ReduceMode::SUM, ignoreIdx);
+  auto lossMeanIgnore =
+      categoricalCrossEntropy(x, y, ReduceMode::MEAN, ignoreIdx);
+  auto ignoreCount = af::sum<int>(y.array() == ignoreIdx);
+  ASSERT_NEAR(
+      (lossSumIgnore / lossMeanIgnore).scalar<double>(),
+      40 - ignoreCount,
+      1e-5);
 }
 
 TEST(AutogradTest, Reorder) {

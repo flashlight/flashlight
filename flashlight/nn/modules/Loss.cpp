@@ -65,7 +65,7 @@ std::string BinaryCrossEntropy::prettyString() const {
 Variable CategoricalCrossEntropy::forward(
     const Variable& inputs,
     const Variable& targets) {
-  return categoricalCrossEntropy(inputs, targets, reduction_);
+  return categoricalCrossEntropy(inputs, targets, reduction_, ignoreIndex_);
 }
 
 std::string CategoricalCrossEntropy::prettyString() const {
