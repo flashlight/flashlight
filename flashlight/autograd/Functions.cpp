@@ -814,7 +814,8 @@ Variable binaryCrossEntropy(const Variable& inputs, const Variable& targets) {
 Variable categoricalCrossEntropy(
     const Variable& input,
     const Variable& targets,
-    ReduceMode reduction /* =ReduceMode::MEAN */) {
+    ReduceMode reduction /* =ReduceMode::MEAN */,
+    int ignoreIndex /* = -1 */) {
   // input -- [C, X1, X2, X3]
   // target -- [X1, X2, X3, 1]
   for (int i = 1; i < 4; i++) {
@@ -828,47 +829,54 @@ Variable categoricalCrossEntropy(
         "dimension mismatch in categorical cross entropy");
   }
 
-  int categories = input.dims(0);
-  if (af::anyTrue<bool>(
-          (targets.array() < 0) || (targets.array() >= categories))) {
+  int C = input.dims(0);
+  int X = targets.elements();
+  if (af::anyTrue<bool>((targets.array() < 0) || (targets.array() >= C))) {
     throw std::invalid_argument(
         "target contains elements out of valid range [0, num_categories) "
         "in categorical cross entropy");
   }
-  int num_elems = input.elements() / categories;
-  af::array A = af::range(af::dim4(categories, num_elems));
-  af::array B = af::moddims(targets.array(), af::dim4(1, targets.elements()));
-  B = tile(B, af::dim4(categories, 1, 1, 1));
-  auto mask = -(A == B);
 
-  auto result =
-      mask * af::moddims(input.array(), af::dim4(categories, num_elems));
-  result = af::sum(result, 0);
+  auto x = af::moddims(input.array(), af::dim4(C, X));
+  auto y = af::moddims(targets.array(), af::dim4(1, X));
 
+  auto A = af::range(af::dim4(C, X));
+  auto B = af::tile(y, af::dim4(C));
+  auto mask = -(A == B); // [C X]
+
+  auto result = mask * x;
+  auto ignoreMask = (y != ignoreIndex).as(s32); // [1 X]
+  result = ignoreMask * af::sum(result, 0); // [1 X]
+
+  Variable denominator;
   if (reduction == ReduceMode::NONE) {
-    result = af::moddims(result, targets.dims());
+    result = af::moddims(result, targets.dims()); // [X1 X2 X3]
   } else if (reduction == ReduceMode::MEAN) {
-    result = af::mean(result, 1);
+    denominator = Variable(af::sum(ignoreMask, 1), false);
+    result = af::sum(result, 1) / denominator.array(); // [1]
   } else if (reduction == ReduceMode::SUM) {
-    result = af::sum(result, 1);
+    result = af::sum(result, 1); // [1]
   } else {
     throw std::invalid_argument(
         "unknown reduction method for categorical cross entropy");
   }
 
-  af::dim4 in_dims = input.dims();
-  auto gradFunc = [mask, reduction, num_elems, in_dims](
+  auto inputDims = input.dims();
+  auto gradFunc = [C, X, mask, ignoreMask, denominator, reduction, inputDims](
                       std::vector<Variable>& inputs,
-                      const Variable& grad_output) {
-    auto grad = grad_output;
+                      const Variable& gradOutput) {
+    auto grad = gradOutput.array();
     if (reduction == ReduceMode::NONE) {
-      grad = moddims(grad, af::dim4(1, num_elems));
+      grad = af::moddims(grad, af::dim4(1, X));
+    } else if (reduction == ReduceMode::MEAN) {
+      grad = af::tile(grad / denominator.array(), af::dim4(1, X));
+    } else if (reduction == ReduceMode::SUM) {
+      grad = af::tile(grad, af::dim4(1, X));
     }
-    grad = Variable(detail::tileAs(grad.array(), mask.dims()) * mask, false);
-    if (reduction == ReduceMode::MEAN) {
-      grad = grad / num_elems;
-    }
-    inputs[0].addGrad(Variable(moddims(grad, in_dims).array(), false));
+    // [1 X]
+    grad *= ignoreMask;
+    grad = af::tile(grad, af::dim4(C)) * mask;
+    inputs[0].addGrad(Variable(af::moddims(grad, inputDims), false));
   };
 
   return Variable(result, {input.withoutData(), targets}, gradFunc);

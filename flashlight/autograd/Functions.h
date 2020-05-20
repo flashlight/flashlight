@@ -646,13 +646,18 @@ Variable binaryCrossEntropy(const Variable& inputs, const Variable& targets);
  * - NONE
  * - MEAN
  * - SUM
+ * @param ignoreIndex a target value that is ignored and does not contribute
+ * to the loss or the input gradient. If `reduce` is MEAN, the loss is
+ * averaged over non-ignored targets. Only indicies in \f$[0, C - 1]\f$ are
+ * considered to be valid.
  * @return a `Variable` of loss value with shape scalar by default. If `reduce`
  * is NONE, then [\f$B_1\f$, \f$B_2\f$, \f$B_3\f$].
  */
 Variable categoricalCrossEntropy(
     const Variable& input,
     const Variable& targets,
-    ReduceMode reduction = ReduceMode::MEAN);
+    ReduceMode reduction = ReduceMode::MEAN,
+    int ignoreIndex = -1);
 
 /**
  * The gated linear unit.
