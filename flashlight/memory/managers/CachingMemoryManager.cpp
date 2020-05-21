@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <arrayfire.h> // Needed for af exception
 #include "flashlight/memory/managers/CachingMemoryManager.h"
 
 #include <algorithm>
@@ -122,7 +123,7 @@ void* CachingMemoryManager::alloc(
   } else {
     void* ptr = nullptr;
     size_t allocSize = getAllocationSize(size);
-    mallocWithRetry(allocSize, &ptr);
+    mallocWithRetry(allocSize, &ptr); // could throw
     block = new Block(allocSize, ptr);
   }
 
@@ -248,19 +249,13 @@ void CachingMemoryManager::mallocWithRetry(size_t size, void** ptr) {
       signalMemoryCleanup();
       ++memoryInfo.stats_.totalNativeMallocs_;
       *ptr = this->deviceInterface->nativeAlloc(size);
-    } catch (af::exception& ex) {
-      std::cerr << "Unable to allocate memory with native alloc for size " +
-              std::to_string(size) + " bytes with AF error '" + ex.what()
-                << "'";
-      if (ex.err() == AF_ERR_NO_MEM)
-        throw std::bad_alloc();
-      throw std::runtime_error(ex.what());
     } catch (std::exception& ex) {
-      // DEBUG: throw std::runtime_error doesn't work.
+      // note: af exception inherits from std exception
       std::cerr << "Unable to allocate memory with native alloc for size " +
               std::to_string(size) + " bytes with error '" + ex.what()
                 << "'";
-      throw std::runtime_error(ex.what());
+      // note: converting here an af exception to std exception prevents to catch the af error code at the user level. Rethrowing.
+      throw;
     }
   }
 }
