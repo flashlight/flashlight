@@ -69,6 +69,7 @@ MemoryManagerInstaller::MemoryManagerInstaller(
     return AF_SUCCESS;
   };
   AF_CHECK(af_memory_manager_set_shutdown_fn(interface, shutdownFn));
+  // Note: AF expects the memory managers alloc fn to return an af_err, not to throw
   auto allocFn = [](af_memory_manager manager,
                     void** ptr,
                     /* bool */ int userLock,
@@ -76,7 +77,15 @@ MemoryManagerInstaller::MemoryManagerInstaller(
                     dim_t* dims,
                     const unsigned elSize) {
     MemoryManagerAdapter* m = MemoryManagerInstaller::getImpl(manager);
-    *ptr = m->alloc(userLock, ndims, dims, elSize);
+    try {
+      *ptr = m->alloc(userLock, ndims, dims, elSize);
+    } catch(af::exception& ex) {
+      m->log("allocFn: alloc failed with af exception " + std::to_string(ex.err()));
+      return ex.err(); // AF_ERR_NO_MEM, ...
+    } catch(...) {
+      m->log("allocFn: alloc failed with unspecified exception");
+      return af_err(AF_ERR_UNKNOWN);
+    }
     // Log
     m->log(
         "alloc",
@@ -173,6 +182,7 @@ MemoryManagerInstaller::MemoryManagerInstaller(
     return out;
   };
   impl_->deviceInterface->getMaxMemorySize = std::move(getMaxMemorySizeFn);
+  // nativeAlloc could throw via AF_CHECK:
   auto nativeAllocFn = [interface](const size_t bytes) {
     void* ptr;
     AF_CHECK(af_memory_manager_native_alloc(interface, &ptr, bytes));
