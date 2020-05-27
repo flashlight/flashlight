@@ -5,6 +5,7 @@
 
 #include <cassert>
 
+// TODO check layer norm dimensions
 
 namespace fl {
 namespace cv {
@@ -38,6 +39,8 @@ fl::Variable transformerRotate(const fl::Variable& input) {
   return fl::Variable(data, {input}, gradFunc);
 }
 
+// query [ C X  X B ]
+// values and keys [ C X  X B ]
 fl::Variable transformerMultiheadAttention(
     const fl::Variable& query,
     const fl::Variable& key,
@@ -47,28 +50,29 @@ fl::Variable transformerMultiheadAttention(
     const int32_t nHead,
     const double pDropout,
     const int32_t offset = 0) {
-  int32_t bsz = query.dims(2);
-  int32_t modelDim = query.dims(1);
-  int32_t headDim = modelDim / nHead;
+  int32_t headDim = query.dims(1);;
 
-  auto q = moddims(query, af::dim4(-1, headDim, nHead * bsz));
-  auto k = moddims(key, af::dim4(-1, headDim, nHead * bsz));
-  auto v = moddims(value, af::dim4(-1, headDim, nHead * bsz));
+  std::cout << "query " << query.dims() << std::endl;
+  std::cout << "key " << key.dims() << std::endl;
 
-  auto scores = matmulNT(q, k);
-  if (!posEmb.isempty()) {
-    int n = posEmb.dims(0) / 2 - offset;
-    auto pscores = transformerRotate(matmulNT(posEmb, q));
-    scores = scores + transpose(pscores.rows(n, n + k.dims(0) - 1));
-  }
+  auto scores = matmulTN(query, key);
+  std::cout << " Done!" << std::endl;
+  //if (!posEmb.isempty()) {
+    //int n = posEmb.dims(0) / 2 - offset;
+    //auto pscores = transformerRotate(matmulNT(posEmb, q));
+    //scores = scores + transpose(pscores.rows(n, n + k.dims(0) - 1));
+  //}
   scores = scores / std::sqrt(float(headDim));
-  if (!mask.isempty()) {
-    scores = scores + tileAs(mask, scores);
-  }
+  //if (!mask.isempty()) {
+    //scores = scores + tileAs(mask, scores);
+  //}
+
+  std::cout << " Done with scores " << std::endl;
 
   auto attn = dropout(softmax(scores, 1), pDropout);
-  auto result = matmul(attn, v);
-  result = moddims(result, af::dim4(-1, headDim * nHead, bsz));
+  auto result = matmulNT(attn, value);
+  //result = moddims(result, af::dim4(-1, headDim * nHead, bsz));
+  std::cout << " Done with results " << std::endl;
   return result;
 }
 
@@ -81,6 +85,7 @@ class MultiheadAttention : public Container {
          float pDropout=0.f
     ) : pDropout_(pDropout),
       numHeads_(numHeads){
+        std::cout << "Head dim " << headDim << "num HEads " << numHeads << std::endl;
       wq_ = std::make_shared<Linear>(
         transformerInitLinear(modelDim, headDim * numHeads));
       wk_ = std::make_shared<Linear>(
@@ -95,32 +100,48 @@ class MultiheadAttention : public Container {
       add(wf_);
   };
 
-  std::vector<Variable> forward(
-      const Variable queries,
-      const Variable keys,
-      const Variable values) {
-      int n = queries.dims(1), bsz = queries.dims(2);
-      double pDrop = train_ ? pDropout_ : 0.0;
+  // queries [ E, N, L ], where L is target length, N is batch size.
+  // keys / values  [ E, N, S ], where S is src length, N is batch size.
+    std::vector<Variable> forward(
+        const Variable queries,
+        const Variable keys,
+        const Variable values) {
 
-      auto q = transpose((*wq_)(queries));
-      auto k = transpose((*wk_)(keys));
-      auto v = transpose((*wv_)(values));
+      assert(queries.dims(0) == keys.dims(0));
+      assert(queries.dims(0) == values.dims(0));
+      assert(queries.dims(1) == keys.dims(1));
+      assert(queries.dims(1) == values.dims(1));
+      assert(values.dims(2) ==  keys.dims(2));
 
-      //Variable mask, posEmb;
-      //posEmb = tile(params_[0], af::dim4(1, 1, nHeads_ * bsz));
-      //if (useMask_ && input.back().dims(1) > 1) {
-        //mask = getMask(n, input.size() == 2);
-      //}
+      int32_t bsz = queries.dims(1);
+      int32_t modelDim = queries.dims(0);
+      int32_t headDim = modelDim / numHeads_;
+      int32_t tgtLen = queries.dims(2);
+      int32_t srcLen = keys.dims(2);
+      int32_t nHead = numHeads_;
 
-      //int offset = (input.size() == 1) ? 0 : input[0].dims(1);
+      auto q = (*wq_)(queries);
+      auto k = (*wk_)(keys);
+      auto v = (*wv_)(values);
+
+      q = moddims(q, af::dim4(headDim, numHeads_, bsz, tgtLen));
+      v = moddims(v, af::dim4(headDim, numHeads_, bsz, srcLen));
+      k = moddims(k, af::dim4(headDim, numHeads_, bsz, srcLen));
+      q = reorder(q, 0, 3, 1, 2);
+      v = reorder(v, 0, 3, 1, 2);
+      k = reorder(k, 0, 3, 1, 2);
       auto posEmb = fl::Variable();
       auto mask = fl::Variable();
       int offset = 0;
       auto result = transformerMultiheadAttention(
-        q, k, v, posEmb, mask, numHeads_, pDropout_);
-      std::vector<Variable> results = { (*wf_)(transpose(result)) };
+          q, k, v, posEmb, mask, numHeads_, pDropout_);
+      result = reorder(result, 0, 3, 1, 2);
+      result = moddims(result, af::dim4(modelDim, bsz, -1));
+      result = (*wf_)(result);
+      assert(result.dims() == queries.dims());
+      std::vector<Variable> results = { result };
       return results;
-  }
+    }
 
   std::vector<Variable> forward(const std::vector<Variable>& input) override {
     return this->forward(input[0], input[1], input[2]);
@@ -149,7 +170,7 @@ class TransformerBaseLayer : public Container {
       int32_t nHeads,
       float pDropout
       ) :
-      self_attn_(std::make_shared<MultiheadAttention>(modelDim, modelDim, nHeads, pDropout)),
+      self_attn_(std::make_shared<MultiheadAttention>(modelDim, modelDim / nHeads, nHeads, pDropout)),
       w1_(std::make_shared<Linear>(transformerInitLinear(modelDim, mlpDim))),
       w2_(std::make_shared<Linear>(transformerInitLinear(mlpDim, modelDim))),
       norm1_(std::make_shared<LayerNorm>(std::vector<int>({0, 3}))),
@@ -206,10 +227,12 @@ class TransformerEncoderLayer : public TransformerBaseLayer {
 
   std::vector<Variable> forward(const std::vector<Variable>& input) override {
     auto src = input[0];
+    auto pos = (input.size() > 1) ? input[1] : fl::Variable();
     // Self Attention
     {
       auto src2 = (*norm1_)(src);
-      src2 = this->selfAttention(src, fl::Variable());
+      src2 = this->selfAttention(src, pos);
+      af_print(src2.array());
       src = src + dropout(src2, pDropout_);
     }
     // MLP
@@ -236,13 +259,15 @@ class TransformerDecoderLayer : public TransformerBaseLayer {
       int32_t nHeads,
       float pDropout) :
         TransformerBaseLayer(modelDim, headDim, mlpDim, nHeads, pDropout),
-        encoder_attn_(std::make_shared<MultiheadAttention>(modelDim, modelDim, nHeads, pDropout)),
+        encoder_attn_(std::make_shared<MultiheadAttention>(modelDim, modelDim / nHeads, nHeads, pDropout)),
         norm3_(std::make_shared<LayerNorm>(std::vector<int>({0, 3})))
         { };
 
   std::vector<Variable> forward(const std::vector<Variable>& input) override {
-    auto tgt = input[0];
-    auto memory = input[0];
+      auto tgt = input[0];
+      auto memory = input[1];
+      auto pos = (input.size() > 2) ? input[2] : Variable();
+      auto query_pos = (input.size() > 3) ? input[3] : Variable();
     // Self attention
     {
       auto tgt2 = (*norm1_)(tgt);
@@ -295,14 +320,17 @@ class TransformerDecoder : public Container {
     }
 
     std::vector<Variable> forward(const std::vector<Variable>& input) override {
-      auto memory = input[1];
       auto tgt = input[0];
+      auto memory = input[1];
+      auto pos = (input.size() > 2) ? input[2] : Variable();
+      auto query_pos = (input.size() > 3) ? input[3] : Variable();
 
       auto output = tgt;
       std::cout << "modules " << modules().size() << std::endl;
       for(auto mod : modules()) {
         af_print(output.array());
-        output = mod->forward({output, memory})[0];
+        af_print(memory.array());
+        output = mod->forward({output, memory, pos, query_pos})[0];
       }
       return { output };
     }
@@ -330,6 +358,7 @@ class TransformerEncoder : public Container {
       auto output = input;
       for(auto mod : modules_) {
         output = mod->forward(output);
+        af_print(output[0].array());
       }
       return output;
     }
@@ -357,29 +386,38 @@ public:
   };
 
 
+std::vector<Variable> forward(
+    Variable src,
+    Variable queryEmbed,
+    Variable posEmbed) {
+      assert(src.dims(2) == queryEmbed.dims(0));
+      //assert(queryEmbed.dims(1) == 1 && queryEmbed.dims(3) == 1);
 
-  //std::vector<Variable> forward(
-      //const Variable& src,
-      //const Variable& query_embed) {
-  //}
+      int B = src.dims(3);
+      // Reshape from [ W X H X C X B ] to [ WH X C X B ]
+      src = dataset::flatten(src, 0, 1);
+      // Flatten to C x B x WH
+      src = reorder(src, 1, 2, 0);
+
+      // Tile object queries for each batch
+      af::dim4 unsqueeze = { queryEmbed.dims(0), 1, queryEmbed.dims(1) };
+      queryEmbed = moddims(queryEmbed, unsqueeze);
+      queryEmbed = tile(queryEmbed, {1, B, 1});
+      assert(queryEmbed.dims(1) == src.dims(1));
+      assert(queryEmbed.dims(0) == src.dims(0));
+
+      auto memory = encoder_->forward({src});
+      std::cout << "Done encoding" << std::endl;
+      auto hs = decoder_->forward({queryEmbed, memory[0]})[0];
+      return { reorder(hs, 0, 2, 1) };
+  }
+
 std::vector<Variable> forward(const std::vector<Variable>& input) override {
     assert(input.size() > 1);
     auto src = input[0];
-    auto tgt = input[1];
-    assert(src.dims(2) == tgt.dims(0));
-    int B = src.dims(3);
-    int C = src.dims(2);
-    
-    // Reshape from W X H X C X B to C X B X WH
-    src = dataset::flatten(src, 0, 1);
-    src = reorder(src, 1, 2, 0);
-
-    tgt = moddims(tgt, { tgt.dims(0), 1, tgt.dims(1) });
-    tgt = tile(tgt, {1, B, 1});
-    auto memory = encoder_->forward({src});
-    std::vector<Variable> decoderInputs = { tgt, memory[0] };
-    auto hs = decoder_->forward(decoderInputs)[0];
-    return { reorder(hs, 0, 2, 1) };
+    auto query_embed = (input.size() > 1) ? input[1] : Variable();
+    auto pos_embed = (input.size() > 2) ? input[2] : Variable();
+    return forward(src, query_embed, pos_embed);
   }
 
   std::string prettyString() const override {

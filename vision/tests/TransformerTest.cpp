@@ -6,19 +6,19 @@ using namespace fl;
 using namespace fl::cv;
 
 TEST(Tranformer, Size) {
-  int B = 2;
-  int H = 3;
-  int W = 3;
+  int B = 3;
+  int H = 5;
+  int W = 5;
   int C = 16;
   float dropout = 0.5;
   int bbox_queries = 100;
-  int numEncoderDecoder = 100;
+  int numEncoderDecoder = 2;
   int mlpDim = 32;
-  int numHeads = 6;
+  int numHeads = 8;
   Transformer tr(C, numHeads, numEncoderDecoder, numEncoderDecoder, mlpDim, dropout);
 
   std::vector<Variable> inputs = { 
-    Variable(af::randu(W, H, C, B), false),
+    Variable(af::randu(W, H, C, B), false), // src
     Variable(af::randu(af::dim4(C, bbox_queries)), false)
   };
   auto output = tr(inputs)[0];
