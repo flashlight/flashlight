@@ -16,31 +16,31 @@ fl::Variable transformerInitLinear(int32_t inDim, int32_t outDim) {
   return fl::uniform(outDim, inDim, -std, std);
 }
 
-fl::Variable transformerRotate(const fl::Variable& input) {
-  auto data = input.array();
-  int d0 = data.dims(0);
-  int d1 = data.dims(1);
-  int d2 = data.dims(2);
-  int d3 = data.dims(3);
-  data = af::join(0, data, af::constant(0.0, d1, d1, d2, d3));
-  data = af::moddims(data, af::dim4((d0 + d1) * d1, 1, d2, d3));
-  data = data.rows(0, (d1 + d0 - 1) * d1 - 1);
-  data = af::moddims(data, af::dim4(d0 + d1 - 1, d1, d2, d3));
-  auto gradFunc = [d0, d1, d2, d3](
-                      std::vector<fl::Variable>& inputs,
-                      const fl::Variable& gradOutput) {
-    auto gradData = gradOutput.array();
-    gradData = af::moddims(gradData, af::dim4((d0 + d1 - 1) * d1, 1, d2, d3));
-    gradData = af::join(0, gradData, af::constant(0.0, d1, 1, d2, d3));
-    gradData = af::moddims(gradData, af::dim4(d0 + d1, d1, d2, d3));
-    gradData = gradData.rows(0, d0 - 1);
-    inputs[0].addGrad(fl::Variable(gradData, false));
-  };
-  return fl::Variable(data, {input}, gradFunc);
-}
+//fl::Variable transformerRotate(const fl::Variable& input) {
+  //auto data = input.array();
+  //int d0 = data.dims(0);
+  //int d1 = data.dims(1);
+  //int d2 = data.dims(2);
+  //int d3 = data.dims(3);
+  //data = af::join(0, data, af::constant(0.0, d1, d1, d2, d3));
+  //data = af::moddims(data, af::dim4((d0 + d1) * d1, 1, d2, d3));
+  //data = data.rows(0, (d1 + d0 - 1) * d1 - 1);
+  //data = af::moddims(data, af::dim4(d0 + d1 - 1, d1, d2, d3));
+  //auto gradFunc = [d0, d1, d2, d3](
+                      //std::vector<fl::Variable>& inputs,
+                      //const fl::Variable& gradOutput) {
+    //auto gradData = gradOutput.array();
+    //gradData = af::moddims(gradData, af::dim4((d0 + d1 - 1) * d1, 1, d2, d3));
+    //gradData = af::join(0, gradData, af::constant(0.0, d1, 1, d2, d3));
+    //gradData = af::moddims(gradData, af::dim4(d0 + d1, d1, d2, d3));
+    //gradData = gradData.rows(0, d0 - 1);
+    //inputs[0].addGrad(fl::Variable(gradData, false));
+  //};
+  //return fl::Variable(data, {input}, gradFunc);
+//}
 
-// query [ C X  X B ]
-// values and keys [ C X  X B ]
+// query [ E X B X L ]
+// values and keys [ E X B X S ]
 fl::Variable transformerMultiheadAttention(
     const fl::Variable& query,
     const fl::Variable& key,
@@ -50,29 +50,29 @@ fl::Variable transformerMultiheadAttention(
     const int32_t nHead,
     const double pDropout,
     const int32_t offset = 0) {
-  int32_t headDim = query.dims(1);;
 
-  std::cout << "query " << query.dims() << std::endl;
-  std::cout << "key " << key.dims() << std::endl;
+  int32_t bsz = query.dims(1);
+  int32_t modelDim = query.dims(0);
+  int32_t headDim = modelDim / nHead;
+  int32_t tgtLen = query.dims(2);
+  int32_t srcLen = key.dims(2);
 
-  auto scores = matmulTN(query, key);
-  std::cout << " Done!" << std::endl;
-  //if (!posEmb.isempty()) {
-    //int n = posEmb.dims(0) / 2 - offset;
-    //auto pscores = transformerRotate(matmulNT(posEmb, q));
-    //scores = scores + transpose(pscores.rows(n, n + k.dims(0) - 1));
-  //}
+  auto q = moddims(query, af::dim4(headDim, nHead, bsz, tgtLen));
+  auto v = moddims(value, af::dim4(headDim, nHead, bsz, srcLen));
+  auto k = moddims(key, af::dim4(headDim, nHead, bsz, srcLen));
+  // Reorder so that the "Sequence" is along the first dimension,
+  // the embedding is along the zeroth dimension
+  q = reorder(q, 0, 3, 1, 2);
+  v = reorder(v, 0, 3, 1, 2);
+  k = reorder(k, 0, 3, 1, 2);
+
+  auto scores = matmulTN(q, k);
   scores = scores / std::sqrt(float(headDim));
-  //if (!mask.isempty()) {
-    //scores = scores + tileAs(mask, scores);
-  //}
-
-  std::cout << " Done with scores " << std::endl;
 
   auto attn = dropout(softmax(scores, 1), pDropout);
-  auto result = matmulNT(attn, value);
-  //result = moddims(result, af::dim4(-1, headDim * nHead, bsz));
-  std::cout << " Done with results " << std::endl;
+  auto result = matmulNT(attn, v);
+  result = moddims(result, af::dim4(tgtLen, modelDim, bsz));
+  result = reorder(result, 1, 2, 0);
   return result;
 }
 
@@ -85,7 +85,6 @@ class MultiheadAttention : public Container {
          float pDropout=0.f
     ) : pDropout_(pDropout),
       numHeads_(numHeads){
-        std::cout << "Head dim " << headDim << "num HEads " << numHeads << std::endl;
       wq_ = std::make_shared<Linear>(
         transformerInitLinear(modelDim, headDim * numHeads));
       wk_ = std::make_shared<Linear>(
@@ -113,30 +112,14 @@ class MultiheadAttention : public Container {
       assert(queries.dims(1) == values.dims(1));
       assert(values.dims(2) ==  keys.dims(2));
 
-      int32_t bsz = queries.dims(1);
-      int32_t modelDim = queries.dims(0);
-      int32_t headDim = modelDim / numHeads_;
-      int32_t tgtLen = queries.dims(2);
-      int32_t srcLen = keys.dims(2);
-      int32_t nHead = numHeads_;
-
       auto q = (*wq_)(queries);
       auto k = (*wk_)(keys);
       auto v = (*wv_)(values);
-
-      q = moddims(q, af::dim4(headDim, numHeads_, bsz, tgtLen));
-      v = moddims(v, af::dim4(headDim, numHeads_, bsz, srcLen));
-      k = moddims(k, af::dim4(headDim, numHeads_, bsz, srcLen));
-      q = reorder(q, 0, 3, 1, 2);
-      v = reorder(v, 0, 3, 1, 2);
-      k = reorder(k, 0, 3, 1, 2);
       auto posEmb = fl::Variable();
       auto mask = fl::Variable();
       int offset = 0;
       auto result = transformerMultiheadAttention(
           q, k, v, posEmb, mask, numHeads_, pDropout_);
-      result = reorder(result, 0, 3, 1, 2);
-      result = moddims(result, af::dim4(modelDim, bsz, -1));
       result = (*wf_)(result);
       assert(result.dims() == queries.dims());
       std::vector<Variable> results = { result };
@@ -232,7 +215,6 @@ class TransformerEncoderLayer : public TransformerBaseLayer {
     {
       auto src2 = (*norm1_)(src);
       src2 = this->selfAttention(src, pos);
-      af_print(src2.array());
       src = src + dropout(src2, pDropout_);
     }
     // MLP
@@ -277,7 +259,7 @@ class TransformerDecoderLayer : public TransformerBaseLayer {
     // Encoder-decoder attention
     {
       auto tgt2 = (*norm2_)(tgt);
-      tgt2 = encoder_attn_->forward({ 
+      tgt2 = encoder_attn_->forward({
           tgt2, // queries
           memory, // keys
           memory // values
@@ -326,10 +308,7 @@ class TransformerDecoder : public Container {
       auto query_pos = (input.size() > 3) ? input[3] : Variable();
 
       auto output = tgt;
-      std::cout << "modules " << modules().size() << std::endl;
       for(auto mod : modules()) {
-        af_print(output.array());
-        af_print(memory.array());
         output = mod->forward({output, memory, pos, query_pos})[0];
       }
       return { output };
@@ -358,7 +337,6 @@ class TransformerEncoder : public Container {
       auto output = input;
       for(auto mod : modules_) {
         output = mod->forward(output);
-        af_print(output[0].array());
       }
       return output;
     }
@@ -407,7 +385,6 @@ std::vector<Variable> forward(
       assert(queryEmbed.dims(0) == src.dims(0));
 
       auto memory = encoder_->forward({src});
-      std::cout << "Done encoding" << std::endl;
       auto hs = decoder_->forward({queryEmbed, memory[0]})[0];
       return { reorder(hs, 0, 2, 1) };
   }
