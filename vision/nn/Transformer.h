@@ -369,7 +369,6 @@ std::vector<Variable> forward(
     Variable queryEmbed,
     Variable posEmbed) {
       assert(src.dims(2) == queryEmbed.dims(0));
-      //assert(queryEmbed.dims(1) == 1 && queryEmbed.dims(3) == 1);
 
       int B = src.dims(3);
       // Reshape from [ W X H X C X B ] to [ WH X C X B ]
