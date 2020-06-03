@@ -59,7 +59,8 @@ public:
   MLP(const int32_t inputDim,
       const int32_t hiddenDim,
       const int32_t outputDim,
-      const int32_t numLayers) {
+      const int32_t numLayers) 
+  {
     add(Linear(inputDim, hiddenDim));
     for(int i = 1; i < numLayers - 1; i++) {
       add(ReLU());
@@ -243,6 +244,12 @@ int main(int argc, char** argv) {
       output[0], 
       targetBoxes, 
       targetClasses);
+  auto accumLoss = fl::Variable(af::constant(0), true);
+  for(auto losses : loss) {
+    accumLoss += losses.second;
+  }
+  accumLoss.backward();
+  af_print(accumLoss.array());
   af_print(loss["loss_giou"].array());
   //af_print(first);
   auto second = coco->get(0).target_boxes;
