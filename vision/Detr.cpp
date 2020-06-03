@@ -18,6 +18,9 @@
 #include "vision/dataset/Transforms.h"
 #include "vision/dataset/Utils.h"
 #include "vision/models/Resnet.h"
+#include "vision/nn/PositionalEmbeddingSine.h"
+#include "vision/nn/Transformer.h"
+#include "vision/criterion/SetCriterion.h"
 
 DEFINE_string(data_dir, "/datasets01_101/imagenet_full_size/061417/", "Directory of imagenet data");
 DEFINE_double(lr, 0.1f, "Learning rate");
@@ -44,7 +47,94 @@ DEFINE_int64(checkpoint, -1, "Load from checkpoint");
 
 
 using namespace fl;
+using namespace fl::cv;
 using namespace cv::dataset;
+
+// TODO Refactor
+const int32_t backboneChannels = 512;
+
+class MLP : public Sequential {
+
+public:
+  MLP(const int32_t inputDim,
+      const int32_t hiddenDim,
+      const int32_t outputDim,
+      const int32_t numLayers) {
+    add(Linear(inputDim, hiddenDim));
+    for(int i = 1; i < numLayers - 1; i++) {
+      add(ReLU());
+      add(Linear(hiddenDim, hiddenDim));
+    }
+    add(ReLU());
+    add(Linear(hiddenDim, outputDim));
+  }
+};
+
+class Detr : Container {
+
+public:
+
+  Detr(
+      std::shared_ptr<Module> backbone,
+      std::shared_ptr<Transformer> transformer,
+      const int32_t hiddenDim,
+      const int32_t numClasses,
+      const int32_t numQueries,
+      const bool auxLoss) :
+    backbone_(backbone),
+    transformer_(transformer),
+    numClasses_(numClasses),
+    numQueries_(numQueries),
+    auxLoss_(auxLoss),
+    classEmbed_(std::make_shared<Linear>(hiddenDim, numClasses + 1)),
+    bboxEmbed_(std::make_shared<MLP>(hiddenDim, hiddenDim, 4, 3)),
+    queryEmbed_(std::make_shared<Embedding>(hiddenDim, numQueries)),
+    inputProj_(std::make_shared<Conv2D>(512, hiddenDim, 1, 1)),
+    posEmbed_(std::make_shared<PositionalEmbeddingSine>(hiddenDim / 2, 
+          10000, false, 0.0f))
+  {
+    add(backbone_);
+    add(transformer_);
+    add(classEmbed_);
+    add(queryEmbed_);
+    add(inputProj_);
+  }
+
+  std::vector<Variable> forward(const std::vector<Variable>& input) {
+
+    auto backboneFeatures = backbone_->forward(input);
+    auto inputProjection = inputProj_->forward(backboneFeatures[0]);
+    auto posEmbed = posEmbed_->forward(backboneFeatures[0]);
+    auto hs = transformer_->forward(
+        inputProjection, 
+        queryEmbed_->param(0), 
+        posEmbed);
+
+    auto outputClasses = classEmbed_->forward(hs[0]);
+    auto outputCoord = sigmoid(bboxEmbed_->forward(hs)[0]);
+
+    return { outputClasses, outputCoord };
+  }
+
+  std::string prettyString() const {
+    // TODO print params
+    return "Detection Transformer!";
+  }
+
+private:
+  std::shared_ptr<Module> backbone_;
+  std::shared_ptr<Transformer> transformer_;
+  std::shared_ptr<Linear> classEmbed_;
+  std::shared_ptr<MLP> bboxEmbed_;
+  std::shared_ptr<Embedding> queryEmbed_;
+  std::shared_ptr<PositionalEmbeddingSine> posEmbed_;
+  std::shared_ptr<Conv2D> inputProj_;
+  int32_t hiddenDim_;
+  int32_t numClasses_;
+  int32_t numQueries_;
+  bool auxLoss_;
+
+};
 
 int main(int argc, char** argv) {
 
@@ -79,13 +169,81 @@ int main(int argc, char** argv) {
       normalizeImage(mean, std)
   };
 
+  const int32_t modelDim = 64;
+  const int32_t numHeads = 6;
+  const int32_t numEncoderLayers = 6;
+  const int32_t numDecoderLayers = 6;
+  const int32_t mlpDim = modelDim;
+  // TODO check this is correct
+  const int32_t hiddenDim = modelDim;
+  const int32_t numClasses = 80;
+  const int32_t numQueries = 100;
+  const float pDropout = 0.0;
+  const bool auxLoss = false;
+
+  std::shared_ptr<Module> backbone; 
+  backbone = std::make_shared<Sequential>(resnet34());
+  auto transformer = std::make_shared<Transformer>(
+      modelDim,
+      numHeads,
+      numEncoderLayers,
+      numDecoderLayers,
+      mlpDim,
+      pDropout);
+
+  auto detr = Detr(
+      backbone,
+      transformer,
+      hiddenDim,
+      numClasses,
+      numQueries,
+      auxLoss);
+
+
+  auto matcher = HungarianMatcher(1, 1, 1);
+  SetCriterion::LossDict losses;
+  auto criterion = SetCriterion(
+      numClasses, 
+      matcher, 
+      af::array(),
+      0.0,
+      losses);
+
+
+
   const int64_t batch_size_per_gpu = FLAGS_batch_size / FLAGS_world_size;
   const int64_t prefetch_threads = 10;
   const int64_t prefetch_size = FLAGS_batch_size;
   std::string coco_list = "/private/home/padentomasello/data/coco/train.lst";
   auto coco = cv::dataset::coco(coco_list, val_transforms);
   std::cout << "Here " << std::endl;
-  auto first = coco->get(0).images;
+  auto sample = coco->get(0);
+  auto images =  { fl::Variable(sample.images, false) };
+
+  //std::vector<Variable> targetBoxes(sample.targetBoxes
+
+  auto output = detr.forward(images);
+  af_print(output[0].array());
+
+  std::vector<Variable> targetBoxes(sample.target_boxes.size());
+  std::vector<Variable> targetClasses(sample.target_labels.size());
+
+  std::transform(
+      sample.target_boxes.begin(), sample.target_boxes.end(), 
+      targetBoxes.begin(), 
+      [](const af::array& in) { return fl::Variable(in, false); });
+
+  std::transform(
+      sample.target_labels.begin(), sample.target_labels.end(), 
+      targetClasses.begin(), 
+      [](const af::array& in) { return fl::Variable(in, false); });
+
+  auto loss = criterion.forward(
+      output[1], 
+      output[0], 
+      targetBoxes, 
+      targetClasses);
+  af_print(loss["loss_giou"].array());
   //af_print(first);
   auto second = coco->get(0).target_boxes;
   //auto second = coco->get(0).target_labels;

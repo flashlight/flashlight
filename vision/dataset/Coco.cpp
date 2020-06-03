@@ -133,8 +133,9 @@ CocoData cocoBatchFunc(const std::vector<std::vector<af::array>>& batches) {
 
 std::shared_ptr<Dataset> transform(
     std::shared_ptr<Dataset> in,
-    std::vector<ImageTransform> transforms) {
-  return std::make_shared<TransformDataset>(in, transforms);
+    std::vector<ImageTransform>& transforms) {
+  std::vector<ImageTransform> composed = { compose(transforms) } ;
+  return std::make_shared<TransformDataset>(in, composed);
 }
 std::shared_ptr<Dataset> merge(const std::vector<std::shared_ptr<const Dataset>>& in) {
   return std::make_shared<MergeDataset>(in);
