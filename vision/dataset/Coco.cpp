@@ -170,7 +170,7 @@ CocoDataset::CocoDataset(const std::string& list_file,
     auto labels = getLabels(list_file);
     auto merged = merge({images, labels});
     batched_ = std::make_shared<BatchTransformDataset<CocoData>>(
-        merged, 2, BatchDatasetPolicy::INCLUDE_LAST, cocoBatchFunc);
+        merged, 32, BatchDatasetPolicy::INCLUDE_LAST, cocoBatchFunc);
 
   }
 

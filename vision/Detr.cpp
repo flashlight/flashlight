@@ -71,7 +71,7 @@ public:
   }
 };
 
-class Detr : Container {
+class Detr : public Container {
 
 public:
 
@@ -217,50 +217,41 @@ int main(int argc, char** argv) {
   const int64_t prefetch_size = FLAGS_batch_size;
   std::string coco_list = "/private/home/padentomasello/data/coco/train.lst";
   auto coco = cv::dataset::coco(coco_list, val_transforms);
-  std::cout << "Here " << std::endl;
-  auto sample = coco->get(0);
-  auto images =  { fl::Variable(sample.images, false) };
+  SGDOptimizer opt(detr.params(), FLAGS_lr, FLAGS_momentum, FLAGS_wd);
 
-  //std::vector<Variable> targetBoxes(sample.targetBoxes
+  for(int i = 0; i < 100; i++) {
 
-  auto output = detr.forward(images);
-  af_print(output[0].array());
+  for(auto& sample : *coco) {
+    auto images =  { fl::Variable(sample.images, false) };
+    auto output = detr.forward(images);
 
-  std::vector<Variable> targetBoxes(sample.target_boxes.size());
-  std::vector<Variable> targetClasses(sample.target_labels.size());
+    std::vector<Variable> targetBoxes(sample.target_boxes.size());
+    std::vector<Variable> targetClasses(sample.target_labels.size());
 
-  std::transform(
-      sample.target_boxes.begin(), sample.target_boxes.end(), 
-      targetBoxes.begin(), 
-      [](const af::array& in) { return fl::Variable(in, false); });
+    std::transform(
+        sample.target_boxes.begin(), sample.target_boxes.end(), 
+        targetBoxes.begin(), 
+        [](const af::array& in) { return fl::Variable(in, false); });
 
-  std::transform(
-      sample.target_labels.begin(), sample.target_labels.end(), 
-      targetClasses.begin(), 
-      [](const af::array& in) { return fl::Variable(in, false); });
+    std::transform(
+        sample.target_labels.begin(), sample.target_labels.end(), 
+        targetClasses.begin(), 
+        [](const af::array& in) { return fl::Variable(in, false); });
 
-  auto loss = criterion.forward(
-      output[1], 
-      output[0], 
-      targetBoxes, 
-      targetClasses);
-  auto accumLoss = fl::Variable(af::constant(0), true);
-  for(auto losses : loss) {
-    accumLoss += losses.second;
+    auto loss = criterion.forward(
+        output[1], 
+        output[0], 
+        targetBoxes, 
+        targetClasses);
+    auto accumLoss = fl::Variable(af::constant(0, 1), true);
+    for(auto losses : loss) {
+      accumLoss = losses.second + accumLoss;
+    }
+    accumLoss.backward();
+    af_print(accumLoss.array());
+    //af_print(loss["loss_giou"].array());
+    opt.step();
+    opt.zeroGrad();
   }
-  accumLoss.backward();
-  af_print(accumLoss.array());
-  af_print(loss["loss_giou"].array());
-  //af_print(first);
-  auto second = coco->get(0).target_boxes;
-  //auto second = coco->get(0).target_labels;
-  std::cout << second.size() << std::endl;
-  af_print(second[0]);
-  af_print(second[1]);
-  auto target_classes = coco->get(0).target_labels;
-  af_print(target_classes[0]);
-  af_print(target_classes[1]);
-
-  //af_print(second);
-  return 0;
+}
 }
