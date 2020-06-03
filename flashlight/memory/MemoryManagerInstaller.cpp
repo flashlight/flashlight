@@ -47,7 +47,7 @@ MemoryManagerInstaller::MemoryManagerInstaller(
         "passed MemoryManagerAdapter is null");
   }
 
-  af_memory_manager interface = impl_->getHandle();
+  af_memory_manager itf = impl_->getHandle();
   if (!impl_->getHandle()) {
     throw std::invalid_argument(
         "MemoryManagerInstaller::MemoryManagerInstaller - "
@@ -61,14 +61,14 @@ MemoryManagerInstaller::MemoryManagerInstaller(
     m->initialize();
     return AF_SUCCESS;
   };
-  AF_CHECK(af_memory_manager_set_initialize_fn(interface, initializeFn));
+  AF_CHECK(af_memory_manager_set_initialize_fn(itf, initializeFn));
   auto shutdownFn = [](af_memory_manager manager) {
     MemoryManagerAdapter* m = MemoryManagerInstaller::getImpl(manager);
     m->log("shutdown");
     m->shutdown();
     return AF_SUCCESS;
   };
-  AF_CHECK(af_memory_manager_set_shutdown_fn(interface, shutdownFn));
+  AF_CHECK(af_memory_manager_set_shutdown_fn(itf, shutdownFn));
   // Note: AF expects the memory managers alloc fn to return an af_err, not to throw
   auto allocFn = [](af_memory_manager manager,
                     void** ptr,
@@ -94,21 +94,21 @@ MemoryManagerInstaller::MemoryManagerInstaller(
         (std::uintptr_t)ptr);
     return AF_SUCCESS;
   };
-  AF_CHECK(af_memory_manager_set_alloc_fn(interface, allocFn));
+  AF_CHECK(af_memory_manager_set_alloc_fn(itf, allocFn));
   auto allocatedFn = [](af_memory_manager manager, size_t* size, void* ptr) {
     MemoryManagerAdapter* m = MemoryManagerInstaller::getImpl(manager);
     m->log("allocated", (std::uintptr_t)ptr);
     *size = m->allocated(ptr);
     return AF_SUCCESS;
   };
-  AF_CHECK(af_memory_manager_set_allocated_fn(interface, allocatedFn));
+  AF_CHECK(af_memory_manager_set_allocated_fn(itf, allocatedFn));
   auto unlockFn = [](af_memory_manager manager, void* ptr, int userLock) {
     MemoryManagerAdapter* m = MemoryManagerInstaller::getImpl(manager);
     m->log("unlock", (std::uintptr_t)ptr, userLock);
     m->unlock(ptr, (bool)userLock);
     return AF_SUCCESS;
   };
-  AF_CHECK(af_memory_manager_set_unlock_fn(interface, unlockFn));
+  AF_CHECK(af_memory_manager_set_unlock_fn(itf, unlockFn));
   auto signalMemoryCleanupFn = [](af_memory_manager manager) {
     MemoryManagerAdapter* m = MemoryManagerInstaller::getImpl(manager);
     m->log("signalMemoryCleanup");
@@ -116,40 +116,40 @@ MemoryManagerInstaller::MemoryManagerInstaller(
     return AF_SUCCESS;
   };
   AF_CHECK(af_memory_manager_set_signal_memory_cleanup_fn(
-      interface, signalMemoryCleanupFn));
+      itf, signalMemoryCleanupFn));
   auto printInfoFn = [](af_memory_manager manager, char* msg, int device) {
     // no log
     MemoryManagerInstaller::getImpl(manager)->printInfo(msg, device);
     return AF_SUCCESS;
   };
-  AF_CHECK(af_memory_manager_set_print_info_fn(interface, printInfoFn));
+  AF_CHECK(af_memory_manager_set_print_info_fn(itf, printInfoFn));
   auto userLockFn = [](af_memory_manager manager, void* ptr) {
     MemoryManagerAdapter* m = MemoryManagerInstaller::getImpl(manager);
     m->log("userLock", (std::uintptr_t)ptr);
     m->userLock(ptr);
     return AF_SUCCESS;
   };
-  AF_CHECK(af_memory_manager_set_user_lock_fn(interface, userLockFn));
+  AF_CHECK(af_memory_manager_set_user_lock_fn(itf, userLockFn));
   auto userUnlockFn = [](af_memory_manager manager, void* ptr) {
     MemoryManagerAdapter* m = MemoryManagerInstaller::getImpl(manager);
     m->log("userUnlock", (std::uintptr_t)ptr);
     MemoryManagerInstaller::getImpl(manager)->userUnlock(ptr);
     return AF_SUCCESS;
   };
-  AF_CHECK(af_memory_manager_set_user_unlock_fn(interface, userUnlockFn));
+  AF_CHECK(af_memory_manager_set_user_unlock_fn(itf, userUnlockFn));
   auto isUserLockedFn = [](af_memory_manager manager, int* out, void* ptr) {
     MemoryManagerAdapter* m = MemoryManagerInstaller::getImpl(manager);
     m->log("isUserLocked", (std::uintptr_t)ptr);
     *out = (int)m->isUserLocked(ptr);
     return AF_SUCCESS;
   };
-  AF_CHECK(af_memory_manager_set_is_user_locked_fn(interface, isUserLockedFn));
+  AF_CHECK(af_memory_manager_set_is_user_locked_fn(itf, isUserLockedFn));
   auto getMemoryPressureFn = [](af_memory_manager manager, float* pressure) {
     *pressure = MemoryManagerInstaller::getImpl(manager)->getMemoryPressure();
     return AF_SUCCESS;
   };
   AF_CHECK(af_memory_manager_set_get_memory_pressure_fn(
-      interface, getMemoryPressureFn));
+      itf, getMemoryPressureFn));
   auto jitTreeExceedsMemoryPressureFn =
       [](af_memory_manager manager, int* out, size_t bytes) {
         *out = (int)MemoryManagerInstaller::getImpl(manager)
@@ -157,57 +157,57 @@ MemoryManagerInstaller::MemoryManagerInstaller(
         return AF_SUCCESS;
       };
   AF_CHECK(af_memory_manager_set_jit_tree_exceeds_memory_pressure_fn(
-      interface, jitTreeExceedsMemoryPressureFn));
+      itf, jitTreeExceedsMemoryPressureFn));
   auto addMemoryManagementFn = [](af_memory_manager manager, int device) {
     MemoryManagerInstaller::getImpl(manager)->addMemoryManagement(device);
   };
   AF_CHECK(af_memory_manager_set_add_memory_management_fn(
-      interface, addMemoryManagementFn));
+      itf, addMemoryManagementFn));
   auto removeMemoryManagementFn = [](af_memory_manager manager, int device) {
     MemoryManagerInstaller::getImpl(manager)->removeMemoryManagement(device);
   };
   AF_CHECK(af_memory_manager_set_remove_memory_management_fn(
-      interface, removeMemoryManagementFn));
+      itf, removeMemoryManagementFn));
 
   // Native and device memory manager functions
-  auto getActiveDeviceIdFn = [interface]() {
+  auto getActiveDeviceIdFn = [itf]() {
     int id;
-    AF_CHECK(af_memory_manager_get_active_device_id(interface, &id));
+    AF_CHECK(af_memory_manager_get_active_device_id(itf, &id));
     return id;
   };
   impl_->deviceInterface->getActiveDeviceId = std::move(getActiveDeviceIdFn);
-  auto getMaxMemorySizeFn = [interface](int id) {
+  auto getMaxMemorySizeFn = [itf](int id) {
     size_t out;
-    AF_CHECK(af_memory_manager_get_max_memory_size(interface, &out, id));
+    AF_CHECK(af_memory_manager_get_max_memory_size(itf, &out, id));
     return out;
   };
   impl_->deviceInterface->getMaxMemorySize = std::move(getMaxMemorySizeFn);
   // nativeAlloc could throw via AF_CHECK:
-  auto nativeAllocFn = [interface](const size_t bytes) {
+  auto nativeAllocFn = [itf](const size_t bytes) {
     void* ptr;
-    AF_CHECK(af_memory_manager_native_alloc(interface, &ptr, bytes));
-    MemoryManagerInstaller::getImpl(interface)->log(
+    AF_CHECK(af_memory_manager_native_alloc(itf, &ptr, bytes));
+    MemoryManagerInstaller::getImpl(itf)->log(
         "nativeAlloc", bytes, (std::uintptr_t)ptr);
     return ptr;
   };
   impl_->deviceInterface->nativeAlloc = std::move(nativeAllocFn);
-  auto nativeFreeFn = [interface](void* ptr) {
-    MemoryManagerInstaller::getImpl(interface)->log(
+  auto nativeFreeFn = [itf](void* ptr) {
+    MemoryManagerInstaller::getImpl(itf)->log(
         "nativeFree", (std::uintptr_t)ptr);
-    AF_CHECK(af_memory_manager_native_free(interface, ptr));
+    AF_CHECK(af_memory_manager_native_free(itf, ptr));
   };
   impl_->deviceInterface->nativeFree = std::move(nativeFreeFn);
-  auto getMemoryPressureThresholdFn = [interface]() {
+  auto getMemoryPressureThresholdFn = [itf]() {
     float pressure;
     AF_CHECK(
-        af_memory_manager_get_memory_pressure_threshold(interface, &pressure));
+        af_memory_manager_get_memory_pressure_threshold(itf, &pressure));
     return pressure;
   };
   impl_->deviceInterface->getMemoryPressureThreshold =
       std::move(getMemoryPressureThresholdFn);
-  auto setMemoryPressureThresholdFn = [interface](float pressure) {
+  auto setMemoryPressureThresholdFn = [itf](float pressure) {
     AF_CHECK(
-        af_memory_manager_set_memory_pressure_threshold(interface, pressure));
+        af_memory_manager_set_memory_pressure_threshold(itf, pressure));
   };
   impl_->deviceInterface->setMemoryPressureThreshold =
       std::move(setMemoryPressureThresholdFn);
