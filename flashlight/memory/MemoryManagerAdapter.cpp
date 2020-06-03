@@ -16,10 +16,10 @@
 namespace fl {
 
 MemoryManagerAdapter::MemoryManagerAdapter(
-    std::shared_ptr<MemoryManagerDeviceInterface> interface,
+    std::shared_ptr<MemoryManagerDeviceInterface> itf,
     std::ostream* logStream)
-    : deviceInterface(interface), logStream_(logStream) {
-  if (!interface) {
+    : deviceInterface(itf), logStream_(logStream) {
+  if (!itf) {
     throw std::invalid_argument(
         "MemoryManagerAdapter::MemoryManagerAdapter - "
         "memory manager device interface is null");
