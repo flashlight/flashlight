@@ -331,6 +331,26 @@ class LogSoftmax : public UnaryModule {
   std::string prettyString() const override;
 };
 
+/**
+ * Applies the [swish activation](https://arxiv.org/abs/1710.05941)
+ * function to a `Variable`
+ * \f[ Swish(x) = x \cdot sigmoid(\beta x) \f]
+ */
+class Swish : public UnaryModule {
+ public:
+  Swish(float beta = 1.0);
+
+  Variable forward(const Variable& input) override;
+
+  std::string prettyString() const override;
+
+ private:
+  float beta_;
+
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule, beta_)
+};
+
+
 } // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::Sigmoid)
@@ -345,3 +365,4 @@ CEREAL_REGISTER_TYPE(fl::GatedLinearUnit)
 CEREAL_REGISTER_TYPE(fl::Log)
 CEREAL_REGISTER_TYPE(fl::HardTanh)
 CEREAL_REGISTER_TYPE(fl::LogSoftmax)
+CEREAL_REGISTER_TYPE(fl::Swish)

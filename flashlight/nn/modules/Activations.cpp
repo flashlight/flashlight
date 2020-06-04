@@ -149,4 +149,14 @@ std::string LogSoftmax::prettyString() const {
   return "LogSoftmax (" + std::to_string(dim_) + ")";
 }
 
+Swish::Swish(float beta /* = 1.0 */) : beta_(beta) {}
+
+Variable Swish::forward(const Variable& input) {
+  return input * sigmoid(beta_ * input);
+}
+
+std::string Swish::prettyString() const {
+  return "Swish (" + std::to_string(beta_) + ")";
+}
+
 } // namespace fl
