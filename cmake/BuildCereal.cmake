@@ -2,7 +2,7 @@ include(ExternalProject)
 
 set(cereal_URL https://github.com/USCiLab/cereal.git)
 set(cereal_BUILD ${CMAKE_CURRENT_BINARY_DIR}/cereal)
-set(cereal_TAG 319ce5f5ee5b76cb80617156bf7c95474a2938b1) # `develop` branch, commit
+set(cereal_TAG 02eace19a99ce3cd564ca4e379753d69af08c2c8) # version 1.3.0
 
 # Download Cereal
 ExternalProject_Add(
