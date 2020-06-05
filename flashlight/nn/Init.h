@@ -70,37 +70,28 @@ Variable param(const af::array& arr);
  * @return A `Variable` containing a tensor with random values distributed
  * accordingly.
  */
-Variable kaimingUniform(
-    af::dim4 shape,
-    int fanIn,
-    af::dtype type = af::dtype::f32,
-    bool calcGrad = true);
+af::array
+kaimingUniform(af::dim4 shape, int fanIn, af::dtype type = af::dtype::f32);
 /**
- * Creates a `Variable` representing a tensor with given input dimensions where
- * elements are normally distributed according to the method
- * outlined in [He et al (2015)](https://arxiv.org/abs/1502.01852):
- * _Delving Deep into Rectifiers: Surpassing Human-Level Performance on
- * ImageNet Classification._
+ * Creates an `af::array` representing a tensor with given input dimensions
+ * where elements are normally distributed according to the method outlined in
+ * [He et al (2015)](https://arxiv.org/abs/1502.01852): _Delving Deep into
+ * Rectifiers: Surpassing Human-Level Performance on ImageNet Classification._
  *
  * @param shape the shape of output Variable
  * @param fanIn number of input units in the Variable
  * @param type the ArrayFire datatype for which to create the tensor
- * @param calcGrad flag denoting whether gradient calculation on the resulting
- * `Variable` should be enabled
  *
- * @return A `Variable` containing a tensor with random values distributed
+ * @return An `af::array` containing a tensor with random values distributed
  * accordingly.
  */
-Variable kaimingNormal(
-    af::dim4 shape,
-    int fanIn,
-    af::dtype type = af::dtype::f32,
-    bool calcGrad = true);
+af::array
+kaimingNormal(af::dim4 shape, int fanIn, af::dtype type = af::dtype::f32);
 
 /**
- * Creates a `Variable` representing a tensor with given input dimensions where
- * elements are uniformly distributed according to the
- * method outlined in [Glorot and Bengio
+ * Creates an `af::array` representing a tensor with given input dimensions
+ * where elements are uniformly distributed according to the method outlined in
+ * [Glorot and Bengio
  * (2010)](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf):
  * _Understanding the difficulty of training deep feedforward neural networks_.
  *
@@ -108,23 +99,20 @@ Variable kaimingNormal(
  * @param fanIn number of input units in the Variable
  * @param fanOut number of output units in the Variable
  * @param type the ArrayFire datatype with which to create the tensor
- * @param calcGrad flag denoting whether gradient calculation on the resulting
- * `Variable` should be enabled
  *
- * @return A `Variable` containing a tensor with random values distributed
+ * @return An `af::array` containing a tensor with random values distributed
  * accordingly.
  */
-Variable glorotUniform(
+af::array glorotUniform(
     af::dim4 shape,
     int fanIn,
     int fanOut,
-    af::dtype type = af::dtype::f32,
-    bool calcGrad = true);
+    af::dtype type = af::dtype::f32);
 
 /**
- * Creates a `Variable` representing a tensor with given input dimensions where
- * elements are normally distributed according to the
- * method outlined in [Glorot and Bengio
+ * Creates an `af::array` representing a tensor with given input dimensions
+ * where elements are normally distributed according to the method outlined in
+ * [Glorot and Bengio
  * (2010)](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf):
  * _Understanding the difficulty of training deep feedforward neural
  * networks._
@@ -133,17 +121,14 @@ Variable glorotUniform(
  * @param fanIn number of input units in the Variable
  * @param fanOut number of output units in the Variable
  * @param type the ArrayFire datatype for which to create the tensor
- * @param calcGrad flag denoting whether gradient calculation on the resulting
- * `Variable` should be enabled
  *
- * @return A `Variable` containing a tensor with random values distributed
+ * @return An `af::array` containing a tensor with random values distributed
  * accordingly.
  */
-Variable glorotNormal(
+af::array glorotNormal(
     af::dim4 shape,
     int fanIn,
     int fanOut,
-    af::dtype type = af::dtype::f32,
-    bool calcGrad = true);
+    af::dtype type = af::dtype::f32);
 
 } // namespace fl

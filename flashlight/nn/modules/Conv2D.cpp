@@ -137,8 +137,10 @@ Variable Conv2D::forward(const Variable& input) {
 
 void Conv2D::initialize() {
   int fanIn = xFilter_ * yFilter_ * nIn_ / groups_;
-  auto wt = kaimingUniform(
-      af::dim4(xFilter_, yFilter_, nIn_ / groups_, nOut_), fanIn);
+  auto wt = Variable(
+      kaimingUniform(
+          af::dim4(xFilter_, yFilter_, nIn_ / groups_, nOut_), fanIn),
+      true);
   if (bias_) {
     double bound = std::sqrt(1.0 / fanIn);
     auto bs = uniform(af::dim4(1, 1, nOut_, 1), -bound, bound);

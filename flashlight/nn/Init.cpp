@@ -38,44 +38,52 @@ Variable param(const af::array& arr) {
   return Variable(arr, true);
 }
 
-Variable kaimingUniform(
+af::array kaimingUniform(
     af::dim4 shape,
     int fanIn,
-    af::dtype type /* = af::dtype::f32 */,
-    bool calcGrad /* = true */) {
+    af::dtype type /* = af::dtype::f32 */) {
   double stdv = std::sqrt(1.0 / static_cast<double>(fanIn));
   double limit = std::sqrt(3.0) * stdv;
-  return uniform(shape, -limit, limit, type, calcGrad);
+  af::array result = af::randu(shape, type);
+  result = 2 * limit * result - limit;
+  return result;
 }
 
-Variable kaimingNormal(
+af::array kaimingNormal(
     af::dim4 shape,
     int fanIn,
-    af::dtype type /* = af::dtype::f32 */,
-    bool calcGrad /* = true */) {
+    af::dtype type /* = af::dtype::f32 */) {
   double stdv = std::sqrt(1.0 / static_cast<double>(fanIn));
-  return normal(shape, stdv, 0, type, calcGrad);
+  af::array result = af::randn(shape, type);
+  if (stdv != 1) {
+    result = stdv * result;
+  }
+  return result;
 }
 
-Variable glorotUniform(
+af::array glorotUniform(
     af::dim4 shape,
     int fanIn,
     int fanOut,
-    af::dtype type /* = af::dtype::f32 */,
-    bool calcGrad /* = true */) {
+    af::dtype type /* = af::dtype::f32 */) {
   double stdv = std::sqrt(2.0 / static_cast<double>(fanIn + fanOut));
   double limit = std::sqrt(3.0) * stdv;
-  return uniform(shape, -limit, limit, type, calcGrad);
+  af::array result = af::randu(shape, type);
+  result = 2 * limit * result - limit;
+  return result;
 }
 
-Variable glorotNormal(
+af::array glorotNormal(
     af::dim4 shape,
     int fanIn,
     int fanOut,
-    af::dtype type /* = af::dtype::f32 */,
-    bool calcGrad /* = true */) {
+    af::dtype type /* = af::dtype::f32 */) {
   double stdv = std::sqrt(2.0 / static_cast<double>(fanIn + fanOut));
-  return normal(fanIn, stdv, 0, type, calcGrad);
+  af::array result = af::randn(shape, type);
+  if (stdv != 1) {
+    result = stdv * result;
+  }
+  return result;
 }
 
 } // namespace fl
