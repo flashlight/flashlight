@@ -14,6 +14,6 @@ echo $SLURM_NTASKS
 echo $SLURM_LOCALID
 BUILD_DIR=/scratch/slurm_tmpdir/$SLURM_JOB_ID/$1
 mkdir -p $BUILD_DIR/rndv/
-AF_MAX_BUFFERS=3000 $BUILD_DIR/flashlight/build/vision/Resnet34Backbone --world_rank $SLURM_LOCALID --world_size $SLURM_NTASKS --rndv_filepath $BUILD_DIR/rndv --checkpointpath /checkpoint/padentomasello/models/resnet34
+AF_MAX_BUFFERS=3000 $BUILD_DIR/flashlight/build/vision/Resnet34Backbone --world_rank $SLURM_LOCALID --world_size $SLURM_NTASKS --rndv_filepath $BUILD_DIR/rndv --checkpointpath /checkpoint/padentomasello/models/resnet34backbone
 
 # Your CUDA enabled program here
