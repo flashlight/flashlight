@@ -25,14 +25,13 @@ def create_training_list(img_folder, ann_file, output_file):
 def dump_dataset(image_set, image_folder, args):
     dataset = build_dataset(image_set, args);
     output_file = os.path.join(args.output_dir, f'{image_set}.lst')
-    i = 0
     with open(output_file, 'w') as out:
         for sample in dataset:
             (_, targets) = sample
             bboxes = targets["boxes"]
             labels = targets["labels"]
-            print('bboxes', bboxes)
-            print('labels', labels)
+            # print('bboxes', bboxes)
+            # print('labels', labels)
             image_id = targets["image_id"].item();
             filepath = f'{image_id:012}.jpg'
             out.write(f'{os.path.join(img_folder, filepath)}\t')
@@ -42,12 +41,9 @@ def dump_dataset(image_set, image_folder, args):
                 box_with_label = bbox.tolist() + [ label.item() ];
                 box_string = " ".join(map(str, box_with_label));
                 strings.append(box_string);
-            print(strings)
+            # print(strings)
             out.write(" ".join(strings))
             out.write('\n')
-            i += 1
-            if(i == 10):
-                break
     return
 
 
