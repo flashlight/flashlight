@@ -45,21 +45,21 @@ add_subdirectory(${VISION_PROJECT_COMPONENT_SRC_DIR}/criterion)
 
 
 
-set(target "Resnet34")
-add_executable(${target} "Resnet34.cpp")
-if(TARGET flashlight)
-    target_link_libraries(${target} PRIVATE
-      flashlight
-      ${GFLAGS_LIBRARIES}
-      ${VISION_MODULES}
-    )
-    target_include_directories(${target}
-      PRIVATE
-      ${CMAKE_SOURCE_DIR}
-    )
-else()
-  target_link_libraries(${target} PRIVATE ${VISION_MODULES} flashlight::flashlight ${GFLAGS_LIBRARIES})
-endif()
+#set(target "Resnet34")
+#add_executable(${target} "Resnet34.cpp")
+#if(TARGET flashlight)
+    #target_link_libraries(${target} PRIVATE
+      #flashlight
+      #${GFLAGS_LIBRARIES}
+      #${VISION_MODULES}
+    #)
+    #target_include_directories(${target}
+      #PRIVATE
+      #${CMAKE_SOURCE_DIR}
+    #)
+#else()
+  #target_link_libraries(${target} PRIVATE ${VISION_MODULES} flashlight::flashlight ${GFLAGS_LIBRARIES})
+#endif()
 
 function(build_train SRCFILE)
   get_filename_component(src_name ${SRCFILE} NAME_WE)
@@ -81,6 +81,8 @@ function(build_train SRCFILE)
 endfunction(build_train)
 
 build_train(Detr.cpp)
+build_train(Resnet34.cpp)
+build_train(Resnet34Backbone.cpp)
 
 enable_testing()
 add_subdirectory(${VISION_PROJECT_COMPONENT_SRC_DIR}/tests)
