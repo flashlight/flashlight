@@ -5,6 +5,7 @@
 namespace fl {
 namespace cv {
 
+// TODO Can probably generalize this
 class Resnet34Backbone : public Container {
 
 public:
