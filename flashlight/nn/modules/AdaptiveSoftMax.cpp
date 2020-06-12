@@ -26,19 +26,28 @@ AdaptiveSoftMax::AdaptiveSoftMax(
 
   int outputSize = cutoff_[0] + cutoff_.size() - 1;
 
-  auto head =
-      kaimingUniform(af::dim4(outputSize, inputSize), inputSize /* fanIn */);
+  auto head = kaimingUniform(
+      af::dim4(outputSize, inputSize),
+      inputSize /* fanIn */,
+      af::dtype::f32,
+      true);
   params_.push_back(head);
 
   int denominator = 1;
   for (int i = 0; i < cutoff_.size() - 1; i++) {
     denominator *= divValue_;
     int hiddenSize = inputSize / denominator;
-    auto tail1 =
-        kaimingUniform(af::dim4(hiddenSize, inputSize), inputSize /* fanIn */);
+    auto tail1 = kaimingUniform(
+        af::dim4(hiddenSize, inputSize),
+        inputSize /* fanIn */,
+        af::dtype::f32,
+        true);
     auto tail2 = kaimingUniform(
         af::dim4(cutoff_[i + 1] - cutoff_[i], hiddenSize),
-        hiddenSize /* fanIn */);
+        hiddenSize /* fanIn */,
+        af::dtype::f32,
+        true);
+
     params_.push_back(tail1);
     params_.push_back(tail2);
   }
@@ -100,9 +109,14 @@ Variable AdaptiveSoftMax::predict(const Variable& inputs) const {
   if (af::anyTrue<bool>(notInShortlist)) {
     headOutput = logSoftmax(headOutput, 0);
     auto logProbTailPositions = getFullLogProb(
-      inputsFlattened(af::span, notInShortlist), headOutput(af::span, notInShortlist));
+        inputsFlattened(af::span, notInShortlist),
+        headOutput(af::span, notInShortlist));
     af::array maxValueTailPositions, predictionTailPositions;
-    af::max(maxValueTailPositions, predictionTailPositions, logProbTailPositions.array(), 0);
+    af::max(
+        maxValueTailPositions,
+        predictionTailPositions,
+        logProbTailPositions.array(),
+        0);
     ret.array()(notInShortlist) = predictionTailPositions;
   }
   return moddims(

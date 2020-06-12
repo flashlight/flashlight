@@ -14,7 +14,7 @@
 namespace {
 fl::Variable transformerInitLinear(int32_t inDim, int32_t outDim) {
   float std = std::sqrt(1.0 / float(inDim));
-  return fl::uniform(outDim, inDim, -std, std);
+  return fl::uniform(outDim, inDim, -std, std, af::dtype::f32, true);
 }
 
 fl::Variable transformerRotate(const fl::Variable& input) {
@@ -105,7 +105,8 @@ Transformer::Transformer(
           transformerInitLinear(headDim * nHeads, modelDim))),
       norm1_(std::make_shared<LayerNorm>(std::vector<int>({0, 3}))),
       norm2_(std::make_shared<LayerNorm>(std::vector<int>({0, 3}))) {
-  params_.push_back(uniform(2 * bptt - 1, headDim, -0.1, 0.1));
+  params_.push_back(
+      uniform(2 * bptt - 1, headDim, -0.1, 0.1, af::dtype::f32, true));
 
   add(w1_);
   add(w2_);

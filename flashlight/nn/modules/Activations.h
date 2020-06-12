@@ -148,9 +148,9 @@ class ReLU6 : public UnaryModule {
  */
 class LeakyReLU : public UnaryModule {
  private:
-  double m_slope;
+  double mSlope_;
 
-  FL_SAVE_LOAD_WITH_BASE(UnaryModule, m_slope)
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule, mSlope_)
 
  public:
   /**
@@ -232,9 +232,9 @@ class PReLU : public UnaryModule {
  */
 class ELU : public UnaryModule {
  private:
-  double m_alpha;
+  double mAlpha_;
 
-  FL_SAVE_LOAD_WITH_BASE(UnaryModule, m_alpha)
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule, mAlpha_)
 
  public:
   ELU(double alpha = 1.0);
@@ -259,9 +259,9 @@ class ELU : public UnaryModule {
  */
 class ThresholdReLU : public UnaryModule {
  private:
-  double m_threshold;
+  double mThreshold_;
 
-  FL_SAVE_LOAD_WITH_BASE(UnaryModule, m_threshold)
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule, mThreshold_)
 
  public:
   /**
@@ -332,24 +332,31 @@ class LogSoftmax : public UnaryModule {
 };
 
 /**
- * Applies the [swish activation](https://arxiv.org/abs/1710.05941)
- * function to a `Variable`
+ * Applies the swish activation function from [Ramachandran et al (2013)](
+ * https://arxiv.org/abs/1710.05941), _Searching for Activation Functions_.
+ * Applied function element-wise to a `Variable`:
  * \f[ Swish(x) = x \cdot sigmoid(\beta x) \f]
+ * where \f$\beta\f$ is a constant, often is 1.
  */
 class Swish : public UnaryModule {
  public:
-  Swish(float beta = 1.0);
+  /**
+   * Creates a `Swish` with the specified beta
+   *
+   * @param beta a constant by which the input will be multiplied in the x *
+   * sigma(beta * x)
+   */
+  Swish(double beta = 1.0);
 
   Variable forward(const Variable& input) override;
 
   std::string prettyString() const override;
 
  private:
-  float beta_;
+  double beta_;
 
   FL_SAVE_LOAD_WITH_BASE(UnaryModule, beta_)
 };
-
 
 } // namespace fl
 

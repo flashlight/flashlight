@@ -19,7 +19,7 @@ PositionEmbedding::PositionEmbedding(
     int32_t maxLen,
     double dropout)
     : dropout_(dropout) {
-  auto embeddings = uniform(layerDim, maxLen, -0.1, 0.1);
+  auto embeddings = uniform(layerDim, maxLen, -0.1, 0.1, af::dtype::f32, true);
   params_ = {embeddings};
 }
 
