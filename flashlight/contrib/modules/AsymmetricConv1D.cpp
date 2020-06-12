@@ -24,8 +24,8 @@ void AsymmetricConv1D::checkParams() {
 }
 
 AsymmetricConv1D::AsymmetricConv1D(
-    int n_in,
-    int n_out,
+    int nIn,
+    int nOut,
     int wx,
     int sx /*= 1 */,
     fl::detail::IntOrPadMode px /*= 0 */,
@@ -33,7 +33,7 @@ AsymmetricConv1D::AsymmetricConv1D(
     int dx /* 1 */,
     bool bias /* true */,
     int groups /* 1 */)
-    : Conv2D(n_in, n_out, wx, 1, sx, 1, px, 0, dx, 1, bias, groups),
+    : Conv2D(nIn, nOut, wx, 1, sx, 1, px, 0, dx, 1, bias, groups),
       futurePart_(futurePart) {
   checkParams();
 }
