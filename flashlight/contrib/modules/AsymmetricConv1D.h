@@ -24,8 +24,8 @@ namespace fl {
 class AsymmetricConv1D : public fl::Conv2D {
  public:
   AsymmetricConv1D(
-      int n_in,
-      int n_out,
+      int nIn,
+      int nOut,
       int wx,
       int sx = 1,
       fl::detail::IntOrPadMode px = 0,
