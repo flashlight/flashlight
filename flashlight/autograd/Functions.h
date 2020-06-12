@@ -748,8 +748,8 @@ Variable embedding(const Variable& input, const Variable& embeddings);
  * @param input a Variable with size [\f$H\f$, \f$W\f$, \f$C\f$, \f$N\f$]
  * @param weight a Variable with size [\f$C\f$] for \f$\gamma\f$
  * @param bias a Variable with size [\f$C\f$] for \f$\beta\f$
- * @param running_mean a buffer storing intermediate means during training
- * @param running_var a buffer storing intermediate variances during training
+ * @param runningMean a buffer storing intermediate means during training
+ * @param runningVar a buffer storing intermediate variances during training
  * @param axes dimensions to perform normalization on. If having size greater
  * than one, reduce over all of them.
  * @param train a flag indicating if running in training mode
@@ -762,8 +762,8 @@ Variable batchnorm(
     const Variable& input,
     const Variable& weight,
     const Variable& bias,
-    Variable& running_mean,
-    Variable& running_var,
+    Variable& runningMean,
+    Variable& runningVar,
     const std::vector<int>& axes,
     bool train,
     double momentum,

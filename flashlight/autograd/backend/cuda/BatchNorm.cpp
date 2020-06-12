@@ -22,8 +22,8 @@ Variable batchnorm(
     const Variable& input,
     const Variable& weight,
     const Variable& bias,
-    Variable& running_mean,
-    Variable& running_var,
+    Variable& runningMean,
+    Variable& runningVar,
     const std::vector<int>& axes,
     bool train,
     double momentum,
@@ -86,8 +86,8 @@ Variable batchnorm(
     DevicePtr out_raw(output);
     DevicePtr wt_raw(weight_nonempty.array());
     DevicePtr bs_raw(bias_nonempty.array());
-    DevicePtr run_mean_raw(running_mean.array());
-    DevicePtr run_var_raw(running_var.array());
+    DevicePtr run_mean_raw(runningMean.array());
+    DevicePtr run_var_raw(runningVar.array());
 
     if (train) {
       save_mean = af::array(nfeatures, input.type());
