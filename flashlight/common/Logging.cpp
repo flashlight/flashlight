@@ -130,7 +130,15 @@ Logging&& operator<<(Logging&& log, long l) {
   return std::move(log.print(l));
 }
 
+Logging&& operator<<(Logging&& log, long long l) {
+  return std::move(log.print(l));
+}
+
 Logging&& operator<<(Logging&& log, unsigned long u) {
+  return std::move(log.print(u));
+}
+
+Logging&& operator<<(Logging&& log, unsigned long long u) {
   return std::move(log.print(u));
 }
 
@@ -140,6 +148,10 @@ Logging&& operator<<(Logging&& log, float f) {
 
 Logging&& operator<<(Logging&& log, double d) {
   return std::move(log.print(d));
+}
+
+Logging&& operator<<(Logging&& log, bool b) {
+  return std::move(log.print(b));
 }
 
 VerboseLogging::VerboseLogging(int level, const char* fullPath, int lineNumber)
@@ -204,6 +216,10 @@ VerboseLogging&& operator<<(VerboseLogging&& log, float f) {
 
 VerboseLogging&& operator<<(VerboseLogging&& log, double d) {
   return std::move(log.print(d));
+}
+
+VerboseLogging&& operator<<(VerboseLogging&& log, bool b) {
+  return std::move(log.print(b));
 }
 
 } // namespace fl
