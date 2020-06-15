@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "flashlight/memory/allocator/MemoryAllocator.h"
+#include "flashlight/experimental/memory/allocator/MemoryAllocator.h"
 
 namespace fl {
 
@@ -31,7 +31,9 @@ class FreeList : public MemoryAllocator {
       std::string name,
       void* arena,
       size_t arenaSizeInBytes,
-      size_t blockSize);
+      size_t blockSize,
+      double allocatedRatioJitThreshold,
+      int logLevel = 1);
   ~FreeList() override;
 
   void* allocate(size_t size) override;
@@ -39,8 +41,10 @@ class FreeList : public MemoryAllocator {
 
   Stats getStats() const override;
   size_t getAllocatedSizeInBytes(void* ptr) const override;
+  bool jitTreeExceedsMemoryPressure(size_t bytes) override;
 
   std::string prettyString() const override;
+  std::string blockMapPrettyString() const;
 
  private:
   // Descriptor of a memory region of continuous blocks.
@@ -71,6 +75,14 @@ class FreeList : public MemoryAllocator {
     Chunk* prev_;
   };
 
+  // Helper for blockMapPrettyString()
+  struct BlockMapFormatter {
+    bool isFree;
+    const Chunk* chunk;
+
+    std::string prettyString() const;
+  };
+
   Chunk* findBestFit(size_t nBlocksNeed);
 
   void chopChunkIfNeeded(Chunk* chunk, size_t nBlocksNeed);
@@ -84,7 +96,7 @@ class FreeList : public MemoryAllocator {
   void removeFromFreeList(Chunk* chunk);
 
   void* memoryAddress(void* ptr, size_t numBlocksOffset) const {
-    return reinterpret_cast<char*>(ptr) + numBlocksOffset * blockSize_;
+    return reinterpret_cast<char*>(ptr) + numBlocksOffset * stats_.blockSize;
   }
 
   Chunk* getChunkAndRemoveFromMap(
@@ -93,19 +105,13 @@ class FreeList : public MemoryAllocator {
   const Chunk* getChunk(void* ptr, const std::string& callerNameForErrorMessage)
       const;
 
-  void* const arena_;
-  const size_t arenaSizeInBytes_;
-  const size_t arenaSizeInBlocks_;
-  const size_t blockSize_;
-  size_t allocatedBytesCount_;
-  size_t allocatedBlocksCount_;
-  // mutable since largestChunkInBlocks_ is recalculated by getStats() which is
-  // const.
+  // set mutable to values recalculated by getStats() which is a const method.
+  mutable MemoryAllocator::Stats stats_;
   mutable size_t largestChunkInBlocks_;
+
   size_t totalNumberOfChunks_;
-  size_t totalNumberOfAllocations_;
-  size_t totalNumberOfFree_;
   size_t freeListSize_;
+  size_t maxFreeListSize_;
   // Freelist is sorted by block index from small to large.
   Chunk* freeList_;
   // Mapping from pointer of memory allocated to the user to Chunk data
@@ -114,6 +120,8 @@ class FreeList : public MemoryAllocator {
   // Vector of the block size and relative order of all allocations requests.
   // Used for stats analysis.
   std::vector<size_t> historyOfAllocationRequestInBlocks_;
+  double allocatedRatioJitThreshold_;
+  bool isNullAllocator_;
 };
 
 } // namespace fl

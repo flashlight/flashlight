@@ -10,7 +10,7 @@
 
 #include <vector>
 
-#include "flashlight/memory/allocator/MemoryAllocator.h"
+#include "flashlight/experimental/memory/allocator/MemoryAllocator.h"
 
 namespace fl {
 
@@ -18,38 +18,39 @@ namespace fl {
 // one at a time. Allocation and deallocation costs O(1).
 class MemoryPool : public MemoryAllocator {
  public:
-  MemoryPool(std::string name, void* arena, size_t arenaSizeInBytes, size_t blockSize);
-  ~MemoryPool();
+  MemoryPool(
+      std::string name,
+      void* arena,
+      size_t arenaSizeInBytes,
+      size_t blockSize,
+      double allocatedRatioJitThreshold,
+      int logLevel = 1);
+  ~MemoryPool() override;
 
   void* allocate(size_t size) override;
   void free(void* ptr) override;
 
   Stats getStats() const override;
-
+  bool jitTreeExceedsMemoryPressure(size_t bytes) override;
   size_t getAllocatedSizeInBytes(void* ptr) const override;
 
   std::string prettyString() const override;
 
  private:
-   struct Block {
-     size_t allocatedSize = 0;
-     long indexOfNext = -1;
-   };
+  struct Block {
+    size_t allocatedSize = 0;
+    long indexOfNext = -1;
+  };
 
-  void* toPtr(size_t index) const ;
+  void* toPtr(size_t index) const;
 
-  const std::string name_;
-  void* const arena_;
-  const size_t arenaSizeInBytes_;
-  const size_t arenaSizeInBlocks_;
-  const size_t blockSize_;
-  size_t allocatedBytesCount_;
-  size_t allocatedBlocksCount_;
-  size_t totalNumberOfAllocations_;
-  size_t totalNumberOfFree_;
+  MemoryAllocator::Stats stats_;
   size_t freeListSize_;
   long freeList_; // Index of first free block.
   std::vector<Block> blocks_;
+  std::vector<size_t> currentlyAlloctedInBytes_;
+  double allocatedRatioJitThreshold_;
+  bool isNullAllocator_;
 };
 
 } // namespace fl

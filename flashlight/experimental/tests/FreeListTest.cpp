@@ -14,11 +14,13 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/common/Logging.h"
-#include "flashlight/memory/allocator/freelist/FreeList.h"
+#include "flashlight/experimental/memory/allocator/freelist/FreeList.h"
 
 using namespace fl;
 namespace {
 constexpr double kEpsilon = 0.001;
+const double kAllocatedRatioJitThreshold = 0.9;
+const int kLogLevel = 1;
 
 // Allocate memory in normal distribution of size and random order
 // of deallocations. Verify that allocation are within the arena and
@@ -28,7 +30,7 @@ TEST(FreeList, NormalDistribution) {
   VerboseLogging::setMaxLoggingLevel(0);
 
   const int nAllocationInterations = 10; // Random value
-  const int nAllocations = 10000; // Random large value
+  const int nAllocations = 1000; // Random large value
   // mean and stddev values should yield mostly positive values that are not too
   // much larger than arenaBlockSize
   const int mean = 500;
@@ -39,8 +41,14 @@ TEST(FreeList, NormalDistribution) {
   // a small safety margin.
   const size_t arenaSizeInBytes = nAllocations * mean * nAllocationInterations;
   const size_t arenaBlockSize = 3; // Random "weird" value.
+
   FreeList allocator(
-      "NormalDistribution", arena, arenaSizeInBytes, arenaBlockSize);
+      "NormalDistribution",
+      arena,
+      arenaSizeInBytes,
+      arenaBlockSize,
+      kAllocatedRatioJitThreshold,
+      kLogLevel);
   const MemoryAllocator::Stats initialStats = allocator.getStats();
 
   std::minstd_rand0 generator;
@@ -108,7 +116,7 @@ TEST(FreeList, ExponentialDistribution) {
   const int nAllocationInterations = 10; // Random value
   const int nAllocations = 10000; // Random large value
   const int multiplier = 500; // yields mostly positive values not too much
-                              // larger than arenaBlockSize.
+  // larger than arenaBlockSize.
   const double perIterationFreeRatio = 0.8;
   void* arena = (void*)0x1000;
   const size_t arenaBlockSize = 10; // Random value
@@ -116,8 +124,14 @@ TEST(FreeList, ExponentialDistribution) {
   // a small safety margin.
   const size_t arenaSizeInBytes =
       nAllocations * nAllocationInterations * multiplier * arenaBlockSize;
+
   FreeList allocator(
-      "ExponentialDistribution", arena, arenaSizeInBytes, arenaBlockSize);
+      "ExponentialDistribution",
+      arena,
+      arenaSizeInBytes,
+      arenaBlockSize,
+      kAllocatedRatioJitThreshold,
+      kLogLevel);
   MemoryAllocator::Stats initialStats = allocator.getStats();
 
   std::random_device rd;
@@ -180,12 +194,19 @@ TEST(FreeList, ExponentialDistribution) {
 }
 
 TEST(FreeList, TooManyAllocs) {
-  FreeList allocator("TooManyAllocs", nullptr, 100, 10);
+  FreeList allocator(
+      "TooManyAllocs",
+      nullptr,
+      100,
+      10,
+      kAllocatedRatioJitThreshold,
+      kLogLevel);
   EXPECT_THROW(while (true) { allocator.allocate(1); }, std::invalid_argument);
 }
 
 TEST(FreeList, AllocTooBig) {
-  FreeList allocator("AllocTooBig", nullptr, 100, 10);
+  FreeList allocator(
+      "AllocTooBig", nullptr, 100, 10, kAllocatedRatioJitThreshold, kLogLevel);
   EXPECT_THROW(
       while (true) { allocator.allocate(101); }, std::invalid_argument);
 }
@@ -210,7 +231,13 @@ TEST(FreeList, InternalFragmentation) {
       (1.0 - internalFragmentationScore2 + kEpsilon) * (2 * blockSize) -
       allocationSize1;
 
-  FreeList allocator("InternalFragmentation", arena, arenaSize, blockSize);
+  FreeList allocator(
+      "InternalFragmentation",
+      arena,
+      arenaSize,
+      blockSize,
+      kAllocatedRatioJitThreshold,
+      kLogLevel);
   const MemoryAllocator::Stats initialStats = allocator.getStats();
   LOG(INFO) << "initialStats=" << initialStats.prettyString();
   EXPECT_EQ(initialStats.internalFragmentationScore, 0.0);
@@ -239,7 +266,12 @@ TEST(FreeList, ExternalFragmentation) {
   const size_t blockSize = 1; // Random value
   const size_t arenaSize = blockSize * 5; // sufficient size for 5 allocations
 
-  FreeList allocator("ExternalFragmentation", arena, arenaSize, blockSize);
+  FreeList allocator(
+      "ExternalFragmentation",
+      arena,
+      arenaSize,
+      blockSize,
+      kAllocatedRatioJitThreshold);
   const MemoryAllocator::Stats initialStats = allocator.getStats();
   LOG(INFO) << "initialStats=" << initialStats.prettyString();
   EXPECT_DOUBLE_EQ(initialStats.internalFragmentationScore, 0.0);

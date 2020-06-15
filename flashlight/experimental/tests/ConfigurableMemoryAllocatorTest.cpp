@@ -14,7 +14,7 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/common/Logging.h"
-#include "flashlight/memory/allocator/ConfigurableMemoryAllocator.h"
+#include "flashlight/experimental/memory/allocator/ConfigurableMemoryAllocator.h"
 
 using namespace fl;
 
@@ -61,29 +61,34 @@ TEST(ConfigurableMemoryAllocator, ExponentialDistribution) {
   void* arena = (void*)0x1000;
   const size_t arenaSizeInBytes = nAllocations * multiplier *
       (nAllocationInterations * (1.0 - perIterationFreeRatio));
+  const double allocatedRatioJitThreshold = 0.9;
 
   std::random_device rd;
   std::mt19937 generator(rd());
   std::exponential_distribution<double> distribution(2.5);
 
-  std::unique_ptr<MemoryAllocator> allocator =
-      CreateMemoryAllocator({arena,
-                             alignmentNumberOfBits,
-                             arenaSizeInBytes,
-                             {
-                                 {arena1Name,
-                                  arena1BlockSize,
-                                  arena1MaxAllocationSize,
-                                  arnea1RelativeSize},
-                                 {arena2Name,
-                                  arena2BlockSize,
-                                  arena2MaxAllocationSize,
-                                  arnea2RelativeSize},
-                                 {arena3Name,
-                                  arena3BlockSize,
-                                  arena3MaxAllocationSize,
-                                  arnea3RelativeSize},
-                             }});
+  std::unique_ptr<MemoryAllocator> allocator = CreateMemoryAllocator(
+      {"pool-and-2-freelists",
+       alignmentNumberOfBits,
+       {
+           {arena1Name,
+            arena1BlockSize,
+            arena1MaxAllocationSize,
+            arnea1RelativeSize,
+            allocatedRatioJitThreshold},
+           {arena2Name,
+            arena2BlockSize,
+            arena2MaxAllocationSize,
+            arnea2RelativeSize,
+            allocatedRatioJitThreshold},
+           {arena3Name,
+            arena3BlockSize,
+            arena3MaxAllocationSize,
+            arnea3RelativeSize,
+            allocatedRatioJitThreshold},
+       }},
+      arena,
+      arenaSizeInBytes);
 
   const MemoryAllocator::Stats initialStats = allocator->getStats();
 

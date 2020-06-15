@@ -7,7 +7,6 @@
  */
 
 #include <algorithm>
-#include <iostream>
 #include <memory>
 #include <random>
 #include <vector>
@@ -16,12 +15,14 @@
 
 #include "flashlight/common/CppBackports.h"
 #include "flashlight/common/Logging.h"
-#include "flashlight/memory/allocator/CompositeMemoryAllocator.h"
-#include "flashlight/memory/allocator/freelist/FreeList.h"
+#include "flashlight/experimental/memory/allocator/CompositeMemoryAllocator.h"
+#include "flashlight/experimental/memory/allocator/freelist/FreeList.h"
 
 using namespace fl;
 
 namespace {
+const double kAllocatedRatioJitThreshold = 0.9;
+const int kLogLevel = 1;
 
 // Loop over a test that allocates elements and frees half of them in random
 // order.
@@ -47,19 +48,25 @@ TEST(FreeList, MaxAllocationSizeRepeatedly) {
       "small-freelist",
       address1,
       numAllocations * maxAllocationSize1,
-      blockSize);
+      blockSize,
+      kAllocatedRatioJitThreshold,
+      kLogLevel);
   auto freelist2 = fl::cpp::make_unique<FreeList>(
       "medium-freelist",
       address2,
       numAllocations * maxAllocationSize2,
-      blockSize);
+      blockSize,
+      kAllocatedRatioJitThreshold,
+      kLogLevel);
   auto freelist3 = fl::cpp::make_unique<FreeList>(
       "large-freelist",
       address3,
       numAllocations * maxAllocationSize3,
-      blockSize);
+      blockSize,
+      kAllocatedRatioJitThreshold,
+      kLogLevel);
 
-  fl::CompositeMemoryAllocator allocator;
+  fl::CompositeMemoryAllocator allocator("3-freelists");
   allocator.add({maxAllocationSize1, std::move(freelist1)});
   allocator.add({maxAllocationSize2, std::move(freelist2)});
   allocator.add({maxAllocationSize3, std::move(freelist3)});
@@ -118,25 +125,31 @@ TEST(FreeList, ExponentialDistribution) {
   const size_t numAllocations =
       nIterations * allocCntPerIteration * (1.0 - perIterationFreeRatio);
   const int multiplier = maxAllocationSize2; // yields values that fall within
-                                             // all three allocators.
+  // all three allocators.
   auto freelist1 = fl::cpp::make_unique<FreeList>(
       "small-freelist",
       address1,
       numAllocations * maxAllocationSize1,
-      blockSize);
+      blockSize,
+      kAllocatedRatioJitThreshold,
+      kLogLevel);
   auto freelist2 = fl::cpp::make_unique<FreeList>(
       "medium-freelist",
       address2,
       numAllocations * maxAllocationSize2,
-      blockSize);
+      blockSize,
+      kAllocatedRatioJitThreshold,
+      kLogLevel);
   auto freelist3 = fl::cpp::make_unique<FreeList>(
       "large-freelist",
       address3,
       numAllocations * maxAllocationSize2 *
           2, // This size seems to be just enough.
-      blockSize);
+      blockSize,
+      kAllocatedRatioJitThreshold,
+      kLogLevel);
 
-  fl::CompositeMemoryAllocator allocator;
+  fl::CompositeMemoryAllocator allocator("3-freelists");
   allocator.add({maxAllocationSize1, std::move(freelist1)});
   allocator.add({maxAllocationSize2, std::move(freelist2)});
   allocator.add({maxAllocationSize3, std::move(freelist3)});
@@ -174,10 +187,10 @@ TEST(FreeList, ExponentialDistribution) {
 
     // Deallocate some of the allocated memory.
     std::vector<void*> unFreedPtrs;
-    for (int i = 0; i < ptrs.size(); ++i) {
-      if (i < (ptrs.size() * perIterationFreeRatio)) {
+    for (int k = 0; k < ptrs.size(); ++k) {
+      if (k < (ptrs.size() * perIterationFreeRatio)) {
         const MemoryAllocator::Stats statsBeforeFree = allocator.getStats();
-        allocator.free(ptrs[i]);
+        allocator.free(ptrs[k]);
         const MemoryAllocator::Stats statsAfterFree = allocator.getStats();
 
         // Verify that allocator account for freed memory.
@@ -185,7 +198,7 @@ TEST(FreeList, ExponentialDistribution) {
             statsBeforeFree.statsInBytes.allocatedCount,
             statsAfterFree.statsInBytes.allocatedCount);
       } else {
-        unFreedPtrs.push_back(ptrs[i]);
+        unFreedPtrs.push_back(ptrs[k]);
       }
     }
     ptrs.swap(unFreedPtrs);
@@ -230,16 +243,28 @@ TEST(FreeList, InternalFragmentation) {
       maxAllocationSize2 + blockSize * partOfBlockToAllocate;
 
   auto freelist1 = fl::cpp::make_unique<FreeList>(
-      "small-freelist", address1, maxAllocationSize1, blockSize);
+      "small-freelist",
+      address1,
+      maxAllocationSize1,
+      blockSize,
+      kAllocatedRatioJitThreshold,
+      kLogLevel);
   auto freelist2 = fl::cpp::make_unique<FreeList>(
-      "medium-freelist", address2, maxAllocationSize2, blockSize);
+      "medium-freelist",
+      address2,
+      maxAllocationSize2,
+      blockSize,
+      kAllocatedRatioJitThreshold,
+      kLogLevel);
   auto freelist3 = fl::cpp::make_unique<FreeList>(
       "large-freelist",
       address3,
       maxAllocationSize2 * 2, // This size seems to be just enough.
-      blockSize);
+      blockSize,
+      kAllocatedRatioJitThreshold,
+      kLogLevel);
 
-  fl::CompositeMemoryAllocator allocator;
+  fl::CompositeMemoryAllocator allocator("3-freelists");
   allocator.add({maxAllocationSize1, std::move(freelist1)});
   allocator.add({maxAllocationSize2, std::move(freelist2)});
   allocator.add({maxAllocationSize3, std::move(freelist3)});
@@ -301,34 +326,31 @@ TEST(FreeList, ExternalFragmentation) {
   const size_t maxAllocationSize1 = 2 * blockSize;
   const size_t maxAllocationSize2 = 10 * blockSize;
   const size_t maxAllocationSize3 = SIZE_MAX; // Catch all size
-  const double partOfBlockToAllocate = 0.5;
-  // Size that matches from allocator1 with some internal fragmentation.
-  const size_t alloc1Size = blockSize * partOfBlockToAllocate;
-  // Size that matches from allocator2 with some internal fragmentation.
-  const size_t alloc2Size =
-      maxAllocationSize1 + blockSize * partOfBlockToAllocate;
-  // Size that matches from allocator3 with some internal fragmentation.
-  const size_t alloc3Size =
-      maxAllocationSize2 + blockSize * partOfBlockToAllocate;
 
   auto freelist1 = fl::cpp::make_unique<FreeList>(
       "small-freelist",
       address1,
       maxAllocationSize1 * numberBlocksPerAllocator,
-      blockSize);
+      blockSize,
+      kAllocatedRatioJitThreshold,
+      kLogLevel);
   auto freelist2 = fl::cpp::make_unique<FreeList>(
       "medium-freelist",
       address2,
       maxAllocationSize2 * numberBlocksPerAllocator,
-      blockSize);
+      blockSize,
+      kAllocatedRatioJitThreshold,
+      kLogLevel);
   auto freelist3 = fl::cpp::make_unique<FreeList>(
       "large-freelist",
       address3,
       maxAllocationSize2 * numberBlocksPerAllocator *
           2, // This size seems to be just enough.
-      blockSize);
+      blockSize,
+      kAllocatedRatioJitThreshold,
+      kLogLevel);
 
-  fl::CompositeMemoryAllocator allocator;
+  fl::CompositeMemoryAllocator allocator("3-freelists");
   allocator.add({maxAllocationSize1, std::move(freelist1)});
   allocator.add({maxAllocationSize2, std::move(freelist2)});
   allocator.add({maxAllocationSize3, std::move(freelist3)});

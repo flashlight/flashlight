@@ -16,6 +16,12 @@ project(flashlight-experimental)
 # Add includes here:
 
 
+# Memory
+include(${CMAKE_CURRENT_LIST_DIR}/memory/CMakeLists.txt)
+
+# Tests
+include(${CMAKE_CURRENT_LIST_DIR}/tests/CMakeLists.txt)
+
 # - Also add your project's target name `FLASHLIGHT_EXPERIMENTAL_LIBS`
 #   call below if you want your code to be installed with flashlight.
 # - Note that experimental targets MUST be `INTERFACE` targets for
@@ -23,6 +29,7 @@ project(flashlight-experimental)
 set(
   FLASHLIGHT_EXPERIMENTAL_LIBS
   # Experimental project target names go here
+  experimental_memory
   )
 
 # Root dir is `flashlight/experimental`
