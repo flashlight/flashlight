@@ -49,7 +49,7 @@
 namespace fl {
 enum LogLevel {
   DISABLE_LOGGING, // use only for when calling setMaxLoggingLevel() or
-                   // setting DEFUALT_MAX_LOGGING_LEVEL.
+  // setting DEFUALT_MAX_LOGGING_LEVEL.
   FATAL,
   ERROR,
   WARNING,
@@ -65,6 +65,9 @@ constexpr int DEFUALT_MAX_VERBOSE_LOGGING_LEVEL = 1;
 
 #define LOG(level) Logging(level, __FILE__, __LINE__)
 #define VLOG(level) VerboseLogging(level, __FILE__, __LINE__)
+
+#define IFLOG(level) if (Logging::ifLog(level))
+#define IFVLOG(level) if (VerboseLogging::ifLog(level))
 
 class Logging {
  public:
@@ -82,6 +85,10 @@ class Logging {
 
   // Overrides DEFUALT_MAX_LOGGING_LEVEL value.
   static void setMaxLoggingLevel(LogLevel maxLoggingLevel);
+
+  static bool ifLog(LogLevel level) {
+    return (maxLoggingLevel_ >= level);
+  }
 
  private:
   static LogLevel maxLoggingLevel_;
@@ -107,6 +114,10 @@ class VerboseLogging {
   // Overrides DEFUALT_MAX_VERBOSE_LOGGING_LEVEL value.
   static void setMaxLoggingLevel(int maxLoggingLevel);
 
+  static bool ifLog(int level) {
+    return (maxLoggingLevel_ >= level);
+  }
+
  private:
   static int maxLoggingLevel_;
   const int level_;
@@ -124,9 +135,12 @@ Logging&& operator<<(Logging&& log, unsigned char u);
 Logging&& operator<<(Logging&& log, int i);
 Logging&& operator<<(Logging&& log, unsigned int u);
 Logging&& operator<<(Logging&& log, long l);
+Logging&& operator<<(Logging&& log, long long l);
 Logging&& operator<<(Logging&& log, unsigned long u);
+Logging&& operator<<(Logging&& log, unsigned long long u);
 Logging&& operator<<(Logging&& log, float f);
 Logging&& operator<<(Logging&& log, double d);
+Logging&& operator<<(Logging&& log, bool b);
 
 VerboseLogging&& operator<<(VerboseLogging&& log, const std::string& s);
 VerboseLogging&& operator<<(VerboseLogging&& log, const char* s);
@@ -139,5 +153,6 @@ VerboseLogging&& operator<<(VerboseLogging&& log, long l);
 VerboseLogging&& operator<<(VerboseLogging&& log, unsigned long u);
 VerboseLogging&& operator<<(VerboseLogging&& log, float f);
 VerboseLogging&& operator<<(VerboseLogging&& log, double d);
+VerboseLogging&& operator<<(VerboseLogging&& log, bool b);
 
 } // namespace fl

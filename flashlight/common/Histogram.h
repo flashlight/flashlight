@@ -16,6 +16,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 namespace fl {
@@ -64,6 +65,7 @@ struct HistogramStats {
   T min = 0;
   T max = 0;
   T sum = 0;
+  bool sumOverflow = false;
   double mean = 0;
   size_t numValues = 0;
   size_t maxNumValuesPerBucket = 0;
@@ -74,6 +76,19 @@ struct HistogramStats {
       histValFmtFunc fromatCountIntoStream = shortFormatCount,
       histValFmtFunc fromatValuesIntoStream = shortFormatMemory) const;
 };
+
+template <typename T>
+bool isAdditionSafe(T a, T b) {
+  if (a > (std::numeric_limits<T>::max() - b)) {
+    return false;
+  }
+  if (std::is_signed<T>::value) {
+    if (a < 0 && b < 0 && (a < (std::numeric_limits<T>::min() - b))) {
+      return false;
+    }
+  }
+  return true;
+}
 
 /**
  * Analyses a set of values from @begin to @end using histogram with fixed size
@@ -111,7 +126,14 @@ HistogramStats<T> FixedBucketSizeHistogram(
     if ((*itr < clipMinValueInclusive) || (*itr >= clipMaxValueExclusive)) {
       continue;
     }
-    stats.sum += *itr;
+    if (!stats.sumOverflow) {
+      if (isAdditionSafe(stats.sum, *itr)) {
+        stats.sum += *itr;
+      } else {
+        stats.sumOverflow = true;
+      }
+    }
+
     stats.min = std::min(stats.min, *itr);
     stats.max = std::max(stats.max, *itr);
     double denominator = static_cast<double>(stats.numValues + 1);
@@ -136,7 +158,8 @@ HistogramStats<T> FixedBucketSizeHistogram(
     if (*itr < clipMinValueInclusive || *itr > clipMaxValueExclusive) {
       continue;
     }
-    double index = std::round(static_cast<double>(*itr - stats.min) / bucketWidth);
+    double index =
+        std::round(static_cast<double>(*itr - stats.min) / bucketWidth);
     size_t intIndex = std::min(static_cast<size_t>(index), nBuckets - 1);
 
     HistogramBucket<T>& bucket = stats.buckets[intIndex];
@@ -191,7 +214,11 @@ std::string HistogramStats<T>::prettyString(
   ss << "] max_=[";
   fromatValuesIntoStream(ss, max);
   ss << "] sum=[";
-  fromatCountIntoStream(ss, sum);
+  if (sumOverflow) {
+    ss << "overflow";
+  } else {
+    fromatCountIntoStream(ss, sum);
+  }
   ss << "] mean=[";
   fromatValuesIntoStream(ss, mean);
   ss << "] numValues=[";
