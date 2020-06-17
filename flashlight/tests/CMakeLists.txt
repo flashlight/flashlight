@@ -39,7 +39,7 @@ function(build_test SRCFILE)
   add_test(${target} ${target})
 endfunction(build_test)
 
-set(FLASHLIGHT_TEST_DIR ${CMAKE_SOURCE_DIR}/tests)
+set(FLASHLIGHT_TEST_DIR ${CMAKE_SOURCE_DIR}/flashlight/tests)
 if (FL_BUILD_TESTS)
   build_test(${FLASHLIGHT_TEST_DIR}/autograd/AutogradTest.cpp)
   build_test(${FLASHLIGHT_TEST_DIR}/common/DevicePtrTest.cpp)

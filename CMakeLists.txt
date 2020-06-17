@@ -370,11 +370,11 @@ install(FILES
 option(FL_BUILD_TESTS "Build tests for flashlight" ON)
 if (FL_BUILD_TESTS)
   enable_testing()
-  add_subdirectory(${CMAKE_SOURCE_DIR}/tests)
+  add_subdirectory(${FLASHLIGHT_PROJECT_COMPONENT_SRC_DIR}/tests)
 endif ()
 
 # Build examples
 option(FL_BUILD_EXAMPLES "Build examples for flashlight" ON)
 if (FL_BUILD_EXAMPLES)
-  add_subdirectory(${CMAKE_SOURCE_DIR}/examples)
+  add_subdirectory(${FLASHLIGHT_PROJECT_COMPONENT_SRC_DIR}/examples)
 endif ()
