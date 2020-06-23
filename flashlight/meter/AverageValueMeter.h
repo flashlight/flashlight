@@ -13,6 +13,18 @@
 namespace fl {
 /** An implementation of average value meter, which measures the mean and
  * variance of a sequence of values.
+ *
+ * This meter takes as input a stream of i.i.d data \f$ X = {x_i} \f$ with
+ * unormalized weights \f$ W = {w_i} \f$ (\f$ w_i \ge 0 \f$). Suppose \f$ p_i =
+ * w_i / \sum_{j = 1}^n w_j \f$, it maintains the following variables:
+ *
+ * - unbiased mean \f$ \tilde{mu} = \sum_{i = 1}^n p_i x_i \f$
+ * - unbiased second momentum \f$ \tilde{mu}_2 = \sum_{i = 1}^n p_i x_i^2 \f$
+ * - sum of weights \f$ Sum(W) = \sum_{i = 1}^n w_i} \f$
+ * - sum of squared weights \f$ Sum(W^2) = \sum_{i = 1}^n w_i^2} \f$
+ *
+ * Thus, we have \f$ Sum(P^2) = \sum_{i = 1}^n p_i^2} = Sum(W^2) / Sum(W)^2 \f$.
+ *
  * Example usage:
  *
  * \code
@@ -25,24 +37,21 @@ namespace fl {
  */
 class AverageValueMeter {
  public:
-  /** Constructor of `AverageValueMeter`. An instance will maintain three
-   * counters initialized to 0:
-   * - `n`: total number of values
-   * - `sum`: sum of the values
-   * - `squared_sum`: sum of the square of values
-   */
+  /** Constructor of `AverageValueMeter`. */
   AverageValueMeter();
 
-  /** Updates counters with the given value `val` and its repetition `n`. */
-  void add(const double val, int64_t n = 1);
+  /** Updates counters with the given value `val` with weight `w`. */
+  void add(const double val, const double w = 1.0);
 
-  /** Updates counters with all values in `vals`. */
+  /** Updates counters with all values in `vals` with equal weights. */
   void add(const af::array& vals);
 
-  /** Returns a vector of three values:
-   * - `mean`: \f$ \frac{\sum_{i = 1}^n x_i}{n} \f$
-   * - `variance`: \f$ \frac{\sum_{i = 1}^n (x_i - mean)^2}{n - 1} \f$
-   * - `N`: \f$ n \f$
+  /** Returns a vector of four values:
+   * - `unbiased mean`: \f$ \tilde{mu} \f$
+   * - `unbiased variance`: \f$ \tilde{sigma}^2 = \frac{(\tilde{mu}_2 -
+   * \tilde{mu}^2)}{1 - Sum(P^2)} \f$
+   * - `weight_sum`: \f$ Sum(W) \f$
+   * - `weight_squared_sum`: \f$ Sum(W^2) \f$
    */
   std::vector<double> value();
 
@@ -50,7 +59,9 @@ class AverageValueMeter {
   void reset();
 
  private:
-  double curSum_, curVar_;
-  int64_t curN_;
+  double curMean_;
+  double curMeanSquaredSum_;
+  double curWeightSum_;
+  double curWeightSquaredSum_;
 };
 } // namespace fl
