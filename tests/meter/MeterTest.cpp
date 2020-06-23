@@ -43,20 +43,21 @@ TEST(MeterTest, FrameErrorMeter) {
 
 TEST(MeterTest, AverageValueMeter) {
   AverageValueMeter meter;
+  meter.add(1.0, 0.0);
   meter.add(2.0);
   meter.add(3.0);
   meter.add(4.0);
   auto val = meter.value();
   ASSERT_EQ(val[0], 3.0);
-  ASSERT_EQ(val[1], 1.0);
-  ASSERT_EQ(val[2], 3);
+  ASSERT_NEAR(val[1], 1.0, 1e-10);
+  ASSERT_EQ(val[2], 3.0);
 
   std::array<float, 3> a{2.0, 3.0, 4.0};
   meter.add(af::array(3, a.data()));
   val = meter.value();
   ASSERT_EQ(val[0], 3.0);
-  ASSERT_EQ(val[1], 0.8);
-  ASSERT_EQ(val[2], 6);
+  ASSERT_NEAR(val[1], 0.8, 1e-10);
+  ASSERT_EQ(val[2], 6.0);
 }
 
 TEST(MeterTest, MSEMeter) {
