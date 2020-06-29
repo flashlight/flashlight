@@ -52,13 +52,13 @@ template <typename T>
 class Loader : public fl::Dataset {
 
 public:
- using LoadFunc = std::function<af::array(const T&)>;
+ using LoadFunc = std::function<std::vector<af::array>(const T&)>;
 
  Loader(const std::vector<T>& list, LoadFunc loadfn)
      : list_(list), loadfn_(loadfn) {}
 
  std::vector<af::array> get(const int64_t idx) const override {
-   return {loadfn_(list_[idx])};
+   return loadfn_(list_[idx]);
   }
 
   int64_t size() const override {

@@ -42,7 +42,6 @@ fl::Variable flatten(const fl::Variable& x, int start, int stop) {
   for(int i = start + 1; i < (4 - stop); i++) {
     new_dims[i] = dims[i + stop];
   }
-  std::cout << "New dims " << new_dims << std::endl;
   return fl::moddims(x, new_dims);
 };
 

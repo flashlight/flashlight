@@ -30,7 +30,11 @@ af::array loadJpeg(const std::string& fp) {
 }
 
 FilepathLoader jpegLoader(std::vector<std::string> fps) {
-  return FilepathLoader(fps, loadJpeg);
+  return FilepathLoader(fps,
+    [](const std::string& fp) {
+      std::vector<af::array> result = { loadJpeg(fp) };
+      return result;
+  });
 }
 
 //std::shared_ptr<Dataset> imageTransform(std::shared_ptr<Dataset> ds,

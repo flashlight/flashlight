@@ -47,6 +47,10 @@ std::vector<BBoxVector> parseBoundingBoxes(const std::string& list_file) {
       std::vector<float> bboxes;
       int pos = line.find(label_delim);
       int next = line.find(bbox_delim, pos + 1);
+      if(next == std::string::npos) {
+        labels.emplace_back(bboxes);
+        continue;
+      }
       while(next != std::string::npos) {
         bboxes.emplace_back(std::stof(line.substr(pos, next - pos)));
         pos = next;
@@ -63,9 +67,14 @@ std::shared_ptr<const Dataset> bboxLoader(std::vector<BBoxVector> bboxes) {
       const int num_elements = bbox.size();
       // Bounding box coordinates + class label
       const int num_bboxes = num_elements / kElementsPerBbox;
-      af::array full = af::array(kElementsPerBbox, num_bboxes, bbox.data());
-      af::array result = full(af::seq(0, 3), af::span);
-      return result;
+      if (num_bboxes > 0) {
+        af::array full = af::array(kElementsPerBbox, num_bboxes, bbox.data());
+        std::vector<af::array> result = { full(af::seq(0, 3), af::span) };
+        return result;
+      } else {
+        std::vector<af::array> result = { af::array(0, 1, 1, 1) };
+        return result;
+      }
   });
 }
 
@@ -115,20 +124,30 @@ af::array makeBatch(
 }
 
 CocoData cocoBatchFunc(const std::vector<std::vector<af::array>>& batches) {
+  // TODO padentomasello refactor
   std::vector<af::array> images(batches.size());
+  std::vector<af::array> image_sizes(batches.size());
+  std::vector<af::array> image_ids(batches.size());
+  std::vector<af::array> target_bboxes(batches.size());
+  std::vector<af::array> target_classes(batches.size());
+
   std::transform(batches.begin(), batches.end(), images.begin(),
       [](const std::vector<af::array>& in) { return in[0]; }
   );
-  af::array img = makeBatch(images);
-  std::vector<af::array> target_bboxes(batches.size());
-  std::transform(batches.begin(), batches.end(), target_bboxes.begin(),
+  std::transform(batches.begin(), batches.end(), image_sizes.begin(),
       [](const std::vector<af::array>& in) { return in[1]; }
   );
-  std::vector<af::array> target_classes(batches.size());
-  std::transform(batches.begin(), batches.end(), target_classes.begin(),
+  std::transform(batches.begin(), batches.end(), image_ids.begin(),
       [](const std::vector<af::array>& in) { return in[2]; }
   );
-  return { img, target_bboxes, target_classes };
+
+  std::transform(batches.begin(), batches.end(), target_bboxes.begin(),
+      [](const std::vector<af::array>& in) { return in[3]; }
+  );
+  std::transform(batches.begin(), batches.end(), target_classes.begin(),
+      [](const std::vector<af::array>& in) { return in[4]; }
+  );
+  return { makeBatch(images), makeBatch(image_sizes), makeBatch(image_ids), target_bboxes, target_classes };
 }
 
 std::shared_ptr<Dataset> transform(
@@ -145,14 +164,35 @@ std::shared_ptr<Dataset> classLoader(std::vector<BBoxVector> bboxes) {
   return std::make_shared<BBoxLoader>(bboxes, [](BBoxVector bbox) {
       const int num_elements = bbox.size();
       const int num_bboxes = num_elements / kElementsPerBbox;
-      af::array full = af::array(kElementsPerBbox, num_bboxes, bbox.data());
-      af::array result = full(4, af::span);
-      return result;
+      if(num_bboxes > 0) {
+        af::array full = af::array(kElementsPerBbox, num_bboxes, bbox.data());
+        std::vector<af::array> result = { full(4, af::span) };
+        return result;
+      } else {
+        std::vector<af::array> result = { af::array(0, 1, 1, 1) };
+        return result;
+      }
   });
 }
 
-std::shared_ptr<Dataset> jpegLoader2(std::vector<std::string> fps) {
-  return std::make_shared<FilepathLoader>(fps, loadJpeg);
+int64_t getImageId(const std::string fp) {
+    const std::string slash("/");
+    const std::string period(".");
+    int start = fp.rfind(slash);
+    int end = fp.rfind(period);
+    std::string substring = fp.substr(start + 1, end - start);
+    return std::stol(substring);
+}
+
+std::shared_ptr<Dataset> cocoDataLoader(std::vector<std::string> fps) {
+  return std::make_shared<FilepathLoader>(fps, [](const std::string& fp) {
+      af::array image = loadJpeg(fp);
+      long long int imageSizeArray[] = { image.dims(0), image.dims(1) };
+      af::array targetSize = af::array(2, imageSizeArray);
+      af::array imageId = af::constant(getImageId(fp), 1, s64);
+      std::vector<af::array> result = { image, targetSize, imageId };
+      return result;
+  });
 }
 
 }
@@ -169,8 +209,10 @@ CocoDataset::CocoDataset(const std::string& list_file,
     auto images = getImages(list_file, transformfns);
     auto labels = getLabels(list_file);
     auto merged = merge({images, labels});
+    auto prefetch = std::make_shared<PrefetchDataset>(merged, 12, 128 * 2);
+    //return merged;
     batched_ = std::make_shared<BatchTransformDataset<CocoData>>(
-        merged, 32, BatchDatasetPolicy::INCLUDE_LAST, cocoBatchFunc);
+        prefetch, 128, BatchDatasetPolicy::INCLUDE_LAST, cocoBatchFunc);
 
   }
 
@@ -182,7 +224,7 @@ std::shared_ptr<Dataset> CocoDataset::getImages(
     const std::string list_file, 
     std::vector<ImageTransform>& transformfns) {
   const std::vector<std::string> filepaths = parseImageFilepaths(list_file);
-  auto images = jpegLoader2(filepaths);
+  auto images = cocoDataLoader(filepaths);
   return transform(images, transformfns);
 }
 

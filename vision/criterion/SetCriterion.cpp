@@ -206,11 +206,13 @@ SetCriterion::LossDict SetCriterion::lossBoxes(
 
 
   int i = 0;
-  std::vector<Variable> permuted(targetBoxes.size());
+  std::vector<Variable> permuted;
   for(auto idx: indices) {
     auto targetIdxs = idx.first;
     auto reordered = targetBoxes[i](af::span, targetIdxs);
-    permuted[i] = reordered;
+    if(!reordered.isempty()) {
+      permuted.emplace_back(reordered);
+    }
     i += 1;
   }
   auto tgtBoxes = fl::concatenate(permuted, 1);
@@ -280,16 +282,20 @@ std::pair<af::array, af::array> SetCriterion::getTgtPermutationIdx(
 std::pair<af::array, af::array> SetCriterion::getSrcPermutationIdx(
     const std::vector<std::pair<af::array, af::array>>& indices) {
 
-  std::vector<fl::Variable> srcIdxs(indices.size());
-  std::transform(indices.begin(), indices.end(), srcIdxs.begin(),
-      [](std::pair<af::array, af::array> idxs) { return Variable(idxs.second, false); } 
-  );
-
-  std::vector<fl::Variable> batchIdxs(indices.size());
-  for(uint64_t i = 0; i < indices.size(); i ++) {
-    auto result = af::constant(i, indices[i].second.dims(), s32);
-    batchIdxs[i] = Variable(result, false);;
-  };
+  //std::vector<fl::Variable> srcIdxs(indices.size());
+  std::vector<fl::Variable> srcIdxs;
+  std::vector<fl::Variable> batchIdxs;
+  //std::transform(indices.begin(), indices.end(), srcIdxs.begin(),
+      //[](std::pair<af::array, af::array> idxs) { return Variable(idxs.second, false); } 
+  //);
+  for(int i = 0; i < indices.size(); i++) {
+    auto index = indices[i].second;
+    if(!index.isempty()) {
+      srcIdxs.emplace_back(Variable(index, false));
+      auto batchIdx = af::constant(i, index.dims(), s32);
+      batchIdxs.emplace_back(Variable(batchIdx, false));
+    }
+  }
 
   auto srcIdx = concatenate(srcIdxs, 0);
   auto batchIdx = concatenate(batchIdxs, 0);

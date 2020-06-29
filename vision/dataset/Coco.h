@@ -10,8 +10,16 @@ namespace fl {
 namespace cv {
 namespace dataset {
 
+//struct CocoAnnotation {
+  //af::array bboxes;
+  //af::array labels;
+  //uint64_t image_id;
+//}
+
 struct CocoData {
   af::array images;
+  af::array imageSizes;
+  af::array imageIds;
   std::vector<af::array> target_boxes;
   std::vector<af::array> target_labels;
 };

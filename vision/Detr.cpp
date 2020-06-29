@@ -91,7 +91,7 @@ public:
     bboxEmbed_(std::make_shared<MLP>(hiddenDim, hiddenDim, 4, 3)),
     queryEmbed_(std::make_shared<Embedding>(hiddenDim, numQueries)),
     inputProj_(std::make_shared<Conv2D>(512, hiddenDim, 1, 1)),
-    posEmbed_(std::make_shared<PositionalEmbeddingSine>(hiddenDim / 2, 
+    posEmbed_(std::make_shared<PositionalEmbeddingSine>(hiddenDim / 2,
           10000, false, 0.0f))
   {
     add(backbone_);
@@ -107,8 +107,8 @@ public:
     auto inputProjection = inputProj_->forward(backboneFeatures[0]);
     auto posEmbed = posEmbed_->forward(backboneFeatures[0]);
     auto hs = transformer_->forward(
-        inputProjection, 
-        queryEmbed_->param(0), 
+        inputProjection,
+        queryEmbed_->param(0),
         posEmbed);
 
     auto outputClasses = classEmbed_->forward(hs[0]);
@@ -204,8 +204,8 @@ int main(int argc, char** argv) {
   auto matcher = HungarianMatcher(1, 1, 1);
   SetCriterion::LossDict losses;
   auto criterion = SetCriterion(
-      numClasses, 
-      matcher, 
+      numClasses,
+      matcher,
       af::array(),
       0.0,
       losses);
@@ -215,13 +215,20 @@ int main(int argc, char** argv) {
   const int64_t batch_size_per_gpu = FLAGS_batch_size / FLAGS_world_size;
   const int64_t prefetch_threads = 10;
   const int64_t prefetch_size = FLAGS_batch_size;
-  std::string coco_list = "/private/home/padentomasello/data/coco/train.lst";
+  std::string coco_list = "/private/home/padentomasello/data/coco-mini/train.lst";
   auto coco = cv::dataset::coco(coco_list, val_transforms);
-  SGDOptimizer opt(detr.params(), FLAGS_lr, FLAGS_momentum, FLAGS_wd);
+  //SGDOptimizer opt(detr.params(), FLAGS_lr, FLAGS_momentum, FLAGS_wd);
+  AdamOptimizer opt(detr.params(), FLAGS_lr);
 
-  for(int i = 0; i < 100; i++) {
+  for(int i = 0; i < FLAGS_epochs; i++) {
 
+  AverageValueMeter accum_loss_meter;
+  AverageValueMeter bbox_loss_meter;
+  AverageValueMeter giou_loss_meter;
+  AverageValueMeter ce_loss_meter;
+  std::unordered_map<std::string, AverageValueMeter> meters;
   for(auto& sample : *coco) {
+    std::cout << " Sample done" << std::endl;
     auto images =  { fl::Variable(sample.images, false) };
     auto output = detr.forward(images);
 
@@ -229,29 +236,40 @@ int main(int argc, char** argv) {
     std::vector<Variable> targetClasses(sample.target_labels.size());
 
     std::transform(
-        sample.target_boxes.begin(), sample.target_boxes.end(), 
-        targetBoxes.begin(), 
+        sample.target_boxes.begin(), sample.target_boxes.end(),
+        targetBoxes.begin(),
         [](const af::array& in) { return fl::Variable(in, false); });
 
     std::transform(
-        sample.target_labels.begin(), sample.target_labels.end(), 
-        targetClasses.begin(), 
+        sample.target_labels.begin(), sample.target_labels.end(),
+        targetClasses.begin(),
         [](const af::array& in) { return fl::Variable(in, false); });
 
     auto loss = criterion.forward(
-        output[1], 
-        output[0], 
-        targetBoxes, 
+        output[1],
+        output[0],
+        targetBoxes,
         targetClasses);
     auto accumLoss = fl::Variable(af::constant(0, 1), true);
     for(auto losses : loss) {
+      //const char* name = losses.first.c_str();
+      //const af::array arr = losses.second.array();
+      //af::print(name, arr);
+      meters[losses.first].add(losses.second.array());
       accumLoss = losses.second + accumLoss;
     }
+    meters["sum"].add(accumLoss.array());
     accumLoss.backward();
-    af_print(accumLoss.array());
+    //af_print(accumLoss.array());
     //af_print(loss["loss_giou"].array());
     opt.step();
     opt.zeroGrad();
   }
+  std::cout << "Batch: " << i;
+  for(auto meter : meters) {
+    std::cout << " " << meter.first << ": " << meter.second.value()[0];
+    meter.second.reset();
+  }
+  std::cout << std::endl;
 }
 }

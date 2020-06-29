@@ -25,6 +25,7 @@ def create_training_list(img_folder, ann_file, output_file):
 def dump_dataset(image_set, image_folder, args):
     dataset = build_dataset(image_set, args);
     output_file = os.path.join(args.output_dir, f'{image_set}.lst')
+    i = 0
     with open(output_file, 'w') as out:
         for sample in dataset:
             (_, targets) = sample
@@ -44,6 +45,9 @@ def dump_dataset(image_set, image_folder, args):
             # print(strings)
             out.write(" ".join(strings))
             out.write('\n')
+            i += 1
+            if i == 1280:
+                break
     return
 
 
@@ -54,7 +58,7 @@ if __name__ == "__main__":
                         help='Remove crowd images from training on COCO')
     parser.add_argument('--masks', action='store_true')
     parser.add_argument('-r', '--root', help='Root of COCO data', default='/datasets01/COCO/022719')
-    parser.add_argument('-o', '--output_dir', help='Output dir .lst file', default='/private/home/padentomasello/data/coco/')
+    parser.add_argument('-o', '--output_dir', help='Output dir .lst file', default='/private/home/padentomasello/data/coco-mini/')
     args = parser.parse_args()
 
     # dataset_train = dump_dataset(image_set='train', args=args)

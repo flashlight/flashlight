@@ -37,6 +37,11 @@ std::pair<af::array, af::array> HungarianMatcher::matchBatch(
     const Variable& targetBoxes, 
     const Variable& targetClasses) const {
 
+  // TODO Kind of a hack...
+  if(targetClasses.isempty()) {
+    return { af::array(0, 1), af::array(0, 1) };
+  }
+
 
   // Create an M X N cost matrix where M is the number of targets and N is the number of preds
   

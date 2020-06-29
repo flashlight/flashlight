@@ -15,7 +15,8 @@ using LabelLoader = Loader<uint64_t>;
 
 LabelLoader labelLoader(std::vector<uint64_t> labels) {
   return LabelLoader(labels, [](uint64_t x) {
-      return af::constant(x, 1, 1, 1, 1, u64);
+      std::vector<af::array> result {  af::constant(x, 1, 1, 1, 1, u64) };
+      return result;
   });
 }
 

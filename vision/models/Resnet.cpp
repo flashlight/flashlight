@@ -117,10 +117,10 @@ Sequential resnet34() {
   model.add(ResNetStage(256, 512, 3, 2));
   //return model;
   // pool 7x7x64 ->
-  model.add(Pool2D(7, 7, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
-  model.add(ConvBnAct(512, 1000, 1, 1, 1, 1, false, false));
-  model.add(View({1000, -1}));
-  model.add(LogSoftmax());
+  //model.add(Pool2D(7, 7, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
+  //model.add(ConvBnAct(512, 1000, 1, 1, 1, 1, false, false));
+  //model.add(View({1000, -1}));
+  //model.add(LogSoftmax());
   return model;
 };
 
