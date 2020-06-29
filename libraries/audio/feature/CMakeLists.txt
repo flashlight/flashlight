@@ -53,3 +53,9 @@ target_include_directories(
   INTERFACE
   ${CBLAS_INCLUDE_DIR}
   )
+
+target_compile_definitions(
+  libraries-audio-feature
+  INTERFACE
+  -DW2L_LIBRARIES_USE_MKL
+)

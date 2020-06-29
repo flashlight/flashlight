@@ -115,7 +115,6 @@ target_include_directories(
   wav2letter++
   PUBLIC
   ${PROJECT_SOURCE_DIR} # all includes are based at 
-  ${KENLM_LIBRARIES}
   )
 
 # ----------------------------- Train -----------------------------
