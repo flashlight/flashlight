@@ -15,7 +15,7 @@
 #include "criterion/attention/attention.h"
 #include "criterion/attention/window.h"
 
-#include "flashlight-extensions/common/Utils.h"
+#include "extensions/common/Utils.h"
 
 namespace w2l {
 

@@ -10,7 +10,7 @@
 
 #include <string>
 
-#include "flashlight-extensions/common/Utils.h"
+#include "extensions/common/Utils.h"
 
 namespace w2l {
 GetConvLmScoreFunc buildGetConvLmScoreFunction(

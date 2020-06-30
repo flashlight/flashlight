@@ -23,52 +23,24 @@ function(build_test SRCFILE)
   target_compile_definitions(
     ${target}
     PRIVATE
-    "DATA_TEST_DATADIR=\"${PROJECT_SOURCE_DIR}/data/test/testdata\""
-    "DECODER_TEST_DATADIR=\"${PROJECT_SOURCE_DIR}/decoder/test\""
-    "FEATURE_TEST_DATADIR=\"${PROJECT_SOURCE_DIR}/libraries/feature/test/data\""
-    "MODULE_TEST_ARCHDIR=\"${PROJECT_SOURCE_DIR}/module/test\""
+    "DATA_TEST_DATADIR=\"${CMAKE_CURRENT_SOURCE_DIR}/data/testdata\""
+    "DECODER_TEST_DATADIR=\"${CMAKE_CURRENT_SOURCE_DIR}/decoder/data\""
     )
   add_test(${target} ${target})
 endfunction(build_test)
 
-if (W2L_BUILD_TESTS)
-  # Common
-  build_test(${PROJECT_SOURCE_DIR}/common/test/W2lCommonTest.cpp)
-  build_test(${PROJECT_SOURCE_DIR}/common/test/DictionaryTest.cpp)
-  build_test(${PROJECT_SOURCE_DIR}/common/test/ProducerConsumerQueueTest.cpp)
-  set(
-    W2L_DICTIONARY_TEST_DIR
-    "\"${PROJECT_SOURCE_DIR}/common/test/\""
-    )
-  target_compile_definitions(
-    DictionaryTest
-    PRIVATE
-    -DW2L_DICTIONARY_TEST_DIR=${W2L_DICTIONARY_TEST_DIR}
-  )
-
-  # Criterion
-  build_test(${PROJECT_SOURCE_DIR}/criterion/test/CriterionTest.cpp)
-  build_test(${PROJECT_SOURCE_DIR}/criterion/test/Seq2SeqTest.cpp)
-  build_test(${PROJECT_SOURCE_DIR}/criterion/attention/test/AttentionTest.cpp)
-  build_test(${PROJECT_SOURCE_DIR}/criterion/attention/test/WindowTest.cpp)
-  # Data
-  build_test(${PROJECT_SOURCE_DIR}/data/test/DataTest.cpp)
-  build_test(${PROJECT_SOURCE_DIR}/data/test/ListFileDatasetTest.cpp)
-  build_test(${PROJECT_SOURCE_DIR}/data/test/SoundTest.cpp)
-  # Decoder
-  build_test(${PROJECT_SOURCE_DIR}/decoder/test/DecoderTest.cpp)
-  # Feature
-  build_test(${PROJECT_SOURCE_DIR}/libraries/feature/test/CeplifterTest.cpp)
-  build_test(${PROJECT_SOURCE_DIR}/libraries/feature/test/DctTest.cpp)
-  build_test(${PROJECT_SOURCE_DIR}/libraries/feature/test/DerivativesTest.cpp)
-  build_test(${PROJECT_SOURCE_DIR}/libraries/feature/test/DitherTest.cpp)
-  build_test(${PROJECT_SOURCE_DIR}/libraries/feature/test/MfccTest.cpp)
-  build_test(${PROJECT_SOURCE_DIR}/libraries/feature/test/PreEmphasisTest.cpp)
-  build_test(${PROJECT_SOURCE_DIR}/libraries/feature/test/SpeechUtilsTest.cpp)
-  build_test(${PROJECT_SOURCE_DIR}/libraries/feature/test/TriFilterbankTest.cpp)
-  build_test(${PROJECT_SOURCE_DIR}/libraries/feature/test/WindowingTest.cpp)
-  # Module
-  build_test(${PROJECT_SOURCE_DIR}/module/test/W2lModuleTest.cpp)
-  # Runtime
-  build_test(${PROJECT_SOURCE_DIR}/runtime/test/RuntimeTest.cpp)
-endif ()
+# Criterion
+build_test(${CMAKE_CURRENT_SOURCE_DIR}/criterion/CriterionTest.cpp)
+build_test(${CMAKE_CURRENT_SOURCE_DIR}/criterion/Seq2SeqTest.cpp)
+build_test(${CMAKE_CURRENT_SOURCE_DIR}/criterion/attention/AttentionTest.cpp)
+build_test(${CMAKE_CURRENT_SOURCE_DIR}/criterion/attention/WindowTest.cpp)
+# Data
+build_test(${CMAKE_CURRENT_SOURCE_DIR}/data/DataTest.cpp)
+build_test(${CMAKE_CURRENT_SOURCE_DIR}/data/FeatureTest.cpp)
+build_test(${CMAKE_CURRENT_SOURCE_DIR}/data/ListFileDatasetTest.cpp)
+build_test(${CMAKE_CURRENT_SOURCE_DIR}/data/SoundTest.cpp)
+# Decoder
+build_test(${CMAKE_CURRENT_SOURCE_DIR}/decoder/ConvLmModuleTest.cpp)
+build_test(${CMAKE_CURRENT_SOURCE_DIR}/decoder/DecoderTest.cpp)
+# Runtime
+build_test(${CMAKE_CURRENT_SOURCE_DIR}/runtime/RuntimeTest.cpp)

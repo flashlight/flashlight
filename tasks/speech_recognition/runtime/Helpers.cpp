@@ -11,7 +11,7 @@
 #include <random>
 #include <glog/logging.h>
 
-#include "flashlight-extensions/common/Utils.h"
+#include "extensions/common/Utils.h"
 #include "libraries/common/System.h"
 
 namespace w2l {

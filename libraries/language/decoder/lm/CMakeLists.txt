@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.5.1)
 
+set(KENLM_MAX_ORDER 6 CACHE STRING "Maximum ngram order for KenLM")
+
 add_library(
   libraries-language-decoder-lm
   INTERFACE

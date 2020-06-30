@@ -27,8 +27,8 @@
 #include "libraries/common/System.h"
 #include "libraries/language/dictionary/Dictionary.h"
 #include "libraries/language/dictionary/Utils.h"
-#include "flashlight-extensions/common/Utils.h"
-#include "flashlight-extensions/common/SequentialBuilder.h"
+#include "extensions/common/Utils.h"
+#include "extensions/common/SequentialBuilder.h"
 
 using namespace w2l;
 

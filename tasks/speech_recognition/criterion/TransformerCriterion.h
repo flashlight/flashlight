@@ -17,7 +17,7 @@
 #include "criterion/attention/window.h"
 
 #include "flashlight/contrib/modules/Transformer.h"
-#include "flashlight-extensions/common/Utils.h"
+#include "extensions/common/Utils.h"
 
 namespace w2l {
 

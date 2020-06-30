@@ -13,7 +13,7 @@
 #include <glog/logging.h>
 
 #include "common/Defines.h"
-#include "flashlight-extensions/common/Utils.h"
+#include "extensions/common/Utils.h"
 #include "libraries/common/String.h"
 #include "libraries/common/System.h"
 
