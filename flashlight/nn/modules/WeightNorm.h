@@ -77,10 +77,10 @@ class WeightNorm : public Module {
   }
 
   /**
-    * Returns a pointer to the inner `Module` normalized by this `WeightNorm`.
-    *
-    * @return a module pointer.
-    */
+   * Returns a pointer to the inner `Module` normalized by this `WeightNorm`.
+   *
+   * @return a module pointer.
+   */
   ModulePtr module() const;
 
   void train() override;

@@ -9,8 +9,8 @@
 #include <chrono>
 #include <cstdio>
 #include <ctime>
-#include <stdexcept>
 #include <sstream>
+#include <stdexcept>
 
 #include "flashlight/common/Utils.h"
 
@@ -74,7 +74,6 @@ size_t divRoundUp(size_t numerator, size_t denominator) {
   }
   return (numerator + denominator - 1) / denominator;
 }
-
 
 namespace {
 std::string prettyStringMemorySizeUnits(size_t size) {
@@ -177,6 +176,5 @@ std::string prettyStringCount(size_t count) {
   }
   return ss.str();
 }
-
 
 } // namespace fl

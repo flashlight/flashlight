@@ -43,11 +43,8 @@ namespace af {
  * @return An `af::array` containing a tensor with random values distributed
  * accordingly.
  */
-af::array uniform(
-    af::dim4 dims,
-    double min = 0,
-    double max = 1,
-    af::dtype type = f32);
+af::array
+uniform(af::dim4 dims, double min = 0, double max = 1, af::dtype type = f32);
 
 /**
  * Creates an `af::array` representing a tensor of up to rank 4 with arbitrary
@@ -63,11 +60,8 @@ af::array uniform(
  * @return An `af::array` containing a tensor with random values distributed
  * accordingly.
  */
-af::array normal(
-    af::dim4 dims,
-    double stdv = 1,
-    double mean = 0,
-    af::dtype type = f32);
+af::array
+normal(af::dim4 dims, double stdv = 1, double mean = 0, af::dtype type = f32);
 
 /**
  * Creates a `af::array` representing a tensor with given input dimensions where
@@ -206,11 +200,8 @@ Variable constant(
  *
  * @return A `Variable` containing a tensor with constant values.
  */
-Variable constant(
-    double val,
-    af::dim4 dims,
-    af::dtype type = f32,
-    bool calcGrad = true);
+Variable
+constant(double val, af::dim4 dims, af::dtype type = f32, bool calcGrad = true);
 
 /**
  * Creates a `Variable` representing an identity tensor with dimensions

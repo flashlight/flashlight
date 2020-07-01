@@ -18,7 +18,6 @@
 
 #include <cmath>
 
-
 namespace fl {
 
 AdadeltaOptimizer::AdadeltaOptimizer(
