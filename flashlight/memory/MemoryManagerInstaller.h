@@ -17,15 +17,6 @@
 
 namespace fl {
 
-// Warpper to af::getMemStepSize(). getMemStepSize() is defined only when
-// ArrayFire is not using a custom memory manager. This function ignores the
-// call when a custom memory manager is installed.
-size_t afGetMemStepSize();
-// Warpper to af::setMemStepSize(). setMemStepSize() is defined only when
-// ArrayFire is not using a custom memory manager. This function ignores the
-// call when a custom memory manager is installed.
-void afSetMemStepSize(size_t size);
-
 /**
  * Manages memory managers and abstracts away parts of the ArrayFire C memory
  * manager API that enables setting active memory managers in ArrayFire.

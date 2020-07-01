@@ -367,11 +367,6 @@ TEST(MemoryFramework, AdapterInstallerDeviceInterfaceTest) {
         .Times(Exactly(1));
     af::printMemInfo(printInfoMsg.c_str(), printInfoDeviceId);
 
-    // test step size functions (throws with a custom memory manager as per
-    // ArrayFire behavior)
-    ASSERT_THROW(af::setMemStepSize(500), af::exception);
-    ASSERT_THROW(af::getMemStepSize(), af::exception);
-
     // all allocations are either freed or out of scope - check that the map is
     // empty
     EXPECT_TRUE(memoryManager->lockedPtrToSizeMap.empty());
