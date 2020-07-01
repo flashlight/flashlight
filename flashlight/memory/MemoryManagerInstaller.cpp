@@ -69,7 +69,8 @@ MemoryManagerInstaller::MemoryManagerInstaller(
     return AF_SUCCESS;
   };
   AF_CHECK(af_memory_manager_set_shutdown_fn(itf, shutdownFn));
-  // Note: AF expects the memory managers alloc fn to return an af_err, not to throw
+  // ArrayFire expects the memory managers alloc fn to return an af_err, not to
+  // throw, if a problem with allocation occurred
   auto allocFn = [](af_memory_manager manager,
                     void** ptr,
                     /* bool */ int userLock,
@@ -79,10 +80,12 @@ MemoryManagerInstaller::MemoryManagerInstaller(
     MemoryManagerAdapter* m = MemoryManagerInstaller::getImpl(manager);
     try {
       *ptr = m->alloc(userLock, ndims, dims, elSize);
-    } catch(af::exception& ex) {
-      m->log("allocFn: alloc failed with af exception " + std::to_string(ex.err()));
+    } catch (af::exception& ex) {
+      m->log(
+          "allocFn: alloc failed with af exception " +
+          std::to_string(ex.err()));
       return ex.err(); // AF_ERR_NO_MEM, ...
-    } catch(...) {
+    } catch (...) {
       m->log("allocFn: alloc failed with unspecified exception");
       return af_err(AF_ERR_UNKNOWN);
     }
@@ -148,8 +151,8 @@ MemoryManagerInstaller::MemoryManagerInstaller(
     *pressure = MemoryManagerInstaller::getImpl(manager)->getMemoryPressure();
     return AF_SUCCESS;
   };
-  AF_CHECK(af_memory_manager_set_get_memory_pressure_fn(
-      itf, getMemoryPressureFn));
+  AF_CHECK(
+      af_memory_manager_set_get_memory_pressure_fn(itf, getMemoryPressureFn));
   auto jitTreeExceedsMemoryPressureFn =
       [](af_memory_manager manager, int* out, size_t bytes) {
         *out = (int)MemoryManagerInstaller::getImpl(manager)
@@ -199,15 +202,13 @@ MemoryManagerInstaller::MemoryManagerInstaller(
   impl_->deviceInterface->nativeFree = std::move(nativeFreeFn);
   auto getMemoryPressureThresholdFn = [itf]() {
     float pressure;
-    AF_CHECK(
-        af_memory_manager_get_memory_pressure_threshold(itf, &pressure));
+    AF_CHECK(af_memory_manager_get_memory_pressure_threshold(itf, &pressure));
     return pressure;
   };
   impl_->deviceInterface->getMemoryPressureThreshold =
       std::move(getMemoryPressureThresholdFn);
   auto setMemoryPressureThresholdFn = [itf](float pressure) {
-    AF_CHECK(
-        af_memory_manager_set_memory_pressure_threshold(itf, pressure));
+    AF_CHECK(af_memory_manager_set_memory_pressure_threshold(itf, pressure));
   };
   impl_->deviceInterface->setMemoryPressureThreshold =
       std::move(setMemoryPressureThresholdFn);
@@ -246,26 +247,6 @@ void MemoryManagerInstaller::unsetMemoryManager() {
   if (currentlyInstalledMemoryManager_) {
     AF_CHECK(af_unset_memory_manager());
     currentlyInstalledMemoryManager_ = nullptr;
-  }
-}
-
-size_t afGetMemStepSize() {
-  MemoryManagerAdapter* customMemoryManager =
-      MemoryManagerInstaller::currentlyInstalledMemoryManager();
-  if (customMemoryManager) {
-    return customMemoryManager->getMemStepSize();
-  } else {
-    return af::getMemStepSize();
-  }
-}
-
-void afSetMemStepSize(size_t size) {
-  MemoryManagerAdapter* customMemoryManager =
-      MemoryManagerInstaller::currentlyInstalledMemoryManager();
-  if (customMemoryManager) {
-    customMemoryManager->setMemStepSize(size);
-  } else {
-    af::setMemStepSize(size);
   }
 }
 
