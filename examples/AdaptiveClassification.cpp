@@ -29,8 +29,7 @@ int main(int /* unused */, const char** /* unused */) {
   model.add(Linear(feature_dim, feature_dim));
 
   std::vector<int> cutoff = {1, categories};
-  auto asActivation =
-      std::make_shared<AdaptiveSoftMax>(feature_dim, cutoff);
+  auto asActivation = std::make_shared<AdaptiveSoftMax>(feature_dim, cutoff);
 
   AdaptiveSoftMaxLoss criterion(asActivation);
   auto sgd_m = SGDOptimizer(model.params(), 1e-2);

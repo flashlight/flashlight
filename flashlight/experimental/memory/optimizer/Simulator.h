@@ -9,6 +9,7 @@
 #pragma once
 
 #include <condition_variable>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <ostream>
@@ -16,10 +17,9 @@
 #include <string>
 #include <thread>
 #include <vector>
-#include <functional>
 
-#include "flashlight/experimental/memory/allocator/MemoryAllocator.h"
 #include "flashlight/experimental/memory/AllocationLog.h"
+#include "flashlight/experimental/memory/allocator/MemoryAllocator.h"
 
 namespace fl {
 

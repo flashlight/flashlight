@@ -13,8 +13,8 @@
 #include <vector>
 
 #include "flashlight/common/Logging.h"
-#include "flashlight/experimental/memory/allocator/ConfigurableMemoryAllocator.h"
 #include "flashlight/experimental/memory/AllocationLog.h"
+#include "flashlight/experimental/memory/allocator/ConfigurableMemoryAllocator.h"
 #include "flashlight/experimental/memory/optimizer/Simulator.h"
 
 using namespace fl;

@@ -147,8 +147,7 @@ bool MemoryPool::jitTreeExceedsMemoryPressure(size_t bytes) {
   if (allocatedRatio > allocatedRatioJitThreshold_) {
     LOG(INFO) << "MemoryPool::jitTreeExceedsMemoryPressure(bytes=" << bytes
               << ") true allocatedRatio=" << allocatedRatio
-              << " allocatedRatioJitThreshold_="
-              << allocatedRatioJitThreshold_;
+              << " allocatedRatioJitThreshold_=" << allocatedRatioJitThreshold_;
   }
 
   return allocatedRatio > allocatedRatioJitThreshold_;

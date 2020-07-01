@@ -169,12 +169,11 @@ Variable operator/(const Variable& lhs, const double& rhsVal) {
 
 Variable operator/(const double& lhsVal, const Variable& rhs) {
   auto result = lhsVal / rhs.array();
-  auto gradFunc = [lhsVal](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
-    inputs[0].addGrad(Variable(
-        (gradOutput * (-lhsVal) / (inputs[0] * inputs[0])).array(), false));
-  };
+  auto gradFunc =
+      [lhsVal](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        inputs[0].addGrad(Variable(
+            (gradOutput * (-lhsVal) / (inputs[0] * inputs[0])).array(), false));
+      };
   return Variable(result, {rhs}, gradFunc);
 }
 
@@ -390,12 +389,11 @@ Variable clamp(const Variable& input, const double lo, const double hi) {
 
 Variable sqrt(const Variable& input) {
   auto result = af::sqrt(input.array());
-  auto gradFunc = [result](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
-    auto output = Variable(result, false);
-    inputs[0].addGrad(Variable((gradOutput / (2 * output)).array(), false));
-  };
+  auto gradFunc =
+      [result](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        auto output = Variable(result, false);
+        inputs[0].addGrad(Variable((gradOutput / (2 * output)).array(), false));
+      };
   return Variable(result, {input.withoutData()}, gradFunc);
 }
 
@@ -486,18 +484,17 @@ Variable concatenate(const std::vector<Variable>& concatInputs, int dim) {
     inDims.push_back(in.dims());
   }
 
-  auto gradFunc = [dim, inDims](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
-    std::array<af::index, 4> sx{af::span, af::span, af::span, af::span};
-    int s = 0;
-    for (size_t i = 0; i < inputs.size(); ++i) {
-      sx[dim] = af::seq(s, s + inDims[i][dim] - 1);
-      inputs[i].addGrad(
-          Variable(gradOutput.array()(sx[0], sx[1], sx[2], sx[3]), false));
-      s += inDims[i][dim];
-    }
-  };
+  auto gradFunc =
+      [dim, inDims](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        std::array<af::index, 4> sx{af::span, af::span, af::span, af::span};
+        int s = 0;
+        for (size_t i = 0; i < inputs.size(); ++i) {
+          sx[dim] = af::seq(s, s + inDims[i][dim] - 1);
+          inputs[i].addGrad(
+              Variable(gradOutput.array()(sx[0], sx[1], sx[2], sx[3]), false));
+          s += inDims[i][dim];
+        }
+      };
 
   return Variable(result, inputsNoData, gradFunc);
 }
@@ -676,8 +673,7 @@ Variable matmulTN(const Variable& lhs, const Variable& rhs) {
     if (inputs[1].isCalcGrad()) {
       // matmul(inputs[0], gradOutput)
       // -- matmulNT([N, M], [M, K]) -- [N, K]
-      inputs[1].addGrad(
-          Variable(matmul(inputs[0], gradOutput).array(), false));
+      inputs[1].addGrad(Variable(matmul(inputs[0], gradOutput).array(), false));
     }
   };
   return Variable(result, {lhs, rhs}, gradFunc);
@@ -696,8 +692,7 @@ Variable matmulNT(const Variable& lhs, const Variable& rhs) {
     if (inputs[0].isCalcGrad()) {
       // matmul(gradOutput, inputs[1])
       // -- matmul([M, K], [K, N]) -- [M, N]
-      inputs[0].addGrad(
-          Variable(matmul(gradOutput, inputs[1]).array(), false));
+      inputs[0].addGrad(Variable(matmul(gradOutput, inputs[1]).array(), false));
     }
     if (inputs[1].isCalcGrad()) {
       // matmulTN(gradOutput, inputs[0])
@@ -760,11 +755,10 @@ Variable moddims(const Variable& input, const af::dim4& dims) {
   auto result = af::moddims(input.array(), inferDims);
 
   af::dim4 inDims = input.dims();
-  auto gradFunc = [inDims](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
-    inputs[0].addGrad(Variable(moddims(gradOutput, inDims).array(), false));
-  };
+  auto gradFunc =
+      [inDims](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        inputs[0].addGrad(Variable(moddims(gradOutput, inDims).array(), false));
+      };
   return Variable(result, {input.withoutData()}, gradFunc);
 }
 
@@ -1009,8 +1003,7 @@ Variable embedding(const Variable& input, const Variable& embeddings) {
   Variable result = Variable(embeddings.array()(af::span, idxs), false);
 
   auto inDims = input.dims();
-  af::dim4 resultDims = {
-      embeddings.dims(0), inDims[0], inDims[1], inDims[2]};
+  af::dim4 resultDims = {embeddings.dims(0), inDims[0], inDims[1], inDims[2]};
 
   result = moddims(result, resultDims);
 
@@ -1052,11 +1045,10 @@ Variable padding(
   af::array result = af::constant(val, opDims, input.type());
   result(inSeq[0], inSeq[1], inSeq[2], inSeq[3]) = input.array();
 
-  auto gradFunc = [inSeq](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
-    inputs[0].addGrad(gradOutput(inSeq[0], inSeq[1], inSeq[2], inSeq[3]));
-  };
+  auto gradFunc =
+      [inSeq](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        inputs[0].addGrad(gradOutput(inSeq[0], inSeq[1], inSeq[2], inSeq[3]));
+      };
 
   return Variable(result, {input.withoutData()}, gradFunc);
 }

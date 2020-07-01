@@ -8,8 +8,8 @@
 
 #include "Utils.h"
 
-#include <stdexcept>
 #include <algorithm>
+#include <stdexcept>
 
 namespace fl {
 

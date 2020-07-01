@@ -23,7 +23,6 @@ using testing::Not;
 // VLOG(l) should print to stdout when VerboseLogging::setMaxLoggingLevel(i)
 // i>=l
 TEST(Logging, vlogOnOff) {
-
   LOG(INFO) << "test" << 1 << 1UL << 1L << 1.0;
   std::stringstream stdoutBuffer;
   std::stringstream stderrBuffer;
@@ -141,7 +140,7 @@ TEST(LoggingDeathTest, FatalOnOff) {
   std::cerr.rdbuf(origStderrBuffer);
 
   Logging::setMaxLoggingLevel(FATAL);
-  EXPECT_DEATH({LOG(FATAL) << "log-fatal";}, "");
+  EXPECT_DEATH({ LOG(FATAL) << "log-fatal"; }, "");
 }
 
 } // namespace

@@ -23,9 +23,9 @@
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
 
+#include "flashlight/experimental/memory/AllocationLog.h"
 #include "flashlight/experimental/memory/allocator/ConfigurableMemoryAllocator.h"
 #include "flashlight/experimental/memory/allocator/MemoryAllocator.h"
-#include "flashlight/experimental/memory/AllocationLog.h"
 #include "flashlight/experimental/memory/optimizer/Optimizer.h"
 
 namespace fl {
