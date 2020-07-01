@@ -94,12 +94,13 @@ Variable AdaptiveSoftMaxLoss::cast(
   output(indices) = af::flat(input.array());
   auto inputDims = input.dims();
 
-  auto gradFunc =
-      [indices, inputDims](std::vector<Variable>& inputs, const Variable& grad_output) {
-        af::array gradArray = grad_output.array()(indices);
-        auto grad = Variable(af::moddims(gradArray, inputDims), false);
-        inputs[0].addGrad(grad);
-      };
+  auto gradFunc = [indices, inputDims](
+                      std::vector<Variable>& inputs,
+                      const Variable& grad_output) {
+    af::array gradArray = grad_output.array()(indices);
+    auto grad = Variable(af::moddims(gradArray, inputDims), false);
+    inputs[0].addGrad(grad);
+  };
   return Variable(output, {input.withoutData()}, gradFunc);
 }
 

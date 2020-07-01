@@ -135,12 +135,8 @@ Variable normal(
   return normal(af::dim4(outputSize, inputSize), stdv, mean, type, calcGrad);
 }
 
-Variable normal(
-    af::dim4 dims,
-    double stdv,
-    double mean,
-    af::dtype type,
-    bool calcGrad) {
+Variable
+normal(af::dim4 dims, double stdv, double mean, af::dtype type, bool calcGrad) {
   return Variable(af::normal(dims, stdv, mean, type), calcGrad);
 }
 

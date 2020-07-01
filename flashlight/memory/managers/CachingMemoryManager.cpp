@@ -6,8 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <arrayfire.h> // Needed for af exception
 #include "flashlight/memory/managers/CachingMemoryManager.h"
+#include <arrayfire.h> // Needed for af exception
 
 #include <algorithm>
 #include <iostream>
@@ -254,7 +254,8 @@ void CachingMemoryManager::mallocWithRetry(size_t size, void** ptr) {
       std::cerr << "Unable to allocate memory with native alloc for size " +
               std::to_string(size) + " bytes with error '" + ex.what()
                 << "'";
-      // note: converting here an af exception to std exception prevents to catch the af error code at the user level. Rethrowing.
+      // note: converting here an af exception to std exception prevents to
+      // catch the af error code at the user level. Rethrowing.
       throw;
     }
   }
