@@ -46,6 +46,6 @@ class W2lBlobsDataset : public W2lDataset {
 
   std::vector<SpeechSampleMetaInfo> loadBlob(const std::string& filename);
 };
-} 
+}
 }
 }

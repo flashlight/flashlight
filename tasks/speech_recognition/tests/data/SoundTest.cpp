@@ -86,8 +86,8 @@ TEST(SoundTest, Mono) {
 }
 
 TEST(SoundTest, Stereo) {
-  auto audiopath = pathsConcat(
-      loadPath, "test_stereo.wav"); // 16-bit Signed Integer PCM
+  auto audiopath =
+      pathsConcat(loadPath, "test_stereo.wav"); // 16-bit Signed Integer PCM
   auto datapath = pathsConcat(loadPath, "test_stereo.dat");
   auto info = loadSoundInfo(audiopath);
 

@@ -148,6 +148,5 @@ std::vector<int> unpackReplabels(
   }
   return result;
 }
-
-} 
+}
 }

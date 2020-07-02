@@ -80,7 +80,6 @@ PowerSpectrum& getPowerSpectrum() {
   return powspec;
 }
 
-
 W2lFeatureData featurize(
     const std::vector<W2lLoaderData>& data,
     const DictionaryMap& dicts) {
@@ -246,7 +245,6 @@ W2lFeatureData featurize(
 
   return feat;
 }
-
-} 
+}
 }
 }

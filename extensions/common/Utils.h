@@ -47,7 +47,6 @@ void initDistributed(
     int worldSize,
     int maxDevicesPerNode,
     const std::string& rndvFilepath);
-
 }
 }
 

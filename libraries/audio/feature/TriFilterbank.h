@@ -46,5 +46,5 @@ class TriFilterbank {
   float hertzToWarpedScale(float hz, FrequencyScale freqscale) const;
   float warpedToHertzScale(float wrp, FrequencyScale freqscale) const;
 };
-} 
+}
 }

@@ -84,6 +84,5 @@ class LM {
 };
 
 using LMPtr = std::shared_ptr<LM>;
-
-} 
+}
 }

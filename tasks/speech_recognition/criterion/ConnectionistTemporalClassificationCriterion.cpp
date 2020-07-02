@@ -47,7 +47,8 @@ namespace asr {
 
 ConnectionistTemporalClassificationCriterion::
     ConnectionistTemporalClassificationCriterion(
-        fl::lib::CriterionScaleMode scalemode /* = fl::lib::CriterionScaleMode::NONE */)
+        fl::lib::CriterionScaleMode
+            scalemode /* = fl::lib::CriterionScaleMode::NONE */)
     : scaleMode_(scalemode) {}
 
 af::array ConnectionistTemporalClassificationCriterion::viterbiPath(
@@ -109,7 +110,6 @@ void ConnectionistTemporalClassificationCriterion::validate(
     throw(af::exception("CTC: Batchsize mismatch for input and target"));
   }
 }
-
-} 
+}
 }
 }

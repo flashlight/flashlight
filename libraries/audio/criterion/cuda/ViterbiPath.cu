@@ -135,5 +135,5 @@ template struct ViterbiPath<float>;
 template struct ViterbiPath<double>;
 
 } // namespace cuda
-} 
+}
 }

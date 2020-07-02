@@ -148,6 +148,5 @@ class LexiconSeq2SeqDecoder : public Decoder {
 
   std::unordered_map<int, std::vector<LexiconSeq2SeqDecoderState>> hyp_;
 };
-
-} 
+}
 }

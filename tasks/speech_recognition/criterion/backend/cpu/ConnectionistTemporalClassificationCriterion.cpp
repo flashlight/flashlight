@@ -67,7 +67,8 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
 
       // A heuristic to modify target length to be able to compute CTC loss
       L = std::min(L + R, T) - R;
-      R = fl::task::asr::countRepeats(targetVec, L); // Recompute repeats as L has changed
+      R = fl::task::asr::countRepeats(
+          targetVec, L); // Recompute repeats as L has changed
 
       auto& alphas = batchAlphas[b];
       alphas.resize(T * S, NEG_INFINITY_FLT);
@@ -105,7 +106,8 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
           } else if (
               (s % 2 == 0) || s == 1 ||
               targetVec[s / 2] == targetVec[s / 2 - 1]) {
-            alphas[ts] = fl::task::asr::logSumExp(alphas[ts - S], alphas[ts - S - 1]);
+            alphas[ts] =
+                fl::task::asr::logSumExp(alphas[ts - S], alphas[ts - S - 1]);
           } else {
             alphas[ts] = fl::task::asr::logSumExp(
                 alphas[ts - S], alphas[ts - S - 1], alphas[ts - S - 2]);
@@ -221,7 +223,6 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
   };
   return {Variable(result, {logprobs, target}, gradFunc)};
 }
-
-} 
+}
 }
 }

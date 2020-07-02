@@ -34,8 +34,7 @@ class SoftPretrainWindow : public WindowBase {
 
   FL_SAVE_LOAD_WITH_BASE(WindowBase, std_)
 };
-
-} 
+}
 }
 }
 

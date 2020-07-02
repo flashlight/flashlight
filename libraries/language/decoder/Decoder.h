@@ -72,6 +72,5 @@ class Decoder {
  protected:
   DecoderOptions opt_;
 };
-
-} 
+}
 }

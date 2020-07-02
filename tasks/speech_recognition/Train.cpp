@@ -252,8 +252,7 @@ int main(int argc, char** argv) {
     Serializer::load(reloadPath, cfg, network, criterion);
   } else { // kContinueMode
     std::unordered_map<std::string, std::string> cfg; // unused
-    Serializer::load(
-        reloadPath, cfg, network, criterion, netoptim, critoptim);
+    Serializer::load(reloadPath, cfg, network, criterion, netoptim, critoptim);
   }
   LOG_MASTER(INFO) << "[Network] " << network->prettyString();
   LOG_MASTER(INFO) << "[Network Params: " << numTotalParams(network) << "]";
@@ -419,8 +418,8 @@ int main(int argc, char** argv) {
     auto batchsz = op.dims(2);
     for (int b = 0; b < batchsz; ++b) {
       auto tgt = target(af::span, b);
-      auto viterbipath = afToVector<int>(
-          criterion->viterbiPath(op(af::span, af::span, b)));
+      auto viterbipath =
+          afToVector<int>(criterion->viterbiPath(op(af::span, af::span, b)));
       auto tgtraw = afToVector<int>(tgt);
 
       // Remove `-1`s appended to the target for batching (if any)

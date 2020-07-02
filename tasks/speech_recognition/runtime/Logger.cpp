@@ -209,7 +209,6 @@ void syncMeter<TrainMeters>(TrainMeters& mtrs) {
     syncMeter(v.second.loss);
   }
 }
-
-} 
+}
 }
 }

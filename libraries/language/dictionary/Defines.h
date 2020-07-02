@@ -17,6 +17,5 @@ constexpr const char* kSilToken = "|";
 constexpr const char* kUnkToken = "<unk>";
 constexpr const char* kLmEosToken = "</s>";
 constexpr const char* kLmPadToken = "<pad>";
-
-} 
+}
 }

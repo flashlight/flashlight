@@ -220,7 +220,7 @@ typedef std::function<
 
 AMUpdateFunc buildAmUpdateFunction(
     std::shared_ptr<SequenceCriterion>& criterion);
-} 
+}
 }
 }
 

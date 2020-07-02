@@ -27,6 +27,5 @@ class ZeroLM : public LM {
 
   std::pair<LMStatePtr, float> finish(const LMStatePtr& state) override;
 };
-
-} 
+}
 }

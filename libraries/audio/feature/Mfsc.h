@@ -41,5 +41,5 @@ class Mfsc : public PowerSpectrum {
   TriFilterbank triFltBank_;
   Derivatives derivatives_;
 };
-} 
+}
 }

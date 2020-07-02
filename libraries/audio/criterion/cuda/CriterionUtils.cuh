@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include <cuda_runtime.h>
-#include <cstddef>
 #include <cuda.h>
+#include <cuda_runtime.h>
 #include <math_constants.h> // for CUDART_INF
+#include <cstddef>
 
 #include "libraries/audio/criterion/Defines.h"
 
@@ -87,5 +87,5 @@ void setZero(T* devPtr, size_t count, cudaStream_t stream) {
 }
 
 } // namespace cuda
-} 
+}
 }

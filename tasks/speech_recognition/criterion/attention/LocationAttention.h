@@ -71,7 +71,7 @@ class NeuralLocationAttention : public AttentionBase {
 
   FL_SAVE_LOAD_WITH_BASE(AttentionBase)
 };
-} 
+}
 }
 }
 

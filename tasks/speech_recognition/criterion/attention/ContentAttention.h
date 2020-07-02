@@ -48,8 +48,7 @@ class NeuralContentAttention : public AttentionBase {
  private:
   FL_SAVE_LOAD_WITH_BASE(AttentionBase)
 };
-
-} 
+}
 }
 }
 

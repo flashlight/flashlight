@@ -44,13 +44,17 @@ std::shared_ptr<AttentionBase> buildAttention() {
   } else if (FLAGS_attention == fl::task::asr::kMultiHeadContentAttention) {
     attention = std::make_shared<MultiHeadContentAttention>(
         FLAGS_encoderdim, FLAGS_numattnhead);
-  } else if (FLAGS_attention == fl::task::asr::kMultiHeadKeyValueContentAttention) {
+  } else if (
+      FLAGS_attention == fl::task::asr::kMultiHeadKeyValueContentAttention) {
     attention = std::make_shared<MultiHeadContentAttention>(
         FLAGS_encoderdim, FLAGS_numattnhead, true);
-  } else if (FLAGS_attention == fl::task::asr::kMultiHeadSplitContentAttention) {
+  } else if (
+      FLAGS_attention == fl::task::asr::kMultiHeadSplitContentAttention) {
     attention = std::make_shared<MultiHeadContentAttention>(
         FLAGS_encoderdim, FLAGS_numattnhead, false, true);
-  } else if (FLAGS_attention == fl::task::asr::kMultiHeadKeyValueSplitContentAttention) {
+  } else if (
+      FLAGS_attention ==
+      fl::task::asr::kMultiHeadKeyValueSplitContentAttention) {
     attention = std::make_shared<MultiHeadContentAttention>(
         FLAGS_encoderdim, FLAGS_numattnhead, true, true);
   } else {
@@ -630,7 +634,8 @@ Seq2SeqCriterion::decodeBatchStep(
 
 void Seq2SeqCriterion::setUseSequentialDecoder() {
   useSequentialDecoder_ = false;
-  if ((pctTeacherForcing_ < 100 && samplingStrategy_ == fl::task::asr::kModelSampling) ||
+  if ((pctTeacherForcing_ < 100 &&
+       samplingStrategy_ == fl::task::asr::kModelSampling) ||
       samplingStrategy_ == fl::task::asr::kGumbelSampling || inputFeeding_) {
     useSequentialDecoder_ = true;
   } else if (
@@ -712,7 +717,6 @@ AMUpdateFunc buildAmUpdateFunction(
 
   return amUpdateFunc;
 }
-
-} 
+}
 }
 }

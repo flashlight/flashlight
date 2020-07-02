@@ -312,6 +312,5 @@ void LexiconDecoder::prune(int lookBack) {
 
   nPrunedFrames_ = nDecodedFrames_ - lookBack;
 }
-
-} 
+}
 }

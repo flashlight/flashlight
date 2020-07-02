@@ -31,7 +31,6 @@ std::vector<std::string> wrd2Target(
     const lib::Dictionary& dict,
     bool fallback2Ltr = false,
     bool skipUnk = false);
-
-} 
+}
 }
 }

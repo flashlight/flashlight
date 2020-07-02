@@ -94,7 +94,6 @@ std::pair<Variable, Variable> NeuralContentAttention::forward(
 std::string NeuralContentAttention::prettyString() const {
   return "NeuralContentBasedAttention";
 }
-
-} 
+}
 }
 }

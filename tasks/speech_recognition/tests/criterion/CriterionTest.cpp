@@ -644,8 +644,7 @@ TEST(CriterionTest, ASGJacobian) {
   auto in = Variable(af::log(af::randu(N, T, B)), true);
   std::array<int, 9> target = {0, 1, -1, 1, -1, -1, 0, 2, 1};
   auto tgt = Variable(af::array(L, B, target.data()), false);
-  auto l =
-      AutoSegmentationCriterion(N, CriterionScaleMode::TARGET_SZ_SQRT);
+  auto l = AutoSegmentationCriterion(N, CriterionScaleMode::TARGET_SZ_SQRT);
 
   // Test case for input
   auto func_in = [&](Variable& inp) { return l.forward({inp, tgt}).front(); };
@@ -665,8 +664,7 @@ TEST(CriterionTest, LinSegJacobian) {
   auto in = Variable(af::log(af::randu(N, T, B)), true);
   std::array<int, 9> target = {0, 1, -1, 1, -1, -1, 0, 2, 1};
   auto tgt = Variable(af::array(L, B, target.data()), false);
-  auto l =
-      LinearSegmentationCriterion(N, CriterionScaleMode::TARGET_SZ_SQRT);
+  auto l = LinearSegmentationCriterion(N, CriterionScaleMode::TARGET_SZ_SQRT);
 
   // Test case for input
   auto func_in = [&](Variable& inp) { return l.forward({inp, tgt}).front(); };

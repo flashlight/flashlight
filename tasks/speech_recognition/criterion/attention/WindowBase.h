@@ -43,7 +43,6 @@ class WindowBase {
  private:
   FL_SAVE_LOAD()
 };
-
-} 
+}
 }
 }

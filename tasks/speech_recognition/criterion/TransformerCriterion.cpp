@@ -395,7 +395,6 @@ AMUpdateFunc buildTransformerAmUpdateFunction(
 std::string TransformerCriterion::prettyString() const {
   return "TransformerCriterion";
 }
-
-} 
+}
 }
 }

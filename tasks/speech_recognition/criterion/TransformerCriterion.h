@@ -151,8 +151,7 @@ struct TS2SDecoderBuffer {
 
 AMUpdateFunc buildTransformerAmUpdateFunction(
     std::shared_ptr<SequenceCriterion>& crit);
-
-} 
+}
 }
 }
 

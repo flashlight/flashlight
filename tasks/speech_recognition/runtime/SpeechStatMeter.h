@@ -37,6 +37,6 @@ class SpeechStatMeter {
  private:
   SpeechStats stats_;
 };
-} 
+}
 }
 }

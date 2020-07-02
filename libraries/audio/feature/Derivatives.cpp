@@ -85,6 +85,5 @@ std::vector<float> Derivatives::computeDerivative(
   }
   return output;
 }
-
-} 
+}
 }

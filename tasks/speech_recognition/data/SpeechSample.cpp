@@ -104,6 +104,6 @@ void filterSamples(
   LOG(INFO) << "Filtered " << initialSize - samples.size() << "/" << initialSize
             << " samples";
 }
-} 
+}
 }
 }

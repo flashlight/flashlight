@@ -309,6 +309,5 @@ void updateLMCache(const LMPtr& lm, std::vector<DecoderState>& hypothesis) {
   }
   lm->updateCache(states);
 }
-
-} 
+}
 }

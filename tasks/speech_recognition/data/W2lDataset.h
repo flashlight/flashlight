@@ -90,6 +90,6 @@ class RoundRobinBatchPacker : public BatchPacker {
   int64_t worldSize_;
   int64_t worldRank_;
 };
-} 
+}
 }
 }

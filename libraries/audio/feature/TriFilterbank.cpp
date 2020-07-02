@@ -98,5 +98,5 @@ float TriFilterbank::warpedToHertzScale(float wrp, FrequencyScale freqscale)
       return 0.0;
   }
 }
-} 
+}
 }

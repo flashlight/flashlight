@@ -101,7 +101,6 @@ void saveSound(
     int64_t channels,
     const SoundFormat format,
     const SoundSubFormat subformat);
-
-} 
+}
 }
 }

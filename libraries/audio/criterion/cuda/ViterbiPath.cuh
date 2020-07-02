@@ -46,5 +46,5 @@ struct ViterbiPath {
 };
 
 } // namespace cuda
-} 
+}
 }

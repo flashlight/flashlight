@@ -67,6 +67,5 @@ std::pair<LMStatePtr, float> KenLM::finish(const LMStatePtr& state) {
       model_->BaseScore(inState->ken(), vocab_->EndSentence(), outState->ken());
   return std::make_pair(std::move(outState), score);
 }
-
-} 
+}
 }

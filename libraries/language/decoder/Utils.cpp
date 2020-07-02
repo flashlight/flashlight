@@ -10,6 +10,5 @@ namespace fl {
 namespace lib {
 
 // Place holder
-
-} 
+}
 }

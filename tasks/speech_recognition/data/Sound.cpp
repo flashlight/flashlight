@@ -402,8 +402,6 @@ template void saveSound(
     int64_t,
     SoundFormat,
     SoundSubFormat);
-    
-} 
 }
 }
-
+}

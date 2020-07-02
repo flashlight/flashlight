@@ -33,5 +33,5 @@ class Dither {
   float ditherVal_;
   std::mt19937 rng_; // Standard mersenne_twister_engine
 };
-} 
+}
 }

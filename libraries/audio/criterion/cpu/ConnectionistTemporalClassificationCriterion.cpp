@@ -225,5 +225,5 @@ template struct ConnectionistTemporalClassificationCriterion<float>;
 template struct ConnectionistTemporalClassificationCriterion<double>;
 
 } // namespace cpu
-} 
+}
 }

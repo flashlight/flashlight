@@ -37,8 +37,7 @@ class MultiHeadContentAttention : public AttentionBase {
   bool splitInput_;
   FL_SAVE_LOAD_WITH_BASE(AttentionBase, numHeads_, keyValue_, splitInput_)
 };
-
-} 
+}
 }
 }
 

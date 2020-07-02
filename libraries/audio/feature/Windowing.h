@@ -32,5 +32,5 @@ class Windowing {
   WindowType windowType_;
   std::vector<float> coefs_;
 };
-} 
+}
 }

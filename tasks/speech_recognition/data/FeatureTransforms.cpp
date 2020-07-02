@@ -103,6 +103,6 @@ fl::Dataset::DataTransformFunction targetFeatures(
     return af::array(tokens.size(), tokens.data());
   };
 }
-} 
+}
 }
 }

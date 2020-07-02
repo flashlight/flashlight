@@ -86,8 +86,7 @@ class AutoSegmentationCriterion : public SequenceCriterion {
 };
 
 using ASGLoss = AutoSegmentationCriterion;
-
-} 
+}
 }
 }
 

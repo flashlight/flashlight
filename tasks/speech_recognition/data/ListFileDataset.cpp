@@ -93,7 +93,6 @@ std::pair<std::vector<float>, af::dim4> ListFileDataset::loadAudio(
   auto info = loadSoundInfo(handle.c_str());
   return {loadSound<float>(handle.c_str()), {info.channels, info.frames}};
 }
-
-} 
+}
 }
 }

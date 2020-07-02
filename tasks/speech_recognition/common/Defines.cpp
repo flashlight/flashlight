@@ -419,7 +419,6 @@ void handleDeprecatedFlags() {
     // user set neither flag, noop.
   }
 }
-
-} 
+}
 }
 }

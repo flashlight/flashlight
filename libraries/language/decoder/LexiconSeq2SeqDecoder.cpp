@@ -237,6 +237,5 @@ int LexiconSeq2SeqDecoder::nDecodedFramesInBuffer() const {
   /* unused function */
   return -1;
 }
-
-} 
+}
 }

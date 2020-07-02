@@ -77,7 +77,6 @@ af::array getTargetSizeArray(const af::array& target, int maxSize) {
 
   return targetSize;
 }
-
-} 
+}
 }
 }

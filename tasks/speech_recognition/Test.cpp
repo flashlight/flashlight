@@ -234,8 +234,8 @@ int main(int argc, char** argv) {
           }
 
           // Tokens
-          auto tokenPrediction = afToVector<int>(
-              localCriterion->viterbiPath(rawEmission.array()));
+          auto tokenPrediction =
+              afToVector<int>(localCriterion->viterbiPath(rawEmission.array()));
           auto letterPrediction = tknPrediction2Ltr(tokenPrediction, tokenDict);
 
           meters.lerSlice.add(letterPrediction, letterTarget);

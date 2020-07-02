@@ -59,5 +59,5 @@ struct ForceAlignmentCriterion {
 };
 
 } // namespace cpu
-} 
+}
 }

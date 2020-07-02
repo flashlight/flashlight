@@ -62,6 +62,5 @@ class Dictionary {
 };
 
 typedef std::unordered_map<int, Dictionary> DictionaryMap;
-
-} 
+}
 }

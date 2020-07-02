@@ -107,6 +107,5 @@ std::string join(
     const std::vector<std::string>& vec) {
   return join(delim, vec.begin(), vec.end());
 }
-
 }
 }

@@ -153,6 +153,5 @@ std::vector<std::string> Dictionary::mapIndicesToEntries(
 size_t Dictionary::indexSize() const {
   return idx2entry_.size();
 }
-
-} 
+}
 }

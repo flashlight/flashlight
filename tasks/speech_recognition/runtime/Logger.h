@@ -83,7 +83,6 @@ void syncMeter(T& mtr) {
 
 template <>
 void syncMeter<TrainMeters>(TrainMeters& mtrs);
-
-} 
+}
 }
 }

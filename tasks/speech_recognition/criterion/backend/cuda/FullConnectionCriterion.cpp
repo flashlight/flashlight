@@ -108,7 +108,6 @@ Variable FullConnectionCriterion::forward(
         backward(inputs, gradVar, B, T, N, trans, workspace);
       });
 }
-
-} 
+}
 }
 }

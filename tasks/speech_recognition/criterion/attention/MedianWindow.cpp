@@ -74,7 +74,6 @@ Variable MedianWindow::computeWindowMask(
     int /* unused */) {
   throw af::exception("MedianWindow does not support vectorized window mask");
 }
-
-} 
+}
 }
 }

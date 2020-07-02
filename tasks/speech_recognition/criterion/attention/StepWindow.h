@@ -36,8 +36,7 @@ class StepWindow : public WindowBase {
 
   FL_SAVE_LOAD_WITH_BASE(WindowBase, sMin_, sMax_, vMin_, vMax_)
 };
-
-} 
+}
 }
 }
 

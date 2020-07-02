@@ -44,8 +44,7 @@ class ForceAlignmentCriterion : public fl::BinaryModule {
 };
 
 typedef ForceAlignmentCriterion FACLoss;
-
-} 
+}
 }
 }
 

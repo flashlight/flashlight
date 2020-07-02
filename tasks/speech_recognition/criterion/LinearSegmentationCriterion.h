@@ -44,8 +44,7 @@ class LinearSegmentationCriterion : public AutoSegmentationCriterion {
 };
 
 using LinSegCriterion = LinearSegmentationCriterion;
-
-} 
+}
 }
 }
 

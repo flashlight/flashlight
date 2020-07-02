@@ -45,5 +45,5 @@ void PreEmphasis::applyInPlace(std::vector<float>& input) const {
     input[s] *= (1 - preemCoef_);
   }
 }
-} 
+}
 }

@@ -41,8 +41,7 @@ class FullConnectionCriterion : public fl::BinaryModule {
 };
 
 typedef FullConnectionCriterion FCCLoss;
-
-} 
+}
 }
 }
 

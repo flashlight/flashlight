@@ -124,6 +124,5 @@ void dedup(std::vector<T>& in) {
   auto it = std::unique(in.begin(), in.end());
   in.resize(std::distance(in.begin(), it));
 }
-
 }
 }

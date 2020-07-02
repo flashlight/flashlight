@@ -73,7 +73,6 @@ std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
 
   return opt;
 }
-
-} 
+}
 }
 }

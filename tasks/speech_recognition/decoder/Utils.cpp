@@ -136,7 +136,6 @@ std::vector<int> validateIdx(std::vector<int> input, int unkIdx) {
 
   return input;
 }
-
 }
 }
 }

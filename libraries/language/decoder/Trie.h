@@ -90,6 +90,5 @@ class Trie {
 };
 
 using TriePtr = std::shared_ptr<Trie>;
-
-} 
+}
 }

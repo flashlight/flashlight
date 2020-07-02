@@ -46,7 +46,6 @@ struct TargetUnit {
 };
 
 using EmissionTargetPair = std::pair<EmissionUnit, TargetUnit>;
-
 }
 }
 }

@@ -37,8 +37,7 @@ class SoftWindow : public WindowBase {
 
   FL_SAVE_LOAD_WITH_BASE(WindowBase, std_, avgRate_, offset_)
 };
-
-} 
+}
 }
 }
 

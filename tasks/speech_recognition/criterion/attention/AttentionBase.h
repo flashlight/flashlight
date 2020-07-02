@@ -60,8 +60,7 @@ class AttentionBase : public fl::Container {
  private:
   FL_SAVE_LOAD_WITH_BASE(fl::Container)
 };
-
-} 
+}
 }
 }
 

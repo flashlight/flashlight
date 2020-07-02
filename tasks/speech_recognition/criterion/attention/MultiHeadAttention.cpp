@@ -91,7 +91,6 @@ std::pair<Variable, Variable> MultiHeadContentAttention::forward(
 std::string MultiHeadContentAttention::prettyString() const {
   return "MultiHeadContentAttention";
 }
-
-} 
+}
 }
 }

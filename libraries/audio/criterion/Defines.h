@@ -18,6 +18,5 @@ enum class CriterionScaleMode {
   TARGET_SZ = 3,
   TARGET_SZ_SQRT = 4,
 };
-
-} 
+}
 }

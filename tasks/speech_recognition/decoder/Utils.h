@@ -27,15 +27,23 @@ namespace asr {
 
 /* A series of vector to vector mapping operations */
 
-std::vector<std::string> tknIdx2Ltr(const std::vector<int>&, const lib::Dictionary&);
+std::vector<std::string> tknIdx2Ltr(
+    const std::vector<int>&,
+    const lib::Dictionary&);
 
 std::vector<std::string> tkn2Wrd(const std::vector<std::string>&);
 
-std::vector<std::string> wrdIdx2Wrd(const std::vector<int>&, const lib::Dictionary&);
+std::vector<std::string> wrdIdx2Wrd(
+    const std::vector<int>&,
+    const lib::Dictionary&);
 
-std::vector<std::string> tknTarget2Ltr(std::vector<int>, const lib::Dictionary&);
+std::vector<std::string> tknTarget2Ltr(
+    std::vector<int>,
+    const lib::Dictionary&);
 
-std::vector<std::string> tknPrediction2Ltr(std::vector<int>, const lib::Dictionary&);
+std::vector<std::string> tknPrediction2Ltr(
+    std::vector<int>,
+    const lib::Dictionary&);
 
 std::vector<int> tkn2Idx(
     const std::vector<std::string>& spelling,
@@ -70,7 +78,6 @@ void remapLabels(std::vector<T>& labels, const lib::Dictionary& dict) {
     trimLabels(dict.getIndex(FLAGS_surround));
   }
 };
-
 }
 }
 }

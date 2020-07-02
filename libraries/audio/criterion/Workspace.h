@@ -58,6 +58,5 @@ class Workspace {
   const uintptr_t workspacePtr_;
   size_t offset_;
 };
-
-} 
+}
 }

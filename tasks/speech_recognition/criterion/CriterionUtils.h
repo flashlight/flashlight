@@ -86,7 +86,9 @@ int getTargetSize(const int* labels, int len);
 
 af::array getTargetSizeArray(const af::array& target, int maxSize);
 
-lib::CriterionScaleMode getCriterionScaleMode(const std::string& onorm, bool sqnorm);
+lib::CriterionScaleMode getCriterionScaleMode(
+    const std::string& onorm,
+    bool sqnorm);
 
 // Input: N x T x B (type: float), Output: T x B (type: int)
 af::array viterbiPath(const af::array& input, const af::array& trans);
@@ -104,7 +106,6 @@ inline af::array reorder(
   const af::array& result = af::reorder(in, x, y, z, w);
   return moddims(result, result.dims());
 }
-
-} 
+}
 }
 }

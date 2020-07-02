@@ -297,5 +297,5 @@ template struct FullConnectionCriterion<float>;
 template struct FullConnectionCriterion<double>;
 
 } // namespace cuda
-} 
+}
 }

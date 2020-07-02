@@ -33,7 +33,6 @@ FullConnectionCriterion::FullConnectionCriterion(
 std::string FullConnectionCriterion::prettyString() const {
   return "FullConnectionCriterion";
 }
-
-} 
+}
 }
 }

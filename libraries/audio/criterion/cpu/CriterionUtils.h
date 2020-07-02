@@ -42,5 +42,5 @@ void setZero(T* ptr, size_t count) {
 }
 
 } // namespace cpu
-} 
+}
 }

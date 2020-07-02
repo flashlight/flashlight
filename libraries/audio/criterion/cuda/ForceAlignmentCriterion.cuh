@@ -96,5 +96,5 @@ struct ForceAlignmentCriterion {
 };
 
 } // namespace cuda
-} 
+}
 }

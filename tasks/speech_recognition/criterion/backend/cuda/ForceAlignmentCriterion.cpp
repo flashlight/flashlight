@@ -166,7 +166,6 @@ af::array ForceAlignmentCriterion::viterbiPath(
   }
   return bestPathsVar;
 }
-
-} 
+}
 }
 }

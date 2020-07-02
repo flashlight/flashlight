@@ -71,5 +71,5 @@ class Mfcc : public Mfsc {
 
   void validateMfccParams() const;
 };
-} 
+}
 }

@@ -165,7 +165,6 @@ std::shared_ptr<W2lDataset> createDataset(
 
   return ds;
 }
-
-} 
+}
 }
 }

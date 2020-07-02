@@ -143,7 +143,6 @@ std::vector<SpeechSampleMetaInfo> W2lListFilesDataset::loadListFile(
 
   return samplesMetaInfo;
 }
-
-} 
+}
 }
 }

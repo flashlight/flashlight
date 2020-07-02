@@ -57,5 +57,5 @@ void Windowing::applyInPlace(std::vector<float>& input) const {
     }
   }
 }
-} 
+}
 }

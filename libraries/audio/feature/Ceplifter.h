@@ -30,5 +30,5 @@ class Ceplifter {
   int lifterParam_; // liftering parameter
   std::vector<float> coefs_; // coefficients to scale cepstral coefficients
 };
-} 
+}
 }

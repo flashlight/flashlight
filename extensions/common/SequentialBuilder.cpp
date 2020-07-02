@@ -58,9 +58,7 @@ std::shared_ptr<Sequential> buildSequentialModule(
 
   return net;
 }
-
-} 
-
+}
 }
 
 namespace {

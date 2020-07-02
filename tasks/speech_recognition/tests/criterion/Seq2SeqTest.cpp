@@ -406,8 +406,7 @@ TEST(Seq2SeqTest, Seq2SeqSampling) {
   auto input = noGrad(af::randn(H, T, B, f32));
   auto target = noGrad((af::randu(U, B, f32) * 0.99 * N).as(s32));
 
-  std::vector<std::string> samplingStrategy(
-      {kRandSampling, kModelSampling});
+  std::vector<std::string> samplingStrategy({kRandSampling, kModelSampling});
 
   for (const auto& ss : samplingStrategy) {
     Seq2SeqCriterion seq2seq(

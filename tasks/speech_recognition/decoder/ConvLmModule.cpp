@@ -65,7 +65,6 @@ GetConvLmScoreFunc buildGetConvLmScoreFunction(
 
   return getConvLmScoreFunc;
 }
-
-} 
+}
 }
 }

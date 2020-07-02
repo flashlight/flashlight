@@ -36,8 +36,7 @@ class MedianWindow : public WindowBase {
 
   FL_SAVE_LOAD_WITH_BASE(WindowBase, wL_, wR_)
 };
-
-} 
+}
 }
 }
 

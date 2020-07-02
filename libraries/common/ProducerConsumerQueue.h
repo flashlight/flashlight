@@ -147,6 +147,5 @@ class ProducerConsumerQueue {
     return queue_.size() == 0;
   }
 };
-
-} 
+}
 }

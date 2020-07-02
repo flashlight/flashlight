@@ -43,6 +43,5 @@ void initDistributed(
          {fl::DistributedConstants::kFilePath, rndvFilepath}});
   }
 }
-
 }
 }

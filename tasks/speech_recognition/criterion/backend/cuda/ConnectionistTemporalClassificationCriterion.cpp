@@ -165,7 +165,6 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
 
   return {Variable(result, {input, target}, gradFunc)};
 }
-
-} 
+}
 }
 }

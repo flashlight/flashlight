@@ -22,6 +22,6 @@ std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
     double lr,
     double momentum,
     double weightdecay);
-} 
+}
 }
 }

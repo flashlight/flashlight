@@ -115,5 +115,5 @@ template struct CriterionUtils<float>;
 template struct CriterionUtils<double>;
 
 } // namespace cuda
-} 
+}
 }

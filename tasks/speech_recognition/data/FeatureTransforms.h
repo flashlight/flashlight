@@ -16,7 +16,8 @@ namespace fl {
 namespace task {
 namespace asr {
 
-fl::Dataset::DataTransformFunction inputFeatures(const lib::FeatureParams& params);
+fl::Dataset::DataTransformFunction inputFeatures(
+    const lib::FeatureParams& params);
 
 fl::Dataset::DataTransformFunction targetFeatures(
     const lib::Dictionary& dict,
@@ -124,7 +125,6 @@ std::vector<T> normalize(
   }
   return out;
 }
-
-} 
+}
 }
 }

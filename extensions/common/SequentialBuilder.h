@@ -22,6 +22,5 @@ std::shared_ptr<fl::Sequential> buildSequentialModule(
     const std::string& archfile,
     int64_t nFeatures,
     int64_t nClasses);
-
 }
-} 
+}

@@ -58,7 +58,6 @@ SoftWindow::computeWindowMask(int targetLen, int inputSteps, int batchSize) {
 
   return mask;
 }
-
-} 
+}
 }
 }

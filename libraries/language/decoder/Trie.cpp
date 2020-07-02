@@ -98,6 +98,5 @@ void Trie::smear(SmearingMode smearMode) {
     smearNode(root_, smearMode);
   }
 }
-
-} 
+}
 }

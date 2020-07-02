@@ -99,7 +99,6 @@ void filterSamples(
     const int64_t maxInputSz,
     const int64_t minTargetSz,
     const int64_t maxTargetSz);
-
-} 
+}
 }
 }

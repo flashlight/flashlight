@@ -19,7 +19,8 @@ namespace asr {
 class ConnectionistTemporalClassificationCriterion : public SequenceCriterion {
  public:
   ConnectionistTemporalClassificationCriterion(
-      fl::lib::CriterionScaleMode scalemode = fl::lib::CriterionScaleMode::NONE);
+      fl::lib::CriterionScaleMode scalemode =
+          fl::lib::CriterionScaleMode::NONE);
 
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;
@@ -39,9 +40,9 @@ class ConnectionistTemporalClassificationCriterion : public SequenceCriterion {
 };
 
 typedef ConnectionistTemporalClassificationCriterion CTCLoss;
-
-} 
 }
 }
+}
 
-CEREAL_REGISTER_TYPE(fl::task::asr::ConnectionistTemporalClassificationCriterion)
+CEREAL_REGISTER_TYPE(
+    fl::task::asr::ConnectionistTemporalClassificationCriterion)
