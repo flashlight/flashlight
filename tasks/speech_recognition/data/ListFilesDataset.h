@@ -8,9 +8,9 @@
 
 #pragma once
 
+#include "data/Dataset.h"
 #include "data/SpeechSample.h"
 #include "data/Utils.h"
-#include "data/Dataset.h"
 
 namespace fl {
 namespace task {

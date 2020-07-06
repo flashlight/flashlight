@@ -57,8 +57,7 @@ class Dataset : public fl::Dataset {
 
   // used if FLAGS_nthread > 1
   std::unique_ptr<fl::ThreadPool> threadpool_;
-  mutable std::unordered_map<int64_t, std::future<FeatureData>>
-      prefetchCache_;
+  mutable std::unordered_map<int64_t, std::future<FeatureData>> prefetchCache_;
 
   std::vector<std::vector<int64_t>> sampleBatches_;
 };

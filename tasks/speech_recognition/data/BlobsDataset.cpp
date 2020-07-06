@@ -73,15 +73,13 @@ BlobsDataset::~BlobsDataset() {
   threadpool_ = nullptr; // join all threads
 }
 
-std::vector<LoaderData> BlobsDataset::getLoaderData(
-    const int64_t idx) const {
+std::vector<LoaderData> BlobsDataset::getLoaderData(const int64_t idx) const {
   std::vector<LoaderData> data(sampleBatches_[idx].size(), LoaderData());
   for (int64_t id = 0; id < sampleBatches_[idx].size(); ++id) {
     auto i = sampleSizeOrder_[sampleBatches_[idx][id]];
 
     if (!(i >= 0 && i < sampleIndex_.size())) {
-      throw std::out_of_range(
-          "BlobsDataset::getLoaderData idx out of range");
+      throw std::out_of_range("BlobsDataset::getLoaderData idx out of range");
     }
 
     data[id].sampleId = std::to_string(sampleIndex_[i]);

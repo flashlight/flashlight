@@ -20,8 +20,8 @@
 #include <flashlight/flashlight.h>
 
 #include "common/Defines.h"
-#include "data/ListFileDataset.h"
 #include "data/BlobsDataset.h"
+#include "data/ListFileDataset.h"
 #include "data/ListFilesDataset.h"
 
 #include "libraries/common/String.h"
