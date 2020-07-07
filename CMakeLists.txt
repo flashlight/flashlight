@@ -4,6 +4,14 @@ project(flashlight)
 
 include(CTest)
 
+# Conan support
+set(CONAN_BUILD_INFO ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+if (EXISTS ${CONAN_BUILD_INFO})
+  message(STATUS "Building with Conan.")
+  include(${CONAN_BUILD_INFO})
+  conan_basic_setup(TARGETS)
+endif()
+
 # ----------------------------- Setup -----------------------------
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 set(CMAKE_CXX_STANDARD 11)
@@ -60,54 +68,88 @@ endif ()
 
 # ------------------------ Global External Dependencies ------------------------
 # ArrayFire
-find_package(ArrayFire REQUIRED)
-if (ArrayFire_FOUND AND ArrayFire_VERSION VERSION_LESS 3.7.1)
-  message(FATAL_ERROR "ArrayFire versions < 3.7.1 are no longer supported "
-    "with flashlight. To build flashlight with a version of ArrayFire "
-    "< 3.7.1, use commit <= 5518d91b7f4fd5b400cbc802cfbecc0df57836bd.")
-endif()
-
-if (ArrayFire_FOUND)
-  message(STATUS "ArrayFire found (include: ${ArrayFire_INCLUDE_DIRS}, library: ${ArrayFire_LIBRARIES})")
-  if (FLASHLIGHT_USE_UNIFIED)
-    # Set the AF_PATH environment variable to wherever the ArrayFire libs are
-    # located so they can be loaded in the unified backend
-    set(ENV{AF_PATH} ${ArrayFire_LIBRARIES})
-  endif ()
+if (TARGET CONAN_PKG::arrayfire)
+  message(STATUS "Found ArrayFire installed with Conan.")
 else()
-  message(FATAL_ERROR "ArrayFire not found")
+  find_package(ArrayFire REQUIRED)
+  if (ArrayFire_FOUND AND ArrayFire_VERSION VERSION_LESS 3.7.1)
+    message(FATAL_ERROR "ArrayFire versions < 3.7.1 are no longer supported "
+      "with flashlight. To build flashlight with a version of ArrayFire "
+      "< 3.7.1, use commit <= 5518d91b7f4fd5b400cbc802cfbecc0df57836bd.")
+  endif()
+
+  if (ArrayFire_FOUND)
+    message(STATUS "ArrayFire found (include: ${ArrayFire_INCLUDE_DIRS}, library: ${ArrayFire_LIBRARIES})")
+    if (FLASHLIGHT_USE_UNIFIED)
+      # Set the AF_PATH environment variable to wherever the ArrayFire libs are
+      # located so they can be loaded in the unified backend
+      set(ENV{AF_PATH} ${ArrayFire_LIBRARIES})
+    endif ()
+  else()
+    message(FATAL_ERROR "ArrayFire not found")
+  endif()
+
+  # Check the proper ArrayFire backend is present
+  if (FLASHLIGHT_USE_CPU AND NOT ArrayFire_CPU_FOUND)
+    message(FATAL_ERROR "ArrayFire CPU not found: cannot build CPU backend")
+  elseif (FLASHLIGHT_USE_CUDA AND NOT ArrayFire_CUDA_FOUND)
+    message(FATAL_ERROR "ArrayFire CUDA not found: cannot build CUDA backend")
+  elseif (FLASHLIGHT_USE_OPENCL AND NOT ArrayFire_OpenCL_FOUND)
+    message(FATAL_ERROR "ArrayFire OpenCL not found: cannot build OpenCL backend")
+  elseif (FLASHLIGHT_USE_UNIFIED AND NOT ArrayFire_Unified_FOUND)
+    message(FATAL_ERROR "ArrayFire Unified not found: cannot build unified backend")
+  endif()
 endif()
 
-# Check the proper ArrayFire backend is present
-if (FLASHLIGHT_USE_CPU AND NOT ArrayFire_CPU_FOUND)
-  message(FATAL_ERROR "ArrayFire CPU not found: cannot build CPU backend")
-elseif (FLASHLIGHT_USE_CUDA AND NOT ArrayFire_CUDA_FOUND)
-  message(FATAL_ERROR "ArrayFire CUDA not found: cannot build CUDA backend")
-elseif (FLASHLIGHT_USE_OPENCL AND NOT ArrayFire_OpenCL_FOUND)
-  message(FATAL_ERROR "ArrayFire OpenCL not found: cannot build OpenCL backend")
-elseif (FLASHLIGHT_USE_UNIFIED AND NOT ArrayFire_Unified_FOUND)
-  message(FATAL_ERROR "ArrayFire Unified not found: cannot build unified backend")
+# Set up variables to link the right ArrayFire backend
+if (FLASHLIGHT_USE_UNIFIED)
+  set(FL_AF_BACKEND "af")
+elseif (FLASHLIGHT_USE_CPU)
+  set(FL_AF_BACKEND "afcpu")
+elseif (FLASHLIGHT_USE_CUDA)
+  set(FL_AF_BACKEND "afcuda")
+elseif (FLASHLIGHT_USE_OPENCL)
+  set(FL_AF_BACKEND "afopencl")
+else()
+  message(FATAL_ERROR "flashlight backend ill-specified")
 endif()
+
+# Link ArrayFire. Use a dummy interface library so the lib target can be
+# exported and projects depending on projects can discern which AF
+# (and FL) backend was built.
+set(FL_BACKEND "BACKEND_${FLASHLIGHT_BACKEND}")
+add_library(${FL_BACKEND} INTERFACE)
+if (TARGET CONAN_PKG::arrayfire)
+  target_link_libraries(${FL_BACKEND} INTERFACE CONAN_PKG::arrayfire)
+else()
+  target_link_libraries(${FL_BACKEND} INTERFACE ArrayFire::${FL_AF_BACKEND})
+endif()
+
 
 # Find/download/build Cereal
 set(CEREAL_INSTALL_PATH ${FL_INSTALL_INC_DIR_HEADER_LOC}/cereal)
 # If cereal is found in a user-defined location, use it rather than
-find_package(cereal)
-if (NOT cereal_FOUND)
-  message(STATUS "cereal NOT found. Will download from source")
-  include(${CMAKE_MODULE_PATH}/BuildCereal.cmake)
-  # Move cereal headers
-  install(DIRECTORY ${CEREAL_SOURCE_DIR}/include/cereal
-    DESTINATION ${CEREAL_INSTALL_PATH}
-    COMPONENT cereal
-    FILES_MATCHING
-    PATTERN "*.hpp"
-    PATTERN "*.h"
-    PATTERN ".git" EXCLUDE
-    )
-  install(FILES ${CEREAL_SOURCE_DIR}/LICENSE ${CEREAL_SOURCE_DIR}/README.md
-    DESTINATION ${CEREAL_INSTALL_PATH}
-    )
+if (TARGET CONAN_PKG::cereal)
+  message(STATUS "Found cereal installed by Conan")
+else ()
+  # Try to find from source, else download
+  find_package(cereal)
+  if (NOT cereal_FOUND)
+    message(STATUS "cereal NOT found. Will download from source")
+    include(${CMAKE_MODULE_PATH}/BuildCereal.cmake)
+    # Move cereal headers
+    install(DIRECTORY ${CEREAL_SOURCE_DIR}/include/cereal
+      DESTINATION ${CEREAL_INSTALL_PATH}
+      COMPONENT cereal
+      FILES_MATCHING
+      PATTERN "*.hpp"
+      PATTERN "*.h"
+      PATTERN ".git" EXCLUDE
+      )
+    install(FILES ${CEREAL_SOURCE_DIR}/LICENSE ${CEREAL_SOURCE_DIR}/README.md
+      DESTINATION ${CEREAL_INSTALL_PATH}
+      )
+  endif()
 endif()
 
 # -------------------- Locate Backend-specific Dependencies --------------------
@@ -169,25 +211,6 @@ if (FLASHLIGHT_USE_OPENCL)
   endif()
 endif()
 
-# Set up variables to link the right ArrayFire backend
-if (FLASHLIGHT_USE_UNIFIED)
-  set(FL_AF_BACKEND "af")
-elseif (FLASHLIGHT_USE_CPU)
-  set(FL_AF_BACKEND "afcpu")
-elseif (FLASHLIGHT_USE_CUDA)
-  set(FL_AF_BACKEND "afcuda")
-elseif (FLASHLIGHT_USE_OPENCL)
-  set(FL_AF_BACKEND "afopencl")
-else()
-  message(FATAL_ERROR "flashlight backend ill-specified")
-endif()
-
-# Link ArrayFire. Use a dummy interface library so the lib target can be
-# exported and projects depending on projects can discern which AF
-# (and FL) backend was built.
-set(FL_BACKEND "BACKEND_${FLASHLIGHT_BACKEND}")
-add_library(${FL_BACKEND} INTERFACE)
-target_link_libraries(${FL_BACKEND} INTERFACE ArrayFire::${FL_AF_BACKEND})
 
 # -------------------------------- Main Library --------------------------------
 add_library(flashlight "")

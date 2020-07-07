@@ -53,8 +53,16 @@ target_link_libraries(
   Common
   )
 
-target_include_directories(
-  NN
-  INTERFACE
-  ${cereal_INCLUDE_DIRS} # pulled in - see cmake/BuildCereal.cmake
-  )
+if (TARGET CONAN_PKG::cereal)
+  target_link_libraries(
+    NN
+    INTERFACE
+    CONAN_PKG::cereal
+    )
+else()
+  target_include_directories(
+    NN
+    INTERFACE
+    ${cereal_INCLUDE_DIRS} # pulled in - see cmake/BuildCereal.cmake
+    )
+endif ()
