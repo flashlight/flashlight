@@ -9,6 +9,7 @@
 #pragma once
 
 #include <chrono>
+#include <fstream>
 #include <string>
 #include <thread>
 #include <type_traits>
@@ -31,9 +32,13 @@ std::string getCurrentDate();
 
 std::string getCurrentTime();
 
-// =============================== Miscellaneous ===============================
-
 std::vector<std::string> getFileContent(const std::string& file);
+
+std::ifstream createInputStream(const std::string& filename);
+
+std::ofstream createOutputStream(
+    const std::string& filename,
+    std::ios_base::openmode mode = std::ios_base::out);
 
 /**
  * Calls `f(args...)` repeatedly, retrying if an exception is thrown.

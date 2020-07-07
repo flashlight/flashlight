@@ -14,7 +14,6 @@
 #include <array>
 #include <cstdlib>
 #include <ctime>
-#include <fstream>
 #include <functional>
 
 static constexpr const char* kSpaceChars = "\t\n\v\f\r ";

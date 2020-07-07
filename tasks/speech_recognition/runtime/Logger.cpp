@@ -109,22 +109,6 @@ void appendToLog(std::ofstream& logfile, const std::string& logstr) {
   retryWithBackoff(std::chrono::seconds(1), 1.0, 6, write);
 }
 
-af::array allreduceGet(fl::AverageValueMeter& mtr) {
-  auto mtrVal = mtr.value();
-  mtrVal[0] *= mtrVal[2];
-  return af::array(mtrVal.size(), mtrVal.data());
-}
-
-af::array allreduceGet(fl::EditDistanceMeter& mtr) {
-  auto mtrVal = mtr.value();
-  mtrVal[0] = mtrVal[0] * mtrVal[1] / 100;
-  mtrVal[2] = mtrVal[2] * mtrVal[1] / 100;
-  mtrVal[3] = mtrVal[3] * mtrVal[1] / 100;
-  mtrVal[4] = mtrVal[4] * mtrVal[1] / 100;
-
-  return af::array(mtrVal.size(), mtrVal.data());
-}
-
 af::array allreduceGet(SpeechStatMeter& mtr) {
   auto mtrVal0 = mtr.value();
   std::vector<long long> mtrVal(mtrVal0.begin(), mtrVal0.end());
@@ -132,35 +116,6 @@ af::array allreduceGet(SpeechStatMeter& mtr) {
   mtrVal[2] *= mtrVal[4];
   mtrVal[3] *= mtrVal[4];
   return af::array(mtrVal.size(), mtrVal.data());
-}
-
-af::array allreduceGet(fl::CountMeter& mtr) {
-  auto mtrVal0 = mtr.value();
-  std::vector<long long> mtrVal(mtrVal0.begin(), mtrVal0.end());
-  return af::array(mtrVal.size(), mtrVal.data());
-}
-
-af::array allreduceGet(fl::TimeMeter& mtr) {
-  return af::constant(mtr.value(), 1, af::dtype::f64);
-}
-
-void allreduceSet(fl::AverageValueMeter& mtr, af::array& val) {
-  mtr.reset();
-  auto valVec = afToVector<double>(val);
-  if (valVec[2] != 0) {
-    valVec[0] /= valVec[2];
-  }
-  mtr.add(valVec[0], valVec[2]);
-}
-
-void allreduceSet(fl::EditDistanceMeter& mtr, af::array& val) {
-  mtr.reset();
-  auto valVec = afToVector<double>(val);
-  mtr.add(
-      static_cast<int64_t>(valVec[1]),
-      static_cast<int64_t>(valVec[2]),
-      static_cast<int64_t>(valVec[3]),
-      static_cast<int64_t>(valVec[4]));
 }
 
 void allreduceSet(SpeechStatMeter& mtr, af::array& val) {
@@ -177,38 +132,24 @@ void allreduceSet(SpeechStatMeter& mtr, af::array& val) {
   mtr.add(stats);
 }
 
-void allreduceSet(fl::CountMeter& mtr, af::array& val) {
-  mtr.reset();
-  auto valVec = afToVector<long long>(val);
-  for (size_t i = 0; i < valVec.size(); ++i) {
-    mtr.add(i, valVec[i]);
-  }
-}
-
-void allreduceSet(fl::TimeMeter& mtr, af::array& val) {
-  auto worldSize = fl::getWorldSize();
-  auto valVec = afToVector<double>(val);
-  mtr.set(valVec[0] / worldSize);
-}
-
-template <>
-void syncMeter<TrainMeters>(TrainMeters& mtrs) {
-  syncMeter(mtrs.stats);
-  syncMeter(mtrs.runtime);
-  syncMeter(mtrs.timer);
-  syncMeter(mtrs.fwdtimer);
-  syncMeter(mtrs.critfwdtimer);
-  syncMeter(mtrs.bwdtimer);
-  syncMeter(mtrs.optimtimer);
-  syncMeter(mtrs.train.tknEdit);
-  syncMeter(mtrs.train.wrdEdit);
-  syncMeter(mtrs.train.loss);
+void syncMeter(TrainMeters& mtrs) {
+  fl::ext::syncMeter(mtrs.stats);
+  fl::ext::syncMeter(mtrs.runtime);
+  fl::ext::syncMeter(mtrs.timer);
+  fl::ext::syncMeter(mtrs.fwdtimer);
+  fl::ext::syncMeter(mtrs.critfwdtimer);
+  fl::ext::syncMeter(mtrs.bwdtimer);
+  fl::ext::syncMeter(mtrs.optimtimer);
+  fl::ext::syncMeter(mtrs.train.tknEdit);
+  fl::ext::syncMeter(mtrs.train.wrdEdit);
+  fl::ext::syncMeter(mtrs.train.loss);
   for (auto& v : mtrs.valid) {
-    syncMeter(v.second.tknEdit);
-    syncMeter(v.second.wrdEdit);
-    syncMeter(v.second.loss);
+    fl::ext::syncMeter(v.second.tknEdit);
+    fl::ext::syncMeter(v.second.wrdEdit);
+    fl::ext::syncMeter(v.second.loss);
   }
 }
+
 } // namespace asr
 } // namespace task
 } // namespace fl

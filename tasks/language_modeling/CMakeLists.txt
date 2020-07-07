@@ -1,20 +1,6 @@
 cmake_minimum_required(VERSION 3.5.1)
 
-project(flashlight_task_asr)
-
-# ----------------------------- Configuration -----------------------------
-
-option(FL_LIBRARIES_USE_CUDA "Use CUDA in libraries-only build" ON)
-option(FL_LIBRARIES_USE_KENLM "Use KenLM in libraries-only build" ON)
-option(FL_LIBRARIES_USE_MKL "Use MKL in libraries-only build" ON)
-option(FL_BUILD_FOR_PYTHON "Build Python bindings" OFF)
-option(FL_BUILD_TESTS "Build tests for wav2letter++" ON)
-option(FL_BUILD_EXAMPLES "Build examples for wav2letter++" ON)
-option(FL_BUILD_EXPERIMENTAL "Build internal experimental components for wav2letter++" OFF)
-option(FL_BUILD_SCRIPTS "Build internal scripts for wav2letter++" OFF)
-option(FL_BUILD_RECIPES "Build recipes" ON)
-option(FL_BUILD_TOOLS "Build audio tools" OFF)
-set(KENLM_MAX_ORDER 6 CACHE STRING "Maximum ngram order for KenLM")
+project(flashlight_task_lm)
 
 # ------------------------- Dependency Fallback -------------------------
 
@@ -66,89 +52,67 @@ find_library(fl-libraries REQUIRED HINTS "${CMAKE_BINARY_DIR}/libraries")
 # Common
 add_subdirectory(${PROJECT_SOURCE_DIR}/common)
 
-# Criterion
-add_subdirectory(${PROJECT_SOURCE_DIR}/criterion)
-
 # Data
 add_subdirectory(${PROJECT_SOURCE_DIR}/data)
 
-# Decoder
-add_subdirectory(${PROJECT_SOURCE_DIR}/decoder)
-
-# Runtime
-add_subdirectory(${PROJECT_SOURCE_DIR}/runtime)
-
-# ----------------------------- task-asr lib  -----------------------------
+# ----------------------------- task-lm lib  -----------------------------
 
 add_library(
-  task-asr
+  task-lm
   ""
   )
 
 set_target_properties(
-  task-asr
+  task-lm
   PROPERTIES
   LINKER_LANGUAGE CXX
   CXX_STANDARD 11
   )
 
 target_link_libraries(
-  task-asr
+  task-lm
   PUBLIC
-  asr-common
-  asr-criterion
-  asr-data
-  asr-decoder
-  asr-runtime
+  lm-common
+  lm-data
   flashlight
   fl-extensions
   fl-libraries
+  ${GLOG_LIBRARIES}
   )
 
 target_include_directories(
-  task-asr
+  task-lm
   PUBLIC
   ${PROJECT_SOURCE_DIR} # all includes are based at 
   )
 
 # ----------------------------- Train -----------------------------
 add_executable(
-  Train
+  TrainLM
   Train.cpp
 )
 
 target_link_libraries(
-  Train
-  task-asr
+  TrainLM
+  task-lm
   )
 
 # ----------------------------- Test -----------------------------
 add_executable(
-  Test
-  Test.cpp
+  BuildDictionary
+  BuildDictionary.cpp
   )
 
 target_link_libraries(
-  Test
-  task-asr
-  )
-
-# ----------------------------- Decoder -----------------------------
-add_executable(
-  Decoder
-  Decode.cpp
-  )
-
-target_link_libraries(
-  Decoder
-  task-asr
+  BuildDictionary
+  task-lm
   )
 
 # --------------------------- Tests ---------------------------
 
 # Build tests
-option(FL_BUILD_TESTS "Build tests for flashlight" ON)
-if (FL_BUILD_TESTS)
-  enable_testing()
-  add_subdirectory(${PROJECT_SOURCE_DIR}/tests)
-endif ()
+#option(FL_BUILD_TESTS "Build tests for flashlight" ON)
+#if (FL_BUILD_TESTS)
+#  enable_testing()
+#  add_subdirectory(${PROJECT_SOURCE_DIR}/tests)
+#endif ()

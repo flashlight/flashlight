@@ -8,9 +8,8 @@
 
 #include "libraries/language/dictionary/Utils.h"
 
-#include <fstream>
-
 #include "libraries/common/String.h"
+#include "libraries/common/System.h"
 #include "libraries/language/dictionary/Defines.h"
 
 namespace fl {
@@ -29,11 +28,7 @@ LexiconMap loadWords(const std::string& filename, int maxWords) {
   LexiconMap lexicon;
 
   std::string line;
-  std::ifstream infile(filename);
-
-  if (!infile) {
-    throw std::invalid_argument("Cannot open " + filename);
-  }
+  std::ifstream infile = createInputStream(filename);
 
   // Add at most `maxWords` words into the lexicon.
   // If `maxWords` is negative then no limit is applied.

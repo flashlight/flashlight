@@ -8,7 +8,6 @@
 
 #include "libraries/language/dictionary/Dictionary.h"
 
-#include <fstream>
 #include <iostream>
 #include <stdexcept>
 
@@ -24,11 +23,7 @@ Dictionary::Dictionary(std::istream& stream) {
 }
 
 Dictionary::Dictionary(const std::string& filename) {
-  if (!fileExists(filename)) {
-    throw std::invalid_argument(
-        "Dictionary file '" + filename + "' does not exist.");
-  }
-  std::ifstream stream(filename);
+  std::ifstream stream = createInputStream(filename);
   createFromStream(stream);
 }
 

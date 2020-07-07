@@ -10,9 +10,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ------------------------- Build Tasks -------------------------
 
-set(FLASHLIGHT_ASR_TASK_DIR "${PROJECT_SOURCE_DIR}/speech_recognition")
+set(FLASHLIGHT_TASK_DIR "${PROJECT_SOURCE_DIR}")
 
 option(FL_BUILD_ASR_TASK "Build asr task for flashlight" ON)
 if (FL_BUILD_ASR_TASK)
-  add_subdirectory(${FLASHLIGHT_ASR_TASK_DIR})
+  add_subdirectory(${FLASHLIGHT_TASK_DIR}/speech_recognition)
+endif ()
+
+option(FL_BUILD_LM_TASK "Build asr task for flashlight" ON)
+if (FL_BUILD_LM_TASK)
+  add_subdirectory(${FLASHLIGHT_TASK_DIR}/language_modeling)
 endif ()

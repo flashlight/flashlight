@@ -1,28 +1,28 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 add_library(
-  decoder
+  asr-decoder
   INTERFACE
   )
 
 target_sources(
-  decoder
+  asr-decoder
   INTERFACE
   ${CMAKE_CURRENT_SOURCE_DIR}/ConvLmModule.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Utils.cpp
   )
 
 target_link_libraries(
-  decoder
+  asr-decoder
   INTERFACE
-  common
+  asr-common
   flashlight
   ${cereal_LIBRARIES}
   ${GLOG_LIBRARIES}
   )
 
 target_include_directories(
-  decoder
+  asr-decoder
   INTERFACE
   ${GLOG_INCLUDE_DIRS}
   ${cereal_INCLUDE_DIRS}

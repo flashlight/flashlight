@@ -13,7 +13,6 @@
 #include <array>
 #include <cstdlib>
 #include <ctime>
-#include <fstream>
 #include <functional>
 
 #include "libraries/common/String.h"
@@ -99,11 +98,7 @@ std::string getCurrentTime() {
 
 std::vector<std::string> getFileContent(const std::string& file) {
   std::vector<std::string> data;
-  std::ifstream in(file);
-  if (!in.good()) {
-    throw std::runtime_error(
-        std::string() + "Could not read file '" + file + "'");
-  }
+  std::ifstream in = createInputStream(file);
   std::string str;
   while (std::getline(in, str)) {
     data.emplace_back(str);
@@ -111,5 +106,24 @@ std::vector<std::string> getFileContent(const std::string& file) {
   in.close();
   return data;
 }
+
+std::ifstream createInputStream(const std::string& filename) {
+  std::ifstream file(filename);
+  if (!file.is_open()) {
+    throw std::runtime_error("Failed to open file for reading: " + filename);
+  }
+  return file;
+}
+
+std::ofstream createOutputStream(
+    const std::string& filename,
+    std::ios_base::openmode mode) {
+  std::ofstream file(filename, mode);
+  if (!file.is_open()) {
+    throw std::runtime_error("Failed to open file for writing: " + filename);
+  }
+  return file;
+}
+
 } // namespace lib
 } // namespace fl

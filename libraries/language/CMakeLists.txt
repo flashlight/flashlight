@@ -4,11 +4,14 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # ------------------------- Components -------------------------
 
-# criterion-library
+# decoder-library
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/decoder)
 
-# feature-library
+# dictionary-library
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dictionary)
+
+# tokenizer-library
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tokenizer)
 
 # ------------------------- Library -------------------------
 
@@ -29,6 +32,7 @@ target_link_libraries(
   PUBLIC
   libraries-language-decoder
   libraries-language-dictionary
+  libraries-language-tokenizer
   )
 
 target_include_directories(

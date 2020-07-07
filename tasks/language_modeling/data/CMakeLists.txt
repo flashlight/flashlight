@@ -1,25 +1,25 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 add_library(
-  asr-common
+  lm-data
   INTERFACE
   )
 
 target_sources(
-  asr-common
+  lm-data
   INTERFACE
-  ${CMAKE_CURRENT_SOURCE_DIR}/Defines.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/BlobDataset.cpp
   )
 
 target_link_libraries(
-  asr-common
+  lm-data
   INTERFACE
   flashlight
   ${GFLAGS_LIBRARIES}
   )
 
 target_include_directories(
-  asr-common
+  lm-data
   INTERFACE
   ${CMAKE_SOURCE_DIR}
   ${GFLAGS_INCLUDE_DIRS}

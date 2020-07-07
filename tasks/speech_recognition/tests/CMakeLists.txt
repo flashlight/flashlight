@@ -11,7 +11,7 @@ function(build_test SRCFILE)
   target_link_libraries(
     ${target}
     PRIVATE
-    wav2letter++
+    task-asr
     ${GTEST_LIBRARIES}
     )
   target_include_directories(
