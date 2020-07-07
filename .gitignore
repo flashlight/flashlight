@@ -1,5 +1,14 @@
 build
 release
 debug
+
+# FB
 fb
 TARGETS
+
+# Conan
+conanbuildinfo*
+conan.lock
+arrayfire
+conaninfo*
+graph_info.json

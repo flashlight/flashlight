@@ -47,25 +47,32 @@ else()
 endif()
 
 # MPI
-find_package(MPI QUIET)
-
-if (MPI_C_FOUND AND MPI_CXX_FOUND)
-  message(STATUS "MPI_VERSION found: ${MPI_VERSION} ${MPI_C_VERSION_MAJOR}.${MPI_C_VERSION_MINOR}")
-  message(STATUS "MPI_CXX found")
-  message(STATUS "MPI_CXX compile flags: " ${MPI_CXX_COMPILE_FLAGS})
-  message(STATUS "MPI_CXX include path: " ${MPI_CXX_INCLUDE_PATH})
-  message(STATUS "MPI_CXX LINK flags path: " ${MPI_CXX_LINK_FLAGS})
-  message(STATUS "MPI_CXX libraries: " ${MPI_CXX_LIBRARIES})
-
-  message(STATUS "MPI_C found")
-  message(STATUS "MPI_C compile flags: " ${MPI_C_COMPILE_FLAGS})
-  message(STATUS "MPI_C include path: " ${MPI_C_INCLUDE_PATH})
-  message(STATUS "MPI_C LINK flags path: " ${MPI_C_LINK_FLAGS})
-  message(STATUS "MPI_C libraries: " ${MPI_C_LIBRARIES})
+if (TARGET CONAN_PKG::openmpi)
+  message(STATUS "Found OpenMPI installed with Conan")
+  set(MPI_LIBRARIES CONAN_PKG::openmpi)
 else()
-  message(STATUS "MPI not found")
-  if (FL_BUILD_DISTRIBUTED)
-    message(FATAL_ERROR "MPI_C and MPI_CXX not found; required to build flashlight distributed")
+  find_package(MPI)
+
+  if (MPI_C_FOUND AND MPI_CXX_FOUND)
+    message(STATUS "MPI_VERSION found: ${MPI_VERSION} ${MPI_C_VERSION_MAJOR}.${MPI_C_VERSION_MINOR}")
+    message(STATUS "MPI_CXX found")
+    message(STATUS "MPI_CXX compile flags: " ${MPI_CXX_COMPILE_FLAGS})
+    message(STATUS "MPI_CXX include path: " ${MPI_CXX_INCLUDE_PATH})
+    message(STATUS "MPI_CXX LINK flags path: " ${MPI_CXX_LINK_FLAGS})
+    message(STATUS "MPI_CXX libraries: " ${MPI_CXX_LIBRARIES})
+    
+    message(STATUS "MPI_C found")
+    message(STATUS "MPI_C compile flags: " ${MPI_C_COMPILE_FLAGS})
+    message(STATUS "MPI_C include path: " ${MPI_C_INCLUDE_PATH})
+    message(STATUS "MPI_C LINK flags path: " ${MPI_C_LINK_FLAGS})
+    message(STATUS "MPI_C libraries: " ${MPI_C_LIBRARIES})
+
+    set(MPI_INCLUDE_DIRS ${MPI_CXX_INCLUDE_PATH} ${MPI_INCLUDE_PATH})
+  else()
+    message(STATUS "MPI not found")
+    if (FL_BUILD_DISTRIBUTED)
+      message(FATAL_ERROR "MPI_C and MPI_CXX not found; required to build flashlight distributed")
+    endif()
   endif()
 endif()
 
@@ -89,14 +96,13 @@ if (USE_NCCL)
     INTERFACE
     ${CUDA_LIBRARIES}
     ${NCCL_LIBRARIES}
-    ${MPI_CXX_LIBRARIES}
-    ${MPI_C_LIBRARIES}
+    ${MPI_LIBRARIES}
     )
 
   target_include_directories(
     Distributed
     INTERFACE
-    ${MPI_CXX_INCLUDE_PATH}
+    ${MPI_INCLUDE_DIRS}
     ${NCCL_INCLUDE_DIRS}
     )
 
@@ -122,15 +128,14 @@ if (USE_GLOO)
   target_link_libraries(
     Distributed
     INTERFACE
-    ${MPI_CXX_LIBRARIES}
-    ${MPI_C_LIBRARIES}
+    ${MPI_LIBRARIES}
     ${Gloo_LIBRARY}
     )
 
   target_include_directories(
     Distributed
     INTERFACE
-    ${MPI_CXX_INCLUDE_PATH}
+    ${MPI_INCLUDE_DIRS}
     ${Gloo_INCLUDE_DIR}
     )
 endif ()
