@@ -27,24 +27,9 @@ using namespace fl::task::lm;
 
 #define LOG_MASTER(lvl) LOG_IF(lvl, (fl::getWorldRank() == 0))
 
-namespace {
-DEFINE_int64(
-    adsm_input_size,
-    0,
-    "input size of AdaptiveSoftMax (i.e. output size of network)");
-DEFINE_string(adsm_cutoffs, "", "cutoffs for AdaptiveSoftMax");
-DEFINE_int64(num_labels, 0, "# of classes for target labels");
-DEFINE_int64(tokens_per_sample, 1024, "# of tokens per sample");
-DEFINE_int64(saveiters, 0, "save every # iterations");
-DEFINE_string(sample_break_mode, "none", "none, eos");
-DEFINE_string(dictionary, "", "path to dictionary");
-DEFINE_bool(use_dynamic_batching, false, "if or not use dynamic batching");
-}
-
 /* =========== Stateless helper functions ============ */
 void initArrayFire() {
   af::setSeed(FLAGS_seed);
-  af::setFFTPlanCacheSize(FLAGS_fftcachesize);
 }
 
 std::vector<int> parseCutoffs() {

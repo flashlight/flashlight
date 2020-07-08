@@ -21,8 +21,6 @@ namespace fl {
 namespace task {
 namespace lm {
 
-
-
 constexpr int kPadIdx = 1;
 constexpr int kEosIdx = 2;
 constexpr int kUnkIdx = 3;
@@ -48,64 +46,32 @@ constexpr const char* kAdadeltaOptimizer = "adadelta";
 constexpr const char* kAdagradOptimizer = "adagrad";
 constexpr const char* kAMSgradOptimizer = "amsgrad";
 constexpr const char* kNovogradOptimizer = "novograd";
-constexpr const char* kCtcCriterion = "ctc";
-constexpr const char* kAsgCriterion = "asg";
-constexpr const char* kSeq2SeqCriterion = "seq2seq";
-constexpr const char* kTransformerCriterion = "transformer";
-constexpr int kTargetPadValue = -1;
-
-// Feature params
-constexpr int kLifterParam = 22;
-constexpr int kPrefetchSize = 2;
 
 /* ========== DATA OPTIONS ========== */
+DECLARE_string(dictionary);
+DECLARE_int64(maxwords);
+DECLARE_int64(minappearence);
 
+
+/* ========== DATA OPTIONS ========== */
 DECLARE_string(train);
 DECLARE_string(valid);
 DECLARE_string(test);
 DECLARE_int64(batchsize);
-DECLARE_string(input);
-DECLARE_int64(samplerate);
-DECLARE_int64(channels);
-DECLARE_string(tokens);
-DECLARE_bool(usewordpiece);
-DECLARE_int64(replabel);
-DECLARE_string(surround);
-DECLARE_bool(noresample);
-DECLARE_bool(eostoken);
-DECLARE_string(dataorder);
-DECLARE_int64(inputbinsize);
-DECLARE_int64(outputbinsize);
-DECLARE_bool(blobdata);
-DECLARE_string(wordseparator);
-DECLARE_double(sampletarget);
+DECLARE_int64(num_labels);
+DECLARE_int64(tokens_per_sample);
+DECLARE_string(sample_break_mode);
+DECLARE_bool(use_dynamic_batching);
 
-/* ========== FILTERING OPTIONS ========== */
-
-DECLARE_int64(minisz);
-DECLARE_int64(maxisz);
-DECLARE_int64(mintsz);
-DECLARE_int64(maxtsz);
-
-/* ========== NORMALIZATION OPTIONS ========== */
-
-DECLARE_int64(localnrmlleftctx);
-DECLARE_int64(localnrmlrightctx);
-DECLARE_string(onorm);
-DECLARE_bool(sqnorm);
-DECLARE_bool(lrcosine);
 
 /* ========== LEARNING HYPER-PARAMETER OPTIONS ========== */
-
 DECLARE_int64(iter);
 DECLARE_bool(itersave);
 DECLARE_double(lr);
 DECLARE_double(momentum);
 DECLARE_double(weightdecay);
-DECLARE_bool(sqnorm);
 DECLARE_double(lrcrit);
 DECLARE_int64(warmup);
-DECLARE_int64(saug_start_update);
 DECLARE_int64(lr_decay);
 DECLARE_int64(lr_decay_step);
 DECLARE_double(maxgradnorm);
@@ -113,9 +79,10 @@ DECLARE_double(adambeta1); // TODO rename into optim beta1
 DECLARE_double(adambeta2); // TODO rename into optim beta2
 DECLARE_double(optimrho);
 DECLARE_double(optimepsilon);
+DECLARE_int64(saveiters);
+
 
 /* ========== LR-SCHEDULER OPTIONS ========== */
-
 DECLARE_int64(stepsize);
 DECLARE_double(gamma);
 
@@ -123,29 +90,7 @@ DECLARE_double(gamma);
 DECLARE_string(netoptim);
 DECLARE_string(critoptim);
 
-/* ========== MFCC OPTIONS ========== */
-
-DECLARE_bool(mfcc);
-DECLARE_bool(pow);
-DECLARE_int64(mfcccoeffs);
-DECLARE_bool(mfsc);
-DECLARE_double(melfloor);
-DECLARE_int64(filterbanks);
-DECLARE_int64(devwin);
-DECLARE_int64(fftcachesize);
-DECLARE_int64(framesizems);
-DECLARE_int64(framestridems);
-
-/* ========== SPECAUGMENT OPTIONS ========== */
-
-DECLARE_int64(saug_fmaskf);
-DECLARE_int64(saug_fmaskn);
-DECLARE_int64(saug_tmaskt);
-DECLARE_double(saug_tmaskp);
-DECLARE_int64(saug_tmaskn);
-
 /* ========== RUN OPTIONS ========== */
-
 DECLARE_string(datadir);
 DECLARE_string(tokensdir);
 DECLARE_string(rundir);
@@ -160,90 +105,13 @@ DECLARE_int64(reportiters);
 DECLARE_double(pcttraineval);
 
 /* ========== ARCHITECTURE OPTIONS ========== */
-
 DECLARE_string(arch);
 DECLARE_string(criterion);
 DECLARE_int64(encoderdim);
 
-// Seq2Seq Transformer decoder
-DECLARE_int64(am_decoder_tr_layers);
-DECLARE_double(am_decoder_tr_dropout);
-DECLARE_double(am_decoder_tr_layerdrop);
-
-/* ========== DECODER OPTIONS ========== */
-
-DECLARE_bool(show);
-DECLARE_bool(showletters);
-DECLARE_bool(logadd);
-DECLARE_bool(uselexicon);
-DECLARE_bool(isbeamdump);
-
-DECLARE_string(smearing);
-DECLARE_string(lmtype);
-DECLARE_string(lexicon);
-DECLARE_string(lm_vocab);
-DECLARE_string(emission_dir);
-DECLARE_string(lm);
-DECLARE_string(am);
-DECLARE_string(sclite);
-DECLARE_string(decodertype);
-
-DECLARE_double(lmweight);
-DECLARE_double(wordscore);
-DECLARE_double(silscore);
-DECLARE_double(unkscore);
-DECLARE_double(eosscore);
-DECLARE_double(beamthreshold);
-
-DECLARE_int32(maxload);
-DECLARE_int32(maxword);
-DECLARE_int32(beamsize);
-DECLARE_int32(beamsizetoken);
-DECLARE_int32(nthread_decoder_am_forward);
-DECLARE_int32(nthread_decoder);
-DECLARE_int32(lm_memory);
-
-DECLARE_int32(emission_queue_size);
-
-// Seq2Seq
-DECLARE_double(smoothingtemperature);
-DECLARE_int32(attentionthreshold);
-
-/* ========== ASG OPTIONS ========== */
-
-DECLARE_int64(linseg);
-DECLARE_double(linlr);
-DECLARE_double(linlrcrit);
-DECLARE_double(transdiag);
-
-/* ========== SEQ2SEQ OPTIONS ========== */
-
-DECLARE_int64(maxdecoderoutputlen);
-DECLARE_int64(pctteacherforcing);
-DECLARE_string(samplingstrategy);
-DECLARE_double(labelsmooth);
-DECLARE_bool(inputfeeding);
-DECLARE_string(attention);
-DECLARE_string(attnWindow);
-DECLARE_int64(attndim);
-DECLARE_int64(attnconvchannel);
-DECLARE_int64(attnconvkernel);
-DECLARE_int64(numattnhead);
-DECLARE_int64(leftWindowSize);
-DECLARE_int64(rightWindowSize);
-DECLARE_int64(maxsil);
-DECLARE_int64(minsil);
-DECLARE_double(maxrate);
-DECLARE_double(minrate);
-DECLARE_int64(softwoffset);
-DECLARE_double(softwrate);
-DECLARE_double(softwstd);
-DECLARE_bool(trainWithWindow);
-DECLARE_int64(pretrainWindow);
-DECLARE_double(gumbeltemperature);
-DECLARE_int64(decoderrnnlayer);
-DECLARE_int64(decoderattnround);
-DECLARE_double(decoderdropout);
+/* ========== ADAPTIVE SOFTMAX OPTIONS ========== */
+DECLARE_int64(adsm_input_size);
+DECLARE_string(adsm_cutoffs);
 
 /* ========== DISTRIBUTED TRAINING ========== */
 DECLARE_bool(enable_distributed);

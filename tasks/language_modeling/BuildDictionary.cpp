@@ -10,17 +10,14 @@
 #include <glog/logging.h>
 #include <sstream>
 
-#include "libraries/language/tokenizer/Tokenizer.h"
+#include "common/Defines.h"
 
+#include "libraries/language/tokenizer/Tokenizer.h"
 #include "libraries/common/String.h"
 #include "libraries/common/System.h"
 
 namespace {
-DEFINE_string(inputfiles, "", "Training files of the language model");
-DEFINE_string(dictionary, "", "Path to save the dictionary");
 DEFINE_int64(nworkers, 1, "number of workers");
-DEFINE_int64(maxwords, 0, "number of workers");
-DEFINE_int64(minappearence, 0, "number of workers");
 DEFINE_bool(
     writedescriptor,
     false,
@@ -28,6 +25,7 @@ DEFINE_bool(
 } // namespace
 
 using namespace fl::lib;
+using namespace fl::task::lm;
 
 std::string printGflags(const std::string& separator /* = "\n" */) {
   std::stringstream serialized;
@@ -46,7 +44,7 @@ int main(int argc, char** argv) {
   google::InstallFailureSignalHandler();
   std::string exec(argv[0]);
   gflags::SetUsageMessage(
-      "Usage: " + exec + " \n Compulsory: [-inputfiles] [-dictionary]" +
+      "Usage: " + exec + " \n Compulsory: [-train] [-dictionary]" +
       "\n Optional: [nworkers] [nwords] [minappearence]");
   if (argc <= 1) {
     throw std::invalid_argument(gflags::ProgramUsage());
@@ -56,7 +54,7 @@ int main(int argc, char** argv) {
   LOG(INFO) << "Gflags after parsing \n" << printGflags("; ");
 
   auto tokenizer = Tokenizer();
-  auto files = split(',', FLAGS_inputfiles);
+  auto files = split(',', FLAGS_train);
 
   for (const auto& file : files) {
     LOG(INFO) << "Parsing " << file;
