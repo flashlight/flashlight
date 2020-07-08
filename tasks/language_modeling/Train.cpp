@@ -85,7 +85,6 @@ struct Trainer {
       createNetwork();
       createCriterion();
     }
-    // DEBUG: override existing flags from command line
     gflags::ParseCommandLineFlags(&argc, &argv, false);
     gflags = serializeGflags();
     LOG_MASTER(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
@@ -176,12 +175,6 @@ struct Trainer {
   void runTraining() {
     LOG_MASTER(INFO) << "training started (epoch=" << epoch
                      << " batch=" << batchIdx << ")";
-
-    // DEBUG: addGrad() crash
-    network->train();
-    criterion->train();
-    network->eval();
-    criterion->eval();
 
     fl::allReduceParameters(network);
     fl::allReduceParameters(criterion);
