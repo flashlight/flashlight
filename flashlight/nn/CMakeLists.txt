@@ -19,6 +19,7 @@ set(
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Conv2D.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Dropout.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Embedding.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Identity.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/LayerNorm.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Linear.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Loss.cpp
