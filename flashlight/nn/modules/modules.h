@@ -16,6 +16,7 @@
 #include "flashlight/nn/modules/Conv2D.h"
 #include "flashlight/nn/modules/Dropout.h"
 #include "flashlight/nn/modules/Embedding.h"
+#include "flashlight/nn/modules/Identity.h"
 #include "flashlight/nn/modules/LayerNorm.h"
 #include "flashlight/nn/modules/Linear.h"
 #include "flashlight/nn/modules/Loss.h"

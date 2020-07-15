@@ -414,6 +414,26 @@ TEST(ModuleTest, AdaptiveSoftMaxLossIgnoreIndex) {
       1E-5);
 }
 
+TEST(ModuleTest, IdentityFwd) {
+  auto module = Identity();
+  std::vector<Variable> in = {Variable(af::randu(af::dim4(1000, 1000)), true),
+                              Variable(af::randu(af::dim4(100, 100)), true)};
+
+  // Train Mode
+  module.train();
+  auto out = module(in);
+  ASSERT_EQ(out.size(), 2);
+  ASSERT_TRUE(allClose(out.at(0), in.at(0), 1e-20));
+  ASSERT_TRUE(allClose(out.at(1), in.at(1), 1e-20));
+
+  // Eval Mode
+  module.eval();
+  out = module(in);
+  ASSERT_EQ(out.size(), 2);
+  ASSERT_TRUE(allClose(out.at(0), in.at(0), 1e-20));
+  ASSERT_TRUE(allClose(out.at(1), in.at(1), 1e-20));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
