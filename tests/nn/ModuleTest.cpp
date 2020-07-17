@@ -27,6 +27,34 @@ class ContainerTestClass : public Sequential {
 
 } // namespace
 
+TEST(ModuleTest, EmbeddingFwd) {
+  int embDim = 3, nEmb = 5, nQuery = 2, batchSize = 2;
+  std::array<float, 15> wt = {8, 2, 2, 10, 5, 3, 3, 4, 6, 12, 3, 8, 0, 5, 2};
+  auto wtVar = param(af::array(embDim, nEmb, wt.data()));
+
+  std::array<float, 4> in = {1, 3, 0, 0};
+  auto inVar = input(af::array(2, batchSize, in.data()));
+
+  std::array<float, 12> expectedOut = {10, 5, 3, 12, 3, 8, 8, 2, 2, 8, 2, 2};
+  auto expectedOutVar =
+      Variable(af::array(embDim, nQuery, batchSize, expectedOut.data()), true);
+
+  // Var initialization
+  auto emb = Embedding(wtVar);
+  ASSERT_TRUE(allClose(emb.forward(inVar), expectedOutVar, 1E-7));
+
+  // Regular initialization
+  emb = Embedding(embDim, nEmb);
+  wtVar = emb.param(0);
+  ASSERT_EQ(wtVar.dims(), af::dim4(embDim, nEmb));
+  expectedOutVar = Variable(
+      af::moddims(
+          af::lookup(wtVar.array(), af::flat(inVar.array()), 1),
+          af::dim4(embDim, nQuery, batchSize)),
+      true);
+  ASSERT_TRUE(allClose(emb.forward(inVar), expectedOutVar, 1E-7));
+}
+
 TEST(ModuleTest, LinearFwd) {
   int n_in = 2, n_out = 3, x = 4, batchsize = 2;
   std::array<float, 6> wt = {8, 2, 2, 10, 5, 3};
