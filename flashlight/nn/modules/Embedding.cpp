@@ -13,10 +13,13 @@
 
 namespace fl {
 
-Embedding::Embedding(int embedding_dim, int num_embeddings)
-    : embeddingDim_(embedding_dim), numEmbeddings_(num_embeddings) {
+Embedding::Embedding(int embeddingDim, int numEmbeddings)
+    : embeddingDim_(embeddingDim), numEmbeddings_(numEmbeddings) {
   initialize();
 }
+
+Embedding::Embedding(const Variable& w)
+    : UnaryModule({w}), embeddingDim_(w.dims(0)), numEmbeddings_(w.dims(1)) {}
 
 void Embedding::initialize() {
   double stdv = std::sqrt(1.0 / (double)embeddingDim_);
