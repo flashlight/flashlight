@@ -132,11 +132,13 @@ fl::Variable index(
         }
         auto grad = fl::Variable(af::constant(0, idims), false);
         auto linearIndices = ravelIndices(idxs, idims);
+        grad.array()(linearIndices) = 
+          grad_output.array()(af::seq(linearIndices.elements()));
         // TODO Can parallize this if needed but does not work for duplicate keys
-        for(int i = 0; i < linearIndices.elements(); i++) {
-          af::array index = linearIndices(i);
-          grad.array()(index) += grad_output.array()(i);
-        }
+        //for(int i = 0; i < linearIndices.elements(); i++) {
+          //af::array index = linearIndices(i);
+          //grad.array()(index) += grad_output.array()(i);
+        //}
         inputs[0].addGrad(grad);
   };
   return fl::Variable(result, { in.withoutData() }, gradFunction);

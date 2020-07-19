@@ -103,7 +103,8 @@ public:
 
 
   CocoDataset(const std::string& list_file,
-      std::vector<ImageTransform>& transformfns
+      std::vector<ImageTransform>& transformfns,
+      int batch_size
       ); 
 
   std::shared_ptr<Dataset> getLabels(std::string list_file);
@@ -134,7 +135,8 @@ private:
 
 std::shared_ptr<CocoDataset> coco(
     const std::string& list_file,
-    std::vector<ImageTransform>& transformfns);
+    std::vector<ImageTransform>& transformfns,
+    int batch_size);
 
 //af::array cxcywh_to_xyxy(const af::array& bboxes);
 

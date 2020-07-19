@@ -187,7 +187,8 @@ int64_t getImageId(const std::string fp) {
 std::shared_ptr<Dataset> cocoDataLoader(std::vector<std::string> fps) {
   return std::make_shared<FilepathLoader>(fps, [](const std::string& fp) {
       af::array image = loadJpeg(fp);
-      long long int imageSizeArray[] = { image.dims(0), image.dims(1) };
+      // TODO (padentomasello) check this against Pytorch eval code
+      long long int imageSizeArray[] = { image.dims(1), image.dims(0) };
       af::array targetSize = af::array(2, imageSizeArray);
       af::array imageId = af::constant(getImageId(fp), 1, s64);
       std::vector<af::array> result = { image, targetSize, imageId };
@@ -204,15 +205,15 @@ namespace dataset {
 
 
 CocoDataset::CocoDataset(const std::string& list_file,
-      std::vector<ImageTransform>& transformfns
+      std::vector<ImageTransform>& transformfns,
+      int batch_size
       ) {
     auto images = getImages(list_file, transformfns);
     auto labels = getLabels(list_file);
     auto merged = merge({images, labels});
-    auto prefetch = std::make_shared<PrefetchDataset>(merged, 12, 128 * 2);
-    //return merged;
+    auto prefetch = std::make_shared<PrefetchDataset>(merged, 12, batch_size * 2);
     batched_ = std::make_shared<BatchTransformDataset<CocoData>>(
-        prefetch, 128, BatchDatasetPolicy::INCLUDE_LAST, cocoBatchFunc);
+        prefetch, batch_size, BatchDatasetPolicy::INCLUDE_LAST, cocoBatchFunc);
 
   }
 
@@ -221,7 +222,7 @@ void CocoDataset::resample() {
 
 
 std::shared_ptr<Dataset> CocoDataset::getImages(
-    const std::string list_file, 
+    const std::string list_file,
     std::vector<ImageTransform>& transformfns) {
   const std::vector<std::string> filepaths = parseImageFilepaths(list_file);
   auto images = cocoDataLoader(filepaths);
@@ -249,8 +250,9 @@ CocoData CocoDataset::get(const uint64_t idx) {
 
 std::shared_ptr<CocoDataset> coco(
     const std::string& list_file,
-    std::vector<ImageTransform>& transformfns)  {
-  return std::make_shared<CocoDataset>(list_file, transformfns);
+    std::vector<ImageTransform>& transformfns,
+    int batch_size)  {
+  return std::make_shared<CocoDataset>(list_file, transformfns, batch_size);
 
 }
 

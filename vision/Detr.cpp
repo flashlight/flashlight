@@ -18,6 +18,7 @@
 #include "vision/dataset/Transforms.h"
 #include "vision/dataset/Utils.h"
 #include "vision/models/Resnet.h"
+#include "vision/Resnet34Backbone.h"
 #include "vision/nn/PositionalEmbeddingSine.h"
 #include "vision/nn/Transformer.h"
 #include "vision/criterion/SetCriterion.h"
@@ -104,8 +105,8 @@ public:
   std::vector<Variable> forward(const std::vector<Variable>& input) {
 
     auto backboneFeatures = backbone_->forward(input);
-    auto inputProjection = inputProj_->forward(backboneFeatures[0]);
-    auto posEmbed = posEmbed_->forward(backboneFeatures[0]);
+    auto inputProjection = inputProj_->forward(backboneFeatures[1]);
+    auto posEmbed = posEmbed_->forward(backboneFeatures[1]);
     auto hs = transformer_->forward(
         inputProjection,
         queryEmbed_->param(0),
@@ -183,7 +184,9 @@ int main(int argc, char** argv) {
   const bool auxLoss = false;
 
   std::shared_ptr<Module> backbone; 
-  backbone = std::make_shared<Sequential>(resnet34());
+  //backbone = std::make_shared<Sequential>(resnet34());
+  std::string modelPath = "/checkpoint/padentomasello/models/resnet34backbone49";
+  fl::load(modelPath, backbone);
   auto transformer = std::make_shared<Transformer>(
       modelDim,
       numHeads,
@@ -192,7 +195,7 @@ int main(int argc, char** argv) {
       mlpDim,
       pDropout);
 
-  auto detr = Detr(
+  auto detr = std::make_shared<Detr>(
       backbone,
       transformer,
       hiddenDim,
@@ -210,66 +213,120 @@ int main(int argc, char** argv) {
       0.0,
       losses);
 
-
+  auto eval_loop = [](
+      std::shared_ptr<Detr> model,
+      std::shared_ptr<CocoDataset> dataset) {
+    int idx = 0;
+    for(auto& sample : *dataset) {
+      auto images =  { fl::Variable(sample.images, false) };
+      auto output = model->forward(images);
+      std::stringstream ss;
+      ss << "/private/home/padentomasello/data/coco/output/detection" << idx << ".array";
+      auto output_array = ss.str();
+      af::saveArray("imageSizes", sample.imageSizes, output_array.c_str(), false);
+      af::saveArray("imageIds", sample.imageIds, output_array.c_str(), true);
+      af::saveArray("scores", output[0].array(), output_array.c_str(), true);
+      af::saveArray("bboxes", output[1].array(), output_array.c_str(), true);
+      idx++;
+    }
+    system("PYTHONPATH=/private/home/padentomasello/code/detection-transformer/ "
+        "python3 /private/home/padentomasello/code/flashlight/vision/scripts/eval_coco.py");
+  };
 
   const int64_t batch_size_per_gpu = FLAGS_batch_size / FLAGS_world_size;
   const int64_t prefetch_threads = 10;
   const int64_t prefetch_size = FLAGS_batch_size;
   std::string coco_list = "/private/home/padentomasello/data/coco-mini/train.lst";
-  auto coco = cv::dataset::coco(coco_list, val_transforms);
+  auto coco = cv::dataset::coco(coco_list, val_transforms, FLAGS_batch_size);
   //SGDOptimizer opt(detr.params(), FLAGS_lr, FLAGS_momentum, FLAGS_wd);
-  AdamOptimizer opt(detr.params(), FLAGS_lr);
+  AdamOptimizer opt(detr->params(), FLAGS_lr);
 
-  for(int i = 0; i < FLAGS_epochs; i++) {
+  for(int e = 0; e < FLAGS_epochs; e++) {
 
-  AverageValueMeter accum_loss_meter;
-  AverageValueMeter bbox_loss_meter;
-  AverageValueMeter giou_loss_meter;
-  AverageValueMeter ce_loss_meter;
-  std::unordered_map<std::string, AverageValueMeter> meters;
-  for(auto& sample : *coco) {
-    std::cout << " Sample done" << std::endl;
-    auto images =  { fl::Variable(sample.images, false) };
-    auto output = detr.forward(images);
+    std::unordered_map<std::string, AverageValueMeter> meters;
+    std::unordered_map<std::string, TimeMeter> timers;
+    int idx = 0;
+    for(auto& sample : *coco) {
+      auto images =  { fl::Variable(sample.images, false) };
 
-    std::vector<Variable> targetBoxes(sample.target_boxes.size());
-    std::vector<Variable> targetClasses(sample.target_labels.size());
+      timers["forward"].resume();
+      timers["total"].resume();
+      auto output = detr->forward(images);
+      timers["forward"].stop();
 
-    std::transform(
-        sample.target_boxes.begin(), sample.target_boxes.end(),
-        targetBoxes.begin(),
-        [](const af::array& in) { return fl::Variable(in, false); });
+      /////////////////////////
+      // Criterion
+      /////////////////////////
+      std::vector<Variable> targetBoxes(sample.target_boxes.size());
+      std::vector<Variable> targetClasses(sample.target_labels.size());
 
-    std::transform(
-        sample.target_labels.begin(), sample.target_labels.end(),
-        targetClasses.begin(),
-        [](const af::array& in) { return fl::Variable(in, false); });
+      std::transform(
+          sample.target_boxes.begin(), sample.target_boxes.end(),
+          targetBoxes.begin(),
+          [](const af::array& in) { return fl::Variable(in, false); });
 
-    auto loss = criterion.forward(
-        output[1],
-        output[0],
-        targetBoxes,
-        targetClasses);
-    auto accumLoss = fl::Variable(af::constant(0, 1), true);
-    for(auto losses : loss) {
-      //const char* name = losses.first.c_str();
-      //const af::array arr = losses.second.array();
-      //af::print(name, arr);
-      meters[losses.first].add(losses.second.array());
-      accumLoss = losses.second + accumLoss;
+      std::transform(
+          sample.target_labels.begin(), sample.target_labels.end(),
+          targetClasses.begin(),
+          [](const af::array& in) { return fl::Variable(in, false); });
+
+      timers["criterion"].resume();
+
+      auto loss = criterion.forward(
+          output[1],
+          output[0],
+          targetBoxes,
+          targetClasses);
+      auto accumLoss = fl::Variable(af::constant(0, 1), true);
+      for(auto losses : loss) {
+        meters[losses.first].add(losses.second.array());
+        accumLoss = losses.second + accumLoss;
+      }
+      meters["sum"].add(accumLoss.array());
+      timers["criterion"].stop();
+
+      /////////////////////////
+      // Backward and update gradients
+      //////////////////////////
+      timers["backward"].resume();
+      accumLoss.backward();
+      timers["backward"].stop();
+      opt.step();
+      opt.zeroGrad();
+      timers["total"].stop();
+      //////////////////////////
+      // Metrics 
+      /////////////////////////
+      if(++idx % 10 == 0 || true) {
+        double total_time = timers["total"].value();
+        double sample_per_second = (idx * FLAGS_batch_size) / total_time;
+        double forward_time = timers["forward"].value();
+        double backward_time = timers["backward"].value();
+        double criterion_time = timers["criterion"].value();
+        std::cout << "Epoch " << e << std::setprecision(5) << " Batch: " << idx
+            << ": sample_per_second: " << sample_per_second
+            << ": forward_time_avg: " << forward_time / idx
+            << ": backward_time_avg: " << backward_time / idx
+            << ": criterion_time_avg: " << criterion_time / idx;
+            //<< std::endl;;
+            //<< " Samples per second " << sample_per_second
+            //<< ": Avg Train Loss: " << train_loss
+            //<< ": Train Top5 Error( %): " << top5_meter.value()
+            //<< ": Train Top1 Error( %): " << top1_meter.value()
+        for(auto meter : meters) {
+          std::cout << ": " << meter.first << ": " << meter.second.value()[0];
+        }
+        std::cout << std::endl;
+      }
     }
-    meters["sum"].add(accumLoss.array());
-    accumLoss.backward();
-    //af_print(accumLoss.array());
-    //af_print(loss["loss_giou"].array());
-    opt.step();
-    opt.zeroGrad();
+    for(auto timer : timers) {
+      timer.second.reset();
+    }
+    for(auto meter : meters) {
+      meter.second.reset();
+    }
+    if(e % 10 == 0 && e > 0) {
+      eval_loop(detr, coco);
+    }
   }
-  std::cout << "Batch: " << i;
-  for(auto meter : meters) {
-    std::cout << " " << meter.first << ": " << meter.second.value()[0];
-    meter.second.reset();
-  }
-  std::cout << std::endl;
-}
 }
