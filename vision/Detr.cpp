@@ -303,18 +303,18 @@ int main(int argc, char** argv) {
         double forward_time = timers["forward"].value();
         double backward_time = timers["backward"].value();
         double criterion_time = timers["criterion"].value();
-        std::cout << "Epoch " << e << std::setprecision(5) << " Batch: " << idx
-            << ": sample_per_second: " << sample_per_second
-            << ": forward_time_avg: " << forward_time / idx
-            << ": backward_time_avg: " << backward_time / idx
-            << ": criterion_time_avg: " << criterion_time / idx;
+        std::cout << "Epoch: " << e << std::setprecision(5) << " | Batch: " << idx
+            << " | sample_per_second: " << sample_per_second
+            << " | forward_time_avg: " << forward_time / idx
+            << " | backward_time_avg: " << backward_time / idx
+            << " | criterion_time_avg: " << criterion_time / idx;
             //<< std::endl;;
             //<< " Samples per second " << sample_per_second
             //<< ": Avg Train Loss: " << train_loss
             //<< ": Train Top5 Error( %): " << top5_meter.value()
             //<< ": Train Top1 Error( %): " << top1_meter.value()
         for(auto meter : meters) {
-          std::cout << ": " << meter.first << ": " << meter.second.value()[0];
+          std::cout << " | " << meter.first << ": " << meter.second.value()[0];
         }
         std::cout << std::endl;
       }
