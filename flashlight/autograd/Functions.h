@@ -212,6 +212,12 @@ Variable exp(const Variable& input);
 Variable log(const Variable& input);
 
 /**
+ * Computes power of each element in a Variable.
+ * \f[ out_i = var_i^p \f]
+ */
+Variable pow(const Variable& input, double p);
+
+/**
  * Computes natural logarithm of (1 + element) for each element in a Variable.
  * \f[ out_i = log(1.0 + var_i) \f]
  */
@@ -375,11 +381,26 @@ Variable sum(const Variable& input, const std::vector<int>& axes);
 Variable mean(const Variable& input, const std::vector<int>& axes);
 
 /**
- * Computes l2-norm of the tensor `input` along dimensions specified in
- * descriptor `axes`. If `axes` has size greater than 1, reduce over all of
- * them.
+ * Lp-norm computation, reduced over specified dimensions.
+ * @param input tensor on which the Lp norm is going to be computed.
+ * @param p the p value of the Lp norm.
+ * @param axes dimensions over which the reduction is performed.
  */
-Variable norm(const Variable& input, const std::vector<int>& axes);
+Variable
+norm(const Variable& input, const std::vector<int>& axes, double p = 2);
+
+/**
+ * Lp norm normalization, reduced over specified dimensions.
+ * @param input the tensor to be normalized.
+ * @param axes dimensions over which the reduction is performed.
+ * @param p the p value of the Lp norm.
+ * @param eps clamping value to avoid overflows.
+ */
+Variable normalize(
+    const Variable& input,
+    const std::vector<int>& axes,
+    double p = 2,
+    double eps = 1e-12);
 
 /**
  * Computes variance of the tensor `input` along dimensions specified in

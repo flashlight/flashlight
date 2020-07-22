@@ -345,6 +345,16 @@ Variable log1p(const Variable& input) {
   return Variable(result, {input}, gradFunc);
 }
 
+Variable pow(const Variable& input, double p) {
+  auto result = af::pow(input.array(), p);
+  auto gradFunc = [p](std::vector<Variable>& inputs,
+                      const Variable& gradOutput) {
+    af::array grad = p * af::pow(inputs[0].array(), p - 1) * gradOutput.array();
+    inputs[0].addGrad(Variable(grad, false));
+  };
+  return Variable(result, {input}, gradFunc);
+}
+
 Variable sin(const Variable& input) {
   auto result = sin(input.array());
   auto gradFunc = [](std::vector<Variable>& inputs,
@@ -608,22 +618,41 @@ Variable var(
   return Variable(result.array(), {input}, gradFunc);
 }
 
-Variable norm(const Variable& input, const std::vector<int>& axes) {
-  auto result = input.array() * input.array();
-  for (size_t i = 0; i < axes.size(); i++) {
-    result = sum(result, axes[i]);
+Variable
+norm(const Variable& input, const std::vector<int>& axes, double p /* = 2 */) {
+  if (p <= 0) {
+    throw std::out_of_range("Lp norm: p must be > 0");
   }
-  result = af::sqrt(result);
+  auto result = af::pow(af::abs(input.array()), p);
+  for (size_t i = 0; i < axes.size(); i++) {
+    result = af::sum(result, axes[i]);
+  }
+  af::array sumap = result;
+  result = af::pow(result, 1 / p);
   result.eval();
 
-  auto gradFunc = [result](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
-    auto output = Variable(result, false);
-    inputs[0].addGrad(Variable(
-        (inputs[0] * tileAs(gradOutput / output, inputs[0])).array(), false));
-  };
+  auto gradFunc =
+      [sumap, p](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        // correct, but less precise: auto gvar = Variable(af::pow(result, p-1),
+        // false);
+        auto gvar = Variable(af::pow(sumap, 1 - 1 / p), false);
+        inputs[0].addGrad(Variable(
+            (inputs[0] * fl::pow(fl::abs(inputs[0]), p - 2) *
+             tileAs(gradOutput / gvar, inputs[0]))
+                .array(),
+            false));
+      };
   return Variable(result, {input}, gradFunc);
+}
+
+Variable normalize(
+    const Variable& input,
+    const std::vector<int>& axes,
+    double p /* = 2 */,
+    double eps /* = 1e-12 */) {
+  Variable norm = fl::norm(input, axes, p);
+  Variable invscale = max(norm, eps);
+  return input / tileAs(invscale, input);
 }
 
 Variable matmul(const Variable& lhs, const Variable& rhs) {

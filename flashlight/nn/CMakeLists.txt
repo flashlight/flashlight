@@ -24,6 +24,7 @@ set(
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Linear.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Loss.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Module.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Normalize.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Padding.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Pool2D.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Reorder.cpp
