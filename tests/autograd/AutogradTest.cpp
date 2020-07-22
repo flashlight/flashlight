@@ -289,6 +289,25 @@ TEST(AutogradTest, Exp) {
   ASSERT_TRUE(allClose(dx.array(), (af::exp(x.array()))));
 }
 
+TEST(AutogradTest, Pow) {
+  {
+    auto x = Variable(af::randu(5), true);
+    auto y = pow(x, 2);
+    auto dy = Variable(af::constant(2.0, 5), false);
+    y.backward(dy);
+    auto dx = x.grad();
+    ASSERT_TRUE(allClose(dx.array(), (2 * 2 * x.array())));
+  }
+  {
+    auto x = Variable(af::randu(5), true);
+    auto y = pow(x, 3);
+    auto dy = Variable(af::constant(1.0, 5), false);
+    y.backward(dy);
+    auto dx = x.grad();
+    ASSERT_TRUE(allClose(dx.array(), (3 * af::pow(x.array(), 2))));
+  }
+}
+
 TEST(AutogradTest, Sigmoid) {
   auto x = Variable(af::randu(5), true);
   auto y = sigmoid(x);
@@ -503,8 +522,24 @@ TEST(AutogradTest, Variance) {
 
 TEST(AutogradTest, Norm) {
   auto x = Variable(af::randu(5, 3, af::dtype::f64), true);
-  auto func_norm = [](Variable& in) { return norm(in, {1}); };
-  ASSERT_TRUE(jacobianTestImpl(func_norm, x, 1E-4));
+  auto funcNorm2 = [](Variable& in) { return norm(in, {1}); };
+  ASSERT_TRUE(jacobianTestImpl(funcNorm2, x, 1E-4));
+  auto funcNorm1 = [](Variable& in) { return norm(in, {1}, 1); };
+  ASSERT_TRUE(jacobianTestImpl(funcNorm1, x, 1E-4));
+  auto funcNorm3 = [](Variable& in) { return norm(in, {1}, 3); };
+  ASSERT_TRUE(jacobianTestImpl(funcNorm3, x, 1E-4));
+}
+
+TEST(AutogradTest, Normalize) {
+  auto x = Variable(af::randu(5, 3, af::dtype::f64), true);
+  auto funcNormalize2 = [](Variable& in) { return normalize(in, {1}); };
+  ASSERT_TRUE(jacobianTestImpl(funcNormalize2, x));
+  auto ys = funcNormalize2(x);
+  ASSERT_TRUE(allClose(
+      af::sum(ys.array() * ys.array(), 1), af::constant(1, 5, af::dtype::f64)));
+  auto yb = normalize(x, {1}, 2, 1);
+  ASSERT_TRUE(
+      af::allTrue<bool>(af::sqrt(af::sum(yb.array() * yb.array(), 1)) <= 1));
 }
 
 TEST(AutogradTest, Indexing) {

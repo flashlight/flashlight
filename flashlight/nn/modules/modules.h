@@ -21,6 +21,7 @@
 #include "flashlight/nn/modules/Linear.h"
 #include "flashlight/nn/modules/Loss.h"
 #include "flashlight/nn/modules/Module.h"
+#include "flashlight/nn/modules/Normalize.h"
 #include "flashlight/nn/modules/Padding.h"
 #include "flashlight/nn/modules/Pool2D.h"
 #include "flashlight/nn/modules/RNN.h"

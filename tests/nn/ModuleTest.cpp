@@ -328,6 +328,16 @@ TEST(ModuleTest, LayerNormFwd) {
   ASSERT_EQ(out_train.dims(), input.dims());
 }
 
+TEST(ModuleTest, NormalizeFwd) {
+  auto input = Variable(af::randu(10, 3, af::dtype::f64), true);
+  auto module = Normalize({1}, 2, 1e-12, 5);
+  module.train();
+  auto out = module.forward(input);
+  ASSERT_TRUE(allClose(
+      af::sqrt(af::sum(out.array() * out.array(), 1)),
+      af::constant(5, 10, af::dtype::f64)));
+}
+
 TEST(ModuleTest, TransformFwd) {
   auto inVar = Variable(af::constant(1.0, 4, 5), true);
 
