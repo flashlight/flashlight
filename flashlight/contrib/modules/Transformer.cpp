@@ -105,8 +105,10 @@ Transformer::Transformer(
           transformerInitLinear(headDim * nHeads, modelDim))),
       norm1_(std::make_shared<LayerNorm>(std::vector<int>({0, 3}))),
       norm2_(std::make_shared<LayerNorm>(std::vector<int>({0, 3}))) {
-  params_.push_back(
-      uniform(2 * bptt - 1, headDim, -0.1, 0.1, af::dtype::f32, true));
+  if (bptt > 0) {
+    params_.push_back(
+        uniform(2 * bptt - 1, headDim, -0.1, 0.1, af::dtype::f32, true));
+  }
 
   add(w1_);
   add(w2_);
@@ -141,7 +143,9 @@ Variable Transformer::selfAttention(const std::vector<Variable>& input) {
   auto v = transpose((*wv_)(concatenate(input, 1)));
 
   Variable mask, posEmb;
-  posEmb = tile(params_[0], af::dim4(1, 1, nHeads_ * bsz));
+  if (bptt_ > 0) {
+    posEmb = tile(params_[0], af::dim4(1, 1, nHeads_ * bsz));
+  }
   if (useMask_ && input.back().dims(1) > 1) {
     mask = getMask(n, input.size() == 2);
   }
