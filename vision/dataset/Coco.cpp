@@ -204,18 +204,30 @@ namespace cv {
 namespace dataset {
 
 
-CocoDataset::CocoDataset(const std::string& list_file,
-      std::vector<ImageTransform>& transformfns,
-      int batch_size
-      ) {
-    auto images = getImages(list_file, transformfns);
-    auto labels = getLabels(list_file);
-    auto merged = merge({images, labels});
-    auto prefetch = std::make_shared<PrefetchDataset>(merged, 12, batch_size * 2);
-    batched_ = std::make_shared<BatchTransformDataset<CocoData>>(
-        prefetch, batch_size, BatchDatasetPolicy::INCLUDE_LAST, cocoBatchFunc);
+CocoDataset::CocoDataset(
+    const std::string& list_file,
+    std::vector<ImageTransform>& transformfns,
+    int world_rank,
+    int world_size,
+    int batch_size,
+    int num_threads,
+    int prefetch_size
+  ) {
+  auto images = getImages(list_file, transformfns);
+  auto labels = getLabels(list_file);
+  auto merged = merge({images, labels});
 
-  }
+  auto permfn = [world_size, world_rank](int64_t idx) {
+    return (idx * world_size) + world_rank;
+  };
+  auto sampled = std::make_shared<ResampleDataset>(
+    merged, permfn, merged->size() / world_size);
+
+  auto prefetch = std::make_shared<PrefetchDataset>(sampled, num_threads, prefetch_size);
+  batched_ = std::make_shared<BatchTransformDataset<CocoData>>(
+      prefetch, batch_size, BatchDatasetPolicy::INCLUDE_LAST, cocoBatchFunc);
+
+}
 
 void CocoDataset::resample() {
 }
@@ -248,13 +260,13 @@ CocoData CocoDataset::get(const uint64_t idx) {
 
 
 
-std::shared_ptr<CocoDataset> coco(
-    const std::string& list_file,
-    std::vector<ImageTransform>& transformfns,
-    int batch_size)  {
-  return std::make_shared<CocoDataset>(list_file, transformfns, batch_size);
+//std::shared_ptr<CocoDataset> coco(
+    //const std::string& list_file,
+    //std::vector<ImageTransform>& transformfns,
+    //int batch_size)  {
+  //return std::make_shared<CocoDataset>(list_file, transformfns, batch_size);
 
-}
+//}
 
 } // namespace dataset
 } // namespace cv

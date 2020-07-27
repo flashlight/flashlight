@@ -236,8 +236,27 @@ int main(int argc, char** argv) {
   const int64_t batch_size_per_gpu = FLAGS_batch_size / FLAGS_world_size;
   const int64_t prefetch_threads = 10;
   const int64_t prefetch_size = FLAGS_batch_size;
-  std::string coco_list = "/private/home/padentomasello/data/coco-mini/train.lst";
-  auto coco = cv::dataset::coco(coco_list, val_transforms, FLAGS_batch_size);
+  std::string coco_dir = "/private/home/padentomasello/data/coco-mini/";
+  //std::string coco_list = "/private/home/padentomasello/data/coco-mini/train.lst";
+  //auto coco = cv::dataset::coco(coco_list, val_transforms, FLAGS_batch_size);
+
+  auto train_ds = std::make_shared<CocoDataset>(
+      coco_dir + "train.lst",
+      val_transforms,
+      FLAGS_world_rank,
+      FLAGS_world_size,
+      FLAGS_batch_size,
+      prefetch_threads,
+      batch_size_per_gpu * 2);
+
+  auto val_ds = std::make_shared<CocoDataset>(
+      coco_dir + "val.lst",
+      val_transforms,
+      FLAGS_world_rank,
+      FLAGS_world_size,
+      FLAGS_batch_size,
+      prefetch_threads,
+      batch_size_per_gpu * 2);
   //SGDOptimizer opt(detr.params(), FLAGS_lr, FLAGS_momentum, FLAGS_wd);
   AdamOptimizer opt(detr->params(), FLAGS_lr);
 
@@ -267,7 +286,7 @@ int main(int argc, char** argv) {
     std::unordered_map<std::string, AverageValueMeter> meters;
     std::unordered_map<std::string, TimeMeter> timers;
     int idx = 0;
-    for(auto& sample : *coco) {
+    for(auto& sample : *train_ds) {
       auto images =  { fl::Variable(sample.images, false) };
 
       timers["forward"].resume();
@@ -321,7 +340,7 @@ int main(int argc, char** argv) {
       //////////////////////////
       // Metrics 
       /////////////////////////
-      if(++idx % 10 == 0 || true) {
+      if(++idx % 10 == 0) {
         double total_time = timers["total"].value();
         double sample_per_second = (idx * FLAGS_batch_size) / total_time;
         double forward_time = timers["forward"].value();
@@ -350,7 +369,7 @@ int main(int argc, char** argv) {
       meter.second.reset();
     }
     if(e % 10 == 0 && e > 0) {
-      eval_loop(detr, coco);
+      eval_loop(detr, val_ds);
     }
   }
 }
