@@ -149,6 +149,27 @@ int main(int argc, char** argv) {
   /////////////////////////
   // Setup distributed training
   ////////////////////////
+  af::info();
+  fl::distributedInit(
+	fl::DistributedInit::FILE_SYSTEM,
+	FLAGS_world_rank,
+	FLAGS_world_size,
+	{{fl::DistributedConstants::kMaxDevicePerNode,
+	  std::to_string(8)},
+	 {fl::DistributedConstants::kFilePath, FLAGS_rndv_filepath}});
+
+  std::cout << "WorldRank " << FLAGS_world_rank << " world_size " << FLAGS_world_size << std::endl;
+  af::setDevice(FLAGS_world_rank);
+  af::setSeed(FLAGS_world_size);
+
+  auto reducer = std::make_shared<fl::CoalescingReducer>(
+      1.0 / FLAGS_world_size,
+      true,
+      true);
+
+  /////////////////////////
+  // Setup distributed training
+  ////////////////////////
 
   //////////////////////////
   //  Create datasets
@@ -260,26 +281,6 @@ int main(int argc, char** argv) {
   //SGDOptimizer opt(detr.params(), FLAGS_lr, FLAGS_momentum, FLAGS_wd);
   AdamOptimizer opt(detr->params(), FLAGS_lr);
 
-  /////////////////////////
-  // Setup distributed training
-  ////////////////////////
-  af::info();
-  fl::distributedInit(
-	fl::DistributedInit::FILE_SYSTEM,
-	FLAGS_world_rank,
-	FLAGS_world_size,
-	{{fl::DistributedConstants::kMaxDevicePerNode,
-	  std::to_string(8)},
-	 {fl::DistributedConstants::kFilePath, FLAGS_rndv_filepath}});
-
-  std::cout << "WorldRank " << FLAGS_world_rank << " world_size " << FLAGS_world_size << std::endl;
-  af::setDevice(FLAGS_world_rank);
-  af::setSeed(FLAGS_world_size);
-
-  auto reducer = std::make_shared<fl::CoalescingReducer>(
-      1.0 / FLAGS_world_size,
-      true,
-      true);
 
   for(int e = 0; e < FLAGS_epochs; e++) {
 
@@ -340,7 +341,7 @@ int main(int argc, char** argv) {
       //////////////////////////
       // Metrics 
       /////////////////////////
-      if(++idx % 10 == 0) {
+      if(++idx % 5 == 0) {
         double total_time = timers["total"].value();
         double sample_per_second = (idx * FLAGS_batch_size) / total_time;
         double forward_time = timers["forward"].value();

@@ -49,7 +49,7 @@ class Args(object):
 
 args = Args()
 
-dataset_val = build_coco(image_set='train', args=args)
+dataset_val = build_coco(image_set='val', args=args)
 base_ds = get_coco_api_from_dataset(dataset_val)
 coco_evaluator = CocoEvaluator(base_ds, ('bbox',))
 
