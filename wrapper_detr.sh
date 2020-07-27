@@ -15,7 +15,7 @@ echo $SLURM_LOCALID
 export LD_LIBRARY_PATH=/private/home/padentomasello/usr/lib/:$LD_LIBRARY_PATH
 BUILD_DIR=/scratch/slurm_tmpdir/$SLURM_JOB_ID/$1
 mkdir -p $BUILD_DIR/rndv/
-$BUILD_DIR/flashlight/build/vision/Detr -lr 0.0001 --epochs 100000 --batch_size 256 \
+$BUILD_DIR/flashlight/build/vision/Detr -lr 0.0001 --epochs 100000 --batch_size 512 \
 --world_rank $SLURM_LOCALID --world_size $SLURM_NTASKS --rndv_filepath $BUILD_DIR/rndv 
 
 
