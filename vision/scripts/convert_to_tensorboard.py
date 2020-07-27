@@ -36,10 +36,12 @@ if __name__ == "__main__":
         for line in infile:
             if (train_matcher.match(line)):
                 parts = line.split('|')
+                # print(line)
                 metrics = {}
                 for part in parts:
-                    split = part.split(':');
+                    split = part.rsplit(':', 1);
                     key = split[0].strip();
+                    # print(split)
                     value = float(split[1].strip());
                     metrics[key] = value
                 log_train_metrics(metrics, step)
