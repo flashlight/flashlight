@@ -49,6 +49,7 @@ class Args(object):
 
 args = Args()
 
+# dataset_val = build_coco(image_set='val', args=args)
 dataset_val = build_coco(image_set='val', args=args)
 base_ds = get_coco_api_from_dataset(dataset_val)
 coco_evaluator = CocoEvaluator(base_ds, ('bbox',))
@@ -72,6 +73,7 @@ for f in glob.glob('/private/home/padentomasello/data/coco/output/detection*.arr
     bboxes = torch.from_numpy(bboxes)
     results = postprocess.forward(scores, bboxes, imageSizes)
     imageIds = [ id for id in imageIds ];
+    # print(imageIds)
 
     res = { id : output for id, output in zip(imageIds, results) };
     coco_evaluator.update(res)
