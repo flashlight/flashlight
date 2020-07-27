@@ -257,7 +257,7 @@ int main(int argc, char** argv) {
   const int64_t batch_size_per_gpu = FLAGS_batch_size / FLAGS_world_size;
   const int64_t prefetch_threads = 10;
   const int64_t prefetch_size = FLAGS_batch_size;
-  std::string coco_dir = "/private/home/padentomasello/data/coco-mini/";
+  std::string coco_dir = "/private/home/padentomasello/data/coco/";
   //std::string coco_list = "/private/home/padentomasello/data/coco-mini/train.lst";
   //auto coco = cv::dataset::coco(coco_list, val_transforms, FLAGS_batch_size);
 
