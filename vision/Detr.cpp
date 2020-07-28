@@ -259,7 +259,7 @@ int main(int argc, char** argv) {
       idx++;
     }
     system("PYTHONPATH=/private/home/padentomasello/code/detection-transformer/ "
-        "python3 /private/home/padentomasello/code/flashlight/vision/scripts/eval_coco.py");
+        "/private/home/padentomasello/.conda/envs/coco/bin/python3.8 /private/home/padentomasello/code/flashlight/vision/scripts/eval_coco.py");
   };
 
   //const int64_t batch_size_per_gpu = FLAGS_batch_size / FLAGS_world_size;
