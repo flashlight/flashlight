@@ -291,22 +291,22 @@ int main(int argc, char** argv) {
   AdamOptimizer opt(detr->params(), FLAGS_lr);
 
   // Small utility functions to load and save models
-  auto saveModel = [&detr](int epoch) {
-    if(FLAGS_world_rank == 0) {
-      std::string modelPath = FLAGS_checkpointpath + std::to_string(epoch);
-      std::cout <<  "Saving model to file: " << modelPath << std::endl;
-      fl::save(modelPath, detr);
-    }
-  };
+  //auto saveModel = [&detr](int epoch) {
+    //if(FLAGS_world_rank == 0) {
+      //std::string modelPath = FLAGS_checkpointpath + std::to_string(epoch);
+      //std::cout <<  "Saving model to file: " << modelPath << std::endl;
+      //fl::save(modelPath, detr);
+    //}
+  //};
 
-  auto loadModel = [&detr](int epoch) {
-      std::string modelPath = FLAGS_checkpointpath + std::to_string(epoch);
-      std::cout <<  "Loading model from file: " << modelPath << std::endl;
-      fl::load(modelPath, detr);
-  };
-  if (FLAGS_checkpoint >= 0) {
-    loadModel(FLAGS_checkpoint);
-  }
+  //auto loadModel = [&detr](int epoch) {
+      //std::string modelPath = FLAGS_checkpointpath + std::to_string(epoch);
+      //std::cout <<  "Loading model from file: " << modelPath << std::endl;
+      //fl::load(modelPath, detr);
+  //};
+  //if (FLAGS_checkpoint >= 0) {
+    //loadModel(FLAGS_checkpoint);
+  //}
 
 
   for(int e = 0; e < FLAGS_epochs; e++) {
@@ -398,7 +398,7 @@ int main(int argc, char** argv) {
     }
     if(e % 10 == 0 && e > 0) {
       eval_loop(detr, val_ds);
-      saveModel(e);
+      //saveModel(e);
     }
   }
 }
