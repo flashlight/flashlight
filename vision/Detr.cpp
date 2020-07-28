@@ -224,6 +224,14 @@ int main(int argc, char** argv) {
       numQueries,
       auxLoss);
 
+  // synchronize parameters of tje model so that the parameters in each process
+  // is the same
+  fl::allReduceParameters(detr);
+
+  // Add a hook to synchronize gradients of model parameters as they are
+  // computed
+  fl::distributeModuleGrads(detr, reducer);
+
 
   auto matcher = HungarianMatcher(1, 1, 1);
   SetCriterion::LossDict losses;
@@ -254,7 +262,8 @@ int main(int argc, char** argv) {
         "python3 /private/home/padentomasello/code/flashlight/vision/scripts/eval_coco.py");
   };
 
-  const int64_t batch_size_per_gpu = FLAGS_batch_size / FLAGS_world_size;
+  //const int64_t batch_size_per_gpu = FLAGS_batch_size / FLAGS_world_size;
+  const int64_t batch_size_per_gpu = FLAGS_batch_size;
   const int64_t prefetch_threads = 10;
   const int64_t prefetch_size = FLAGS_batch_size;
   std::string coco_dir = "/private/home/padentomasello/data/coco/";
@@ -266,7 +275,7 @@ int main(int argc, char** argv) {
       val_transforms,
       FLAGS_world_rank,
       FLAGS_world_size,
-      FLAGS_batch_size,
+      batch_size_per_gpu,
       prefetch_threads,
       batch_size_per_gpu * 2);
 
@@ -275,11 +284,29 @@ int main(int argc, char** argv) {
       val_transforms,
       FLAGS_world_rank,
       FLAGS_world_size,
-      FLAGS_batch_size,
+      batch_size_per_gpu,
       prefetch_threads,
       batch_size_per_gpu * 2);
   //SGDOptimizer opt(detr.params(), FLAGS_lr, FLAGS_momentum, FLAGS_wd);
   AdamOptimizer opt(detr->params(), FLAGS_lr);
+
+  // Small utility functions to load and save models
+  auto saveModel = [&detr](int epoch) {
+    if(FLAGS_world_rank == 0) {
+      std::string modelPath = FLAGS_checkpointpath + std::to_string(epoch);
+      std::cout <<  "Saving model to file: " << modelPath << std::endl;
+      fl::save(modelPath, detr);
+    }
+  };
+
+  auto loadModel = [&detr](int epoch) {
+      std::string modelPath = FLAGS_checkpointpath + std::to_string(epoch);
+      std::cout <<  "Loading model from file: " << modelPath << std::endl;
+      fl::load(modelPath, detr);
+  };
+  if (FLAGS_checkpoint >= 0) {
+    loadModel(FLAGS_checkpoint);
+  }
 
 
   for(int e = 0; e < FLAGS_epochs; e++) {
@@ -343,7 +370,7 @@ int main(int argc, char** argv) {
       /////////////////////////
       if(++idx % 5 == 0) {
         double total_time = timers["total"].value();
-        double sample_per_second = (idx * FLAGS_batch_size) / total_time;
+        double sample_per_second = (idx * FLAGS_batch_size * FLAGS_world_size) / total_time;
         double forward_time = timers["forward"].value();
         double backward_time = timers["backward"].value();
         double criterion_time = timers["criterion"].value();
@@ -371,6 +398,7 @@ int main(int argc, char** argv) {
     }
     if(e % 10 == 0 && e > 0) {
       eval_loop(detr, val_ds);
+      saveModel(e);
     }
   }
 }
