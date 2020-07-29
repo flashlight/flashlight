@@ -112,7 +112,6 @@ public:
         inputProjection,
         queryEmbed_->param(0),
         posEmbed);
-    return { inputProjection, hs[0] };
 
     auto outputClasses = classEmbed_->forward(hs[0]);
     auto outputCoord = sigmoid(bboxEmbed_->forward(hs)[0]);
@@ -151,23 +150,23 @@ int main(int argc, char** argv) {
   /////////////////////////
   // Setup distributed training
   ////////////////////////
-  //af::info();
-  //fl::distributedInit(
-	//fl::DistributedInit::FILE_SYSTEM,
-	//FLAGS_world_rank,
-	//FLAGS_world_size,
-	//{{fl::DistributedConstants::kMaxDevicePerNode,
-		//std::to_string(8)},
-	 //{fl::DistributedConstants::kFilePath, FLAGS_rndv_filepath}});
+  af::info();
+  fl::distributedInit(
+  fl::DistributedInit::FILE_SYSTEM,
+  FLAGS_world_rank,
+  FLAGS_world_size,
+  {{fl::DistributedConstants::kMaxDevicePerNode,
+    std::to_string(8)},
+   {fl::DistributedConstants::kFilePath, FLAGS_rndv_filepath}});
 
   std::cout << "WorldRank " << FLAGS_world_rank << " world_size " << FLAGS_world_size << std::endl;
   af::setDevice(FLAGS_world_rank);
   af::setSeed(FLAGS_world_size);
 
-  //auto reducer = std::make_shared<fl::CoalescingReducer>(
-      //1.0 / FLAGS_world_size,
-      //true,
-      //true);
+  auto reducer = std::make_shared<fl::CoalescingReducer>(
+      1.0 / FLAGS_world_size,
+      true,
+      true);
 
   /////////////////////////
   // Setup distributed training
@@ -201,7 +200,7 @@ int main(int argc, char** argv) {
   const int32_t mlpDim = modelDim;
   // TODO check this is correct
   const int32_t hiddenDim = modelDim;
-  const int32_t numClasses = 80;
+  const int32_t numClasses = 90;
   const int32_t numQueries = 100;
   const float pDropout = 0.0;
   const bool auxLoss = false;
@@ -228,21 +227,21 @@ int main(int argc, char** argv) {
 
   // synchronize parameters of tje model so that the parameters in each process
   // is the same
-  //fl::allReduceParameters(detr);
+  fl::allReduceParameters(detr);
 
   // Add a hook to synchronize gradients of model parameters as they are
   // computed
-  //fl::distributeModuleGrads(detr, reducer);
+  fl::distributeModuleGrads(detr, reducer);
 
 
-  //auto matcher = HungarianMatcher(1, 1, 1);
-  //SetCriterion::LossDict losses;
-  //auto criterion = SetCriterion(
-      //numClasses,
-      //matcher,
-      //af::array(),
-      //0.0,
-      //losses);
+  auto matcher = HungarianMatcher(1, 1, 1);
+  SetCriterion::LossDict losses;
+  auto criterion = SetCriterion(
+      numClasses,
+      matcher,
+      af::array(),
+      0.0,
+      losses);
 
   auto eval_loop = [](
       std::shared_ptr<Detr> model,
@@ -279,7 +278,7 @@ int main(int argc, char** argv) {
       FLAGS_world_size,
       batch_size_per_gpu,
       prefetch_threads,
-      batch_size_per_gpu * 2);
+      batch_size_per_gpu);
 
   auto val_ds = std::make_shared<CocoDataset>(
       coco_dir + "val.lst",
@@ -288,7 +287,7 @@ int main(int argc, char** argv) {
       FLAGS_world_size,
       batch_size_per_gpu,
       prefetch_threads,
-      batch_size_per_gpu * 2);
+      batch_size_per_gpu);
   //SGDOptimizer opt(detr.params(), FLAGS_lr, FLAGS_momentum, FLAGS_wd);
   AdamOptimizer opt(detr->params(), FLAGS_lr);
 
@@ -318,8 +317,8 @@ int main(int argc, char** argv) {
     int idx = 0;
     timers["total"].resume();
     auto sample = train_ds->get(0);
-    while(true) {
-    //for(auto& sample : *train_ds) {
+    //while(true) {
+    for(auto& sample : *train_ds) {
       auto images =  { fl::Variable(sample.images, false) };
 
       timers["forward"].resume();
@@ -331,45 +330,45 @@ int main(int argc, char** argv) {
       /////////////////////////
       // Criterion
       /////////////////////////
-      //std::vector<Variable> targetBoxes(sample.target_boxes.size());
-      //std::vector<Variable> targetClasses(sample.target_labels.size());
+      std::vector<Variable> targetBoxes(sample.target_boxes.size());
+      std::vector<Variable> targetClasses(sample.target_labels.size());
 
-      //std::transform(
-          //sample.target_boxes.begin(), sample.target_boxes.end(),
-          //targetBoxes.begin(),
-          //[](const af::array& in) { return fl::Variable(in, false); });
+      std::transform(
+          sample.target_boxes.begin(), sample.target_boxes.end(),
+          targetBoxes.begin(),
+          [](const af::array& in) { return fl::Variable(in, false); });
 
-      //std::transform(
-          //sample.target_labels.begin(), sample.target_labels.end(),
-          //targetClasses.begin(),
-          //[](const af::array& in) { return fl::Variable(in, false); });
+      std::transform(
+          sample.target_labels.begin(), sample.target_labels.end(),
+          targetClasses.begin(),
+          [](const af::array& in) { return fl::Variable(in, false); });
 
-      //timers["criterion"].resume();
+      timers["criterion"].resume();
 
-      //auto loss = criterion.forward(
-          //output[1],
-          //output[0],
-          //targetBoxes,
-          //targetClasses);
-      //auto accumLoss = fl::Variable(af::constant(0, 1), true);
-      //for(auto losses : loss) {
-        //meters[losses.first].add(losses.second.array());
-        //accumLoss = losses.second + accumLoss;
-      //}
-      //meters["sum"].add(accumLoss.array());
-      //timers["criterion"].stop();
+      auto loss = criterion.forward(
+          output[1],
+          output[0],
+          targetBoxes,
+          targetClasses);
+      auto accumLoss = fl::Variable(af::constant(0, 1), true);
+      for(auto losses : loss) {
+        meters[losses.first].add(losses.second.array());
+        accumLoss = losses.second + accumLoss;
+      }
+      meters["sum"].add(accumLoss.array());
+      timers["criterion"].stop();
 
       /////////////////////////
       // Backward and update gradients
       //////////////////////////
-      //timers["backward"].resume();
-      //accumLoss.backward();
-      //timers["backward"].stop();
+      timers["backward"].resume();
+      accumLoss.backward();
+      timers["backward"].stop();
 
-      //reducer->finalize();
-      //opt.step();
+      reducer->finalize();
+      opt.step();
 
-      //opt.zeroGrad();
+      opt.zeroGrad();
       //////////////////////////
       // Metrics 
       /////////////////////////
