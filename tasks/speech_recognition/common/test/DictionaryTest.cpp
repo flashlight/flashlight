@@ -12,7 +12,7 @@
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
-#include "common/FlashlightUtils.h"
+#include "common/Utils.h"
 #include "libraries/common/Dictionary.h"
 
 using namespace w2l;

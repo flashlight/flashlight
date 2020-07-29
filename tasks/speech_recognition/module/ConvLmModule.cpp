@@ -10,7 +10,7 @@
 
 #include <string>
 
-#include "common/FlashlightUtils.h"
+#include "common/Utils.h"
 
 namespace w2l {
 GetConvLmScoreFunc buildGetConvLmScoreFunction(
@@ -57,7 +57,7 @@ GetConvLmScoreFunc buildGetConvLmScoreFunction(
     af::array preds =
         af::moddims(af::flat(output.array())(af::flat(globalIndices)), C, B);
     // vector of B X C predictions
-    return afToVector<float>(preds);
+    return w2l::afToVector<float>(preds);
   };
 
   return getConvLmScoreFunc;

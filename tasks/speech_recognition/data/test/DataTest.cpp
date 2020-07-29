@@ -12,7 +12,7 @@
 #include <gtest/gtest.h>
 
 #include "common/Defines.h"
-#include "common/FlashlightUtils.h"
+#include "common/Utils.h"
 #include "data/Featurize.h"
 #include "data/W2lListFilesDataset.h"
 

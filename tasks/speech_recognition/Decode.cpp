@@ -19,7 +19,7 @@
 #include <glog/logging.h>
 
 #include "common/Defines.h"
-#include "common/FlashlightUtils.h"
+#include "common/Utils.h"
 #include "common/Transforms.h"
 #include "criterion/criterion.h"
 #include "data/Featurize.h"
@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
       criterion->eval();
       LOG(INFO) << "[Criterion] " << criterion->prettyString();
     }
-    LOG(INFO) << "[Network] Number of params: " << numTotalParams(network);
+    LOG(INFO) << "[Network] Number of params: " << fl::numTotalParams(network);
 
     auto flags = cfg.find(kGflags);
     if (flags == cfg.end()) {
@@ -159,7 +159,7 @@ int main(int argc, char** argv) {
 
   std::vector<float> transition;
   if (FLAGS_criterion == kAsgCriterion) {
-    transition = afToVector<float>(criterion->param(0).array());
+    transition = w2l::afToVector<float>(criterion->param(0).array());
   }
 
   // Prepare decoder options
@@ -341,8 +341,8 @@ int main(int argc, char** argv) {
 
       /* 2. Load Targets */
       TargetUnit targetUnit;
-      auto tokenTarget = afToVector<int>(sample[kTargetIdx]);
-      auto wordTarget = afToVector<int>(sample[kWordIdx]);
+      auto tokenTarget = w2l::afToVector<int>(sample[kTargetIdx]);
+      auto wordTarget = w2l::afToVector<int>(sample[kWordIdx]);
       // TODO: we will reform the w2l dataset so that the loaded word targets
       // are strings already
       std::vector<std::string> wordTargetStr;
@@ -362,7 +362,7 @@ int main(int argc, char** argv) {
         auto rawEmission =
             localNetwork->forward({fl::input(sample[kInputIdx])}).front();
         emissionUnit = EmissionUnit(
-            afToVector<float>(rawEmission),
+            w2l::afToVector<float>(rawEmission),
             sampleId,
             rawEmission.dims(1),
             rawEmission.dims(0));

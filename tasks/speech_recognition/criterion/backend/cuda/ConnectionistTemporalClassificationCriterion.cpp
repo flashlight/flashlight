@@ -11,7 +11,7 @@
 #include <flashlight/autograd/autograd.h>
 #include <flashlight/common/cuda.h>
 
-#include "common/FlashlightUtils.h"
+#include "common/Utils.h"
 #include "criterion/ConnectionistTemporalClassificationCriterion.h"
 #include "criterion/CriterionUtils.h"
 #include "libraries/criterion/cuda/CriterionUtils.cuh"

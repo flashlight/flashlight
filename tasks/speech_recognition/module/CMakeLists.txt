@@ -18,7 +18,7 @@ target_link_libraries(
   module
   INTERFACE
   common
-  flashlight::flashlight
+  flashlight
   ${cereal_LIBRARIES}
   ${GLOG_LIBRARIES}
   )

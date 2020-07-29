@@ -12,7 +12,7 @@
 #include <functional>
 #include <sstream>
 
-#include "common/FlashlightUtils.h"
+#include "common/Utils.h"
 #include "data/Sound.h"
 
 namespace {

@@ -8,7 +8,7 @@
 
 #include "Serial.h"
 
-#include "common/FlashlightUtils.h"
+#include "common/Utils.h"
 
 #include <fstream>
 #include <sstream>

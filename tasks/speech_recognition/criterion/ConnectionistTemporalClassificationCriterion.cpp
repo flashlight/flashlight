@@ -7,7 +7,7 @@
  */
 #include "ConnectionistTemporalClassificationCriterion.h"
 
-#include "common/FlashlightUtils.h"
+#include "common/Utils.h"
 #include "libraries/criterion/cpu/ConnectionistTemporalClassificationCriterion.h"
 
 using CTC = w2l::cpu::ConnectionistTemporalClassificationCriterion<float>;
@@ -65,9 +65,9 @@ af::array ConnectionistTemporalClassificationCriterion::viterbiPath(
   const af::array targetSize = getTargetSizeArray(targetVar, T);
   std::shared_ptr<CTCContext> ctx = std::make_shared<CTCContext>();
   af::array softmax = logSoftmax(inputVar, 0);
-  std::vector<float> inputVec = afToVector<float>(softmax);
-  ctx->targetVec = afToVector<int>(targetVar);
-  ctx->targetSizeVec = afToVector<int>(targetSize);
+  std::vector<float> inputVec = w2l::afToVector<float>(softmax);
+  ctx->targetVec = w2l::afToVector<int>(targetVar);
+  ctx->targetSizeVec = w2l::afToVector<int>(targetSize);
   ctx->workspaceVec.assign(CTC::getWorkspaceSize(B, T, N, L), 0);
   std::vector<int> bestPaths(B * T);
   CTC::viterbi(

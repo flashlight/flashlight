@@ -8,7 +8,7 @@
 
 #include "criterion/FullConnectionCriterion.h"
 
-#include "common/FlashlightUtils.h"
+#include "common/Utils.h"
 #include "criterion/CriterionUtils.h"
 #include "libraries/criterion/cpu/FullConnectionCriterion.h"
 
@@ -36,7 +36,7 @@ static void backward(
     throw std::invalid_argument("FCC: grad must be float32");
   }
 
-  auto gradVec = afToVector<float>(gradVar);
+  auto gradVec = w2l::afToVector<float>(gradVar);
   std::vector<float> inputGradVec(B * T * N);
   std::vector<float> transGradVec(N * N);
 
@@ -75,10 +75,10 @@ Variable FullConnectionCriterion::forward(
 
   const auto& targetSize = getTargetSizeArray(targetVar.array(), T);
   auto ctx = std::make_shared<Context>();
-  auto inputVec = afToVector<float>(inputVar);
-  auto targetVec = afToVector<int>(targetVar);
-  auto targetSizeVec = afToVector<int>(targetSize);
-  ctx->transVec = afToVector<float>(transVar);
+  auto inputVec = w2l::afToVector<float>(inputVar);
+  auto targetVec = w2l::afToVector<int>(targetVar);
+  auto targetSizeVec = w2l::afToVector<int>(targetSize);
+  ctx->transVec = w2l::afToVector<float>(transVar);
   std::vector<float> lossVec(B);
   ctx->workspaceVec.assign(FCC::getWorkspaceSize(B, T, N), 0);
 

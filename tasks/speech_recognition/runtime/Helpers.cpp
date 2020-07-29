@@ -10,9 +10,26 @@
 
 #include <random>
 
-#include "common/FlashlightUtils.h"
+#include "common/Utils.h"
 
 namespace w2l {
+
+template <class T>
+std::vector<std::string> afMatrixToStrings(const af::array& arr, T terminator) {
+  int L = arr.dims(0); // padded length of string
+  int N = arr.dims(1); // number of strings
+  std::vector<std::string> result;
+  auto values = w2l::afToVector<T>(arr);
+  for (int i = 0; i < N; ++i) {
+    const T* row = &values[i * L];
+    int len = 0;
+    while (len < L && row[len] != terminator) {
+      ++len;
+    }
+    result.emplace_back(row, row + len);
+  }
+  return result;
+}
 
 std::unordered_set<int64_t>
 getTrainEvalIds(int64_t dsSize, double pctTrainEval, int64_t seed) {

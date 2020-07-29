@@ -22,7 +22,7 @@ target_link_libraries(
   INTERFACE
   common
   data
-  flashlight::flashlight
+  flashlight
   ${GLOG_LIBRARIES}
   ${cereal_LIBRARIES}
   )

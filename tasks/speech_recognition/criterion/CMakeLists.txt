@@ -7,6 +7,9 @@ add_library(
   )
 
 # ---------------------------- Backend-specific -----------------------------
+if (FLASHLIGHT_BACKEND STREQUAL "CUDA")
+  set(FLASHLIGHT_USE_CUDA ON)
+endif ()
 
 if (FLASHLIGHT_USE_CUDA)
   # Build WarpCTC
@@ -38,6 +41,7 @@ if (FLASHLIGHT_USE_CUDA)
     INTERFACE
     ${CUDA_INCLUDE_DIRS}
     ${WARPCTC_INCLUDE_DIR}
+    # ${CMAKE_SOURCE_DIR}/flashlight
     )
 elseif (FLASHLIGHT_USE_CPU)
   target_sources(
@@ -77,7 +81,7 @@ target_link_libraries(
   window
   common
   wav2letter-libraries
-  flashlight::flashlight
+  flashlight
   ${GLOG_LIBRARIES}
   ${cereal_LIBRARIES}
   )
@@ -85,6 +89,7 @@ target_link_libraries(
 target_include_directories(
   criterion
   INTERFACE
+  # ${PROJECT_SOURCE_DIR}
   ${GLOG_INCLUDE_DIRS}
   ${cereal_INCLUDE_DIRS}
   )
@@ -115,7 +120,7 @@ target_include_directories(
 target_link_libraries(
   attention
   INTERFACE
-  flashlight::flashlight
+  flashlight
   common
   ${cereal_LIBRARIES}
   )
@@ -140,13 +145,14 @@ target_include_directories(
   INTERFACE
   attention
   src/flashlight
+  # ${CMAKE_SOURCE_DIR}
   ${cereal_INCLUDE_DIRS}
   )
 
 target_link_libraries(
   window
   INTERFACE
-  flashlight::flashlight
+  flashlight
   common
   ${cereal_LIBRARIES}
   )

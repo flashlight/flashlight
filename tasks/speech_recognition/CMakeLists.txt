@@ -1,12 +1,6 @@
 cmake_minimum_required(VERSION 3.5.1)
 
-<<<<<<< HEAD
-project(wav2letter++)
-
-# ----------------------------- Setup -----------------------------
-set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+project(flashlight_asr_task)
 
 # ----------------------------- Configuration -----------------------------
 
@@ -34,36 +28,6 @@ if (W2L_LIBRARIES_USE_MKL)
     set(W2L_LIBRARIES_USE_MKL OFF CACHE BOOL "" FORCE)
   endif ()
 endif ()
-=======
-project(flashlight_asr_task)
-
-# ----------------------------- Configuration -----------------------------
-
-# option(W2L_BUILD_LIBRARIES_ONLY "Build wav2letter-libraries only" OFF)
-# option(W2L_BUILD_INFERENCE
-#   "Build inference even when W2L_BUILD_LIBRARIES_ONLY is set" OFF)
-# option(W2L_LIBRARIES_USE_CUDA "Use CUDA in libraries-only build" ON)
-# option(W2L_LIBRARIES_USE_KENLM "Use KenLM in libraries-only build" ON)
-# option(W2L_LIBRARIES_USE_MKL "Use MKL in libraries-only build" ON)
-# option(W2L_BUILD_FOR_PYTHON "Build Python bindings" OFF)
-# option(W2L_BUILD_TESTS "Build tests for wav2letter++" ON)
-# option(W2L_BUILD_EXAMPLES "Build examples for wav2letter++" ON)
-# option(W2L_BUILD_EXPERIMENTAL "Build internal experimental components for wav2letter++" OFF)
-# option(W2L_BUILD_SCRIPTS "Build internal scripts for wav2letter++" OFF)
-# option(W2L_BUILD_RECIPES "Build recipes" ON)
-# option(W2L_BUILD_TOOLS "Build audio tools" OFF)
-# set(KENLM_MAX_ORDER 6 CACHE STRING "Maximum ngram order for KenLM")
-
-# ------------------------- Dependency Fallback -------------------------
-
-# if (W2L_LIBRARIES_USE_MKL)
-#   find_package(MKL)
-#   if (NOT MKL_FOUND)
-#     message(WARNING "MKL not found; forcing W2L_LIBRARIES_USE_MKL=OFF.")
-#     set(W2L_LIBRARIES_USE_MKL OFF CACHE BOOL "" FORCE)
-#   endif ()
-# endif ()
->>>>>>> cd74bfa... make asr task build in fl
 
 # ------------------------- Libraries-Only Build ------------------------------
 
@@ -73,11 +37,7 @@ function (build_w2l_libraries)
     $<$<BOOL:${W2L_LIBRARIES_USE_KENLM}>:W2L_LIBRARIES_USE_KENLM>
     $<$<BOOL:${W2L_LIBRARIES_USE_MKL}>:W2L_LIBRARIES_USE_MKL>
     )
-<<<<<<< HEAD
-  add_subdirectory(${PROJECT_SOURCE_DIR}/src/libraries)
-=======
   add_subdirectory(${PROJECT_SOURCE_DIR}/libraries)
->>>>>>> cd74bfa... make asr task build in fl
   if (W2L_BUILD_FOR_PYTHON)
     add_subdirectory(${PROJECT_SOURCE_DIR}/bindings/python)
   endif ()
@@ -92,15 +52,6 @@ if (W2L_BUILD_LIBRARIES_ONLY)
 endif ()
 
 # ------------------------ Global External Dependencies ------------------------
-# ArrayFire
-# The correct ArrayFire backend target is transitively included by flashlight
-find_package(ArrayFire 3.6.1 REQUIRED)
-if (ArrayFire_FOUND)
-  message(STATUS "ArrayFire found (include: ${ArrayFire_INCLUDE_DIRS}, library: ${ArrayFire_LIBRARIES})")
-else()
-  message(FATAL_ERROR "ArrayFire not found")
-endif()
-
 # Find GLog
 find_package(GLOG REQUIRED)
 if (GLOG_FOUND)
@@ -130,45 +81,7 @@ else()
   message(STATUS "OpenMP not found - building without OpenMP")
 endif()
 
-# ------------------------ flashlight ------------------------
-find_package(flashlight REQUIRED)
-if (flashlight_FOUND)
-  message(STATUS "flashlight found (include: ${FLASHLIGHT_INCLUDE_DIRS} lib: flashlight::flashlight )")
-  if (NOT TARGET flashlight::Distributed)
-    message(FATAL_ERROR "flashlight must be build in distributed mode for wav2letter++")
-  else ()
-    message(STATUS "flashlight built in distributed mode.")
-  endif ()
-  if (NOT TARGET flashlight::Contrib)
-    message(FATAL_ERROR "flashlight must be built with contrib features for wav2letter++")
-  else ()
-    message(STATUS "flashlight built with contrib features.")
-  endif ()
-else()
-  message(FATAL_ERROR "flashlight not found.")
-endif ()
-
-# "Import" flashlight backend variables using the dummy target
-if (TARGET flashlight::BACKEND_UNIFIED)
-  set(FLASHLIGHT_BACKEND "UNIFIED")
-  set(FLASHLIGHT_USE_UNIFIED ON)
-elseif (TARGET flashlight::BACKEND_CPU)
-  set(FLASHLIGHT_BACKEND "CPU")
-  set(FLASHLIGHT_USE_CPU ON)
-elseif (TARGET flashlight::BACKEND_CUDA)
-  set(FLASHLIGHT_BACKEND "CUDA")
-  set(FLASHLIGHT_USE_CUDA ON)
-elseif (TARGET flashlight::BACKEND_OPENCL)
-  set(FLASHLIGHT_BACKEND "OPENCL")
-  set(FLASHLIGHT_USE_OPENCL ON)
-else ()
-  message(FATAL_ERROR "could not determine flashlight backend")
-endif ()
-
-# ------------------ Configure Full Build ----------------------
-
-set(W2L_LIBRARIES_USE_CUDA ${FLASHLIGHT_USE_CUDA} CACHE BOOL "" FORCE)
-set(W2L_LIBRARIES_USE_KENLM ON CACHE BOOL "" FORCE)
+find_library(flashlight REQUIRED HINTS "${CMAKE_BINARY_DIR}/flashlight")
 
 # ------------------------ Components ------------------------
 
@@ -223,13 +136,14 @@ target_link_libraries(
   data
   module
   runtime
+  flashlight
   )
 
 target_include_directories(
   wav2letter++
   PUBLIC
-  ${PROJECT_SOURCE_DIR}/speech_recognition # all includes are based at 
-  ${FLASHLIGHT_INCLUDE_DIRS} # includes are <flashlight/...>
+  ${PROJECT_SOURCE_DIR} # all includes are based at 
+  #${FLASHLIGHT_INCLUDE_DIRS} # includes are <flashlight/...>
   )
 
 # ----------------------------- Train -----------------------------

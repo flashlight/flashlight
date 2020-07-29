@@ -22,7 +22,6 @@ target_link_libraries(
   )
 
 # ------------------------- CUDA-specific -------------------------
-
 if (W2L_LIBRARIES_USE_CUDA)
   include(${CMAKE_MODULE_PATH}/BuildCUB.cmake)
   include(${CMAKE_MODULE_PATH}/CUDAUtils.cmake)
@@ -62,5 +61,10 @@ if (W2L_LIBRARIES_USE_CUDA)
     criterion-library
     INTERFACE
     ${CUDA_INCLUDE_DIRS}
+    )
+else ()
+  message(
+    FATAL_ERROR
+    "wav2letter criterions not implemented for non-CUDA backends"
     )
 endif ()

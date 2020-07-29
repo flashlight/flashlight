@@ -10,7 +10,7 @@
 
 #include <memory>
 
-#include "common/FlashlightUtils.h"
+#include "common/Utils.h"
 #include "criterion/Defines.h"
 #include "criterion/Seq2SeqCriterion.h"
 #include "criterion/SequenceCriterion.h"

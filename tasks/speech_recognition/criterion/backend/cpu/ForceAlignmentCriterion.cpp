@@ -8,7 +8,7 @@
 
 #include "criterion/ForceAlignmentCriterion.h"
 
-#include "common/FlashlightUtils.h"
+#include "common/Utils.h"
 #include "criterion/CriterionUtils.h"
 #include "libraries/criterion/cpu/ForceAlignmentCriterion.h"
 
@@ -38,7 +38,7 @@ static void backward(
     throw std::invalid_argument("FAC: grad must be float32");
   }
 
-  auto gradVec = afToVector<float>(gradVar);
+  auto gradVec = w2l::afToVector<float>(gradVar);
   std::vector<float> inputGradVec(B * T * N);
   std::vector<float> transGradVec(N * N);
 
@@ -83,10 +83,10 @@ Variable ForceAlignmentCriterion::forward(
 
   const auto& targetSize = getTargetSizeArray(targetVar.array(), T);
   auto ctx = std::make_shared<Context>();
-  auto inputVec = afToVector<float>(inputVar);
-  ctx->targetVec = afToVector<int>(targetVar);
-  ctx->targetSizeVec = afToVector<int>(targetSize);
-  auto transVec = afToVector<float>(transVar);
+  auto inputVec = w2l::afToVector<float>(inputVar);
+  ctx->targetVec = w2l::afToVector<int>(targetVar);
+  ctx->targetSizeVec = w2l::afToVector<int>(targetSize);
+  auto transVec = w2l::afToVector<float>(transVar);
   std::vector<float> lossVec(B);
   ctx->workspaceVec.assign(FAC::getWorkspaceSize(B, T, N, L), 0);
 
@@ -129,10 +129,10 @@ af::array ForceAlignmentCriterion::viterbiPath(
   }
   const af::array targetSize = getTargetSizeArray(targetVar, T);
   std::shared_ptr<Context> ctx = std::make_shared<Context>();
-  std::vector<float> inputVec = afToVector<float>(inputVar);
-  ctx->targetVec = afToVector<int>(targetVar);
-  ctx->targetSizeVec = afToVector<int>(targetSize);
-  std::vector<float> transVec = afToVector<float>(transVar);
+  std::vector<float> inputVec = w2l::afToVector<float>(inputVar);
+  ctx->targetVec = w2l::afToVector<int>(targetVar);
+  ctx->targetSizeVec = w2l::afToVector<int>(targetSize);
+  std::vector<float> transVec = w2l::afToVector<float>(transVar);
   std::vector<float> lossVec(B);
   ctx->workspaceVec.assign(FAC::getWorkspaceSize(B, T, N, L), 0);
   std::vector<int> bestPaths(B * T);

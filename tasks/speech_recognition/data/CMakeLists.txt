@@ -53,7 +53,7 @@ target_link_libraries(
   INTERFACE
   common
   feature-library
-  flashlight::flashlight
+  flashlight
   ${GLOG_LIBRARIES}
   ${MKL_LIBRARIES}
   ${SNDFILE_LIBRARIES}

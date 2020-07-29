@@ -7,10 +7,10 @@ add_library(
 
 set(
   DISTRIBUTED_SOURCES
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/distributed/DistributedApi.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/distributed/FileStore.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/distributed/reducers/InlineReducer.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/distributed/reducers/CoalescingReducer.cpp
+  ${CMAKE_SOURCE_DIR}/flashlight/distributed/DistributedApi.cpp
+  ${CMAKE_SOURCE_DIR}/flashlight/distributed/FileStore.cpp
+  ${CMAKE_SOURCE_DIR}/flashlight/distributed/reducers/InlineReducer.cpp
+  ${CMAKE_SOURCE_DIR}/flashlight/distributed/reducers/CoalescingReducer.cpp
   )
 
 # Build sources only in distributed mode. Distributed headers will be included regardless,
@@ -82,7 +82,7 @@ endif()
 if (USE_NCCL)
   set(
     DISTRIBUTED_NCCL_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/distributed/backend/cuda/DistributedBackend.cpp
+    ${CMAKE_SOURCE_DIR}/flashlight/distributed/backend/cuda/DistributedBackend.cpp
     )
 
   target_sources(
@@ -117,7 +117,7 @@ endif ()
 if (USE_GLOO)
   set(
     DISTRIBUTED_GLOO_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/distributed/backend/cpu/DistributedBackend.cpp
+    ${CMAKE_SOURCE_DIR}/flashlight/distributed/backend/cpu/DistributedBackend.cpp
     )
   target_sources(
     Distributed

@@ -19,7 +19,7 @@
 #include <glog/logging.h>
 
 #include "common/Defines.h"
-#include "common/FlashlightUtils.h"
+#include "common/Utils.h"
 #include "common/Transforms.h"
 #include "criterion/criterion.h"
 #include "data/Featurize.h"
@@ -250,7 +250,7 @@ int main(int argc, char** argv) {
         reloadPath, cfg, network, criterion, netoptim, critoptim);
   }
   LOG_MASTER(INFO) << "[Network] " << network->prettyString();
-  LOG_MASTER(INFO) << "[Network Params: " << numTotalParams(network) << "]";
+  LOG_MASTER(INFO) << "[Network Params: " << fl::numTotalParams(network) << "]";
   LOG_MASTER(INFO) << "[Criterion] " << criterion->prettyString();
 
   if (runStatus == kTrainMode || runStatus == kForkMode) {
@@ -414,8 +414,8 @@ int main(int argc, char** argv) {
     for (int b = 0; b < batchsz; ++b) {
       auto tgt = target(af::span, b);
       auto viterbipath =
-          afToVector<int>(criterion->viterbiPath(op(af::span, af::span, b)));
-      auto tgtraw = afToVector<int>(tgt);
+          w2l::afToVector<int>(criterion->viterbiPath(op(af::span, af::span, b)));
+      auto tgtraw = w2l::afToVector<int>(tgt);
 
       // Remove `-1`s appended to the target for batching (if any)
       auto labellen = getTargetSize(tgtraw.data(), tgtraw.size());

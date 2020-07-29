@@ -8,9 +8,9 @@ add_library(
 
 set(
   AUTOGRAD_SOURCES
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/autograd/Variable.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/autograd/Functions.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/autograd/Utils.cpp
+  ${CMAKE_SOURCE_DIR}/flashlight/autograd/Variable.cpp
+  ${CMAKE_SOURCE_DIR}/flashlight/autograd/Functions.cpp
+  ${CMAKE_SOURCE_DIR}/flashlight/autograd/Utils.cpp
   )
 
 target_sources(
@@ -36,11 +36,11 @@ target_include_directories(
 if (FLASHLIGHT_USE_CPU)
   set(
     AUTOGRAD_CPU_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/autograd/backend/cpu/Conv2D.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/autograd/backend/cpu/Pool2D.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/autograd/backend/cpu/RNN.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/autograd/backend/cpu/BatchNorm.cpp # generic
-    ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/autograd/backend/cpu/MkldnnUtils.cpp # generic
+    ${CMAKE_SOURCE_DIR}/flashlight/autograd/backend/cpu/Conv2D.cpp
+    ${CMAKE_SOURCE_DIR}/flashlight/autograd/backend/cpu/Pool2D.cpp
+    ${CMAKE_SOURCE_DIR}/flashlight/autograd/backend/cpu/RNN.cpp
+    ${CMAKE_SOURCE_DIR}/flashlight/autograd/backend/cpu/BatchNorm.cpp # generic
+    ${CMAKE_SOURCE_DIR}/flashlight/autograd/backend/cpu/MkldnnUtils.cpp # generic
     )
   
   target_sources(
@@ -58,7 +58,7 @@ if (FLASHLIGHT_USE_CPU)
   target_include_directories(
     Autograd
     INTERFACE
-    ${FLASHLIGHT_INCLUDE_DIR}
+    ${CMAKE_SOURCE_DIR}
     ${MKLDNN_INCLUDE_DIR} # includes MKL headers if found
     )
 endif ()
@@ -68,12 +68,12 @@ endif ()
 if (FLASHLIGHT_USE_CUDA)
   set(
     AUTOGRAD_CUDA_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/autograd/backend/cuda/BatchNorm.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/autograd/backend/cuda/Conv2D.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/autograd/backend/cuda/CudnnUtils.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/autograd/backend/cuda/CudnnUtils.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/autograd/backend/cuda/Pool2D.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/autograd/backend/cuda/RNN.cpp
+    ${CMAKE_SOURCE_DIR}/flashlight/autograd/backend/cuda/BatchNorm.cpp
+    ${CMAKE_SOURCE_DIR}/flashlight/autograd/backend/cuda/Conv2D.cpp
+    ${CMAKE_SOURCE_DIR}/flashlight/autograd/backend/cuda/CudnnUtils.h
+    ${CMAKE_SOURCE_DIR}/flashlight/autograd/backend/cuda/CudnnUtils.cpp
+    ${CMAKE_SOURCE_DIR}/flashlight/autograd/backend/cuda/Pool2D.cpp
+    ${CMAKE_SOURCE_DIR}/flashlight/autograd/backend/cuda/RNN.cpp
     )
   
   target_sources(
@@ -92,7 +92,7 @@ if (FLASHLIGHT_USE_CUDA)
   target_include_directories(
     Autograd
     INTERFACE
-    ${FLASHLIGHT_INCLUDE_DIR}
+    ${CMAKE_SOURCE_DIR}
     ${CUDA_INCLUDE_DIRS}
     ${CUDNN_INCLUDE_DIRS}
     )
@@ -110,10 +110,10 @@ endif ()
 if (FLASHLIGHT_USE_OPENCL)
   set(
     AUTOGRAD_OPENCL_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/autograd/backend/opencl/Conv2D.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/autograd/backend/opencl/Pool2D.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/autograd/backend/opencl/RNN.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/autograd/backend/generic/BatchNorm.cpp # generic
+    ${CMAKE_SOURCE_DIR}/flashlight/autograd/backend/opencl/Conv2D.cpp
+    ${CMAKE_SOURCE_DIR}/flashlight/autograd/backend/opencl/Pool2D.cpp
+    ${CMAKE_SOURCE_DIR}/flashlight/autograd/backend/opencl/RNN.cpp
+    ${CMAKE_SOURCE_DIR}/flashlight/autograd/backend/generic/BatchNorm.cpp # generic
     )
   
   target_sources(
@@ -131,7 +131,7 @@ if (FLASHLIGHT_USE_OPENCL)
   target_include_directories(
     Autograd
     INTERFACE
-    ${FLASHLIGHT_INCLUDE_DIR}
+    ${CMAKE_SOURCE_DIR}
     ${OpenCL_INCLUDE_DIRS}
     )
 endif ()

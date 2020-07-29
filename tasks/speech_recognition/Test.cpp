@@ -18,7 +18,7 @@
 #include <glog/logging.h>
 
 #include "common/Defines.h"
-#include "common/FlashlightUtils.h"
+#include "common/Utils.h"
 #include "common/Transforms.h"
 #include "criterion/criterion.h"
 #include "libraries/common/Dictionary.h"
@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
 
   LOG(INFO) << "[Network] " << network->prettyString();
   LOG(INFO) << "[Criterion] " << criterion->prettyString();
-  LOG(INFO) << "[Network] Number of params: " << numTotalParams(network);
+  LOG(INFO) << "[Network] Number of params: " << fl::numTotalParams(network);
 
   auto flags = cfg.find(kGflags);
   if (flags == cfg.end()) {
@@ -213,9 +213,9 @@ int main(int argc, char** argv) {
       }
       auto rawEmission =
           localNetwork->forward({fl::input(sample[kInputIdx])}).front();
-      auto emission = afToVector<float>(rawEmission);
-      auto tokenTarget = afToVector<int>(sample[kTargetIdx]);
-      auto wordTarget = afToVector<int>(sample[kWordIdx]);
+      auto emission = w2l::afToVector<float>(rawEmission);
+      auto tokenTarget = w2l::afToVector<int>(sample[kTargetIdx]);
+      auto wordTarget = w2l::afToVector<int>(sample[kWordIdx]);
       auto sampleId = readSampleIds(sample[kSampleIdx]).front();
 
       auto letterTarget = tknTarget2Ltr(tokenTarget, tokenDict);
@@ -228,7 +228,7 @@ int main(int argc, char** argv) {
 
       // Tokens
       auto tokenPrediction =
-          afToVector<int>(localCriterion->viterbiPath(rawEmission.array()));
+          w2l::afToVector<int>(localCriterion->viterbiPath(rawEmission.array()));
       auto letterPrediction = tknPrediction2Ltr(tokenPrediction, tokenDict);
 
       meters.lerSlice.add(letterPrediction, letterTarget);

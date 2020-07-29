@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 
 #include "common/Defines.h"
-#include "common/FlashlightUtils.h"
+#include "common/Utils.h"
 #include "common/Transforms.h"
 #include "criterion/criterion.h"
 #include "libraries/common/Dictionary.h"

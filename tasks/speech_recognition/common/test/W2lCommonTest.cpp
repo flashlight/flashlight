@@ -13,7 +13,9 @@
 #include <future>
 #include <memory>
 
-#include "common/FlashlightUtils.h"
+#include <flashlight/flashlight.h>
+
+#include "common/Utils.h"
 #include "common/Transforms.h"
 #include "libraries/common/Dictionary.h"
 #include "libraries/common/WordUtils.h"
@@ -353,17 +355,6 @@ TEST(W2lCommonTest, localNormalize) {
     ASSERT_TRUE(af::allTrue<bool>(
         af::abs(arrNrm - afNormalize(arr, c.first, c.second)) < 1E-4));
   }
-}
-
-TEST(W2lCommonTest, AfMatrixToStrings) {
-  std::vector<int> arr = {119, 97,  118, -1,  -1,  -1,  -1,  -1, -1, -1, -1,
-                          -1,  108, 101, 116, 116, 101, 114, -1, -1, -1};
-  af::array afArr(6, 3, arr.data());
-  auto stringVec = afMatrixToStrings<int>(afArr, -1);
-  ASSERT_EQ(stringVec.size(), 3);
-  ASSERT_EQ(stringVec[0], "wav");
-  ASSERT_EQ(stringVec[1], "");
-  ASSERT_EQ(stringVec[2], "letter");
 }
 
 TEST(W2lCommonTest, WrdToTarget) {

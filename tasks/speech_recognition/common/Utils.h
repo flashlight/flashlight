@@ -20,6 +20,9 @@
 #include "libraries/common/Utils.h"
 #include "libraries/common/WordUtils.h"
 
+#include <flashlight/flashlight.h>
+
+
 namespace w2l {
 
 // ============================== Dataset helpers ==============================
@@ -60,5 +63,30 @@ std::vector<std::string> wrdIdx2Wrd(const std::vector<int>&, const Dictionary&);
 std::vector<std::string> tknTarget2Ltr(std::vector<int>, const Dictionary&);
 
 std::vector<std::string> tknPrediction2Ltr(std::vector<int>, const Dictionary&);
+
+
+/**
+ * Convert an arrayfire array into a std::vector.
+ * 
+ * @param arr input array to convert
+ * 
+ */
+template <typename T>
+std::vector<T> afToVector(const af::array& arr) {
+  std::vector<T> vec(arr.elements());
+  arr.host(vec.data());
+  return vec;
+}
+
+/**
+ * Convert the array in a Variable into a std::vector.
+ * 
+ * @param var input Variables to convert
+ * 
+ */
+template <typename T>
+std::vector<T> afToVector(const fl::Variable& var) {
+  return afToVector<T>(var.array());
+}
 
 } // namespace w2l

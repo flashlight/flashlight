@@ -3,15 +3,15 @@ cmake_minimum_required(VERSION 3.5.1)
 # ----------------------------- Common -----------------------------
 set(
   COMMON_SRCS
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/common/Utils.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/common/DevicePtr.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/common/Defines.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/common/Logging.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/common/Histogram.cpp
+  ${CMAKE_SOURCE_DIR}/flashlight/common/Utils.cpp
+  ${CMAKE_SOURCE_DIR}/flashlight/common/DevicePtr.cpp
+  ${CMAKE_SOURCE_DIR}/flashlight/common/Defines.cpp
+  ${CMAKE_SOURCE_DIR}/flashlight/common/Logging.cpp
+  ${CMAKE_SOURCE_DIR}/flashlight/common/Histogram.cpp
 )
 
 if(FLASHLIGHT_USE_CUDA)
-  set(COMMON_SRCS ${COMMON_SRCS} ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/common/CudaUtils.cpp)
+  set(COMMON_SRCS ${COMMON_SRCS} ${CMAKE_SOURCE_DIR}/flashlight/common/CudaUtils.cpp)
 endif()
 
 add_library(

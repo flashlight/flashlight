@@ -7,12 +7,12 @@ add_library(
 
 set(
   METER_SOURCES
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/meter/AverageValueMeter.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/meter/CountMeter.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/meter/EditDistanceMeter.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/meter/FrameErrorMeter.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/meter/MSEMeter.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/meter/TimeMeter.cpp
+  ${CMAKE_SOURCE_DIR}/flashlight/meter/AverageValueMeter.cpp
+  ${CMAKE_SOURCE_DIR}/flashlight/meter/CountMeter.cpp
+  ${CMAKE_SOURCE_DIR}/flashlight/meter/EditDistanceMeter.cpp
+  ${CMAKE_SOURCE_DIR}/flashlight/meter/FrameErrorMeter.cpp
+  ${CMAKE_SOURCE_DIR}/flashlight/meter/MSEMeter.cpp
+  ${CMAKE_SOURCE_DIR}/flashlight/meter/TimeMeter.cpp
   )
 
 target_sources(
