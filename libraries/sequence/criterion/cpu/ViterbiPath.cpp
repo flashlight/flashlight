@@ -6,11 +6,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "libraries/audio/criterion/cpu/ViterbiPath.h"
+#include "libraries/sequence/criterion/cpu/ViterbiPath.h"
 
 #include <cmath>
 
-#include "libraries/audio/criterion/Workspace.h"
+#include "libraries/sequence/criterion/Workspace.h"
 
 namespace {
 

@@ -13,7 +13,7 @@
 #include <math_constants.h> // for CUDART_INF
 #include <cstddef>
 
-#include "libraries/audio/criterion/Defines.h"
+#include "libraries/sequence/criterion/Defines.h"
 
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 600
 

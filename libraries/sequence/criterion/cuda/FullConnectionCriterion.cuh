@@ -10,7 +10,7 @@
 
 #include <cuda_runtime.h>
 
-#include "libraries/audio/criterion/Defines.h"
+#include "libraries/sequence/criterion/Defines.h"
 
 namespace fl {
 namespace lib {

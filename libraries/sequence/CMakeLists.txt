@@ -4,37 +4,37 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # ------------------------- Components -------------------------
 
-# feature-library
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/feature)
+# criterion-library
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/criterion)
 
 # ------------------------- Library -------------------------
 
 add_library(
-  libraries-audio
+  libraries-sequence
   ""
   )
 
 set_target_properties(
-  libraries-audio
+  libraries-sequence
   PROPERTIES
   LINKER_LANGUAGE CXX
   CXX_STANDARD 11
   )
 
 target_link_libraries(
-  libraries-audio
+  libraries-sequence
   PUBLIC
-  libraries-audio-feature
+  libraries-sequence-criterion
   )
 
 target_include_directories(
-  libraries-audio
+  libraries-sequence
   PUBLIC
   ${PROJECT_SOURCE_DIR}
   )
 
 target_compile_definitions(
-  libraries-audio
+  libraries-sequence
   PUBLIC
   )
  

@@ -5,8 +5,11 @@ cmake_minimum_required(VERSION 3.5.1)
 # common-library
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/common)
 
-# criterion-library
+# audio-library
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/audio)
+
+# audio-library
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/sequence)
 
 # decoder-library
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/language)
@@ -30,6 +33,7 @@ target_link_libraries(
   PUBLIC
   libraries-common
   libraries-audio
+  libraries-sequence
   libraries-language
   )
 

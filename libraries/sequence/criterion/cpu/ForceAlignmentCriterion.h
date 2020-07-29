@@ -9,7 +9,7 @@
 #pragma once
 
 #include <cstddef>
-#include "libraries/audio/criterion/Defines.h"
+#include "libraries/sequence/criterion/Defines.h"
 
 namespace fl {
 namespace lib {

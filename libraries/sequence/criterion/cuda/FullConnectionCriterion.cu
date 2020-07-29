@@ -6,14 +6,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "libraries/audio/criterion/cuda/FullConnectionCriterion.cuh"
+#include "libraries/sequence/criterion/cuda/FullConnectionCriterion.cuh"
 
 #include <cmath>
 
 #include <cub/cub.cuh>
 
-#include "libraries/audio/criterion/Workspace.h"
-#include "libraries/audio/criterion/cuda/CriterionUtils.cuh"
+#include "libraries/sequence/criterion/Workspace.h"
+#include "libraries/sequence/criterion/cuda/CriterionUtils.cuh"
 
 namespace {
 

@@ -15,7 +15,7 @@
 #include "criterion/CriterionUtils.h"
 
 #include "extensions/common/Utils.h"
-#include "libraries/audio/criterion/cuda/CriterionUtils.cuh"
+#include "libraries/sequence/criterion/cuda/CriterionUtils.cuh"
 
 using namespace fl;
 using namespace fl::ext;

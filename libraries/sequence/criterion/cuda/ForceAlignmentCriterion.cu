@@ -6,13 +6,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "libraries/audio/criterion/cuda/ForceAlignmentCriterion.cuh"
+#include "libraries/sequence/criterion/cuda/ForceAlignmentCriterion.cuh"
 
 #include <algorithm>
 #include <cmath>
 
-#include "libraries/audio/criterion/Workspace.h"
-#include "libraries/audio/criterion/cuda/CriterionUtils.cuh"
+#include "libraries/sequence/criterion/Workspace.h"
+#include "libraries/sequence/criterion/cuda/CriterionUtils.cuh"
 
 namespace {
 

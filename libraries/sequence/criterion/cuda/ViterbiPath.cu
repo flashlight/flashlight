@@ -6,13 +6,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "libraries/audio/criterion/cuda/ViterbiPath.cuh"
+#include "libraries/sequence/criterion/cuda/ViterbiPath.cuh"
 
 #include <cmath>
 
 #include <cub/cub.cuh>
 
-#include "libraries/audio/criterion/Workspace.h"
+#include "libraries/sequence/criterion/Workspace.h"
 
 namespace {
 

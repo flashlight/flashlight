@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include <cstring>
+#include <cstddef>
 
-#include "libraries/audio/criterion/Defines.h"
+#include "libraries/sequence/criterion/Defines.h"
 
 namespace fl {
 namespace lib {
@@ -18,28 +18,30 @@ namespace cpu {
 
 /// Check CUDA header for docs.
 template <class Float>
-struct CriterionUtils {
-  static void batchTargetSize(
-      int B,
-      int L,
-      int maxSize,
-      const int* target,
-      int* targetSize);
+struct FullConnectionCriterion {
+  static size_t getWorkspaceSize(int B, int T, int N);
 
-  static void computeScale(
+  static void forward(
       int B,
       int T,
       int N,
       CriterionScaleMode scaleMode,
+      const Float* input,
       const int* targetSize,
-      Float* scale);
-};
+      const Float* trans,
+      Float* loss,
+      void* workspace);
 
-/// Zeroes `count * sizeof(T)` device bytes
-template <typename T>
-void setZero(T* ptr, size_t count) {
-  std::memset(ptr, 0, count * sizeof(T));
-}
+  static void backward(
+      int B,
+      int T,
+      int N,
+      const Float* trans,
+      const Float* grad,
+      Float* inputGrad,
+      Float* transGrad,
+      void* workspace);
+};
 
 } // namespace cpu
 } // namespace lib

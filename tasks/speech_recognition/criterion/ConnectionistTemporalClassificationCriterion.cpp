@@ -8,7 +8,7 @@
 #include "ConnectionistTemporalClassificationCriterion.h"
 
 #include "extensions/common/Utils.h"
-#include "libraries/audio/criterion/cpu/ConnectionistTemporalClassificationCriterion.h"
+#include "libraries/sequence/criterion/cpu/ConnectionistTemporalClassificationCriterion.h"
 
 using CTC = fl::lib::cpu::ConnectionistTemporalClassificationCriterion<float>;
 using namespace fl::ext;

@@ -9,8 +9,8 @@
 #include "criterion/CriterionUtils.h"
 
 #include "common/Utils.h"
-#include "libraries/audio/criterion/cpu/CriterionUtils.h"
-#include "libraries/audio/criterion/cpu/ViterbiPath.h"
+#include "libraries/sequence/criterion/cpu/CriterionUtils.h"
+#include "libraries/sequence/criterion/cpu/ViterbiPath.h"
 
 using CriterionUtils = fl::lib::cpu::CriterionUtils<float>;
 using ViterbiPath = fl::lib::cpu::ViterbiPath<float>;

@@ -10,7 +10,7 @@
 
 #include "common/Utils.h"
 #include "criterion/CriterionUtils.h"
-#include "libraries/audio/criterion/cpu/FullConnectionCriterion.h"
+#include "libraries/sequence/criterion/cpu/FullConnectionCriterion.h"
 
 using fl::Variable;
 using FCC = fl::lib::cpu::FullConnectionCriterion<float>;

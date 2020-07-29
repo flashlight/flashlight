@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "libraries/audio/criterion/Defines.h"
+#include "libraries/sequence/criterion/Defines.h"
 
 namespace fl {
 namespace task {

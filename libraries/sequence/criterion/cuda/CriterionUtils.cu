@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "libraries/audio/criterion/cuda/CriterionUtils.cuh"
+#include "libraries/sequence/criterion/cuda/CriterionUtils.cuh"
 
 #include <algorithm>
 

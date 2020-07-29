@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 add_library(
-  libraries-audio-criterion
+  libraries-sequence-criterion
   INTERFACE
   )
 
 target_sources(
-  libraries-audio-criterion
+  libraries-sequence-criterion
   INTERFACE
   ${CMAKE_CURRENT_SOURCE_DIR}/cpu/CriterionUtils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/cpu/ForceAlignmentCriterion.cpp
@@ -16,7 +16,7 @@ target_sources(
   )
 
 target_link_libraries(
-  libraries-audio-criterion
+  libraries-sequence-criterion
   INTERFACE
   libraries-common
   )
@@ -41,24 +41,24 @@ if (FL_LIBRARIES_USE_CUDA)
 
   # Qualify name because CUDA target is public
   cuda_add_library(
-    libraries-audio-criterion-cuda
+    libraries-sequence-criterion-cuda
     ${CMAKE_CURRENT_SOURCE_DIR}/cuda/CriterionUtils.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/cuda/ForceAlignmentCriterion.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/cuda/FullConnectionCriterion.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/cuda/ViterbiPath.cu
     )
 
-  add_dependencies(libraries-audio-criterion-cuda CUB)
+  add_dependencies(libraries-sequence-criterion-cuda CUB)
 
   target_link_libraries(
-    libraries-audio-criterion
+    libraries-sequence-criterion
     INTERFACE
     ${CUDA_LIBRARIES}
-    libraries-audio-criterion-cuda
+    libraries-sequence-criterion-cuda
     )
 
   target_include_directories(
-    libraries-audio-criterion
+    libraries-sequence-criterion
     INTERFACE
     ${CUDA_INCLUDE_DIRS}
     )

@@ -6,12 +6,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "libraries/audio/criterion/cpu/ConnectionistTemporalClassificationCriterion.h"
+#include "libraries/sequence/criterion/cpu/ConnectionistTemporalClassificationCriterion.h"
 
 #include <cmath>
 #include <limits>
 
-#include "libraries/audio/criterion/Workspace.h"
+#include "libraries/sequence/criterion/Workspace.h"
 
 namespace {
 

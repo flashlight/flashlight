@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "libraries/audio/criterion/cpu/CriterionUtils.h"
+#include "libraries/sequence/criterion/cpu/CriterionUtils.h"
 
 #include <algorithm>
 #include <cmath>
