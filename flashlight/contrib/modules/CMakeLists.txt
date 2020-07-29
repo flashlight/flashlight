@@ -13,6 +13,8 @@ set(
   ${FL_CONTRIB_ROOT_PATH}/modules/PositionEmbedding.cpp
   ${FL_CONTRIB_ROOT_PATH}/modules/Residual.cpp
   ${FL_CONTRIB_ROOT_PATH}/modules/Transformer.cpp
+  ${FL_CONTRIB_ROOT_PATH}/modules/TDSBlock.cpp
+  ${FL_CONTRIB_ROOT_PATH}/modules/SpecAugment.cpp
   )
 
 target_sources(

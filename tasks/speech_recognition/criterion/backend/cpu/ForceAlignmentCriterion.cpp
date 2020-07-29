@@ -10,7 +10,7 @@
 
 #include "common/Utils.h"
 #include "criterion/CriterionUtils.h"
-#include "libraries/criterion/cpu/ForceAlignmentCriterion.h"
+#include "libraries/audio/criterion/cpu/ForceAlignmentCriterion.h"
 
 using fl::Variable;
 using FAC = w2l::cpu::ForceAlignmentCriterion<float>;

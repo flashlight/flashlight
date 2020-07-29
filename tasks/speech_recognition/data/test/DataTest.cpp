@@ -44,6 +44,24 @@ LexiconMap getLexicon() {
   lexicon[kUnkToken] = {};
   return lexicon;
 }
+
+std::vector<std::string> loadTarget(const std::string& filepath) {
+  std::vector<std::string> tokens;
+  std::ifstream infile(filepath);
+  if (!infile) {
+    throw std::runtime_error(
+        std::string() + "Could not read file '" + filepath + "'");
+  }
+  std::string line;
+  while (std::getline(infile, line)) {
+    auto tkns_str = splitOnWhitespace(line, true);
+    for (const auto& tkn : tkns_str) {
+      tokens.emplace_back(tkn);
+    }
+  }
+  return tokens;
+}
+
 } // namespace
 
 TEST(DataTest, inputFeaturizer) {

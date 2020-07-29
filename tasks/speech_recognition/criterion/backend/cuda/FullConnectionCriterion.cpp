@@ -11,7 +11,7 @@
 #include <flashlight/common/cuda.h>
 
 #include "criterion/CriterionUtils.h"
-#include "libraries/criterion/cuda/FullConnectionCriterion.cuh"
+#include "libraries/audio/criterion/cuda/FullConnectionCriterion.cuh"
 
 using fl::Variable;
 using FCC = w2l::cuda::FullConnectionCriterion<float>;

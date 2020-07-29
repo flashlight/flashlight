@@ -33,7 +33,6 @@ if (FLASHLIGHT_USE_CUDA)
     ${CUDA_LIBRARIES}
     warpctc # added directly from subdir
     # Can remove once CTC constrained Viterbi is implemented in CUDA T62268085
-    criterion-library
     )
 
   target_include_directories(
@@ -80,7 +79,6 @@ target_link_libraries(
   attention
   window
   common
-  wav2letter-libraries
   flashlight
   ${GLOG_LIBRARIES}
   ${cereal_LIBRARIES}

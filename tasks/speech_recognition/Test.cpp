@@ -18,12 +18,15 @@
 #include <glog/logging.h>
 
 #include "common/Defines.h"
-#include "common/Utils.h"
-#include "common/Transforms.h"
+#include "decoder/Defines.h"
+#include "decoder/Utils.h"
 #include "criterion/criterion.h"
-#include "libraries/common/Dictionary.h"
-#include "module/module.h"
 #include "runtime/runtime.h"
+
+#include "libraries/common/System.h"
+#include "libraries/language/dictionary/Dictionary.h"
+#include "libraries/language/dictionary/Utils.h"
+#include "flashlight-extensions/common/Utils.h"
 
 using namespace w2l;
 
@@ -61,7 +64,7 @@ int main(int argc, char** argv) {
 
   LOG(INFO) << "[Network] " << network->prettyString();
   LOG(INFO) << "[Criterion] " << criterion->prettyString();
-  LOG(INFO) << "[Network] Number of params: " << fl::numTotalParams(network);
+  LOG(INFO) << "[Network] Number of params: " << numTotalParams(network);
 
   auto flags = cfg.find(kGflags);
   if (flags == cfg.end()) {

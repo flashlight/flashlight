@@ -10,8 +10,8 @@
 
 #include <flashlight/common/cuda.h>
 
-#include "libraries/criterion/cuda/CriterionUtils.cuh"
-#include "libraries/criterion/cuda/ViterbiPath.cuh"
+#include "libraries/audio/criterion/cuda/CriterionUtils.cuh"
+#include "libraries/audio/criterion/cuda/ViterbiPath.cuh"
 
 using CriterionUtils = w2l::cuda::CriterionUtils<float>;
 using ViterbiPath = w2l::cuda::ViterbiPath<float>;

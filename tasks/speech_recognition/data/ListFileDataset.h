@@ -13,8 +13,7 @@
 
 #include <flashlight/flashlight.h>
 
-#include "libraries/common/Dictionary.h"
-#include "libraries/common/Utils.h"
+#include "libraries/language/dictionary/Dictionary.h"
 
 namespace w2l {
 

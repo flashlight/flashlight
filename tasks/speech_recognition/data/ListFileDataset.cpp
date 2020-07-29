@@ -4,6 +4,9 @@
 
 #include "data/Sound.h"
 
+#include "libraries/common/String.h"
+
+
 namespace {
 constexpr const size_t kIdIdx = 0;
 constexpr const size_t kInIdx = 1;

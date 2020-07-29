@@ -19,21 +19,21 @@
 #include <glog/logging.h>
 
 #include "common/Defines.h"
-#include "common/Utils.h"
-#include "common/Transforms.h"
+#include "decoder/ConvLmModule.h"
+#include "decoder/Defines.h"
+#include "decoder/Utils.h"
 #include "criterion/criterion.h"
-#include "data/Featurize.h"
-#include "libraries/common/Dictionary.h"
-#include "libraries/common/ProducerConsumerQueue.h"
-#include "libraries/decoder/LexiconDecoder.h"
-#include "libraries/decoder/LexiconFreeDecoder.h"
-#include "libraries/decoder/LexiconFreeSeq2SeqDecoder.h"
-#include "libraries/decoder/LexiconSeq2SeqDecoder.h"
-#include "libraries/lm/ConvLM.h"
-#include "libraries/lm/KenLM.h"
-#include "libraries/lm/ZeroLM.h"
-#include "module/module.h"
+#include "decoder/Utils.h"
 #include "runtime/runtime.h"
+
+#include "libraries/common/ProducerConsumerQueue.h"
+#include "libraries/language/decoder/LexiconDecoder.h"
+#include "libraries/language/decoder/LexiconFreeDecoder.h"
+#include "libraries/language/decoder/LexiconFreeSeq2SeqDecoder.h"
+#include "libraries/language/decoder/LexiconSeq2SeqDecoder.h"
+#include "libraries/language/decoder/lm/ConvLM.h"
+#include "libraries/language/decoder/lm/KenLM.h"
+#include "libraries/language/decoder/lm/ZeroLM.h"
 
 using namespace w2l;
 
@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
       criterion->eval();
       LOG(INFO) << "[Criterion] " << criterion->prettyString();
     }
-    LOG(INFO) << "[Network] Number of params: " << fl::numTotalParams(network);
+    LOG(INFO) << "[Network] Number of params: " << numTotalParams(network);
 
     auto flags = cfg.find(kGflags);
     if (flags == cfg.end()) {

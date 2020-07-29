@@ -15,21 +15,69 @@
 
 #pragma once
 
-#include <string>
 #include <unordered_set>
-#include <vector>
 
 #include <flashlight/flashlight.h>
 
 #include "common/Defines.h"
+#include "data/ListFileDataset.h"
+#include "data/W2lListFilesDataset.h"
+#include "data/W2lBlobsDataset.h"
+
+#include "libraries/common/String.h"
+#include "libraries/language/dictionary/Utils.h"
 
 namespace w2l {
 
-// Sample indices for the `--pcttraineval` flag.
+/**
+ * Create the path to save checkpoints and logs of an experiments.
+ */
+std::string newRunPath(
+    const std::string& root,
+    const std::string& runname = "",
+    const std::string& tag = "");
+
+/**
+ * Get a certain checkpoint by `runidx`.
+ */
+std::string
+getRunFile(const std::string& name, int runidx, const std::string& runpath);
+
+/**
+ * Given a filename, remove any filepath delimiters - returns a contiguous
+ * string that won't be subdivided into a filepath.
+ */
+std::string cleanFilepath(const std::string& inputFileName);
+
+/**
+ * Serialize gflags into a buffer.
+ *
+ * Only serializes gflags that aren't explicitly deprecated.
+ */
+std::string serializeGflags(const std::string& separator = "\n");
+
+/**
+ * Sample indices for the `--pcttraineval` flag.
+ */
 std::unordered_set<int64_t>
 getTrainEvalIds(int64_t dsSize, double pctTrainEval, int64_t seed);
 
-// Read sample ids from an `af::array`.
+/**
+ * Read sample ids from an `af::array`.
+ */
 std::vector<std::string> readSampleIds(const af::array& arr);
+
+/**
+ * Create dataset.
+ */
+std::shared_ptr<W2lDataset> createDataset(
+    const std::string& path,
+    const DictionaryMap& dicts,
+    const LexiconMap& lexicon = LexiconMap(),
+    int batchSize = 1,
+    int worldRank = 0,
+    int worldSize = 1,
+    bool fallback2Ltr = true,
+    bool skipUnk = true);
 
 } // namespace w2l

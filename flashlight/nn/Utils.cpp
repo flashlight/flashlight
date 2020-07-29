@@ -90,14 +90,6 @@ int derivePadding(int inSz, int filterSz, int stride, int pad, int dilation) {
   return pad;
 }
 
-int64_t numTotalParams(std::shared_ptr<fl::Module> module) {
-  int64_t params = 0;
-  for (auto& p : module->params()) {
-    params += p.elements();
-  }
-  return params;
-}
-
 af::array join(
     const std::vector<af::array>& inputs,
     double padValue /* = 0.0 */,

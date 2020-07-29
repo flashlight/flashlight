@@ -13,7 +13,9 @@
 #include <glog/logging.h>
 
 #include "common/Defines.h"
-#include "common/Utils.h"
+#include "flashlight-extensions/common/Utils.h"
+#include "libraries/common/String.h"
+#include "libraries/common/System.h"
 
 namespace w2l {
 std::pair<std::string, std::string> getStatus(

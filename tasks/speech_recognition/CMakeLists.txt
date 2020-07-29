@@ -4,9 +4,6 @@ project(flashlight_asr_task)
 
 # ----------------------------- Configuration -----------------------------
 
-option(W2L_BUILD_LIBRARIES_ONLY "Build wav2letter-libraries only" OFF)
-option(W2L_BUILD_INFERENCE
-  "Build inference even when W2L_BUILD_LIBRARIES_ONLY is set" OFF)
 option(W2L_LIBRARIES_USE_CUDA "Use CUDA in libraries-only build" ON)
 option(W2L_LIBRARIES_USE_KENLM "Use KenLM in libraries-only build" ON)
 option(W2L_LIBRARIES_USE_MKL "Use MKL in libraries-only build" ON)
@@ -27,28 +24,6 @@ if (W2L_LIBRARIES_USE_MKL)
     message(WARNING "MKL not found; forcing W2L_LIBRARIES_USE_MKL=OFF.")
     set(W2L_LIBRARIES_USE_MKL OFF CACHE BOOL "" FORCE)
   endif ()
-endif ()
-
-# ------------------------- Libraries-Only Build ------------------------------
-
-function (build_w2l_libraries)
-  set(W2L_COMPILE_DEFINITIONS
-    $<$<BOOL:${W2L_LIBRARIES_USE_CUDA}>:W2L_LIBRARIES_USE_CUDA>
-    $<$<BOOL:${W2L_LIBRARIES_USE_KENLM}>:W2L_LIBRARIES_USE_KENLM>
-    $<$<BOOL:${W2L_LIBRARIES_USE_MKL}>:W2L_LIBRARIES_USE_MKL>
-    )
-  add_subdirectory(${PROJECT_SOURCE_DIR}/libraries)
-  if (W2L_BUILD_FOR_PYTHON)
-    add_subdirectory(${PROJECT_SOURCE_DIR}/bindings/python)
-  endif ()
-endfunction ()
-
-if (W2L_BUILD_LIBRARIES_ONLY)
-  build_w2l_libraries()
-  if (W2L_BUILD_INFERENCE)
-    add_subdirectory(${PROJECT_SOURCE_DIR}/inference)
-  endif()
-  return()
 endif ()
 
 # ------------------------ Global External Dependencies ------------------------
@@ -81,12 +56,12 @@ else()
   message(STATUS "OpenMP not found - building without OpenMP")
 endif()
 
+# Find Flashlight
 find_library(flashlight REQUIRED HINTS "${CMAKE_BINARY_DIR}/flashlight")
+find_library(fl-extensions REQUIRED HINTS "${CMAKE_BINARY_DIR}/flashlight-extensions")
+find_library(fl-libraries REQUIRED HINTS "${CMAKE_BINARY_DIR}/libraries")
 
 # ------------------------ Components ------------------------
-
-# wav2letter-libraries
-build_w2l_libraries()
 
 # Common
 add_subdirectory(${PROJECT_SOURCE_DIR}/common)
@@ -97,21 +72,17 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/criterion)
 # Data
 add_subdirectory(${PROJECT_SOURCE_DIR}/data)
 
-# Module
-add_subdirectory(${PROJECT_SOURCE_DIR}/module)
+# Decoder
+add_subdirectory(${PROJECT_SOURCE_DIR}/decoder)
 
 # Runtime
 add_subdirectory(${PROJECT_SOURCE_DIR}/runtime)
 
 # Tests
-if (W2L_BUILD_TESTS)
-  enable_testing()
-  add_subdirectory(${PROJECT_SOURCE_DIR}/tests)
-endif ()
-
-if (W2L_BUILD_INFERENCE)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/inference)
-endif()
+#if (W2L_BUILD_TESTS)
+#  enable_testing()
+#  add_subdirectory(${PROJECT_SOURCE_DIR}/tests)
+#endif ()
 
 # ----------------------------- wav2letter++ lib  -----------------------------
 
@@ -130,20 +101,21 @@ set_target_properties(
 target_link_libraries(
   wav2letter++
   PUBLIC
-  wav2letter-libraries
   common
   criterion
   data
-  module
+  decoder
   runtime
   flashlight
+  fl-extensions
+  fl-libraries
   )
 
 target_include_directories(
   wav2letter++
   PUBLIC
   ${PROJECT_SOURCE_DIR} # all includes are based at 
-  #${FLASHLIGHT_INCLUDE_DIRS} # includes are <flashlight/...>
+  ${KENLM_LIBRARIES}
   )
 
 # ----------------------------- Train -----------------------------

@@ -14,18 +14,21 @@
 
 #include <cereal/archives/json.hpp>
 #include <cereal/types/unordered_map.hpp>
+#include <flashlight/contrib/contrib.h>
 #include <flashlight/flashlight.h>
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
 #include "common/Defines.h"
-#include "common/Utils.h"
-#include "common/Transforms.h"
+#include "decoder/Utils.h"
 #include "criterion/criterion.h"
-#include "data/Featurize.h"
-#include "libraries/common/Dictionary.h"
-#include "module/module.h"
 #include "runtime/runtime.h"
+
+#include "libraries/common/System.h"
+#include "libraries/language/dictionary/Dictionary.h"
+#include "libraries/language/dictionary/Utils.h"
+#include "flashlight-extensions/common/Utils.h"
+#include "flashlight-extensions/common/SequentialBuilder.h"
 
 using namespace w2l;
 
@@ -220,7 +223,7 @@ int main(int argc, char** argv) {
     LOG_MASTER(INFO) << "Loading architecture file from " << archfile;
     auto numFeatures = getSpeechFeatureSize();
     // Encoder network, works on audio
-    network = createW2lSeqModule(archfile, numFeatures, numClasses);
+    network = buildSequentialModule(archfile, numFeatures, numClasses);
 
     if (FLAGS_criterion == kCtcCriterion) {
       criterion = std::make_shared<CTCLoss>(scalemode);
@@ -250,7 +253,7 @@ int main(int argc, char** argv) {
         reloadPath, cfg, network, criterion, netoptim, critoptim);
   }
   LOG_MASTER(INFO) << "[Network] " << network->prettyString();
-  LOG_MASTER(INFO) << "[Network Params: " << fl::numTotalParams(network) << "]";
+  LOG_MASTER(INFO) << "[Network Params: " << numTotalParams(network) << "]";
   LOG_MASTER(INFO) << "[Criterion] " << criterion->prettyString();
 
   if (runStatus == kTrainMode || runStatus == kForkMode) {
@@ -492,9 +495,9 @@ int main(int argc, char** argv) {
     meters.train.tknEdit.reset();
     meters.train.wrdEdit.reset();
 
-    std::shared_ptr<SpecAugment> saug;
+    std::shared_ptr<fl::SpecAugment> saug;
     if (FLAGS_saug_start_update >= 0) {
-      saug = std::make_shared<SpecAugment>(
+      saug = std::make_shared<fl::SpecAugment>(
           FLAGS_filterbanks,
           FLAGS_saug_fmaskf,
           FLAGS_saug_fmaskn,

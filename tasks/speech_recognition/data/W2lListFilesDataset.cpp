@@ -12,6 +12,8 @@
 
 #include "common/Defines.h"
 #include "data/W2lListFilesDataset.h"
+#include "libraries/common/String.h"
+#include "libraries/common/System.h"
 
 namespace w2l {
 

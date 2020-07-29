@@ -10,7 +10,6 @@
 
 #include <memory>
 
-#include "common/Utils.h"
 #include "criterion/Defines.h"
 #include "criterion/Seq2SeqCriterion.h"
 #include "criterion/SequenceCriterion.h"
@@ -18,6 +17,7 @@
 #include "criterion/attention/window.h"
 
 #include "flashlight/contrib/modules/Transformer.h"
+#include "flashlight-extensions/common/Utils.h"
 
 namespace w2l {
 

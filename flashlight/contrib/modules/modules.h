@@ -12,3 +12,5 @@
 #include "flashlight/contrib/modules/PositionEmbedding.h"
 #include "flashlight/contrib/modules/Residual.h"
 #include "flashlight/contrib/modules/Transformer.h"
+#include "flashlight/contrib/modules/TDSBlock.h"
+#include "flashlight/contrib/modules/SpecAugment.h"

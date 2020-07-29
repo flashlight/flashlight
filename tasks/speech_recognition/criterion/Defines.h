@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "libraries/criterion/Defines.h"
+#include "libraries/audio/criterion/Defines.h"
 
 namespace w2l {
 

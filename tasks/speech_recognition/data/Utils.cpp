@@ -6,100 +6,99 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "data/Utils.h"
+#include "Utils.h"
+
+#include <iostream>
+
+#include "common/Defines.h"
 
 namespace w2l {
 
-std::vector<int64_t> sortSamples(
-    const std::vector<SpeechSampleMetaInfo>& samples,
-    const std::string& dataorder,
-    const int64_t inputbinsize,
-    const int64_t outputbinsize) {
-  std::vector<int64_t> sortedIndices(samples.size());
-  std::iota(sortedIndices.begin(), sortedIndices.end(), 0);
-  if (dataorder.compare("input_spiral") == 0) {
-    // Sort samples in increasing order of output bins. For samples in the same
-    // output bin, sorting is done based on input size in alternating manner
-    // (spiral) for consecutive bins.
-    VLOG(1) << "Doing data ordering by input_spiral";
-    std::sort(
-        sortedIndices.begin(),
-        sortedIndices.end(),
-        [&](int64_t i1, int64_t i2) {
-          auto& s1 = samples[i1];
-          auto& s2 = samples[i2];
-          auto s1_y = s1.reflength() / outputbinsize;
-          auto s2_y = s2.reflength() / outputbinsize;
-          if (s1_y != s2_y) {
-            return s1_y < s2_y;
-          }
-          if (s1_y % 2 == 0) {
-            return s1.audiolength() < s2.audiolength();
-          } else {
-            return s2.audiolength() < s1.audiolength();
-          }
-        });
-  } else if (dataorder.compare("output_spiral") == 0) {
-    // Sort samples in increasing order of input bins. For samples in the same
-    // input bin, sorting is done based on output size in alternating manner
-    // (spiral) for consecutive bins.
-    VLOG(1) << "Doing data ordering by output_spiral";
-    std::sort(
-        sortedIndices.begin(),
-        sortedIndices.end(),
-        [&](int64_t i1, int64_t i2) {
-          auto& s1 = samples[i1];
-          auto& s2 = samples[i2];
-          int s1_x = s1.audiolength() / inputbinsize;
-          int s2_x = s2.audiolength() / inputbinsize;
-          if (s1_x != s2_x) {
-            return s1_x < s2_x;
-          }
-          if (s1_x % 2 == 0) {
-            return s1.reflength() < s2.reflength();
-          } else {
-            return s2.reflength() < s1.reflength();
-          }
-        });
-  } else if (dataorder.compare("input") == 0) {
-    // Sort by input size
-    VLOG(1) << "Doing data ordering by input";
-    std::sort(
-        sortedIndices.begin(),
-        sortedIndices.end(),
-        [&](int64_t i1, int64_t i2) {
-          auto& s1 = samples[i1];
-          auto& s2 = samples[i2];
-          return s1.audiolength() < s2.audiolength();
-        });
-  } // Default is no sorting.
-
-  std::vector<int64_t> sortedSampleIndices(samples.size());
-  for (size_t i = 0; i < sortedSampleIndices.size(); ++i) {
-    sortedSampleIndices[i] = samples[sortedIndices[i]].index();
+std::vector<std::string> wrd2Target(
+    const std::string& word,
+    const LexiconMap& lexicon,
+    const Dictionary& dict,
+    bool fallback2Ltr /* = false */,
+    bool skipUnk /* = false */) {
+  auto lit = lexicon.find(word);
+  if (lit != lexicon.end()) {
+    if (lit->second.size() > 1 &&
+        FLAGS_sampletarget >
+            static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX)) {
+      return lit->second[std::rand() % lit->second.size()];
+    } else {
+      return lit->second[0];
+    }
   }
-  return sortedSampleIndices;
+
+  std::vector<std::string> res;
+  if (fallback2Ltr) {
+    std::cerr
+        << "Falling back to using letters as targets for the unknown word: "
+        << word << "\n";
+    auto tokens = splitWrd(word);
+    for (const auto& tkn : tokens) {
+      if (dict.contains(tkn)) {
+        res.push_back(tkn);
+      } else if (skipUnk) {
+        std::cerr
+            << "Skipping unknown token '" << tkn
+            << "' when falling back to letter target for the unknown word: "
+            << word << "\n";
+      } else {
+        throw std::invalid_argument(
+            "Unknown token '" + tkn +
+            "' when falling back to letter target for the unknown word: " +
+            word);
+      }
+    }
+  } else if (skipUnk) {
+    std::cerr << "Skipping unknown word '" << word
+              << "' when generating target\n";
+  } else {
+    throw std::invalid_argument("Unknown word in the lexicon: " + word);
+  }
+  return res;
 }
-void filterSamples(
-    std::vector<SpeechSampleMetaInfo>& samples,
-    const int64_t minInputSz,
-    const int64_t maxInputSz,
-    const int64_t minTargetSz,
-    const int64_t maxTargetSz) {
-  auto initialSize = samples.size();
-  samples.erase(
-      std::remove_if(
-          samples.begin(),
-          samples.end(),
-          [minInputSz, maxInputSz, minTargetSz, maxTargetSz](
-              const SpeechSampleMetaInfo& sample) {
-            return sample.audiolength() < minInputSz ||
-                sample.audiolength() > maxInputSz ||
-                sample.reflength() < minTargetSz ||
-                sample.reflength() > maxTargetSz;
-          }),
-      samples.end());
-  LOG(INFO) << "Filtered " << initialSize - samples.size() << "/" << initialSize
-            << " samples";
+
+std::vector<std::string> wrd2Target(
+    const std::vector<std::string>& words,
+    const LexiconMap& lexicon,
+    const Dictionary& dict,
+    bool fallback2Ltr /* = false */,
+    bool skipUnk /* = false */) {
+  std::vector<std::string> res;
+  for (auto w : words) {
+    auto t = wrd2Target(w, lexicon, dict, fallback2Ltr, skipUnk);
+
+    if (t.size() == 0) {
+      continue;
+    }
+
+    // remove duplicate word separators in the beginning of each target token
+    if (res.size() > 0 && !FLAGS_wordseparator.empty() &&
+        t[0].length() >= FLAGS_wordseparator.length() &&
+        t[0].compare(0, FLAGS_wordseparator.length(), FLAGS_wordseparator) ==
+            0) {
+      res.pop_back();
+    }
+
+    res.insert(res.end(), t.begin(), t.end());
+
+    if (!FLAGS_wordseparator.empty() &&
+        !(res.back().length() >= FLAGS_wordseparator.length() &&
+          res.back().compare(
+              res.back().length() - FLAGS_wordseparator.length(),
+              FLAGS_wordseparator.length(),
+              FLAGS_wordseparator) == 0)) {
+      res.emplace_back(FLAGS_wordseparator);
+    }
+  }
+
+  if (res.size() > 0 && res.back() == FLAGS_wordseparator) {
+    res.pop_back();
+  }
+  return res;
 }
+
 } // namespace w2l

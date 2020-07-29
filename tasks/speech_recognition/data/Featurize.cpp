@@ -15,11 +15,9 @@
 #include <glog/logging.h>
 
 #include "common/Defines.h"
-#include "common/Utils.h"
-#include "common/Transforms.h"
-#include "libraries/feature/Mfcc.h"
-#include "libraries/feature/Mfsc.h"
-#include "libraries/feature/PowerSpectrum.h"
+#include "libraries/audio/feature/Mfcc.h"
+#include "libraries/audio/feature/Mfsc.h"
+#include "libraries/common/String.h"
 
 namespace w2l {
 
@@ -140,7 +138,7 @@ W2lFeatureData featurize(
           tgtVec = packReplabels(tgtVec, dict, FLAGS_replabel);
         }
         if (FLAGS_criterion == kAsgCriterion) {
-          uniq(tgtVec);
+          dedup(tgtVec);
         }
         if (FLAGS_eostoken) {
           tgtVec.emplace_back(dict.getIndex(kEosToken));

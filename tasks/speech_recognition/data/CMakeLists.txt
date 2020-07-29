@@ -40,8 +40,10 @@ target_sources(
   data
   INTERFACE
   ${CMAKE_CURRENT_SOURCE_DIR}/Featurize.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/FeatureTransforms.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ListFileDataset.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Sound.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/SpeechSample.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Utils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/W2lDataset.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/W2lBlobsDataset.cpp
@@ -52,7 +54,6 @@ target_link_libraries(
   data
   INTERFACE
   common
-  feature-library
   flashlight
   ${GLOG_LIBRARIES}
   ${MKL_LIBRARIES}

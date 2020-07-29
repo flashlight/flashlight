@@ -6,10 +6,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include "TransformerCriterion.h"
+
 #include <algorithm>
 #include <queue>
 
-#include "criterion/TransformerCriterion.h"
+#include "common/Defines.h"
 
 using namespace fl;
 

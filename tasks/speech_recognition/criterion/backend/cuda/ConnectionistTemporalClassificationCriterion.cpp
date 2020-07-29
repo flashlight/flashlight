@@ -11,10 +11,11 @@
 #include <flashlight/autograd/autograd.h>
 #include <flashlight/common/cuda.h>
 
-#include "common/Utils.h"
 #include "criterion/ConnectionistTemporalClassificationCriterion.h"
 #include "criterion/CriterionUtils.h"
-#include "libraries/criterion/cuda/CriterionUtils.cuh"
+
+#include "flashlight-extensions/common/Utils.h"
+#include "libraries/audio/criterion/cuda/CriterionUtils.cuh"
 
 using namespace fl;
 

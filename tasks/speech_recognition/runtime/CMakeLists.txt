@@ -8,11 +8,8 @@ add_library(
 target_sources(
   runtime
   INTERFACE
-  ${CMAKE_CURRENT_SOURCE_DIR}/Data.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Logger.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Serial.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SpeechStatMeter.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Distributed.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Optimizer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Helpers.cpp
   )

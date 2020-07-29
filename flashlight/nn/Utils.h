@@ -54,8 +54,6 @@ struct IntOrPadMode {
 
 int derivePadding(int inSz, int filterSz, int stride, int pad, int dilation);
 
-int64_t numTotalParams(std::shared_ptr<fl::Module> module);
-
 /// packs a list of arrays (possibly of different dimensions) to a single array
 /// by padding them to same dimensions
 af::array join(

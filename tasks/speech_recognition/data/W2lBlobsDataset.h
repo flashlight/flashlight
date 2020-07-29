@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "common/Utils.h"
+#include "data/SpeechSample.h"
 #include "data/Utils.h"
 #include "data/W2lDataset.h"
 

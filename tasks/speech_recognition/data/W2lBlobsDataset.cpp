@@ -13,6 +13,8 @@
 
 #include "common/Defines.h"
 #include "data/W2lBlobsDataset.h"
+#include "libraries/common/String.h"
+#include "libraries/common/System.h"
 
 namespace w2l {
 

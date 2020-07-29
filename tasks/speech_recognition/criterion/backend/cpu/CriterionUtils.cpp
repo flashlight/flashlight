@@ -9,8 +9,8 @@
 #include "criterion/CriterionUtils.h"
 
 #include "common/Utils.h"
-#include "libraries/criterion/cpu/CriterionUtils.h"
-#include "libraries/criterion/cpu/ViterbiPath.h"
+#include "libraries/audio/criterion/cpu/CriterionUtils.h"
+#include "libraries/audio/criterion/cpu/ViterbiPath.h"
 
 using CriterionUtils = w2l::cpu::CriterionUtils<float>;
 using ViterbiPath = w2l::cpu::ViterbiPath<float>;

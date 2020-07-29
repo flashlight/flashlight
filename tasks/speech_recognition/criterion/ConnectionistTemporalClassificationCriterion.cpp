@@ -7,8 +7,8 @@
  */
 #include "ConnectionistTemporalClassificationCriterion.h"
 
-#include "common/Utils.h"
-#include "libraries/criterion/cpu/ConnectionistTemporalClassificationCriterion.h"
+#include "flashlight-extensions/common/Utils.h"
+#include "libraries/audio/criterion/cpu/ConnectionistTemporalClassificationCriterion.h"
 
 using CTC = w2l::cpu::ConnectionistTemporalClassificationCriterion<float>;
 

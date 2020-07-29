@@ -11,7 +11,7 @@
 #include <flashlight/common/cuda.h>
 
 #include "criterion/CriterionUtils.h"
-#include "libraries/criterion/cuda/ForceAlignmentCriterion.cuh"
+#include "libraries/audio/criterion/cuda/ForceAlignmentCriterion.cuh"
 
 using fl::Variable;
 using FAC = w2l::cuda::ForceAlignmentCriterion<float>;

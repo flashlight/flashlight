@@ -7,9 +7,12 @@
  */
 
 #include "Seq2SeqCriterion.h"
+
 #include <algorithm>
 #include <numeric>
 #include <queue>
+
+#include "common/Defines.h"
 
 using namespace fl;
 

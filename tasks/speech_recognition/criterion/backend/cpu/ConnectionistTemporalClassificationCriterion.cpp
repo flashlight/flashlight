@@ -8,7 +8,7 @@
 
 #include "criterion/ConnectionistTemporalClassificationCriterion.h"
 #include "criterion/CriterionUtils.h"
-#include "libraries/criterion/cpu/CriterionUtils.h"
+#include "libraries/audio/criterion/cpu/CriterionUtils.h"
 
 using namespace fl;
 

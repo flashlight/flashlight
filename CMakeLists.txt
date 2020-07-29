@@ -7,6 +7,12 @@ project(flashlight)
 set(FLASHLIGHT_CORE_DIR "${CMAKE_SOURCE_DIR}/flashlight") # module root
 add_subdirectory(${FLASHLIGHT_CORE_DIR})
 
+set(FLASHLIGHT_EXT_DIR "${CMAKE_SOURCE_DIR}/flashlight-extensions") # module root
+add_subdirectory(${FLASHLIGHT_EXT_DIR})
+
+set(FLASHLIGHT_LIB_DIR "${CMAKE_SOURCE_DIR}/libraries") # module root
+add_subdirectory(${FLASHLIGHT_LIB_DIR})
+
 
 # --------------------------- Configure Tasks ---------------------------
 
