@@ -4,25 +4,25 @@ project(flashlight_asr_task)
 
 # ----------------------------- Configuration -----------------------------
 
-option(W2L_LIBRARIES_USE_CUDA "Use CUDA in libraries-only build" ON)
-option(W2L_LIBRARIES_USE_KENLM "Use KenLM in libraries-only build" ON)
-option(W2L_LIBRARIES_USE_MKL "Use MKL in libraries-only build" ON)
-option(W2L_BUILD_FOR_PYTHON "Build Python bindings" OFF)
-option(W2L_BUILD_TESTS "Build tests for wav2letter++" ON)
-option(W2L_BUILD_EXAMPLES "Build examples for wav2letter++" ON)
-option(W2L_BUILD_EXPERIMENTAL "Build internal experimental components for wav2letter++" OFF)
-option(W2L_BUILD_SCRIPTS "Build internal scripts for wav2letter++" OFF)
-option(W2L_BUILD_RECIPES "Build recipes" ON)
-option(W2L_BUILD_TOOLS "Build audio tools" OFF)
+option(FL_LIBRARIES_USE_CUDA "Use CUDA in libraries-only build" ON)
+option(FL_LIBRARIES_USE_KENLM "Use KenLM in libraries-only build" ON)
+option(FL_LIBRARIES_USE_MKL "Use MKL in libraries-only build" ON)
+option(FL_BUILD_FOR_PYTHON "Build Python bindings" OFF)
+option(FL_BUILD_TESTS "Build tests for wav2letter++" ON)
+option(FL_BUILD_EXAMPLES "Build examples for wav2letter++" ON)
+option(FL_BUILD_EXPERIMENTAL "Build internal experimental components for wav2letter++" OFF)
+option(FL_BUILD_SCRIPTS "Build internal scripts for wav2letter++" OFF)
+option(FL_BUILD_RECIPES "Build recipes" ON)
+option(FL_BUILD_TOOLS "Build audio tools" OFF)
 set(KENLM_MAX_ORDER 6 CACHE STRING "Maximum ngram order for KenLM")
 
 # ------------------------- Dependency Fallback -------------------------
 
-if (W2L_LIBRARIES_USE_MKL)
+if (FL_LIBRARIES_USE_MKL)
   find_package(MKL)
   if (NOT MKL_FOUND)
-    message(WARNING "MKL not found; forcing W2L_LIBRARIES_USE_MKL=OFF.")
-    set(W2L_LIBRARIES_USE_MKL OFF CACHE BOOL "" FORCE)
+    message(WARNING "MKL not found; forcing FL_LIBRARIES_USE_MKL=OFF.")
+    set(FL_LIBRARIES_USE_MKL OFF CACHE BOOL "" FORCE)
   endif ()
 endif ()
 

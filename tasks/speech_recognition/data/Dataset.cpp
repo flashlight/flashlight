@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "W2lDataset.h"
+#include "Dataset.h"
 
 #include <functional>
 #include <numeric>
@@ -22,7 +22,7 @@ namespace fl {
 namespace task {
 namespace asr {
 
-W2lDataset::W2lDataset(
+Dataset::Dataset(
     const DictionaryMap& dicts,
     int64_t batchsize,
     int worldrank /* = 0 */,
@@ -38,14 +38,14 @@ W2lDataset::W2lDataset(
   }
 }
 
-int64_t W2lDataset::size() const {
+int64_t Dataset::size() const {
   return sampleBatches_.size();
 }
 
-std::vector<af::array> W2lDataset::get(const int64_t idx) const {
+std::vector<af::array> Dataset::get(const int64_t idx) const {
   checkIndexBounds(idx);
 
-  W2lFeatureData feat;
+  FeatureData feat;
   if (FLAGS_nthread > 0) {
     feat = getFeatureDataAndPrefetch(idx);
   } else {
@@ -69,17 +69,17 @@ std::vector<af::array> W2lDataset::get(const int64_t idx) const {
   return result;
 }
 
-int64_t W2lDataset::getGlobalBatchIdx(const int64_t idx) {
+int64_t Dataset::getGlobalBatchIdx(const int64_t idx) {
   return sampleBatches_[idx][0] / (worldSize_ * batchSize_);
 }
 
-W2lFeatureData W2lDataset::getFeatureData(const int64_t idx) const {
+FeatureData Dataset::getFeatureData(const int64_t idx) const {
   auto ldData = getLoaderData(idx);
   return featurize(ldData, dicts_);
 }
 
-W2lFeatureData W2lDataset::getFeatureDataAndPrefetch(const int64_t idx) const {
-  W2lFeatureData feat;
+FeatureData Dataset::getFeatureDataAndPrefetch(const int64_t idx) const {
+  FeatureData feat;
   // check cache
   auto cachedata = prefetchCache_.find(idx);
   if (cachedata != prefetchCache_.end()) {
@@ -112,7 +112,7 @@ W2lFeatureData W2lDataset::getFeatureDataAndPrefetch(const int64_t idx) const {
   return feat;
 }
 
-void W2lDataset::shuffle(int seed) {
+void Dataset::shuffle(int seed) {
   prefetchCache_.clear();
   RoundRobinBatchPacker shuffler(batchSize_, worldSize_, worldRank_);
   // We shuffle such that calling `get(idx)` from different mpi jobs with same

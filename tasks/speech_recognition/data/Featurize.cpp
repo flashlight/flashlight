@@ -80,14 +80,14 @@ PowerSpectrum& getPowerSpectrum() {
   return powspec;
 }
 
-W2lFeatureData featurize(
-    const std::vector<W2lLoaderData>& data,
+FeatureData featurize(
+    const std::vector<LoaderData>& data,
     const DictionaryMap& dicts) {
   if (data.empty()) {
     return {};
   }
   auto batchSz = data.size();
-  W2lFeatureData feat;
+  FeatureData feat;
   std::vector<std::string> sampleIds;
 
   // Featurize Input

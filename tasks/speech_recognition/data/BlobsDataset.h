@@ -10,15 +10,15 @@
 
 #include "data/SpeechSample.h"
 #include "data/Utils.h"
-#include "data/W2lDataset.h"
+#include "data/Dataset.h"
 
 namespace fl {
 namespace task {
 namespace asr {
 
-class W2lListFilesDataset : public W2lDataset {
+class BlobsDataset : public Dataset {
  public:
-  W2lListFilesDataset(
+  BlobsDataset(
       const std::string& filenames,
       const lib::DictionaryMap& dicts,
       const lib::LexiconMap& lexicon,
@@ -29,20 +29,22 @@ class W2lListFilesDataset : public W2lDataset {
       bool skipUnk = false,
       const std::string& rootdir = "");
 
-  ~W2lListFilesDataset() override;
+  ~BlobsDataset() override;
 
-  virtual std::vector<W2lLoaderData> getLoaderData(
+  virtual std::vector<LoaderData> getLoaderData(
       const int64_t idx) const override;
 
  private:
+  std::vector<std::shared_ptr<fl::BlobDataset>> blobs_;
   std::vector<int64_t> sampleSizeOrder_;
-  std::vector<SpeechSample> data_;
+  std::vector<int64_t> blobIndex_;
+  std::vector<int64_t> sampleIndex_;
   lib::LexiconMap lexicon_;
   bool includeWrd_;
   bool fallback2Ltr_;
   bool skipUnk_;
 
-  std::vector<SpeechSampleMetaInfo> loadListFile(const std::string& filename);
+  std::vector<SpeechSampleMetaInfo> loadBlob(const std::string& filename);
 };
 } // namespace asr
 } // namespace task

@@ -13,7 +13,7 @@
 
 #include "common/Defines.h"
 #include "data/Featurize.h"
-#include "data/W2lListFilesDataset.h"
+#include "data/ListFilesDataset.h"
 
 #include "libraries/common/String.h"
 #include "libraries/common/System.h"
@@ -72,7 +72,7 @@ TEST(DataTest, inputFeaturizer) {
   auto dict = getDict();
   auto inputFeaturizer = [](std::vector<std::vector<float>> in,
                             const Dictionary& d) {
-    std::vector<W2lLoaderData> data;
+    std::vector<LoaderData> data;
     for (const auto& i : in) {
       data.emplace_back();
       data.back().input = i;
@@ -123,7 +123,7 @@ TEST(DataTest, targetFeaturizer) {
 
   auto targetFeaturizer = [](std::vector<std::vector<std::string>> tgt,
                              const Dictionary& d) {
-    std::vector<W2lLoaderData> data;
+    std::vector<LoaderData> data;
     for (const auto& t : tgt) {
       data.emplace_back();
       data.back().targets[kTargetIdx] = t;
@@ -154,7 +154,7 @@ TEST(DataTest, targetFeaturizer) {
   ASSERT_EQ(tgtArray(tgtLen - 2, 1).scalar<int>(), eosIdx);
 }
 
-TEST(DataTest, W2lListDataset) {
+TEST(DataTest, ListDataset) {
   gflags::FlagSaver flagsaver;
   FLAGS_mfcc = false;
   FLAGS_mfsc = false;
@@ -204,7 +204,7 @@ TEST(DataTest, W2lListDataset) {
   DictionaryMap dicts;
   dicts.insert({kTargetIdx, dict});
 
-  W2lListFilesDataset ds(fileList, dicts, lexicon, 1);
+  ListFilesDataset ds(fileList, dicts, lexicon, 1);
 
   auto fields = ds.get(0);
   auto& input = fields[kInputIdx];

@@ -12,7 +12,7 @@
 #include <sstream>
 
 #include "common/Defines.h"
-#include "data/W2lBlobsDataset.h"
+#include "data/BlobsDataset.h"
 #include "libraries/common/String.h"
 #include "libraries/common/System.h"
 
@@ -22,7 +22,7 @@ namespace fl {
 namespace task {
 namespace asr {
 
-W2lBlobsDataset::W2lBlobsDataset(
+BlobsDataset::BlobsDataset(
     const std::string& filenames,
     const DictionaryMap& dicts,
     const LexiconMap& lexicon,
@@ -32,7 +32,7 @@ W2lBlobsDataset::W2lBlobsDataset(
     bool fallback2Ltr /* = false */,
     bool skipUnk /* = false */,
     const std::string& rootdir /* = "" */)
-    : W2lDataset(dicts, batchSize, worldRank, worldSize),
+    : Dataset(dicts, batchSize, worldRank, worldSize),
       lexicon_(lexicon),
       fallback2Ltr_(fallback2Ltr),
       skipUnk_(skipUnk) {
@@ -69,19 +69,19 @@ W2lBlobsDataset::W2lBlobsDataset(
   LOG(INFO) << "Total batches (i.e. iters): " << sampleBatches_.size();
 }
 
-W2lBlobsDataset::~W2lBlobsDataset() {
+BlobsDataset::~BlobsDataset() {
   threadpool_ = nullptr; // join all threads
 }
 
-std::vector<W2lLoaderData> W2lBlobsDataset::getLoaderData(
+std::vector<LoaderData> BlobsDataset::getLoaderData(
     const int64_t idx) const {
-  std::vector<W2lLoaderData> data(sampleBatches_[idx].size(), W2lLoaderData());
+  std::vector<LoaderData> data(sampleBatches_[idx].size(), LoaderData());
   for (int64_t id = 0; id < sampleBatches_[idx].size(); ++id) {
     auto i = sampleSizeOrder_[sampleBatches_[idx][id]];
 
     if (!(i >= 0 && i < sampleIndex_.size())) {
       throw std::out_of_range(
-          "W2lBlobsDataset::getLoaderData idx out of range");
+          "BlobsDataset::getLoaderData idx out of range");
     }
 
     data[id].sampleId = std::to_string(sampleIndex_[i]);
@@ -106,7 +106,7 @@ std::vector<W2lLoaderData> W2lBlobsDataset::getLoaderData(
   return data;
 }
 
-std::vector<SpeechSampleMetaInfo> W2lBlobsDataset::loadBlob(
+std::vector<SpeechSampleMetaInfo> BlobsDataset::loadBlob(
     const std::string& filename) {
   std::shared_ptr<fl::BlobDataset> blob =
       std::make_shared<fl::FileBlobDataset>(filename);

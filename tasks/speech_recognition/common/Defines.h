@@ -15,7 +15,7 @@
 
 #include <gflags/gflags.h>
 
-#define W2L_VERSION "0.1"
+#define FL_TASK_ASR_VERSION "0.1"
 
 namespace fl {
 namespace task {

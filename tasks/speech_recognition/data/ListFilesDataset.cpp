@@ -11,7 +11,7 @@
 #include <numeric>
 
 #include "common/Defines.h"
-#include "data/W2lListFilesDataset.h"
+#include "data/ListFilesDataset.h"
 #include "libraries/common/String.h"
 #include "libraries/common/System.h"
 
@@ -21,7 +21,7 @@ namespace fl {
 namespace task {
 namespace asr {
 
-W2lListFilesDataset::W2lListFilesDataset(
+ListFilesDataset::ListFilesDataset(
     const std::string& filenames,
     const DictionaryMap& dicts,
     const LexiconMap& lexicon,
@@ -31,7 +31,7 @@ W2lListFilesDataset::W2lListFilesDataset(
     bool fallback2Ltr /* = false */,
     bool skipUnk /* = false */,
     const std::string& rootdir /* = "" */)
-    : W2lDataset(dicts, batchSize, worldRank, worldSize),
+    : Dataset(dicts, batchSize, worldRank, worldSize),
       lexicon_(lexicon),
       fallback2Ltr_(fallback2Ltr),
       skipUnk_(skipUnk) {
@@ -68,19 +68,19 @@ W2lListFilesDataset::W2lListFilesDataset(
   LOG(INFO) << "Total batches (i.e. iters): " << sampleBatches_.size();
 }
 
-W2lListFilesDataset::~W2lListFilesDataset() {
+ListFilesDataset::~ListFilesDataset() {
   threadpool_ = nullptr; // join all threads
 }
 
-std::vector<W2lLoaderData> W2lListFilesDataset::getLoaderData(
+std::vector<LoaderData> ListFilesDataset::getLoaderData(
     const int64_t idx) const {
-  std::vector<W2lLoaderData> data(sampleBatches_[idx].size(), W2lLoaderData());
+  std::vector<LoaderData> data(sampleBatches_[idx].size(), LoaderData());
   for (int64_t id = 0; id < sampleBatches_[idx].size(); ++id) {
     auto i = sampleSizeOrder_[sampleBatches_[idx][id]];
 
     if (!(i >= 0 && i < data_.size())) {
       throw std::out_of_range(
-          "W2lListFilesDataset::getLoaderData idx out of range");
+          "ListFilesDataset::getLoaderData idx out of range");
     }
 
     data[id].sampleId = data_[i].getSampleId();
@@ -99,7 +99,7 @@ std::vector<W2lLoaderData> W2lListFilesDataset::getLoaderData(
   return data;
 }
 
-std::vector<SpeechSampleMetaInfo> W2lListFilesDataset::loadListFile(
+std::vector<SpeechSampleMetaInfo> ListFilesDataset::loadListFile(
     const std::string& filename) {
   std::ifstream infile(filename);
 

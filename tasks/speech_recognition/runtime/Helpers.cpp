@@ -111,7 +111,7 @@ std::vector<std::string> readSampleIds(const af::array& arr) {
   return afMatrixToStrings<int>(arr, -1);
 }
 
-std::shared_ptr<W2lDataset> createDataset(
+std::shared_ptr<Dataset> createDataset(
     const std::string& path,
     const DictionaryMap& dicts,
     const LexiconMap& lexicon /* = LexiconMap() */,
@@ -120,11 +120,11 @@ std::shared_ptr<W2lDataset> createDataset(
     int worldSize /* = 1 */,
     bool fallback2Ltr /* = true */,
     bool skipUnk /* = true */) {
-  std::shared_ptr<W2lDataset> ds;
+  std::shared_ptr<Dataset> ds;
   if (FLAGS_everstoredb) {
-#ifdef W2L_BUILD_FB_DEPENDENCIES
-    W2lEverstoreDataset::init(); // Required for everstore client
-    ds = std::make_shared<W2lEverstoreDataset>(
+#ifdef FL_BUILD_FB_DEPENDENCIES
+    EverstoreDataset::init(); // Required for everstore client
+    ds = std::make_shared<EverstoreDataset>(
         path,
         dicts,
         lexicon,
@@ -136,11 +136,11 @@ std::shared_ptr<W2lDataset> createDataset(
         FLAGS_datadir,
         FLAGS_use_memcache);
 #else
-    LOG(FATAL) << "W2lEverstoreDataset not supported: "
-               << "build with -DW2L_BUILD_FB_DEPENDENCIES";
+    LOG(FATAL) << "EverstoreDataset not supported: "
+               << "build with -DFL_BUILD_FB_DEPENDENCIES";
 #endif
   } else if (FLAGS_blobdata) {
-    ds = std::make_shared<W2lBlobsDataset>(
+    ds = std::make_shared<BlobsDataset>(
         path,
         dicts,
         lexicon,
@@ -151,7 +151,7 @@ std::shared_ptr<W2lDataset> createDataset(
         skipUnk,
         FLAGS_datadir);
   } else {
-    ds = std::make_shared<W2lListFilesDataset>(
+    ds = std::make_shared<ListFilesDataset>(
         path,
         dicts,
         lexicon,

@@ -54,7 +54,7 @@ struct Serializer {
             "failed to open file for writing: " + filepath);
       }
       cereal::BinaryOutputArchive ar(file);
-      ar(std::string(W2L_VERSION));
+      ar(std::string(FL_TASK_ASR_VERSION));
       ar(args...);
     } catch (const std::exception& ex) {
       LOG(ERROR) << "Error while saving \"" << filepath << "\": " << ex.what()

@@ -34,7 +34,6 @@
 #include "libraries/language/decoder/lm/KenLM.h"
 #include "libraries/language/decoder/lm/ZeroLM.h"
 
-using namespace fl;
 using namespace fl::ext;
 using namespace fl::lib;
 using namespace fl::task::asr;

@@ -30,7 +30,6 @@
 #include "libraries/language/dictionary/Dictionary.h"
 #include "libraries/language/dictionary/Utils.h"
 
-using namespace fl;
 using namespace fl::ext;
 using namespace fl::lib;
 using namespace fl::task::asr;
@@ -402,7 +401,7 @@ int main(int argc, char** argv) {
     trainds->shuffle(FLAGS_seed);
   }
 
-  std::map<std::string, std::shared_ptr<W2lDataset>> validds;
+  std::map<std::string, std::shared_ptr<Dataset>> validds;
   int64_t validBatchSize =
       FLAGS_validbatchsize == -1 ? FLAGS_batchsize : FLAGS_validbatchsize;
   for (const auto& s : validTagSets) {
@@ -446,7 +445,7 @@ int main(int argc, char** argv) {
   auto test = [&evalOutput](
                   std::shared_ptr<fl::Module> ntwrk,
                   std::shared_ptr<SequenceCriterion> crit,
-                  std::shared_ptr<W2lDataset> testds,
+                  std::shared_ptr<Dataset> testds,
                   DatasetMeters& mtrs) {
     ntwrk->eval();
     crit->eval();
@@ -481,7 +480,7 @@ int main(int argc, char** argv) {
                 reducer](
                    std::shared_ptr<fl::Module> ntwrk,
                    std::shared_ptr<SequenceCriterion> crit,
-                   std::shared_ptr<W2lDataset> trainset,
+                   std::shared_ptr<Dataset> trainset,
                    std::shared_ptr<fl::FirstOrderOptimizer> netopt,
                    std::shared_ptr<fl::FirstOrderOptimizer> critopt,
                    double initlr,

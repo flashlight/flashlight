@@ -45,7 +45,7 @@ class SpeechSampleMetaInfo {
   }
 };
 
-// Helper class used to store data in W2lListFilesDataset
+// Helper class used to store data in ListFilesDataset
 class SpeechSample {
  private:
   std::string sampleId_; // utterance id

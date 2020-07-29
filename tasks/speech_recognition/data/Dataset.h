@@ -20,9 +20,9 @@ namespace fl {
 namespace task {
 namespace asr {
 
-class W2lDataset : public fl::Dataset {
+class Dataset : public fl::Dataset {
  public:
-  W2lDataset(
+  Dataset(
       const lib::DictionaryMap& dicts,
       int64_t batchsize,
       int worldrank = 0,
@@ -35,13 +35,13 @@ class W2lDataset : public fl::Dataset {
   // or else samples will be loaded into cache unnecessarily and discarded.
   std::vector<af::array> get(const int64_t idx) const override;
 
-  virtual std::vector<W2lLoaderData> getLoaderData(const int64_t idx) const = 0;
+  virtual std::vector<LoaderData> getLoaderData(const int64_t idx) const = 0;
 
   int64_t getGlobalBatchIdx(const int64_t idx);
 
-  W2lFeatureData getFeatureData(const int64_t idx) const;
+  FeatureData getFeatureData(const int64_t idx) const;
 
-  W2lFeatureData getFeatureDataAndPrefetch(const int64_t idx) const;
+  FeatureData getFeatureDataAndPrefetch(const int64_t idx) const;
 
   void shuffle(int seed);
 
@@ -57,7 +57,7 @@ class W2lDataset : public fl::Dataset {
 
   // used if FLAGS_nthread > 1
   std::unique_ptr<fl::ThreadPool> threadpool_;
-  mutable std::unordered_map<int64_t, std::future<W2lFeatureData>>
+  mutable std::unordered_map<int64_t, std::future<FeatureData>>
       prefetchCache_;
 
   std::vector<std::vector<int64_t>> sampleBatches_;

@@ -23,7 +23,7 @@ namespace asr {
 typedef std::unordered_map<int, af::dim4> DimsMap;
 typedef std::unordered_map<int, std::vector<int>> TargetFeatMap;
 
-struct W2lFeatureData {
+struct FeatureData {
   std::vector<float> input;
   TargetFeatMap targets;
   af::dim4 inputDims;
@@ -33,14 +33,14 @@ struct W2lFeatureData {
 };
 
 typedef std::unordered_map<int, std::vector<std::string>> TargetMap;
-struct W2lLoaderData {
+struct LoaderData {
   std::vector<float> input;
   TargetMap targets;
   std::string sampleId;
 };
 
-W2lFeatureData featurize(
-    const std::vector<W2lLoaderData>& data,
+FeatureData featurize(
+    const std::vector<LoaderData>& data,
     const lib::DictionaryMap& dicts);
 
 lib::FeatureParams defineSpeechFeatureParams();

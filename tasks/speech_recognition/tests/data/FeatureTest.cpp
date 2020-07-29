@@ -13,7 +13,7 @@
 
 #include "common/Defines.h"
 #include "data/Featurize.h"
-#include "data/W2lListFilesDataset.h"
+#include "data/ListFilesDataset.h"
 #include "decoder/Utils.h"
 
 #include "libraries/audio/feature/SpeechUtils.h"
