@@ -107,10 +107,12 @@ public:
     auto backboneFeatures = backbone_->forward(input);
     auto inputProjection = inputProj_->forward(backboneFeatures[1]);
     auto posEmbed = posEmbed_->forward(backboneFeatures[1]);
+    //return { inputProjection, posEmbed };
     auto hs = transformer_->forward(
         inputProjection,
         queryEmbed_->param(0),
         posEmbed);
+    return { inputProjection, hs[0] };
 
     auto outputClasses = classEmbed_->forward(hs[0]);
     auto outputCoord = sigmoid(bboxEmbed_->forward(hs)[0]);
@@ -149,23 +151,23 @@ int main(int argc, char** argv) {
   /////////////////////////
   // Setup distributed training
   ////////////////////////
-  af::info();
-  fl::distributedInit(
-	fl::DistributedInit::FILE_SYSTEM,
-	FLAGS_world_rank,
-	FLAGS_world_size,
-	{{fl::DistributedConstants::kMaxDevicePerNode,
-	  std::to_string(8)},
-	 {fl::DistributedConstants::kFilePath, FLAGS_rndv_filepath}});
+  //af::info();
+  //fl::distributedInit(
+	//fl::DistributedInit::FILE_SYSTEM,
+	//FLAGS_world_rank,
+	//FLAGS_world_size,
+	//{{fl::DistributedConstants::kMaxDevicePerNode,
+		//std::to_string(8)},
+	 //{fl::DistributedConstants::kFilePath, FLAGS_rndv_filepath}});
 
   std::cout << "WorldRank " << FLAGS_world_rank << " world_size " << FLAGS_world_size << std::endl;
   af::setDevice(FLAGS_world_rank);
   af::setSeed(FLAGS_world_size);
 
-  auto reducer = std::make_shared<fl::CoalescingReducer>(
-      1.0 / FLAGS_world_size,
-      true,
-      true);
+  //auto reducer = std::make_shared<fl::CoalescingReducer>(
+      //1.0 / FLAGS_world_size,
+      //true,
+      //true);
 
   /////////////////////////
   // Setup distributed training
@@ -226,21 +228,21 @@ int main(int argc, char** argv) {
 
   // synchronize parameters of tje model so that the parameters in each process
   // is the same
-  fl::allReduceParameters(detr);
+  //fl::allReduceParameters(detr);
 
   // Add a hook to synchronize gradients of model parameters as they are
   // computed
-  fl::distributeModuleGrads(detr, reducer);
+  //fl::distributeModuleGrads(detr, reducer);
 
 
-  auto matcher = HungarianMatcher(1, 1, 1);
-  SetCriterion::LossDict losses;
-  auto criterion = SetCriterion(
-      numClasses,
-      matcher,
-      af::array(),
-      0.0,
-      losses);
+  //auto matcher = HungarianMatcher(1, 1, 1);
+  //SetCriterion::LossDict losses;
+  //auto criterion = SetCriterion(
+      //numClasses,
+      //matcher,
+      //af::array(),
+      //0.0,
+      //losses);
 
   auto eval_loop = [](
       std::shared_ptr<Detr> model,
@@ -314,57 +316,60 @@ int main(int argc, char** argv) {
     std::unordered_map<std::string, AverageValueMeter> meters;
     std::unordered_map<std::string, TimeMeter> timers;
     int idx = 0;
-    for(auto& sample : *train_ds) {
+    timers["total"].resume();
+    auto sample = train_ds->get(0);
+    while(true) {
+    //for(auto& sample : *train_ds) {
       auto images =  { fl::Variable(sample.images, false) };
 
       timers["forward"].resume();
-      timers["total"].resume();
       auto output = detr->forward(images);
+      output[0].array().eval();
+      output[1].array().eval();
       timers["forward"].stop();
 
       /////////////////////////
       // Criterion
       /////////////////////////
-      std::vector<Variable> targetBoxes(sample.target_boxes.size());
-      std::vector<Variable> targetClasses(sample.target_labels.size());
+      //std::vector<Variable> targetBoxes(sample.target_boxes.size());
+      //std::vector<Variable> targetClasses(sample.target_labels.size());
 
-      std::transform(
-          sample.target_boxes.begin(), sample.target_boxes.end(),
-          targetBoxes.begin(),
-          [](const af::array& in) { return fl::Variable(in, false); });
+      //std::transform(
+          //sample.target_boxes.begin(), sample.target_boxes.end(),
+          //targetBoxes.begin(),
+          //[](const af::array& in) { return fl::Variable(in, false); });
 
-      std::transform(
-          sample.target_labels.begin(), sample.target_labels.end(),
-          targetClasses.begin(),
-          [](const af::array& in) { return fl::Variable(in, false); });
+      //std::transform(
+          //sample.target_labels.begin(), sample.target_labels.end(),
+          //targetClasses.begin(),
+          //[](const af::array& in) { return fl::Variable(in, false); });
 
-      timers["criterion"].resume();
+      //timers["criterion"].resume();
 
-      auto loss = criterion.forward(
-          output[1],
-          output[0],
-          targetBoxes,
-          targetClasses);
-      auto accumLoss = fl::Variable(af::constant(0, 1), true);
-      for(auto losses : loss) {
-        meters[losses.first].add(losses.second.array());
-        accumLoss = losses.second + accumLoss;
-      }
-      meters["sum"].add(accumLoss.array());
-      timers["criterion"].stop();
+      //auto loss = criterion.forward(
+          //output[1],
+          //output[0],
+          //targetBoxes,
+          //targetClasses);
+      //auto accumLoss = fl::Variable(af::constant(0, 1), true);
+      //for(auto losses : loss) {
+        //meters[losses.first].add(losses.second.array());
+        //accumLoss = losses.second + accumLoss;
+      //}
+      //meters["sum"].add(accumLoss.array());
+      //timers["criterion"].stop();
 
       /////////////////////////
       // Backward and update gradients
       //////////////////////////
-      timers["backward"].resume();
-      accumLoss.backward();
-      timers["backward"].stop();
+      //timers["backward"].resume();
+      //accumLoss.backward();
+      //timers["backward"].stop();
 
-      reducer->finalize();
-      opt.step();
+      //reducer->finalize();
+      //opt.step();
 
-      opt.zeroGrad();
-      timers["total"].stop();
+      //opt.zeroGrad();
       //////////////////////////
       // Metrics 
       /////////////////////////
@@ -375,6 +380,8 @@ int main(int argc, char** argv) {
         double backward_time = timers["backward"].value();
         double criterion_time = timers["criterion"].value();
         std::cout << "Epoch: " << e << std::setprecision(5) << " | Batch: " << idx
+            << " | total_time: " << total_time
+            << " | idx: " << idx
             << " | sample_per_second: " << sample_per_second
             << " | forward_time_avg: " << forward_time / idx
             << " | backward_time_avg: " << backward_time / idx
