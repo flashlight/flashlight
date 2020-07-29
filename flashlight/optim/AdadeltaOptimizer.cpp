@@ -18,8 +18,6 @@
 
 #include <cmath>
 
-using std::vector;
-
 namespace fl {
 
 AdadeltaOptimizer::AdadeltaOptimizer(

@@ -73,20 +73,6 @@ int64_t getNumRnnParams(
 
   return n_params;
 }
-
-std::pair<dim_t, dim_t> computeFans(af::dim4 dims) {
-  dim_t fan_in, fan_out;
-  auto ndims = dims.ndims();
-  if (ndims <= 2) {
-    fan_in = dims[1];
-    fan_out = dims[0];
-  } else {
-    fan_out = dims[ndims - 1];
-    fan_in = dims.elements() / dims[ndims - 1];
-  }
-  return {fan_in, fan_out};
-}
-
 } // namespace detail
 
 int derivePadding(int inSz, int filterSz, int stride, int pad, int dilation) {

@@ -16,11 +16,11 @@ namespace fl {
 
 void WeightNorm::transformDims() {
   normDim_.clear();
-  int v_numdims = module_->param(0).array().numdims();
-  if (dim_ < 0 || dim_ > v_numdims) {
+  int vNumdims = module_->param(0).array().numdims();
+  if (dim_ < 0 || dim_ > vNumdims) {
     throw std::invalid_argument("invalid dimension for WeightNorm");
   }
-  for (int i = 0; i < v_numdims; i++) {
+  for (int i = 0; i < vNumdims; i++) {
     if (i != dim_) {
       normDim_.push_back(i);
     }

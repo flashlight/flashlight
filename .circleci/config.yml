@@ -19,9 +19,9 @@ jobs:
       - run:
           name: Setup Docker and nvidia-docker
           command: |
-            # Install CUDA 9.2
-            wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_9.2.148-1_amd64.deb
-            sudo dpkg -i cuda-repo-ubuntu1604_9.2.148-1_amd64.deb
+            # Install CUDA 10.0
+            wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_10.0.130-1_amd64.deb
+            sudo dpkg -i cuda-repo-ubuntu1604_10.0.130-1_amd64.deb
             sudo apt-get update || true
             sudo apt-get --yes --force-yes install cuda
             nvidia-smi
@@ -57,7 +57,9 @@ jobs:
             sudo docker exec -it flashlight bash -c "mkdir /flashlight"
             sudo docker cp . flashlight:/flashlight
             sudo docker exec -it flashlight bash -c "\
+            apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5 && \
             cd /flashlight && pwd && ls && mkdir -p build && cd build && \
+            export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5 && \
             cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CUDA && \
             make -j$(nproc) && make install && make test"
   build-cpu:
@@ -68,7 +70,8 @@ jobs:
       - run:
           name: Build flashlight with CPU backend
           command: |
-            export MKLROOT=/opt/intel/mkl && mkdir -p build && cd build
+            apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5
+            export MKLROOT=/opt/intel/mkl && export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5 && mkdir -p build && cd build
             cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CPU
             make -j1 && make install
 workflows:

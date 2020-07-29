@@ -5,8 +5,10 @@ set(
   COMMON_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/common/Utils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/common/DevicePtr.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/common/Defines.cpp  
-  )
+  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/common/Defines.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/common/Logging.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/common/Histogram.cpp
+)
 
 if(FLASHLIGHT_USE_CUDA)
   set(COMMON_SRCS ${COMMON_SRCS} ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/common/CudaUtils.cpp)

@@ -289,6 +289,25 @@ TEST(AutogradTest, Exp) {
   ASSERT_TRUE(allClose(dx.array(), (af::exp(x.array()))));
 }
 
+TEST(AutogradTest, Pow) {
+  {
+    auto x = Variable(af::randu(5), true);
+    auto y = pow(x, 2);
+    auto dy = Variable(af::constant(2.0, 5), false);
+    y.backward(dy);
+    auto dx = x.grad();
+    ASSERT_TRUE(allClose(dx.array(), (2 * 2 * x.array())));
+  }
+  {
+    auto x = Variable(af::randu(5), true);
+    auto y = pow(x, 3);
+    auto dy = Variable(af::constant(1.0, 5), false);
+    y.backward(dy);
+    auto dx = x.grad();
+    ASSERT_TRUE(allClose(dx.array(), (3 * af::pow(x.array(), 2))));
+  }
+}
+
 TEST(AutogradTest, Sigmoid) {
   auto x = Variable(af::randu(5), true);
   auto y = sigmoid(x);
@@ -390,6 +409,11 @@ TEST(AutogradTest, Tile) {
   auto dx = x.grad();
   ASSERT_TRUE(allClose(dy.array(), af::tile(x.array(), 1, 3)));
   ASSERT_TRUE(allClose(dx.array(), af::sum(y.array(), 1)));
+
+  // Jacobian
+  auto input = Variable(af::randu(10, 1, 5), true);
+  auto func_tile = [](Variable& in) { return tile(in, {1, 2}); };
+  ASSERT_TRUE(jacobianTestImpl(func_tile, input, 1E-4, 1E-3));
 }
 
 TEST(AutogradTest, Clamp) {
@@ -480,7 +504,14 @@ TEST(AutogradTest, Variance) {
   auto x = Variable(af::randu(5, 6, 7, 8, af::dtype::f64), true);
   std::vector<bool> biased = {true, false};
   for (auto b : biased) {
-    auto expected_var = var(x.array(), b, 1);
+    // Behavior of the bias parameter in af::var was changed in
+    // https://git.io/Jv5gF and is different in ArrayFire v3.7. If isbiased is
+    // true, sample variance rather than population variance is used. The
+    // flashlight API implements the opposite behavior to be consistent with
+    // other libraries.
+    bool afVarBiasArg = !b;
+
+    auto expected_var = af::var(x.array(), afVarBiasArg, 1);
     auto calculated_var = var(x, {1}, b);
     ASSERT_TRUE(allClose(calculated_var.array(), expected_var));
 
@@ -491,8 +522,24 @@ TEST(AutogradTest, Variance) {
 
 TEST(AutogradTest, Norm) {
   auto x = Variable(af::randu(5, 3, af::dtype::f64), true);
-  auto func_norm = [](Variable& in) { return norm(in, {1}); };
-  ASSERT_TRUE(jacobianTestImpl(func_norm, x, 1E-4));
+  auto funcNorm2 = [](Variable& in) { return norm(in, {1}); };
+  ASSERT_TRUE(jacobianTestImpl(funcNorm2, x, 1E-4));
+  auto funcNorm1 = [](Variable& in) { return norm(in, {1}, 1); };
+  ASSERT_TRUE(jacobianTestImpl(funcNorm1, x, 1E-4));
+  auto funcNorm3 = [](Variable& in) { return norm(in, {1}, 3); };
+  ASSERT_TRUE(jacobianTestImpl(funcNorm3, x, 1E-4));
+}
+
+TEST(AutogradTest, Normalize) {
+  auto x = Variable(af::randu(5, 3, af::dtype::f64), true);
+  auto funcNormalize2 = [](Variable& in) { return normalize(in, {1}); };
+  ASSERT_TRUE(jacobianTestImpl(funcNormalize2, x));
+  auto ys = funcNormalize2(x);
+  ASSERT_TRUE(allClose(
+      af::sum(ys.array() * ys.array(), 1), af::constant(1, 5, af::dtype::f64)));
+  auto yb = normalize(x, {1}, 2, 1);
+  ASSERT_TRUE(
+      af::allTrue<bool>(af::sqrt(af::sum(yb.array() * yb.array(), 1)) <= 1));
 }
 
 TEST(AutogradTest, Indexing) {
@@ -624,19 +671,36 @@ TEST(AutogradTest, BinaryCrossEntropy) {
 }
 
 TEST(AutogradTest, CrossEntropy) {
-  auto in = Variable(af::randu(7, 10, 1, 1, af::dtype::f64), true);
-  af::dim4 dims(10, 1, 1, 1);
-  auto y = Variable(af::constant(1.0, dims, af::dtype::f64), false);
+  auto x = Variable(af::randu(7, 10, 4, af::dtype::f64), true);
+  auto y = Variable((af::randu(10, 4, af::dtype::u32) % 7).as(s32), false);
+  auto ignoreIdx = y(0, 0).scalar<int>();
 
-  auto func_crossent_mean = [&](Variable& input) {
-    return categoricalCrossEntropy(input, y);
-  };
-  ASSERT_TRUE(jacobianTestImpl(func_crossent_mean, in, 1E-5));
+  std::vector<ReduceMode> modes = {
+      ReduceMode::NONE, ReduceMode::SUM, ReduceMode::MEAN};
+  for (auto mode : modes) {
+    auto func = [&](Variable& input) {
+      return categoricalCrossEntropy(input, y, mode);
+    };
+    ASSERT_TRUE(jacobianTestImpl(func, x, 1E-5));
+    auto funcIgnore = [&](Variable& input) {
+      return categoricalCrossEntropy(input, y, mode, ignoreIdx);
+    };
+    ASSERT_TRUE(jacobianTestImpl(funcIgnore, x, 1E-5));
+  }
 
-  auto func_crossent_noreduce = [&](Variable& input) {
-    return categoricalCrossEntropy(input, y, ReduceMode::NONE);
-  };
-  ASSERT_TRUE(jacobianTestImpl(func_crossent_noreduce, in, 1E-5));
+  auto lossSum = categoricalCrossEntropy(x, y, ReduceMode::SUM);
+  auto lossMean = categoricalCrossEntropy(x, y, ReduceMode::MEAN);
+  ASSERT_NEAR((lossSum / lossMean).scalar<double>(), 40, 1e-5);
+
+  auto lossSumIgnore =
+      categoricalCrossEntropy(x, y, ReduceMode::SUM, ignoreIdx);
+  auto lossMeanIgnore =
+      categoricalCrossEntropy(x, y, ReduceMode::MEAN, ignoreIdx);
+  auto ignoreCount = af::sum<int>(y.array() == ignoreIdx);
+  ASSERT_NEAR(
+      (lossSumIgnore / lossMeanIgnore).scalar<double>(),
+      40 - ignoreCount,
+      1e-5);
 }
 
 TEST(AutogradTest, Reorder) {

@@ -3,7 +3,7 @@ include(ExternalProject)
 set(gtest_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/googletest/src/googletest/googletest/include)
 set(gtest_URL https://github.com/google/googletest.git)
 set(gtest_BUILD ${CMAKE_CURRENT_BINARY_DIR}/googletest/)
-set(gtest_TAG 2fe3bd994b3189899d93f1d5a881e725e046fdc2) # release 1.8.1
+set(gtest_TAG 703bd9caab50b139428cea1aaff9974ebee5742e) # release 1.10.0
 
 # Download googletest
 ExternalProject_Add(
@@ -16,7 +16,7 @@ ExternalProject_Add(
     INSTALL_COMMAND ""
     CMAKE_CACHE_ARGS
         -DCMAKE_BUILD_TYPE:STRING=Release
-        -DBUILD_GMOCK:BOOL=OFF
+        -DBUILD_GMOCK:BOOL=ON
         -DBUILD_GTEST:BOOL=ON
         -Dgtest_force_shared_crt:BOOL=OFF
 )
@@ -27,7 +27,13 @@ set(GTEST_BINARY_DIR ${binary_dir})
 
 # Library and include dirs
 set(GTEST_LIBRARIES
-  "${GTEST_BINARY_DIR}/${CMAKE_CFG_INTDIR}/googletest/${CMAKE_STATIC_LIBRARY_PREFIX}gtest${CMAKE_STATIC_LIBRARY_SUFFIX}"
-  "${GTEST_BINARY_DIR}/${CMAKE_CFG_INTDIR}/googletest/${CMAKE_STATIC_LIBRARY_PREFIX}gtest_main${CMAKE_STATIC_LIBRARY_SUFFIX}"
+  "${GTEST_BINARY_DIR}/${CMAKE_CFG_INTDIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}gtest${CMAKE_STATIC_LIBRARY_SUFFIX}"
+  "${GTEST_BINARY_DIR}/${CMAKE_CFG_INTDIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}gtest_main${CMAKE_STATIC_LIBRARY_SUFFIX}"
+  "${GTEST_BINARY_DIR}/${CMAKE_CFG_INTDIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}gmock${CMAKE_STATIC_LIBRARY_SUFFIX}"
+  "${GTEST_BINARY_DIR}/${CMAKE_CFG_INTDIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}gmock_main${CMAKE_STATIC_LIBRARY_SUFFIX}"
 )
-set(GTEST_INCLUDE_DIR ${GTEST_SOURCE_DIR}/googletest/include)
+
+set(GTEST_INCLUDE_DIRS
+  ${GTEST_SOURCE_DIR}/googletest/include
+  ${GTEST_SOURCE_DIR}/googlemock/include
+)

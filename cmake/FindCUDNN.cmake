@@ -47,8 +47,36 @@ else()
   set(CUDNN_ROOT_DIR "" CACHE PATH "Folder contains NVIDIA cuDNN")
 endif()
 
+option(USE_STATIC_CUDNN "Use statically-linked cuDNN library" OFF)
+
+if (USE_STATIC_CUDNN)
+  # Windows not yet supported by FL and it is unknown if static cudnn works correctly on MacOS: supporting only Linux at the moment.
+  # CMAKE_SYSTEM_NAME is supposed to resolve to "Linux", "Windows", or "Darwin"
+  if (NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+    MESSAGE(FATAL_ERROR "USE_STATIC_CUDNN only supported on Linux")
+  endif()
+  MESSAGE(STATUS "USE_STATIC_CUDNN detected. Linking against static CUDNN library")
+  SET(CUDNN_LIBNAME "libcudnn_static.a" "cudnn_static")
+  # culibos is needed to statically link with cudnn and usually installed in the regular cuda lib folders. On Linux:
+  # /usr/local/cuda/lib64/libculibos.a
+  # /usr/local/cuda/targets/x86_64-linux/lib/libculibos.a
+  # https://cmake.org/cmake/help/latest/module/FindCUDAToolkit.html#culibos
+  find_library(CULIBOS_LIBRARY
+    NAMES culibos
+    PATHS ${CUDA_TOOLKIT_ROOT_DIR}
+    PATH_SUFFIXES lib lib64
+    DOC "culibos library")
+  if ("${CULIBOS_LIBRARY}" STREQUAL "CULIBOS_LIBRARY-NOTFOUND")
+    MESSAGE(FATAL_ERROR "CULIBOS not found")
+  endif()
+else()
+  # shared lib:
+  SET(CUDNN_LIBNAME libcudnn.so${__cudnn_ver_suffix} libcudnn${__cudnn_ver_suffix}.dylib ${__cudnn_lib_win_name})
+endif()
+MESSAGE(STATUS "CUDNN libname: ${CUDNN_LIBNAME}")
+
 find_library(CUDNN_LIBRARY
-  NAMES libcudnn.so${__cudnn_ver_suffix} libcudnn${__cudnn_ver_suffix}.dylib ${__cudnn_lib_win_name}
+  NAMES ${CUDNN_LIBNAME}
   PATHS $ENV{LD_LIBRARY_PATH} ${__libpath_cudart} ${CUDNN_ROOT_DIR} ${PC_CUDNN_LIBRARY_DIRS} ${CMAKE_INSTALL_PREFIX}
   PATH_SUFFIXES lib lib64 bin
   DOC "CUDNN library." )
@@ -101,8 +129,13 @@ find_package_handle_standard_args(
   )
 
 if(CUDNN_FOUND)
-  set(CUDNN_LIBRARIES ${CUDNN_LIBRARY})
+  if(USE_STATIC_CUDNN)
+    set(CUDNN_LIBRARIES ${CUDNN_LIBRARY} ${CULIBOS_LIBRARY})
+  else()
+    set(CUDNN_LIBRARIES ${CUDNN_LIBRARY})
+  endif()
   set(CUDNN_INCLUDE_DIRS ${CUDNN_INCLUDE_DIR})
   set(CUDNN_DEFINITIONS ${PC_CUDNN_CFLAGS_OTHER})
   message(STATUS "Found CUDNN: (lib: ${CUDNN_LIBRARIES} include: ${CUDNN_INCLUDE_DIRS})")
-  endif()
+endif()
+

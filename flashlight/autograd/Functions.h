@@ -212,6 +212,12 @@ Variable exp(const Variable& input);
 Variable log(const Variable& input);
 
 /**
+ * Computes power of each element in a Variable.
+ * \f[ out_i = var_i^p \f]
+ */
+Variable pow(const Variable& input, double p);
+
+/**
  * Computes natural logarithm of (1 + element) for each element in a Variable.
  * \f[ out_i = log(1.0 + var_i) \f]
  */
@@ -375,16 +381,37 @@ Variable sum(const Variable& input, const std::vector<int>& axes);
 Variable mean(const Variable& input, const std::vector<int>& axes);
 
 /**
- * Computes l2-norm of the tensor `input` along dimensions specified in
- * descriptor `axes`. If `axes` has size greater than 1, reduce over all of
- * them.
+ * Lp-norm computation, reduced over specified dimensions.
+ * @param input tensor on which the Lp norm is going to be computed.
+ * @param p the p value of the Lp norm.
+ * @param axes dimensions over which the reduction is performed.
  */
-Variable norm(const Variable& input, const std::vector<int>& axes);
+Variable
+norm(const Variable& input, const std::vector<int>& axes, double p = 2);
+
+/**
+ * Lp norm normalization, reduced over specified dimensions.
+ * @param input the tensor to be normalized.
+ * @param axes dimensions over which the reduction is performed.
+ * @param p the p value of the Lp norm.
+ * @param eps clamping value to avoid overflows.
+ */
+Variable normalize(
+    const Variable& input,
+    const std::vector<int>& axes,
+    double p = 2,
+    double eps = 1e-12);
 
 /**
  * Computes variance of the tensor `input` along dimensions specified in
  * descriptor `axes`. If `axes` has size greater than 1, reduce over all of
- * them.
+ * them. Uses population variance if `isbiased` is `true`, otherwise, uses
+ * sample variance.
+ *
+ * NB: the behavior of `fl::var` differs from that of `af::var`. In ArrayFire
+ * versions >= 3.7.0, if `isbiased` is `true` the variance computation uses
+ * sample variance; if `false`, population variance is used. For versions of
+ * ArrayFire before v3.7.0, the reverse is true.
  */
 Variable var(
     const Variable& input,
@@ -640,13 +667,18 @@ Variable binaryCrossEntropy(const Variable& inputs, const Variable& targets);
  * - NONE
  * - MEAN
  * - SUM
+ * @param ignoreIndex a target value that is ignored and does not contribute
+ * to the loss or the input gradient. If `reduce` is MEAN, the loss is
+ * averaged over non-ignored targets. Only indicies in \f$[0, C - 1]\f$ are
+ * considered to be valid.
  * @return a `Variable` of loss value with shape scalar by default. If `reduce`
  * is NONE, then [\f$B_1\f$, \f$B_2\f$, \f$B_3\f$].
  */
 Variable categoricalCrossEntropy(
     const Variable& input,
     const Variable& targets,
-    ReduceMode reduction = ReduceMode::MEAN);
+    ReduceMode reduction = ReduceMode::MEAN,
+    int ignoreIndex = -1);
 
 /**
  * The gated linear unit.
@@ -737,8 +769,8 @@ Variable embedding(const Variable& input, const Variable& embeddings);
  * @param input a Variable with size [\f$H\f$, \f$W\f$, \f$C\f$, \f$N\f$]
  * @param weight a Variable with size [\f$C\f$] for \f$\gamma\f$
  * @param bias a Variable with size [\f$C\f$] for \f$\beta\f$
- * @param running_mean a buffer storing intermediate means during training
- * @param running_var a buffer storing intermediate variances during training
+ * @param runningMean a buffer storing intermediate means during training
+ * @param runningVar a buffer storing intermediate variances during training
  * @param axes dimensions to perform normalization on. If having size greater
  * than one, reduce over all of them.
  * @param train a flag indicating if running in training mode
@@ -751,8 +783,8 @@ Variable batchnorm(
     const Variable& input,
     const Variable& weight,
     const Variable& bias,
-    Variable& running_mean,
-    Variable& running_var,
+    Variable& runningMean,
+    Variable& runningVar,
     const std::vector<int>& axes,
     bool train,
     double momentum,
@@ -793,170 +825,5 @@ Variable relu(const Variable& input);
  * element-wise to a `Variable`
  */
 Variable gelu(const Variable& input);
-
-/**
- * Creates a `Variable` representing a tensor with dimensions `[input_size,
- * output_size]` where all elements are a constant
- *
- * @param val the value of the constant in the tensor
- * @param input_size the second dimension for the output tensor shape
- * @param output_size the first dimension of the output tensor shape
- * @param type the ArrayFire datatype for which to create the tensor
- * @param calc_grad flag denoting whether gradient calculation on the resulting
- * `Variable` should be enabled
- *
- * @return A `Variable` containing a tensor with constant values.
- */
-Variable constant(
-    double val,
-    int input_size,
-    int output_size,
-    af::dtype type = f32,
-    bool calc_grad = true);
-
-/**
- * Creates a `Variable` representing a tensor of up to rank 4 with arbitrary
- * dimensions where all elements are a constant
- *
- * @param val the value of the constant in the tensor
- * @param dims an ArrayFire tensor shape
- * @param type the ArrayFire datatype for which to create the tensor
- * @param calc_grad flag denoting whether gradient calculation on the resulting
- * `Variable` should be enabled
- *
- * @return A `Variable` containing a tensor with constant values.
- */
-Variable constant(
-    double val,
-    af::dim4 dims,
-    af::dtype type = f32,
-    bool calc_grad = true);
-
-/**
- * Creates a `Variable` representing an identity tensor with dimensions
- * `[input_size, output_size]`.
- *
- * @param input_size the second dimension for the output tensor shape
- * @param output_size the first dimension of the output tensor shape
- * @param type the ArrayFire datatype for which to create the tensor
- * @param calc_grad flag denoting whether gradient calculation on the resulting
- * `Variable` should be enabled
- *
- * @return A `Variable` containing the identity tensor.
- */
-Variable identity(
-    int input_size,
-    int output_size,
-    af::dtype type = f32,
-    bool calc_grad = true);
-
-/**
- * Creates a `Variable` representing an identity tensor of up to rank 4 with
- * arbitrary dimensions.
- *
- * @param dims an ArrayFire tensor shape
- * @param type the ArrayFire datatype for which to create the tensor
- * @param calc_grad flag denoting whether gradient calculation on the resulting
- * `Variable` should be enabled
- *
- * @return A `Variable` containing the identity tensor.
- */
-Variable identity(af::dim4 dims, af::dtype type = f32, bool calc_grad = true);
-
-/**
- * Creates a `Variable` representing a tensor with dimensions `[input_size,
- * output_size]`, where elements are distributed according to a uniform
- * distribution with parameters \f$\mathcal{U}(min, max)\f$. See [Uniform
- * Distribution](https://en.wikipedia.org/wiki/Uniform_distribution_(continuous)).
- *
- * @param input_size the second dimension for the output tensor shape
- * @param output_size the first dimension of the output tensor shape
- * @param min the lower bound parameter for the uniform distribution
- * @param max the upper bound parameter for the uniform distribution
- * @param type the ArrayFire datatype for which to create the tensor
- * @param calc_grad flag denoting whether gradient calculation on the resulting
- * `Variable` should be enabled
- *
- * @return A `Variable` containing a tensor with random values distributed
- * accordingly.
- */
-Variable uniform(
-    int input_size,
-    int output_size,
-    double min = 0,
-    double max = 1,
-    af::dtype type = f32,
-    bool calc_grad = true);
-
-/**
- * Creates a `Variable` representing a tensor of up to rank 4 with arbitrary
- * dimensions, where elements are distributed according to a uniform
- * distribution with parameters \f$\mathcal{U}(min, max)\f$. See [Uniform
- * Distribution](https://en.wikipedia.org/wiki/Uniform_distribution_(continuous)).
- *
- * @param dims an ArrayFire tensor shape
- * @param min the lower bound parameter for the uniform distribution
- * @param max the upper bound parameter for the uniform distribution
- * @param type the ArrayFire datatype for which to create the tensor
- * @param calc_grad flag denoting whether gradient calculation on the resulting
- * `Variable` should be enabled
- *
- * @return A `Variable` containing a tensor with random values distributed
- * accordingly.
- */
-Variable uniform(
-    af::dim4 dims,
-    double min = 0,
-    double max = 1,
-    af::dtype type = f32,
-    bool calc_grad = true);
-
-/**
- * Creates a `Variable` representing a tensor with dimensions `[input_size,
- * output_size]` where elements are distributed according to a normal
- * distribution with parameters \f$\mathcal{N}(\mu, \sigma^2)\f$. See [Normal
- * Distribution](https://en.wikipedia.org/wiki/Normal_distribution).
- *
- * @param input_size the second dimension for the output tensor shape
- * @param output_size the first dimension of the output tensor shape
- * @param stdv the standard deviation by which to parameterize the distribution
- * @param mean the mean by which to parameterize the distribution
- * @param type the ArrayFire datatype for which to create the tensor
- * @param calc_grad flag denoting whether gradient calculation on the resulting
- * `Variable` should be enabled
- *
- * @return A `Variable` containing a tensor with random values distributed
- * accordingly.
- */
-Variable normal(
-    int input_size,
-    int output_size,
-    double stdv = 1,
-    double mean = 0,
-    af::dtype type = f32,
-    bool calc_grad = true);
-
-/**
- * Creates a `Variable` representing a tensor of up to rank 4 with arbitrary
- * dimensions, where elements are distributed according to a  normal
- * distribution with parameters \f$\mathcal{N}(\mu, \sigma^2)\f$. See [Normal
- * Distribution](https://en.wikipedia.org/wiki/Normal_distribution).
- *
- * @param dims an ArrayFire tensor shape
- * @param stdv the standard deviation by which to parameterize the distribution
- * @param mean the mean by which to parameterize the distribution
- * @param type the ArrayFire datatype for which to create the tensor
- * @param calc_grad flag denoting whether gradient calculation on the resulting
- * `Variable` should be enabled
- *
- * @return A `Variable` containing a tensor with random values distributed
- * accordingly.
- */
-Variable normal(
-    af::dim4 dims,
-    double stdv = 1,
-    double mean = 0,
-    af::dtype type = f32,
-    bool calc_grad = true);
 
 } // namespace fl

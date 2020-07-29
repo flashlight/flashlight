@@ -81,14 +81,14 @@ std::string ReLU6::prettyString() const {
   return "ReLU6";
 }
 
-LeakyReLU::LeakyReLU(double slope) : m_slope(slope) {}
+LeakyReLU::LeakyReLU(double slope) : mSlope_(slope) {}
 
 Variable LeakyReLU::forward(const Variable& input) {
-  return max(input, m_slope * input);
+  return max(input, mSlope_ * input);
 }
 
 std::string LeakyReLU::prettyString() const {
-  return ("LeakyReLU (" + std::to_string(m_slope) + ")");
+  return "LeakyReLU (" + std::to_string(mSlope_) + ")";
 }
 
 PReLU::PReLU(const Variable& w) : UnaryModule({w}) {}
@@ -107,26 +107,26 @@ std::string PReLU::prettyString() const {
   return "PReLU";
 }
 
-ELU::ELU(double alpha) : m_alpha(alpha) {}
+ELU::ELU(double alpha) : mAlpha_(alpha) {}
 
 Variable ELU::forward(const Variable& input) {
   auto mask = input >= 0.0;
-  return (mask * input) + (!mask * m_alpha * (exp(input) - 1));
+  return (mask * input) + (!mask * mAlpha_ * (exp(input) - 1));
 }
 
 std::string ELU::prettyString() const {
-  return ("ELU (" + std::to_string(m_alpha) + ")");
+  return "ELU (" + std::to_string(mAlpha_) + ")";
 }
 
-ThresholdReLU::ThresholdReLU(double threshold) : m_threshold(threshold) {}
+ThresholdReLU::ThresholdReLU(double threshold) : mThreshold_(threshold) {}
 
 Variable ThresholdReLU::forward(const Variable& input) {
-  auto mask = input >= m_threshold;
+  auto mask = input >= mThreshold_;
   return input * mask;
 }
 
 std::string ThresholdReLU::prettyString() const {
-  return "ThresholdReLU";
+  return "ThresholdReLU (" + std::to_string(mThreshold_) + ")";
 }
 
 GatedLinearUnit::GatedLinearUnit(int dim) : dim_(dim) {}
@@ -147,6 +147,16 @@ Variable LogSoftmax::forward(const Variable& input) {
 
 std::string LogSoftmax::prettyString() const {
   return "LogSoftmax (" + std::to_string(dim_) + ")";
+}
+
+Swish::Swish(double beta /* = 1.0 */) : beta_(beta) {}
+
+Variable Swish::forward(const Variable& input) {
+  return input * sigmoid(beta_ * input);
+}
+
+std::string Swish::prettyString() const {
+  return "Swish (" + std::to_string(beta_) + ")";
 }
 
 } // namespace fl

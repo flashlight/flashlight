@@ -19,10 +19,12 @@ set(
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Conv2D.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Dropout.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Embedding.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Identity.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/LayerNorm.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Linear.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Loss.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Module.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Normalize.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Padding.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Pool2D.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/nn/modules/Reorder.cpp
@@ -53,9 +55,16 @@ target_link_libraries(
   Common
   )
 
-target_include_directories(
-  NN
-  INTERFACE
-  ${ArrayFire_INCLUDE_DIRS}
-  ${cereal_INCLUDE_DIRS} # pulled in - see cmake/BuildCereal.cmake
-  )
+if (TARGET CONAN_PKG::cereal)
+  target_link_libraries(
+    NN
+    INTERFACE
+    CONAN_PKG::cereal
+    )
+else()
+  target_include_directories(
+    NN
+    INTERFACE
+    ${cereal_INCLUDE_DIRS} # pulled in - see cmake/BuildCereal.cmake
+    )
+endif ()

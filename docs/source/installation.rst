@@ -14,7 +14,7 @@ First, clone flashlight from `its repository on Github <https://github.com/faceb
 Build Requirements
 ~~~~~~~~~~~~~~~~~~
 
-- A C++ compiler with good C++11 support (e.g. g++ >= 4.8)
+- A C++ compiler with good C++11 support (e.g. g++ >= 5)
 - `cmake <https://cmake.org/>`_ -- version 3.5.1 or later, and ``make``
 
 Dependencies
@@ -22,11 +22,15 @@ Dependencies
 
 flashlight can be built with either a CUDA, CPU (in development), or OpenCL (coming soon) backend. Requirements vary depending on which backend is selected.
 
-- For all backends, `ArrayFire <https://github.com/arrayfire/arrayfire/wiki>`_ >= 3.6.2 is required. flashlight has been tested with `ArrayFire 3.6.2 <https://github.com/arrayfire/arrayfire/releases/tag/v3.6.2>`_ and 3.6.4.
-  - Currently we recommend using either 3.6.2 or master, due to an indexing bug present in 3.6.4.
+- For all backends, `ArrayFire <https://github.com/arrayfire/arrayfire/wiki>`_ >= `3.7.1 <https://github.com/arrayfire/arrayfire/releases/tag/v3.7.1>`_ is required. flashlight can also be built flashlight with `ArrayFire 3.6.2 <https://github.com/arrayfire/arrayfire/releases/tag/v3.6.2>`_ - `3.6.4 <https://github.com/arrayfire/arrayfire/releases/tag/v3.6.4>`_, but only using commits ``<= 5518d91b7f4fd5b400cbc802cfbecc0df57836bd``.
+
+  - Using ArrayFire >= 3.7.1 enables features that significantly improve performance; using it is highly recommended.
+
 - The following dependencies are `downloaded, built, and installed automatically` with flashlight:
+
   - `Cereal <https://github.com/USCiLab/cereal>`_ is required for serialization -- the `develop` branch must be used.
-  - If building tests, `Google Test <https://github.com/google/googletest>`_ >= 1.8.0 is required.
+
+  - If building tests, `Google Test <https://github.com/google/googletest>`_ >= 1.10.0 is required.
 
 
 Distributed Training Dependencies
@@ -75,6 +79,8 @@ Build Options
 +-------------------------+-------------------+---------------+
 | FL_BUILD_CONTRIB        | ON, OFF           | ON            |
 +-------------------------+-------------------+---------------+
+| FL_BUILD_EXPERIMENTAL   | ON, OFF           | OFF           |
++-------------------------+-------------------+---------------+
 | FL_BUILD_TESTS          | ON, OFF           | ON            |
 +-------------------------+-------------------+---------------+
 | FL_BUILD_EXAMPLES       | ON, OFF           | ON            |
@@ -87,7 +93,7 @@ Building on Linux or MacOS
 --------------------------
 flashlight has been thoroughly tested on Ubuntu 16.04 and above, CentOS 7.5, and macOS 10.14, but has good compatability with older operating systems.
 
-Building on Linux and MacOS is simple:
+Building from source on Linux and MacOS is simple:
 
 .. code-block:: shell
 
@@ -105,6 +111,12 @@ To change the location of the install, simply `set CMake's <https://cmake.org/cm
  make install
 
 To build a shared object, simply `set CMake's <https://cmake.org/cmake/help/v3.5/variable/BUILD_SHARED_LIBS.html>`_ ``BUILD_SHARED_LIBS`` when running ``cmake``.
+
+Building with Conan on Linux
+----------------------------
+flashlight's CUDA backend is available on Linux with `Conan <https://conan.io/>`_. Adding it to your project is easy: simply add ``('flashlight/0.1@conan/stable')`` to your ``conanfile``'s requirements.
+
+The Conan package for flashlight `can be found here <https://bintray.com/flashlight/flashlight>`_.
 
 Building on Windows
 -------------------
@@ -148,7 +160,7 @@ To build flashlight with Docker:
 
 Building Your Project with flashlight
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Once flashlight is built and installed, including it in another project is simple, using CMake. Suppose we have a project in ``project.cpp`` that uses flashlight:
+Once flashlight is built and installed, including it in another project is simple, using CMake `or with Conan <https://docs.conan.io/en/latest/getting_started.html>`_. Suppose we have a project in ``project.cpp`` that uses flashlight:
 
 ::
 
@@ -173,29 +185,40 @@ Once flashlight is built and installed, including it in another project is simpl
      return 0;
    }
 
-We can link flashlight with the following CMake configuration:
+We can link flashlight with the following CMake configuration. If using Conan, you'll need the extra CMake components as they're given:
 
 .. code-block:: shell
 
-  # CMake 3.5.1+ is recommended
+  # CMake 3.5.1+ is required
   cmake_minimum_required(VERSION 3.5.1)
   # C++ 11 is required
   set(CMAKE_CXX_STANDARD 11)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-  add_executable(myProject project.cpp)
+  # If using Conan, run setup
+  include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+  conan_basic_setup(TARGETS)
 
+  # If you're not using Conan, find needed packages directly:
+  find_package(flashlight REQUIRED)
   find_package(ArrayFire REQUIRED)
   # ...
 
-  find_package(flashlight REQUIRED)
-  # ...
+  # If using Conan, you'll also need to link system libraries.
+  # For example, if using the CUDA backend:
+  find_package(CUDA REQUIRED)
 
+  add_executable(myProject project.cpp)
+
+  # the correct ArrayFire backend is transitively included by flashlight
   target_link_libraries(
     myProject
     PRIVATE
-     # the correct ArrayFire backend is transitively included by flashlight
+    # If building the package directly:
     flashlight::flashlight
+    # If using Conan:
+    CONAN_PKG::flashlight
+    ${CUDA_LIBRARIES} # system libs needed if using Conan
   )
 
 The above will automatically link all flashlight backend-specific dependencies and will add the correct directories to the target's (``myProject``'s) include directories.

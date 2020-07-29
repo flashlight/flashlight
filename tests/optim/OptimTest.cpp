@@ -29,7 +29,7 @@ TEST(OptimTest, GradNorm) {
     clipped += af::sum<double>(g * g);
   }
   clipped = std::sqrt(clipped);
-  ASSERT_TRUE(allClose(max_norm, clipped));
+  ASSERT_TRUE(allClose(af::constant(max_norm, 1), af::constant(clipped, 1)));
 }
 
 TEST(SerializationTest, OptimizerSerialize) {

@@ -65,7 +65,7 @@ std::string BinaryCrossEntropy::prettyString() const {
 Variable CategoricalCrossEntropy::forward(
     const Variable& inputs,
     const Variable& targets) {
-  return categoricalCrossEntropy(inputs, targets, reduction_);
+  return categoricalCrossEntropy(inputs, targets, reduction_, ignoreIndex_);
 }
 
 std::string CategoricalCrossEntropy::prettyString() const {
@@ -74,67 +74,93 @@ std::string CategoricalCrossEntropy::prettyString() const {
 
 AdaptiveSoftMaxLoss::AdaptiveSoftMaxLoss(
     std::shared_ptr<AdaptiveSoftMax> activation,
-    ReduceMode reduction)
-    : BinaryModule(), activation_(activation), reduction_(reduction) {
+    ReduceMode reduction,
+    int ignoreIndex)
+    : BinaryModule(),
+      activation_(activation),
+      reduction_(reduction),
+      ignoreIndex_(ignoreIndex) {
   params_ = activation_->params();
 }
 
-void AdaptiveSoftMaxLoss::setTargets(
-    const Variable& targets,
-    std::vector<af::array>& masks,
-    std::vector<Variable>& targetChunks,
-    std::vector<int>& cutoff) const {
-  auto headTarget = Variable(targets.array(), false);
-  headTarget = headTarget && (targets < cutoff[0]);
-  targetChunks[0] = headTarget;
-
-  for (int i = 0; i < cutoff.size() - 1; i++) {
-    auto mask1 = targets >= cutoff[i];
-    auto mask2 = targets < cutoff[i + 1];
-    auto mask = mask1 && mask2;
-    auto maskArray = where(mask.array());
-    masks[i] = maskArray;
-    targetChunks[0] = targetChunks[0] + mask * (cutoff[0] + i);
-    auto tailTarget = targets(maskArray) - cutoff[i];
-    targetChunks[i + 1] = tailTarget;
+Variable AdaptiveSoftMaxLoss::cast(
+    const Variable& input,
+    const af::dim4& outDims,
+    const af::array& indices) {
+  if (input.elements() != indices.elements()) {
+    throw std::invalid_argument("AdaptiveSoftMaxLoss: input, indices mismatch");
   }
+  af::array output = af::constant(0, outDims, input.type());
+  output(indices) = af::flat(input.array());
+  auto inputDims = input.dims();
+
+  auto gradFunc = [indices, inputDims](
+                      std::vector<Variable>& inputs,
+                      const Variable& grad_output) {
+    af::array gradArray = grad_output.array()(indices);
+    auto grad = Variable(af::moddims(gradArray, inputDims), false);
+    inputs[0].addGrad(grad);
+  };
+  return Variable(output, {input.withoutData()}, gradFunc);
 }
 
 Variable AdaptiveSoftMaxLoss::forward(
-    const Variable& input,
+    const Variable& inputs,
     const Variable& targets) {
-  if (input.numdims() != 2) {
-    throw std::invalid_argument("AdaptiveSoftMaxLoss only supports 2D inputs");
+  // inputs: N x T x B x 1
+  // targets: T x B x 1 x 1
+  if (inputs.dims(1) != targets.dims(0)) {
+    throw std::invalid_argument("AdaptiveSoftMaxLoss: length mismatch");
+  } else if (inputs.dims(2) != targets.dims(1)) {
+    throw std::invalid_argument("AdaptiveSoftMaxLoss: batch size mismatch");
   }
-  if (targets.numdims() != 1) {
-    throw std::invalid_argument("AdaptiveSoftMaxLoss only supports 1D targets");
-  }
+
+  auto N = inputs.dims(0);
+  auto T = inputs.dims(1);
+  auto B = inputs.dims(2);
   auto cutoff = activation_->getCutoff();
 
-  std::vector<af::array> masks(cutoff.size() - 1);
-  std::vector<Variable> targetChunks(cutoff.size());
-  setTargets(targets, masks, targetChunks, cutoff);
+  auto input = moddims(inputs, af::dim4(N, T * B));
+  auto target = moddims(targets, af::dim4(T * B));
 
-  // Head forward
   auto headOutput = matmul(params_[0], input);
-  auto res = categoricalCrossEntropy(
-      logSoftmax(headOutput, 0), targetChunks[0], ReduceMode::SUM);
+  auto headTarget = Variable(target.array(), false) * (target < cutoff[0]);
+  auto res = Variable(af::constant(0, T * B), true);
 
   // Tail forwawrd
   for (int i = 0; i < cutoff.size() - 1; i++) {
-    if (masks[i].dims(0) == 0) {
+    auto mask = (target >= cutoff[i]) && (target < cutoff[i + 1]);
+    if (!af::anyTrue<bool>(mask.array())) {
       continue;
     }
 
-    auto selectedInput = embedding(Variable(masks[i], false), input);
+    auto indicesArray = af::where(mask.array());
+    headTarget = headTarget + mask * (cutoff[0] + i);
+    auto tailTarget = target(indicesArray) - cutoff[i];
+    auto selectedInput = embedding(Variable(indicesArray, false), input);
     auto tailOutput = matmul(params_[1 + i * 2], selectedInput);
     tailOutput = matmul(params_[2 + i * 2], tailOutput);
-    res = res +
-        categoricalCrossEntropy(
-              logSoftmax(tailOutput, 0), targetChunks[i + 1], ReduceMode::SUM);
+    auto localLoss = categoricalCrossEntropy(
+        logSoftmax(tailOutput, 0), tailTarget, ReduceMode::NONE, ignoreIndex_);
+    res = res + cast(localLoss, res.dims(), indicesArray);
   }
+
+  // Head forward
+  res = res +
+      categoricalCrossEntropy(
+            logSoftmax(headOutput, 0),
+            headTarget,
+            ReduceMode::NONE,
+            ignoreIndex_);
+
+  // Reduce
+  if (reduction_ == ReduceMode::NONE) {
+    return moddims(res, targets.dims());
+  }
+  res = sum(res, {0});
   if (reduction_ == ReduceMode::MEAN) {
-    res = res / input.dims(1);
+    auto denominator = af::count<int>(target.array() != ignoreIndex_);
+    res = res / denominator;
   }
   return res;
 }

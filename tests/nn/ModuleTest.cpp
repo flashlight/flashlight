@@ -27,6 +27,34 @@ class ContainerTestClass : public Sequential {
 
 } // namespace
 
+TEST(ModuleTest, EmbeddingFwd) {
+  int embDim = 3, nEmb = 5, nQuery = 2, batchSize = 2;
+  std::array<float, 15> wt = {8, 2, 2, 10, 5, 3, 3, 4, 6, 12, 3, 8, 0, 5, 2};
+  auto wtVar = param(af::array(embDim, nEmb, wt.data()));
+
+  std::array<float, 4> in = {1, 3, 0, 0};
+  auto inVar = input(af::array(2, batchSize, in.data()));
+
+  std::array<float, 12> expectedOut = {10, 5, 3, 12, 3, 8, 8, 2, 2, 8, 2, 2};
+  auto expectedOutVar =
+      Variable(af::array(embDim, nQuery, batchSize, expectedOut.data()), true);
+
+  // Var initialization
+  auto emb = Embedding(wtVar);
+  ASSERT_TRUE(allClose(emb.forward(inVar), expectedOutVar, 1E-7));
+
+  // Regular initialization
+  emb = Embedding(embDim, nEmb);
+  wtVar = emb.param(0);
+  ASSERT_EQ(wtVar.dims(), af::dim4(embDim, nEmb));
+  expectedOutVar = Variable(
+      af::moddims(
+          af::lookup(wtVar.array(), af::flat(inVar.array()), 1),
+          af::dim4(embDim, nQuery, batchSize)),
+      true);
+  ASSERT_TRUE(allClose(emb.forward(inVar), expectedOutVar, 1E-7));
+}
+
 TEST(ModuleTest, LinearFwd) {
   int n_in = 2, n_out = 3, x = 4, batchsize = 2;
   std::array<float, 6> wt = {8, 2, 2, 10, 5, 3};
@@ -300,6 +328,16 @@ TEST(ModuleTest, LayerNormFwd) {
   ASSERT_EQ(out_train.dims(), input.dims());
 }
 
+TEST(ModuleTest, NormalizeFwd) {
+  auto input = Variable(af::randu(10, 3, af::dtype::f64), true);
+  auto module = Normalize({1}, 2, 1e-12, 5);
+  module.train();
+  auto out = module.forward(input);
+  ASSERT_TRUE(allClose(
+      af::sqrt(af::sum(out.array() * out.array(), 1)),
+      af::constant(5, 10, af::dtype::f64)));
+}
+
 TEST(ModuleTest, TransformFwd) {
   auto inVar = Variable(af::constant(1.0, 4, 5), true);
 
@@ -339,6 +377,99 @@ TEST(ModuleTest, ContainerReplaceParam) {
   new_param = Variable(af::randu(5, 5), true);
   seq.setParams(new_param, 6);
   ASSERT_TRUE(allClose(seq.param(6), new_param));
+}
+
+TEST(ModuleTest, AdaptiveSoftMaxPredict) {
+  // test predict gives the same as argmax along probs
+  int N = 5;
+  int C = 5;
+  int T = 10;
+  int B = 5;
+
+  auto x = input(af::randu(N, T, B, af::dtype::f32));
+  auto y = Variable((af::randu(T, B, af::dtype::u32) % C).as(s32), false);
+
+  std::vector<int> cutoff{{C / 2, C}};
+  auto activation = std::make_shared<AdaptiveSoftMax>(N, cutoff);
+
+  auto probs = activation->forward(x);
+  auto result1 = activation->predict(x).array();
+  af::array tmpValue, result2;
+  af::max(tmpValue, result2, probs.array(), 0);
+
+  ASSERT_TRUE(allClose(result1, result2));
+}
+
+TEST(ModuleTest, AdaptiveSoftMaxLossBatchFwd) {
+  // test batching
+  int N = 5;
+  int C = 3;
+  int T = 10;
+  int B = 5;
+
+  auto x = input(af::randu(N, T, B, af::dtype::f32));
+  auto y = Variable((af::randu(T, B, af::dtype::u32) % C).as(s32), false);
+
+  std::vector<int> cutoff{{C / 2, C}};
+  auto activation = std::make_shared<AdaptiveSoftMax>(N, cutoff);
+  auto asml =
+      std::make_shared<AdaptiveSoftMaxLoss>(activation, ReduceMode::NONE);
+  auto batchOutVar = asml->forward(x, y);
+
+  auto singleOut = af::constant(0, T, B);
+  for (int i = 0; i < B; ++i) {
+    auto singleOutVar = asml->forward(x(af::span, af::span, i), y(af::span, i));
+    singleOut(af::span, i) = singleOutVar.array();
+  }
+
+  ASSERT_TRUE(allClose(batchOutVar.array(), singleOut));
+}
+
+TEST(ModuleTest, AdaptiveSoftMaxLossIgnoreIndex) {
+  // test batching
+  int N = 5;
+  int C = 3;
+  int T = 10;
+  int B = 5;
+
+  auto x = input(af::randu(N, T, B, af::dtype::f32));
+  auto y = Variable((af::randu(T, B, af::dtype::u32) % C).as(s32), false);
+  auto ignoreIdx = y(0, 0).scalar<int>();
+  auto ignoreCount = af::sum<int>(y.array() != ignoreIdx);
+
+  std::vector<int> cutoff{{C / 2, C}};
+  auto activation = std::make_shared<AdaptiveSoftMax>(N, cutoff);
+  auto asml1 = std::make_shared<AdaptiveSoftMaxLoss>(
+      activation, ReduceMode::SUM, ignoreIdx);
+  auto asml2 = std::make_shared<AdaptiveSoftMaxLoss>(
+      activation, ReduceMode::MEAN, ignoreIdx);
+
+  auto lossSum = asml1->forward(x, y);
+  auto lossMean = asml2->forward(x, y);
+  ASSERT_NEAR(
+      af::sum<float>(lossSum.array()),
+      af::sum<float>(lossMean.array()) * ignoreCount,
+      1E-5);
+}
+
+TEST(ModuleTest, IdentityFwd) {
+  auto module = Identity();
+  std::vector<Variable> in = {Variable(af::randu(af::dim4(1000, 1000)), true),
+                              Variable(af::randu(af::dim4(100, 100)), true)};
+
+  // Train Mode
+  module.train();
+  auto out = module(in);
+  ASSERT_EQ(out.size(), 2);
+  ASSERT_TRUE(allClose(out.at(0), in.at(0), 1e-20));
+  ASSERT_TRUE(allClose(out.at(1), in.at(1), 1e-20));
+
+  // Eval Mode
+  module.eval();
+  out = module(in);
+  ASSERT_EQ(out.size(), 2);
+  ASSERT_TRUE(allClose(out.at(0), in.at(0), 1e-20));
+  ASSERT_TRUE(allClose(out.at(1), in.at(1), 1e-20));
 }
 
 int main(int argc, char** argv) {

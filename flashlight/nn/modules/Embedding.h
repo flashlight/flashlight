@@ -17,7 +17,7 @@ namespace fl {
  * This layer expects as input a list of indices with at most three dimensions,
  * [\f$B_1\f$, \f$B_2\f$ (optional), \f$B_3\f$ (optional)], and generates an
  * output from lookup of shape
- * [`embedding_dim`, \f$B_1\f$, \f$B_2\f$ (optional), \f$B_3\f$ (optional)].
+ * [`embeddingDim`, \f$B_1\f$, \f$B_2\f$ (optional), \f$B_3\f$ (optional)].
  */
 class Embedding : public UnaryModule {
  private:
@@ -34,10 +34,18 @@ class Embedding : public UnaryModule {
   /**
    * Constructs an Embedding module.
    *
-   * @param embedding_dim the size of each embedding vector
-   * @param num_embeddings the size of the dictionary of embeddings
+   * @param embeddingDim the size of each embedding vector
+   * @param numEmbeddings the size of the dictionary of embeddings
    */
-  Embedding(int embedding_dim, int num_embeddings);
+  Embedding(int embeddingDim, int numEmbeddings);
+
+  /**
+   * Constructs an Embedding module from the weight parameter \f$w\f$.
+   *
+   * @param w the 2D `Variable` tensor for the weight \f$w\f$.
+   *  The shape should be [`embeddingDim`, `numEmbeddings`].
+   */
+  explicit Embedding(const Variable& w);
 
   Variable forward(const Variable& input) override;
 
