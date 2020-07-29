@@ -10,9 +10,9 @@ add_library(
 
 if (FLASHLIGHT_USE_CUDA)
   # Build WarpCTC
-  set(WARPCTC_DIR ${PROJECT_SOURCE_DIR}/src/third_party/warpctc)
+  set(WARPCTC_DIR ${PROJECT_SOURCE_DIR}/third_party/warpctc)
   message(STATUS "Adding warpctc:")
-  add_subdirectory(${WARPCTC_DIR} ${PROJECT_BINARY_DIR}/src/third_party/warpctc)
+  add_subdirectory(${WARPCTC_DIR} ${PROJECT_BINARY_DIR}/third_party/warpctc)
   set(WARPCTC_INCLUDE_DIR ${WARPCTC_DIR}/include)
 
   target_sources(

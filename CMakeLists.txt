@@ -374,7 +374,16 @@ if (FL_BUILD_TESTS)
 endif ()
 
 # Build examples
-option(FL_BUILD_EXAMPLES "Build examples for flashlight" ON)
-if (FL_BUILD_EXAMPLES)
-  add_subdirectory(${FLASHLIGHT_PROJECT_COMPONENT_SRC_DIR}/examples)
+# option(FL_BUILD_EXAMPLES "Build examples for flashlight" ON)
+# if (FL_BUILD_EXAMPLES)
+#   add_subdirectory(${FLASHLIGHT_PROJECT_COMPONENT_SRC_DIR}/examples)
+# endif ()
+
+# --------------------------- Configure Tasks ---------------------------
+
+set(FLASHLIGHT_TASKS_DIR "${CMAKE_SOURCE_DIR}/tasks") # module root
+
+option(FL_BUILD_TASKS "Build tasks for flashlight" ON)
+if (FL_BUILD_TASKS)
+  add_subdirectory(${FLASHLIGHT_TASKS_DIR})
 endif ()

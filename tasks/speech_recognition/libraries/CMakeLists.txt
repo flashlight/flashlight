@@ -44,7 +44,7 @@ target_link_libraries(
 target_include_directories(
   wav2letter-libraries
   PUBLIC
-  ${PROJECT_SOURCE_DIR}/src
+  ${PROJECT_SOURCE_DIR}
   )
 
 target_compile_definitions(

@@ -37,7 +37,7 @@ if (W2L_LIBRARIES_USE_CUDA)
 
   cuda_include_directories(
     ${CUB_INCLUDE_DIRS}
-    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}
     )
 
   # Qualify name because CUDA target is public

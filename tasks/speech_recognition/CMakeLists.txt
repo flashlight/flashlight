@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.5.1)
 
+<<<<<<< HEAD
 project(wav2letter++)
 
 # ----------------------------- Setup -----------------------------
@@ -33,6 +34,36 @@ if (W2L_LIBRARIES_USE_MKL)
     set(W2L_LIBRARIES_USE_MKL OFF CACHE BOOL "" FORCE)
   endif ()
 endif ()
+=======
+project(flashlight_asr_task)
+
+# ----------------------------- Configuration -----------------------------
+
+# option(W2L_BUILD_LIBRARIES_ONLY "Build wav2letter-libraries only" OFF)
+# option(W2L_BUILD_INFERENCE
+#   "Build inference even when W2L_BUILD_LIBRARIES_ONLY is set" OFF)
+# option(W2L_LIBRARIES_USE_CUDA "Use CUDA in libraries-only build" ON)
+# option(W2L_LIBRARIES_USE_KENLM "Use KenLM in libraries-only build" ON)
+# option(W2L_LIBRARIES_USE_MKL "Use MKL in libraries-only build" ON)
+# option(W2L_BUILD_FOR_PYTHON "Build Python bindings" OFF)
+# option(W2L_BUILD_TESTS "Build tests for wav2letter++" ON)
+# option(W2L_BUILD_EXAMPLES "Build examples for wav2letter++" ON)
+# option(W2L_BUILD_EXPERIMENTAL "Build internal experimental components for wav2letter++" OFF)
+# option(W2L_BUILD_SCRIPTS "Build internal scripts for wav2letter++" OFF)
+# option(W2L_BUILD_RECIPES "Build recipes" ON)
+# option(W2L_BUILD_TOOLS "Build audio tools" OFF)
+# set(KENLM_MAX_ORDER 6 CACHE STRING "Maximum ngram order for KenLM")
+
+# ------------------------- Dependency Fallback -------------------------
+
+# if (W2L_LIBRARIES_USE_MKL)
+#   find_package(MKL)
+#   if (NOT MKL_FOUND)
+#     message(WARNING "MKL not found; forcing W2L_LIBRARIES_USE_MKL=OFF.")
+#     set(W2L_LIBRARIES_USE_MKL OFF CACHE BOOL "" FORCE)
+#   endif ()
+# endif ()
+>>>>>>> cd74bfa... make asr task build in fl
 
 # ------------------------- Libraries-Only Build ------------------------------
 
@@ -42,7 +73,11 @@ function (build_w2l_libraries)
     $<$<BOOL:${W2L_LIBRARIES_USE_KENLM}>:W2L_LIBRARIES_USE_KENLM>
     $<$<BOOL:${W2L_LIBRARIES_USE_MKL}>:W2L_LIBRARIES_USE_MKL>
     )
+<<<<<<< HEAD
   add_subdirectory(${PROJECT_SOURCE_DIR}/src/libraries)
+=======
+  add_subdirectory(${PROJECT_SOURCE_DIR}/libraries)
+>>>>>>> cd74bfa... make asr task build in fl
   if (W2L_BUILD_FOR_PYTHON)
     add_subdirectory(${PROJECT_SOURCE_DIR}/bindings/python)
   endif ()
@@ -141,24 +176,24 @@ set(W2L_LIBRARIES_USE_KENLM ON CACHE BOOL "" FORCE)
 build_w2l_libraries()
 
 # Common
-add_subdirectory(${PROJECT_SOURCE_DIR}/src/common)
+add_subdirectory(${PROJECT_SOURCE_DIR}/common)
 
 # Criterion
-add_subdirectory(${PROJECT_SOURCE_DIR}/src/criterion)
+add_subdirectory(${PROJECT_SOURCE_DIR}/criterion)
 
 # Data
-add_subdirectory(${PROJECT_SOURCE_DIR}/src/data)
+add_subdirectory(${PROJECT_SOURCE_DIR}/data)
 
 # Module
-add_subdirectory(${PROJECT_SOURCE_DIR}/src/module)
+add_subdirectory(${PROJECT_SOURCE_DIR}/module)
 
 # Runtime
-add_subdirectory(${PROJECT_SOURCE_DIR}/src/runtime)
+add_subdirectory(${PROJECT_SOURCE_DIR}/runtime)
 
 # Tests
 if (W2L_BUILD_TESTS)
   enable_testing()
-  add_subdirectory(${PROJECT_SOURCE_DIR}/src/tests)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/tests)
 endif ()
 
 if (W2L_BUILD_INFERENCE)
@@ -193,33 +228,9 @@ target_link_libraries(
 target_include_directories(
   wav2letter++
   PUBLIC
-  ${PROJECT_SOURCE_DIR}/src # all includes are based at src/
+  ${PROJECT_SOURCE_DIR}/speech_recognition # all includes are based at 
   ${FLASHLIGHT_INCLUDE_DIRS} # includes are <flashlight/...>
   )
-
-# Build experimental assets if specified
-if (W2L_BUILD_EXPERIMENTAL)
-  message(STATUS "Building experimental assets.")
-  add_subdirectory(${PROJECT_SOURCE_DIR}/src/experimental)
-endif ()
-
-# Build scripts if specified
-if (W2L_BUILD_SCRIPTS)
-  message(STATUS "Building scripts.")
-  add_subdirectory(${PROJECT_SOURCE_DIR}/scripts)
-endif ()
-
-# Recipes for research
-if (W2L_BUILD_RECIPES)
-  message(STATUS "Building recipes.")
-  add_subdirectory(${PROJECT_SOURCE_DIR}/recipes)
-endif ()
-
-# Tools for audio data and text
-if (W2L_BUILD_TOOLS)
-  message(STATUS "Building tools.")
-  add_subdirectory(${PROJECT_SOURCE_DIR}/tools)
-endif ()
 
 # ----------------------------- Train -----------------------------
 add_executable(
