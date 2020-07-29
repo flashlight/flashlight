@@ -2,9 +2,11 @@ cmake_minimum_required(VERSION 3.5.1)
 
 set(KENLM_MAX_ORDER 6 CACHE STRING "Maximum ngram order for KenLM")
 
-add_library(
-  libraries-language-decoder-lm
-  INTERFACE
+target_sources(
+  fl-libraries
+  PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/ConvLM.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/ZeroLM.cpp
   )
 
 # ------------------------- KenLM-specific -------------------------
@@ -18,16 +20,14 @@ if (FL_LIBRARIES_USE_KENLM)
   find_package(ZLIB)
 
   target_sources(
-    libraries-language-decoder-lm
-    INTERFACE
-    ${CMAKE_CURRENT_SOURCE_DIR}/KenLM.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/ConvLM.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/ZeroLM.cpp
+    fl-libraries
+    PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}/KenLM.cpp    
     )
 
   target_link_libraries(
-    libraries-language-decoder-lm
-    INTERFACE
+    fl-libraries
+    PUBLIC
     ${KENLM_LIBRARIES}
     ${LIBLZMA_LIBRARIES}
     ${BZIP2_LIBRARIES}
@@ -35,8 +35,8 @@ if (FL_LIBRARIES_USE_KENLM)
     )
 
   target_include_directories(
-    libraries-language-decoder-lm
-    INTERFACE
+    fl-libraries
+    PUBLIC
     ${KENLM_INCLUDE_DIRS}
     ${LIBLZMA_INCLUDE_DIRS}
     ${BZIP2_INCLUDE_DIRS}
@@ -44,8 +44,8 @@ if (FL_LIBRARIES_USE_KENLM)
     )
 
   target_compile_definitions(
-    libraries-language-decoder-lm
-    INTERFACE
+    fl-libraries
+    PUBLIC
     KENLM_MAX_ORDER=${KENLM_MAX_ORDER}
     )
 endif ()

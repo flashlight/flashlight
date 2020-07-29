@@ -4,17 +4,12 @@ project(flashlight_task_asr)
 
 # ----------------------------- Configuration -----------------------------
 
-option(FL_LIBRARIES_USE_CUDA "Use CUDA in libraries-only build" ON)
-option(FL_LIBRARIES_USE_KENLM "Use KenLM in libraries-only build" ON)
-option(FL_LIBRARIES_USE_MKL "Use MKL in libraries-only build" ON)
-option(FL_BUILD_FOR_PYTHON "Build Python bindings" OFF)
 option(FL_BUILD_TESTS "Build tests for wav2letter++" ON)
 option(FL_BUILD_EXAMPLES "Build examples for wav2letter++" ON)
 option(FL_BUILD_EXPERIMENTAL "Build internal experimental components for wav2letter++" OFF)
 option(FL_BUILD_SCRIPTS "Build internal scripts for wav2letter++" OFF)
 option(FL_BUILD_RECIPES "Build recipes" ON)
 option(FL_BUILD_TOOLS "Build audio tools" OFF)
-set(KENLM_MAX_ORDER 6 CACHE STRING "Maximum ngram order for KenLM")
 
 # ------------------------- Dependency Fallback -------------------------
 

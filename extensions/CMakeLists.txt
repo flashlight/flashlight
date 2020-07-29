@@ -27,7 +27,7 @@ set_target_properties(
 target_link_libraries(
   fl-extensions
   PUBLIC
-  libraries-common
+  fl-libraries
   extension-common
   flashlight
   )

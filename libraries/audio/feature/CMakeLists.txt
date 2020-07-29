@@ -20,42 +20,31 @@ else()
 endif()
 
 # ----------------------------- Lib -----------------------------
-add_library(
-  libraries-audio-feature
-  INTERFACE
-  )
-
 target_sources(
-  libraries-audio-feature
-  INTERFACE
-  ${CMAKE_CURRENT_SOURCE_DIR}/Ceplifter.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Dct.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Derivatives.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Dither.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Mfcc.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Mfsc.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/PowerSpectrum.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/PreEmphasis.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/SpeechUtils.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/TriFilterbank.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Windowing.cpp
+  fl-libraries
+  PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/Ceplifter.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/Dct.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/Derivatives.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/Dither.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/Mfcc.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/Mfsc.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/PowerSpectrum.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/PreEmphasis.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/SpeechUtils.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/TriFilterbank.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/Windowing.cpp
   )
 
 target_link_libraries(
-  libraries-audio-feature
-  INTERFACE
+  fl-libraries
+  PUBLIC
   ${CBLAS_LIBRARIES}
   ${FFTW_LIBRARIES}
   )
 
 target_include_directories(
-  libraries-audio-feature
-  INTERFACE
+  fl-libraries
+  PUBLIC
   ${CBLAS_INCLUDE_DIR}
   )
-
-target_compile_definitions(
-  libraries-audio-feature
-  INTERFACE
-  -DFL_LIBRARIES_USE_MKL
-)
