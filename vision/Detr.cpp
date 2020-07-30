@@ -402,7 +402,7 @@ int main(int argc, char** argv) {
     for(auto meter : meters) {
       meter.second.reset();
     }
-    if(e % 10 == 0 && e > 0) {
+    if(e % 10 == 0 && e > 0 || true) {
       eval_loop(detr, val_ds);
       //saveModel(e);
     }
