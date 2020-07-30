@@ -19,10 +19,12 @@ set(
   ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Conv2D.cpp
   ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Dropout.cpp
   ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Embedding.cpp
+  ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Identity.cpp
   ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/LayerNorm.cpp
   ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Linear.cpp
   ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Loss.cpp
   ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Module.cpp
+  ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Normalize.cpp
   ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Padding.cpp
   ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Pool2D.cpp
   ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Reorder.cpp

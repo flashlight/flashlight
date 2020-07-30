@@ -631,7 +631,6 @@ norm(const Variable& input, const std::vector<int>& axes, double p /* = 2 */) {
   result = af::pow(result, 1 / p);
   result.eval();
 
-<<<<<<< HEAD
   auto gradFunc =
       [sumap, p](std::vector<Variable>& inputs, const Variable& gradOutput) {
         // correct, but less precise: auto gvar = Variable(af::pow(result, p-1),
@@ -643,15 +642,6 @@ norm(const Variable& input, const std::vector<int>& axes, double p /* = 2 */) {
                 .array(),
             false));
       };
-=======
-  auto gradFunc = [result](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
-    auto output = Variable(result, false);
-    inputs[0].addGrad(Variable(
-        (inputs[0] * tileAs(gradOutput / output, inputs[0])).array(), false));
-  };
->>>>>>> d03004f... clang-format-8
   return Variable(result, {input}, gradFunc);
 }
 
