@@ -61,7 +61,7 @@ class MLP : public Sequential {
 public: MLP(const int32_t inputDim,
       const int32_t hiddenDim,
       const int32_t outputDim,
-      const int32_t numLayers) 
+      const int32_t numLayers)
   {
     add(Linear(inputDim, hiddenDim));
     for(int i = 1; i < numLayers - 1; i++) {
@@ -390,17 +390,11 @@ int main(int argc, char** argv) {
             << " | forward_time_avg: " << forward_time / idx
             << " | backward_time_avg: " << backward_time / idx
             << " | criterion_time_avg: " << criterion_time / idx;
-            //<< std::endl;;
-            //<< " Samples per second " << sample_per_second
-            //<< ": Avg Train Loss: " << train_loss
-            //<< ": Train Top5 Error( %): " << top5_meter.value()
-            //<< ": Train Top1 Error( %): " << top1_meter.value()
         for(auto meter : meters) {
           std::cout << " | " << meter.first << ": " << meter.second.value()[0];
         }
         std::cout << std::endl;
       }
-      eval_loop(detr, val_ds);
     }
     for(auto timer : timers) {
       timer.second.reset();
