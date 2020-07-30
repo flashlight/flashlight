@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.5.1)
 
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-
 # ---------------------- Configuration ----------------------
 
 option(FL_LIBRARIES_USE_CUDA "Use CUDA in libraries-only build" ON)
@@ -34,7 +32,28 @@ target_compile_definitions(
   ${FL_LIBRARIES_COMPILE_DEFINITIONS}
   )
 
+# --------------------------- Components ---------------------------
+
+# sequence
+include(${CMAKE_CURRENT_LIST_DIR}/sequence/CMakeLists.txt)
+
+# audio
+include(${CMAKE_CURRENT_LIST_DIR}/audio/CMakeLists.txt)
+
+# common
+include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
+
+# language
+include(${CMAKE_CURRENT_LIST_DIR}/language/CMakeLists.txt)
+
 # ---------------------- CUDA Library -----------------------
+
+# Accumulate CUDA sources after including library components because
+# target_sources doesn't work with CUDA libraries as expected with
+# old versions of CMake
+set(FL_LIBRARY_CUDA_SOURCES
+  ${FL_LIBRARIES_SEQUENCE_CUDA_SOURCES}
+  )
 
 # A library containing CUDA targets within libraries that may need to be linked
 # in. Only build a CUDA lib of libraries that require CUDA kernels are built
@@ -52,13 +71,13 @@ if (FL_LIBRARIES_USE_CUDA)
   
   cuda_include_directories(
     ${CUB_INCLUDE_DIRS}
-    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR} # includes are relative to the project path
     )
 
   # Qualify name because CUDA target is public
   cuda_add_library(
     fl-libraries-cuda
-    ""
+    ${FL_LIBRARY_CUDA_SOURCES}
     )
 
   add_dependencies(fl-libraries-cuda CUB)
@@ -89,25 +108,11 @@ if (FL_LIBRARIES_USE_CUDA)
 
 endif()
 
-# --------------------------- Components ---------------------------
-
-# sequence
-include(${CMAKE_CURRENT_SOURCE_DIR}/sequence/CMakeLists.txt)
-
-# audio
-include(${CMAKE_CURRENT_SOURCE_DIR}/audio/CMakeLists.txt)
-
-# common
-include(${CMAKE_CURRENT_SOURCE_DIR}/common/CMakeLists.txt)
-
-# language
-include(${CMAKE_CURRENT_SOURCE_DIR}/language/CMakeLists.txt)
-
 # --------------------------- Tests ---------------------------
 
 # Build tests
 option(FL_BUILD_TESTS "Build tests for flashlight" ON)
 if (FL_BUILD_TESTS)
   enable_testing()
-  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
+  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/tests)
 endif ()

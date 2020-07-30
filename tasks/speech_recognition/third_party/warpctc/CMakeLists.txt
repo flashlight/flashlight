@@ -11,7 +11,10 @@ IF (NOT APPLE)
 ENDIF()
 
 IF (APPLE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O2")
+  # NOTE: setting -std this again causes nvcc to break, since this is already
+  # set in flashlight/cmake/CUDAUtils.cmake::set_cuda_cxx_compile_flags
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
+    # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O2")
     add_definitions(-DAPPLE)
 ENDIF()
 
@@ -46,7 +49,9 @@ IF ((CUDA_VERSION VERSION_GREATER "9.0") OR (CUDA_VERSION VERSION_EQUAL "9.0"))
 ENDIF()
 
 if (NOT APPLE)
-    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --std=c++11")
+  # NOTE: setting -std this again causes nvcc to break, since this is already
+  # set in flashlight/cmake/CUDAUtils.cmake::set_cuda_cxx_compile_flags
+    # set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --std=c++11")
     set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Xcompiler -fopenmp")
 ENDIF()
 

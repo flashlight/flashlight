@@ -12,9 +12,7 @@ target_sources(
 
 # ------------------------- CUDA-specific -------------------------
 if (FL_LIBRARIES_USE_CUDA)
-  target_sources(
-    fl-libraries-cuda
-    PUBLIC
+  set(FL_LIBRARIES_SEQUENCE_CRITERION_CUDA_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/cuda/CriterionUtils.cu
     ${CMAKE_CURRENT_LIST_DIR}/cuda/ForceAlignmentCriterion.cu
     ${CMAKE_CURRENT_LIST_DIR}/cuda/FullConnectionCriterion.cu

@@ -2,14 +2,6 @@ cmake_minimum_required(VERSION 3.5.1)
 
 project(flashlight_task_asr)
 
-# ----------------------------- Configuration -----------------------------
-
-option(FL_BUILD_TESTS "Build tests for wav2letter++" ON)
-option(FL_BUILD_EXAMPLES "Build examples for wav2letter++" ON)
-option(FL_BUILD_EXPERIMENTAL "Build internal experimental components for wav2letter++" OFF)
-option(FL_BUILD_SCRIPTS "Build internal scripts for wav2letter++" OFF)
-option(FL_BUILD_RECIPES "Build recipes" ON)
-option(FL_BUILD_TOOLS "Build audio tools" OFF)
 
 # ------------------------- Dependency Fallback -------------------------
 
