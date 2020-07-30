@@ -135,6 +135,7 @@ public:
 
 private:
   std::shared_ptr<BatchTransformDataset<CocoData>> batched_;
+  std::shared_ptr<ShuffleDataset> shuffled_;
 
 };
 

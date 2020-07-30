@@ -220,8 +220,13 @@ CocoDataset::CocoDataset(
   auto permfn = [world_size, world_rank](int64_t idx) {
     return (idx * world_size) + world_rank;
   };
+
+  shuffled_ = std::make_shared<ShuffleDataset>(merged);
+
+  auto next = shuffled_;
+  //auto next = merged;
   auto sampled = std::make_shared<ResampleDataset>(
-    merged, permfn, merged->size() / world_size);
+    next, permfn, next->size() / world_size);
 
   auto prefetch = std::make_shared<PrefetchDataset>(sampled, num_threads, prefetch_size);
   batched_ = std::make_shared<BatchTransformDataset<CocoData>>(
@@ -230,6 +235,7 @@ CocoDataset::CocoDataset(
 }
 
 void CocoDataset::resample() {
+  shuffled_->resample();
 }
 
 

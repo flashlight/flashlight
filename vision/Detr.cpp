@@ -24,7 +24,7 @@
 #include "vision/criterion/SetCriterion.h"
 
 DEFINE_string(data_dir, "/datasets01_101/imagenet_full_size/061417/", "Directory of imagenet data");
-DEFINE_double(lr, 0.1f, "Learning rate");
+DEFINE_double(lr, 0.0001f, "Learning rate");
 DEFINE_double(momentum, 0.9f, "Momentum");
 
 DEFINE_double(wd, 1e-4f, "Weight decay");
@@ -321,7 +321,7 @@ int main(int argc, char** argv) {
     std::unordered_map<std::string, TimeMeter> timers;
     int idx = 0;
     timers["total"].resume();
-    auto sample = train_ds->get(0);
+    train_ds->resample();
     //while(true) {
     for(auto& sample : *train_ds) {
       auto images =  { fl::Variable(sample.images, false) };
