@@ -58,7 +58,6 @@ coco_evaluator = CocoEvaluator(base_ds, ('bbox',))
 
 postprocess = PostProcess();
 for f in glob.glob('/private/home/padentomasello/data/coco/output/detection*.array'):
-    print(f);
 
     imageSizes = af.read_array(f, key='imageSizes').to_ndarray()
     imageSizes = np.transpose(imageSizes, (1, 0))

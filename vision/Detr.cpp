@@ -372,7 +372,7 @@ int main(int argc, char** argv) {
       //////////////////////////
       // Metrics 
       /////////////////////////
-      if(++idx % 5 == 0) {
+      if(++idx % 10 == 0) {
         double total_time = timers["total"].value();
         double sample_per_second = (idx * FLAGS_batch_size * FLAGS_world_size) / total_time;
         double forward_time = timers["forward"].value();
@@ -402,9 +402,9 @@ int main(int argc, char** argv) {
     for(auto meter : meters) {
       meter.second.reset();
     }
-    if(e % 10 == 0 && e > 0 || true) {
-      eval_loop(detr, val_ds);
-      //saveModel(e);
-    }
+      if(e % 10 == 0 && e > 0) {
+        eval_loop(detr, val_ds);
+        //saveModel(e);
+      }
   }
 }
