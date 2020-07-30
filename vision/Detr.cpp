@@ -206,7 +206,7 @@ int main(int argc, char** argv) {
   const float pDropout = 0.0;
   const bool auxLoss = false;
 
-  std::shared_ptr<Module> backbone; 
+  std::shared_ptr<Module> backbone;
   //backbone = std::make_shared<Sequential>(resnet34());
   std::string modelPath = "/checkpoint/padentomasello/models/resnet34backbone49";
   fl::load(modelPath, backbone);
@@ -262,8 +262,8 @@ int main(int argc, char** argv) {
     }
     std::stringstream ss;
     ss << "PYTHONPATH=/private/home/padentomasello/code/detection-transformer/ "
-      << "/private/home/padentomasello/.conda/envs/coco/bin/python3.8"
-      << "/private/home/padentomasello/code/flashlight/vision/scripts/eval_coco.py --dir"
+      << "/private/home/padentomasello/.conda/envs/coco/bin/python3.8 "
+      << "/private/home/padentomasello/code/flashlight/vision/scripts/eval_coco.py --dir "
       << FLAGS_eval_dir;
     system(ss.str().c_str());
   };

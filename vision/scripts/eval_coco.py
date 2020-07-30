@@ -48,7 +48,7 @@ class Args(object):
     coco_path = '/datasets01/COCO/022719'
     masks = False
 
-def man(directory):
+def main(directory):
 
     args = Args()
 
