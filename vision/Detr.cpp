@@ -46,6 +46,8 @@ DEFINE_uint64(batch_size, 256, "Total batch size across all gpus");
 DEFINE_string(checkpointpath, "/tmp/model", "Checkpointing prefix path");
 DEFINE_int64(checkpoint, -1, "Load from checkpoint");
 
+DEFINE_string(eval_dir, "/private/home/padentomasello/data/coco/output", "Directory to dump images to run evaluation script on");
+
 
 using namespace fl;
 using namespace fl::cv;
@@ -56,8 +58,7 @@ const int32_t backboneChannels = 512;
 
 class MLP : public Sequential {
 
-public:
-  MLP(const int32_t inputDim,
+public: MLP(const int32_t inputDim,
       const int32_t hiddenDim,
       const int32_t outputDim,
       const int32_t numLayers) 
@@ -251,7 +252,7 @@ int main(int argc, char** argv) {
       auto images =  { fl::Variable(sample.images, false) };
       auto output = model->forward(images);
       std::stringstream ss;
-      ss << "/private/home/padentomasello/data/coco/output/detection" << idx << ".array";
+      ss << FLAGS_eval_dir << "detection" << idx << ".array";
       auto output_array = ss.str();
       af::saveArray("imageSizes", sample.imageSizes, output_array.c_str(), false);
       af::saveArray("imageIds", sample.imageIds, output_array.c_str(), true);
@@ -259,8 +260,12 @@ int main(int argc, char** argv) {
       af::saveArray("bboxes", output[1].array(), output_array.c_str(), true);
       idx++;
     }
-    system("PYTHONPATH=/private/home/padentomasello/code/detection-transformer/ "
-        "/private/home/padentomasello/.conda/envs/coco/bin/python3.8 /private/home/padentomasello/code/flashlight/vision/scripts/eval_coco.py");
+    std::stringstream ss;
+    ss << "PYTHONPATH=/private/home/padentomasello/code/detection-transformer/ "
+      << "/private/home/padentomasello/.conda/envs/coco/bin/python3.8"
+      << "/private/home/padentomasello/code/flashlight/vision/scripts/eval_coco.py --dir"
+      << FLAGS_eval_dir;
+    system(ss.str().c_str());
   };
 
   //const int64_t batch_size_per_gpu = FLAGS_batch_size / FLAGS_world_size;
@@ -370,7 +375,7 @@ int main(int argc, char** argv) {
 
       opt.zeroGrad();
       //////////////////////////
-      // Metrics 
+      // Metrics
       /////////////////////////
       if(++idx % 10 == 0) {
         double total_time = timers["total"].value();
@@ -395,6 +400,7 @@ int main(int argc, char** argv) {
         }
         std::cout << std::endl;
       }
+      eval_loop(detr, val_ds);
     }
     for(auto timer : timers) {
       timer.second.reset();

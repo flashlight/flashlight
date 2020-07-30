@@ -12,13 +12,19 @@ set -x
 echo $SLURMD_NODENAME $SLURM_JOB_ID $CUDA_VISIBLE_DEVICES
 echo $SLURM_NTASKS
 echo $SLURM_LOCALID
+
+# Needed for arrayfire
 export LD_LIBRARY_PATH=/private/home/padentomasello/usr/lib/:$LD_LIBRARY_PATH
+
 BUILD_DIR=/scratch/slurm_tmpdir/$SLURM_JOB_ID/$1
+EVAL_DIR=$BUILD_DIR/eval/$SLURM_LOCALID/
 mkdir -p $BUILD_DIR/rndv/
+mkdir -p $EVAL_DIR
 $BUILD_DIR/flashlight/build/vision/Detr -lr 0.0001 --epochs 100000 --batch_size 128 \
 --world_rank $SLURM_LOCALID --world_size $SLURM_NTASKS \
 --rndv_filepath $BUILD_DIR/rndv/ \
---checkpointpath /checkpoint/padentomasello/models/detr
+--checkpointpath /checkpoint/padentomasello/models/detr \
+--eval_dir $EVAL_DIR
 
 
 

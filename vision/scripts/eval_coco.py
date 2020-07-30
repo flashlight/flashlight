@@ -1,3 +1,4 @@
+import argparse
 import arrayfire as af
 import numpy as np
 import torch
@@ -47,39 +48,47 @@ class Args(object):
     coco_path = '/datasets01/COCO/022719'
     masks = False
 
-args = Args()
+def man(directory):
 
-# dataset_val = build_coco(image_set='val', args=args)
-dataset_val = build_coco(image_set='val', args=args)
-base_ds = get_coco_api_from_dataset(dataset_val)
-coco_evaluator = CocoEvaluator(base_ds, ('bbox',))
+    args = Args()
 
-# imageIds = [f'/datasets01/COCO/022719/train2017/{id:012d}.jpg' for id in imageIds]
+    # dataset_val = build_coco(image_set='val', args=args)
+    dataset_val = build_coco(image_set='val', args=args)
+    base_ds = get_coco_api_from_dataset(dataset_val)
+    coco_evaluator = CocoEvaluator(base_ds, ('bbox',))
 
-postprocess = PostProcess();
-for f in glob.glob('/private/home/padentomasello/data/coco/output/detection*.array'):
+    # imageIds = [f'/datasets01/COCO/022719/train2017/{id:012d}.jpg' for id in imageIds]
 
-    imageSizes = af.read_array(f, key='imageSizes').to_ndarray()
-    imageSizes = np.transpose(imageSizes, (1, 0))
-    imageSizes = torch.from_numpy(imageSizes)
-    imageIds = af.read_array(f, key='imageIds').to_ndarray()
-    # imageIds = np.transpose(imageIds, (1, 0))
-    scores = af.read_array(f, key='scores').to_ndarray()
-    scores = np.transpose(scores, (2, 1, 0))
-    scores = torch.from_numpy(scores)
-    bboxes = af.read_array(f, key='bboxes').to_ndarray()
-    bboxes = np.transpose(bboxes, (2, 1, 0))
-    bboxes = torch.from_numpy(bboxes)
-    results = postprocess.forward(scores, bboxes, imageSizes)
-    imageIds = [ id for id in imageIds ];
-    # print(imageIds)
+    postprocess = PostProcess();
+    for f in glob.glob(directory + 'detection*.array'):
 
-    res = { id : output for id, output in zip(imageIds, results) };
-    coco_evaluator.update(res)
+        imageSizes = af.read_array(f, key='imageSizes').to_ndarray()
+        imageSizes = np.transpose(imageSizes, (1, 0))
+        imageSizes = torch.from_numpy(imageSizes)
+        imageIds = af.read_array(f, key='imageIds').to_ndarray()
+        # imageIds = np.transpose(imageIds, (1, 0))
+        scores = af.read_array(f, key='scores').to_ndarray()
+        scores = np.transpose(scores, (2, 1, 0))
+        scores = torch.from_numpy(scores)
+        bboxes = af.read_array(f, key='bboxes').to_ndarray()
+        bboxes = np.transpose(bboxes, (2, 1, 0))
+        bboxes = torch.from_numpy(bboxes)
+        results = postprocess.forward(scores, bboxes, imageSizes)
+        imageIds = [ id for id in imageIds ];
+        # print(imageIds)
 
-coco_evaluator.synchronize_between_processes()
-coco_evaluator.accumulate()
-coco_evaluator.summarize()
+        res = { id : output for id, output in zip(imageIds, results) };
+        coco_evaluator.update(res)
+
+    coco_evaluator.synchronize_between_processes()
+    coco_evaluator.accumulate()
+    coco_evaluator.summarize()
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dir', default='/private/home/padentomasello/data/coco/output/')
+    args = parser.parse_args()
+    main(args.dir)
 
 
 
