@@ -60,7 +60,8 @@ jobs:
             apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5 && \
             cd /flashlight && pwd && ls && mkdir -p build && cd build && \
             export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5 && \
-            cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CUDA && \
+            export MKLROOT=/opt/intel/mkl && export KENLM_ROOT_DIR=/root/kenlm && \
+            cmake .. -DFL_BACKEND=CUDA && \
             make -j$(nproc) && make install && make test"
   build-cpu:
     docker:
@@ -71,8 +72,10 @@ jobs:
           name: Build flashlight with CPU backend
           command: |
             apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5
-            export MKLROOT=/opt/intel/mkl && export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5 && mkdir -p build && cd build
-            cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CPU
+            export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5
+            export MKLROOT=/opt/intel/mkl && export KENLM_ROOT_DIR=/root/kenlm
+            mkdir -p build && cd build
+            cmake .. -DFL_BACKEND=CPU 
             make -j1 && make install
 workflows:
   version: 2

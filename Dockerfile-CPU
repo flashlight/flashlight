@@ -14,6 +14,7 @@ RUN mkdir /root/flashlight
 
 COPY . /root/flashlight
 
-RUN export MKLROOT=/opt/intel/mkl && cd /root/flashlight && mkdir -p build && \
-    cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CPU && \
+RUN export MKLROOT=/opt/intel/mkl && export KENLM_ROOT_DIR=/root/kenlm && \
+    cd /root/flashlight && mkdir -p build && \
+    cd build && cmake .. -DFL_BACKEND=CPU -DFL_LIBRARIES_USE_CUDA=OFF && \
     make -j$(nproc) && make install
