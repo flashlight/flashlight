@@ -8,7 +8,7 @@
 
 #include "criterion/CriterionUtils.h"
 
-#include "common/Utils.h"
+#include "extensions/common/Utils.h"
 #include "libraries/sequence/criterion/cpu/CriterionUtils.h"
 #include "libraries/sequence/criterion/cpu/ViterbiPath.h"
 
@@ -32,8 +32,8 @@ af::array viterbiPath(const af::array& input, const af::array& trans) {
     throw std::invalid_argument("viterbiPath: trans must be float32");
   }
 
-  auto inputVec = fl::fl::task::asr::afToVector<float>(input);
-  auto transVec = fl::fl::task::asr::afToVector<float>(trans);
+  auto inputVec = fl::ext::afToVector<float>(input);
+  auto transVec = fl::ext::afToVector<float>(trans);
   std::vector<int> pathVec(B * T);
   std::vector<uint8_t> workspaceVec(ViterbiPath::getWorkspaceSize(B, T, N));
 
@@ -53,7 +53,7 @@ af::array getTargetSizeArray(const af::array& target, int maxSize) {
   int B = target.dims(1);
   int L = target.dims(0);
 
-  auto targetVec = fl::fl::task::asr::afToVector<int>(target);
+  auto targetVec = fl::ext::afToVector<int>(target);
   std::vector<int> targetSizeVec(B);
 
   CriterionUtils::batchTargetSize(

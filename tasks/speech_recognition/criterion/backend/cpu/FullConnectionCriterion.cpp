@@ -7,9 +7,9 @@
  */
 
 #include "criterion/FullConnectionCriterion.h"
-
-#include "common/Utils.h"
 #include "criterion/CriterionUtils.h"
+
+#include "extensions/common/Utils.h"
 #include "libraries/sequence/criterion/cpu/FullConnectionCriterion.h"
 
 using fl::Variable;
@@ -38,7 +38,7 @@ static void backward(
     throw std::invalid_argument("FCC: grad must be float32");
   }
 
-  auto gradVec = fl::task::asr::afToVector<float>(gradVar);
+  auto gradVec = fl::ext::afToVector<float>(gradVar);
   std::vector<float> inputGradVec(B * T * N);
   std::vector<float> transGradVec(N * N);
 
@@ -77,10 +77,10 @@ Variable FullConnectionCriterion::forward(
 
   const auto& targetSize = getTargetSizeArray(targetVar.array(), T);
   auto ctx = std::make_shared<Context>();
-  auto inputVec = fl::task::asr::afToVector<float>(inputVar);
-  auto targetVec = fl::task::asr::afToVector<int>(targetVar);
-  auto targetSizeVec = fl::task::asr::afToVector<int>(targetSize);
-  ctx->transVec = fl::task::asr::afToVector<float>(transVar);
+  auto inputVec = fl::ext::afToVector<float>(inputVar);
+  auto targetVec = fl::ext::afToVector<int>(targetVar);
+  auto targetSizeVec = fl::ext::afToVector<int>(targetSize);
+  ctx->transVec = fl::ext::afToVector<float>(transVar);
   std::vector<float> lossVec(B);
   ctx->workspaceVec.assign(FCC::getWorkspaceSize(B, T, N), 0);
 

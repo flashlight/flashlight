@@ -16,6 +16,8 @@ function(build_test SRCFILE)
     ${target}
     PRIVATE
     fl-extensions
+    fl-libraries
+    flashlight
     ${GTEST_LIBRARIES}
     )
   target_include_directories(

@@ -20,7 +20,6 @@ if (FL_LIBRARIES_USE_CUDA)
     )
 else ()
   message(
-    FATAL_ERROR
-    "wav2letter criterions not implemented for non-CUDA backends"
+    "libraries criterions are not implemented for non-CUDA backends"
     )
 endif ()
