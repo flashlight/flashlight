@@ -181,16 +181,16 @@ int main(int argc, char** argv) {
   std::vector<ImageTransform> train_transforms = {
       // randomly resize shortest side of image between 256 to 480 for scale 
       // invariance
-      randomResizeTransform(256, 480),
-      randomCropTransform(224, 224),
+      //randomResizeTransform(256, 480),
+      //randomCropTransform(224, 224),
       normalizeImage(mean, std),
       // Randomly flip image with probability of 0.5
-      horizontalFlipTransform(0.5)
+      //horizontalFlipTransform(0.5)
   };
   std::vector<ImageTransform> val_transforms = {
       // Resize shortest side to 256, then take a center crop
-      resizeTransform(256),
-      centerCropTransform(224),
+      //resizeTransform(256),
+      //centerCropTransform(224),
       normalizeImage(mean, std)
   };
 

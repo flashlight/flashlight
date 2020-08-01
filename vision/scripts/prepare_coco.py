@@ -3,24 +3,24 @@ from datasets import build_dataset
 import argparse
 import os
 
-def create_training_list(img_folder, ann_file, output_file):
-    coco = COCO(ann_file)
-    ids = list(sorted(coco.imgs.keys()))
+# def create_training_list(img_folder, ann_file, output_file):
+    # coco = COCO(ann_file)
+    # ids = list(sorted(coco.imgs.keys()))
 
-    with open(output_file, 'w') as out:
-        for idx in ids:
-            filepath = coco.loadImgs(idx)[0]['file_name']
-            ann_ids = coco.getAnnIds(idx)
-            anns = coco.loadAnns(ann_ids)
-            bboxes = [ ann['bbox'] + [ float(ann['category_id']) ] for ann in anns]
-            out.write(f'{os.path.join(img_folder, filepath)}\t')
-            for box in bboxes:
-                print(box)
-                box_string = " ".join(map(str, box));
-                out.write(f'{box_string}')
-                break;
-            out.write('\n')
-            break;
+    # with open(output_file, 'w') as out:
+        # for idx in ids:
+            # filepath = coco.loadImgs(idx)[0]['file_name']
+            # ann_ids = coco.getAnnIds(idx)
+            # anns = coco.loadAnns(ann_ids)
+            # bboxes = [ ann['bbox'] + [ float(ann['category_id']) ] for ann in anns]
+            # out.write(f'{os.path.join(img_folder, filepath)}\t')
+            # for box in bboxes:
+                # print(box)
+                # box_string = " ".join(map(str, box));
+                # out.write(f'{box_string}')
+                # break;
+            # out.write('\n')
+            # break;
 
 def dump_dataset(image_set, image_folder, args):
     dataset = build_dataset(image_set, args);
@@ -45,10 +45,6 @@ def dump_dataset(image_set, image_folder, args):
             # print(strings)
             out.write(" ".join(strings))
             out.write('\n')
-            i += 1
-            if i == 1280:
-                break
-    return
 
 
 if __name__ == "__main__":

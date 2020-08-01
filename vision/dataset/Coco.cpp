@@ -1,8 +1,10 @@
 #include "vision/dataset/Coco.h"
 #include "vision/dataset/Utils.h"
+#include "vision/dataset/Transforms.h"
 
 #include <arrayfire.h>
 
+#include <assert.h>
 #include <algorithm>
 #include <map>
 
@@ -196,12 +198,91 @@ std::shared_ptr<Dataset> cocoDataLoader(std::vector<std::string> fps) {
   });
 }
 
+using TransformAllFunction = std::function<std::vector<af::array>(const std::vector<af::array>&)>;
+
+class TransformAllDataset : public Dataset {
+
+public:
+
+  TransformAllDataset(
+    std::shared_ptr<const Dataset> dataset,
+    TransformAllFunction fn) : dataset_(dataset), fn_(fn) {};
+
+  std::vector<af::array> get(const int64_t idx) const override {
+    return fn_(dataset_->get(idx));
+  }
+
+  int64_t size() const override { return dataset_->size(); };
+
+private:
+  std::shared_ptr<const Dataset> dataset_;
+  const TransformAllFunction fn_;
+
+};
+
 }
 
 
 namespace fl {
 namespace cv {
 namespace dataset {
+
+// TODO move into common namespace
+af::array resizeSmallest(const af::array& in, const int resize) {
+    const int w = in.dims(0);
+    const int h = in.dims(1);
+    int th, tw;
+    if (h > w) {
+      th = (resize * h) / w;
+      tw = resize;
+    } else {
+      th = resize;
+      tw = (resize * w) / h;
+    }
+    return af::resize(in, tw, th, AF_INTERP_BILINEAR);
+}
+
+af::array resize(const af::array& in, const int resize) {
+  return af::resize(in, resize, resize, AF_INTERP_BILINEAR);
+}
+
+TransformAllFunction randomResize(
+    std::vector<int> sizes,
+    int maxsize) {
+  assert(sizes.size() > 0);
+
+  auto resizeCoco = [sizes, maxsize](std::vector<af::array> in) {
+    assert(in.size() == 5);
+    assert(sizes.size() > 0);
+    int randomIndex = rand() % sizes.size();
+    int size = sizes[randomIndex];
+    const af::array originalImage = in[0];
+    const af::dim4 originalDims = originalImage.dims();
+    const af::array resizedImage = resize(originalImage, size);
+    const af::dim4 resizedDims = resizedImage.dims();
+
+
+    af::array boxes = in[3];
+
+    af::array targetSize = in[1];
+    if (!boxes.isempty()) {
+      const float ratioWidth = float(originalDims[0]) / float(resizedDims[0]);
+      const float ratioHeight = float(originalDims[1]) / float(resizedDims[1]);
+
+      const std::vector<float> resizeVector = { ratioWidth, ratioHeight, ratioWidth, ratioHeight };
+      af::array resizedArray = af::array(4, resizeVector.data());
+      boxes = af::batchFunc(boxes, resizedArray, af::operator*);
+
+      long long int imageSizeArray[] = { resizedDims[1], resizedDims[0] };
+      targetSize = af::array(2, imageSizeArray);
+    }
+
+    std::vector<af::array> result =  { resizedImage, targetSize, in[2], boxes, in[4] };
+    return result;
+
+  };
+  return resizeCoco;
+}
 
 
 CocoDataset::CocoDataset(
@@ -213,18 +294,33 @@ CocoDataset::CocoDataset(
     int num_threads,
     int prefetch_size
   ) {
-  auto images = getImages(list_file, transformfns);
-  auto labels = getLabels(list_file);
+  // Images
+  const std::vector<std::string> filepaths = parseImageFilepaths(list_file);
+  auto images = cocoDataLoader(filepaths);
+
+  // Labels
+  const std::vector<BBoxVector> bboxes = parseBoundingBoxes(list_file);
+  auto bboxLabels = bboxLoader(bboxes);
+  auto classLabels = classLoader(bboxes);
+  auto labels =  merge({bboxLabels, classLabels});
+
   auto merged = merge({images, labels});
 
-  auto permfn = [world_size, world_rank](int64_t idx) {
-    return (idx * world_size) + world_rank;
-  };
 
-  shuffled_ = std::make_shared<ShuffleDataset>(merged);
+  std::shared_ptr<Dataset> transformed = std::make_shared<TransformAllDataset>(
+      merged, randomResize({ 256 }, 1000000));
+
+  transformed = std::make_shared<TransformDataset>(
+      transformed, transformfns);
+
+  shuffled_ = std::make_shared<ShuffleDataset>(transformed);
 
   auto next = shuffled_;
   //auto next = merged;
+  //
+  auto permfn = [world_size, world_rank](int64_t idx) {
+    return (idx * world_size) + world_rank;
+  };
   auto sampled = std::make_shared<ResampleDataset>(
     next, permfn, next->size() / world_size);
 
