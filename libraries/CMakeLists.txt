@@ -75,7 +75,7 @@ if (FL_LIBRARIES_USE_CUDA)
   
   cuda_include_directories(
     ${CUB_INCLUDE_DIRS}
-    ${PROJECT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR} # TODO(jacobkahn): fix me
     )
 
   target_link_libraries(

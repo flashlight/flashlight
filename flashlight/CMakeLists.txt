@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.5.1)
 
-project(flashlight-core)
-
 # ----------------------------- Setup -----------------------------
 set(FLASHLIGHT_CORE_COMPONENT_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}") # module root
 
@@ -41,7 +39,6 @@ if (FL_BUILD_EXPERIMENTAL)
 endif()
 
 # Internal includes are implicitly defined as <flashlight...>
-message("!@#$%^&*() ${PROJECT_SOURCE_DIR}")
 target_include_directories(
   flashlight
   PUBLIC

@@ -1,8 +1,5 @@
 cmake_minimum_required(VERSION 3.5.1)
 
-project(flashlight_task_asr)
-
-
 # ------------------------- Dependency Fallback -------------------------
 
 if (FL_LIBRARIES_USE_MKL)
@@ -14,6 +11,8 @@ if (FL_LIBRARIES_USE_MKL)
 endif ()
 
 # ------------------------ Global External Dependencies ------------------------
+# TODO(jacobkahn): add gating for Conan glog and gflags packages
+
 # Find GLog
 find_package(GLOG REQUIRED)
 if (GLOG_FOUND)
@@ -43,93 +42,54 @@ else()
   message(STATUS "OpenMP not found - building without OpenMP")
 endif()
 
-# ------------------------ Components ------------------------
-
-# Common
-add_subdirectory(${PROJECT_SOURCE_DIR}/common)
-
-# Criterion
-add_subdirectory(${PROJECT_SOURCE_DIR}/criterion)
-
-# Data
-add_subdirectory(${PROJECT_SOURCE_DIR}/data)
-
-# Decoder
-add_subdirectory(${PROJECT_SOURCE_DIR}/decoder)
-
-# Runtime
-add_subdirectory(${PROJECT_SOURCE_DIR}/runtime)
-
-# ----------------------------- task-asr lib  -----------------------------
-
-add_library(
-  task-asr
-  ""
-  )
-
-set_target_properties(
-  task-asr
-  PROPERTIES
-  LINKER_LANGUAGE CXX
-  CXX_STANDARD 11
-  )
-
 target_link_libraries(
-  task-asr
-  PUBLIC
-  asr-common
-  asr-criterion
-  asr-data
-  asr-decoder
-  asr-runtime
   flashlight
-  fl-libraries
+  PUBLIC
+  ${GFLAGS_LIBRARIES}
+  ${GLOG_LIBRARIES}
+  ${MKL_LIBRARIES}
   )
 
 target_include_directories(
-  task-asr
+  flashlight
   PUBLIC
-  ${PROJECT_SOURCE_DIR} # all includes are based at 
+  ${GFLAGS_INCLUDE_DIRS}
+  ${GLOG_INCLUDE_DIRS}
+  ${MKL_INCLUDE_DIR}
+  # some includes are relative to the asr root path
+  # TODO(jacobkahn): improve this...?
+  ${FL_TASK_SPEECH_RECOGNITION_ROOT_DIR}
   )
 
-# ----------------------------- Train -----------------------------
-add_executable(
-  Train
-  Train.cpp
-)
+# ------------------------ Components ------------------------
 
-target_link_libraries(
-  Train
-  task-asr
-  )
+# Common
+include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
 
-# ----------------------------- Test -----------------------------
-add_executable(
-  Test
-  Test.cpp
-  )
+# Criterion
+include(${CMAKE_CURRENT_LIST_DIR}/criterion/CMakeLists.txt)
 
-target_link_libraries(
-  Test
-  task-asr
-  )
+# Data
+include(${CMAKE_CURRENT_LIST_DIR}/data/CMakeLists.txt)
 
-# ----------------------------- Decoder -----------------------------
-add_executable(
-  Decoder
-  Decode.cpp
-  )
+# Decoder
+include(${CMAKE_CURRENT_LIST_DIR}/decoder/CMakeLists.txt)
 
-target_link_libraries(
-  Decoder
-  task-asr
-  )
+# Runtime
+include(${CMAKE_CURRENT_LIST_DIR}/runtime/CMakeLists.txt)
+
+# ----------------------------- Binaries -----------------------------
+add_executable(Train ${CMAKE_CURRENT_LIST_DIR}/Train.cpp)
+add_executable(Test ${CMAKE_CURRENT_LIST_DIR}/Test.cpp)
+add_executable(Decoder ${CMAKE_CURRENT_LIST_DIR}/Decode.cpp)
+
+target_link_libraries(Train flashlight)
+target_link_libraries(Test flashlight)
+target_link_libraries(Decoder flashlight)
 
 # --------------------------- Tests ---------------------------
 
 # Build tests
-option(FL_BUILD_TESTS "Build tests for flashlight" ON)
 if (FL_BUILD_TESTS)
-  enable_testing()
-  add_subdirectory(${PROJECT_SOURCE_DIR}/tests)
+  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/tests)
 endif ()

@@ -190,4 +190,4 @@ include(${FLASHLIGHT_EXT_DIR}/CMakeLists.txt)
 
 # --------------------------- Tasks ---------------------------
 set(FLASHLIGHT_TASKS_DIR "${CMAKE_SOURCE_DIR}/tasks")
-add_subdirectory(${FLASHLIGHT_TASKS_DIR})
+include(${FLASHLIGHT_TASKS_DIR}/CMakeLists.txt)

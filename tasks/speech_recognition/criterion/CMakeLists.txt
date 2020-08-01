@@ -1,11 +1,5 @@
 cmake_minimum_required(VERSION 3.5.1)
 
-# Main library
-add_library(
-  asr-criterion
-  INTERFACE
-  )
-
 # ---------------------------- Backend-specific -----------------------------
 if (FL_BACKEND STREQUAL "CUDA")
   set(FLASHLIGHT_USE_CUDA ON)
@@ -13,43 +7,42 @@ endif ()
 
 if (FLASHLIGHT_USE_CUDA)
   # Build WarpCTC
-  set(WARPCTC_DIR ${PROJECT_SOURCE_DIR}/third_party/warpctc)
-  message(STATUS "Adding warpctc:")
+  set(WARPCTC_DIR ${FL_TASK_SPEECH_RECOGNITION_ROOT_DIR}/third_party/warpctc)
+  message(STATUS "Adding warpctc from dir: ${WARPCTC_DIR}")
   add_subdirectory(${WARPCTC_DIR} ${PROJECT_BINARY_DIR}/third_party/warpctc)
   set(WARPCTC_INCLUDE_DIR ${WARPCTC_DIR}/include)
 
   target_sources(
-    asr-criterion
-    INTERFACE
-    ${CMAKE_CURRENT_SOURCE_DIR}/backend/cuda/ConnectionistTemporalClassificationCriterion.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/backend/cuda/CriterionUtils.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/backend/cuda/ForceAlignmentCriterion.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/backend/cuda/FullConnectionCriterion.cpp
+    flashlight
+    PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/ConnectionistTemporalClassificationCriterion.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/CriterionUtils.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/ForceAlignmentCriterion.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/FullConnectionCriterion.cpp
     )
 
   target_link_libraries(
-    asr-criterion
-    INTERFACE
+    flashlight
+    PUBLIC
     ${CUDA_LIBRARIES}
-    warpctc # added directly from subdir
     # Can remove once CTC constrained Viterbi is implemented in CUDA T62268085
+    warpctc # added directly from subdir    
     )
 
   target_include_directories(
-    asr-criterion
-    INTERFACE
+    flashlight
+    PUBLIC
     ${CUDA_INCLUDE_DIRS}
     ${WARPCTC_INCLUDE_DIR}
-    # ${CMAKE_SOURCE_DIR}/flashlight
     )
 elseif (FLASHLIGHT_USE_CPU)
   target_sources(
-    asr-criterion
-    INTERFACE
-    ${CMAKE_CURRENT_SOURCE_DIR}/backend/cpu/ConnectionistTemporalClassificationCriterion.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/backend/cpu/CriterionUtils.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/backend/cpu/ForceAlignmentCriterion.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/backend/cpu/FullConnectionCriterion.cpp
+    flashlight
+    PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/ConnectionistTemporalClassificationCriterion.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/CriterionUtils.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/ForceAlignmentCriterion.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/FullConnectionCriterion.cpp
     )
 else ()
   message(
@@ -58,98 +51,26 @@ else ()
     )
 endif ()
 
-# ----------------------------- Lib -----------------------------
+# ----------------------------- Criterion APIs -----------------------------
 
 target_sources(
-  asr-criterion
-  INTERFACE
-  ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionistTemporalClassificationCriterion.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/CriterionUtils.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/ConnectionistTemporalClassificationCriterion.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/CriterionUtils.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/ForceAlignmentCriterion.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Seq2SeqCriterion.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FullConnectionCriterion.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/TransformerCriterion.cpp
-  )
-
-target_link_libraries(
-  asr-criterion
-  INTERFACE
-  asr-attention
-  asr-window
-  asr-common
   flashlight
-  ${GLOG_LIBRARIES}
-  ${cereal_LIBRARIES}
-  )
-
-target_include_directories(
-  asr-criterion
-  INTERFACE
-  # ${PROJECT_SOURCE_DIR}
-  ${GLOG_INCLUDE_DIRS}
-  ${cereal_INCLUDE_DIRS}
-  )
-
-# ---------------------------- Attention/Window -----------------------------
-# Attention
-add_library(
-  asr-attention
-  INTERFACE
-  )
-
-target_sources(
-  asr-attention
-  INTERFACE
-  ${CMAKE_CURRENT_SOURCE_DIR}/attention/ContentAttention.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/attention/LocationAttention.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/attention/MultiHeadAttention.cpp
-  )
-
-target_include_directories(
-  asr-attention
-  INTERFACE
-  attention
-  src/flashlight
-  ${cereal_INCLUDE_DIRS}
-  )
-
-target_link_libraries(
-  asr-attention
-  INTERFACE
-  flashlight
-  asr-common
-  ${cereal_LIBRARIES}
-  )
-
-# Window
-add_library(
-  asr-window
-  INTERFACE
-  )
-
-target_sources(
-  asr-window
-  INTERFACE
-  ${CMAKE_CURRENT_SOURCE_DIR}/attention/MedianWindow.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/attention/SoftPretrainWindow.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/attention/SoftWindow.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/attention/StepWindow.cpp
-  )
-
-target_include_directories(
-  asr-window
-  INTERFACE
-  asr-attention
-  # ${CMAKE_SOURCE_DIR}
-  ${cereal_INCLUDE_DIRS}
-  )
-
-target_link_libraries(
-  asr-window
-  INTERFACE
-  flashlight
-  asr-common
-  ${cereal_LIBRARIES}
+  PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/ConnectionistTemporalClassificationCriterion.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/CriterionUtils.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/ConnectionistTemporalClassificationCriterion.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/CriterionUtils.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/ForceAlignmentCriterion.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/Seq2SeqCriterion.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/FullConnectionCriterion.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/TransformerCriterion.cpp
+  # Attention
+  ${CMAKE_CURRENT_LIST_DIR}/attention/ContentAttention.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/attention/LocationAttention.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/attention/MultiHeadAttention.cpp
+  # Window
+  ${CMAKE_CURRENT_LIST_DIR}/attention/MedianWindow.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/attention/SoftPretrainWindow.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/attention/SoftWindow.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/attention/StepWindow.cpp
   )
