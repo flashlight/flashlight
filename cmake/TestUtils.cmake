@@ -27,19 +27,19 @@ function(build_test SRCFILE LINK_LIBRARIES PREPROC_DEFS)
   endif()
   target_link_libraries(
     ${target}
-    PRIVATE
+    PUBLIC
     ${LINK_LIBRARIES}
     ${GTEST_LIBRARIES}
     )
   target_include_directories(
     ${target}
-    PRIVATE
+    PUBLIC
     ${PROJECT_SOURCE_DIR}
     ${GTEST_INCLUDE_DIRS}
     )
   target_compile_definitions(
     ${target}
-    PRIVATE
+    PUBLIC
     ${PREPROC_DEFS}
     )
   add_test(${target} ${target})

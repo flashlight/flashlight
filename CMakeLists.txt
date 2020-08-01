@@ -30,11 +30,6 @@ option(FL_BUILD_SCRIPTS "Build internal scripts for wav2letter++" OFF)
 option(FL_BUILD_RECIPES "Build recipes" ON)
 option(FL_BUILD_TOOLS "Build tools" OFF)
 
-if (FL_BUILD_TESTS)
-  enable_testing()
-  include(${CMAKE_MODULE_PATH}/TestUtils.cmake)
-endif ()
-
 # Flashlight backend
 set(FL_BACKEND "CUDA" CACHE STRING "Backend with which to build flashlight")
 # Select from exactly one backend
@@ -89,12 +84,23 @@ elseif (FLASHLIGHT_USE_OPENCL AND NOT ArrayFire_OpenCL_FOUND)
 endif()
 
 # Find/download/build Cereal
-set(CEREAL_INSTALL_PATH ${FL_INSTALL_INC_DIR_HEADER_LOC}/cereal)
-# If cereal is found in a user-defined location, use it rather than
-find_package(cereal)
-if (NOT cereal_FOUND)
-  message(STATUS "cereal NOT found. Will download from source")
-  include(${CMAKE_MODULE_PATH}/BuildCereal.cmake)
+if (TARGET CONAN_PKG::cereal)
+  target_link_libraries(
+    flashlight
+    PUBLIC
+    CONAN_PKG::cereal
+    )
+else()
+   set(CEREAL_INSTALL_PATH ${FL_INSTALL_INC_DIR_HEADER_LOC}/cereal)
+   # If cereal is found in a user-defined location, use it rather than
+   find_package(cereal)
+   if (NOT cereal_FOUND)
+     message(STATUS "cereal NOT found. Will download from source")
+     include(${CMAKE_MODULE_PATH}/BuildCereal.cmake)
+     add_dependencies(flashlight cereal)
+   endif()
+
+   target_include_directories(flashlight PUBLIC ${cereal_INCLUDE_DIRS})
 endif()
 
 # -------------------- Locate Backend-specific Dependencies --------------------
@@ -114,7 +120,7 @@ endif()
 
 if (FLASHLIGHT_USE_CPU)
   # MKL is not required to build the CPU backend (but is highly recommended
-  # for improved performance) since MKL-DNN can be built with either mklml or
+  # for improved performag ance) since MKL-DNN can be built with either mklml or
   # MKL-DNN's internal GEMM implementation (see https://git.io/fhSMH). If MKL
   # isn't found, try to find mklml when finding MKL-DNN, and add it to
   # MKLDNN_LIBRARIES. If mklml can't be found, fall back to a system BLAS
@@ -162,12 +168,14 @@ endif()
 # Link ArrayFire to flashlight
 target_link_libraries(flashlight INTERFACE ArrayFire::${FL_AF_BACKEND})
 
+# ------------------------ Tests ------------------------
 
-# flashlight core
-set(FLASHLIGHT_CORE_DIR "${CMAKE_SOURCE_DIR}/flashlight")
-include(${FLASHLIGHT_CORE_DIR}/CMakeLists.txt)
+if (FL_BUILD_TESTS)
+  enable_testing()
+  include(${CMAKE_MODULE_PATH}/TestUtils.cmake)
+endif ()
 
-# ------------------------ Libraries ------------------------
+# ------------------------ flashlight Libraries ------------------------
 option(FL_LIBRARIES_USE_CUDA "Use CUDA in libraries-only build" ON)
 option(FL_LIBRARIES_USE_KENLM "Use KenLM in libraries-only build" ON)
 option(FL_LIBRARIES_USE_MKL "Use MKL in libraries-only build" ON)
@@ -184,6 +192,11 @@ include(${FLASHLIGHT_LIB_DIR}/CMakeLists.txt)
 # Link to flashlight core
 target_link_libraries(flashlight PUBLIC fl-libraries)
 
+# ------------------------ flashlight Core ------------------------
+
+set(FLASHLIGHT_CORE_DIR "${CMAKE_SOURCE_DIR}/flashlight")
+include(${FLASHLIGHT_CORE_DIR}/CMakeLists.txt)
+
 # ------------------------ Extensions ------------------------
 set(FLASHLIGHT_EXT_DIR "${CMAKE_SOURCE_DIR}/extensions")
 include(${FLASHLIGHT_EXT_DIR}/CMakeLists.txt)
@@ -191,3 +204,6 @@ include(${FLASHLIGHT_EXT_DIR}/CMakeLists.txt)
 # --------------------------- Tasks ---------------------------
 set(FLASHLIGHT_TASKS_DIR "${CMAKE_SOURCE_DIR}/tasks")
 include(${FLASHLIGHT_TASKS_DIR}/CMakeLists.txt)
+
+# --------------------------- Tasks ---------------------------
+

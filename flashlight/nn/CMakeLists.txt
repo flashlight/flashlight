@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 # ----------------------------- NN Modules -----------------------------
-add_dependencies(flashlight cereal)
 
 set(
   NN_SOURCES
@@ -42,17 +41,3 @@ target_sources(
   PUBLIC
   $<BUILD_INTERFACE:${NN_SOURCES}>
   )
-
-if (TARGET CONAN_PKG::cereal)
-  target_link_libraries(
-    flashlight
-    PUBLIC
-    CONAN_PKG::cereal
-    )
-else()
-  target_include_directories(
-    flashlight
-    PUBLIC
-    ${cereal_INCLUDE_DIRS} # pulled in - see cmake/BuildCereal.cmake
-    )
-endif ()

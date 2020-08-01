@@ -14,9 +14,6 @@ if(FLASHLIGHT_USE_CUDA)
   set(COMMON_SRCS ${COMMON_SRCS} ${CMAKE_CURRENT_LIST_DIR}/CudaUtils.cpp)
 endif()
 
-# Don't build until cereal is properly included
-add_dependencies(flashlight cereal)
-
 target_sources(
   flashlight
   PUBLIC
@@ -32,12 +29,6 @@ target_link_libraries(
   flashlight
   PUBLIC
   ${CMAKE_THREAD_LIBS_INIT} # threading library
-)
-
-target_include_directories(
-  flashlight
-  PUBLIC
-  ${cereal_INCLUDE_DIRS} # pulled in - see cmake/BuildCereal.cmake
 )
 
 if (FLASHLIGHT_USE_CUDA)

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 set(DIR ${CMAKE_CURRENT_SOURCE_DIR})
-set(LIBS task-asr)
+set(LIBS flashlight)
 
 # Criterion
 build_test(${DIR}/criterion/CriterionTest.cpp ${LIBS} "")
@@ -11,7 +11,7 @@ build_test(${DIR}/criterion/attention/WindowTest.cpp ${LIBS} "")
 # Data
 build_test(
   ${DIR}/data/DataTest.cpp
-  ${LIBS}}
+  ${LIBS}
   "DATA_TEST_DATADIR=\"${CMAKE_CURRENT_SOURCE_DIR}/data/testdata\""
   )
 build_test(${DIR}/data/FeatureTest.cpp ${LIBS} "")
