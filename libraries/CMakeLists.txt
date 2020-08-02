@@ -1,9 +1,5 @@
 cmake_minimum_required(VERSION 3.5.1)
 
-# ---------------------- Configuration ----------------------
-
-option(FL_BUILD_FOR_PYTHON "Build Python bindings" OFF)
-
 # ------------------------- Library -------------------------
 
 add_library(
@@ -56,7 +52,7 @@ if (FL_LIBRARIES_USE_CUDA)
   set_cuda_arch_nvcc_flags()
 
   # hacky: add -fPIC to nvcc flags if needed
-  if (FL_BUILD_FOR_PYTHON OR CMAKE_POSITION_INDEPENDENT_CODE)
+  if (FL_LIBRARIES_BUILD_FOR_PYTHON OR CMAKE_POSITION_INDEPENDENT_CODE)
     cuda_enable_position_independent_code()
   endif ()
   

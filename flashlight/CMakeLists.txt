@@ -25,7 +25,6 @@ set(FL_BUILD_CONTRIB ON CACHE BOOL
 if (FL_BUILD_CONTRIB)
   message(STATUS "Will build flashlight contrib assets.")
   include(${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/contrib/CMakeLists.txt)
-  set(FLASHLIGHT_MODULES ${FLASHLIGHT_MODULES} Contrib ${FLASHLIGHT_CONTRIB_LIBS})
 endif()
 
 # Build and link resources from `flashlight/experimental`.

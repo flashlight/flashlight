@@ -28,7 +28,8 @@ option(FL_BUILD_EXAMPLES "Build examples" ON)
 option(FL_BUILD_EXPERIMENTAL "Build internal experimental components" OFF)
 option(FL_BUILD_SCRIPTS "Build internal scripts for wav2letter++" OFF)
 option(FL_BUILD_RECIPES "Build recipes" ON)
-option(FL_BUILD_TOOLS "Build tools" OFF)
+option(FL_BUILD_CORE_ONLY "Build flashlight core only" OFF)
+option(FL_BUILD_LIBRARIES_ONLY "Build flashlight libraries only" OFF)
 
 # Flashlight backend
 set(FL_BACKEND "CUDA" CACHE STRING "Backend with which to build flashlight")
@@ -48,6 +49,33 @@ else ()
   message(FATAL_ERROR "Invalid FLASHLIGHT backend specified")
 endif ()
 
+# ------------------------ Tests ------------------------
+
+if (FL_BUILD_TESTS)
+  enable_testing()
+  include(${CMAKE_MODULE_PATH}/TestUtils.cmake)
+endif ()
+
+# ------------------------ flashlight Libraries ------------------------
+option(FL_LIBRARIES_USE_CUDA "Use CUDA in flashlight libraries build" ON)
+option(FL_LIBRARIES_USE_KENLM "Use KenLM in flashlight libraries build" ON)
+option(FL_LIBRARIES_USE_MKL "Use MKL in flashlight libraries build" ON)
+option(FL_LIBRARIES_BUILD_FOR_PYTHON "Build Python bindings" OFF)
+
+set(FL_COMPILE_DEFINITIONS
+  $<$<BOOL:${FL_LIBRARIES_USE_CUDA}>:FL_LIBRARIES_USE_CUDA>
+  $<$<BOOL:${FL_LIBRARIES_USE_MKL}>:FL_LIBRARIES_USE_MKL>
+  $<$<BOOL:${FL_LIBRARIES_USE_KENLM}>:FL_LIBRARIES_USE_KENLM>
+  )
+
+set(FLASHLIGHT_LIB_DIR "${CMAKE_SOURCE_DIR}/libraries")
+include(${FLASHLIGHT_LIB_DIR}/CMakeLists.txt)
+
+if (FL_BUILD_LIBRARIES_ONLY)
+  message(STATUS "Libraries-only setup complete")
+  return()
+endif()
+
 # --------------------------- flashlight ---------------------------
 # Primary lib target. All non-library code is linked here, including tasks
 add_library(flashlight "")
@@ -58,6 +86,9 @@ set_target_properties(
   LINKER_LANGUAGE CXX
   CXX_STANDARD 11
   )
+
+# Link libraries to flashlight core
+target_link_libraries(flashlight PUBLIC fl-libraries)
 
 # ------------------------ Global External Dependencies ------------------------
 # ArrayFire
@@ -168,34 +199,15 @@ endif()
 # Link ArrayFire to flashlight
 target_link_libraries(flashlight INTERFACE ArrayFire::${FL_AF_BACKEND})
 
-# ------------------------ Tests ------------------------
-
-if (FL_BUILD_TESTS)
-  enable_testing()
-  include(${CMAKE_MODULE_PATH}/TestUtils.cmake)
-endif ()
-
-# ------------------------ flashlight Libraries ------------------------
-option(FL_LIBRARIES_USE_CUDA "Use CUDA in libraries-only build" ON)
-option(FL_LIBRARIES_USE_KENLM "Use KenLM in libraries-only build" ON)
-option(FL_LIBRARIES_USE_MKL "Use MKL in libraries-only build" ON)
-
-set(FL_COMPILE_DEFINITIONS
-  $<$<BOOL:${FL_LIBRARIES_USE_CUDA}>:FL_LIBRARIES_USE_CUDA>
-  $<$<BOOL:${FL_LIBRARIES_USE_MKL}>:FL_LIBRARIES_USE_MKL>
-  $<$<BOOL:${FL_LIBRARIES_USE_KENLM}>:FL_LIBRARIES_USE_KENLM>
-  )
-
-set(FLASHLIGHT_LIB_DIR "${CMAKE_SOURCE_DIR}/libraries")
-include(${FLASHLIGHT_LIB_DIR}/CMakeLists.txt)
-
-# Link to flashlight core
-target_link_libraries(flashlight PUBLIC fl-libraries)
-
 # ------------------------ flashlight Core ------------------------
 
 set(FLASHLIGHT_CORE_DIR "${CMAKE_SOURCE_DIR}/flashlight")
 include(${FLASHLIGHT_CORE_DIR}/CMakeLists.txt)
+
+if (FL_BUILD_CORE_ONLY)
+  message(STATUS "Core-only setup complete")
+  return()
+endif()
 
 # ------------------------ Extensions ------------------------
 set(FLASHLIGHT_EXT_DIR "${CMAKE_SOURCE_DIR}/extensions")
@@ -204,6 +216,4 @@ include(${FLASHLIGHT_EXT_DIR}/CMakeLists.txt)
 # --------------------------- Tasks ---------------------------
 set(FLASHLIGHT_TASKS_DIR "${CMAKE_SOURCE_DIR}/tasks")
 include(${FLASHLIGHT_TASKS_DIR}/CMakeLists.txt)
-
-# --------------------------- Tasks ---------------------------
 
