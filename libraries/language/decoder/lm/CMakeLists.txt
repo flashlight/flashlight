@@ -4,7 +4,7 @@ set(KENLM_MAX_ORDER 6 CACHE STRING "Maximum ngram order for KenLM")
 
 target_sources(
   fl-libraries
-  PUBLIC
+  PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/ConvLM.cpp
   ${CMAKE_CURRENT_LIST_DIR}/ZeroLM.cpp
   )
@@ -21,7 +21,7 @@ if (FL_LIBRARIES_USE_KENLM)
 
   target_sources(
     fl-libraries
-    PUBLIC
+    PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/KenLM.cpp    
     )
 

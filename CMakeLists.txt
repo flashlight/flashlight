@@ -21,6 +21,10 @@ set(FL_INSTALL_CMAKE_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/cmake" CACHE PATH "Insta
 set(FL_INSTALL_EXAMPLES_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/examples" CACHE PATH "Install path for example files")
 set(FL_INSTALL_DOC_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/doc" CACHE PATH "Install path for documentation")
 
+include(InternalUtils)
+set(INSTALLABLE_TARGETS "")
+set(INSTALLABLE_HEADERS "")
+
 # ----------------------------- Configuration -----------------------------
 
 option(FL_BUILD_TESTS "Build tests" ON)
@@ -53,7 +57,7 @@ endif ()
 
 if (FL_BUILD_TESTS)
   enable_testing()
-  include(${CMAKE_MODULE_PATH}/TestUtils.cmake)
+  include(TestUtils)
 endif ()
 
 # ------------------------ flashlight Libraries ------------------------
@@ -68,11 +72,16 @@ set(FL_COMPILE_DEFINITIONS
   $<$<BOOL:${FL_LIBRARIES_USE_KENLM}>:FL_LIBRARIES_USE_KENLM>
   )
 
-set(FLASHLIGHT_LIB_DIR "${CMAKE_SOURCE_DIR}/libraries")
+set(FLASHLIGHT_LIB_DIR "${PROJECT_SOURCE_DIR}/libraries")
 include(${FLASHLIGHT_LIB_DIR}/CMakeLists.txt)
 
 if (FL_BUILD_LIBRARIES_ONLY)
   message(STATUS "Libraries-only setup complete")
+  setup_install(
+    INSTALL_TARGETS
+    ${INSTALLABLE_TARGETS}
+    INSTALL_HEADERS
+    ${INSTALLABLE_HEADERS})
   return()
 endif()
 
@@ -124,11 +133,24 @@ if (TARGET CONAN_PKG::cereal)
 else()
    set(CEREAL_INSTALL_PATH ${FL_INSTALL_INC_DIR_HEADER_LOC}/cereal)
    # If cereal is found in a user-defined location, use it rather than
+   # downloading from source
    find_package(cereal)
    if (NOT cereal_FOUND)
      message(STATUS "cereal NOT found. Will download from source")
      include(${CMAKE_MODULE_PATH}/BuildCereal.cmake)
      add_dependencies(flashlight cereal)
+     # Move cereal headers at install time
+     install(DIRECTORY ${CEREAL_SOURCE_DIR}/include/cereal
+      DESTINATION ${CEREAL_INSTALL_PATH}
+      COMPONENT cereal
+      FILES_MATCHING
+      PATTERN "*.hpp"
+      PATTERN "*.h"
+      PATTERN ".git" EXCLUDE
+      )
+    install(FILES ${CEREAL_SOURCE_DIR}/LICENSE ${CEREAL_SOURCE_DIR}/README.md
+      DESTINATION ${CEREAL_INSTALL_PATH}
+      )
    endif()
 
    target_include_directories(flashlight PUBLIC ${cereal_INCLUDE_DIRS})
@@ -201,19 +223,32 @@ target_link_libraries(flashlight INTERFACE ArrayFire::${FL_AF_BACKEND})
 
 # ------------------------ flashlight Core ------------------------
 
-set(FLASHLIGHT_CORE_DIR "${CMAKE_SOURCE_DIR}/flashlight")
+set(FLASHLIGHT_CORE_DIR "${PROJECT_SOURCE_DIR}/flashlight")
 include(${FLASHLIGHT_CORE_DIR}/CMakeLists.txt)
+set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} flashlight)
+set(INSTALLABLE_HEADERS ${INSTALLABLE_HEADERS} ${FLASHLIGHT_CORE_DIR})
 
 if (FL_BUILD_CORE_ONLY)
   message(STATUS "Core-only setup complete")
+  setup_install(
+    INSTALL_TARGETS
+    ${INSTALLABLE_TARGETS}
+    INSTALL_HEADERS
+    ${INSTALLABLE_HEADERS})
   return()
 endif()
 
 # ------------------------ Extensions ------------------------
-set(FLASHLIGHT_EXT_DIR "${CMAKE_SOURCE_DIR}/extensions")
+set(FLASHLIGHT_EXT_DIR "${PROJECT_SOURCE_DIR}/extensions")
 include(${FLASHLIGHT_EXT_DIR}/CMakeLists.txt)
 
 # --------------------------- Tasks ---------------------------
-set(FLASHLIGHT_TASKS_DIR "${CMAKE_SOURCE_DIR}/tasks")
+set(FLASHLIGHT_TASKS_DIR "${PROJECT_SOURCE_DIR}/tasks")
 include(${FLASHLIGHT_TASKS_DIR}/CMakeLists.txt)
 
+# Fallthrough default install
+setup_install(
+  INSTALL_TARGETS
+  ${INSTALLABLE_TARGETS}
+  INSTALL_HEADERS
+  ${INSTALLABLE_HEADERS})

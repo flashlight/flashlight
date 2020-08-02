@@ -13,6 +13,6 @@ set(
 
 target_sources(
   flashlight
-  PUBLIC
+  PRIVATE
   ${FL_CONTRIB_SOURCES}
   )

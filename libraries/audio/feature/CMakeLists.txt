@@ -22,7 +22,7 @@ endif()
 # ----------------------------- Lib -----------------------------
 target_sources(
   fl-libraries
-  PUBLIC
+  PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/Ceplifter.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Dct.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Derivatives.cpp

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5.1)
 
 target_sources(
   flashlight
-  PUBLIC
+  PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/Logger.cpp
   ${CMAKE_CURRENT_LIST_DIR}/SpeechStatMeter.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Optimizer.cpp

@@ -76,17 +76,21 @@ IF (WITH_GPU)
 
     MESSAGE(STATUS "warpctc: Building shared library with GPU support")
 
-    CUDA_ADD_LIBRARY(warpctc SHARED src/ctc_entrypoint.cu src/reduce.cu)
+    # CUDA_ADD_LIBRARY(warpctc SHARED src/ctc_entrypoint.cu src/reduce.cu)
+    set(warpctc_SOURCES
+      ${CMAKE_CURRENT_LIST_DIR}/src/ctc_entrypoint.cu
+      ${CMAKE_CURRENT_LIST_DIR}/src/reduce.cu PARENT_SCOPE)
     
-    TARGET_LINK_LIBRARIES(warpctc ${CUDA_curand_LIBRARY})
+    # TARGET_LINK_LIBRARIES(warpctc ${CUDA_curand_LIBRARY})
+    set(warpctc_LIBS ${CUDA_curand_LIBRARY} PARENT_SCOPE)
     
 
-    INSTALL(TARGETS warpctc
-            RUNTIME DESTINATION "bin"
-            LIBRARY DESTINATION "lib"
-            ARCHIVE DESTINATION "lib")
+    # INSTALL(TARGETS warpctc
+    #         RUNTIME DESTINATION "bin"
+    #         LIBRARY DESTINATION "lib"
+    #         ARCHIVE DESTINATION "lib")
 
-    INSTALL(FILES include/ctc.h DESTINATION "include")
+    # INSTALL(FILES include/ctc.h DESTINATION "include")
 
 ELSE()
     MESSAGE(STATUS "warpctc: Building shared library with no GPU support")

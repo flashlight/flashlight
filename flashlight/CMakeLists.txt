@@ -41,7 +41,7 @@ endif()
 target_include_directories(
   flashlight
   PUBLIC
-  ${PROJECT_SOURCE_DIR}
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
 )
 
 # -------------------------------- Components --------------------------------
@@ -79,5 +79,12 @@ endif ()
 
 # Build examples
 if (FL_BUILD_EXAMPLES)
- add_subdirectory(${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/examples)
+  set(FL_EXAMPLES_DIR ${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/examples)
+  add_subdirectory(${FL_EXAMPLES_DIR})
+  # Installation properties
+  install(
+    DIRECTORY ${FL_EXAMPLES_DIR}
+    DESTINATION ${FL_INSTALL_EXAMPLES_DIR}
+    COMPONENT examples
+    )
 endif ()

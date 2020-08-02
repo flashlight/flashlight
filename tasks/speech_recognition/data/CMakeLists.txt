@@ -33,7 +33,7 @@ endif ()
 
 target_sources(
   flashlight
-  PUBLIC
+  PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/Featurize.cpp
   ${CMAKE_CURRENT_LIST_DIR}/FeatureTransforms.cpp
   ${CMAKE_CURRENT_LIST_DIR}/ListFileDataset.cpp

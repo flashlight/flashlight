@@ -6,11 +6,13 @@ add_library(
   fl-libraries
   ""
   )
+set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} fl-libraries)
+set(INSTALLABLE_HEADERS ${INSTALLABLE_HEADERS} ${FLASHLIGHT_LIB_DIR})
 
 target_include_directories(
   fl-libraries
   PUBLIC
-  ${PROJECT_SOURCE_DIR}
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
   )
 
 target_compile_definitions(
@@ -67,6 +69,7 @@ if (FL_LIBRARIES_USE_CUDA)
     ${FL_LIBRARY_CUDA_SOURCES}
     )
 
+  set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} fl-libraries-cuda)
   add_dependencies(fl-libraries-cuda CUB)
   
   cuda_include_directories(
@@ -90,7 +93,7 @@ if (FL_LIBRARIES_USE_CUDA)
   target_include_directories(
     fl-libraries
     PUBLIC
-    ${CUDA_INCLUDE_DIRS}
+    $<BUILD_INTERFACE:${CUDA_INCLUDE_DIRS}>
     )
 endif()
 

@@ -58,7 +58,7 @@ target_include_directories(
   ${MKL_INCLUDE_DIR}
   # some includes are relative to the asr root path
   # TODO(jacobkahn): improve this...?
-  ${FL_TASK_SPEECH_RECOGNITION_ROOT_DIR}
+  $<BUILD_INTERFACE:${FL_TASK_SPEECH_RECOGNITION_ROOT_DIR}>
   )
 
 # ------------------------ Components ------------------------

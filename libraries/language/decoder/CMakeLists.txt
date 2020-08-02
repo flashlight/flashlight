@@ -4,7 +4,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/lm/CMakeLists.txt)
 
 target_sources(
   fl-libraries
-  PUBLIC
+  PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/LexiconDecoder.cpp
   ${CMAKE_CURRENT_LIST_DIR}/LexiconFreeDecoder.cpp
   ${CMAKE_CURRENT_LIST_DIR}/LexiconSeq2SeqDecoder.cpp
