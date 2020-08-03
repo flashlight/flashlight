@@ -20,7 +20,10 @@ build_test(
   ${LIBS}
   "DATA_TEST_DATADIR=\"${DIR}/data/testdata\""
   )
-build_test(${DIR}/data/SoundTest.cpp ${LIBS} "")
+build_test(
+  ${DIR}/data/SoundTest.cpp
+  ${LIBS}
+  "DATA_TEST_DATADIR=\"${DIR}/data/testdata\"")
 # Decoder
 build_test(
   ${DIR}/decoder/ConvLmModuleTest.cpp
