@@ -19,7 +19,7 @@ if (FLASHLIGHT_USE_CUDA)
   target_include_directories(warpctc PRIVATE ${WARPCTC_INCLUDE_DIR})
 
   target_sources(
-    flashlight
+    flashlight-task-speech-recognition
     PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/ConnectionistTemporalClassificationCriterion.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/CriterionUtils.cpp
@@ -28,25 +28,22 @@ if (FLASHLIGHT_USE_CUDA)
     )
 
   target_link_libraries(
-    flashlight
+    flashlight-task-speech-recognition
     PUBLIC
     ${CUDA_LIBRARIES}
     # Can remove once CTC constrained Viterbi is implemented in CUDA T62268085
     warpctc # added directly from subdir, please remove me
     )
 
-  # TODO(jacobkahn, padentomasello): We really have to remove warpctc
-  set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} warpctc)
-
   target_include_directories(
-    flashlight
+    flashlight-task-speech-recognition
     PUBLIC
     ${CUDA_INCLUDE_DIRS}
     $<BUILD_INTERFACE:${WARPCTC_INCLUDE_DIR}> # I hope to remove me one day
     )
 elseif (FLASHLIGHT_USE_CPU)
   target_sources(
-    flashlight
+    flashlight-task-speech-recognition
     PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/ConnectionistTemporalClassificationCriterion.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/CriterionUtils.cpp
@@ -63,7 +60,7 @@ endif ()
 # ----------------------------- Criterion APIs -----------------------------
 
 target_sources(
-  flashlight
+  flashlight-task-speech-recognition
   PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/ConnectionistTemporalClassificationCriterion.cpp
   ${CMAKE_CURRENT_LIST_DIR}/CriterionUtils.cpp

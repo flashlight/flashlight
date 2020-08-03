@@ -32,7 +32,7 @@ endif ()
 # ----------------------------- Lib -----------------------------
 
 target_sources(
-  flashlight
+  flashlight-task-speech-recognition
   PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/Featurize.cpp
   ${CMAKE_CURRENT_LIST_DIR}/FeatureTransforms.cpp
@@ -46,14 +46,14 @@ target_sources(
   )
 
 target_link_libraries(
-  flashlight
+  flashlight-task-speech-recognition
   PUBLIC
   ${SNDFILE_LIBRARIES}
   ${SNDFILE_DEP_LIBRARIES}
   )
 
 target_include_directories(
-  flashlight
+  flashlight-task-speech-recognition
   PUBLIC
   ${SNDFILE_INCLUDE_DIRS}
   ${SNDFILE_DEP_INCLUDE_DIRS}

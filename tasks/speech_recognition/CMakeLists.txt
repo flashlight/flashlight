@@ -1,5 +1,14 @@
 cmake_minimum_required(VERSION 3.5.1)
 
+# ------------------------- Library -------------------------
+# TODO(jacobkahn): Task libraries aren't currently installed.
+# Having them bundled into flashlight and moving headers accordingly is
+# one potential path forward here.
+add_library(
+  flashlight-task-speech-recognition
+  ""
+  )
+
 # ------------------------- Dependency Fallback -------------------------
 
 if (FL_LIBRARIES_USE_MKL)
@@ -43,15 +52,17 @@ else()
 endif()
 
 target_link_libraries(
-  flashlight
+  flashlight-task-speech-recognition
   PUBLIC
   ${GFLAGS_LIBRARIES}
   ${GLOG_LIBRARIES}
   ${MKL_LIBRARIES}
+  flashlight
   )
 
+
 target_include_directories(
-  flashlight
+  flashlight-task-speech-recognition
   PUBLIC
   ${GFLAGS_INCLUDE_DIRS}
   ${GLOG_INCLUDE_DIRS}
@@ -83,9 +94,9 @@ add_executable(Train ${CMAKE_CURRENT_LIST_DIR}/Train.cpp)
 add_executable(Test ${CMAKE_CURRENT_LIST_DIR}/Test.cpp)
 add_executable(Decoder ${CMAKE_CURRENT_LIST_DIR}/Decode.cpp)
 
-target_link_libraries(Train flashlight)
-target_link_libraries(Test flashlight)
-target_link_libraries(Decoder flashlight)
+target_link_libraries(Train flashlight-task-speech-recognition)
+target_link_libraries(Test flashlight-task-speech-recognition)
+target_link_libraries(Decoder flashlight-task-speech-recognition)
 
 # --------------------------- Tests ---------------------------
 

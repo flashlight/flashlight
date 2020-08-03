@@ -1,12 +1,12 @@
 
-function(setup_install)
+function(setup_install_targets)
   set(multiValueArgs INSTALL_TARGETS INSTALL_HEADERS)
-  cmake_parse_arguments(setup_install "${options}" "${oneValueArgs}"
+  cmake_parse_arguments(setup_install_targets "${options}" "${oneValueArgs}"
     "${multiValueArgs}" ${ARGN})
     
   # Main target
   install(
-    TARGETS ${setup_install_INSTALL_TARGETS}
+    TARGETS ${setup_install_targets_INSTALL_TARGETS}
     EXPORT flashlightTargets
     COMPONENT flashlight
     PUBLIC_HEADER DESTINATION fl
@@ -29,18 +29,6 @@ function(setup_install)
     cmake
     )
 
-  # Move headers
-  install(
-    DIRECTORY
-    ${setup_install_INSTALL_HEADERS}
-    COMPONENT
-    headers
-    DESTINATION
-    ${FL_INSTALL_INC_DIR_HEADER_LOC}
-    FILES_MATCHING # preserve directory structure
-    PATTERN  "*.h"
-    )
-
   # Write config file (used by projects including fl, such as examples)
   include(CMakePackageConfigHelpers)
   set(INCLUDE_DIRS include)
@@ -57,4 +45,19 @@ function(setup_install)
     DESTINATION ${FL_INSTALL_CMAKE_DIR}
     COMPONENT cmake
     )
-endfunction(setup_install)
+endfunction(setup_install_targets)
+
+function(setup_install_headers HEADER_DIR DEST_DIR)
+  # Move headers
+  install(
+    DIRECTORY
+    ${HEADER_DIR}
+    COMPONENT
+    headers
+    DESTINATION
+    ${DEST_DIR}
+    FILES_MATCHING # preserve directory structure
+    PATTERN  "*.h"
+    PATTERN "tests" EXCLUDE
+    )
+endfunction(setup_install_headers)
