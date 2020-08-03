@@ -17,9 +17,9 @@
 #include <vector>
 
 #include "common/Defines.h"
-#include "libraries/common/String.h"
-#include "libraries/language/dictionary/Dictionary.h"
-#include "libraries/language/dictionary/Utils.h"
+#include "flashlight/libraries/common/String.h"
+#include "flashlight/libraries/language/dictionary/Dictionary.h"
+#include "flashlight/libraries/language/dictionary/Utils.h"
 
 namespace fl {
 namespace task {

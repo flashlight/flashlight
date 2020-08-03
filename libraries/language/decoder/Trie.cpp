@@ -11,7 +11,7 @@
 #include <iostream>
 #include <limits>
 
-#include "libraries/language/decoder/Trie.h"
+#include "flashlight/libraries/language/decoder/Trie.h"
 
 namespace fl {
 namespace lib {

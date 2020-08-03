@@ -6,13 +6,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "libraries/sequence/criterion/cpu/ForceAlignmentCriterion.h"
+#include "flashlight/libraries/sequence/criterion/cpu/ForceAlignmentCriterion.h"
 
 #include <algorithm>
 #include <cmath>
 
-#include "libraries/sequence/criterion/Workspace.h"
-#include "libraries/sequence/criterion/cpu/CriterionUtils.h"
+#include "flashlight/libraries/sequence/criterion/Workspace.h"
+#include "flashlight/libraries/sequence/criterion/cpu/CriterionUtils.h"
 
 namespace {
 

@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 
 #include "TestUtils.h"
-#include "libraries/audio/feature/Ceplifter.h"
+#include "flashlight/libraries/audio/feature/Ceplifter.h"
 
 using fl::lib::Ceplifter;
 

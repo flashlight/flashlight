@@ -19,7 +19,7 @@
 #include <string>
 
 #include "inference/common/IOBuffer.h"
-#include "libraries/decoder/Utils.h"
+#include "flashlight/libraries/decoder/Utils.h"
 
 namespace w2l {
 namespace streaming {

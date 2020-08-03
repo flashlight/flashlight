@@ -6,12 +6,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "libraries/sequence/criterion/cpu/FullConnectionCriterion.h"
+#include "flashlight/libraries/sequence/criterion/cpu/FullConnectionCriterion.h"
 
 #include <cmath>
 
-#include "libraries/sequence/criterion/Workspace.h"
-#include "libraries/sequence/criterion/cpu/CriterionUtils.h"
+#include "flashlight/libraries/sequence/criterion/Workspace.h"
+#include "flashlight/libraries/sequence/criterion/cpu/CriterionUtils.h"
 
 namespace {
 

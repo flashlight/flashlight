@@ -11,8 +11,8 @@
 #include <string>
 #include <vector>
 
-#include "libraries/language/dictionary/Dictionary.h"
-#include "libraries/language/dictionary/Utils.h"
+#include "flashlight/libraries/language/dictionary/Dictionary.h"
+#include "flashlight/libraries/language/dictionary/Utils.h"
 
 namespace fl {
 namespace task {

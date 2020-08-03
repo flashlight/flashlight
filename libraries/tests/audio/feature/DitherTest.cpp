@@ -11,7 +11,7 @@
 #include <thread>
 
 #include "TestUtils.h"
-#include "libraries/audio/feature/Dither.h"
+#include "flashlight/libraries/audio/feature/Dither.h"
 
 using fl::lib::Dither;
 

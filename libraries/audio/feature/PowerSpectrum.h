@@ -12,10 +12,10 @@
 
 #include <fftw3.h>
 
-#include "libraries/audio/feature/Dither.h"
-#include "libraries/audio/feature/FeatureParams.h"
-#include "libraries/audio/feature/PreEmphasis.h"
-#include "libraries/audio/feature/Windowing.h"
+#include "flashlight/libraries/audio/feature/Dither.h"
+#include "flashlight/libraries/audio/feature/FeatureParams.h"
+#include "flashlight/libraries/audio/feature/PreEmphasis.h"
+#include "flashlight/libraries/audio/feature/Windowing.h"
 
 namespace fl {
 namespace lib {

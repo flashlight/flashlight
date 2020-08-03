@@ -6,11 +6,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "libraries/language/dictionary/Utils.h"
+#include "flashlight/libraries/language/dictionary/Utils.h"
 
-#include "libraries/common/String.h"
-#include "libraries/common/System.h"
-#include "libraries/language/dictionary/Defines.h"
+#include "flashlight/libraries/common/String.h"
+#include "flashlight/libraries/common/System.h"
+#include "flashlight/libraries/language/dictionary/Defines.h"
 
 namespace fl {
 namespace lib {

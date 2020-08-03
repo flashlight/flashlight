@@ -24,7 +24,7 @@
 #include "inference/module/feature/feature.h"
 #include "inference/module/module.h"
 #include "inference/module/nn/nn.h"
-#include "libraries/common/Dictionary.h"
+#include "flashlight/libraries/common/Dictionary.h"
 #include "module/SpecAugment.h"
 #include "module/TDSBlock.h"
 #include "module/W2lModule.h"

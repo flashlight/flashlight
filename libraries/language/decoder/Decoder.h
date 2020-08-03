@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "libraries/language/decoder/Utils.h"
+#include "flashlight/libraries/language/decoder/Utils.h"
 
 namespace fl {
 namespace lib {

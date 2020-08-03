@@ -15,9 +15,9 @@
 #include <glog/logging.h>
 
 #include "common/Defines.h"
-#include "libraries/audio/feature/Mfcc.h"
-#include "libraries/audio/feature/Mfsc.h"
-#include "libraries/common/String.h"
+#include "flashlight/libraries/audio/feature/Mfcc.h"
+#include "flashlight/libraries/audio/feature/Mfsc.h"
+#include "flashlight/libraries/common/String.h"
 
 using namespace fl::lib;
 

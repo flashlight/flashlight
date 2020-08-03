@@ -13,7 +13,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "libraries/language/decoder/lm/LM.h"
+#include "flashlight/libraries/language/decoder/lm/LM.h"
 
 namespace fl {
 namespace lib {

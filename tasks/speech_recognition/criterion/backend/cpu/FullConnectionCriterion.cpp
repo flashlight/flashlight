@@ -10,7 +10,7 @@
 #include "criterion/CriterionUtils.h"
 
 #include "extensions/common/Utils.h"
-#include "libraries/sequence/criterion/cpu/FullConnectionCriterion.h"
+#include "flashlight/libraries/sequence/criterion/cpu/FullConnectionCriterion.h"
 
 using fl::Variable;
 using FCC = fl::lib::cpu::FullConnectionCriterion<float>;

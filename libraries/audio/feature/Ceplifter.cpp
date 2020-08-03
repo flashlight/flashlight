@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "libraries/audio/feature/Ceplifter.h"
+#include "flashlight/libraries/audio/feature/Ceplifter.h"
 
 #include <cmath>
 #include <cstddef>

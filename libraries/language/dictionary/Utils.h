@@ -12,7 +12,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "libraries/language/dictionary/Dictionary.h"
+#include "flashlight/libraries/language/dictionary/Dictionary.h"
 
 namespace fl {
 namespace lib {

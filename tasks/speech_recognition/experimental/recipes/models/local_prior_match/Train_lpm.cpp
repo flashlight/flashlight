@@ -19,7 +19,7 @@
 #include "common/FlashlightUtils.h"
 #include "criterion/criterion.h"
 #include "data/Featurize.h"
-#include "libraries/common/Dictionary.h"
+#include "flashlight/libraries/common/Dictionary.h"
 #include "module/module.h"
 #include "recipes/models/local_prior_match/src/module/LMWrapper.h"
 #include "recipes/models/local_prior_match/src/runtime/runtime.h"

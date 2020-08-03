@@ -10,7 +10,7 @@
 #include <glog/logging.h>
 
 #include "criterion/criterion.h"
-#include "libraries/common/Dictionary.h"
+#include "flashlight/libraries/common/Dictionary.h"
 #include "module/module.h"
 #include "runtime/runtime.h"
 

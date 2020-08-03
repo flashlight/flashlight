@@ -6,13 +6,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "libraries/language/tokenizer/Tokenizer.h"
+#include "flashlight/libraries/language/tokenizer/Tokenizer.h"
 
 #include <algorithm>
 #include <future>
 
-#include "libraries/common/String.h"
-#include "libraries/common/System.h"
+#include "flashlight/libraries/common/String.h"
+#include "flashlight/libraries/common/System.h"
 
 namespace fl {
 namespace lib {

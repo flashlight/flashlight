@@ -7,12 +7,11 @@ add_library(
   ""
   )
 set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} fl-libraries)
-set(INSTALLABLE_HEADERS ${INSTALLABLE_HEADERS} ${FLASHLIGHT_LIB_DIR})
 
 target_include_directories(
   fl-libraries
   PUBLIC
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/..> # for #include "flashlight/libraries"
   )
 
 target_compile_definitions(

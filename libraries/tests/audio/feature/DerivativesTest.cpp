@@ -10,7 +10,7 @@
 #include <numeric>
 
 #include "TestUtils.h"
-#include "libraries/audio/feature/Derivatives.h"
+#include "flashlight/libraries/audio/feature/Derivatives.h"
 
 using fl::lib::Derivatives;
 

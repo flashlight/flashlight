@@ -6,11 +6,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "libraries/sequence/criterion/cpu/ViterbiPath.h"
+#include "flashlight/libraries/sequence/criterion/cpu/ViterbiPath.h"
 
 #include <cmath>
 
-#include "libraries/sequence/criterion/Workspace.h"
+#include "flashlight/libraries/sequence/criterion/Workspace.h"
 
 namespace {
 

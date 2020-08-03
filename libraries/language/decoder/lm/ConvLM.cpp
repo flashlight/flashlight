@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#include "libraries/language/decoder/lm/ConvLM.h"
+#include "flashlight/libraries/language/decoder/lm/ConvLM.h"
 
 #include <cmath>
 #include <cstring>

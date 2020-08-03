@@ -8,7 +8,7 @@
 
 #include "Utils.h"
 
-#include "libraries/common/String.h"
+#include "flashlight/libraries/common/String.h"
 
 using namespace fl::lib;
 

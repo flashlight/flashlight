@@ -9,7 +9,7 @@
 #pragma once
 
 #include <cstddef>
-#include "libraries/sequence/criterion/Defines.h"
+#include "flashlight/libraries/sequence/criterion/Defines.h"
 
 namespace fl {
 namespace lib {

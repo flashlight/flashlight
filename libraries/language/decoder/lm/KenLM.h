@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "libraries/language/decoder/lm/LM.h"
-#include "libraries/language/dictionary/Dictionary.h"
+#include "flashlight/libraries/language/decoder/lm/LM.h"
+#include "flashlight/libraries/language/dictionary/Dictionary.h"
 
 #include <lm/model.hh>
 

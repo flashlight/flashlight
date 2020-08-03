@@ -6,12 +6,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "libraries/audio/feature/Derivatives.h"
+#include "flashlight/libraries/audio/feature/Derivatives.h"
 
 #include <cstddef>
 #include <stdexcept>
 
-#include "libraries/audio/feature/SpeechUtils.h"
+#include "flashlight/libraries/audio/feature/SpeechUtils.h"
 
 namespace fl {
 namespace lib {

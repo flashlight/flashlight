@@ -12,7 +12,7 @@
 #include <functional>
 #include <numeric>
 
-#include "libraries/language/decoder/LexiconFreeDecoder.h"
+#include "flashlight/libraries/language/decoder/LexiconFreeDecoder.h"
 
 namespace fl {
 namespace lib {

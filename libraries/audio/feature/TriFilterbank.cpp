@@ -6,14 +6,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "libraries/audio/feature/TriFilterbank.h"
+#include "flashlight/libraries/audio/feature/TriFilterbank.h"
 
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <stdexcept>
 
-#include "libraries/audio/feature/SpeechUtils.h"
+#include "flashlight/libraries/audio/feature/SpeechUtils.h"
 
 namespace fl {
 namespace lib {

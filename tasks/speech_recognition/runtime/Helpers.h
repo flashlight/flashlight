@@ -24,8 +24,8 @@
 #include "data/ListFileDataset.h"
 #include "data/ListFilesDataset.h"
 
-#include "libraries/common/String.h"
-#include "libraries/language/dictionary/Utils.h"
+#include "flashlight/libraries/common/String.h"
+#include "flashlight/libraries/language/dictionary/Utils.h"
 
 namespace fl {
 namespace task {

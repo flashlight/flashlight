@@ -16,8 +16,8 @@
 #include "inference/common/IOBuffer.h"
 #include "inference/module/InferenceModule.h"
 #include "inference/module/ModuleParameter.h"
-#include "libraries/feature/FeatureParams.h"
-#include "libraries/feature/Mfsc.h"
+#include "flashlight/libraries/feature/FeatureParams.h"
+#include "flashlight/libraries/feature/Mfsc.h"
 
 namespace w2l {
 namespace streaming {

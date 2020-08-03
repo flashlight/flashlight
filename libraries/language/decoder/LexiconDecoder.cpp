@@ -13,7 +13,7 @@
 #include <numeric>
 #include <unordered_map>
 
-#include "libraries/language/decoder/LexiconDecoder.h"
+#include "flashlight/libraries/language/decoder/LexiconDecoder.h"
 
 namespace fl {
 namespace lib {

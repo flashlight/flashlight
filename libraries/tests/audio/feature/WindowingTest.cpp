@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 
 #include "TestUtils.h"
-#include "libraries/audio/feature/Windowing.h"
+#include "flashlight/libraries/audio/feature/Windowing.h"
 
 using fl::lib::Windowing;
 using fl::lib::WindowType;

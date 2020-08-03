@@ -9,8 +9,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "libraries/common/Dictionary.h"
-#include "libraries/common/WordUtils.h"
+#include "flashlight/libraries/common/Dictionary.h"
+#include "flashlight/libraries/common/WordUtils.h"
 
 namespace py = pybind11;
 using namespace w2l;

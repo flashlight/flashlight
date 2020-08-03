@@ -14,7 +14,7 @@
 #include <flashlight/flashlight.h>
 
 #include "data/Featurize.h"
-#include "libraries/language/dictionary/Dictionary.h"
+#include "flashlight/libraries/language/dictionary/Dictionary.h"
 
 namespace fl {
 namespace task {

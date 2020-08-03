@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "libraries/common/System.h"
+#include "flashlight/libraries/common/System.h"
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -15,7 +15,7 @@
 #include <ctime>
 #include <functional>
 
-#include "libraries/common/String.h"
+#include "flashlight/libraries/common/String.h"
 
 namespace fl {
 namespace lib {

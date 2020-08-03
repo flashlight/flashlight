@@ -10,9 +10,9 @@
 
 #include <functional>
 
-#include "libraries/language/decoder/lm/LM.h"
-#include "libraries/language/dictionary/Defines.h"
-#include "libraries/language/dictionary/Dictionary.h"
+#include "flashlight/libraries/language/decoder/lm/LM.h"
+#include "flashlight/libraries/language/dictionary/Defines.h"
+#include "flashlight/libraries/language/dictionary/Dictionary.h"
 
 namespace fl {
 namespace lib {

@@ -9,8 +9,8 @@
 
 #include <flashlight/flashlight.h>
 
-#include "libraries/audio/feature/FeatureParams.h"
-#include "libraries/language/dictionary/Utils.h"
+#include "flashlight/libraries/audio/feature/FeatureParams.h"
+#include "flashlight/libraries/language/dictionary/Utils.h"
 
 namespace fl {
 namespace task {

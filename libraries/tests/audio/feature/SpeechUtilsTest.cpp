@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 
 #include "TestUtils.h"
-#include "libraries/audio/feature/SpeechUtils.h"
+#include "flashlight/libraries/audio/feature/SpeechUtils.h"
 
 using namespace fl::lib;
 

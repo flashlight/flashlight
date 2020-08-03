@@ -9,10 +9,10 @@
 
 #pragma once
 
-#include "libraries/common/Dictionary.h"
-#include "libraries/decoder/Decoder.h"
-#include "libraries/decoder/Trie.h"
-#include "libraries/lm/LM.h"
+#include "flashlight/libraries/common/Dictionary.h"
+#include "flashlight/libraries/decoder/Decoder.h"
+#include "flashlight/libraries/decoder/Trie.h"
+#include "flashlight/libraries/lm/LM.h"
 
 namespace w2l {
 namespace streaming {

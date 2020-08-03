@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "libraries/language/decoder/lm/ZeroLM.h"
+#include "flashlight/libraries/language/decoder/lm/ZeroLM.h"
 
 #include <stdexcept>
 

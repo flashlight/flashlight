@@ -8,12 +8,12 @@
 
 #pragma once
 
-#include "libraries/audio/feature/Ceplifter.h"
-#include "libraries/audio/feature/Dct.h"
-#include "libraries/audio/feature/Derivatives.h"
-#include "libraries/audio/feature/FeatureParams.h"
-#include "libraries/audio/feature/Mfsc.h"
-#include "libraries/audio/feature/SpeechUtils.h"
+#include "flashlight/libraries/audio/feature/Ceplifter.h"
+#include "flashlight/libraries/audio/feature/Dct.h"
+#include "flashlight/libraries/audio/feature/Derivatives.h"
+#include "flashlight/libraries/audio/feature/FeatureParams.h"
+#include "flashlight/libraries/audio/feature/Mfsc.h"
+#include "flashlight/libraries/audio/feature/SpeechUtils.h"
 
 namespace fl {
 namespace lib {

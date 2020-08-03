@@ -13,7 +13,7 @@
 #include <sstream>
 
 #include "data/Sound.h"
-#include "libraries/common/System.h"
+#include "flashlight/libraries/common/System.h"
 
 using namespace fl::lib;
 using namespace fl::task::asr;

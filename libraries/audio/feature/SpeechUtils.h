@@ -10,7 +10,7 @@
 
 #include <vector>
 
-#include "libraries/audio/feature/FeatureParams.h"
+#include "flashlight/libraries/audio/feature/FeatureParams.h"
 
 namespace fl {
 namespace lib {

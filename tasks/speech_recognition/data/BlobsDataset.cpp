@@ -13,8 +13,8 @@
 
 #include "common/Defines.h"
 #include "data/BlobsDataset.h"
-#include "libraries/common/String.h"
-#include "libraries/common/System.h"
+#include "flashlight/libraries/common/String.h"
+#include "flashlight/libraries/common/System.h"
 
 using namespace fl::lib;
 

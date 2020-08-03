@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include "libraries/audio/feature/Derivatives.h"
-#include "libraries/audio/feature/FeatureParams.h"
-#include "libraries/audio/feature/PowerSpectrum.h"
-#include "libraries/audio/feature/SpeechUtils.h"
-#include "libraries/audio/feature/TriFilterbank.h"
+#include "flashlight/libraries/audio/feature/Derivatives.h"
+#include "flashlight/libraries/audio/feature/FeatureParams.h"
+#include "flashlight/libraries/audio/feature/PowerSpectrum.h"
+#include "flashlight/libraries/audio/feature/SpeechUtils.h"
+#include "flashlight/libraries/audio/feature/TriFilterbank.h"
 
 namespace fl {
 namespace lib {

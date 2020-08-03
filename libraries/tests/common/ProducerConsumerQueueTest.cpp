@@ -14,7 +14,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "libraries/common/ProducerConsumerQueue.h"
+#include "flashlight/libraries/common/ProducerConsumerQueue.h"
 
 using namespace fl::lib;
 

@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 
 #include "TestUtils.h"
-#include "libraries/audio/feature/Dct.h"
+#include "flashlight/libraries/audio/feature/Dct.h"
 
 using fl::lib::Dct;
 

@@ -13,9 +13,9 @@
 #include <iterator>
 #include <sstream>
 
-#include "libraries/audio/feature/FeatureParams.h"
-#include "libraries/audio/feature/Mfcc.h"
-#include "libraries/common/System.h"
+#include "flashlight/libraries/audio/feature/FeatureParams.h"
+#include "flashlight/libraries/audio/feature/Mfcc.h"
+#include "flashlight/libraries/common/System.h"
 
 #include "TestUtils.h"
 

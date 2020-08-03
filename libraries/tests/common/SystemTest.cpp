@@ -13,7 +13,7 @@
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
-#include "libraries/common/System.h"
+#include "flashlight/libraries/common/System.h"
 
 using namespace fl::lib;
 

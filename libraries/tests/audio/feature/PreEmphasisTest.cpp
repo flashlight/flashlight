@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 
 #include "TestUtils.h"
-#include "libraries/audio/feature/PreEmphasis.h"
+#include "flashlight/libraries/audio/feature/PreEmphasis.h"
 
 using fl::lib::PreEmphasis;
 

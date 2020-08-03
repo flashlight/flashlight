@@ -12,7 +12,7 @@
 #include <functional>
 #include <numeric>
 
-#include "libraries/language/decoder/LexiconFreeSeq2SeqDecoder.h"
+#include "flashlight/libraries/language/decoder/LexiconFreeSeq2SeqDecoder.h"
 
 namespace fl {
 namespace lib {

@@ -14,7 +14,7 @@
 #include <functional>
 #include <numeric>
 
-#include "libraries/language/decoder/LexiconSeq2SeqDecoder.h"
+#include "flashlight/libraries/language/decoder/LexiconSeq2SeqDecoder.h"
 
 namespace fl {
 namespace lib {

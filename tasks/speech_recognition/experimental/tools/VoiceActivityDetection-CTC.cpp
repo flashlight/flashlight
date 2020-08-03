@@ -39,8 +39,8 @@
 #include "common/FlashlightUtils.h"
 #include "common/Transforms.h"
 #include "criterion/criterion.h"
-#include "libraries/common/Dictionary.h"
-#include "libraries/lm/KenLM.h"
+#include "flashlight/libraries/common/Dictionary.h"
+#include "flashlight/libraries/lm/KenLM.h"
 #include "module/module.h"
 #include "runtime/runtime.h"
 

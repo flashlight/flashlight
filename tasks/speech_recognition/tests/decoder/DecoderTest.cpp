@@ -17,10 +17,10 @@
 #include "criterion/criterion.h"
 #include "decoder/Defines.h"
 #include "decoder/Utils.h"
-#include "libraries/language/decoder/LexiconDecoder.h"
-#include "libraries/language/decoder/Trie.h"
-#include "libraries/language/decoder/lm/KenLM.h"
-#include "libraries/language/dictionary/Dictionary.h"
+#include "flashlight/libraries/language/decoder/LexiconDecoder.h"
+#include "flashlight/libraries/language/decoder/Trie.h"
+#include "flashlight/libraries/language/decoder/lm/KenLM.h"
+#include "flashlight/libraries/language/dictionary/Dictionary.h"
 #include "runtime/runtime.h"
 
 using namespace fl;

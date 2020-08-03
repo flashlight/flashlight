@@ -14,7 +14,7 @@
 #include <flashlight/flashlight.h>
 
 #include "criterion/criterion.h"
-#include "libraries/common/Dictionary.h"
+#include "flashlight/libraries/common/Dictionary.h"
 
 namespace w2l {
 /**

@@ -12,7 +12,7 @@
 
 #include "criterion/criterion.h"
 #include "data/W2lDataset.h"
-#include "libraries/common/Dictionary.h"
+#include "flashlight/libraries/common/Dictionary.h"
 #include "recipes/models/local_prior_match/src/runtime/Logging.h"
 #include "runtime/runtime.h"
 

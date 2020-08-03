@@ -8,14 +8,14 @@
 
 #include <pybind11/pybind11.h>
 
-#include "libraries/criterion/cpu/ForceAlignmentCriterion.h"
-#include "libraries/criterion/cpu/FullConnectionCriterion.h"
-#include "libraries/criterion/cpu/ViterbiPath.h"
+#include "flashlight/libraries/criterion/cpu/ForceAlignmentCriterion.h"
+#include "flashlight/libraries/criterion/cpu/FullConnectionCriterion.h"
+#include "flashlight/libraries/criterion/cpu/ViterbiPath.h"
 
 #ifdef W2L_LIBRARIES_USE_CUDA
-#include "libraries/criterion/cuda/ForceAlignmentCriterion.cuh"
-#include "libraries/criterion/cuda/FullConnectionCriterion.cuh"
-#include "libraries/criterion/cuda/ViterbiPath.cuh"
+#include "flashlight/libraries/criterion/cuda/ForceAlignmentCriterion.cuh"
+#include "flashlight/libraries/criterion/cuda/FullConnectionCriterion.cuh"
+#include "flashlight/libraries/criterion/cuda/ViterbiPath.cuh"
 #endif // W2L_LIBRARIES_USE_CUDA
 
 namespace py = pybind11;
