@@ -8,7 +8,7 @@
 
 #include <gtest/gtest.h>
 
-#include "extensions/common/SequentialBuilder.h"
+#include "flashlight/extensions/common/SequentialBuilder.h"
 
 #include "flashlight/libraries/common/System.h"
 

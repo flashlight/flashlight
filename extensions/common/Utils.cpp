@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "extensions/common/Utils.h"
+#include "flashlight/extensions/common/Utils.h"
 
 #include <flashlight/flashlight.h>
 

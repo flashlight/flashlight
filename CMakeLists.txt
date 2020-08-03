@@ -223,9 +223,7 @@ target_link_libraries(flashlight INTERFACE ArrayFire::${FL_AF_BACKEND})
 set(FLASHLIGHT_CORE_DIR "${PROJECT_SOURCE_DIR}/flashlight")
 include(${FLASHLIGHT_CORE_DIR}/CMakeLists.txt)
 set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} flashlight)
-# To remove the flashlight prefix path (so includes aren't
-# flashlight/flashlight/flashlight.h, etc), glob all files below
-# [root]/flashlight since the instal base path is flashlight
+# Make #include "flashlight/libraries" work by adding to the inner incl dir
 setup_install_headers(${FLASHLIGHT_CORE_DIR} ${FL_INSTALL_INC_DIR})
 
 if (FL_BUILD_CORE_ONLY)
@@ -237,6 +235,9 @@ endif()
 # ------------------------ Extensions ------------------------
 set(FLASHLIGHT_EXT_DIR "${PROJECT_SOURCE_DIR}/extensions")
 include(${FLASHLIGHT_EXT_DIR}/CMakeLists.txt)
+
+# Make #include "flashlight/libraries" work by adding to the inner incl dir
+setup_install_headers(${FLASHLIGHT_EXT_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
 
 # --------------------------- Tasks ---------------------------
 set(FLASHLIGHT_TASKS_DIR "${PROJECT_SOURCE_DIR}/tasks")

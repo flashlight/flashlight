@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "extensions/common/SequentialBuilder.h"
+#include "flashlight/extensions/common/SequentialBuilder.h"
 
 #include <stdexcept>
 
