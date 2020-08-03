@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5.1)
 
-set(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(DIR ${CMAKE_CURRENT_LIST_DIR})
 set(LIBS fl-libraries)
 
 build_test(${DIR}/audio/feature/CeplifterTest.cpp ${LIBS} "")
