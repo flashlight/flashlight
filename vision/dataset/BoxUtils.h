@@ -13,7 +13,7 @@ namespace dataset {
 
 fl::Variable cxcywh_to_xyxy(const fl::Variable& bboxes);
 
-//af::array xyxy_to_cxcywh(const af::array& bboxes);
+af::array xyxy_to_cxcywh(const af::array& bboxes);
 
 //af::array xywh_to_cxcywh(const af::array& bboxes);
 

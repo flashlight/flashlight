@@ -1,4 +1,5 @@
 #include "vision/dataset/Coco.h"
+#include "vision/dataset/BoxUtils.h"
 #include "vision/dataset/Utils.h"
 #include "vision/dataset/Transforms.h"
 
@@ -200,6 +201,7 @@ std::shared_ptr<Dataset> cocoDataLoader(std::vector<std::string> fps) {
 
 using TransformAllFunction = std::function<std::vector<af::array>(const std::vector<af::array>&)>;
 
+
 class TransformAllDataset : public Dataset {
 
 public:
@@ -246,6 +248,30 @@ af::array resize(const af::array& in, const int resize) {
   return af::resize(in, resize, resize, AF_INTERP_BILINEAR);
 }
 
+std::vector<af::array> Normalize(const std::vector<af::array> in) {
+  auto boxes = in[3];
+
+  //std::cout << "Pre Normalize boxes" << std::endl;
+  //af_print(boxes);
+
+  if(! boxes.isempty()) {
+    auto image = in[0];
+    auto w = float(image.dims(0));
+    auto h = float(image.dims(1));
+
+    boxes = xyxy_to_cxcywh(boxes);
+    //std::cout << " Post to cxcywh " << std::endl;
+    //af_print(boxes);
+    const std::vector<float> ratioVector = { w, h, w, h };
+    af::array ratioArray = af::array(4, ratioVector.data());
+    boxes = af::batchFunc(boxes, ratioArray, af::operator/);
+    //std::cout << "Post Normalize boxes " << std::endl;
+    //af_print(boxes);
+  }
+  return { in[0], in[1], in[2], boxes, in[4] };
+
+}
+
 TransformAllFunction randomResize(
     std::vector<int> sizes,
     int maxsize) {
@@ -263,18 +289,23 @@ TransformAllFunction randomResize(
 
 
     af::array boxes = in[3];
+    //std::cout << " Pre resize" << std::endl;
+    //af_print(boxes);
 
     af::array targetSize = in[1];
     if (!boxes.isempty()) {
-      const float ratioWidth = float(originalDims[0]) / float(resizedDims[0]);
-      const float ratioHeight = float(originalDims[1]) / float(resizedDims[1]);
+      const float ratioWidth = float(resizedDims[0]) / float(originalDims[0]);
+      const float ratioHeight = float(resizedDims[1]) / float(originalDims[1]);
 
       const std::vector<float> resizeVector = { ratioWidth, ratioHeight, ratioWidth, ratioHeight };
       af::array resizedArray = af::array(4, resizeVector.data());
       boxes = af::batchFunc(boxes, resizedArray, af::operator*);
+      //std::cout << " Post resize " << std::endl;
+      //af_print(boxes);
 
       long long int imageSizeArray[] = { resizedDims[1], resizedDims[0] };
       targetSize = af::array(2, imageSizeArray);
+
     }
 
     std::vector<af::array> result =  { resizedImage, targetSize, in[2], boxes, in[4] };
@@ -306,9 +337,15 @@ CocoDataset::CocoDataset(
 
   auto merged = merge({images, labels});
 
+  std::shared_ptr<Dataset> transformed;
 
-  std::shared_ptr<Dataset> transformed = std::make_shared<TransformAllDataset>(
-      merged, randomResize({ 256 }, 1000000));
+  transformed = merged;
+
+  transformed = std::make_shared<TransformAllDataset>(
+       transformed, randomResize({256}, 1000000));
+
+  transformed = std::make_shared<TransformAllDataset>(
+      transformed, Normalize);
 
   transformed = std::make_shared<TransformDataset>(
       transformed, transformfns);
@@ -316,7 +353,7 @@ CocoDataset::CocoDataset(
   shuffled_ = std::make_shared<ShuffleDataset>(transformed);
 
   auto next = shuffled_;
-  //auto next = merged;
+  //auto next = transformed;
   //
   auto permfn = [world_size, world_rank](int64_t idx) {
     return (idx * world_size) + world_rank;
@@ -325,13 +362,16 @@ CocoDataset::CocoDataset(
     next, permfn, next->size() / world_size);
 
   auto prefetch = std::make_shared<PrefetchDataset>(sampled, num_threads, prefetch_size);
+  //auto prefetch = sampled;
   batched_ = std::make_shared<BatchTransformDataset<CocoData>>(
       prefetch, batch_size, BatchDatasetPolicy::INCLUDE_LAST, cocoBatchFunc);
 
 }
 
 void CocoDataset::resample() {
-  shuffled_->resample();
+  if(shuffled_) {
+    shuffled_->resample();
+  }
 }
 
 

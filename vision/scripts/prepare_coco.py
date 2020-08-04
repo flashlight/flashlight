@@ -30,21 +30,23 @@ def dump_dataset(image_set, image_folder, args):
         for sample in dataset:
             (_, targets) = sample
             bboxes = targets["boxes"]
-            labels = targets["labels"]
-            # print('bboxes', bboxes)
-            # print('labels', labels)
-            image_id = targets["image_id"].item();
-            filepath = f'{image_id:012}.jpg'
-            out.write(f'{os.path.join(img_folder, filepath)}\t')
-            # Tabs seperate boxes
-            strings = []
-            for (bbox, label) in zip(bboxes, labels):
-                box_with_label = bbox.tolist() + [ label.item() ];
-                box_string = " ".join(map(str, box_with_label));
-                strings.append(box_string);
-            # print(strings)
-            out.write(" ".join(strings))
-            out.write('\n')
+            print(bboxes)
+            break;
+            # labels = targets["labels"]
+            # # print('bboxes', bboxes)
+            # # print('labels', labels)
+            # image_id = targets["image_id"].item();
+            # filepath = f'{image_id:012}.jpg'
+            # out.write(f'{os.path.join(img_folder, filepath)}\t')
+            # # Tabs seperate boxes
+            # strings = []
+            # for (bbox, label) in zip(bboxes, labels):
+                # box_with_label = bbox.tolist() + [ label.item() ];
+                # box_string = " ".join(map(str, box_with_label));
+                # strings.append(box_string);
+            # # print(strings)
+            # out.write(" ".join(strings))
+            # out.write('\n')
 
 
 if __name__ == "__main__":

@@ -13,6 +13,16 @@ namespace fl {
 namespace cv {
 namespace dataset {
 
+af::array xyxy_to_cxcywh(const af::array& bboxes) {
+  auto x0 = bboxes.row(0);
+  auto y0 = bboxes.row(1);
+  auto x1 = bboxes.row(2);
+  auto y1 = bboxes.row(3);
+  af::array result =  af::join(0, (x0 + x1) / 2, (y0 + y1) / 2,
+      (x1 - x0), (y1 - y0));
+  return result;
+}
+
 fl::Variable cxcywh_to_xyxy(const Variable& bboxes) {
   auto transformed = Variable(af::constant(0, 4, bboxes.dims(1)), true);
   auto x_c = bboxes.row(0);

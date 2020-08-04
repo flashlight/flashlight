@@ -234,6 +234,18 @@ int main(int argc, char** argv) {
   // computed
   fl::distributeModuleGrads(detr, reducer);
 
+  auto saveOutput = [](
+      af::array imageSizes,
+      af::array imageIds,
+      af::array boxes,
+      af::array scores,
+      std::string outputFile) {
+      af::saveArray("imageSizes", imageSizes, outputFile.c_str(), false);
+      af::saveArray("imageIds", imageIds, outputFile.c_str(), true);
+      af::saveArray("scores", scores, outputFile.c_str(), true);
+      af::saveArray("bboxes", boxes, outputFile.c_str(), true);
+  };
+
 
   auto matcher = HungarianMatcher(1, 1, 1);
   SetCriterion::LossDict losses;
@@ -244,7 +256,7 @@ int main(int argc, char** argv) {
       0.0,
       losses);
 
-  auto eval_loop = [](
+  auto eval_loop = [saveOutput](
       std::shared_ptr<Detr> model,
       std::shared_ptr<CocoDataset> dataset) {
     int idx = 0;
@@ -254,10 +266,7 @@ int main(int argc, char** argv) {
       std::stringstream ss;
       ss << FLAGS_eval_dir << "detection" << idx << ".array";
       auto output_array = ss.str();
-      af::saveArray("imageSizes", sample.imageSizes, output_array.c_str(), false);
-      af::saveArray("imageIds", sample.imageIds, output_array.c_str(), true);
-      af::saveArray("scores", output[0].array(), output_array.c_str(), true);
-      af::saveArray("bboxes", output[1].array(), output_array.c_str(), true);
+      saveOutput(sample.imageSizes, sample.imageIds, output[1].array(), output[0].array(), ss.str());
       idx++;
     }
     std::stringstream ss;
@@ -272,7 +281,7 @@ int main(int argc, char** argv) {
   const int64_t batch_size_per_gpu = FLAGS_batch_size;
   const int64_t prefetch_threads = 10;
   const int64_t prefetch_size = FLAGS_batch_size;
-  std::string coco_dir = "/private/home/padentomasello/data/coco-new/";
+  std::string coco_dir = "/private/home/padentomasello/data/coco3/";
   //std::string coco_list = "/private/home/padentomasello/data/coco-mini/train.lst";
   //auto coco = cv::dataset::coco(coco_list, val_transforms, FLAGS_batch_size);
 
@@ -325,6 +334,10 @@ int main(int argc, char** argv) {
     //while(true) {
     for(auto& sample : *train_ds) {
       auto images =  { fl::Variable(sample.images, false) };
+
+      //saveOutput(sample.imageSizes, sample.imageIds, sample.target_boxes[0], sample.target_labels[0], 
+          //"/private/home/padentomasello/data/coco/scratch/labels.array");
+      //return 0;
 
       timers["forward"].resume();
       auto output = detr->forward(images);

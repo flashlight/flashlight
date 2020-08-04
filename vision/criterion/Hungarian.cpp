@@ -49,6 +49,8 @@ std::pair<af::array, af::array> HungarianMatcher::matchBatch(
   auto outProbs = softmax(predLogits, 0);
   auto cost_class = transpose((1 - outProbs(targetClasses.array(), af::span)));
   //auto cost_class = (1 - outProbs(targetClasses.array(), af::span));
+  //
+
 
   // Generalized IOU loss
   auto cost_giou =  0 - dataset::generalized_box_iou(
