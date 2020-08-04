@@ -4,7 +4,7 @@
 # flashlight       master     (git, CPU backend)
 # ==================================================================
 
-FROM flml/flashlight:cpu-base-latest
+FROM flml/flashlight:cpu-base-consolidation-latest
 
 # ==================================================================
 # flashlight with CPU backend

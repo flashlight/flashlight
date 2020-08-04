@@ -4,7 +4,7 @@
 # flashlight       master   (git, CUDA backend)
 # ==================================================================
 
-FROM flml/flashlight:cuda-base-latest
+FROM flml/flashlight:cuda-base-consolidation-latest
 
 # ==================================================================
 # flashlight with GPU backend
