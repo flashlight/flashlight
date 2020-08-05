@@ -303,12 +303,12 @@ TransformAllFunction randomResize(
       //std::cout << " Post resize " << std::endl;
       //af_print(boxes);
 
-      long long int imageSizeArray[] = { resizedDims[1], resizedDims[0] };
-      targetSize = af::array(2, imageSizeArray);
+      //long long int imageSizeArray[] = { resizedDims[1], resizedDims[0] };
+      //targetSize = af::array(2, imageSizeArray);
 
     }
 
-    std::vector<af::array> result =  { resizedImage, targetSize, in[2], boxes, in[4] };
+    std::vector<af::array> result =  { resizedImage, in[1], in[2], boxes, in[4] };
     return result;
 
   };

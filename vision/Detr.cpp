@@ -144,9 +144,9 @@ int main(int argc, char** argv) {
 
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-  const std::string label_path = FLAGS_data_dir + "labels.txt";
-  const std::string train_list = FLAGS_data_dir + "train";
-  const std::string val_list = FLAGS_data_dir + "val";
+  //const std::string label_path = FLAGS_data_dir + "labels.txt";
+  //const std::string train_list = FLAGS_data_dir + "train";
+  //const std::string val_list = FLAGS_data_dir + "val";
 
   /////////////////////////
   // Setup distributed training
@@ -210,6 +210,7 @@ int main(int argc, char** argv) {
   //backbone = std::make_shared<Sequential>(resnet34());
   std::string modelPath = "/checkpoint/padentomasello/models/resnet34backbone49";
   fl::load(modelPath, backbone);
+  //backbone->eval();
   auto transformer = std::make_shared<Transformer>(
       modelDim,
       numHeads,
@@ -229,10 +230,12 @@ int main(int argc, char** argv) {
   // synchronize parameters of tje model so that the parameters in each process
   // is the same
   fl::allReduceParameters(detr);
+  //fl::allReduceParameters(backbone);
 
   // Add a hook to synchronize gradients of model parameters as they are
   // computed
   fl::distributeModuleGrads(detr, reducer);
+  //fl::distributeModuleGrads(backbone, reducer);
 
   auto saveOutput = [](
       af::array imageSizes,
@@ -257,11 +260,15 @@ int main(int argc, char** argv) {
       losses);
 
   auto eval_loop = [saveOutput](
+      //std::shared_ptr<Module> backbone,
       std::shared_ptr<Detr> model,
       std::shared_ptr<CocoDataset> dataset) {
+    //backbone->eval();
+    model->eval();
     int idx = 0;
     for(auto& sample : *dataset) {
       auto images =  { fl::Variable(sample.images, false) };
+      //auto features = backbone->forward(images);
       auto output = model->forward(images);
       std::stringstream ss;
       ss << FLAGS_eval_dir << "detection" << idx << ".array";
@@ -275,18 +282,20 @@ int main(int argc, char** argv) {
       << "/private/home/padentomasello/code/flashlight/vision/scripts/eval_coco.py --dir "
       << FLAGS_eval_dir;
     system(ss.str().c_str());
+    //backbone->train();
+    model->train();
   };
 
   //const int64_t batch_size_per_gpu = FLAGS_batch_size / FLAGS_world_size;
   const int64_t batch_size_per_gpu = FLAGS_batch_size;
   const int64_t prefetch_threads = 10;
   const int64_t prefetch_size = FLAGS_batch_size;
-  std::string coco_dir = "/private/home/padentomasello/data/coco3/";
+  std::string coco_dir = FLAGS_data_dir;
   //std::string coco_list = "/private/home/padentomasello/data/coco-mini/train.lst";
   //auto coco = cv::dataset::coco(coco_list, val_transforms, FLAGS_batch_size);
 
   auto train_ds = std::make_shared<CocoDataset>(
-      coco_dir + "train.lst",
+      coco_dir + "val.lst",
       val_transforms,
       FLAGS_world_rank,
       FLAGS_world_size,
@@ -304,6 +313,8 @@ int main(int argc, char** argv) {
       batch_size_per_gpu);
   //SGDOptimizer opt(detr.params(), FLAGS_lr, FLAGS_momentum, FLAGS_wd);
   AdamOptimizer opt(detr->params(), FLAGS_lr);
+  //AdamOptimizer opt2(backbone->params(), FLAGS_lr * 0.1);
+  //AdamOptimizer backbone_opt(backbone->params(), FLAGS_lr * 0.1);
 
   // Small utility functions to load and save models
   //auto saveModel = [&detr](int epoch) {
@@ -340,6 +351,8 @@ int main(int argc, char** argv) {
       //return 0;
 
       timers["forward"].resume();
+      //auto features = backbone->forward(images);
+      //auto features = input;
       auto output = detr->forward(images);
       output[0].array().eval();
       output[1].array().eval();
@@ -385,12 +398,14 @@ int main(int argc, char** argv) {
 
       reducer->finalize();
       opt.step();
+      //opt2.step();
 
       opt.zeroGrad();
+      //opt2.zeroGrad();
       //////////////////////////
       // Metrics
       /////////////////////////
-      if(++idx % 10 == 0) {
+      if(++idx % 10 == 0 || true) {
         double total_time = timers["total"].value();
         double sample_per_second = (idx * FLAGS_batch_size * FLAGS_world_size) / total_time;
         double forward_time = timers["forward"].value();
@@ -415,7 +430,8 @@ int main(int argc, char** argv) {
     for(auto meter : meters) {
       meter.second.reset();
     }
-      if(e % 10 == 0 && e > 0) {
+      if(e % 100 == 0 && e > 0) {
+        //eval_loop(backbone, detr, val_ds);
         eval_loop(detr, val_ds);
         //saveModel(e);
       }
