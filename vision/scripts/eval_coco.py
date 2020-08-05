@@ -9,6 +9,7 @@ from datasets.coco import build as build_coco
 from datasets.coco_eval import CocoEvaluator
 import box_ops
 import glob
+import os
 
 
 # from datasets.coco_eval import CocoEvaluator
@@ -60,7 +61,7 @@ def main(directory):
     # imageIds = [f'/datasets01/COCO/022719/train2017/{id:012d}.jpg' for id in imageIds]
 
     postprocess = PostProcess();
-    for f in glob.glob(directory + 'detection*.array'):
+    for f in glob.glob(os.path.join(directory, 'detection*.array')):
 
         imageSizes = af.read_array(f, key='imageSizes').to_ndarray()
         imageSizes = np.transpose(imageSizes, (1, 0))

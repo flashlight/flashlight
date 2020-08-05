@@ -23,7 +23,7 @@
 #include "vision/nn/Transformer.h"
 #include "vision/criterion/SetCriterion.h"
 
-DEFINE_string(data_dir, "/datasets01_101/imagenet_full_size/061417/", "Directory of imagenet data");
+DEFINE_string(data_dir, "/private/home/padentomasello/data/coco3/", "Directory of imagenet data");
 DEFINE_double(lr, 0.0001f, "Learning rate");
 DEFINE_double(momentum, 0.9f, "Momentum");
 
@@ -46,7 +46,7 @@ DEFINE_uint64(batch_size, 256, "Total batch size across all gpus");
 DEFINE_string(checkpointpath, "/tmp/model", "Checkpointing prefix path");
 DEFINE_int64(checkpoint, -1, "Load from checkpoint");
 
-DEFINE_string(eval_dir, "/private/home/padentomasello/data/coco/output", "Directory to dump images to run evaluation script on");
+DEFINE_string(eval_dir, "/private/home/padentomasello/data/coco/output/", "Directory to dump images to run evaluation script on");
 
 
 using namespace fl;
@@ -295,7 +295,7 @@ int main(int argc, char** argv) {
   //auto coco = cv::dataset::coco(coco_list, val_transforms, FLAGS_batch_size);
 
   auto train_ds = std::make_shared<CocoDataset>(
-      coco_dir + "val.lst",
+      coco_dir + "train.lst",
       val_transforms,
       FLAGS_world_rank,
       FLAGS_world_size,
@@ -405,7 +405,7 @@ int main(int argc, char** argv) {
       //////////////////////////
       // Metrics
       /////////////////////////
-      if(++idx % 10 == 0 || true) {
+      if(++idx % 10 == 0) {
         double total_time = timers["total"].value();
         double sample_per_second = (idx * FLAGS_batch_size * FLAGS_world_size) / total_time;
         double forward_time = timers["forward"].value();
@@ -430,7 +430,7 @@ int main(int argc, char** argv) {
     for(auto meter : meters) {
       meter.second.reset();
     }
-      if(e % 100 == 0 && e > 0) {
+      if(e % 10 == 0 && e > 0) {
         //eval_loop(backbone, detr, val_ds);
         eval_loop(detr, val_ds);
         //saveModel(e);
