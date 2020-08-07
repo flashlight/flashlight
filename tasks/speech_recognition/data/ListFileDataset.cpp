@@ -2,7 +2,7 @@
 
 #include "ListFileDataset.h"
 
-#include "data/Sound.h"
+#include "flashlight/tasks/speech_recognition/data/Sound.h"
 
 #include "flashlight/libraries/common/String.h"
 

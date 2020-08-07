@@ -8,13 +8,13 @@
 
 #pragma once
 
-#include "criterion/AutoSegmentationCriterion.h"
-#include "criterion/ConnectionistTemporalClassificationCriterion.h"
-#include "criterion/CriterionUtils.h"
-#include "criterion/Defines.h"
-#include "criterion/ForceAlignmentCriterion.h"
-#include "criterion/FullConnectionCriterion.h"
-#include "criterion/LinearSegmentationCriterion.h"
-#include "criterion/Seq2SeqCriterion.h"
-#include "criterion/SequenceCriterion.h"
-#include "criterion/TransformerCriterion.h"
+#include "flashlight/tasks/speech_recognition/criterion/AutoSegmentationCriterion.h"
+#include "flashlight/tasks/speech_recognition/criterion/ConnectionistTemporalClassificationCriterion.h"
+#include "flashlight/tasks/speech_recognition/criterion/CriterionUtils.h"
+#include "flashlight/tasks/speech_recognition/criterion/Defines.h"
+#include "flashlight/tasks/speech_recognition/criterion/ForceAlignmentCriterion.h"
+#include "flashlight/tasks/speech_recognition/criterion/FullConnectionCriterion.h"
+#include "flashlight/tasks/speech_recognition/criterion/LinearSegmentationCriterion.h"
+#include "flashlight/tasks/speech_recognition/criterion/Seq2SeqCriterion.h"
+#include "flashlight/tasks/speech_recognition/criterion/SequenceCriterion.h"
+#include "flashlight/tasks/speech_recognition/criterion/TransformerCriterion.h"

@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "criterion/ForceAlignmentCriterion.h"
+#include "flashlight/tasks/speech_recognition/criterion/ForceAlignmentCriterion.h"
 
 namespace fl {
 namespace tasks {

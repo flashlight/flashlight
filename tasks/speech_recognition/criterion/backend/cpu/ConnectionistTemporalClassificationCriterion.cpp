@@ -6,8 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "criterion/ConnectionistTemporalClassificationCriterion.h"
-#include "criterion/CriterionUtils.h"
+#include "flashlight/tasks/speech_recognition/criterion/ConnectionistTemporalClassificationCriterion.h"
+#include "flashlight/tasks/speech_recognition/criterion/CriterionUtils.h"
 #include "flashlight/libraries/sequence/criterion/cpu/CriterionUtils.h"
 
 using namespace fl;

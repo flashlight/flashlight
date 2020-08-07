@@ -7,7 +7,7 @@
  */
 #include <glog/logging.h>
 #include <runtime/Serial.h>
-#include "common/Utils.h"
+#include "flashlight/tasks/speech_recognition/common/Utils.h"
 #include "recipes/models/utilities/convlm_serializer/Utils.h"
 
 using std::shared_ptr;

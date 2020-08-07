@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "runtime/Optimizer.h"
+#include "flashlight/tasks/speech_recognition/runtime/Optimizer.h"
 
 #include <glog/logging.h>
 

@@ -19,10 +19,10 @@
 
 #include <flashlight/flashlight.h>
 
-#include "common/Defines.h"
-#include "data/BlobsDataset.h"
-#include "data/ListFileDataset.h"
-#include "data/ListFilesDataset.h"
+#include "flashlight/tasks/speech_recognition/common/Defines.h"
+#include "flashlight/tasks/speech_recognition/data/BlobsDataset.h"
+#include "flashlight/tasks/speech_recognition/data/ListFileDataset.h"
+#include "flashlight/tasks/speech_recognition/data/ListFilesDataset.h"
 
 #include "flashlight/libraries/common/String.h"
 #include "flashlight/libraries/language/dictionary/Utils.h"

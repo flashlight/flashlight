@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "criterion/CriterionUtils.h"
+#include "flashlight/tasks/speech_recognition/criterion/CriterionUtils.h"
 
 #include <flashlight/common/cuda.h>
 

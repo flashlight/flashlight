@@ -11,8 +11,8 @@
 #include <flashlight/autograd/autograd.h>
 #include <flashlight/common/cuda.h>
 
-#include "criterion/ConnectionistTemporalClassificationCriterion.h"
-#include "criterion/CriterionUtils.h"
+#include "flashlight/tasks/speech_recognition/criterion/ConnectionistTemporalClassificationCriterion.h"
+#include "flashlight/tasks/speech_recognition/criterion/CriterionUtils.h"
 
 #include "flashlight/extensions/common/DistributedUtils.h"
 #include "flashlight/libraries/sequence/criterion/cuda/CriterionUtils.cuh"

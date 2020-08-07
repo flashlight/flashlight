@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-#include "common/Defines.h"
+#include "flashlight/tasks/speech_recognition/common/Defines.h"
 #include "flashlight/libraries/common/String.h"
 #include "flashlight/libraries/language/dictionary/Dictionary.h"
 #include "flashlight/libraries/language/dictionary/Utils.h"

@@ -11,9 +11,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "common/Defines.h"
-#include "data/Featurize.h"
-#include "data/ListFilesDataset.h"
+#include "flashlight/tasks/speech_recognition/common/Defines.h"
+#include "flashlight/tasks/speech_recognition/data/Featurize.h"
+#include "flashlight/tasks/speech_recognition/data/ListFilesDataset.h"
 
 #include "flashlight/libraries/common/String.h"
 #include "flashlight/libraries/common/System.h"

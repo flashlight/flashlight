@@ -6,8 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "criterion/ForceAlignmentCriterion.h"
-#include "criterion/CriterionUtils.h"
+#include "flashlight/tasks/speech_recognition/criterion/ForceAlignmentCriterion.h"
+#include "flashlight/tasks/speech_recognition/criterion/CriterionUtils.h"
 
 #include "flashlight/extensions/common/DistributedUtils.h"
 #include "flashlight/libraries/sequence/criterion/cpu/ForceAlignmentCriterion.h"

@@ -12,7 +12,7 @@
 #include <functional>
 #include <sstream>
 
-#include "data/Sound.h"
+#include "flashlight/tasks/speech_recognition/data/Sound.h"
 #include "flashlight/libraries/common/System.h"
 
 using namespace fl::lib;

@@ -11,9 +11,9 @@
 #include <memory>
 
 #include "SequenceCriterion.h"
-#include "criterion/Defines.h"
-#include "criterion/attention/attention.h"
-#include "criterion/attention/window.h"
+#include "flashlight/tasks/speech_recognition/criterion/Defines.h"
+#include "flashlight/tasks/speech_recognition/criterion/attention/attention.h"
+#include "flashlight/tasks/speech_recognition/criterion/attention/window.h"
 
 #include "flashlight/extensions/common/DistributedUtils.h"
 

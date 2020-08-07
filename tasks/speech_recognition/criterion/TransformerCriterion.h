@@ -10,11 +10,11 @@
 
 #include <memory>
 
-#include "criterion/Defines.h"
-#include "criterion/Seq2SeqCriterion.h"
-#include "criterion/SequenceCriterion.h"
-#include "criterion/attention/attention.h"
-#include "criterion/attention/window.h"
+#include "flashlight/tasks/speech_recognition/criterion/Defines.h"
+#include "flashlight/tasks/speech_recognition/criterion/Seq2SeqCriterion.h"
+#include "flashlight/tasks/speech_recognition/criterion/SequenceCriterion.h"
+#include "flashlight/tasks/speech_recognition/criterion/attention/attention.h"
+#include "flashlight/tasks/speech_recognition/criterion/attention/window.h"
 
 #include "flashlight/extensions/common/DistributedUtils.h"
 #include "flashlight/contrib/modules/Transformer.h"

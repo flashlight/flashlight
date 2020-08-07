@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "data/SpeechSample.h"
+#include "flashlight/tasks/speech_recognition/data/SpeechSample.h"
 
 namespace fl {
 namespace tasks {

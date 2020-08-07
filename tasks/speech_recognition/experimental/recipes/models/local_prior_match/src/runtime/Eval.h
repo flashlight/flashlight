@@ -10,11 +10,11 @@
 
 #include <flashlight/flashlight.h>
 
-#include "criterion/criterion.h"
-#include "data/W2lDataset.h"
+#include "flashlight/tasks/speech_recognition/criterion/criterion.h"
+#include "flashlight/tasks/speech_recognition/data/W2lDataset.h"
 #include "flashlight/libraries/common/Dictionary.h"
 #include "recipes/models/local_prior_match/src/runtime/Logging.h"
-#include "runtime/runtime.h"
+#include "flashlight/tasks/speech_recognition/runtime/runtime.h"
 
 namespace w2l {
 void evalOutput(

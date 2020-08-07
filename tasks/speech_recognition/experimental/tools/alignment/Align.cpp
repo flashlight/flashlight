@@ -9,10 +9,10 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "criterion/criterion.h"
+#include "flashlight/tasks/speech_recognition/criterion/criterion.h"
 #include "flashlight/libraries/common/Dictionary.h"
 #include "module/module.h"
-#include "runtime/runtime.h"
+#include "flashlight/tasks/speech_recognition/runtime/runtime.h"
 
 #include "tools/alignment/Utils.h"
 

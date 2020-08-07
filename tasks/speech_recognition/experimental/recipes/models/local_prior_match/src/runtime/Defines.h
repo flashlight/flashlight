@@ -12,7 +12,7 @@
 
 #include <gflags/gflags.h>
 
-#include "common/Defines.h"
+#include "flashlight/tasks/speech_recognition/common/Defines.h"
 
 namespace w2l {
 

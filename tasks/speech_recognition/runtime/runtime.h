@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "runtime/Helpers.h"
-#include "runtime/Logger.h"
-#include "runtime/Optimizer.h"
-#include "runtime/Serial.h"
-#include "runtime/SpeechStatMeter.h"
+#include "flashlight/tasks/speech_recognition/runtime/Helpers.h"
+#include "flashlight/tasks/speech_recognition/runtime/Logger.h"
+#include "flashlight/tasks/speech_recognition/runtime/Optimizer.h"
+#include "flashlight/tasks/speech_recognition/runtime/Serial.h"
+#include "flashlight/tasks/speech_recognition/runtime/SpeechStatMeter.h"

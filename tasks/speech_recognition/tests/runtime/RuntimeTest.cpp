@@ -14,7 +14,7 @@
 
 #include <flashlight/flashlight.h>
 
-#include "runtime/runtime.h"
+#include "flashlight/tasks/speech_recognition/runtime/runtime.h"
 
 #include "flashlight/libraries/common/System.h"
 

@@ -13,7 +13,7 @@
 
 #include <flashlight/flashlight.h>
 
-#include "criterion/criterion.h"
+#include "flashlight/tasks/speech_recognition/criterion/criterion.h"
 #include "flashlight/libraries/common/Dictionary.h"
 
 namespace w2l {

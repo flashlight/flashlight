@@ -11,8 +11,8 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "common/FlashlightUtils.h"
-#include "common/Transforms.h"
+#include "flashlight/tasks/speech_recognition/common/FlashlightUtils.h"
+#include "flashlight/tasks/speech_recognition/common/Transforms.h"
 #include "recipes/models/local_prior_match/src/runtime/Logging.h"
 
 namespace w2l {

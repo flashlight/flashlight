@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "criterion/attention/MultiHeadAttention.h"
+#include "flashlight/tasks/speech_recognition/criterion/attention/MultiHeadAttention.h"
 
 #include <cmath>
 

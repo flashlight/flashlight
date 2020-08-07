@@ -15,9 +15,9 @@
 
 #include <flashlight/flashlight.h>
 
-#include "criterion/criterion.h"
+#include "flashlight/tasks/speech_recognition/criterion/criterion.h"
 #include "recipes/models/local_prior_match/src/runtime/Defines.h"
-#include "runtime/Logger.h"
+#include "flashlight/tasks/speech_recognition/runtime/Logger.h"
 
 namespace w2l {
 struct SSLDatasetMeters {

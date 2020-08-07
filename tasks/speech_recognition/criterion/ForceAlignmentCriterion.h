@@ -10,8 +10,8 @@
 
 #include <flashlight/flashlight.h>
 
-#include "criterion/CriterionUtils.h"
-#include "criterion/Defines.h"
+#include "flashlight/tasks/speech_recognition/criterion/CriterionUtils.h"
+#include "flashlight/tasks/speech_recognition/criterion/Defines.h"
 
 namespace fl {
 namespace tasks {

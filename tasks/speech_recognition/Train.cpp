@@ -19,10 +19,10 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "common/Defines.h"
-#include "criterion/criterion.h"
-#include "decoder/Utils.h"
-#include "runtime/runtime.h"
+#include "flashlight/tasks/speech_recognition/common/Defines.h"
+#include "flashlight/tasks/speech_recognition/criterion/criterion.h"
+#include "flashlight/tasks/speech_recognition/decoder/Utils.h"
+#include "flashlight/tasks/speech_recognition/runtime/runtime.h"
 
 #include "flashlight/extensions/common/SequentialBuilder.h"
 #include "flashlight/extensions/common/DistributedUtils.h"

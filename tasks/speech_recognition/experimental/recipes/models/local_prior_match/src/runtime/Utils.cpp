@@ -9,9 +9,9 @@
 
 #include "recipes/models/local_prior_match/src/runtime/Utils.h"
 
-#include "common/Defines.h"
-#include "common/Transforms.h"
-#include "common/Utils.h"
+#include "flashlight/tasks/speech_recognition/common/Defines.h"
+#include "flashlight/tasks/speech_recognition/common/Transforms.h"
+#include "flashlight/tasks/speech_recognition/common/Utils.h"
 #include "recipes/models/local_prior_match/src/runtime/Defines.h"
 
 namespace w2l {

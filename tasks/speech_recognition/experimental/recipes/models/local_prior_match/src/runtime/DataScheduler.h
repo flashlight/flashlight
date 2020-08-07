@@ -15,7 +15,7 @@
 
 #include <flashlight/flashlight.h>
 
-#include "data/W2lDataset.h"
+#include "flashlight/tasks/speech_recognition/data/W2lDataset.h"
 
 namespace w2l {
 

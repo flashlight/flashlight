@@ -35,14 +35,14 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "common/Defines.h"
-#include "common/FlashlightUtils.h"
-#include "common/Transforms.h"
-#include "criterion/criterion.h"
+#include "flashlight/tasks/speech_recognition/common/Defines.h"
+#include "flashlight/tasks/speech_recognition/common/FlashlightUtils.h"
+#include "flashlight/tasks/speech_recognition/common/Transforms.h"
+#include "flashlight/tasks/speech_recognition/criterion/criterion.h"
 #include "flashlight/libraries/common/Dictionary.h"
 #include "flashlight/libraries/lm/KenLM.h"
 #include "module/module.h"
-#include "runtime/runtime.h"
+#include "flashlight/tasks/speech_recognition/runtime/runtime.h"
 
 namespace {
 

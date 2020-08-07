@@ -13,7 +13,7 @@
 #include <arrayfire.h>
 #include <gtest/gtest.h>
 
-#include "data/ListFileDataset.h"
+#include "flashlight/tasks/speech_recognition/data/ListFileDataset.h"
 
 #include "flashlight/libraries/common/String.h"
 #include "flashlight/libraries/common/System.h"

@@ -2,7 +2,7 @@
 #include <glog/logging.h>
 #include <module/module.h>
 #include <fstream>
-#include "common/Utils.h"
+#include "flashlight/tasks/speech_recognition/common/Utils.h"
 
 using fl::Variable;
 using std::dynamic_pointer_cast;

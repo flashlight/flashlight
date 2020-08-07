@@ -60,16 +60,12 @@ target_link_libraries(
   flashlight
   )
 
-
 target_include_directories(
   flashlight-task-speech-recognition
   PUBLIC
   ${GFLAGS_INCLUDE_DIRS}
   ${GLOG_INCLUDE_DIRS}
   ${MKL_INCLUDE_DIR}
-  # some includes are relative to the asr root path
-  # TODO(jacobkahn): improve this...?
-  $<BUILD_INTERFACE:${FL_TASK_SPEECH_RECOGNITION_ROOT_DIR}>
   )
 
 # ------------------------ Components ------------------------

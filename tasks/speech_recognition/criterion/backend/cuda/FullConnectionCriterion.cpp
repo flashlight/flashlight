@@ -6,11 +6,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "criterion/FullConnectionCriterion.h"
+#include "flashlight/tasks/speech_recognition/criterion/FullConnectionCriterion.h"
 
 #include <flashlight/common/cuda.h>
 
-#include "criterion/CriterionUtils.h"
+#include "flashlight/tasks/speech_recognition/criterion/CriterionUtils.h"
 #include "flashlight/libraries/sequence/criterion/cuda/FullConnectionCriterion.cuh"
 
 using fl::Variable;

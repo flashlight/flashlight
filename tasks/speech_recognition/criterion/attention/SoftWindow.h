@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "criterion/attention/WindowBase.h"
+#include "flashlight/tasks/speech_recognition/criterion/attention/WindowBase.h"
 
 namespace fl {
 namespace tasks {

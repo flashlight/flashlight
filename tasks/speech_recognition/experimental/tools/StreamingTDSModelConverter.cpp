@@ -17,10 +17,10 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "common/Defines.h"
-#include "common/FlashlightUtils.h"
-#include "common/Transforms.h"
-#include "criterion/criterion.h"
+#include "flashlight/tasks/speech_recognition/common/Defines.h"
+#include "flashlight/tasks/speech_recognition/common/FlashlightUtils.h"
+#include "flashlight/tasks/speech_recognition/common/Transforms.h"
+#include "flashlight/tasks/speech_recognition/criterion/criterion.h"
 #include "inference/module/feature/feature.h"
 #include "inference/module/module.h"
 #include "inference/module/nn/nn.h"
@@ -28,7 +28,7 @@
 #include "module/SpecAugment.h"
 #include "module/TDSBlock.h"
 #include "module/W2lModule.h"
-#include "runtime/runtime.h"
+#include "flashlight/tasks/speech_recognition/runtime/runtime.h"
 
 DEFINE_string(outdir, "", "");
 

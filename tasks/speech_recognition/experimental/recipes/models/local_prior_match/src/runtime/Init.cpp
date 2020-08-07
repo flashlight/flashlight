@@ -14,10 +14,10 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "common/FlashlightUtils.h"
+#include "flashlight/tasks/speech_recognition/common/FlashlightUtils.h"
 #include "recipes/models/local_prior_match/src/runtime/Defines.h"
 #include "recipes/models/local_prior_match/src/runtime/Utils.h"
-#include "runtime/Serial.h"
+#include "flashlight/tasks/speech_recognition/runtime/Serial.h"
 
 namespace w2l {
 std::unordered_map<std::string, std::string> setFlags(int argc, char** argv) {

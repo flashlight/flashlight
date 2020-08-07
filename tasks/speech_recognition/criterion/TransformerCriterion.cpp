@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <queue>
 
-#include "common/Defines.h"
+#include "flashlight/tasks/speech_recognition/common/Defines.h"
 
 using namespace fl;
 using namespace fl::ext;

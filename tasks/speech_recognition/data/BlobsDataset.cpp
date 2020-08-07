@@ -11,8 +11,8 @@
 #include <numeric>
 #include <sstream>
 
-#include "common/Defines.h"
-#include "data/BlobsDataset.h"
+#include "flashlight/tasks/speech_recognition/common/Defines.h"
+#include "flashlight/tasks/speech_recognition/data/BlobsDataset.h"
 #include "flashlight/libraries/common/String.h"
 #include "flashlight/libraries/common/System.h"
 

@@ -13,7 +13,7 @@
 
 #include <flashlight/flashlight.h>
 
-#include "data/Featurize.h"
+#include "flashlight/tasks/speech_recognition/data/Featurize.h"
 #include "flashlight/libraries/language/dictionary/Dictionary.h"
 
 namespace fl {

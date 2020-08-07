@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "criterion/attention/MedianWindow.h"
-#include "criterion/attention/SoftPretrainWindow.h"
-#include "criterion/attention/SoftWindow.h"
-#include "criterion/attention/StepWindow.h"
-#include "criterion/attention/WindowBase.h"
+#include "flashlight/tasks/speech_recognition/criterion/attention/MedianWindow.h"
+#include "flashlight/tasks/speech_recognition/criterion/attention/SoftPretrainWindow.h"
+#include "flashlight/tasks/speech_recognition/criterion/attention/SoftWindow.h"
+#include "flashlight/tasks/speech_recognition/criterion/attention/StepWindow.h"
+#include "flashlight/tasks/speech_recognition/criterion/attention/WindowBase.h"

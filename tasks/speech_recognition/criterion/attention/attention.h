@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "criterion/attention/AttentionBase.h"
-#include "criterion/attention/ContentAttention.h"
-#include "criterion/attention/Defines.h"
-#include "criterion/attention/LocationAttention.h"
-#include "criterion/attention/MultiHeadAttention.h"
+#include "flashlight/tasks/speech_recognition/criterion/attention/AttentionBase.h"
+#include "flashlight/tasks/speech_recognition/criterion/attention/ContentAttention.h"
+#include "flashlight/tasks/speech_recognition/criterion/attention/Defines.h"
+#include "flashlight/tasks/speech_recognition/criterion/attention/LocationAttention.h"
+#include "flashlight/tasks/speech_recognition/criterion/attention/MultiHeadAttention.h"

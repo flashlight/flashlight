@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "runtime/Helpers.h"
+#include "flashlight/tasks/speech_recognition/runtime/Helpers.h"
 
 #include <glog/logging.h>
 #include <random>

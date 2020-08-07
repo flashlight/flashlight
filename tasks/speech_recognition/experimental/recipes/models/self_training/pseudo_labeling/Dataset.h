@@ -15,7 +15,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "common/Utils.h"
+#include "flashlight/tasks/speech_recognition/common/Utils.h"
 
 namespace filter {
 namespace dataset {

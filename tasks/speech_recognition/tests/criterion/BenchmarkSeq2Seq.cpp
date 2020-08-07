@@ -14,8 +14,8 @@
 #include <arrayfire.h>
 #include <array>
 
-#include "criterion/attention/attention.h"
-#include "criterion/criterion.h"
+#include "flashlight/tasks/speech_recognition/criterion/attention/attention.h"
+#include "flashlight/tasks/speech_recognition/criterion/criterion.h"
 
 using namespace fl;
 using namespace fl::tasks::asr;
