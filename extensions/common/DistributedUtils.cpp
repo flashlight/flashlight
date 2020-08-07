@@ -6,20 +6,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/extensions/common/Utils.h"
+#include "flashlight/extensions/common/DistributedUtils.h"
 
 #include <flashlight/flashlight.h>
 
 namespace fl {
 namespace ext {
-
-int64_t numTotalParams(std::shared_ptr<fl::Module> module) {
-  int64_t params = 0;
-  for (auto& p : module->params()) {
-    params += p.elements();
-  }
-  return params;
-}
 
 void initDistributed(
     int worldRank,

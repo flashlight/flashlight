@@ -10,7 +10,7 @@
 
 #include <string>
 
-#include "flashlight/extensions/common/Utils.h"
+#include "flashlight/extensions/common/DistributedUtils.h"
 
 namespace fl {
 namespace tasks {

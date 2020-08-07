@@ -14,7 +14,7 @@
 #include "criterion/ConnectionistTemporalClassificationCriterion.h"
 #include "criterion/CriterionUtils.h"
 
-#include "flashlight/extensions/common/Utils.h"
+#include "flashlight/extensions/common/DistributedUtils.h"
 #include "flashlight/libraries/sequence/criterion/cuda/CriterionUtils.cuh"
 
 using namespace fl;

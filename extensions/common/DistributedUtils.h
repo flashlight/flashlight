@@ -35,11 +35,6 @@ template <typename T>
 std::vector<T> afToVector(const fl::Variable& var);
 
 /**
- * Compute the total number of parameters of a fl::Module.
- */
-int64_t numTotalParams(std::shared_ptr<fl::Module> module);
-
-/**
  * Call Flashlight API to initialize distributed environment.
  */
 void initDistributed(

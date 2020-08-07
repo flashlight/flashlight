@@ -21,6 +21,14 @@
 namespace fl {
 
 /**
+ * Compute the total number of parameters of a fl::Module.
+ *
+ * @param[in] module The module over which to compute params
+ * @return the number of parameters in the module
+ */
+int64_t numTotalParams(std::shared_ptr<fl::Module> module);
+
+/**
  * Returns true if the parameters of two modules are of same type and are
  * element-wise equal within given tolerance limit.
  *

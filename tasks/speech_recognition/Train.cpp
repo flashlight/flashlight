@@ -25,7 +25,7 @@
 #include "runtime/runtime.h"
 
 #include "flashlight/extensions/common/SequentialBuilder.h"
-#include "flashlight/extensions/common/Utils.h"
+#include "flashlight/extensions/common/DistributedUtils.h"
 #include "flashlight/libraries/common/System.h"
 #include "flashlight/libraries/language/dictionary/Dictionary.h"
 #include "flashlight/libraries/language/dictionary/Utils.h"
