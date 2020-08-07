@@ -19,6 +19,9 @@
 
 #include "TestUtils.h"
 
+using fl::lib::pathsConcat;
+using namespace fl::lib::audio;
+
 namespace {
 std::string loadPath = "";
 
@@ -31,8 +34,6 @@ auto loadData = [](const std::string& filepath) {
   return data;
 };
 } // namespace
-
-using namespace fl::lib;
 
 // HTK Code used -
 //    HCopy -C config.mfcc sa1.wav sa1-mfcc.htk

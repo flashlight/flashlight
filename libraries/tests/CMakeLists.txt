@@ -20,7 +20,7 @@ build_test(${DIR}/common/ProducerConsumerQueueTest.cpp ${LIBS} "")
 build_test(${DIR}/common/StringTest.cpp ${LIBS} "")
 build_test(${DIR}/common/SystemTest.cpp ${LIBS} "")
 build_test(
-  ${DIR}/language/dictionary/DictionaryTest.cpp
+  ${DIR}/text/dictionary/DictionaryTest.cpp
   ${LIBS}
-  "DICTIONARY_TEST_DATADIR=\"${DIR}/language/dictionary\""
+  "DICTIONARY_TEST_DATADIR=\"${DIR}/text/dictionary\""
   )

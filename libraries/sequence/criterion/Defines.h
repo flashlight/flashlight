@@ -10,6 +10,7 @@
 
 namespace fl {
 namespace lib {
+namespace seq {
 
 enum class CriterionScaleMode {
   NONE = 0,
@@ -18,5 +19,6 @@ enum class CriterionScaleMode {
   TARGET_SZ = 3,
   TARGET_SZ_SQRT = 4,
 };
-}
+} // namespace seq
+} // namespace lib
 } // namespace fl

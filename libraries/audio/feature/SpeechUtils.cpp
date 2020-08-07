@@ -22,6 +22,7 @@ extern "C" {
 
 namespace fl {
 namespace lib {
+namespace audio {
 
 std::vector<float> frameSignal(
     const std::vector<float>& input,
@@ -86,5 +87,6 @@ std::vector<float> cblasGemm(
 
   return matC;
 };
+} // namespace audio
 } // namespace lib
 } // namespace fl

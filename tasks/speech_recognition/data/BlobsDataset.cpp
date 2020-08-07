@@ -11,12 +11,14 @@
 #include <numeric>
 #include <sstream>
 
-#include "flashlight/tasks/speech_recognition/common/Defines.h"
-#include "flashlight/tasks/speech_recognition/data/BlobsDataset.h"
 #include "flashlight/libraries/common/String.h"
 #include "flashlight/libraries/common/System.h"
+#include "flashlight/tasks/speech_recognition/common/Defines.h"
+#include "flashlight/tasks/speech_recognition/data/BlobsDataset.h"
 
 using namespace fl::lib;
+using fl::lib::text::DictionaryMap;
+using fl::lib::text::LexiconMap;
 
 namespace fl {
 namespace tasks {

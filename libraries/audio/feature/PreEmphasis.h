@@ -13,6 +13,7 @@
 
 namespace fl {
 namespace lib {
+namespace audio {
 
 // Pre-emphasise the signal by applying the first order difference equation
 //    s'(n) = s(n) - k * s(n-1)  where k in [0, 1)
@@ -29,5 +30,6 @@ class PreEmphasis {
   float preemCoef_;
   int windowLength_;
 };
+} // namespace audio
 } // namespace lib
 } // namespace fl

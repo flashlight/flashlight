@@ -14,12 +14,13 @@
 #include "flashlight/tasks/speech_recognition/common/Defines.h"
 #include "flashlight/tasks/speech_recognition/data/Featurize.h"
 #include "flashlight/tasks/speech_recognition/data/ListFilesDataset.h"
-#include "flashlight/tasks/speech_recognition/decoder/Utils.h"
+#include "flashlight/tasks/speech_recognition/decoder/TranscriptionUtils.h"
 
 #include "flashlight/libraries/audio/feature/SpeechUtils.h"
 
 using namespace fl;
-using namespace fl::lib;
+using namespace fl::lib::audio;
+using namespace fl::lib::text;
 using namespace fl::tasks::asr;
 
 template <typename T>

@@ -13,8 +13,8 @@
 
 #include <flashlight/flashlight.h>
 
+#include "flashlight/libraries/text/dictionary/Dictionary.h"
 #include "flashlight/tasks/speech_recognition/data/Featurize.h"
-#include "flashlight/libraries/language/dictionary/Dictionary.h"
 
 namespace fl {
 namespace tasks {
@@ -23,7 +23,7 @@ namespace asr {
 class Dataset : public fl::Dataset {
  public:
   Dataset(
-      const lib::DictionaryMap& dicts,
+      const lib::text::DictionaryMap& dicts,
       int64_t batchsize,
       int worldrank = 0,
       int worldsize = 1);
@@ -46,7 +46,7 @@ class Dataset : public fl::Dataset {
   void shuffle(int seed);
 
  protected:
-  lib::DictionaryMap dicts_;
+  lib::text::DictionaryMap dicts_;
 
   int64_t sampleCount_; // Num individual samples in the dataset before batching
   int64_t batchSize_;

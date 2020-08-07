@@ -22,20 +22,21 @@
 #include "flashlight/tasks/speech_recognition/criterion/criterion.h"
 #include "flashlight/tasks/speech_recognition/decoder/ConvLmModule.h"
 #include "flashlight/tasks/speech_recognition/decoder/Defines.h"
-#include "flashlight/tasks/speech_recognition/decoder/Utils.h"
+#include "flashlight/tasks/speech_recognition/decoder/TranscriptionUtils.h"
 #include "flashlight/tasks/speech_recognition/runtime/runtime.h"
 
 #include "flashlight/libraries/common/ProducerConsumerQueue.h"
-#include "flashlight/libraries/language/decoder/LexiconDecoder.h"
-#include "flashlight/libraries/language/decoder/LexiconFreeDecoder.h"
-#include "flashlight/libraries/language/decoder/LexiconFreeSeq2SeqDecoder.h"
-#include "flashlight/libraries/language/decoder/LexiconSeq2SeqDecoder.h"
-#include "flashlight/libraries/language/decoder/lm/ConvLM.h"
-#include "flashlight/libraries/language/decoder/lm/KenLM.h"
-#include "flashlight/libraries/language/decoder/lm/ZeroLM.h"
+#include "flashlight/libraries/text/decoder/LexiconDecoder.h"
+#include "flashlight/libraries/text/decoder/LexiconFreeDecoder.h"
+#include "flashlight/libraries/text/decoder/LexiconFreeSeq2SeqDecoder.h"
+#include "flashlight/libraries/text/decoder/LexiconSeq2SeqDecoder.h"
+#include "flashlight/libraries/text/decoder/lm/ConvLM.h"
+#include "flashlight/libraries/text/decoder/lm/KenLM.h"
+#include "flashlight/libraries/text/decoder/lm/ZeroLM.h"
 
 using namespace fl::ext;
 using namespace fl::lib;
+using namespace fl::lib::text;
 using namespace fl::tasks::asr;
 
 int main(int argc, char** argv) {
@@ -121,7 +122,7 @@ int main(int argc, char** argv) {
     tokenDict.addEntry(kBlankToken);
   }
   if (FLAGS_eostoken) {
-    tokenDict.addEntry(kEosToken);
+    tokenDict.addEntry(fl::tasks::asr::kEosToken);
   }
 
   int numClasses = tokenDict.indexSize();
@@ -459,7 +460,7 @@ int main(int argc, char** argv) {
         auto amUpdateFunc = FLAGS_criterion == kSeq2SeqCriterion
             ? buildAmUpdateFunction(localCriterion)
             : buildTransformerAmUpdateFunction(localCriterion);
-        int eosIdx = tokenDict.getIndex(kEosToken);
+        int eosIdx = tokenDict.getIndex(fl::tasks::asr::kEosToken);
 
         if (FLAGS_decodertype == "wrd") {
           decoder.reset(new LexiconSeq2SeqDecoder(

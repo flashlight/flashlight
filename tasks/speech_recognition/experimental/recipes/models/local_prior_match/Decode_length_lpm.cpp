@@ -18,8 +18,8 @@
 #include "flashlight/tasks/speech_recognition/common/FlashlightUtils.h"
 #include "flashlight/tasks/speech_recognition/common/Transforms.h"
 #include "flashlight/tasks/speech_recognition/criterion/criterion.h"
-#include "module/module.h"
 #include "flashlight/tasks/speech_recognition/runtime/runtime.h"
+#include "module/module.h"
 
 using namespace w2l;
 

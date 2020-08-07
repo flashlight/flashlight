@@ -14,6 +14,7 @@
 #include <cstddef>
 
 #include "libraries/sequence/criterion/Defines.h"
+using fl::lib::seq::CriterionScaleMode;
 
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 600
 

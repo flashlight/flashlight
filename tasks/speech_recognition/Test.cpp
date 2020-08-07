@@ -20,16 +20,17 @@
 #include "flashlight/tasks/speech_recognition/common/Defines.h"
 #include "flashlight/tasks/speech_recognition/criterion/criterion.h"
 #include "flashlight/tasks/speech_recognition/decoder/Defines.h"
-#include "flashlight/tasks/speech_recognition/decoder/Utils.h"
+#include "flashlight/tasks/speech_recognition/decoder/TranscriptionUtils.h"
 #include "flashlight/tasks/speech_recognition/runtime/runtime.h"
 
 #include "flashlight/extensions/common/DistributedUtils.h"
 #include "flashlight/libraries/common/System.h"
-#include "flashlight/libraries/language/dictionary/Dictionary.h"
-#include "flashlight/libraries/language/dictionary/Utils.h"
+#include "flashlight/libraries/text/dictionary/Dictionary.h"
+#include "flashlight/libraries/text/dictionary/Utils.h"
 
 using namespace fl::ext;
 using namespace fl::lib;
+using namespace fl::lib::text;
 using namespace fl::tasks::asr;
 
 int main(int argc, char** argv) {
@@ -102,7 +103,7 @@ int main(int argc, char** argv) {
     tokenDict.addEntry(kBlankToken);
   }
   if (FLAGS_eostoken) {
-    tokenDict.addEntry(kEosToken);
+    tokenDict.addEntry(fl::tasks::asr::kEosToken);
   }
 
   int numClasses = tokenDict.indexSize();

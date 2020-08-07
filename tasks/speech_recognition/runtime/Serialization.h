@@ -13,8 +13,8 @@
 #include <flashlight/flashlight.h>
 #include <glog/logging.h>
 
-#include "flashlight/tasks/speech_recognition/common/Defines.h"
 #include "flashlight/libraries/common/System.h"
+#include "flashlight/tasks/speech_recognition/common/Defines.h"
 
 namespace fl {
 namespace tasks {

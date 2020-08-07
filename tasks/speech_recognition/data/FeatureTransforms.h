@@ -10,18 +10,18 @@
 #include <flashlight/flashlight.h>
 
 #include "flashlight/libraries/audio/feature/FeatureParams.h"
-#include "flashlight/libraries/language/dictionary/Utils.h"
+#include "flashlight/libraries/text/dictionary/Utils.h"
 
 namespace fl {
 namespace tasks {
 namespace asr {
 
 fl::Dataset::DataTransformFunction inputFeatures(
-    const lib::FeatureParams& params);
+    const lib::audio::FeatureParams& params);
 
 fl::Dataset::DataTransformFunction targetFeatures(
-    const lib::Dictionary& dict,
-    const lib::LexiconMap& lexicon,
+    const lib::text::Dictionary& dict,
+    const lib::text::LexiconMap& lexicon,
     int wordSeperator,
     bool surround = true);
 

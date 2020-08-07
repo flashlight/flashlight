@@ -13,13 +13,14 @@
 
 #include "libraries/sequence/criterion/Workspace.h"
 #include "libraries/sequence/criterion/cuda/CriterionUtils.cuh"
+using fl::lib::seq::CriterionScaleMode;
 
 namespace {
 
 template <class Float>
 struct WorkspacePtrs {
   explicit WorkspacePtrs(void* workspace, int B, int T, int N, int L) {
-    fl::lib::Workspace<> ws(workspace);
+    fl::lib::seq::Workspace<> ws(workspace);
     ws.request(&scale, B);
     ws.request(&alpha, B, T, L);
     ws.request(&alphaGrad, B, T, L);

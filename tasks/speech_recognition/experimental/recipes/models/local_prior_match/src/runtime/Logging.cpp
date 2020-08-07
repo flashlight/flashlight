@@ -13,8 +13,8 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "recipes/models/local_prior_match/src/runtime/Defines.h"
 #include "flashlight/tasks/speech_recognition/runtime/Serialization.h"
+#include "recipes/models/local_prior_match/src/runtime/Defines.h"
 
 namespace w2l {
 

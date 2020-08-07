@@ -21,17 +21,18 @@
 
 #include "flashlight/tasks/speech_recognition/common/Defines.h"
 #include "flashlight/tasks/speech_recognition/criterion/criterion.h"
-#include "flashlight/tasks/speech_recognition/decoder/Utils.h"
+#include "flashlight/tasks/speech_recognition/decoder/TranscriptionUtils.h"
 #include "flashlight/tasks/speech_recognition/runtime/runtime.h"
 
-#include "flashlight/extensions/common/SequentialBuilder.h"
 #include "flashlight/extensions/common/DistributedUtils.h"
+#include "flashlight/extensions/common/SequentialBuilder.h"
 #include "flashlight/libraries/common/System.h"
-#include "flashlight/libraries/language/dictionary/Dictionary.h"
-#include "flashlight/libraries/language/dictionary/Utils.h"
+#include "flashlight/libraries/text/dictionary/Dictionary.h"
+#include "flashlight/libraries/text/dictionary/Utils.h"
 
 using namespace fl::ext;
 using namespace fl::lib;
+using namespace fl::lib::text;
 using namespace fl::tasks::asr;
 
 int main(int argc, char** argv) {
@@ -197,7 +198,7 @@ int main(int argc, char** argv) {
     tokenDict.addEntry(kBlankToken);
   }
   if (FLAGS_eostoken) {
-    tokenDict.addEntry(kEosToken);
+    tokenDict.addEntry(fl::tasks::asr::kEosToken);
   }
 
   int numClasses = tokenDict.indexSize();
@@ -233,8 +234,8 @@ int main(int argc, char** argv) {
       criterion =
           std::make_shared<ASGLoss>(numClasses, scalemode, FLAGS_transdiag);
     } else if (FLAGS_criterion == kSeq2SeqCriterion) {
-      criterion = std::make_shared<Seq2SeqCriterion>(
-          buildSeq2Seq(numClasses, tokenDict.getIndex(kEosToken)));
+      criterion = std::make_shared<Seq2SeqCriterion>(buildSeq2Seq(
+          numClasses, tokenDict.getIndex(fl::tasks::asr::kEosToken)));
     } else if (FLAGS_criterion == kTransformerCriterion) {
       criterion =
           std::make_shared<TransformerCriterion>(buildTransformerCriterion(
@@ -242,7 +243,7 @@ int main(int argc, char** argv) {
               FLAGS_am_decoder_tr_layers,
               FLAGS_am_decoder_tr_dropout,
               FLAGS_am_decoder_tr_layerdrop,
-              tokenDict.getIndex(kEosToken)));
+              tokenDict.getIndex(fl::tasks::asr::kEosToken)));
     } else {
       LOG(FATAL) << "unimplemented criterion";
     }

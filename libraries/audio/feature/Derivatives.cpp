@@ -15,6 +15,7 @@
 
 namespace fl {
 namespace lib {
+namespace audio {
 
 Derivatives::Derivatives(int deltawindow, int accwindow)
     : deltaWindow_(deltawindow), accWindow_(accwindow) {}
@@ -85,5 +86,6 @@ std::vector<float> Derivatives::computeDerivative(
   }
   return output;
 }
+} // namespace audio
 } // namespace lib
 } // namespace fl

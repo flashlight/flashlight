@@ -13,6 +13,9 @@
 #include "flashlight/tasks/speech_recognition/common/Defines.h"
 
 using namespace fl::lib;
+using fl::lib::text::Dictionary;
+using fl::lib::text::LexiconMap;
+using fl::lib::text::splitWrd;
 
 namespace fl {
 namespace tasks {

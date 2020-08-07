@@ -15,6 +15,7 @@
 
 namespace fl {
 namespace lib {
+namespace audio {
 
 class TriFilterbank {
  public:
@@ -46,5 +47,6 @@ class TriFilterbank {
   float hertzToWarpedScale(float hz, FrequencyScale freqscale) const;
   float warpedToHertzScale(float wrp, FrequencyScale freqscale) const;
 };
+} // namespace audio
 } // namespace lib
 } // namespace fl

@@ -13,6 +13,7 @@
 
 namespace fl {
 namespace lib {
+namespace audio {
 
 // Re-scale the cepstral coefficients using liftering
 //    c'(n) = c(n) * (1 + 0.5 * L * sin(pi * n/ L)) where L is lifterparam
@@ -30,5 +31,6 @@ class Ceplifter {
   int lifterParam_; // liftering parameter
   std::vector<float> coefs_; // coefficients to scale cepstral coefficients
 };
+} // namespace audio
 } // namespace lib
 } // namespace fl

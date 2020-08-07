@@ -11,6 +11,7 @@
 #include <cuda_runtime.h>
 
 #include "libraries/sequence/criterion/Defines.h"
+using fl::lib::seq::CriterionScaleMode;
 
 namespace fl {
 namespace lib {

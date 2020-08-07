@@ -16,6 +16,7 @@
 
 namespace fl {
 namespace lib {
+namespace audio {
 
 // Computes MFSC features for a speech signal.
 
@@ -41,5 +42,6 @@ class Mfsc : public PowerSpectrum {
   TriFilterbank triFltBank_;
   Derivatives derivatives_;
 };
+} // namespace audio
 } // namespace lib
 } // namespace fl

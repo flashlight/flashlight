@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cmath>
 #include <vector>
+using fl::lib::seq::CriterionScaleMode;
 
 namespace fl {
 namespace lib {

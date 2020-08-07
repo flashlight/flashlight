@@ -12,7 +12,8 @@
 
 namespace {
 
-using namespace fl::lib;
+using fl::lib::seq::CriterionScaleMode;
+using namespace fl::lib::seq;
 
 /*
  * B thread blocks

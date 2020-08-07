@@ -86,7 +86,7 @@ int getTargetSize(const int* labels, int len);
 
 af::array getTargetSizeArray(const af::array& target, int maxSize);
 
-lib::CriterionScaleMode getCriterionScaleMode(
+lib::seq::CriterionScaleMode getCriterionScaleMode(
     const std::string& onorm,
     bool sqnorm);
 

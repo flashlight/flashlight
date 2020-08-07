@@ -13,11 +13,11 @@
 #include <cstdio>
 #include <memory>
 
+#include "flashlight/libraries/feature/FeatureParams.h"
+#include "flashlight/libraries/feature/Mfsc.h"
 #include "inference/common/IOBuffer.h"
 #include "inference/module/InferenceModule.h"
 #include "inference/module/ModuleParameter.h"
-#include "flashlight/libraries/feature/FeatureParams.h"
-#include "flashlight/libraries/feature/Mfsc.h"
 
 namespace w2l {
 namespace streaming {

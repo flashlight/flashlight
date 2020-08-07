@@ -13,6 +13,7 @@
 
 namespace fl {
 namespace lib {
+namespace seq {
 
 /**
  * Partitions a contiguous block of memory into aligned arrays.
@@ -58,5 +59,6 @@ class Workspace {
   const uintptr_t workspacePtr_;
   size_t offset_;
 };
+} // namespace seq
 } // namespace lib
 } // namespace fl

@@ -16,6 +16,7 @@
 
 namespace fl {
 namespace lib {
+namespace audio {
 
 Mfsc::Mfsc(const FeatureParams& params)
     : PowerSpectrum(params),
@@ -105,5 +106,6 @@ void Mfsc::validateMfscParams() const {
     throw std::invalid_argument("Mfsc: melfloor must be positive");
   }
 }
+} // namespace audio
 } // namespace lib
 } // namespace fl

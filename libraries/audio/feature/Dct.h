@@ -13,6 +13,7 @@
 
 namespace fl {
 namespace lib {
+namespace audio {
 
 // Compute Discrete Cosine Transform
 //    c(i) = sqrt(2/N)  SUM_j (m(j) * cos(pi * i * (j - 0.5)/ N))
@@ -29,5 +30,6 @@ class Dct {
   int numCeps_; // Number of cepstral coefficients
   std::vector<float> dctMat_; // Dct matrix
 };
+} // namespace audio
 } // namespace lib
 } // namespace fl

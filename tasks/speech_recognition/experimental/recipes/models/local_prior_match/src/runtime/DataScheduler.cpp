@@ -16,8 +16,8 @@
 #include <glog/logging.h>
 
 #include "flashlight/tasks/speech_recognition/common/Defines.h"
-#include "recipes/models/local_prior_match/src/runtime/Defines.h"
 #include "flashlight/tasks/speech_recognition/runtime/Logger.h"
+#include "recipes/models/local_prior_match/src/runtime/Defines.h"
 
 namespace w2l {
 

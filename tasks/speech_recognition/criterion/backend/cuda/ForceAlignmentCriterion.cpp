@@ -10,8 +10,8 @@
 
 #include <flashlight/common/cuda.h>
 
-#include "flashlight/tasks/speech_recognition/criterion/CriterionUtils.h"
 #include "flashlight/libraries/sequence/criterion/cuda/ForceAlignmentCriterion.cuh"
+#include "flashlight/tasks/speech_recognition/criterion/CriterionUtils.h"
 
 using fl::Variable;
 using FAC = fl::lib::cuda::ForceAlignmentCriterion<float>;

@@ -14,7 +14,7 @@
 #include "FeatureTransforms.h"
 #include "Sound.h"
 
-#include "flashlight/libraries/language/dictionary/Dictionary.h"
+#include "flashlight/libraries/text/dictionary/Dictionary.h"
 
 namespace fl {
 namespace tasks {
@@ -41,9 +41,9 @@ struct LoaderData {
 
 FeatureData featurize(
     const std::vector<LoaderData>& data,
-    const lib::DictionaryMap& dicts);
+    const lib::text::DictionaryMap& dicts);
 
-lib::FeatureParams defineSpeechFeatureParams();
+lib::audio::FeatureParams defineSpeechFeatureParams();
 
 int64_t getSpeechFeatureSize();
 } // namespace asr

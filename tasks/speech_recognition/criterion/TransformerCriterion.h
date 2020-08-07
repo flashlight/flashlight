@@ -16,8 +16,8 @@
 #include "flashlight/tasks/speech_recognition/criterion/attention/attention.h"
 #include "flashlight/tasks/speech_recognition/criterion/attention/window.h"
 
-#include "flashlight/extensions/common/DistributedUtils.h"
 #include "flashlight/contrib/modules/Transformer.h"
+#include "flashlight/extensions/common/DistributedUtils.h"
 
 namespace fl {
 namespace tasks {

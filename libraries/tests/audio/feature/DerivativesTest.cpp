@@ -12,7 +12,7 @@
 #include "TestUtils.h"
 #include "flashlight/libraries/audio/feature/Derivatives.h"
 
-using fl::lib::Derivatives;
+using fl::lib::audio::Derivatives;
 
 // Reference C++ code taken from HTK - http://htk.eng.cam.ac.uk/
 //   float *fp,*fp1,*fp2, *back, *forw;

@@ -11,7 +11,7 @@
 #include "TestUtils.h"
 #include "flashlight/libraries/audio/feature/SpeechUtils.h"
 
-using namespace fl::lib;
+using namespace fl::lib::audio;
 
 TEST(SpeechUtilsTest, SimpleMatmul) {
   /*

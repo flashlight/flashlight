@@ -12,6 +12,7 @@
 
 namespace fl {
 namespace lib {
+namespace audio {
 
 Dither::Dither(float ditherVal)
     : ditherVal_(ditherVal), rng_((ditherVal > 0.0) ? 123456 : time(nullptr)){};
@@ -28,5 +29,6 @@ void Dither::applyInPlace(std::vector<float>& input) {
     i += ditherVal_ * distribution(rng_);
   }
 }
+} // namespace audio
 } // namespace lib
 } // namespace fl

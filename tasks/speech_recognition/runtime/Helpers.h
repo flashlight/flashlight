@@ -25,7 +25,7 @@
 #include "flashlight/tasks/speech_recognition/data/ListFilesDataset.h"
 
 #include "flashlight/libraries/common/String.h"
-#include "flashlight/libraries/language/dictionary/Utils.h"
+#include "flashlight/libraries/text/dictionary/Utils.h"
 
 namespace fl {
 namespace tasks {
@@ -74,8 +74,8 @@ std::vector<std::string> readSampleIds(const af::array& arr);
  */
 std::shared_ptr<Dataset> createDataset(
     const std::string& path,
-    const lib::DictionaryMap& dicts,
-    const lib::LexiconMap& lexicon = lib::LexiconMap(),
+    const lib::text::DictionaryMap& dicts,
+    const lib::text::LexiconMap& lexicon = lib::text::LexiconMap(),
     int batchSize = 1,
     int worldRank = 0,
     int worldSize = 1,

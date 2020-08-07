@@ -12,6 +12,8 @@
 #include "Defines.h"
 #include "SequenceCriterion.h"
 
+using fl::lib::seq::CriterionScaleMode;
+
 namespace fl {
 namespace tasks {
 namespace asr {
@@ -19,8 +21,7 @@ namespace asr {
 class ConnectionistTemporalClassificationCriterion : public SequenceCriterion {
  public:
   ConnectionistTemporalClassificationCriterion(
-      fl::lib::CriterionScaleMode scalemode =
-          fl::lib::CriterionScaleMode::NONE);
+      CriterionScaleMode scalemode = CriterionScaleMode::NONE);
 
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;
@@ -32,7 +33,7 @@ class ConnectionistTemporalClassificationCriterion : public SequenceCriterion {
   std::string prettyString() const override;
 
  private:
-  fl::lib::CriterionScaleMode scaleMode_;
+  CriterionScaleMode scaleMode_;
 
   FL_SAVE_LOAD_WITH_BASE(SequenceCriterion, scaleMode_)
 

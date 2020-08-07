@@ -14,6 +14,7 @@
 
 namespace fl {
 namespace lib {
+namespace audio {
 
 // Convert the speech signal into frames
 
@@ -28,5 +29,6 @@ std::vector<float> cblasGemm(
     const std::vector<float>& matB,
     int n,
     int k);
+} // namespace audio
 } // namespace lib
 } // namespace fl

@@ -12,8 +12,8 @@
 #include <functional>
 #include <sstream>
 
-#include "flashlight/tasks/speech_recognition/data/Sound.h"
 #include "flashlight/libraries/common/System.h"
+#include "flashlight/tasks/speech_recognition/data/Sound.h"
 
 using namespace fl::lib;
 using namespace fl::tasks::asr;

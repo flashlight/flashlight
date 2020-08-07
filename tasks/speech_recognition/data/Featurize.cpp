@@ -14,12 +14,15 @@
 
 #include <glog/logging.h>
 
-#include "flashlight/tasks/speech_recognition/common/Defines.h"
 #include "flashlight/libraries/audio/feature/Mfcc.h"
 #include "flashlight/libraries/audio/feature/Mfsc.h"
 #include "flashlight/libraries/common/String.h"
+#include "flashlight/tasks/speech_recognition/common/Defines.h"
 
 using namespace fl::lib;
+using namespace fl::lib::audio;
+using fl::lib::text::DictionaryMap;
+using fl::lib::text::packReplabels;
 
 namespace fl {
 namespace tasks {
@@ -196,7 +199,7 @@ FeatureData featurize(
         tgtFeat.emplace_back(tgtVec);
         maxTgtSize = std::max(maxTgtSize, tgtVec.size());
 
-        int padVal = dict.getIndex(kUnkToken);
+        int padVal = dict.getIndex(fl::lib::text::kUnkToken);
         // L X BATCHSZ (Col Major)
         feat.targets[targetType].resize(batchSz * maxTgtSize, padVal);
         feat.targetDims[targetType] = af::dim4(maxTgtSize, batchSz);

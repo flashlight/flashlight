@@ -16,6 +16,7 @@
 
 namespace fl {
 namespace lib {
+namespace audio {
 
 Dct::Dct(int numfilters, int numceps)
     : numFilters_(numfilters),
@@ -32,5 +33,6 @@ Dct::Dct(int numfilters, int numceps)
 std::vector<float> Dct::apply(const std::vector<float>& input) const {
   return cblasGemm(input, dctMat_, numCeps_, numFilters_);
 }
+} // namespace audio
 } // namespace lib
 } // namespace fl

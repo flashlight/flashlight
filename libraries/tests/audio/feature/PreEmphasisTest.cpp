@@ -11,7 +11,7 @@
 #include "TestUtils.h"
 #include "flashlight/libraries/audio/feature/PreEmphasis.h"
 
-using fl::lib::PreEmphasis;
+using fl::lib::audio::PreEmphasis;
 
 // Matlab code used: B=[1, -0.95]; = filter(B, 1, data, [], 2);
 // For first element in data multiply by (1 - alpha)

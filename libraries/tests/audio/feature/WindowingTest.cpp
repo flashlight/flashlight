@@ -11,8 +11,8 @@
 #include "TestUtils.h"
 #include "flashlight/libraries/audio/feature/Windowing.h"
 
-using fl::lib::Windowing;
-using fl::lib::WindowType;
+using fl::lib::audio::Windowing;
+using fl::lib::audio::WindowType;
 
 TEST(WindowingTest, hammingCoeffsTest) {
   int N = 64;

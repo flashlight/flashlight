@@ -18,8 +18,8 @@
 #include <stdexcept>
 #include <string>
 
-#include "inference/common/IOBuffer.h"
 #include "flashlight/libraries/decoder/Utils.h"
+#include "inference/common/IOBuffer.h"
 
 namespace w2l {
 namespace streaming {

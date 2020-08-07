@@ -14,17 +14,18 @@
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
+#include "flashlight/libraries/text/decoder/LexiconDecoder.h"
+#include "flashlight/libraries/text/decoder/Trie.h"
+#include "flashlight/libraries/text/decoder/lm/KenLM.h"
+#include "flashlight/libraries/text/dictionary/Dictionary.h"
 #include "flashlight/tasks/speech_recognition/criterion/criterion.h"
 #include "flashlight/tasks/speech_recognition/decoder/Defines.h"
-#include "flashlight/tasks/speech_recognition/decoder/Utils.h"
-#include "flashlight/libraries/language/decoder/LexiconDecoder.h"
-#include "flashlight/libraries/language/decoder/Trie.h"
-#include "flashlight/libraries/language/decoder/lm/KenLM.h"
-#include "flashlight/libraries/language/dictionary/Dictionary.h"
+#include "flashlight/tasks/speech_recognition/decoder/TranscriptionUtils.h"
 #include "flashlight/tasks/speech_recognition/runtime/runtime.h"
 
 using namespace fl;
 using namespace fl::lib;
+using namespace fl::lib::text;
 using namespace fl::tasks::asr;
 
 /**

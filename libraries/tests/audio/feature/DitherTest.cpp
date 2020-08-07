@@ -13,7 +13,7 @@
 #include "TestUtils.h"
 #include "flashlight/libraries/audio/feature/Dither.h"
 
-using fl::lib::Dither;
+using fl::lib::audio::Dither;
 
 TEST(DitherTest, basicTest) {
   int N = 1000;

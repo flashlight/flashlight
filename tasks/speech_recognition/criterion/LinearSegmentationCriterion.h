@@ -11,6 +11,8 @@
 #include "AutoSegmentationCriterion.h"
 #include "CriterionUtils.h"
 
+using fl::lib::seq::CriterionScaleMode;
+
 namespace fl {
 namespace tasks {
 namespace asr {
@@ -19,7 +21,7 @@ class LinearSegmentationCriterion : public AutoSegmentationCriterion {
  public:
   explicit LinearSegmentationCriterion(
       int N,
-      lib::CriterionScaleMode scaleMode = lib::CriterionScaleMode::NONE)
+      CriterionScaleMode scaleMode = CriterionScaleMode::NONE)
       : AutoSegmentationCriterion(N, scaleMode) {}
 
   std::vector<fl::Variable> forward(

@@ -20,8 +20,8 @@ class ListFilesDataset : public Dataset {
  public:
   ListFilesDataset(
       const std::string& filenames,
-      const lib::DictionaryMap& dicts,
-      const lib::LexiconMap& lexicon,
+      const lib::text::DictionaryMap& dicts,
+      const lib::text::LexiconMap& lexicon,
       int64_t batchSize,
       int worldRank = 0,
       int worldSize = 1,
@@ -37,7 +37,7 @@ class ListFilesDataset : public Dataset {
  private:
   std::vector<int64_t> sampleSizeOrder_;
   std::vector<SpeechSample> data_;
-  lib::LexiconMap lexicon_;
+  lib::text::LexiconMap lexicon_;
   bool includeWrd_;
   bool fallback2Ltr_;
   bool skipUnk_;

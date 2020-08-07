@@ -14,6 +14,7 @@
 #include "FullConnectionCriterion.h"
 #include "SequenceCriterion.h"
 
+using fl::lib::seq::CriterionScaleMode;
 namespace fl {
 namespace tasks {
 namespace asr {
@@ -22,7 +23,7 @@ class AutoSegmentationCriterion : public SequenceCriterion {
  public:
   explicit AutoSegmentationCriterion(
       int N,
-      lib::CriterionScaleMode scalemode = lib::CriterionScaleMode::NONE,
+      CriterionScaleMode scalemode = CriterionScaleMode::NONE,
       double transdiag = 0.0)
       : N_(N),
         scaleMode_(scalemode),
@@ -73,7 +74,7 @@ class AutoSegmentationCriterion : public SequenceCriterion {
 
  private:
   int N_;
-  lib::CriterionScaleMode scaleMode_;
+  CriterionScaleMode scaleMode_;
   ForceAlignmentCriterion fac_;
   FullConnectionCriterion fcc_;
 

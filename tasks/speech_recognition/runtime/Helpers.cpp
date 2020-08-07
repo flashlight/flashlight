@@ -16,6 +16,8 @@
 
 using namespace fl::ext;
 using namespace fl::lib;
+using fl::lib::text::DictionaryMap;
+using fl::lib::text::LexiconMap;
 
 namespace fl {
 namespace tasks {

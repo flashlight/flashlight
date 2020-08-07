@@ -19,7 +19,7 @@ namespace {
 template <class Float>
 struct WorkspacePtrs {
   WorkspacePtrs(void* workspace, int B, int T, int N, int L) {
-    fl::lib::Workspace<> ws(workspace);
+    fl::lib::seq::Workspace<> ws(workspace);
     ws.request(&scale, B);
     ws.request(&alpha, B, T, L);
     ws.request(&alphaGrad, B, T, L);

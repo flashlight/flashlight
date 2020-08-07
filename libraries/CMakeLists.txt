@@ -31,8 +31,8 @@ include(${CMAKE_CURRENT_LIST_DIR}/audio/CMakeLists.txt)
 # common
 include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
 
-# language
-include(${CMAKE_CURRENT_LIST_DIR}/language/CMakeLists.txt)
+# text
+include(${CMAKE_CURRENT_LIST_DIR}/text/CMakeLists.txt)
 
 # ---------------------- CUDA Library -----------------------
 

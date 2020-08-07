@@ -15,6 +15,7 @@
 
 namespace fl {
 namespace lib {
+namespace audio {
 
 Ceplifter::Ceplifter(int numfilters, int lifterparam)
     : numFilters_(numfilters), lifterParam_(lifterparam), coefs_(numFilters_) {
@@ -43,5 +44,6 @@ void Ceplifter::applyInPlace(std::vector<float>& input) const {
     }
   }
 }
+} // namespace audio
 } // namespace lib
 } // namespace fl

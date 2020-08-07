@@ -17,6 +17,10 @@
 #include "flashlight/libraries/common/String.h"
 
 using namespace fl::lib;
+using namespace fl::lib::audio;
+using fl::lib::text::Dictionary;
+using fl::lib::text::LexiconMap;
+using fl::lib::text::packReplabels;
 
 namespace {
 

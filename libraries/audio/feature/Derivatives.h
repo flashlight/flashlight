@@ -13,6 +13,7 @@
 
 namespace fl {
 namespace lib {
+namespace audio {
 
 // Compute first order (deltas) and second order (acceleration) derivatives of
 //  cepstral coefficients
@@ -35,5 +36,6 @@ class Derivatives {
       int windowlen,
       int numfeat) const;
 };
+} // namespace audio
 } // namespace lib
 } // namespace fl

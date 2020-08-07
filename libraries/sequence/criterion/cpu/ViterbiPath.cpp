@@ -17,7 +17,7 @@ namespace {
 template <class Float>
 struct WorkspacePtrs {
   explicit WorkspacePtrs(void* workspace, int B, int T, int N) {
-    fl::lib::Workspace<> ws(workspace);
+    fl::lib::seq::Workspace<> ws(workspace);
     ws.request(&alpha, B, 2, N);
     ws.request(&beta, B, T, N);
     requiredSize = ws.requiredSize();

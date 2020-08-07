@@ -14,7 +14,7 @@ namespace asr {
 
 ForceAlignmentCriterion::ForceAlignmentCriterion(
     int N,
-    fl::lib::CriterionScaleMode scalemode)
+    fl::lib::seq::CriterionScaleMode scalemode)
     : N_(N), scaleMode_(scalemode) {
   if (N_ <= 0) {
     throw std::invalid_argument(

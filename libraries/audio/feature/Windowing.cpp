@@ -15,6 +15,7 @@
 
 namespace fl {
 namespace lib {
+namespace audio {
 
 Windowing::Windowing(int N, WindowType windowtype)
     : windowLength_(N), windowType_(windowtype), coefs_(N) {
@@ -57,5 +58,6 @@ void Windowing::applyInPlace(std::vector<float>& input) const {
     }
   }
 }
+} // namespace audio
 } // namespace lib
 } // namespace fl

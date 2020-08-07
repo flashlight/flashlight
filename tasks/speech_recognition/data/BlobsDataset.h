@@ -20,8 +20,8 @@ class BlobsDataset : public Dataset {
  public:
   BlobsDataset(
       const std::string& filenames,
-      const lib::DictionaryMap& dicts,
-      const lib::LexiconMap& lexicon,
+      const lib::text::DictionaryMap& dicts,
+      const lib::text::LexiconMap& lexicon,
       int64_t batchSize,
       int worldRank = 0,
       int worldSize = 1,
@@ -39,7 +39,7 @@ class BlobsDataset : public Dataset {
   std::vector<int64_t> sampleSizeOrder_;
   std::vector<int64_t> blobIndex_;
   std::vector<int64_t> sampleIndex_;
-  lib::LexiconMap lexicon_;
+  lib::text::LexiconMap lexicon_;
   bool includeWrd_;
   bool fallback2Ltr_;
   bool skipUnk_;

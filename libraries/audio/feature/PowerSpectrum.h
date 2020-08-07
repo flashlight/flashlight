@@ -19,6 +19,7 @@
 
 namespace fl {
 namespace lib {
+namespace audio {
 
 // Computes Power Spectrum features for a speech signal.
 
@@ -59,5 +60,6 @@ class PowerSpectrum {
   std::vector<double> inFftBuf_, outFftBuf_;
   std::mutex fftMutex_;
 };
+} // namespace audio
 } // namespace lib
 } // namespace fl

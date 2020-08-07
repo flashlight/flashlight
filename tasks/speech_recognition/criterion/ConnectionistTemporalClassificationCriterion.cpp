@@ -47,8 +47,8 @@ namespace asr {
 
 ConnectionistTemporalClassificationCriterion::
     ConnectionistTemporalClassificationCriterion(
-        fl::lib::CriterionScaleMode
-            scalemode /* = fl::lib::CriterionScaleMode::NONE */)
+        fl::lib::seq::CriterionScaleMode
+            scalemode /* = fl::lib::seq::CriterionScaleMode::NONE */)
     : scaleMode_(scalemode) {}
 
 af::array ConnectionistTemporalClassificationCriterion::viterbiPath(

@@ -13,6 +13,7 @@
 
 namespace fl {
 namespace lib {
+namespace audio {
 
 enum class WindowType {
   HAMMING = 0,
@@ -163,5 +164,6 @@ struct FeatureParams {
     return 1 + floor((inSize - frameSize) * 1.0 / frameStride);
   }
 };
+} // namespace audio
 } // namespace lib
 } // namespace fl

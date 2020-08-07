@@ -7,8 +7,8 @@
  */
 
 #include "flashlight/tasks/speech_recognition/criterion/ConnectionistTemporalClassificationCriterion.h"
-#include "flashlight/tasks/speech_recognition/criterion/CriterionUtils.h"
 #include "flashlight/libraries/sequence/criterion/cpu/CriterionUtils.h"
+#include "flashlight/tasks/speech_recognition/criterion/CriterionUtils.h"
 
 using namespace fl;
 

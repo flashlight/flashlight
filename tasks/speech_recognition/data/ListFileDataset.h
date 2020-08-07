@@ -13,7 +13,7 @@
 
 #include <flashlight/flashlight.h>
 
-#include "flashlight/libraries/language/dictionary/Dictionary.h"
+#include "flashlight/libraries/text/dictionary/Dictionary.h"
 
 namespace fl {
 namespace tasks {

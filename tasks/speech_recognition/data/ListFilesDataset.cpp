@@ -10,12 +10,14 @@
 #include <functional>
 #include <numeric>
 
-#include "flashlight/tasks/speech_recognition/common/Defines.h"
-#include "flashlight/tasks/speech_recognition/data/ListFilesDataset.h"
 #include "flashlight/libraries/common/String.h"
 #include "flashlight/libraries/common/System.h"
+#include "flashlight/tasks/speech_recognition/common/Defines.h"
+#include "flashlight/tasks/speech_recognition/data/ListFilesDataset.h"
 
 using namespace fl::lib;
+using fl::lib::text::DictionaryMap;
+using fl::lib::text::LexiconMap;
 
 namespace fl {
 namespace tasks {

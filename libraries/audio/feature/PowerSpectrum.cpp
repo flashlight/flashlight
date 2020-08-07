@@ -16,6 +16,7 @@
 
 namespace fl {
 namespace lib {
+namespace audio {
 
 PowerSpectrum::PowerSpectrum(const FeatureParams& params)
     : featParams_(params),
@@ -137,5 +138,6 @@ void PowerSpectrum::validatePowSpecParams() const {
 PowerSpectrum::~PowerSpectrum() {
   fftw_destroy_plan(fftPlan_);
 }
+} // namespace audio
 } // namespace lib
 } // namespace fl

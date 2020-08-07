@@ -11,8 +11,8 @@
 #include <string>
 #include <vector>
 
-#include "flashlight/libraries/language/dictionary/Dictionary.h"
-#include "flashlight/libraries/language/dictionary/Utils.h"
+#include "flashlight/libraries/text/dictionary/Dictionary.h"
+#include "flashlight/libraries/text/dictionary/Utils.h"
 
 namespace fl {
 namespace tasks {
@@ -20,15 +20,15 @@ namespace asr {
 
 std::vector<std::string> wrd2Target(
     const std::string& word,
-    const lib::LexiconMap& lexicon,
-    const lib::Dictionary& dict,
+    const lib::text::LexiconMap& lexicon,
+    const lib::text::Dictionary& dict,
     bool fallback2Ltr = false,
     bool skipUnk = false);
 
 std::vector<std::string> wrd2Target(
     const std::vector<std::string>& words,
-    const lib::LexiconMap& lexicon,
-    const lib::Dictionary& dict,
+    const lib::text::LexiconMap& lexicon,
+    const lib::text::Dictionary& dict,
     bool fallback2Ltr = false,
     bool skipUnk = false);
 } // namespace asr

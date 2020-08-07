@@ -11,7 +11,7 @@
 #include "TestUtils.h"
 #include "flashlight/libraries/audio/feature/Dct.h"
 
-using fl::lib::Dct;
+using fl::lib::audio::Dct;
 
 // Matlab code used:
 // dctm = @( N, M )( sqrt(2.0/M) * cos( repmat([0:N-1].',1,M) ...

@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "flashlight/libraries/language/dictionary/Defines.h"
+#include "flashlight/libraries/text/dictionary/Defines.h"
 
 #include <memory>
 #include <unordered_map>
@@ -107,6 +107,10 @@ constexpr int kTargetPadValue = -1;
 // Feature params
 constexpr int kLifterParam = 22;
 constexpr int kPrefetchSize = 2;
+
+constexpr const char* kEosToken = "$";
+constexpr const char* kBlankToken = "#";
+constexpr const char* kSilToken = "|";
 
 /* ========== DATA OPTIONS ========== */
 

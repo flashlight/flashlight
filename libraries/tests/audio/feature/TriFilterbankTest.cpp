@@ -11,8 +11,8 @@
 #include "TestUtils.h"
 #include "flashlight/libraries/audio/feature/TriFilterbank.h"
 
-using fl::lib::FrequencyScale;
-using fl::lib::TriFilterbank;
+using fl::lib::audio::FrequencyScale;
+using fl::lib::audio::TriFilterbank;
 
 // Matlab code used:
 // H = trifbank( M, K, R, fs, hz2mel, mel2hz ); % size of H is M x K

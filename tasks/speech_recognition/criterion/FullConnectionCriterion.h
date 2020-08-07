@@ -12,6 +12,8 @@
 #include "CriterionUtils.h"
 #include "Defines.h"
 
+using fl::lib::seq::CriterionScaleMode;
+
 namespace fl {
 namespace tasks {
 namespace asr {
@@ -20,7 +22,7 @@ class FullConnectionCriterion : public fl::BinaryModule {
  public:
   explicit FullConnectionCriterion(
       int N,
-      lib::CriterionScaleMode scalemode = fl::lib::CriterionScaleMode::NONE);
+      CriterionScaleMode scalemode = CriterionScaleMode::NONE);
 
   fl::Variable forward(const fl::Variable& input, const fl::Variable& target)
       override;
@@ -32,7 +34,7 @@ class FullConnectionCriterion : public fl::BinaryModule {
   FullConnectionCriterion() = default;
 
   int N_;
-  lib::CriterionScaleMode scaleMode_;
+  CriterionScaleMode scaleMode_;
 
   FL_SAVE_LOAD_WITH_BASE(
       fl::BinaryModule,

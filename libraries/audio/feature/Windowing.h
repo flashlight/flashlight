@@ -15,6 +15,7 @@
 
 namespace fl {
 namespace lib {
+namespace audio {
 
 // Applies a given window on input
 //    s'(n) = w(n) * s(n) where w(n) are the window coefficients
@@ -32,5 +33,6 @@ class Windowing {
   WindowType windowType_;
   std::vector<float> coefs_;
 };
+} // namespace audio
 } // namespace lib
 } // namespace fl
