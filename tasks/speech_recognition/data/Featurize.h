@@ -17,7 +17,7 @@
 #include "flashlight/libraries/language/dictionary/Dictionary.h"
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 typedef std::unordered_map<int, af::dim4> DimsMap;
@@ -47,5 +47,5 @@ lib::FeatureParams defineSpeechFeatureParams();
 
 int64_t getSpeechFeatureSize();
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

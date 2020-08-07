@@ -15,7 +15,7 @@ using namespace fl;
 using CriterionUtils = fl::lib::cpu::CriterionUtils<float>;
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
@@ -63,11 +63,11 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
 
       int64_t L = batchTargetSizes[b];
       const int64_t S = 2 * L + 1;
-      int64_t R = fl::task::asr::countRepeats(targetVec, L);
+      int64_t R = fl::tasks::asr::countRepeats(targetVec, L);
 
       // A heuristic to modify target length to be able to compute CTC loss
       L = std::min(L + R, T) - R;
-      R = fl::task::asr::countRepeats(
+      R = fl::tasks::asr::countRepeats(
           targetVec, L); // Recompute repeats as L has changed
 
       auto& alphas = batchAlphas[b];
@@ -107,15 +107,15 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
               (s % 2 == 0) || s == 1 ||
               targetVec[s / 2] == targetVec[s / 2 - 1]) {
             alphas[ts] =
-                fl::task::asr::logSumExp(alphas[ts - S], alphas[ts - S - 1]);
+                fl::tasks::asr::logSumExp(alphas[ts - S], alphas[ts - S - 1]);
           } else {
-            alphas[ts] = fl::task::asr::logSumExp(
+            alphas[ts] = fl::tasks::asr::logSumExp(
                 alphas[ts - S], alphas[ts - S - 1], alphas[ts - S - 2]);
           }
           alphas[ts] += inputVec[curLabel];
         }
       }
-      batchLoss[b] = -fl::task::asr::logSumExp(
+      batchLoss[b] = -fl::tasks::asr::logSumExp(
                          alphas.end()[-1],
                          (S == 1) ? NEG_INFINITY_FLT : alphas.end()[-2]) *
           batchScales[b];
@@ -147,7 +147,7 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
       int64_t L = batchTargetSizes[b];
 
       L = std::min(L, T);
-      const int64_t R = fl::task::asr::countRepeats(targetVec, L);
+      const int64_t R = fl::tasks::asr::countRepeats(targetVec, L);
       L = std::min(L + R, T) - R;
 
       const int64_t S = 2 * L + 1;
@@ -161,7 +161,7 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
       if (S == 1) {
         dAlphas[T * S - 1] = -1.0;
       } else {
-        fl::task::asr::dLogSumExp(
+        fl::tasks::asr::dLogSumExp(
             alphas[T * S - 2],
             alphas[T * S - 1],
             dAlphas[T * S - 2],
@@ -200,14 +200,14 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
           } else if (
               (s % 2 == 0) || s == 1 ||
               targetVec[s / 2] == targetVec[s / 2 - 1]) {
-            fl::task::asr::dLogSumExp(
+            fl::tasks::asr::dLogSumExp(
                 alphas[ts - S],
                 alphas[ts - S - 1],
                 dAlphas[ts - S],
                 dAlphas[ts - S - 1],
                 dAlphas[ts]);
           } else {
-            fl::task::asr::dLogSumExp(
+            fl::tasks::asr::dLogSumExp(
                 alphas[ts - S],
                 alphas[ts - S - 1],
                 alphas[ts - S - 2],
@@ -225,5 +225,5 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
   return {Variable(result, {logprobs, target}, gradFunc)};
 }
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

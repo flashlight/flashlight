@@ -12,7 +12,7 @@
 #include "CriterionUtils.h"
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 class LinearSegmentationCriterion : public AutoSegmentationCriterion {
@@ -45,7 +45,7 @@ class LinearSegmentationCriterion : public AutoSegmentationCriterion {
 
 using LinSegCriterion = LinearSegmentationCriterion;
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::task::asr::LinearSegmentationCriterion)
+CEREAL_REGISTER_TYPE(fl::tasks::asr::LinearSegmentationCriterion)

@@ -11,7 +11,7 @@
 using namespace fl;
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 StepWindow::StepWindow() {}
@@ -57,5 +57,5 @@ StepWindow::computeWindowMask(int targetLen, int inputSteps, int batchSize) {
   return mask;
 }
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

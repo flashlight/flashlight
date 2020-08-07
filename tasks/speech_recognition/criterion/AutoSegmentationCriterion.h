@@ -15,7 +15,7 @@
 #include "SequenceCriterion.h"
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 class AutoSegmentationCriterion : public SequenceCriterion {
@@ -46,7 +46,7 @@ class AutoSegmentationCriterion : public SequenceCriterion {
   }
 
   af::array viterbiPath(const af::array& input) override {
-    return fl::task::asr::viterbiPath(input, params_[0].array());
+    return fl::tasks::asr::viterbiPath(input, params_[0].array());
   }
 
   af::array viterbiPath(const af::array& input, const af::array& target)
@@ -87,7 +87,7 @@ class AutoSegmentationCriterion : public SequenceCriterion {
 
 using ASGLoss = AutoSegmentationCriterion;
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::task::asr::AutoSegmentationCriterion)
+CEREAL_REGISTER_TYPE(fl::tasks::asr::AutoSegmentationCriterion)

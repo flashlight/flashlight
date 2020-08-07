@@ -17,7 +17,7 @@ using fl::Variable;
 using FCC = fl::lib::cuda::FullConnectionCriterion<float>;
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 static void backward(
@@ -109,5 +109,5 @@ Variable FullConnectionCriterion::forward(
       });
 }
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

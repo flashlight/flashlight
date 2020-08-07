@@ -42,7 +42,7 @@ af::array logSoftmax(const af::array& input, const int dim) {
 using namespace fl;
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 ConnectionistTemporalClassificationCriterion::
@@ -111,5 +111,5 @@ void ConnectionistTemporalClassificationCriterion::validate(
   }
 }
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

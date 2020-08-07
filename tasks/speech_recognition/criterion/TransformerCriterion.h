@@ -20,7 +20,7 @@
 #include "flashlight/contrib/modules/Transformer.h"
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 struct TS2SState {
@@ -152,7 +152,7 @@ struct TS2SDecoderBuffer {
 AMUpdateFunc buildTransformerAmUpdateFunction(
     std::shared_ptr<SequenceCriterion>& crit);
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::task::asr::TransformerCriterion)
+CEREAL_REGISTER_TYPE(fl::tasks::asr::TransformerCriterion)

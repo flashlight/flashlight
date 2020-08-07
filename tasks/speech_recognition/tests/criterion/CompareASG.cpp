@@ -22,7 +22,7 @@
 #include "criterion/AutoSegmentationCriterion.h"
 
 using namespace fl;
-using namespace fl::task::asr;
+using namespace fl::tasks::asr;
 
 namespace {
 

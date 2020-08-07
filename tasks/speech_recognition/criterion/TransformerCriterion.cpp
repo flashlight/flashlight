@@ -17,7 +17,7 @@ using namespace fl;
 using namespace fl::ext;
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 TransformerCriterion buildTransformerCriterion(
@@ -27,18 +27,18 @@ TransformerCriterion buildTransformerCriterion(
     float layerdrop,
     int eosIdx) {
   std::shared_ptr<AttentionBase> attention;
-  if (FLAGS_attention == fl::task::asr::kContentAttention) {
+  if (FLAGS_attention == fl::tasks::asr::kContentAttention) {
     attention = std::make_shared<ContentAttention>();
-  } else if (FLAGS_attention == fl::task::asr::kKeyValueAttention) {
+  } else if (FLAGS_attention == fl::tasks::asr::kKeyValueAttention) {
     attention = std::make_shared<ContentAttention>(true);
-  } else if (FLAGS_attention == fl::task::asr::kNeuralContentAttention) {
+  } else if (FLAGS_attention == fl::tasks::asr::kNeuralContentAttention) {
     attention = std::make_shared<NeuralContentAttention>(FLAGS_encoderdim);
-  } else if (FLAGS_attention == fl::task::asr::kSimpleLocationAttention) {
+  } else if (FLAGS_attention == fl::tasks::asr::kSimpleLocationAttention) {
     attention = std::make_shared<SimpleLocationAttention>(FLAGS_attnconvkernel);
-  } else if (FLAGS_attention == fl::task::asr::kLocationAttention) {
+  } else if (FLAGS_attention == fl::tasks::asr::kLocationAttention) {
     attention = std::make_shared<LocationAttention>(
         FLAGS_encoderdim, FLAGS_attnconvkernel);
-  } else if (FLAGS_attention == fl::task::asr::kNeuralLocationAttention) {
+  } else if (FLAGS_attention == fl::tasks::asr::kNeuralLocationAttention) {
     attention = std::make_shared<NeuralLocationAttention>(
         FLAGS_encoderdim,
         FLAGS_attndim,
@@ -49,18 +49,18 @@ TransformerCriterion buildTransformerCriterion(
   }
 
   std::shared_ptr<WindowBase> window;
-  if (FLAGS_attnWindow == fl::task::asr::kNoWindow) {
+  if (FLAGS_attnWindow == fl::tasks::asr::kNoWindow) {
     window = nullptr;
-  } else if (FLAGS_attnWindow == fl::task::asr::kMedianWindow) {
+  } else if (FLAGS_attnWindow == fl::tasks::asr::kMedianWindow) {
     window = std::make_shared<MedianWindow>(
         FLAGS_leftWindowSize, FLAGS_rightWindowSize);
-  } else if (FLAGS_attnWindow == fl::task::asr::kStepWindow) {
+  } else if (FLAGS_attnWindow == fl::tasks::asr::kStepWindow) {
     window = std::make_shared<StepWindow>(
         FLAGS_minsil, FLAGS_maxsil, FLAGS_minrate, FLAGS_maxrate);
-  } else if (FLAGS_attnWindow == fl::task::asr::kSoftWindow) {
+  } else if (FLAGS_attnWindow == fl::tasks::asr::kSoftWindow) {
     window = std::make_shared<SoftWindow>(
         FLAGS_softwstd, FLAGS_softwrate, FLAGS_softwoffset);
-  } else if (FLAGS_attnWindow == fl::task::asr::kSoftPretrainWindow) {
+  } else if (FLAGS_attnWindow == fl::tasks::asr::kSoftPretrainWindow) {
     window = std::make_shared<SoftPretrainWindow>(FLAGS_softwstd);
   } else {
     throw std::runtime_error("Unimplmented window: " + FLAGS_attnWindow);
@@ -396,5 +396,5 @@ std::string TransformerCriterion::prettyString() const {
   return "TransformerCriterion";
 }
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

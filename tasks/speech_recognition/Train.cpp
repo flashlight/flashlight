@@ -32,7 +32,7 @@
 
 using namespace fl::ext;
 using namespace fl::lib;
-using namespace fl::task::asr;
+using namespace fl::tasks::asr;
 
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);

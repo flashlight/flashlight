@@ -17,7 +17,7 @@
 #include "flashlight/libraries/common/System.h"
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 struct Serializer {
@@ -83,5 +83,5 @@ struct Serializer {
   }
 };
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

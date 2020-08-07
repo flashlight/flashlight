@@ -17,7 +17,7 @@
 #include "criterion/criterion.h"
 
 using namespace fl;
-using namespace fl::task::asr;
+using namespace fl::tasks::asr;
 
 int main() {
   af::info();

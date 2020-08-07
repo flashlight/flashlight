@@ -13,7 +13,7 @@
 #include <vector>
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 enum class SoundFormat {
@@ -102,5 +102,5 @@ void saveSound(
     const SoundFormat format,
     const SoundSubFormat subformat);
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

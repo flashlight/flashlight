@@ -14,7 +14,7 @@
 
 #include <sndfile.h>
 
-using namespace fl::task::asr;
+using namespace fl::tasks::asr;
 
 namespace {
 
@@ -79,7 +79,7 @@ const std::unordered_map<SoundSubFormat, int, EnumClassHash> subformats{
 } // namespace
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 extern "C" {
@@ -403,5 +403,5 @@ template void saveSound(
     SoundFormat,
     SoundSubFormat);
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

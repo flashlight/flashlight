@@ -14,7 +14,7 @@
 #include "criterion/attention/attention.h"
 
 using namespace fl;
-using namespace fl::task::asr;
+using namespace fl::tasks::asr;
 
 namespace {
 void sequential_test(std::shared_ptr<AttentionBase> attention, int H) {

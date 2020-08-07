@@ -15,7 +15,7 @@
 using namespace fl::lib;
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 std::vector<std::string> wrd2Target(
@@ -105,5 +105,5 @@ std::vector<std::string> wrd2Target(
   return res;
 }
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

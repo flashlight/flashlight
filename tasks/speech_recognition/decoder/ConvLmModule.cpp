@@ -13,7 +13,7 @@
 #include "flashlight/extensions/common/Utils.h"
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 GetConvLmScoreFunc buildGetConvLmScoreFunction(
@@ -66,5 +66,5 @@ GetConvLmScoreFunc buildGetConvLmScoreFunction(
   return getConvLmScoreFunc;
 }
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

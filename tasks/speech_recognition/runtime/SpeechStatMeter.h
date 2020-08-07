@@ -11,7 +11,7 @@
 #include <flashlight/flashlight.h>
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 struct SpeechStats {
@@ -38,5 +38,5 @@ class SpeechStatMeter {
   SpeechStats stats_;
 };
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

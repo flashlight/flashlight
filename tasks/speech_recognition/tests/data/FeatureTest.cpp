@@ -20,7 +20,7 @@
 
 using namespace fl;
 using namespace fl::lib;
-using namespace fl::task::asr;
+using namespace fl::tasks::asr;
 
 template <typename T>
 bool compareVec(std::vector<T> A, std::vector<T> B, float precision = 1E-5) {

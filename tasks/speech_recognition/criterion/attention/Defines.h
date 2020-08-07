@@ -11,7 +11,7 @@
 #include <flashlight/flashlight.h>
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 // attention
@@ -33,5 +33,5 @@ const std::string kSoftWindow = "soft";
 const std::string kSoftPretrainWindow = "softPretrain";
 const std::string kStepWindow = "step";
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

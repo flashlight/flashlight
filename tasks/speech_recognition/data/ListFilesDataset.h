@@ -13,7 +13,7 @@
 #include "data/Utils.h"
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 class ListFilesDataset : public Dataset {
@@ -45,5 +45,5 @@ class ListFilesDataset : public Dataset {
   std::vector<SpeechSampleMetaInfo> loadListFile(const std::string& filename);
 };
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

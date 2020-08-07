@@ -22,7 +22,7 @@
 using namespace fl::lib;
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 FeatureParams defineSpeechFeatureParams() {
@@ -246,5 +246,5 @@ FeatureData featurize(
   return feat;
 }
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

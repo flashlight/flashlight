@@ -18,7 +18,7 @@ using namespace fl::ext;
 using namespace fl::lib;
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 template <class T>
@@ -166,5 +166,5 @@ std::shared_ptr<Dataset> createDataset(
   return ds;
 }
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

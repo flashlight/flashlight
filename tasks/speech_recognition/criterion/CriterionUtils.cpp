@@ -15,7 +15,7 @@ using namespace fl::lib;
 using fl::Variable;
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 int countRepeats(const int* labels, int len) {
@@ -63,7 +63,7 @@ Variable getLinearTarget(const Variable& targetVar, int T) {
     const auto pTarget = target.data() + b * L;
     auto pNewTarget = newTarget.data() + b * T;
 
-    int targetSize = std::min(T, fl::task::asr::getTargetSize(pTarget, L));
+    int targetSize = std::min(T, fl::tasks::asr::getTargetSize(pTarget, L));
     if (targetSize == 0) {
       // hacky way to make ASG think L == 0.
       std::fill(pNewTarget, pNewTarget + T, -1);
@@ -77,5 +77,5 @@ Variable getLinearTarget(const Variable& targetVar, int T) {
 }
 
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

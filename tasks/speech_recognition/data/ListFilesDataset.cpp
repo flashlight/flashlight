@@ -18,7 +18,7 @@
 using namespace fl::lib;
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 ListFilesDataset::ListFilesDataset(
@@ -144,5 +144,5 @@ std::vector<SpeechSampleMetaInfo> ListFilesDataset::loadListFile(
   return samplesMetaInfo;
 }
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

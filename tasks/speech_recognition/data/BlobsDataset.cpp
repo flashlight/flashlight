@@ -19,7 +19,7 @@
 using namespace fl::lib;
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 BlobsDataset::BlobsDataset(
@@ -133,5 +133,5 @@ std::vector<SpeechSampleMetaInfo> BlobsDataset::loadBlob(
   return samplesMetaInfo;
 }
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

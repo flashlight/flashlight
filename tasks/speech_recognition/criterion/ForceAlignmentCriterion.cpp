@@ -9,7 +9,7 @@
 #include "criterion/ForceAlignmentCriterion.h"
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 ForceAlignmentCriterion::ForceAlignmentCriterion(
@@ -28,5 +28,5 @@ std::string ForceAlignmentCriterion::prettyString() const {
   return "ForceAlignmentCriterion";
 }
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

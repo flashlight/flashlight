@@ -13,7 +13,7 @@
 #include "SequenceCriterion.h"
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 class ConnectionistTemporalClassificationCriterion : public SequenceCriterion {
@@ -41,8 +41,8 @@ class ConnectionistTemporalClassificationCriterion : public SequenceCriterion {
 
 typedef ConnectionistTemporalClassificationCriterion CTCLoss;
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl
 
 CEREAL_REGISTER_TYPE(
-    fl::task::asr::ConnectionistTemporalClassificationCriterion)
+    fl::tasks::asr::ConnectionistTemporalClassificationCriterion)

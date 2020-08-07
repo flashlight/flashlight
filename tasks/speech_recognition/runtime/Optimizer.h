@@ -13,7 +13,7 @@
 #include "common/Defines.h"
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
@@ -23,5 +23,5 @@ std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
     double momentum,
     double weightdecay);
 }
-} // namespace task
+} // namespace tasks
 } // namespace fl

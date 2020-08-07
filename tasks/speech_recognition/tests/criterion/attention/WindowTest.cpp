@@ -14,7 +14,7 @@
 #include "criterion/attention/window.h"
 
 using namespace fl;
-using namespace fl::task::asr;
+using namespace fl::tasks::asr;
 
 TEST(WindowTest, MedianWindow) {
   int inputsteps = 12;

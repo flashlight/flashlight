@@ -18,43 +18,43 @@ using namespace fl;
 using namespace fl::ext;
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 namespace detail {
 std::shared_ptr<AttentionBase> buildAttention() {
   std::shared_ptr<AttentionBase> attention;
-  if (FLAGS_attention == fl::task::asr::kContentAttention) {
+  if (FLAGS_attention == fl::tasks::asr::kContentAttention) {
     attention = std::make_shared<ContentAttention>();
-  } else if (FLAGS_attention == fl::task::asr::kKeyValueAttention) {
+  } else if (FLAGS_attention == fl::tasks::asr::kKeyValueAttention) {
     attention = std::make_shared<ContentAttention>(true);
-  } else if (FLAGS_attention == fl::task::asr::kNeuralContentAttention) {
+  } else if (FLAGS_attention == fl::tasks::asr::kNeuralContentAttention) {
     attention = std::make_shared<NeuralContentAttention>(FLAGS_encoderdim);
-  } else if (FLAGS_attention == fl::task::asr::kSimpleLocationAttention) {
+  } else if (FLAGS_attention == fl::tasks::asr::kSimpleLocationAttention) {
     attention = std::make_shared<SimpleLocationAttention>(FLAGS_attnconvkernel);
-  } else if (FLAGS_attention == fl::task::asr::kLocationAttention) {
+  } else if (FLAGS_attention == fl::tasks::asr::kLocationAttention) {
     attention = std::make_shared<LocationAttention>(
         FLAGS_encoderdim, FLAGS_attnconvkernel);
-  } else if (FLAGS_attention == fl::task::asr::kNeuralLocationAttention) {
+  } else if (FLAGS_attention == fl::tasks::asr::kNeuralLocationAttention) {
     attention = std::make_shared<NeuralLocationAttention>(
         FLAGS_encoderdim,
         FLAGS_attndim,
         FLAGS_attnconvchannel,
         FLAGS_attnconvkernel);
-  } else if (FLAGS_attention == fl::task::asr::kMultiHeadContentAttention) {
+  } else if (FLAGS_attention == fl::tasks::asr::kMultiHeadContentAttention) {
     attention = std::make_shared<MultiHeadContentAttention>(
         FLAGS_encoderdim, FLAGS_numattnhead);
   } else if (
-      FLAGS_attention == fl::task::asr::kMultiHeadKeyValueContentAttention) {
+      FLAGS_attention == fl::tasks::asr::kMultiHeadKeyValueContentAttention) {
     attention = std::make_shared<MultiHeadContentAttention>(
         FLAGS_encoderdim, FLAGS_numattnhead, true);
   } else if (
-      FLAGS_attention == fl::task::asr::kMultiHeadSplitContentAttention) {
+      FLAGS_attention == fl::tasks::asr::kMultiHeadSplitContentAttention) {
     attention = std::make_shared<MultiHeadContentAttention>(
         FLAGS_encoderdim, FLAGS_numattnhead, false, true);
   } else if (
       FLAGS_attention ==
-      fl::task::asr::kMultiHeadKeyValueSplitContentAttention) {
+      fl::tasks::asr::kMultiHeadKeyValueSplitContentAttention) {
     attention = std::make_shared<MultiHeadContentAttention>(
         FLAGS_encoderdim, FLAGS_numattnhead, true, true);
   } else {
@@ -66,18 +66,18 @@ std::shared_ptr<AttentionBase> buildAttention() {
 
 std::shared_ptr<WindowBase> buildWindow() {
   std::shared_ptr<WindowBase> window;
-  if (FLAGS_attnWindow == fl::task::asr::kNoWindow) {
+  if (FLAGS_attnWindow == fl::tasks::asr::kNoWindow) {
     window = nullptr;
-  } else if (FLAGS_attnWindow == fl::task::asr::kMedianWindow) {
+  } else if (FLAGS_attnWindow == fl::tasks::asr::kMedianWindow) {
     window = std::make_shared<MedianWindow>(
         FLAGS_leftWindowSize, FLAGS_rightWindowSize);
-  } else if (FLAGS_attnWindow == fl::task::asr::kStepWindow) {
+  } else if (FLAGS_attnWindow == fl::tasks::asr::kStepWindow) {
     window = std::make_shared<StepWindow>(
         FLAGS_minsil, FLAGS_maxsil, FLAGS_minrate, FLAGS_maxrate);
-  } else if (FLAGS_attnWindow == fl::task::asr::kSoftWindow) {
+  } else if (FLAGS_attnWindow == fl::tasks::asr::kSoftWindow) {
     window = std::make_shared<SoftWindow>(
         FLAGS_softwstd, FLAGS_softwrate, FLAGS_softwoffset);
-  } else if (FLAGS_attnWindow == fl::task::asr::kSoftPretrainWindow) {
+  } else if (FLAGS_attnWindow == fl::tasks::asr::kSoftPretrainWindow) {
     window = std::make_shared<SoftPretrainWindow>(FLAGS_softwstd);
   } else {
     throw std::runtime_error("Unimplmented window: " + FLAGS_attnWindow);
@@ -169,7 +169,7 @@ Seq2SeqCriterion::Seq2SeqCriterion(
     int pctTeacherForcing /* = 100 */,
     double labelSmooth /* = 0.0 */,
     bool inputFeeding /* = false */,
-    std::string samplingStrategy, /* = fl::task::asr::kRandSampling */
+    std::string samplingStrategy, /* = fl::tasks::asr::kRandSampling */
     double gumbelTemperature /* = 1.0 */,
     int nRnnLayer /* = 1 */,
     int nAttnRound /* = 1 */,
@@ -259,10 +259,10 @@ std::pair<Variable, Variable> Seq2SeqCriterion::vectorizedDecoder(
     // Slice off eos
     auto y = target(af::seq(0, U - 2), af::span);
     if (train_) {
-      if (samplingStrategy_ == fl::task::asr::kModelSampling) {
+      if (samplingStrategy_ == fl::tasks::asr::kModelSampling) {
         throw std::logic_error(
             "vectorizedDecoder does not support model sampling");
-      } else if (samplingStrategy_ == fl::task::asr::kRandSampling) {
+      } else if (samplingStrategy_ == fl::tasks::asr::kRandSampling) {
         auto mask =
             Variable(af::randu(y.dims()) * 100 <= pctTeacherForcing_, false);
         auto samples =
@@ -317,7 +317,7 @@ std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
 
     if (!train_) {
       y = target(u, af::span);
-    } else if (samplingStrategy_ == fl::task::asr::kGumbelSampling) {
+    } else if (samplingStrategy_ == fl::tasks::asr::kGumbelSampling) {
       double eps = 1e-7;
       auto gb = -log(-log((1 - 2 * eps) * af::randu(ox.dims()) + eps));
       ox = logSoftmax((ox + Variable(gb, false)) / gumbelTemperature_, 0);
@@ -325,11 +325,11 @@ std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
     } else if (af::allTrue<bool>(
                    af::randu(1) * 100 <= af::constant(pctTeacherForcing_, 1))) {
       y = target(u, af::span);
-    } else if (samplingStrategy_ == fl::task::asr::kModelSampling) {
+    } else if (samplingStrategy_ == fl::tasks::asr::kModelSampling) {
       af::array maxIdx, maxValues;
       max(maxValues, maxIdx, ox.array());
       y = Variable(maxIdx, false);
-    } else if (samplingStrategy_ == fl::task::asr::kRandSampling) {
+    } else if (samplingStrategy_ == fl::tasks::asr::kRandSampling) {
       y = Variable(
           (af::randu(af::dim4{1, target.dims(1)}) * (nClass_ - 1)).as(s32),
           false);
@@ -507,7 +507,7 @@ std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
   Variable hy;
   if (y.isempty()) {
     hy = tile(startEmbedding(), {1, 1, static_cast<int>(xEncoded.dims(2))});
-  } else if (train_ && samplingStrategy_ == fl::task::asr::kGumbelSampling) {
+  } else if (train_ && samplingStrategy_ == fl::tasks::asr::kGumbelSampling) {
     hy = linear(y, embedding()->param(0));
   } else {
     hy = embedding()->forward(y);
@@ -636,8 +636,8 @@ Seq2SeqCriterion::decodeBatchStep(
 void Seq2SeqCriterion::setUseSequentialDecoder() {
   useSequentialDecoder_ = false;
   if ((pctTeacherForcing_ < 100 &&
-       samplingStrategy_ == fl::task::asr::kModelSampling) ||
-      samplingStrategy_ == fl::task::asr::kGumbelSampling || inputFeeding_) {
+       samplingStrategy_ == fl::tasks::asr::kModelSampling) ||
+      samplingStrategy_ == fl::tasks::asr::kGumbelSampling || inputFeeding_) {
     useSequentialDecoder_ = true;
   } else if (
       std::dynamic_pointer_cast<SimpleLocationAttention>(attention(0)) ||
@@ -719,5 +719,5 @@ AMUpdateFunc buildAmUpdateFunction(
   return amUpdateFunc;
 }
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

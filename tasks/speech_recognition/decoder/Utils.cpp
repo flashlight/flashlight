@@ -13,7 +13,7 @@
 using namespace fl::lib;
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 std::vector<std::string> tknIdx2Ltr(
@@ -137,5 +137,5 @@ std::vector<int> validateIdx(std::vector<int> input, int unkIdx) {
   return input;
 }
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

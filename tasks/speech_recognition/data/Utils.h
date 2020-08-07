@@ -15,7 +15,7 @@
 #include "flashlight/libraries/language/dictionary/Utils.h"
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 std::vector<std::string> wrd2Target(
@@ -32,5 +32,5 @@ std::vector<std::string> wrd2Target(
     bool fallback2Ltr = false,
     bool skipUnk = false);
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

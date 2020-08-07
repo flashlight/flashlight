@@ -15,7 +15,7 @@
 using namespace fl;
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 FullConnectionCriterion::FullConnectionCriterion(
@@ -34,5 +34,5 @@ std::string FullConnectionCriterion::prettyString() const {
   return "FullConnectionCriterion";
 }
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

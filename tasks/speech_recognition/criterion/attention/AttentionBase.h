@@ -11,7 +11,7 @@
 #include <flashlight/flashlight.h>
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 class AttentionBase : public fl::Container {
@@ -61,7 +61,7 @@ class AttentionBase : public fl::Container {
   FL_SAVE_LOAD_WITH_BASE(fl::Container)
 };
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::task::asr::AttentionBase)
+CEREAL_REGISTER_TYPE(fl::tasks::asr::AttentionBase)

@@ -11,7 +11,7 @@
 #include "criterion/attention/AttentionBase.h"
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 class MultiHeadContentAttention : public AttentionBase {
@@ -38,7 +38,7 @@ class MultiHeadContentAttention : public AttentionBase {
   FL_SAVE_LOAD_WITH_BASE(AttentionBase, numHeads_, keyValue_, splitInput_)
 };
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::task::asr::MultiHeadContentAttention)
+CEREAL_REGISTER_TYPE(fl::tasks::asr::MultiHeadContentAttention)

@@ -23,7 +23,7 @@ using namespace fl::ext;
 using CriterionUtils = fl::lib::cuda::CriterionUtils<float>;
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 namespace {
@@ -103,7 +103,7 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
 
     // A heuristic to modify target length to be able to compute CTC loss
     L = std::min(L, T);
-    const int R = fl::task::asr::countRepeats(targetVec, L);
+    const int R = fl::tasks::asr::countRepeats(targetVec, L);
     L = std::min(L + R, T) - R;
 
     labelLengths.push_back(L);
@@ -167,5 +167,5 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
   return {Variable(result, {input, target}, gradFunc)};
 }
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

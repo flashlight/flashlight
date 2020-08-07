@@ -11,7 +11,7 @@
 using namespace fl;
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 SimpleLocationAttention::SimpleLocationAttention(int convKernel) {
@@ -173,5 +173,5 @@ std::string NeuralLocationAttention::prettyString() const {
   return "NeuralLocationBasedAttention";
 }
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

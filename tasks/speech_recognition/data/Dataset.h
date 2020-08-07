@@ -17,7 +17,7 @@
 #include "flashlight/libraries/language/dictionary/Dictionary.h"
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 class Dataset : public fl::Dataset {
@@ -90,5 +90,5 @@ class RoundRobinBatchPacker : public BatchPacker {
   int64_t worldRank_;
 };
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

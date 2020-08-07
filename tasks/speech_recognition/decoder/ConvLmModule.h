@@ -12,7 +12,7 @@
 #include <flashlight/flashlight.h>
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 using GetConvLmScoreFunc = std::function<std::vector<
@@ -20,5 +20,5 @@ using GetConvLmScoreFunc = std::function<std::vector<
 
 GetConvLmScoreFunc buildGetConvLmScoreFunction(std::shared_ptr<Module> network);
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl

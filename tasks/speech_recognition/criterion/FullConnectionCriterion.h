@@ -13,7 +13,7 @@
 #include "Defines.h"
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 class FullConnectionCriterion : public fl::BinaryModule {
@@ -42,7 +42,7 @@ class FullConnectionCriterion : public fl::BinaryModule {
 
 typedef FullConnectionCriterion FCCLoss;
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::task::asr::FullConnectionCriterion)
+CEREAL_REGISTER_TYPE(fl::tasks::asr::FullConnectionCriterion)

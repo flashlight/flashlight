@@ -11,7 +11,7 @@
 using namespace fl;
 
 namespace fl {
-namespace task {
+namespace tasks {
 namespace asr {
 
 SoftWindow::SoftWindow() {}
@@ -59,5 +59,5 @@ SoftWindow::computeWindowMask(int targetLen, int inputSteps, int batchSize) {
   return mask;
 }
 } // namespace asr
-} // namespace task
+} // namespace tasks
 } // namespace fl
