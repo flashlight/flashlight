@@ -49,7 +49,7 @@ std::vector<int> validateIdx(std::vector<int> input, int unkIdx);
 template <class T>
 void remapLabels(std::vector<T>& labels, const Dictionary& dict) {
   if (FLAGS_eostoken) {
-    int eosidx = dict.getIndex(lib::text::kEosToken);
+    int eosidx = dict.getIndex(kEosToken);
     while (!labels.empty() && labels.back() == eosidx) {
       labels.pop_back();
     }
