@@ -11,5 +11,5 @@
 #include "flashlight/tasks/speech_recognition/runtime/Helpers.h"
 #include "flashlight/tasks/speech_recognition/runtime/Logger.h"
 #include "flashlight/tasks/speech_recognition/runtime/Optimizer.h"
-#include "flashlight/tasks/speech_recognition/runtime/Serial.h"
+#include "flashlight/tasks/speech_recognition/runtime/Serialization.h"
 #include "flashlight/tasks/speech_recognition/runtime/SpeechStatMeter.h"

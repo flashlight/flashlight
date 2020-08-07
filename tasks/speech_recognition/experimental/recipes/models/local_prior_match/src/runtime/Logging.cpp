@@ -14,7 +14,7 @@
 #include <glog/logging.h>
 
 #include "recipes/models/local_prior_match/src/runtime/Defines.h"
-#include "flashlight/tasks/speech_recognition/runtime/Serial.h"
+#include "flashlight/tasks/speech_recognition/runtime/Serialization.h"
 
 namespace w2l {
 
