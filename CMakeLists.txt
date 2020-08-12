@@ -83,7 +83,7 @@ if (FL_BUILD_LIBRARIES_ONLY)
 endif()
 
 # --------------------------- flashlight ---------------------------
-# Primary lib target. All non-library code is linked here, including tasks
+# Primary lib target. All non-library code is linked here, including app
 add_library(flashlight "")
 
 set_target_properties(
@@ -240,8 +240,8 @@ include(${FLASHLIGHT_EXT_DIR}/CMakeLists.txt)
 setup_install_headers(${FLASHLIGHT_EXT_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
 
 # --------------------------- Tasks ---------------------------
-set(FLASHLIGHT_TASKS_DIR "${PROJECT_SOURCE_DIR}/tasks")
-include(${FLASHLIGHT_TASKS_DIR}/CMakeLists.txt)
+set(FLASHLIGHT_APPS_DIR "${PROJECT_SOURCE_DIR}/app")
+include(${FLASHLIGHT_APPS_DIR}/CMakeLists.txt)
 
 # Fallthrough default install
 setup_install_targets(INSTALL_TARGETS ${INSTALLABLE_TARGETS})
