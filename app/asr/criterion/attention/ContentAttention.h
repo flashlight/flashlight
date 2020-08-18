@@ -11,7 +11,7 @@
 #include "AttentionBase.h"
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 class ContentAttention : public AttentionBase {
@@ -49,9 +49,9 @@ class NeuralContentAttention : public AttentionBase {
   FL_SAVE_LOAD_WITH_BASE(AttentionBase)
 };
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::tasks::asr::ContentAttention)
-CEREAL_CLASS_VERSION(fl::tasks::asr::ContentAttention, 1)
-CEREAL_REGISTER_TYPE(fl::tasks::asr::NeuralContentAttention)
+CEREAL_REGISTER_TYPE(fl::app::asr::ContentAttention)
+CEREAL_CLASS_VERSION(fl::app::asr::ContentAttention, 1)
+CEREAL_REGISTER_TYPE(fl::app::asr::NeuralContentAttention)

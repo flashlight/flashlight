@@ -13,7 +13,7 @@
 #include <flashlight/flashlight.h>
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 // Convenience structs for serializing emissions and targets
@@ -47,5 +47,5 @@ struct TargetUnit {
 
 using EmissionTargetPair = std::pair<EmissionUnit, TargetUnit>;
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

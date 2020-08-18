@@ -33,7 +33,7 @@
 using namespace fl::ext;
 using namespace fl::lib;
 using namespace fl::lib::text;
-using namespace fl::tasks::asr;
+using namespace fl::app::asr;
 
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
@@ -198,7 +198,7 @@ int main(int argc, char** argv) {
     tokenDict.addEntry(kBlankToken);
   }
   if (FLAGS_eostoken) {
-    tokenDict.addEntry(fl::tasks::asr::kEosToken);
+    tokenDict.addEntry(fl::app::asr::kEosToken);
   }
 
   int numClasses = tokenDict.indexSize();
@@ -235,7 +235,7 @@ int main(int argc, char** argv) {
           std::make_shared<ASGLoss>(numClasses, scalemode, FLAGS_transdiag);
     } else if (FLAGS_criterion == kSeq2SeqCriterion) {
       criterion = std::make_shared<Seq2SeqCriterion>(buildSeq2Seq(
-          numClasses, tokenDict.getIndex(fl::tasks::asr::kEosToken)));
+          numClasses, tokenDict.getIndex(fl::app::asr::kEosToken)));
     } else if (FLAGS_criterion == kTransformerCriterion) {
       criterion =
           std::make_shared<TransformerCriterion>(buildTransformerCriterion(
@@ -243,7 +243,7 @@ int main(int argc, char** argv) {
               FLAGS_am_decoder_tr_layers,
               FLAGS_am_decoder_tr_dropout,
               FLAGS_am_decoder_tr_layerdrop,
-              tokenDict.getIndex(fl::tasks::asr::kEosToken)));
+              tokenDict.getIndex(fl::app::asr::kEosToken)));
     } else {
       LOG(FATAL) << "unimplemented criterion";
     }

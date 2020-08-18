@@ -13,7 +13,7 @@
 #include "flashlight/lib/text/dictionary/Utils.h"
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 fl::Dataset::DataTransformFunction inputFeatures(
@@ -126,5 +126,5 @@ std::vector<T> normalize(
   return out;
 }
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

@@ -18,7 +18,7 @@
 #include "flashlight/ext/common/DistributedUtils.h"
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 struct Seq2SeqState {
@@ -61,7 +61,7 @@ class Seq2SeqCriterion : public SequenceCriterion {
       int pctTeacherForcing = 100,
       double labelSmooth = 0.0,
       bool inputFeeding = false,
-      std::string samplingStrategy = fl::tasks::asr::kRandSampling,
+      std::string samplingStrategy = fl::app::asr::kRandSampling,
       double gumbelTemperature = 1.0,
       int nRnnLayer = 1,
       int nAttnRound = 1,
@@ -183,7 +183,7 @@ class Seq2SeqCriterion : public SequenceCriterion {
   void setUseSequentialDecoder();
 };
 
-fl::tasks::asr::Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx);
+fl::app::asr::Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx);
 
 /* Decoder helpers */
 struct Seq2SeqDecoderBuffer {
@@ -221,8 +221,8 @@ typedef std::function<
 AMUpdateFunc buildAmUpdateFunction(
     std::shared_ptr<SequenceCriterion>& criterion);
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::tasks::asr::Seq2SeqCriterion)
-CEREAL_CLASS_VERSION(fl::tasks::asr::Seq2SeqCriterion, 3)
+CEREAL_REGISTER_TYPE(fl::app::asr::Seq2SeqCriterion)
+CEREAL_CLASS_VERSION(fl::app::asr::Seq2SeqCriterion, 3)

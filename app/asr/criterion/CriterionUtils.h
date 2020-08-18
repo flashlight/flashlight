@@ -17,7 +17,7 @@
 #include "flashlight/app/asr/criterion/Defines.h"
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 #define NEG_INFINITY_FLT -std::numeric_limits<float>::infinity()
@@ -107,5 +107,5 @@ inline af::array reorder(
   return moddims(result, result.dims());
 }
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

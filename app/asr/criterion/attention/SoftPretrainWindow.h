@@ -11,7 +11,7 @@
 #include "flashlight/app/asr/criterion/attention/WindowBase.h"
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 class SoftPretrainWindow : public WindowBase {
@@ -35,7 +35,7 @@ class SoftPretrainWindow : public WindowBase {
   FL_SAVE_LOAD_WITH_BASE(WindowBase, std_)
 };
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::tasks::asr::SoftPretrainWindow)
+CEREAL_REGISTER_TYPE(fl::app::asr::SoftPretrainWindow)

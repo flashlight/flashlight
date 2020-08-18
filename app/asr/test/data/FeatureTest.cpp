@@ -21,7 +21,7 @@
 using namespace fl;
 using namespace fl::lib::audio;
 using namespace fl::lib::text;
-using namespace fl::tasks::asr;
+using namespace fl::app::asr;
 
 template <typename T>
 bool compareVec(std::vector<T> A, std::vector<T> B, float precision = 1E-5) {

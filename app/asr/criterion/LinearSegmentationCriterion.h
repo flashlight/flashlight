@@ -14,7 +14,7 @@
 using fl::lib::seq::CriterionScaleMode;
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 class LinearSegmentationCriterion : public AutoSegmentationCriterion {
@@ -47,7 +47,7 @@ class LinearSegmentationCriterion : public AutoSegmentationCriterion {
 
 using LinSegCriterion = LinearSegmentationCriterion;
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::tasks::asr::LinearSegmentationCriterion)
+CEREAL_REGISTER_TYPE(fl::app::asr::LinearSegmentationCriterion)

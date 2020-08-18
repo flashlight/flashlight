@@ -15,7 +15,7 @@ using fl::lib::text::Dictionary;
 using fl::lib::text::splitWrd;
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 std::vector<std::string> tknIdx2Ltr(
@@ -139,5 +139,5 @@ std::vector<int> validateIdx(std::vector<int> input, int unkIdx) {
   return input;
 }
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

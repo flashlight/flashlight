@@ -11,7 +11,7 @@
 #include "flashlight/lib/sequence/criterion/Defines.h"
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 // sampling strategy to use in decoder in place of teacher forcing
@@ -19,5 +19,5 @@ constexpr const char* kModelSampling = "model";
 constexpr const char* kRandSampling = "rand";
 constexpr const char* kGumbelSampling = "gumbel";
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

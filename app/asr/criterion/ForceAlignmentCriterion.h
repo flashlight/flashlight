@@ -16,7 +16,7 @@
 using fl::lib::seq::CriterionScaleMode;
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 class ForceAlignmentCriterion : public fl::BinaryModule {
@@ -47,7 +47,7 @@ class ForceAlignmentCriterion : public fl::BinaryModule {
 
 typedef ForceAlignmentCriterion FACLoss;
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::tasks::asr::ForceAlignmentCriterion)
+CEREAL_REGISTER_TYPE(fl::app::asr::ForceAlignmentCriterion)

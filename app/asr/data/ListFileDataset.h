@@ -16,7 +16,7 @@
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 /**
@@ -69,5 +69,5 @@ class ListFileDataset : public fl::Dataset {
   std::vector<double> sizes_;
 };
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

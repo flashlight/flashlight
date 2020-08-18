@@ -18,7 +18,7 @@ using fl::lib::text::LexiconMap;
 using fl::lib::text::splitWrd;
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 std::vector<std::string> wrd2Target(
@@ -108,5 +108,5 @@ std::vector<std::string> wrd2Target(
   return res;
 }
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

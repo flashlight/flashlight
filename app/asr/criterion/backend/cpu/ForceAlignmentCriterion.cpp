@@ -25,7 +25,7 @@ struct Context {
 } // namespace
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 static void backward(
@@ -152,5 +152,5 @@ af::array ForceAlignmentCriterion::viterbiPath(
   return af::array(T, B, bestPaths.data());
 }
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

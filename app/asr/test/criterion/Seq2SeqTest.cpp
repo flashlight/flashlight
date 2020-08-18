@@ -16,7 +16,7 @@
 
 using namespace fl;
 using namespace fl::ext;
-using namespace fl::tasks::asr;
+using namespace fl::app::asr;
 
 TEST(Seq2SeqTest, Seq2Seq) {
   int nclass = 40;

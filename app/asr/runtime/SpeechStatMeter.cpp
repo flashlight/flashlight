@@ -10,7 +10,7 @@
 #include <array>
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 SpeechStatMeter::SpeechStatMeter() {
   reset();
@@ -69,5 +69,5 @@ std::vector<int64_t> SpeechStats::toArray() {
   return arr;
 }
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

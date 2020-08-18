@@ -11,7 +11,7 @@
 using namespace fl;
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 MedianWindow::MedianWindow() {}
@@ -75,5 +75,5 @@ Variable MedianWindow::computeWindowMask(
   throw af::exception("MedianWindow does not support vectorized window mask");
 }
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

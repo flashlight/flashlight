@@ -12,7 +12,7 @@
 using namespace fl;
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 std::pair<Variable, Variable> ContentAttention::forward(
@@ -95,5 +95,5 @@ std::string NeuralContentAttention::prettyString() const {
   return "NeuralContentBasedAttention";
 }
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

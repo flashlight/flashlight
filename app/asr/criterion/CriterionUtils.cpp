@@ -16,7 +16,7 @@ using fl::Variable;
 using fl::lib::seq::CriterionScaleMode;
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 int countRepeats(const int* labels, int len) {
@@ -64,7 +64,7 @@ Variable getLinearTarget(const Variable& targetVar, int T) {
     const auto pTarget = target.data() + b * L;
     auto pNewTarget = newTarget.data() + b * T;
 
-    int targetSize = std::min(T, fl::tasks::asr::getTargetSize(pTarget, L));
+    int targetSize = std::min(T, fl::app::asr::getTargetSize(pTarget, L));
     if (targetSize == 0) {
       // hacky way to make ASG think L == 0.
       std::fill(pNewTarget, pNewTarget + T, -1);
@@ -78,5 +78,5 @@ Variable getLinearTarget(const Variable& targetVar, int T) {
 }
 
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

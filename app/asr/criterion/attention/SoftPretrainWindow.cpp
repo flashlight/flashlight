@@ -11,7 +11,7 @@
 using namespace fl;
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 SoftPretrainWindow::SoftPretrainWindow(double std) : std_(std) {}
@@ -44,5 +44,5 @@ Variable SoftPretrainWindow::computeWindowMask(
   return Variable(tile(maskArray, {1, 1, batchSize}), false);
 }
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

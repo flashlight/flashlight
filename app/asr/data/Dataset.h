@@ -17,7 +17,7 @@
 #include "flashlight/app/asr/data/Featurize.h"
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 class Dataset : public fl::Dataset {
@@ -90,5 +90,5 @@ class RoundRobinBatchPacker : public BatchPacker {
   int64_t worldRank_;
 };
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

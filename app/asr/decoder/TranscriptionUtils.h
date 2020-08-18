@@ -24,7 +24,7 @@
 using fl::lib::text::Dictionary;
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 /* A series of vector to vector mapping operations */
@@ -73,5 +73,5 @@ void remapLabels(std::vector<T>& labels, const Dictionary& dict) {
   }
 };
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

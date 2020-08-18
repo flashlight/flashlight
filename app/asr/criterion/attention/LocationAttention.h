@@ -11,7 +11,7 @@
 #include "flashlight/app/asr/criterion/attention/AttentionBase.h"
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 class SimpleLocationAttention : public AttentionBase {
@@ -72,9 +72,9 @@ class NeuralLocationAttention : public AttentionBase {
   FL_SAVE_LOAD_WITH_BASE(AttentionBase)
 };
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::tasks::asr::SimpleLocationAttention)
-CEREAL_REGISTER_TYPE(fl::tasks::asr::LocationAttention)
-CEREAL_REGISTER_TYPE(fl::tasks::asr::NeuralLocationAttention)
+CEREAL_REGISTER_TYPE(fl::app::asr::SimpleLocationAttention)
+CEREAL_REGISTER_TYPE(fl::app::asr::LocationAttention)
+CEREAL_REGISTER_TYPE(fl::app::asr::NeuralLocationAttention)

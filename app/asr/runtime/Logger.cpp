@@ -21,7 +21,7 @@ using namespace fl::ext;
 using namespace fl::lib;
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 std::pair<std::string, std::string> getStatus(
     TrainMeters& meters,
@@ -151,5 +151,5 @@ void syncMeter(TrainMeters& mtrs) {
 }
 
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

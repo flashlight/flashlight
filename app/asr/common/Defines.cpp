@@ -17,7 +17,7 @@
 using namespace fl::lib;
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 // DATA OPTIONS
@@ -420,5 +420,5 @@ void handleDeprecatedFlags() {
   }
 }
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

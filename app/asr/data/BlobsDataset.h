@@ -13,7 +13,7 @@
 #include "flashlight/app/asr/data/Utils.h"
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 class BlobsDataset : public Dataset {
@@ -47,5 +47,5 @@ class BlobsDataset : public Dataset {
   std::vector<SpeechSampleMetaInfo> loadBlob(const std::string& filename);
 };
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

@@ -24,7 +24,7 @@ struct Context {
 } // namespace
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 static void backward(
@@ -103,5 +103,5 @@ Variable FullConnectionCriterion::forward(
       });
 }
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

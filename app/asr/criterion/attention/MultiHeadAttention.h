@@ -11,7 +11,7 @@
 #include "flashlight/app/asr/criterion/attention/AttentionBase.h"
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 class MultiHeadContentAttention : public AttentionBase {
@@ -38,7 +38,7 @@ class MultiHeadContentAttention : public AttentionBase {
   FL_SAVE_LOAD_WITH_BASE(AttentionBase, numHeads_, keyValue_, splitInput_)
 };
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::tasks::asr::MultiHeadContentAttention)
+CEREAL_REGISTER_TYPE(fl::app::asr::MultiHeadContentAttention)

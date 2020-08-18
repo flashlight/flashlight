@@ -18,7 +18,7 @@
 #define FL_TASK_ASR_VERSION "0.1"
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 namespace detail {
@@ -312,5 +312,5 @@ DECLARE_string(target);
 DECLARE_bool(everstoredb);
 DECLARE_bool(use_memcache);
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

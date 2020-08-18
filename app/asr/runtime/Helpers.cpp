@@ -20,7 +20,7 @@ using fl::lib::text::DictionaryMap;
 using fl::lib::text::LexiconMap;
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 template <class T>
@@ -168,5 +168,5 @@ std::shared_ptr<Dataset> createDataset(
   return ds;
 }
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

@@ -17,7 +17,7 @@
 #define LOG_MASTER(lvl) LOG_IF(lvl, (fl::getWorldRank() == 0))
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 struct DatasetMeters {
   fl::EditDistanceMeter tknEdit, wrdEdit;
@@ -64,5 +64,5 @@ void allreduceSet(SpeechStatMeter& mtr, af::array& val);
 
 void syncMeter(TrainMeters& mtrs);
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

@@ -14,7 +14,7 @@
 #include "flashlight/app/asr/criterion/attention/attention.h"
 
 using namespace fl;
-using namespace fl::tasks::asr;
+using namespace fl::app::asr;
 
 namespace {
 void sequential_test(std::shared_ptr<AttentionBase> attention, int H) {

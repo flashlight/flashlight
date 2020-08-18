@@ -14,7 +14,7 @@
 #include "flashlight/app/asr/criterion/attention/window.h"
 
 using namespace fl;
-using namespace fl::tasks::asr;
+using namespace fl::app::asr;
 
 TEST(WindowTest, MedianWindow) {
   int inputsteps = 12;

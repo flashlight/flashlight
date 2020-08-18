@@ -9,7 +9,7 @@
 #include "flashlight/app/asr/data/SpeechSample.h"
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 std::vector<int64_t> sortSamples(
@@ -105,5 +105,5 @@ void filterSamples(
             << " samples";
 }
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

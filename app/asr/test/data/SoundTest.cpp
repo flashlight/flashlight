@@ -16,7 +16,7 @@
 #include "flashlight/app/asr/data/Sound.h"
 
 using namespace fl::lib;
-using namespace fl::tasks::asr;
+using namespace fl::app::asr;
 
 namespace {
 std::string loadPath = "";

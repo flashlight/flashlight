@@ -13,7 +13,7 @@
 using namespace fl;
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 MultiHeadContentAttention::MultiHeadContentAttention(
@@ -92,5 +92,5 @@ std::string MultiHeadContentAttention::prettyString() const {
   return "MultiHeadContentAttention";
 }
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

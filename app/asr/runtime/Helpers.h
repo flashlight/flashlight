@@ -28,7 +28,7 @@
 #include "flashlight/lib/text/dictionary/Utils.h"
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 /**
@@ -82,5 +82,5 @@ std::shared_ptr<Dataset> createDataset(
     bool fallback2Ltr = true,
     bool skipUnk = true);
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

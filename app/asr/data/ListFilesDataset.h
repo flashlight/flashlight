@@ -13,7 +13,7 @@
 #include "flashlight/app/asr/data/Utils.h"
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 class ListFilesDataset : public Dataset {
@@ -45,5 +45,5 @@ class ListFilesDataset : public Dataset {
   std::vector<SpeechSampleMetaInfo> loadListFile(const std::string& filename);
 };
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

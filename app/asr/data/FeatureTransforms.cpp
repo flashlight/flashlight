@@ -48,7 +48,7 @@ std::vector<T> transpose2d(
 } // namespace
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 fl::Dataset::DataTransformFunction inputFeatures(const FeatureParams& params) {
@@ -108,5 +108,5 @@ fl::Dataset::DataTransformFunction targetFeatures(
   };
 }
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

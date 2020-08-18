@@ -9,7 +9,7 @@
 #include "flashlight/app/asr/criterion/ForceAlignmentCriterion.h"
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 ForceAlignmentCriterion::ForceAlignmentCriterion(
@@ -28,5 +28,5 @@ std::string ForceAlignmentCriterion::prettyString() const {
   return "ForceAlignmentCriterion";
 }
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

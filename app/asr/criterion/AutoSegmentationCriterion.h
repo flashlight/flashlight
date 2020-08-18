@@ -16,7 +16,7 @@
 
 using fl::lib::seq::CriterionScaleMode;
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 class AutoSegmentationCriterion : public SequenceCriterion {
@@ -47,7 +47,7 @@ class AutoSegmentationCriterion : public SequenceCriterion {
   }
 
   af::array viterbiPath(const af::array& input) override {
-    return fl::tasks::asr::viterbiPath(input, params_[0].array());
+    return fl::app::asr::viterbiPath(input, params_[0].array());
   }
 
   af::array viterbiPath(const af::array& input, const af::array& target)
@@ -88,7 +88,7 @@ class AutoSegmentationCriterion : public SequenceCriterion {
 
 using ASGLoss = AutoSegmentationCriterion;
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::tasks::asr::AutoSegmentationCriterion)
+CEREAL_REGISTER_TYPE(fl::app::asr::AutoSegmentationCriterion)

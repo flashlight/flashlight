@@ -16,7 +16,7 @@ using CriterionUtils = fl::lib::cpu::CriterionUtils<float>;
 using ViterbiPath = fl::lib::cpu::ViterbiPath<float>;
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 af::array viterbiPath(const af::array& input, const af::array& trans) {
@@ -62,5 +62,5 @@ af::array getTargetSizeArray(const af::array& target, int maxSize) {
   return af::array(B, targetSizeVec.data());
 }
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

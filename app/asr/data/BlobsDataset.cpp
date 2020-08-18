@@ -21,7 +21,7 @@ using fl::lib::text::DictionaryMap;
 using fl::lib::text::LexiconMap;
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 BlobsDataset::BlobsDataset(
@@ -135,5 +135,5 @@ std::vector<SpeechSampleMetaInfo> BlobsDataset::loadBlob(
   return samplesMetaInfo;
 }
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

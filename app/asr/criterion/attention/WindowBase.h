@@ -11,7 +11,7 @@
 #include <flashlight/flashlight.h>
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 class WindowBase {
@@ -44,5 +44,5 @@ class WindowBase {
   FL_SAVE_LOAD()
 };
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

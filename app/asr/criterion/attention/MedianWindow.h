@@ -11,7 +11,7 @@
 #include "WindowBase.h"
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 class MedianWindow : public WindowBase {
@@ -37,7 +37,7 @@ class MedianWindow : public WindowBase {
   FL_SAVE_LOAD_WITH_BASE(WindowBase, wL_, wR_)
 };
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::tasks::asr::MedianWindow)
+CEREAL_REGISTER_TYPE(fl::app::asr::MedianWindow)

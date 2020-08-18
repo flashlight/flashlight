@@ -20,7 +20,7 @@ using fl::lib::text::DictionaryMap;
 using fl::lib::text::LexiconMap;
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 ListFilesDataset::ListFilesDataset(
@@ -146,5 +146,5 @@ std::vector<SpeechSampleMetaInfo> ListFilesDataset::loadListFile(
   return samplesMetaInfo;
 }
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

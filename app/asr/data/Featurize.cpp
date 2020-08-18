@@ -25,7 +25,7 @@ using fl::lib::text::DictionaryMap;
 using fl::lib::text::packReplabels;
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 FeatureParams defineSpeechFeatureParams() {
@@ -249,5 +249,5 @@ FeatureData featurize(
   return feat;
 }
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

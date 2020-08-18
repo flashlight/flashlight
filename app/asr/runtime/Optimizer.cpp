@@ -11,7 +11,7 @@
 #include <glog/logging.h>
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
@@ -74,5 +74,5 @@ std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
   return opt;
 }
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

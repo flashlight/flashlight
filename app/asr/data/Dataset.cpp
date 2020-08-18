@@ -20,7 +20,7 @@ using namespace fl::lib;
 using fl::lib::text::DictionaryMap;
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 Dataset::Dataset(
@@ -174,5 +174,5 @@ std::vector<std::vector<int64_t>> RoundRobinBatchPacker::getBatches(
   return batches;
 }
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

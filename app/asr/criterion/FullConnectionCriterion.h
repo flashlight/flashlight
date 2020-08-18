@@ -15,7 +15,7 @@
 using fl::lib::seq::CriterionScaleMode;
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 class FullConnectionCriterion : public fl::BinaryModule {
@@ -44,7 +44,7 @@ class FullConnectionCriterion : public fl::BinaryModule {
 
 typedef FullConnectionCriterion FCCLoss;
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::tasks::asr::FullConnectionCriterion)
+CEREAL_REGISTER_TYPE(fl::app::asr::FullConnectionCriterion)

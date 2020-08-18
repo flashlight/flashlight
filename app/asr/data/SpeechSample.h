@@ -15,7 +15,7 @@
 #include <glog/logging.h>
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 // Helper class used to send metadata about samples in a dataset for
@@ -100,5 +100,5 @@ void filterSamples(
     const int64_t minTargetSz,
     const int64_t maxTargetSz);
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl

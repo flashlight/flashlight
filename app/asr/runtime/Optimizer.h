@@ -13,7 +13,7 @@
 #include "flashlight/app/asr/common/Defines.h"
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
@@ -23,5 +23,5 @@ std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
     double momentum,
     double weightdecay);
 }
-} // namespace tasks
+} // namespace app
 } // namespace fl

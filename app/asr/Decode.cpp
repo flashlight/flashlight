@@ -37,7 +37,7 @@
 using namespace fl::ext;
 using namespace fl::lib;
 using namespace fl::lib::text;
-using namespace fl::tasks::asr;
+using namespace fl::app::asr;
 
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
     tokenDict.addEntry(kBlankToken);
   }
   if (FLAGS_eostoken) {
-    tokenDict.addEntry(fl::tasks::asr::kEosToken);
+    tokenDict.addEntry(fl::app::asr::kEosToken);
   }
 
   int numClasses = tokenDict.indexSize();
@@ -460,7 +460,7 @@ int main(int argc, char** argv) {
         auto amUpdateFunc = FLAGS_criterion == kSeq2SeqCriterion
             ? buildAmUpdateFunction(localCriterion)
             : buildTransformerAmUpdateFunction(localCriterion);
-        int eosIdx = tokenDict.getIndex(fl::tasks::asr::kEosToken);
+        int eosIdx = tokenDict.getIndex(fl::app::asr::kEosToken);
 
         if (FLAGS_decodertype == "wrd") {
           decoder.reset(new LexiconSeq2SeqDecoder(

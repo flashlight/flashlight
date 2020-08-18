@@ -11,7 +11,7 @@
 #include "WindowBase.h"
 
 namespace fl {
-namespace tasks {
+namespace app {
 namespace asr {
 
 class StepWindow : public WindowBase {
@@ -37,7 +37,7 @@ class StepWindow : public WindowBase {
   FL_SAVE_LOAD_WITH_BASE(WindowBase, sMin_, sMax_, vMin_, vMax_)
 };
 } // namespace asr
-} // namespace tasks
+} // namespace app
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::tasks::asr::StepWindow)
+CEREAL_REGISTER_TYPE(fl::app::asr::StepWindow)

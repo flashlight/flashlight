@@ -26,7 +26,7 @@
 using namespace fl;
 using namespace fl::lib;
 using namespace fl::lib::text;
-using namespace fl::tasks::asr;
+using namespace fl::app::asr;
 
 /**
  * In this test, we check the output from LM, trie and decoder.

@@ -31,7 +31,7 @@
 using namespace fl::ext;
 using namespace fl::lib;
 using namespace fl::lib::text;
-using namespace fl::tasks::asr;
+using namespace fl::app::asr;
 
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
@@ -103,7 +103,7 @@ int main(int argc, char** argv) {
     tokenDict.addEntry(kBlankToken);
   }
   if (FLAGS_eostoken) {
-    tokenDict.addEntry(fl::tasks::asr::kEosToken);
+    tokenDict.addEntry(fl::app::asr::kEosToken);
   }
 
   int numClasses = tokenDict.indexSize();
