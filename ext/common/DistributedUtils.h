@@ -67,4 +67,4 @@ void allreduceSet(TimeMeter& mtr, af::array& val);
 } // namespace ext
 } // namespace fl
 
-#include "flashlight/extensions/common/Utils-inl.h"
+#include "flashlight/ext/common/Utils-inl.h"

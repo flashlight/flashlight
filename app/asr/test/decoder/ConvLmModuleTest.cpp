@@ -11,7 +11,7 @@
 #include <arrayfire.h>
 #include <flashlight/flashlight.h>
 
-#include "flashlight/extensions/common/SequentialBuilder.h"
+#include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/lib/common/System.h"
 
 using namespace fl;

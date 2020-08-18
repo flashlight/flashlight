@@ -24,8 +24,8 @@
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 
-#include "flashlight/extensions/common/DistributedUtils.h"
-#include "flashlight/extensions/common/SequentialBuilder.h"
+#include "flashlight/ext/common/DistributedUtils.h"
+#include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"

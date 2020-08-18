@@ -17,7 +17,7 @@
 #include "flashlight/app/asr/criterion/attention/window.h"
 
 #include "flashlight/contrib/modules/Transformer.h"
-#include "flashlight/extensions/common/DistributedUtils.h"
+#include "flashlight/ext/common/DistributedUtils.h"
 
 namespace fl {
 namespace tasks {

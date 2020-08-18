@@ -11,7 +11,7 @@
 #include <glog/logging.h>
 #include <random>
 
-#include "flashlight/extensions/common/DistributedUtils.h"
+#include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/lib/common/System.h"
 
 using namespace fl::ext;

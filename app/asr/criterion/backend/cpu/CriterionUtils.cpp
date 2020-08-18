@@ -8,7 +8,7 @@
 
 #include "flashlight/app/asr/criterion/CriterionUtils.h"
 
-#include "flashlight/extensions/common/DistributedUtils.h"
+#include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/lib/sequence/criterion/cpu/CriterionUtils.h"
 #include "flashlight/lib/sequence/criterion/cpu/ViterbiPath.h"
 

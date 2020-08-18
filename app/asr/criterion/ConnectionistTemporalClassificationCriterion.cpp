@@ -7,7 +7,7 @@
  */
 #include "ConnectionistTemporalClassificationCriterion.h"
 
-#include "flashlight/extensions/common/DistributedUtils.h"
+#include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/lib/sequence/criterion/cpu/ConnectionistTemporalClassificationCriterion.h"
 
 using CTC = fl::lib::cpu::ConnectionistTemporalClassificationCriterion<float>;

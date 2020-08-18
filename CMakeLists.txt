@@ -233,7 +233,7 @@ if (FL_BUILD_CORE_ONLY)
 endif()
 
 # ------------------------ Extensions ------------------------
-set(FLASHLIGHT_EXT_DIR "${PROJECT_SOURCE_DIR}/extensions")
+set(FLASHLIGHT_EXT_DIR "${PROJECT_SOURCE_DIR}/ext")
 include(${FLASHLIGHT_EXT_DIR}/CMakeLists.txt)
 
 # Make #include "flashlight/lib" work by adding to the inner incl dir
