@@ -18,6 +18,7 @@ namespace dataset {
 
 struct CocoData {
   af::array images;
+  af::array masks;
   af::array imageSizes;
   af::array imageIds;
   std::vector<af::array> target_boxes;

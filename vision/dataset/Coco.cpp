@@ -94,6 +94,49 @@ std::shared_ptr<const Dataset> bboxLoader(std::vector<BBoxVector> bboxes) {
 //
 //
 
+std::pair<af::array, af::array> makeImageAndMaskBatch(
+    const std::vector<af::array>& data
+    ) {
+  // Using default batching function
+  if (data.empty()) {
+    return std::make_pair(af::array(), af::array());
+  }
+  //auto dims = data[0].dims();
+
+  int maxW, maxH = -1;
+
+  for (const auto& d : data) {
+    int w = d.dims(0);
+    int h = d.dims(0);
+    maxW = std::max(w, maxW);
+    maxH = std::max(h, maxH);
+  }
+
+  af::dim4 dims = { maxW, maxH, 3, data.size() };
+  af::dim4 maskDims = { maxW, maxH, 1, data.size() };
+
+  //int ndims = (data[0].elements() > 1) ? dims.ndims() : 0;
+
+  //if (ndims >= 4) {
+    //throw std::invalid_argument("# of dims must be < 4 for batching");
+  //}
+  //dims[ndims] = data.size();
+  auto batcharr = af::array(dims, data[0].type());
+
+  //auto maskarr = af::constant(true, dims, b8);
+  auto maskarr = af::constant(0, maskDims);
+
+  for (size_t i = 0; i < data.size(); ++i) {
+    af::array sample = data[i];
+    af::dim4 dims = sample.dims();
+    int w = dims[0];
+    int h = dims[1];
+    batcharr(af::seq(0, w - 1), af::seq(0, h - 1), af::span, af::seq(i, i)) = data[i];
+    //maskarr(af::seq(0, w - 1), af::seq(0, h - 1), af::span, af::seq(i, i)) = af::constant(false, dims, b8);
+    maskarr(af::seq(0, w - 1), af::seq(0, h - 1), af::span, af::seq(i, i)) = af::constant(1, { w, h });
+  }
+  return std::make_pair(batcharr, maskarr);
+}
 
 af::array makeBatch(
     const std::vector<af::array>& data
@@ -150,7 +193,17 @@ CocoData cocoBatchFunc(const std::vector<std::vector<af::array>>& batches) {
   std::transform(batches.begin(), batches.end(), target_classes.begin(),
       [](const std::vector<af::array>& in) { return in[4]; }
   );
-  return { makeBatch(images), makeBatch(image_sizes), makeBatch(image_ids), target_bboxes, target_classes };
+
+  af::array imageBatch, masks;
+  std::tie(imageBatch, masks) = makeImageAndMaskBatch(images);
+  return {
+    imageBatch,
+    masks,
+    makeBatch(image_sizes),
+    makeBatch(image_ids),
+    target_bboxes,
+    target_classes
+  };
 }
 
 std::shared_ptr<Dataset> transform(

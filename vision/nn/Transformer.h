@@ -46,10 +46,10 @@ fl::Variable transformerMultiheadAttention(
     const fl::Variable& key,
     const fl::Variable& value,
     const fl::Variable& posEmb,
-    const fl::Variable& mask,
+    const fl::Variable& keyPaddingMask,
     const int32_t nHead,
-    const double pDropout,
-    const int32_t offset = 0) {
+    const double pDropout
+    ) {
 
   int32_t bsz = query.dims(1);
   int32_t modelDim = query.dims(0);
@@ -59,7 +59,7 @@ fl::Variable transformerMultiheadAttention(
 
   auto q = moddims(query, af::dim4(headDim, nHead, bsz, tgtLen));
   auto v = moddims(value, af::dim4(headDim, nHead, bsz, srcLen));
-  auto k = moddims(key, af::dim4(headDim, nHead, bsz, srcLen));
+  auto k = moddims(key, af::dim4(headDim, nHead, bsz, srcLen)); 
   // Reorder so that the "Sequence" is along the first dimension,
   // the embedding is along the zeroth dimension
   q = reorder(q, 0, 3, 1, 2);
@@ -68,6 +68,10 @@ fl::Variable transformerMultiheadAttention(
 
   auto scores = matmulTN(q, k);
   scores = scores / std::sqrt(float(headDim));
+
+  if(!keyPaddingMask.isempty()) {
+    scores = scores + tileAs(moddims(log(keyPaddingMask), { 1, srcLen, 1, bsz }), scores);
+  }
 
   auto attn = dropout(softmax(scores, 1), pDropout);
   auto result = matmulNT(attn, v);
@@ -101,10 +105,13 @@ class MultiheadAttention : public Container {
 
   // queries [ E, N, L ], where L is target length, N is batch size.
   // keys / values  [ E, N, S ], where S is src length, N is batch size.
+  // keyPaddingMask [ S, N ]
     std::vector<Variable> forward(
         const Variable queries,
         const Variable keys,
-        const Variable values) {
+        const Variable values,
+        const Variable keyPaddingMask
+        ) {
 
       assert(queries.dims(0) == keys.dims(0));
       assert(queries.dims(0) == values.dims(0));
@@ -112,14 +119,18 @@ class MultiheadAttention : public Container {
       assert(queries.dims(1) == values.dims(1));
       assert(values.dims(2) ==  keys.dims(2));
 
+      if(!keyPaddingMask.isempty()) {
+        assert(keyPaddingMask.dims(0) == keys.dims(2));
+        assert(keyPaddingMask.dims(1) == keys.dims(1));
+      }
+
       auto q = (*wq_)(queries);
       auto k = (*wk_)(keys);
       auto v = (*wv_)(values);
       auto posEmb = fl::Variable();
-      auto mask = fl::Variable();
-      int offset = 0;
+      //auto mask = fl::Variable();
       auto result = transformerMultiheadAttention(
-          q, k, v, posEmb, mask, numHeads_, pDropout_);
+          q, k, v, posEmb, keyPaddingMask, numHeads_, pDropout_);
       result = (*wf_)(result);
       assert(result.dims() == queries.dims());
       std::vector<Variable> results = { result };
@@ -127,7 +138,8 @@ class MultiheadAttention : public Container {
     }
 
   std::vector<Variable> forward(const std::vector<Variable>& input) override {
-    return this->forward(input[0], input[1], input[2]);
+    assert(input.size() == 4);
+    return this->forward(input[0], input[1], input[2], input[3]);
   }
 
   std::string prettyString() const override {
@@ -182,10 +194,11 @@ class TransformerBaseLayer : public Container {
 
   Variable selfAttention(
       const Variable& input,
-      const Variable &pos) {
+      const Variable &pos,
+      const Variable& keyPaddingMask = Variable()) {
     auto k = withPosEmbed(input, pos);
     auto q = withPosEmbed(input, pos);
-    return self_attn_->forward(q, k, input)[0];
+    return self_attn_->forward(q, k, input, keyPaddingMask)[0];
   }
 
  protected:
@@ -209,12 +222,14 @@ class TransformerEncoderLayer : public TransformerBaseLayer {
       { };
 
   std::vector<Variable> forward(const std::vector<Variable>& input) override {
+    assert(input.size() == 3);
     auto src = input[0];
-    auto pos = (input.size() > 1) ? input[1] : fl::Variable();
+    auto mask = input[1];
+    auto pos = input[2];
     // Self Attention
     {
       auto src2 = (*norm1_)(src);
-      src2 = this->selfAttention(src, pos);
+      src2 = this->selfAttention(src, pos, mask);
       src = src + dropout(src2, pDropout_);
     }
     // MLP
@@ -223,7 +238,7 @@ class TransformerEncoderLayer : public TransformerBaseLayer {
       src2 = mlp(src2);
       src = src + dropout(src2, pDropout_);
     }
-    return { src };
+    return { src, mask, pos }; 
   }
 
   std::string prettyString() const override {
@@ -246,14 +261,16 @@ class TransformerDecoderLayer : public TransformerBaseLayer {
         { };
 
   std::vector<Variable> forward(const std::vector<Variable>& input) override {
+      assert(input.size() == 5);
       auto tgt = input[0];
       auto memory = input[1];
       auto pos = (input.size() > 2) ? input[2] : Variable();
-      auto query_pos = (input.size() > 3) ? input[3] : Variable();
+      auto queryPos = (input.size() > 3) ? input[3] : Variable();
+      auto memoryKeyPaddingMask = input[4];
     // Self attention
     {
       auto tgt2 = (*norm1_)(tgt);
-      tgt2 = this->selfAttention(tgt2, fl::Variable());
+      tgt2 = this->selfAttention(tgt2, queryPos);
       tgt = tgt + dropout(tgt2, pDropout_);
     }
     // Encoder-decoder attention
@@ -262,7 +279,8 @@ class TransformerDecoderLayer : public TransformerBaseLayer {
       tgt2 = encoder_attn_->forward({
           tgt2, // queries
           memory, // keys
-          memory // values
+          memory, // values
+          memoryKeyPaddingMask // mask
           })[0];
       // TODO fix norms
       tgt = tgt + dropout(tgt2, pDropout_);
@@ -302,14 +320,16 @@ class TransformerDecoder : public Container {
     }
 
     std::vector<Variable> forward(const std::vector<Variable>& input) override {
+      assert(input.size() == 5);
       auto tgt = input[0];
       auto memory = input[1];
       auto pos = (input.size() > 2) ? input[2] : Variable();
       auto query_pos = (input.size() > 3) ? input[3] : Variable();
+      auto mask = (input.size() > 4) ? input[4] : Variable();
 
       auto output = tgt;
       for(auto mod : modules()) {
-        output = mod->forward({output, memory, pos, query_pos})[0];
+        output = mod->forward({output, memory, pos, query_pos, mask})[0];
       }
       return { output };
     }
@@ -366,6 +386,7 @@ public:
 
 std::vector<Variable> forward(
     Variable src,
+    Variable mask,
     Variable queryEmbed,
     Variable posEmbed) {
       assert(src.dims(2) == queryEmbed.dims(0));
@@ -376,6 +397,14 @@ std::vector<Variable> forward(
       // Flatten to C x B x WH
       src = reorder(src, 1, 2, 0);
 
+      posEmbed = dataset::flatten(posEmbed, 0, 1);
+      posEmbed = reorder(posEmbed, 1, 2, 0);
+
+      mask = dataset::flatten(mask, 0, 2);
+
+      // TODO Should we ever not pass positional encodings to each layer?
+      // https://github.com/fairinternal/detr/blob/master/models/transformer.py#L56
+
       // Tile object queries for each batch
       af::dim4 unsqueeze = { queryEmbed.dims(0), 1, queryEmbed.dims(1) };
       queryEmbed = moddims(queryEmbed, unsqueeze);
@@ -383,17 +412,30 @@ std::vector<Variable> forward(
       assert(queryEmbed.dims(1) == src.dims(1));
       assert(queryEmbed.dims(0) == src.dims(0));
 
-      auto memory = encoder_->forward({src});
-      auto hs = decoder_->forward({queryEmbed, memory[0]})[0];
+      auto tgt = fl::Variable(af::constant(0, queryEmbed.dims()), false);
+
+      auto memory = encoder_->forward({
+          src, 
+          mask, 
+          posEmbed
+      });
+      auto hs = decoder_->forward({
+          tgt,
+          memory[0], 
+          posEmbed, 
+          queryEmbed,
+          mask})[0];
       return { reorder(hs, 0, 2, 1) };
   }
 
 std::vector<Variable> forward(const std::vector<Variable>& input) override {
-    assert(input.size() > 1);
+    //assert(input.size() > 1);
+    assert(input.size() > 3);
     auto src = input[0];
-    auto query_embed = (input.size() > 1) ? input[1] : Variable();
-    auto pos_embed = (input.size() > 2) ? input[2] : Variable();
-    return forward(src, query_embed, pos_embed);
+    auto mask = (input.size() > 1) ? input[1] : Variable();
+    auto query_embed = (input.size() > 2) ? input[2] : Variable();
+    auto pos_embed = (input.size() > 3) ? input[3] : Variable();
+    return forward(src, mask, query_embed, pos_embed);
   }
 
   std::string prettyString() const override {

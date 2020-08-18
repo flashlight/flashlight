@@ -78,13 +78,13 @@ class Detr : public Container {
 public:
 
   Detr(
-      std::shared_ptr<Module> backbone,
+      //std::shared_ptr<Module> backbone,
       std::shared_ptr<Transformer> transformer,
       const int32_t hiddenDim,
       const int32_t numClasses,
       const int32_t numQueries,
       const bool auxLoss) :
-    backbone_(backbone),
+    //backbone_(backbone),
     transformer_(transformer),
     numClasses_(numClasses),
     numQueries_(numQueries),
@@ -96,7 +96,7 @@ public:
     posEmbed_(std::make_shared<PositionalEmbeddingSine>(hiddenDim / 2,
           10000, false, 0.0f))
   {
-    add(backbone_);
+    //add(backbone_);
     add(transformer_);
     add(classEmbed_);
     add(queryEmbed_);
@@ -105,12 +105,16 @@ public:
 
   std::vector<Variable> forward(const std::vector<Variable>& input) {
 
-    auto backboneFeatures = backbone_->forward(input);
-    auto inputProjection = inputProj_->forward(backboneFeatures[1]);
-    auto posEmbed = posEmbed_->forward(backboneFeatures[1]);
+    //auto backboneFeatures = backbone_->forward(input);
+    auto features = input[0];
+    auto mask = input[1];
+    auto backboneFeatures = input;
+    auto inputProjection = inputProj_->forward(features);
+    auto posEmbed = posEmbed_->forward(features);
     //return { inputProjection, posEmbed };
     auto hs = transformer_->forward(
         inputProjection,
+        mask,
         queryEmbed_->param(0),
         posEmbed);
 
@@ -210,7 +214,7 @@ int main(int argc, char** argv) {
   //backbone = std::make_shared<Sequential>(resnet34());
   std::string modelPath = "/checkpoint/padentomasello/models/resnet34backbone49";
   fl::load(modelPath, backbone);
-  //backbone->eval();
+  backbone->eval();
   auto transformer = std::make_shared<Transformer>(
       modelDim,
       numHeads,
@@ -220,7 +224,7 @@ int main(int argc, char** argv) {
       pDropout);
 
   auto detr = std::make_shared<Detr>(
-      backbone,
+      //backbone,
       transformer,
       hiddenDim,
       numClasses,
@@ -235,7 +239,7 @@ int main(int argc, char** argv) {
   // Add a hook to synchronize gradients of model parameters as they are
   // computed
   fl::distributeModuleGrads(detr, reducer);
-  //fl::distributeModuleGrads(backbone, reducer);
+  fl::distributeModuleGrads(backbone, reducer);
 
   auto saveOutput = [](
       af::array imageSizes,
@@ -260,16 +264,16 @@ int main(int argc, char** argv) {
       losses);
 
   auto eval_loop = [saveOutput](
-      //std::shared_ptr<Module> backbone,
+      std::shared_ptr<Module> backbone,
       std::shared_ptr<Detr> model,
       std::shared_ptr<CocoDataset> dataset) {
-    //backbone->eval();
+    backbone->eval();
     model->eval();
     int idx = 0;
     for(auto& sample : *dataset) {
       auto images =  { fl::Variable(sample.images, false) };
-      //auto features = backbone->forward(images);
-      auto output = model->forward(images);
+      auto features = backbone->forward(images);
+      auto output = model->forward(features);
       std::stringstream ss;
       ss << FLAGS_eval_dir << "detection" << idx << ".array";
       auto output_array = ss.str();
@@ -282,7 +286,7 @@ int main(int argc, char** argv) {
       << "/private/home/padentomasello/code/flashlight/vision/scripts/eval_coco.py --dir "
       << FLAGS_eval_dir;
     system(ss.str().c_str());
-    //backbone->train();
+    backbone->train();
     model->train();
   };
 
@@ -313,7 +317,7 @@ int main(int argc, char** argv) {
       batch_size_per_gpu);
   //SGDOptimizer opt(detr.params(), FLAGS_lr, FLAGS_momentum, FLAGS_wd);
   AdamOptimizer opt(detr->params(), FLAGS_lr);
-  //AdamOptimizer opt2(backbone->params(), FLAGS_lr * 0.1);
+  AdamOptimizer opt2(backbone->params(), FLAGS_lr * 0.1);
   //AdamOptimizer backbone_opt(backbone->params(), FLAGS_lr * 0.1);
 
   // Small utility functions to load and save models
@@ -346,14 +350,24 @@ int main(int argc, char** argv) {
     for(auto& sample : *train_ds) {
       auto images =  { fl::Variable(sample.images, false) };
 
+
       //saveOutput(sample.imageSizes, sample.imageIds, sample.target_boxes[0], sample.target_labels[0], 
           //"/private/home/padentomasello/data/coco/scratch/labels.array");
       //return 0;
 
       timers["forward"].resume();
-      //auto features = backbone->forward(images);
+      auto features = backbone->forward(images)[1];
+
+      auto masks = fl::Variable(
+          af::resize(
+            sample.masks, 
+            features.dims(0), 
+            features.dims(1), 
+            AF_INTERP_NEAREST),
+        false
+      );
       //auto features = input;
-      auto output = detr->forward(images);
+      auto output = detr->forward({features, masks});
       output[0].array().eval();
       output[1].array().eval();
       timers["forward"].stop();
@@ -431,8 +445,8 @@ int main(int argc, char** argv) {
       meter.second.reset();
     }
       if(e % 10 == 0 && e > 0) {
-        //eval_loop(backbone, detr, val_ds);
-        eval_loop(detr, val_ds);
+        eval_loop(backbone, detr, val_ds);
+        //eval_loop(detr, val_ds);
         //saveModel(e);
       }
   }

@@ -5,6 +5,29 @@
 namespace fl {
 namespace cv {
 
+//class Joiner: public Container {
+
+  //Joiner(std::shared_ptr<Module> base) :
+    //base_(base) {
+      //add(base_);
+    //}
+
+  //std::vector<Variable> forward(const std::vector<Variable&> inputs) {
+    //auto images = inputs[0];
+    //auto masks = inputs[1];
+    //auto outputs = base_->forward(images);
+    //std::vector<Variable> results;
+    //for(auto output : outputs) {
+      //results.push_back(output);
+      //auto resized_mask = af::resize(masks, output.dim(0), output.dim(1));
+      //results.push_back(fl::Variable(resized_mask, false));
+    //}
+  //}
+
+  //private:
+    //std::shared_ptr<Module> base_;
+//};
+
 // TODO Can probably generalize this
 class Resnet34Backbone : public Container {
 
