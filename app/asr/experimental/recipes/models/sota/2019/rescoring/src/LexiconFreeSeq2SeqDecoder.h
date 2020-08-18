@@ -12,8 +12,8 @@
 #include <memory>
 #include <unordered_map>
 
-#include "flashlight/libraries/decoder/Decoder.h"
-#include "flashlight/libraries/lm/LM.h"
+#include "flashlight/lib/decoder/Decoder.h"
+#include "flashlight/lib/lm/LM.h"
 
 namespace w2l {
 using AMStatePtr = std::shared_ptr<void>;

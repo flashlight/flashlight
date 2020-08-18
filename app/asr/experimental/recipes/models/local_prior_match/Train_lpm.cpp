@@ -15,7 +15,7 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/libraries/common/Dictionary.h"
+#include "flashlight/lib/common/Dictionary.h"
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/common/FlashlightUtils.h"
 #include "flashlight/app/asr/criterion/criterion.h"

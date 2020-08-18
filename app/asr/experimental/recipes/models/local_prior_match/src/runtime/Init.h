@@ -13,7 +13,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "flashlight/libraries/common/Dictionary.h"
+#include "flashlight/lib/common/Dictionary.h"
 
 namespace w2l {
 std::unordered_map<std::string, std::string> setFlags(int argc, char** argv);

@@ -18,7 +18,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "flashlight/libraries/decoder/Utils.h"
+#include "flashlight/lib/decoder/Utils.h"
 #include "inference/common/IOBuffer.h"
 
 namespace w2l {

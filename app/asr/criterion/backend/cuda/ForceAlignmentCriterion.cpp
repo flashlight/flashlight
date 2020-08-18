@@ -10,7 +10,7 @@
 
 #include <flashlight/common/cuda.h>
 
-#include "flashlight/libraries/sequence/criterion/cuda/ForceAlignmentCriterion.cuh"
+#include "flashlight/lib/sequence/criterion/cuda/ForceAlignmentCriterion.cuh"
 #include "flashlight/app/asr/criterion/CriterionUtils.h"
 
 using fl::Variable;

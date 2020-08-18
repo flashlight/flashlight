@@ -13,7 +13,7 @@
 #include <flashlight/flashlight.h>
 #include <glog/logging.h>
 
-#include "flashlight/libraries/common/System.h"
+#include "flashlight/lib/common/System.h"
 #include "flashlight/app/asr/common/Defines.h"
 
 namespace fl {

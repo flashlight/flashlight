@@ -13,7 +13,7 @@
 
 #include <flashlight/flashlight.h>
 
-#include "flashlight/libraries/common/Dictionary.h"
+#include "flashlight/lib/common/Dictionary.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 
 namespace w2l {

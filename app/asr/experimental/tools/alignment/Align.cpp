@@ -9,7 +9,7 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/libraries/common/Dictionary.h"
+#include "flashlight/lib/common/Dictionary.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "module/module.h"

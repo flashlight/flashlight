@@ -12,12 +12,12 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "flashlight/libraries/common/Defines.h"
-#include "flashlight/libraries/common/WordUtils.h"
-#include "flashlight/libraries/decoder/LexiconDecoder.h"
-#include "flashlight/libraries/decoder/LexiconFreeDecoder.h"
-#include "flashlight/libraries/lm/KenLM.h"
-#include "flashlight/libraries/lm/ZeroLM.h"
+#include "flashlight/lib/common/Defines.h"
+#include "flashlight/lib/common/WordUtils.h"
+#include "flashlight/lib/decoder/LexiconDecoder.h"
+#include "flashlight/lib/decoder/LexiconFreeDecoder.h"
+#include "flashlight/lib/lm/KenLM.h"
+#include "flashlight/lib/lm/ZeroLM.h"
 
 #include "inference/decoder/Decoder.h"
 

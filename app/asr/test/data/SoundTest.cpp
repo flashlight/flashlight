@@ -12,7 +12,7 @@
 #include <functional>
 #include <sstream>
 
-#include "flashlight/libraries/common/System.h"
+#include "flashlight/lib/common/System.h"
 #include "flashlight/app/asr/data/Sound.h"
 
 using namespace fl::lib;

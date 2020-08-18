@@ -16,9 +16,9 @@
 #include <string>
 #include <vector>
 
-#include "flashlight/libraries/common/String.h"
-#include "flashlight/libraries/text/dictionary/Dictionary.h"
-#include "flashlight/libraries/text/dictionary/Utils.h"
+#include "flashlight/lib/common/String.h"
+#include "flashlight/lib/text/dictionary/Dictionary.h"
+#include "flashlight/lib/text/dictionary/Utils.h"
 #include "flashlight/app/asr/common/Defines.h"
 
 using fl::lib::text::Dictionary;

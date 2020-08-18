@@ -10,7 +10,7 @@
 #include "flashlight/app/asr/criterion/CriterionUtils.h"
 
 #include "flashlight/extensions/common/DistributedUtils.h"
-#include "flashlight/libraries/sequence/criterion/cpu/ForceAlignmentCriterion.h"
+#include "flashlight/lib/sequence/criterion/cpu/ForceAlignmentCriterion.h"
 
 using fl::Variable;
 using FAC = fl::lib::cpu::ForceAlignmentCriterion<float>;

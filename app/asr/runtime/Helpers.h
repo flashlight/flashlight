@@ -24,8 +24,8 @@
 #include "flashlight/app/asr/data/ListFileDataset.h"
 #include "flashlight/app/asr/data/ListFilesDataset.h"
 
-#include "flashlight/libraries/common/String.h"
-#include "flashlight/libraries/text/dictionary/Utils.h"
+#include "flashlight/lib/common/String.h"
+#include "flashlight/lib/text/dictionary/Utils.h"
 
 namespace fl {
 namespace tasks {

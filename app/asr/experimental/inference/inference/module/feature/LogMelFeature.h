@@ -13,8 +13,8 @@
 #include <cstdio>
 #include <memory>
 
-#include "flashlight/libraries/feature/FeatureParams.h"
-#include "flashlight/libraries/feature/Mfsc.h"
+#include "flashlight/lib/feature/FeatureParams.h"
+#include "flashlight/lib/feature/Mfsc.h"
 #include "inference/common/IOBuffer.h"
 #include "inference/module/InferenceModule.h"
 #include "inference/module/ModuleParameter.h"

@@ -12,7 +12,7 @@
 #include <functional>
 #include <numeric>
 
-#include "flashlight/libraries/decoder/LexiconFreeSeq2SeqDecoder.h"
+#include "flashlight/lib/decoder/LexiconFreeSeq2SeqDecoder.h"
 
 namespace w2l {
 

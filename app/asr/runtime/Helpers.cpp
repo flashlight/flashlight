@@ -12,7 +12,7 @@
 #include <random>
 
 #include "flashlight/extensions/common/DistributedUtils.h"
-#include "flashlight/libraries/common/System.h"
+#include "flashlight/lib/common/System.h"
 
 using namespace fl::ext;
 using namespace fl::lib;

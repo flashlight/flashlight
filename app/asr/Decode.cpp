@@ -25,14 +25,14 @@
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 
-#include "flashlight/libraries/common/ProducerConsumerQueue.h"
-#include "flashlight/libraries/text/decoder/LexiconDecoder.h"
-#include "flashlight/libraries/text/decoder/LexiconFreeDecoder.h"
-#include "flashlight/libraries/text/decoder/LexiconFreeSeq2SeqDecoder.h"
-#include "flashlight/libraries/text/decoder/LexiconSeq2SeqDecoder.h"
-#include "flashlight/libraries/text/decoder/lm/ConvLM.h"
-#include "flashlight/libraries/text/decoder/lm/KenLM.h"
-#include "flashlight/libraries/text/decoder/lm/ZeroLM.h"
+#include "flashlight/lib/common/ProducerConsumerQueue.h"
+#include "flashlight/lib/text/decoder/LexiconDecoder.h"
+#include "flashlight/lib/text/decoder/LexiconFreeDecoder.h"
+#include "flashlight/lib/text/decoder/LexiconFreeSeq2SeqDecoder.h"
+#include "flashlight/lib/text/decoder/LexiconSeq2SeqDecoder.h"
+#include "flashlight/lib/text/decoder/lm/ConvLM.h"
+#include "flashlight/lib/text/decoder/lm/KenLM.h"
+#include "flashlight/lib/text/decoder/lm/ZeroLM.h"
 
 using namespace fl::ext;
 using namespace fl::lib;

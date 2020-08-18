@@ -14,10 +14,10 @@
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
-#include "flashlight/libraries/text/decoder/LexiconDecoder.h"
-#include "flashlight/libraries/text/decoder/Trie.h"
-#include "flashlight/libraries/text/decoder/lm/KenLM.h"
-#include "flashlight/libraries/text/dictionary/Dictionary.h"
+#include "flashlight/lib/text/decoder/LexiconDecoder.h"
+#include "flashlight/lib/text/decoder/Trie.h"
+#include "flashlight/lib/text/decoder/lm/KenLM.h"
+#include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/decoder/Defines.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"

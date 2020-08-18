@@ -71,7 +71,7 @@ set(FL_COMPILE_DEFINITIONS
   $<$<BOOL:${FL_LIBRARIES_USE_KENLM}>:FL_LIBRARIES_USE_KENLM>
   )
 
-set(FLASHLIGHT_LIB_DIR "${PROJECT_SOURCE_DIR}/libraries")
+set(FLASHLIGHT_LIB_DIR "${PROJECT_SOURCE_DIR}/lib")
 include(${FLASHLIGHT_LIB_DIR}/CMakeLists.txt)
 
 setup_install_headers(${FLASHLIGHT_LIB_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
@@ -223,7 +223,7 @@ target_link_libraries(flashlight INTERFACE ArrayFire::${FL_AF_BACKEND})
 set(FLASHLIGHT_CORE_DIR "${PROJECT_SOURCE_DIR}/flashlight")
 include(${FLASHLIGHT_CORE_DIR}/CMakeLists.txt)
 set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} flashlight)
-# Make #include "flashlight/libraries" work by adding to the inner incl dir
+# Make #include "flashlight/lib" work by adding to the inner incl dir
 setup_install_headers(${FLASHLIGHT_CORE_DIR} ${FL_INSTALL_INC_DIR})
 
 if (FL_BUILD_CORE_ONLY)
@@ -236,7 +236,7 @@ endif()
 set(FLASHLIGHT_EXT_DIR "${PROJECT_SOURCE_DIR}/extensions")
 include(${FLASHLIGHT_EXT_DIR}/CMakeLists.txt)
 
-# Make #include "flashlight/libraries" work by adding to the inner incl dir
+# Make #include "flashlight/lib" work by adding to the inner incl dir
 setup_install_headers(${FLASHLIGHT_EXT_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
 
 # --------------------------- Tasks ---------------------------

@@ -9,10 +9,10 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "flashlight/libraries/decoder/LexiconDecoder.h"
+#include "flashlight/lib/decoder/LexiconDecoder.h"
 
 #ifdef W2L_LIBRARIES_USE_KENLM
-#include "flashlight/libraries/lm/KenLM.h"
+#include "flashlight/lib/lm/KenLM.h"
 #endif
 
 namespace py = pybind11;

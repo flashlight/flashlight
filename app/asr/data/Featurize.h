@@ -14,7 +14,7 @@
 #include "FeatureTransforms.h"
 #include "Sound.h"
 
-#include "flashlight/libraries/text/dictionary/Dictionary.h"
+#include "flashlight/lib/text/dictionary/Dictionary.h"
 
 namespace fl {
 namespace tasks {

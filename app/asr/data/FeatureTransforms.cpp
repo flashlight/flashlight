@@ -11,10 +11,10 @@
 #include <algorithm>
 #include <stdexcept>
 
-#include "flashlight/libraries/audio/feature/Mfcc.h"
-#include "flashlight/libraries/audio/feature/Mfsc.h"
-#include "flashlight/libraries/audio/feature/PowerSpectrum.h"
-#include "flashlight/libraries/common/String.h"
+#include "flashlight/lib/audio/feature/Mfcc.h"
+#include "flashlight/lib/audio/feature/Mfsc.h"
+#include "flashlight/lib/audio/feature/PowerSpectrum.h"
+#include "flashlight/lib/common/String.h"
 
 using namespace fl::lib;
 using namespace fl::lib::audio;

@@ -10,7 +10,7 @@
 
 #include <flashlight/flashlight.h>
 
-#include "flashlight/libraries/common/Dictionary.h"
+#include "flashlight/lib/common/Dictionary.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/data/W2lDataset.h"
 #include "flashlight/app/asr/runtime/runtime.h"

@@ -4,7 +4,7 @@
 
 #include "flashlight/app/asr/data/Sound.h"
 
-#include "flashlight/libraries/common/String.h"
+#include "flashlight/lib/common/String.h"
 
 using namespace fl::lib;
 

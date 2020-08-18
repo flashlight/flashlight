@@ -8,7 +8,7 @@
 
 #include "TranscriptionUtils.h"
 
-#include "flashlight/libraries/common/String.h"
+#include "flashlight/lib/common/String.h"
 
 using namespace fl::lib;
 using fl::lib::text::Dictionary;

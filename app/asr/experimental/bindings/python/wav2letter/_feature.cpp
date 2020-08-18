@@ -9,18 +9,18 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "flashlight/libraries/feature/Ceplifter.h"
-#include "flashlight/libraries/feature/Dct.h"
-#include "flashlight/libraries/feature/Derivatives.h"
-#include "flashlight/libraries/feature/Dither.h"
-#include "flashlight/libraries/feature/FeatureParams.h"
-#include "flashlight/libraries/feature/Mfcc.h"
-#include "flashlight/libraries/feature/Mfsc.h"
-#include "flashlight/libraries/feature/PowerSpectrum.h"
-#include "flashlight/libraries/feature/PreEmphasis.h"
-#include "flashlight/libraries/feature/SpeechUtils.h"
-#include "flashlight/libraries/feature/TriFilterbank.h"
-#include "flashlight/libraries/feature/Windowing.h"
+#include "flashlight/lib/feature/Ceplifter.h"
+#include "flashlight/lib/feature/Dct.h"
+#include "flashlight/lib/feature/Derivatives.h"
+#include "flashlight/lib/feature/Dither.h"
+#include "flashlight/lib/feature/FeatureParams.h"
+#include "flashlight/lib/feature/Mfcc.h"
+#include "flashlight/lib/feature/Mfsc.h"
+#include "flashlight/lib/feature/PowerSpectrum.h"
+#include "flashlight/lib/feature/PreEmphasis.h"
+#include "flashlight/lib/feature/SpeechUtils.h"
+#include "flashlight/lib/feature/TriFilterbank.h"
+#include "flashlight/lib/feature/Windowing.h"
 
 namespace py = pybind11;
 using namespace pybind11::literals;

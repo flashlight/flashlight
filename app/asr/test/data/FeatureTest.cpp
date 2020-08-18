@@ -16,7 +16,7 @@
 #include "flashlight/app/asr/data/ListFilesDataset.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 
-#include "flashlight/libraries/audio/feature/SpeechUtils.h"
+#include "flashlight/lib/audio/feature/SpeechUtils.h"
 
 using namespace fl;
 using namespace fl::lib::audio;

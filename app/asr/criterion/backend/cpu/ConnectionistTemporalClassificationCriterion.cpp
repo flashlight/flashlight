@@ -7,7 +7,7 @@
  */
 
 #include "flashlight/app/asr/criterion/ConnectionistTemporalClassificationCriterion.h"
-#include "flashlight/libraries/sequence/criterion/cpu/CriterionUtils.h"
+#include "flashlight/lib/sequence/criterion/cpu/CriterionUtils.h"
 #include "flashlight/app/asr/criterion/CriterionUtils.h"
 
 using namespace fl;

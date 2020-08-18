@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "flashlight/libraries/text/dictionary/Defines.h"
+#include "flashlight/lib/text/dictionary/Defines.h"
 
 #include <memory>
 #include <unordered_map>

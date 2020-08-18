@@ -26,9 +26,9 @@
 
 #include "flashlight/extensions/common/DistributedUtils.h"
 #include "flashlight/extensions/common/SequentialBuilder.h"
-#include "flashlight/libraries/common/System.h"
-#include "flashlight/libraries/text/dictionary/Dictionary.h"
-#include "flashlight/libraries/text/dictionary/Utils.h"
+#include "flashlight/lib/common/System.h"
+#include "flashlight/lib/text/dictionary/Dictionary.h"
+#include "flashlight/lib/text/dictionary/Utils.h"
 
 using namespace fl::ext;
 using namespace fl::lib;

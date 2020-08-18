@@ -15,7 +15,7 @@
 #include "flashlight/app/asr/criterion/CriterionUtils.h"
 
 #include "flashlight/extensions/common/DistributedUtils.h"
-#include "flashlight/libraries/sequence/criterion/cuda/CriterionUtils.cuh"
+#include "flashlight/lib/sequence/criterion/cuda/CriterionUtils.cuh"
 
 using namespace fl;
 using namespace fl::ext;

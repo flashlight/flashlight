@@ -10,8 +10,8 @@
 
 #include <stdexcept>
 
-#include "flashlight/libraries/common/String.h"
-#include "flashlight/libraries/common/System.h"
+#include "flashlight/lib/common/String.h"
+#include "flashlight/lib/common/System.h"
 
 using namespace fl;
 using namespace fl::lib;
