@@ -74,7 +74,7 @@ include(${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/optim/CMakeLists.txt)
 
 # Build tests
 if (FL_BUILD_TESTS)
-  add_subdirectory(${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/tests)
+  add_subdirectory(${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/test)
 endif ()
 
 # Build examples

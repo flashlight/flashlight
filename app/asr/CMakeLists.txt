@@ -98,5 +98,5 @@ target_link_libraries(Decoder flashlight-app-asr)
 
 # Build tests
 if (FL_BUILD_TESTS)
-  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/tests)
+  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test)
 endif ()

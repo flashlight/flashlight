@@ -99,5 +99,5 @@ endif()
 # --------------------------- Tests ---------------------------
 
 if (FL_BUILD_TESTS)
-  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/tests)
+  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test)
 endif ()
