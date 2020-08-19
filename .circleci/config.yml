@@ -53,7 +53,7 @@ jobs:
       - run:
           name: Build flashlight with CUDA backend inside nvidia-docker
           command: |
-            sudo docker run --runtime=nvidia --rm -itd --ipc=host --name flashlight flml/flashlight:cuda-base-latest
+            sudo docker run --runtime=nvidia --rm -itd --ipc=host --name flashlight flml/flashlight:cuda-base-consolidation-latest
             sudo docker exec -it flashlight bash -c "mkdir /flashlight"
             sudo docker cp . flashlight:/flashlight
             sudo docker exec -it flashlight bash -c "\
@@ -65,7 +65,7 @@ jobs:
             make -j$(nproc) && make install && make test"
   build-cpu:
     docker:
-      - image: flml/flashlight:cpu-base-latest
+      - image: flml/flashlight:cpu-base-consolidation-latest
     steps:
       - checkout
       - run:
