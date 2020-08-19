@@ -1,70 +1,58 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 # ----------------------------- NN Modules -----------------------------
-add_library(
-  NN
-  INTERFACE
-  )
-
-add_dependencies(NN cereal)
+add_dependencies(flashlight cereal)
 
 set(
   NN_SOURCES
-  ${CMAKE_SOURCE_DIR}/flashlight/nn/Init.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/nn/Utils.cpp # utils
-  ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Activations.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/AdaptiveSoftMax.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/BatchNorm.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Container.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Conv2D.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Dropout.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Embedding.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Identity.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/LayerNorm.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Linear.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Loss.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Module.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Normalize.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Padding.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Pool2D.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Reorder.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/RNN.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/Transform.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/View.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/nn/modules/WeightNorm.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/Init.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/Utils.cpp # utils
+  ${CMAKE_CURRENT_LIST_DIR}/modules/Activations.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/AdaptiveSoftMax.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/BatchNorm.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/Container.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/Conv2D.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/Dropout.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/Embedding.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/Identity.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/LayerNorm.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/Linear.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/Loss.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/Module.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/Normalize.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/Padding.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/Pool2D.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/Reorder.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/RNN.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/Transform.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/View.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/WeightNorm.cpp
   )
 
 if (FL_BUILD_DISTRIBUTED)
   set(
     NN_SOURCES
-    ${CMAKE_SOURCE_DIR}/flashlight/nn/DistributedUtils.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/DistributedUtils.cpp
     ${NN_SOURCES}
   )
 endif ()
 
 target_sources(
-  NN
-  INTERFACE
+  flashlight
+  PUBLIC
   $<BUILD_INTERFACE:${NN_SOURCES}>
-  )
-
-target_link_libraries(
-  NN
-  INTERFACE
-  Autograd
-  Common
   )
 
 if (TARGET CONAN_PKG::cereal)
   target_link_libraries(
-    NN
-    INTERFACE
+    flashlight
+    PUBLIC
     CONAN_PKG::cereal
     )
 else()
   target_include_directories(
-    NN
-    INTERFACE
+    flashlight
+    PUBLIC
     ${cereal_INCLUDE_DIRS} # pulled in - see cmake/BuildCereal.cmake
     )
 endif ()

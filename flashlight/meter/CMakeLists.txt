@@ -1,23 +1,18 @@
 cmake_minimum_required(VERSION 3.5.1)
 
-add_library(
-  Meter
-  INTERFACE
-  )
-
 set(
   METER_SOURCES
-  ${CMAKE_SOURCE_DIR}/flashlight/meter/AverageValueMeter.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/meter/CountMeter.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/meter/EditDistanceMeter.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/meter/FrameErrorMeter.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/meter/MSEMeter.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/meter/TimeMeter.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/AverageValueMeter.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/CountMeter.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/EditDistanceMeter.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/FrameErrorMeter.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/MSEMeter.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/TimeMeter.cpp
   )
 
 target_sources(
-  Meter
-  INTERFACE
+  flashlight
+  PUBLIC
   $<BUILD_INTERFACE:${METER_SOURCES}>
   )
 

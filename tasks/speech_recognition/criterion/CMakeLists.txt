@@ -7,7 +7,7 @@ add_library(
   )
 
 # ---------------------------- Backend-specific -----------------------------
-if (FLASHLIGHT_BACKEND STREQUAL "CUDA")
+if (FL_BACKEND STREQUAL "CUDA")
   set(FLASHLIGHT_USE_CUDA ON)
 endif ()
 
@@ -54,7 +54,7 @@ elseif (FLASHLIGHT_USE_CPU)
 else ()
   message(
     FATAL_ERROR
-    "wav2letter criterions not implemented for ${FLASHLIGHT_BACKEND} backend"
+    "wav2letter criterions not implemented for ${FL_BACKEND} backend"
     )
 endif ()
 

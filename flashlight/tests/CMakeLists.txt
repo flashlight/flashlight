@@ -33,13 +33,13 @@ function(build_test SRCFILE)
   target_include_directories(
     ${target}
     PRIVATE
-    ${CMAKE_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}
     ${GTEST_INCLUDE_DIRS}
     )
   add_test(${target} ${target})
 endfunction(build_test)
 
-set(FLASHLIGHT_TEST_DIR ${CMAKE_SOURCE_DIR}/flashlight/tests)
+set(FLASHLIGHT_TEST_DIR ${FLASHLIGHT_CORE_DIR}/tests)
 build_test(${FLASHLIGHT_TEST_DIR}/autograd/AutogradTest.cpp)
 build_test(${FLASHLIGHT_TEST_DIR}/common/DevicePtrTest.cpp)
 build_test(${FLASHLIGHT_TEST_DIR}/common/HistogramTest.cpp)

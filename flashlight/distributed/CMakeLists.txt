@@ -1,24 +1,19 @@
 cmake_minimum_required(VERSION 3.5.1)
 
-add_library(
-  Distributed
-  INTERFACE
-  )
-
 set(
   DISTRIBUTED_SOURCES
-  ${CMAKE_SOURCE_DIR}/flashlight/distributed/DistributedApi.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/distributed/FileStore.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/distributed/reducers/InlineReducer.cpp
-  ${CMAKE_SOURCE_DIR}/flashlight/distributed/reducers/CoalescingReducer.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/DistributedApi.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/FileStore.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/reducers/InlineReducer.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/reducers/CoalescingReducer.cpp
   )
 
 # Build sources only in distributed mode. Distributed headers will be included regardless,
 # but usage of the apis will fail to link if not enabled.
 if (FL_BUILD_DISTRIBUTED)
   target_sources(
-    Distributed
-    INTERFACE
+    flashlight
+    PUBLIC
     $<BUILD_INTERFACE:${DISTRIBUTED_SOURCES}>
     )
 endif()
@@ -78,37 +73,49 @@ endif()
 
 
 # ----------------------------- Backend libs -----------------------------
-# Distributed
-if (USE_NCCL)
-  set(
-    DISTRIBUTED_NCCL_SOURCES
-    ${CMAKE_SOURCE_DIR}/flashlight/distributed/backend/cuda/DistributedBackend.cpp
-    )
-
-  target_sources(
-    Distributed
-    INTERFACE
-    $<BUILD_INTERFACE:${DISTRIBUTED_NCCL_SOURCES}>
-    )
-
+if (FL_BUILD_DISTRIBUTED)
   target_link_libraries(
-    Distributed
-    INTERFACE
-    ${CUDA_LIBRARIES}
-    ${NCCL_LIBRARIES}
+    flashlight
+    PUBLIC
     ${MPI_LIBRARIES}
     )
 
   target_include_directories(
-    Distributed
-    INTERFACE
+    flashlight
+    PUBLIC
     ${MPI_INCLUDE_DIRS}
+    )
+endif ()
+
+# Distributed
+if (USE_NCCL)
+  set(
+    DISTRIBUTED_NCCL_SOURCES
+    ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/DistributedBackend.cpp
+    )
+
+  target_sources(
+    flashlight
+    PUBLIC
+    $<BUILD_INTERFACE:${DISTRIBUTED_NCCL_SOURCES}>
+    )
+
+  target_link_libraries(
+    flashlight
+    PUBLIC
+    ${CUDA_LIBRARIES}
+    ${NCCL_LIBRARIES}
+    )
+
+  target_include_directories(
+    flashlight
+    PUBLIC
     ${NCCL_INCLUDE_DIRS}
     )
 
   target_compile_definitions(
-    Distributed
-    INTERFACE
+    flashlight
+    PUBLIC
     "-DNO_NCCL_COMM_DESTROY_HANDLE"
     )
 endif ()
@@ -117,25 +124,24 @@ endif ()
 if (USE_GLOO)
   set(
     DISTRIBUTED_GLOO_SOURCES
-    ${CMAKE_SOURCE_DIR}/flashlight/distributed/backend/cpu/DistributedBackend.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/DistributedBackend.cpp
     )
+
   target_sources(
-    Distributed
-    INTERFACE
+    flashlight
+    PUBLIC
     $<BUILD_INTERFACE:${DISTRIBUTED_GLOO_SOURCES}>
     )
 
   target_link_libraries(
-    Distributed
-    INTERFACE
-    ${MPI_LIBRARIES}
+    flashlight
+    PUBLIC
     ${Gloo_LIBRARY}
     )
 
   target_include_directories(
-    Distributed
-    INTERFACE
-    ${MPI_INCLUDE_DIRS}
+    flashlight
+    PUBLIC     
     ${Gloo_INCLUDE_DIR}
     )
 endif ()

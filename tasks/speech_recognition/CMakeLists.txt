@@ -43,11 +43,6 @@ else()
   message(STATUS "OpenMP not found - building without OpenMP")
 endif()
 
-# Find Flashlight
-find_library(flashlight REQUIRED HINTS "${CMAKE_BINARY_DIR}/flashlight")
-find_library(fl-extensions REQUIRED HINTS "${CMAKE_BINARY_DIR}/extensions")
-find_library(fl-libraries REQUIRED HINTS "${CMAKE_BINARY_DIR}/libraries")
-
 # ------------------------ Components ------------------------
 
 # Common
@@ -88,7 +83,6 @@ target_link_libraries(
   asr-decoder
   asr-runtime
   flashlight
-  fl-extensions
   fl-libraries
   )
 
