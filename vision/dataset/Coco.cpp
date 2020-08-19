@@ -330,6 +330,32 @@ TransformAllFunction randomResize(
     int maxsize) {
   assert(sizes.size() > 0);
 
+  auto getSize = [](const af::array& in, int size, int maxSize = 0) {
+    int w = in.dims(0);
+    int h = in.dims(1);
+    //long size;
+    if(maxSize > 0) {
+      float minOriginalSize = std::min(w, h);
+      float maxOriginalSize = std::max(w, h);
+      if (maxOriginalSize / minOriginalSize * size > maxSize) {
+        size = lroundf(maxSize * minOriginalSize / maxOriginalSize);
+      }
+    }
+
+    if( (w <= h && w == size) || (h <= w && h == size) {
+        return std::make_pair<int, int>(w, h);
+    }
+    int ow, oh;
+    if ( w < h ) {
+      ow = size;
+      oh = size * h / w;
+    } else {
+      oh = size;
+      ow = size * w / h;
+    }
+    return std::make_pair<int, int>(ow, oh);
+  };
+
   auto resizeCoco = [sizes, maxsize](std::vector<af::array> in) {
     assert(in.size() == 5);
     assert(sizes.size() > 0);
