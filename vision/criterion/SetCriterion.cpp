@@ -239,7 +239,7 @@ namespace cv {
 SetCriterion::SetCriterion(
     const int num_classes,
     const HungarianMatcher& matcher,
-    const af::array& weight_dict,
+    const std::unordered_map<std::string, float> weight_dict,
     const float eos_coef,
     LossDict losses) :
   num_classes_(num_classes),
@@ -343,6 +343,10 @@ SetCriterion::LossDict SetCriterion::lossLabels(
   auto loss_ce = weightedCategoricalCrossEntropy(
       softmaxed, fl::Variable(target_classes_full, false), weightVar, ReduceMode::MEAN, -1);
   return { {"loss_ce", loss_ce} };
+}
+
+std::unordered_map<std::string, float> SetCriterion::getWeightDict() {
+  return weight_dict_;
 }
 
 // TODO we can push all of this into HungarianMatcher. Do after testing.

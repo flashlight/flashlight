@@ -16,7 +16,7 @@ public:
   SetCriterion(
       const int num_classes, 
       const HungarianMatcher& matcher, 
-      const af::array& weight_dict,
+      std::unordered_map<std::string, float> weight_dict,
       const float eos_coef, 
       LossDict losses);
 
@@ -60,6 +60,8 @@ public:
       const Variable& predLogits,
       const std::vector<Variable>& targetBoxes, 
       const std::vector<Variable>& targetClasses);
+
+  std::unordered_map<std::string, float> getWeightDict();
 private:
   std::pair<af::array, af::array> getSrcPermutationIdx(
       const std::vector<std::pair<af::array, af::array>>& indices);
@@ -69,7 +71,7 @@ private:
 
   const int num_classes_;
   const HungarianMatcher matcher_;
-  const af::array weight_dict_;
+  const std::unordered_map<std::string, float> weight_dict_;
   const float eos_coef_;
   LossDict losses_;
 

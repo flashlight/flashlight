@@ -252,13 +252,26 @@ int main(int argc, char** argv) {
       af::saveArray("bboxes", boxes, outputFile.c_str(), true);
   };
 
+  const float setCostClass = 1.f;
+  const float setCostBBox = 5.f;
+  const float setCostGiou = 2.f;
+  const float bboxLossCoef = 5.f;
+  const float giouLossCoef = 2.f;
 
-  auto matcher = HungarianMatcher(1, 1, 1);
+
+  auto matcher = HungarianMatcher(
+      setCostClass,
+      setCostBBox,
+      setCostGiou
+      );
   SetCriterion::LossDict losses;
   auto criterion = SetCriterion(
       numClasses,
       matcher,
-      af::array(),
+      { { "loss_ce" , 1.f} ,
+        { "loss_giou", giouLossCoef },
+        { "loss_bbox", bboxLossCoef }
+      },
       0.0,
       losses);
 
@@ -338,6 +351,7 @@ int main(int argc, char** argv) {
   //}
 
 
+  auto weightDict = criterion.getWeightDict();
   for(int e = 0; e < FLAGS_epochs; e++) {
 
     std::unordered_map<std::string, AverageValueMeter> meters;
@@ -396,8 +410,10 @@ int main(int argc, char** argv) {
           targetClasses);
       auto accumLoss = fl::Variable(af::constant(0, 1), true);
       for(auto losses : loss) {
+        fl::Variable scaled_loss = weightDict[losses.first] * losses.second;
         meters[losses.first].add(losses.second.array());
-        accumLoss = losses.second + accumLoss;
+        meters[losses.first + "_weighted"].add(scaled_loss.array());
+        accumLoss = scaled_loss + accumLoss;
       }
       meters["sum"].add(accumLoss.array());
       timers["criterion"].stop();
