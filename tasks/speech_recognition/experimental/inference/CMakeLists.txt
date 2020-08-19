@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.5.1)
 
+project(wav2letter-inference)
+
 # Creates build rules for wav2letter inference processing graph.
 
 include(GNUInstallDirs)
@@ -28,8 +30,6 @@ set_property(
 )
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-project(wav2letter-inference)
 
 add_library(wav2letter-inference "")
 

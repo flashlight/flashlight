@@ -33,9 +33,9 @@ set(FL_BUILD_EXPERIMENTAL OFF CACHE BOOL
     "Build and link additional internal flashlight experimental resources.")
 if (FL_BUILD_EXPERIMENTAL)
   message(STATUS "Will build flashlight experimental assets.")
-  include(${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/experimental/CMakeLists.txt)
-  set(FLASHLIGHT_MODULES ${FLASHLIGHT_MODULES} FlExperimental
-      ${FLASHLIGHT_EXPERIMENTAL_LIBS})
+  set(FL_EXPERIMENTAL_ROOT_PATH
+    ${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/experimental)
+  include(${FL_EXPERIMENTAL_ROOT_PATH}/CMakeLists.txt)
 endif()
 
 # Internal includes are implicitly defined as <flashlight...>
@@ -79,6 +79,6 @@ if (FL_BUILD_TESTS)
 endif ()
 
 # Build examples
-#if (FL_BUILD_EXAMPLES)
-#  add_subdirectory(${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/examples)
-#endif ()
+if (FL_BUILD_EXAMPLES)
+ add_subdirectory(${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/examples)
+endif ()
