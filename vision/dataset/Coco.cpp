@@ -122,12 +122,10 @@ std::pair<af::array, af::array> makeImageAndMaskBatch(
     //throw std::invalid_argument("# of dims must be < 4 for batching");
   //}
   //dims[ndims] = data.size();
-  std::cout << "dims " << dims << std::endl;
   auto batcharr = af::array(dims, data[0].type());
 
   //auto maskarr = af::constant(true, dims, b8);
   auto maskarr = af::constant(0, maskDims);
-  std::cout << "Batch w " << maxW << "Batch h" << maxH << std::endl;
 
   for (size_t i = 0; i < data.size(); ++i) {
     af::array sample = data[i];
@@ -138,7 +136,6 @@ std::pair<af::array, af::array> makeImageAndMaskBatch(
     //maskarr(af::seq(0, w - 1), af::seq(0, h - 1), af::span, af::seq(i, i)) = af::constant(false, dims, b8);
     maskarr(af::seq(0, w - 1), af::seq(0, h - 1), af::span, af::seq(i, i)) = af::constant(1, { w, h });
   }
-  std::cout << "Done!" << std::endl;
   return std::make_pair(batcharr, maskarr);
 }
 
@@ -312,8 +309,6 @@ af::array resize(const af::array& in, const int resize) {
 std::vector<af::array> Normalize(const std::vector<af::array> in) {
   auto boxes = in[3];
 
-  //std::cout << "Pre Normalize boxes" << std::endl;
-  //af_print(boxes);
 
   if(! boxes.isempty()) {
     auto image = in[0];
@@ -321,13 +316,9 @@ std::vector<af::array> Normalize(const std::vector<af::array> in) {
     auto h = float(image.dims(1));
 
     boxes = xyxy_to_cxcywh(boxes);
-    //std::cout << " Post to cxcywh " << std::endl;
-    //af_print(boxes);
     const std::vector<float> ratioVector = { w, h, w, h };
     af::array ratioArray = af::array(4, ratioVector.data());
     boxes = af::batchFunc(boxes, ratioArray, af::operator/);
-    //std::cout << "Post Normalize boxes " << std::endl;
-    //af_print(boxes);
   }
   return { in[0], in[1], in[2], boxes, in[4] };
 
@@ -377,9 +368,6 @@ TransformAllFunction randomResize(
 
 
     af::array boxes = in[3];
-    //std::cout << " Pre resize" << std::endl;
-    //af_print(boxes);
-
     af::array targetSize = in[1];
     if (!boxes.isempty()) {
       const float ratioWidth = float(resizedDims[0]) / float(originalDims[0]);
@@ -388,12 +376,6 @@ TransformAllFunction randomResize(
       const std::vector<float> resizeVector = { ratioWidth, ratioHeight, ratioWidth, ratioHeight };
       af::array resizedArray = af::array(4, resizeVector.data());
       boxes = af::batchFunc(boxes, resizedArray, af::operator*);
-      //std::cout << " Post resize " << std::endl;
-      //af_print(boxes);
-
-      //long long int imageSizeArray[] = { resizedDims[1], resizedDims[0] };
-      //targetSize = af::array(2, imageSizeArray);
-
     }
 
     std::vector<af::array> result =  { resizedImage, in[1], in[2], boxes, in[4] };
