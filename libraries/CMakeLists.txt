@@ -2,16 +2,7 @@ cmake_minimum_required(VERSION 3.5.1)
 
 # ---------------------- Configuration ----------------------
 
-option(FL_LIBRARIES_USE_CUDA "Use CUDA in libraries-only build" ON)
-option(FL_LIBRARIES_USE_KENLM "Use KenLM in libraries-only build" ON)
-option(FL_LIBRARIES_USE_MKL "Use MKL in libraries-only build" ON)
 option(FL_BUILD_FOR_PYTHON "Build Python bindings" OFF)
-
-set(FL_COMPILE_DEFINITIONS
-  $<$<BOOL:${FL_LIBRARIES_USE_CUDA}>:FL_LIBRARIES_USE_CUDA>
-  $<$<BOOL:${FL_LIBRARIES_USE_KENLM}>:FL_LIBRARIES_USE_KENLM>
-  $<$<BOOL:${FL_LIBRARIES_USE_MKL}>:FL_LIBRARIES_USE_MKL>
-  )
 
 # ------------------------- Library -------------------------
 
@@ -29,7 +20,7 @@ target_include_directories(
 target_compile_definitions(
   fl-libraries
   PUBLIC
-  ${FL_LIBRARIES_COMPILE_DEFINITIONS}
+  ${FL_COMPILE_DEFINITIONS}
   )
 
 # --------------------------- Components ---------------------------
@@ -105,14 +96,10 @@ if (FL_LIBRARIES_USE_CUDA)
     PUBLIC
     ${CUDA_INCLUDE_DIRS}
     )
-
 endif()
 
 # --------------------------- Tests ---------------------------
 
-# Build tests
-option(FL_BUILD_TESTS "Build tests for flashlight" ON)
 if (FL_BUILD_TESTS)
-  enable_testing()
   add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/tests)
 endif ()

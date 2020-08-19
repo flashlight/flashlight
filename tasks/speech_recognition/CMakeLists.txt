@@ -84,7 +84,6 @@ target_link_libraries(
   asr-runtime
   flashlight
   fl-libraries
-  fl-extensions
   )
 
 target_include_directories(

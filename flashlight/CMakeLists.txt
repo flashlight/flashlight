@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.5.1)
 
 project(flashlight-core)
 
-include(CTest)
-
 # ----------------------------- Setup -----------------------------
 set(FLASHLIGHT_CORE_COMPONENT_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}") # module root
 
@@ -43,9 +41,10 @@ if (FL_BUILD_EXPERIMENTAL)
 endif()
 
 # Internal includes are implicitly defined as <flashlight...>
+message("!@#$%^&*() ${PROJECT_SOURCE_DIR}")
 target_include_directories(
   flashlight
-  PRIVATE
+  PUBLIC
   ${PROJECT_SOURCE_DIR}
 )
 
@@ -78,14 +77,11 @@ include(${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/optim/CMakeLists.txt)
 # --------------------------- Configure Examples/Tests ---------------------------
 
 # Build tests
-option(FL_BUILD_TESTS "Build tests for flashlight" ON)
 if (FL_BUILD_TESTS)
-  enable_testing()
   add_subdirectory(${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/tests)
 endif ()
 
 # Build examples
-#option(FL_BUILD_EXAMPLES "Build examples for flashlight" ON)
 #if (FL_BUILD_EXAMPLES)
 #  add_subdirectory(${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/examples)
 #endif ()

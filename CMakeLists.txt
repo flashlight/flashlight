@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.5.1)
 
 project(flashlight)
 
+include(CTest)
+
 # ----------------------------- Setup -----------------------------
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
@@ -27,6 +29,11 @@ option(FL_BUILD_EXPERIMENTAL "Build internal experimental components" OFF)
 option(FL_BUILD_SCRIPTS "Build internal scripts for wav2letter++" OFF)
 option(FL_BUILD_RECIPES "Build recipes" ON)
 option(FL_BUILD_TOOLS "Build tools" OFF)
+
+if (FL_BUILD_TESTS)
+  enable_testing()
+  include(${CMAKE_MODULE_PATH}/TestUtils.cmake)
+endif ()
 
 # Flashlight backend
 set(FL_BACKEND "CUDA" CACHE STRING "Backend with which to build flashlight")
@@ -161,14 +168,26 @@ set(FLASHLIGHT_CORE_DIR "${CMAKE_SOURCE_DIR}/flashlight")
 include(${FLASHLIGHT_CORE_DIR}/CMakeLists.txt)
 
 # ------------------------ Libraries ------------------------
+option(FL_LIBRARIES_USE_CUDA "Use CUDA in libraries-only build" ON)
+option(FL_LIBRARIES_USE_KENLM "Use KenLM in libraries-only build" ON)
+option(FL_LIBRARIES_USE_MKL "Use MKL in libraries-only build" ON)
+
+set(FL_COMPILE_DEFINITIONS
+  $<$<BOOL:${FL_LIBRARIES_USE_CUDA}>:FL_LIBRARIES_USE_CUDA>
+  $<$<BOOL:${FL_LIBRARIES_USE_MKL}>:FL_LIBRARIES_USE_MKL>
+  $<$<BOOL:${FL_LIBRARIES_USE_KENLM}>:FL_LIBRARIES_USE_KENLM>
+  )
+
 set(FLASHLIGHT_LIB_DIR "${CMAKE_SOURCE_DIR}/libraries")
 include(${FLASHLIGHT_LIB_DIR}/CMakeLists.txt)
+
+# Link to flashlight core
+target_link_libraries(flashlight PUBLIC fl-libraries)
 
 # ------------------------ Extensions ------------------------
 set(FLASHLIGHT_EXT_DIR "${CMAKE_SOURCE_DIR}/extensions")
 include(${FLASHLIGHT_EXT_DIR}/CMakeLists.txt)
 
 # --------------------------- Tasks ---------------------------
-
 set(FLASHLIGHT_TASKS_DIR "${CMAKE_SOURCE_DIR}/tasks")
 add_subdirectory(${FLASHLIGHT_TASKS_DIR})
