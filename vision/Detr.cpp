@@ -213,7 +213,6 @@ int main(int argc, char** argv) {
   //backbone = std::make_shared<Sequential>(resnet34());
   std::string modelPath = "/checkpoint/padentomasello/models/resnet34backbone49";
   fl::load(modelPath, backbone);
-  backbone->eval();
   auto transformer = std::make_shared<Transformer>(
       modelDim,
       numHeads,
@@ -284,8 +283,17 @@ int main(int argc, char** argv) {
     int idx = 0;
     for(auto& sample : *dataset) {
       auto images =  { fl::Variable(sample.images, false) };
-      auto features = backbone->forward(images);
-      auto output = model->forward(features);
+      auto features = backbone->forward(images)[1];
+      auto masks = fl::Variable(
+          af::resize(
+            sample.masks, 
+            features.dims(0), 
+            features.dims(1), 
+            AF_INTERP_NEAREST),
+        false
+      );
+      //auto features = input;
+      auto output = model->forward({features, masks});
       std::stringstream ss;
       ss << FLAGS_eval_dir << "detection" << idx << ".array";
       auto output_array = ss.str();
@@ -427,10 +435,10 @@ int main(int argc, char** argv) {
 
       reducer->finalize();
       opt.step();
-      //opt2.step();
+      opt2.step();
 
       opt.zeroGrad();
-      //opt2.zeroGrad();
+      opt2.zeroGrad();
       //////////////////////////
       // Metrics
       /////////////////////////
