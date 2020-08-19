@@ -125,5 +125,5 @@ class LexiconFreeSeq2SeqDecoder : public Decoder {
 
   std::unordered_map<int, std::vector<LexiconFreeSeq2SeqDecoderState>> hyp_;
 };
-}
-}
+} // namespace lib
+} // namespace fl

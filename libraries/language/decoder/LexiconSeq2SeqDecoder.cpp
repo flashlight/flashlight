@@ -32,9 +32,10 @@ void LexiconSeq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
   hyp_[0].emplace_back(
       0.0, lm_->start(0), lexicon_->getRoot(), nullptr, -1, -1, nullptr);
 
-  auto compare = [](
-      const LexiconSeq2SeqDecoderState& n1,
-      const LexiconSeq2SeqDecoderState& n2) { return n1.score > n2.score; };
+  auto compare = [](const LexiconSeq2SeqDecoderState& n1,
+                    const LexiconSeq2SeqDecoderState& n2) {
+    return n1.score > n2.score;
+  };
 
   // Decode frame by frame
   int t = 0;
@@ -237,5 +238,5 @@ int LexiconSeq2SeqDecoder::nDecodedFramesInBuffer() const {
   /* unused function */
   return -1;
 }
-}
-}
+} // namespace lib
+} // namespace fl

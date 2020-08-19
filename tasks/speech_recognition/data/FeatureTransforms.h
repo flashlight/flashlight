@@ -125,6 +125,6 @@ std::vector<T> normalize(
   }
   return out;
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

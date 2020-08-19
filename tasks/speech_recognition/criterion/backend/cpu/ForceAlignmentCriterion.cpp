@@ -151,6 +151,6 @@ af::array ForceAlignmentCriterion::viterbiPath(
       ctx->workspaceVec.data());
   return af::array(T, B, bestPaths.data());
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

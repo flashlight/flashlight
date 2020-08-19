@@ -166,6 +166,6 @@ af::array ForceAlignmentCriterion::viterbiPath(
   }
   return bestPathsVar;
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

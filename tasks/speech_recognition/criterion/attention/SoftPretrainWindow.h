@@ -34,8 +34,8 @@ class SoftPretrainWindow : public WindowBase {
 
   FL_SAVE_LOAD_WITH_BASE(WindowBase, std_)
 };
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::task::asr::SoftPretrainWindow)

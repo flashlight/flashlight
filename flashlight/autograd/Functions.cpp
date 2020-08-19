@@ -60,8 +60,8 @@ af::array sumAs(const af::array& input, const af::dim4& rdims) {
 
 Variable operator+(const Variable& lhs, const Variable& rhs) {
   auto result = lhs.array() + rhs.array();
-  auto gradFunc = [](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
     inputs[0].addGrad(Variable(gradOutput.array(), false));
     inputs[1].addGrad(Variable(gradOutput.array(), false));
   };
@@ -70,8 +70,8 @@ Variable operator+(const Variable& lhs, const Variable& rhs) {
 
 Variable operator+(const Variable& lhs, const double& rhsVal) {
   auto result = lhs.array() + rhsVal;
-  auto gradFunc = [](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
     inputs[0].addGrad(Variable(gradOutput.array(), false));
   };
   return Variable(result, {lhs.withoutData()}, gradFunc);
@@ -83,8 +83,8 @@ Variable operator+(const double& lhsVal, const Variable& rhs) {
 
 Variable operator-(const Variable& lhs, const Variable& rhs) {
   auto result = lhs.array() - rhs.array();
-  auto gradFunc = [](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
     inputs[0].addGrad(Variable(gradOutput.array(), false));
     inputs[1].addGrad(Variable(negate(gradOutput).array(), false));
   };
@@ -93,8 +93,8 @@ Variable operator-(const Variable& lhs, const Variable& rhs) {
 
 Variable operator-(const Variable& lhs, const double& rhsVal) {
   auto result = lhs.array() - rhsVal;
-  auto gradFunc = [](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
     inputs[0].addGrad(Variable(gradOutput.array(), false));
   };
   return Variable(result, {lhs.withoutData()}, gradFunc);
@@ -102,8 +102,8 @@ Variable operator-(const Variable& lhs, const double& rhsVal) {
 
 Variable operator-(const double& lhsVal, const Variable& rhs) {
   auto result = lhsVal - rhs.array();
-  auto gradFunc = [](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
     inputs[0].addGrad(Variable(negate(gradOutput).array(), false));
   };
   return Variable(result, {rhs.withoutData()}, gradFunc);
@@ -111,8 +111,8 @@ Variable operator-(const double& lhsVal, const Variable& rhs) {
 
 Variable operator*(const Variable& lhs, const Variable& rhs) {
   auto result = lhs.array() * rhs.array();
-  auto gradFunc = [](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
     if (inputs[0].isCalcGrad()) {
       inputs[0].addGrad(Variable((gradOutput * inputs[1]).array(), false));
     }
@@ -129,10 +129,10 @@ Variable operator*(const Variable& lhs, const Variable& rhs) {
 
 Variable operator*(const Variable& lhs, const double& rhsVal) {
   auto result = lhs.array() * rhsVal;
-  auto gradFunc = [rhsVal](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
-    inputs[0].addGrad(Variable((gradOutput * rhsVal).array(), false));
-  };
+  auto gradFunc =
+      [rhsVal](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        inputs[0].addGrad(Variable((gradOutput * rhsVal).array(), false));
+      };
   return Variable(result, {lhs.withoutData()}, gradFunc);
 }
 
@@ -142,8 +142,8 @@ Variable operator*(const double& lhsVal, const Variable& rhs) {
 
 Variable operator/(const Variable& lhs, const Variable& rhs) {
   auto result = lhs.array() / rhs.array();
-  auto gradFunc = [](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
     auto inputs1rec = reciprocal(inputs[1]);
     auto gradInput0 = gradOutput * inputs1rec;
     if (inputs[0].isCalcGrad()) {
@@ -160,10 +160,10 @@ Variable operator/(const Variable& lhs, const Variable& rhs) {
 
 Variable operator/(const Variable& lhs, const double& rhsVal) {
   auto result = lhs.array() / rhsVal;
-  auto gradFunc = [rhsVal](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
-    inputs[0].addGrad(Variable((gradOutput / rhsVal).array(), false));
-  };
+  auto gradFunc =
+      [rhsVal](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        inputs[0].addGrad(Variable((gradOutput / rhsVal).array(), false));
+      };
   return Variable(result, {lhs.withoutData()}, gradFunc);
 }
 
@@ -249,8 +249,8 @@ Variable operator!(const Variable& input) {
 
 Variable max(const Variable& lhs, const Variable& rhs) {
   auto result = max(lhs.array(), rhs.array());
-  auto gradFunc = [](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
     auto mask = Variable(inputs[0].array() > inputs[1].array(), false);
     inputs[0].addGrad(Variable((mask * gradOutput).array(), false));
     inputs[1].addGrad(Variable((!mask * gradOutput).array(), false));
@@ -260,11 +260,11 @@ Variable max(const Variable& lhs, const Variable& rhs) {
 
 Variable max(const Variable& lhs, const double& rhsVal) {
   auto result = max(lhs.array(), rhsVal);
-  auto gradFunc = [rhsVal](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
-    auto mask = Variable(inputs[0].array() > rhsVal, false);
-    inputs[0].addGrad(Variable((mask * gradOutput).array(), false));
-  };
+  auto gradFunc =
+      [rhsVal](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        auto mask = Variable(inputs[0].array() > rhsVal, false);
+        inputs[0].addGrad(Variable((mask * gradOutput).array(), false));
+      };
   return Variable(result, {lhs}, gradFunc);
 }
 
@@ -274,8 +274,8 @@ Variable max(const double& lhsVal, const Variable& rhs) {
 
 Variable min(const Variable& lhs, const Variable& rhs) {
   auto result = min(lhs.array(), rhs.array());
-  auto gradFunc = [](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
     auto mask = Variable(inputs[0].array() < inputs[1].array(), false);
     inputs[0].addGrad(Variable((mask * gradOutput).array(), false));
     inputs[1].addGrad(Variable((!mask * gradOutput).array(), false));
@@ -285,11 +285,11 @@ Variable min(const Variable& lhs, const Variable& rhs) {
 
 Variable min(const Variable& lhs, const double& rhsVal) {
   auto result = min(lhs.array(), rhsVal);
-  auto gradFunc = [rhsVal](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
-    auto mask = Variable(inputs[0].array() < rhsVal, false);
-    inputs[0].addGrad(Variable((mask * gradOutput).array(), false));
-  };
+  auto gradFunc =
+      [rhsVal](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        auto mask = Variable(inputs[0].array() < rhsVal, false);
+        inputs[0].addGrad(Variable((mask * gradOutput).array(), false));
+      };
   return Variable(result, {lhs}, gradFunc);
 }
 
@@ -299,8 +299,8 @@ Variable min(const double& lhsVal, const Variable& rhs) {
 
 Variable negate(const Variable& input) {
   auto result = 0.0 - input.array();
-  auto gradFunc = [](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
     inputs[0].addGrad(Variable(negate(gradOutput).array(), false));
   };
   return Variable(result, {input.withoutData()}, gradFunc);
@@ -308,8 +308,8 @@ Variable negate(const Variable& input) {
 
 Variable reciprocal(const Variable& input) {
   auto result = 1.0 / input.array();
-  auto gradFunc = [](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
     auto res = reciprocal(inputs[0]);
     inputs[0].addGrad(
         Variable((negate(gradOutput) * res * res).array(), false));
@@ -319,8 +319,8 @@ Variable reciprocal(const Variable& input) {
 
 Variable exp(const Variable& input) {
   auto result = exp(input.array());
-  auto gradFunc = [](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
     inputs[0].addGrad(Variable((gradOutput * exp(inputs[0])).array(), false));
   };
   return Variable(result, {input}, gradFunc);
@@ -328,8 +328,8 @@ Variable exp(const Variable& input) {
 
 Variable log(const Variable& input) {
   auto result = log(input.array());
-  auto gradFunc = [](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
     inputs[0].addGrad(Variable((gradOutput / inputs[0]).array(), false));
   };
   return Variable(result, {input}, gradFunc);
@@ -337,8 +337,8 @@ Variable log(const Variable& input) {
 
 Variable log1p(const Variable& input) {
   auto result = log1p(input.array());
-  auto gradFunc = [](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
     inputs[0].addGrad(
         Variable((gradOutput / (1.0 + inputs[0])).array(), false));
   };
@@ -357,8 +357,8 @@ Variable pow(const Variable& input, double p) {
 
 Variable sin(const Variable& input) {
   auto result = sin(input.array());
-  auto gradFunc = [](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
     inputs[0].addGrad(Variable((gradOutput * cos(inputs[0])).array(), false));
   };
   return Variable(result, {input}, gradFunc);
@@ -366,8 +366,8 @@ Variable sin(const Variable& input) {
 
 Variable cos(const Variable& input) {
   auto result = cos(input.array());
-  auto gradFunc = [](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
     inputs[0].addGrad(
         Variable((gradOutput * negate(sin(inputs[0]))).array(), false));
   };
@@ -376,18 +376,20 @@ Variable cos(const Variable& input) {
 
 Variable tanh(const Variable& input) {
   auto result = tanh(input.array());
-  auto gradFunc = [result](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
-    auto grad = Variable((1.0 - result * result) * gradOutput.array(), false);
-    inputs[0].addGrad(Variable(grad.array(), false));
-  };
+  auto gradFunc =
+      [result](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        auto grad =
+            Variable((1.0 - result * result) * gradOutput.array(), false);
+        inputs[0].addGrad(Variable(grad.array(), false));
+      };
   return Variable(result, {input.withoutData()}, gradFunc);
 }
 
 Variable clamp(const Variable& input, const double lo, const double hi) {
   auto result = clamp(input.array(), lo, hi);
   auto gradFunc = [lo, hi, result](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+                      std::vector<Variable>& inputs,
+                      const Variable& gradOutput) {
     af::array gradMask = gradOutput.array();
     replace(gradMask, (result > lo) && (result < hi), 0);
     inputs[0].addGrad(Variable(gradMask, false));
@@ -407,18 +409,18 @@ Variable sqrt(const Variable& input) {
 
 Variable sigmoid(const Variable& input) {
   auto result = sigmoid(input.array());
-  auto gradFunc = [result](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
-    auto grad = gradOutput.array() * result * (1 - result);
-    inputs[0].addGrad(Variable(grad, false));
-  };
+  auto gradFunc =
+      [result](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        auto grad = gradOutput.array() * result * (1 - result);
+        inputs[0].addGrad(Variable(grad, false));
+      };
   return Variable(result, {input.withoutData()}, gradFunc);
 }
 
 Variable transpose(const Variable& input) {
   auto result = transpose(input.array());
-  auto gradFunc = [](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
     inputs[0].addGrad(Variable(transpose(gradOutput).array(), false));
   };
   return Variable(result, {input.withoutData()}, gradFunc);
@@ -428,10 +430,10 @@ Variable tileAs(const Variable& input, const af::dim4& rdims) {
   auto result = detail::tileAs(input.array(), rdims);
 
   af::dim4 inDims = input.dims();
-  auto gradFunc = [inDims](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
-    inputs[0].addGrad(Variable(sumAs(gradOutput, inDims).array(), false));
-  };
+  auto gradFunc =
+      [inDims](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        inputs[0].addGrad(Variable(sumAs(gradOutput, inDims).array(), false));
+      };
   return Variable(result, {input.withoutData()}, gradFunc);
 }
 
@@ -442,10 +444,10 @@ Variable tileAs(const Variable& input, const Variable& reference) {
 Variable sumAs(const Variable& input, const af::dim4& rdims) {
   auto result = detail::sumAs(input.array(), rdims);
   auto idims = input.dims();
-  auto gradFunc = [idims](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
-    inputs[0].addGrad(Variable(tileAs(gradOutput, idims).array(), false));
-  };
+  auto gradFunc =
+      [idims](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        inputs[0].addGrad(Variable(tileAs(gradOutput, idims).array(), false));
+      };
   return Variable(result, {input.withoutData()}, gradFunc);
 }
 
@@ -546,10 +548,10 @@ split(const Variable& input, const std::vector<dim_t>& splitSizes, int dim) {
 Variable tile(const Variable& input, const af::dim4& dims) {
   auto result = tile(input.array(), dims);
   af::dim4 idims = input.dims();
-  auto gradFunc = [idims](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
-    inputs[0].addGrad(Variable(sumAs(gradOutput, idims).array(), false));
-  };
+  auto gradFunc =
+      [idims](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        inputs[0].addGrad(Variable(sumAs(gradOutput, idims).array(), false));
+      };
   return Variable(result, {input.withoutData()}, gradFunc);
 }
 
@@ -559,10 +561,10 @@ Variable sum(const Variable& input, const std::vector<int>& axes) {
     result = sum(result, axes[i]);
   }
   af::dim4 indims = input.dims();
-  auto gradFunc = [indims](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
-    inputs[0].addGrad(Variable(tileAs(gradOutput, indims).array(), false));
-  };
+  auto gradFunc =
+      [indims](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        inputs[0].addGrad(Variable(tileAs(gradOutput, indims).array(), false));
+      };
   return Variable(result, {input.withoutData()}, gradFunc);
 }
 
@@ -572,16 +574,16 @@ Variable mean(const Variable& input, const std::vector<int>& axes) {
     result = mean(result, axes[i]);
   }
   af::dim4 idims = input.dims();
-  auto gradFunc = [idims](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
-    af::dim4 odims = gradOutput.dims();
-    dim_t count = 1;
-    for (int i = 0; i < 4; i++) {
-      count *= idims[i] / odims[i];
-    }
-    inputs[0].addGrad(
-        Variable((tileAs(gradOutput, idims) / count).array(), false));
-  };
+  auto gradFunc =
+      [idims](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        af::dim4 odims = gradOutput.dims();
+        dim_t count = 1;
+        for (int i = 0; i < 4; i++) {
+          count *= idims[i] / odims[i];
+        }
+        inputs[0].addGrad(
+            Variable((tileAs(gradOutput, idims) / count).array(), false));
+      };
   return Variable(result, {input.withoutData()}, gradFunc);
 }
 
@@ -601,18 +603,18 @@ Variable var(
   }
   auto val = 1.0 / (isbiased ? n : n - 1);
   result = val * (result - n * avg * avg);
-  auto gradFunc = [val, axes](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
-    af::dim4 tiledims(1, 1, 1, 1);
-    for (auto ax : axes) {
-      tiledims[ax] = inputs[0].dims(ax);
-    }
-    inputs[0].addGrad(Variable(
-        (2 * val * tile(gradOutput, tiledims) *
-         (inputs[0] - tile(mean(inputs[0], axes), tiledims)))
-            .array(),
-        false));
-  };
+  auto gradFunc =
+      [val, axes](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        af::dim4 tiledims(1, 1, 1, 1);
+        for (auto ax : axes) {
+          tiledims[ax] = inputs[0].dims(ax);
+        }
+        inputs[0].addGrad(Variable(
+            (2 * val * tile(gradOutput, tiledims) *
+             (inputs[0] - tile(mean(inputs[0], axes), tiledims)))
+                .array(),
+            false));
+      };
   return Variable(result.array(), {input}, gradFunc);
 }
 
@@ -629,6 +631,7 @@ norm(const Variable& input, const std::vector<int>& axes, double p /* = 2 */) {
   result = af::pow(result, 1 / p);
   result.eval();
 
+<<<<<<< HEAD
   auto gradFunc =
       [sumap, p](std::vector<Variable>& inputs, const Variable& gradOutput) {
         // correct, but less precise: auto gvar = Variable(af::pow(result, p-1),
@@ -640,6 +643,15 @@ norm(const Variable& input, const std::vector<int>& axes, double p /* = 2 */) {
                 .array(),
             false));
       };
+=======
+  auto gradFunc = [result](
+                      std::vector<Variable>& inputs,
+                      const Variable& gradOutput) {
+    auto output = Variable(result, false);
+    inputs[0].addGrad(Variable(
+        (inputs[0] * tileAs(gradOutput / output, inputs[0])).array(), false));
+  };
+>>>>>>> d03004f... clang-format-8
   return Variable(result, {input}, gradFunc);
 }
 
@@ -660,8 +672,8 @@ Variable matmul(const Variable& lhs, const Variable& rhs) {
   // -- matmul([M, N], [N, K]) --  [M, K]
   // result:gradOutput -- [M, K]
   auto result = matmul(lhs.array(), rhs.array());
-  auto gradFunc = [](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
     if (inputs[0].isCalcGrad()) {
       // matmulNT(gradOutput, inputs[1])
       // -- matmulNT([M, K], [N, K])
@@ -688,8 +700,8 @@ Variable matmulTN(const Variable& lhs, const Variable& rhs) {
   // -- matmul([M, N], [N, K]) -- [M, K]
   // result:gradOutput -- [M, K]
   auto result = matmulTN(lhs.array(), rhs.array());
-  auto gradFunc = [](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
     if (inputs[0].isCalcGrad()) {
       // matmulNT(inputs[1], gradOutput)
       // -- matmulNT([N, K], [M, K])
@@ -714,8 +726,8 @@ Variable matmulNT(const Variable& lhs, const Variable& rhs) {
   // -- matmul([M, N], [N, K]) -- [M, K]
   // result:gradOutput -- [M, K]
   auto result = matmulNT(lhs.array(), rhs.array());
-  auto gradFunc = [](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
     if (inputs[0].isCalcGrad()) {
       // matmul(gradOutput, inputs[1])
       // -- matmul([M, K], [K, N]) -- [M, N]
@@ -734,8 +746,8 @@ Variable matmulNT(const Variable& lhs, const Variable& rhs) {
 
 Variable abs(const Variable& input) {
   auto result = af::abs(input.array());
-  auto gradFunc = [](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
     // af::sign returns signbit
     // Convert it into -1, 1
     auto sign = Variable(1 - 2 * af::sign(inputs[0].array()), false);
@@ -747,10 +759,10 @@ Variable abs(const Variable& input) {
 Variable flat(const Variable& input) {
   auto result = af::flat(input.array());
   af::dim4 idims = input.dims();
-  auto gradFunc = [idims](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
-    inputs[0].addGrad(Variable(moddims(gradOutput, idims).array(), false));
-  };
+  auto gradFunc =
+      [idims](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        inputs[0].addGrad(Variable(moddims(gradOutput, idims).array(), false));
+      };
   return Variable(result, {input.withoutData()}, gradFunc);
 }
 
@@ -799,7 +811,8 @@ Variable softmax(const Variable& input, const int dim) {
 
   result.eval();
   auto gradFunc = [dim, tiledims, result](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+                      std::vector<Variable>& inputs,
+                      const Variable& gradOutput) {
     auto rbyg = gradOutput.array() * result;
     auto gradSm = rbyg - result * tile(sum(rbyg, dim), tiledims);
     inputs[0].addGrad(Variable(gradSm, false));
@@ -818,7 +831,8 @@ Variable logSoftmax(const Variable& input, const int dim) {
 
   result.eval();
   auto gradFunc = [dim, tiledims, result](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+                      std::vector<Variable>& inputs,
+                      const Variable& gradOutput) {
     auto gradLsm = gradOutput.array() -
         exp(result) * tile(sum(gradOutput.array(), dim), tiledims);
     inputs[0].addGrad(Variable(gradLsm, false));
@@ -882,7 +896,8 @@ Variable categoricalCrossEntropy(
 
   auto inputDims = input.dims();
   auto gradFunc = [C, X, mask, ignoreMask, denominator, reduction, inputDims](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+                      std::vector<Variable>& inputs,
+                      const Variable& gradOutput) {
     auto grad = gradOutput.array();
     if (reduction == ReduceMode::NONE) {
       grad = af::moddims(grad, af::dim4(1, X));
@@ -917,18 +932,18 @@ Variable reorder(
       {dim0, 0}, {dim1, 1}, {dim2, 2}, {dim3, 3}};
   std::sort(dimgrad.begin(), dimgrad.end());
 
-  auto gradFunc = [dimgrad](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
-    inputs[0].addGrad(Variable(
-        reorder(
-            gradOutput,
-            dimgrad[0].second,
-            dimgrad[1].second,
-            dimgrad[2].second,
-            dimgrad[3].second)
-            .array(),
-        false));
-  };
+  auto gradFunc =
+      [dimgrad](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        inputs[0].addGrad(Variable(
+            reorder(
+                gradOutput,
+                dimgrad[0].second,
+                dimgrad[1].second,
+                dimgrad[2].second,
+                dimgrad[3].second)
+                .array(),
+            false));
+      };
   return Variable(result, {input.withoutData()}, gradFunc);
 }
 
@@ -954,7 +969,8 @@ linear(const Variable& input, const Variable& weight, const Variable& bias) {
     output = output + tile(bias.array(), tiledims);
   }
   auto gradFunc = [hasBias](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+                      std::vector<Variable>& inputs,
+                      const Variable& gradOutput) {
     auto& in = inputs[0];
     auto& wt = inputs[1];
     auto nframes = in.elements() / in.dims(0);
@@ -1005,7 +1021,8 @@ Variable gatedlinearunit(const Variable& input, const int dim) {
   shalfout = af::sigmoid(shalfout);
 
   auto gradFunc = [fhalf, shalf, fhalfout, shalfout, inDims, inType](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+                      std::vector<Variable>& inputs,
+                      const Variable& gradOutput) {
     auto gradGlu = af::array(inDims, inType);
     gradGlu(fhalf[0], fhalf[1], fhalf[2], fhalf[3]) =
         shalfout * gradOutput.array();
@@ -1029,8 +1046,8 @@ Variable embedding(const Variable& input, const Variable& embeddings) {
 
   result = moddims(result, resultDims);
 
-  auto gradFunc = [](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
     auto& w = inputs[1];
     if (!w.isCalcGrad()) {
       return;

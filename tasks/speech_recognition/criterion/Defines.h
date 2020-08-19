@@ -18,6 +18,6 @@ namespace asr {
 constexpr const char* kModelSampling = "model";
 constexpr const char* kRandSampling = "rand";
 constexpr const char* kGumbelSampling = "gumbel";
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

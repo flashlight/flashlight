@@ -77,6 +77,6 @@ af::array getTargetSizeArray(const af::array& target, int maxSize) {
 
   return targetSize;
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

@@ -43,6 +43,6 @@ Variable SoftPretrainWindow::computeWindowMask(
   // [targetLen, inputSteps, batchSize]
   return Variable(tile(maskArray, {1, 1, batchSize}), false);
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

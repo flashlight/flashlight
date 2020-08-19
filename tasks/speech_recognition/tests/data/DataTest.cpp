@@ -70,8 +70,8 @@ std::vector<std::string> loadTarget(const std::string& filepath) {
 
 TEST(DataTest, inputFeaturizer) {
   auto dict = getDict();
-  auto inputFeaturizer = [](
-      std::vector<std::vector<float>> in, const Dictionary& d) {
+  auto inputFeaturizer = [](std::vector<std::vector<float>> in,
+                            const Dictionary& d) {
     std::vector<W2lLoaderData> data;
     for (const auto& i : in) {
       data.emplace_back();
@@ -121,8 +121,8 @@ TEST(DataTest, targetFeaturizer) {
   FLAGS_replabel = 0;
   FLAGS_criterion = kCtcCriterion;
 
-  auto targetFeaturizer = [](
-      std::vector<std::vector<std::string>> tgt, const Dictionary& d) {
+  auto targetFeaturizer = [](std::vector<std::vector<std::string>> tgt,
+                             const Dictionary& d) {
     std::vector<W2lLoaderData> data;
     for (const auto& t : tgt) {
       data.emplace_back();

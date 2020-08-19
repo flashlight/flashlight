@@ -72,5 +72,5 @@ void Mfcc::validateMfccParams() const {
     throw std::invalid_argument("Mfcc: lifterparam must be nonnegative");
   }
 }
-}
-}
+} // namespace lib
+} // namespace fl

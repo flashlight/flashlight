@@ -44,8 +44,8 @@ class LinearSegmentationCriterion : public AutoSegmentationCriterion {
 };
 
 using LinSegCriterion = LinearSegmentationCriterion;
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::task::asr::LinearSegmentationCriterion)

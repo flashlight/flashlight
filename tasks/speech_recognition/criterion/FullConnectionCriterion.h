@@ -41,8 +41,8 @@ class FullConnectionCriterion : public fl::BinaryModule {
 };
 
 typedef FullConnectionCriterion FCCLoss;
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::task::asr::FullConnectionCriterion)

@@ -155,8 +155,8 @@ void candidatesStore(
   candidatePtrs.resize(nHypAfterMerging);
 
   /* 3. Sort and prune */
-  auto compareNodeScore = [](
-      const DecoderState* node1, const DecoderState* node2) {
+  auto compareNodeScore = [](const DecoderState* node1,
+                             const DecoderState* node2) {
     return node1->score > node2->score;
   };
 
@@ -309,5 +309,5 @@ void updateLMCache(const LMPtr& lm, std::vector<DecoderState>& hypothesis) {
   }
   lm->updateCache(states);
 }
-}
-}
+} // namespace lib
+} // namespace fl

@@ -33,6 +33,6 @@ FullConnectionCriterion::FullConnectionCriterion(
 std::string FullConnectionCriterion::prettyString() const {
   return "FullConnectionCriterion";
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

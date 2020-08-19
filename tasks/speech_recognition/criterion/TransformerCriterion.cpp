@@ -346,12 +346,12 @@ AMUpdateFunc buildTransformerAmUpdateFunction(
       static_cast<TransformerCriterion*>(c.get());
 
   auto amUpdateFunc = [buf, criterion](
-      const float* emissions,
-      const int N,
-      const int T,
-      const std::vector<int>& rawY,
-      const std::vector<AMStatePtr>& rawPrevStates,
-      int& t) {
+                          const float* emissions,
+                          const int N,
+                          const int T,
+                          const std::vector<int>& rawY,
+                          const std::vector<AMStatePtr>& rawPrevStates,
+                          int& t) {
     if (t == 0) {
       buf->input = fl::Variable(af::array(N, T, emissions), false);
     }
@@ -395,6 +395,6 @@ AMUpdateFunc buildTransformerAmUpdateFunction(
 std::string TransformerCriterion::prettyString() const {
   return "TransformerCriterion";
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

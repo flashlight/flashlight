@@ -29,5 +29,5 @@ class PreEmphasis {
   float preemCoef_;
   int windowLength_;
 };
-}
-}
+} // namespace lib
+} // namespace fl

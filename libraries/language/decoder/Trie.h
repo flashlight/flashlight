@@ -90,5 +90,5 @@ class Trie {
 };
 
 using TriePtr = std::shared_ptr<Trie>;
-}
-}
+} // namespace lib
+} // namespace fl

@@ -41,7 +41,7 @@ std::vector<T> transpose2d(
   }
   return out;
 }
-}
+} // namespace
 
 namespace fl {
 namespace task {
@@ -80,7 +80,7 @@ fl::Dataset::DataTransformFunction targetFeatures(
     int wordSeperator,
     bool surround /* = true */) {
   return [dict, lexicon, wordSeperator, surround](
-      void* data, af::dim4 dims, af::dtype type) {
+             void* data, af::dim4 dims, af::dtype type) {
     std::string transcript((char*)data, (char*)data + dims[0]);
     auto words = splitOnWhitespace(transcript);
     std::vector<int> tokens;
@@ -103,6 +103,6 @@ fl::Dataset::DataTransformFunction targetFeatures(
     return af::array(tokens.size(), tokens.data());
   };
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

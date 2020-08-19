@@ -49,5 +49,5 @@ class KenLM : public LM {
 };
 
 using KenLMPtr = std::shared_ptr<KenLM>;
-}
-}
+} // namespace lib
+} // namespace fl

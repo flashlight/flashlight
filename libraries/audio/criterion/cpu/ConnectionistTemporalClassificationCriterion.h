@@ -29,5 +29,5 @@ struct ConnectionistTemporalClassificationCriterion {
       void* workspace);
 };
 } // namespace cpu
-}
-}
+} // namespace lib
+} // namespace fl

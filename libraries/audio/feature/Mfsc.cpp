@@ -105,5 +105,5 @@ void Mfsc::validateMfscParams() const {
     throw std::invalid_argument("Mfsc: melfloor must be positive");
   }
 }
-}
-}
+} // namespace lib
+} // namespace fl

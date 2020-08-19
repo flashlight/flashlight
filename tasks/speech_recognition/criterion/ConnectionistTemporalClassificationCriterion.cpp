@@ -110,6 +110,6 @@ void ConnectionistTemporalClassificationCriterion::validate(
     throw(af::exception("CTC: Batchsize mismatch for input and target"));
   }
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

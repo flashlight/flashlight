@@ -27,6 +27,6 @@ ForceAlignmentCriterion::ForceAlignmentCriterion(
 std::string ForceAlignmentCriterion::prettyString() const {
   return "ForceAlignmentCriterion";
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

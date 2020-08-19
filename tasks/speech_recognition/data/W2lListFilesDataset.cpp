@@ -143,6 +143,6 @@ std::vector<SpeechSampleMetaInfo> W2lListFilesDataset::loadListFile(
 
   return samplesMetaInfo;
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

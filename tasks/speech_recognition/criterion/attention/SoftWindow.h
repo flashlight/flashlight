@@ -37,8 +37,8 @@ class SoftWindow : public WindowBase {
 
   FL_SAVE_LOAD_WITH_BASE(WindowBase, std_, avgRate_, offset_)
 };
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::task::asr::SoftWindow)

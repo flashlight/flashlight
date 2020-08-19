@@ -151,7 +151,8 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
   result = result * batchScales;
 
   auto gradFunc = [grad, batchScales](
-      std::vector<Variable>& moduleInputs, const Variable& grad_output) {
+                      std::vector<Variable>& moduleInputs,
+                      const Variable& grad_output) {
     auto gradScales = grad_output.array() * batchScales;
     auto& in = moduleInputs[0];
     gradScales = af::tile(
@@ -165,6 +166,6 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
 
   return {Variable(result, {input, target}, gradFunc)};
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

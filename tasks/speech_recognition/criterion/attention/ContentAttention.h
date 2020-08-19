@@ -48,9 +48,9 @@ class NeuralContentAttention : public AttentionBase {
  private:
   FL_SAVE_LOAD_WITH_BASE(AttentionBase)
 };
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::task::asr::ContentAttention)
 CEREAL_CLASS_VERSION(fl::task::asr::ContentAttention, 1)

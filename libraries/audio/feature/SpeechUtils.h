@@ -28,5 +28,5 @@ std::vector<float> cblasGemm(
     const std::vector<float>& matB,
     int n,
     int k);
-}
-}
+} // namespace lib
+} // namespace fl

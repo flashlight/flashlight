@@ -76,14 +76,14 @@ std::vector<float> Derivatives::computeDerivative(
     for (size_t j = 0; j < numfeat; ++j) {
       size_t curIdx = i * numfeat + j;
       for (size_t d = 1; d <= windowlen; ++d) {
-        output[curIdx] +=
-            d * (input[curIdx + std::min((numframes - i - 1), d) * numfeat] -
-                 input[curIdx - std::min(i, d) * numfeat]);
+        output[curIdx] += d *
+            (input[curIdx + std::min((numframes - i - 1), d) * numfeat] -
+             input[curIdx - std::min(i, d) * numfeat]);
       }
       output[curIdx] /= denominator;
     }
   }
   return output;
 }
-}
-}
+} // namespace lib
+} // namespace fl

@@ -134,6 +134,6 @@ std::vector<SpeechSampleMetaInfo> W2lBlobsDataset::loadBlob(
 
   return samplesMetaInfo;
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

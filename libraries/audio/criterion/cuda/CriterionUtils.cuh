@@ -87,5 +87,5 @@ void setZero(T* devPtr, size_t count, cudaStream_t stream) {
 }
 
 } // namespace cuda
-}
-}
+} // namespace lib
+} // namespace fl

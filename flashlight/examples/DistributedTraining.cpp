@@ -20,7 +20,7 @@ int main() {
       -1, // worldRank - unused. Automatically derived from `MPI_Comm_Rank`
       -1, // worldRank - unused. Automatically derived from `MPI_Comm_Size`
       {{fl::DistributedConstants::kMaxDevicePerNode, "8"}} // param
-      );
+  );
 
   auto worldSize = fl::getWorldSize();
   auto worldRank = fl::getWorldRank();

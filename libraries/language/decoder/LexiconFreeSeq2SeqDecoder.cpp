@@ -174,5 +174,5 @@ int LexiconFreeSeq2SeqDecoder::nDecodedFramesInBuffer() const {
   /* unused function */
   return -1;
 }
-}
-}
+} // namespace lib
+} // namespace fl

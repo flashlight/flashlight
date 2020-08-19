@@ -78,6 +78,6 @@ void remapLabels(std::vector<T>& labels, const lib::Dictionary& dict) {
     trimLabels(dict.getIndex(FLAGS_surround));
   }
 };
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

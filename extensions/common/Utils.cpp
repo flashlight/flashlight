@@ -43,5 +43,5 @@ void initDistributed(
          {fl::DistributedConstants::kFilePath, rndvFilepath}});
   }
 }
-}
-}
+} // namespace ext
+} // namespace fl

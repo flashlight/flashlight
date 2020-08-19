@@ -41,5 +41,5 @@ class Mfsc : public PowerSpectrum {
   TriFilterbank triFltBank_;
   Derivatives derivatives_;
 };
-}
-}
+} // namespace lib
+} // namespace fl

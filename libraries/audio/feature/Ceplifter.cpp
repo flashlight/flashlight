@@ -43,5 +43,5 @@ void Ceplifter::applyInPlace(std::vector<float>& input) const {
     }
   }
 }
-}
-}
+} // namespace lib
+} // namespace fl

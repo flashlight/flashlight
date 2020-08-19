@@ -47,5 +47,5 @@ std::vector<int> unpackReplabels(
     const std::vector<int>& tokens,
     const Dictionary& dict,
     int maxReps);
-}
-}
+} // namespace lib
+} // namespace fl

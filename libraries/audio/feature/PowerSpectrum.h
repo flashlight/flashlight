@@ -59,5 +59,5 @@ class PowerSpectrum {
   std::vector<double> inFftBuf_, outFftBuf_;
   std::mutex fftMutex_;
 };
-}
-}
+} // namespace lib
+} // namespace fl

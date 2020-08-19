@@ -68,6 +68,6 @@ class ListFileDataset : public fl::Dataset {
   std::vector<std::string> targets_;
   std::vector<double> sizes_;
 };
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

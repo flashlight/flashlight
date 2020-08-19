@@ -220,9 +220,9 @@ typedef std::function<
 
 AMUpdateFunc buildAmUpdateFunction(
     std::shared_ptr<SequenceCriterion>& criterion);
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::task::asr::Seq2SeqCriterion)
 CEREAL_CLASS_VERSION(fl::task::asr::Seq2SeqCriterion, 3)

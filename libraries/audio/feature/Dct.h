@@ -29,5 +29,5 @@ class Dct {
   int numCeps_; // Number of cepstral coefficients
   std::vector<float> dctMat_; // Dct matrix
 };
-}
-}
+} // namespace lib
+} // namespace fl

@@ -68,5 +68,5 @@ class ConvLM : public LM {
       const LMStatePtr& state,
       const int tokenIdx);
 };
-}
-}
+} // namespace lib
+} // namespace fl

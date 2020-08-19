@@ -47,7 +47,7 @@ void initDistributed(
     int worldSize,
     int maxDevicesPerNode,
     const std::string& rndvFilepath);
-}
-}
+} // namespace ext
+} // namespace fl
 
 #include "extensions/common/Utils-inl.h"

@@ -410,9 +410,10 @@ std::vector<Seq2SeqCriterion::CandidateHypo> Seq2SeqCriterion::beamSearch(
 
   std::vector<Seq2SeqCriterion::CandidateHypo> complete;
   std::vector<Seq2SeqCriterion::CandidateHypo> newBeam;
-  auto cmpfn = [](
-      Seq2SeqCriterion::CandidateHypo& lhs,
-      Seq2SeqCriterion::CandidateHypo& rhs) { return lhs.score > rhs.score; };
+  auto cmpfn = [](Seq2SeqCriterion::CandidateHypo& lhs,
+                  Seq2SeqCriterion::CandidateHypo& rhs) {
+    return lhs.score > rhs.score;
+  };
 
   for (int l = 0; l < maxLen; l++) {
     newBeam.resize(0);
@@ -665,12 +666,12 @@ AMUpdateFunc buildAmUpdateFunction(
   const Seq2SeqCriterion* s2sCriterion =
       static_cast<Seq2SeqCriterion*>(criterion.get());
   auto amUpdateFunc = [buf, s2sCriterion](
-      const float* emissions,
-      const int N,
-      const int T,
-      const std::vector<int>& rawY,
-      const std::vector<AMStatePtr>& rawPrevStates,
-      int& t) {
+                          const float* emissions,
+                          const int N,
+                          const int T,
+                          const std::vector<int>& rawY,
+                          const std::vector<AMStatePtr>& rawPrevStates,
+                          int& t) {
     if (t == 0) {
       buf->input = fl::Variable(af::array(N, T, emissions), false);
     }
@@ -717,6 +718,6 @@ AMUpdateFunc buildAmUpdateFunction(
 
   return amUpdateFunc;
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

@@ -86,8 +86,8 @@ class AutoSegmentationCriterion : public SequenceCriterion {
 };
 
 using ASGLoss = AutoSegmentationCriterion;
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::task::asr::AutoSegmentationCriterion)

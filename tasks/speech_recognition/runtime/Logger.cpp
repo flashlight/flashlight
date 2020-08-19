@@ -209,6 +209,6 @@ void syncMeter<TrainMeters>(TrainMeters& mtrs) {
     syncMeter(v.second.loss);
   }
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

@@ -20,5 +20,5 @@ template <typename T>
 std::vector<T> afToVector(const fl::Variable& var) {
   return afToVector<T>(var.array());
 }
-}
-}
+} // namespace ext
+} // namespace fl

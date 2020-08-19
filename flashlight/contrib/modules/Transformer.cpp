@@ -28,7 +28,8 @@ fl::Variable transformerRotate(const fl::Variable& input) {
   data = data.rows(0, (d1 + d0 - 1) * d1 - 1);
   data = af::moddims(data, af::dim4(d0 + d1 - 1, d1, d2, d3));
   auto gradFunc = [d0, d1, d2, d3](
-      std::vector<fl::Variable>& inputs, const fl::Variable& gradOutput) {
+                      std::vector<fl::Variable>& inputs,
+                      const fl::Variable& gradOutput) {
     auto gradData = gradOutput.array();
     gradData = af::moddims(gradData, af::dim4((d0 + d1 - 1) * d1, 1, d2, d3));
     gradData = af::join(0, gradData, af::constant(0.0, d1, 1, d2, d3));

@@ -72,5 +72,5 @@ class Decoder {
  protected:
   DecoderOptions opt_;
 };
-}
-}
+} // namespace lib
+} // namespace fl

@@ -40,9 +40,9 @@ class ConnectionistTemporalClassificationCriterion : public SequenceCriterion {
 };
 
 typedef ConnectionistTemporalClassificationCriterion CTCLoss;
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl
 
 CEREAL_REGISTER_TYPE(
     fl::task::asr::ConnectionistTemporalClassificationCriterion)

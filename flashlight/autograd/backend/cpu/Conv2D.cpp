@@ -228,225 +228,215 @@ Variable conv2d(
   detail::MkldnnStream::getInstance().getStream().submit(network);
 
   /***************************** Backward ******************************/
-  auto gradFunc =
-      [hasBias,
-       // Types
-       dataType,
-       formatNCHW,
-       formatWeight,
-       // Dims
-       mInputDims,
-       mWeightDims,
-       mOutputDims,
-       mBiasDims,
-       mStrideDims,
-       mDilationDims,
-       mPaddingDims,
-       // Memory descriptors
-       inputMD,
-       outputMD,
-       weightMD,
-       biasMD,
-       fwdPrimDesc // used for creating a bw desc
+  auto gradFunc = [hasBias,
+                   // Types
+                   dataType,
+                   formatNCHW,
+                   formatWeight,
+                   // Dims
+                   mInputDims,
+                   mWeightDims,
+                   mOutputDims,
+                   mBiasDims,
+                   mStrideDims,
+                   mDilationDims,
+                   mPaddingDims,
+                   // Memory descriptors
+                   inputMD,
+                   outputMD,
+                   weightMD,
+                   biasMD,
+                   fwdPrimDesc // used for creating a bw desc
   ](std::vector<Variable>& inputs, const Variable& grad_output) {
-        auto& inputRef = inputs[0];
-        auto& weightRef = inputs[1];
+    auto& inputRef = inputs[0];
+    auto& weightRef = inputs[1];
 
-        auto mkldnnEngineBwd = detail::MkldnnEngine::getInstance().getEngine();
+    auto mkldnnEngineBwd = detail::MkldnnEngine::getInstance().getEngine();
 
-        /*** Compute the gradient with respect to the input ***/
-        if (inputRef.isCalcGrad()) {
-          // Result
-          auto gradInput =
-              Variable(af::array(inputRef.dims(), inputRef.type()), false);
+    /*** Compute the gradient with respect to the input ***/
+    if (inputRef.isCalcGrad()) {
+      // Result
+      auto gradInput =
+          Variable(af::array(inputRef.dims(), inputRef.type()), false);
 
-          // Backward descriptor
-          auto bwdDataDesc = std::make_shared<convolution_backward_data::desc>(
-              convolution_direct,
-              inputMD,
-              weightMD,
-              outputMD,
-              mStrideDims,
-              mDilationDims,
-              mPaddingDims,
-              mPaddingDims,
-              padding_kind::zero);
-          // Primitive descriptor
-          auto bwdDataPrimDesc =
-              std::make_shared<convolution_backward_data::primitive_desc>(
-                  *bwdDataDesc, mkldnnEngineBwd, *fwdPrimDesc);
+      // Backward descriptor
+      auto bwdDataDesc = std::make_shared<convolution_backward_data::desc>(
+          convolution_direct,
+          inputMD,
+          weightMD,
+          outputMD,
+          mStrideDims,
+          mDilationDims,
+          mPaddingDims,
+          mPaddingDims,
+          padding_kind::zero);
+      // Primitive descriptor
+      auto bwdDataPrimDesc =
+          std::make_shared<convolution_backward_data::primitive_desc>(
+              *bwdDataDesc, mkldnnEngineBwd, *fwdPrimDesc);
 
-          // Create memory
-          DevicePtr gradOutputRaw(grad_output.array());
-          auto gradOutputMemoryInit = memory(
-              {{{mOutputDims}, dataType, formatNCHW}, mkldnnEngineBwd},
-              gradOutputRaw.get());
-          DevicePtr gradInputRaw(gradInput.array());
-          auto gradInputMemoryInit = memory(
-              {{{mInputDims}, dataType, formatNCHW}, mkldnnEngineBwd},
-              gradInputRaw.get());
-          DevicePtr weightRaw(weightRef.array());
-          auto weightsMemoryInitBackwards = memory(
-              {{{mWeightDims}, dataType, formatWeight}, mkldnnEngineBwd},
-              weightRaw.get());
+      // Create memory
+      DevicePtr gradOutputRaw(grad_output.array());
+      auto gradOutputMemoryInit = memory(
+          {{{mOutputDims}, dataType, formatNCHW}, mkldnnEngineBwd},
+          gradOutputRaw.get());
+      DevicePtr gradInputRaw(gradInput.array());
+      auto gradInputMemoryInit = memory(
+          {{{mInputDims}, dataType, formatNCHW}, mkldnnEngineBwd},
+          gradInputRaw.get());
+      DevicePtr weightRaw(weightRef.array());
+      auto weightsMemoryInitBackwards = memory(
+          {{{mWeightDims}, dataType, formatWeight}, mkldnnEngineBwd},
+          weightRaw.get());
 
-          std::vector<primitive> networkBackwards;
-          // Check for reorderings
-          auto gradOutputPrimitiveDesc =
-              bwdDataPrimDesc->diff_dst_primitive_desc();
-          auto weightsPrimitiveDesc = bwdDataPrimDesc->weights_primitive_desc();
-          auto gradInputPrimitiveDesc =
-              bwdDataPrimDesc->diff_src_primitive_desc();
-          auto gradOutputMemory = detail::mkldnnAlignOrdering(
-              networkBackwards, gradOutputMemoryInit, gradOutputPrimitiveDesc);
-          auto weightsMemoryBackwards = detail::mkldnnAlignOrdering(
-              networkBackwards,
-              weightsMemoryInitBackwards,
-              weightsPrimitiveDesc);
-          auto gradInputMemory = gradInputMemoryInit;
-          // Don't reorder the gradient until after the conv
-          if (gradInputMemoryInit.get_primitive_desc() !=
-              memory::primitive_desc(gradInputPrimitiveDesc)) {
-            gradInputMemory = memory(gradInputPrimitiveDesc);
-          }
+      std::vector<primitive> networkBackwards;
+      // Check for reorderings
+      auto gradOutputPrimitiveDesc = bwdDataPrimDesc->diff_dst_primitive_desc();
+      auto weightsPrimitiveDesc = bwdDataPrimDesc->weights_primitive_desc();
+      auto gradInputPrimitiveDesc = bwdDataPrimDesc->diff_src_primitive_desc();
+      auto gradOutputMemory = detail::mkldnnAlignOrdering(
+          networkBackwards, gradOutputMemoryInit, gradOutputPrimitiveDesc);
+      auto weightsMemoryBackwards = detail::mkldnnAlignOrdering(
+          networkBackwards, weightsMemoryInitBackwards, weightsPrimitiveDesc);
+      auto gradInputMemory = gradInputMemoryInit;
+      // Don't reorder the gradient until after the conv
+      if (gradInputMemoryInit.get_primitive_desc() !=
+          memory::primitive_desc(gradInputPrimitiveDesc)) {
+        gradInputMemory = memory(gradInputPrimitiveDesc);
+      }
 
-          // Convolution backwards
-          auto convBwdData = std::make_shared<convolution_backward_data>(
-              *bwdDataPrimDesc,
-              gradOutputMemory,
-              weightsMemoryBackwards,
-              gradInputMemory);
-          networkBackwards.push_back(*convBwdData);
+      // Convolution backwards
+      auto convBwdData = std::make_shared<convolution_backward_data>(
+          *bwdDataPrimDesc,
+          gradOutputMemory,
+          weightsMemoryBackwards,
+          gradInputMemory);
+      networkBackwards.push_back(*convBwdData);
 
-          detail::MkldnnStream::getInstance().getStream().submit(
-              networkBackwards);
+      detail::MkldnnStream::getInstance().getStream().submit(networkBackwards);
 
-          // Reorder the output (which is gradInput here) if necessary
-          if (gradInputMemory != gradInputMemoryInit) {
-            networkBackwards.push_back(
-                mkldnn::reorder(gradInputMemory, gradInputMemoryInit));
-          }
+      // Reorder the output (which is gradInput here) if necessary
+      if (gradInputMemory != gradInputMemoryInit) {
+        networkBackwards.push_back(
+            mkldnn::reorder(gradInputMemory, gradInputMemoryInit));
+      }
 
-          inputRef.addGrad(gradInput);
-        }
+      inputRef.addGrad(gradInput);
+    }
 
-        /*** Compute the gradient with respect to weight and bias ***/
-        if (weightRef.isCalcGrad()) {
-          // Result
-          auto gradWeights =
-              Variable(af::array(weightRef.dims(), weightRef.type()), false);
-          Variable gradBias;
-          bool computeBiasGrad = hasBias && inputs[2].isCalcGrad();
-          auto& biasRef = inputs[2];
-          if (computeBiasGrad) {
-            gradBias =
-                Variable(af::array(biasRef.dims(), biasRef.type()), false);
-          }
+    /*** Compute the gradient with respect to weight and bias ***/
+    if (weightRef.isCalcGrad()) {
+      // Result
+      auto gradWeights =
+          Variable(af::array(weightRef.dims(), weightRef.type()), false);
+      Variable gradBias;
+      bool computeBiasGrad = hasBias && inputs[2].isCalcGrad();
+      auto& biasRef = inputs[2];
+      if (computeBiasGrad) {
+        gradBias = Variable(af::array(biasRef.dims(), biasRef.type()), false);
+      }
 
-          // Weight backward descriptor
-          std::shared_ptr<convolution_backward_weights::desc> bwdWeightDesc;
-          if (hasBias) {
-            bwdWeightDesc =
-                std::make_shared<convolution_backward_weights::desc>(
-                    convolution_direct,
-                    inputMD,
-                    weightMD,
-                    biasMD,
-                    outputMD,
-                    mStrideDims,
-                    mDilationDims,
-                    mPaddingDims,
-                    mPaddingDims,
-                    padding_kind::zero);
-          } else {
-            bwdWeightDesc =
-                std::make_shared<convolution_backward_weights::desc>(
-                    convolution_direct,
-                    inputMD,
-                    weightMD,
-                    outputMD,
-                    mStrideDims,
-                    mDilationDims,
-                    mPaddingDims,
-                    mPaddingDims,
-                    padding_kind::zero);
-          }
-          // Weight backward primitive descriptor
-          auto bwdWeightPrimDesc =
-              std::make_shared<convolution_backward_weights::primitive_desc>(
-                  *bwdWeightDesc, mkldnnEngineBwd, *fwdPrimDesc);
+      // Weight backward descriptor
+      std::shared_ptr<convolution_backward_weights::desc> bwdWeightDesc;
+      if (hasBias) {
+        bwdWeightDesc = std::make_shared<convolution_backward_weights::desc>(
+            convolution_direct,
+            inputMD,
+            weightMD,
+            biasMD,
+            outputMD,
+            mStrideDims,
+            mDilationDims,
+            mPaddingDims,
+            mPaddingDims,
+            padding_kind::zero);
+      } else {
+        bwdWeightDesc = std::make_shared<convolution_backward_weights::desc>(
+            convolution_direct,
+            inputMD,
+            weightMD,
+            outputMD,
+            mStrideDims,
+            mDilationDims,
+            mPaddingDims,
+            mPaddingDims,
+            padding_kind::zero);
+      }
+      // Weight backward primitive descriptor
+      auto bwdWeightPrimDesc =
+          std::make_shared<convolution_backward_weights::primitive_desc>(
+              *bwdWeightDesc, mkldnnEngineBwd, *fwdPrimDesc);
 
-          // Create memory
-          DevicePtr inputRawBackwards(inputRef.array());
-          auto inputMemoryInitBackwards = memory(
-              {{{mInputDims}, dataType, formatNCHW}, mkldnnEngineBwd},
-              inputRawBackwards.get());
-          DevicePtr gradOutputRaw(grad_output.array());
-          auto gradOutputMemoryInit = memory(
-              {{{mOutputDims}, dataType, formatNCHW}, mkldnnEngineBwd},
-              gradOutputRaw.get());
-          DevicePtr gradWeightsRaw(gradWeights.array());
-          auto gradWeightsMemoryInit = memory(
-              {{{mWeightDims}, dataType, formatWeight}, mkldnnEngineBwd},
-              gradWeightsRaw.get());
+      // Create memory
+      DevicePtr inputRawBackwards(inputRef.array());
+      auto inputMemoryInitBackwards = memory(
+          {{{mInputDims}, dataType, formatNCHW}, mkldnnEngineBwd},
+          inputRawBackwards.get());
+      DevicePtr gradOutputRaw(grad_output.array());
+      auto gradOutputMemoryInit = memory(
+          {{{mOutputDims}, dataType, formatNCHW}, mkldnnEngineBwd},
+          gradOutputRaw.get());
+      DevicePtr gradWeightsRaw(gradWeights.array());
+      auto gradWeightsMemoryInit = memory(
+          {{{mWeightDims}, dataType, formatWeight}, mkldnnEngineBwd},
+          gradWeightsRaw.get());
 
-          std::vector<primitive> networkBackwards;
-          // Check for reorderings, reorder if needed
-          auto inputPrimitiveDesc = bwdWeightPrimDesc->src_primitive_desc();
-          auto gradOutputPrimitiveDesc =
-              bwdWeightPrimDesc->diff_dst_primitive_desc();
-          auto gradWeightsPrimitiveDesc =
-              bwdWeightPrimDesc->diff_weights_primitive_desc();
-          auto inputMemoryBackwards = detail::mkldnnAlignOrdering(
-              networkBackwards, inputMemoryInitBackwards, inputPrimitiveDesc);
-          auto gradOutputMemory = detail::mkldnnAlignOrdering(
-              networkBackwards, gradOutputMemoryInit, gradOutputPrimitiveDesc);
-          // Don't reorder the grads until after the conv bwd
-          auto gradWeightsMemory = gradWeightsMemoryInit;
-          if (gradWeightsMemoryInit.get_primitive_desc() !=
-              memory::primitive_desc(gradWeightsPrimitiveDesc)) {
-            gradWeightsMemory = memory(gradWeightsPrimitiveDesc);
-          }
+      std::vector<primitive> networkBackwards;
+      // Check for reorderings, reorder if needed
+      auto inputPrimitiveDesc = bwdWeightPrimDesc->src_primitive_desc();
+      auto gradOutputPrimitiveDesc =
+          bwdWeightPrimDesc->diff_dst_primitive_desc();
+      auto gradWeightsPrimitiveDesc =
+          bwdWeightPrimDesc->diff_weights_primitive_desc();
+      auto inputMemoryBackwards = detail::mkldnnAlignOrdering(
+          networkBackwards, inputMemoryInitBackwards, inputPrimitiveDesc);
+      auto gradOutputMemory = detail::mkldnnAlignOrdering(
+          networkBackwards, gradOutputMemoryInit, gradOutputPrimitiveDesc);
+      // Don't reorder the grads until after the conv bwd
+      auto gradWeightsMemory = gradWeightsMemoryInit;
+      if (gradWeightsMemoryInit.get_primitive_desc() !=
+          memory::primitive_desc(gradWeightsPrimitiveDesc)) {
+        gradWeightsMemory = memory(gradWeightsPrimitiveDesc);
+      }
 
-          // Create the convolution backward weight
-          std::shared_ptr<convolution_backward_weights> bwdWeights;
-          DevicePtr biasRawBackwards(gradBias.array());
-          auto formatBias = memory::format::x;
-          auto gradBiasMemory = memory(
-              {{{mBiasDims}, dataType, formatBias}, mkldnnEngineBwd},
-              biasRawBackwards.get());
-          if (hasBias) {
-            bwdWeights = std::make_shared<convolution_backward_weights>(
-                *bwdWeightPrimDesc,
-                inputMemoryBackwards,
-                gradOutputMemory,
-                gradWeightsMemory,
-                gradBiasMemory);
-          } else {
-            bwdWeights = std::make_shared<convolution_backward_weights>(
-                *bwdWeightPrimDesc,
-                inputMemoryBackwards,
-                gradOutputMemory,
-                gradWeightsMemory);
-          }
-          networkBackwards.push_back(*bwdWeights);
+      // Create the convolution backward weight
+      std::shared_ptr<convolution_backward_weights> bwdWeights;
+      DevicePtr biasRawBackwards(gradBias.array());
+      auto formatBias = memory::format::x;
+      auto gradBiasMemory = memory(
+          {{{mBiasDims}, dataType, formatBias}, mkldnnEngineBwd},
+          biasRawBackwards.get());
+      if (hasBias) {
+        bwdWeights = std::make_shared<convolution_backward_weights>(
+            *bwdWeightPrimDesc,
+            inputMemoryBackwards,
+            gradOutputMemory,
+            gradWeightsMemory,
+            gradBiasMemory);
+      } else {
+        bwdWeights = std::make_shared<convolution_backward_weights>(
+            *bwdWeightPrimDesc,
+            inputMemoryBackwards,
+            gradOutputMemory,
+            gradWeightsMemory);
+      }
+      networkBackwards.push_back(*bwdWeights);
 
-          // Reorder weight gradients if necessary
-          if (gradWeightsMemory != gradWeightsMemoryInit) {
-            networkBackwards.push_back(
-                mkldnn::reorder(gradWeightsMemory, gradWeightsMemoryInit));
-          }
+      // Reorder weight gradients if necessary
+      if (gradWeightsMemory != gradWeightsMemoryInit) {
+        networkBackwards.push_back(
+            mkldnn::reorder(gradWeightsMemory, gradWeightsMemoryInit));
+      }
 
-          detail::MkldnnStream::getInstance().getStream().submit(
-              networkBackwards);
+      detail::MkldnnStream::getInstance().getStream().submit(networkBackwards);
 
-          // Add weight and bias gradients
-          weightRef.addGrad(gradWeights);
-          if (computeBiasGrad) {
-            biasRef.addGrad(gradBias);
-          }
-        }
-      };
+      // Add weight and bias gradients
+      weightRef.addGrad(gradWeights);
+      if (computeBiasGrad) {
+        biasRef.addGrad(gradBias);
+      }
+    }
+  };
 
   // Return for forward
   if (hasBias) {

@@ -304,5 +304,5 @@ template struct ForceAlignmentCriterion<float>;
 template struct ForceAlignmentCriterion<double>;
 
 } // namespace cpu
-}
-}
+} // namespace lib
+} // namespace fl

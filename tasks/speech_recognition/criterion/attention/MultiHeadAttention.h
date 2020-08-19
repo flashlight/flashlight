@@ -37,8 +37,8 @@ class MultiHeadContentAttention : public AttentionBase {
   bool splitInput_;
   FL_SAVE_LOAD_WITH_BASE(AttentionBase, numHeads_, keyValue_, splitInput_)
 };
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::task::asr::MultiHeadContentAttention)

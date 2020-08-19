@@ -137,5 +137,5 @@ void PowerSpectrum::validatePowSpecParams() const {
 PowerSpectrum::~PowerSpectrum() {
   fftw_destroy_plan(fftPlan_);
 }
-}
-}
+} // namespace lib
+} // namespace fl

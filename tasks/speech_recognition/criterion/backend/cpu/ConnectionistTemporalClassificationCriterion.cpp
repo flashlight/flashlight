@@ -124,7 +124,8 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
   auto result = af::array(batchLoss.size(), batchLoss.data());
 
   auto gradFunc = [batchAlphas, batchScales, batchTargetSizes](
-      std::vector<Variable>& moduleInputs, const Variable& gradOutput) {
+                      std::vector<Variable>& moduleInputs,
+                      const Variable& gradOutput) {
     const int64_t N = moduleInputs[0].dims(0);
     const int64_t T = moduleInputs[0].dims(1);
     const int64_t B = moduleInputs[0].dims(2);
@@ -223,6 +224,6 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
   };
   return {Variable(result, {logprobs, target}, gradFunc)};
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

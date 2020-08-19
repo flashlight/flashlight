@@ -168,5 +168,5 @@ class LexiconDecoder : public Decoder {
   int nDecodedFrames_; // Total number of decoded frames.
   int nPrunedFrames_; // Total number of pruned frames from hyp_.
 };
-}
-}
+} // namespace lib
+} // namespace fl

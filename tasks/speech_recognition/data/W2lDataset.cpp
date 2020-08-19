@@ -172,6 +172,6 @@ std::vector<std::vector<int64_t>> RoundRobinBatchPacker::getBatches(
   }
   return batches;
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

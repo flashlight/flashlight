@@ -263,11 +263,11 @@ void FullConnectionCriterion<Float>::forward(
       B, T, N, scaleMode, targetSize, ws.scale, stream);
   forwardInitial<<<B, kBlockSize, 0, stream>>>(T, N, input, ws);
   for (int t = 1; t < T; ++t) {
-    forwardStep<false><<<B * N, kBlockSize, 0, stream>>>(
-        T, N, t, input, trans, loss, ws);
+    forwardStep<false>
+        <<<B * N, kBlockSize, 0, stream>>>(T, N, t, input, trans, loss, ws);
   }
-  forwardStep<true><<<B, kBlockSize, 0, stream>>>(
-      T, N, T, input, trans, loss, ws);
+  forwardStep<true>
+      <<<B, kBlockSize, 0, stream>>>(T, N, T, input, trans, loss, ws);
 }
 
 template <class Float>
@@ -297,5 +297,5 @@ template struct FullConnectionCriterion<float>;
 template struct FullConnectionCriterion<double>;
 
 } // namespace cuda
-}
-}
+} // namespace lib
+} // namespace fl

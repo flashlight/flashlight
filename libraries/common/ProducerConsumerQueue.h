@@ -147,5 +147,5 @@ class ProducerConsumerQueue {
     return queue_.size() == 0;
   }
 };
-}
-}
+} // namespace lib
+} // namespace fl

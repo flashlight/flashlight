@@ -68,6 +68,6 @@ std::vector<int64_t> SpeechStats::toArray() {
   arr[4] = numSamples_;
   return arr;
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

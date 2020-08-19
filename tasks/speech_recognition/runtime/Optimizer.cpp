@@ -73,6 +73,6 @@ std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
 
   return opt;
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

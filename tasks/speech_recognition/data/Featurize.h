@@ -46,6 +46,6 @@ W2lFeatureData featurize(
 lib::FeatureParams defineSpeechFeatureParams();
 
 int64_t getSpeechFeatureSize();
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

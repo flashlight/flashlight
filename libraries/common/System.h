@@ -72,5 +72,5 @@ typename std::result_of<Fn(Args...)>::type retryWithBackoff(
   }
   throw std::logic_error("retryWithBackoff: hit unreachable");
 }
-}
-}
+} // namespace lib
+} // namespace fl

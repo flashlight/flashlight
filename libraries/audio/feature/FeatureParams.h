@@ -163,5 +163,5 @@ struct FeatureParams {
     return 1 + floor((inSize - frameSize) * 1.0 / frameStride);
   }
 };
-}
-}
+} // namespace lib
+} // namespace fl

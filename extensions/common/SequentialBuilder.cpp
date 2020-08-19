@@ -58,8 +58,8 @@ std::shared_ptr<Sequential> buildSequentialModule(
 
   return net;
 }
-}
-}
+} // namespace ext
+} // namespace fl
 
 namespace {
 std::shared_ptr<Module> parseLine(const std::string& line) {
@@ -387,8 +387,8 @@ std::shared_ptr<Module> parseLines(
       throw std::invalid_argument("Failed parsing - " + line);
     }
 
-    auto residualBlock = [&](
-        const std::vector<std::string>& prms, int& numResLayerAndSkip) {
+    auto residualBlock = [&](const std::vector<std::string>& prms,
+                             int& numResLayerAndSkip) {
       int numResLayers = std::stoi(prms[1]);
       int numSkipConnections = std::stoi(prms[2]);
       std::shared_ptr<Residual> resPtr = std::make_shared<Residual>();

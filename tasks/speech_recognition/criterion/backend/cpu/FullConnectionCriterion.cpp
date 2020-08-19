@@ -102,6 +102,6 @@ Variable FullConnectionCriterion::forward(
         backward(inputs, gradVar, B, T, N, ctx);
       });
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

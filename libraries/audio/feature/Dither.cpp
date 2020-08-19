@@ -28,5 +28,5 @@ void Dither::applyInPlace(std::vector<float>& input) {
     i += ditherVal_ * distribution(rng_);
   }
 }
-}
-}
+} // namespace lib
+} // namespace fl

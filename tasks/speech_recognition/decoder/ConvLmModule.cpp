@@ -19,10 +19,10 @@ namespace asr {
 GetConvLmScoreFunc buildGetConvLmScoreFunction(
     std::shared_ptr<Module> network) {
   auto getConvLmScoreFunc = [network](
-      const std::vector<int>& inputs,
-      const std::vector<int>& lastTokenPositions,
-      int sampleSize = -1,
-      int batchSize = 1) {
+                                const std::vector<int>& inputs,
+                                const std::vector<int>& lastTokenPositions,
+                                int sampleSize = -1,
+                                int batchSize = 1) {
     sampleSize = sampleSize > 0 ? sampleSize : inputs.size();
     if (sampleSize * batchSize > inputs.size()) {
       throw std::invalid_argument(
@@ -65,6 +65,6 @@ GetConvLmScoreFunc buildGetConvLmScoreFunction(
 
   return getConvLmScoreFunc;
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

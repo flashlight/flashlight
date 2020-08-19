@@ -61,6 +61,6 @@ af::array getTargetSizeArray(const af::array& target, int maxSize) {
 
   return af::array(B, targetSizeVec.data());
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

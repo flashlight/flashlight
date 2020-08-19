@@ -30,5 +30,5 @@ struct ViterbiPath {
 };
 
 } // namespace cpu
-}
-}
+} // namespace lib
+} // namespace fl

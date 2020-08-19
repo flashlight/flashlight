@@ -172,6 +172,6 @@ std::pair<Variable, Variable> NeuralLocationAttention::forward(
 std::string NeuralLocationAttention::prettyString() const {
   return "NeuralLocationBasedAttention";
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

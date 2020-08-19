@@ -379,5 +379,5 @@ template struct ForceAlignmentCriterion<float>;
 template struct ForceAlignmentCriterion<double>;
 
 } // namespace cuda
-}
-}
+} // namespace lib
+} // namespace fl

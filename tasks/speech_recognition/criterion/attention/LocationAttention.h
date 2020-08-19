@@ -71,9 +71,9 @@ class NeuralLocationAttention : public AttentionBase {
 
   FL_SAVE_LOAD_WITH_BASE(AttentionBase)
 };
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::task::asr::SimpleLocationAttention)
 CEREAL_REGISTER_TYPE(fl::task::asr::LocationAttention)

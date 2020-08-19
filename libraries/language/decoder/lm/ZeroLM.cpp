@@ -26,5 +26,5 @@ std::pair<LMStatePtr, float> ZeroLM::score(
 std::pair<LMStatePtr, float> ZeroLM::finish(const LMStatePtr& state) {
   return std::make_pair(state, 0.0);
 }
-}
-}
+} // namespace lib
+} // namespace fl

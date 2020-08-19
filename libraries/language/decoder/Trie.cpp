@@ -98,5 +98,5 @@ void Trie::smear(SmearingMode smearMode) {
     smearNode(root_, smearMode);
   }
 }
-}
-}
+} // namespace lib
+} // namespace fl

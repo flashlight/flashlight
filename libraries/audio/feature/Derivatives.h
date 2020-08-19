@@ -35,5 +35,5 @@ class Derivatives {
       int windowlen,
       int numfeat) const;
 };
-}
-}
+} // namespace lib
+} // namespace fl

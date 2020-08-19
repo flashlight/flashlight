@@ -82,6 +82,6 @@ struct Serializer {
     }
   }
 };
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

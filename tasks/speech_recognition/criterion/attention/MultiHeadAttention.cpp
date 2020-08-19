@@ -91,6 +91,6 @@ std::pair<Variable, Variable> MultiHeadContentAttention::forward(
 std::string MultiHeadContentAttention::prettyString() const {
   return "MultiHeadContentAttention";
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

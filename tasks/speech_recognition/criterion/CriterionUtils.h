@@ -106,6 +106,6 @@ inline af::array reorder(
   const af::array& result = af::reorder(in, x, y, z, w);
   return moddims(result, result.dims());
 }
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

@@ -202,5 +202,5 @@ void LexiconFreeDecoder::prune(int lookBack) {
 
   nPrunedFrames_ = nDecodedFrames_ - lookBack;
 }
-}
-}
+} // namespace lib
+} // namespace fl

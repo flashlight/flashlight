@@ -19,4 +19,4 @@ enum class CriterionScaleMode {
   TARGET_SZ_SQRT = 4,
 };
 }
-}
+} // namespace fl

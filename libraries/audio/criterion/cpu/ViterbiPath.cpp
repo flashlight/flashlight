@@ -93,5 +93,5 @@ template struct ViterbiPath<float>;
 template struct ViterbiPath<double>;
 
 } // namespace cpu
-}
-}
+} // namespace lib
+} // namespace fl

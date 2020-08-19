@@ -151,8 +151,8 @@ struct TS2SDecoderBuffer {
 
 AMUpdateFunc buildTransformerAmUpdateFunction(
     std::shared_ptr<SequenceCriterion>& crit);
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::task::asr::TransformerCriterion)

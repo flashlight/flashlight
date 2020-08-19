@@ -37,6 +37,6 @@ class SpeechStatMeter {
  private:
   SpeechStats stats_;
 };
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

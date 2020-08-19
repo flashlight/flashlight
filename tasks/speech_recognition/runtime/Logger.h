@@ -83,6 +83,6 @@ void syncMeter(T& mtr) {
 
 template <>
 void syncMeter<TrainMeters>(TrainMeters& mtrs);
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl

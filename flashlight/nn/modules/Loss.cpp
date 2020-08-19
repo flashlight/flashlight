@@ -146,11 +146,12 @@ Variable AdaptiveSoftMaxLoss::forward(
   }
 
   // Head forward
-  res = res + categoricalCrossEntropy(
-                  logSoftmax(headOutput, 0),
-                  headTarget,
-                  ReduceMode::NONE,
-                  ignoreIndex_);
+  res = res +
+      categoricalCrossEntropy(
+            logSoftmax(headOutput, 0),
+            headTarget,
+            ReduceMode::NONE,
+            ignoreIndex_);
 
   // Reduce
   if (reduction_ == ReduceMode::NONE) {

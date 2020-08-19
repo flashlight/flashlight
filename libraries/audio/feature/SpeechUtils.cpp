@@ -86,5 +86,5 @@ std::vector<float> cblasGemm(
 
   return matC;
 };
-}
-}
+} // namespace lib
+} // namespace fl

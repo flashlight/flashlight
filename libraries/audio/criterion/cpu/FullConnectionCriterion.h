@@ -44,5 +44,5 @@ struct FullConnectionCriterion {
 };
 
 } // namespace cpu
-}
-}
+} // namespace lib
+} // namespace fl

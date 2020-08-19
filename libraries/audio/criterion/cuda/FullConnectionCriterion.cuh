@@ -74,5 +74,5 @@ struct FullConnectionCriterion {
 };
 
 } // namespace cuda
-}
-}
+} // namespace lib
+} // namespace fl

@@ -34,8 +34,8 @@ class SequenceCriterion : public fl::Container {
  private:
   FL_SAVE_LOAD_WITH_BASE(fl::Container)
 };
-}
-}
-}
+} // namespace asr
+} // namespace task
+} // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::task::asr::SequenceCriterion)
