@@ -103,7 +103,8 @@ std::pair<af::array, af::array> makeImageAndMaskBatch(
   }
   //auto dims = data[0].dims();
 
-  int maxW, maxH = -1;
+  int maxW = -1;
+  int maxH = -1;;
 
   for (const auto& d : data) {
     int w = d.dims(0);
@@ -112,8 +113,8 @@ std::pair<af::array, af::array> makeImageAndMaskBatch(
     maxH = std::max(h, maxH);
   }
 
-  af::dim4 dims = { maxW, maxH, 3, data.size() };
-  af::dim4 maskDims = { maxW, maxH, 1, data.size() };
+  af::dim4 dims = { maxW, maxH, 3, static_cast<long>(data.size()) };
+  af::dim4 maskDims = { maxW, maxH, 1, static_cast<long>(data.size()) };
 
   //int ndims = (data[0].elements() > 1) ? dims.ndims() : 0;
 
@@ -121,10 +122,12 @@ std::pair<af::array, af::array> makeImageAndMaskBatch(
     //throw std::invalid_argument("# of dims must be < 4 for batching");
   //}
   //dims[ndims] = data.size();
+  std::cout << "dims " << dims << std::endl;
   auto batcharr = af::array(dims, data[0].type());
 
   //auto maskarr = af::constant(true, dims, b8);
   auto maskarr = af::constant(0, maskDims);
+  std::cout << "Batch w " << maxW << "Batch h" << maxH << std::endl;
 
   for (size_t i = 0; i < data.size(); ++i) {
     af::array sample = data[i];
@@ -135,6 +138,7 @@ std::pair<af::array, af::array> makeImageAndMaskBatch(
     //maskarr(af::seq(0, w - 1), af::seq(0, h - 1), af::span, af::seq(i, i)) = af::constant(false, dims, b8);
     maskarr(af::seq(0, w - 1), af::seq(0, h - 1), af::span, af::seq(i, i)) = af::constant(1, { w, h });
   }
+  std::cout << "Done!" << std::endl;
   return std::make_pair(batcharr, maskarr);
 }
 
@@ -445,8 +449,8 @@ CocoDataset::CocoDataset(
   auto sampled = std::make_shared<ResampleDataset>(
     next, permfn, next->size() / world_size);
 
-  //auto prefetch = std::make_shared<PrefetchDataset>(sampled, num_threads, prefetch_size);
-  auto prefetch = sampled;
+  auto prefetch = std::make_shared<PrefetchDataset>(sampled, num_threads, prefetch_size);
+  //auto prefetch = sampled;
   batched_ = std::make_shared<BatchTransformDataset<CocoData>>(
       prefetch, batch_size, BatchDatasetPolicy::INCLUDE_LAST, cocoBatchFunc);
 
