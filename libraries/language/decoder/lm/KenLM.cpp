@@ -12,7 +12,8 @@
 
 #include <lm/model.hh>
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 KenLM::KenLM(const std::string& path, const Dictionary& usrTknDict) {
   // Load LM
@@ -67,4 +68,5 @@ std::pair<LMStatePtr, float> KenLM::finish(const LMStatePtr& state) {
   return std::make_pair(std::move(outState), score);
 }
 
-} // namespace w2l
+} 
+}

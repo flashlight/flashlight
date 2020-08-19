@@ -8,20 +8,25 @@
 
 #include "runtime/Helpers.h"
 
-#include <random>
 #include <glog/logging.h>
+#include <random>
 
 #include "extensions/common/Utils.h"
 #include "libraries/common/System.h"
 
-namespace w2l {
+using namespace fl::ext;
+using namespace fl::lib;
+
+namespace fl {
+namespace task {
+namespace asr {
 
 template <class T>
 std::vector<std::string> afMatrixToStrings(const af::array& arr, T terminator) {
   int L = arr.dims(0); // padded length of string
   int N = arr.dims(1); // number of strings
   std::vector<std::string> result;
-  auto values = w2l::afToVector<T>(arr);
+  auto values = afToVector<T>(arr);
   for (int i = 0; i < N; ++i) {
     const T* row = &values[i * L];
     int len = 0;
@@ -161,4 +166,6 @@ std::shared_ptr<W2lDataset> createDataset(
   return ds;
 }
 
-} // namespace w2l
+} 
+}
+}

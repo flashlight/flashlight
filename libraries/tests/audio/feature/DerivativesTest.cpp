@@ -12,7 +12,7 @@
 #include "TestUtils.h"
 #include "libraries/audio/feature/Derivatives.h"
 
-using w2l::Derivatives;
+using fl::lib::Derivatives;
 
 // Reference C++ code taken from HTK - http://htk.eng.cam.ac.uk/
 //   float *fp,*fp1,*fp2, *back, *forw;

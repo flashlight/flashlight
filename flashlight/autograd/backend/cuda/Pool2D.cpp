@@ -55,8 +55,7 @@ Variable pool2d(
         resultraw.get()));
   }
   auto gradFunc = [wx, wy, sx, sy, px, py, mode, output](
-                      std::vector<Variable>& inputs,
-                      const Variable& grad_output) {
+      std::vector<Variable>& inputs, const Variable& grad_output) {
     auto& in = inputs[0];
     if (!in.isCalcGrad()) {
       return;

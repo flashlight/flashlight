@@ -12,14 +12,17 @@
 
 #include "extensions/common/Utils.h"
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
+
 GetConvLmScoreFunc buildGetConvLmScoreFunction(
-    std::shared_ptr<fl::Module> network) {
+    std::shared_ptr<Module> network) {
   auto getConvLmScoreFunc = [network](
-                                const std::vector<int>& inputs,
-                                const std::vector<int>& lastTokenPositions,
-                                int sampleSize = -1,
-                                int batchSize = 1) {
+      const std::vector<int>& inputs,
+      const std::vector<int>& lastTokenPositions,
+      int sampleSize = -1,
+      int batchSize = 1) {
     sampleSize = sampleSize > 0 ? sampleSize : inputs.size();
     if (sampleSize * batchSize > inputs.size()) {
       throw std::invalid_argument(
@@ -57,9 +60,12 @@ GetConvLmScoreFunc buildGetConvLmScoreFunction(
     af::array preds =
         af::moddims(af::flat(output.array())(af::flat(globalIndices)), C, B);
     // vector of B X C predictions
-    return w2l::afToVector<float>(preds);
+    return ext::afToVector<float>(preds);
   };
 
   return getConvLmScoreFunc;
 }
-} // namespace w2l
+
+} 
+}
+}

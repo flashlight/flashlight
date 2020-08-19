@@ -11,10 +11,11 @@
 #include <flashlight/contrib/contrib.h>
 #include <flashlight/flashlight.h>
 
-namespace w2l {
+namespace fl {
+namespace ext {
 
 /**
- * Build a sequential module by parsing a file that 
+ * Build a sequential module by parsing a file that
  * defines the model architecture.
  */
 std::shared_ptr<fl::Sequential> buildSequentialModule(
@@ -22,4 +23,5 @@ std::shared_ptr<fl::Sequential> buildSequentialModule(
     int64_t nFeatures,
     int64_t nClasses);
 
-} // namespace w2l
+}
+} 

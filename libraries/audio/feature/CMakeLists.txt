@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5.1)
 
 # ----------------------------- Dependencies -----------------------------
 # CBLAS
-if (W2L_LIBRARIES_USE_MKL)
+if (FL_LIBRARIES_USE_MKL)
   find_package(MKL REQUIRED)
   set(CBLAS_LIBRARIES ${MKL_LIBRARIES})
   set(CBLAS_INCLUDE_DIR ${MKL_INCLUDE_DIR})
@@ -57,5 +57,5 @@ target_include_directories(
 target_compile_definitions(
   libraries-audio-feature
   INTERFACE
-  -DW2L_LIBRARIES_USE_MKL
+  -DFL_LIBRARIES_USE_MKL
 )

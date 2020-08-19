@@ -82,6 +82,6 @@ class SpecAugment : public UnaryModule {
   SpecAugment() = default;
 };
 
-} // namespace w2l
+} // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::SpecAugment)

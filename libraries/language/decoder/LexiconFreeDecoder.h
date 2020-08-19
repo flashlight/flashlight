@@ -13,7 +13,8 @@
 #include "libraries/language/decoder/Decoder.h"
 #include "libraries/language/decoder/lm/LM.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 /**
  * LexiconFreeDecoderState stores information for each hypothesis in the beam.
  */
@@ -143,4 +144,5 @@ class LexiconFreeDecoder : public Decoder {
   int nPrunedFrames_; // Total number of pruned frames from hyp_.
 };
 
-} // namespace w2l
+} 
+}

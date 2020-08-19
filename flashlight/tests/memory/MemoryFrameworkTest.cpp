@@ -196,10 +196,10 @@ class MockTestMemoryManager : public TestMemoryManager {
     }));
     ON_CALL(*this, alloc(_, _, _, _))
         .WillByDefault(Invoke([this](
-                                  bool userLock,
-                                  const unsigned ndims,
-                                  dim_t* dims,
-                                  const unsigned elSize) {
+            bool userLock,
+            const unsigned ndims,
+            dim_t* dims,
+            const unsigned elSize) {
           return real_->alloc(userLock, ndims, dims, elSize);
         }));
     ON_CALL(*this, allocated(_)).WillByDefault(Invoke([this](void* ptr) {

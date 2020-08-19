@@ -14,7 +14,8 @@
 
 #include "libraries/language/decoder/LexiconFreeDecoder.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 void LexiconFreeDecoder::decodeBegin() {
   hyp_.clear();
@@ -202,4 +203,5 @@ void LexiconFreeDecoder::prune(int lookBack) {
   nPrunedFrames_ = nDecodedFrames_ - lookBack;
 }
 
-} // namespace w2l
+} 
+}

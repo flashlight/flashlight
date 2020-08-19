@@ -16,7 +16,11 @@
 
 #include "common/Defines.h"
 
-namespace w2l {
+using namespace fl::lib;
+
+namespace fl {
+namespace task {
+namespace asr {
 
 W2lDataset::W2lDataset(
     const DictionaryMap& dicts,
@@ -169,4 +173,6 @@ std::vector<std::vector<int64_t>> RoundRobinBatchPacker::getBatches(
   return batches;
 }
 
-} // namespace w2l
+} 
+}
+}

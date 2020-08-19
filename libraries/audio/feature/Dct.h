@@ -11,7 +11,8 @@
 #include <stdint.h>
 #include <vector>
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 // Compute Discrete Cosine Transform
 //    c(i) = sqrt(2/N)  SUM_j (m(j) * cos(pi * i * (j - 0.5)/ N))
@@ -28,4 +29,5 @@ class Dct {
   int numCeps_; // Number of cepstral coefficients
   std::vector<float> dctMat_; // Dct matrix
 };
-} // namespace w2l
+} 
+}

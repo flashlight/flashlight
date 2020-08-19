@@ -11,7 +11,8 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 /**
  * Partitions a contiguous block of memory into aligned arrays.
@@ -58,4 +59,5 @@ class Workspace {
   size_t offset_;
 };
 
-} // namespace w2l
+} 
+}

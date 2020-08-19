@@ -11,12 +11,16 @@
 #include <flashlight/contrib/contrib.h>
 #include <flashlight/flashlight.h>
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 using GetConvLmScoreFunc = std::function<std::vector<
     float>(const std::vector<int>&, const std::vector<int>&, int, int)>;
 
 GetConvLmScoreFunc buildGetConvLmScoreFunction(
-    std::shared_ptr<fl::Module> network);
+    std::shared_ptr<Module> network);
 
-} // namespace w2l
+} 
+}
+}

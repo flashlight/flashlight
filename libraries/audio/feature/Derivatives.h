@@ -11,7 +11,8 @@
 #include <stdint.h>
 #include <vector>
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 // Compute first order (deltas) and second order (acceleration) derivatives of
 //  cepstral coefficients
@@ -34,4 +35,5 @@ class Derivatives {
       int windowlen,
       int numfeat) const;
 };
-} // namespace w2l
+} 
+}

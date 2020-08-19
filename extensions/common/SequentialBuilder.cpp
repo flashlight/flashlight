@@ -14,6 +14,7 @@
 #include "libraries/common/System.h"
 
 using namespace fl;
+using namespace fl::lib;
 
 namespace {
 std::shared_ptr<Module> parseLine(const std::string& line);
@@ -24,7 +25,9 @@ std::shared_ptr<Module> parseLines(
     int& numLinesParsed);
 } // namespace
 
-namespace w2l {
+namespace fl {
+
+namespace ext {
 
 std::shared_ptr<Sequential> buildSequentialModule(
     const std::string& archfile,
@@ -56,7 +59,9 @@ std::shared_ptr<Sequential> buildSequentialModule(
   return net;
 }
 
-} // namespace w2l
+} 
+
+}
 
 namespace {
 std::shared_ptr<Module> parseLine(const std::string& line) {
@@ -70,7 +75,7 @@ std::shared_ptr<Module> parseLines(
     int& numLinesParsed) {
   auto line = lines[lineIdx];
   numLinesParsed = 0;
-  auto params = w2l::splitOnWhitespace(line, true);
+  auto params = splitOnWhitespace(line, true);
 
   auto inRange = [&](const int a, const int b, const int c) {
     return (a <= b && b <= c);
@@ -246,11 +251,12 @@ std::shared_ptr<Module> parseLines(
     }
     if (featDims == std::vector<int>{3}) {
       if (!inRange(7, params.size(), 11)) {
-        throw std::invalid_argument("Failed parsing - "
-          "flashlight LayerNorm API for specifying `featAxes` is modified "
-          "recently - https://git.io/Je70U. You probably would want to "
-          "specify LN 0 1 2 instead of LN 3. If you really know what you're "
-          "doing, comment out this check and build again.");
+        throw std::invalid_argument(
+            "Failed parsing - "
+            "flashlight LayerNorm API for specifying `featAxes` is modified "
+            "recently - https://git.io/Je70U. You probably would want to "
+            "specify LN 0 1 2 instead of LN 3. If you really know what you're "
+            "doing, comment out this check and build again.");
       }
     }
     return std::make_shared<LayerNorm>(featDims);
@@ -261,7 +267,7 @@ std::shared_ptr<Module> parseLines(
       throw std::invalid_argument("Failed parsing - " + line);
     }
     int dim = std::stoi(params[1]);
-    std::string childStr = w2l::join(" ", params.begin() + 2, params.end());
+    std::string childStr = join(" ", params.begin() + 2, params.end());
     return std::make_shared<WeightNorm>(parseLine(childStr), dim);
   }
 
@@ -383,8 +389,8 @@ std::shared_ptr<Module> parseLines(
       throw std::invalid_argument("Failed parsing - " + line);
     }
 
-    auto residualBlock = [&](const std::vector<std::string>& prms,
-                             int& numResLayerAndSkip) {
+    auto residualBlock = [&](
+        const std::vector<std::string>& prms, int& numResLayerAndSkip) {
       int numResLayers = std::stoi(prms[1]);
       int numSkipConnections = std::stoi(prms[2]);
       std::shared_ptr<Residual> resPtr = std::make_shared<Residual>();
@@ -396,7 +402,7 @@ std::shared_ptr<Module> parseLines(
           throw std::invalid_argument("Failed parsing Residual block");
         }
         std::string resLine = lines[lineIdx + i + numProjections];
-        auto resLinePrms = w2l::splitOnWhitespace(resLine, true);
+        auto resLinePrms = splitOnWhitespace(resLine, true);
 
         if (resLinePrms[0] == "SKIP") {
           if (!inRange(3, resLinePrms.size(), 4)) {
@@ -439,7 +445,8 @@ std::shared_ptr<Module> parseLines(
 
     auto numBlocks = params.size() == 4 ? std::stoi(params.back()) : 1;
     if (numBlocks <= 0) {
-      throw std::invalid_argument("Invalid number of residual blocks: " + numBlocks);
+      throw std::invalid_argument(
+          "Invalid number of residual blocks: " + numBlocks);
     }
 
     if (numBlocks > 1) {
@@ -467,53 +474,8 @@ std::shared_ptr<Module> parseLines(
         std::stoi(params[6]));
   }
 
-#ifdef W2L_BUILD_FB_DEPENDENCIES
-
-  /* ========== Trainable frontend ========== */
-  if (params[0] == "SL2P") {
-    return std::make_shared<w2l::SqL2Pooling>();
-  }
-
-  if (params[0] == "LC") {
-    if (params.size() < 2) {
-      throw std::invalid_argument("Failed parsing - " + line);
-    }
-    double k = std::stod(params[1]);
-    return std::make_shared<w2l::LogCompression>(k);
-  }
-
-  if (params[0] == "LPF") {
-    if (params.size() < 5) {
-      throw std::invalid_argument("Failed parsing - " + line);
-    }
-
-    int nin = std::stoi(params[1]);
-    int kw = std::stoi(params[2]);
-    int dw = std::stoi(params[3]);
-    w2l::LPFMode learn = w2l::LPFMode::FIXED;
-    if (params[4] == "L") {
-      learn = w2l::LPFMode::LEARN;
-    }
-    return std::make_shared<w2l::Lowpass>(nin, kw, dw, learn);
-  }
-
-  if (params[0] == "WF") {
-    if (params.size() < 3) {
-      throw std::invalid_argument("Failed parsing - " + line);
-    }
-
-    std::string weightsFile = params[1];
-    std::string childStr = w2l::join(" ", params.begin() + 2, params.end());
-
-    auto conv = parseLine(childStr);
-    auto weights = conv->param(0);
-    w2l::initializeWeights(weightsFile, weights);
-    conv->setParams(weights, 0);
-    return conv;
-  }
-#endif
-
   throw std::invalid_argument("Failed parsing - " + line);
   return nullptr;
 }
+
 } // namespace

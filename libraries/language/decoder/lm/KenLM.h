@@ -8,12 +8,13 @@
 
 #pragma once
 
-#include "libraries/language/dictionary/Dictionary.h"
 #include "libraries/language/decoder/lm/LM.h"
+#include "libraries/language/dictionary/Dictionary.h"
 
 #include <lm/model.hh>
 
-namespace w2l {
+namespace fl {
+namespace lib {
 /**
  * KenLMState is a state object from KenLM, which  contains context length,
  * indicies and compare functions
@@ -49,4 +50,5 @@ class KenLM : public LM {
 
 using KenLMPtr = std::shared_ptr<KenLM>;
 
-} // namespace w2l
+} 
+}

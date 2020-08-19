@@ -11,7 +11,8 @@
 #include <cstddef>
 #include <stdexcept>
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 PreEmphasis::PreEmphasis(float alpha, int N)
     : preemCoef_(alpha), windowLength_(N) {
@@ -44,4 +45,5 @@ void PreEmphasis::applyInPlace(std::vector<float>& input) const {
     input[s] *= (1 - preemCoef_);
   }
 }
-} // namespace w2l
+} 
+}

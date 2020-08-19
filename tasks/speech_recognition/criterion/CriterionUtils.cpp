@@ -11,9 +11,12 @@
 #include <algorithm>
 #include <cmath>
 
+using namespace fl::lib;
 using fl::Variable;
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 int countRepeats(const int* labels, int len) {
   int r = 0;
@@ -60,7 +63,7 @@ Variable getLinearTarget(const Variable& targetVar, int T) {
     const auto pTarget = target.data() + b * L;
     auto pNewTarget = newTarget.data() + b * T;
 
-    int targetSize = std::min(T, w2l::getTargetSize(pTarget, L));
+    int targetSize = std::min(T, fl::task::asr::getTargetSize(pTarget, L));
     if (targetSize == 0) {
       // hacky way to make ASG think L == 0.
       std::fill(pNewTarget, pNewTarget + T, -1);
@@ -73,4 +76,6 @@ Variable getLinearTarget(const Variable& targetVar, int T) {
   return Variable(af::array(T, B, newTarget.data()), false);
 }
 
-} // namespace w2l
+} // namespace asr
+} // namespace task
+} // namespace fl

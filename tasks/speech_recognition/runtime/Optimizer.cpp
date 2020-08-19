@@ -10,7 +10,9 @@
 
 #include <glog/logging.h>
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
     const std::vector<std::shared_ptr<fl::Module>>& nets,
@@ -72,4 +74,6 @@ std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
   return opt;
 }
 
-} // namespace w2l
+} 
+}
+}

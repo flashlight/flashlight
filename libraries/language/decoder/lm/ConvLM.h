@@ -10,11 +10,12 @@
 
 #include <functional>
 
+#include "libraries/language/decoder/lm/LM.h"
 #include "libraries/language/dictionary/Defines.h"
 #include "libraries/language/dictionary/Dictionary.h"
-#include "libraries/language/decoder/lm/LM.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 using GetConvLmScoreFunc = std::function<std::vector<
     float>(const std::vector<int>&, const std::vector<int>&, int, int)>;
@@ -68,4 +69,5 @@ class ConvLM : public LM {
       const int tokenIdx);
 };
 
-} // namespace w2l
+} 
+}

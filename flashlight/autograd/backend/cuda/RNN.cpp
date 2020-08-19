@@ -316,58 +316,58 @@ std::tuple<Variable, Variable, Variable> rnn(
   }
   auto grad_data = std::make_shared<RNNGradData>();
 
-  auto gradFunc = [y,
-                   workspace_size,
-                   reserve_size,
-                   reserve_space,
-                   num_layers,
-                   hidden_size,
-                   mode,
-                   bidirectional,
-                   drop_prob,
-                   grad_data](
-                      std::vector<Variable>& inputs,
-                      const Variable& /* grad_output */) {
-    rnn_backward(
-        inputs,
-        grad_data,
-        y,
-        workspace_size,
-        reserve_size,
-        reserve_space,
-        num_layers,
-        hidden_size,
-        mode,
-        bidirectional,
-        drop_prob);
-  };
+  auto gradFunc =
+      [y,
+       workspace_size,
+       reserve_size,
+       reserve_space,
+       num_layers,
+       hidden_size,
+       mode,
+       bidirectional,
+       drop_prob,
+       grad_data](
+          std::vector<Variable>& inputs, const Variable& /* grad_output */) {
+        rnn_backward(
+            inputs,
+            grad_data,
+            y,
+            workspace_size,
+            reserve_size,
+            reserve_space,
+            num_layers,
+            hidden_size,
+            mode,
+            bidirectional,
+            drop_prob);
+      };
 
   Variable dummy(
       af::array(), {input, hidden_state, cell_state, weights}, gradFunc);
 
-  auto dy_gradFunc =
-      [grad_data](std::vector<Variable>& inputs, const Variable& grad_output) {
-        if (!inputs[0].isGradAvailable()) {
-          inputs[0].addGrad(Variable(af::array(), false));
-        }
-        grad_data->dy = grad_output.array();
-      };
+  auto dy_gradFunc = [grad_data](
+      std::vector<Variable>& inputs, const Variable& grad_output) {
+    if (!inputs[0].isGradAvailable()) {
+      inputs[0].addGrad(Variable(af::array(), false));
+    }
+    grad_data->dy = grad_output.array();
+  };
 
-  auto dhy_gradFunc =
-      [grad_data](std::vector<Variable>& inputs, const Variable& grad_output) {
-        if (!inputs[0].isGradAvailable()) {
-          inputs[0].addGrad(Variable(af::array(), false));
-        }
-        grad_data->dhy = grad_output.array();
-      };
+  auto dhy_gradFunc = [grad_data](
+      std::vector<Variable>& inputs, const Variable& grad_output) {
+    if (!inputs[0].isGradAvailable()) {
+      inputs[0].addGrad(Variable(af::array(), false));
+    }
+    grad_data->dhy = grad_output.array();
+  };
 
-  auto dcy_gradFunc =
-      [grad_data](std::vector<Variable>& inputs, const Variable& grad_output) {
-        if (!inputs[0].isGradAvailable()) {
-          inputs[0].addGrad(Variable(af::array(), false));
-        }
-        grad_data->dcy = grad_output.array();
-      };
+  auto dcy_gradFunc = [grad_data](
+      std::vector<Variable>& inputs, const Variable& grad_output) {
+    if (!inputs[0].isGradAvailable()) {
+      inputs[0].addGrad(Variable(af::array(), false));
+    }
+    grad_data->dcy = grad_output.array();
+  };
 
   Variable yv(y, {dummy}, dy_gradFunc);
   Variable hyv(hy, {dummy}, dhy_gradFunc);

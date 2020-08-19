@@ -10,11 +10,15 @@
 
 #include "libraries/audio/criterion/Defines.h"
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 // sampling strategy to use in decoder in place of teacher forcing
 constexpr const char* kModelSampling = "model";
 constexpr const char* kRandSampling = "rand";
 constexpr const char* kGumbelSampling = "gumbel";
 
-} // namespace w2l
+} 
+}
+}

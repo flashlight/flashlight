@@ -22,7 +22,7 @@ namespace {
 TEST(FixedBucketSizeHistogram, NormalDistribution) {
   const int nValues = 10e6; // Random large number.
   const int nBuckes = 9; // Odd number of nuckets such that we have a bucket at
-                         // the center with max elements.
+  // the center with max elements.
   const int mean = 100;
   const int stddev = 5;
 

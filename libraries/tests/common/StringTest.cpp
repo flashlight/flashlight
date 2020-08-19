@@ -9,12 +9,12 @@
 #include <string>
 
 #include <glog/logging.h>
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 #include "libraries/common/String.h"
 
-using namespace w2l;
+using namespace fl::lib;
 
 TEST(StringTest, StringTrim) {
   EXPECT_EQ(trim(""), "");
@@ -98,9 +98,9 @@ TEST(StringTest, Uniq) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
 
-  // Resolve directory for sample dictionary
-#ifdef W2L_DICTIONARY_TEST_DIR
-  loadPath = W2L_DICTIONARY_TEST_DIR;
+// Resolve directory for sample dictionary
+#ifdef FL_DICTIONARY_TEST_DIR
+  loadPath = FL_DICTIONARY_TEST_DIR;
 #endif
 
   return RUN_ALL_TESTS();

@@ -12,7 +12,9 @@
 
 #include <flashlight/flashlight.h>
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 // Convenience structs for serializing emissions and targets
 struct EmissionUnit {
@@ -45,4 +47,6 @@ struct TargetUnit {
 
 using EmissionTargetPair = std::pair<EmissionUnit, TargetUnit>;
 
+}
+}
 }

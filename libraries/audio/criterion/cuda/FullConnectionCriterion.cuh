@@ -12,7 +12,8 @@
 
 #include "libraries/audio/criterion/Defines.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 namespace cuda {
 
 /// The denominator of ASG loss. Reference: https://arxiv.org/abs/1609.03193
@@ -73,4 +74,5 @@ struct FullConnectionCriterion {
 };
 
 } // namespace cuda
-} // namespace w2l
+} 
+}

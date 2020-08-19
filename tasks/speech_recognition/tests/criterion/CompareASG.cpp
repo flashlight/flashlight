@@ -21,7 +21,8 @@
 
 #include "criterion/AutoSegmentationCriterion.h"
 
-using namespace w2l;
+using namespace fl;
+using namespace fl::task::asr;
 
 namespace {
 

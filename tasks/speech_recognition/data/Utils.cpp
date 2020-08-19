@@ -12,7 +12,11 @@
 
 #include "common/Defines.h"
 
-namespace w2l {
+using namespace fl::lib;
+
+namespace fl {
+namespace task {
+namespace asr {
 
 std::vector<std::string> wrd2Target(
     const std::string& word,
@@ -101,4 +105,6 @@ std::vector<std::string> wrd2Target(
   return res;
 }
 
-} // namespace w2l
+} 
+}
+}

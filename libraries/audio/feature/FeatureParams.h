@@ -11,7 +11,8 @@
 #include <math.h>
 #include <stdint.h>
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 enum class WindowType {
   HAMMING = 0,
@@ -163,4 +164,5 @@ struct FeatureParams {
   }
 };
 
-} // namespace w2l
+} 
+}

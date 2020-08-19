@@ -13,7 +13,8 @@
 
 #include "libraries/language/decoder/Trie.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 const double kMinusLogThreshold = -39.14;
 
@@ -98,4 +99,5 @@ void Trie::smear(SmearingMode smearMode) {
   }
 }
 
-} // namespace w2l
+} 
+}

@@ -11,7 +11,7 @@
 #include "TestUtils.h"
 #include "libraries/audio/feature/PreEmphasis.h"
 
-using w2l::PreEmphasis;
+using fl::lib::PreEmphasis;
 
 // Matlab code used: B=[1, -0.95]; = filter(B, 1, data, [], 2);
 // For first element in data multiply by (1 - alpha)

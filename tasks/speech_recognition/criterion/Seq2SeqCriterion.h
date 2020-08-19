@@ -17,7 +17,9 @@
 
 #include "extensions/common/Utils.h"
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 struct Seq2SeqState {
   fl::Variable alpha;
@@ -59,7 +61,7 @@ class Seq2SeqCriterion : public SequenceCriterion {
       int pctTeacherForcing = 100,
       double labelSmooth = 0.0,
       bool inputFeeding = false,
-      std::string samplingStrategy = w2l::kRandSampling,
+      std::string samplingStrategy = fl::task::asr::kRandSampling,
       double gumbelTemperature = 1.0,
       int nRnnLayer = 1,
       int nAttnRound = 1,
@@ -181,7 +183,7 @@ class Seq2SeqCriterion : public SequenceCriterion {
   void setUseSequentialDecoder();
 };
 
-w2l::Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx);
+fl::task::asr::Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx);
 
 /* Decoder helpers */
 struct Seq2SeqDecoderBuffer {
@@ -218,7 +220,9 @@ typedef std::function<
 
 AMUpdateFunc buildAmUpdateFunction(
     std::shared_ptr<SequenceCriterion>& criterion);
-} // namespace w2l
+} 
+}
+}
 
-CEREAL_REGISTER_TYPE(w2l::Seq2SeqCriterion)
-CEREAL_CLASS_VERSION(w2l::Seq2SeqCriterion, 3)
+CEREAL_REGISTER_TYPE(fl::task::asr::Seq2SeqCriterion)
+CEREAL_CLASS_VERSION(fl::task::asr::Seq2SeqCriterion, 3)

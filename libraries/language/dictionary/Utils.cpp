@@ -10,10 +10,11 @@
 
 #include <fstream>
 
-#include "libraries/language/dictionary/Defines.h"
 #include "libraries/common/String.h"
+#include "libraries/language/dictionary/Defines.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 Dictionary createWordDict(const LexiconMap& lexicon) {
   Dictionary dict;
@@ -148,4 +149,5 @@ std::vector<int> unpackReplabels(
   return result;
 }
 
-} // namespace w2l
+} 
+}

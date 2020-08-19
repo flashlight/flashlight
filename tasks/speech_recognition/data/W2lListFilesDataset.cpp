@@ -15,7 +15,11 @@
 #include "libraries/common/String.h"
 #include "libraries/common/System.h"
 
-namespace w2l {
+using namespace fl::lib;
+
+namespace fl {
+namespace task {
+namespace asr {
 
 W2lListFilesDataset::W2lListFilesDataset(
     const std::string& filenames,
@@ -36,7 +40,7 @@ W2lListFilesDataset::W2lListFilesDataset(
   LOG_IF(FATAL, dicts.find(kTargetIdx) == dicts.end())
       << "Target dictionary does not exist";
 
-  auto filesVec = split(',', filenames);
+  auto filesVec = lib::split(',', filenames);
   std::vector<SpeechSampleMetaInfo> speechSamplesMetaInfo;
   for (const auto& f : filesVec) {
     auto fullpath = pathsConcat(rootdir, trim(f));
@@ -80,7 +84,7 @@ std::vector<W2lLoaderData> W2lListFilesDataset::getLoaderData(
     }
 
     data[id].sampleId = data_[i].getSampleId();
-    data[id].input = loadSound(data_[i].getAudioFile());
+    data[id].input = loadSound<float>(data_[i].getAudioFile());
     data[id].targets[kTargetIdx] = wrd2Target(
         data_[i].getTranscript(),
         lexicon_,
@@ -93,11 +97,6 @@ std::vector<W2lLoaderData> W2lListFilesDataset::getLoaderData(
     }
   }
   return data;
-}
-
-std::vector<float> W2lListFilesDataset::loadSound(
-    const std::string& audioHandle) const {
-  return w2l::loadSound<float>(audioHandle);
 }
 
 std::vector<SpeechSampleMetaInfo> W2lListFilesDataset::loadListFile(
@@ -144,4 +143,7 @@ std::vector<SpeechSampleMetaInfo> W2lListFilesDataset::loadListFile(
 
   return samplesMetaInfo;
 }
-} // namespace w2l
+
+} 
+}
+}

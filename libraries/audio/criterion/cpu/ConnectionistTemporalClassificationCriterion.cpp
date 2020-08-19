@@ -19,7 +19,7 @@ template <class Float>
 struct WorkspacePtrs {
   WorkspacePtrs(void* workspace, int B, int T, int /* N unused */, int L) {
     const int s = (2 * L) + 1;
-    w2l::Workspace<> ws(workspace);
+    fl::lib::Workspace<> ws(workspace);
     ws.request(&alpha, B, T, s);
     ws.request(&s_inc, B, s);
     ws.request(&e_inc, B, s);
@@ -167,7 +167,8 @@ void compute_alphas(
 
 } // namespace
 
-namespace w2l {
+namespace fl {
+namespace lib {
 namespace cpu {
 
 template <class Float>
@@ -224,4 +225,5 @@ template struct ConnectionistTemporalClassificationCriterion<float>;
 template struct ConnectionistTemporalClassificationCriterion<double>;
 
 } // namespace cpu
-} // namespace w2l
+} 
+}

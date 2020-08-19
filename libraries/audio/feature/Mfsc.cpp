@@ -14,7 +14,8 @@
 
 #include "libraries/audio/feature/SpeechUtils.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 Mfsc::Mfsc(const FeatureParams& params)
     : PowerSpectrum(params),
@@ -104,4 +105,5 @@ void Mfsc::validateMfscParams() const {
     throw std::invalid_argument("Mfsc: melfloor must be positive");
   }
 }
-} // namespace w2l
+} 
+}

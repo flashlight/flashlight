@@ -13,22 +13,23 @@
 
 #include <flashlight/flashlight.h>
 
-namespace w2l {
+namespace fl {
+namespace ext {
 
 /**
  * Convert an arrayfire array into a std::vector.
- * 
+ *
  * @param arr input array to convert
- * 
+ *
  */
 template <typename T>
 std::vector<T> afToVector(const af::array& arr);
 
 /**
  * Convert the array in a Variable into a std::vector.
- * 
+ *
  * @param var input Variables to convert
- * 
+ *
  */
 template <typename T>
 std::vector<T> afToVector(const fl::Variable& var);
@@ -47,6 +48,7 @@ void initDistributed(
     int maxDevicesPerNode,
     const std::string& rndvFilepath);
 
+}
 }
 
 #include "extensions/common/Utils-inl.h"

@@ -14,13 +14,15 @@
 #include "FullConnectionCriterion.h"
 #include "SequenceCriterion.h"
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 class AutoSegmentationCriterion : public SequenceCriterion {
  public:
   explicit AutoSegmentationCriterion(
       int N,
-      w2l::CriterionScaleMode scalemode = w2l::CriterionScaleMode::NONE,
+      lib::CriterionScaleMode scalemode = lib::CriterionScaleMode::NONE,
       double transdiag = 0.0)
       : N_(N),
         scaleMode_(scalemode),
@@ -44,7 +46,7 @@ class AutoSegmentationCriterion : public SequenceCriterion {
   }
 
   af::array viterbiPath(const af::array& input) override {
-    return w2l::viterbiPath(input, params_[0].array());
+    return fl::task::asr::viterbiPath(input, params_[0].array());
   }
 
   af::array viterbiPath(const af::array& input, const af::array& target)
@@ -71,7 +73,7 @@ class AutoSegmentationCriterion : public SequenceCriterion {
 
  private:
   int N_;
-  w2l::CriterionScaleMode scaleMode_;
+  lib::CriterionScaleMode scaleMode_;
   ForceAlignmentCriterion fac_;
   FullConnectionCriterion fcc_;
 
@@ -85,6 +87,8 @@ class AutoSegmentationCriterion : public SequenceCriterion {
 
 using ASGLoss = AutoSegmentationCriterion;
 
-} // namespace w2l
+} 
+}
+}
 
-CEREAL_REGISTER_TYPE(w2l::AutoSegmentationCriterion)
+CEREAL_REGISTER_TYPE(fl::task::asr::AutoSegmentationCriterion)

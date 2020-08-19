@@ -10,7 +10,9 @@
 
 #include <flashlight/flashlight.h>
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 struct SpeechStats {
   int64_t totalInputSz_;
@@ -35,4 +37,6 @@ class SpeechStatMeter {
  private:
   SpeechStats stats_;
 };
-} // namespace w2l
+} 
+}
+}

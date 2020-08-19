@@ -12,8 +12,11 @@
 #include <functional>
 #include <sstream>
 
-#include "libraries/common/System.h"
 #include "data/Sound.h"
+#include "libraries/common/System.h"
+
+using namespace fl::lib;
+using namespace fl::task::asr;
 
 namespace {
 std::string loadPath = "";
@@ -30,10 +33,10 @@ auto loadData = [](const std::string& filepath) {
 
 TEST(SoundTest, Mono) {
   auto audiopath =
-      w2l::pathsConcat(loadPath, "test_mono.wav"); // 16-bit Signed Integer PCM
-  auto datapath = w2l::pathsConcat(loadPath, "test_mono.dat");
+      pathsConcat(loadPath, "test_mono.wav"); // 16-bit Signed Integer PCM
+  auto datapath = pathsConcat(loadPath, "test_mono.dat");
 
-  auto info = w2l::loadSoundInfo(audiopath);
+  auto info = loadSoundInfo(audiopath);
   ASSERT_EQ(info.samplerate, 48000);
   ASSERT_EQ(info.channels, 1);
   ASSERT_EQ(info.frames, 24576);
@@ -41,14 +44,14 @@ TEST(SoundTest, Mono) {
   auto data = loadData(datapath);
 
   // Double
-  auto vecDouble = w2l::loadSound<double>(audiopath);
+  auto vecDouble = loadSound<double>(audiopath);
   ASSERT_EQ(vecDouble.size(), info.channels * info.frames);
   for (int64_t i = 0; i < vecDouble.size(); ++i) {
     ASSERT_NEAR(vecDouble[i], data[i], 1E-8);
   }
 
   // Float
-  auto vecFloat = w2l::loadSound<float>(audiopath);
+  auto vecFloat = loadSound<float>(audiopath);
   ASSERT_EQ(vecFloat.size(), info.channels * info.frames);
 
   for (int64_t i = 0; i < vecFloat.size(); ++i) {
@@ -62,7 +65,7 @@ TEST(SoundTest, Mono) {
       });
 
   // Short
-  auto vecShort = w2l::loadSound<short>(audiopath);
+  auto vecShort = loadSound<short>(audiopath);
   ASSERT_EQ(vecShort.size(), info.channels * info.frames);
 
   for (int64_t i = 0; i < vecShort.size(); ++i) {
@@ -75,7 +78,7 @@ TEST(SoundTest, Mono) {
         return d * (1 << 16);
       });
   // Int
-  auto vecInt = w2l::loadSound<int>(audiopath);
+  auto vecInt = loadSound<int>(audiopath);
   ASSERT_EQ(vecInt.size(), info.channels * info.frames);
   for (int64_t i = 0; i < vecInt.size(); ++i) {
     ASSERT_NEAR(vecInt[i], data[i], 25);
@@ -83,16 +86,16 @@ TEST(SoundTest, Mono) {
 }
 
 TEST(SoundTest, Stereo) {
-  auto audiopath = w2l::pathsConcat(
+  auto audiopath = pathsConcat(
       loadPath, "test_stereo.wav"); // 16-bit Signed Integer PCM
-  auto datapath = w2l::pathsConcat(loadPath, "test_stereo.dat");
-  auto info = w2l::loadSoundInfo(audiopath);
+  auto datapath = pathsConcat(loadPath, "test_stereo.dat");
+  auto info = loadSoundInfo(audiopath);
 
   ASSERT_EQ(info.samplerate, 48000);
   ASSERT_EQ(info.channels, 2);
   ASSERT_EQ(info.frames, 24576);
 
-  auto vecFloat = w2l::loadSound<float>(audiopath);
+  auto vecFloat = loadSound<float>(audiopath);
   ASSERT_EQ(vecFloat.size(), info.channels * info.frames);
 
   auto data = loadData(datapath);
@@ -104,21 +107,21 @@ TEST(SoundTest, Stereo) {
 }
 
 TEST(SoundTest, OggReadWrite) {
-  auto audiopath = w2l::pathsConcat(loadPath, "test_stereo.wav");
-  auto outaudiopath = w2l::pathsConcat("/tmp", "test_stereo_out.ogg");
-  auto oggaudiopath = w2l::pathsConcat(loadPath, "test_stereo.ogg");
-  auto info = w2l::loadSoundInfo(audiopath);
-  auto vecShort = w2l::loadSound<short>(audiopath);
+  auto audiopath = pathsConcat(loadPath, "test_stereo.wav");
+  auto outaudiopath = pathsConcat("/tmp", "test_stereo_out.ogg");
+  auto oggaudiopath = pathsConcat(loadPath, "test_stereo.ogg");
+  auto info = loadSoundInfo(audiopath);
+  auto vecShort = loadSound<short>(audiopath);
 
-  w2l::saveSound(
+  saveSound(
       outaudiopath,
       vecShort,
       info.samplerate,
       info.channels,
-      w2l::SoundFormat::OGG,
-      w2l::SoundSubFormat::VORBIS);
-  auto vecFloatOut = w2l::loadSound<float>(outaudiopath);
-  auto vecFloat = w2l::loadSound<float>(oggaudiopath);
+      SoundFormat::OGG,
+      SoundSubFormat::VORBIS);
+  auto vecFloatOut = loadSound<float>(outaudiopath);
+  auto vecFloat = loadSound<float>(oggaudiopath);
 
   ASSERT_EQ(vecFloat.size(), vecFloatOut.size());
 
@@ -128,29 +131,29 @@ TEST(SoundTest, OggReadWrite) {
 }
 
 TEST(SoundTest, StreamReadWrite) {
-  auto audiopath = w2l::pathsConcat(loadPath, "test_stereo.wav");
-  auto info = w2l::loadSoundInfo(audiopath);
-  auto vecShort = w2l::loadSound<short>(audiopath);
+  auto audiopath = pathsConcat(loadPath, "test_stereo.wav");
+  auto info = loadSoundInfo(audiopath);
+  auto vecShort = loadSound<short>(audiopath);
 
   std::stringstream f;
-  w2l::saveSound(
+  saveSound(
       f,
       vecShort,
       info.samplerate,
       info.channels,
-      w2l::SoundFormat::WAV,
-      w2l::SoundSubFormat::PCM_16);
+      SoundFormat::WAV,
+      SoundSubFormat::PCM_16);
 
   f.seekg(0);
   f.clear();
-  auto infostream = w2l::loadSoundInfo(f);
+  auto infostream = loadSoundInfo(f);
   ASSERT_EQ(info.samplerate, infostream.samplerate);
   ASSERT_EQ(info.channels, infostream.channels);
   ASSERT_EQ(info.frames, infostream.frames);
 
   f.seekg(0);
   f.clear();
-  auto vecShortStream = w2l::loadSound<short>(f);
+  auto vecShortStream = loadSound<short>(f);
 
   ASSERT_EQ(vecShort.size(), vecShortStream.size());
   for (int64_t i = 0; i < vecShort.size(); ++i) {
@@ -161,7 +164,7 @@ TEST(SoundTest, StreamReadWrite) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
 
-  // Resolve directory for data
+// Resolve directory for data
 #ifdef DATA_TEST_DATADIR
   loadPath = DATA_TEST_DATADIR;
 #endif

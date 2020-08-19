@@ -11,7 +11,6 @@
 
 #include "flashlight/contrib/modules/SpecAugment.h"
 
-
 namespace fl {
 
 SpecAugment::SpecAugment(

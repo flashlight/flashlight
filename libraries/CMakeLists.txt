@@ -42,7 +42,6 @@ target_include_directories(
 target_compile_definitions(
   fl-libraries
   PUBLIC
-  ${W2L_COMPILE_DEFINITIONS}
   )
  
 # --------------------------- Tests ---------------------------

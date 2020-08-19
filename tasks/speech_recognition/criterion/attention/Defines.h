@@ -10,7 +10,9 @@
 
 #include <flashlight/flashlight.h>
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 // attention
 const std::string kContentAttention = "content";
@@ -31,4 +33,6 @@ const std::string kSoftWindow = "soft";
 const std::string kSoftPretrainWindow = "softPretrain";
 const std::string kStepWindow = "step";
 
-} // namespace w2l
+} 
+}
+}

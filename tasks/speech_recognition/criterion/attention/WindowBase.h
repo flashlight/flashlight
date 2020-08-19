@@ -10,7 +10,9 @@
 
 #include <flashlight/flashlight.h>
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 class WindowBase {
  public:
@@ -42,4 +44,6 @@ class WindowBase {
   FL_SAVE_LOAD()
 };
 
-} // namespace w2l
+} 
+}
+}

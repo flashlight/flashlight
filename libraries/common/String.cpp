@@ -19,7 +19,8 @@
 
 static constexpr const char* kSpaceChars = "\t\n\v\f\r ";
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 std::string trim(const std::string& str) {
   auto i = str.find_first_not_of(kSpaceChars);
@@ -107,4 +108,5 @@ std::string join(
   return join(delim, vec.begin(), vec.end());
 }
 
+}
 }

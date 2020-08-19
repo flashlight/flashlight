@@ -15,7 +15,8 @@
 #include "libraries/language/decoder/Trie.h"
 #include "libraries/language/decoder/lm/LM.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 using AMStatePtr = std::shared_ptr<void>;
 using AMUpdateFunc = std::function<
     std::pair<std::vector<std::vector<float>>, std::vector<AMStatePtr>>(
@@ -148,4 +149,5 @@ class LexiconSeq2SeqDecoder : public Decoder {
   std::unordered_map<int, std::vector<LexiconSeq2SeqDecoderState>> hyp_;
 };
 
-} // namespace w2l
+} 
+}

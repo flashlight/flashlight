@@ -12,7 +12,8 @@
 #include <mutex>
 #include <queue>
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 /**
  * ProducerConsumerQueue implements a thread-safe queue for a certain type of
@@ -147,4 +148,5 @@ class ProducerConsumerQueue {
   }
 };
 
-} // namespace w2l
+} 
+}

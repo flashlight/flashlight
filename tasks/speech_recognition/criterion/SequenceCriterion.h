@@ -12,7 +12,9 @@
 
 #include <flashlight/flashlight.h>
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 class SequenceCriterion : public fl::Container {
  public:
@@ -33,6 +35,8 @@ class SequenceCriterion : public fl::Container {
   FL_SAVE_LOAD_WITH_BASE(fl::Container)
 };
 
-} // namespace w2l
+} 
+}
+}
 
-CEREAL_REGISTER_TYPE(w2l::SequenceCriterion)
+CEREAL_REGISTER_TYPE(fl::task::asr::SequenceCriterion)

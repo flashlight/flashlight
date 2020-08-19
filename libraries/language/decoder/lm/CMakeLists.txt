@@ -9,7 +9,7 @@ add_library(
 
 # ------------------------- KenLM-specific -------------------------
 
-if (W2L_LIBRARIES_USE_KENLM)
+if (FL_LIBRARIES_USE_KENLM)
   find_package(kenlm REQUIRED)
 
   # Required for KenLM to read ARPA files in compressed format

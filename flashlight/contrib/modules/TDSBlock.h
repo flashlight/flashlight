@@ -56,11 +56,10 @@ class TDSBlock : public Container {
       int rightPadding = -1,
       bool lNormIncludeTime = true);
 
-  std::vector<Variable> forward(
-      const std::vector<Variable>& inputs) override;
+  std::vector<Variable> forward(const std::vector<Variable>& inputs) override;
   std::string prettyString() const override;
 };
 
-} // namespace w2l
+} // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::TDSBlock)

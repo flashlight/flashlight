@@ -16,7 +16,8 @@
 #include "libraries/common/System.h"
 #include "libraries/language/dictionary/Utils.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 Dictionary::Dictionary(std::istream& stream) {
   createFromStream(stream);
@@ -153,4 +154,5 @@ size_t Dictionary::indexSize() const {
   return idx2entry_.size();
 }
 
-} // namespace w2l
+} 
+}

@@ -14,7 +14,8 @@
 #include "criterion/criterion.h"
 
 using namespace fl;
-using namespace w2l;
+using namespace fl::lib;
+using namespace fl::task::asr;
 
 namespace {
 
@@ -110,7 +111,7 @@ TEST(CriterionTest, CTCJacobian) {
   auto t = af::abs(af::randu(L, af::dtype::s32)) % (N - 2);
   auto tgt = Variable(t.as(af::dtype::s32), false);
   auto l = ConnectionistTemporalClassificationCriterion(
-      w2l::CriterionScaleMode::INPUT_SZ_SQRT);
+      CriterionScaleMode::INPUT_SZ_SQRT);
   auto func_conv_in = [&](Variable& inp) {
     return l.forward({inp, tgt}).front();
   };
@@ -130,7 +131,7 @@ TEST(CriterionTest, Batching) {
     }
     auto tgt = Variable(t.as(af::dtype::s32), false);
     auto l = ConnectionistTemporalClassificationCriterion(
-        w2l::CriterionScaleMode::TARGET_SZ_SQRT);
+        CriterionScaleMode::TARGET_SZ_SQRT);
     auto func_conv_in = [&](Variable& inp) {
       return l.forward({inp, tgt}).front();
     };
@@ -148,7 +149,7 @@ TEST(CriterionTest, Batching) {
     }
     auto tgt = Variable(t.as(af::dtype::s32), false);
     auto l = ConnectionistTemporalClassificationCriterion(
-        w2l::CriterionScaleMode::TARGET_SZ);
+        CriterionScaleMode::TARGET_SZ);
     auto output = l.forward({in, tgt}).front();
 
     for (int i = 0; i < B; ++i) {
@@ -296,7 +297,7 @@ TEST(CriterionTest, ViterbiPath) {
 
 // Test with alternating blanks and with varying target sizes
 TEST(CriterionTest, ASGAlternatingBlanks) {
-  w2l::AutoSegmentationCriterion criterion(2);
+  AutoSegmentationCriterion criterion(2);
   int C = 2; // (one class + blank)
   int T = 7;
   int mL = 3;
@@ -515,7 +516,7 @@ TEST(CriterionTest, FCCJacobian) {
   auto in = Variable(af::log(af::randu(N, T, B)), true);
   auto t = af::abs(af::randu(L, B, af::dtype::s32)) % (N - 1);
   auto tgt = Variable(t.as(af::dtype::s32), false);
-  auto l = FullConnectionCriterion(N, w2l::CriterionScaleMode::TARGET_SZ_SQRT);
+  auto l = FullConnectionCriterion(N, CriterionScaleMode::TARGET_SZ_SQRT);
 
   // Test case for input
   auto func_in = [&](Variable& inp) { return l.forward(inp, tgt); };
@@ -566,7 +567,7 @@ TEST(CriterionTest, FACJacobian) {
   auto in = Variable(af::log(af::randu(N, T, B)), true);
   std::array<int, 9> target = {0, 1, -1, 1, -1, -1, 0, 2, 1};
   auto tgt = Variable(af::array(L, B, target.data()), false);
-  auto l = ForceAlignmentCriterion(N, w2l::CriterionScaleMode::TARGET_SZ_SQRT);
+  auto l = ForceAlignmentCriterion(N, CriterionScaleMode::TARGET_SZ_SQRT);
 
   // Test case for input
   auto func_in = [&](Variable& inp) { return l.forward(inp, tgt); };
@@ -644,7 +645,7 @@ TEST(CriterionTest, ASGJacobian) {
   std::array<int, 9> target = {0, 1, -1, 1, -1, -1, 0, 2, 1};
   auto tgt = Variable(af::array(L, B, target.data()), false);
   auto l =
-      AutoSegmentationCriterion(N, w2l::CriterionScaleMode::TARGET_SZ_SQRT);
+      AutoSegmentationCriterion(N, CriterionScaleMode::TARGET_SZ_SQRT);
 
   // Test case for input
   auto func_in = [&](Variable& inp) { return l.forward({inp, tgt}).front(); };
@@ -665,7 +666,7 @@ TEST(CriterionTest, LinSegJacobian) {
   std::array<int, 9> target = {0, 1, -1, 1, -1, -1, 0, 2, 1};
   auto tgt = Variable(af::array(L, B, target.data()), false);
   auto l =
-      LinearSegmentationCriterion(N, w2l::CriterionScaleMode::TARGET_SZ_SQRT);
+      LinearSegmentationCriterion(N, CriterionScaleMode::TARGET_SZ_SQRT);
 
   // Test case for input
   auto func_in = [&](Variable& inp) { return l.forward({inp, tgt}).front(); };
@@ -691,7 +692,7 @@ TEST(CriterionTest, ASGBatching) {
     }
   }
   auto tgt = Variable(t.as(af::dtype::s32), false);
-  auto l = AutoSegmentationCriterion(N, w2l::CriterionScaleMode::TARGET_SZ);
+  auto l = AutoSegmentationCriterion(N, CriterionScaleMode::TARGET_SZ);
   auto output = l.forward({in, tgt}).front();
 
   for (int i = 0; i < B; ++i) {
@@ -816,7 +817,7 @@ TEST(CriterionTest, LinSegCompareLua) {
   // clang-format on
 
   auto linseg =
-      LinearSegmentationCriterion(N, w2l::CriterionScaleMode::TARGET_SZ_SQRT);
+      LinearSegmentationCriterion(N, CriterionScaleMode::TARGET_SZ_SQRT);
   auto input_af = Variable(af::array(N, T, B, input.data()), true);
   auto target_af = Variable(af::array(L, B, target.data()), false);
   linseg.setParams(constant(0.0, af::dim4(N, N)), 0);

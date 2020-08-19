@@ -10,7 +10,8 @@
 
 #include <time.h>
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 Dither::Dither(float ditherVal)
     : ditherVal_(ditherVal), rng_((ditherVal > 0.0) ? 123456 : time(nullptr)){};
@@ -28,4 +29,5 @@ void Dither::applyInPlace(std::vector<float>& input) {
   }
 }
 
-} // namespace w2l
+} 
+}

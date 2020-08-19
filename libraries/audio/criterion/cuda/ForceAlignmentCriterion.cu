@@ -19,7 +19,7 @@ namespace {
 template <class Float>
 struct WorkspacePtrs {
   explicit WorkspacePtrs(void* workspace, int B, int T, int N, int L) {
-    w2l::Workspace<> ws(workspace);
+    fl::lib::Workspace<> ws(workspace);
     ws.request(&scale, B);
     ws.request(&alpha, B, T, L);
     ws.request(&alphaGrad, B, T, L);
@@ -298,7 +298,8 @@ __global__ void viterbiPathKernel(
 
 } // namespace
 
-namespace w2l {
+namespace fl {
+namespace lib {
 namespace cuda {
 
 template <class Float>
@@ -378,4 +379,5 @@ template struct ForceAlignmentCriterion<float>;
 template struct ForceAlignmentCriterion<double>;
 
 } // namespace cuda
-} // namespace w2l
+} 
+}

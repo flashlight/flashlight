@@ -6,7 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-namespace w2l {
+namespace fl {
+namespace ext {
 
 template <typename T>
 std::vector<T> afToVector(const af::array& arr) {
@@ -20,4 +21,5 @@ std::vector<T> afToVector(const fl::Variable& var) {
   return afToVector<T>(var.array());
 }
 
+}
 }

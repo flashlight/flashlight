@@ -32,7 +32,7 @@ auto loadData = [](const std::string& filepath) {
 };
 } // namespace
 
-using namespace w2l;
+using namespace fl::lib;
 
 // HTK Code used -
 //    HCopy -C config.mfcc sa1.wav sa1-mfcc.htk
@@ -203,7 +203,7 @@ TEST(MfccTest, ZeroInputTest) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
 
-  // Resolve directory for data
+// Resolve directory for data
 #ifdef FEATURE_TEST_DATADIR
   loadPath = FEATURE_TEST_DATADIR;
 #endif

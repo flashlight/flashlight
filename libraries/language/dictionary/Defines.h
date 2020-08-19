@@ -8,7 +8,8 @@
 
 #pragma once
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 constexpr const char* kEosToken = "$";
 constexpr const char* kBlankToken = "#";
@@ -17,4 +18,5 @@ constexpr const char* kUnkToken = "<unk>";
 constexpr const char* kLmEosToken = "</s>";
 constexpr const char* kLmPadToken = "<pad>";
 
-} // namespace w2l
+} 
+}

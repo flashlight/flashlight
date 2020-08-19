@@ -16,6 +16,8 @@
 #include "libraries/audio/feature/PowerSpectrum.h"
 #include "libraries/common/String.h"
 
+using namespace fl::lib;
+
 namespace {
 
 // Input: B x inRow x inCol (Row Major), Output: B x inCol x inRow (Row Major)
@@ -39,10 +41,11 @@ std::vector<T> transpose2d(
   }
   return out;
 }
-
 }
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 fl::Dataset::DataTransformFunction inputFeatures(const FeatureParams& params) {
   return [params](void* data, af::dim4 dims, af::dtype type) {
@@ -77,7 +80,7 @@ fl::Dataset::DataTransformFunction targetFeatures(
     int wordSeperator,
     bool surround /* = true */) {
   return [dict, lexicon, wordSeperator, surround](
-             void* data, af::dim4 dims, af::dtype type) {
+      void* data, af::dim4 dims, af::dtype type) {
     std::string transcript((char*)data, (char*)data + dims[0]);
     auto words = splitOnWhitespace(transcript);
     std::vector<int> tokens;
@@ -100,4 +103,6 @@ fl::Dataset::DataTransformFunction targetFeatures(
     return af::array(tokens.size(), tokens.data());
   };
 }
-} // namespace w2l
+} 
+}
+}

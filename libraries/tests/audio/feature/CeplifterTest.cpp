@@ -11,7 +11,7 @@
 #include "TestUtils.h"
 #include "libraries/audio/feature/Ceplifter.h"
 
-using w2l::Ceplifter;
+using fl::lib::Ceplifter;
 
 // matlab code used:
 // ceplifter = @( N, L )( 1+0.5*L*sin(pi*[0:N-1]/L) );

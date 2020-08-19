@@ -153,12 +153,21 @@ MemoryManagerInstaller::MemoryManagerInstaller(
   };
   AF_CHECK(
       af_memory_manager_set_get_memory_pressure_fn(itf, getMemoryPressureFn));
+<<<<<<< HEAD
   auto jitTreeExceedsMemoryPressureFn =
       [](af_memory_manager manager, int* out, size_t bytes) {
         *out = (int)MemoryManagerInstaller::getImpl(manager)
                    ->jitTreeExceedsMemoryPressure(bytes);
         return AF_SUCCESS;
       };
+=======
+  auto jitTreeExceedsMemoryPressureFn = [](
+      af_memory_manager manager, int* out, size_t bytes) {
+    *out = (int)MemoryManagerInstaller::getImpl(manager)
+               ->jitTreeExceedsMemoryPressure(bytes);
+    return AF_SUCCESS;
+  };
+>>>>>>> finish namespace changing
   AF_CHECK(af_memory_manager_set_jit_tree_exceeds_memory_pressure_fn(
       itf, jitTreeExceedsMemoryPressureFn));
   auto addMemoryManagementFn = [](af_memory_manager manager, int device) {

@@ -15,7 +15,8 @@
 #include "criterion/criterion.h"
 
 using namespace fl;
-using namespace w2l;
+using namespace fl::ext;
+using namespace fl::task::asr;
 
 TEST(Seq2SeqTest, Seq2Seq) {
   int nclass = 40;
@@ -39,7 +40,7 @@ TEST(Seq2SeqTest, Seq2Seq) {
       100,
       0.0,
       false,
-      w2l::kRandSampling,
+      kRandSampling,
       1.0,
       2, // nRnnLayer
       nAttnRound,
@@ -251,7 +252,7 @@ TEST(Seq2SeqTest, Seq2SeqMixedAttn) {
       100,
       0.0,
       false,
-      w2l::kRandSampling,
+      kRandSampling,
       1.0,
       1,
       2);
@@ -289,7 +290,7 @@ TEST(Seq2SeqTest, Serialization) {
       100,
       0.0,
       false,
-      w2l::kRandSampling,
+      kRandSampling,
       1.0,
       2, // nRnnLayer
       nAttnRound,
@@ -335,7 +336,7 @@ TEST(Seq2SeqTest, BatchedDecoderStep) {
                                                100,
                                                0.0,
                                                false,
-                                               w2l::kRandSampling,
+                                               kRandSampling,
                                                1.0,
                                                nRnnLayer,
                                                nAttnRound,
@@ -351,7 +352,7 @@ TEST(Seq2SeqTest, BatchedDecoderStep) {
                                                100,
                                                0.0,
                                                false,
-                                               w2l::kRandSampling,
+                                               kRandSampling,
                                                1.0,
                                                nRnnLayer,
                                                nAttnRound,
@@ -383,7 +384,7 @@ TEST(Seq2SeqTest, BatchedDecoderStep) {
       Variable ox;
       std::tie(ox, outstate) = seq2seq.decodeStep(input, y, inStates[i]);
       ox = logSoftmax(ox, 0);
-      single_scores[i] = w2l::afToVector<float>(ox);
+      single_scores[i] = afToVector<float>(ox);
     }
 
     // Batched forward
@@ -406,7 +407,7 @@ TEST(Seq2SeqTest, Seq2SeqSampling) {
   auto target = noGrad((af::randu(U, B, f32) * 0.99 * N).as(s32));
 
   std::vector<std::string> samplingStrategy(
-      {w2l::kRandSampling, w2l::kModelSampling});
+      {kRandSampling, kModelSampling});
 
   for (const auto& ss : samplingStrategy) {
     Seq2SeqCriterion seq2seq(
@@ -440,7 +441,7 @@ TEST(Seq2SeqTest, Seq2SeqSampling) {
       60,
       0.05,
       false,
-      w2l::kRandSampling);
+      kRandSampling);
   seq2seq1.train();
 
   Variable output, attention;
@@ -459,7 +460,7 @@ TEST(Seq2SeqTest, Seq2SeqSampling) {
       60,
       0.05,
       false,
-      w2l::kModelSampling);
+      kModelSampling);
   seq2seq2.train();
   ASSERT_THROW(seq2seq2.vectorizedDecoder(input, target), std::logic_error);
 }

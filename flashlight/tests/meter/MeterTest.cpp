@@ -20,15 +20,13 @@ TEST(MeterTest, EditDistanceMeter) {
   std::array<int, 6> b{1, 1, 3, 3, 5, 6};
   meter.add(af::array(5, a.data()), af::array(6, b.data()));
   ASSERT_EQ(meter.value()[0], 50.0); // 3 / 6
-  ASSERT_LT(fabs(16.6666667 - meter.value()[2]),
-            1e-5); // deletion = 1 / 6
+  ASSERT_LT(fabs(16.6666667 - meter.value()[2]), 1e-5); // deletion = 1 / 6
   ASSERT_EQ(meter.value()[3], 0.0); // insertion error
   ASSERT_LT(
       fabs(33.3333333 - meter.value()[4]),
       1e-5); // substitution error = 2 / 6
   meter.add(af::array(3, a.data() + 1), af::array(3, b.data()));
-  ASSERT_LT(fabs(66.666666 - meter.value()[0]),
-            1e-5); // 3 + 3 / 6 + 3
+  ASSERT_LT(fabs(66.666666 - meter.value()[0]), 1e-5); // 3 + 3 / 6 + 3
 }
 
 TEST(MeterTest, FrameErrorMeter) {

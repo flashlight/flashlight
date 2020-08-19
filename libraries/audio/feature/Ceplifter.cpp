@@ -13,7 +13,8 @@
 #include <numeric>
 #include <stdexcept>
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 Ceplifter::Ceplifter(int numfilters, int lifterparam)
     : numFilters_(numfilters), lifterParam_(lifterparam), coefs_(numFilters_) {
@@ -42,4 +43,5 @@ void Ceplifter::applyInPlace(std::vector<float>& input) const {
     }
   }
 }
-} // namespace w2l
+} 
+}

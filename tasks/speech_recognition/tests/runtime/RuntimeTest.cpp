@@ -18,7 +18,9 @@
 
 #include "libraries/common/System.h"
 
-using namespace w2l;
+using namespace fl;
+using namespace fl::lib;
+using namespace fl::task::asr;
 
 namespace {
 const std::string kPath = "/tmp/test.bin";
@@ -49,11 +51,11 @@ TEST(RuntimeTest, LoadAndSave) {
   model.add(fl::GatedLinearUnit(2));
   model.add(fl::Dropout(0.214));
 
-  W2lSerializer::save(kPath, config, model);
+  Serializer::save(kPath, config, model);
 
   fl::Sequential modelload;
   std::unordered_map<std::string, std::string> configload;
-  W2lSerializer::load(kPath, configload, modelload);
+  Serializer::load(kPath, configload, modelload);
 
   EXPECT_EQ(configload.size(), config.size());
   EXPECT_THAT(config, ::testing::ContainerEq(configload));
@@ -79,7 +81,7 @@ TEST(RuntimeTest, TestCleanFilepath) {
 }
 
 TEST(RuntimeTest, SpeechStatMeter) {
-  w2l::SpeechStatMeter meter;
+  SpeechStatMeter meter;
   std::array<int, 5> a{1, 2, 3, 4, 5};
   std::array<int, 6> b{1, 1, 3, 3, 5, 6};
   meter.add(af::array(5, a.data()), af::array(6, b.data()));

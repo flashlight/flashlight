@@ -10,7 +10,9 @@
 
 using namespace fl;
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 StepWindow::StepWindow() {}
 StepWindow::StepWindow(int sMin, int sMax, double vMin, double vMax)
@@ -55,4 +57,6 @@ StepWindow::computeWindowMask(int targetLen, int inputSteps, int batchSize) {
   return mask;
 }
 
-} // namespace w2l
+} 
+}
+}

@@ -16,10 +16,12 @@
 #include "criterion/attention/attention.h"
 #include "criterion/attention/window.h"
 
-#include "flashlight/contrib/modules/Transformer.h"
 #include "extensions/common/Utils.h"
+#include "flashlight/contrib/modules/Transformer.h"
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 struct TS2SState {
   fl::Variable alpha;
@@ -150,6 +152,8 @@ struct TS2SDecoderBuffer {
 AMUpdateFunc buildTransformerAmUpdateFunction(
     std::shared_ptr<SequenceCriterion>& crit);
 
-} // namespace w2l
+} 
+}
+}
 
-CEREAL_REGISTER_TYPE(w2l::TransformerCriterion)
+CEREAL_REGISTER_TYPE(fl::task::asr::TransformerCriterion)

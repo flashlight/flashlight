@@ -10,7 +10,9 @@
 
 #include "WindowBase.h"
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 class StepWindow : public WindowBase {
  public:
@@ -35,6 +37,8 @@ class StepWindow : public WindowBase {
   FL_SAVE_LOAD_WITH_BASE(WindowBase, sMin_, sMax_, vMin_, vMax_)
 };
 
-} // namespace w2l
+} 
+}
+}
 
-CEREAL_REGISTER_TYPE(w2l::StepWindow)
+CEREAL_REGISTER_TYPE(fl::task::asr::StepWindow)

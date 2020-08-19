@@ -12,7 +12,8 @@
 
 #include "libraries/audio/feature/FeatureParams.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 // Convert the speech signal into frames
 
@@ -28,4 +29,5 @@ std::vector<float> cblasGemm(
     int n,
     int k);
 
-} // namespace w2l
+} 
+}

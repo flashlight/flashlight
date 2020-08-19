@@ -18,7 +18,9 @@
 #include "libraries/common/String.h"
 #include "libraries/common/System.h"
 
-using namespace w2l;
+using namespace fl;
+using namespace fl::lib;
+using namespace fl::task::asr;
 
 namespace {
 std::string loadPath = "";
@@ -46,7 +48,7 @@ TEST(ListFileDatasetTest, LoadData) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
 
-  // Resolve directory for data
+// Resolve directory for data
 #ifdef DATA_TEST_DATADIR
   loadPath = DATA_TEST_DATADIR;
 #endif

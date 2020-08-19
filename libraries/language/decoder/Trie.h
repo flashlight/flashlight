@@ -11,7 +11,8 @@
 #include <unordered_map>
 #include <vector>
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 constexpr int kTrieMaxLabel = 6;
 
@@ -85,9 +86,10 @@ class Trie {
  private:
   TrieNodePtr root_;
   int maxChildren_; // The maximum number of childern for each node. It is
-                    // usually the size of letters or phonmes.
+  // usually the size of letters or phonmes.
 };
 
 using TriePtr = std::shared_ptr<Trie>;
 
-} // namespace w2l
+} 
+}

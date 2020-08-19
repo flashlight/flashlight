@@ -10,7 +10,8 @@
 
 #include <stdexcept>
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 LMStatePtr ZeroLM::start(bool /* unused */) {
   return std::make_shared<LMState>();
@@ -26,4 +27,5 @@ std::pair<LMStatePtr, float> ZeroLM::finish(const LMStatePtr& state) {
   return std::make_pair(state, 0.0);
 }
 
-} // namespace w2l
+} 
+}

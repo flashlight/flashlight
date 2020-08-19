@@ -14,9 +14,11 @@
 #include "libraries/audio/criterion/cuda/ForceAlignmentCriterion.cuh"
 
 using fl::Variable;
-using FAC = w2l::cuda::ForceAlignmentCriterion<float>;
+using FAC = fl::lib::cuda::ForceAlignmentCriterion<float>;
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 static void backward(
     std::vector<Variable>& inputs,
@@ -165,4 +167,6 @@ af::array ForceAlignmentCriterion::viterbiPath(
   return bestPathsVar;
 }
 
-} // namespace w2l
+} 
+}
+}

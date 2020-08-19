@@ -14,9 +14,11 @@
 #include "libraries/audio/criterion/cuda/FullConnectionCriterion.cuh"
 
 using fl::Variable;
-using FCC = w2l::cuda::FullConnectionCriterion<float>;
+using FCC = fl::lib::cuda::FullConnectionCriterion<float>;
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 static void backward(
     std::vector<Variable>& inputs,
@@ -107,4 +109,6 @@ Variable FullConnectionCriterion::forward(
       });
 }
 
-} // namespace w2l
+} 
+}
+}

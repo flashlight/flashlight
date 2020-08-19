@@ -12,7 +12,8 @@
 
 #include "libraries/audio/criterion/Defines.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 namespace cuda {
 
 /// The numerator of ASG loss. Reference: https://arxiv.org/abs/1609.03193
@@ -95,4 +96,5 @@ struct ForceAlignmentCriterion {
 };
 
 } // namespace cuda
-} // namespace w2l
+} 
+}

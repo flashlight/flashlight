@@ -11,7 +11,7 @@
 #include "TestUtils.h"
 #include "libraries/audio/feature/Dct.h"
 
-using w2l::Dct;
+using fl::lib::Dct;
 
 // Matlab code used:
 // dctm = @( N, M )( sqrt(2.0/M) * cos( repmat([0:N-1].',1,M) ...

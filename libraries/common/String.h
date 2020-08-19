@@ -16,8 +16,8 @@
 #include <unordered_map>
 #include <vector>
 
-
-namespace w2l {
+namespace fl {
+namespace lib {
 
 // ============================ Types and Templates ============================
 
@@ -28,7 +28,8 @@ using DecayDereference =
 template <typename S, typename T>
 using EnableIfSame = typename std::enable_if<std::is_same<S, T>::value>::type;
 
-// ================================== Functions ==================================
+// ================================== Functions
+// ==================================
 
 std::string trim(const std::string& str);
 
@@ -68,7 +69,7 @@ template <
     typename FwdIt,
     typename = EnableIfSame<DecayDereference<FwdIt>, std::string>>
 std::string join(const std::string& delim, FwdIt begin, FwdIt end) {
-      if (begin == end) {
+  if (begin == end) {
     return "";
   }
 
@@ -124,4 +125,5 @@ void dedup(std::vector<T>& in) {
   in.resize(std::distance(in.begin(), it));
 }
 
+}
 }

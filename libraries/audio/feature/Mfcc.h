@@ -15,7 +15,8 @@
 #include "libraries/audio/feature/Mfsc.h"
 #include "libraries/audio/feature/SpeechUtils.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 // Computes Mel Frequency Cepstral Coefficient (MFCC) for a speech signal.
 // Feature calculation is similar to the calculation of default HTK MFCCs except
@@ -70,4 +71,5 @@ class Mfcc : public Mfsc {
 
   void validateMfccParams() const;
 };
-} // namespace w2l
+} 
+}

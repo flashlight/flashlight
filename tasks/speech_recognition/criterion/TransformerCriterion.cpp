@@ -14,8 +14,11 @@
 #include "common/Defines.h"
 
 using namespace fl;
+using namespace fl::ext;
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 TransformerCriterion buildTransformerCriterion(
     int numClasses,
@@ -24,18 +27,18 @@ TransformerCriterion buildTransformerCriterion(
     float layerdrop,
     int eosIdx) {
   std::shared_ptr<AttentionBase> attention;
-  if (FLAGS_attention == w2l::kContentAttention) {
+  if (FLAGS_attention == fl::task::asr::kContentAttention) {
     attention = std::make_shared<ContentAttention>();
-  } else if (FLAGS_attention == w2l::kKeyValueAttention) {
+  } else if (FLAGS_attention == fl::task::asr::kKeyValueAttention) {
     attention = std::make_shared<ContentAttention>(true);
-  } else if (FLAGS_attention == w2l::kNeuralContentAttention) {
+  } else if (FLAGS_attention == fl::task::asr::kNeuralContentAttention) {
     attention = std::make_shared<NeuralContentAttention>(FLAGS_encoderdim);
-  } else if (FLAGS_attention == w2l::kSimpleLocationAttention) {
+  } else if (FLAGS_attention == fl::task::asr::kSimpleLocationAttention) {
     attention = std::make_shared<SimpleLocationAttention>(FLAGS_attnconvkernel);
-  } else if (FLAGS_attention == w2l::kLocationAttention) {
+  } else if (FLAGS_attention == fl::task::asr::kLocationAttention) {
     attention = std::make_shared<LocationAttention>(
         FLAGS_encoderdim, FLAGS_attnconvkernel);
-  } else if (FLAGS_attention == w2l::kNeuralLocationAttention) {
+  } else if (FLAGS_attention == fl::task::asr::kNeuralLocationAttention) {
     attention = std::make_shared<NeuralLocationAttention>(
         FLAGS_encoderdim,
         FLAGS_attndim,
@@ -46,18 +49,18 @@ TransformerCriterion buildTransformerCriterion(
   }
 
   std::shared_ptr<WindowBase> window;
-  if (FLAGS_attnWindow == w2l::kNoWindow) {
+  if (FLAGS_attnWindow == fl::task::asr::kNoWindow) {
     window = nullptr;
-  } else if (FLAGS_attnWindow == w2l::kMedianWindow) {
+  } else if (FLAGS_attnWindow == fl::task::asr::kMedianWindow) {
     window = std::make_shared<MedianWindow>(
         FLAGS_leftWindowSize, FLAGS_rightWindowSize);
-  } else if (FLAGS_attnWindow == w2l::kStepWindow) {
+  } else if (FLAGS_attnWindow == fl::task::asr::kStepWindow) {
     window = std::make_shared<StepWindow>(
         FLAGS_minsil, FLAGS_maxsil, FLAGS_minrate, FLAGS_maxrate);
-  } else if (FLAGS_attnWindow == w2l::kSoftWindow) {
+  } else if (FLAGS_attnWindow == fl::task::asr::kSoftWindow) {
     window = std::make_shared<SoftWindow>(
         FLAGS_softwstd, FLAGS_softwrate, FLAGS_softwoffset);
-  } else if (FLAGS_attnWindow == w2l::kSoftPretrainWindow) {
+  } else if (FLAGS_attnWindow == fl::task::asr::kSoftPretrainWindow) {
     window = std::make_shared<SoftPretrainWindow>(FLAGS_softwstd);
   } else {
     throw std::runtime_error("Unimplmented window: " + FLAGS_attnWindow);
@@ -328,7 +331,7 @@ TransformerCriterion::decodeBatchStep(
   outBatched = logSoftmax(outBatched / smoothingTemperature, 0);
   std::vector<std::vector<float>> out(B);
   for (int i = 0; i < B; i++) {
-    out[i] = w2l::afToVector<float>(outBatched.col(i));
+    out[i] = afToVector<float>(outBatched.col(i));
   }
 
   return std::make_pair(out, outstates);
@@ -343,12 +346,12 @@ AMUpdateFunc buildTransformerAmUpdateFunction(
       static_cast<TransformerCriterion*>(c.get());
 
   auto amUpdateFunc = [buf, criterion](
-                          const float* emissions,
-                          const int N,
-                          const int T,
-                          const std::vector<int>& rawY,
-                          const std::vector<AMStatePtr>& rawPrevStates,
-                          int& t) {
+      const float* emissions,
+      const int N,
+      const int T,
+      const std::vector<int>& rawY,
+      const std::vector<AMStatePtr>& rawPrevStates,
+      int& t) {
     if (t == 0) {
       buf->input = fl::Variable(af::array(N, T, emissions), false);
     }
@@ -393,4 +396,6 @@ std::string TransformerCriterion::prettyString() const {
   return "TransformerCriterion";
 }
 
-} // namespace w2l
+} 
+}
+}

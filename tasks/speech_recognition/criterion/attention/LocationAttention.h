@@ -10,7 +10,9 @@
 
 #include "criterion/attention/AttentionBase.h"
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 class SimpleLocationAttention : public AttentionBase {
  public:
@@ -69,8 +71,10 @@ class NeuralLocationAttention : public AttentionBase {
 
   FL_SAVE_LOAD_WITH_BASE(AttentionBase)
 };
-} // namespace w2l
+} 
+}
+}
 
-CEREAL_REGISTER_TYPE(w2l::SimpleLocationAttention)
-CEREAL_REGISTER_TYPE(w2l::LocationAttention)
-CEREAL_REGISTER_TYPE(w2l::NeuralLocationAttention)
+CEREAL_REGISTER_TYPE(fl::task::asr::SimpleLocationAttention)
+CEREAL_REGISTER_TYPE(fl::task::asr::LocationAttention)
+CEREAL_REGISTER_TYPE(fl::task::asr::NeuralLocationAttention)

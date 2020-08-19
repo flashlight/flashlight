@@ -9,7 +9,9 @@
 #include "SpeechStatMeter.h"
 #include <array>
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 SpeechStatMeter::SpeechStatMeter() {
   reset();
 }
@@ -67,4 +69,6 @@ std::vector<int64_t> SpeechStats::toArray() {
   return arr;
 }
 
-} // namespace w2l
+} 
+}
+}

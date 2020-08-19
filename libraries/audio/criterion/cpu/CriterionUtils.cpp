@@ -12,7 +12,8 @@
 #include <cmath>
 #include <vector>
 
-namespace w2l {
+namespace fl {
+namespace lib {
 namespace cpu {
 
 template <class Float>
@@ -67,4 +68,5 @@ template struct CriterionUtils<float>;
 template struct CriterionUtils<double>;
 
 } // namespace cpu
-} // namespace w2l
+} 
+}

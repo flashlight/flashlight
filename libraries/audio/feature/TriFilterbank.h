@@ -13,7 +13,8 @@
 
 #include "libraries/audio/feature/FeatureParams.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 class TriFilterbank {
  public:
@@ -45,4 +46,5 @@ class TriFilterbank {
   float hertzToWarpedScale(float hz, FrequencyScale freqscale) const;
   float warpedToHertzScale(float wrp, FrequencyScale freqscale) const;
 };
-} // namespace w2l
+} 
+}

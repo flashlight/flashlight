@@ -22,7 +22,7 @@ constexpr int kBlockSize = 32;
 template <class Float>
 struct WorkspacePtrs {
   explicit WorkspacePtrs(void* workspace, int B, int T, int N) {
-    w2l::Workspace<> ws(workspace);
+    fl::lib::Workspace<> ws(workspace);
     ws.request(&scale, B);
     ws.request(&alpha, B, T, N);
     ws.request(&alphaGrad, B, T, N);
@@ -237,7 +237,8 @@ __global__ void backwardFinal(
 
 } // namespace
 
-namespace w2l {
+namespace fl {
+namespace lib {
 namespace cuda {
 
 template <class Float>
@@ -262,11 +263,11 @@ void FullConnectionCriterion<Float>::forward(
       B, T, N, scaleMode, targetSize, ws.scale, stream);
   forwardInitial<<<B, kBlockSize, 0, stream>>>(T, N, input, ws);
   for (int t = 1; t < T; ++t) {
-    forwardStep<false>
-        <<<B * N, kBlockSize, 0, stream>>>(T, N, t, input, trans, loss, ws);
+    forwardStep<false><<<B * N, kBlockSize, 0, stream>>>(
+        T, N, t, input, trans, loss, ws);
   }
-  forwardStep<true>
-      <<<B, kBlockSize, 0, stream>>>(T, N, T, input, trans, loss, ws);
+  forwardStep<true><<<B, kBlockSize, 0, stream>>>(
+      T, N, T, input, trans, loss, ws);
 }
 
 template <class Float>
@@ -296,4 +297,5 @@ template struct FullConnectionCriterion<float>;
 template struct FullConnectionCriterion<double>;
 
 } // namespace cuda
-} // namespace w2l
+} 
+}

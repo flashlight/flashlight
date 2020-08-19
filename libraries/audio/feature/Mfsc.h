@@ -14,7 +14,8 @@
 #include "libraries/audio/feature/SpeechUtils.h"
 #include "libraries/audio/feature/TriFilterbank.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 // Computes MFSC features for a speech signal.
 
@@ -40,4 +41,5 @@ class Mfsc : public PowerSpectrum {
   TriFilterbank triFltBank_;
   Derivatives derivatives_;
 };
-} // namespace w2l
+} 
+}

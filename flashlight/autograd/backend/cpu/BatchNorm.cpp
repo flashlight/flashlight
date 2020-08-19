@@ -200,131 +200,132 @@ Variable batchnorm(
   /****************************************************************************/
   // Setup backward func
 
-  auto gradFunc = [train,
-                   epsilon,
-                   nfeatures,
-                   fwdPrimDesc,
-                   outputMemDesc,
-                   inputOutputDims,
-                   formatNCHW,
-                   format2d,
-                   dType,
-                   weightsMkldnn,
-                   weightsMkldnnDims,
-                   inputMemInit,
-                   meanMemInit,
-                   varMemInit,
-                   weightsMkldnnMemInit](
-                      std::vector<Variable>& inputs,
-                      const Variable& grad_output) {
-    if (!train) {
-      throw std::logic_error(
-          "can't compute batchnorm grad when train was not specified");
-    }
+  auto gradFunc =
+      [train,
+       epsilon,
+       nfeatures,
+       fwdPrimDesc,
+       outputMemDesc,
+       inputOutputDims,
+       formatNCHW,
+       format2d,
+       dType,
+       weightsMkldnn,
+       weightsMkldnnDims,
+       inputMemInit,
+       meanMemInit,
+       varMemInit,
+       weightsMkldnnMemInit](
+          std::vector<Variable>& inputs, const Variable& grad_output) {
+        if (!train) {
+          throw std::logic_error(
+              "can't compute batchnorm grad when train was not specified");
+        }
 
-    auto mkldnnEngineBwd = detail::MkldnnEngine::getInstance().getEngine();
+        auto mkldnnEngineBwd = detail::MkldnnEngine::getInstance().getEngine();
 
-    auto& inputRef = inputs[0];
-    auto weightRef = inputs[1].isempty()
-        ? Variable(af::constant(1.0, nfeatures, inputRef.type()), false)
-        : inputs[1];
-    auto biasRef = inputs[2].isempty()
-        ? Variable(af::constant(0.0, nfeatures, inputRef.type()), false)
-        : inputs[2];
-    ;
+        auto& inputRef = inputs[0];
+        auto weightRef = inputs[1].isempty()
+            ? Variable(af::constant(1.0, nfeatures, inputRef.type()), false)
+            : inputs[1];
+        auto biasRef = inputs[2].isempty()
+            ? Variable(af::constant(0.0, nfeatures, inputRef.type()), false)
+            : inputs[2];
+        ;
 
-    auto grad_input =
-        Variable(af::array(inputRef.dims(), inputRef.type()), false);
+        auto grad_input =
+            Variable(af::array(inputRef.dims(), inputRef.type()), false);
 
-    auto grad_weightsMKLDNN =
-        Variable(af::array(weightsMkldnn.dims(), weightsMkldnn.type()), false);
+        auto grad_weightsMKLDNN = Variable(
+            af::array(weightsMkldnn.dims(), weightsMkldnn.type()), false);
 
-    /********************************************************************/
-    // Prepare memories for grad_output
-    DevicePtr gradOutputRaw(grad_output.array());
-    auto gradOutputMemDesc =
-        mkldnn::memory::desc({inputOutputDims}, dType, formatNCHW);
-    auto gradOutputMemPrimDesc =
-        mkldnn::memory::primitive_desc(gradOutputMemDesc, mkldnnEngineBwd);
-    auto gradOutputMemInit =
-        mkldnn::memory(gradOutputMemPrimDesc, gradOutputRaw.get());
+        /********************************************************************/
+        // Prepare memories for grad_output
+        DevicePtr gradOutputRaw(grad_output.array());
+        auto gradOutputMemDesc =
+            mkldnn::memory::desc({inputOutputDims}, dType, formatNCHW);
+        auto gradOutputMemPrimDesc =
+            mkldnn::memory::primitive_desc(gradOutputMemDesc, mkldnnEngineBwd);
+        auto gradOutputMemInit =
+            mkldnn::memory(gradOutputMemPrimDesc, gradOutputRaw.get());
 
-    DevicePtr gradInputRaw(grad_input.array());
-    auto gradInputMemDesc =
-        mkldnn::memory::desc({inputOutputDims}, dType, formatNCHW);
-    auto gradInputMemPrimDesc =
-        mkldnn::memory::primitive_desc(gradInputMemDesc, mkldnnEngineBwd);
-    auto gradInputMemInit =
-        mkldnn::memory(gradInputMemPrimDesc, gradInputRaw.get());
+        DevicePtr gradInputRaw(grad_input.array());
+        auto gradInputMemDesc =
+            mkldnn::memory::desc({inputOutputDims}, dType, formatNCHW);
+        auto gradInputMemPrimDesc =
+            mkldnn::memory::primitive_desc(gradInputMemDesc, mkldnnEngineBwd);
+        auto gradInputMemInit =
+            mkldnn::memory(gradInputMemPrimDesc, gradInputRaw.get());
 
-    DevicePtr gradWeightsMkldnnRaw(grad_weightsMKLDNN.array());
-    auto gradWeightsMkldnnMemDesc =
-        mkldnn::memory::desc({weightsMkldnnDims}, dType, format2d);
-    auto gradWeightsMkldnnMemPrimDesc = mkldnn::memory::primitive_desc(
-        gradWeightsMkldnnMemDesc, mkldnnEngineBwd);
-    auto gradWeightsMkldnnMemInit = mkldnn::memory(
-        gradWeightsMkldnnMemPrimDesc, gradWeightsMkldnnRaw.get());
+        DevicePtr gradWeightsMkldnnRaw(grad_weightsMKLDNN.array());
+        auto gradWeightsMkldnnMemDesc =
+            mkldnn::memory::desc({weightsMkldnnDims}, dType, format2d);
+        auto gradWeightsMkldnnMemPrimDesc = mkldnn::memory::primitive_desc(
+            gradWeightsMkldnnMemDesc, mkldnnEngineBwd);
+        auto gradWeightsMkldnnMemInit = mkldnn::memory(
+            gradWeightsMkldnnMemPrimDesc, gradWeightsMkldnnRaw.get());
 
-    /********************************************************************/
-    // Setup backward descriptor:
+        /********************************************************************/
+        // Setup backward descriptor:
 
-    auto bwdDesc = mkldnn::batch_normalization_backward::desc(
-        mkldnn::prop_kind::backward,
-        gradOutputMemDesc,
-        outputMemDesc,
-        epsilon,
-        mkldnn::use_scale_shift);
+        auto bwdDesc = mkldnn::batch_normalization_backward::desc(
+            mkldnn::prop_kind::backward,
+            gradOutputMemDesc,
+            outputMemDesc,
+            epsilon,
+            mkldnn::use_scale_shift);
 
-    /********************************************************************/
-    // Setup backward prim descriptor:
-    auto bwdPrimDesc = mkldnn::batch_normalization_backward::primitive_desc(
-        bwdDesc, mkldnnEngineBwd, *fwdPrimDesc);
+        /********************************************************************/
+        // Setup backward prim descriptor:
+        auto bwdPrimDesc = mkldnn::batch_normalization_backward::primitive_desc(
+            bwdDesc, mkldnnEngineBwd, *fwdPrimDesc);
 
-    /********************************************************************/
-    // Construct bwd op
+        /********************************************************************/
+        // Construct bwd op
 
-    auto bwdPrim = std::make_shared<mkldnn::batch_normalization_backward>(
-        bwdPrimDesc,
-        inputMemInit,
-        meanMemInit,
-        varMemInit,
-        gradOutputMemInit,
-        weightsMkldnnMemInit,
-        gradInputMemInit,
-        gradWeightsMkldnnMemInit);
+        auto bwdPrim = std::make_shared<mkldnn::batch_normalization_backward>(
+            bwdPrimDesc,
+            inputMemInit,
+            meanMemInit,
+            varMemInit,
+            gradOutputMemInit,
+            weightsMkldnnMemInit,
+            gradInputMemInit,
+            gradWeightsMkldnnMemInit);
 
-    /********************************************************************/
-    // Setup execution network
+        /********************************************************************/
+        // Setup execution network
 
-    std::vector<mkldnn::primitive> networkBackwards;
-    networkBackwards.push_back(*bwdPrim);
-    detail::MkldnnStream::getInstance().getStream().submit(networkBackwards);
+        std::vector<mkldnn::primitive> networkBackwards;
+        networkBackwards.push_back(*bwdPrim);
+        detail::MkldnnStream::getInstance().getStream().submit(
+            networkBackwards);
 
-    /********************************************************************/
-    // Update grad
+        /********************************************************************/
+        // Update grad
 
-    inputRef.addGrad(grad_input);
+        inputRef.addGrad(grad_input);
 
-    // extracting grads from grad_weightsMKLDNN for weight and bias
-    if (weightRef.isCalcGrad()) {
-      auto gradWeight = Variable(
-          grad_weightsMKLDNN.array()(
-              af::seq(0, nfeatures - 1), af::span, af::span, af::span),
-          false);
-      weightRef.addGrad(gradWeight);
+        // extracting grads from grad_weightsMKLDNN for weight and bias
+        if (weightRef.isCalcGrad()) {
+          auto gradWeight = Variable(
+              grad_weightsMKLDNN.array()(
+                  af::seq(0, nfeatures - 1), af::span, af::span, af::span),
+              false);
+          weightRef.addGrad(gradWeight);
 
-      auto gradBias = Variable(
-          grad_weightsMKLDNN.array()(
-              af::seq(nfeatures, 2 * nfeatures - 1),
-              af::span,
-              af::span,
-              af::span),
-          false);
-      if (!biasRef.isempty()) {
-        biasRef.addGrad(gradBias);
-      }
-    }
-  };
+          auto gradBias = Variable(
+              grad_weightsMKLDNN.array()(
+                  af::seq(nfeatures, 2 * nfeatures - 1),
+                  af::span,
+                  af::span,
+                  af::span),
+              false);
+          if (!biasRef.isempty()) {
+            biasRef.addGrad(gradBias);
+          }
+        }
+      };
 
   /****************************************************************************/
   // return

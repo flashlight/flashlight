@@ -13,7 +13,8 @@
 
 #include "libraries/audio/feature/FeatureParams.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 // Applies a given window on input
 //    s'(n) = w(n) * s(n) where w(n) are the window coefficients
@@ -31,4 +32,5 @@ class Windowing {
   WindowType windowType_;
   std::vector<float> coefs_;
 };
-} // namespace w2l
+} 
+}

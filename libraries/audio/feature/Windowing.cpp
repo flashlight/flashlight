@@ -13,7 +13,8 @@
 #include <numeric>
 #include <stdexcept>
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 Windowing::Windowing(int N, WindowType windowtype)
     : windowLength_(N), windowType_(windowtype), coefs_(N) {
@@ -56,4 +57,5 @@ void Windowing::applyInPlace(std::vector<float>& input) const {
     }
   }
 }
-} // namespace w2l
+} 
+}

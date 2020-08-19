@@ -12,6 +12,8 @@
 
 namespace {
 
+using namespace fl::lib;
+
 /*
  * B thread blocks
  * 32 threads/block (ideally)
@@ -52,24 +54,24 @@ __global__ void computeScaleKernel(
     int B,
     int T,
     int /* N */,
-    w2l::CriterionScaleMode scaleMode,
+    CriterionScaleMode scaleMode,
     const int* targetSize,
     Float* scale) {
   for (int b = threadIdx.x; b < B; b += blockDim.x) {
     switch (scaleMode) {
-      case w2l::CriterionScaleMode::NONE:
+      case CriterionScaleMode::NONE:
         scale[b] = 1.0;
         break;
-      case w2l::CriterionScaleMode::INPUT_SZ:
+      case CriterionScaleMode::INPUT_SZ:
         scale[b] = T > 0 ? 1.0 / T : 1.0;
         break;
-      case w2l::CriterionScaleMode::INPUT_SZ_SQRT:
+      case CriterionScaleMode::INPUT_SZ_SQRT:
         scale[b] = T > 0 ? std::sqrt(1.0 / T) : 1.0;
         break;
-      case w2l::CriterionScaleMode::TARGET_SZ:
+      case CriterionScaleMode::TARGET_SZ:
         scale[b] = targetSize[b] > 0 ? 1.0 / targetSize[b] : 1.0;
         break;
-      case w2l::CriterionScaleMode::TARGET_SZ_SQRT:
+      case CriterionScaleMode::TARGET_SZ_SQRT:
         scale[b] = targetSize[b] > 0 ? std::sqrt(1.0 / targetSize[b]) : 1.0;
         break;
       default:
@@ -80,7 +82,8 @@ __global__ void computeScaleKernel(
 
 } // namespace
 
-namespace w2l {
+namespace fl {
+namespace lib {
 namespace cuda {
 
 template <class Float>
@@ -112,4 +115,5 @@ template struct CriterionUtils<float>;
 template struct CriterionUtils<double>;
 
 } // namespace cuda
-} // namespace w2l
+} 
+}

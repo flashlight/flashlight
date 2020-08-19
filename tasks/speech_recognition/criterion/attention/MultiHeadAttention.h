@@ -10,7 +10,9 @@
 
 #include "criterion/attention/AttentionBase.h"
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 class MultiHeadContentAttention : public AttentionBase {
  public:
@@ -36,6 +38,8 @@ class MultiHeadContentAttention : public AttentionBase {
   FL_SAVE_LOAD_WITH_BASE(AttentionBase, numHeads_, keyValue_, splitInput_)
 };
 
-} // namespace w2l
+} 
+}
+}
 
-CEREAL_REGISTER_TYPE(w2l::MultiHeadContentAttention)
+CEREAL_REGISTER_TYPE(fl::task::asr::MultiHeadContentAttention)

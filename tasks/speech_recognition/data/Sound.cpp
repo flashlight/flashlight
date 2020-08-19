@@ -14,6 +14,8 @@
 
 #include <sndfile.h>
 
+using namespace fl::task::asr;
+
 namespace {
 
 struct EnumClassHash {
@@ -23,60 +25,62 @@ struct EnumClassHash {
   }
 };
 
-const std::unordered_map<w2l::SoundFormat, int, EnumClassHash> formats{
-    {w2l::SoundFormat::WAV, SF_FORMAT_WAV},
-    {w2l::SoundFormat::AIFF, SF_FORMAT_AIFF},
-    {w2l::SoundFormat::AU, SF_FORMAT_AU},
-    {w2l::SoundFormat::RAW, SF_FORMAT_RAW},
-    {w2l::SoundFormat::PAF, SF_FORMAT_PAF},
-    {w2l::SoundFormat::SVX, SF_FORMAT_SVX},
-    {w2l::SoundFormat::NIST, SF_FORMAT_NIST},
-    {w2l::SoundFormat::VOC, SF_FORMAT_VOC},
-    {w2l::SoundFormat::IRCAM, SF_FORMAT_IRCAM},
-    {w2l::SoundFormat::W64, SF_FORMAT_W64},
-    {w2l::SoundFormat::MAT4, SF_FORMAT_MAT4},
-    {w2l::SoundFormat::MAT5, SF_FORMAT_MAT5},
-    {w2l::SoundFormat::PVF, SF_FORMAT_PVF},
-    {w2l::SoundFormat::XI, SF_FORMAT_XI},
-    {w2l::SoundFormat::HTK, SF_FORMAT_HTK},
-    {w2l::SoundFormat::SDS, SF_FORMAT_SDS},
-    {w2l::SoundFormat::AVR, SF_FORMAT_AVR},
-    {w2l::SoundFormat::WAVEX, SF_FORMAT_WAVEX},
-    {w2l::SoundFormat::SD2, SF_FORMAT_SD2},
-    {w2l::SoundFormat::FLAC, SF_FORMAT_FLAC},
-    {w2l::SoundFormat::CAF, SF_FORMAT_CAF},
-    {w2l::SoundFormat::WVE, SF_FORMAT_WVE},
-    {w2l::SoundFormat::OGG, SF_FORMAT_OGG},
-    {w2l::SoundFormat::MPC2K, SF_FORMAT_MPC2K},
-    {w2l::SoundFormat::RF64, SF_FORMAT_RF64}};
+const std::unordered_map<SoundFormat, int, EnumClassHash> formats{
+    {SoundFormat::WAV, SF_FORMAT_WAV},
+    {SoundFormat::AIFF, SF_FORMAT_AIFF},
+    {SoundFormat::AU, SF_FORMAT_AU},
+    {SoundFormat::RAW, SF_FORMAT_RAW},
+    {SoundFormat::PAF, SF_FORMAT_PAF},
+    {SoundFormat::SVX, SF_FORMAT_SVX},
+    {SoundFormat::NIST, SF_FORMAT_NIST},
+    {SoundFormat::VOC, SF_FORMAT_VOC},
+    {SoundFormat::IRCAM, SF_FORMAT_IRCAM},
+    {SoundFormat::W64, SF_FORMAT_W64},
+    {SoundFormat::MAT4, SF_FORMAT_MAT4},
+    {SoundFormat::MAT5, SF_FORMAT_MAT5},
+    {SoundFormat::PVF, SF_FORMAT_PVF},
+    {SoundFormat::XI, SF_FORMAT_XI},
+    {SoundFormat::HTK, SF_FORMAT_HTK},
+    {SoundFormat::SDS, SF_FORMAT_SDS},
+    {SoundFormat::AVR, SF_FORMAT_AVR},
+    {SoundFormat::WAVEX, SF_FORMAT_WAVEX},
+    {SoundFormat::SD2, SF_FORMAT_SD2},
+    {SoundFormat::FLAC, SF_FORMAT_FLAC},
+    {SoundFormat::CAF, SF_FORMAT_CAF},
+    {SoundFormat::WVE, SF_FORMAT_WVE},
+    {SoundFormat::OGG, SF_FORMAT_OGG},
+    {SoundFormat::MPC2K, SF_FORMAT_MPC2K},
+    {SoundFormat::RF64, SF_FORMAT_RF64}};
 
-const std::unordered_map<w2l::SoundSubFormat, int, EnumClassHash> subformats{
-    {w2l::SoundSubFormat::PCM_S8, SF_FORMAT_PCM_S8},
-    {w2l::SoundSubFormat::PCM_16, SF_FORMAT_PCM_16},
-    {w2l::SoundSubFormat::PCM_24, SF_FORMAT_PCM_24},
-    {w2l::SoundSubFormat::PCM_32, SF_FORMAT_PCM_32},
-    {w2l::SoundSubFormat::PCM_U8, SF_FORMAT_PCM_U8},
-    {w2l::SoundSubFormat::FLOAT, SF_FORMAT_FLOAT},
-    {w2l::SoundSubFormat::DOUBLE, SF_FORMAT_DOUBLE},
-    {w2l::SoundSubFormat::ULAW, SF_FORMAT_ULAW},
-    {w2l::SoundSubFormat::ALAW, SF_FORMAT_ALAW},
-    {w2l::SoundSubFormat::IMA_ADPCM, SF_FORMAT_IMA_ADPCM},
-    {w2l::SoundSubFormat::MS_ADPCM, SF_FORMAT_MS_ADPCM},
-    {w2l::SoundSubFormat::GSM610, SF_FORMAT_GSM610},
-    {w2l::SoundSubFormat::VOX_ADPCM, SF_FORMAT_VOX_ADPCM},
-    {w2l::SoundSubFormat::G721_32, SF_FORMAT_G721_32},
-    {w2l::SoundSubFormat::G723_24, SF_FORMAT_G723_24},
-    {w2l::SoundSubFormat::G723_40, SF_FORMAT_G723_40},
-    {w2l::SoundSubFormat::DWVW_12, SF_FORMAT_DWVW_12},
-    {w2l::SoundSubFormat::DWVW_16, SF_FORMAT_DWVW_16},
-    {w2l::SoundSubFormat::DWVW_24, SF_FORMAT_DWVW_24},
-    {w2l::SoundSubFormat::DWVW_N, SF_FORMAT_DWVW_N},
-    {w2l::SoundSubFormat::DPCM_8, SF_FORMAT_DPCM_8},
-    {w2l::SoundSubFormat::DPCM_16, SF_FORMAT_DPCM_16},
-    {w2l::SoundSubFormat::VORBIS, SF_FORMAT_VORBIS}};
+const std::unordered_map<SoundSubFormat, int, EnumClassHash> subformats{
+    {SoundSubFormat::PCM_S8, SF_FORMAT_PCM_S8},
+    {SoundSubFormat::PCM_16, SF_FORMAT_PCM_16},
+    {SoundSubFormat::PCM_24, SF_FORMAT_PCM_24},
+    {SoundSubFormat::PCM_32, SF_FORMAT_PCM_32},
+    {SoundSubFormat::PCM_U8, SF_FORMAT_PCM_U8},
+    {SoundSubFormat::FLOAT, SF_FORMAT_FLOAT},
+    {SoundSubFormat::DOUBLE, SF_FORMAT_DOUBLE},
+    {SoundSubFormat::ULAW, SF_FORMAT_ULAW},
+    {SoundSubFormat::ALAW, SF_FORMAT_ALAW},
+    {SoundSubFormat::IMA_ADPCM, SF_FORMAT_IMA_ADPCM},
+    {SoundSubFormat::MS_ADPCM, SF_FORMAT_MS_ADPCM},
+    {SoundSubFormat::GSM610, SF_FORMAT_GSM610},
+    {SoundSubFormat::VOX_ADPCM, SF_FORMAT_VOX_ADPCM},
+    {SoundSubFormat::G721_32, SF_FORMAT_G721_32},
+    {SoundSubFormat::G723_24, SF_FORMAT_G723_24},
+    {SoundSubFormat::G723_40, SF_FORMAT_G723_40},
+    {SoundSubFormat::DWVW_12, SF_FORMAT_DWVW_12},
+    {SoundSubFormat::DWVW_16, SF_FORMAT_DWVW_16},
+    {SoundSubFormat::DWVW_24, SF_FORMAT_DWVW_24},
+    {SoundSubFormat::DWVW_N, SF_FORMAT_DWVW_N},
+    {SoundSubFormat::DPCM_8, SF_FORMAT_DPCM_8},
+    {SoundSubFormat::DPCM_16, SF_FORMAT_DPCM_16},
+    {SoundSubFormat::VORBIS, SF_FORMAT_VORBIS}};
 } // namespace
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 extern "C" {
 
@@ -360,43 +364,46 @@ void saveSound(
   sf_close(file);
 }
 
-} // namespace w2l
+template std::vector<float> loadSound(const std::string&);
+template std::vector<double> loadSound(const std::string&);
+template std::vector<int> loadSound(const std::string&);
+template std::vector<short> loadSound(const std::string&);
 
-template std::vector<float> w2l::loadSound(const std::string&);
-template std::vector<double> w2l::loadSound(const std::string&);
-template std::vector<int> w2l::loadSound(const std::string&);
-template std::vector<short> w2l::loadSound(const std::string&);
+template std::vector<float> loadSound<float>(std::istream&);
+template std::vector<double> loadSound<double>(std::istream&);
+template std::vector<int> loadSound<int>(std::istream&);
+template std::vector<short> loadSound<short>(std::istream&);
 
-template std::vector<float> w2l::loadSound<float>(std::istream&);
-template std::vector<double> w2l::loadSound<double>(std::istream&);
-template std::vector<int> w2l::loadSound<int>(std::istream&);
-template std::vector<short> w2l::loadSound<short>(std::istream&);
-
-template void w2l::saveSound(
+template void saveSound(
     const std::string&,
     const std::vector<float>&,
     int64_t,
     int64_t,
-    w2l::SoundFormat,
-    w2l::SoundSubFormat);
-template void w2l::saveSound(
+    SoundFormat,
+    SoundSubFormat);
+template void saveSound(
     const std::string&,
     const std::vector<double>&,
     int64_t,
     int64_t,
-    w2l::SoundFormat,
-    w2l::SoundSubFormat);
-template void w2l::saveSound(
+    SoundFormat,
+    SoundSubFormat);
+template void saveSound(
     const std::string&,
     const std::vector<int>&,
     int64_t,
     int64_t,
-    w2l::SoundFormat,
-    w2l::SoundSubFormat);
-template void w2l::saveSound(
+    SoundFormat,
+    SoundSubFormat);
+template void saveSound(
     const std::string&,
     const std::vector<short>&,
     int64_t,
     int64_t,
-    w2l::SoundFormat,
-    w2l::SoundSubFormat);
+    SoundFormat,
+    SoundSubFormat);
+    
+} 
+}
+}
+

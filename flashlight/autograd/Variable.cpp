@@ -56,8 +56,7 @@ Variable Variable::operator()(
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [s0, s1, s2, s3, inDims, inType](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
+      std::vector<Variable>& inputs, const Variable& gradOutput) {
     if (!inputs[0].isGradAvailable()) {
       auto grad = af::constant(0.0, inDims, inType);
       inputs[0].addGrad(Variable(grad, false));
@@ -227,8 +226,7 @@ Variable Variable::col(int index) const {
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [index, inDims, inType](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
+      std::vector<Variable>& inputs, const Variable& gradOutput) {
     auto grad = Variable(af::constant(0, inDims, inType), false);
     grad.array().col(index) = gradOutput.array();
     inputs[0].addGrad(grad);
@@ -241,8 +239,7 @@ Variable Variable::cols(int first, int last) const {
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [first, last, inDims, inType](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
+      std::vector<Variable>& inputs, const Variable& gradOutput) {
     auto grad = Variable(af::constant(0, inDims, inType), false);
     grad.array().cols(first, last) = gradOutput.array();
     inputs[0].addGrad(grad);
@@ -255,8 +252,7 @@ Variable Variable::row(int index) const {
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [index, inDims, inType](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
+      std::vector<Variable>& inputs, const Variable& gradOutput) {
     auto grad = Variable(af::constant(0, inDims, inType), false);
     grad.array().row(index) = gradOutput.array();
     inputs[0].addGrad(grad);
@@ -269,8 +265,7 @@ Variable Variable::rows(int first, int last) const {
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [first, last, inDims, inType](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
+      std::vector<Variable>& inputs, const Variable& gradOutput) {
     auto grad = Variable(af::constant(0, inDims, inType), false);
     grad.array().rows(first, last) = gradOutput.array();
     inputs[0].addGrad(grad);
@@ -283,8 +278,7 @@ Variable Variable::slice(int index) const {
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [index, inDims, inType](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
+      std::vector<Variable>& inputs, const Variable& gradOutput) {
     auto grad = Variable(af::constant(0, inDims, inType), false);
     grad.array().slice(index) = gradOutput.array();
     inputs[0].addGrad(grad);
@@ -297,8 +291,7 @@ Variable Variable::slices(int first, int last) const {
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [first, last, inDims, inType](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
+      std::vector<Variable>& inputs, const Variable& gradOutput) {
     auto grad = Variable(af::constant(0, inDims, inType), false);
     grad.array().slices(first, last) = gradOutput.array();
     inputs[0].addGrad(grad);

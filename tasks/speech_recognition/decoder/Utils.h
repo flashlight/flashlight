@@ -21,31 +21,33 @@
 #include "libraries/language/dictionary/Dictionary.h"
 #include "libraries/language/dictionary/Utils.h"
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 /* A series of vector to vector mapping operations */
 
-std::vector<std::string> tknIdx2Ltr(const std::vector<int>&, const Dictionary&);
+std::vector<std::string> tknIdx2Ltr(const std::vector<int>&, const lib::Dictionary&);
 
 std::vector<std::string> tkn2Wrd(const std::vector<std::string>&);
 
-std::vector<std::string> wrdIdx2Wrd(const std::vector<int>&, const Dictionary&);
+std::vector<std::string> wrdIdx2Wrd(const std::vector<int>&, const lib::Dictionary&);
 
-std::vector<std::string> tknTarget2Ltr(std::vector<int>, const Dictionary&);
+std::vector<std::string> tknTarget2Ltr(std::vector<int>, const lib::Dictionary&);
 
-std::vector<std::string> tknPrediction2Ltr(std::vector<int>, const Dictionary&);
+std::vector<std::string> tknPrediction2Ltr(std::vector<int>, const lib::Dictionary&);
 
 std::vector<int> tkn2Idx(
     const std::vector<std::string>& spelling,
-    const Dictionary& tokenDict,
+    const lib::Dictionary& tokenDict,
     int maxReps);
 
 std::vector<int> validateIdx(std::vector<int> input, int unkIdx);
 
 template <class T>
-void remapLabels(std::vector<T>& labels, const Dictionary& dict) {
+void remapLabels(std::vector<T>& labels, const lib::Dictionary& dict) {
   if (FLAGS_eostoken) {
-    int eosidx = dict.getIndex(kEosToken);
+    int eosidx = dict.getIndex(lib::kEosToken);
     while (!labels.empty() && labels.back() == eosidx) {
       labels.pop_back();
     }
@@ -61,12 +63,14 @@ void remapLabels(std::vector<T>& labels, const Dictionary& dict) {
       labels.erase(labels.begin());
     }
   };
-  if (dict.contains(kSilToken)) {
-    trimLabels(dict.getIndex(kSilToken));
+  if (dict.contains(lib::kSilToken)) {
+    trimLabels(dict.getIndex(lib::kSilToken));
   }
   if (!FLAGS_surround.empty()) {
     trimLabels(dict.getIndex(FLAGS_surround));
   }
 };
 
+}
+}
 }

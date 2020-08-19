@@ -13,7 +13,8 @@
 #include <unordered_map>
 #include <vector>
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 // A simple dictionary class which holds a bidirectional map
 // entry (strings) <--> integer indices. Not thread-safe !
@@ -62,4 +63,5 @@ class Dictionary {
 
 typedef std::unordered_map<int, Dictionary> DictionaryMap;
 
-} // namespace w2l
+} 
+}

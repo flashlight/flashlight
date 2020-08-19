@@ -39,7 +39,8 @@ static __inline__ __device__ double atomicAdd(double* address, double val) {
 
 #endif
 
-namespace w2l {
+namespace fl {
+namespace lib {
 namespace cuda {
 
 template <class Float>
@@ -86,4 +87,5 @@ void setZero(T* devPtr, size_t count, cudaStream_t stream) {
 }
 
 } // namespace cuda
-} // namespace w2l
+} 
+}

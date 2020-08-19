@@ -8,17 +8,18 @@
 
 #include "libraries/common/System.h"
 
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <array>
 #include <cstdlib>
 #include <ctime>
 #include <fstream>
 #include <functional>
-#include <sys/stat.h>
-#include <sys/types.h>
 
 #include "libraries/common/String.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 std::string pathsConcat(const std::string& p1, const std::string& p2) {
   char sep = '/';
@@ -111,4 +112,5 @@ std::vector<std::string> getFileContent(const std::string& file) {
   return data;
 }
 
+}
 }

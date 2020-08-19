@@ -14,7 +14,8 @@
 #include <utility>
 #include <vector>
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 struct LMState {
   std::unordered_map<int, std::shared_ptr<LMState>> children;
@@ -84,4 +85,5 @@ class LM {
 
 using LMPtr = std::shared_ptr<LM>;
 
-} // namespace w2l
+} 
+}

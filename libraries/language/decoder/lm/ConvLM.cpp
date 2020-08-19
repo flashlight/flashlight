@@ -13,7 +13,8 @@
 #include <cstring>
 #include <iostream>
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 ConvLM::ConvLM(
     const GetConvLmScoreFunc& getConvLmScoreFunc,
@@ -234,4 +235,5 @@ void ConvLM::updateCache(std::vector<LMStatePtr> states) {
   }
 }
 
-} // namespace w2l
+} 
+}

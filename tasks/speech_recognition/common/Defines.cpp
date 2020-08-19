@@ -14,7 +14,11 @@
 #include <mutex>
 #include <sstream>
 
-namespace w2l {
+using namespace fl::lib;
+
+namespace fl {
+namespace task {
+namespace asr {
 
 // DATA OPTIONS
 DEFINE_string(train, "", "comma-separated list of training data");
@@ -416,4 +420,6 @@ void handleDeprecatedFlags() {
   }
 }
 
-} // namespace w2l
+} 
+}
+}

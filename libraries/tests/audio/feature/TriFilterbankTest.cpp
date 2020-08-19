@@ -11,8 +11,8 @@
 #include "TestUtils.h"
 #include "libraries/audio/feature/TriFilterbank.h"
 
-using w2l::FrequencyScale;
-using w2l::TriFilterbank;
+using fl::lib::FrequencyScale;
+using fl::lib::TriFilterbank;
 
 // Matlab code used:
 // H = trifbank( M, K, R, fs, hz2mel, mel2hz ); % size of H is M x K

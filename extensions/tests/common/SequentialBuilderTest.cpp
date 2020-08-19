@@ -13,7 +13,8 @@
 #include "libraries/common/System.h"
 
 using namespace fl;
-using namespace w2l;
+using namespace fl::ext;
+using namespace fl::lib;
 
 namespace {
 
@@ -71,7 +72,7 @@ TEST(SequentialBuilderTest, Serialization) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
 
-  // Resolve directory for arch
+// Resolve directory for arch
 #ifdef ARCHDIR
   archDir = ARCHDIR;
 #endif

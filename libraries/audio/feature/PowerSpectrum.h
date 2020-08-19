@@ -17,7 +17,8 @@
 #include "libraries/audio/feature/PreEmphasis.h"
 #include "libraries/audio/feature/Windowing.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 // Computes Power Spectrum features for a speech signal.
 
@@ -58,4 +59,5 @@ class PowerSpectrum {
   std::vector<double> inFftBuf_, outFftBuf_;
   std::mutex fftMutex_;
 };
-} // namespace w2l
+} 
+}

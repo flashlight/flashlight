@@ -11,8 +11,8 @@
 #include "TestUtils.h"
 #include "libraries/audio/feature/Windowing.h"
 
-using w2l::Windowing;
-using w2l::WindowType;
+using fl::lib::Windowing;
+using fl::lib::WindowType;
 
 TEST(WindowingTest, hammingCoeffsTest) {
   int N = 64;

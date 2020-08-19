@@ -11,7 +11,8 @@
 #include <random>
 #include <vector>
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 // Dither the signal by adding small amount of random noise to the signal
 //    s'(n) = s(n) + q * RND()  where RND() is uniformly distributed in [-1, 1)
@@ -32,4 +33,5 @@ class Dither {
   float ditherVal_;
   std::mt19937 rng_; // Standard mersenne_twister_engine
 };
-} // namespace w2l
+} 
+}

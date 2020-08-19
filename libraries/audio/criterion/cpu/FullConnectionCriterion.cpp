@@ -18,7 +18,7 @@ namespace {
 template <class Float>
 struct WorkspacePtrs {
   explicit WorkspacePtrs(void* workspace, int B, int T, int N) {
-    w2l::Workspace<> ws(workspace);
+    fl::lib::Workspace<> ws(workspace);
     ws.request(&scale, B);
     ws.request(&alpha, B, T, N);
     ws.request(&alphaGrad, B, T, N);
@@ -37,7 +37,8 @@ struct WorkspacePtrs {
 
 } // namespace
 
-namespace w2l {
+namespace fl {
+namespace lib {
 namespace cpu {
 
 template <class Float>
@@ -182,4 +183,5 @@ template struct FullConnectionCriterion<float>;
 template struct FullConnectionCriterion<double>;
 
 } // namespace cpu
-} // namespace w2l
+} 
+}

@@ -18,7 +18,7 @@
 #include "criterion/criterion.h"
 
 using namespace fl;
-using namespace w2l;
+using namespace fl::task::asr;
 
 void timeBeamSearch() {
   int N = 40, H = 256, T = 200;

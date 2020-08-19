@@ -16,7 +16,11 @@
 #include "libraries/common/String.h"
 #include "libraries/common/System.h"
 
-namespace w2l {
+using namespace fl::lib;
+
+namespace fl {
+namespace task {
+namespace asr {
 
 W2lBlobsDataset::W2lBlobsDataset(
     const std::string& filenames,
@@ -37,7 +41,7 @@ W2lBlobsDataset::W2lBlobsDataset(
   LOG_IF(FATAL, dicts.find(kTargetIdx) == dicts.end())
       << "Target dictionary does not exist";
 
-  auto filesVec = split(',', filenames);
+  auto filesVec = lib::split(',', filenames);
   std::vector<SpeechSampleMetaInfo> speechSamplesMetaInfo;
   for (const auto& f : filesVec) {
     auto fullpath = pathsConcat(rootdir, trim(f));
@@ -91,7 +95,7 @@ std::vector<W2lLoaderData> W2lBlobsDataset::getLoaderData(
 
     std::istringstream audiois(
         std::string((char*)audio_v.data(), audio_v.size()));
-    data[id].input = w2l::loadSound<float>(audiois);
+    data[id].input = loadSound<float>(audiois);
     data[id].targets[kTargetIdx] = wrd2Target(
         transcript, lexicon_, dicts_.at(kTargetIdx), fallback2Ltr_, skipUnk_);
 
@@ -130,4 +134,6 @@ std::vector<SpeechSampleMetaInfo> W2lBlobsDataset::loadBlob(
 
   return samplesMetaInfo;
 }
-} // namespace w2l
+} 
+}
+}

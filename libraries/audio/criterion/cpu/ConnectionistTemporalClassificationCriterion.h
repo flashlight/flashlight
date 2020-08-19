@@ -9,7 +9,8 @@
 
 #include <cstddef>
 
-namespace w2l {
+namespace fl {
+namespace lib {
 namespace cpu {
 
 template <class Float>
@@ -28,4 +29,5 @@ struct ConnectionistTemporalClassificationCriterion {
       void* workspace);
 };
 } // namespace cpu
-} // namespace w2l
+} 
+}

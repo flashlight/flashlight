@@ -10,7 +10,9 @@
 
 #include "AttentionBase.h"
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 class ContentAttention : public AttentionBase {
  public:
@@ -47,8 +49,10 @@ class NeuralContentAttention : public AttentionBase {
   FL_SAVE_LOAD_WITH_BASE(AttentionBase)
 };
 
-} // namespace w2l
+} 
+}
+}
 
-CEREAL_REGISTER_TYPE(w2l::ContentAttention)
-CEREAL_CLASS_VERSION(w2l::ContentAttention, 1)
-CEREAL_REGISTER_TYPE(w2l::NeuralContentAttention)
+CEREAL_REGISTER_TYPE(fl::task::asr::ContentAttention)
+CEREAL_CLASS_VERSION(fl::task::asr::ContentAttention, 1)
+CEREAL_REGISTER_TYPE(fl::task::asr::NeuralContentAttention)

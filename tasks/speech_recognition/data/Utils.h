@@ -14,20 +14,24 @@
 #include "libraries/language/dictionary/Dictionary.h"
 #include "libraries/language/dictionary/Utils.h"
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 std::vector<std::string> wrd2Target(
     const std::string& word,
-    const LexiconMap& lexicon,
-    const Dictionary& dict,
+    const lib::LexiconMap& lexicon,
+    const lib::Dictionary& dict,
     bool fallback2Ltr = false,
     bool skipUnk = false);
 
 std::vector<std::string> wrd2Target(
     const std::vector<std::string>& words,
-    const LexiconMap& lexicon,
-    const Dictionary& dict,
+    const lib::LexiconMap& lexicon,
+    const lib::Dictionary& dict,
     bool fallback2Ltr = false,
     bool skipUnk = false);
 
-} // namespace w2l
+} 
+}
+}

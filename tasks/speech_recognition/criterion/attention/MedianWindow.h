@@ -10,7 +10,9 @@
 
 #include "WindowBase.h"
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 class MedianWindow : public WindowBase {
  public:
@@ -35,6 +37,8 @@ class MedianWindow : public WindowBase {
   FL_SAVE_LOAD_WITH_BASE(WindowBase, wL_, wR_)
 };
 
-} // namespace w2l
+} 
+}
+}
 
-CEREAL_REGISTER_TYPE(w2l::MedianWindow)
+CEREAL_REGISTER_TYPE(fl::task::asr::MedianWindow)

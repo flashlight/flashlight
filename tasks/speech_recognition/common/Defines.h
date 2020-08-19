@@ -17,7 +17,9 @@
 
 #define W2L_VERSION "0.1"
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 namespace detail {
 
@@ -65,7 +67,7 @@ void handleDeprecatedFlags();
  *   DEPRECATE_FLAGS(myOldFlagName, my_new_flag_name)
  */
 #define DEPRECATE_FLAGS(DEPRECATED, NEW) \
-  w2l::detail::addDeprecatedFlag(#DEPRECATED, #NEW);
+  detail::addDeprecatedFlag(#DEPRECATED, #NEW);
 
 // Dataset indices
 // If a new field is added, `kNumDataIdx` should be modified accordingly.
@@ -75,7 +77,7 @@ constexpr size_t kWordIdx = 2;
 constexpr size_t kSampleIdx = 3;
 constexpr size_t kNumDataIdx = 4; // total number of dataset indices
 
-// Various constants used in w2l
+// Various constants used in asr task
 constexpr const char* kTrainMode = "train";
 constexpr const char* kContinueMode = "continue";
 constexpr const char* kForkMode = "fork";
@@ -306,4 +308,6 @@ DECLARE_string(target);
 DECLARE_bool(everstoredb);
 DECLARE_bool(use_memcache);
 
-} // namespace w2l
+} 
+}
+}

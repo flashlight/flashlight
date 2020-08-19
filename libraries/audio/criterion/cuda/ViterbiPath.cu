@@ -21,7 +21,7 @@ constexpr int kBlockSize = 32;
 template <class Float>
 struct WorkspacePtrs {
   explicit WorkspacePtrs(void* workspace, int B, int T, int N) {
-    w2l::Workspace<> ws(workspace);
+    fl::lib::Workspace<> ws(workspace);
     ws.request(&alpha, B, 2, N);
     ws.request(&beta, B, T, N);
     requiredSize = ws.requiredSize();
@@ -102,7 +102,8 @@ __global__ void computeStep(
 
 } // namespace
 
-namespace w2l {
+namespace fl {
+namespace lib {
 namespace cuda {
 
 template <class Float>
@@ -123,15 +124,16 @@ void ViterbiPath<Float>::compute(
   WorkspacePtrs<Float> ws(workspace, B, T, N);
   computeInitial<<<B, kBlockSize, 0, stream>>>(T, N, input, ws);
   for (int t = 1; t < T; ++t) {
-    computeStep<false>
-        <<<B * N, kBlockSize, 0, stream>>>(T, N, t, input, trans, path, ws);
+    computeStep<false><<<B * N, kBlockSize, 0, stream>>>(
+        T, N, t, input, trans, path, ws);
   }
-  computeStep<true>
-      <<<B, kBlockSize, 0, stream>>>(T, N, T, input, trans, path, ws);
+  computeStep<true><<<B, kBlockSize, 0, stream>>>(
+      T, N, T, input, trans, path, ws);
 }
 
 template struct ViterbiPath<float>;
 template struct ViterbiPath<double>;
 
 } // namespace cuda
-} // namespace w2l
+} 
+}

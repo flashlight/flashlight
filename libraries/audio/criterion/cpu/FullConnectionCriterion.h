@@ -12,7 +12,8 @@
 
 #include "libraries/audio/criterion/Defines.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 namespace cpu {
 
 /// Check CUDA header for docs.
@@ -43,4 +44,5 @@ struct FullConnectionCriterion {
 };
 
 } // namespace cpu
-} // namespace w2l
+} 
+}

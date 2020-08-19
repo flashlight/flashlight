@@ -10,7 +10,11 @@
 
 #include "libraries/common/String.h"
 
-namespace w2l {
+using namespace fl::lib;
+
+namespace fl {
+namespace task {
+namespace asr {
 
 std::vector<std::string> tknIdx2Ltr(
     const std::vector<int>& labels,
@@ -98,7 +102,7 @@ std::vector<std::string> tknPrediction2Ltr(
     dedup(tokens);
   }
   if (FLAGS_criterion == kCtcCriterion) {
-    int blankIdx = tokenDict.getIndex(kBlankToken);
+    int blankIdx = tokenDict.getIndex(lib::kBlankToken);
     tokens.erase(
         std::remove(tokens.begin(), tokens.end(), blankIdx), tokens.end());
   }
@@ -133,4 +137,6 @@ std::vector<int> validateIdx(std::vector<int> input, int unkIdx) {
   return input;
 }
 
+}
+}
 }

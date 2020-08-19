@@ -12,7 +12,8 @@
 
 #include "libraries/audio/criterion/Defines.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 namespace cpu {
 
 /// Check CUDA header for docs.
@@ -41,4 +42,5 @@ void setZero(T* ptr, size_t count) {
 }
 
 } // namespace cpu
-} // namespace w2l
+} 
+}

@@ -10,19 +10,8 @@
 
 #include <flashlight/flashlight.h>
 
-using namespace fl;
-
-namespace {
-std::shared_ptr<Module> parseLine(const std::string& line);
-
-std::shared_ptr<Module> parseLines(
-    const std::vector<std::string>& lines,
-    const int lineIdx,
-    int& numLinesParsed);
-} // namespace
-
-
-namespace w2l {
+namespace fl {
+namespace ext {
 
 int64_t numTotalParams(std::shared_ptr<fl::Module> module) {
   int64_t params = 0;
@@ -55,4 +44,5 @@ void initDistributed(
   }
 }
 
+}
 }

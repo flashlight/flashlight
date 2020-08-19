@@ -78,12 +78,6 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/decoder)
 # Runtime
 add_subdirectory(${PROJECT_SOURCE_DIR}/runtime)
 
-# Tests
-#if (W2L_BUILD_TESTS)
-#  enable_testing()
-#  add_subdirectory(${PROJECT_SOURCE_DIR}/tests)
-#endif ()
-
 # ----------------------------- wav2letter++ lib  -----------------------------
 
 add_library(

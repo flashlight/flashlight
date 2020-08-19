@@ -14,7 +14,8 @@
 
 #include "libraries/audio/feature/SpeechUtils.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 Dct::Dct(int numfilters, int numceps)
     : numFilters_(numfilters),
@@ -31,4 +32,5 @@ Dct::Dct(int numfilters, int numceps)
 std::vector<float> Dct::apply(const std::vector<float>& input) const {
   return cblasGemm(input, dctMat_, numCeps_, numFilters_);
 }
-} // namespace w2l
+} 
+}

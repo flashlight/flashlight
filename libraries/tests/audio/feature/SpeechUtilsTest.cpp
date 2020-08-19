@@ -11,7 +11,7 @@
 #include "TestUtils.h"
 #include "libraries/audio/feature/SpeechUtils.h"
 
-using namespace w2l;
+using namespace fl::lib;
 
 TEST(SpeechUtilsTest, SimpleMatmul) {
   /*

@@ -16,7 +16,9 @@
 
 #include "criterion/Defines.h"
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 #define NEG_INFINITY_FLT -std::numeric_limits<float>::infinity()
 #define NEG_INFINITY_DBL -std::numeric_limits<double>::infinity()
@@ -84,7 +86,7 @@ int getTargetSize(const int* labels, int len);
 
 af::array getTargetSizeArray(const af::array& target, int maxSize);
 
-CriterionScaleMode getCriterionScaleMode(const std::string& onorm, bool sqnorm);
+lib::CriterionScaleMode getCriterionScaleMode(const std::string& onorm, bool sqnorm);
 
 // Input: N x T x B (type: float), Output: T x B (type: int)
 af::array viterbiPath(const af::array& input, const af::array& trans);
@@ -103,4 +105,6 @@ inline af::array reorder(
   return moddims(result, result.dims());
 }
 
-} // namespace w2l
+} 
+}
+}

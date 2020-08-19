@@ -16,7 +16,9 @@
 
 #define LOG_MASTER(lvl) LOG_IF(lvl, (fl::getWorldRank() == 0))
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 struct DatasetMeters {
   fl::EditDistanceMeter tknEdit, wrdEdit;
   fl::AverageValueMeter loss;
@@ -82,4 +84,6 @@ void syncMeter(T& mtr) {
 template <>
 void syncMeter<TrainMeters>(TrainMeters& mtrs);
 
-} // namespace w2l
+} 
+}
+}

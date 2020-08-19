@@ -13,7 +13,7 @@
 #include "libraries/audio/criterion/cpu/ForceAlignmentCriterion.h"
 
 using fl::Variable;
-using FAC = w2l::cpu::ForceAlignmentCriterion<float>;
+using FAC = fl::lib::cpu::ForceAlignmentCriterion<float>;
 
 namespace {
 // By passing shared_ptr<Context> we avoid copies from forward to backward.
@@ -24,7 +24,9 @@ struct Context {
 };
 } // namespace
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 static void backward(
     std::vector<Variable>& inputs,
@@ -38,7 +40,7 @@ static void backward(
     throw std::invalid_argument("FAC: grad must be float32");
   }
 
-  auto gradVec = w2l::afToVector<float>(gradVar);
+  auto gradVec = fl::task::asr::afToVector<float>(gradVar);
   std::vector<float> inputGradVec(B * T * N);
   std::vector<float> transGradVec(N * N);
 
@@ -83,10 +85,10 @@ Variable ForceAlignmentCriterion::forward(
 
   const auto& targetSize = getTargetSizeArray(targetVar.array(), T);
   auto ctx = std::make_shared<Context>();
-  auto inputVec = w2l::afToVector<float>(inputVar);
-  ctx->targetVec = w2l::afToVector<int>(targetVar);
-  ctx->targetSizeVec = w2l::afToVector<int>(targetSize);
-  auto transVec = w2l::afToVector<float>(transVar);
+  auto inputVec = fl::task::asr::afToVector<float>(inputVar);
+  ctx->targetVec = fl::task::asr::afToVector<int>(targetVar);
+  ctx->targetSizeVec = fl::task::asr::afToVector<int>(targetSize);
+  auto transVec = fl::task::asr::afToVector<float>(transVar);
   std::vector<float> lossVec(B);
   ctx->workspaceVec.assign(FAC::getWorkspaceSize(B, T, N, L), 0);
 
@@ -129,10 +131,10 @@ af::array ForceAlignmentCriterion::viterbiPath(
   }
   const af::array targetSize = getTargetSizeArray(targetVar, T);
   std::shared_ptr<Context> ctx = std::make_shared<Context>();
-  std::vector<float> inputVec = w2l::afToVector<float>(inputVar);
-  ctx->targetVec = w2l::afToVector<int>(targetVar);
-  ctx->targetSizeVec = w2l::afToVector<int>(targetSize);
-  std::vector<float> transVec = w2l::afToVector<float>(transVar);
+  std::vector<float> inputVec = fl::task::asr::afToVector<float>(inputVar);
+  ctx->targetVec = fl::task::asr::afToVector<int>(targetVar);
+  ctx->targetSizeVec = fl::task::asr::afToVector<int>(targetSize);
+  std::vector<float> transVec = fl::task::asr::afToVector<float>(transVar);
   std::vector<float> lossVec(B);
   ctx->workspaceVec.assign(FAC::getWorkspaceSize(B, T, N, L), 0);
   std::vector<int> bestPaths(B * T);
@@ -150,4 +152,6 @@ af::array ForceAlignmentCriterion::viterbiPath(
   return af::array(T, B, bestPaths.data());
 }
 
-} // namespace w2l
+} 
+}
+}

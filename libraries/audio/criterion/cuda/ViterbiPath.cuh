@@ -10,7 +10,8 @@
 
 #include <cuda_runtime.h>
 
-namespace w2l {
+namespace fl {
+namespace lib {
 namespace cuda {
 
 /// Computes max likelihood path using Viterbi algorithm.
@@ -45,4 +46,5 @@ struct ViterbiPath {
 };
 
 } // namespace cuda
-} // namespace w2l
+} 
+}

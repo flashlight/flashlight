@@ -10,7 +10,8 @@
 
 #include "libraries/language/decoder/Utils.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 /**
  * Decoder support two typical use cases:
  * Offline manner:
@@ -72,4 +73,5 @@ class Decoder {
   DecoderOptions opt_;
 };
 
-} // namespace w2l
+} 
+}

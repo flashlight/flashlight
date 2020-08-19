@@ -18,7 +18,9 @@
 
 #include "libraries/audio/feature/SpeechUtils.h"
 
-using namespace w2l;
+using namespace fl;
+using namespace fl::lib;
+using namespace fl::task::asr;
 
 template <typename T>
 bool compareVec(std::vector<T> A, std::vector<T> B, float precision = 1E-5) {
@@ -130,7 +132,7 @@ TEST(FeatureTest, localNormalize) {
 
 TEST(FeatureTest, WrdToTarget) {
   gflags::FlagSaver flagsaver;
-  w2l::FLAGS_wordseparator = "_";
+  FLAGS_wordseparator = "_";
 
   LexiconMap lexicon;
   // word pieces with word separator in the end
@@ -193,8 +195,8 @@ TEST(FeatureTest, WrdToTarget) {
 
 TEST(FeatureTest, TargetToSingleLtr) {
   gflags::FlagSaver flagsaver;
-  w2l::FLAGS_wordseparator = "_";
-  w2l::FLAGS_usewordpiece = true;
+  FLAGS_wordseparator = "_";
+  FLAGS_usewordpiece = true;
 
   Dictionary dict;
   for (int i = 0; i < 10; ++i) {

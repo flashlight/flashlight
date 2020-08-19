@@ -15,7 +15,8 @@
 
 #include "libraries/audio/feature/SpeechUtils.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 TriFilterbank::TriFilterbank(
     int numfilters,
@@ -97,4 +98,5 @@ float TriFilterbank::warpedToHertzScale(float wrp, FrequencyScale freqscale)
       return 0.0;
   }
 }
-} // namespace w2l
+} 
+}

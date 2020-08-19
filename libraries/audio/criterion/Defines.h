@@ -8,7 +8,8 @@
 
 #pragma once
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 enum class CriterionScaleMode {
   NONE = 0,
@@ -18,4 +19,5 @@ enum class CriterionScaleMode {
   TARGET_SZ_SQRT = 4,
 };
 
-} // namespace w2l
+} 
+}

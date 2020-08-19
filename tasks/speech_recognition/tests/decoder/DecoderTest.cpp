@@ -14,17 +14,18 @@
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
-#include "common/Defines.h"
 #include "criterion/criterion.h"
 #include "decoder/Defines.h"
 #include "decoder/Utils.h"
-#include "libraries/language/dictionary/Dictionary.h"
 #include "libraries/language/decoder/LexiconDecoder.h"
 #include "libraries/language/decoder/Trie.h"
 #include "libraries/language/decoder/lm/KenLM.h"
+#include "libraries/language/dictionary/Dictionary.h"
 #include "runtime/runtime.h"
 
-using namespace w2l;
+using namespace fl;
+using namespace fl::lib;
+using namespace fl::task::asr;
 
 /**
  * In this test, we check the output from LM, trie and decoder.
@@ -44,16 +45,11 @@ std::vector<int> tokens2Tensor(
   for (const auto& tkn : tokens) {
     ret.push_back(tokenDict.getIndex(tkn));
   }
-  ret = packReplabels(ret, tokenDict, FLAGS_replabel);
+  ret = packReplabels(ret, tokenDict, 0);
   return ret;
 }
 
 TEST(DecoderTest, run) {
-  // TODO: It seems that emissions were generated with `--replabel=1` but the
-  // expected results of DecoderTest were generated with FLAGS_replabel
-  // at the default value, 0. Leaving it this way for now...
-  // FLAGS_replabel = 1;
-  FLAGS_criterion = kAsgCriterion;
   std::string dataDir = "";
 #ifdef DECODER_TEST_DATADIR
   dataDir = DECODER_TEST_DATADIR;
@@ -118,8 +114,7 @@ TEST(DecoderTest, run) {
 
   /* -------- Build Trie --------*/
   int silIdx = tokenDict.getIndex(kSilToken);
-  int blankIdx =
-      FLAGS_criterion == kCtcCriterion ? tokenDict.getIndex(kBlankToken) : -1;
+  int blankIdx = -1;
   int unkIdx = wordDict.getIndex(kUnkToken);
   auto trie = std::make_shared<Trie>(tokenDict.indexSize(), silIdx);
   auto startState = lm->start(false);
@@ -133,7 +128,7 @@ TEST(DecoderTest, run) {
     std::tie(dummyState, score) = lm->score(startState, usrIdx);
 
     for (const auto& tokens : it.second) {
-      auto tokensTensor = tkn2Idx(tokens, tokenDict, FLAGS_replabel);
+      auto tokensTensor = tkn2Idx(tokens, tokenDict, 0);
       trie->insert(tokensTensor, usrIdx, score);
     }
   }
@@ -154,15 +149,15 @@ TEST(DecoderTest, run) {
 
   /* -------- Build Decoder --------*/
   DecoderOptions decoderOpt(
-      2500, // FLAGS_beamsize
-      25000, // FLAGS_beamsizetoken
-      100.0, // FLAGS_beamthreshold
-      2.0, // FLAGS_lmweight
-      2.0, // FLAGS_lexiconcore
-      -std::numeric_limits<float>::infinity(), // FLAGS_unkscore
-      -1, // FLAGS_silscore
-      0, // FLAGS_eosscore
-      false, // FLAGS_logadd
+      2500, // beamsize
+      25000, // beamsizetoken
+      100.0, // beamthreshold
+      2.0, // lmweight
+      2.0, // lexiconcore
+      -std::numeric_limits<float>::infinity(), // unkscore
+      -1, // silscore
+      0, // eosscore
+      false, // logadd
       CriterionType::ASG);
 
   LexiconDecoder decoder(

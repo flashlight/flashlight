@@ -12,13 +12,15 @@
 #include "libraries/audio/feature/FeatureParams.h"
 #include "libraries/language/dictionary/Utils.h"
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
-fl::Dataset::DataTransformFunction inputFeatures(const FeatureParams& params);
+fl::Dataset::DataTransformFunction inputFeatures(const lib::FeatureParams& params);
 
 fl::Dataset::DataTransformFunction targetFeatures(
-    const Dictionary& dict,
-    const LexiconMap& lexicon,
+    const lib::Dictionary& dict,
+    const lib::LexiconMap& lexicon,
     int wordSeperator,
     bool surround = true);
 
@@ -123,4 +125,6 @@ std::vector<T> normalize(
   return out;
 }
 
-} // namespace w2l
+} 
+}
+}

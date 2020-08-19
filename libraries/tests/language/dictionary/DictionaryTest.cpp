@@ -9,13 +9,13 @@
 #include <string>
 
 #include <glog/logging.h>
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 #include "libraries/common/System.h"
 #include "libraries/language/dictionary/Utils.h"
 
-using namespace w2l;
+using namespace fl::lib;
 
 std::string loadPath = "";
 
@@ -80,7 +80,6 @@ TEST(DictionaryTest, Dictionary) {
   ASSERT_EQ(dict.getIndex("6"), 5);
   ASSERT_EQ(dict.indexSize(), 5);
 }
-
 
 TEST(DictionaryTest, PackReplabels) {
   Dictionary dict;
@@ -179,7 +178,7 @@ TEST(DictionaryTest, UT8Split) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
 
-  // Resolve directory for sample dictionary
+// Resolve directory for sample dictionary
 #ifdef DICTIONARY_TEST_DATADIR
   loadPath = DICTIONARY_TEST_DATADIR;
 #endif

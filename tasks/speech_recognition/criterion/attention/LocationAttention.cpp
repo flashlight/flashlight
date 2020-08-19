@@ -10,7 +10,9 @@
 
 using namespace fl;
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 SimpleLocationAttention::SimpleLocationAttention(int convKernel) {
   Sequential pa;
@@ -171,4 +173,6 @@ std::string NeuralLocationAttention::prettyString() const {
   return "NeuralLocationBasedAttention";
 }
 
-} // namespace w2l
+} 
+}
+}

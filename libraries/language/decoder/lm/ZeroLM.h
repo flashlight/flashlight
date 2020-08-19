@@ -10,7 +10,8 @@
 
 #include "libraries/language/decoder/lm/LM.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 /**
  * ZeroLM is a dummy language model class, which mimics the behavious of a
@@ -27,4 +28,5 @@ class ZeroLM : public LM {
   std::pair<LMStatePtr, float> finish(const LMStatePtr& state) override;
 };
 
-} // namespace w2l
+} 
+}

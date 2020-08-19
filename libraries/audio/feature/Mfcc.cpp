@@ -12,7 +12,8 @@
 
 #include "SpeechUtils.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 Mfcc::Mfcc(const FeatureParams& params)
     : Mfsc(params),
@@ -72,4 +73,5 @@ void Mfcc::validateMfccParams() const {
   }
 }
 
-} // namespace w2l
+} 
+}

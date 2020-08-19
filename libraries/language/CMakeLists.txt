@@ -40,6 +40,5 @@ target_include_directories(
 target_compile_definitions(
   libraries-language
   PUBLIC
-  ${W2L_COMPILE_DEFINITIONS}
   )
  

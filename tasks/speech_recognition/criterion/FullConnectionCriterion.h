@@ -12,13 +12,15 @@
 #include "CriterionUtils.h"
 #include "Defines.h"
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 class FullConnectionCriterion : public fl::BinaryModule {
  public:
   explicit FullConnectionCriterion(
       int N,
-      w2l::CriterionScaleMode scalemode = w2l::CriterionScaleMode::NONE);
+      lib::CriterionScaleMode scalemode = fl::lib::CriterionScaleMode::NONE);
 
   fl::Variable forward(const fl::Variable& input, const fl::Variable& target)
       override;
@@ -30,7 +32,7 @@ class FullConnectionCriterion : public fl::BinaryModule {
   FullConnectionCriterion() = default;
 
   int N_;
-  w2l::CriterionScaleMode scaleMode_;
+  lib::CriterionScaleMode scaleMode_;
 
   FL_SAVE_LOAD_WITH_BASE(
       fl::BinaryModule,
@@ -40,6 +42,8 @@ class FullConnectionCriterion : public fl::BinaryModule {
 
 typedef FullConnectionCriterion FCCLoss;
 
-} // namespace w2l
+} 
+}
+}
 
-CEREAL_REGISTER_TYPE(w2l::FullConnectionCriterion)
+CEREAL_REGISTER_TYPE(fl::task::asr::FullConnectionCriterion)

@@ -10,7 +10,8 @@
 
 #include <cstddef>
 
-namespace w2l {
+namespace fl {
+namespace lib {
 namespace cpu {
 
 /// Check CUDA header for docs.
@@ -29,4 +30,5 @@ struct ViterbiPath {
 };
 
 } // namespace cpu
-} // namespace w2l
+}
+}

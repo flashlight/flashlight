@@ -17,7 +17,7 @@ namespace {
 template <class Float>
 struct WorkspacePtrs {
   explicit WorkspacePtrs(void* workspace, int B, int T, int N) {
-    w2l::Workspace<> ws(workspace);
+    fl::lib::Workspace<> ws(workspace);
     ws.request(&alpha, B, 2, N);
     ws.request(&beta, B, T, N);
     requiredSize = ws.requiredSize();
@@ -30,7 +30,8 @@ struct WorkspacePtrs {
 
 } // namespace
 
-namespace w2l {
+namespace fl {
+namespace lib {
 namespace cpu {
 
 template <class Float>
@@ -92,4 +93,5 @@ template struct ViterbiPath<float>;
 template struct ViterbiPath<double>;
 
 } // namespace cpu
-} // namespace w2l
+} 
+}

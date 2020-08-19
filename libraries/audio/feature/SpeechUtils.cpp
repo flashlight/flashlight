@@ -12,7 +12,7 @@
 #include <stdexcept>
 
 extern "C" {
-#if W2L_LIBRARIES_USE_MKL
+#if FL_LIBRARIES_USE_MKL
 #include <mkl_cblas.h>
 #include <mkl_service.h>
 #else
@@ -20,7 +20,8 @@ extern "C" {
 #endif
 }
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 std::vector<float> frameSignal(
     const std::vector<float>& input,
@@ -54,11 +55,11 @@ std::vector<float> cblasGemm(
 
   std::vector<float> matC(m * n);
 
-#if W2L_LIBRARIES_USE_MKL
+#if FL_LIBRARIES_USE_MKL
   auto prevMaxThreads = mkl_get_max_threads();
   mkl_set_num_threads_local(1);
 #else
-  // TODO: to be tested
+// TODO: to be tested
 #endif
 
   cblas_sgemm(
@@ -77,12 +78,13 @@ std::vector<float> cblasGemm(
       matC.data(),
       n);
 
-#if W2L_LIBRARIES_USE_MKL
+#if FL_LIBRARIES_USE_MKL
   mkl_set_num_threads_local(prevMaxThreads);
 #else
-  // TODO: to be tested
+// TODO: to be tested
 #endif
 
   return matC;
 };
-} // namespace w2l
+} 
+}

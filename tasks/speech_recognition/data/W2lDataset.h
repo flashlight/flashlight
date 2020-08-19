@@ -16,12 +16,14 @@
 #include "data/Featurize.h"
 #include "libraries/language/dictionary/Dictionary.h"
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 class W2lDataset : public fl::Dataset {
  public:
   W2lDataset(
-      const DictionaryMap& dicts,
+      const lib::DictionaryMap& dicts,
       int64_t batchsize,
       int worldrank = 0,
       int worldsize = 1);
@@ -44,7 +46,7 @@ class W2lDataset : public fl::Dataset {
   void shuffle(int seed);
 
  protected:
-  DictionaryMap dicts_;
+  lib::DictionaryMap dicts_;
 
   int64_t sampleCount_; // Num individual samples in the dataset before batching
   int64_t batchSize_;
@@ -88,4 +90,6 @@ class RoundRobinBatchPacker : public BatchPacker {
   int64_t worldSize_;
   int64_t worldRank_;
 };
-} // namespace w2l
+} 
+}
+}

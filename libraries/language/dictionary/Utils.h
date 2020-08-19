@@ -14,7 +14,8 @@
 
 #include "libraries/language/dictionary/Dictionary.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 using LexiconMap =
     std::unordered_map<std::string, std::vector<std::vector<std::string>>>;
@@ -47,4 +48,5 @@ std::vector<int> unpackReplabels(
     const Dictionary& dict,
     int maxReps);
 
-} // namespace w2l
+} 
+}

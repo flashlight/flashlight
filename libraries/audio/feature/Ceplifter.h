@@ -11,7 +11,8 @@
 #include <stdint.h>
 #include <vector>
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 // Re-scale the cepstral coefficients using liftering
 //    c'(n) = c(n) * (1 + 0.5 * L * sin(pi * n/ L)) where L is lifterparam
@@ -29,4 +30,5 @@ class Ceplifter {
   int lifterParam_; // liftering parameter
   std::vector<float> coefs_; // coefficients to scale cepstral coefficients
 };
-} // namespace w2l
+} 
+}

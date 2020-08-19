@@ -138,7 +138,7 @@ class EditDistanceMeter {
           ++column[y].ndel;
         } else if (
             std::distance(possibilities.begin(), min_it) == 1) { // insertion
-                                                                 // error
+          // error
           column[y] = column[y - 1];
           ++column[y].nins;
         } else {

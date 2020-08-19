@@ -11,13 +11,15 @@
 #include "AutoSegmentationCriterion.h"
 #include "CriterionUtils.h"
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 class LinearSegmentationCriterion : public AutoSegmentationCriterion {
  public:
   explicit LinearSegmentationCriterion(
       int N,
-      w2l::CriterionScaleMode scaleMode = w2l::CriterionScaleMode::NONE)
+      lib::CriterionScaleMode scaleMode = lib::CriterionScaleMode::NONE)
       : AutoSegmentationCriterion(N, scaleMode) {}
 
   std::vector<fl::Variable> forward(
@@ -28,7 +30,7 @@ class LinearSegmentationCriterion : public AutoSegmentationCriterion {
     const auto& input = inputs[0];
     const auto& target = inputs[1];
     return AutoSegmentationCriterion::forward(
-        {input, w2l::getLinearTarget(target, input.dims(1))});
+        {input, getLinearTarget(target, input.dims(1))});
   }
 
   std::string prettyString() const override {
@@ -43,6 +45,8 @@ class LinearSegmentationCriterion : public AutoSegmentationCriterion {
 
 using LinSegCriterion = LinearSegmentationCriterion;
 
-} // namespace w2l
+} 
+}
+}
 
-CEREAL_REGISTER_TYPE(w2l::LinearSegmentationCriterion)
+CEREAL_REGISTER_TYPE(fl::task::asr::LinearSegmentationCriterion)

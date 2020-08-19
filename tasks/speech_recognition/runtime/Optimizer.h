@@ -12,7 +12,9 @@
 
 #include "common/Defines.h"
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
     const std::vector<std::shared_ptr<fl::Module>>& nets,
@@ -20,4 +22,6 @@ std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
     double lr,
     double momentum,
     double weightdecay);
-} // namespace w2l
+} 
+}
+}

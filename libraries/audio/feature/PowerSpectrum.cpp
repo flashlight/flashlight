@@ -14,7 +14,8 @@
 
 #include "libraries/audio/feature/SpeechUtils.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 PowerSpectrum::PowerSpectrum(const FeatureParams& params)
     : featParams_(params),
@@ -137,4 +138,5 @@ PowerSpectrum::~PowerSpectrum() {
   fftw_destroy_plan(fftPlan_);
 }
 
-} // namespace w2l
+} 
+}

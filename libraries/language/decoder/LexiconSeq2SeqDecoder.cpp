@@ -16,7 +16,8 @@
 
 #include "libraries/language/decoder/LexiconSeq2SeqDecoder.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 void LexiconSeq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
   // Extend hyp_ buffer
@@ -31,10 +32,9 @@ void LexiconSeq2SeqDecoder::decodeStep(const float* emissions, int T, int N) {
   hyp_[0].emplace_back(
       0.0, lm_->start(0), lexicon_->getRoot(), nullptr, -1, -1, nullptr);
 
-  auto compare = [](const LexiconSeq2SeqDecoderState& n1,
-                    const LexiconSeq2SeqDecoderState& n2) {
-    return n1.score > n2.score;
-  };
+  auto compare = [](
+      const LexiconSeq2SeqDecoderState& n1,
+      const LexiconSeq2SeqDecoderState& n2) { return n1.score > n2.score; };
 
   // Decode frame by frame
   int t = 0;
@@ -238,4 +238,5 @@ int LexiconSeq2SeqDecoder::nDecodedFramesInBuffer() const {
   return -1;
 }
 
-} // namespace w2l
+} 
+}

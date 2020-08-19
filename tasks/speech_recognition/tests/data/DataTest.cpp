@@ -18,7 +18,9 @@
 #include "libraries/common/String.h"
 #include "libraries/common/System.h"
 
-using namespace w2l;
+using namespace fl;
+using namespace fl::lib;
+using namespace fl::task::asr;
 
 namespace {
 
@@ -68,8 +70,8 @@ std::vector<std::string> loadTarget(const std::string& filepath) {
 
 TEST(DataTest, inputFeaturizer) {
   auto dict = getDict();
-  auto inputFeaturizer = [](std::vector<std::vector<float>> in,
-                            const Dictionary& d) {
+  auto inputFeaturizer = [](
+      std::vector<std::vector<float>> in, const Dictionary& d) {
     std::vector<W2lLoaderData> data;
     for (const auto& i : in) {
       data.emplace_back();
@@ -85,10 +87,10 @@ TEST(DataTest, inputFeaturizer) {
 
   std::vector<std::vector<float>> inputs;
   gflags::FlagSaver flagsaver;
-  w2l::FLAGS_channels = 2;
-  w2l::FLAGS_samplerate = 16000;
+  FLAGS_channels = 2;
+  FLAGS_samplerate = 16000;
   for (int i = 0; i < 10; ++i) {
-    inputs.emplace_back(i * w2l::FLAGS_samplerate * w2l::FLAGS_channels);
+    inputs.emplace_back(i * FLAGS_samplerate * FLAGS_channels);
     for (int j = 0; j < inputs.back().size(); ++j) {
       inputs.back()[j] = std::sin(2 * M_PI * (j / 2) / FLAGS_samplerate);
     }
@@ -100,7 +102,7 @@ TEST(DataTest, inputFeaturizer) {
   af::array ch2 = inArray(af::span, 1, af::span);
   ASSERT_TRUE(af::max<double>(af::abs(ch1 - ch2)) < 1E-5);
 
-  w2l::FLAGS_mfsc = true;
+  FLAGS_mfsc = true;
   inArray = inputFeaturizer(inputs, dict);
   auto nFrames = 1 + (9 * FLAGS_samplerate - 25 * 16) / (10 * 16);
   ASSERT_EQ(inArray.dims(), af::dim4(nFrames, 40, FLAGS_channels, 10));
@@ -116,11 +118,11 @@ TEST(DataTest, targetFeaturizer) {
                                                    {"b", "c", "d", "d"}};
 
   gflags::FlagSaver flagsaver;
-  w2l::FLAGS_replabel = 0;
-  w2l::FLAGS_criterion = kCtcCriterion;
+  FLAGS_replabel = 0;
+  FLAGS_criterion = kCtcCriterion;
 
-  auto targetFeaturizer = [](std::vector<std::vector<std::string>> tgt,
-                             const Dictionary& d) {
+  auto targetFeaturizer = [](
+      std::vector<std::vector<std::string>> tgt, const Dictionary& d) {
     std::vector<W2lLoaderData> data;
     for (const auto& t : tgt) {
       data.emplace_back();
@@ -142,7 +144,7 @@ TEST(DataTest, targetFeaturizer) {
   ASSERT_EQ(tgtArray(tgtLen - 1, 1).scalar<int>(), kTargetPadValue);
   ASSERT_EQ(tgtArray(tgtLen - 2, 1).scalar<int>(), 3);
 
-  w2l::FLAGS_eostoken = true;
+  FLAGS_eostoken = true;
   tgtArray = targetFeaturizer(targets, dict);
   tgtLen = 6;
   int eosIdx = dict.getIndex(kEosToken);
@@ -154,13 +156,13 @@ TEST(DataTest, targetFeaturizer) {
 
 TEST(DataTest, W2lListDataset) {
   gflags::FlagSaver flagsaver;
-  w2l::FLAGS_mfcc = false;
-  w2l::FLAGS_mfsc = false;
-  w2l::FLAGS_pow = false;
-  w2l::FLAGS_nthread = 6;
-  w2l::FLAGS_replabel = 0;
-  w2l::FLAGS_surround = "";
-  w2l::FLAGS_dataorder = "none";
+  FLAGS_mfcc = false;
+  FLAGS_mfsc = false;
+  FLAGS_pow = false;
+  FLAGS_nthread = 6;
+  FLAGS_replabel = 0;
+  FLAGS_surround = "";
+  FLAGS_dataorder = "none";
 
   // generate the file list
   char* user = getenv("USER");
@@ -183,7 +185,7 @@ TEST(DataTest, W2lListDataset) {
     auto wordFile =
         pathsConcat(loadPath, "dataset/" + std::string(fchar.data()) + "wrd");
 
-    auto info = w2l::loadSoundInfo(audioFile);
+    auto info = loadSoundInfo(audioFile);
     auto durationMs =
         (static_cast<double>(info.frames) / info.samplerate) * 1e3;
 
@@ -258,7 +260,7 @@ TEST(RoundRobinBatchShufflerTest, params) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
 
-  // Resolve directory for data
+// Resolve directory for data
 #ifdef DATA_TEST_DATADIR
   loadPath = DATA_TEST_DATADIR;
 #endif

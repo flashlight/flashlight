@@ -265,8 +265,7 @@ Variable conv2d(
     }
   }
   auto gradFunc = [sx, sy, px, py, dx, dy, hasBias, groups](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
+      std::vector<Variable>& inputs, const Variable& gradOutput) {
     auto& in = inputs[0];
     auto& wt = inputs[1];
 

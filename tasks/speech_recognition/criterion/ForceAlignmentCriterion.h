@@ -13,13 +13,15 @@
 #include "criterion/CriterionUtils.h"
 #include "criterion/Defines.h"
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 class ForceAlignmentCriterion : public fl::BinaryModule {
  public:
   explicit ForceAlignmentCriterion(
       int N,
-      w2l::CriterionScaleMode scalemode = w2l::CriterionScaleMode::NONE);
+      lib::CriterionScaleMode scalemode = fl::lib::CriterionScaleMode::NONE);
 
   fl::Variable forward(const fl::Variable& input, const fl::Variable& target)
       override;
@@ -33,7 +35,7 @@ class ForceAlignmentCriterion : public fl::BinaryModule {
   ForceAlignmentCriterion() = default;
 
   int N_;
-  w2l::CriterionScaleMode scaleMode_;
+  fl::lib::CriterionScaleMode scaleMode_;
 
   FL_SAVE_LOAD_WITH_BASE(
       fl::BinaryModule,
@@ -43,6 +45,8 @@ class ForceAlignmentCriterion : public fl::BinaryModule {
 
 typedef ForceAlignmentCriterion FACLoss;
 
-} // namespace w2l
+} 
+}
+}
 
-CEREAL_REGISTER_TYPE(w2l::ForceAlignmentCriterion)
+CEREAL_REGISTER_TYPE(fl::task::asr::ForceAlignmentCriterion)

@@ -15,7 +15,8 @@
 #include "libraries/common/System.h"
 
 using namespace fl;
-using namespace w2l;
+using namespace fl::lib;
+using namespace fl::ext;
 
 namespace {
 
@@ -82,7 +83,8 @@ TEST(ConvLmModuleTest, SerializationGCNN14BAdaptiveSoftmax) {
   int inputlength = 10;
   std::vector<int> tail = {10000, 50000, 200000, nclass};
 
-  std::shared_ptr<fl::Module> model = buildSequentialModule(archfile, 1, nclass);
+  std::shared_ptr<fl::Module> model =
+      buildSequentialModule(archfile, 1, nclass);
   auto as = std::make_shared<fl::AdaptiveSoftMax>(4096, tail);
   std::shared_ptr<BinaryModule> criterion =
       std::make_shared<fl::AdaptiveSoftMaxLoss>(as);
@@ -116,7 +118,7 @@ TEST(ConvLmModuleTest, SerializationGCNN14BAdaptiveSoftmax) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
 
-  // Resolve directory for arch
+// Resolve directory for arch
 #ifdef DECODER_TEST_DATADIR
   archDir = DECODER_TEST_DATADIR;
 #endif

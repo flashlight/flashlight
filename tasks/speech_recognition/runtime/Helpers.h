@@ -21,13 +21,15 @@
 
 #include "common/Defines.h"
 #include "data/ListFileDataset.h"
-#include "data/W2lListFilesDataset.h"
 #include "data/W2lBlobsDataset.h"
+#include "data/W2lListFilesDataset.h"
 
 #include "libraries/common/String.h"
 #include "libraries/language/dictionary/Utils.h"
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 /**
  * Create the path to save checkpoints and logs of an experiments.
@@ -72,12 +74,14 @@ std::vector<std::string> readSampleIds(const af::array& arr);
  */
 std::shared_ptr<W2lDataset> createDataset(
     const std::string& path,
-    const DictionaryMap& dicts,
-    const LexiconMap& lexicon = LexiconMap(),
+    const lib::DictionaryMap& dicts,
+    const lib::LexiconMap& lexicon = lib::LexiconMap(),
     int batchSize = 1,
     int worldRank = 0,
     int worldSize = 1,
     bool fallback2Ltr = true,
     bool skipUnk = true);
 
-} // namespace w2l
+} 
+}
+}

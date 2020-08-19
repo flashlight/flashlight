@@ -14,7 +14,8 @@
 #include "libraries/language/decoder/Trie.h"
 #include "libraries/language/decoder/lm/LM.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 /**
  * LexiconDecoderState stores information for each hypothesis in the beam.
  */
@@ -168,4 +169,5 @@ class LexiconDecoder : public Decoder {
   int nPrunedFrames_; // Total number of pruned frames from hyp_.
 };
 
-} // namespace w2l
+} 
+}

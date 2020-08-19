@@ -13,7 +13,7 @@
 #include "TestUtils.h"
 #include "libraries/audio/feature/Dither.h"
 
-using w2l::Dither;
+using fl::lib::Dither;
 
 TEST(DitherTest, basicTest) {
   int N = 1000;

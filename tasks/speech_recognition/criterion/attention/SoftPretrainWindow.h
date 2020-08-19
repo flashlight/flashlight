@@ -10,7 +10,9 @@
 
 #include "criterion/attention/WindowBase.h"
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 class SoftPretrainWindow : public WindowBase {
  public:
@@ -33,6 +35,8 @@ class SoftPretrainWindow : public WindowBase {
   FL_SAVE_LOAD_WITH_BASE(WindowBase, std_)
 };
 
-} // namespace w2l
+} 
+}
+}
 
-CEREAL_REGISTER_TYPE(w2l::SoftPretrainWindow)
+CEREAL_REGISTER_TYPE(fl::task::asr::SoftPretrainWindow)

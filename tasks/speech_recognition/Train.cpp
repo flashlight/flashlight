@@ -20,17 +20,20 @@
 #include <glog/logging.h>
 
 #include "common/Defines.h"
-#include "decoder/Utils.h"
 #include "criterion/criterion.h"
+#include "decoder/Utils.h"
 #include "runtime/runtime.h"
 
+#include "extensions/common/SequentialBuilder.h"
+#include "extensions/common/Utils.h"
 #include "libraries/common/System.h"
 #include "libraries/language/dictionary/Dictionary.h"
 #include "libraries/language/dictionary/Utils.h"
-#include "extensions/common/Utils.h"
-#include "extensions/common/SequentialBuilder.h"
 
-using namespace w2l;
+using namespace fl;
+using namespace fl::ext;
+using namespace fl::lib;
+using namespace fl::task::asr;
 
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
@@ -72,7 +75,7 @@ int main(int argc, char** argv) {
     reloadPath = getRunFile("model_last.bin", runIdx - 1, runPath);
     LOG(INFO) << "reload path is " << reloadPath;
     std::unordered_map<std::string, std::string> cfg;
-    W2lSerializer::load(reloadPath, cfg);
+    Serializer::load(reloadPath, cfg);
     auto flags = cfg.find(kGflags);
     if (flags == cfg.end()) {
       LOG(FATAL) << "Invalid config loaded from " << reloadPath;
@@ -104,7 +107,7 @@ int main(int argc, char** argv) {
   } else if (runStatus == kForkMode) {
     reloadPath = argv[2];
     std::unordered_map<std::string, std::string> cfg;
-    W2lSerializer::load(reloadPath, cfg);
+    Serializer::load(reloadPath, cfg);
     auto flags = cfg.find(kGflags);
     if (flags == cfg.end()) {
       LOG(FATAL) << "Invalid config loaded from " << reloadPath;
@@ -131,7 +134,7 @@ int main(int argc, char** argv) {
   // Only new flags are re-serialized. Copy any values from deprecated flags to
   // new flags when deprecated flags are present and corresponding new flags
   // aren't
-  w2l::handleDeprecatedFlags();
+  handleDeprecatedFlags();
 
   af::setSeed(FLAGS_seed);
   af::setFFTPlanCacheSize(FLAGS_fftcachesize);
@@ -246,10 +249,10 @@ int main(int argc, char** argv) {
     }
   } else if (runStatus == kForkMode) {
     std::unordered_map<std::string, std::string> cfg; // unused
-    W2lSerializer::load(reloadPath, cfg, network, criterion);
+    Serializer::load(reloadPath, cfg, network, criterion);
   } else { // kContinueMode
     std::unordered_map<std::string, std::string> cfg; // unused
-    W2lSerializer::load(
+    Serializer::load(
         reloadPath, cfg, network, criterion, netoptim, critoptim);
   }
   LOG_MASTER(INFO) << "[Network] " << network->prettyString();
@@ -361,13 +364,13 @@ int main(int argc, char** argv) {
       if (FLAGS_itersave) {
         filename =
             getRunFile(format("model_iter_%03d.bin", iter), runIdx, runPath);
-        W2lSerializer::save(
+        Serializer::save(
             filename, config, network, criterion, netoptim, critoptim);
       }
 
       // save last model
       filename = getRunFile("model_last.bin", runIdx, runPath);
-      W2lSerializer::save(
+      Serializer::save(
           filename, config, network, criterion, netoptim, critoptim);
 
       // save if better than ever for one valid
@@ -378,7 +381,7 @@ int main(int argc, char** argv) {
           std::string cleaned_v = cleanFilepath(v.first);
           std::string vfname =
               getRunFile("model_" + cleaned_v + ".bin", runIdx, runPath);
-          W2lSerializer::save(
+          Serializer::save(
               vfname, config, network, criterion, netoptim, critoptim);
         }
       }
@@ -416,9 +419,9 @@ int main(int argc, char** argv) {
     auto batchsz = op.dims(2);
     for (int b = 0; b < batchsz; ++b) {
       auto tgt = target(af::span, b);
-      auto viterbipath =
-          w2l::afToVector<int>(criterion->viterbiPath(op(af::span, af::span, b)));
-      auto tgtraw = w2l::afToVector<int>(tgt);
+      auto viterbipath = afToVector<int>(
+          criterion->viterbiPath(op(af::span, af::span, b)));
+      auto tgtraw = afToVector<int>(tgt);
 
       // Remove `-1`s appended to the target for batching (if any)
       auto labellen = getTargetSize(tgtraw.data(), tgtraw.size());

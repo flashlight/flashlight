@@ -15,7 +15,7 @@
 
 #include "libraries/common/System.h"
 
-using namespace w2l;
+using namespace fl::lib;
 
 TEST(SystemTest, PathsConcat) {
   auto path1 = pathsConcat("/tmp/", "test.wav");
@@ -116,9 +116,9 @@ TEST(SystemTest, RetryWithBackoff) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
 
-  // Resolve directory for sample dictionary
-#ifdef W2L_DICTIONARY_TEST_DIR
-  loadPath = W2L_DICTIONARY_TEST_DIR;
+// Resolve directory for sample dictionary
+#ifdef FL_DICTIONARY_TEST_DIR
+  loadPath = FL_DICTIONARY_TEST_DIR;
 #endif
 
   return RUN_ALL_TESTS();

@@ -22,7 +22,7 @@ target_link_libraries(
   )
 
 # ------------------------- CUDA-specific -------------------------
-if (W2L_LIBRARIES_USE_CUDA)
+if (FL_LIBRARIES_USE_CUDA)
   include(${CMAKE_MODULE_PATH}/BuildCUB.cmake)
   include(${CMAKE_MODULE_PATH}/CUDAUtils.cmake)
 
@@ -30,7 +30,7 @@ if (W2L_LIBRARIES_USE_CUDA)
   set_cuda_arch_nvcc_flags()
 
   # hacky: add -fPIC to nvcc flags if needed
-  if (W2L_BUILD_FOR_PYTHON OR CMAKE_POSITION_INDEPENDENT_CODE)
+  if (FL_BUILD_FOR_PYTHON OR CMAKE_POSITION_INDEPENDENT_CODE)
     cuda_enable_position_independent_code()
   endif ()
 
@@ -41,20 +41,20 @@ if (W2L_LIBRARIES_USE_CUDA)
 
   # Qualify name because CUDA target is public
   cuda_add_library(
-    w2l-criterion-library-cuda
+    libraries-audio-criterion-cuda
     ${CMAKE_CURRENT_SOURCE_DIR}/cuda/CriterionUtils.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/cuda/ForceAlignmentCriterion.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/cuda/FullConnectionCriterion.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/cuda/ViterbiPath.cu
     )
 
-  add_dependencies(w2l-criterion-library-cuda CUB)
+  add_dependencies(libraries-audio-criterion-cuda CUB)
 
   target_link_libraries(
     libraries-audio-criterion
     INTERFACE
     ${CUDA_LIBRARIES}
-    w2l-criterion-library-cuda
+    libraries-audio-criterion-cuda
     )
 
   target_include_directories(

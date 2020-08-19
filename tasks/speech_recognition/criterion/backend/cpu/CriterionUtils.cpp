@@ -12,10 +12,12 @@
 #include "libraries/audio/criterion/cpu/CriterionUtils.h"
 #include "libraries/audio/criterion/cpu/ViterbiPath.h"
 
-using CriterionUtils = w2l::cpu::CriterionUtils<float>;
-using ViterbiPath = w2l::cpu::ViterbiPath<float>;
+using CriterionUtils = fl::lib::cpu::CriterionUtils<float>;
+using ViterbiPath = fl::lib::cpu::ViterbiPath<float>;
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 af::array viterbiPath(const af::array& input, const af::array& trans) {
   auto B = input.dims(2);
@@ -30,8 +32,8 @@ af::array viterbiPath(const af::array& input, const af::array& trans) {
     throw std::invalid_argument("viterbiPath: trans must be float32");
   }
 
-  auto inputVec = fl::w2l::afToVector<float>(input);
-  auto transVec = fl::w2l::afToVector<float>(trans);
+  auto inputVec = fl::fl::task::asr::afToVector<float>(input);
+  auto transVec = fl::fl::task::asr::afToVector<float>(trans);
   std::vector<int> pathVec(B * T);
   std::vector<uint8_t> workspaceVec(ViterbiPath::getWorkspaceSize(B, T, N));
 
@@ -51,7 +53,7 @@ af::array getTargetSizeArray(const af::array& target, int maxSize) {
   int B = target.dims(1);
   int L = target.dims(0);
 
-  auto targetVec = fl::w2l::afToVector<int>(target);
+  auto targetVec = fl::fl::task::asr::afToVector<int>(target);
   std::vector<int> targetSizeVec(B);
 
   CriterionUtils::batchTargetSize(
@@ -60,4 +62,6 @@ af::array getTargetSizeArray(const af::array& target, int maxSize) {
   return af::array(B, targetSizeVec.data());
 }
 
-} // namespace w2l
+} 
+}
+}

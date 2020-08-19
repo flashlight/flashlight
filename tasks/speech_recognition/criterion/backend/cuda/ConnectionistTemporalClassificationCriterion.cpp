@@ -18,10 +18,13 @@
 #include "libraries/audio/criterion/cuda/CriterionUtils.cuh"
 
 using namespace fl;
+using namespace fl::ext;
 
-using CriterionUtils = w2l::cuda::CriterionUtils<float>;
+using CriterionUtils = fl::lib::cuda::CriterionUtils<float>;
 
-namespace w2l {
+namespace fl {
+namespace task {
+namespace asr {
 
 namespace {
 inline void throw_on_error(ctcStatus_t status, const char* message) {
@@ -100,7 +103,7 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
 
     // A heuristic to modify target length to be able to compute CTC loss
     L = std::min(L, T);
-    const int R = w2l::countRepeats(targetVec, L);
+    const int R = fl::task::asr::countRepeats(targetVec, L);
     L = std::min(L + R, T) - R;
 
     labelLengths.push_back(L);
@@ -148,8 +151,7 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
   result = result * batchScales;
 
   auto gradFunc = [grad, batchScales](
-                      std::vector<Variable>& moduleInputs,
-                      const Variable& grad_output) {
+      std::vector<Variable>& moduleInputs, const Variable& grad_output) {
     auto gradScales = grad_output.array() * batchScales;
     auto& in = moduleInputs[0];
     gradScales = af::tile(
@@ -164,4 +166,6 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
   return {Variable(result, {input, target}, gradFunc)};
 }
 
-} // namespace w2l
+} 
+}
+}

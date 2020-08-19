@@ -15,7 +15,8 @@
 
 #include "libraries/language/decoder/lm/LM.h"
 
-namespace w2l {
+namespace fl {
+namespace lib {
 
 /* ===================== Definitions ===================== */
 
@@ -154,8 +155,8 @@ void candidatesStore(
   candidatePtrs.resize(nHypAfterMerging);
 
   /* 3. Sort and prune */
-  auto compareNodeScore = [](const DecoderState* node1,
-                             const DecoderState* node2) {
+  auto compareNodeScore = [](
+      const DecoderState* node1, const DecoderState* node2) {
     return node1->score > node2->score;
   };
 
@@ -309,4 +310,5 @@ void updateLMCache(const LMPtr& lm, std::vector<DecoderState>& hypothesis) {
   lm->updateCache(states);
 }
 
-} // namespace w2l
+} 
+}
