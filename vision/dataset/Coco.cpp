@@ -107,7 +107,7 @@ std::pair<af::array, af::array> makeImageAndMaskBatch(
 
   for (const auto& d : data) {
     int w = d.dims(0);
-    int h = d.dims(0);
+    int h = d.dims(1);
     maxW = std::max(w, maxW);
     maxH = std::max(h, maxH);
   }
@@ -301,6 +301,10 @@ af::array resize(const af::array& in, const int resize) {
   return af::resize(in, resize, resize, AF_INTERP_BILINEAR);
 }
 
+//af::array resize(const af::array& in, const int ow, const int oh) {
+  //return af::resize(in, resize, resize, AF_INTERP_BILINEAR);
+//}
+
 std::vector<af::array> Normalize(const std::vector<af::array> in) {
   auto boxes = in[3];
 
@@ -338,12 +342,12 @@ TransformAllFunction randomResize(
       float minOriginalSize = std::min(w, h);
       float maxOriginalSize = std::max(w, h);
       if (maxOriginalSize / minOriginalSize * size > maxSize) {
-        size = lroundf(maxSize * minOriginalSize / maxOriginalSize);
+        size = maxSize * minOriginalSize / maxOriginalSize;
       }
     }
 
-    if( (w <= h && w == size) || (h <= w && h == size) {
-        return std::make_pair<int, int>(w, h);
+    if( (w <= h && w == size) || (h <= w && h == size)) {
+        return std::make_pair(w, h);
     }
     int ow, oh;
     if ( w < h ) {
@@ -353,17 +357,18 @@ TransformAllFunction randomResize(
       oh = size;
       ow = size * w / h;
     }
-    return std::make_pair<int, int>(ow, oh);
+    return std::make_pair(ow, oh);
   };
 
-  auto resizeCoco = [sizes, maxsize](std::vector<af::array> in) {
+  auto resizeCoco = [sizes, maxsize, getSize](std::vector<af::array> in) {
     assert(in.size() == 5);
     assert(sizes.size() > 0);
     int randomIndex = rand() % sizes.size();
     int size = sizes[randomIndex];
     const af::array originalImage = in[0];
+    auto output_size = getSize(originalImage, size, maxsize);
     const af::dim4 originalDims = originalImage.dims();
-    const af::array resizedImage = resize(originalImage, size);
+    const af::array resizedImage = af::resize(originalImage, output_size.first, output_size.second, AF_INTERP_BILINEAR);
     const af::dim4 resizedDims = resizedImage.dims();
 
 
@@ -421,7 +426,7 @@ CocoDataset::CocoDataset(
   transformed = merged;
 
   transformed = std::make_shared<TransformAllDataset>(
-       transformed, randomResize({480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800}, 1000000));
+       transformed, randomResize({480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800}, 800));
 
   transformed = std::make_shared<TransformAllDataset>(
       transformed, Normalize);
@@ -440,8 +445,8 @@ CocoDataset::CocoDataset(
   auto sampled = std::make_shared<ResampleDataset>(
     next, permfn, next->size() / world_size);
 
-  auto prefetch = std::make_shared<PrefetchDataset>(sampled, num_threads, prefetch_size);
-  //auto prefetch = sampled;
+  //auto prefetch = std::make_shared<PrefetchDataset>(sampled, num_threads, prefetch_size);
+  auto prefetch = sampled;
   batched_ = std::make_shared<BatchTransformDataset<CocoData>>(
       prefetch, batch_size, BatchDatasetPolicy::INCLUDE_LAST, cocoBatchFunc);
 
