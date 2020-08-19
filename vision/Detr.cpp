@@ -186,8 +186,7 @@ int main(int argc, char** argv) {
       // randomly resize shortest side of image between 256 to 480 for scale 
       // invariance
       //randomResizeTransform(256, 480),
-      //randomCropTransform(224, 224),
-      normalizeImage(mean, std),
+      //randomCropTransform(224, 224), normalizeImage(mean, std),
       // Randomly flip image with probability of 0.5
       //horizontalFlipTransform(0.5)
   };
@@ -198,14 +197,14 @@ int main(int argc, char** argv) {
       normalizeImage(mean, std)
   };
 
-  const int32_t modelDim = 64;
-  const int32_t numHeads = 6;
+  const int32_t modelDim = 256;
+  const int32_t numHeads = 8;
   const int32_t numEncoderLayers = 6;
   const int32_t numDecoderLayers = 6;
-  const int32_t mlpDim = modelDim;
+  const int32_t mlpDim = 2048;
   // TODO check this is correct
   const int32_t hiddenDim = modelDim;
-  const int32_t numClasses = 90;
+  const int32_t numClasses = 91;
   const int32_t numQueries = 100;
   const float pDropout = 0.0;
   const bool auxLoss = false;
