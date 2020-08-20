@@ -67,11 +67,12 @@ jobs:
     docker:
       - image: flml/flashlight:cpu-base-consolidation-latest
     steps:
-      - checkout
+      - checkout:
+          path: flashlight
       - run:
           name: Build flashlight with CPU backend
           command: |
-            apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5
+            cd flashlight && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5
             export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5
             export MKLROOT=/opt/intel/mkl && export KENLM_ROOT_DIR=/root/kenlm
             mkdir -p build && cd build
