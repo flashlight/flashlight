@@ -11,6 +11,7 @@
 #include <cstring>
 
 #include "flashlight/lib/sequence/criterion/Defines.h"
+
 using fl::lib::seq::CriterionScaleMode;
 
 namespace fl {
