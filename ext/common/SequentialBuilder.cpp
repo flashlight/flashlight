@@ -444,7 +444,7 @@ std::shared_ptr<Module> parseLines(
     auto numBlocks = params.size() == 4 ? std::stoi(params.back()) : 1;
     if (numBlocks <= 0) {
       throw std::invalid_argument(
-          "Invalid number of residual blocks: " + numBlocks);
+          "Invalid number of residual blocks: " + std::to_string(numBlocks));
     }
 
     if (numBlocks > 1) {
