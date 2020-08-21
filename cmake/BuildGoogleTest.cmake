@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.5.1)
+
 include(ExternalProject)
 
 set(gtest_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/googletest/src/googletest/googletest/include)
@@ -5,8 +7,9 @@ set(gtest_URL https://github.com/google/googletest.git)
 set(gtest_BUILD ${CMAKE_CURRENT_BINARY_DIR}/googletest/)
 set(gtest_TAG 703bd9caab50b139428cea1aaff9974ebee5742e) # release 1.10.0
 
-# Download googletest
-ExternalProject_Add(
+if (NOT TARGET gtest)
+  # Download googletest
+  ExternalProject_Add(
     gtest
     PREFIX googletest
     GIT_REPOSITORY ${gtest_URL}
@@ -15,11 +18,13 @@ ExternalProject_Add(
     BUILD_COMMAND ${CMAKE_COMMAND} --build . --config Release
     INSTALL_COMMAND ""
     CMAKE_CACHE_ARGS
-        -DCMAKE_BUILD_TYPE:STRING=Release
+    -DCMAKE_BUILD_TYPE:STRING=Release
         -DBUILD_GMOCK:BOOL=ON
         -DBUILD_GTEST:BOOL=ON
         -Dgtest_force_shared_crt:BOOL=OFF
-)
+  )
+endif ()
+
 ExternalProject_Get_Property(gtest source_dir)
 set(GTEST_SOURCE_DIR ${source_dir})
 ExternalProject_Get_Property(gtest binary_dir)

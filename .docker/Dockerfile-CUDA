@@ -1,0 +1,20 @@
+# ==================================================================
+# module list
+# ------------------------------------------------------------------
+# flashlight       master   (git, CUDA backend)
+# ==================================================================
+
+FROM flml/flashlight:cuda-base-consolidation-latest
+
+# ==================================================================
+# flashlight with GPU backend
+# ------------------------------------------------------------------
+# Setup and build flashlight
+RUN mkdir /root/flashlight
+
+COPY . /root/flashlight
+
+RUN export MKLROOT=/opt/intel/mkl && export KENLM_ROOT_DIR=/root/kenlm && \
+    cd /root/flashlight && mkdir -p build && \ 
+    cd build && cmake .. -DFL_BACKEND=CUDA && \
+    make -j$(nproc) && make install

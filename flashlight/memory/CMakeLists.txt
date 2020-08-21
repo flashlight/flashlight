@@ -1,27 +1,16 @@
 cmake_minimum_required(VERSION 3.5.1)
 
-add_library(
-  Memory
-  INTERFACE
-)
-
 set(
   MEMORY_SOURCES
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/memory/MemoryManagerAdapter.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/memory/MemoryManagerInstaller.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/MemoryManagerAdapter.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/MemoryManagerInstaller.cpp
   # Managers
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/memory/managers/DefaultMemoryManager.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/flashlight/memory/managers/CachingMemoryManager.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/managers/DefaultMemoryManager.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/managers/CachingMemoryManager.cpp
 )
 
 target_sources(
-  Memory
-  INTERFACE
+  flashlight
+  PUBLIC
   $<BUILD_INTERFACE:${MEMORY_SOURCES}>
-)
-
-target_link_libraries(
-  Memory
-  INTERFACE
-  Common
 )

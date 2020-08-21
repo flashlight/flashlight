@@ -1,0 +1,8 @@
+build
+scripts
+src/fb
+src/experimental
+TARGETS
+__pycache__
+*.egg-info
+*.cpython-*.so

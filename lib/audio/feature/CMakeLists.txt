@@ -1,0 +1,50 @@
+cmake_minimum_required(VERSION 3.5.1)
+
+# ----------------------------- Dependencies -----------------------------
+# CBLAS
+if (FL_LIBRARIES_USE_MKL)
+  find_package(MKL REQUIRED)
+  set(CBLAS_LIBRARIES ${MKL_LIBRARIES})
+  set(CBLAS_INCLUDE_DIR ${MKL_INCLUDE_DIR})
+else ()
+  find_package(CBLAS REQUIRED)
+endif ()
+message(STATUS "CBLAS found (include: ${CBLAS_INCLUDE_DIR}, library: ${CBLAS_LIBRARIES})")
+
+# FFTW
+find_package(FFTW REQUIRED)
+if (FFTW_FOUND)
+  message(STATUS "FFTW found")
+else()
+  message(FATAL_ERROR "FFTW not found")
+endif()
+
+# ----------------------------- Lib -----------------------------
+target_sources(
+  fl-libraries
+  PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/Ceplifter.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/Dct.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/Derivatives.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/Dither.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/Mfcc.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/Mfsc.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/PowerSpectrum.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/PreEmphasis.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/SpeechUtils.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/TriFilterbank.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/Windowing.cpp
+  )
+
+target_link_libraries(
+  fl-libraries
+  PUBLIC
+  ${CBLAS_LIBRARIES}
+  ${FFTW_LIBRARIES}
+  )
+
+target_include_directories(
+  fl-libraries
+  PUBLIC
+  ${CBLAS_INCLUDE_DIR}
+  )
