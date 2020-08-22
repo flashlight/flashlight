@@ -112,7 +112,11 @@ void allReduce(af::array& arr, bool async /* = false */) {
   ncclDataType_t type = detail::getNcclTypeForArray(arr);
   DevicePtr arrPtr(arr);
   detail::allreduceCuda(
-      arrPtr.get(), arr.elements(), type, async, /* contiguous = */ false);
+      arrPtr.get(),
+      arr.elements(),
+      type,
+      async,
+      /* contiguous = */ false);
 }
 
 void allReduceMultiple(
@@ -467,7 +471,7 @@ void NcclContext::initWithFileSystem(
 
 NcclContext::~NcclContext() {
 #ifdef NO_NCCL_COMM_DESTROY_HANDLE
-  // DEBUG : ncclCommDestroy disabled as it leads to segfault.
+// DEBUG : ncclCommDestroy disabled as it leads to segfault.
 #else
   // finalizing NCCL
   NCCLCHECK(ncclCommDestroy(comm_));
@@ -477,20 +481,20 @@ NcclContext::~NcclContext() {
   FL_CUDA_CHECK(cudaEventDestroy(event_));
 #endif
 
-  // Destroying the dedicated NCCL CUDA stream is a bit odd since the stream
-  // lives in a global NcclContext singleton. The CUDA driver shuts down when
-  // exit(0) is called, but the context may not be destroyed until
-  // afterwards, and destroying streams when the driver has already shut down is
-  // ungraceful. Manually destroying streams races against the driver, but in
-  // all cases, streams are destroyed when the driver shuts down, so don't
-  // destroy the stream by default.
+// Destroying the dedicated NCCL CUDA stream is a bit odd since the stream
+// lives in a global NcclContext singleton. The CUDA driver shuts down when
+// exit(0) is called, but the context may not be destroyed until
+// afterwards, and destroying streams when the driver has already shut down is
+// ungraceful. Manually destroying streams races against the driver, but in
+// all cases, streams are destroyed when the driver shuts down, so don't
+// destroy the stream by default.
 #ifdef CUDA_STREAM_POOL_DESTROY_ON_SHUTDOWN
   FL_CUDA_CHECK(cudaStreamDestroy(reductionStream_));
   FL_CUDA_CHECK(cudaStreamDestroy(workerStream_));
 #endif
 
-  // The CUDA driver has already shut down before we can free, so don't free by
-  // default, as driver shutdown will clean up this memory anyways.
+// The CUDA driver has already shut down before we can free, so don't free by
+// default, as driver shutdown will clean up this memory anyways.
 #ifdef CUDA_CONTIGUOUS_BUFFER_FREE_ON_SHUTDOWN
   // Free the coalesce buffer if it was allocated
   if (coalesceBuffer_ != nullptr) {

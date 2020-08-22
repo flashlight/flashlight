@@ -35,7 +35,7 @@ cpp_binary(
     ],
     deps = [
         ":experimental_memory",
-        "//deeplearning/projects/wav2letter/src/common:common",
+        "//deeplearning/projects/flashlight:flashlight",
     ],
     external_deps = [
         ("Cereal", None, "cereal"),
@@ -49,7 +49,7 @@ cpp_binary(
     ],
     deps = [
         ":experimental_memory",
-        "//deeplearning/projects/wav2letter/src/common:common",
+        "//deeplearning/projects/flashlight:flashlight",
     ],
 )
 
@@ -63,6 +63,6 @@ cpp_binary(
     ],
     deps = [
         ":experimental_memory",
-        "//deeplearning/projects/wav2letter/src/common:common",
+        "//deeplearning/projects/flashlight:flashlight",
     ],
 )

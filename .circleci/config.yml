@@ -53,26 +53,30 @@ jobs:
       - run:
           name: Build flashlight with CUDA backend inside nvidia-docker
           command: |
-            sudo docker run --runtime=nvidia --rm -itd --ipc=host --name flashlight flml/flashlight:cuda-base-latest
+            sudo docker run --runtime=nvidia --rm -itd --ipc=host --name flashlight flml/flashlight:cuda-base-consolidation-latest
             sudo docker exec -it flashlight bash -c "mkdir /flashlight"
             sudo docker cp . flashlight:/flashlight
             sudo docker exec -it flashlight bash -c "\
             apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5 && \
             cd /flashlight && pwd && ls && mkdir -p build && cd build && \
             export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5 && \
-            cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CUDA && \
+            export MKLROOT=/opt/intel/mkl && export KENLM_ROOT_DIR=/root/kenlm && \
+            cmake .. -DFL_BACKEND=CUDA && \
             make -j$(nproc) && make install && make test"
   build-cpu:
     docker:
-      - image: flml/flashlight:cpu-base-latest
+      - image: flml/flashlight:cpu-base-consolidation-latest
     steps:
-      - checkout
+      - checkout:
+          path: flashlight
       - run:
           name: Build flashlight with CPU backend
           command: |
-            apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5
-            export MKLROOT=/opt/intel/mkl && export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5 && mkdir -p build && cd build
-            cmake .. -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CPU
+            cd flashlight && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5
+            export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5
+            export MKLROOT=/opt/intel/mkl && export KENLM_ROOT_DIR=/root/kenlm
+            mkdir -p build && cd build
+            cmake .. -DFL_BACKEND=CPU -DFL_LIBRARIES_USE_CUDA=OFF
             make -j1 && make install
 workflows:
   version: 2

@@ -88,7 +88,7 @@ IF (INTEL_MKL_DIR)
   SET(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH}
     "${INTEL_MKL_DIR}/include")
   SET(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH}
-    "${INTEL_MKL_DIR}/lib/${mklvers};${INTEL_MKL_DIR}/lib")
+    "${INTEL_MKL_DIR}/lib/${mklvers}")
   IF (MSVC)
     SET(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH}
       "${INTEL_MKL_DIR}/lib/${iccvers}")

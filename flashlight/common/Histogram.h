@@ -108,7 +108,8 @@ HistogramStats<T> FixedBucketSizeHistogram(
     T clipMaxValueExclusive = std::numeric_limits<T>::max()) {
   if (!nBuckets) {
     throw std::invalid_argument(
-        "FixedBucketSizeHistogram(nBuckets=0) nBuckets must be a positive integer");
+        "FixedBucketSizeHistogram(nBuckets=0) nBuckets "
+        "must be a positive integer");
   }
 
   HistogramStats<T> stats;
