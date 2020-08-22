@@ -10,7 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@master
     - name: Build the CUDA Docker image
-      run: docker build . --file Dockerfile-CUDA --tag flml/flashlight:cuda-consolidation-latest
+      run: docker build . --file .docker/Dockerfile-CUDA --tag flml/flashlight:cuda-consolidation-latest
     - name: Docker login
       env:
           USER: ${{ secrets.DOCKER_USERNAME }}
@@ -30,7 +30,7 @@ jobs:
     steps:
     - uses: actions/checkout@master
     - name: Build the CPU Docker image
-      run: docker build . --file Dockerfile-CPU --tag flml/flashlight:cpu-consolidation-latest
+      run: docker build . --file .docker/Dockerfile-CPU --tag flml/flashlight:cpu-consolidation-latest
     - name: Docker login
       env:
           USER: ${{ secrets.DOCKER_USERNAME }}
