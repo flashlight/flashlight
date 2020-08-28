@@ -25,20 +25,7 @@ jcai@fb.com,  gab@fb.com, vitaliy888@fb.com, locronan@fb.com
 flashlight is being very actively developed. See
 [CONTRIBUTING](CONTRIBUTING.md) for more on how to help out.
 
-# Quick Start
-flashlight and relevant dependencies can be easily built and installed on Linux-based systems using the [Conan package manager](https://conan.io/). Only the flashlight
- CUDA backend is supported at this time. After [installing Conan](https://conan.io/downloads.html):
-```
-conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan  # for OpenMPI
-conan remote add flashlight https://api.bintray.com/conan/flashlight/flashlight  # for ArrayFire/flashlight
-conan install flashlight/0.1@conan/stable -r=flashlight
-```
-if no pre-built version of flashlight or ArrayFire exists on your system, you can build everything from source with:
-```
-conan install flashlight 0.1@conan/stable -r=flashlight --build arrayfire --build flashlight
-```
-
-See the documentation for more on how to [use Conan and flashlight with your own project](https://fl.readthedocs.io/en/latest/installation.html#building-your-project-with-flashlight).
+See the documentation for more on how to [use flashlight with your own project](https://fl.readthedocs.io/en/latest/installation.html#building-your-project-with-flashlight).
 
 ## Acknowledgments
 Some of flashlight's code is derived from

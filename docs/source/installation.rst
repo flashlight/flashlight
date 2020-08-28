@@ -112,12 +112,6 @@ To change the location of the install, simply `set CMake's <https://cmake.org/cm
 
 To build a shared object, simply `set CMake's <https://cmake.org/cmake/help/v3.5/variable/BUILD_SHARED_LIBS.html>`_ ``BUILD_SHARED_LIBS`` when running ``cmake``.
 
-Building with Conan on Linux
-----------------------------
-flashlight's CUDA backend is available on Linux with `Conan <https://conan.io/>`_. Adding it to your project is easy: simply add ``('flashlight/0.1@conan/stable')`` to your ``conanfile``'s requirements.
-
-The Conan package for flashlight `can be found here <https://bintray.com/flashlight/flashlight>`_.
-
 Building on Windows
 -------------------
 Building flashlight on Windows is not supported at this time (coming soon).
@@ -160,7 +154,7 @@ To build flashlight with Docker:
 
 Building Your Project with flashlight
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Once flashlight is built and installed, including it in another project is simple, using CMake `or with Conan <https://docs.conan.io/en/latest/getting_started.html>`_. Suppose we have a project in ``project.cpp`` that uses flashlight:
+Once flashlight is built and installed, including it in another project is simple using a CMake imported target. Suppose we have a project in ``project.cpp`` that uses flashlight:
 
 ::
 
@@ -185,7 +179,7 @@ Once flashlight is built and installed, including it in another project is simpl
      return 0;
    }
 
-We can link flashlight with the following CMake configuration. If using Conan, you'll need the extra CMake components as they're given:
+We can link flashlight with the following CMake configuration:
 
 .. code-block:: shell
 
@@ -195,18 +189,9 @@ We can link flashlight with the following CMake configuration. If using Conan, y
   set(CMAKE_CXX_STANDARD 11)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-  # If using Conan, run setup
-  include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-  conan_basic_setup(TARGETS)
-
-  # If you're not using Conan, find needed packages directly:
   find_package(flashlight REQUIRED)
   find_package(ArrayFire REQUIRED)
   # ...
-
-  # If using Conan, you'll also need to link system libraries.
-  # For example, if using the CUDA backend:
-  find_package(CUDA REQUIRED)
 
   add_executable(myProject project.cpp)
 
@@ -216,9 +201,6 @@ We can link flashlight with the following CMake configuration. If using Conan, y
     PRIVATE
     # If building the package directly:
     flashlight::flashlight
-    # If using Conan:
-    CONAN_PKG::flashlight
-    ${CUDA_LIBRARIES} # system libs needed if using Conan
   )
 
 The above will automatically link all flashlight backend-specific dependencies and will add the correct directories to the target's (``myProject``'s) include directories.
