@@ -14,10 +14,10 @@
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
 
-#include "flashlight/nn/modules/Dropout.h"
+#include "flashlight/flashlight/nn/modules/Dropout.h"
 
-#include "flashlight/autograd/Functions.h"
-#include "flashlight/nn/Init.h"
+#include "flashlight/flashlight/autograd/Functions.h"
+#include "flashlight/flashlight/nn/Init.h"
 
 namespace fl {
 

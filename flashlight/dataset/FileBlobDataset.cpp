@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/dataset/FileBlobDataset.h"
+#include "flashlight/flashlight/dataset/FileBlobDataset.h"
 
 namespace fl {
 

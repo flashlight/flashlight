@@ -9,7 +9,7 @@
 #include <iomanip>
 #include <iostream>
 
-#include "flashlight/nn/nn.h"
+#include "flashlight/flashlight/nn/nn.h"
 
 using namespace fl;
 

@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/common/Histogram.h"
+#include "flashlight/flashlight/common/Histogram.h"
 
 #include <iomanip>
 #include <stdexcept>

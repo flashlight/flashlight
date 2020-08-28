@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include "flashlight/contrib/modules/AsymmetricConv1D.h"
-#include "flashlight/contrib/modules/PositionEmbedding.h"
-#include "flashlight/contrib/modules/Residual.h"
-#include "flashlight/contrib/modules/SpecAugment.h"
-#include "flashlight/contrib/modules/TDSBlock.h"
-#include "flashlight/contrib/modules/Transformer.h"
+#include "flashlight/flashlight/contrib/modules/AsymmetricConv1D.h"
+#include "flashlight/flashlight/contrib/modules/PositionEmbedding.h"
+#include "flashlight/flashlight/contrib/modules/Residual.h"
+#include "flashlight/flashlight/contrib/modules/SpecAugment.h"
+#include "flashlight/flashlight/contrib/modules/TDSBlock.h"
+#include "flashlight/flashlight/contrib/modules/Transformer.h"

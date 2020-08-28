@@ -8,10 +8,10 @@
 
 #include <array>
 
-#include "flashlight/nn/Utils.h"
+#include "flashlight/flashlight/nn/Utils.h"
 
-#include "flashlight/autograd/Utils.h"
-#include "flashlight/common/Utils.h"
+#include "flashlight/flashlight/autograd/Utils.h"
+#include "flashlight/flashlight/common/Utils.h"
 
 namespace fl {
 

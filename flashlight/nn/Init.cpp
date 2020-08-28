@@ -20,9 +20,9 @@
 
 #include <cmath>
 
-#include "flashlight/autograd/Functions.h"
-#include "flashlight/nn/Init.h"
-#include "flashlight/nn/Utils.h"
+#include "flashlight/flashlight/autograd/Functions.h"
+#include "flashlight/flashlight/nn/Init.h"
+#include "flashlight/flashlight/nn/Utils.h"
 
 namespace af {
 af::array uniform(af::dim4 shape, double min, double max, af::dtype type) {

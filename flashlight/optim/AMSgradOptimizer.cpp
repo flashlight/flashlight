@@ -14,7 +14,7 @@
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
 
-#include "flashlight/optim/AMSgradOptimizer.h"
+#include "flashlight/flashlight/optim/AMSgradOptimizer.h"
 
 #include <cmath>
 

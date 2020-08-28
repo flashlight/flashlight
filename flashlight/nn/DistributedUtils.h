@@ -10,8 +10,8 @@
 
 #include <memory>
 
-#include "flashlight/distributed/distributed.h"
-#include "flashlight/nn/modules/Module.h"
+#include "flashlight/flashlight/distributed/distributed.h"
+#include "flashlight/flashlight/nn/modules/Module.h"
 
 namespace fl {
 

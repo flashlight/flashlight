@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/memory/managers/CachingMemoryManager.h"
+#include "flashlight/flashlight/memory/managers/CachingMemoryManager.h"
 #include <arrayfire.h> // Needed for af exception
 
 #include <algorithm>
@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-#include "flashlight/common/CppBackports.h"
+#include "flashlight/flashlight/common/CppBackports.h"
 namespace fl {
 
 namespace {

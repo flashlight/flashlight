@@ -14,7 +14,7 @@
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
 
-#include "flashlight/optim/RMSPropOptimizer.h"
+#include "flashlight/flashlight/optim/RMSPropOptimizer.h"
 
 #include <cmath>
 

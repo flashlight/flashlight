@@ -19,8 +19,8 @@
 #include <stdexcept>
 
 #include <gtest/gtest.h>
-#include "flashlight/autograd/autograd.h"
-#include "flashlight/common/common.h"
+#include "flashlight/flashlight/autograd/autograd.h"
+#include "flashlight/flashlight/common/common.h"
 
 using namespace fl;
 

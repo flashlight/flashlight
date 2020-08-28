@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/autograd/backend/cpu/MkldnnUtils.h"
+#include "flashlight/flashlight/autograd/backend/cpu/MkldnnUtils.h"
 
 #include <flashlight/common/Defines.h>
 

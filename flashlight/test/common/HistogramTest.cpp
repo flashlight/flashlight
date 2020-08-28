@@ -10,7 +10,7 @@
 
 #include <gtest/gtest.h>
 
-#include "flashlight/common/Histogram.h"
+#include "flashlight/flashlight/common/Histogram.h"
 
 using namespace fl;
 

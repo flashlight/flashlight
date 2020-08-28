@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "flashlight/dataset/ResampleDataset.h"
+#include "flashlight/flashlight/dataset/ResampleDataset.h"
 
 #include <random>
 

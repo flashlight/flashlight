@@ -12,7 +12,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#include "flashlight/common/Utils.h"
+#include "flashlight/flashlight/common/Utils.h"
 
 namespace fl {
 

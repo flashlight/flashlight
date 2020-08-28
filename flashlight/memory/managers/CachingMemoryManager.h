@@ -14,8 +14,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "flashlight/memory/MemoryManagerAdapter.h"
-#include "flashlight/memory/MemoryManagerDeviceInterface.h"
+#include "flashlight/flashlight/memory/MemoryManagerAdapter.h"
+#include "flashlight/flashlight/memory/MemoryManagerDeviceInterface.h"
 
 namespace fl {
 

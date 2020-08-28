@@ -15,8 +15,8 @@
 #include <arrayfire.h>
 #include <gtest/gtest.h>
 
-#include "flashlight/common/CppBackports.h"
-#include "flashlight/memory/memory.h"
+#include "flashlight/flashlight/common/CppBackports.h"
+#include "flashlight/flashlight/memory/memory.h"
 
 class CachingMemoryManagerTest : public ::testing::Test {
  protected:

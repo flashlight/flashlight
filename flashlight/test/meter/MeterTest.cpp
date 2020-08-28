@@ -10,7 +10,7 @@
 
 #include <gtest/gtest.h>
 
-#include "flashlight/meter/meters.h"
+#include "flashlight/flashlight/meter/meters.h"
 
 using namespace fl;
 

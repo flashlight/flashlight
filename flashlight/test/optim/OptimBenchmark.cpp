@@ -9,9 +9,9 @@
 #include <iomanip>
 #include <iostream>
 
-#include "flashlight/autograd/autograd.h"
-#include "flashlight/common/common.h"
-#include "flashlight/optim/optim.h"
+#include "flashlight/flashlight/autograd/autograd.h"
+#include "flashlight/flashlight/common/common.h"
+#include "flashlight/flashlight/optim/optim.h"
 
 using namespace fl;
 

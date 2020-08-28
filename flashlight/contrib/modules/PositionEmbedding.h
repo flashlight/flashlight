@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include "flashlight/nn/modules/Container.h"
-#include "flashlight/nn/modules/LayerNorm.h"
-#include "flashlight/nn/modules/Linear.h"
-#include "flashlight/nn/modules/Module.h"
+#include "flashlight/flashlight/nn/modules/Container.h"
+#include "flashlight/flashlight/nn/modules/LayerNorm.h"
+#include "flashlight/flashlight/nn/modules/Linear.h"
+#include "flashlight/flashlight/nn/modules/Module.h"
 
 namespace fl {
 

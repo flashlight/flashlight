@@ -6,10 +6,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/nn/modules/Reorder.h"
+#include "flashlight/flashlight/nn/modules/Reorder.h"
 
-#include "flashlight/autograd/Functions.h"
-#include "flashlight/nn/Init.h"
+#include "flashlight/flashlight/autograd/Functions.h"
+#include "flashlight/flashlight/nn/Init.h"
 
 namespace fl {
 

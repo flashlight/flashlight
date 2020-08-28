@@ -8,7 +8,7 @@
 
 #include <gtest/gtest.h>
 
-#include "flashlight/common/DevicePtr.h"
+#include "flashlight/flashlight/common/DevicePtr.h"
 
 using namespace fl;
 

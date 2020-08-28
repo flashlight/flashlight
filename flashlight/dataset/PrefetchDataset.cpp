@@ -8,9 +8,9 @@
 
 #include <stdexcept>
 
-#include "flashlight/common/CppBackports.h"
-#include "flashlight/common/Serialization.h"
-#include "flashlight/dataset/PrefetchDataset.h"
+#include "flashlight/flashlight/common/CppBackports.h"
+#include "flashlight/flashlight/common/Serialization.h"
+#include "flashlight/flashlight/dataset/PrefetchDataset.h"
 
 namespace fl {
 

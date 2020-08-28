@@ -8,7 +8,7 @@
 
 #include <stdexcept>
 
-#include "flashlight/contrib/modules/AsymmetricConv1D.h"
+#include "flashlight/flashlight/contrib/modules/AsymmetricConv1D.h"
 
 namespace fl {
 

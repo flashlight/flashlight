@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "flashlight/dataset/BlobDataset.h"
+#include "flashlight/flashlight/dataset/BlobDataset.h"
 
 #include <fstream>
 #include <mutex>

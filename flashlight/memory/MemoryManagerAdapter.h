@@ -17,7 +17,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "flashlight/memory/MemoryManagerDeviceInterface.h"
+#include "flashlight/flashlight/memory/MemoryManagerDeviceInterface.h"
 
 namespace fl {
 
