@@ -854,7 +854,9 @@ Variable categoricalCrossEntropy(
 
   int C = input.dims(0);
   int X = targets.elements();
-  if (af::anyTrue<bool>((targets.array() < 0) || (targets.array() >= C))) {
+  if (af::anyTrue<bool>(
+          ((targets.array() < 0) || (targets.array() >= C)) &&
+          (targets.array() != ignoreIndex))) {
     throw std::invalid_argument(
         "target contains elements out of valid range [0, num_categories) "
         "in categorical cross entropy");
@@ -868,17 +870,18 @@ Variable categoricalCrossEntropy(
   auto mask = -(A == B); // [C X]
 
   auto result = mask * x;
-  auto ignoreMask = (y != ignoreIndex).as(s32); // [1 X]
-  result = ignoreMask * af::sum(result, 0); // [1 X]
+  auto ignoreMask = af::flat(y == ignoreIndex); // [X, 1]
+  result = af::flat(af::sum(result, 0)); // [X, 1]
+  result(ignoreMask) = 0.;
 
-  Variable denominator;
+  af::array denominator;
   if (reduction == ReduceMode::NONE) {
     result = af::moddims(result, targets.dims()); // [X1 X2 X3]
   } else if (reduction == ReduceMode::MEAN) {
-    denominator = Variable(af::sum(ignoreMask, 1), false);
-    result = af::sum(result, 1) / denominator.array(); // [1]
+    denominator = af::sum((af::flat(y != ignoreIndex)).as(s32), 0);
+    result = af::sum(result, 0) / denominator; // [1]
   } else if (reduction == ReduceMode::SUM) {
-    result = af::sum(result, 1); // [1]
+    result = af::sum(result, 0); // [1]
   } else {
     throw std::invalid_argument(
         "unknown reduction method for categorical cross entropy");
@@ -888,16 +891,17 @@ Variable categoricalCrossEntropy(
   auto gradFunc = [C, X, mask, ignoreMask, denominator, reduction, inputDims](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
-    auto grad = gradOutput.array();
+    af::array grad = gradOutput.array();
     if (reduction == ReduceMode::NONE) {
-      grad = af::moddims(grad, af::dim4(1, X));
+      grad = af::moddims(grad, af::dim4(X));
     } else if (reduction == ReduceMode::MEAN) {
-      grad = af::tile(grad / denominator.array(), af::dim4(1, X));
+      grad = af::tile(grad / denominator, af::dim4(X));
     } else if (reduction == ReduceMode::SUM) {
-      grad = af::tile(grad, af::dim4(1, X));
+      grad = af::tile(grad, af::dim4(X));
     }
     // [1 X]
-    grad *= ignoreMask;
+    grad(ignoreMask) = 0.;
+    grad = af::moddims(grad, af::dim4(1, X));
     grad = af::tile(grad, af::dim4(C)) * mask;
     inputs[0].addGrad(Variable(af::moddims(grad, inputDims), false));
   };
