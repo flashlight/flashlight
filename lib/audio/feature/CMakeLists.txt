@@ -19,6 +19,19 @@ else()
   message(FATAL_ERROR "FFTW not found")
 endif()
 
+# OpenMP
+if(NOT TARGET OpenMP::OpenMP_CXX)
+  find_package(Threads REQUIRED)
+  add_library(OpenMP::OpenMP_CXX IMPORTED INTERFACE)
+  set_property(TARGET OpenMP::OpenMP_CXX
+    PROPERTY INTERFACE_COMPILE_OPTIONS
+    ${OpenMP_CXX_FLAGS})
+  # Same flag has to be given to the linker
+  set_property(TARGET OpenMP::OpenMP_CXX
+    PROPERTY INTERFACE_LINK_LIBRARIES
+    ${OpenMP_CXX_FLAGS} Threads::Threads)
+endif()
+
 # ----------------------------- Lib -----------------------------
 target_sources(
   fl-libraries
@@ -41,6 +54,7 @@ target_link_libraries(
   PUBLIC
   ${CBLAS_LIBRARIES}
   ${FFTW_LIBRARIES}
+  OpenMP::OpenMP_CXX
   )
 
 target_include_directories(
