@@ -365,7 +365,7 @@ int main(int argc, char** argv) {
   for (int i = 0; i < outputBuffer->size<float>(); i++) {
     float streamingOut = outPtr[i];
     float w2lOut = outputVec[i];
-    LOG_IF(FATAL, fabs(streamingOut - w2lOut) > 1e-2)
+    LOG_IF(ERROR, fabs(streamingOut - w2lOut) > 1e-2)
         << "[Serialization Error] Mismatched output w2l:" << w2lOut
         << " vs streaming:" << streamingOut;
   }
