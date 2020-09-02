@@ -559,7 +559,7 @@ int main(int argc, char** argv) {
     int64_t curBatch = startUpdate;
     while (curBatch < nbatches) {
       ++curEpoch; // counts partial epochs too!
-      int epochsAfterDecay = curEpoch - FLAGS_lr_decay;
+      int64_t epochsAfterDecay = curEpoch - FLAGS_lr_decay;
       double lrDecayScale = std::pow(
           0.5,
           (epochsAfterDecay < 0 ? 0
