@@ -8,18 +8,18 @@
 
 #include <pybind11/pybind11.h>
 
-#include "flashlight/lib/criterion/cpu/ForceAlignmentCriterion.h"
-#include "flashlight/lib/criterion/cpu/FullConnectionCriterion.h"
-#include "flashlight/lib/criterion/cpu/ViterbiPath.h"
+#include "flashlight/lib/sequence/criterion/cpu/ForceAlignmentCriterion.h"
+#include "flashlight/lib/sequence/criterion/cpu/FullConnectionCriterion.h"
+#include "flashlight/lib/sequence/criterion/cpu/ViterbiPath.h"
 
-#ifdef W2L_LIBRARIES_USE_CUDA
-#include "flashlight/lib/criterion/cuda/ForceAlignmentCriterion.cuh"
-#include "flashlight/lib/criterion/cuda/FullConnectionCriterion.cuh"
-#include "flashlight/lib/criterion/cuda/ViterbiPath.cuh"
-#endif // W2L_LIBRARIES_USE_CUDA
+#ifdef FL_LIBRARIES_USE_CUDA
+#include "flashlight/lib/sequence/criterion/cuda/ForceAlignmentCriterion.cuh"
+#include "flashlight/lib/sequence/criterion/cuda/FullConnectionCriterion.cuh"
+#include "flashlight/lib/sequence/criterion/cuda/ViterbiPath.cuh"
+#endif // FL_LIBRARIES_USE_CUDA
 
 namespace py = pybind11;
-using namespace w2l;
+using namespace fl::lib::seq;
 
 template <class T>
 static T castBytes(const py::bytes& b) {
@@ -33,9 +33,9 @@ static T castBytes(const py::bytes& b) {
   return *reinterpret_cast<const T*>(s.data());
 }
 
-using CpuFAC = cpu::ForceAlignmentCriterion<float>;
-using CpuFCC = cpu::FullConnectionCriterion<float>;
-using CpuViterbi = cpu::ViterbiPath<float>;
+using CpuFAC = fl::lib::cpu::ForceAlignmentCriterion<float>;
+using CpuFCC = fl::lib::cpu::FullConnectionCriterion<float>;
+using CpuViterbi = fl::lib::cpu::ViterbiPath<float>;
 
 static void CpuFAC_forward(
     int B,
@@ -147,11 +147,11 @@ static void CpuViterbi_compute(
       castBytes<void*>(workspace));
 }
 
-#ifdef W2L_LIBRARIES_USE_CUDA
+#ifdef FL_LIBRARIES_USE_CUDA
 
-using CudaFAC = cuda::ForceAlignmentCriterion<float>;
-using CudaFCC = cuda::FullConnectionCriterion<float>;
-using CudaViterbi = cuda::ViterbiPath<float>;
+using CudaFAC = fl::lib::cuda::ForceAlignmentCriterion<float>;
+using CudaFCC = fl::lib::cuda::FullConnectionCriterion<float>;
+using CudaViterbi = fl::lib::cuda::ViterbiPath<float>;
 
 static void CudaFAC_forward(
     int B,
@@ -273,9 +273,9 @@ static void CudaViterbi_compute(
       castBytes<cudaStream_t>(stream));
 }
 
-#endif // W2L_LIBRARIES_USE_CUDA
+#endif // FL_LIBRARIES_USE_CUDA
 
-PYBIND11_MODULE(_criterion, m) {
+PYBIND11_MODULE(_lib_sequence_criterion, m) {
   py::enum_<CriterionScaleMode>(m, "CriterionScaleMode")
       .value("NONE", CriterionScaleMode::NONE)
       .value("INPUT_SZ", CriterionScaleMode::INPUT_SZ)
@@ -297,7 +297,7 @@ PYBIND11_MODULE(_criterion, m) {
       .def("get_workspace_size", &CpuViterbi::getWorkspaceSize)
       .def("compute", &CpuViterbi_compute);
 
-#ifdef W2L_LIBRARIES_USE_CUDA
+#ifdef FL_LIBRARIES_USE_CUDA
   m.attr("sizeof_cuda_stream") = py::int_(sizeof(cudaStream_t));
 
   py::class_<CudaFAC>(m, "CudaForceAlignmentCriterion")
@@ -313,5 +313,5 @@ PYBIND11_MODULE(_criterion, m) {
   py::class_<CudaViterbi>(m, "CudaViterbiPath")
       .def("get_workspace_size", &CudaViterbi::getWorkspaceSize)
       .def("compute", &CudaViterbi_compute);
-#endif // W2L_LIBRARIES_USE_CUDA
+#endif // FL_LIBRARIES_USE_CUDA
 }

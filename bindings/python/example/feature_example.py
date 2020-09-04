@@ -6,7 +6,7 @@ import itertools as it
 import os
 import sys
 
-from wav2letter.feature import FeatureParams, Mfcc
+from flashlight.lib.audio.feature import FeatureParams, Mfcc
 
 
 def load_data(filename):
@@ -19,7 +19,10 @@ def load_data(filename):
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print(f"usage: {sys.argv[0]} feature_test_data_path", file=sys.stderr)
-        print("  (usually: <wav2letter_root>/src/feature/test/data)", file=sys.stderr)
+        print(
+            "  (usually: <flashlight_root>/lib/test/audio/feature/data)",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     data_path = sys.argv[1]

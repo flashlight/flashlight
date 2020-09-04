@@ -3,9 +3,9 @@
 import struct
 import sys
 
+import flashlight._lib_sequence_criterion as _C
 import torch
 import torch.nn as nn
-import wav2letter._criterion as _C
 
 
 def get_data_ptr_as_bytes(tensor):

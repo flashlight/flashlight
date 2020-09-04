@@ -3,7 +3,7 @@
 import argparse
 
 import torch
-from wav2letter.criterion import ASGLoss, CriterionScaleMode
+from flashlight.lib.sequence.criterion import ASGLoss, CriterionScaleMode
 
 
 if __name__ == "__main__":

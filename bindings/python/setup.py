@@ -15,6 +15,7 @@ from setuptools.command.build_ext import build_ext
 # - `USE_CUDA=0` disables building CUDA components
 # - `USE_KENLM=0` disables building KenLM
 # - `USE_MKL=1` enables MKL (may cause errors)
+# By default build with USE_CUDA=1, USE_KENLM=1, USE_MKL=0
 
 
 def check_env_flag(name, default=""):
@@ -42,13 +43,13 @@ class CMakeBuild(build_ext):
 
         cmake_version = re.search(r"version\s*([\d.]+)", out.decode().lower()).group(1)
         if version.parse(cmake_version) < version.parse("3.5.1"):
-            raise RuntimeError("CMake >= 3.5.1 is required to build wav2letter")
+            raise RuntimeError("CMake >= 3.5.1 is required to build flashlight")
 
         # our CMakeLists builds all the extensions at once
         self.build_extensions()
 
     def build_extensions(self):
-        extdir = os.path.abspath("wav2letter")
+        extdir = os.path.abspath("flashlight")
         sourcedir = os.path.abspath("../..")
         use_cuda = "OFF" if check_negative_env_flag("USE_CUDA") else "ON"
         use_kenlm = "OFF" if check_negative_env_flag("USE_KENLM") else "ON"
@@ -56,13 +57,12 @@ class CMakeBuild(build_ext):
         cmake_args = [
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + extdir,
             "-DPYTHON_EXECUTABLE=" + sys.executable,
-            "-DW2L_BUILD_LIBRARIES_ONLY=ON",
-            "-DW2L_BUILD_FOR_PYTHON=ON",
-            "-DW2L_LIBRARIES_USE_CUDA=" + use_cuda,
-            "-DW2L_LIBRARIES_USE_KENLM=" + use_kenlm,
-            "-DW2L_LIBRARIES_USE_MKL=" + use_mkl,
+            "-DFL_BUILD_LIBRARIES_ONLY=ON",
+            "-DFL_LIBRARIES_BUILD_FOR_PYTHON=ON",
+            "-DFL_LIBRARIES_USE_CUDA=" + use_cuda,
+            "-DFL_LIBRARIES_USE_KENLM=" + use_kenlm,
+            "-DFL_LIBRARIES_USE_MKL=" + use_mkl,
         ]
-
         cfg = "Debug" if self.debug else "Release"
         build_args = ["--config", cfg]
 
@@ -73,13 +73,13 @@ class CMakeBuild(build_ext):
             # if sys.maxsize > 2 ** 32:
             #     cmake_args += ["-A", "x64"]
             # build_args += ["--", "/m"]
-            raise RuntimeError("wav2letter doesn't support building on Windows yet")
+            raise RuntimeError("flashligth doesn't support building on Windows yet")
         else:
             cmake_args += ["-DCMAKE_BUILD_TYPE=" + cfg]
             build_args += ["--", "-j4"]
 
         env = os.environ.copy()
-        env["CXXFLAGS"] = '{} -DVERSION_INFO=\\"{}\\"'.format(
+        env["CXXFLAGS"] = '{} -fPIC -DVERSION_INFO=\\"{}\\"'.format(
             env.get("CXXFLAGS", ""), self.distribution.get_version()
         )
         if not os.path.exists(self.build_temp):
@@ -93,17 +93,17 @@ class CMakeBuild(build_ext):
 
 
 setup(
-    name="wav2letter",
-    version="0.0.2",
-    author="Jeff Cai",
+    name="flashlight",
+    version="0.0.1",
+    author="Jeff Cai, Tatiana Likhomanenko",
     author_email="jcai@fb.com, antares@fb.com",
-    description="wav2letter bindings for python",
+    description="flashlight bindings for python",
     long_description="",
     ext_modules=[
-        CMakeExtension("wav2letter._common"),
-        CMakeExtension("wav2letter._criterion"),
-        CMakeExtension("wav2letter._decoder"),
-        CMakeExtension("wav2letter._feature"),
+        CMakeExtension("flashlight._lib_audio_feature"),
+        CMakeExtension("flashlight._lib_sequence_criterion"),
+        CMakeExtension("flashlight._lib_text_decoder"),
+        CMakeExtension("flashlight._lib_text_dictionary"),
     ],
     cmdclass={"build_ext": CMakeBuild},
     zip_safe=False,
