@@ -9,38 +9,38 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "flashlight/lib/feature/Ceplifter.h"
-#include "flashlight/lib/feature/Dct.h"
-#include "flashlight/lib/feature/Derivatives.h"
-#include "flashlight/lib/feature/Dither.h"
-#include "flashlight/lib/feature/FeatureParams.h"
-#include "flashlight/lib/feature/Mfcc.h"
-#include "flashlight/lib/feature/Mfsc.h"
-#include "flashlight/lib/feature/PowerSpectrum.h"
-#include "flashlight/lib/feature/PreEmphasis.h"
-#include "flashlight/lib/feature/SpeechUtils.h"
-#include "flashlight/lib/feature/TriFilterbank.h"
-#include "flashlight/lib/feature/Windowing.h"
+#include "flashlight/lib/audio/feature/Ceplifter.h"
+#include "flashlight/lib/audio/feature/Dct.h"
+#include "flashlight/lib/audio/feature/Derivatives.h"
+#include "flashlight/lib/audio/feature/Dither.h"
+#include "flashlight/lib/audio/feature/FeatureParams.h"
+#include "flashlight/lib/audio/feature/Mfcc.h"
+#include "flashlight/lib/audio/feature/Mfsc.h"
+#include "flashlight/lib/audio/feature/PowerSpectrum.h"
+#include "flashlight/lib/audio/feature/PreEmphasis.h"
+#include "flashlight/lib/audio/feature/SpeechUtils.h"
+#include "flashlight/lib/audio/feature/TriFilterbank.h"
+#include "flashlight/lib/audio/feature/Windowing.h"
 
 namespace py = pybind11;
 using namespace pybind11::literals;
 
-using WindowType = w2l::WindowType;
-using FrequencyScale = w2l::FrequencyScale;
-using FeatureParams = w2l::FeatureParams;
+using WindowType = fl::lib::audio::WindowType;
+using FrequencyScale = fl::lib::audio::FrequencyScale;
+using FeatureParams = fl::lib::audio::FeatureParams;
 
-using Ceplifter = w2l::Ceplifter;
-using Dct = w2l::Dct;
-using Derivatives = w2l::Derivatives;
-using Dither = w2l::Dither;
-using Mfcc = w2l::Mfcc;
-using Mfsc = w2l::Mfsc;
-using PowerSpectrum = w2l::PowerSpectrum;
-using PreEmphasis = w2l::PreEmphasis;
-using TriFilterbank = w2l::TriFilterbank;
-using Windowing = w2l::Windowing;
+using Ceplifter = fl::lib::audio::Ceplifter;
+using Dct = fl::lib::audio::Dct;
+using Derivatives = fl::lib::audio::Derivatives;
+using Dither = fl::lib::audio::Dither;
+using Mfcc = fl::lib::audio::Mfcc;
+using Mfsc = fl::lib::audio::Mfsc;
+using PowerSpectrum = fl::lib::audio::PowerSpectrum;
+using PreEmphasis = fl::lib::audio::PreEmphasis;
+using TriFilterbank = fl::lib::audio::TriFilterbank;
+using Windowing = fl::lib::audio::Windowing;
 
-PYBIND11_MODULE(_feature, m) {
+PYBIND11_MODULE(_lib_audio_feature, m) {
   py::enum_<WindowType>(m, "WindowType")
       .value("HAMMING", WindowType::HAMMING)
       .value("HANNING", WindowType::HANNING);
@@ -172,6 +172,6 @@ PYBIND11_MODULE(_feature, m) {
       .def("apply", &Windowing::apply, "input"_a)
       .def("apply_in_place", &Windowing::applyInPlace, "input"_a);
 
-  m.def("frame_signal", w2l::frameSignal, "input"_a, "params"_a);
-  m.def("cblas_gemm", w2l::cblasGemm, "A"_a, "B"_a, "n"_a, "k"_a);
+  m.def("frame_signal", fl::lib::audio::frameSignal, "input"_a, "params"_a);
+  m.def("cblas_gemm", fl::lib::audio::cblasGemm, "A"_a, "B"_a, "n"_a, "k"_a);
 }

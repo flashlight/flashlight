@@ -8,14 +8,19 @@ import struct
 import sys
 
 import numpy as np
-from wav2letter.common import Dictionary, create_word_dict, load_words, tkn_to_idx
-from wav2letter.decoder import (
+from flashlight.lib.text.decoder import (
     CriterionType,
     DecoderOptions,
     KenLM,
     LexiconDecoder,
     SmearingMode,
     Trie,
+)
+from flashlight.lib.text.dictionary import (
+    Dictionary,
+    create_word_dict,
+    load_words,
+    pack_replabels,
 )
 
 
@@ -78,10 +83,17 @@ def assert_near(x, y, tol):
     assert abs(x - y) <= tol
 
 
+def tkn_to_idx(spelling, token_dict, maxReps = 0):
+    result = []
+    for token in spelling:
+        result.append(token_dict.get_index(token))
+    return pack_replabels(result, token_dict, maxReps)
+
+
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print(f"usage: {sys.argv[0]} decoder_test_data_path", file=sys.stderr)
-        print("  (usually: <wav2letter_root>/src/decoder/test)", file=sys.stderr)
+        print("  (usually: <flashlight>/app/asr/test/decoder/data)", file=sys.stderr)
         sys.exit(1)
 
     data_path = sys.argv[1]
@@ -196,7 +208,9 @@ if __name__ == "__main__":
                 break
             prediction.append(token_dict.get_entry(idx))
         prediction = " ".join(prediction)
-        print(f"score={results[i].score} amScore={results[i].amScore} lmScore={results[i].lmScore} prediction='{prediction}'")
+        print(
+            f"score={results[i].score} amScore={results[i].amScore} lmScore={results[i].lmScore} prediction='{prediction}'"
+        )
 
     assert len(results) == 16
     hyp_score_target = [-284.0998, -284.108, -284.119, -284.127, -284.296]

@@ -9,14 +9,15 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "flashlight/lib/decoder/LexiconDecoder.h"
+#include "flashlight/lib/text/decoder/LexiconDecoder.h"
+#include "flashlight/lib/text/decoder/LexiconFreeDecoder.h"
 
-#ifdef W2L_LIBRARIES_USE_KENLM
-#include "flashlight/lib/lm/KenLM.h"
-#endif
+#ifdef FL_LIBRARIES_USE_KENLM
+#include "flashlight/lib/text/decoder/lm/KenLM.h"
+#endif // FL_LIBRARIES_USE_KENLM
 
 namespace py = pybind11;
-using namespace w2l;
+using namespace fl::lib::text;
 using namespace py::literals;
 
 /**
@@ -64,14 +65,14 @@ class PyLM : public LM {
  * in score and finish functions to the derived class
  * (for example vie obj.__class__ = CustomPyLMSTate) which cause the error
  * "TypeError: __class__ assignment: 'CustomPyLMState' deallocator differs
- * from 'wav2letter._decoder.LMState'"
+ * from 'flashlight.text.decoder._decoder.LMState'"
  * details see in https://github.com/pybind/pybind11/issues/1640
  * To define custom LM you can introduce map inside LM which maps LMstate to
  * additional state info (shared pointers pointing to the same underlying object
  * will have the same id in python in functions score and finish)
  *
  * ```python
- * from wav2letter.decoder import LM
+ * from flashlight.lib.text.decoder import LM
  * class MyPyLM(LM):
  *      mapping_states = dict() # store simple additional int for each state
  *
@@ -112,9 +113,25 @@ std::vector<DecodeResult> LexiconDecoder_decode(
   return decoder.decode(reinterpret_cast<const float*>(emissions), T, N);
 }
 
+void LexiconFreeDecoder_decodeStep(
+    LexiconFreeDecoder& decoder,
+    uintptr_t emissions,
+    int T,
+    int N) {
+  decoder.decodeStep(reinterpret_cast<const float*>(emissions), T, N);
+}
+
+std::vector<DecodeResult> LexiconFreeDecoder_decode(
+    LexiconFreeDecoder& decoder,
+    uintptr_t emissions,
+    int T,
+    int N) {
+  return decoder.decode(reinterpret_cast<const float*>(emissions), T, N);
+}
+
 } // namespace
 
-PYBIND11_MODULE(_decoder, m) {
+PYBIND11_MODULE(_lib_text_decoder, m) {
   py::enum_<SmearingMode>(m, "SmearingMode")
       .value("NONE", SmearingMode::NONE)
       .value("MAX", SmearingMode::MAX)
@@ -147,7 +164,7 @@ PYBIND11_MODULE(_decoder, m) {
       .def("compare", &LMState::compare, "state"_a)
       .def("child", &LMState::child<LMState>, "usr_index"_a);
 
-#ifdef W2L_LIBRARIES_USE_KENLM
+#ifdef FL_LIBRARIES_USE_KENLM
   py::class_<KenLM, KenLMPtr, LM>(m, "KenLM")
       .def(
           py::init<const std::string&, const Dictionary&>(),
@@ -227,4 +244,29 @@ PYBIND11_MODULE(_decoder, m) {
           &LexiconDecoder::getBestHypothesis,
           "look_back"_a = 0)
       .def("get_all_final_hypothesis", &LexiconDecoder::getAllFinalHypothesis);
+
+  py::class_<LexiconFreeDecoder>(m, "LexiconFreeDecoder")
+      .def(py::init<
+           const DecoderOptions&,
+           const LMPtr,
+           const int,
+           const int,
+           const std::vector<float>&>())
+      .def("decode_begin", &LexiconFreeDecoder::decodeBegin)
+      .def(
+          "decode_step",
+          &LexiconFreeDecoder_decodeStep,
+          "emissions"_a,
+          "T"_a,
+          "N"_a)
+      .def("decode_end", &LexiconFreeDecoder::decodeEnd)
+      .def("decode", &LexiconFreeDecoder_decode, "emissions"_a, "T"_a, "N"_a)
+      .def("prune", &LexiconFreeDecoder::prune, "look_back"_a = 0)
+      .def(
+          "get_best_hypothesis",
+          &LexiconFreeDecoder::getBestHypothesis,
+          "look_back"_a = 0)
+      .def(
+          "get_all_final_hypothesis",
+          &LexiconFreeDecoder::getAllFinalHypothesis);
 }

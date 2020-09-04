@@ -9,11 +9,11 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "flashlight/lib/common/Dictionary.h"
-#include "flashlight/lib/common/WordUtils.h"
+#include "flashlight/lib/text/dictionary/Dictionary.h"
+#include "flashlight/lib/text/dictionary/Utils.h"
 
 namespace py = pybind11;
-using namespace w2l;
+using namespace fl::lib::text;
 using namespace py::literals;
 
 namespace {
@@ -31,7 +31,7 @@ void Dictionary_addEntry_1(Dictionary& dict, const std::string& entry) {
 
 } // namespace
 
-PYBIND11_MODULE(_common, m) {
+PYBIND11_MODULE(_lib_text_dictionary, m) {
   py::class_<Dictionary>(m, "Dictionary")
       .def(py::init<>())
       .def(py::init<const std::string&>(), "filename"_a)
@@ -52,10 +52,8 @@ PYBIND11_MODULE(_common, m) {
           "map_indices_to_entries",
           &Dictionary::mapIndicesToEntries,
           "indices"_a);
-
   m.def("create_word_dict", &createWordDict, "lexicon"_a);
   m.def("load_words", &loadWords, "filename"_a, "max_words"_a = -1);
-  m.def("tkn_to_idx", &tkn2Idx, "spelling"_a, "token_dict"_a, "max_reps"_a);
   m.def("pack_replabels", &packReplabels, "tokens"_a, "dict"_a, "max_reps"_a);
   m.def(
       "unpack_replabels", &unpackReplabels, "tokens"_a, "dict"_a, "max_reps"_a);
