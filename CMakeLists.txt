@@ -221,7 +221,7 @@ else()
 endif()
 
 # Link ArrayFire to flashlight
-target_link_libraries(flashlight INTERFACE ArrayFire::${FL_AF_BACKEND})
+target_link_libraries(flashlight PUBLIC ArrayFire::${FL_AF_BACKEND})
 
 # ------------------------ flashlight Core ------------------------
 
