@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 # ------------------------- Library -------------------------
-# TODO(jacobkahn): Task libraries aren't currently installed.
-# Having them bundled into flashlight and moving headers accordingly is
-# one potential path forward here.
 add_library(
   flashlight-app-asr
   ""
