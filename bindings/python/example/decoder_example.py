@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+"""
+Copyright (c) Facebook, Inc. and its affiliates.
+All rights reserved.
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree.
+"""
+
 # Perform beam-search decoding with word-level LM
 # this is test with dumped acoustic model scores
 
@@ -83,7 +90,7 @@ def assert_near(x, y, tol):
     assert abs(x - y) <= tol
 
 
-def tkn_to_idx(spelling, token_dict, maxReps = 0):
+def tkn_to_idx(spelling, token_dict, maxReps=0):
     result = []
     for token in spelling:
         result.append(token_dict.get_index(token))
