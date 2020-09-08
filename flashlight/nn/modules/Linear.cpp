@@ -50,8 +50,7 @@ Variable Linear::forward(const Variable& input) {
 void Linear::initialize() {
   int fanIn = nIn_;
   auto w = Variable(
-      2 * af::kaimingNormal(af::dim4(nOut_, nIn_), fanIn, af::dtype::f32),
-      true);
+      af::kaimingUniform(af::dim4(nOut_, nIn_), fanIn, af::dtype::f32), true);
   if (bias_) {
     double bound = std::sqrt(1.0 / fanIn);
     auto b = uniform(af::dim4(nOut_), -bound, bound, af::dtype::f32, true);
