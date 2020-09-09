@@ -10,11 +10,11 @@
 
 #include <unordered_map>
 
-#include <flashlight/flashlight.h>
 #include <glog/logging.h>
+#include "flashlight/flashlight/flashlight.h"
 
-#include "flashlight/lib/common/System.h"
 #include "flashlight/app/asr/common/Defines.h"
+#include "flashlight/lib/common/System.h"
 
 namespace fl {
 namespace app {

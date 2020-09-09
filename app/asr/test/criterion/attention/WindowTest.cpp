@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 
 #include <arrayfire.h>
-#include <flashlight/flashlight.h>
+#include "flashlight/flashlight/flashlight.h"
 
 #include "flashlight/app/asr/criterion/attention/window.h"
 
