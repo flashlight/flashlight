@@ -8,7 +8,7 @@
 
 #include <stdexcept>
 
-#include "flashlight/meter/FrameErrorMeter.h"
+#include "flashlight/flashlight/meter/FrameErrorMeter.h"
 
 namespace fl {
 FrameErrorMeter::FrameErrorMeter(bool accuracy /* = false */)

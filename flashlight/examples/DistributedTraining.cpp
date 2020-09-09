@@ -8,7 +8,7 @@
 
 #include <iostream>
 
-#include "flashlight/flashlight.h"
+#include "flashlight/flashlight/flashlight.h"
 
 using namespace fl;
 

@@ -14,9 +14,9 @@
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
 
-#include "flashlight/common/CppBackports.h"
-#include "flashlight/nn/nn.h"
-#include "flashlight/optim/optim.h"
+#include "flashlight/flashlight/common/CppBackports.h"
+#include "flashlight/flashlight/nn/nn.h"
+#include "flashlight/flashlight/optim/optim.h"
 
 #include <array>
 #include <iostream>

@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/experimental/memory/optimizer/Optimizer.h"
+#include "flashlight/flashlight/experimental/memory/optimizer/Optimizer.h"
 
 #include <algorithm>
 #include <limits>
@@ -15,10 +15,10 @@
 #include <stdexcept>
 #include <thread>
 
-#include "flashlight/common/Logging.h"
-#include "flashlight/common/threadpool/ThreadPool.h"
-#include "flashlight/experimental/memory/allocator/ConfigurableMemoryAllocator.h"
-#include "flashlight/experimental/memory/optimizer/Simulator.h"
+#include "flashlight/flashlight/common/Logging.h"
+#include "flashlight/flashlight/common/threadpool/ThreadPool.h"
+#include "flashlight/flashlight/experimental/memory/allocator/ConfigurableMemoryAllocator.h"
+#include "flashlight/flashlight/experimental/memory/optimizer/Simulator.h"
 
 namespace fl {
 

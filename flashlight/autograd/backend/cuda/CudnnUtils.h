@@ -11,8 +11,8 @@
 #include <arrayfire.h>
 #include <cudnn.h>
 
-#include "flashlight/autograd/Variable.h"
-#include "flashlight/common/Defines.h"
+#include "flashlight/flashlight/autograd/Variable.h"
+#include "flashlight/flashlight/common/Defines.h"
 
 namespace fl {
 

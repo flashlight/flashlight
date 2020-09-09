@@ -14,7 +14,7 @@
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
 
-#include "flashlight/optim/AdamOptimizer.h"
+#include "flashlight/flashlight/optim/AdamOptimizer.h"
 
 #include <cmath>
 

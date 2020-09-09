@@ -22,10 +22,10 @@
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
 
-#include "flashlight/experimental/memory/AllocationLog.h"
-#include "flashlight/experimental/memory/allocator/ConfigurableMemoryAllocator.h"
-#include "flashlight/experimental/memory/allocator/MemoryAllocator.h"
-#include "flashlight/experimental/memory/optimizer/Optimizer.h"
+#include "flashlight/flashlight/experimental/memory/AllocationLog.h"
+#include "flashlight/flashlight/experimental/memory/allocator/ConfigurableMemoryAllocator.h"
+#include "flashlight/flashlight/experimental/memory/allocator/MemoryAllocator.h"
+#include "flashlight/flashlight/experimental/memory/optimizer/Optimizer.h"
 
 namespace fl {
 std::string fullpath(const std::string& path, const std::string& filename);

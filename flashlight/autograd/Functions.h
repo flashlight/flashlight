@@ -20,7 +20,7 @@
 
 #include <arrayfire.h>
 
-#include "flashlight/common/Defines.h"
+#include "flashlight/flashlight/common/Defines.h"
 
 namespace fl {
 namespace detail {

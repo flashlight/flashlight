@@ -9,7 +9,7 @@
 #include <array>
 #include <stdexcept>
 
-#include "flashlight/dataset/TensorDataset.h"
+#include "flashlight/flashlight/dataset/TensorDataset.h"
 
 namespace fl {
 

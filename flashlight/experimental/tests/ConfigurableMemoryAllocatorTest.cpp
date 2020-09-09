@@ -13,8 +13,8 @@
 
 #include <gtest/gtest.h>
 
-#include "flashlight/common/Logging.h"
-#include "flashlight/experimental/memory/allocator/ConfigurableMemoryAllocator.h"
+#include "flashlight/flashlight/common/Logging.h"
+#include "flashlight/flashlight/experimental/memory/allocator/ConfigurableMemoryAllocator.h"
 
 using namespace fl;
 

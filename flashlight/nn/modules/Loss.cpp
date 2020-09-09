@@ -14,11 +14,11 @@
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
 
-#include "flashlight/nn/modules/Loss.h"
+#include "flashlight/flashlight/nn/modules/Loss.h"
 #include <stdexcept>
 #include <vector>
 
-#include "flashlight/autograd/Functions.h"
+#include "flashlight/flashlight/autograd/Functions.h"
 
 namespace fl {
 

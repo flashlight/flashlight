@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/experimental/memory/allocator/ConfigurableMemoryAllocator.h"
+#include "flashlight/flashlight/experimental/memory/allocator/ConfigurableMemoryAllocator.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -20,12 +20,12 @@
 
 #include <cereal/archives/json.hpp>
 
-#include "flashlight/common/CppBackports.h"
-#include "flashlight/common/Logging.h"
-#include "flashlight/common/Utils.h"
-#include "flashlight/experimental/memory/allocator/CompositeMemoryAllocator.h"
-#include "flashlight/experimental/memory/allocator/freelist/FreeList.h"
-#include "flashlight/experimental/memory/allocator/memorypool/MemoryPool.h"
+#include "flashlight/flashlight/common/CppBackports.h"
+#include "flashlight/flashlight/common/Logging.h"
+#include "flashlight/flashlight/common/Utils.h"
+#include "flashlight/flashlight/experimental/memory/allocator/CompositeMemoryAllocator.h"
+#include "flashlight/flashlight/experimental/memory/allocator/freelist/FreeList.h"
+#include "flashlight/flashlight/experimental/memory/allocator/memorypool/MemoryPool.h"
 
 namespace fl {
 

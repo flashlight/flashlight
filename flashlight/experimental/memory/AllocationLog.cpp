@@ -6,12 +6,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/experimental/memory/AllocationLog.h"
+#include "flashlight/flashlight/experimental/memory/AllocationLog.h"
 
 #include <sstream>
 #include <stdexcept>
 
-#include "flashlight/common/Logging.h"
+#include "flashlight/flashlight/common/Logging.h"
 
 namespace fl {
 

@@ -8,7 +8,7 @@
 
 #include <stdexcept>
 
-#include "flashlight/dataset/TransformDataset.h"
+#include "flashlight/flashlight/dataset/TransformDataset.h"
 
 namespace fl {
 

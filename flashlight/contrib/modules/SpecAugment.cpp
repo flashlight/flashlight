@@ -9,7 +9,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#include "flashlight/contrib/modules/SpecAugment.h"
+#include "flashlight/flashlight/contrib/modules/SpecAugment.h"
 
 namespace fl {
 

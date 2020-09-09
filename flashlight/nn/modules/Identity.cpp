@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/nn/modules/Identity.h"
+#include "flashlight/flashlight/nn/modules/Identity.h"
 
 namespace fl {
 

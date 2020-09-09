@@ -11,9 +11,9 @@
 #include <future>
 #include <queue>
 
-#include "flashlight/dataset/Dataset.h"
+#include "flashlight/flashlight/dataset/Dataset.h"
 
-#include "flashlight/common/threadpool/ThreadPool.h"
+#include "flashlight/flashlight/common/threadpool/ThreadPool.h"
 
 namespace fl {
 

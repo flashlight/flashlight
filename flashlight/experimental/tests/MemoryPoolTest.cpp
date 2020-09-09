@@ -12,8 +12,8 @@
 
 #include <gtest/gtest.h>
 
-#include "flashlight/common/Logging.h"
-#include "flashlight/experimental/memory/allocator/memorypool/MemoryPool.h"
+#include "flashlight/flashlight/common/Logging.h"
+#include "flashlight/flashlight/experimental/memory/allocator/memorypool/MemoryPool.h"
 
 using namespace fl;
 

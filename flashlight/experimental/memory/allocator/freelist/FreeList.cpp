@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/experimental/memory/allocator/freelist/FreeList.h"
+#include "flashlight/flashlight/experimental/memory/allocator/freelist/FreeList.h"
 
 #include <algorithm>
 #include <cmath>
@@ -17,9 +17,9 @@
 #include <unordered_map>
 #include <utility>
 
-#include "flashlight/common/Histogram.h"
-#include "flashlight/common/Logging.h"
-#include "flashlight/common/Utils.h"
+#include "flashlight/flashlight/common/Histogram.h"
+#include "flashlight/flashlight/common/Logging.h"
+#include "flashlight/flashlight/common/Utils.h"
 
 namespace fl {
 

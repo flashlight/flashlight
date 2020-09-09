@@ -17,11 +17,11 @@
 #include <utility>
 #include <vector>
 
-#include "flashlight/common/Histogram.h"
-#include "flashlight/common/Logging.h"
-#include "flashlight/common/Utils.h"
-#include "flashlight/experimental/memory/AllocationLog.h"
-#include "flashlight/experimental/memory/allocator/ConfigurableMemoryAllocator.h"
+#include "flashlight/flashlight/common/Histogram.h"
+#include "flashlight/flashlight/common/Logging.h"
+#include "flashlight/flashlight/common/Utils.h"
+#include "flashlight/flashlight/experimental/memory/AllocationLog.h"
+#include "flashlight/flashlight/experimental/memory/allocator/ConfigurableMemoryAllocator.h"
 
 using namespace fl;
 

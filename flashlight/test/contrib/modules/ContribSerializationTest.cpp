@@ -12,9 +12,9 @@
 #include <arrayfire.h>
 #include <gtest/gtest.h>
 
-#include "flashlight/autograd/autograd.h"
-#include "flashlight/contrib/modules/modules.h"
-#include "flashlight/nn/nn.h"
+#include "flashlight/flashlight/autograd/autograd.h"
+#include "flashlight/flashlight/contrib/modules/modules.h"
+#include "flashlight/flashlight/nn/nn.h"
 
 using namespace fl;
 

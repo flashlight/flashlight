@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/meter/TimeMeter.h"
+#include "flashlight/flashlight/meter/TimeMeter.h"
 
 namespace fl {
 

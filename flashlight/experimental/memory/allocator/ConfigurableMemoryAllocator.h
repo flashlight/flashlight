@@ -22,7 +22,7 @@
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
 
-#include "flashlight/experimental/memory/allocator/MemoryAllocator.h"
+#include "flashlight/flashlight/experimental/memory/allocator/MemoryAllocator.h"
 
 namespace fl {
 

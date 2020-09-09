@@ -9,7 +9,7 @@
 #include <array>
 #include <thread>
 
-#include "flashlight/dataset/BlobDataset.h"
+#include "flashlight/flashlight/dataset/BlobDataset.h"
 
 namespace fl {
 

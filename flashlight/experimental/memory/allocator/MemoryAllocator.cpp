@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/experimental/memory/allocator/MemoryAllocator.h"
+#include "flashlight/flashlight/experimental/memory/allocator/MemoryAllocator.h"
 
 #include <climits>
 #include <cmath>
@@ -14,8 +14,8 @@
 #include <sstream>
 #include <utility>
 
-#include "flashlight/common/Logging.h"
-#include "flashlight/common/Utils.h"
+#include "flashlight/flashlight/common/Logging.h"
+#include "flashlight/flashlight/common/Utils.h"
 
 namespace fl {
 

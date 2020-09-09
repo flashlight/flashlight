@@ -6,11 +6,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/contrib/modules/PositionEmbedding.h"
+#include "flashlight/flashlight/contrib/modules/PositionEmbedding.h"
 
-#include "flashlight/autograd/Functions.h"
-#include "flashlight/nn/Init.h"
-#include "flashlight/nn/Utils.h"
+#include "flashlight/flashlight/autograd/Functions.h"
+#include "flashlight/flashlight/nn/Init.h"
+#include "flashlight/flashlight/nn/Utils.h"
 
 namespace fl {
 

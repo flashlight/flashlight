@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/contrib/modules/TDSBlock.h"
+#include "flashlight/flashlight/contrib/modules/TDSBlock.h"
 
 namespace fl {
 

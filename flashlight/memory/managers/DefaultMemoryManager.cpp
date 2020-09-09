@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 
-#include "flashlight/memory/MemoryManagerDeviceInterface.h"
+#include "flashlight/flashlight/memory/MemoryManagerDeviceInterface.h"
 
 #define divup(a, b) (((a) + (b)-1) / (b))
 

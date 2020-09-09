@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "flashlight/experimental/memory/allocator/MemoryAllocator.h"
+#include "flashlight/flashlight/experimental/memory/allocator/MemoryAllocator.h"
 
 namespace fl {
 

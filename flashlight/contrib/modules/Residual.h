@@ -17,9 +17,9 @@
 #include <cereal/types/set.hpp>
 #include <cereal/types/unordered_set.hpp>
 
-#include "flashlight/common/Defines.h"
-#include "flashlight/nn/modules/Container.h"
-#include "flashlight/nn/modules/Module.h"
+#include "flashlight/flashlight/common/Defines.h"
+#include "flashlight/flashlight/nn/modules/Container.h"
+#include "flashlight/flashlight/nn/modules/Module.h"
 
 namespace fl {
 

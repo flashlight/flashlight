@@ -5,7 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-#include "flashlight/experimental/memory/allocator/memorypool/MemoryPool.h"
+#include "flashlight/flashlight/experimental/memory/allocator/memorypool/MemoryPool.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -14,8 +14,8 @@
 #include <stdexcept>
 #include <unordered_map>
 
-#include "flashlight/common/Histogram.h"
-#include "flashlight/common/Logging.h"
+#include "flashlight/flashlight/common/Histogram.h"
+#include "flashlight/flashlight/common/Logging.h"
 
 namespace fl {
 

@@ -13,7 +13,7 @@
 #include <memory>
 #include <mutex>
 
-#include "flashlight/memory/MemoryManagerAdapter.h"
+#include "flashlight/flashlight/memory/MemoryManagerAdapter.h"
 
 namespace fl {
 

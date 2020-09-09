@@ -13,10 +13,10 @@
 
 #include <gtest/gtest.h>
 
-#include "flashlight/common/CppBackports.h"
-#include "flashlight/common/Logging.h"
-#include "flashlight/experimental/memory/allocator/CompositeMemoryAllocator.h"
-#include "flashlight/experimental/memory/allocator/freelist/FreeList.h"
+#include "flashlight/flashlight/common/CppBackports.h"
+#include "flashlight/flashlight/common/Logging.h"
+#include "flashlight/flashlight/experimental/memory/allocator/CompositeMemoryAllocator.h"
+#include "flashlight/flashlight/experimental/memory/allocator/freelist/FreeList.h"
 
 using namespace fl;
 

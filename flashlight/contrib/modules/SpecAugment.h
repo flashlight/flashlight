@@ -10,7 +10,7 @@
 
 #include <random>
 
-#include "flashlight/nn/nn.h"
+#include "flashlight/flashlight/nn/nn.h"
 
 namespace fl {
 

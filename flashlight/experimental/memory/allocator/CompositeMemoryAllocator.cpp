@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/experimental/memory/allocator/CompositeMemoryAllocator.h"
+#include "flashlight/flashlight/experimental/memory/allocator/CompositeMemoryAllocator.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -15,9 +15,9 @@
 #include <sstream>
 #include <stdexcept>
 
-#include "flashlight/common/Histogram.h"
-#include "flashlight/common/Logging.h"
-#include "flashlight/common/Utils.h"
+#include "flashlight/flashlight/common/Histogram.h"
+#include "flashlight/flashlight/common/Logging.h"
+#include "flashlight/flashlight/common/Utils.h"
 
 namespace fl {
 

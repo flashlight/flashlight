@@ -6,15 +6,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/memory/MemoryManagerInstaller.h"
+#include "flashlight/flashlight/memory/MemoryManagerInstaller.h"
 
 #include <cstdint>
 #include <cstdlib>
 #include <stdexcept>
 
-#include "flashlight/common/Logging.h"
-#include "flashlight/common/Utils.h"
-#include "flashlight/memory/managers/CachingMemoryManager.h"
+#include "flashlight/flashlight/common/Logging.h"
+#include "flashlight/flashlight/common/Utils.h"
+#include "flashlight/flashlight/memory/managers/CachingMemoryManager.h"
 
 namespace fl {
 

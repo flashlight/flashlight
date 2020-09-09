@@ -14,7 +14,7 @@
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
 
-#include "flashlight/optim/NovogradOptimizer.h"
+#include "flashlight/flashlight/optim/NovogradOptimizer.h"
 
 #include <cmath>
 

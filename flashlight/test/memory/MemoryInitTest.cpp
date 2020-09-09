@@ -13,7 +13,7 @@
 #include <arrayfire.h>
 #include <gtest/gtest.h>
 
-#include "flashlight/memory/memory.h"
+#include "flashlight/flashlight/memory/memory.h"
 
 using namespace fl;
 

@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/dataset/ResampleDataset.h"
+#include "flashlight/flashlight/dataset/ResampleDataset.h"
 
 #include <algorithm>
 #include <numeric>

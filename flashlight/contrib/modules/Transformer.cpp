@@ -6,10 +6,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/contrib/modules/Transformer.h"
-#include "flashlight/autograd/Functions.h"
-#include "flashlight/nn/Init.h"
-#include "flashlight/nn/Utils.h"
+#include "flashlight/flashlight/contrib/modules/Transformer.h"
+#include "flashlight/flashlight/autograd/Functions.h"
+#include "flashlight/flashlight/nn/Init.h"
+#include "flashlight/flashlight/nn/Utils.h"
 
 namespace {
 fl::Variable transformerInitLinear(int32_t inDim, int32_t outDim) {
