@@ -10,11 +10,11 @@
 
 #include <stdexcept>
 
-#include "flashlight/autograd/Functions.h"
-#include "flashlight/nn/Init.h"
-#include "flashlight/nn/modules/Container.h"
-#include "flashlight/nn/modules/Conv2D.h"
-#include "flashlight/nn/modules/Linear.h"
+#include "flashlight/flashlight/autograd/Functions.h"
+#include "flashlight/flashlight/nn/Init.h"
+#include "flashlight/flashlight/nn/modules/Container.h"
+#include "flashlight/flashlight/nn/modules/Conv2D.h"
+#include "flashlight/flashlight/nn/modules/Linear.h"
 
 namespace fl {
 

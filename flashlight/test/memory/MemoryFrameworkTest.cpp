@@ -17,8 +17,8 @@
 #include <arrayfire.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "flashlight/common/CppBackports.h"
-#include "flashlight/memory/memory.h"
+#include "flashlight/flashlight/common/CppBackports.h"
+#include "flashlight/flashlight/memory/memory.h"
 
 using namespace fl;
 using ::testing::_;

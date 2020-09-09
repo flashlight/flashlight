@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "flashlight/memory/MemoryManagerAdapter.h"
+#include "flashlight/flashlight/memory/MemoryManagerAdapter.h"
 
 #include <functional>
 #include <memory>

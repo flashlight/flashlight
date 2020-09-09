@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include "flashlight/meter/AverageValueMeter.h"
-#include "flashlight/meter/CountMeter.h"
-#include "flashlight/meter/EditDistanceMeter.h"
-#include "flashlight/meter/FrameErrorMeter.h"
-#include "flashlight/meter/MSEMeter.h"
-#include "flashlight/meter/TimeMeter.h"
+#include "flashlight/flashlight/meter/AverageValueMeter.h"
+#include "flashlight/flashlight/meter/CountMeter.h"
+#include "flashlight/flashlight/meter/EditDistanceMeter.h"
+#include "flashlight/flashlight/meter/FrameErrorMeter.h"
+#include "flashlight/flashlight/meter/MSEMeter.h"
+#include "flashlight/flashlight/meter/TimeMeter.h"

@@ -14,7 +14,7 @@
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
 
-#include "flashlight/optim/SGDOptimizer.h"
+#include "flashlight/flashlight/optim/SGDOptimizer.h"
 
 #include <cmath>
 

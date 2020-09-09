@@ -15,7 +15,7 @@
 
 #include <gtest/gtest.h>
 
-#include "flashlight/common/Serialization.h"
+#include "flashlight/flashlight/common/Serialization.h"
 
 // ========== utility functions ==========
 

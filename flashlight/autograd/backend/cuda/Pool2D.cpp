@@ -6,11 +6,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/autograd/Functions.h"
+#include "flashlight/flashlight/autograd/Functions.h"
 
-#include "flashlight/autograd/Variable.h"
-#include "flashlight/autograd/backend/cuda/CudnnUtils.h"
-#include "flashlight/common/DevicePtr.h"
+#include "flashlight/flashlight/autograd/Variable.h"
+#include "flashlight/flashlight/autograd/backend/cuda/CudnnUtils.h"
+#include "flashlight/flashlight/common/DevicePtr.h"
 
 namespace fl {
 

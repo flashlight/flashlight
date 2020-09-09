@@ -8,4 +8,4 @@
 
 #pragma once
 
-#include "flashlight/contrib/modules/modules.h"
+#include "flashlight/flashlight/contrib/modules/modules.h"

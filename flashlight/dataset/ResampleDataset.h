@@ -9,7 +9,7 @@
 #pragma once
 
 #include <memory>
-#include "flashlight/dataset/Dataset.h"
+#include "flashlight/flashlight/dataset/Dataset.h"
 
 namespace fl {
 

@@ -8,5 +8,5 @@
 
 #pragma once
 
-#include "flashlight/distributed/DistributedApi.h"
-#include "flashlight/distributed/reducers/reducers.h"
+#include "flashlight/flashlight/distributed/DistributedApi.h"
+#include "flashlight/flashlight/distributed/reducers/reducers.h"

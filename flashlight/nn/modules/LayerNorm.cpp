@@ -6,15 +6,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/nn/modules/LayerNorm.h"
+#include "flashlight/flashlight/nn/modules/LayerNorm.h"
 
 #include <algorithm>
 #include <array>
 #include <numeric>
 #include <stdexcept>
 
-#include "flashlight/autograd/Functions.h"
-#include "flashlight/nn/Init.h"
+#include "flashlight/flashlight/autograd/Functions.h"
+#include "flashlight/flashlight/nn/Init.h"
 
 namespace fl {
 

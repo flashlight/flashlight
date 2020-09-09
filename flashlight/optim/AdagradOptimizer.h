@@ -20,8 +20,8 @@
 
 #include <arrayfire.h>
 
-#include "flashlight/autograd/Variable.h"
-#include "flashlight/optim/Optimizers.h"
+#include "flashlight/flashlight/autograd/Variable.h"
+#include "flashlight/flashlight/optim/Optimizers.h"
 
 namespace fl {
 

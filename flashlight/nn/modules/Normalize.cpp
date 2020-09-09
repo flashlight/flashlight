@@ -6,8 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/nn/modules/Normalize.h"
-#include "flashlight/autograd/Functions.h"
+#include "flashlight/flashlight/nn/modules/Normalize.h"
+#include "flashlight/flashlight/autograd/Functions.h"
 
 namespace fl {
 

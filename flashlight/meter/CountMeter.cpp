@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <stdexcept>
 
-#include "flashlight/meter/CountMeter.h"
+#include "flashlight/flashlight/meter/CountMeter.h"
 
 namespace fl {
 

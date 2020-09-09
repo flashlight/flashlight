@@ -14,7 +14,7 @@
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
 
-#include "flashlight/optim/AdagradOptimizer.h"
+#include "flashlight/flashlight/optim/AdagradOptimizer.h"
 
 #include <cmath>
 

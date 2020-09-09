@@ -28,7 +28,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "flashlight/flashlight.h"
+#include "flashlight/flashlight/flashlight.h"
 
 using namespace fl;
 

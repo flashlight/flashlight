@@ -12,8 +12,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "flashlight/autograd/Variable.h"
-#include "flashlight/common/Defines.h"
+#include "flashlight/flashlight/autograd/Variable.h"
+#include "flashlight/flashlight/common/Defines.h"
 
 namespace fl {
 

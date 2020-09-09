@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/meter/EditDistanceMeter.h"
+#include "flashlight/flashlight/meter/EditDistanceMeter.h"
 
 #include <array>
 #include <stdexcept>

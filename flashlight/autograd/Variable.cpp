@@ -14,7 +14,7 @@
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
 
-#include "flashlight/autograd/Variable.h"
+#include "flashlight/flashlight/autograd/Variable.h"
 
 #include <af/internal.h>
 #include <algorithm>
@@ -24,7 +24,7 @@
 #include <unordered_set>
 #include <utility>
 
-#include "flashlight/common/CppBackports.h"
+#include "flashlight/flashlight/common/CppBackports.h"
 
 namespace fl {
 

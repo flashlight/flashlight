@@ -10,7 +10,7 @@
 
 #include <vector>
 
-#include "flashlight/distributed/reducers/Reducer.h"
+#include "flashlight/flashlight/distributed/reducers/Reducer.h"
 
 namespace fl {
 

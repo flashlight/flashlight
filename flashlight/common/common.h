@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include "flashlight/common/CppBackports.h"
-#include "flashlight/common/Defines.h"
-#include "flashlight/common/DevicePtr.h"
-#include "flashlight/common/Serialization.h"
-#include "flashlight/common/Utils.h"
-#include "flashlight/common/threadpool/ThreadPool.h"
+#include "flashlight/flashlight/common/CppBackports.h"
+#include "flashlight/flashlight/common/Defines.h"
+#include "flashlight/flashlight/common/DevicePtr.h"
+#include "flashlight/flashlight/common/Serialization.h"
+#include "flashlight/flashlight/common/Utils.h"
+#include "flashlight/flashlight/common/threadpool/ThreadPool.h"

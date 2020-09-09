@@ -8,7 +8,7 @@
 
 #include <stdexcept>
 
-#include "flashlight/common/DevicePtr.h"
+#include "flashlight/flashlight/common/DevicePtr.h"
 
 #include <af/internal.h>
 

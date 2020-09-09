@@ -9,9 +9,9 @@
 #include <stdexcept>
 #include <vector>
 
-#include "flashlight/autograd/Functions.h"
-#include "flashlight/nn/Init.h"
-#include "flashlight/nn/modules/AdaptiveSoftMax.h"
+#include "flashlight/flashlight/autograd/Functions.h"
+#include "flashlight/flashlight/nn/Init.h"
+#include "flashlight/flashlight/nn/modules/AdaptiveSoftMax.h"
 
 namespace fl {
 

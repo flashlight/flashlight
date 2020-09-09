@@ -8,11 +8,11 @@
 
 #include <stdexcept>
 
-#include "flashlight/nn/modules/RNN.h"
+#include "flashlight/flashlight/nn/modules/RNN.h"
 
-#include "flashlight/autograd/Functions.h"
-#include "flashlight/nn/Init.h"
-#include "flashlight/nn/Utils.h"
+#include "flashlight/flashlight/autograd/Functions.h"
+#include "flashlight/flashlight/nn/Init.h"
+#include "flashlight/flashlight/nn/Utils.h"
 
 namespace fl {
 

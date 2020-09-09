@@ -8,4 +8,4 @@
 
 #pragma once
 
-#include "flashlight/common/CudaUtils.h"
+#include "flashlight/flashlight/common/CudaUtils.h"

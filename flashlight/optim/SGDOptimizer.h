@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "flashlight/optim/Optimizers.h"
+#include "flashlight/flashlight/optim/Optimizers.h"
 
 namespace fl {
 

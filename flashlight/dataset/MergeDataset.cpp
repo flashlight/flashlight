@@ -8,7 +8,7 @@
 
 #include <stdexcept>
 
-#include "flashlight/dataset/MergeDataset.h"
+#include "flashlight/flashlight/dataset/MergeDataset.h"
 
 namespace fl {
 MergeDataset::MergeDataset(

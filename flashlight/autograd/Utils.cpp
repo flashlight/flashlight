@@ -6,9 +6,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/autograd/Utils.h"
+#include "flashlight/flashlight/autograd/Utils.h"
 
-#include "flashlight/common/Utils.h"
+#include "flashlight/flashlight/common/Utils.h"
 
 namespace fl {
 

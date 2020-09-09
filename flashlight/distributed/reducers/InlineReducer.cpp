@@ -6,8 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/distributed/reducers/InlineReducer.h"
-#include "flashlight/distributed/DistributedApi.h"
+#include "flashlight/flashlight/distributed/reducers/InlineReducer.h"
+#include "flashlight/flashlight/distributed/DistributedApi.h"
 
 namespace fl {
 

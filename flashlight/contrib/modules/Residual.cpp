@@ -8,8 +8,8 @@
 
 #include <stdexcept>
 
-#include "flashlight/autograd/Functions.h"
-#include "flashlight/contrib/modules/Residual.h"
+#include "flashlight/flashlight/autograd/Functions.h"
+#include "flashlight/flashlight/contrib/modules/Residual.h"
 
 namespace fl {
 

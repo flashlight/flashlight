@@ -14,11 +14,11 @@
 #include <mpi.h>
 #include <nccl.h>
 
-#include "flashlight/common/CudaUtils.h"
-#include "flashlight/common/Defines.h"
-#include "flashlight/common/DevicePtr.h"
-#include "flashlight/distributed/DistributedApi.h"
-#include "flashlight/distributed/FileStore.h"
+#include "flashlight/flashlight/common/CudaUtils.h"
+#include "flashlight/flashlight/common/Defines.h"
+#include "flashlight/flashlight/common/DevicePtr.h"
+#include "flashlight/flashlight/distributed/DistributedApi.h"
+#include "flashlight/flashlight/distributed/FileStore.h"
 
 #define NCCLCHECK(expr) ::fl::detail::ncclCheck((expr))
 #define MPICHECK(expr) ::fl::detail::mpiCheck((expr))

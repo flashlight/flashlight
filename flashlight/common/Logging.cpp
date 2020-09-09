@@ -10,8 +10,8 @@
 #include <thread>
 #include <utility>
 
-#include "flashlight/common/Logging.h"
-#include "flashlight/common/Utils.h"
+#include "flashlight/flashlight/common/Logging.h"
+#include "flashlight/flashlight/common/Utils.h"
 
 namespace fl {
 LogLevel Logging::maxLoggingLevel_ = DEFUALT_MAX_LOGGING_LEVEL;

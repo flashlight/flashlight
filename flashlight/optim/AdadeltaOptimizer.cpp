@@ -14,7 +14,7 @@
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
 
-#include "flashlight/optim/AdadeltaOptimizer.h"
+#include "flashlight/flashlight/optim/AdadeltaOptimizer.h"
 
 #include <cmath>
 

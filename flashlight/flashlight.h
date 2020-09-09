@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include "flashlight/autograd/autograd.h"
-#include "flashlight/common/common.h"
-#include "flashlight/dataset/datasets.h"
-#include "flashlight/distributed/distributed.h"
-#include "flashlight/memory/memory.h"
-#include "flashlight/meter/meters.h"
-#include "flashlight/nn/nn.h"
-#include "flashlight/optim/optim.h"
+#include "flashlight/flashlight/autograd/autograd.h"
+#include "flashlight/flashlight/common/common.h"
+#include "flashlight/flashlight/dataset/datasets.h"
+#include "flashlight/flashlight/distributed/distributed.h"
+#include "flashlight/flashlight/memory/memory.h"
+#include "flashlight/flashlight/meter/meters.h"
+#include "flashlight/flashlight/nn/nn.h"
+#include "flashlight/flashlight/optim/optim.h"

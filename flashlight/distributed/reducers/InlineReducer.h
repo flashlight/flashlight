@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "flashlight/distributed/reducers/Reducer.h"
+#include "flashlight/flashlight/distributed/reducers/Reducer.h"
 
 namespace fl {
 
