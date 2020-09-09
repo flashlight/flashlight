@@ -10,7 +10,7 @@
 
 #include <unordered_map>
 
-#include <flashlight/flashlight.h>
+#include "flashlight/flashlight/flashlight.h"
 #include <glog/logging.h>
 
 #include "flashlight/lib/common/System.h"

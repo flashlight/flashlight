@@ -31,7 +31,7 @@
 #include <string>
 #include <vector>
 
-#include <flashlight/flashlight.h>
+#include "flashlight/flashlight/flashlight.h"
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 

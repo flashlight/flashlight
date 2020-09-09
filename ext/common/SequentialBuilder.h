@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <flashlight/contrib/contrib.h>
-#include <flashlight/flashlight.h>
+#include "flashlight/flashlight/contrib/contrib.h"
+#include "flashlight/flashlight/flashlight.h"
 
 namespace fl {
 namespace ext {

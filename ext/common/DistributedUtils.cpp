@@ -8,7 +8,7 @@
 
 #include "flashlight/ext/common/DistributedUtils.h"
 
-#include <flashlight/flashlight.h>
+#include "flashlight/flashlight/flashlight.h"
 
 namespace fl {
 namespace ext {

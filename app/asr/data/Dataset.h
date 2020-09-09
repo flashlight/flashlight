@@ -11,7 +11,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <flashlight/flashlight.h>
+#include "flashlight/flashlight/flashlight.h"
 
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/app/asr/data/Featurize.h"

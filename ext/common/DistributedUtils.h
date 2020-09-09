@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-#include <flashlight/flashlight.h>
+#include "flashlight/flashlight/flashlight.h"
 
 namespace fl {
 namespace ext {

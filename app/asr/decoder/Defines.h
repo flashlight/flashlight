@@ -10,7 +10,7 @@
 
 #include <unordered_map>
 
-#include <flashlight/flashlight.h>
+#include "flashlight/flashlight/flashlight.h"
 
 namespace fl {
 namespace app {

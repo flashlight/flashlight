@@ -10,7 +10,7 @@
 
 #include <map>
 
-#include <flashlight/flashlight.h>
+#include "flashlight/flashlight/flashlight.h"
 
 #include "SpeechStatMeter.h"
 
