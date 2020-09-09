@@ -7,7 +7,7 @@
  */
 #pragma once
 
-#include <flashlight/flashlight.h>
+#include "flashlight/flashlight/flashlight.h"
 
 #include "flashlight/lib/audio/feature/FeatureParams.h"
 #include "flashlight/lib/text/dictionary/Utils.h"

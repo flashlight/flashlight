@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <flashlight/flashlight.h>
+#include "flashlight/flashlight/flashlight.h"
 #include "CriterionUtils.h"
 #include "Defines.h"
 

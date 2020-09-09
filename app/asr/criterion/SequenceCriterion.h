@@ -10,7 +10,7 @@
 
 #include <stdexcept>
 
-#include <flashlight/flashlight.h>
+#include "flashlight/flashlight/flashlight.h"
 
 namespace fl {
 namespace app {

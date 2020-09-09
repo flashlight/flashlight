@@ -17,7 +17,7 @@
 #include <iostream>
 #include <random>
 
-#include <flashlight/flashlight.h>
+#include "flashlight/flashlight/flashlight.h"
 
 #include "flashlight/app/asr/criterion/AutoSegmentationCriterion.h"
 

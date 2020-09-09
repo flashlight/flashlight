@@ -14,8 +14,8 @@
 
 #include <cereal/archives/json.hpp>
 #include <cereal/types/unordered_map.hpp>
-#include <flashlight/contrib/contrib.h>
-#include <flashlight/flashlight.h>
+#include "flashlight/flashlight/contrib/contrib.h"
+#include "flashlight/flashlight/flashlight.h"
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 

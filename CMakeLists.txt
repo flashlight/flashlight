@@ -228,8 +228,9 @@ target_link_libraries(flashlight PUBLIC ArrayFire::${FL_AF_BACKEND})
 set(FLASHLIGHT_CORE_DIR "${PROJECT_SOURCE_DIR}/flashlight")
 include(${FLASHLIGHT_CORE_DIR}/CMakeLists.txt)
 set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} flashlight)
-# Make #include "flashlight/lib" work by adding to the inner incl dir
-setup_install_headers(${FLASHLIGHT_CORE_DIR} ${FL_INSTALL_INC_DIR})
+# flashlight core components keep their relative paths with respect to project
+# root and land in ${CMAKE_INSTALL_PREFIX}/include/flashlight/flashlight/*
+setup_install_headers(${FLASHLIGHT_CORE_DIR} ${FL_INSTALL_INC_DIR}/flashlight)
 
 if (FL_BUILD_CORE_ONLY)
   message(STATUS "Core-only setup complete")

@@ -12,7 +12,7 @@
 #include <stdint.h>
 #include <limits>
 
-#include <flashlight/flashlight.h>
+#include "flashlight/flashlight/flashlight.h"
 
 #include "flashlight/app/asr/criterion/Defines.h"
 

@@ -17,7 +17,7 @@
 
 #include <unordered_set>
 
-#include <flashlight/flashlight.h>
+#include "flashlight/flashlight/flashlight.h"
 
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/data/BlobsDataset.h"

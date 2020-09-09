@@ -8,8 +8,8 @@
 
 #include <ctc.h> // warpctc
 
-#include <flashlight/autograd/autograd.h>
-#include <flashlight/common/cuda.h>
+#include "flashlight/flashlight/autograd/autograd.h"
+#include "flashlight/flashlight/common/cuda.h"
 
 #include "flashlight/app/asr/criterion/ConnectionistTemporalClassificationCriterion.h"
 #include "flashlight/app/asr/criterion/CriterionUtils.h"
