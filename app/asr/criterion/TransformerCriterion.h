@@ -16,7 +16,7 @@
 #include "flashlight/app/asr/criterion/attention/attention.h"
 #include "flashlight/app/asr/criterion/attention/window.h"
 
-#include "flashlight/contrib/modules/Transformer.h"
+#include "flashlight/flashlight/contrib/modules/Transformer.h"
 #include "flashlight/ext/common/DistributedUtils.h"
 
 namespace fl {

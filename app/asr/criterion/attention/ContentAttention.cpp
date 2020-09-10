@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "ContentAttention.h"
+#include "flashlight/app/asr/criterion/attention/ContentAttention.h"
 #include <cmath>
 
 using namespace fl;
@@ -21,7 +21,7 @@ std::pair<Variable, Variable> ContentAttention::forward(
     const Variable& /* unused */,
     const Variable& attnWeight) {
   int dim = xEncoded.dims(0);
-  if (dim != (1 + keyValue_) * state.dims(0)) {
+  if (dim != (1 + ((keyValue_) ? 1 : 0)) * state.dims(0)) {
     throw std::invalid_argument("Invalid dimension for content attention");
   }
 

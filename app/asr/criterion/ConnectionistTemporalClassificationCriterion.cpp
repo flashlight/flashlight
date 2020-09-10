@@ -5,7 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-#include "ConnectionistTemporalClassificationCriterion.h"
+#include "flashlight/app/asr/criterion/ConnectionistTemporalClassificationCriterion.h"
 
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/lib/sequence/criterion/cpu/ConnectionistTemporalClassificationCriterion.h"

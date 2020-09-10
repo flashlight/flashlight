@@ -1,6 +1,6 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#include "ListFileDataset.h"
+#include "flashlight/app/asr/data/ListFileDataset.h"
 
 #include "flashlight/app/asr/data/Sound.h"
 

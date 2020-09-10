@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "StepWindow.h"
+#include "flashlight/app/asr/criterion/attention/StepWindow.h"
 
 using namespace fl;
 

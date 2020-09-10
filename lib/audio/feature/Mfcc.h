@@ -56,7 +56,7 @@ class Mfcc : public Mfsc {
  public:
   explicit Mfcc(const FeatureParams& params);
 
-  virtual ~Mfcc() {}
+  virtual ~Mfcc() override {}
 
   // input - input speech signal (T)
   // Returns - MFCC features (Col Major : FEAT X FRAMESZ)

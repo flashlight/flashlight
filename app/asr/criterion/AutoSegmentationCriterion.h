@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include "CriterionUtils.h"
-#include "Defines.h"
-#include "ForceAlignmentCriterion.h"
-#include "FullConnectionCriterion.h"
-#include "SequenceCriterion.h"
+#include "flashlight/app/asr/criterion/CriterionUtils.h"
+#include "flashlight/app/asr/criterion/Defines.h"
+#include "flashlight/app/asr/criterion/ForceAlignmentCriterion.h"
+#include "flashlight/app/asr/criterion/FullConnectionCriterion.h"
+#include "flashlight/app/asr/criterion/SequenceCriterion.h"
 
 using fl::lib::seq::CriterionScaleMode;
 namespace fl {

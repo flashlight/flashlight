@@ -133,7 +133,7 @@ class MemoryManagerAdapter {
    *
    * @returns the `af_memory_manager` handle associated with this class.
    */
-  const af_memory_manager getHandle() const;
+  af_memory_manager getHandle() const;
 
   // Native and device memory management functions
   const std::shared_ptr<MemoryManagerDeviceInterface> deviceInterface;

@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "Sound.h"
+#include "flashlight/app/asr/data/Sound.h"
 
 #include <fstream>
 #include <string>

@@ -16,12 +16,10 @@
 #include <string>
 #include <vector>
 
+#include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
-#include "flashlight/app/asr/common/Defines.h"
-
-using fl::lib::text::Dictionary;
 
 namespace fl {
 namespace app {
@@ -29,25 +27,35 @@ namespace asr {
 
 /* A series of vector to vector mapping operations */
 
-std::vector<std::string> tknIdx2Ltr(const std::vector<int>&, const Dictionary&);
+std::vector<std::string> tknIdx2Ltr(
+    const std::vector<int>&,
+    const fl::lib::text::Dictionary&);
 
 std::vector<std::string> tkn2Wrd(const std::vector<std::string>&);
 
-std::vector<std::string> wrdIdx2Wrd(const std::vector<int>&, const Dictionary&);
+std::vector<std::string> wrdIdx2Wrd(
+    const std::vector<int>&,
+    const fl::lib::text::Dictionary&);
 
-std::vector<std::string> tknTarget2Ltr(std::vector<int>, const Dictionary&);
+std::vector<std::string> tknTarget2Ltr(
+    std::vector<int>,
+    const fl::lib::text::Dictionary&);
 
-std::vector<std::string> tknPrediction2Ltr(std::vector<int>, const Dictionary&);
+std::vector<std::string> tknPrediction2Ltr(
+    std::vector<int>,
+    const fl::lib::text::Dictionary&);
 
 std::vector<int> tkn2Idx(
     const std::vector<std::string>& spelling,
-    const Dictionary& tokenDict,
+    const fl::lib::text::Dictionary& tokenDict,
     int maxReps);
 
 std::vector<int> validateIdx(std::vector<int> input, int unkIdx);
 
 template <class T>
-void remapLabels(std::vector<T>& labels, const Dictionary& dict) {
+void remapLabels(
+    std::vector<T>& labels,
+    const fl::lib::text::Dictionary& dict) {
   if (FLAGS_eostoken) {
     int eosidx = dict.getIndex(kEosToken);
     while (!labels.empty() && labels.back() == eosidx) {
