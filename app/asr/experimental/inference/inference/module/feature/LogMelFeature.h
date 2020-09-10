@@ -13,8 +13,8 @@
 #include <cstdio>
 #include <memory>
 
-#include "flashlight/lib/feature/FeatureParams.h"
-#include "flashlight/lib/feature/Mfsc.h"
+#include "flashlight/lib/audio/feature/FeatureParams.h"
+#include "flashlight/lib/audio/feature/Mfsc.h"
 #include "inference/common/IOBuffer.h"
 #include "inference/module/InferenceModule.h"
 #include "inference/module/ModuleParameter.h"
@@ -45,8 +45,8 @@ class LogMelFeature : public InferenceModule {
   int32_t frameSizeMs_;
   int32_t frameShiftMs_;
   int32_t samplingFreq_;
-  FeatureParams featParams_;
-  std::shared_ptr<Mfsc> mfscFeaturizer_;
+  fl::lib::audio::FeatureParams featParams_;
+  std::shared_ptr<fl::lib::audio::Mfsc> mfscFeaturizer_;
 
   LogMelFeature();
 

@@ -8,8 +8,14 @@
 
 #include <codecvt>
 #include <locale>
-#include "flashlight/app/asr/common/FlashlightUtils.h"
-#include "flashlight/app/asr/common/Transforms.h"
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+#include "flashlight/app/asr/criterion/criterion.h"
+
+using namespace fl::app::asr;
+
 namespace w2l {
 
 namespace alignment {
@@ -51,7 +57,7 @@ void remapUTFWord(std::u16string& input, int replabel) {
 
 std::vector<std::vector<std::string>> mapIndexToToken(
     af::array paths,
-    w2l::DictionaryMap dicts) {
+    fl::lib::text::DictionaryMap dicts) {
   const int B = paths.dims(1);
   const int T = paths.dims(0);
   std::vector<std::vector<std::string>> batchTokensPath;
@@ -117,7 +123,7 @@ std::vector<AlignedWord> postprocessASG(
   bool inWord = false;
   int silStart = 0;
   for (int i = 0; i < utf16Ltrs.size(); i++) {
-    if (utf16Ltrs[i] == utf16conv.from_bytes(w2l::kSilToken)) {
+    if (utf16Ltrs[i] == utf16conv.from_bytes(kSilToken)) {
       if (inWord) { // found end of word, insert
         const double endTimeMs = msPerFrame * i;
         const double startTimeMs = msPerFrame * stFrame;
@@ -160,7 +166,7 @@ std::vector<AlignedWord> postprocessASG(
 // once we are ready to move out of experimental
 std::function<
     std::vector<AlignedWord>(const std::vector<std::string>&, int, double)>
-getWordSegmenter(std::shared_ptr<w2l::SequenceCriterion> criterion) {
+getWordSegmenter(std::shared_ptr<SequenceCriterion> criterion) {
   const std::string& desc = criterion->prettyString();
   const std::string asgDesc = "AutoSegmentationCriterion";
   const std::string ctcDesc = "ConnectionistTemporalClassificationCriterion";

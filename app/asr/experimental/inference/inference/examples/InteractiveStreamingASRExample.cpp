@@ -173,7 +173,7 @@ int main(int argc, char* argv[]) {
   int nTokens = tokens.size();
   std::cout << "Tokens loaded - " << nTokens << " tokens" << std::endl;
 
-  DecoderOptions decoderOptions;
+  fl::lib::text::DecoderOptions decoderOptions;
   {
     TimeElapsedReporter decoderOptionsElapsed("decoder options file loading");
     std::ifstream decoderOptionsFile(
@@ -221,7 +221,7 @@ int main(int argc, char* argv[]) {
         GetInputFileFullPath(FLAGS_lexicon_file),
         GetInputFileFullPath(FLAGS_language_model_file),
         transitions,
-        SmearingMode::MAX,
+        fl::lib::text::SmearingMode::MAX,
         FLAGS_silence_token,
         0);
   }

@@ -35,14 +35,12 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/lib/common/Dictionary.h"
-#include "flashlight/lib/lm/KenLM.h"
+#include "flashlight/lib/text/dictionary/Dictionary.h"
+#include "flashlight/lib/text/decoder/lm/KenLM.h"
+#include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/common/Defines.h"
-#include "flashlight/app/asr/common/FlashlightUtils.h"
-#include "flashlight/app/asr/common/Transforms.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/runtime/runtime.h"
-#include "module/module.h"
 
 namespace {
 
@@ -60,7 +58,9 @@ const std::string kPerplexityPctSpeechExt = ".sts";
 
 } // namespace
 
-using namespace w2l;
+using namespace fl::app::asr;
+using namespace fl::lib;
+using namespace fl::ext;
 
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
   std::shared_ptr<SequenceCriterion> criterion;
   std::unordered_map<std::string, std::string> cfg;
   LOG(INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
-  W2lSerializer::load(FLAGS_am, cfg, network, criterion);
+  Serializer::load(FLAGS_am, cfg, network, criterion);
   network->eval();
   criterion->eval();
 
@@ -137,24 +137,24 @@ int main(int argc, char** argv) {
   LOG(INFO) << "Number of classes (network): " << numClasses;
 
   Dictionary wordDict;
-  LexiconMap lexicon;
+  text::LexiconMap lexicon;
   if (!FLAGS_lexicon.empty()) {
-    lexicon = loadWords(FLAGS_lexicon, FLAGS_maxword);
-    wordDict = createWordDict(lexicon);
+    lexicon = text::loadWords(FLAGS_lexicon, FLAGS_maxword);
+    wordDict = text::createWordDict(lexicon);
     LOG(INFO) << "Number of words: " << wordDict.indexSize();
-    wordDict.setDefaultIndex(wordDict.getIndex(kUnkToken));
+    wordDict.setDefaultIndex(wordDict.getIndex(text::kUnkToken));
   }
 
-  DictionaryMap dicts = {{kTargetIdx, tokenDict}, {kWordIdx, wordDict}};
+  text::DictionaryMap dicts = {{kTargetIdx, tokenDict}, {kWordIdx, wordDict}};
 
   /* ===================== Create Dataset ===================== */
   auto ds = createDataset(FLAGS_test, dicts, lexicon, 1, 0, 1);
   LOG(INFO) << "[Dataset] Dataset loaded.";
 
   /* ===================== Build LM ===================== */
-  std::shared_ptr<LM> lm;
+  std::shared_ptr<text::LM> lm;
   if (FLAGS_lmtype == "kenlm") {
-    lm = std::make_shared<KenLM>(FLAGS_lm, wordDict);
+    lm = std::make_shared<text::KenLM>(FLAGS_lm, wordDict);
     if (!lm) {
       throw std::runtime_error(
           "[LM constructing] Failed to load LM: " + FLAGS_lm);

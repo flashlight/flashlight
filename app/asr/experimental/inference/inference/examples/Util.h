@@ -18,7 +18,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "flashlight/lib/decoder/Utils.h"
+#include "flashlight/lib/text/decoder/Decoder.h"
 #include "inference/common/IOBuffer.h"
 
 namespace w2l {
@@ -88,13 +88,13 @@ namespace cereal {
 template <typename Archive>
 inline std::string save_minimal(
     const Archive&,
-    const w2l::CriterionType& criterionType) {
+    const fl::lib::text::CriterionType& criterionType) {
   switch (criterionType) {
-    case w2l::CriterionType::ASG:
+    case fl::lib::text::CriterionType::ASG:
       return "ASG";
-    case w2l::CriterionType::CTC:
+    case fl::lib::text::CriterionType::CTC:
       return "CTC";
-    case w2l::CriterionType::S2S:
+    case fl::lib::text::CriterionType::S2S:
       return "S2S";
   }
   throw std::runtime_error(
@@ -105,14 +105,14 @@ inline std::string save_minimal(
 template <typename Archive>
 void load_minimal(
     const Archive&,
-    w2l::CriterionType& obj,
+    fl::lib::text::CriterionType& obj,
     const std::string& value) {
   if (value == "ASG") {
-    obj = w2l::CriterionType::ASG;
+    obj = fl::lib::text::CriterionType::ASG;
   } else if (value == "CTC") {
-    obj = w2l::CriterionType::CTC;
+    obj = fl::lib::text::CriterionType::CTC;
   } else if (value == "S2S") {
-    obj = w2l::CriterionType::S2S;
+    obj = fl::lib::text::CriterionType::S2S;
   } else {
     throw std::runtime_error(
         "load_minimal() got invalid CriterionType value=" + value);

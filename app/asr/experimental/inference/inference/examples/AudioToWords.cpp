@@ -38,7 +38,7 @@ void audioStreamToWordsStream(
     std::ostream& outputWordsStream,
     std::shared_ptr<Sequential> dnnModule,
     std::shared_ptr<const DecoderFactory> decoderFactory,
-    const DecoderOptions& decoderOptions,
+    const fl::lib::text::DecoderOptions& decoderOptions,
     int nTokens) {
   constexpr const int lookBack = 0;
   constexpr const size_t kWavHeaderNumBytes = 44;
@@ -113,7 +113,7 @@ void audioFileToWordsFileImpl(
     const std::string& outputFileName,
     std::shared_ptr<streaming::Sequential> dnnModule,
     std::shared_ptr<const DecoderFactory> decoderFactory,
-    const DecoderOptions& decoderOptions,
+    const fl::lib::text::DecoderOptions& decoderOptions,
     int nTokens,
     std::ostream* errorStream) {
   std::ifstream inputFileStream(inputFileName, std::ios::binary);
@@ -156,7 +156,7 @@ void audioFileToWordsFile(
     const std::string& outputFileName,
     std::shared_ptr<streaming::Sequential> dnnModule,
     std::shared_ptr<const DecoderFactory> decoderFactory,
-    const DecoderOptions& decoderOptions,
+    const fl::lib::text::DecoderOptions& decoderOptions,
     int nTokens,
     std::ostream& errorStream) {
   audioFileToWordsFileImpl(
@@ -174,7 +174,7 @@ void audioFileToWordsFile(
     const std::string& outputFileName,
     std::shared_ptr<streaming::Sequential> dnnModule,
     std::shared_ptr<const DecoderFactory> decoderFactory,
-    const DecoderOptions& decoderOptions,
+    const fl::lib::text::DecoderOptions& decoderOptions,
     int nTokens) {
   audioFileToWordsFileImpl(
       inputFileName,

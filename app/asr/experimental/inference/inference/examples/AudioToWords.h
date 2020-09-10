@@ -25,7 +25,7 @@ void audioStreamToWordsStream(
     std::ostream& outputWordsStream,
     std::shared_ptr<streaming::Sequential> dnnModule,
     std::shared_ptr<const DecoderFactory> decoderFactory,
-    const DecoderOptions& decoderOptions,
+    const fl::lib::text::DecoderOptions& decoderOptions,
     int nTokens);
 
 // @inputFileName is a 16KHz wav file.
@@ -35,7 +35,7 @@ void audioFileToWordsFile(
     const std::string& outputFileName,
     std::shared_ptr<streaming::Sequential> dnnModule,
     std::shared_ptr<const DecoderFactory> decoderFactory,
-    const DecoderOptions& decoderOptions,
+    const fl::lib::text::DecoderOptions& decoderOptions,
     int nTokens,
     std::ostream& errorStream);
 
@@ -46,7 +46,7 @@ void audioFileToWordsFile(
     const std::string& outputFileName,
     std::shared_ptr<streaming::Sequential> dnnModule,
     std::shared_ptr<const DecoderFactory> decoderFactory,
-    const DecoderOptions& decoderOptions,
+    const fl::lib::text::DecoderOptions& decoderOptions,
     int nTokens);
 
 } // namespace streaming

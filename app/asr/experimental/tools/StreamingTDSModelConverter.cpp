@@ -17,22 +17,22 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/lib/common/Dictionary.h"
+#include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/app/asr/common/Defines.h"
-#include "flashlight/app/asr/common/FlashlightUtils.h"
-#include "flashlight/app/asr/common/Transforms.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "inference/module/feature/feature.h"
 #include "inference/module/module.h"
 #include "inference/module/nn/nn.h"
-#include "module/SpecAugment.h"
-#include "module/TDSBlock.h"
-#include "module/W2lModule.h"
+#include "flashlight/contrib/modules/SpecAugment.h"
+#include "flashlight/contrib/modules/TDSBlock.h"
+#include "flashlight/ext/common/SequentialBuilder.h"
 
 DEFINE_string(outdir, "", "");
 
 using namespace w2l;
+using namespace fl::app::asr;
+using namespace fl::lib;
 
 namespace {
 std::shared_ptr<streaming::ModuleParameter> variableToModuleParam(
@@ -150,7 +150,7 @@ int main(int argc, char** argv) {
   std::shared_ptr<SequenceCriterion> criterion;
   std::unordered_map<std::string, std::string> cfg;
   LOG(INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
-  W2lSerializer::load(FLAGS_am, cfg, network, criterion);
+  Serializer::load(FLAGS_am, cfg, network, criterion);
   network->eval();
   criterion->eval();
 
@@ -179,7 +179,7 @@ int main(int argc, char** argv) {
     throw std::runtime_error(
         "Invalid dictionary filepath specified " + dictPath);
   }
-  Dictionary tokenDict(dictPath);
+  text::Dictionary tokenDict(dictPath);
   for (int64_t r = 1; r <= FLAGS_replabel; ++r) {
     tokenDict.addEntry(std::to_string(r));
   }
@@ -198,7 +198,7 @@ int main(int argc, char** argv) {
     LOG(FATAL) << "This script currently support only mfsc features";
   }
 
-  auto lines = w2l::getFileContent(pathsConcat(FLAGS_archdir, FLAGS_arch));
+  auto lines = getFileContent(pathsConcat(FLAGS_archdir, FLAGS_arch));
 
   auto streamingModule = std::make_shared<streaming::Sequential>();
   auto params = network->params();
@@ -206,7 +206,7 @@ int main(int argc, char** argv) {
   int paramIdx = 0;
   int leftPad = -1, rightPad = -1;
   for (size_t i = 0; i < lines.size(); ++i) {
-    auto columns = w2l::splitOnWhitespace(lines[i], true);
+    auto columns = splitOnWhitespace(lines[i], true);
     if (columns.empty()) {
       continue;
     }
@@ -365,7 +365,7 @@ int main(int argc, char** argv) {
   for (int i = 0; i < outputBuffer->size<float>(); i++) {
     float streamingOut = outPtr[i];
     float w2lOut = outputVec[i];
-    LOG_IF(FATAL, fabs(streamingOut - w2lOut) > 1e-2)
+    LOG_IF(ERROR, fabs(streamingOut - w2lOut) > 1e-2)
         << "[Serialization Error] Mismatched output w2l:" << w2lOut
         << " vs streaming:" << streamingOut;
   }
