@@ -12,13 +12,12 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "flashlight/lib/common/Defines.h"
-#include "flashlight/lib/common/WordUtils.h"
-#include "flashlight/lib/decoder/LexiconDecoder.h"
-#include "flashlight/lib/decoder/LexiconFreeDecoder.h"
-#include "flashlight/lib/lm/KenLM.h"
-#include "flashlight/lib/lm/ZeroLM.h"
-
+#include "flashlight/app/asr/common/Defines.h"
+#include "flashlight/app/asr/decoder/TranscriptionUtils.h"
+#include "flashlight/lib/text/decoder/LexiconDecoder.h"
+#include "flashlight/lib/text/decoder/LexiconFreeDecoder.h"
+#include "flashlight/lib/text/decoder/lm/KenLM.h"
+#include "flashlight/lib/text/decoder/lm/ZeroLM.h"
 #include "inference/decoder/Decoder.h"
 
 namespace w2l {
@@ -30,7 +29,7 @@ DecoderFactory::DecoderFactory(
     const std::string& wordDictFile,
     const std::string& languageModelFile,
     const std::vector<float>& transitions,
-    SmearingMode smearing,
+    fl::lib::text::SmearingMode smearing,
     const std::string& silenceToken,
     const int repetitionLabel)
     : letterMap_(Dictionary(letterDictFile)),
@@ -44,46 +43,46 @@ DecoderFactory::DecoderFactory(
   std::cerr << "[Letters] " << alphabetSize_ << " tokens loaded.\n";
   silence_ = letterMap_.getIndex(silenceToken);
   blank_ =
-      letterMap_.contains(kBlankToken) ? letterMap_.getIndex(kBlankToken) : -1;
+      letterMap_.contains(fl::app::asr::kBlankToken) ? letterMap_.getIndex(fl::app::asr::kBlankToken) : -1;
 
   /* 2. Load word dictionary */
-  LexiconMap lexicon;
+  fl::lib::text::LexiconMap lexicon;
   unk_ = -1;
   if (!wordDictFile.empty()) {
-    lexicon = loadWords(wordDictFile);
-    wordMap_ = createWordDict(lexicon);
+    lexicon = fl::lib::text::loadWords(wordDictFile);
+    wordMap_ = fl::lib::text::createWordDict(lexicon);
     int nWords = wordMap_.indexSize();
     if (nWords == 0) {
       throw std::invalid_argument("Invalid word dictionary.");
     }
     std::cerr << "[Words] " << nWords << " words loaded.\n";
-    unk_ = wordMap_.getIndex(kUnkToken);
+    unk_ = wordMap_.getIndex(fl::lib::text::kUnkToken);
   }
 
   /* 3. Load language model. */
   if (!languageModelFile.empty()) {
-    lm_ = std::make_shared<KenLM>(languageModelFile.c_str(), wordMap_);
+    lm_ = std::make_shared<fl::lib::text::KenLM>(languageModelFile.c_str(), wordMap_);
     if (!lm_) {
       throw std::invalid_argument("Could not load LM.");
     }
   } else {
-    lm_ = std::make_shared<ZeroLM>();
+    lm_ = std::make_shared<fl::lib::text::ZeroLM>();
   }
 
   /* 4. Plant trie */
   if (!wordDictFile.empty()) {
     // Init Trie.
-    trie_ = std::make_shared<Trie>(alphabetSize_, silence_);
+    trie_ = std::make_shared<fl::lib::text::Trie>(alphabetSize_, silence_);
     auto startState = lm_->start(false);
     for (const auto& it : lexicon) {
       const std::string& word = it.first;
       int usrIdx = wordMap_.getIndex(word);
       float score = -1;
-      LMStatePtr dummyState;
+      fl::lib::text::LMStatePtr dummyState;
       std::tie(dummyState, score) = lm_->score(startState, usrIdx);
 
       for (const auto& tokens : it.second) {
-        auto tokensTensor = tkn2Idx(tokens, letterMap_, repetitionLabel_);
+        auto tokensTensor = fl::app::asr::tkn2Idx(tokens, letterMap_, repetitionLabel_);
         trie_->insert(tokensTensor, usrIdx, score);
       }
     }
@@ -93,14 +92,14 @@ DecoderFactory::DecoderFactory(
   }
 }
 
-Decoder DecoderFactory::createDecoder(const DecoderOptions& opt) const {
+Decoder DecoderFactory::createDecoder(const fl::lib::text::DecoderOptions& opt) const {
   if (trie_) {
-    auto decoder = std::make_shared<LexiconDecoder>(
+    auto decoder = std::make_shared<fl::lib::text::LexiconDecoder>(
         opt, trie_, lm_, silence_, blank_, unk_, transitions_, false);
     std::cerr << "Creating LexiconDecoder instance.\n";
     return Decoder(this, decoder);
   } else {
-    auto decoder = std::make_shared<LexiconFreeDecoder>(
+    auto decoder = std::make_shared<fl::lib::text::LexiconFreeDecoder>(
         opt, lm_, silence_, blank_, transitions_);
     std::cerr << "Creating LexiconFreeDecoder instance.\n";
     return Decoder(this, decoder);
@@ -112,7 +111,7 @@ size_t DecoderFactory::alphabetSize() const {
 }
 
 std::vector<WordUnit> DecoderFactory::result2Words(
-    const DecodeResult& result) const {
+    const fl::lib::text::DecodeResult& result) const {
   int seqLength = result.tokens.size();
   if (seqLength == 0) {
     return std::vector<WordUnit>{};
@@ -253,7 +252,7 @@ void Decoder::finish() {
 }
 
 std::vector<WordUnit> Decoder::getBestHypothesisInWords(int lookBack) const {
-  DecodeResult rawResult = decoder_->getBestHypothesis(lookBack);
+  fl::lib::text::DecodeResult rawResult = decoder_->getBestHypothesis(lookBack);
   return factory_->result2Words(rawResult);
 }
 

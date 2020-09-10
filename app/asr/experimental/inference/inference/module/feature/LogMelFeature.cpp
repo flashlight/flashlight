@@ -88,7 +88,7 @@ void LogMelFeature::init() {
   featParams_.accWindow = 0;
   featParams_.deltaWindow = 0;
 
-  mfscFeaturizer_ = std::make_shared<Mfsc>(featParams_);
+  mfscFeaturizer_ = std::make_shared<fl::lib::audio::Mfsc>(featParams_);
 }
 
 } // namespace streaming

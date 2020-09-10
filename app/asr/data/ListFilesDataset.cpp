@@ -86,7 +86,7 @@ std::vector<LoaderData> ListFilesDataset::getLoaderData(
     }
 
     data[id].sampleId = data_[i].getSampleId();
-    data[id].input = loadSound<float>(data_[i].getAudioFile());
+    data[id].input = loadSound(data_[i].getAudioFile());
     data[id].targets[kTargetIdx] = wrd2Target(
         data_[i].getTranscript(),
         lexicon_,
@@ -99,6 +99,11 @@ std::vector<LoaderData> ListFilesDataset::getLoaderData(
     }
   }
   return data;
+}
+
+std::vector<float> ListFilesDataset::loadSound(
+    const std::string& audioHandle) const {
+  return fl::app::asr::loadSound<float>(audioHandle);
 }
 
 std::vector<SpeechSampleMetaInfo> ListFilesDataset::loadListFile(

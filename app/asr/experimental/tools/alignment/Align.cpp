@@ -9,14 +9,15 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/lib/common/Dictionary.h"
+#include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/runtime/runtime.h"
-#include "module/module.h"
+#include "flashlight/ext/common/SequentialBuilder.h"
 
-#include "tools/alignment/Utils.h"
+#include "flashlight/app/asr/experimental/tools/alignment/Utils.h"
 
-using namespace w2l;
+using namespace fl::app::asr;
+using namespace fl::lib;
 using namespace w2l::alignment;
 
 int main(int argc, char** argv) {
@@ -46,7 +47,7 @@ int main(int argc, char** argv) {
   std::shared_ptr<SequenceCriterion> criterion;
   std::unordered_map<std::string, std::string> cfg;
   LOG(INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
-  W2lSerializer::load(FLAGS_am, cfg, network, criterion);
+  Serializer::load(FLAGS_am, cfg, network, criterion);
   network->eval();
   criterion->eval();
 
@@ -74,7 +75,7 @@ int main(int argc, char** argv) {
   if (dictPath.empty() || !fileExists(dictPath)) {
     throw std::invalid_argument("Invalid dictionary filepath specified.");
   }
-  Dictionary tokenDict(dictPath);
+  text::Dictionary tokenDict(dictPath);
   // Setup-specific modifications
   for (int64_t r = 1; r <= FLAGS_replabel; ++r) {
     tokenDict.addEntry(std::to_string(r));
@@ -90,7 +91,7 @@ int main(int argc, char** argv) {
   int numClasses = tokenDict.indexSize();
   LOG(INFO) << "Number of classes (network): " << numClasses;
 
-  DictionaryMap dicts;
+  text::DictionaryMap dicts;
   dicts.insert({kTargetIdx, tokenDict});
 
   std::mutex write_mutex;
@@ -102,9 +103,9 @@ int main(int argc, char** argv) {
     LOG(INFO) << "Writing alignment to: " << alignFilePath;
   }
 
-  LexiconMap lexicon;
+  text::LexiconMap lexicon;
   if (!FLAGS_lexicon.empty()) {
-    lexicon = loadWords(FLAGS_lexicon, FLAGS_maxword);
+    lexicon = text::loadWords(FLAGS_lexicon, FLAGS_maxword);
   }
 
   LOG(INFO) << "Loaded lexicon";
@@ -120,7 +121,7 @@ int main(int argc, char** argv) {
   /* ===================== Create Dataset ===================== */
   int worldRank = 0;
   int worldSize = 1;
-  std::shared_ptr<W2lDataset> ds;
+  std::shared_ptr<Dataset> ds;
   ds = createDataset(
       FLAGS_test, dicts, lexicon, FLAGS_batchsize, worldRank, worldSize);
 

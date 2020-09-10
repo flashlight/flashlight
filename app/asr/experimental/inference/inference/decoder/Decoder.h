@@ -9,10 +9,10 @@
 
 #pragma once
 
-#include "flashlight/lib/common/Dictionary.h"
-#include "flashlight/lib/decoder/Decoder.h"
-#include "flashlight/lib/decoder/Trie.h"
-#include "flashlight/lib/lm/LM.h"
+#include "flashlight/lib/text/dictionary/Dictionary.h"
+#include "flashlight/lib/text/decoder/Decoder.h"
+#include "flashlight/lib/text/decoder/Trie.h"
+#include "flashlight/lib/text/decoder/lm/LM.h"
 
 namespace w2l {
 namespace streaming {
@@ -43,30 +43,30 @@ class DecoderFactory {
       const std::string& wordDictFile,
       const std::string& languageModelFile,
       const std::vector<float>& transitions,
-      SmearingMode smearing,
+      fl::lib::text::SmearingMode smearing,
       const std::string& silenceToken,
       const int repetitionLabel);
 
   // Creates provided Decoder instance with specified options and allocator.
   // The Decoder instance uses provided allocator to manage its memory.
-  Decoder createDecoder(const w2l::DecoderOptions& options) const;
+  Decoder createDecoder(const fl::lib::text::DecoderOptions& options) const;
 
   // Parse the raw decoder results and form a list of WordUnit
-  std::vector<WordUnit> result2Words(const DecodeResult& result) const;
+  std::vector<WordUnit> result2Words(const fl::lib::text::DecodeResult& result) const;
 
   // Returns size of the alphabet (=dimension of transitions matrix).
   size_t alphabetSize() const;
 
  private:
-  w2l::Dictionary wordMap_;
-  w2l::Dictionary letterMap_;
+  fl::lib::text::Dictionary wordMap_;
+  fl::lib::text::Dictionary letterMap_;
   size_t alphabetSize_;
   int silence_;
   int blank_;
   int unk_;
   int repetitionLabel_;
-  w2l::LMPtr lm_;
-  w2l::TriePtr trie_;
+  fl::lib::text::LMPtr lm_;
+  fl::lib::text::TriePtr trie_;
   std::vector<float> transitions_;
 
   // Helper functions to unpack RepLabels from the transcription
@@ -81,7 +81,7 @@ class Decoder {
  public:
   Decoder() {}
 
-  Decoder(const DecoderFactory* factory, std::shared_ptr<w2l::Decoder> decoder)
+  Decoder(const DecoderFactory* factory, std::shared_ptr<fl::lib::text::Decoder> decoder)
       : factory_(std::make_shared<DecoderFactory>(*factory)),
         decoder_(decoder) {}
 
@@ -98,7 +98,7 @@ class Decoder {
 
  private:
   const std::shared_ptr<DecoderFactory> factory_;
-  std::shared_ptr<w2l::Decoder> decoder_;
+  std::shared_ptr<fl::lib::text::Decoder> decoder_;
 };
 
 } // namespace streaming
