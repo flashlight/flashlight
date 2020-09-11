@@ -13,7 +13,7 @@
 #include <arrayfire.h>
 #include <mkldnn.hpp>
 
-#include <flashlight/common/Defines.h>
+#include "flashlight/flashlight/common/Defines.h"
 
 namespace fl {
 namespace detail {
