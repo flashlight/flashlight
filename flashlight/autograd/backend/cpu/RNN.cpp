@@ -8,8 +8,8 @@
 
 #include <stdexcept>
 
-#include "flashlight/autograd/Functions.h"
-#include "flashlight/autograd/Variable.h"
+#include "flashlight/flashlight/autograd/Functions.h"
+#include "flashlight/flashlight/autograd/Variable.h"
 
 namespace fl {
 

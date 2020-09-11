@@ -13,10 +13,10 @@
 #include <arrayfire.h>
 #include <mkldnn.hpp>
 
-#include "flashlight/autograd/Functions.h"
-#include "flashlight/autograd/Variable.h"
-#include "flashlight/autograd/backend/cpu/MkldnnUtils.h"
-#include "flashlight/common/DevicePtr.h"
+#include "flashlight/flashlight/autograd/Functions.h"
+#include "flashlight/flashlight/autograd/Variable.h"
+#include "flashlight/flashlight/autograd/backend/cpu/MkldnnUtils.h"
+#include "flashlight/flashlight/common/DevicePtr.h"
 
 using namespace mkldnn;
 
