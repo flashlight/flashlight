@@ -24,7 +24,7 @@ class Mfsc : public PowerSpectrum {
  public:
   explicit Mfsc(const FeatureParams& params);
 
-  virtual ~Mfsc() {}
+  virtual ~Mfsc() override {}
 
   // input - input speech signal (T)
   // Returns - MFSC feature (Col Major : FEAT X FRAMESZ)

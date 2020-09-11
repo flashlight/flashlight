@@ -8,7 +8,7 @@
 
 #include <gtest/gtest.h>
 
-#include "TestUtils.h"
+#include "flashlight/lib/test/audio/feature/TestUtils.h"
 #include "flashlight/lib/audio/feature/Dct.h"
 
 using fl::lib::audio::Dct;

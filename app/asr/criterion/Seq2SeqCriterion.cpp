@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "Seq2SeqCriterion.h"
+#include "flashlight/app/asr/criterion/Seq2SeqCriterion.h"
 
 #include <algorithm>
 #include <numeric>

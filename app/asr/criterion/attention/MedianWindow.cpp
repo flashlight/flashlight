@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "MedianWindow.h"
+#include "flashlight/app/asr/criterion/attention/MedianWindow.h"
 
 using namespace fl;
 

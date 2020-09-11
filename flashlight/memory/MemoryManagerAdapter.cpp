@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "MemoryManagerAdapter.h"
+#include "flashlight/flashlight/memory/MemoryManagerAdapter.h"
 
 #include <stdexcept>
 #include <utility>
@@ -62,7 +62,7 @@ void MemoryManagerAdapter::setLogFlushInterval(size_t interval) {
   logFlushInterval_ = interval;
 }
 
-const af_memory_manager MemoryManagerAdapter::getHandle() const {
+af_memory_manager MemoryManagerAdapter::getHandle() const {
   return interface_;
 }
 

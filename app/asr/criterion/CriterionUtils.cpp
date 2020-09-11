@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "CriterionUtils.h"
+#include "flashlight/app/asr/criterion/CriterionUtils.h"
 
 #include <algorithm>
 #include <cmath>

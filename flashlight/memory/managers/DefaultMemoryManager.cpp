@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "DefaultMemoryManager.h"
+#include "flashlight/flashlight/memory/managers/DefaultMemoryManager.h"
 
 #include <af/defines.h>
 #include <af/exception.h>

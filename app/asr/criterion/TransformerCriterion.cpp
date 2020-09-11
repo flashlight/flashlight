@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "TransformerCriterion.h"
+#include "flashlight/app/asr/criterion/TransformerCriterion.h"
 
 #include <algorithm>
 #include <queue>

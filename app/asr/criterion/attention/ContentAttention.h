@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "AttentionBase.h"
+#include "flashlight/app/asr/criterion/attention/AttentionBase.h"
 
 namespace fl {
 namespace app {

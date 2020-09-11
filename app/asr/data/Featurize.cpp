@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "Featurize.h"
+#include "flashlight/app/asr/data/Featurize.h"
 
 #include <math.h>
 #include <fstream>

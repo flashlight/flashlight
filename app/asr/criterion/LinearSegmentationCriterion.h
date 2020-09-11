@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "AutoSegmentationCriterion.h"
-#include "CriterionUtils.h"
+#include "flashlight/app/asr/criterion/AutoSegmentationCriterion.h"
+#include "flashlight/app/asr/criterion/CriterionUtils.h"
 
 using fl::lib::seq::CriterionScaleMode;
 

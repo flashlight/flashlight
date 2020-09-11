@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "Dataset.h"
+#include "flashlight/app/asr/data/Dataset.h"
 
 #include <functional>
 #include <numeric>
