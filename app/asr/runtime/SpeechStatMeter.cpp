@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "SpeechStatMeter.h"
+#include "flashlight/app/asr/runtime/SpeechStatMeter.h"
 #include <array>
 
 namespace fl {

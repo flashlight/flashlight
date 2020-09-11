@@ -8,11 +8,10 @@
 
 #pragma once
 
-#include "CriterionUtils.h"
-#include "Defines.h"
-#include "SequenceCriterion.h"
+#include "flashlight/app/asr/criterion/CriterionUtils.h"
+#include "flashlight/app/asr/criterion/Defines.h"
+#include "flashlight/app/asr/criterion/SequenceCriterion.h"
 
-using fl::lib::seq::CriterionScaleMode;
 
 namespace fl {
 namespace app {
@@ -21,7 +20,7 @@ namespace asr {
 class ConnectionistTemporalClassificationCriterion : public SequenceCriterion {
  public:
   ConnectionistTemporalClassificationCriterion(
-      CriterionScaleMode scalemode = CriterionScaleMode::NONE);
+      fl::lib::seq::CriterionScaleMode scalemode = fl::lib::seq::CriterionScaleMode::NONE);
 
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;
@@ -33,7 +32,7 @@ class ConnectionistTemporalClassificationCriterion : public SequenceCriterion {
   std::string prettyString() const override;
 
  private:
-  CriterionScaleMode scaleMode_;
+  fl::lib::seq::CriterionScaleMode scaleMode_;
 
   FL_SAVE_LOAD_WITH_BASE(SequenceCriterion, scaleMode_)
 

@@ -11,8 +11,8 @@
 #include <arrayfire.h>
 #include <unordered_map>
 
-#include "FeatureTransforms.h"
-#include "Sound.h"
+#include "flashlight/app/asr/data/FeatureTransforms.h"
+#include "flashlight/app/asr/data/Sound.h"
 
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 

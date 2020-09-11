@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "SoftWindow.h"
+#include "flashlight/app/asr/criterion/attention/SoftWindow.h"
 
 using namespace fl;
 

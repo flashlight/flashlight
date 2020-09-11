@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "ConvLmModule.h"
+#include "flashlight/app/asr/decoder/ConvLmModule.h"
 
 #include <string>
 

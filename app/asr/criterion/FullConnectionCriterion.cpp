@@ -6,11 +6,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "FullConnectionCriterion.h"
+#include "flashlight/app/asr/criterion/FullConnectionCriterion.h"
 
 #include <cmath>
 
-#include "CriterionUtils.h"
+#include "flashlight/app/asr/criterion/CriterionUtils.h"
 
 using namespace fl;
 

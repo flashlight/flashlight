@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "Utils.h"
+#include "flashlight/flashlight/dataset/Utils.h"
 
 #include <algorithm>
 #include <stdexcept>

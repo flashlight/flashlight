@@ -10,7 +10,7 @@
 
 #include <memory>
 
-#include "SequenceCriterion.h"
+#include "flashlight/app/asr/criterion/SequenceCriterion.h"
 #include "flashlight/app/asr/criterion/Defines.h"
 #include "flashlight/app/asr/criterion/attention/attention.h"
 #include "flashlight/app/asr/criterion/attention/window.h"
@@ -45,7 +45,7 @@ class Seq2SeqCriterion : public SequenceCriterion {
     Seq2SeqState state;
     explicit CandidateHypo() : score(0.0) {
       path.resize(0);
-    };
+    }
     CandidateHypo(float score_, std::vector<int> path_, Seq2SeqState state_)
         : score(score_), path(path_), state(state_) {}
   };
