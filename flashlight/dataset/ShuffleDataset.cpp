@@ -12,14 +12,20 @@
 
 namespace fl {
 
-ShuffleDataset::ShuffleDataset(std::shared_ptr<const Dataset> dataset)
-    : ResampleDataset(dataset), rng_(std::default_random_engine(0)) {
+ShuffleDataset::ShuffleDataset(
+    std::shared_ptr<const Dataset> dataset,
+    int seed /* = 0 */)
+    : ResampleDataset(dataset), rng_(seed) {
   resample();
 }
 
 void ShuffleDataset::resample() {
   std::iota(resampleVec_.begin(), resampleVec_.end(), 0);
-  std::shuffle(resampleVec_.begin(), resampleVec_.end(), rng_);
+  auto n = resampleVec_.size();
+  // custom implementation of shuffle - https://stackoverflow.com/a/51931164
+  for (auto i = n; i >= 1; --i) {
+    std::swap(resampleVec_[i - 1], resampleVec_[rng_() % n]);
+  }
 }
 
 void ShuffleDataset::setSeed(int seed) {

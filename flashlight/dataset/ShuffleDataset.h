@@ -39,8 +39,9 @@ class ShuffleDataset : public ResampleDataset {
   /**
    * Creates a `ShuffleDataset`.
    * @param[in] dataset The underlying dataset.
+   * @param[seed] seed initial seed to be used.
    */
-  explicit ShuffleDataset(std::shared_ptr<const Dataset> dataset);
+  explicit ShuffleDataset(std::shared_ptr<const Dataset> dataset, int seed = 0);
 
   /**
    * Generates a new random permutation for the dataset.
@@ -54,7 +55,7 @@ class ShuffleDataset : public ResampleDataset {
   void setSeed(int seed);
 
  protected:
-  std::default_random_engine rng_;
+  std::mt19937_64 rng_;
 };
 
 } // namespace fl
