@@ -79,12 +79,18 @@ class CachingMemoryManager : public MemoryManagerAdapter {
   typedef bool (*Comparison)(const Block*, const Block*);
   typedef std::set<Block*, Comparison> BlockSet;
 
-  // A structure to store allocation stats per device. A simple one for now.
+  // A structure to store allocation stats per device.
   struct MemoryAllocationStats {
     size_t totalNativeMallocs_;
     size_t totalNativeFrees_;
+    size_t allocatedBytes_; // memory allocated by mem manager for the program
+    size_t cachedBytes_; // memory held by mem manager & not used by the program
 
-    MemoryAllocationStats() : totalNativeMallocs_(0), totalNativeFrees_(0) {}
+    MemoryAllocationStats()
+        : totalNativeMallocs_(0),
+          totalNativeFrees_(0),
+          allocatedBytes_(0),
+          cachedBytes_(0) {}
   };
 
   // Stores the mutex and misc variables per device so that we operate in a
