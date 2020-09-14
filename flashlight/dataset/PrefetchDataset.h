@@ -61,7 +61,7 @@ class PrefetchDataset : public Dataset {
  private:
   std::unique_ptr<ThreadPool> threadPool_;
   // state variables
-  mutable std::queue<std::future<std::string>> prefetchCache_;
+  mutable std::queue<std::future<std::vector<af::array>>> prefetchCache_;
   mutable int64_t curIdx_;
 };
 

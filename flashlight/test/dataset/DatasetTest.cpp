@@ -93,6 +93,19 @@ TEST(DatasetTest, ShuffleDataset) {
   auto ff1 = shuffleds.get(10);
   ASSERT_EQ(ff1.size(), 1);
   ASSERT_FALSE(allClose(ff1[0], tensormap[0](af::span, af::span, 10)));
+
+  // Same seed produces same order and vice-versa
+  ShuffleDataset shuffleds2(tensords, 2);
+  ShuffleDataset shuffleds3(tensords, 2);
+  ShuffleDataset shuffleds4(tensords, 3);
+  auto ff2 = shuffleds2.get(10);
+  auto ff3 = shuffleds3.get(10);
+  auto ff4 = shuffleds4.get(10);
+  ASSERT_EQ(ff2.size(), 1);
+  ASSERT_EQ(ff3.size(), 1);
+  ASSERT_EQ(ff4.size(), 1);
+  ASSERT_TRUE(allClose(ff2[0], ff3[0]));
+  ASSERT_FALSE(allClose(ff2[0], ff4[0]));
 }
 
 TEST(DatasetTest, ResampleDataset) {
