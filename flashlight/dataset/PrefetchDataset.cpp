@@ -57,18 +57,11 @@ std::vector<af::array> PrefetchDataset::get(int64_t idx) const {
       break;
     }
     prefetchCache_.emplace(threadPool_->enqueue([this, fetchIdx]() {
-      auto sample = this->dataset_->get(fetchIdx);
-      std::ostringstream oss;
-      fl::save(oss, sample);
-      return oss.str();
+      return this->dataset_->get(fetchIdx);
     }));
   }
 
-  auto curSampleStr = prefetchCache_.front().get();
-  std::istringstream iss(curSampleStr);
-
-  std::vector<af::array> curSample;
-  fl::load(iss, curSample);
+  auto curSample = prefetchCache_.front().get();
 
   prefetchCache_.pop();
   curIdx_ = idx + 1;
