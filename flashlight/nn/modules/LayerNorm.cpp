@@ -42,21 +42,6 @@ LayerNorm::LayerNorm(
 Variable LayerNorm::forward(const Variable& input) {
   Variable dummyInMean, dummyInVar;
 
-  auto weight = Variable();
-  auto bias = Variable();
-
-  if (affine_ && axisSize_ == kLnVariableAxisSize) {
-    af::dim4 tiledims(1, 1, 1, 1);
-    for (int ax : axisComplement_) {
-      tiledims[ax] = input.dims(ax);
-    }
-    weight = tile(params_[0], tiledims);
-    bias = tile(params_[1], tiledims);
-  } else if (affine_) {
-    weight = params_[0];
-    bias = params_[1];
-  }
-
   Variable inputToBn = input;
   std::vector<int> inNormAxes;
   // reorder is only required if axisComplement_ is not continuous
@@ -85,8 +70,8 @@ Variable LayerNorm::forward(const Variable& input) {
   }
   auto output = batchnorm(
       inputToBn,
-      weight,
-      bias,
+      Variable(),
+      Variable(),
       dummyInMean,
       dummyInVar,
       inNormAxes,
@@ -107,6 +92,24 @@ Variable LayerNorm::forward(const Variable& input) {
         restoreDims[2].second,
         restoreDims[3].second);
   }
+
+  if (affine_) {
+    Variable weight = params_[0], bias = params_[1];
+    if (axisSize_ != kLnVariableAxisSize) {
+      af::dim4 affineDims = input.dims();
+      for (int ax : axisComplement_) {
+        affineDims[ax] = 1;
+      }
+      if (affineDims.elements() != axisSize_) {
+        throw std::invalid_argument(
+            "[LayerNorm] Input size along the norm axis doesn't with axisSize.");
+      }
+      weight = moddims(params_[0], affineDims);
+      bias = moddims(params_[1], affineDims);
+    }
+    output = tileAs(weight, input) * output + tileAs(bias, input);
+  }
+
   return output;
 }
 

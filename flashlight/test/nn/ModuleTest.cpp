@@ -294,7 +294,8 @@ TEST(ModuleTest, PaddingFwd) {
 TEST(ModuleTest, LayerNormFwd) {
   double eps = 1E-5;
   std::vector<int> feat_axes = {3};
-  auto input = Variable(af::randu(4, 4, 3, 10), true);
+  int F = 10;
+  auto input = Variable(af::randu(4, 4, 3, F), true);
 
   auto sample_mean = mean(input, {3});
   auto sample_var = var(input, {3}, true);
@@ -326,6 +327,13 @@ TEST(ModuleTest, LayerNormFwd) {
 
   ASSERT_TRUE(allClose(out_train.array(), out_eval.array(), eps));
   ASSERT_EQ(out_train.dims(), input.dims());
+
+   // with affine transform
+  auto module3 = LayerNorm(feat_axes, eps, true, F);
+  module3.setParams(Variable(af::constant(1.0, F), false), 0);
+  module3.setParams(Variable(af::constant(0.0, F), false), 1);
+  auto out3 = module3.forward(input);
+  ASSERT_TRUE(allClose(out_train.array(), out3.array(), eps));
 }
 
 TEST(ModuleTest, NormalizeFwd) {
