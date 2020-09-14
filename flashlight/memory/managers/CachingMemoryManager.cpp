@@ -59,6 +59,16 @@ static bool BlockComparator(
   return (uintptr_t)a->ptr_ < (uintptr_t)b->ptr_;
 }
 
+std::string formatMemory(size_t bytes) {
+  const std::vector<std::string> units = {"B", "KiB", "MiB", "GiB", "TiB"};
+  size_t unitId =
+      bytes == 0 ? 0 : std::floor(std::log(bytes) / std::log(1024.0));
+  unitId = std::min(unitId, units.size() - 1);
+  std::string bytesStr = std::to_string(bytes / std::pow(1024.0, unitId));
+  bytesStr = bytesStr.substr(0, bytesStr.find(".") + 3);
+  return bytesStr + " " + units[unitId];
+}
+
 } // namespace
 
 CachingMemoryManager::DeviceMemoryInfo::DeviceMemoryInfo(int id)
@@ -120,11 +130,13 @@ void* CachingMemoryManager::alloc(
   if (it != pool.end()) {
     block = *it;
     pool.erase(it);
+    memoryInfo.stats_.cachedBytes_ -= block->size_;
   } else {
     void* ptr = nullptr;
     size_t allocSize = getAllocationSize(size);
     mallocWithRetry(allocSize, &ptr); // could throw
     block = new Block(allocSize, ptr);
+    memoryInfo.stats_.allocatedBytes_ += allocSize;
   }
 
   // If the block is larger than the requested size to handle another
@@ -146,6 +158,7 @@ void* CachingMemoryManager::alloc(
     remaining->ptr_ = static_cast<char*>(remaining->ptr_) + size;
     remaining->size_ -= size;
     pool.insert(remaining);
+    memoryInfo.stats_.cachedBytes_ += remaining->size_;
   }
 
   block->managerLock_ = !userLock;
@@ -210,6 +223,7 @@ void CachingMemoryManager::freeBlock(CachingMemoryManager::Block* block) {
   tryMergeBlocks(block, block->next_, pool);
 
   pool.insert(block);
+  memoryInfo.stats_.cachedBytes_ += block->size_;
 }
 
 /** combine previously split blocks */
@@ -234,26 +248,32 @@ void CachingMemoryManager::tryMergeBlocks(
   }
   dst->size_ += src->size_;
   pool.erase(src);
+  getDeviceMemoryInfo().stats_.cachedBytes_ -= src->size_;
   delete src;
 }
 
 void CachingMemoryManager::mallocWithRetry(size_t size, void** ptr) {
   // Try nativeMalloc. If nativeMalloc fails, frees all non-split cached blocks
   // and retries.
-  auto& memoryInfo = getDeviceMemoryInfo();
+  auto& memInfo = getDeviceMemoryInfo();
   try {
-    ++memoryInfo.stats_.totalNativeMallocs_;
+    ++memInfo.stats_.totalNativeMallocs_;
     *ptr = this->deviceInterface->nativeAlloc(size);
   } catch (std::exception& exUnused) {
     try {
       signalMemoryCleanup();
-      ++memoryInfo.stats_.totalNativeMallocs_;
+      ++memInfo.stats_.totalNativeMallocs_;
       *ptr = this->deviceInterface->nativeAlloc(size);
     } catch (std::exception& ex) {
       // note: af exception inherits from std exception
-      std::cerr << "Unable to allocate memory with native alloc for size " +
-              std::to_string(size) + " bytes with error '" + ex.what()
-                << "'";
+      std::cerr << "Failed to allocate memory of size " << formatMemory(size)
+                << " (Device: " << memInfo.deviceId_ << ", Capacity: "
+                << formatMemory(this->deviceInterface->getMaxMemorySize(
+                       memInfo.deviceId_))
+                << ", Allocated: "
+                << formatMemory(memInfo.stats_.allocatedBytes_)
+                << ", Cached: " << formatMemory(memInfo.stats_.cachedBytes_)
+                << ") with error '" << ex.what() << "'" << std::endl;
       // note: converting here an af exception to std exception prevents to
       // catch the af error code at the user level. Rethrowing.
       throw;
@@ -272,6 +292,8 @@ void CachingMemoryManager::freeBlocks(
     if (!block->isSplit()) {
       this->deviceInterface->nativeFree(static_cast<void*>(block->ptr_));
       ++memoryInfo.stats_.totalNativeFrees_;
+      memoryInfo.stats_.allocatedBytes_ -= block->size_;
+      memoryInfo.stats_.cachedBytes_ -= block->size_;
       auto cur = it;
       ++it;
       blocks.erase(cur);
@@ -310,17 +332,15 @@ void CachingMemoryManager::printInfo(const char* msg, const int /* unused */) {
   auto& memInfo = getDeviceMemoryInfo();
   std::lock_guard<std::recursive_mutex> lock(memInfo.mutexAll_);
 
-  std::cout << msg << std::endl;
-  std::cout << "MemoryManager type: CachingMemoryManager" << std::endl;
-  std::cout << "Number of allocated blocks:" << memInfo.allocatedBlocks_.size()
-            << std::endl;
-  std::cout << "Size of free block pool (small):" << memInfo.smallBlocks_.size()
-            << std::endl;
-  std::cout << "Size of free block pool (large):" << memInfo.largeBlocks_.size()
-            << std::endl;
-  std::cout << "Total native mallocs:" << memInfo.stats_.totalNativeMallocs_
-            << std::endl;
-  std::cout << "Total native frees:" << memInfo.stats_.totalNativeFrees_
+  std::cout << msg;
+  std::cout << "\nType: CachingMemoryManager";
+  std::cout << "\nDevice: " << memInfo.deviceId_ << ", Capacity: "
+            << formatMemory(
+                   this->deviceInterface->getMaxMemorySize(memInfo.deviceId_))
+            << ", Allocated: " << formatMemory(memInfo.stats_.allocatedBytes_)
+            << ", Cached: " << formatMemory(memInfo.stats_.cachedBytes_);
+  std::cout << "\nTotal native calls: " << memInfo.stats_.totalNativeMallocs_
+            << "(mallocs), " << memInfo.stats_.totalNativeFrees_ << "(frees)"
             << std::endl;
 }
 
