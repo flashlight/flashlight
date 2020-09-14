@@ -36,7 +36,7 @@ Variable batchnorm(
   }
 
   cudnnBatchNormMode_t mode;
-  af::dim4 in_desc_dims, wt_desc_dims;
+  af::dim4 inDescDims, wtDescDims;
 
   auto max_axis = *std::max_element(axes.begin(), axes.end());
   auto min_axis = *std::min_element(axes.begin(), axes.end());
@@ -49,8 +49,8 @@ Variable batchnorm(
 
   if (min_axis == 0) {
     mode = CUDNN_BATCHNORM_PER_ACTIVATION;
-    in_desc_dims = af::dim4(1, 1, nfeatures, input.elements() / nfeatures);
-    wt_desc_dims = af::dim4(1, 1, nfeatures);
+    inDescDims = af::dim4(1, 1, nfeatures, input.elements() / nfeatures);
+    wtDescDims = af::dim4(1, 1, nfeatures);
   } else {
     mode = CUDNN_BATCHNORM_SPATIAL;
 #if CUDNN_VERSION >= 7003
@@ -62,77 +62,86 @@ Variable batchnorm(
     for (int i = max_axis + 1; i < 4; ++i) {
       batchsz *= input.dims(i);
     }
-    in_desc_dims = af::dim4(
+    inDescDims = af::dim4(
         1, input.elements() / (nfeatures * batchsz), nfeatures, batchsz);
-    wt_desc_dims = af::dim4(1, 1, nfeatures);
+    wtDescDims = af::dim4(1, 1, nfeatures);
   }
 
   const void* one = kOne(input.type());
   const void* zero = kZero(input.type());
 
-  auto weight_nonempty = weight.isempty()
-      ? Variable(af::constant(1.0, wt_desc_dims, input.type()), false)
+
+  if (!weight.isempty() && weight.elements()!= wtDescDims.elements()) {
+    throw std::invalid_argument("[BatchNorm] Invalid shape for weight.");
+  }
+
+  if (!bias.isempty() && bias.elements()!= wtDescDims.elements()) {
+    throw std::invalid_argument("[BatchNorm] Invalid shape for bias.");
+  }
+
+  auto weightNonEmpty = weight.isempty()
+      ? Variable(af::constant(1.0, wtDescDims, input.type()), false)
       : weight;
-  auto bias_nonempty = bias.isempty()
-      ? Variable(af::constant(0.0, wt_desc_dims, input.type()), false)
+  auto biasNonEmpty = bias.isempty()
+      ? Variable(af::constant(0.0, wtDescDims, input.type()), false)
       : bias;
 
-  auto in_desc = TensorDescriptor(input.type(), in_desc_dims);
-  auto wt_desc = TensorDescriptor(weight_nonempty.type(), wt_desc_dims);
+  auto inDesc = TensorDescriptor(input.type(), inDescDims);
+  auto wtDesc = TensorDescriptor(weightNonEmpty.type(), wtDescDims);
 
-  af::array save_mean, save_var;
+  af::array saveMean, saveVar;
   {
-    DevicePtr in_raw(input.array());
-    DevicePtr out_raw(output);
-    DevicePtr wt_raw(weight_nonempty.array());
-    DevicePtr bs_raw(bias_nonempty.array());
-    DevicePtr run_mean_raw(runningMean.array());
-    DevicePtr run_var_raw(runningVar.array());
+    DevicePtr inRaw(input.array());
+    DevicePtr outRaw(output);
+    DevicePtr wtRaw(weightNonEmpty.array());
+    DevicePtr bsRaw(biasNonEmpty.array());
+    DevicePtr runMeanRaw(runningMean.array());
+    DevicePtr runVarRaw(runningVar.array());
 
     if (train) {
-      save_mean = af::array(nfeatures, input.type());
-      save_var = af::array(nfeatures, input.type());
+      saveMean = af::array(nfeatures, input.type());
+      saveVar = af::array(nfeatures, input.type());
 
-      DevicePtr save_mean_raw(save_mean);
-      DevicePtr save_var_raw(save_var);
+      DevicePtr saveMeanRaw(saveMean);
+      DevicePtr saveVarRaw(saveVar);
       CUDNN_CHECK_ERR(cudnnBatchNormalizationForwardTraining(
           getCudnnHandle(),
           mode,
           one,
           zero,
-          in_desc.descriptor,
-          in_raw.get(),
-          in_desc.descriptor,
-          out_raw.get(),
-          wt_desc.descriptor,
-          wt_raw.get(),
-          bs_raw.get(),
+          inDesc.descriptor,
+          inRaw.get(),
+          inDesc.descriptor,
+          outRaw.get(),
+          wtDesc.descriptor,
+          wtRaw.get(),
+          bsRaw.get(),
           momentum,
-          run_mean_raw.get(),
-          run_var_raw.get(),
+          runMeanRaw.get(),
+          runVarRaw.get(),
           epsilon,
-          save_mean_raw.get(),
-          save_var_raw.get()));
+          saveMeanRaw.get(),
+          saveVarRaw.get()));
     } else {
       CUDNN_CHECK_ERR(cudnnBatchNormalizationForwardInference(
           getCudnnHandle(),
           mode,
           one,
           zero,
-          in_desc.descriptor,
-          in_raw.get(),
-          in_desc.descriptor,
-          out_raw.get(),
-          wt_desc.descriptor,
-          wt_raw.get(),
-          bs_raw.get(),
-          run_mean_raw.get(),
-          run_var_raw.get(),
+          inDesc.descriptor,
+          inRaw.get(),
+          inDesc.descriptor,
+          outRaw.get(),
+          wtDesc.descriptor,
+          wtRaw.get(),
+          bsRaw.get(),
+          runMeanRaw.get(),
+          runVarRaw.get(),
           epsilon));
     }
   }
   auto gradFunc =
-      [train, save_mean, save_var, mode, in_desc_dims, wt_desc_dims, epsilon](
+      [train, saveMean, saveVar, mode, inDescDims, wtDescDims, epsilon](
           std::vector<Variable>& inputs, const Variable& grad_output) {
         if (!train) {
           throw std::logic_error(
@@ -141,32 +150,32 @@ Variable batchnorm(
 
         auto& in = inputs[0];
         auto wt = inputs[1].isempty()
-            ? Variable(af::constant(1.0, wt_desc_dims, in.type()), false)
+            ? Variable(af::constant(1.0, wtDescDims, in.type()), false)
             : inputs[1];
         auto& bs = inputs[2];
 
         const void* one1 = kOne(in.type());
         const void* zero0 = kZero(in.type());
 
-        auto i_desc = TensorDescriptor(in.type(), in_desc_dims);
-        auto w_desc = TensorDescriptor(wt.type(), wt_desc_dims);
+        auto iDesc = TensorDescriptor(in.type(), inDescDims);
+        auto wDesc = TensorDescriptor(wt.type(), wtDescDims);
         // CuDNN doesn't support calculating only the gradients
         // required for batchnorm
-        auto grad_in = Variable(af::array(in.dims(), in.type()), false);
-        auto grad_wt = Variable(af::array(wt.dims(), wt.type()), false);
-        auto grad_bs = Variable(af::array(wt.dims(), wt.type()), false);
+        auto gradIn = Variable(af::array(in.dims(), in.type()), false);
+        auto gradWt = Variable(af::array(wt.dims(), wt.type()), false);
+        auto gradBs = Variable(af::array(wt.dims(), wt.type()), false);
         {
-          DevicePtr i_raw(in.array());
-          DevicePtr w_raw(wt.array());
+          DevicePtr iRaw(in.array());
+          DevicePtr wRaw(wt.array());
 
-          DevicePtr grad_in_raw(grad_in.array());
-          DevicePtr grad_wt_raw(grad_wt.array());
-          DevicePtr grad_bs_raw(grad_bs.array());
+          DevicePtr gradInRaw(gradIn.array());
+          DevicePtr gradWtRaw(gradWt.array());
+          DevicePtr gradBsRaw(gradBs.array());
 
-          DevicePtr grad_op_raw(grad_output.array());
+          DevicePtr grad_opRaw(grad_output.array());
 
-          DevicePtr save_mean_raw(save_mean);
-          DevicePtr save_var_raw(save_var);
+          DevicePtr saveMeanRaw(saveMean);
+          DevicePtr saveVarRaw(saveVar);
 
           CUDNN_CHECK_ERR(cudnnBatchNormalizationBackward(
               getCudnnHandle(),
@@ -175,24 +184,24 @@ Variable batchnorm(
               zero0,
               one1,
               zero0,
-              i_desc.descriptor,
-              i_raw.get(),
-              i_desc.descriptor,
-              grad_op_raw.get(),
-              i_desc.descriptor,
-              grad_in_raw.get(),
-              w_desc.descriptor,
-              w_raw.get(),
-              grad_wt_raw.get(),
-              grad_bs_raw.get(),
+              iDesc.descriptor,
+              iRaw.get(),
+              iDesc.descriptor,
+              grad_opRaw.get(),
+              iDesc.descriptor,
+              gradInRaw.get(),
+              wDesc.descriptor,
+              wRaw.get(),
+              gradWtRaw.get(),
+              gradBsRaw.get(),
               epsilon,
-              save_mean_raw.get(),
-              save_var_raw.get()));
+              saveMeanRaw.get(),
+              saveVarRaw.get()));
         }
-        in.addGrad(grad_in);
-        wt.addGrad(grad_wt);
+        in.addGrad(gradIn);
+        wt.addGrad(gradWt);
         if (!bs.isempty()) {
-          bs.addGrad(grad_bs);
+          bs.addGrad(gradBs);
         }
       };
   return Variable(output, {input, weight, bias}, gradFunc);
