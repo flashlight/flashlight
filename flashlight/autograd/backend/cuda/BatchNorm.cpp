@@ -70,6 +70,15 @@ Variable batchnorm(
   const void* one = kOne(input.type());
   const void* zero = kZero(input.type());
 
+
+  if (!weight.isempty() && weight.dims()!= wt_desc_dims) {
+    throw std::invalid_argument("[BatchNorm] Invalid shape for weight.");
+  }
+
+  if (!bias.isempty() && bias.dims()!= wt_desc_dims) {
+    throw std::invalid_argument("[BatchNorm] Invalid shape for bias.");
+  }
+
   auto weight_nonempty = weight.isempty()
       ? Variable(af::constant(1.0, wt_desc_dims, input.type()), false)
       : weight;

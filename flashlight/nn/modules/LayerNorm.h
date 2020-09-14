@@ -36,7 +36,7 @@ class LayerNorm : public UnaryModule {
    *  and \f$\beta\f$. \f$\gamma\f$ and \f$\beta\f$ are set to 1, 0 respectively
    *  if set to `false`, or initialized as learnable parameters
    *  if set to `true`.
-   * @param axisSize size of features specified by `axis` to perform
+   * @param axisSize total size of features specified by `axis` to perform
    *  elementwise affine transform. If the feat size is variable, use
    *  `kLnVariableAxisSize` which uses singleton weight, bias and tiles them
    *  dynamically according to the given input.
@@ -57,7 +57,7 @@ class LayerNorm : public UnaryModule {
    *  and \f$\beta\f$. \f$\gamma\f$ and \f$\beta\f$ are set to 1, 0 respectively
    *  if set to `false`, or initialized as learnable parameters
    *  if set to `true`.
-   * @param featSize size of features specified by `axis` to perform
+   * @param axisSize total size of features specified by `axis` to perform
    *  elementwise affine transform. If the feat size is variable, use
    *  `kLnVariableAxisSize` which uses singleton weight, bias and tiles them
    *  dynamically according to the given input.
