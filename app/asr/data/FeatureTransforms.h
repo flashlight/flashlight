@@ -7,23 +7,68 @@
  */
 #pragma once
 
-#include "flashlight/flashlight/flashlight.h"
+#include <utility>
 
+#include "flashlight/flashlight/flashlight.h"
 #include "flashlight/lib/audio/feature/FeatureParams.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
+#include "flashlight/lib/common/String.h"
+#include "flashlight/app/asr/common/Defines.h"
 
 namespace fl {
 namespace app {
 namespace asr {
 
+enum class FeatureType { POW_SPECTRUM, MFSC, MFCC, NONE };
+
+struct TargetGenerationConfig {
+  TargetGenerationConfig(
+      const std::string& wordSeparator,
+      float sampleTarget,
+      const std::string& criterion,
+      const std::string& surround,
+      bool eostoken,
+      int replabel,
+      bool skipUnk,
+      bool fallbackToLetter)
+      : wordSeparator_(wordSeparator),
+        sampleTarget_(sampleTarget),
+        criterion_(criterion),
+        surround_(surround),
+        eostoken_(eostoken),
+        replabel_(replabel),
+        skipUnk_(skipUnk),
+        fallbackToLetter_(fallbackToLetter) {}
+
+  // token separator between words
+  const std::string wordSeparator_;
+  // sampling fraction if multiple spellings are present in lexicon
+  const float sampleTarget_;
+  // loss criterion
+  const std::string criterion_;
+  // token to add
+  const std::string surround_;
+  // end of sentence token
+  const bool eostoken_;
+  // repeat label (used in ASG)
+  const int replabel_;
+  // skip unknown tokens
+  const bool skipUnk_;
+  // use letters of word as tokens if a word is not present in lexicon
+  const bool fallbackToLetter_;
+};
+
 fl::Dataset::DataTransformFunction inputFeatures(
-    const lib::audio::FeatureParams& params);
+    const lib::audio::FeatureParams& params,
+    const FeatureType& featureType,
+    const std::pair<int, int>& localNormCtx);
 
 fl::Dataset::DataTransformFunction targetFeatures(
-    const lib::text::Dictionary& dict,
+    const lib::text::Dictionary& tokenDict,
     const lib::text::LexiconMap& lexicon,
-    int wordSeperator,
-    bool surround = true);
+    const TargetGenerationConfig& config);
+
+fl::Dataset::DataTransformFunction wordFeatures(const lib::text::Dictionary& wrdDict);
 
 // ============================== Helper function ==============================
 

@@ -31,6 +31,23 @@ std::vector<std::string> wrd2Target(
     const lib::text::Dictionary& dict,
     bool fallback2Ltr = false,
     bool skipUnk = false);
+
+std::vector<std::string> wrd2Target(
+    const std::string& word,
+    const lib::text::LexiconMap& lexicon,
+    const lib::text::Dictionary& dict,
+    float sampletarget = 0,
+    bool fallback2Ltr = false,
+    bool skipUnk = false);
+
+std::vector<std::string> wrd2Target(
+    const std::vector<std::string>& words,
+    const lib::text::LexiconMap& lexicon,
+    const lib::text::Dictionary& dict,
+    const std::string& wordseparator = "",
+    float sampletarget = 0,
+    bool fallback2Ltr = false,
+    bool skipUnk = false);
 } // namespace asr
 } // namespace app
 } // namespace fl

@@ -27,10 +27,21 @@ std::vector<std::string> wrd2Target(
     const Dictionary& dict,
     bool fallback2Ltr /* = false */,
     bool skipUnk /* = false */) {
+  return wrd2Target(
+      word, lexicon, dict, FLAGS_sampletarget, fallback2Ltr, skipUnk);
+}
+
+std::vector<std::string> wrd2Target(
+    const std::string& word,
+    const LexiconMap& lexicon,
+    const Dictionary& dict,
+    float sampletarget /* = 0 */,
+    bool fallback2Ltr /* = false */,
+    bool skipUnk /* = false */) {
   auto lit = lexicon.find(word);
   if (lit != lexicon.end()) {
     if (lit->second.size() > 1 &&
-        FLAGS_sampletarget >
+        sampletarget >
             static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX)) {
       return lit->second[std::rand() % lit->second.size()];
     } else {
@@ -74,35 +85,52 @@ std::vector<std::string> wrd2Target(
     const Dictionary& dict,
     bool fallback2Ltr /* = false */,
     bool skipUnk /* = false */) {
+  return wrd2Target(
+      words,
+      lexicon,
+      dict,
+      FLAGS_wordseparator,
+      FLAGS_sampletarget,
+      fallback2Ltr,
+      skipUnk);
+}
+
+std::vector<std::string> wrd2Target(
+    const std::vector<std::string>& words,
+    const LexiconMap& lexicon,
+    const Dictionary& dict,
+    const std::string& wordseparator /* = "" */,
+    float sampletarget /* = 0 */,
+    bool fallback2Ltr /* = false */,
+    bool skipUnk /* = false */) {
   std::vector<std::string> res;
   for (auto w : words) {
-    auto t = wrd2Target(w, lexicon, dict, fallback2Ltr, skipUnk);
+    auto t = wrd2Target(w, lexicon, dict, sampletarget, fallback2Ltr, skipUnk);
 
     if (t.size() == 0) {
       continue;
     }
 
     // remove duplicate word separators in the beginning of each target token
-    if (res.size() > 0 && !FLAGS_wordseparator.empty() &&
-        t[0].length() >= FLAGS_wordseparator.length() &&
-        t[0].compare(0, FLAGS_wordseparator.length(), FLAGS_wordseparator) ==
-            0) {
+    if (res.size() > 0 && !wordseparator.empty() &&
+        t[0].length() >= wordseparator.length() &&
+        t[0].compare(0, wordseparator.length(), wordseparator) == 0) {
       res.pop_back();
     }
 
     res.insert(res.end(), t.begin(), t.end());
 
-    if (!FLAGS_wordseparator.empty() &&
-        !(res.back().length() >= FLAGS_wordseparator.length() &&
+    if (!wordseparator.empty() &&
+        !(res.back().length() >= wordseparator.length() &&
           res.back().compare(
-              res.back().length() - FLAGS_wordseparator.length(),
-              FLAGS_wordseparator.length(),
-              FLAGS_wordseparator) == 0)) {
-      res.emplace_back(FLAGS_wordseparator);
+              res.back().length() - wordseparator.length(),
+              wordseparator.length(),
+              wordseparator) == 0)) {
+      res.emplace_back(wordseparator);
     }
   }
 
-  if (res.size() > 0 && res.back() == FLAGS_wordseparator) {
+  if (res.size() > 0 && res.back() == wordseparator) {
     res.pop_back();
   }
   return res;
