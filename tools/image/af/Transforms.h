@@ -1,12 +1,13 @@
 #pragma once
 
-#include "flashlight/dataset/Dataset.h"
+#include <functional>
+#include <arrayfire.h>
 
 namespace fl {
 namespace cv {
 namespace dataset {
 
-using ImageTransform = Dataset::TransformFunction;
+using ImageTransform = std::function<af::array(const af::array&)>;
 
 
 ImageTransform normalizeImage(
