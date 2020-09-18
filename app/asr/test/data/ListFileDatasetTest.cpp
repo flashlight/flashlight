@@ -24,6 +24,16 @@ using namespace fl::app::asr;
 
 namespace {
 std::string loadPath = "";
+auto letterToTarget = [](
+             void* data, af::dim4 dims, af::dtype /* unused */) {
+    std::string transcript(
+        static_cast<char*>(data), static_cast<char*>(data) + dims.elements());
+    std::vector<int> tgt;
+    for (auto c: transcript) {
+        tgt.push_back(static_cast<int>(c));
+    }
+  return af::array(tgt.size(), tgt.data());
+};
 }
 
 TEST(ListFileDatasetTest, LoadData) {
@@ -36,14 +46,19 @@ TEST(ListFileDatasetTest, LoadData) {
     out << "\n";
   }
   out.close();
-  ListFileDataset audiods(rootPath);
+  ListFileDataset audiods(rootPath, nullptr, letterToTarget);
   ASSERT_EQ(audiods.size(), 3);
+  std::vector<int> expectedTgtLen = {45, 23, 26};
   for (int i = 0; i < 3; ++i) {
     ASSERT_EQ(audiods.get(i).size(), 4);
     ASSERT_EQ(audiods.get(i)[0].dims(), af::dim4(1, 24000));
+    ASSERT_EQ(audiods.get(i)[1].elements(), expectedTgtLen[i]);
+    ASSERT_EQ(audiods.get(i)[1].elements(), audiods.getTargetSize(i));
+    ASSERT_TRUE(audiods.get(i)[2].isempty());
     ASSERT_EQ(audiods.get(i)[3].elements(), 1);
   }
 }
+
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
