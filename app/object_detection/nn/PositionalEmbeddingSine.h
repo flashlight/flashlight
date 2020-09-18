@@ -3,7 +3,8 @@
 #include "flashlight/nn/modules/Module.h"
 
 namespace fl {
-namespace cv {
+namespace app {
+namespace object_detection {
 
 class PositionalEmbeddingSine : public UnaryModule {
   public:
@@ -24,5 +25,6 @@ private:
   const float scale_;
 };
 
+} // end namespace object_detection
+} // end namespace app
 } // end namespace fl
-} // end namespace cv

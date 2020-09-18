@@ -1,20 +1,14 @@
 #pragma once
 
-#include "vision/dataset/ImageDataset.h"
-#include "vision/dataset/Transforms.h"
+#include "flashlight/ext/image/fl/dataset/Jpeg.h"
+#include "flashlight/ext/image/af/Transforms.h"
 #include "flashlight/dataset/datasets.h"
 
 #include <iostream>
 
 namespace fl {
-namespace cv {
-namespace dataset {
-
-//struct CocoAnnotation {
-  //af::array bboxes;
-  //af::array labels;
-  //uint64_t image_id;
-//}
+namespace app {
+namespace object_detection {
 
 struct CocoData {
   af::array images;
@@ -108,7 +102,7 @@ public:
 
   CocoDataset(
       const std::string& list_file,
-      std::vector<ImageTransform>& transformfns,
+      std::vector<ext::image::ImageTransform>& transformfns,
       int world_rank,
       int world_size,
       int batch_size,
@@ -119,7 +113,7 @@ public:
   std::shared_ptr<Dataset> getLabels(std::string list_file);
 
   std::shared_ptr<Dataset> getImages(std::string list_file,
-      std::vector<ImageTransform>& transformfns);
+      std::vector<ext::image::ImageTransform>& transformfns);
 
   using iterator = detail::DatasetIterator<CocoDataset, CocoData>;
 

@@ -2,10 +2,12 @@
 
 #include <iostream>
 
-#include "models/Resnet.h"
+#include "flashlight/ext/image/fl/models/Resnet.h"
+
 
 namespace fl {
-namespace cv {
+namespace ext {
+namespace image {
 
 // TODO HACK!!!!!!
 void freezeBatchNorm(std::shared_ptr<fl::Module> ptr) {
@@ -87,7 +89,8 @@ public:
     FL_SAVE_LOAD_WITH_BASE(fl::Container)
 };
 
-} // end namespace cv
+} // end namespace image
+} // end namespace ext
 } // end namespace fl
 
-CEREAL_REGISTER_TYPE(fl::cv::Resnet34Backbone)
+CEREAL_REGISTER_TYPE(fl::ext::image::Resnet34Backbone)

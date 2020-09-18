@@ -1,6 +1,7 @@
 #pragma once
+
 #include "flashlight/nn/nn.h"
-#include "vision/dataset/BoxUtils.h"
+#include "flashlight/app/object_detection/dataset/BoxUtils.h"
 #include "iostream"
 
 #include <cassert>
@@ -8,7 +9,8 @@
 // TODO check layer norm dimensions
 
 namespace fl {
-namespace cv {
+namespace app {
+namespace object_detection {
 
 
 fl::Variable transformerInitLinear(int32_t inDim, int32_t outDim) {
@@ -413,14 +415,14 @@ std::vector<Variable> forward(
 
       int B = src.dims(3);
       // Reshape from [ W X H X C X B ] to [ WH X C X B ]
-      src = dataset::flatten(src, 0, 1);
+      src = flatten(src, 0, 1);
       // Flatten to C x B x WH
       src = reorder(src, 1, 2, 0);
 
-      posEmbed = dataset::flatten(posEmbed, 0, 1);
+      posEmbed = flatten(posEmbed, 0, 1);
       posEmbed = reorder(posEmbed, 1, 2, 0);
 
-      mask = dataset::flatten(mask, 0, 2);
+      mask = flatten(mask, 0, 2);
 
       // TODO Should we ever not pass positional encodings to each layer?
       // https://github.com/fairinternal/detr/blob/master/models/transformer.py#L56
@@ -436,14 +438,14 @@ std::vector<Variable> forward(
       //auto tgt = queryEmbed;
 
       auto memory = encoder_->forward({
-          src, 
-          mask, 
+          src,
+          mask,
           posEmbed
       });
       auto hs = decoder_->forward({
           tgt,
-          memory[0], 
-          posEmbed, 
+          memory[0],
+          posEmbed,
           queryEmbed,
           mask})[0];
       return { reorder(hs, 0, 2, 1) };
@@ -469,5 +471,6 @@ private:
 };
 
 
-} // namespace cv
+} // namespace object_detection
+} // namespace app
 } // namespace fl

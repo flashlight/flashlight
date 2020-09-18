@@ -6,8 +6,8 @@
 #include "flashlight/autograd/Variable.h"
 
 namespace fl {
-namespace cv {
-namespace dataset {
+namespace app {
+namespace object_detection {
 
 //af::array cxcywh_to_xyxy(const af::array& bboxes);
 
@@ -42,6 +42,6 @@ Variable generalized_box_iou(const Variable& bboxes1, const Variable& bboxes2);
 
 Variable l1_loss(const Variable& input, const Variable& target);
 
-} // namespace dataset
-} // namespace cv
+} // namespace object_detection
+} // namespace app
 } // namespace fl

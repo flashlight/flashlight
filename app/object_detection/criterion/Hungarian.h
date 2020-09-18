@@ -3,7 +3,8 @@
 #include "flashlight/nn/modules/Container.h"
 
 namespace fl {
-namespace cv {
+namespace app {
+namespace object_detection {
 
 class HungarianMatcher {
 
@@ -28,16 +29,17 @@ private:
   float cost_giou_;
 
    std::pair<af::array, af::array> matchBatch(
-       const Variable& predBoxes, 
+       const Variable& predBoxes,
        const Variable& predLogits,
-       const Variable& targetBoxes, 
+       const Variable& targetBoxes,
        const Variable& targetClasses) const;
 
   af::array getCostMatrix(
-      const Variable& input, 
+      const Variable& input,
       const Variable& target);
 
 };
 
-} // cv
-} // flashlight
+} // object_detection
+} // app
+} // fl

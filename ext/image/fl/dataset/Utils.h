@@ -4,8 +4,8 @@
 #include <glob.h>
 
 namespace fl {
-namespace cv {
-namespace dataset {
+namespace ext {
+namespace image {
 
 class DistributedDataset : public Dataset {
  public:
@@ -81,6 +81,6 @@ inline std::vector<std::string> glob(const std::string& pat) {
   return ret;
 }
 
-}
-}
-}
+} // namespace image
+} // namespace ext
+} // namespace fl

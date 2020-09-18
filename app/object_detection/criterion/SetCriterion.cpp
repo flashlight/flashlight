@@ -7,7 +7,7 @@
 
 #include <af/array.h>
 
-#include "vision/dataset/BoxUtils.h"
+#include "flashlight/app/object_detection/dataset/BoxUtils.h"
 #include "flashlight/autograd/autograd.h"
 #include "flashlight/common/Defines.h"
 
@@ -234,7 +234,8 @@ fl::Variable index(
 }
 
 namespace fl {
-namespace cv {
+namespace app {
+namespace object_detection {
 
 SetCriterion::SetCriterion(
     const int num_classes,
@@ -298,9 +299,9 @@ SetCriterion::LossDict SetCriterion::lossBoxes(
   auto tgtBoxes = fl::concatenate(permuted, 1);
 
 
-  auto cost_giou =  dataset::generalized_box_iou(
-      dataset::cxcywh_to_xyxy(srcBoxes), 
-      dataset::cxcywh_to_xyxy(tgtBoxes)
+  auto cost_giou =  generalized_box_iou(
+      cxcywh_to_xyxy(srcBoxes), 
+      cxcywh_to_xyxy(tgtBoxes)
   );
 
   // Extract diagnal
@@ -309,7 +310,7 @@ SetCriterion::LossDict SetCriterion::lossBoxes(
   cost_giou = 1 - index(cost_giou, { rng, rng, af::array(), af::array() });
   cost_giou = sum(cost_giou, { 0 } ) / numBoxes;
 
-  auto loss_bbox = cv::dataset::l1_loss(srcBoxes, tgtBoxes);
+  auto loss_bbox = l1_loss(srcBoxes, tgtBoxes);
   loss_bbox = sum(loss_bbox, { 0 } ) / numBoxes;
 
   return { {"loss_giou", cost_giou}, {"loss_bbox", loss_bbox }};
@@ -402,5 +403,6 @@ std::pair<af::array, af::array> SetCriterion::getSrcPermutationIdx(
   //return std::make_pair(batchIdxs, srcIdxs);
 }
 
-}// end namespace cv
-} // end namespace fl
+} // namespace object_detection
+} // namespace app
+} // namespace fl

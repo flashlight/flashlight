@@ -5,13 +5,11 @@
 #include <tuple>
 #include <iostream>
 
-//#include "flashlight/flashlight.h"
 #include "flashlight/autograd/Functions.h"
 
-
 namespace fl {
-namespace cv {
-namespace dataset {
+namespace app {
+namespace object_detection {
 
 af::array xyxy_to_cxcywh(const af::array& bboxes) {
   auto x0 = bboxes.row(0);
@@ -29,8 +27,8 @@ fl::Variable cxcywh_to_xyxy(const Variable& bboxes) {
   auto y_c = bboxes.row(1);
   auto w = bboxes.row(2);
   auto h = bboxes.row(3);
-  transformed = fl::concatenate( { 
-      x_c - 0.5 * w, 
+  transformed = fl::concatenate({
+      x_c - 0.5 * w,
       y_c - 0.5 * h,
       x_c + 0.5 * w,
       y_c + 0.5 * h
@@ -68,8 +66,8 @@ typedef Variable(* batchFuncVar_t) (const Variable& lhs, const Variable& rhs);
 
 
 Variable cartesian(
-    const Variable& x, 
-    const Variable& y, 
+    const Variable& x,
+    const Variable& y,
     batchFuncVar_t fn) {
   assert(y.dims(3) == 1);
   assert(x.dims(3) == 1);
@@ -84,7 +82,7 @@ Variable cartesian(
 }
 
 std::tuple<fl::Variable, fl::Variable> box_iou(
-    const fl::Variable& bboxes1, 
+    const fl::Variable& bboxes1,
     const fl::Variable& bboxes2) {
   auto area1 = box_area(bboxes1);
   auto area2 = box_area(bboxes2);
@@ -118,6 +116,6 @@ Variable l1_loss(const Variable& input, const Variable& target) {
   return flatten(sum(abs(input - target), {0} ), 0, 1);
 }
 
-} // namespace dataset
-} // namespace cv
+} // namespace object_detection
+} // namespace app
 } // namespace fl

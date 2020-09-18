@@ -4,11 +4,11 @@
 #include <arrayfire.h>
 
 namespace fl {
-namespace cv {
-namespace dataset {
+namespace ext {
+namespace image {
 
+// Same function signature as DataTransform
 using ImageTransform = std::function<af::array(const af::array&)>;
-
 
 ImageTransform normalizeImage(
   const std::vector<float>& mean_,
@@ -55,6 +55,6 @@ ImageTransform horizontalFlipTransform(const float p = 0.5);
  */
 ImageTransform compose(std::vector<ImageTransform>& transformfns);
 
-} // transforms
-} // cv
-} // fg
+} // image
+} // ext
+} // fl

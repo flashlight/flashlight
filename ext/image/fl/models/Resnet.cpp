@@ -2,6 +2,8 @@
 
 
 namespace fl {
+namespace ext {
+namespace image {
 
 namespace {
 
@@ -124,4 +126,6 @@ Sequential resnet34() {
   return model;
 };
 
-}; // namespace fl
+} // namespace image
+} // namespace ext
+} // namespace fl

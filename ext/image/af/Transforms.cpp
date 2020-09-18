@@ -3,7 +3,7 @@
 #include <random>
 #include <numeric>
 
-// TODO maybe move these into a Functional namespace
+// TODO consider moving these outside of annonymous namespace
 namespace {
 
 float randomFloat(float a, float b) {
@@ -53,8 +53,8 @@ af::array centerCrop(const af::array& in, const int size) {
 }
 
 namespace fl {
-namespace cv {
-namespace dataset {
+namespace ext {
+namespace image {
 
 ImageTransform resizeTransform(const uint64_t resize) {
   return [resize](const af::array& in) {
@@ -155,6 +155,6 @@ ImageTransform normalizeImage(
   };
 };
 
-} // namespace dataset
-} // namespace cv
+} // namespace image
+} // namespace ext
 } // namespace fl

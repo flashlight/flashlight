@@ -1,7 +1,8 @@
-#include "vision/dataset/Coco.h"
-#include "vision/dataset/BoxUtils.h"
-#include "vision/dataset/Utils.h"
-#include "vision/dataset/Transforms.h"
+#include "flashlight/app/object_detection/dataset/BoxUtils.h"
+#include "flashlight/app/object_detection/dataset/Coco.h"
+#include "flashlight/ext/image/af/Transforms.h"
+#include "flashlight/ext/image/af/Jpeg.h"
+#include "flashlight/ext/image/fl/dataset/Utils.h"
 
 #include <arrayfire.h>
 
@@ -9,18 +10,18 @@
 #include <algorithm>
 #include <map>
 
-#include "iostream"
-
 namespace {
 
+using namespace fl::app::object_detection;
+using namespace fl::ext::image;
 using namespace fl;
-using namespace fl::cv::dataset;
-
-static const int kElementsPerBbox = 5;
-static const int kMaxNumLabels = 64;
 
 using BBoxVector = std::vector<float>;
 using BBoxLoader = Loader<BBoxVector>;
+using FilepathLoader = Loader<std::string>;
+
+static const int kElementsPerBbox = 5;
+static const int kMaxNumLabels = 64;
 
 std::vector<std::string> parseImageFilepaths(const std::string& list_file) {
   std::ifstream ifs(list_file);
@@ -284,8 +285,8 @@ private:
 
 
 namespace fl {
-namespace cv {
-namespace dataset {
+namespace app {
+namespace object_detection {
 
 // TODO move into common namespace
 af::array resizeSmallest(const af::array& in, const int resize) {
@@ -476,16 +477,6 @@ CocoData CocoDataset::get(const uint64_t idx) {
   return batched_->get(idx);
 }
 
-
-
-//std::shared_ptr<CocoDataset> coco(
-    //const std::string& list_file,
-    //std::vector<ImageTransform>& transformfns,
-    //int batch_size)  {
-  //return std::make_shared<CocoDataset>(list_file, transformfns, batch_size);
-
-//}
-
-} // namespace dataset
-} // namespace cv
-} // namespace flashlight
+} // namespace object_detection
+} // namespace app
+} // namespace fl

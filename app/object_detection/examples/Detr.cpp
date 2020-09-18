@@ -9,19 +9,19 @@
 
 #include <gflags/gflags.h>
 
-#include "flashlight/dataset/datasets.h"
+#include "flashlight/app/object_detection/criterion/SetCriterion.h"
+#include "flashlight/app/object_detection/dataset/BoxUtils.h"
+#include "flashlight/app/object_detection/dataset/Coco.h"
+#include "flashlight/app/object_detection/examples/Resnet34Backbone.h"
+#include "flashlight/app/object_detection/nn/PositionalEmbeddingSine.h"
+#include "flashlight/app/object_detection/nn/Transformer.h"
+//#include "flashlight/dataset/datasets.h"
+#include "flashlight/ext/image/af/Transforms.h"
+#include "flashlight/ext/image/fl/dataset/Utils.h"
+#include "flashlight/ext/image/fl/models/Resnet.h"
 #include "flashlight/meter/meters.h"
 #include "flashlight/optim/optim.h"
-#include "vision/dataset/ImagenetUtils.h"
-#include "vision/dataset/Coco.h"
-#include "vision/dataset/BoxUtils.h"
-#include "vision/dataset/Transforms.h"
-#include "vision/dataset/Utils.h"
-#include "vision/models/Resnet.h"
-#include "vision/Resnet34Backbone.h"
-#include "vision/nn/PositionalEmbeddingSine.h"
-#include "vision/nn/Transformer.h"
-#include "vision/criterion/SetCriterion.h"
+//#include "vision/dataset/ImagenetUtils.h"
 
 DEFINE_string(data_dir, "/private/home/padentomasello/data/coco3/", "Directory of imagenet data");
 DEFINE_double(lr, 0.0001f, "Learning rate");
@@ -51,8 +51,8 @@ DEFINE_string(eval_dir, "/private/home/padentomasello/data/coco/output/", "Direc
 
 
 using namespace fl;
-using namespace fl::cv;
-using namespace cv::dataset;
+using namespace fl::ext::image;
+using namespace fl::app::object_detection;
 
 // TODO Refactor
 //const int32_t backboneChannels = 512;

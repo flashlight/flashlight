@@ -42,8 +42,8 @@ DEFINE_int64(checkpoint, -1, "Load from checkpoint");
 
 
 using namespace fl;
-using namespace cv::dataset;
-
+using namespace fl::ext::image;
+using namespace fl::app::image_classfication;
 
 std::tuple<double, double, double> eval_loop(
     std::shared_ptr<Sequential> model,
@@ -56,10 +56,10 @@ std::tuple<double, double, double> eval_loop(
   model->eval();
   int idx = 0;
   for (auto& example : dataset) {
-    auto inputs = noGrad(example[cv::dataset::INPUT_IDX]);
+    auto inputs = noGrad(example[INPUT_IDX]);
     auto output = model->forward(inputs);
 
-    auto target = noGrad(example[cv::dataset::TARGET_IDX]);
+    auto target = noGrad(example[TARGET_IDX]);
 
     // Compute and record the loss.
     auto loss = categoricalCrossEntropy(output, target);
@@ -131,7 +131,7 @@ int main(int argc, char** argv) {
   const int64_t prefetch_threads = 10;
   const int64_t prefetch_size = FLAGS_batch_size;
   auto train_ds = DistributedDataset(
-      cv::dataset::imagenet(train_list, train_transforms),
+      imagenet(train_list, train_transforms),
       FLAGS_world_rank,
       FLAGS_world_size,
       batch_size_per_gpu,
@@ -139,7 +139,7 @@ int main(int argc, char** argv) {
       prefetch_size);
 
   auto val_ds = DistributedDataset(
-      cv::dataset::imagenet(val_list, val_transforms),
+      imagenet(val_list, val_transforms),
       FLAGS_world_rank,
       FLAGS_world_size,
       batch_size_per_gpu,
@@ -202,13 +202,13 @@ int main(int argc, char** argv) {
     for (auto& example : train_ds) {
       opt.zeroGrad();
       // Make a Variable from the input array.
-      auto inputs = noGrad(example[cv::dataset::INPUT_IDX]);
+      auto inputs = noGrad(example[INPUT_IDX]);
 
       // Get the activations from the model.
       auto output = model->forward(inputs);
 
       // Make a Variable from the target array.
-      auto target = noGrad(example[cv::dataset::TARGET_IDX]);
+      auto target = noGrad(example[TARGET_IDX]);
 
       // Compute and record the loss.
       auto loss = categoricalCrossEntropy(output, target);

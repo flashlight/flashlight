@@ -2,8 +2,8 @@
 #include "flashlight/ext/image/fl/dataset/Utils.h"
 
 namespace fl {
-namespace cv {
-namespace dataset {
+namespace ext {
+namespace image {
 
 std::shared_ptr<Dataset> jpegLoader(std::vector<std::string> fps) {
   return std::make_shared<Loader<std::string>>(fps,
@@ -13,6 +13,6 @@ std::shared_ptr<Dataset> jpegLoader(std::vector<std::string> fps) {
   });
 }
 
-}
-}
-}
+} // namespace image
+} // namespace ext
+} // namespace fl

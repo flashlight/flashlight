@@ -1,6 +1,6 @@
 #pragma once
 
-//#include "flashlight/ext/image/af/Jpeg.h"
+#include "flashlight/ext/image/af/Jpeg.h"
 #include "flashlight/dataset/datasets.h"
 /**
  * Utilities for creating an ImageDataset with imagenet data
@@ -27,8 +27,8 @@
  *
  */
 namespace fl {
-namespace cv {
-namespace dataset {
+namespace app {
+namespace image_classfication {
 
 /* Given the path to the imagenet labels file labels.txt,
  * create a map with a unique id for each label that can be used for training
@@ -61,6 +61,6 @@ std::shared_ptr<Dataset> imagenet(
 static const uint64_t INPUT_IDX = 0;
 static const uint64_t TARGET_IDX = 1;
 
-} // namespace dataset
-} // namespace cv
+} // namespace image_classification
+} // namespace app
 } // namespace fl

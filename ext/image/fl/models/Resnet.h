@@ -3,6 +3,8 @@
 #include "flashlight/nn/nn.h"
 
 namespace fl {
+namespace ext {
+namespace image {
 
 class ConvBnAct : public fl::Sequential {
  public:
@@ -53,7 +55,9 @@ class ResNetStage : public fl::Sequential {
 Sequential resnet34();
 
 
+} // namespace image
+} // namespace ext
 } // namespace fl
-CEREAL_REGISTER_TYPE(fl::ConvBnAct)
-CEREAL_REGISTER_TYPE(fl::ResNetBlock)
-CEREAL_REGISTER_TYPE(fl::ResNetStage)
+CEREAL_REGISTER_TYPE(fl::ext::image::ConvBnAct)
+CEREAL_REGISTER_TYPE(fl::ext::image::ResNetBlock)
+CEREAL_REGISTER_TYPE(fl::ext::image::ResNetStage)

@@ -9,7 +9,7 @@
 
 namespace {
 
-using namespace fl::cv::dataset;
+using namespace fl::ext::image;
 
 using LabelLoader = Loader<uint64_t>;
 using FilepathLoader = Loader<std::string>;
@@ -22,7 +22,7 @@ LabelLoader labelLoader(std::vector<uint64_t> labels) {
 }
 
 /*
- * Assumes images are in a directory where the parent folder represents 
+ * Assumes images are in a directory where the parent folder represents
  * thier class
  */
 std::string labelFromFilePath(std::string fp) {
@@ -43,7 +43,7 @@ std::vector<uint64_t> labelTargets(
     if (labelMap.find(label) == labelMap.end()) {
       int size = labelMap.size();
       labelMap[label] = size;
-    } 
+    }
     return labelMap[label];
   };
   std::vector<uint64_t> labels(filepaths.size());
@@ -60,8 +60,8 @@ LabelLoader labelsFromSubDir(std::vector<std::string> fps) {
 } // namespace
 
 namespace fl {
-namespace cv {
-namespace dataset {
+namespace app {
+namespace image_classfication {
 
 std::unordered_map<std::string, uint32_t> imagenetLabels(
     const std::string& label_file) {
@@ -100,6 +100,6 @@ std::shared_ptr<Dataset> imagenet(
   return std::make_shared<MergeDataset>(MergeDataset({transformed, target_ds}));
 }
 
-} // namespace dataset
-} // namespace cv
-} // namespace flashlight
+} // namespace image_classification
+} // namespace app
+} // namespace fl

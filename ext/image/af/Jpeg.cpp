@@ -5,8 +5,8 @@
 
 
 namespace fl {
-namespace cv {
-namespace dataset {
+namespace ext {
+namespace image {
 
 /*
  * Loads a jpeg from filepath fp. Note: It will automatically convert from any
@@ -27,13 +27,6 @@ af::array loadJpeg(const std::string& fp) {
 	}
 }
 
-
-//std::shared_ptr<Dataset> imageTransform(std::shared_ptr<Dataset> ds,
-    //std::vector<ImageTransform>& transforms) {
-  //std::vector<ImageTransform> composed = { compose(transforms) };
-  //return std::make_shared<TransformDataset(ds, composed);
-//}
-
-} // namespace dataset
-} // namespace cv
+} // namespace image
+} // namespace ext
 } // namespace fl
