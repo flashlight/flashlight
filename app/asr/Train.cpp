@@ -8,6 +8,7 @@
 
 #include <cstdlib>
 #include <fstream>
+#include <functional>
 #include <random>
 #include <string>
 #include <vector>
@@ -464,9 +465,6 @@ int main(int argc, char** argv) {
     }
   };
 
-  auto trainEvalIds =
-      getTrainEvalIds(trainds->size(), FLAGS_pcttraineval, FLAGS_seed);
-
   int64_t curEpoch = startEpoch;
 
   auto train = [&meters,
@@ -475,7 +473,6 @@ int main(int argc, char** argv) {
                 &saveModels,
                 &evalOutput,
                 &validds,
-                &trainEvalIds,
                 &curEpoch,
                 &startUpdate,
                 reducer](
@@ -569,6 +566,7 @@ int main(int argc, char** argv) {
       if (FLAGS_reportiters == 0) {
         resetTimeStatMeters();
       }
+      std::hash<std::string> hasher;
       if (!FLAGS_noresample) {
         LOG_MASTER(INFO) << "Shuffling trainset";
         trainset->shuffle(curEpoch /* seed */);
@@ -627,9 +625,8 @@ int main(int argc, char** argv) {
         }
         meters.train.loss.add(loss.array());
 
-        int64_t batchIdx = (curBatch - startUpdate - 1) % trainset->size();
-        int64_t globalBatchIdx = trainset->getGlobalBatchIdx(batchIdx);
-        if (trainEvalIds.find(globalBatchIdx) != trainEvalIds.end()) {
+        if (hasher(join(",", readSampleIds(batch[kSampleIdx]))) % 100 <=
+            FLAGS_pcttraineval) {
           evalOutput(output.array(), batch[kTargetIdx], meters.train);
         }
 
