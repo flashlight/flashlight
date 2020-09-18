@@ -34,7 +34,7 @@ target_link_libraries(
   PUBLIC
   ${GFLAGS_LIBRARIES}
   ${GLOG_LIBRARIES}
-  flashlight-tools-image
+  flashlight
   )
 
 target_include_directories(

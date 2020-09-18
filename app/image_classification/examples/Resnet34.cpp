@@ -11,11 +11,11 @@
 
 #include "flashlight/app/image_classification/dataset/Imagenet.h"
 #include "flashlight/dataset/datasets.h"
+#include "flashlight/ext/image/af/Transforms.h"
+#include "flashlight/ext/image/fl/dataset/Utils.h"
+#include "flashlight/ext/image/fl/models/Resnet.h"
 #include "flashlight/meter/meters.h"
 #include "flashlight/optim/optim.h"
-#include "flashlight/tools/image/af/Transforms.h"
-#include "flashlight/tools/image/fl/dataset/Utils.h"
-#include "flashlight/tools/image/fl/models/Resnet.h"
 
 DEFINE_string(data_dir, "/datasets01_101/imagenet_full_size/061417/", "Directory of imagenet data");
 DEFINE_double(lr, 0.1f, "Learning rate");

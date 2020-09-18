@@ -1,4 +1,4 @@
-#include "flashlight/tools/image/fl/models/Resnet.h"
+#include "flashlight/ext/image/fl/models/Resnet.h"
 
 
 namespace fl {

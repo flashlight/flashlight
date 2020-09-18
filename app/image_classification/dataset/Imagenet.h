@@ -1,6 +1,6 @@
 #pragma once
 
-#include "tools/image/af/Jpeg.h"
+//#include "flashlight/ext/image/af/Jpeg.h"
 #include "flashlight/dataset/datasets.h"
 /**
  * Utilities for creating an ImageDataset with imagenet data

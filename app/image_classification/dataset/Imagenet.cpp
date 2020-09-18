@@ -2,9 +2,9 @@
 
 #include <algorithm>
 
-#include "tools/image/af/Transforms.h"
-#include "tools/image/fl/dataset/Utils.h"
-#include "tools/image/fl/dataset/Jpeg.h"
+#include "ext/image/af/Transforms.h"
+#include "ext/image/fl/dataset/Utils.h"
+#include "ext/image/fl/dataset/Jpeg.h"
 #include "flashlight/dataset/datasets.h"
 
 namespace {

@@ -1,5 +1,5 @@
-#include "tools/image/af/Jpeg.h"
-#include "flashlight/tools/image/fl/dataset/Utils.h"
+#include "flashlight/ext/image/af/Jpeg.h"
+#include "flashlight/ext/image/fl/dataset/Utils.h"
 
 namespace fl {
 namespace cv {

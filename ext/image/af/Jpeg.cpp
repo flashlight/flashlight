@@ -1,4 +1,4 @@
-#include "Jpeg.h"
+#include "flashlight/ext/image/af/Jpeg.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
