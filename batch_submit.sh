@@ -46,7 +46,9 @@ cd $BUILD_DIR
 git clone git@github.com:padentomasello/flashlight.git
 cd flashlight && git fetch && git checkout $1
 mkdir build && cd build
-CMAKE_PREFIX_PATH=~/code/arrayfire/build-3.7.1 cmake ..  -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CUDA -DFL_BUILD_VISION=ON
+CMAKE_PREFIX_PATH=~/code/arrayfire/build-3.7.1 cmake .. \
+  -DCMAKE_BUILD_TYPE=Release -DFLASHLIGHT_BACKEND=CUDA -DFL_BUILD_VISION=ON -DFL_LIBRARIES_USE_KENLM=OFF
+
 make -j $(nproc) Resnet34Backbone
 cd ..
 
