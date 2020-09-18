@@ -158,69 +158,6 @@ TEST(DataTest, targetFeaturizer) {
   ASSERT_EQ(tgtArray(tgtLen - 2, 1).scalar<int>(), eosIdx);
 }
 
-TEST(DataTest, ListDataset) {
-  gflags::FlagSaver flagsaver;
-  FLAGS_mfcc = false;
-  FLAGS_mfsc = false;
-  FLAGS_pow = false;
-  FLAGS_nthread = 6;
-  FLAGS_replabel = 0;
-  FLAGS_surround = "";
-  FLAGS_dataorder = "none";
-
-  // generate the file list
-  char* user = getenv("USER");
-  std::string userstr = "unknown";
-  if (user != nullptr) {
-    userstr = std::string(user);
-  }
-  auto fileList = "/tmp/" + userstr + "_filelist.txt";
-
-  std::ofstream fs(fileList, std::ofstream::out);
-  if (!fs.is_open()) {
-    throw std::runtime_error("failed to write to " + fileList);
-  }
-
-  for (int64_t idx = 0; idx < 3; idx++) {
-    std::array<char, 20> fchar;
-    snprintf(fchar.data(), fchar.size(), "%09ld.", idx);
-    auto audioFile =
-        pathsConcat(loadPath, "dataset/" + std::string(fchar.data()) + "wav");
-    auto wordFile =
-        pathsConcat(loadPath, "dataset/" + std::string(fchar.data()) + "wrd");
-
-    auto info = loadSoundInfo(audioFile);
-    auto durationMs =
-        (static_cast<double>(info.frames) / info.samplerate) * 1e3;
-
-    auto targets = loadTarget(wordFile);
-
-    fs << idx << " " << audioFile << " " << durationMs;
-    for (auto t : targets) {
-      fs << " " << t;
-    }
-    fs << std::endl;
-  }
-  fs.close();
-
-  auto dict = getDict();
-  auto lexicon = getLexicon();
-  DictionaryMap dicts;
-  dicts.insert({kTargetIdx, dict});
-
-  ListFilesDataset ds(fileList, dicts, lexicon, 1);
-
-  auto fields = ds.get(0);
-  auto& input = fields[kInputIdx];
-  auto& target = fields[kTargetIdx];
-  std::vector<int> expectedTarget = {20, 7, 26, 20, 7}; // "u h | u h"
-  ASSERT_EQ(target.dims(), af::dim4(expectedTarget.size()));
-  for (int i = 0; i < expectedTarget.size(); ++i) {
-    ASSERT_EQ(target(i).scalar<int>(), expectedTarget[i]);
-  }
-  ASSERT_EQ(input.dims(), af::dim4(24000));
-}
-
 TEST(RoundRobinBatchShufflerTest, params) {
   auto packer = RoundRobinBatchPacker(2, 2, 0);
   auto batches = packer.getBatches(11, 0);

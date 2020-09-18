@@ -46,6 +46,7 @@ FeatureData featurize(
 lib::audio::FeatureParams defineSpeechFeatureParams();
 
 int64_t getSpeechFeatureSize();
+
 } // namespace asr
 } // namespace app
 } // namespace fl

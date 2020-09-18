@@ -1,4 +1,10 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
 
 #include "flashlight/app/asr/data/ListFileDataset.h"
 
@@ -15,20 +21,20 @@ constexpr const size_t kSzIdx = 2;
 constexpr const size_t kTgtIdx = 3;
 constexpr const size_t kNumCols = 4;
 
-af::array toArray(const std::string& str) {
-  return af::array(str.length(), str.data());
-}
 } // namespace
 
 namespace fl {
 namespace app {
 namespace asr {
-
 ListFileDataset::ListFileDataset(
     const std::string& filename,
     const DataTransformFunction& inFeatFunc /* = nullptr */,
-    const DataTransformFunction& tgtFeatFunc /* = nullptr */)
-    : inFeatFunc_(inFeatFunc), tgtFeatFunc_(tgtFeatFunc), numRows_(0) {
+    const DataTransformFunction& tgtFeatFunc /* = nullptr */,
+    const DataTransformFunction& wrdFeatFunc /* = nullptr */)
+    : inFeatFunc_(inFeatFunc),
+      tgtFeatFunc_(tgtFeatFunc),
+      wrdFeatFunc_(wrdFeatFunc),
+      numRows_(0) {
   std::ifstream inFile(filename);
   if (!inFile) {
     throw std::invalid_argument("Unable to open file -" + filename);
@@ -39,18 +45,19 @@ ListFileDataset::ListFileDataset(
       continue;
     }
     auto splits = splitOnWhitespace(line, true);
-    if (splits.size() < kNumCols) {
-      throw std::runtime_error("Invalid line: " + line);
+    if (splits.size() < 3) {
+      throw std::runtime_error("Invalid columns in line: " + line);
     }
 
     ids_.emplace_back(std::move(splits[kIdIdx]));
     inputs_.emplace_back(std::move(splits[kInIdx]));
-    sizes_.emplace_back(std::stod(splits[kSzIdx]));
-    targets_.emplace_back(lib::join(
+    inputSizes_.emplace_back(std::stof(splits[kSzIdx]));
+    targets_.emplace_back(fl::lib::join(
         " ", std::vector<std::string>(splits.begin() + kTgtIdx, splits.end())));
     ++numRows_;
   }
   inFile.close();
+  targetSizesCache_.resize(inputSizes_.size(), -1);
 }
 
 int64_t ListFileDataset::size() const {
@@ -59,7 +66,8 @@ int64_t ListFileDataset::size() const {
 
 std::vector<af::array> ListFileDataset::get(const int64_t idx) const {
   checkIndexBounds(idx);
-  auto audio = loadAudio(inputs_[idx]);
+
+  auto audio = loadAudio(inputs_[idx]); // channels x time
   af::array input;
   if (inFeatFunc_) {
     input = inFeatFunc_(
@@ -67,7 +75,7 @@ std::vector<af::array> ListFileDataset::get(const int64_t idx) const {
   } else {
     input = af::array(audio.second, audio.first.data());
   }
-  af::array transcript = toArray(targets_[idx]);
+
   af::array target;
   if (tgtFeatFunc_) {
     std::vector<char> curTarget(targets_[idx].begin(), targets_[idx].end());
@@ -75,17 +83,21 @@ std::vector<af::array> ListFileDataset::get(const int64_t idx) const {
         static_cast<void*>(curTarget.data()),
         {static_cast<dim_t>(curTarget.size())},
         af::dtype::b8);
-  } else {
-    target = transcript;
+  }
+  targetSizesCache_[idx] = target.elements();
+
+  af::array words;
+  if (wrdFeatFunc_) {
+    std::vector<char> curTarget(targets_[idx].begin(), targets_[idx].end());
+    words = wrdFeatFunc_(
+        static_cast<void*>(curTarget.data()),
+        {static_cast<dim_t>(curTarget.size())},
+        af::dtype::b8);
   }
 
-  af::array sampleIdx = toArray(ids_[idx]);
+  af::array sampleIdx = af::array(ids_[idx].length(), ids_[idx].data());
 
-  return {input, target, transcript, sampleIdx};
-}
-
-const std::vector<double>& ListFileDataset::getSampleSizes() const {
-  return sizes_;
+  return {input, target, words, sampleIdx};
 }
 
 std::pair<std::vector<float>, af::dim4> ListFileDataset::loadAudio(
@@ -93,6 +105,30 @@ std::pair<std::vector<float>, af::dim4> ListFileDataset::loadAudio(
   auto info = loadSoundInfo(handle.c_str());
   return {loadSound<float>(handle.c_str()), {info.channels, info.frames}};
 }
+
+float ListFileDataset::getInputSize(const int64_t idx) const {
+  checkIndexBounds(idx);
+  return inputSizes_[idx];
+}
+
+int64_t ListFileDataset::getTargetSize(const int64_t idx) const {
+  checkIndexBounds(idx);
+  if (targetSizesCache_[idx] >=0 ) {
+    return targetSizesCache_[idx];
+  }
+  if (!tgtFeatFunc_) {
+    return 0;
+  }
+  std::vector<char> curTarget(targets_[idx].begin(), targets_[idx].end());
+  auto tgtSize =  tgtFeatFunc_(
+             static_cast<void*>(curTarget.data()),
+             {static_cast<dim_t>(curTarget.size())},
+             af::dtype::b8)
+      .elements();
+  targetSizesCache_[idx] = tgtSize;
+  return tgtSize;
+}
+
 } // namespace asr
 } // namespace app
 } // namespace fl
