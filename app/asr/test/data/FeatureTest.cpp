@@ -163,20 +163,20 @@ TEST(FeatureTest, WrdToTarget) {
   dict.addEntry("_");
 
   std::vector<std::string> words = {"123", "456"};
-  auto target = wrd2Target(words, lexicon, dict);
+  auto target = wrd2Target(words, lexicon, dict, false, false);
   ASSERT_THAT(target, ::testing::ElementsAreArray({"1", "23_", "456_"}));
 
   std::vector<std::string> words1 = {"789", "010"};
-  auto target1 = wrd2Target(words1, lexicon, dict);
+  auto target1 = wrd2Target(words1, lexicon, dict, false, false);
   ASSERT_THAT(target1, ::testing::ElementsAreArray({"_7", "89", "_0", "10"}));
 
   std::vector<std::string> words2 = {"105", "2100"};
-  auto target2 = wrd2Target(words2, lexicon, dict);
+  auto target2 = wrd2Target(words2, lexicon, dict, false, false);
   ASSERT_THAT(
       target2, ::testing::ElementsAreArray({"10", "5", "_", "2", "1", "00"}));
 
   std::vector<std::string> words3 = {"12", "888", "12"};
-  auto target3 = wrd2Target(words3, lexicon, dict);
+  auto target3 = wrd2Target(words3, lexicon, dict, false, false);
   ASSERT_THAT(
       target3,
       ::testing::ElementsAreArray(
