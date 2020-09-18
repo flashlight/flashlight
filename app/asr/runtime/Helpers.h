@@ -7,7 +7,7 @@
  */
 
 /**
- * @file runtime/Utils.h
+ * @file runtime/Helpers.h
  *
  * Reusable helper functions for binary files like Train.cpp. For functions
  * that aren't generic enough to go in `common`, `libraries/common`, etc.
@@ -15,6 +15,7 @@
 
 #pragma once
 
+#include <tuple>
 #include <unordered_set>
 
 #include "flashlight/flashlight/flashlight.h"
@@ -81,6 +82,31 @@ std::shared_ptr<Dataset> createDataset(
     int worldSize = 1,
     bool fallback2Ltr = true,
     bool skipUnk = true);
+
+/*
+ * Utility function for creating a w2l dataset.
+ * @param inputTransform - a function to featurize input
+ * @param targetTransform - a function to featurize target
+ * @param wordTransform - a function to featurize words
+ * @param padVal - a tuple of padding values when batching input, target, word
+ */
+std::shared_ptr<fl::Dataset> createDataset(
+    const std::vector<std::string>& paths,
+    const std::string& rootDir = "",
+    int batchSize = 1,
+    const fl::Dataset::DataTransformFunction& inputTransform = nullptr,
+    const fl::Dataset::DataTransformFunction& targetTransform = nullptr,
+    const fl::Dataset::DataTransformFunction& wordTransform = nullptr,
+    const std::tuple<int, int, int>& padVal = std::tuple<int, int, int>{0, -1, -1},
+    int worldRank = 0,
+    int worldSize = 1);
+
+std::shared_ptr<fl::Dataset> loadPrefetchDataset(
+    std::shared_ptr<fl::Dataset> dataset,
+    int prefetchThreads,
+    bool shuffle,
+    int shuffleSeed = 0);
+
 } // namespace asr
 } // namespace app
 } // namespace fl
