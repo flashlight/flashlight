@@ -77,6 +77,8 @@ bool isNonNegativeInteger(const std::string& s) {
 
 ncclDataType_t getNcclTypeForArray(const af::array& arr) {
   switch (arr.type()) {
+    case af::dtype::f16:
+      return ncclHalf;
     case af::dtype::f32:
       return ncclFloat32;
     case af::dtype::f64:

@@ -13,9 +13,12 @@
 
 #pragma once
 
+#include <iomanip>
+
 #include <af/dim4.hpp>
 
 #include "flashlight/flashlight/common/Defines.h"
+#include "flashlight/flashlight/common/Utils.h"
 #include "flashlight/flashlight/nn/modules/Module.h"
 
 namespace fl {

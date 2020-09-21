@@ -21,6 +21,7 @@
 #include <arrayfire.h>
 
 #include "flashlight/flashlight/common/Defines.h"
+#include "flashlight/flashlight/common/Utils.h"
 
 namespace fl {
 namespace detail {
@@ -366,6 +367,18 @@ split(const Variable& input, const std::vector<dim_t>& splitSizes, int dim);
  * repetition along each dimension is specified in descriptor `dims`.
  */
 Variable tile(const Variable& input, const af::dim4& dims);
+
+/**
+ * Repeats the tensor `input` along specific dimensions. The number of
+ * repetition along each dimension is specified in descriptor `dims`.
+ *
+ * @param[in] precision Type of the output vector when is it is desired to
+ * be different from the input type. This is particularly useful when tile is
+ * applied on parameters and the results will be used in a half precision
+ * arithmetic.
+ */
+Variable
+tile(const Variable& input, const af::dim4& dims, const af::dtype precision);
 
 /**
  * Sums up the tensors `input` along dimensions specified in descriptor `axes`.

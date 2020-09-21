@@ -14,6 +14,8 @@
 
 #include "flashlight/flashlight/common/Utils.h"
 
+#include <unordered_map>
+
 namespace fl {
 
 bool allClose(
@@ -175,6 +177,50 @@ std::string prettyStringCount(size_t count) {
     ss << '(' << prettyStringCountUnits(count) << ')';
   }
   return ss.str();
+}
+
+af::dtype stringToAfType(const std::string& typeName) {
+  std::unordered_map<std::string, af::dtype> strToType = {
+      {"f32", f32},
+      {"c32", c32},
+      {"f64", f64},
+      {"c64", c64},
+      {"b8", b8},
+      {"s32", s32},
+      {"u32", u32},
+      {"u8", u8},
+      {"s64", s64},
+      {"u64", u64},
+      {"s16", s16},
+      {"u16", u16},
+      {"f16", f16},
+  };
+  if (strToType.find(typeName) != strToType.end()) {
+    return strToType[typeName];
+  }
+  throw std::invalid_argument("Invalid inputs type: " + typeName);
+}
+
+std::string afTypeToString(const af::dtype& type) {
+  u_map<af::dtype, std::string> typeToStr = {
+      {f32, "f32"},
+      {c32, "c32"},
+      {f64, "f64"},
+      {c64, "c64"},
+      {b8, "b8"},
+      {s32, "s32"},
+      {u32, "u32"},
+      {u8, "u8"},
+      {s64, "s64"},
+      {u64, "u64"},
+      {s16, "s16"},
+      {u16, "u16"},
+      {f16, "f16"},
+  };
+  if (typeToStr.find(type) != typeToStr.end()) {
+    return typeToStr[type];
+  }
+  throw std::invalid_argument("Invalid inputs type: " + std::to_string(type));
 }
 
 } // namespace fl
