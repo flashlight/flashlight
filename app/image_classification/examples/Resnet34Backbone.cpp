@@ -12,10 +12,11 @@
 #include "flashlight/dataset/datasets.h"
 #include "flashlight/meter/meters.h"
 #include "flashlight/optim/optim.h"
-#include "vision/dataset/ImagenetUtils.h"
-#include "vision/dataset/Transforms.h"
-#include "vision/dataset/Utils.h"
-#include "vision/Resnet34Backbone.h"
+//#include "vision/dataset/ImagenetUtils.h"
+#include "flashlight/ext/image/af/Transforms.h"
+#include "flashlight/ext/image/fl/dataset/Utils.h"
+#include "flashlight/ext/image/fl/models/Resnet34Backbone.h"
+#include "flashlight/app/image_classification/dataset/Imagenet.h"
 
 DEFINE_string(data_dir, "/datasets01_101/imagenet_full_size/061417/", "Directory of imagenet data");
 DEFINE_double(lr, 0.1f, "Learning rate");
@@ -41,7 +42,8 @@ DEFINE_string(checkpointpath, "/tmp/model", "Checkpointing prefix path");
 DEFINE_int64(checkpoint, -1, "Load from checkpoint");
 
 using namespace fl;
-using namespace cv::dataset;
+using namespace fl::ext::image;
+using namespace fl::app::image_classfication;
 
 std::tuple<double, double, double> eval_loop(
     std::shared_ptr<Module> model,
@@ -54,10 +56,10 @@ std::tuple<double, double, double> eval_loop(
   model->eval();
   int idx = 0;
   for (auto& example : dataset) {
-    auto inputs = noGrad(example[cv::dataset::INPUT_IDX]);
+    auto inputs = noGrad(example[INPUT_IDX]);
     auto output = model->forward({ inputs })[0];
 
-    auto target = noGrad(example[cv::dataset::TARGET_IDX]);
+    auto target = noGrad(example[TARGET_IDX]);
 
     // Compute and record the loss.
     auto loss = categoricalCrossEntropy(output, target);
@@ -129,7 +131,7 @@ int main(int argc, char** argv) {
   const int64_t prefetch_threads = 10;
   const int64_t prefetch_size = FLAGS_batch_size;
   auto train_ds = DistributedDataset(
-      cv::dataset::imagenet(train_list, train_transforms),
+      imagenet(train_list, train_transforms),
       FLAGS_world_rank,
       FLAGS_world_size,
       batch_size_per_gpu,
@@ -137,7 +139,7 @@ int main(int argc, char** argv) {
       prefetch_size);
 
   auto val_ds = DistributedDataset(
-      cv::dataset::imagenet(val_list, val_transforms),
+      imagenet(val_list, val_transforms),
       FLAGS_world_rank,
       FLAGS_world_size,
       batch_size_per_gpu,
@@ -148,7 +150,7 @@ int main(int argc, char** argv) {
   //  Load model and optimizer
   /////////////////////////
   //auto model = std::make_shared<Sequential>(resnet34());
-  std::shared_ptr<Module>  model = std::make_shared<cv::Resnet34Backbone>();
+  std::shared_ptr<Module>  model = std::make_shared<Resnet34Backbone>();
   // synchronize parameters of tje model so that the parameters in each process
   // is the same
   fl::allReduceParameters(model);
@@ -201,13 +203,13 @@ int main(int argc, char** argv) {
     for (auto& example : train_ds) {
       opt.zeroGrad();
       // Make a Variable from the input array.
-      auto input = noGrad(example[cv::dataset::INPUT_IDX]);
+      auto input = noGrad(example[INPUT_IDX]);
 
       // Get the activations from the model.
       auto output = model->forward({ input })[0];
 
       // Make a Variable from the target array.
-      auto target = noGrad(example[cv::dataset::TARGET_IDX]);
+      auto target = noGrad(example[TARGET_IDX]);
 
       // Compute and record the loss.
       auto loss = categoricalCrossEntropy(output, target);

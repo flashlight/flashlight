@@ -52,9 +52,6 @@ include(${CMAKE_CURRENT_LIST_DIR}/nn/CMakeLists.txt)
 add_executable(Detr ${CMAKE_CURRENT_LIST_DIR}/examples/Detr.cpp)
 target_link_libraries(Detr flashlight-app-object-det)
 
-add_executable(Resnet34Backbone ${CMAKE_CURRENT_LIST_DIR}/examples/Resnet34Backbone.cpp)
-target_link_libraries(Resnet34Backbone flashlight-app-object-det)
-
 # Build tests
 if (FL_BUILD_TESTS)
   add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test)

@@ -51,4 +51,8 @@ add_executable(Resnet34 ${CMAKE_CURRENT_LIST_DIR}/examples/Resnet34.cpp)
 #target_link_libraries(Resnet34 flashlight-app-vision)
 target_link_libraries(Resnet34 flashlight-app-img-class)
 
+add_executable(Resnet34Backbone ${CMAKE_CURRENT_LIST_DIR}/examples/Resnet34Backbone.cpp)
+target_link_libraries(Resnet34Backbone flashlight-app-img-class)
+
+
 
