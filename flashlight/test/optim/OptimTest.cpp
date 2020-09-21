@@ -17,7 +17,32 @@ TEST(OptimTest, GradNorm) {
   std::vector<Variable> parameters;
   for (int i = 0; i < 5; i++) {
     auto v = Variable(af::array(), true);
+    v = v.as(af::dtype::f64);
     v.addGrad(Variable(af::randn(10, 10, 10, f64), false));
+    parameters.push_back(v);
+  }
+  double max_norm = 5.0;
+  clipGradNorm(parameters, max_norm);
+
+  double clipped = 0.0;
+  for (auto& v : parameters) {
+    auto& g = v.grad().array();
+    clipped += af::sum<double>(g * g);
+  }
+  clipped = std::sqrt(clipped);
+  ASSERT_TRUE(allClose(af::constant(max_norm, 1), af::constant(clipped, 1)));
+}
+
+TEST(OptimTest, GradNormF16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  std::vector<Variable> parameters;
+  for (int i = 0; i < 5; i++) {
+    auto v = Variable(af::array(), true);
+    v = v.as(af::dtype::f16);
+    v.addGrad(Variable(af::randn(10, 10, 10, af::dtype::f16), false));
     parameters.push_back(v);
   }
   double max_norm = 5.0;

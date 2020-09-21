@@ -15,8 +15,6 @@
 
 #include <cereal/archives/json.hpp>
 #include <cereal/types/unordered_map.hpp>
-#include "flashlight/flashlight/contrib/contrib.h"
-#include "flashlight/flashlight/flashlight.h"
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
@@ -24,9 +22,10 @@
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
-
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
+#include "flashlight/flashlight/contrib/contrib.h"
+#include "flashlight/flashlight/flashlight.h"
 #include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
@@ -148,7 +147,7 @@ int main(int argc, char** argv) {
         FLAGS_max_devices_per_node,
         FLAGS_rndv_filepath);
     reducer = std::make_shared<fl::CoalescingReducer>(
-        1.0 / fl::getWorldSize(), true, true);
+        1.0 / fl::getWorldSize(), true, true, af::dtype::f32);
   }
 
   int worldRank = fl::getWorldRank();

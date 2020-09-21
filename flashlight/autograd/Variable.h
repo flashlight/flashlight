@@ -119,14 +119,6 @@ class Variable {
   af::array& array() const;
 
   /**
-   * Casts the variable to the given data type.
-   *
-   * @param[in] type target data type
-   *
-   */
-  void inPlaceCast(af::dtype type);
-
-  /**
    * Creates a new variable based on the current variable whose type will be
    * adjusted based on the input type. Unlike `inPlaceCast`, `as` does not
    * change the current variable.

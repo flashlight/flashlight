@@ -12,14 +12,16 @@
 
 #include "flashlight/flashlight/distributed/reducers/Reducer.h"
 
+#include <arrayfire.h>
+
 namespace fl {
 
 class Variable;
 
 /**
- * A Reducer which coalesces added Variables in a cache until some maximum cache
- * size is reached, after which all Variables in the cache are reduced and the
- * cache is emptied.
+ * A Reducer which coalesces added Variables in a cache until some maximum
+ * cache size is reached, after which all Variables in the cache are reduced
+ * and the cache is emptied.
  *
  * Since the Reducer executes ``allReduceMultiple`` operations asynchronously,
  * to guarantee that synchronized values are available after reduction,
@@ -41,6 +43,9 @@ class CoalescingReducer : public Reducer {
   std::vector<Variable> cache_;
   /// The current cache size, in bytes
   std::size_t currCacheSize_{0};
+  /// The type in which to synchronize tensors. Tensors not of this type are
+  /// cast accordingly before synchronization
+  af::dtype syncType_;
 
  public:
   /**
@@ -52,8 +57,17 @@ class CoalescingReducer : public Reducer {
    * runs asynchronously to the AF stream.
    * @param[in] contiguous forces synchronization of the set of Variables
    * to occur in a contiguous buffer, which may improve performance.
+   * @param[in] syncType the type to which all synchronized `Variable`s will
+   * be cast. All added tensors must be cast to the same type since
+   * `allReduce` only supports reductions over a single type; all Variables
+   * being added to a reducer between calls to `finalize` must be of the same
+   * type.
    */
-  CoalescingReducer(double scale, bool async, bool contiguous);
+  CoalescingReducer(
+      double scale,
+      bool async,
+      bool contiguous,
+      af::dtype syncType);
 
   /**
    * Destroy the Reducer. Calls `finalize()` before returning.
