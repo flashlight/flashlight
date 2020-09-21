@@ -15,13 +15,14 @@
 
 #include <cereal/archives/json.hpp>
 #include <cereal/types/unordered_map.hpp>
-#include "flashlight/flashlight/contrib/contrib.h"
-#include "flashlight/flashlight/flashlight.h"
 #include <gflags/gflags.h>
 #include <glog/logging.h>
+#include "flashlight/flashlight/contrib/contrib.h"
+#include "flashlight/flashlight/flashlight.h"
 
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/criterion/criterion.h"
+#include "flashlight/app/asr/data/FeatureTransforms.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 
@@ -34,6 +35,7 @@
 using namespace fl::ext;
 using namespace fl::lib;
 using namespace fl::lib::text;
+using namespace fl::lib::audio;
 using namespace fl::app::asr;
 
 int main(int argc, char** argv) {
@@ -213,6 +215,79 @@ int main(int argc, char** argv) {
     LOG(INFO) << "Number of words: " << wordDict.indexSize();
   }
 
+  /* ===================== Create Dataset ===================== */
+  FeatureParams featParams(
+      FLAGS_samplerate,
+      FLAGS_framesizems,
+      FLAGS_framestridems,
+      FLAGS_filterbanks,
+      0.0 /* lowFreqFilterbank */,
+      FLAGS_samplerate / 2 /* highFreqFilterbank */,
+      FLAGS_mfcccoeffs,
+      kLifterParam /* lifterparam */,
+      FLAGS_devwin /* delta window */,
+      FLAGS_devwin /* delta-delta window */);
+  featParams.useEnergy = false;
+  featParams.usePower = false;
+  int numFeatures = -1;
+  FeatureType featType = FeatureType::NONE;
+  if (FLAGS_pow) {
+    featType = FeatureType::POW_SPECTRUM;
+    numFeatures = featParams.powSpecFeatSz();
+  } else if (FLAGS_mfsc) {
+    featType = FeatureType::MFSC;
+    numFeatures = featParams.mfscFeatSz();
+  } else if (FLAGS_mfcc) {
+    featType = FeatureType::MFCC;
+    numFeatures = featParams.mfccFeatSz();
+  }
+  TargetGenerationConfig targetGenConfig(
+      FLAGS_wordseparator,
+      FLAGS_sampletarget,
+      FLAGS_criterion,
+      FLAGS_surround,
+      FLAGS_eostoken,
+      FLAGS_replabel,
+      true /* skip unk */,
+      true /* fallback2Letter */);
+
+  auto inputTransform = inputFeatures(
+      featParams, featType, {FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx});
+  auto targetTransform = targetFeatures(tokenDict, lexicon, targetGenConfig);
+  auto wordTransform = wordFeatures(wordDict);
+  int targetpadVal = FLAGS_eostoken
+      ? tokenDict.getIndex(fl::app::asr::kEosToken)
+      : kTargetPadValue;
+  int wordpadVal = wordDict.getIndex(kUnkToken);
+
+  std::vector<std::string> trainSplits = split(",", FLAGS_train, true);
+  auto trainds = createDataset(
+      trainSplits,
+      FLAGS_datadir,
+      FLAGS_batchsize,
+      inputTransform,
+      targetTransform,
+      wordTransform,
+      std::make_tuple(0, targetpadVal, wordpadVal),
+      worldRank,
+      worldSize);
+
+  std::map<std::string, std::shared_ptr<fl::Dataset>> validds;
+  int64_t validBatchSize =
+      FLAGS_validbatchsize == -1 ? FLAGS_batchsize : FLAGS_validbatchsize;
+  for (const auto& s : validTagSets) {
+    validds[s.first] = createDataset(
+        {s.second},
+        FLAGS_datadir,
+        validBatchSize,
+        inputTransform,
+        targetTransform,
+        wordTransform,
+        std::make_tuple(0, targetpadVal, wordpadVal),
+        worldRank,
+        worldSize);
+  }
+
   DictionaryMap dicts = {{kTargetIdx, tokenDict}, {kWordIdx, wordDict}};
 
   /* =========== Create Network & Optimizers / Reload Snapshot ============ */
@@ -225,7 +300,6 @@ int main(int argc, char** argv) {
   if (runStatus == kTrainMode) {
     auto archfile = pathsConcat(FLAGS_archdir, FLAGS_arch);
     LOG_MASTER(INFO) << "Loading architecture file from " << archfile;
-    auto numFeatures = getSpeechFeatureSize();
     // Encoder network, works on audio
     network = buildSequentialModule(archfile, numFeatures, numClasses);
 
@@ -394,25 +468,8 @@ int main(int argc, char** argv) {
     }
   };
 
-  /* ===================== Create Dataset ===================== */
-  auto trainds = createDataset(
-      FLAGS_train, dicts, lexicon, FLAGS_batchsize, worldRank, worldSize);
-
-  if (FLAGS_noresample) {
-    LOG_MASTER(INFO) << "Shuffling trainset";
-    trainds->shuffle(FLAGS_seed);
-  }
-
-  std::map<std::string, std::shared_ptr<Dataset>> validds;
-  int64_t validBatchSize =
-      FLAGS_validbatchsize == -1 ? FLAGS_batchsize : FLAGS_validbatchsize;
-  for (const auto& s : validTagSets) {
-    validds[s.first] = createDataset(
-        s.second, dicts, lexicon, validBatchSize, worldRank, worldSize);
-  }
-
   /* ===================== Hooks ===================== */
-  auto evalOutput = [&dicts, &criterion](
+  auto evalOutput = [&tokenDict, &criterion](
                         const af::array& op,
                         const af::array& target,
                         DatasetMeters& mtr) {
@@ -428,13 +485,9 @@ int main(int argc, char** argv) {
       tgtraw.resize(labellen);
 
       // remap actual, predicted targets for evaluating edit distance error
-      if (dicts.find(kTargetIdx) == dicts.end()) {
-        LOG(FATAL) << "Dictionary not provided for target: " << kTargetIdx;
-      }
-      auto tgtDict = dicts.find(kTargetIdx)->second;
 
-      auto ltrPred = tknPrediction2Ltr(viterbipath, tgtDict);
-      auto ltrTgt = tknTarget2Ltr(tgtraw, tgtDict);
+      auto ltrPred = tknPrediction2Ltr(viterbipath, tokenDict);
+      auto ltrTgt = tknTarget2Ltr(tgtraw, tokenDict);
 
       auto wrdPred = tkn2Wrd(ltrPred);
       auto wrdTgt = tkn2Wrd(ltrTgt);
@@ -447,15 +500,17 @@ int main(int argc, char** argv) {
   auto test = [&evalOutput](
                   std::shared_ptr<fl::Module> ntwrk,
                   std::shared_ptr<SequenceCriterion> crit,
-                  std::shared_ptr<Dataset> testds,
+                  std::shared_ptr<fl::Dataset> validds,
                   DatasetMeters& mtrs) {
     ntwrk->eval();
     crit->eval();
     mtrs.tknEdit.reset();
     mtrs.wrdEdit.reset();
     mtrs.loss.reset();
+    auto curValidset = loadPrefetchDataset(
+        validds, FLAGS_nthread, false /* shuffle */, 0 /* seed */);
 
-    for (auto& batch : *testds) {
+    for (auto& batch : *curValidset) {
       auto output = ntwrk->forward({fl::input(batch[kInputIdx])}).front();
       auto loss =
           crit->forward({output, fl::Variable(batch[kTargetIdx], false)})
@@ -478,7 +533,7 @@ int main(int argc, char** argv) {
                 reducer](
                    std::shared_ptr<fl::Module> ntwrk,
                    std::shared_ptr<SequenceCriterion> crit,
-                   std::shared_ptr<Dataset> trainset,
+                   std::shared_ptr<fl::Dataset> trainset,
                    std::shared_ptr<fl::FirstOrderOptimizer> netopt,
                    std::shared_ptr<fl::FirstOrderOptimizer> critopt,
                    double initlr,
@@ -567,16 +622,15 @@ int main(int argc, char** argv) {
         resetTimeStatMeters();
       }
       std::hash<std::string> hasher;
-      if (!FLAGS_noresample) {
-        LOG_MASTER(INFO) << "Shuffling trainset";
-        trainset->shuffle(curEpoch /* seed */);
-      }
+      LOG_MASTER(INFO) << "Shuffling trainset";
+      auto curTrainset = loadPrefetchDataset(
+          trainset, FLAGS_nthread, true /* shuffle */, curEpoch /* seed */);
       af::sync();
       meters.sampletimer.resume();
       meters.runtime.resume();
       meters.timer.resume();
       LOG_MASTER(INFO) << "Epoch " << curEpoch << " started!";
-      for (auto& batch : *trainset) {
+      for (auto& batch : *curTrainset) {
         ++curBatch;
         double lrScheduleScale;
         if (FLAGS_lrcosine) {
