@@ -6,15 +6,16 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include "flashlight/flashlight/common/Utils.h"
+
 #include <chrono>
 #include <cstdio>
 #include <ctime>
 #include <sstream>
 #include <stdexcept>
-
-#include "flashlight/flashlight/common/Utils.h"
-
 #include <unordered_map>
+
+#include "flashlight/flashlight/common/CppBackports.h"
 
 namespace fl {
 
@@ -198,11 +199,12 @@ af::dtype stringToAfType(const std::string& typeName) {
   if (strToType.find(typeName) != strToType.end()) {
     return strToType[typeName];
   }
-  throw std::invalid_argument("Invalid inputs type: " + typeName);
+  throw std::invalid_argument(
+      "stringToAfType: Invalid input type: " + typeName);
 }
 
 std::string afTypeToString(const af::dtype& type) {
-  u_map<af::dtype, std::string> typeToStr = {
+  fl::cpp::enum_unordered_map<af::dtype, std::string> typeToStr = {
       {f32, "f32"},
       {c32, "c32"},
       {f64, "f64"},
@@ -220,7 +222,8 @@ std::string afTypeToString(const af::dtype& type) {
   if (typeToStr.find(type) != typeToStr.end()) {
     return typeToStr[type];
   }
-  throw std::invalid_argument("Invalid inputs type: " + std::to_string(type));
+  throw std::invalid_argument(
+      "afTypeToString: Invalid input type: " + std::to_string(type));
 }
 
 } // namespace fl

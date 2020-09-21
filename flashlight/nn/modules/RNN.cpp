@@ -6,9 +6,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <stdexcept>
-
 #include "flashlight/flashlight/nn/modules/RNN.h"
+
+#include <stdexcept>
 
 #include "flashlight/flashlight/autograd/Functions.h"
 #include "flashlight/flashlight/nn/Init.h"

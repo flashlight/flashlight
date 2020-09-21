@@ -12,7 +12,6 @@
 #include <iostream>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 
 #include <arrayfire.h>
 
@@ -36,23 +35,6 @@ constexpr bool trace = false;
 
 namespace fl {
 
-// This is a temporary solution for a bug that is fixed in gcc 6.1+. After
-// upgrade to that version+, this can be removed. Read more:
-// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=60970
-
-struct EnumNaiveHash {
-  template <typename T>
-  std::size_t operator()(T t) const {
-    return static_cast<std::size_t>(t);
-  }
-};
-
-template <typename T>
-using u_set = std::unordered_set<T, EnumNaiveHash>;
-
-template <typename KeyType, typename ValueType>
-using u_map = std::unordered_map<KeyType, ValueType, EnumNaiveHash>;
-
 /**
  * Returns true if two arrays are of same type and are element-wise equal within
  * given tolerance limit.
@@ -73,6 +55,7 @@ std::string dateTimeWithMicroSeconds();
 // Returns round-up result of integer division.
 // throws invalid_argument exception on zero denominator.
 size_t divRoundUp(size_t numerator, size_t denominator);
+
 /*
  * Converts string to arrayfire types (`af::dtype`).
  *

@@ -100,7 +100,6 @@ PReLU::PReLU(int size, double value) {
 }
 
 Variable PReLU::forward(const Variable& input) {
-  typeTrace("PReLU FWD", input.type());
   auto mask = input >= 0.0;
   return (input * mask) + (input * !mask * tileAs(params_[0], input));
 }
@@ -112,7 +111,6 @@ std::string PReLU::prettyString() const {
 ELU::ELU(double alpha) : mAlpha_(alpha) {}
 
 Variable ELU::forward(const Variable& input) {
-  typeTrace("ELU FWD", input.type());
   auto mask = input >= 0.0;
   return (mask * input) + (!mask * mAlpha_ * (exp(input) - 1));
 }
