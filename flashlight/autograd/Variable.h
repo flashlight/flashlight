@@ -124,14 +124,7 @@ class Variable {
    * @param[in] type target data type
    *
    */
-  void inPlaceCast(af::dtype type) {
-    if (this->type() != type) {
-      array() = array().as(type);
-    }
-    if (sharedGrad_->grad && grad().type() != type) {
-      grad().array() = grad().array().as(type);
-    }
-  }
+  void inPlaceCast(af::dtype type);
 
   /**
    * Creates a new variable based on the current variable whose type will be
@@ -142,14 +135,7 @@ class Variable {
    *
    * @return returns the casted variable.
    */
-  Variable as(af::dtype type) {
-    auto output = withoutData();
-    output.array() = array().as(type);
-    if (sharedGrad_->grad) {
-      output.grad().array() = grad().array().as(type);
-    }
-    return output;
-  }
+  Variable as(af::dtype type);
 
   /**
    * @return a reference to the underlying gradient Variable.

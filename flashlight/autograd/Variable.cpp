@@ -25,6 +25,7 @@
 #include <utility>
 
 #include "flashlight/flashlight/common/CppBackports.h"
+#include "flashlight/flashlight/common/Utils.h"
 
 namespace fl {
 
@@ -70,6 +71,26 @@ Variable Variable::operator()(
 
 af::array& Variable::array() const {
   return sharedData_->data;
+}
+
+void Variable::inPlaceCast(af::dtype type) {
+  if (this->type() != type) {
+    array() = array().as(type);
+  }
+  if (sharedGrad_->grad && grad().type() != type) {
+    grad().array() = grad().array().as(type);
+  }
+}
+
+Variable Variable::as(af::dtype newType) {
+  auto output = array().as(newType);
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
+    auto& input = inputs[0];
+    // Cast the grad output to match the type of the input's grad
+    input.addGrad(Variable(gradOutput.array().as(input.type()), false));
+  };
+  return Variable(output, {this->withoutData()}, gradFunc);
 }
 
 Variable& Variable::grad() const {
@@ -159,6 +180,17 @@ void Variable::setCalcGrad(bool calcGrad) {
 
 void Variable::addGrad(const Variable& childGrad) {
   if (sharedGrad_->calcGrad) {
+    // Ensure the type of the child grad is the same as the type of this
+    // Variable (and transitively, that it's the same type as an existing grad)
+    if (childGrad.type() != this->type()) {
+      std::stringstream ss;
+      ss << "Variable::addGrad: attempted to add child gradient of type "
+         << afTypeToString(childGrad.type()) << " to a Variable of type "
+         << afTypeToString(this->type())
+         << ". You might be performing an operation with "
+            "two inputs of different types.";
+      throw std::invalid_argument(ss.str());
+    }
     if (sharedGrad_->grad) {
       // Prevent increment of array refcount to avoid a copy
       // if getting a device pointer. See
@@ -218,7 +250,7 @@ void Variable::backward(const Variable& grad, bool retainGraph) {
 }
 
 void Variable::backward(bool retainGraph) {
-  auto ones = Variable(af::constant(1, dims()), false);
+  auto ones = Variable(af::constant(1, dims(), this->type()), false);
   backward(ones, retainGraph);
 }
 
@@ -309,6 +341,9 @@ Variable Variable::slices(int first, int last) const {
 Variable Variable::withoutData() const {
   Variable other;
   other.sharedGrad_ = sharedGrad_;
+  // Ensure the type of the underlying [but empty] data is the same; since
+  // af::array is f32-initialized by default
+  other.array() = af::array().as(this->type());
   return other;
 }
 
