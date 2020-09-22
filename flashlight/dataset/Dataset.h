@@ -80,7 +80,6 @@ class Dataset {
     return iterator();
   }
 
-
  protected:
   void checkIndexBounds(int64_t idx) const {
     if (!(idx >= 0 && idx < size())) {

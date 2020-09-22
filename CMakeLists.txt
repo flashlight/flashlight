@@ -19,7 +19,6 @@ set(FL_INSTALL_BIN_DIR "bin" CACHE PATH "Install path for binaries")
 set(FL_INSTALL_ASSETS_BASE_DIR "share/flashlight")
 set(FL_INSTALL_CMAKE_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/cmake" CACHE PATH "Install path for CMake files")
 set(FL_INSTALL_EXAMPLES_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/examples" CACHE PATH "Install path for example files")
-set(FL_INSTALL_VISION_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/vision" CACHE PATH "Install path for vision files")
 set(FL_INSTALL_DOC_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/doc" CACHE PATH "Install path for documentation")
 
 include(InternalUtils)
@@ -250,4 +249,5 @@ setup_install_headers(${FLASHLIGHT_EXT_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
 set(FLASHLIGHT_APPS_DIR "${PROJECT_SOURCE_DIR}/app")
 include(${FLASHLIGHT_APPS_DIR}/CMakeLists.txt)
 
+# Fallthrough default install
 setup_install_targets(INSTALL_TARGETS ${INSTALLABLE_TARGETS})
