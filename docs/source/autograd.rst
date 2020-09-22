@@ -10,7 +10,7 @@ Variable
 
 ::
 
-  auto var = fl::Variable(af::range(1.0, af::dim4(2, 3)), true /* isCalcGrad */);
+  auto A = fl::Variable(af::range(1.0, af::dim4(2, 3)), true /* isCalcGrad */);
   af::print("A", A.array()); // get the underlying array from a Variable
   // A
   // [2 3 1 1]
@@ -60,6 +60,7 @@ Similar to ArrayFire arrays, ``Variable`` can be used to perform array operation
 
 ::
 
+  auto var = fl::Variable(af::range(1.0, af::dim4(2, 3)), true /* isCalcGrad */);
   auto expVar = exp(var);
   af::print("expVar", expVar.array());
   // expVar
@@ -67,8 +68,8 @@ Similar to ArrayFire arrays, ``Variable`` can be used to perform array operation
   //    1.0000     1.0000     1.0000
   //    2.7183     2.7183     2.7183
 
-  auto A = fl::Variable(af::constant(1.0, af::dim4(2, 3)), false /* isCalcGrad */);
-  auto B = fl::Variable(af::constant(2.0, af::dim4(2, 3)), true /* isCalcGrad */);
+  auto A = fl::Variable(af::constant(1.0, af::dim4(2, 3)), true /* isCalcGrad */);
+  auto B = fl::Variable(af::constant(2.0, af::dim4(2, 3)), false /* isCalcGrad */);
   auto AB = A * B;
   af::print("AB", AB.array());
   // AB
