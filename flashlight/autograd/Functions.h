@@ -265,6 +265,12 @@ Variable clamp(const Variable& input, const double min, const double max);
 Variable sigmoid(const Variable& input);
 
 /**
+ * Returns maximum value of a Variable along a given dimension.
+ * 
+ */
+Variable max(const Variable& input, const int& dim);
+
+/**
  * Returns element-wise maximum value of two Variables.
  * \f[ out = max(var_1, var_2) \f]
  */
@@ -281,6 +287,12 @@ Variable max(const Variable& lhs, const double& rhs);
  * \f[ out_i = max(value, var_i) \f]
  */
 Variable max(const double& lhs, const Variable& rhs);
+
+/**
+ * Returns minimum value of a Variable along a given dimension.
+ * 
+ */
+Variable min(const Variable& input, const int& dim);
 
 /**
  * Returns element-wise minimum value of two Variables.

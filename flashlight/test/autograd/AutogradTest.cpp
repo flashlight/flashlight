@@ -1216,6 +1216,130 @@ TEST(AutogradTest, LayerNormJacobian) {
   ASSERT_TRUE(jacobianTestImpl(func_ln_in, input, 1e-2, 1e-4));
 }
 
+Variable max(const Variable& input, const int& dim) {
+  auto result = max(input.array(), dim);
+  std::cout << "max done.\n" << std::endl;
+  auto gradFunc = [result](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
+    af::print("result", result); //tile(result, inputs[0].dims()));
+    auto mask = Variable(inputs[0].array() == tile(result, inputs[0].dims()), false);
+    inputs[0].addGrad(Variable((mask * gradOutput).array(), false));
+  };
+  return Variable(result, {input}, gradFunc);
+}
+
+TEST(AutogradTest, MaxMinDim) {
+  af::array a = af::moddims(af::range(af::dim4(16)), af::dim4(2, 2, 2, 2));
+  fl::Variable A(a, true);
+
+  fl::Variable  max0 = fl::max(A, 0), max1 = fl::max(A, 1), max2 = fl::max(A, 2), max3 = fl::max(A, 3);
+  
+  double a0_data[] = {1, 3, 5, 7, 9, 11, 13, 15};
+  af::array a0 = af::array(af::dim4(1, 2, 2, 2), a0_data);
+  fl::Variable A0(a0, false);
+
+  double a1_data[] = {2, 3, 6, 7, 10, 11, 14, 15};
+  af::array a1 = af::array(af::dim4(2, 1, 2, 2), a1_data);
+  fl::Variable A1(a1, false);
+
+  double a2_data[] = {4, 5, 6, 7, 12, 13, 14, 15};
+  af::array a2 = af::array(af::dim4(2, 2, 1, 2), a2_data);
+  fl::Variable A2(a2, false);
+
+  double a3_data[] = {8, 9, 10, 11, 12, 13, 14, 15};
+  af::array a3 = af::array(af::dim4(2, 2, 2, 1), a3_data);
+  fl::Variable A3(a3, false);
+
+  ASSERT_TRUE(af::max<double>(af::abs(A0.array() - max0.array())) == 0.0);
+  ASSERT_TRUE(af::max<double>(af::abs(A1.array() - max1.array())) == 0.0);
+  ASSERT_TRUE(af::max<double>(af::abs(A2.array() - max2.array())) == 0.0);
+  ASSERT_TRUE(af::max<double>(af::abs(A3.array() - max3.array())) == 0.0);
+
+  max0.backward();
+  double grada0_data[] = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1};
+  af::array grada0 = af::array(af::dim4(2, 2, 2, 2), grada0_data);
+  fl::Variable gradA0(grada0, false);
+  ASSERT_TRUE(af::max<double>(af::abs(gradA0.array() - A.grad().array())) == 0.0);
+  A.zeroGrad();
+  
+  max1.backward();
+  double grada1_data[] = {0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1};
+  af::array grada1 = af::array(af::dim4(2, 2, 2, 2), grada1_data);
+  fl::Variable gradA1(grada1, false);
+  ASSERT_TRUE(af::max<double>(af::abs(gradA1.array() - A.grad().array())) == 0.0);
+  A.zeroGrad();
+  
+  max2.backward();
+  double grada2_data[] = {0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1};
+  af::array grada2 = af::array(af::dim4(2, 2, 2, 2), grada2_data);
+  fl::Variable gradA2(grada2, false);
+  ASSERT_TRUE(af::max<double>(af::abs(gradA2.array() - A.grad().array())) == 0.0);
+  A.zeroGrad();
+  
+  max3.backward();
+  double grada3_data[] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1};
+  af::array grada3 = af::array(af::dim4(2, 2, 2, 2), grada3_data);
+  fl::Variable gradA3(grada3, false);
+  ASSERT_TRUE(af::max<double>(af::abs(gradA3.array() - A.grad().array())) == 0.0);
+  A.zeroGrad();
+
+
+  af::array b = af::moddims(af::range(af::dim4(16)), af::dim4(2, 2, 2, 2));
+  fl::Variable B(-1*b, true);
+
+  fl::Variable  min0 = fl::min(B, 0), min1 = fl::min(B, 1), min2 = fl::min(B, 2), min3 = fl::min(B, 3);
+  
+  double b0_data[] = {1, 3, 5, 7, 9, 11, 13, 15};
+  af::array b0 = af::array(af::dim4(1, 2, 2, 2), b0_data);
+  fl::Variable B0(-1*b0, false);
+
+  double b1_data[] = {2, 3, 6, 7, 10, 11, 14, 15};
+  af::array b1 = af::array(af::dim4(2, 1, 2, 2), b1_data);
+  fl::Variable B1(-1*b1, false);
+
+  double b2_data[] = {4, 5, 6, 7, 12, 13, 14, 15};
+  af::array b2 = af::array(af::dim4(2, 2, 1, 2), b2_data);
+  fl::Variable B2(-1*b2, false);
+
+  double b3_data[] = {8, 9, 10, 11, 12, 13, 14, 15};
+  af::array b3 = af::array(af::dim4(2, 2, 2, 1), b3_data);
+  fl::Variable B3(-1*b3, false);
+
+  ASSERT_TRUE(af::max<double>(af::abs(B0.array() - min0.array())) == 0.0);
+  ASSERT_TRUE(af::max<double>(af::abs(B1.array() - min1.array())) == 0.0);
+  ASSERT_TRUE(af::max<double>(af::abs(B2.array() - min2.array())) == 0.0);
+  ASSERT_TRUE(af::max<double>(af::abs(B3.array() - min3.array())) == 0.0);
+
+  min0.backward();
+  double gradb0_data[] = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1};
+  af::array gradb0 = af::array(af::dim4(2, 2, 2, 2), gradb0_data);
+  fl::Variable gradB0(gradb0, false);
+  ASSERT_TRUE(af::max<double>(af::abs(gradB0.array() - B.grad().array())) == 0.0);
+  B.zeroGrad();
+  
+  min1.backward();
+  double gradb1_data[] = {0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1};
+  af::array gradb1 = af::array(af::dim4(2, 2, 2, 2), gradb1_data);
+  fl::Variable gradB1(gradb1, false);
+  ASSERT_TRUE(af::max<double>(af::abs(gradB1.array() - B.grad().array())) == 0.0);
+  B.zeroGrad();
+  
+  min2.backward();
+  double gradb2_data[] = {0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1};
+  af::array gradb2 = af::array(af::dim4(2, 2, 2, 2), gradb2_data);
+  fl::Variable gradB2(gradb2, false);
+  ASSERT_TRUE(af::max<double>(af::abs(gradB2.array() - B.grad().array())) == 0.0);
+  B.zeroGrad();
+  
+  min3.backward();
+  double gradb3_data[] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1};
+  af::array gradb3 = af::array(af::dim4(2, 2, 2, 2), gradb3_data);
+  fl::Variable gradB3(gradb3, false);
+  ASSERT_TRUE(af::max<double>(af::abs(gradB3.array() - B.grad().array())) == 0.0);
+  B.zeroGrad();
+
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
