@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+filiates.
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
