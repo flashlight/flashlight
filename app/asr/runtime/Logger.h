@@ -13,7 +13,7 @@
 
 #include "SpeechStatMeter.h"
 
-#define LOG_MASTER(lvl) LOG_IF(lvl, (fl::getWorldRank() == 0))
+#define FL_LOG_MASTER(lvl) FL_LOG_IF(lvl, (fl::getWorldRank() == 0))
 
 namespace fl {
 namespace app {

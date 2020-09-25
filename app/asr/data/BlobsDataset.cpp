@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <glog/logging.h>
 #include <functional>
 #include <numeric>
 #include <sstream>
@@ -39,7 +38,7 @@ BlobsDataset::BlobsDataset(
       skipUnk_(skipUnk) {
   includeWrd_ = (dicts.find(kWordIdx) != dicts.end());
 
-  LOG_IF(FATAL, dicts.find(kTargetIdx) == dicts.end())
+  FL_LOG_IF(fl::FATAL, dicts.find(kTargetIdx) == dicts.end())
       << "Target dictionary does not exist";
 
   auto filesVec = lib::split(',', filenames);
@@ -67,7 +66,7 @@ BlobsDataset::BlobsDataset(
       FLAGS_outputbinsize);
 
   shuffle(-1);
-  LOG(INFO) << "Total batches (i.e. iters): " << sampleBatches_.size();
+  FL_LOG(fl::INFO) << "Total batches (i.e. iters): " << sampleBatches_.size();
 }
 
 BlobsDataset::~BlobsDataset() {
@@ -129,7 +128,7 @@ std::vector<SpeechSampleMetaInfo> BlobsDataset::loadBlob(
 
   blobs_.push_back(blob);
 
-  LOG(INFO) << samplesMetaInfo.size() << " files found. ";
+  FL_LOG(fl::INFO) << samplesMetaInfo.size() << " files found. ";
 
   return samplesMetaInfo;
 }
