@@ -13,7 +13,6 @@
 #include "flashlight/lib/sequence/criterion/cuda/ForceAlignmentCriterion.cuh"
 #include "flashlight/app/asr/criterion/CriterionUtils.h"
 
-using fl::Variable;
 using FAC = fl::lib::cuda::ForceAlignmentCriterion<float>;
 
 namespace fl {

@@ -14,7 +14,6 @@
 #include "flashlight/app/asr/criterion/criterion.h"
 
 using namespace fl;
-using namespace fl::lib;
 using namespace fl::app::asr;
 
 namespace {
