@@ -23,7 +23,6 @@
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 
-using namespace fl;
 using namespace fl::lib;
 using namespace fl::lib::text;
 using namespace fl::app::asr;

@@ -14,7 +14,6 @@
 
 #include "flashlight/app/asr/common/Defines.h"
 
-using namespace fl;
 using namespace fl::ext;
 
 namespace fl {
