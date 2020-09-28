@@ -14,7 +14,6 @@
 #include <mutex>
 #include <sstream>
 
-using namespace fl::lib;
 
 namespace fl {
 namespace app {

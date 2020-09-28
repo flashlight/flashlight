@@ -9,7 +9,6 @@
 #include "flashlight/app/asr/criterion/attention/ContentAttention.h"
 #include <cmath>
 
-using namespace fl;
 
 namespace fl {
 namespace app {

@@ -11,8 +11,6 @@
 #include <algorithm>
 #include <cmath>
 
-using namespace fl::lib;
-using fl::Variable;
 using fl::lib::seq::CriterionScaleMode;
 
 namespace fl {

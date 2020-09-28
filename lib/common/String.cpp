@@ -8,7 +8,6 @@
 
 #include "flashlight/lib/common/String.h"
 
-#include <sys/stat.h>
 #include <sys/types.h>
 
 #include <array>

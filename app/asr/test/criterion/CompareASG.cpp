@@ -21,7 +21,6 @@
 
 #include "flashlight/app/asr/criterion/AutoSegmentationCriterion.h"
 
-using namespace fl;
 using namespace fl::app::asr;
 
 namespace {

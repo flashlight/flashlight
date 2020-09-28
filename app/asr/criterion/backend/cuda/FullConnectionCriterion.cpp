@@ -13,7 +13,6 @@
 #include "flashlight/lib/sequence/criterion/cuda/FullConnectionCriterion.cuh"
 #include "flashlight/app/asr/criterion/CriterionUtils.h"
 
-using fl::Variable;
 using FCC = fl::lib::cuda::FullConnectionCriterion<float>;
 
 namespace fl {

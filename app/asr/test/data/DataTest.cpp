@@ -18,7 +18,6 @@
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
 
-using namespace fl;
 using namespace fl::lib;
 using namespace fl::app::asr;
 using fl::lib::text::Dictionary;
