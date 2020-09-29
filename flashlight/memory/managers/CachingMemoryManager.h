@@ -7,8 +7,11 @@
 
 #pragma once
 
+#include <atomic>
+#include <limits>
 #include <memory>
 #include <mutex>
+#include <numeric>
 #include <set>
 #include <unordered_map>
 #include <vector>
@@ -48,6 +51,9 @@ class CachingMemoryManager : public MemoryManagerAdapter {
   bool jitTreeExceedsMemoryPressure(size_t bytes) override;
   void addMemoryManagement(int device) override;
   void removeMemoryManagement(int device) override;
+  // Set runtime options: RecyclingSizeLimit, SplitSizeLimit, ... Warning: not thread safe
+  void setRecyclingSizeLimit(size_t);
+  void setSplitSizeLimit(size_t);
 
   // Block denotes a single allocated unit of memory.
   struct Block {
@@ -133,6 +139,15 @@ class CachingMemoryManager : public MemoryManagerAdapter {
 
   void tryMergeBlocks(Block* dst, Block* src, BlockSet& freeBlocks);
   void freeBlock(Block* block);
+
+ private:
+  // Non-const runtime options in order to fine tune the behavior of this
+  // manager. Prevents to recycle some buffers, to be set by the user if
+  // desired:
+  size_t recyclingSizeLimit_{std::numeric_limits<size_t>::max()};
+  //size_t recyclingSizeLimit;
+  // Prevents to split big buffers, to be set by the user if desired:
+  size_t splitSizeLimit_{std::numeric_limits<size_t>::max()};
 };
 
 } // namespace fl

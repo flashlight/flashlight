@@ -3,11 +3,13 @@ cmake_minimum_required(VERSION 3.5.1)
 set(DIR ${CMAKE_CURRENT_LIST_DIR})
 set(LIBS flashlight)
 
-build_test(
-  ${DIR}/common/SequentialBuilderTest.cpp
-  ${LIBS}
-  "ARCHDIR=\"${DIR}/common/\""
+if(FL_BUILD_CONTRIB)
+  build_test(
+    ${DIR}/common/SequentialBuilderTest.cpp
+    ${LIBS}
+    "ARCHDIR=\"${DIR}/common/\""
   )
+endif()
 
 add_library(test_module_plugin MODULE
   ${DIR}/common/test_module_plugin.cpp)

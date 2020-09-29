@@ -87,9 +87,9 @@ add_executable(Train ${CMAKE_CURRENT_LIST_DIR}/Train.cpp)
 add_executable(Test ${CMAKE_CURRENT_LIST_DIR}/Test.cpp)
 add_executable(Decoder ${CMAKE_CURRENT_LIST_DIR}/Decode.cpp)
 
-target_link_libraries(Train flashlight-app-asr)
-target_link_libraries(Test flashlight-app-asr)
-target_link_libraries(Decoder flashlight-app-asr)
+target_link_libraries(Train flashlight-app-asr ${CMAKE_DL_LIBS})
+target_link_libraries(Test flashlight-app-asr ${CMAKE_DL_LIBS})
+target_link_libraries(Decoder flashlight-app-asr ${CMAKE_DL_LIBS})
 
 # --------------------------- Tests ---------------------------
 
