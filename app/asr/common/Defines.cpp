@@ -135,6 +135,8 @@ DEFINE_int64(
     framestridems,
     10,
     "Stride millisecond for power spectrum feature");
+DEFINE_int64(lowfreqfilterbank, 0, "low freq filter bank (Hz)");
+DEFINE_int64(highfreqfilterbank, -1, "high freq filter bank (Hz)");
 
 // SPECAUGMENT OPTIONS
 DEFINE_int64(saug_fmaskf, 27, "Max number of frequency bands that are masked");

@@ -190,6 +190,8 @@ DECLARE_int64(devwin);
 DECLARE_int64(fftcachesize);
 DECLARE_int64(framesizems);
 DECLARE_int64(framestridems);
+DECLARE_int64(lowfreqfilterbank);
+DECLARE_int64(highfreqfilterbank);
 
 /* ========== SPECAUGMENT OPTIONS ========== */
 
