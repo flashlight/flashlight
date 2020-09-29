@@ -2,10 +2,10 @@
 
 # flashlight
 
-[![CircleCI](https://circleci.com/gh/facebookresearch/flashlight.svg?style=svg)](https://circleci.com/gh/facebookresearch/flashlight)
-[![](https://github.com/facebookresearch/flashlight/workflows/Publish%20Docker%20images/badge.svg)](https://hub.docker.com/r/flml/flashlight/tags)
-[![Join the chat at https://gitter.im/flashlight-ml/community](https://badges.gitter.im/flashlight-ml/community.svg)](https://gitter.im/flashlight-ml/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
+[![CircleCI](https://circleci.com/gh/facebookresearch/flashlight.svg?style=shield)](https://circleci.com/gh/facebookresearch/flashlight)
+[![Documentation Status](https://img.shields.io/readthedocs/fl.svg)](https://fl.readthedocs.io/en/latest/)
+[![Docker Image Build Status](https://github.com/facebookresearch/flashlight/workflows/Publish%20Docker%20images/badge.svg)](https://hub.docker.com/r/flml/flashlight/tags)
+[![Join the chat at https://gitter.im/flashlight-ml/community](https://img.shields.io/gitter/room/flashlight-ml/community)](https://gitter.im/flashlight-ml/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 flashlight is a fast, flexible machine learning library written entirely in C++
 from the Facebook AI Research Speech team and the creators of Torch and
