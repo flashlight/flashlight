@@ -56,9 +56,8 @@ std::vector<af::array> PrefetchDataset::get(int64_t idx) const {
     if (fetchIdx >= size()) {
       break;
     }
-    prefetchCache_.emplace(threadPool_->enqueue([this, fetchIdx]() {
-      return this->dataset_->get(fetchIdx);
-    }));
+    prefetchCache_.emplace(threadPool_->enqueue(
+        [this, fetchIdx]() { return this->dataset_->get(fetchIdx); }));
   }
 
   auto curSample = prefetchCache_.front().get();

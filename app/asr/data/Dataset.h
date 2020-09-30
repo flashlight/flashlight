@@ -13,8 +13,8 @@
 
 #include "flashlight/flashlight/flashlight.h"
 
-#include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/app/asr/data/Featurize.h"
+#include "flashlight/lib/text/dictionary/Dictionary.h"
 
 namespace fl {
 namespace app {

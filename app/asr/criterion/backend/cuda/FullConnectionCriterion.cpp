@@ -10,8 +10,8 @@
 
 #include "flashlight/flashlight/common/cuda.h"
 
-#include "flashlight/lib/sequence/criterion/cuda/FullConnectionCriterion.cuh"
 #include "flashlight/app/asr/criterion/CriterionUtils.h"
+#include "flashlight/lib/sequence/criterion/cuda/FullConnectionCriterion.cuh"
 
 using FCC = fl::lib::cuda::FullConnectionCriterion<float>;
 

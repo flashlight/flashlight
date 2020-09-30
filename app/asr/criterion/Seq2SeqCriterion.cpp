@@ -47,8 +47,7 @@ std::shared_ptr<AttentionBase> buildAttention() {
       FLAGS_attention == fl::app::asr::kMultiHeadKeyValueContentAttention) {
     attention = std::make_shared<MultiHeadContentAttention>(
         FLAGS_encoderdim, FLAGS_numattnhead, true);
-  } else if (
-      FLAGS_attention == fl::app::asr::kMultiHeadSplitContentAttention) {
+  } else if (FLAGS_attention == fl::app::asr::kMultiHeadSplitContentAttention) {
     attention = std::make_shared<MultiHeadContentAttention>(
         FLAGS_encoderdim, FLAGS_numattnhead, false, true);
   } else if (

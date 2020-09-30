@@ -12,7 +12,6 @@
 
 #include "flashlight/app/asr/criterion/CriterionUtils.h"
 
-
 namespace fl {
 namespace app {
 namespace asr {

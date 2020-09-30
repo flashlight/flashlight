@@ -10,7 +10,6 @@
 
 #include <cmath>
 
-
 namespace fl {
 namespace app {
 namespace asr {

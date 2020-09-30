@@ -9,11 +9,11 @@
 
 #include <utility>
 
+#include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/flashlight/flashlight.h"
 #include "flashlight/lib/audio/feature/FeatureParams.h"
-#include "flashlight/lib/text/dictionary/Utils.h"
 #include "flashlight/lib/common/String.h"
-#include "flashlight/app/asr/common/Defines.h"
+#include "flashlight/lib/text/dictionary/Utils.h"
 
 namespace fl {
 namespace app {
@@ -68,7 +68,8 @@ fl::Dataset::DataTransformFunction targetFeatures(
     const lib::text::LexiconMap& lexicon,
     const TargetGenerationConfig& config);
 
-fl::Dataset::DataTransformFunction wordFeatures(const lib::text::Dictionary& wrdDict);
+fl::Dataset::DataTransformFunction wordFeatures(
+    const lib::text::Dictionary& wrdDict);
 
 // ============================== Helper function ==============================
 

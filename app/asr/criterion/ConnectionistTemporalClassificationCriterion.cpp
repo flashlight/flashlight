@@ -39,7 +39,6 @@ af::array logSoftmax(const af::array& input, const int dim) {
 
 } // namespace
 
-
 namespace fl {
 namespace app {
 namespace asr {

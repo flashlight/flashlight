@@ -9,10 +9,10 @@
 
 #pragma once
 
-#include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/decoder/Decoder.h"
 #include "flashlight/lib/text/decoder/Trie.h"
 #include "flashlight/lib/text/decoder/lm/LM.h"
+#include "flashlight/lib/text/dictionary/Dictionary.h"
 
 namespace w2l {
 namespace streaming {
@@ -52,7 +52,8 @@ class DecoderFactory {
   Decoder createDecoder(const fl::lib::text::DecoderOptions& options) const;
 
   // Parse the raw decoder results and form a list of WordUnit
-  std::vector<WordUnit> result2Words(const fl::lib::text::DecodeResult& result) const;
+  std::vector<WordUnit> result2Words(
+      const fl::lib::text::DecodeResult& result) const;
 
   // Returns size of the alphabet (=dimension of transitions matrix).
   size_t alphabetSize() const;
@@ -81,7 +82,9 @@ class Decoder {
  public:
   Decoder() {}
 
-  Decoder(const DecoderFactory* factory, std::shared_ptr<fl::lib::text::Decoder> decoder)
+  Decoder(
+      const DecoderFactory* factory,
+      std::shared_ptr<fl::lib::text::Decoder> decoder)
       : factory_(std::make_shared<DecoderFactory>(*factory)),
         decoder_(decoder) {}
 

@@ -42,8 +42,9 @@ DecoderFactory::DecoderFactory(
   }
   std::cerr << "[Letters] " << alphabetSize_ << " tokens loaded.\n";
   silence_ = letterMap_.getIndex(silenceToken);
-  blank_ =
-      letterMap_.contains(fl::app::asr::kBlankToken) ? letterMap_.getIndex(fl::app::asr::kBlankToken) : -1;
+  blank_ = letterMap_.contains(fl::app::asr::kBlankToken)
+      ? letterMap_.getIndex(fl::app::asr::kBlankToken)
+      : -1;
 
   /* 2. Load word dictionary */
   fl::lib::text::LexiconMap lexicon;
@@ -61,7 +62,8 @@ DecoderFactory::DecoderFactory(
 
   /* 3. Load language model. */
   if (!languageModelFile.empty()) {
-    lm_ = std::make_shared<fl::lib::text::KenLM>(languageModelFile.c_str(), wordMap_);
+    lm_ = std::make_shared<fl::lib::text::KenLM>(
+        languageModelFile.c_str(), wordMap_);
     if (!lm_) {
       throw std::invalid_argument("Could not load LM.");
     }
@@ -82,7 +84,8 @@ DecoderFactory::DecoderFactory(
       std::tie(dummyState, score) = lm_->score(startState, usrIdx);
 
       for (const auto& tokens : it.second) {
-        auto tokensTensor = fl::app::asr::tkn2Idx(tokens, letterMap_, repetitionLabel_);
+        auto tokensTensor =
+            fl::app::asr::tkn2Idx(tokens, letterMap_, repetitionLabel_);
         trie_->insert(tokensTensor, usrIdx, score);
       }
     }
@@ -92,7 +95,8 @@ DecoderFactory::DecoderFactory(
   }
 }
 
-Decoder DecoderFactory::createDecoder(const fl::lib::text::DecoderOptions& opt) const {
+Decoder DecoderFactory::createDecoder(
+    const fl::lib::text::DecoderOptions& opt) const {
   if (trie_) {
     auto decoder = std::make_shared<fl::lib::text::LexiconDecoder>(
         opt, trie_, lm_, silence_, blank_, unk_, transitions_, false);

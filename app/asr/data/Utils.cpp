@@ -93,7 +93,8 @@ std::vector<std::string> wrd2Target(
     bool skipUnk /* = false */) {
   std::vector<std::string> res;
   for (auto w : words) {
-    auto t = wrd2Target(w, lexicon, dict, targetSamplePct, fallback2Ltr, skipUnk);
+    auto t =
+        wrd2Target(w, lexicon, dict, targetSamplePct, fallback2Ltr, skipUnk);
 
     if (t.size() == 0) {
       continue;

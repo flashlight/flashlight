@@ -9,8 +9,8 @@
 #include <gtest/gtest.h>
 #include <numeric>
 
-#include "flashlight/lib/test/audio/feature/TestUtils.h"
 #include "flashlight/lib/audio/feature/Derivatives.h"
+#include "flashlight/lib/test/audio/feature/TestUtils.h"
 
 using fl::lib::audio::Derivatives;
 

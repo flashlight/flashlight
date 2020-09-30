@@ -70,12 +70,11 @@ Variable batchnorm(
   const void* one = kOne(input.type());
   const void* zero = kZero(input.type());
 
-
-  if (!weight.isempty() && weight.elements()!= wtDescDims.elements()) {
+  if (!weight.isempty() && weight.elements() != wtDescDims.elements()) {
     throw std::invalid_argument("[BatchNorm] Invalid shape for weight.");
   }
 
-  if (!bias.isempty() && bias.elements()!= wtDescDims.elements()) {
+  if (!bias.isempty() && bias.elements() != wtDescDims.elements()) {
     throw std::invalid_argument("[BatchNorm] Invalid shape for bias.");
   }
 

@@ -17,16 +17,16 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/runtime/runtime.h"
-#include "inference/module/feature/feature.h"
-#include "inference/module/module.h"
-#include "inference/module/nn/nn.h"
 #include "flashlight/contrib/modules/SpecAugment.h"
 #include "flashlight/contrib/modules/TDSBlock.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
+#include "flashlight/lib/text/dictionary/Dictionary.h"
+#include "inference/module/feature/feature.h"
+#include "inference/module/module.h"
+#include "inference/module/nn/nn.h"
 
 DEFINE_string(outdir, "", "");
 

@@ -12,8 +12,8 @@
 #include <functional>
 #include <sstream>
 
-#include "flashlight/lib/common/System.h"
 #include "flashlight/app/asr/data/Sound.h"
+#include "flashlight/lib/common/System.h"
 
 using namespace fl::lib;
 using namespace fl::app::asr;

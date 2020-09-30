@@ -8,7 +8,6 @@
 
 #include "flashlight/app/asr/criterion/attention/StepWindow.h"
 
-
 namespace fl {
 namespace app {
 namespace asr {

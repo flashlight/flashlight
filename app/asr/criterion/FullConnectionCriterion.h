@@ -8,10 +8,9 @@
 
 #pragma once
 
-#include "flashlight/flashlight/flashlight.h"
 #include "flashlight/app/asr/criterion/CriterionUtils.h"
 #include "flashlight/app/asr/criterion/Defines.h"
-
+#include "flashlight/flashlight/flashlight.h"
 
 namespace fl {
 namespace app {
@@ -21,7 +20,8 @@ class FullConnectionCriterion : public fl::BinaryModule {
  public:
   explicit FullConnectionCriterion(
       int N,
-      fl::lib::seq::CriterionScaleMode scalemode = fl::lib::seq::CriterionScaleMode::NONE);
+      fl::lib::seq::CriterionScaleMode scalemode =
+          fl::lib::seq::CriterionScaleMode::NONE);
 
   fl::Variable forward(const fl::Variable& input, const fl::Variable& target)
       override;

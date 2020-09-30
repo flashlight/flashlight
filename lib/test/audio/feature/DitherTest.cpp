@@ -10,8 +10,8 @@
 #include <chrono>
 #include <thread>
 
-#include "flashlight/lib/test/audio/feature/TestUtils.h"
 #include "flashlight/lib/audio/feature/Dither.h"
+#include "flashlight/lib/test/audio/feature/TestUtils.h"
 
 using fl::lib::audio::Dither;
 

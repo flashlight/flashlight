@@ -10,10 +10,10 @@
 #include <functional>
 #include <numeric>
 
-#include "flashlight/lib/common/String.h"
-#include "flashlight/lib/common/System.h"
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/data/ListFilesDataset.h"
+#include "flashlight/lib/common/String.h"
+#include "flashlight/lib/common/System.h"
 
 using namespace fl::lib;
 using fl::lib::text::DictionaryMap;

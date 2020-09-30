@@ -7,9 +7,9 @@
  */
 
 #include <arrayfire.h>
-#include "flashlight/flashlight/flashlight.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "flashlight/flashlight/flashlight.h"
 
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/data/Featurize.h"
