@@ -14,7 +14,6 @@
 #include <mutex>
 #include <sstream>
 
-
 namespace fl {
 namespace app {
 namespace asr {

@@ -8,7 +8,6 @@
 
 #include "flashlight/app/asr/criterion/attention/MedianWindow.h"
 
-
 namespace fl {
 namespace app {
 namespace asr {

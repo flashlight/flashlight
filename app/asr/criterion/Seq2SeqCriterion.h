@@ -10,8 +10,8 @@
 
 #include <memory>
 
-#include "flashlight/app/asr/criterion/SequenceCriterion.h"
 #include "flashlight/app/asr/criterion/Defines.h"
+#include "flashlight/app/asr/criterion/SequenceCriterion.h"
 #include "flashlight/app/asr/criterion/attention/attention.h"
 #include "flashlight/app/asr/criterion/attention/window.h"
 

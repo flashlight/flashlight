@@ -23,17 +23,16 @@ using namespace fl::app::asr;
 
 namespace {
 std::string loadPath = "";
-auto letterToTarget = [](
-             void* data, af::dim4 dims, af::dtype /* unused */) {
-    std::string transcript(
-        static_cast<char*>(data), static_cast<char*>(data) + dims.elements());
-    std::vector<int> tgt;
-    for (auto c: transcript) {
-        tgt.push_back(static_cast<int>(c));
-    }
+auto letterToTarget = [](void* data, af::dim4 dims, af::dtype /* unused */) {
+  std::string transcript(
+      static_cast<char*>(data), static_cast<char*>(data) + dims.elements());
+  std::vector<int> tgt;
+  for (auto c : transcript) {
+    tgt.push_back(static_cast<int>(c));
+  }
   return af::array(tgt.size(), tgt.data());
 };
-}
+} // namespace
 
 TEST(ListFileDatasetTest, LoadData) {
   auto data = getFileContent(pathsConcat(loadPath, "data.lst"));
@@ -57,7 +56,6 @@ TEST(ListFileDatasetTest, LoadData) {
     ASSERT_EQ(audiods.get(i)[3].elements(), 1);
   }
 }
-
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);

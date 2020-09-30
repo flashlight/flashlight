@@ -12,7 +12,6 @@
 #include "flashlight/app/asr/criterion/Defines.h"
 #include "flashlight/app/asr/criterion/SequenceCriterion.h"
 
-
 namespace fl {
 namespace app {
 namespace asr {
@@ -20,7 +19,8 @@ namespace asr {
 class ConnectionistTemporalClassificationCriterion : public SequenceCriterion {
  public:
   ConnectionistTemporalClassificationCriterion(
-      fl::lib::seq::CriterionScaleMode scalemode = fl::lib::seq::CriterionScaleMode::NONE);
+      fl::lib::seq::CriterionScaleMode scalemode =
+          fl::lib::seq::CriterionScaleMode::NONE);
 
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;
@@ -44,5 +44,4 @@ typedef ConnectionistTemporalClassificationCriterion CTCLoss;
 } // namespace app
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(
-    fl::app::asr::ConnectionistTemporalClassificationCriterion)
+CEREAL_REGISTER_TYPE(fl::app::asr::ConnectionistTemporalClassificationCriterion)

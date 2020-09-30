@@ -328,7 +328,7 @@ TEST(ModuleTest, LayerNormFwd) {
   ASSERT_TRUE(allClose(out_train.array(), out_eval.array(), eps));
   ASSERT_EQ(out_train.dims(), input.dims());
 
-   // with affine transform
+  // with affine transform
   auto module3 = LayerNorm(feat_axes, eps, true, F);
   module3.setParams(Variable(af::constant(1.0, F), false), 0);
   module3.setParams(Variable(af::constant(0.0, F), false), 1);

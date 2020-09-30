@@ -8,7 +8,6 @@
 
 #include "flashlight/app/asr/criterion/attention/LocationAttention.h"
 
-
 namespace fl {
 namespace app {
 namespace asr {

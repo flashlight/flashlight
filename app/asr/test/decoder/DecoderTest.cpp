@@ -14,14 +14,14 @@
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
-#include "flashlight/lib/text/decoder/LexiconDecoder.h"
-#include "flashlight/lib/text/decoder/Trie.h"
-#include "flashlight/lib/text/decoder/lm/KenLM.h"
-#include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/decoder/Defines.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
+#include "flashlight/lib/text/decoder/LexiconDecoder.h"
+#include "flashlight/lib/text/decoder/Trie.h"
+#include "flashlight/lib/text/decoder/lm/KenLM.h"
+#include "flashlight/lib/text/dictionary/Dictionary.h"
 
 using namespace fl::lib;
 using namespace fl::lib::text;

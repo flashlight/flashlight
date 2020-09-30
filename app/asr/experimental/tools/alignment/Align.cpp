@@ -9,10 +9,10 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
+#include "flashlight/lib/text/dictionary/Dictionary.h"
 
 #include "flashlight/app/asr/experimental/tools/alignment/Utils.h"
 

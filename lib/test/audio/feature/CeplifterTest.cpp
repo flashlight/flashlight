@@ -8,8 +8,8 @@
 
 #include <gtest/gtest.h>
 
-#include "flashlight/lib/test/audio/feature/TestUtils.h"
 #include "flashlight/lib/audio/feature/Ceplifter.h"
+#include "flashlight/lib/test/audio/feature/TestUtils.h"
 
 using fl::lib::audio::Ceplifter;
 

@@ -13,9 +13,9 @@
 #include <string>
 #include <vector>
 
-#include "flashlight/flashlight/flashlight.h"
 #include <gflags/gflags.h>
 #include <glog/logging.h>
+#include "flashlight/flashlight/flashlight.h"
 
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/criterion/criterion.h"

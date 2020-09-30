@@ -14,10 +14,10 @@
 
 #include <glog/logging.h>
 
+#include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/lib/audio/feature/Mfcc.h"
 #include "flashlight/lib/audio/feature/Mfsc.h"
 #include "flashlight/lib/common/String.h"
-#include "flashlight/app/asr/common/Defines.h"
 
 using namespace fl::lib;
 using namespace fl::lib::audio;

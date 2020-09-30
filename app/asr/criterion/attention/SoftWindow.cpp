@@ -8,7 +8,6 @@
 
 #include "flashlight/app/asr/criterion/attention/SoftWindow.h"
 
-
 namespace fl {
 namespace app {
 namespace asr {

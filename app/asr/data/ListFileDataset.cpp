@@ -113,18 +113,18 @@ float ListFileDataset::getInputSize(const int64_t idx) const {
 
 int64_t ListFileDataset::getTargetSize(const int64_t idx) const {
   checkIndexBounds(idx);
-  if (targetSizesCache_[idx] >=0 ) {
+  if (targetSizesCache_[idx] >= 0) {
     return targetSizesCache_[idx];
   }
   if (!tgtFeatFunc_) {
     return 0;
   }
   std::vector<char> curTarget(targets_[idx].begin(), targets_[idx].end());
-  auto tgtSize =  tgtFeatFunc_(
-             static_cast<void*>(curTarget.data()),
-             {static_cast<dim_t>(curTarget.size())},
-             af::dtype::b8)
-      .elements();
+  auto tgtSize = tgtFeatFunc_(
+                     static_cast<void*>(curTarget.data()),
+                     {static_cast<dim_t>(curTarget.size())},
+                     af::dtype::b8)
+                     .elements();
   targetSizesCache_[idx] = tgtSize;
   return tgtSize;
 }

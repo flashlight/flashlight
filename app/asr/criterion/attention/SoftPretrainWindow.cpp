@@ -8,7 +8,6 @@
 
 #include "flashlight/app/asr/criterion/attention/SoftPretrainWindow.h"
 
-
 namespace fl {
 namespace app {
 namespace asr {
