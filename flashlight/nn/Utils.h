@@ -4,10 +4,10 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
 /**
- * @file nn/Utils.h
- *
- * Utils for modules.
+ * \defgroup nn_utils NN Utils
+ * @{
  */
 
 #pragma once
@@ -67,5 +67,7 @@ af::array join(
     const std::vector<af::array>& inputs,
     double padValue = 0.0,
     dim_t batchDim = -1);
+
+/** @} */
 
 } // namespace fl

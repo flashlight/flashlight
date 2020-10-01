@@ -12,6 +12,11 @@
 namespace fl {
 
 /**
+ * \defgroup dataset_utils Dataset Utils
+ * @{
+ */
+
+/**
  * Partitions the samples in a round-robin manner and return ids of the samples.
  * For dealing with end effects, we include final samples iff we can fit
  * atleast one sample for last batch for all partitions
@@ -25,5 +30,7 @@ std::vector<int64_t> partitionByRoundRobin(
     int64_t partitionId,
     int64_t numPartitions,
     int64_t batchSz = 1);
+
+/** @} */
 
 } // namespace fl

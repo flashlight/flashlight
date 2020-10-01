@@ -31,6 +31,11 @@ af::array sumAs(const af::array& input, const af::dim4& rdims);
 class Variable;
 
 /**
+ * \defgroup autograd_functions Autograd Functions
+ * @{
+ */
+
+/**
  * Element-wise addition of two Variables.
  * \f[ out = var_1 + var_2 \f]
  */
@@ -824,5 +829,7 @@ Variable relu(const Variable& input);
  * element-wise to a `Variable`
  */
 Variable gelu(const Variable& input);
+
+/** @} */
 
 } // namespace fl

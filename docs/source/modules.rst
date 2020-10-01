@@ -168,12 +168,15 @@ MeanSquaredError
 
 Initialization
 --------------
-.. doxygenfile:: nn/Init.h
+
+.. doxygengroup:: nn_init_utils
 
 Utils
 --------------
-.. doxygenfile:: nn/Utils.h
+.. doxygengroup:: nn_utils
+    :content-only:
 
 DistributedUtils
 ----------------
-.. doxygenfile:: nn/DistributedUtils.h
+.. doxygengroup:: nn_distributed_utils
+    :content-only:

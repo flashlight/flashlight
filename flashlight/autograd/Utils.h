@@ -12,6 +12,11 @@
 namespace fl {
 
 /**
+ * \defgroup autograd_utils Autograd Utils
+ * @{
+ */
+
+/**
  * Returns true if two Variable are of same type and are element-wise equal
  * within given tolerance limit.
  *
@@ -20,5 +25,7 @@ namespace fl {
  *
  */
 bool allClose(const Variable& a, const Variable& b, double absTolerance = 1e-5);
+
+/** @} */
 
 } // namespace fl

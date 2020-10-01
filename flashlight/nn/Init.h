@@ -12,14 +12,17 @@
  * The complete license agreement can be obtained at:
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
+
 /**
- * @file nn/Init.h
+ * \defgroup nn_init_utils NN Initialization Functions
  *
  * Functions for initializing tensors.
  *
  * Provides facilities for creating a `fl::Variable` tensor of different types
  * and initializations vis-a-vis probability distributions, constants, and the
  * identity. Additionally wraps common tensors as integrated into modules.
+ *
+ * @{
  */
 
 #pragma once
@@ -419,5 +422,7 @@ Variable glorotNormal(
     int fanOut,
     af::dtype type = af::dtype::f32,
     bool calcGrad = true);
+
+/** @} */
 
 } // namespace fl

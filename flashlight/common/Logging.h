@@ -6,37 +6,6 @@
  *
  */
 
-/**
- * Logging is a light, multi-level, compile time filterable, logging
- * infrastructure that is similar to glog in output format. It defines two
- * logging macros, one for any logging and the other for more verbose logging.
- * Compile time filter is applied separately to each of the two.
- *
- * Output format:
- * LMMDD HH:MM:SS.uuuuuu tid filename:##] Log message ...
- *  L: Log level (Fatal, Critical, Error, Warning, Info)
- * MMDD: month, day
- * HH:MM:SS.uuuuuu: time (24-hour format) with micro-seconds
- * tid: thread ID
- * filename:## the basename of the source file and line number of the LOG
- * message
- *
- * LOG use examples:
- *   LOG(INFO) << "foo bar n=" << 42;
- * Output example:
- *   I0206 10:42:21.047293 87072 Logging.h:15 foo bar n=42
- * Note that LOG(level) only prints when level is <= from value set to
- * Logging::setMaxLoggingLevel(level)
- *
- * VLOG use example:
- *   VLOG(1) << "foo bar n=" << 42;
- * Output example:
- *   vlog(1)0206 10:42:21.005439 87072 Logging.h:23 foo bar n=42
- * Note that VLOG(level) only prints when level is <= from value set to
- * VerboseLogging::setMaxLoggingLevel(level)
- *
- */
-
 #pragma once
 
 #include <signal.h>
@@ -46,6 +15,58 @@
 #include <utility>
 
 namespace fl {
+
+/**
+ * \defgroup logging Logging Library
+ *
+ * Logging is a light, multi-level, compile-time-filterable, logging
+ * framework that is similar to [glog](https://github.com/google/glog) in output
+ * format. It defines two logging macros, one for conventional logging and the
+ * other for verbose logging. Compile time filtering is applied separately to
+ * each of the two.
+ *
+ * Output formatsdfds:
+ * \code
+ * LMMDD HH:MM:SS.uuuuuu tid filename:##] Log message ...
+ * \endcode
+ *
+ * Where:
+ * \code
+ * L: Log level {Fatal, Critical, Error, Warning, Info}
+ * MMDD: month, day
+ * HH:MM:SS.uuuuuu: time (24-hour format) with micro-seconds
+ * tid: thread ID
+ * filename:## basename of the source file and line number of the LOG message
+ * \endcode
+ *
+ * Example:
+ * \code
+ * LOG(INFO) << "foo bar n=" << 42;
+ * \endcode
+ *
+ * Gives output:
+ * \code
+ * I0206 10:42:21.047293 87072 Logging.h:15 foo bar n=42
+ * \endcode
+ *
+ * Note that `LOG(level)` only prints when level is less than or equal to the
+ * value set via `Logging`` Example with `VLOG`:
+ * \code
+ * VLOG(1) << "foo bar n=" << 42;
+ * \endcode
+ *
+ * Gives output:
+ *
+ * \code
+ * vlog(1) 0206 10:42:21.005439 87072 Logging.h:23 foo bar n=42
+ * \endcode
+ *
+ * Note that `VLOG(level)` only prints when level is less than or equal to the
+ * value set to `VerboseLogging`
+ *
+ * @{
+ */
+
 enum LogLevel {
   DISABLE_LOGGING, // use only for when calling setMaxLoggingLevel() or
   // setting DEFUALT_MAX_LOGGING_LEVEL.
@@ -55,11 +76,11 @@ enum LogLevel {
   INFO,
 };
 
-// DEFUALT_MAX_LOGGING_LEVEL is used for globaly limit LOG(level).
+/// `DEFUALT_MAX_LOGGING_LEVEL` is used for globaly limit `LOG(level)`.
 constexpr LogLevel DEFUALT_MAX_LOGGING_LEVEL = LogLevel::INFO;
-// MAX_VERBOSE_LOGGING_LEVEL values are based on the values used in VLOG()
-// and can be any value, but expected reasonable values are: 0..10
-// for print none and print all respectively.
+/// `MAX_VERBOSE_LOGGING_LEVEL` values are based on the values used in `VLOG()`
+/// and can be any value, but expected reasonable values are: `{0..10}`
+/// for print none and print all respectively.
 constexpr int DEFUALT_MAX_VERBOSE_LOGGING_LEVEL = 1;
 
 #define LOG(level) Logging(level, __FILE__, __LINE__)
@@ -67,6 +88,8 @@ constexpr int DEFUALT_MAX_VERBOSE_LOGGING_LEVEL = 1;
 
 #define IFLOG(level) if (Logging::ifLog(level))
 #define IFVLOG(level) if (VerboseLogging::ifLog(level))
+
+/** @} */
 
 class Logging {
  public:
