@@ -11,6 +11,11 @@
 
 #include <arrayfire.h>
 
+/**
+ * \defgroup common_utils Common utilities
+ * @{
+ */
+
 #define AF_CHECK(fn)                                                          \
   do {                                                                        \
     af_err __err = fn;                                                        \
@@ -50,5 +55,7 @@ std::string prettyStringMemorySize(size_t size);
 
 // Returns a string formatted similar to: 26675644(2m+667k+5644)
 std::string prettyStringCount(size_t count);
+
+/** @} */
 
 } // namespace fl

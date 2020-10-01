@@ -3,6 +3,8 @@
 Functions
 ---------
 
-.. doxygenfile:: Functions.h
+.. doxygengroup:: autograd_functions
+    :content-only:
 
-.. doxygenfile:: autograd/Utils.h
+.. doxygengroup:: autograd_utils
+    :content-only:

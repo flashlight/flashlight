@@ -15,10 +15,14 @@
 #include "flashlight/flashlight/common/Defines.h"
 
 namespace fl {
+/**
+ * \defgroup distributed_api Distributed API
+ * @{
+ */
 
 /**
  * Initialize the distributed environment. Note that `worldSize`, `worldRank`
- * are ignored if DistributedInit::MPI is used.
+ * are ignored if `DistributedInit::MPI` is used.
  *
  * @param initMethod Initialization method used for setting up the rendezvous
  * @param worldSize Total number of processes in the communication group
@@ -121,6 +125,8 @@ void allReduceMultiple(
  * stream.
  */
 void syncDistributed();
+
+/** @} */
 
 namespace detail {
 class DistributedInfo {

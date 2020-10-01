@@ -12,6 +12,11 @@
 namespace fl {
 
 /**
+ * \defgroup common_defines Common constants and definitions
+ * @{
+ */
+
+/**
  * Reduction mode to used for CrossEntropy, AdaptiveSoftMax etc ...
  */
 enum class ReduceMode {
@@ -69,5 +74,7 @@ struct DistributedConstants {
   static constexpr const std::size_t kCoalesceCacheSize =
       ((size_t)(20) << 20); // 20 MB
 };
+
+/** @} */
 
 } // namespace fl

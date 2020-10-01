@@ -15,6 +15,11 @@
 namespace fl {
 
 /**
+ * \defgroup nn_distributed_utils NN Distributed Functions
+ * @{
+ */
+
+/**
  * Registers a module for allreduce synchronization with a gradient hook on it
  * parameter Variables.
  *
@@ -44,5 +49,7 @@ void allReduceParameters(std::shared_ptr<const Module> module);
 void allReduceGradients(
     std::shared_ptr<const Module> module,
     double scale = 1.0);
+
+/** @} */
 
 } // namespace fl
