@@ -4,11 +4,9 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
 /**
  * @file common/Serialization.h
- *
- * Serialization support using the Cereal library. Provides serialization
- * functions for `af::array` and `af::dim4` and convenience utilities.
  */
 
 #pragma once
@@ -26,6 +24,29 @@
 #include <cereal/types/vector.hpp>
 
 namespace fl {
+
+/**
+ * \defgroup serialization_library Serialization Library
+ *
+ * Serialization support using the `cereal` library. Provides serialization
+ * functions for `af::array` and `af::dim4` and convenience utilities.
+ *
+ * Note the following guidelines for serialization:
+ * - By default you should use save/load pairs and explicit versioning.
+ *   The provided macros encourage this usage.
+ * - Saving an object must not mutate it. `save()` being `const` helps, but
+ *   be careful about `Variable` which is a `shared_ptr` to non-const.
+ * - Loading an object must provide the basic exception guarantee. After an
+ *   exception, the object must be safe to destroy and no leaks can occur.
+ * - For simplicity, `load()` may assume that the initial state of the
+ *   object is default-constructed. Conversely, one must only call `load()`
+ *   on a default-constructed object.
+ * - Avoid serializing `long`, `size_t`, and ArrayFire's `dim_t` since these
+ *   types have platform-dependent sizes. Fixed-size types like `int64_t` are
+ *   always fine. `int`, `long long` should be fine on virtually all platforms.
+ *
+ * @{
+ */
 
 /**
  * Save (serialize) the specified args to a binary file (via Cereal).
@@ -58,22 +79,13 @@ void load(const std::string& filepath, Args&... args);
  */
 template <typename... Args>
 void load(std::istream& istr, Args&... args);
+
+/** @} */
 } // namespace fl
 
 /**
- * Note the following guidelines for serialization:
- * - By default you should use save/load pairs and explicit versioning.
- *   The provided macros encourage this usage.
- * - Saving an object must not mutate it. `save()` being `const` helps, but
- *   be careful about `Variable` which is a `shared_ptr` to non-const.
- * - Loading an object must provide the basic exception guarantee. After an
- *   exception, the object must be safe to destroy and no leaks can occur.
- * - For simplicity, `load()` may assume that the initial state of the
- *   object is default-constructed. Conversely, one must only call `load()`
- *   on a default-constructed object.
- * - Avoid serializing `long`, `size_t`, and ArrayFire's `dim_t` since these
- *   types have platform-dependent sizes. Fixed-size types like `int64_t` are
- *   always fine. `int`, `long long` should be fine on virtually all platforms.
+ * \addtogroup serialization_library Serialization Library
+ * @{
  */
 
 /**
@@ -119,6 +131,8 @@ void load(std::istream& istr, Args&... args);
   template <class Archive>                              \
   void load(Archive& ar, const uint32_t version);
 
+/** @} */
+
 namespace fl {
 namespace detail {
 
@@ -132,6 +146,11 @@ template <typename T>
 struct CerealSave;
 
 } // namespace detail
+
+/**
+ * \addtogroup serialization_library Serialization Library
+ * @{
+ */
 
 /**
  * Serialize an expression iff the version is in the given range (inclusive).
@@ -170,6 +189,7 @@ template <typename S, typename T, typename SaveConvFn, typename LoadConvFn>
 detail::SerializeAs<S, T>
 serializeAs(T&& t, SaveConvFn saveConverter, LoadConvFn loadConverter);
 
+/** @} */
 } // namespace fl
 
 namespace cereal {

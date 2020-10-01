@@ -1,9 +1,11 @@
 Common
 ======
 
-.. doxygenfile:: Defines.h
+.. doxygengroup:: common_defines
+    :content-only:
 
-.. doxygenfile:: common/Utils.h
+.. doxygengroup:: common_utils
+    :content-only:
 
 .. doxygenclass:: fl::DevicePtr
    :members:

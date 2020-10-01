@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-/**
+/*
  * Generic utilities which should not depend on ArrayFire / flashlight.
  */
 

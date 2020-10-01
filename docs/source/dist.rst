@@ -1,7 +1,8 @@
 Distributed Library
 ===================
 
-.. doxygenfile:: DistributedApi.h
+.. doxygengroup:: distributed_api
+    :content-only:
 
 
 Reducer Framework

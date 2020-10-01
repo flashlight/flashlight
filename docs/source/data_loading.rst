@@ -66,4 +66,5 @@ PrefetchDataset
 
 Utils
 -----
-.. doxygenfile:: dataset/Utils.h
+.. doxygengroup:: dataset_utils
+    :content-only:
