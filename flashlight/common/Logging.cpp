@@ -13,8 +13,8 @@
 #include "flashlight/flashlight/common/Utils.h"
 
 namespace fl {
-LogLevel Logging::maxLoggingLevel_ = DEFUALT_MAX_LOGGING_LEVEL;
-int VerboseLogging::maxLoggingLevel_ = DEFUALT_MAX_VERBOSE_LOGGING_LEVEL;
+LogLevel Logging::maxLoggingLevel_ = DEFAULT_MAX_FL_LOGGING_LEVEL;
+int VerboseLogging::maxLoggingLevel_ = DEFAULT_MAX_VERBOSE_FL_LOGGING_LEVEL;
 
 namespace {
 // Constatnts for ANSI terminal colors.
@@ -219,6 +219,70 @@ VerboseLogging&& operator<<(VerboseLogging&& log, double d) {
 
 VerboseLogging&& operator<<(VerboseLogging&& log, bool b) {
   return std::move(log.print(b));
+}
+
+constexpr std::array<LogLevel, 5> flLogLevelValues = {fl::INFO,
+                                                      fl::WARNING,
+                                                      fl::ERROR,
+                                                      fl::FATAL,
+                                                      fl::DISABLE_FL_LOGGING};
+constexpr std::array<const char* const, 5> flLogLevelNames =
+    {"INFO", "WARNING", "ERROR", "FATAL", "DISABLE_FL_LOGGING"};
+
+std::string logLevelName(LogLevel level) {
+  for (int i = 0; i < flLogLevelValues.size(); ++i) {
+    if (level == flLogLevelValues.at(i)) {
+      return flLogLevelNames.at(i);
+    }
+  }
+  std::stringstream ss;
+  ss << "logLevelName(level=" << static_cast<int>(level)
+     << ") invalid level. Level should be in the range [0.."
+     << (flLogLevelNames.size() - 1) << "]";
+  throw std::invalid_argument(ss.str());
+}
+
+LogLevel logLevelValue(const std::string& level) {
+  for (int i = 0; i < flLogLevelValues.size(); ++i) {
+    if (level == std::string(flLogLevelNames.at(i))) {
+      return flLogLevelValues.at(i);
+    }
+  }
+  std::stringstream ss;
+  ss << "logLevelValue(level=" << level
+     << ") invalid level. Level should be INFO, WARNING, ERROR or FATAL";
+  throw std::invalid_argument(ss.str());
+}
+
+void initFlLogging(char* argv[]) {
+  const std::string logLevel = "--fl_log_level=";
+  const std::string vlogLevel = "--fl_vlog_level=";
+
+  while (*argv) {
+    std::string arg(*argv);
+    if (arg.find(logLevel) == 0) {
+      const std::string flagValue = arg.substr(logLevel.size());
+      try {
+        LogLevel level = logLevelValue(flagValue);
+        Logging::setMaxLoggingLevel(level);
+      } catch (std::exception& ex) {
+        std::cerr << "invalid " << logLevel << " value=" << flagValue
+                  << " error={" << ex.what() << "}" << std::endl;
+      }
+    }
+    if (arg.find(vlogLevel) == 0) {
+      const std::string flagValue = arg.substr(vlogLevel.size());
+      int vlogLevel = 0;
+      try {
+        vlogLevel = std::stoi(flagValue);
+      } catch (std::exception& ex) {
+        std::cerr << "invalid " << vlogLevel << " value=" << flagValue
+                  << " error={" << ex.what() << "}" << std::endl;
+      }
+      VerboseLogging::setMaxLoggingLevel(vlogLevel);
+    }
+    ++argv;
+  }
 }
 
 } // namespace fl
