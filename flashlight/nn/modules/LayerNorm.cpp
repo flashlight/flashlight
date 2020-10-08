@@ -41,6 +41,21 @@ LayerNorm::LayerNorm(
 Variable LayerNorm::forward(const Variable& input) {
   Variable dummyInMean, dummyInVar;
 
+  auto weight = Variable();
+  auto bias = Variable();
+
+  if (affine_ && axisSize_ == kLnVariableAxisSize) {
+    af::dim4 tiledims(1, 1, 1, 1);
+    for (int ax : axisComplement_) {
+      tiledims[ax] = input.dims(ax);
+    }
+    weight = tile(params_[0], tiledims, input.type());
+    bias = tile(params_[1], tiledims, input.type());
+  } else if (affine_) {
+    weight = params_[0];
+    bias = params_[1];
+  }
+
   Variable inputToBn = input;
   std::vector<int> inNormAxes;
   // reorder is only required if axisComplement_ is not continuous
