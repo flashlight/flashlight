@@ -9,7 +9,6 @@
 
 #include <unordered_map>
 
-#include <glog/logging.h>
 #include "flashlight/flashlight/flashlight.h"
 
 #include "flashlight/app/asr/common/Defines.h"
@@ -56,8 +55,8 @@ struct Serializer {
       ar(std::string(FL_TASK_ASR_VERSION));
       ar(args...);
     } catch (const std::exception& ex) {
-      LOG(ERROR) << "Error while saving \"" << filepath << "\": " << ex.what()
-                 << "\n";
+      FL_LOG(ERROR) << "Error while saving \"" << filepath
+                    << "\": " << ex.what() << "\n";
       throw;
     }
   }
@@ -75,8 +74,8 @@ struct Serializer {
       ar(version);
       ar(args...);
     } catch (const std::exception& ex) {
-      LOG(ERROR) << "Error while loading \"" << filepath << "\": " << ex.what()
-                 << "\n";
+      FL_LOG(ERROR) << "Error while loading \"" << filepath
+                    << "\": " << ex.what() << "\n";
       throw;
     }
   }

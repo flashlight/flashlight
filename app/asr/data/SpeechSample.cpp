@@ -6,6 +6,7 @@
  */
 
 #include "flashlight/app/asr/data/SpeechSample.h"
+#include "flashlight/flashlight/common/Logging.h"
 
 namespace fl {
 namespace app {
@@ -22,7 +23,7 @@ std::vector<int64_t> sortSamples(
     // Sort samples in increasing order of output bins. For samples in the same
     // output bin, sorting is done based on input size in alternating manner
     // (spiral) for consecutive bins.
-    VLOG(1) << "Doing data ordering by input_spiral";
+    FL_VLOG(1) << "Doing data ordering by input_spiral";
     std::sort(
         sortedIndices.begin(),
         sortedIndices.end(),
@@ -44,7 +45,7 @@ std::vector<int64_t> sortSamples(
     // Sort samples in increasing order of input bins. For samples in the same
     // input bin, sorting is done based on output size in alternating manner
     // (spiral) for consecutive bins.
-    VLOG(1) << "Doing data ordering by output_spiral";
+    FL_VLOG(1) << "Doing data ordering by output_spiral";
     std::sort(
         sortedIndices.begin(),
         sortedIndices.end(),
@@ -64,7 +65,7 @@ std::vector<int64_t> sortSamples(
         });
   } else if (dataorder.compare("input") == 0) {
     // Sort by input size
-    VLOG(1) << "Doing data ordering by input";
+    FL_VLOG(1) << "Doing data ordering by input";
     std::sort(
         sortedIndices.begin(),
         sortedIndices.end(),
@@ -100,8 +101,8 @@ void filterSamples(
                 sample.reflength() > maxTargetSz;
           }),
       samples.end());
-  LOG(INFO) << "Filtered " << initialSize - samples.size() << "/" << initialSize
-            << " samples";
+  FL_LOG(fl::INFO) << "Filtered " << initialSize - samples.size() << "/"
+                   << initialSize << " samples";
 }
 } // namespace asr
 } // namespace app
