@@ -407,7 +407,6 @@ Variable sqrt(const Variable& input) {
 }
 
 Variable sigmoid(const Variable& input) {
-  typeTrace("Sigmoid FWD", input.type());
   auto result = sigmoid(input.array());
   auto gradFunc =
       [result](std::vector<Variable>& inputs, const Variable& gradOutput) {
@@ -427,7 +426,6 @@ Variable transpose(const Variable& input) {
 }
 
 Variable tileAs(const Variable& input, const af::dim4& rdims) {
-  typeTrace("TileAs FWD", input.type());
   auto result = detail::tileAs(input.array(), rdims);
 
   af::dim4 inDims = input.dims();
@@ -829,7 +827,6 @@ Variable softmax(const Variable& input, const int dim) {
 }
 
 Variable logSoftmax(const Variable& input, const int dim) {
-  typeTrace("Logsoftmax FWD", input.type());
   auto maxvals = max((input.array()), dim);
   af::dim4 tiledims(1, 1, 1, 1);
   tiledims[dim] = input.dims(dim);
@@ -934,7 +931,6 @@ Variable reorder(
     const int dim1,
     const int dim2,
     const int dim3) {
-  typeTrace("Reorder FWD", input.type());
   auto result = reorder(input.array(), dim0, dim1, dim2, dim3);
   if (!af::isLinear(result)) {
     auto tmp = af::array(result.dims(), input.type());
@@ -1076,7 +1072,6 @@ Variable gatedlinearunit(const Variable& input, const int dim) {
 }
 
 Variable embedding(const Variable& input, const Variable& embeddings) {
-  typeTrace("Embedding FWD", input.type());
   if (input.numdims() >= 4) {
     throw std::invalid_argument("embedding input must have 3 or fewer dims");
   }
