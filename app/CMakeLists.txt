@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 option(FL_BUILD_APP_ASR "Build asr task for flashlight" ON)
+option(FL_BUILD_APP_IMG_CLASS "Build image classification app" ON)
 
 if (FL_BUILD_APP_ASR)
   if (NOT FL_BUILD_DISTRIBUTED)
@@ -13,4 +14,13 @@ if (FL_BUILD_APP_ASR)
     set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} warpctc)
   endif()
   setup_install_headers(${FLASHLIGHT_APPS_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
+endif ()
+
+if (FL_BUILD_APP_IMG_CLASS)
+  if (NOT FL_BUILD_DISTRIBUTED)
+    message(FATAL_ERROR
+    "FL_BUILD_DISTRIBUTED must be enabled for image classification")
+  endif()
+  set(FL_APP_IMG_CLASS_ROOT_DIR ${FLASHLIGHT_APPS_DIR}/image_classification)
+  include(${FL_APP_IMG_CLASS_ROOT_DIR}/CMakeLists.txt)
 endif ()

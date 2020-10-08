@@ -7,12 +7,13 @@
 
 #include "flashlight/lib/common/System.h"
 
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <array>
 #include <cstdlib>
 #include <ctime>
 #include <functional>
+#include <glob.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include "flashlight/lib/common/String.h"
 
@@ -104,6 +105,17 @@ std::vector<std::string> getFileContent(const std::string& file) {
   }
   in.close();
   return data;
+}
+
+std::vector<std::string> fileGlob(const std::string& pat) {
+  glob_t result;
+  glob(pat.c_str(), GLOB_TILDE, nullptr, &result);
+  std::vector<std::string> ret;
+  for (unsigned int i = 0; i < result.gl_pathc; ++i) {
+    ret.push_back(std::string(result.gl_pathv[i]));
+  }
+  globfree(&result);
+  return ret;
 }
 
 std::ifstream createInputStream(const std::string& filename) {

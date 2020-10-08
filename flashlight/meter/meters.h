@@ -13,3 +13,4 @@
 #include "flashlight/flashlight/meter/FrameErrorMeter.h"
 #include "flashlight/flashlight/meter/MSEMeter.h"
 #include "flashlight/flashlight/meter/TimeMeter.h"
+#include "flashlight/flashlight/meter/TopKMeter.h"
