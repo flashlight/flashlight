@@ -29,7 +29,8 @@ int main() {
   auto reducer = std::make_shared<fl::CoalescingReducer>(
       /*scale=*/1.0 / worldSize,
       /*async=*/true,
-      /*contiguous=*/true);
+      /*contiguous=*/true,
+      /*syncType=*/af::dtype::f32);
 
   // Create dataset
   const int nSamples = 10000 / worldSize;

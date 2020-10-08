@@ -110,7 +110,10 @@ TEST(Distributed, CoalescingReducer) {
   auto size = getWorldSize();
 
   auto s = std::make_shared<fl::CoalescingReducer>(
-      /* scale = */ 1.0 / size, /*async=*/true, /*contiguous=*/true);
+      /* scale = */ 1.0 / size,
+      /*async=*/true,
+      /*contiguous=*/true,
+      /*syncType=*/af::dtype::f32);
 
   size_t vSize = (1 << 20);
   std::vector<Variable> vars;

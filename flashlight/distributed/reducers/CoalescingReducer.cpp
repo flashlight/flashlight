@@ -10,18 +10,24 @@
 
 namespace fl {
 
-CoalescingReducer::CoalescingReducer(double scale, bool async, bool contiguous)
+CoalescingReducer::CoalescingReducer(
+    double scale,
+    bool async,
+    bool contiguous,
+    af::dtype syncType)
     : scale_(scale),
       async_(async),
       contiguous_(contiguous),
-      cacheThresholdBytes_(DistributedConstants::kCoalesceCacheSize) {}
+      cacheThresholdBytes_(DistributedConstants::kCoalesceCacheSize),
+      syncType_(syncType) {}
 
 CoalescingReducer::~CoalescingReducer() {
   finalize();
 }
 
-void CoalescingReducer::add(Variable& var) {
-  var.inPlaceCast(f32);
+void CoalescingReducer::add(Variable& rawVar) {
+  Variable var = rawVar.as(syncType_);
+
   // if this tensor would push the cache oversize, flush
   if (currCacheSize_ + var.bytes() > cacheThresholdBytes_) {
     flush();
