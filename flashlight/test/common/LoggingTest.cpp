@@ -19,9 +19,10 @@ namespace {
 using testing::HasSubstr;
 using testing::Not;
 
-// FL_VLOG(l) should print to stdout when VerboseLogging::setMaxLoggingLevel(i)
+// VLOG(l) should print to stdout when VerboseLogging::setMaxLoggingLevel(i)
 // i>=l
 TEST(Logging, vlogOnOff) {
+  LOG(INFO) << "test" << 1 << 1UL << 1L << 1.0;
   std::stringstream stdoutBuffer;
   std::stringstream stderrBuffer;
 
@@ -32,12 +33,12 @@ TEST(Logging, vlogOnOff) {
   std::cerr.rdbuf(stderrBuffer.rdbuf());
 
   for (int i = 0; i < 11; ++i) {
-    stdoutBuffer.clear();
-    stderrBuffer.clear();
+    stdoutBuffer.str(""); // clear content
+    stderrBuffer.str(""); // clear content
     VerboseLogging::setMaxLoggingLevel(i);
-    FL_VLOG(0) << "vlog-0";
-    FL_VLOG(1) << "vlog-1";
-    FL_VLOG(10) << "vlog-10";
+    VLOG(0) << "vlog-0";
+    VLOG(1) << "vlog-1";
+    VLOG(10) << "vlog-10";
 
     // Prints to stdout
     EXPECT_THAT(stdoutBuffer.str(), HasSubstr("vlog-0"));
@@ -64,10 +65,10 @@ TEST(Logging, vlogOnOff) {
   std::cerr.rdbuf(origStderrBuffer);
 }
 
-// FL_LOG(l) should print to stdout when Logging::setMaxLoggingLevel(i) i>=l and
-// l is fl::INFO or WARNING.
-// FL_LOG(l) should print to stderr when Logging::setMaxLoggingLevel(i) i>=l and
-// l is ERROR.
+// LOG(l) should print to stdout when Logging::setMaxLoggingLevel(i) i>=l and l
+// is INFO or WARNING.
+// LOG(l) should print to stderr when Logging::setMaxLoggingLevel(i) i>=l and l
+// is ERROR.
 TEST(Logging, logOnOff) {
   std::stringstream stdoutBuffer;
   std::stringstream stderrBuffer;
@@ -79,18 +80,18 @@ TEST(Logging, logOnOff) {
   std::cerr.rdbuf(stderrBuffer.rdbuf());
 
   const std::vector<LogLevel> logLevels = {
-      fl::DISABLE_FL_LOGGING, fl::FATAL, fl::ERROR, fl::WARNING, fl::INFO};
+      DISABLE_LOGGING, FATAL, ERROR, WARNING, INFO};
   for (LogLevel l : logLevels) {
-    stdoutBuffer.clear();
-    stderrBuffer.clear();
+    stdoutBuffer.str(""); // clear content
+    stderrBuffer.str(""); // clear content
 
     Logging::setMaxLoggingLevel(l);
-    FL_LOG(fl::INFO) << "log-info";
-    FL_LOG(WARNING) << "log-warning";
-    FL_LOG(ERROR) << "log-error";
+    LOG(INFO) << "log-info";
+    LOG(WARNING) << "log-warning";
+    LOG(ERROR) << "log-error";
 
     // Prints to stdout
-    if (l >= fl::INFO) {
+    if (l >= INFO) {
       EXPECT_THAT(stdoutBuffer.str(), HasSubstr("log-info"));
     } else {
       EXPECT_THAT(stdoutBuffer.str(), Not(HasSubstr("log-info")));
@@ -129,16 +130,16 @@ TEST(LoggingDeathTest, FatalOnOff) {
   std::cout.rdbuf(stdoutBuffer.rdbuf());
   std::cerr.rdbuf(stderrBuffer.rdbuf());
 
-  Logging::setMaxLoggingLevel(DISABLE_FL_LOGGING);
-  FL_LOG(fl::FATAL) << "log-fatal";
+  Logging::setMaxLoggingLevel(DISABLE_LOGGING);
+  LOG(FATAL) << "log-fatal";
   EXPECT_THAT(stdoutBuffer.str(), Not(HasSubstr("log-fatal")));
   EXPECT_THAT(stderrBuffer.str(), Not(HasSubstr("log-fatal")));
 
   std::cout.rdbuf(origStdoutBuffer);
   std::cerr.rdbuf(origStderrBuffer);
 
-  Logging::setMaxLoggingLevel(fl::FATAL);
-  EXPECT_DEATH({ FL_LOG(fl::FATAL) << "log-fatal"; }, "");
+  Logging::setMaxLoggingLevel(FATAL);
+  EXPECT_DEATH({ LOG(FATAL) << "log-fatal"; }, "");
 }
 
 } // namespace

@@ -6,19 +6,21 @@
  */
 
 #include <gflags/gflags.h>
+#include <glog/logging.h>
 
 #include "flashlight/app/asr/criterion/criterion.h"
-#include "flashlight/app/asr/experimental/tools/alignment/Utils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
+
+#include "flashlight/app/asr/experimental/tools/alignment/Utils.h"
 
 using namespace fl::app::asr;
 using namespace fl::lib;
 using namespace w2l::alignment;
 
 int main(int argc, char** argv) {
-  fl::initFlLogging(argv);
+  google::InitGoogleLogging(argv[0]);
   std::string exec(argv[0]);
   std::vector<std::string> argvs;
   for (int i = 0; i < argc; i++) {
@@ -26,16 +28,16 @@ int main(int argc, char** argv) {
   }
   gflags::SetUsageMessage("Usage: \n " + exec + " align_file_path [flags]");
   if (argc <= 2) {
-    FL_LOG(fl::FATAL) << gflags::ProgramUsage();
+    LOG(FATAL) << gflags::ProgramUsage();
   }
 
   std::string alignFilePath = argv[1];
 
   /* ===================== Parse Options ===================== */
-  FL_LOG(fl::INFO) << "Parsing command line flags";
+  LOG(INFO) << "Parsing command line flags";
   gflags::ParseCommandLineFlags(&argc, &argv, false);
   if (!FLAGS_flagsfile.empty()) {
-    FL_LOG(fl::INFO) << "Reading flags from file " << FLAGS_flagsfile;
+    LOG(INFO) << "Reading flags from file " << FLAGS_flagsfile;
     gflags::ReadFromFlagsFile(FLAGS_flagsfile, argv[0], true);
   }
 
@@ -43,32 +45,32 @@ int main(int argc, char** argv) {
   std::shared_ptr<fl::Module> network;
   std::shared_ptr<SequenceCriterion> criterion;
   std::unordered_map<std::string, std::string> cfg;
-  FL_LOG(fl::INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
+  LOG(INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
   Serializer::load(FLAGS_am, cfg, network, criterion);
   network->eval();
   criterion->eval();
 
-  FL_LOG(fl::INFO) << "[Network] " << network->prettyString();
-  FL_LOG(fl::INFO) << "[Criterion] " << criterion->prettyString();
-  FL_LOG(fl::INFO) << "[Network] Number of params: " << numTotalParams(network);
+  LOG(INFO) << "[Network] " << network->prettyString();
+  LOG(INFO) << "[Criterion] " << criterion->prettyString();
+  LOG(INFO) << "[Network] Number of params: " << numTotalParams(network);
 
   auto flags = cfg.find(kGflags);
   if (flags == cfg.end()) {
-    FL_LOG(fl::FATAL) << "[Network] Invalid config loaded from " << FLAGS_am;
+    LOG(FATAL) << "[Network] Invalid config loaded from " << FLAGS_am;
   }
-  FL_LOG(fl::INFO) << "[Network] Updating flags from config file: " << FLAGS_am;
+  LOG(INFO) << "[Network] Updating flags from config file: " << FLAGS_am;
   gflags::ReadFlagsFromString(flags->second, gflags::GetArgv0(), true);
   gflags::ParseCommandLineFlags(&argc, &argv, false);
   if (!FLAGS_flagsfile.empty()) {
-    FL_LOG(fl::INFO) << "Reading flags from file " << FLAGS_flagsfile;
+    LOG(INFO) << "Reading flags from file " << FLAGS_flagsfile;
     gflags::ReadFromFlagsFile(FLAGS_flagsfile, argv[0], true);
   }
 
-  FL_LOG(fl::INFO) << "Gflags after parsing \n" << serializeGflags("; ");
+  LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */
   auto dictPath = pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
-  FL_LOG(fl::INFO) << "Loading dictionary from " << dictPath;
+  LOG(INFO) << "Loading dictionary from " << dictPath;
   if (dictPath.empty() || !fileExists(dictPath)) {
     throw std::invalid_argument("Invalid dictionary filepath specified.");
   }
@@ -86,7 +88,7 @@ int main(int argc, char** argv) {
   }
 
   int numClasses = tokenDict.indexSize();
-  FL_LOG(fl::INFO) << "Number of classes (network): " << numClasses;
+  LOG(INFO) << "Number of classes (network): " << numClasses;
 
   text::DictionaryMap dicts;
   dicts.insert({kTargetIdx, tokenDict});
@@ -95,9 +97,9 @@ int main(int argc, char** argv) {
   std::ofstream alignFile;
   alignFile.open(alignFilePath);
   if (!alignFile.is_open() || !alignFile.good()) {
-    FL_LOG(fl::FATAL) << "Error opening log file";
+    LOG(FATAL) << "Error opening log file";
   } else {
-    FL_LOG(fl::INFO) << "Writing alignment to: " << alignFilePath;
+    LOG(INFO) << "Writing alignment to: " << alignFilePath;
   }
 
   text::LexiconMap lexicon;
@@ -105,7 +107,7 @@ int main(int argc, char** argv) {
     lexicon = text::loadWords(FLAGS_lexicon, FLAGS_maxword);
   }
 
-  FL_LOG(fl::INFO) << "Loaded lexicon";
+  LOG(INFO) << "Loaded lexicon";
 
   auto writeLog = [&](const std::string& logStr) {
     std::lock_guard<std::mutex> lock(write_mutex);
@@ -122,7 +124,7 @@ int main(int argc, char** argv) {
   ds = createDataset(
       FLAGS_test, dicts, lexicon, FLAGS_batchsize, worldRank, worldSize);
 
-  FL_LOG(fl::INFO) << "[Dataset] Dataset loaded";
+  LOG(INFO) << "[Dataset] Dataset loaded";
 
   auto postprocessFN = getWordSegmenter(criterion);
 
@@ -139,7 +141,7 @@ int main(int argc, char** argv) {
     if (!rawEmissions.empty()) {
       rawEmission = rawEmissions.front();
     } else {
-      FL_LOG(ERROR) << "Network did not produce any outputs";
+      LOG(ERROR) << "Network did not produce any outputs";
     }
 
     fwdMtr.stop();
@@ -171,14 +173,14 @@ int main(int argc, char** argv) {
     parseMtr.stop();
     ++batches;
     if (batches % 500 == 0) {
-      FL_LOG(fl::INFO) << "Done batches: " << batches
-                       << " , samples: " << batches * FLAGS_batchsize;
+      LOG(INFO) << "Done batches: " << batches
+                << " , samples: " << batches * FLAGS_batchsize;
     }
   }
 
-  FL_LOG(fl::INFO) << "Align time: " << alignMtr.value();
-  FL_LOG(fl::INFO) << "Fwd time: " << fwdMtr.value();
-  FL_LOG(fl::INFO) << "Parse time: " << parseMtr.value();
+  LOG(INFO) << "Align time: " << alignMtr.value();
+  LOG(INFO) << "Fwd time: " << fwdMtr.value();
+  LOG(INFO) << "Parse time: " << parseMtr.value();
   alignFile.close();
   return 0;
 }

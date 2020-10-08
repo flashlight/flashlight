@@ -14,6 +14,8 @@
 #include <string>
 #include <utility>
 
+namespace fl {
+
 /**
  * \defgroup logging Logging Library
  *
@@ -23,7 +25,7 @@
  * other for verbose logging. Compile time filtering is applied separately to
  * each of the two.
  *
- * Output format:
+ * Output formatsdfds:
  * \code
  * LMMDD HH:MM:SS.uuuuuu tid filename:##] Log message ...
  * \endcode
@@ -34,29 +36,23 @@
  * MMDD: month, day
  * HH:MM:SS.uuuuuu: time (24-hour format) with micro-seconds
  * tid: thread ID
- * filename:## the basename of the source file and line number of the FL_LOG
- * message
+ * filename:## basename of the source file and line number of the LOG message
+ * \endcode
  *
- * FL_LOG use examples:
+ * Example:
  * \code
- *   FL_LOG(INFO) << "foo bar n=" << 42;
+ * LOG(INFO) << "foo bar n=" << 42;
  * \endcode
- * Output example:
- *   I0206 10:42:21.047293 87072 Logging.h:15 foo bar n=42
- * Note that FL_LOG(level) only prints when level is <= from value set to
- * Logging::setMaxLoggingLevel(level)
  *
- * FL_VLOG use example:
+ * Gives output:
  * \code
- *   FL_VLOG(1) << "foo bar n=" << 42;
+ * I0206 10:42:21.047293 87072 Logging.h:15 foo bar n=42
  * \endcode
- * Output example:
+ *
+ * Note that `LOG(level)` only prints when level is less than or equal to the
+ * value set via `Logging`` Example with `VLOG`:
  * \code
- *   vlog(1)0206 10:42:21.005439 87072 Logging.h:23 foo bar n=42
- * \endcode
- * Note that FL_VLOG(level) only prints when level is <= from value set to
- * \code
- * VerboseLogging::setMaxLoggingLevel(level)
+ * VLOG(1) << "foo bar n=" << 42;
  * \endcode
  *
  * Gives output:
@@ -71,66 +67,27 @@
  * @{
  */
 
-#pragma once
-
-#include <signal.h>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <utility>
-
-namespace fl {
-
-/**
- * Call first thing in main() to enable command line logging flags:
- * `--fl_log_level=XXX`
- * `--fl_vlog_level=N`
- *
- * Add this function on first line in main() as follows:
- * \code
- * int main(int argc, char** argv) {
- *    fl::initFlLogging(argv);
- *    ...
- * \endcode
- */
-void initFlLogging(char* argv[]);
-
 enum LogLevel {
-  DISABLE_FL_LOGGING, // use only for when calling setMaxLoggingLevel() or
-  // setting DEFAULT_MAX_FL_LOGGING_LEVEL.
+  DISABLE_LOGGING, // use only for when calling setMaxLoggingLevel() or
+  // setting DEFUALT_MAX_LOGGING_LEVEL.
   FATAL,
   ERROR,
   WARNING,
   INFO,
 };
 
-LogLevel logLevelValue(const std::string& level);
-std::string logLevelName(LogLevel level);
+/// `DEFUALT_MAX_LOGGING_LEVEL` is used for globaly limit `LOG(level)`.
+constexpr LogLevel DEFUALT_MAX_LOGGING_LEVEL = LogLevel::INFO;
+/// `MAX_VERBOSE_LOGGING_LEVEL` values are based on the values used in `VLOG()`
+/// and can be any value, but expected reasonable values are: `{0..10}`
+/// for print none and print all respectively.
+constexpr int DEFUALT_MAX_VERBOSE_LOGGING_LEVEL = 1;
 
-/**
- *  DEFAULT_MAX_FL_LOGGING_LEVEL is used for globally limit FL_LOG(level).
- */
-constexpr LogLevel DEFAULT_MAX_FL_LOGGING_LEVEL = LogLevel::WARNING;
-/**
- * MAX_VERBOSE_FL_LOGGING_LEVEL values are based on the values used in
- * FL_VLOG() and can be any value, but expected reasonable values are: 0..10
- * for print none and print all respectively.
- */
-constexpr int DEFAULT_MAX_VERBOSE_FL_LOGGING_LEVEL = 0;
+#define LOG(level) Logging(level, __FILE__, __LINE__)
+#define VLOG(level) VerboseLogging(level, __FILE__, __LINE__)
 
-#define FL_LOG(level) fl::Logging(level, __FILE__, __LINE__)
-#define FL_VLOG(level) fl::VerboseLogging(level, __FILE__, __LINE__)
-
-// Optimization macros that allow to run code only we are going to log it.
-#define IF_LOG(level) if (fl::Logging::ifLog(level))
-#define IF_VLOG(level) if (fl::VerboseLogging::ifLog(level))
-
-#define FL_LOG_IF(level, exp) \
-  if (exp)                    \
-  fl::Logging(level, __FILE__, __LINE__)
-#define FL_VLOG_IF(level, exp) \
-  if (exp)                     \
-  fl::VerboseLogging(level, __FILE__, __LINE__)
+#define IFLOG(level) if (Logging::ifLog(level))
+#define IFVLOG(level) if (VerboseLogging::ifLog(level))
 
 /** @} */
 
@@ -148,7 +105,7 @@ class Logging {
     return std::move(*this);
   }
 
-  // Overrides DEFAULT_MAX_FL_LOGGING_LEVEL value.
+  // Overrides DEFUALT_MAX_LOGGING_LEVEL value.
   static void setMaxLoggingLevel(LogLevel maxLoggingLevel);
 
   static bool ifLog(LogLevel level) {
@@ -176,7 +133,7 @@ class VerboseLogging {
     return std::move(*this);
   }
 
-  // Overrides DEFAULT_MAX_VERBOSE_FL_LOGGING_LEVEL value.
+  // Overrides DEFUALT_MAX_VERBOSE_LOGGING_LEVEL value.
   static void setMaxLoggingLevel(int maxLoggingLevel);
 
   static bool ifLog(int level) {
@@ -207,12 +164,6 @@ Logging&& operator<<(Logging&& log, float f);
 Logging&& operator<<(Logging&& log, double d);
 Logging&& operator<<(Logging&& log, bool b);
 
-// Catch all designed mostly for <iomanip> stuff.
-template <typename T>
-Logging&& operator<<(Logging&& log, const T& t) {
-  log.print(t);
-}
-
 VerboseLogging&& operator<<(VerboseLogging&& log, const std::string& s);
 VerboseLogging&& operator<<(VerboseLogging&& log, const char* s);
 VerboseLogging&& operator<<(VerboseLogging&& log, const void* s);
@@ -225,11 +176,5 @@ VerboseLogging&& operator<<(VerboseLogging&& log, unsigned long u);
 VerboseLogging&& operator<<(VerboseLogging&& log, float f);
 VerboseLogging&& operator<<(VerboseLogging&& log, double d);
 VerboseLogging&& operator<<(VerboseLogging&& log, bool b);
-
-// Catch all designed mostly for <iomanip> stuff.
-template <typename T>
-VerboseLogging&& operator<<(VerboseLogging&& log, const T& t) {
-  log.print(t);
-}
 
 } // namespace fl

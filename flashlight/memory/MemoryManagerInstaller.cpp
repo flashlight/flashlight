@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <stdexcept>
 
+#include "flashlight/flashlight/common/Logging.h"
 #include "flashlight/flashlight/common/Utils.h"
 #include "flashlight/flashlight/memory/managers/CachingMemoryManager.h"
 
