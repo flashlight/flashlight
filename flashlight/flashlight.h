@@ -8,7 +8,6 @@
 #pragma once
 
 #include "flashlight/flashlight/autograd/autograd.h"
-#include "flashlight/flashlight/common/Logging.h"
 #include "flashlight/flashlight/common/common.h"
 #include "flashlight/flashlight/dataset/datasets.h"
 #include "flashlight/flashlight/distributed/distributed.h"

@@ -13,6 +13,7 @@
 #include <vector>
 
 #include <gflags/gflags.h>
+#include <glog/logging.h>
 #include "flashlight/flashlight/flashlight.h"
 
 #include "flashlight/app/asr/common/Defines.h"
@@ -20,6 +21,7 @@
 #include "flashlight/app/asr/decoder/Defines.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
+
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
@@ -31,7 +33,8 @@ using namespace fl::lib::text;
 using namespace fl::app::asr;
 
 int main(int argc, char** argv) {
-  fl::initFlLogging(argv);
+  google::InitGoogleLogging(argv[0]);
+  google::InstallFailureSignalHandler();
   std::string exec(argv[0]);
   std::vector<std::string> argvs;
   for (int i = 0; i < argc; i++) {
@@ -39,15 +42,15 @@ int main(int argc, char** argv) {
   }
   gflags::SetUsageMessage("Usage: Please refer to https://git.io/JvJuR");
   if (argc <= 1) {
-    FL_LOG(fl::FATAL) << gflags::ProgramUsage();
+    LOG(FATAL) << gflags::ProgramUsage();
   }
 
   /* ===================== Parse Options ===================== */
-  FL_LOG(fl::INFO) << "Parsing command line flags";
+  LOG(INFO) << "Parsing command line flags";
   gflags::ParseCommandLineFlags(&argc, &argv, false);
   auto flagsfile = FLAGS_flagsfile;
   if (!flagsfile.empty()) {
-    FL_LOG(fl::INFO) << "Reading flags from file " << flagsfile;
+    LOG(INFO) << "Reading flags from file " << flagsfile;
     gflags::ReadFromFlagsFile(flagsfile, argv[0], true);
   }
 
@@ -55,21 +58,21 @@ int main(int argc, char** argv) {
   std::shared_ptr<fl::Module> network;
   std::shared_ptr<SequenceCriterion> criterion;
   std::unordered_map<std::string, std::string> cfg;
-  FL_LOG(fl::INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
+  LOG(INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
   af::setDevice(0);
   Serializer::load(FLAGS_am, cfg, network, criterion);
   network->eval();
   criterion->eval();
 
-  FL_LOG(fl::INFO) << "[Network] " << network->prettyString();
-  FL_LOG(fl::INFO) << "[Criterion] " << criterion->prettyString();
-  FL_LOG(fl::INFO) << "[Network] Number of params: " << numTotalParams(network);
+  LOG(INFO) << "[Network] " << network->prettyString();
+  LOG(INFO) << "[Criterion] " << criterion->prettyString();
+  LOG(INFO) << "[Network] Number of params: " << numTotalParams(network);
 
   auto flags = cfg.find(kGflags);
   if (flags == cfg.end()) {
-    FL_LOG(fl::FATAL) << "[Network] Invalid config loaded from " << FLAGS_am;
+    LOG(FATAL) << "[Network] Invalid config loaded from " << FLAGS_am;
   }
-  FL_LOG(fl::INFO) << "[Network] Updating flags from config file: " << FLAGS_am;
+  LOG(INFO) << "[Network] Updating flags from config file: " << FLAGS_am;
   gflags::ReadFlagsFromString(flags->second, gflags::GetArgv0(), true);
 
   // override with user-specified flags
@@ -82,7 +85,7 @@ int main(int argc, char** argv) {
   // flags are present and corresponding new flags aren't
   handleDeprecatedFlags();
 
-  FL_LOG(fl::INFO) << "Gflags after parsing \n" << serializeGflags("; ");
+  LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */
   auto dictPath = pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
@@ -103,14 +106,14 @@ int main(int argc, char** argv) {
   }
 
   int numClasses = tokenDict.indexSize();
-  FL_LOG(fl::INFO) << "Number of classes (network): " << numClasses;
+  LOG(INFO) << "Number of classes (network): " << numClasses;
 
   Dictionary wordDict;
   LexiconMap lexicon;
   if (!FLAGS_lexicon.empty()) {
     lexicon = loadWords(FLAGS_lexicon, FLAGS_maxword);
     wordDict = createWordDict(lexicon);
-    FL_LOG(fl::INFO) << "Number of words: " << wordDict.indexSize();
+    LOG(INFO) << "Number of words: " << wordDict.indexSize();
   }
 
   DictionaryMap dicts = {{kTargetIdx, tokenDict}, {kWordIdx, wordDict}};
@@ -130,7 +133,7 @@ int main(int argc, char** argv) {
   if (FLAGS_maxload > 0) {
     nSamples = std::min(nSamples, FLAGS_maxload);
   }
-  FL_LOG(fl::INFO) << "[Dataset] Dataset loaded.";
+  LOG(INFO) << "[Dataset] Dataset loaded.";
 
   /* ===================== Test ===================== */
   std::vector<double> sliceWer(FLAGS_nthread_decoder_am_forward);
@@ -155,10 +158,10 @@ int main(int argc, char** argv) {
     hypStream.open(hypPath);
     refStream.open(refPath);
     if (!hypStream.is_open() || !hypStream.good()) {
-      FL_LOG(fl::FATAL) << "Error opening hypothesis file: " << hypPath;
+      LOG(FATAL) << "Error opening hypothesis file: " << hypPath;
     }
     if (!refStream.is_open() || !refStream.good()) {
-      FL_LOG(fl::FATAL) << "Error opening reference file: " << refPath;
+      LOG(FATAL) << "Error opening reference file: " << refPath;
     }
   }
 
@@ -176,115 +179,114 @@ int main(int argc, char** argv) {
   std::mutex dataReadMutex;
   int datasetSampleId = 0; // A gloabal index for data reading
 
-  auto run =
-      [&dataReadMutex,
-       &datasetSampleId,
-       &network,
-       &criterion,
-       &nSamples,
-       &ds,
-       &tokenDict,
-       &wordDict,
-       &writeHyp,
-       &writeRef,
-       &emissionDir,
-       &sliceWer,
-       &sliceLer,
-       &sliceNumWords,
-       &sliceNumTokens,
-       &sliceNumSamples,
-       &sliceTime](int tid) {
-        // Initialize AM
-        af::setDevice(tid);
-        std::shared_ptr<fl::Module> localNetwork = network;
-        std::shared_ptr<SequenceCriterion> localCriterion = criterion;
-        if (tid != 0) {
-          std::unordered_map<std::string, std::string> dummyCfg;
-          Serializer::load(FLAGS_am, dummyCfg, localNetwork, localCriterion);
-          localNetwork->eval();
-          localCriterion->eval();
-        }
+  auto run = [&dataReadMutex,
+              &datasetSampleId,
+              &network,
+              &criterion,
+              &nSamples,
+              &ds,
+              &tokenDict,
+              &wordDict,
+              &writeHyp,
+              &writeRef,
+              &emissionDir,
+              &sliceWer,
+              &sliceLer,
+              &sliceNumWords,
+              &sliceNumTokens,
+              &sliceNumSamples,
+              &sliceTime](int tid) {
+    // Initialize AM
+    af::setDevice(tid);
+    std::shared_ptr<fl::Module> localNetwork = network;
+    std::shared_ptr<SequenceCriterion> localCriterion = criterion;
+    if (tid != 0) {
+      std::unordered_map<std::string, std::string> dummyCfg;
+      Serializer::load(FLAGS_am, dummyCfg, localNetwork, localCriterion);
+      localNetwork->eval();
+      localCriterion->eval();
+    }
 
-        TestMeters meters;
-        meters.timer.resume();
-        while (datasetSampleId < nSamples) {
-          std::vector<af::array> sample;
-          {
-            std::lock_guard<std::mutex> lock(dataReadMutex);
-            sample = ds->get(datasetSampleId);
-            datasetSampleId++;
-          }
-          auto rawEmission =
-              localNetwork->forward({fl::input(sample[kInputIdx])}).front();
-          auto emission = afToVector<float>(rawEmission);
-          auto tokenTarget = afToVector<int>(sample[kTargetIdx]);
-          auto wordTarget = afToVector<int>(sample[kWordIdx]);
-          auto sampleId = readSampleIds(sample[kSampleIdx]).front();
+    TestMeters meters;
+    meters.timer.resume();
+    while (datasetSampleId < nSamples) {
+      std::vector<af::array> sample;
+      {
+        std::lock_guard<std::mutex> lock(dataReadMutex);
+        sample = ds->get(datasetSampleId);
+        datasetSampleId++;
+      }
+      auto rawEmission =
+          localNetwork->forward({fl::input(sample[kInputIdx])}).front();
+      auto emission = afToVector<float>(rawEmission);
+      auto tokenTarget = afToVector<int>(sample[kTargetIdx]);
+      auto wordTarget = afToVector<int>(sample[kWordIdx]);
+      auto sampleId = readSampleIds(sample[kSampleIdx]).front();
 
-          auto letterTarget = tknTarget2Ltr(tokenTarget, tokenDict);
-          std::vector<std::string> wordTargetStr;
-          if (FLAGS_uselexicon) {
-            wordTargetStr = wrdIdx2Wrd(wordTarget, wordDict);
-          } else {
-            wordTargetStr = tkn2Wrd(letterTarget);
-          }
+      auto letterTarget = tknTarget2Ltr(tokenTarget, tokenDict);
+      std::vector<std::string> wordTargetStr;
+      if (FLAGS_uselexicon) {
+        wordTargetStr = wrdIdx2Wrd(wordTarget, wordDict);
+      } else {
+        wordTargetStr = tkn2Wrd(letterTarget);
+      }
 
-          // Tokens
-          auto tokenPrediction =
-              afToVector<int>(localCriterion->viterbiPath(rawEmission.array()));
-          auto letterPrediction = tknPrediction2Ltr(tokenPrediction, tokenDict);
+      // Tokens
+      auto tokenPrediction =
+          afToVector<int>(localCriterion->viterbiPath(rawEmission.array()));
+      auto letterPrediction = tknPrediction2Ltr(tokenPrediction, tokenDict);
 
-          meters.lerSlice.add(letterPrediction, letterTarget);
+      meters.lerSlice.add(letterPrediction, letterTarget);
 
-          // Words
-          std::vector<std::string> wrdPredictionStr = tkn2Wrd(letterPrediction);
-          meters.werSlice.add(wrdPredictionStr, wordTargetStr);
+      // Words
+      std::vector<std::string> wrdPredictionStr = tkn2Wrd(letterPrediction);
+      meters.werSlice.add(wrdPredictionStr, wordTargetStr);
 
-          if (!FLAGS_sclite.empty()) {
-            writeRef(join(" ", wordTargetStr) + " (" + sampleId + ")\n");
-            writeHyp(join(" ", wrdPredictionStr) + " (" + sampleId + ")\n");
-          }
+      if (!FLAGS_sclite.empty()) {
+        writeRef(join(" ", wordTargetStr) + " (" + sampleId + ")\n");
+        writeHyp(join(" ", wrdPredictionStr) + " (" + sampleId + ")\n");
+      }
 
-          if (FLAGS_show) {
-            meters.ler.reset();
-            meters.wer.reset();
-            meters.ler.add(letterPrediction, letterTarget);
-            meters.wer.add(wrdPredictionStr, wordTargetStr);
+      if (FLAGS_show) {
+        meters.ler.reset();
+        meters.wer.reset();
+        meters.ler.add(letterPrediction, letterTarget);
+        meters.wer.add(wrdPredictionStr, wordTargetStr);
 
-            std::cout << "|T|: " << join(" ", letterTarget) << std::endl;
-            std::cout << "|P|: " << join(" ", letterPrediction) << std::endl;
-            std::cout << "[sample: " << sampleId
-                      << ", WER: " << meters.wer.value()[0]
-                      << "\%, LER: " << meters.ler.value()[0]
-                      << "\%, total WER: " << meters.werSlice.value()[0]
-                      << "\%, total LER: " << meters.lerSlice.value()[0]
-                      << "\%, progress (thread " << tid << "): "
-                      << static_cast<float>(datasetSampleId) / nSamples * 100
-                      << "\%]" << std::endl;
-          }
+        std::cout << "|T|: " << join(" ", letterTarget) << std::endl;
+        std::cout << "|P|: " << join(" ", letterPrediction) << std::endl;
+        std::cout << "[sample: " << sampleId
+                  << ", WER: " << meters.wer.value()[0]
+                  << "\%, LER: " << meters.ler.value()[0]
+                  << "\%, total WER: " << meters.werSlice.value()[0]
+                  << "\%, total LER: " << meters.lerSlice.value()[0]
+                  << "\%, progress (thread " << tid << "): "
+                  << static_cast<float>(datasetSampleId) / nSamples * 100
+                  << "\%]" << std::endl;
+      }
 
-          /* Save emission and targets */
-          int nTokens = rawEmission.dims(0);
-          int nFrames = rawEmission.dims(1);
-          EmissionUnit emissionUnit(emission, sampleId, nFrames, nTokens);
+      /* Save emission and targets */
+      int nTokens = rawEmission.dims(0);
+      int nFrames = rawEmission.dims(1);
+      EmissionUnit emissionUnit(emission, sampleId, nFrames, nTokens);
 
-          // Update counters
-          sliceNumWords[tid] += wordTarget.size();
-          sliceNumTokens[tid] += letterTarget.size();
-          sliceNumSamples[tid]++;
+      // Update counters
+      sliceNumWords[tid] += wordTarget.size();
+      sliceNumTokens[tid] += letterTarget.size();
+      sliceNumSamples[tid]++;
 
-          if (!emissionDir.empty()) {
-            std::string savePath = pathsConcat(emissionDir, sampleId + ".bin");
-            Serializer::save(savePath, emissionUnit);
-          }
-        }
+      if (!emissionDir.empty()) {
+        std::string savePath = pathsConcat(emissionDir, sampleId + ".bin");
+        Serializer::save(savePath, emissionUnit);
+      }
+    }
 
-        meters.timer.stop();
+    meters.timer.stop();
 
-        sliceWer[tid] = meters.werSlice.value()[0];
-        sliceLer[tid] = meters.lerSlice.value()[0];
-        sliceTime[tid] = meters.timer.value();
-      };
+    sliceWer[tid] = meters.werSlice.value()[0];
+    sliceLer[tid] = meters.lerSlice.value()[0];
+    sliceTime[tid] = meters.timer.value();
+  };
 
   /* Spread threades */
   auto startThreadsAndJoin = [&run](int nThreads) {
@@ -296,7 +298,7 @@ int main(int argc, char** argv) {
         threadPool.enqueue(run, i);
       }
     } else {
-      FL_LOG(fl::FATAL) << "Invalid negative FLAGS_nthread_decoder_am_forward";
+      LOG(FATAL) << "Invalid negative FLAGS_nthread_decoder_am_forward";
     }
   };
   auto timer = fl::TimeMeter();
@@ -317,13 +319,12 @@ int main(int argc, char** argv) {
     totalTime += sliceTime[i];
   }
 
-  FL_LOG(fl::INFO) << "------";
-  FL_LOG(fl::INFO) << "[Test " << FLAGS_test << " (" << totalSamples
-                   << " samples) in " << timer.value()
-                   << "s (actual decoding time " << std::setprecision(3)
-                   << totalTime / totalSamples
-                   << "s/sample) -- WER: " << std::setprecision(6) << totalWer
-                   << ", LER: " << totalLer << "]";
+  LOG(INFO) << "------";
+  LOG(INFO) << "[Test " << FLAGS_test << " (" << totalSamples << " samples) in "
+            << timer.value() << "s (actual decoding time "
+            << std::setprecision(3) << totalTime / totalSamples
+            << "s/sample) -- WER: " << std::setprecision(6) << totalWer
+            << ", LER: " << totalLer << "]" << std::endl;
 
   return 0;
 }

@@ -14,6 +14,7 @@
 
 #include <flashlight/flashlight.h>
 #include <gflags/gflags.h>
+#include <glog/logging.h>
 
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/criterion/criterion.h"
@@ -35,7 +36,7 @@ using namespace fl::lib;
 namespace {
 std::shared_ptr<streaming::ModuleParameter> variableToModuleParam(
     const fl::Variable& var) {
-  FL_LOG_IF(fl::FATAL, var.type() != af::dtype::f32) << "Invalid variable type";
+  LOG_IF(FATAL, var.type() != af::dtype::f32) << "Invalid variable type";
   std::vector<float> hostVec(var.elements());
   var.host(hostVec.data());
   return std::make_shared<streaming::ModuleParameter>(
@@ -45,7 +46,7 @@ std::shared_ptr<streaming::ModuleParameter> variableToModuleParam(
 std::shared_ptr<streaming::LayerNorm>
 convertLayerNorm(int featSz, const fl::Variable& wt, const fl::Variable& bs) {
   if (wt.elements() != 1 || bs.elements() != 1) {
-    FL_LOG(fl::FATAL) << "Invalid params for layernorm.";
+    LOG(FATAL) << "Invalid params for layernorm.";
   }
   return std::make_shared<streaming::LayerNorm>(
       featSz, wt.scalar<float>(), bs.scalar<float>());
@@ -62,10 +63,9 @@ std::shared_ptr<streaming::Conv1d> convertConv1d(
     const fl::Variable& bs) {
   if (wt.elements() != (cIn * cOut * kw) / (groups * groups) ||
       bs.elements() != cOut / groups) {
-    FL_LOG(fl::INFO) << "Invalid params for conv1d. wt.elements():"
-                     << wt.elements() << " cIn:" << cIn << " cOut:" << cOut
-                     << " kw:" << kw << " groups:" << groups
-                     << "  bs.elements():" << bs.elements();
+    LOG(INFO) << "Invalid params for conv1d. wt.elements():" << wt.elements()
+              << " cIn:" << cIn << " cOut:" << cOut << " kw:" << kw
+              << " groups:" << groups << "  bs.elements():" << bs.elements();
   }
   if (padding.first == -1 && padding.second == -1) {
     auto totalPad = kw - dw;
@@ -93,7 +93,7 @@ std::shared_ptr<streaming::Linear> convertLinear(
     const fl::Variable& wt,
     const fl::Variable& bs) {
   if (wt.elements() != (nIn * nOut) || bs.elements() != nOut) {
-    FL_LOG(fl::FATAL) << "Invalid params for linear.";
+    LOG(FATAL) << "Invalid params for linear.";
   }
   return streaming::createLinear(
       nIn, nOut, variableToModuleParam(wt), variableToModuleParam(bs));
@@ -137,31 +137,31 @@ std::shared_ptr<streaming::TDSBlock> convertTDS(
 } // namespace
 
 int main(int argc, char** argv) {
-  fl::initFlLogging(argv);
+  google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
 
   /* ===================== Parse Options ===================== */
-  FL_LOG(fl::INFO) << "Parsing command line flags";
+  LOG(INFO) << "Parsing command line flags";
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
   /* ===================== Create Network ===================== */
   std::shared_ptr<fl::Module> network;
   std::shared_ptr<SequenceCriterion> criterion;
   std::unordered_map<std::string, std::string> cfg;
-  FL_LOG(fl::INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
+  LOG(INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
   Serializer::load(FLAGS_am, cfg, network, criterion);
   network->eval();
   criterion->eval();
 
-  FL_LOG(fl::INFO) << "[Network] " << network->prettyString();
-  FL_LOG(fl::INFO) << "[Criterion] " << criterion->prettyString();
-  FL_LOG(fl::INFO) << "[Network] Number of params: " << numTotalParams(network);
+  LOG(INFO) << "[Network] " << network->prettyString();
+  LOG(INFO) << "[Criterion] " << criterion->prettyString();
+  LOG(INFO) << "[Network] Number of params: " << numTotalParams(network);
 
   auto flags = cfg.find(kGflags);
   if (flags == cfg.end()) {
-    FL_LOG(fl::FATAL) << "[Network] Invalid config loaded from " << FLAGS_am;
+    LOG(FATAL) << "[Network] Invalid config loaded from " << FLAGS_am;
   }
-  FL_LOG(fl::INFO) << "[Network] Updating flags from config file: " << FLAGS_am;
+  LOG(INFO) << "[Network] Updating flags from config file: " << FLAGS_am;
   gflags::ReadFlagsFromString(flags->second, gflags::GetArgv0(), true);
 
   // override with user-specified flags
@@ -170,7 +170,7 @@ int main(int argc, char** argv) {
     gflags::ReadFromFlagsFile(FLAGS_flagsfile, argv[0], true);
   }
 
-  FL_LOG(fl::INFO) << "Gflags after parsing \n" << serializeGflags("; ");
+  LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */
   auto dictPath = pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
@@ -185,16 +185,16 @@ int main(int argc, char** argv) {
   if (FLAGS_criterion == kCtcCriterion) {
     tokenDict.addEntry(kBlankToken);
   } else if (FLAGS_criterion != kAsgCriterion) {
-    FL_LOG(fl::FATAL) << "This script currently support only CTC/ASG criterion";
+    LOG(FATAL) << "This script currently support only CTC/ASG criterion";
   }
   int numTokens = tokenDict.indexSize();
-  FL_LOG(fl::INFO) << "Number of classes (network): " << numTokens;
+  LOG(INFO) << "Number of classes (network): " << numTokens;
 
   int nFeat = 0;
   if (FLAGS_mfsc) {
     nFeat = FLAGS_filterbanks;
   } else {
-    FL_LOG(fl::FATAL) << "This script currently support only mfsc features";
+    LOG(FATAL) << "This script currently support only mfsc features";
   }
 
   auto lines = getFileContent(pathsConcat(FLAGS_archdir, FLAGS_arch));
@@ -212,7 +212,7 @@ int main(int argc, char** argv) {
     auto layerType = columns[0];
     if (layerType == "C2") {
       if (columns.size() < 8) {
-        FL_LOG(fl::FATAL) << "Invalid arch specified for C2";
+        LOG(FATAL) << "Invalid arch specified for C2";
       }
       auto conv1d = convertConv1d(
           std::stoi(columns[1]) * nFeat,
@@ -230,10 +230,10 @@ int main(int argc, char** argv) {
       curFeatSz = std::stoi(columns[2]) * nFeat;
     } else if (layerType == "PD") {
       if (columns.size() != 4) {
-        FL_LOG(fl::FATAL) << "Padding is supported only along time axis";
+        LOG(FATAL) << "Padding is supported only along time axis";
       }
       if (!startsWith(lines[i + 1], "C2")) {
-        FL_LOG(fl::FATAL) << "Padding layer must be followed by conv layer";
+        LOG(FATAL) << "Padding layer must be followed by conv layer";
       }
       leftPad = std::stoi(columns[2]);
       rightPad = std::stoi(columns[3]);
@@ -242,7 +242,7 @@ int main(int argc, char** argv) {
           std::make_shared<streaming::Relu>(streaming::DataType::FLOAT));
     } else if (layerType == "LN") {
       if (columns[1] != "1" || columns[2] != "2") {
-        FL_LOG(fl::FATAL)
+        LOG(FATAL)
             << "Unsupported LayerNorm axis: must be {1, 2} for streaming";
       }
       auto lyrNorm =
@@ -253,8 +253,7 @@ int main(int argc, char** argv) {
       int outDim = (columns[2] == "NLABEL") ? numTokens : std::stoi(columns[2]);
       int inDim = std::stoi(columns[1]);
       if (params.size() < paramIdx + 2) {
-        FL_LOG(fl::FATAL)
-            << "Error serializing Linear module. Not enough parameters.";
+        LOG(FATAL) << "Error serializing Linear module. Not enough parameters.";
       }
       auto linear =
           convertLinear(inDim, outDim, params[paramIdx], params[paramIdx + 1]);
@@ -286,7 +285,7 @@ int main(int argc, char** argv) {
   {
     std::string amFilePath = pathsConcat(FLAGS_outdir, "acoustic_model.bin");
     std::ofstream amFile(amFilePath, std::ios::binary);
-    FL_LOG(fl::INFO) << "Serializing acoustic model to '" << amFilePath << "'";
+    LOG(INFO) << "Serializing acoustic model to '" << amFilePath << "'";
 
     if (!amFile.is_open()) {
       throw std::runtime_error("failed to open file for reading");
@@ -298,7 +297,7 @@ int main(int argc, char** argv) {
   {
     std::string tokenFilePath = pathsConcat(FLAGS_outdir, "tokens.txt");
     std::ofstream tokenFile(tokenFilePath);
-    FL_LOG(fl::INFO) << "Writing tokens file to '" << tokenFilePath << "'";
+    LOG(INFO) << "Writing tokens file to '" << tokenFilePath << "'";
     for (int i = 0; i < tokenDict.indexSize(); ++i) {
       tokenFile << tokenDict.getEntry(i) << "\n";
     }
@@ -314,8 +313,7 @@ int main(int argc, char** argv) {
     std::string transitionsFilePath =
         pathsConcat(FLAGS_outdir, "transitions.bin");
     std::ofstream transitionsFile(transitionsFilePath);
-    FL_LOG(fl::INFO) << "Writing transitions file to '" << transitionsFilePath
-                     << "'";
+    LOG(INFO) << "Writing transitions file to '" << transitionsFilePath << "'";
     std::vector<float> transitionsVec(criterion->param(0).elements());
     criterion->param(0).host(transitionsVec.data());
     fl::save(transitionsFile, transitionsVec);
@@ -326,11 +324,11 @@ int main(int argc, char** argv) {
     std::string featFilePath =
         pathsConcat(FLAGS_outdir, "feature_extractor.bin");
     std::ofstream featFile(featFilePath, std::ios::binary);
-    FL_LOG(fl::INFO) << "Serializing feature extraction model to '"
-                     << featFilePath << "'";
+    LOG(INFO) << "Serializing feature extraction model to '" << featFilePath
+              << "'";
     auto featureModule = std::make_shared<streaming::Sequential>();
     featureModule->add(std::make_shared<streaming::LogMelFeature>(nFeat));
-    FL_LOG_IF(fl::FATAL, FLAGS_localnrmlleftctx <= 0)
+    LOG_IF(FATAL, FLAGS_localnrmlleftctx <= 0)
         << "Local Norm should be used for online inference";
     featureModule->add(std::make_shared<streaming::LocalNorm>(
         nFeat, FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx));
@@ -342,7 +340,7 @@ int main(int argc, char** argv) {
     ar(featureModule);
   }
 
-  FL_LOG(fl::INFO) << "verifying serialization ...";
+  LOG(INFO) << "verifying serialization ...";
   af::array inputArr = af::randu(16, 80);
   auto outputArr = network->forward({fl::Variable(inputArr, false)})[0].array();
   std::vector<float> outputVec(outputArr.elements());
@@ -360,16 +358,16 @@ int main(int argc, char** argv) {
 
   std::shared_ptr<streaming::IOBuffer> outputBuffer = outputState->buffer(0);
 
-  FL_LOG_IF(fl::FATAL, outputBuffer->size<float>() != outputVec.size())
+  LOG_IF(FATAL, outputBuffer->size<float>() != outputVec.size())
       << "[Serialization Error] Incorrect output sizes";
   float* outPtr = outputBuffer->data<float>();
   for (int i = 0; i < outputBuffer->size<float>(); i++) {
     float streamingOut = outPtr[i];
     float w2lOut = outputVec[i];
-    FL_LOG_IF(ERROR, fabs(streamingOut - w2lOut) > 1e-2)
+    LOG_IF(ERROR, fabs(streamingOut - w2lOut) > 1e-2)
         << "[Serialization Error] Mismatched output w2l:" << w2lOut
         << " vs streaming:" << streamingOut;
   }
-  FL_LOG(fl::INFO) << "Done !";
+  LOG(INFO) << "Done !";
   return 0;
 }

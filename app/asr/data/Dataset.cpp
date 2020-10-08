@@ -11,6 +11,8 @@
 #include <numeric>
 #include <utility>
 
+#include <glog/logging.h>
+
 #include "flashlight/app/asr/common/Defines.h"
 
 using fl::lib::text::DictionaryMap;
@@ -31,7 +33,7 @@ Dataset::Dataset(
       threadpool_(fl::cpp::make_unique<fl::ThreadPool>(FLAGS_nthread)) {
   if (batchSize_ < 1 || worldRank_ < 0 || worldSize_ < 1 ||
       worldRank_ >= worldSize_) {
-    FL_LOG(fl::FATAL) << "Invalid arguments!";
+    LOG(FATAL) << "Invalid arguments!";
   }
 }
 

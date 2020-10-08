@@ -9,6 +9,8 @@
 
 #include <thread>
 
+#include <glog/logging.h>
+
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/lib/common/String.h"

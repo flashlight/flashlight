@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <glog/logging.h>
 #include <functional>
 #include <numeric>
 
@@ -37,7 +38,7 @@ ListFilesDataset::ListFilesDataset(
       skipUnk_(skipUnk) {
   includeWrd_ = (dicts.find(kWordIdx) != dicts.end());
 
-  FL_LOG_IF(fl::FATAL, dicts.find(kTargetIdx) == dicts.end())
+  LOG_IF(FATAL, dicts.find(kTargetIdx) == dicts.end())
       << "Target dictionary does not exist";
 
   auto filesVec = lib::split(',', filenames);
@@ -65,7 +66,7 @@ ListFilesDataset::ListFilesDataset(
       FLAGS_outputbinsize);
 
   shuffle(-1);
-  FL_LOG(fl::INFO) << "Total batches (i.e. iters): " << sampleBatches_.size();
+  LOG(INFO) << "Total batches (i.e. iters): " << sampleBatches_.size();
 }
 
 ListFilesDataset::~ListFilesDataset() {
@@ -108,7 +109,7 @@ std::vector<SpeechSampleMetaInfo> ListFilesDataset::loadListFile(
     const std::string& filename) {
   std::ifstream infile(filename);
 
-  FL_LOG_IF(fl::FATAL, !infile) << "Could not read file '" << filename << "'";
+  LOG_IF(FATAL, !infile) << "Could not read file '" << filename << "'";
 
   // The format of the list: columns should be space-separated
   // [utterance id] [audio file (full path)] [audio length] [word transcripts]
@@ -119,7 +120,7 @@ std::vector<SpeechSampleMetaInfo> ListFilesDataset::loadListFile(
   while (std::getline(infile, line)) {
     auto tokens = splitOnWhitespace(line, true);
 
-    FL_LOG_IF(fl::FATAL, tokens.size() < 3) << "Cannot parse " << line;
+    LOG_IF(FATAL, tokens.size() < 3) << "Cannot parse " << line;
 
     data_.emplace_back(SpeechSample(
         tokens[0],
@@ -144,7 +145,7 @@ std::vector<SpeechSampleMetaInfo> ListFilesDataset::loadListFile(
     throw std::runtime_error("Train files not found from " + filename);
   }
 
-  FL_LOG(fl::INFO) << samplesMetaInfo.size() << " files found. ";
+  LOG(INFO) << samplesMetaInfo.size() << " files found. ";
 
   return samplesMetaInfo;
 }
