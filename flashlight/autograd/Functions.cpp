@@ -51,10 +51,11 @@ af::array sumAs(const af::array& input, const af::dim4& rdims) {
            << " to output dims " << rdims;
         throw std::invalid_argument(ss.str());
       }
-      result = sum(result, i);
+      result = af::sum(result, i);
     }
   }
-  return result;
+
+  return result.as(input.type());
 }
 
 bool areVariableTypesEqual(const Variable& a, const Variable& b) {
@@ -75,7 +76,7 @@ Variable operator+(const Variable& lhs, const Variable& rhs) {
 }
 
 Variable operator+(const Variable& lhs, const double& rhsVal) {
-  auto result = lhs.array() + rhsVal;
+  auto result = (lhs.array() + rhsVal).as(lhs.type());
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
     inputs[0].addGrad(Variable(gradOutput.array(), false));
@@ -99,7 +100,7 @@ Variable operator-(const Variable& lhs, const Variable& rhs) {
 }
 
 Variable operator-(const Variable& lhs, const double& rhsVal) {
-  auto result = lhs.array() - rhsVal;
+  auto result = (lhs.array() - rhsVal).as(lhs.type());
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
     inputs[0].addGrad(Variable(gradOutput.array(), false));
@@ -108,7 +109,7 @@ Variable operator-(const Variable& lhs, const double& rhsVal) {
 }
 
 Variable operator-(const double& lhsVal, const Variable& rhs) {
-  auto result = lhsVal - rhs.array();
+  auto result = (lhsVal - rhs.array()).as(rhs.type());
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
     inputs[0].addGrad(Variable(negate(gradOutput).array(), false));
@@ -136,7 +137,7 @@ Variable operator*(const Variable& lhs, const Variable& rhs) {
 }
 
 Variable operator*(const Variable& lhs, const double& rhsVal) {
-  auto result = lhs.array() * rhsVal;
+  auto result = (lhs.array() * rhsVal).as(lhs.type());
   auto gradFunc =
       [rhsVal](std::vector<Variable>& inputs, const Variable& gradOutput) {
         inputs[0].addGrad(Variable((gradOutput * rhsVal).array(), false));
@@ -168,7 +169,7 @@ Variable operator/(const Variable& lhs, const Variable& rhs) {
 }
 
 Variable operator/(const Variable& lhs, const double& rhsVal) {
-  auto result = lhs.array() / rhsVal;
+  auto result = (lhs.array() / rhsVal).as(lhs.type());
   auto gradFunc =
       [rhsVal](std::vector<Variable>& inputs, const Variable& gradOutput) {
         inputs[0].addGrad(Variable((gradOutput / rhsVal).array(), false));
@@ -177,7 +178,7 @@ Variable operator/(const Variable& lhs, const double& rhsVal) {
 }
 
 Variable operator/(const double& lhsVal, const Variable& rhs) {
-  auto result = lhsVal / rhs.array();
+  auto result = (lhsVal / rhs.array()).as(rhs.type());
   auto gradFunc =
       [lhsVal](std::vector<Variable>& inputs, const Variable& gradOutput) {
         inputs[0].addGrad(Variable(
@@ -193,12 +194,13 @@ Variable operator>(const Variable& lhs, const Variable& rhs) {
 }
 
 Variable operator>(const Variable& lhs, const double& rhsVal) {
-  auto result = lhs.array() > rhsVal;
+  auto result = (lhs.array() > rhsVal).as(lhs.type());
+  std::cout << "result " << result.type() << std::endl;
   return Variable(result, false);
 }
 
 Variable operator>(const double& lhsVal, const Variable& rhs) {
-  auto result = lhsVal > rhs.array();
+  auto result = (lhsVal > rhs.array()).as(rhs.type());
   return Variable(result, false);
 }
 
@@ -209,12 +211,12 @@ Variable operator<(const Variable& lhs, const Variable& rhs) {
 }
 
 Variable operator<(const Variable& lhs, const double& rhsVal) {
-  auto result = lhs.array() < rhsVal;
+  auto result = (lhs.array() < rhsVal).as(lhs.type());
   return Variable(result, false);
 }
 
 Variable operator<(const double& lhsVal, const Variable& rhs) {
-  auto result = lhsVal < rhs.array();
+  auto result = (lhsVal < rhs.array()).as(rhs.type());
   return Variable(result, false);
 }
 
@@ -225,12 +227,12 @@ Variable operator>=(const Variable& lhs, const Variable& rhs) {
 }
 
 Variable operator>=(const Variable& lhs, const double& rhsVal) {
-  auto result = lhs.array() >= rhsVal;
+  auto result = (lhs.array() >= rhsVal).as(lhs.type());
   return Variable(result, false);
 }
 
 Variable operator>=(const double& lhsVal, const Variable& rhs) {
-  auto result = lhsVal >= rhs.array();
+  auto result = (lhsVal >= rhs.array()).as(rhs.type());
   return Variable(result, false);
 }
 
@@ -241,12 +243,12 @@ Variable operator<=(const Variable& lhs, const Variable& rhs) {
 }
 
 Variable operator<=(const Variable& lhs, const double& rhsVal) {
-  auto result = lhs.array() <= rhsVal;
+  auto result = (lhs.array() <= rhsVal).as(lhs.type());
   return Variable(result, false);
 }
 
 Variable operator<=(const double& lhsVal, const Variable& rhs) {
-  auto result = lhsVal <= rhs.array();
+  auto result = (lhsVal <= rhs.array()).as(rhs.type());
   return Variable(result, false);
 }
 
@@ -257,16 +259,17 @@ Variable operator&&(const Variable& lhs, const Variable& rhs) {
 }
 
 Variable operator!(const Variable& input) {
-  auto result = !input.array();
+  auto result = (!input.array()).as(input.type());
   return Variable(result, false);
 }
 
 Variable max(const Variable& lhs, const Variable& rhs) {
   FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
-  auto result = max(lhs.array(), rhs.array());
+  auto result = af::max(lhs.array(), rhs.array());
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
-    auto mask = Variable(inputs[0].array() > inputs[1].array(), false);
+    auto mask = Variable(
+        (inputs[0].array() > inputs[1].array()).as(gradOutput.type()), false);
     inputs[0].addGrad(Variable((mask * gradOutput).array(), false));
     inputs[1].addGrad(Variable((!mask * gradOutput).array(), false));
   };
@@ -274,10 +277,11 @@ Variable max(const Variable& lhs, const Variable& rhs) {
 }
 
 Variable max(const Variable& lhs, const double& rhsVal) {
-  auto result = max(lhs.array(), rhsVal);
+  auto result = af::max(lhs.array(), rhsVal).as(lhs.type());
   auto gradFunc =
       [rhsVal](std::vector<Variable>& inputs, const Variable& gradOutput) {
-        auto mask = Variable(inputs[0].array() > rhsVal, false);
+        auto mask =
+            Variable((inputs[0].array() > rhsVal).as(gradOutput.type()), false);
         inputs[0].addGrad(Variable((mask * gradOutput).array(), false));
       };
   return Variable(result, {lhs}, gradFunc);
@@ -289,10 +293,11 @@ Variable max(const double& lhsVal, const Variable& rhs) {
 
 Variable min(const Variable& lhs, const Variable& rhs) {
   FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
-  auto result = min(lhs.array(), rhs.array());
+  auto result = af::min(lhs.array(), rhs.array());
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
-    auto mask = Variable(inputs[0].array() < inputs[1].array(), false);
+    auto mask = Variable(
+        (inputs[0].array() < inputs[1].array()).as(gradOutput.type()), false);
     inputs[0].addGrad(Variable((mask * gradOutput).array(), false));
     inputs[1].addGrad(Variable((!mask * gradOutput).array(), false));
   };
@@ -300,10 +305,11 @@ Variable min(const Variable& lhs, const Variable& rhs) {
 }
 
 Variable min(const Variable& lhs, const double& rhsVal) {
-  auto result = min(lhs.array(), rhsVal);
+  auto result = af::min(lhs.array(), rhsVal).as(lhs.type());
   auto gradFunc =
       [rhsVal](std::vector<Variable>& inputs, const Variable& gradOutput) {
-        auto mask = Variable(inputs[0].array() < rhsVal, false);
+        auto mask =
+            Variable((inputs[0].array() < rhsVal).as(gradOutput.type()), false);
         inputs[0].addGrad(Variable((mask * gradOutput).array(), false));
       };
   return Variable(result, {lhs}, gradFunc);
@@ -314,7 +320,7 @@ Variable min(const double& lhsVal, const Variable& rhs) {
 }
 
 Variable negate(const Variable& input) {
-  auto result = 0.0 - input.array();
+  auto result = (0.0 - input.array()).as(input.type());
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
     inputs[0].addGrad(Variable(negate(gradOutput).array(), false));
@@ -334,7 +340,7 @@ Variable reciprocal(const Variable& input) {
 }
 
 Variable exp(const Variable& input) {
-  auto result = exp(input.array());
+  auto result = af::exp(input.array());
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
     inputs[0].addGrad(Variable((gradOutput * exp(inputs[0])).array(), false));
@@ -343,7 +349,7 @@ Variable exp(const Variable& input) {
 }
 
 Variable log(const Variable& input) {
-  auto result = log(input.array());
+  auto result = af::log(input.array());
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
     inputs[0].addGrad(Variable((gradOutput / inputs[0]).array(), false));
@@ -352,7 +358,7 @@ Variable log(const Variable& input) {
 }
 
 Variable log1p(const Variable& input) {
-  auto result = log1p(input.array());
+  auto result = af::log1p(input.array());
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
     inputs[0].addGrad(
@@ -372,7 +378,7 @@ Variable pow(const Variable& input, double p) {
 }
 
 Variable sin(const Variable& input) {
-  auto result = sin(input.array());
+  auto result = af::sin(input.array());
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
     inputs[0].addGrad(Variable((gradOutput * cos(inputs[0])).array(), false));
@@ -381,7 +387,7 @@ Variable sin(const Variable& input) {
 }
 
 Variable cos(const Variable& input) {
-  auto result = cos(input.array());
+  auto result = af::cos(input.array());
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
     inputs[0].addGrad(
@@ -391,7 +397,7 @@ Variable cos(const Variable& input) {
 }
 
 Variable tanh(const Variable& input) {
-  auto result = tanh(input.array());
+  auto result = af::tanh(input.array());
   auto gradFunc =
       [result](std::vector<Variable>& inputs, const Variable& gradOutput) {
         auto grad =
@@ -402,7 +408,7 @@ Variable tanh(const Variable& input) {
 }
 
 Variable clamp(const Variable& input, const double lo, const double hi) {
-  auto result = clamp(input.array(), lo, hi);
+  auto result = af::clamp(input.array(), lo, hi);
   auto gradFunc = [lo, hi, result](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
@@ -424,7 +430,7 @@ Variable sqrt(const Variable& input) {
 }
 
 Variable sigmoid(const Variable& input) {
-  auto result = sigmoid(input.array());
+  auto result = af::sigmoid(input.array());
   auto gradFunc =
       [result](std::vector<Variable>& inputs, const Variable& gradOutput) {
         auto grad = gradOutput.array() * result * (1 - result);
@@ -434,7 +440,7 @@ Variable sigmoid(const Variable& input) {
 }
 
 Variable transpose(const Variable& input) {
-  auto result = transpose(input.array());
+  auto result = af::transpose(input.array());
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
     inputs[0].addGrad(Variable(transpose(gradOutput).array(), false));
@@ -570,29 +576,13 @@ split(const Variable& input, const std::vector<dim_t>& splitSizes, int dim) {
 }
 
 Variable tile(const Variable& input, const af::dim4& dims) {
-  return tile(input, dims, input.type());
-}
-
-Variable
-tile(const Variable& input, const af::dim4& dims, const af::dtype precision) {
-  af::array result;
-  if (input.type() == precision) {
-    result = tile(input.array(), dims);
-  } else {
-    result = tile(input.array().as(precision), dims);
-  }
-
+  af::array result = af::tile(input.array(), dims).as(input.type());
   af::dim4 idims = input.dims();
-  auto gradFunc = [idims, precision](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
-    if (gradOutput.type() == precision) {
-      inputs[0].addGrad(Variable(sumAs(gradOutput, idims).array(), false));
-    } else {
-      inputs[0].addGrad(
-          Variable(sumAs(gradOutput, idims).array().as(precision), false));
-    }
-  };
+  auto gradFunc =
+      [idims](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        inputs[0].addGrad(Variable(
+            sumAs(gradOutput, idims).array().as(inputs[0].type()), false));
+      };
   return Variable(result, {input.withoutData()}, gradFunc);
 }
 
@@ -840,8 +830,8 @@ Variable softmax(const Variable& input, const int dim) {
   af::dim4 tiledims(1, 1, 1, 1);
   tiledims[dim] = input.dims(dim);
 
-  auto expInput = exp(input.array() - tile(maxvals, tiledims));
-  auto result = expInput / tile(sum(expInput, dim), tiledims);
+  auto expInput = af::exp(input.array() - af::tile(maxvals, tiledims));
+  auto result = expInput / af::tile(af::sum(expInput, dim), tiledims);
 
   result.eval();
   auto gradFunc = [dim, tiledims, result](
@@ -859,24 +849,26 @@ Variable logSoftmax(const Variable& input, const int dim) {
   af::dim4 tiledims(1, 1, 1, 1);
   tiledims[dim] = input.dims(dim);
   auto result = input.array() -
-      tile(log(sum(exp(input.array() - tile(maxvals, tiledims)), dim)) +
-               maxvals,
-           tiledims);
+      af::tile(af::log(af::sum(
+                   af::exp(input.array() - af::tile(maxvals, tiledims)), dim)) +
+                   maxvals,
+               tiledims);
 
   result.eval();
   auto gradFunc = [dim, tiledims, result](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
     auto gradLsm = gradOutput.array() -
-        exp(result) * tile(sum(gradOutput.array(), dim), tiledims);
-    inputs[0].addGrad(Variable(gradLsm, false));
+        af::exp(result) * af::tile(af::sum(gradOutput.array(), dim), tiledims);
+    inputs[0].addGrad(Variable(gradLsm.as(inputs[0].type()), false));
   };
-  return Variable(result, {input.withoutData()}, gradFunc);
+  return Variable(result.as(input.type()), {input.withoutData()}, gradFunc);
 }
 
 Variable binaryCrossEntropy(const Variable& inputs, const Variable& targets) {
-  FL_VARIABLE_DTYPES_MATCH_CHECK(inputs, targets);
-  return negate(targets * log(inputs) + (1 - targets) * log(1 - inputs));
+  auto targetsTyped = targets.as(inputs.type());
+  return negate(
+      targetsTyped * log(inputs) + (1 - targetsTyped) * log(1 - inputs));
 }
 
 Variable categoricalCrossEntropy(
@@ -884,7 +876,6 @@ Variable categoricalCrossEntropy(
     const Variable& targets,
     ReduceMode reduction /* =ReduceMode::MEAN */,
     int ignoreIndex /* = -1 */) {
-  FL_VARIABLE_DTYPES_MATCH_CHECK(input, targets);
   // input -- [C, X1, X2, X3]
   // target -- [X1, X2, X3, 1]
   for (int i = 1; i < 4; i++) {
@@ -924,7 +915,7 @@ Variable categoricalCrossEntropy(
   if (reduction == ReduceMode::NONE) {
     result = af::moddims(result, targets.dims()); // [X1 X2 X3]
   } else if (reduction == ReduceMode::MEAN) {
-    denominator = af::sum((!ignoreMask).as(s32), 0);
+    denominator = af::sum((!ignoreMask).as(af::dtype::s32), 0);
     result = af::sum(result, 0) / denominator; // [1]
   } else if (reduction == ReduceMode::SUM) {
     result = af::sum(result, 0); // [1]
@@ -988,7 +979,7 @@ Variable reorder(
 }
 
 Variable linear(const Variable& input, const Variable& weight) {
-  auto dummyBias = Variable(af::array(), false);
+  auto dummyBias = Variable(af::array().as(input.type()), false);
   return linear(input, weight, dummyBias);
 }
 
@@ -1001,7 +992,7 @@ linear(const Variable& input, const Variable& weight, const Variable& bias) {
   to4d[0] = weight.array().dims(0);
 
   auto output =
-      moddims(matmul(weight.array(), moddims(input.array(), to2d)), to4d);
+      moddims(af::matmul(weight.array(), moddims(input.array(), to2d)), to4d);
 
   auto hasBias = bias.elements() > 0;
   if (hasBias) {
@@ -1015,19 +1006,8 @@ linear(const Variable& input, const Variable& weight, const Variable& bias) {
     auto& in = inputs[0];
     auto& wt = inputs[1];
 
-    af::array wtArray;
-    if (in.type() == wt.type()) {
-      wtArray = wt.array();
-    } else {
-      wtArray = wt.array().as(in.type());
-    }
-
-    af::array gradOutputArray;
-    if (in.type() == gradOutput.type()) {
-      gradOutputArray = gradOutput.array();
-    } else {
-      gradOutputArray = gradOutput.array().as(in.type());
-    }
+    af::array wtArray = wt.array();
+    af::array gradOutputArray = gradOutput.array();
 
     auto nframes = in.elements() / in.dims(0);
 
@@ -1090,7 +1070,6 @@ Variable gatedlinearunit(const Variable& input, const int dim) {
 }
 
 Variable embedding(const Variable& input, const Variable& embeddings) {
-  FL_VARIABLE_DTYPES_MATCH_CHECK(input, embeddings);
   if (input.numdims() >= 4) {
     throw std::invalid_argument("embedding input must have 3 or fewer dims");
   }
@@ -1118,7 +1097,7 @@ Variable embedding(const Variable& input, const Variable& embeddings) {
         w.dims(1),
         af::constant(1, ip.elements(), deltas.type()),
         af::range(af::dim4(ip.elements() + 1), 0, s32),
-        ip.as(s32),
+        ip.as(af::dtype::s32),
         AF_STORAGE_CSR);
 
     auto grad = transpose(matmulTN(sp, transpose(deltas)));
@@ -1145,14 +1124,14 @@ Variable padding(
       [inSeq](std::vector<Variable>& inputs, const Variable& gradOutput) {
         inputs[0].addGrad(gradOutput(inSeq[0], inSeq[1], inSeq[2], inSeq[3]));
       };
-
   return Variable(result, {input.withoutData()}, gradFunc);
 }
 
 Variable dropout(const Variable& input, double p) {
   if (p > 0.0) {
-    auto mask = Variable(af::randu(input.dims(), input.type()), false) > p;
-    return (1.0 / (1.0 - p)) * mask * input;
+    auto mask = Variable(
+        (af::randu(input.dims(), input.type()) > p).as(input.type()), false);
+    return 1.0 / (1.0 - p) * mask * input;
   } else {
     return input;
   }
