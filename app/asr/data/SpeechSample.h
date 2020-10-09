@@ -6,12 +6,12 @@
  */
 
 #pragma once
+
 #include <algorithm>
 #include <numeric>
+#include <stdexcept>
 #include <string>
 #include <vector>
-
-#include <glog/logging.h>
 
 namespace fl {
 namespace app {

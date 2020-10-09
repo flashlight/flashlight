@@ -13,8 +13,8 @@
 #include "flashlight/flashlight/common/Utils.h"
 
 namespace fl {
-LogLevel Logging::maxLoggingLevel_ = DEFUALT_MAX_LOGGING_LEVEL;
-int VerboseLogging::maxLoggingLevel_ = DEFUALT_MAX_VERBOSE_LOGGING_LEVEL;
+LogLevel Logging::maxLoggingLevel_ = DEFAULT_MAX_FL_LOGGING_LEVEL;
+int VerboseLogging::maxLoggingLevel_ = DEFAULT_MAX_VERBOSE_FL_LOGGING_LEVEL;
 
 namespace {
 // Constatnts for ANSI terminal colors.
@@ -94,7 +94,12 @@ Logging::~Logging() {
 }
 
 void Logging::setMaxLoggingLevel(LogLevel maxLoggingLevel) {
-  Logging::maxLoggingLevel_ = maxLoggingLevel;
+  if (maxLoggingLevel != Logging::maxLoggingLevel_) {
+    std::cerr << "Logging::setMaxLoggingLevel(maxLoggingLevel="
+              << logLevelName(maxLoggingLevel) << ") Logging::maxLoggingLevel_="
+              << logLevelName(Logging::maxLoggingLevel_) << std::endl;
+    Logging::maxLoggingLevel_ = maxLoggingLevel;
+  }
 }
 
 Logging&& operator<<(Logging&& log, const std::string& s) {
@@ -170,7 +175,12 @@ VerboseLogging::~VerboseLogging() {
 }
 
 void VerboseLogging::setMaxLoggingLevel(int maxLoggingLevel) {
-  VerboseLogging::maxLoggingLevel_ = maxLoggingLevel;
+  if (maxLoggingLevel != VerboseLogging::maxLoggingLevel_) {
+    std::cerr << "VerboseLogging::setMaxLoggingLevel(maxLoggingLevel="
+              << maxLoggingLevel << ") VerboseLogging::maxLoggingLevel_="
+              << VerboseLogging::maxLoggingLevel_ << std::endl;
+    VerboseLogging::maxLoggingLevel_ = maxLoggingLevel;
+  }
 }
 
 VerboseLogging&& operator<<(VerboseLogging&& log, const std::string& s) {
@@ -219,6 +229,39 @@ VerboseLogging&& operator<<(VerboseLogging&& log, double d) {
 
 VerboseLogging&& operator<<(VerboseLogging&& log, bool b) {
   return std::move(log.print(b));
+}
+
+constexpr std::array<LogLevel, 5> flLogLevelValues = {fl::INFO,
+                                                      fl::WARNING,
+                                                      fl::ERROR,
+                                                      fl::FATAL,
+                                                      fl::DISABLED};
+constexpr std::array<const char* const, 5> flLogLevelNames =
+    {"INFO", "WARNING", "ERROR", "FATAL", "DISABLED"};
+
+std::string logLevelName(LogLevel level) {
+  for (int i = 0; i < flLogLevelValues.size(); ++i) {
+    if (level == flLogLevelValues.at(i)) {
+      return flLogLevelNames.at(i);
+    }
+  }
+  std::stringstream ss;
+  ss << "logLevelName(level=" << static_cast<int>(level)
+     << ") invalid level. Level should be in the range [0.."
+     << (flLogLevelNames.size() - 1) << "]";
+  throw std::invalid_argument(ss.str());
+}
+
+LogLevel logLevelValue(const std::string& level) {
+  for (int i = 0; i < flLogLevelValues.size(); ++i) {
+    if (level == std::string(flLogLevelNames.at(i))) {
+      return flLogLevelValues.at(i);
+    }
+  }
+  std::stringstream ss;
+  ss << "logLevelValue(level=" << level
+     << ") invalid level. Level should be INFO, WARNING, ERROR or FATAL";
+  throw std::invalid_argument(ss.str());
 }
 
 } // namespace fl

@@ -32,7 +32,6 @@
 
 #include <flashlight/flashlight.h>
 #include <gflags/gflags.h>
-#include <glog/logging.h>
 
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/criterion/criterion.h"
@@ -62,7 +61,6 @@ using namespace fl::lib;
 using namespace fl::ext;
 
 int main(int argc, char** argv) {
-  google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
   std::string exec(argv[0]);
   std::vector<std::string> argvs;
@@ -71,15 +69,15 @@ int main(int argc, char** argv) {
   }
   gflags::SetUsageMessage("Usage: Please refer to https://git.io/Je9lG");
   if (argc <= 1) {
-    LOG(FATAL) << gflags::ProgramUsage();
+    FL_LOG(fl::FATAL) << gflags::ProgramUsage();
   }
 
   /* ===================== Parse Options ===================== */
-  LOG(INFO) << "Parsing command line flags";
+  FL_LOG(fl::INFO) << "Parsing command line flags";
   gflags::ParseCommandLineFlags(&argc, &argv, false);
   auto flagsfile = FLAGS_flagsfile;
   if (!flagsfile.empty()) {
-    LOG(INFO) << "Reading flags from file " << flagsfile;
+    FL_LOG(fl::INFO) << "Reading flags from file " << flagsfile;
     gflags::ReadFromFlagsFile(flagsfile, argv[0], true);
   }
 
@@ -87,20 +85,20 @@ int main(int argc, char** argv) {
   std::shared_ptr<fl::Module> network;
   std::shared_ptr<SequenceCriterion> criterion;
   std::unordered_map<std::string, std::string> cfg;
-  LOG(INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
+  FL_LOG(fl::INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
   Serializer::load(FLAGS_am, cfg, network, criterion);
   network->eval();
   criterion->eval();
 
-  LOG(INFO) << "[Network] " << network->prettyString();
-  LOG(INFO) << "[Criterion] " << criterion->prettyString();
-  LOG(INFO) << "[Network] Number of params: " << numTotalParams(network);
+  FL_LOG(fl::INFO) << "[Network] " << network->prettyString();
+  FL_LOG(fl::INFO) << "[Criterion] " << criterion->prettyString();
+  FL_LOG(fl::INFO) << "[Network] Number of params: " << numTotalParams(network);
 
   auto flags = cfg.find(kGflags);
   if (flags == cfg.end()) {
-    LOG(FATAL) << "[Network] Invalid config loaded from " << FLAGS_am;
+    FL_LOG(fl::FATAL) << "[Network] Invalid config loaded from " << FLAGS_am;
   }
-  LOG(INFO) << "[Network] Updating flags from config file: " << FLAGS_am;
+  FL_LOG(fl::INFO) << "[Network] Updating flags from config file: " << FLAGS_am;
   gflags::ReadFlagsFromString(flags->second, gflags::GetArgv0(), true);
 
   // override with user-specified flags
@@ -109,7 +107,7 @@ int main(int argc, char** argv) {
     gflags::ReadFromFlagsFile(flagsfile, argv[0], true);
   }
 
-  LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
+  FL_LOG(fl::INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */
   auto dictPath = pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
@@ -126,21 +124,21 @@ int main(int argc, char** argv) {
   if (FLAGS_criterion == kCtcCriterion) {
     tokenDict.addEntry(kBlankToken);
   } else {
-    LOG(FATAL) << "CTC-trained model required for VAD-CTC.";
+    FL_LOG(fl::FATAL) << "CTC-trained model required for VAD-CTC.";
   }
   if (FLAGS_eostoken) {
     tokenDict.addEntry(kEosToken);
   }
 
   int numClasses = tokenDict.indexSize();
-  LOG(INFO) << "Number of classes (network): " << numClasses;
+  FL_LOG(fl::INFO) << "Number of classes (network): " << numClasses;
 
   Dictionary wordDict;
   text::LexiconMap lexicon;
   if (!FLAGS_lexicon.empty()) {
     lexicon = text::loadWords(FLAGS_lexicon, FLAGS_maxword);
     wordDict = text::createWordDict(lexicon);
-    LOG(INFO) << "Number of words: " << wordDict.indexSize();
+    FL_LOG(fl::INFO) << "Number of words: " << wordDict.indexSize();
     wordDict.setDefaultIndex(wordDict.getIndex(text::kUnkToken));
   }
 
@@ -148,7 +146,7 @@ int main(int argc, char** argv) {
 
   /* ===================== Create Dataset ===================== */
   auto ds = createDataset(FLAGS_test, dicts, lexicon, 1, 0, 1);
-  LOG(INFO) << "[Dataset] Dataset loaded.";
+  FL_LOG(fl::INFO) << "[Dataset] Dataset loaded.";
 
   /* ===================== Build LM ===================== */
   std::shared_ptr<text::LM> lm;
@@ -168,7 +166,7 @@ int main(int argc, char** argv) {
   for (auto& sample : *ds) {
     auto rawEmission = network->forward({fl::input(sample[kInputIdx])}).front();
     auto sampleId = readSampleIds(sample[kSampleIdx]).front();
-    LOG(INFO) << "Processing sample ID " << sampleId << std::endl;
+    FL_LOG(fl::INFO) << "Processing sample ID " << sampleId << std::endl;
 
     // Hypothesis
     auto tokenPrediction =
