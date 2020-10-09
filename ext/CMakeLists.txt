@@ -4,7 +4,8 @@ cmake_minimum_required(VERSION 3.5.1)
 
 # common
 include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
- 
+include(${CMAKE_CURRENT_LIST_DIR}/image/CMakeLists.txt)
+
 # --------------------------- Tests ---------------------------
 
 if (FL_BUILD_TESTS)

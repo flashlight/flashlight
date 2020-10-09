@@ -8,6 +8,7 @@ set(
   ${CMAKE_CURRENT_LIST_DIR}/FrameErrorMeter.cpp
   ${CMAKE_CURRENT_LIST_DIR}/MSEMeter.cpp
   ${CMAKE_CURRENT_LIST_DIR}/TimeMeter.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/TopKMeter.cpp
   )
 
 target_sources(
