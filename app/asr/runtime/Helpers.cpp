@@ -7,7 +7,6 @@
 
 #include "flashlight/app/asr/runtime/Helpers.h"
 
-#include <glog/logging.h>
 #include <random>
 
 #include "flashlight/ext/common/DistributedUtils.h"
@@ -137,8 +136,8 @@ std::shared_ptr<Dataset> createDataset(
         FLAGS_datadir,
         FLAGS_use_memcache);
 #else
-    LOG(FATAL) << "EverstoreDataset not supported: "
-               << "build with -DFL_BUILD_FB_DEPENDENCIES";
+    FL_LOG(fl::FATAL) << "EverstoreDataset not supported: "
+                      << "build with -DFL_BUILD_FB_DEPENDENCIES";
 #endif
   } else if (FLAGS_blobdata) {
     ds = std::make_shared<BlobsDataset>(
