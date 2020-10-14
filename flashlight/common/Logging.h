@@ -194,7 +194,7 @@ Logging&& operator<<(Logging&& log, bool b);
 // Catch all designed mostly for <iomanip> stuff.
 template <typename T>
 Logging&& operator<<(Logging&& log, const T& t) {
-  log.print(t);
+  return log.print(t);
 }
 
 VerboseLogging&& operator<<(VerboseLogging&& log, const std::string& s);
@@ -213,7 +213,7 @@ VerboseLogging&& operator<<(VerboseLogging&& log, bool b);
 // Catch all designed mostly for <iomanip> stuff.
 template <typename T>
 VerboseLogging&& operator<<(VerboseLogging&& log, const T& t) {
-  log.print(t);
+  return log.print(t);
 }
 
 } // namespace fl
