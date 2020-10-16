@@ -56,7 +56,7 @@ void addContext(
 } // namespace
 
 Logging::Logging(LogLevel level, const char* fullPath, int lineNumber)
-    : level_(level), outputStreamPtr_(&std::cout) {
+    : level_(level), outputStreamPtr_(&std::cerr) {
   if (level_ <= Logging::maxLoggingLevel_) {
     switch (level_) {
       case LogLevel::INFO:
@@ -169,8 +169,8 @@ VerboseLogging::VerboseLogging(int level, const char* fullPath, int lineNumber)
 VerboseLogging::~VerboseLogging() {
   if (level_ <= VerboseLogging::maxLoggingLevel_) {
     stringStream_ << std::endl;
-    std::cout << stringStream_.str();
-    std::cout.flush();
+    std::cerr << stringStream_.str();
+    std::cerr.flush();
   }
 }
 
@@ -236,8 +236,11 @@ constexpr std::array<LogLevel, 5> flLogLevelValues = {fl::INFO,
                                                       fl::ERROR,
                                                       fl::FATAL,
                                                       fl::DISABLED};
-constexpr std::array<const char* const, 5> flLogLevelNames =
-    {"INFO", "WARNING", "ERROR", "FATAL", "DISABLED"};
+constexpr std::array<const char* const, 5> flLogLevelNames = {"INFO",
+                                                              "WARNING",
+                                                              "ERROR",
+                                                              "FATAL",
+                                                              "DISABLED"};
 
 std::string logLevelName(LogLevel level) {
   for (int i = 0; i < flLogLevelValues.size(); ++i) {
