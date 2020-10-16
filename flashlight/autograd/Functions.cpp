@@ -246,6 +246,18 @@ Variable operator!(const Variable& input) {
   return Variable(result, false);
 }
 
+Variable max(const Variable& input, const int& dim) {
+  auto result = max(input.array(), dim);
+  auto gradFunc = [result, dim](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
+    af::dim4 tiledim(1, 1, 1, 1);
+    tiledim[dim] = inputs[0].dims(dim);
+    auto mask = Variable(inputs[0].array() == tile(result, tiledim), false);
+    inputs[0].addGrad(Variable((mask * tileAs(gradOutput, mask)).array(), false));
+  };
+  return Variable(result, {input}, gradFunc);
+}
+
 Variable max(const Variable& lhs, const Variable& rhs) {
   auto result = max(lhs.array(), rhs.array());
   auto gradFunc = [](std::vector<Variable>& inputs,
@@ -269,6 +281,18 @@ Variable max(const Variable& lhs, const double& rhsVal) {
 
 Variable max(const double& lhsVal, const Variable& rhs) {
   return max(rhs, lhsVal);
+}
+
+Variable min(const Variable& input, const int& dim) {
+  auto result = min(input.array(), dim);
+  auto gradFunc = [result, dim](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
+    af::dim4 tiledim(1, 1, 1, 1);
+    tiledim[dim] = inputs[0].dims(dim);
+    auto mask = Variable(inputs[0].array() == tile(result, tiledim), false);
+    inputs[0].addGrad(Variable((mask * tileAs(gradOutput, mask)).array(), false));
+  };
+  return Variable(result, {input}, gradFunc);
 }
 
 Variable min(const Variable& lhs, const Variable& rhs) {
