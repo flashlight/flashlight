@@ -39,25 +39,25 @@ TEST(Logging, vlogOnOff) {
     FL_VLOG(1) << "vlog-1";
     FL_VLOG(10) << "vlog-10";
 
-    // Prints to stdout
-    EXPECT_THAT(stdoutBuffer.str(), HasSubstr("vlog-0"));
+    // Prints to stderr
+    EXPECT_THAT(stderrBuffer.str(), HasSubstr("vlog-0"));
 
     if (i >= 1) {
-      EXPECT_THAT(stdoutBuffer.str(), HasSubstr("vlog-1"));
+      EXPECT_THAT(stderrBuffer.str(), HasSubstr("vlog-1"));
     } else {
-      EXPECT_THAT(stdoutBuffer.str(), Not(HasSubstr("vlog-1")));
+      EXPECT_THAT(stderrBuffer.str(), Not(HasSubstr("vlog-1")));
     }
 
     if (i >= 10) {
-      EXPECT_THAT(stdoutBuffer.str(), HasSubstr("vlog-10"));
+      EXPECT_THAT(stderrBuffer.str(), HasSubstr("vlog-10"));
     } else {
-      EXPECT_THAT(stdoutBuffer.str(), Not(HasSubstr("vlog-10")));
+      EXPECT_THAT(stderrBuffer.str(), Not(HasSubstr("vlog-10")));
     }
 
-    // Does not print to stderr
-    EXPECT_THAT(stderrBuffer.str(), Not(HasSubstr("vlog-0")));
-    EXPECT_THAT(stderrBuffer.str(), Not(HasSubstr("vlog-1")));
-    EXPECT_THAT(stderrBuffer.str(), Not(HasSubstr("vlog-10")));
+    // Does not print to stdout
+    EXPECT_THAT(stdoutBuffer.str(), Not(HasSubstr("vlog-0")));
+    EXPECT_THAT(stdoutBuffer.str(), Not(HasSubstr("vlog-1")));
+    EXPECT_THAT(stdoutBuffer.str(), Not(HasSubstr("vlog-10")));
   }
 
   std::cout.rdbuf(origStdoutBuffer);
@@ -89,24 +89,22 @@ TEST(Logging, logOnOff) {
     FL_LOG(WARNING) << "log-warning";
     FL_LOG(ERROR) << "log-error";
 
-    // Prints to stdout
+    // Prints to stderr
     if (l >= fl::INFO) {
-      EXPECT_THAT(stdoutBuffer.str(), HasSubstr("log-info"));
+      EXPECT_THAT(stderrBuffer.str(), HasSubstr("log-info"));
     } else {
-      EXPECT_THAT(stdoutBuffer.str(), Not(HasSubstr("log-info")));
+      EXPECT_THAT(stderrBuffer.str(), Not(HasSubstr("log-info")));
     }
 
     if (l >= WARNING) {
-      EXPECT_THAT(stdoutBuffer.str(), HasSubstr("log-warning"));
+      EXPECT_THAT(stderrBuffer.str(), HasSubstr("log-warning"));
     } else {
-      EXPECT_THAT(stdoutBuffer.str(), Not(HasSubstr("log-warning")));
+      EXPECT_THAT(stderrBuffer.str(), Not(HasSubstr("log-warning")));
     }
 
-    EXPECT_THAT(stdoutBuffer.str(), Not(HasSubstr("log-error")));
-
-    // Prints to stderr
-    EXPECT_THAT(stderrBuffer.str(), Not(HasSubstr("log-info")));
-    EXPECT_THAT(stderrBuffer.str(), Not(HasSubstr("log-warning")));
+    // Does not print to stdout
+    EXPECT_THAT(stdoutBuffer.str(), Not(HasSubstr("log-info")));
+    EXPECT_THAT(stdoutBuffer.str(), Not(HasSubstr("log-warning")));
 
     if (l >= ERROR) {
       EXPECT_THAT(stderrBuffer.str(), HasSubstr("log-error"));
@@ -120,21 +118,15 @@ TEST(Logging, logOnOff) {
 }
 
 TEST(LoggingDeathTest, FatalOnOff) {
-  std::stringstream stdoutBuffer;
   std::stringstream stderrBuffer;
-
-  std::streambuf* origStdoutBuffer = std::cout.rdbuf();
   std::streambuf* origStderrBuffer = std::cerr.rdbuf();
-
-  std::cout.rdbuf(stdoutBuffer.rdbuf());
   std::cerr.rdbuf(stderrBuffer.rdbuf());
 
   Logging::setMaxLoggingLevel(DISABLED);
   FL_LOG(fl::FATAL) << "log-fatal";
-  EXPECT_THAT(stdoutBuffer.str(), Not(HasSubstr("log-fatal")));
+  EXPECT_THAT(stderrBuffer.str(), Not(HasSubstr("log-fatal")));
   EXPECT_THAT(stderrBuffer.str(), Not(HasSubstr("log-fatal")));
 
-  std::cout.rdbuf(origStdoutBuffer);
   std::cerr.rdbuf(origStderrBuffer);
 
   Logging::setMaxLoggingLevel(fl::FATAL);
