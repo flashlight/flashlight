@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <exception>
+#include <functional>
 #include <stdexcept>
 #include <thread>
 #include <utility>
@@ -82,13 +84,32 @@ Logging::Logging(LogLevel level, const char* fullPath, int lineNumber)
   }
 }
 
-Logging::~Logging() {
+namespace {
+struct ScopeExitExceptionThrower {
+  ~ScopeExitExceptionThrower() noexcept(false) {
+    if (!err_.empty()) {
+      if (!std::uncaught_exception()) {
+        throw std::runtime_error(err_);
+      }
+    }
+  }
+  std::string err_;
+};
+}; // namespace
+
+Logging::~Logging() noexcept(false) {
+  ScopeExitExceptionThrower exceptionThrower;
   if (level_ <= Logging::maxLoggingLevel_) {
+    const std::string err = stringStream_.str();
     stringStream_ << std::endl;
-    (*outputStreamPtr_) << stringStream_.str();
+    (*outputStreamPtr_) << err;
     outputStreamPtr_->flush();
     if (level_ == LogLevel::FATAL) {
-      exit(-1);
+      // We should never throw an exception from a destructor that is being
+      // called during the "stack unwinding" process of another exception.
+      // To guard from that we throw the exception after all the destructor
+      // work is done using RAII wrapper object.
+      exceptionThrower.err_ = err;
     }
   }
 }

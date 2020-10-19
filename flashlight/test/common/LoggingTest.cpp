@@ -117,20 +117,38 @@ TEST(Logging, logOnOff) {
   std::cerr.rdbuf(origStderrBuffer);
 }
 
-TEST(LoggingDeathTest, FatalOnOff) {
+// Test that LOG(FATAL) throws an exception containing
+// the error message only when setMaxLoggingLevel() allows it.
+TEST(LoggingDeath, FatalOnOff) {
   std::stringstream stderrBuffer;
   std::streambuf* origStderrBuffer = std::cerr.rdbuf();
   std::cerr.rdbuf(stderrBuffer.rdbuf());
+  int exceptionCnt = 0;
+  std::string message;
 
   Logging::setMaxLoggingLevel(DISABLED);
-  FL_LOG(fl::FATAL) << "log-fatal";
+  try {
+    FL_LOG(fl::FATAL) << "log-fatal";
+  } catch (std::exception& ex) {
+    ++exceptionCnt;
+    message = ex.what();
+  }
   EXPECT_THAT(stderrBuffer.str(), Not(HasSubstr("log-fatal")));
-  EXPECT_THAT(stderrBuffer.str(), Not(HasSubstr("log-fatal")));
-
-  std::cerr.rdbuf(origStderrBuffer);
+  EXPECT_THAT(message, Not(HasSubstr("log-fatal")));
+  EXPECT_EQ(exceptionCnt, 0);
 
   Logging::setMaxLoggingLevel(fl::FATAL);
-  EXPECT_DEATH({ FL_LOG(fl::FATAL) << "log-fatal"; }, "");
+  try {
+    FL_LOG(fl::FATAL) << "log-fatal";
+  } catch (std::exception& ex) {
+    ++exceptionCnt;
+    message = ex.what();
+  }
+  EXPECT_THAT(stderrBuffer.str(), HasSubstr("log-fatal"));
+  EXPECT_THAT(message, HasSubstr("log-fatal"));
+  EXPECT_EQ(exceptionCnt, 1);
+
+  std::cerr.rdbuf(origStderrBuffer);
 }
 
 } // namespace

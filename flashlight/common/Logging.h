@@ -121,7 +121,7 @@ constexpr int DEFAULT_MAX_VERBOSE_FL_LOGGING_LEVEL = 0;
 class Logging {
  public:
   Logging(LogLevel level, const char* filename, int lineNumber);
-  ~Logging();
+  ~Logging() noexcept(false);
 
   // Prints t to stdout along with context and sensible font color.
   template <typename T>
