@@ -8,6 +8,7 @@ set(
   ${CMAKE_CURRENT_LIST_DIR}/Defines.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Logging.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Histogram.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/Plugin.cpp
 )
 
 if(FLASHLIGHT_USE_CUDA)

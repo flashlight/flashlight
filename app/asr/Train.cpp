@@ -26,6 +26,7 @@
 #include "flashlight/app/asr/runtime/runtime.h"
 
 #include "flashlight/ext/common/DistributedUtils.h"
+#include "flashlight/ext/common/ModulePlugin.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
@@ -303,7 +304,11 @@ int main(int argc, char** argv) {
     FL_LOG_MASTER(fl::INFO) << "Loading architecture file from " << archfile;
     auto numFeatures = getSpeechFeatureSize();
     // Encoder network, works on audio
-    network = buildSequentialModule(archfile, numFeatures, numClasses);
+    if (endsWith(archfile, ".so")) {
+      network = ModulePlugin(archfile).arch(numFeatures, numClasses);
+    } else {
+      network = buildSequentialModule(archfile, numFeatures, numClasses);
+    }
 
     if (FLAGS_criterion == kCtcCriterion) {
       criterion = std::make_shared<CTCLoss>(scalemode);
