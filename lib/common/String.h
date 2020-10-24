@@ -39,6 +39,7 @@ void replaceAll(
     const std::string& repl);
 
 bool startsWith(const std::string& input, const std::string& pattern);
+bool endsWith(const std::string& input, const std::string& pattern);
 
 std::vector<std::string>
 split(char delim, const std::string& input, bool ignoreEmpty = false);

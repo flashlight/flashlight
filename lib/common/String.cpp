@@ -49,6 +49,13 @@ bool startsWith(const std::string& input, const std::string& pattern) {
   return (input.find(pattern) == 0);
 }
 
+bool endsWith(const std::string& input, const std::string& pattern) {
+  if (pattern.size() > input.size()) {
+    return false;
+  }
+  return std::equal(pattern.rbegin(), pattern.rend(), input.rbegin());
+}
+
 template <bool Any, typename Delim>
 static std::vector<std::string> splitImpl(
     const Delim& delim,
