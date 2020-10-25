@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 set(DIR ${FLASHLIGHT_CORE_DIR}/test)
-set(LIBS flashlight)
+set(LIBS flashlight ${CMAKE_DL_LIBS})
 build_test(${DIR}/autograd/AutogradTest.cpp ${LIBS} "")
 build_test(${DIR}/common/DevicePtrTest.cpp ${LIBS} "")
 build_test(${DIR}/common/HistogramTest.cpp ${LIBS} "")
