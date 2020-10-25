@@ -20,9 +20,8 @@
 class CachingMemoryManagerTest : public ::testing::Test {
  protected:
   virtual void SetUp() override {
-    auto deviceInterface_ =
-        std::make_shared<fl::MemoryManagerDeviceInterface>();
-    auto adapter_ = std::make_shared<fl::CachingMemoryManager>(
+    deviceInterface_ = std::make_shared<fl::MemoryManagerDeviceInterface>();
+    adapter_ = std::make_shared<fl::CachingMemoryManager>(
         af::getDeviceCount(), deviceInterface_);
     installer_ = fl::cpp::make_unique<fl::MemoryManagerInstaller>(adapter_);
     installer_->setAsMemoryManager();
@@ -32,6 +31,8 @@ class CachingMemoryManagerTest : public ::testing::Test {
     af_unset_memory_manager();
   }
 
+  std::shared_ptr<fl::MemoryManagerDeviceInterface> deviceInterface_;
+  std::shared_ptr<fl::CachingMemoryManager> adapter_;
   std::unique_ptr<fl::MemoryManagerInstaller> installer_;
 };
 
@@ -135,6 +136,54 @@ TEST_F(CachingMemoryManagerTest, OOM) {
   } catch (...) {
     EXPECT_TRUE(false) << "CachingMemoryManagerTest OOM: unexpected exception";
   }
+}
+
+void testFragmentation(
+    std::shared_ptr<fl::MemoryManagerDeviceInterface> deviceInterface_,
+    std::shared_ptr<fl::CachingMemoryManager> adapter_,
+    bool expectOOM) {
+  af::Backend b = af::getActiveBackend();
+
+  if (b != AF_BACKEND_CUDA) {
+    GTEST_SKIP()
+        << "CachingMemoryManager fragmentation tests require CUDA backend";
+  }
+
+  const auto mms = deviceInterface_->getMaxMemorySize(0);
+  const auto maxNumf32 = mms / sizeof(float); // AF f32 is supposed to be 32b
+  ASSERT_NE(mms, 0);
+  {
+    af::array a1(.5f * maxNumf32);
+    adapter_->printInfo("After creating a1:", 0);
+  } // The a1 buffer will not be freed here, just registered to the cache
+  adapter_->printInfo("After releasing a1:", 0);
+
+  af::array a2(.1f * maxNumf32);
+  adapter_->printInfo("After creating a2:", 0);
+
+  af::array a3;
+  try {
+    a3 = af::array(.5f * maxNumf32);
+  } catch (af::exception& ex) {
+    if (expectOOM) {
+      ASSERT_EQ(ex.err(), AF_ERR_NO_MEM);
+    } else {
+      EXPECT_TRUE(false)
+          << "CachingMemoryManagerTest fragmentaiton not supposed to throw: "
+          << ex.what();
+    }
+  }
+}
+
+TEST_F(CachingMemoryManagerTest, Fragmentation) {
+  testFragmentation(deviceInterface_, adapter_, true); // should OOM
+}
+
+TEST_F(CachingMemoryManagerTest, RecLimit) {
+  constexpr static size_t ONE_GB = 1 << 30;
+  // Fine set the manager in order not to recycle big tensors:
+  adapter_->setRecyclingSizeLimit(2 * ONE_GB);
+  testFragmentation(deviceInterface_, adapter_, false); // should not OOM
 }
 
 int main(int argc, char** argv) {

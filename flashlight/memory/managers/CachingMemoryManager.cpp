@@ -10,7 +10,9 @@
 
 #include <algorithm>
 #include <iostream>
+#include <limits>
 #include <mutex>
+#include <numeric>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -87,6 +89,14 @@ CachingMemoryManager::CachingMemoryManager(
 
 void CachingMemoryManager::initialize() {}
 
+void CachingMemoryManager::setRecyclingSizeLimit(size_t limit) {
+  recyclingSizeLimit_ = limit;
+}
+
+void CachingMemoryManager::setSplitSizeLimit(size_t limit) {
+  splitSizeLimit_ = limit;
+}
+
 void CachingMemoryManager::shutdown() {
   signalMemoryCleanup();
 }
@@ -126,7 +136,9 @@ void* CachingMemoryManager::alloc(
 
   CachingMemoryManager::Block* block = nullptr;
   auto it = pool.lower_bound(&searchKey);
-  if (it != pool.end()) {
+  // Recycle blocks if any found, and if small alloc or the block size is not
+  // too large:
+  if (it != pool.end() && (isSmallAlloc || (*it)->size_ < recyclingSizeLimit_)) {
     block = *it;
     pool.erase(it);
     memoryInfo.stats_.cachedBytes_ -= block->size_;
@@ -144,7 +156,10 @@ void* CachingMemoryManager::alloc(
   // implementation simple.
   CachingMemoryManager::Block* remaining = nullptr;
   size_t diff = block->size_ - size;
-  if (diff >= (isSmallAlloc ? kMinBlockSize : kSmallSize)) {
+  if ((diff >= (isSmallAlloc ? kMinBlockSize : kSmallSize)) &&
+      (block->size_ < splitSizeLimit_) // possibly dont split large buffers to
+                                      // minimize risk of fragmentation
+  ) {
     remaining = block;
     block = new Block(size, block->ptr_);
     block->prev_ = remaining->prev_;
