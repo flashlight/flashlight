@@ -17,7 +17,9 @@ target_include_directories(test_module_plugin
   PUBLIC "$<TARGET_PROPERTY:flashlight,INTERFACE_INCLUDE_DIRECTORIES>")
 set_target_properties(test_module_plugin PROPERTIES
   POSITION_INDEPENDENT_CODE ON
-      PREFIX "")
+  PREFIX "")
+add_dependencies(test_module_plugin flashlight)
+
 build_test(
   ${DIR}/common/ModulePluginTest.cpp
   ${LIBS}
