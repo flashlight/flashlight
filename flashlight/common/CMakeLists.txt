@@ -30,6 +30,7 @@ target_link_libraries(
   flashlight
   PUBLIC
   ${CMAKE_THREAD_LIBS_INIT} # threading library
+  ${CMAKE_DL_LIBS} # for plugin
 )
 
 if (FLASHLIGHT_USE_CUDA)
