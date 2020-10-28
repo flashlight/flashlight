@@ -49,8 +49,8 @@ Variable LayerNorm::forward(const Variable& input) {
     for (int ax : axisComplement_) {
       tiledims[ax] = input.dims(ax);
     }
-    weight = tile(params_[0], tiledims, input.type());
-    bias = tile(params_[1], tiledims, input.type());
+    weight = tile(params_[0], tiledims);
+    bias = tile(params_[1], tiledims);
   } else if (affine_) {
     weight = params_[0];
     bias = params_[1];
@@ -82,10 +82,12 @@ Variable LayerNorm::forward(const Variable& input) {
     inputToBn = reorder(
         input, reorderDims[0], reorderDims[1], reorderDims[2], reorderDims[3]);
   }
+  auto paramsType =
+      (input.type() == af::dtype::f16) ? af::dtype::f32 : input.type();
   auto output = batchnorm(
       inputToBn,
-      Variable(),
-      Variable(),
+      Variable(af::array().as(paramsType), false),
+      Variable(af::array().as(paramsType), false),
       dummyInMean,
       dummyInVar,
       inNormAxes,
@@ -108,7 +110,8 @@ Variable LayerNorm::forward(const Variable& input) {
   }
 
   if (affine_) {
-    Variable weight = params_[0], bias = params_[1];
+    Variable weight = params_[0].as(input.type());
+    Variable bias = params_[1].as(input.type());
     if (axisSize_ != kLnVariableAxisSize) {
       af::dim4 affineDims = input.dims();
       for (int ax : axisComplement_) {

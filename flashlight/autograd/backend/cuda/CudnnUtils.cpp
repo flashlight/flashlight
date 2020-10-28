@@ -347,6 +347,7 @@ cudnnHandle_t getCudnnHandle() {
 
 const void* kOne(const af::dtype t) {
   switch (t) {
+    case af::dtype::f16:
     case af::dtype::f32:
       return &kFloatOne;
     case af::dtype::f64:
@@ -358,6 +359,7 @@ const void* kOne(const af::dtype t) {
 
 const void* kZero(const af::dtype t) {
   switch (t) {
+    case af::dtype::f16:
     case af::dtype::f32:
       return &kFloatZero;
     case af::dtype::f64:
