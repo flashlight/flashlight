@@ -16,9 +16,7 @@ namespace fl {
 View::View(af::dim4 dims) : dims_(dims) {}
 
 Variable View::forward(const Variable& input) {
-  typeTrace("View FWD", input.type());
   af::dim4 dims = dims_;
-
   return moddims(input, dims);
 }
 
