@@ -33,7 +33,7 @@ namespace fl {
 
 /**
  * Returns true if two arrays are of same type and are element-wise equal within
- * given tolerance limit.
+ * a given tolerance limit.
  *
  * @param [a,b] input arrays to compare
  * @param absTolerance absolute tolerance allowed
