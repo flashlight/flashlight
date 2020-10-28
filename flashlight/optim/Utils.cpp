@@ -15,6 +15,12 @@ double clipGradNorm(const std::vector<Variable>& parameters, double max_norm) {
     if (!p.isGradAvailable()) {
       continue;
     }
+    // ArrayFire v3.7.1 does not support computing the norm of an f16 tensor.
+    // This cast can be removed when the support is added.
+    // https://github.com/arrayfire/arrayfire/blob/v3.7.1/src/api/c/norm.cpp#L128
+    if (p.grad().type() == f16) {
+      p.grad().inPlaceCast(f32);
+    }
     const auto& grad = p.grad().array();
     grad_norm += std::pow(af::norm(af::flat(grad)), 2);
   }
