@@ -9,6 +9,8 @@
 
 #include <cstdlib>
 
+#define __forceinline __attribute__((always_inline)) inline
+
 namespace fl {
 
 /**
