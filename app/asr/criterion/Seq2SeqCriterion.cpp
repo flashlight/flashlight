@@ -260,10 +260,12 @@ std::pair<Variable, Variable> Seq2SeqCriterion::vectorizedDecoder(
         throw std::logic_error(
             "vectorizedDecoder does not support model sampling");
       } else if (samplingStrategy_ == fl::app::asr::kRandSampling) {
-        auto mask =
-            Variable(af::randu(y.dims()) * 100 <= pctTeacherForcing_, false);
+        auto mask = Variable(
+            (af::randu(y.dims()) * 100 <= pctTeacherForcing_).as(y.type()),
+            false);
         auto samples =
-            Variable((af::randu(y.dims()) * (nClass_ - 1)).as(s32), false);
+            Variable((af::randu(y.dims()) * (nClass_ - 1)).as(y.type()), false);
+
         y = mask * y + (1 - mask) * samples;
       }
     }

@@ -158,10 +158,12 @@ std::pair<Variable, Variable> TransformerCriterion::vectorizedDecoder(
 
     if (train_) {
       // TODO: other sampling strategies
-      auto mask =
-          Variable(af::randu(y.dims()) * 100 <= pctTeacherForcing_, false);
+      auto mask = Variable(
+          (af::randu(y.dims()) * 100 <= pctTeacherForcing_).as(y.type()),
+          false);
       auto samples =
-          Variable((af::randu(y.dims()) * (nClass_ - 1)).as(s32), false);
+          Variable((af::randu(y.dims()) * (nClass_ - 1)).as(y.type()), false);
+
       y = mask * y + (1 - mask) * samples;
     }
 
