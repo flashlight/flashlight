@@ -230,6 +230,40 @@ TEST(AutogradTest, MultiplyAdd) {
   ASSERT_TRUE(allClose(dy.array(), 2 * y.array() + x.array()));
 }
 
+TEST(AutogradTest, AutogradOperatorTypeCompatibility) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  auto f16 = Variable(af::randu({2, 2}, af::dtype::f16), true);
+  auto f32 = Variable(af::randu({2, 2}), true);
+  // Binary operators
+  EXPECT_THROW({ auto res = f16 + f32; }, std::invalid_argument); // +
+  EXPECT_THROW({ auto res = f16 - f32; }, std::invalid_argument); // -
+  EXPECT_THROW({ auto res = f16 * f32; }, std::invalid_argument); // *
+  EXPECT_THROW({ auto res = f16 / f32; }, std::invalid_argument); // /
+  EXPECT_THROW({ auto res = f16 > f32; }, std::invalid_argument); // >
+  EXPECT_THROW({ auto res = f16 < f32; }, std::invalid_argument); // <
+  EXPECT_THROW({ auto res = f16 >= f32; }, std::invalid_argument); // >=
+  EXPECT_THROW({ auto res = f16 <= f32; }, std::invalid_argument); // <=
+  EXPECT_THROW({ auto res = f16 && f32; }, std::invalid_argument); // &&
+  EXPECT_THROW({ max(f16, f32); }, std::invalid_argument); // max
+  EXPECT_THROW({ min(f16, f32); }, std::invalid_argument); // min
+  EXPECT_THROW({ matmul(f16, f32); }, std::invalid_argument); // matmul
+  EXPECT_THROW({ matmulTN(f16, f32); }, std::invalid_argument); // matmulTN
+  EXPECT_THROW({ matmulNT(f16, f32); }, std::invalid_argument); // matmulNT
+  EXPECT_THROW({ binaryCrossEntropy(f16, f32); }, std::invalid_argument);
+  EXPECT_THROW({ categoricalCrossEntropy(f16, f32); }, std::invalid_argument);
+  EXPECT_THROW({ embedding(f16, f32); }, std::invalid_argument);
+  // Ternary operators
+  auto f16_2 = Variable(af::randu({2, 2}, af::dtype::f16), true);
+  EXPECT_THROW({ linear(f16, f32, f16_2); }, std::invalid_argument); // linear
+  // Variadic operators
+  auto f32_2 = Variable(af::randu({2, 2}), true);
+  std::vector<Variable> concatInputs = {f16, f32, f16_2, f32_2};
+  EXPECT_THROW({ concatenate(concatInputs, 0); }, std::invalid_argument);
+}
+
 TEST(AutogradTest, CastingAs) {
   if (!af::isHalfAvailable(af::getDevice())) {
     GTEST_SKIP() << "Half-precision not supported on this device";

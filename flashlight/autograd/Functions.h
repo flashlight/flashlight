@@ -23,13 +23,38 @@
 #include "flashlight/flashlight/common/Utils.h"
 
 namespace fl {
+
+class Variable;
+
 namespace detail {
+
 af::array tileAs(const af::array& input, const af::dim4& rdims);
 
 af::array sumAs(const af::array& input, const af::dim4& rdims);
+
+bool areVariableTypesEqual(const Variable& a, const Variable& b);
+
+template <typename... Args>
+bool areVariableTypesEqual(
+    const Variable& a,
+    const Variable& b,
+    const Args&... args) {
+  return areVariableTypesEqual(a, b) && areVariableTypesEqual(a, args...) &&
+      areVariableTypesEqual(b, args...);
+}
+
 } // namespace detail
 
-class Variable;
+/**
+ * Checks if two Variables have the same types.
+ */
+#define FL_VARIABLE_DTYPES_MATCH_CHECK(...)              \
+  if (!detail::areVariableTypesEqual(__VA_ARGS__)) {     \
+    throw std::invalid_argument(                         \
+        std::string(__func__) +                          \
+        " doesn't support binary "                       \
+        "operations with Variables of different types"); \
+  }
 
 /**
  * \defgroup autograd_functions Autograd Functions
