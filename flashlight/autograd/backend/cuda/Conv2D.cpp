@@ -16,17 +16,18 @@
 #include "flashlight/flashlight/common/DevicePtr.h"
 
 namespace {
-const fl::u_set<cudnnConvolutionFwdAlgo_t> fwdPreferredAlgos = {
-    CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM,
-    CUDNN_CONVOLUTION_FWD_ALGO_WINOGRAD_NONFUSED};
+const fl::cpp::enum_unordered_set<cudnnConvolutionFwdAlgo_t> fwdPreferredAlgos =
+    {CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM,
+     CUDNN_CONVOLUTION_FWD_ALGO_WINOGRAD_NONFUSED};
 
-const fl::u_set<cudnnConvolutionBwdDataAlgo_t> bwdDataPreferredAlgos = {
-    CUDNN_CONVOLUTION_BWD_DATA_ALGO_1,
-    CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD_NONFUSED};
+const fl::cpp::enum_unordered_set<cudnnConvolutionBwdDataAlgo_t>
+    bwdDataPreferredAlgos = {CUDNN_CONVOLUTION_BWD_DATA_ALGO_1,
+                             CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD_NONFUSED};
 
-const fl::u_set<cudnnConvolutionBwdFilterAlgo_t> bwdFilterPreferredAlgos = {
-    CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1,
-    CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD_NONFUSED};
+const fl::cpp::enum_unordered_set<cudnnConvolutionBwdFilterAlgo_t>
+    bwdFilterPreferredAlgos = {
+        CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1,
+        CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD_NONFUSED};
 
 constexpr size_t kWorkspaceSizeLimitBytes = 512 * 1024 * 1024; // 512 MB
 constexpr cudnnConvolutionFwdAlgo_t kFwdDefaultAlgo =
@@ -42,7 +43,7 @@ constexpr cudnnConvolutionBwdFilterAlgo_t kBwdFilterDefaultAlgo =
 template <typename T, typename ALGO_TYPE>
 T getBestAlgorithm(
     const std::vector<T>& algoPerfs,
-    const fl::u_set<ALGO_TYPE>& preferredAlgos,
+    const fl::cpp::enum_unordered_set<ALGO_TYPE>& preferredAlgos,
     const bool algoMustSupportF16) {
   T reserved;
   bool algoFound = false;

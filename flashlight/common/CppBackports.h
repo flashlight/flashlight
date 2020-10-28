@@ -14,6 +14,8 @@
 #include <cstddef>
 #include <memory>
 #include <type_traits>
+#include <unordered_map>
+#include <unordered_set>
 #include <utility>
 
 #pragma once
@@ -101,6 +103,24 @@ typename _unique_if<T>::_unknown_bound make_unique(std::size_t n) {
 
 template <class T, class... Args>
 typename _unique_if<T>::_known_bound make_unique(Args&&...) = delete;
+
+// ========== enum hashing ==========
+
+// This is a temporary solution for a bug that is fixed in gcc 6.1+. After
+// upgrade to that version+, this can be removed. Read more:
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=60970
+struct EnumHash {
+  template <typename T>
+  std::size_t operator()(T t) const {
+    return static_cast<std::size_t>(t);
+  }
+};
+
+template <typename T>
+using enum_unordered_set = std::unordered_set<T, EnumHash>;
+
+template <typename KeyType, typename ValueType>
+using enum_unordered_map = std::unordered_map<KeyType, ValueType, EnumHash>;
 
 } // namespace cpp
 } // namespace fl
