@@ -24,6 +24,7 @@
 
 namespace fl {
 namespace detail {
+
 af::array tileAs(const af::array& input, const af::dim4& rdims) {
   af::dim4 dims(1, 1, 1, 1);
   af::dim4 idims = input.dims();
@@ -55,9 +56,15 @@ af::array sumAs(const af::array& input, const af::dim4& rdims) {
   }
   return result;
 }
+
+bool areVariableTypesEqual(const Variable& a, const Variable& b) {
+  return a.type() == b.type();
+}
+
 } // namespace detail
 
 Variable operator+(const Variable& lhs, const Variable& rhs) {
+  FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
   auto result = lhs.array() + rhs.array();
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
@@ -81,6 +88,7 @@ Variable operator+(const double& lhsVal, const Variable& rhs) {
 }
 
 Variable operator-(const Variable& lhs, const Variable& rhs) {
+  FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
   auto result = lhs.array() - rhs.array();
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
@@ -109,6 +117,7 @@ Variable operator-(const double& lhsVal, const Variable& rhs) {
 }
 
 Variable operator*(const Variable& lhs, const Variable& rhs) {
+  FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
   auto result = lhs.array() * rhs.array();
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
@@ -140,6 +149,7 @@ Variable operator*(const double& lhsVal, const Variable& rhs) {
 }
 
 Variable operator/(const Variable& lhs, const Variable& rhs) {
+  FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
   auto result = lhs.array() / rhs.array();
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
@@ -177,6 +187,7 @@ Variable operator/(const double& lhsVal, const Variable& rhs) {
 }
 
 Variable operator>(const Variable& lhs, const Variable& rhs) {
+  FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
   auto result = lhs.array() > rhs.array();
   return Variable(result, false);
 }
@@ -192,6 +203,7 @@ Variable operator>(const double& lhsVal, const Variable& rhs) {
 }
 
 Variable operator<(const Variable& lhs, const Variable& rhs) {
+  FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
   auto result = lhs.array() < rhs.array();
   return Variable(result, false);
 }
@@ -207,6 +219,7 @@ Variable operator<(const double& lhsVal, const Variable& rhs) {
 }
 
 Variable operator>=(const Variable& lhs, const Variable& rhs) {
+  FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
   auto result = lhs.array() >= rhs.array();
   return Variable(result, false);
 }
@@ -222,6 +235,7 @@ Variable operator>=(const double& lhsVal, const Variable& rhs) {
 }
 
 Variable operator<=(const Variable& lhs, const Variable& rhs) {
+  FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
   auto result = lhs.array() <= rhs.array();
   return Variable(result, false);
 }
@@ -237,6 +251,7 @@ Variable operator<=(const double& lhsVal, const Variable& rhs) {
 }
 
 Variable operator&&(const Variable& lhs, const Variable& rhs) {
+  FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
   auto result = lhs.array() && rhs.array();
   return Variable(result, false);
 }
@@ -247,6 +262,7 @@ Variable operator!(const Variable& input) {
 }
 
 Variable max(const Variable& lhs, const Variable& rhs) {
+  FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
   auto result = max(lhs.array(), rhs.array());
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
@@ -272,6 +288,7 @@ Variable max(const double& lhsVal, const Variable& rhs) {
 }
 
 Variable min(const Variable& lhs, const Variable& rhs) {
+  FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
   auto result = min(lhs.array(), rhs.array());
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
@@ -464,6 +481,14 @@ Variable concatenate(const std::vector<Variable>& concatInputs, int dim) {
   if (concatInputs.size() == 1) {
     return concatInputs[0];
   }
+  // All variables must be of the same type
+  af::dtype type = concatInputs[0].type();
+  for (auto& var : concatInputs) {
+    if (var.type() != type) {
+      throw std::invalid_argument(
+          "concatenate: all input Variables must be of the same type");
+    }
+  }
   auto dims = concatInputs[0].dims();
   int concatSize = dims[dim];
   for (int i = 1; i < concatInputs.size(); i++) {
@@ -574,14 +599,14 @@ tile(const Variable& input, const af::dim4& dims, const af::dtype precision) {
 Variable sum(const Variable& input, const std::vector<int>& axes) {
   auto result = input.array();
   for (size_t i = 0; i < axes.size(); i++) {
-    result = sum(result, axes[i]);
+    result = af::sum(result, axes[i]);
   }
   af::dim4 indims = input.dims();
   auto gradFunc =
       [indims](std::vector<Variable>& inputs, const Variable& gradOutput) {
         inputs[0].addGrad(Variable(tileAs(gradOutput, indims).array(), false));
       };
-  return Variable(result, {input.withoutData()}, gradFunc);
+  return Variable(result.as(input.type()), {input.withoutData()}, gradFunc);
 }
 
 Variable mean(const Variable& input, const std::vector<int>& axes) {
@@ -672,6 +697,7 @@ Variable normalize(
 }
 
 Variable matmul(const Variable& lhs, const Variable& rhs) {
+  FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
   // lhs:Input[0] -- [M, N]
   // rhs:Input[1] -- [N, K]
   // matmul(lhs, rhs)
@@ -699,6 +725,7 @@ Variable matmul(const Variable& lhs, const Variable& rhs) {
 }
 
 Variable matmulTN(const Variable& lhs, const Variable& rhs) {
+  FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
   // lhs:Input[0] -- [N, M]
   // rhs:Input[1] -- [N, K]
   // matmulTN(lhs, rhs)
@@ -725,6 +752,7 @@ Variable matmulTN(const Variable& lhs, const Variable& rhs) {
 }
 
 Variable matmulNT(const Variable& lhs, const Variable& rhs) {
+  FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
   // lhs:Input[0] -- [M, N]
   // rhs:Input[1] -- [K, N]
   // matmulNT(lhs, rhs)
@@ -847,6 +875,7 @@ Variable logSoftmax(const Variable& input, const int dim) {
 }
 
 Variable binaryCrossEntropy(const Variable& inputs, const Variable& targets) {
+  FL_VARIABLE_DTYPES_MATCH_CHECK(inputs, targets);
   return negate(targets * log(inputs) + (1 - targets) * log(1 - inputs));
 }
 
@@ -855,6 +884,7 @@ Variable categoricalCrossEntropy(
     const Variable& targets,
     ReduceMode reduction /* =ReduceMode::MEAN */,
     int ignoreIndex /* = -1 */) {
+  FL_VARIABLE_DTYPES_MATCH_CHECK(input, targets);
   // input -- [C, X1, X2, X3]
   // target -- [X1, X2, X3, 1]
   for (int i = 1; i < 4; i++) {
@@ -964,32 +994,20 @@ Variable linear(const Variable& input, const Variable& weight) {
 
 Variable
 linear(const Variable& input, const Variable& weight, const Variable& bias) {
-  af::array weight_array;
-  if (input.type() == weight.type()) {
-    weight_array = weight.array();
-  } else {
-    weight_array = weight.array().as(input.type());
-  }
-
-  af::array bias_array;
-  if (input.type() == bias.type()) {
-    bias_array = bias.array();
-  } else {
-    bias_array = bias.array().as(input.type());
-  }
+  FL_VARIABLE_DTYPES_MATCH_CHECK(input, weight, bias);
 
   af::dim4 to2d(input.dims(0), input.elements() / input.dims(0));
   auto to4d = input.dims();
-  to4d[0] = weight_array.dims(0);
+  to4d[0] = weight.array().dims(0);
 
   auto output =
-      moddims(matmul(weight_array, moddims(input.array(), to2d)), to4d);
+      moddims(matmul(weight.array(), moddims(input.array(), to2d)), to4d);
 
   auto hasBias = bias.elements() > 0;
   if (hasBias) {
     auto tiledims = output.dims();
     tiledims[0] = 1;
-    output = output + tile(bias_array, tiledims);
+    output = output + tile(bias.array(), tiledims);
   }
   auto gradFunc = [hasBias](
                       std::vector<Variable>& inputs,
@@ -1072,6 +1090,7 @@ Variable gatedlinearunit(const Variable& input, const int dim) {
 }
 
 Variable embedding(const Variable& input, const Variable& embeddings) {
+  FL_VARIABLE_DTYPES_MATCH_CHECK(input, embeddings);
   if (input.numdims() >= 4) {
     throw std::invalid_argument("embedding input must have 3 or fewer dims");
   }
@@ -1132,7 +1151,7 @@ Variable padding(
 
 Variable dropout(const Variable& input, double p) {
   if (p > 0.0) {
-    auto mask = Variable(af::randu(input.dims(), f32), false) > p;
+    auto mask = Variable(af::randu(input.dims(), input.type()), false) > p;
     return (1.0 / (1.0 - p)) * mask * input;
   } else {
     return input;

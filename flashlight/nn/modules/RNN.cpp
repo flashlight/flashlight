@@ -54,7 +54,7 @@ std::vector<Variable> RNN::forward(const std::vector<Variable>& inputs) {
       rnn(input,
           hiddenState,
           cellState,
-          params_[0],
+          params_[0].as(input.type()),
           hiddenSize_,
           numLayers_,
           mode_,
