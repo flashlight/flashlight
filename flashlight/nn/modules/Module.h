@@ -52,6 +52,7 @@ class Module {
 
   /**
    * An empty module constructor, which creates a module with no parameters.
+   *
    */
   Module();
 
