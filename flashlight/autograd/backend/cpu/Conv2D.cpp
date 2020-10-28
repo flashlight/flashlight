@@ -42,6 +42,9 @@ Variable conv2d(
     int dx,
     int dy,
     int groups) {
+  if (input.type() == f16) {
+    throw std::runtime_error("Half precision is not supported in CPU.");
+  }
   auto dummy_bias = Variable(af::array(), false);
   return conv2d(input, weights, dummy_bias, sx, sy, px, py, dx, dy, groups);
 }
@@ -57,6 +60,9 @@ Variable conv2d(
     int dx,
     int dy,
     int groups) {
+  if (input.type() == f16) {
+    throw std::runtime_error("Half precision is not supported in CPU.");
+  }
   auto output = af::array(
       1 +
           (input.dims(kWIdx) + (2 * px) -
