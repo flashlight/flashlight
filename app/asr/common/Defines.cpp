@@ -172,6 +172,33 @@ DEFINE_double(
     pcttraineval,
     100,
     "percentage of training set (by number of utts) to use for evaluation");
+DEFINE_bool(
+    fl_benchmark_mode,
+    true,
+    "Sets flashlight benchmark mode, which dynamically "
+    "benchmarks various operations based on their empirical performance on "
+    "current hardware throughout training");
+
+// MIXED PRECISION OPTIONS
+DEFINE_bool(
+    fl_amp_use_mixed_precision,
+    false,
+    "Use mixed precision for training - "
+    "scale loss and gradients up and down by a "
+    "scale factor that changes over time");
+DEFINE_uint64(
+    fl_amp_scale_factor,
+    4096,
+    "Starting scale factor to use for loss scaling "
+    " with mixed precision training");
+DEFINE_uint64(
+    fl_amp_scale_factor_update_interval,
+    2000,
+    "Update interval for adjusting loss scaling in mixed precision training");
+DEFINE_uint64(
+    fl_amp_max_scale_factor,
+    32000,
+    "Maximum value for the loss scale factor in mixed precision training");
 
 // ARCHITECTURE OPTIONS
 DEFINE_string(arch, "default", "network architecture");

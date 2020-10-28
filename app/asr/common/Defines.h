@@ -214,6 +214,14 @@ DECLARE_int64(seed);
 DECLARE_int64(memstepsize);
 DECLARE_int64(reportiters);
 DECLARE_double(pcttraineval);
+DECLARE_bool(fl_benchmark_mode);
+
+/* ========== MIXED PRECISION OPTIONS ========== */
+
+DECLARE_bool(fl_amp_use_mixed_precision);
+DECLARE_uint64(fl_amp_scale_factor);
+DECLARE_uint64(fl_amp_scale_factor_update_interval);
+DECLARE_uint64(fl_amp_max_scale_factor);
 
 /* ========== ARCHITECTURE OPTIONS ========== */
 
