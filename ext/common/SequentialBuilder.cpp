@@ -471,6 +471,15 @@ std::shared_ptr<Module> parseLines(
         std::stoi(params[6]));
   }
 
+  /* ========== Precision Cast  ========== */
+  if (params[0] == "PC") {
+    if (params.size() != 2) {
+      throw std::invalid_argument("Failed parsing - " + line);
+    }
+    auto targetType = fl::stringToAfType(params[1]);
+    return std::make_shared<PrecisionCast>(targetType);
+  }
+
   throw std::invalid_argument("Failed parsing - " + line);
   return nullptr;
 }
