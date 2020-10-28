@@ -16,18 +16,16 @@
 #include <cereal/types/unordered_map.hpp>
 #include <gflags/gflags.h>
 
-#include "flashlight/flashlight/contrib/contrib.h"
-#include "flashlight/flashlight/flashlight.h"
-
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/data/FeatureTransforms.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
-
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/common/ModulePlugin.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
+#include "flashlight/flashlight/contrib/contrib.h"
+#include "flashlight/flashlight/flashlight.h"
 #include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"

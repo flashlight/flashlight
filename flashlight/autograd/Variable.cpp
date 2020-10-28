@@ -72,15 +72,6 @@ af::array& Variable::array() const {
   return sharedData_->data;
 }
 
-void Variable::inPlaceCast(af::dtype type) {
-  if (this->type() != type) {
-    array() = array().as(type);
-  }
-  if (sharedGrad_->grad && grad().type() != type) {
-    grad().array() = grad().array().as(type);
-  }
-}
-
 Variable Variable::as(af::dtype newType) {
   auto output = array().as(newType);
   auto gradFunc = [](std::vector<Variable>& inputs,
