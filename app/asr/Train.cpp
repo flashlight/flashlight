@@ -162,6 +162,22 @@ int main(int argc, char** argv) {
   FL_LOG_MASTER(fl::INFO) << "Experiment path: " << runPath;
   FL_LOG_MASTER(fl::INFO) << "Experiment runidx: " << runIdx;
 
+  // flashlight optim mode
+  auto flOptimLevel = FLAGS_fl_optim_mode.empty()
+      ? fl::OptimLevel::DEFAULT
+      : fl::OptimMode::toOptimLevel(FLAGS_fl_optim_mode);
+  fl::OptimMode::get().setOptimLevel(flOptimLevel);
+  if (FLAGS_fl_amp_use_mixed_precision) {
+    // Only set the optim mode to O1 if it was left empty
+    FL_LOG(fl::INFO)
+        << "Mixed precision training enabled. Will perform loss scaling.";
+    if (FLAGS_fl_optim_mode.empty()) {
+      FL_LOG(fl::INFO) << "Mixed precision training enabled with no "
+                          "optim mode specified - setting optim mode to O1.";
+      fl::OptimMode::get().setOptimLevel(fl::OptimLevel::O1);
+    }
+  }
+
   std::unordered_map<std::string, std::string> config = {
       {kProgramName, exec},
       {kCommandLine, join(" ", argvs)},

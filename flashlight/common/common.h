@@ -12,5 +12,6 @@
 #include "flashlight/flashlight/common/DevicePtr.h"
 #include "flashlight/flashlight/common/DynamicBenchmark.h"
 #include "flashlight/flashlight/common/Serialization.h"
+#include "flashlight/flashlight/common/Types.h"
 #include "flashlight/flashlight/common/Utils.h"
 #include "flashlight/flashlight/common/threadpool/ThreadPool.h"

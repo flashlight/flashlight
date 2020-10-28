@@ -63,6 +63,18 @@ bool jacobianTestImpl(
   return allClose(fwdJacobian, bwdJacobian, precision);
 }
 
+class AutogradTestF16 : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    // Ensures all operations will be in f16
+    OptimMode::get().setOptimLevel(OptimLevel::O3);
+  }
+
+  void TearDown() override {
+    OptimMode::get().setOptimLevel(OptimLevel::DEFAULT);
+  }
+};
+
 } // namespace
 
 TEST(AutogradTest, AfRefCountBasic) {
@@ -535,7 +547,7 @@ TEST(AutogradTest, TileAs) {
   ASSERT_TRUE(allClose(dx.array(), af::sum(y.array(), 1)));
 }
 
-TEST(AutogradTest, TileAsF16) {
+TEST_F(AutogradTestF16, TileAsF16) {
   if (!af::isHalfAvailable(af::getDevice())) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
@@ -782,7 +794,7 @@ TEST(AutogradTest, Convolve) {
   ASSERT_TRUE(jacobianTestImpl(func_conv_bs, bs, 0.02));
 }
 
-TEST(AutogradTest, ConvolveF16) {
+TEST_F(AutogradTestF16, ConvolveF16) {
   if (!af::isHalfAvailable(af::getDevice())) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
@@ -934,7 +946,7 @@ TEST(AutogradTest, Pooling) {
   ASSERT_TRUE(jacobianTestImpl(func_pool, in, 1E-3));
 }
 
-TEST(AutogradTest, PoolingF16) {
+TEST_F(AutogradTestF16, PoolingF16) {
   if (!af::isHalfAvailable(af::getDevice())) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
@@ -952,13 +964,12 @@ TEST(AutogradTest, Softmax) {
   ASSERT_TRUE(jacobianTestImpl(func_sm, in, 1E-5));
 }
 
-TEST(AutogradTest, SoftmaxF16) {
+TEST_F(AutogradTestF16, SoftmaxF16) {
   if (!af::isHalfAvailable(af::getDevice())) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
   auto in = Variable(af::randu(3, 5, 1, af::dtype::f16), true);
-  ASSERT_EQ(in.type(), softmax(in, 0).type());
   auto func_sm = [&](Variable& input) { return softmax(input, 0); };
 
   ASSERT_TRUE(jacobianTestImpl(func_sm, in, 1E-2, 1e-1));
@@ -971,7 +982,7 @@ TEST(AutogradTest, LogSoftmax) {
   ASSERT_TRUE(jacobianTestImpl(func_lsm, in, 1E-5));
 }
 
-TEST(AutogradTest, LogSoftmaxF16) {
+TEST_F(AutogradTestF16, LogSoftmaxF16) {
   if (!af::isHalfAvailable(af::getDevice())) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
@@ -1053,7 +1064,7 @@ TEST(AutogradTest, Linear) {
   }
 }
 
-TEST(AutogradTest, LinearF16) {
+TEST_F(AutogradTestF16, LinearF16) {
   if (!af::isHalfAvailable(af::getDevice())) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
@@ -1527,17 +1538,16 @@ TEST(AutogradTest, BatchnormJacobian) {
   ASSERT_TRUE(jacobianTestImpl(func_bn_bs, bias, 1e-2, 1e-4));
 }
 
-TEST(AutogradTest, BatchnormJacobianF16) {
+TEST_F(AutogradTestF16, BatchnormJacobianF16) {
   if (!af::isHalfAvailable(af::getDevice())) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
   // Jacobian Test with  train_mode = true;
+
   int numFeat = 3;
   std::vector<int> featAxes = {2};
-  const float inputScale = 4.0; // scale the input to prevent grad underflow
-  auto input =
-      Variable(inputScale * af::randu(3, 3, numFeat, 4, af::dtype::f16), true);
+  auto input = Variable(af::randu(8, 8, numFeat, 16, af::dtype::f16), true);
   auto runningMean = Variable(af::randu(numFeat, af::dtype::f32), false);
   auto runningVar = Variable(af::randu(numFeat, af::dtype::f32), false);
   auto weight = Variable(af::randu(numFeat, af::dtype::f32), true);
@@ -1600,16 +1610,14 @@ TEST(AutogradTest, BatchnormJacobianMultipleAxes) {
   ASSERT_TRUE(jacobianTestImpl(func_bn_bs, bias, 1e-2, 1e-3));
 }
 
-TEST(AutogradTest, BatchnormJacobianMultipleAxesF16) {
+TEST_F(AutogradTestF16, BatchnormJacobianMultipleAxesF16) {
   if (!af::isHalfAvailable(af::getDevice())) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
   // Jacobian Test with  train_mode = true;
   std::vector<int> featAxes = {0, 1, 2};
-  const float inputScale = 8.0; // scale the input to prevent grad underflow
-  auto input =
-      Variable(inputScale * af::randu(2, 2, 2, 1, af::dtype::f16), true);
+  auto input = Variable(af::randu(2, 2, 2, 1, af::dtype::f16), true);
   auto nfeatures = 1;
   for (auto ax : featAxes) {
     nfeatures *= input.dims(ax);
@@ -1626,19 +1634,19 @@ TEST(AutogradTest, BatchnormJacobianMultipleAxesF16) {
         in, weight, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
   };
   ASSERT_TRUE(
-      jacobianTestImpl(func_bn_in, input, 1e-1, 0.5)); // TODO: investigate
+      jacobianTestImpl(func_bn_in, input, 5e-2, 1e-1)); // TODO: investigate
 
   auto func_bn_wt = [&](Variable& wt) {
     return (batchnorm(
         input, wt, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_bn_wt, weight, 5e-3, 1e-1));
+  ASSERT_TRUE(jacobianTestImpl(func_bn_wt, weight, 5e-2, 1e-1));
 
   auto func_bn_bs = [&](Variable& bs) {
     return (batchnorm(
         input, weight, bs, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_bn_bs, bias, 5e-3, 1e-1));
+  ASSERT_TRUE(jacobianTestImpl(func_bn_bs, bias, 5e-2, 1e-1));
 }
 
 TEST(AutogradTest, LayerNormJacobian) {
@@ -1661,7 +1669,7 @@ TEST(AutogradTest, LayerNormJacobian) {
   ASSERT_TRUE(jacobianTestImpl(func_ln_in, input, 1e-2, 1e-4));
 }
 
-TEST(AutogradTest, LayerNormJacobianF16) {
+TEST_F(AutogradTestF16, LayerNormJacobianF16) {
   if (!af::isHalfAvailable(af::getDevice())) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
