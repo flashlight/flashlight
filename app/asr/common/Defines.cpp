@@ -178,6 +178,11 @@ DEFINE_bool(
     "Sets flashlight benchmark mode, which dynamically "
     "benchmarks various operations based on their empirical performance on "
     "current hardware throughout training");
+DEFINE_string(
+    fl_optim_mode,
+    "",
+    "Sets the flashlight optimization mode. "
+    "Optim modes can be O1, O2, or O3.");
 
 // MIXED PRECISION OPTIONS
 DEFINE_bool(
