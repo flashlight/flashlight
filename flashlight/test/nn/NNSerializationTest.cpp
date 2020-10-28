@@ -150,6 +150,24 @@ TEST(NNSerializationTest, BaseModule) {
   ASSERT_TRUE(allParamsClose(*dout2, *dout));
 }
 
+TEST(NNSerializationTest, PrecisionCast) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half precision not available on this device";
+  }
+
+  auto in = input(af::randu({8, 8}));
+  auto precisionCast = std::make_shared<PrecisionCast>(af::dtype::f16);
+
+  save(getTmpPath("PrecisionCast"), precisionCast);
+
+  std::shared_ptr<PrecisionCast> precisionCast2;
+  load(getTmpPath("PrecisionCast"), precisionCast2);
+  ASSERT_TRUE(precisionCast2);
+
+  ASSERT_TRUE(
+      allClose(precisionCast->forward(in), precisionCast2->forward(in)));
+}
+
 TEST(NNSerializationTest, WeightNormLinear) {
   auto in = input(af::randn(2, 10, 1, 1));
   auto wlin = std::make_shared<WeightNorm>(Linear(2, 3), 0);
