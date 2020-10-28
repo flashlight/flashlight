@@ -12,6 +12,7 @@
  */
 
 #include <cstddef>
+#include <functional>
 #include <memory>
 #include <type_traits>
 #include <unordered_map>
@@ -116,11 +117,15 @@ struct EnumHash {
   }
 };
 
-template <typename T>
-using enum_unordered_set = std::unordered_set<T, EnumHash>;
+// Hasher conditional on whether the type is an enum
+template <typename Key>
+using HashType = typename std::
+    conditional<std::is_enum<Key>::value, EnumHash, std::hash<Key>>::type;
 
-template <typename KeyType, typename ValueType>
-using enum_unordered_map = std::unordered_map<KeyType, ValueType, EnumHash>;
+template <typename Key, typename T>
+using fl_unordered_map = std::unordered_map<Key, T, HashType<Key>>;
+template <typename T>
+using fl_unordered_set = std::unordered_set<T, HashType<T>>;
 
 } // namespace cpp
 } // namespace fl
