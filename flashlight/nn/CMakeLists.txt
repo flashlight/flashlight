@@ -20,6 +20,7 @@ set(
   ${CMAKE_CURRENT_LIST_DIR}/modules/Module.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/Normalize.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/Padding.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/PrecisionCast.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/Pool2D.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/Reorder.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/RNN.cpp
