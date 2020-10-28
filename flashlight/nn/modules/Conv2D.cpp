@@ -10,6 +10,7 @@
 #include <stdexcept>
 
 #include "flashlight/flashlight/autograd/Functions.h"
+#include "flashlight/flashlight/common/DynamicBenchmark.h"
 #include "flashlight/flashlight/nn/Init.h"
 #include "flashlight/flashlight/nn/Utils.h"
 
@@ -119,7 +120,8 @@ Variable Conv2D::forward(const Variable& input) {
         py,
         xDilation_,
         yDilation_,
-        groups_);
+        groups_,
+        benchmarks_);
   } else {
     return conv2d(
         input,
@@ -130,7 +132,8 @@ Variable Conv2D::forward(const Variable& input) {
         py,
         xDilation_,
         yDilation_,
-        groups_);
+        groups_,
+        benchmarks_);
   }
 }
 
@@ -149,6 +152,8 @@ void Conv2D::initialize() {
   } else {
     params_ = {wt};
   }
+
+  benchmarks_ = std::make_shared<detail::ConvBenchmarks>();
 }
 
 std::string Conv2D::prettyString() const {

@@ -273,9 +273,29 @@ TEST(ModuleTest, LogSoftmaxFwdF16) {
 
 TEST(ModuleTest, ConvolutionFwd) {
   // test batching
-  auto conv = Conv2D(30, 50, 9, 7, 2, 3, 3, 2, true);
+  auto conv = Conv2D(30, 50, 9, 7, 2, 3, 3, 2, 1, 1, true, 1);
   int batchsize = 10;
   auto input = af::randu(120, 100, 30, batchsize);
+  auto batchOutVar = conv(Variable(input, false));
+  for (int i = 0; i < batchsize; ++i) {
+    auto expected_outVar =
+        conv(Variable(input(af::span, af::span, af::span, i), false));
+    ASSERT_TRUE(allClose(
+        batchOutVar.array()(af::span, af::span, af::span, i),
+        expected_outVar.array(),
+        1E-7));
+  }
+}
+
+TEST(ModuleTest, ConvolutionFwdF16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  // test batching
+  auto conv = Conv2D(30, 50, 9, 7, 2, 3, 3, 2, 1, 1, true, 1);
+  int batchsize = 1;
+  auto input = af::randu(120, 100, 30, batchsize, af::dtype::f16);
   auto batchOutVar = conv(Variable(input, false));
   for (int i = 0; i < batchsize; ++i) {
     auto expected_outVar =
