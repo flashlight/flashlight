@@ -341,6 +341,9 @@ Variable batchnorm(
     bool train,
     double momentum,
     double epsilon) {
+  if (input.type() == f16) {
+    throw std::runtime_error("Half precision is not supported in CPU.");
+  }
   // CPU backend MKL-DNN does not support momentum factor.
   // If momentum enabled, throw error.
   if (momentum == 0.0) {
