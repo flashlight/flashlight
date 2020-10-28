@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <stdexcept>
-
 #include "flashlight/flashlight/nn/modules/Pool2D.h"
+
+#include <stdexcept>
 
 #include "flashlight/flashlight/autograd/Functions.h"
 #include "flashlight/flashlight/nn/Init.h"
