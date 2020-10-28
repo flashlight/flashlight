@@ -56,10 +56,12 @@ Variable BatchNorm::forward(const Variable& input) {
     }
   }
 
+  auto paramsType =
+      (input.type() == af::dtype::f16) ? af::dtype::f32 : input.type();
   return batchnorm(
       input,
-      params_.empty() ? Variable() : params_[0],
-      params_.empty() ? Variable() : params_[1],
+      params_.empty() ? Variable(af::array(0, paramsType), false) : params_[0],
+      params_.empty() ? Variable(af::array(0, paramsType), false) : params_[1],
       runningMean_,
       runningVar_,
       featAxis_,
