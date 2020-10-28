@@ -72,7 +72,7 @@ af::array& Variable::array() const {
   return sharedData_->data;
 }
 
-Variable Variable::as(af::dtype newType) {
+Variable Variable::as(af::dtype newType) const {
   auto output = array().as(newType);
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {

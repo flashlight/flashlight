@@ -27,6 +27,12 @@ Variable batchnorm(
     bool train,
     double momentum,
     double epsilon) {
+  if (input.type() == af::dtype::f16 && weight.type() != af::dtype::f32) {
+    throw std::invalid_argument(
+        "fl::batchnorm: non-input tensors must be of type f32");
+  }
+  FL_VARIABLE_DTYPES_MATCH_CHECK(weight, bias, runningMean, runningVar);
+
   auto output = af::array(input.dims(), input.type());
 
   int nfeatures = 1;
@@ -73,31 +79,16 @@ Variable batchnorm(
   if (!bias.isempty() && bias.elements() != wtDescDims.elements()) {
     throw std::invalid_argument("[BatchNorm] Invalid shape for bias.");
   }
+  // Weight, bias, and running mean/var arrays can't be fp16 (must be fp32)
+  af::array weightArray = weight.isempty()
+      ? af::constant(1.0, wtDescDims, af::dtype::f32)
+      : weight.array().as(af::dtype::f32);
+  af::array biasArray = bias.isempty()
+      ? af::constant(0.0, wtDescDims, af::dtype::f32)
+      : bias.array().as(af::dtype::f32);
 
-  auto weightNonEmpty = weight.isempty()
-      ? Variable(af::constant(1.0, wtDescDims, input.type()), false)
-      : weight;
-  auto biasNonEmpty = bias.isempty()
-      ? Variable(af::constant(0.0, wtDescDims, input.type()), false)
-      : bias;
-
-  af::array weightArray;
-  if (weightNonEmpty.type() == f32) {
-    weightArray = weightNonEmpty.array();
-  } else {
-    weightArray = weightNonEmpty.array().as(f32);
-  }
-
-  af::array biasArray;
-  if (biasNonEmpty.type() == f32) {
-    biasArray = biasNonEmpty.array();
-  } else {
-    biasArray = biasNonEmpty.array().as(f32);
-  }
-
-  auto scalarsType = input.type() == f16 ? f32 : input.type();
-  const void* one = kOne(scalarsType);
-  const void* zero = kZero(scalarsType);
+  af::dtype scalarsType =
+      input.type() == af::dtype::f16 ? af::dtype::f32 : input.type();
 
   auto inDesc = TensorDescriptor(input.type(), inDescDims);
   auto wtDesc = TensorDescriptor(weightArray.type(), wtDescDims);
@@ -112,16 +103,16 @@ Variable batchnorm(
     DevicePtr runVarRaw(runningVar.array());
 
     if (train) {
-      saveMean = af::array(nfeatures, input.type());
-      saveVar = af::array(nfeatures, input.type());
+      saveMean = af::array(nfeatures, scalarsType);
+      saveVar = af::array(nfeatures, scalarsType);
 
       DevicePtr saveMeanRaw(saveMean);
       DevicePtr saveVarRaw(saveVar);
       CUDNN_CHECK_ERR(cudnnBatchNormalizationForwardTraining(
           getCudnnHandle(),
           mode,
-          one,
-          zero,
+          kOne(scalarsType),
+          kZero(scalarsType),
           inDesc.descriptor,
           inRaw.get(),
           inDesc.descriptor,
@@ -139,8 +130,8 @@ Variable batchnorm(
       CUDNN_CHECK_ERR(cudnnBatchNormalizationForwardInference(
           getCudnnHandle(),
           mode,
-          one,
-          zero,
+          kOne(scalarsType),
+          kZero(scalarsType),
           inDesc.descriptor,
           inRaw.get(),
           inDesc.descriptor,
@@ -162,45 +153,33 @@ Variable batchnorm(
         }
 
         auto& in = inputs[0];
+        // Weight, bias, and running mean/var arrays can't be fp16 (must be
+        // fp32)
         auto wt = inputs[1].isempty()
-            ? Variable(af::constant(1.0, wtDescDims, in.type()), false)
+            ? Variable(af::constant(1.0, wtDescDims, af::dtype::f32), false)
             : inputs[1];
         auto& bs = inputs[2];
-
-        af::array grad_output_array;
-        if (grad_output.type() == in.type()) {
-          grad_output_array = grad_output.array();
-        } else {
-          grad_output_array = grad_output.array().as(in.type());
-        }
-
-        af::array wtArray;
-        if (wt.type() == f32) {
-          wtArray = wt.array();
-        } else {
-          wtArray = wt.array().as(f32);
-        }
 
         auto scalarsType = in.type() == f16 ? f32 : in.type();
         const void* one1 = kOne(scalarsType);
         const void* zero0 = kZero(scalarsType);
 
         auto iDesc = TensorDescriptor(in.type(), inDescDims);
-        auto wDesc = TensorDescriptor(wtArray.type(), wtDescDims);
+        auto wDesc = TensorDescriptor(wt.type(), wtDescDims);
         // CuDNN doesn't support calculating only the gradients
         // required for batchnorm
-        auto gradIn = Variable(af::array(in.dims(), in.type()), false);
-        auto gradWt = Variable(af::array(wt.dims(), wtArray.type()), false);
-        auto gradBs = Variable(af::array(wt.dims(), wtArray.type()), false);
+        auto gradIn = af::array(in.dims(), in.type());
+        auto gradWt = af::array(wt.dims(), wt.type());
+        auto gradBs = af::array(wt.dims(), wt.type());
         {
           DevicePtr iRaw(in.array());
-          DevicePtr wRaw(wtArray);
+          DevicePtr wRaw(wt.array());
 
-          DevicePtr gradInRaw(gradIn.array());
-          DevicePtr gradWtRaw(gradWt.array());
-          DevicePtr gradBsRaw(gradBs.array());
+          DevicePtr gradInRaw(gradIn);
+          DevicePtr gradWtRaw(gradWt);
+          DevicePtr gradBsRaw(gradBs);
 
-          DevicePtr grad_opRaw(grad_output_array);
+          DevicePtr grad_opRaw(grad_output.array());
 
           DevicePtr saveMeanRaw(saveMean);
           DevicePtr saveVarRaw(saveVar);
@@ -226,10 +205,10 @@ Variable batchnorm(
               saveMeanRaw.get(),
               saveVarRaw.get()));
         }
-        in.addGrad(gradIn);
-        wt.addGrad(gradWt);
+        in.addGrad(Variable(gradIn, false));
+        wt.addGrad(Variable(gradWt.as(wt.type()), false));
         if (!bs.isempty()) {
-          bs.addGrad(gradBs);
+          bs.addGrad(Variable(gradBs.as(bs.type()), false));
         }
       };
   return Variable(output, {input, weight, bias}, gradFunc);

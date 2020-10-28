@@ -32,7 +32,7 @@ int64_t numTotalParams(std::shared_ptr<fl::Module> module);
 
 /**
  * Returns true if the parameters of two modules are of same type and are
- * element-wise equal within given tolerance limit.
+ * element-wise equal within a given tolerance limit.
  *
  * @param [a,b] input Modules to compare
  * @param absTolerance absolute tolerance allowed

@@ -131,6 +131,29 @@ TEST(ModuleTest, TransformerFwd) {
   ASSERT_EQ(output[0].dims(2), batchsize);
 }
 
+TEST(ModuleTest, TransformerFwdF16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  int batchsize = 10;
+  int timesteps = 120;
+  int c = 32;
+  int nheads = 4;
+
+  auto tr =
+      Transformer(c, c / nheads, c, nheads, timesteps, 0.2, 0.1, false, false);
+  auto input =
+      Variable(af::randu(c, timesteps, batchsize, 1, af::dtype::f16), false);
+
+  auto output = tr.forward({input});
+  ASSERT_EQ(output[0].type(), input.type());
+
+  ASSERT_EQ(output[0].dims(0), c);
+  ASSERT_EQ(output[0].dims(1), timesteps);
+  ASSERT_EQ(output[0].dims(2), batchsize);
+}
+
 TEST(ModuleTest, PositionEmbeddingFwd) {
   int batchsize = 10;
   int timesteps = 120;
@@ -138,6 +161,28 @@ TEST(ModuleTest, PositionEmbeddingFwd) {
 
   auto posemb = PositionEmbedding(csz, timesteps, 0.5);
   auto input = Variable(af::randu(csz, timesteps, batchsize, 1), false);
+
+  auto output = posemb.forward({input});
+
+  ASSERT_EQ(output[0].dims(0), csz);
+  ASSERT_EQ(output[0].dims(1), timesteps);
+  ASSERT_EQ(output[0].dims(2), batchsize);
+
+  ASSERT_FALSE(allClose(output[0], input));
+}
+
+TEST(ModuleTest, PositionEmbeddingFwdF16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  int batchsize = 10;
+  int timesteps = 120;
+  int csz = 256;
+
+  auto posemb = PositionEmbedding(csz, timesteps, 0.5);
+  auto input =
+      Variable(af::randu(csz, timesteps, batchsize, 1, af::dtype::f16), false);
 
   auto output = posemb.forward({input});
 
