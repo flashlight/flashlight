@@ -14,18 +14,20 @@
 #include "flashlight/flashlight/autograd/Variable.h"
 #include "flashlight/flashlight/autograd/backend/cuda/CudnnUtils.h"
 #include "flashlight/flashlight/common/DevicePtr.h"
+#include "flashlight/flashlight/common/DynamicBenchmark.h"
 
 namespace {
-const fl::cpp::enum_unordered_set<cudnnConvolutionFwdAlgo_t> fwdPreferredAlgos =
+const fl::cpp::fl_unordered_set<cudnnConvolutionFwdAlgo_t> kFwdPreferredAlgos =
     {CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM,
      CUDNN_CONVOLUTION_FWD_ALGO_WINOGRAD_NONFUSED};
 
-const fl::cpp::enum_unordered_set<cudnnConvolutionBwdDataAlgo_t>
-    bwdDataPreferredAlgos = {CUDNN_CONVOLUTION_BWD_DATA_ALGO_1,
-                             CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD_NONFUSED};
+const fl::cpp::fl_unordered_set<cudnnConvolutionBwdDataAlgo_t>
+    kBwdDataPreferredAlgos = {
+        CUDNN_CONVOLUTION_BWD_DATA_ALGO_1,
+        CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD_NONFUSED};
 
-const fl::cpp::enum_unordered_set<cudnnConvolutionBwdFilterAlgo_t>
-    bwdFilterPreferredAlgos = {
+const fl::cpp::fl_unordered_set<cudnnConvolutionBwdFilterAlgo_t>
+    kBwdFilterPreferredAlgos = {
         CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1,
         CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD_NONFUSED};
 
@@ -43,14 +45,14 @@ constexpr cudnnConvolutionBwdFilterAlgo_t kBwdFilterDefaultAlgo =
 template <typename T, typename ALGO_TYPE>
 T getBestAlgorithm(
     const std::vector<T>& algoPerfs,
-    const fl::cpp::enum_unordered_set<ALGO_TYPE>& preferredAlgos,
-    const bool algoMustSupportF16) {
+    const fl::cpp::fl_unordered_set<ALGO_TYPE>& preferredAlgos,
+    const af::dtype arithmeticPrecision) {
   T reserved;
   bool algoFound = false;
   for (const auto& algoPerf : algoPerfs) {
     if (algoPerf.status == CUDNN_STATUS_SUCCESS &&
         algoPerf.memory < kWorkspaceSizeLimitBytes) {
-      if (!algoMustSupportF16 ||
+      if (!(arithmeticPrecision == af::dtype::f16) ||
           (preferredAlgos.find(algoPerf.algo) != preferredAlgos.end())) {
         return algoPerf;
       } else if (!algoFound) {
@@ -89,7 +91,7 @@ cudnnConvolutionFwdAlgoPerf_t getFwdAlgo(
       fwdAlgoPerfs.data()));
 
   return getBestAlgorithm(
-      fwdAlgoPerfs, fwdPreferredAlgos, arithmeticPrecision == f16);
+      fwdAlgoPerfs, kFwdPreferredAlgos, arithmeticPrecision);
 }
 
 cudnnConvolutionBwdDataAlgoPerf_t getBwdDataAlgo(
@@ -117,7 +119,7 @@ cudnnConvolutionBwdDataAlgoPerf_t getBwdDataAlgo(
       bwdDataAlgoPerfs.data()));
 
   auto bestAlgo = getBestAlgorithm(
-      bwdDataAlgoPerfs, bwdDataPreferredAlgos, arithmeticPrecision == f16);
+      bwdDataAlgoPerfs, kBwdDataPreferredAlgos, arithmeticPrecision);
 
   // We use a few hacks here to resolve some cuDNN bugs
   // 1: blacklist BWD_DATA_ALGO_1
@@ -126,7 +128,7 @@ cudnnConvolutionBwdDataAlgoPerf_t getBwdDataAlgo(
   // https://github.com/pytorch/pytorch/issues/16610
   bool isAlgoBlacklisted = false;
 #ifndef FL_CUDNN_ALLOW_ALGO_1
-  if (arithmeticPrecision != f16 &&
+  if (arithmeticPrecision != af::dtype::f16 &&
       bestAlgo.algo == CUDNN_CONVOLUTION_BWD_DATA_ALGO_1) {
     isAlgoBlacklisted = true;
   }
@@ -171,7 +173,7 @@ cudnnConvolutionBwdFilterAlgoPerf_t getBwdFilterAlgo(
       &numBwdFilterAlgoReturned,
       bwdFilterAlgoPerfs.data()));
   auto bestAlgo = getBestAlgorithm(
-      bwdFilterAlgoPerfs, bwdFilterPreferredAlgos, arithmeticPrecision == f16);
+      bwdFilterAlgoPerfs, kBwdFilterPreferredAlgos, arithmeticPrecision);
 
   // We use a few hacks here to resolve some cuDNN bugs
   // 1: blacklist BWD_FILTER_ALGO_1
@@ -192,6 +194,41 @@ cudnnConvolutionBwdFilterAlgoPerf_t getBwdFilterAlgo(
   }
   return bestAlgo;
 }
+
+enum class KernelMode { F32 = 0, F32_ALLOW_CONVERSION = 1, F16 = 2 };
+fl::cpp::fl_unordered_map<KernelMode, cudnnMathType_t>
+    kKernelModesToCudnnMathType = {
+        {KernelMode::F32, CUDNN_DEFAULT_MATH},
+        {KernelMode::F32_ALLOW_CONVERSION,
+         CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION},
+        {KernelMode::F16, CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION}};
+
+std::shared_ptr<fl::DynamicBenchmark> createBenchmarkOptions() {
+  return std::make_shared<fl::DynamicBenchmark>(
+      std::make_shared<fl::DynamicBenchmarkOptions<KernelMode>>(
+          std::vector<KernelMode>({KernelMode::F32,
+                                   KernelMode::F32_ALLOW_CONVERSION,
+                                   KernelMode::F16}),
+          fl::kDynamicBenchmarkDefaultCount));
+}
+
+/**
+ * Sets the cudnnMathType according to a `KernelMode` value.
+ *
+ * @param[in] cDesc a pointer to a `ConvDescriptor` for which the math type will
+ * be set.
+ * @param[in] kernelOptions a pointer to the DynamicBenchmarkOptions for the
+ possible kernel modes.
+ */
+void setCudnnMathType(
+    fl::ConvDescriptor& cDesc,
+    const std::shared_ptr<fl::DynamicBenchmarkOptions<KernelMode>>&
+        kernelOptions) {
+  CUDNN_CHECK_ERR(cudnnSetConvolutionMathType(
+      cDesc.descriptor,
+      kKernelModesToCudnnMathType[kernelOptions->currentOption()]));
+}
+
 } // namespace
 
 namespace fl {
@@ -205,9 +242,11 @@ Variable conv2d(
     int py,
     int dx,
     int dy,
-    int groups) {
+    int groups,
+    std::shared_ptr<detail::ConvBenchmarks> benchmarks) {
   auto dummy_bias = Variable(af::array(), false);
-  return conv2d(input, weights, dummy_bias, sx, sy, px, py, dx, dy, groups);
+  return conv2d(
+      input, weights, dummy_bias, sx, sy, px, py, dx, dy, groups, benchmarks);
 }
 
 Variable conv2d(
@@ -220,25 +259,13 @@ Variable conv2d(
     int py,
     int dx,
     int dy,
-    int groups) {
+    int groups,
+    std::shared_ptr<detail::ConvBenchmarks> benchmarks) {
+  FL_VARIABLE_DTYPES_MATCH_CHECK(input, weights, bias);
   auto hasBias = bias.elements() > 0;
 
-  af::array weightsArray;
-  if (weights.type() == input.type()) {
-    weightsArray = weights.array();
-  } else {
-    weightsArray = weights.array().as(input.type());
-  }
-
-  af::array biasArray;
-  if (bias.type() == input.type()) {
-    biasArray = bias.array();
-  } else {
-    biasArray = bias.array().as(input.type());
-  }
-
   auto inDesc = TensorDescriptor(input);
-  auto wtDesc = FilterDescriptor(weightsArray);
+  auto wtDesc = FilterDescriptor(weights.array());
   auto convDesc = ConvDescriptor(input.type(), px, py, sx, sy, dx, dy, groups);
   if (input.type() == f16) {
     CUDNN_CHECK_ERR(cudnnSetConvolutionMathType(
@@ -285,7 +312,7 @@ Variable conv2d(
   }
   {
     DevicePtr inPtr(input.array());
-    DevicePtr wtPtr(weightsArray);
+    DevicePtr wtPtr(weights.array());
     DevicePtr outPtr(output);
     DevicePtr wspacePtr(wspace);
 
@@ -309,8 +336,8 @@ Variable conv2d(
         outPtr.get()));
 
     if (hasBias) {
-      auto bsDesc = TensorDescriptor(biasArray);
-      DevicePtr bsPtr(biasArray);
+      auto bsDesc = TensorDescriptor(bias.array());
+      DevicePtr bsPtr(bias.array());
 
       CUDNN_CHECK_ERR(cudnnAddTensor(
           handle,
@@ -322,45 +349,49 @@ Variable conv2d(
           outPtr.get()));
     }
   }
-  auto gradFunc = [sx, sy, px, py, dx, dy, hasBias, groups](
+  auto gradFunc = [sx, sy, px, py, dx, dy, hasBias, groups, benchmarks](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
+    // Create benchmarks if needed
+    if (benchmarks && DynamicBenchmark::getBenchmarkMode()) {
+      if (!benchmarks->bwdFilterBenchmark) {
+        benchmarks->bwdFilterBenchmark = createBenchmarkOptions();
+      }
+      if (!benchmarks->bwdDataBenchmark) {
+        benchmarks->bwdDataBenchmark = createBenchmarkOptions();
+      }
+      if (!benchmarks->bwdBiasBenchmark) {
+        benchmarks->bwdBiasBenchmark = createBenchmarkOptions();
+      }
+    }
+
     auto& in = inputs[0];
     auto& wt = inputs[1];
 
-    af::array wtArray;
-    if (wt.type() == in.type()) {
-      wtArray = wt.array();
-    } else {
-      wtArray = wt.array().as(in.type());
-    }
-
-    af::array gradOutputArray;
-    if (gradOutput.type() == in.type()) {
-      gradOutputArray = gradOutput.array();
-    } else {
-      gradOutputArray = gradOutput.array().as(in.type());
-    }
-
+    // Create default descriptors assuming no casts. If dynamic
+    // benchmarking suggests input or weight casting should occur, these
+    // descriptors may not be used/new ones with the correct types will be used
+    // instead.
     auto iDesc = TensorDescriptor(in);
-    auto oDesc = TensorDescriptor(gradOutputArray);
+    auto wDesc = FilterDescriptor(wt.array());
+    auto cDesc = ConvDescriptor(in.type(), px, py, sx, sy, dx, dy, groups);
+    auto oDesc = TensorDescriptor(gradOutput.array());
 
     auto hndl = getCudnnHandle();
 
     auto scalarsType = in.type() == f16 ? f32 : in.type();
     const void* oneg = kOne(scalarsType);
     const void* zerog = kZero(scalarsType);
-    {
-      DevicePtr gradResultPtr(gradOutputArray);
 
-      if (hasBias && inputs[2].isCalcGrad()) {
-        auto& bs = inputs[2];
-        af::array bsArray;
-        if (bs.type() == in.type()) {
-          bsArray = bs.array();
-        } else {
-          bsArray = bs.array().as(in.type());
-        }
+    // Bias gradients
+    if (hasBias && inputs.size() > 2 && inputs[2].isCalcGrad()) {
+      auto& bias = inputs[2];
+      auto convolutionBackwardBias = [&bias, &hndl, oneg, zerog](
+                                         const af::array& bsArray,
+                                         const af::array& gradOutput,
+                                         const TensorDescriptor& oDesc) {
+        DevicePtr gradResultPtr(gradOutput);
+
         auto gradBias =
             Variable(af::array(bsArray.dims(), bsArray.type()), false);
         {
@@ -375,114 +406,344 @@ Variable conv2d(
               bDesc.descriptor,
               gradBiasPtr.get()));
         }
-        bs.addGrad(gradBias);
+        bias.addGrad(gradBias);
+      };
+
+      if (benchmarks && DynamicBenchmark::getBenchmarkMode()) {
+        KernelMode biasBwdOption =
+            benchmarks->bwdBiasBenchmark
+                ->getOptions<DynamicBenchmarkOptions<KernelMode>>()
+                ->currentOption();
+
+        if (in.type() == af::dtype::f16 && biasBwdOption == KernelMode::F32 &&
+            biasBwdOption == KernelMode::F32_ALLOW_CONVERSION) {
+          // The input type of fp16, but the result of the dynamic benchmark is
+          // that using fp32 kernels is faster for computing bwd with fp16
+          // kernels, including the cast
+          af::array biasF32;
+          af::array gradOutputF32;
+          // Time cast bias and grad output if benchmarking
+          benchmarks->bwdBiasBenchmark->audit(
+              [&bias, &gradOutput, &biasF32, &gradOutputF32]() {
+                biasF32 = bias.array().as(af::dtype::f32);
+                gradOutputF32 = gradOutput.array().as(af::dtype::f32);
+              },
+              /* incrementCount = */ false);
+          auto oDescF32 = TensorDescriptor(gradOutputF32);
+          // Perform bias gradient computation
+          benchmarks->bwdBiasBenchmark->audit([&convolutionBackwardBias,
+                                               &biasF32,
+                                               &gradOutputF32,
+                                               &oDescF32]() {
+            convolutionBackwardBias(biasF32, gradOutputF32, oDescF32);
+          });
+        } else {
+          // Grad output and bias types are already the same, so perform the
+          // computation using whatever input type is given
+          benchmarks->bwdBiasBenchmark->audit(
+              [&convolutionBackwardBias, &bias, &gradOutput, &oDesc]() {
+                convolutionBackwardBias(
+                    bias.array(), gradOutput.array(), oDesc);
+              });
+        }
+      } else {
+        // No benchmark; proceed normally
+        convolutionBackwardBias(bias.array(), gradOutput.array(), oDesc);
       }
     }
-    auto wDesc = FilterDescriptor(wtArray);
-    auto cDesc = ConvDescriptor(in.type(), px, py, sx, sy, dx, dy, groups);
-    if (in.type() == f16) {
-      CUDNN_CHECK_ERR(cudnnSetConvolutionMathType(
-          cDesc.descriptor, CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION));
+
+    // Gradients with respect to the input
+    auto convolutionBackwardData =
+        [&hndl, &in, &benchmarks, oneg, zerog, dx, dy](
+            const af::array& inArray,
+            const af::array& wtArray,
+            const af::array& gradOutputArray,
+            TensorDescriptor& iDesc,
+            FilterDescriptor& wDesc,
+            ConvDescriptor& cDesc,
+            TensorDescriptor& oDesc) {
+          if (benchmarks && DynamicBenchmark::getBenchmarkMode()) {
+            setCudnnMathType(
+                cDesc,
+                benchmarks->bwdDataBenchmark
+                    ->getOptions<DynamicBenchmarkOptions<KernelMode>>());
+          }
+
+          DevicePtr wPtr(wtArray);
+          if (in.isCalcGrad()) {
+            bool isStrided = (dx * dy) > 1;
+            auto bwdDataAlgoBestPerf = getBwdDataAlgo(
+                iDesc.descriptor,
+                wDesc.descriptor,
+                cDesc.descriptor,
+                oDesc.descriptor,
+                isStrided,
+                inArray.type());
+
+            af::array ws;
+            try {
+              ws = af::array(bwdDataAlgoBestPerf.memory, af::dtype::b8);
+            } catch (const std::exception& e) {
+              bwdDataAlgoBestPerf.algo = kBwdDataDefaultAlgo;
+              CUDNN_CHECK_ERR(cudnnGetConvolutionBackwardDataWorkspaceSize(
+                  hndl,
+                  wDesc.descriptor,
+                  oDesc.descriptor,
+                  cDesc.descriptor,
+                  iDesc.descriptor,
+                  bwdDataAlgoBestPerf.algo,
+                  &bwdDataAlgoBestPerf.memory));
+              ws = af::array(bwdDataAlgoBestPerf.memory, af::dtype::b8);
+            }
+            auto gradInput =
+                Variable(af::array(inArray.dims(), inArray.type()), false);
+            {
+              DevicePtr gradInputPtr(gradInput.array());
+              DevicePtr gradResultPtr(gradOutputArray);
+              DevicePtr wsPtr(ws);
+              CUDNN_CHECK_ERR(cudnnConvolutionBackwardData(
+                  hndl,
+                  oneg,
+                  wDesc.descriptor,
+                  wPtr.get(),
+                  oDesc.descriptor,
+                  gradResultPtr.get(),
+                  cDesc.descriptor,
+                  bwdDataAlgoBestPerf.algo,
+                  wsPtr.get(),
+                  bwdDataAlgoBestPerf.memory,
+                  zerog,
+                  iDesc.descriptor,
+                  gradInputPtr.get()));
+            }
+            in.addGrad(gradInput);
+          }
+        };
+
+    if (benchmarks && DynamicBenchmark::getBenchmarkMode()) {
+      KernelMode dataBwdOption =
+          benchmarks->bwdDataBenchmark
+              ->getOptions<DynamicBenchmarkOptions<KernelMode>>()
+              ->currentOption();
+
+      if (in.type() == af::dtype::f16 && dataBwdOption == KernelMode::F32 &&
+          dataBwdOption == KernelMode::F32_ALLOW_CONVERSION) {
+        // The input type of fp16, but the result of the dynamic benchmark is
+        // that using fp32 kernels is faster for computing bwd with fp16
+        // kernels, including the cast
+        af::array inArrayF32;
+        af::array wtArrayF32;
+        af::array gradOutputArrayF32;
+        benchmarks->bwdDataBenchmark->audit(
+            [&in,
+             &inArrayF32,
+             &wt,
+             &wtArrayF32,
+             &gradOutput,
+             &gradOutputArrayF32]() {
+              inArrayF32 = in.array().as(af::dtype::f32);
+              wtArrayF32 = wt.array().as(af::dtype::f32);
+              gradOutputArrayF32 = gradOutput.array().as(af::dtype::f32);
+            },
+            /* incrementCount = */ false);
+
+        auto iDescF32 = TensorDescriptor(inArrayF32);
+        auto wDescF32 = FilterDescriptor(wtArrayF32);
+        auto cDescF32 =
+            ConvDescriptor(af::dtype::f32, px, py, sx, sy, dx, dy, groups);
+        auto oDescF32 = TensorDescriptor(gradOutputArrayF32);
+        // core bwd data computation
+        benchmarks->bwdDataBenchmark->audit([&convolutionBackwardData,
+                                             &inArrayF32,
+                                             &wtArrayF32,
+                                             &gradOutputArrayF32,
+                                             &iDescF32,
+                                             &wDescF32,
+                                             &cDescF32,
+                                             &oDescF32]() {
+          convolutionBackwardData(
+              inArrayF32,
+              wtArrayF32,
+              gradOutputArrayF32,
+              iDescF32,
+              wDescF32,
+              cDescF32,
+              oDescF32);
+        });
+      } else {
+        benchmarks->bwdDataBenchmark->audit([&convolutionBackwardData,
+                                             &in,
+                                             &wt,
+                                             &gradOutput,
+                                             &iDesc,
+                                             &wDesc,
+                                             &cDesc,
+                                             &oDesc]() {
+          convolutionBackwardData(
+              in.array(),
+              wt.array(),
+              gradOutput.array(),
+              iDesc,
+              wDesc,
+              cDesc,
+              oDesc);
+        });
+      }
     } else {
-      CUDNN_CHECK_ERR(
-          cudnnSetConvolutionMathType(cDesc.descriptor, CUDNN_DEFAULT_MATH));
+      // No benchmarking - proceed normally
+      convolutionBackwardData(
+          in.array(),
+          wt.array(),
+          gradOutput.array(),
+          iDesc,
+          wDesc,
+          cDesc,
+          oDesc);
     }
 
-    DevicePtr iPtr(in.array());
-    DevicePtr wPtr(wtArray);
+    // Gradients with respect to the filter
+    auto convolutionBackwardFilter = [&hndl, &wt, &benchmarks, oneg, zerog](
+                                         const af::array& inArray,
+                                         const af::array& wtArray,
+                                         const af::array& gradOutputArray,
+                                         TensorDescriptor& iDesc,
+                                         FilterDescriptor& wDesc,
+                                         ConvDescriptor& cDesc,
+                                         TensorDescriptor& oDesc) {
+      if (benchmarks && DynamicBenchmark::getBenchmarkMode()) {
+        setCudnnMathType(
+            cDesc,
+            benchmarks->bwdFilterBenchmark
+                ->getOptions<DynamicBenchmarkOptions<KernelMode>>());
+      }
 
-    if (in.isCalcGrad()) {
-      bool isStrided = (dx * dy) > 1;
-      auto bwdDataAlgoBestPerf = getBwdDataAlgo(
-          iDesc.descriptor,
-          wDesc.descriptor,
-          cDesc.descriptor,
-          oDesc.descriptor,
-          isStrided,
-          in.type());
-      af::array ws;
+      DevicePtr iPtr(inArray);
+      if (wt.isCalcGrad()) {
+        auto bwdFilterAlgoBestPerf = getBwdFilterAlgo(
+            iDesc.descriptor,
+            wDesc.descriptor,
+            cDesc.descriptor,
+            oDesc.descriptor,
+            inArray.type());
 
-      try {
-        ws = af::array(bwdDataAlgoBestPerf.memory, af::dtype::b8);
-      } catch (const std::exception& e) {
-        bwdDataAlgoBestPerf.algo = kBwdDataDefaultAlgo;
-        CUDNN_CHECK_ERR(cudnnGetConvolutionBackwardDataWorkspaceSize(
-            hndl,
-            wDesc.descriptor,
-            oDesc.descriptor,
-            cDesc.descriptor,
-            iDesc.descriptor,
-            bwdDataAlgoBestPerf.algo,
-            &bwdDataAlgoBestPerf.memory));
-        ws = af::array(bwdDataAlgoBestPerf.memory, af::dtype::b8);
+        af::array ws;
+        try {
+          ws = af::array(bwdFilterAlgoBestPerf.memory, af::dtype::b8);
+        } catch (const std::exception& e) {
+          bwdFilterAlgoBestPerf.algo = kBwdFilterDefaultAlgo;
+          CUDNN_CHECK_ERR(cudnnGetConvolutionBackwardFilterWorkspaceSize(
+              hndl,
+              iDesc.descriptor,
+              oDesc.descriptor,
+              cDesc.descriptor,
+              wDesc.descriptor,
+              bwdFilterAlgoBestPerf.algo,
+              &bwdFilterAlgoBestPerf.memory));
+          ws = af::array(bwdFilterAlgoBestPerf.memory, af::dtype::b8);
+        }
+        auto gradWeight =
+            Variable(af::array(wtArray.dims(), wtArray.type()), false);
+        {
+          DevicePtr gradWeightPtr(gradWeight.array());
+          DevicePtr gradResultPtr(gradOutputArray);
+          DevicePtr wsPtr(ws);
+          CUDNN_CHECK_ERR(cudnnConvolutionBackwardFilter(
+              hndl,
+              oneg,
+              iDesc.descriptor,
+              iPtr.get(),
+              oDesc.descriptor,
+              gradResultPtr.get(),
+              cDesc.descriptor,
+              bwdFilterAlgoBestPerf.algo,
+              wsPtr.get(),
+              bwdFilterAlgoBestPerf.memory,
+              zerog,
+              wDesc.descriptor,
+              gradWeightPtr.get()));
+        }
+        wt.addGrad(gradWeight);
       }
-      auto gradInput = Variable(af::array(in.dims(), in.type()), false);
-      {
-        DevicePtr gradInputPtr(gradInput.array());
-        DevicePtr gradResultPtr(gradOutputArray);
-        DevicePtr wsPtr(ws);
-        CUDNN_CHECK_ERR(cudnnConvolutionBackwardData(
-            hndl,
-            oneg,
-            wDesc.descriptor,
-            wPtr.get(),
-            oDesc.descriptor,
-            gradResultPtr.get(),
-            cDesc.descriptor,
-            bwdDataAlgoBestPerf.algo,
-            wsPtr.get(),
-            bwdDataAlgoBestPerf.memory,
-            zerog,
-            iDesc.descriptor,
-            gradInputPtr.get()));
-      }
-      in.addGrad(gradInput);
-    }
-    if (wt.isCalcGrad()) {
-      auto bwdFilterAlgoBestPerf = getBwdFilterAlgo(
-          iDesc.descriptor,
-          wDesc.descriptor,
-          cDesc.descriptor,
-          oDesc.descriptor,
-          in.type());
-      af::array ws;
+    };
 
-      try {
-        ws = af::array(bwdFilterAlgoBestPerf.memory, af::dtype::b8);
-      } catch (const std::exception& e) {
-        bwdFilterAlgoBestPerf.algo = kBwdFilterDefaultAlgo;
-        CUDNN_CHECK_ERR(cudnnGetConvolutionBackwardFilterWorkspaceSize(
-            hndl,
-            iDesc.descriptor,
-            oDesc.descriptor,
-            cDesc.descriptor,
-            wDesc.descriptor,
-            bwdFilterAlgoBestPerf.algo,
-            &bwdFilterAlgoBestPerf.memory));
-        ws = af::array(bwdFilterAlgoBestPerf.memory, af::dtype::b8);
+    if (benchmarks && DynamicBenchmark::getBenchmarkMode()) {
+      KernelMode dataBwdOption =
+          benchmarks->bwdFilterBenchmark
+              ->getOptions<DynamicBenchmarkOptions<KernelMode>>()
+              ->currentOption();
+
+      if (in.type() == af::dtype::f16 && dataBwdOption == KernelMode::F32 &&
+          dataBwdOption == KernelMode::F32_ALLOW_CONVERSION) {
+        // The input type of fp16, but the result of the dynamic benchmark is
+        // that using fp32 kernels is faster for computing bwd with fp16
+        // kernels, including the cast
+        af::array inArrayF32;
+        af::array wtArrayF32;
+        af::array gradOutputArrayF32;
+        benchmarks->bwdFilterBenchmark->audit(
+            [&in,
+             &inArrayF32,
+             &wt,
+             &wtArrayF32,
+             &gradOutput,
+             &gradOutputArrayF32]() {
+              inArrayF32 = in.array().as(af::dtype::f32);
+              wtArrayF32 = wt.array().as(af::dtype::f32);
+              gradOutputArrayF32 = gradOutput.array().as(af::dtype::f32);
+            },
+            /* incrementCount = */ false);
+
+        auto iDescF32 = TensorDescriptor(inArrayF32);
+        auto wDescF32 = FilterDescriptor(wtArrayF32);
+        auto cDescF32 =
+            ConvDescriptor(af::dtype::f32, px, py, sx, sy, dx, dy, groups);
+        auto oDescF32 = TensorDescriptor(gradOutputArrayF32);
+        // core bwd data computation
+        benchmarks->bwdFilterBenchmark->audit([&convolutionBackwardFilter,
+                                               &inArrayF32,
+                                               &wtArrayF32,
+                                               &gradOutputArrayF32,
+                                               &iDescF32,
+                                               &wDescF32,
+                                               &cDescF32,
+                                               &oDescF32]() {
+          convolutionBackwardFilter(
+              inArrayF32,
+              wtArrayF32,
+              gradOutputArrayF32,
+              iDescF32,
+              wDescF32,
+              cDescF32,
+              oDescF32);
+        });
+      } else {
+        benchmarks->bwdFilterBenchmark->audit([&convolutionBackwardFilter,
+                                               &in,
+                                               &wt,
+                                               &gradOutput,
+                                               &iDesc,
+                                               &wDesc,
+                                               &cDesc,
+                                               &oDesc]() {
+          convolutionBackwardFilter(
+              in.array(),
+              wt.array(),
+              gradOutput.array(),
+              iDesc,
+              wDesc,
+              cDesc,
+              oDesc);
+        });
       }
-      auto gradWeight =
-          Variable(af::array(wtArray.dims(), wtArray.type()), false);
-      {
-        DevicePtr gradWeightPtr(gradWeight.array());
-        DevicePtr gradResultPtr(gradOutputArray);
-        DevicePtr wsPtr(ws);
-        CUDNN_CHECK_ERR(cudnnConvolutionBackwardFilter(
-            hndl,
-            oneg,
-            iDesc.descriptor,
-            iPtr.get(),
-            oDesc.descriptor,
-            gradResultPtr.get(),
-            cDesc.descriptor,
-            bwdFilterAlgoBestPerf.algo,
-            wsPtr.get(),
-            bwdFilterAlgoBestPerf.memory,
-            zerog,
-            wDesc.descriptor,
-            gradWeightPtr.get()));
-      }
-      wt.addGrad(gradWeight);
+    } else {
+      convolutionBackwardFilter(
+          in.array(),
+          wt.array(),
+          gradOutput.array(),
+          iDesc,
+          wDesc,
+          cDesc,
+          oDesc);
     }
   };
 

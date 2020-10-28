@@ -19,7 +19,7 @@
 
 #include <gtest/gtest.h>
 #include "flashlight/flashlight/autograd/autograd.h"
-// #include "flashlight/flashlight/common/common.h"
+#include "flashlight/flashlight/common/common.h"
 
 using namespace fl;
 
@@ -275,6 +275,8 @@ TEST(AutogradTest, AutogradOperatorTypeCompatibility) {
   EXPECT_THROW(
       { batchnorm(f16, f32, f16_2, w, b, {1}, true, 0.01, 0.01); },
       std::invalid_argument);
+  EXPECT_THROW(
+      { conv2d(f16, f32, f16_2, 1, 1, 0, 0, 1, 1); }, std::invalid_argument);
   // Variadic operators
   std::vector<Variable> concatInputs = {f16, f32, f16_2, f32_2};
   EXPECT_THROW({ concatenate(concatInputs, 0); }, std::invalid_argument);
@@ -732,6 +734,7 @@ TEST(AutogradTest, Convolve) {
   int px = 2, py = 1;
   int sx = 1, sy = 1;
   int dx = 1, dy = 1;
+  auto benchmarks = std::make_shared<detail::ConvBenchmarks>();
   auto func_conv_in = [&](Variable& input) {
     return conv2d(
         input,
@@ -743,7 +746,8 @@ TEST(AutogradTest, Convolve) {
         py,
         dx,
         dy,
-        /* groups */ 1);
+        /* groups */ 1,
+        benchmarks);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_in, in, 0.06));
   auto func_conv_wt = [&](Variable& weight) {
@@ -757,7 +761,8 @@ TEST(AutogradTest, Convolve) {
         py,
         dx,
         dy,
-        /* groups */ 1);
+        /* groups */ 1,
+        benchmarks);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_wt, wt, 0.05));
   auto func_conv_bs = [&](Variable& bias) {
@@ -771,9 +776,70 @@ TEST(AutogradTest, Convolve) {
         py,
         dx,
         dy,
-        /* groups */ 1);
+        /* groups */ 1,
+        benchmarks);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_bs, bs, 0.02));
+}
+
+TEST(AutogradTest, ConvolveF16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  const float scaleFactor = 10.0; // scale the input to prevent grad underflow
+  auto in = Variable(af::randu(3, 1, 2, 1, af::dtype::f16) * scaleFactor, true);
+  auto wt = Variable(af::randu(2, 1, 2, 1, af::dtype::f16), true);
+  auto bs = Variable(af::randu(1, 1, 1, 1, af::dtype::f16), true);
+  int px = 1, py = 1;
+  int sx = 1, sy = 1;
+  int dx = 1, dy = 1;
+  auto benchmarks = std::make_shared<detail::ConvBenchmarks>();
+  auto func_conv_in = [&](Variable& input) {
+    return conv2d(
+        input,
+        wt,
+        bs,
+        sx,
+        sy,
+        px,
+        py,
+        dx,
+        dy,
+        /* groups */ 1,
+        benchmarks);
+  };
+  ASSERT_TRUE(jacobianTestImpl(func_conv_in, in, 5e-1, 0.1));
+  auto func_conv_wt = [&](Variable& weight) {
+    return conv2d(
+        in,
+        weight,
+        bs,
+        sx,
+        sy,
+        px,
+        py,
+        dx,
+        dy,
+        /* groups */ 1,
+        benchmarks);
+  };
+  ASSERT_TRUE(jacobianTestImpl(func_conv_wt, wt, 5e-2, 0.1));
+  auto func_conv_bs = [&](Variable& bias) {
+    return conv2d(
+        in,
+        wt,
+        bias,
+        sx,
+        sy,
+        px,
+        py,
+        dx,
+        dy,
+        /* groups */ 1,
+        benchmarks);
+  };
+  ASSERT_TRUE(jacobianTestImpl(func_conv_bs, bs, 3e-2, 0.1));
 }
 
 TEST(AutogradTest, ConvolveFilterGroups) {
@@ -1465,8 +1531,8 @@ TEST(AutogradTest, BatchnormJacobianF16) {
   if (!af::isHalfAvailable(af::getDevice())) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
-  // Jacobian Test with  train_mode = true;
 
+  // Jacobian Test with  train_mode = true;
   int numFeat = 3;
   std::vector<int> featAxes = {2};
   const float inputScale = 4.0; // scale the input to prevent grad underflow
