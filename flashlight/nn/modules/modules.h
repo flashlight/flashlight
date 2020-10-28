@@ -23,6 +23,7 @@
 #include "flashlight/flashlight/nn/modules/Normalize.h"
 #include "flashlight/flashlight/nn/modules/Padding.h"
 #include "flashlight/flashlight/nn/modules/Pool2D.h"
+#include "flashlight/flashlight/nn/modules/PrecisionCast.h"
 #include "flashlight/flashlight/nn/modules/RNN.h"
 #include "flashlight/flashlight/nn/modules/Reorder.h"
 #include "flashlight/flashlight/nn/modules/Transform.h"
