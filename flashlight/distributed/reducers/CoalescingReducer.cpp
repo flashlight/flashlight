@@ -21,7 +21,6 @@ CoalescingReducer::~CoalescingReducer() {
 }
 
 void CoalescingReducer::add(Variable& var) {
-  var.inPlaceCast(f32);
   // if this tensor would push the cache oversize, flush
   if (currCacheSize_ + var.bytes() > cacheThresholdBytes_) {
     flush();
