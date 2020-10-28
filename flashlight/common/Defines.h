@@ -8,8 +8,7 @@
 #pragma once
 
 #include <cstdlib>
-
-#define __forceinline __attribute__((always_inline)) inline
+#include <unordered_map>
 
 namespace fl {
 
@@ -78,6 +77,69 @@ struct DistributedConstants {
 };
 
 constexpr std::size_t kDynamicBenchmarkDefaultCount = 10;
+
+/**************************** Optimization Modes *****************************/
+// TODO(jacobkahn): should we move this to a different header? In Types.h/cpp?
+
+/**
+ * Optimization levels in flashlight. These determine the computation behavior
+ * of autograd operator computation as well as how inputs and outputs of
+ * operators are cast.
+ *
+ * Operator precision roughly follows those found in NVIDIA Apex:
+ * - https://bit.ly/33UpSWp
+ * - https://bit.ly/30Zv2OS
+ * - https://bit.ly/310k8Z6
+ */
+enum class OptimLevel {
+  /// All operations occur in default (f32 or f64) precision.
+  DEFAULT = 0,
+  /// Operations that perform reduction accumulation, including layer/batch
+  /// normalization are performed in f32 - all other operations are in fp16.
+  /// To be used in a standard mixed-precision training setup.
+  O1 = 1,
+  /// Only batch and layer normalization occur in f32 - all other operations
+  /// occur in f16.
+  O2 = 2,
+  /// All operations that support it use fp16.
+  O3 = 3
+};
+
+/**
+ * Singleton storing the current optimization level (`OptimLevel`) for
+ * flashlight.
+ */
+class OptimMode {
+ public:
+  /**
+   * @return the OptimMode singleton
+   */
+  static OptimMode& get();
+
+  /**
+   * Gets the current optimization level. Not thread safe.
+   *
+   * @return the current optimization level.
+   */
+  OptimLevel getOptimLevel();
+
+  /**
+   * Gets the current optimization level. Not thread safe.
+   *
+   * @param[in] level the optimization level to set
+   */
+  void setOptimLevel(OptimLevel level);
+
+  /**
+   *
+   */
+  static OptimLevel toOptimLevel(const std::string& in);
+
+  static const std::unordered_map<std::string, OptimLevel> kStringToOptimLevel;
+
+ private:
+  OptimLevel optimLevel_{OptimLevel::DEFAULT};
+};
 
 /** @} */
 

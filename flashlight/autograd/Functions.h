@@ -16,11 +16,13 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include <arrayfire.h>
 
 #include "flashlight/flashlight/common/Defines.h"
+#include "flashlight/flashlight/common/Types.h"
 #include "flashlight/flashlight/common/Utils.h"
 
 namespace fl {
@@ -46,10 +48,48 @@ bool areVariableTypesEqual(
       areVariableTypesEqual(b, args...);
 }
 
+/**
+ * Performs type conversion based on the optim level. Operations that lack
+ * sufficient precision are automatically upcast to f32 before computation.
+ * These are typically operations that require accumulations or reductions.
+ */
+template <typename T>
+T adjustInputType(const T& in, const char* funcname) {
+  OptimLevel optimLevel = OptimMode::get().getOptimLevel();
+  // Fastpath - DEFAULT mode never casts tensors
+  if (optimLevel == OptimLevel::DEFAULT) {
+    return in;
+  }
+
+  T res;
+  auto& funcs = kOptimLevelTypeExclusionMappings.find(optimLevel)->second;
+  // TODO: tiny, but this lookup incurs an extra alloc from char* to string
+  if (funcs.find(std::string(funcname)) == funcs.end() &&
+      optimLevel != OptimLevel::DEFAULT) {
+    // Not in the excluded list - cast to f16
+    res = in.as(af::dtype::f16);
+  } else {
+    // Upcast to f32 only if we have an f16 input - otherwise, leave as is
+    if (in.type() == af::dtype::f16) {
+      res = in.as(af::dtype::f32);
+    } else {
+      res = in;
+    }
+  }
+
+  return res;
+}
+
 } // namespace detail
 
 /**
- * Checks if two Variables have the same types.
+ * Adjusts the input type to operators based on the optimization mode and the
+ * operator name.
+ */
+#define FL_ADJUST_INPUT_TYPE(INPUT) detail::adjustInputType(INPUT, __func__)
+
+/**
+ * Checks if a variadic number of Variables have the same types.
  */
 #define FL_VARIABLE_DTYPES_MATCH_CHECK(...)              \
   if (!detail::areVariableTypesEqual(__VA_ARGS__)) {     \
