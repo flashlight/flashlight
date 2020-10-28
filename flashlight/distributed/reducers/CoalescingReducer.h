@@ -11,14 +11,16 @@
 
 #include "flashlight/flashlight/distributed/reducers/Reducer.h"
 
+#include <arrayfire.h>
+
 namespace fl {
 
 class Variable;
 
 /**
- * A Reducer which coalesces added Variables in a cache until some maximum cache
- * size is reached, after which all Variables in the cache are reduced and the
- * cache is emptied.
+ * A Reducer which coalesces added Variables in a cache until some maximum
+ * cache size is reached, after which all Variables in the cache are reduced
+ * and the cache is emptied.
  *
  * Since the Reducer executes ``allReduceMultiple`` operations asynchronously,
  * to guarantee that synchronized values are available after reduction,
