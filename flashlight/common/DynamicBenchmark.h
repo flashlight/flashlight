@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  * All rights reserved.
  *
@@ -12,11 +12,12 @@
 #include <memory>
 #include <stdexcept>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include <arrayfire.h>
+
+#include "flashlight/flashlight/common/CppBackports.h"
 
 namespace fl {
 
@@ -85,7 +86,9 @@ struct DynamicBenchmarkOptions : DynamicBenchmarkOptionsBase {
    * @param[in] benchCount the number of times to benchmark each option before
    * fixing on the optimal option
    */
-  DynamicBenchmarkOptions(std::unordered_set<T> options, size_t benchCount)
+  DynamicBenchmarkOptions(
+      fl::cpp::fl_unordered_set<T> options,
+      size_t benchCount)
       : DynamicBenchmarkOptions(
             std::vector<T>(options.begin(), options.end()),
             benchCount) {}
@@ -252,5 +255,16 @@ class DynamicBenchmark {
   // functions will be run directly without timings
   static bool benchmarkMode_;
 };
+
+// Specific benchmark implementations
+namespace detail {
+
+struct ConvBenchmarks {
+  std::shared_ptr<DynamicBenchmark> bwdFilterBenchmark;
+  std::shared_ptr<DynamicBenchmark> bwdDataBenchmark;
+  std::shared_ptr<DynamicBenchmark> bwdBiasBenchmark;
+};
+
+} // namespace detail
 
 } // namespace fl

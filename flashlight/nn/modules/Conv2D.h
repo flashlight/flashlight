@@ -13,6 +13,10 @@
 
 namespace fl {
 
+namespace detail {
+class ConvBenchmarks;
+}
+
 /**
  * Applies a 2D convolution over an 4D input along its first two dimensions.
  * This layer expects an input of shape [\f$X_{in}\f$, \f$Y_{in}\f$,
@@ -175,6 +179,9 @@ class Conv2D : public UnaryModule {
   Variable forward(const Variable& input) override;
 
   std::string prettyString() const override;
+
+ protected:
+  std::shared_ptr<detail::ConvBenchmarks> benchmarks_;
 };
 
 } // namespace fl

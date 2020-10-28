@@ -203,7 +203,7 @@ af::dtype stringToAfType(const std::string& typeName) {
 }
 
 std::string afTypeToString(const af::dtype& type) {
-  fl::cpp::enum_unordered_map<af::dtype, std::string> typeToStr = {
+  fl::cpp::fl_unordered_map<af::dtype, std::string> typeToStr = {
       {f32, "f32"},
       {c32, "c32"},
       {f64, "f64"},
