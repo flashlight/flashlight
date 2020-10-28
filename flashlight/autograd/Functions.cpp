@@ -407,6 +407,7 @@ Variable sqrt(const Variable& input) {
 }
 
 Variable sigmoid(const Variable& input) {
+  typeTrace("Sigmoid FWD", input.type());
   auto result = sigmoid(input.array());
   auto gradFunc =
       [result](std::vector<Variable>& inputs, const Variable& gradOutput) {
@@ -426,6 +427,7 @@ Variable transpose(const Variable& input) {
 }
 
 Variable tileAs(const Variable& input, const af::dim4& rdims) {
+  typeTrace("TileAs FWD", input.type());
   auto result = detail::tileAs(input.array(), rdims);
 
   af::dim4 inDims = input.dims();
@@ -545,12 +547,29 @@ split(const Variable& input, const std::vector<dim_t>& splitSizes, int dim) {
 }
 
 Variable tile(const Variable& input, const af::dim4& dims) {
-  auto result = tile(input.array(), dims);
+  return tile(input, dims, input.type());
+}
+
+Variable
+tile(const Variable& input, const af::dim4& dims, const af::dtype precision) {
+  af::array result;
+  if (input.type() == precision) {
+    result = tile(input.array(), dims);
+  } else {
+    result = tile(input.array().as(precision), dims);
+  }
+
   af::dim4 idims = input.dims();
-  auto gradFunc =
-      [idims](std::vector<Variable>& inputs, const Variable& gradOutput) {
-        inputs[0].addGrad(Variable(sumAs(gradOutput, idims).array(), false));
-      };
+  auto gradFunc = [idims, precision](
+                      std::vector<Variable>& inputs,
+                      const Variable& gradOutput) {
+    if (gradOutput.type() == precision) {
+      inputs[0].addGrad(Variable(sumAs(gradOutput, idims).array(), false));
+    } else {
+      inputs[0].addGrad(
+          Variable(sumAs(gradOutput, idims).array().as(precision), false));
+    }
+  };
   return Variable(result, {input.withoutData()}, gradFunc);
 }
 
@@ -810,6 +829,7 @@ Variable softmax(const Variable& input, const int dim) {
 }
 
 Variable logSoftmax(const Variable& input, const int dim) {
+  typeTrace("Logsoftmax FWD", input.type());
   auto maxvals = max((input.array()), dim);
   af::dim4 tiledims(1, 1, 1, 1);
   tiledims[dim] = input.dims(dim);
@@ -914,6 +934,7 @@ Variable reorder(
     const int dim1,
     const int dim2,
     const int dim3) {
+  typeTrace("Reorder FWD", input.type());
   auto result = reorder(input.array(), dim0, dim1, dim2, dim3);
   if (!af::isLinear(result)) {
     auto tmp = af::array(result.dims(), input.type());
@@ -947,25 +968,53 @@ Variable linear(const Variable& input, const Variable& weight) {
 
 Variable
 linear(const Variable& input, const Variable& weight, const Variable& bias) {
-  auto hasBias = bias.elements() > 0;
+  af::array weight_array;
+  if (input.type() == weight.type()) {
+    weight_array = weight.array();
+  } else {
+    weight_array = weight.array().as(input.type());
+  }
+
+  af::array bias_array;
+  if (input.type() == bias.type()) {
+    bias_array = bias.array();
+  } else {
+    bias_array = bias.array().as(input.type());
+  }
 
   af::dim4 to2d(input.dims(0), input.elements() / input.dims(0));
   auto to4d = input.dims();
-  to4d[0] = weight.dims(0);
+  to4d[0] = weight_array.dims(0);
 
   auto output =
-      moddims(matmul(weight.array(), moddims(input.array(), to2d)), to4d);
+      moddims(matmul(weight_array, moddims(input.array(), to2d)), to4d);
 
+  auto hasBias = bias.elements() > 0;
   if (hasBias) {
     auto tiledims = output.dims();
     tiledims[0] = 1;
-    output = output + tile(bias.array(), tiledims);
+    output = output + tile(bias_array, tiledims);
   }
   auto gradFunc = [hasBias](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
     auto& in = inputs[0];
     auto& wt = inputs[1];
+
+    af::array wtArray;
+    if (in.type() == wt.type()) {
+      wtArray = wt.array();
+    } else {
+      wtArray = wt.array().as(in.type());
+    }
+
+    af::array gradOutputArray;
+    if (in.type() == gradOutput.type()) {
+      gradOutputArray = gradOutput.array();
+    } else {
+      gradOutputArray = gradOutput.array().as(in.type());
+    }
+
     auto nframes = in.elements() / in.dims(0);
 
     if (hasBias && inputs[2].isCalcGrad()) {
@@ -973,15 +1022,15 @@ linear(const Variable& input, const Variable& weight, const Variable& bias) {
       bs.addGrad(Variable(sumAs(gradOutput, bs).array(), false));
     }
     if (in.isCalcGrad()) {
-      af::dim4 to2dout(wt.dims(0), nframes);
+      af::dim4 to2dout(wtArray.dims(0), nframes);
       in.addGrad(Variable(
           moddims(matmulTN(wt, moddims(gradOutput, to2dout)), in.dims())
               .array(),
           false));
     }
     if (wt.isCalcGrad()) {
-      af::dim4 to2din(wt.dims(1), nframes);
-      af::dim4 to2dout(wt.dims(0), nframes);
+      af::dim4 to2din(wtArray.dims(1), nframes);
+      af::dim4 to2dout(wtArray.dims(0), nframes);
       wt.addGrad(Variable(
           matmulNT(moddims(gradOutput, to2dout), moddims(in, to2din)).array(),
           false));
@@ -1016,17 +1065,18 @@ Variable gatedlinearunit(const Variable& input, const int dim) {
   auto gradFunc = [fhalf, shalf, fhalfout, shalfout, inDims, inType](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
-    auto gradGlu = af::array(inDims, inType);
-    gradGlu(fhalf[0], fhalf[1], fhalf[2], fhalf[3]) =
+    auto grad_glu = af::array(inDims, inType);
+    grad_glu(fhalf[0], fhalf[1], fhalf[2], fhalf[3]) =
         shalfout * gradOutput.array();
-    gradGlu(shalf[0], shalf[1], shalf[2], shalf[3]) =
+    grad_glu(shalf[0], shalf[1], shalf[2], shalf[3]) =
         shalfout * (1.0 - shalfout) * fhalfout * gradOutput.array();
-    inputs[0].addGrad(Variable(gradGlu, false));
+    inputs[0].addGrad(Variable(grad_glu, false));
   };
   return Variable(fhalfout * shalfout, {input.withoutData()}, gradFunc);
 }
 
 Variable embedding(const Variable& input, const Variable& embeddings) {
+  typeTrace("Embedding FWD", input.type());
   if (input.numdims() >= 4) {
     throw std::invalid_argument("embedding input must have 3 or fewer dims");
   }
