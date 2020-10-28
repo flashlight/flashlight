@@ -22,7 +22,7 @@ fl::Variable transformerRotate(const fl::Variable& input) {
   int d1 = data.dims(1);
   int d2 = data.dims(2);
   int d3 = data.dims(3);
-  data = af::join(0, data, af::constant(0.0, d1, d1, d2, d3));
+  data = af::join(0, data, af::constant(0.0, d1, d1, d2, d3, data.type()));
   data = af::moddims(data, af::dim4((d0 + d1) * d1, 1, d2, d3));
   data = data.rows(0, (d1 + d0 - 1) * d1 - 1);
   data = af::moddims(data, af::dim4(d0 + d1 - 1, d1, d2, d3));
@@ -31,7 +31,8 @@ fl::Variable transformerRotate(const fl::Variable& input) {
                       const fl::Variable& gradOutput) {
     auto gradData = gradOutput.array();
     gradData = af::moddims(gradData, af::dim4((d0 + d1 - 1) * d1, 1, d2, d3));
-    gradData = af::join(0, gradData, af::constant(0.0, d1, 1, d2, d3));
+    gradData = af::join(
+        0, gradData, af::constant(0.0, d1, 1, d2, d3, gradData.type()));
     gradData = af::moddims(gradData, af::dim4(d0 + d1, d1, d2, d3));
     gradData = gradData.rows(0, d0 - 1);
     inputs[0].addGrad(fl::Variable(gradData, false));
@@ -143,7 +144,8 @@ Variable Transformer::selfAttention(const std::vector<Variable>& input) {
 
   Variable mask, posEmb;
   if (bptt_ > 0) {
-    posEmb = tile(params_[0], af::dim4(1, 1, nHeads_ * bsz));
+    posEmb =
+        tile(params_[0].as(input.back().type()), af::dim4(1, 1, nHeads_ * bsz));
   }
   if (useMask_ && input.back().dims(1) > 1) {
     mask = getMask(n, input.size() == 2);

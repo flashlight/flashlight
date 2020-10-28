@@ -42,6 +42,7 @@ bool jacobianTestImpl(
     input.array()(i) = orig + perturbation;
     auto outb = func(input).array();
     input.array()(i) = orig;
+
     fwdJacobian(af::span, i) =
         af::moddims((outb - outa), outa.elements()) * 0.5 / perturbation;
   }
@@ -49,7 +50,7 @@ bool jacobianTestImpl(
   auto bwdJacobian =
       af::array(func(input).elements(), input.elements(), af::dtype::f32);
   auto dout =
-      Variable(af::constant(0, func(input).dims(), input.type()), false);
+      Variable(af::constant(0, func(input).dims(), func(input).type()), false);
   for (int i = 0; i < dout.elements(); ++i) {
     dout.array()(i) = 1; // element in 1D view
     input.zeroGrad();
@@ -236,7 +237,8 @@ TEST(AutogradTest, AutogradOperatorTypeCompatibility) {
   }
 
   auto f16 = Variable(af::randu({2, 2}, af::dtype::f16), true);
-  auto f32 = Variable(af::randu({2, 2}), true);
+  auto f32 = Variable(af::randu({2, 2}, af::dtype::f32), true);
+
   // Binary operators
   EXPECT_THROW({ auto res = f16 + f32; }, std::invalid_argument); // +
   EXPECT_THROW({ auto res = f16 - f32; }, std::invalid_argument); // -
@@ -252,14 +254,28 @@ TEST(AutogradTest, AutogradOperatorTypeCompatibility) {
   EXPECT_THROW({ matmul(f16, f32); }, std::invalid_argument); // matmul
   EXPECT_THROW({ matmulTN(f16, f32); }, std::invalid_argument); // matmulTN
   EXPECT_THROW({ matmulNT(f16, f32); }, std::invalid_argument); // matmulNT
-  EXPECT_THROW({ binaryCrossEntropy(f16, f32); }, std::invalid_argument);
-  EXPECT_THROW({ categoricalCrossEntropy(f16, f32); }, std::invalid_argument);
-  EXPECT_THROW({ embedding(f16, f32); }, std::invalid_argument);
+  EXPECT_NO_THROW({ binaryCrossEntropy(f16, f32); });
+  EXPECT_NO_THROW({
+    categoricalCrossEntropy(
+        Variable(af::randu(7, 10, 4, af::dtype::f16), true),
+        Variable((af::randu(10, 4, af::dtype::u32) % 7).as(s32), false));
+  });
+  EXPECT_NO_THROW({ pool2d(f16, 1, 1, 1, 1, 1, 1); });
+  EXPECT_NO_THROW({ embedding(f16, f32); }); // lookup is of a different type
   // Ternary operators
+  auto f32_2 = Variable(af::randu({2, 2}, af::dtype::f32), true);
   auto f16_2 = Variable(af::randu({2, 2}, af::dtype::f16), true);
   EXPECT_THROW({ linear(f16, f32, f16_2); }, std::invalid_argument); // linear
+  EXPECT_THROW({ linear(f16, f32, f32_2); }, std::invalid_argument); // linear
+  auto w = Variable(af::randu(1, af::dtype::f32), true);
+  auto b = Variable(af::randu(1, af::dtype::f32), true);
+  EXPECT_THROW(
+      { batchnorm(f16, f32, f32_2, w, b, {1}, true, 0.01, 0.01); },
+      std::invalid_argument);
+  EXPECT_THROW(
+      { batchnorm(f16, f32, f16_2, w, b, {1}, true, 0.01, 0.01); },
+      std::invalid_argument);
   // Variadic operators
-  auto f32_2 = Variable(af::randu({2, 2}), true);
   std::vector<Variable> concatInputs = {f16, f32, f16_2, f32_2};
   EXPECT_THROW({ concatenate(concatInputs, 0); }, std::invalid_argument);
 }
@@ -314,11 +330,14 @@ TEST(AutogradTest, CastingAsInPlace) {
 }
 
 TEST(AutogradTest, CastingAsDifferentGradTypes) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
   auto f32 = Variable(af::randu({5, 5}), true);
   auto f16 = Variable(af::randu({5, 5}, af::dtype::f16), true);
-  auto res = f32 + f16;
-  // Computing gradients with mixed types fails
-  ASSERT_THROW(res.backward(), std::invalid_argument);
+  // Computing gradients with mixed types fails when the op is applied
+  ASSERT_THROW({ f32 + f16; }, std::invalid_argument);
 }
 
 TEST(AutogradTest, CastingAsGrad) {
@@ -382,7 +401,7 @@ TEST(AutogradTest, DivideAdd) {
   auto x = Variable(af::randu(5, af::dtype::f64), true);
   auto y = Variable(af::randu(5, af::dtype::f64), true);
   auto z = x + x / y + y;
-  auto dz = Variable(af::constant(1.0, 5), false);
+  auto dz = Variable(af::constant(1.0, 5, af::dtype::f64), false);
   z.backward(dz);
   auto dx = x.grad();
   auto dy = y.grad();
@@ -512,6 +531,24 @@ TEST(AutogradTest, TileAs) {
   auto dx = x.grad();
   ASSERT_TRUE(allClose(dy.array(), af::tile(x.array(), 1, 2)));
   ASSERT_TRUE(allClose(dx.array(), af::sum(y.array(), 1)));
+}
+
+TEST(AutogradTest, TileAsF16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  auto x = Variable(af::randu(5, af::dtype::f16), true);
+  auto y = Variable(af::randu(5, 2, af::dtype::f16), true);
+  auto z = y * tileAs(x, y);
+  ASSERT_EQ(x.type(), z.type());
+  auto dz = Variable(af::constant(1.0, 5, 2, af::dtype::f16), false);
+  z.backward(dz);
+  auto dy = y.grad();
+  auto dx = x.grad();
+  ASSERT_TRUE(
+      allClose(dy.array(), af::tile(x.array(), 1, 2).as(dx.type()), 1e-2));
+  ASSERT_TRUE(allClose(dx.array(), af::sum(y.array(), 1).as(dx.type()), 1e-2));
 }
 
 TEST(AutogradTest, TileAs2) {
@@ -831,6 +868,17 @@ TEST(AutogradTest, Pooling) {
   ASSERT_TRUE(jacobianTestImpl(func_pool, in, 1E-3));
 }
 
+TEST(AutogradTest, PoolingF16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  const float inputScale = 2.0; // scale the input to prevent grad underflow
+  auto in = Variable(inputScale * af::randu(3, 3, 1, 1, af::dtype::f16), true);
+  auto func_pool = [&](Variable& input) { return pool2d(input, 2, 2, 1, 1); };
+  ASSERT_TRUE(jacobianTestImpl(func_pool, in, 1e1, 1e-1)); // TODO: investigate
+}
+
 TEST(AutogradTest, Softmax) {
   auto in = Variable(af::randu(3, 5, 1, af::dtype::f64), true);
   auto func_sm = [&](Variable& input) { return softmax(input, 0); };
@@ -838,11 +886,34 @@ TEST(AutogradTest, Softmax) {
   ASSERT_TRUE(jacobianTestImpl(func_sm, in, 1E-5));
 }
 
+TEST(AutogradTest, SoftmaxF16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  auto in = Variable(af::randu(3, 5, 1, af::dtype::f16), true);
+  ASSERT_EQ(in.type(), softmax(in, 0).type());
+  auto func_sm = [&](Variable& input) { return softmax(input, 0); };
+
+  ASSERT_TRUE(jacobianTestImpl(func_sm, in, 1E-2, 1e-1));
+}
+
 TEST(AutogradTest, LogSoftmax) {
   auto in = Variable(af::randu(3, 5, 1, af::dtype::f64), true);
   auto func_lsm = [&](Variable& input) { return logSoftmax(input, 0); };
 
   ASSERT_TRUE(jacobianTestImpl(func_lsm, in, 1E-5));
+}
+
+TEST(AutogradTest, LogSoftmaxF16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  auto in = Variable(af::randu(3, 5, 1, af::dtype::f16), true);
+  auto func_lsm = [&](Variable& input) { return logSoftmax(input, 0); };
+
+  ASSERT_TRUE(jacobianTestImpl(func_lsm, in, 1E-2, 1e-1));
 }
 
 TEST(AutogradTest, BinaryCrossEntropy) {
@@ -913,6 +984,26 @@ TEST(AutogradTest, Linear) {
     ASSERT_TRUE(jacobianTestImpl(func_lin_wt, wt, 1E-8));
     auto func_lin_bs = [&](Variable& bias) { return linear(in, wt, bias); };
     ASSERT_TRUE(jacobianTestImpl(func_lin_bs, bs, 1E-8));
+  }
+}
+
+TEST(AutogradTest, LinearF16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  std::vector<int> batchsizes = {1, 5};
+  const float scale = 4.0; // scale prevent grad underflow
+  for (auto b : batchsizes) {
+    auto in = Variable(af::randu(2, 2, b, af::dtype::f16) * scale, true);
+    auto wt = Variable(af::randu(2, 2, af::dtype::f16) * scale, true);
+    auto bs = Variable(af::randu(2, af::dtype::f16) * scale, true);
+    auto func_lin_in = [&](Variable& input) { return linear(input, wt, bs); };
+    ASSERT_TRUE(jacobianTestImpl(func_lin_in, in, 5E-2, 5E-1));
+    auto func_lin_wt = [&](Variable& weight) { return linear(in, weight, bs); };
+    ASSERT_TRUE(jacobianTestImpl(func_lin_wt, wt, 5E-2, 5E-1));
+    auto func_lin_bs = [&](Variable& bias) { return linear(in, wt, bias); };
+    ASSERT_TRUE(jacobianTestImpl(func_lin_bs, bs, 1E-2, 5E-1));
   }
 }
 
@@ -1370,7 +1461,44 @@ TEST(AutogradTest, BatchnormJacobian) {
   ASSERT_TRUE(jacobianTestImpl(func_bn_bs, bias, 1e-2, 1e-4));
 }
 
-TEST(AutogradTest, BatchnormJacobianMultipleAxies) {
+TEST(AutogradTest, BatchnormJacobianF16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+  // Jacobian Test with  train_mode = true;
+
+  int numFeat = 3;
+  std::vector<int> featAxes = {2};
+  const float inputScale = 4.0; // scale the input to prevent grad underflow
+  auto input =
+      Variable(inputScale * af::randu(3, 3, numFeat, 4, af::dtype::f16), true);
+  auto runningMean = Variable(af::randu(numFeat, af::dtype::f32), false);
+  auto runningVar = Variable(af::randu(numFeat, af::dtype::f32), false);
+  auto weight = Variable(af::randu(numFeat, af::dtype::f32), true);
+  auto bias = Variable(af::randu(numFeat, af::dtype::f32), true);
+
+  // Use larger perturbations to ensure gradients don't underflow with fp16
+
+  auto func_bn_in = [&](Variable& in) {
+    return (batchnorm(
+        in, weight, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
+  };
+  ASSERT_TRUE(jacobianTestImpl(func_bn_in, input, 5e-2, 1e-1));
+
+  auto func_bn_wt = [&](Variable& wt) {
+    return (batchnorm(
+        input, wt, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
+  };
+  ASSERT_TRUE(jacobianTestImpl(func_bn_wt, weight, 5e-2, 1e-1));
+
+  auto func_bn_bs = [&](Variable& bs) {
+    return (batchnorm(
+        input, weight, bs, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
+  };
+  ASSERT_TRUE(jacobianTestImpl(func_bn_bs, bias, 5e-2, 1e-1));
+}
+
+TEST(AutogradTest, BatchnormJacobianMultipleAxes) {
   // Jacobian Test with  train_mode = true;
   std::vector<int> featAxes = {0, 1, 2};
   auto input = Variable(af::randu(8, 8, 3, 16, af::dtype::f32), true);
@@ -1391,23 +1519,63 @@ TEST(AutogradTest, BatchnormJacobianMultipleAxies) {
     return (batchnorm(
         in, weight, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_bn_in, input, 1e-2, 1e-4));
+  ASSERT_TRUE(jacobianTestImpl(func_bn_in, input, 1e-2, 1e-3));
 
   auto func_bn_wt = [&](Variable& wt) {
     return (batchnorm(
         input, wt, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_bn_wt, weight, 1e-2, 1e-4));
+  ASSERT_TRUE(jacobianTestImpl(func_bn_wt, weight, 1e-2, 1e-3));
 
   auto func_bn_bs = [&](Variable& bs) {
     return (batchnorm(
         input, weight, bs, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_bn_bs, bias, 1e-2, 1e-4));
+  ASSERT_TRUE(jacobianTestImpl(func_bn_bs, bias, 1e-2, 1e-3));
+}
+
+TEST(AutogradTest, BatchnormJacobianMultipleAxesF16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  // Jacobian Test with  train_mode = true;
+  std::vector<int> featAxes = {0, 1, 2};
+  const float inputScale = 8.0; // scale the input to prevent grad underflow
+  auto input =
+      Variable(inputScale * af::randu(2, 2, 2, 1, af::dtype::f16), true);
+  auto nfeatures = 1;
+  for (auto ax : featAxes) {
+    nfeatures *= input.dims(ax);
+  }
+  auto runningMean = Variable(af::randu(nfeatures, af::dtype::f32), false);
+  auto runningVar = Variable(af::randu(nfeatures, af::dtype::f32), false);
+  auto weight = Variable(af::randu(nfeatures, af::dtype::f32), true);
+  auto bias = Variable(af::randu(nfeatures, af::dtype::f32), true);
+
+  // Use larger perturbations to ensure gradients don't underflow with fp16
+
+  auto func_bn_in = [&](Variable& in) {
+    return (batchnorm(
+        in, weight, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
+  };
+  ASSERT_TRUE(
+      jacobianTestImpl(func_bn_in, input, 1e-1, 0.5)); // TODO: investigate
+
+  auto func_bn_wt = [&](Variable& wt) {
+    return (batchnorm(
+        input, wt, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
+  };
+  ASSERT_TRUE(jacobianTestImpl(func_bn_wt, weight, 5e-3, 1e-1));
+
+  auto func_bn_bs = [&](Variable& bs) {
+    return (batchnorm(
+        input, weight, bs, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
+  };
+  ASSERT_TRUE(jacobianTestImpl(func_bn_bs, bias, 5e-3, 1e-1));
 }
 
 TEST(AutogradTest, LayerNormJacobian) {
-  double eps = 1e-5;
   std::vector<int> featAxes = {0, 1, 2, 3};
   auto input = Variable(af::randu(7, 7, 3, 10), true);
   auto nfeatures = 1;
@@ -1425,6 +1593,32 @@ TEST(AutogradTest, LayerNormJacobian) {
   };
 
   ASSERT_TRUE(jacobianTestImpl(func_ln_in, input, 1e-2, 1e-4));
+}
+
+TEST(AutogradTest, LayerNormJacobianF16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  std::vector<int> featAxes = {0, 1, 2, 3};
+  const float inputScale = 4.0; // scale the input to prevent grad underflow
+  auto input =
+      Variable(inputScale * af::randu(2, 2, 2, 4, af::dtype::f16), true);
+  auto nfeatures = 1;
+  for (auto ax : featAxes) {
+    nfeatures *= input.dims(ax);
+  }
+  auto runningMean = Variable(af::randu(nfeatures, af::dtype::f32), false);
+  auto runningVar = Variable(af::randu(nfeatures, af::dtype::f32), false);
+  auto weight = Variable(af::randu(nfeatures, af::dtype::f32), true);
+  auto bias = Variable(af::randu(nfeatures, af::dtype::f32), true);
+
+  auto func_ln_in = [&](Variable& in) {
+    return batchnorm(
+        in, weight, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5);
+  };
+
+  ASSERT_TRUE(jacobianTestImpl(func_ln_in, input, 1e-4, 1e-2));
 }
 
 int main(int argc, char** argv) {

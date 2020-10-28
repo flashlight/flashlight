@@ -82,6 +82,45 @@ TEST(ModuleTest, LinearFwd) {
   ASSERT_TRUE(allClose(linBias.forward(inVar), expected_outVar, 1E-7));
 }
 
+TEST(ModuleTest, LinearFwdF16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  int n_in = 2, n_out = 3, x = 4, batchsize = 2;
+  std::array<float, 6> wt = {8, 2, 2, 10, 5, 3};
+  auto wtVar = param(af::array(n_out, n_in, wt.data()));
+
+  std::array<float, 16> in = {6, 2, 1, 4, 8, 2, 7, 1, 10, 7, 3, 7, 5, 9, 2, 4};
+  auto inVar =
+      input(af::array(n_in, x, batchsize, in.data()).as(af::dtype::f16));
+
+  std::array<float, 24> expected_out = {68, 22, 18,  48, 22,  14, 84, 26,
+                                        22, 66, 19,  17, 150, 55, 41, 94,
+                                        41, 27, 130, 55, 37,  56, 24, 16};
+  auto expected_outVar = Variable(
+      af::array(n_out, x, batchsize, expected_out.data()).as(af::dtype::f16),
+      true);
+
+  auto linNoBias = Linear(wtVar);
+  auto result = linNoBias.forward(inVar);
+  ASSERT_EQ(result.type(), inVar.type());
+  ASSERT_TRUE(allClose(result, expected_outVar, 1E-2));
+
+  std::array<float, 3> bs = {1, 2, 3};
+  auto bsVar = input(af::array(n_out, bs.data()));
+  expected_out = {69,  24, 21, 49, 24, 17, 85,  28, 25, 67, 21, 20,
+                  151, 57, 44, 95, 43, 30, 131, 57, 40, 57, 26, 19};
+  expected_outVar = Variable(
+      af::array(n_out, x, batchsize, expected_out.data()).as(inVar.type()),
+      true);
+
+  auto linBias = Linear(wtVar, bsVar);
+  auto resultBias = linBias.forward(inVar);
+  ASSERT_EQ(resultBias.type(), af::dtype::f16);
+  ASSERT_TRUE(allClose(resultBias, expected_outVar, 1E-3));
+}
+
 TEST(ModuleTest, ConvPadding) {
   auto conv1 = Conv2D(30, 100, 3, 5, 2, 1, PaddingMode::SAME, 0, true, 1);
   auto conv2 = Conv2D(
@@ -127,6 +166,39 @@ TEST(ModuleTest, GLUFwd) {
   }
 }
 
+TEST(ModuleTest, GLUFwdF16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  std::array<float, 6> in = {0.8, 0.2, 0.2, 0.1, 0.5, 0.3};
+  auto inVar = Variable(af::array(3, 2, in.data()).as(af::dtype::f16), true);
+
+  std::array<float, 3> expected_out = {0.419983, 0.124492, 0.114888};
+  auto expected_outVar =
+      Variable(af::array(3, expected_out.data()).as(af::dtype::f16), true);
+
+  GatedLinearUnit glu(1);
+  auto out = glu.forward(inVar);
+  ASSERT_EQ(out.type(), inVar.type());
+  ASSERT_TRUE(allClose(out, expected_outVar, 1E-2));
+
+  // test batching
+  int batchsize = 5;
+  inVar = Variable(af::randu(10, 7, batchsize).as(af::dtype::f16), true);
+  glu = GatedLinearUnit(0);
+
+  auto batchOutVar = glu(inVar);
+
+  for (int i = 0; i < batchsize; ++i) {
+    expected_outVar = glu.forward(inVar.slice(i));
+    ASSERT_TRUE(allClose(
+        batchOutVar.array()(af::span, af::span, i),
+        expected_outVar.array(),
+        1E-7));
+  }
+}
+
 TEST(ModuleTest, LogSoftmaxFwd) {
   std::array<float, 6> in = {0.8, 0.2, 0.2, 0.1, 0.5, 0.3};
   auto inVar = Variable(af::array(3, 2, in.data()), true);
@@ -142,6 +214,46 @@ TEST(ModuleTest, LogSoftmaxFwd) {
   auto expected_outVar1 = Variable(af::array(3, 2, expected_out1.data()), true);
   LogSoftmax lsm1(1);
   ASSERT_TRUE(allClose(lsm1.forward(inVar), expected_outVar1, 1E-4));
+
+  // test batching
+  int batchsize = 5;
+  inVar = Variable(af::randu(10, 7, batchsize), true);
+  LogSoftmax lsm(0);
+
+  auto batchOutVar = lsm(inVar);
+
+  for (int i = 0; i < batchsize; ++i) {
+    auto expected_outVar = lsm.forward(inVar.slice(i));
+    ASSERT_TRUE(allClose(
+        batchOutVar.array()(af::span, af::span, i),
+        expected_outVar.array(),
+        1E-7));
+  }
+}
+
+TEST(ModuleTest, LogSoftmaxFwdF16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  std::array<float, 6> in = {0.8, 0.2, 0.2, 0.1, 0.5, 0.3};
+  auto inVar = Variable(af::array(3, 2, in.data()).as(af::dtype::f16), true);
+
+  std::array<float, 6> expected_out0 = {
+      -0.740805, -1.34081, -1.34081, -1.3119, -0.911902, -1.1119};
+  auto expected_outVar0 =
+      Variable(af::array(3, 2, expected_out0.data()).as(af::dtype::f16), true);
+  LogSoftmax lsm0(0);
+  auto result0 = lsm0.forward(inVar);
+  ASSERT_EQ(result0.type(), inVar.type());
+  ASSERT_TRUE(allClose(result0, expected_outVar0, 1E-3));
+
+  std::array<float, 6> expected_out1 = {
+      -0.403186, -0.854355, -0.744397, -1.10319, -0.554355, -0.644397};
+  auto expected_outVar1 =
+      Variable(af::array(3, 2, expected_out1.data()).as(af::dtype::f16), true);
+  LogSoftmax lsm1(1);
+  ASSERT_TRUE(allClose(lsm1.forward(inVar), expected_outVar1, 1E-3));
 
   // test batching
   int batchsize = 5;
@@ -196,6 +308,27 @@ TEST(ModuleTest, PoolingFwd) {
   auto pool = Pool2D(9, 7, 1, 1, PaddingMode::SAME, PaddingMode::SAME);
   int batchsize = 10;
   auto input = af::randu(120, 100, 30, batchsize);
+  auto batchOutVar = pool(Variable(input, false));
+  for (int i = 0; i < batchsize; ++i) {
+    ASSERT_EQ(input.dims(), batchOutVar.dims());
+    auto expected_outVar =
+        pool(Variable(input(af::span, af::span, af::span, i), false));
+    ASSERT_TRUE(allClose(
+        batchOutVar.array()(af::span, af::span, af::span, i),
+        expected_outVar.array(),
+        1E-7));
+  }
+}
+
+TEST(ModuleTest, PoolingFwdF16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  // test batching
+  auto pool = Pool2D(9, 7, 1, 1, PaddingMode::SAME, PaddingMode::SAME);
+  int batchsize = 10;
+  auto input = af::randu(120, 100, 30, batchsize, af::dtype::f16);
   auto batchOutVar = pool(Variable(input, false));
   for (int i = 0; i < batchsize; ++i) {
     ASSERT_EQ(input.dims(), batchOutVar.dims());
@@ -278,6 +411,31 @@ TEST(ModuleTest, DropoutFwd) {
   ASSERT_TRUE(allClose(out, in, 1E-5));
 }
 
+TEST(ModuleTest, DropoutFwdF16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  auto module = Dropout(0.5);
+  // Train Mode
+  module.train();
+  auto in = Variable(af::randu(af::dim4(1000, 1000), af::dtype::f16), true);
+  auto out = module(in);
+  ASSERT_EQ(out.type(), af::dtype::f16);
+
+  ASSERT_NEAR(
+      af::count<int>(out.array() == 0.0),
+      in.elements() / 2,
+      in.elements() / 16); // Check enough zeroes
+
+  ASSERT_GT(af::max<float>(out.array()), 1.5); // Check input is scaled
+
+  // Eval Mode
+  module.eval();
+  out = module(in);
+  ASSERT_TRUE(allClose(out, in, 1E-5));
+}
+
 TEST(ModuleTest, PaddingFwd) {
   auto module = Padding({1, 2}, {3, 4}, -1);
   auto input = Variable(af::randu(1, 2, 3, 4, af::dtype::f64), true);
@@ -333,6 +491,47 @@ TEST(ModuleTest, LayerNormFwd) {
   module3.setParams(Variable(af::constant(0.0, F), false), 1);
   auto out3 = module3.forward(input);
   ASSERT_TRUE(allClose(out_train.array(), out3.array(), eps));
+}
+
+TEST(ModuleTest, LayerNormFwdF16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  double eps = 5E-2;
+  std::vector<int> feat_axes = {3};
+  auto input = Variable(af::randu(4, 4, 3, 10, af::dtype::f16), true);
+
+  auto sample_mean = mean(input, {3});
+  auto sample_var = var(input, {3}, true);
+  auto true_out = (input - tileAs(sample_mean, input)) /
+      tileAs(fl::sqrt(sample_var + eps), input);
+
+  // no affine transform
+  auto module1 = LayerNorm(feat_axes, eps, false);
+
+  module1.train();
+  auto out = module1.forward(input);
+
+  ASSERT_EQ(out.type(), input.type());
+  ASSERT_TRUE(allClose(out, true_out, eps));
+
+  module1.eval();
+  out = module1.forward(input);
+
+  ASSERT_EQ(out.type(), input.type());
+  ASSERT_TRUE(allClose(out.array(), true_out.array(), eps));
+
+  // with affine transform
+  auto module2 = LayerNorm(feat_axes, eps, true);
+
+  module2.train();
+  auto out_train = module2.forward(input);
+  module2.eval();
+  auto out_eval = module2.forward(input);
+
+  ASSERT_TRUE(allClose(out_train.array(), out_eval.array(), eps));
+  ASSERT_EQ(out_train.dims(), input.dims());
 }
 
 TEST(ModuleTest, NormalizeFwd) {
