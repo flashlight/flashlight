@@ -37,10 +37,11 @@ struct Handle {
   }
 };
 
-const float kFloatOne = 1.0;
-const double kDoubleOne = 1.0;
 const float kFloatZero = 0.0;
+const float kFloatOne = 1.0;
+
 const double kDoubleZero = 0.0;
+const double kDoubleOne = 1.0;
 
 std::unordered_map<int, Handle> handles;
 
@@ -72,6 +73,8 @@ void cudnnCheckErr(cudnnStatus_t status) {
 
 cudnnDataType_t cudnnMapToType(const af::dtype& t) {
   switch (t) {
+    case af::dtype::f16:
+      return CUDNN_DATA_HALF;
     case af::dtype::f32:
       return CUDNN_DATA_FLOAT;
     case af::dtype::f64:
