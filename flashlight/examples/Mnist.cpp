@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
   model.add(Conv2D(32, 64, 5, 5, 1, 1, pad, pad));
   model.add(ReLU());
   model.add(Pool2D(2, 2, 2, 2));
-  model.add(View({7 * 7 * 64, -1}));
+  model.add(View(af::dim4(7 * 7 * 64, -1)));
   model.add(Linear(7 * 7 * 64, 1024));
   model.add(ReLU());
   model.add(Dropout(0.5));
