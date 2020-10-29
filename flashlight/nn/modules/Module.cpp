@@ -17,6 +17,7 @@
 
 #include "flashlight/flashlight/nn/modules/Module.h"
 
+#include "flashlight/flashlight/common/Utils.h"
 #include "flashlight/flashlight/nn/Init.h"
 
 namespace fl {
