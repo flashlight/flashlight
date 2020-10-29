@@ -24,6 +24,18 @@ class ContainerTestClass : public Sequential {
   }
 };
 
+class ModuleTestF16 : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    // Ensures all operations will be in f16
+    OptimMode::get().setOptimLevel(OptimLevel::O3);
+  }
+
+  void TearDown() override {
+    OptimMode::get().setOptimLevel(OptimLevel::DEFAULT);
+  }
+};
+
 } // namespace
 
 TEST(ModuleTest, EmbeddingFwd) {
@@ -82,7 +94,7 @@ TEST(ModuleTest, LinearFwd) {
   ASSERT_TRUE(allClose(linBias.forward(inVar), expected_outVar, 1E-7));
 }
 
-TEST(ModuleTest, LinearFwdF16) {
+TEST_F(ModuleTestF16, LinearFwdF16) {
   if (!af::isHalfAvailable(af::getDevice())) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
@@ -119,6 +131,9 @@ TEST(ModuleTest, LinearFwdF16) {
   auto resultBias = linBias.forward(inVar);
   ASSERT_EQ(resultBias.type(), af::dtype::f16);
   ASSERT_TRUE(allClose(resultBias, expected_outVar, 1E-3));
+
+  // OptimLevel::O3 is active with this fixture
+  ASSERT_EQ(linBias.forward(inVar.as(af::dtype::f32)).type(), af::dtype::f16);
 }
 
 TEST(ModuleTest, ConvPadding) {
@@ -166,7 +181,7 @@ TEST(ModuleTest, GLUFwd) {
   }
 }
 
-TEST(ModuleTest, GLUFwdF16) {
+TEST_F(ModuleTestF16, GLUFwdF16) {
   if (!af::isHalfAvailable(af::getDevice())) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
@@ -192,10 +207,11 @@ TEST(ModuleTest, GLUFwdF16) {
 
   for (int i = 0; i < batchsize; ++i) {
     expected_outVar = glu.forward(inVar.slice(i));
+    ASSERT_EQ(batchOutVar.type(), expected_outVar.type());
     ASSERT_TRUE(allClose(
         batchOutVar.array()(af::span, af::span, i),
         expected_outVar.array(),
-        1E-7));
+        1E-3));
   }
 }
 
@@ -231,7 +247,7 @@ TEST(ModuleTest, LogSoftmaxFwd) {
   }
 }
 
-TEST(ModuleTest, LogSoftmaxFwdF16) {
+TEST_F(ModuleTestF16, LogSoftmaxFwdF16) {
   if (!af::isHalfAvailable(af::getDevice())) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
@@ -241,17 +257,14 @@ TEST(ModuleTest, LogSoftmaxFwdF16) {
 
   std::array<float, 6> expected_out0 = {
       -0.740805, -1.34081, -1.34081, -1.3119, -0.911902, -1.1119};
-  auto expected_outVar0 =
-      Variable(af::array(3, 2, expected_out0.data()).as(af::dtype::f16), true);
+  auto expected_outVar0 = Variable(af::array(3, 2, expected_out0.data()), true);
   LogSoftmax lsm0(0);
   auto result0 = lsm0.forward(inVar);
-  ASSERT_EQ(result0.type(), inVar.type());
   ASSERT_TRUE(allClose(result0, expected_outVar0, 1E-3));
 
   std::array<float, 6> expected_out1 = {
       -0.403186, -0.854355, -0.744397, -1.10319, -0.554355, -0.644397};
-  auto expected_outVar1 =
-      Variable(af::array(3, 2, expected_out1.data()).as(af::dtype::f16), true);
+  auto expected_outVar1 = Variable(af::array(3, 2, expected_out1.data()), true);
   LogSoftmax lsm1(1);
   ASSERT_TRUE(allClose(lsm1.forward(inVar), expected_outVar1, 1E-3));
 
@@ -287,7 +300,7 @@ TEST(ModuleTest, ConvolutionFwd) {
   }
 }
 
-TEST(ModuleTest, ConvolutionFwdF16) {
+TEST_F(ModuleTestF16, ConvolutionFwdF16) {
   if (!af::isHalfAvailable(af::getDevice())) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
@@ -297,6 +310,7 @@ TEST(ModuleTest, ConvolutionFwdF16) {
   int batchsize = 1;
   auto input = af::randu(120, 100, 30, batchsize, af::dtype::f16);
   auto batchOutVar = conv(Variable(input, false));
+  ASSERT_EQ(batchOutVar.type(), input.type());
   for (int i = 0; i < batchsize; ++i) {
     auto expected_outVar =
         conv(Variable(input(af::span, af::span, af::span, i), false));
@@ -305,6 +319,11 @@ TEST(ModuleTest, ConvolutionFwdF16) {
         expected_outVar.array(),
         1E-7));
   }
+
+  auto inputF32 = af::randu(120, 100, 30, batchsize, af::dtype::f32);
+  ASSERT_EQ(
+      conv(Variable(input, false)).type(),
+      af::dtype::f16); // OptimLevel::O3 is active with this fixture
 }
 
 TEST(ModuleTest, ConvolutionWithGroupFwd) {
@@ -340,7 +359,7 @@ TEST(ModuleTest, PoolingFwd) {
   }
 }
 
-TEST(ModuleTest, PoolingFwdF16) {
+TEST_F(ModuleTestF16, PoolingFwdF16) {
   if (!af::isHalfAvailable(af::getDevice())) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
@@ -431,7 +450,7 @@ TEST(ModuleTest, DropoutFwd) {
   ASSERT_TRUE(allClose(out, in, 1E-5));
 }
 
-TEST(ModuleTest, DropoutFwdF16) {
+TEST_F(ModuleTestF16, DropoutFwdF16) {
   if (!af::isHalfAvailable(af::getDevice())) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
@@ -513,7 +532,7 @@ TEST(ModuleTest, LayerNormFwd) {
   ASSERT_TRUE(allClose(out_train.array(), out3.array(), eps));
 }
 
-TEST(ModuleTest, LayerNormFwdF16) {
+TEST_F(ModuleTestF16, LayerNormFwdF16) {
   if (!af::isHalfAvailable(af::getDevice())) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
@@ -524,8 +543,8 @@ TEST(ModuleTest, LayerNormFwdF16) {
 
   auto sample_mean = mean(input, {3});
   auto sample_var = var(input, {3}, true);
-  auto true_out = (input - tileAs(sample_mean, input)) /
-      tileAs(fl::sqrt(sample_var + eps), input);
+  auto true_out = (input - tileAs(sample_mean, input).as(input.type())) /
+      tileAs(fl::sqrt(sample_var + eps), input).as(input.type());
 
   // no affine transform
   auto module1 = LayerNorm(feat_axes, eps, false);
@@ -533,14 +552,12 @@ TEST(ModuleTest, LayerNormFwdF16) {
   module1.train();
   auto out = module1.forward(input);
 
-  ASSERT_EQ(out.type(), input.type());
-  ASSERT_TRUE(allClose(out, true_out, eps));
+  ASSERT_TRUE(allClose(out, true_out.as(out.type()), eps));
 
   module1.eval();
   out = module1.forward(input);
 
-  ASSERT_EQ(out.type(), input.type());
-  ASSERT_TRUE(allClose(out.array(), true_out.array(), eps));
+  ASSERT_TRUE(allClose(out.array(), true_out.array().as(out.type()), eps));
 
   // with affine transform
   auto module2 = LayerNorm(feat_axes, eps, true);
@@ -552,6 +569,8 @@ TEST(ModuleTest, LayerNormFwdF16) {
 
   ASSERT_TRUE(allClose(out_train.array(), out_eval.array(), eps));
   ASSERT_EQ(out_train.dims(), input.dims());
+
+  module2.train();
 }
 
 TEST(ModuleTest, NormalizeFwd) {

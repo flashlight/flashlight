@@ -18,7 +18,7 @@
 namespace fl {
 
 Variable batchnorm(
-    const Variable& input,
+    const Variable& in,
     const Variable& weight,
     const Variable& bias,
     Variable& runningMean,
@@ -27,6 +27,8 @@ Variable batchnorm(
     bool train,
     double momentum,
     double epsilon) {
+  auto input = FL_ADJUST_INPUT_TYPE(in);
+
   if (input.type() == af::dtype::f16 && weight.type() != af::dtype::f32) {
     throw std::invalid_argument(
         "fl::batchnorm: non-input tensors must be of type f32");
@@ -153,6 +155,9 @@ Variable batchnorm(
         }
 
         auto& in = inputs[0];
+        auto inArray = detail::adjustInputType(in.array(), "batchnorm");
+        auto gradOutputArray =
+            detail::adjustInputType(grad_output.array(), "batchnorm");
         // Weight, bias, and running mean/var arrays can't be fp16 (must be
         // fp32)
         auto wt = inputs[1].isempty()
@@ -160,26 +165,26 @@ Variable batchnorm(
             : inputs[1];
         auto& bs = inputs[2];
 
-        auto scalarsType = in.type() == f16 ? f32 : in.type();
+        auto scalarsType = inArray.type() == f16 ? f32 : inArray.type();
         const void* one1 = kOne(scalarsType);
         const void* zero0 = kZero(scalarsType);
 
-        auto iDesc = TensorDescriptor(in.type(), inDescDims);
+        auto iDesc = TensorDescriptor(inArray.type(), inDescDims);
         auto wDesc = TensorDescriptor(wt.type(), wtDescDims);
         // CuDNN doesn't support calculating only the gradients
         // required for batchnorm
-        auto gradIn = af::array(in.dims(), in.type());
+        auto gradIn = af::array(inArray.dims(), inArray.type());
         auto gradWt = af::array(wt.dims(), wt.type());
         auto gradBs = af::array(wt.dims(), wt.type());
         {
-          DevicePtr iRaw(in.array());
+          DevicePtr iRaw(inArray);
           DevicePtr wRaw(wt.array());
 
           DevicePtr gradInRaw(gradIn);
           DevicePtr gradWtRaw(gradWt);
           DevicePtr gradBsRaw(gradBs);
 
-          DevicePtr grad_opRaw(grad_output.array());
+          DevicePtr grad_opRaw(gradOutputArray);
 
           DevicePtr saveMeanRaw(saveMean);
           DevicePtr saveVarRaw(saveVar);
@@ -205,13 +210,13 @@ Variable batchnorm(
               saveMeanRaw.get(),
               saveVarRaw.get()));
         }
-        in.addGrad(Variable(gradIn, false));
+        in.addGrad(Variable(gradIn.as(in.type()), false));
         wt.addGrad(Variable(gradWt.as(wt.type()), false));
         if (!bs.isempty()) {
           bs.addGrad(Variable(gradBs.as(bs.type()), false));
         }
       };
-  return Variable(output, {input, weight, bias}, gradFunc);
+  return Variable(output, {in, weight, bias}, gradFunc);
 }
 
 } // namespace fl

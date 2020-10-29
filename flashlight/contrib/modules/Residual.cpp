@@ -97,7 +97,7 @@ Variable Residual::forward(const Variable& input) {
                               ->forward({outputs[shortcut.first]})
                               .front();
         }
-        output = output + connectionOut;
+        output = output + connectionOut.as(output.type());
       }
     }
     output = modules_[moduleIndex]
@@ -115,7 +115,7 @@ Variable Residual::forward(const Variable& input) {
                             ->forward({outputs[shortcut.first]})
                             .front();
       }
-      output = output + connectionOut;
+      output = output + connectionOut.as(output.type());
     }
   }
   return applyScale(output, nLayers);

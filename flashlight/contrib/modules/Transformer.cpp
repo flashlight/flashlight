@@ -60,7 +60,7 @@ fl::Variable transformerMultiheadAttention(
   auto scores = matmulNT(q, k);
   if (!posEmb.isempty()) {
     int n = posEmb.dims(0) / 2 - offset;
-    auto pscores = transformerRotate(matmulNT(posEmb, q));
+    auto pscores = transformerRotate(matmulNT(posEmb.as(q.type()), q));
     scores = scores + transpose(pscores.rows(n, n + k.dims(0) - 1));
   }
   scores = scores / std::sqrt(float(headDim));
@@ -69,7 +69,7 @@ fl::Variable transformerMultiheadAttention(
   }
 
   auto attn = dropout(softmax(scores, 1), pDropout);
-  auto result = matmul(attn, v);
+  auto result = matmul(attn.as(v.type()), v);
   result = moddims(result, af::dim4(-1, headDim * nHead, bsz));
   return result;
 }
@@ -167,11 +167,11 @@ std::vector<Variable> Transformer::forward(const std::vector<Variable>& input) {
     f = 0.0;
   }
   if (preLN_) {
-    auto h = f * (*norm1_)(selfAttention(input)) + x;
-    return {f * (*norm2_)(mlp(h)) + h};
+    auto h = (f * (*norm1_)(selfAttention(input))).as(x.type()) + x;
+    return {f * (*norm2_)(mlp(h)).as(h.type()) + h};
   } else {
-    auto h = (*norm1_)(f * selfAttention(input) + x);
-    return {(*norm2_)(f * mlp(h) + h)};
+    auto h = (*norm1_)((f * selfAttention(input)).as(x.type()) + x);
+    return {(*norm2_)((f * mlp(h)).as(h.type()) + h)};
   }
 }
 

@@ -178,14 +178,20 @@ DEFINE_bool(
     "Sets flashlight benchmark mode, which dynamically "
     "benchmarks various operations based on their empirical performance on "
     "current hardware throughout training");
+DEFINE_string(
+    fl_optim_mode,
+    "",
+    "Sets the flashlight optimization mode. "
+    "Optim modes can be O1, O2, or O3.");
 
 // MIXED PRECISION OPTIONS
 DEFINE_bool(
     fl_amp_use_mixed_precision,
     false,
-    "Use mixed precision for training - "
-    "scale loss and gradients up and down by a "
-    "scale factor that changes over time");
+    "Use mixed precision for training - scale loss and gradients up and down "
+    "by a scale factor that changes over time. If no fl optim mode is "
+    "specified with --fl_optim_mode when passing this flag, automatically "
+    "sets the optim mode to O1.");
 DEFINE_uint64(
     fl_amp_scale_factor,
     4096,

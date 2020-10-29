@@ -215,6 +215,7 @@ DECLARE_int64(memstepsize);
 DECLARE_int64(reportiters);
 DECLARE_double(pcttraineval);
 DECLARE_bool(fl_benchmark_mode);
+DECLARE_string(fl_optim_mode);
 
 /* ========== MIXED PRECISION OPTIONS ========== */
 
