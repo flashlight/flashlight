@@ -21,6 +21,10 @@ using namespace mkldnn;
 
 namespace fl {
 
+namespace detail {
+class ConvBenchmark;
+} // namespace detail
+
 namespace {
 
 // Input, output: WHCN; weights: WHIO
@@ -41,7 +45,8 @@ Variable conv2d(
     int py,
     int dx,
     int dy,
-    int groups) {
+    int groups,
+    std::shared_ptr<detail::ConvBenchmarks> benchmarks) {
   if (input.type() == f16) {
     throw std::runtime_error("Half precision is not supported in CPU.");
   }
@@ -59,7 +64,8 @@ Variable conv2d(
     int py,
     int dx,
     int dy,
-    int groups) {
+    int groups,
+    std::shared_ptr<detail::ConvBenchmarks> benchmarks) {
   if (input.type() == f16) {
     throw std::runtime_error("Half precision is not supported in CPU.");
   }
