@@ -14,7 +14,18 @@
 
 #include "flashlight/flashlight/common/DynamicBenchmark.h"
 
-TEST(DynamicBenchmark, OptionsStateBasic) {
+namespace {
+
+class DynamicBenchmark : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    fl::DynamicBenchmark::setBenchmarkMode(true);
+  }
+};
+
+} // namespace
+
+TEST_F(DynamicBenchmark, OptionsStateBasic) {
   size_t maxCount = 5;
   std::vector<int> ops = {1, 2, 3, 4, 5};
   auto options =
@@ -29,7 +40,7 @@ TEST(DynamicBenchmark, OptionsStateBasic) {
   ASSERT_EQ(options->currentOption(), 1); // best idx should never have changed
 }
 
-TEST(DynamicBenchmark, OptionscurrentOptionUnchangedWithNoCountIncrement) {
+TEST_F(DynamicBenchmark, OptionscurrentOptionUnchangedWithNoCountIncrement) {
   std::vector<int> ops = {1, 2, 3, 4, 5};
   auto options = std::make_shared<fl::DynamicBenchmarkOptions<int>>(
       ops, /* maxCount = */ 3);
@@ -40,7 +51,7 @@ TEST(DynamicBenchmark, OptionscurrentOptionUnchangedWithNoCountIncrement) {
   ASSERT_EQ(state, options->currentOption());
 }
 
-TEST(DynamicBenchmark, OptionsStateTimed) {
+TEST_F(DynamicBenchmark, OptionsStateTimed) {
   size_t maxCount = 5;
   std::unordered_set<int> ops = {1, 2, 3, 4, 5};
   auto options =
@@ -61,7 +72,7 @@ TEST(DynamicBenchmark, OptionsStateTimed) {
   ASSERT_EQ(options->currentOption(), 4);
 }
 
-TEST(DynamicBenchmarkSimple, DynamicBenchmarkSimple) {
+TEST_F(DynamicBenchmark, DynamicBenchmarkSimple) {
   size_t maxCount = 5;
   std::vector<int> sleepTimes = {4, 2, 6};
 
@@ -79,7 +90,7 @@ TEST(DynamicBenchmarkSimple, DynamicBenchmarkSimple) {
   ASSERT_EQ(options->currentOption(), 2);
 }
 
-TEST(DynamicBenchmarkSimple, DynamicBenchmarkDisjointLambdas) {
+TEST_F(DynamicBenchmark, DynamicBenchmarkDisjointLambdas) {
   size_t maxCount = 5;
   std::vector<int> sleepTimes = {4, 2, 6};
 
@@ -109,7 +120,7 @@ TEST(DynamicBenchmarkSimple, DynamicBenchmarkDisjointLambdas) {
   ASSERT_EQ(options->currentOption(), 2);
 }
 
-TEST(DynamicBenchmarkSimple, DynamicBenchmarkMatmul) {
+TEST_F(DynamicBenchmark, DynamicBenchmarkMatmul) {
   size_t maxCount = 5;
   // n x n arrays of different sizes
   std::vector<int> arraySizes = {12, 4, 300};
