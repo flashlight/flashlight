@@ -250,9 +250,9 @@ Variable conv2d(
 }
 
 Variable conv2d(
-    const Variable& input,
-    const Variable& weights,
-    const Variable& bias,
+    const Variable& in,
+    const Variable& wt,
+    const Variable& bs,
     int sx,
     int sy,
     int px,
@@ -261,7 +261,12 @@ Variable conv2d(
     int dy,
     int groups,
     std::shared_ptr<detail::ConvBenchmarks> benchmarks) {
-  FL_VARIABLE_DTYPES_MATCH_CHECK(input, weights, bias);
+  FL_VARIABLE_DTYPES_MATCH_CHECK(in, wt, bs);
+
+  auto input = FL_ADJUST_INPUT_TYPE(in);
+  auto weights = FL_ADJUST_INPUT_TYPE(wt);
+  auto bias = FL_ADJUST_INPUT_TYPE(bs);
+
   auto hasBias = bias.elements() > 0;
 
   auto inDesc = TensorDescriptor(input);

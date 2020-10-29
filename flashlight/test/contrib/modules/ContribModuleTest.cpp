@@ -14,6 +14,22 @@
 
 using namespace fl;
 
+namespace {
+
+class ModuleTestF16 : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    // Ensures all operations will be in f16
+    OptimMode::get().setOptimLevel(OptimLevel::O3);
+  }
+
+  void TearDown() override {
+    OptimMode::get().setOptimLevel(OptimLevel::DEFAULT);
+  }
+};
+
+} // namespace
+
 TEST(ModuleTest, ResidualFwd) {
   auto conv = Conv2D(30, 50, 9, 7, 2, 3, 3, 2);
   auto bn = BatchNorm(2, 50);
@@ -131,7 +147,7 @@ TEST(ModuleTest, TransformerFwd) {
   ASSERT_EQ(output[0].dims(2), batchsize);
 }
 
-TEST(ModuleTest, TransformerFwdF16) {
+TEST_F(ModuleTestF16, TransformerFwdF16) {
   if (!af::isHalfAvailable(af::getDevice())) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
@@ -147,7 +163,11 @@ TEST(ModuleTest, TransformerFwdF16) {
       Variable(af::randu(c, timesteps, batchsize, 1, af::dtype::f16), false);
 
   auto output = tr.forward({input});
-  ASSERT_EQ(output[0].type(), input.type());
+  if (OptimMode::get().getOptimLevel() == OptimLevel::O3) {
+    ASSERT_EQ(output[0].type(), input.type());
+  } else {
+    ASSERT_EQ(output[0].type(), af::dtype::f32); // result is upcast
+  }
 
   ASSERT_EQ(output[0].dims(0), c);
   ASSERT_EQ(output[0].dims(1), timesteps);
@@ -171,7 +191,7 @@ TEST(ModuleTest, PositionEmbeddingFwd) {
   ASSERT_FALSE(allClose(output[0], input));
 }
 
-TEST(ModuleTest, PositionEmbeddingFwdF16) {
+TEST_F(ModuleTestF16, PositionEmbeddingFwdF16) {
   if (!af::isHalfAvailable(af::getDevice())) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }

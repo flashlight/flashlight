@@ -110,8 +110,8 @@ Variable LayerNorm::forward(const Variable& input) {
   }
 
   if (affine_) {
-    Variable weight = params_[0].as(input.type());
-    Variable bias = params_[1].as(input.type());
+    Variable weight = params_[0].as(output.type());
+    Variable bias = params_[1].as(output.type());
     if (axisSize_ != kLnVariableAxisSize) {
       af::dim4 affineDims = input.dims();
       for (int ax : axisComplement_) {

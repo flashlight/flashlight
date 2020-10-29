@@ -328,7 +328,7 @@ Variable negate(const Variable& input) {
 }
 
 Variable reciprocal(const Variable& input) {
-  auto result = 1.0 / input.array();
+  auto result = 1.0 / FL_ADJUST_INPUT_TYPE(input.array());
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
     auto res = reciprocal(inputs[0]);
@@ -339,7 +339,7 @@ Variable reciprocal(const Variable& input) {
 }
 
 Variable exp(const Variable& input) {
-  auto result = af::exp(input.array());
+  auto result = af::exp(FL_ADJUST_INPUT_TYPE(input.array()));
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
     inputs[0].addGrad(Variable((gradOutput * exp(inputs[0])).array(), false));
@@ -348,7 +348,7 @@ Variable exp(const Variable& input) {
 }
 
 Variable log(const Variable& input) {
-  auto result = af::log(input.array());
+  auto result = af::log(FL_ADJUST_INPUT_TYPE(input.array()));
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
     inputs[0].addGrad(Variable((gradOutput / inputs[0]).array(), false));
@@ -357,7 +357,7 @@ Variable log(const Variable& input) {
 }
 
 Variable log1p(const Variable& input) {
-  auto result = af::log1p(input.array());
+  auto result = af::log1p(FL_ADJUST_INPUT_TYPE(input.array()));
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
     inputs[0].addGrad(
@@ -367,7 +367,7 @@ Variable log1p(const Variable& input) {
 }
 
 Variable pow(const Variable& input, double p) {
-  auto result = af::pow(input.array(), p);
+  auto result = af::pow(FL_ADJUST_INPUT_TYPE(input.array()), p);
   auto gradFunc = [p](std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
     af::array grad = p * af::pow(inputs[0].array(), p - 1) * gradOutput.array();
@@ -453,7 +453,8 @@ Variable tileAs(const Variable& input, const af::dim4& rdims) {
   af::dim4 inDims = input.dims();
   auto gradFunc =
       [inDims](std::vector<Variable>& inputs, const Variable& gradOutput) {
-        inputs[0].addGrad(Variable(sumAs(gradOutput, inDims).array(), false));
+        inputs[0].addGrad(Variable(
+            sumAs(gradOutput, inDims).array().as(inputs[0].type()), false));
       };
   return Variable(result, {input.withoutData()}, gradFunc);
 }
@@ -463,7 +464,7 @@ Variable tileAs(const Variable& input, const Variable& reference) {
 }
 
 Variable sumAs(const Variable& input, const af::dim4& rdims) {
-  auto result = detail::sumAs(input.array(), rdims);
+  auto result = detail::sumAs(FL_ADJUST_INPUT_TYPE(input.array()), rdims);
   auto idims = input.dims();
   auto gradFunc =
       [idims](std::vector<Variable>& inputs, const Variable& gradOutput) {
@@ -586,7 +587,7 @@ Variable tile(const Variable& input, const af::dim4& dims) {
 }
 
 Variable sum(const Variable& input, const std::vector<int>& axes) {
-  auto result = input.array();
+  auto result = FL_ADJUST_INPUT_TYPE(input.array());
   for (size_t i = 0; i < axes.size(); i++) {
     result = af::sum(result, axes[i]);
   }
@@ -599,7 +600,7 @@ Variable sum(const Variable& input, const std::vector<int>& axes) {
 }
 
 Variable mean(const Variable& input, const std::vector<int>& axes) {
-  auto result = input.array();
+  auto result = FL_ADJUST_INPUT_TYPE(input.array());
   for (size_t i = 0; i < axes.size(); i++) {
     result = mean(result, axes[i]);
   }
@@ -618,9 +619,11 @@ Variable mean(const Variable& input, const std::vector<int>& axes) {
 }
 
 Variable var(
-    const Variable& input,
+    const Variable& in,
     const std::vector<int>& axes,
     const bool isbiased /* = false */) {
+  auto input = FL_ADJUST_INPUT_TYPE(in);
+
   auto result = sum(input * input, axes);
   auto avg = mean(input, axes);
   auto n = 1;
@@ -653,7 +656,7 @@ norm(const Variable& input, const std::vector<int>& axes, double p /* = 2 */) {
   if (p <= 0) {
     throw std::out_of_range("Lp norm: p must be > 0");
   }
-  auto result = af::pow(af::abs(input.array()), p);
+  auto result = af::pow(af::abs(FL_ADJUST_INPUT_TYPE(input.array())), p);
   for (size_t i = 0; i < axes.size(); i++) {
     result = af::sum(result, axes[i]);
   }
@@ -676,10 +679,11 @@ norm(const Variable& input, const std::vector<int>& axes, double p /* = 2 */) {
 }
 
 Variable normalize(
-    const Variable& input,
+    const Variable& in,
     const std::vector<int>& axes,
     double p /* = 2 */,
     double eps /* = 1e-12 */) {
+  auto input = FL_ADJUST_INPUT_TYPE(in);
   Variable norm = fl::norm(input, axes, p);
   Variable invscale = max(norm, eps);
   return input / tileAs(invscale, input);
@@ -825,11 +829,12 @@ Variable moddims(const Variable& input, const af::dim4& dims) {
 }
 
 Variable softmax(const Variable& input, const int dim) {
-  auto maxvals = max((input.array()), dim);
+  af::array inputArr = FL_ADJUST_INPUT_TYPE(input.array());
+  auto maxvals = af::max(inputArr, dim);
   af::dim4 tiledims(1, 1, 1, 1);
   tiledims[dim] = input.dims(dim);
 
-  auto expInput = af::exp(input.array() - af::tile(maxvals, tiledims));
+  auto expInput = af::exp(inputArr - af::tile(maxvals, tiledims));
   auto result = expInput / af::tile(af::sum(expInput, dim), tiledims);
 
   result.eval();
@@ -840,16 +845,17 @@ Variable softmax(const Variable& input, const int dim) {
     auto gradSm = rbyg - result * af::tile(af::sum(rbyg, dim), tiledims);
     inputs[0].addGrad(Variable(gradSm.as(inputs[0].type()), false));
   };
-  return Variable(result.as(input.type()), {input.withoutData()}, gradFunc);
+  return Variable(result, {input.withoutData()}, gradFunc);
 }
 
 Variable logSoftmax(const Variable& input, const int dim) {
-  auto maxvals = max((input.array()), dim);
+  af::array inputArr = FL_ADJUST_INPUT_TYPE(input.array());
+  auto maxvals = max((inputArr), dim);
   af::dim4 tiledims(1, 1, 1, 1);
   tiledims[dim] = input.dims(dim);
-  auto result = input.array() -
+  auto result = inputArr -
       af::tile(af::log(af::sum(
-                   af::exp(input.array() - af::tile(maxvals, tiledims)), dim)) +
+                   af::exp(inputArr - af::tile(maxvals, tiledims)), dim)) +
                    maxvals,
                tiledims);
 
@@ -861,7 +867,7 @@ Variable logSoftmax(const Variable& input, const int dim) {
         af::exp(result) * af::tile(af::sum(gradOutput.array(), dim), tiledims);
     inputs[0].addGrad(Variable(gradLsm.as(inputs[0].type()), false));
   };
-  return Variable(result.as(input.type()), {input.withoutData()}, gradFunc);
+  return Variable(result, {input.withoutData()}, gradFunc);
 }
 
 Variable binaryCrossEntropy(const Variable& inputs, const Variable& targets) {
@@ -871,10 +877,11 @@ Variable binaryCrossEntropy(const Variable& inputs, const Variable& targets) {
 }
 
 Variable categoricalCrossEntropy(
-    const Variable& input,
+    const Variable& in,
     const Variable& targets,
     ReduceMode reduction /* =ReduceMode::MEAN */,
     int ignoreIndex /* = -1 */) {
+  auto input = FL_ADJUST_INPUT_TYPE(in);
   // input -- [C, X1, X2, X3]
   // target -- [X1, X2, X3, 1]
   for (int i = 1; i < 4; i++) {
@@ -982,9 +989,11 @@ Variable linear(const Variable& input, const Variable& weight) {
   return linear(input, weight, dummyBias);
 }
 
-Variable
-linear(const Variable& input, const Variable& weight, const Variable& bias) {
-  FL_VARIABLE_DTYPES_MATCH_CHECK(input, weight, bias);
+Variable linear(const Variable& in, const Variable& wt, const Variable& bs) {
+  FL_VARIABLE_DTYPES_MATCH_CHECK(in, wt, bs);
+  auto input = FL_ADJUST_INPUT_TYPE(in);
+  auto weight = FL_ADJUST_INPUT_TYPE(wt);
+  auto bias = FL_ADJUST_INPUT_TYPE(bs);
 
   af::dim4 to2d(input.dims(0), input.elements() / input.dims(0));
   auto to4d = input.dims();
@@ -1140,7 +1149,8 @@ Variable relu(const Variable& input) {
   return max(input, 0.0);
 }
 
-Variable gelu(const Variable& input) {
+Variable gelu(const Variable& in) {
+  auto input = FL_ADJUST_INPUT_TYPE(in);
   return 0.5 * input *
       (1.0 +
        fl::tanh(0.7978845608 * (input + 0.044715 * input * input * input)));
