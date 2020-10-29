@@ -22,18 +22,18 @@ struct RNNGradData {
 } // namespace
 
 namespace fl {
-void rnn_backward(
+void rnnBackward(
     std::vector<Variable>& inputs,
-    const std::shared_ptr<struct RNNGradData> grad_data,
+    const std::shared_ptr<struct RNNGradData> gradData,
     const af::array& y,
-    size_t workspace_size,
-    size_t reserve_size,
-    af::array reserve_space,
-    int num_layers,
-    int hidden_size,
+    size_t workspaceSize,
+    size_t reserveSize,
+    af::array reserveSpace,
+    int numLayers,
+    int hiddenSize,
     RnnMode mode,
     bool bidirectional,
-    float drop_prob) {
+    float dropProb) {
   if (inputs.size() != 4) {
     throw std::invalid_argument("wrong # of inputs for RNN");
   }
@@ -56,103 +56,101 @@ void rnn_backward(
 
   auto& x = input.array();
   auto dims = x.dims();
-  int input_size = dims[0];
-  int batch_size = dims[1];
-  int seq_length = dims[2];
-  int total_layers = num_layers * (bidirectional ? 2 : 1);
-  int out_size = hidden_size * (bidirectional ? 2 : 1);
+  int inputSize = dims[0];
+  int batchSize = dims[1];
+  int seqLength = dims[2];
+  int totalLayers = numLayers * (bidirectional ? 2 : 1);
+  int outSize = hiddenSize * (bidirectional ? 2 : 1);
 
-  DropoutDescriptor dropout(drop_prob);
-  RNNDescriptor rnn_desc(
-      input.type(), hidden_size, num_layers, mode, bidirectional, dropout);
+  DropoutDescriptor dropout(dropProb);
+  RNNDescriptor rnnDesc(
+      input.type(), hiddenSize, numLayers, mode, bidirectional, dropout);
   if (input.type() == f16) {
     CUDNN_CHECK_ERR(cudnnSetRNNMatrixMathType(
-        rnn_desc.descriptor, CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION));
+        rnnDesc.descriptor, CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION));
   } else {
     CUDNN_CHECK_ERR(
-        cudnnSetRNNMatrixMathType(rnn_desc.descriptor, CUDNN_DEFAULT_MATH));
+        cudnnSetRNNMatrixMathType(rnnDesc.descriptor, CUDNN_DEFAULT_MATH));
   }
 
-  TensorDescriptorArray y_descs(
-      seq_length, y.type(), {1, 1, out_size, batch_size});
+  TensorDescriptorArray yDesc(seqLength, y.type(), {1, 1, outSize, batchSize});
 
-  TensorDescriptorArray dy_descs(
-      seq_length, y.type(), {1, 1, out_size, batch_size});
+  TensorDescriptorArray dyDesc(seqLength, y.type(), {1, 1, outSize, batchSize});
 
-  af::dim4 h_dims = {1, hidden_size, batch_size, total_layers};
-  TensorDescriptor dhy_desc(x.type(), h_dims);
-  TensorDescriptor dcy_desc(x.type(), h_dims);
-  TensorDescriptor hx_desc(x.type(), h_dims);
-  TensorDescriptor cx_desc(x.type(), h_dims);
+  af::dim4 hDims = {1, hiddenSize, batchSize, totalLayers};
+  TensorDescriptor dhyDesc(x.type(), hDims);
+  TensorDescriptor dcyDesc(x.type(), hDims);
+  TensorDescriptor hxDesc(x.type(), hDims);
+  TensorDescriptor cxDesc(x.type(), hDims);
 
   Variable dhx(af::array(hxArray.dims(), hxArray.type()), false);
   Variable dcx(af::array(cxArray.dims(), cxArray.type()), false);
-  TensorDescriptor dhx_desc(x.type(), h_dims);
-  TensorDescriptor dcx_desc(x.type(), h_dims);
+  TensorDescriptor dhxDesc(x.type(), hDims);
+  TensorDescriptor dcxDesc(x.type(), hDims);
 
-  FilterDescriptor w_desc(weightsArray);
+  FilterDescriptor wDesc(weightsArray);
 
   Variable dx(af::array(input.dims(), input.type()), false);
-  TensorDescriptorArray dx_descs(
-      seq_length, dx.type(), {1, 1, input_size, batch_size});
+  TensorDescriptorArray dxDescs(
+      seqLength, dx.type(), {1, 1, inputSize, batchSize});
 
-  af::array workspace(workspace_size, af::dtype::b8);
+  af::array workspace(workspaceSize, af::dtype::b8);
 
-  auto& dy = grad_data->dy;
+  auto& dy = gradData->dy;
   if (dy.isempty()) {
     dy = af::constant(0.0, y.dims(), y.type());
   }
-  auto& dhy = grad_data->dhy;
-  auto& dcy = grad_data->dcy;
+  auto& dhy = gradData->dhy;
+  auto& dcy = gradData->dcy;
 
-  DevicePtr y_raw(y);
-  DevicePtr workspace_raw(workspace);
-  DevicePtr reserve_space_raw(reserve_space);
+  DevicePtr yRaw(y);
+  DevicePtr workspaceRaw(workspace);
+  DevicePtr reserveSpaceRaw(reserveSpace);
 
   {
-    DevicePtr dy_raw(dy); // Has to be set to 0 if empty
-    DevicePtr dhy_raw(dhy);
-    DevicePtr dcy_raw(dcy);
+    DevicePtr dyRaw(dy); // Has to be set to 0 if empty
+    DevicePtr dhyRaw(dhy);
+    DevicePtr dcyRaw(dcy);
 
-    DevicePtr w_raw(weightsArray);
+    DevicePtr wRaw(weightsArray);
 
-    DevicePtr hx_raw(hxArray);
-    DevicePtr cx_raw(cxArray);
+    DevicePtr hxRaw(hxArray);
+    DevicePtr cxRaw(cxArray);
 
-    DevicePtr dx_raw(dx.array());
-    DevicePtr dhx_raw(dhx.array());
-    DevicePtr dcx_raw(dcx.array());
+    DevicePtr dxRaw(dx.array());
+    DevicePtr dhxRaw(dhx.array());
+    DevicePtr dcxRaw(dcx.array());
 
-    /* We need to update reserve_space even if we just want the
+    /* We need to update reserveSpace even if we just want the
      * weight gradients. */
     CUDNN_CHECK_ERR(cudnnRNNBackwardData(
         handle,
-        rnn_desc.descriptor,
-        seq_length,
-        y_descs.descriptors,
-        y_raw.get(),
-        dy_descs.descriptors,
-        dy_raw.get(),
-        dhy_desc.descriptor,
-        dhy_raw.get(),
-        dcy_desc.descriptor,
-        dcy_raw.get(),
-        w_desc.descriptor,
-        w_raw.get(),
-        hx_desc.descriptor,
-        hx_raw.get(),
-        cx_desc.descriptor,
-        cx_raw.get(),
-        dx_descs.descriptors,
-        dx_raw.get(),
-        dhx_desc.descriptor,
-        dhx_raw.get(),
-        dcx_desc.descriptor,
-        dcx_raw.get(),
-        workspace_raw.get(),
-        workspace_size,
-        reserve_space_raw.get(),
-        reserve_size));
+        rnnDesc.descriptor,
+        seqLength,
+        yDesc.descriptors,
+        yRaw.get(),
+        dyDesc.descriptors,
+        dyRaw.get(),
+        dhyDesc.descriptor,
+        dhyRaw.get(),
+        dcyDesc.descriptor,
+        dcyRaw.get(),
+        wDesc.descriptor,
+        wRaw.get(),
+        hxDesc.descriptor,
+        hxRaw.get(),
+        cxDesc.descriptor,
+        cxRaw.get(),
+        dxDescs.descriptors,
+        dxRaw.get(),
+        dhxDesc.descriptor,
+        dhxRaw.get(),
+        dcxDesc.descriptor,
+        dcxRaw.get(),
+        workspaceRaw.get(),
+        workspaceSize,
+        reserveSpaceRaw.get(),
+        reserveSize));
   }
   if (input.isCalcGrad()) {
     input.addGrad(dx);
@@ -169,39 +167,39 @@ void rnn_backward(
   if (weights.isCalcGrad()) {
     if (input.type() == f16) {
       CUDNN_CHECK_ERR(cudnnSetRNNMatrixMathType(
-          rnn_desc.descriptor, CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION));
+          rnnDesc.descriptor, CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION));
     } else {
       CUDNN_CHECK_ERR(
-          cudnnSetRNNMatrixMathType(rnn_desc.descriptor, CUDNN_DEFAULT_MATH));
+          cudnnSetRNNMatrixMathType(rnnDesc.descriptor, CUDNN_DEFAULT_MATH));
     }
-    TensorDescriptorArray x_descs(
-        seq_length, x.type(), {1, 1, input_size, batch_size});
+    TensorDescriptorArray xDescs(
+        seqLength, x.type(), {1, 1, inputSize, batchSize});
     Variable dw(
         af::constant(0, weightsArray.dims(), weightsArray.type()), false);
 
-    FilterDescriptor dw_desc(dw);
+    FilterDescriptor dwDesc(dw);
 
     {
-      DevicePtr x_raw(x);
-      DevicePtr dw_raw(dw.array());
-      DevicePtr hx_raw(hxArray);
+      DevicePtr xRaw(x);
+      DevicePtr dwRaw(dw.array());
+      DevicePtr hxRaw(hxArray);
 
       CUDNN_CHECK_ERR(cudnnRNNBackwardWeights(
           handle,
-          rnn_desc.descriptor,
-          seq_length,
-          x_descs.descriptors,
-          x_raw.get(),
-          hx_desc.descriptor,
-          hx_raw.get(),
-          y_descs.descriptors,
-          y_raw.get(),
-          workspace_raw.get(),
-          workspace_size,
-          dw_desc.descriptor,
-          dw_raw.get(),
-          reserve_space_raw.get(),
-          reserve_size));
+          rnnDesc.descriptor,
+          seqLength,
+          xDescs.descriptors,
+          xRaw.get(),
+          hxDesc.descriptor,
+          hxRaw.get(),
+          yDesc.descriptors,
+          yRaw.get(),
+          workspaceRaw.get(),
+          workspaceSize,
+          dwDesc.descriptor,
+          dwRaw.get(),
+          reserveSpaceRaw.get(),
+          reserveSize));
     }
     weights.addGrad(dw);
   }
@@ -209,198 +207,193 @@ void rnn_backward(
 
 std::tuple<Variable, Variable, Variable> rnn(
     const Variable& input,
-    const Variable& hidden_state,
-    const Variable& cell_state,
+    const Variable& hiddenState,
+    const Variable& cellState,
     const Variable& weights,
-    int hidden_size,
-    int num_layers,
+    int hiddenSize,
+    int numLayers,
     RnnMode mode,
     bool bidirectional,
-    float drop_prob) {
-  FL_VARIABLE_DTYPES_MATCH_CHECK(input, hidden_state, cell_state, weights);
+    float dropProb) {
+  FL_VARIABLE_DTYPES_MATCH_CHECK(input, hiddenState, cellState, weights);
 
   auto& x = input.array();
 
-  af::array hxArray = hidden_state.array();
-  af::array cxArray = cell_state.array();
+  af::array hxArray = hiddenState.array();
+  af::array cxArray = cellState.array();
 
-  DropoutDescriptor dropout(drop_prob);
-  RNNDescriptor rnn_desc(
-      input.type(), hidden_size, num_layers, mode, bidirectional, dropout);
+  DropoutDescriptor dropout(dropProb);
+  RNNDescriptor rnnDesc(
+      input.type(), hiddenSize, numLayers, mode, bidirectional, dropout);
   if (input.type() == f16) {
     CUDNN_CHECK_ERR(cudnnSetRNNMatrixMathType(
-        rnn_desc.descriptor, CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION));
+        rnnDesc.descriptor, CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION));
   } else {
     CUDNN_CHECK_ERR(
-        cudnnSetRNNMatrixMathType(rnn_desc.descriptor, CUDNN_DEFAULT_MATH));
+        cudnnSetRNNMatrixMathType(rnnDesc.descriptor, CUDNN_DEFAULT_MATH));
   }
 
   auto dims = x.dims();
 
-  int input_size = dims[0];
-  int batch_size = dims[1];
-  int seq_length = dims[2];
+  int inputSize = dims[0];
+  int batchSize = dims[1];
+  int seqLength = dims[2];
 
-  int total_layers = num_layers * (bidirectional ? 2 : 1);
-  int out_size = hidden_size * (bidirectional ? 2 : 1);
+  int totalLayers = numLayers * (bidirectional ? 2 : 1);
+  int outSize = hiddenSize * (bidirectional ? 2 : 1);
 
-  TensorDescriptorArray x_descs(
-      seq_length, x.type(), {1, 1, input_size, batch_size});
+  TensorDescriptorArray xDescs(
+      seqLength, x.type(), {1, 1, inputSize, batchSize});
 
   if (!hxArray.isempty() &&
-      !(hxArray.dims(0) == hidden_size && hxArray.dims(1) == batch_size &&
-        hxArray.dims(2) == total_layers)) {
+      !(hxArray.dims(0) == hiddenSize && hxArray.dims(1) == batchSize &&
+        hxArray.dims(2) == totalLayers)) {
     throw std::invalid_argument("invalid hidden state dims for RNN");
   }
 
   if (!cxArray.isempty() &&
-      !(mode == RnnMode::LSTM && cxArray.dims(0) == hidden_size &&
-        cxArray.dims(1) == batch_size && cxArray.dims(2) == total_layers)) {
+      !(mode == RnnMode::LSTM && cxArray.dims(0) == hiddenSize &&
+        cxArray.dims(1) == batchSize && cxArray.dims(2) == totalLayers)) {
     throw std::invalid_argument("invalid cell state dims for RNN");
   }
 
-  af::dim4 h_dims = {1, hidden_size, batch_size, total_layers};
-  TensorDescriptor hx_desc(x.type(), h_dims);
-  TensorDescriptor cx_desc(x.type(), h_dims);
+  af::dim4 hDims = {1, hiddenSize, batchSize, totalLayers};
+  TensorDescriptor hxDesc(x.type(), hDims);
+  TensorDescriptor cxDesc(x.type(), hDims);
 
   auto handle = getCudnnHandle();
 
-  size_t param_size;
+  size_t paramSize;
   CUDNN_CHECK_ERR(cudnnGetRNNParamsSize(
       handle,
-      rnn_desc.descriptor,
-      x_descs.descriptors[0],
-      &param_size,
+      rnnDesc.descriptor,
+      xDescs.descriptors[0],
+      &paramSize,
       cudnnMapToType(weights.array().type())));
-  if (param_size != weights.array().bytes()) {
+  if (paramSize != weights.array().bytes()) {
     throw std::invalid_argument(
         "invalid # of parameters or wrong input shape for RNN");
   }
-  FilterDescriptor w_desc(weights);
+  FilterDescriptor wDesc(weights);
 
-  af::array y(out_size, batch_size, seq_length, input.type());
-  TensorDescriptorArray y_descs(
-      seq_length, y.type(), {1, 1, out_size, batch_size});
+  af::array y(outSize, batchSize, seqLength, input.type());
+  TensorDescriptorArray yDesc(seqLength, y.type(), {1, 1, outSize, batchSize});
 
-  af::array hy({hidden_size, batch_size, total_layers}, x.type());
-  TensorDescriptor hy_desc(x.type(), h_dims);
+  af::array hy({hiddenSize, batchSize, totalLayers}, x.type());
+  TensorDescriptor hyDesc(x.type(), hDims);
 
   af::array cy;
   if (mode == RnnMode::LSTM) {
     cy = af::array(hy.dims(), x.type());
   }
 
-  TensorDescriptor cy_desc(x.type(), h_dims);
+  TensorDescriptor cyDesc(x.type(), hDims);
 
-  size_t workspace_size;
+  size_t workspaceSize;
   CUDNN_CHECK_ERR(cudnnGetRNNWorkspaceSize(
       handle,
-      rnn_desc.descriptor,
-      seq_length,
-      x_descs.descriptors,
-      &workspace_size));
-  af::array workspace(workspace_size, af::dtype::b8);
+      rnnDesc.descriptor,
+      seqLength,
+      xDescs.descriptors,
+      &workspaceSize));
+  af::array workspace(workspaceSize, af::dtype::b8);
 
-  size_t reserve_size;
+  size_t reserveSize;
   CUDNN_CHECK_ERR(cudnnGetRNNTrainingReserveSize(
-      handle,
-      rnn_desc.descriptor,
-      seq_length,
-      x_descs.descriptors,
-      &reserve_size));
-  af::array reserve_space(reserve_size, af::dtype::b8);
+      handle, rnnDesc.descriptor, seqLength, xDescs.descriptors, &reserveSize));
+  af::array reserveSpace(reserveSize, af::dtype::b8);
   {
-    DevicePtr x_raw(x);
-    DevicePtr hx_raw(hxArray);
-    DevicePtr cx_raw(cxArray);
-    DevicePtr w_raw(weights.array());
-    DevicePtr y_raw(y);
-    DevicePtr hy_raw(hy);
-    DevicePtr cy_raw(cy);
-    DevicePtr workspace_raw(workspace);
-    DevicePtr reserve_space_raw(reserve_space);
+    DevicePtr xRaw(x);
+    DevicePtr hxRaw(hxArray);
+    DevicePtr cxRaw(cxArray);
+    DevicePtr wRaw(weights.array());
+    DevicePtr yRaw(y);
+    DevicePtr hyRaw(hy);
+    DevicePtr cyRaw(cy);
+    DevicePtr workspaceRaw(workspace);
+    DevicePtr reserveSpaceRaw(reserveSpace);
 
     CUDNN_CHECK_ERR(cudnnRNNForwardTraining(
         handle,
-        rnn_desc.descriptor,
-        seq_length,
-        x_descs.descriptors,
-        x_raw.get(),
-        hx_desc.descriptor,
-        hx_raw.get(),
-        cx_desc.descriptor,
-        cx_raw.get(),
-        w_desc.descriptor,
-        w_raw.get(),
-        y_descs.descriptors,
-        y_raw.get(),
-        hy_desc.descriptor,
-        hy_raw.get(),
-        cy_desc.descriptor,
-        cy_raw.get(),
-        workspace_raw.get(),
-        workspace_size,
-        reserve_space_raw.get(),
-        reserve_size));
+        rnnDesc.descriptor,
+        seqLength,
+        xDescs.descriptors,
+        xRaw.get(),
+        hxDesc.descriptor,
+        hxRaw.get(),
+        cxDesc.descriptor,
+        cxRaw.get(),
+        wDesc.descriptor,
+        wRaw.get(),
+        yDesc.descriptors,
+        yRaw.get(),
+        hyDesc.descriptor,
+        hyRaw.get(),
+        cyDesc.descriptor,
+        cyRaw.get(),
+        workspaceRaw.get(),
+        workspaceSize,
+        reserveSpaceRaw.get(),
+        reserveSize));
   }
-  auto grad_data = std::make_shared<RNNGradData>();
+  auto gradData = std::make_shared<RNNGradData>();
 
   auto gradFunc = [y,
-                   workspace_size,
-                   reserve_size,
-                   reserve_space,
-                   num_layers,
-                   hidden_size,
+                   workspaceSize,
+                   reserveSize,
+                   reserveSpace,
+                   numLayers,
+                   hiddenSize,
                    mode,
                    bidirectional,
-                   drop_prob,
-                   grad_data](
+                   dropProb,
+                   gradData](
                       std::vector<Variable>& inputs,
-                      const Variable& /* grad_output */) {
-    rnn_backward(
+                      const Variable& /* gradOutput */) {
+    rnnBackward(
         inputs,
-        grad_data,
+        gradData,
         y,
-        workspace_size,
-        reserve_size,
-        reserve_space,
-        num_layers,
-        hidden_size,
+        workspaceSize,
+        reserveSize,
+        reserveSpace,
+        numLayers,
+        hiddenSize,
         mode,
         bidirectional,
-        drop_prob);
+        dropProb);
   };
 
   Variable dummy(
-      af::array(), {input, hidden_state, cell_state, weights}, gradFunc);
+      af::array(), {input, hiddenState, cellState, weights}, gradFunc);
 
-  auto dy_gradFunc =
-      [grad_data](std::vector<Variable>& inputs, const Variable& grad_output) {
+  auto dyGradFunc =
+      [gradData](std::vector<Variable>& inputs, const Variable& gradOutput) {
         if (!inputs[0].isGradAvailable()) {
           inputs[0].addGrad(Variable(af::array(), false));
         }
-        grad_data->dy = grad_output.array();
+        gradData->dy = gradOutput.array();
       };
 
-  auto dhy_gradFunc =
-      [grad_data](std::vector<Variable>& inputs, const Variable& grad_output) {
+  auto dhyGradFunc =
+      [gradData](std::vector<Variable>& inputs, const Variable& gradOutput) {
         if (!inputs[0].isGradAvailable()) {
           inputs[0].addGrad(Variable(af::array(), false));
         }
-        grad_data->dhy = grad_output.array();
+        gradData->dhy = gradOutput.array();
       };
 
-  auto dcy_gradFunc =
-      [grad_data](std::vector<Variable>& inputs, const Variable& grad_output) {
+  auto dcyGradFunc =
+      [gradData](std::vector<Variable>& inputs, const Variable& gradOutput) {
         if (!inputs[0].isGradAvailable()) {
           inputs[0].addGrad(Variable(af::array(), false));
         }
-        grad_data->dcy = grad_output.array();
+        gradData->dcy = gradOutput.array();
       };
 
-  Variable yv(y, {dummy}, dy_gradFunc);
-  Variable hyv(hy, {dummy}, dhy_gradFunc);
-  Variable cyv(cy, {dummy}, dcy_gradFunc);
+  Variable yv(y, {dummy}, dyGradFunc);
+  Variable hyv(hy, {dummy}, dhyGradFunc);
+  Variable cyv(cy, {dummy}, dcyGradFunc);
   return std::make_tuple(yv, hyv, cyv);
 }
 
