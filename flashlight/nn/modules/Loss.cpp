@@ -134,7 +134,7 @@ Variable AdaptiveSoftMaxLoss::forward(
     }
 
     auto indicesArray = af::where(mask.array());
-    headTarget = headTarget + mask * (cutoff[0] + i);
+    headTarget = headTarget + (mask * (cutoff[0] + i)).as(headTarget.type());
     auto tailTarget = target(indicesArray) - cutoff[i];
     auto selectedInput = embedding(Variable(indicesArray, false), input);
     auto tailOutput = matmul(params_[1 + i * 2], selectedInput);
