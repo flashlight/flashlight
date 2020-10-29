@@ -148,7 +148,7 @@ Variable batchnorm(
   }
   auto gradFunc =
       [train, saveMean, saveVar, mode, inDescDims, wtDescDims, epsilon](
-          std::vector<Variable>& inputs, const Variable& grad_output) {
+          std::vector<Variable>& inputs, const Variable& gradOutput) {
         if (!train) {
           throw std::logic_error(
               "can't compute batchnorm grad when train was not specified");
@@ -157,7 +157,7 @@ Variable batchnorm(
         auto& in = inputs[0];
         auto inArray = detail::adjustInputType(in.array(), "batchnorm");
         auto gradOutputArray =
-            detail::adjustInputType(grad_output.array(), "batchnorm");
+            detail::adjustInputType(gradOutput.array(), "batchnorm");
         // Weight, bias, and running mean/var arrays can't be fp16 (must be
         // fp32)
         auto wt = inputs[1].isempty()
@@ -184,7 +184,7 @@ Variable batchnorm(
           DevicePtr gradWtRaw(gradWt);
           DevicePtr gradBsRaw(gradBs);
 
-          DevicePtr grad_opRaw(gradOutputArray);
+          DevicePtr gradOpRaw(gradOutputArray);
 
           DevicePtr saveMeanRaw(saveMean);
           DevicePtr saveVarRaw(saveVar);
@@ -199,7 +199,7 @@ Variable batchnorm(
               iDesc.descriptor,
               iRaw.get(),
               iDesc.descriptor,
-              grad_opRaw.get(),
+              gradOpRaw.get(),
               iDesc.descriptor,
               gradInRaw.get(),
               wDesc.descriptor,
