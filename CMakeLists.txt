@@ -24,6 +24,8 @@ set(FL_INSTALL_DOC_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/doc" CACHE PATH "Install p
 include(InternalUtils)
 set(INSTALLABLE_TARGETS "")
 
+set(FLASHLIGHT_ROOT_DIR ${PROJECT_SOURCE_DIR}/flashlight)
+
 # ----------------------------- Configuration -----------------------------
 
 option(FL_BUILD_TESTS "Build tests" ON)
@@ -71,7 +73,7 @@ set(FL_COMPILE_DEFINITIONS
   $<$<BOOL:${FL_LIBRARIES_USE_KENLM}>:FL_LIBRARIES_USE_KENLM>
   )
 
-set(FLASHLIGHT_LIB_DIR "${PROJECT_SOURCE_DIR}/lib")
+set(FLASHLIGHT_LIB_DIR "${FLASHLIGHT_ROOT_DIR}/lib")
 include(${FLASHLIGHT_LIB_DIR}/CMakeLists.txt)
 
 if (FL_LIBRARIES_BUILD_FOR_PYTHON)
@@ -225,12 +227,11 @@ target_link_libraries(flashlight PUBLIC ArrayFire::${FL_AF_BACKEND})
 
 # ------------------------ flashlight Core ------------------------
 
-set(FLASHLIGHT_CORE_DIR "${PROJECT_SOURCE_DIR}/flashlight")
+set(FLASHLIGHT_CORE_DIR "${FLASHLIGHT_ROOT_DIR}/fl")
 include(${FLASHLIGHT_CORE_DIR}/CMakeLists.txt)
 set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} flashlight)
 # flashlight core components keep their relative paths with respect to project
-# root and land in ${CMAKE_INSTALL_PREFIX}/include/flashlight/flashlight/*
-setup_install_headers(${FLASHLIGHT_CORE_DIR} ${FL_INSTALL_INC_DIR}/flashlight)
+setup_install_headers(${FLASHLIGHT_CORE_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
 
 if (FL_BUILD_CORE_ONLY)
   message(STATUS "Core-only setup complete")
@@ -239,14 +240,14 @@ if (FL_BUILD_CORE_ONLY)
 endif()
 
 # ------------------------ Extensions ------------------------
-set(FLASHLIGHT_EXT_DIR "${PROJECT_SOURCE_DIR}/ext")
+set(FLASHLIGHT_EXT_DIR "${FLASHLIGHT_ROOT_DIR}/ext")
 include(${FLASHLIGHT_EXT_DIR}/CMakeLists.txt)
 
 # Make #include "flashlight/lib" work by adding to the inner incl dir
 setup_install_headers(${FLASHLIGHT_EXT_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
 
 # --------------------------- Tasks ---------------------------
-set(FLASHLIGHT_APPS_DIR "${PROJECT_SOURCE_DIR}/app")
+set(FLASHLIGHT_APPS_DIR "${FLASHLIGHT_ROOT_DIR}/app")
 include(${FLASHLIGHT_APPS_DIR}/CMakeLists.txt)
 
 # Fallthrough default install

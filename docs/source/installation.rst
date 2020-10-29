@@ -167,7 +167,7 @@ Once flashlight is built and installed, including it in another project is simpl
    #include <iostream>
 
    #include <arrayfire.h>
-   #include "flashlight/flashlight.h"
+   #include "flashlight/fl/flashlight.h"
 
    /**
     * ###### #         ##    ####  #    # #      #  ####  #    # #####
