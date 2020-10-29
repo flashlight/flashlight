@@ -77,6 +77,8 @@ struct DistributedConstants {
       ((size_t)(20) << 20); // 20 MB
 };
 
+constexpr std::size_t kDynamicBenchmarkDefaultCount = 10;
+
 /** @} */
 
 } // namespace fl

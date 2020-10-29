@@ -11,4 +11,6 @@ namespace fl {
 // ODR
 constexpr const char* DistributedConstants::kMaxDevicePerNode;
 constexpr const char* DistributedConstants::kFilePath;
+constexpr const std::size_t DistributedConstants::kCoalesceCacheSize;
+
 } // namespace fl
