@@ -43,26 +43,9 @@ void rnn_backward(
   auto cx = inputs[2];
   auto weights = inputs[3];
 
-  af::array hxArray;
-  if (hx.type() == input.type()) {
-    hxArray = hx.array();
-  } else {
-    hxArray = hx.array().as(input.type());
-  }
-
-  af::array cxArray;
-  if (cx.type() == input.type()) {
-    cxArray = cx.array();
-  } else {
-    cxArray = cx.array().as(input.type());
-  }
-
-  af::array weightsArray;
-  if (weights.type() == input.type()) {
-    weightsArray = weights.array();
-  } else {
-    weightsArray = weights.array().as(input.type());
-  }
+  af::array hxArray = hx.array();
+  af::array cxArray = cx.array();
+  af::array weightsArray = weights.array();
 
   if (!(input.isCalcGrad() || hx.isCalcGrad() || cx.isCalcGrad() ||
         weights.isCalcGrad())) {
@@ -176,11 +159,11 @@ void rnn_backward(
   }
 
   if (hx.isCalcGrad() && !hx.isempty()) {
-    hx.addGrad(dhx);
+    hx.addGrad(dhx.as(hx.type()));
   }
 
   if (cx.isCalcGrad() && !cx.isempty()) {
-    cx.addGrad(dcx);
+    cx.addGrad(dcx.as(cx.type()));
   }
 
   if (weights.isCalcGrad()) {
@@ -222,7 +205,7 @@ void rnn_backward(
     }
     weights.addGrad(dw);
   }
-}
+} // namespace fl
 
 std::tuple<Variable, Variable, Variable> rnn(
     const Variable& input,
@@ -234,21 +217,12 @@ std::tuple<Variable, Variable, Variable> rnn(
     RnnMode mode,
     bool bidirectional,
     float drop_prob) {
+  FL_VARIABLE_DTYPES_MATCH_CHECK(input, hidden_state, cell_state, weights);
+
   auto& x = input.array();
 
-  af::array hxArray;
-  if (hidden_state.type() == input.type()) {
-    hxArray = hidden_state.array();
-  } else {
-    hxArray = hidden_state.array().as(input.type());
-  }
-
-  af::array cxArray;
-  if (cell_state.type() == input.type()) {
-    cxArray = cell_state.array();
-  } else {
-    cxArray = cell_state.array().as(input.type());
-  }
+  af::array hxArray = hidden_state.array();
+  af::array cxArray = cell_state.array();
 
   DropoutDescriptor dropout(drop_prob);
   RNNDescriptor rnn_desc(
