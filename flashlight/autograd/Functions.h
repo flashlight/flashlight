@@ -796,13 +796,13 @@ Variable gatedlinearunit(const Variable& input, const int dim);
 
  * @param input Variable of input with shape [input size, batch size, sequence
  * length]
- * @param hidden_state Variable of hidden state with shape [hidden size, batch
+ * @param hiddenState Variable of hidden state with shape [hidden size, batch
  * size, total layers]
- * @param cell_state [LSTM only] Variable of cell state with same shape as
+ * @param cellState [LSTM only] Variable of cell state with same shape as
  * hidden state
  * @param weights Learnable parameters in the RNN unit
- * @param hidden_size number of features in the hidden state
- * @param num_layers number of recurrent layers
+ * @param hiddenSize number of features in the hidden state
+ * @param numLayers number of recurrent layers
  * @param mode defines the type of RNN unit
  *  - RELU
  *  - TANH
@@ -816,16 +816,16 @@ Variable gatedlinearunit(const Variable& input, const int dim);
  * @return a tuple of three Variables:
  * - `y`: input with shape [input size, batch size, sequence length *
  * directions]
- * - `hidden_state`: hidden state for the current time step
- * - `cell_state`: cell state for the current time step
+ * - `hiddenState`: hidden state for the current time step
+ * - `cellState`: cell state for the current time step
  */
 std::tuple<Variable, Variable, Variable> rnn(
     const Variable& input,
-    const Variable& hidden_state,
-    const Variable& cell_state,
+    const Variable& hiddenState,
+    const Variable& cellState,
     const Variable& weights,
-    int hidden_size,
-    int num_layers,
+    int hiddenSize,
+    int numLayers,
     RnnMode mode,
     bool bidirectional,
     float dropout);

@@ -25,12 +25,12 @@ PositionEmbedding::PositionEmbedding(
 std::vector<Variable> PositionEmbedding::forward(
     const std::vector<Variable>& input) {
   int n = input[0].dims(1);
-  Variable pos_emb =
+  Variable posEmb =
       tileAs(params_[0].as(input[0].type()).cols(0, n - 1), input[0]);
   if (dropout_ > 0.0 && train_) {
-    return {input[0] + dropout(pos_emb, dropout_)};
+    return {input[0] + dropout(posEmb, dropout_)};
   } else {
-    return {input[0] + pos_emb};
+    return {input[0] + posEmb};
   }
 }
 
