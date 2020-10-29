@@ -289,6 +289,22 @@ TEST(AutogradTest, AutogradOperatorTypeCompatibility) {
       std::invalid_argument);
   EXPECT_THROW(
       { conv2d(f16, f32, f16_2, 1, 1, 0, 0, 1, 1); }, std::invalid_argument);
+  // Quaternary
+  auto f16_3 = Variable(af::randu(2, 2, 3, af::dtype::f16), false);
+  auto f16_4 = Variable(af::randu(50, af::dtype::f16), false);
+  EXPECT_THROW(
+      {
+        rnn(f16_3,
+            Variable(af::array(af::dtype::f32), false),
+            Variable(af::array(af::dtype::f32), false),
+            f16_4,
+            2,
+            2,
+            RnnMode::LSTM,
+            true,
+            0.0);
+      },
+      std::invalid_argument);
   // Variadic operators
   std::vector<Variable> concatInputs = {f16, f32, f16_2, f32_2};
   EXPECT_THROW({ concatenate(concatInputs, 0); }, std::invalid_argument);
@@ -1161,16 +1177,18 @@ TEST(AutogradTest, WeightNormConv) {
   ASSERT_TRUE(jacobianTestImpl(func_weightNorm_g, g, 1E-1));
 }
 
-void test_rnn_impl(RnnMode mode) {
+void test_rnn_impl(RnnMode mode, af::dtype precision = af::dtype::f64) {
   int num_layers = 2;
   int hidden_size = 2;
   int input_size = 2;
   int batch_size = 2;
   int seq_length = 3;
   bool bidirectional = true;
+  float expectedPrecision = precision == af::dtype::f16 ? 5E-2 : 1E-5;
+  float perturbation = precision == af::dtype::f16 ? 1E-1 : 1E-4;
 
-  auto in = Variable(
-      af::randu(input_size, batch_size, seq_length, af::dtype::f64), true);
+  auto in =
+      Variable(af::randu(input_size, batch_size, seq_length, precision), true);
   size_t n_params;
 
   switch (mode) {
@@ -1187,13 +1205,13 @@ void test_rnn_impl(RnnMode mode) {
       throw std::invalid_argument("invalid RNN mode for the test");
   }
 
-  auto w = Variable(af::randu(n_params, af::dtype::f64), true);
+  auto w = Variable(af::randu(n_params, precision), true);
 
   auto func_rnn_in = [&](Variable& input) -> Variable {
     return std::get<0>(
         rnn(input,
-            Variable(),
-            Variable(),
+            Variable().as(precision),
+            Variable().as(precision),
             w,
             hidden_size,
             num_layers,
@@ -1201,13 +1219,14 @@ void test_rnn_impl(RnnMode mode) {
             bidirectional,
             0.0));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_rnn_in, in, 1E-5));
+  ASSERT_TRUE(
+      jacobianTestImpl(func_rnn_in, in, expectedPrecision, perturbation));
 
   auto func_rnn_w = [&](Variable& weights) -> Variable {
     return std::get<0>(
         rnn(in,
-            Variable(),
-            Variable(),
+            Variable().as(precision),
+            Variable().as(precision),
             weights,
             hidden_size,
             num_layers,
@@ -1215,7 +1234,7 @@ void test_rnn_impl(RnnMode mode) {
             bidirectional,
             0.0));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_rnn_w, w, 1E-5));
+  ASSERT_TRUE(jacobianTestImpl(func_rnn_w, w, expectedPrecision, perturbation));
 
   // We get the correct gradient for hx
   auto hx = Variable(
@@ -1228,8 +1247,8 @@ void test_rnn_impl(RnnMode mode) {
   auto func_rnn_hx = [&](Variable& hidden_state) -> Variable {
     return std::get<0>(
         rnn(in,
-            hidden_state,
-            Variable(),
+            hidden_state.as(precision),
+            Variable().as(precision),
             w,
             hidden_size,
             num_layers,
@@ -1237,14 +1256,15 @@ void test_rnn_impl(RnnMode mode) {
             bidirectional,
             0.0));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_rnn_hx, hx, 1E-5));
+  ASSERT_TRUE(
+      jacobianTestImpl(func_rnn_hx, hx, expectedPrecision, perturbation));
 
   // We can compute the gradient w.r.t. hy
   auto func_rnn_in_dhy = [&](Variable& input) -> Variable {
     return std::get<1>(
         rnn(input,
-            Variable(),
-            Variable(),
+            Variable().as(precision),
+            Variable().as(precision),
             w,
             hidden_size,
             num_layers,
@@ -1252,7 +1272,8 @@ void test_rnn_impl(RnnMode mode) {
             bidirectional,
             0.0));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_rnn_in_dhy, in, 1E-5));
+  ASSERT_TRUE(
+      jacobianTestImpl(func_rnn_in_dhy, in, expectedPrecision, perturbation));
 
   if (mode == RnnMode::LSTM) {
     // We get the correct gradient for cx
@@ -1266,8 +1287,8 @@ void test_rnn_impl(RnnMode mode) {
     auto func_rnn_cx = [&](Variable& cell_state) -> Variable {
       return std::get<0>(
           rnn(in,
-              Variable(),
-              cell_state,
+              Variable().as(precision),
+              cell_state.as(precision),
               w,
               hidden_size,
               num_layers,
@@ -1275,14 +1296,15 @@ void test_rnn_impl(RnnMode mode) {
               bidirectional,
               0.0));
     };
-    ASSERT_TRUE(jacobianTestImpl(func_rnn_cx, cx, 1E-5));
+    ASSERT_TRUE(
+        jacobianTestImpl(func_rnn_cx, cx, expectedPrecision, perturbation));
 
     // We can compute the gradient w.r.t. cy
     auto func_rnn_in_dcy = [&](Variable& input) -> Variable {
       return std::get<2>(
           rnn(input,
-              Variable(),
-              Variable(),
+              Variable().as(precision),
+              Variable().as(precision),
               w,
               hidden_size,
               num_layers,
@@ -1290,7 +1312,8 @@ void test_rnn_impl(RnnMode mode) {
               bidirectional,
               0.0));
     };
-    ASSERT_TRUE(jacobianTestImpl(func_rnn_in_dcy, in, 1E-5));
+    ASSERT_TRUE(
+        jacobianTestImpl(func_rnn_in_dcy, in, expectedPrecision, perturbation));
   }
 }
 
@@ -1298,12 +1321,35 @@ TEST(AutogradTest, Rnn) {
   test_rnn_impl(RnnMode::TANH);
 }
 
+TEST_F(AutogradTestF16, RnnF16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  test_rnn_impl(RnnMode::TANH, af::dtype::f16);
+}
+
 TEST(AutogradTest, Lstm) {
   test_rnn_impl(RnnMode::LSTM);
+}
+TEST_F(AutogradTestF16, LstmF16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  test_rnn_impl(RnnMode::LSTM, af::dtype::f16);
 }
 
 TEST(AutogradTest, Gru) {
   test_rnn_impl(RnnMode::GRU);
+}
+
+TEST_F(AutogradTestF16, GruF16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  test_rnn_impl(RnnMode::GRU, af::dtype::f16);
 }
 
 TEST(AutogradTest, Embedding) {
