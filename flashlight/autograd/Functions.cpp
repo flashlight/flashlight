@@ -342,7 +342,8 @@ Variable exp(const Variable& input) {
   auto result = af::exp(FL_ADJUST_INPUT_TYPE(input.array()));
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
-    inputs[0].addGrad(Variable((gradOutput * exp(inputs[0])).array(), false));
+    inputs[0].addGrad(
+        Variable(gradOutput.array() * af::exp(inputs[0].array()), false));
   };
   return Variable(result, {input}, gradFunc);
 }
