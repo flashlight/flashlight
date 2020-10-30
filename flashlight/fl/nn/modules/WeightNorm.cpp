@@ -29,7 +29,22 @@ void WeightNorm::transformDims() {
 void WeightNorm::computeWeight() {
   auto v = params_[0];
   auto g = params_[1];
-  auto wt = v * tileAs(g / norm(v, normDim_), v);
+  Variable nm;
+  // speed of norm operation is the best while doing it across {1} dim
+  // tested for convlm model training
+  if (dim_ == 0) {
+    nm = moddims(v, af::dim4{0, -1, 1, 1});
+    nm = norm(nm, {1});
+  } else if (dim_ == 3) {
+    nm = moddims(v, af::dim4{-1, 1, 1, 0});
+    nm = reorder(nm, 3, 0, 1, 2);
+    nm = norm(nm, {1});
+    nm = reorder(nm, 1, 2, 3, 0);
+  } else {
+    throw std::invalid_argument(
+        "Wrong dimension for Weight Norm: " + std::to_string(dim_));
+  }
+  auto wt = v * tileAs(g / nm, v);
   module_->setParams(wt, 0);
 }
 
