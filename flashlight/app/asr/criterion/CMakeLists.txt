@@ -10,13 +10,8 @@ if (FLASHLIGHT_USE_CUDA)
   set(WARPCTC_DIR ${FL_APP_ASR_ROOT_DIR}/third_party/warpctc)
   message(STATUS "Adding warpctc from dir: ${WARPCTC_DIR}")
 
-  # HORRENDOUS HACK (remove me when we remove warpctc):
-  # see https://cmake.org/Bug/view.php?id=14444
+  # Add Warpctc library
   add_subdirectory(${WARPCTC_DIR} ${PROJECT_BINARY_DIR}/third_party/warpctc)
-  cuda_add_library(warpctc SHARED ${warpctc_SOURCES})
-  target_link_libraries(warpctc ${warpctc_LIBS})
-  set(WARPCTC_INCLUDE_DIR ${WARPCTC_DIR}/include)
-  target_include_directories(warpctc PRIVATE ${WARPCTC_INCLUDE_DIR})
 
   target_sources(
     flashlight-app-asr
@@ -39,7 +34,7 @@ if (FLASHLIGHT_USE_CUDA)
     flashlight-app-asr
     PUBLIC
     ${CUDA_INCLUDE_DIRS}
-    $<BUILD_INTERFACE:${WARPCTC_INCLUDE_DIR}> # I hope to remove me one day
+    #$<BUILD_INTERFACE:${WARPCTC_INCLUDE_DIR}> # I hope to remove me one day
     )
 elseif (FLASHLIGHT_USE_CPU)
   target_sources(

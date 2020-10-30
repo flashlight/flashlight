@@ -18,7 +18,7 @@ CTC[Connectionist Temporal Classification](http://www.cs.toronto.edu/~graves/icm
 
 这种执行方式提高了训练的的可扩展性，超过了并行CTC的实现方式。对于以GPU为核心的训练， 我们可用所有的的网络带宽来增加数据的可并行性。
 性能
-相起其他的开源工具，Warp-CTC的实现方式相对高效，且代码的数值稳定性也较好。因为CTC本身对数值较为敏感，因此即使使用双精度标准计算，也会出现下溢 (underflow)的情况。 具体来说，两个数值趋近于无穷小且相近的数字相除的结果应该大约为1，却因为分母接近为0而变成无穷。 然而，如果直接取对数执行运算，CTC会在数值上较为稳定，虽然会在单精度浮点中以高成本运算为代价。
+相比其他的开源工具，Warp-CTC的实现方式相对高效，且代码的数值稳定性也较好。因为CTC本身对数值较为敏感，因此即使使用双精度标准计算，也会出现下溢 (underflow)的情况。 具体来说，两个数值趋近于无穷小且相近的数字相除的结果应该大约为1，却因为分母接近为0而变成无穷。 然而，如果直接取对数执行运算，CTC会在数值上较为稳定，虽然会在单精度浮点中以高成本运算为代价。
 我们将Warp-CTC和[Eesen](https://github.com/srvk/eesen/commit/68f2bc2d46a5513cce3c232a645292632a1b08f9) (建立在[Theano](https://github.com/mohammadpz/CTC-Connectionist-Temporal-Classification/commit/904e8c72e15334887609d399254cf05a591d570f)上的CTC)以及仅运行[Stanford-CTC](https://github.com/amaas/stanford-ctc/commit/c8859897336a349b6c561d2bf2d179fae90b4d67)的Cython CPU进行了比较。为了进行比较，我们对在32位浮点数上运行的Theano进行了基准测试，并且取对数计算。 而Stanford-CTC由于本身不支持对数运算，因此需要被修改。而且它也不支持大于1的迷你批处理 （minibatches), 所以需要在真正的训练流水线上布局非常规内存（我们假设成本与迷你批处理的规模是成正线性关系）。
 我们在Deep Speech 2中分别展示了英文及中文端对端模型的结果, 其中T代表输入CTC的时间步数量，L代表每个例子的标签长度，A代表字母数量。
 在GPU上，Warp-CTC对64个例子迷你批处理的表现比Eesen快7倍到155倍，比Theano快46倍到68倍

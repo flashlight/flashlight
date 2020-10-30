@@ -367,7 +367,7 @@ GpuCTC<ProbT>::compute_log_probs(const ProbT* const activations) {
 
     // Numerically stable SM
     ctcStatus_t ctc_status =
-        reduce_max(probs_, denoms_, out_dim_,
+        reduce_max<ProbT>(probs_, denoms_, out_dim_,
                    activation_cols_, 1, stream_);
     if (ctc_status != CTC_STATUS_SUCCESS)
         return ctc_status;
@@ -385,7 +385,7 @@ GpuCTC<ProbT>::compute_log_probs(const ProbT* const activations) {
 
     // Reduce along columns to calculate denominator
     ctc_status =
-        reduce_exp(probs_, denoms_, out_dim_,
+        reduce_exp<ProbT>(probs_, denoms_, out_dim_,
                    activation_cols_, 1, stream_);
     if (ctc_status != CTC_STATUS_SUCCESS)
         return ctc_status;
@@ -394,6 +394,9 @@ GpuCTC<ProbT>::compute_log_probs(const ProbT* const activations) {
     compute_log_probs_kernel<ProbT, VT><<<grid_size, NT, 0, stream_>>>
         (ctc_helper::logarithmic<ProbT>(), probs_,
          denoms_, out_dim_, num_elements);
+
+    truncate_probs_kernel<ProbT, VT><<<grid_size, NT, 0, stream_>>>
+        (probs_, num_elements);
 
     return CTC_STATUS_SUCCESS;
 }
@@ -449,6 +452,7 @@ GpuCTC<ProbT>::cost_and_grad(const ProbT* const activations,
     if (activations == nullptr ||
         grads == nullptr ||
         costs == nullptr ||
+        flat_labels == nullptr ||
         label_lengths == nullptr ||
         input_lengths == nullptr
         )
@@ -467,6 +471,7 @@ GpuCTC<ProbT>::score_forward(const ProbT* const activations,
                              const int* const input_lengths) {
     if (activations == nullptr ||
         costs == nullptr ||
+        flat_labels == nullptr ||
         label_lengths == nullptr ||
         input_lengths == nullptr
         )

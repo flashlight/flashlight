@@ -1,4 +1,4 @@
-/*****************************************************************************
+/******************************************************************************
  * Copyright (c) 2013, NVIDIA CORPORATION.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -112,7 +112,11 @@ __device__ __forceinline__ float shfl_up(float var,
 	unsigned int delta, int width = 32) {
 
 #if __CUDA_ARCH__ >= 300
-	var = __shfl_up_sync(0xffffffff, var, delta, width);
+#if defined(__CUDACC_VER_MAJOR__) && (__CUDACC_VER_MAJOR__ >= 9)
+	var = __shfl_up_sync(0xFFFFFFFF, var, delta, width);
+#else
+	var = __shfl_up(var, delta, width);
+#endif
 #endif
 	return var;
 }
@@ -122,8 +126,13 @@ __device__ __forceinline__ double shfl_up(double var,
 
 #if __CUDA_ARCH__ >= 300
 	int2 p = mgpu::double_as_int2(var);
-	p.x = __shfl_up_sync(0xffffffff, p.x, delta, width);
-	p.y = __shfl_up_sync(0xffffffff, p.y, delta, width);
+#if defined(__CUDACC_VER_MAJOR__) && (__CUDACC_VER_MAJOR__ >= 9)
+	p.x = __shfl_up_sync(0xFFFFFFFF, p.x, delta, width);
+	p.y = __shfl_up_sync(0xFFFFFFFF, p.y, delta, width);
+#else
+	p.x = __shfl_up(p.x, delta, width);
+	p.y = __shfl_up(p.y, delta, width);
+#endif
 	var = mgpu::int2_as_double(p);
 #endif
 
@@ -137,13 +146,23 @@ MGPU_DEVICE int shfl_add(int x, int offset, int width = WARP_SIZE) {
 	int result = 0;
 #if __CUDA_ARCH__ >= 300
 	int mask = (WARP_SIZE - width)<< 8;
+#if defined(__CUDACC_VER_MAJOR__) && (__CUDACC_VER_MAJOR__ >= 9)
 	asm(
 		"{.reg .s32 r0;"
 		".reg .pred p;"
-		"shfl.sync.up.b32 r0|p, %1, %2, %3, 0xffffffff;"
+		"shfl.up.sync.b32 r0|p, %1, %2, %3, %4;"
 		"@p add.s32 r0, r0, %4;"
 		"mov.s32 %0, r0; }"
 		: "=r"(result) : "r"(x), "r"(offset), "r"(mask), "r"(x));
+#else
+	asm(
+		"{.reg .s32 r0;"
+		".reg .pred p;"
+		"shfl.up.b32 r0|p, %1, %2, %3;"
+		"@p add.s32 r0, r0, %4;"
+		"mov.s32 %0, r0; }"
+		: "=r"(result) : "r"(x), "r"(offset), "r"(mask), "r"(x));
+#endif
 #endif
 	return result;
 }
@@ -152,13 +171,23 @@ MGPU_DEVICE int shfl_max(int x, int offset, int width = WARP_SIZE) {
 	int result = 0;
 #if __CUDA_ARCH__ >= 300
 	int mask = (WARP_SIZE - width)<< 8;
+#if defined(__CUDACC_VER_MAJOR__) && (__CUDACC_VER_MAJOR__ >= 9)
 	asm(
 		"{.reg .s32 r0;"
 		".reg .pred p;"
-		"shfl.sync.up.b32 r0|p, %1, %2, %3, 0xffffffff;"
+		"shfl.up.sync.b32 r0|p, %1, %2, %3, %4;"
 		"@p max.s32 r0, r0, %4;"
 		"mov.s32 %0, r0; }"
 		: "=r"(result) : "r"(x), "r"(offset), "r"(mask), "r"(x));
+#else
+	asm(
+		"{.reg .s32 r0;"
+		".reg .pred p;"
+		"shfl.up.b32 r0|p, %1, %2, %3;"
+		"@p max.s32 r0, r0, %4;"
+		"mov.s32 %0, r0; }"
+		: "=r"(result) : "r"(x), "r"(offset), "r"(mask), "r"(x));
+#endif
 #endif
 	return result;
 }

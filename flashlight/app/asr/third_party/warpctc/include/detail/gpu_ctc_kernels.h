@@ -469,6 +469,23 @@ __global__ void compute_log_probs_kernel(Op f, ProbT* probs,
     }
 }
 
+template <typename ProbT, int VT = 1>
+__global__ void truncate_probs_kernel(ProbT* probs, int count) {
+
+    int idx = blockDim.x * blockIdx.x + threadIdx.x;
+    int stride = blockDim.x * gridDim.x;
+    ProbT min_T = numeric_limits<ProbT>::min();
+#pragma unroll
+    for(int i = 0; i < VT; i++) {
+        if (idx < count) {
+            if (min_T > probs[idx]) {
+                probs[idx] = min_T;
+            }
+        }
+        idx += stride;
+    }
+}
+
 template <typename ProbT, int VT = 1, typename Op>
 __global__ void prepare_stable_SM_kernel(Op f, ProbT* probs,
                                          const ProbT* const col_max,
