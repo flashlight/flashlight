@@ -9,7 +9,7 @@ flashlight provides a flexible API to describe new Modules so as to create compl
 
   #include <memory>
 
-  #include "flashlight/flashlight.h"
+  #include "flashlight/fl/flashlight.h"
 
   class ResNetBlock : public fl::Container {
    public:
@@ -57,7 +57,7 @@ Here, we show an example of how one could use Baidu Research's `warp-ctc <https:
 
   #include <ctc.h> // warp-ctc
   #include "flashlight/common/cuda.h" // cuda specific util. Not included in flashlight by default.
-  #include "flashlight/flashlight.h" // flashlight library
+  #include "flashlight/fl/flashlight.h" // flashlight library
 
   fl::Variable ctc(const fl::Variable& input, const fl::Variable& target) {
     // Works only for batchsize = 1
