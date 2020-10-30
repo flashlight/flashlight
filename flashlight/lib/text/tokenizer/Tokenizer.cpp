@@ -48,15 +48,15 @@ std::vector<std::string> Tokenizer::readAndParseSentence(
   return splitOnWhitespace(line, true);
 }
 
-void Tokenizer::countWords(
+void Tokenizer::countTokens(
     const std::string& filename,
     int numWorkers,
     bool generateDescriptor) {
   // 1. Compute offsets
   auto offsets = findOffsets(filename, numWorkers);
 
-  // 2. Count words in each partition
-  std::vector<WordCountMap> subWordCountMaps(numWorkers);
+  // 2. Count tokens in each partition
+  std::vector<TokenCountMap> subTokenCountMaps(numWorkers);
   std::vector<FileDescriptor> subFileDescriptors(numWorkers);
   std::vector<std::future<void>> futures(numWorkers);
 
@@ -64,22 +64,22 @@ void Tokenizer::countWords(
                               const std::string& filename,
                               size_t begin,
                               size_t end,
-                              WordCountMap& wordCountMap,
+                              TokenCountMap& tokenCountMap,
                               FileDescriptor& fileDescriptor,
                               bool generateDescriptor) {
     auto stream = createInputStream(filename);
     stream.seekg(begin, stream.beg);
     while (stream.tellg() < end) {
-      auto words = readAndParseSentence(stream);
-      for (const auto& word : words) {
-        if (wordCountMap.find(word) == wordCountMap.end()) {
-          wordCountMap[word] = 0;
+      auto tokens = readAndParseSentence(stream);
+      for (const auto& token : tokens) {
+        if (tokenCountMap.find(token) == tokenCountMap.end()) {
+          tokenCountMap[token] = 0;
         }
-        wordCountMap[word]++;
+        tokenCountMap[token]++;
       }
       if (generateDescriptor) {
         fileDescriptor.push_back(
-            {static_cast<size_t>(stream.tellg()), words.size()});
+            {static_cast<size_t>(stream.tellg()), tokens.size()});
       }
     }
     stream.close();
@@ -92,7 +92,7 @@ void Tokenizer::countWords(
         filename,
         offsets[i],
         offsets[i + 1],
-        std::ref(subWordCountMaps[i]),
+        std::ref(subTokenCountMaps[i]),
         std::ref(subFileDescriptors[i]),
         generateDescriptor);
   }
@@ -100,13 +100,13 @@ void Tokenizer::countWords(
   // 3. Merge the counters and file descriptors
   for (int i = 0; i < numWorkers; ++i) {
     futures[i].get();
-    // Word counter
-    for (const auto& item : subWordCountMaps[i]) {
-      if (wordCountMap_.find(item.first) == wordCountMap_.end()) {
-        wordCountMap_[item.first] = 0;
+    // Token counter
+    for (const auto& item : subTokenCountMaps[i]) {
+      if (tokenCountMap_.find(item.first) == tokenCountMap_.end()) {
+        tokenCountMap_[item.first] = 0;
       }
-      wordCountMap_[item.first] += item.second;
-      totalWords_ += item.second;
+      tokenCountMap_[item.first] += item.second;
+      totalTokens_ += item.second;
     }
     // File descriptors
     if (generateDescriptor) {
@@ -119,45 +119,51 @@ void Tokenizer::countWords(
   }
 }
 
-size_t Tokenizer::totalWords() {
-  return totalWords_;
+size_t Tokenizer::totalTokens() {
+  return totalTokens_;
 }
 
 size_t Tokenizer::totalSentences() {
   return totalSentences_;
 }
 
-void Tokenizer::filterWords(int maxWords, int minAppearence) {
-  wordCountPairs_.clear();
-  for (const auto& item : wordCountMap_) {
+void Tokenizer::filterTokens(int maxTokens, int minAppearence) {
+  tokenCountPairs_.clear();
+  for (const auto& item : tokenCountMap_) {
     if (item.second > minAppearence) {
-      wordCountPairs_.push_back(item);
+      tokenCountPairs_.push_back(item);
     }
   }
   std::sort(
-      wordCountPairs_.begin(),
-      wordCountPairs_.end(),
-      [](const WordCountPair& wcp1, const WordCountPair& wcp2) {
-        return wcp1.second > wcp2.second;
+      tokenCountPairs_.begin(),
+      tokenCountPairs_.end(),
+      [](const TokenCountPair& wcp1, const TokenCountPair& wcp2) {
+        if (wcp1.second != wcp2.second) {
+          // sort by occurences
+          return wcp1.second > wcp2.second;
+        } else {
+          // sort in lexical order if occurences is the same
+          return wcp1.first < wcp2.first;
+        }
       });
 
-  maxWords = maxWords > 0 && maxWords < wordCountPairs_.size()
-      ? maxWords
-      : wordCountPairs_.size();
-  wordCountPairs_.resize(maxWords);
+  maxTokens = maxTokens > -1 && maxTokens < tokenCountPairs_.size()
+      ? maxTokens
+      : tokenCountPairs_.size();
+  tokenCountPairs_.resize(maxTokens);
 }
 
 void Tokenizer::saveDictionary(const std::string& filename) {
   auto stream = createOutputStream(filename);
-  for (int i = 0; i < wordCountPairs_.size(); ++i) {
-    stream << wordCountPairs_[i].first << " " << wordCountPairs_[i].second
+  for (int i = 0; i < tokenCountPairs_.size(); ++i) {
+    stream << tokenCountPairs_[i].first << " " << tokenCountPairs_[i].second
            << "\n";
   }
 }
 
 void Tokenizer::saveFileDescriptor(const std::string& filename) {
   auto stream = createOutputStream(filename);
-  stream << "words: " << totalWords_ << "\n";
+  stream << "tokens: " << totalTokens_ << "\n";
   stream << "sentences: " << totalSentences_ << "\n";
   for (int i = 0; i < fileDescriptor_.size(); ++i) {
     stream << fileDescriptor_[i].first << " " << fileDescriptor_[i].second
