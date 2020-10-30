@@ -32,14 +32,14 @@ bool simulateAllocatorOnAllocationLog(
         try {
           allocatorPtr = allocator->allocate(event.sizeRequested_);
         } catch (std::exception& ex) {
-          LOG(ERROR)
+          FL_LOG(fl::ERROR)
               << "simulateAllocatorOnAllocationLog() allocator->allocate(event.sizeRequested_="
               << event.sizeRequested_
               << " OOM. allocator=" << allocator->getName();
           return false;
         }
         if (!allocatorPtr) {
-          LOG(ERROR)
+          FL_LOG(fl::ERROR)
               << "simulateAllocatorOnAllocationLog() allocator->allocate(event.sizeRequested_="
               << event.sizeRequested_ << ") returns null."
               << " allocator=" << allocator->getName();
@@ -54,7 +54,7 @@ bool simulateAllocatorOnAllocationLog(
           // ss << "simulateAllocatorOnAllocationLog() attempts to free
           // unalocated ptr="
           //    << event.ptr_ << std::endl;
-          // LOG(ERROR) << ss.str();
+          // FL_LOG(fl::ERROR) << ss.str();
           // throw std::invalid_argument(ss.str());
           // return false;
           continue;
@@ -67,7 +67,7 @@ bool simulateAllocatorOnAllocationLog(
         try {
           allocator->free(allocatorPtr);
         } catch (std::exception& ex) {
-          LOG(ERROR)
+          FL_LOG(fl::ERROR)
               << "simulateAllocatorOnAllocationLog() allocator->free(allocatorPtr="
               << allocatorPtr << " error=" << ex.what()
               << ". allocator=" << allocator->getName();
@@ -75,8 +75,9 @@ bool simulateAllocatorOnAllocationLog(
         }
       } break;
       default: {
-        LOG(ERROR) << "simulateAllocatorOnAllocationLog() invalid event.type_="
-                   << static_cast<int>(event.type_);
+        FL_LOG(fl::ERROR)
+            << "simulateAllocatorOnAllocationLog() invalid event.type_="
+            << static_cast<int>(event.type_);
       } break;
     }
   }
@@ -137,16 +138,17 @@ std::vector<SimResult> simulateAllocatorsOnAllocationLog(
           clock_gettime(threadClockId, &endTime);
           simResult.timeElapsedNanoSec_ =
               timespec_diff_nsec(endTime, startTime);
-          LOG(ERROR) << "Allocator=" << allocator->getName()
-                     << " simResult=" << simResult.prettyString() << " i=" << i;
+          FL_LOG(fl::ERROR)
+              << "Allocator=" << allocator->getName()
+              << " simResult=" << simResult.prettyString() << " i=" << i;
         } catch (std::exception& ex) {
-          LOG(ERROR) << ss.str() << " threadPool.enqueue(i=" << i
-                     << ") failed with error=" << ex.what();
+          FL_LOG(fl::ERROR) << ss.str() << " threadPool.enqueue(i=" << i
+                            << ") failed with error=" << ex.what();
         }
       });
     }
   } catch (std::exception& e) {
-    LOG(ERROR) << e.what();
+    FL_LOG(fl::ERROR) << e.what();
   }
   threadPool.blockUntilAlldone();
   return results;
@@ -157,7 +159,7 @@ void BlockingThreadPool::blockUntilAlldone() {
   this->allDoneCondition_.wait(lock, [this] {
     const bool allDone =
         this->tasks_.empty() && this->currentlyRunningCount_ < 1;
-    LOG(INFO) << " allDone=" << allDone;
+    FL_LOG(fl::INFO) << " allDone=" << allDone;
     return allDone;
   });
 }
@@ -174,9 +176,10 @@ BlockingThreadPool::~BlockingThreadPool() {
   {
     std::unique_lock<std::mutex> lock(mutex_);
     if (!tasks_.empty() || currentlyRunningCount_ > 0) {
-      LOG(WARNING) << "BlockingThreadPool::~BlockingThreadPool() tasks_.size()="
-                   << tasks_.size()
-                   << " currentlyRunningCount_=" << currentlyRunningCount_;
+      FL_LOG(fl::WARNING)
+          << "BlockingThreadPool::~BlockingThreadPool() tasks_.size()="
+          << tasks_.size()
+          << " currentlyRunningCount_=" << currentlyRunningCount_;
     }
     stop_ = true;
   }
@@ -209,7 +212,7 @@ void BlockingThreadPool::workerFunction() {
       }
 
       if (tasks_.empty()) {
-        LOG(ERROR)
+        FL_LOG(fl::ERROR)
             << "BlockingThreadPool::workerFunction() tasks_.empty() where it should never be the case.";
       } else {
         ++currentlyRunningCount_;
@@ -222,12 +225,12 @@ void BlockingThreadPool::workerFunction() {
       try {
         task();
       } catch (std::exception& ex) {
-        LOG(ERROR) << "BlockingThreadPool::workerFunction() exception="
-                   << ex.what();
+        FL_LOG(fl::ERROR) << "BlockingThreadPool::workerFunction() exception="
+                          << ex.what();
       }
       std::unique_lock<std::mutex> lock(mutex_);
       if (currentlyRunningCount_ < 1) {
-        LOG(ERROR)
+        FL_LOG(fl::ERROR)
             << "BlockingThreadPool::workerFunction() currentlyRunningCount_ goes negative";
       } else {
         --currentlyRunningCount_;
@@ -235,12 +238,12 @@ void BlockingThreadPool::workerFunction() {
       const bool allDone =
           this->tasks_.empty() && this->currentlyRunningCount_ < 1;
       if (allDone) {
-        LOG(INFO)
+        FL_LOG(fl::INFO)
             << "BlockingThreadPool::workerFunction() allDoneCondition_ notify_all";
         allDoneCondition_.notify_all();
       }
     } else {
-      LOG(ERROR)
+      FL_LOG(fl::ERROR)
           << "BlockingThreadPool::workerFunction() tasks is null where it should never be the case.";
     }
   }

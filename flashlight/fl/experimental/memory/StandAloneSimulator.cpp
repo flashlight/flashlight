@@ -42,23 +42,24 @@ void simulate(
     for (const std::string& configFileName : memoryAllocatorConfigPathVector) {
       ss << configFileName << std::endl;
     }
-    LOG(INFO) << ss.str();
+    FL_LOG(fl::INFO) << ss.str();
   }
 
   std::ifstream allocationLogStream(allocationLogPath);
   if (!allocationLogStream.is_open()) {
-    LOG(ERROR) << "simulate() failed to open allocation log file="
-               << allocationLogPath;
+    FL_LOG(fl::ERROR) << "simulate() failed to open allocation log file="
+                      << allocationLogPath;
     return;
   }
   std::vector<AllocationEvent> allocationLog =
       LoadAllocationLog(allocationLogStream);
   if (allocationLog.empty()) {
-    LOG(ERROR) << "simulate() empty allocation log file=" << allocationLogPath;
+    FL_LOG(fl::ERROR) << "simulate() empty allocation log file="
+                      << allocationLogPath;
     return;
   }
-  LOG(INFO) << "Allocation log size="
-            << prettyStringCount(allocationLog.size());
+  FL_LOG(fl::INFO) << "Allocation log size="
+                   << prettyStringCount(allocationLog.size());
 
   std::vector<std::unique_ptr<MemoryAllocator>> allocators;
   std::vector<MemoryAllocator*> allocatorCopyVec;
@@ -67,16 +68,16 @@ void simulate(
   for (const std::string& configFileName : memoryAllocatorConfigPathVector) {
     std::ifstream initConfigStream(configFileName);
     if (!initConfigStream.is_open()) {
-      LOG(ERROR) << "Failed to read memory allocator config file="
-                 << configFileName;
+      FL_LOG(fl::ERROR) << "Failed to read memory allocator config file="
+                        << configFileName;
       return;
     }
     MemoryAllocatorConfiguration allocatorCnfig;
     try {
       allocatorCnfig = MemoryAllocatorConfiguration::loadJSon(initConfigStream);
     } catch (std::exception& ex) {
-      LOG(ERROR) << "Failed to parse memory allocator config file="
-                 << configFileName << " with error=" << ex.what();
+      FL_LOG(fl::ERROR) << "Failed to parse memory allocator config file="
+                        << configFileName << " with error=" << ex.what();
       return;
     }
     void* arenaAddress = reinterpret_cast<void*>(0x10);
@@ -87,24 +88,25 @@ void simulate(
     allocators.push_back(std::move(allocator));
 
     allocatorsFiles.push_back(std::ofstream(resultFileName(configFileName)));
-    LOG(INFO) << "file=" << resultFileName(configFileName)
-              << " is open=" << allocatorsFiles.back().is_open();
+    FL_LOG(fl::INFO) << "file=" << resultFileName(configFileName)
+                     << " is open=" << allocatorsFiles.back().is_open();
   }
 
   const unsigned int threadCount = std::min(
       static_cast<unsigned int>(memoryAllocatorConfigPathVector.size()),
       std::thread::hardware_concurrency());
-  LOG(INFO) << "Creating a thread pool of size=" << threadCount;
+  FL_LOG(fl::INFO) << "Creating a thread pool of size=" << threadCount;
   BlockingThreadPool threadPool(threadCount);
   std::vector<SimResult> simResults;
   try {
-    LOG(INFO);
+    FL_LOG(fl::INFO);
     simResults = simulateAllocatorsOnAllocationLog(
         threadPool, allocationLog, allocatorCopyVec);
-    LOG(INFO) << " simResults.size()=" << simResults.size();
+    FL_LOG(fl::INFO) << " simResults.size()=" << simResults.size();
   } catch (std::exception& ex) {
-    LOG(ERROR) << "simulateAllocatorsOnAllocationLog() failed with error="
-               << ex.what();
+    FL_LOG(fl::ERROR)
+        << "simulateAllocatorsOnAllocationLog() failed with error="
+        << ex.what();
   }
 
   std::vector<int> sortedIndices(simResults.size());
@@ -120,8 +122,8 @@ void simulate(
       << "success,elapsed(sec),allocationsCount,maxExternalFragmentationScore,performanceCost,"
       << "maxInternalFragmentationScore,allocatorConfigFile,resultFileName"
       << std::endl;
-  LOG(INFO) << "  memoryAllocatorConfigPathVector.size()="
-            << memoryAllocatorConfigPathVector.size();
+  FL_LOG(fl::INFO) << "  memoryAllocatorConfigPathVector.size()="
+                   << memoryAllocatorConfigPathVector.size();
 
   for (int i : sortedIndices) {
     const MemoryAllocator::Stats stats = allocatorCopyVec.at(i)->getStats();
@@ -159,14 +161,15 @@ void simulate(
         resultFile << "allocatorCnfig="
                    << allocatorConfigVec.at(i).prettyString() << std::endl;
       } else {
-        LOG(ERROR) << "Failed to write to resultFileName="
-                   << resultFileName(memoryAllocatorConfigPathVector.at(i));
+        FL_LOG(fl::ERROR) << "Failed to write to resultFileName="
+                          << resultFileName(
+                                 memoryAllocatorConfigPathVector.at(i));
       }
     } catch (std::exception& ex) {
-      LOG(ERROR) << ex.what();
+      FL_LOG(fl::ERROR) << ex.what();
     }
   }
-  LOG(INFO) << "Summary of results:\n" << summary.str();
+  FL_LOG(fl::INFO) << "Summary of results:\n" << summary.str();
 }
 
 constexpr size_t kTypicalArenaSize16gb = 16523001856; // (15GB+397MB+576KB)
@@ -176,7 +179,7 @@ int main(int argc, char** argv) {
   VerboseLogging::setMaxLoggingLevel(0);
 
   if (argc < 4) {
-    LOG(ERROR)
+    FL_LOG(fl::ERROR)
         << "Usage:" << argv[0]
         << " [arenasize] [path to allocation log csv file] "
         << "[path to memory config json file 1] ..  [path to memory config json file n]"
@@ -185,8 +188,8 @@ int main(int argc, char** argv) {
   }
   const size_t arenaSize = std::stol(argv[1]);
   if (arenaSize != kTypicalArenaSize16gb) {
-    LOG(ERROR) << "Are you sure about the arena size? usueally it is:"
-               << kTypicalArenaSize16gb;
+    FL_LOG(fl::ERROR) << "Are you sure about the arena size? usueally it is:"
+                      << kTypicalArenaSize16gb;
   }
   const std::string allocationLogPath = argv[2];
   std::vector<std::string> memoryAllocatorConfigPathVector;

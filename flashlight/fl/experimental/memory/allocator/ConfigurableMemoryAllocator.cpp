@@ -46,13 +46,13 @@ std::unique_ptr<MemoryAllocator> CreateMemoryAllocator(
      << " arenaSizeInBytes=" << prettyStringMemorySize(arenaSizeInBytes)
      << ") config=" << config.prettyString();
   if (logLevel > 0) {
-    LOG(INFO) << ss.str();
+    FL_LOG(fl::INFO) << ss.str();
   }
 
   const size_t nSubArenas = config.subArenaConfiguration_.size();
   if (nSubArenas == 0) {
     ss << " config must have at least one sub arena configuration.";
-    LOG(ERROR) << ss.str();
+    FL_LOG(fl::ERROR) << ss.str();
     throw std::invalid_argument(ss.str());
   }
 
@@ -89,7 +89,7 @@ std::unique_ptr<MemoryAllocator> CreateMemoryAllocator(
          subArenaConfig.blockSize_);
     avaialableBytes -= subAreanClumpedSize;
 
-    // LOG(INFO) << "CreateMemoryAllocator() arenaSizeInBytes="
+    // FL_LOG(fl::INFO) << "CreateMemoryAllocator() arenaSizeInBytes="
     //           << prettyStringMemorySize(arenaSizeInBytes)
     //           << " subArenaConfig.relativeSize_="
     //           << subArenaConfig.relativeSize_
@@ -147,7 +147,7 @@ MemoryAllocatorConfiguration MemoryAllocatorConfiguration::loadJSon(
     cereal::JSONInputArchive archive(streamToConfig);
     archive(config);
   } catch (std::exception& ex) {
-    LOG(ERROR)
+    FL_LOG(fl::ERROR)
         << "MemoryAllocatorConfiguration::loadJSon() failed to load config with error="
         << ex.what();
     throw ex;
@@ -161,7 +161,7 @@ void MemoryAllocatorConfiguration::saveJSon(
     cereal::JSONOutputArchive archive(saveConfigStream);
     archive(*this);
   } catch (std::exception& ex) {
-    LOG(ERROR)
+    FL_LOG(fl::ERROR)
         << "MemoryAllocatorConfiguration::saveJSon() failed to save config with error="
         << ex.what();
     throw ex;
@@ -271,7 +271,7 @@ void MemoryAllocatorConfiguration::normalize() {
          << subConfig.blockSize_
          << " for proper alignment block size must be in multiples of="
          << minBlockSize << " config=" << prettyString();
-      LOG(ERROR) << ss.str();
+      FL_LOG(fl::ERROR) << ss.str();
       throw std::runtime_error(ss.str());
     }
 
@@ -284,7 +284,7 @@ void MemoryAllocatorConfiguration::normalize() {
            << subConfig.maxAllocationSize_
            << " must be in multiples of block size=" << subConfig.blockSize_
            << " config=" << prettyString();
-        // LOG(ERROR) << ss.str();
+        // FL_LOG(fl::ERROR) << ss.str();
         throw std::runtime_error(ss.str());
       }
     }

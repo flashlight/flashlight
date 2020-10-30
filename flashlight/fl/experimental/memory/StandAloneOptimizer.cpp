@@ -23,24 +23,25 @@ int main(int argc, char** argv) {
   VerboseLogging::setMaxLoggingLevel(0);
 
   if (argc < 2) {
-    LOG(ERROR) << "Usage:" << argv[0]
-               << " [fl_memory_manager_standalone_optimizer_config.json]";
+    FL_LOG(fl::ERROR)
+        << "Usage:" << argv[0]
+        << " [fl_memory_manager_standalone_optimizer_config.json]";
     return writeTemplateConfigFile();
   }
   const std::string standaloneOptimizerConfigFilename = argv[1];
-  LOG(INFO) << "Reading stand alone optimizer config from file="
-            << standaloneOptimizerConfigFilename;
+  FL_LOG(fl::INFO) << "Reading stand alone optimizer config from file="
+                   << standaloneOptimizerConfigFilename;
   std::ifstream standaloneOptimizerConfigFile(
       standaloneOptimizerConfigFilename);
   if (!standaloneOptimizerConfigFile.is_open()) {
-    LOG(ERROR) << "Failed to open stand alone optimizer config file="
-               << standaloneOptimizerConfigFilename;
+    FL_LOG(fl::ERROR) << "Failed to open stand alone optimizer config file="
+                      << standaloneOptimizerConfigFilename;
     return -1;
   }
   StandAloneOptimizerConfig standaloneOptimizerConfig =
       StandAloneOptimizerConfig::loadJSon(standaloneOptimizerConfigFile);
-  LOG(INFO) << "Stand alone optimizer config="
-            << standaloneOptimizerConfig.prettyString();
+  FL_LOG(fl::INFO) << "Stand alone optimizer config="
+                   << standaloneOptimizerConfig.prettyString();
 
   std::vector<MemoryAllocatorConfiguration> initialAllocatorConfigs;
 
@@ -52,33 +53,35 @@ int main(int argc, char** argv) {
     }
     const std::string initialAllocatorConfigFilename =
         fullpath(standaloneOptimizerConfig.basePath, initialConfigFilename);
-    LOG(INFO) << "Reading initial memory allocator config from file="
-              << initialAllocatorConfigFilename;
+    FL_LOG(fl::INFO) << "Reading initial memory allocator config from file="
+                     << initialAllocatorConfigFilename;
     std::ifstream initialAllocatorConfigFile(initialAllocatorConfigFilename);
     if (!initialAllocatorConfigFile.is_open()) {
-      LOG(ERROR) << "Failed to open initial memory allocator config file="
-                 << initialAllocatorConfigFilename;
+      FL_LOG(fl::ERROR)
+          << "Failed to open initial memory allocator config file="
+          << initialAllocatorConfigFilename;
       return -1;
     }
     initialAllocatorConfigs.push_back(
         MemoryAllocatorConfiguration::loadJSon(initialAllocatorConfigFile));
-    LOG(INFO) << "Initial memory allocator config="
-              << initialAllocatorConfigs.back().prettyString();
+    FL_LOG(fl::INFO) << "Initial memory allocator config="
+                     << initialAllocatorConfigs.back().prettyString();
   }
   if (initialAllocatorConfigs.empty()) {
-    LOG(ERROR) << "Please specify initial allocator configuration files.";
+    FL_LOG(fl::ERROR)
+        << "Please specify initial allocator configuration files.";
     return -1;
   }
 
   const std::string finalAllocatorConfigFilename = fullpath(
       standaloneOptimizerConfig.basePath,
       standaloneOptimizerConfig.finalConfigFile);
-  LOG(INFO)
+  FL_LOG(fl::INFO)
       << "Open for writing the final (optimized) memory allocator config file="
       << finalAllocatorConfigFilename;
   std::ofstream finalAllocatorConfigFile(finalAllocatorConfigFilename);
   if (!finalAllocatorConfigFile.is_open()) {
-    LOG(ERROR)
+    FL_LOG(fl::ERROR)
         << "Failed to open final (optimized) memory allocator config file="
         << finalAllocatorConfigFilename;
     return -1;
@@ -87,40 +90,42 @@ int main(int argc, char** argv) {
   const std::string allocationLogFilename = fullpath(
       standaloneOptimizerConfig.basePath,
       standaloneOptimizerConfig.allocationLog);
-  LOG(INFO) << "Reading allocation log from file=" << allocationLogFilename;
+  FL_LOG(fl::INFO) << "Reading allocation log from file="
+                   << allocationLogFilename;
   std::ifstream allocationLogFile(allocationLogFilename);
   if (!allocationLogFile.is_open()) {
-    LOG(ERROR) << "Failed to open allocation log file="
-               << allocationLogFilename;
+    FL_LOG(fl::ERROR) << "Failed to open allocation log file="
+                      << allocationLogFilename;
     return -1;
   }
   std::vector<AllocationEvent> allocationLog =
       LoadAllocationLog(allocationLogFile);
-  LOG(INFO) << "Allocation log size=" << allocationLog.size();
+  FL_LOG(fl::INFO) << "Allocation log size=" << allocationLog.size();
 
   const std::string optimizerConfigFilename = fullpath(
       standaloneOptimizerConfig.basePath,
       standaloneOptimizerConfig.memoryOptimizerConfigurationFile);
-  LOG(INFO) << "Reading memory allocator optimizer config from file="
-            << optimizerConfigFilename;
+  FL_LOG(fl::INFO) << "Reading memory allocator optimizer config from file="
+                   << optimizerConfigFilename;
   std::ifstream memoryOptimizerConfigurationFile(optimizerConfigFilename);
   if (!memoryOptimizerConfigurationFile.is_open()) {
-    LOG(ERROR) << "Failed to open memory allocator optimizer config file="
-               << optimizerConfigFilename;
+    FL_LOG(fl::ERROR)
+        << "Failed to open memory allocator optimizer config file="
+        << optimizerConfigFilename;
     return -1;
   }
   MemoryOptimizerConfiguration memoryOptimizerConfiguration =
       MemoryOptimizerConfiguration::loadJSon(memoryOptimizerConfigurationFile);
-  LOG(INFO) << "Memory allocator optimizer config="
-            << memoryOptimizerConfiguration.prettyString();
+  FL_LOG(fl::INFO) << "Memory allocator optimizer config="
+                   << memoryOptimizerConfiguration.prettyString();
 
   MemoryAllocatorConfiguration finalAllocatorConfig = randomNearSearchOptimizer(
       initialAllocatorConfigs, allocationLog, memoryOptimizerConfiguration);
 
-  LOG(INFO) << "Final (optimized) config="
-            << finalAllocatorConfig.prettyString();
-  LOG(INFO) << "Writing final memory allocator config to file="
-            << finalAllocatorConfigFilename;
+  FL_LOG(fl::INFO) << "Final (optimized) config="
+                   << finalAllocatorConfig.prettyString();
+  FL_LOG(fl::INFO) << "Writing final memory allocator config to file="
+                   << finalAllocatorConfigFilename;
   finalAllocatorConfig.saveJSon(finalAllocatorConfigFile);
 
   return 0;
@@ -158,7 +163,7 @@ int writeTemplateConfigFile() {
                                  << kOptimizerConfigFilename;
   const std::string optimizerConfigFilename =
       optimizerConfigFilenameBuilder.str();
-  LOG(INFO)
+  FL_LOG(fl::INFO)
       << "Writing a MemoryOptimizerConfiguration templates for your convenience to="
       << optimizerConfigFilename;
 
@@ -180,7 +185,7 @@ int writeTemplateConfigFile() {
 
   std::ofstream optimizerConfigFile(optimizerConfigFilename);
   if (!optimizerConfigFile.is_open()) {
-    LOG(ERROR)
+    FL_LOG(fl::ERROR)
         << "Failed to open for writing MemoryOptimizerConfiguration file="
         << optimizerConfigFilename;
     return -1;
@@ -192,7 +197,7 @@ int writeTemplateConfigFile() {
       << std::tmpnam(nullptr) << '-' << kStandaloneOptimizerConfigFilename;
   const std::string standAloneOptimizerConfigFilename =
       standAloneOptimizerConfigFilenameBuilder.str();
-  LOG(INFO)
+  FL_LOG(fl::INFO)
       << "Writing a StandAloneOptimizerConfig template for your convenience to="
       << standAloneOptimizerConfigFilename;
 
@@ -206,8 +211,8 @@ int writeTemplateConfigFile() {
   std::ofstream standaloneOptimizerConfigFileOstream(
       standAloneOptimizerConfigFilename);
   if (!standaloneOptimizerConfigFileOstream.is_open()) {
-    LOG(ERROR) << "Failed to open for writing config file="
-               << standAloneOptimizerConfigFilename;
+    FL_LOG(fl::ERROR) << "Failed to open for writing config file="
+                      << standAloneOptimizerConfigFilename;
     return -1;
   }
 
@@ -233,7 +238,7 @@ StandAloneOptimizerConfig StandAloneOptimizerConfig::loadJSon(
     cereal::JSONInputArchive archive(streamToConfig);
     archive(config);
   } catch (std::exception& ex) {
-    LOG(ERROR)
+    FL_LOG(fl::ERROR)
         << "StandAloneOptimizerConfig::loadJSon() failed to load config with error="
         << ex.what();
     throw ex;
@@ -246,7 +251,7 @@ void StandAloneOptimizerConfig::saveJSon(std::ostream& saveConfigStream) const {
     cereal::JSONOutputArchive archive(saveConfigStream);
     archive(*this);
   } catch (std::exception& ex) {
-    LOG(ERROR)
+    FL_LOG(fl::ERROR)
         << "StandAloneOptimizerConfig::saveJSon() failed to save config with error="
         << ex.what();
     throw ex;

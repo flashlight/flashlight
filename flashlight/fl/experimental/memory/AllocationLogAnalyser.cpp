@@ -32,7 +32,7 @@ int main(int argc, char** argv) {
   VerboseLogging::setMaxLoggingLevel(0);
 
   if (argc < 3) {
-    LOG(ERROR)
+    FL_LOG(fl::ERROR)
         << "Usage:" << argv[0]
         << " [arenasize] [path to allocation log csv file] "
         << "\narenasize: use 16523001856 (15GB+397MB+576KB) for 16GB machines";
@@ -40,25 +40,26 @@ int main(int argc, char** argv) {
   }
   const size_t arenaSize = std::stol(argv[1]);
   if (arenaSize != kArenaSize16gb) {
-    LOG(ERROR) << "Are you sure about the arena size? usueally it is:"
-               << kArenaSize16gb;
+    FL_LOG(fl::ERROR) << "Are you sure about the arena size? usueally it is:"
+                      << kArenaSize16gb;
   }
   const std::string allocationLogPath = argv[2];
 
   std::ifstream allocationLogStream(allocationLogPath);
   if (!allocationLogStream.is_open()) {
-    LOG(ERROR) << argv[0]
-               << " failed to open allocation log file=" << allocationLogPath;
+    FL_LOG(fl::ERROR) << argv[0] << " failed to open allocation log file="
+                      << allocationLogPath;
     return -1;
   }
   std::vector<AllocationEvent> allocationLog =
       LoadAllocationLog(allocationLogStream);
   if (allocationLog.empty()) {
-    LOG(ERROR) << argv[0] << " empty allocation log file=" << allocationLogPath;
+    FL_LOG(fl::ERROR) << argv[0]
+                      << " empty allocation log file=" << allocationLogPath;
     return -1;
   }
-  LOG(INFO) << "Allocation log size="
-            << prettyStringCount(allocationLog.size());
+  FL_LOG(fl::INFO) << "Allocation log size="
+                   << prettyStringCount(allocationLog.size());
 
   std::vector<size_t> allocationRequests;
   std::vector<size_t> freeRequests;
@@ -110,7 +111,7 @@ int main(int argc, char** argv) {
         if (ptrToSizeItr == ptrToNativeRequestedAndAllocatedSizeMap.end()) {
           std::stringstream ss;
           ss << argv[0] << " attempts to free unalocated ptr=" << event.ptr_;
-          LOG(WARNING) << ss.str();
+          FL_LOG(fl::WARNING) << ss.str();
           continue;
         }
         size_t sizeRequested = ptrToSizeItr->second.first;
@@ -142,7 +143,7 @@ int main(int argc, char** argv) {
         if (ptrToSizeItr == ptrToCacheRequestedAndAllocatedSizeMap.end()) {
           // std::stringstream ss;
           // ss << argv[0] << " attempts to free unalocated ptr=" << event.ptr_;
-          // LOG(WARNING) << ss.str();
+          // FL_LOG(fl::WARNING) << ss.str();
           continue;
         }
         size_t sizeRequested = ptrToSizeItr->second.first;
@@ -153,7 +154,8 @@ int main(int argc, char** argv) {
         cacheFrees.push_back(sizeRequested);
       } break;
       default: {
-        LOG(ERROR) << "Invalid event.type_=" << static_cast<int>(event.type_);
+        FL_LOG(fl::ERROR) << "Invalid event.type_="
+                          << static_cast<int>(event.type_);
       } break;
     }
   }
@@ -290,6 +292,6 @@ int main(int argc, char** argv) {
               allocationRequestSizeCount.at(idx))
        << std::endl;
   }
-  LOG(INFO) << ss.str();
+  FL_LOG(fl::INFO) << ss.str();
   return 0;
 }

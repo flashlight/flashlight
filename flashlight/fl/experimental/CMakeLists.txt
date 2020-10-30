@@ -32,7 +32,7 @@ set(
   experimental_memory
   )
 
-# Root dir is `flashlight/experimental`
+# Root dir is `flashlight/fl/experimental`
 set(FL_EXPERIMENTAL_ROOT_PATH
     ${FLASHLIGHT_PROJECT_COMPONENT_SRC_DIR}/experimental)
 

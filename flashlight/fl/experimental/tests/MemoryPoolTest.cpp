@@ -255,18 +255,18 @@ TEST(MemoryPool, Fragmentation) {
       kAllocatedRatioJitThreshold,
       kLogLevel);
   const MemoryAllocator::Stats initialStats = allocator.getStats();
-  LOG(INFO) << "initialStats=" << initialStats.prettyString();
+  FL_LOG(fl::INFO) << "initialStats=" << initialStats.prettyString();
   EXPECT_EQ(initialStats.internalFragmentationScore, 0.0);
   EXPECT_EQ(initialStats.externalFragmentationScore, 0.0);
   allocator.allocate(allocationSize1);
   const MemoryAllocator::Stats stats1 = allocator.getStats();
-  LOG(INFO) << "stats1=" << stats1.prettyString();
+  FL_LOG(fl::INFO) << "stats1=" << stats1.prettyString();
   // 2 bytes allocated out
   EXPECT_EQ(stats1.internalFragmentationScore, internalFragmentationScore1);
   EXPECT_EQ(stats1.externalFragmentationScore, 0.0);
   allocator.allocate(allocationSize2);
   const MemoryAllocator::Stats stats2 = allocator.getStats();
-  LOG(INFO) << "stats2=" << stats2.prettyString();
+  FL_LOG(fl::INFO) << "stats2=" << stats2.prettyString();
   EXPECT_EQ(stats2.internalFragmentationScore, internalFragmentationScore2);
   EXPECT_EQ(stats2.externalFragmentationScore, 0.0);
 }

@@ -269,8 +269,9 @@ void MemoryAllocator::Stats::addPerformanceCost(size_t cost) {
   if (ULLONG_MAX - cost > performanceCost) {
     performanceCost += cost;
   } else {
-    LOG(WARNING) << "MemoryAllocator::Stats::addPerformanceCost(cost=" << cost
-                 << ") reach maximum cost and will not be tracked any longer.";
+    FL_LOG(fl::WARNING)
+        << "MemoryAllocator::Stats::addPerformanceCost(cost=" << cost
+        << ") reach maximum cost and will not be tracked any longer.";
     performanceCost = ULLONG_MAX;
   }
 }
