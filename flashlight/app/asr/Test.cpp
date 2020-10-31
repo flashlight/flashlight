@@ -205,13 +205,20 @@ int main(int argc, char** argv) {
 
     TestMeters meters;
     meters.timer.resume();
-    while (datasetSampleId < nSamples) {
+    while (true) {
       std::vector<af::array> sample;
       {
         std::lock_guard<std::mutex> lock(dataReadMutex);
+        if (datasetSampleId >= nSamples) {
+          break;
+        }
         sample = ds->get(datasetSampleId);
         datasetSampleId++;
       }
+      if (datasetSampleId > nSamples) {
+        break;
+      }
+      
       auto rawEmission =
           localNetwork->forward({fl::input(sample[kInputIdx])}).front();
       auto emission = afToVector<float>(rawEmission);
