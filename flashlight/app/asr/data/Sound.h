@@ -73,6 +73,8 @@ struct SoundInfo {
   int64_t frames;
   int64_t samplerate;
   int64_t channels;
+
+  std::string prettyString() const;
 };
 
 SoundInfo loadSoundInfo(std::istream& f);
@@ -100,6 +102,10 @@ void saveSound(
     int64_t channels,
     const SoundFormat format,
     const SoundSubFormat subformat);
+
+std::string soundFormatPrettyString(SoundFormat format);
+std::string soundSubFormatPrettyString(SoundSubFormat subformat);
+
 } // namespace asr
 } // namespace app
 } // namespace fl
