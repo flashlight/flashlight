@@ -91,7 +91,7 @@ TEST(FreeList, NormalDistribution) {
       }
     }
     ptrs.swap(unFreedPtrs);
-    VLOG(1) << allocator.prettyString();
+    FL_VLOG(1) << allocator.prettyString();
   }
 
   // Free the leftover allocations.
@@ -238,17 +238,17 @@ TEST(FreeList, InternalFragmentation) {
       kAllocatedRatioJitThreshold,
       kLogLevel);
   const MemoryAllocator::Stats initialStats = allocator.getStats();
-  LOG(INFO) << "initialStats=" << initialStats.prettyString();
+  FL_LOG(fl::INFO) << "initialStats=" << initialStats.prettyString();
   EXPECT_EQ(initialStats.internalFragmentationScore, 0.0);
   EXPECT_EQ(initialStats.externalFragmentationScore, 0.0);
   void* ptr1 = allocator.allocate(allocationSize1);
   const MemoryAllocator::Stats stats1 = allocator.getStats();
-  LOG(INFO) << "stats1=" << stats1.prettyString();
+  FL_LOG(fl::INFO) << "stats1=" << stats1.prettyString();
   EXPECT_EQ(stats1.internalFragmentationScore, internalFragmentationScore1);
   EXPECT_EQ(stats1.externalFragmentationScore, 0.0);
   void* ptr2 = allocator.allocate(allocationSize2);
   const MemoryAllocator::Stats stats2 = allocator.getStats();
-  LOG(INFO) << "stats2=" << stats2.prettyString();
+  FL_LOG(fl::INFO) << "stats2=" << stats2.prettyString();
   EXPECT_EQ(stats2.internalFragmentationScore, internalFragmentationScore2);
   EXPECT_EQ(stats2.externalFragmentationScore, 0.0);
 
@@ -272,7 +272,7 @@ TEST(FreeList, ExternalFragmentation) {
       blockSize,
       kAllocatedRatioJitThreshold);
   const MemoryAllocator::Stats initialStats = allocator.getStats();
-  LOG(INFO) << "initialStats=" << initialStats.prettyString();
+  FL_LOG(fl::INFO) << "initialStats=" << initialStats.prettyString();
   EXPECT_DOUBLE_EQ(initialStats.internalFragmentationScore, 0.0);
   EXPECT_DOUBLE_EQ(initialStats.externalFragmentationScore, 0.0);
 
@@ -285,7 +285,7 @@ TEST(FreeList, ExternalFragmentation) {
   // We should have now the following configuration (A-allocated, F-free):
   // A A A A A
   const MemoryAllocator::Stats afterAllocationStats = allocator.getStats();
-  LOG(INFO) << "all allocated=" << initialStats.prettyString();
+  FL_LOG(fl::INFO) << "all allocated=" << initialStats.prettyString();
   EXPECT_DOUBLE_EQ(afterAllocationStats.internalFragmentationScore, 0.0);
   EXPECT_DOUBLE_EQ(afterAllocationStats.externalFragmentationScore, 0.0);
 
@@ -296,7 +296,7 @@ TEST(FreeList, ExternalFragmentation) {
   // 2 free blocks but max chunk size is 1.
   const double expectedExternalFragmentationScore1 = 1.0 - (1.0 / 2.0);
   const MemoryAllocator::Stats deAllocationStats1 = allocator.getStats();
-  LOG(INFO) << "all allocated=" << deAllocationStats1.prettyString();
+  FL_LOG(fl::INFO) << "all allocated=" << deAllocationStats1.prettyString();
   EXPECT_DOUBLE_EQ(deAllocationStats1.internalFragmentationScore, 0.0);
   EXPECT_DOUBLE_EQ(
       deAllocationStats1.externalFragmentationScore,
@@ -308,7 +308,7 @@ TEST(FreeList, ExternalFragmentation) {
   // 3 free blocks but max chunk size is 1.
   const double expectedExternalFragmentationScore2 = 1.0 - (1.0 / 3.0);
   const MemoryAllocator::Stats deAllocationStats2 = allocator.getStats();
-  LOG(INFO) << "all allocated=" << deAllocationStats2.prettyString();
+  FL_LOG(fl::INFO) << "all allocated=" << deAllocationStats2.prettyString();
   EXPECT_DOUBLE_EQ(deAllocationStats2.internalFragmentationScore, 0.0);
   EXPECT_DOUBLE_EQ(
       deAllocationStats2.externalFragmentationScore,
@@ -320,7 +320,7 @@ TEST(FreeList, ExternalFragmentation) {
   // 4 free blocks but max chunk size is 3.
   const double expectedExternalFragmentationScore3 = 1.0 - (3.0 / 4.0);
   const MemoryAllocator::Stats deAllocationStats3 = allocator.getStats();
-  LOG(INFO) << "all allocated=" << deAllocationStats3.prettyString();
+  FL_LOG(fl::INFO) << "all allocated=" << deAllocationStats3.prettyString();
   EXPECT_DOUBLE_EQ(deAllocationStats3.internalFragmentationScore, 0.0);
   EXPECT_DOUBLE_EQ(
       deAllocationStats3.externalFragmentationScore,
@@ -332,7 +332,7 @@ TEST(FreeList, ExternalFragmentation) {
   // 5 free blocks with max chunk size of 5.
   const double expectedExternalFragmentationScore4 = 1.0 - (5.0 / 5.0);
   const MemoryAllocator::Stats deAllocationStats4 = allocator.getStats();
-  LOG(INFO) << "all allocated=" << deAllocationStats4.prettyString();
+  FL_LOG(fl::INFO) << "all allocated=" << deAllocationStats4.prettyString();
   EXPECT_DOUBLE_EQ(deAllocationStats4.internalFragmentationScore, 0.0);
   EXPECT_DOUBLE_EQ(
       deAllocationStats4.externalFragmentationScore,

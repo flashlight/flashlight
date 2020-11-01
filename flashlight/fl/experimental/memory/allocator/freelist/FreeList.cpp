@@ -66,16 +66,16 @@ FreeList::FreeList(
     }
 
     ss << ' ' << prettyString();
-    LOG(INFO) << ss.str();
+    FL_LOG(fl::INFO) << ss.str();
   }
 }
 
 FreeList::~FreeList() {
   if (pointerToAllocatedChunkMap_.size() && getLogLevel() > 0) {
-    LOG(WARNING) << "~FreeList() there are still "
-                 << stats_.statsInBlocks.arenaSize << " blocks in "
-                 << pointerToAllocatedChunkMap_.size()
-                 << " chunks held by the user";
+    FL_LOG(fl::WARNING) << "~FreeList() there are still "
+                        << stats_.statsInBlocks.arenaSize << " blocks in "
+                        << pointerToAllocatedChunkMap_.size()
+                        << " chunks held by the user";
     // Free chunks held by the user.
     for (auto& ptrAndChunk : pointerToAllocatedChunkMap_) {
       delete ptrAndChunk.second;
@@ -95,9 +95,9 @@ bool FreeList::jitTreeExceedsMemoryPressure(size_t bytes) {
   }
   const size_t nBlocksNeed = divRoundUp(bytes, stats_.blockSize);
   if (nBlocksNeed > largestChunkInBlocks_) {
-    LOG(INFO) << "FreeList::jitTreeExceedsMemoryPressure(bytes=" << bytes
-              << ") true nBlocksNeed=" << nBlocksNeed
-              << " largestChunkInBlocks_=" << largestChunkInBlocks_;
+    FL_LOG(fl::INFO) << "FreeList::jitTreeExceedsMemoryPressure(bytes=" << bytes
+                     << ") true nBlocksNeed=" << nBlocksNeed
+                     << " largestChunkInBlocks_=" << largestChunkInBlocks_;
     return true;
   }
 
@@ -106,9 +106,10 @@ bool FreeList::jitTreeExceedsMemoryPressure(size_t bytes) {
       static_cast<double>(stats_.statsInBlocks.arenaSize);
 
   if (allocatedRatio > allocatedRatioJitThreshold_) {
-    LOG(INFO) << "FreeList::jitTreeExceedsMemoryPressure(bytes=" << bytes
-              << ") true allocatedRatio=" << allocatedRatio
-              << " allocatedRatioJitThreshold_=" << allocatedRatioJitThreshold_;
+    FL_LOG(fl::INFO) << "FreeList::jitTreeExceedsMemoryPressure(bytes=" << bytes
+                     << ") true allocatedRatio=" << allocatedRatio
+                     << " allocatedRatioJitThreshold_="
+                     << allocatedRatioJitThreshold_;
   }
 
   return allocatedRatio > allocatedRatioJitThreshold_;
@@ -130,7 +131,7 @@ void* FreeList::allocate(size_t size) {
          << " freeListSize_=" << freeListSize_
          << " failed to allocate since largestChunkInBlocks_="
          << largestChunkInBlocks_ << " but nBlocksNeed=" << nBlocksNeed;
-      LOG(ERROR) << ss.str();
+      FL_LOG(fl::ERROR) << ss.str();
       throw std::invalid_argument(ss.str());
     }
     return nullptr;
@@ -188,8 +189,8 @@ const FreeList::Chunk* FreeList::getChunk(
 void FreeList::free(void* ptr) {
   Chunk* chunk = getChunkAndRemoveFromMap(ptr, __PRETTY_FUNCTION__);
   if (getLogLevel() > 1) {
-    VLOG(2) << "FreeList::free(ptr=" << ptr << ") name=" << getName()
-            << " chunk=" << chunk->prettyString();
+    FL_VLOG(2) << "FreeList::free(ptr=" << ptr << ") name=" << getName()
+               << " chunk=" << chunk->prettyString();
   }
 
   // stats
@@ -328,9 +329,9 @@ FreeList::Chunk* FreeList::findBestFit(size_t nBlocksNeed) {
   }
 
   if (getLogLevel() > 1) {
-    VLOG(3) << "FreeList::findBestFit(nBlocksNeed=" << nBlocksNeed << ")"
-            << " name=" << getName() << " return "
-            << (bestFit ? bestFit->prettyString() : "null") << ')';
+    FL_VLOG(3) << "FreeList::findBestFit(nBlocksNeed=" << nBlocksNeed << ")"
+               << " name=" << getName() << " return "
+               << (bestFit ? bestFit->prettyString() : "null") << ')';
   }
 
   return bestFit;
@@ -356,10 +357,10 @@ void FreeList::chopChunkIfNeeded(FreeList::Chunk* chunk, size_t nBlocksNeed) {
     ++totalNumberOfChunks_;
 
     if (getLogLevel() > 1) {
-      VLOG(3) << "FreeList::chopChunkIfNeeded(chunk="
-              << origChunk.prettyString() << " nBlocksNeed=" << nBlocksNeed
-              << ") name=" << getName()
-              << " newChunk=" << newChunk->prettyString();
+      FL_VLOG(3) << "FreeList::chopChunkIfNeeded(chunk="
+                 << origChunk.prettyString() << " nBlocksNeed=" << nBlocksNeed
+                 << ") name=" << getName()
+                 << " newChunk=" << newChunk->prettyString();
     }
   }
 }
@@ -417,16 +418,16 @@ FreeList::Chunk* FreeList::mergeWithPrevNeighbors(FreeList::Chunk* chunk) {
       ss << "FreeList::mergeWithPrevNeighbors() freeListSize_=" << freeListSize_
          << " totalNumberOfChunks_=" << totalNumberOfChunks_
          << " but both should be > 1.";
-      LOG(ERROR) << ss.str();
+      FL_LOG(fl::ERROR) << ss.str();
       throw std::runtime_error(ss.str());
     }
     --freeListSize_;
     --totalNumberOfChunks_;
 
     if (getLogLevel() > 1) {
-      VLOG(2) << "FreeList::mergeWithPrevNeighbors(). original size="
-              << origSize << " new size=" << prevChunk->sizeInBlocks_
-              << " new chunk details=" << prevChunk->prettyString() << ")";
+      FL_VLOG(2) << "FreeList::mergeWithPrevNeighbors(). original size="
+                 << origSize << " new size=" << prevChunk->sizeInBlocks_
+                 << " new chunk details=" << prevChunk->prettyString() << ")";
     }
 
     return prevChunk;
@@ -454,16 +455,16 @@ void FreeList::mergeWithNextNeighbors(FreeList::Chunk* chunk) {
       ss << "FreeList::mergeWithNextNeighbors() freeListSize_=" << freeListSize_
          << " totalNumberOfChunks_=" << totalNumberOfChunks_
          << " but both should be > 1.";
-      LOG(ERROR) << ss.str();
+      FL_LOG(fl::ERROR) << ss.str();
       throw std::runtime_error(ss.str());
     }
     --freeListSize_;
     --totalNumberOfChunks_;
 
     if (getLogLevel() > 1) {
-      VLOG(2) << "FreeList::mergeWithNextNeighbors(). original size="
-              << origSize << " new size=" << chunk->sizeInBlocks_
-              << " new chunk details=" << chunk->prettyString() << ")";
+      FL_VLOG(2) << "FreeList::mergeWithNextNeighbors(). original size="
+                 << origSize << " new size=" << chunk->sizeInBlocks_
+                 << " new chunk details=" << chunk->prettyString() << ")";
     }
   }
 }

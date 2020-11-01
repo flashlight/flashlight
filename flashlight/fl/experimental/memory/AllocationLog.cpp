@@ -157,15 +157,15 @@ std::string AllocationEvent::toCsvString() const {
       ss << "b,0,0,0," << std::dec << number_;
       break;
     default:
-      LOG(ERROR) << "AllocationEvent::toCsvString() type_="
-                 << static_cast<int>(type_) << " is invalid value.";
+      FL_LOG(fl::ERROR) << "AllocationEvent::toCsvString() type_="
+                        << static_cast<int>(type_) << " is invalid value.";
       break;
   }
   return ss.str();
 }
 
 std::vector<AllocationEvent> LoadAllocationLog(std::istream& is) {
-  LOG(INFO) << "LoadAllocationLog() loading...";
+  FL_LOG(fl::INFO) << "LoadAllocationLog() loading...";
   std::vector<AllocationEvent> allocationLog;
   std::vector<std::string> errors;
   size_t cnt = 0;
@@ -191,7 +191,7 @@ std::vector<AllocationEvent> LoadAllocationLog(std::istream& is) {
   ss << "\nAllocation log is loaded with " << allocationLog.size()
      << " entries. ";
   if (!errors.empty()) {
-    LOG(INFO) << ss.str();
+    FL_LOG(fl::INFO) << ss.str();
   } else {
     ss << " Number of invalid log entries=" << errors.size() << '('
        << ((static_cast<double>(errors.size()) / allocationLog.size()) * 100.0)
@@ -200,7 +200,7 @@ std::vector<AllocationEvent> LoadAllocationLog(std::istream& is) {
       ss << err << ", ";
     }
     ss << '}';
-    LOG(ERROR) << ss.str();
+    FL_LOG(fl::ERROR) << ss.str();
   }
   return allocationLog;
 }
