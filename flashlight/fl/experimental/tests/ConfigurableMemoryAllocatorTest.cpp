@@ -101,7 +101,7 @@ TEST(ConfigurableMemoryAllocator, ExponentialDistribution) {
       void* ptr = allocator->allocate(bytesToAllocate);
       const MemoryAllocator::Stats statsAfterAlloc = allocator->getStats();
 
-      VLOG(1) << "ptr=" << ptr << " bytesToAllocate=" << bytesToAllocate;
+      FL_VLOG(1) << "ptr=" << ptr << " bytesToAllocate=" << bytesToAllocate;
       if (bytesToAllocate == 0) {
         EXPECT_EQ(ptr, nullptr);
       } else {

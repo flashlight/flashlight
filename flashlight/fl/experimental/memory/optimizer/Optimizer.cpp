@@ -42,12 +42,12 @@ bool permute(
     ss << " fail: subArenaConfigIndex=" << subArenaConfigIndex
        << " >= config->subArenaConfiguration_.size()="
        << config->subArenaConfiguration_.size();
-    LOG(WARNING) << ss.str();
+    FL_LOG(fl::WARNING) << ss.str();
     return false;
   }
   if (dimention > 2) {
     ss << " fail dimention > 2";
-    LOG(WARNING) << ss.str();
+    FL_LOG(fl::WARNING) << ss.str();
     return false;
   }
   const size_t minBlockSize = (1UL << config->alignmentNumberOfBits_);
@@ -70,13 +70,13 @@ bool permute(
       if (newBlockSize < minBlockSize) {
         ss << "fails!! blockSize_=" << blockSize
            << " newBlockSize=" << newBlockSize << " < minSize ";
-        LOG(INFO) << ss.str();
+        FL_LOG(fl::INFO) << ss.str();
         return false;
       }
       if (newBlockSize > subArenaSize) {
         ss << "fails!! blockSize_=" << blockSize
            << " newBlockSize=" << newBlockSize << " > subArenaSize ";
-        LOG(INFO) << ss.str();
+        FL_LOG(fl::INFO) << ss.str();
         return false;
       }
       if (subArenaConfigIndex > 0) {
@@ -87,7 +87,7 @@ bool permute(
              << " newBlockSize=" << newBlockSize << " < "
              << config->subArenaConfiguration_[subArenaConfigIndex - 1]
                     .blockSize_;
-          LOG(WARNING) << ss.str();
+          FL_LOG(fl::WARNING) << ss.str();
           return false;
         }
       }
@@ -105,7 +105,7 @@ bool permute(
          << " old=" << blockSize << " new=" << newBlockSize
          << "  also adjusting maxAllocationSize_ old="
          << subConfig->maxAllocationSize_ << " new=" << newMaxAllocationSize;
-      LOG(INFO) << ss.str();
+      FL_LOG(fl::INFO) << ss.str();
       subConfig->maxAllocationSize_ = newMaxAllocationSize;
       blockSize = newBlockSize;
     } break;
@@ -126,7 +126,7 @@ bool permute(
       if (newMaxAllocationSize < 0) {
         ss << "fails!! newMaxAllocationSize=" << newMaxAllocationSize
            << " < 0    subConfig->blockSize_=" << subConfig->blockSize_;
-        LOG(WARNING) << ss.str();
+        FL_LOG(fl::WARNING) << ss.str();
         return false;
       }
       if (subArenaConfigIndex < config->subArenaConfiguration_.size() - 1) {
@@ -137,7 +137,7 @@ bool permute(
              << " newMaxAllocationSize=" << newMaxAllocationSize << " > "
              << config->subArenaConfiguration_[subArenaConfigIndex + 1]
                     .maxAllocationSize_;
-          LOG(WARNING) << ss.str();
+          FL_LOG(fl::WARNING) << ss.str();
           return false;
         }
       }
@@ -152,7 +152,7 @@ bool permute(
              << "  newMaxAllocationSize" << newMaxAllocationSize << " <= "
              << config->subArenaConfiguration_[subArenaConfigIndex - 1]
                     .maxAllocationSize_;
-          LOG(INFO) << ss.str();
+          FL_LOG(fl::INFO) << ss.str();
           return false;
         }
       }
@@ -167,7 +167,7 @@ bool permute(
       ss << "maxAllocationSize=" << maxAllocationSize
          << ((newMaxAllocationSize > maxAllocationSize) ? " up+ " : " down- ")
          << "  to new maxAllocationSize=" << newMaxAllocationSize;
-      LOG(INFO) << ss.str();
+      FL_LOG(fl::INFO) << ss.str();
       subConfig->maxAllocationSize_ = newMaxAllocationSize;
     } break;
     case 2: // relativeSize_
@@ -187,12 +187,12 @@ bool permute(
       if (newRelativeSize == relativeSize) {
         ss << "fail!! newRelativeSize=" << newRelativeSize
            << "  == relativeSize";
-        LOG(INFO) << ss.str();
+        FL_LOG(fl::INFO) << ss.str();
         return false;
       }
       if (newRelativeSize < 0) {
         ss << "fail!! newRelativeSize=" << newRelativeSize << "  < 0";
-        LOG(INFO) << ss.str();
+        FL_LOG(fl::INFO) << ss.str();
         return false;
       }
 
@@ -211,15 +211,15 @@ bool permute(
       ss << "relativeSize=" << relativeSize
          << ((newRelativeSize > relativeSize) ? " up+ " : " down- ")
          << " to new relativeSize=" << newRelativeSize;
-      LOG(INFO) << ss.str();
+      FL_LOG(fl::INFO) << ss.str();
       relativeSize = newRelativeSize;
     } break;
     default:
       ss << "fail!! default";
-      LOG(WARNING) << ss.str();
+      FL_LOG(fl::WARNING) << ss.str();
       return false;
   }
-  // LOG(INFO) << ss.str();
+  // FL_LOG(fl::INFO) << ss.str();
   return true;
 }
 
@@ -253,12 +253,12 @@ void createConfigurationsNearInitial(
   size_t alreadyExists = 0;
 
   while (newOnes < optimizerConfig.numberOfConfigsToGeneratePerIteration) {
-    LOG(INFO) << "createConfigurationsNearInitial() alreadyExists="
-              << alreadyExists << " newOnes=" << newOnes
-              << " numberOfConfigsToGeneratePerIteration="
-              << optimizerConfig.numberOfConfigsToGeneratePerIteration
-              << " initialConfigurations.size()="
-              << initialConfigurations.size();
+    FL_LOG(fl::INFO) << "createConfigurationsNearInitial() alreadyExists="
+                     << alreadyExists << " newOnes=" << newOnes
+                     << " numberOfConfigsToGeneratePerIteration="
+                     << optimizerConfig.numberOfConfigsToGeneratePerIteration
+                     << " initialConfigurations.size()="
+                     << initialConfigurations.size();
     for (const MemoryAllocatorConfiguration& center : initialConfigurations) {
       size_t configsAroundCenter =
           optimizerConfig.numberOfConfigsToGeneratePerIteration /
@@ -277,7 +277,7 @@ void createConfigurationsNearInitial(
           ++alreadyExists;
         }
       }
-      // LOG(INFO)
+      // FL_LOG(fl::INFO)
       // << "randomNearSearchOptimizer() single generateNearConfig()
       // alreadyExists="
       // << alreadyExists << " newOnes=" << newOnes;
@@ -289,8 +289,9 @@ MemoryAllocatorConfiguration randomNearSearchOptimizer(
     std::vector<MemoryAllocatorConfiguration> newCenters,
     const std::vector<AllocationEvent>& allocationLog,
     const MemoryOptimizerConfiguration& optimizerConfig) {
-  LOG(INFO) << "randomNearSearchOptimizer() creating a thread pool of size="
-            << std::thread::hardware_concurrency();
+  FL_LOG(fl::INFO)
+      << "randomNearSearchOptimizer() creating a thread pool of size="
+      << std::thread::hardware_concurrency();
   BlockingThreadPool threadPool(std::thread::hardware_concurrency());
 
   std::map<MemoryAllocatorConfiguration, Result> configToResult;
@@ -309,11 +310,11 @@ MemoryAllocatorConfiguration randomNearSearchOptimizer(
   void* arenaAddress = reinterpret_cast<void*>(0x10);
 
   for (int i1 = 0; i1 < optimizerConfig.numberOfIterations; ++i1) {
-    LOG(INFO) << "randomNearSearchOptimizer() iteration=" << i1;
+    FL_LOG(fl::INFO) << "randomNearSearchOptimizer() iteration=" << i1;
     createConfigurationsNearInitial(
         newCenters, optimizerConfig, radius, &configToResult, &newConfigs);
-    LOG(INFO) << "randomNearSearchOptimizer() iteration=" << i1
-              << " newConfigs.size()=" << newConfigs.size();
+    FL_LOG(fl::INFO) << "randomNearSearchOptimizer() iteration=" << i1
+                     << " newConfigs.size()=" << newConfigs.size();
 
     std::vector<std::unique_ptr<MemoryAllocator>> allocatorObjects;
     std::vector<MemoryAllocator*> allocatorsSimulateAdapter;
@@ -333,7 +334,8 @@ MemoryAllocatorConfiguration randomNearSearchOptimizer(
       }
     }
 
-    LOG(ERROR) << "Discarding invalid config with errors cnt=" << errors.size();
+    FL_LOG(fl::ERROR) << "Discarding invalid config with errors cnt="
+                      << errors.size();
 
     std::vector<SimResult> simResults = simulateAllocatorsOnAllocationLog(
         threadPool, allocationLog, allocatorsSimulateAdapter);
@@ -381,9 +383,9 @@ MemoryAllocatorConfiguration randomNearSearchOptimizer(
     }
     allConfigs.swap(allConfigsTmp);
 
-    LOG(INFO) << "randomNearSearchOptimizer() iteration=" << i1
-              << " completed. Summary:\n"
-              << "allConfigs size=" << allConfigs.size();
+    FL_LOG(fl::INFO) << "randomNearSearchOptimizer() iteration=" << i1
+                     << " completed. Summary:\n"
+                     << "allConfigs size=" << allConfigs.size();
     HistogramStats<double> recentLossHist = FixedBucketSizeHistogram<double>(
         recentLossVector.begin(),
         recentLossVector.end(),
@@ -394,8 +396,9 @@ MemoryAllocatorConfiguration randomNearSearchOptimizer(
         allLossVector.end(),
         kHistogramBucketCountPrettyString);
 
-    LOG(INFO) << "recentLossHist\n:" << recentLossHist.prettyString();
-    LOG(INFO) << "allLossVectorHist\n:" << allLossVectorHist.prettyString();
+    FL_LOG(fl::INFO) << "recentLossHist\n:" << recentLossHist.prettyString();
+    FL_LOG(fl::INFO) << "allLossVectorHist\n:"
+                     << allLossVectorHist.prettyString();
 
     newConfigs.clear();
     radius *= (1.0 - optimizerConfig.learningRate);
@@ -404,19 +407,19 @@ MemoryAllocatorConfiguration randomNearSearchOptimizer(
     newCenters.clear();
     const size_t beamSize =
         std::min(allConfigs.size(), optimizerConfig.beamSize);
-    LOG(INFO) << "Current beam state: beamSize=" << beamSize;
+    FL_LOG(fl::INFO) << "Current beam state: beamSize=" << beamSize;
     for (int i5 = 0; i5 < beamSize; ++i5) {
       MemoryAllocatorConfiguration& config = allConfigs.at(i5);
       Result& result = configToResult[config];
-      LOG(INFO) << "newCenters[i5=" << i5
-                << "] result=" << result.prettyString();
+      FL_LOG(fl::INFO) << "newCenters[i5=" << i5
+                       << "] result=" << result.prettyString();
       newCenters.push_back(config);
     }
-    LOG(INFO) << "Beam configs:";
+    FL_LOG(fl::INFO) << "Beam configs:";
     for (int i6 = 0; i6 < beamSize; ++i6) {
       MemoryAllocatorConfiguration& config = allConfigs.at(i6);
-      LOG(INFO) << "newCenters[i6=" << i6 << "] "
-                << " config=" << config.prettyString();
+      FL_LOG(fl::INFO) << "newCenters[i6=" << i6 << "] "
+                       << " config=" << config.prettyString();
       newCenters.push_back(config);
     }
   }
@@ -503,10 +506,10 @@ orderMemoryAllocatorConfigByLoss(
     const std::vector<MemoryAllocatorConfiguration>& haystack,
     const std::vector<AllocationEvent>& allocationLog,
     const MemoryOptimizerConfiguration& optimizerConfig) {
-  LOG(INFO) << "orderMemoryAllocatorConfigByLoss(haystack=(size="
-            << haystack.size() << ") allocationLog=(size("
-            << allocationLog.size()
-            << ") optimizerConfig=" << optimizerConfig.prettyString();
+  FL_LOG(fl::INFO) << "orderMemoryAllocatorConfigByLoss(haystack=(size="
+                   << haystack.size() << ") allocationLog=(size("
+                   << allocationLog.size()
+                   << ") optimizerConfig=" << optimizerConfig.prettyString();
 
   const int logLevel = 0;
   // Create an haystackOrder vector and point to corresponding allocator
@@ -534,14 +537,15 @@ orderMemoryAllocatorConfigByLoss(
       size_t arenaSize = allocator->getStats().statsInBlocks.arenaSize;
 
       if (arenaSize < 10) {
-        LOG(ERROR) << "INVALID allocator!!!=" << allocator->prettyString();
+        FL_LOG(fl::ERROR) << "INVALID allocator!!!="
+                          << allocator->prettyString();
         return;
       }
 
       bool success =
           simulateAllocatorOnAllocationLog(allocationLog, allocator.get());
       if (!success) {
-        LOG(ERROR)
+        FL_LOG(fl::ERROR)
             << "Failed orderMemoryAllocatorConfigByLoss() haystackOrder->index="
             << haystackOrder->index;
         return;
@@ -588,8 +592,8 @@ std::vector<MemoryAllocatorConfiguration> generateNearConfig(
   }
   size_t mutationCount = 0;
   size_t failures = 0;
-  LOG(INFO) << "generateNearConfig() mutationCount=" << mutationCount
-            << " count=" << count;
+  FL_LOG(fl::INFO) << "generateNearConfig() mutationCount=" << mutationCount
+                   << " count=" << count;
   while (mutationCount < count) {
     MemoryAllocatorConfiguration* config = &result.at(mutationCount);
     const size_t subArenaIndex = subAllocatorIndexDistribution(generator);
@@ -598,12 +602,12 @@ std::vector<MemoryAllocatorConfiguration> generateNearConfig(
     bool success = permute(ratio, dimention, subArenaIndex, arenaSize, config);
     if (success) {
       ++mutationCount;
-      // LOG(INFO) << "config=" << config->prettyString();
+      // FL_LOG(fl::INFO) << "config=" << config->prettyString();
     } else {
       ++failures;
     }
-    LOG(WARNING) << "mutationCount=" << mutationCount
-                 << " failures=" << failures;
+    FL_LOG(fl::WARNING) << "mutationCount=" << mutationCount
+                        << " failures=" << failures;
   }
   return result;
 }

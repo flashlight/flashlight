@@ -269,12 +269,12 @@ TEST(FreeList, InternalFragmentation) {
   allocator.add({maxAllocationSize3, std::move(freelist3)});
 
   const MemoryAllocator::Stats initialStats = allocator.getStats();
-  LOG(INFO) << "initialStats=" << initialStats.prettyString();
+  FL_LOG(fl::INFO) << "initialStats=" << initialStats.prettyString();
   EXPECT_EQ(initialStats.internalFragmentationScore, 0.0);
   EXPECT_EQ(initialStats.externalFragmentationScore, 0.0);
   void* ptr1 = allocator.allocate(alloc1Size);
   const MemoryAllocator::Stats stats1 = allocator.getStats();
-  LOG(INFO) << "stats1=" << stats1.prettyString();
+  FL_LOG(fl::INFO) << "stats1=" << stats1.prettyString();
   EXPECT_GT(
       stats1.internalFragmentationScore,
       initialStats.internalFragmentationScore);
@@ -282,14 +282,14 @@ TEST(FreeList, InternalFragmentation) {
 
   void* ptr2 = allocator.allocate(alloc2Size);
   const MemoryAllocator::Stats stats2 = allocator.getStats();
-  LOG(INFO) << "stats2=" << stats2.prettyString();
+  FL_LOG(fl::INFO) << "stats2=" << stats2.prettyString();
   EXPECT_GT(
       stats2.internalFragmentationScore, stats1.internalFragmentationScore);
   EXPECT_EQ(stats2.externalFragmentationScore, 0.0);
 
   void* ptr3 = allocator.allocate(alloc3Size);
   const MemoryAllocator::Stats stats3 = allocator.getStats();
-  LOG(INFO) << "stats2=" << stats2.prettyString();
+  FL_LOG(fl::INFO) << "stats2=" << stats2.prettyString();
   EXPECT_GT(
       stats3.internalFragmentationScore, stats2.internalFragmentationScore);
   EXPECT_EQ(stats3.externalFragmentationScore, 0.0);
@@ -355,8 +355,8 @@ TEST(FreeList, ExternalFragmentation) {
   allocator.add({maxAllocationSize3, std::move(freelist3)});
 
   const MemoryAllocator::Stats initialStats = allocator.getStats();
-  LOG(INFO) << "initialStats=" << initialStats.prettyString();
-  VLOG(1) << "allocator=" << allocator.prettyString();
+  FL_LOG(fl::INFO) << "initialStats=" << initialStats.prettyString();
+  FL_VLOG(1) << "allocator=" << allocator.prettyString();
   EXPECT_EQ(initialStats.internalFragmentationScore, 0.0);
   EXPECT_EQ(initialStats.externalFragmentationScore, 0.0);
 
@@ -368,8 +368,8 @@ TEST(FreeList, ExternalFragmentation) {
   // We should have now the following configuration (A-allocated, F-free):
   // A F A F F
   const MemoryAllocator::Stats stats1 = allocator.getStats();
-  LOG(INFO) << "stats1=" << stats1.prettyString();
-  VLOG(1) << "allocator=" << allocator.prettyString();
+  FL_LOG(fl::INFO) << "stats1=" << stats1.prettyString();
+  FL_VLOG(1) << "allocator=" << allocator.prettyString();
   EXPECT_EQ(stats1.internalFragmentationScore, 0.0);
   EXPECT_GT(
       stats1.externalFragmentationScore,
@@ -383,8 +383,8 @@ TEST(FreeList, ExternalFragmentation) {
   // We should have now the following configuration (A-allocated, F-free):
   // A F A F F
   const MemoryAllocator::Stats stats2 = allocator.getStats();
-  LOG(INFO) << "stats2=" << stats2.prettyString();
-  VLOG(1) << "allocator=" << allocator.prettyString();
+  FL_LOG(fl::INFO) << "stats2=" << stats2.prettyString();
+  FL_VLOG(1) << "allocator=" << allocator.prettyString();
   EXPECT_EQ(stats1.internalFragmentationScore, 0.0);
   EXPECT_GT(
       stats2.externalFragmentationScore, stats1.externalFragmentationScore);
@@ -397,8 +397,8 @@ TEST(FreeList, ExternalFragmentation) {
   // We should have now the following configuration (A-allocated, F-free):
   // A F A F F
   const MemoryAllocator::Stats stats3 = allocator.getStats();
-  LOG(INFO) << "stats3=" << stats3.prettyString();
-  VLOG(1) << "allocator=" << allocator.prettyString();
+  FL_LOG(fl::INFO) << "stats3=" << stats3.prettyString();
+  FL_VLOG(1) << "allocator=" << allocator.prettyString();
   EXPECT_EQ(stats1.internalFragmentationScore, 0.0);
   EXPECT_GT(
       stats3.externalFragmentationScore, stats2.externalFragmentationScore);
@@ -412,8 +412,8 @@ TEST(FreeList, ExternalFragmentation) {
   // (A-allocated, F-free):
   // F F A F F
   const MemoryAllocator::Stats stats4 = allocator.getStats();
-  LOG(INFO) << "stats4=" << stats4.prettyString();
-  VLOG(1) << "allocator=" << allocator.prettyString();
+  FL_LOG(fl::INFO) << "stats4=" << stats4.prettyString();
+  FL_VLOG(1) << "allocator=" << allocator.prettyString();
   EXPECT_EQ(stats1.internalFragmentationScore, 0.0);
   EXPECT_GT(
       stats4.externalFragmentationScore, stats3.externalFragmentationScore);
@@ -423,8 +423,8 @@ TEST(FreeList, ExternalFragmentation) {
   allocator.free(ptr9);
   // All memory is freed.
   const MemoryAllocator::Stats endStats = allocator.getStats();
-  LOG(INFO) << "endStats=" << initialStats.prettyString();
-  VLOG(1) << "allocator=" << allocator.prettyString();
+  FL_LOG(fl::INFO) << "endStats=" << initialStats.prettyString();
+  FL_VLOG(1) << "allocator=" << allocator.prettyString();
   EXPECT_EQ(initialStats.internalFragmentationScore, 0.0);
   EXPECT_EQ(initialStats.externalFragmentationScore, 0.0);
 }

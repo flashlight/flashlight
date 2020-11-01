@@ -97,7 +97,7 @@ std::vector<MemoryAllocatorConfiguration> heuristicsSuggestOptimization(
               i,
               allocatorConfig.alignmentNumberOfBits_,
               &suggested)) {
-        LOG(INFO)
+        FL_LOG(fl::INFO)
             << "heuristicsSuggestOptimization() Handle high extrenal fragmentation."
             << "\norig=" << allocatorConfig.prettyString()
             << "\nsuggested=" << suggested.prettyString();
@@ -121,7 +121,7 @@ std::vector<MemoryAllocatorConfiguration> heuristicsSuggestOptimization(
         suggested.subArenaConfiguration_.at(i).blockSize_ =
             ((minBlockSizeCnt - 1) << allocatorConfig.alignmentNumberOfBits_);
 
-        LOG(INFO)
+        FL_LOG(fl::INFO)
             << "heuristicsSuggestOptimization() Handle high internal fragmentation."
             << "\norig=" << allocatorConfig.prettyString()
             << "\nsuggested=" << suggested.prettyString();
@@ -143,7 +143,7 @@ std::vector<MemoryAllocatorConfiguration> heuristicsSuggestOptimization(
           highUsageRelativeSizeRatio;
       suggested.normalize();
 
-      LOG(INFO)
+      FL_LOG(fl::INFO)
           << "heuristicsSuggestOptimization() Handle high allocation ratio."
           << "\norig=" << allocatorConfig.prettyString()
           << "\nsuggested=" << suggested.prettyString();
@@ -166,7 +166,7 @@ std::vector<MemoryAllocatorConfiguration> heuristicsSuggestOptimization(
         suggested.subArenaConfiguration_.erase(
             suggested.subArenaConfiguration_.begin() + i);
 
-        LOG(INFO)
+        FL_LOG(fl::INFO)
             << "heuristicsSuggestOptimization() Handle zero allocation ratio."
             << "\norig=" << allocatorConfig.prettyString()
             << "\nsuggested=" << suggested.prettyString();

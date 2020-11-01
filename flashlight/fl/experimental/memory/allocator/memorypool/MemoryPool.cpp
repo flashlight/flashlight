@@ -53,15 +53,15 @@ MemoryPool::MemoryPool(
 
   if (getLogLevel() > 1) {
     ss << ' ' << prettyString();
-    LOG(INFO) << ss.str();
+    FL_LOG(fl::INFO) << ss.str();
   }
 }
 
 MemoryPool::~MemoryPool() {
   if (stats_.statsInBlocks.allocatedCount && getLogLevel() > 0) {
-    LOG(WARNING) << "~MemoryPool() there are still "
-                 << stats_.statsInBlocks.allocatedCount
-                 << " blocks_ held by the user";
+    FL_LOG(fl::WARNING) << "~MemoryPool() there are still "
+                        << stats_.statsInBlocks.allocatedCount
+                        << " blocks_ held by the user";
   }
 }
 
@@ -83,14 +83,14 @@ void* MemoryPool::allocate(size_t size) {
 
     if (size > stats_.blockSize) {
       ss << "allocated size must be <= blockSize=" << stats_.blockSize;
-      LOG(ERROR) << ss.str();
+      FL_LOG(fl::ERROR) << ss.str();
       // throw std::invalid_argument(ss.str());
     }
 
     if (freeList_ < 0 || freeListSize_ == 0) {
       if (getLogLevel() > 1) {
         ss << " OOM (out of memory) error. freeList_=" << freeList_;
-        LOG(ERROR) << ss.str();
+        FL_LOG(fl::ERROR) << ss.str();
         // throw std::invalid_argument(ss.str());
       }
       stats_.incrementOomEventCount();
@@ -144,9 +144,10 @@ bool MemoryPool::jitTreeExceedsMemoryPressure(size_t bytes) {
       static_cast<double>(stats_.statsInBlocks.arenaSize);
 
   if (allocatedRatio > allocatedRatioJitThreshold_) {
-    LOG(INFO) << "MemoryPool::jitTreeExceedsMemoryPressure(bytes=" << bytes
-              << ") true allocatedRatio=" << allocatedRatio
-              << " allocatedRatioJitThreshold_=" << allocatedRatioJitThreshold_;
+    FL_LOG(fl::INFO) << "MemoryPool::jitTreeExceedsMemoryPressure(bytes="
+                     << bytes << ") true allocatedRatio=" << allocatedRatio
+                     << " allocatedRatioJitThreshold_="
+                     << allocatedRatioJitThreshold_;
   }
 
   return allocatedRatio > allocatedRatioJitThreshold_;

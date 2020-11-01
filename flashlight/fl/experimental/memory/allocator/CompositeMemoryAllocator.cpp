@@ -119,11 +119,11 @@ void* CompositeMemoryAllocator::allocate(size_t size) {
 
     if (ptr) {
       if (getLogLevel() > 1) {
-        LOG(WARNING) << oomErrorDescription;
+        FL_LOG(fl::WARNING) << oomErrorDescription;
       }
     } else {
       if (getLogLevel() > 0) {
-        LOG(ERROR) << oomErrorDescription;
+        FL_LOG(fl::ERROR) << oomErrorDescription;
       }
       if (!oomEventCount_) {
         firstOomStats_.stats = getStats();
