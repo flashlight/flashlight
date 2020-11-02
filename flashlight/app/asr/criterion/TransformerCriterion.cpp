@@ -356,37 +356,54 @@ AMUpdateFunc buildTransformerAmUpdateFunction(
       buf->input = fl::Variable(af::array(N, T, emissions), false);
     }
     int B = rawY.size();
-    buf->prevStates.resize(0);
-    buf->ys.resize(0);
-
-    for (int i = 0; i < B; i++) {
-      TS2SState* prevState = static_cast<TS2SState*>(rawPrevStates[i].get());
-      fl::Variable y;
-      if (t > 0) {
-        y = fl::constant(rawY[i], 1, s32, false);
-      } else {
-        prevState = &buf->dummyState;
-      }
-      buf->ys.push_back(y);
-      buf->prevStates.push_back(prevState);
-    }
-
-    std::vector<std::vector<float>> amScores;
-    std::vector<TS2SStatePtr> outStates;
-
-    std::tie(amScores, outStates) = criterion->decodeBatchStep(
-        buf->input,
-        buf->ys,
-        buf->prevStates,
-        buf->attentionThreshold,
-        buf->smoothingTemperature);
-
     std::vector<AMStatePtr> out;
-    for (auto& os : outStates) {
-      out.push_back(os);
-    }
+    std::vector<std::vector<float>> amScoresAll;
 
-    return std::make_pair(amScores, out);
+    int start = 0, step = std::min(10, 1000 / (t + 1));
+    while (start < B) {
+      buf->prevStates.resize(0);
+      buf->ys.resize(0);
+
+      int end = start + step;
+      if (end > B) {
+        end = B;
+      }
+      for (int i = start; i < end; i++) {
+        TS2SState* prevState = static_cast<TS2SState*>(rawPrevStates[i].get());
+        fl::Variable y;
+        if (t > 0) {
+          y = fl::constant(rawY[i], 1, s32, false);
+        } else {
+          prevState = &buf->dummyState;
+        }
+        buf->ys.push_back(y);
+        buf->prevStates.push_back(prevState);
+      }
+      std::vector<std::vector<float>> amScores;
+      std::vector<TS2SStatePtr> outStates;
+      std::tie(amScores, outStates) = criterion->decodeBatchStep(
+          buf->input,
+          buf->ys,
+          buf->prevStates,
+          buf->attentionThreshold,
+          buf->smoothingTemperature);
+      for (auto& os : outStates) {
+        out.push_back(os);
+      }
+      for (auto& s : amScores) {
+        amScoresAll.push_back(s);
+      }
+      // clean the previous state which is not needed anymore
+      // to prevent from OOM
+      for (int i = start; i < end; i++) {
+        TS2SState* prevState = static_cast<TS2SState*>(rawPrevStates[i].get());
+        if (prevState) {
+          prevState->hidden.clear();
+        }
+      }
+      start += step;
+    }
+    return std::make_pair(amScoresAll, out);
   };
 
   return amUpdateFunc;
