@@ -22,9 +22,8 @@
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 
-#include "app/asr/experimental/soundeffect/Sound.h"
-#include "app/asr/experimental/soundeffect/SoundEffect.h"
-#include "app/asr/experimental/soundeffect/SoundEffectConfigFile.h"
+#include "flashlight/app/asr/experimental/soundeffect/SoundEffect.h"
+#include "flashlight/app/asr/experimental/soundeffect/SoundEffectConfigFile.h"
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/common/ModulePlugin.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
@@ -396,9 +395,9 @@ int main(int argc, char** argv) {
     }
     linseg = std::make_shared<LinSegCriterion>(numClasses, scalemode);
     linseg->setParams(criterion->param(0), 0);
-    FL_LOG_MASTER(fl::INFO)
-        << "[Criterion] " << linseg->prettyString() << " (for first "
-        << FLAGS_linseg - startUpdate << " updates)";
+    FL_LOG_MASTER(fl::INFO) << "[Criterion] " << linseg->prettyString()
+                            << " (for first " << FLAGS_linseg - startUpdate
+                            << " updates)";
 
     linNetoptim = initOptimizer(
         {network},
@@ -409,12 +408,12 @@ int main(int argc, char** argv) {
     linCritoptim =
         initOptimizer({linseg}, FLAGS_critoptim, initLinCritlr, 0.0, 0.0);
 
-    FL_LOG_MASTER(fl::INFO)
-        << "[Network Optimizer] " << linNetoptim->prettyString()
-        << " (for first " << FLAGS_linseg - startUpdate << " updates)";
-    FL_LOG_MASTER(fl::INFO)
-        << "[Criterion Optimizer] " << linCritoptim->prettyString()
-        << " (for first " << FLAGS_linseg - startUpdate << " updates)";
+    FL_LOG_MASTER(fl::INFO) << "[Network Optimizer] "
+                            << linNetoptim->prettyString() << " (for first "
+                            << FLAGS_linseg - startUpdate << " updates)";
+    FL_LOG_MASTER(fl::INFO) << "[Criterion Optimizer] "
+                            << linCritoptim->prettyString() << " (for first "
+                            << FLAGS_linseg - startUpdate << " updates)";
   }
 
   /* ===================== Meters ===================== */
@@ -451,11 +450,11 @@ int main(int argc, char** argv) {
   }
 
   auto logStatus = [&perfFile, &logFile, isMaster](
-                       TrainMeters& mtrs,
-                       int64_t epoch,
-                       int64_t nupdates,
-                       double lr,
-                       double lrcrit) {
+      TrainMeters& mtrs,
+      int64_t epoch,
+      int64_t nupdates,
+      double lr,
+      double lrcrit) {
     syncMeter(mtrs);
 
     if (isMaster) {
@@ -512,9 +511,7 @@ int main(int argc, char** argv) {
 
   /* ===================== Hooks ===================== */
   auto evalOutput = [&tokenDict, &criterion](
-                        const af::array& op,
-                        const af::array& target,
-                        DatasetMeters& mtr) {
+      const af::array& op, const af::array& target, DatasetMeters& mtr) {
     auto batchsz = op.dims(2);
     for (int b = 0; b < batchsz; ++b) {
       auto tgt = target(af::span, b);
@@ -540,10 +537,10 @@ int main(int argc, char** argv) {
   };
 
   auto test = [&evalOutput](
-                  std::shared_ptr<fl::Module> ntwrk,
-                  std::shared_ptr<SequenceCriterion> crit,
-                  std::shared_ptr<fl::Dataset> validds,
-                  DatasetMeters& mtrs) {
+      std::shared_ptr<fl::Module> ntwrk,
+      std::shared_ptr<SequenceCriterion> crit,
+      std::shared_ptr<fl::Dataset> validds,
+      DatasetMeters& mtrs) {
     ntwrk->eval();
     crit->eval();
     mtrs.tknEdit.reset();
@@ -566,307 +563,316 @@ int main(int argc, char** argv) {
 
   int64_t curEpoch = startEpoch;
 
-  auto train = [&meters,
-                &test,
-                &logStatus,
-                &saveModels,
-                &evalOutput,
-                &validds,
-                &curEpoch,
-                &startUpdate,
-                reducer,
-                trainDsSoundEffect](
-                   std::shared_ptr<fl::Module> ntwrk,
-                   std::shared_ptr<SequenceCriterion> crit,
-                   std::shared_ptr<fl::Dataset> trainset,
-                   std::shared_ptr<fl::FirstOrderOptimizer> netopt,
-                   std::shared_ptr<fl::FirstOrderOptimizer> critopt,
-                   double initlr,
-                   double initcritlr,
-                   bool clampCrit,
-                   int64_t nbatches) {
-    if (trainDsSoundEffect) {
-      trainDsSoundEffect->setEnableCountdown(
-          std::max(FLAGS_sfx_start_update - startUpdate, 0L) * FLAGS_batchsize);
-    }
-
-    if (reducer) {
-      fl::distributeModuleGrads(ntwrk, reducer);
-      fl::distributeModuleGrads(crit, reducer);
-    }
-
-    meters.train.loss.reset();
-    meters.train.tknEdit.reset();
-    meters.train.wrdEdit.reset();
-
-    std::shared_ptr<fl::SpecAugment> saug;
-    if (FLAGS_saug_start_update >= 0) {
-      saug = std::make_shared<fl::SpecAugment>(
-          FLAGS_filterbanks,
-          FLAGS_saug_fmaskf,
-          FLAGS_saug_fmaskn,
-          FLAGS_saug_tmaskt,
-          FLAGS_saug_tmaskp,
-          FLAGS_saug_tmaskn);
-    }
-
-    fl::allReduceParameters(ntwrk);
-    fl::allReduceParameters(crit);
-
-    auto resetTimeStatMeters = [&meters]() {
-      meters.runtime.reset();
-      meters.stats.reset();
-      meters.sampletimer.reset();
-      meters.fwdtimer.reset();
-      meters.critfwdtimer.reset();
-      meters.bwdtimer.reset();
-      meters.optimtimer.reset();
-      meters.timer.reset();
-    };
-    auto runValAndSaveModel = [&](int64_t totalEpochs,
-                                  int64_t totalUpdates,
-                                  double lr,
-                                  double lrcrit) {
-      meters.runtime.stop();
-      meters.timer.stop();
-      meters.sampletimer.stop();
-      meters.fwdtimer.stop();
-      meters.critfwdtimer.stop();
-      meters.bwdtimer.stop();
-      meters.optimtimer.stop();
-
-      // valid
-      for (auto& vds : validds) {
-        test(ntwrk, crit, vds.second, meters.valid[vds.first]);
-      }
-
-      // print status
-      try {
-        logStatus(meters, totalEpochs, totalUpdates, lr, lrcrit);
-      } catch (const std::exception& ex) {
-        FL_LOG(fl::ERROR) << "Error while writing logs: " << ex.what();
-      }
-      // save last and best models
-      try {
-        saveModels(totalEpochs, totalUpdates);
-      } catch (const std::exception& ex) {
-        FL_LOG(fl::FATAL) << "Error while saving models: " << ex.what();
-      }
-      // reset meters for next readings
-      meters.train.loss.reset();
-      meters.train.tknEdit.reset();
-      meters.train.wrdEdit.reset();
-    };
-
-    int64_t curBatch = startUpdate;
-    unsigned int scaleFactor =
-        FLAGS_fl_amp_use_mixed_precision ? FLAGS_fl_amp_scale_factor : 1;
-    unsigned int kScaleFactorUpdateInterval =
-        FLAGS_fl_amp_scale_factor_update_interval;
-    unsigned int kMaxScaleFactor = FLAGS_fl_amp_max_scale_factor;
-    unsigned short scaleCounter = 1;
-    while (curBatch < nbatches) {
-      ++curEpoch; // counts partial epochs too!
-      int64_t epochsAfterDecay = curEpoch - FLAGS_lr_decay;
-      double lrDecayScale = std::pow(
-          0.5,
-          (epochsAfterDecay < 0 ? 0
-                                : 1 + epochsAfterDecay / FLAGS_lr_decay_step));
-      ntwrk->train();
-      crit->train();
-      if (FLAGS_reportiters == 0) {
-        resetTimeStatMeters();
-      }
-      std::hash<std::string> hasher;
-      FL_LOG_MASTER(fl::INFO) << "Shuffling trainset";
-      auto curTrainset = loadPrefetchDataset(
-          trainset, FLAGS_nthread, true /* shuffle */, curEpoch /* seed */);
-      af::sync();
-      meters.sampletimer.resume();
-      meters.runtime.resume();
-      meters.timer.resume();
-      FL_LOG_MASTER(fl::INFO) << "Epoch " << curEpoch << " started!";
-      for (auto& batch : *curTrainset) {
-        ++curBatch;
-        double lrScheduleScale;
-        if (FLAGS_lrcosine) {
-          const double pi = std::acos(-1);
-          lrScheduleScale =
-              std::cos(((double)curBatch) / ((double)nbatches) * pi / 2.0);
-        } else {
-          lrScheduleScale =
-              std::pow(FLAGS_gamma, (double)curBatch / (double)FLAGS_stepsize);
-        }
-        netopt->setLr(
-            initlr * lrDecayScale * lrScheduleScale *
-            std::min(curBatch / double(FLAGS_warmup), 1.0));
-        critopt->setLr(
-            initcritlr * lrDecayScale * lrScheduleScale *
-            std::min(curBatch / double(FLAGS_warmup), 1.0));
-        af::sync();
-        meters.timer.incUnit();
-        meters.sampletimer.stopAndIncUnit();
-        meters.stats.add(batch[kInputIdx], batch[kTargetIdx]);
-        if (af::anyTrue<bool>(af::isNaN(batch[kInputIdx])) ||
-            af::anyTrue<bool>(af::isNaN(batch[kTargetIdx]))) {
-          FL_LOG(fl::FATAL) << "Sample has NaN values - "
-                            << join(",", readSampleIds(batch[kSampleIdx]));
+  auto train =
+      [&meters,
+       &test,
+       &logStatus,
+       &saveModels,
+       &evalOutput,
+       &validds,
+       &curEpoch,
+       &startUpdate,
+       reducer,
+       trainDsSoundEffect](
+          std::shared_ptr<fl::Module> ntwrk,
+          std::shared_ptr<SequenceCriterion> crit,
+          std::shared_ptr<fl::Dataset> trainset,
+          std::shared_ptr<fl::FirstOrderOptimizer> netopt,
+          std::shared_ptr<fl::FirstOrderOptimizer> critopt,
+          double initlr,
+          double initcritlr,
+          bool clampCrit,
+          int64_t nbatches) {
+        if (trainDsSoundEffect) {
+          trainDsSoundEffect->setEnableCountdown(
+              std::max(FLAGS_sfx_start_update - startUpdate, 0L) *
+              FLAGS_batchsize);
         }
 
-        // Ensure no samples are skipped while adjusting the loss scale factor.
-        // When gradient values are Inf/NaN, the model update is skipped and the
-        // scale factor is adjusted accordingly for determinism.
-        // The AMP algorithm implemented here mirrors:
-        // - https://arxiv.org/abs/1710.03740
-        // - https://bit.ly/35F5GqX
-        // - https://bit.ly/3mn2qr0
-        bool retrySample = false;
-        do {
-          retrySample = false;
-          // forward
-          meters.fwdtimer.resume();
-          auto input = fl::input(batch[kInputIdx]);
-          if (FLAGS_saug_start_update >= 0 &&
-              curBatch >= FLAGS_saug_start_update) {
-            input = saug->forward(input);
-          }
-          auto output =
-              ntwrk->forward({input}).front().as(batch[kInputIdx].type());
-          af::sync();
-          meters.critfwdtimer.resume();
-          auto loss =
-              crit->forward({output, fl::noGrad(batch[kTargetIdx])}).front();
-          af::sync();
-          meters.fwdtimer.stopAndIncUnit();
-          meters.critfwdtimer.stopAndIncUnit();
-
-          if (FLAGS_fl_amp_use_mixed_precision) {
-            ++scaleCounter;
-            loss = loss * scaleFactor;
-          }
-
-          if (af::anyTrue<bool>(af::isNaN(loss.array())) ||
-              af::anyTrue<bool>(af::isInf(loss.array()))) {
-            if (FLAGS_fl_amp_use_mixed_precision && scaleFactor >= 2) {
-              scaleFactor = scaleFactor / 2.0f;
-              FL_VLOG(2) << "AMP: Scale factor decreased. New value:\t"
-                         << scaleFactor;
-              scaleCounter = 1;
-              retrySample = true;
-              continue;
-            } else {
-              FL_LOG(fl::FATAL) << "Loss has NaN values. Samples - "
-                                << join(",", readSampleIds(batch[kSampleIdx]));
-            }
-          }
-
-          if (hasher(join(",", readSampleIds(batch[kSampleIdx]))) % 100 <=
-              FLAGS_pcttraineval) {
-            evalOutput(output.array(), batch[kTargetIdx], meters.train);
-          }
-
-          // backward
-          meters.bwdtimer.resume();
-          netopt->zeroGrad();
-          critopt->zeroGrad();
-          loss.backward();
-          if (reducer) {
-            reducer->finalize();
-          }
-          af::sync();
-          meters.bwdtimer.stopAndIncUnit();
-
-          // optimizer
-          meters.optimtimer.resume();
-
-          // scale down gradients by batchsize
-          for (const auto& p : ntwrk->params()) {
-            if (!p.isGradAvailable()) {
-              continue;
-            }
-            p.grad() = p.grad() / (FLAGS_batchsize * scaleFactor);
-            if (FLAGS_fl_amp_use_mixed_precision) {
-              if (af::anyTrue<bool>(af::isNaN(p.grad().array())) ||
-                  af::anyTrue<bool>(af::isInf(p.grad().array()))) {
-                if (scaleFactor >= 2) {
-                  scaleFactor = scaleFactor / 2.0f;
-                  FL_VLOG(2) << "AMP: Scale factor decreased. New value:\t"
-                             << scaleFactor;
-                  retrySample = true;
-                }
-                scaleCounter = 1;
-                break;
-              }
-            }
-          }
-          if (retrySample) {
-            meters.optimtimer.stop();
-            continue;
-          }
-
-          meters.train.loss.add((loss / scaleFactor).array());
-
-          for (const auto& p : crit->params()) {
-            if (!p.isGradAvailable()) {
-              continue;
-            }
-            p.grad() = p.grad() / (FLAGS_batchsize * scaleFactor);
-          }
-
-        } while (retrySample);
-
-        // clamp gradients
-        if (FLAGS_maxgradnorm > 0) {
-          auto params = ntwrk->params();
-          if (clampCrit) {
-            auto critparams = crit->params();
-            params.insert(params.end(), critparams.begin(), critparams.end());
-          }
-          fl::clipGradNorm(params, FLAGS_maxgradnorm);
+        if (reducer) {
+          fl::distributeModuleGrads(ntwrk, reducer);
+          fl::distributeModuleGrads(crit, reducer);
         }
 
-        // update weights
-        critopt->step();
-        netopt->step();
-        af::sync();
-        meters.optimtimer.stopAndIncUnit();
+        meters.train.loss.reset();
+        meters.train.tknEdit.reset();
+        meters.train.wrdEdit.reset();
 
-        // update scale factor
-        if (FLAGS_fl_amp_use_mixed_precision && scaleFactor < kMaxScaleFactor) {
-          if (scaleCounter % kScaleFactorUpdateInterval == 0) {
-            scaleFactor *= 2;
-            FL_VLOG(2) << "AMP: Scale factor doubled. New value:\t"
-                       << scaleFactor;
-          } else {
-            scaleFactor += 2;
-            FL_VLOG(3) << "AMP: Scale factor incremented. New value\t"
-                       << scaleFactor;
-          }
+        std::shared_ptr<fl::SpecAugment> saug;
+        if (FLAGS_saug_start_update >= 0) {
+          saug = std::make_shared<fl::SpecAugment>(
+              FLAGS_filterbanks,
+              FLAGS_saug_fmaskf,
+              FLAGS_saug_fmaskn,
+              FLAGS_saug_tmaskt,
+              FLAGS_saug_tmaskp,
+              FLAGS_saug_tmaskn);
         }
 
-        meters.sampletimer.resume();
+        fl::allReduceParameters(ntwrk);
+        fl::allReduceParameters(crit);
 
-        if (FLAGS_reportiters > 0 && curBatch % FLAGS_reportiters == 0) {
-          runValAndSaveModel(
-              curEpoch, curBatch, netopt->getLr(), critopt->getLr());
-          resetTimeStatMeters();
+        auto resetTimeStatMeters = [&meters]() {
+          meters.runtime.reset();
+          meters.stats.reset();
+          meters.sampletimer.reset();
+          meters.fwdtimer.reset();
+          meters.critfwdtimer.reset();
+          meters.bwdtimer.reset();
+          meters.optimtimer.reset();
+          meters.timer.reset();
+        };
+        auto runValAndSaveModel = [&](
+            int64_t totalEpochs,
+            int64_t totalUpdates,
+            double lr,
+            double lrcrit) {
+          meters.runtime.stop();
+          meters.timer.stop();
+          meters.sampletimer.stop();
+          meters.fwdtimer.stop();
+          meters.critfwdtimer.stop();
+          meters.bwdtimer.stop();
+          meters.optimtimer.stop();
+
+          // valid
+          for (auto& vds : validds) {
+            test(ntwrk, crit, vds.second, meters.valid[vds.first]);
+          }
+
+          // print status
+          try {
+            logStatus(meters, totalEpochs, totalUpdates, lr, lrcrit);
+          } catch (const std::exception& ex) {
+            FL_LOG(fl::ERROR) << "Error while writing logs: " << ex.what();
+          }
+          // save last and best models
+          try {
+            saveModels(totalEpochs, totalUpdates);
+          } catch (const std::exception& ex) {
+            FL_LOG(fl::FATAL) << "Error while saving models: " << ex.what();
+          }
+          // reset meters for next readings
+          meters.train.loss.reset();
+          meters.train.tknEdit.reset();
+          meters.train.wrdEdit.reset();
+        };
+
+        int64_t curBatch = startUpdate;
+        unsigned int scaleFactor =
+            FLAGS_fl_amp_use_mixed_precision ? FLAGS_fl_amp_scale_factor : 1;
+        unsigned int kScaleFactorUpdateInterval =
+            FLAGS_fl_amp_scale_factor_update_interval;
+        unsigned int kMaxScaleFactor = FLAGS_fl_amp_max_scale_factor;
+        unsigned short scaleCounter = 1;
+        while (curBatch < nbatches) {
+          ++curEpoch; // counts partial epochs too!
+          int64_t epochsAfterDecay = curEpoch - FLAGS_lr_decay;
+          double lrDecayScale = std::pow(
+              0.5,
+              (epochsAfterDecay < 0
+                   ? 0
+                   : 1 + epochsAfterDecay / FLAGS_lr_decay_step));
           ntwrk->train();
           crit->train();
+          if (FLAGS_reportiters == 0) {
+            resetTimeStatMeters();
+          }
+          std::hash<std::string> hasher;
+          FL_LOG_MASTER(fl::INFO) << "Shuffling trainset";
+          auto curTrainset = loadPrefetchDataset(
+              trainset, FLAGS_nthread, true /* shuffle */, curEpoch /* seed */);
+          af::sync();
           meters.sampletimer.resume();
           meters.runtime.resume();
           meters.timer.resume();
+          FL_LOG_MASTER(fl::INFO) << "Epoch " << curEpoch << " started!";
+          for (auto& batch : *curTrainset) {
+            ++curBatch;
+            double lrScheduleScale;
+            if (FLAGS_lrcosine) {
+              const double pi = std::acos(-1);
+              lrScheduleScale =
+                  std::cos(((double)curBatch) / ((double)nbatches) * pi / 2.0);
+            } else {
+              lrScheduleScale = std::pow(
+                  FLAGS_gamma, (double)curBatch / (double)FLAGS_stepsize);
+            }
+            netopt->setLr(
+                initlr * lrDecayScale * lrScheduleScale *
+                std::min(curBatch / double(FLAGS_warmup), 1.0));
+            critopt->setLr(
+                initcritlr * lrDecayScale * lrScheduleScale *
+                std::min(curBatch / double(FLAGS_warmup), 1.0));
+            af::sync();
+            meters.timer.incUnit();
+            meters.sampletimer.stopAndIncUnit();
+            meters.stats.add(batch[kInputIdx], batch[kTargetIdx]);
+            if (af::anyTrue<bool>(af::isNaN(batch[kInputIdx])) ||
+                af::anyTrue<bool>(af::isNaN(batch[kTargetIdx]))) {
+              FL_LOG(fl::FATAL) << "Sample has NaN values - "
+                                << join(",", readSampleIds(batch[kSampleIdx]));
+            }
+
+            // Ensure no samples are skipped while adjusting the loss scale
+            // factor.
+            // When gradient values are Inf/NaN, the model update is skipped and
+            // the
+            // scale factor is adjusted accordingly for determinism.
+            // The AMP algorithm implemented here mirrors:
+            // - https://arxiv.org/abs/1710.03740
+            // - https://bit.ly/35F5GqX
+            // - https://bit.ly/3mn2qr0
+            bool retrySample = false;
+            do {
+              retrySample = false;
+              // forward
+              meters.fwdtimer.resume();
+              auto input = fl::input(batch[kInputIdx]);
+              if (FLAGS_saug_start_update >= 0 &&
+                  curBatch >= FLAGS_saug_start_update) {
+                input = saug->forward(input);
+              }
+              auto output =
+                  ntwrk->forward({input}).front().as(batch[kInputIdx].type());
+              af::sync();
+              meters.critfwdtimer.resume();
+              auto loss = crit->forward({output, fl::noGrad(batch[kTargetIdx])})
+                              .front();
+              af::sync();
+              meters.fwdtimer.stopAndIncUnit();
+              meters.critfwdtimer.stopAndIncUnit();
+
+              if (FLAGS_fl_amp_use_mixed_precision) {
+                ++scaleCounter;
+                loss = loss * scaleFactor;
+              }
+
+              if (af::anyTrue<bool>(af::isNaN(loss.array())) ||
+                  af::anyTrue<bool>(af::isInf(loss.array()))) {
+                if (FLAGS_fl_amp_use_mixed_precision && scaleFactor >= 2) {
+                  scaleFactor = scaleFactor / 2.0f;
+                  FL_VLOG(2) << "AMP: Scale factor decreased. New value:\t"
+                             << scaleFactor;
+                  scaleCounter = 1;
+                  retrySample = true;
+                  continue;
+                } else {
+                  FL_LOG(fl::FATAL)
+                      << "Loss has NaN values. Samples - "
+                      << join(",", readSampleIds(batch[kSampleIdx]));
+                }
+              }
+
+              if (hasher(join(",", readSampleIds(batch[kSampleIdx]))) % 100 <=
+                  FLAGS_pcttraineval) {
+                evalOutput(output.array(), batch[kTargetIdx], meters.train);
+              }
+
+              // backward
+              meters.bwdtimer.resume();
+              netopt->zeroGrad();
+              critopt->zeroGrad();
+              loss.backward();
+              if (reducer) {
+                reducer->finalize();
+              }
+              af::sync();
+              meters.bwdtimer.stopAndIncUnit();
+
+              // optimizer
+              meters.optimtimer.resume();
+
+              // scale down gradients by batchsize
+              for (const auto& p : ntwrk->params()) {
+                if (!p.isGradAvailable()) {
+                  continue;
+                }
+                p.grad() = p.grad() / (FLAGS_batchsize * scaleFactor);
+                if (FLAGS_fl_amp_use_mixed_precision) {
+                  if (af::anyTrue<bool>(af::isNaN(p.grad().array())) ||
+                      af::anyTrue<bool>(af::isInf(p.grad().array()))) {
+                    if (scaleFactor >= 2) {
+                      scaleFactor = scaleFactor / 2.0f;
+                      FL_VLOG(2) << "AMP: Scale factor decreased. New value:\t"
+                                 << scaleFactor;
+                      retrySample = true;
+                    }
+                    scaleCounter = 1;
+                    break;
+                  }
+                }
+              }
+              if (retrySample) {
+                meters.optimtimer.stop();
+                continue;
+              }
+
+              meters.train.loss.add((loss / scaleFactor).array());
+
+              for (const auto& p : crit->params()) {
+                if (!p.isGradAvailable()) {
+                  continue;
+                }
+                p.grad() = p.grad() / (FLAGS_batchsize * scaleFactor);
+              }
+
+            } while (retrySample);
+
+            // clamp gradients
+            if (FLAGS_maxgradnorm > 0) {
+              auto params = ntwrk->params();
+              if (clampCrit) {
+                auto critparams = crit->params();
+                params.insert(
+                    params.end(), critparams.begin(), critparams.end());
+              }
+              fl::clipGradNorm(params, FLAGS_maxgradnorm);
+            }
+
+            // update weights
+            critopt->step();
+            netopt->step();
+            af::sync();
+            meters.optimtimer.stopAndIncUnit();
+
+            // update scale factor
+            if (FLAGS_fl_amp_use_mixed_precision &&
+                scaleFactor < kMaxScaleFactor) {
+              if (scaleCounter % kScaleFactorUpdateInterval == 0) {
+                scaleFactor *= 2;
+                FL_VLOG(2) << "AMP: Scale factor doubled. New value:\t"
+                           << scaleFactor;
+              } else {
+                scaleFactor += 2;
+                FL_VLOG(3) << "AMP: Scale factor incremented. New value\t"
+                           << scaleFactor;
+              }
+            }
+
+            meters.sampletimer.resume();
+
+            if (FLAGS_reportiters > 0 && curBatch % FLAGS_reportiters == 0) {
+              runValAndSaveModel(
+                  curEpoch, curBatch, netopt->getLr(), critopt->getLr());
+              resetTimeStatMeters();
+              ntwrk->train();
+              crit->train();
+              meters.sampletimer.resume();
+              meters.runtime.resume();
+              meters.timer.resume();
+            }
+            if (curBatch > nbatches) {
+              break;
+            }
+          }
+          af::sync();
+          if (FLAGS_reportiters == 0) {
+            runValAndSaveModel(
+                curEpoch, curBatch, netopt->getLr(), critopt->getLr());
+          }
         }
-        if (curBatch > nbatches) {
-          break;
-        }
-      }
-      af::sync();
-      if (FLAGS_reportiters == 0) {
-        runValAndSaveModel(
-            curEpoch, curBatch, netopt->getLr(), critopt->getLr());
-      }
-    }
-  };
+      };
 
   /* ===================== Train ===================== */
   if (FLAGS_linseg - startUpdate > 0) {

@@ -25,7 +25,8 @@ class Dataset : public fl::Dataset {
       const lib::text::DictionaryMap& dicts,
       int64_t batchsize,
       int worldrank = 0,
-      int worldsize = 1);
+      int worldsize = 1,
+      const DataAugmentationFunction& augmentationFunc = nullptr);
 
   int64_t size() const override;
 
@@ -59,6 +60,7 @@ class Dataset : public fl::Dataset {
   mutable std::unordered_map<int64_t, std::future<FeatureData>> prefetchCache_;
 
   std::vector<std::vector<int64_t>> sampleBatches_;
+  const DataAugmentationFunction augmentationFunc_;
 };
 
 // Abstract class which defines an interface to pack samples

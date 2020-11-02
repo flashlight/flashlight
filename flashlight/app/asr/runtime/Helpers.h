@@ -80,7 +80,8 @@ std::shared_ptr<Dataset> createDataset(
     int worldRank = 0,
     int worldSize = 1,
     bool fallback2Ltr = true,
-    bool skipUnk = true);
+    bool skipUnk = true,
+    const fl::Dataset::DataAugmentationFunction& augmentationFunc = nullptr);
 
 /*
  * Utility function for creating a w2l dataset.
@@ -100,7 +101,8 @@ std::shared_ptr<fl::Dataset> createDataset(
                                                                         -1,
                                                                         -1},
     int worldRank = 0,
-    int worldSize = 1);
+    int worldSize = 1,
+    const fl::Dataset::DataAugmentationFunction& augmentationFunc = nullptr);
 
 std::shared_ptr<fl::Dataset> loadPrefetchDataset(
     std::shared_ptr<fl::Dataset> dataset,

@@ -119,7 +119,9 @@ std::shared_ptr<Dataset> createDataset(
     int worldRank /* = 0 */,
     int worldSize /* = 1 */,
     bool fallback2Ltr /* = true */,
-    bool skipUnk /* = true */) {
+    bool skipUnk /* = true */,
+    const fl::Dataset::DataAugmentationFunction&
+        augmentationFunc /* = nullptr */) {
   std::shared_ptr<Dataset> ds;
   if (FLAGS_everstoredb) {
 #ifdef FL_BUILD_FB_DEPENDENCIES
@@ -160,7 +162,8 @@ std::shared_ptr<Dataset> createDataset(
         worldSize,
         fallback2Ltr,
         skipUnk,
-        FLAGS_datadir);
+        FLAGS_datadir,
+        augmentationFunc);
   }
 
   return ds;
@@ -175,7 +178,9 @@ std::shared_ptr<fl::Dataset> createDataset(
     const fl::Dataset::DataTransformFunction& wordTransform /* = nullptr */,
     const std::tuple<int, int, int>& padVal /* = {0, -1, -1} */,
     int worldRank /* = 0 */,
-    int worldSize /* = 1 */) {
+    int worldSize /* = 1 */,
+    const fl::Dataset::DataAugmentationFunction&
+        augmentationFunc /* = nullptr */) {
   std::vector<std::shared_ptr<const fl::Dataset>> allListDs;
   std::vector<float> sizes;
   for (auto& path : paths) {
@@ -183,7 +188,8 @@ std::shared_ptr<fl::Dataset> createDataset(
         pathsConcat(rootDir, path),
         inputTransform,
         targetTransform,
-        wordTransform);
+        wordTransform,
+        augmentationFunc);
 
     allListDs.emplace_back(curListDs);
     sizes.reserve(sizes.size() + curListDs->size());

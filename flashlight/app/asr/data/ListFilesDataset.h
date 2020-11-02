@@ -26,7 +26,8 @@ class ListFilesDataset : public Dataset {
       int worldSize = 1,
       bool fallback2Ltr = false,
       bool skipUnk = false,
-      const std::string& rootdir = "");
+      const std::string& rootdir = "",
+      const DataAugmentationFunction& augmentationFunc = nullptr);
 
   ~ListFilesDataset() override;
 

@@ -30,8 +30,9 @@ ListFilesDataset::ListFilesDataset(
     int worldSize /* = 1 */,
     bool fallback2Ltr /* = false */,
     bool skipUnk /* = false */,
-    const std::string& rootdir /* = "" */)
-    : Dataset(dicts, batchSize, worldRank, worldSize),
+    const std::string& rootdir /* = "" */,
+    const DataAugmentationFunction& augmentationFunc /* = nullptr */)
+    : Dataset(dicts, batchSize, worldRank, worldSize, augmentationFunc),
       lexicon_(lexicon),
       fallback2Ltr_(fallback2Ltr),
       skipUnk_(skipUnk) {

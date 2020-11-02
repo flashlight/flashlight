@@ -29,10 +29,12 @@ ListFileDataset::ListFileDataset(
     const std::string& filename,
     const DataTransformFunction& inFeatFunc /* = nullptr */,
     const DataTransformFunction& tgtFeatFunc /* = nullptr */,
-    const DataTransformFunction& wrdFeatFunc /* = nullptr */)
+    const DataTransformFunction& wrdFeatFunc /* = nullptr */,
+    const DataAugmentationFunction& augmentationFunc /* = nullptr */)
     : inFeatFunc_(inFeatFunc),
       tgtFeatFunc_(tgtFeatFunc),
       wrdFeatFunc_(wrdFeatFunc),
+      augmentationFunc_(augmentationFunc),
       numRows_(0) {
   std::ifstream inFile(filename);
   if (!inFile) {
@@ -66,7 +68,20 @@ int64_t ListFileDataset::size() const {
 std::vector<af::array> ListFileDataset::get(const int64_t idx) const {
   checkIndexBounds(idx);
 
-  auto audio = loadAudio(inputs_[idx]); // channels x time
+  std::pair<std::vector<float>, af::dim4> audio =
+      loadAudio(inputs_[idx]); // channels x time
+
+  if (augmentationFunc_) {
+    const auto channels = audio.second[0];
+    if (channels == 1) {
+      augmentationFunc_(&audio.first);
+    } else {
+      throw std::runtime_error(
+          "ListFileDataset::get() augmentationFunc expects a single channel. channels=" +
+          std::to_string(channels));
+    }
+  }
+
   af::array input;
   if (inFeatFunc_) {
     input = inFeatFunc_(

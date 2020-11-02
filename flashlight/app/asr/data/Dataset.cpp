@@ -23,16 +23,21 @@ Dataset::Dataset(
     const DictionaryMap& dicts,
     int64_t batchsize,
     int worldrank /* = 0 */,
-    int worldsize /* = 1 */)
+    int worldsize /* = 1 */,
+    const DataAugmentationFunction& augmentationFunc /* = nullptr */)
     : dicts_(dicts),
       batchSize_(batchsize),
       worldRank_(worldrank),
       worldSize_(worldsize),
-      threadpool_(fl::cpp::make_unique<fl::ThreadPool>(FLAGS_nthread)) {
+      augmentationFunc_(augmentationFunc) {
   if (batchSize_ < 1 || worldRank_ < 0 || worldSize_ < 1 ||
       worldRank_ >= worldSize_) {
     FL_LOG(fl::FATAL) << "Invalid arguments!";
   }
+  auto deviceId = af::getDevice();
+  threadpool_ = cpp::make_unique<fl::ThreadPool>(
+      FLAGS_nthread,
+      [deviceId](int /* threadId */) { af::setDevice(deviceId); });
 }
 
 int64_t Dataset::size() const {
@@ -72,6 +77,11 @@ int64_t Dataset::getGlobalBatchIdx(const int64_t idx) {
 
 FeatureData Dataset::getFeatureData(const int64_t idx) const {
   auto ldData = getLoaderData(idx);
+  if (augmentationFunc_) {
+    for (auto& data : ldData) {
+      augmentationFunc_(&data.input);
+    }
+  }
   return featurize(ldData, dicts_);
 }
 
