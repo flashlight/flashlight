@@ -26,6 +26,10 @@ target_include_directories(
   ${CMAKE_CURRENT_LIST_DIR}/..
   )
 
+# ----------------------------- Binaries -----------------------------
+add_executable(ApplySoundEffect ${CMAKE_CURRENT_LIST_DIR}/ApplySoundEffect.cpp)
+
+target_link_libraries(ApplySoundEffect flashlight-app-sfx)
 
 # --------------------------- Tests ---------------------------
 

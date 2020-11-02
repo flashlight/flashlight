@@ -200,6 +200,11 @@ DECLARE_int64(saug_tmaskt);
 DECLARE_double(saug_tmaskp);
 DECLARE_int64(saug_tmaskn);
 
+/* ========== SOUND EFFECTS OPTIONS ========== */
+
+DECLARE_string(sfx_config_filename);
+DECLARE_int64(sfx_start_update);
+
 /* ========== RUN OPTIONS ========== */
 
 DECLARE_string(datadir);
