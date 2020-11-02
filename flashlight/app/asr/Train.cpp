@@ -21,6 +21,10 @@
 #include "flashlight/app/asr/data/FeatureTransforms.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
+
+#include "app/asr/experimental/soundeffect/Sound.h"
+#include "app/asr/experimental/soundeffect/SoundEffect.h"
+#include "app/asr/experimental/soundeffect/SoundEffectConfigFile.h"
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/common/ModulePlugin.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
@@ -35,6 +39,9 @@ using namespace fl::lib;
 using namespace fl::lib::text;
 using namespace fl::lib::audio;
 using namespace fl::app::asr;
+using ::fl::app::asr::sfx::createSoundEffect;
+using ::fl::app::asr::sfx::readSoundEffectConfigFile;
+using ::fl::app::asr::sfx::SoundEffect;
 
 int main(int argc, char** argv) {
   std::string exec(argv[0]);
@@ -231,6 +238,16 @@ int main(int argc, char** argv) {
     wordDict = createWordDict(lexicon);
     FL_LOG(fl::INFO) << "Number of words: " << wordDict.indexSize();
   }
+  /* ============= Augment Train Dataset with Sound Effects ============= */
+
+  std::shared_ptr<SoundEffect> trainDsSoundEffect;
+  std::function<void(std::vector<float>*)> trainDsSoundEffectFunc = nullptr;
+  if (FLAGS_sfx_start_update >= 0 && !FLAGS_sfx_config_filename.empty()) {
+    trainDsSoundEffect =
+        createSoundEffect(readSoundEffectConfigFile(FLAGS_sfx_config_filename));
+    trainDsSoundEffect->setEnableCountdown(std::numeric_limits<int>::max());
+    trainDsSoundEffectFunc = trainDsSoundEffect->asStdFunction();
+  }
 
   /* ===================== Create Dataset ===================== */
   FeatureParams featParams(
@@ -287,7 +304,8 @@ int main(int argc, char** argv) {
       wordTransform,
       std::make_tuple(0, targetpadVal, wordpadVal),
       worldRank,
-      worldSize);
+      worldSize,
+      trainDsSoundEffectFunc);
 
   std::map<std::string, std::shared_ptr<fl::Dataset>> validds;
   int64_t validBatchSize =
@@ -556,7 +574,8 @@ int main(int argc, char** argv) {
                 &validds,
                 &curEpoch,
                 &startUpdate,
-                reducer](
+                reducer,
+                trainDsSoundEffect](
                    std::shared_ptr<fl::Module> ntwrk,
                    std::shared_ptr<SequenceCriterion> crit,
                    std::shared_ptr<fl::Dataset> trainset,
@@ -566,6 +585,11 @@ int main(int argc, char** argv) {
                    double initcritlr,
                    bool clampCrit,
                    int64_t nbatches) {
+    if (trainDsSoundEffect) {
+      trainDsSoundEffect->setEnableCountdown(
+          std::max(FLAGS_sfx_start_update - startUpdate, 0L) * FLAGS_batchsize);
+    }
+
     if (reducer) {
       fl::distributeModuleGrads(ntwrk, reducer);
       fl::distributeModuleGrads(crit, reducer);

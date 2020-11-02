@@ -44,3 +44,24 @@ function(build_test SRCFILE LINK_LIBRARIES PREPROC_DEFS)
     )
   add_test(${target} ${target})
 endfunction(build_test)
+
+function(build_test_library SRCFILE LINK_LIBRARIES)
+  get_filename_component(src_name ${SRCFILE} NAME_WE)
+  set(target "${src_name}")
+  add_library(${target} ${SRCFILE})
+  if (TARGET gtest)
+    add_dependencies(${target} gtest) # make sure gtest is built first
+  endif()
+  target_link_libraries(
+    ${target}
+    PUBLIC
+    ${LINK_LIBRARIES}
+    ${GTEST_LIBRARIES}
+    )
+  target_include_directories(
+    ${target}
+    PUBLIC
+    ${PROJECT_SOURCE_DIR}
+    ${GTEST_INCLUDE_DIRS}
+    )
+endfunction(build_test)

@@ -82,6 +82,9 @@ include(${CMAKE_CURRENT_LIST_DIR}/decoder/CMakeLists.txt)
 # Runtime
 include(${CMAKE_CURRENT_LIST_DIR}/runtime/CMakeLists.txt)
 
+# SoundEffect
+include(${CMAKE_CURRENT_LIST_DIR}/experimental/soundeffect/CMakeLists.txt)
+
 # ----------------------------- Binaries -----------------------------
 add_executable(Train ${CMAKE_CURRENT_LIST_DIR}/Train.cpp)
 add_executable(Test ${CMAKE_CURRENT_LIST_DIR}/Test.cpp)
