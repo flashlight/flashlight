@@ -79,7 +79,7 @@ void serialize(Archive& ar, SoundEffectConfig& conf) {
   } else if (conf.type_ == kReverbEcho) {
     ar(cereal::make_nvp("reverbEchoConfig_", conf.reverbEchoConfig_));
   } else if (conf.type_ == kAmplify) {
-    ar(cereal::make_nvp("reverbDatasetConfig_", conf.reverbDatasetConfig_));
+    ar(cereal::make_nvp("amplifyConfig_", conf.amplifyConfig_));
   }
 }
 

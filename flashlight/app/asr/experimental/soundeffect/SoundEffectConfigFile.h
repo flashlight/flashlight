@@ -18,6 +18,59 @@
 #include "flashlight/app/asr/experimental/soundeffect/Reverberation.h"
 #include "flashlight/app/asr/experimental/soundeffect/SoundEffect.h"
 
+// Example of sound effect chain configuration serialized to json:
+// {
+//     "soundEffectChain": [
+//         {
+//             "type_": "AdditiveNoise",
+//             "noiseConfig_": {
+//                 "maxTimeRatio_": 1.0,
+//                 "minSnr_": 0.0,
+//                 "maxSnr_": 10.0,
+//                 "nClipsPerUtteranceMin_": 0,
+//                 "nClipsPerUtteranceMax_": 1,
+//                 "listFilePath_":
+//                 "experiments/noise-unbalanced-16kHz-mono-train.lst",
+//                 "randomNoiseWithReplacement_": true,
+//                 "randomSeed_": 1234
+//             }
+//         },
+//         {
+//             "type_": "ReverbEcho",
+//             "reverbEchoConfig_": {
+//                 "absorptionCoefficientMin_": 0.01,
+//                 "absorptionCoefficientMax_": 0.1,
+//                 "distanceToWallInMetersMin_": 1.0,
+//                 "distanceToWallInMetersMax_": 10.0,
+//                 "numEchosMin_": 0,
+//                 "numEchosMax_": 10,
+//                 "jitter_": 0.10000000149011612,
+//                 "randomSeed_": 1234567
+//             }
+//         },
+//         {
+//             "type_": "ReverbDataset",
+//             "reverbDatasetConfig_": {
+//                 "listFilePath_":
+//                 flashlight/flashlight/app/asr/experimental/soundeffect/test/data/BUT/reverb.lst",
+//                 "randomRirWithReplacement_": true,
+//                 "randomSeed_": 12
+//             }
+//         },
+//         {
+//             "type_": "Amplify",
+//             "reverbDatasetConfig_": {
+//                 "ratioMin_": 0.1,
+//                 "ratioMax_": 0.9,
+//                 "randomSeed_": 5489
+//             }
+//         },
+//         {
+//             "type_": "Normalize"
+//         }
+//     ]
+// }
+
 namespace fl {
 namespace app {
 namespace asr {
