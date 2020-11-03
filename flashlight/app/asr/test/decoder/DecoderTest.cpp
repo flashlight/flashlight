@@ -16,6 +16,7 @@
 #include "flashlight/app/asr/decoder/Defines.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
+#include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/decoder/LexiconDecoder.h"
 #include "flashlight/lib/text/decoder/Trie.h"
 #include "flashlight/lib/text/decoder/lm/KenLM.h"

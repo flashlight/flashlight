@@ -17,9 +17,11 @@
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/runtime/runtime.h"
-#include "flashlight/contrib/modules/SpecAugment.h"
-#include "flashlight/contrib/modules/TDSBlock.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
+#include "flashlight/ext/common/Serializer.h"
+#include "flashlight/fl/contrib/modules/SpecAugment.h"
+#include "flashlight/fl/contrib/modules/TDSBlock.h"
+#include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "inference/module/feature/feature.h"
 #include "inference/module/module.h"
@@ -136,8 +138,6 @@ std::shared_ptr<streaming::TDSBlock> convertTDS(
 } // namespace
 
 int main(int argc, char** argv) {
-  google::InstallFailureSignalHandler();
-
   /* ===================== Parse Options ===================== */
   FL_LOG(fl::INFO) << "Parsing command line flags";
   gflags::ParseCommandLineFlags(&argc, &argv, false);
@@ -146,8 +146,9 @@ int main(int argc, char** argv) {
   std::shared_ptr<fl::Module> network;
   std::shared_ptr<SequenceCriterion> criterion;
   std::unordered_map<std::string, std::string> cfg;
+  std::string version;
   FL_LOG(fl::INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
-  Serializer::load(FLAGS_am, cfg, network, criterion);
+  fl::ext::Serializer::load(FLAGS_am, version, cfg, network, criterion);
   network->eval();
   criterion->eval();
 
@@ -171,7 +172,7 @@ int main(int argc, char** argv) {
   FL_LOG(fl::INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */
-  auto dictPath = pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
+  auto dictPath = fl::lib::pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
   if (dictPath.empty() || !fileExists(dictPath)) {
     throw std::runtime_error(
         "Invalid dictionary filepath specified " + dictPath);
@@ -195,7 +196,7 @@ int main(int argc, char** argv) {
     FL_LOG(fl::FATAL) << "This script currently support only mfsc features";
   }
 
-  auto lines = getFileContent(pathsConcat(FLAGS_archdir, FLAGS_arch));
+  auto lines = getFileContent(fl::lib::pathsConcat(FLAGS_archdir, FLAGS_arch));
 
   auto streamingModule = std::make_shared<streaming::Sequential>();
   auto params = network->params();
@@ -282,7 +283,8 @@ int main(int argc, char** argv) {
   }
 
   {
-    std::string amFilePath = pathsConcat(FLAGS_outdir, "acoustic_model.bin");
+    std::string amFilePath =
+        fl::lib::pathsConcat(FLAGS_outdir, "acoustic_model.bin");
     std::ofstream amFile(amFilePath, std::ios::binary);
     FL_LOG(fl::INFO) << "Serializing acoustic model to '" << amFilePath << "'";
 
@@ -294,7 +296,8 @@ int main(int argc, char** argv) {
   }
 
   {
-    std::string tokenFilePath = pathsConcat(FLAGS_outdir, "tokens.txt");
+    std::string tokenFilePath =
+        fl::lib::pathsConcat(FLAGS_outdir, "tokens.txt");
     std::ofstream tokenFile(tokenFilePath);
     FL_LOG(fl::INFO) << "Writing tokens file to '" << tokenFilePath << "'";
     for (int i = 0; i < tokenDict.indexSize(); ++i) {
@@ -310,7 +313,7 @@ int main(int argc, char** argv) {
       throw std::runtime_error("Invalid criterion parameters for ASG");
     }
     std::string transitionsFilePath =
-        pathsConcat(FLAGS_outdir, "transitions.bin");
+        fl::lib::pathsConcat(FLAGS_outdir, "transitions.bin");
     std::ofstream transitionsFile(transitionsFilePath);
     FL_LOG(fl::INFO) << "Writing transitions file to '" << transitionsFilePath
                      << "'";
@@ -322,7 +325,7 @@ int main(int argc, char** argv) {
 
   {
     std::string featFilePath =
-        pathsConcat(FLAGS_outdir, "feature_extractor.bin");
+        fl::lib::pathsConcat(FLAGS_outdir, "feature_extractor.bin");
     std::ofstream featFile(featFilePath, std::ios::binary);
     FL_LOG(fl::INFO) << "Serializing feature extraction model to '"
                      << featFilePath << "'";
@@ -364,7 +367,7 @@ int main(int argc, char** argv) {
   for (int i = 0; i < outputBuffer->size<float>(); i++) {
     float streamingOut = outPtr[i];
     float w2lOut = outputVec[i];
-    FL_LOG_IF(ERROR, fabs(streamingOut - w2lOut) > 1e-2)
+    FL_LOG_IF(fl::ERROR, fabs(streamingOut - w2lOut) > 1e-2)
         << "[Serialization Error] Mismatched output w2l:" << w2lOut
         << " vs streaming:" << streamingOut;
   }

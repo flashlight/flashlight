@@ -10,5 +10,4 @@
 #include "flashlight/app/asr/runtime/Helpers.h"
 #include "flashlight/app/asr/runtime/Logger.h"
 #include "flashlight/app/asr/runtime/Optimizer.h"
-#include "flashlight/app/asr/runtime/Serialization.h"
 #include "flashlight/app/asr/runtime/SpeechStatMeter.h"

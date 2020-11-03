@@ -21,6 +21,7 @@
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/ext/common/DistributedUtils.h"
+#include "flashlight/ext/common/Serializer.h"
 #include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
@@ -54,9 +55,14 @@ int main(int argc, char** argv) {
   std::shared_ptr<fl::Module> network;
   std::shared_ptr<SequenceCriterion> criterion;
   std::unordered_map<std::string, std::string> cfg;
+  std::string version;
   FL_LOG(fl::INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
   af::setDevice(0);
-  Serializer::load(FLAGS_am, cfg, network, criterion);
+  Serializer::load(FLAGS_am, version, cfg, network, criterion);
+  if (version != FL_APP_ASR_VERSION) {
+    FL_LOG(fl::WARNING) << "[Network] Model version " << version
+                        << " and code version " << FL_APP_ASR_VERSION;
+  }
   network->eval();
   criterion->eval();
 
@@ -198,7 +204,9 @@ int main(int argc, char** argv) {
     std::shared_ptr<SequenceCriterion> localCriterion = criterion;
     if (tid != 0) {
       std::unordered_map<std::string, std::string> dummyCfg;
-      Serializer::load(FLAGS_am, dummyCfg, localNetwork, localCriterion);
+      std::string dummyVersion;
+      Serializer::load(
+          FLAGS_am, dummyVersion, dummyCfg, localNetwork, localCriterion);
       localNetwork->eval();
       localCriterion->eval();
     }
@@ -273,7 +281,7 @@ int main(int argc, char** argv) {
 
       if (!emissionDir.empty()) {
         std::string savePath = pathsConcat(emissionDir, sampleId + ".bin");
-        Serializer::save(savePath, emissionUnit);
+        Serializer::save(savePath, FL_APP_ASR_VERSION, emissionUnit);
       }
     }
 
