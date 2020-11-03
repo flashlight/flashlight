@@ -16,8 +16,8 @@ namespace lib {
 namespace text {
 
 class Tokenizer {
-  using WordCountMap = std::unordered_map<std::string, size_t>;
-  using WordCountPair = std::pair<std::string, size_t>;
+  using TokenCountMap = std::unordered_map<std::string, size_t>;
+  using TokenCountPair = std::pair<std::string, size_t>;
   using FileDescriptor = std::vector<std::pair<size_t, int>>;
 
  public:
@@ -27,28 +27,28 @@ class Tokenizer {
 
   std::vector<std::string> readAndParseSentence(std::ifstream& stream);
 
-  void countWords(
+  void countTokens(
       const std::string& filename,
       int numWorkers = 1,
       bool generateDescriptor = false);
 
-  void filterWords(int maxWords = 0, int minAppearence = 0);
+  void filterTokens(int maxTokens = -1, int minAppearence = 0);
 
   void saveDictionary(const std::string& filename);
 
   void saveFileDescriptor(const std::string& filename);
 
-  size_t totalWords();
+  size_t totalTokens();
 
   size_t totalSentences();
 
  private:
-  size_t totalWords_{0};
+  size_t totalTokens_{0};
   size_t totalSentences_{0};
 
-  WordCountMap wordCountMap_;
+  TokenCountMap tokenCountMap_;
   FileDescriptor fileDescriptor_;
-  std::vector<WordCountPair> wordCountPairs_;
+  std::vector<TokenCountPair> tokenCountPairs_;
 };
 } // namespace text
 } // namespace lib
