@@ -9,7 +9,7 @@
 #include "flashlight/ext/image/af/Jpeg.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "flashlight/ext/image/af/stb_image.h"
+#include "stb_image.h"
 
 namespace fl {
 namespace ext {
