@@ -52,16 +52,19 @@ template void syncMeter<AverageValueMeter>(AverageValueMeter& mtr);
 template void syncMeter<EditDistanceMeter>(EditDistanceMeter& mtr);
 template void syncMeter<CountMeter>(CountMeter& mtr);
 template void syncMeter<TimeMeter>(TimeMeter& mtr);
+template void syncMeter<TopKMeter>(TopKMeter& mtr);
 
 af::array allreduceGet(AverageValueMeter& mtr);
 af::array allreduceGet(EditDistanceMeter& mtr);
 af::array allreduceGet(CountMeter& mtr);
 af::array allreduceGet(TimeMeter& mtr);
+af::array allreduceGet(TopKMeter& mtr);
 
 void allreduceSet(AverageValueMeter& mtr, af::array& val);
 void allreduceSet(EditDistanceMeter& mtr, af::array& val);
 void allreduceSet(CountMeter& mtr, af::array& val);
 void allreduceSet(TimeMeter& mtr, af::array& val);
+void allreduceSet(TopKMeter& mtr, af::array& val);
 
 } // namespace ext
 } // namespace fl
