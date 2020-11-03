@@ -14,7 +14,7 @@
 
 #include <gflags/gflags.h>
 
-#define FL_TASK_ASR_VERSION "0.1"
+#define FL_APP_ASR_VERSION "0.1"
 
 namespace fl {
 namespace app {

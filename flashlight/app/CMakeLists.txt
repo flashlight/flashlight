@@ -13,7 +13,7 @@ if (FL_BUILD_APP_ASR)
   if (FLASHLIGHT_USE_CUDA)
     set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} warpctc)
   endif()
-  setup_install_headers(${FLASHLIGHT_APPS_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
+  setup_install_headers(${FL_APP_ASR_ROOT_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC}/app)
 endif ()
 
 if (FL_BUILD_APP_IMG_CLASS)

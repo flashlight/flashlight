@@ -36,6 +36,8 @@
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
+#include "flashlight/ext/common/Serializer.h"
+#include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/decoder/lm/KenLM.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 
@@ -84,8 +86,13 @@ int main(int argc, char** argv) {
   std::shared_ptr<fl::Module> network;
   std::shared_ptr<SequenceCriterion> criterion;
   std::unordered_map<std::string, std::string> cfg;
+  std::string version;
   FL_LOG(fl::INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
-  Serializer::load(FLAGS_am, cfg, network, criterion);
+  fl::ext::Serializer::load(FLAGS_am, version, cfg, network, criterion);
+  if (version != FL_APP_ASR_VERSION) {
+    FL_LOG(fl::WARNING) << "[Network] Model version " << version
+                        << " and code version " << FL_APP_ASR_VERSION;
+  }
   network->eval();
   criterion->eval();
 
@@ -109,12 +116,12 @@ int main(int argc, char** argv) {
   FL_LOG(fl::INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */
-  auto dictPath = pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
+  auto dictPath = fl::lib::pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
   if (dictPath.empty() || !fileExists(dictPath)) {
     throw std::runtime_error(
         "Invalid dictionary filepath specified " + dictPath);
   }
-  Dictionary tokenDict(dictPath);
+  fl::lib::text::Dictionary tokenDict(dictPath);
   // Setup-specific modifications
   for (int64_t r = 1; r <= FLAGS_replabel; ++r) {
     tokenDict.addEntry(std::to_string(r));
@@ -132,7 +139,7 @@ int main(int argc, char** argv) {
   int numClasses = tokenDict.indexSize();
   FL_LOG(fl::INFO) << "Number of classes (network): " << numClasses;
 
-  Dictionary wordDict;
+  fl::lib::text::Dictionary wordDict;
   text::LexiconMap lexicon;
   if (!FLAGS_lexicon.empty()) {
     lexicon = text::loadWords(FLAGS_lexicon, FLAGS_maxword);
@@ -165,7 +172,7 @@ int main(int argc, char** argv) {
   for (auto& sample : *ds) {
     auto rawEmission = network->forward({fl::input(sample[kInputIdx])}).front();
     auto sampleId = readSampleIds(sample[kSampleIdx]).front();
-    FL_LOG(fl::INFO) << "Processing sample ID " << sampleId << std::endl;
+    FL_LOG(fl::INFO) << "Processing sample ID " << sampleId;
 
     // Hypothesis
     auto tokenPrediction =
@@ -186,7 +193,7 @@ int main(int argc, char** argv) {
 
     // Determine results basename. In case the sample id contains an extension,
     // else a noop
-    auto baseName = pathsConcat(
+    auto baseName = fl::lib::pathsConcat(
         FLAGS_outpath, sampleId.substr(0, sampleId.find_last_of(".")));
 
     // Output chunk-level word piece outputs (or blanks)
