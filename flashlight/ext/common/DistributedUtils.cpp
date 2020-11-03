@@ -61,6 +61,12 @@ af::array allreduceGet(fl::TimeMeter& mtr) {
   return af::constant(mtr.value(), 1, af::dtype::f64);
 }
 
+af::array allreduceGet(fl::TopKMeter& mtr) {
+  std::pair<int32_t, int32_t> stats = mtr.getStats();
+  std::vector<int32_t> vec = { stats.first, stats.second };
+  return af::array(vec.size(), vec.data());
+}
+
 void allreduceSet(fl::AverageValueMeter& mtr, af::array& val) {
   mtr.reset();
   auto valVec = afToVector<double>(val);
@@ -92,6 +98,12 @@ void allreduceSet(fl::TimeMeter& mtr, af::array& val) {
   auto worldSize = fl::getWorldSize();
   auto valVec = afToVector<double>(val);
   mtr.set(valVec[0] / worldSize);
+}
+
+void allreduceSet(fl::TopKMeter& mtr, af::array& val) {
+  mtr.reset();
+  auto valVec = afToVector<int32_t>(val);
+  mtr.set(valVec[0], valVec[1]);
 }
 } // namespace ext
 } // namespace fl
