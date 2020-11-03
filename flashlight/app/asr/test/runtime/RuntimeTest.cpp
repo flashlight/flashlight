@@ -14,6 +14,7 @@
 #include "flashlight/fl/flashlight.h"
 
 #include "flashlight/app/asr/runtime/runtime.h"
+#include "flashlight/ext/common/Serializer.h"
 
 #include "flashlight/lib/common/System.h"
 
@@ -48,13 +49,15 @@ TEST(RuntimeTest, LoadAndSave) {
   model.add(fl::GatedLinearUnit(2));
   model.add(fl::Dropout(0.214));
 
-  Serializer::save(kPath, config, model);
+  fl::ext::Serializer::save(kPath, FL_APP_ASR_VERSION, config, model);
 
   fl::Sequential modelload;
   std::unordered_map<std::string, std::string> configload;
-  Serializer::load(kPath, configload, modelload);
+  std::string versionload;
+  fl::ext::Serializer::load(kPath, versionload, configload, modelload);
 
   EXPECT_EQ(configload.size(), config.size());
+  EXPECT_EQ(versionload, FL_APP_ASR_VERSION);
   EXPECT_THAT(config, ::testing::ContainerEq(configload));
 
   ASSERT_EQ(model.prettyString(), modelload.prettyString());

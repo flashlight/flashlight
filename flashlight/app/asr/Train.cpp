@@ -24,6 +24,7 @@
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/common/ModulePlugin.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
+#include "flashlight/ext/common/Serializer.h"
 #include "flashlight/fl/contrib/contrib.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/System.h"
@@ -74,7 +75,8 @@ int main(int argc, char** argv) {
     reloadPath = getRunFile("model_last.bin", runIdx - 1, runPath);
     FL_LOG(fl::INFO) << "reload path is " << reloadPath;
     std::unordered_map<std::string, std::string> cfg;
-    Serializer::load(reloadPath, cfg);
+    std::string version;
+    Serializer::load(reloadPath, version, cfg);
     auto flags = cfg.find(kGflags);
     if (flags == cfg.end()) {
       FL_LOG(fl::FATAL) << "Invalid config loaded from " << reloadPath;
@@ -109,7 +111,8 @@ int main(int argc, char** argv) {
   } else if (runStatus == kForkMode) {
     reloadPath = argv[2];
     std::unordered_map<std::string, std::string> cfg;
-    Serializer::load(reloadPath, cfg);
+    std::string version;
+    Serializer::load(reloadPath, version, cfg);
     auto flags = cfg.find(kGflags);
     if (flags == cfg.end()) {
       FL_LOG(fl::FATAL) << "Invalid config loaded from " << reloadPath;
@@ -346,10 +349,21 @@ int main(int argc, char** argv) {
     }
   } else if (runStatus == kForkMode) {
     std::unordered_map<std::string, std::string> cfg; // unused
-    Serializer::load(reloadPath, cfg, network, criterion);
+    std::string version;
+    Serializer::load(reloadPath, version, cfg, network, criterion);
+    if (version != FL_APP_ASR_VERSION) {
+      FL_LOG(fl::WARNING) << "Model version " << version << " and code version "
+                          << FL_APP_ASR_VERSION;
+    }
   } else { // kContinueMode
     std::unordered_map<std::string, std::string> cfg; // unused
-    Serializer::load(reloadPath, cfg, network, criterion, netoptim, critoptim);
+    std::string version;
+    Serializer::load(
+        reloadPath, version, cfg, network, criterion, netoptim, critoptim);
+    if (version != FL_APP_ASR_VERSION) {
+      FL_LOG(fl::WARNING) << "Model version " << version << " and code version "
+                          << FL_APP_ASR_VERSION;
+    }
   }
   FL_LOG_MASTER(fl::INFO) << "[Network] " << network->prettyString();
   FL_LOG_MASTER(fl::INFO) << "[Network Params: " << numTotalParams(network)
@@ -463,13 +477,25 @@ int main(int argc, char** argv) {
         filename =
             getRunFile(format("model_iter_%03d.bin", iter), runIdx, runPath);
         Serializer::save(
-            filename, config, network, criterion, netoptim, critoptim);
+            filename,
+            FL_APP_ASR_VERSION,
+            config,
+            network,
+            criterion,
+            netoptim,
+            critoptim);
       }
 
       // save last model
       filename = getRunFile("model_last.bin", runIdx, runPath);
       Serializer::save(
-          filename, config, network, criterion, netoptim, critoptim);
+          filename,
+          FL_APP_ASR_VERSION,
+          config,
+          network,
+          criterion,
+          netoptim,
+          critoptim);
 
       // save if better than ever for one valid
       for (const auto& v : validminerrs) {
@@ -480,7 +506,13 @@ int main(int argc, char** argv) {
           std::string vfname =
               getRunFile("model_" + cleaned_v + ".bin", runIdx, runPath);
           Serializer::save(
-              vfname, config, network, criterion, netoptim, critoptim);
+              vfname,
+              FL_APP_ASR_VERSION,
+              config,
+              network,
+              criterion,
+              netoptim,
+              critoptim);
         }
       }
       // print brief stats on memory allocation (so far)

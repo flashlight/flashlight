@@ -7,10 +7,15 @@
 
 #include <gflags/gflags.h>
 
+#include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/experimental/tools/alignment/Utils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
+#include "flashlight/ext/common/Serializer.h"
+#include "flashlight/fl/flashlight.h"
+#include "flashlight/lib/common/System.h"
+#include "flashlight/lib/text/dictionary/Defines.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 
 using namespace fl::app::asr;
@@ -42,8 +47,9 @@ int main(int argc, char** argv) {
   std::shared_ptr<fl::Module> network;
   std::shared_ptr<SequenceCriterion> criterion;
   std::unordered_map<std::string, std::string> cfg;
+  std::string version;
   FL_LOG(fl::INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
-  Serializer::load(FLAGS_am, cfg, network, criterion);
+  fl::ext::Serializer::load(FLAGS_am, version, cfg, network, criterion);
   network->eval();
   criterion->eval();
 
@@ -66,7 +72,7 @@ int main(int argc, char** argv) {
   FL_LOG(fl::INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */
-  auto dictPath = pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
+  auto dictPath = fl::lib::pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
   FL_LOG(fl::INFO) << "Loading dictionary from " << dictPath;
   if (dictPath.empty() || !fileExists(dictPath)) {
     throw std::invalid_argument("Invalid dictionary filepath specified.");
@@ -138,7 +144,7 @@ int main(int argc, char** argv) {
     if (!rawEmissions.empty()) {
       rawEmission = rawEmissions.front();
     } else {
-      FL_LOG(ERROR) << "Network did not produce any outputs";
+      FL_LOG(fl::ERROR) << "Network did not produce any outputs";
     }
 
     fwdMtr.stop();

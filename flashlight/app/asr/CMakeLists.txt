@@ -83,13 +83,13 @@ include(${CMAKE_CURRENT_LIST_DIR}/decoder/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/runtime/CMakeLists.txt)
 
 # ----------------------------- Binaries -----------------------------
-add_executable(Train ${CMAKE_CURRENT_LIST_DIR}/Train.cpp)
-add_executable(Test ${CMAKE_CURRENT_LIST_DIR}/Test.cpp)
-add_executable(Decoder ${CMAKE_CURRENT_LIST_DIR}/Decode.cpp)
+add_executable(asr_train ${CMAKE_CURRENT_LIST_DIR}/Train.cpp)
+add_executable(asr_test ${CMAKE_CURRENT_LIST_DIR}/Test.cpp)
+add_executable(asr_decode ${CMAKE_CURRENT_LIST_DIR}/Decode.cpp)
 
-target_link_libraries(Train flashlight-app-asr ${CMAKE_DL_LIBS})
-target_link_libraries(Test flashlight-app-asr ${CMAKE_DL_LIBS})
-target_link_libraries(Decoder flashlight-app-asr ${CMAKE_DL_LIBS})
+target_link_libraries(asr_train flashlight-app-asr ${CMAKE_DL_LIBS})
+target_link_libraries(asr_test flashlight-app-asr ${CMAKE_DL_LIBS})
+target_link_libraries(asr_decode flashlight-app-asr ${CMAKE_DL_LIBS})
 
 # --------------------------- Tests ---------------------------
 
