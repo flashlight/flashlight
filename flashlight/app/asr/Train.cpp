@@ -20,6 +20,9 @@
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/data/FeatureTransforms.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
+#include "flashlight/app/asr/flags/DistributedFlags.h"
+#include "flashlight/app/asr/flags/SharedFlags.h"
+#include "flashlight/app/asr/flags/TrainFlags.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/common/ModulePlugin.h"
@@ -27,6 +30,7 @@
 #include "flashlight/fl/contrib/contrib.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/System.h"
+#include "flashlight/lib/text/dictionary/Defines.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
 
@@ -510,11 +514,27 @@ int main(int argc, char** argv) {
 
       // remap actual, predicted targets for evaluating edit distance error
 
-      auto ltrPred = tknPrediction2Ltr(viterbipath, tokenDict);
-      auto ltrTgt = tknTarget2Ltr(tgtraw, tokenDict);
+      auto ltrPred = tknPrediction2Ltr(
+        viterbipath, 
+        tokenDict,
+        FLAGS_criterion,
+        FLAGS_surround,
+        FLAGS_eostoken,
+        FLAGS_replabel,
+        FLAGS_usewordpiece,
+        FLAGS_wordseparator);
+      auto ltrTgt = tknTarget2Ltr(
+        tgtraw, 
+        tokenDict,
+        FLAGS_criterion,
+        FLAGS_surround,
+        FLAGS_eostoken,
+        FLAGS_replabel,
+        FLAGS_usewordpiece,
+        FLAGS_wordseparator);
 
-      auto wrdPred = tkn2Wrd(ltrPred);
-      auto wrdTgt = tkn2Wrd(ltrTgt);
+      auto wrdPred = tkn2Wrd(ltrPred, FLAGS_wordseparator);
+      auto wrdTgt = tkn2Wrd(ltrTgt, FLAGS_wordseparator);
 
       mtr.tknEdit.add(ltrPred, ltrTgt);
       mtr.wrdEdit.add(wrdPred, wrdTgt);

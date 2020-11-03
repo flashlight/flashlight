@@ -11,11 +11,13 @@
 #include "flashlight/fl/flashlight.h"
 
 #include "flashlight/app/asr/common/Defines.h"
+#include "flashlight/app/asr/flags/SharedFlags.h"
 #include "flashlight/app/asr/data/Featurize.h"
 #include "flashlight/app/asr/data/ListFilesDataset.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 
 #include "flashlight/lib/audio/feature/SpeechUtils.h"
+#include "flashlight/lib/text/dictionary/Defines.h"
 
 using namespace fl;
 using namespace fl::lib::audio;
@@ -147,7 +149,7 @@ TEST(FeatureTest, WrdToTarget) {
   // letters
   lexicon["888"].push_back({"8", "8", "8"});
   lexicon["12"].push_back({"1", "2"});
-  lexicon[kUnkToken] = {};
+  lexicon[fl::lib::text::kUnkToken] = {};
 
   Dictionary dict;
   for (auto l : lexicon) {
@@ -195,9 +197,6 @@ TEST(FeatureTest, WrdToTarget) {
 
 TEST(FeatureTest, TargetToSingleLtr) {
   gflags::FlagSaver flagsaver;
-  FLAGS_wordseparator = "_";
-  FLAGS_usewordpiece = true;
-
   Dictionary dict;
   for (int i = 0; i < 10; ++i) {
     dict.addEntry(std::to_string(i), i);
@@ -207,7 +206,7 @@ TEST(FeatureTest, TargetToSingleLtr) {
   dict.addEntry("456_", 4560);
 
   std::vector<int> words = {1, 230, 4560};
-  auto target = tknIdx2Ltr(words, dict);
+  auto target = tknIdx2Ltr(words, dict, true, "_");
   ASSERT_THAT(
       target, ::testing::ElementsAreArray({"1", "2", "3", "_", "4", "5", "6"}));
 }

@@ -79,6 +79,9 @@ include(${CMAKE_CURRENT_LIST_DIR}/data/CMakeLists.txt)
 # Decoder
 include(${CMAKE_CURRENT_LIST_DIR}/decoder/CMakeLists.txt)
 
+# FLAGS
+include(${CMAKE_CURRENT_LIST_DIR}/flags/CMakeLists.txt)
+
 # Runtime
 include(${CMAKE_CURRENT_LIST_DIR}/runtime/CMakeLists.txt)
 

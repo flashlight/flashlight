@@ -19,6 +19,7 @@
 #include "flashlight/lib/text/decoder/LexiconDecoder.h"
 #include "flashlight/lib/text/decoder/Trie.h"
 #include "flashlight/lib/text/decoder/lm/KenLM.h"
+#include "flashlight/lib/text/dictionary/Defines.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 
 using namespace fl::lib;
@@ -114,7 +115,7 @@ TEST(DecoderTest, run) {
   /* -------- Build Trie --------*/
   int silIdx = tokenDict.getIndex(kSilToken);
   int blankIdx = -1;
-  int unkIdx = wordDict.getIndex(kUnkToken);
+  int unkIdx = wordDict.getIndex(fl::lib::text::kUnkToken);
   auto trie = std::make_shared<Trie>(tokenDict.indexSize(), silIdx);
   auto startState = lm->start(false);
 

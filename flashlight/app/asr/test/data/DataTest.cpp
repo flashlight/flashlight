@@ -11,11 +11,13 @@
 #include "flashlight/fl/flashlight.h"
 
 #include "flashlight/app/asr/common/Defines.h"
+#include "flashlight/app/asr/flags/SharedFlags.h"
 #include "flashlight/app/asr/data/Featurize.h"
 #include "flashlight/app/asr/data/ListFilesDataset.h"
 
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
+#include "flashlight/lib/text/dictionary/Defines.h"
 
 using namespace fl::lib;
 using namespace fl::app::asr;

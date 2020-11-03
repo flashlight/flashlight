@@ -10,6 +10,8 @@
 #include <iostream>
 
 #include "flashlight/app/asr/common/Defines.h"
+#include "flashlight/app/asr/flags/SharedFlags.h"
+#include "flashlight/app/asr/flags/TrainFlags.h"
 
 using fl::lib::text::Dictionary;
 using fl::lib::text::LexiconMap;

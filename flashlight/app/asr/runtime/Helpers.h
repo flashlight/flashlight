@@ -20,6 +20,7 @@
 #include "flashlight/fl/flashlight.h"
 
 #include "flashlight/app/asr/common/Defines.h"
+#include "flashlight/app/asr/flags/SharedFlags.h"
 #include "flashlight/app/asr/data/BlobsDataset.h"
 #include "flashlight/app/asr/data/ListFileDataset.h"
 #include "flashlight/app/asr/data/ListFilesDataset.h"

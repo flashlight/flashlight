@@ -21,6 +21,8 @@
 #include "flashlight/app/asr/decoder/ConvLmModule.h"
 #include "flashlight/app/asr/decoder/Defines.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
+#include "flashlight/app/asr/flags/SharedFlags.h"
+#include "flashlight/app/asr/flags/DecodeFlags.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/lib/common/ProducerConsumerQueue.h"
 #include "flashlight/lib/text/decoder/LexiconDecoder.h"
@@ -351,8 +353,16 @@ int main(int argc, char** argv) {
       if (FLAGS_uselexicon) {
         wordTargetStr = wrdIdx2Wrd(wordTarget, wordDict);
       } else {
-        auto letterTarget = tknTarget2Ltr(tokenTarget, tokenDict);
-        wordTargetStr = tkn2Wrd(letterTarget);
+        auto letterTarget = tknTarget2Ltr(
+          tokenTarget, 
+          tokenDict, 
+          FLAGS_criterion,
+          FLAGS_surround,
+          FLAGS_eostoken,
+          FLAGS_replabel,
+          FLAGS_usewordpiece,
+          FLAGS_wordseparator);
+        wordTargetStr = tkn2Wrd(letterTarget, FLAGS_wordseparator);
       }
 
       targetUnit.wordTargetStr = wordTargetStr;
@@ -570,16 +580,32 @@ int main(int argc, char** argv) {
           auto rawWordPrediction = results[i].words;
           auto rawTokenPrediction = results[i].tokens;
 
-          auto letterTarget = tknTarget2Ltr(tokenTarget, tokenDict);
+          auto letterTarget = tknTarget2Ltr(
+            tokenTarget, 
+            tokenDict,
+            FLAGS_criterion,
+            FLAGS_surround,
+            FLAGS_eostoken,
+            FLAGS_replabel,
+            FLAGS_usewordpiece,
+            FLAGS_wordseparator);
           auto letterPrediction =
-              tknPrediction2Ltr(rawTokenPrediction, tokenDict);
+              tknPrediction2Ltr(
+                rawTokenPrediction, 
+                tokenDict,
+                FLAGS_criterion,
+                FLAGS_surround,
+                FLAGS_eostoken,
+                FLAGS_replabel,
+                FLAGS_usewordpiece,
+                FLAGS_wordseparator);
           std::vector<std::string> wordPrediction;
           if (FLAGS_uselexicon) {
             rawWordPrediction =
                 validateIdx(rawWordPrediction, wordDict.getIndex(kUnkToken));
             wordPrediction = wrdIdx2Wrd(rawWordPrediction, wordDict);
           } else {
-            wordPrediction = tkn2Wrd(letterPrediction);
+            wordPrediction = tkn2Wrd(letterPrediction, FLAGS_wordseparator);
           }
           auto wordTargetStr = join(" ", wordTarget);
           auto wordPredictionStr = join(" ", wordPrediction);

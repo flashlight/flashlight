@@ -10,6 +10,8 @@
 #include <thread>
 
 #include "flashlight/app/asr/common/Defines.h"
+#include "flashlight/app/asr/flags/SharedFlags.h"
+#include "flashlight/app/asr/flags/TrainFlags.h"
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"

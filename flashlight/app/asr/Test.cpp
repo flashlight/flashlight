@@ -19,6 +19,8 @@
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/decoder/Defines.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
+#include "flashlight/app/asr/flags/SharedFlags.h"
+#include "flashlight/app/asr/flags/DecodeFlags.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/lib/common/System.h"
@@ -219,23 +221,39 @@ int main(int argc, char** argv) {
       auto wordTarget = afToVector<int>(sample[kWordIdx]);
       auto sampleId = readSampleIds(sample[kSampleIdx]).front();
 
-      auto letterTarget = tknTarget2Ltr(tokenTarget, tokenDict);
+      auto letterTarget = tknTarget2Ltr(
+        tokenTarget, 
+        tokenDict,
+        FLAGS_criterion,
+        FLAGS_surround,
+        FLAGS_eostoken,
+        FLAGS_replabel,
+        FLAGS_usewordpiece,
+        FLAGS_wordseparator);
       std::vector<std::string> wordTargetStr;
       if (FLAGS_uselexicon) {
         wordTargetStr = wrdIdx2Wrd(wordTarget, wordDict);
       } else {
-        wordTargetStr = tkn2Wrd(letterTarget);
+        wordTargetStr = tkn2Wrd(letterTarget, FLAGS_wordseparator);
       }
 
       // Tokens
       auto tokenPrediction =
           afToVector<int>(localCriterion->viterbiPath(rawEmission.array()));
-      auto letterPrediction = tknPrediction2Ltr(tokenPrediction, tokenDict);
+      auto letterPrediction = tknPrediction2Ltr(
+        tokenPrediction, 
+        tokenDict,
+        FLAGS_criterion,
+        FLAGS_surround,
+        FLAGS_eostoken,
+        FLAGS_replabel,
+        FLAGS_usewordpiece,
+        FLAGS_wordseparator);
 
       meters.lerSlice.add(letterPrediction, letterTarget);
 
       // Words
-      std::vector<std::string> wrdPredictionStr = tkn2Wrd(letterPrediction);
+      std::vector<std::string> wrdPredictionStr = tkn2Wrd(letterPrediction, FLAGS_wordseparator);
       meters.werSlice.add(wrdPredictionStr, wordTargetStr);
 
       if (!FLAGS_sclite.empty()) {

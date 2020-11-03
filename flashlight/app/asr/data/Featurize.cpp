@@ -12,9 +12,11 @@
 #include <vector>
 
 #include "flashlight/app/asr/common/Defines.h"
+#include "flashlight/app/asr/flags/SharedFlags.h"
 #include "flashlight/lib/audio/feature/Mfcc.h"
 #include "flashlight/lib/audio/feature/Mfsc.h"
 #include "flashlight/lib/common/String.h"
+#include "flashlight/lib/text/dictionary/Defines.h"
 
 using namespace fl::lib;
 using namespace fl::lib::audio;
