@@ -118,6 +118,7 @@ std::shared_ptr<Module> parseLines(
     float pDropout = std::stof(params[5]);
     float pLayerdrop = (params.size() >= 7) ? std::stof(params[6]) : 0.0;
     int preLN = (params.size() >= 8) ? std::stoi(params[7]) : 0;
+    bool useFutureMask = (params.size() >= 9) ? std::stoi(params[8]) : 0;
     return std::make_shared<Transformer>(
         modelDim,
         modelDim / nHead,
@@ -126,7 +127,7 @@ std::shared_ptr<Module> parseLines(
         csz,
         pDropout,
         pLayerdrop,
-        false,
+        useFutureMask,
         preLN);
   }
 
@@ -135,6 +136,15 @@ std::shared_ptr<Module> parseLines(
     int csz = std::stoi(params[2]);
     float dropout = (params.size() >= 4) ? std::stof(params[3]) : 0.0;
     return std::make_shared<PositionEmbedding>(layerDim, csz, dropout);
+  }
+
+  if (params[0] == "SINPOSEMB") {
+    if (!inRange(2, params.size(), 3)) {
+      throw std::invalid_argument("Failed parsing - " + line);
+    }
+    int layerDim = std::stoi(params[1]);
+    float inputScale = (params.size() >= 3) ? std::stof(params[2]) : 1.0;
+    return std::make_shared<SinusoidalPositionEmbedding>(layerDim, inputScale);
   }
 
   /* ========== CONVOLUTIONS ========== */

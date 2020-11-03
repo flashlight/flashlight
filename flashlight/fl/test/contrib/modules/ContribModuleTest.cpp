@@ -213,6 +213,47 @@ TEST_F(ModuleTestF16, PositionEmbeddingFwdF16) {
   ASSERT_FALSE(allClose(output[0], input));
 }
 
+TEST(ModuleTest, SinusoidalPositionEmbeddingFwd) {
+  int batchsize = 10;
+  int timesteps = 120;
+  int csz = 256;
+
+  auto posemb = SinusoidalPositionEmbedding(csz, 2.);
+  auto input = Variable(af::randu(csz, timesteps, batchsize, 1), false) - 0.5;
+
+  auto output = posemb.forward({input});
+
+  ASSERT_EQ(output[0].dims(0), csz);
+  ASSERT_EQ(output[0].dims(1), timesteps);
+  ASSERT_EQ(output[0].dims(2), batchsize);
+  ASSERT_TRUE((af::max(output[0].array())).scalar<float>() <= 2);
+  ASSERT_TRUE((af::min(output[0].array())).scalar<float>() >= -2);
+}
+
+TEST_F(ModuleTestF16, SinusoidalPositionEmbeddingFwdF16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  int batchsize = 10;
+  int timesteps = 120;
+  int csz = 256;
+
+  auto posemb = SinusoidalPositionEmbedding(csz, 2.);
+  auto input =
+      Variable(af::randu(csz, timesteps, batchsize, 1, af::dtype::f16), false) - 0.5;
+
+  auto output = posemb.forward({input});
+
+  ASSERT_EQ(output[0].dims(0), csz);
+  ASSERT_EQ(output[0].dims(1), timesteps);
+  ASSERT_EQ(output[0].dims(2), batchsize);
+  auto outfp16 = output[0].as(af::dtype::f32).array();
+  ASSERT_TRUE((af::max(outfp16)).scalar<float>() <= 2);
+  ASSERT_TRUE((af::min(outfp16)).scalar<float>() >= -2);
+}
+
+
 TEST(ModuleTest, TDSFwd) {
   int batchsize = 10;
   int timesteps = 120;
