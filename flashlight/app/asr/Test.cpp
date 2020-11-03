@@ -19,7 +19,6 @@
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/decoder/Defines.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
-#include "flashlight/app/asr/flags/SharedFlags.h"
 #include "flashlight/app/asr/flags/DecodeFlags.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/ext/common/DistributedUtils.h"

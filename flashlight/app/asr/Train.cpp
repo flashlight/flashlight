@@ -20,8 +20,6 @@
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/data/FeatureTransforms.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
-#include "flashlight/app/asr/flags/DistributedFlags.h"
-#include "flashlight/app/asr/flags/SharedFlags.h"
 #include "flashlight/app/asr/flags/TrainFlags.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/ext/common/DistributedUtils.h"

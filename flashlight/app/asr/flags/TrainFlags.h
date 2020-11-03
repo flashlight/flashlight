@@ -8,7 +8,10 @@
 #pragma once
 
 #include "flashlight/app/asr/common/Defines.h"
+
 #include <gflags/gflags.h>
+#include "flashlight/app/asr/flags/DistributedFlags.h"
+#include "flashlight/app/asr/flags/SharedFlags.h"
 
 namespace fl {
 namespace app {

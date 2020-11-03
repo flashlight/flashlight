@@ -12,7 +12,6 @@
 
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/flags/DecodeFlags.h"
-#include "flashlight/app/asr/flags/SharedFlags.h"
 #include "flashlight/app/asr/flags/TrainFlags.h"
 
 using namespace fl::ext;

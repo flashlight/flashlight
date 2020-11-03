@@ -10,7 +10,6 @@
 #include <sstream>
 
 #include "flashlight/app/asr/common/Defines.h"
-#include "flashlight/app/asr/flags/SharedFlags.h"
 #include "flashlight/app/asr/flags/TrainFlags.h"
 #include "flashlight/app/asr/data/BlobsDataset.h"
 #include "flashlight/lib/common/String.h"
