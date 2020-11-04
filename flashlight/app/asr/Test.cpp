@@ -213,13 +213,20 @@ int main(int argc, char** argv) {
 
     TestMeters meters;
     meters.timer.resume();
-    while (datasetSampleId < nSamples) {
+    while (true) {
       std::vector<af::array> sample;
       {
         std::lock_guard<std::mutex> lock(dataReadMutex);
+        if (datasetSampleId >= nSamples) {
+          break;
+        }
         sample = ds->get(datasetSampleId);
         datasetSampleId++;
       }
+      if (datasetSampleId > nSamples) {
+        break;
+      }
+
       auto rawEmission =
           localNetwork->forward({fl::input(sample[kInputIdx])}).front();
       auto emission = afToVector<float>(rawEmission);
@@ -293,13 +300,19 @@ int main(int argc, char** argv) {
   };
 
   /* Spread threades */
+  // TODO possibly try catch for futures to proper logging of all errors
+  // https://github.com/facebookresearch/gtn/blob/master/gtn/parallel/parallel_map.h#L154
   auto startThreadsAndJoin = [&run](int nThreads) {
     if (nThreads == 1) {
       run(0);
     } else if (nThreads > 1) {
+      std::vector<std::future<void>> futs(nThreads);
       fl::ThreadPool threadPool(nThreads);
       for (int i = 0; i < nThreads; i++) {
-        threadPool.enqueue(run, i);
+        futs[i] = threadPool.enqueue(run, i);
+      }
+      for (int i = 0; i < nThreads; i++) {
+        futs[i].get();
       }
     } else {
       FL_LOG(fl::FATAL) << "Invalid negative FLAGS_nthread_decoder_am_forward";
