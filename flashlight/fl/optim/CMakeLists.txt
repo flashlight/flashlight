@@ -10,6 +10,7 @@ set(
   ${CMAKE_CURRENT_LIST_DIR}/AdadeltaOptimizer.cpp
   ${CMAKE_CURRENT_LIST_DIR}/AdagradOptimizer.cpp
   ${CMAKE_CURRENT_LIST_DIR}/AMSgradOptimizer.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/NAGOptimizer.cpp
   ${CMAKE_CURRENT_LIST_DIR}/NovogradOptimizer.cpp
   ${CMAKE_CURRENT_LIST_DIR}/RMSPropOptimizer.cpp
   ${CMAKE_CURRENT_LIST_DIR}/SGDOptimizer.cpp
