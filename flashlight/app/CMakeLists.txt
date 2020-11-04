@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.5.1)
 
-option(FL_BUILD_APP_ASR "Build asr task for flashlight" ON)
-option(FL_BUILD_APP_IMG_CLASS "Build image classification app" ON)
+cmake_dependent_option(FL_BUILD_APP_ASR "Build asr task for flashlight" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
+cmake_dependent_option(FL_BUILD_APP_IMG_CLASS "Build image classification app" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
 
 if (FL_BUILD_APP_ASR)
+  message(STATUS "Building flashlight ASR app")
   if (NOT FL_BUILD_DISTRIBUTED)
     message(FATAL_ERROR "FL_BUILD_DISTRIBUTED must be enabled to build speech recognition")
   endif()

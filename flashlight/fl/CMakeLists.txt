@@ -20,16 +20,18 @@ endif ()
 # -------------------------------- Components --------------------------------
 
 # Build and link resources from `flashlight/contrib`.
-set(FL_BUILD_CONTRIB ON CACHE BOOL
-    "Build and link additional flashlight contrib resources.")
+cmake_dependent_option(FL_BUILD_CONTRIB
+  "Build and link additional flashlight contrib resources." ON
+  "FL_BUILD_CORE" OFF)
 if (FL_BUILD_CONTRIB)
   message(STATUS "Will build flashlight contrib assets.")
   include(${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/contrib/CMakeLists.txt)
 endif()
 
 # Build and link resources from `flashlight/experimental`.
-set(FL_BUILD_EXPERIMENTAL OFF CACHE BOOL
-    "Build and link additional internal flashlight experimental resources.")
+cmake_dependent_option(FL_BUILD_EXPERIMENTAL
+  "Build and link additional internal flashlight experimental resources." ON
+  "FL_BUILD_CORE" OFF)
 if (FL_BUILD_EXPERIMENTAL)
   message(STATUS "Will build flashlight experimental assets.")
   set(FL_EXPERIMENTAL_ROOT_PATH
