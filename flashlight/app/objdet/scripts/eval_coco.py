@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from datasets import build_dataset, get_coco_api_from_dataset
 from datasets.coco import build as build_coco
 from datasets.coco_eval import CocoEvaluator
-import box_ops
+import util.box_ops
 import glob
 import os
 
@@ -38,7 +38,7 @@ class PostProcess(nn.Module):
         scores, labels = prob[..., :-1].max(-1)
 
         # convert to [x0, y0, x1, y1] format
-        boxes = box_ops.box_cxcywh_to_xyxy(out_bbox)
+        boxes = util.box_ops.box_cxcywh_to_xyxy(out_bbox)
         # and from relative [0, 1] to absolute [0, height] coordinates
         img_h, img_w = target_sizes.unbind(1)
         scale_fct = torch.stack([img_w, img_h, img_w, img_h], dim=1)
@@ -122,7 +122,6 @@ def main(directory):
 
         all_results.extend(results)
         all_image_ids.extend(imageIds)
-        break
         # print(imageIds)
 
     cocoDt = coco.loadRes(all_results)

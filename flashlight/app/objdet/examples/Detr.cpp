@@ -356,14 +356,18 @@ int main(int argc, char** argv) {
       std::stringstream ss;
       ss << FLAGS_eval_dir << "detection" << idx << ".array";
       auto output_array = ss.str();
-      saveOutput(sample.imageSizes, sample.imageIds, output[1].array(), output[0].array(), ss.str());
+      int lastLayerIdx = output[0].dims(3) - 1;
+      auto output_first_last = output[0].array()(af::span, af::span, af::span, af::seq(lastLayerIdx, lastLayerIdx));
+      auto output_second_last = output[1].array()(af::span, af::span, af::span, af::seq(lastLayerIdx, lastLayerIdx));
+      //saveOutput(sample.imageSizes, sample.imageIds, output[1].array(), output[0].array(), ss.str());
+      saveOutput(sample.imageSizes, sample.imageIds, output_second_last, output_first_last, ss.str());
       idx++;
     }
     std::stringstream ss;
     ss << "PYTHONPATH=/private/home/padentomasello/code/detection-transformer/ "
       //<< "LD_LIBRARY_PATH=/private/home/padentomasello/usr/lib/:$LD_LIBRARY_PATH "
       << "/private/home/padentomasello/.conda/envs/coco/bin/python3.8 "
-      << "/private/home/padentomasello/code/flashlight/app/object_detection/scripts/eval_coco.py --dir "
+      << "/private/home/padentomasello/code/flashlight/flashlight/app/objdet/scripts/eval_coco.py --dir "
       << FLAGS_eval_dir;
     system(ss.str().c_str());
     std::stringstream ss2;
