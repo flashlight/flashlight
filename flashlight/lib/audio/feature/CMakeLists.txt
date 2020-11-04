@@ -12,8 +12,8 @@ endif ()
 message(STATUS "CBLAS found (include: ${CBLAS_INCLUDE_DIR}, library: ${CBLAS_LIBRARIES})")
 
 # FFTW
-find_package(FFTW REQUIRED)
-if (FFTW_FOUND)
+find_package(FFTW3 REQUIRED)
+if (TARGET FFTW3::fftw3)
   message(STATUS "FFTW found")
 else()
   message(FATAL_ERROR "FFTW not found")
@@ -53,7 +53,7 @@ target_link_libraries(
   fl-libraries
   PUBLIC
   ${CBLAS_LIBRARIES}
-  ${FFTW_LIBRARIES}
+  FFTW3::fftw3
   OpenMP::OpenMP_CXX
   )
 
