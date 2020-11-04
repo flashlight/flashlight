@@ -66,6 +66,40 @@ TEST(ModuleTest, AsymmetricConv1DSerialization) {
   ASSERT_TRUE(allClose(outputl, output));
 }
 
+TEST(ModuleTest, PositionEmbedding) {
+  auto model = std::make_shared<PositionEmbedding>(128, 100, 0.1);
+  model->eval();
+
+  save(getTmpPath("PositionEmbedding"), model);
+
+  std::shared_ptr<PositionEmbedding> loaded;
+  load(getTmpPath("PositionEmbedding"), loaded);
+  loaded->eval();
+
+  auto input = Variable(af::randu(128, 10, 5, 1), false);
+  auto output = model->forward({input});
+  auto outputl = loaded->forward({input});
+
+  ASSERT_TRUE(allParamsClose(*loaded, *model));
+  ASSERT_TRUE(allClose(outputl[0], output[0]));
+}
+
+TEST(ModuleTest, SinusoidalPositionEmbedding) {
+  auto model = std::make_shared<SinusoidalPositionEmbedding>(128, 2.);
+
+  save(getTmpPath("SinusoidalPositionEmbedding"), model);
+
+  std::shared_ptr<SinusoidalPositionEmbedding> loaded;
+  load(getTmpPath("SinusoidalPositionEmbedding"), loaded);
+
+  auto input = Variable(af::randu(128, 10, 5, 1), false);
+  auto output = model->forward({input});
+  auto outputl = loaded->forward({input});
+
+  ASSERT_TRUE(allParamsClose(*loaded, *model));
+  ASSERT_TRUE(allClose(outputl[0], output[0]));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
