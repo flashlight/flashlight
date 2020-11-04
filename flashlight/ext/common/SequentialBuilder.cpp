@@ -111,6 +111,9 @@ std::shared_ptr<Module> parseLines(
   /* ========== TRANSFORMERS ========== */
 
   if (params[0] == "TR") {
+    if (!inRange(6, params.size(), 9)) {
+      throw std::invalid_argument("Failed parsing - " + line);
+    }
     int modelDim = std::stoi(params[1]);
     int mlpDim = std::stoi(params[2]);
     int nHead = std::stoi(params[3]);
@@ -132,6 +135,9 @@ std::shared_ptr<Module> parseLines(
   }
 
   if (params[0] == "POSEMB") {
+    if (!inRange(3, params.size(), 4)) {
+      throw std::invalid_argument("Failed parsing - " + line);
+    }
     int layerDim = std::stoi(params[1]);
     int csz = std::stoi(params[2]);
     float dropout = (params.size() >= 4) ? std::stof(params[3]) : 0.0;
@@ -307,32 +313,53 @@ std::shared_ptr<Module> parseLines(
   /* ========== ACTIVATIONS ========== */
 
   if (params[0] == "ELU") {
+    if (params.size() != 1) {
+      throw std::invalid_argument("Failed parsing - " + line);
+    }
     return std::make_shared<ELU>();
   }
 
   if (params[0] == "R") {
+    if (params.size() != 1) {
+      throw std::invalid_argument("Failed parsing - " + line);
+    }
     return std::make_shared<ReLU>();
   }
 
   if (params[0] == "R6") {
+    if (params.size() != 1) {
+      throw std::invalid_argument("Failed parsing - " + line);
+    }
     return std::make_shared<ReLU6>();
   }
 
   if (params[0] == "PR") {
+    if (!inRange(1, params.size(), 3)) {
+      throw std::invalid_argument("Failed parsing - " + line);
+    }
     auto numParams = params.size() > 1 ? std::stoi(params[1]) : 1;
     auto initVal = params.size() > 2 ? std::stod(params[2]) : 0.25;
     return std::make_shared<PReLU>(numParams, initVal);
   }
 
   if (params[0] == "LG") {
+    if (params.size() != 1) {
+      throw std::invalid_argument("Failed parsing - " + line);
+    }
     return std::make_shared<Log>();
   }
 
   if (params[0] == "HT") {
+    if (params.size() != 1) {
+      throw std::invalid_argument("Failed parsing - " + line);
+    }
     return std::make_shared<HardTanh>();
   }
 
   if (params[0] == "T") {
+    if (params.size() != 1) {
+      throw std::invalid_argument("Failed parsing - " + line);
+    }
     return std::make_shared<Tanh>();
   }
 
@@ -353,6 +380,9 @@ std::shared_ptr<Module> parseLines(
   }
 
   if (params[0] == "SH") {
+    if (!inRange(1, params.size(), 2)) {
+      throw std::invalid_argument("Failed parsing - " + line);
+    }
     auto beta = params.size() > 1 ? std::stof(params[1]) : 1.0;
     return std::make_shared<Swish>(beta);
   }
