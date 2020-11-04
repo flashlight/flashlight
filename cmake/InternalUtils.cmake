@@ -3,7 +3,7 @@ function(setup_install_targets)
   set(multiValueArgs INSTALL_TARGETS INSTALL_HEADERS)
   cmake_parse_arguments(setup_install_targets "${options}" "${oneValueArgs}"
     "${multiValueArgs}" ${ARGN})
-    
+
   # Main target
   install(
     TARGETS ${setup_install_targets_INSTALL_TARGETS}
@@ -16,17 +16,13 @@ function(setup_install_targets)
     FRAMEWORK DESTINATION framework
     INCLUDES DESTINATION ${FL_INSTALL_INC_DIR}
     )
-  
+
   # Write and install targets file
   install(
-    EXPORT
-    flashlightTargets
-    NAMESPACE
-    flashlight::
-    DESTINATION
-    ${FL_INSTALL_CMAKE_DIR}
-    COMPONENT
-    cmake
+    EXPORT flashlightTargets
+    NAMESPACE flashlight::
+    DESTINATION ${FL_INSTALL_CMAKE_DIR}
+    COMPONENT flashlight
     )
 
   # Write config file (used by projects including fl, such as examples)
@@ -43,21 +39,24 @@ function(setup_install_targets)
   install(FILES
     ${PROJECT_BINARY_DIR}/cmake/install/flashlightConfig.cmake
     DESTINATION ${FL_INSTALL_CMAKE_DIR}
-    COMPONENT cmake
+    COMPONENT flashlight
     )
 endfunction(setup_install_targets)
 
 function(setup_install_headers HEADER_DIR DEST_DIR)
   # Move headers
   install(
-    DIRECTORY
-    ${HEADER_DIR}
-    COMPONENT
-    headers
-    DESTINATION
-    ${DEST_DIR}
+    DIRECTORY ${HEADER_DIR}
+    COMPONENT headers
+    DESTINATION ${DEST_DIR}
     FILES_MATCHING # preserve directory structure
     PATTERN  "*.h"
+    PATTERN "*.cuh" # TODO: gate me
+    PATTERN "test*" EXCLUDE
     PATTERN "tests" EXCLUDE
+    PATTERN "backend" EXCLUDE
+    PATTERN "examples" EXCLUDE
+    PATTERN "third_party" EXCLUDE
+    PATTERN "experimental" EXCLUDE
     )
 endfunction(setup_install_headers)
