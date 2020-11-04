@@ -269,7 +269,8 @@ int main(int argc, char** argv) {
       FLAGS_eostoken,
       FLAGS_replabel,
       true /* skip unk */,
-      true /* fallback2Letter */);
+      FLAGS_usewordpiece /* fallback2LetterWordSepLeft */,
+      !FLAGS_usewordpiece /* fallback2LetterWordSepLeft */);
 
   auto inputTransform = inputFeatures(
       featParams, featType, {FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx});

@@ -94,7 +94,8 @@ fl::Dataset::DataTransformFunction targetFeatures(
         tokenDict,
         config.wordSeparator_,
         config.targetSamplePct_,
-        config.fallbackToLetter_,
+        config.fallbackToLetterWordSepLeft_,
+        config.fallbackToLetterWordSepRight_,
         config.skipUnk_);
     auto tgtVec = tokenDict.mapEntriesToIndices(target);
     if (!config.surround_.empty()) {
