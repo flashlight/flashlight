@@ -176,7 +176,14 @@ std::vector<Variable> Transformer::forward(const std::vector<Variable>& input) {
 }
 
 std::string Transformer::prettyString() const {
-  return "Transformer";
+  std::ostringstream ss;
+  ss << "Transformer (nHeads: " << nHeads_ << "), "
+     << "(pDropout: " << pDropout_ << "), "
+     << "(pLayerdrop: " << pLayerdrop_ << "), "
+     << "(bptt: " << bptt_ << "), "
+     << "(useMask: " << useMask_ << "), "
+     << "(preLayerNorm: " << preLN_ << ")";
+  return ss.str();
 }
 
 Transformer::Transformer() {}
