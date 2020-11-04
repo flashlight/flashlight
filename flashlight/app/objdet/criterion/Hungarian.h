@@ -4,7 +4,7 @@
 
 namespace fl {
 namespace app {
-namespace object_detection {
+namespace objdet {
 
 class HungarianMatcher {
 
@@ -40,6 +40,6 @@ private:
 
 };
 
-} // object_detection
+} // objdet
 } // app
 } // fl

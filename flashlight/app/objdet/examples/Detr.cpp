@@ -55,7 +55,7 @@ DEFINE_bool(pretrained, true, "Directory to dump images to run evaluation script
 
 using namespace fl;
 using namespace fl::ext::image;
-using namespace fl::app::object_detection;
+using namespace fl::app::objdet;
 
 // TODO Refactor
 //const int32_t backboneChannels = 512;

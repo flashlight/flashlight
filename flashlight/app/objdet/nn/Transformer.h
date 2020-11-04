@@ -10,7 +10,7 @@
 
 namespace fl {
 namespace app {
-namespace object_detection {
+namespace objdet {
 
 fl::Variable transformerInitLinear(int32_t inDim, int32_t outDim) {
   float std = std::sqrt(1.0 / float(inDim));
@@ -478,6 +478,6 @@ private:
 };
 
 
-} // namespace object_detection
+} // namespace objdet
 } // namespace app
 } // namespace fl

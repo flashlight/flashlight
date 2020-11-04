@@ -235,7 +235,7 @@ fl::Variable index(
 
 namespace fl {
 namespace app {
-namespace object_detection {
+namespace objdet {
 
 SetCriterion::SetCriterion(
     const int num_classes,
@@ -403,6 +403,6 @@ std::pair<af::array, af::array> SetCriterion::getSrcPermutationIdx(
   //return std::make_pair(batchIdxs, srcIdxs);
 }
 
-} // namespace object_detection
+} // namespace objdet
 } // namespace app
 } // namespace fl

@@ -7,7 +7,7 @@
 
 namespace fl {
 namespace app {
-namespace object_detection {
+namespace objdet {
 
 class SetCriterion {
 
@@ -78,6 +78,6 @@ private:
 
 };
 
-} // end namespace object_detection
+} // end namespace objdet
 } // end namespace app
 } // end namespace fl

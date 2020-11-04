@@ -3,7 +3,7 @@
 
 namespace fl {
 namespace app {
-namespace object_detection {
+namespace objdet {
 
 std::string PositionalEmbeddingSine::prettyString() const {
   return "PositionalEmbeddingSine";
@@ -67,6 +67,6 @@ Variable PositionalEmbeddingSine::forward(const Variable& input) {
   return fl::Variable(result, false);
 }
 
-} // end namespace image
-} // end namespace ext
+} // end namespace objdet
+} // end namespace app
 } // end namespace fl

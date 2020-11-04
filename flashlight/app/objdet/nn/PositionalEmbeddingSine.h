@@ -4,7 +4,7 @@
 
 namespace fl {
 namespace app {
-namespace object_detection {
+namespace objdet {
 
 class PositionalEmbeddingSine : public UnaryModule {
   public:
@@ -25,6 +25,6 @@ private:
   const float scale_;
 };
 
-} // end namespace object_detection
+} // end namespace objdet
 } // end namespace app
 } // end namespace fl

@@ -24,7 +24,7 @@ std::pair<af::array, af::array> hungarian(af::array& cost) {
 
 namespace fl {
 namespace app {
-namespace object_detection {
+namespace objdet {
 
 HungarianMatcher::HungarianMatcher(
     const float cost_class,
@@ -90,7 +90,7 @@ std::vector<std::pair<af::array, af::array>> HungarianMatcher::forward(
   return results;
 };
 
-} // end namespace object_detection
+} // end namespace objdet
 } // end namespace app
 } // end namespace fl
 

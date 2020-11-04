@@ -7,7 +7,7 @@
 
 namespace fl {
 namespace app {
-namespace object_detection {
+namespace objdet {
 
 //af::array cxcywh_to_xyxy(const af::array& bboxes);
 
@@ -42,6 +42,6 @@ Variable generalized_box_iou(const Variable& bboxes1, const Variable& bboxes2);
 
 Variable l1_loss(const Variable& input, const Variable& target);
 
-} // namespace object_detection
+} // namespace objdet
 } // namespace app
 } // namespace fl

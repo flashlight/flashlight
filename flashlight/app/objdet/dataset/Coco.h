@@ -12,7 +12,7 @@ DECLARE_bool(equal_aspect);
 
 namespace fl {
 namespace app {
-namespace object_detection {
+namespace objdet {
 
 struct CocoData {
   af::array images;
@@ -155,6 +155,6 @@ private:
 
 //af::array box_iou(const af::array& bboxes1, const af::array& bboxes2);
 
-} // namespace dataset
-} // namespace cv
+} // namespace objdet
+} // namespace app
 } // namespace flashlight

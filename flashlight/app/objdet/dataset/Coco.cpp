@@ -16,7 +16,7 @@ DEFINE_bool(equal_aspect, false, "");
 
 namespace {
 
-using namespace fl::app::object_detection;
+using namespace fl::app::objdet;
 using namespace fl::ext::image;
 using namespace fl;
 
@@ -290,7 +290,7 @@ private:
 
 namespace fl {
 namespace app {
-namespace object_detection {
+namespace objdet {
 
 // TODO move into common namespace
 af::array resizeSmallest(const af::array& in, const int resize) {
@@ -501,6 +501,6 @@ CocoData CocoDataset::get(const uint64_t idx) {
   return batched_->get(idx);
 }
 
-} // namespace object_detection
+} // namespace objdet
 } // namespace app
 } // namespace fl

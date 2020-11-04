@@ -9,7 +9,7 @@
 
 namespace fl {
 namespace app {
-namespace object_detection {
+namespace objdet {
 
 af::array xyxy_to_cxcywh(const af::array& bboxes) {
   auto x0 = bboxes.row(0);
@@ -116,6 +116,6 @@ Variable l1_loss(const Variable& input, const Variable& target) {
   return flatten(sum(abs(input - target), {0} ), 0, 1);
 }
 
-} // namespace object_detection
+} // namespace objdet
 } // namespace app
 } // namespace fl
