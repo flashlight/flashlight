@@ -25,7 +25,8 @@ std::vector<std::string> wrd2Target(
     const Dictionary& dict,
     bool fallback2Ltr /* = false */,
     bool skipUnk /* = false */) {
-  bool fallback2LtrWordSepLeft = fallback2Ltr * FLAGS_usewordpiece;
+  bool fallback2LtrWordSepLeft = fallback2Ltr && FLAGS_usewordpiece;
+  bool fallback2LtrWordSepRight = fallback2Ltr && !FLAGS_usewordpiece;
   return wrd2Target(
       word, 
       lexicon, 
@@ -33,7 +34,7 @@ std::vector<std::string> wrd2Target(
       FLAGS_wordseparator,
       FLAGS_sampletarget, 
       fallback2LtrWordSepLeft, 
-      !fallback2LtrWordSepLeft, 
+      fallback2LtrWordSepRight, 
       skipUnk);
 }
 
@@ -92,7 +93,8 @@ std::vector<std::string> wrd2Target(
     const Dictionary& dict,
     bool fallback2Ltr /* = false */,
     bool skipUnk /* = false */) {
-  bool fallback2LtrWordSepLeft = fallback2Ltr * FLAGS_usewordpiece;
+  bool fallback2LtrWordSepLeft = fallback2Ltr && FLAGS_usewordpiece;
+  bool fallback2LtrWordSepRight = fallback2Ltr && !FLAGS_usewordpiece;
   return wrd2Target(
       words,
       lexicon,
@@ -100,7 +102,7 @@ std::vector<std::string> wrd2Target(
       FLAGS_wordseparator,
       FLAGS_sampletarget,
       fallback2LtrWordSepLeft,
-      !fallback2LtrWordSepLeft,
+      fallback2LtrWordSepRight,
       skipUnk);
 }
 
