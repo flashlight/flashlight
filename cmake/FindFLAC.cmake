@@ -1,6 +1,10 @@
 # - Find FLAC
 # Find the native FLAC includes and libraries
 #
+# Sets the following imported targets if FLAC is found:
+# FLAC::FLAC
+#
+# Sets the following legacy CMake variables:
 #  FLAC_INCLUDE_DIRS - where to find FLAC headers.
 #  FLAC_LIBRARIES    - List of libraries when using libFLAC.
 #  FLAC_FOUND        - True if libFLAC found.
@@ -67,7 +71,7 @@ if (FLAC_FOUND)
 			INTERFACE_INCLUDE_DIRECTORIES "${FLAC_INCLUDE_DIR}"
 			IMPORTED_LOCATION "${FLAC_LIBRARY}"
 			INTERFACE_LINK_LIBRARIES
-				Ogg::Ogg
+				Ogg::ogg
 				$<$<BOOL:${WIN32}>:wsock32>
 			INTERFACE_COMPILE_DEFINITIONS ${FLAC_DEFINITIONS}
 			)
