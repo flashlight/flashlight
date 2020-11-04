@@ -17,16 +17,6 @@ if (FL_LIBRARIES_USE_MKL)
 endif ()
 
 # ------------------------ Global External Dependencies ------------------------
-# TODO(jacobkahn): add gating for Conan glog and gflags packages
-
-# Find GLog
-find_package(GLOG REQUIRED)
-if (GLOG_FOUND)
-  message(STATUS "GLOG found")
-else()
-  message(FATAL_ERROR "GLOG not found")
-endif()
-
 # Find GFlags
 find_package(GFLAGS REQUIRED)
 if (GFLAGS_FOUND)
@@ -52,7 +42,6 @@ target_link_libraries(
   flashlight-app-asr
   PUBLIC
   ${GFLAGS_LIBRARIES}
-  ${GLOG_LIBRARIES}
   ${MKL_LIBRARIES}
   flashlight
   )
@@ -61,7 +50,6 @@ target_include_directories(
   flashlight-app-asr
   PUBLIC
   ${GFLAGS_INCLUDE_DIRS}
-  ${GLOG_INCLUDE_DIRS}
   ${MKL_INCLUDE_DIR}
   )
 
