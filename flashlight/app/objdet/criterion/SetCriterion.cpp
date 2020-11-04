@@ -250,10 +250,17 @@ SetCriterion::SetCriterion(
   losses_(losses) { };
 
 SetCriterion::LossDict SetCriterion::forward(
-    const Variable& predBoxes,
-    const Variable& predLogits,
+    const Variable& predBoxesAux,
+    const Variable& predLogitsAux,
     const std::vector<Variable>& targetBoxes,
     const std::vector<Variable>& targetClasses) {
+
+    LossDict losses;
+
+    for(int i = 0; i < predBoxesAux.dims(3); i++) {
+
+      auto predBoxes = predBoxesAux(af::span, af::span, af::span, af::seq(i, i));
+      auto predLogits = predLogitsAux(af::span, af::span, af::span, af::seq(i, i));
 
       auto indices = matcher_.forward(predBoxes, predLogits, targetBoxes, targetClasses);
 
@@ -263,13 +270,17 @@ SetCriterion::LossDict SetCriterion::forward(
       // TODO clamp number of boxes based on world size
       // https://github.com/fairinternal/detection-transformer/blob/master/models/detr.py#L168
 
-      LossDict losses;
 
       auto labelLoss = lossLabels(predBoxes, predLogits, targetBoxes, targetClasses, indices, numBoxes);
       auto bboxLoss = lossBoxes(predBoxes, predLogits, targetBoxes, targetClasses, indices, numBoxes);
-      losses.insert(labelLoss.begin(), labelLoss.end());
-      losses.insert(bboxLoss.begin(), bboxLoss.end());
-      return losses;
+      for(std::pair<std::string, Variable> l : labelLoss) {
+        losses[l.first + "_" + std::to_string(i)] = l.second;
+      }
+      for(std::pair<std::string, Variable> l : bboxLoss) {
+        losses[l.first + "_" + std::to_string(i)] = l.second;
+      }
+    }
+    return losses;
 }
 
 SetCriterion::LossDict SetCriterion::lossBoxes(

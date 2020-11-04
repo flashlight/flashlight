@@ -350,11 +350,16 @@ class TransformerDecoder : public Container {
 
       fl::Variable output = tgt;
       auto mods = modules();
+
+      std::vector<Variable> intermediate;
       for(int i = 0; i < mods.size() - 1; i++) {
         output = mods[i]->forward({output, memory, pos, query_pos, mask})[0];
+        intermediate.push_back(output);
       }
-      output = mods.back()->forward({output})[0];
-      return { output };
+      output = mods.back()->forward({intermediate.back()})[0];
+      intermediate.pop_back();
+      intermediate.push_back(output);
+      return { concatenate(intermediate, 3) };
     }
   std::string prettyString() const override {
     return "TransformerDecoder";
@@ -455,7 +460,9 @@ std::vector<Variable> forward(
           posEmbed,
           queryEmbed,
           mask})[0];
-      return { reorder(hs, 0, 2, 1) };
+
+      auto reordered = reorder(hs, 0, 2, 1);
+      return { reordered };
   }
 
 std::vector<Variable> forward(const std::vector<Variable>& input) override {

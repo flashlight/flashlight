@@ -239,7 +239,7 @@ int main(int argc, char** argv) {
   const int32_t modelDim = 256;
   const int32_t numHeads = 8;
   const int32_t numEncoderLayers = 6;
-  const int32_t numDecoderLayers = 1;
+  const int32_t numDecoderLayers = 6;
   const int32_t mlpDim = 2048;
   // TODO check this is correct
   const int32_t hiddenDim = modelDim;
@@ -310,13 +310,25 @@ int main(int argc, char** argv) {
       setCostGiou
       );
   SetCriterion::LossDict losses;
+
+
+  std::unordered_map<std::string, float> lossWeightsBase = 
+        { { "loss_ce" , 1.f} ,
+        { "loss_giou", giouLossCoef },
+        { "loss_bbox", bboxLossCoef }
+  };
+
+  std::unordered_map<std::string, float> lossWeights;
+  for(int i = 0; i < numDecoderLayers; i++) {
+    for(auto l : lossWeightsBase) {
+      std::string key = l.first + "_" + std::to_string(i);
+      lossWeights[key] = l.second;
+    }
+  }
   auto criterion = SetCriterion(
       numClasses,
       matcher,
-      { { "loss_ce" , 1.f} ,
-        { "loss_giou", giouLossCoef },
-        { "loss_bbox", bboxLossCoef }
-      },
+      lossWeights,
       0.0,
       losses);
 
@@ -460,6 +472,12 @@ int main(int argc, char** argv) {
           [](const af::array& in) { return fl::Variable(in, false); });
 
       timers["criterion"].resume();
+
+      // TODO test
+      //std::vector<Variable> outputSecond = { output[1], output[1] };
+      //std::vector<Variable> outputFirst = { output[0], output[0] };
+      //output[0] = concatenate(outputFirst, 3);
+      //output[1] = concatenate(outputSecond, 4);
 
       auto loss = criterion.forward(
           output[1],
