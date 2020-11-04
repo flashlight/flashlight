@@ -42,7 +42,7 @@ set(SNDFILE_LIBRARIES
 
 mark_as_advanced(SNDFILE_INCLUDE_DIRS SNDFILE_LIBRARIES)
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(SNDFILE DEFAULT_MSG SNDFILE_INCLUDE_DIRS GLOG_LIBRARIES)
+find_package_handle_standard_args(SNDFILE DEFAULT_MSG SNDFILE_INCLUDE_DIRS SNDFILE_LIBRARIES)
 
 if (SNDFILE_FOUND)
   message(STATUS "Found libsndfile: (lib: ${SNDFILE_LIBRARIES} include: ${SNDFILE_INCLUDE_DIRS}")
