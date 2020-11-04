@@ -100,6 +100,24 @@ TEST(ModuleTest, SinusoidalPositionEmbedding) {
   ASSERT_TRUE(allClose(outputl[0], output[0]));
 }
 
+TEST(ModuleTest, AdaptiveEmbedding) {
+  std::vector<int> cutoff = {5, 10, 25};
+  auto model = std::make_shared<AdaptiveEmbedding>(128, cutoff);
+
+  save(getTmpPath("AdaptiveEmbedding"), model);
+
+  std::shared_ptr<AdaptiveEmbedding> loaded;
+  load(getTmpPath("AdaptiveEmbedding"), loaded);
+
+  std::vector<int> values = {1, 4, 6, 2, 12, 7, 4, 21, 22, 18, 3, 23};
+  auto input = Variable(af::array(af::dim4(6, 2), values.data()), false);
+  auto output = model->forward(input);
+  auto outputl = loaded->forward(input);
+
+  ASSERT_TRUE(allParamsClose(*loaded, *model));
+  ASSERT_TRUE(allClose(outputl, output));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

@@ -253,6 +253,18 @@ TEST_F(ModuleTestF16, SinusoidalPositionEmbeddingFwdF16) {
   ASSERT_TRUE((af::min(outfp16)).scalar<float>() >= -2);
 }
 
+TEST(ModuleTest, AdaptiveEmbedding) {
+  std::vector<int> values = {1, 4, 6, 2, 12, 7, 4, 21, 22, 18, 3, 23};
+  int T = 6, B = 2, dim = 128;
+  auto input = Variable(af::array(af::dim4(T, B), values.data()), false);
+  std::vector<int> cutoff = {5, 10, 25};
+  auto emb = AdaptiveEmbedding(dim, cutoff);
+  auto output = emb.forward(input);
+
+  ASSERT_EQ(output.dims(0), dim);
+  ASSERT_EQ(output.dims(1), T);
+  ASSERT_EQ(output.dims(2), B);
+}
 
 TEST(ModuleTest, TDSFwd) {
   int batchsize = 10;
