@@ -72,9 +72,16 @@ double adadelta() {
   return optloop(opt, w);
 }
 
+double nag() {
+  auto w = Variable(af::randn(1, 10), true);
+  auto opt = NAGOptimizer({w}, 1e-3);
+  return optloop(opt, w);
+}
+
 int main() {
   af::info();
   TIME(sgd);
+  TIME(nag);
   TIME(adam);
   TIME(rmsprop);
   TIME(adadelta);
