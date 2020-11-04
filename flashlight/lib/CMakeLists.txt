@@ -52,7 +52,6 @@ set(FL_LIBRARY_CUDA_SOURCES
 # A library containing CUDA targets within libraries that may need to be linked
 # in. Only build a CUDA lib of libraries that require CUDA kernels are built
 if (FL_LIBRARIES_USE_CUDA)
-  include(${CMAKE_MODULE_PATH}/BuildCUB.cmake)
   include(${CMAKE_MODULE_PATH}/CUDAUtils.cmake)
 
   set_cuda_cxx_compile_flags()
@@ -62,26 +61,39 @@ if (FL_LIBRARIES_USE_CUDA)
   if (FL_LIBRARIES_BUILD_FOR_PYTHON OR CMAKE_POSITION_INDEPENDENT_CODE)
     cuda_enable_position_independent_code()
   endif ()
-
-  cuda_include_directories(
-    ${CUB_INCLUDE_DIRS}
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
-    )
-
   # Qualify name because CUDA target is public
   cuda_add_library(
     fl-libraries-cuda
     ${FL_LIBRARY_CUDA_SOURCES}
     )
 
-  set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} fl-libraries-cuda)
-  add_dependencies(fl-libraries-cuda CUB)
+  # CUB
+  # TODO: don't look if CUDA >= 11
+  find_path(CUB_INCLUDE_DIRS "cub/cub.cuh")
+  if (NOT ${CUB_INCLUDE_DIRS})
+    include(${CMAKE_MODULE_PATH}/BuildCUB.cmake)
+    add_dependencies(fl-libraries-cuda CUB)
+  endif()
+
+  # Both, to support older and newer versions of CMake
+  cuda_include_directories(
+    $<BUILD_INTERFACE:${CUB_INCLUDE_DIRS}>
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+    )
+  target_include_directories(
+    fl-libraries-cuda
+    PUBLIC
+    $<BUILD_INTERFACE:${CUB_INCLUDE_DIRS}>
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+    )
 
   target_link_libraries(
     fl-libraries-cuda
     PUBLIC
     ${CUDA_LIBRARIES}
     )
+
+  set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} fl-libraries-cuda)
 
   # link to fl-libraries
   target_link_libraries(
