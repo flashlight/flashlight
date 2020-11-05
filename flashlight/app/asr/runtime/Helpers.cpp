@@ -196,7 +196,7 @@ std::shared_ptr<fl::Dataset> createDataset(
   std::vector<int64_t> sortedIds(sizes.size());
   std::iota(sortedIds.begin(), sortedIds.end(), 0);
   auto cmp = [&sizes](const int64_t& l, const int64_t& r) {
-    return sizes[l] < sizes[r];
+    return sizes[l] > sizes[r];
   };
   std::stable_sort(sortedIds.begin(), sortedIds.end(), cmp);
 
