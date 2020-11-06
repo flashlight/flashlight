@@ -1157,4 +1157,62 @@ Variable gelu(const Variable& in) {
        fl::tanh(0.7978845608 * (input + 0.044715 * input * input * input)));
 }
 
+fl::Variable relativePositionEmbeddingRotate(const fl::Variable& input) {
+  auto data = input.array();
+  int d0 = data.dims(0);
+  int d1 = data.dims(1);
+  int d2 = data.dims(2);
+  int d3 = data.dims(3);
+  data = af::join(0, data, af::constant(0.0, d1, d1, d2, d3, data.type()));
+  data = af::moddims(data, af::dim4((d0 + d1) * d1, 1, d2, d3));
+  data = data.rows(0, (d1 + d0 - 1) * d1 - 1);
+  data = af::moddims(data, af::dim4(d0 + d1 - 1, d1, d2, d3));
+  auto gradFunc = [d0, d1, d2, d3](
+                      std::vector<fl::Variable>& inputs,
+                      const fl::Variable& gradOutput) {
+    auto gradData = gradOutput.array();
+    gradData = af::moddims(gradData, af::dim4((d0 + d1 - 1) * d1, 1, d2, d3));
+    gradData = af::join(
+        0, gradData, af::constant(0.0, d1, 1, d2, d3, gradData.type()));
+    gradData = af::moddims(gradData, af::dim4(d0 + d1, d1, d2, d3));
+    gradData = gradData.rows(0, d0 - 1);
+    inputs[0].addGrad(fl::Variable(gradData, false));
+  };
+  return fl::Variable(data, {input}, gradFunc);
+}
+
+fl::Variable multiheadAttention(
+    const fl::Variable& query,
+    const fl::Variable& key,
+    const fl::Variable& value,
+    const fl::Variable& posEmb,
+    const fl::Variable& mask,
+    const int32_t nHeads,
+    const double pDropout,
+    const int32_t offset /* = 0 */) {
+  int32_t bsz = query.dims(2);
+  int32_t modelDim = query.dims(1);
+  int32_t headDim = modelDim / nHeads;
+
+  auto q = moddims(query, af::dim4(-1, headDim, nHeads * bsz));
+  auto k = moddims(key, af::dim4(-1, headDim, nHeads * bsz));
+  auto v = moddims(value, af::dim4(-1, headDim, nHeads * bsz));
+
+  auto scores = matmulNT(q, k);
+  if (!posEmb.isempty()) {
+    int n = posEmb.dims(0) / 2 - offset;
+    auto pscores = relativePositionEmbeddingRotate(matmulNT(posEmb.as(q.type()), q));
+    scores = scores + transpose(pscores.rows(n, n + k.dims(0) - 1));
+  }
+  scores = scores / std::sqrt(float(headDim));
+  if (!mask.isempty()) {
+    scores = scores + tileAs(mask, scores);
+  }
+
+  auto attn = dropout(softmax(scores, 1), pDropout);
+  auto result = matmul(attn.as(v.type()), v);
+  result = moddims(result, af::dim4(-1, headDim * nHeads, bsz));
+  return result;
+}
+
 } // namespace fl
