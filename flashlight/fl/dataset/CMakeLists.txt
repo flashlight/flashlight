@@ -9,6 +9,7 @@ set(
   ${CMAKE_CURRENT_LIST_DIR}/DatasetIterator.h
   ${CMAKE_CURRENT_LIST_DIR}/Utils.cpp
   ${CMAKE_CURRENT_LIST_DIR}/FileBlobDataset.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/MemoryBlobDataset.cpp
   ${CMAKE_CURRENT_LIST_DIR}/MergeDataset.cpp
   ${CMAKE_CURRENT_LIST_DIR}/PrefetchDataset.cpp
   ${CMAKE_CURRENT_LIST_DIR}/ResampleDataset.cpp
