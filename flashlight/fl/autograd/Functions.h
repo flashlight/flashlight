@@ -917,6 +917,37 @@ Variable relu(const Variable& input);
  */
 Variable gelu(const Variable& input);
 
+/**
+ * Relative positional embedding for the multihead attention
+ * Implementation partially follows https://arxiv.org/pdf/1803.02155.pdf
+ */
+Variable relativePositionalEmbeddingRotate(const Variable& input);
+
+/**
+ * Multihead Attention function
+ * For details, see [Vaswani et al (2017)](https://arxiv.org/abs/1706.03762).
+ * @param query query Variable
+ * @param key key Variable
+ * @param value value Variable
+ * @param posEmb if non empty then compute relative
+ * positional embedding in additon to standard computations
+ * @param mask mask or not future in the computations
+ * if non-empty then don't use future (for exmaple for autoregressive language models
+ * or for decoder part in the encoder-decoder transformer models)
+ * @param nHeads number of heads
+ * @param pDropout dropout probability
+ * @param offset size of the current output from the decoder used now as input
+ */
+Variable multiheadAttention(
+    const Variable& query,
+    const Variable& key,
+    const Variable& value,
+    const Variable& posEmb,
+    const Variable& mask,
+    const int32_t nHeads,
+    const double pDropout,
+    const int32_t offset = 0);
+
 /** @} */
 
 } // namespace fl

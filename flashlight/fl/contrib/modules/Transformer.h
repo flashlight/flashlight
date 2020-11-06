@@ -26,6 +26,17 @@ namespace fl {
  * Input dimension at forward is assumed to be CxTxBx1, where C is the
  * number of features, T the sequence length and B the batch size.
  *
+ * @param modelDim input embedding dimension
+ * @param headDim dimension of each head
+ * @param mlpDim dimension of the feed-forward layers
+ * @param nHeads number of heads
+ * @param bptt size for learnt relative positional embedding matrix (2 * bptt - 1) * nHeads
+ * @param pDropout dropout probability
+ * @param pLayerdrop layer dropout probability
+ * @param useMask mask or not future in the computations
+ * if true then don't use future (for example for autoregressive language models
+ * or for decoder part in the encoder-decoder transformer models)
+ * @param preLN apply layer normalization before or after residual connection
  */
 class Transformer : public Container {
  public:
