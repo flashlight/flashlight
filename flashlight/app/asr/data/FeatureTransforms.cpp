@@ -94,14 +94,18 @@ fl::Dataset::DataTransformFunction targetFeatures(
         tokenDict,
         config.wordSeparator_,
         config.targetSamplePct_,
-        config.fallbackToLetter_,
+        config.fallbackToLetterWordSepLeft_,
+        config.fallbackToLetterWordSepRight_,
         config.skipUnk_);
     auto tgtVec = tokenDict.mapEntriesToIndices(target);
     if (!config.surround_.empty()) {
       // add surround token at the beginning and end of target
+      // only if begin/end tokens are not surround
       auto idx = tokenDict.getIndex(config.surround_);
-      tgtVec.emplace_back(idx);
-      if (tgtVec.size() > 1) {
+      if (tgtVec.empty() || tgtVec.back() != idx) {
+        tgtVec.emplace_back(idx);
+      }
+      if (tgtVec.size() > 1 && tgtVec.front() != idx) {
         tgtVec.emplace_back(idx);
         std::rotate(tgtVec.begin(), tgtVec.end() - 1, tgtVec.end());
       }

@@ -29,15 +29,16 @@ struct TargetGenerationConfig {
       bool eosToken,
       int replabel,
       bool skipUnk,
-      bool fallbackToLetter)
-      : wordSeparator_(wordSeparator),
-        targetSamplePct_(targetSamplePct),
+      bool fallbackToLetterWordSepLeft,
+      bool fallbackToLetterWordSepRight)
+      : targetSamplePct_(targetSamplePct),
         criterion_(criterion),
         surround_(surround),
         eosToken_(eosToken),
         replabel_(replabel),
         skipUnk_(skipUnk),
-        fallbackToLetter_(fallbackToLetter) {}
+        fallbackToLetterWordSepLeft_(fallbackToLetterWordSepLeft),
+        fallbackToLetterWordSepRight_(fallbackToLetterWordSepRight) {}
 
   // token separator between words
   const std::string wordSeparator_;
@@ -53,8 +54,12 @@ struct TargetGenerationConfig {
   const int replabel_;
   // skip unknown tokens
   const bool skipUnk_;
-  // use letters of word as tokens if a word is not present in lexicon
-  const bool fallbackToLetter_;
+  // use letters of word as tokens if a word is not present in lexicon 
+  // + add wordseparator at the beginning
+  const bool fallbackToLetterWordSepLeft_;
+  // use letters of word as tokens if a word is not present in lexicon 
+  // + add wordseparator at the end
+  const bool fallbackToLetterWordSepRight_;      
 };
 
 fl::Dataset::DataTransformFunction inputFeatures(

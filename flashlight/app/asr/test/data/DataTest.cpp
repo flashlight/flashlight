@@ -12,6 +12,7 @@
 
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/data/Featurize.h"
+#include "flashlight/app/asr/data/Utils.h"
 #include "flashlight/app/asr/data/ListFilesDataset.h"
 
 #include "flashlight/lib/common/String.h"
@@ -60,8 +61,8 @@ std::vector<std::string> loadTarget(const std::string& filepath) {
   }
   std::string line;
   while (std::getline(infile, line)) {
-    auto tkns_str = splitOnWhitespace(line, true);
-    for (const auto& tkn : tkns_str) {
+    auto tknsStr = splitOnWhitespace(line, true);
+    for (const auto& tkn : tknsStr) {
       tokens.emplace_back(tkn);
     }
   }

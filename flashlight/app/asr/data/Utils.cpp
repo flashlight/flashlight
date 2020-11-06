@@ -25,19 +25,32 @@ std::vector<std::string> wrd2Target(
     const Dictionary& dict,
     bool fallback2Ltr /* = false */,
     bool skipUnk /* = false */) {
+  bool fallback2LtrWordSepLeft = fallback2Ltr && FLAGS_usewordpiece;
+  bool fallback2LtrWordSepRight = fallback2Ltr && !FLAGS_usewordpiece;
   return wrd2Target(
-      word, lexicon, dict, FLAGS_sampletarget, fallback2Ltr, skipUnk);
+      word, 
+      lexicon, 
+      dict, 
+      FLAGS_wordseparator,
+      FLAGS_sampletarget, 
+      fallback2LtrWordSepLeft, 
+      fallback2LtrWordSepRight, 
+      skipUnk);
 }
 
 std::vector<std::string> wrd2Target(
     const std::string& word,
     const LexiconMap& lexicon,
     const Dictionary& dict,
+    const std::string& wordSeparator /* = "" */,
     float targetSamplePct /* = 0 */,
-    bool fallback2Ltr /* = false */,
+    bool fallback2LtrWordSepLeft /* = false */,
+    bool fallback2LtrWordSepRight /* = false */,
     bool skipUnk /* = false */) {
+  // find the word in the lexicon and use its spelling
   auto lit = lexicon.find(word);
   if (lit != lexicon.end()) {
+    // sample random spelling if word has different spellings
     if (lit->second.size() > 1 &&
         targetSamplePct >
             static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX)) {
@@ -45,14 +58,18 @@ std::vector<std::string> wrd2Target(
     } else {
       return lit->second[0];
     }
-  }
-
-  std::vector<std::string> res;
-  if (fallback2Ltr) {
+  } 
+  
+  std::vector<std::string> word2tokens;
+  if (fallback2LtrWordSepLeft || fallback2LtrWordSepRight) {
+    if (fallback2LtrWordSepLeft && !wordSeparator.empty()) {
+      // add word separator at the beginning of fallback word 
+      word2tokens.push_back(wordSeparator);
+    } 
     auto tokens = splitWrd(word);
     for (const auto& tkn : tokens) {
       if (dict.contains(tkn)) {
-        res.push_back(tkn);
+        word2tokens.push_back(tkn);
       } else if (!skipUnk) {
         throw std::invalid_argument(
             "Unknown token '" + tkn +
@@ -60,10 +77,14 @@ std::vector<std::string> wrd2Target(
             word);
       }
     }
+    if (fallback2LtrWordSepRight && !wordSeparator.empty()) {
+      // add word separator at the end of fallback word 
+      word2tokens.push_back(wordSeparator);
+    }
   } else if (!skipUnk) {
     throw std::invalid_argument("Unknown word in the lexicon: " + word);
   }
-  return res;
+  return word2tokens;
 }
 
 std::vector<std::string> wrd2Target(
@@ -72,13 +93,16 @@ std::vector<std::string> wrd2Target(
     const Dictionary& dict,
     bool fallback2Ltr /* = false */,
     bool skipUnk /* = false */) {
+  bool fallback2LtrWordSepLeft = fallback2Ltr && FLAGS_usewordpiece;
+  bool fallback2LtrWordSepRight = fallback2Ltr && !FLAGS_usewordpiece;
   return wrd2Target(
       words,
       lexicon,
       dict,
       FLAGS_wordseparator,
       FLAGS_sampletarget,
-      fallback2Ltr,
+      fallback2LtrWordSepLeft,
+      fallback2LtrWordSepRight,
       skipUnk);
 }
 
@@ -88,38 +112,26 @@ std::vector<std::string> wrd2Target(
     const Dictionary& dict,
     const std::string& wordSeparator /* = "" */,
     float targetSamplePct /* = 0 */,
-    bool fallback2Ltr /* = false */,
+    bool fallback2LtrWordSepLeft /* = false */,
+    bool fallback2LtrWordSepRight /* = false */,
     bool skipUnk /* = false */) {
   std::vector<std::string> res;
   for (auto w : words) {
-    auto t =
-        wrd2Target(w, lexicon, dict, targetSamplePct, fallback2Ltr, skipUnk);
+    auto w2tokens =
+        wrd2Target(
+          w, 
+          lexicon, 
+          dict, 
+          wordSeparator,
+          targetSamplePct, 
+          fallback2LtrWordSepLeft, 
+          fallback2LtrWordSepRight, 
+          skipUnk);
 
-    if (t.size() == 0) {
+    if (w2tokens.size() == 0) {
       continue;
     }
-
-    // remove duplicate word separators in the beginning of each target token
-    if (res.size() > 0 && !wordSeparator.empty() &&
-        t[0].length() >= wordSeparator.length() &&
-        t[0].compare(0, wordSeparator.length(), wordSeparator) == 0) {
-      res.pop_back();
-    }
-
-    res.insert(res.end(), t.begin(), t.end());
-
-    if (!wordSeparator.empty() &&
-        !(res.back().length() >= wordSeparator.length() &&
-          res.back().compare(
-              res.back().length() - wordSeparator.length(),
-              wordSeparator.length(),
-              wordSeparator) == 0)) {
-      res.emplace_back(wordSeparator);
-    }
-  }
-
-  if (res.size() > 0 && res.back() == wordSeparator) {
-    res.pop_back();
+    res.insert(res.end(), w2tokens.begin(), w2tokens.end());
   }
   return res;
 }
