@@ -51,6 +51,11 @@ int main(int argc, char** argv) {
     gflags::ReadFromFlagsFile(flagsfile, argv[0], true);
   }
 
+  if (!FLAGS_fl_log_level.empty()) {
+    fl::Logging::setMaxLoggingLevel(fl::logLevelValue(FLAGS_fl_log_level));
+  }
+  fl::VerboseLogging::setMaxLoggingLevel(FLAGS_fl_vlog_level);
+
   /* ===================== Create Network ===================== */
   std::shared_ptr<fl::Module> network;
   std::shared_ptr<SequenceCriterion> criterion;

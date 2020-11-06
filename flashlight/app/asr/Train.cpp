@@ -142,6 +142,10 @@ int main(int argc, char** argv) {
   // aren't
   handleDeprecatedFlags();
 
+  if (!FLAGS_fl_log_level.empty()) {
+    fl::Logging::setMaxLoggingLevel(fl::logLevelValue(FLAGS_fl_log_level));
+  }
+  fl::VerboseLogging::setMaxLoggingLevel(FLAGS_fl_vlog_level);
   af::setSeed(FLAGS_seed);
   af::setFFTPlanCacheSize(FLAGS_fftcachesize);
   fl::DynamicBenchmark::setBenchmarkMode(FLAGS_fl_benchmark_mode);
