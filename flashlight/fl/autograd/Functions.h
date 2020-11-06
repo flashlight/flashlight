@@ -933,9 +933,9 @@ Variable relativePositionalEmbeddingRotate(const Variable& input);
  * @param posEmb if non empty then compute relative 
  * positional embedding in additon to standard computations
  * @param mask mask or not future in the computations
- * if true then don't use future (for exmaple for autoregressive language models
- * or for decoder part in the encoder-decoder tarnsformer models)
- * @param nHead number of heads
+ * if non-empty then don't use future (for exmaple for autoregressive language models
+ * or for decoder part in the encoder-decoder transformer models)
+ * @param nHeads number of heads
  * @param pDropout dropout probability
  * @param offset size of the current output from the decoder used now as input
  */
@@ -946,7 +946,7 @@ Variable multiheadAttention(
     const Variable& value,
     const Variable& posEmb,
     const Variable& mask,
-    const int32_t nHead,
+    const int32_t nHeads,
     const double pDropout,
     const int32_t offset = 0);
 

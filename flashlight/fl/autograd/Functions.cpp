@@ -1187,16 +1187,16 @@ fl::Variable multiheadAttention(
     const fl::Variable& value,
     const fl::Variable& posEmb,
     const fl::Variable& mask,
-    const int32_t nHead,
+    const int32_t nHeads,
     const double pDropout,
     const int32_t offset /* = 0 */) {
   int32_t bsz = query.dims(2);
   int32_t modelDim = query.dims(1);
-  int32_t headDim = modelDim / nHead;
+  int32_t headDim = modelDim / nHeads;
 
-  auto q = moddims(query, af::dim4(-1, headDim, nHead * bsz));
-  auto k = moddims(key, af::dim4(-1, headDim, nHead * bsz));
-  auto v = moddims(value, af::dim4(-1, headDim, nHead * bsz));
+  auto q = moddims(query, af::dim4(-1, headDim, nHeads * bsz));
+  auto k = moddims(key, af::dim4(-1, headDim, nHeads * bsz));
+  auto v = moddims(value, af::dim4(-1, headDim, nHeads * bsz));
 
   auto scores = matmulNT(q, k);
   if (!posEmb.isempty()) {
@@ -1211,7 +1211,7 @@ fl::Variable multiheadAttention(
 
   auto attn = dropout(softmax(scores, 1), pDropout);
   auto result = matmul(attn.as(v.type()), v);
-  result = moddims(result, af::dim4(-1, headDim * nHead, bsz));
+  result = moddims(result, af::dim4(-1, headDim * nHeads, bsz));
   return result;
 }
 
