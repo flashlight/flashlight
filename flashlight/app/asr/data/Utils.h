@@ -35,8 +35,10 @@ std::vector<std::string> wrd2Target(
     const std::string& word,
     const lib::text::LexiconMap& lexicon,
     const lib::text::Dictionary& dict,
+    const std::string& wordSeparator = "",
     float targetSamplePct = 0,
-    bool fallback2Ltr = false,
+    bool fallback2LtrWordSepLeft = false,
+    bool fallback2LtrWordSepRight = false,
     bool skipUnk = false);
 
 std::vector<std::string> wrd2Target(
@@ -45,7 +47,8 @@ std::vector<std::string> wrd2Target(
     const lib::text::Dictionary& dict,
     const std::string& wordSeparator = "",
     float targetSamplePct = 0,
-    bool fallback2Ltr = false,
+    bool fallback2LtrWordSepLeft = false,
+    bool fallback2LtrWordSepRight = false,
     bool skipUnk = false);
 } // namespace asr
 } // namespace app

@@ -130,6 +130,108 @@ TEST(FeatureTest, localNormalize) {
   }
 }
 
+TEST(FeatureTest, TargetTknTestStandaloneSep) {
+  Dictionary tokens;
+  std::string sep = "||";
+  tokens.addEntry("ab");
+  tokens.addEntry("cd");
+  tokens.addEntry("ef");
+  tokens.addEntry("t");
+  tokens.addEntry("r");
+  tokens.addEntry(sep);
+  
+  LexiconMap lexicon;
+  lexicon["abcd"].push_back({"ab", "cd", "||"});
+  lexicon["abcdef"].push_back({"ab", "cd", "ef", "||"});
+  
+  std::vector<std::string> words = {"abcdef", "abcd", "tr"};
+  auto res = wrd2Target(
+    words,
+    lexicon,
+    tokens,
+    sep,
+    0,
+    false,
+    true, // fallback right 
+    false
+  );
+
+  std::vector<std::string> resT = {"ab", "cd", "ef", "||", "ab", "cd", "||", "t", "r", "||"};
+  ASSERT_EQ(res.size(), resT.size());
+  for (int index = 0; index < res.size(); index++) {
+    ASSERT_EQ(res[index], resT[index]);
+  }
+
+  auto res2 = wrd2Target(
+    words,
+    lexicon,
+    tokens,
+    sep,
+    0,
+    true, // fallback left
+    false, 
+    false
+  );
+
+  std::vector<std::string> resT2 = {"ab", "cd", "ef", "||", "ab", "cd", "||", "||", "t", "r"};
+  ASSERT_EQ(res2.size(), resT2.size());
+  for (int index = 0; index < res2.size(); index++) {
+    ASSERT_EQ(res2[index], resT2[index]);
+  }
+}
+
+TEST(FeatureTest, TargetTknTestInsideSep) {
+  Dictionary tokens;
+  std::string sep = "_";
+  tokens.addEntry("_hel");
+  tokens.addEntry("lo");
+  tokens.addEntry("_ma");
+  tokens.addEntry("ma");
+  tokens.addEntry(sep);
+  tokens.addEntry("f");
+  tokens.addEntry("a");
+  
+  LexiconMap lexicon;
+  lexicon["hello"].push_back({"_hel", "lo"});
+  lexicon["mama"].push_back({"_ma", "ma"});
+  lexicon["af"].push_back({"_", "a", "f"});
+  
+  std::vector<std::string> words = {"aff", "hello", "mama", "af"};
+  auto res = wrd2Target(
+    words,
+    lexicon,
+    tokens,
+    sep,
+    0,
+    true, // fallback left
+    false,
+    false
+  );
+
+  std::vector<std::string> resT = {"_", "a", "f", "f", "_hel", "lo", "_ma", "ma", "_", "a", "f"};
+  ASSERT_EQ(res.size(), resT.size());
+  for (int index = 0; index < res.size(); index++) {
+    ASSERT_EQ(res[index], resT[index]);
+  }
+
+  auto res2 = wrd2Target(
+    words,
+    lexicon,
+    tokens,
+    sep,
+    0,
+    false,
+    true, // fallback right
+    false
+  );
+
+  std::vector<std::string> resT2 = {"a", "f", "f", "_", "_hel", "lo", "_ma", "ma", "_", "a", "f"};
+  ASSERT_EQ(res.size(), resT2.size());
+  for (int index = 0; index < res2.size(); index++) {
+    ASSERT_EQ(res2[index], resT2[index]);
+  }
+}
+
 TEST(FeatureTest, WrdToTarget) {
   gflags::FlagSaver flagsaver;
   FLAGS_wordseparator = "_";
@@ -145,8 +247,8 @@ TEST(FeatureTest, WrdToTarget) {
   lexicon["105"].push_back({"10", "5"});
   lexicon["2100"].push_back({"2", "1", "00"});
   // letters
-  lexicon["888"].push_back({"8", "8", "8"});
-  lexicon["12"].push_back({"1", "2"});
+  lexicon["888"].push_back({"8", "8", "8", "_"});
+  lexicon["12"].push_back({"1", "2", "_"});
   lexicon[kUnkToken] = {};
 
   Dictionary dict;
@@ -159,7 +261,9 @@ TEST(FeatureTest, WrdToTarget) {
       }
     }
   }
-  dict.addEntry("_");
+  if (!dict.contains(FLAGS_wordseparator)) {
+    dict.addEntry(FLAGS_wordseparator);
+  }
 
   std::vector<std::string> words = {"123", "456"};
   auto target = wrd2Target(words, lexicon, dict, false, false);
@@ -172,22 +276,30 @@ TEST(FeatureTest, WrdToTarget) {
   std::vector<std::string> words2 = {"105", "2100"};
   auto target2 = wrd2Target(words2, lexicon, dict, false, false);
   ASSERT_THAT(
-      target2, ::testing::ElementsAreArray({"10", "5", "_", "2", "1", "00"}));
+      target2, ::testing::ElementsAreArray({"10", "5", "2", "1", "00"}));
 
   std::vector<std::string> words3 = {"12", "888", "12"};
   auto target3 = wrd2Target(words3, lexicon, dict, false, false);
   ASSERT_THAT(
       target3,
       ::testing::ElementsAreArray(
-          {"1", "2", "_", "8", "8", "8", "_", "1", "2"}));
+          {"1", "2", "_", "8", "8", "8", "_", "1", "2", "_"}));
 
   // unknown words "111", "199"
   std::vector<std::string> words4 = {"111", "789", "199"};
-  // fall back to letters and skip unknown
+  // fall back to letters and skip unknown, word sep is part of word
+  FLAGS_usewordpiece = true;
   auto target4 = wrd2Target(words4, lexicon, dict, true, true);
   ASSERT_THAT(
-      target4,
-      ::testing::ElementsAreArray({"1", "1", "1", "_7", "89", "_", "1"}));
+    target4, 
+    ::testing::ElementsAreArray({"_", "1", "1", "1", "_7", "89", "_", "1"}));
+  // fall back to letters and skip unknown, word sep is separate token
+  FLAGS_usewordpiece = false;
+  target4 = wrd2Target(words4, lexicon, dict, true, true);
+  ASSERT_THAT(
+    target4, 
+    ::testing::ElementsAreArray({"1", "1", "1", "_", "_7", "89", "1", "_"}));
+
   // skip unknown
   target4 = wrd2Target(words4, lexicon, dict, false, true);
   ASSERT_THAT(target4, ::testing::ElementsAreArray({"_7", "89"}));
