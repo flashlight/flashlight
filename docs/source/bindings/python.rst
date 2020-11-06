@@ -357,10 +357,10 @@ After flashlight python package is installed, please, have a look at the example
 
   .. code-block:: shell
 
-    python example/decoder_example.py ../../app/asr/test/decoder/data
+    python example/decoder_example.py ../../flashlight/app/asr/test/decoder/data
 
 - audio featurization
 
   .. code-block:: shell
 
-    python example/feature_example.py ../../lib/test/audio/feature/data
+    python example/feature_example.py ../../flashlight/lib/test/audio/feature/data

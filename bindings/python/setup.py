@@ -63,8 +63,9 @@ class CMakeBuild(build_ext):
         cmake_args = [
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + extdir,
             "-DPYTHON_EXECUTABLE=" + sys.executable,
-            "-DFL_BUILD_LIBRARIES_ONLY=ON",
+            "-DFL_BUILD_LIBRARIES=ON",
             "-DFL_LIBRARIES_BUILD_FOR_PYTHON=ON",
+            "-DFL_BUILD_CORE=OFF",
             "-DFL_LIBRARIES_USE_CUDA=" + use_cuda,
             "-DFL_LIBRARIES_USE_KENLM=" + use_kenlm,
             "-DFL_LIBRARIES_USE_MKL=" + use_mkl,
