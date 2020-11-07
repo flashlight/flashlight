@@ -137,7 +137,7 @@ TEST(ModuleTest, TransformerFwd) {
   int nheads = 4;
 
   auto tr =
-      Transformer(c, c / nheads, c, nheads, timesteps, 0.2, 0.1, false, false);
+      Transformer(c, c / nheads, c, nheads, timesteps, 0.2, 0.1, true, false);
   auto input = Variable(af::randu(c, timesteps, batchsize, 1), false);
 
   auto output = tr.forward({input});
@@ -158,7 +158,7 @@ TEST_F(ModuleTestF16, TransformerFwdF16) {
   int nheads = 4;
 
   auto tr =
-      Transformer(c, c / nheads, c, nheads, timesteps, 0.2, 0.1, false, false);
+      Transformer(c, c / nheads, c, nheads, timesteps, 0.2, 0.1, true, false);
   auto input =
       Variable(af::randu(c, timesteps, batchsize, 1, af::dtype::f16), false);
 
@@ -241,7 +241,8 @@ TEST_F(ModuleTestF16, SinusoidalPositionEmbeddingFwdF16) {
 
   auto posemb = SinusoidalPositionEmbedding(csz, 2.);
   auto input =
-      Variable(af::randu(csz, timesteps, batchsize, 1, af::dtype::f16), false) - 0.5;
+      Variable(af::randu(csz, timesteps, batchsize, 1, af::dtype::f16), false) -
+      0.5;
 
   auto output = posemb.forward({input});
 
@@ -252,7 +253,6 @@ TEST_F(ModuleTestF16, SinusoidalPositionEmbeddingFwdF16) {
   ASSERT_TRUE((af::max(outfp16)).scalar<float>() <= 2);
   ASSERT_TRUE((af::min(outfp16)).scalar<float>() >= -2);
 }
-
 
 TEST(ModuleTest, TDSFwd) {
   int batchsize = 10;
