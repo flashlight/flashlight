@@ -1201,12 +1201,13 @@ fl::Variable multiheadAttention(
   auto scores = matmulNT(q, k);
   if (!posEmb.isempty()) {
     int n = posEmb.dims(0) / 2 - offset;
-    auto pscores = relativePositionEmbeddingRotate(matmulNT(posEmb.as(q.type()), q));
+    auto pscores =
+        relativePositionEmbeddingRotate(matmulNT(posEmb.as(q.type()), q));
     scores = scores + transpose(pscores.rows(n, n + k.dims(0) - 1));
   }
   scores = scores / std::sqrt(float(headDim));
   if (!mask.isempty()) {
-    scores = scores + tileAs(mask, scores);
+    scores = scores + tileAs(mask.as(scores.type()), scores);
   }
 
   auto attn = dropout(softmax(scores, 1), pDropout);
