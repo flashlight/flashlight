@@ -183,6 +183,12 @@ DEFINE_string(
     "",
     "Sets the flashlight optimization mode. "
     "Optim modes can be O1, O2, or O3.");
+DEFINE_string(
+    fl_log_level,
+    "",
+    "Sets the logging level - "
+    "must be [FATAL, ERROR, WARNING, INFO]");
+DEFINE_int64(fl_vlog_level, 0, "Sets the verbose logging level");
 
 // MIXED PRECISION OPTIONS
 DEFINE_bool(

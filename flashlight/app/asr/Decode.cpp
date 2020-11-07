@@ -61,6 +61,11 @@ int main(int argc, char** argv) {
     gflags::ParseCommandLineFlags(&argc, &argv, false);
   }
 
+  if (!FLAGS_fl_log_level.empty()) {
+    fl::Logging::setMaxLoggingLevel(fl::logLevelValue(FLAGS_fl_log_level));
+  }
+  fl::VerboseLogging::setMaxLoggingLevel(FLAGS_fl_vlog_level);
+
   /* ===================== Create Network ===================== */
   if (FLAGS_emission_dir.empty() && FLAGS_am.empty()) {
     FL_LOG(fl::FATAL) << "Both flags are empty: `-emission_dir` and `-am`";
