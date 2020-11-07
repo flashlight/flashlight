@@ -222,7 +222,7 @@ DECLARE_int64(fl_vlog_level);
 /* ========== MIXED PRECISION OPTIONS ========== */
 
 DECLARE_bool(fl_amp_use_mixed_precision);
-DECLARE_uint64(fl_amp_scale_factor);
+DECLARE_double(fl_amp_scale_factor);
 DECLARE_uint64(fl_amp_scale_factor_update_interval);
 DECLARE_uint64(fl_amp_max_scale_factor);
 

@@ -672,8 +672,8 @@ int main(int argc, char** argv) {
     };
 
     int64_t curBatch = startUpdate;
-    unsigned int scaleFactor =
-        FLAGS_fl_amp_use_mixed_precision ? FLAGS_fl_amp_scale_factor : 1;
+    double scaleFactor =
+        FLAGS_fl_amp_use_mixed_precision ? FLAGS_fl_amp_scale_factor : 1.;
     unsigned int kScaleFactorUpdateInterval =
         FLAGS_fl_amp_scale_factor_update_interval;
     unsigned int kMaxScaleFactor = FLAGS_fl_amp_max_scale_factor;
@@ -760,7 +760,8 @@ int main(int argc, char** argv) {
 
           if (af::anyTrue<bool>(af::isNaN(loss.array())) ||
               af::anyTrue<bool>(af::isInf(loss.array()))) {
-            if (FLAGS_fl_amp_use_mixed_precision && scaleFactor >= 2) {
+            if (FLAGS_fl_amp_use_mixed_precision &&
+                scaleFactor >= fl::kAmpMinimumScaleFactorValue) {
               scaleFactor = scaleFactor / 2.0f;
               FL_VLOG(2) << "AMP: Scale factor decreased. New value:\t"
                          << scaleFactor;
@@ -801,7 +802,7 @@ int main(int argc, char** argv) {
             if (FLAGS_fl_amp_use_mixed_precision) {
               if (af::anyTrue<bool>(af::isNaN(p.grad().array())) ||
                   af::anyTrue<bool>(af::isInf(p.grad().array()))) {
-                if (scaleFactor >= 2) {
+                if (scaleFactor >= fl::kAmpMinimumScaleFactorValue) {
                   scaleFactor = scaleFactor / 2.0f;
                   FL_VLOG(2) << "AMP: Scale factor decreased. New value:\t"
                              << scaleFactor;
