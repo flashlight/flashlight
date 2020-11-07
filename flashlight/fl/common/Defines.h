@@ -77,6 +77,7 @@ struct DistributedConstants {
 };
 
 constexpr std::size_t kDynamicBenchmarkDefaultCount = 10;
+constexpr double kAmpMinimumScaleFactorValue = 1e-4;
 
 /**************************** Optimization Modes *****************************/
 // TODO(jacobkahn): should we move this to a different header? In Types.h/cpp?

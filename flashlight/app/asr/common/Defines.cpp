@@ -198,9 +198,9 @@ DEFINE_bool(
     "by a scale factor that changes over time. If no fl optim mode is "
     "specified with --fl_optim_mode when passing this flag, automatically "
     "sets the optim mode to O1.");
-DEFINE_uint64(
+DEFINE_double(
     fl_amp_scale_factor,
-    4096,
+    4096.,
     "Starting scale factor to use for loss scaling "
     " with mixed precision training");
 DEFINE_uint64(
