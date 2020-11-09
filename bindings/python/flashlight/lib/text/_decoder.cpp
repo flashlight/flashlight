@@ -175,12 +175,11 @@ PYBIND11_MODULE(_lib_text_decoder, m) {
       .value("ASG", CriterionType::ASG)
       .value("CTC", CriterionType::CTC);
 
-  py::class_<DecoderOptions>(m, "DecoderOptions")
+  py::class_<LexiconDecoderOptions>(m, "LexiconDecoderOptions")
       .def(
           py::init<
               const int,
               const int,
-              const double,
               const double,
               const double,
               const double,
@@ -195,19 +194,42 @@ PYBIND11_MODULE(_lib_text_decoder, m) {
           "word_score"_a,
           "unk_score"_a,
           "sil_score"_a,
-          "eos_score"_a,
           "log_add"_a,
           "criterion_type"_a)
-      .def_readwrite("beam_size", &DecoderOptions::beamSize)
-      .def_readwrite("beam_size_token", &DecoderOptions::beamSizeToken)
-      .def_readwrite("beam_threshold", &DecoderOptions::beamThreshold)
-      .def_readwrite("lm_weight", &DecoderOptions::lmWeight)
-      .def_readwrite("word_score", &DecoderOptions::wordScore)
-      .def_readwrite("unk_score", &DecoderOptions::unkScore)
-      .def_readwrite("sil_score", &DecoderOptions::silScore)
-      .def_readwrite("eos_score", &DecoderOptions::silScore)
-      .def_readwrite("log_add", &DecoderOptions::logAdd)
-      .def_readwrite("criterion_type", &DecoderOptions::criterionType);
+      .def_readwrite("beam_size", &LexiconDecoderOptions::beamSize)
+      .def_readwrite("beam_size_token", &LexiconDecoderOptions::beamSizeToken)
+      .def_readwrite("beam_threshold", &LexiconDecoderOptions::beamThreshold)
+      .def_readwrite("lm_weight", &LexiconDecoderOptions::lmWeight)
+      .def_readwrite("word_score", &LexiconDecoderOptions::wordScore)
+      .def_readwrite("unk_score", &LexiconDecoderOptions::unkScore)
+      .def_readwrite("sil_score", &LexiconDecoderOptions::silScore)
+      .def_readwrite("log_add", &LexiconDecoderOptions::logAdd)
+      .def_readwrite("criterion_type", &LexiconDecoderOptions::criterionType);
+
+  py::class_<LexiconFreeDecoderOptions>(m, "LexiconFreeDecoderOptions")
+      .def(
+          py::init<
+              const int,
+              const int,
+              const double,
+              const double,
+              const double,
+              const bool,
+              const CriterionType>(),
+          "beam_size"_a,
+          "beam_size_token"_a,
+          "beam_threshold"_a,
+          "lm_weight"_a,
+          "sil_score"_a,
+          "log_add"_a,
+          "criterion_type"_a)
+      .def_readwrite("beam_size", &LexiconFreeDecoderOptions::beamSize)
+      .def_readwrite("beam_size_token", &LexiconFreeDecoderOptions::beamSizeToken)
+      .def_readwrite("beam_threshold", &LexiconFreeDecoderOptions::beamThreshold)
+      .def_readwrite("lm_weight", &LexiconFreeDecoderOptions::lmWeight)
+      .def_readwrite("sil_score", &LexiconFreeDecoderOptions::silScore)
+      .def_readwrite("log_add", &LexiconFreeDecoderOptions::logAdd)
+      .def_readwrite("criterion_type", &LexiconFreeDecoderOptions::criterionType);
 
   py::class_<DecodeResult>(m, "DecodeResult")
       .def(py::init<int>(), "length"_a)
@@ -220,7 +242,7 @@ PYBIND11_MODULE(_lib_text_decoder, m) {
   // NB: `decode` and `decodeStep` expect raw emissions pointers.
   py::class_<LexiconDecoder>(m, "LexiconDecoder")
       .def(py::init<
-           const DecoderOptions&,
+           const LexiconDecoderOptions&,
            const TriePtr,
            const LMPtr,
            const int,
@@ -246,7 +268,7 @@ PYBIND11_MODULE(_lib_text_decoder, m) {
 
   py::class_<LexiconFreeDecoder>(m, "LexiconFreeDecoder")
       .def(py::init<
-           const DecoderOptions&,
+           const LexiconFreeDecoderOptions&,
            const LMPtr,
            const int,
            const int,
