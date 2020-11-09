@@ -82,9 +82,9 @@ TEST(DictionaryTest, Dictionary) {
 
 TEST(DictionaryTest, PackReplabels) {
   Dictionary dict;
-  dict.addEntry("1", 1);
-  dict.addEntry("2", 2);
-  dict.addEntry("3", 3);
+  dict.addEntry("<1>", 1);
+  dict.addEntry("<2>", 2);
+  dict.addEntry("<3>", 3);
 
   std::vector<int> labels = {5, 6, 6, 6, 10, 8, 8, 10, 10, 10, 10, 10};
   std::vector<std::vector<int>> packedCheck(4);
@@ -103,9 +103,12 @@ TEST(DictionaryTest, PackReplabels) {
 
 TEST(DictionaryTest, UnpackReplabels) {
   Dictionary dict;
-  dict.addEntry("1", 1);
-  dict.addEntry("2", 2);
-  dict.addEntry("3", 3);
+  dict.addEntry("<1>", 1);
+  dict.addEntry("<2>", 2);
+  dict.addEntry("<3>", 3);
+  dict.addEntry("1", 4);
+  dict.addEntry("2", 5);
+  dict.addEntry("3", 6);
   std::vector<int> labels = {6, 3, 7, 2, 8, 0, 1};
 
   auto unpacked1 = unpackReplabels(labels, dict, 1);
@@ -120,19 +123,21 @@ TEST(DictionaryTest, UnpackReplabels) {
 
 TEST(DictionaryTest, UnpackReplabelsIgnoresInvalid) {
   Dictionary dict;
-  dict.addEntry("1", 1);
-  dict.addEntry("2", 2);
+  dict.addEntry("<1>", 1);
+  dict.addEntry("<2>", 2);
+  dict.addEntry("1", 3);
+  dict.addEntry("2", 4);
 
-  // The initial replabel "1", with no prior token to repeat, is ignored.
+  // The initial replabel "<1>", with no prior token to repeat, is ignored.
   std::vector<int> labels1 = {1, 5, 1, 6};
   auto unpacked1 = unpackReplabels(labels1, dict, 2);
   ASSERT_THAT(unpacked1, ::testing::ElementsAre(5, 5, 6));
 
-  // The final replabel "2", whose prior token is a replabel, is ignored.
+  // The final replabel "<2>", whose prior token is a replabel, is ignored.
   std::vector<int> labels2 = {1, 5, 1, 2, 6};
   auto unpacked2 = unpackReplabels(labels2, dict, 2);
   ASSERT_THAT(unpacked2, ::testing::ElementsAre(5, 5, 6));
-  // With maxReps=1, "2" is not considered a replabel, altering the result.
+  // With maxReps=1, "<2>" is not considered a replabel, altering the result.
   auto unpacked2_1 = unpackReplabels(labels2, dict, 1);
   ASSERT_THAT(unpacked2_1, ::testing::ElementsAre(5, 5, 2, 6));
 

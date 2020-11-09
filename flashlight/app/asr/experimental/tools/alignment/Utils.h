@@ -37,7 +37,7 @@ void remapUTFWord(std::u16string& input, int replabel) {
   // map of replabels
   std::unordered_map<char16_t, int64_t> replabelMap;
   for (int64_t i = 1; i <= replabel; ++i) {
-    replabelMap[utf16conv.from_bytes(std::to_string(i))[0]] = i;
+    replabelMap[utf16conv.from_bytes("<" + std::to_string(i) + ">")[0]] = i;
   }
 
   std::u16string output;

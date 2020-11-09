@@ -87,7 +87,7 @@ TEST(DecoderTest, run) {
   /* ===================== Create Dictionary ===================== */
   auto lexicon = loadWords(pathsConcat(dataDir, "words.lst"));
   Dictionary tokenDict(pathsConcat(dataDir, "letters.lst"));
-  tokenDict.addEntry("1"); // replabel
+  tokenDict.addEntry("1"); // replabel emulation
   auto wordDict = createWordDict(lexicon);
 
   FL_LOG(fl::INFO) << "[Dictionary] Number of words: " << wordDict.indexSize();
