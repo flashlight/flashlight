@@ -106,6 +106,8 @@ class RnnLm : public Container {
     co.setCalcGrad(false);
 
     output = linear(output);
+    LogSoftmax lsm(0); // max on the main dimension
+    output = lsm(output);
     return std::make_tuple(output, ho, co);
   }
 
