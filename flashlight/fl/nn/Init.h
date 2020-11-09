@@ -13,6 +13,11 @@
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
 
+#pragma once
+
+#include "flashlight/fl/autograd/Variable.h"
+#include "flashlight/fl/common/Defines.h"
+
 /**
  * \defgroup nn_init_utils NN Initialization Functions
  *
@@ -21,14 +26,7 @@
  * Provides facilities for creating a `fl::Variable` tensor of different types
  * and initializations vis-a-vis probability distributions, constants, and the
  * identity. Additionally wraps common tensors as integrated into modules.
- *
- * @{
  */
-
-#pragma once
-
-#include "flashlight/fl/autograd/Variable.h"
-#include "flashlight/fl/common/Defines.h"
 
 namespace af {
 /**
@@ -44,6 +42,8 @@ namespace af {
  *
  * @return An `af::array` containing a tensor with random values distributed
  * accordingly.
+ *
+ * \ingroup nn_init_utils
  */
 af::array
 uniform(af::dim4 dims, double min = 0, double max = 1, af::dtype type = f32);
@@ -61,6 +61,8 @@ uniform(af::dim4 dims, double min = 0, double max = 1, af::dtype type = f32);
  *
  * @return An `af::array` containing a tensor with random values distributed
  * accordingly.
+ *
+ * \ingroup nn_init_utils
  */
 af::array
 normal(af::dim4 dims, double stdv = 1, double mean = 0, af::dtype type = f32);
@@ -79,6 +81,8 @@ normal(af::dim4 dims, double stdv = 1, double mean = 0, af::dtype type = f32);
  *
  * @return A `Variable` containing a tensor with random values distributed
  * accordingly.
+ *
+ * \ingroup nn_init_utils
  */
 af::array
 kaimingUniform(af::dim4 shape, int fanIn, af::dtype type = af::dtype::f32);
@@ -94,6 +98,8 @@ kaimingUniform(af::dim4 shape, int fanIn, af::dtype type = af::dtype::f32);
  *
  * @return An `af::array` containing a tensor with random values distributed
  * accordingly.
+ *
+ * \ingroup nn_init_utils
  */
 af::array
 kaimingNormal(af::dim4 shape, int fanIn, af::dtype type = af::dtype::f32);
@@ -112,6 +118,8 @@ kaimingNormal(af::dim4 shape, int fanIn, af::dtype type = af::dtype::f32);
  *
  * @return An `af::array` containing a tensor with random values distributed
  * accordingly.
+ *
+ * \ingroup nn_init_utils
  */
 af::array glorotUniform(
     af::dim4 shape,
@@ -134,6 +142,8 @@ af::array glorotUniform(
  *
  * @return An `af::array` containing a tensor with random values distributed
  * accordingly.
+ *
+ * \ingroup nn_init_utils
  */
 af::array glorotNormal(
     af::dim4 shape,
@@ -151,6 +161,8 @@ namespace fl {
  *
  * @param arr an `af::array` to be used
  * @return a `Variable` from the given array with gradient calculation disabled
+ *
+ * \ingroup nn_init_utils
  */
 Variable input(const af::array& arr);
 
@@ -159,6 +171,8 @@ Variable input(const af::array& arr);
  *
  * @param arr an `af::array` to be used
  * @return a `Variable` from the given array with gradient calculation disabled
+ *
+ * \ingroup nn_init_utils
  */
 Variable noGrad(const af::array& arr);
 
@@ -167,6 +181,8 @@ Variable noGrad(const af::array& arr);
  *
  * @param arr an `af::array` to be used
  * @return a `Variable` from the given array with gradient calculation enabled
+ *
+ * \ingroup nn_init_utils
  */
 Variable param(const af::array& arr);
 
@@ -182,6 +198,8 @@ Variable param(const af::array& arr);
  * `Variable` should be enabled
  *
  * @return A `Variable` containing a tensor with constant values.
+ *
+ * \ingroup nn_init_utils
  */
 Variable constant(
     double val,
@@ -201,6 +219,8 @@ Variable constant(
  * `Variable` should be enabled
  *
  * @return A `Variable` containing a tensor with constant values.
+ *
+ * \ingroup nn_init_utils
  */
 Variable
 constant(double val, af::dim4 dims, af::dtype type = f32, bool calcGrad = true);
@@ -216,6 +236,8 @@ constant(double val, af::dim4 dims, af::dtype type = f32, bool calcGrad = true);
  * `Variable` should be enabled
  *
  * @return A `Variable` containing the identity tensor.
+ *
+ * \ingroup nn_init_utils
  */
 Variable identity(
     int inputSize,
@@ -233,6 +255,8 @@ Variable identity(
  * `Variable` should be enabled
  *
  * @return A `Variable` containing the identity tensor.
+ *
+ * \ingroup nn_init_utils
  */
 Variable identity(af::dim4 dims, af::dtype type = f32, bool calcGrad = true);
 
@@ -252,6 +276,8 @@ Variable identity(af::dim4 dims, af::dtype type = f32, bool calcGrad = true);
  *
  * @return A `Variable` containing a tensor with random values distributed
  * accordingly.
+ *
+ * \ingroup nn_init_utils
  */
 Variable uniform(
     int inputSize,
@@ -276,6 +302,8 @@ Variable uniform(
  *
  * @return A `Variable` containing a tensor with random values distributed
  * accordingly.
+ *
+ * \ingroup nn_init_utils
  */
 Variable uniform(
     af::dim4 dims,
@@ -300,6 +328,8 @@ Variable uniform(
  *
  * @return A `Variable` containing a tensor with random values distributed
  * accordingly.
+ *
+ * \ingroup nn_init_utils
  */
 Variable normal(
     int inputSize,
@@ -324,6 +354,8 @@ Variable normal(
  *
  * @return A `Variable` containing a tensor with random values distributed
  * accordingly.
+ *
+ * \ingroup nn_init_utils
  */
 Variable normal(
     af::dim4 dims,
@@ -346,6 +378,8 @@ Variable normal(
  *
  * @return A `Variable` containing a tensor with random values distributed
  * accordingly.
+ *
+ * \ingroup nn_init_utils
  */
 Variable kaimingUniform(
     af::dim4 shape,
@@ -367,6 +401,8 @@ Variable kaimingUniform(
  *
  * @return A `Variable` containing a tensor with random values distributed
  * accordingly.
+ *
+ * \ingroup nn_init_utils
  */
 Variable kaimingNormal(
     af::dim4 shape,
@@ -390,6 +426,8 @@ Variable kaimingNormal(
  *
  * @return A `Variable` containing a tensor with random values distributed
  * accordingly.
+ *
+ * \ingroup nn_init_utils
  */
 Variable glorotUniform(
     af::dim4 shape,
@@ -415,6 +453,8 @@ Variable glorotUniform(
  *
  * @return A `Variable` containing a tensor with random values distributed
  * accordingly.
+ *
+ * \ingroup nn_init_utils
  */
 Variable glorotNormal(
     af::dim4 shape,
@@ -422,7 +462,5 @@ Variable glorotNormal(
     int fanOut,
     af::dtype type = af::dtype::f32,
     bool calcGrad = true);
-
-/** @} */
 
 } // namespace fl
