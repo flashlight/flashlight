@@ -66,6 +66,52 @@ TEST(ModuleTest, AsymmetricConv1DSerialization) {
   ASSERT_TRUE(allClose(outputl, output));
 }
 
+TEST(ModuleTest, TransformerSerialization) {
+  int batchsize = 10;
+  int timesteps = 120;
+  int c = 32;
+  int nheads = 4;
+
+  auto model = std::make_shared<Transformer>(
+    c, c / nheads, c, nheads, timesteps, 0.2, 0.1, false, false);
+  model->eval();
+  save(getTmpPath("Transformer"), model);
+  
+  std::shared_ptr<Transformer> loaded;
+  load(getTmpPath("Transformer"), loaded);
+  loaded->eval();
+
+  auto input = Variable(af::randu(c, timesteps, batchsize, 1), false);
+  auto output = model->forward({input});
+  auto outputl = loaded->forward({input});
+
+  ASSERT_TRUE(allParamsClose(*loaded, *model));
+  ASSERT_TRUE(allClose(outputl[0], output[0]));
+}
+
+TEST(ModuleTest, ConformerSerialization) {
+  int batchsize = 10;
+  int timesteps = 120;
+  int c = 32;
+  int nheads = 4;
+
+  auto model = std::make_shared<Conformer>(
+    c, c / nheads, c, nheads, timesteps, 33, 0.2, 0.1);
+  model->eval();
+  save(getTmpPath("Conformer"), model);
+  
+  std::shared_ptr<Conformer> loaded;
+  load(getTmpPath("Conformer"), loaded);
+  loaded->eval();
+
+  auto input = Variable(af::randu(c, timesteps, batchsize, 1), false);
+  auto output = model->forward({input});
+  auto outputl = loaded->forward({input});
+
+  ASSERT_TRUE(allParamsClose(*loaded, *model));
+  ASSERT_TRUE(allClose(outputl[0], output[0]));
+}
+
 TEST(ModuleTest, PositionEmbedding) {
   auto model = std::make_shared<PositionEmbedding>(128, 100, 0.1);
   model->eval();

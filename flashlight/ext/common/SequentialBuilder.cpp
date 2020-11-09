@@ -134,6 +134,28 @@ std::shared_ptr<Module> parseLines(
         preLN);
   }
 
+  if (params[0] == "CTR") {
+    if (!inRange(7, params.size(), 8)) {
+      throw std::invalid_argument("Failed parsing - " + line);
+    }
+    int modelDim = std::stoi(params[1]);
+    int mlpDim = std::stoi(params[2]);
+    int nHead = std::stoi(params[3]);
+    int csz = std::stoi(params[4]);
+    int kernel = std::stoi(params[5]);
+    float pDropout = std::stof(params[6]);
+    float pLayerdrop = (params.size() >= 8) ? std::stof(params[7]) : 0.0;
+    return std::make_shared<Conformer>(
+        modelDim,
+        modelDim / nHead,
+        mlpDim,
+        nHead,
+        csz,
+        kernel,
+        pDropout,
+        pLayerdrop);
+  }
+
   if (params[0] == "POSEMB") {
     if (!inRange(3, params.size(), 4)) {
       throw std::invalid_argument("Failed parsing - " + line);
