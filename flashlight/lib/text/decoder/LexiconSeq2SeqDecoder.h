@@ -28,6 +28,16 @@ using AMUpdateFunc = std::function<
         const std::vector<AMStatePtr>&,
         int&)>;
 
+struct LexiconSeq2SeqDecoderOptions {
+  int beamSize; // Maximum number of hypothesis we hold after each step
+  int beamSizeToken; // Maximum number of tokens we consider at each step
+  double beamThreshold; // Threshold to prune hypothesis
+  double lmWeight; // Weight of lm
+  double wordScore; // Word insertion score
+  double eosScore; // Score for inserting an EOS
+  bool logAdd; // If or not use logadd when merging hypothesis
+};
+
 /**
  * LexiconSeq2SeqDecoderState stores information for each hypothesis in the
  * beam.
@@ -108,14 +118,14 @@ struct LexiconSeq2SeqDecoderState {
 class LexiconSeq2SeqDecoder : public Decoder {
  public:
   LexiconSeq2SeqDecoder(
-      const DecoderOptions& opt,
+      const LexiconSeq2SeqDecoderOptions& opt,
       const TriePtr& lexicon,
       const LMPtr& lm,
       const int eos,
       AMUpdateFunc amUpdateFunc,
       const int maxOutputLength,
       const bool isLmToken)
-      : Decoder(opt),
+      : opt_(opt),
         lm_(lm),
         lexicon_(lexicon),
         eos_(eos),
@@ -134,6 +144,7 @@ class LexiconSeq2SeqDecoder : public Decoder {
   std::vector<DecodeResult> getAllFinalHypothesis() const override;
 
  protected:
+  LexiconSeq2SeqDecoderOptions opt_;
   LMPtr lm_;
   TriePtr lexicon_;
   int eos_;

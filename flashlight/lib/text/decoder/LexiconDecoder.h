@@ -17,6 +17,18 @@ namespace fl {
 namespace lib {
 namespace text {
 
+struct LexiconDecoderOptions {
+  int beamSize; // Maximum number of hypothesis we hold after each step
+  int beamSizeToken; // Maximum number of tokens we consider at each step
+  double beamThreshold; // Threshold to prune hypothesis
+  double lmWeight; // Weight of lm
+  double wordScore; // Word insertion score
+  double unkScore; // Unknown word insertion score
+  double silScore; // Silence insertion score
+  bool logAdd; // If or not use logadd when merging hypothesis
+  CriterionType criterionType; // CTC or ASG
+};
+
 /**
  * LexiconDecoderState stores information for each hypothesis in the beam.
  */
@@ -102,7 +114,7 @@ struct LexiconDecoderState {
 class LexiconDecoder : public Decoder {
  public:
   LexiconDecoder(
-      const DecoderOptions& opt,
+      const LexiconDecoderOptions& opt,
       const TriePtr& lexicon,
       const LMPtr& lm,
       const int sil,
@@ -110,7 +122,7 @@ class LexiconDecoder : public Decoder {
       const int unk,
       const std::vector<float>& transitions,
       const bool isLmToken)
-      : Decoder(opt),
+      : opt_(opt),
         lexicon_(lexicon),
         lm_(lm),
         sil_(sil),
@@ -136,6 +148,7 @@ class LexiconDecoder : public Decoder {
   std::vector<DecodeResult> getAllFinalHypothesis() const override;
 
  protected:
+  LexiconDecoderOptions opt_;
   // Lexicon trie to restrict beam-search decoder
   TriePtr lexicon_;
   LMPtr lm_;

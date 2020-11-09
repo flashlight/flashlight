@@ -16,6 +16,16 @@ namespace fl {
 namespace lib {
 namespace text {
 
+struct LexiconFreeDecoderOptions {
+  int beamSize; // Maximum number of hypothesis we hold after each step
+  int beamSizeToken; // Maximum number of tokens we consider at each step
+  double beamThreshold; // Threshold to prune hypothesis
+  double lmWeight; // Weight of lm
+  double silScore; // Silence insertion score
+  bool logAdd;
+  CriterionType criterionType; // CTC or ASG
+};
+
 /**
  * LexiconFreeDecoderState stores information for each hypothesis in the beam.
  */
@@ -89,12 +99,12 @@ struct LexiconFreeDecoderState {
 class LexiconFreeDecoder : public Decoder {
  public:
   LexiconFreeDecoder(
-      const DecoderOptions& opt,
+      const LexiconFreeDecoderOptions& opt,
       const LMPtr& lm,
       const int sil,
       const int blank,
       const std::vector<float>& transitions)
-      : Decoder(opt),
+      : opt_(opt),
         lm_(lm),
         transitions_(transitions),
         sil_(sil),
@@ -117,6 +127,7 @@ class LexiconFreeDecoder : public Decoder {
   std::vector<DecodeResult> getAllFinalHypothesis() const override;
 
  protected:
+  LexiconFreeDecoderOptions opt_;
   LMPtr lm_;
   std::vector<float> transitions_;
 

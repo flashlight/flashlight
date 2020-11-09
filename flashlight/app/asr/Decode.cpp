@@ -179,19 +179,6 @@ int main(int argc, char** argv) {
     transition = afToVector<float>(criterion->param(0).array());
   }
 
-  // Prepare decoder options
-  DecoderOptions decoderOpt(
-      FLAGS_beamsize,
-      FLAGS_beamsizetoken,
-      FLAGS_beamthreshold,
-      FLAGS_lmweight,
-      FLAGS_wordscore,
-      FLAGS_unkscore,
-      FLAGS_silscore,
-      FLAGS_eosscore,
-      FLAGS_logadd,
-      criterionType);
-
   // Prepare log writer
   std::mutex hypMutex, refMutex, logMutex;
   std::ofstream hypStream, refStream, logStream;
@@ -381,8 +368,16 @@ int main(int argc, char** argv) {
       if (FLAGS_uselexicon) {
         wordTargetStr = wrdIdx2Wrd(wordTarget, wordDict);
       } else {
-        auto letterTarget = tknTarget2Ltr(tokenTarget, tokenDict);
-        wordTargetStr = tkn2Wrd(letterTarget);
+        auto letterTarget = tknTarget2Ltr(
+            tokenTarget,
+            tokenDict,
+            FLAGS_criterion,
+            FLAGS_surround,
+            FLAGS_eostoken,
+            FLAGS_replabel,
+            FLAGS_usewordpiece,
+            FLAGS_wordseparator);
+        wordTargetStr = tkn2Wrd(letterTarget, FLAGS_wordseparator);
       }
 
       targetUnit.wordTargetStr = wordTargetStr;
@@ -432,7 +427,6 @@ int main(int argc, char** argv) {
                      &usrDict,
                      &tokenDict,
                      &wordDict,
-                     &decoderOpt,
                      &emissionQueue,
                      &writeHyp,
                      &writeRef,
@@ -495,7 +489,15 @@ int main(int argc, char** argv) {
 
       if (FLAGS_decodertype == "wrd") {
         decoder.reset(new LexiconSeq2SeqDecoder(
-            decoderOpt,
+            {
+                .beamSize = FLAGS_beamsize,
+                .beamSizeToken = FLAGS_beamsizetoken,
+                .beamThreshold = FLAGS_beamthreshold,
+                .lmWeight = FLAGS_lmweight,
+                .wordScore = FLAGS_wordscore,
+                .eosScore = FLAGS_eosscore,
+                .logAdd = FLAGS_logadd,
+            },
             trie,
             localLm,
             eosIdx,
@@ -508,7 +510,15 @@ int main(int argc, char** argv) {
       } else if (FLAGS_decodertype == "tkn") {
         if (FLAGS_uselexicon) {
           decoder.reset(new LexiconSeq2SeqDecoder(
-              decoderOpt,
+              {
+                  .beamSize = FLAGS_beamsize,
+                  .beamSizeToken = FLAGS_beamsizetoken,
+                  .beamThreshold = FLAGS_beamthreshold,
+                  .lmWeight = FLAGS_lmweight,
+                  .wordScore = FLAGS_wordscore,
+                  .eosScore = FLAGS_eosscore,
+                  .logAdd = FLAGS_logadd,
+              },
               trie,
               localLm,
               eosIdx,
@@ -520,7 +530,14 @@ int main(int argc, char** argv) {
               << tid;
         } else {
           decoder.reset(new LexiconFreeSeq2SeqDecoder(
-              decoderOpt,
+              {
+                  .beamSize = FLAGS_beamsize,
+                  .beamSizeToken = FLAGS_beamsizetoken,
+                  .beamThreshold = FLAGS_beamthreshold,
+                  .lmWeight = FLAGS_lmweight,
+                  .eosScore = FLAGS_eosscore,
+                  .logAdd = FLAGS_logadd,
+              },
               localLm,
               eosIdx,
               amUpdateFunc,
@@ -535,7 +552,15 @@ int main(int argc, char** argv) {
     } else {
       if (FLAGS_decodertype == "wrd") {
         decoder.reset(new LexiconDecoder(
-            decoderOpt,
+            {.beamSize = FLAGS_beamsize,
+             .beamSizeToken = FLAGS_beamsizetoken,
+             .beamThreshold = FLAGS_beamthreshold,
+             .lmWeight = FLAGS_lmweight,
+             .wordScore = FLAGS_wordscore,
+             .unkScore = FLAGS_unkscore,
+             .silScore = FLAGS_silscore,
+             .logAdd = FLAGS_logadd,
+             .criterionType = criterionType},
             trie,
             localLm,
             silIdx,
@@ -549,7 +574,15 @@ int main(int argc, char** argv) {
       } else if (FLAGS_decodertype == "tkn") {
         if (FLAGS_uselexicon) {
           decoder.reset(new LexiconDecoder(
-              decoderOpt,
+              {.beamSize = FLAGS_beamsize,
+               .beamSizeToken = FLAGS_beamsizetoken,
+               .beamThreshold = FLAGS_beamthreshold,
+               .lmWeight = FLAGS_lmweight,
+               .wordScore = FLAGS_wordscore,
+               .unkScore = FLAGS_unkscore,
+               .silScore = FLAGS_silscore,
+               .logAdd = FLAGS_logadd,
+               .criterionType = criterionType},
               trie,
               localLm,
               silIdx,
@@ -562,7 +595,17 @@ int main(int argc, char** argv) {
               << tid;
         } else {
           decoder.reset(new LexiconFreeDecoder(
-              decoderOpt, localLm, silIdx, blankIdx, transition));
+              {.beamSize = FLAGS_beamsize,
+               .beamSizeToken = FLAGS_beamsizetoken,
+               .beamThreshold = FLAGS_beamthreshold,
+               .lmWeight = FLAGS_lmweight,
+               .silScore = FLAGS_silscore,
+               .logAdd = FLAGS_logadd,
+               .criterionType = criterionType},
+              localLm,
+              silIdx,
+              blankIdx,
+              transition));
           FL_LOG(fl::INFO)
               << "[Decoder] Lexicon-free decoder with token-LM loaded in thread: "
               << tid;
@@ -596,16 +639,31 @@ int main(int argc, char** argv) {
         auto rawWordPrediction = results[i].words;
         auto rawTokenPrediction = results[i].tokens;
 
-        auto letterTarget = tknTarget2Ltr(tokenTarget, tokenDict);
-        auto letterPrediction =
-            tknPrediction2Ltr(rawTokenPrediction, tokenDict);
+        auto letterTarget = tknTarget2Ltr(
+            tokenTarget,
+            tokenDict,
+            FLAGS_criterion,
+            FLAGS_surround,
+            FLAGS_eostoken,
+            FLAGS_replabel,
+            FLAGS_usewordpiece,
+            FLAGS_wordseparator);
+        auto letterPrediction = tknPrediction2Ltr(
+            rawTokenPrediction,
+            tokenDict,
+            FLAGS_criterion,
+            FLAGS_surround,
+            FLAGS_eostoken,
+            FLAGS_replabel,
+            FLAGS_usewordpiece,
+            FLAGS_wordseparator);
         std::vector<std::string> wordPrediction;
         if (FLAGS_uselexicon) {
           rawWordPrediction =
               validateIdx(rawWordPrediction, wordDict.getIndex(kUnkToken));
           wordPrediction = wrdIdx2Wrd(rawWordPrediction, wordDict);
         } else {
-          wordPrediction = tkn2Wrd(letterPrediction);
+          wordPrediction = tkn2Wrd(letterPrediction, FLAGS_wordseparator);
         }
         auto wordTargetStr = join(" ", wordTarget);
         auto wordPredictionStr = join(" ", wordPrediction);

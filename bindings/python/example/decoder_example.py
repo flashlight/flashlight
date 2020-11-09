@@ -17,7 +17,7 @@ import sys
 import numpy as np
 from flashlight.lib.text.decoder import (
     CriterionType,
-    DecoderOptions,
+    LexiconDecoderOptions,
     KenLM,
     LexiconDecoder,
     SmearingMode,
@@ -187,11 +187,11 @@ if __name__ == "__main__":
         assert_near(node.max_score, trie_score_target[i], 1e-5)
 
     # Define decoder options:
-    # DecoderOptions (beam_size, token_beam_size, beam_threshold, lm_weight,
+    # LexiconDecoderOptions (beam_size, token_beam_size, beam_threshold, lm_weight,
     #                 word_score, unk_score, sil_score,
-    #                 eos_score, log_add, criterion_type (ASG or CTC))
-    opts = DecoderOptions(
-        2500, 25000, 100.0, 2.0, 2.0, -math.inf, -1, 0, False, CriterionType.ASG
+    #                 log_add, criterion_type (ASG or CTC))
+    opts = LexiconDecoderOptions(
+        2500, 25000, 100.0, 2.0, 2.0, -math.inf, -1, False, CriterionType.ASG
     )
 
     # define lexicon beam-search decoder with word-level lm

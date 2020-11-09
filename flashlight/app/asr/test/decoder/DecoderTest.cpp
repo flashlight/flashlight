@@ -148,17 +148,16 @@ TEST(DecoderTest, run) {
   }
 
   /* -------- Build Decoder --------*/
-  DecoderOptions decoderOpt(
-      2500, // beamsize
-      25000, // beamsizetoken
-      100.0, // beamthreshold
-      2.0, // lmweight
-      2.0, // lexiconcore
-      -std::numeric_limits<float>::infinity(), // unkscore
-      -1, // silscore
-      0, // eosscore
-      false, // logadd
-      CriterionType::ASG);
+  LexiconDecoderOptions decoderOpt{
+      .beamSize = 2500, // beamsize
+      .beamSizeToken = 25000, // beamsizetoken
+      .beamThreshold = 100.0, // beamthreshold
+      .lmWeight = 2.0, // lmweight
+      .wordScore = 2.0, // lexiconcore
+      .unkScore = -std::numeric_limits<float>::infinity(), // unkscore
+      .silScore = -1, // silscore
+      .logAdd = false, // logadd
+      .criterionType = CriterionType::ASG};
 
   LexiconDecoder decoder(
       decoderOpt, trie, lm, silIdx, blankIdx, unkIdx, transitions, false);
