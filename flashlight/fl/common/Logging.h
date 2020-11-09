@@ -67,18 +67,11 @@
  *
  * Note that `VLOG(level)` only prints when level is less than or equal to the
  * value set to `VerboseLogging`
- *
- * @{
  */
-
-#include <signal.h>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <utility>
 
 namespace fl {
 
+/// \ingroup logging
 enum LogLevel {
   DISABLED, // use only for when calling setMaxLoggingLevel() or
   // setting DEFAULT_MAX_FL_LOGGING_LEVEL.
@@ -88,35 +81,61 @@ enum LogLevel {
   INFO,
 };
 
+/**
+ * Gets the `LogLevel` for a given string. Throws if invalid.
+ *
+ * \ingroup logging
+ */
 LogLevel logLevelValue(const std::string& level);
+
+/**
+ * Gets string representation of a given `LogLevel`.
+ *
+ * \ingroup logging
+ */
 std::string logLevelName(LogLevel level);
 
 /**
- *  DEFAULT_MAX_FL_LOGGING_LEVEL is used for globally limit FL_LOG(level).
+ *  Used to globally limit `FL_LOG(level)`.
+ *
+ * \ingroup logging
  */
 constexpr LogLevel DEFAULT_MAX_FL_LOGGING_LEVEL = LogLevel::INFO;
 /**
- * MAX_VERBOSE_FL_LOGGING_LEVEL values are based on the values used in
- * FL_VLOG() and can be any value, but expected reasonable values are: 0..10
+ * `MAX_VERBOSE_FL_LOGGING_LEVEL` values are based on the values used in
+ * `FL_VLOG()` and can be any value, but expected reasonable values are: 0..10
  * for print none and print all respectively.
+ *
+ * \ingroup logging
  */
 constexpr int DEFAULT_MAX_VERBOSE_FL_LOGGING_LEVEL = 0;
 
+/**
+ * Write to log output for a given `LogLevel`.
+ *
+ * \ingroup logging
+ */
 #define FL_LOG(level) fl::Logging(level, __FILE__, __LINE__)
+
+/**
+ * Write to verbose log output for a given verbose logging level.
+ *
+ * \ingroup logging
+ */
 #define FL_VLOG(level) fl::VerboseLogging(level, __FILE__, __LINE__)
 
 // Optimization macros that allow to run code only we are going to log it.
 #define IF_LOG(level) if (fl::Logging::ifLog(level))
 #define IF_VLOG(level) if (fl::VerboseLogging::ifLog(level))
 
+/// \ingroup logging
 #define FL_LOG_IF(level, exp) \
   if (exp)                    \
   fl::Logging(level, __FILE__, __LINE__)
+/// \ingroup logging
 #define FL_VLOG_IF(level, exp) \
   if (exp)                     \
   fl::VerboseLogging(level, __FILE__, __LINE__)
-
-/** @} */
 
 class Logging {
  public:
