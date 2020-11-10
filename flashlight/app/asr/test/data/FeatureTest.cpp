@@ -139,11 +139,11 @@ TEST(FeatureTest, TargetTknTestStandaloneSep) {
   tokens.addEntry("t");
   tokens.addEntry("r");
   tokens.addEntry(sep);
-  
+
   LexiconMap lexicon;
   lexicon["abcd"].push_back({"ab", "cd", "||"});
   lexicon["abcdef"].push_back({"ab", "cd", "ef", "||"});
-  
+
   std::vector<std::string> words = {"abcdef", "abcd", "tr"};
   auto res = wrd2Target(
     words,
@@ -152,7 +152,7 @@ TEST(FeatureTest, TargetTknTestStandaloneSep) {
     sep,
     0,
     false,
-    true, // fallback right 
+    true, // fallback right
     false
   );
 
@@ -169,7 +169,7 @@ TEST(FeatureTest, TargetTknTestStandaloneSep) {
     sep,
     0,
     true, // fallback left
-    false, 
+    false,
     false
   );
 
@@ -190,12 +190,12 @@ TEST(FeatureTest, TargetTknTestInsideSep) {
   tokens.addEntry(sep);
   tokens.addEntry("f");
   tokens.addEntry("a");
-  
+
   LexiconMap lexicon;
   lexicon["hello"].push_back({"_hel", "lo"});
   lexicon["mama"].push_back({"_ma", "ma"});
   lexicon["af"].push_back({"_", "a", "f"});
-  
+
   std::vector<std::string> words = {"aff", "hello", "mama", "af"};
   auto res = wrd2Target(
     words,
@@ -291,13 +291,13 @@ TEST(FeatureTest, WrdToTarget) {
   FLAGS_usewordpiece = true;
   auto target4 = wrd2Target(words4, lexicon, dict, true, true);
   ASSERT_THAT(
-    target4, 
+    target4,
     ::testing::ElementsAreArray({"_", "1", "1", "1", "_7", "89", "_", "1"}));
   // fall back to letters and skip unknown, word sep is separate token
   FLAGS_usewordpiece = false;
   target4 = wrd2Target(words4, lexicon, dict, true, true);
   ASSERT_THAT(
-    target4, 
+    target4,
     ::testing::ElementsAreArray({"1", "1", "1", "_", "_7", "89", "1", "_"}));
 
   // skip unknown
@@ -306,9 +306,8 @@ TEST(FeatureTest, WrdToTarget) {
 }
 
 TEST(FeatureTest, TargetToSingleLtr) {
-  gflags::FlagSaver flagsaver;
-  FLAGS_wordseparator = "_";
-  FLAGS_usewordpiece = true;
+  std::string wordseparator = "_";
+  bool usewordpiece = true;
 
   Dictionary dict;
   for (int i = 0; i < 10; ++i) {
@@ -319,7 +318,7 @@ TEST(FeatureTest, TargetToSingleLtr) {
   dict.addEntry("456_", 4560);
 
   std::vector<int> words = {1, 230, 4560};
-  auto target = tknIdx2Ltr(words, dict);
+  auto target = tknIdx2Ltr(words, dict, usewordpiece, wordseparator);
   ASSERT_THAT(
       target, ::testing::ElementsAreArray({"1", "2", "3", "_", "4", "5", "6"}));
 }

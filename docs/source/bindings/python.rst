@@ -153,10 +153,10 @@ To run decoder one first should define its options:
 
 .. code-block:: python
 
-    from flashlight.lib.text.decoder import DecoderOptions
+    from flashlight.lib.text.decoder import LexiconDecoderOptions, LexiconFreeDecoderOptions
 
-
-    options = DecoderOptions(
+    // for lexicon-based decoder
+    options = LexiconDecoderOptions(
         beam_size, # number of top hypothesis to preserve at each decoding step
         token_beam_size, # restrict number of tokens by top am scores (if you have a huge token set)
         beam_threshold, # preserve a hypothesis only if its score is not far away from the current best hypothesis score
@@ -164,10 +164,20 @@ To run decoder one first should define its options:
         word_score, # score for words appearance in the transcription
         unk_score, # score for unknown word appearance in the transcription
         sil_score, # score for silence appearance in the transcription
-        eos_score, # score for eos appearance in the transcription (for Seq2Seq decoder only)
         log_add, # the way how to combine scores during hypotheses merging (log add operation, max)
         criterion_type # supports only CriterionType.ASG or CriterionType.CTC
         )
+    // for lexicon free-based decoder
+    options = LexiconFreeDecoderOptions(
+        beam_size, # number of top hypothesis to preserve at each decoding step
+        token_beam_size, # restrict number of tokens by top am scores (if you have a huge token set)
+        beam_threshold, # preserve a hypothesis only if its score is not far away from the current best hypothesis score
+        lm_weight, # language model weight for LM score
+        sil_score, # score for silence appearance in the transcription
+        log_add, # the way how to combine scores during hypotheses merging (log add operation, max)
+        criterion_type # supports only CriterionType.ASG or CriterionType.CTC
+        )
+
 
 Then we should prepare tokens dictionary (tokens for which acoustic models
 returns probability for each frame), lexicon (mapping between words and its spelling with the tokens set).

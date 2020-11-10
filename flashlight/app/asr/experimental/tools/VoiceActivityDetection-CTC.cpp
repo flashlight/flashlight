@@ -176,8 +176,17 @@ int main(int argc, char** argv) {
     // Hypothesis
     auto tokenPrediction =
         afToVector<int>(criterion->viterbiPath(rawEmission.array()));
-    auto letterPrediction = tknPrediction2Ltr(tokenPrediction, tokenDict);
-    std::vector<std::string> wordPrediction = tkn2Wrd(letterPrediction);
+    auto letterPrediction = tknPrediction2Ltr(
+        tokenPrediction,
+        tokenDict,
+        FLAGS_criterion,
+        FLAGS_surround,
+        FLAGS_eostoken,
+        FLAGS_replabel,
+        FLAGS_usewordpiece,
+        FLAGS_wordseparator);
+    std::vector<std::string> wordPrediction =
+        tkn2Wrd(letterPrediction, FLAGS_wordseparator);
 
     // LM score
     float lmScore = 0;
