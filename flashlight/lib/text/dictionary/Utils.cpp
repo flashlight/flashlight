@@ -91,7 +91,7 @@ std::vector<int> packReplabels(
 
   std::vector<int> replabelValueToIdx(maxReps + 1);
   for (int i = 1; i <= maxReps; ++i) {
-    replabelValueToIdx[i] = dict.getIndex(std::to_string(i));
+    replabelValueToIdx[i] = dict.getIndex("<" + std::to_string(i) + ">");
   }
 
   std::vector<int> result;
@@ -125,7 +125,7 @@ std::vector<int> unpackReplabels(
 
   std::unordered_map<int, int> replabelIdxToValue;
   for (int i = 1; i <= maxReps; ++i) {
-    replabelIdxToValue.emplace(dict.getIndex(std::to_string(i)), i);
+    replabelIdxToValue.emplace(dict.getIndex("<" + std::to_string(i) + ">"), i);
   }
 
   std::vector<int> result;

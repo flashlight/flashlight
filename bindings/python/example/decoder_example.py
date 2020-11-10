@@ -122,7 +122,7 @@ if __name__ == "__main__":
     # create w2l dict with tokens set (letters in this example)
     token_dict = Dictionary(os.path.join(data_path, "letters.lst"))
     # add repetition symbol as soon as we have ASG acoustic model
-    token_dict.add_entry("1")
+    token_dict.add_entry("<1>")
     # create Kenlm language model
     lm = KenLM(os.path.join(data_path, "lm.arpa"), word_dict)
 
@@ -172,7 +172,7 @@ if __name__ == "__main__":
         _, score = lm.score(start_state, usr_idx)
         for spelling in spellings:
             # max_reps should be 1; using 0 here to match DecoderTest bug
-            spelling_idxs = tkn_to_idx(spelling, token_dict, 0)
+            spelling_idxs = tkn_to_idx(spelling, token_dict, 1)
             trie.insert(spelling_idxs, usr_idx, score)
 
     trie.smear(SmearingMode.MAX)
@@ -182,7 +182,7 @@ if __name__ == "__main__":
     for i in range(len(sentence)):
         word = sentence[i]
         # max_reps should be 1; using 0 here to match DecoderTest bug
-        word_tensor = tkn_to_idx([c for c in word], token_dict, 0)
+        word_tensor = tkn_to_idx([c for c in word], token_dict, 1)
         node = trie.search(word_tensor)
         assert_near(node.max_score, trie_score_target[i], 1e-5)
 

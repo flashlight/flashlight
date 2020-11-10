@@ -44,7 +44,7 @@ std::vector<int> tokens2Tensor(
   for (const auto& tkn : tokens) {
     ret.push_back(tokenDict.getIndex(tkn));
   }
-  ret = packReplabels(ret, tokenDict, 0);
+  ret = packReplabels(ret, tokenDict, 1);
   return ret;
 }
 
@@ -85,9 +85,9 @@ TEST(DecoderTest, run) {
                    << ']';
 
   /* ===================== Create Dictionary ===================== */
-  auto lexicon = loadWords(pathsConcat(dataDir, "words.lst"));
+  auto lexicon = loadWords(pathsConcat(dataDir, "words_new.lst"));
   Dictionary tokenDict(pathsConcat(dataDir, "letters.lst"));
-  tokenDict.addEntry("1"); // replabel
+  tokenDict.addEntry("<1>"); // replabel emulation
   auto wordDict = createWordDict(lexicon);
 
   FL_LOG(fl::INFO) << "[Dictionary] Number of words: " << wordDict.indexSize();
@@ -128,7 +128,7 @@ TEST(DecoderTest, run) {
     std::tie(dummyState, score) = lm->score(startState, usrIdx);
 
     for (const auto& tokens : it.second) {
-      auto tokensTensor = tkn2Idx(tokens, tokenDict, 0);
+      auto tokensTensor = tkn2Idx(tokens, tokenDict, 1);
       trie->insert(tokensTensor, usrIdx, score);
     }
   }

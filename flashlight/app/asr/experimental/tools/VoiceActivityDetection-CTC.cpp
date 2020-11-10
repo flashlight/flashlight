@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
   fl::lib::text::Dictionary tokenDict(dictPath);
   // Setup-specific modifications
   for (int64_t r = 1; r <= FLAGS_replabel; ++r) {
-    tokenDict.addEntry(std::to_string(r));
+    tokenDict.addEntry("<" + std::to_string(r) + ">");
   }
   // ctc expects the blank label last
   if (FLAGS_criterion == kCtcCriterion) {
