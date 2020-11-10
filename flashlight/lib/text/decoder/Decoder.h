@@ -15,43 +15,6 @@ namespace text {
 
 enum class CriterionType { ASG = 0, CTC = 1, S2S = 2 };
 
-struct DecoderOptions {
-  int beamSize; // Maximum number of hypothesis we hold after each step
-  int beamSizeToken; // Maximum number of tokens we consider at each step
-  double beamThreshold; // Threshold to prune hypothesis
-  double lmWeight; // Weight of lm
-  double wordScore; // Word insertion score
-  double unkScore; // Unknown word insertion score
-  double silScore; // Silence insertion score
-  double eosScore; // Score for inserting an EOS
-  bool logAdd; // If or not use logadd when merging hypothesis
-  CriterionType criterionType; // CTC or ASG
-
-  DecoderOptions(
-      const int beamSize,
-      const int beamSizeToken,
-      const double beamThreshold,
-      const double lmWeight,
-      const double wordScore,
-      const double unkScore,
-      const double silScore,
-      const double eosScore,
-      const bool logAdd,
-      const CriterionType criterionType)
-      : beamSize(beamSize),
-        beamSizeToken(beamSizeToken),
-        beamThreshold(beamThreshold),
-        lmWeight(lmWeight),
-        wordScore(wordScore),
-        unkScore(unkScore),
-        silScore(silScore),
-        eosScore(eosScore),
-        logAdd(logAdd),
-        criterionType(criterionType) {}
-
-  DecoderOptions() {}
-};
-
 /**
  * Decoder support two typical use cases:
  * Offline manner:
@@ -72,7 +35,7 @@ struct DecoderOptions {
  */
 class Decoder {
  public:
-  explicit Decoder(const DecoderOptions& opt) : opt_(opt) {}
+  Decoder() = default;
   virtual ~Decoder() = default;
 
   /* Initialize decoder before starting consume emissions */
@@ -108,9 +71,6 @@ class Decoder {
 
   /* Get all the final hypothesis */
   virtual std::vector<DecodeResult> getAllFinalHypothesis() const = 0;
-
- protected:
-  DecoderOptions opt_;
 };
 } // namespace text
 } // namespace lib
