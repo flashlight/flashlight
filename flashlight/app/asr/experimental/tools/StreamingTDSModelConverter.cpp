@@ -179,7 +179,7 @@ int main(int argc, char** argv) {
   }
   text::Dictionary tokenDict(dictPath);
   for (int64_t r = 1; r <= FLAGS_replabel; ++r) {
-    tokenDict.addEntry(std::to_string(r));
+    tokenDict.addEntry("<" + std::to_string(r) + ">");
   }
   if (FLAGS_criterion == kCtcCriterion) {
     tokenDict.addEntry(kBlankToken);
