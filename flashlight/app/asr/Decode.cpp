@@ -20,6 +20,7 @@
 
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/criterion/criterion.h"
+#include "flashlight/app/asr/data/FeatureTransforms.h"
 #include "flashlight/app/asr/decoder/ConvLmModule.h"
 #include "flashlight/app/asr/decoder/Defines.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
@@ -37,6 +38,7 @@
 using namespace fl::ext;
 using namespace fl::lib;
 using namespace fl::lib::text;
+using namespace fl::lib::audio;
 using namespace fl::app::asr;
 
 int main(int argc, char** argv) {
@@ -255,7 +257,7 @@ int main(int argc, char** argv) {
                         << FLAGS_lmtype;
     }
   }
-  FL_LOG(fl::INFO) << "[Decoder] LM constructed.\n";
+  FL_LOG(fl::INFO) << "[Decoder] LM constructed.";
 
   // Build Trie
   int blankIdx =
@@ -282,7 +284,7 @@ int main(int argc, char** argv) {
         trie->insert(tokensTensor, usrIdx, score);
       }
     }
-    FL_LOG(fl::INFO) << "[Decoder] Trie planted.\n";
+    FL_LOG(fl::INFO) << "[Decoder] Trie planted.";
 
     // Smearing
     SmearingMode smear_mode = SmearingMode::NONE;
@@ -298,30 +300,73 @@ int main(int argc, char** argv) {
     FL_LOG(fl::INFO) << "[Decoder] Trie smeared.\n";
   }
 
-  /* ===================== AM Forwarding ===================== */
-  using EmissionQueue = ProducerConsumerQueue<EmissionTargetPair>;
-  EmissionQueue emissionQueue(FLAGS_emission_queue_size);
+  /* ===================== Create Dataset ===================== */
+  FeatureParams featParams(
+      FLAGS_samplerate,
+      FLAGS_framesizems,
+      FLAGS_framestridems,
+      FLAGS_filterbanks,
+      FLAGS_lowfreqfilterbank,
+      FLAGS_highfreqfilterbank,
+      FLAGS_mfcccoeffs,
+      kLifterParam /* lifterparam */,
+      FLAGS_devwin /* delta window */,
+      FLAGS_devwin /* delta-delta window */);
+  featParams.useEnergy = false;
+  featParams.usePower = false;
+  featParams.zeroMeanFrame = false;
+  FeatureType featType = FeatureType::NONE;
+  if (FLAGS_pow) {
+    featType = FeatureType::POW_SPECTRUM;
+  } else if (FLAGS_mfsc) {
+    featType = FeatureType::MFSC;
+  } else if (FLAGS_mfcc) {
+    featType = FeatureType::MFCC;
+  }
+  TargetGenerationConfig targetGenConfig(
+      FLAGS_wordseparator,
+      FLAGS_sampletarget,
+      FLAGS_criterion,
+      FLAGS_surround,
+      FLAGS_eostoken,
+      FLAGS_replabel,
+      true /* skip unk */,
+      FLAGS_usewordpiece /* fallback2LetterWordSepLeft */,
+      !FLAGS_usewordpiece /* fallback2LetterWordSepLeft */);
 
-  // Load dataset
+  auto inputTransform = inputFeatures(
+      featParams, featType, {FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx});
+  auto targetTransform = targetFeatures(tokenDict, lexicon, targetGenConfig);
+  auto wordTransform = wordFeatures(wordDict);
+  int targetpadVal = FLAGS_eostoken
+      ? tokenDict.getIndex(fl::app::asr::kEosToken)
+      : kTargetPadValue;
+  int wordpadVal = wordDict.getIndex(kUnkToken);
+
+  std::vector<std::string> testSplits = split(",", FLAGS_test, true);
   auto ds = createDataset(
-      FLAGS_test,
-      dicts,
-      lexicon,
+      testSplits,
+      FLAGS_datadir,
       1 /* batchsize */,
+      inputTransform,
+      targetTransform,
+      wordTransform,
+      std::make_tuple(0, targetpadVal, wordpadVal),
       0 /* worldrank */,
       1 /* worldsize */);
-  ds->shuffle(3);
+
   int nSamples = ds->size();
   if (FLAGS_maxload > 0) {
     nSamples = std::min(nSamples, FLAGS_maxload);
   }
+  FL_LOG(fl::INFO) << "[Dataset] Dataset loaded, with " << nSamples
+                   << " samples.";
 
-  std::mutex dataReadMutex;
-  int datasetGlobalSampleId = 0; // A gloabal index for data reading
+  /* ===================== AM Forwarding ===================== */
+  using EmissionQueue = ProducerConsumerQueue<EmissionTargetPair>;
+  EmissionQueue emissionQueue(FLAGS_emission_queue_size);
 
-  auto runAmForward = [&dataReadMutex,
-                       &datasetGlobalSampleId,
-                       &network,
+  auto runAmForward = [&network,
                        &criterion,
                        &nSamples,
                        &ds,
@@ -340,22 +385,17 @@ int main(int argc, char** argv) {
       localNetwork->eval();
       localCriterion->eval();
     }
-    while (true) {
-      /* 1. Get sample */
-      int datasetLocalSampleId = -1;
-      std::vector<af::array> sample;
-      {
-        std::lock_guard<std::mutex> lock(dataReadMutex);
-        if (datasetGlobalSampleId >= nSamples) {
-          break;
-        }
-        sample = ds->get(datasetGlobalSampleId);
-        datasetLocalSampleId = datasetGlobalSampleId;
-        datasetGlobalSampleId++;
-      }
-      if (datasetGlobalSampleId > nSamples) {
-        break;
-      }
+
+    std::vector<int64_t> selectedIds;
+    for (int64_t i = tid; i < nSamples; i += FLAGS_nthread_decoder_am_forward) {
+      selectedIds.emplace_back(i);
+    }
+    std::shared_ptr<fl::Dataset> localDs =
+        std::make_shared<fl::ResampleDataset>(ds, selectedIds);
+    localDs = std::make_shared<fl::PrefetchDataset>(
+        localDs, FLAGS_nthread, FLAGS_nthread);
+
+    for (auto& sample : *localDs) {
       auto sampleId = readSampleIds(sample[kSampleIdx]).front();
 
       /* 2. Load Targets */
@@ -403,9 +443,6 @@ int main(int argc, char** argv) {
       }
 
       emissionQueue.add({emissionUnit, targetUnit});
-      if (datasetLocalSampleId == nSamples - 1) {
-        emissionQueue.finishAdding();
-      }
     }
 
     localNetwork.reset(); // AM is only used in running forward pass. So we will
@@ -703,7 +740,7 @@ int main(int argc, char** argv) {
                       << ") need to be positive ";
   }
 
-  auto startThreadsAndJoin = [&runAmForward, &runDecoder](
+  auto startThreadsAndJoin = [&runAmForward, &runDecoder, &emissionQueue](
                                  int nAmThreads, int nDecoderThreads) {
     // TODO possibly try catch for futures to proper logging of all errors
     // https://github.com/facebookresearch/gtn/blob/master/gtn/parallel/parallel_map.h#L154
@@ -721,6 +758,7 @@ int main(int argc, char** argv) {
         for (int i = 0; i < nAmThreads; i++) {
           futs[i].get();
         }
+        emissionQueue.finishAdding();
       }
       // 2. Decoding
       {
@@ -747,7 +785,11 @@ int main(int argc, char** argv) {
         futs[i + nAmThreads] = threadPool.enqueue(runDecoder, i);
       }
 
-      for (int i = 0; i < nAmThreads + nDecoderThreads; i++) {
+      for (int i = 0; i < nAmThreads; i++) {
+        futs[i].get();
+      }
+      emissionQueue.finishAdding();
+      for (int i = nAmThreads; i < nAmThreads + nDecoderThreads; i++) {
         futs[i].get();
       }
     }
