@@ -253,6 +253,7 @@ int main(int argc, char** argv) {
       FLAGS_devwin /* delta-delta window */);
   featParams.useEnergy = false;
   featParams.usePower = false;
+  featParams.zeroMeanFrame = false;
   int numFeatures = -1;
   FeatureType featType = FeatureType::NONE;
   if (FLAGS_pow) {
