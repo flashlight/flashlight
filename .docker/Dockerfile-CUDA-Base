@@ -4,7 +4,7 @@
 # Ubuntu           18.04
 # CUDA             10.0
 # CuDNN            7-dev
-# cmake            3.10         (git)
+# cmake            3.18         (git)
 # arrayfire        3.7.1        (git, CUDA backend)
 # OpenMPI          latest       (apt)
 # libsndfile       4bdd741      (git)
@@ -26,7 +26,6 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
         build-essential \
         ca-certificates \
-        cmake \
         wget \
         git \
         vim \
@@ -63,13 +62,13 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         # for python
         python3-distutils && \
 # ==================================================================
-# cmake 3.10 (for MKLDNN)
+# cmake 3.18 (for MKLDNN)
 # ------------------------------------------------------------------
     apt-get purge -y cmake && \
     # for cmake
     DEBIAN_FRONTEND=noninteractive $APT_INSTALL zlib1g-dev libcurl4-openssl-dev && \
-    cd /tmp && wget https://cmake.org/files/v3.10/cmake-3.10.3.tar.gz  && \
-    tar -xzvf cmake-3.10.3.tar.gz  && cd cmake-3.10.3  && \
+    cd /tmp && wget https://github.com/Kitware/CMake/releases/download/v3.18.4/cmake-3.18.4.tar.gz && \
+    tar -xzvf cmake-3.18.4.tar.gz  && cd cmake-3.18.4  && \
     ./bootstrap --system-curl && \
     make -j$(nproc) &&  make install && cmake --version && \
 # ==================================================================

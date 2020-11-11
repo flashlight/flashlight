@@ -3,7 +3,7 @@
 # ------------------------------------------------------------------
 # Ubuntu           18.04
 # OpenMPI          latest       (apt)
-# cmake            3.10         (git)
+# cmake            3.18         (git)
 # MKL              2018.4-057   (apt)
 # arrayfire        3.7.1        (git, CPU backend)
 # MKLDNN           4bdffc2      (git)
@@ -58,15 +58,12 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         # for python sox
         sox && \
 # ==================================================================
-# cmake 3.10 (for MKLDNN)
+# cmake 3.18 (for MKLDNN)
 # ------------------------------------------------------------------
     apt-get purge -y cmake && \
-    # for cmake
-    DEBIAN_FRONTEND=noninteractive $APT_INSTALL zlib1g-dev libcurl4-openssl-dev && \
-    cd /tmp && wget https://cmake.org/files/v3.10/cmake-3.10.3.tar.gz  && \
+    cd /tmp && wget https://cmake.org/files/v3.18/cmake-3.18.4.tar.gz  && \
     tar -xzvf cmake-3.10.3.tar.gz  && cd cmake-3.10.3  && \
-    ./bootstrap --system-curl && \
-    make -j$(nproc) &&  make install && cmake --version && \
+    ./bootstrap && make -j$(nproc) &&  make install && cmake --version && \
 # ==================================================================
 # MKL https://software.intel.com/en-us/mkl
 # ------------------------------------------------------------------
