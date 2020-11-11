@@ -74,7 +74,9 @@ constexpr size_t kInputIdx = 0;
 constexpr size_t kTargetIdx = 1;
 constexpr size_t kWordIdx = 2;
 constexpr size_t kSampleIdx = 3;
-constexpr size_t kNumDataIdx = 4; // total number of dataset indices
+constexpr size_t kPathIdx = 4;
+constexpr size_t kDurationIdx = 5;
+constexpr size_t kNumDataIdx = 6; // total number of dataset indices
 
 // Various constants used in asr task
 constexpr const char* kTrainMode = "train";
