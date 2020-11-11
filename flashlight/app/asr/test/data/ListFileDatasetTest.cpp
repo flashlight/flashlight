@@ -46,13 +46,17 @@ TEST(ListFileDatasetTest, LoadData) {
   ListFileDataset audiods(rootPath, nullptr, letterToTarget);
   ASSERT_EQ(audiods.size(), 3);
   std::vector<int> expectedTgtLen = {45, 23, 26};
+  std::vector<float> expectedDuration = {1.2, 2.1, 0.6};
   for (int i = 0; i < 3; ++i) {
-    ASSERT_EQ(audiods.get(i).size(), 4);
+    ASSERT_EQ(audiods.get(i).size(), 6);
     ASSERT_EQ(audiods.get(i)[0].dims(), af::dim4(1, 24000));
     ASSERT_EQ(audiods.get(i)[1].elements(), expectedTgtLen[i]);
     ASSERT_EQ(audiods.get(i)[1].elements(), audiods.getTargetSize(i));
     ASSERT_TRUE(audiods.get(i)[2].isempty());
     ASSERT_EQ(audiods.get(i)[3].elements(), 1);
+    ASSERT_GE(audiods.get(i)[4].elements(), 15);
+    ASSERT_EQ(audiods.get(i)[5].elements(), 1);
+    ASSERT_EQ(audiods.get(i)[5].scalar<float>(), expectedDuration[i]);
   }
 }
 

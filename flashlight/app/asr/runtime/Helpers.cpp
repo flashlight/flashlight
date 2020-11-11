@@ -108,7 +108,7 @@ getTrainEvalIds(int64_t dsSize, double pctTrainEval, int64_t seed) {
 }
 
 std::vector<std::string> readSampleIds(const af::array& arr) {
-  return afMatrixToStrings<int>(arr, -1);
+  return afMatrixToStrings<char>(arr, '\0');
 }
 
 std::shared_ptr<Dataset> createDataset(
@@ -226,6 +226,12 @@ std::shared_ptr<fl::Dataset> createDataset(
           },
           [wrdPad](const std::vector<af::array>& arr) {
             return fl::join(arr, wrdPad, 1);
+          },
+          [](const std::vector<af::array>& arr) {
+            return fl::join(arr, 0, 1);
+          },
+          [](const std::vector<af::array>& arr) {
+            return fl::join(arr, 0, 1);
           },
           [](const std::vector<af::array>& arr) {
             return fl::join(arr, 0, 1);
