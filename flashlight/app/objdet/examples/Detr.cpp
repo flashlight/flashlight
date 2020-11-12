@@ -429,8 +429,8 @@ int main(int argc, char** argv) {
   auto weightDict = criterion.getWeightDict();
   for(int e = 0; e < FLAGS_epochs; e++) {
 
-    std::unordered_map<std::string, AverageValueMeter> meters;
-    std::unordered_map<std::string, TimeMeter> timers;
+    std::map<std::string, AverageValueMeter> meters;
+    std::map<std::string, TimeMeter> timers;
     int idx = 0;
     timers["total"].resume();
     train_ds->resample();

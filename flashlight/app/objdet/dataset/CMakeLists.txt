@@ -5,5 +5,6 @@ target_sources(
   PRIVATE
   #${CMAKE_CURRENT_LIST_DIR}/ImageDataset.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Coco.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/Transforms.cpp
   ${CMAKE_CURRENT_LIST_DIR}/BoxUtils.cpp
 )

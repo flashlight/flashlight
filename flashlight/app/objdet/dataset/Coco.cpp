@@ -1,6 +1,7 @@
 #include "flashlight/app/objdet/dataset/BoxUtils.h"
 #include "flashlight/app/objdet/dataset/Coco.h"
 #include "flashlight/ext/image/af/Transforms.h"
+#include "flashlight/app/objdet/dataset/Transforms.h"
 #include "flashlight/ext/image/af/Jpeg.h"
 #include "flashlight/ext/image/fl/dataset/DistributedDataset.h"
 #include "flashlight/ext/image/fl/dataset/LoaderDataset.h"
@@ -10,9 +11,6 @@
 #include <assert.h>
 #include <algorithm>
 #include <map>
-
-DEFINE_bool(onesize, false, "");
-DEFINE_bool(equal_aspect, false, "");
 
 namespace {
 
@@ -318,8 +316,7 @@ af::array resize(const af::array& in, const int resize) {
 std::vector<af::array> Normalize(const std::vector<af::array> in) {
   auto boxes = in[3];
 
-
-  if(! boxes.isempty()) {
+  if(!boxes.isempty()) {
     auto image = in[0];
     auto w = float(image.dims(0));
     auto h = float(image.dims(1));
@@ -332,6 +329,31 @@ std::vector<af::array> Normalize(const std::vector<af::array> in) {
   return { in[0], in[1], in[2], boxes, in[4] };
 
 }
+
+int randomInt(int min, int max) {
+  return std::rand() % (max - min + 1) + min;
+}
+
+TransformAllFunction randomSelect(std::vector<TransformAllFunction> fns)
+{
+  return [fns](const std::vector<af::array>& in) {
+    TransformAllFunction randomFunc = fns[std::rand() % fns.size()];
+    return randomFunc(in);
+  };
+};
+
+TransformAllFunction randomSizeCrop(int minSize, int maxSize) {
+  return [minSize, maxSize](const std::vector<af::array>& in) {
+    const af::array& image = in[0];
+    const int w = image.dims(0);
+    const int h = image.dims(1);
+    const int tw = randomInt(minSize, std::min(w, maxSize));
+    const int th = randomInt(minSize, std::min(h, maxSize));
+    const int x = std::rand() % (w - tw + 1);
+    const int y = std::rand() % (h - th + 1);
+    return crop(in, x, y, tw, th);
+  };
+};
 
 TransformAllFunction randomResize(
     std::vector<int> sizes,
@@ -373,11 +395,7 @@ TransformAllFunction randomResize(
     auto output_size = getSize(originalImage, size, maxsize);
     const af::dim4 originalDims = originalImage.dims();
     af::array resizedImage;
-    if (FLAGS_equal_aspect) {
-      resizedImage = af::resize(originalImage, size, size, AF_INTERP_BILINEAR);
-    } else {
-      resizedImage = af::resize(originalImage, output_size.first, output_size.second, AF_INTERP_BILINEAR);
-    }
+    resizedImage = af::resize(originalImage, output_size.first, output_size.second, AF_INTERP_BILINEAR);
     const af::dim4 resizedDims = resizedImage.dims();
 
 
@@ -399,6 +417,16 @@ TransformAllFunction randomResize(
   return resizeCoco;
 }
 
+
+TransformAllFunction compose(std::vector<TransformAllFunction> fns) {
+  return [fns](const std::vector<af::array>& in) {
+    std::vector<af::array> out = in; 
+    for(auto fn: fns) {
+      out = fn(out);
+    }
+    return out;
+  };
+}
 
 CocoDataset::CocoDataset(
     const std::string& list_file,
@@ -426,23 +454,26 @@ CocoDataset::CocoDataset(
 
   transformed = merged;
 
-  int maxSize = 800;
-  int oneSize = 800;
+  int maxSize = 1333;
   if (val) {
     transformed = std::make_shared<TransformAllDataset>(
-         //transformed, randomResize({480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800}, 800));
-         transformed, randomResize({oneSize}, maxSize));
+         transformed, randomResize({800}, maxSize));
    } else {
-    if (FLAGS_onesize) {
+
+     std::vector<int> scales = {480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800};
+     TransformAllFunction trainTransform = randomSelect(
+         {  
+         randomResize(scales, maxSize),
+         compose({
+              randomResize({400, 500, 600}, -1),
+              randomSizeCrop(384, 600),
+              randomResize(scales, 1333)
+          })
+         }
+      );
+
       transformed = std::make_shared<TransformAllDataset>(
-           //transformed, randomResize({480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800}, 800));
-           transformed, randomResize({oneSize}, maxSize));
-    } else {
-      transformed = std::make_shared<TransformAllDataset>(
-           transformed, randomResize({480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800}, maxSize));
-           //transformed, randomResize({480, 512}, 800));
-           //transformed, randomResize({256}, 800));
-     }
+           transformed, trainTransform);
    }
 
   transformed = std::make_shared<TransformAllDataset>(

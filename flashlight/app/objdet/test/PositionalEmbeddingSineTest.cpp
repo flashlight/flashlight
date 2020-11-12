@@ -1,4 +1,4 @@
-#include "app/object_detection/nn/PositionalEmbeddingSine.h"
+#include "flashlight/app/objdet/nn/PositionalEmbeddingSine.h"
 
 #include <gtest/gtest.h>
 
