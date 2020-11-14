@@ -21,8 +21,7 @@ FROM ubuntu:18.04 as cpu_base_builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         ca-certificates \
         curl \
@@ -132,8 +131,7 @@ RUN cd /tmp && \
 FROM cpu_base_builder as final
 
 # install dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         ca-certificates \
         curl \
@@ -142,7 +140,7 @@ RUN apt-get update && \
         # for cmake
         zlib1g-dev libcurl4-openssl-dev \
         # for MKL
-        #apt-transport-https gpg-agent gnupg2 \
+        apt-transport-https gpg-agent gnupg2 \
         # for arrayfire CPU backend
         # OpenBLAS
         libopenblas-dev libfftw3-dev liblapacke-dev \
