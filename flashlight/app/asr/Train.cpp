@@ -631,13 +631,22 @@ int main(int argc, char** argv) {
 
     std::shared_ptr<fl::SpecAugment> saug;
     if (FLAGS_saug_start_update >= 0) {
+      fl::RawWavSpecAugmentConfig rawConfig = {
+        .useRawWav = !(FLAGS_pow || FLAGS_mfsc || FLAGS_mfcc),
+        .nMels = (int)FLAGS_filterbanks,
+        .lowFreqHz = (int)FLAGS_lowfreqfilterbank,
+        .highFreqHz = (int)FLAGS_highfreqfilterbank,
+        .sampleRate = (int)FLAGS_samplerate,
+        .maxKernelSize = 20000
+      };
       saug = std::make_shared<fl::SpecAugment>(
           FLAGS_filterbanks,
           FLAGS_saug_fmaskf,
           FLAGS_saug_fmaskn,
           FLAGS_saug_tmaskt,
           FLAGS_saug_tmaskp,
-          FLAGS_saug_tmaskn);
+          FLAGS_saug_tmaskn,
+          rawConfig);
     }
 
     fl::allReduceParameters(ntwrk);

@@ -291,7 +291,15 @@ TEST(ModuleTest, StreamingTDSFwd) {
 }
 
 TEST(ModuleTest, SpecAugmentFwd) {
-  SpecAugment specAug(0, 27, 2, 100, 0.2, 2);
+  fl::RawWavSpecAugmentConfig rawConfig = {
+    .useRawWav = false,
+    .nMels = 0,
+    .lowFreqHz = 0,
+    .highFreqHz = 0,
+    .sampleRate = 0,
+    .maxKernelSize = 0
+  };
+  SpecAugment specAug(0, 27, 2, 100, 0.2, 2, rawConfig);
   int T = 512, F = 80;
   auto input = Variable(af::randu(T, F), false);
 
@@ -326,6 +334,34 @@ TEST(ModuleTest, SpecAugmentFwd) {
     fZeros = af::allTrue<bool>(curOutSlice == 0) ? fZeros + 1 : fZeros;
   }
   ASSERT_GT(fZeros, 0);
+}
+
+TEST(ModuleTest, SpecAugmentRawWave) {
+  fl::RawWavSpecAugmentConfig rawConfig = {
+    .useRawWav = true,
+    .nMels = 1,
+    .lowFreqHz = 2000,
+    .highFreqHz = 6000,
+    .sampleRate = 16000,
+    .maxKernelSize = 20000
+  };
+  // no time, only freq masking
+  SpecAugment specAug(0, 1, 1, 0, 0, 0, rawConfig);
+  specAug.train();
+
+  int T = 300;
+  auto time = 2 * M_PI * af::iota(af::dim4(T)) / 16000;
+  auto finalWav =
+    af::sin(time * 500) + af::sin(time * 1000) + af::sin(time * 7000) + af::sin(time * 7500);
+  auto inputWav = finalWav + af::sin(time * 3000) + af::sin(time * 4000) + af::sin(time * 5000);
+
+  auto filteredWav = specAug(fl::Variable(inputWav, false));
+  // compare middle of filtered wave to avoid edge artifacts comparison
+  int halfKernelWidth = 63;
+  ASSERT_TRUE(fl::allClose(
+    fl::Variable(finalWav.rows(halfKernelWidth, T - halfKernelWidth - 1), false),
+    filteredWav.rows(halfKernelWidth, T - halfKernelWidth - 1),
+    1e-3));
 }
 
 int main(int argc, char** argv) {

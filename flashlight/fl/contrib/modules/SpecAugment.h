@@ -25,7 +25,19 @@ namespace fl {
  * LibriSpeech double (LD)   80        27        2     100       1.0       2
  * Switchboard mild (SM)     40        15        2      70       0.2       2
  * Switchboard strong (SS)   40        27        2      70       0.2       2
+ *
+ * Raw wave specAug is implemented with the low pass filter, for example
+ * https://www.analog.com/media/en/technical-documentation/dsp-book/dsp_book_Ch16.pdf
  **/
+struct RawWavSpecAugmentConfig {
+  bool useRawWav;
+  int nMels;
+  int lowFreqHz;
+  int highFreqHz;
+  int sampleRate;
+  int maxKernelSize;
+};
+
 class SpecAugment : public UnaryModule {
  public:
   enum class MaskingStrategy {
@@ -41,7 +53,9 @@ class SpecAugment : public UnaryModule {
       int tMaskT,
       float tMaskP,
       int nTMask,
-      MaskingStrategy mStrategy = MaskingStrategy::ZERO);
+      RawWavSpecAugmentConfig rawWaveConfig,
+      MaskingStrategy mStrategy = MaskingStrategy::ZERO
+      );
 
   Variable forward(const Variable& input) override;
 
@@ -53,7 +67,13 @@ class SpecAugment : public UnaryModule {
       timeMaskT_,
       timeMaskP_,
       numTimeMask_,
-      maskStrategy_)
+      maskStrategy_,
+      fl::versioned(useRawWav_, 1),
+      fl::versioned(rawWavNMels_, 1),
+      fl::versioned(rawWavLowFreqHz_, 1),
+      fl::versioned(rawWavHighFreqHz_, 1),
+      fl::versioned(rawWavSampleRate_, 1),
+      fl::versioned(maxKernelSize_, 1))
 
   std::string prettyString() const override;
 
@@ -76,7 +96,22 @@ class SpecAugment : public UnaryModule {
   std::mt19937 eng_{0};
   MaskingStrategy maskStrategy_;
 
+  // Raw wave input
+  bool useRawWav_{false};
+  int rawWavNMels_{80};
+  int rawWavLowFreqHz_{0};
+  int rawWavHighFreqHz_{8000};
+  int rawWavSampleRate_{16000};
+  int maxKernelSize_{20000};
+  int ignoredLowPassFilters_;
+  std::vector<float> cutoff_;
+  std::vector<std::shared_ptr<Conv2D>> lowPassFilters_;
+
   int generateRandomInt(int low, int high);
+
+  void rawWavPrecompute();
+
+  af::array lowPassFilter(int freq, af::array wav);
 
   SpecAugment() = default;
 };
@@ -84,3 +119,4 @@ class SpecAugment : public UnaryModule {
 } // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::SpecAugment)
+CEREAL_CLASS_VERSION(fl::SpecAugment, 1)

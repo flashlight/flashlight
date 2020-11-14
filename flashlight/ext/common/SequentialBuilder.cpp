@@ -502,13 +502,22 @@ std::shared_ptr<Module> parseLines(
     if (params.size() != 7) {
       throw std::invalid_argument("Failed parsing - " + line);
     }
+    fl::RawWavSpecAugmentConfig rawConfig = {
+      .useRawWav = false,
+      .nMels = 0,
+      .lowFreqHz = 0,
+      .highFreqHz = 0,
+      .sampleRate = 0,
+      .maxKernelSize = 0
+    };
     return std::make_shared<SpecAugment>(
         std::stoi(params[1]),
         std::stoi(params[2]),
         std::stoi(params[3]),
         std::stoi(params[4]),
         std::stod(params[5]),
-        std::stoi(params[6]));
+        std::stoi(params[6]),
+        rawConfig);
   }
 
   /* ========== Precision Cast  ========== */
