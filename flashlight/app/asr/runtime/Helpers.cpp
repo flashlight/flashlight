@@ -12,6 +12,10 @@
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/lib/common/System.h"
 
+#ifdef FL_BUILD_FB_DEPENDENCIES
+#include "flashlight/fl/fb/EverstoreDataset.h"
+#endif
+
 using namespace fl::ext;
 using namespace fl::lib;
 using fl::lib::text::DictionaryMap;
@@ -121,25 +125,7 @@ std::shared_ptr<Dataset> createDataset(
     bool fallback2Ltr /* = true */,
     bool skipUnk /* = true */) {
   std::shared_ptr<Dataset> ds;
-  if (FLAGS_everstoredb) {
-#ifdef FL_BUILD_FB_DEPENDENCIES
-    EverstoreDataset::init(); // Required for everstore client
-    ds = std::make_shared<EverstoreDataset>(
-        path,
-        dicts,
-        lexicon,
-        batchSize,
-        worldRank,
-        worldSize,
-        fallback2Ltr,
-        skipUnk,
-        FLAGS_datadir,
-        FLAGS_use_memcache);
-#else
-    FL_LOG(fl::FATAL) << "EverstoreDataset not supported: "
-                      << "build with -DFL_BUILD_FB_DEPENDENCIES";
-#endif
-  } else if (FLAGS_blobdata) {
+  if (FLAGS_blobdata) {
     ds = std::make_shared<BlobsDataset>(
         path,
         dicts,
@@ -179,11 +165,26 @@ std::shared_ptr<fl::Dataset> createDataset(
   std::vector<std::shared_ptr<const fl::Dataset>> allListDs;
   std::vector<float> sizes;
   for (auto& path : paths) {
-    auto curListDs = std::make_shared<ListFileDataset>(
-        pathsConcat(rootDir, path),
-        inputTransform,
-        targetTransform,
-        wordTransform);
+    std::shared_ptr<ListFileDataset> curListDs;
+    if (FLAGS_everstoredb) {
+#ifdef FL_BUILD_FB_DEPENDENCIES
+      curListDs = std::make_shared<fl::app::asr::EverstoreDataset>(
+          pathsConcat(rootDir, path),
+          inputTransform,
+          targetTransform,
+          wordTransform,
+          FLAGS_use_memcache);
+#else
+      FL_LOG(fl::FATAL) << "EverstoreDataset not supported: "
+                        << "build with -DFL_BUILD_FB_DEPENDENCIES";
+#endif
+    } else {
+      curListDs = std::make_shared<ListFileDataset>(
+          pathsConcat(rootDir, path),
+          inputTransform,
+          targetTransform,
+          wordTransform);
+    }
 
     allListDs.emplace_back(curListDs);
     sizes.reserve(sizes.size() + curListDs->size());

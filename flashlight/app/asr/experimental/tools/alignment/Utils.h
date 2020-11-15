@@ -17,8 +17,9 @@
 
 using namespace fl::app::asr;
 
-namespace w2l {
-
+namespace fl {
+namespace app {
+namespace asr {
 namespace alignment {
 
 struct AlignedWord {
@@ -204,4 +205,6 @@ std::string getCTMFormat(std::vector<AlignedWord> alignedWords) {
 }
 
 } // namespace alignment
-} // namespace w2l
+} // namespace asr
+} // namespace app
+} // namespace fl
