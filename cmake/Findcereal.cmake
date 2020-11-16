@@ -36,7 +36,7 @@ if (NOT TARGET cereal)
   message(STATUS "Found cereal (include: ${cereal_INCLUDE_DIRS})")
   mark_as_advanced(cereal_FOUND)
   if (cereal_FOUND)
-    add_library(cereal UNKNOWN IMPORTED)
+    add_library(cereal INTERFACE IMPORTED)
     set_target_properties(cereal PROPERTIES
       INTERFACE_INCLUDE_DIRECTORIES "${cereal_INCLUDE_DIRS}")
   endif()
