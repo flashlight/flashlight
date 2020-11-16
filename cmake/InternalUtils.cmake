@@ -1,4 +1,3 @@
-
 function(setup_install_targets)
   set(multiValueArgs INSTALL_TARGETS INSTALL_HEADERS)
   cmake_parse_arguments(setup_install_targets "${options}" "${oneValueArgs}"
@@ -44,6 +43,7 @@ function(setup_install_targets)
 endfunction(setup_install_targets)
 
 function(setup_install_headers HEADER_DIR DEST_DIR)
+
   # Move headers
   install(
     DIRECTORY ${HEADER_DIR}
@@ -51,7 +51,7 @@ function(setup_install_headers HEADER_DIR DEST_DIR)
     DESTINATION ${DEST_DIR}
     FILES_MATCHING # preserve directory structure
     PATTERN  "*.h"
-    PATTERN "*.cuh" # TODO: gate me
+    PATTERN "*.cuh" # TODO: make this conditional, e.g. $<IF:FLASHLIGHT_USE_CUDA,"*.cuh","a^">
     PATTERN "test*" EXCLUDE
     PATTERN "tests" EXCLUDE
     PATTERN "backend" EXCLUDE

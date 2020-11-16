@@ -1,22 +1,15 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 # Get Google Test
-if (TARGET CONAN_PKG::gtest)
-  message(STATUS "Found googletest installed by conan")
-  # Use imported target
-  set(GTEST_LIBRARIES CONAN_PKG::gtest)
+find_package(GTest 1.10.0)
+if (NOT TARGET gtest AND NOT GTEST_FOUND)
+  message(STATUS "googletest not found - will download and build from source")
+  # Download and build googletest
+  include(${CMAKE_MODULE_PATH}/BuildGoogleTest.cmake) # internally sets GTEST_LIBRARIES
 else()
-  find_package(GTest 1.10.0)
-  if (NOT TARGET gtest AND NOT GTEST_FOUND)
-    message(STATUS "googletest not found - will download and build from source")
-    # Download and build googletest
-    include(${CMAKE_MODULE_PATH}/BuildGoogleTest.cmake) # internally sets GTEST_LIBRARIES
-  else()
-    message(STATUS "gtest found: (include: ${GTEST_INCLUDE_DIRS}, lib: ${GTEST_BOTH_LIBRARIES}")
-    set(GTEST_LIBRARIES ${GTEST_BOTH_LIBRARIES})
-   endif()
+  message(STATUS "gtest found: (include: ${GTEST_INCLUDE_DIRS}, lib: ${GTEST_BOTH_LIBRARIES}")
+  set(GTEST_LIBRARIES ${GTEST_BOTH_LIBRARIES})
 endif()
-
 
 function(build_test SRCFILE LINK_LIBRARIES PREPROC_DEFS)
   get_filename_component(src_name ${SRCFILE} NAME_WE)
