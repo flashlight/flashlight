@@ -14,7 +14,7 @@ message(STATUS "CBLAS found (include: ${CBLAS_INCLUDE_DIR}, library: ${CBLAS_LIB
 
 # FFTW
 find_package(FFTW3 REQUIRED)
-if (TARGET FFTW3::fftw3)
+if (FFTW3_FOUND)
   message(STATUS "FFTW found")
   setup_install_find_module(${CMAKE_MODULE_PATH}/FindFFTW3.cmake)
 else()
