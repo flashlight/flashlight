@@ -4,6 +4,10 @@ cmake_minimum_required(VERSION 3.5.1)
 find_package(SndFile REQUIRED)
 if (TARGET SndFile::sndfile)
   message(STATUS "libsndfile found.")
+  setup_install_find_module(${CMAKE_MODULE_PATH}/FindSndFile.cmake)
+  setup_install_find_module(${CMAKE_MODULE_PATH}/FindOgg.cmake)
+  setup_install_find_module(${CMAKE_MODULE_PATH}/FindVorbis.cmake)
+  setup_install_find_module(${CMAKE_MODULE_PATH}/FindFLAC.cmake)
 else ()
   message(FATAL_ERROR "Required dependency libsndfile not found.")
 endif ()
@@ -25,6 +29,6 @@ target_sources(
 
 target_link_libraries(
   flashlight-app-asr
-  PUBLIC
+  PRIVATE
   SndFile::sndfile
   )
