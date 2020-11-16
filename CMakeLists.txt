@@ -55,6 +55,9 @@ else ()
   message(FATAL_ERROR "Invalid FLASHLIGHT backend specified")
 endif ()
 
+
+set(FLASHLIGHT_ROOT_DIR ${PROJECT_SOURCE_DIR}/flashlight)
+
 # ------------------------ Tests ------------------------
 
 if (FL_BUILD_TESTS)
@@ -129,39 +132,30 @@ if (FL_BUILD_CORE)
     message(FATAL_ERROR "ArrayFire OpenCL not found: cannot build OpenCL backend")
   endif()
 
-  # Find/download/build Cereal
-  if (TARGET CONAN_PKG::cereal)
-    target_link_libraries(
-      flashlight
-      PUBLIC
-      CONAN_PKG::cereal
+  # If cereal is found in a user-defined location, use it rather than
+  # downloading from source
+  find_package(cereal)
+  if (NOT TARGET cereal AND NOT cereal_FOUND)
+    message(STATUS "cereal NOT found. Will download from source")
+    set(CEREAL_INSTALL_PATH ${FL_INSTALL_INC_DIR}/cereal)
+    include(${CMAKE_MODULE_PATH}/BuildCereal.cmake)
+    add_dependencies(flashlight cereal)
+    # Move cereal headers at install time
+    install(DIRECTORY ${CEREAL_SOURCE_DIR}/include/cereal
+      DESTINATION ${CEREAL_INSTALL_PATH}
+      COMPONENT cereal
+      FILES_MATCHING
+      PATTERN "*.hpp"
+      PATTERN "*.h"
+      PATTERN ".git" EXCLUDE
       )
+    install(FILES ${CEREAL_SOURCE_DIR}/LICENSE ${CEREAL_SOURCE_DIR}/README.md
+      DESTINATION ${CEREAL_INSTALL_PATH}
+      )
+    target_include_directories(flashlight PUBLIC ${cereal_INCLUDE_DIRS})
   else()
-     # If cereal is found in a user-defined location, use it rather than
-     # downloading from source
-     find_package(cereal)
-     if (NOT TARGET cereal AND NOT cereal_FOUND)
-       message(STATUS "cereal NOT found. Will download from source")
-       set(CEREAL_INSTALL_PATH ${FL_INSTALL_INC_DIR}/cereal)
-       include(${CMAKE_MODULE_PATH}/BuildCereal.cmake)
-       add_dependencies(flashlight cereal)
-       # Move cereal headers at install time
-       install(DIRECTORY ${CEREAL_SOURCE_DIR}/include/cereal
-         DESTINATION ${CEREAL_INSTALL_PATH}
-         COMPONENT cereal
-         FILES_MATCHING
-         PATTERN "*.hpp"
-         PATTERN "*.h"
-         PATTERN ".git" EXCLUDE
-         )
-      install(FILES ${CEREAL_SOURCE_DIR}/LICENSE ${CEREAL_SOURCE_DIR}/README.md
-        DESTINATION ${CEREAL_INSTALL_PATH}
-        )
-      target_include_directories(flashlight PUBLIC ${cereal_INCLUDE_DIRS})
-    else()
-      message(STATUS "Found cereal")
-      target_link_libraries(flashlight PUBLIC cereal)
-    endif()
+    message(STATUS "Found cereal")
+    target_link_libraries(flashlight PRIVATE cereal)
   endif()
 
   # -------------------- Locate Backend-specific Dependencies --------------------
