@@ -6,6 +6,7 @@ if (FL_LIBRARIES_USE_MKL)
   find_package(MKL REQUIRED)
   set(CBLAS_LIBRARIES ${MKL_LIBRARIES})
   set(CBLAS_INCLUDE_DIR ${MKL_INCLUDE_DIR})
+  setup_install_find_module(${CMAKE_MODULE_PATH}/FindMKL.cmake)
 else ()
   find_package(CBLAS REQUIRED)
 endif ()
@@ -15,6 +16,7 @@ message(STATUS "CBLAS found (include: ${CBLAS_INCLUDE_DIR}, library: ${CBLAS_LIB
 find_package(FFTW3 REQUIRED)
 if (TARGET FFTW3::fftw3)
   message(STATUS "FFTW found")
+  setup_install_find_module(${CMAKE_MODULE_PATH}/FindFFTW3.cmake)
 else()
   message(FATAL_ERROR "FFTW not found")
 endif()
@@ -51,7 +53,7 @@ target_sources(
 
 target_link_libraries(
   fl-libraries
-  PUBLIC
+  PRIVATE
   ${CBLAS_LIBRARIES}
   FFTW3::fftw3
   OpenMP::OpenMP_CXX

@@ -60,3 +60,14 @@ function(setup_install_headers HEADER_DIR DEST_DIR)
     PATTERN "experimental" EXCLUDE
     )
 endfunction(setup_install_headers)
+
+function(setup_install_find_module CONFIG_PATH)
+  # Only actually move module files if doing a standalone install; otherwise,
+  # assume we're being installed by a package manager
+  if (FL_BUILD_STANDALONE)
+    install(
+      FILES ${CONFIG_PATH}
+      DESTINATION ${FL_INSTALL_CMAKE_DIR}
+      )
+  endif()
+endfunction()
