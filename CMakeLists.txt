@@ -22,11 +22,6 @@ set(FL_INSTALL_CMAKE_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/cmake" CACHE PATH "Insta
 set(FL_INSTALL_EXAMPLES_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/examples" CACHE PATH "Install path for example files")
 set(FL_INSTALL_DOC_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/doc" CACHE PATH "Install path for documentation")
 
-include(InternalUtils)
-set(INSTALLABLE_TARGETS "")
-
-set(FLASHLIGHT_ROOT_DIR ${PROJECT_SOURCE_DIR}/flashlight)
-
 # ----------------------------- Configuration -----------------------------
 
 option(FL_BUILD_TESTS "Build tests" ON)
@@ -34,6 +29,7 @@ option(FL_BUILD_EXAMPLES "Build examples" ON)
 option(FL_BUILD_EXPERIMENTAL "Build internal experimental components" OFF)
 option(FL_BUILD_SCRIPTS "Build internal scripts for wav2letter++" OFF)
 option(FL_BUILD_RECIPES "Build recipes" ON)
+option(FL_BUILD_STANDALONE "Build standalone installation" ON)
 option(FL_BUILD_LIBRARIES "Build flashlight libraries" ON)
 cmake_dependent_option(FL_BUILD_CORE "Build flashlight core" ON "FL_BUILD_LIBRARIES" OFF)
 
@@ -55,6 +51,9 @@ else ()
   message(FATAL_ERROR "Invalid FLASHLIGHT backend specified")
 endif ()
 
+# Installation utilities
+include(InternalUtils)
+set(INSTALLABLE_TARGETS "")
 
 set(FLASHLIGHT_ROOT_DIR ${PROJECT_SOURCE_DIR}/flashlight)
 
@@ -157,6 +156,7 @@ if (FL_BUILD_CORE)
     message(STATUS "Found cereal")
     target_link_libraries(flashlight PRIVATE cereal)
   endif()
+  setup_install_find_module(${CMAKE_MODULE_PATH}/Findcereal.cmake)
 
   # -------------------- Locate Backend-specific Dependencies --------------------
   # TODO: rather than conditionally searching for backend-specific dependencies,
