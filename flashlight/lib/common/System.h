@@ -19,9 +19,17 @@ namespace lib {
 
 std::string pathsConcat(const std::string& p1, const std::string& p2);
 
+std::string pathSeperator();
+
+std::string dirname(const std::string& path);
+
+std::string basename(const std::string& path);
+
 bool dirExists(const std::string& path);
 
 void dirCreate(const std::string& path);
+
+void dirCreateRecursive(const std::string& path);
 
 bool fileExists(const std::string& path);
 

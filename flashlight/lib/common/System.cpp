@@ -20,17 +20,69 @@
 namespace fl {
 namespace lib {
 
-std::string pathsConcat(const std::string& p1, const std::string& p2) {
-  char sep = '/';
-
+std::string pathSeperator() {
 #ifdef _WIN32
-  sep = '\\';
+  return "\\";
+#else
+  return "/";
 #endif
+}
 
-  if (!p1.empty() && p1[p1.length() - 1] != sep) {
-    return (trim(p1) + sep + trim(p2)); // Need to add a path separator
+std::string pathsConcat(const std::string& p1, const std::string& p2) {
+  if (!p1.empty() && p1[p1.length() - 1] != pathSeperator()[0]) {
+    return (
+        trim(p1) + pathSeperator() + trim(p2)); // Need to add a path separator
   } else {
     return (trim(p1) + trim(p2));
+  }
+}
+
+namespace {
+
+/**
+ * @path contains directories separated by path separator.
+ * Returns a vector with the directores in the original order. Vector with a
+ * Special cases: a vector with a single entry containing the input is returned
+ * when path is one of the following special cases: empty, “.”, “..” and “/”
+ */
+std::vector<std::string> getDirsOnPath(const std::string& path) {
+  const std::string trimPath = trim(path);
+
+  if (trimPath.empty() || trimPath == pathSeperator() || trimPath == "." ||
+      trimPath == "..") {
+    return {trimPath};
+  }
+  const std::vector<std::string> tokens = split(pathSeperator(), trimPath);
+  std::vector<std::string> dirs;
+  for (const std::string& token : tokens) {
+    const std::string dir = trim(token);
+    if (!dir.empty()) {
+      dirs.push_back(dir);
+    }
+  }
+  return dirs;
+}
+
+} // namespace
+
+std::string dirname(const std::string& path) {
+  std::vector<std::string> dirsOnPath = getDirsOnPath(path);
+  if (dirsOnPath.size() < 2) {
+    return ".";
+  } else {
+    dirsOnPath.pop_back();
+    const std::string root =
+        ((trim(path))[0] == pathSeperator()[0]) ? pathSeperator() : "";
+    return root + join(pathSeperator(), dirsOnPath);
+  }
+}
+
+std::string basename(const std::string& path) {
+  std::vector<std::string> dirsOnPath = getDirsOnPath(path);
+  if (dirsOnPath.empty()) {
+    return "";
+  } else {
+    return dirsOnPath.back();
   }
 }
 
@@ -59,6 +111,28 @@ void dirCreate(const std::string& path) {
   if (nError != 0) {
     throw std::runtime_error(
         std::string() + "Unable to create directory - " + path);
+  }
+}
+
+void dirCreateRecursive(const std::string& path) {
+  if (dirExists(path)) {
+    return;
+  }
+  std::vector<std::string> dirsOnPath = getDirsOnPath(path);
+  std::string pathFromStart;
+  if (path[0] == pathSeperator()[0]) {
+    pathFromStart = pathSeperator();
+  }
+  for (std::string& dir : dirsOnPath) {
+    if (pathFromStart.empty()) {
+      pathFromStart = dir;
+    } else {
+      pathFromStart = pathsConcat(pathFromStart, dir);
+    }
+
+    if (!dirExists(pathFromStart)) {
+      dirCreate(pathFromStart);
+    }
   }
 }
 
