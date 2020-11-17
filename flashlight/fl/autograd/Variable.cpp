@@ -19,11 +19,11 @@
 #include <algorithm>
 #include <cassert>
 #include <functional>
+#include <memory>
 #include <stdexcept>
 #include <unordered_set>
 #include <utility>
 
-#include "flashlight/fl/common/CppBackports.h"
 #include "flashlight/fl/common/Utils.h"
 
 namespace fl {
@@ -185,7 +185,7 @@ void Variable::addGrad(const Variable& childGrad) {
       // Prevent increment of array refcount to avoid a copy
       // if getting a device pointer. See
       // https://git.io/fp9oM for more
-      sharedGrad_->grad = cpp::make_unique<Variable>(
+      sharedGrad_->grad = std::make_unique<Variable>(
           sharedGrad_->grad->array() + childGrad.array(), false);
       // Eval the JIT as a temporary workaround for
       // https://github.com/arrayfire/arrayfire/issues/2281
@@ -194,7 +194,7 @@ void Variable::addGrad(const Variable& childGrad) {
       // Copy the childGrad Variable so as to share a reference
       // to the underlying childGrad.array() rather than copying
       // the array into a new variable
-      sharedGrad_->grad = cpp::make_unique<Variable>(childGrad);
+      sharedGrad_->grad = std::make_unique<Variable>(childGrad);
     }
   }
 }

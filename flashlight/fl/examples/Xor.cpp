@@ -13,7 +13,6 @@
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
 
-#include "flashlight/fl/common/CppBackports.h"
 #include "flashlight/fl/nn/nn.h"
 #include "flashlight/fl/optim/optim.h"
 
@@ -60,11 +59,11 @@ int main(int argc, const char** argv) {
   std::unique_ptr<FirstOrderOptimizer> optim;
 
   if (optimizer_arg == "--rmsprop") {
-    optim = cpp::make_unique<RMSPropOptimizer>(model.params(), lr);
+    optim = std::make_unique<RMSPropOptimizer>(model.params(), lr);
   } else if (optimizer_arg == "--adam") {
-    optim = cpp::make_unique<AdamOptimizer>(model.params(), lr);
+    optim = std::make_unique<AdamOptimizer>(model.params(), lr);
   } else {
-    optim = cpp::make_unique<SGDOptimizer>(model.params(), lr, mu);
+    optim = std::make_unique<SGDOptimizer>(model.params(), lr, mu);
   }
 
   Variable result, l;

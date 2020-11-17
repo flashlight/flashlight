@@ -73,7 +73,7 @@ std::unique_ptr<MemoryAllocator> CreateMemoryAllocator(
       });
 
   auto compositeAllocator =
-      fl::cpp::make_unique<CompositeMemoryAllocator>(config.name_);
+      std::make_unique<CompositeMemoryAllocator>(config.name_);
 
   size_t avaialableBytes = arenaSizeInBytes;
   for (size_t i : subArenaReverseRelativeSizeSorting) {
@@ -106,7 +106,7 @@ std::unique_ptr<MemoryAllocator> CreateMemoryAllocator(
 
     std::unique_ptr<MemoryAllocator> subAllocator;
     if (subArenaConfig.blockSize_ < subArenaConfig.maxAllocationSize_) {
-      subAllocator = fl::cpp::make_unique<FreeList>(
+      subAllocator = std::make_unique<FreeList>(
           subArenaConfig.name_,
           subArenaAddress,
           subAreanClumpedSize,
@@ -114,7 +114,7 @@ std::unique_ptr<MemoryAllocator> CreateMemoryAllocator(
           subArenaConfig.allocatedRatioJitThreshold_,
           logLevel);
     } else {
-      subAllocator = fl::cpp::make_unique<MemoryPool>(
+      subAllocator = std::make_unique<MemoryPool>(
           subArenaConfig.name_,
           subArenaAddress,
           subAreanClumpedSize,
