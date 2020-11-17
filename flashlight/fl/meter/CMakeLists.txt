@@ -13,6 +13,6 @@ set(
 
 target_sources(
   flashlight
-  PUBLIC
-  $<BUILD_INTERFACE:${METER_SOURCES}>
+  PRIVATE
+  ${METER_SOURCES}
   )

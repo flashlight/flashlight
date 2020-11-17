@@ -18,8 +18,8 @@ endif()
 
 target_sources(
   flashlight
-  PUBLIC
-  $<BUILD_INTERFACE:${COMMON_SRCS}>
+  PRIVATE
+  ${COMMON_SRCS}
 )
 
 # A native threading library is needed for ThreadPool

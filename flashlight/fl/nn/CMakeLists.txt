@@ -39,6 +39,6 @@ endif ()
 
 target_sources(
   flashlight
-  PUBLIC
-  $<BUILD_INTERFACE:${NN_SOURCES}>
+  PRIVATE
+  ${NN_SOURCES}
   )

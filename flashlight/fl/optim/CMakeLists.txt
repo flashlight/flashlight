@@ -18,6 +18,6 @@ set(
 
 target_sources(
   flashlight
-  PUBLIC
-  $<BUILD_INTERFACE:${OPTIM_SOURCES}>
+  PRIVATE
+  ${OPTIM_SOURCES}
   )
