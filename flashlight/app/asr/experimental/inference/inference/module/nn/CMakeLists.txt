@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.10)
 
 if (NOT W2L_INFERENCE_BACKEND IN_LIST AVAILABLE_INFERENCE_BACKENDS)
   message(FATAL_ERROR "Passed value of W2L_INFERENCE_BACKEND is invalid."

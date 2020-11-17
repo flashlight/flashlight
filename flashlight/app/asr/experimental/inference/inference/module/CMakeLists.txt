@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.10)
 
 # Creates interface library: streaming_inference_modules_nn
 include(${CMAKE_CURRENT_LIST_DIR}/nn/CMakeLists.txt)

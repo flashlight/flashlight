@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.10)
 
 include(${CMAKE_MODULE_PATH}/Buildpybind11.cmake)
 include(${CMAKE_MODULE_PATH}/pybind11Tools.cmake)

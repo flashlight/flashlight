@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.10)
 
 # Root dir is `flashlight/contrib`
 set(FL_CONTRIB_ROOT_PATH ${CMAKE_CURRENT_LIST_DIR})

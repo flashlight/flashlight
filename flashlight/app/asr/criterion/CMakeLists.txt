@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.10)
 
 # ---------------------------- Backend-specific -----------------------------
 if (FL_BACKEND STREQUAL "CUDA")
@@ -10,13 +10,14 @@ if (FLASHLIGHT_USE_CUDA)
   set(WARPCTC_DIR ${FL_APP_ASR_ROOT_DIR}/third_party/warpctc)
   message(STATUS "Adding warpctc from dir: ${WARPCTC_DIR}")
 
-  # HORRENDOUS HACK (remove me when we remove warpctc):
-  # see https://cmake.org/Bug/view.php?id=14444
   add_subdirectory(${WARPCTC_DIR} ${PROJECT_BINARY_DIR}/third_party/warpctc)
-  cuda_add_library(warpctc SHARED ${warpctc_SOURCES})
-  target_link_libraries(warpctc ${warpctc_LIBS})
+  target_sources(
+    flashlight-app-asr
+    PRIVATE
+    ${warpctc_SOURCES})
+  # cuRAND is required and linked below
   set(WARPCTC_INCLUDE_DIR ${WARPCTC_DIR}/include)
-  target_include_directories(warpctc PRIVATE ${WARPCTC_INCLUDE_DIR})
+  target_include_directories(flashlight-app-asr PRIVATE ${WARPCTC_INCLUDE_DIR})
 
   target_sources(
     flashlight-app-asr
@@ -29,17 +30,15 @@ if (FLASHLIGHT_USE_CUDA)
 
   target_link_libraries(
     flashlight-app-asr
-    PUBLIC
+    PRIVATE
     ${CUDA_LIBRARIES}
-    # Can remove once CTC constrained Viterbi is implemented in CUDA T62268085
-    warpctc # added directly from subdir, please remove me
     )
 
   target_include_directories(
     flashlight-app-asr
-    PUBLIC
+    PRIVATE
     ${CUDA_INCLUDE_DIRS}
-    $<BUILD_INTERFACE:${WARPCTC_INCLUDE_DIR}> # I hope to remove me one day
+    ${WARPCTC_INCLUDE_DIR} # I hope to remove me one day
     )
 elseif (FLASHLIGHT_USE_CPU)
   target_sources(
