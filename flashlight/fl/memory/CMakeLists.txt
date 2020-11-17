@@ -11,6 +11,6 @@ set(
 
 target_sources(
   flashlight
-  PUBLIC
-  $<BUILD_INTERFACE:${MEMORY_SOURCES}>
+  PRIVATE
+  ${MEMORY_SOURCES}
 )

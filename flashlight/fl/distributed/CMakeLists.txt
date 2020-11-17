@@ -13,8 +13,8 @@ set(
 if (FL_BUILD_DISTRIBUTED)
   target_sources(
     flashlight
-    PUBLIC
-    $<BUILD_INTERFACE:${DISTRIBUTED_SOURCES}>
+    PRIVATE
+    ${DISTRIBUTED_SOURCES}
     )
 endif()
 
@@ -91,8 +91,8 @@ if (USE_NCCL)
 
   target_sources(
     flashlight
-    PUBLIC
-    $<BUILD_INTERFACE:${DISTRIBUTED_NCCL_SOURCES}>
+    PRIVATE
+    ${DISTRIBUTED_NCCL_SOURCES}
     )
 
   target_link_libraries(
@@ -124,8 +124,8 @@ if (USE_GLOO)
 
   target_sources(
     flashlight
-    PUBLIC
-    $<BUILD_INTERFACE:${DISTRIBUTED_GLOO_SOURCES}>
+    PRIVATE
+    ${DISTRIBUTED_GLOO_SOURCES}
     )
 
   target_link_libraries(

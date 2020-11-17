@@ -20,6 +20,6 @@ set(
 
 target_sources(
   flashlight
-  PUBLIC
-  $<BUILD_INTERFACE:${DATASET_SOURCES}>
+  PRIVATE
+  ${DATASET_SOURCES}
   )

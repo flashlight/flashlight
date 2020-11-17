@@ -10,8 +10,8 @@ set(
 
 target_sources(
   flashlight
-  PUBLIC
-  $<BUILD_INTERFACE:${AUTOGRAD_SOURCES}>
+  PRIVATE
+  ${AUTOGRAD_SOURCES}
   )
 
 # ----------------------------- Autograd Backends -----------------------------
@@ -28,8 +28,8 @@ if (FLASHLIGHT_USE_CPU)
 
   target_sources(
     flashlight
-    PUBLIC
-    $<BUILD_INTERFACE:${AUTOGRAD_CPU_SOURCES}>
+    PRIVATE
+    ${AUTOGRAD_CPU_SOURCES}
     )
 
   target_link_libraries(
@@ -69,8 +69,8 @@ if (FLASHLIGHT_USE_CUDA)
 
   target_sources(
     flashlight
-    PUBLIC
-    $<BUILD_INTERFACE:${AUTOGRAD_CUDA_SOURCES}>
+    PRIVATE
+    ${AUTOGRAD_CUDA_SOURCES}
     )
 
   target_link_libraries(
@@ -108,8 +108,8 @@ if (FLASHLIGHT_USE_OPENCL)
 
   target_sources(
     flashlight
-    PUBLIC
-    $<BUILD_INTERFACE:${AUTOGRAD_OPENCL_SOURCES}>
+    PRIVATE
+    ${AUTOGRAD_OPENCL_SOURCES}
     )
 
   target_link_libraries(
