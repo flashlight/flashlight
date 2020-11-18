@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.10)
 
 # ----------------------------- Dependencies -----------------------------
 # CBLAS
@@ -22,17 +22,14 @@ else()
 endif()
 
 # OpenMP
-if(NOT TARGET OpenMP::OpenMP_CXX)
-  find_package(Threads REQUIRED)
-  add_library(OpenMP::OpenMP_CXX IMPORTED INTERFACE)
-  set_property(TARGET OpenMP::OpenMP_CXX
-    PROPERTY INTERFACE_COMPILE_OPTIONS
-    ${OpenMP_CXX_FLAGS})
-  # Same flag has to be given to the linker
-  set_property(TARGET OpenMP::OpenMP_CXX
-    PROPERTY INTERFACE_LINK_LIBRARIES
-    ${OpenMP_CXX_FLAGS} Threads::Threads)
-endif()
+find_package(OpenMP REQUIRED)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
+# Threads/OpenMP pollutes other compilers (e.g. nvcc) with flags
+target_compile_options(fl-libraries PRIVATE $<$<COMPILE_LANGUAGE:C>:${OpenMP_C_FLAGS}>)
+target_compile_options(fl-libraries PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${OpenMP_CXX_FLAGS}>)
+target_compile_options(fl-libraries PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_THREAD_LIBS_INIT}>)
 
 # ----------------------------- Lib -----------------------------
 target_sources(
@@ -56,7 +53,6 @@ target_link_libraries(
   PRIVATE
   ${CBLAS_LIBRARIES}
   FFTW3::fftw3
-  OpenMP::OpenMP_CXX
   )
 
 target_include_directories(
