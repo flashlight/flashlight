@@ -292,6 +292,10 @@ SetCriterion::LossDict SetCriterion::lossBoxes(
     const int numBoxes) {
 
   auto srcIdx = this->getSrcPermutationIdx(indices);
+  if (srcIdx.first.isempty()) {
+    return { { "loss_giou", fl::Variable(af::constant(0, {1}), false) } , 
+              {"loss_bbox", fl::Variable(af::constant(0, {1}), false) }};
+  }
   auto colIdxs = af::moddims(srcIdx.second, { 1, srcIdx.second.dims(0) });
   auto batchIdxs = af::moddims(srcIdx.first, {1, srcIdx.first.dims(0) });
   auto srcBoxes = index(predBoxes, { af::array(), colIdxs, batchIdxs, af::array() });
@@ -396,9 +400,11 @@ std::pair<af::array, af::array> SetCriterion::getSrcPermutationIdx(
       batchIdxs.emplace_back(Variable(batchIdx, false));
     }
   }
-
-  auto srcIdx = concatenate(srcIdxs, 0);
-  auto batchIdx = concatenate(batchIdxs, 0);
+  fl::Variable srcIdx, batchIdx;
+  if (srcIdxs.size() > 0) {
+    srcIdx = concatenate(srcIdxs, 0);
+    batchIdx = concatenate(batchIdxs, 0);
+  }
   return { batchIdx.array(), srcIdx.array() };
   //long batchSize = static_cast<long>(indices.size());
   //auto batchIdxs = af::constant(-1, {1, 1, batchSize});
