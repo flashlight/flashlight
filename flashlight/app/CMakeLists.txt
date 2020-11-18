@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.10)
 
 cmake_dependent_option(FL_BUILD_APP_ASR "Build asr task for flashlight" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
 cmake_dependent_option(FL_BUILD_APP_IMG_CLASS "Build image classification app" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
@@ -11,9 +11,6 @@ if (FL_BUILD_APP_ASR)
   set(FL_APP_ASR_ROOT_DIR ${FLASHLIGHT_APPS_DIR}/asr)
   include(${FL_APP_ASR_ROOT_DIR}/CMakeLists.txt)
   set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} flashlight-app-asr)
-  if (FLASHLIGHT_USE_CUDA)
-    set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} warpctc)
-  endif()
   setup_install_headers(${FL_APP_ASR_ROOT_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC}/app)
 endif ()
 

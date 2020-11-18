@@ -5,9 +5,9 @@
 #       - "Auto" detects local machine GPU compute arch at runtime.
 #       - "Common" and "All" cover common and entire subsets of architectures
 #      ARCH_AND_PTX : NAME | NUM.NUM | NUM.NUM(NUM.NUM) | NUM.NUM+PTX
-#      NAME: Fermi Kepler Maxwell Kepler+Tegra Kepler+Tesla Maxwell+Tegra Pascal Volta Turing
+#      NAME: Fermi Kepler Maxwell Kepler+Tegra Kepler+Tesla Maxwell+Tegra Pascal Volta Turing Ampere
 #      NUM: Any number. Only those pairs are currently accepted by NVCC though:
-#            2.0 2.1 3.0 3.2 3.5 3.7 5.0 5.2 5.3 6.0 6.2 7.0 7.2 7.5
+#            2.0 2.1 3.0 3.2 3.5 3.7 5.0 5.2 5.3 6.0 6.2 7.0 7.2 7.5 8.0
 #      Returns LIST of flags to be added to CUDA_NVCC_FLAGS in ${out_variable}
 #      Additionally, sets ${out_variable}_readable to the resulting numeric list
 #      Example:
@@ -16,7 +16,6 @@
 #
 #      More info on CUDA architectures: https://en.wikipedia.org/wiki/CUDA
 #
-
 if(CMAKE_CUDA_COMPILER_LOADED) # CUDA as a language
   if(CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA"
       AND CMAKE_CUDA_COMPILER_VERSION MATCHES "^([0-9]+\\.[0-9]+)")
@@ -27,7 +26,7 @@ endif()
 # See: https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html#gpu-feature-list
 
 # This list will be used for CUDA_ARCH_NAME = All option
-set(CUDA_KNOWN_GPU_ARCHITECTURES  "Fermi" "Kepler" "Maxwell")
+set(CUDA_KNOWN_GPU_ARCHITECTURES "Fermi" "Kepler" )
 
 # This list will be used for CUDA_ARCH_NAME = Common option (enabled by default)
 set(CUDA_COMMON_GPU_ARCHITECTURES "3.0" "3.5" "5.0")
@@ -39,9 +38,10 @@ endif()
 # This list is used to filter CUDA archs when autodetecting
 set(CUDA_ALL_GPU_ARCHITECTURES "3.0" "3.2" "3.5" "5.0")
 
-if(CUDA_VERSION VERSION_GREATER "7.0" OR CUDA_VERSION VERSION_EQUAL "7.0")
-  list(APPEND CUDA_KNOWN_GPU_ARCHITECTURES "Kepler+Tegra" "Kepler+Tesla" "Maxwell+Tegra")
-  list(APPEND CUDA_COMMON_GPU_ARCHITECTURES "5.2")
+if(CUDA_VERSION VERSION_GREATER "7.0" OR CUDA_VERSION VERSION_EQUAL "7.0" )
+  list(APPEND CUDA_KNOWN_GPU_ARCHITECTURES "Kepler+Tegra" "Kepler+Tesla" "Maxwell" "Maxwell+Tegra")
+  list(APPEND CUDA_COMMON_GPU_ARCHITECTURES "5.0" "5.2")
+  list(APPEND CUDA_ALL_GPU_ARCHITECTURES "5.0" "5.2" "5.3")
 
   if(CUDA_VERSION VERSION_LESS "8.0")
     list(APPEND CUDA_COMMON_GPU_ARCHITECTURES "5.2+PTX")
@@ -49,33 +49,69 @@ if(CUDA_VERSION VERSION_GREATER "7.0" OR CUDA_VERSION VERSION_EQUAL "7.0")
   endif()
 endif()
 
-if(CUDA_VERSION VERSION_GREATER "8.0" OR CUDA_VERSION VERSION_EQUAL "8.0")
-  list(APPEND CUDA_KNOWN_GPU_ARCHITECTURES "Pascal")
+if(CUDA_VERSION VERSION_GREATER "8.0" OR CUDA_VERSION VERSION_EQUAL "8.0" )
+  list(APPEND CUDA_KNOWN_GPU_ARCHITECTURES "Pascal" "Pascal+Tegra")
   list(APPEND CUDA_COMMON_GPU_ARCHITECTURES "6.0" "6.1")
   list(APPEND CUDA_ALL_GPU_ARCHITECTURES "6.0" "6.1" "6.2")
 
   if(CUDA_VERSION VERSION_LESS "9.0")
-    list(APPEND CUDA_COMMON_GPU_ARCHITECTURES "6.1+PTX")
+    list(APPEND CUDA_COMMON_GPU_ARCHITECTURES "6.2+PTX")
     set(CUDA_LIMIT_GPU_ARCHITECTURE "7.0")
   endif()
 endif ()
 
 if(CUDA_VERSION VERSION_GREATER "9.0" OR CUDA_VERSION VERSION_EQUAL "9.0")
   list(APPEND CUDA_KNOWN_GPU_ARCHITECTURES "Volta")
-  list(APPEND CUDA_COMMON_GPU_ARCHITECTURES "7.0" "7.0+PTX")
-  list(APPEND CUDA_ALL_GPU_ARCHITECTURES "7.0" "7.0+PTX" "7.2" "7.2+PTX")
+  list(APPEND CUDA_COMMON_GPU_ARCHITECTURES "7.0")
+  list(APPEND CUDA_ALL_GPU_ARCHITECTURES "7.0")
 
-  if(CUDA_VERSION VERSION_LESS "10.0")
-    set(CUDA_LIMIT_GPU_ARCHITECTURE "8.0")
+  if(CUDA_VERSION VERSION_GREATER "9.1" OR CUDA_VERSION VERSION_EQUAL "9.1")
+    list(APPEND CUDA_KNOWN_GPU_ARCHITECTURES "Volta+Tegra")
+    list(APPEND CUDA_ALL_GPU_ARCHITECTURES "7.2")
   endif()
+
+  list(REMOVE_ITEM CUDA_KNOWN_GPU_ARCHITECTURES "Fermi")
+  list(REMOVE_ITEM CUDA_COMMON_GPU_ARCHITECTURES "2.0")
+
+  if(CUDA_VERSION VERSION_GREATER "9.1" OR CUDA_VERSION VERSION_EQUAL "9.1"
+     AND CUDA_VERSION VERSION_LESS "10.0")
+    list(APPEND CUDA_COMMON_GPU_ARCHITECTURES "7.0+PTX")
+  endif()
+
+  set(CUDA_LIMIT_GPU_ARCHITECTURE "8.0")
+
 endif()
 
 if(CUDA_VERSION VERSION_GREATER "10.0" OR CUDA_VERSION VERSION_EQUAL "10.0")
   list(APPEND CUDA_KNOWN_GPU_ARCHITECTURES "Turing")
-  list(APPEND CUDA_COMMON_GPU_ARCHITECTURES "7.5" "7.5+PTX")
-  list(APPEND CUDA_ALL_GPU_ARCHITECTURES "7.5" "7.5+PTX")
+  list(APPEND CUDA_COMMON_GPU_ARCHITECTURES "7.5")
+  list(APPEND CUDA_ALL_GPU_ARCHITECTURES "7.5")
 
   if(CUDA_VERSION VERSION_LESS "11.0")
+    set(CUDA_LIMIT_GPU_ARCHITECTURE "8.0")
+    list(APPEND CUDA_COMMON_GPU_ARCHITECTURES "7.5+PTX")
+  endif()
+endif()
+
+if(CUDA_VERSION VERSION_GREATER "11.0" OR CUDA_VERSION VERSION_EQUAL "11.0")
+  list(APPEND CUDA_KNOWN_GPU_ARCHITECTURES "Ampere")
+  list(APPEND CUDA_COMMON_GPU_ARCHITECTURES "8.0")
+  list(APPEND CUDA_ALL_GPU_ARCHITECTURES "8.0")
+
+  list(REMOVE_ITEM CUDA_KNOWN_GPU_ARCHITECTURES "Kepler+Tegra")
+  list(REMOVE_ITEM CUDA_KNOWN_GPU_ARCHITECTURES "Kepler")
+  list(REMOVE_ITEM CUDA_COMMON_GPU_ARCHITECTURES "3.0" "3.2")
+
+  if(CUDA_VERSION VERSION_GREATER "11.1" OR CUDA_VERSION VERSION_EQUAL "11.1")
+    list(APPEND CUDA_ALL_GPU_ARCHITECTURES "8.6")
+  endif()
+
+  if(CUDA_VERSION VERSION_GREATER "11.1" OR CUDA_VERSION VERSION_EQUAL "11.1"
+      AND CUDA_VERSION VERSION_LESS "12.0")
+    list(APPEND CUDA_COMMON_GPU_ARCHITECTURES "8.0+PTX")
+  endif()
+
+  if(CUDA_VERSION VERSION_LESS "12.0")
     set(CUDA_LIMIT_GPU_ARCHITECTURE "9.0")
   endif()
 endif()

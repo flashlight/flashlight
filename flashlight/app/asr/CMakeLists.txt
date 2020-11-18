@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.10)
 
 # ------------------------- Library -------------------------
 add_library(
@@ -23,19 +23,6 @@ if (GFLAGS_FOUND)
   message(STATUS "GFLAGS found")
 else()
   message(FATAL_ERROR "GFLAGS not found")
-endif()
-
-# Find and setup OpenMP
-find_package(OpenMP)
-if (OPENMP_FOUND)
-  message(STATUS "OpenMP found")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-  set(CMAKE_EXE_LINKER_FLAGS
-    "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}"
-  )
-else()
-  message(STATUS "OpenMP not found - building without OpenMP")
 endif()
 
 target_link_libraries(
