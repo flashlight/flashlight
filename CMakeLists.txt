@@ -8,7 +8,7 @@ include(CMakeDependentOption)
 # ----------------------------- Setup -----------------------------
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Default directories for installation
@@ -101,7 +101,7 @@ if (FL_BUILD_CORE)
     flashlight
     PROPERTIES
     LINKER_LANGUAGE CXX
-    CXX_STANDARD 11
+    CXX_STANDARD 14
     )
 
   # Link libraries to flashlight core

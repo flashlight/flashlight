@@ -19,7 +19,6 @@
 #include <gloo/transport/tcp/device.h>
 #include <mpi.h>
 
-#include "flashlight/fl/common/CppBackports.h"
 #include "flashlight/fl/common/DevicePtr.h"
 #include "flashlight/fl/distributed/LRUCache.h"
 
@@ -57,7 +56,7 @@ inline void allreduceGloo(T* ptr, size_t s) {
     using Allreduce = gloo::AllreduceHalvingDoubling<T>;
     algorithm = glooCache_.put(
         key,
-        cpp::make_unique<Allreduce>(
+        std::make_unique<Allreduce>(
             globalContext(),
             std::vector<T*>({ptr}),
             s,

@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <memory>
 #include <stdexcept>
 
-#include "flashlight/fl/common/CppBackports.h"
 #include "flashlight/fl/common/Serialization.h"
 #include "flashlight/fl/dataset/PrefetchDataset.h"
 
@@ -30,7 +30,7 @@ PrefetchDataset::PrefetchDataset(
   }
   if (numThreads_ > 0) {
     auto deviceId = af::getDevice();
-    threadPool_ = cpp::make_unique<ThreadPool>(
+    threadPool_ = std::make_unique<ThreadPool>(
         numThreads_,
         [deviceId](int /* threadId */) { af::setDevice(deviceId); });
   }
