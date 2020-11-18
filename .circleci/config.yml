@@ -64,7 +64,7 @@ jobs:
             apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5 && \
             cd /flashlight && pwd && ls && mkdir -p build && cd build && \
             export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5 && \
-            export MKLROOT=/opt/intel/mkl && export KENLM_ROOT_DIR=/root/kenlm && \
+            export MKLROOT=/opt/intel/mkl && export KENLM_ROOT=/root/kenlm && \
             cmake .. -DFL_BACKEND=CUDA && \
             make -j$(nproc) && make install && make test"
   build-cpu:
@@ -81,7 +81,7 @@ jobs:
           command: |
             cd flashlight && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5
             export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5
-            export MKLROOT=/opt/intel/mkl && export KENLM_ROOT_DIR=/root/kenlm
+            export MKLROOT=/opt/intel/mkl && export KENLM_ROOT=/root/kenlm
             mkdir -p build && cd build
             cmake .. -DFL_BACKEND=CPU -DFL_LIBRARIES_USE_CUDA=OFF
             make -j1 && make install

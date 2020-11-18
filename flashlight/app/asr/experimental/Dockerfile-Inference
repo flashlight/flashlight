@@ -15,7 +15,7 @@ RUN mkdir /root/wav2letter
 COPY . /root/wav2letter
 
 # build w2l
-RUN export KENLM_ROOT_DIR=/root/kenlm && \
+RUN export KENLM_ROOT=/root/kenlm && \
     export MKLROOT=/opt/intel/mkl && \
     cd /root/wav2letter && \
     mkdir -p build && \
