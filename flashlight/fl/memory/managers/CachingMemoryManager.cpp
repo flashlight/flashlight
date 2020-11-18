@@ -11,13 +11,13 @@
 #include <algorithm>
 #include <iostream>
 #include <limits>
+#include <memory>
 #include <mutex>
 #include <numeric>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
-#include "flashlight/fl/common/CppBackports.h"
 namespace fl {
 
 namespace {
@@ -83,7 +83,7 @@ CachingMemoryManager::CachingMemoryManager(
     : MemoryManagerAdapter(deviceInterface) {
   for (int i = 0; i < numDevices; ++i) {
     deviceMemInfos_.emplace(
-        i, fl::cpp::make_unique<CachingMemoryManager::DeviceMemoryInfo>(i));
+        i, std::make_unique<CachingMemoryManager::DeviceMemoryInfo>(i));
   }
 }
 
@@ -106,8 +106,7 @@ void CachingMemoryManager::addMemoryManagement(int device) {
     return;
   }
   deviceMemInfos_.emplace(
-      device,
-      fl::cpp::make_unique<CachingMemoryManager::DeviceMemoryInfo>(device));
+      device, std::make_unique<CachingMemoryManager::DeviceMemoryInfo>(device));
 }
 
 void CachingMemoryManager::removeMemoryManagement(int device) {
@@ -138,7 +137,8 @@ void* CachingMemoryManager::alloc(
   auto it = pool.lower_bound(&searchKey);
   // Recycle blocks if any found, and if small alloc or the block size is not
   // too large:
-  if (it != pool.end() && (isSmallAlloc || (*it)->size_ < recyclingSizeLimit_)) {
+  if (it != pool.end() &&
+      (isSmallAlloc || (*it)->size_ < recyclingSizeLimit_)) {
     block = *it;
     pool.erase(it);
     memoryInfo.stats_.cachedBytes_ -= block->size_;
@@ -158,7 +158,7 @@ void* CachingMemoryManager::alloc(
   size_t diff = block->size_ - size;
   if ((diff >= (isSmallAlloc ? kMinBlockSize : kSmallSize)) &&
       (block->size_ < splitSizeLimit_) // possibly dont split large buffers to
-                                      // minimize risk of fragmentation
+                                       // minimize risk of fragmentation
   ) {
     remaining = block;
     block = new Block(size, block->ptr_);

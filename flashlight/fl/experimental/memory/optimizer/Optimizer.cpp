@@ -551,7 +551,7 @@ orderMemoryAllocatorConfigByLoss(
         return;
       }
       haystackOrder->stats =
-          fl::cpp::make_unique<MemoryAllocator::Stats>(allocator->getStats());
+          std::make_unique<MemoryAllocator::Stats>(allocator->getStats());
       haystackOrder->loss = memoryAllocatorStatsLossFunction(
           true, *haystackOrder->stats, 0, 0, optimizerConfig);
       haystackOrder->completedWithSuccess = true;

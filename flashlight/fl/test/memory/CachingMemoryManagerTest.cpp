@@ -14,7 +14,6 @@
 #include <arrayfire.h>
 #include <gtest/gtest.h>
 
-#include "flashlight/fl/common/CppBackports.h"
 #include "flashlight/fl/memory/memory.h"
 
 class CachingMemoryManagerTest : public ::testing::Test {
@@ -23,7 +22,7 @@ class CachingMemoryManagerTest : public ::testing::Test {
     deviceInterface_ = std::make_shared<fl::MemoryManagerDeviceInterface>();
     adapter_ = std::make_shared<fl::CachingMemoryManager>(
         af::getDeviceCount(), deviceInterface_);
-    installer_ = fl::cpp::make_unique<fl::MemoryManagerInstaller>(adapter_);
+    installer_ = std::make_unique<fl::MemoryManagerInstaller>(adapter_);
     installer_->setAsMemoryManager();
   }
 

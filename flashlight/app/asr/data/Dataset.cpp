@@ -28,7 +28,7 @@ Dataset::Dataset(
       batchSize_(batchsize),
       worldRank_(worldrank),
       worldSize_(worldsize),
-      threadpool_(fl::cpp::make_unique<fl::ThreadPool>(FLAGS_nthread)) {
+      threadpool_(std::make_unique<fl::ThreadPool>(FLAGS_nthread)) {
   if (batchSize_ < 1 || worldRank_ < 0 || worldSize_ < 1 ||
       worldRank_ >= worldSize_) {
     FL_LOG(fl::FATAL) << "Invalid arguments!";

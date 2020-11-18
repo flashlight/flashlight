@@ -43,21 +43,21 @@ TEST(FreeList, MaxAllocationSizeRepeatedly) {
   const size_t maxAllocationSize3 = 100 * blockSize;
   const size_t numAllocations = nIterations * allocCntPerIteration;
 
-  auto freelist1 = fl::cpp::make_unique<FreeList>(
+  auto freelist1 = std::make_unique<FreeList>(
       "small-freelist",
       address1,
       numAllocations * maxAllocationSize1,
       blockSize,
       kAllocatedRatioJitThreshold,
       kLogLevel);
-  auto freelist2 = fl::cpp::make_unique<FreeList>(
+  auto freelist2 = std::make_unique<FreeList>(
       "medium-freelist",
       address2,
       numAllocations * maxAllocationSize2,
       blockSize,
       kAllocatedRatioJitThreshold,
       kLogLevel);
-  auto freelist3 = fl::cpp::make_unique<FreeList>(
+  auto freelist3 = std::make_unique<FreeList>(
       "large-freelist",
       address3,
       numAllocations * maxAllocationSize3,
@@ -125,21 +125,21 @@ TEST(FreeList, ExponentialDistribution) {
       nIterations * allocCntPerIteration * (1.0 - perIterationFreeRatio);
   const int multiplier = maxAllocationSize2; // yields values that fall within
   // all three allocators.
-  auto freelist1 = fl::cpp::make_unique<FreeList>(
+  auto freelist1 = std::make_unique<FreeList>(
       "small-freelist",
       address1,
       numAllocations * maxAllocationSize1,
       blockSize,
       kAllocatedRatioJitThreshold,
       kLogLevel);
-  auto freelist2 = fl::cpp::make_unique<FreeList>(
+  auto freelist2 = std::make_unique<FreeList>(
       "medium-freelist",
       address2,
       numAllocations * maxAllocationSize2,
       blockSize,
       kAllocatedRatioJitThreshold,
       kLogLevel);
-  auto freelist3 = fl::cpp::make_unique<FreeList>(
+  auto freelist3 = std::make_unique<FreeList>(
       "large-freelist",
       address3,
       numAllocations * maxAllocationSize2 *
@@ -241,21 +241,21 @@ TEST(FreeList, InternalFragmentation) {
   const size_t alloc3Size =
       maxAllocationSize2 + blockSize * partOfBlockToAllocate;
 
-  auto freelist1 = fl::cpp::make_unique<FreeList>(
+  auto freelist1 = std::make_unique<FreeList>(
       "small-freelist",
       address1,
       maxAllocationSize1,
       blockSize,
       kAllocatedRatioJitThreshold,
       kLogLevel);
-  auto freelist2 = fl::cpp::make_unique<FreeList>(
+  auto freelist2 = std::make_unique<FreeList>(
       "medium-freelist",
       address2,
       maxAllocationSize2,
       blockSize,
       kAllocatedRatioJitThreshold,
       kLogLevel);
-  auto freelist3 = fl::cpp::make_unique<FreeList>(
+  auto freelist3 = std::make_unique<FreeList>(
       "large-freelist",
       address3,
       maxAllocationSize2 * 2, // This size seems to be just enough.
@@ -326,21 +326,21 @@ TEST(FreeList, ExternalFragmentation) {
   const size_t maxAllocationSize2 = 10 * blockSize;
   const size_t maxAllocationSize3 = SIZE_MAX; // Catch all size
 
-  auto freelist1 = fl::cpp::make_unique<FreeList>(
+  auto freelist1 = std::make_unique<FreeList>(
       "small-freelist",
       address1,
       maxAllocationSize1 * numberBlocksPerAllocator,
       blockSize,
       kAllocatedRatioJitThreshold,
       kLogLevel);
-  auto freelist2 = fl::cpp::make_unique<FreeList>(
+  auto freelist2 = std::make_unique<FreeList>(
       "medium-freelist",
       address2,
       maxAllocationSize2 * numberBlocksPerAllocator,
       blockSize,
       kAllocatedRatioJitThreshold,
       kLogLevel);
-  auto freelist3 = fl::cpp::make_unique<FreeList>(
+  auto freelist3 = std::make_unique<FreeList>(
       "large-freelist",
       address3,
       maxAllocationSize2 * numberBlocksPerAllocator *

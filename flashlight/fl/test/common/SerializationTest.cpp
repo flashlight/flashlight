@@ -211,7 +211,7 @@ struct WeirdTransform {
 
   template <class Archive>
   void load(Archive& ar) {
-    fl::cpp::decay_t<T> y;
+    std::decay_t<T> y;
     ar(y);
     x = y + 3;
   }

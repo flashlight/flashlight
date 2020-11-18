@@ -192,7 +192,7 @@ We can link flashlight with the following CMake configuration:
   # CMake 3.5.1+ is required
   cmake_minimum_required(VERSION 3.5.1)
   # C++ 11 is required
-  set(CMAKE_CXX_STANDARD 11)
+  set(CMAKE_CXX_STANDARD 14)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
   find_package(flashlight REQUIRED)

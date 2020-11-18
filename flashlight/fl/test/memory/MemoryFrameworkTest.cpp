@@ -16,7 +16,6 @@
 #include <arrayfire.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "flashlight/fl/common/CppBackports.h"
 #include "flashlight/fl/memory/memory.h"
 
 using namespace fl;
@@ -281,7 +280,7 @@ TEST(MemoryFramework, AdapterInstallerDeviceInterfaceTest) {
         memoryManager, deviceInterface, &mockLogStream);
 
     auto installer =
-        cpp::make_unique<MemoryManagerInstaller>(mockMemoryManager);
+        std::make_unique<MemoryManagerInstaller>(mockMemoryManager);
     // initialize should only be called once while the custom memory
     // manager was set
     EXPECT_CALL(*mockMemoryManager, initialize()).Times(Exactly(1));
