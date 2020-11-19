@@ -51,6 +51,7 @@ function(setup_install_headers HEADER_DIR DEST_DIR)
     DESTINATION ${DEST_DIR}
     FILES_MATCHING # preserve directory structure
     PATTERN  "*.h"
+    PATTERN  "*.hpp"
     PATTERN "*.cuh" # TODO: make this conditional, e.g. $<IF:FLASHLIGHT_USE_CUDA,"*.cuh","a^">
     PATTERN "test*" EXCLUDE
     PATTERN "tests" EXCLUDE
@@ -58,6 +59,7 @@ function(setup_install_headers HEADER_DIR DEST_DIR)
     PATTERN "examples" EXCLUDE
     PATTERN "third_party" EXCLUDE
     PATTERN "experimental" EXCLUDE
+    PATTERN ".git" EXCLUDE
     )
 endfunction(setup_install_headers)
 
