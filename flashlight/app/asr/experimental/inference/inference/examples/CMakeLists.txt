@@ -61,7 +61,7 @@ function(build_example TARGET SRCFILE)
     ${TARGET}
     PRIVATE
       ${CMAKE_CURRENT_LIST_DIR}
-      ${GFLAGS_INCLUDE_DIRS}
+      ${gflags_INCLUDE_DIRS}
   )
   target_link_libraries(
     ${TARGET}
@@ -69,7 +69,7 @@ function(build_example TARGET SRCFILE)
       streaming_inference_modules_nn_backend
       streaming_inference_modules_feature
       audio_to_words_example
-      ${GFLAGS_LIBRARIES}
+      ${gflags_LIBRARIES}
   )
 endfunction(build_example)
 
