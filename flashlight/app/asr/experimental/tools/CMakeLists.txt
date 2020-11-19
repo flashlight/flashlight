@@ -28,7 +28,7 @@ add_executable(
 target_include_directories(
   streaming_tds_model_converter
   PRIVATE
-    ${GFLAGS_INCLUDE_DIRS}
+    ${gflags_INCLUDE_DIRS}
 )
 
 target_link_libraries(
@@ -38,7 +38,7 @@ target_link_libraries(
     criterion
     module
     runtime
-    ${GFLAGS_LIBRARIES}
+    ${gflags_LIBRARIES}
     streaming_inference_common
     streaming_inference_decoder
     streaming_inference_modules
