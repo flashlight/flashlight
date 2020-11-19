@@ -17,12 +17,12 @@ if (FL_LIBRARIES_USE_MKL)
 endif ()
 
 # ------------------------ Global External Dependencies ------------------------
-# Find GFlags
-find_package(GFLAGS REQUIRED)
+# Find gflags
+find_package(gflags REQUIRED)
 if (gflags_FOUND)
-  message(STATUS "GFLAGS found")
+  message(STATUS "gflags found")
 else()
-  message(FATAL_ERROR "GFLAGS not found")
+  message(FATAL_ERROR "gflags not found")
 endif()
 
 target_link_libraries(

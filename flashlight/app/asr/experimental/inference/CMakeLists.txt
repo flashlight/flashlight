@@ -35,12 +35,12 @@ add_library(wav2letter-inference "")
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
-#--- Find GFlags ---
-find_package(GFLAGS REQUIRED)
-if (GFLAGS_FOUND)
-  message(STATUS "GFLAGS found")
+#--- Find gflags ---
+find_package(gflags REQUIRED)
+if (gflags_FOUND)
+  message(STATUS "gflags found")
 else()
-  message(FATAL_ERROR "GFLAGS not found")
+  message(FATAL_ERROR "gflags not found")
 endif()
 
 #--- Download and build Google test ---
