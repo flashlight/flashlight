@@ -83,6 +83,14 @@ void BatchNorm::initialize() {
   }
 }
 
+void BatchNorm::setRunningMean(af::array x) {
+  runningMean_ = fl::Variable(x, false);
+}
+
+void BatchNorm::setRunningVar(af::array x) {
+  runningVar_ = fl::Variable(x, false);
+}
+
 std::string BatchNorm::prettyString() const {
   std::ostringstream ss;
   ss << "BatchNorm";
