@@ -18,9 +18,9 @@ ExternalProject_Add(
 )
 
 ExternalProject_Get_Property(stb SOURCE_DIR)
-set(STB_SOURCE_DIR ${SOURCE_DIR})
+set(stb_SOURCE_DIR ${SOURCE_DIR})
 
 set(stb_INCLUDE_DIRS
   $<BUILD_INTERFACE:${SOURCE_DIR}/>
-  $<INSTALL_INTERFACE:${STB_INSTALL_PATH}>
+  $<INSTALL_INTERFACE:${stb_INSTALL_PATH}>
   )
