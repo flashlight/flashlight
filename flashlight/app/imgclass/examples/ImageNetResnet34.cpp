@@ -10,7 +10,7 @@
 
 #include <gflags/gflags.h>
 
-#include "flashlight/app/imclass/dataset/Imagenet.h"
+#include "flashlight/app/imgclass/dataset/Imagenet.h"
 #include "flashlight/fl/dataset/datasets.h"
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/image/af/Transforms.h"
@@ -50,7 +50,7 @@ DEFINE_int64(exp_checkpoint_epoch, -1, "Checkpoint epoch to load from");
 
 using namespace fl;
 using namespace fl::ext::image;
-using namespace fl::app::imclass;
+using namespace fl::app::imgclass;
 
 #define FL_LOG_MASTER(lvl) FL_LOG_IF(lvl, (fl::getWorldRank() == 0))
 
