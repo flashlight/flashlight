@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/app/imclass/dataset/Imagenet.h"
+#include "flashlight/app/imgclass/dataset/Imagenet.h"
 
 #include <algorithm>
 
@@ -21,7 +21,7 @@ using LabelLoader = LoaderDataset<uint64_t>;
 
 namespace fl {
 namespace app {
-namespace imclass {
+namespace imgclass {
 
 std::unordered_map<std::string, uint64_t> getImagenetLabels(
     const std::string& labelFile) {
@@ -85,6 +85,6 @@ std::shared_ptr<Dataset> imagenetDataset(
       MergeDataset({imageDataset, labelDataset}));
 }
 
-} // namespace imclass
+} // namespace imgclass
 } // namespace app
 } // namespace fl

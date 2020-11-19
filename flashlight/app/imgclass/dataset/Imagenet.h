@@ -38,7 +38,7 @@
  */
 namespace fl {
 namespace app {
-namespace imclass {
+namespace imgclass {
 
 /* Given the path to the imagenet labels file labels.txt,
  * create a map with a unique id for each label that can be used for training
@@ -72,6 +72,6 @@ std::shared_ptr<Dataset> imagenetDataset(
 constexpr uint64_t kImagenetInputIdx = 0;
 constexpr uint64_t kImagenetTargetIdx = 1;
 
-} // namespace imclass
+} // namespace imgclass
 } // namespace app
 } // namespace fl
