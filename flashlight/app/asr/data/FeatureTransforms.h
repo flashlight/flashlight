@@ -31,7 +31,8 @@ struct TargetGenerationConfig {
       bool skipUnk,
       bool fallbackToLetterWordSepLeft,
       bool fallbackToLetterWordSepRight)
-      : targetSamplePct_(targetSamplePct),
+      : wordSeparator_(wordSeparator),
+	targetSamplePct_(targetSamplePct),
         criterion_(criterion),
         surround_(surround),
         eosToken_(eosToken),
