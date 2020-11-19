@@ -8,6 +8,7 @@
 #include "flashlight/app/asr/data/Sound.h"
 
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 
@@ -75,6 +76,17 @@ const std::unordered_map<SoundSubFormat, int, EnumClassHash> subformats{
     {SoundSubFormat::DPCM_8, SF_FORMAT_DPCM_8},
     {SoundSubFormat::DPCM_16, SF_FORMAT_DPCM_16},
     {SoundSubFormat::VORBIS, SF_FORMAT_VORBIS}};
+
+constexpr std::array<const char* const, 25> kSoundFormatName = {
+    "WAV", "AIFF", "AU",   "RAW", "PAF", "SVX",   "NIST", "VOC", "IRCAM",
+    "W64", "MAT4", "MAT5", "PVF", "XI",  "HTK",   "SDS",  "AVR", "WAVEX",
+    "SD2", "FLAC", "CAF",  "WVE", "OGG", "MPC2K", "RF64"};
+
+constexpr std::array<const char* const, 23> kSoundSubFormatName = {
+    "PCM_S8",    "PCM_16",  "PCM_24",  "PCM_32",    "PCM_U8",   "FLOAT",
+    "DOUBLE",    "ULAW",    "ALAW",    "IMA_ADPCM", "MS_ADPCM", "GSM610",
+    "VOX_ADPCM", "G721_32", "G723_24", "G723_40",   "DWVW_12",  "DWVW_16",
+    "DWVW_24",   "DWVW_N",  "DPCM_8",  "DPCM_16",   "VORBIS"};
 } // namespace
 
 namespace fl {
@@ -401,6 +413,38 @@ template void saveSound(
     int64_t,
     SoundFormat,
     SoundSubFormat);
+
+std::string SoundInfo::prettyString() const {
+  std::stringstream ss;
+  ss << "frames=" << frames << " samplerate=" << samplerate
+     << " channels=" << channels;
+  return ss.str();
+}
+
+std::string soundFormatPrettyString(SoundFormat format) {
+  const size_t idx = static_cast<size_t>(format);
+  if (idx >= kSoundFormatName.size()) {
+    std::stringstream ss;
+    ss << "soundFormatPrettyString(format=" << idx
+       << ") invalid format value. Expected value in the range [0.."
+       << (kSoundFormatName.size() - 1) << "]";
+    throw std::invalid_argument(ss.str());
+  }
+  return kSoundFormatName[idx];
+}
+
+std::string soundSubFormatPrettyString(SoundSubFormat subformat) {
+  const size_t idx = static_cast<size_t>(subformat);
+  if (idx >= kSoundSubFormatName.size()) {
+    std::stringstream ss;
+    ss << "soundSubFormatPrettyString(subformat=" << idx
+       << ") invalid format value. Expected value in the range [0.."
+       << (kSoundSubFormatName.size() - 1) << "]";
+    throw std::invalid_argument(ss.str());
+  }
+  return kSoundSubFormatName[idx];
+}
+
 } // namespace asr
 } // namespace app
 } // namespace fl
