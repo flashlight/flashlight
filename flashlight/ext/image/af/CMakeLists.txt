@@ -1,30 +1,19 @@
 cmake_minimum_required(VERSION 3.10)
 
-set(STB_INSTALL_PATH ${FL_INSTALL_INC_DIR}/stb)
-find_path(STB_IMAGE_PATH "stb_image.h")
-if(${STB_IMAGE_PATH})
-  message(STATUS "stb_image.h found: (include: ${STB_IMAGE_PATH})")
-  get_filename_component(STB_SOURCE_DIR ${STB_IMAGE_PATH} DIRECTORY)
-  set(stb_INCLUDE_DIRS
-    $<BUILD_INTERFACE:${STB_SOURCE_DIR}/>
-    $<INSTALL_INTERFACE:${STB_INSTALL_PATH}>
-    )
-else()
+# stb_image
+set(stb_INSTALL_PATH ${FL_INSTALL_INC_DIR}/stb)
+find_package(stb)
+if(NOT stb_FOUND)
   message(STATUS "Could not find stb_image.h. Will download stb from github")
   include(${CMAKE_MODULE_PATH}/BuildStb.cmake)
   add_dependencies(flashlight stb)
+
+  # Move stb headers at install time only if they weren't already found
+  setup_install_headers(${stb_SOURCE_DIR} ${stb_INSTALL_PATH})
+  setup_install_find_module(${CMAKE_MODULE_PATH}/Findstb.cmake)
+else()
+  message(STATUS "stb_image.h found: (include: ${stb_INCLUDE_DIRS})")
 endif()
-
-# Move stb headers at install time
-install(DIRECTORY ${STB_SOURCE_DIR}
-   DESTINATION ${STB_INSTALL_PATH}
-   COMPONENT stb
-   FILES_MATCHING
-   PATTERN "*.hpp"
-   PATTERN "*.h"
-   PATTERN ".git" EXCLUDE
-)
-
 target_include_directories(flashlight PRIVATE ${stb_INCLUDE_DIRS})
 
 target_sources(
