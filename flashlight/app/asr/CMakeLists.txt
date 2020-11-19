@@ -19,7 +19,7 @@ endif ()
 # ------------------------ Global External Dependencies ------------------------
 # Find GFlags
 find_package(GFLAGS REQUIRED)
-if (GFLAGS_FOUND)
+if (gflags_FOUND)
   message(STATUS "GFLAGS found")
 else()
   message(FATAL_ERROR "GFLAGS not found")
@@ -28,7 +28,7 @@ endif()
 target_link_libraries(
   flashlight-app-asr
   PUBLIC
-  ${GFLAGS_LIBRARIES}
+  ${gflags_LIBRARIES}
   ${MKL_LIBRARIES}
   flashlight
   )
@@ -36,7 +36,7 @@ target_link_libraries(
 target_include_directories(
   flashlight-app-asr
   PUBLIC
-  ${GFLAGS_INCLUDE_DIRS}
+  ${gflags_INCLUDE_DIRS}
   ${MKL_INCLUDE_DIR}
   )
 

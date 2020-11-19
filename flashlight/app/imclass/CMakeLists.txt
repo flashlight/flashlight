@@ -16,14 +16,14 @@ endif()
 target_link_libraries(
   flashlight-app-imclass
   PUBLIC
-  ${GFLAGS_LIBRARIES}
+  ${gflags_LIBRARIES}
   flashlight
   )
 
 target_include_directories(
   flashlight-app-imclass
   PUBLIC
-  ${GFLAGS_INCLUDE_DIRS}
+  ${gflags_INCLUDE_DIRS}
   )
 
 include(${CMAKE_CURRENT_LIST_DIR}/dataset/CMakeLists.txt)
