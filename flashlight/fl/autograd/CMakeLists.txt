@@ -16,7 +16,7 @@ target_sources(
 
 # ----------------------------- Autograd Backends -----------------------------
 # CPU
-if (FLASHLIGHT_USE_CPU)
+if (FL_USE_CPU)
   set(
     AUTOGRAD_CPU_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/Conv2D.cpp
@@ -47,7 +47,7 @@ endif ()
 
 
 # CUDA
-if (FLASHLIGHT_USE_CUDA)
+if (FL_USE_CUDA)
   find_package(CUDNN 7.1 QUIET) # CUDNN 7.1 works with CUDA 9.2
   if (CUDNN_FOUND)
     message(STATUS "CUDNN found (library: ${CUDNN_LIBRARIES} include: ${CUDNN_INCLUDE_DIRS})")
@@ -97,7 +97,7 @@ endif ()
 
 # OpenCL
 # TODO(jacobkahn): enable, with dependencies, when needed
-if (FLASHLIGHT_USE_OPENCL)
+if (FL_USE_OPENCL)
   set(
     AUTOGRAD_OPENCL_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/Conv2D.cpp

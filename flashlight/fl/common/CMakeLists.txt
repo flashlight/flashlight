@@ -12,7 +12,7 @@ set(
   ${CMAKE_CURRENT_LIST_DIR}/Plugin.cpp
 )
 
-if(FLASHLIGHT_USE_CUDA)
+if(FL_USE_CUDA)
   set(COMMON_SRCS ${COMMON_SRCS} ${CMAKE_CURRENT_LIST_DIR}/CudaUtils.cpp)
 endif()
 
@@ -34,7 +34,7 @@ target_link_libraries(
   ${CMAKE_DL_LIBS} # for plugin
 )
 
-if (FLASHLIGHT_USE_CUDA)
+if (FL_USE_CUDA)
   target_link_libraries(flashlight PUBLIC ${CUDA_LIBRARIES})
   target_include_directories(flashlight PUBLIC ${CUDA_INCLUDE_DIRS})
 endif()

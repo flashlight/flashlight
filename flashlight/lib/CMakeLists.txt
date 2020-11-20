@@ -37,7 +37,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/text/CMakeLists.txt)
 # ---------------------- CUDA Library -----------------------
 
 # Only build the library if the FL CUDA backend is enabled.
-if (NOT FLASHLIGHT_USE_CUDA)
+if (NOT FL_USE_CUDA)
   message(STATUS "FL_BACKEND is not CUDA - forcing FL_LIBRARIES_USE_CUDA to OFF")
   set(FL_LIBRARIES_USE_CUDA OFF)
 endif()
