@@ -38,15 +38,15 @@ set(FL_BACKEND "CUDA" CACHE STRING "Backend with which to build flashlight")
 # Select from exactly one backend
 set_property(CACHE FL_BACKEND PROPERTY STRINGS CPU CUDA OPENCL)
 # Map to flags
-set(FLASHLIGHT_USE_CPU OFF)
-set(FLASHLIGHT_USE_CUDA OFF)
-set(FLASHLIGHT_USE_OPENCL OFF)
+set(FL_USE_CPU OFF)
+set(FL_USE_CUDA OFF)
+set(FL_USE_OPENCL OFF)
 if (FL_BACKEND STREQUAL "CPU")
-  set(FLASHLIGHT_USE_CPU ON)
+  set(FL_USE_CPU ON)
 elseif (FL_BACKEND STREQUAL "CUDA")
-  set(FLASHLIGHT_USE_CUDA ON)
+  set(FL_USE_CUDA ON)
 elseif (FL_BACKEND STREQUAL "OPENCL")
-  set(FLASHLIGHT_USE_OPENCL ON)
+  set(FL_USE_OPENCL ON)
 else ()
   message(FATAL_ERROR "Invalid FLASHLIGHT backend specified")
 endif ()
@@ -55,7 +55,8 @@ endif ()
 include(InternalUtils)
 set(INSTALLABLE_TARGETS "")
 
-set(FLASHLIGHT_ROOT_DIR ${PROJECT_SOURCE_DIR}/flashlight)
+set(FL_ROOT_DIR ${PROJECT_SOURCE_DIR}/flashlight)
+set(FL_BUILD_BINARY_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
 # ------------------------ Tests ------------------------
 
@@ -79,15 +80,15 @@ if (FL_BUILD_LIBRARIES)
     $<$<BOOL:${FL_LIBRARIES_USE_KENLM}>:FL_LIBRARIES_USE_KENLM>
     )
 
-  set(FLASHLIGHT_LIB_DIR "${FLASHLIGHT_ROOT_DIR}/lib")
-  include(${FLASHLIGHT_LIB_DIR}/CMakeLists.txt)
+  set(FL_LIB_DIR "${FL_ROOT_DIR}/lib")
+  include(${FL_LIB_DIR}/CMakeLists.txt)
 
   if (FL_LIBRARIES_BUILD_FOR_PYTHON)
-    set(FLASHLIGHT_BINDING_PYTHON "${PROJECT_SOURCE_DIR}/bindings/python")
-    include(${FLASHLIGHT_BINDING_PYTHON}/CMakeLists.txt)
+    set(FL_BINDING_PYTHON "${PROJECT_SOURCE_DIR}/bindings/python")
+    include(${FL_BINDING_PYTHON}/CMakeLists.txt)
   endif ()
 
-  setup_install_headers(${FLASHLIGHT_LIB_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
+  setup_install_headers(${FL_LIB_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
 endif() # if FL_BUILD_LIBRARIES
 
 # --------------------------- flashlight ---------------------------
@@ -123,11 +124,11 @@ if (FL_BUILD_CORE)
   endif()
 
   # Check the proper ArrayFire backend is present
-  if (FLASHLIGHT_USE_CPU AND NOT ArrayFire_CPU_FOUND)
+  if (FL_USE_CPU AND NOT ArrayFire_CPU_FOUND)
     message(FATAL_ERROR "ArrayFire CPU not found: cannot build CPU backend")
-  elseif (FLASHLIGHT_USE_CUDA AND NOT ArrayFire_CUDA_FOUND)
+  elseif (FL_USE_CUDA AND NOT ArrayFire_CUDA_FOUND)
     message(FATAL_ERROR "ArrayFire CUDA not found: cannot build CUDA backend")
-  elseif (FLASHLIGHT_USE_OPENCL AND NOT ArrayFire_OpenCL_FOUND)
+  elseif (FL_USE_OPENCL AND NOT ArrayFire_OpenCL_FOUND)
     message(FATAL_ERROR "ArrayFire OpenCL not found: cannot build OpenCL backend")
   endif()
 
@@ -163,7 +164,7 @@ if (FL_BUILD_CORE)
   # always search for all dependencies, and dynamically build all backends for
   # which all required dependencies are found.
 
-  if (FLASHLIGHT_USE_CUDA)
+  if (FL_USE_CUDA)
      find_package(CUDA 9.2 QUIET) # CUDA 9.2 is required for >= ArrayFire 3.6.1
      if (CUDA_FOUND)
        message(STATUS "CUDA found (library: ${CUDA_LIBRARIES} include: ${CUDA_INCLUDE_DIRS})")
@@ -173,7 +174,7 @@ if (FL_BUILD_CORE)
      endif()
   endif()
 
-  if (FLASHLIGHT_USE_CPU)
+  if (FL_USE_CPU)
     # MKL is not required to build the CPU backend (but is highly recommended
     # for improved performag ance) since MKL-DNN can be built with either mklml or
     # MKL-DNN's internal GEMM implementation (see https://git.io/fhSMH). If MKL
@@ -197,24 +198,24 @@ if (FL_BUILD_CORE)
     endif()
   endif()
 
-  if (FLASHLIGHT_USE_OPENCL)
+  if (FL_USE_OPENCL)
     find_package(OpenCL)
     if (OpenCL_FOUND)
       message(STATUS "OpenCL found (library: ${OpenCL_LIBRARIES} include: ${OpenCL_INCLUDE_DIRS})")
     else()
       message(STATUS "OpenCL not found")
-      if (FLASHLIGHT_USE_OPENCL)
+      if (FL_USE_OPENCL)
         message(FATAL_ERROR "OpenCL required to build OpenCL backend")
       endif ()
     endif()
   endif()
 
   # Set up variables to link the right ArrayFire backend
-  if (FLASHLIGHT_USE_CPU)
+  if (FL_USE_CPU)
     set(FL_AF_BACKEND "afcpu")
-  elseif (FLASHLIGHT_USE_CUDA)
+  elseif (FL_USE_CUDA)
     set(FL_AF_BACKEND "afcuda")
-  elseif (FLASHLIGHT_USE_OPENCL)
+  elseif (FL_USE_OPENCL)
     set(FL_AF_BACKEND "afopencl")
   else()
     message(FATAL_ERROR "flashlight backend ill-specified")
@@ -225,23 +226,23 @@ if (FL_BUILD_CORE)
 
   # ------------------------ flashlight Core ------------------------
 
-  set(FLASHLIGHT_CORE_DIR "${FLASHLIGHT_ROOT_DIR}/fl")
-  include(${FLASHLIGHT_CORE_DIR}/CMakeLists.txt)
+  set(FL_CORE_DIR "${FL_ROOT_DIR}/fl")
+  include(${FL_CORE_DIR}/CMakeLists.txt)
   set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} flashlight)
   # flashlight core components keep their relative paths with respect to project
-  setup_install_headers(${FLASHLIGHT_CORE_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
+  setup_install_headers(${FL_CORE_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
 
   # ------------------------ Extensions ------------------------
-  set(FLASHLIGHT_EXT_DIR "${FLASHLIGHT_ROOT_DIR}/ext")
-  include(${FLASHLIGHT_EXT_DIR}/CMakeLists.txt)
+  set(FL_EXT_DIR "${FL_ROOT_DIR}/ext")
+  include(${FL_EXT_DIR}/CMakeLists.txt)
 
   # Make #include "flashlight/lib" work by adding to the inner incl dir
-  setup_install_headers(${FLASHLIGHT_EXT_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
+  setup_install_headers(${FL_EXT_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
 endif() # if FL_BUILD_CORE
 
-# --------------------------- Tasks ---------------------------
-set(FLASHLIGHT_APPS_DIR "${FLASHLIGHT_ROOT_DIR}/app")
-include(${FLASHLIGHT_APPS_DIR}/CMakeLists.txt)
+# --------------------------- Apps ---------------------------
+set(FL_APPS_DIR "${FL_ROOT_DIR}/app")
+include(${FL_APPS_DIR}/CMakeLists.txt)
 
 # --------------------------- Cleanup ---------------------------
 setup_install_targets(INSTALL_TARGETS ${INSTALLABLE_TARGETS})

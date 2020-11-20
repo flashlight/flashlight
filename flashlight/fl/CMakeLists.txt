@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # ----------------------------- Setup -----------------------------
-set(FLASHLIGHT_CORE_COMPONENT_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}") # module root
+set(FL_CORE_COMPONENT_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}") # module root
 
 # ----------------------------- Configuration -----------------------------
 # Distributed Training Backend
@@ -10,9 +10,9 @@ set(FL_BUILD_DISTRIBUTED ON CACHE BOOL "Whether to build and link the distribute
 set(USE_NCCL FALSE)
 set(USE_GLOO FALSE)
 if (FL_BUILD_DISTRIBUTED)
-  if (FLASHLIGHT_USE_CUDA)
+  if (FL_USE_CUDA)
     set(USE_NCCL TRUE)
-  elseif (FLASHLIGHT_USE_CPU OR FLASHLIGHT_USE_OPENCL)
+  elseif (FL_USE_CPU OR FL_USE_OPENCL)
     set(USE_GLOO TRUE)
   endif ()
 endif ()
@@ -25,7 +25,7 @@ cmake_dependent_option(FL_BUILD_CONTRIB
   "FL_BUILD_CORE" OFF)
 if (FL_BUILD_CONTRIB)
   message(STATUS "Will build flashlight contrib assets.")
-  include(${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/contrib/CMakeLists.txt)
+  include(${FL_CORE_COMPONENT_SRC_DIR}/contrib/CMakeLists.txt)
 endif()
 
 # Build and link resources from `flashlight/experimental`.
@@ -35,7 +35,7 @@ cmake_dependent_option(FL_BUILD_EXPERIMENTAL
 if (FL_BUILD_EXPERIMENTAL)
   message(STATUS "Will build flashlight experimental assets.")
   set(FL_EXPERIMENTAL_ROOT_PATH
-    ${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/experimental)
+    ${FL_CORE_COMPONENT_SRC_DIR}/experimental)
   include(${FL_EXPERIMENTAL_ROOT_PATH}/CMakeLists.txt)
 endif()
 
@@ -49,39 +49,39 @@ target_include_directories(
 # -------------------------------- Components --------------------------------
 
 # Common
-include(${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/common/CMakeLists.txt)
+include(${FL_CORE_COMPONENT_SRC_DIR}/common/CMakeLists.txt)
 
 # Autograd
-include(${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/autograd/CMakeLists.txt)
+include(${FL_CORE_COMPONENT_SRC_DIR}/autograd/CMakeLists.txt)
 
 # Dataset
-include(${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/dataset/CMakeLists.txt)
+include(${FL_CORE_COMPONENT_SRC_DIR}/dataset/CMakeLists.txt)
 
 # Dataset
-include(${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/distributed/CMakeLists.txt)
+include(${FL_CORE_COMPONENT_SRC_DIR}/distributed/CMakeLists.txt)
 
 # Memory
-include(${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/memory/CMakeLists.txt)
+include(${FL_CORE_COMPONENT_SRC_DIR}/memory/CMakeLists.txt)
 
 # Meter
-include(${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/meter/CMakeLists.txt)
+include(${FL_CORE_COMPONENT_SRC_DIR}/meter/CMakeLists.txt)
 
 # NN
-include(${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/nn/CMakeLists.txt)
+include(${FL_CORE_COMPONENT_SRC_DIR}/nn/CMakeLists.txt)
 
 # Optim
-include(${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/optim/CMakeLists.txt)
+include(${FL_CORE_COMPONENT_SRC_DIR}/optim/CMakeLists.txt)
 
 # --------------------------- Configure Examples/Tests ---------------------------
 
 # Build tests
 if (FL_BUILD_TESTS)
-  add_subdirectory(${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/test)
+  add_subdirectory(${FL_CORE_COMPONENT_SRC_DIR}/test)
 endif ()
 
 # Build examples
 if (FL_BUILD_EXAMPLES)
-  set(FL_EXAMPLES_DIR ${FLASHLIGHT_CORE_COMPONENT_SRC_DIR}/examples)
+  set(FL_EXAMPLES_DIR ${FL_CORE_COMPONENT_SRC_DIR}/examples)
   add_subdirectory(${FL_EXAMPLES_DIR})
   # Installation properties
   install(
