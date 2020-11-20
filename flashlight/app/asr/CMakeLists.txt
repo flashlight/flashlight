@@ -58,13 +58,21 @@ include(${CMAKE_CURRENT_LIST_DIR}/decoder/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/runtime/CMakeLists.txt)
 
 # ----------------------------- Binaries -----------------------------
-add_executable(asr_train ${CMAKE_CURRENT_LIST_DIR}/Train.cpp)
-add_executable(asr_test ${CMAKE_CURRENT_LIST_DIR}/Test.cpp)
-add_executable(asr_decode ${CMAKE_CURRENT_LIST_DIR}/Decode.cpp)
+add_executable(fl_asr_train ${CMAKE_CURRENT_LIST_DIR}/Train.cpp)
+add_executable(fl_asr_test ${CMAKE_CURRENT_LIST_DIR}/Test.cpp)
+add_executable(fl_asr_decode ${CMAKE_CURRENT_LIST_DIR}/Decode.cpp)
 
-target_link_libraries(asr_train flashlight-app-asr ${CMAKE_DL_LIBS})
-target_link_libraries(asr_test flashlight-app-asr ${CMAKE_DL_LIBS})
-target_link_libraries(asr_decode flashlight-app-asr ${CMAKE_DL_LIBS})
+target_link_libraries(fl_asr_train flashlight-app-asr ${CMAKE_DL_LIBS})
+target_link_libraries(fl_asr_test flashlight-app-asr ${CMAKE_DL_LIBS})
+target_link_libraries(fl_asr_decode flashlight-app-asr ${CMAKE_DL_LIBS})
+
+set_executable_output_directory(fl_asr_train "${FL_BUILD_BINARY_OUTPUT_DIR}/asr")
+set_executable_output_directory(fl_asr_test "${FL_BUILD_BINARY_OUTPUT_DIR}/asr")
+set_executable_output_directory(fl_asr_decode "${FL_BUILD_BINARY_OUTPUT_DIR}/asr")
+
+install(TARGETS fl_asr_train RUNTIME DESTINATION ${FL_INSTALL_BIN_DIR})
+install(TARGETS fl_asr_test RUNTIME DESTINATION ${FL_INSTALL_BIN_DIR})
+install(TARGETS fl_asr_decode RUNTIME DESTINATION ${FL_INSTALL_BIN_DIR})
 
 # --------------------------- Tests ---------------------------
 

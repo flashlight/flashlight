@@ -73,3 +73,10 @@ function(setup_install_find_module CONFIG_PATH)
       )
   endif()
 endfunction()
+
+function(set_executable_output_directory EXEC_TARGET DIRECTORY)
+  set_target_properties(${EXEC_TARGET} PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY
+    ${DIRECTORY}
+    )
+endfunction()

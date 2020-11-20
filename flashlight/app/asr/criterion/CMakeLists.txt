@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 3.10)
 
 # ---------------------------- Backend-specific -----------------------------
 if (FL_BACKEND STREQUAL "CUDA")
-  set(FLASHLIGHT_USE_CUDA ON)
+  set(FL_USE_CUDA ON)
 endif ()
 
-if (FLASHLIGHT_USE_CUDA)
+if (FL_USE_CUDA)
   # Build WarpCTC
   set(WARPCTC_DIR ${FL_APP_ASR_ROOT_DIR}/third_party/warpctc)
   message(STATUS "Adding warpctc from dir: ${WARPCTC_DIR}")
@@ -40,7 +40,7 @@ if (FLASHLIGHT_USE_CUDA)
     ${CUDA_INCLUDE_DIRS}
     ${WARPCTC_INCLUDE_DIR} # I hope to remove me one day
     )
-elseif (FLASHLIGHT_USE_CPU)
+elseif (FL_USE_CPU)
   target_sources(
     flashlight-app-asr
     PRIVATE
