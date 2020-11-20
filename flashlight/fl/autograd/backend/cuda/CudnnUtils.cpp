@@ -278,7 +278,7 @@ RNNDescriptor::RNNDescriptor(
   cudnnRNNAlgo_t algo = CUDNN_RNN_ALGO_STANDARD;
   cudnnDataType_t cudnntype = cudnnMapToType(type);
 
-#if CUDNN_VERSION >= 7000
+#if CUDNN_VERSION >= 7000 && CUDNN_VERSION < 8000 
   CUDNN_CHECK_ERR(cudnnSetRNNDescriptor(
       handle,
       descriptor,
