@@ -439,6 +439,10 @@ Variable sigmoid(const Variable& input) {
   return Variable(result, {input.withoutData()}, gradFunc);
 }
 
+Variable swish(const Variable& input, double beta) {
+  return input * sigmoid(beta * input);
+}
+
 Variable transpose(const Variable& input) {
   auto result = af::transpose(input.array());
   auto gradFunc = [](std::vector<Variable>& inputs,

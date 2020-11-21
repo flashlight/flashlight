@@ -152,7 +152,7 @@ std::string LogSoftmax::prettyString() const {
 Swish::Swish(double beta /* = 1.0 */) : beta_(beta) {}
 
 Variable Swish::forward(const Variable& input) {
-  return input * sigmoid(beta_ * input);
+  return swish(input, beta_);
 }
 
 std::string Swish::prettyString() const {
