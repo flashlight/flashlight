@@ -114,7 +114,7 @@ Variable Conformer::conv(const Variable& input) {
   // input C x T x B x 1
   // apply first pointwise conv
   auto result =
-      gatedlinearunit((*conv1_)(((*normConv1_)(input)).as(input.type())), 2);
+      gatedlinearunit((*conv1_)(((*normConv1_)(input)).as(input.type())), 0);
   result = reorder(input, 1, 3, 0, 2);
   // T x 1 x C x B
   // apply depthwise separable convolutions
