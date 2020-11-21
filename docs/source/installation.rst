@@ -1,8 +1,7 @@
 Building and Installing
 =======================
-Currently, flashlight must be built and installed from source.
 
-Building/installing flashlight creates ``libflashlight``, which contains the entire flashlight library. Headers are contained in ``flashlight/``, which is placed in the specified ``include`` directory after install.
+Building or installing from `vcpkg <https://github.com/microsoft/vcpkg>`_ is the simplest way to get started with flashlight. See the `top-level readme <https://github.com/facebookresearch/flashlight/blob/master/README.md>`_ for instructions on getting started with a ``vcpkg`` installation .For a more advanced installation from source, follow the steps below.
 
 First, clone flashlight from `its repository on Github <https://github.com/facebookresearch/flashlight>`_:
 
@@ -10,27 +9,30 @@ First, clone flashlight from `its repository on Github <https://github.com/faceb
 
    git clone https://github.com/facebookresearch/flashlight.git
 
-
 Build Requirements
 ~~~~~~~~~~~~~~~~~~
 
-- A C++ compiler with good C++11 support (e.g. g++ >= 5)
-- `cmake <https://cmake.org/>`_ -- version 3.5.1 or later, and ``make``
+- A C++ compiler with good C++14 support (e.g. g++ >= 5)
+- `cmake <https://cmake.org/>`_ -- version 3.10 or later, and ``make``
 
 Dependencies
 ------------
 
-flashlight can be built with either a CUDA, CPU (in development), or OpenCL (coming soon) backend. Requirements vary depending on which backend is selected.
+flashlight can be built with either a CUDA, or CPU (in development, will be shifted to OpenCL) backend. Requirements vary depending on which backend is selected.
 
 - For all backends, `ArrayFire <https://github.com/arrayfire/arrayfire/wiki>`_ >= `3.7.1 <https://github.com/arrayfire/arrayfire/releases/tag/v3.7.1>`_ is required. flashlight can also be built flashlight with `ArrayFire 3.6.2 <https://github.com/arrayfire/arrayfire/releases/tag/v3.6.2>`_ - `3.6.4 <https://github.com/arrayfire/arrayfire/releases/tag/v3.6.4>`_, but only using commits ``<= 5518d91b7f4fd5b400cbc802cfbecc0df57836bd``.
 
   - Using ArrayFire >= 3.7.1 enables features that significantly improve performance; using it is highly recommended.
 
-- The following dependencies are `downloaded, built, and installed automatically` with flashlight:
+  - Using ArrayFire 3.7.2 is not recommended due to several bugs that are fixed in 3.7.3.
 
-  - `Cereal <https://github.com/USCiLab/cereal>`_ is required for serialization -- the `develop` branch must be used.
+- The following dependencies are `downloaded, built, and installed automatically` with flashlight but can also be built and installed manually:
 
-  - If building tests, `Google Test <https://github.com/google/googletest>`_ >= 1.10.0 is required.
+  - `Cereal <https://github.com/USCiLab/cereal>`_ is required for serialization -- the `develop` branch is used.
+
+  - If building tests, `Google Test <https://github.com/google/googletest>`_ >= 1.10.0 is used.
+
+  - If using CUDA <= 11, `NVIDIA CUB <https://github.com/NVlabs/cub>`_ is required.
 
 
 Distributed Training Dependencies
@@ -64,7 +66,7 @@ If building MKL-DNN and flashlight with MKL, the flashlight build needs to be ab
 OpenCL Backend Dependencies
 ---------------------------
 
-The OpenCL backend is not currently supported.
+The OpenCL backend is currently under active development.
 
 Build Instructions
 ~~~~~~~~~~~~~~~~~~
@@ -90,6 +92,10 @@ Build Options
 | FL_BUILD_EXAMPLES       | ON, OFF           | ON            |
 +-------------------------+-------------------+---------------+
 | FL_BUILD_APP_ASR        | ON, OFF           | ON            |
++-------------------------+-------------------+---------------+
+| FL_BUILD_APP_IMG_CLASS  | ON, OFF           | ON            |
++-------------------------+-------------------+---------------+
+| FL_BUILD_STANDALONE     | ON, OFF           | ON            |
 +-------------------------+-------------------+---------------+
 | CMAKE_BUILD_TYPE        | CMake build types | Debug         |
 +-------------------------+-------------------+---------------+
@@ -160,6 +166,17 @@ To build flashlight with Docker:
 
 Building Your Project with flashlight
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The flashlight build exports the following CMake targets on install:
+
+- ``flashlight::fl-libraries`` -- contains flashlight libraries headers and symbols.
+
+- ``flashlight::flashlight`` -- contains flashlight libraries as well as the flashlight core autograd and neural network library.
+
+- ``flashlight::flashlight-app-asr`` -- contains the automatic speech recognition application along with the flashlight core and flashlight libraries.
+
+- ``flashlight::flashlight-app-imgclass`` -- contains the image classification application along with the flashlight core and flashlight libraries.
+
 Once flashlight is built and installed, including it in another project is simple using a CMake imported target. Suppose we have a project in ``project.cpp`` that uses flashlight:
 
 ::
@@ -189,14 +206,11 @@ We can link flashlight with the following CMake configuration:
 
 .. code-block:: shell
 
-  # CMake 3.5.1+ is required
-  cmake_minimum_required(VERSION 3.5.1)
-  # C++ 11 is required
+  cmake_minimum_required(VERSION 3.10)
   set(CMAKE_CXX_STANDARD 14)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-  find_package(flashlight REQUIRED)
-  find_package(ArrayFire REQUIRED)
+  find_package(flashlight CONFIG REQUIRED)
   # ...
 
   add_executable(myProject project.cpp)
