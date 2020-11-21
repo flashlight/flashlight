@@ -338,6 +338,15 @@ Variable clamp(const Variable& input, const double min, const double max);
 Variable sigmoid(const Variable& input);
 
 /**
+ * Computes swish of each element in a Variable
+ * from [Ramachandran et al (2013)](
+ * https://arxiv.org/abs/1710.05941), _Searching for Activation Functions_.
+ * \f[ Swish(x) = x \cdot sigmoid(\beta x) \f]
+ * where \f$\beta\f$ is a constant, often is 1.
+ */
+Variable swish(const Variable& input, double beta);
+
+/**
  * Returns element-wise maximum value of two Variables.
  * \f[ out = max(var_1, var_2) \f]
  */

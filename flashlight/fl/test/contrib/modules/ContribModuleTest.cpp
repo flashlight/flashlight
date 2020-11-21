@@ -174,6 +174,48 @@ TEST_F(ModuleTestF16, TransformerFwdF16) {
   ASSERT_EQ(output[0].dims(2), batchsize);
 }
 
+TEST(ModuleTest, ConformerFwd) {
+  int batchsize = 10;
+  int timesteps = 120;
+  int c = 32;
+  int nheads = 4;
+
+  auto tr = Conformer(c, c / nheads, c, nheads, timesteps, 33, 0.2, 0.1);
+  auto input = Variable(af::randu(c, timesteps, batchsize, 1), false);
+
+  auto output = tr.forward({input});
+
+  ASSERT_EQ(output[0].dims(0), c);
+  ASSERT_EQ(output[0].dims(1), timesteps);
+  ASSERT_EQ(output[0].dims(2), batchsize);
+}
+
+TEST_F(ModuleTestF16, ConformerFwdF16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  int batchsize = 10;
+  int timesteps = 120;
+  int c = 32;
+  int nheads = 4;
+
+  auto tr = Conformer(c, c / nheads, c, nheads, timesteps, 33, 0.2, 0.1);
+  auto input =
+      Variable(af::randu(c, timesteps, batchsize, 1, af::dtype::f16), false);
+
+  auto output = tr.forward({input});
+  if (OptimMode::get().getOptimLevel() == OptimLevel::O3) {
+    ASSERT_EQ(output[0].type(), input.type());
+  } else {
+    ASSERT_EQ(output[0].type(), af::dtype::f32); // result is upcast
+  }
+
+  ASSERT_EQ(output[0].dims(0), c);
+  ASSERT_EQ(output[0].dims(1), timesteps);
+  ASSERT_EQ(output[0].dims(2), batchsize);
+}
+
 TEST(ModuleTest, PositionEmbeddingFwd) {
   int batchsize = 10;
   int timesteps = 120;
