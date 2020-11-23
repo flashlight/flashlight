@@ -122,7 +122,7 @@ DEFINE_bool(pow, false, "use standard power spectrum as input");
 DEFINE_int64(mfcccoeffs, 13, "number of mfcc coefficients");
 DEFINE_bool(mfsc, false, "use standard mfsc features as input");
 DEFINE_double(melfloor, 1.0, "specify optional mel floor for mfcc/mfsc/pow");
-DEFINE_int64(filterbanks, 40, "Number of mel-filter bank channels");
+DEFINE_int64(filterbanks, 80, "Number of mel-filter bank channels");
 DEFINE_int64(devwin, 0, "Window length for delta and doubledelta derivatives");
 DEFINE_int64(fftcachesize, 1, "number of cached cuFFT plans in GPU memory");
 DEFINE_int64(
