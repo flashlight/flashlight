@@ -92,6 +92,7 @@ TEST(DataTest, inputFeaturizer) {
   gflags::FlagSaver flagsaver;
   FLAGS_channels = 2;
   FLAGS_samplerate = 16000;
+  FLAGS_filterbanks = 40;
   for (int i = 0; i < 10; ++i) {
     inputs.emplace_back(i * FLAGS_samplerate * FLAGS_channels);
     for (int j = 0; j < inputs.back().size(); ++j) {
