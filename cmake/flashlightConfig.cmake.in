@@ -49,9 +49,14 @@ if(NOT TARGET flashlight::fl-libraries)
   endif()
 endif()
 
+# Flashlight backend
+set(FL_USE_CPU @FL_USE_CPU@)
+set(FL_USE_CUDA @FL_USE_CUDA@)
+set(FL_USE_OPENCL @FL_USE_OPENCL@)
+
 # For legacy configurations
 # Libraries
-set(flashlight_LIBRARIES flashlight::fl-libraries flashlight::fl-libraries-cuda)
+set(flashlight_LIBRARIES flashlight::fl-libraries)
 if (@FL_BUILD_CORE@)
   set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::flashlight)
 endif()
@@ -59,7 +64,7 @@ if (@FL_BUILD_APP_ASR@)
   set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::flashlight-app-asr)
 endif()
 if (@FL_BUILD_APP_IMG_CLASS@)
-  set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::flashlight-app-imclass)
+  set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::flashlight-app-imgclass)
 endif()
 # Include dirs
 if (EXISTS @PACKAGE_INCLUDE_DIRS@)
