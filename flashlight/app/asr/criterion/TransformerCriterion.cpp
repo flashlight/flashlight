@@ -359,6 +359,13 @@ AMUpdateFunc buildTransformerAmUpdateFunction(
     std::vector<AMStatePtr> out;
     std::vector<std::vector<float>> amScoresAll;
 
+    // Store the latest index of the hidden state when we can clear it
+    std::map<TS2SState*, int> lastIndexOfStatePtr;
+    for (int index = 0; index < rawPrevStates.size(); index++) {
+      TS2SState* ptr = static_cast<TS2SState*>(rawPrevStates[index].get());
+      lastIndexOfStatePtr[ptr] = index;
+    }
+
     int start = 0, step = std::min(10, 1000 / (t + 1));
     while (start < B) {
       buf->prevStates.resize(0);
@@ -397,7 +404,9 @@ AMUpdateFunc buildTransformerAmUpdateFunction(
       // to prevent from OOM
       for (int i = start; i < end; i++) {
         TS2SState* prevState = static_cast<TS2SState*>(rawPrevStates[i].get());
-        if (prevState) {
+        if (prevState &&
+            (lastIndexOfStatePtr.find(prevState) == lastIndexOfStatePtr.end() ||
+             lastIndexOfStatePtr.find(prevState)->second == i)) {
           prevState->hidden.clear();
         }
       }
