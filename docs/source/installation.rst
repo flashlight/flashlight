@@ -195,8 +195,11 @@ We can link flashlight with the following CMake configuration:
   set(CMAKE_CXX_STANDARD 14)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-  find_package(flashlight REQUIRED)
-  find_package(ArrayFire REQUIRED)
+  find_package(flashlight CONFIG REQUIRED)
+
+  if (FL_USE_CUDA)
+    enable_language(CUDA)
+  endif()
   # ...
 
   add_executable(myProject project.cpp)
