@@ -15,6 +15,8 @@ if (FL_USE_CUDA)
     flashlight-app-asr
     PRIVATE
     ${warpctc_SOURCES})
+  # Required with cmake 3.12+:
+  target_compile_options(flashlight-app-asr PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--std=c++14>)
   # cuRAND is required and linked below
   set(WARPCTC_INCLUDE_DIR ${WARPCTC_DIR}/include)
   target_include_directories(flashlight-app-asr PRIVATE ${WARPCTC_INCLUDE_DIR})
