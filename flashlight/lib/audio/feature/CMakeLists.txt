@@ -48,10 +48,17 @@ target_sources(
   ${CMAKE_CURRENT_LIST_DIR}/Windowing.cpp
   )
 
+if (NOT FL_LIBRARIES_USE_MKL)
+  # openmp required by PowerSpectrum: provided by iomp if MKL ON
+  # Not using the target OpenMP::OpenMP_CXX: it does add fopenmp to nvcc which does not understand it
+  set(OMPLIB ${OpenMP_CXX_LIBRARIES})
+endif()
+
 target_link_libraries(
   fl-libraries
   PRIVATE
   ${CBLAS_LIBRARIES}
+  ${OMPLIB}
   FFTW3::fftw3
   )
 
