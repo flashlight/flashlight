@@ -56,6 +56,8 @@ if (FL_LIBRARIES_USE_CUDA)
   include(${CMAKE_MODULE_PATH}/CUDAUtils.cmake)
 
   set_cuda_cxx_compile_flags()
+  # Required when using cmake 3.12+ not using anymore CUDA_NVCC_FLAGS:
+  target_compile_options(fl-libraries PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--std=c++14>)
   set_cuda_arch_nvcc_flags()
 
   # hacky: add -fPIC to nvcc flags if needed
