@@ -17,7 +17,7 @@ tensor library.
 - CUDA, CPU, and OpenCL (coming soon) backends for GPU and CPU training.
 - An emphasis on efficiency and scale.
 
-Native support in C++ and simple extensibility makes Flashlight a powerful research framework as  *hackable to its core* and enable fast iteration on new experimental setups and algorithms without sacrificing performance. In a single repository, Flashlight provides [applications](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app) for research across multiple domains:
+Native support in C++ and simple extensibility makes Flashlight a powerful research framework that's *hackable to its core* and enables fast iteration on new experimental setups and algorithms without sacrificing performance. In a single repository, Flashlight provides [applications](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app) for research across multiple domains:
 - [Automatic speech recognition](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr) (the [wav2letter](https://github.com/facebookresearch/wav2letter/) project)
 - [Image classification](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/imclass)
 - Language modeling (coming soon)
@@ -38,7 +38,7 @@ First, [install Flashlight](#installation). And [link it to your own project](ht
 
 [`Sequential`](https://fl.readthedocs.io/en/latest/modules.html#sequential) forms a sequence of Flashlight [`Module`](https://fl.readthedocs.io/en/latest/modules.html#module)s for chaining computation.
 
-<details><summary>Implementing a simple convnet is easy...</summary>
+<details><summary>Implementing a simple convnet is easy.</summary>
 
 ```c++
 #include <flashlight/fl/flashlight.h>
@@ -120,6 +120,7 @@ To build your clone of Flashlight from source using `vcpkg` and `CMake`, first i
     arrayfire cudnn nccl openmpi cereal \ # for the flashlight neural net library
     gflags                              \ # for flashlight application libraries
     libsndfile                          \ # for the flashlight asr application
+    stb                                 \ # for the flashlight imgclass application
     gtest                                 # optional, if building tests
 ```
 Clone the repository:
