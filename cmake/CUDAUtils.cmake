@@ -20,7 +20,7 @@ include(${CMAKE_MODULE_PATH}/select_compute_arch.cmake)
 # This MUST be done after CUDA is found, but before any cuda libs/binaries have
 # been created.
 function (set_cuda_cxx_compile_flags)
-  set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-std=c++11" PARENT_SCOPE)
+  set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-std=c++14" PARENT_SCOPE)
   # Using host flags makes things bad - keep things clean
   set(CUDA_PROPAGATE_HOST_FLAGS OFF)
 endfunction()
