@@ -629,15 +629,29 @@ int main(int argc, char** argv) {
     meters.train.tknEdit.reset();
     meters.train.wrdEdit.reset();
 
-    std::shared_ptr<fl::SpecAugment> saug;
+    std::shared_ptr<fl::Module> saug;
     if (FLAGS_saug_start_update >= 0) {
-      saug = std::make_shared<fl::SpecAugment>(
+      if (!(FLAGS_pow || FLAGS_mfsc || FLAGS_mfcc)) {
+        saug = std::make_shared<fl::RawWavSpecAugment>(
+          FLAGS_filterbanks,
+          FLAGS_saug_fmaskf,
+          FLAGS_saug_fmaskn,
+          FLAGS_saug_tmaskt,
+          FLAGS_saug_tmaskp,
+          FLAGS_saug_tmaskn,
+          FLAGS_filterbanks,
+          FLAGS_lowfreqfilterbank,
+          FLAGS_highfreqfilterbank,
+          FLAGS_samplerate);
+      } else {
+        saug = std::make_shared<fl::SpecAugment>(
           FLAGS_filterbanks,
           FLAGS_saug_fmaskf,
           FLAGS_saug_fmaskn,
           FLAGS_saug_tmaskt,
           FLAGS_saug_tmaskp,
           FLAGS_saug_tmaskn);
+      }
     }
 
     fl::allReduceParameters(ntwrk);
@@ -758,7 +772,7 @@ int main(int argc, char** argv) {
           auto input = fl::input(batch[kInputIdx]);
           if (FLAGS_saug_start_update >= 0 &&
               curBatch >= FLAGS_saug_start_update) {
-            input = saug->forward(input);
+            input = saug->forward({input}).front();
           }
           auto output =
               ntwrk->forward({input}).front().as(batch[kInputIdx].type());
