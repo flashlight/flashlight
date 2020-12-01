@@ -76,7 +76,7 @@ TEST(ModuleTest, TransformerSerialization) {
     c, c / nheads, c, nheads, timesteps, 0.2, 0.1, false, false);
   model->eval();
   save(getTmpPath("Transformer"), model);
-  
+
   std::shared_ptr<Transformer> loaded;
   load(getTmpPath("Transformer"), loaded);
   loaded->eval();
@@ -99,7 +99,7 @@ TEST(ModuleTest, ConformerSerialization) {
     c, c / nheads, c, nheads, timesteps, 33, 0.2, 0.1);
   model->eval();
   save(getTmpPath("Conformer"), model);
-  
+
   std::shared_ptr<Conformer> loaded;
   load(getTmpPath("Conformer"), loaded);
   loaded->eval();
@@ -162,6 +162,31 @@ TEST(ModuleTest, AdaptiveEmbedding) {
 
   ASSERT_TRUE(allParamsClose(*loaded, *model));
   ASSERT_TRUE(allClose(outputl, output));
+}
+
+TEST(ModuleTest, RawWavSpecAugment) {
+  auto model = std::make_shared<RawWavSpecAugment>(0, 1, 1, 0, 0, 0, 1, 2000, 6000, 16000, 20000);
+  model->eval();
+
+  save(getTmpPath("RawWavSpecAugment"), model);
+
+  std::shared_ptr<RawWavSpecAugment> loaded;
+  load(getTmpPath("RawWavSpecAugment"), loaded);
+  loaded->train();
+
+  int T = 300;
+  auto time = 2 * M_PI * af::iota(af::dim4(T)) / 16000;
+  auto finalWav =
+    af::sin(time * 500) + af::sin(time * 1000) + af::sin(time * 7000) + af::sin(time * 7500);
+  auto inputWav = finalWav + af::sin(time * 3000) + af::sin(time * 4000) + af::sin(time * 5000);
+
+  auto filteredWav = loaded->forward(fl::Variable(inputWav, false));
+  // compare middle of filtered wave to avoid edge artifacts comparison
+  int halfKernelWidth = 63;
+  ASSERT_TRUE(fl::allClose(
+    fl::Variable(finalWav.rows(halfKernelWidth, T - halfKernelWidth - 1), false),
+    filteredWav.rows(halfKernelWidth, T - halfKernelWidth - 1),
+    1e-3));
 }
 
 int main(int argc, char** argv) {

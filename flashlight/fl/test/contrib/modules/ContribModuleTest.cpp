@@ -383,6 +383,30 @@ TEST(ModuleTest, SpecAugmentFwd) {
   ASSERT_GT(fZeros, 0);
 }
 
+TEST(ModuleTest, RawWavSpecAugmentFwd) {
+  // no time, only freq masking
+  for (int nmask = 1; nmask < 3; nmask++) {
+    RawWavSpecAugment specAug(0, 1, nmask, 0, 0, 0, 1, 2000, 6000, 16000, 20000);
+    specAug.train();
+
+    int T = 300, C = 3, B = 4;
+    auto time = 2 * M_PI * af::iota(af::dim4(T)) / 16000;
+    auto finalWav =
+      af::sin(time * 500) + af::sin(time * 1000) + af::sin(time * 7000) + af::sin(time * 7500);
+    auto inputWav = finalWav + af::sin(time * 3000) + af::sin(time * 4000) + af::sin(time * 5000);
+    inputWav = af::tile(inputWav, 1, C, B);
+    finalWav = af::tile(finalWav, 1, C, B);
+
+    auto filteredWav = specAug(fl::Variable(inputWav, false));
+    // compare middle of filtered wave to avoid edge artifacts comparison
+    int halfKernelWidth = 63;
+    ASSERT_TRUE(fl::allClose(
+      fl::Variable(finalWav.rows(halfKernelWidth, T - halfKernelWidth - 1), false),
+      filteredWav.rows(halfKernelWidth, T - halfKernelWidth - 1),
+      1e-3));
+  }
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
