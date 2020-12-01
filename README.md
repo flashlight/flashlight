@@ -116,12 +116,12 @@ To see the features available for installation, run `./vcpkg search Flashlight`.
 To build your clone of Flashlight from source using `vcpkg` and `CMake`, first install dependencies:
 ```shell
 ./vcpkg install \
-    cuda intel-mkl fftw cub kenlm       \ # for flashlight libraries
-    arrayfire cudnn nccl openmpi cereal \ # for the flashlight neural net library
-    gflags                              \ # for flashlight application libraries
-    libsndfile                          \ # for the flashlight asr application
-    stb                                 \ # for the flashlight imgclass application
-    gtest                                 # optional, if building tests
+    cuda intel-mkl fftw3 cub kenlm            \ # for flashlight libraries
+    arrayfire[cuda] cudnn nccl openmpi cereal \ # for the flashlight neural net library
+    gflags                                    \ # for flashlight application libraries
+    libsndfile                                \ # for the flashlight asr application
+    stb                                       \ # for the flashlight imgclass application
+    gtest                                       # optional, if building tests
 ```
 Clone the repository:
 ```shell
