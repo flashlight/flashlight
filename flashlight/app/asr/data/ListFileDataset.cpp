@@ -45,7 +45,10 @@ ListFileDataset::ListFileDataset(
     }
     auto splits = splitOnWhitespace(line, true);
     if (splits.size() < 3) {
-      throw std::runtime_error("Invalid columns in line: " + line);
+      throw std::runtime_error(
+          "File " + filename +
+          " has invalid columns in line (expected 3 columns at least): " +
+          line);
     }
 
     ids_.emplace_back(std::move(splits[kIdIdx]));

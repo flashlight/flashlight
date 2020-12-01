@@ -119,6 +119,10 @@ fl::Dataset::DataTransformFunction targetFeatures(
     if (config.eosToken_) {
       tgtVec.emplace_back(tokenDict.getIndex(kEosToken));
     }
+    if (tgtVec.size() == 0) {
+      // support empty target
+      return af::array().as(s32);
+    }
     return af::array(tgtVec.size(), tgtVec.data());
   };
 }
@@ -129,6 +133,10 @@ fl::Dataset::DataTransformFunction wordFeatures(const Dictionary& wrdDict) {
         static_cast<char*>(data), static_cast<char*>(data) + dims.elements());
     auto words = splitOnWhitespace(transcript, true);
     auto wrdVec = wrdDict.mapEntriesToIndices(words);
+    if (wrdVec.size() == 0) {
+      // support empty target
+      return af::array().as(s32);
+    }
     return af::array(wrdVec.size(), wrdVec.data());
   };
 }

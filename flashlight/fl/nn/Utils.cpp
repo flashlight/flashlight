@@ -104,7 +104,8 @@ af::array join(
   if (inputs.empty()) {
     return af::array();
   }
-  af::dim4 maxDims;
+  // if empty arrays are provided then we just return padded matrix for them
+  af::dim4 maxDims = af::dim4(1, 1, 1, 1);
   af::dtype type = inputs[0].type();
   for (const auto& in : inputs) {
     for (int d = 0; d < AF_MAX_DIMS; ++d) {
@@ -129,7 +130,9 @@ af::array join(
       sel[d] = af::seq(inputs[i].dims(d));
     }
     sel[batchDim] = af::seq(i, i);
-    padSeq(sel[0], sel[1], sel[2], sel[3]) = inputs[i];
+    if (!inputs[i].isempty()) {
+      padSeq(sel[0], sel[1], sel[2], sel[3]) = inputs[i];
+    }
   }
   return padSeq;
 }
