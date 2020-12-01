@@ -106,8 +106,8 @@ Variable LayerNorm::forward(const Variable& input) {
         throw std::invalid_argument(
             "[LayerNorm] Input size along the norm axis doesn't with axisSize.");
       }
-      weight = moddims(params_[0], affineDims);
-      bias = moddims(params_[1], affineDims);
+      weight = moddims(params_[0].as(output.type()), affineDims);
+      bias = moddims(params_[1].as(output.type()), affineDims);
     }
     output = tileAs(weight, input) * output + tileAs(bias, input);
   }
