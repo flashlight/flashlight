@@ -106,7 +106,9 @@ af::array join(
   }
   af::dim4 maxDims;
   af::dtype type = inputs[0].type();
+  bool isEmpty = true;
   for (const auto& in : inputs) {
+    isEmpty = isEmpty && in.isempty();
     for (int d = 0; d < AF_MAX_DIMS; ++d) {
       maxDims[d] = std::max(maxDims[d], in.dims(d));
       if (in.type() != type) {
@@ -122,6 +124,14 @@ af::array join(
     throw std::invalid_argument("no singleton dim available for batching");
   }
   maxDims[batchDim] = inputs.size();
+  if (isEmpty) {
+    // if empty arrays are provided (some element in maxDims is zero)
+    // then af::constant will create array with sizes 0 and 1 on non-zeros dims,
+    // e.g. maxDims = (0, 3, 4, 5) the af::constant(pad, maxDims)
+    // will have size = (0, 1, 1, 1), not (0, 3, 4, 5)
+    // To avoid this we directly create empty array here with correct sizes
+    return af::array(maxDims, type);
+  }
   auto padSeq = af::constant(padValue, maxDims, type);
   std::array<af::seq, AF_MAX_DIMS> sel;
   for (int i = 0; i < inputs.size(); ++i) {
@@ -129,7 +139,9 @@ af::array join(
       sel[d] = af::seq(inputs[i].dims(d));
     }
     sel[batchDim] = af::seq(i, i);
-    padSeq(sel[0], sel[1], sel[2], sel[3]) = inputs[i];
+    if (!inputs[i].isempty()) {
+      padSeq(sel[0], sel[1], sel[2], sel[3]) = inputs[i];
+    }
   }
   return padSeq;
 }
