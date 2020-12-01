@@ -15,16 +15,6 @@ endif()
 # This line must be placed after find_package(CUDA)
 include(${CMAKE_MODULE_PATH}/select_compute_arch.cmake)
 
-### Set compilation flags
-# NVCC doesn't properly listen to cxx version flags, so manually override.
-# This MUST be done after CUDA is found, but before any cuda libs/binaries have
-# been created.
-function (set_cuda_cxx_compile_flags)
-  set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-std=c++14" PARENT_SCOPE)
-  # Using host flags makes things bad - keep things clean
-  set(CUDA_PROPAGATE_HOST_FLAGS OFF)
-endfunction()
-
 ### Detect GPU architectures
 # Detect architectures (see select_compute_arch.cmake) and
 # add appropriate flags to nvcc for gencode/arch/ptx
