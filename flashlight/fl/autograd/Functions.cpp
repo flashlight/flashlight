@@ -1088,12 +1088,10 @@ Variable embedding(const Variable& input, const Variable& embeddings) {
   }
 
   auto idxs = af::flat(input.array());
-  Variable result = Variable(embeddings.array()(af::span, idxs), false);
-
   auto inDims = input.dims();
   af::dim4 resultDims = {embeddings.dims(0), inDims[0], inDims[1], inDims[2]};
-
-  result = moddims(result, resultDims);
+  af::array result =
+      af::moddims(embeddings.array()(af::span, idxs), resultDims);
 
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
@@ -1105,7 +1103,7 @@ Variable embedding(const Variable& input, const Variable& embeddings) {
     auto ip = af::flat(inputs[0].array());
     auto deltas = af::moddims(gradOutput.array(), w.dims(0), ip.elements());
 
-    auto sp = sparse(
+    auto sp = af::sparse(
         ip.elements(),
         w.dims(1),
         af::constant(1, ip.elements(), deltas.type()),
@@ -1117,7 +1115,7 @@ Variable embedding(const Variable& input, const Variable& embeddings) {
     w.addGrad(Variable(grad, false));
   };
 
-  return Variable(result.array(), {input, embeddings}, gradFunc);
+  return Variable(result, {input, embeddings}, gradFunc);
 }
 
 Variable padding(
