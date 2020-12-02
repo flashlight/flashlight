@@ -65,7 +65,7 @@ commands:
                     -DFL_BACKEND=<< parameters.fl_backend >> \
                     -DFL_BUILD_fl_CORE=<< parameters.fl_build_fl_core >> \
                     -DFL_BUILD_APP_ASR=<< parameters.fl_build_app_asr >> \
-                    -DFL_BUILD_APP_IMG_CLASS=<< parameters.fl_build_app_img_class >>
+                    -DFL_BUILD_APP_IMG_CLASS=<< parameters.fl_build_app_img_class >> \
                 && \
                 make -j$(nproc) && make install
   test_flashlight_inside_nvidia_docker:
@@ -147,7 +147,7 @@ commands:
             sudo apt-get --yes --force-yes install cuda
             nvidia-smi
 jobs:
-  ubuntu_1604_gcc5_cuda_10_1_vcpkg_flashlight_lib:
+  ubuntu1604_gcc5_cuda_10_1_vcpkg_flashlight_lib:
     <<: *gpu
     steps:
       - install_vcpkg_prereqs
@@ -167,7 +167,7 @@ jobs:
           name: "Run flashlight-cuda libraries tests"
           command: |
             cd $HOME/project/build/flashlight/lib/test && ctest
-  # ubuntu_1604_gcc5_cuda_10_1_vcpkg_flashlight_fl_core:
+  # ubuntu1604_gcc5_cuda_10_1_vcpkg_flashlight_fl_core:
   #   <<: *gpu
   #   steps:
   #     - checkout
@@ -177,7 +177,7 @@ jobs:
   #         name: "Install flashlight-cuda fl core with vcpkg"
   #         command: |
   #           ./vcpkg install flashlight-cuda[fl]
-  # ubuntu_1604_gcc5_cuda_10_1_vcpkg_flashlight_app_asr:
+  # ubuntu1604_gcc5_cuda_10_1_vcpkg_flashlight_app_asr:
   #   <<: *gpu
   #   steps:
   #     - checkout
@@ -187,7 +187,7 @@ jobs:
   #         name: "Install flashlight-cuda fl core with vcpkg"
   #         command: |
   #           ./vcpkg install flashlight-cuda[asr]
-  # ubuntu_1604_gcc5_cuda_10_1_vcpkg_flashlight_app_imgclass:
+  # ubuntu1604_gcc5_cuda_10_1_vcpkg_flashlight_app_imgclass:
   #   <<: *gpu
   #   steps:
   #     - checkout
@@ -198,7 +198,7 @@ jobs:
   #         command: |
   #           ./vcpkg install flashlight-cuda[imgclass]
 
-  ubuntu_1604_gcc5_cuda_10_0_docker_flashlight_lib:
+  ubuntu1604_gcc5_cuda10_0_docker_flashlight_lib:
     <<: *gpu
     steps:
       - authenticate_docker
@@ -213,7 +213,7 @@ jobs:
       - test_flashlight_inside_nvidia_docker:
           fl_test_apex_dir: "flashlight/lib/test"
 
-  ubuntu_1604_gcc5_cuda_10_0_docker_flashlight_fl_core:
+  ubuntu1604_gcc5_cuda10_0_docker_flashlight_fl_core:
     <<: *gpu
     steps:
       - authenticate_docker
@@ -228,7 +228,7 @@ jobs:
       - test_flashlight_inside_nvidia_docker:
           fl_test_apex_dir: "flashlight/fl/test"
 
-  ubuntu_1604_gcc5_cuda_10_0_docker_flashlight_app_asr:
+  ubuntu1604_gcc5_cuda10_0_docker_flashlight_app_asr:
     <<: *gpu
     steps:
       - authenticate_docker
@@ -243,7 +243,7 @@ jobs:
       - test_flashlight_inside_nvidia_docker:
           fl_test_apex_dir: "flashlight/app/asr/test"
 
-  ubuntu_1604_gcc5_cuda_10_0_docker_flashlight_app_imgclass:
+  ubuntu1604_gcc5_cuda10_0_docker_flashlight_app_imgclass:
     <<: *gpu
     steps:
       - authenticate_docker
@@ -282,10 +282,13 @@ workflows:
   version: 2
   vcpkg_test_source_build:
     jobs:
-      - ubuntu_1604_gcc5_cuda_10_1_vcpkg_flashlight_lib
-  cuda_build_and_install:
+      - ubuntu1604_gcc5_cuda_10_1_vcpkg_flashlight_lib
+  docker_cuda_build_and_install:
     jobs:
-      - ubuntu_1604_gcc5_cuda_10_0_docker_flashlight_lib
+      - ubuntu1604_gcc5_cuda10_0_docker_flashlight_lib
+      - ubuntu1604_gcc5_cuda10_0_docker_flashlight_fl_core
+      - ubuntu1604_gcc5_cuda10_0_docker_flashlight_app_asr
+      - ubuntu1604_gcc5_cuda10_0_docker_flashlight_app_imgclass
   build_and_install:
     jobs:
       - build-cpu
