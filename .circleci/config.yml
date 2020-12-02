@@ -139,6 +139,23 @@ commands:
             ctest
 
   ############################ Dependency Commands ############################
+  ubuntu_install_and_setup_cmake:
+    parameters:
+      version:
+        default: "3.10"
+        type: string
+      version_build:
+        default: "1"
+        type: string
+    steps:
+      - run:
+          name: ""
+          command: |
+            cd /tmp
+            wget https://cmake.org/files/v<< parameters.version >>/cmake-<< parameters.version >>.<< parameters.version_build >>-Linux-x86_64.sh
+            sudo mkdir /opt/cmake
+            sudo sh cmake-<< parameters.version >>.<< parameters.version_build >>-Linux-x86_64.sh --prefix=/opt/cmake --skip-license
+            sudo ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
   ubuntu_install_mkl:
     parameters:
       mkl_version:
@@ -178,6 +195,7 @@ jobs:
       - build_vcpkg
       - install_vcpkg_deps:
           vcpkg_deps: "intel-mkl fftw3 cub kenlm"
+      - ubuntu_install_and_setup_cmake
       - flashlight_source_build_with_vcpkg:
           fl_build_fl_core: "OFF"
           fl_build_app_asr: "OFF"
