@@ -41,16 +41,12 @@ commands:
   build_flashlight_inside_nvidia_docker:
     parameters:
       fl_backend:
-        default: "CUDA"
         type: string
       fl_build_fl_core:
-        default: "OFF"
         type: string
       fl_build_app_asr:
-        default: "OFF"
         type: string
       fl_build_app_img_class:
-        default: "OFF"
         type: string
     steps:
       - run:
@@ -63,14 +59,13 @@ commands:
             export MKLROOT=/opt/intel/mkl && export KENLM_ROOT=/root/kenlm && \
             cmake .. \
                 -DFL_BACKEND=<< parameters.fl_backend >> \
-                -DFL_BUILD_fl_CORE=<< parameters.fl_build_fl_core >> \
+                -DFL_BUILD_CORE=<< parameters.fl_build_fl_core >> \
                 -DFL_BUILD_APP_ASR=<< parameters.fl_build_app_asr >> \
                 -DFL_BUILD_APP_IMG_CLASS=<< parameters.fl_build_app_img_class >> && \
             make -j$(nproc) && make install"
   test_flashlight_inside_nvidia_docker:
     parameters:
       fl_test_apex_dir:
-        default: "."
         type: string
     steps:
       - run:
@@ -105,19 +100,46 @@ commands:
           command: |
             DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends gperf automake
   install_vcpkg_deps:
+    parameters:
+      vcpkg_deps:
+        type: string
     steps:
       - run:
           name: "Install vcpkg dependencies"
           command: |
-            MKLROOT=/opt/intel/mkl ./vcpkg/vcpkg install \
-                cuda intel-mkl fftw3 cub kenlm            \
-                arrayfire[cuda] cudnn nccl openmpi cereal \
-                gflags                                    \
-                libsndfile                                \
-                stb                                       \
-                gtest
+            MKLROOT=/opt/intel/mkl ./vcpkg/vcpkg install << parameters.vcpkg_deps >>
+  flashlight_source_build_with_vcpkg:
+    parameters:
+      fl_build_fl_core:
+        type: string
+      fl_build_app_asr:
+        type: string
+      fl_build_app_img_class:
+        type: string
+    steps:
+      - run:
+          name: "Build Flashlight CUDA from source with vcpkg dependencies"
+          command: |
+            cd $HOME/project && mkdir -p build && cd build
+            cmake .. \
+              -DFL_BACKEND=CUDA \
+              -DFL_BUILD_CORE=<< parameters.fl_build_fl_core >> \
+              -DFL_BUILD_APP_ASR=<< parameters.fl_build_app_asr >> \
+              -DFL_BUILD_APP_IMG_CLASS=<< parameters.fl_build_app_img_class >> && \
+              -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake
+  flashlight_source_test_with_vcpkg:
+    parameters:
+      fl_test_apex_dir:
+        type: string
+    steps:
+      - run:
+          name: "Run Flashlight CUDA tests for in-source build with vcpkg dependencies"
+          command: |
+            cd $HOME/project/build/<< parameters.fl_test_apex_dir >>
+            ctest
+
   ############################ Dependency Commands ############################
-  install_mkl_linux:
+  ubuntu_install_mkl:
     parameters:
       mkl_version:
         default: "intel-mkl-64bit-2020.0-088"
@@ -131,10 +153,9 @@ commands:
             sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
             sudo sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list'
             apt-get update && DEBIAN_FRONTEND=noninteractive sudo apt install << parameters.mkl_version >>
-  install_cuda_linux:
+  ubuntu_install_cuda10_0:
     parameters:
       version:
-        default: "10.0"
         type: string
     steps:
       - run:
@@ -145,57 +166,27 @@ commands:
             sudo apt-get update || true
             sudo apt-get --yes --force-yes install cuda
             nvidia-smi
+
+############################ Jobs ############################
 jobs:
   ubuntu1604_gcc5_cuda_10_1_vcpkg_flashlight_lib:
     <<: *gpu
     steps:
+      - ubuntu_install_mkl
       - install_vcpkg_prereqs
       - build_vcpkg
-      - install_mkl_linux
-      - install_vcpkg_deps
-      - install_mkl_linux
+      - install_vcpkg_deps:
+          vcpkg_deps: "intel-mkl fftw3 cub kenlm"
       - checkout
-      - run:
-          name: "Install flashlight-cuda libraries with vcpkg"
-          command: |
-            cd $HOME/project && mkdir -p build && cd build && \
-            cmake .. \
-              -DFL_BACKEND=CUDA -DFL_BUILD_CORE=OFF -DFL_BUILD_APP_ASR=OFF -DFL_BUILD_APP_IMG_CLASS=OFF \
-              -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake
-      - run:
-          name: "Run flashlight-cuda libraries tests"
-          command: |
-            cd $HOME/project/build/flashlight/lib/test && ctest
-  # ubuntu1604_gcc5_cuda_10_1_vcpkg_flashlight_fl_core:
-  #   <<: *gpu
-  #   steps:
-  #     - checkout
-  #     - build_vcpkg
-  #     - install_vcpkg_prereqs
-  #     - run:
-  #         name: "Install flashlight-cuda fl core with vcpkg"
-  #         command: |
-  #           ./vcpkg install flashlight-cuda[fl]
-  # ubuntu1604_gcc5_cuda_10_1_vcpkg_flashlight_app_asr:
-  #   <<: *gpu
-  #   steps:
-  #     - checkout
-  #     - build_vcpkg
-  #     - install_vcpkg_prereqs
-  #     - run:
-  #         name: "Install flashlight-cuda fl core with vcpkg"
-  #         command: |
-  #           ./vcpkg install flashlight-cuda[asr]
-  # ubuntu1604_gcc5_cuda_10_1_vcpkg_flashlight_app_imgclass:
-  #   <<: *gpu
-  #   steps:
-  #     - checkout
-  #     - build_vcpkg
-  #     - install_vcpkg_prereqs
-  #     - run:
-  #         name: "Install flashlight-cuda fl core with vcpkg"
-  #         command: |
-  #           ./vcpkg install flashlight-cuda[imgclass]
+      - flashlight_source_build_with_vcpkg:
+          fl_build_fl_core: "OFF"
+          fl_build_app_asr: "OFF"
+          fl_build_app_img_class: "OFF"
+      - flashlight_source_test_with_vcpkg:
+          fl_test_apex_dir: "flashlight/lib/test"
+  # TODO(jacobkahn): add jobs forversions for the fl core and apps
+  # once https://github.com/microsoft/vcpkg/issues/14864 is merged
+  # and forge can be built on Xenial
 
   ubuntu1804_gcc5_cuda10_0_docker_flashlight_lib:
     <<: *gpu
@@ -256,7 +247,7 @@ jobs:
           fl_build_app_img_class: "ON"
       # TODO (jacobkahn/padentomasello): add the below once we have tests inside imgclass
       # - test_flashlight_inside_nvidia_docker:
-      #     fl_test_apex_dir: "flashlight/app/asr/test"
+      #     fl_test_apex_dir: "flashlight/app/imgclass/test"
 
   build-cpu:
     docker:
