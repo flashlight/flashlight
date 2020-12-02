@@ -26,7 +26,6 @@ commands:
       - run:
           name: "Install gcc 7"
           command: |
-            sudo apt-get install -y --no-install-recommends software-properties-common
             sudo add-apt-repository ppa:ubuntu-toolchain-r/test
             sudo apt update
             sudo apt install gcc-7 g++-7 -y --no-install-recommends
