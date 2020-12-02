@@ -199,7 +199,7 @@ jobs:
           fl_build_core: "OFF"
           fl_build_app_asr: "OFF"
           fl_build_app_img_class: "OFF"
-          fl_test_apex_dir: "OFF"
+          fl_test_apex_dir: "flashlight/lib/test"
   build-cpu:
     docker:
       - image: flml/flashlight:cpu-base-consolidation-latest
