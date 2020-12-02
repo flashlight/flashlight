@@ -21,11 +21,19 @@ commands:
             then
                 sudo docker login -u=$DOCKER_USERNAME -p=$DOCKER_PASSWORD
             fi
-  install_nvidia_docker:
+  install_nvidia_docker2:
     steps:
       - run:
-          name: "Install NVIDIA Docker"
-          command: sudo apt-get install -y --no-install-recommends nvidia-docker
+          name: "Install NVIDIA Docker 2"
+          command: sudo apt-get install -y --no-install-recommends nvidia-docker2
+  start_nvidia_docker_and_copy_flashlight_source:
+    steps:
+      - run:
+          name: "Start NVIDIA Docker 2 and Copy flashlight source"
+          command: |
+            sudo docker run --runtime=nvidia --rm -itd --ipc=host --name flashlight2 flml/flashlight:cuda-base-consolidation-latest
+            sudo docker exec -it flashlight bash -c "mkdir /flashlight"
+            sudo docker cp . flashlight:/flashlight
   install_gcc_7:
     steps:
       - run:
@@ -143,25 +151,23 @@ jobs:
   #         command: |
   #           ./vcpkg install flashlight-cuda[imgclass]
 
-  ubuntu_1604_gcc5_cuda_10_1_docker_lib:
+  ubuntu_1604_gcc5_cuda_10_0_docker_flashlight_lib:
     <<: *gpu
     steps:
-      - checkout
       - authenticate_docker
-      - install_nvidia_docker
+      - install_nvidia_docker2
+      - checkout
+      - start_nvidia_docker_and_copy_flashlight_source
       - run:
-          name: Build flashlight with CUDA backend inside nvidia-docker
+          name: Build flashlight with CUDA backend inside nvidia-docker2
           command: |
-            sudo docker run --runtime=nvidia --rm -itd --ipc=host --name flashlight flml/flashlight:cuda-base-consolidation-latest
-            sudo docker exec -it flashlight bash -c "mkdir /flashlight"
-            sudo docker cp . flashlight:/flashlight
             sudo docker exec -it flashlight bash -c "\
-            apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5 && \
-            cd /flashlight && pwd && ls && mkdir -p build && cd build && \
-            export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5 && \
-            export MKLROOT=/opt/intel/mkl && export KENLM_ROOT=/root/kenlm && \
-            cmake .. -DFL_BACKEND=CUDA && \
-            make -j$(nproc) && make install && make test"
+                apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5 && \
+                cd /flashlight && pwd && ls && mkdir -p build && cd build && \
+                export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5 && \
+                export MKLROOT=/opt/intel/mkl && export KENLM_ROOT=/root/kenlm && \
+                cmake .. -DFL_BACKEND=CUDA -DFL_BUILD_CORE=OFF -DFL_BUILD_APP_ASR=OFF -DFL_BUILD_APP_IMG_CLASS=OFF
+                make -j$(nproc) && make install && cd flashlight/lib/test && ctest"
   build-cpu:
     docker:
       - image: flml/flashlight:cpu-base-consolidation-latest
@@ -188,7 +194,7 @@ workflows:
       - ubuntu_1604_gcc5_cuda_10_1_vcpkg_flashlight_lib
   cuda_build_and_install:
     jobs:
-      - ubuntu_1604_gcc5_cuda_10_1_docker_lib
+      - ubuntu_1604_gcc5_cuda_10_0_docker_flashlight_lib
   build_and_install:
     jobs:
       - build-cpu
