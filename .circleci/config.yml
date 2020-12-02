@@ -33,17 +33,17 @@ commands:
       - run:
           name: "Install vcpkg prerequisites"
           command: |
-            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gperf automake
+            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gperf automake gcc-7 g++-7
       - run:
           name: "Install vcpkg dependencies"
           command: |
             ./vcpkg/vcpkg install \
-                cuda intel-mkl fftw3 cub kenlm            \ # for flashlight libraries
-                arrayfire[cuda] cudnn nccl openmpi cereal \ # for the flashlight neural net library
-                gflags                                    \ # for flashlight application libraries
-                libsndfile                                \ # for the flashlight asr application
-                stb                                       \ # for the flashlight imgclass application
-                gtest                                       # optional, if building tests
+                cuda intel-mkl fftw3 cub kenlm            \
+                arrayfire[cuda] cudnn nccl openmpi cereal \
+                gflags                                    \
+                libsndfile                                \
+                stb                                       \
+                gtest
   install_cuda_linux:
     parameters:
       version:
@@ -62,8 +62,8 @@ jobs:
   ubuntu_1604_gcc5_cuda_10_1_vcpkg_flashlight_lib:
     <<: *gpu
     steps:
-      - build_vcpkg
       - install_vcpkg_deps
+      - build_vcpkg
       - checkout
       - run:
           name: "Install flashlight-cuda libraries with vcpkg"
