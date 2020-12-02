@@ -57,17 +57,16 @@ commands:
           name: "Build and Install Flashlight inside of NVIDIA Docker"
           command: |
             sudo docker exec -it flashlight bash -c "\
-                apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5 && \
-                cd /flashlight && pwd && ls && mkdir -p build && cd build && \
-                export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5 && \
-                export MKLROOT=/opt/intel/mkl && export KENLM_ROOT=/root/kenlm && \
-                cmake .. \
-                    -DFL_BACKEND=<< parameters.fl_backend >> \
-                    -DFL_BUILD_fl_CORE=<< parameters.fl_build_fl_core >> \
-                    -DFL_BUILD_APP_ASR=<< parameters.fl_build_app_asr >> \
-                    -DFL_BUILD_APP_IMG_CLASS=<< parameters.fl_build_app_img_class >> \
-                && \
-                make -j$(nproc) && make install"
+            apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5 && \
+            cd /flashlight && pwd && ls && mkdir -p build && cd build && \
+            export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5 && \
+            export MKLROOT=/opt/intel/mkl && export KENLM_ROOT=/root/kenlm && \
+            cmake .. \
+                -DFL_BACKEND=<< parameters.fl_backend >> \
+                -DFL_BUILD_fl_CORE=<< parameters.fl_build_fl_core >> \
+                -DFL_BUILD_APP_ASR=<< parameters.fl_build_app_asr >> \
+                -DFL_BUILD_APP_IMG_CLASS=<< parameters.fl_build_app_img_class >> && \
+            make -j$(nproc) && make install"
   test_flashlight_inside_nvidia_docker:
     parameters:
       fl_test_apex_dir:
