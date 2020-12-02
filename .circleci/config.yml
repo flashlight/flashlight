@@ -33,7 +33,7 @@ commands:
       - run:
           name: "Install vcpkg prerequisites"
           command: |
-            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gperf automake gcc-7 g++-7
+            sudo apt-get update && DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends gperf automake gcc-7 g++-7
       - run:
           name: "Install vcpkg dependencies"
           command: |
