@@ -67,7 +67,7 @@ commands:
                     -DFL_BUILD_APP_ASR=<< parameters.fl_build_app_asr >> \
                     -DFL_BUILD_APP_IMG_CLASS=<< parameters.fl_build_app_img_class >> \
                 && \
-                make -j$(nproc) && make install
+                make -j$(nproc) && make install"
   test_flashlight_inside_nvidia_docker:
     parameters:
       fl_test_apex_dir:
@@ -198,7 +198,7 @@ jobs:
   #         command: |
   #           ./vcpkg install flashlight-cuda[imgclass]
 
-  ubuntu1604_gcc5_cuda10_0_docker_flashlight_lib:
+  ubuntu1804_gcc5_cuda10_0_docker_flashlight_lib:
     <<: *gpu
     steps:
       - authenticate_docker
@@ -213,7 +213,7 @@ jobs:
       - test_flashlight_inside_nvidia_docker:
           fl_test_apex_dir: "flashlight/lib/test"
 
-  ubuntu1604_gcc5_cuda10_0_docker_flashlight_fl_core:
+  ubuntu1804_gcc5_cuda10_0_docker_flashlight_fl_core:
     <<: *gpu
     steps:
       - authenticate_docker
@@ -228,7 +228,7 @@ jobs:
       - test_flashlight_inside_nvidia_docker:
           fl_test_apex_dir: "flashlight/fl/test"
 
-  ubuntu1604_gcc5_cuda10_0_docker_flashlight_app_asr:
+  ubuntu1804_gcc5_cuda10_0_docker_flashlight_app_asr:
     <<: *gpu
     steps:
       - authenticate_docker
@@ -243,7 +243,7 @@ jobs:
       - test_flashlight_inside_nvidia_docker:
           fl_test_apex_dir: "flashlight/app/asr/test"
 
-  ubuntu1604_gcc5_cuda10_0_docker_flashlight_app_imgclass:
+  ubuntu1804_gcc5_cuda10_0_docker_flashlight_app_imgclass:
     <<: *gpu
     steps:
       - authenticate_docker
@@ -285,10 +285,10 @@ workflows:
       - ubuntu1604_gcc5_cuda_10_1_vcpkg_flashlight_lib
   docker_cuda_build_and_install:
     jobs:
-      - ubuntu1604_gcc5_cuda10_0_docker_flashlight_lib
-      - ubuntu1604_gcc5_cuda10_0_docker_flashlight_fl_core
-      - ubuntu1604_gcc5_cuda10_0_docker_flashlight_app_asr
-      - ubuntu1604_gcc5_cuda10_0_docker_flashlight_app_imgclass
+      - ubuntu1804_gcc5_cuda10_0_docker_flashlight_lib
+      - ubuntu1804_gcc5_cuda10_0_docker_flashlight_fl_core
+      - ubuntu1804_gcc5_cuda10_0_docker_flashlight_app_asr
+      - ubuntu1804_gcc5_cuda10_0_docker_flashlight_app_imgclass
   build_and_install:
     jobs:
       - build-cpu
