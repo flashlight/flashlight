@@ -1,62 +1,49 @@
- # Copyright (c) Facebook, Inc. and its affiliates.
- # All rights reserved.
- #
- # This source code is licensed under the BSD-style license found in the
- # LICENSE file in the root directory of this source tree.
+# Copyright (c) Facebook, Inc. and its affiliates.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
 
-version: 2.0
+version: 2.1
 
 gpu: &gpu
   machine:
-    image: ubuntu-1604:201903-01
+    image: ubuntu-1604-cuda-10.1:201909-23
   resource_class: gpu.small
 
-jobs:
-  build-cuda:
-    <<: *gpu
+commands:
+  authenticate_docker:
     steps:
-      - checkout
       - run:
-          name: Setup Docker and nvidia-docker
-          command: |
-            # Install CUDA 10.0
-            wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_10.0.130-1_amd64.deb
-            sudo dpkg -i cuda-repo-ubuntu1604_10.0.130-1_amd64.deb
-            sudo apt-get update || true
-            sudo apt-get --yes --force-yes install cuda
-            nvidia-smi
-            # Install Docker
-            sudo apt-get update
-            sudo apt-get install \
-            apt-transport-https \
-            ca-certificates \
-            curl \
-            software-properties-common
-            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-            sudo apt-key fingerprint 0EBFCD88
-            sudo add-apt-repository \
-            "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-            $(lsb_release -cs) \
-            stable"
-            sudo apt-get update
-            sudo apt-get install docker-ce
-            # Install nvidia-docker
-            curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | \
-            sudo apt-key add -
-            distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-            curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | \
-            sudo tee /etc/apt/sources.list.d/nvidia-docker.list
-            sudo apt-get update
-            # Install nvidia-docker2 and reload the Docker daemon configuration
-            sudo apt-get install -y nvidia-docker2
-            sudo pkill -SIGHUP dockerd
-      - run:
-          name: Build flashlight with CUDA backend inside nvidia-docker
+          name: "Authenticate Docker"
           command: |
             if [ ! -z "$DOCKER_USERNAME" ]
             then
                 sudo docker login -u=$DOCKER_USERNAME -p=$DOCKER_PASSWORD
             fi
+  install_cuda_linux:
+    parameters:
+      version:
+        default: "10.0"
+        type: string
+    steps:
+      - run:
+          name: Install CUDA 10.0
+          command: |
+            wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_10.0.130-1_amd64.deb
+            sudo dpkg -i cuda-repo-ubuntu1604_10.0.130-1_amd64.deb
+            sudo apt-get update || true
+            sudo apt-get --yes --force-yes install cuda
+            nvidia-smi
+jobs:
+  ubuntu_1604_gcc5_cuda_10_1_docker:
+    <<: *gpu
+    steps:
+      - checkout
+      - authenticate_docker
+      - run:
+          name: Build flashlight with CUDA backend inside nvidia-docker
+          command: |
             sudo docker run --runtime=nvidia --rm -itd --ipc=host --name flashlight flml/flashlight:cuda-base-consolidation-latest
             sudo docker exec -it flashlight bash -c "mkdir /flashlight"
             sudo docker cp . flashlight:/flashlight
@@ -89,5 +76,5 @@ workflows:
   version: 2
   build_and_install:
     jobs:
-      - build-cuda
+      - ubuntu_1604_gcc5_cuda_10_1_docker
       - build-cpu
