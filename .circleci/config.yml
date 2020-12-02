@@ -21,6 +21,15 @@ commands:
             then
                 sudo docker login -u=$DOCKER_USERNAME -p=$DOCKER_PASSWORD
             fi
+  install_gcc_7:
+    steps:
+      - run:
+          name: "Install gcc 7"
+          command: |
+            sudo apt-get install -y --no-install-recommends software-properties-common
+            sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+            sudo apt update
+            sudo apt install gcc-7 g++-7 -y --no-install-recommends
   build_vcpkg:
     steps:
       - run:
@@ -30,6 +39,7 @@ commands:
             ./vcpkg/bootstrap-vcpkg.sh
   install_vcpkg_deps:
     steps:
+      - install_gcc_7
       - run:
           name: "Install vcpkg prerequisites"
           command: |
