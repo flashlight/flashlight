@@ -9,7 +9,7 @@ version: 2.1
 gpu: &gpu
   machine:
     image: ubuntu-1604-cuda-10.1:201909-23
-  resource_class: gpu.small
+  resource_class: gpu.medium
 
 commands:
   authenticate_docker:
@@ -21,6 +21,29 @@ commands:
             then
                 sudo docker login -u=$DOCKER_USERNAME -p=$DOCKER_PASSWORD
             fi
+  build_vcpkg:
+    steps:
+      - run:
+          name: "Clone and Build vcpkg"
+          command: |
+            git clone https://github.com/microsoft/vcpkg
+            ./vcpkg/bootstrap-vcpkg.sh
+  install_vcpkg_deps:
+    steps:
+      - run:
+          name: "Install vcpkg prerequisites"
+          command: |
+            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gperf automake
+      - run:
+          name: "Install vcpkg dependencies"
+          command: |
+            ./vcpkg/vcpkg install \
+                cuda intel-mkl fftw3 cub kenlm            \ # for flashlight libraries
+                arrayfire[cuda] cudnn nccl openmpi cereal \ # for the flashlight neural net library
+                gflags                                    \ # for flashlight application libraries
+                libsndfile                                \ # for the flashlight asr application
+                stb                                       \ # for the flashlight imgclass application
+                gtest                                       # optional, if building tests
   install_cuda_linux:
     parameters:
       version:
@@ -36,6 +59,54 @@ commands:
             sudo apt-get --yes --force-yes install cuda
             nvidia-smi
 jobs:
+  ubuntu_1604_gcc5_cuda_10_1_vcpkg_flashlight_lib:
+    <<: *gpu
+    steps:
+      - build_vcpkg
+      - install_vcpkg_deps
+      - checkout
+      - run:
+          name: "Install flashlight-cuda libraries with vcpkg"
+          command: |
+            cd $HOME/project && mkdir -p build && cd build && \
+            cmake .. \
+              -DFL_BACKEND=CUDA -DFL_BUILD_CORE=OFF -DFL_BUILD_APP_ASR=OFF -DFL_BUILD_APP_IMG_CLASS=OFF \
+              -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake
+      - run:
+          name: "Run flashlight-cuda libraries tests"
+          command: |
+            cd $HOME/project/build/flashlight/lib/test && ctest
+  # ubuntu_1604_gcc5_cuda_10_1_vcpkg_flashlight_fl_core:
+  #   <<: *gpu
+  #   steps:
+  #     - checkout
+  #     - build_vcpkg
+  #     - install_vcpkg_deps
+  #     - run:
+  #         name: "Install flashlight-cuda fl core with vcpkg"
+  #         command: |
+  #           ./vcpkg install flashlight-cuda[fl]
+  # ubuntu_1604_gcc5_cuda_10_1_vcpkg_flashlight_app_asr:
+  #   <<: *gpu
+  #   steps:
+  #     - checkout
+  #     - build_vcpkg
+  #     - install_vcpkg_deps
+  #     - run:
+  #         name: "Install flashlight-cuda fl core with vcpkg"
+  #         command: |
+  #           ./vcpkg install flashlight-cuda[asr]
+  # ubuntu_1604_gcc5_cuda_10_1_vcpkg_flashlight_app_imgclass:
+  #   <<: *gpu
+  #   steps:
+  #     - checkout
+  #     - build_vcpkg
+  #     - install_vcpkg_deps
+  #     - run:
+  #         name: "Install flashlight-cuda fl core with vcpkg"
+  #         command: |
+  #           ./vcpkg install flashlight-cuda[imgclass]
+
   ubuntu_1604_gcc5_cuda_10_1_docker:
     <<: *gpu
     steps:
@@ -74,6 +145,9 @@ jobs:
             make -j1 && make install
 workflows:
   version: 2
+  vcpkg_test_source_build:
+    jobs:
+      - ubuntu_1604_gcc5_cuda_10_1_vcpkg_flashlight_lib
   build_and_install:
     jobs:
       - ubuntu_1604_gcc5_cuda_10_1_docker
