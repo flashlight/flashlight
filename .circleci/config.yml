@@ -26,6 +26,8 @@ commands:
       - run:
           name: "Install and setup gcc 7"
           command: |
+            sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+            sudo apt update || true
             sudo apt install gcc-7 g++-7 -y --no-install-recommends
             sudo rm /usr/bin/gcc /usr/bin/g++
             sudo ln -s /usr/bin/gcc-7 /usr/bin/gcc
