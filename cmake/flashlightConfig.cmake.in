@@ -49,10 +49,14 @@ if(NOT TARGET flashlight::fl-libraries)
   endif()
 endif()
 
-# Flashlight backend
+# Flashlight backend variables for downstream config use
 set(FL_USE_CPU @FL_USE_CPU@)
 set(FL_USE_CUDA @FL_USE_CUDA@)
 set(FL_USE_OPENCL @FL_USE_OPENCL@)
+
+if (@FL_USE_CUDA@)
+  enable_language(CUDA)
+endif()
 
 # For legacy configurations
 # Libraries

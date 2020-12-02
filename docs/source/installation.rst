@@ -212,9 +212,6 @@ We can link flashlight with the following CMake configuration:
 
   find_package(flashlight CONFIG REQUIRED)
 
-  if (FL_USE_CUDA)
-    enable_language(CUDA)
-  endif()
   # ...
 
   add_executable(myProject project.cpp)
