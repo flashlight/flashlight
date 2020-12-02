@@ -12,6 +12,8 @@ gpu: &gpu
   resource_class: gpu.small
 
 commands:
+  ############################### Docker Commands ###############################
+  # Docker commands
   authenticate_docker:
     steps:
       - run:
@@ -31,17 +33,17 @@ commands:
   start_nvidia_docker_and_copy_flashlight_source:
     steps:
       - run:
-          name: "Start NVIDIA Docker 2 and Copy flashlight source"
+          name: "Start NVIDIA Docker and Copy Flashlight source"
           command: |
             sudo docker run --runtime=nvidia --rm -itd --ipc=host --name flashlight flml/flashlight:cuda-base-consolidation-latest
             sudo docker exec -it flashlight bash -c "mkdir /flashlight"
             sudo docker cp . flashlight:/flashlight
-  build_and_test_flashlight_inside_nvidia_docker:
+  build_flashlight_inside_nvidia_docker:
     parameters:
       fl_backend:
         default: "CUDA"
         type: string
-      fl_build_core:
+      fl_build_fl_core:
         default: "OFF"
         type: string
       fl_build_app_asr:
@@ -50,12 +52,9 @@ commands:
       fl_build_app_img_class:
         default: "OFF"
         type: string
-      fl_test_apex_dir:
-        default: "."
-        type: string
     steps:
       - run:
-          name: "Build and Test Flashlight inside of NVIDIA Docker"
+          name: "Build and Install Flashlight inside of NVIDIA Docker"
           command: |
             sudo docker exec -it flashlight bash -c "\
                 apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5 && \
@@ -64,12 +63,23 @@ commands:
                 export MKLROOT=/opt/intel/mkl && export KENLM_ROOT=/root/kenlm && \
                 cmake .. \
                     -DFL_BACKEND=<< parameters.fl_backend >> \
-                    -DFL_BUILD_CORE=<< parameters.fl_build_core >> \
+                    -DFL_BUILD_fl_CORE=<< parameters.fl_build_fl_core >> \
                     -DFL_BUILD_APP_ASR=<< parameters.fl_build_app_asr >> \
-                    -DFL_BUILD_APP_IMG_CLASS=<< parameters.fl_build_app_img_class >> \
+                    -DFL_BUILD_APP_IMG_CLASS=<< parameters.fl_build_app_img_class >>
                 && \
-                make -j$(nproc) && make install && cd << parameters.fl_test_apex_dir >> && ctest"
-
+                make -j$(nproc) && make install
+  test_flashlight_inside_nvidia_docker:
+    parameters:
+      fl_test_apex_dir:
+        default: "."
+        type: string
+    steps:
+      - run:
+          name: "Test Flashlight inside of NVIDIA Docker"
+          command: |
+            sudo docker exec -it flashlight bash -c "\
+                cd /flashlight/build/<< parameters.fl_test_apex_dir >> && ctest"
+  ############################### vcpkg Commands ###############################
   install_gcc_7:
     steps:
       - run:
@@ -107,6 +117,7 @@ commands:
                 libsndfile                                \
                 stb                                       \
                 gtest
+  ############################ Dependency Commands ############################
   install_mkl_linux:
     parameters:
       mkl_version:
@@ -194,12 +205,60 @@ jobs:
       - install_nvidia_docker
       - checkout
       - start_nvidia_docker_and_copy_flashlight_source
-      - build_and_test_flashlight_inside_nvidia_docker:
+      - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
-          fl_build_core: "OFF"
+          fl_build_fl_core: "OFF"
           fl_build_app_asr: "OFF"
           fl_build_app_img_class: "OFF"
+      - test_flashlight_inside_nvidia_docker:
           fl_test_apex_dir: "flashlight/lib/test"
+
+  ubuntu_1604_gcc5_cuda_10_0_docker_flashlight_fl_core:
+    <<: *gpu
+    steps:
+      - authenticate_docker
+      - install_nvidia_docker
+      - checkout
+      - start_nvidia_docker_and_copy_flashlight_source
+      - build_flashlight_inside_nvidia_docker:
+          fl_backend: "CUDA"
+          fl_build_fl_core: "ON"
+          fl_build_app_asr: "OFF"
+          fl_build_app_img_class: "OFF"
+      - test_flashlight_inside_nvidia_docker:
+          fl_test_apex_dir: "flashlight/fl/test"
+
+  ubuntu_1604_gcc5_cuda_10_0_docker_flashlight_app_asr:
+    <<: *gpu
+    steps:
+      - authenticate_docker
+      - install_nvidia_docker
+      - checkout
+      - start_nvidia_docker_and_copy_flashlight_source
+      - build_flashlight_inside_nvidia_docker:
+          fl_backend: "CUDA"
+          fl_build_fl_core: "ON"
+          fl_build_app_asr: "ON"
+          fl_build_app_img_class: "OFF"
+      - test_flashlight_inside_nvidia_docker:
+          fl_test_apex_dir: "flashlight/app/asr/test"
+
+  ubuntu_1604_gcc5_cuda_10_0_docker_flashlight_app_imgclass:
+    <<: *gpu
+    steps:
+      - authenticate_docker
+      - install_nvidia_docker
+      - checkout
+      - start_nvidia_docker_and_copy_flashlight_source
+      - build_flashlight_inside_nvidia_docker:
+          fl_backend: "CUDA"
+          fl_build_fl_core: "ON"
+          fl_build_app_asr: "OFF"
+          fl_build_app_img_class: "ON"
+      # TODO (jacobkahn/padentomasello): add the below once we have tests inside imgclass
+      # - test_flashlight_inside_nvidia_docker:
+      #     fl_test_apex_dir: "flashlight/app/asr/test"
+
   build-cpu:
     docker:
       - image: flml/flashlight:cpu-base-consolidation-latest
