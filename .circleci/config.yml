@@ -39,13 +39,15 @@ commands:
           command: |
             git clone https://github.com/microsoft/vcpkg
             ./vcpkg/bootstrap-vcpkg.sh
-  install_vcpkg_deps:
+  install_vcpkg_prereqs:
     steps:
       - install_gcc_7
       - run:
           name: "Install vcpkg prerequisites"
           command: |
             DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends gperf automake gcc-7 g++-7
+  install_vcpkg_deps:
+    steps:
       - run:
           name: "Install vcpkg dependencies"
           command: |
@@ -74,8 +76,9 @@ jobs:
   ubuntu_1604_gcc5_cuda_10_1_vcpkg_flashlight_lib:
     <<: *gpu
     steps:
-      - install_vcpkg_deps
+      - install_vcpkg_prereqs
       - build_vcpkg
+      - install_vcpkg_deps
       - checkout
       - run:
           name: "Install flashlight-cuda libraries with vcpkg"
@@ -93,7 +96,7 @@ jobs:
   #   steps:
   #     - checkout
   #     - build_vcpkg
-  #     - install_vcpkg_deps
+  #     - install_vcpkg_prereqs
   #     - run:
   #         name: "Install flashlight-cuda fl core with vcpkg"
   #         command: |
@@ -103,7 +106,7 @@ jobs:
   #   steps:
   #     - checkout
   #     - build_vcpkg
-  #     - install_vcpkg_deps
+  #     - install_vcpkg_prereqs
   #     - run:
   #         name: "Install flashlight-cuda fl core with vcpkg"
   #         command: |
@@ -113,7 +116,7 @@ jobs:
   #   steps:
   #     - checkout
   #     - build_vcpkg
-  #     - install_vcpkg_deps
+  #     - install_vcpkg_prereqs
   #     - run:
   #         name: "Install flashlight-cuda fl core with vcpkg"
   #         command: |
