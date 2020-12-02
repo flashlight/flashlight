@@ -21,6 +21,11 @@ commands:
             then
                 sudo docker login -u=$DOCKER_USERNAME -p=$DOCKER_PASSWORD
             fi
+  install_nvidia_docker:
+    steps:
+      - run:
+          name: "Install NVIDIA Docker"
+          command: sudo apt-get install -y --no-install-recommends nvidia-docker
   install_gcc_7:
     steps:
       - run:
@@ -45,19 +50,33 @@ commands:
       - run:
           name: "Install vcpkg prerequisites"
           command: |
-            DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends gperf automake gcc-7 g++-7
+            DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends gperf automake
   install_vcpkg_deps:
     steps:
       - run:
           name: "Install vcpkg dependencies"
           command: |
-            ./vcpkg/vcpkg install \
+            MKLROOT=/opt/intel/mkl ./vcpkg/vcpkg install \
                 cuda intel-mkl fftw3 cub kenlm            \
                 arrayfire[cuda] cudnn nccl openmpi cereal \
                 gflags                                    \
                 libsndfile                                \
                 stb                                       \
                 gtest
+  install_mkl_linux:
+    parameters:
+      mkl_version:
+        default: "intel-mkl-64bit-2020.0-088"
+        type: string
+    steps:
+      - run:
+          name: "Install MKL"
+          command: |
+            cd /tmp
+            wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
+            sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
+            sudo sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list'
+            apt-get update && DEBIAN_FRONTEND=noninteractive sudo apt install << parameters.mkl_version >>
   install_cuda_linux:
     parameters:
       version:
@@ -78,7 +97,9 @@ jobs:
     steps:
       - install_vcpkg_prereqs
       - build_vcpkg
+      - install_mkl_linux
       - install_vcpkg_deps
+      - install_mkl_linux
       - checkout
       - run:
           name: "Install flashlight-cuda libraries with vcpkg"
@@ -122,11 +143,12 @@ jobs:
   #         command: |
   #           ./vcpkg install flashlight-cuda[imgclass]
 
-  ubuntu_1604_gcc5_cuda_10_1_docker:
+  ubuntu_1604_gcc5_cuda_10_1_docker_lib:
     <<: *gpu
     steps:
       - checkout
       - authenticate_docker
+      - install_nvidia_docker
       - run:
           name: Build flashlight with CUDA backend inside nvidia-docker
           command: |
@@ -158,12 +180,15 @@ jobs:
             mkdir -p build && cd build
             cmake .. -DFL_BACKEND=CPU -DFL_LIBRARIES_USE_CUDA=OFF
             make -j1 && make install
+
 workflows:
   version: 2
   vcpkg_test_source_build:
     jobs:
       - ubuntu_1604_gcc5_cuda_10_1_vcpkg_flashlight_lib
+  cuda_build_and_install:
+    jobs:
+      - ubuntu_1604_gcc5_cuda_10_1_docker_lib
   build_and_install:
     jobs:
-      - ubuntu_1604_gcc5_cuda_10_1_docker
       - build-cpu
