@@ -172,12 +172,12 @@ jobs:
   ubuntu1604_gcc5_cuda_10_1_vcpkg_flashlight_lib:
     <<: *gpu
     steps:
+      - checkout
       - ubuntu_install_mkl
       - install_vcpkg_prereqs
       - build_vcpkg
       - install_vcpkg_deps:
           vcpkg_deps: "intel-mkl fftw3 cub kenlm"
-      - checkout
       - flashlight_source_build_with_vcpkg:
           fl_build_fl_core: "OFF"
           fl_build_app_asr: "OFF"
