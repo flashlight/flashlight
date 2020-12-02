@@ -21,11 +21,13 @@ commands:
             then
                 sudo docker login -u=$DOCKER_USERNAME -p=$DOCKER_PASSWORD
             fi
-  install_nvidia_docker2:
+  install_nvidia_docker:
     steps:
       - run:
-          name: "Install NVIDIA Docker 2"
-          command: sudo apt-get install -y --no-install-recommends nvidia-docker2
+          name: "Install NVIDIA Docker"
+          command: |
+            sudo apt-get install -y --no-install-recommends nvidia-docker2
+            sudo pkill -SIGHUP dockerd
   start_nvidia_docker_and_copy_flashlight_source:
     steps:
       - run:
@@ -155,7 +157,7 @@ jobs:
     <<: *gpu
     steps:
       - authenticate_docker
-      - install_nvidia_docker2
+      - install_nvidia_docker
       - checkout
       - start_nvidia_docker_and_copy_flashlight_source
       - run:
