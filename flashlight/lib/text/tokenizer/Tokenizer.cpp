@@ -10,129 +10,91 @@
 #include <algorithm>
 #include <future>
 
-#include "flashlight/lib/common/String.h"
-#include "flashlight/lib/common/System.h"
+#include "flashlight/lib/text/tokenizer/PartialFileReader.h"
 
 namespace fl {
 namespace lib {
 namespace text {
 
-std::vector<size_t> Tokenizer::findOffsets(
-    const std::string& filename,
-    int nWorkers) {
-  auto stream = createInputStream(filename);
-  stream.seekg(0, stream.end);
-  size_t fileSize = stream.tellg();
-  stream.seekg(0, stream.beg);
+using TokenCountMap = std::unordered_map<std::string, size_t>;
 
-  size_t chunkSize = fileSize / nWorkers;
-  std::vector<size_t> offsets(nWorkers + 1, 0);
-
-  std::string line;
-  for (int i = 1; i < nWorkers; ++i) {
-    stream.seekg(chunkSize * i, std::ios::beg);
-    // TODO: be careful of corner cases
-    std::getline(stream, line);
-    offsets[i] = stream.tellg();
-  }
-  offsets.back() = fileSize;
-
-  stream.close();
-  return offsets;
-}
-
-std::vector<std::string> Tokenizer::readAndParseSentence(
-    std::ifstream& stream) {
-  std::string line;
-  std::getline(stream, line);
-  return splitOnWhitespace(line, true);
+std::vector<std::string> Tokenizer::tokenize(
+    const std::string& sentence) const {
+  return splitOnWhitespace(sentence, true);
 }
 
 void Tokenizer::countTokens(
     const std::string& filename,
     int numWorkers,
-    bool generateDescriptor) {
-  // 1. Compute offsets
-  auto offsets = findOffsets(filename, numWorkers);
-
-  // 2. Count tokens in each partition
+    bool generateMetaData) {
   std::vector<TokenCountMap> subTokenCountMaps(numWorkers);
-  std::vector<FileDescriptor> subFileDescriptors(numWorkers);
-  std::vector<std::future<void>> futures(numWorkers);
+  std::vector<TextFileMetaData> subTextFileMetaDatas(numWorkers);
+  std::vector<std::future<int>> futures(numWorkers);
 
-  auto countPartialFile = [this](
+  auto countPartialFile = [this, numWorkers](
                               const std::string& filename,
-                              size_t begin,
-                              size_t end,
+                              int rank,
                               TokenCountMap& tokenCountMap,
-                              FileDescriptor& fileDescriptor,
-                              bool generateDescriptor) {
-    auto stream = createInputStream(filename);
-    stream.seekg(begin, stream.beg);
-    while (stream.tellg() < end) {
-      auto tokens = readAndParseSentence(stream);
+                              TextFileMetaData& fileMetaData,
+                              bool generateMetaData) -> int {
+    PartialFileReader reader(rank, numWorkers);
+    reader.loadFile(filename);
+    int nSentences = 0;
+    while (reader.hasNextLine()) {
+      auto tokens = tokenize(reader.getLine());
       for (const auto& token : tokens) {
         if (tokenCountMap.find(token) == tokenCountMap.end()) {
           tokenCountMap[token] = 0;
         }
         tokenCountMap[token]++;
       }
-      if (generateDescriptor) {
-        fileDescriptor.push_back(
-            {static_cast<size_t>(stream.tellg()), tokens.size()});
+      if (generateMetaData) {
+        fileMetaData.push_back({reader.getPosition(), tokens.size()});
       }
+      nSentences++;
     }
-    stream.close();
+
+    return nSentences;
   };
 
+  /* 1. Launch threads */
   for (int i = 0; i < numWorkers; ++i) {
     futures[i] = std::async(
         std::launch::async,
         countPartialFile,
         filename,
-        offsets[i],
-        offsets[i + 1],
+        i,
         std::ref(subTokenCountMaps[i]),
-        std::ref(subFileDescriptors[i]),
-        generateDescriptor);
+        std::ref(subTextFileMetaDatas[i]),
+        generateMetaData);
   }
 
-  // 3. Merge the counters and file descriptors
+  /* 2. Gather results */
+  fileMetaData_.clear();
+  TokenCountMap tokenCountMap;
   for (int i = 0; i < numWorkers; ++i) {
-    futures[i].get();
+    totalSentences_ += futures[i].get();
     // Token counter
     for (const auto& item : subTokenCountMaps[i]) {
-      if (tokenCountMap_.find(item.first) == tokenCountMap_.end()) {
-        tokenCountMap_[item.first] = 0;
+      if (tokenCountMap.find(item.first) == tokenCountMap.end()) {
+        tokenCountMap[item.first] = 0;
       }
-      tokenCountMap_[item.first] += item.second;
+      tokenCountMap[item.first] += item.second;
       totalTokens_ += item.second;
     }
-    // File descriptors
-    if (generateDescriptor) {
-      fileDescriptor_.insert(
-          fileDescriptor_.end(),
-          subFileDescriptors[i].begin(),
-          subFileDescriptors[i].end());
-      totalSentences_ += fileDescriptor_.size();
+    // File MetaDatas
+    if (generateMetaData) {
+      fileMetaData_.insert(
+          fileMetaData_.end(),
+          subTextFileMetaDatas[i].begin(),
+          subTextFileMetaDatas[i].end());
     }
   }
-}
 
-size_t Tokenizer::totalTokens() {
-  return totalTokens_;
-}
-
-size_t Tokenizer::totalSentences() {
-  return totalSentences_;
-}
-
-void Tokenizer::filterTokens(int maxTokens, int minAppearence) {
+  /* 3. Sort tokens */
   tokenCountPairs_.clear();
-  for (const auto& item : tokenCountMap_) {
-    if (item.second > minAppearence) {
-      tokenCountPairs_.push_back(item);
-    }
+  for (const auto& item : tokenCountMap) {
+    tokenCountPairs_.push_back(item);
   }
   std::sort(
       tokenCountPairs_.begin(),
@@ -146,30 +108,39 @@ void Tokenizer::filterTokens(int maxTokens, int minAppearence) {
           return wcp1.first < wcp2.first;
         }
       });
+}
 
+void Tokenizer::pruneTokens(int maxTokens, int minAppearence) {
   maxTokens = maxTokens > -1 && maxTokens < tokenCountPairs_.size()
       ? maxTokens
       : tokenCountPairs_.size();
   tokenCountPairs_.resize(maxTokens);
+
+  auto end = std::find_if_not(
+      tokenCountPairs_.begin(),
+      tokenCountPairs_.end(),
+      [&minAppearence](const TokenCountPair& pair) {
+        return pair.second >= minAppearence;
+      });
+  tokenCountPairs_.resize(std::distance(tokenCountPairs_.begin(), end));
 }
 
-void Tokenizer::saveDictionary(const std::string& filename) {
-  auto stream = createOutputStream(filename);
-  for (int i = 0; i < tokenCountPairs_.size(); ++i) {
-    stream << tokenCountPairs_[i].first << " " << tokenCountPairs_[i].second
-           << "\n";
-  }
+std::vector<TokenCountPair> Tokenizer::getDictionary() const {
+  return tokenCountPairs_;
 }
 
-void Tokenizer::saveFileDescriptor(const std::string& filename) {
-  auto stream = createOutputStream(filename);
-  stream << "tokens: " << totalTokens_ << "\n";
-  stream << "sentences: " << totalSentences_ << "\n";
-  for (int i = 0; i < fileDescriptor_.size(); ++i) {
-    stream << fileDescriptor_[i].first << " " << fileDescriptor_[i].second
-           << "\n";
-  }
+TextFileMetaData Tokenizer::getTextFileMetaData() const {
+  return fileMetaData_;
 }
+
+size_t Tokenizer::totalTokens() const {
+  return totalTokens_;
+}
+
+size_t Tokenizer::totalSentences() const {
+  return totalSentences_;
+}
+
 } // namespace text
 } // namespace lib
 } // namespace fl

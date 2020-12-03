@@ -15,41 +15,66 @@ namespace fl {
 namespace lib {
 namespace text {
 
-class Tokenizer {
-  using TokenCountMap = std::unordered_map<std::string, size_t>;
-  using TokenCountPair = std::pair<std::string, size_t>;
-  using FileDescriptor = std::vector<std::pair<size_t, int>>;
+// TextFileMetaData saves the meta data info of each sentence
+// 1) the offset it begins from in the text file.
+// 2) the number of tokens it contains.
+using TextFileMetaData = std::vector<std::pair<size_t, int>>;
+using TokenCountPair = std::pair<std::string, size_t>;
 
+/**
+ * Tokenizer is designed to tokenize a given chunk of text.
+ * It also supports to compute statistics of words in a given text dataset as
+ * well as generate meta data for the raw text files.
+ *
+ * Usage:
+ *
+ * Tokenizer tokenizer();
+ * for (textFile in dataset) {
+ *   tokenizer.countTokens(textFile, nWorkers, true);
+ *   auto fileMetaData = tokenizer.getTextFileMetaData();
+ *   // Do something with fileMetaData
+ * }
+ *
+ * tokenizer.pruneTokens(maxSize, minAppearence);
+ * auto tokenCountPairs = tokenizer.getDictionary();
+ * // Do something with the tokens
+ *
+ * -------------------------------
+ *
+ * This is still an early implementation, which only supports:
+ * - Tokenizing space-separated text
+ * - None unicode encoded text
+ *
+ * TODO:
+ * - Support different word separator.
+ * - Support multilingal/unicode use cases.
+ */
+class Tokenizer {
  public:
   Tokenizer() {}
 
-  std::vector<size_t> findOffsets(const std::string& filename, int nWorkers);
-
-  std::vector<std::string> readAndParseSentence(std::ifstream& stream);
+  std::vector<std::string> tokenize(const std::string& sentence) const;
 
   void countTokens(
       const std::string& filename,
       int numWorkers = 1,
-      bool generateDescriptor = false);
+      bool generateMetaData = false);
+  void pruneTokens(int maxTokens = -1, int minAppearence = 0);
 
-  void filterTokens(int maxTokens = -1, int minAppearence = 0);
+  std::vector<TokenCountPair> getDictionary() const;
+  TextFileMetaData getTextFileMetaData() const;
 
-  void saveDictionary(const std::string& filename);
-
-  void saveFileDescriptor(const std::string& filename);
-
-  size_t totalTokens();
-
-  size_t totalSentences();
+  size_t totalTokens() const;
+  size_t totalSentences() const;
 
  private:
   size_t totalTokens_{0};
   size_t totalSentences_{0};
 
-  TokenCountMap tokenCountMap_;
-  FileDescriptor fileDescriptor_;
+  TextFileMetaData fileMetaData_;
   std::vector<TokenCountPair> tokenCountPairs_;
 };
+
 } // namespace text
 } // namespace lib
 } // namespace fl
