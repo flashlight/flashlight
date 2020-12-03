@@ -62,8 +62,14 @@ target_link_libraries(
   FFTW3::fftw3
   )
 
-target_include_directories(
+target_link_libraries(
   fl-libraries
   PUBLIC
+  $<BUILD_INTERFACE:FFTW3::fftw3>
+  )
+
+target_include_directories(
+  fl-libraries
+  PRIVATE
   ${CBLAS_INCLUDE_DIR}
   )
