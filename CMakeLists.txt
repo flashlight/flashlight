@@ -58,6 +58,20 @@ set(INSTALLABLE_TARGETS "")
 set(FL_ROOT_DIR ${PROJECT_SOURCE_DIR}/flashlight)
 set(FL_BUILD_BINARY_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
+# CUDA/nvcc setup
+if (FL_USE_CUDA)
+  enable_language(CUDA)
+  set(CMAKE_CUDA_STANDARD 14)
+  set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+  include(${CMAKE_MODULE_PATH}/CUDAUtils.cmake)
+  set_cuda_arch_nvcc_flags()
+
+  # remove me? add -fPIC to nvcc flags if needed
+  if (FL_LIBRARIES_BUILD_FOR_PYTHON OR CMAKE_POSITION_INDEPENDENT_CODE)
+    cuda_enable_position_independent_code()
+  endif ()
+endif()
+
 # ------------------------ Tests ------------------------
 
 if (FL_BUILD_TESTS)

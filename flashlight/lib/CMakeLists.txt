@@ -52,16 +52,6 @@ set(FL_LIBRARY_CUDA_SOURCES
 # A library containing CUDA targets within libraries that may need to be linked
 # in. Only build a CUDA lib of libraries that require CUDA kernels are built
 if (FL_LIBRARIES_USE_CUDA)
-  enable_language(CUDA)
-  set(CMAKE_CUDA_STANDARD 14)
-  set(CMAKE_CUDA_STANDARD_REQUIRED ON)
-  include(${CMAKE_MODULE_PATH}/CUDAUtils.cmake)
-  set_cuda_arch_nvcc_flags()
-
-  # hacky: add -fPIC to nvcc flags if needed
-  if (FL_LIBRARIES_BUILD_FOR_PYTHON OR CMAKE_POSITION_INDEPENDENT_CODE)
-    cuda_enable_position_independent_code()
-  endif ()
   # Qualify name because CUDA target is public
   target_sources(
     fl-libraries
