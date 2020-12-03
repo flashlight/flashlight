@@ -15,6 +15,12 @@ else()
   message(FATAL_ERROR "gflags not found")
 endif()
 
+target_sources(
+  flashlight-app-lm
+  PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/Trainer.cpp
+  )
+
 target_link_libraries(
   flashlight-app-lm
   PUBLIC
@@ -37,13 +43,29 @@ include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/data/CMakeLists.txt)
 
 # ----------------------------- Binaries -----------------------------
-add_executable(fl_lm_dictionary_builder ${CMAKE_CURRENT_LIST_DIR}/BuildDictionary.cpp)
+add_executable(fl_lm_train ${CMAKE_CURRENT_LIST_DIR}/Train.cpp)
+add_executable(
+  fl_lm_dictionary_builder
+  ${CMAKE_CURRENT_LIST_DIR}/BuildDictionary.cpp
+  )
 
+target_link_libraries(fl_lm_train flashlight-app-lm)
 target_link_libraries(fl_lm_dictionary_builder flashlight-app-lm)
 
-set_executable_output_directory(fl_lm_dictionary_builder "${FL_BUILD_BINARY_OUTPUT_DIR}/lm")
+set_executable_output_directory(fl_lm_train "${FL_BUILD_BINARY_OUTPUT_DIR}/lm")
+set_executable_output_directory(
+  fl_lm_dictionary_builder
+  "${FL_BUILD_BINARY_OUTPUT_DIR}/lm"
+  )
 
-install(TARGETS fl_lm_dictionary_builder RUNTIME DESTINATION ${FL_INSTALL_BIN_DIR})
+install(TARGETS fl_lm_train RUNTIME DESTINATION ${FL_INSTALL_BIN_DIR})
+install(
+  TARGETS
+  fl_lm_dictionary_builder
+  RUNTIME
+  DESTINATION
+  ${FL_INSTALL_BIN_DIR}
+  )
 
 # --------------------------- Tests ---------------------------
 if (FL_BUILD_TESTS)
