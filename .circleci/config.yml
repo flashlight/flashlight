@@ -130,7 +130,7 @@ commands:
               -DFL_BACKEND=CUDA \
               -DFL_BUILD_CORE=<< parameters.fl_build_fl_core >> \
               -DFL_BUILD_APP_ASR=<< parameters.fl_build_app_asr >> \
-              -DFL_BUILD_APP_IMG_CLASS=<< parameters.fl_build_app_img_class >> && \
+              -DFL_BUILD_APP_IMG_CLASS=<< parameters.fl_build_app_img_class >> \
               -DCMAKE_TOOLCHAIN_FILE=$HOME/project/vcpkg/scripts/buildsystems/vcpkg.cmake
             make -j$(nproc)
   flashlight_source_test_with_vcpkg:
@@ -291,7 +291,7 @@ jobs:
             export MKLROOT=/opt/intel/mkl && export KENLM_ROOT=/root/kenlm
             mkdir -p build && cd build
             cmake .. -DFL_BACKEND=CPU -DFL_LIBRARIES_USE_CUDA=OFF
-            make -j8 && make install
+            make -j2 && make install
 
 workflows:
   version: 2
@@ -304,6 +304,6 @@ workflows:
       - ubuntu1804_gcc5_cuda10_0_docker_flashlight_fl_core
       - ubuntu1804_gcc5_cuda10_0_docker_flashlight_app_asr
       - ubuntu1804_gcc5_cuda10_0_docker_flashlight_app_imgclass
-  docker_cpu_build_test_and_install:
+  docker_cpu_build_and_install:
     jobs:
       - ubuntu1804_gcc5_cpu_docker_flashlight_all
