@@ -21,7 +21,7 @@ void CountMeter::add(int id, int64_t val) {
   counts_[id] += val;
 }
 
-std::vector<int64_t> CountMeter::value() {
+std::vector<int64_t> CountMeter::value() const {
   return counts_;
 }
 

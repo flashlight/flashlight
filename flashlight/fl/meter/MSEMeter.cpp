@@ -29,7 +29,7 @@ void MSEMeter::add(const af::array& output, const af::array& target) {
       curN_;
 }
 
-double MSEMeter::value() {
+double MSEMeter::value() const {
   return curValue_;
 }
 } // namespace fl
