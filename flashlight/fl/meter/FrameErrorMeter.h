@@ -43,7 +43,7 @@ class FrameErrorMeter {
   /** Returns a single value in percentage. If `accuracy` is `True`, the value
    * returned is accuracy, error otherwise.
    */
-  double value();
+  double value() const;
 
   /** Sets all the counters to 0. */
   void reset();

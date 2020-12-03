@@ -49,7 +49,7 @@ void AverageValueMeter::add(const af::array& vals) {
       (af::sum<double>(vals * vals) - w * curMeanSquaredSum_) / curWeightSum_;
 }
 
-std::vector<double> AverageValueMeter::value() {
+std::vector<double> AverageValueMeter::value() const {
   double mean = curMean_;
   double var = (curMeanSquaredSum_ - curMean_ * curMean_) /
       (1 - curWeightSquaredSum_ / (curWeightSum_ * curWeightSum_));

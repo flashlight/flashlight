@@ -9,6 +9,8 @@
 
 #include <arrayfire.h>
 
+#include <chrono>
+
 namespace fl {
 
 /** An implementation of timer, which measures the wall clock time.
@@ -32,8 +34,9 @@ class TimeMeter {
 
   /** Stops the timer if still running. If `unit` is `True`, returns the average
    * time spend per unit, otherwise the total time in the current timing period.
+   * Time is measured in seconds.
    */
-  double value();
+  double value() const;
 
   /** Refreshes the counters and stops the timer. */
   void reset();
@@ -54,7 +57,7 @@ class TimeMeter {
   void stopAndIncUnit(int64_t num = 1);
 
  private:
-  af::timer curTimer_;
+  std::chrono::time_point<std::chrono::system_clock> start_;
   double curValue_;
   int64_t curN_;
   bool isStopped_;
