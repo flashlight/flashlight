@@ -108,6 +108,9 @@ commands:
           name: "Install vcpkg dependencies"
           command: |
             MKLROOT=/opt/intel/mkl ./vcpkg/vcpkg install << parameters.vcpkg_deps >>
+  # FIXME(jacobkahn): investigate why we need to force MKL to be off here. It seems that
+  # in the CI env, MKL is found but not MKL's iomp5 components which means no OpenMP
+  # implementation is linked - which causes a linker failure with omp symbols.
   flashlight_source_build_with_vcpkg:
     parameters:
       fl_build_fl_core:
@@ -121,12 +124,15 @@ commands:
           name: "Build Flashlight CUDA from source with vcpkg dependencies"
           command: |
             cd $HOME/project && mkdir -p build && cd build
+            export MKLROOT=/opt/intel/mkl
             cmake .. \
+              -DFL_LIBRARIES_USE_MKL=OFF \
               -DFL_BACKEND=CUDA \
               -DFL_BUILD_CORE=<< parameters.fl_build_fl_core >> \
               -DFL_BUILD_APP_ASR=<< parameters.fl_build_app_asr >> \
               -DFL_BUILD_APP_IMG_CLASS=<< parameters.fl_build_app_img_class >> && \
-              -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake
+              -DCMAKE_TOOLCHAIN_FILE=$HOME/project/vcpkg/scripts/buildsystems/vcpkg.cmake
+            make -j$(nproc)
   flashlight_source_test_with_vcpkg:
     parameters:
       fl_test_apex_dir:
