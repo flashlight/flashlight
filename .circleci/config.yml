@@ -291,7 +291,7 @@ jobs:
             export MKLROOT=/opt/intel/mkl && export KENLM_ROOT=/root/kenlm
             mkdir -p build && cd build
             cmake .. -DFL_BACKEND=CPU -DFL_LIBRARIES_USE_CUDA=OFF
-            make -j$(nproc) && make install
+            make -j16 && make install
 
 workflows:
   version: 2
