@@ -273,13 +273,13 @@ jobs:
       # - test_flashlight_inside_nvidia_docker:
       #     fl_test_apex_dir: "flashlight/app/imgclass/test"
 
-  ubuntu1804_gcc5_docker_flashlight_all:
+  ubuntu1804_gcc5_cpu_docker_flashlight_all:
     docker:
       - image: flml/flashlight:cpu-base-consolidation-latest
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
-    resource_class: 2xlarge
+    resource_class: 2xlarge+
     steps:
       - checkout:
           path: flashlight
@@ -306,4 +306,4 @@ workflows:
       - ubuntu1804_gcc5_cuda10_0_docker_flashlight_app_imgclass
   docker_cpu_build_test_and_install:
     jobs:
-      - ubuntu1804_gcc5_docker_flashlight_all
+      - ubuntu1804_gcc5_cpu_docker_flashlight_all
