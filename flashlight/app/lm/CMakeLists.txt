@@ -33,6 +33,9 @@ target_include_directories(
 # Common
 include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
 
+# Data
+include(${CMAKE_CURRENT_LIST_DIR}/data/CMakeLists.txt)
+
 # ----------------------------- Binaries -----------------------------
 add_executable(fl_lm_dictionary_builder ${CMAKE_CURRENT_LIST_DIR}/BuildDictionary.cpp)
 
@@ -41,3 +44,8 @@ target_link_libraries(fl_lm_dictionary_builder flashlight-app-lm)
 set_executable_output_directory(fl_lm_dictionary_builder "${FL_BUILD_BINARY_OUTPUT_DIR}/lm")
 
 install(TARGETS fl_lm_dictionary_builder RUNTIME DESTINATION ${FL_INSTALL_BIN_DIR})
+
+# --------------------------- Tests ---------------------------
+if (FL_BUILD_TESTS)
+  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test)
+endif ()
