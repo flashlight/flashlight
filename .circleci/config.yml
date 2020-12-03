@@ -125,6 +125,7 @@ commands:
           command: |
             cd $HOME/project && mkdir -p build && cd build
             export MKLROOT=/opt/intel/mkl
+            export CUDACXX=/usr/local/cuda/bin/nvcc
             cmake .. \
               -DFL_LIBRARIES_USE_MKL=OFF \
               -DFL_BACKEND=CUDA \
