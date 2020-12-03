@@ -273,12 +273,13 @@ jobs:
       # - test_flashlight_inside_nvidia_docker:
       #     fl_test_apex_dir: "flashlight/app/imgclass/test"
 
-  build-cpu:
+  ubuntu1804_gcc5_docker_flashlight_all:
     docker:
       - image: flml/flashlight:cpu-base-consolidation-latest
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
+    resource_class: 2xlarge
     steps:
       - checkout:
           path: flashlight
@@ -290,19 +291,19 @@ jobs:
             export MKLROOT=/opt/intel/mkl && export KENLM_ROOT=/root/kenlm
             mkdir -p build && cd build
             cmake .. -DFL_BACKEND=CPU -DFL_LIBRARIES_USE_CUDA=OFF
-            make -j1 && make install
+            make -j$(nproc) && make install
 
 workflows:
   version: 2
-  vcpkg_test_source_build:
+  vcpkg_cuda_test_source_build_and_test:
     jobs:
       - ubuntu1604_gcc5_cuda_10_1_vcpkg_flashlight_lib
-  docker_cuda_build_and_install:
+  docker_cuda_build_test_and_install:
     jobs:
       - ubuntu1804_gcc5_cuda10_0_docker_flashlight_lib
       - ubuntu1804_gcc5_cuda10_0_docker_flashlight_fl_core
       - ubuntu1804_gcc5_cuda10_0_docker_flashlight_app_asr
       - ubuntu1804_gcc5_cuda10_0_docker_flashlight_app_imgclass
-  build_and_install:
+  docker_cpu_build_test_and_install:
     jobs:
-      - build-cpu
+      - ubuntu1804_gcc5_docker_flashlight_all
