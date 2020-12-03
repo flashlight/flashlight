@@ -27,20 +27,23 @@ if (FL_LIBRARIES_USE_KENLM)
 
   target_link_libraries(
     fl-libraries
-    PUBLIC
+    PRIVATE
     ${KENLM_LIBRARIES}
     ${LIBLZMA_LIBRARIES}
     ${BZIP2_LIBRARIES}
     ${ZLIB_LIBRARIES}
     )
 
-  target_include_directories(
-    fl-libraries
-    PUBLIC
-    ${KENLM_INCLUDE_DIRS}
+  set(KENLM_AND_DEP_INCLUDE_DIRS
     ${LIBLZMA_INCLUDE_DIRS}
     ${BZIP2_INCLUDE_DIRS}
     ${ZLIB_INCLUDE_DIRS}
+    )
+
+  target_include_directories(
+    fl-libraries
+    PUBLIC
+    $<BUILD_INTERFACE:${KENLM_INCLUDE_DIRS}>
     )
 
   target_compile_definitions(
