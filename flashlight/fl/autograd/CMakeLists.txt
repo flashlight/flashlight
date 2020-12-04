@@ -19,6 +19,7 @@ target_sources(
 if (FL_USE_CPU)
   set(
     AUTOGRAD_CPU_SOURCES
+    ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/operators/AdvancedIndex.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/Conv2D.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/Pool2D.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/RNN.cpp
@@ -59,6 +60,7 @@ if (FL_USE_CUDA)
 
   set(
     AUTOGRAD_CUDA_SOURCES
+    ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/operators/AdvancedIndex.cu
     ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/BatchNorm.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/Conv2D.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/CudnnUtils.h
