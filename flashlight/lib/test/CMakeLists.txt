@@ -24,3 +24,8 @@ build_test(
   ${LIBS}
   "DICTIONARY_TEST_DATADIR=\"${DIR}/text/dictionary\""
   )
+build_test(
+  ${DIR}/text/tokenizer/TokenizerTest.cpp
+  ${LIBS}
+  "TOKENIZER_TEST_DATADIR=\"${DIR}/text/tokenizer\""
+  )
