@@ -294,6 +294,7 @@ int main(int argc, char** argv) {
       inputTransform,
       targetTransform,
       wordTransform,
+      /*inAugFunc=*/nullptr,
       std::make_tuple(0, targetpadVal, wordpadVal),
       worldRank,
       worldSize);
@@ -309,6 +310,7 @@ int main(int argc, char** argv) {
         inputTransform,
         targetTransform,
         wordTransform,
+        /*inAugFunc=*/nullptr,
         std::make_tuple(0, targetpadVal, wordpadVal),
         worldRank,
         worldSize);
@@ -645,12 +647,12 @@ int main(int argc, char** argv) {
           FLAGS_samplerate);
       } else {
         saug = std::make_shared<fl::SpecAugment>(
-          FLAGS_filterbanks,
-          FLAGS_saug_fmaskf,
-          FLAGS_saug_fmaskn,
-          FLAGS_saug_tmaskt,
-          FLAGS_saug_tmaskp,
-          FLAGS_saug_tmaskn);
+            FLAGS_filterbanks,
+            FLAGS_saug_fmaskf,
+            FLAGS_saug_fmaskn,
+            FLAGS_saug_tmaskt,
+            FLAGS_saug_tmaskp,
+            FLAGS_saug_tmaskn);
       }
     }
 

@@ -56,6 +56,11 @@ class Dataset {
       std::function<af::array(void*, af::dim4, af::dtype)>;
 
   /**
+   * A function to augment host data.
+   */
+  using DataAugmentationFunction = std::function<void(std::vector<float>&)>;
+
+  /**
    * @return The size of the dataset.
    */
   virtual int64_t size() const = 0;

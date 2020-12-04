@@ -96,6 +96,7 @@ std::shared_ptr<fl::Dataset> createDataset(
     const fl::Dataset::DataTransformFunction& inputTransform = nullptr,
     const fl::Dataset::DataTransformFunction& targetTransform = nullptr,
     const fl::Dataset::DataTransformFunction& wordTransform = nullptr,
+    const fl::Dataset::DataAugmentationFunction& inAugFunc = nullptr,
     const std::tuple<int, int, int>& padVal = std::tuple<int, int, int>{0,
                                                                         -1,
                                                                         -1},

@@ -178,6 +178,7 @@ int main(int argc, char** argv) {
       inputTransform,
       targetTransform,
       wordTransform,
+      /*inAugFunc=*/nullptr,
       std::make_tuple(0, targetpadVal, wordpadVal),
       0 /* worldrank */,
       1 /* worldsize */);

@@ -49,7 +49,8 @@ class ListFileDataset : public fl::Dataset {
       const std::string& filename,
       const DataTransformFunction& inFeatFunc = nullptr,
       const DataTransformFunction& tgtFeatFunc = nullptr,
-      const DataTransformFunction& wrdFeatFunc = nullptr);
+      const DataTransformFunction& wrdFeatFunc = nullptr,
+      const DataAugmentationFunction& inAugFunc = nullptr);
 
   int64_t size() const override;
 
@@ -64,6 +65,7 @@ class ListFileDataset : public fl::Dataset {
 
  protected:
   DataTransformFunction inFeatFunc_, tgtFeatFunc_, wrdFeatFunc_;
+  DataAugmentationFunction inAugFunc_;
   int64_t numRows_;
   std::vector<std::string> ids_;
   std::vector<std::string> inputs_;

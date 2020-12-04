@@ -29,10 +29,12 @@ ListFileDataset::ListFileDataset(
     const std::string& filename,
     const DataTransformFunction& inFeatFunc /* = nullptr */,
     const DataTransformFunction& tgtFeatFunc /* = nullptr */,
-    const DataTransformFunction& wrdFeatFunc /* = nullptr */)
+    const DataTransformFunction& wrdFeatFunc /* = nullptr */,
+    const DataAugmentationFunction& inAugFunc /* = nullptr */)
     : inFeatFunc_(inFeatFunc),
       tgtFeatFunc_(tgtFeatFunc),
       wrdFeatFunc_(wrdFeatFunc),
+      inAugFunc_(inAugFunc),
       numRows_(0) {
   std::ifstream inFile(filename);
   if (!inFile) {
@@ -70,6 +72,9 @@ std::vector<af::array> ListFileDataset::get(const int64_t idx) const {
   checkIndexBounds(idx);
 
   auto audio = loadAudio(inputs_[idx]); // channels x time
+  if (inAugFunc_) {
+    inAugFunc_(audio.first);
+  }
   af::array input;
   if (inFeatFunc_) {
     input = inFeatFunc_(

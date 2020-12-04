@@ -159,6 +159,7 @@ std::shared_ptr<fl::Dataset> createDataset(
     const fl::Dataset::DataTransformFunction& inputTransform /* = nullptr */,
     const fl::Dataset::DataTransformFunction& targetTransform /* = nullptr */,
     const fl::Dataset::DataTransformFunction& wordTransform /* = nullptr */,
+    const fl::Dataset::DataAugmentationFunction& inAugFunc /* = nullptr */,
     const std::tuple<int, int, int>& padVal /* = {0, -1, -1} */,
     int worldRank /* = 0 */,
     int worldSize /* = 1 */) {
@@ -183,7 +184,8 @@ std::shared_ptr<fl::Dataset> createDataset(
           pathsConcat(rootDir, path),
           inputTransform,
           targetTransform,
-          wordTransform);
+          wordTransform,
+          inAugFunc);
     }
 
     allListDs.emplace_back(curListDs);
