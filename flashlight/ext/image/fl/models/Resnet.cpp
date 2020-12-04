@@ -67,6 +67,66 @@ ResNetBlock::ResNetBlock(const int inC, const int outC, const int stride) {
   }
 }
 
+ResNetBottleneckBlock::ResNetBottleneckBlock() = default;
+
+ResNetBottleneckBlock::ResNetBottleneckBlock(const int inC, const int planes, const int stride) {
+  const int expansionFactor = 4;
+  add(std::make_shared<Conv2D>(conv1x1(inC, planes, 1, 1)));
+  add(std::make_shared<BatchNorm>(BatchNorm(2, planes)));
+  add(std::make_shared<ReLU>());
+  add(std::make_shared<Conv2D>(conv3x3(planes, planes, stride, 1)));
+  add(std::make_shared<BatchNorm>(BatchNorm(2, planes)));
+  add(std::make_shared<ReLU>());
+  add(std::make_shared<Conv2D>(conv1x1(planes, planes * expansionFactor, 1, 1)));
+  add(std::make_shared<BatchNorm>(BatchNorm(2, planes * expansionFactor)));
+  add(std::make_shared<ReLU>());
+  if (inC != planes * expansionFactor || stride > 1) {
+    Sequential downsample;
+    downsample.add(conv1x1(inC, planes * expansionFactor, stride, 1));
+    downsample.add(BatchNorm(2, planes * expansionFactor));
+    add(downsample);
+  }
+
+}
+
+std::vector<fl::Variable> ResNetBottleneckBlock::forward(
+  const std::vector<fl::Variable>& inputs) {
+  auto c1 = module(0);
+  auto bn1 = module(1);
+  auto relu1 = module(2);
+  auto c2 = module(3);
+  auto bn2 = module(4);
+  auto relu2 = module(5);
+  auto c3 = module(6);
+  auto bn3 = module(7);
+  auto relu3 = module(8);
+
+  std::vector<fl::Variable> out;
+  out = c1->forward(inputs);
+  out = bn1->forward(out);
+
+  out = relu1->forward(out);
+
+  out = c2->forward(out);
+  out = bn2->forward(out);
+  out = relu2->forward(out);
+
+  out = c3->forward(out);
+  out = bn3->forward(out);
+
+  std::vector<fl::Variable> shortcut;
+  if (modules().size() > 9) {
+    shortcut = module(9)->forward(inputs);
+  } else {
+    shortcut = inputs;
+  }
+  return relu3->forward({out[0] + shortcut[0]});
+}
+
+std::string ResNetBottleneckBlock::prettyString() const {
+  return "ResNetBottleneckBlock";
+}
+
 std::vector<fl::Variable> ResNetBlock::forward(
     const std::vector<fl::Variable>& inputs) {
   auto c1 = module(0);
@@ -94,6 +154,19 @@ std::vector<fl::Variable> ResNetBlock::forward(
 std::string ResNetBlock::prettyString() const {
   return "2-Layer ResNetBlock Conv3x3";
 }
+
+ResNetBottleneckStage::ResNetBottleneckStage(
+    const int inC,
+    const int outC,
+    const int numBlocks,
+    const int stride) {
+  add(ResNetBottleneckBlock(inC, outC, stride));
+  const int expansionFactor = 4;
+  const int inPlanes = outC * expansionFactor;
+  for (int i = 1; i < numBlocks; i++) {
+    add(ResNetBottleneckBlock(inPlanes, outC));
+  }
+};
 
 ResNetStage::ResNetStage() = default;
 
@@ -133,6 +206,28 @@ std::shared_ptr<Sequential> resnet34() {
   //model->add(LogSoftmax());
   return model;
 };
+
+std::shared_ptr<Sequential> resnet50() {
+  auto model = std::make_shared<Sequential>();
+  // conv1 -> 244x244x3 -> 112x112x64
+  model->add(ConvBnAct(3, 64, 7, 7, 2, 2));
+  // maxpool -> 112x122x64 -> 56x56x64
+  model->add(Pool2D(3, 3, 2, 2, -1, -1, PoolingMode::MAX));
+  //// conv2_x -> 56x56x64 -> 56x56x64
+  model->add(ResNetBottleneckStage(64, 64, 3, 1));
+  //// conv3_x -> 56x56x64 -> 28x28x128
+  model->add(ResNetBottleneckStage(64 * 4, 128, 4, 2));
+  ////// conv4_x -> 28x28x128 -> 14x14x256
+  model->add(ResNetBottleneckStage(128 * 4, 256, 6, 2));
+  ////// conv5_x -> 14x14x256 -> 7x7x256
+  model->add(ResNetBottleneckStage(256 * 4, 512, 3, 2));
+  ////// pool 7x7x512 -> 1x1x512
+  model->add(Pool2D(7, 7, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
+
+  model->add(View(af::dim4(512 * 4, -1, 1, 1)));
+  model->add(Linear(512 * 4, 1000));
+  return model;
+}
 
 //std::shared_ptr<Sequential> resnet34() {
   //auto model = std::make_shared<Sequential>();

@@ -49,7 +49,7 @@ std::pair<af::array, af::array> HungarianMatcher::matchBatch(
 
   // Class cost
   auto outProbs = softmax(predLogits, 0);
-  auto cost_class = transpose((1 - outProbs(targetClasses.array(), af::span)));
+  auto cost_class = transpose((0 - outProbs(targetClasses.array(), af::span)));
   //auto cost_class = (1 - outProbs(targetClasses.array(), af::span));
   //
 
@@ -68,6 +68,7 @@ std::pair<af::array, af::array> HungarianMatcher::matchBatch(
   cost_bbox = flatten(cost_bbox, 0, 1);
 
   auto cost = cost_bbox_ * cost_bbox + cost_class_ * cost_class + cost_giou_ * cost_giou;
+  af_print(cost.array());
   return ::hungarian(cost.array());
 
 

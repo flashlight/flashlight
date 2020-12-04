@@ -1,10 +1,16 @@
 #include "flashlight/ext/image/fl/models/Resnet34Backbone.h"
 #include "flashlight/fl/nn/modules/Conv2D.h"
 #include "flashlight/ext/image/fl/models/Resnet.h"
+#include "flashlight/app/objdet/nn/PositionalEmbeddingSine.h"
+#include "flashlight/app/objdet/nn/Transformer.h"
 //#include "flashlight/fl/flashlight.h"
 #include "flashlight/fl/autograd/Variable.h"
+#include "flashlight/app/objdet/criterion/Hungarian.h"
+#include "flashlight/app/objdet/criterion/SetCriterion.h"
 
 #include <gtest/gtest.h>
+
+using namespace fl::app::objdet;
 
 fl::Variable param(af::array x) {
   return fl::Variable(x, true);
@@ -26,6 +32,7 @@ bool allClose(
     std::cout << "Shape mismatch " << std::endl;
     return false;
   }
+  std::cout << " Max " << af::max<double>(af::abs(a - b)) << std::endl;
   return (af::max<double>(af::abs(a - b)) < precision);
 }
 
@@ -85,6 +92,8 @@ void getBns(
   }
 };
 
+#if 0
+
 TEST(Pytorch, resnet34) {
   af::info();
   const auto pad = fl::PaddingMode::SAME;
@@ -114,14 +123,7 @@ TEST(Pytorch, resnet34) {
     bn_ptr->setRunningVar(af::readArray((filename + "running").c_str(), i));
     i++;
   }
-  std::cout << "Number of batchnorms" << bns.size() << std::endl;
 
-
-
-  std::cout << resnet34->params()[paramSize - 1].dims() << std::endl;
-  std::cout << resnet34->params()[paramSize - 2].dims() << std::endl;
-  std::cout << af::readArray(filename.c_str(), paramSize).dims() << std::endl;
-  std::cout << af::readArray(filename.c_str(), paramSize - 1).dims() << std::endl;
   resnet34->eval();
 
   auto output = resnet34->forward(input(x));
@@ -132,3 +134,287 @@ TEST(Pytorch, resnet34) {
 
   ASSERT_TRUE(allClose(output.array(), expOutput));
 }
+
+//TEST(Pytorch, resnet50) {
+  //af::info();
+  //const auto pad = fl::PaddingMode::SAME;
+
+  //std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/resnet50.array";
+    
+  //af::array x = af::readArray(filename.c_str(), "input");
+  //af::array expOutput = af::readArray(filename.c_str(), "output");
+
+  //auto resnet50 = fl::ext::image::resnet50();
+
+  //int paramSize = resnet50->params().size();
+  //for(int i = 0; i < paramSize; i++) {
+    //auto array = af::readArray(filename.c_str(), i + 1);
+    //ASSERT_TRUE(resnet50->param(i).dims() == array.dims());
+    //resnet50->setParams(param(array), i);
+  //}
+
+  //std::vector<std::shared_ptr<fl::Module>> bns;
+  //getBns(resnet50, bns);
+
+  //int i = 0;
+  //for(auto bn : bns) {
+    //auto bn_ptr = dynamic_cast<fl::BatchNorm*>(bn.get());
+    //bn_ptr->setRunningMean(af::readArray((filename + "running").c_str(), i));
+    //i++;
+    //bn_ptr->setRunningVar(af::readArray((filename + "running").c_str(), i));
+    //i++;
+  //}
+
+  //resnet50->eval();
+
+  //auto output = resnet50->forward(input(x));
+  //std::cout << output.dims() << std::endl;
+  //std::cout << " Max " << af::max<double>(output.array()) << std::endl;
+  //std::cout << " Max " << af::max<double>(expOutput) << std::endl;
+
+  ////std::cout << output.array().scalar<float>() << std::endl;
+  ////std::cout << expOutput.scalar<float>() << std::endl;
+
+  //ASSERT_TRUE(allClose(output.array(), expOutput));
+//}
+
+//TEST(Pytorch, bottleneck) {
+  //af::info();
+  //const auto pad = fl::PaddingMode::SAME;
+
+  //std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/bottleneck.array";
+    
+  //af::array x = af::readArray(filename.c_str(), "input");
+  //af::array expOutput = af::readArray(filename.c_str(), "output");
+
+  //auto model = std::make_shared<fl::ext::image::ResNetBottleneckBlock>(40, 10, 1);
+
+  //int paramSize = model->params().size();
+  //for(int i = 0; i < paramSize; i++) {
+    //auto array = af::readArray(filename.c_str(), i + 1);
+    //ASSERT_TRUE(model->param(i).dims() == array.dims());
+    //model->setParams(param(array), i);
+  //}
+
+  //std::vector<std::shared_ptr<fl::Module>> bns;
+  //getBns(model, bns);
+
+  //int i = 0;
+  //for(auto bn : bns) {
+    //auto bn_ptr = dynamic_cast<fl::BatchNorm*>(bn.get());
+    //bn_ptr->setRunningMean(af::readArray((filename + "running").c_str(), i));
+    //i++;
+    //bn_ptr->setRunningVar(af::readArray((filename + "running").c_str(), i));
+    //i++;
+  //}
+
+  //model->eval();
+
+  //auto output = model->forward({ input(x) })[0];
+
+  //ASSERT_TRUE(allClose(output.array(), expOutput));
+//}
+//
+TEST(Pytorch, basic_array) {
+
+  std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/basic_array.array";
+    
+  af::array x = af::readArray(filename.c_str(), "input");
+}
+
+TEST(Pytorch, basic_output) {
+
+  std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/basic_output.array";
+    
+  af::array x = af::readArray(filename.c_str(), "output");
+}
+
+TEST(Pytorch, pos_embedd) {
+  af::info();
+  const auto pad = fl::PaddingMode::SAME;
+
+  std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/pos_embedding.array";
+    
+  af::array x = af::readArray(filename.c_str(), "input");
+  af::array expOutput = af::readArray(filename.c_str(), "output");
+
+  auto model = std::make_shared<PositionalEmbeddingSine>(4);
+  auto inputDims = x.dims();
+  af::dim4 modifiedDims = { inputDims[0], inputDims[1], 1, inputDims[2] };
+
+  auto input = fl::Variable(1 - af::moddims(x, modifiedDims), false);
+  auto output = model->forward(input);
+
+  ASSERT_TRUE(allClose(output.array(), expOutput));
+}
+
+TEST(Pytorch, matcher_test) {
+
+  const int batchSize = 2;
+
+  std::string bboxFilename = "/private/home/padentomasello/scratch/pytorch_testing/matcher_test0_bboxes.array";
+  std::string labelFilename = "/private/home/padentomasello/scratch/pytorch_testing/matcher_test0_labels.array";
+  std::string inputFilename = "/private/home/padentomasello/scratch/pytorch_testing/matcher_test0input.array";
+
+  std::vector<fl::Variable> bboxes, labels;
+  for(int i = 0; i < batchSize; i++) {
+    bboxes.push_back({af::readArray(bboxFilename.c_str(), i), false});
+    labels.push_back({af::readArray(labelFilename.c_str(), i), false});
+  }
+
+  auto predBoxes = fl::Variable(af::readArray(inputFilename.c_str(), "pred_boxes"), false);
+  auto predLogits = fl::Variable(af::readArray(inputFilename.c_str(), "pred_logits"), false);
+
+  auto matcher = HungarianMatcher(1.0f, 1.0f, 1.0f);
+
+  std::vector<std::pair<af::array, af::array>> results = matcher.forward(predBoxes, predLogits, bboxes, labels);
+  for(auto result : results) {
+    af_print(result.first);
+    af_print(result.second);
+  }
+    
+}
+
+TEST(Pytorch, set_crit) {
+
+  const int batchSize = 2;
+
+  std::string bboxFilename = "/private/home/padentomasello/scratch/pytorch_testing/set_criterion_bboxes.array";
+  std::string labelFilename = "/private/home/padentomasello/scratch/pytorch_testing/set_criterion_labels.array";
+  std::string inputFilename = "/private/home/padentomasello/scratch/pytorch_testing/set_criterion_input.array";
+  std::string lossFilename = "/private/home/padentomasello/scratch/pytorch_testing/set_criterion_loss.array";
+
+  std::vector<fl::Variable> bboxes, labels;
+  for(int i = 0; i < batchSize; i++) {
+    bboxes.push_back({af::readArray(bboxFilename.c_str(), i).as(f32), false});
+    labels.push_back({af::readArray(labelFilename.c_str(), i).as(f32), false});
+  }
+
+  auto predBoxes = fl::Variable(af::readArray(inputFilename.c_str(), "pred_boxes"), false);
+  auto predLogits = fl::Variable(af::readArray(inputFilename.c_str(), "pred_logits"), false);
+
+  auto matcher = HungarianMatcher(1.0f, 1.0f, 1.0f);
+
+  std::unordered_map<std::string, float> lossWeightsBase = 
+        { { "loss_ce" , 1.f} ,
+        { "loss_giou", 1.f },
+        { "loss_bbox", 1.f }
+  };
+  SetCriterion::LossDict losses;
+
+  auto criterion = SetCriterion(
+      91,
+      matcher,
+      lossWeightsBase,
+      1.0,
+      losses);
+
+  auto results = criterion.forward(predBoxes, predLogits, bboxes, labels);
+  for(auto result : results) {
+    std::cout << "Checking: " << result.first << std::endl;
+    ASSERT_TRUE(allClose(result.second.array(), af::readArray(lossFilename.c_str(), result.first.c_str())));
+  }
+    
+}
+
+
+#endif
+
+
+TEST(Pytorch, multihead_attention) {
+
+
+  std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/multi_headed_attention.array";
+  af::array x = af::readArray(filename.c_str(), "input");
+  af::array keyPaddingMask = af::readArray(filename.c_str(), "mask");
+  af::array expOutput = af::readArray(filename.c_str(), "output");
+
+  const int embeddingDim = x.dims(0);
+  const int headDim = x.dims(0);
+  const int numHead = 2;
+
+  auto model = MultiheadAttention(embeddingDim, embeddingDim / numHead, numHead);
+
+  int paramSize = model.params().size();
+  for(int i = 0; i < paramSize; i++) {
+    auto array = af::readArray(filename.c_str(), i + 2);
+    std::cout << " i " << i << std::endl;
+    std::cout << "model dims " << model.param(i).dims() << std::endl;
+    std::cout << " array dims " << array.dims() << std::endl;
+    ASSERT_TRUE(model.param(i).dims() == array.dims());
+    model.setParams(param(array), i);
+  }
+
+  af_print(x);
+
+  auto output = model.forward({x, false}, {x, false}, {x, false}, {1 - keyPaddingMask, false})[0];
+  ASSERT_TRUE(allClose(output.array(), expOutput));
+
+}
+
+
+
+TEST(Pytorch, transformer_encoder_layer) {
+
+
+  std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/transformer_encoder_layer.array";
+  af::array x = af::readArray(filename.c_str(), "input");
+  af::array expOutput = af::readArray(filename.c_str(), "output");
+
+  const int embeddingDim = x.dims(0);
+  const int headDim = x.dims(0);
+  const int numHead = 1;
+
+  auto model = TransformerEncoderLayer(embeddingDim, headDim, 128, numHead, 0.0);
+  std::vector<fl::Variable> inputs = { 
+    fl::Variable(x, false), 
+    fl::Variable({}, false), // mask
+    fl::Variable({}, false)  // pos
+  };
+
+  int paramSize = model.params().size();
+  for(int i = 0; i < paramSize; i++) {
+    auto array = af::readArray(filename.c_str(), i + 1);
+    ASSERT_TRUE(model.param(i).dims() == array.dims());
+    model.setParams(param(array), i);
+  }
+
+  auto output = model.forward(inputs)[0];
+  ASSERT_TRUE(allClose(output.array(), expOutput));
+}
+
+
+
+TEST(Pytorch, transformer_decoder_layer) {
+
+
+  std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/transformer_decoder_layer.array";
+  af::array memory = af::readArray(filename.c_str(), "memory");
+  af::array queries = af::readArray(filename.c_str(), "queries");
+  af::array expOutput = af::readArray(filename.c_str(), "output");
+
+  const int embeddingDim = memory.dims(0);
+  const int headDim = memory.dims(0);
+  const int numHead = 1;
+
+  auto model = TransformerDecoderLayer(embeddingDim, headDim, 128, numHead, 0.0);
+  std::vector<fl::Variable> inputs = { 
+    fl::Variable(queries, false), 
+    fl::Variable(memory, false), // mask
+    fl::Variable({}, false)  // pos
+  };
+
+  int paramSize = model.params().size();
+  for(int i = 0; i < paramSize; i++) {
+    auto array = af::readArray(filename.c_str(), i + 2);
+    ASSERT_TRUE(model.param(i).dims() == array.dims());
+    model.setParams(param(array), i);
+  }
+
+  auto output = model.forward(inputs)[0];
+  ASSERT_TRUE(allClose(output.array(), expOutput));
+}
+
+#if 0
+
+#endif

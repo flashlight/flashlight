@@ -354,7 +354,7 @@ SetCriterion::LossDict SetCriterion::lossLabels(
   auto softmaxed = logSoftmax(predLogits, 0);
   int num_classes = softmaxed.dims(0);
   auto weight = af::constant(1, num_classes);
-  weight(num_classes - 1) = 0.1;
+  weight(num_classes - 1) = eos_coef_;
   auto weightVar = Variable(weight, false);
   auto loss_ce = weightedCategoricalCrossEntropy(
       softmaxed, fl::Variable(target_classes_full, false), weightVar, ReduceMode::MEAN, -1);

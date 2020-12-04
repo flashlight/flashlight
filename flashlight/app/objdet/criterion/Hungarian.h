@@ -28,6 +28,7 @@ private:
   float cost_bbox_;
   float cost_giou_;
 
+  // First is SrcIdx, second is ColIdx
    std::pair<af::array, af::array> matchBatch(
        const Variable& predBoxes,
        const Variable& predLogits,
