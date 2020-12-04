@@ -95,6 +95,8 @@ Build Options
 +-------------------------+-------------------+---------------+
 | FL_BUILD_APP_IMG_CLASS  | ON, OFF           | ON            |
 +-------------------------+-------------------+---------------+
+| FL_BUILD_APP_LM         | ON, OFF           | ON            |
++-------------------------+-------------------+---------------+
 | FL_BUILD_STANDALONE     | ON, OFF           | ON            |
 +-------------------------+-------------------+---------------+
 | CMAKE_BUILD_TYPE        | CMake build types | Debug         |
@@ -176,6 +178,8 @@ The flashlight build exports the following CMake targets on install:
 - ``flashlight::flashlight-app-asr`` -- contains the automatic speech recognition application along with the flashlight core and flashlight libraries.
 
 - ``flashlight::flashlight-app-imgclass`` -- contains the image classification application along with the flashlight core and flashlight libraries.
+
+- ``flashlight::flashlight-app-lm`` -- contains the language modeling application along with the flashlight core and flashlight libraries.
 
 Once flashlight is built and installed, including it in another project is simple using a CMake imported target. Suppose we have a project in ``project.cpp`` that uses flashlight:
 
