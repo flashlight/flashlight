@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -16,6 +16,7 @@
 
 namespace fl {
 namespace app {
+namespace asr {
 namespace sfx {
 
 /**
@@ -25,7 +26,7 @@ class SoundEffect {
  public:
   SoundEffect() = default;
   virtual ~SoundEffect() = default;
-  virtual void apply(std::vector<float>* sound) = 0;
+  virtual void apply(std::vector<float>& sound) = 0;
   virtual std::string prettyString() const = 0;
 };
 
@@ -37,7 +38,7 @@ class SoundEffectChain : public SoundEffect {
  public:
   SoundEffectChain() {}
   ~SoundEffectChain() override = default;
-  void apply(std::vector<float>* sound) override;
+  void apply(std::vector<float>& sound) override;
   std::string prettyString() const override;
   void add(std::shared_ptr<SoundEffect> SoundEffect);
 
@@ -53,7 +54,7 @@ class Normalize : public SoundEffect {
  public:
   explicit Normalize(bool onlyIfTooHigh = true);
   ~Normalize() override = default;
-  void apply(std::vector<float>* sound) override;
+  void apply(std::vector<float>& sound) override;
   std::string prettyString() const override;
 
  private:
@@ -68,7 +69,7 @@ class ClampAmplitude : public SoundEffect {
  public:
   explicit ClampAmplitude() {}
   ~ClampAmplitude() override = default;
-  void apply(std::vector<float>* sound) override;
+  void apply(std::vector<float>& sound) override;
 
   std::string prettyString() const override;
 };
@@ -87,7 +88,7 @@ class Amplify : public SoundEffect {
 
   explicit Amplify(const Amplify::Config& config);
   ~Amplify() override = default;
-  void apply(std::vector<float>* sound) override;
+  void apply(std::vector<float>& sound) override;
   std::string prettyString() const override;
 
  private:
@@ -97,5 +98,6 @@ class Amplify : public SoundEffect {
 };
 
 } // namespace sfx
+} // namespace asr
 } // namespace app
 } // namespace fl

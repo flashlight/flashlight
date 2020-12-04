@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -8,10 +8,10 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "flashlight/app/asraug/SoundEffect.h"
-#include "flashlight/app/asraug/test/SoundTestUtil.h"
+#include "flashlight/app/asr/augmentation/SoundEffect.h"
+#include "flashlight/app/asr/test/augmentation/SoundTestUtil.h"
 
-using namespace ::fl::app::sfx;
+using namespace ::fl::app::asr::sfx;
 using ::testing::AllOf;
 using ::testing::Contains;
 using ::testing::Each;
@@ -33,7 +33,7 @@ TEST(SoundEffect, ClampAmplitude) {
   const float amplitude = 2.0;
   std::vector<float> signal =
       genSinWave(numSamples, freq, sampleRate, amplitude);
-  sfx.apply(&signal);
+  sfx.apply(signal);
   EXPECT_THAT(signal, Each(AllOf(Ge(-1.0), Le(1.0))));
 }
 
@@ -47,7 +47,7 @@ TEST(SoundEffect, NormalizeTooHigh) {
   const float amplitude = 2.0;
   std::vector<float> signal =
       genSinWave(numSamples, freq, sampleRate, amplitude);
-  sfx.apply(&signal);
+  sfx.apply(signal);
   EXPECT_THAT(signal, Each(AllOf(Ge(-1.0), Le(1.0))));
 }
 
@@ -61,7 +61,7 @@ TEST(SoundEffect, NoNormalizeTooLow) {
   std::vector<float> signal =
       genSinWave(numSamples, freq, sampleRate, amplitude);
   std::vector<float> signalCopy = signal;
-  sfx.apply(&signalCopy);
+  sfx.apply(signalCopy);
   EXPECT_EQ(signal, signalCopy);
 }
 
@@ -74,7 +74,7 @@ TEST(SoundEffect, NormalizeTooLow) {
   const float amplitude = 0.5;
   std::vector<float> signal =
       genSinWave(numSamples, freq, sampleRate, amplitude);
-  sfx.apply(&signal);
+  sfx.apply(signal);
   EXPECT_THAT(signal, Each(AllOf(Ge(-1.0f), Le(1.0f))));
   EXPECT_THAT(signal, testing::Contains(-1.0f));
   EXPECT_THAT(signal, testing::Contains(1.0f));
@@ -103,7 +103,7 @@ TEST(SoundEffect, Amplify) {
   float maxMaxAbsAmp = 0;
   for (int i = 0; i < 100; ++i) {
     std::vector<float> soundCopy = sound;
-    sfx.apply(&soundCopy);
+    sfx.apply(soundCopy);
     // Ensure that current augmentation amplitude is within expected range.
     EXPECT_THAT(
         soundCopy, Each(AllOf(Ge(-conf.ratioMax_), Le(conf.ratioMax_))));
@@ -139,7 +139,7 @@ TEST(SoundEffect, SfxChain) {
 
   std::vector<float> signal =
       genSinWave(numSamples, freq, sampleRate, amplitude);
-  sfxChain->apply(&signal);
+  sfxChain->apply(signal);
   EXPECT_THAT(signal, Each(AllOf(Ge(-amplitude), Le(amplitude))));
 }
 
