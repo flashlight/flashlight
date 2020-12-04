@@ -11,6 +11,7 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/lib/text/tokenizer/PartialFileReader.h"
+#include "flashlight/lib/text/tokenizer/Tokenizer.h"
 
 std::string loadPath = "";
 
@@ -52,6 +53,18 @@ TEST(PartialFileReaderTest, Reading) {
     ASSERT_EQ(target[i], loadedWords[i]);
   }
 }
+
+TEST(TokenizerTest, Counting) {
+  auto tokenizer = fl::lib::text::Tokenizer();
+  tokenizer.countTokens(fl::lib::pathsConcat(loadPath, "test.txt"), 2);
+  ASSERT_EQ(tokenizer.totalTokens(), 13);
+  ASSERT_EQ(tokenizer.totalSentences(), 4);
+
+  tokenizer.pruneTokens(-1, 2);
+  auto dict = tokenizer.getDictionary();
+  ASSERT_EQ(dict.size(), 2);
+}
+
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
