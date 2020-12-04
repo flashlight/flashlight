@@ -14,6 +14,8 @@ namespace text {
 constexpr const char* kUnkToken = "<unk>";
 constexpr const char* kEosToken = "</s>";
 constexpr const char* kPadToken = "<pad>";
+constexpr const char* kMaskToken = "<mask>";
+
 } // namespace text
 } // namespace lib
 } // namespace fl
