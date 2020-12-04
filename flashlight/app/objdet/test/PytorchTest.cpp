@@ -318,7 +318,6 @@ TEST(Pytorch, set_crit) {
 }
 
 
-#endif
 
 
 TEST(Pytorch, multihead_attention) {
@@ -415,6 +414,40 @@ TEST(Pytorch, transformer_decoder_layer) {
   ASSERT_TRUE(allClose(output.array(), expOutput));
 }
 
-#if 0
+#endif
 
+TEST(Pytorch, transformer_multilayer_encoder) {
+
+
+  std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/transformer_encoder.array";
+  af::array x = af::readArray(filename.c_str(), "input");
+  af::array expOutput = af::readArray(filename.c_str(), "output");
+
+  const int embeddingDim = x.dims(0);
+  const int headDim = x.dims(0);
+  const int numHead = 1;
+  const int numLayers = 6;
+
+  auto model = TransformerEncoder(embeddingDim, headDim, 128, numHead, numLayers, 0.0);
+  std::vector<fl::Variable> inputs = { 
+    fl::Variable(x, false), 
+    fl::Variable({}, false), // mask
+    fl::Variable({}, false)  // pos
+  };
+
+  int paramSize = model.params().size();
+  for(int i = 0; i < paramSize; i++) {
+    auto array = af::readArray(filename.c_str(), i + 1);
+    std::cout << " i " << i << std::endl;
+    std::cout << " Array " << array.dims() << std::endl;
+    std::cout << " Model " << model.param(i).dims() << std::endl;
+    ASSERT_TRUE(model.param(i).dims() == array.dims());
+    model.setParams(param(array), i);
+  }
+
+  auto output = model.forward(inputs)[0];
+  ASSERT_TRUE(allClose(output.array(), expOutput));
+}
+
+#if 0
 #endif
