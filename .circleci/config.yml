@@ -280,7 +280,7 @@ jobs:
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
-    resource_class: 2xlarge+
+    resource_class: 2xlarge
     steps:
       - checkout:
           path: flashlight
@@ -292,7 +292,7 @@ jobs:
             export MKLROOT=/opt/intel/mkl && export KENLM_ROOT=/root/kenlm
             mkdir -p build && cd build
             cmake .. -DFL_BACKEND=CPU -DFL_LIBRARIES_USE_CUDA=OFF
-            make -j2 && make install
+            make -j$(nproc) && make install
 
 workflows:
   version: 2
