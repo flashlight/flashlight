@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/app/asraug/SoundEffect.h"
+#include "flashlight/app/augmentation/SoundEffect.h"
 
 #include <algorithm>
 #include <cmath>
@@ -29,7 +29,7 @@ void SoundEffectChain::add(std::shared_ptr<SoundEffect> SoundEffect) {
   soundEffects_.push_back(SoundEffect);
 }
 
-void SoundEffectChain::apply(std::vector<float>* sound) {
+void SoundEffectChain::apply(std::vector<float>& sound) {
   for (std::shared_ptr<SoundEffect>& effect : soundEffects_) {
     effect->apply(sound);
   }
@@ -37,16 +37,16 @@ void SoundEffectChain::apply(std::vector<float>* sound) {
 
 Normalize::Normalize(bool onlyIfTooHigh) : onlyIfTooHigh_(onlyIfTooHigh) {}
 
-void Normalize::apply(std::vector<float>* sound) {
+void Normalize::apply(std::vector<float>& sound) {
   float maxAbs = 0.0f;
-  for (float i : *sound) {
+  for (float i : sound) {
     maxAbs = std::fmax(maxAbs, std::fabs(i));
   }
   if (!onlyIfTooHigh_ || maxAbs > 1.0f) {
     std::transform(
-        sound->begin(),
-        sound->end(),
-        sound->begin(),
+        sound.begin(),
+        sound.end(),
+        sound.begin(),
         [maxAbs](float amp) -> float { return amp / maxAbs; });
   }
 }
@@ -61,9 +61,9 @@ std::string ClampAmplitude::prettyString() const {
   return "ClampAmplitude";
 }
 
-void ClampAmplitude::apply(std::vector<float>* sound) {
+void ClampAmplitude::apply(std::vector<float>& sound) {
   std::transform(
-      sound->begin(), sound->end(), sound->begin(), [](float amp) -> float {
+      sound.begin(), sound.end(), sound.begin(), [](float amp) -> float {
         return std::fmax(std::fmin(amp, 1.0), -1.0);
       });
 }
@@ -76,17 +76,16 @@ std::string Amplify::prettyString() const {
   return "Amplify";
 }
 
-void Amplify::apply(std::vector<float>* sound) {
+void Amplify::apply(std::vector<float>& sound) {
   float ratio = 0;
   {
     std::lock_guard<std::mutex> guard(mutex_);
     ratio = randomRatio_(randomEngine_);
   }
   std::transform(
-      sound->begin(),
-      sound->end(),
-      sound->begin(),
-      [ratio](float amp) -> float { return amp * ratio; });
+      sound.begin(), sound.end(), sound.begin(), [ratio](float amp) -> float {
+        return amp * ratio;
+      });
 }
 
 } // namespace sfx
