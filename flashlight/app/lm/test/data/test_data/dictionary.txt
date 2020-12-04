@@ -1,0 +1,11 @@
+</s>
+<pad>
+<unk>
+<mask>
+this
+is
+a
+test
+ok
+fine
+works
