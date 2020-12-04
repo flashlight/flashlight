@@ -39,7 +39,7 @@ void TopKMeter::reset() {
   n_ = 0;
 }
 
-double TopKMeter::value() {
+double TopKMeter::value() const {
   return (static_cast<double>(correct_) / n_) * 100.0f;
 }
 

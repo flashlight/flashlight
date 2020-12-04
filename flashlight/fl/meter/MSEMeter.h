@@ -40,7 +40,7 @@ class MSEMeter {
   void add(const af::array& output, const af::array& target);
 
   /** Returns a single value of mean square error. */
-  double value();
+  double value() const;
 
   /** Sets all the counters to 0. */
   void reset();

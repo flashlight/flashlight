@@ -75,7 +75,7 @@ class EditDistanceMeter {
    * - `insertion rate`: \f$ \frac{nins}{n} \times 100.0 \f$
    * - `substitution rate`: \f$ \frac{nsub}{n} \times 100.0 \f$
    */
-  std::vector<double> value();
+  std::vector<double> value() const;
 
   /** Computes edit distance between two arrays `output` and `target`, with
    * length `olen` and `tlen` respectively, and updates the counters.
@@ -104,7 +104,7 @@ class EditDistanceMeter {
   int64_t nins_;
   int64_t nsub_;
 
-  int64_t sumErr() {
+  int64_t sumErr() const {
     return ndel_ + nins_ + nsub_;
   }
 

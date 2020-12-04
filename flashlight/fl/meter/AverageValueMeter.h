@@ -52,7 +52,7 @@ class AverageValueMeter {
    * - `weight_sum`: \f$ Sum(W) \f$
    * - `weight_squared_sum`: \f$ Sum(W^2) \f$
    */
-  std::vector<double> value();
+  std::vector<double> value() const;
 
   /** Sets all the counters to 0. */
   void reset();
