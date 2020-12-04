@@ -46,7 +46,7 @@ class TopKMeter {
 
   std::pair<int32_t, int32_t> getStats();
 
-  double value();
+  double value() const;
 
  private:
   int k_;

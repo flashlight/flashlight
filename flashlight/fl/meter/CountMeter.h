@@ -39,7 +39,7 @@ class CountMeter {
   /** Returns a vector of `num` values, representing the total value of each
    * category.
    */
-  std::vector<int64_t> value();
+  std::vector<int64_t> value() const;
 
   /** Sets the value of each category to 0. */
   void reset();

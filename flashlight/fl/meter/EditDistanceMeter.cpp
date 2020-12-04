@@ -53,7 +53,7 @@ void EditDistanceMeter::add(
   nsub_ += nsub;
 }
 
-std::vector<double> EditDistanceMeter::value() {
+std::vector<double> EditDistanceMeter::value() const {
   double val = (n_ > 0) ? (static_cast<double>(sumErr() * 100.0) / n_) : 0.0;
   double val_del = (n_ > 0) ? (static_cast<double>(ndel_ * 100.0) / n_) : 0.0;
   double val_ins = (n_ > 0) ? (static_cast<double>(nins_ * 100.0) / n_) : 0.0;
