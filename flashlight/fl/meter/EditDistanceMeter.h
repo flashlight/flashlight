@@ -75,6 +75,15 @@ class EditDistanceMeter {
    * - `insertion rate`: \f$ \frac{nins}{n} \times 100.0 \f$
    * - `substitution rate`: \f$ \frac{nsub}{n} \times 100.0 \f$
    */
+  std::vector<double> errorRate() const;
+
+  /** Returns a vector of five values:
+   * - `edit distance`: \f$ (ndel + nins + nsub)\f$
+   * - `total length`: \f$ n \f$
+   * - `number of deletions`: \f$ ndel \f$
+   * - `number of insertions`: \f$ nins \f$
+   * - `number of substitution`: \f$ nsub \f$
+   */
   std::vector<double> value() const;
 
   /** Computes edit distance between two arrays `output` and `target`, with
