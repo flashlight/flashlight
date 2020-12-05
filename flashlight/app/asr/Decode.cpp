@@ -157,8 +157,8 @@ int main(int argc, char** argv) {
 
   /* =============== Prepare Sharable Decoder Components ============== */
   // Prepare counters
-  std::vector<double> sliceWer(FLAGS_nthread_decoder);
-  std::vector<double> sliceLer(FLAGS_nthread_decoder);
+  std::vector<double> sliceWrdDst(FLAGS_nthread_decoder);
+  std::vector<double> sliceTknDst(FLAGS_nthread_decoder);
   std::vector<int> sliceNumWords(FLAGS_nthread_decoder, 0);
   std::vector<int> sliceNumTokens(FLAGS_nthread_decoder, 0);
   std::vector<int> sliceNumSamples(FLAGS_nthread_decoder, 0);
@@ -468,8 +468,8 @@ int main(int argc, char** argv) {
                      &writeHyp,
                      &writeRef,
                      &writeLog,
-                     &sliceWer,
-                     &sliceLer,
+                     &sliceWrdDst,
+                     &sliceTknDst,
                      &sliceNumWords,
                      &sliceNumTokens,
                      &sliceNumSamples,
@@ -662,8 +662,8 @@ int main(int argc, char** argv) {
 
         // Normal decoding and computing WER
         if (!FLAGS_isbeamdump) {
-          meters.werSlice.add(wordPrediction, wordTarget);
-          meters.lerSlice.add(letterPrediction, letterTarget);
+          meters.wrdDstSlice.add(wordPrediction, wordTarget);
+          meters.tknDstSlice.add(letterPrediction, letterTarget);
 
           if (!FLAGS_sclite.empty()) {
             std::string suffix = " (" + sampleId + ")\n";
@@ -672,10 +672,10 @@ int main(int argc, char** argv) {
           }
 
           if (FLAGS_show) {
-            meters.wer.reset();
-            meters.ler.reset();
-            meters.wer.add(wordPrediction, wordTarget);
-            meters.ler.add(letterPrediction, letterTarget);
+            meters.wrdDst.reset();
+            meters.tknDst.reset();
+            meters.wrdDst.add(wordPrediction, wordTarget);
+            meters.tknDst.add(letterPrediction, letterTarget);
 
             std::stringstream buffer;
             buffer << "|T|: " << wordTargetStr << std::endl;
@@ -685,10 +685,10 @@ int main(int argc, char** argv) {
               buffer << "|p|: " << join(" ", letterPrediction) << std::endl;
             }
             buffer << "[sample: " << sampleId
-                   << ", WER: " << meters.wer.value()[0]
-                   << "\%, LER: " << meters.ler.value()[0]
-                   << "\%, slice WER: " << meters.werSlice.value()[0]
-                   << "\%, slice LER: " << meters.lerSlice.value()[0]
+                   << ", WER: " << meters.wrdDst.errorRate()[0]
+                   << "\%, TER: " << meters.tknDst.errorRate()[0]
+                   << "\%, slice WER: " << meters.wrdDstSlice.errorRate()[0]
+                   << "\%, slice TER: " << meters.tknDstSlice.errorRate()[0]
                    << "\%, decoded samples (thread " << tid
                    << "): " << sliceNumSamples[tid] + 1 << "]" << std::endl;
 
@@ -706,9 +706,9 @@ int main(int argc, char** argv) {
         }
         // Beam Dump
         else {
-          meters.wer.reset();
-          meters.wer.add(wordPrediction, wordTarget);
-          auto wer = meters.wer.value()[0];
+          meters.wrdDst.reset();
+          meters.wrdDst.add(wordPrediction, wordTarget);
+          auto wer = meters.wrdDst.errorRate()[0];
 
           if (FLAGS_sclite.empty()) {
             FL_LOG(fl::FATAL)
@@ -725,8 +725,8 @@ int main(int argc, char** argv) {
         }
       }
     }
-    sliceWer[tid] = meters.werSlice.value()[0];
-    sliceLer[tid] = meters.lerSlice.value()[0];
+    sliceWrdDst[tid] = meters.wrdDstSlice.value()[0];
+    sliceTknDst[tid] = meters.tknDstSlice.value()[0];
   };
 
   /* ===================== Spread threades ===================== */
@@ -806,20 +806,29 @@ int main(int argc, char** argv) {
     totalWords += sliceNumWords[i];
     totalSamples += sliceNumSamples[i];
   }
-  double totalWer = 0, totalLer = 0, totalTime = 0;
+  double totalWer = 0, totalTkn = 0, totalTime = 0;
   for (int i = 0; i < FLAGS_nthread_decoder; i++) {
-    totalWer += sliceWer[i] * sliceNumWords[i] / totalWords;
-    totalLer += sliceLer[i] * sliceNumTokens[i] / totalTokens;
+    totalWer += sliceWrdDst[i];
+    totalTkn += sliceTknDst[i];
     totalTime += sliceTime[i];
   }
-
+  if (totalWer > 0 && totalWords == 0) {
+    totalWer = std::numeric_limits<double>::infinity();
+  } else {
+    totalWer = totalWords > 0 ? totalWer / totalWords * 100.: 0.0;
+  }
+  if (totalTkn > 0 && totalTokens == 0) {
+    totalTkn = std::numeric_limits<double>::infinity();
+  } else {
+    totalTkn = totalTokens > 0 ? totalTkn / totalTokens * 100. : 0.0;
+  }
   std::stringstream buffer;
   buffer << "------\n";
   buffer << "[Decode " << FLAGS_test << " (" << totalSamples << " samples) in "
          << timer.value() << "s (actual decoding time " << std::setprecision(3)
          << totalTime / totalSamples
          << "s/sample) -- WER: " << std::setprecision(6) << totalWer
-         << ", LER: " << totalLer << "]" << std::endl;
+         << "\%, TER: " << totalTkn << "\%]" << std::endl;
   FL_LOG(fl::INFO) << buffer.str();
   if (!FLAGS_sclite.empty()) {
     writeLog(buffer.str());

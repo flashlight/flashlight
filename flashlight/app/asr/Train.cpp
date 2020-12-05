@@ -505,7 +505,7 @@ int main(int argc, char** argv) {
 
       // save if better than ever for one valid
       for (const auto& v : validminerrs) {
-        double verr = meters.valid[v.first].wrdEdit.value()[0];
+        double verr = meters.valid[v.first].wrdEdit.errorRate()[0];
         if (verr < validminerrs[v.first]) {
           validminerrs[v.first] = verr;
           std::string cleaned_v = cleanFilepath(v.first);
