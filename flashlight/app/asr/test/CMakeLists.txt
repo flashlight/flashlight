@@ -45,3 +45,4 @@ set(SFX_LIBS
     flashlight-app-asr-sfx
     )
 build_test(${DIR}/augmentation/SoundEffectTest.cpp "${SFX_LIBS}" "")
+build_test(${DIR}/augmentation/SoundEffectConfigTest.cpp "${SFX_LIBS}" "")
