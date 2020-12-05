@@ -338,7 +338,7 @@ class TransformerDecoder : public Container {
     }
 
     std::vector<Variable> forward(const std::vector<Variable>& input) override {
-      assert(input.size() == 5);
+      //assert(input.size() == 5);
       auto tgt = input[0];
       auto memory = input[1];
       auto pos = (input.size() > 2) ? input[2] : Variable();

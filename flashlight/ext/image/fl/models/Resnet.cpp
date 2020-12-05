@@ -168,6 +168,8 @@ ResNetBottleneckStage::ResNetBottleneckStage(
   }
 };
 
+ResNetBottleneckStage::ResNetBottleneckStage() = default;
+
 ResNetStage::ResNetStage() = default;
 
 ResNetStage::ResNetStage(
@@ -222,10 +224,10 @@ std::shared_ptr<Sequential> resnet50() {
   ////// conv5_x -> 14x14x256 -> 7x7x256
   model->add(ResNetBottleneckStage(256 * 4, 512, 3, 2));
   ////// pool 7x7x512 -> 1x1x512
-  model->add(Pool2D(7, 7, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
+  //model->add(Pool2D(7, 7, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
 
-  model->add(View(af::dim4(512 * 4, -1, 1, 1)));
-  model->add(Linear(512 * 4, 1000));
+  //model->add(View(af::dim4(512 * 4, -1, 1, 1)));
+  //model->add(Linear(512 * 4, 1000));
   return model;
 }
 

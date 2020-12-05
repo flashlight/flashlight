@@ -93,3 +93,5 @@ std::shared_ptr<Sequential> resnet50();
 CEREAL_REGISTER_TYPE(fl::ext::image::ConvBnAct)
 CEREAL_REGISTER_TYPE(fl::ext::image::ResNetBlock)
 CEREAL_REGISTER_TYPE(fl::ext::image::ResNetStage)
+CEREAL_REGISTER_TYPE(fl::ext::image::ResNetBottleneckBlock)
+CEREAL_REGISTER_TYPE(fl::ext::image::ResNetBottleneckStage)

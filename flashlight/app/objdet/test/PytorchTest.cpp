@@ -1,6 +1,7 @@
 #include "flashlight/ext/image/fl/models/Resnet34Backbone.h"
 #include "flashlight/fl/nn/modules/Conv2D.h"
 #include "flashlight/ext/image/fl/models/Resnet.h"
+#include "flashlight/ext/image/fl/models/Resnet50Backbone.h"
 #include "flashlight/app/objdet/nn/PositionalEmbeddingSine.h"
 #include "flashlight/app/objdet/nn/Transformer.h"
 //#include "flashlight/fl/flashlight.h"
@@ -29,6 +30,8 @@ bool allClose(
     const af::array& b,
     const double precision = 1e-2) {
   if ((a.numdims() != b.numdims()) || (a.dims() != b.dims())) {
+    std::cout << " A dims " << a.dims() << std::endl;
+    std::cout << " B dims " << b.dims() << std::endl;
     std::cout << "Shape mismatch " << std::endl;
     return false;
   }
@@ -135,86 +138,6 @@ TEST(Pytorch, resnet34) {
   ASSERT_TRUE(allClose(output.array(), expOutput));
 }
 
-//TEST(Pytorch, resnet50) {
-  //af::info();
-  //const auto pad = fl::PaddingMode::SAME;
-
-  //std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/resnet50.array";
-    
-  //af::array x = af::readArray(filename.c_str(), "input");
-  //af::array expOutput = af::readArray(filename.c_str(), "output");
-
-  //auto resnet50 = fl::ext::image::resnet50();
-
-  //int paramSize = resnet50->params().size();
-  //for(int i = 0; i < paramSize; i++) {
-    //auto array = af::readArray(filename.c_str(), i + 1);
-    //ASSERT_TRUE(resnet50->param(i).dims() == array.dims());
-    //resnet50->setParams(param(array), i);
-  //}
-
-  //std::vector<std::shared_ptr<fl::Module>> bns;
-  //getBns(resnet50, bns);
-
-  //int i = 0;
-  //for(auto bn : bns) {
-    //auto bn_ptr = dynamic_cast<fl::BatchNorm*>(bn.get());
-    //bn_ptr->setRunningMean(af::readArray((filename + "running").c_str(), i));
-    //i++;
-    //bn_ptr->setRunningVar(af::readArray((filename + "running").c_str(), i));
-    //i++;
-  //}
-
-  //resnet50->eval();
-
-  //auto output = resnet50->forward(input(x));
-  //std::cout << output.dims() << std::endl;
-  //std::cout << " Max " << af::max<double>(output.array()) << std::endl;
-  //std::cout << " Max " << af::max<double>(expOutput) << std::endl;
-
-  ////std::cout << output.array().scalar<float>() << std::endl;
-  ////std::cout << expOutput.scalar<float>() << std::endl;
-
-  //ASSERT_TRUE(allClose(output.array(), expOutput));
-//}
-
-//TEST(Pytorch, bottleneck) {
-  //af::info();
-  //const auto pad = fl::PaddingMode::SAME;
-
-  //std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/bottleneck.array";
-    
-  //af::array x = af::readArray(filename.c_str(), "input");
-  //af::array expOutput = af::readArray(filename.c_str(), "output");
-
-  //auto model = std::make_shared<fl::ext::image::ResNetBottleneckBlock>(40, 10, 1);
-
-  //int paramSize = model->params().size();
-  //for(int i = 0; i < paramSize; i++) {
-    //auto array = af::readArray(filename.c_str(), i + 1);
-    //ASSERT_TRUE(model->param(i).dims() == array.dims());
-    //model->setParams(param(array), i);
-  //}
-
-  //std::vector<std::shared_ptr<fl::Module>> bns;
-  //getBns(model, bns);
-
-  //int i = 0;
-  //for(auto bn : bns) {
-    //auto bn_ptr = dynamic_cast<fl::BatchNorm*>(bn.get());
-    //bn_ptr->setRunningMean(af::readArray((filename + "running").c_str(), i));
-    //i++;
-    //bn_ptr->setRunningVar(af::readArray((filename + "running").c_str(), i));
-    //i++;
-  //}
-
-  //model->eval();
-
-  //auto output = model->forward({ input(x) })[0];
-
-  //ASSERT_TRUE(allClose(output.array(), expOutput));
-//}
-//
 TEST(Pytorch, basic_array) {
 
   std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/basic_array.array";
@@ -414,7 +337,6 @@ TEST(Pytorch, transformer_decoder_layer) {
   ASSERT_TRUE(allClose(output.array(), expOutput));
 }
 
-#endif
 
 TEST(Pytorch, transformer_multilayer_encoder) {
 
@@ -446,6 +368,175 @@ TEST(Pytorch, transformer_multilayer_encoder) {
   }
 
   auto output = model.forward(inputs)[0];
+  ASSERT_TRUE(allClose(output.array(), expOutput));
+}
+
+
+//TEST(Pytorch, transformer_multilayer_decoder) {
+
+
+  //std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/transformer_decoder.array";
+  //af::array memory = af::readArray(filename.c_str(), "memory");
+  //af::array queries = af::readArray(filename.c_str(), "queries");
+  //af::array expOutput = af::readArray(filename.c_str(), "output");
+
+  //const int embeddingDim = memory.dims(0);
+  //const int headDim = memory.dims(0);
+  //const int numHead = 1;
+
+  //const int numLayers = 2;
+
+  //auto model = TransformerDecoder(embeddingDim, headDim, 128, numHead, numLayers, 0.0);
+  //std::vector<fl::Variable> inputs = { 
+    //fl::Variable(queries, false), 
+    //fl::Variable(memory, false), // mask
+    //fl::Variable({}, false)  // pos
+  //};
+
+  //int paramSize = model.params().size();
+  //for(int i = 0; i < paramSize; i++) {
+    //auto array = af::readArray(filename.c_str(), i + 2);
+    //std::cout << " i " << i << std::endl;
+    //std::cout << " Array " << array.dims() << std::endl;
+    //std::cout << " Model " << model.param(i).dims() << std::endl;
+    //ASSERT_TRUE(model.param(i).dims() == array.dims());
+    //model.setParams(param(array), i);
+  //}
+
+  //auto output = model.forward(inputs)[0];
+  //ASSERT_TRUE(allClose(output.array(), expOutput));
+//}
+
+
+TEST(Pytorch, resnet50) {
+  af::info();
+  const auto pad = fl::PaddingMode::SAME;
+
+  std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/resnet50.array";
+    
+  af::array x = af::readArray(filename.c_str(), "input");
+  af::array expOutput = af::readArray(filename.c_str(), "output");
+
+  auto resnet50 = fl::ext::image::resnet50();
+
+  int paramSize = resnet50->params().size();
+  for(int i = 0; i < paramSize; i++) {
+    auto array = af::readArray(filename.c_str(), i + 1);
+    ASSERT_TRUE(resnet50->param(i).dims() == array.dims());
+    resnet50->setParams(param(array), i);
+  }
+
+  std::vector<std::shared_ptr<fl::Module>> bns;
+  getBns(resnet50, bns);
+
+  int i = 0;
+  for(auto bn : bns) {
+    auto bn_ptr = dynamic_cast<fl::BatchNorm*>(bn.get());
+    bn_ptr->setRunningMean(af::readArray((filename + "running").c_str(), i));
+    i++;
+    bn_ptr->setRunningVar(af::readArray((filename + "running").c_str(), i));
+    i++;
+  }
+
+  resnet50->eval();
+
+  auto output = resnet50->forward(input(x));
+  std::cout << output.dims() << std::endl;
+  std::cout << " Max " << af::max<double>(output.array()) << std::endl;
+  std::cout << " Max " << af::max<double>(expOutput) << std::endl;
+
+  //std::cout << output.array().scalar<float>() << std::endl;
+  //std::cout << expOutput.scalar<float>() << std::endl;
+
+  ASSERT_TRUE(allClose(output.array(), expOutput));
+}
+
+TEST(Pytorch, bottleneck) {
+  af::info();
+  const auto pad = fl::PaddingMode::SAME;
+
+  std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/bottleneck.array";
+    
+  af::array x = af::readArray(filename.c_str(), "input");
+  af::array expOutput = af::readArray(filename.c_str(), "output");
+
+  auto model = std::make_shared<fl::ext::image::ResNetBottleneckBlock>(40, 10, 1);
+
+  int paramSize = model->params().size();
+  for(int i = 0; i < paramSize; i++) {
+    auto array = af::readArray(filename.c_str(), i + 1);
+    ASSERT_TRUE(model->param(i).dims() == array.dims());
+    model->setParams(param(array), i);
+  }
+
+  std::vector<std::shared_ptr<fl::Module>> bns;
+  getBns(model, bns);
+
+  int i = 0;
+  for(auto bn : bns) {
+    auto bn_ptr = dynamic_cast<fl::BatchNorm*>(bn.get());
+    bn_ptr->setRunningMean(af::readArray((filename + "running").c_str(), i));
+    i++;
+    bn_ptr->setRunningVar(af::readArray((filename + "running").c_str(), i));
+    i++;
+  }
+
+  model->eval();
+
+  auto output = model->forward({ input(x) })[0];
+
+  ASSERT_TRUE(allClose(output.array(), expOutput));
+}
+
+#endif
+
+
+TEST(Pytorch, resnet50_backbone) {
+  af::info();
+  const auto pad = fl::PaddingMode::SAME;
+
+  std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/resnet50_backbone.array";
+    
+  af::array x = af::readArray(filename.c_str(), "input");
+  af::array expOutput = af::readArray(filename.c_str(), "output");
+
+  auto resnet50 = std::make_shared<fl::ext::image::Resnet50Backbone>();
+
+  int paramSize = resnet50->params().size();
+  // Hack! Don't read the last two!
+  for(int i = 0; i < paramSize - 2; i++) {
+    auto array = af::readArray(filename.c_str(), i + 1);
+    std::cout << " i " << i << std::endl;
+    std::cout << " Array " << array.dims() << std::endl;
+    std::cout << " Parma " << resnet50->param(i).dims() << std::endl;
+    ASSERT_TRUE(resnet50->param(i).dims() == array.dims());
+    resnet50->setParams(param(array), i);
+  }
+
+  std::vector<std::shared_ptr<fl::Module>> bns;
+  getBns(resnet50, bns);
+
+  int i = 0;
+  for(auto bn : bns) {
+    auto bn_ptr = dynamic_cast<fl::BatchNorm*>(bn.get());
+    bn_ptr->setRunningMean(af::readArray((filename + "running").c_str(), i));
+    i++;
+    bn_ptr->setRunningVar(af::readArray((filename + "running").c_str(), i));
+    i++;
+  }
+
+  resnet50->eval();
+
+  auto output = resnet50->forward({ input(x) })[1];
+  std::string modelPath = "/checkpoint/padentomasello/models/resnet50/from_pytorch";
+  fl::save(modelPath, resnet50);
+  std::cout << output.dims() << std::endl;
+  std::cout << " Max " << af::max<double>(output.array()) << std::endl;
+  std::cout << " Max " << af::max<double>(expOutput) << std::endl;
+
+  //std::cout << output.array().scalar<float>() << std::endl;
+  //std::cout << expOutput.scalar<float>() << std::endl;
+
   ASSERT_TRUE(allClose(output.array(), expOutput));
 }
 
