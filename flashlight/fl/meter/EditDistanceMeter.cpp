@@ -54,11 +54,27 @@ void EditDistanceMeter::add(
 }
 
 std::vector<double> EditDistanceMeter::value() const {
-  double val = (n_ > 0) ? (static_cast<double>(sumErr() * 100.0) / n_) : 0.0;
-  double val_del = (n_ > 0) ? (static_cast<double>(ndel_ * 100.0) / n_) : 0.0;
-  double val_ins = (n_ > 0) ? (static_cast<double>(nins_ * 100.0) / n_) : 0.0;
-  double val_sub = (n_ > 0) ? (static_cast<double>(nsub_ * 100.0) / n_) : 0.0;
-
-  return {val, static_cast<double>(n_), val_del, val_ins, val_sub};
+  return {static_cast<double>(sumErr()),
+          static_cast<double>(n_),
+          static_cast<double>(ndel_),
+          static_cast<double>(nins_),
+          static_cast<double>(nsub_)};
 }
+
+std::vector<double> EditDistanceMeter::errorRate() const {
+  double val, valDel, valIns, valSub;
+  if (n_ > 0) {
+    val = static_cast<double>(sumErr() * 100.0) / n_;
+    valDel = static_cast<double>(ndel_ * 100.0) / n_;
+    valIns = static_cast<double>(nins_ * 100.0) / n_;
+    valSub = static_cast<double>(nsub_ * 100.0) / n_;
+  } else {
+    val = (sumErr() > 0) ? std::numeric_limits<double>::infinity() : 0.0;
+    valDel = (ndel_ > 0) ? std::numeric_limits<double>::infinity() : 0.0;
+    valIns = (nins_ > 0) ? std::numeric_limits<double>::infinity() : 0.0;
+    valSub = (nsub_ > 0) ? std::numeric_limits<double>::infinity() : 0.0;
+  }
+  return {val, static_cast<double>(n_), valDel, valIns, valSub};
+}
+
 } // namespace fl
