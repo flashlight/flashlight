@@ -62,13 +62,13 @@ std::pair<std::string, std::string> getStatus(
   insertItem("loss", format("%10.5f", meters.train.loss.value()[0]));
 
   insertItem(
-      "train-" + errtype, format("%5.2f", meters.train.tknEdit.value()[0]));
-  insertItem("train-WER", format("%5.2f", meters.train.wrdEdit.value()[0]));
+      "train-" + errtype, format("%5.2f", meters.train.tknEdit.errorRate()[0]));
+  insertItem("train-WER", format("%5.2f", meters.train.wrdEdit.errorRate()[0]));
   for (auto& v : meters.valid) {
     insertItem(v.first + "-loss", format("%10.5f", v.second.loss.value()[0]));
     insertItem(
-        v.first + "-" + errtype, format("%5.2f", v.second.tknEdit.value()[0]));
-    insertItem(v.first + "-WER", format("%5.2f", v.second.wrdEdit.value()[0]));
+        v.first + "-" + errtype, format("%5.2f", v.second.tknEdit.errorRate()[0]));
+    insertItem(v.first + "-WER", format("%5.2f", v.second.wrdEdit.errorRate()[0]));
   }
   auto stats = meters.stats.value();
   auto numsamples = std::max<int64_t>(stats[4], 1);
