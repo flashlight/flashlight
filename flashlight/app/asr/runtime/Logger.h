@@ -38,10 +38,10 @@ struct TrainMeters {
 
 struct TestMeters {
   fl::TimeMeter timer;
-  fl::EditDistanceMeter werSlice;
-  fl::EditDistanceMeter wer;
-  fl::EditDistanceMeter lerSlice;
-  fl::EditDistanceMeter ler;
+  fl::EditDistanceMeter wrdDstSlice;
+  fl::EditDistanceMeter wrdDst;
+  fl::EditDistanceMeter tknDstSlice;
+  fl::EditDistanceMeter tknDst;
 };
 
 std::pair<std::string, std::string> getStatus(

@@ -190,8 +190,8 @@ int main(int argc, char** argv) {
                    << " samples.";
 
   /* ===================== Test ===================== */
-  std::vector<double> sliceWer(FLAGS_nthread_decoder_am_forward);
-  std::vector<double> sliceLer(FLAGS_nthread_decoder_am_forward);
+  std::vector<double> sliceWrdDst(FLAGS_nthread_decoder_am_forward);
+  std::vector<double> sliceTknDst(FLAGS_nthread_decoder_am_forward);
   std::vector<int> sliceNumWords(FLAGS_nthread_decoder_am_forward, 0);
   std::vector<int> sliceNumTokens(FLAGS_nthread_decoder_am_forward, 0);
   std::vector<int> sliceNumSamples(FLAGS_nthread_decoder_am_forward, 0);
@@ -239,8 +239,8 @@ int main(int argc, char** argv) {
               &writeHyp,
               &writeRef,
               &emissionDir,
-              &sliceWer,
-              &sliceLer,
+              &sliceWrdDst,
+              &sliceTknDst,
               &sliceNumWords,
               &sliceNumTokens,
               &sliceNumSamples,
@@ -307,12 +307,12 @@ int main(int argc, char** argv) {
           FLAGS_usewordpiece,
           FLAGS_wordseparator);
 
-      meters.lerSlice.add(letterPrediction, letterTarget);
+      meters.tknDstSlice.add(letterPrediction, letterTarget);
 
       // Words
       std::vector<std::string> wrdPredictionStr =
           tkn2Wrd(letterPrediction, FLAGS_wordseparator);
-      meters.werSlice.add(wrdPredictionStr, wordTargetStr);
+      meters.wrdDstSlice.add(wrdPredictionStr, wordTargetStr);
 
       if (!FLAGS_sclite.empty()) {
         writeRef(join(" ", wordTargetStr) + " (" + sampleId + ")\n");
@@ -320,18 +320,18 @@ int main(int argc, char** argv) {
       }
 
       if (FLAGS_show) {
-        meters.ler.reset();
-        meters.wer.reset();
-        meters.ler.add(letterPrediction, letterTarget);
-        meters.wer.add(wrdPredictionStr, wordTargetStr);
+        meters.tknDst.reset();
+        meters.wrdDst.reset();
+        meters.tknDst.add(letterPrediction, letterTarget);
+        meters.wrdDst.add(wrdPredictionStr, wordTargetStr);
 
         std::cout << "|T|: " << join(" ", letterTarget) << std::endl;
         std::cout << "|P|: " << join(" ", letterPrediction) << std::endl;
         std::cout << "[sample: " << sampleId
-                  << ", WER: " << meters.wer.value()[0]
-                  << "\%, LER: " << meters.ler.value()[0]
-                  << "\%, total WER: " << meters.werSlice.value()[0]
-                  << "\%, total LER: " << meters.lerSlice.value()[0]
+                  << ", WER: " << meters.wrdDst.errorRate()[0]
+                  << "\%, TER: " << meters.tknDst.errorRate()[0]
+                  << "\%, total WER: " << meters.wrdDstSlice.errorRate()[0]
+                  << "\%, total TER: " << meters.tknDstSlice.errorRate()[0]
                   << "\%, progress (thread " << tid << "): "
                   << static_cast<float>(++cnt) / selectedIds.size() * 100
                   << "\%]" << std::endl;
@@ -355,8 +355,8 @@ int main(int argc, char** argv) {
 
     meters.timer.stop();
 
-    sliceWer[tid] = meters.werSlice.value()[0];
-    sliceLer[tid] = meters.lerSlice.value()[0];
+    sliceWrdDst[tid] = meters.wrdDstSlice.value()[0];
+    sliceTknDst[tid] = meters.tknDstSlice.value()[0];
     sliceTime[tid] = meters.timer.value();
   };
 
@@ -390,20 +390,29 @@ int main(int argc, char** argv) {
     totalWords += sliceNumWords[i];
     totalSamples += sliceNumSamples[i];
   }
-  double totalWer = 0, totalLer = 0, totalTime = 0;
+  double totalWer = 0, totalTer = 0, totalTime = 0;
   for (int i = 0; i < FLAGS_nthread_decoder_am_forward; i++) {
-    totalWer += sliceWer[i] * sliceNumWords[i] / totalWords;
-    totalLer += sliceLer[i] * sliceNumTokens[i] / totalTokens;
+    totalWer += sliceWrdDst[i];
+    totalTer += sliceTknDst[i];
     totalTime += sliceTime[i];
   }
-
+  if (totalWer > 0 && totalWords == 0) {
+    totalWer = std::numeric_limits<double>::infinity();
+  } else {
+    totalWer = totalWords > 0 ? totalWer / totalWords * 100. : 0.0;
+  }
+  if (totalTer > 0 && totalTokens == 0) {
+    totalTer = std::numeric_limits<double>::infinity();
+  } else {
+    totalTer = totalTokens > 0 ? totalTer / totalTokens * 100. : 0.0;
+  }
   FL_LOG(fl::INFO) << "------";
   FL_LOG(fl::INFO) << "[Test " << FLAGS_test << " (" << totalSamples
                    << " samples) in " << timer.value()
                    << "s (actual decoding time " << std::setprecision(3)
                    << totalTime / totalSamples
                    << "s/sample) -- WER: " << std::setprecision(6) << totalWer
-                   << ", LER: " << totalLer << "]";
+                   << "\%, TER: " << totalTer << "\%]";
 
   return 0;
 }
