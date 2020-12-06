@@ -52,7 +52,7 @@ fl::Variable transformerMultiheadAttention(
     scores = scores + tileAs(moddims(log(keyPaddingMask), { 1, srcLen, 1, bsz }), scores);
   }
 
-  auto attn = softmax(scores, 1);
+  auto attn = dropout(softmax(scores, 1), pDropout);
   auto result = matmulNT(attn, v);
   result = moddims(result, af::dim4(tgtLen, modelDim, bsz));
   result = reorder(result, 1, 2, 0);
