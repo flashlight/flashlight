@@ -335,7 +335,10 @@ int main(int argc, char** argv) {
       !FLAGS_usewordpiece /* fallback2LetterWordSepLeft */);
 
   auto inputTransform = inputFeatures(
-      featParams, featType, {FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx});
+      featParams,
+      featType,
+      {FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx},
+      /*sfxConf=*/{});
   auto targetTransform = targetFeatures(tokenDict, lexicon, targetGenConfig);
   auto wordTransform = wordFeatures(wordDict);
   int targetpadVal = FLAGS_eostoken
@@ -815,7 +818,7 @@ int main(int argc, char** argv) {
   if (totalWer > 0 && totalWords == 0) {
     totalWer = std::numeric_limits<double>::infinity();
   } else {
-    totalWer = totalWords > 0 ? totalWer / totalWords * 100.: 0.0;
+    totalWer = totalWords > 0 ? totalWer / totalWords * 100. : 0.0;
   }
   if (totalTkn > 0 && totalTokens == 0) {
     totalTkn = std::numeric_limits<double>::infinity();

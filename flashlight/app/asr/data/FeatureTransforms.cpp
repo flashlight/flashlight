@@ -29,8 +29,9 @@ namespace asr {
 fl::Dataset::DataTransformFunction inputFeatures(
     const FeatureParams& params,
     const FeatureType& featureType,
-    const std::pair<int, int>& localNormCtx) {
-  return [params, featureType, localNormCtx](
+    const std::pair<int, int>& localNormCtx,
+    const std::vector<sfx::SoundEffectConfig>& sfxConf) {
+  return [params, featureType, localNormCtx, sfxConf](
              void* data, af::dim4 dims, af::dtype type) {
     if (type != af::dtype::f32) {
       throw std::invalid_argument("Invalid input type");
@@ -44,6 +45,11 @@ fl::Dataset::DataTransformFunction inputFeatures(
     std::copy_n(static_cast<const float*>(data), input.size(), input.data());
     if (channels > 1) {
       input = transpose2d(input, dims[1], channels);
+    }
+    if (channels == 1 && !sfxConf.empty()) {
+      static thread_local std::shared_ptr<sfx::SoundEffect> sfx =
+          sfx::createSoundEffect(sfxConf);
+      sfx->apply(input);
     }
     std::vector<float> output;
     int featSz = 1;
