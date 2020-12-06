@@ -57,6 +57,9 @@ include(${CMAKE_CURRENT_LIST_DIR}/decoder/CMakeLists.txt)
 # Runtime
 include(${CMAKE_CURRENT_LIST_DIR}/runtime/CMakeLists.txt)
 
+# Augmentation
+include(${CMAKE_CURRENT_LIST_DIR}/augmentation/CMakeLists.txt)
+
 # ----------------------------- Binaries -----------------------------
 add_executable(fl_asr_train ${CMAKE_CURRENT_LIST_DIR}/Train.cpp)
 add_executable(fl_asr_test ${CMAKE_CURRENT_LIST_DIR}/Test.cpp)
