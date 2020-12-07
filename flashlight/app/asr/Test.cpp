@@ -165,7 +165,7 @@ int main(int argc, char** argv) {
       featParams,
       featType,
       {FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx},
-      /*sfxConfig=*/{});
+      /*sfxConf=*/{});
   auto targetTransform = targetFeatures(tokenDict, lexicon, targetGenConfig);
   auto wordTransform = wordFeatures(wordDict);
   int targetpadVal = FLAGS_eostoken
