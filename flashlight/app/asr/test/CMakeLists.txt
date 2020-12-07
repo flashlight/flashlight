@@ -37,3 +37,12 @@ build_test(
   )
 # Runtime
 build_test(${DIR}/runtime/RuntimeTest.cpp ${LIBS} "")
+# Augmentation
+build_test_library(${DIR}/augmentation/SoundTestUtil.cpp "${LIBS}")
+set(SFX_LIBS
+    ${LIBS}
+    SoundTestUtil
+    flashlight-app-asr-sfx
+    )
+build_test(${DIR}/augmentation/SoundEffectTest.cpp "${SFX_LIBS}" "")
+build_test(${DIR}/augmentation/SoundEffectConfigTest.cpp "${SFX_LIBS}" "")
