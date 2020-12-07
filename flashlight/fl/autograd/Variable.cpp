@@ -24,6 +24,7 @@
 #include <unordered_set>
 #include <utility>
 
+#include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/common/Utils.h"
 
 namespace fl {
@@ -48,23 +49,73 @@ Variable::Variable(
 }
 
 Variable Variable::operator()(
-    const af::index& s0,
-    const af::index& s1, /* af::span */
-    const af::index& s2, /* af::span */
-    const af::index& s3 /* af::span */) const {
-  auto result = array()(s0, s1, s2, s3);
+    const af::index& idx1,
+    const af::index& idx2, /* af::span */
+    const af::index& idx3, /* af::span */
+    const af::index& idx4, /* af::span */
+    bool unique /* false */) const {
+  // Get forward pass result using advanced indexing
+  // from arrayfire
+  auto result = array()(idx1, idx2, idx3, idx4);
   auto inDims = dims();
   auto inType = type();
-  auto gradFunc = [s0, s1, s2, s3, inDims, inType](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
-    if (!inputs[0].isGradAvailable()) {
-      auto grad = af::constant(0.0, inDims, inType);
-      inputs[0].addGrad(Variable(grad, false));
+  af::dim4 idxStart;
+  af::dim4 idxEnd;
+  std::vector<af::array> idxArr(4);
+  bool advancedIndex = false;
+
+  // Extract af::index variable information,
+  // it can either be af::span, af::seq or af::array
+  auto idxFunc = [&idxStart, &idxEnd, &idxArr, &advancedIndex, unique, inDims](
+      const af::index& index, int pos) {
+    if (index.isspan()) {
+      idxStart[pos] = 0;
+      idxEnd[pos] = inDims[pos];
+    } else {
+      const auto& idxSeq = index.get();
+      if (idxSeq.isSeq) {
+        // arrayfire uses inclusive last dimension, we use exclusive
+        idxStart[pos] = idxSeq.idx.seq.begin;
+        idxEnd[pos] = idxSeq.idx.seq.end + 1;
+      } else {
+        af_array arr;
+        af_retain_array(&arr, idxSeq.idx.arr);
+        idxArr[pos] = af::array(arr);
+        idxStart[pos] = 0;
+        idxEnd[pos] = idxArr[pos].dims(0);
+        advancedIndex = !unique;
+      }
     }
-    auto& grad = inputs[0].grad().array();
-    grad(s0, s1, s2, s3) += gradOutput.array();
   };
+  idxFunc(idx1, 0);
+  idxFunc(idx2, 1);
+  idxFunc(idx3, 2);
+  idxFunc(idx4, 3);
+
+  auto gradFunc =
+      [idx1,
+       idx2,
+       idx3,
+       idx4,
+       idxStart,
+       idxEnd,
+       idxArr,
+       advancedIndex,
+       inDims,
+       inType](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        if (!inputs[0].isGradAvailable()) {
+          auto grad = af::constant(0.0, inDims, inType);
+          inputs[0].addGrad(Variable(grad, false));
+        }
+
+        if (!advancedIndex) {
+          auto& grad = inputs[0].grad().array();
+          grad(idx1, idx2, idx3, idx4) += gradOutput.array();
+        } else {
+          gradAdvancedIndex(
+              gradOutput, idxStart, idxEnd, inDims, idxArr, inputs[0].grad());
+        }
+      };
   return Variable(result, {this->withoutData()}, gradFunc);
 }
 
@@ -74,8 +125,8 @@ af::array& Variable::array() const {
 
 Variable Variable::as(af::dtype newType) const {
   auto output = array().as(newType);
-  auto gradFunc = [](std::vector<Variable>& inputs,
-                     const Variable& gradOutput) {
+  auto gradFunc = [](
+      std::vector<Variable>& inputs, const Variable& gradOutput) {
     auto& input = inputs[0];
     // Cast the grad output to match the type of the input's grad
     input.addGrad(Variable(gradOutput.array().as(input.type()), false));
@@ -249,8 +300,7 @@ Variable Variable::col(int index) const {
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [index, inDims, inType](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
+      std::vector<Variable>& inputs, const Variable& gradOutput) {
     auto grad = Variable(af::constant(0, inDims, inType), false);
     grad.array().col(index) = gradOutput.array();
     inputs[0].addGrad(grad);
@@ -263,8 +313,7 @@ Variable Variable::cols(int first, int last) const {
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [first, last, inDims, inType](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
+      std::vector<Variable>& inputs, const Variable& gradOutput) {
     auto grad = Variable(af::constant(0, inDims, inType), false);
     grad.array().cols(first, last) = gradOutput.array();
     inputs[0].addGrad(grad);
@@ -277,8 +326,7 @@ Variable Variable::row(int index) const {
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [index, inDims, inType](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
+      std::vector<Variable>& inputs, const Variable& gradOutput) {
     auto grad = Variable(af::constant(0, inDims, inType), false);
     grad.array().row(index) = gradOutput.array();
     inputs[0].addGrad(grad);
@@ -291,8 +339,7 @@ Variable Variable::rows(int first, int last) const {
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [first, last, inDims, inType](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
+      std::vector<Variable>& inputs, const Variable& gradOutput) {
     auto grad = Variable(af::constant(0, inDims, inType), false);
     grad.array().rows(first, last) = gradOutput.array();
     inputs[0].addGrad(grad);
@@ -305,8 +352,7 @@ Variable Variable::slice(int index) const {
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [index, inDims, inType](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
+      std::vector<Variable>& inputs, const Variable& gradOutput) {
     auto grad = Variable(af::constant(0, inDims, inType), false);
     grad.array().slice(index) = gradOutput.array();
     inputs[0].addGrad(grad);
@@ -319,8 +365,7 @@ Variable Variable::slices(int first, int last) const {
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [first, last, inDims, inType](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
+      std::vector<Variable>& inputs, const Variable& gradOutput) {
     auto grad = Variable(af::constant(0, inDims, inType), false);
     grad.array().slices(first, last) = gradOutput.array();
     inputs[0].addGrad(grad);
