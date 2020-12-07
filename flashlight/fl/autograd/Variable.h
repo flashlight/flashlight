@@ -104,13 +104,16 @@ class Variable {
    * @param[in] s1 sequence of indices along second dimension
    * @param[in] s2 sequence of indices along third dimension
    * @param[in] s3 sequence of indices along fourth dimension
+   * @param[in] unique boolean to specify whether all dimensions contain unique
+   * indices
    * @return Variable storing the result after indexing operation
    */
   Variable operator()(
       const af::index& s0,
       const af::index& s1 = af::span,
       const af::index& s2 = af::span,
-      const af::index& s3 = af::span) const;
+      const af::index& s3 = af::span,
+      bool unique = false) const;
 
   /**
    * @return a reference to the underlying Arrayfire array.
