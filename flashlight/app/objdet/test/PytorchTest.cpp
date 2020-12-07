@@ -557,7 +557,8 @@ TEST(Pytorch, detr) {
     i++;
   }
   model->eval();
-  std::string modelPath = "/checkpoint/padentomasello/models/detr/from_pytorch";
+  //std::string modelPath = "/checkpoint/padentomasello/models/detr/from_pytorch";
+  std::string modelPath = "/checkpoint/padentomasello/models/detr/pytorch_initializaition";
   fl::save(modelPath, model);
   fl::load(modelPath, model);
 

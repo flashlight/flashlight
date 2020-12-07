@@ -187,7 +187,11 @@ int main(int argc, char** argv) {
       numQueries,
       auxLoss);
 
-  //fl::load("/checkpoint/padentomasello/models/detr/from_pytorch", detr);
+  // Trained
+  //std::string modelPath = "/checkpoint/padentomasello/models/detr/from_pytorch";
+  // untrained but initializaed
+  std::string modelPath = "/checkpoint/padentomasello/models/detr/pytorch_initializaition";
+  fl::load(modelPath, detr);
 
   // synchronize parameters of tje model so that the parameters in each process
   // is the same
