@@ -187,7 +187,7 @@ int main(int argc, char** argv) {
       numQueries,
       auxLoss);
 
-  fl::load("/checkpoint/padentomasello/models/detr/from_pytorch", detr);
+  //fl::load("/checkpoint/padentomasello/models/detr/from_pytorch", detr);
 
   // synchronize parameters of tje model so that the parameters in each process
   // is the same
