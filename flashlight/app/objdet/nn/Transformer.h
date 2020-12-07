@@ -69,6 +69,7 @@ std::shared_ptr<Linear> makeTransformerLinear(int inDim, int outDim) {
 // TODO paden fixed bias + fixed scoring
 class MultiheadAttention : public Container {
   public:
+    MultiheadAttention() = default;
     MultiheadAttention(
         int32_t modelDim,
         int32_t headDim,
@@ -145,10 +146,14 @@ class MultiheadAttention : public Container {
   std::shared_ptr<Linear> wf_;
   float pDropout_;
   int32_t numHeads_;
+
+private:
+   FL_SAVE_LOAD_WITH_BASE(fl::Container, pDropout_, numHeads_, wq_, wk_, wv_, wf_)
 };
 
 class TransformerBaseLayer : public Container {
  public:
+  TransformerBaseLayer() = default;
   TransformerBaseLayer(
       int32_t modelDim,
       int32_t headDim,
@@ -196,13 +201,16 @@ class TransformerBaseLayer : public Container {
   std::shared_ptr<MultiheadAttention> self_attn_;
   std::shared_ptr<Linear> w1_, w2_;
   std::shared_ptr<LayerNorm> norm1_, norm2_;
-  TransformerBaseLayer();
   float pDropout_;
+
+private:
+   FL_SAVE_LOAD_WITH_BASE(fl::Container, pDropout_, self_attn_, w1_, w2_, norm1_, norm2_)
 
 };
 
 class TransformerEncoderLayer : public TransformerBaseLayer {
  public:
+  TransformerEncoderLayer() = default;
   TransformerEncoderLayer(
       int32_t modelDim,
       int32_t headDim,
@@ -231,11 +239,14 @@ class TransformerEncoderLayer : public TransformerBaseLayer {
   std::string prettyString() const override {
     return "TransformerEncoderLayer";
   }
+private:
+   FL_SAVE_LOAD_WITH_BASE(TransformerBaseLayer)
 
 };
 
 class TransformerDecoderLayer  : public Container {
  public:
+  TransformerDecoderLayer() = default;
   TransformerDecoderLayer(
       int32_t modelDim,
       int32_t headDim,
@@ -289,6 +300,7 @@ class TransformerDecoderLayer  : public Container {
       auto queryPos = (input.size() > 3) ? input[3] : Variable();
       auto memoryKeyPaddingMask = (input.size() > 4) ? input[4] : Variable();
 
+      //auto q = withPosEmbed(tgt, queryPos);
       auto tgt2 = this->selfAttention(tgt, queryPos);
       tgt = tgt + dropout(tgt2, pDropout_);
       tgt = (*norm1_)(tgt);
@@ -317,10 +329,12 @@ private:
   std::shared_ptr<Linear> w1_, w2_;
   std::shared_ptr<LayerNorm> norm1_, norm2_, norm3_;
   float pDropout_;
+   FL_SAVE_LOAD_WITH_BASE(fl::Container, pDropout_, self_attn_, encoder_attn_, w1_, w2_, norm1_, norm2_, norm3_)
 };
 
 class TransformerDecoder : public Container {
   public:
+    TransformerDecoder() = default;
     TransformerDecoder(
       int32_t modelDim,
       int32_t headDim,
@@ -351,20 +365,20 @@ class TransformerDecoder : public Container {
       std::vector<Variable> intermediate;
       for(int i = 0; i < mods.size() - 1; i++) {
         output = mods[i]->forward({output, memory, pos, query_pos, mask})[0];
-        intermediate.push_back(output);
+        intermediate.push_back(mods.back()->forward({output})[0]);
       }
-      output = mods.back()->forward({intermediate.back()})[0];
-      intermediate.pop_back();
-      intermediate.push_back(output);
-      return { concatenate(intermediate, 3) };
+      return { intermediate.back() };
+      //return { concatenate(intermediate, 3) };
     }
   std::string prettyString() const override {
     return "TransformerDecoder";
   }
+   FL_SAVE_LOAD_WITH_BASE(fl::Container)
 };
 
 class TransformerEncoder : public Container {
   public:
+    TransformerEncoder() = default;
     TransformerEncoder(
       int32_t modelDim,
       int32_t headDim,
@@ -395,12 +409,14 @@ class TransformerEncoder : public Container {
       return "TransformerDecoder";
     }
 private:
+   FL_SAVE_LOAD_WITH_BASE(fl::Container)
     //std::shared_ptr<LayerNorm> norm_;
 };
 
 class Transformer : public Container {
 public:
 
+  Transformer() = default;
   Transformer(
       int32_t modelDim,
       int32_t numHeads,
@@ -480,9 +496,17 @@ std::vector<Variable> forward(const std::vector<Variable>& input) override {
 private:
   std::shared_ptr<TransformerEncoder> encoder_;
   std::shared_ptr<TransformerDecoder> decoder_;
+   FL_SAVE_LOAD_WITH_BASE(fl::Container, encoder_, decoder_)
+
 };
 
 
 } // namespace objdet
 } // namespace app
 } // namespace fl
+CEREAL_REGISTER_TYPE(fl::app::objdet::Transformer)
+CEREAL_REGISTER_TYPE(fl::app::objdet::MultiheadAttention)
+CEREAL_REGISTER_TYPE(fl::app::objdet::TransformerEncoder)
+CEREAL_REGISTER_TYPE(fl::app::objdet::TransformerEncoderLayer)
+CEREAL_REGISTER_TYPE(fl::app::objdet::TransformerDecoder)
+CEREAL_REGISTER_TYPE(fl::app::objdet::TransformerDecoderLayer)

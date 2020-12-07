@@ -9,6 +9,8 @@ std::string PositionalEmbeddingSine::prettyString() const {
   return "PositionalEmbeddingSine";
 }
 
+PositionalEmbeddingSine::PositionalEmbeddingSine() {};
+
 PositionalEmbeddingSine::PositionalEmbeddingSine(
     const int numPosFeats,
     const int temperature,
@@ -20,7 +22,10 @@ PositionalEmbeddingSine::PositionalEmbeddingSine(
   scale_(scale) {
 };
 
-Variable PositionalEmbeddingSine::forward(const Variable& input) {
+std::vector<Variable>  PositionalEmbeddingSine::forward(const std::vector<Variable>& inputs) {
+  assert(inputs.size() == 1);
+  auto input = inputs[0];
+
   auto inputDims = input.dims();
   // Input mask will be [ w x h x 1 x b ]
   // but implemention expects [ w x h x b ] in order to do interleaves easier
@@ -47,6 +52,15 @@ Variable PositionalEmbeddingSine::forward(const Variable& input) {
 
   af::array xEmbed = af::scan(nonMask, 0);
   af::array yEmbed = af::scan(nonMask, 1);
+  if (normalize_) {
+    const float eps = 1e-6;
+    yEmbed = af::batchFunc(yEmbed, yEmbed(af::span, yEmbed.dims(1) - 1, af::span) + eps, af::operator/) * scale_;
+    xEmbed = af::batchFunc(xEmbed, xEmbed(xEmbed.dims(0) - 1, af::span, af::span) + eps, af::operator/) * scale_;
+  }
+
+  //af_print(nonMask);
+  //af_print(xEmbed);
+  //af_print(yEmbed);
 
   auto dim = af::range(af::dim4(numPosFeats_), 0, f32);
   dim = af::pow(temperature_, ((2 * af::floor(dim / 2)) / numPosFeats_));
@@ -64,7 +78,12 @@ Variable PositionalEmbeddingSine::forward(const Variable& input) {
   posY = interleave(posYSin, posYCos);
   auto result = af::join(0, posY, posX);
   result = af::reorder(result, 1, 2, 0, 3);
-  return fl::Variable(result, false);
+  return { fl::Variable(result, false) };
+}
+
+std::vector<Variable> PositionalEmbeddingSine::operator()(
+    const std::vector<Variable>& input) {
+  return forward(input);
 }
 
 } // end namespace objdet

@@ -65,18 +65,18 @@ public:
     ////// conv5_x -> 14x14x256 -> 7x7x256
     backbone_->add(ResNetBottleneckStage(256 * 4, 512, 3, 2));
 
-    tail_->add(Pool2D(7, 7, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
-    tail_->add(ConvBnAct(512 * 4, 1000, 1, 1, 1, 1, false, false));
-    tail_->add(View({1000, -1}));
-    tail_->add(LogSoftmax());
+    //tail_->add(Pool2D(7, 7, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
+    //tail_->add(ConvBnAct(512 * 4, 1000, 1, 1, 1, 1, false, false));
+    //tail_->add(View({1000, -1}));
+    //tail_->add(LogSoftmax());
     add(backbone_);
-    add(tail_);
+    //add(tail_);
   }
 
   std::vector<Variable> forward(const std::vector<Variable>& input) {
     auto features = module(0)->forward(input);
-    auto output = module(1)->forward(features);
-    return { output[0], features[0] };
+    //auto output = module(1)->forward(features);
+    return { features[0], features[0] };
   }
 
   std::string prettyString() const {

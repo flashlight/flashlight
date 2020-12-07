@@ -8,6 +8,7 @@
 #include "flashlight/fl/autograd/Variable.h"
 #include "flashlight/app/objdet/criterion/Hungarian.h"
 #include "flashlight/app/objdet/criterion/SetCriterion.h"
+#include "flashlight/app/objdet/nn/Detr.h"
 
 #include <gtest/gtest.h>
 
@@ -406,6 +407,170 @@ TEST(Pytorch, transformer_multilayer_encoder) {
   //auto output = model.forward(inputs)[0];
   //ASSERT_TRUE(allClose(output.array(), expOutput));
 //}
+//
+TEST(Pytorch, transformer) {
+
+
+  std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/transformer.array";
+  af::array src = af::readArray(filename.c_str(), "src");
+  af::array queries = af::readArray(filename.c_str(), "queries");
+  af::array mask = af::readArray(filename.c_str(), "mask");
+  mask = af::moddims(mask, { mask.dims(0), mask.dims(1), 1, mask.dims(2)});
+  mask = 1 - mask;
+  af::array pos = af::readArray(filename.c_str(), "pos");
+  af::array expOutput = af::readArray(filename.c_str(), "output");
+
+  const int embeddingDim = 8;
+  const int numHead = 8;
+
+  const int numLayers = 6;
+
+  auto model = Transformer(embeddingDim, numHead, numLayers, numLayers, 2048, 0.0f);
+  std::vector<fl::Variable> inputs = { 
+    fl::Variable(src, false), 
+    fl::Variable(mask, false), // mask
+    fl::Variable(queries, false),  // pos
+    fl::Variable(pos, false)  // pos
+  };
+
+  int paramSize = model.params().size();
+  for(int i = 0; i < paramSize; i++) {
+    auto array = af::readArray(filename.c_str(), i + 4);
+    std::cout << " i " << i << std::endl;
+    std::cout << " Array " << array.dims() << std::endl;
+    std::cout << " Model " << model.param(i).dims() << std::endl;
+    ASSERT_TRUE(model.param(i).dims() == array.dims());
+    model.setParams(param(array), i);
+  }
+
+  auto output = model.forward(inputs)[0];
+  af_print(output.array());
+  ASSERT_TRUE(allClose(output.array(), expOutput));
+}
+
+
+TEST(Pytorch, detr_backbone) {
+
+
+  std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/detr.array";
+  af::array image = af::readArray(filename.c_str(), "image");
+  //af::array queries = af::readArray(filename.c_str(), "queries");
+  af::array mask = af::readArray(filename.c_str(), "mask");
+  mask = af::moddims(mask, { mask.dims(0), mask.dims(1), 1, mask.dims(2)});
+  mask = 1 - mask;
+  //af::array pos = af::readArray(filename.c_str(), "pos");
+  af::array expOutput = af::readArray(filename.c_str(), "output");
+
+  const int embeddingDim = 256;
+  const int numHead = 8;
+
+  const int numLayers = 6;
+
+  //auto transformer = std::make_shared<Transformer>(embeddingDim, numHead, numLayers, numLayers, 2048, 0.0f);
+  auto model = std::make_shared<fl::ext::image::Resnet50Backbone>();
+  //auto model = fl::ext::image::Resnet50Backbone();
+
+  //auto model = Detr(transformer, backbone, 256, 91, 100, true);
+  std::vector<fl::Variable> inputs = { 
+    fl::Variable(image, false), 
+    //fl::Variable(mask, false), // mask
+  };
+
+  int paramSize = model->params().size();
+  for(int i = 0; i < paramSize; i++) {
+    auto array = af::readArray(filename.c_str(), i + 2);
+    if(i == 264) {
+      array = af::moddims(array, { 1, 1, 256, 1});
+    }
+    ASSERT_TRUE(model->param(i).dims() == array.dims());
+    model->setParams(param(array), i);
+  }
+
+  std::vector<std::shared_ptr<fl::Module>> bns;
+  getBns(model, bns);
+
+  int i = 0;
+  for(auto bn : bns) {
+    auto bn_ptr = dynamic_cast<fl::BatchNorm*>(bn.get());
+    bn_ptr->setRunningMean(af::readArray((filename + "running").c_str(), i));
+    i++;
+    bn_ptr->setRunningVar(af::readArray((filename + "running").c_str(), i));
+    i++;
+  }
+  model->eval();
+
+  auto output = model->forward(inputs)[0];
+  af_print(output.array());
+  ASSERT_TRUE(allClose(output.array(), expOutput));
+}
+#endif
+
+
+TEST(Pytorch, detr) {
+
+
+  std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/detr.array";
+  af::array image = af::readArray(filename.c_str(), "image");
+  //af::array queries = af::readArray(filename.c_str(), "queries");
+  af::array mask = af::readArray(filename.c_str(), "mask");
+  mask = af::moddims(mask, { mask.dims(0), mask.dims(1), 1, mask.dims(2)});
+  mask = 1 - mask;
+  //af::array pos = af::readArray(filename.c_str(), "pos");
+  //af::array expOutput = af::readArray(filename.c_str(), "output");
+
+  const int embeddingDim = 256;
+  const int numHead = 8;
+
+  const int numLayers = 6;
+
+  auto transformer = std::make_shared<Transformer>(embeddingDim, numHead, numLayers, numLayers, 2048, 0.0f);
+  auto backbone = std::make_shared<fl::ext::image::Resnet50Backbone>();
+
+  auto model = std::make_shared<Detr>(transformer, backbone, 256, 91, 100, true);
+  std::vector<fl::Variable> inputs = { 
+    fl::Variable(image, false), 
+    fl::Variable(mask, false), // mask
+  };
+
+  int paramSize = model->params().size();
+  for(int i = 0; i < paramSize; i++) {
+    auto array = af::readArray(filename.c_str(), i + 2);
+    if(i == 264) {
+      array = af::moddims(array, { 1, 1, 256, 1});
+    }
+    std::cout << " i " << i << std::endl;
+    std::cout << " Array " << array.dims() << std::endl;
+    std::cout << " Model " << model->param(i).dims() << std::endl;
+    ASSERT_TRUE(model->param(i).dims() == array.dims());
+    model->setParams(param(array), i);
+  }
+
+  std::vector<std::shared_ptr<fl::Module>> bns;
+  getBns(backbone, bns);
+
+  int i = 0;
+  for(auto bn : bns) {
+    auto bn_ptr = dynamic_cast<fl::BatchNorm*>(bn.get());
+    bn_ptr->setRunningMean(af::readArray((filename + "running").c_str(), i));
+    i++;
+    bn_ptr->setRunningVar(af::readArray((filename + "running").c_str(), i));
+    i++;
+  }
+  model->eval();
+  std::string modelPath = "/checkpoint/padentomasello/models/detr/from_pytorch";
+  fl::save(modelPath, model);
+  fl::load(modelPath, model);
+
+  auto outputs = model->forward(inputs);
+  auto predLogits = outputs[0];
+  auto predBoxes = outputs[1];
+  af_print(predLogits.array());
+  af_print(predBoxes.array());
+  //ASSERT_TRUE(allClose(output.array(), expOutput));
+}
+
+#if 0
+
 
 
 TEST(Pytorch, resnet50) {
@@ -488,7 +653,6 @@ TEST(Pytorch, bottleneck) {
   ASSERT_TRUE(allClose(output.array(), expOutput));
 }
 
-#endif
 
 
 TEST(Pytorch, resnet50_backbone) {
@@ -500,7 +664,7 @@ TEST(Pytorch, resnet50_backbone) {
   af::array x = af::readArray(filename.c_str(), "input");
   af::array expOutput = af::readArray(filename.c_str(), "output");
 
-  auto resnet50 = std::make_shared<fl::ext::image::Resnet50Backbone>();
+  auto model = std::make_shared<fl::app::objdet::Detr>();
 
   int paramSize = resnet50->params().size();
   // Hack! Don't read the last two!
@@ -540,5 +704,4 @@ TEST(Pytorch, resnet50_backbone) {
   ASSERT_TRUE(allClose(output.array(), expOutput));
 }
 
-#if 0
 #endif
