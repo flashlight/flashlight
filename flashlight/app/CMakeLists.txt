@@ -11,7 +11,7 @@ if (FL_BUILD_APP_ASR)
   endif()
   set(FL_APP_ASR_ROOT_DIR ${FL_APPS_DIR}/asr)
   include(${FL_APP_ASR_ROOT_DIR}/CMakeLists.txt)
-  set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} flashlight-app-asr)
+  set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} flashlight-app-asr flashlight-app-asr-sfx)
   setup_install_headers(${FL_APP_ASR_ROOT_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC}/app)
 endif ()
 
