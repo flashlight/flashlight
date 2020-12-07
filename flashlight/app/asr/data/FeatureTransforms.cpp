@@ -46,8 +46,12 @@ fl::Dataset::DataTransformFunction inputFeatures(
     if (channels > 1) {
       input = transpose2d(input, dims[1], channels);
     }
-    if (channels == 1 && !sfxConf.empty()) {
-      static thread_local std::shared_ptr<sfx::SoundEffect> sfx =
+    if (!sfxConf.empty()) {
+      if (channels > 1) {
+        throw std::invalid_argument(
+            "'inputFeatures': Invalid input dims. sound effect supports a single channel audio");
+      }
+      thread_local std::shared_ptr<sfx::SoundEffect> sfx =
           sfx::createSoundEffect(sfxConf);
       sfx->apply(input);
     }
