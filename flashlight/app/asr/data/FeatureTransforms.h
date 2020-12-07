@@ -8,6 +8,7 @@
 
 #include <utility>
 
+#include "flashlight/app/asr/augmentation/SoundEffectConfig.h"
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/audio/feature/FeatureParams.h"
@@ -32,7 +33,7 @@ struct TargetGenerationConfig {
       bool fallbackToLetterWordSepLeft,
       bool fallbackToLetterWordSepRight)
       : wordSeparator_(wordSeparator),
-	targetSamplePct_(targetSamplePct),
+        targetSamplePct_(targetSamplePct),
         criterion_(criterion),
         surround_(surround),
         eosToken_(eosToken),
@@ -55,18 +56,19 @@ struct TargetGenerationConfig {
   const int replabel_;
   // skip unknown tokens
   const bool skipUnk_;
-  // use letters of word as tokens if a word is not present in lexicon 
+  // use letters of word as tokens if a word is not present in lexicon
   // + add wordseparator at the beginning
   const bool fallbackToLetterWordSepLeft_;
-  // use letters of word as tokens if a word is not present in lexicon 
+  // use letters of word as tokens if a word is not present in lexicon
   // + add wordseparator at the end
-  const bool fallbackToLetterWordSepRight_;      
+  const bool fallbackToLetterWordSepRight_;
 };
 
 fl::Dataset::DataTransformFunction inputFeatures(
     const lib::audio::FeatureParams& params,
     const FeatureType& featureType,
-    const std::pair<int, int>& localNormCtx);
+    const std::pair<int, int>& localNormCtx,
+    const std::vector<sfx::SoundEffectConfig>& sfxConf);
 
 fl::Dataset::DataTransformFunction targetFeatures(
     const lib::text::Dictionary& tokenDict,

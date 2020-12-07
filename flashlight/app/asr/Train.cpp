@@ -16,6 +16,7 @@
 #include <cereal/types/unordered_map.hpp>
 #include <gflags/gflags.h>
 
+#include "flashlight/app/asr/augmentation/SoundEffectConfig.h"
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/data/FeatureTransforms.h"
@@ -277,8 +278,15 @@ int main(int argc, char** argv) {
       FLAGS_usewordpiece /* fallback2LetterWordSepLeft */,
       !FLAGS_usewordpiece /* fallback2LetterWordSepLeft */);
 
+  const auto sfxConf = (FLAGS_sfx_config.empty())
+      ? std::vector<sfx::SoundEffectConfig>()
+      : sfx::readSoundEffectConfigFile(FLAGS_sfx_config);
+
   auto inputTransform = inputFeatures(
-      featParams, featType, {FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx});
+      featParams,
+      featType,
+      {FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx},
+      sfxConf);
   auto targetTransform = targetFeatures(tokenDict, lexicon, targetGenConfig);
   auto wordTransform = wordFeatures(wordDict);
   int targetpadVal = FLAGS_eostoken
