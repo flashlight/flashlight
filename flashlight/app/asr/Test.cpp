@@ -162,7 +162,10 @@ int main(int argc, char** argv) {
       !FLAGS_usewordpiece /* fallback2LetterWordSepLeft */);
 
   auto inputTransform = inputFeatures(
-      featParams, featType, {FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx});
+      featParams,
+      featType,
+      {FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx},
+      /*sfxConfig=*/{});
   auto targetTransform = targetFeatures(tokenDict, lexicon, targetGenConfig);
   auto wordTransform = wordFeatures(wordDict);
   int targetpadVal = FLAGS_eostoken

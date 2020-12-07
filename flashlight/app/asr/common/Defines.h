@@ -202,6 +202,10 @@ DECLARE_int64(saug_tmaskt);
 DECLARE_double(saug_tmaskp);
 DECLARE_int64(saug_tmaskn);
 
+/* ========== SOUND EFFECT AUGMENTATION OPTIONS ========== */
+
+DECLARE_string(sfx_config);
+
 /* ========== RUN OPTIONS ========== */
 
 DECLARE_string(datadir);

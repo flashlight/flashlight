@@ -146,6 +146,13 @@ DEFINE_double(
     "Max proportion of the input sequence (1.0 is 100%) that can be masked in time");
 DEFINE_int64(saug_tmaskn, 2, "Number of time masks");
 
+// SOUND EFFECTS AUGMENTATION OPTIONS
+DEFINE_string(
+    sfx_config,
+    "",
+    "[train] Path to a sound effect json config file. When set the sound effect is "
+    "applied to augment the input data.");
+
 // RUN OPTIONS
 DEFINE_string(datadir, "", "speech data directory");
 DEFINE_string(tokensdir, "", "dictionary directory");
