@@ -254,19 +254,13 @@ int main(int argc, char** argv) {
     model->eval();
     int idx = 0;
     for(auto& sample : *dataset) {
-      std::vector<Variable> images =  { fl::Variable(sample.images, false) };
+      std::vector<Variable> input =  { 
+        fl::Variable(sample.images, false),  
+        fl::Variable(sample.masks, false) 
+      };
       //auto features = backbone->forward(images)[0];
-      auto features = backbone->forward(images)[1];
-      auto masks = fl::Variable(
-          af::resize(
-            sample.masks, 
-            features.dims(0), 
-            features.dims(1), 
-            AF_INTERP_NEAREST),
-        false
-      );
       //auto features = input;
-      auto output = model->forward({images[0], masks});
+      auto output = model->forward(input);
       std::stringstream ss;
       ss << FLAGS_eval_dir << "detection" << idx << ".array";
       auto output_array = ss.str();
@@ -351,19 +345,13 @@ int main(int argc, char** argv) {
     //while(true) {
     for(auto& sample : *train_ds) {
       //auto images =  { fl::Variable(sample.images, true) };
-      std::vector<Variable> images =  { fl::Variable(sample.images, false) };
+      std::vector<Variable> input =  { 
+        fl::Variable(sample.images, false),
+        fl::Variable(sample.masks, false) 
+      };
       //auto features = backbone->forward(images)[0];
-      auto features = backbone->forward(images)[1];
-      auto masks = fl::Variable(
-          af::resize(
-            sample.masks, 
-            features.dims(0), 
-            features.dims(1), 
-            AF_INTERP_NEAREST),
-        false
-      );
       ////auto features = input;
-      auto output = detr->forward({images[0], masks});
+      auto output = detr->forward(input);
 
 
       ////saveOutput(sample.imageSizes, sample.imageIds, sample.target_boxes[0], sample.target_labels[0], 
