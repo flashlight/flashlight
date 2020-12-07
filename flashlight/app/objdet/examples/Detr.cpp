@@ -350,7 +350,7 @@ int main(int argc, char** argv) {
     train_ds->resample();
     //while(true) {
     for(auto& sample : *train_ds) {
-      auto images =  { fl::Variable(sample.images, true) };
+      //auto images =  { fl::Variable(sample.images, true) };
       std::vector<Variable> images =  { fl::Variable(sample.images, false) };
       //auto features = backbone->forward(images)[0];
       auto features = backbone->forward(images)[1];
@@ -363,7 +363,7 @@ int main(int argc, char** argv) {
         false
       );
       ////auto features = input;
-      //auto output = model->forward({images[0], masks});
+      auto output = detr->forward({images[0], masks});
 
 
       ////saveOutput(sample.imageSizes, sample.imageIds, sample.target_boxes[0], sample.target_labels[0], 
