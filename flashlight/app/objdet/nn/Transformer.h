@@ -367,8 +367,8 @@ class TransformerDecoder : public Container {
         output = mods[i]->forward({output, memory, pos, query_pos, mask})[0];
         intermediate.push_back(mods.back()->forward({output})[0]);
       }
-      return { intermediate.back() };
-      //return { concatenate(intermediate, 3) };
+      //return { intermediate.back() };
+      return { concatenate(intermediate, 3) };
     }
   std::string prettyString() const override {
     return "TransformerDecoder";
