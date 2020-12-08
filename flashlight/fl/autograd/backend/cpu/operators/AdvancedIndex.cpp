@@ -6,10 +6,13 @@
  */
 
 #include <af/array.h>
-#include <cstdio>
-#include "flashlight/fl/autograd/Variable.h"
+
+#include <stdexcept>
+#include <vector>
 
 namespace fl {
+
+class Variable;
 
 void gradAdvancedIndex(
     const Variable& inp,

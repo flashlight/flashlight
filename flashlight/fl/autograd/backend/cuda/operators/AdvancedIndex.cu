@@ -6,7 +6,9 @@
  */
 
 #include <af/array.h>
-#include <cstdio>
+
+#include <stdexcept>
+
 #include "flashlight/fl/autograd/Variable.h"
 #include "flashlight/fl/common/CudaUtils.h"
 #include "flashlight/fl/common/DevicePtr.h"
