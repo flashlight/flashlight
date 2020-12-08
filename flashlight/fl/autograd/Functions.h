@@ -941,8 +941,7 @@ Variable relativePositionalEmbeddingRotate(const Variable& input);
  * @param posEmb if non empty then compute relative
  * positional embedding in additon to standard computations
  * @param mask mask or not future in the computations
- * if non-empty then don't use future (for exmaple for autoregressive language
- * models
+ * if non-empty then don't use future (for example for autoregressive language models
  * or for decoder part in the encoder-decoder transformer models)
  * @param nHeads number of heads
  * @param pDropout dropout probability
