@@ -11,14 +11,17 @@ else()
   set(GTEST_LIBRARIES ${GTEST_BOTH_LIBRARIES})
 endif()
 
-function(build_test_common target LINK_LIBRARIES)
+function(build_test SRCFILE LINK_LIBRARY PREPROC_DEFS)
+  get_filename_component(src_name ${SRCFILE} NAME_WE)
+  set(target "${src_name}")
+  add_executable(${target} ${SRCFILE})
   if (TARGET gtest)
     add_dependencies(${target} gtest) # make sure gtest is built first
   endif()
   target_link_libraries(
     ${target}
     PUBLIC
-    ${LINK_LIBRARIES}
+    ${LINK_LIBRARY}
     ${GTEST_LIBRARIES}
     )
   target_include_directories(
@@ -27,13 +30,6 @@ function(build_test_common target LINK_LIBRARIES)
     ${PROJECT_SOURCE_DIR}
     ${GTEST_INCLUDE_DIRS}
     )
-endfunction(build_test_common)
-
-function(build_test SRCFILE LINK_LIBRARIES PREPROC_DEFS)
-  get_filename_component(src_name ${SRCFILE} NAME_WE)
-  set(target "${src_name}")
-  add_executable(${target} ${SRCFILE})
-  build_test_common(${target} "${LINK_LIBRARIES}")
   target_compile_definitions(
     ${target}
     PUBLIC
@@ -41,10 +37,3 @@ function(build_test SRCFILE LINK_LIBRARIES PREPROC_DEFS)
     )
   add_test(${target} ${target})
 endfunction(build_test)
-
-function(build_test_library SRCFILE LINK_LIBRARIES)
-  get_filename_component(src_name ${SRCFILE} NAME_WE)
-  set(target "${src_name}")
-  add_library(${target} ${SRCFILE})
-  build_test_common(${target} "${LINK_LIBRARIES}")
-endfunction(build_test_library)
