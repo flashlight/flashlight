@@ -9,7 +9,6 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/app/asr/augmentation/SoundEffect.h"
-#include "flashlight/app/asr/test/augmentation/SoundTestUtil.h"
 
 using namespace ::fl::app::asr::sfx;
 using ::testing::AllOf;
@@ -22,6 +21,23 @@ using ::testing::Le;
 const int numSamples = 10000;
 const size_t freq = 1000;
 const size_t sampleRate = 16000;
+
+namespace {
+
+std::vector<float>
+genSinWave(size_t numSamples, size_t freq, size_t sampleRate, float amplitude) {
+  std::vector<float> output(numSamples, 0);
+  const float waveLenSamples =
+      static_cast<float>(sampleRate) / static_cast<float>(freq);
+  const float ratio = (2 * M_PI) / waveLenSamples;
+
+  for (size_t i = 0; i < numSamples; ++i) {
+    output.at(i) = amplitude * std::sin(static_cast<float>(i) * ratio);
+  }
+  return output;
+}
+
+} // namespace
 
 /**
  * Test that after clamping the amplitude the resulting amplitude is in [-1..1]
