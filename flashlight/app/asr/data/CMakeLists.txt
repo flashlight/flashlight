@@ -29,8 +29,6 @@ target_sources(
 
 target_link_libraries(
   flashlight-app-asr
-  PUBLIC
-  flashlight-app-asr-sfx
   PRIVATE
   SndFile::sndfile
   )
