@@ -9,6 +9,15 @@ namespace fl {
 namespace app {
 namespace objdet {
 
+Variable  weightedCategoricalCrossEntropy(
+      const Variable& input,
+      const Variable& targets,
+      const Variable& weight,
+      ReduceMode reduction,
+      int ignoreIndex
+    );
+
+
 class SetCriterion {
 
 public:

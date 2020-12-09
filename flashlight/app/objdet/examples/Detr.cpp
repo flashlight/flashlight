@@ -18,7 +18,8 @@
 
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/image/af/Transforms.h"
-#include "flashlight/ext/image/fl/models/Resnet50Backbone.h"
+//#include "flashlight/ext/image/fl/models/Resnet50Backbone.h"
+#include "flashlight/ext/image/fl/models/Resnet34Backbone.h"
 #include "flashlight/ext/image/fl/models/Resnet.h"
 #include "flashlight/fl/meter/meters.h"
 #include "flashlight/fl/optim/optim.h"
@@ -115,8 +116,8 @@ int main(int argc, char** argv) {
   const int worldRank = fl::getWorldRank();
   const int worldSize = fl::getWorldSize();
 
-  af::setDevice(worldRank);
-  af::setSeed(worldSize);
+  //af::setDevice(worldRank);
+  //af::setSeed(worldSize);
   std::cout << "World rank: " << worldRank << std::endl;
 
   auto reducer = std::make_shared<fl::CoalescingReducer>(
@@ -159,14 +160,13 @@ int main(int argc, char** argv) {
   const int32_t numQueries = 100;
   const float pDropout = 0.1;
   const bool auxLoss = false;
-  std::shared_ptr<Resnet50Backbone> backbone;
-  //backbone = std::make_shared<Sequential>(resnet34());
-  if(FLAGS_pretrained) {
-    std::string modelPath = "/checkpoint/padentomasello/models/resnet50/from_pytorch";
-    fl::load(modelPath, backbone);
-  } else {
-    backbone = std::make_shared<Resnet50Backbone>();
-  }
+  std::shared_ptr<Module> backbone;
+   if(FLAGS_pretrained) {
+		 std::string modelPath = "/checkpoint/padentomasello/models/resnet34/d0529c4f1b68e144a096a66f5a306bb38a51c30b/65";
+     fl::load(modelPath, backbone);
+   } else {
+			backbone = std::make_shared<Resnet34Backbone>();
+   }
   backbone->train();
 
   //
@@ -190,8 +190,11 @@ int main(int argc, char** argv) {
   // Trained
   //std::string modelPath = "/checkpoint/padentomasello/models/detr/from_pytorch";
   // untrained but initializaed
-  std::string modelPath = "/checkpoint/padentomasello/models/detr/pytorch_initializaition";
-  fl::load(modelPath, detr);
+  //std::string modelPath = "/checkpoint/padentomasello/models/detr/pytorch_initializaition";
+  //fl::load(modelPath, detr);
+
+  detr->train();
+  freezeBatchNorm(backbone);
 
   // synchronize parameters of tje model so that the parameters in each process
   // is the same
@@ -285,8 +288,9 @@ int main(int argc, char** argv) {
     std::stringstream ss2;
     ss2 << "rm -rf " << FLAGS_eval_dir << "/detection*";
     system(ss2.str().c_str());
-    backbone->train();
     model->train();
+    backbone->train();
+    freezeBatchNorm(backbone);
   };
 
   //const int64_t batch_size_per_gpu = FLAGS_batch_size / FLAGS_world_size;

@@ -10,13 +10,14 @@ namespace ext {
 namespace image {
 
 // TODO HACK!!!!!!
-void freezeBatchNorm(std::shared_ptr<fl::Module> ptr) {
-  //std::cout << "Freezing " << ptr->prettyString() << std::endl;
-  if(dynamic_cast<fl::BatchNorm*>(ptr.get())) {
-    ptr->zeroGrad();
-  } else if(dynamic_cast<fl::Container*>(ptr.get())) {
-      for(auto mod : dynamic_cast<fl::Container*>(ptr.get())->modules()) {
-        freezeBatchNorm(mod);
+void freezebatchnorm(std::shared_ptr<fl::module> ptr) {
+  //std::cout << "freezing " << ptr->prettystring() << std::endl;
+  if(dynamic_cast<fl::batchnorm*>(ptr.get())) {
+    ptr->eval();
+    //ptr->zerograd();
+  } else if(dynamic_cast<fl::container*>(ptr.get())) {
+      for(auto mod : dynamic_cast<fl::container*>(ptr.get())->modules()) {
+        freezebatchnorm(mod);
       }
   }
 }
