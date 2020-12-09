@@ -19,7 +19,7 @@
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/image/af/Transforms.h"
 //#include "flashlight/ext/image/fl/models/Resnet50Backbone.h"
-#include "flashlight/ext/image/fl/models/Resnet34Backbone.h"
+#include "flashlight/ext/image/fl/models/Resnet50Backbone.h"
 #include "flashlight/ext/image/fl/models/Resnet.h"
 #include "flashlight/fl/meter/meters.h"
 #include "flashlight/fl/optim/optim.h"
@@ -160,13 +160,13 @@ int main(int argc, char** argv) {
   const int32_t numQueries = 100;
   const float pDropout = 0.1;
   const bool auxLoss = false;
-  std::shared_ptr<Module> backbone;
-   if(FLAGS_pretrained) {
-		 std::string modelPath = "/checkpoint/padentomasello/models/resnet34/d0529c4f1b68e144a096a66f5a306bb38a51c30b/65";
-     fl::load(modelPath, backbone);
-   } else {
-			backbone = std::make_shared<Resnet34Backbone>();
-   }
+  std::shared_ptr<Resnet50Backbone> backbone;
+  if(FLAGS_pretrained) {
+    std::string modelPath = "/checkpoint/padentomasello/models/resnet50/from_pytorch_fbn";
+    fl::load(modelPath, backbone);
+  } else {
+    backbone = std::make_shared<Resnet50Backbone>();
+  }
   backbone->train();
 
   //
@@ -194,7 +194,7 @@ int main(int argc, char** argv) {
   //fl::load(modelPath, detr);
 
   detr->train();
-  freezeBatchNorm(backbone);
+  //freezeBatchNorm(backbone);
 
   // synchronize parameters of tje model so that the parameters in each process
   // is the same
@@ -290,7 +290,7 @@ int main(int argc, char** argv) {
     system(ss2.str().c_str());
     model->train();
     backbone->train();
-    freezeBatchNorm(backbone);
+    //freezeBatchNorm(backbone);
   };
 
   //const int64_t batch_size_per_gpu = FLAGS_batch_size / FLAGS_world_size;
@@ -440,7 +440,7 @@ int main(int argc, char** argv) {
       }
       fl::clipGradNorm(detr->params(), 0.1);
 
-      freezeBatchNorm(backbone);
+      //freezeBatchNorm(backbone);
 
       opt.step();
       //opt2.step();

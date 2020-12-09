@@ -5,21 +5,21 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/fl/nn/modules/BatchNorm.h"
+#include "flashlight/ext/image/fl/models/FrozenBatchNorm.h"
 
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/nn/Init.h"
 
 namespace fl {
 
-BatchNorm::BatchNorm(
+FrozenBatchNorm::FrozenBatchNorm(
     int featAxis,
     int featSize,
     double momentum /* = 0.1 */,
     double eps /*  = 1e-5*/,
     bool affine /*  = true*/,
     bool trackStats /*  = true*/)
-    : BatchNorm(
+    : FrozenBatchNorm(
           std::vector<int>(1, featAxis),
           featSize,
           momentum,
@@ -27,7 +27,7 @@ BatchNorm::BatchNorm(
           affine,
           trackStats) {}
 
-BatchNorm::BatchNorm(
+FrozenBatchNorm::FrozenBatchNorm(
     const std::vector<int>& featAxis,
     int featSize,
     double momentum /* = 0.1*/,
@@ -44,64 +44,39 @@ BatchNorm::BatchNorm(
   initialize();
 }
 
-Variable BatchNorm::forward(const Variable& input) {
-  momentum_ = 0.0f;
-  double avgFactor = 0.0;
 
-  if (train_ && trackStats_) {
-    ++numBatchesTracked_;
-    if (momentum_ < 0) { // cumulative moving average
-      avgFactor = 1.0 / numBatchesTracked_;
-    } else { // exponential moving average
-      avgFactor = momentum_;
-    }
-  }
-
-  auto paramsType =
-      (input.type() == af::dtype::f16) ? af::dtype::f32 : input.type();
-  return batchnorm(
-      input,
-      params_.empty() ? Variable(af::array(0, paramsType), false) : params_[0],
-      params_.empty() ? Variable(af::array(0, paramsType), false) : params_[1],
-      runningMean_,
-      runningVar_,
-      featAxis_,
-      //train_ || (!trackStats_),
-      train_ || (!trackStats_),
-      avgFactor,
-      epsilon_);
+Variable FrozenBatchNorm::forward(const Variable& input) {
+  auto scale = params_[0] / fl::sqrt(runningVar_ + epsilon_);
+  auto bias = params_[1] - runningMean_ * scale;
+  bias = fl::moddims(bias, { 1, 1, bias.dims(0), 1});
+  scale = fl::moddims(scale, { 1, 1, scale.dims(0), 1});
+  return (input * fl::tileAs(scale, input)) + fl::tileAs(bias, input);
 }
 
-void BatchNorm::initialize() {
+void FrozenBatchNorm::initialize() {
   if (trackStats_) {
     runningMean_ = constant(0.0, featSize_, af::dtype::f32, false);
     runningVar_ = constant(1.0, featSize_, af::dtype::f32, false);
   }
 
   if (affine_) {
-    auto wt = uniform(featSize_, 0.0, 1.0, af::dtype::f32, true);
-    auto bs = constant(0.0, featSize_, af::dtype::f32, true);
+    auto wt = uniform(featSize_, 0.0, 1.0, af::dtype::f32, false);
+    auto bs = constant(0.0, featSize_, af::dtype::f32, false);
     params_ = {wt, bs};
   }
 }
 
-void BatchNorm::freeze() {
-  for (auto& param : params_) {
-    param.setCalcGrad(false);
-  }
-}
-
-void BatchNorm::setRunningMean(af::array x) {
+void FrozenBatchNorm::setRunningMean(af::array x) {
   runningMean_ = fl::Variable(x, false);
 }
 
-void BatchNorm::setRunningVar(af::array x) {
+void FrozenBatchNorm::setRunningVar(af::array x) {
   runningVar_ = fl::Variable(x, false);
 }
 
-std::string BatchNorm::prettyString() const {
+std::string FrozenBatchNorm::prettyString() const {
   std::ostringstream ss;
-  ss << "BatchNorm";
+  ss << "FrozenBatchNorm";
   ss << " ( axis : { ";
   for (auto x : featAxis_) {
     ss << x << " ";

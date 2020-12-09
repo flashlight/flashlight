@@ -43,7 +43,7 @@ ConvBnAct::ConvBnAct(
   add(std::make_shared<fl::Conv2D>(
       inC, outC, kw, kh, sx, sy, pad, pad, 1, 1, bias));
   if (bn) {
-    add(std::make_shared<fl::BatchNorm>(2, outC));
+    add(std::make_shared<fl::FrozenBatchNorm>(2, outC));
   }
   if (act) {
     add(std::make_shared<fl::ReLU>());
@@ -54,15 +54,15 @@ ResNetBlock::ResNetBlock() = default;
 
 ResNetBlock::ResNetBlock(const int inC, const int outC, const int stride) {
   add(std::make_shared<Conv2D>(conv3x3(inC, outC, stride, 1)));
-  add(std::make_shared<BatchNorm>(BatchNorm(2, outC)));
+  add(std::make_shared<FrozenBatchNorm>(FrozenBatchNorm(2, outC)));
   add(std::make_shared<ReLU>());
   add(std::make_shared<Conv2D>(conv3x3(outC, outC, 1, 1)));
-  add(std::make_shared<BatchNorm>(BatchNorm(2, outC)));
+  add(std::make_shared<FrozenBatchNorm>(FrozenBatchNorm(2, outC)));
   add(std::make_shared<ReLU>());
   if (inC != outC || stride > 1) {
     Sequential downsample;
     downsample.add(conv1x1(inC, outC, stride, 1));
-    downsample.add(BatchNorm(2, outC));
+    downsample.add(FrozenBatchNorm(2, outC));
     add(downsample);
   }
 }
@@ -72,18 +72,18 @@ ResNetBottleneckBlock::ResNetBottleneckBlock() = default;
 ResNetBottleneckBlock::ResNetBottleneckBlock(const int inC, const int planes, const int stride) {
   const int expansionFactor = 4;
   add(std::make_shared<Conv2D>(conv1x1(inC, planes, 1, 1)));
-  add(std::make_shared<BatchNorm>(BatchNorm(2, planes)));
+  add(std::make_shared<FrozenBatchNorm>(FrozenBatchNorm(2, planes)));
   add(std::make_shared<ReLU>());
   add(std::make_shared<Conv2D>(conv3x3(planes, planes, stride, 1)));
-  add(std::make_shared<BatchNorm>(BatchNorm(2, planes)));
+  add(std::make_shared<FrozenBatchNorm>(FrozenBatchNorm(2, planes)));
   add(std::make_shared<ReLU>());
   add(std::make_shared<Conv2D>(conv1x1(planes, planes * expansionFactor, 1, 1)));
-  add(std::make_shared<BatchNorm>(BatchNorm(2, planes * expansionFactor)));
+  add(std::make_shared<FrozenBatchNorm>(FrozenBatchNorm(2, planes * expansionFactor)));
   add(std::make_shared<ReLU>());
   if (inC != planes * expansionFactor || stride > 1) {
     Sequential downsample;
     downsample.add(conv1x1(inC, planes * expansionFactor, stride, 1));
-    downsample.add(BatchNorm(2, planes * expansionFactor));
+    downsample.add(FrozenBatchNorm(2, planes * expansionFactor));
     add(downsample);
   }
 

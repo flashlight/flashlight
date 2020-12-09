@@ -90,7 +90,7 @@ using namespace fl::ext::image;
 void getBns(
     std::shared_ptr<fl::Module> module, 
     std::vector<std::shared_ptr<fl::Module>>& bns) {
-  if(dynamic_cast<fl::BatchNorm*>(module.get())) {
+  if(dynamic_cast<fl::FrozenBatchNorm*>(module.get())) {
     bns.push_back(module);
   } else if(dynamic_cast<fl::Container*>(module.get())) {
     for(auto mod : dynamic_cast<fl::Container*>(module.get())->modules()) {
@@ -204,125 +204,260 @@ TEST(Pytorch, matcher_test) {
 
 #endif
 
-TEST(Pytorch, weightedCategoricalCrossEntropy) {
+//TEST(Pytorch, weightedCategoricalCrossEntropy) {
 
-  std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/weight_cross_entropy.array";
-  auto inputArray  = af::readArray(filename.c_str(), "input");
+  //std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/weight_cross_entropy.array";
+  //auto inputArray  = af::readArray(filename.c_str(), "input");
   
-  auto targetArray  = af::readArray(filename.c_str(), "target");
-  auto weightArray  = af::readArray(filename.c_str(), "weight");
-  af_print(inputArray);
-  auto input = fl::Variable(inputArray, true);
-  auto softmaxed = fl::logSoftmax(input, 0);
-  af_print(softmaxed.array());
+  //auto targetArray  = af::readArray(filename.c_str(), "target");
+  //auto weightArray  = af::readArray(filename.c_str(), "weight");
+  //af_print(inputArray);
+  //auto input = fl::Variable(inputArray, true);
+  //auto softmaxed = fl::logSoftmax(input, 0);
+  //af_print(softmaxed.array());
 
-  auto loss = weightedCategoricalCrossEntropy(
-      softmaxed,
-      { targetArray, false },
-      { weightArray, false},
-      fl::ReduceMode::MEAN,
-      -1
-      );
-  loss.backward();
-  af_print(input.grad().array());
+  //auto loss = weightedCategoricalCrossEntropy(
+      //softmaxed,
+      //{ targetArray, false },
+      //{ weightArray, false},
+      //fl::ReduceMode::MEAN,
+      //-1
+      //);
+  //loss.backward();
+  //af_print(input.grad().array());
 
 
-}
+//}
 
-TEST(Pytorch, weightedCategoricalCrossEntropySum) {
+//TEST(Pytorch, weightedCategoricalCrossEntropySum) {
 
-  std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/weight_cross_entropy.array";
-  auto inputArray  = af::readArray(filename.c_str(), "input");
+  //std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/weight_cross_entropy.array";
+  //auto inputArray  = af::readArray(filename.c_str(), "input");
   
-  auto targetArray  = af::readArray(filename.c_str(), "target");
-  auto weightArray  = af::readArray(filename.c_str(), "weight");
-  auto softmaxed = fl::logSoftmax({ inputArray, false}, 0);
+  //auto targetArray  = af::readArray(filename.c_str(), "target");
+  //auto weightArray  = af::readArray(filename.c_str(), "weight");
+  //auto softmaxed = fl::logSoftmax({ inputArray, false}, 0);
 
-  auto result = weightedCategoricalCrossEntropy(
-      softmaxed,
-      { targetArray, false },
-      { weightArray, false},
-      fl::ReduceMode::SUM,
-      -1
-      );
-  af_print(result.array());
+  //auto result = weightedCategoricalCrossEntropy(
+      //softmaxed,
+      //{ targetArray, false },
+      //{ weightArray, false},
+      //fl::ReduceMode::SUM,
+      //-1
+      //);
+  //af_print(result.array());
 
 
-}
+//}
 
-TEST(Pytorch, categoricalCrossEntropy) {
+//TEST(Pytorch, categoricalCrossEntropy) {
 
-  std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/weight_cross_entropy.array";
-  auto inputArray  = af::readArray(filename.c_str(), "input");
+  //std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/weight_cross_entropy.array";
+  //auto inputArray  = af::readArray(filename.c_str(), "input");
   
-  auto targetArray  = af::readArray(filename.c_str(), "target");
-  auto weightArray  = af::readArray(filename.c_str(), "weight");
-  auto softmaxed = fl::logSoftmax({ inputArray, false}, 0);
+  //auto targetArray  = af::readArray(filename.c_str(), "target");
+  //auto weightArray  = af::readArray(filename.c_str(), "weight");
+  //auto softmaxed = fl::logSoftmax({ inputArray, false}, 0);
 
-  auto result = categoricalCrossEntropy(
-      softmaxed,
-      { targetArray, false },
-      fl::ReduceMode::MEAN,
-      -1
-      );
-  af_print(result.array());
-
-
-}
+  //auto result = categoricalCrossEntropy(
+      //softmaxed,
+      //{ targetArray, false },
+      //fl::ReduceMode::MEAN,
+      //-1
+      //);
+  //af_print(result.array());
 
 
+//}
 
-TEST(Pytorch, set_crit) {
 
-  const int batchSize = 1;
 
-  std::string bboxFilename = "/private/home/padentomasello/scratch/pytorch_testing/set_criterion_bboxes.array";
-  std::string labelFilename = "/private/home/padentomasello/scratch/pytorch_testing/set_criterion_labels.array";
-  std::string inputFilename = "/private/home/padentomasello/scratch/pytorch_testing/set_criterion_input.array";
-  std::string lossFilename = "/private/home/padentomasello/scratch/pytorch_testing/set_criterion_loss.array";
+//TEST(Pytorch, set_crit) {
 
-  std::vector<fl::Variable> bboxes, labels;
-  for(int i = 0; i < batchSize; i++) {
-    bboxes.push_back({af::readArray(bboxFilename.c_str(), i).as(f32), false});
-    labels.push_back({af::readArray(labelFilename.c_str(), i).as(f32), false});
+  //const int batchSize = 1;
+
+  //std::string bboxFilename = "/private/home/padentomasello/scratch/pytorch_testing/set_criterion_bboxes.array";
+  //std::string labelFilename = "/private/home/padentomasello/scratch/pytorch_testing/set_criterion_labels.array";
+  //std::string inputFilename = "/private/home/padentomasello/scratch/pytorch_testing/set_criterion_input.array";
+  //std::string lossFilename = "/private/home/padentomasello/scratch/pytorch_testing/set_criterion_loss.array";
+
+  //std::vector<fl::Variable> bboxes, labels;
+  //for(int i = 0; i < batchSize; i++) {
+    //bboxes.push_back({af::readArray(bboxFilename.c_str(), i).as(f32), false});
+    //labels.push_back({af::readArray(labelFilename.c_str(), i).as(f32), false});
+  //}
+
+  //auto predBoxes = fl::Variable(af::readArray(inputFilename.c_str(), "pred_boxes"), true);
+  //auto predLogits = fl::Variable(af::readArray(inputFilename.c_str(), "pred_logits"), true);
+
+  //auto matcher = HungarianMatcher(1.0f, 1.0f, 1.0f);
+
+  //std::unordered_map<std::string, float> lossWeightsBase = 
+        //{ { "loss_ce" , 1.f} ,
+        //{ "loss_giou", 1.f },
+        //{ "loss_bbox", 1.f }
+  //};
+  //SetCriterion::LossDict losses;
+
+  //auto criterion = SetCriterion(
+      //predLogits.dims(0) - 1,
+      //matcher,
+      //lossWeightsBase,
+      //0.1f,
+      //losses);
+
+  //auto results = criterion.forward(predBoxes, predLogits, bboxes, labels);
+  //for(auto result : results) {
+    ////result.second.backward(true);
+    //std::cout << "Checking: " << result.first << std::endl;
+    //af_print(result.second.array());
+    //auto expOutput = af::readArray(lossFilename.c_str(), result.first.c_str());
+    //af_print(expOutput);
+    //ASSERT_TRUE(allClose(result.second.array(), af::readArray(lossFilename.c_str(), result.first.c_str())));
+  //}
+
+  //auto sum = results["loss_ce_0"] + results["loss_giou_0"] + results["loss_bbox_0"];
+  //sum.backward();
+  ////results["loss_ce_0"].backward(true);
+  ////results["loss_giou_0"].backward(true);
+  ////results["loss_bbox_0"].backward(true);
+  //af_print(predBoxes.grad().array());
+  //af_print(predLogits.grad().array());
+//}
+
+TEST(Pytorch, detr_backbone) {
+
+
+  std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/detr_backbone.array";
+  af::array image = af::readArray(filename.c_str(), "image");
+  af::array expOutput = af::readArray(filename.c_str(), "output");
+
+
+  auto model = std::make_shared<fl::ext::image::Resnet50Backbone>();
+  std::vector<fl::Variable> inputs = { 
+    fl::Variable(image, false), 
+  };
+
+  //std::string modelPath = "/checkpoint/padentomasello/models/resnet50/from_pytorch_fbn";
+  //fl::save(modelPath, model);
+  //fl::load(modelPath, model);
+
+  int paramSize = model->params().size();
+  for(int i = 0; i < paramSize; i++) {
+    auto array = af::readArray(filename.c_str(), i + 2);
+    if(i == 264) {
+      array = af::moddims(array, { 1, 1, 256, 1});
+    }
+    ASSERT_TRUE(model->param(i).dims() == array.dims());
+    model->setParams(param(array), i);
   }
 
-  auto predBoxes = fl::Variable(af::readArray(inputFilename.c_str(), "pred_boxes"), true);
-  auto predLogits = fl::Variable(af::readArray(inputFilename.c_str(), "pred_logits"), true);
+  std::vector<std::shared_ptr<fl::Module>> bns;
+  getBns(model, bns);
 
-  auto matcher = HungarianMatcher(1.0f, 1.0f, 1.0f);
+  int i = 0;
+  for(auto bn : bns) {
+    auto bn_ptr = dynamic_cast<fl::FrozenBatchNorm*>(bn.get());
+    bn_ptr->setRunningMean(af::readArray((filename + "running").c_str(), i));
+    i++;
+    bn_ptr->setRunningVar(af::readArray((filename + "running").c_str(), i));
+    i++;
+  }
+
+  auto output = model->forward(inputs)[0];
+  //af_print(output.array());
+  ASSERT_TRUE(allClose(output.array(), expOutput));
+}
+
+TEST(Pytorch, detr) {
+
+
+  std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/detr.array";
+  af::array image = af::readArray(filename.c_str(), "image");
+  //af::array queries = af::readArray(filename.c_str(), "queries");
+  af::array mask = af::readArray(filename.c_str(), "mask");
+  mask = af::moddims(mask, { mask.dims(0), mask.dims(1), 1, mask.dims(2)});
+  mask = 1 - mask;
+  //af::array pos = af::readArray(filename.c_str(), "pos");
+  //af::array expOutput = af::readArray(filename.c_str(), "output");
+
+  const int embeddingDim = 256;
+  const int numHead = 8;
+
+  const int numLayers = 6;
+
+  auto transformer = std::make_shared<Transformer>(embeddingDim, numHead, numLayers, numLayers, 2048, 0.0f);
+  auto backbone = std::make_shared<fl::ext::image::Resnet50Backbone>();
+
+  auto model = std::make_shared<Detr>(transformer, backbone, 256, 91, 100, true);
+  std::vector<fl::Variable> inputs = { 
+    fl::Variable(image, true), 
+    fl::Variable(mask, true), // mask
+  };
+
+  int paramSize = model->params().size();
+  for(int i = 0; i < paramSize; i++) {
+    auto array = af::readArray(filename.c_str(), i + 4);
+    if(i == 264) {
+      array = af::moddims(array, { 1, 1, 256, 1});
+    }
+    //std::cout << " i " << i << std::endl;
+    //std::cout << " Array " << array.dims() << std::endl;
+    //std::cout << " Model " << model->param(i).dims() << std::endl;
+    ASSERT_TRUE(model->param(i).dims() == array.dims());
+    model->setParams(param(array), i);
+  }
+
+  std::vector<std::shared_ptr<fl::Module>> bns;
+  getBns(backbone, bns);
+
+  int i = 0;
+  for(auto bn : bns) {
+    auto bn_ptr = dynamic_cast<fl::FrozenBatchNorm*>(bn.get());
+    bn_ptr->setRunningMean(af::readArray((filename + "running").c_str(), i));
+    i++;
+    bn_ptr->setRunningVar(af::readArray((filename + "running").c_str(), i));
+    i++;
+  }
+  //model->eval();
+  //backbone->eval();
+  //std::string modelPath = "/checkpoint/padentomasello/models/detr/from_pytorch";
+  //std::string modelPath = "/checkpoint/padentomasello/models/detr/pytorch_initializaition";
+  //fl::save(modelPath, model);
+  //fl::load(modelPath, model);
+
+  auto outputs = model->forward(inputs);
+  af::array expPredLogits = af::readArray(filename.c_str(), "pred_logits");
+  af::array expPredBoxes = af::readArray(filename.c_str(), "pred_boxes");
+  auto predLogits = outputs[0];
+  auto predBoxes = outputs[1];
+  ASSERT_TRUE(allClose(predLogits.array(), expPredLogits));
+  ASSERT_TRUE(allClose(predBoxes.array(), expPredBoxes));
+  auto matcher = HungarianMatcher(1.0f, 5.0f, 2.0f);
 
   std::unordered_map<std::string, float> lossWeightsBase = 
         { { "loss_ce" , 1.f} ,
-        { "loss_giou", 1.f },
-        { "loss_bbox", 1.f }
+        { "loss_giou", 5.f },
+        { "loss_bbox", 2.f }
   };
   SetCriterion::LossDict losses;
 
   auto criterion = SetCriterion(
-      predLogits.dims(0) - 1,
+      91,
       matcher,
       lossWeightsBase,
-      0.1f,
+      0.5f,
       losses);
-
-  auto results = criterion.forward(predBoxes, predLogits, bboxes, labels);
+  std::vector<fl::Variable> targetClasses = { {af::readArray(filename.c_str(), "target_labels"), false}};
+  std::vector<fl::Variable> targetBoxes = { { af::readArray(filename.c_str(), "target_boxes"), false }};
+  auto results = criterion.forward(predBoxes, predLogits, targetBoxes, targetClasses);
   for(auto result : results) {
-    //result.second.backward(true);
     std::cout << "Checking: " << result.first << std::endl;
     af_print(result.second.array());
-    auto expOutput = af::readArray(lossFilename.c_str(), result.first.c_str());
-    af_print(expOutput);
-    ASSERT_TRUE(allClose(result.second.array(), af::readArray(lossFilename.c_str(), result.first.c_str())));
+    //ASSERT_TRUE(allClose(result.second.array(), af::readArray(lossFilename.c_str(), result.first.c_str())));
   }
+  results["loss_giou_0"].backward();
 
-  auto sum = results["loss_ce_0"] + results["loss_giou_0"] + results["loss_bbox_0"];
-  sum.backward();
-  //results["loss_ce_0"].backward(true);
-  //results["loss_giou_0"].backward(true);
-  //results["loss_bbox_0"].backward(true);
-  af_print(predBoxes.grad().array());
-  af_print(predLogits.grad().array());
 }
 
 #if 0
@@ -535,151 +670,8 @@ TEST(Pytorch, transformer) {
 }
 
 
-TEST(Pytorch, detr_backbone) {
 
 
-  std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/detr.array";
-  af::array image = af::readArray(filename.c_str(), "image");
-  //af::array queries = af::readArray(filename.c_str(), "queries");
-  af::array mask = af::readArray(filename.c_str(), "mask");
-  mask = af::moddims(mask, { mask.dims(0), mask.dims(1), 1, mask.dims(2)});
-  mask = 1 - mask;
-  //af::array pos = af::readArray(filename.c_str(), "pos");
-  af::array expOutput = af::readArray(filename.c_str(), "output");
-
-  const int embeddingDim = 256;
-  const int numHead = 8;
-
-  const int numLayers = 6;
-
-  //auto transformer = std::make_shared<Transformer>(embeddingDim, numHead, numLayers, numLayers, 2048, 0.0f);
-  auto model = std::make_shared<fl::ext::image::Resnet50Backbone>();
-  //auto model = fl::ext::image::Resnet50Backbone();
-
-  //auto model = Detr(transformer, backbone, 256, 91, 100, true);
-  std::vector<fl::Variable> inputs = { 
-    fl::Variable(image, false), 
-    //fl::Variable(mask, false), // mask
-  };
-
-  int paramSize = model->params().size();
-  for(int i = 0; i < paramSize; i++) {
-    auto array = af::readArray(filename.c_str(), i + 2);
-    if(i == 264) {
-      array = af::moddims(array, { 1, 1, 256, 1});
-    }
-    ASSERT_TRUE(model->param(i).dims() == array.dims());
-    model->setParams(param(array), i);
-  }
-
-  std::vector<std::shared_ptr<fl::Module>> bns;
-  getBns(model, bns);
-
-  int i = 0;
-  for(auto bn : bns) {
-    auto bn_ptr = dynamic_cast<fl::BatchNorm*>(bn.get());
-    bn_ptr->setRunningMean(af::readArray((filename + "running").c_str(), i));
-    i++;
-    bn_ptr->setRunningVar(af::readArray((filename + "running").c_str(), i));
-    i++;
-  }
-  model->eval();
-
-  auto output = model->forward(inputs)[0];
-  af_print(output.array());
-  ASSERT_TRUE(allClose(output.array(), expOutput));
-}
-
-
-TEST(Pytorch, detr) {
-
-
-  std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/detr.array";
-  af::array image = af::readArray(filename.c_str(), "image");
-  //af::array queries = af::readArray(filename.c_str(), "queries");
-  af::array mask = af::readArray(filename.c_str(), "mask");
-  mask = af::moddims(mask, { mask.dims(0), mask.dims(1), 1, mask.dims(2)});
-  mask = 1 - mask;
-  //af::array pos = af::readArray(filename.c_str(), "pos");
-  //af::array expOutput = af::readArray(filename.c_str(), "output");
-
-  const int embeddingDim = 256;
-  const int numHead = 8;
-
-  const int numLayers = 6;
-
-  auto transformer = std::make_shared<Transformer>(embeddingDim, numHead, numLayers, numLayers, 2048, 0.0f);
-  auto backbone = std::make_shared<fl::ext::image::Resnet50Backbone>();
-
-  auto model = std::make_shared<Detr>(transformer, backbone, 256, 91, 100, true);
-  std::vector<fl::Variable> inputs = { 
-    fl::Variable(image, false), 
-    fl::Variable(mask, false), // mask
-  };
-
-  int paramSize = model->params().size();
-  for(int i = 0; i < paramSize; i++) {
-    auto array = af::readArray(filename.c_str(), i + 4);
-    if(i == 264) {
-      array = af::moddims(array, { 1, 1, 256, 1});
-    }
-    //std::cout << " i " << i << std::endl;
-    //std::cout << " Array " << array.dims() << std::endl;
-    //std::cout << " Model " << model->param(i).dims() << std::endl;
-    ASSERT_TRUE(model->param(i).dims() == array.dims());
-    model->setParams(param(array), i);
-  }
-
-  std::vector<std::shared_ptr<fl::Module>> bns;
-  getBns(backbone, bns);
-
-  int i = 0;
-  for(auto bn : bns) {
-    auto bn_ptr = dynamic_cast<fl::BatchNorm*>(bn.get());
-    bn_ptr->setRunningMean(af::readArray((filename + "running").c_str(), i));
-    i++;
-    bn_ptr->setRunningVar(af::readArray((filename + "running").c_str(), i));
-    i++;
-  }
-  model->eval();
-  //std::string modelPath = "/checkpoint/padentomasello/models/detr/from_pytorch";
-  //std::string modelPath = "/checkpoint/padentomasello/models/detr/pytorch_initializaition";
-  //fl::save(modelPath, model);
-  //fl::load(modelPath, model);
-
-  auto outputs = model->forward(inputs);
-  af::array expPredLogits = af::readArray(filename.c_str(), "pred_logits");
-  af::array expPredBoxes = af::readArray(filename.c_str(), "pred_boxes");
-  auto predLogits = outputs[0];
-  af_print(predLogits.array());
-  auto predBoxes = outputs[1];
-  ASSERT_TRUE(allClose(predLogits.array(), expPredLogits));
-  ASSERT_TRUE(allClose(predBoxes.array(), expPredBoxes));
-  auto matcher = HungarianMatcher(1.0f, 5.0f, 2.0f);
-
-  std::unordered_map<std::string, float> lossWeightsBase = 
-        { { "loss_ce" , 1.f} ,
-        { "loss_giou", 5.f },
-        { "loss_bbox", 2.f }
-  };
-  SetCriterion::LossDict losses;
-
-  auto criterion = SetCriterion(
-      91,
-      matcher,
-      lossWeightsBase,
-      0.5f,
-      losses);
-  std::vector<fl::Variable> targetClasses = { {af::readArray(filename.c_str(), "target_labels"), false}};
-  std::vector<fl::Variable> targetBoxes = { { af::readArray(filename.c_str(), "target_boxes"), false }};
-  auto results = criterion.forward(predBoxes, predLogits, targetBoxes, targetClasses);
-  for(auto result : results) {
-    std::cout << "Checking: " << result.first << std::endl;
-    af_print(result.second.array());
-    //ASSERT_TRUE(allClose(result.second.array(), af::readArray(lossFilename.c_str(), result.first.c_str())));
-  }
-
-}
 
 
 

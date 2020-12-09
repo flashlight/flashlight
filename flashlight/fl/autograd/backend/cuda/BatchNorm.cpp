@@ -149,10 +149,10 @@ Variable batchnorm(
   auto gradFunc =
       [train, saveMean, saveVar, mode, inDescDims, wtDescDims, epsilon](
           std::vector<Variable>& inputs, const Variable& gradOutput) {
-        if (!train) {
-          throw std::logic_error(
-              "can't compute batchnorm grad when train was not specified");
-        }
+        //if (!train) {
+          //throw std::logic_error(
+              //"can't compute batchnorm grad when train was not specified");
+        //}
 
         auto& in = inputs[0];
         auto inArray = detail::adjustInputType(in.array(), "batchnorm");

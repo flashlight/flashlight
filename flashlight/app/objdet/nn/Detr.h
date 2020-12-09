@@ -48,8 +48,8 @@ public:
     classEmbed_(std::make_shared<Linear>(hiddenDim, numClasses + 1)),
     bboxEmbed_(std::make_shared<MLP>(hiddenDim, hiddenDim, 4, 3)),
     queryEmbed_(std::make_shared<Embedding>(hiddenDim, numQueries)),
-    //inputProj_(std::make_shared<Conv2D>(2048, hiddenDim, 1, 1)),
-    inputProj_(std::make_shared<Conv2D>(512, hiddenDim, 1, 1)),
+		inputProj_(std::make_shared<Conv2D>(2048, hiddenDim, 1, 1)),
+    //inputProj_(std::make_shared<Conv2D>(512, hiddenDim, 1, 1)),
     posEmbed_(std::make_shared<PositionalEmbeddingSine>(hiddenDim / 2,
           10000, true, 6.283185307179586f))
   {

@@ -10,17 +10,17 @@ namespace ext {
 namespace image {
 
 // TODO HACK!!!!!!
-void freezebatchnorm(std::shared_ptr<fl::module> ptr) {
-  //std::cout << "freezing " << ptr->prettystring() << std::endl;
-  if(dynamic_cast<fl::batchnorm*>(ptr.get())) {
-    ptr->eval();
-    //ptr->zerograd();
-  } else if(dynamic_cast<fl::container*>(ptr.get())) {
-      for(auto mod : dynamic_cast<fl::container*>(ptr.get())->modules()) {
-        freezebatchnorm(mod);
-      }
-  }
-}
+//void freezebatchnorm(std::shared_ptr<fl::Module> ptr) {
+  ////std::cout << "freezing " << ptr->prettystring() << std::endl;
+  //if(dynamic_cast<fl::BatchNorm*>(ptr.get())) {
+    //ptr->eval();
+    ////ptr->zerograd();
+  //} else if(dynamic_cast<fl::Container*>(ptr.get())) {
+      //for(auto mod : dynamic_cast<fl::Container*>(ptr.get())->modules()) {
+        //freezebatchnorm(mod);
+      //}
+  //}
+//}
 
 //class Joiner: public Container {
 

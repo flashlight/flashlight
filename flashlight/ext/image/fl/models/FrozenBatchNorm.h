@@ -23,9 +23,9 @@ namespace fl {
  * added to the variance to avoid divide-by-zero, and \f$\gamma\f$ and
  * \f$\beta\f$ are learnable parameters for affine transformation.
  */
-class BatchNorm : public UnaryModule {
+class FrozenBatchNorm : public UnaryModule {
  private:
-  BatchNorm() = default; // intentionally private
+  FrozenBatchNorm() = default; // intentionally private
 
   std::vector<int> featAxis_;
   int featSize_;
@@ -56,7 +56,7 @@ class BatchNorm : public UnaryModule {
 
  public:
   /**
-   * Constructs a BatchNorm module.
+   * Constructs a FrozenBatchNorm module.
    *
    * @param featAxis the axis over which normalizationis performed
    * @param featSize the size of the dimension along `featAxis`
@@ -74,7 +74,7 @@ class BatchNorm : public UnaryModule {
    *  running mean and variance while in train mode. If `false`, batch
    *  statistics are used to perform normalization in both train and eval mode.
    */
-  BatchNorm(
+  FrozenBatchNorm(
       int featAxis,
       int featSize,
       double momentum = 0.1,
@@ -83,7 +83,7 @@ class BatchNorm : public UnaryModule {
       bool trackStats = true);
 
   /**
-   * Constructs a BatchNorm module.
+   * Constructs a FrozenBatchNorm module.
    *
    * @param featAxis the axis over which  normalization is performed
    * @param featSize total dimension along `featAxis`.
@@ -106,7 +106,7 @@ class BatchNorm : public UnaryModule {
    *  running mean and variance while in train mode. If `false`, batch
    *  statistics are used to perform normalization in both train and eval mode.
    */
-  BatchNorm(
+  FrozenBatchNorm(
       const std::vector<int>& featAxis,
       int featSize,
       double momentum = 0.1,
@@ -116,15 +116,13 @@ class BatchNorm : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
-  void setRunningMean(af::array x);
+  void setRunningVar(af::array);
 
-  void setRunningVar(af::array x);
-
-  void freeze();
+  void setRunningMean(af::array);
 
   std::string prettyString() const override;
 };
 
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::BatchNorm)
+CEREAL_REGISTER_TYPE(fl::FrozenBatchNorm)
