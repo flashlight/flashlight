@@ -22,6 +22,7 @@ namespace app {
 namespace asr {
 std::pair<std::string, std::string> getStatus(
     TrainMeters& meters,
+    std::unordered_map<std::string, double>& validDecoderWer,
     int64_t epoch,
     int64_t nupdates,
     double lr,
@@ -69,6 +70,7 @@ std::pair<std::string, std::string> getStatus(
     insertItem(
         v.first + "-" + errtype, format("%5.2f", v.second.tknEdit.errorRate()[0]));
     insertItem(v.first + "-WER", format("%5.2f", v.second.wrdEdit.errorRate()[0]));
+    insertItem(v.first + "-WER-decoded", format("%5.2f", validDecoderWer[v.first]));
   }
   auto stats = meters.stats.value();
   auto numsamples = std::max<int64_t>(stats[4], 1);

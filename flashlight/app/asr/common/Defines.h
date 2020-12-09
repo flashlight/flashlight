@@ -278,6 +278,10 @@ DECLARE_int32(lm_memory);
 
 DECLARE_int32(emission_queue_size);
 
+DECLARE_double(lmweight_low);
+DECLARE_double(lmweight_high);
+DECLARE_double(lmweight_step);
+
 // Seq2Seq
 DECLARE_double(smoothingtemperature);
 DECLARE_int32(attentionthreshold);

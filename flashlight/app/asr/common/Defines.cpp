@@ -285,6 +285,10 @@ DEFINE_int32(
     std::numeric_limits<int>::max(),
     "hard attention limit");
 
+DEFINE_double(lmweight_low, 0.0, "language model weight (low boundary, search)");
+DEFINE_double(lmweight_high, 4.0, "language model weight (high boundary, search)");
+DEFINE_double(lmweight_step, 0.2, "language model weight (step, search)");
+
 // ASG OPTIONS
 DEFINE_int64(linseg, 0, "# of updates of LinSeg to init transitions for ASG");
 DEFINE_double(linlr, -1.0, "LinSeg learning rate (if < 0, use lr)");

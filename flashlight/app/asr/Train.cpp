@@ -20,6 +20,7 @@
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/data/FeatureTransforms.h"
+#include "flashlight/app/asr/decoder/DecodeMaster.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/ext/common/DistributedUtils.h"
@@ -29,6 +30,7 @@
 #include "flashlight/fl/contrib/contrib.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/System.h"
+#include "flashlight/lib/text/decoder/lm/KenLM.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
 
@@ -292,7 +294,7 @@ int main(int argc, char** argv) {
   int targetpadVal = FLAGS_eostoken
       ? tokenDict.getIndex(fl::app::asr::kEosToken)
       : kTargetPadValue;
-  int wordpadVal = wordDict.getIndex(kUnkToken);
+  int wordpadVal = kTargetPadValue;
 
   std::vector<std::string> trainSplits = split(",", FLAGS_train, true);
   auto trainds = createDataset(
@@ -329,6 +331,8 @@ int main(int argc, char** argv) {
   std::shared_ptr<SequenceCriterion> criterion;
   std::shared_ptr<fl::FirstOrderOptimizer> netoptim;
   std::shared_ptr<fl::FirstOrderOptimizer> critoptim;
+  std::shared_ptr<fl::lib::text::LM> lm;
+  std::shared_ptr<WordDecodeMaster> dm;
 
   auto scalemode = getCriterionScaleMode(FLAGS_onorm, FLAGS_sqnorm);
   if (runStatus == kTrainMode) {
@@ -383,6 +387,30 @@ int main(int argc, char** argv) {
   FL_LOG_MASTER(fl::INFO) << "[Network Params: " << numTotalParams(network)
                           << "]";
   FL_LOG_MASTER(fl::INFO) << "[Criterion] " << criterion->prettyString();
+
+  if (!FLAGS_lm.empty()) {
+    FL_LOG_MASTER(fl::INFO)
+        << "[Beam-search Decoder] Constructing language model and beam search decoder";
+    std::vector<float> dummyTransition;
+    if (FLAGS_decodertype == "wrd" && FLAGS_lmtype == "kenlm" &&
+        FLAGS_criterion == "ctc") {
+      lm = std::make_shared<KenLM>(FLAGS_lm, wordDict);
+      dm = std::make_shared<WordDecodeMaster>(
+          network,
+          lm,
+          dummyTransition,
+          tokenDict,
+          wordDict,
+          DecodeMasterTrainOptions{.repLabel = int32_t(FLAGS_replabel),
+                                   .wordSepIsPartOfToken = FLAGS_usewordpiece,
+                                   .surround = FLAGS_surround,
+                                   .wordSep = FLAGS_wordseparator,
+                                   .targetPadIdx = targetpadVal});
+    } else {
+      throw std::runtime_error(
+          "Other decoders are not supported yet during training");
+    }
+  }
 
   if (runStatus == kTrainMode || runStatus == kForkMode) {
     netoptim = initOptimizer(
@@ -439,6 +467,13 @@ int main(int argc, char** argv) {
     validminerrs[s.first] = DBL_MAX;
   }
 
+  std::unordered_map<std::string, double> validMinWerWithDecoder;
+  std::unordered_map<std::string, double> validWerWithDecoder;
+  for (const auto& s : validTagSets) {
+    validMinWerWithDecoder[s.first] = DBL_MAX;
+    validWerWithDecoder[s.first] = DBL_MAX;
+  }
+
   /* ===================== Logging ===================== */
   std::ofstream logFile, perfFile;
   if (isMaster) {
@@ -452,7 +487,9 @@ int main(int argc, char** argv) {
       FL_LOG(fl::FATAL) << "failed to open perf file for writing";
     }
     // write perf header
-    auto perfMsg = getStatus(meters, 0, 0, 0, 0, false, true, "\t").first;
+    auto perfMsg =
+        getStatus(meters, validWerWithDecoder, 0, 0, 0, 0, false, true, "\t")
+            .first;
     appendToLog(perfFile, "# " + perfMsg);
     // write config
     std::ofstream configFile(getRunFile("config", runIdx, runPath));
@@ -460,25 +497,43 @@ int main(int argc, char** argv) {
     ar(CEREAL_NVP(config));
   }
 
-  auto logStatus = [&perfFile, &logFile, isMaster](
-                       TrainMeters& mtrs,
-                       int64_t epoch,
-                       int64_t nupdates,
-                       double lr,
-                       double lrcrit) {
-    syncMeter(mtrs);
+  auto logStatus =
+      [&perfFile, &logFile, isMaster](
+          TrainMeters& mtrs,
+          std::unordered_map<std::string, double>& validWerWithDecoder,
+          int64_t epoch,
+          int64_t nupdates,
+          double lr,
+          double lrcrit) {
+        syncMeter(mtrs);
 
-    if (isMaster) {
-      auto logMsg =
-          getStatus(mtrs, epoch, nupdates, lr, lrcrit, true, false, " | ")
-              .second;
-      auto perfMsg =
-          getStatus(mtrs, epoch, nupdates, lr, lrcrit, false, true).second;
-      FL_LOG_MASTER(fl::INFO) << logMsg;
-      appendToLog(logFile, logMsg);
-      appendToLog(perfFile, perfMsg);
-    }
-  };
+        if (isMaster) {
+          auto logMsg = getStatus(
+                            mtrs,
+                            validWerWithDecoder,
+                            epoch,
+                            nupdates,
+                            lr,
+                            lrcrit,
+                            true,
+                            false,
+                            " | ")
+                            .second;
+          auto perfMsg = getStatus(
+                             mtrs,
+                             validWerWithDecoder,
+                             epoch,
+                             nupdates,
+                             lr,
+                             lrcrit,
+                             false,
+                             true)
+                             .second;
+          FL_LOG_MASTER(fl::INFO) << logMsg;
+          appendToLog(logFile, logMsg);
+          appendToLog(perfFile, perfMsg);
+        }
+      };
 
   auto saveModels = [&](int iter, int totalUpdates) {
     if (isMaster) {
@@ -519,6 +574,25 @@ int main(int argc, char** argv) {
           std::string cleaned_v = cleanFilepath(v.first);
           std::string vfname =
               getRunFile("model_" + cleaned_v + ".bin", runIdx, runPath);
+          Serializer::save(
+              vfname,
+              FL_APP_ASR_VERSION,
+              config,
+              network,
+              criterion,
+              netoptim,
+              critoptim);
+        }
+      }
+
+      // save if better than ever for one valid with lm decoding
+      for (const auto& v : validMinWerWithDecoder) {
+        double verr = validWerWithDecoder[v.first];
+        if (verr < validMinWerWithDecoder[v.first]) {
+          validMinWerWithDecoder[v.first] = verr;
+          std::string cleaned_v = cleanFilepath(v.first);
+          std::string vfname = getRunFile(
+              "model_" + cleaned_v + "_decoder.bin", runIdx, runPath);
           Serializer::save(
               vfname,
               FL_APP_ASR_VERSION,
@@ -583,18 +657,87 @@ int main(int argc, char** argv) {
     }
   };
 
-  auto test = [&evalOutput](
+  auto test = [&evalOutput, &dm, &lexicon](
                   std::shared_ptr<fl::Module> ntwrk,
                   std::shared_ptr<SequenceCriterion> crit,
                   std::shared_ptr<fl::Dataset> validds,
-                  DatasetMeters& mtrs) {
+                  DatasetMeters& mtrs,
+                  double& dmErr) {
     ntwrk->eval();
     crit->eval();
     mtrs.tknEdit.reset();
     mtrs.wrdEdit.reset();
     mtrs.loss.reset();
+
     auto curValidset = loadPrefetchDataset(
         validds, FLAGS_nthread, false /* shuffle */, 0 /* seed */);
+
+    if (dm) {
+      fl::TimeMeter timer;
+      timer.resume();
+      FL_LOG_MASTER(fl::INFO)
+          << "[Beam-search decoder]   * DM: compute emissions";
+      auto eds = dm->forward(curValidset);
+      FL_LOG_MASTER(fl::INFO) << "[Beam-search decoder]   * DM: decode";
+      std::vector<double> lmweights;
+      for (double lmweight = FLAGS_lmweight_low;
+           lmweight <= FLAGS_lmweight_high;
+           lmweight += FLAGS_lmweight_step) {
+        lmweights.push_back(lmweight);
+      }
+      std::vector<std::vector<double>> wers(lmweights.size());
+      std::vector<std::thread> threads;
+      for (int i = 0; i < lmweights.size(); i++) {
+        threads.push_back(
+            std::thread([&lmweights, &wers, dm, eds, &lexicon, i]() {
+              double lmweight = lmweights[i];
+              DecodeMasterLexiconOptions opt = {
+                  .beamSize = FLAGS_beamsize,
+                  .beamSizeToken = FLAGS_beamsizetoken,
+                  .beamThreshold = FLAGS_beamthreshold,
+                  .lmWeight = lmweight,
+                  .silScore = FLAGS_silscore,
+                  .wordScore = FLAGS_wordscore,
+                  .unkScore = FLAGS_unkscore,
+                  .logAdd = FLAGS_logadd,
+                  .silToken = FLAGS_wordseparator,
+                  .blankToken = kBlankToken,
+                  .unkToken = kUnkToken,
+                  .smearMode =
+                      (FLAGS_smearing == "max" ? SmearingMode::MAX
+                                               : SmearingMode::NONE)};
+              auto pds = dm->decode(eds, lexicon, opt);
+              // return wer and ler vectors
+              wers[i] = dm->computeMetrics(pds).second;
+            }));
+      }
+      for (auto& thread : threads) {
+        thread.join();
+      }
+      dmErr = DBL_MAX;
+      for (int i = 0; i < lmweights.size(); i++) {
+        af::array currentEditDist =
+            af::constant(wers[i][0], af::dim4(1, 1, 1, 1));
+        af::array currentTokens =
+            af::constant(wers[i][1], af::dim4(1, 1, 1, 1));
+        if (FLAGS_enable_distributed) {
+          fl::allReduce(currentEditDist);
+          fl::allReduce(currentTokens);
+        }
+        double wer = currentEditDist.scalar<float>() /
+            currentTokens.scalar<float>() * 100.0;
+        FL_LOG_MASTER(fl::INFO)
+            << "[Beam-search decoder]   * DM: lmweight=" << lmweights[i]
+            << " WER: " << wer;
+        dmErr = std::min(dmErr, wer);
+      }
+      FL_LOG_MASTER(fl::INFO)
+          << "[Beam-search decoder]   * DM: done with best WER " << dmErr;
+      timer.stop();
+      FL_LOG_MASTER(fl::INFO)
+          << "[Beam-search decoder] time spent on grid-search for decoding: "
+          << timer.value() << "s";
+    }
 
     for (auto& batch : *curValidset) {
       auto output = fl::ext::forwardSequentialModuleWithPadMask(
@@ -610,6 +753,7 @@ int main(int argc, char** argv) {
   int64_t curEpoch = startEpoch;
 
   auto train = [&meters,
+                &validWerWithDecoder,
                 &test,
                 &logStatus,
                 &saveModels,
@@ -688,12 +832,18 @@ int main(int argc, char** argv) {
 
       // valid
       for (auto& vds : validds) {
-        test(ntwrk, crit, vds.second, meters.valid[vds.first]);
+        test(
+            ntwrk,
+            crit,
+            vds.second,
+            meters.valid[vds.first],
+            validWerWithDecoder[vds.first]);
       }
 
       // print status
       try {
-        logStatus(meters, totalEpochs, totalUpdates, lr, lrcrit);
+        logStatus(
+            meters, validWerWithDecoder, totalEpochs, totalUpdates, lr, lrcrit);
       } catch (const std::exception& ex) {
         FL_LOG(fl::ERROR) << "Error while writing logs: " << ex.what();
       }
