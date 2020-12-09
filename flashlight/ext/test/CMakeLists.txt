@@ -5,9 +5,9 @@ set(LIBS flashlight)
 
 if(FL_BUILD_CONTRIB)
   build_test(
-    ${DIR}/common/SequentialBuilderTest.cpp
-    ${LIBS}
-    "ARCHDIR=\"${DIR}/common/\""
+    SRC ${DIR}/common/SequentialBuilderTest.cpp
+    LIBS ${LIBS}
+    PREPROC "ARCHDIR=\"${DIR}/common/\""
   )
 endif()
 
@@ -21,9 +21,9 @@ set_target_properties(test_module_plugin PROPERTIES
 add_dependencies(test_module_plugin flashlight)
 
 build_test(
-  ${DIR}/common/ModulePluginTest.cpp
-  ${LIBS}
-  "PLUGINDIR=\"${CMAKE_CURRENT_BINARY_DIR}\""
+  SRC ${DIR}/common/ModulePluginTest.cpp
+  LIBS ${LIBS}
+  PREPROC "PLUGINDIR=\"${CMAKE_CURRENT_BINARY_DIR}\""
   )
 target_link_libraries(ModulePluginTest PUBLIC "-Wl,--export-dynamic")
 add_dependencies(ModulePluginTest test_module_plugin)
