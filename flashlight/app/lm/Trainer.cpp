@@ -293,11 +293,12 @@ void Trainer::trainStep() {
   fl::Variable input, target;
   sampleTimerMeter_.resume();
   std::tie(input, target) = getInputAndTarget(trainDataset_->get(batchIdx_));
+  af::array inputSizes = af::flat(af::sum(input.array() != kPadIdx_, 0));
   sampleTimerMeter_.stopAndIncUnit();
 
   // 2. Forward
   fwdTimeMeter_.resume();
-  auto output = network_->forward({input}).front();
+  auto output = forwardSequentialModuleWithPadMask(input, network_, inputSizes);
   af::sync();
   critFwdTimeMeter_.resume();
   auto loss = criterion_->forward({output, target}).front();
@@ -341,7 +342,8 @@ void Trainer::evalStep() {
   for (const auto& sample : *validDataset_) {
     fl::Variable input, target;
     std::tie(input, target) = getInputAndTarget(sample);
-    auto output = network_->forward({input}).front();
+    af::array inputSizes = af::flat(af::sum(input.array() == kPadIdx_, 0));
+    auto output = forwardSequentialModuleWithPadMask(input, network_, inputSizes);
     auto loss = criterion_->forward({output, target}).front();
     auto numTokens = af::count<int>(target.array() != kPadIdx_);
     if (numTokens > 0) {

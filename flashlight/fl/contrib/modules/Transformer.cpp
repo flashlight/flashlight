@@ -77,32 +77,59 @@ Variable Transformer::getMask(int32_t n, bool cache) {
 }
 
 Variable Transformer::selfAttention(const std::vector<Variable>& input) {
+  // previous step[optionally], input, padMask
+  auto encoderInput = input.at(input.size() - 2);
+  // in case of previous state input[0] has size CxT_prevxB
   int n = input[0].dims(1), bsz = input[0].dims(2);
   double pDrop = train_ ? pDropout_ : 0.0;
 
-  auto q = transpose((*wq_)(input.back()));
-  auto k = transpose((*wk_)(concatenate(input, 1)));
-  auto v = transpose((*wv_)(concatenate(input, 1)));
+  auto q = transpose((*wq_)(encoderInput));
+  std::vector<fl::Variable> inputWithState(input.begin(), input.end() - 1);
+  auto k = transpose((*wk_)(concatenate(inputWithState, 1)));
+  auto v = transpose((*wv_)(concatenate(inputWithState, 1)));
 
   Variable mask, posEmb;
   if (bptt_ > 0) {
     posEmb =
-        tile(params_[0].as(input.back().type()), af::dim4(1, 1, nHeads_ * bsz));
+        tile(params_[0].as(encoderInput.type()), af::dim4(1, 1, nHeads_ * bsz));
   }
-  if (useMask_ && input.back().dims(1) > 1) {
-    mask = getMask(n, input.size() == 2);
+  if (useMask_ && encoderInput.dims(1) > 1) {
+    // mask future if we use the previous state (then n is previous time)
+    mask = getMask(n, input.size() == 3);
   }
 
-  int offset = (input.size() == 1) ? 0 : n;
+  int offset = (input.size() == 2) ? 0 : n;
 
-  auto result = multiheadAttention(q, k, v, posEmb, mask, nHeads_, pDrop, offset);
+  // time x batch
+  fl::Variable padMask;
+  if (!input.back().isempty()) {
+    auto padMaskArr = input.back().array();
+    padMaskArr =
+        af::resize(padMaskArr, encoderInput.dims(1), encoderInput.dims(2));
+    padMask = fl::Variable(af::log(padMaskArr), false);
+  }
+  auto result = multiheadAttention(
+      q, k, v, posEmb, mask, padMask, nHeads_, pDrop, offset);
   result = (*wf_)(transpose(result));
 
   return result;
 }
 
 std::vector<Variable> Transformer::forward(const std::vector<Variable>& input) {
-  auto x = input.back();
+  // previous step[optionally], input, padMask
+  // padMask should be empty if previous step is provided
+  // padMask is expected to have "1" on the used positions and "0" on padded
+  // positions
+  if (input.size() < 2) {
+    throw std::invalid_argument(
+        "Invalid inputs for transformer block: there should be at least input and mask");
+  }
+  auto x = input.at(input.size() - 2);
+  if (!input.back().isempty() && x.dims(2) != input.back().dims(1)) {
+    throw std::invalid_argument(
+        "Invalid inputs for transformer block: input and Mask batch sizes are different");
+  }
+
   float f = 1.0;
   if (train_ && (af::randu(1).scalar<float>() < pLayerdrop_)) {
     f = 0.0;
