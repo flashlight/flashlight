@@ -597,9 +597,8 @@ int main(int argc, char** argv) {
         validds, FLAGS_nthread, false /* shuffle */, 0 /* seed */);
 
     for (auto& batch : *curValidset) {
-      auto output = ntwrk->forward({fl::input(batch[kInputIdx])})
-                        .front()
-                        .as(batch[kInputIdx].type());
+      auto output = fl::ext::forwardSequentialModuleWithPadMask(
+          fl::input(batch[kInputIdx]), ntwrk, batch[kDurationIdx]);
       auto loss =
           crit->forward({output, fl::Variable(batch[kTargetIdx], false)})
               .front();
@@ -641,24 +640,24 @@ int main(int argc, char** argv) {
     if (FLAGS_saug_start_update >= 0) {
       if (!(FLAGS_pow || FLAGS_mfsc || FLAGS_mfcc)) {
         saug = std::make_shared<fl::RawWavSpecAugment>(
-          FLAGS_filterbanks,
-          FLAGS_saug_fmaskf,
-          FLAGS_saug_fmaskn,
-          FLAGS_saug_tmaskt,
-          FLAGS_saug_tmaskp,
-          FLAGS_saug_tmaskn,
-          FLAGS_filterbanks,
-          FLAGS_lowfreqfilterbank,
-          FLAGS_highfreqfilterbank,
-          FLAGS_samplerate);
+            FLAGS_filterbanks,
+            FLAGS_saug_fmaskf,
+            FLAGS_saug_fmaskn,
+            FLAGS_saug_tmaskt,
+            FLAGS_saug_tmaskp,
+            FLAGS_saug_tmaskn,
+            FLAGS_filterbanks,
+            FLAGS_lowfreqfilterbank,
+            FLAGS_highfreqfilterbank,
+            FLAGS_samplerate);
       } else {
         saug = std::make_shared<fl::SpecAugment>(
-          FLAGS_filterbanks,
-          FLAGS_saug_fmaskf,
-          FLAGS_saug_fmaskn,
-          FLAGS_saug_tmaskt,
-          FLAGS_saug_tmaskp,
-          FLAGS_saug_tmaskn);
+            FLAGS_filterbanks,
+            FLAGS_saug_fmaskf,
+            FLAGS_saug_fmaskn,
+            FLAGS_saug_tmaskt,
+            FLAGS_saug_tmaskp,
+            FLAGS_saug_tmaskn);
       }
     }
 
@@ -782,8 +781,8 @@ int main(int argc, char** argv) {
               curBatch >= FLAGS_saug_start_update) {
             input = saug->forward({input}).front();
           }
-          auto output =
-              ntwrk->forward({input}).front().as(batch[kInputIdx].type());
+          auto output = forwardSequentialModuleWithPadMask(
+              input, ntwrk, batch[kDurationIdx]);
           af::sync();
           meters.critfwdtimer.resume();
           auto loss =

@@ -130,6 +130,91 @@ TEST(ModuleTest, AsymmetricConv1DFwd) {
   ASSERT_FALSE(allClose(output, outputFuture));
 }
 
+TEST(ModuleTest, TransformerPadMaskFwd) {
+  int timesteps = 10;
+  int c = 4;
+  int nheads = 2;
+
+  auto tr =
+      Transformer(c, c / nheads, c, nheads, timesteps, 0, 0, false, false);
+  auto input1 = Variable(af::randu(c, timesteps, 1, 1), false);
+  auto input1NoPad = input1.cols(0, timesteps / 2 - 1);
+  auto input2 = Variable(af::randu(c, timesteps, 1, 1), false);
+  auto input = fl::concatenate({input1, input2}, 2);
+  auto padMask = af::constant(1, af::dim4(timesteps, 2));
+  padMask(af::iota(timesteps / 2) + timesteps / 2, 0) = 0;
+  auto noPadMask = af::constant(1, af::dim4(timesteps, 2));
+
+  auto output = tr.forward({input, Variable(padMask, false)}).front();
+  auto outputNoPad = tr.forward({input, Variable(noPadMask, false)}).front();
+
+  ASSERT_EQ(output.dims(0), c);
+  ASSERT_EQ(output.dims(1), timesteps);
+  ASSERT_EQ(output.dims(2), 2);
+
+  auto output1 =
+      tr.forward({input1NoPad,
+                  Variable(padMask.rows(0, timesteps / 2 - 1).col(0), false)})
+          .front();
+  auto output2 = tr.forward({input2, Variable(padMask.col(1), false)}).front();
+  ASSERT_TRUE(
+      allClose(output.array()(af::span, af::span, 1), output2.array()));
+  ASSERT_TRUE(
+      allClose(outputNoPad.array()(af::span, af::span, 1), output2.array()));
+  ASSERT_TRUE(allClose(
+      output.array()(af::span, af::iota(timesteps / 2), 0), output1.array()));
+  ASSERT_FALSE(allClose(
+      outputNoPad.array()(af::span, af::iota(timesteps / 2), 0),
+      output1.array()));
+}
+
+TEST_F(ModuleTestF16, TransformerPadMaskFwd16) {
+  if (!af::isHalfAvailable(af::getDevice())) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+  int timesteps = 10;
+  int c = 4;
+  int nheads = 2;
+
+  auto tr =
+      Transformer(c, c / nheads, c, nheads, timesteps, 0, 0, false, false);
+  auto input1 = Variable(af::randu(c, timesteps, 1, 1, af::dtype::f16), false);
+  auto input1NoPad = input1.cols(0, timesteps / 2 - 1);
+  auto input2 = Variable(af::randu(c, timesteps, 1, 1, af::dtype::f16), false);
+  auto input = fl::concatenate({input1, input2}, 2);
+  auto padMask = af::constant(1, af::dim4(timesteps, 2));
+  padMask(af::iota(timesteps / 2) + timesteps / 2, 0) = 0;
+  auto noPadMask = af::constant(1, af::dim4(timesteps, 2));
+
+  auto output = tr.forward({input, Variable(padMask, false)}).front();
+  auto outputNoPad = tr.forward({input, Variable(noPadMask, false)}).front();
+
+  ASSERT_EQ(output.dims(0), c);
+  ASSERT_EQ(output.dims(1), timesteps);
+  ASSERT_EQ(output.dims(2), 2);
+
+  if (OptimMode::get().getOptimLevel() == OptimLevel::O3) {
+    ASSERT_EQ(outputNoPad.type(), input.type());
+  } else {
+    ASSERT_EQ(outputNoPad.type(), af::dtype::f32); // result is upcast
+  }
+
+  auto output1 =
+      tr.forward({input1NoPad,
+                  Variable(padMask.rows(0, timesteps / 2 - 1).col(0), false)})
+          .front();
+  auto output2 = tr.forward({input2, Variable(padMask.col(1), false)}).front();
+  ASSERT_TRUE(
+      allClose(output.array()(af::span, af::span, 1), output2.array()));
+  ASSERT_TRUE(
+      allClose(outputNoPad.array()(af::span, af::span, 1), output2.array()));
+  ASSERT_TRUE(allClose(
+      output.array()(af::span, af::iota(timesteps / 2), 0), output1.array()));
+  ASSERT_FALSE(allClose(
+      outputNoPad.array()(af::span, af::iota(timesteps / 2), 0),
+      output1.array()));
+}
+
 TEST(ModuleTest, TransformerFwd) {
   int batchsize = 10;
   int timesteps = 120;
@@ -140,7 +225,8 @@ TEST(ModuleTest, TransformerFwd) {
       Transformer(c, c / nheads, c, nheads, timesteps, 0.2, 0.1, true, false);
   auto input = Variable(af::randu(c, timesteps, batchsize, 1), false);
 
-  auto output = tr.forward({input});
+  fl::Variable padMask;
+  auto output = tr.forward({input, padMask});
 
   ASSERT_EQ(output[0].dims(0), c);
   ASSERT_EQ(output[0].dims(1), timesteps);
@@ -162,7 +248,8 @@ TEST_F(ModuleTestF16, TransformerFwdF16) {
   auto input =
       Variable(af::randu(c, timesteps, batchsize, 1, af::dtype::f16), false);
 
-  auto output = tr.forward({input});
+  fl::Variable padMask;
+  auto output = tr.forward({input, padMask});
   if (OptimMode::get().getOptimLevel() == OptimLevel::O3) {
     ASSERT_EQ(output[0].type(), input.type());
   } else {
@@ -183,7 +270,7 @@ TEST(ModuleTest, ConformerFwd) {
   auto tr = Conformer(c, c / nheads, c, nheads, timesteps, 33, 0.2, 0.1);
   auto input = Variable(af::randu(c, timesteps, batchsize, 1), false);
 
-  auto output = tr.forward({input});
+  auto output = tr.forward({input, Variable()});
 
   ASSERT_EQ(output[0].dims(0), c);
   ASSERT_EQ(output[0].dims(1), timesteps);
@@ -204,7 +291,7 @@ TEST_F(ModuleTestF16, ConformerFwdF16) {
   auto input =
       Variable(af::randu(c, timesteps, batchsize, 1, af::dtype::f16), false);
 
-  auto output = tr.forward({input});
+  auto output = tr.forward({input, Variable()});
   if (OptimMode::get().getOptimLevel() == OptimLevel::O3) {
     ASSERT_EQ(output[0].type(), input.type());
   } else {

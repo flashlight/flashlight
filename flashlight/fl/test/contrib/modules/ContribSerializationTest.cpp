@@ -82,8 +82,8 @@ TEST(ModuleTest, TransformerSerialization) {
   loaded->eval();
 
   auto input = Variable(af::randu(c, timesteps, batchsize, 1), false);
-  auto output = model->forward({input});
-  auto outputl = loaded->forward({input});
+  auto output = model->forward({input, Variable()});
+  auto outputl = loaded->forward({input, Variable()});
 
   ASSERT_TRUE(allParamsClose(*loaded, *model));
   ASSERT_TRUE(allClose(outputl[0], output[0]));
@@ -105,8 +105,8 @@ TEST(ModuleTest, ConformerSerialization) {
   loaded->eval();
 
   auto input = Variable(af::randu(c, timesteps, batchsize, 1), false);
-  auto output = model->forward({input});
-  auto outputl = loaded->forward({input});
+  auto output = model->forward({input, Variable()});
+  auto outputl = loaded->forward({input, Variable()});
 
   ASSERT_TRUE(allParamsClose(*loaded, *model));
   ASSERT_TRUE(allClose(outputl[0], output[0]));

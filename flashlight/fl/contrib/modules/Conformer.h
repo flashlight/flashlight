@@ -61,7 +61,7 @@ class Conformer : public Container {
   std::shared_ptr<Conv2D> convDepthWise_;
 
   static Variable conformerInitLinear(int32_t inDim, int32_t outDim);
-  Variable mhsa(const Variable& input);
+  Variable mhsa(const Variable& input, const Variable& inputPadMask);
   Variable conv(const Variable& input);
 
   Conformer() = default;

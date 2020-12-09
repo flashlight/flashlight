@@ -8,6 +8,7 @@
 #pragma once
 
 #include "flashlight/fl/contrib/contrib.h"
+#include "flashlight/fl/contrib/modules/modules.h"
 #include "flashlight/fl/flashlight.h"
 
 namespace fl {
@@ -21,5 +22,19 @@ std::shared_ptr<fl::Sequential> buildSequentialModule(
     const std::string& archfile,
     int64_t nFeatures,
     int64_t nClasses);
+
+/**
+ * Utility function for to run forward with pad masking
+ * casting of modules happens to use pad masking for trasnfromer layers
+ * properly. It assumes that model is constructed with
+ * buildSequentialModule. Caveat: it is not supporting resnet block
+ * with a transformer block in it!
+ * TODO remove with landing plugin arch instead of arch files
+ */
+fl::Variable forwardSequentialModuleWithPadMask(
+    const fl::Variable& input,
+    std::shared_ptr<fl::Module> ntwrk,
+    const af::array& inputSizes);
+
 } // namespace ext
 } // namespace fl

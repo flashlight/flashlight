@@ -22,6 +22,7 @@
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/ext/common/DistributedUtils.h"
+#include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/ext/common/Serializer.h"
 #include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
@@ -274,8 +275,8 @@ int main(int argc, char** argv) {
     meters.timer.resume();
     int cnt = 0;
     for (auto& sample : *localDs) {
-      auto rawEmission =
-          localNetwork->forward({fl::input(sample[kInputIdx])}).front();
+      auto rawEmission = fl::ext::forwardSequentialModuleWithPadMask(
+          fl::input(sample[kInputIdx]), localNetwork, sample[kDurationIdx]);
       auto emission = afToVector<float>(rawEmission);
       auto tokenTarget = afToVector<int>(sample[kTargetIdx]);
       auto wordTarget = afToVector<int>(sample[kWordIdx]);
