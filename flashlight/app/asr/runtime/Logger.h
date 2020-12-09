@@ -46,6 +46,7 @@ struct TestMeters {
 
 std::pair<std::string, std::string> getStatus(
     TrainMeters& meters,
+    std::unordered_map<std::string, double>& dmErrs,
     int64_t epoch,
     int64_t nupdates,
     double lr,
