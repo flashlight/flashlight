@@ -56,16 +56,11 @@ endif()
 
 target_link_libraries(
   fl-libraries
-  PRIVATE
-  ${CBLAS_LIBRARIES}
-  ${OMPLIB}
-  FFTW3::fftw3
-  )
-
-target_link_libraries(
-  fl-libraries
   PUBLIC
-  $<BUILD_INTERFACE:FFTW3::fftw3>
+    $<BUILD_INTERFACE:FFTW3::fftw3>
+  PRIVATE
+    ${OMPLIB}
+    ${CBLAS_LIBRARIES}
   )
 
 target_include_directories(
