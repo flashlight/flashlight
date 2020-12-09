@@ -5,6 +5,14 @@ add_library(
   ""
   )
 
+# Find GLog
+find_package(GLOG REQUIRED)
+if (GLOG_FOUND)
+  message(STATUS "GLOG found")
+else()
+  message(FATAL_ERROR "GLOG not found")
+endif()
+
 # Find gflags
 find_package(gflags REQUIRED)
 if (gflags_FOUND)
@@ -16,6 +24,7 @@ endif()
 target_link_libraries(
   flashlight-app-imgclass
   PUBLIC
+  ${GLOG_LIBRARIES}
   ${gflags_LIBRARIES}
   flashlight
   )
@@ -23,6 +32,7 @@ target_link_libraries(
 target_include_directories(
   flashlight-app-imgclass
   PUBLIC
+  ${GLOG_INCLUDE_DIRS}
   ${gflags_INCLUDE_DIRS}
   )
 
@@ -33,6 +43,7 @@ add_executable(fl_imageNetResnet34
 target_link_libraries(
   fl_imageNetResnet34
   flashlight-app-imgclass
+  ${GLOG_LIBRARIES}
   )
 install(TARGETS fl_imageNetResnet34 RUNTIME DESTINATION ${FL_INSTALL_BIN_DIR})
 set_executable_output_directory(fl_imageNetResnet34 ${FL_BUILD_BINARY_OUTPUT_DIR}/imgclass)
