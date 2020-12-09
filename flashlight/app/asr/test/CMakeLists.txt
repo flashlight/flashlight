@@ -4,45 +4,40 @@ set(DIR ${CMAKE_CURRENT_LIST_DIR})
 set(LIBS flashlight-app-asr)
 
 # Criterion
-build_test(${DIR}/criterion/CriterionTest.cpp ${LIBS} "" ON)
-build_test(${DIR}/criterion/Seq2SeqTest.cpp ${LIBS} "" ON)
-build_test(${DIR}/criterion/attention/AttentionTest.cpp ${LIBS} "" ON)
-build_test(${DIR}/criterion/attention/WindowTest.cpp ${LIBS} "" ON)
+build_test(SRC ${DIR}/criterion/CriterionTest.cpp LIBS ${LIBS})
+build_test(SRC ${DIR}/criterion/Seq2SeqTest.cpp LIBS ${LIBS})
+build_test(SRC ${DIR}/criterion/attention/AttentionTest.cpp LIBS ${LIBS})
+build_test(SRC ${DIR}/criterion/attention/WindowTest.cpp LIBS ${LIBS})
 # Data
 build_test(
-  ${DIR}/data/DataTest.cpp
-  ${LIBS}
-  "DATA_TEST_DATADIR=\"${DIR}/data/testdata\""
-  ON
+  SRC ${DIR}/data/DataTest.cpp
+  LIBS ${LIBS}
+  PREPROC "DATA_TEST_DATADIR=\"${DIR}/data/testdata\""
   )
-build_test(${DIR}/data/FeatureTest.cpp ${LIBS} "" ON)
+build_test(SRC ${DIR}/data/FeatureTest.cpp LIBS ${LIBS})
 build_test(
-  ${DIR}/data/ListFileDatasetTest.cpp
-  ${LIBS}
-  "DATA_TEST_DATADIR=\"${DIR}/data/testdata\""
-  ON
+  SRC ${DIR}/data/ListFileDatasetTest.cpp
+  LIBS ${LIBS}
+  PREPROC "DATA_TEST_DATADIR=\"${DIR}/data/testdata\""
   )
 build_test(
-  ${DIR}/data/SoundTest.cpp
-  ${LIBS}
-  "DATA_TEST_DATADIR=\"${DIR}/data/testdata\""
-  ON
+  SRC ${DIR}/data/SoundTest.cpp
+  LIBS ${LIBS}
+  PREPROC "DATA_TEST_DATADIR=\"${DIR}/data/testdata\""
   )
 # Decoder
 build_test(
-  ${DIR}/decoder/ConvLmModuleTest.cpp
-  ${LIBS}
-  "DECODER_TEST_DATADIR=\"${DIR}/decoder/data\""
-  ON
+  SRC ${DIR}/decoder/ConvLmModuleTest.cpp
+  LIBS ${LIBS}
+  PREPROC "DECODER_TEST_DATADIR=\"${DIR}/decoder/data\""
   )
 build_test(
-  ${DIR}/decoder/DecoderTest.cpp
-  ${LIBS}
-  "DECODER_TEST_DATADIR=\"${DIR}/decoder/data\""
-  ON
+  SRC ${DIR}/decoder/DecoderTest.cpp
+  LIBS ${LIBS}
+  PREPROC "DECODER_TEST_DATADIR=\"${DIR}/decoder/data\""
   )
 # Runtime
-build_test(${DIR}/runtime/RuntimeTest.cpp ${LIBS} "" ON)
+build_test(SRC ${DIR}/runtime/RuntimeTest.cpp LIBS ${LIBS})
 # Augmentation
-build_test(${DIR}/augmentation/SoundEffectTest.cpp ${LIBS} "" ON)
-build_test(${DIR}/augmentation/SoundEffectConfigTest.cpp ${LIBS} "" ON)
+build_test(SRC ${DIR}/augmentation/SoundEffectTest.cpp LIBS ${LIBS})
+build_test(SRC ${DIR}/augmentation/SoundEffectConfigTest.cpp LIBS ${LIBS})
