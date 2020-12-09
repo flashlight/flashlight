@@ -1,23 +1,33 @@
 cmake_minimum_required(VERSION 3.5.1)
 
-# Get or find Google Test
+set(GTEST_IMPORTED_TARGETS "")
+
+# Get or find Google Test and Google Mock
 find_package(GTest 1.10.0)
-if (NOT TARGET gtest AND NOT GTEST_FOUND)
-  message(STATUS "googletest not found - will download and build from source")
-  # Download and build googletest
-  include(${CMAKE_MODULE_PATH}/BuildGoogleTest.cmake) # internally sets GTEST_LIBRARIES
+if (NOT GTEST_FOUND)
+  if (NOT TARGET gtest)
+    message(STATUS "googletest not found - will download and build from source")
+    # Download and build googletest
+    include(${CMAKE_MODULE_PATH}/BuildGoogleTest.cmake) # internally sets GTEST_LIBRARIES
+    list(APPEND GTEST_IMPORTED_TARGETS GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
+  endif()
 else()
   message(STATUS "gtest found: (include: ${GTEST_INCLUDE_DIRS}, lib: ${GTEST_BOTH_LIBRARIES}")
   # Try again with a config to make sure there isn't some broken module in the way
   find_package(GTest CONFIG 1.10.0)
-  if (NOT TARGET GTest::gtest)
-    # If we found the weirdly-named CMake targets from FindGTest, alias them.
-    # Assume gmock was built into gtest as it should be with >= 1.10.0:
-    add_library(GTest::gtest ALIAS GTest::GTest)
-    add_library(GTest::gtest_main ALIAS GTest::Main)
-    add_library(GTest::gmock ALIAS GTest::GTest)
-    add_library(GTest::gmock_main ALIAS GTest::Main)
+  if (TARGET GTest::GTest)
+    # We found the differently-named CMake targets from FindGTest
+    if (NOT TARGET GTest::Main)
+      message(FATAL_ERROR "Google Test must be built with main")
+    endif()
+    list(APPEND GTEST_IMPORTED_TARGETS GTest::GTest GTest::Main)
   endif()
+  if (NOT TARGET GTest::gmock)
+    find_package(GMock REQUIRED)
+    message(STATUS "gmock found: (include: ${GMOCK_INCLUDE_DIRS}, lib: ${GMOCK_BOTH_LIBRARIES})")
+  endif()
+  list(APPEND GTEST_IMPORTED_TARGETS GTest::gmock GTest::gmock_main)
+  message(STATUS "Found gtest and gmock on system.")
 endif()
 
 include(GoogleTest)
@@ -33,10 +43,7 @@ function(build_test SRCFILE LINK_LIBRARY PREPROC_DEFS)
     ${target}
     PUBLIC
     ${LINK_LIBRARY}
-    GTest::gtest
-    GTest::gtest_main
-    GTest::gmock
-    GTest::gmock_main
+    ${GTEST_IMPORTED_TARGETS}
     )
   target_include_directories(
     ${target}
