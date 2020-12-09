@@ -37,14 +37,39 @@ Conformer::Conformer(
           conformerInitLinear(modelDim, headDim * nHeads))),
       wf_(std::make_shared<Linear>(
           conformerInitLinear(headDim * nHeads, modelDim))),
-      conv1_(std::make_shared<Linear>(conformerInitLinear(modelDim, modelDim * 2))),
+      conv1_(std::make_shared<Linear>(
+          conformerInitLinear(modelDim, modelDim * 2))),
       conv2_(std::make_shared<Linear>(conformerInitLinear(modelDim, modelDim))),
-      norm1_(std::make_shared<LayerNorm>(std::vector<int>({0}), 1e-5, true, modelDim)),
-      norm2_(std::make_shared<LayerNorm>(std::vector<int>({0}), 1e-5, true, modelDim)),
-      normMhsa_(std::make_shared<LayerNorm>(std::vector<int>({0}), 1e-5, true, modelDim)),
-      normConv1_(std::make_shared<LayerNorm>(std::vector<int>({0}), 1e-5, true, modelDim)),
-      normConv2_(std::make_shared<LayerNorm>(std::vector<int>({0}), 1e-5, true, modelDim)),
-      norm3_(std::make_shared<LayerNorm>(std::vector<int>({0}), 1e-5, true, modelDim)),
+      norm1_(std::make_shared<LayerNorm>(
+          std::vector<int>({0}),
+          1e-5,
+          true,
+          modelDim)),
+      norm2_(std::make_shared<LayerNorm>(
+          std::vector<int>({0}),
+          1e-5,
+          true,
+          modelDim)),
+      normMhsa_(std::make_shared<LayerNorm>(
+          std::vector<int>({0}),
+          1e-5,
+          true,
+          modelDim)),
+      normConv1_(std::make_shared<LayerNorm>(
+          std::vector<int>({0}),
+          1e-5,
+          true,
+          modelDim)),
+      normConv2_(std::make_shared<LayerNorm>(
+          std::vector<int>({0}),
+          1e-5,
+          true,
+          modelDim)),
+      norm3_(std::make_shared<LayerNorm>(
+          std::vector<int>({0}),
+          1e-5,
+          true,
+          modelDim)),
       convDepthWise_(std::make_shared<Conv2D>(
           modelDim,
           modelDim,
@@ -90,7 +115,7 @@ Variable Conformer::conformerInitLinear(int32_t inDim, int32_t outDim) {
   return fl::uniform(outDim, inDim, -std, std);
 }
 
-Variable Conformer::mhsa(const Variable& input) {
+Variable Conformer::mhsa(const Variable& input, const Variable& inputPadMask) {
   float pDropout = train_ ? pDropout_ : 0.0;
   int bsz = input.dims(2);
 
@@ -103,7 +128,14 @@ Variable Conformer::mhsa(const Variable& input) {
   if (posEmbContextSize_ > 0) {
     posEmb = tile(params_[0].as(input.type()), af::dim4(1, 1, nHeads_ * bsz));
   }
-  auto result = multiheadAttention(q, k, v, posEmb, mask, nHeads_, pDropout, 0);
+  fl::Variable padMask;
+  if (!inputPadMask.isempty()) {
+    auto padMaskArr = inputPadMask.array();
+    padMaskArr = af::resize(padMaskArr, input.dims(1), input.dims(2));
+    padMask = fl::Variable(af::log(padMaskArr), false);
+  }
+  auto result =
+      multiheadAttention(q, k, v, posEmb, mask, padMask, nHeads_, pDropout, 0);
   result = (*wf_)(transpose(result));
   result = input + dropout(result, pDropout);
   return result;
@@ -128,6 +160,11 @@ Variable Conformer::conv(const Variable& input) {
 }
 
 std::vector<Variable> Conformer::forward(const std::vector<Variable>& input) {
+  if (input.size() != 2) {
+    throw std::invalid_argument(
+        "Invalid inputs for conformer block: there should be input "
+        "and paddding mask (can be empty Variable)");
+  }
   float pDropout = train_ ? pDropout_ : 0.0;
   float f = 1.0;
   if (train_ && (af::randu(1).scalar<float>() < pLayerDropout_)) {
@@ -143,7 +180,7 @@ std::vector<Variable> Conformer::forward(const std::vector<Variable>& input) {
           pDropout);
   x = x + f * 0.5 * ffn1;
   // apply multihead attention module
-  x = x + f * mhsa(x);
+  x = x + f * mhsa(x, input[1]);
   // apply conv module
   x = x + f * conv(x);
   // apply second feed-forward module

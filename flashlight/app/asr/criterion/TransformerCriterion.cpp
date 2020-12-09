@@ -172,8 +172,9 @@ std::pair<Variable, Variable> TransformerCriterion::vectorizedDecoder(
   }
 
   Variable alpha, summaries;
+  Variable padMask;
   for (int i = 0; i < nLayer_; i++) {
-    hy = layer(i)->forward(std::vector<Variable>({hy})).front();
+    hy = layer(i)->forward(std::vector<Variable>({hy, padMask})).front();
   }
 
   if (!input.isempty()) {

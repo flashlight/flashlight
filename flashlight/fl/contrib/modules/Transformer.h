@@ -23,14 +23,21 @@ namespace fl {
  * This module also supports layer drop regularization, as introduced in
  * [Fan et al (2019)](https://arxiv.org/abs/1909.11556).
  *
- * Input dimension at forward is assumed to be CxTxBx1, where C is the
+ * Forward takes {previous step[optionally], input, padMask}
+ * previous step is used in for the decoder phase, previous output with size
+ * CxT'xBx1 Input dimension at forward is assumed to be CxTxBx1, where C is the
  * number of features, T the sequence length and B the batch size.
+ * padMask is with T''xB sizes (T'' will be af::resize to the input size)
+ * padMask should be empty if "previous step" is provided (in the decoder phase)
+ * padMask is expected to have "1" on the normal positions and "0" on the padded
+ * positions
  *
  * @param modelDim input embedding dimension
  * @param headDim dimension of each head
  * @param mlpDim dimension of the feed-forward layers
  * @param nHeads number of heads
- * @param bptt size for learnt relative positional embedding matrix (2 * bptt - 1) * nHeads
+ * @param bptt size for learnt relative positional embedding matrix (2 * bptt -
+ * 1) * nHeads
  * @param pDropout dropout probability
  * @param pLayerdrop layer dropout probability
  * @param useMask mask or not future in the computations

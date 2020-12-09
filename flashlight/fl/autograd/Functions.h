@@ -935,14 +935,16 @@ Variable relativePositionalEmbeddingRotate(const Variable& input);
 /**
  * Multihead Attention function
  * For details, see [Vaswani et al (2017)](https://arxiv.org/abs/1706.03762).
- * @param query query Variable
- * @param key key Variable
- * @param value value Variable
+ * @param query query Variable of size T x nHeads * headDim x B
+ * @param key key Variable of size Time x nHeads * headDim x B
+ * @param value value Variable of size Time x nHeads * headDim x B
  * @param posEmb if non empty then compute relative
  * positional embedding in additon to standard computations
- * @param mask mask or not future in the computations
+ * @param mask mask or not future in the computations T x T
  * if non-empty then don't use future (for example for autoregressive language models
  * or for decoder part in the encoder-decoder transformer models)
+ * @param padMask mask which is 1 for positions where pad token is,
+ * don't attend to the pad-positions, of size T x B
  * @param nHeads number of heads
  * @param pDropout dropout probability
  * @param offset size of the current output from the decoder used now as input
@@ -953,6 +955,7 @@ Variable multiheadAttention(
     const Variable& value,
     const Variable& posEmb,
     const Variable& mask,
+    const Variable& padMask,
     const int32_t nHeads,
     const double pDropout,
     const int32_t offset = 0);

@@ -25,6 +25,7 @@
 #include "flashlight/app/asr/decoder/Defines.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
+#include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/ext/common/Serializer.h"
 #include "flashlight/lib/common/ProducerConsumerQueue.h"
 #include "flashlight/lib/text/decoder/LexiconDecoder.h"
@@ -429,8 +430,8 @@ int main(int argc, char** argv) {
       /* 3. Load Emissions */
       EmissionUnit emissionUnit;
       if (FLAGS_emission_dir.empty()) {
-        auto rawEmission =
-            localNetwork->forward({fl::input(sample[kInputIdx])}).front();
+        auto rawEmission = fl::ext::forwardSequentialModuleWithPadMask(
+            fl::input(sample[kInputIdx]), localNetwork, sample[kDurationIdx]);
         emissionUnit = EmissionUnit(
             afToVector<float>(rawEmission),
             sampleId,
