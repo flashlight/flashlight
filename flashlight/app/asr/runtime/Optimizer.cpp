@@ -7,6 +7,7 @@
 
 #include "flashlight/app/asr/runtime/Optimizer.h"
 
+#include <glog/logging.h>
 
 namespace fl {
 namespace app {
@@ -66,7 +67,7 @@ std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
         FLAGS_optimepsilon,
         weightdecay);
   } else {
-    FL_LOG(fl::FATAL) << "Optimizer option " << optimizer << " not implemented";
+    LOG(FATAL) << "Optimizer option " << optimizer << " not implemented";
   }
 
   return opt;

@@ -11,6 +11,8 @@
 #include <fstream>
 #include <vector>
 
+#include <glog/logging.h>
+
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/lib/audio/feature/Mfcc.h"
 #include "flashlight/lib/audio/feature/Mfsc.h"
@@ -116,8 +118,7 @@ FeatureData featurize(
   if (FLAGS_pow || FLAGS_mfsc || FLAGS_mfcc) {
     if ((FLAGS_mfcc && FLAGS_mfsc) || (FLAGS_pow && FLAGS_mfsc) ||
         (FLAGS_mfcc && FLAGS_pow)) {
-      FL_LOG(fl::FATAL)
-          << "Only one of -mfsc, -mfcc, -pow options can set to true";
+      LOG(FATAL) << "Only one of -mfsc, -mfcc, -pow options can set to true";
     }
     int64_t featSz = 1;
     if (FLAGS_mfcc) {
@@ -155,14 +156,13 @@ FeatureData featurize(
     std::vector<std::vector<int>> tgtFeat;
     size_t maxTgtSize = 0;
     if (dicts.find(targetType) == dicts.end()) {
-      FL_LOG(fl::FATAL) << "Dictionary not provided for target: " << targetType;
+      LOG(FATAL) << "Dictionary not provided for target: " << targetType;
     }
     auto dict = dicts.find(targetType)->second;
 
     for (const auto& d : data) {
       if (d.targets.find(targetType) == d.targets.end()) {
-        FL_LOG(fl::FATAL) << "Target type not found for featurization: "
-                          << targetType;
+        LOG(FATAL) << "Target type not found for featurization: " << targetType;
       }
       auto target = d.targets.find(targetType)->second;
 
@@ -203,7 +203,7 @@ FeatureData featurize(
         feat.targets[targetType].resize(batchSz * maxTgtSize, padVal);
         feat.targetDims[targetType] = af::dim4(maxTgtSize, batchSz);
       } else {
-        FL_LOG(fl::FATAL) << "Unrecognized target type" << targetType;
+        LOG(FATAL) << "Unrecognized target type" << targetType;
       }
     }
 

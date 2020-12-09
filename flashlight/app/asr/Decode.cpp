@@ -16,6 +16,7 @@
 #include <vector>
 
 #include <gflags/gflags.h>
+#include <glog/logging.h>
 #include "flashlight/fl/flashlight.h"
 
 #include "flashlight/app/asr/common/Defines.h"
@@ -43,6 +44,8 @@ using namespace fl::lib::audio;
 using namespace fl::app::asr;
 
 int main(int argc, char** argv) {
+  google::InitGoogleLogging(argv[0]);
+  google::InstallFailureSignalHandler();
   std::string exec(argv[0]);
   std::vector<std::string> argvs;
   for (int i = 0; i < argc; i++) {
@@ -50,15 +53,15 @@ int main(int argc, char** argv) {
   }
   gflags::SetUsageMessage("Usage: Please refer to https://git.io/JvJuR");
   if (argc <= 1) {
-    FL_LOG(fl::FATAL) << gflags::ProgramUsage();
+    LOG(FATAL) << gflags::ProgramUsage();
   }
 
   /* ===================== Parse Options ===================== */
-  FL_LOG(fl::INFO) << "Parsing command line flags";
+  LOG(INFO) << "Parsing command line flags";
   gflags::ParseCommandLineFlags(&argc, &argv, false);
   auto flagsfile = FLAGS_flagsfile;
   if (!flagsfile.empty()) {
-    FL_LOG(fl::INFO) << "Reading flags from file " << flagsfile;
+    LOG(INFO) << "Reading flags from file " << flagsfile;
     gflags::ReadFromFlagsFile(flagsfile, argv[0], true);
     // Re-parse command line flags to override values in the flag file.
     gflags::ParseCommandLineFlags(&argc, &argv, false);
@@ -71,7 +74,7 @@ int main(int argc, char** argv) {
 
   /* ===================== Create Network ===================== */
   if (FLAGS_emission_dir.empty() && FLAGS_am.empty()) {
-    FL_LOG(fl::FATAL) << "Both flags are empty: `-emission_dir` and `-am`";
+    LOG(FATAL) << "Both flags are empty: `-emission_dir` and `-am`";
   }
 
   std::shared_ptr<fl::Module> network;
@@ -81,28 +84,26 @@ int main(int argc, char** argv) {
 
   /* Using acoustic model */
   if (!FLAGS_am.empty()) {
-    FL_LOG(fl::INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
+    LOG(INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
     af::setDevice(0);
     Serializer::load(FLAGS_am, version, cfg, network, criterion);
     network->eval();
     if (version != FL_APP_ASR_VERSION) {
-      FL_LOG(fl::WARNING) << "[Network] Model version " << version
-                          << " and code version " << FL_APP_ASR_VERSION;
+      LOG(WARNING) << "[Network] Model version " << version
+                   << " and code version " << FL_APP_ASR_VERSION;
     }
-    FL_LOG(fl::INFO) << "[Network] " << network->prettyString();
+    LOG(INFO) << "[Network] " << network->prettyString();
     if (criterion) {
       criterion->eval();
-      FL_LOG(fl::INFO) << "[Criterion] " << criterion->prettyString();
+      LOG(INFO) << "[Criterion] " << criterion->prettyString();
     }
-    FL_LOG(fl::INFO) << "[Network] Number of params: "
-                     << numTotalParams(network);
+    LOG(INFO) << "[Network] Number of params: " << numTotalParams(network);
 
     auto flags = cfg.find(kGflags);
     if (flags == cfg.end()) {
-      FL_LOG(fl::FATAL) << "[Network] Invalid config loaded from " << FLAGS_am;
+      LOG(FATAL) << "[Network] Invalid config loaded from " << FLAGS_am;
     }
-    FL_LOG(fl::INFO) << "[Network] Updating flags from config file: "
-                     << FLAGS_am;
+    LOG(INFO) << "[Network] Updating flags from config file: " << FLAGS_am;
     gflags::ReadFlagsFromString(flags->second, gflags::GetArgv0(), true);
   }
 
@@ -118,7 +119,7 @@ int main(int argc, char** argv) {
   // flags are present and corresponding new flags aren't
   handleDeprecatedFlags();
 
-  FL_LOG(fl::INFO) << "Gflags after parsing \n" << serializeGflags("; ");
+  LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */
   auto dictPath = pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
@@ -139,18 +140,18 @@ int main(int argc, char** argv) {
   }
 
   int numClasses = tokenDict.indexSize();
-  FL_LOG(fl::INFO) << "Number of classes (network): " << numClasses;
+  LOG(INFO) << "Number of classes (network): " << numClasses;
 
   Dictionary wordDict;
   LexiconMap lexicon;
   if (!FLAGS_lexicon.empty()) {
     lexicon = loadWords(FLAGS_lexicon, FLAGS_maxword);
     wordDict = createWordDict(lexicon);
-    FL_LOG(fl::INFO) << "Number of words: " << wordDict.indexSize();
+    LOG(INFO) << "Number of words: " << wordDict.indexSize();
   } else {
     if (FLAGS_uselexicon || FLAGS_decodertype == "wrd") {
-      FL_LOG(fl::FATAL) << "For lexicon-based beam-search decoder "
-                        << "lexicon shouldn't be empty";
+      LOG(FATAL) << "For lexicon-based beam-search decoder "
+                 << "lexicon shouldn't be empty";
     }
   }
 
@@ -174,7 +175,7 @@ int main(int argc, char** argv) {
       FLAGS_criterion == kTransformerCriterion) {
     criterionType = CriterionType::S2S;
   } else if (FLAGS_criterion != kAsgCriterion) {
-    FL_LOG(fl::FATAL) << "[Decoder] Invalid model type: " << FLAGS_criterion;
+    LOG(FATAL) << "[Decoder] Invalid model type: " << FLAGS_criterion;
   }
 
   std::vector<float> transition;
@@ -194,13 +195,13 @@ int main(int argc, char** argv) {
     refStream.open(refPath);
     logStream.open(logPath);
     if (!hypStream.is_open() || !hypStream.good()) {
-      FL_LOG(fl::FATAL) << "Error opening hypothesis file: " << hypPath;
+      LOG(FATAL) << "Error opening hypothesis file: " << hypPath;
     }
     if (!refStream.is_open() || !refStream.good()) {
-      FL_LOG(fl::FATAL) << "Error opening reference file: " << refPath;
+      LOG(FATAL) << "Error opening reference file: " << refPath;
     }
     if (!logStream.is_open() || !logStream.good()) {
-      FL_LOG(fl::FATAL) << "Error opening log file: " << logPath;
+      LOG(FATAL) << "Error opening log file: " << logPath;
     }
   }
 
@@ -231,18 +232,17 @@ int main(int argc, char** argv) {
     if (FLAGS_lmtype == "kenlm") {
       lm = std::make_shared<KenLM>(FLAGS_lm, usrDict);
       if (!lm) {
-        FL_LOG(fl::FATAL) << "[LM constructing] Failed to load LM: "
-                          << FLAGS_lm;
+        LOG(FATAL) << "[LM constructing] Failed to load LM: " << FLAGS_lm;
       }
     } else if (FLAGS_lmtype == "convlm") {
       af::setDevice(0);
-      FL_LOG(fl::INFO) << "[ConvLM]: Loading LM from " << FLAGS_lm;
+      LOG(INFO) << "[ConvLM]: Loading LM from " << FLAGS_lm;
       std::shared_ptr<fl::Module> convLmModel;
       std::string convlmVersion;
       Serializer::load(FLAGS_lm, convlmVersion, convLmModel);
       if (convlmVersion != FL_APP_ASR_VERSION) {
-        FL_LOG(fl::WARNING) << "[Convlm] Model version " << convlmVersion
-                            << " and code version " << FL_APP_ASR_VERSION;
+        LOG(WARNING) << "[Convlm] Model version " << convlmVersion
+                     << " and code version " << FL_APP_ASR_VERSION;
       }
       convLmModel->eval();
 
@@ -254,11 +254,10 @@ int main(int argc, char** argv) {
           FLAGS_lm_memory,
           FLAGS_beamsize);
     } else {
-      FL_LOG(fl::FATAL) << "[LM constructing] Invalid LM Type: "
-                        << FLAGS_lmtype;
+      LOG(FATAL) << "[LM constructing] Invalid LM Type: " << FLAGS_lmtype;
     }
   }
-  FL_LOG(fl::INFO) << "[Decoder] LM constructed.";
+  LOG(INFO) << "[Decoder] LM constructed.";
 
   // Build Trie
   int blankIdx =
@@ -285,7 +284,7 @@ int main(int argc, char** argv) {
         trie->insert(tokensTensor, usrIdx, score);
       }
     }
-    FL_LOG(fl::INFO) << "[Decoder] Trie planted.";
+    LOG(INFO) << "[Decoder] Trie planted.";
 
     // Smearing
     SmearingMode smear_mode = SmearingMode::NONE;
@@ -294,11 +293,10 @@ int main(int argc, char** argv) {
     } else if (FLAGS_smearing == "max") {
       smear_mode = SmearingMode::MAX;
     } else if (FLAGS_smearing != "none") {
-      FL_LOG(fl::FATAL) << "[Decoder] Invalid smearing mode: "
-                        << FLAGS_smearing;
+      LOG(FATAL) << "[Decoder] Invalid smearing mode: " << FLAGS_smearing;
     }
     trie->smear(smear_mode);
-    FL_LOG(fl::INFO) << "[Decoder] Trie smeared.\n";
+    LOG(INFO) << "[Decoder] Trie smeared.\n";
   }
 
   /* ===================== Create Dataset ===================== */
@@ -363,8 +361,7 @@ int main(int argc, char** argv) {
   if (FLAGS_maxload > 0) {
     nSamples = std::min(nSamples, FLAGS_maxload);
   }
-  FL_LOG(fl::INFO) << "[Dataset] Dataset loaded, with " << nSamples
-                   << " samples.";
+  LOG(INFO) << "[Dataset] Dataset loaded, with " << nSamples << " samples.";
 
   /* ===================== AM Forwarding ===================== */
   using EmissionQueue = ProducerConsumerQueue<EmissionTargetPair>;
@@ -488,7 +485,7 @@ int main(int argc, char** argv) {
     std::shared_ptr<LM> localLm = lm;
     if (FLAGS_lmtype == "convlm" || criterionType == CriterionType::S2S) {
       if (tid >= af::getDeviceCount()) {
-        FL_LOG(fl::FATAL)
+        LOG(FATAL)
             << "FLAGS_nthread_decoder exceeds the number of visible GPUs";
       }
       af::setDevice(tid);
@@ -497,7 +494,7 @@ int main(int argc, char** argv) {
     // Make a copy for non-main threads.
     if (tid != 0) {
       if (FLAGS_lmtype == "convlm") {
-        FL_LOG(fl::INFO) << "[ConvLM]: Loading LM from " << FLAGS_lm;
+        LOG(INFO) << "[ConvLM]: Loading LM from " << FLAGS_lm;
         std::shared_ptr<fl::Module> convLmModel;
         std::string convlmVersion;
         Serializer::load(FLAGS_lm, convlmVersion, convLmModel);
@@ -523,7 +520,7 @@ int main(int argc, char** argv) {
     /* 2. Build Decoder */
     std::unique_ptr<Decoder> decoder;
     if (FLAGS_decodertype != "wrd" && FLAGS_decodertype != "tkn") {
-      FL_LOG(fl::FATAL) << "Unsupported decoder type: " << FLAGS_decodertype;
+      LOG(FATAL) << "Unsupported decoder type: " << FLAGS_decodertype;
     }
 
     if (criterionType == CriterionType::S2S) {
@@ -549,9 +546,8 @@ int main(int argc, char** argv) {
             amUpdateFunc,
             FLAGS_maxdecoderoutputlen,
             FLAGS_decodertype == "tkn"));
-        FL_LOG(fl::INFO) << "[Decoder] LexiconSeq2Seq decoder with "
-                         << FLAGS_decodertype
-                         << "-LM loaded in thread: " << tid;
+        LOG(INFO) << "[Decoder] LexiconSeq2Seq decoder with "
+                  << FLAGS_decodertype << "-LM loaded in thread: " << tid;
       } else {
         decoder.reset(new LexiconFreeSeq2SeqDecoder(
             {
@@ -566,7 +562,7 @@ int main(int argc, char** argv) {
             eosIdx,
             amUpdateFunc,
             FLAGS_maxdecoderoutputlen));
-        FL_LOG(fl::INFO)
+        LOG(INFO)
             << "[Decoder] LexiconFreeSeq2Seq decoder with token-LM loaded in thread: "
             << tid;
       }
@@ -589,9 +585,8 @@ int main(int argc, char** argv) {
             unkWordIdx,
             transition,
             FLAGS_decodertype == "tkn"));
-        FL_LOG(fl::INFO) << "[Decoder] Lexicon decoder with "
-                         << FLAGS_decodertype
-                         << "-LM loaded in thread: " << tid;
+        LOG(INFO) << "[Decoder] Lexicon decoder with " << FLAGS_decodertype
+                  << "-LM loaded in thread: " << tid;
       } else {
         decoder.reset(new LexiconFreeDecoder(
             {.beamSize = FLAGS_beamsize,
@@ -605,7 +600,7 @@ int main(int argc, char** argv) {
             silIdx,
             blankIdx,
             transition));
-        FL_LOG(fl::INFO)
+        LOG(INFO)
             << "[Decoder] Lexicon-free decoder with token-LM loaded in thread: "
             << tid;
       }
@@ -715,8 +710,7 @@ int main(int argc, char** argv) {
           auto wer = meters.wrdDst.errorRate()[0];
 
           if (FLAGS_sclite.empty()) {
-            FL_LOG(fl::FATAL)
-                << "FLAGS_sclite is empty, nowhere to dump the beam.";
+            LOG(FATAL) << "FLAGS_sclite is empty, nowhere to dump the beam.";
           }
 
           auto score = results[i].score;
@@ -735,13 +729,12 @@ int main(int argc, char** argv) {
 
   /* ===================== Spread threades ===================== */
   if (FLAGS_nthread_decoder_am_forward <= 0) {
-    FL_LOG(fl::FATAL) << "FLAGS_nthread_decoder_am_forward ("
-                      << FLAGS_nthread_decoder_am_forward
-                      << ") need to be positive ";
+    LOG(FATAL) << "FLAGS_nthread_decoder_am_forward ("
+               << FLAGS_nthread_decoder_am_forward << ") need to be positive ";
   }
   if (FLAGS_nthread_decoder <= 0) {
-    FL_LOG(fl::FATAL) << "FLAGS_nthread_decoder (" << FLAGS_nthread_decoder
-                      << ") need to be positive ";
+    LOG(FATAL) << "FLAGS_nthread_decoder (" << FLAGS_nthread_decoder
+               << ") need to be positive ";
   }
 
   auto startThreadsAndJoin = [&runAmForward, &runDecoder, &emissionQueue](
@@ -833,7 +826,7 @@ int main(int argc, char** argv) {
          << totalTime / totalSamples
          << "s/sample) -- WER: " << std::setprecision(6) << totalWer
          << "\%, TER: " << totalTkn << "\%]" << std::endl;
-  FL_LOG(fl::INFO) << buffer.str();
+  LOG(INFO) << buffer.str();
   if (!FLAGS_sclite.empty()) {
     writeLog(buffer.str());
     hypStream.close();
