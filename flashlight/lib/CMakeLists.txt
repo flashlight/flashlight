@@ -61,17 +61,20 @@ if (FL_LIBRARIES_USE_CUDA)
 
   # CUB
   if(CUDA_VERSION_MAJOR VERSION_LESS 11)
-    find_path(CUB_INCLUDE_DIRS "cub/cub.cuh")
-    if (NOT ${CUB_INCLUDE_DIRS})
+    find_package(cub)
+    if (NOT cub_FOUND)
+      message(STATUS "Could not find cub - will download from source")
       include(${CMAKE_MODULE_PATH}/BuildCUB.cmake)
       add_dependencies(fl-libraries CUB)
+    else ()
+      message(STATUS "Found cub: (include: ${cub_INCLUDE_DIRS})")
     endif()
   endif()
 
   target_include_directories(
     fl-libraries
     PUBLIC
-    $<BUILD_INTERFACE:${CUB_INCLUDE_DIRS}>
+    $<BUILD_INTERFACE:${cub_INCLUDE_DIRS}>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CUDA_INCLUDE_DIRS}>
     )

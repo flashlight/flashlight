@@ -63,7 +63,7 @@ commands:
                 -DFL_BACKEND=<< parameters.fl_backend >> \
                 -DFL_BUILD_CORE=<< parameters.fl_build_fl_core >> \
                 -DFL_BUILD_APP_ASR=<< parameters.fl_build_app_asr >> \
-                -DFL_BUILD_APP_IMG_CLASS=<< parameters.fl_build_app_img_class >> \
+                -DFL_BUILD_APP_IMGCLASS=<< parameters.fl_build_app_img_class >> \
                 -DFL_BUILD_APP_LM=<< parameters.fl_build_app_lm >> && \
             make -j$(nproc) && make install"
   test_flashlight_inside_nvidia_docker:
@@ -136,7 +136,7 @@ commands:
               -DFL_BACKEND=CUDA \
               -DFL_BUILD_CORE=<< parameters.fl_build_fl_core >> \
               -DFL_BUILD_APP_ASR=<< parameters.fl_build_app_asr >> \
-              -DFL_BUILD_APP_IMG_CLASS=<< parameters.fl_build_app_img_class >> \
+              -DFL_BUILD_APP_IMGCLASS=<< parameters.fl_build_app_img_class >> \
               -DFL_BUILD_APP_LM=<< parameters.fl_build_app_lm >> \
               -DCMAKE_TOOLCHAIN_FILE=$HOME/project/vcpkg/scripts/buildsystems/vcpkg.cmake
             make -j$(nproc)
@@ -318,8 +318,8 @@ jobs:
             export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5
             export MKLROOT=/opt/intel/mkl && export KENLM_ROOT=/root/kenlm
             mkdir -p build && cd build
-            cmake .. -DFL_BACKEND=CPU -DFL_LIBRARIES_USE_CUDA=OFF
-            make -j$(nproc) && make install
+            cmake .. -DFL_BACKEND=CPU -DFL_LIBRARIES_USE_CUDA=OFF -DFL_BUILD_TESTS=OFF
+            make -j16 && make install
 
 workflows:
   version: 2

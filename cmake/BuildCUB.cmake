@@ -20,4 +20,4 @@ ExternalProject_Get_Property(CUB binary_dir)
 set(CUB_BINARY_DIR ${binary_dir})
 
 # Include dir. No install step supported yet, so invariant/no gen exps needed
-set(CUB_INCLUDE_DIRS ${CUB_SOURCE_DIR})
+set(cub_INCLUDE_DIRS ${CUB_SOURCE_DIR})

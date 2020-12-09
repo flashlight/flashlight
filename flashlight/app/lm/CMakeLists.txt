@@ -32,7 +32,7 @@ target_link_libraries(
 target_include_directories(
   flashlight-app-lm
   PUBLIC
-  ${gflags_LIBRARIES}
+  ${gflags_INCLUDE_DIRS}
   )
 # ------------------------ Components ------------------------
 
