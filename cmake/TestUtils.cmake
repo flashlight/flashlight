@@ -32,7 +32,7 @@ endif()
 
 include(GoogleTest)
 
-function(build_test SRCFILE LINK_LIBRARY PREPROC_DEFS)
+function(build_test SRCFILE LINK_LIBRARY PREPROC_DEFS DISCOVER_TESTS)
   get_filename_component(src_name ${SRCFILE} NAME_WE)
   set(target "${src_name}")
   add_executable(${target} ${SRCFILE})
@@ -55,5 +55,9 @@ function(build_test SRCFILE LINK_LIBRARY PREPROC_DEFS)
     PUBLIC
     ${PREPROC_DEFS}
     )
-  gtest_discover_tests(${target})
+  if (DISCOVER_TESTS)
+    gtest_discover_tests(${target})
+  else()
+    add_test(${target} ${target})
+  endif()
 endfunction(build_test)

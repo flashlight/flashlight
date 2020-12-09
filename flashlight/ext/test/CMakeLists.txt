@@ -8,6 +8,7 @@ if(FL_BUILD_CONTRIB)
     ${DIR}/common/SequentialBuilderTest.cpp
     ${LIBS}
     "ARCHDIR=\"${DIR}/common/\""
+    ON
   )
 endif()
 
@@ -24,6 +25,7 @@ build_test(
   ${DIR}/common/ModulePluginTest.cpp
   ${LIBS}
   "PLUGINDIR=\"${CMAKE_CURRENT_BINARY_DIR}\""
+  ON
   )
 target_link_libraries(ModulePluginTest PUBLIC "-Wl,--export-dynamic")
 add_dependencies(ModulePluginTest test_module_plugin)

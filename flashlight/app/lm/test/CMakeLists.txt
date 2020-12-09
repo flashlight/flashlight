@@ -7,4 +7,5 @@ build_test(
   ${DIR}/data/TextDatasetTest.cpp
   ${LIBS}
   "TEXTDATASET_TEST_DATADIR=\"${DIR}/data/test_data\""
+  ON
   )
