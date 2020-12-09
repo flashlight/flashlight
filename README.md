@@ -105,11 +105,12 @@ At minimum, compilation requires:
 - A Unix-ish operating system. We're currently exploring experimental support on Windows.
 
 ### Building
+
 Flashlight is most-easily built and installed with `vcpkg`. Only the CUDA backend is currently supported with `vcpkg`. First, install [`CUDA` >= 9.2](https://developer.nvidia.com/cuda-downloads), [`cuDNN`](https://docs.nvidia.com/deeplearning/cudnn/install-guide/index.html), and [`NCCL`](https://docs.nvidia.com/deeplearning/nccl/install-guide/index.html). Then, after [installing `vcpkg`](https://github.com/microsoft/vcpkg#getting-started) install the libraries and core with:
 ```shell
 ./vcpkg install flashlight-cuda
 ```
-To see the features available for installation, run `./vcpkg search Flashlight`. [Integrating Flashlight into your own project](https://vcpkg.readthedocs.io/en/latest/examples/installing-and-using-packages/#cmake) is simple. `vcpkg` [CMake toolchain integration](https://vcpkg.readthedocs.io/en/latest/examples/installing-and-using-packages/#cmake) is well-supported. OpenCL support in `vcpkg` is coming soon.
+To see the features available for installation, run `./vcpkg search flashlight-cuda`. [Integrating Flashlight into your own project](https://vcpkg.readthedocs.io/en/latest/examples/installing-and-using-packages/#cmake) is simple. `vcpkg` [CMake toolchain integration](https://vcpkg.readthedocs.io/en/latest/examples/installing-and-using-packages/#cmake) is well-supported. OpenCL support in `vcpkg` is coming soon.
 
 ### In-Source Build
 
@@ -118,7 +119,7 @@ To build your clone of Flashlight from source using `vcpkg` and `CMake`, first i
 ./vcpkg install \
     cuda intel-mkl fftw3 cub kenlm            \ # for flashlight libraries
     arrayfire[cuda] cudnn nccl openmpi cereal \ # for the flashlight neural net library
-    gflags                                    \ # for flashlight application libraries
+    gflags glog                               \ # for flashlight application libraries
     libsndfile                                \ # for the flashlight asr application
     stb                                       \ # for the flashlight imgclass application
     gtest                                       # optional, if building tests
@@ -137,6 +138,9 @@ make -j$(nproc)
 ```
 To build a subset of Flashlight's features, see the [installation options](https://fl.readthedocs.io/en/latest/installation.html) in the documentation.
 
+#### Building from Source
+
+Instructions to build fully from source can be found [in the documentation](https://fl.readthedocs.io/en/latest/installation.html).
 
 ### Contributing and Contact
 Contact: vineelkpratap@fb.com, awni@fb.com, jacobkahn@fb.com, qiantong@fb.com, antares@fb.com, padentomasello@fb.com,

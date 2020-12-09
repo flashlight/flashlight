@@ -1096,7 +1096,7 @@ TEST_F(AutogradTestF16, LinearF16) {
     auto func_lin_wt = [&](Variable& weight) { return linear(in, weight, bs); };
     ASSERT_TRUE(jacobianTestImpl(func_lin_wt, wt, 5E-2, 5E-1));
     auto func_lin_bs = [&](Variable& bias) { return linear(in, wt, bias); };
-    ASSERT_TRUE(jacobianTestImpl(func_lin_bs, bs, 1E-2, 5E-1));
+    ASSERT_TRUE(jacobianTestImpl(func_lin_bs, bs, 5E-2, 5E-1));
   }
 }
 

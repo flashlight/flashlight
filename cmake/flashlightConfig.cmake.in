@@ -67,7 +67,7 @@ endif()
 if (@FL_BUILD_APP_ASR@)
   set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::flashlight-app-asr)
 endif()
-if (@FL_BUILD_APP_IMG_CLASS@)
+if (@FL_BUILD_APP_IMGCLASS@)
   set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::flashlight-app-imgclass)
 endif()
 # Include dirs

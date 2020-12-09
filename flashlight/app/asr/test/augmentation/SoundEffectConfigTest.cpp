@@ -15,14 +15,22 @@
 using namespace ::fl::app::asr::sfx;
 using ::fl::lib::pathsConcat;
 
+std::string getTmpPath(const std::string& key) {
+  char* user = getenv("USER");
+  std::string userstr = "unknown";
+  if (user != nullptr) {
+    userstr = std::string(user);
+  }
+  return std::string("/tmp/test_") + userstr + key + std::string(".json");
+}
+
 /**
  * Test creation of arbitrary sound effect chain configuration, writing of that
  * configuration to a json file, and reading the json file to create the
  * configured sound effect chain.
  */
 TEST(SoundEffectConfigFile, ReadWriteJson) {
-  const std::string configFile =
-      pathsConcat(std::tmpnam(nullptr), "sfxConfig.json");
+  const std::string configFile = getTmpPath("sfxConfig");
   // This log line alllows the user to ispect the config file or copy/paste
   // configuration.
   std::cout << "configFile=" << configFile << std::endl;
