@@ -32,18 +32,24 @@ endif()
 
 include(GoogleTest)
 
-function(build_test SRCFILE LINK_LIBRARY PREPROC_DEFS)
-  get_filename_component(src_name ${SRCFILE} NAME_WE)
+function(build_test)
+  set(options NO_DISCOVERY)
+  set(oneValueArgs SRC)
+  set(multiValueArgs LIBS PREPROC)
+  cmake_parse_arguments(build_test "${options}" "${oneValueArgs}"
+    "${multiValueArgs}" ${ARGN})
+
+  get_filename_component(src_name ${build_test_SRC} NAME_WE)
   set(target "${src_name}")
-  add_executable(${target} ${SRCFILE})
+  add_executable(${target} ${build_test_SRC})
   if (TARGET gtest)
     add_dependencies(${target} gtest) # make sure gtest is built first
   endif()
   target_link_libraries(
     ${target}
     PUBLIC
-    ${LINK_LIBRARY}
     ${GTEST_IMPORTED_TARGETS}
+    ${build_test_LIBS}
     )
   target_include_directories(
     ${target}
@@ -53,7 +59,11 @@ function(build_test SRCFILE LINK_LIBRARY PREPROC_DEFS)
   target_compile_definitions(
     ${target}
     PUBLIC
-    ${PREPROC_DEFS}
+    ${build_test_PREPROC}
     )
-  gtest_discover_tests(${target})
+  if (build_test_NO_DISCOVERY)
+    add_test(${target} ${target})
+  else()
+    gtest_discover_tests(${target})
+  endif()
 endfunction(build_test)
