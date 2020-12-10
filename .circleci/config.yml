@@ -318,7 +318,7 @@ jobs:
             export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5
             export MKLROOT=/opt/intel/mkl && export KENLM_ROOT=/root/kenlm
             mkdir -p build && cd build
-            cmake .. -DFL_BACKEND=CPU -DFL_LIBRARIES_USE_CUDA=OFF -DFL_BUILD_TESTS=OFF
+            cmake .. -DFL_BACKEND=CPU -DFL_LIBRARIES_USE_CUDA=OFF
             make -j16 && make install
 
 workflows:
