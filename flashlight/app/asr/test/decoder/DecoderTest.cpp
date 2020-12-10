@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include <glog/logging.h>
 #include <gtest/gtest.h>
 
 #include "flashlight/app/asr/criterion/criterion.h"
@@ -81,8 +82,7 @@ TEST(DecoderTest, run) {
   tr_stream.read((char*)transitions.data(), N * N * sizeof(float));
   tr_stream.close();
 
-  FL_LOG(fl::INFO) << "[Serialization] Loaded emissions [" << T << " x " << N
-                   << ']';
+  LOG(INFO) << "[Serialization] Loaded emissions [" << T << " x " << N << ']';
 
   /* ===================== Create Dictionary ===================== */
   auto lexicon = loadWords(pathsConcat(dataDir, "words.lst"));
@@ -90,12 +90,12 @@ TEST(DecoderTest, run) {
   tokenDict.addEntry("<1>"); // replabel emulation
   auto wordDict = createWordDict(lexicon);
 
-  FL_LOG(fl::INFO) << "[Dictionary] Number of words: " << wordDict.indexSize();
+  LOG(INFO) << "[Dictionary] Number of words: " << wordDict.indexSize();
 
   /* ===================== Decode ===================== */
   /* -------- Build Language Model --------*/
   auto lm = std::make_shared<KenLM>(pathsConcat(dataDir, "lm.arpa"), wordDict);
-  FL_LOG(fl::INFO) << "[Decoder] LM constructed.\n";
+  LOG(INFO) << "[Decoder] LM constructed.\n";
 
   std::vector<std::string> sentence{"the", "cat", "sat", "on", "the", "mat"};
   auto inState = lm->start(0);
@@ -132,11 +132,11 @@ TEST(DecoderTest, run) {
       trie->insert(tokensTensor, usrIdx, score);
     }
   }
-  FL_LOG(fl::INFO) << "[Decoder] Trie planted.\n";
+  LOG(INFO) << "[Decoder] Trie planted.\n";
 
   // Smearing
   trie->smear(SmearingMode::MAX);
-  FL_LOG(fl::INFO) << "[Decoder] Trie smeared.\n";
+  LOG(INFO) << "[Decoder] Trie smeared.\n";
 
   std::vector<float> trieScoreTarget{
       -1.05971, -2.87742, -2.64553, -3.05081, -1.05971, -3.08968};
@@ -161,7 +161,7 @@ TEST(DecoderTest, run) {
 
   LexiconDecoder decoder(
       decoderOpt, trie, lm, silIdx, blankIdx, unkIdx, transitions, false);
-  FL_LOG(fl::INFO) << "[Decoder] Decoder constructed.\n";
+  LOG(INFO) << "[Decoder] Decoder constructed.\n";
 
   /* -------- Run --------*/
   auto emission = emissionUnit.emission;
@@ -180,7 +180,7 @@ TEST(DecoderTest, run) {
   ASSERT_EQ(n_hyp, 16); // only one with nice ending
 
   for (int i = 0; i < std::min(n_hyp, 5); i++) {
-    FL_LOG(fl::INFO) << results[i].score;
+    LOG(INFO) << results[i].score;
   }
 
   std::vector<float> hypScoreTarget{
@@ -191,6 +191,8 @@ TEST(DecoderTest, run) {
 }
 
 int main(int argc, char** argv) {
+  google::InitGoogleLogging(argv[0]);
+  google::InstallFailureSignalHandler();
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

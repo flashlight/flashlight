@@ -31,6 +31,7 @@
 #include <vector>
 
 #include <gflags/gflags.h>
+#include <glog/logging.h>
 
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/criterion/criterion.h"
@@ -62,6 +63,8 @@ using namespace fl::lib;
 using namespace fl::ext;
 
 int main(int argc, char** argv) {
+  google::InitGoogleLogging(argv[0]);
+  google::InstallFailureSignalHandler();
   std::string exec(argv[0]);
   std::vector<std::string> argvs;
   for (int i = 0; i < argc; i++) {
@@ -69,15 +72,15 @@ int main(int argc, char** argv) {
   }
   gflags::SetUsageMessage("Usage: Please refer to https://git.io/Je9lG");
   if (argc <= 1) {
-    FL_LOG(fl::FATAL) << gflags::ProgramUsage();
+    LOG(FATAL) << gflags::ProgramUsage();
   }
 
   /* ===================== Parse Options ===================== */
-  FL_LOG(fl::INFO) << "Parsing command line flags";
+  LOG(INFO) << "Parsing command line flags";
   gflags::ParseCommandLineFlags(&argc, &argv, false);
   auto flagsfile = FLAGS_flagsfile;
   if (!flagsfile.empty()) {
-    FL_LOG(fl::INFO) << "Reading flags from file " << flagsfile;
+    LOG(INFO) << "Reading flags from file " << flagsfile;
     gflags::ReadFromFlagsFile(flagsfile, argv[0], true);
   }
 
@@ -86,24 +89,24 @@ int main(int argc, char** argv) {
   std::shared_ptr<SequenceCriterion> criterion;
   std::unordered_map<std::string, std::string> cfg;
   std::string version;
-  FL_LOG(fl::INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
+  LOG(INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
   fl::ext::Serializer::load(FLAGS_am, version, cfg, network, criterion);
   if (version != FL_APP_ASR_VERSION) {
-    FL_LOG(fl::WARNING) << "[Network] Model version " << version
-                        << " and code version " << FL_APP_ASR_VERSION;
+    LOG(WARNING) << "[Network] Model version " << version
+                 << " and code version " << FL_APP_ASR_VERSION;
   }
   network->eval();
   criterion->eval();
 
-  FL_LOG(fl::INFO) << "[Network] " << network->prettyString();
-  FL_LOG(fl::INFO) << "[Criterion] " << criterion->prettyString();
-  FL_LOG(fl::INFO) << "[Network] Number of params: " << numTotalParams(network);
+  LOG(INFO) << "[Network] " << network->prettyString();
+  LOG(INFO) << "[Criterion] " << criterion->prettyString();
+  LOG(INFO) << "[Network] Number of params: " << numTotalParams(network);
 
   auto flags = cfg.find(kGflags);
   if (flags == cfg.end()) {
-    FL_LOG(fl::FATAL) << "[Network] Invalid config loaded from " << FLAGS_am;
+    LOG(FATAL) << "[Network] Invalid config loaded from " << FLAGS_am;
   }
-  FL_LOG(fl::INFO) << "[Network] Updating flags from config file: " << FLAGS_am;
+  LOG(INFO) << "[Network] Updating flags from config file: " << FLAGS_am;
   gflags::ReadFlagsFromString(flags->second, gflags::GetArgv0(), true);
 
   // override with user-specified flags
@@ -112,7 +115,7 @@ int main(int argc, char** argv) {
     gflags::ReadFromFlagsFile(flagsfile, argv[0], true);
   }
 
-  FL_LOG(fl::INFO) << "Gflags after parsing \n" << serializeGflags("; ");
+  LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */
   auto dictPath = fl::lib::pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
@@ -129,21 +132,21 @@ int main(int argc, char** argv) {
   if (FLAGS_criterion == kCtcCriterion) {
     tokenDict.addEntry(kBlankToken);
   } else {
-    FL_LOG(fl::FATAL) << "CTC-trained model required for VAD-CTC.";
+    LOG(FATAL) << "CTC-trained model required for VAD-CTC.";
   }
   if (FLAGS_eostoken) {
     tokenDict.addEntry(kEosToken);
   }
 
   int numClasses = tokenDict.indexSize();
-  FL_LOG(fl::INFO) << "Number of classes (network): " << numClasses;
+  LOG(INFO) << "Number of classes (network): " << numClasses;
 
   fl::lib::text::Dictionary wordDict;
   text::LexiconMap lexicon;
   if (!FLAGS_lexicon.empty()) {
     lexicon = text::loadWords(FLAGS_lexicon, FLAGS_maxword);
     wordDict = text::createWordDict(lexicon);
-    FL_LOG(fl::INFO) << "Number of words: " << wordDict.indexSize();
+    LOG(INFO) << "Number of words: " << wordDict.indexSize();
     wordDict.setDefaultIndex(wordDict.getIndex(text::kUnkToken));
   }
 
@@ -151,7 +154,7 @@ int main(int argc, char** argv) {
 
   /* ===================== Create Dataset ===================== */
   auto ds = createDataset(FLAGS_test, dicts, lexicon, 1, 0, 1);
-  FL_LOG(fl::INFO) << "[Dataset] Dataset loaded.";
+  LOG(INFO) << "[Dataset] Dataset loaded.";
 
   /* ===================== Build LM ===================== */
   std::shared_ptr<text::LM> lm;
@@ -171,7 +174,7 @@ int main(int argc, char** argv) {
   for (auto& sample : *ds) {
     auto rawEmission = network->forward({fl::input(sample[kInputIdx])}).front();
     auto sampleId = readSampleIds(sample[kSampleIdx]).front();
-    FL_LOG(fl::INFO) << "Processing sample ID " << sampleId;
+    LOG(INFO) << "Processing sample ID " << sampleId;
 
     // Hypothesis
     auto tokenPrediction =

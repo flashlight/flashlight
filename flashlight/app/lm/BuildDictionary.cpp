@@ -6,6 +6,7 @@
  */
 
 #include <gflags/gflags.h>
+#include <glog/logging.h>
 #include <sstream>
 
 #include "flashlight/app/lm/common/Defines.h"
@@ -73,10 +74,9 @@ int main(int argc, char** argv) {
   gflags::SetUsageMessage(
       "Preparation of tokens dictionary from the text data. \n Usage: " + exec +
       " \n Compulsory: [--data_train] [--dictionary]");
-  FL_LOG(fl::INFO) << "Parsing command line flags";
+  LOG(INFO) << "Parsing command line flags";
   gflags::ParseCommandLineFlags(&argc, &argv, false);
-  FL_LOG(fl::INFO) << "Gflags after parsing \n"
-                   << fl::app::lm::serializeGflags("; ");
+  LOG(INFO) << "Gflags after parsing \n" << fl::app::lm::serializeGflags("; ");
 
   if (argc <= 1 || FLAGS_data_train.empty() || FLAGS_dictionary.empty()) {
     throw std::invalid_argument(gflags::ProgramUsage());
@@ -86,7 +86,7 @@ int main(int argc, char** argv) {
   auto files = fl::lib::split(',', FLAGS_data_train);
 
   for (const auto& file : files) {
-    FL_LOG(fl::INFO) << "Parsing " << file;
+    LOG(INFO) << "Parsing " << file;
     tokenizer.countTokens(
         fl::lib::pathsConcat(FLAGS_data_dir, file),
         FLAGS_n_workers,
@@ -101,13 +101,13 @@ int main(int argc, char** argv) {
         stream << fileMetaData[i].first << " " << fileMetaData[i].second
                << "\n";
       }
-      FL_LOG(fl::INFO) << "  Meta data saved to: " << metaPath;
+      LOG(INFO) << "  Meta data saved to: " << metaPath;
     }
   }
 
-  FL_LOG(fl::INFO) << " --- Data Loading completed. --- ";
-  FL_LOG(fl::INFO) << "  Loaded " << tokenizer.totalTokens() << " tokens";
-  FL_LOG(fl::INFO) << "  Loaded " << tokenizer.totalSentences() << " sentences";
+  LOG(INFO) << " --- Data Loading completed. --- ";
+  LOG(INFO) << "  Loaded " << tokenizer.totalTokens() << " tokens";
+  LOG(INFO) << "  Loaded " << tokenizer.totalSentences() << " sentences";
 
   tokenizer.pruneTokens(
       FLAGS_dictionary_max_size, FLAGS_dictionary_min_appearence);
@@ -121,7 +121,7 @@ int main(int argc, char** argv) {
     stream << tcp.first << " " << tcp.second << "\n";
   }
 
-  FL_LOG(fl::INFO) << "Dictionary saved to: " << FLAGS_dictionary;
+  LOG(INFO) << "Dictionary saved to: " << FLAGS_dictionary;
 
   return 0;
 }

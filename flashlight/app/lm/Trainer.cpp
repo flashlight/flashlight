@@ -210,7 +210,7 @@ Trainer::Trainer(const std::string& mode) {
   }
   checkArgs();
   gflagsStr_ = serializeGflags();
-  FL_LOG_MASTER(fl::INFO) << "Gflags after parsing \n" << serializeGflags("; ");
+  FL_LOG_MASTER(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   createDatasets();
   initArrayFire();
@@ -224,16 +224,16 @@ Trainer::Trainer(const std::string& mode) {
         std::ios_base::app);
   }
 
-  FL_LOG_MASTER(fl::INFO) << "network (" << fl::numTotalParams(network_)
-                          << " params): " << network_->prettyString();
-  FL_LOG_MASTER(fl::INFO) << "criterion (" << fl::numTotalParams(criterion_)
-                          << " params): " << criterion_->prettyString();
-  FL_LOG_MASTER(fl::INFO) << "optimizer: " << optimizer_->prettyString();
+  FL_LOG_MASTER(INFO) << "network (" << fl::numTotalParams(network_)
+                      << " params): " << network_->prettyString();
+  FL_LOG_MASTER(INFO) << "criterion (" << fl::numTotalParams(criterion_)
+                      << " params): " << criterion_->prettyString();
+  FL_LOG_MASTER(INFO) << "optimizer: " << optimizer_->prettyString();
 }
 
 void Trainer::runTraining() {
-  FL_LOG_MASTER(fl::INFO) << "training started (epoch=" << epoch_
-                          << " batch=" << batchIdx_ << ")";
+  FL_LOG_MASTER(INFO) << "training started (epoch=" << epoch_
+                      << " batch=" << batchIdx_ << ")";
 
   fl::allReduceParameters(network_);
   fl::allReduceParameters(criterion_);
@@ -263,7 +263,7 @@ void Trainer::runTraining() {
       evalStep();
       syncMeters();
       auto progress = getProgress();
-      FL_LOG_MASTER(fl::INFO) << progress;
+      FL_LOG_MASTER(INFO) << progress;
       if (isMaster()) {
         logWriter_ << progress << "\n" << std::flush;
       }
@@ -357,7 +357,7 @@ void Trainer::evalStep() {
 
 /* ============= Initializers ============= */
 void Trainer::initTrain() {
-  FL_LOG_MASTER(fl::INFO) << "Creating a fresh model";
+  FL_LOG_MASTER(INFO) << "Creating a fresh model";
   createDictionary();
   createNetwork();
   createCriterion();
@@ -371,7 +371,7 @@ void Trainer::initContinue() {
     throw std::invalid_argument(
         "Checkpoint doesn't exist to continue training: " + checkPoint);
   }
-  FL_LOG_MASTER(fl::INFO) << "Continue training from file: " << checkPoint;
+  FL_LOG_MASTER(INFO) << "Continue training from file: " << checkPoint;
   fl::ext::Serializer::load(
       checkPoint,
       version_,
@@ -395,8 +395,8 @@ void Trainer::initFork() {
         "Checkpoint doesn't exist for finetuning: " +
         FLAGS_exp_init_model_path);
   }
-  FL_LOG_MASTER(fl::INFO) << "Fork training from file: "
-                          << FLAGS_exp_init_model_path;
+  FL_LOG_MASTER(INFO) << "Fork training from file: "
+                      << FLAGS_exp_init_model_path;
 
   std::shared_ptr<fl::FirstOrderOptimizer> dummyOptimizer;
   fl::ext::Serializer::load(
@@ -454,8 +454,8 @@ void Trainer::createDatasets() {
       FLAGS_data_batch_size,
       FLAGS_data_sample_break_mode,
       true);
-  FL_LOG_MASTER(fl::INFO) << "train dataset: " << trainDataset_->size()
-                          << " samples";
+  FL_LOG_MASTER(INFO) << "train dataset: " << trainDataset_->size()
+                      << " samples";
 
   validDataset_ = std::make_shared<TextDataset>(
       FLAGS_data_dir,
@@ -467,8 +467,8 @@ void Trainer::createDatasets() {
       FLAGS_data_batch_size,
       "eos",
       FLAGS_data_use_dynamic_batching);
-  FL_LOG_MASTER(fl::INFO) << "valid dataset: " << validDataset_->size()
-                          << " samples";
+  FL_LOG_MASTER(INFO) << "valid dataset: " << validDataset_->size()
+                      << " samples";
 }
 
 void Trainer::createNetwork() {
@@ -667,9 +667,9 @@ bool Trainer::isMaster() const {
 
 void Trainer::checkArgs() const {
   if (version_ != FL_APP_LM_VERSION) {
-    FL_LOG_MASTER(fl::INFO)
-        << "Model version (" << version_
-        << ") does not match FL_APP_LM_VERSION (" << FL_APP_LM_VERSION << ")";
+    FL_LOG_MASTER(INFO) << "Model version (" << version_
+                        << ") does not match FL_APP_LM_VERSION ("
+                        << FL_APP_LM_VERSION << ")";
   }
 
   if (FLAGS_dictionary_max_size == 0) {
@@ -722,8 +722,8 @@ void Trainer::saveCheckpoint(const std::string& path, const std::string& suffix)
     return;
   }
 
-  FL_LOG_MASTER(fl::INFO) << "saving model checkpoint (epoch=" << epoch_
-                          << " batch=" << batchIdx_ << ") to: " << path;
+  FL_LOG_MASTER(INFO) << "saving model checkpoint (epoch=" << epoch_
+                      << " batch=" << batchIdx_ << ") to: " << path;
   Serializer::save(
       path,
       FL_APP_LM_VERSION,
