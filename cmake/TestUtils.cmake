@@ -13,8 +13,6 @@ if (NOT GTEST_FOUND)
   endif()
 else()
   message(STATUS "gtest found: (include: ${GTEST_INCLUDE_DIRS}, lib: ${GTEST_BOTH_LIBRARIES}")
-  # Try again with a config to make sure there isn't some broken module in the way
-  find_package(GTest CONFIG 1.10.0)
   if (TARGET GTest::GTest)
     # We found the differently-named CMake targets from FindGTest
     if (NOT TARGET GTest::Main)
