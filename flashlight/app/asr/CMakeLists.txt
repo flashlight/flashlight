@@ -17,6 +17,14 @@ if (FL_LIBRARIES_USE_MKL)
 endif ()
 
 # ------------------------ Global External Dependencies ------------------------
+# Find GLog
+find_package(GLOG REQUIRED)
+if (GLOG_FOUND)
+  message(STATUS "GLOG found")
+else()
+  message(FATAL_ERROR "GLOG not found")
+endif()
+
 # Find gflags
 find_package(gflags REQUIRED)
 if (gflags_FOUND)
@@ -28,6 +36,7 @@ endif()
 target_link_libraries(
   flashlight-app-asr
   PUBLIC
+  ${GLOG_LIBRARIES}
   ${gflags_LIBRARIES}
   ${MKL_LIBRARIES}
   flashlight
@@ -37,6 +46,7 @@ target_include_directories(
   flashlight-app-asr
   PUBLIC
   ${gflags_INCLUDE_DIRS}
+  ${GLOG_INCLUDE_DIRS}
   ${MKL_INCLUDE_DIR}
   )
 

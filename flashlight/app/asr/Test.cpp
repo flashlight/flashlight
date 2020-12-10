@@ -13,6 +13,7 @@
 #include <vector>
 
 #include <gflags/gflags.h>
+#include <glog/logging.h>
 #include "flashlight/fl/flashlight.h"
 
 #include "flashlight/app/asr/common/Defines.h"
@@ -35,6 +36,8 @@ using namespace fl::lib::audio;
 using namespace fl::app::asr;
 
 int main(int argc, char** argv) {
+  google::InitGoogleLogging(argv[0]);
+  google::InstallFailureSignalHandler();
   std::string exec(argv[0]);
   std::vector<std::string> argvs;
   for (int i = 0; i < argc; i++) {
@@ -42,15 +45,15 @@ int main(int argc, char** argv) {
   }
   gflags::SetUsageMessage("Usage: Please refer to https://git.io/JvJuR");
   if (argc <= 1) {
-    FL_LOG(fl::FATAL) << gflags::ProgramUsage();
+    LOG(FATAL) << gflags::ProgramUsage();
   }
 
   /* ===================== Parse Options ===================== */
-  FL_LOG(fl::INFO) << "Parsing command line flags";
+  LOG(INFO) << "Parsing command line flags";
   gflags::ParseCommandLineFlags(&argc, &argv, false);
   auto flagsfile = FLAGS_flagsfile;
   if (!flagsfile.empty()) {
-    FL_LOG(fl::INFO) << "Reading flags from file " << flagsfile;
+    LOG(INFO) << "Reading flags from file " << flagsfile;
     gflags::ReadFromFlagsFile(flagsfile, argv[0], true);
   }
 
@@ -64,25 +67,25 @@ int main(int argc, char** argv) {
   std::shared_ptr<SequenceCriterion> criterion;
   std::unordered_map<std::string, std::string> cfg;
   std::string version;
-  FL_LOG(fl::INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
+  LOG(INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
   af::setDevice(0);
   Serializer::load(FLAGS_am, version, cfg, network, criterion);
   if (version != FL_APP_ASR_VERSION) {
-    FL_LOG(fl::WARNING) << "[Network] Model version " << version
-                        << " and code version " << FL_APP_ASR_VERSION;
+    LOG(WARNING) << "[Network] Model version " << version
+                 << " and code version " << FL_APP_ASR_VERSION;
   }
   network->eval();
   criterion->eval();
 
-  FL_LOG(fl::INFO) << "[Network] " << network->prettyString();
-  FL_LOG(fl::INFO) << "[Criterion] " << criterion->prettyString();
-  FL_LOG(fl::INFO) << "[Network] Number of params: " << numTotalParams(network);
+  LOG(INFO) << "[Network] " << network->prettyString();
+  LOG(INFO) << "[Criterion] " << criterion->prettyString();
+  LOG(INFO) << "[Network] Number of params: " << numTotalParams(network);
 
   auto flags = cfg.find(kGflags);
   if (flags == cfg.end()) {
-    FL_LOG(fl::FATAL) << "[Network] Invalid config loaded from " << FLAGS_am;
+    LOG(FATAL) << "[Network] Invalid config loaded from " << FLAGS_am;
   }
-  FL_LOG(fl::INFO) << "[Network] Updating flags from config file: " << FLAGS_am;
+  LOG(INFO) << "[Network] Updating flags from config file: " << FLAGS_am;
   gflags::ReadFlagsFromString(flags->second, gflags::GetArgv0(), true);
 
   // override with user-specified flags
@@ -95,7 +98,7 @@ int main(int argc, char** argv) {
   // flags are present and corresponding new flags aren't
   handleDeprecatedFlags();
 
-  FL_LOG(fl::INFO) << "Gflags after parsing \n" << serializeGflags("; ");
+  LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */
   auto dictPath = pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
@@ -116,14 +119,14 @@ int main(int argc, char** argv) {
   }
 
   int numClasses = tokenDict.indexSize();
-  FL_LOG(fl::INFO) << "Number of classes (network): " << numClasses;
+  LOG(INFO) << "Number of classes (network): " << numClasses;
 
   Dictionary wordDict;
   LexiconMap lexicon;
   if (!FLAGS_lexicon.empty()) {
     lexicon = loadWords(FLAGS_lexicon, FLAGS_maxword);
     wordDict = createWordDict(lexicon);
-    FL_LOG(fl::INFO) << "Number of words: " << wordDict.indexSize();
+    LOG(INFO) << "Number of words: " << wordDict.indexSize();
   }
 
   DictionaryMap dicts = {{kTargetIdx, tokenDict}, {kWordIdx, wordDict}};
@@ -190,8 +193,7 @@ int main(int argc, char** argv) {
   if (FLAGS_maxload > 0) {
     nSamples = std::min(nSamples, FLAGS_maxload);
   }
-  FL_LOG(fl::INFO) << "[Dataset] Dataset loaded, with " << nSamples
-                   << " samples.";
+  LOG(INFO) << "[Dataset] Dataset loaded, with " << nSamples << " samples.";
 
   /* ===================== Test ===================== */
   std::vector<double> sliceWrdDst(FLAGS_nthread_decoder_am_forward);
@@ -216,10 +218,10 @@ int main(int argc, char** argv) {
     hypStream.open(hypPath);
     refStream.open(refPath);
     if (!hypStream.is_open() || !hypStream.good()) {
-      FL_LOG(fl::FATAL) << "Error opening hypothesis file: " << hypPath;
+      LOG(FATAL) << "Error opening hypothesis file: " << hypPath;
     }
     if (!refStream.is_open() || !refStream.good()) {
-      FL_LOG(fl::FATAL) << "Error opening reference file: " << refPath;
+      LOG(FATAL) << "Error opening reference file: " << refPath;
     }
   }
 
@@ -380,7 +382,7 @@ int main(int argc, char** argv) {
         futs[i].get();
       }
     } else {
-      FL_LOG(fl::FATAL) << "Invalid negative FLAGS_nthread_decoder_am_forward";
+      LOG(FATAL) << "Invalid negative FLAGS_nthread_decoder_am_forward";
     }
   };
   auto timer = fl::TimeMeter();
@@ -410,13 +412,12 @@ int main(int argc, char** argv) {
   } else {
     totalTer = totalTokens > 0 ? totalTer / totalTokens * 100. : 0.0;
   }
-  FL_LOG(fl::INFO) << "------";
-  FL_LOG(fl::INFO) << "[Test " << FLAGS_test << " (" << totalSamples
-                   << " samples) in " << timer.value()
-                   << "s (actual decoding time " << std::setprecision(3)
-                   << totalTime / totalSamples
-                   << "s/sample) -- WER: " << std::setprecision(6) << totalWer
-                   << "\%, TER: " << totalTer << "\%]";
+  LOG(INFO) << "------";
+  LOG(INFO) << "[Test " << FLAGS_test << " (" << totalSamples << " samples) in "
+            << timer.value() << "s (actual decoding time "
+            << std::setprecision(3) << totalTime / totalSamples
+            << "s/sample) -- WER: " << std::setprecision(6) << totalWer
+            << "\%, TER: " << totalTer << "\%]";
 
   return 0;
 }
