@@ -250,7 +250,7 @@ int main(int argc, char** argv) {
       numClasses,
       matcher,
       lossWeights,
-      0.0,
+      0.1,
       losses);
 
   auto eval_loop = [saveOutput](
