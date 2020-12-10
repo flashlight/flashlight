@@ -9,6 +9,8 @@
 
 #include <random>
 
+#include <glog/logging.h>
+
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/lib/common/System.h"
 
@@ -175,8 +177,8 @@ std::shared_ptr<fl::Dataset> createDataset(
           wordTransform,
           FLAGS_use_memcache);
 #else
-      FL_LOG(fl::FATAL) << "EverstoreDataset not supported: "
-                        << "build with -DFL_BUILD_FB_DEPENDENCIES";
+      LOG(FATAL) << "EverstoreDataset not supported: "
+                 << "build with -DFL_BUILD_FB_DEPENDENCIES";
 #endif
     } else {
       curListDs = std::make_shared<ListFileDataset>(
@@ -228,12 +230,8 @@ std::shared_ptr<fl::Dataset> createDataset(
           [wrdPad](const std::vector<af::array>& arr) {
             return fl::join(arr, wrdPad, 1);
           },
-          [](const std::vector<af::array>& arr) {
-            return fl::join(arr, 0, 1);
-          },
-          [](const std::vector<af::array>& arr) {
-            return fl::join(arr, 0, 1);
-          },
+          [](const std::vector<af::array>& arr) { return fl::join(arr, 0, 1); },
+          [](const std::vector<af::array>& arr) { return fl::join(arr, 0, 1); },
           [](const std::vector<af::array>& arr) {
             return fl::join(arr, 0, 1);
           }});

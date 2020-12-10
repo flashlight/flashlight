@@ -10,8 +10,7 @@
 #include <fstream>
 
 #include <gflags/gflags.h>
-
-#include "flashlight/fl/common/Logging.h"
+#include <glog/logging.h>
 
 #include "flashlight/app/lm/common/Defines.h"
 #include "flashlight/app/lm/common/Helpers.h"
@@ -31,7 +30,7 @@ namespace fl {
 namespace app {
 namespace lm {
 
-#define FL_LOG_MASTER(lvl) FL_LOG_IF(lvl, (fl::getWorldRank() == 0))
+#define FL_LOG_MASTER(lvl) LOG_IF(lvl, (fl::getWorldRank() == 0))
 
 /* CRITERION OPTIONS */
 DECLARE_string(loss_type);

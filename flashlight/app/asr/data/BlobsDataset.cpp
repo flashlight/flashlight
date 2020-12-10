@@ -9,6 +9,8 @@
 #include <numeric>
 #include <sstream>
 
+#include <glog/logging.h>
+
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/data/BlobsDataset.h"
 #include "flashlight/lib/common/String.h"
@@ -38,7 +40,7 @@ BlobsDataset::BlobsDataset(
       skipUnk_(skipUnk) {
   includeWrd_ = (dicts.find(kWordIdx) != dicts.end());
 
-  FL_LOG_IF(fl::FATAL, dicts.find(kTargetIdx) == dicts.end())
+  LOG_IF(FATAL, dicts.find(kTargetIdx) == dicts.end())
       << "Target dictionary does not exist";
 
   auto filesVec = lib::split(',', filenames);
@@ -66,7 +68,7 @@ BlobsDataset::BlobsDataset(
       FLAGS_outputbinsize);
 
   shuffle(-1);
-  FL_LOG(fl::INFO) << "Total batches (i.e. iters): " << sampleBatches_.size();
+  LOG(INFO) << "Total batches (i.e. iters): " << sampleBatches_.size();
 }
 
 BlobsDataset::~BlobsDataset() {
@@ -128,7 +130,7 @@ std::vector<SpeechSampleMetaInfo> BlobsDataset::loadBlob(
 
   blobs_.push_back(blob);
 
-  FL_LOG(fl::INFO) << samplesMetaInfo.size() << " files found. ";
+  LOG(INFO) << samplesMetaInfo.size() << " files found. ";
 
   return samplesMetaInfo;
 }

@@ -8,6 +8,13 @@ add_library(
 
 # ------------------------ Global External Dependencies ------------------------
 # Find gflags
+find_package(GLOG REQUIRED)
+if (GLOG_FOUND)
+  message(STATUS "GLOG found")
+else()
+  message(FATAL_ERROR "GLOG not found")
+endif()
+
 find_package(gflags REQUIRED)
 if (gflags_FOUND)
   message(STATUS "gflags found")
@@ -24,6 +31,7 @@ target_sources(
 target_link_libraries(
   flashlight-app-lm
   PUBLIC
+  ${GLOG_LIBRARIES}
   ${gflags_LIBRARIES}
   flashlight
   fl-libraries
@@ -32,7 +40,8 @@ target_link_libraries(
 target_include_directories(
   flashlight-app-lm
   PUBLIC
-  ${gflags_INCLUDE_DIRS}
+  ${GLOG_INCLUDE_DIRS}
+  ${gflags_LIBRARIES}
   )
 # ------------------------ Components ------------------------
 

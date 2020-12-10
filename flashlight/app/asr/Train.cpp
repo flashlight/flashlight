@@ -15,6 +15,7 @@
 #include <cereal/archives/json.hpp>
 #include <cereal/types/unordered_map.hpp>
 #include <gflags/gflags.h>
+#include <glog/logging.h>
 
 #include "flashlight/app/asr/augmentation/SoundEffectConfig.h"
 #include "flashlight/app/asr/common/Defines.h"
@@ -41,6 +42,8 @@ using namespace fl::lib::audio;
 using namespace fl::app::asr;
 
 int main(int argc, char** argv) {
+  google::InitGoogleLogging(argv[0]);
+  google::InstallFailureSignalHandler();
   std::string exec(argv[0]);
   std::vector<std::string> argvs;
   for (int i = 0; i < argc; i++) {
@@ -59,13 +62,13 @@ int main(int argc, char** argv) {
   int64_t startEpoch = 0;
   int64_t startUpdate = 0;
   if (argc <= 1) {
-    FL_LOG(fl::FATAL) << gflags::ProgramUsage();
+    LOG(FATAL) << gflags::ProgramUsage();
   }
   if (runStatus == kTrainMode) {
-    FL_LOG(fl::INFO) << "Parsing command line flags";
+    LOG(INFO) << "Parsing command line flags";
     gflags::ParseCommandLineFlags(&argc, &argv, false);
     if (!FLAGS_flagsfile.empty()) {
-      FL_LOG(fl::INFO) << "Reading flags from file " << FLAGS_flagsfile;
+      LOG(INFO) << "Reading flags from file " << FLAGS_flagsfile;
       gflags::ReadFromFlagsFile(FLAGS_flagsfile, argv[0], true);
     }
     gflags::ParseCommandLineFlags(&argc, &argv, false);
@@ -76,38 +79,35 @@ int main(int argc, char** argv) {
       ++runIdx;
     }
     reloadPath = getRunFile("model_last.bin", runIdx - 1, runPath);
-    FL_LOG(fl::INFO) << "reload path is " << reloadPath;
+    LOG(INFO) << "reload path is " << reloadPath;
     std::unordered_map<std::string, std::string> cfg;
     std::string version;
     Serializer::load(reloadPath, version, cfg);
     auto flags = cfg.find(kGflags);
     if (flags == cfg.end()) {
-      FL_LOG(fl::FATAL) << "Invalid config loaded from " << reloadPath;
+      LOG(FATAL) << "Invalid config loaded from " << reloadPath;
     }
-    FL_LOG(fl::INFO) << "Reading flags from config file " << reloadPath;
+    LOG(INFO) << "Reading flags from config file " << reloadPath;
     gflags::ReadFlagsFromString(flags->second, gflags::GetArgv0(), true);
     if (argc > 3) {
-      FL_LOG(fl::INFO) << "Parsing command line flags";
-      FL_LOG(fl::INFO)
-          << "Overriding flags should be mutable when using `continue`";
+      LOG(INFO) << "Parsing command line flags";
+      LOG(INFO) << "Overriding flags should be mutable when using `continue`";
       gflags::ParseCommandLineFlags(&argc, &argv, false);
     }
     if (!FLAGS_flagsfile.empty()) {
-      FL_LOG(fl::INFO) << "Reading flags from file " << FLAGS_flagsfile;
+      LOG(INFO) << "Reading flags from file " << FLAGS_flagsfile;
       gflags::ReadFromFlagsFile(FLAGS_flagsfile, argv[0], true);
     }
     gflags::ParseCommandLineFlags(&argc, &argv, false);
     auto epoch = cfg.find(kEpoch);
     if (epoch == cfg.end()) {
-      FL_LOG(fl::WARNING)
-          << "Did not find epoch to start from, starting from 0.";
+      LOG(WARNING) << "Did not find epoch to start from, starting from 0.";
     } else {
       startEpoch = std::stoi(epoch->second);
     }
     auto nbupdates = cfg.find(kUpdates);
     if (nbupdates == cfg.end()) {
-      FL_LOG(fl::WARNING)
-          << "Did not find #updates to start from, starting from 0.";
+      LOG(WARNING) << "Did not find #updates to start from, starting from 0.";
     } else {
       startUpdate = std::stoi(nbupdates->second);
     }
@@ -118,27 +118,26 @@ int main(int argc, char** argv) {
     Serializer::load(reloadPath, version, cfg);
     auto flags = cfg.find(kGflags);
     if (flags == cfg.end()) {
-      FL_LOG(fl::FATAL) << "Invalid config loaded from " << reloadPath;
+      LOG(FATAL) << "Invalid config loaded from " << reloadPath;
     }
 
-    FL_LOG(fl::INFO) << "Reading flags from config file " << reloadPath;
+    LOG(INFO) << "Reading flags from config file " << reloadPath;
     gflags::ReadFlagsFromString(flags->second, gflags::GetArgv0(), true);
 
     if (argc > 3) {
-      FL_LOG(fl::INFO) << "Parsing command line flags";
-      FL_LOG(fl::INFO)
-          << "Overriding flags should be mutable when using `fork`";
+      LOG(INFO) << "Parsing command line flags";
+      LOG(INFO) << "Overriding flags should be mutable when using `fork`";
       gflags::ParseCommandLineFlags(&argc, &argv, false);
     }
 
     if (!FLAGS_flagsfile.empty()) {
-      FL_LOG(fl::INFO) << "Reading flags from file" << FLAGS_flagsfile;
+      LOG(INFO) << "Reading flags from file" << FLAGS_flagsfile;
       gflags::ReadFromFlagsFile(FLAGS_flagsfile, argv[0], true);
     }
     gflags::ParseCommandLineFlags(&argc, &argv, false);
     runPath = newRunPath(FLAGS_rundir, FLAGS_runname, FLAGS_tag);
   } else {
-    FL_LOG(fl::FATAL) << gflags::ProgramUsage();
+    LOG(FATAL) << gflags::ProgramUsage();
   }
   // Only new flags are re-serialized. Copy any values from deprecated flags to
   // new flags when deprecated flags are present and corresponding new flags
@@ -168,9 +167,9 @@ int main(int argc, char** argv) {
   int worldSize = fl::getWorldSize();
   bool isMaster = (worldRank == 0);
 
-  FL_LOG_MASTER(fl::INFO) << "Gflags after parsing \n" << serializeGflags("; ");
-  FL_LOG_MASTER(fl::INFO) << "Experiment path: " << runPath;
-  FL_LOG_MASTER(fl::INFO) << "Experiment runidx: " << runIdx;
+  FL_LOG_MASTER(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
+  FL_LOG_MASTER(INFO) << "Experiment path: " << runPath;
+  FL_LOG_MASTER(INFO) << "Experiment runidx: " << runIdx;
 
   // flashlight optim mode
   auto flOptimLevel = FLAGS_fl_optim_mode.empty()
@@ -179,11 +178,10 @@ int main(int argc, char** argv) {
   fl::OptimMode::get().setOptimLevel(flOptimLevel);
   if (FLAGS_fl_amp_use_mixed_precision) {
     // Only set the optim mode to O1 if it was left empty
-    FL_LOG(fl::INFO)
-        << "Mixed precision training enabled. Will perform loss scaling.";
+    LOG(INFO) << "Mixed precision training enabled. Will perform loss scaling.";
     if (FLAGS_fl_optim_mode.empty()) {
-      FL_LOG(fl::INFO) << "Mixed precision training enabled with no "
-                          "optim mode specified - setting optim mode to O1.";
+      LOG(INFO) << "Mixed precision training enabled with no "
+                   "optim mode specified - setting optim mode to O1.";
       fl::OptimMode::get().setOptimLevel(fl::OptimLevel::O1);
     }
   }
@@ -232,14 +230,14 @@ int main(int argc, char** argv) {
   }
 
   int numClasses = tokenDict.indexSize();
-  FL_LOG(fl::INFO) << "Number of classes (network): " << numClasses;
+  LOG(INFO) << "Number of classes (network): " << numClasses;
 
   Dictionary wordDict;
   LexiconMap lexicon;
   if (!FLAGS_lexicon.empty()) {
     lexicon = loadWords(FLAGS_lexicon, FLAGS_maxword);
     wordDict = createWordDict(lexicon);
-    FL_LOG(fl::INFO) << "Number of words: " << wordDict.indexSize();
+    LOG(INFO) << "Number of words: " << wordDict.indexSize();
   }
 
   /* ===================== Create Dataset ===================== */
@@ -337,7 +335,7 @@ int main(int argc, char** argv) {
   auto scalemode = getCriterionScaleMode(FLAGS_onorm, FLAGS_sqnorm);
   if (runStatus == kTrainMode) {
     auto archfile = pathsConcat(FLAGS_archdir, FLAGS_arch);
-    FL_LOG_MASTER(fl::INFO) << "Loading architecture file from " << archfile;
+    FL_LOG_MASTER(INFO) << "Loading architecture file from " << archfile;
     auto numFeatures = getSpeechFeatureSize();
     // Encoder network, works on audio
     if (endsWith(archfile, ".so")) {
@@ -363,15 +361,15 @@ int main(int argc, char** argv) {
               FLAGS_am_decoder_tr_layerdrop,
               tokenDict.getIndex(fl::app::asr::kEosToken)));
     } else {
-      FL_LOG(fl::FATAL) << "unimplemented criterion";
+      LOG(FATAL) << "unimplemented criterion";
     }
   } else if (runStatus == kForkMode) {
     std::unordered_map<std::string, std::string> cfg; // unused
     std::string version;
     Serializer::load(reloadPath, version, cfg, network, criterion);
     if (version != FL_APP_ASR_VERSION) {
-      FL_LOG(fl::WARNING) << "Model version " << version << " and code version "
-                          << FL_APP_ASR_VERSION;
+      LOG(WARNING) << "Model version " << version << " and code version "
+                   << FL_APP_ASR_VERSION;
     }
   } else { // kContinueMode
     std::unordered_map<std::string, std::string> cfg; // unused
@@ -379,17 +377,16 @@ int main(int argc, char** argv) {
     Serializer::load(
         reloadPath, version, cfg, network, criterion, netoptim, critoptim);
     if (version != FL_APP_ASR_VERSION) {
-      FL_LOG(fl::WARNING) << "Model version " << version << " and code version "
-                          << FL_APP_ASR_VERSION;
+      LOG(WARNING) << "Model version " << version << " and code version "
+                   << FL_APP_ASR_VERSION;
     }
   }
-  FL_LOG_MASTER(fl::INFO) << "[Network] " << network->prettyString();
-  FL_LOG_MASTER(fl::INFO) << "[Network Params: " << numTotalParams(network)
-                          << "]";
-  FL_LOG_MASTER(fl::INFO) << "[Criterion] " << criterion->prettyString();
+  FL_LOG_MASTER(INFO) << "[Network] " << network->prettyString();
+  FL_LOG_MASTER(INFO) << "[Network Params: " << numTotalParams(network) << "]";
+  FL_LOG_MASTER(INFO) << "[Criterion] " << criterion->prettyString();
 
   if (!FLAGS_lm.empty()) {
-    FL_LOG_MASTER(fl::INFO)
+    FL_LOG_MASTER(INFO)
         << "[Beam-search Decoder] Constructing language model and beam search decoder";
     std::vector<float> dummyTransition;
     if (FLAGS_decodertype == "wrd" && FLAGS_lmtype == "kenlm" &&
@@ -418,9 +415,8 @@ int main(int argc, char** argv) {
     critoptim =
         initOptimizer({criterion}, FLAGS_critoptim, FLAGS_lrcrit, 0.0, 0.0);
   }
-  FL_LOG_MASTER(fl::INFO) << "[Network Optimizer] " << netoptim->prettyString();
-  FL_LOG_MASTER(fl::INFO) << "[Criterion Optimizer] "
-                          << critoptim->prettyString();
+  FL_LOG_MASTER(INFO) << "[Network Optimizer] " << netoptim->prettyString();
+  FL_LOG_MASTER(INFO) << "[Criterion Optimizer] " << critoptim->prettyString();
 
   double initLinNetlr = FLAGS_linlr >= 0.0 ? FLAGS_linlr : FLAGS_lr;
   double initLinCritlr =
@@ -430,13 +426,13 @@ int main(int argc, char** argv) {
   std::shared_ptr<fl::FirstOrderOptimizer> linCritoptim;
   if (FLAGS_linseg > startUpdate) {
     if (FLAGS_criterion != kAsgCriterion) {
-      FL_LOG(fl::FATAL) << "linseg may only be used with ASG criterion";
+      LOG(FATAL) << "linseg may only be used with ASG criterion";
     }
     linseg = std::make_shared<LinSegCriterion>(numClasses, scalemode);
     linseg->setParams(criterion->param(0), 0);
-    FL_LOG_MASTER(fl::INFO)
-        << "[Criterion] " << linseg->prettyString() << " (for first "
-        << FLAGS_linseg - startUpdate << " updates)";
+    FL_LOG_MASTER(INFO) << "[Criterion] " << linseg->prettyString()
+                        << " (for first " << FLAGS_linseg - startUpdate
+                        << " updates)";
 
     linNetoptim = initOptimizer(
         {network},
@@ -447,12 +443,12 @@ int main(int argc, char** argv) {
     linCritoptim =
         initOptimizer({linseg}, FLAGS_critoptim, initLinCritlr, 0.0, 0.0);
 
-    FL_LOG_MASTER(fl::INFO)
-        << "[Network Optimizer] " << linNetoptim->prettyString()
-        << " (for first " << FLAGS_linseg - startUpdate << " updates)";
-    FL_LOG_MASTER(fl::INFO)
-        << "[Criterion Optimizer] " << linCritoptim->prettyString()
-        << " (for first " << FLAGS_linseg - startUpdate << " updates)";
+    FL_LOG_MASTER(INFO) << "[Network Optimizer] " << linNetoptim->prettyString()
+                        << " (for first " << FLAGS_linseg - startUpdate
+                        << " updates)";
+    FL_LOG_MASTER(INFO) << "[Criterion Optimizer] "
+                        << linCritoptim->prettyString() << " (for first "
+                        << FLAGS_linseg - startUpdate << " updates)";
   }
 
   /* ===================== Meters ===================== */
@@ -480,11 +476,11 @@ int main(int argc, char** argv) {
     dirCreate(runPath);
     logFile.open(getRunFile("log", runIdx, runPath));
     if (!logFile.is_open()) {
-      FL_LOG(fl::FATAL) << "failed to open log file for writing";
+      LOG(FATAL) << "failed to open log file for writing";
     }
     perfFile.open(getRunFile("perf", runIdx, runPath));
     if (!perfFile.is_open()) {
-      FL_LOG(fl::FATAL) << "failed to open perf file for writing";
+      LOG(FATAL) << "failed to open perf file for writing";
     }
     // write perf header
     auto perfMsg =
@@ -529,7 +525,7 @@ int main(int argc, char** argv) {
                              false,
                              true)
                              .second;
-          FL_LOG_MASTER(fl::INFO) << logMsg;
+          FL_LOG_MASTER(INFO) << logMsg;
           appendToLog(logFile, logMsg);
           appendToLog(perfFile, perfMsg);
         }
@@ -675,10 +671,9 @@ int main(int argc, char** argv) {
     if (dm) {
       fl::TimeMeter timer;
       timer.resume();
-      FL_LOG_MASTER(fl::INFO)
-          << "[Beam-search decoder]   * DM: compute emissions";
+      FL_LOG_MASTER(INFO) << "[Beam-search decoder]   * DM: compute emissions";
       auto eds = dm->forward(curValidset);
-      FL_LOG_MASTER(fl::INFO) << "[Beam-search decoder]   * DM: decode";
+      FL_LOG_MASTER(INFO) << "[Beam-search decoder]   * DM: decode";
       std::vector<double> lmweights;
       for (double lmweight = FLAGS_lmweight_low;
            lmweight <= FLAGS_lmweight_high;
@@ -726,15 +721,15 @@ int main(int argc, char** argv) {
         }
         double wer = currentEditDist.scalar<float>() /
             currentTokens.scalar<float>() * 100.0;
-        FL_LOG_MASTER(fl::INFO)
+        FL_LOG_MASTER(INFO)
             << "[Beam-search decoder]   * DM: lmweight=" << lmweights[i]
             << " WER: " << wer;
         dmErr = std::min(dmErr, wer);
       }
-      FL_LOG_MASTER(fl::INFO)
-          << "[Beam-search decoder]   * DM: done with best WER " << dmErr;
+      FL_LOG_MASTER(INFO) << "[Beam-search decoder]   * DM: done with best WER "
+                          << dmErr;
       timer.stop();
-      FL_LOG_MASTER(fl::INFO)
+      FL_LOG_MASTER(INFO)
           << "[Beam-search decoder] time spent on grid-search for decoding: "
           << timer.value() << "s";
     }
@@ -845,13 +840,13 @@ int main(int argc, char** argv) {
         logStatus(
             meters, validWerWithDecoder, totalEpochs, totalUpdates, lr, lrcrit);
       } catch (const std::exception& ex) {
-        FL_LOG(fl::ERROR) << "Error while writing logs: " << ex.what();
+        LOG(ERROR) << "Error while writing logs: " << ex.what();
       }
       // save last and best models
       try {
         saveModels(totalEpochs, totalUpdates);
       } catch (const std::exception& ex) {
-        FL_LOG(fl::FATAL) << "Error while saving models: " << ex.what();
+        LOG(FATAL) << "Error while saving models: " << ex.what();
       }
       // reset meters for next readings
       meters.train.loss.reset();
@@ -879,14 +874,14 @@ int main(int argc, char** argv) {
         resetTimeStatMeters();
       }
       std::hash<std::string> hasher;
-      FL_LOG_MASTER(fl::INFO) << "Shuffling trainset";
+      FL_LOG_MASTER(INFO) << "Shuffling trainset";
       auto curTrainset = loadPrefetchDataset(
           trainset, FLAGS_nthread, true /* shuffle */, curEpoch /* seed */);
       af::sync();
       meters.sampletimer.resume();
       meters.runtime.resume();
       meters.timer.resume();
-      FL_LOG_MASTER(fl::INFO) << "Epoch " << curEpoch << " started!";
+      FL_LOG_MASTER(INFO) << "Epoch " << curEpoch << " started!";
       for (auto& batch : *curTrainset) {
         ++curBatch;
         double lrScheduleScale;
@@ -910,8 +905,8 @@ int main(int argc, char** argv) {
         meters.stats.add(batch[kInputIdx], batch[kTargetIdx]);
         if (af::anyTrue<bool>(af::isNaN(batch[kInputIdx])) ||
             af::anyTrue<bool>(af::isNaN(batch[kTargetIdx]))) {
-          FL_LOG(fl::FATAL) << "Sample has NaN values - "
-                            << join(",", readSampleIds(batch[kSampleIdx]));
+          LOG(FATAL) << "Sample has NaN values - "
+                     << join(",", readSampleIds(batch[kSampleIdx]));
         }
 
         // Ensure no samples are skipped while adjusting the loss scale factor.
@@ -957,8 +952,8 @@ int main(int argc, char** argv) {
               retrySample = true;
               continue;
             } else {
-              FL_LOG(fl::FATAL) << "Loss has NaN values. Samples - "
-                                << join(",", readSampleIds(batch[kSampleIdx]));
+              LOG(FATAL) << "Loss has NaN values. Samples - "
+                         << join(",", readSampleIds(batch[kSampleIdx]));
             }
           }
 
@@ -1084,14 +1079,14 @@ int main(int argc, char** argv) {
         FLAGS_linseg - startUpdate);
 
     startUpdate = FLAGS_linseg;
-    FL_LOG_MASTER(fl::INFO) << "Finished LinSeg";
+    FL_LOG_MASTER(INFO) << "Finished LinSeg";
   }
 
   auto s2s = std::dynamic_pointer_cast<Seq2SeqCriterion>(criterion);
   auto trde = std::dynamic_pointer_cast<TransformerCriterion>(criterion);
   if (FLAGS_pretrainWindow - startUpdate > 0) {
     if (!s2s && !trde) {
-      FL_LOG(fl::FATAL) << "Window pretraining only allowed for seq2seq.";
+      LOG(FATAL) << "Window pretraining only allowed for seq2seq.";
     }
     train(
         network,
@@ -1104,7 +1099,7 @@ int main(int argc, char** argv) {
         true,
         FLAGS_pretrainWindow - startUpdate);
     startUpdate = FLAGS_pretrainWindow;
-    FL_LOG_MASTER(fl::INFO) << "Finished window pretraining.";
+    FL_LOG_MASTER(INFO) << "Finished window pretraining.";
   }
   if (s2s) {
     s2s->clearWindow();
@@ -1123,6 +1118,6 @@ int main(int argc, char** argv) {
       true /* clampCrit */,
       FLAGS_iter);
 
-  FL_LOG_MASTER(fl::INFO) << "Finished training";
+  FL_LOG_MASTER(INFO) << "Finished training";
   return 0;
 }
