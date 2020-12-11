@@ -41,7 +41,7 @@ target_include_directories(
   flashlight-app-lm
   PUBLIC
   ${GLOG_INCLUDE_DIRS}
-  ${gflags_LIBRARIES}
+  ${gflags_INCLUDE_DIRS}
   )
 # ------------------------ Components ------------------------
 

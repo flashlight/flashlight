@@ -37,14 +37,8 @@ if (FL_USE_CPU)
 
   target_link_libraries(
     flashlight
-    PUBLIC
-    ${DNNL_LIBRARIES} # also contains MKL or mklml libraries
-    )
-
-  target_include_directories(
-    flashlight
-    PUBLIC
-    ${DNNL_INCLUDE_DIR} # includes MKL headers if found
+    PRIVATE
+    DNNL::dnnl
     )
 endif ()
 
