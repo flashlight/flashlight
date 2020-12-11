@@ -53,12 +53,8 @@ void EditDistanceMeter::add(
   nsub_ += nsub;
 }
 
-std::vector<double> EditDistanceMeter::value() const {
-  return {static_cast<double>(sumErr()),
-          static_cast<double>(n_),
-          static_cast<double>(ndel_),
-          static_cast<double>(nins_),
-          static_cast<double>(nsub_)};
+std::vector<int64_t> EditDistanceMeter::value() const {
+  return {sumErr(), n_, ndel_, nins_, nsub_};
 }
 
 std::vector<double> EditDistanceMeter::errorRate() const {

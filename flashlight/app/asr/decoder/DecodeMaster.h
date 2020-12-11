@@ -73,15 +73,15 @@ class DecodeMaster {
       const std::shared_ptr<fl::Dataset>& eds,
       fl::lib::text::Decoder& decoder);
 
-  // returns LER and WER
-  std::pair<std::vector<double>, std::vector<double>> computeMetrics(
+  // returns token edit distance and word edit distance stats
+  std::pair<std::vector<int64_t>, std::vector<int64_t>> computeMetrics(
       const std::shared_ptr<fl::Dataset>& pds);
 
-  // convert tokens indices predictions into letters string
+  // convert tokens indices predictions into tokens string
   virtual std::vector<std::string> computeStringPred(
       const std::vector<int>& tokenIdxSeq) = 0;
 
-  // convert tokens indices predictions into letters string
+  // convert tokens indices predictions into tokens string
   virtual std::vector<std::string> computeStringTarget(
       const std::vector<int>& tokenIdxSeq) = 0;
 
@@ -122,11 +122,11 @@ class TokenDecodeMaster : public DecodeMaster {
       const fl::lib::text::LexiconMap& lexicon,
       DecodeMasterLexiconOptions opt);
 
-  // convert tokens indices predictions into letters string
+  // convert tokens indices predictions into tokens string
   virtual std::vector<std::string> computeStringPred(
       const std::vector<int>& tokenIdxSeq) override;
 
-  // convert tokens indices predictions into letters string
+  // convert tokens indices predictions into tokens string
   virtual std::vector<std::string> computeStringTarget(
       const std::vector<int>& tokenIdxSeq) override;
 
@@ -151,11 +151,11 @@ class WordDecodeMaster : public DecodeMaster {
       const fl::lib::text::LexiconMap& lexicon,
       DecodeMasterLexiconOptions opt);
 
-  // convert tokens indices predictions into letters string
+  // convert tokens indices predictions into tokens string
   virtual std::vector<std::string> computeStringPred(
       const std::vector<int>& tokenIdxSeq) override;
 
-  // convert tokens indices predictions into letters string
+  // convert tokens indices predictions into tokens string
   virtual std::vector<std::string> computeStringTarget(
       const std::vector<int>& tokenIdxSeq) override;
 
