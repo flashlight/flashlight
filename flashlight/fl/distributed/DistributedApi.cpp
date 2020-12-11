@@ -45,6 +45,15 @@ void allReduceMultiple(
   }
 }
 
+void barrier() {
+  auto arr = af::constant(0, 1);
+  allReduce(arr, false);
+
+  // This hack is to make sure `arr` will not be optimized away from arrayfire
+  // JIT during allreduce().
+  af::sum<float>(arr);
+}
+
 namespace detail {
 /*  static */ DistributedInfo& DistributedInfo::getInstance() {
   static DistributedInfo dinfo;
