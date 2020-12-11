@@ -13,7 +13,6 @@
 #include "flashlight/lib/common/System.h"
 
 using namespace fl;
-using namespace fl::lib;
 
 namespace {
 std::shared_ptr<Module> parseLine(const std::string& line);
@@ -33,17 +32,17 @@ std::shared_ptr<Sequential> buildSequentialModule(
     int64_t nFeatures,
     int64_t nClasses) {
   auto net = std::make_shared<Sequential>();
-  auto layers = getFileContent(archfile);
+  auto layers = fl::lib::getFileContent(archfile);
   int numLinesParsed = 0;
 
   // preprocess
   std::vector<std::string> processedLayers;
   for (auto& l : layers) {
-    std::string lrepl = trim(l);
-    replaceAll(lrepl, "NFEAT", std::to_string(nFeatures));
-    replaceAll(lrepl, "NLABEL", std::to_string(nClasses));
+    std::string lrepl = fl::lib::trim(l);
+    fl::lib::replaceAll(lrepl, "NFEAT", std::to_string(nFeatures));
+    fl::lib::replaceAll(lrepl, "NLABEL", std::to_string(nClasses));
 
-    if (lrepl.empty() || startsWith(lrepl, "#")) {
+    if (lrepl.empty() || fl::lib::startsWith(lrepl, "#")) {
       continue; // ignore empty lines / comments
     }
     processedLayers.emplace_back(lrepl);
@@ -96,7 +95,7 @@ std::shared_ptr<Module> parseLines(
     int& numLinesParsed) {
   auto line = lines[lineIdx];
   numLinesParsed = 0;
-  auto params = splitOnWhitespace(line, true);
+  auto params = fl::lib::splitOnWhitespace(line, true);
 
   auto inRange = [&](const int a, const int b, const int c) {
     return (a <= b && b <= c);
@@ -326,7 +325,7 @@ std::shared_ptr<Module> parseLines(
       throw std::invalid_argument("Failed parsing - " + line);
     }
     int dim = std::stoi(params[1]);
-    std::string childStr = join(" ", params.begin() + 2, params.end());
+    std::string childStr = fl::lib::join(" ", params.begin() + 2, params.end());
     return std::make_shared<WeightNorm>(parseLine(childStr), dim);
   }
 
@@ -485,7 +484,7 @@ std::shared_ptr<Module> parseLines(
           throw std::invalid_argument("Failed parsing Residual block");
         }
         std::string resLine = lines[lineIdx + i + numProjections];
-        auto resLinePrms = splitOnWhitespace(resLine, true);
+        auto resLinePrms = fl::lib::splitOnWhitespace(resLine, true);
 
         if (resLinePrms[0] == "SKIP") {
           if (!inRange(3, resLinePrms.size(), 4)) {

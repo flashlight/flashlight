@@ -9,15 +9,13 @@
 
 #include <algorithm>
 
-#include "flashlight/fl/dataset/datasets.h"
 #include "flashlight/ext/image/af/Transforms.h"
 #include "flashlight/ext/image/fl/dataset/Jpeg.h"
 #include "flashlight/ext/image/fl/dataset/LoaderDataset.h"
+#include "flashlight/fl/dataset/datasets.h"
 #include "flashlight/lib/common/System.h"
 
-using namespace fl::ext::image;
-
-using LabelLoader = LoaderDataset<uint64_t>;
+using LabelLoader = fl::ext::image::LoaderDataset<uint64_t>;
 
 namespace fl {
 namespace app {
@@ -56,7 +54,7 @@ std::shared_ptr<Dataset> imagenetDataset(
   }
 
   // Create image dataset
-  std::shared_ptr<Dataset> imageDataset = jpegLoader(filepaths);
+  std::shared_ptr<Dataset> imageDataset = fl::ext::image::jpegLoader(filepaths);
   imageDataset = std::make_shared<TransformDataset>(imageDataset, transformfns);
 
   // Create labels from filepaths
@@ -75,12 +73,10 @@ std::shared_ptr<Dataset> imagenetDataset(
   std::transform(
       filepaths.begin(), filepaths.end(), labels.begin(), getLabelIdxs);
 
-  auto labelDataset =
-      std::make_shared<LabelLoader>(labels, [](uint64_t x) {
-        std::vector<af::array> result{
-            af::constant(x, 1, 1, 1, 1, af::dtype::u64)};
-        return result;
-      });
+  auto labelDataset = std::make_shared<LabelLoader>(labels, [](uint64_t x) {
+    std::vector<af::array> result{af::constant(x, 1, 1, 1, 1, af::dtype::u64)};
+    return result;
+  });
   return std::make_shared<MergeDataset>(
       MergeDataset({imageDataset, labelDataset}));
 }
