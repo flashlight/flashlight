@@ -48,7 +48,7 @@ TEST(SequentialBuilderTest, Serialization) {
   if (user != nullptr) {
     userstr = std::string(user);
   }
-  const std::string path = "/tmp/" + userstr + "_test.mdl";
+  const std::string path = fl::lib::getTmpPath("test.mdl");
   const std::string archfile = pathsConcat(archDir, "arch.txt");
 
   int C = 1, N = 5, B = 1, T = 10;

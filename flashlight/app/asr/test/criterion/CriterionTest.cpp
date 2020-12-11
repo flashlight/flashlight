@@ -12,6 +12,8 @@
 
 #include "flashlight/app/asr/criterion/criterion.h"
 
+#include "flashlight/lib/common/System.h"
+
 using namespace fl;
 using namespace fl::app::asr;
 
@@ -873,7 +875,7 @@ TEST(CriterionTest, AsgSerialization) {
   if (user != nullptr) {
     userstr = std::string(user);
   }
-  const std::string path = "/tmp/" + userstr + "_test.mdl";
+  const std::string path = fl::lib::getTmpPath("test.mdl");
   int N = 500;
 
   auto asg = std::make_shared<AutoSegmentationCriterion>(N);
