@@ -10,7 +10,7 @@
 #include "flashlight/lib/text/decoder/lm/LM.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 
-#include <lm/model.hh>
+#include <kenlm/lm/model.hh>
 
 namespace fl {
 namespace lib {

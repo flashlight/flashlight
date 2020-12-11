@@ -47,7 +47,6 @@ Once the dependencies are satisfied, simply run from wav2letter root:
 
 .. code-block:: shell
 
-    export KENLM_ROOT=<path/to>/kenlm
     cd bindings/python
     pip install -e .
 
@@ -71,7 +70,6 @@ Build inside docker container
   .. code-block:: shell
 
     pip install torch==1.2.0 packaging==19.1
-    export KENLM_ROOT=/root/kenlm && \
     cd /root/flashlight/bindings/python && pip install -e .
 
 
@@ -80,7 +78,7 @@ Build inside docker container
   .. code-block:: shell
 
     pip install torch==1.2.0 packaging==19.1
-    export USE_CUDA=0 && export KENLM_ROOT=/root/kenlm && \
+    export USE_CUDA=0 && \
     cd /root/flashlight/bindings/python && pip install -e .
 
 Python API
