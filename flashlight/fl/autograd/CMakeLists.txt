@@ -17,6 +17,14 @@ target_sources(
 # ----------------------------- Autograd Backends -----------------------------
 # CPU
 if (FL_USE_CPU)
+  find_package(DNNL)
+  if (DNNL_FOUND)
+    message(STATUS "DNNL found: (include: ${DNNL_INCLUDE_DIR} library: ${DNNL_LIBRARIES})")
+    setup_install_find_module(${CMAKE_MODULE_PATH}/FindDNNL.cmake)
+  else()
+    message(FATAL_ERROR "DNNL not found - required to build CPU backend")
+  endif()
+
   set(
     AUTOGRAD_CPU_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/operators/AdvancedIndex.cpp
@@ -24,7 +32,7 @@ if (FL_USE_CPU)
     ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/Pool2D.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/RNN.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/BatchNorm.cpp # generic
-    ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/MkldnnUtils.cpp # generic
+    ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/DnnlUtils.cpp # generic
     )
 
   target_sources(
@@ -36,20 +44,20 @@ if (FL_USE_CPU)
   target_link_libraries(
     flashlight
     PUBLIC
-    ${MKLDNN_LIBRARIES} # also contains MKL or mklml libraries
+    ${DNNL_LIBRARIES} # also contains MKL or mklml libraries
     )
 
   target_include_directories(
     flashlight
     PUBLIC
-    ${MKLDNN_INCLUDE_DIR} # includes MKL headers if found
+    ${DNNL_INCLUDE_DIR} # includes MKL headers if found
     )
 endif ()
 
 
 # CUDA
 if (FL_USE_CUDA)
-  find_package(CUDNN 7.1 QUIET) # CUDNN 7.1 works with CUDA 9.2
+  find_package(CUDNN 7.1) # CUDNN 7.1 works with CUDA 9.2
   if (CUDNN_FOUND)
     message(STATUS "CUDNN found (library: ${CUDNN_LIBRARIES} include: ${CUDNN_INCLUDE_DIRS})")
     setup_install_find_module(${CMAKE_MODULE_PATH}/FindCUDNN.cmake)

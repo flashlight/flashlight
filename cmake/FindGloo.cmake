@@ -6,16 +6,19 @@
 find_path(Gloo_INCLUDE_DIR
   NAMES gloo/common/common.h
   DOC "The directory where Gloo includes reside"
+  PATHS GLOO_ROOT
   )
 
 find_library(Gloo_NATIVE_LIBRARY
   NAMES gloo
   DOC "The Gloo library (without CUDA)"
+  PATHS GLOO_ROOT
   )
 
 find_library(Gloo_CUDA_LIBRARY
   NAMES gloo_cuda
   DOC "The Gloo library (with CUDA)"
+  PATHS GLOO_ROOT
   )
 
 set(Gloo_INCLUDE_DIRS ${Gloo_INCLUDE_DIR})
