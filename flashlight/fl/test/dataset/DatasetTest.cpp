@@ -13,6 +13,8 @@
 
 #include "flashlight/fl/dataset/datasets.h"
 
+#include "flashlight/lib/common/System.h"
+
 using namespace fl;
 
 bool allClose(
@@ -202,7 +204,7 @@ TEST(DatasetTest, FileBlobDataset) {
 
   // check read-write capabilities
   {
-    FileBlobDataset blob("/tmp/data.blob", true, true);
+    FileBlobDataset blob(fl::lib::getTmpPath("data.blob"), true, true);
     fillup(blob);
     check(blob);
     fillup(blob);
@@ -215,7 +217,7 @@ TEST(DatasetTest, FileBlobDataset) {
     blob.writeIndex();
     check(blob);
 
-    FileBlobDataset blobcopy("/tmp/data-copy.blob", true, true);
+    FileBlobDataset blobcopy(fl::lib::getTmpPath("data-copy.blob"), true, true);
     blobcopy.add(blob);
     blobcopy.add(blob, 1048576);
     auto datadup = data;
@@ -249,14 +251,14 @@ TEST(DatasetTest, FileBlobDataset) {
 
   // check everything is correct after re-opening
   {
-    FileBlobDataset blob("/tmp/data.blob");
+    FileBlobDataset blob(fl::lib::getTmpPath("data.blob"));
     check(blob);
   }
 
   // multi-threaded read
   {
     std::vector<std::vector<af::array>> thdata(data.size());
-    auto blob = std::make_shared<FileBlobDataset>("/tmp/data.blob");
+    auto blob = std::make_shared<FileBlobDataset>(fl::lib::getTmpPath("data.blob"));
     std::vector<std::thread> workers;
     const int nworker = 4;
     int nperworker = data.size() / nworker;
@@ -295,7 +297,7 @@ TEST(DatasetTest, FileBlobDataset) {
     }
     {
       auto blob =
-          std::make_shared<FileBlobDataset>("/tmp/data.blob", true, true);
+          std::make_shared<FileBlobDataset>(fl::lib::getTmpPath("data.blob"), true, true);
       std::vector<std::thread> workers;
       const int nworker = 10;
       int nperworker = data.size() / nworker;
@@ -314,7 +316,7 @@ TEST(DatasetTest, FileBlobDataset) {
       blob->writeIndex();
     }
     {
-      auto blob = std::make_shared<FileBlobDataset>("/tmp/data.blob");
+      auto blob = std::make_shared<FileBlobDataset>(fl::lib::getTmpPath("data.blob"));
       ASSERT_EQ(data.size(), blob->size());
       for (int64_t i = 0; i < data.size(); i++) {
         auto blobSample = blob->get(i);

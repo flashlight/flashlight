@@ -21,7 +21,7 @@
 using namespace fl::app::asr;
 
 namespace {
-const std::string kPath = "/tmp/test.bin";
+const std::string kPath = fl::lib::getTmpPath("test.mdl");
 
 bool afEqual(const fl::Variable& a, const fl::Variable& b) {
   if (a.isCalcGrad() != b.isCalcGrad()) {

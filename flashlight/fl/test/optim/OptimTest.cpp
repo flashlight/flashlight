@@ -10,6 +10,8 @@
 #include "flashlight/fl/common/common.h"
 #include "flashlight/fl/optim/optim.h"
 
+#include "flashlight/lib/common/System.h"
+
 using namespace fl;
 
 TEST(OptimTest, GradNorm) {
@@ -63,7 +65,7 @@ TEST(SerializationTest, OptimizerSerialize) {
   if (user != nullptr) {
     userstr = std::string(user);
   }
-  const std::string path = "/tmp/" + userstr + "_optm";
+  const std::string path = fl::lib::getTmpPath("optmizer.bin");
 
   std::vector<Variable> parameters;
   for (int i = 0; i < 5; i++) {

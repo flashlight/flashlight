@@ -39,6 +39,8 @@ std::string getCurrentDate();
 
 std::string getCurrentTime();
 
+std::string getTmpPath(const std::string& filename);
+
 std::vector<std::string> getFileContent(const std::string& file);
 
 std::vector<std::string> fileGlob(const std::string& pat);

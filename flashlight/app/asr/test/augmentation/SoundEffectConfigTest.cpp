@@ -13,16 +13,6 @@
 #include "flashlight/lib/common/System.h"
 
 using namespace ::fl::app::asr::sfx;
-using ::fl::lib::pathsConcat;
-
-std::string getTmpPath(const std::string& key) {
-  char* user = getenv("USER");
-  std::string userstr = "unknown";
-  if (user != nullptr) {
-    userstr = std::string(user);
-  }
-  return std::string("/tmp/test_") + userstr + key + std::string(".json");
-}
 
 /**
  * Test creation of arbitrary sound effect chain configuration, writing of that
@@ -30,7 +20,7 @@ std::string getTmpPath(const std::string& key) {
  * configured sound effect chain.
  */
 TEST(SoundEffectConfigFile, ReadWriteJson) {
-  const std::string configFile = getTmpPath("sfxConfig");
+  const std::string configFile = fl::lib::getTmpPath("sfxConfig.json");
   // This log line alllows the user to ispect the config file or copy/paste
   // configuration.
   std::cout << "configFile=" << configFile << std::endl;

@@ -12,6 +12,7 @@
 
 #include "flashlight/app/asr/criterion/attention/attention.h"
 #include "flashlight/app/asr/criterion/criterion.h"
+#include "flashlight/lib/common/System.h"
 
 using namespace fl;
 using namespace fl::ext;
@@ -271,7 +272,7 @@ TEST(Seq2SeqTest, Serialization) {
   if (user != nullptr) {
     userstr = std::string(user);
   }
-  const std::string path = "/tmp/" + userstr + "_test.mdl";
+  const std::string path = fl::lib::getTmpPath("test.mdl");
 
   int N = 5, H = 8, B = 1, T = 10, U = 5, maxoutputlen = 100, nAttnRound = 2;
 
