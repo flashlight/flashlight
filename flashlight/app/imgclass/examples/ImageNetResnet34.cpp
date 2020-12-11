@@ -50,7 +50,8 @@ DEFINE_string(exp_checkpoint_path, "/tmp/model", "Checkpointing prefix path");
 DEFINE_int64(exp_checkpoint_epoch, -1, "Checkpoint epoch to load from");
 
 using namespace fl;
-using namespace fl::ext::image;
+using fl::ext::image::compose;
+using fl::ext::image::ImageTransform;
 using namespace fl::app::imgclass;
 
 #define FL_LOG_MASTER(lvl) LOG_IF(lvl, (fl::getWorldRank() == 0))
@@ -129,25 +130,25 @@ int main(int argc, char** argv) {
   // TransformDataset will apply each transform in a vector to the respective
   // af::array. Thus, we need to `compose` all of the transforms so are each
   // applied only to the image
-  ImageTransform trainTransforms =
-      compose({// randomly resize shortest side of image between 256 to 480 for
-               // scale invariance
-               randomResizeTransform(randomResizeMin, randomResizeMax),
-               randomCropTransform(randomCropSize, randomCropSize),
-               normalizeImage(mean, std),
-               // Randomly flip image with probability of 0.5
-               randomHorizontalFlipTransform(horizontalFlipProb)});
+  ImageTransform trainTransforms = compose(
+      {// randomly resize shortest side of image between 256 to 480 for
+       // scale invariance
+       fl::ext::image::randomResizeTransform(randomResizeMin, randomResizeMax),
+       fl::ext::image::randomCropTransform(randomCropSize, randomCropSize),
+       fl::ext::image::normalizeImage(mean, std),
+       // Randomly flip image with probability of 0.5
+       fl::ext::image::randomHorizontalFlipTransform(horizontalFlipProb)});
   ImageTransform valTransforms =
       compose({// Resize shortest side to 256, then take a center crop
-               resizeTransform(randomResizeMin),
-               centerCropTransform(randomCropSize),
-               normalizeImage(mean, std)});
+               fl::ext::image::resizeTransform(randomResizeMin),
+               fl::ext::image::centerCropTransform(randomCropSize),
+               fl::ext::image::normalizeImage(mean, std)});
 
   const int64_t batchSizePerGpu = FLAGS_data_batch_size;
   const int64_t prefetchThreads = 10;
   const int64_t prefetchSize = FLAGS_data_batch_size;
   auto labelMap = getImagenetLabels(labelPath);
-  auto trainDataset = DistributedDataset(
+  auto trainDataset = fl::ext::image::DistributedDataset(
       imagenetDataset(trainList, labelMap, {trainTransforms}),
       worldRank,
       worldSize,
@@ -155,7 +156,7 @@ int main(int argc, char** argv) {
       prefetchThreads,
       prefetchSize);
 
-  auto valDataset = DistributedDataset(
+  auto valDataset = fl::ext::image::DistributedDataset(
       imagenetDataset(valList, labelMap, {valTransforms}),
       worldRank,
       worldSize,
@@ -166,7 +167,7 @@ int main(int argc, char** argv) {
   //////////////////////////
   //  Load model and optimizer
   /////////////////////////
-  auto model = resnet34();
+  auto model = fl::ext::image::resnet34();
   // synchronize parameters of the model so that the parameters in each process
   // is the same
   fl::allReduceParameters(model);

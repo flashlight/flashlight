@@ -37,10 +37,14 @@
 #include "flashlight/lib/text/decoder/lm/KenLM.h"
 #include "flashlight/lib/text/decoder/lm/ZeroLM.h"
 
-using namespace fl::ext;
-using namespace fl::lib;
-using namespace fl::lib::text;
-using namespace fl::lib::audio;
+using fl::ext::afToVector;
+using fl::ext::Serializer;
+using fl::lib::join;
+using fl::lib::pathsConcat;
+using fl::lib::text::CriterionType;
+using fl::lib::text::kUnkToken;
+using fl::lib::text::SmearingMode;
+
 using namespace fl::app::asr;
 
 int main(int argc, char** argv) {
@@ -123,10 +127,10 @@ int main(int argc, char** argv) {
 
   /* ===================== Create Dictionary ===================== */
   auto dictPath = pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
-  if (dictPath.empty() || !fileExists(dictPath)) {
+  if (dictPath.empty() || !fl::lib::fileExists(dictPath)) {
     throw std::runtime_error("Invalid dictionary filepath specified.");
   }
-  Dictionary tokenDict(dictPath);
+  fl::lib::text::Dictionary tokenDict(dictPath);
   // Setup-specific modifications
   for (int64_t r = 1; r <= FLAGS_replabel; ++r) {
     tokenDict.addEntry("<" + std::to_string(r) + ">");
@@ -142,11 +146,11 @@ int main(int argc, char** argv) {
   int numClasses = tokenDict.indexSize();
   LOG(INFO) << "Number of classes (network): " << numClasses;
 
-  Dictionary wordDict;
-  LexiconMap lexicon;
+  fl::lib::text::Dictionary wordDict;
+  fl::lib::text::LexiconMap lexicon;
   if (!FLAGS_lexicon.empty()) {
-    lexicon = loadWords(FLAGS_lexicon, FLAGS_maxword);
-    wordDict = createWordDict(lexicon);
+    lexicon = fl::lib::text::loadWords(FLAGS_lexicon, FLAGS_maxword);
+    wordDict = fl::lib::text::createWordDict(lexicon);
     LOG(INFO) << "Number of words: " << wordDict.indexSize();
   } else {
     if (FLAGS_uselexicon || FLAGS_decodertype == "wrd") {
@@ -155,7 +159,8 @@ int main(int argc, char** argv) {
     }
   }
 
-  DictionaryMap dicts = {{kTargetIdx, tokenDict}, {kWordIdx, wordDict}};
+  fl::lib::text::DictionaryMap dicts = {{kTargetIdx, tokenDict},
+                                        {kWordIdx, wordDict}};
 
   /* =============== Prepare Sharable Decoder Components ============== */
   // Prepare counters
@@ -221,16 +226,17 @@ int main(int argc, char** argv) {
   // Build Language Model
   int unkWordIdx = -1;
 
-  Dictionary usrDict = tokenDict;
+  fl::lib::text::Dictionary usrDict = tokenDict;
   if (!FLAGS_lm.empty() && FLAGS_decodertype == "wrd") {
     usrDict = wordDict;
     unkWordIdx = wordDict.getIndex(kUnkToken);
   }
 
-  std::shared_ptr<LM> lm = std::make_shared<ZeroLM>();
+  std::shared_ptr<fl::lib::text::LM> lm =
+      std::make_shared<fl::lib::text::ZeroLM>();
   if (!FLAGS_lm.empty()) {
     if (FLAGS_lmtype == "kenlm") {
-      lm = std::make_shared<KenLM>(FLAGS_lm, usrDict);
+      lm = std::make_shared<fl::lib::text::KenLM>(FLAGS_lm, usrDict);
       if (!lm) {
         LOG(FATAL) << "[LM constructing] Failed to load LM: " << FLAGS_lm;
       }
@@ -247,7 +253,7 @@ int main(int argc, char** argv) {
       convLmModel->eval();
 
       auto getConvLmScoreFunc = buildGetConvLmScoreFunction(convLmModel);
-      lm = std::make_shared<ConvLM>(
+      lm = std::make_shared<fl::lib::text::ConvLM>(
           getConvLmScoreFunc,
           FLAGS_lm_vocab,
           usrDict,
@@ -266,9 +272,9 @@ int main(int argc, char** argv) {
   if (FLAGS_wordseparator != "") {
     silIdx = tokenDict.getIndex(FLAGS_wordseparator);
   }
-  std::shared_ptr<Trie> trie = nullptr;
+  std::shared_ptr<fl::lib::text::Trie> trie = nullptr;
   if (FLAGS_decodertype == "wrd" || FLAGS_uselexicon) {
-    trie = std::make_shared<Trie>(tokenDict.indexSize(), silIdx);
+    trie = std::make_shared<fl::lib::text::Trie>(tokenDict.indexSize(), silIdx);
     auto startState = lm->start(false);
 
     for (auto& it : lexicon) {
@@ -276,7 +282,7 @@ int main(int argc, char** argv) {
       int usrIdx = wordDict.getIndex(word);
       float score = -1;
       if (FLAGS_decodertype == "wrd") {
-        LMStatePtr dummyState;
+        fl::lib::text::LMStatePtr dummyState;
         std::tie(dummyState, score) = lm->score(startState, usrIdx);
       }
       for (auto& tokens : it.second) {
@@ -300,7 +306,7 @@ int main(int argc, char** argv) {
   }
 
   /* ===================== Create Dataset ===================== */
-  FeatureParams featParams(
+  fl::lib::audio::FeatureParams featParams(
       FLAGS_samplerate,
       FLAGS_framesizems,
       FLAGS_framestridems,
@@ -345,7 +351,7 @@ int main(int argc, char** argv) {
       : kTargetPadValue;
   int wordpadVal = wordDict.getIndex(kUnkToken);
 
-  std::vector<std::string> testSplits = split(",", FLAGS_test, true);
+  std::vector<std::string> testSplits = fl::lib::split(",", FLAGS_test, true);
   auto ds = createDataset(
       testSplits,
       FLAGS_datadir,
@@ -364,7 +370,7 @@ int main(int argc, char** argv) {
   LOG(INFO) << "[Dataset] Dataset loaded, with " << nSamples << " samples.";
 
   /* ===================== AM Forwarding ===================== */
-  using EmissionQueue = ProducerConsumerQueue<EmissionTargetPair>;
+  using EmissionQueue = fl::lib::ProducerConsumerQueue<EmissionTargetPair>;
   EmissionQueue emissionQueue(FLAGS_emission_queue_size);
 
   auto runAmForward = [&network,
@@ -482,7 +488,7 @@ int main(int argc, char** argv) {
     // than
     // the number of GPUs.
     std::shared_ptr<SequenceCriterion> localCriterion = criterion;
-    std::shared_ptr<LM> localLm = lm;
+    std::shared_ptr<fl::lib::text::LM> localLm = lm;
     if (FLAGS_lmtype == "convlm" || criterionType == CriterionType::S2S) {
       if (tid >= af::getDeviceCount()) {
         LOG(FATAL)
@@ -501,7 +507,7 @@ int main(int argc, char** argv) {
         convLmModel->eval();
 
         auto getConvLmScoreFunc = buildGetConvLmScoreFunction(convLmModel);
-        localLm = std::make_shared<ConvLM>(
+        localLm = std::make_shared<fl::lib::text::ConvLM>(
             getConvLmScoreFunc,
             FLAGS_lm_vocab,
             usrDict,
@@ -518,7 +524,7 @@ int main(int argc, char** argv) {
     }
 
     /* 2. Build Decoder */
-    std::unique_ptr<Decoder> decoder;
+    std::unique_ptr<fl::lib::text::Decoder> decoder;
     if (FLAGS_decodertype != "wrd" && FLAGS_decodertype != "tkn") {
       LOG(FATAL) << "Unsupported decoder type: " << FLAGS_decodertype;
     }
@@ -530,7 +536,7 @@ int main(int argc, char** argv) {
       int eosIdx = tokenDict.getIndex(fl::app::asr::kEosToken);
 
       if (FLAGS_decodertype == "wrd" || FLAGS_uselexicon) {
-        decoder.reset(new LexiconSeq2SeqDecoder(
+        decoder.reset(new fl::lib::text::LexiconSeq2SeqDecoder(
             {
                 .beamSize = FLAGS_beamsize,
                 .beamSizeToken = FLAGS_beamsizetoken,
@@ -549,7 +555,7 @@ int main(int argc, char** argv) {
         LOG(INFO) << "[Decoder] LexiconSeq2Seq decoder with "
                   << FLAGS_decodertype << "-LM loaded in thread: " << tid;
       } else {
-        decoder.reset(new LexiconFreeSeq2SeqDecoder(
+        decoder.reset(new fl::lib::text::LexiconFreeSeq2SeqDecoder(
             {
                 .beamSize = FLAGS_beamsize,
                 .beamSizeToken = FLAGS_beamsizetoken,
@@ -568,7 +574,7 @@ int main(int argc, char** argv) {
       }
     } else {
       if (FLAGS_decodertype == "wrd" || FLAGS_uselexicon) {
-        decoder.reset(new LexiconDecoder(
+        decoder.reset(new fl::lib::text::LexiconDecoder(
             {.beamSize = FLAGS_beamsize,
              .beamSizeToken = FLAGS_beamsizetoken,
              .beamThreshold = FLAGS_beamthreshold,
@@ -588,7 +594,7 @@ int main(int argc, char** argv) {
         LOG(INFO) << "[Decoder] Lexicon decoder with " << FLAGS_decodertype
                   << "-LM loaded in thread: " << tid;
       } else {
-        decoder.reset(new LexiconFreeDecoder(
+        decoder.reset(new fl::lib::text::LexiconFreeDecoder(
             {.beamSize = FLAGS_beamsize,
              .beamSizeToken = FLAGS_beamsizetoken,
              .beamThreshold = FLAGS_beamthreshold,
