@@ -42,12 +42,8 @@ af::array allreduceGet(fl::AverageValueMeter& mtr) {
 }
 
 af::array allreduceGet(fl::EditDistanceMeter& mtr) {
-  auto mtrVal = mtr.value();
-  mtrVal[0] = mtrVal[0] * mtrVal[1] / 100;
-  mtrVal[2] = mtrVal[2] * mtrVal[1] / 100;
-  mtrVal[3] = mtrVal[3] * mtrVal[1] / 100;
-  mtrVal[4] = mtrVal[4] * mtrVal[1] / 100;
-
+  auto mtrVal0 = mtr.value();
+  std::vector<long long> mtrVal(mtrVal0.begin(), mtrVal0.end());
   return af::array(mtrVal.size(), mtrVal.data());
 }
 
@@ -63,7 +59,7 @@ af::array allreduceGet(fl::TimeMeter& mtr) {
 
 af::array allreduceGet(fl::TopKMeter& mtr) {
   std::pair<int32_t, int32_t> stats = mtr.getStats();
-  std::vector<int32_t> vec = { stats.first, stats.second };
+  std::vector<int32_t> vec = {stats.first, stats.second};
   return af::array(vec.size(), vec.data());
 }
 
@@ -78,7 +74,7 @@ void allreduceSet(fl::AverageValueMeter& mtr, af::array& val) {
 
 void allreduceSet(fl::EditDistanceMeter& mtr, af::array& val) {
   mtr.reset();
-  auto valVec = afToVector<double>(val);
+  auto valVec = afToVector<long long>(val);
   mtr.add(
       static_cast<int64_t>(valVec[1]),
       static_cast<int64_t>(valVec[2]),

@@ -51,9 +51,9 @@ DecodeMaster::DecodeMaster(
       wordDict_(wordDict),
       trainOpt_(trainOpt) {}
 
-std::pair<std::vector<double>, std::vector<double>>
+std::pair<std::vector<int64_t>, std::vector<int64_t>>
 DecodeMaster::computeMetrics(const std::shared_ptr<fl::Dataset>& predDataset) {
-  fl::EditDistanceMeter wer, ler;
+  fl::EditDistanceMeter wordEditDist, tokenEditDist;
 
   for (auto& sample : *predDataset) {
     if (sample.size() <= kDMWordPredIdx) {
@@ -92,7 +92,7 @@ DecodeMaster::computeMetrics(const std::shared_ptr<fl::Dataset>& predDataset) {
 
     auto predictionS = computeStringPred(predictionV);
     auto targetS = computeStringTarget(targetV);
-    ler.add(predictionS, targetS);
+    tokenEditDist.add(predictionS, targetS);
 
     std::vector<std::string> targetWrdS, predictionWrdS;
     if (isPredictingWrd) {
@@ -103,9 +103,9 @@ DecodeMaster::computeMetrics(const std::shared_ptr<fl::Dataset>& predDataset) {
       targetWrdS = tkn2Wrd(targetS, trainOpt_.wordSep);
       predictionWrdS = tkn2Wrd(predictionS, trainOpt_.wordSep);
     }
-    wer.add(predictionWrdS, targetWrdS);
+    wordEditDist.add(predictionWrdS, targetWrdS);
   }
-  return {ler.value(), wer.value()};
+  return {tokenEditDist.value(), wordEditDist.value()};
 }
 
 std::shared_ptr<fl::lib::text::Trie> DecodeMaster::buildTrie(

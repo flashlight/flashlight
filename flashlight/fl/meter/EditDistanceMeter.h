@@ -84,7 +84,7 @@ class EditDistanceMeter {
    * - `number of insertions`: \f$ nins \f$
    * - `number of substitution`: \f$ nsub \f$
    */
-  std::vector<double> value() const;
+  std::vector<int64_t> value() const;
 
   /** Computes edit distance between two arrays `output` and `target`, with
    * length `olen` and `tlen` respectively, and updates the counters.
