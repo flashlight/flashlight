@@ -5,8 +5,9 @@
 #
 # The following are set after configuration is done:
 #  KENLM_FOUND
-#  KENLM_REQUIRED_HEADERS - only the needed headers
 #  KENLM_LIBRARIES
+#  KENLM_INCLUDE_DIRS
+#  KENLM_INCLUDE_DIRS_LM
 #
 
 message(STATUS "Looking for KenLM")
@@ -47,8 +48,11 @@ endif()
 
 # find a model header, then get the entire include directory. We need to do this because
 # cmake consistently confuses other things along this path
-find_file(KENLM_MODEL_HEADER
+find_path(KENLM_MODEL_HEADER
   model.hh
+  PATH_SUFFIXES
+    kenlm/lm
+    include/kenlm/lm
   HINTS
     ${KENLM_ROOT}/lm
     ${KENLM_ROOT}/include/kenlm/lm
@@ -66,7 +70,9 @@ get_filename_component(KENLM_INCLUDE_LM ${KENLM_MODEL_HEADER} DIRECTORY)
 get_filename_component(KENLM_INCLUDE_DIR ${KENLM_INCLUDE_LM} DIRECTORY)
 
 set(KENLM_LIBRARIES ${KENLM_LIB} ${KENLM_UTIL_LIB})
-set(KENLM_INCLUDE_DIRS ${KENLM_INCLUDE_DIR} )
+# Some KenLM include paths are relative to [include dir]/kenlm, not just [include dir] (bad)
+set(KENLM_INCLUDE_DIRS_LM ${KENLM_INCLUDE_LM})
+set(KENLM_INCLUDE_DIRS ${KENLM_INCLUDE_DIR})
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(kenlm DEFAULT_MSG KENLM_INCLUDE_DIRS KENLM_LIBRARIES)

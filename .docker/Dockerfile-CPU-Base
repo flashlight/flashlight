@@ -10,7 +10,7 @@
 # Gloo             b7e0906      (git)
 # libsndfile       4bdd741      (git)
 # FFTW             latest       (apt)
-# KenLM            e47088d      (git)
+# KenLM            4a27753      (git)
 # GLOG             latest       (apt)
 # gflags           latest       (apt)
 # python           3.6          (apt)
@@ -136,8 +136,8 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
 # ==================================================================
 # KenLM https://github.com/kpu/kenlm
 # ------------------------------------------------------------------
-    cd /root && git clone https://github.com/kpu/kenlm.git && \
-    cd kenlm && git checkout e47088ddfae810a5ee4c8a9923b5f8071bed1ae8 && \
+    cd /tmp && git clone https://github.com/kpu/kenlm.git && \
+    cd kenlm && git checkout 4a277534fd33da323205e6ec256e8fd0ff6ee6fa && \
     mkdir build && cd build && \
     cmake .. -DCMAKE_POSITION_INDEPENDENT_CODE=ON && \
     make -j$(nproc) && make install && \
