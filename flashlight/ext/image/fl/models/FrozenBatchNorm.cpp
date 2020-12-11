@@ -74,6 +74,15 @@ void FrozenBatchNorm::setRunningVar(af::array x) {
   runningVar_ = fl::Variable(x, false);
 }
 
+void FrozenBatchNorm::train() {
+  for (auto& param : params_) {
+    param.setCalcGrad(false);
+  }
+  runningVar_.setCalcGrad(false);
+  runningMean_.setCalcGrad(false);
+  train_ = false;
+}
+
 std::string FrozenBatchNorm::prettyString() const {
   std::ostringstream ss;
   ss << "FrozenBatchNorm";

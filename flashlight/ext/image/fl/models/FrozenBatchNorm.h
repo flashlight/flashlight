@@ -120,6 +120,8 @@ class FrozenBatchNorm : public UnaryModule {
 
   void setRunningMean(af::array);
 
+  void train() override;
+
   std::string prettyString() const override;
 };
 
