@@ -9,7 +9,7 @@
 
 #include "flashlight/lib/common/String.h"
 
-using namespace fl::lib;
+using fl::lib::dedup;
 using fl::lib::text::Dictionary;
 using fl::lib::text::splitWrd;
 

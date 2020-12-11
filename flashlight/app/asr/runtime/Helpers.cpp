@@ -18,8 +18,13 @@
 #include "flashlight/fl/fb/EverstoreDataset.h"
 #endif
 
-using namespace fl::ext;
-using namespace fl::lib;
+using fl::ext::afToVector;
+using fl::lib::format;
+using fl::lib::getCurrentDate;
+using fl::lib::getCurrentTime;
+using fl::lib::getEnvVar;
+using fl::lib::pathsConcat;
+using fl::lib::replaceAll;
 using fl::lib::text::DictionaryMap;
 using fl::lib::text::LexiconMap;
 
