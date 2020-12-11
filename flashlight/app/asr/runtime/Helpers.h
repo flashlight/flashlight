@@ -84,6 +84,7 @@ std::shared_ptr<Dataset> createDataset(
 
 /*
  * Utility function for creating a w2l dataset.
+ * From gflags it uses FLAGS_everstoredb and FLAGS_memcache
  * @param inputTransform - a function to featurize input
  * @param targetTransform - a function to featurize target
  * @param wordTransform - a function to featurize words

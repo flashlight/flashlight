@@ -14,8 +14,11 @@
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
 
-using namespace fl::ext;
-using namespace fl::lib;
+using fl::ext::afToVector;
+using fl::lib::format;
+using fl::lib::getCurrentDate;
+using fl::lib::getCurrentTime;
+using fl::lib::retryWithBackoff;
 
 namespace fl {
 namespace app {
@@ -30,8 +33,6 @@ std::pair<std::string, std::string> getStatus(
     bool verbose /* = false */,
     bool date /* = false */,
     const std::string& separator /* = " " */) {
-  std::string errtype = "XER";
-  errtype[0] = std::toupper(FLAGS_target[0]);
   std::string header, status;
   auto insertItem = [&](std::string key, std::string val) {
     if (verbose) {
@@ -62,13 +63,11 @@ std::pair<std::string, std::string> getStatus(
   insertItem("optim(ms)", format("%.2f", meters.optimtimer.value() * 1000));
   insertItem("loss", format("%10.5f", meters.train.loss.value()[0]));
 
-  insertItem(
-      "train-" + errtype, format("%5.2f", meters.train.tknEdit.errorRate()[0]));
+  insertItem("train-TER", format("%5.2f", meters.train.tknEdit.errorRate()[0]));
   insertItem("train-WER", format("%5.2f", meters.train.wrdEdit.errorRate()[0]));
   for (auto& v : meters.valid) {
     insertItem(v.first + "-loss", format("%10.5f", v.second.loss.value()[0]));
-    insertItem(
-        v.first + "-" + errtype, format("%5.2f", v.second.tknEdit.errorRate()[0]));
+    insertItem(v.first + "-TER", format("%5.2f", v.second.tknEdit.errorRate()[0]));
     insertItem(v.first + "-WER", format("%5.2f", v.second.wrdEdit.errorRate()[0]));
     insertItem(v.first + "-WER-decoded", format("%5.2f", validDecoderWer[v.first]));
   }

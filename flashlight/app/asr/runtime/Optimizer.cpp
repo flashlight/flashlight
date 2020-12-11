@@ -20,7 +20,8 @@ std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
     double momentum,
     double weightdecay) {
   if (nets.size() == 0) {
-    throw std::invalid_argument("no network for initializing the optimizer");
+    throw std::invalid_argument(
+        "[InitOptimizer]: No network for initializing the optimizer");
   }
 
   std::vector<fl::Variable> params;
