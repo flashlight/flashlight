@@ -6,7 +6,7 @@
 # cmake            3.10         (git)
 # MKL              2018.4-057   (apt)
 # arrayfire        3.7.1        (git, CPU backend)
-# MKLDNN           4bdffc2      (git)
+# oneDNN           2.0          (git)
 # Gloo             b7e0906      (git)
 # libsndfile       4bdd741      (git)
 # FFTW             latest       (apt)
@@ -88,11 +88,11 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     CXXFLAGS=-DOS_LNX cmake .. -DCMAKE_BUILD_TYPE=Release -DAF_BUILD_CUDA=OFF -DAF_BUILD_OPENCL=OFF -DAF_BUILD_EXAMPLES=OFF -DBOOST_INCLUDEDIR=/tmp/boost_1_70_0 && \
     make -j$(nproc) && make install && \
 # ==================================================================
-# MKLDNN https://github.com/intel/mkl-dnn/
+# oneDNN https://github.com/oneapi-src/oneDNN
 # ------------------------------------------------------------------
-    cd /tmp && git clone https://github.com/intel/mkl-dnn.git && \
-    cd mkl-dnn && git checkout 4bdffc2 && mkdir -p build && cd build && \
-    cmake .. -DMKLDNN_USE_MKL=FULL && \
+    cd /tmp && git clone https://github.com/oneapi-src/oneDNN && \
+    cd oneDNN && git checkout v2.0 && mkdir -p build && cd build && \
+    cmake .. -DDNNL_BLAS_VENDOR=MKL && \
     make -j$(nproc) && make install && \
 # ==================================================================
 # Gloo https://github.com/facebookincubator/gloo.git
