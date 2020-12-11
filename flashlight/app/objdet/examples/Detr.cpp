@@ -162,7 +162,7 @@ int main(int argc, char** argv) {
   const bool auxLoss = false;
   std::shared_ptr<Resnet50Backbone> backbone;
   if(FLAGS_pretrained) {
-    std::string modelPath = "/checkpoint/padentomasello/models/resnet50/from_pytorch_fbn";
+    std::string modelPath = "/checkpoint/padentomasello/models/resnet50/from_pytorch_fbn2";
     fl::load(modelPath, backbone);
   } else {
     backbone = std::make_shared<Resnet50Backbone>();

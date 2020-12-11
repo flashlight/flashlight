@@ -338,9 +338,6 @@ TEST(Pytorch, detr_backbone) {
     fl::Variable(image, false), 
   };
 
-  //std::string modelPath = "/checkpoint/padentomasello/models/resnet50/from_pytorch_fbn";
-  //fl::save(modelPath, model);
-  //fl::load(modelPath, model);
 
   int paramSize = model->params().size();
   for(int i = 0; i < paramSize; i++) {
@@ -363,6 +360,9 @@ TEST(Pytorch, detr_backbone) {
     bn_ptr->setRunningVar(af::readArray((filename + "running").c_str(), i));
     i++;
   }
+  //std::string modelPath = "/checkpoint/padentomasello/models/resnet50/from_pytorch_fbn2";
+  //fl::save(modelPath, model);
+  //fl::load(modelPath, model);
 
   auto output = model->forward(inputs)[0];
   //af_print(output.array());
