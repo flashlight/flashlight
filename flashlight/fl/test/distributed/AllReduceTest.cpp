@@ -5,10 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <chrono>
+#include <cstdio>
 #include <exception>
 #include <iostream>
+#include <thread>
 
 #include <gtest/gtest.h>
+
+#include "flashlight/lib/common/String.h"
+#include "flashlight/lib/common/System.h"
 
 #include "flashlight/fl/distributed/distributed.h"
 
@@ -98,6 +104,37 @@ TEST(Distributed, AllReduceSetAsync) {
     ASSERT_THROW(
         allReduceMultiple(vars, 2.0, /*async=*/true, /*contiguous=*/true),
         std::runtime_error);
+  }
+}
+
+TEST(Distributed, Barrier) {
+  auto rank = getWorldRank();
+  auto size = getWorldSize();
+  auto suffix = "_distributed_barrier_test.txt";
+
+  // Create files
+  std::this_thread::sleep_for(std::chrono::milliseconds(5000 * rank));
+  auto file = lib::getTmpPath(std::to_string(rank) + suffix);
+  std::ofstream stream(file);
+  stream << "done";
+  stream.close();
+
+  barrier();
+  for (int i = 0; i < size; i++) {
+    auto checkingFile = lib::getTmpPath(std::to_string(i) + suffix);
+    ASSERT_TRUE(lib::fileExists(checkingFile));
+  }
+  barrier();
+
+  // Delete files
+  int status = std::remove(file.data());
+  if (status != 0) {
+    throw std::runtime_error("Barrier test cannot delete file: " + file);
+  }
+  barrier();
+  for (int i = 0; i < size; i++) {
+    auto checkingFile = lib::getTmpPath(std::to_string(i) + suffix);
+    ASSERT_TRUE(!lib::fileExists(checkingFile));
   }
 }
 
