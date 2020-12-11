@@ -44,6 +44,11 @@ struct TestMeters {
   fl::EditDistanceMeter tknDst;
 };
 
+/*
+ * Utility function to log results (learning rate, WER, TER, epoch, timing)
+ * From gflags it uses FLAGS_batchsize, FLAGS_pow, FLAGS_mfcc, FLAGS_mfsc
+ * FLAGS_framestridems, FLAGS_samplerate
+ */
 std::pair<std::string, std::string> getStatus(
     TrainMeters& meters,
     std::unordered_map<std::string, double>& dmErrs,

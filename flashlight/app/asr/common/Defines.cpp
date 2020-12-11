@@ -386,7 +386,6 @@ DEFINE_string(
     "If empty, uses MPI to initialize.");
 
 // FB SPECIFIC
-DEFINE_string(target, "tkn", "target feature");
 DEFINE_bool(everstoredb, false, "use Everstore db for reading data");
 DEFINE_bool(use_memcache, false, "use Memcache for reading data");
 
