@@ -296,7 +296,7 @@ TEST(ModuleTest, ConvolutionFwd) {
     ASSERT_TRUE(allClose(
         batchOutVar.array()(af::span, af::span, af::span, i),
         expected_outVar.array(),
-        1E-7));
+        1E-5));
   }
 }
 
