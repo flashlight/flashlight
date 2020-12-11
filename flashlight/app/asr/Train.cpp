@@ -35,10 +35,14 @@
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
 
-using namespace fl::ext;
-using namespace fl::lib;
-using namespace fl::lib::text;
-using namespace fl::lib::audio;
+using fl::ext::afToVector;
+using fl::ext::Serializer;
+using fl::lib::fileExists;
+using fl::lib::format;
+using fl::lib::getCurrentDate;
+using fl::lib::join;
+using fl::lib::pathsConcat;
+
 using namespace fl::app::asr;
 
 int main(int argc, char** argv) {
@@ -154,7 +158,7 @@ int main(int argc, char** argv) {
 
   std::shared_ptr<fl::Reducer> reducer = nullptr;
   if (FLAGS_enable_distributed) {
-    initDistributed(
+    fl::ext::initDistributed(
         FLAGS_world_rank,
         FLAGS_world_size,
         FLAGS_max_devices_per_node,
@@ -191,17 +195,17 @@ int main(int argc, char** argv) {
       {kCommandLine, join(" ", argvs)},
       {kGflags, serializeGflags()},
       // extra goodies
-      {kUserName, getEnvVar("USER")},
-      {kHostName, getEnvVar("HOSTNAME")},
+      {kUserName, fl::lib::getEnvVar("USER")},
+      {kHostName, fl::lib::getEnvVar("HOSTNAME")},
       {kTimestamp, getCurrentDate() + ", " + getCurrentDate()},
       {kRunIdx, std::to_string(runIdx)},
       {kRunPath, runPath}};
 
-  auto validSets = split(',', trim(FLAGS_valid));
+  auto validSets = fl::lib::split(',', fl::lib::trim(FLAGS_valid));
   std::vector<std::pair<std::string, std::string>> validTagSets;
   for (const auto& s : validSets) {
     // assume the format is tag:filepath
-    auto ts = splitOnAnyOf(":", s);
+    auto ts = fl::lib::splitOnAnyOf(":", s);
     if (ts.size() == 1) {
       validTagSets.emplace_back(std::make_pair(s, s));
     } else {
@@ -216,7 +220,7 @@ int main(int argc, char** argv) {
         "Invalid dictionary filepath specified with --tokensdir and --tokens: \"" +
         dictPath + "\"");
   }
-  Dictionary tokenDict(dictPath);
+  fl::lib::text::Dictionary tokenDict(dictPath);
   // Setup-specific modifications
   for (int64_t r = 1; r <= FLAGS_replabel; ++r) {
     tokenDict.addEntry("<" + std::to_string(r) + ">");
@@ -232,16 +236,16 @@ int main(int argc, char** argv) {
   int numClasses = tokenDict.indexSize();
   LOG(INFO) << "Number of classes (network): " << numClasses;
 
-  Dictionary wordDict;
-  LexiconMap lexicon;
+  fl::lib::text::Dictionary wordDict;
+  fl::lib::text::LexiconMap lexicon;
   if (!FLAGS_lexicon.empty()) {
-    lexicon = loadWords(FLAGS_lexicon, FLAGS_maxword);
-    wordDict = createWordDict(lexicon);
+    lexicon = fl::lib::text::loadWords(FLAGS_lexicon, FLAGS_maxword);
+    wordDict = fl::lib::text::createWordDict(lexicon);
     LOG(INFO) << "Number of words: " << wordDict.indexSize();
   }
 
   /* ===================== Create Dataset ===================== */
-  FeatureParams featParams(
+  fl::lib::audio::FeatureParams featParams(
       FLAGS_samplerate,
       FLAGS_framesizems,
       FLAGS_framestridems,
@@ -294,7 +298,7 @@ int main(int argc, char** argv) {
       : kTargetPadValue;
   int wordpadVal = kTargetPadValue;
 
-  std::vector<std::string> trainSplits = split(",", FLAGS_train, true);
+  std::vector<std::string> trainSplits = fl::lib::split(",", FLAGS_train, true);
   auto trainds = createDataset(
       trainSplits,
       FLAGS_datadir,
@@ -322,7 +326,8 @@ int main(int argc, char** argv) {
         worldSize);
   }
 
-  DictionaryMap dicts = {{kTargetIdx, tokenDict}, {kWordIdx, wordDict}};
+  fl::lib::text::DictionaryMap dicts = {{kTargetIdx, tokenDict},
+                                        {kWordIdx, wordDict}};
 
   /* =========== Create Network & Optimizers / Reload Snapshot ============ */
   std::shared_ptr<fl::Module> network;
@@ -338,10 +343,11 @@ int main(int argc, char** argv) {
     FL_LOG_MASTER(INFO) << "Loading architecture file from " << archfile;
     auto numFeatures = getSpeechFeatureSize();
     // Encoder network, works on audio
-    if (endsWith(archfile, ".so")) {
-      network = ModulePlugin(archfile).arch(numFeatures, numClasses);
+    if (fl::lib::endsWith(archfile, ".so")) {
+      network = fl::ext::ModulePlugin(archfile).arch(numFeatures, numClasses);
     } else {
-      network = buildSequentialModule(archfile, numFeatures, numClasses);
+      network =
+          fl::ext::buildSequentialModule(archfile, numFeatures, numClasses);
     }
 
     if (FLAGS_criterion == kCtcCriterion) {
@@ -391,7 +397,7 @@ int main(int argc, char** argv) {
     std::vector<float> dummyTransition;
     if (FLAGS_decodertype == "wrd" && FLAGS_lmtype == "kenlm" &&
         FLAGS_criterion == "ctc") {
-      lm = std::make_shared<KenLM>(FLAGS_lm, wordDict);
+      lm = std::make_shared<fl::lib::text::KenLM>(FLAGS_lm, wordDict);
       dm = std::make_shared<WordDecodeMaster>(
           network,
           lm,
@@ -475,7 +481,7 @@ int main(int argc, char** argv) {
   /* ===================== Logging ===================== */
   std::ofstream logFile, perfFile;
   if (isMaster) {
-    dirCreate(runPath);
+    fl::lib::dirCreate(runPath);
     logFile.open(getRunFile("log", runIdx, runPath));
     if (!logFile.is_open()) {
       LOG(FATAL) << "failed to open log file for writing";
@@ -699,10 +705,10 @@ int main(int argc, char** argv) {
                   .logAdd = FLAGS_logadd,
                   .silToken = FLAGS_wordseparator,
                   .blankToken = kBlankToken,
-                  .unkToken = kUnkToken,
+                  .unkToken = fl::lib::text::kUnkToken,
                   .smearMode =
-                      (FLAGS_smearing == "max" ? SmearingMode::MAX
-                                               : SmearingMode::NONE)};
+                      (FLAGS_smearing == "max" ? fl::lib::text::SmearingMode::MAX
+                                               : fl::lib::text::SmearingMode::NONE)};
               auto pds = dm->decode(eds, lexicon, opt);
               // return wer and ler vectors
               wers[i] = dm->computeMetrics(pds).second;
@@ -927,7 +933,7 @@ int main(int argc, char** argv) {
               curBatch >= FLAGS_saug_start_update) {
             input = saug->forward({input}).front();
           }
-          auto output = forwardSequentialModuleWithPadMask(
+          auto output = fl::ext::forwardSequentialModuleWithPadMask(
               input, ntwrk, batch[kDurationIdx]);
           af::sync();
           meters.critfwdtimer.resume();

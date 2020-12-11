@@ -29,10 +29,11 @@
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
 
-using namespace fl::ext;
-using namespace fl::lib;
-using namespace fl::lib::text;
-using namespace fl::lib::audio;
+using fl::ext::afToVector;
+using fl::ext::Serializer;
+using fl::lib::join;
+using fl::lib::pathsConcat;
+
 using namespace fl::app::asr;
 
 int main(int argc, char** argv) {
@@ -102,10 +103,10 @@ int main(int argc, char** argv) {
 
   /* ===================== Create Dictionary ===================== */
   auto dictPath = pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
-  if (dictPath.empty() || !fileExists(dictPath)) {
+  if (dictPath.empty() || !fl::lib::fileExists(dictPath)) {
     throw std::runtime_error("Invalid dictionary filepath specified.");
   }
-  Dictionary tokenDict(dictPath);
+  fl::lib::text::Dictionary tokenDict(dictPath);
   // Setup-specific modifications
   for (int64_t r = 1; r <= FLAGS_replabel; ++r) {
     tokenDict.addEntry("<" + std::to_string(r) + ">");
@@ -121,18 +122,19 @@ int main(int argc, char** argv) {
   int numClasses = tokenDict.indexSize();
   LOG(INFO) << "Number of classes (network): " << numClasses;
 
-  Dictionary wordDict;
-  LexiconMap lexicon;
+  fl::lib::text::Dictionary wordDict;
+  fl::lib::text::LexiconMap lexicon;
   if (!FLAGS_lexicon.empty()) {
-    lexicon = loadWords(FLAGS_lexicon, FLAGS_maxword);
-    wordDict = createWordDict(lexicon);
+    lexicon = fl::lib::text::loadWords(FLAGS_lexicon, FLAGS_maxword);
+    wordDict = fl::lib::text::createWordDict(lexicon);
     LOG(INFO) << "Number of words: " << wordDict.indexSize();
   }
 
-  DictionaryMap dicts = {{kTargetIdx, tokenDict}, {kWordIdx, wordDict}};
+  fl::lib::text::DictionaryMap dicts = {{kTargetIdx, tokenDict},
+                                        {kWordIdx, wordDict}};
 
   /* ===================== Create Dataset ===================== */
-  FeatureParams featParams(
+  fl::lib::audio::FeatureParams featParams(
       FLAGS_samplerate,
       FLAGS_framesizems,
       FLAGS_framestridems,
@@ -175,9 +177,9 @@ int main(int argc, char** argv) {
   int targetpadVal = FLAGS_eostoken
       ? tokenDict.getIndex(fl::app::asr::kEosToken)
       : kTargetPadValue;
-  int wordpadVal = wordDict.getIndex(kUnkToken);
+  int wordpadVal = wordDict.getIndex(fl::lib::text::kUnkToken);
 
-  std::vector<std::string> testSplits = split(",", FLAGS_test, true);
+  std::vector<std::string> testSplits = fl::lib::split(",", FLAGS_test, true);
   auto ds = createDataset(
       testSplits,
       FLAGS_datadir,
@@ -207,7 +209,7 @@ int main(int argc, char** argv) {
   std::string emissionDir;
   if (!FLAGS_emission_dir.empty()) {
     emissionDir = pathsConcat(FLAGS_emission_dir, cleanTestPath);
-    dirCreate(emissionDir);
+    fl::lib::dirCreate(emissionDir);
   }
 
   // Prepare sclite log writer
