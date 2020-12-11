@@ -56,7 +56,7 @@ class DnnlEngine {
 };
 
 /**
- * Helper for converting an ArrayFire af::dim4 into an MKL-DNN-compatible input
+ * Helper for converting an ArrayFire af::dim4 into an DNNL-compatible input
  * for dnnl::memory::dims.
  */
 dnnl::memory::dims convertAfToDnnlDims(const std::vector<dim_t>& dims);
@@ -95,17 +95,19 @@ void executeNetwork(
 dnnl::algorithm dnnlMapToPoolingMode(const PoolingMode mode);
 
 /**
- * Maps an ArrayFire array datatype into the corresponding MKL-DNN datatype.
+ * Maps an ArrayFire array datatype into the corresponding DNNL datatype.
  *
- * Needs to be explicitly inlined due to a bug with MKL-DNN.
+ * Needs to be explicitly inlined due to a bug with DNNL.
  */
 inline dnnl::memory::data_type dnnlMapToType(const af::dtype t) {
-  if (t == af::dtype::f32) {
+  if (t == af::dtype::f16) {
+    return dnnl::memory::data_type::f16;
+  } else if (t == af::dtype::f32) {
     return dnnl::memory::data_type::f32;
   } else if (t == af::dtype::f64) {
-    throw std::invalid_argument("float64 is not supported by MKL-DNN");
+    throw std::invalid_argument("float64 is not supported by DNNL");
   } else {
-    throw std::invalid_argument("data type not supported with MKL-DNN");
+    throw std::invalid_argument("data type not supported with DNNL");
   }
 }
 
