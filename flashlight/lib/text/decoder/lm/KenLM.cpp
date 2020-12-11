@@ -9,7 +9,7 @@
 
 #include <stdexcept>
 
-#include <lm/model.hh>
+#include <kenlm/lm/model.hh>
 
 namespace fl {
 namespace lib {

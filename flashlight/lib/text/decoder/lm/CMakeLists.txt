@@ -44,6 +44,7 @@ if (FL_LIBRARIES_USE_KENLM)
     fl-libraries
     PUBLIC
     $<BUILD_INTERFACE:${KENLM_INCLUDE_DIRS}>
+    $<BUILD_INTERFACE:${KENLM_INCLUDE_DIRS_LM}>
     )
 
   target_compile_definitions(

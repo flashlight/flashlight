@@ -10,7 +10,7 @@
 # libsndfile       4bdd741      (git)
 # MKL              2018.4.057   (apt)
 # FFTW             latest       (apt)
-# KenLM            e47088d      (git)
+# KenLM            4a27753      (git)
 # GLOG             latest       (apt)
 # gflags           latest       (apt)
 # python           3.6          (apt)
@@ -79,7 +79,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     wget https://dl.bintray.com/boostorg/release/1.70.0/source/boost_1_70_0.tar.gz && tar xf boost_1_70_0.tar.gz && \
     cd arrayfire && git checkout v3.7.1  && git submodule update --init --recursive && \
     mkdir build && cd build && \
-    CXXFLAGS=-DOS_LNX cmake .. -DCMAKE_BUILD_TYPE=Release -DAF_BUILD_CPU=OFF -DAF_BUILD_OPENCL=OFF -DAF_BUILD_EXAMPLES=OFF -DBOOST_INCLUDEDIR=/tmp/boost_1_70_0 && \ 
+    CXXFLAGS=-DOS_LNX cmake .. -DCMAKE_BUILD_TYPE=Release -DAF_BUILD_CPU=OFF -DAF_BUILD_OPENCL=OFF -DAF_BUILD_EXAMPLES=OFF -DBOOST_INCLUDEDIR=/tmp/boost_1_70_0 && \
     make -j$(nproc) && make install && \
 # ==================================================================
 # python (for bindings)
@@ -124,11 +124,11 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
 # ==================================================================
 # KenLM https://github.com/kpu/kenlm
 # ------------------------------------------------------------------
-    cd /root && git clone https://github.com/kpu/kenlm.git && \
-    cd kenlm && git checkout e47088ddfae810a5ee4c8a9923b5f8071bed1ae8 && \
+    cd /tmp && git clone https://github.com/kpu/kenlm.git && \
+    cd kenlm && git checkout 4a277534fd33da323205e6ec256e8fd0ff6ee6fa && \
     mkdir build && cd build && \
     cmake .. -DCMAKE_POSITION_INDEPENDENT_CODE=ON && \
-    make -j$(nproc) && make install && \ 
+    make -j$(nproc) && make install && \
 # ==================================================================
 # config & cleanup
 # ------------------------------------------------------------------
