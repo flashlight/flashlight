@@ -107,7 +107,7 @@ TEST(SoundTest, Stereo) {
 
 TEST(SoundTest, OggReadWrite) {
   auto audiopath = pathsConcat(loadPath, "test_stereo.wav");
-  auto outaudiopath = pathsConcat("/tmp", "test_stereo_out.ogg");
+  const std::string outaudiopath = getTmpPath("test.ogg");
   auto oggaudiopath = pathsConcat(loadPath, "test_stereo.ogg");
   auto info = loadSoundInfo(audiopath);
   auto vecShort = loadSound<short>(audiopath);

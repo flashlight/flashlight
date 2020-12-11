@@ -15,20 +15,9 @@
 #include "flashlight/fl/contrib/modules/modules.h"
 #include "flashlight/fl/nn/nn.h"
 
+#include "flashlight/lib/common/System.h"
+
 using namespace fl;
-
-namespace {
-
-std::string getTmpPath(const std::string& key) {
-  char* user = getenv("USER");
-  std::string userstr = "unknown";
-  if (user != nullptr) {
-    userstr = std::string(user);
-  }
-  return std::string("/tmp/test_") + userstr + key + std::string(".mdl");
-}
-
-} // namespace
 
 TEST(ModuleTest, ResidualSerialization) {
   std::shared_ptr<Residual> model = std::make_shared<Residual>();
@@ -36,10 +25,11 @@ TEST(ModuleTest, ResidualSerialization) {
   model->add(Linear(6, 6));
   model->add(ReLU());
   model->addShortcut(1, 3);
-  save(getTmpPath("Residual"), model);
+  const std::string path = fl::lib::getTmpPath("Residual.mdl");
+  save(path, model);
 
   std::shared_ptr<Residual> loaded;
-  load(getTmpPath("Residual"), loaded);
+  load(path, loaded);
 
   auto input = Variable(af::randu(12, 10, 3, 4), false);
   auto output = model->forward(input);
@@ -53,10 +43,11 @@ TEST(ModuleTest, AsymmetricConv1DSerialization) {
   int c = 32;
   auto model = std::make_shared<AsymmetricConv1D>(c, c, 5, 1, -1, 0, 1);
 
-  save(getTmpPath("AsymmetricConv1D"), model);
+  const std::string path = fl::lib::getTmpPath("AsymmetricConv1D.mdl");
+  save(path, model);
 
   std::shared_ptr<AsymmetricConv1D> loaded;
-  load(getTmpPath("AsymmetricConv1D"), loaded);
+  load(path, loaded);
 
   auto input = Variable(af::randu(25, 10, c, 4), false);
   auto output = model->forward(input);
@@ -75,10 +66,12 @@ TEST(ModuleTest, TransformerSerialization) {
   auto model = std::make_shared<Transformer>(
     c, c / nheads, c, nheads, timesteps, 0.2, 0.1, false, false);
   model->eval();
-  save(getTmpPath("Transformer"), model);
+
+  const std::string path = fl::lib::getTmpPath("Transformer.mdl");
+  save(path, model);
 
   std::shared_ptr<Transformer> loaded;
-  load(getTmpPath("Transformer"), loaded);
+  load(path, loaded);
   loaded->eval();
 
   auto input = Variable(af::randu(c, timesteps, batchsize, 1), false);
@@ -98,10 +91,12 @@ TEST(ModuleTest, ConformerSerialization) {
   auto model = std::make_shared<Conformer>(
     c, c / nheads, c, nheads, timesteps, 33, 0.2, 0.1);
   model->eval();
-  save(getTmpPath("Conformer"), model);
+
+  const std::string path = fl::lib::getTmpPath("Conformer.mdl");
+  save(path, model);
 
   std::shared_ptr<Conformer> loaded;
-  load(getTmpPath("Conformer"), loaded);
+  load(path, loaded);
   loaded->eval();
 
   auto input = Variable(af::randu(c, timesteps, batchsize, 1), false);
@@ -116,10 +111,11 @@ TEST(ModuleTest, PositionEmbedding) {
   auto model = std::make_shared<PositionEmbedding>(128, 100, 0.1);
   model->eval();
 
-  save(getTmpPath("PositionEmbedding"), model);
+  const std::string path = fl::lib::getTmpPath("PositionEmbedding.mdl");
+  save(path, model);
 
   std::shared_ptr<PositionEmbedding> loaded;
-  load(getTmpPath("PositionEmbedding"), loaded);
+  load(path, loaded);
   loaded->eval();
 
   auto input = Variable(af::randu(128, 10, 5, 1), false);
@@ -133,10 +129,11 @@ TEST(ModuleTest, PositionEmbedding) {
 TEST(ModuleTest, SinusoidalPositionEmbedding) {
   auto model = std::make_shared<SinusoidalPositionEmbedding>(128, 2.);
 
-  save(getTmpPath("SinusoidalPositionEmbedding"), model);
+  const std::string path = fl::lib::getTmpPath("SinusoidalPositionEmbedding.mdl");
+  save(path, model);
 
   std::shared_ptr<SinusoidalPositionEmbedding> loaded;
-  load(getTmpPath("SinusoidalPositionEmbedding"), loaded);
+  load(path, loaded);
 
   auto input = Variable(af::randu(128, 10, 5, 1), false);
   auto output = model->forward({input});
@@ -150,10 +147,11 @@ TEST(ModuleTest, AdaptiveEmbedding) {
   std::vector<int> cutoff = {5, 10, 25};
   auto model = std::make_shared<AdaptiveEmbedding>(128, cutoff);
 
-  save(getTmpPath("AdaptiveEmbedding"), model);
+  const std::string path = fl::lib::getTmpPath("AdaptiveEmbedding.mdl");
+  save(path, model);
 
   std::shared_ptr<AdaptiveEmbedding> loaded;
-  load(getTmpPath("AdaptiveEmbedding"), loaded);
+  load(path, loaded);
 
   std::vector<int> values = {1, 4, 6, 2, 12, 7, 4, 21, 22, 18, 3, 23};
   auto input = Variable(af::array(af::dim4(6, 2), values.data()), false);
@@ -168,10 +166,11 @@ TEST(ModuleTest, RawWavSpecAugment) {
   auto model = std::make_shared<RawWavSpecAugment>(0, 1, 1, 0, 0, 0, 1, 2000, 6000, 16000, 20000);
   model->eval();
 
-  save(getTmpPath("RawWavSpecAugment"), model);
+  const std::string path = fl::lib::getTmpPath("RawWavSpecAugment.mdl");
+  save(path, model);
 
   std::shared_ptr<RawWavSpecAugment> loaded;
-  load(getTmpPath("RawWavSpecAugment"), loaded);
+  load(path, loaded);
   loaded->train();
 
   int T = 300;

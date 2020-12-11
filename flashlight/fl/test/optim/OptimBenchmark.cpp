@@ -12,6 +12,8 @@
 #include "flashlight/fl/common/common.h"
 #include "flashlight/fl/optim/optim.h"
 
+#include "flashlight/lib/common/System.h"
+
 using namespace fl;
 
 #define TIME(FUNC)                                           \

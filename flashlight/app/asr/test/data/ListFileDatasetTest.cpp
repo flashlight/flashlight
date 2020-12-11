@@ -35,7 +35,7 @@ auto letterToTarget = [](void* data, af::dim4 dims, af::dtype /* unused */) {
 
 TEST(ListFileDatasetTest, LoadData) {
   auto data = getFileContent(pathsConcat(loadPath, "data.lst"));
-  auto rootPath = "/tmp/data.lst";
+  const std::string rootPath = fl::lib::getTmpPath("data.lst");
   std::ofstream out(rootPath);
   for (auto& d : data) {
     replaceAll(d, "<TESTDIR>", loadPath);

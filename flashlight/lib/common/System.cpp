@@ -7,13 +7,13 @@
 
 #include "flashlight/lib/common/System.h"
 
+#include <glob.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <array>
 #include <cstdlib>
 #include <ctime>
 #include <functional>
-#include <glob.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 
 #include "flashlight/lib/common/String.h"
 
@@ -168,6 +168,10 @@ std::string getCurrentTime() {
   std::array<char, 80> buf;
   strftime(buf.data(), buf.size(), "%X", tstruct);
   return std::string(buf.data());
+}
+
+std::string getTmpPath(const std::string& filename) {
+  return "/tmp/fl_tmp_" + getEnvVar("USER", "unknown") + "_" + filename;
 }
 
 std::vector<std::string> getFileContent(const std::string& file) {

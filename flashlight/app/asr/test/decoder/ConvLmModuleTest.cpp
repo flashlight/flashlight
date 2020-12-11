@@ -74,7 +74,7 @@ TEST(ConvLmModuleTest, SerializationGCNN14BAdaptiveSoftmax) {
   if (user != nullptr) {
     userstr = std::string(user);
   }
-  const std::string path = "/tmp/" + userstr + "_test.mdl";
+  const std::string path = getTmpPath("test.mdl");
   const std::string archfile = pathsConcat(archDir, "gcnn_14B_lm_arch_as.txt");
 
   int nclass = 221452;
