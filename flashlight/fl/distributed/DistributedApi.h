@@ -126,6 +126,11 @@ void allReduceMultiple(
  */
 void syncDistributed();
 
+/**
+ * Blocks until all CPU processes have reached this routine.
+ */
+void barrier();
+
 /** @} */
 
 namespace detail {
