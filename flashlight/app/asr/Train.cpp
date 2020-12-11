@@ -465,9 +465,11 @@ int main(int argc, char** argv) {
 
   std::unordered_map<std::string, double> validMinWerWithDecoder;
   std::unordered_map<std::string, double> validWerWithDecoder;
-  for (const auto& s : validTagSets) {
-    validMinWerWithDecoder[s.first] = DBL_MAX;
-    validWerWithDecoder[s.first] = DBL_MAX;
+  if (dm) {
+    for (const auto& s : validTagSets) {
+      validMinWerWithDecoder[s.first] = DBL_MAX;
+      validWerWithDecoder[s.first] = DBL_MAX;
+    }
   }
 
   /* ===================== Logging ===================== */
@@ -827,12 +829,11 @@ int main(int argc, char** argv) {
 
       // valid
       for (auto& vds : validds) {
-        test(
-            ntwrk,
-            crit,
-            vds.second,
-            meters.valid[vds.first],
-            validWerWithDecoder[vds.first]);
+        double decodedWer;
+        test(ntwrk, crit, vds.second, meters.valid[vds.first], decodedWer);
+        if (validWerWithDecoder.find(vds.first) != validWerWithDecoder.end()) {
+          validWerWithDecoder[vds.first] = decodedWer;
+        }
       }
 
       // print status
