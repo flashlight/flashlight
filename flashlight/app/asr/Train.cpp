@@ -688,11 +688,11 @@ int main(int argc, char** argv) {
            lmweight += FLAGS_lmweight_step) {
         lmweights.push_back(lmweight);
       }
-      std::vector<std::vector<double>> wers(lmweights.size());
+      std::vector<std::vector<int64_t>> wordEditDst(lmweights.size());
       std::vector<std::thread> threads;
       for (int i = 0; i < lmweights.size(); i++) {
         threads.push_back(
-            std::thread([&lmweights, &wers, dm, eds, &lexicon, i]() {
+            std::thread([&lmweights, &wordEditDst, dm, eds, &lexicon, i]() {
               double lmweight = lmweights[i];
               DecodeMasterLexiconOptions opt = {
                   .beamSize = FLAGS_beamsize,
@@ -710,8 +710,8 @@ int main(int argc, char** argv) {
                       (FLAGS_smearing == "max" ? fl::lib::text::SmearingMode::MAX
                                                : fl::lib::text::SmearingMode::NONE)};
               auto pds = dm->decode(eds, lexicon, opt);
-              // return wer and ler vectors
-              wers[i] = dm->computeMetrics(pds).second;
+              // return token distance and word distance stats
+              wordEditDst[i] = dm->computeMetrics(pds).second;
             }));
       }
       for (auto& thread : threads) {
@@ -720,15 +720,15 @@ int main(int argc, char** argv) {
       dmErr = DBL_MAX;
       for (int i = 0; i < lmweights.size(); i++) {
         af::array currentEditDist =
-            af::constant(wers[i][0], af::dim4(1, 1, 1, 1));
+            af::constant((long long)(wordEditDst[i][0]), af::dim4(1, 1, 1, 1));
         af::array currentTokens =
-            af::constant(wers[i][1], af::dim4(1, 1, 1, 1));
+            af::constant((long long)(wordEditDst[i][1]), af::dim4(1, 1, 1, 1));
         if (FLAGS_enable_distributed) {
           fl::allReduce(currentEditDist);
           fl::allReduce(currentTokens);
         }
-        double wer = currentEditDist.scalar<float>() /
-            currentTokens.scalar<float>() * 100.0;
+        double wer = (double)currentEditDist.scalar<long long>() /
+            currentTokens.scalar<long long>() * 100.0;
         FL_LOG_MASTER(INFO)
             << "[Beam-search decoder]   * DM: lmweight=" << lmweights[i]
             << " WER: " << wer;
