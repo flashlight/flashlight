@@ -6,6 +6,8 @@
 
 FROM flml/flashlight:cpu-base-consolidation-latest
 
+ENV MKLROOT="/opt/intel/mkl"
+
 # ==================================================================
 # flashlight with CPU backend
 # ------------------------------------------------------------------
@@ -14,7 +16,6 @@ RUN mkdir /root/flashlight
 
 COPY . /root/flashlight
 
-RUN export MKLROOT=/opt/intel/mkl && \
-    cd /root/flashlight && mkdir -p build && \
+RUN cd /root/flashlight && mkdir -p build && \
     cd build && cmake .. -DFL_BACKEND=CPU -DFL_LIBRARIES_USE_CUDA=OFF && \
     make -j$(nproc) && make install
