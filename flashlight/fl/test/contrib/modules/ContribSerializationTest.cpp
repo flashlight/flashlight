@@ -19,7 +19,7 @@
 
 using namespace fl;
 
-TEST(ModuleTest, ResidualSerialization) {
+TEST(SerializationTest, Residual) {
   std::shared_ptr<Residual> model = std::make_shared<Residual>();
   model->add(Linear(12, 6));
   model->add(Linear(6, 6));
@@ -39,7 +39,7 @@ TEST(ModuleTest, ResidualSerialization) {
   ASSERT_TRUE(allClose(outputl, output));
 }
 
-TEST(ModuleTest, AsymmetricConv1DSerialization) {
+TEST(SerializationTest, AsymmetricConv1D) {
   int c = 32;
   auto model = std::make_shared<AsymmetricConv1D>(c, c, 5, 1, -1, 0, 1);
 
@@ -57,7 +57,7 @@ TEST(ModuleTest, AsymmetricConv1DSerialization) {
   ASSERT_TRUE(allClose(outputl, output));
 }
 
-TEST(ModuleTest, TransformerSerialization) {
+TEST(SerializationTest, Transformer) {
   int batchsize = 10;
   int timesteps = 120;
   int c = 32;
@@ -82,7 +82,7 @@ TEST(ModuleTest, TransformerSerialization) {
   ASSERT_TRUE(allClose(outputl[0], output[0]));
 }
 
-TEST(ModuleTest, ConformerSerialization) {
+TEST(SerializationTest, ConformerSerialization) {
   int batchsize = 10;
   int timesteps = 120;
   int c = 32;
@@ -107,7 +107,7 @@ TEST(ModuleTest, ConformerSerialization) {
   ASSERT_TRUE(allClose(outputl[0], output[0]));
 }
 
-TEST(ModuleTest, PositionEmbedding) {
+TEST(SerializationTest, PositionEmbedding) {
   auto model = std::make_shared<PositionEmbedding>(128, 100, 0.1);
   model->eval();
 
@@ -126,7 +126,7 @@ TEST(ModuleTest, PositionEmbedding) {
   ASSERT_TRUE(allClose(outputl[0], output[0]));
 }
 
-TEST(ModuleTest, SinusoidalPositionEmbedding) {
+TEST(SerializationTest, SinusoidalPositionEmbedding) {
   auto model = std::make_shared<SinusoidalPositionEmbedding>(128, 2.);
 
   const std::string path = fl::lib::getTmpPath("SinusoidalPositionEmbedding.mdl");
@@ -143,7 +143,7 @@ TEST(ModuleTest, SinusoidalPositionEmbedding) {
   ASSERT_TRUE(allClose(outputl[0], output[0]));
 }
 
-TEST(ModuleTest, AdaptiveEmbedding) {
+TEST(SerializationTest, AdaptiveEmbedding) {
   std::vector<int> cutoff = {5, 10, 25};
   auto model = std::make_shared<AdaptiveEmbedding>(128, cutoff);
 
@@ -162,7 +162,7 @@ TEST(ModuleTest, AdaptiveEmbedding) {
   ASSERT_TRUE(allClose(outputl, output));
 }
 
-TEST(ModuleTest, RawWavSpecAugment) {
+TEST(SerializationTest, RawWavSpecAugment) {
   auto model = std::make_shared<RawWavSpecAugment>(0, 1, 1, 0, 0, 0, 1, 2000, 6000, 16000, 20000);
   model->eval();
 
