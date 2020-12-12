@@ -31,7 +31,7 @@ endif()
 include(GoogleTest)
 
 function(build_test)
-  set(options NO_DISCOVERY)
+  set(options)
   set(oneValueArgs SRC)
   set(multiValueArgs LIBS PREPROC)
   cmake_parse_arguments(build_test "${options}" "${oneValueArgs}"
@@ -59,13 +59,5 @@ function(build_test)
     PUBLIC
     ${build_test_PREPROC}
     )
-  # TODO(jacobkahn): investigate and bring back either gtest_discover_tests
-  # or gtest_add_tests once I can figure out what's wrong with the invocation
-  # failing to find dynamically-linked or runtime deps
-  # if (build_test_NO_DISCOVERY)
-  #   add_test(${target} ${target})
-  # else()
-  #   gtest_add_tests(${target})
-  # endif()
-  add_test(${target} ${target})
+  gtest_add_tests(TARGET ${target})
 endfunction(build_test)
