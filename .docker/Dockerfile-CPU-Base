@@ -18,8 +18,10 @@
 
 FROM ubuntu:18.04
 
-RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
-    apt-get update && \
+ENV APT_INSTALL="apt-get install -y --no-install-recommends"
+ENV MKLROOT="/opt/intel/mkl"
+
+RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
         build-essential \
         ca-certificates \
@@ -56,55 +58,54 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         # for glog
         libgoogle-glog-dev libgoogle-glog0v5 \
         # for python sox
-        sox && \
+        sox
 # ==================================================================
-# cmake 3.10 (for MKLDNN)
+# cmake 3.10
 # ------------------------------------------------------------------
-    apt-get purge -y cmake && \
+RUN apt-get purge -y cmake && \
     # for cmake
     DEBIAN_FRONTEND=noninteractive $APT_INSTALL zlib1g-dev libcurl4-openssl-dev && \
     cd /tmp && wget https://cmake.org/files/v3.10/cmake-3.10.3.tar.gz  && \
     tar -xzvf cmake-3.10.3.tar.gz  && cd cmake-3.10.3  && \
     ./bootstrap --system-curl && \
-    make -j$(nproc) &&  make install && cmake --version && \
+    make -j$(nproc) &&  make install && cmake --version
 # ==================================================================
 # MKL https://software.intel.com/en-us/mkl
 # ------------------------------------------------------------------
-    cd /tmp && wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB && \
+RUN cd /tmp && wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB && \
     apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB && \
 # for build in March 2020 this row should be removed to prevent from the error
 # E: Failed to fetch https://apt.repos.intel.com/intelpython/binary/Packages  Writing more data than expected (15520 > 15023) E: Some index files failed to download. They have been ignored, or old ones used instead.
 #    wget https://apt.repos.intel.com/setup/intelproducts.list -O /etc/apt/sources.list.d/intelproducts.list && \
     sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list' && \
-    apt-get update && DEBIAN_FRONTEND=noninteractive $APT_INSTALL intel-mkl-64bit-2018.4-057 && \
-    export MKLROOT=/opt/intel/mkl && \
+    apt-get update && DEBIAN_FRONTEND=noninteractive $APT_INSTALL intel-mkl-64bit-2018.4-057
 # ==================================================================
 # arrayfire with CPU backend https://github.com/arrayfire/arrayfire/wiki/
 # ------------------------------------------------------------------
-    cd /tmp && git clone --recursive https://github.com/arrayfire/arrayfire.git && \
+RUN cd /tmp && git clone --recursive https://github.com/arrayfire/arrayfire.git && \
     wget https://dl.bintray.com/boostorg/release/1.70.0/source/boost_1_70_0.tar.gz && tar xf boost_1_70_0.tar.gz && \
     cd arrayfire && git checkout v3.7.1  && git submodule update --init --recursive && \
     mkdir build && cd build && \
     CXXFLAGS=-DOS_LNX cmake .. -DCMAKE_BUILD_TYPE=Release -DAF_BUILD_CUDA=OFF -DAF_BUILD_OPENCL=OFF -DAF_BUILD_EXAMPLES=OFF -DBOOST_INCLUDEDIR=/tmp/boost_1_70_0 && \
-    make -j$(nproc) && make install && \
+    make -j$(nproc) && make install
 # ==================================================================
 # oneDNN https://github.com/oneapi-src/oneDNN
 # ------------------------------------------------------------------
-    cd /tmp && git clone https://github.com/oneapi-src/oneDNN && \
+RUN cd /tmp && git clone https://github.com/oneapi-src/oneDNN && \
     cd oneDNN && git checkout v2.0 && mkdir -p build && cd build && \
-    cmake .. -DDNNL_BLAS_VENDOR=MKL && \
-    make -j$(nproc) && make install && \
+    cmake .. && \
+    make -j$(nproc) && make install
 # ==================================================================
 # Gloo https://github.com/facebookincubator/gloo.git
 # ------------------------------------------------------------------
-    cd /tmp && git clone https://github.com/facebookincubator/gloo.git && \
+RUN cd /tmp && git clone https://github.com/facebookincubator/gloo.git && \
     cd gloo && git checkout b7e0906 && mkdir build && cd build && \
     cmake .. -DUSE_MPI=ON && \
-    make -j$(nproc) && make install && \
+    make -j$(nproc) && make install
 # ==================================================================
 # python (for bindings)
 # ------------------------------------------------------------------
-    PIP_INSTALL="python3 -m pip --no-cache-dir install --upgrade" && \
+RUN PIP_INSTALL="python3 -m pip --no-cache-dir install --upgrade" && \
     DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
         software-properties-common \
         && \
@@ -125,26 +126,26 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     $PIP_INSTALL \
         numpy \
         sox \
-        tqdm && \
+        tqdm
 # ==================================================================
 # libsndfile https://github.com/erikd/libsndfile.git
 # ------------------------------------------------------------------
-    cd /tmp && git clone https://github.com/erikd/libsndfile.git && \
+RUN cd /tmp && git clone https://github.com/erikd/libsndfile.git && \
     cd libsndfile && git checkout 4bdd7414602946a18799b514001b0570e8693a47 && \
     ./autogen.sh && ./configure --enable-werror && \
-    make && make check && make install && \
+    make && make check && make install
 # ==================================================================
 # KenLM https://github.com/kpu/kenlm
 # ------------------------------------------------------------------
-    cd /tmp && git clone https://github.com/kpu/kenlm.git && \
+RUN cd /tmp && git clone https://github.com/kpu/kenlm.git && \
     cd kenlm && git checkout 4a277534fd33da323205e6ec256e8fd0ff6ee6fa && \
     mkdir build && cd build && \
     cmake .. -DCMAKE_POSITION_INDEPENDENT_CODE=ON && \
-    make -j$(nproc) && make install && \
+    make -j$(nproc) && make install
 # ==================================================================
 # config & cleanup
 # ------------------------------------------------------------------
-    ldconfig && \
+RUN ldconfig && \
     apt-get clean && \
     apt-get -y autoremove && \
     rm -rf /var/lib/apt/lists/* /tmp/*
