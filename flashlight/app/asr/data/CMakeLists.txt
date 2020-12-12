@@ -16,15 +16,10 @@ endif ()
 target_sources(
   flashlight-app-asr
   PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/Featurize.cpp
   ${CMAKE_CURRENT_LIST_DIR}/FeatureTransforms.cpp
   ${CMAKE_CURRENT_LIST_DIR}/ListFileDataset.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Sound.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/SpeechSample.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Utils.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/Dataset.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/BlobsDataset.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/ListFilesDataset.cpp
   )
 
 target_link_libraries(

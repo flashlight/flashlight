@@ -341,7 +341,6 @@ int main(int argc, char** argv) {
   if (runStatus == kTrainMode) {
     auto archfile = pathsConcat(FLAGS_archdir, FLAGS_arch);
     FL_LOG_MASTER(INFO) << "Loading architecture file from " << archfile;
-    auto numFeatures = getSpeechFeatureSize();
     // Encoder network, works on audio
     if (fl::lib::endsWith(archfile, ".so")) {
       network = fl::ext::ModulePlugin(archfile).arch(numFeatures, numClasses);

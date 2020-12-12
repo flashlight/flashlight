@@ -122,43 +122,6 @@ std::vector<std::string> readSampleIds(const af::array& arr) {
   return afMatrixToStrings<char>(arr, '\0');
 }
 
-std::shared_ptr<Dataset> createDataset(
-    const std::string& path,
-    const DictionaryMap& dicts,
-    const LexiconMap& lexicon /* = LexiconMap() */,
-    int batchSize /* = 1 */,
-    int worldRank /* = 0 */,
-    int worldSize /* = 1 */,
-    bool fallback2Ltr /* = true */,
-    bool skipUnk /* = true */) {
-  std::shared_ptr<Dataset> ds;
-  if (FLAGS_blobdata) {
-    ds = std::make_shared<BlobsDataset>(
-        path,
-        dicts,
-        lexicon,
-        batchSize,
-        worldRank,
-        worldSize,
-        fallback2Ltr,
-        skipUnk,
-        FLAGS_datadir);
-  } else {
-    ds = std::make_shared<ListFilesDataset>(
-        path,
-        dicts,
-        lexicon,
-        batchSize,
-        worldRank,
-        worldSize,
-        fallback2Ltr,
-        skipUnk,
-        FLAGS_datadir);
-  }
-
-  return ds;
-}
-
 std::shared_ptr<fl::Dataset> createDataset(
     const std::vector<std::string>& paths,
     const std::string& rootDir /* = "" */,
