@@ -23,25 +23,6 @@ std::vector<std::string> wrd2Target(
     const std::string& word,
     const LexiconMap& lexicon,
     const Dictionary& dict,
-    bool fallback2Ltr /* = false */,
-    bool skipUnk /* = false */) {
-  bool fallback2LtrWordSepLeft = fallback2Ltr && FLAGS_usewordpiece;
-  bool fallback2LtrWordSepRight = fallback2Ltr && !FLAGS_usewordpiece;
-  return wrd2Target(
-      word, 
-      lexicon, 
-      dict, 
-      FLAGS_wordseparator,
-      FLAGS_sampletarget, 
-      fallback2LtrWordSepLeft, 
-      fallback2LtrWordSepRight, 
-      skipUnk);
-}
-
-std::vector<std::string> wrd2Target(
-    const std::string& word,
-    const LexiconMap& lexicon,
-    const Dictionary& dict,
     const std::string& wordSeparator /* = "" */,
     float targetSamplePct /* = 0 */,
     bool fallback2LtrWordSepLeft /* = false */,
@@ -58,14 +39,14 @@ std::vector<std::string> wrd2Target(
     } else {
       return lit->second[0];
     }
-  } 
-  
+  }
+
   std::vector<std::string> word2tokens;
   if (fallback2LtrWordSepLeft || fallback2LtrWordSepRight) {
     if (fallback2LtrWordSepLeft && !wordSeparator.empty()) {
-      // add word separator at the beginning of fallback word 
+      // add word separator at the beginning of fallback word
       word2tokens.push_back(wordSeparator);
-    } 
+    }
     auto tokens = splitWrd(word);
     for (const auto& tkn : tokens) {
       if (dict.contains(tkn)) {
@@ -78,32 +59,13 @@ std::vector<std::string> wrd2Target(
       }
     }
     if (fallback2LtrWordSepRight && !wordSeparator.empty()) {
-      // add word separator at the end of fallback word 
+      // add word separator at the end of fallback word
       word2tokens.push_back(wordSeparator);
     }
   } else if (!skipUnk) {
     throw std::invalid_argument("Unknown word in the lexicon: " + word);
   }
   return word2tokens;
-}
-
-std::vector<std::string> wrd2Target(
-    const std::vector<std::string>& words,
-    const LexiconMap& lexicon,
-    const Dictionary& dict,
-    bool fallback2Ltr /* = false */,
-    bool skipUnk /* = false */) {
-  bool fallback2LtrWordSepLeft = fallback2Ltr && FLAGS_usewordpiece;
-  bool fallback2LtrWordSepRight = fallback2Ltr && !FLAGS_usewordpiece;
-  return wrd2Target(
-      words,
-      lexicon,
-      dict,
-      FLAGS_wordseparator,
-      FLAGS_sampletarget,
-      fallback2LtrWordSepLeft,
-      fallback2LtrWordSepRight,
-      skipUnk);
 }
 
 std::vector<std::string> wrd2Target(
@@ -119,13 +81,13 @@ std::vector<std::string> wrd2Target(
   for (auto w : words) {
     auto w2tokens =
         wrd2Target(
-          w, 
-          lexicon, 
-          dict, 
+          w,
+          lexicon,
+          dict,
           wordSeparator,
-          targetSamplePct, 
-          fallback2LtrWordSepLeft, 
-          fallback2LtrWordSepRight, 
+          targetSamplePct,
+          fallback2LtrWordSepLeft,
+          fallback2LtrWordSepRight,
           skipUnk);
 
     if (w2tokens.size() == 0) {
