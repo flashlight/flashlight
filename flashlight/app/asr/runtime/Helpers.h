@@ -20,9 +20,7 @@
 #include "flashlight/fl/flashlight.h"
 
 #include "flashlight/app/asr/common/Defines.h"
-#include "flashlight/app/asr/data/BlobsDataset.h"
 #include "flashlight/app/asr/data/ListFileDataset.h"
-#include "flashlight/app/asr/data/ListFilesDataset.h"
 
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
@@ -68,19 +66,6 @@ getTrainEvalIds(int64_t dsSize, double pctTrainEval, int64_t seed);
  * Read sample ids from an `af::array`.
  */
 std::vector<std::string> readSampleIds(const af::array& arr);
-
-/**
- * Create dataset.
- */
-std::shared_ptr<Dataset> createDataset(
-    const std::string& path,
-    const lib::text::DictionaryMap& dicts,
-    const lib::text::LexiconMap& lexicon = lib::text::LexiconMap(),
-    int batchSize = 1,
-    int worldRank = 0,
-    int worldSize = 1,
-    bool fallback2Ltr = true,
-    bool skipUnk = true);
 
 /*
  * Utility function for creating a w2l dataset.

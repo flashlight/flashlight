@@ -9,12 +9,7 @@ build_test(SRC ${DIR}/criterion/Seq2SeqTest.cpp LIBS ${LIBS})
 build_test(SRC ${DIR}/criterion/attention/AttentionTest.cpp LIBS ${LIBS})
 build_test(SRC ${DIR}/criterion/attention/WindowTest.cpp LIBS ${LIBS})
 # Data
-build_test(
-  SRC ${DIR}/data/DataTest.cpp
-  LIBS ${LIBS}
-  PREPROC "DATA_TEST_DATADIR=\"${DIR}/data/testdata\""
-  )
-build_test(SRC ${DIR}/data/FeatureTest.cpp LIBS ${LIBS})
+build_test(SRC ${DIR}/data/FeaturizationTest.cpp LIBS ${LIBS})
 build_test(
   SRC ${DIR}/data/ListFileDatasetTest.cpp
   LIBS ${LIBS}
