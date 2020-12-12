@@ -40,6 +40,7 @@ Distributed Training Dependencies
 Building with distributed training is optional. See ``Build Options`` below.
 
 - Regardless of backend, running with distributed training requires an MPI installation. `OpenMPI <https://www.open-mpi.org/>`_ is recommended if supported on your OS. On most Linux-based systems, ``sudo apt-get install openmpi-bin openmpi-common libopenmpi-dev`` is sufficient.
+- A BLAS implementation is required. If using `Intel MKL <https://software.intel.com/content/www/us/en/develop/tools/oneapi/components/onemkl.html>`_, setting the ``MKLROOT`` environment variable can help CMake find libraries and headers. ``export MKLROOT=/opt/intel/mkl`` is sufficient on most Linux-based systems.
 - If building the CUDA backend, `NVIDIA's NCCL library <https://developer.nvidia.com/nccl>`_ is required. Flashlight has been tested with NCCL 2.2.13.
 - If building with the CPU backend, `Facebook's Gloo library <https://github.com/facebookincubator/gloo>`_ is required, and must be built with MPI; after installing OpenMPI, pass the ``-DUSE_MPI=ON`` flag to ``cmake`` when building Gloo.
 
@@ -54,14 +55,7 @@ CPU Backend Dependencies
 
 The CPU backend is currently under active development. Required dependencies include:
 
-- Intel's `MKL-DNN <https://github.com/intel/mkl-dnn/>`_ framework. While not required, using Intel's `Math Kernel Library <https://software.intel.com/en-us/mkl>`_ >= 2017 `when building and installing MKL-DNN <https://github.com/intel/mkl-dnn/#using-intel-mkl-optional>`_ is highly recommended for better performance. flashlight has been tested with MKL-DNN linked to MKL >= 2017.
-  - We currently require mkldnn v0, due to breaking changes in v1. So make sure to use the `mnt-v0` branch: `git clone https://github.com/intel/mkl-dnn.git -b mnt-v0`
-
-If building MKL-DNN and flashlight with MKL, the flashlight build needs to be able to find it. The environment variable ``MKLROOT`` must be set to a directory where the MKL installation is located. This should be done in the same shell session where ``cmake`` is to be run when building flashlight. On most Linux-based systems, the correct command will be:
-
-.. code-block:: shell
-
-   export MKLROOT=/opt/intel/mkl
+- `oneDNN <https://github.com/oneapi-src/oneDNN>`_. oneDNN >= `v2.0 <https://github.com/oneapi-src/oneDNN/releases/tag/v2.0>`_ is required.
 
 OpenCL Backend Dependencies
 ---------------------------
