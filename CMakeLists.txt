@@ -188,22 +188,6 @@ if (FL_BUILD_CORE)
      endif()
   endif()
 
-  if (FL_USE_CPU)
-    # MKL is not required to build the CPU backend (but is highly recommended
-    # for improved performag ance) since MKL-DNN can be built with either mklml or
-    # MKL-DNN's internal GEMM implementation (see https://git.io/fhSMH). If MKL
-    # isn't found, try to find mklml when finding MKL-DNN, and add it to
-    # DNNL_LIBRARIES. If mklml can't be found, fall back to a system BLAS
-    # library for GEMM. If no system lib is avaialble, use the internal MKL-DNN
-    # GEMM implementation.
-    find_package(MKL QUIET)
-    if (MKL_FOUND)
-      message(STATUS "MKL found")
-    else()
-      message(STATUS "MKL not found")
-    endif()
-  endif()
-
   if (FL_USE_OPENCL)
     find_package(OpenCL)
     if (OpenCL_FOUND)

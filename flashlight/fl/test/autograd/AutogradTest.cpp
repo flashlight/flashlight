@@ -1560,7 +1560,7 @@ TEST(AutogradTest, BatchnormJacobian) {
   auto bias = Variable(af::randu(numFeat, af::dtype::f32), true);
 
   // Observation:
-  // When testing on MKL-DNN backend, precision 1E-2 is a good choice.
+  // When testing on CPU/DNNL backend, precision 1E-2 is a good choice.
   // Higher precision may lead to testing failure on some elements.
 
   auto func_bn_in = [&](Variable& in) {
@@ -1632,7 +1632,7 @@ TEST(AutogradTest, BatchnormJacobianMultipleAxes) {
   auto bias = Variable(af::randu(nfeatures, af::dtype::f32), true);
 
   // Observation:
-  // When testing on MKL-DNN backend, precision 1E-2 is a good choice.
+  // When testing on CPU/DNNL backend, precision 1E-2 is a good choice.
   // Higher precision may lead to testing failure on some elements.
 
   auto func_bn_in = [&](Variable& in) {
