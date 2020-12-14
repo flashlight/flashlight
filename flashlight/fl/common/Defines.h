@@ -63,6 +63,7 @@ enum class DistributedBackend {
   GLOO = 0,
   /// https://developer.nvidia.com/nccl
   NCCL = 1,
+  STUB = 2,
 };
 
 enum class DistributedInit {

@@ -11,7 +11,7 @@ cmake_dependent_option(FL_BUILD_DISTRIBUTED
 # If building with CUDA, use NCCL to on; if using CPU or OpenCL, use GLOO
 set(USE_NCCL FALSE)
 set(USE_GLOO FALSE)
-if (FL_BUILD_DISTRIBUTED)
+if (FL_BUILD_DISTRIBUTED AND NOT FL_DISTRIBUTED_STUB)
   if (FL_USE_CUDA)
     set(USE_NCCL TRUE)
   elseif (FL_USE_CPU OR FL_USE_OPENCL)

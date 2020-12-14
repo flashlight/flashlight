@@ -129,3 +129,13 @@ if (USE_GLOO)
     gloo
     )
 endif ()
+
+# Distributed
+if (FL_DISTRIBUTED_STUB)
+  target_sources(
+    flashlight
+    PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}/backend/stub/DistributedBackend.cpp
+    )
+  message(STATUS "using distributed stub")
+endif ()
