@@ -1,0 +1,92 @@
+/*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+#include "flashlight/app/asr/augmentation/Reverberation.h"
+
+#include <algorithm>
+#include <cmath>
+#include <sstream>
+
+namespace fl {
+namespace app {
+namespace asr {
+namespace sfx {
+
+ReverbEcho::ReverbEcho(const ReverbEcho::Config& conf)
+    : conf_(conf),
+      randomEngine_(conf.randomSeed_),
+      randomProba_(0, 1),
+      randomInitial_(conf.initialMin_, conf.initialMax_),
+      randomFirstDeplay_(conf.firstDelayMin_, conf.firstDelayMax_),
+      randomRt60_(conf.rt60Min_, conf.rt60Max_),
+      randomJitter_(1 - conf.jitter_, 1 + conf.jitter_) {}
+
+void ReverbEcho::reverb(
+    std::vector<float>& source,
+    float initial,
+    float firstDelay,
+    float rt60) {
+  size_t length = source.size();
+  for (int i = 0; i < conf_.repeat_; ++i) {
+    float frac = 1;
+    // echo = initial * source
+    std::vector<float> echo = source;
+    std::transform(
+        echo.begin(), echo.end(), echo.begin(), [initial](float x) -> float {
+          return x * initial;
+        });
+    while (frac > 1e-3) {
+      // Add jitter noise for the delay
+      size_t delay = 1 +
+          int(randomJitter_(randomEngine_) * firstDelay * conf_.sampleRate_);
+      if (delay > length - 1) {
+        break;
+      }
+      for (int j = 0; j < length - delay - 1; ++j) {
+        source[delay + j] += echo[j] * frac;
+      }
+
+      // Add jitter noise for the attenuation
+      const float attenuation =
+          std::pow(10, -3 * randomJitter_(randomEngine_) * firstDelay / rt60);
+
+      frac *= attenuation;
+    }
+  }
+}
+
+void ReverbEcho::apply(std::vector<float>& sound) {
+  if (randomProba_(randomEngine_) >= conf_.proba_) {
+    return;
+  }
+  // Sample characteristics for the reverb
+  float initial = randomInitial_(randomEngine_);
+  float firstDelay = randomFirstDeplay_(randomEngine_);
+  float rt60 = randomRt60_(randomEngine_);
+
+  reverb(sound, initial, firstDelay, rt60);
+}
+
+std::string ReverbEcho::prettyString() const {
+  return "ReverbEcho{conf_=" + conf_.prettyString() + "}}";
+}
+
+std::string ReverbEcho::Config::prettyString() const {
+  std::stringstream ss;
+  ss << " proba_=" << proba_ << " initialMin_=" << initialMin_
+     << " initialMax_=" << initialMax_ << " rt60Min_=" << rt60Min_
+     << " rt60Max_=" << rt60Max_ << " firstDelayMin_=" << firstDelayMin_
+     << " firstDelayMax_=" << firstDelayMax_ << " repeat_=" << repeat_
+     << " jitter_=" << jitter_ << " sampleRate_=" << sampleRate_
+     << " randomSeed_=" << randomSeed_;
+  return ss.str();
+}
+
+} // namespace sfx
+} // namespace asr
+} // namespace app
+} // namespace fl
