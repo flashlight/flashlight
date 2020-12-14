@@ -17,29 +17,3 @@ endfunction(build_tool)
 
 build_tool(${PROJECT_SOURCE_DIR}/tools/VoiceActivityDetection-CTC.cpp)
 build_tool(${PROJECT_SOURCE_DIR}/tools/alignment/Align.cpp)
-
-# ---------------------- streaming_tds_model_converter ----------------------
-
-add_executable(
-  streaming_tds_model_converter
-  ${CMAKE_CURRENT_LIST_DIR}/StreamingTDSModelConverter.cpp
-)
-
-target_include_directories(
-  streaming_tds_model_converter
-  PRIVATE
-    ${gflags_INCLUDE_DIRS}
-)
-
-target_link_libraries(
-  streaming_tds_model_converter
-  PRIVATE
-    common
-    criterion
-    module
-    runtime
-    ${gflags_LIBRARIES}
-    streaming_inference_common
-    streaming_inference_decoder
-    streaming_inference_modules
-)
