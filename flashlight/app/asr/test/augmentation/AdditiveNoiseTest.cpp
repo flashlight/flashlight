@@ -64,7 +64,8 @@ TEST(AdditiveNoise, Snr) {
 
   for (float snr = 1; snr < 30; ++snr) {
     AdditiveNoise::Config conf;
-    conf.ratio = 1.0;
+    conf.proba_ = 1.0;
+    conf.ratio_ = 1.0;
     conf.minSnr_ = snr;
     conf.maxSnr_ = snr;
     conf.nClipsMin_ = 1;
