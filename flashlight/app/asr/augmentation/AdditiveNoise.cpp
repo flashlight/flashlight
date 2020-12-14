@@ -22,7 +22,7 @@ namespace sfx {
 
 std::string AdditiveNoise::Config::prettyString() const {
   std::stringstream ss;
-  ss << "AdditiveNoise::Config{ratio=" << ratio << " minSnr_=" << minSnr_
+  ss << "AdditiveNoise::Config{ratio_=" << ratio_ << " minSnr_=" << minSnr_
      << " maxSnr_=" << maxSnr_ << " nClipsMin_=" << nClipsMin_ << " nClipsMax_"
      << nClipsMax_ << " listFilePath_=" << listFilePath_
      << " dsetRndPolicy_=" << randomPolicyToString(dsetRndPolicy_)
@@ -40,6 +40,7 @@ std::string AdditiveNoise::prettyString() const {
 AdditiveNoise::AdditiveNoise(const AdditiveNoise::Config& config)
     : conf_(config),
       randomEngine_(config.randomSeed_),
+      randomProba_(0, 1),
       uniformDistribution_(0, std::numeric_limits<int>::max()),
       randomNumClipsPerUtterance_(config.nClipsMin_, config.nClipsMax_),
       randomSnr_(config.minSnr_, config.maxSnr_) {
@@ -83,12 +84,15 @@ float rootMeanSquare(const std::vector<float>& signal) {
 } // namespace
 
 void AdditiveNoise::apply(std::vector<float>& signal) {
+  if (randomProba_(randomEngine_) >= conf_.proba_) {
+    return;
+  }
   const float signalRms = rootMeanSquare(signal);
   const float snr = randomSnr_(randomEngine_);
   const int nClips = randomNumClipsPerUtterance_(randomEngine_);
   int augStart = uniformDistribution_(randomEngine_) % (signal.size() - 1);
   // overflow implies we start at the beginning again.
-  int augEnd = augStart + conf_.ratio * signal.size();
+  int augEnd = augStart + conf_.ratio_ * signal.size();
 
   std::vector<float> mixedNoise(signal.size(), 0.0f);
   for (int i = 0; i < nClips; ++i) {
