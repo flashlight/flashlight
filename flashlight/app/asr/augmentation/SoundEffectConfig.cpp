@@ -14,11 +14,12 @@
 #include <cereal/archives/json.hpp>
 #include <cereal/types/vector.hpp>
 
+#include "flashlight/app/asr/augmentation/SoundEffectUtil.h"
 #include "flashlight/lib/common/System.h"
 
 using namespace ::fl::app::asr::sfx;
-using ::fl::lib::dirname;
 using ::fl::lib::dirCreateRecursive;
+using ::fl::lib::dirname;
 
 namespace cereal {
 
@@ -30,13 +31,58 @@ void serialize(Archive& ar, Amplify::Config& conf) {
 }
 
 template <class Archive>
+std::string save_minimal(Archive const&, RandomPolicy const& randomPolicy) {
+  return randomPolicyToString(randomPolicy);
+}
+
+template <class Archive>
+void load_minimal(
+    Archive const&,
+    RandomPolicy& randomPolicy,
+    std::string const& str) {
+  randomPolicy = stringToRandomPolicy(str);
+}
+
+template <class Archive>
+void serialize(Archive& ar, AdditiveNoise::Config& conf) {
+  ar(cereal::make_nvp("proba", conf.proba_),
+     cereal::make_nvp("ratio", conf.ratio_),
+     cereal::make_nvp("minSnr", conf.minSnr_),
+     cereal::make_nvp("maxSnr", conf.maxSnr_),
+     cereal::make_nvp("nClipsMin", conf.nClipsMin_),
+     cereal::make_nvp("nClipsMax", conf.nClipsMax_),
+     cereal::make_nvp("listFilePath", conf.listFilePath_),
+     cereal::make_nvp("dsetRndPolicy", conf.dsetRndPolicy_),
+     cereal::make_nvp("randomSeed", conf.randomSeed_));
+}
+
+template <class Archive>
+void serialize(Archive& ar, ReverbEcho::Config& conf) {
+  ar(cereal::make_nvp("proba", conf.proba_),
+     cereal::make_nvp("initialMin", conf.initialMin_),
+     cereal::make_nvp("initialMax", conf.initialMax_),
+     cereal::make_nvp("rt60Min", conf.rt60Min_),
+     cereal::make_nvp("rt60Max", conf.rt60Max_),
+     cereal::make_nvp("firstDelayMin", conf.firstDelayMin_),
+     cereal::make_nvp("firstDelayMax", conf.firstDelayMax_),
+     cereal::make_nvp("repeat", conf.repeat_),
+     cereal::make_nvp("jitter", conf.jitter_),
+     cereal::make_nvp("sampleRate", conf.sampleRate_),
+     cereal::make_nvp("randomSeed", conf.randomSeed_));
+}
+
+template <class Archive>
 void serialize(Archive& ar, SoundEffectConfig& conf) {
   ar(cereal::make_nvp("type", conf.type_));
-  if (conf.type_ == kNormalize) {
-    ar(cereal::make_nvp(
-        "normalizeOnlyIfTooHigh", conf.normalizeOnlyIfTooHigh_));
+  if (conf.type_ == kAdditiveNoise) {
+    ar(cereal::make_nvp("additiveNoiseConfig", conf.additiveNoiseConfig_));
   } else if (conf.type_ == kAmplify) {
     ar(cereal::make_nvp("amplifyConfig", conf.amplifyConfig_));
+  } else if (conf.type_ == kNormalize) {
+    ar(cereal::make_nvp(
+        "normalizeOnlyIfTooHigh", conf.normalizeOnlyIfTooHigh_));
+  } else if (conf.type_ == kReverbEcho) {
+    ar(cereal::make_nvp("reverbEchoConfig", conf.reverbEchoConfig_));
   }
 }
 
