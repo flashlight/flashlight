@@ -23,28 +23,21 @@ using fl::lib::retryWithBackoff;
 namespace fl {
 namespace app {
 namespace asr {
-std::pair<std::string, std::string> getStatus(
+
+std::string getLogString(
     TrainMeters& meters,
-    std::unordered_map<std::string, double>& validDecoderWer,
+    const std::unordered_map<std::string, double>& validDecoderWer,
     int64_t epoch,
     int64_t nupdates,
     double lr,
     double lrcrit,
-    bool verbose /* = false */,
-    bool date /* = false */,
-    const std::string& separator /* = " " */) {
-  std::string header, status;
+    const std::string& separator /* = " | " */) {
+  std::string status;
   auto insertItem = [&](std::string key, std::string val) {
-    if (verbose) {
-      val = key + ": " + val;
-    }
-    header = header + (header.empty() ? "" : separator) + key;
+    val = key + ": " + val;
     status = status + (status.empty() ? "" : separator) + val;
   };
-  if (date) {
-    insertItem("date", format("%s", getCurrentDate().c_str()));
-    insertItem("time", format("%s", getCurrentTime().c_str()));
-  }
+  insertItem("timestamp", getCurrentDate() + " " + getCurrentTime());
   insertItem("epoch", format("%8d", epoch));
   insertItem("nupdates", format("%12d", nupdates));
   insertItem("lr", format("%4.6lf", lr));
@@ -67,10 +60,14 @@ std::pair<std::string, std::string> getStatus(
   insertItem("train-WER", format("%5.2f", meters.train.wrdEdit.errorRate()[0]));
   for (auto& v : meters.valid) {
     insertItem(v.first + "-loss", format("%10.5f", v.second.loss.value()[0]));
-    insertItem(v.first + "-TER", format("%5.2f", v.second.tknEdit.errorRate()[0]));
-    insertItem(v.first + "-WER", format("%5.2f", v.second.wrdEdit.errorRate()[0]));
-    if (validDecoderWer.find(v.first) != validDecoderWer.end()) {
-      insertItem(v.first + "-WER-decoded", format("%5.2f", validDecoderWer[v.first]));
+    insertItem(
+        v.first + "-TER", format("%5.2f", v.second.tknEdit.errorRate()[0]));
+    insertItem(
+        v.first + "-WER", format("%5.2f", v.second.wrdEdit.errorRate()[0]));
+    auto vDecoderIter = validDecoderWer.find(v.first);
+    if (vDecoderIter != validDecoderWer.end()) {
+      insertItem(
+          v.first + "-WER-decoded", format("%5.2f", vDecoderIter->second));
     }
   }
   auto stats = meters.stats.value();
@@ -95,7 +92,7 @@ std::pair<std::string, std::string> getStatus(
   insertItem(
       "thrpt(sec/sec)",
       timeTakenSec > 0.0 ? format("%.2f", audioProcSec / timeTakenSec) : "n/a");
-  return {header, status};
+  return status;
 }
 
 void appendToLog(std::ofstream& logfile, const std::string& logstr) {

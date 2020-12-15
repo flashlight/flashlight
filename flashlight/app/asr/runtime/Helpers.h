@@ -15,6 +15,7 @@
 #pragma once
 
 #include <tuple>
+#include <unordered_map>
 #include <unordered_set>
 
 #include "flashlight/fl/flashlight.h"
@@ -28,14 +29,6 @@
 namespace fl {
 namespace app {
 namespace asr {
-
-/**
- * Create the path to save checkpoints and logs of an experiments.
- */
-std::string newRunPath(
-    const std::string& root,
-    const std::string& runname = "",
-    const std::string& tag = "");
 
 /**
  * Get a certain checkpoint by `runidx`.
@@ -93,6 +86,14 @@ std::shared_ptr<fl::Dataset> loadPrefetchDataset(
     int prefetchThreads,
     bool shuffle,
     int shuffleSeed = 0);
+
+/*
+ * Function to parse valid set string describing multiple datasets into a vector
+ * Input Format: d1:d1.lst,d2:d2.lst returns {{d1, d1.lst}, {d2, d2.lst}}
+ * Input Format: d1.lst,d2.lst returns {{d1.lst, d1.lst}, {d2.lst, d2.lst}}
+ */
+std::vector<std::pair<std::string, std::string>> parseValidSets(
+    const std::string& valid);
 
 } // namespace asr
 } // namespace app

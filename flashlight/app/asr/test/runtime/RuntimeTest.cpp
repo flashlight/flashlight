@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <unordered_map>
+#include <utility>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -99,6 +100,25 @@ TEST(RuntimeTest, SpeechStatMeter) {
   ASSERT_EQ(stats2[2], 5.0);
   ASSERT_EQ(stats2[3], 6.0);
   ASSERT_EQ(stats2[4], 2.0);
+}
+
+TEST(RuntimeTest, parseValidSets) {
+  std::string in = "";
+  auto op = parseValidSets(in);
+  ASSERT_EQ(op.size(), 0);
+
+  std::string in1 = "d1:d1.lst,d2:d2.lst";
+  auto op1 = parseValidSets(in1);
+  ASSERT_EQ(op1.size(), 2);
+  ASSERT_EQ(op1[0], (std::pair<std::string, std::string>("d1", "d1.lst")));
+  ASSERT_EQ(op1[1], (std::pair<std::string, std::string>("d2", "d2.lst")));
+
+  std::string in2 = "d1.lst,d2.lst,d3.lst";
+  auto op2 = parseValidSets(in2);
+  ASSERT_EQ(op2.size(), 3);
+  ASSERT_EQ(op2[0], (std::pair<std::string, std::string>("d1.lst", "d1.lst")));
+  ASSERT_EQ(op2[1], (std::pair<std::string, std::string>("d2.lst", "d2.lst")));
+  ASSERT_EQ(op2[2], (std::pair<std::string, std::string>("d3.lst", "d3.lst")));
 }
 
 int main(int argc, char** argv) {

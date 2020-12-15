@@ -49,16 +49,14 @@ struct TestMeters {
  * From gflags it uses FLAGS_batchsize, FLAGS_pow, FLAGS_mfcc, FLAGS_mfsc
  * FLAGS_framestridems, FLAGS_samplerate
  */
-std::pair<std::string, std::string> getStatus(
+std::string getLogString(
     TrainMeters& meters,
-    std::unordered_map<std::string, double>& dmErrs,
+    const std::unordered_map<std::string, double>& dmErrs,
     int64_t epoch,
     int64_t nupdates,
     double lr,
     double lrcrit,
-    bool verbose = false,
-    bool date = false,
-    const std::string& separator = " ");
+    const std::string& separator = " | ");
 
 void appendToLog(std::ofstream& logfile, const std::string& logstr);
 

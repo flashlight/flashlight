@@ -45,6 +45,22 @@ using fl::lib::pathsConcat;
 
 using namespace fl::app::asr;
 
+namespace {
+void parseCmdLineFlagsWrapper(int argc, char** argv) {
+  LOG(INFO) << "Parsing command line flags";
+  gflags::ParseCommandLineFlags(&argc, &argv, false);
+  if (!FLAGS_flagsfile.empty()) {
+    LOG(INFO) << "Reading flags from file " << FLAGS_flagsfile;
+    gflags::ReadFromFlagsFile(FLAGS_flagsfile, argv[0], true);
+  }
+  gflags::ParseCommandLineFlags(&argc, &argv, false);
+  // Only new flags are re-serialized. Copy any values from deprecated flags to
+  // new flags when deprecated flags are present and corresponding new flags
+  // aren't
+  handleDeprecatedFlags();
+}
+} // namespace
+
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
@@ -69,14 +85,8 @@ int main(int argc, char** argv) {
     LOG(FATAL) << gflags::ProgramUsage();
   }
   if (runStatus == kTrainMode) {
-    LOG(INFO) << "Parsing command line flags";
-    gflags::ParseCommandLineFlags(&argc, &argv, false);
-    if (!FLAGS_flagsfile.empty()) {
-      LOG(INFO) << "Reading flags from file " << FLAGS_flagsfile;
-      gflags::ReadFromFlagsFile(FLAGS_flagsfile, argv[0], true);
-    }
-    gflags::ParseCommandLineFlags(&argc, &argv, false);
-    runPath = newRunPath(FLAGS_rundir, FLAGS_runname, FLAGS_tag);
+    parseCmdLineFlagsWrapper(argc, argv);
+    runPath = pathsConcat(FLAGS_rundir, FLAGS_runname);
   } else if (runStatus == kContinueMode) {
     runPath = argv[2];
     while (fileExists(getRunFile("model_last.bin", runIdx, runPath))) {
@@ -93,16 +103,7 @@ int main(int argc, char** argv) {
     }
     LOG(INFO) << "Reading flags from config file " << reloadPath;
     gflags::ReadFlagsFromString(flags->second, gflags::GetArgv0(), true);
-    if (argc > 3) {
-      LOG(INFO) << "Parsing command line flags";
-      LOG(INFO) << "Overriding flags should be mutable when using `continue`";
-      gflags::ParseCommandLineFlags(&argc, &argv, false);
-    }
-    if (!FLAGS_flagsfile.empty()) {
-      LOG(INFO) << "Reading flags from file " << FLAGS_flagsfile;
-      gflags::ReadFromFlagsFile(FLAGS_flagsfile, argv[0], true);
-    }
-    gflags::ParseCommandLineFlags(&argc, &argv, false);
+    parseCmdLineFlagsWrapper(argc, argv);
     auto epoch = cfg.find(kEpoch);
     if (epoch == cfg.end()) {
       LOG(WARNING) << "Did not find epoch to start from, starting from 0.";
@@ -128,32 +129,17 @@ int main(int argc, char** argv) {
     LOG(INFO) << "Reading flags from config file " << reloadPath;
     gflags::ReadFlagsFromString(flags->second, gflags::GetArgv0(), true);
 
-    if (argc > 3) {
-      LOG(INFO) << "Parsing command line flags";
-      LOG(INFO) << "Overriding flags should be mutable when using `fork`";
-      gflags::ParseCommandLineFlags(&argc, &argv, false);
-    }
-
-    if (!FLAGS_flagsfile.empty()) {
-      LOG(INFO) << "Reading flags from file" << FLAGS_flagsfile;
-      gflags::ReadFromFlagsFile(FLAGS_flagsfile, argv[0], true);
-    }
-    gflags::ParseCommandLineFlags(&argc, &argv, false);
-    runPath = newRunPath(FLAGS_rundir, FLAGS_runname, FLAGS_tag);
+    parseCmdLineFlagsWrapper(argc, argv);
+    runPath = pathsConcat(FLAGS_rundir, FLAGS_runname);
   } else {
     LOG(FATAL) << gflags::ProgramUsage();
   }
-  // Only new flags are re-serialized. Copy any values from deprecated flags to
-  // new flags when deprecated flags are present and corresponding new flags
-  // aren't
-  handleDeprecatedFlags();
 
-  if (!FLAGS_fl_log_level.empty()) {
-    fl::Logging::setMaxLoggingLevel(fl::logLevelValue(FLAGS_fl_log_level));
+  if (runPath.empty()) {
+    LOG(FATAL) << "'runpath' specified by --rundir, --runname cannot be empty";
   }
-  fl::VerboseLogging::setMaxLoggingLevel(FLAGS_fl_vlog_level);
+
   af::setSeed(FLAGS_seed);
-  af::setFFTPlanCacheSize(FLAGS_fftcachesize);
   fl::DynamicBenchmark::setBenchmarkMode(FLAGS_fl_benchmark_mode);
 
   std::shared_ptr<fl::Reducer> reducer = nullptr;
@@ -201,23 +187,15 @@ int main(int argc, char** argv) {
       {kRunIdx, std::to_string(runIdx)},
       {kRunPath, runPath}};
 
-  auto validSets = fl::lib::split(',', fl::lib::trim(FLAGS_valid));
-  std::vector<std::pair<std::string, std::string>> validTagSets;
-  for (const auto& s : validSets) {
-    // assume the format is tag:filepath
-    auto ts = fl::lib::splitOnAnyOf(":", s);
-    if (ts.size() == 1) {
-      validTagSets.emplace_back(std::make_pair(s, s));
-    } else {
-      validTagSets.emplace_back(std::make_pair(ts[0], ts[1]));
-    }
-  }
+  std::vector<std::pair<std::string, std::string>> validTagSets =
+      parseValidSets(FLAGS_valid);
 
   /* ===================== Create Dictionary & Lexicon ===================== */
   auto dictPath = pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
   if (dictPath.empty() || !fileExists(dictPath)) {
     throw std::runtime_error(
-        "Invalid dictionary filepath specified with --tokensdir and --tokens: \"" +
+        "Invalid dictionary filepath specified with "
+        "--tokensdir and --tokens: \"" +
         dictPath + "\"");
   }
   fl::lib::text::Dictionary tokenDict(dictPath);
@@ -326,9 +304,6 @@ int main(int argc, char** argv) {
         worldSize);
   }
 
-  fl::lib::text::DictionaryMap dicts = {{kTargetIdx, tokenDict},
-                                        {kWordIdx, wordDict}};
-
   /* =========== Create Network & Optimizers / Reload Snapshot ============ */
   std::shared_ptr<fl::Module> network;
   std::shared_ptr<SequenceCriterion> criterion;
@@ -391,8 +366,8 @@ int main(int argc, char** argv) {
   FL_LOG_MASTER(INFO) << "[Criterion] " << criterion->prettyString();
 
   if (!FLAGS_lm.empty()) {
-    FL_LOG_MASTER(INFO)
-        << "[Beam-search Decoder] Constructing language model and beam search decoder";
+    FL_LOG_MASTER(INFO) << "[Beam-search Decoder] Constructing language model "
+                           "and beam search decoder";
     std::vector<float> dummyTransition;
     if (FLAGS_decodertype == "wrd" && FLAGS_lmtype == "kenlm" &&
         FLAGS_criterion == "ctc") {
@@ -478,22 +453,13 @@ int main(int argc, char** argv) {
   }
 
   /* ===================== Logging ===================== */
-  std::ofstream logFile, perfFile;
+  std::ofstream logFile;
   if (isMaster) {
     fl::lib::dirCreate(runPath);
     logFile.open(getRunFile("log", runIdx, runPath));
     if (!logFile.is_open()) {
       LOG(FATAL) << "failed to open log file for writing";
     }
-    perfFile.open(getRunFile("perf", runIdx, runPath));
-    if (!perfFile.is_open()) {
-      LOG(FATAL) << "failed to open perf file for writing";
-    }
-    // write perf header
-    auto perfMsg =
-        getStatus(meters, validWerWithDecoder, 0, 0, 0, 0, false, true, "\t")
-            .first;
-    appendToLog(perfFile, "# " + perfMsg);
     // write config
     std::ofstream configFile(getRunFile("config", runIdx, runPath));
     cereal::JSONOutputArchive ar(configFile);
@@ -501,7 +467,7 @@ int main(int argc, char** argv) {
   }
 
   auto logStatus =
-      [&perfFile, &logFile, isMaster](
+      [&logFile, isMaster](
           TrainMeters& mtrs,
           std::unordered_map<std::string, double>& validWerWithDecoder,
           int64_t epoch,
@@ -511,30 +477,10 @@ int main(int argc, char** argv) {
         syncMeter(mtrs);
 
         if (isMaster) {
-          auto logMsg = getStatus(
-                            mtrs,
-                            validWerWithDecoder,
-                            epoch,
-                            nupdates,
-                            lr,
-                            lrcrit,
-                            true,
-                            false,
-                            " | ")
-                            .second;
-          auto perfMsg = getStatus(
-                             mtrs,
-                             validWerWithDecoder,
-                             epoch,
-                             nupdates,
-                             lr,
-                             lrcrit,
-                             false,
-                             true)
-                             .second;
+          auto logMsg = getLogString(
+              mtrs, validWerWithDecoder, epoch, nupdates, lr, lrcrit);
           FL_LOG_MASTER(INFO) << logMsg;
           appendToLog(logFile, logMsg);
-          appendToLog(perfFile, perfMsg);
         }
       };
 
@@ -706,8 +652,9 @@ int main(int argc, char** argv) {
                   .blankToken = kBlankToken,
                   .unkToken = fl::lib::text::kUnkToken,
                   .smearMode =
-                      (FLAGS_smearing == "max" ? fl::lib::text::SmearingMode::MAX
-                                               : fl::lib::text::SmearingMode::NONE)};
+                      (FLAGS_smearing == "max"
+                           ? fl::lib::text::SmearingMode::MAX
+                           : fl::lib::text::SmearingMode::NONE)};
               auto pds = dm->decode(eds, lexicon, opt);
               // return token distance and word distance stats
               wordEditDst[i] = dm->computeMetrics(pds).second;

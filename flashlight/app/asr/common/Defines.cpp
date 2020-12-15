@@ -161,10 +161,6 @@ DEFINE_string(archdir, "", "arch root directory");
 DEFINE_string(flagsfile, "", "File specifying gflags");
 DEFINE_string(runname, "", "name of current run");
 DEFINE_int64(nthread, 1, "specify number of threads for data parallelization");
-DEFINE_string(
-    tag,
-    "",
-    "tag this experiment with a particular name (e.g. 'hypothesis1')");
 DEFINE_int64(seed, 0, "Manually specify Arrayfire seed.");
 DEFINE_int64(
     memstepsize,
