@@ -24,6 +24,7 @@
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/data/FeatureTransforms.h"
 #include "flashlight/app/asr/decoder/ConvLmModule.h"
+#include "flashlight/app/asr/decoder/DecodeUtils.h"
 #include "flashlight/app/asr/decoder/Defines.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
@@ -160,9 +161,6 @@ int main(int argc, char** argv) {
     }
   }
 
-  fl::lib::text::DictionaryMap dicts = {{kTargetIdx, tokenDict},
-                                        {kWordIdx, wordDict}};
-
   /* =============== Prepare Sharable Decoder Components ============== */
   // Prepare counters
   std::vector<double> sliceWrdDst(FLAGS_nthread_decoder);
@@ -273,38 +271,17 @@ int main(int argc, char** argv) {
   if (FLAGS_wordseparator != "") {
     silIdx = tokenDict.getIndex(FLAGS_wordseparator);
   }
-  std::shared_ptr<fl::lib::text::Trie> trie = nullptr;
-  if (FLAGS_decodertype == "wrd" || FLAGS_uselexicon) {
-    trie = std::make_shared<fl::lib::text::Trie>(tokenDict.indexSize(), silIdx);
-    auto startState = lm->start(false);
-
-    for (auto& it : lexicon) {
-      const std::string& word = it.first;
-      int usrIdx = wordDict.getIndex(word);
-      float score = -1;
-      if (FLAGS_decodertype == "wrd") {
-        fl::lib::text::LMStatePtr dummyState;
-        std::tie(dummyState, score) = lm->score(startState, usrIdx);
-      }
-      for (auto& tokens : it.second) {
-        auto tokensTensor = tkn2Idx(tokens, tokenDict, FLAGS_replabel);
-        trie->insert(tokensTensor, usrIdx, score);
-      }
-    }
-    LOG(INFO) << "[Decoder] Trie planted.";
-
-    // Smearing
-    SmearingMode smear_mode = SmearingMode::NONE;
-    if (FLAGS_smearing == "logadd") {
-      smear_mode = SmearingMode::LOGADD;
-    } else if (FLAGS_smearing == "max") {
-      smear_mode = SmearingMode::MAX;
-    } else if (FLAGS_smearing != "none") {
-      LOG(FATAL) << "[Decoder] Invalid smearing mode: " << FLAGS_smearing;
-    }
-    trie->smear(smear_mode);
-    LOG(INFO) << "[Decoder] Trie smeared.\n";
-  }
+  std::shared_ptr<fl::lib::text::Trie> trie = buildTrie(
+      FLAGS_decodertype,
+      FLAGS_uselexicon,
+      lm,
+      FLAGS_smearing,
+      tokenDict,
+      lexicon,
+      wordDict,
+      silIdx,
+      FLAGS_replabel);
+  LOG(INFO) << "[Decoder] Trie smeared.\n";
 
   /* ===================== Create Dataset ===================== */
   fl::lib::audio::FeatureParams featParams(

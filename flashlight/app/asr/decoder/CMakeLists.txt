@@ -5,5 +5,6 @@ target_sources(
   PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/ConvLmModule.cpp
   ${CMAKE_CURRENT_LIST_DIR}/DecodeMaster.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/DecodeUtils.cpp
   ${CMAKE_CURRENT_LIST_DIR}/TranscriptionUtils.cpp
   )
