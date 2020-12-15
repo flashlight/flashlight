@@ -12,6 +12,7 @@
 #include <queue>
 
 #include "flashlight/app/asr/common/Defines.h"
+#include "flashlight/app/asr/common/Flags.h"
 
 using namespace fl::ext;
 

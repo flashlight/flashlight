@@ -19,6 +19,7 @@
 
 #include "flashlight/app/asr/augmentation/SoundEffectConfig.h"
 #include "flashlight/app/asr/common/Defines.h"
+#include "flashlight/app/asr/common/Flags.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/data/FeatureTransforms.h"
 #include "flashlight/app/asr/decoder/DecodeMaster.h"

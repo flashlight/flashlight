@@ -20,6 +20,7 @@
 #include "flashlight/fl/flashlight.h"
 
 #include "flashlight/app/asr/common/Defines.h"
+#include "flashlight/app/asr/common/Flags.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/data/FeatureTransforms.h"
 #include "flashlight/app/asr/decoder/ConvLmModule.h"
