@@ -10,6 +10,7 @@
 #include "flashlight/fl/flashlight.h"
 
 #include "flashlight/app/asr/common/Defines.h"
+#include "flashlight/app/asr/common/Flags.h"
 
 namespace fl {
 namespace app {
