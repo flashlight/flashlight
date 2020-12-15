@@ -10,12 +10,12 @@ There is a codebase for training and inference the end-to-end speech recognition
     + [Token dictionary](#token-dictionary)
     + [Lexicon File](#lexicon-file)
   * [Writing architecture files](#writing-architecture-files)
-  * [How to train acoustic model (Train.cpp -> `build/bin/fl_asr_train`)](#how-to-train-acoustic-model--traincpp-----build-bin-fl-asr-train--)
+  * [How to train acoustic model](#how-to-train-acoustic-model)
     + [Flags](#flags)
   * [Batching strategy](#batching-strategy)
   * [Distributed training](#distributed-training)
-- [Beam-search decoder (`Test.cpp` -> `build/bin/fl_asr_test` and `Decode.cpp` -> `build/bin/fl_asr_decode`).](#beam-search-decoder---testcpp------build-bin-fl-asr-test--and--decodecpp------build-bin-fl-asr-decode--)
-  * [Greedy Path](#greedy-path)
+- [Beam-search decoder](#beam-search-decoder)
+  * [Greedy Decoder](#greedy-decoder)
   * [Beam-search Decoders](#beam-search-decoders)
     + [1. Beam-search Decoder Types](#1-beam-search-decoder-types)
       - [1.1 Lexicon-based beam-search decoder (`uselexicon=true`)](#11-lexicon-based-beam-search-decoder---uselexicon-true--)
@@ -355,8 +355,8 @@ PC [afTypeString]
 ```
 </details>
 
-### How to train acoustic model (Train.cpp -> `build/bin/fl_asr_train`)
-Training supports three modes:
+### How to train acoustic model
+Training is provided with Train.cpp which is compiled into binary `build/bin/fl_asr_train`. It supports three modes
 - `train` : Train a model from scratch on the given training data.
 - `continue` : Continue training a saved model. This can be used for example to
   fine-tune with a smaller learning rate. The `continue` option makes a best
@@ -430,10 +430,11 @@ mpirun <build/bin/fl_asr_train> -n 8 <> [train|continue|fork] \
 The above command will run data parallel training with 8 processes (e.g. on 8 GPUs).
 
 ## Beam-search decoder
-After acoustic model (AM) is trained, one can get the transcription of a audio by running either the **greedy path** (the greedy best path using only acoustic model predictions, in the code Viterbi name is used) or the **beam-search decoding** with language model (LM) incorporated.
+After acoustic model (AM) is trained, one can get the transcription of a audio by running either the **greedy decoder** (the greedy best path using only acoustic model predictions, in the code Viterbi name is used) or the **beam-search decoding** with language model (LM) incorporated.
 
-### Greedy Path (`Test.cpp` -> `build/bin/fl_asr_test`)
-To get the greedy path, one should use the **Test binary** in the following way
+### Greedy Decoder
+It is implemented in the `Test.cpp` which is compiled into binary `build/bin/fl_asr_test`.
+To get the greedy decoder, one should use the **Test binary** in the following way
 
 ```sh
 build/bin/fl_asr_test \
@@ -442,7 +443,7 @@ build/bin/fl_asr_test \
   --test=path/to/test/list/file
 ```
 
-For this particular example, greedy paths will be computed on 10 random samples (`--maxload=10`) from the test list file and WER and LER will be printed on the screen. To run on all samples, set `--maxload=-1`.
+For this particular example, greedy decoder will be computed on 10 random samples (`--maxload=10`) from the test list file and WER and LER will be printed on the screen. To run on all samples, set `--maxload=-1`.
 
 While running the **Test binary**, the AM is loaded and all the saved flags will be used if you don’t specify them in the command line. For example, tokens and lexicon paths. So, in case you want to overwrite them, you should directly specify them:
 
@@ -475,7 +476,8 @@ Summarization on flags to run **Test binary**:
 |`uselexicon` |bool |`true` |`--uselexicon false` |N |Use or not lexicon for mapping between words and tokens sequence. In case of `false` flags `wordseparator` and `usewordpiece` are used to do mapping. |
 
 
-### Beam-search Decoders (`Decode.cpp` -> `build/bin/fl_asr_decode`)
+### Beam-search Decoders
+It is implemented in the `Decode.cpp` which is compiled into binary `build/bin/fl_asr_decode`.
 
 #### 1. Beam-search Decoder Types
 

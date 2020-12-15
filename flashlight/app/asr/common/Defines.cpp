@@ -17,114 +17,221 @@ namespace fl {
 namespace app {
 namespace asr {
 
+// Flags that are specific to an executable are marked
+// in the description with the executable usage in square parenthesis,
+// e.g. [test, decode]
+
 // DATA OPTIONS
-DEFINE_string(train, "", "comma-separated list of training data");
-DEFINE_string(valid, "", "comma-separated list of valid data");
-DEFINE_string(test, "", "comma-separated list of test data");
-DEFINE_int64(batchsize, 1, "batch size (per process in distributed training)");
+DEFINE_string(
+    train,
+    "",
+    "[train] Comma-separated list of training files where each row specifies sample "
+    "information in the format [sample_id audio_absolute_path size transcription]");
+DEFINE_string(
+    valid,
+    "",
+    "[train] Comma-separated list of validation files where each row specifies sample "
+    "information in the format [sample_id audio_absolute_path size transcription]");
+DEFINE_string(
+    test,
+    "",
+    "[test, decode] Comma-separated list of test files where each row specifies sample "
+    "information in the format [sample_id audio_absolute_path size transcription]");
+DEFINE_int64(
+    batchsize,
+    1,
+    "[train] Batch size for training data (per process in distributed training)");
 DEFINE_int64(
     validbatchsize,
     -1,
-    "batch size (per process in distributed training) for the valid data, if -1 then use train batchsize");
-DEFINE_string(input, "flac", "input feature");
-DEFINE_int64(samplerate, 16000, "sample rate (Hz)");
-DEFINE_int64(channels, 1, "number of input channels");
-DEFINE_string(tokens, "tokens.txt", "path/to/tokens");
-DEFINE_bool(usewordpiece, false, "use word piece as target");
+    "[train] Batch size for validation data (per process in distributed training). "
+    "If -1 then use the value of the 'batchsize' flag");
+DEFINE_int64(
+    samplerate,
+    16000,
+    "Sample rate (Hz) for training, validation and test audio data");
+DEFINE_int64(
+    channels,
+    1,
+    "Number of input channels in training, validation and test audio data");
+DEFINE_string(
+    tokens,
+    "tokens.txt",
+    "Tokens file path, the 'tokensdir' flag is used as a prefix for this path");
+DEFINE_bool(
+    usewordpiece,
+    false,
+    "Specify if a word separator can be used inside of a token. "
+    "Should be used if the SentencePiece tool is used to "
+    "construct a token set containing word-pieces");
 DEFINE_int64(
     replabel,
     0,
-    "replace up to replabel reptitions by additional classes");
-DEFINE_string(surround, "", "surround target with provided label");
-DEFINE_bool(noresample, false, "do not resample training data");
-DEFINE_bool(eostoken, false, "append target with end of sentence token");
+    "Replace up to replabel reptitions by additional token classes");
 DEFINE_string(
-    dataorder,
-    "input",
-    "bin method to use for binning samples, input: in order of length of \
-    input, input_spiral: binning using transcript(reference) length , \
-    and spiral along audiolength, output_spiral: binning using audio length and \
-    spiral along reference lenth");
-DEFINE_int64(inputbinsize, 100, "Bin size along audio length axis");
-DEFINE_int64(outputbinsize, 5, "Bin size along transcript length axis");
-DEFINE_bool(blobdata, false, "use blobs instead of folders as input data");
+    surround,
+    "",
+    "Surround target tokens sequence with provided token (duplicates are removed)");
+DEFINE_bool(
+    eostoken,
+    false,
+    "Add the eos (end of sentence) token into the token set and append target token sequences with it "
+    "at train, test, and decode time.");
 DEFINE_string(
     wordseparator,
     kSilToken,
-    "extra word boundaries to be inserted during target generation");
+    "Defines a word separator token used to map tokens sequences to words. "
+    "Defaults to a pre-defined value.");
 DEFINE_double(
     sampletarget,
     0.0,
-    "probability [0.0, 1.0] for randomly sampling targets from a lexicon if there are multiple mappings from a word");
+    "The probability [0.0, 1.0] with which targets are randomly sampled from a "
+    "lexicon if multiple token constructions exist for a given word");
 
 // FILTERING OPTIONS
-DEFINE_int64(minisz, 0, "min input size (in msec) allowed during training");
+DEFINE_int64(minisz, 0, "[DEPRECATED] Min audio samples size (in msec)");
 DEFINE_int64(
     maxisz,
     std::numeric_limits<int64_t>::max(),
-    "max input size (in msec) allowed during training");
+    "[DEPRECATED] Max audio samples size (in msec)");
 DEFINE_int64(
     maxtsz,
     std::numeric_limits<int64_t>::max(),
-    "max target size allowed during training");
-DEFINE_int64(mintsz, 0, "min target size allowed during training");
+    "[DEPRECATED] Max target size (in words)");
+DEFINE_int64(mintsz, 0, "[DEPRECATED] Min target size (in words)");
 
 // NORMALIZATION OPTIONS
-DEFINE_int64(localnrmlleftctx, 0, "left context size for local normalization");
+DEFINE_int64(
+    localnrmlleftctx,
+    0,
+    "Left context size for local normalization of input "
+    "audio after featurization (computation of MFCC, etc.)");
 DEFINE_int64(
     localnrmlrightctx,
     0,
-    "right context size for local normalization");
-DEFINE_string(onorm, "none", "output norm (none");
-DEFINE_bool(sqnorm, false, "use square-root while normalizing criterion loss");
-DEFINE_bool(lrcosine, false, "use cosine learning rate schedule");
+    "Right context size for local normalization of input "
+    "audio after featurization (computation of MFCC, etc.)");
+DEFINE_string(
+    onorm,
+    "none",
+    "[train] Criterion normalization mode. One of: "
+    "{'none' - no normalization, 'target' - by target size, "
+    "'input' - by input size}");
+DEFINE_bool(
+    sqnorm,
+    false,
+    "[train] Use square-root while normalizing criterion loss with 'onorm' mode");
+DEFINE_bool(
+    lrcosine,
+    false,
+    "[train] Use cosine learning rate schedule, see usage for more details");
 
 // LEARNING HYPER-PARAMETER OPTIONS
-DEFINE_int64(iter, std::numeric_limits<int64_t>::max(), "number of updates");
-DEFINE_bool(itersave, false, "save model at each iteration");
-DEFINE_double(lr, 1.0, "learning rate");
-DEFINE_double(momentum, 0.0, "momentum factor");
-DEFINE_double(weightdecay, 0.0, "weight decay (L2 penalty)");
-DEFINE_double(lrcrit, 0, "criterion learning rate");
-DEFINE_int64(warmup, 1, "the LR warmup parameter, in updates");
+DEFINE_int64(
+    iter,
+    std::numeric_limits<int64_t>::max(),
+    "[train] Total number of updates for training");
+DEFINE_bool(itersave, false, "Save model or not at each update");
+DEFINE_double(lr, 1.0, "[train] Learning rate for the network parameters");
+DEFINE_double(
+    momentum,
+    0.0,
+    "[train] Momentum factor used in SGD optimizer for network only");
+DEFINE_double(
+    weightdecay,
+    0.0,
+    "[train] Weight decay (L2 penalty) for optimization for network only");
+DEFINE_double(
+    lrcrit,
+    0,
+    "[train] Criterion learning rate (for 'asg', 'seq2seq' and 'transformer' criterions)");
+DEFINE_int64(
+    warmup,
+    1,
+    "[train] Number of updates for warmup learning rate from 0 to 'lr'/'lrcrit' for network/criterion");
 DEFINE_int64(
     saug_start_update,
     -1,
-    "Use SpecAugment starting at the update number inputted. -1 means no SpecAugment");
+    "[train] Use SpecAugment starting at the update number inputted. -1 means no SpecAugment. "
+    "In case of raw wav input ('mfcc', 'pow' and 'mfsc' are all false) "
+    "we apply RawSpecAugment which emulates behaviour of SpecAugment");
 DEFINE_int64(
     lr_decay,
     std::numeric_limits<int64_t>::max(),
-    "Epoch for the first LR decay");
+    "[train] Epoch value when we start to decay 'lr'/'lrcrit'");
 DEFINE_int64(
     lr_decay_step,
     std::numeric_limits<int64_t>::max(),
-    "Epochs for each new LR decay");
-DEFINE_double(maxgradnorm, 0, "Clip gradients at value (0 = no clipping)");
-DEFINE_double(adambeta1, 0.9, "beta1 in the Adam optimizer");
-DEFINE_double(adambeta2, 0.999, "beta2 in the Adam optimizer");
-DEFINE_double(optimrho, 0.9, "rho in the optimizer");
-DEFINE_double(optimepsilon, 1e-8, "epsilon in the optimizer");
+    "[train] Amount to decay 'lr' and 'lrcrit' starting from epoch 'lr_decay'");
+DEFINE_double(
+    maxgradnorm,
+    0,
+    "[train] Maximum gradient norm to which gradients exceeding it will be clipped (0 = no clipping)");
+DEFINE_double(
+    adambeta1,
+    0.9,
+    "[train] Beta1 parameter in the Adam, AMSGrad and NovoGrad optimizers");
+DEFINE_double(
+    adambeta2,
+    0.999,
+    "[train] Beta2 parameter in the Adam, AMSGrad and NovoGrad optimizers");
+DEFINE_double(
+    optimrho,
+    0.9,
+    "[train] Rho parameter in the RMSProp and Adadelta optimizers");
+DEFINE_double(
+    optimepsilon,
+    1e-8,
+    "[train] Epsilon parameter in the Adam, AMSGrad, NovoGrad, Adadelta, RMSProp and Adagrad optimizers");
 
 // LR-SCHEDULER OPTIONS
 DEFINE_int64(
     stepsize,
     std::numeric_limits<int64_t>::max(),
-    "We multiply LR by gamma every stepsize updates");
-DEFINE_double(gamma, 1.0, "the LR annealing multiplier");
+    "[train] Learning rate schedule if 'lrcosine=false'."
+    "We multiply 'lr'/'lrcrit' by 'gamma' every 'stepsize' updates");
+DEFINE_double(
+    gamma,
+    1.0,
+    "[train] Learning rate annealing multiplier, see detail in 'stepsize' flag");
 
 // OPTIMIZER OPTIONS
-DEFINE_string(netoptim, kSGDOptimizer, "optimizer for the network");
-DEFINE_string(critoptim, kSGDOptimizer, "optimizer for the criterion");
+DEFINE_string(
+    netoptim,
+    kSGDOptimizer,
+    "[train] Optimizer for the network, supported ones "
+    "'sgd', 'adam', 'rmsprop', 'adadelta', 'adagrad', 'amsgrad', 'novograd'");
+DEFINE_string(
+    critoptim,
+    kSGDOptimizer,
+    "[train] Optimizer for the criterion (for 'asg', 'seq2seq' and 'transformer' criterions), "
+    "supported ones 'sgd', 'adam', 'rmsprop', 'adadelta', 'adagrad', 'amsgrad', 'novograd'");
 
 // MFCC OPTIONS
-DEFINE_bool(mfcc, false, "use standard htk mfcc features as input");
-DEFINE_bool(pow, false, "use standard power spectrum as input");
-DEFINE_int64(mfcccoeffs, 13, "number of mfcc coefficients");
-DEFINE_bool(mfsc, false, "use standard mfsc features as input");
-DEFINE_double(melfloor, 1.0, "specify optional mel floor for mfcc/mfsc/pow");
-DEFINE_int64(filterbanks, 80, "Number of mel-filter bank channels");
+DEFINE_bool(
+    mfcc,
+    false,
+    "Use standard htk mfcc features as input by processing audio "
+    "(if 'mfcc', 'pow', 'mfsc' all false raw wave will be used as input)");
+DEFINE_int64(mfcccoeffs, 13, "Number of mfcc coefficients");
+DEFINE_bool(
+    pow,
+    false,
+    "Use standard power spectrum as input by processing audio "
+    "(if 'mfcc', 'pow', 'mfsc' all false raw wave will be used as input)");
+DEFINE_bool(
+    mfsc,
+    false,
+    "Use standard mfsc features as input "
+    "(if 'mfcc', 'pow', 'mfsc' all false raw wave will be used as input)");
+DEFINE_double(melfloor, 1.0, "Specify optional mel floor for mfcc/mfsc/pow");
+DEFINE_int64(
+    filterbanks,
+    80,
+    "Number of mel-filter bank channels, "
+    "used also with RawSpecAugment to define number of mel-scale bins");
 DEFINE_int64(devwin, 0, "Window length for delta and doubledelta derivatives");
-DEFINE_int64(fftcachesize, 1, "number of cached cuFFT plans in GPU memory");
+DEFINE_int64(fftcachesize, 1, "Number of cached cuFFT plans in GPU memory");
 DEFINE_int64(
     framesizems,
     25,
@@ -132,19 +239,41 @@ DEFINE_int64(
 DEFINE_int64(
     framestridems,
     10,
-    "Stride millisecond for power spectrum feature");
-DEFINE_int64(lowfreqfilterbank, 0, "low freq filter bank (Hz)");
-DEFINE_int64(highfreqfilterbank, -1, "high freq filter bank (Hz)");
+    "Stride in milliseconds for power spectrum features");
+DEFINE_int64(
+    lowfreqfilterbank,
+    0,
+    "Low freq filter bank (Hz). "
+    "Is used also in RawSpecAugment to define the lowest frequecny bound for augmentation");
+DEFINE_int64(
+    highfreqfilterbank,
+    -1,
+    "High freq filter bank (Hz). "
+    "Is used also in RawSpecAugment to define the highest frequecny bound for augmentation");
 
 // SPECAUGMENT OPTIONS
-DEFINE_int64(saug_fmaskf, 27, "Max number of frequency bands that are masked");
-DEFINE_int64(saug_fmaskn, 2, "Number of frequency masks");
-DEFINE_int64(saug_tmaskt, 100, "Max number of timesteps that are masked");
+DEFINE_int64(
+    saug_fmaskf,
+    27,
+    "[train] Maximum number of frequency bands / mel-scale bands "
+    "that are masked in SpecAugment/RawSpecAugment");
+DEFINE_int64(
+    saug_fmaskn,
+    2,
+    "[train] Number of frequency masks in SpecAugment/RawSpecAugment");
+DEFINE_int64(
+    saug_tmaskt,
+    100,
+    "[train] Maximum number of frames (input elements) that are masked in SpecAugment/RawSpecAugment");
 DEFINE_double(
     saug_tmaskp,
     1.0,
-    "Max proportion of the input sequence (1.0 is 100%) that can be masked in time");
-DEFINE_int64(saug_tmaskn, 2, "Number of time masks");
+    "[train] Maximum proportion of the input sequence (1.0 is 100%) "
+    "that can be masked in time for SpecAugment/RawSpecAugment");
+DEFINE_int64(
+    saug_tmaskn,
+    2,
+    "[train] Number of time masks in SpecAugment/RawSpecAugment");
 
 // SOUND EFFECTS AUGMENTATION OPTIONS
 DEFINE_string(
@@ -154,37 +283,45 @@ DEFINE_string(
     "applied to augment the input data.");
 
 // RUN OPTIONS
-DEFINE_string(datadir, "", "speech data directory");
-DEFINE_string(tokensdir, "", "dictionary directory");
-DEFINE_string(rundir, "", "experiment root directory");
-DEFINE_string(archdir, "", "arch root directory");
-DEFINE_string(flagsfile, "", "File specifying gflags");
-DEFINE_string(runname, "", "name of current run");
-DEFINE_int64(nthread, 1, "specify number of threads for data parallelization");
-DEFINE_int64(seed, 0, "Manually specify Arrayfire seed.");
+DEFINE_string(datadir, "", "Prefix to the 'train'/'valid'/'test' files paths");
+DEFINE_string(tokensdir, "", "Prefix to the tokens file path");
+DEFINE_string(rundir, "", "[train] Prefix to the 'runname' path");
+DEFINE_string(archdir, "", "[train] Prefix to the arch file");
+DEFINE_string(
+    flagsfile,
+    "",
+    "File specifying gflags, could specify only part of flags");
+DEFINE_string(
+    runname,
+    "",
+    "[train] Name of the experiment root directory where logs, snapshots will be stored");
 DEFINE_int64(
-    memstepsize,
-    10 * (1 << 20),
-    "Minimum allocation size in bytes per array.");
+    nthread,
+    1,
+    "[train] Number of threads for data parallelization (prefetching the data)");
+DEFINE_int64(
+    seed,
+    0,
+    "[train] Manually specify Arrayfire seed for reproducibility");
 DEFINE_int64(
     reportiters,
     0,
-    "number of iterations after which we will run val and save model, \
-    if 0 we only do this at end of epoch ");
+    "[train] Number of updates after which we will run evaluation on validation data \
+    and save model, if 0 we only do this at end of each epoch");
 DEFINE_double(
     pcttraineval,
     100,
-    "percentage of training set (by number of utts) to use for evaluation");
+    "[train] Percentage of training set (by number of utts) to use for evaluation");
 DEFINE_bool(
     fl_benchmark_mode,
     true,
-    "Sets flashlight benchmark mode, which dynamically "
+    "[train] Sets flashlight benchmark mode, which dynamically "
     "benchmarks various operations based on their empirical performance on "
     "current hardware throughout training");
 DEFINE_string(
     fl_optim_mode,
     "",
-    "Sets the flashlight optimization mode. "
+    "[train] Sets the flashlight optimization mode. "
     "Optim modes can be O1, O2, or O3.");
 DEFINE_string(
     fl_log_level,
@@ -197,188 +334,327 @@ DEFINE_int64(fl_vlog_level, 0, "Sets the verbose logging level");
 DEFINE_bool(
     fl_amp_use_mixed_precision,
     false,
-    "Use mixed precision for training - scale loss and gradients up and down "
+    "[train] Use mixed precision for training - scale loss and gradients up and down "
     "by a scale factor that changes over time. If no fl optim mode is "
     "specified with --fl_optim_mode when passing this flag, automatically "
     "sets the optim mode to O1.");
 DEFINE_double(
     fl_amp_scale_factor,
     4096.,
-    "Starting scale factor to use for loss scaling "
+    "[train] Starting scale factor to use for loss scaling "
     " with mixed precision training");
 DEFINE_uint64(
     fl_amp_scale_factor_update_interval,
     2000,
-    "Update interval for adjusting loss scaling in mixed precision training");
+    "[train] Update interval for adjusting loss scaling in mixed precision training");
 DEFINE_uint64(
     fl_amp_max_scale_factor,
     32000,
-    "Maximum value for the loss scale factor in mixed precision training");
+    "[train] Maximum value for the loss scale factor in mixed precision training");
 
 // ARCHITECTURE OPTIONS
-DEFINE_string(arch, "default", "network architecture");
-DEFINE_string(criterion, kAsgCriterion, "training criterion");
-DEFINE_int64(encoderdim, 0, "Dimension of encoded hidden state.");
+DEFINE_string(
+    arch,
+    "default",
+    "[train] Network architecture file path prefixed with 'archdir'");
+DEFINE_string(
+    criterion,
+    kAsgCriterion,
+    "[train] Training criterion to apply on top of network: 'asg', 'ctc', "
+    "'seq2seq' (seq2seq with attention rnn decoder), "
+    "'transformer' (seq2seq with attention and transfromer decoder)");
+DEFINE_int64(
+    encoderdim,
+    0,
+    "[train]: Dimension of encoded hidden state for 'seq2seq' and 'transformer' criterions");
 
 // Seq2Seq Transformer decoder
 DEFINE_int64(
     am_decoder_tr_layers,
     1,
-    "s2s transformer decoder: number of layers");
-DEFINE_double(am_decoder_tr_dropout, 0.0, "s2s transformer decoder: dropout");
+    "[train]: 'transformer' criterion decoder architecture: number of layers");
+DEFINE_double(
+    am_decoder_tr_dropout,
+    0.0,
+    "[train]: 'transformer' criterion decoder architecture: dropout");
 DEFINE_double(
     am_decoder_tr_layerdrop,
     0.0,
-    "s2s transformer decoder: layerdrop");
+    "[train]: 'transformer' criterion decoder architecture: layerdrop");
 
 // DECODER OPTIONS
 
-DEFINE_bool(show, false, "show predictions");
-DEFINE_bool(showletters, false, "show letter predictions");
-DEFINE_bool(logadd, false, "use logadd when merging decoder nodes");
-DEFINE_bool(uselexicon, true, "use lexicon in decoding");
-DEFINE_bool(isbeamdump, false, "dump the decoding beam");
+DEFINE_bool(show, false, "[test, decode] Show predictions in the stdout");
+DEFINE_bool(
+    showletters,
+    false,
+    "[decode] Show tokens predictions in the stdout");
+DEFINE_bool(
+    logadd,
+    false,
+    "[decode] Use logadd operation when merging decoder nodes");
+DEFINE_bool(
+    uselexicon,
+    true,
+    "[test, decode] Use lexicon file to map between words and tokens sequence");
+DEFINE_bool(isbeamdump, false, "[decode] Dump the decoding beam to the disk");
 
-DEFINE_string(smearing, "none", "none, max or logadd");
-DEFINE_string(lmtype, "kenlm", "kenlm, convlm");
-DEFINE_string(lexicon, "", "path/to/lexicon.txt");
-DEFINE_string(lm_vocab, "", "path/to/lm_vocab.txt");
-DEFINE_string(emission_dir, "", "path/to/emission_dir/");
-DEFINE_string(lm, "", "path/to/language_model");
-DEFINE_string(am, "", "path/to/acoustic_model");
-DEFINE_string(sclite, "", "path/to/sclite to be written");
-DEFINE_string(decodertype, "wrd", "wrd, tkn");
+DEFINE_string(
+    smearing,
+    "none",
+    "[decode] How to perform trie smearing to have proxy "
+    "on scores in the middle of a word: 'none', 'max' or 'logadd'");
+DEFINE_string(
+    lmtype,
+    "kenlm",
+    "[decode] Language model type used along with acoustic model: 'kenlm', 'convlm'");
+DEFINE_string(
+    lexicon,
+    "",
+    "path/to/lexicon.txt which contains on each row space separated mapping of a word into tokens sequence");
+DEFINE_string(
+    lm_vocab,
+    "",
+    "[decode] path/to/lm_vocab.txt for the 'convlm' language model: each token is mapped to its file row index");
+DEFINE_string(
+    emission_dir,
+    "",
+    "path/to/emission_dir/ where emissions data will be stored");
+DEFINE_string(lm, "", "[decode] path/to/language_model");
+DEFINE_string(
+    am,
+    "",
+    "path/to/acoustic_model, used also to continue and fork training");
+DEFINE_string(sclite, "", "[decode] path/to/sclite to be written");
+DEFINE_string(
+    decodertype,
+    "wrd",
+    "[decode] Defines at which level language model should be applied: 'wrd', 'tkn'");
 
-DEFINE_double(lmweight, 0.0, "language model weight");
-DEFINE_double(wordscore, 0.0, "word insertion score");
-DEFINE_double(silscore, 0.0, "silence insertion score");
+DEFINE_double(
+    lmweight,
+    0.0,
+    "[decode] language model weight in the beam search");
+DEFINE_double(
+    wordscore,
+    0.0,
+    "[decode] word insertion score for lexicon-based decoding");
+DEFINE_double(silscore, 0.0, "[decode] word separator insertion score");
 DEFINE_double(
     unkscore,
     -std::numeric_limits<float>::infinity(),
-    "unknown word insertion score");
-DEFINE_double(eosscore, 0.0, "EOS insertion score");
-DEFINE_double(beamthreshold, 25, "beam score threshold");
+    "[decode] unknown word insertion score");
+DEFINE_double(
+    eosscore,
+    0.0,
+    "[decode] End-of-sentence insertion score (for decoding of seq2seq with attention models)");
+DEFINE_double(
+    beamthreshold,
+    25,
+    "[decode] beam score threshold for early pruning of hypothesis");
 
-DEFINE_int32(maxload, -1, "max number of testing examples.");
-DEFINE_int32(maxword, -1, "maximum number of words to use");
-DEFINE_int32(beamsize, 2500, "max overall beam size");
-DEFINE_int32(beamsizetoken, 250000, "max beam for token selection");
-DEFINE_int32(nthread_decoder_am_forward, 1, "number of threads for AM forward");
-DEFINE_int32(nthread_decoder, 1, "number of threads for decoding");
+DEFINE_int32(
+    maxload,
+    -1,
+    "[test, decode] Maximum number of testing samples to process");
+DEFINE_int32(
+    maxword,
+    -1,
+    "Maximum number of words (rows) to use from the lexicon file");
+DEFINE_int32(beamsize, 2500, "[decode] Maximum overall beam size");
+DEFINE_int32(
+    beamsizetoken,
+    250000,
+    "[decode] Maximum beam for tokens selection");
+DEFINE_int32(
+    nthread_decoder_am_forward,
+    1,
+    "[test, decoder] Number of threads for acoustic model forward");
+DEFINE_int32(
+    nthread_decoder,
+    1,
+    "[decode] Number of threads for beam-search decoding");
 DEFINE_int32(
     lm_memory,
     5000,
-    "total memory size for batch during forward pass ");
+    "[decode] Total memory size for batch forming for 'convlm' LM forward pass");
 
-DEFINE_int32(emission_queue_size, 3000, "max size of emission queue");
+DEFINE_int32(
+    emission_queue_size,
+    3000,
+    "[test, decode] Maximum size of emission queue for acoustic model forward pass");
 
 DEFINE_double(
     smoothingtemperature,
     1.0,
-    "smoothening the probability distribution in seq2seq decoder");
+    "[train] Smoothening the probability distribution in seq2seq "
+    "decoder of 'seq2seq' and 'transformer' criterions");
 DEFINE_int32(
     attentionthreshold,
     std::numeric_limits<int>::max(),
-    "hard attention limit");
+    "[train] Hard attention limit in seq2seq decoder only for 'seq2seq' criterion");
 
 DEFINE_double(lmweight_low, 0.0, "language model weight (low boundary, search)");
 DEFINE_double(lmweight_high, 4.0, "language model weight (high boundary, search)");
 DEFINE_double(lmweight_step, 0.2, "language model weight (step, search)");
 
 // ASG OPTIONS
-DEFINE_int64(linseg, 0, "# of updates of LinSeg to init transitions for ASG");
-DEFINE_double(linlr, -1.0, "LinSeg learning rate (if < 0, use lr)");
+DEFINE_int64(
+    linseg,
+    0,
+    "[train] Number of updates of LinSeg to init transitions for ASG");
+DEFINE_double(
+    linlr,
+    -1.0,
+    "[train] LinSeg: learning rate for network parameters (if < 0, use lr)");
 DEFINE_double(
     linlrcrit,
     -1.0,
-    "LinSeg criterion learning rate (if < 0, use lrcrit)");
+    "[train] LinSeg criterion learning rate (if < 0, use lrcrit)");
 DEFINE_double(
     transdiag,
     0.0,
-    "Initial value along diagonal of ASG transition matrix");
+    "[train] 'asg' criterion: initial value along diagonal of ASG transition matrix");
 
 // SEQ2SEQ OPTIONS
-DEFINE_int64(maxdecoderoutputlen, 200, "max decoder steps during inference");
+DEFINE_int64(
+    maxdecoderoutputlen,
+    200,
+    "'seq2seq'/'transformer' criterion: max decoder steps during inference; "
+    "(for 'transformer' cannot be changed after initialization)");
 DEFINE_int64(
     pctteacherforcing,
     100,
-    "Percentage of steps to train using teacher forcing");
+    "[train] 'seq2seq'/'transformer' criterion: percentage of steps to train using teacher forcing");
 DEFINE_string(
     samplingstrategy,
     "rand",
-    "Sampling strategy to use when pctteacherforcing < 100. rand or model");
+    "[train] 'seq2seq'/'transformer' criterion: sampling strategy "
+    "to use when `pctteacherforcing` < 100. One of: {'rand', 'model'}");
 DEFINE_double(
     labelsmooth,
     0.0,
-    "Fraction to smooth targets with uniform distribution.");
-DEFINE_bool(inputfeeding, false, "feed encoder summary to the decoder RNN");
-DEFINE_string(attention, "content", "attention type");
-DEFINE_string(attnWindow, "no", "attention window type");
-DEFINE_int64(attndim, 0, "Dimension of neural location attention");
+    "[train] 'seq2seq'/'transformer' criterion: fraction to smooth targets with uniform distribution.");
+DEFINE_bool(
+    inputfeeding,
+    false,
+    "[train] 'seq2seq' criterion: feed encoder summary to the decoder RNN");
+DEFINE_string(
+    attention,
+    "content",
+    "[train] 'seq2seq'/'transformer' criterion: attention type in the encoder-decoder, "
+    "supported options: 'content', 'keyvalue', 'location', 'multi', 'multikv', 'multisplit', 'multikvsplit', "
+    "'neural', 'neuralloc', 'simpleloc'");
+DEFINE_string(
+    attnWindow,
+    "no",
+    "[train] 'seq2seq'/'transformer' criterion: attention window type in the encoder-decoder, "
+    "supported options: 'median', 'no', 'soft', 'softPretrain', 'step'");
+DEFINE_int64(
+    attndim,
+    0,
+    "[train] 'seq2seq'/'transformer' criterion: dimension of neural location attention");
 DEFINE_int64(
     attnconvchannel,
     0,
-    "Number of convolutional channels for location attention");
-DEFINE_int64(attnconvkernel, 0, "Kernel width for location attention");
-DEFINE_int64(numattnhead, 8, "number of heads for multihead attention");
-DEFINE_int64(leftWindowSize, 50, "left median window width");
-DEFINE_int64(rightWindowSize, 50, "right median window width");
+    "[train] 'seq2seq'/'transformer' criterion: "
+    "number of convolutional channels for location attention");
+DEFINE_int64(
+    attnconvkernel,
+    0,
+    "[train] 'seq2seq'/'transformer' criterion: kernel width for location attention");
+DEFINE_int64(
+    numattnhead,
+    8,
+    "[train] 'seq2seq'/'transformer' criterion: number of heads for multihead attention");
+DEFINE_int64(
+    leftWindowSize,
+    50,
+    "[train] 'seq2seq'/'transformer' criterion: left median window width");
+DEFINE_int64(
+    rightWindowSize,
+    50,
+    "[train] 'seq2seq'/'transformer' criterion: right median window width");
 DEFINE_int64(
     maxsil,
     50,
-    "maximum number of leading silence frames for the step window");
+    "[train] 'seq2seq'/'transformer' criterion: maximum number of "
+    "leading silence frames for the step window");
 DEFINE_int64(
     minsil,
     0,
-    "minimum number of leading silence frames for the step window");
+    "[train] 'seq2seq'/'transformer' criterion: minimum number of "
+    "leading silence frames for the step window");
 DEFINE_double(
     maxrate,
     10,
-    "maximum ratio between the transcript and the encoded input lengths for the step window");
+    "[train] 'seq2seq'/'transformer' criterion: maximum ratio between the transcript "
+    "and the encoded input lengths for the step window");
 DEFINE_double(
     minrate,
     3,
-    "minimum ratio between the transcript and the encoded input lengths for the step window");
+    "[train] 'seq2seq'/'transformer' criterion: minimum ratio between the "
+    "transcript and the encoded input lengths for the step window");
 DEFINE_int64(
     softwoffset,
     10,
-    "offset for the soft window center (= offset + step * rate)");
+    "[train] 'seq2seq'/'transformer' criterion: offset for the soft "
+    "window center (= offset + step * rate)");
 DEFINE_double(
     softwrate,
     5,
-    "moving rate for the soft window center (= offset + step * rate)");
+    "[train] 'seq2seq'/'transformer' criterion: moving "
+    "rate for the soft window center (= offset + step * rate)");
 DEFINE_double(
     softwstd,
     5,
-    "std for the soft window shape (=exp(-(t - center)^2 / (2 * std^2)))");
-DEFINE_bool(trainWithWindow, false, "use window in training");
+    "[train] 'seq2seq'/'transformer' criterion: std for the soft "
+    "window shape (=exp(-(t - center)^2 / (2 * std^2)))");
+DEFINE_bool(
+    trainWithWindow,
+    false,
+    "[train] 'seq2seq'/'transformer' criterion: use "
+    "force-aligned diagonal attention window during the whole training");
 DEFINE_int64(
     pretrainWindow,
     0,
-    "use window in training for pretrainWindow in updates");
-DEFINE_double(gumbeltemperature, 1.0, "temperature in gumbel softmax");
-DEFINE_int64(decoderrnnlayer, 1, "The number of decoder rnn layers.");
-DEFINE_int64(decoderattnround, 1, "The number of decoder attention rounds.");
-DEFINE_double(decoderdropout, 0.0, "decoder dropout");
+    "[train] 'seq2seq'/'transformer' criterion: use force-aligned diagonal attention window"
+    "in training for 'pretrainWindow' updates");
+DEFINE_double(
+    gumbeltemperature,
+    1.0,
+    "[train] 'seq2seq' criterion decoder: temperature in gumbel softmax");
+DEFINE_int64(
+    decoderrnnlayer,
+    1,
+    "[train] 'seq2seq' criterion decoder: the number of decoder rnn layers");
+DEFINE_int64(
+    decoderattnround,
+    1,
+    "[train] 'seq2seq' criterion decoder: the number of decoder attention rounds");
+DEFINE_double(
+    decoderdropout,
+    0.0,
+    "[train] 'seq2seq' criterion decoder: dropout");
 
 // DISTRIBUTED TRAINING
-DEFINE_bool(enable_distributed, false, "enable distributed training");
+DEFINE_bool(enable_distributed, false, "[train] Enable distributed training");
 DEFINE_int64(
     world_rank,
     0,
-    "rank of the process (Used if rndv_filepath is not empty)");
+    "[train] Rank of the process (Used if rndv_filepath is not empty)");
 DEFINE_int64(
     world_size,
     1,
-    "total number of the process (Used if rndv_filepath is not empty)");
+    "[train] Total number of the processes (Used if rndv_filepath is not empty)");
 DEFINE_int64(
     max_devices_per_node,
     8,
-    "the maximum number of devices per training node");
+    "[train] The maximum number of devices per training node");
 DEFINE_string(
     rndv_filepath,
     "",
-    "Shared file path used for setting up rendezvous."
+    "[train] Shared file path used for setting up rendezvous."
     "If empty, uses MPI to initialize.");
 
 // FB SPECIFIC
@@ -386,8 +662,7 @@ DEFINE_bool(everstoredb, false, "use Everstore db for reading data");
 DEFINE_bool(use_memcache, false, "use Memcache for reading data");
 
 namespace detail {
-
-/***************************** Deprecated Flags  *****************************/
+/***************************** Deprecated Flags *****************************/
 namespace {
 
 void registerDeprecatedFlags() {
