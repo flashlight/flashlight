@@ -30,7 +30,7 @@ class ReverbEcho : public SoundEffect {
     /**
      * probability of aapplying reverb.
      */
-    float proba_ = 0.5;
+    float proba_ = 1.0;
     /**
      * amplitude of the first echo as a fraction of the input signal. For each
      * sample, actually sampled from`[0, initial]`. Larger values means louder

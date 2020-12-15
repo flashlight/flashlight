@@ -39,10 +39,14 @@ namespace sfx {
 class AdditiveNoise : public SoundEffect {
  public:
   struct Config {
-    double ratio = 1.0;
-    double minSnr_ = 5;
+    /**
+     * probability of aapplying reverb.
+     */
+    float proba_ = 1.0;
+    double ratio_ = 1.0;
+    double minSnr_ = 0;
     double maxSnr_ = 30;
-    int nClipsMin_ = 0;
+    int nClipsMin_ = 1;
     int nClipsMax_ = 3;
     std::string listFilePath_;
     unsigned int randomSeed_ = std::mt19937::default_seed;
@@ -58,6 +62,7 @@ class AdditiveNoise : public SoundEffect {
  private:
   const AdditiveNoise::Config conf_;
   std::mt19937 randomEngine_;
+  std::uniform_real_distribution<float> randomProba_;
   std::uniform_int_distribution<> uniformDistribution_;
   std::uniform_int_distribution<> randomNumClipsPerUtterance_;
   std::uniform_real_distribution<> randomSnr_;
