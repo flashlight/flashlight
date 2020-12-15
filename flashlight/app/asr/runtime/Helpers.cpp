@@ -8,6 +8,7 @@
 #include "flashlight/app/asr/runtime/Helpers.h"
 
 #include <random>
+#include <utility>
 
 #include <glog/logging.h>
 
@@ -47,30 +48,6 @@ std::vector<std::string> afMatrixToStrings(const af::array& arr, T terminator) {
     result.emplace_back(row, row + len);
   }
   return result;
-}
-
-std::string newRunPath(
-    const std::string& root,
-    const std::string& runname /* = "" */,
-    const std::string& tag /* = "" */) {
-  std::string dir = "";
-  if (runname.empty()) {
-    auto dt = getCurrentDate();
-    std::string tm = getCurrentTime();
-    replaceAll(tm, ":", "-");
-    dir += (dt + "_" + tm + "_" + getEnvVar("HOSTNAME", "unknown_host") + "_");
-
-    // Unique hash based on config
-    auto hash = std::hash<std::string>{}(serializeGflags());
-    dir += std::to_string(hash);
-
-  } else {
-    dir += runname;
-  }
-  if (!tag.empty()) {
-    dir += "_" + tag;
-  }
-  return pathsConcat(root, dir);
 }
 
 std::string
@@ -219,6 +196,24 @@ std::shared_ptr<fl::Dataset> loadPrefetchDataset(
   }
   return dataset;
 }
+
+std::vector<std::pair<std::string, std::string>> parseValidSets(
+    const std::string& valid) {
+  auto validSets = fl::lib::split(',', fl::lib::trim(valid), true);
+  std::vector<std::pair<std::string, std::string>> validTagSets;
+  for (const auto& s : validSets) {
+    // assume the format is tag:filepath
+    auto ts = fl::lib::splitOnAnyOf(":", s);
+    if (ts.size() == 1) {
+      validTagSets.emplace_back(std::make_pair(s, s));
+    } else {
+      validTagSets.emplace_back(std::make_pair(ts[0], ts[1]));
+    }
+  }
+  return validTagSets;
+}
+
+
 
 } // namespace asr
 } // namespace app

@@ -215,7 +215,6 @@ DECLARE_string(archdir);
 DECLARE_string(flagsfile);
 DECLARE_string(runname);
 DECLARE_int64(nthread);
-DECLARE_string(tag);
 DECLARE_int64(seed);
 DECLARE_int64(memstepsize);
 DECLARE_int64(reportiters);
