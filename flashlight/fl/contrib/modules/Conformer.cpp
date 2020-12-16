@@ -99,9 +99,9 @@ Conformer::Conformer(
   add(wk_);
   add(wv_);
   add(wf_);
-  add(normMhsa_),
-      // conv module
-      add(conv1_);
+  add(normMhsa_);
+  // conv module
+  add(conv1_);
   add(conv2_);
   add(convDepthWise_);
   add(normConv1_);
