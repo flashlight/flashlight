@@ -9,8 +9,6 @@
 
 #include <iostream>
 
-#include "flashlight/app/asr/common/Defines.h"
-
 using fl::lib::text::Dictionary;
 using fl::lib::text::LexiconMap;
 using fl::lib::text::splitWrd;
