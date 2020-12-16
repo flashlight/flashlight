@@ -21,7 +21,6 @@
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/data/FeatureTransforms.h"
-#include "flashlight/app/asr/decoder/DecodeMaster.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/ext/common/DistributedUtils.h"
@@ -31,7 +30,6 @@
 #include "flashlight/fl/contrib/contrib.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/System.h"
-#include "flashlight/lib/text/decoder/lm/KenLM.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
 
@@ -45,22 +43,6 @@ using fl::lib::pathsConcat;
 
 using namespace fl::app::asr;
 
-namespace {
-void parseCmdLineFlagsWrapper(int argc, char** argv) {
-  LOG(INFO) << "Parsing command line flags";
-  gflags::ParseCommandLineFlags(&argc, &argv, false);
-  if (!FLAGS_flagsfile.empty()) {
-    LOG(INFO) << "Reading flags from file " << FLAGS_flagsfile;
-    gflags::ReadFromFlagsFile(FLAGS_flagsfile, argv[0], true);
-  }
-  gflags::ParseCommandLineFlags(&argc, &argv, false);
-  // Only new flags are re-serialized. Copy any values from deprecated flags to
-  // new flags when deprecated flags are present and corresponding new flags
-  // aren't
-  handleDeprecatedFlags();
-}
-} // namespace
-
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
@@ -69,75 +51,39 @@ int main(int argc, char** argv) {
   for (int i = 0; i < argc; i++) {
     argvs.emplace_back(argv[i]);
   }
-  gflags::SetUsageMessage(
-      "Usage: \n " + exec + " train [flags]\n or " + exec +
-      " continue [directory] [flags]\n or " + exec +
-      " fork [directory/model] [flags]");
+  gflags::SetUsageMessage("Usage: \n " + exec + " [model] [flags]");
 
   /* ===================== Parse Options ===================== */
   int runIdx = 1; // current #runs in this path
-  std::string runPath; // current experiment path
-  std::string reloadPath; // path to model to reload
-  std::string runStatus = argv[1];
+  std::string reloadPath = argv[1]; // path to model to reload
+  std::unordered_map<std::string, std::string> cfg;
   int64_t startEpoch = 0;
   int64_t startUpdate = 0;
   if (argc <= 1) {
     LOG(FATAL) << gflags::ProgramUsage();
   }
-  if (runStatus == kTrainMode) {
-    parseCmdLineFlagsWrapper(argc, argv);
-    runPath = pathsConcat(FLAGS_rundir, FLAGS_runname);
-  } else if (runStatus == kContinueMode) {
-    runPath = argv[2];
-    while (fileExists(getRunFile("model_last.bin", runIdx, runPath))) {
-      ++runIdx;
-    }
-    reloadPath = getRunFile("model_last.bin", runIdx - 1, runPath);
-    LOG(INFO) << "reload path is " << reloadPath;
-    std::unordered_map<std::string, std::string> cfg;
-    std::string version;
-    Serializer::load(reloadPath, version, cfg);
-    auto flags = cfg.find(kGflags);
-    if (flags == cfg.end()) {
-      LOG(FATAL) << "Invalid config loaded from " << reloadPath;
-    }
-    LOG(INFO) << "Reading flags from config file " << reloadPath;
-    gflags::ReadFlagsFromString(flags->second, gflags::GetArgv0(), true);
-    parseCmdLineFlagsWrapper(argc, argv);
-    auto epoch = cfg.find(kEpoch);
-    if (epoch == cfg.end()) {
-      LOG(WARNING) << "Did not find epoch to start from, starting from 0.";
-    } else {
-      startEpoch = std::stoi(epoch->second);
-    }
-    auto nbupdates = cfg.find(kUpdates);
-    if (nbupdates == cfg.end()) {
-      LOG(WARNING) << "Did not find #updates to start from, starting from 0.";
-    } else {
-      startUpdate = std::stoi(nbupdates->second);
-    }
-  } else if (runStatus == kForkMode) {
-    reloadPath = argv[2];
-    std::unordered_map<std::string, std::string> cfg;
-    std::string version;
-    Serializer::load(reloadPath, version, cfg);
-    auto flags = cfg.find(kGflags);
-    if (flags == cfg.end()) {
-      LOG(FATAL) << "Invalid config loaded from " << reloadPath;
-    }
-
-    LOG(INFO) << "Reading flags from config file " << reloadPath;
-    gflags::ReadFlagsFromString(flags->second, gflags::GetArgv0(), true);
-
-    parseCmdLineFlagsWrapper(argc, argv);
-    runPath = pathsConcat(FLAGS_rundir, FLAGS_runname);
-  } else {
-    LOG(FATAL) << gflags::ProgramUsage();
+  std::string version;
+  Serializer::load(reloadPath, version, cfg);
+  auto flags = cfg.find(kGflags);
+  if (flags == cfg.end()) {
+    LOG(FATAL) << "Invalid config loaded from " << reloadPath;
   }
 
-  if (runPath.empty()) {
-    LOG(FATAL) << "'runpath' specified by --rundir, --runname cannot be empty";
+  LOG(INFO) << "Reading flags from config file " << reloadPath;
+  gflags::ReadFlagsFromString(flags->second, gflags::GetArgv0(), true);
+
+  if (argc > 3) {
+    LOG(INFO) << "Parsing command line flags";
+    gflags::ParseCommandLineFlags(&argc, &argv, false);
   }
+
+  if (!FLAGS_flagsfile.empty()) {
+    LOG(INFO) << "Reading flags from file" << FLAGS_flagsfile;
+    gflags::ReadFromFlagsFile(FLAGS_flagsfile, argv[0], true);
+  }
+  gflags::ParseCommandLineFlags(&argc, &argv, false);
+  std::string runPath = pathsConcat(FLAGS_rundir, FLAGS_runname);
+  handleDeprecatedFlags();
 
   af::setSeed(FLAGS_seed);
   fl::DynamicBenchmark::setBenchmarkMode(FLAGS_fl_benchmark_mode);
@@ -187,29 +133,21 @@ int main(int argc, char** argv) {
       {kRunIdx, std::to_string(runIdx)},
       {kRunPath, runPath}};
 
-  std::vector<std::pair<std::string, std::string>> validTagSets =
-      parseValidSets(FLAGS_valid);
+  auto validTagSets = parseValidSets(FLAGS_valid);
 
   /* ===================== Create Dictionary & Lexicon ===================== */
   auto dictPath = pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
   if (dictPath.empty() || !fileExists(dictPath)) {
     throw std::runtime_error(
-        "Invalid dictionary filepath specified with "
-        "--tokensdir and --tokens: \"" +
+        "Invalid dictionary filepath specified with --tokensdir and --tokens: \"" +
         dictPath + "\"");
   }
   fl::lib::text::Dictionary tokenDict(dictPath);
-  // Setup-specific modifications
-  for (int64_t r = 1; r <= FLAGS_replabel; ++r) {
-    tokenDict.addEntry("<" + std::to_string(r) + ">");
+  if (FLAGS_criterion != kCtcCriterion) {
+    LOG(FATAL) << "Finetune binary works only with ctc criterion.";
   }
   // ctc expects the blank label last
-  if (FLAGS_criterion == kCtcCriterion) {
-    tokenDict.addEntry(kBlankToken);
-  }
-  if (FLAGS_eostoken) {
-    tokenDict.addEntry(fl::app::asr::kEosToken);
-  }
+  tokenDict.addEntry(kBlankToken);
 
   int numClasses = tokenDict.indexSize();
   LOG(INFO) << "Number of classes (network): " << numClasses;
@@ -306,130 +244,47 @@ int main(int argc, char** argv) {
 
   /* =========== Create Network & Optimizers / Reload Snapshot ============ */
   std::shared_ptr<fl::Module> network;
-  std::shared_ptr<SequenceCriterion> criterion;
-  std::shared_ptr<fl::FirstOrderOptimizer> netoptim;
-  std::shared_ptr<fl::FirstOrderOptimizer> critoptim;
-  std::shared_ptr<fl::lib::text::LM> lm;
-  std::shared_ptr<WordDecodeMaster> dm;
-
-  auto scalemode = getCriterionScaleMode(FLAGS_onorm, FLAGS_sqnorm);
-  if (runStatus == kTrainMode) {
-    auto archfile = pathsConcat(FLAGS_archdir, FLAGS_arch);
-    FL_LOG_MASTER(INFO) << "Loading architecture file from " << archfile;
-    // Encoder network, works on audio
-    if (fl::lib::endsWith(archfile, ".so")) {
-      network = fl::ext::ModulePlugin(archfile).arch(numFeatures, numClasses);
-    } else {
-      network =
-          fl::ext::buildSequentialModule(archfile, numFeatures, numClasses);
-    }
-
-    if (FLAGS_criterion == kCtcCriterion) {
-      criterion = std::make_shared<CTCLoss>(scalemode);
-    } else if (FLAGS_criterion == kAsgCriterion) {
-      criterion =
-          std::make_shared<ASGLoss>(numClasses, scalemode, FLAGS_transdiag);
-    } else if (FLAGS_criterion == kSeq2SeqCriterion) {
-      criterion = std::make_shared<Seq2SeqCriterion>(buildSeq2Seq(
-          numClasses, tokenDict.getIndex(fl::app::asr::kEosToken)));
-    } else if (FLAGS_criterion == kTransformerCriterion) {
-      criterion =
-          std::make_shared<TransformerCriterion>(buildTransformerCriterion(
-              numClasses,
-              FLAGS_am_decoder_tr_layers,
-              FLAGS_am_decoder_tr_dropout,
-              FLAGS_am_decoder_tr_layerdrop,
-              tokenDict.getIndex(fl::app::asr::kEosToken)));
-    } else {
-      LOG(FATAL) << "unimplemented criterion";
-    }
-  } else if (runStatus == kForkMode) {
-    std::unordered_map<std::string, std::string> cfg; // unused
-    std::string version;
-    Serializer::load(reloadPath, version, cfg, network, criterion);
-    if (version != FL_APP_ASR_VERSION) {
-      LOG(WARNING) << "Model version " << version << " and code version "
-                   << FL_APP_ASR_VERSION;
-    }
-  } else { // kContinueMode
-    std::unordered_map<std::string, std::string> cfg; // unused
-    std::string version;
-    Serializer::load(
-        reloadPath, version, cfg, network, criterion, netoptim, critoptim);
-    if (version != FL_APP_ASR_VERSION) {
-      LOG(WARNING) << "Model version " << version << " and code version "
-                   << FL_APP_ASR_VERSION;
-    }
+  auto archfile = pathsConcat(FLAGS_archdir, FLAGS_arch);
+  FL_LOG_MASTER(INFO) << "Loading architecture file from " << archfile;
+  // Encoder network, works on audio
+  if (fl::lib::endsWith(archfile, ".so")) {
+    network = fl::ext::ModulePlugin(archfile).arch(numFeatures, numClasses);
+  } else {
+    network = fl::ext::buildSequentialModule(archfile, numFeatures, numClasses);
   }
+
+  std::shared_ptr<fl::Module> forkingNetwork;
+  Serializer::load(reloadPath, version, cfg, forkingNetwork);
+  if (version != FL_APP_ASR_VERSION) {
+    LOG(WARNING) << "Model version " << version << " and code version "
+                 << FL_APP_ASR_VERSION;
+  }
+  // override params
+  if (forkingNetwork->params().size() != network->params().size()) {
+    LOG(FATAL)
+        << "Mismatch in # parameters for the model specificied by archfile and forking model.";
+  }
+  for (int i = 0; i < forkingNetwork->params().size(); ++i) {
+    if (network->param(i).dims() != forkingNetwork->param(i).dims()) {
+      LOG(FATAL) << "Mismatch in parameter dims for position " << i
+                 << ". Expected: " << network->param(i).dims()
+                 << " Got: " << forkingNetwork->param(i).dims();
+    }
+
+    network->setParams(forkingNetwork->param(i), i);
+  }
+
   FL_LOG_MASTER(INFO) << "[Network] " << network->prettyString();
   FL_LOG_MASTER(INFO) << "[Network Params: " << numTotalParams(network) << "]";
+
+  auto scalemode = getCriterionScaleMode(FLAGS_onorm, FLAGS_sqnorm);
+  std::shared_ptr<SequenceCriterion> criterion =
+      std::make_shared<CTCLoss>(scalemode);
   FL_LOG_MASTER(INFO) << "[Criterion] " << criterion->prettyString();
 
-  if (!FLAGS_lm.empty()) {
-    FL_LOG_MASTER(INFO) << "[Beam-search Decoder] Constructing language model "
-                           "and beam search decoder";
-    std::vector<float> dummyTransition;
-    if (FLAGS_decodertype == "wrd" && FLAGS_lmtype == "kenlm" &&
-        FLAGS_criterion == "ctc") {
-      lm = std::make_shared<fl::lib::text::KenLM>(FLAGS_lm, wordDict);
-      dm = std::make_shared<WordDecodeMaster>(
-          network,
-          lm,
-          dummyTransition,
-          tokenDict,
-          wordDict,
-          DecodeMasterTrainOptions{.repLabel = int32_t(FLAGS_replabel),
-                                   .wordSepIsPartOfToken = FLAGS_usewordpiece,
-                                   .surround = FLAGS_surround,
-                                   .wordSep = FLAGS_wordseparator,
-                                   .targetPadIdx = targetpadVal});
-    } else {
-      throw std::runtime_error(
-          "Other decoders are not supported yet during training");
-    }
-  }
-
-  if (runStatus == kTrainMode || runStatus == kForkMode) {
-    netoptim = initOptimizer(
-        {network}, FLAGS_netoptim, FLAGS_lr, FLAGS_momentum, FLAGS_weightdecay);
-    critoptim =
-        initOptimizer({criterion}, FLAGS_critoptim, FLAGS_lrcrit, 0.0, 0.0);
-  }
+  std::shared_ptr<fl::FirstOrderOptimizer> netoptim = initOptimizer(
+      {network}, FLAGS_netoptim, FLAGS_lr, FLAGS_momentum, FLAGS_weightdecay);
   FL_LOG_MASTER(INFO) << "[Network Optimizer] " << netoptim->prettyString();
-  FL_LOG_MASTER(INFO) << "[Criterion Optimizer] " << critoptim->prettyString();
-
-  double initLinNetlr = FLAGS_linlr >= 0.0 ? FLAGS_linlr : FLAGS_lr;
-  double initLinCritlr =
-      FLAGS_linlrcrit >= 0.0 ? FLAGS_linlrcrit : FLAGS_lrcrit;
-  std::shared_ptr<LinSegCriterion> linseg;
-  std::shared_ptr<fl::FirstOrderOptimizer> linNetoptim;
-  std::shared_ptr<fl::FirstOrderOptimizer> linCritoptim;
-  if (FLAGS_linseg > startUpdate) {
-    if (FLAGS_criterion != kAsgCriterion) {
-      LOG(FATAL) << "linseg may only be used with ASG criterion";
-    }
-    linseg = std::make_shared<LinSegCriterion>(numClasses, scalemode);
-    linseg->setParams(criterion->param(0), 0);
-    FL_LOG_MASTER(INFO) << "[Criterion] " << linseg->prettyString()
-                        << " (for first " << FLAGS_linseg - startUpdate
-                        << " updates)";
-
-    linNetoptim = initOptimizer(
-        {network},
-        FLAGS_netoptim,
-        initLinNetlr,
-        FLAGS_momentum,
-        FLAGS_weightdecay);
-    linCritoptim =
-        initOptimizer({linseg}, FLAGS_critoptim, initLinCritlr, 0.0, 0.0);
-
-    FL_LOG_MASTER(INFO) << "[Network Optimizer] " << linNetoptim->prettyString()
-                        << " (for first " << FLAGS_linseg - startUpdate
-                        << " updates)";
-    FL_LOG_MASTER(INFO) << "[Criterion Optimizer] "
-                        << linCritoptim->prettyString() << " (for first "
-                        << FLAGS_linseg - startUpdate << " updates)";
-  }
 
   /* ===================== Meters ===================== */
   TrainMeters meters;
@@ -441,15 +296,6 @@ int main(int argc, char** argv) {
   std::unordered_map<std::string, double> validminerrs;
   for (const auto& s : validTagSets) {
     validminerrs[s.first] = DBL_MAX;
-  }
-
-  std::unordered_map<std::string, double> validMinWerWithDecoder;
-  std::unordered_map<std::string, double> validWerWithDecoder;
-  if (dm) {
-    for (const auto& s : validTagSets) {
-      validMinWerWithDecoder[s.first] = DBL_MAX;
-      validWerWithDecoder[s.first] = DBL_MAX;
-    }
   }
 
   /* ===================== Logging ===================== */
@@ -469,16 +315,19 @@ int main(int argc, char** argv) {
   auto logStatus =
       [&logFile, isMaster](
           TrainMeters& mtrs,
-          std::unordered_map<std::string, double>& validWerWithDecoder,
           int64_t epoch,
           int64_t nupdates,
-          double lr,
-          double lrcrit) {
+          double lr) {
         syncMeter(mtrs);
 
         if (isMaster) {
           auto logMsg = getLogString(
-              mtrs, validWerWithDecoder, epoch, nupdates, lr, lrcrit);
+                            mtrs,
+                            {},
+                            epoch,
+                            nupdates,
+                            lr,
+                            0 /* lrcrit */);
           FL_LOG_MASTER(INFO) << logMsg;
           appendToLog(logFile, logMsg);
         }
@@ -495,25 +344,13 @@ int main(int argc, char** argv) {
         filename =
             getRunFile(format("model_iter_%03d.bin", iter), runIdx, runPath);
         Serializer::save(
-            filename,
-            FL_APP_ASR_VERSION,
-            config,
-            network,
-            criterion,
-            netoptim,
-            critoptim);
+            filename, FL_APP_ASR_VERSION, config, network, criterion, netoptim);
       }
 
       // save last model
       filename = getRunFile("model_last.bin", runIdx, runPath);
       Serializer::save(
-          filename,
-          FL_APP_ASR_VERSION,
-          config,
-          network,
-          criterion,
-          netoptim,
-          critoptim);
+          filename, FL_APP_ASR_VERSION, config, network, criterion, netoptim);
 
       // save if better than ever for one valid
       for (const auto& v : validminerrs) {
@@ -524,34 +361,10 @@ int main(int argc, char** argv) {
           std::string vfname =
               getRunFile("model_" + cleaned_v + ".bin", runIdx, runPath);
           Serializer::save(
-              vfname,
-              FL_APP_ASR_VERSION,
-              config,
-              network,
-              criterion,
-              netoptim,
-              critoptim);
+              vfname, FL_APP_ASR_VERSION, config, network, criterion, netoptim);
         }
       }
 
-      // save if better than ever for one valid with lm decoding
-      for (const auto& v : validMinWerWithDecoder) {
-        double verr = validWerWithDecoder[v.first];
-        if (verr < validMinWerWithDecoder[v.first]) {
-          validMinWerWithDecoder[v.first] = verr;
-          std::string cleaned_v = cleanFilepath(v.first);
-          std::string vfname = getRunFile(
-              "model_" + cleaned_v + "_decoder.bin", runIdx, runPath);
-          Serializer::save(
-              vfname,
-              FL_APP_ASR_VERSION,
-              config,
-              network,
-              criterion,
-              netoptim,
-              critoptim);
-        }
-      }
       // print brief stats on memory allocation (so far)
       auto* curMemMgr =
           fl::MemoryManagerInstaller::currentlyInstalledMemoryManager();
@@ -606,87 +419,18 @@ int main(int argc, char** argv) {
     }
   };
 
-  auto test = [&evalOutput, &dm, &lexicon](
+  auto test = [&evalOutput](
                   std::shared_ptr<fl::Module> ntwrk,
                   std::shared_ptr<SequenceCriterion> crit,
                   std::shared_ptr<fl::Dataset> validds,
-                  DatasetMeters& mtrs,
-                  double& dmErr) {
+                  DatasetMeters& mtrs) {
     ntwrk->eval();
-    crit->eval();
     mtrs.tknEdit.reset();
     mtrs.wrdEdit.reset();
     mtrs.loss.reset();
 
     auto curValidset = loadPrefetchDataset(
         validds, FLAGS_nthread, false /* shuffle */, 0 /* seed */);
-
-    if (dm) {
-      fl::TimeMeter timer;
-      timer.resume();
-      FL_LOG_MASTER(INFO) << "[Beam-search decoder]   * DM: compute emissions";
-      auto eds = dm->forward(curValidset);
-      FL_LOG_MASTER(INFO) << "[Beam-search decoder]   * DM: decode";
-      std::vector<double> lmweights;
-      for (double lmweight = FLAGS_lmweight_low;
-           lmweight <= FLAGS_lmweight_high;
-           lmweight += FLAGS_lmweight_step) {
-        lmweights.push_back(lmweight);
-      }
-      std::vector<std::vector<int64_t>> wordEditDst(lmweights.size());
-      std::vector<std::thread> threads;
-      for (int i = 0; i < lmweights.size(); i++) {
-        threads.push_back(
-            std::thread([&lmweights, &wordEditDst, dm, eds, &lexicon, i]() {
-              double lmweight = lmweights[i];
-              DecodeMasterLexiconOptions opt = {
-                  .beamSize = FLAGS_beamsize,
-                  .beamSizeToken = FLAGS_beamsizetoken,
-                  .beamThreshold = FLAGS_beamthreshold,
-                  .lmWeight = lmweight,
-                  .silScore = FLAGS_silscore,
-                  .wordScore = FLAGS_wordscore,
-                  .unkScore = FLAGS_unkscore,
-                  .logAdd = FLAGS_logadd,
-                  .silToken = FLAGS_wordseparator,
-                  .blankToken = kBlankToken,
-                  .unkToken = fl::lib::text::kUnkToken,
-                  .smearMode =
-                      (FLAGS_smearing == "max"
-                           ? fl::lib::text::SmearingMode::MAX
-                           : fl::lib::text::SmearingMode::NONE)};
-              auto pds = dm->decode(eds, lexicon, opt);
-              // return token distance and word distance stats
-              wordEditDst[i] = dm->computeMetrics(pds).second;
-            }));
-      }
-      for (auto& thread : threads) {
-        thread.join();
-      }
-      dmErr = DBL_MAX;
-      for (int i = 0; i < lmweights.size(); i++) {
-        af::array currentEditDist =
-            af::constant((long long)(wordEditDst[i][0]), af::dim4(1, 1, 1, 1));
-        af::array currentTokens =
-            af::constant((long long)(wordEditDst[i][1]), af::dim4(1, 1, 1, 1));
-        if (FLAGS_enable_distributed) {
-          fl::allReduce(currentEditDist);
-          fl::allReduce(currentTokens);
-        }
-        double wer = (double)currentEditDist.scalar<long long>() /
-            currentTokens.scalar<long long>() * 100.0;
-        FL_LOG_MASTER(INFO)
-            << "[Beam-search decoder]   * DM: lmweight=" << lmweights[i]
-            << " WER: " << wer;
-        dmErr = std::min(dmErr, wer);
-      }
-      FL_LOG_MASTER(INFO) << "[Beam-search decoder]   * DM: done with best WER "
-                          << dmErr;
-      timer.stop();
-      FL_LOG_MASTER(INFO)
-          << "[Beam-search decoder] time spent on grid-search for decoding: "
-          << timer.value() << "s";
-    }
 
     for (auto& batch : *curValidset) {
       auto output = fl::ext::forwardSequentialModuleWithPadMask(
@@ -702,7 +446,6 @@ int main(int argc, char** argv) {
   int64_t curEpoch = startEpoch;
 
   auto train = [&meters,
-                &validWerWithDecoder,
                 &test,
                 &logStatus,
                 &saveModels,
@@ -715,14 +458,10 @@ int main(int argc, char** argv) {
                    std::shared_ptr<SequenceCriterion> crit,
                    std::shared_ptr<fl::Dataset> trainset,
                    std::shared_ptr<fl::FirstOrderOptimizer> netopt,
-                   std::shared_ptr<fl::FirstOrderOptimizer> critopt,
                    double initlr,
-                   double initcritlr,
-                   bool clampCrit,
                    int64_t nbatches) {
     if (reducer) {
       fl::distributeModuleGrads(ntwrk, reducer);
-      fl::distributeModuleGrads(crit, reducer);
     }
 
     meters.train.loss.reset();
@@ -731,31 +470,16 @@ int main(int argc, char** argv) {
 
     std::shared_ptr<fl::Module> saug;
     if (FLAGS_saug_start_update >= 0) {
-      if (!(FLAGS_pow || FLAGS_mfsc || FLAGS_mfcc)) {
-        saug = std::make_shared<fl::RawWavSpecAugment>(
-            FLAGS_filterbanks,
-            FLAGS_saug_fmaskf,
-            FLAGS_saug_fmaskn,
-            FLAGS_saug_tmaskt,
-            FLAGS_saug_tmaskp,
-            FLAGS_saug_tmaskn,
-            FLAGS_filterbanks,
-            FLAGS_lowfreqfilterbank,
-            FLAGS_highfreqfilterbank,
-            FLAGS_samplerate);
-      } else {
-        saug = std::make_shared<fl::SpecAugment>(
-            FLAGS_filterbanks,
-            FLAGS_saug_fmaskf,
-            FLAGS_saug_fmaskn,
-            FLAGS_saug_tmaskt,
-            FLAGS_saug_tmaskp,
-            FLAGS_saug_tmaskn);
-      }
+      saug = std::make_shared<fl::SpecAugment>(
+          FLAGS_filterbanks,
+          FLAGS_saug_fmaskf,
+          FLAGS_saug_fmaskn,
+          FLAGS_saug_tmaskt,
+          FLAGS_saug_tmaskp,
+          FLAGS_saug_tmaskn);
     }
 
     fl::allReduceParameters(ntwrk);
-    fl::allReduceParameters(crit);
 
     auto resetTimeStatMeters = [&meters]() {
       meters.runtime.reset();
@@ -769,8 +493,7 @@ int main(int argc, char** argv) {
     };
     auto runValAndSaveModel = [&](int64_t totalEpochs,
                                   int64_t totalUpdates,
-                                  double lr,
-                                  double lrcrit) {
+                                  double lr) {
       meters.runtime.stop();
       meters.timer.stop();
       meters.sampletimer.stop();
@@ -781,17 +504,12 @@ int main(int argc, char** argv) {
 
       // valid
       for (auto& vds : validds) {
-        double decodedWer;
-        test(ntwrk, crit, vds.second, meters.valid[vds.first], decodedWer);
-        if (validWerWithDecoder.find(vds.first) != validWerWithDecoder.end()) {
-          validWerWithDecoder[vds.first] = decodedWer;
-        }
+        test(ntwrk, crit, vds.second, meters.valid[vds.first]);
       }
 
       // print status
       try {
-        logStatus(
-            meters, validWerWithDecoder, totalEpochs, totalUpdates, lr, lrcrit);
+        logStatus(meters, totalEpochs, totalUpdates, lr);
       } catch (const std::exception& ex) {
         LOG(ERROR) << "Error while writing logs: " << ex.what();
       }
@@ -822,7 +540,6 @@ int main(int argc, char** argv) {
           (epochsAfterDecay < 0 ? 0
                                 : 1 + epochsAfterDecay / FLAGS_lr_decay_step));
       ntwrk->train();
-      crit->train();
       if (FLAGS_reportiters == 0) {
         resetTimeStatMeters();
       }
@@ -848,9 +565,6 @@ int main(int argc, char** argv) {
         }
         netopt->setLr(
             initlr * lrDecayScale * lrScheduleScale *
-            std::min(curBatch / double(FLAGS_warmup), 1.0));
-        critopt->setLr(
-            initcritlr * lrDecayScale * lrScheduleScale *
             std::min(curBatch / double(FLAGS_warmup), 1.0));
         af::sync();
         meters.timer.incUnit();
@@ -918,7 +632,6 @@ int main(int argc, char** argv) {
           // backward
           meters.bwdtimer.resume();
           netopt->zeroGrad();
-          critopt->zeroGrad();
           loss.backward();
           if (reducer) {
             reducer->finalize();
@@ -956,27 +669,16 @@ int main(int argc, char** argv) {
 
           meters.train.loss.add((loss / scaleFactor).array());
 
-          for (const auto& p : crit->params()) {
-            if (!p.isGradAvailable()) {
-              continue;
-            }
-            p.grad() = p.grad() / (FLAGS_batchsize * scaleFactor);
-          }
-
         } while (retrySample);
 
         // clamp gradients
         if (FLAGS_maxgradnorm > 0) {
           auto params = ntwrk->params();
-          if (clampCrit) {
-            auto critparams = crit->params();
-            params.insert(params.end(), critparams.begin(), critparams.end());
-          }
+
           fl::clipGradNorm(params, FLAGS_maxgradnorm);
         }
 
         // update weights
-        critopt->step();
         netopt->step();
         af::sync();
         meters.optimtimer.stopAndIncUnit();
@@ -997,11 +699,9 @@ int main(int argc, char** argv) {
         meters.sampletimer.resume();
 
         if (FLAGS_reportiters > 0 && curBatch % FLAGS_reportiters == 0) {
-          runValAndSaveModel(
-              curEpoch, curBatch, netopt->getLr(), critopt->getLr());
+          runValAndSaveModel(curEpoch, curBatch, netopt->getLr());
           resetTimeStatMeters();
           ntwrk->train();
-          crit->train();
           meters.sampletimer.resume();
           meters.runtime.resume();
           meters.timer.resume();
@@ -1012,64 +712,14 @@ int main(int argc, char** argv) {
       }
       af::sync();
       if (FLAGS_reportiters == 0) {
-        runValAndSaveModel(
-            curEpoch, curBatch, netopt->getLr(), critopt->getLr());
+        runValAndSaveModel(curEpoch, curBatch, netopt->getLr());
       }
     }
   };
 
   /* ===================== Train ===================== */
-  if (FLAGS_linseg - startUpdate > 0) {
-    train(
-        network,
-        linseg,
-        trainds,
-        linNetoptim,
-        linCritoptim,
-        initLinNetlr,
-        initLinCritlr,
-        false /* clampCrit */,
-        FLAGS_linseg - startUpdate);
 
-    startUpdate = FLAGS_linseg;
-    FL_LOG_MASTER(INFO) << "Finished LinSeg";
-  }
-
-  auto s2s = std::dynamic_pointer_cast<Seq2SeqCriterion>(criterion);
-  auto trde = std::dynamic_pointer_cast<TransformerCriterion>(criterion);
-  if (FLAGS_pretrainWindow - startUpdate > 0) {
-    if (!s2s && !trde) {
-      LOG(FATAL) << "Window pretraining only allowed for seq2seq.";
-    }
-    train(
-        network,
-        criterion,
-        trainds,
-        netoptim,
-        critoptim,
-        FLAGS_lr,
-        FLAGS_lrcrit,
-        true,
-        FLAGS_pretrainWindow - startUpdate);
-    startUpdate = FLAGS_pretrainWindow;
-    FL_LOG_MASTER(INFO) << "Finished window pretraining.";
-  }
-  if (s2s) {
-    s2s->clearWindow();
-  } else if (trde) {
-    trde->clearWindow();
-  }
-
-  train(
-      network,
-      criterion,
-      trainds,
-      netoptim,
-      critoptim,
-      FLAGS_lr,
-      FLAGS_lrcrit,
-      true /* clampCrit */,
-      FLAGS_iter);
+  train(network, criterion, trainds, netoptim, FLAGS_lr, FLAGS_iter);
 
   FL_LOG_MASTER(INFO) << "Finished training";
   return 0;
