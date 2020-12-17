@@ -389,9 +389,9 @@ TEST(ModuleTest, RNNFwd) {
   int seq_length = 6;
 
   auto in = Variable(
-      af::randu(input_size, batch_size, seq_length, af::dtype::f64), true);
+      af::randu(input_size, batch_size, seq_length, af::dtype::f32), true);
   size_t n_params = 51;
-  auto w = Variable(af::randu(1, 1, n_params, af::dtype::f64), true);
+  auto w = Variable(af::randu(1, 1, n_params, af::dtype::f32), true);
   for (int i = 0; i < in.elements(); ++i) {
     in.array()(i) = (i + 1) * 0.01;
   }
@@ -405,7 +405,7 @@ TEST(ModuleTest, RNNFwd) {
   af::dim4 expected_dims(3, 5, 6);
   ASSERT_EQ(out.dims(), expected_dims);
   // Calculated from Lua Torch Cudnn implementation
-  std::array<double, 90> expected_out = {
+  std::array<float, 90> expected_out = {
       1.5418,  1.6389,  1.7361,  1.5491,  1.6472,  1.7452,  1.5564,  1.6554,
       1.7544,  1.5637,  1.6637,  1.7636,  1.5710,  1.6719,  1.7728,  3.4571,
       3.7458,  4.0345,  3.4761,  3.7670,  4.0578,  3.4951,  3.7881,  4.0812,
@@ -418,6 +418,80 @@ TEST(ModuleTest, RNNFwd) {
       11.2203, 12.2543, 13.2882, 13.9432, 15.2333, 16.5233, 14.0291, 15.3277,
       16.6263, 14.1149, 15.4221, 16.7292, 14.2008, 15.5165, 16.8322, 14.2866,
       15.6109, 16.9351};
+
+  auto expected_outVar =
+      Variable(af::array(expected_dims, expected_out.data()), true);
+  ASSERT_TRUE(allClose(out, expected_outVar, 1E-4));
+}
+
+TEST(ModuleTest, LSTMFwd) {
+  auto mode = RnnMode::LSTM;
+  int num_layers = 4;
+  int hidden_size = 5;
+  int input_size = 3;
+  int batch_size = 2;
+  int seq_length = 2;
+
+  auto in = Variable(
+      af::randu(input_size, batch_size, seq_length, af::dtype::f32), true);
+  size_t n_params = 920;
+  auto w = Variable(af::randu(1, 1, n_params, af::dtype::f32), true);
+
+  for (int i = 0; i < in.elements(); ++i) {
+    in.array()(i) = (i + 1) * 0.001;
+  }
+  for (int i = 0; i < w.elements(); ++i) {
+    w.array()(i) = (i + 1) * 0.001;
+  }
+
+  auto rnn = RNN(input_size, hidden_size, num_layers, mode);
+  rnn.setParams(w, 0);
+
+  auto out = rnn(in);
+  af::dim4 expected_dims(5, 2, 2);
+  ASSERT_EQ(out.dims(), expected_dims);
+  // Calculated from Lua Torch Cudnn implementation
+  std::array<float, 20> expected_out = {0.7390, 0.7395, 0.7399, 0.7403, 0.7407,
+                                        0.7390, 0.7395, 0.7399, 0.7403, 0.7407,
+                                        0.9617, 0.9618, 0.9619, 0.9619, 0.962,
+                                        0.9617, 0.9618, 0.9619, 0.9619, 0.962};
+
+  auto expected_outVar =
+      Variable(af::array(expected_dims, expected_out.data()), true);
+  ASSERT_TRUE(allClose(out, expected_outVar, 1E-4));
+}
+
+TEST(ModuleTest, GRUFwd) {
+  auto mode = RnnMode::GRU;
+  int num_layers = 4;
+  int hidden_size = 5;
+  int input_size = 3;
+  int batch_size = 2;
+  int seq_length = 2;
+
+  auto in = Variable(
+      af::randu(input_size, batch_size, seq_length, af::dtype::f32), true);
+  size_t n_params = 690;
+  auto w = Variable(af::randu(1, 1, n_params, af::dtype::f32), true);
+
+  for (int i = 0; i < in.elements(); ++i) {
+    in.array()(i) = (i + 1) * 0.001;
+  }
+  for (int i = 0; i < w.elements(); ++i) {
+    w.array()(i) = (i + 1) * 0.001;
+  }
+
+  auto rnn = RNN(input_size, hidden_size, num_layers, mode);
+  rnn.setParams(w, 0);
+
+  auto out = rnn(in);
+  af::dim4 expected_dims(5, 2, 2);
+  ASSERT_EQ(out.dims(), expected_dims);
+  // Calculated from Lua Torch Cudnn implementation
+  std::array<float, 20> expected_out = {0.1430, 0.1425, 0.1419, 0.1413, 0.1408,
+                                        0.1430, 0.1425, 0.1419, 0.1413, 0.1408,
+                                        0.2206, 0.2194, 0.2181, 0.2168, 0.2155,
+                                        0.2206, 0.2194, 0.2181, 0.2168, 0.2155};
 
   auto expected_outVar =
       Variable(af::array(expected_dims, expected_out.data()), true);
