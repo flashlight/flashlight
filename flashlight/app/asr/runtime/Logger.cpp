@@ -38,7 +38,6 @@ std::string getLogString(
     val = key + ": " + val;
     status = status + (status.empty() ? "" : separator) + val;
   };
-  insertItem("timestamp", getCurrentDate() + " " + getCurrentTime());
   insertItem("epoch", format("%8d", epoch));
   insertItem("nupdates", format("%12d", nupdates));
   insertItem("lr", format("%4.6lf", lr));
@@ -93,6 +92,7 @@ std::string getLogString(
   insertItem(
       "thrpt(sec/sec)",
       timeTakenSec > 0.0 ? format("%.2f", audioProcSec / timeTakenSec) : "n/a");
+  insertItem("timestamp", getCurrentDate() + " " + getCurrentTime());
   return status;
 }
 
