@@ -802,7 +802,11 @@ Variable gatedlinearunit(const Variable& input, const int dim);
  * \f]
  * where \f$h_t\f$, \f$c_t\f$ are the hidden/cell state at time \f$t\f$,
  * \f$x_t\f$ is the input at time \f$t\f$
-
+ *
+ * \note{cuDNN and oneDNN RNN weights are incompatible since the structure of
+ * the computation is different for each. There is no mapping between weights
+ * from each of those backends.}
+ *
  * @param input Variable of input with shape [input size, batch size, sequence
  * length]
  * @param hiddenState Variable of hidden state with shape [hidden size, batch
