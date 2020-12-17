@@ -13,6 +13,7 @@ target_sources(
 
 if (FL_LIBRARIES_USE_KENLM)
   find_package(kenlm REQUIRED)
+  setup_install_find_module(${CMAKE_MODULE_PATH}/Findkenlm.cmake)
 
   # Required for KenLM to read ARPA files in compressed format
   find_package(LibLZMA)

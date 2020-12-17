@@ -15,6 +15,8 @@ namespace fl {
 namespace lib {
 namespace text {
 
+KenLMState::KenLMState() : ken_(std::make_unique<lm::ngram::State>()) {}
+
 KenLM::KenLM(const std::string& path, const Dictionary& usrTknDict) {
   // Load LM
   model_.reset(lm::ngram::LoadVirtual(path.c_str()));
