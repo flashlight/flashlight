@@ -89,18 +89,6 @@ DEFINE_double(
     "The probability [0.0, 1.0] with which targets are randomly sampled from a "
     "lexicon if multiple token constructions exist for a given word");
 
-// FILTERING OPTIONS
-DEFINE_int64(minisz, 0, "[DEPRECATED] Min audio samples size (in msec)");
-DEFINE_int64(
-    maxisz,
-    std::numeric_limits<int64_t>::max(),
-    "[DEPRECATED] Max audio samples size (in msec)");
-DEFINE_int64(
-    maxtsz,
-    std::numeric_limits<int64_t>::max(),
-    "[DEPRECATED] Max target size (in words)");
-DEFINE_int64(mintsz, 0, "[DEPRECATED] Min target size (in words)");
-
 // NORMALIZATION OPTIONS
 DEFINE_int64(
     localnrmlleftctx,
@@ -285,17 +273,11 @@ DEFINE_string(
 
 // RUN OPTIONS
 DEFINE_string(datadir, "", "Prefix to the 'train'/'valid'/'test' files paths");
-DEFINE_string(tokensdir, "", "Prefix to the tokens file path");
-DEFINE_string(rundir, "", "[train] Prefix to the 'runname' path");
-DEFINE_string(archdir, "", "[train] Prefix to the arch file");
+DEFINE_string(rundir, "", "[train] Name of the experiment root directory where logs, snapshots will be stored");
 DEFINE_string(
     flagsfile,
     "",
     "File specifying gflags, could specify only part of flags");
-DEFINE_string(
-    runname,
-    "",
-    "[train] Name of the experiment root directory where logs, snapshots will be stored");
 DEFINE_int64(
     nthread,
     1,

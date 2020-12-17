@@ -35,6 +35,7 @@
 
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/criterion/criterion.h"
+#include "flashlight/app/asr/data/FeatureTransforms.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/ext/common/Serializer.h"
@@ -118,7 +119,7 @@ int main(int argc, char** argv) {
   LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */
-  auto dictPath = fl::lib::pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
+  auto dictPath = FLAGS_tokens;
   if (dictPath.empty() || !fileExists(dictPath)) {
     throw std::runtime_error(
         "Invalid dictionary filepath specified " + dictPath);
@@ -153,7 +154,65 @@ int main(int argc, char** argv) {
   text::DictionaryMap dicts = {{kTargetIdx, tokenDict}, {kWordIdx, wordDict}};
 
   /* ===================== Create Dataset ===================== */
-  auto ds = createDataset(FLAGS_test, dicts, lexicon, 1, 0, 1);
+    fl::lib::audio::FeatureParams featParams(
+      FLAGS_samplerate,
+      FLAGS_framesizems,
+      FLAGS_framestridems,
+      FLAGS_filterbanks,
+      FLAGS_lowfreqfilterbank,
+      FLAGS_highfreqfilterbank,
+      FLAGS_mfcccoeffs,
+      kLifterParam /* lifterparam */,
+      FLAGS_devwin /* delta window */,
+      FLAGS_devwin /* delta-delta window */);
+  featParams.useEnergy = false;
+  featParams.usePower = false;
+  featParams.zeroMeanFrame = false;
+  int numFeatures = -1;
+  FeatureType featType = FeatureType::NONE;
+  if (FLAGS_pow) {
+    featType = FeatureType::POW_SPECTRUM;
+    numFeatures = featParams.powSpecFeatSz();
+  } else if (FLAGS_mfsc) {
+    featType = FeatureType::MFSC;
+    numFeatures = featParams.mfscFeatSz();
+  } else if (FLAGS_mfcc) {
+    featType = FeatureType::MFCC;
+    numFeatures = featParams.mfccFeatSz();
+  }
+  TargetGenerationConfig targetGenConfig(
+      FLAGS_wordseparator,
+      FLAGS_sampletarget,
+      FLAGS_criterion,
+      FLAGS_surround,
+      FLAGS_eostoken,
+      FLAGS_replabel,
+      true /* skip unk */,
+      FLAGS_usewordpiece /* fallback2LetterWordSepLeft */,
+      !FLAGS_usewordpiece /* fallback2LetterWordSepLeft */);
+
+  auto inputTransform = inputFeatures(
+      featParams,
+      featType,
+      {FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx},
+      {});
+  auto targetTransform = targetFeatures(tokenDict, lexicon, targetGenConfig);
+  auto wordTransform = wordFeatures(wordDict);
+  int targetpadVal = FLAGS_eostoken
+      ? tokenDict.getIndex(fl::app::asr::kEosToken)
+      : kTargetPadValue;
+  int wordpadVal = kTargetPadValue;
+
+  auto ds = createDataset(
+      {FLAGS_test},
+      FLAGS_datadir,
+      1,
+      inputTransform,
+      targetTransform,
+      wordTransform,
+      std::make_tuple(0, targetpadVal, wordpadVal),
+      0,
+      1);
   LOG(INFO) << "[Dataset] Dataset loaded.";
 
   /* ===================== Build LM ===================== */
@@ -171,7 +230,9 @@ int main(int argc, char** argv) {
 
   /* ===================== Test ===================== */
   int cnt = 0;
-  for (auto& sample : *ds) {
+  auto prefetchds = loadPrefetchDataset(
+        ds, FLAGS_nthread, false /* shuffle */, 0 /* seed */);
+  for (auto& sample : *prefetchds) {
     auto rawEmission = network->forward({fl::input(sample[kInputIdx])}).front();
     auto sampleId = readSampleIds(sample[kSampleIdx]).front();
     LOG(INFO) << "Processing sample ID " << sampleId;

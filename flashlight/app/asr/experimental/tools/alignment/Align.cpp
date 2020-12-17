@@ -10,6 +10,7 @@
 
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/criterion/criterion.h"
+#include "flashlight/app/asr/data/FeatureTransforms.h"
 #include "flashlight/app/asr/experimental/tools/alignment/Utils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
@@ -75,7 +76,7 @@ int main(int argc, char** argv) {
   LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */
-  auto dictPath = fl::lib::pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
+  auto dictPath = FLAGS_tokens;
   LOG(INFO) << "Loading dictionary from " << dictPath;
   if (dictPath.empty() || !fileExists(dictPath)) {
     throw std::invalid_argument("Invalid dictionary filepath specified.");
@@ -108,9 +109,13 @@ int main(int argc, char** argv) {
     LOG(INFO) << "Writing alignment to: " << alignFilePath;
   }
 
+  fl::lib::text::Dictionary wordDict;
   text::LexiconMap lexicon;
   if (!FLAGS_lexicon.empty()) {
     lexicon = text::loadWords(FLAGS_lexicon, FLAGS_maxword);
+    wordDict = text::createWordDict(lexicon);
+    LOG(INFO) << "Number of words: " << wordDict.indexSize();
+    wordDict.setDefaultIndex(wordDict.getIndex(text::kUnkToken));
   }
 
   LOG(INFO) << "Loaded lexicon";
@@ -126,9 +131,65 @@ int main(int argc, char** argv) {
   /* ===================== Create Dataset ===================== */
   int worldRank = 0;
   int worldSize = 1;
-  std::shared_ptr<Dataset> ds;
-  ds = createDataset(
-      FLAGS_test, dicts, lexicon, FLAGS_batchsize, worldRank, worldSize);
+    fl::lib::audio::FeatureParams featParams(
+      FLAGS_samplerate,
+      FLAGS_framesizems,
+      FLAGS_framestridems,
+      FLAGS_filterbanks,
+      FLAGS_lowfreqfilterbank,
+      FLAGS_highfreqfilterbank,
+      FLAGS_mfcccoeffs,
+      kLifterParam /* lifterparam */,
+      FLAGS_devwin /* delta window */,
+      FLAGS_devwin /* delta-delta window */);
+  featParams.useEnergy = false;
+  featParams.usePower = false;
+  featParams.zeroMeanFrame = false;
+  int numFeatures = -1;
+  FeatureType featType = FeatureType::NONE;
+  if (FLAGS_pow) {
+    featType = FeatureType::POW_SPECTRUM;
+    numFeatures = featParams.powSpecFeatSz();
+  } else if (FLAGS_mfsc) {
+    featType = FeatureType::MFSC;
+    numFeatures = featParams.mfscFeatSz();
+  } else if (FLAGS_mfcc) {
+    featType = FeatureType::MFCC;
+    numFeatures = featParams.mfccFeatSz();
+  }
+  TargetGenerationConfig targetGenConfig(
+      FLAGS_wordseparator,
+      FLAGS_sampletarget,
+      FLAGS_criterion,
+      FLAGS_surround,
+      FLAGS_eostoken,
+      FLAGS_replabel,
+      true /* skip unk */,
+      FLAGS_usewordpiece /* fallback2LetterWordSepLeft */,
+      !FLAGS_usewordpiece /* fallback2LetterWordSepLeft */);
+
+  auto inputTransform = inputFeatures(
+      featParams,
+      featType,
+      {FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx},
+      {});
+  auto targetTransform = targetFeatures(tokenDict, lexicon, targetGenConfig);
+  auto wordTransform = wordFeatures(wordDict);
+  int targetpadVal = FLAGS_eostoken
+      ? tokenDict.getIndex(fl::app::asr::kEosToken)
+      : kTargetPadValue;
+  int wordpadVal = kTargetPadValue;
+
+  auto ds = createDataset(
+      {FLAGS_test},
+      FLAGS_datadir,
+      1,
+      inputTransform,
+      targetTransform,
+      wordTransform,
+      std::make_tuple(0, targetpadVal, wordpadVal),
+      worldRank,
+      worldSize);
 
   LOG(INFO) << "[Dataset] Dataset loaded";
 

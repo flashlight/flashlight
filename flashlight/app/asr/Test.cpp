@@ -103,7 +103,7 @@ int main(int argc, char** argv) {
   LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */
-  auto dictPath = pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
+  auto dictPath = FLAGS_tokens;
   if (dictPath.empty() || !fl::lib::fileExists(dictPath)) {
     throw std::runtime_error("Invalid dictionary filepath specified.");
   }

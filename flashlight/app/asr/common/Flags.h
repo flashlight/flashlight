@@ -81,13 +81,6 @@ DECLARE_bool(eostoken);
 DECLARE_string(wordseparator);
 DECLARE_double(sampletarget);
 
-/* ========== FILTERING OPTIONS ========== */
-
-DECLARE_int64(minisz);
-DECLARE_int64(maxisz);
-DECLARE_int64(mintsz);
-DECLARE_int64(maxtsz);
-
 /* ========== NORMALIZATION OPTIONS ========== */
 
 DECLARE_int64(localnrmlleftctx);
@@ -154,11 +147,8 @@ DECLARE_string(sfx_config);
 /* ========== RUN OPTIONS ========== */
 
 DECLARE_string(datadir);
-DECLARE_string(tokensdir);
 DECLARE_string(rundir);
-DECLARE_string(archdir);
 DECLARE_string(flagsfile);
-DECLARE_string(runname);
 DECLARE_int64(nthread);
 DECLARE_int64(seed);
 DECLARE_int64(memstepsize);

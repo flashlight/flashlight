@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
   }
   if (runStatus == kTrainMode) {
     parseCmdLineFlagsWrapper(argc, argv);
-    runPath = pathsConcat(FLAGS_rundir, FLAGS_runname);
+    runPath = FLAGS_rundir;
   } else if (runStatus == kContinueMode) {
     runPath = argv[2];
     while (fileExists(getRunFile("model_last.bin", runIdx, runPath))) {
@@ -131,7 +131,7 @@ int main(int argc, char** argv) {
     gflags::ReadFlagsFromString(flags->second, gflags::GetArgv0(), true);
 
     parseCmdLineFlagsWrapper(argc, argv);
-    runPath = pathsConcat(FLAGS_rundir, FLAGS_runname);
+    runPath = FLAGS_rundir;
   } else {
     LOG(FATAL) << gflags::ProgramUsage();
   }
@@ -192,11 +192,11 @@ int main(int argc, char** argv) {
       parseValidSets(FLAGS_valid);
 
   /* ===================== Create Dictionary & Lexicon ===================== */
-  auto dictPath = pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
+  auto dictPath = FLAGS_tokens;
   if (dictPath.empty() || !fileExists(dictPath)) {
     throw std::runtime_error(
         "Invalid dictionary filepath specified with "
-        "--tokensdir and --tokens: \"" +
+        " --tokens: \"" +
         dictPath + "\"");
   }
   fl::lib::text::Dictionary tokenDict(dictPath);
@@ -315,7 +315,7 @@ int main(int argc, char** argv) {
 
   auto scalemode = getCriterionScaleMode(FLAGS_onorm, FLAGS_sqnorm);
   if (runStatus == kTrainMode) {
-    auto archfile = pathsConcat(FLAGS_archdir, FLAGS_arch);
+    auto archfile = FLAGS_arch;
     FL_LOG_MASTER(INFO) << "Loading architecture file from " << archfile;
     // Encoder network, works on audio
     if (fl::lib::endsWith(archfile, ".so")) {

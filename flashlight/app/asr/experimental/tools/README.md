@@ -37,8 +37,7 @@ Run the binary:
     --lexicon [path to lexicon file] \
     --maxload -1 \
     --datadir= \
-    --tokensdir [path to directory containing tokens file] \
-    --tokens [tokens file name] \
+    --tokens [path to tokens file] \
     --outpath [output directory]
 ```
 

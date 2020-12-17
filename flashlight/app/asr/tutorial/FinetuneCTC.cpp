@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
     gflags::ReadFromFlagsFile(FLAGS_flagsfile, argv[0], true);
   }
   gflags::ParseCommandLineFlags(&argc, &argv, false);
-  std::string runPath = pathsConcat(FLAGS_rundir, FLAGS_runname);
+  std::string runPath = FLAGS_rundir;
   handleDeprecatedFlags();
 
   af::setSeed(FLAGS_seed);
@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
   auto validTagSets = parseValidSets(FLAGS_valid);
 
   /* ===================== Create Dictionary & Lexicon ===================== */
-  auto dictPath = pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
+  auto dictPath = FLAGS_tokens;
   if (dictPath.empty() || !fileExists(dictPath)) {
     throw std::runtime_error(
         "Invalid dictionary filepath specified with --tokensdir and --tokens: \"" +
@@ -244,7 +244,7 @@ int main(int argc, char** argv) {
 
   /* =========== Create Network & Optimizers / Reload Snapshot ============ */
   std::shared_ptr<fl::Module> network;
-  auto archfile = pathsConcat(FLAGS_archdir, FLAGS_arch);
+  auto archfile = FLAGS_arch;
   FL_LOG_MASTER(INFO) << "Loading architecture file from " << archfile;
   // Encoder network, works on audio
   if (fl::lib::endsWith(archfile, ".so")) {
