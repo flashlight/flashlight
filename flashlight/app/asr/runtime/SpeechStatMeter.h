@@ -22,7 +22,7 @@ struct SpeechStats {
 
   SpeechStats();
   void reset();
-  std::vector<int64_t> toArray();
+  std::vector<int64_t> toArray() const;
 };
 
 class SpeechStatMeter {
@@ -30,7 +30,7 @@ class SpeechStatMeter {
   SpeechStatMeter();
   void add(const af::array& input, const af::array& target);
   void add(const SpeechStats& stats);
-  std::vector<int64_t> value();
+  std::vector<int64_t> value() const;
   void reset();
 
  private:

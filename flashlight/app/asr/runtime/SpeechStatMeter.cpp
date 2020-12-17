@@ -42,7 +42,7 @@ void SpeechStatMeter::add(const SpeechStats& stats) {
   stats_.numSamples_ += stats.numSamples_;
 }
 
-std::vector<int64_t> SpeechStatMeter::value() {
+std::vector<int64_t> SpeechStatMeter::value() const {
   return stats_.toArray();
 }
 
@@ -58,7 +58,7 @@ void SpeechStats::reset() {
   numSamples_ = 0;
 }
 
-std::vector<int64_t> SpeechStats::toArray() {
+std::vector<int64_t> SpeechStats::toArray() const {
   std::vector<int64_t> arr(5);
   arr[0] = totalInputSz_;
   arr[1] = totalTargetSz_;
