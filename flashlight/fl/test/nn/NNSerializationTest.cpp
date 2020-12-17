@@ -149,7 +149,7 @@ TEST(NNSerializationTest, BaseModule) {
 }
 
 TEST(NNSerializationTest, PrecisionCast) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half precision not available on this device";
   }
 

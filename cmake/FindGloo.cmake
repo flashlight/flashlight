@@ -6,13 +6,15 @@
 find_path(Gloo_INCLUDE_DIR
   NAMES gloo/common/common.h
   DOC "The directory where Gloo includes reside"
-  PATHS GLOO_ROOT
+  PATHS GLOO_ROOT ENV{GLOO_ROOT}
+  PATH_SUFFIXES include
   )
 
 find_library(Gloo_NATIVE_LIBRARY
   NAMES gloo
   DOC "The Gloo library (without CUDA)"
-  PATHS GLOO_ROOT
+  PATHS GLOO_ROOT ENV{GLOO_ROOT}
+  PATH_SUFFIXES lib
   )
 
 find_library(Gloo_CUDA_LIBRARY

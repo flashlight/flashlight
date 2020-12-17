@@ -215,12 +215,17 @@ if (FL_BUILD_CORE)
   target_link_libraries(flashlight PUBLIC ArrayFire::${FL_AF_BACKEND})
 
   # ------------------------ flashlight Core ------------------------
-
   set(FL_CORE_DIR "${FL_ROOT_DIR}/fl")
   include(${FL_CORE_DIR}/CMakeLists.txt)
   set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} flashlight)
   # flashlight core components keep their relative paths with respect to project
   setup_install_headers(${FL_CORE_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
+  target_compile_definitions(flashlight
+    PUBLIC
+    FL_BACKEND_CPU=$<BOOL:${FL_USE_CPU}>
+    FL_BACKEND_CUDA=$<BOOL:${FL_USE_CUDA}>
+    FL_BACKEND_OPENCL=$<BOOL:${FL_USE_OPENCL}>
+    )
 
   # ------------------------ Extensions ------------------------
   set(FL_EXT_DIR "${FL_ROOT_DIR}/ext")

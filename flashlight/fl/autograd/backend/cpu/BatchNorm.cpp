@@ -53,9 +53,9 @@ Variable batchnorm(
   }
 
   // Check if axes are valid
-  auto max_axis = *std::max_element(axes.begin(), axes.end());
-  auto min_axis = *std::min_element(axes.begin(), axes.end());
-  bool axesContinuous = (axes.size() == (max_axis - min_axis + 1));
+  auto maxAxis = *std::max_element(axes.begin(), axes.end());
+  auto minAxis = *std::min_element(axes.begin(), axes.end());
+  bool axesContinuous = (axes.size() == (maxAxis - minAxis + 1));
   if (!axesContinuous) {
     throw std::invalid_argument("axis array should be continuous");
   }
@@ -72,31 +72,31 @@ Variable batchnorm(
   // Prepare combined weights
   // If empty, user specifies affine to false. Both not trainable.
   auto weightNonempty = weight.isempty()
-      ? Variable(af::constant(1.0, nfeatures, input.type()), false)
+      ? Variable(af::constant(1.0, nfeatures, af::dtype::f32), false)
       : weight;
   auto biasNonempty = bias.isempty()
-      ? Variable(af::constant(0.0, nfeatures, input.type()), false)
+      ? Variable(af::constant(0.0, nfeatures, af::dtype::f32), false)
       : bias;
 
-  // DNNL only accept weight and bias as a combined input.
-  // https://fburl.com/l0bctocp
+  // DNNL only accepts weight and bias as a combined input.
+  // https://git.io/JLn9X
   auto weightsDnnl = af::join(0, weightNonempty.array(), biasNonempty.array());
-  auto rawDims = std::vector<int>{(int)input.dims(kWIdx),
-                                  (int)input.dims(kHIdx),
-                                  (int)input.dims(kChannelSizeIdx),
-                                  (int)input.dims(kBatchSizeIdx)};
-  if (axes.size() > 1) {
-    // if norm on multiple axes, we view all axes as on channel axis
-    for (auto ax : axes) {
-      rawDims[ax] = (ax != kChannelSizeIdx) ? 1 : nfeatures;
+  af::dim4 inDescDims;
+  if (minAxis == 0) {
+    inDescDims = af::dim4(1, 1, nfeatures, input.elements() / nfeatures);
+  } else {
+    int batchsz = 1;
+    for (int i = maxAxis + 1; i < 4; ++i) {
+      batchsz *= input.dims(i);
     }
+    inDescDims = af::dim4(
+        1, input.elements() / (nfeatures * batchsz), nfeatures, batchsz);
   }
-  auto inputOutputDims = detail::convertAfToDnnlDims({
-      rawDims[kBatchSizeIdx],
-      rawDims[kChannelSizeIdx],
-      rawDims[kHIdx],
-      rawDims[kWIdx],
-  });
+
+  dnnl::memory::dims inputOutputDims = {inDescDims[kBatchSizeIdx],
+                                        inDescDims[kChannelSizeIdx],
+                                        inDescDims[kHIdx],
+                                        inDescDims[kWIdx]};
   auto inputOutputMemDesc =
       dnnl::memory::desc({inputOutputDims}, dType, formatNCHW);
 

@@ -252,10 +252,12 @@ RnnResult rnnImpl(
   dnnl::memory::dims outputDims = {
       seqLength, batchSize, hiddenSize * directionMult};
   auto dType = detail::dnnlMapToType(input.type());
-  int totalLayers = numLayers * directionMult;
-  int outSize = hiddenSize * directionMult;
-  dnnl::memory::dims hDims = {totalLayers, 1, batchSize, hiddenSize};
-  dnnl::memory::dims cDims = {totalLayers, 1, batchSize, hiddenSize};
+  int totalLayers = numLayers;
+  int outSize = hiddenSize;
+  dnnl::memory::dims hDims = {
+      totalLayers, directionMult, batchSize, hiddenSize};
+  dnnl::memory::dims cDims = {
+      totalLayers, directionMult, batchSize, hiddenSize};
   int extraBias = mode == RnnMode::GRU ? 1 : 0; // for LBR GRU
   dnnl::memory::dims biasDims = {
       numLayers, directionMult, numGates + extraBias, hiddenSize};

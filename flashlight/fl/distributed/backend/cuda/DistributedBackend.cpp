@@ -133,7 +133,7 @@ void allReduceMultiple(
     // Use nccl groups to do everything in a single kernel launch
     NCCLCHECK(ncclGroupStart());
     for (auto& arr : arrs) {
-      allReduce(*arr);
+      allReduce(*arr, async);
     }
     NCCLCHECK(ncclGroupEnd());
     return;

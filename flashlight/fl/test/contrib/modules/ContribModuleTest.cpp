@@ -16,7 +16,7 @@ using namespace fl;
 
 namespace {
 
-class ModuleTestF16 : public ::testing::Test {
+class ContribModuleTestF16 : public ::testing::Test {
  protected:
   void SetUp() override {
     // Ensures all operations will be in f16
@@ -30,9 +30,9 @@ class ModuleTestF16 : public ::testing::Test {
 
 } // namespace
 
-TEST(ModuleTest, ResidualFwd) {
+TEST(ContribModuleTest, ResidualFwd) {
   auto conv = Conv2D(30, 50, 9, 7, 2, 3, 3, 2);
-  auto bn = BatchNorm(2, 50);
+  auto bn = BatchNorm(2, 50, 0.0);
   auto relu = ReLU();
 
   int batchsize = 10;
@@ -65,7 +65,7 @@ TEST(ModuleTest, ResidualFwd) {
   ASSERT_TRUE(allClose(output2, output2True));
 }
 
-TEST(ModuleTest, ResidualFwdWithProjection) {
+TEST(ContribModuleTest, ResidualFwdWithProjection) {
   const float proj1FwdScale = 0.24;
   const float proj2FwdScale = 0.5;
   const float linFwdScale = 0.3;
@@ -107,7 +107,7 @@ TEST(ModuleTest, ResidualFwdWithProjection) {
   ASSERT_TRUE(allClose(outputRes, outputTrue));
 }
 
-TEST(ModuleTest, AsymmetricConv1DFwd) {
+TEST(ContribModuleTest, AsymmetricConv1DFwd) {
   int batchsize = 10;
   int timesteps = 120;
   int c = 32;
@@ -130,7 +130,7 @@ TEST(ModuleTest, AsymmetricConv1DFwd) {
   ASSERT_FALSE(allClose(output, outputFuture));
 }
 
-TEST(ModuleTest, TransformerPadMaskFwd) {
+TEST(ContribModuleTest, TransformerPadMaskFwd) {
   int timesteps = 10;
   int c = 4;
   int nheads = 2;
@@ -157,8 +157,7 @@ TEST(ModuleTest, TransformerPadMaskFwd) {
                   Variable(padMask.rows(0, timesteps / 2 - 1).col(0), false)})
           .front();
   auto output2 = tr.forward({input2, Variable(padMask.col(1), false)}).front();
-  ASSERT_TRUE(
-      allClose(output.array()(af::span, af::span, 1), output2.array()));
+  ASSERT_TRUE(allClose(output.array()(af::span, af::span, 1), output2.array()));
   ASSERT_TRUE(
       allClose(outputNoPad.array()(af::span, af::span, 1), output2.array()));
   ASSERT_TRUE(allClose(
@@ -168,8 +167,8 @@ TEST(ModuleTest, TransformerPadMaskFwd) {
       output1.array()));
 }
 
-TEST_F(ModuleTestF16, TransformerPadMaskFwd16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+TEST_F(ContribModuleTestF16, TransformerPadMaskFwd16) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
   int timesteps = 10;
@@ -204,8 +203,7 @@ TEST_F(ModuleTestF16, TransformerPadMaskFwd16) {
                   Variable(padMask.rows(0, timesteps / 2 - 1).col(0), false)})
           .front();
   auto output2 = tr.forward({input2, Variable(padMask.col(1), false)}).front();
-  ASSERT_TRUE(
-      allClose(output.array()(af::span, af::span, 1), output2.array()));
+  ASSERT_TRUE(allClose(output.array()(af::span, af::span, 1), output2.array()));
   ASSERT_TRUE(
       allClose(outputNoPad.array()(af::span, af::span, 1), output2.array()));
   ASSERT_TRUE(allClose(
@@ -215,7 +213,7 @@ TEST_F(ModuleTestF16, TransformerPadMaskFwd16) {
       output1.array()));
 }
 
-TEST(ModuleTest, TransformerFwd) {
+TEST(ContribModuleTest, TransformerFwd) {
   int batchsize = 10;
   int timesteps = 120;
   int c = 32;
@@ -233,8 +231,8 @@ TEST(ModuleTest, TransformerFwd) {
   ASSERT_EQ(output[0].dims(2), batchsize);
 }
 
-TEST_F(ModuleTestF16, TransformerFwdF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+TEST_F(ContribModuleTestF16, TransformerFwdF16) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -261,7 +259,7 @@ TEST_F(ModuleTestF16, TransformerFwdF16) {
   ASSERT_EQ(output[0].dims(2), batchsize);
 }
 
-TEST(ModuleTest, ConformerFwd) {
+TEST(ContribModuleTest, ConformerFwd) {
   int batchsize = 10;
   int timesteps = 120;
   int c = 32;
@@ -277,8 +275,8 @@ TEST(ModuleTest, ConformerFwd) {
   ASSERT_EQ(output[0].dims(2), batchsize);
 }
 
-TEST_F(ModuleTestF16, ConformerFwdF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+TEST_F(ContribModuleTestF16, ConformerFwdF16) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -303,7 +301,7 @@ TEST_F(ModuleTestF16, ConformerFwdF16) {
   ASSERT_EQ(output[0].dims(2), batchsize);
 }
 
-TEST(ModuleTest, PositionEmbeddingFwd) {
+TEST(ContribModuleTest, PositionEmbeddingFwd) {
   int batchsize = 10;
   int timesteps = 120;
   int csz = 256;
@@ -320,8 +318,8 @@ TEST(ModuleTest, PositionEmbeddingFwd) {
   ASSERT_FALSE(allClose(output[0], input));
 }
 
-TEST_F(ModuleTestF16, PositionEmbeddingFwdF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+TEST_F(ContribModuleTestF16, PositionEmbeddingFwdF16) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -342,7 +340,7 @@ TEST_F(ModuleTestF16, PositionEmbeddingFwdF16) {
   ASSERT_FALSE(allClose(output[0], input));
 }
 
-TEST(ModuleTest, SinusoidalPositionEmbeddingFwd) {
+TEST(ContribModuleTest, SinusoidalPositionEmbeddingFwd) {
   int batchsize = 10;
   int timesteps = 120;
   int csz = 256;
@@ -359,8 +357,8 @@ TEST(ModuleTest, SinusoidalPositionEmbeddingFwd) {
   ASSERT_TRUE((af::min(output[0].array())).scalar<float>() >= -2);
 }
 
-TEST_F(ModuleTestF16, SinusoidalPositionEmbeddingFwdF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+TEST_F(ContribModuleTestF16, SinusoidalPositionEmbeddingFwdF16) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -383,7 +381,7 @@ TEST_F(ModuleTestF16, SinusoidalPositionEmbeddingFwdF16) {
   ASSERT_TRUE((af::min(outfp16)).scalar<float>() >= -2);
 }
 
-TEST(ModuleTest, AdaptiveEmbedding) {
+TEST(ContribModuleTest, AdaptiveEmbedding) {
   std::vector<int> values = {1, 4, 6, 2, 12, 7, 4, 21, 22, 18, 3, 23};
   int T = 6, B = 2, dim = 128;
   auto input = Variable(af::array(af::dim4(T, B), values.data()), false);
@@ -396,7 +394,7 @@ TEST(ModuleTest, AdaptiveEmbedding) {
   ASSERT_EQ(output.dims(2), B);
 }
 
-TEST(ModuleTest, TDSFwd) {
+TEST(ContribModuleTest, TDSFwd) {
   int batchsize = 10;
   int timesteps = 120;
   int w = 4;
@@ -412,7 +410,7 @@ TEST(ModuleTest, TDSFwd) {
   ASSERT_EQ(output.dims(2), c);
 }
 
-TEST(ModuleTest, StreamingTDSFwd) {
+TEST(ContribModuleTest, StreamingTDSFwd) {
   int batchsize = 10;
   int timesteps = 120;
   int w = 4;
@@ -432,7 +430,7 @@ TEST(ModuleTest, StreamingTDSFwd) {
   ASSERT_EQ(output.dims(2), c);
 }
 
-TEST(ModuleTest, SpecAugmentFwd) {
+TEST(ContribModuleTest, SpecAugmentFwd) {
   SpecAugment specAug(0, 27, 2, 100, 0.2, 2);
   int T = 512, F = 80;
   auto input = Variable(af::randu(T, F), false);
@@ -470,17 +468,19 @@ TEST(ModuleTest, SpecAugmentFwd) {
   ASSERT_GT(fZeros, 0);
 }
 
-TEST(ModuleTest, RawWavSpecAugmentFwd) {
+TEST(ContribModuleTest, RawWavSpecAugmentFwd) {
   // no time, only freq masking
   for (int nmask = 1; nmask < 3; nmask++) {
-    RawWavSpecAugment specAug(0, 1, nmask, 0, 0, 0, 1, 2000, 6000, 16000, 20000);
+    RawWavSpecAugment specAug(
+        0, 1, nmask, 0, 0, 0, 1, 2000, 6000, 16000, 20000);
     specAug.train();
 
     int T = 300, C = 3, B = 4;
     auto time = 2 * M_PI * af::iota(af::dim4(T)) / 16000;
-    auto finalWav =
-      af::sin(time * 500) + af::sin(time * 1000) + af::sin(time * 7000) + af::sin(time * 7500);
-    auto inputWav = finalWav + af::sin(time * 3000) + af::sin(time * 4000) + af::sin(time * 5000);
+    auto finalWav = af::sin(time * 500) + af::sin(time * 1000) +
+        af::sin(time * 7000) + af::sin(time * 7500);
+    auto inputWav = finalWav + af::sin(time * 3000) + af::sin(time * 4000) +
+        af::sin(time * 5000);
     inputWav = af::tile(inputWav, 1, C, B);
     finalWav = af::tile(finalWav, 1, C, B);
 
@@ -488,9 +488,10 @@ TEST(ModuleTest, RawWavSpecAugmentFwd) {
     // compare middle of filtered wave to avoid edge artifacts comparison
     int halfKernelWidth = 63;
     ASSERT_TRUE(fl::allClose(
-      fl::Variable(finalWav.rows(halfKernelWidth, T - halfKernelWidth - 1), false),
-      filteredWav.rows(halfKernelWidth, T - halfKernelWidth - 1),
-      1e-3));
+        fl::Variable(
+            finalWav.rows(halfKernelWidth, T - halfKernelWidth - 1), false),
+        filteredWav.rows(halfKernelWidth, T - halfKernelWidth - 1),
+        1e-3));
   }
 }
 
