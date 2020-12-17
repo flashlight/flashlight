@@ -105,7 +105,7 @@ z
 
 The symbol "|" is used to denote space between words. Note that it is possible to add additional symbols like `N` for noise, `L` for laughter and more depending on the dataset. Tokens file defines the mapping between a token and its index in the emission matrix (in the output). If two tokens are on the same line in the tokens file, they are mapped to the same index for training/decoding.
 
-Tokens file is specified via `tokens` flag and `tokensdir`, the later is used as prefix to form the full path to the tokens file, for example `--tokens=tokens.txt --tokensdir=/tmp/tokens` will read tokens set from `/tmp/tokens/tokens.txt` file.
+Tokens file is specified via `tokens` flag which specifies full path to the tokens file, for example `--tokens=/tmp/tokens.txt will read tokens set from `/tmp/tokens/tokens.txt` file.
 
 #### Lexicon File
 
@@ -135,7 +135,7 @@ In case you have mapping to tokens which are not presented in the tokens file th
 
 ### Writing architecture files
 
-For now we provide a simple way to create a `fl::Sequential` module for the acoustic model from text files. These are specified using the flags `arch` (file with the architecture) and `archdir` (prefix which is added to the `arch` path).
+For now we provide a simple way to create a `fl::Sequential` module for the acoustic model from text files. These are specified using the flags `arch` (file path with the architecture).
 
 Example of architecture file:
 ```
@@ -379,10 +379,9 @@ Example of command line:
 ```
 <build/bin/fl_asr_train> [train|continue|fork] \
 --datadir=<path/to/data/> \
---tokensdir=<path/to/tokens/file/> \
---archdir=<path/to/architecture/files/> \
+--tokens=<path/to/tokens/file> \
+--arch=<path/to/architecture/file> \
 --rundir=<path/to/save/models/> \
---arch=<name_of_architecture.arch> \
 --train=<train/datasets/ds1.lst,train/datasets/ds2.lst> \
 --valid=<validation/datasets/ds1.lst,validation/datasets/ds2.lst> \
 --lexicon=<path/to/lexicon.txt> \
@@ -402,9 +401,9 @@ We give a short description of some of the more important flags here. A complete
 
 The `datadir` flag is the base path to where all the `train` and `valid` dataset list files live. Every `train` path will be prefixed by `datadir`. Multiple datasets can be passed to `train` and `valid` as a comma-separated list.
 
-Similarly, the `archdir` and `tokensdir` are (optional) base paths to where the `arch` and `token` files live. For example, the complete architecture file path will be `<archdir>/<arch>`.  `lexicon` flag is used to specify the lexicon which specifies the token sequence for a given word.
+Similarly, the `arch` and `tokens` are the paths to architecture file and tokens file.  `lexicon` flag is used to specify the lexicon which specifies the token sequence for a given word.
 
-The `rundir` flag is the base directory where the model will be saved and the `runname` is the subdirectory that will be created to save the model and training logs. If `runname` is unspecified a directory name based on the date, time and user will be created.
+The `rundir` flag is the checkpoint directory that will be created to save the model and training logs.
 
 Most of the training hyperparameter flags have default values. Many of these you will not need to change. Some of the more important ones include:
 - `lr` : The learning rate for the model parameters.
@@ -452,8 +451,7 @@ build/bin/fl_asr_test \
   --am=path/to/train/am.bin \
   --maxload=10 \
   --test=path/to/test/list/file \
-  --tokensdir=path/to/tokens/dir \
-  --tokens=tokens.txt \
+  --tokens=path/to/tokens/file \
   --lexicon=path/to/the/lexicon/file
 ```
 
@@ -618,7 +616,7 @@ Decoders, except Seq2Seq decoder, are now supporting online decoding. It consume
 
 ### Template to run beam-search decoder
 
-We assume that saved `datadir`, `tokensdir` , `tokens` are stored with existing paths inside the AM model (otherwise you should redefine them in the command line command). Also `criterion`, `wordseparator` and `usewordpiece` will be loaded from the model. To use saved previously **Emission Set** exchange `am` flag to the `emission_dir`
+We assume that saved `datadir`, `tokens` are stored with existing paths inside the AM model (otherwise you should redefine them in the command line command). Also `criterion`, `wordseparator` and `usewordpiece` will be loaded from the model. To use saved previously **Emission Set** exchange `am` flag to the `emission_dir`
 
 ```bash
 <build/bin/fl_asr_decode> \
