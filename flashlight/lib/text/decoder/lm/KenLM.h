@@ -7,10 +7,25 @@
 
 #pragma once
 
+#include <memory>
+
 #include "flashlight/lib/text/decoder/lm/LM.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 
-#include <kenlm/lm/model.hh>
+// Forward declarations to avoid including KenLM headers
+namespace lm {
+namespace base {
+
+struct Vocabulary;
+struct Model;
+
+} // namespace base
+namespace ngram {
+
+struct State;
+
+} // namespace ngram
+} // namespace lm
 
 namespace fl {
 namespace lib {
@@ -21,11 +36,11 @@ namespace text {
  * indicies and compare functions
  * https://github.com/kpu/kenlm/blob/master/lm/state.hh.
  */
-
 struct KenLMState : LMState {
-  lm::ngram::State ken_;
+  KenLMState();
+  std::unique_ptr<lm::ngram::State> ken_;
   lm::ngram::State* ken() {
-    return &ken_;
+    return ken_.get();
   }
 };
 
