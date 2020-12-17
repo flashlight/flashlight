@@ -95,7 +95,7 @@ TEST(ModuleTest, LinearFwd) {
 }
 
 TEST_F(ModuleTestF16, LinearFwdF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -182,7 +182,7 @@ TEST(ModuleTest, GLUFwd) {
 }
 
 TEST_F(ModuleTestF16, GLUFwdF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -248,7 +248,7 @@ TEST(ModuleTest, LogSoftmaxFwd) {
 }
 
 TEST_F(ModuleTestF16, LogSoftmaxFwdF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -301,7 +301,7 @@ TEST(ModuleTest, ConvolutionFwd) {
 }
 
 TEST_F(ModuleTestF16, ConvolutionFwdF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -360,7 +360,7 @@ TEST(ModuleTest, PoolingFwd) {
 }
 
 TEST_F(ModuleTestF16, PoolingFwdF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -499,7 +499,7 @@ TEST(ModuleTest, GRUFwd) {
 }
 
 TEST_F(ModuleTestF16, RNNFwdF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -573,7 +573,7 @@ TEST(ModuleTest, DropoutFwd) {
 }
 
 TEST_F(ModuleTestF16, DropoutFwdF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -655,7 +655,7 @@ TEST(ModuleTest, LayerNormFwd) {
 }
 
 TEST_F(ModuleTestF16, LayerNormFwdF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -715,7 +715,7 @@ TEST(ModuleTest, TransformFwd) {
 }
 
 TEST(ModuleTest, PrecisionCastFwd) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half precision not available on this device";
   }
 

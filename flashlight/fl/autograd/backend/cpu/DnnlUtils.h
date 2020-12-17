@@ -83,6 +83,8 @@ dnnl::memory dnnlAlignOrdering(
  * For each primitive, passes the corresponding arguments map for that index to
  * the execution stream. The number of primitives and the number of arguments
  * must be equal, else throws.
+ *
+ * Blocks calling thread until the enqueued work has been completed.
  */
 void executeNetwork(
     std::vector<dnnl::primitive>& net,

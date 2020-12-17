@@ -269,6 +269,13 @@ class MockTestMemoryManager : public TestMemoryManager {
  *   memory manager
  */
 TEST(MemoryFramework, AdapterInstallerDeviceInterfaceTest) {
+  // The CPU backend in AF allocates a buffer for empty arrays - see
+  // https://github.com/arrayfire/arrayfire/issues/3058. When this is fixed,
+  // this can be relaxed/this test will pass
+  if (FL_BACKEND_CPU) {
+    GTEST_SKIP() << "ArrayFire CPU backend allocates buffers for empty arrays";
+  }
+
   std::stringstream logStream;
   std::stringstream mockLogStream;
   {
