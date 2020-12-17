@@ -63,10 +63,12 @@ TEST(Distributed, AllReduceAsync) {
 
   auto rank = getWorldRank();
   auto size = getWorldSize();
+  // not supported for the CPU backend
+  bool async = true && !FL_BACKEND_CPU;
 
   Variable var(af::constant(rank, 10), false);
 
-  allReduce(var, 2.0, /*async=*/true);
+  allReduce(var, 2.0, async);
   syncDistributed();
 
   float expected_val = size * (size - 1.0);
@@ -80,6 +82,9 @@ TEST(Distributed, AllReduceSetAsync) {
 
   auto rank = getWorldRank();
   auto size = getWorldSize();
+  // not supported for the CPU backend
+  bool async = true && !FL_BACKEND_CPU;
+  bool contiguous = true && !FL_BACKEND_CPU;
 
   size_t vSize = (1 << 20);
   std::vector<Variable> vars;
@@ -87,7 +92,7 @@ TEST(Distributed, AllReduceSetAsync) {
     vars.push_back(Variable(af::constant(rank + 1, vSize), false));
   }
 
-  allReduceMultiple(vars, 2.0, /*async=*/true, /*contiguous=*/true);
+  allReduceMultiple(vars, 2.0, async, contiguous);
   syncDistributed();
 
   float expected_val = size * (size + 1.0);
@@ -148,8 +153,8 @@ TEST(Distributed, CoalescingReducer) {
 
   auto s = std::make_shared<fl::CoalescingReducer>(
       /* scale = */ 1.0 / size,
-      /*async=*/true,
-      /*contiguous=*/true);
+      /*async=*/true && !FL_BACKEND_CPU,
+      /*contiguous=*/true && !FL_BACKEND_CPU);
 
   size_t vSize = (1 << 20);
   std::vector<Variable> vars;

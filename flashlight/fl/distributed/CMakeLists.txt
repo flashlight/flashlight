@@ -22,7 +22,7 @@ endif()
 # Gloo
 find_package(Gloo QUIET)
 if (Gloo_FOUND)
-  message(STATUS "Gloo found")
+  message(STATUS "Gloo found (include: ${Gloo_INCLUDE_DIR} lib: ${Gloo_LIBRARY})")
   setup_install_find_module(${CMAKE_MODULE_PATH}/FindGloo.cmake)
 else()
   message(STATUS "Gloo not found")

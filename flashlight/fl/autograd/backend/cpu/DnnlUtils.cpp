@@ -60,8 +60,19 @@ void executeNetwork(
     throw std::invalid_argument(
         "executeNetwork - given different size nets and netArgs");
   }
+  bool cpuBackend = af::getActiveBackend() == AF_BACKEND_CPU;
+  // If on the CPU backend, there isn't a AF computation stream that facilitates
+  // enforcing that inputs to computation are ready; we're required to wait
+  // until all AF operations are done
+  if (cpuBackend) {
+    af::sync();
+  }
   for (size_t i = 0; i < net.size(); ++i) {
     net.at(i).execute(DnnlStream::getInstance().getStream(), netArgs.at(i));
+  }
+  if (cpuBackend) {
+    // Block the executing thread until the work is complete
+    DnnlStream::getInstance().getStream().wait();
   }
 }
 

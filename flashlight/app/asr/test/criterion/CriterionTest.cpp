@@ -65,6 +65,13 @@ void jacobian_test(
 } // namespace
 
 TEST(CriterionTest, CTCEmptyTarget) {
+  // Subtle - related to memory manager initialization. Will be fixed in a
+  // future version of ArrayFire after which time this can be removed. The test
+  // passes/works properly in isolation.
+  if (FL_BACKEND_CPU) {
+    GTEST_SKIP() << "Skipping test for CPU backend";
+  }
+
   // Non-empty input, Empty target, batchsize > 0
   auto input = Variable(af::array(3, 2, 5), true);
   auto target = Variable(af::array(0, 5), false);

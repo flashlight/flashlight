@@ -22,6 +22,9 @@ std::string archDir = "";
 } // namespace
 
 TEST(SequentialBuilderTest, SeqModule) {
+  if (FL_BACKEND_CPU) {
+    GTEST_SKIP() << "Bidirectional RNN not supported";
+  }
   const std::string archfile = pathsConcat(archDir, "arch.txt");
   int nchannel = 4;
   int nclass = 40;
@@ -43,6 +46,9 @@ TEST(SequentialBuilderTest, SeqModule) {
 }
 
 TEST(SequentialBuilderTest, Serialization) {
+  if (FL_BACKEND_CPU) {
+    GTEST_SKIP() << "Bidirectional RNN not supported";
+  }
   char* user = getenv("USER");
   std::string userstr = "unknown";
   if (user != nullptr) {

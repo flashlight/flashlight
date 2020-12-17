@@ -35,7 +35,7 @@ TEST(OptimTest, GradNorm) {
 }
 
 TEST(OptimTest, GradNormF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
