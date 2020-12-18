@@ -7,14 +7,17 @@
 
 #pragma once
 
+#include <memory>
 #include <mutex>
-
-#include <fftw3.h>
 
 #include "flashlight/lib/audio/feature/Dither.h"
 #include "flashlight/lib/audio/feature/FeatureParams.h"
 #include "flashlight/lib/audio/feature/PreEmphasis.h"
 #include "flashlight/lib/audio/feature/Windowing.h"
+
+// Fwd decl
+class fftw_plan_s;
+typedef fftw_plan_s* fftw_plan;
 
 namespace fl {
 namespace lib {
@@ -55,7 +58,7 @@ class PowerSpectrum {
   PreEmphasis preEmphasis_;
   Windowing windowing_;
 
-  fftw_plan fftPlan_;
+  std::unique_ptr<fftw_plan> fftPlan_; // fftw_plan is an opque pointer type
   std::vector<double> inFftBuf_, outFftBuf_;
   std::mutex fftMutex_;
 };
