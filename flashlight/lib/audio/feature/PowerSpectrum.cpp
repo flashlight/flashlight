@@ -7,6 +7,8 @@
 
 #include "flashlight/lib/audio/feature/PowerSpectrum.h"
 
+#include <fftw3.h>
+
 #include <algorithm>
 #include <cstddef>
 #include <unordered_map>
@@ -26,8 +28,8 @@ PowerSpectrum::PowerSpectrum(const FeatureParams& params)
   auto nFFt = featParams_.nFft();
   inFftBuf_.resize(nFFt, 0.0);
   outFftBuf_.resize(2 * nFFt);
-  fftPlan_ = fftw_plan_dft_r2c_1d(
-      nFFt, inFftBuf_.data(), (fftw_complex*)outFftBuf_.data(), FFTW_MEASURE);
+  fftPlan_ = std::make_unique<fftw_plan>(fftw_plan_dft_r2c_1d(
+      nFFt, inFftBuf_.data(), (fftw_complex*)outFftBuf_.data(), FFTW_MEASURE));
 }
 
 std::vector<float> PowerSpectrum::apply(const std::vector<float>& input) {
@@ -67,7 +69,7 @@ std::vector<float> PowerSpectrum::powSpectrumImpl(std::vector<float>& frames) {
       std::lock_guard<std::mutex> lock(fftMutex_);
       std::copy(begin, begin + nSamples, inFftBuf_.data());
       std::fill(outFftBuf_.begin(), outFftBuf_.end(), 0.0);
-      fftw_execute(fftPlan_);
+      fftw_execute(*fftPlan_);
 
       // Copy stuff to the redundant part
       for (size_t i = K; i < nFft; ++i) {
@@ -135,7 +137,7 @@ void PowerSpectrum::validatePowSpecParams() const {
 }
 
 PowerSpectrum::~PowerSpectrum() {
-  fftw_destroy_plan(fftPlan_);
+  fftw_destroy_plan(*fftPlan_);
 }
 } // namespace audio
 } // namespace lib
