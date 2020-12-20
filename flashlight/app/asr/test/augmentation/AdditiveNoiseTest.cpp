@@ -17,6 +17,7 @@ using ::fl::app::asr::saveSound;
 using ::fl::lib::dirCreateRecursive;
 using ::fl::lib::pathsConcat;
 using ::testing::Pointwise;
+using ::fl::lib::getTmpPath;
 
 const size_t sampleRate = 16000;
 
@@ -36,7 +37,7 @@ MATCHER_P(FloatNearPointwise, tol, "Out of range") {
  * considering the SNR value.
  */
 TEST(AdditiveNoise, Snr) {
-  const std::string tmpDir = std::tmpnam(nullptr);
+  const std::string tmpDir = getTmpPath("AdditiveNoise");
   dirCreateRecursive(tmpDir);
   const std::string listFilePath = pathsConcat(tmpDir, "noise.lst");
   const std::string noiseFilePath = pathsConcat(tmpDir, "noise.flac");
