@@ -17,11 +17,15 @@
 #include <functional>
 #include <stdexcept>
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
 #include "flashlight/fl/autograd/autograd.h"
+#include "flashlight/fl/common/Logging.h"
 #include "flashlight/fl/common/common.h"
 
 using namespace fl;
+using ::testing::HasSubstr;
 
 namespace {
 
@@ -1765,6 +1769,59 @@ TEST(AutogradTest, GetAdvancedIndex) {
   y.backward();
   auto grad = sum(x.grad(), {0, 1, 2, 3}).array();
   ASSERT_TRUE(allClose(grad, res, 1e-3));
+}
+
+// Tests that LOG_DIMS() logs the expected dimensions by searching for the
+// value of each dimension in the printed string.
+TEST(AutogradTest, LogDimsDim4) {
+  auto d = af::dim4(1, 2, 3, 4);
+
+  std::stringstream buf;
+  std::streambuf* origBuf = std::cerr.rdbuf();
+  std::cerr.rdbuf(buf.rdbuf());
+  LOG_DIMS(d);
+  std::cerr.rdbuf(origBuf);
+
+  EXPECT_THAT(buf.str(), HasSubstr(std::to_string(d[0])));
+  EXPECT_THAT(buf.str(), HasSubstr(std::to_string(d[2])));
+  EXPECT_THAT(buf.str(), HasSubstr(std::to_string(d[3])));
+  EXPECT_THAT(buf.str(), HasSubstr(std::to_string(d[3])));
+}
+
+// Tests that LOG_DIMS() logs the expected dimensions by searching for the
+// value of each dimension in the printed string.
+TEST(AutogradTest, LogDimsArray) {
+  auto d = af::dim4(1, 2, 3, 4);
+  auto a = af::randu(d);
+
+  std::stringstream buf;
+  std::streambuf* origBuf = std::cerr.rdbuf();
+  std::cerr.rdbuf(buf.rdbuf());
+  LOG_DIMS(a);
+  std::cerr.rdbuf(origBuf);
+
+  EXPECT_THAT(buf.str(), HasSubstr(std::to_string(d[0])));
+  EXPECT_THAT(buf.str(), HasSubstr(std::to_string(d[2])));
+  EXPECT_THAT(buf.str(), HasSubstr(std::to_string(d[3])));
+  EXPECT_THAT(buf.str(), HasSubstr(std::to_string(d[3])));
+}
+
+// Tests that LOG_DIMS() logs the expected dimensions by searching for the
+// value of each dimension in the printed string.
+TEST(AutogradTest, LogDimsVariable) {
+  auto d = af::dim4(1, 2, 3, 4);
+  auto v = Variable(af::randu(d), false);
+
+  std::stringstream buf;
+  std::streambuf* origBuf = std::cerr.rdbuf();
+  std::cerr.rdbuf(buf.rdbuf());
+  LOG_DIMS(v);
+  std::cerr.rdbuf(origBuf);
+
+  EXPECT_THAT(buf.str(), HasSubstr(std::to_string(d[0])));
+  EXPECT_THAT(buf.str(), HasSubstr(std::to_string(d[2])));
+  EXPECT_THAT(buf.str(), HasSubstr(std::to_string(d[3])));
+  EXPECT_THAT(buf.str(), HasSubstr(std::to_string(d[3])));
 }
 
 int main(int argc, char** argv) {

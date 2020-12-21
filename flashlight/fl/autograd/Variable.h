@@ -24,6 +24,7 @@
 
 #include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/common/Serialization.h"
+#include "flashlight/fl/common/Logging.h"
 
 namespace fl {
 
@@ -395,5 +396,23 @@ class Variable {
   // same underlying tensor twice
   FL_SAVE_LOAD(sharedData_, sharedGrad_)
 };
+
+/**
+ * Quickly log the dimnetions of any type with prettyStringDims() bindings.
+ * Example:
+ * auto d = af::dim4(1, 2, 3, 4);
+ * auto a = af::randu(d);
+ * auto v = Variable(a, false);
+ * LOG_DIMS(d)
+ * LOG_DIMS(a)
+ * LOG_DIMS(v)
+ * prints d:{1, 2, 3, 4}
+ * prints a:{1, 2, 3, 4}
+ * prints v:{1, 2, 3, 4}
+ */
+#define LOG_DIMS(obj) FL_LOG(fl::INFO) << prettyStringDims(#obj, obj)
+std::string prettyStringDims(const std::string& msg, const af::dim4& d);
+std::string prettyStringDims(const std::string& msg, const af::array& arr);
+std::string prettyStringDims(const std::string& msg, const fl::Variable& var);
 
 } // namespace fl

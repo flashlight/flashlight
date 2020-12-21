@@ -404,4 +404,31 @@ Variable::DAG Variable::build() const {
   return dag;
 }
 
+std::string prettyStringDims(const std::string& msg, const af::dim4& d) {
+  std::stringstream ss;
+  ss << msg << ":{";
+  for (int i = 0; i < 4; ++i) {
+    ss << d[i];
+    if (i < 3) {
+      ss << ", ";
+    }
+  }
+  ss << "}";
+  return ss.str();
+}
+
+std::string prettyStringDims(const std::string& msg, const af::array& arr) {
+  if (arr.isempty()) {
+    return msg + ":empty";
+  }
+  return prettyStringDims(msg, arr.dims());
+}
+
+std::string prettyStringDims(const std::string& msg, const fl::Variable& var) {
+  if (var.isempty()) {
+    return msg + ":empty";
+  }
+  return prettyStringDims(msg, var.array());
+}
+
 } // namespace fl
