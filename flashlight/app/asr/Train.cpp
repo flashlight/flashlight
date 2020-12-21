@@ -485,6 +485,22 @@ int main(int argc, char** argv) {
         }
       };
 
+  std::ofstream memLog;
+  if (FLAGS_fl_log_mem_ops_interval > 0 && isMaster) {
+    auto* curMemMgr =
+        fl::MemoryManagerInstaller::currentlyInstalledMemoryManager();
+    if (curMemMgr) {
+      memLog.open(getRunFile("mem", runIdx, runPath));
+      if (!memLog.is_open()) {
+        LOG(FATAL) << "failed to open memory log file="
+                   << getRunFile("mem", runIdx, runPath) << " for writing";
+      }
+      curMemMgr->setLogStream(&memLog);
+      curMemMgr->setLoggingEnabled(true);
+      curMemMgr->setLogFlushInterval(FLAGS_fl_log_mem_ops_interval);
+    }
+  }
+
   auto saveModels = [&](int iter, int totalUpdates) {
     if (isMaster) {
       // Save last epoch
