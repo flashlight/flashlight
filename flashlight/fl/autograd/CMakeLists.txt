@@ -98,6 +98,7 @@ endif ()
 if (FL_USE_OPENCL)
   set(
     AUTOGRAD_OPENCL_SOURCES
+    ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/operators/AdvancedIndex.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/Conv2D.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/Pool2D.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/RNN.cpp
