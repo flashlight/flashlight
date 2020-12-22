@@ -440,6 +440,7 @@ CocoDataset::CocoDataset(
   ) {
   // Images
   const std::vector<std::string> filepaths = parseImageFilepaths(list_file);
+  assert(filepaths.size() > 0);
   auto images = cocoDataLoader(filepaths);
 
   // Labels
@@ -482,9 +483,11 @@ CocoDataset::CocoDataset(
   transformed = std::make_shared<TransformDataset>(
       transformed, transformfns);
 
-  shuffled_ = std::make_shared<ShuffleDataset>(transformed);
-
-  auto next = shuffled_;
+  auto next = transformed;
+  if (!val) {
+    shuffled_ = std::make_shared<ShuffleDataset>(next);
+    next = shuffled_;
+  }
   //auto next = transformed;
   //
   auto permfn = [world_size, world_rank](int64_t idx) {

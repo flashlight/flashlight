@@ -30,7 +30,7 @@ DEFINE_double(momentum, 0.9f, "Momentum");
 DEFINE_uint64(metric_iters, 5, "Print metric every");
 
 DEFINE_double(wd, 1e-4f, "Weight decay");
-DEFINE_uint64(epochs, 50, "Epochs");
+DEFINE_uint64(epochs, 300, "Epochs");
 DEFINE_uint64(eval_iters, 1, "Epochs");
 DEFINE_int64(
     world_rank,
@@ -46,7 +46,7 @@ DEFINE_string(
     "Shared file path used for setting up rendezvous."
     "If empty, uses MPI to initialize.");
 DEFINE_bool(enable_distributed, true, "Enable distributed training");
-DEFINE_uint64(batch_size, 16, "Total batch size across all gpus");
+DEFINE_uint64(batch_size, 2, "Total batch size across all gpus");
 DEFINE_string(checkpointpath, "/tmp/model", "Checkpointing prefix path");
 DEFINE_int64(checkpoint, -1, "Load from checkpoint");
 
@@ -134,14 +134,14 @@ int main(int argc, char** argv) {
   /////////////////////////
   const std::vector<float> mean = {0.485, 0.456, 0.406};
   const std::vector<float> std = {0.229, 0.224, 0.225};
-  std::vector<ImageTransform> train_transforms = {
-      // randomly resize shortest side of image between 256 to 480 for scale 
-      // invariance
-      //randomResizeTransform(256, 480),
-      //randomCropTransform(224, 224), normalizeImage(mean, std),
-      // Randomly flip image with probability of 0.5
-      //horizontalFlipTransform(0.5)
-  };
+  //std::vector<ImageTransform> train_transforms = {
+      //// randomly resize shortest side of image between 256 to 480 for scale 
+      //// invariance
+      ////randomResizeTransform(256, 480),
+      ////randomCropTransform(224, 224), normalizeImage(mean, std),
+      //// Randomly flip image with probability of 0.5
+      ////horizontalFlipTransform(0.5)
+  //};
   std::vector<ImageTransform> val_transforms = {
       // Resize shortest side to 256, then take a center crop
       //resizeTransform(256),
@@ -167,10 +167,6 @@ int main(int argc, char** argv) {
   } else {
     backbone = std::make_shared<Resnet50Backbone>();
   }
-  backbone->train();
-
-  //
-  //backbone->train();
   auto transformer = std::make_shared<Transformer>(
       modelDim,
       numHeads,
@@ -194,7 +190,6 @@ int main(int argc, char** argv) {
   //fl::load(modelPath, detr);
 
   detr->train();
-  //freezeBatchNorm(backbone);
 
   // synchronize parameters of tje model so that the parameters in each process
   // is the same
@@ -204,7 +199,7 @@ int main(int argc, char** argv) {
   // Add a hook to synchronize gradients of model parameters as they are
   // computed
   fl::distributeModuleGrads(detr, reducer);
-  fl::distributeModuleGrads(backbone, reducer);
+  //fl::distributeModuleGrads(backbone, reducer);
 
   auto saveOutput = [](
       af::array imageSizes,
@@ -257,7 +252,6 @@ int main(int argc, char** argv) {
       std::shared_ptr<Module> backbone,
       std::shared_ptr<Detr> model,
       std::shared_ptr<CocoDataset> dataset) {
-    backbone->eval();
     model->eval();
     int idx = 0;
     for(auto& sample : *dataset) {
@@ -289,8 +283,6 @@ int main(int argc, char** argv) {
     ss2 << "rm -rf " << FLAGS_eval_dir << "/detection*";
     system(ss2.str().c_str());
     model->train();
-    backbone->train();
-    //freezeBatchNorm(backbone);
   };
 
   //const int64_t batch_size_per_gpu = FLAGS_batch_size / FLAGS_world_size;
@@ -320,8 +312,10 @@ int main(int argc, char** argv) {
       batch_size_per_gpu,
       true);
   //SGDOptimizer opt(detr.params(), FLAGS_lr, FLAGS_momentum, FLAGS_wd);
-  AdamOptimizer opt(detr->params(), FLAGS_lr, FLAGS_wd);
-  AdamOptimizer opt2(backbone->params(), FLAGS_lr * 0.1, FLAGS_wd);
+  //
+
+  AdamOptimizer opt(detr->paramsWithoutBackbone(), FLAGS_lr, FLAGS_wd);
+  AdamOptimizer opt2(detr->backboneParams(), FLAGS_lr * 0.1, FLAGS_wd);
   //AdamOptimizer backbone_opt(backbone->params(), FLAGS_lr * 0.1);
 
   // Small utility functions to load and save models
@@ -440,13 +434,11 @@ int main(int argc, char** argv) {
       }
       fl::clipGradNorm(detr->params(), 0.1);
 
-      //freezeBatchNorm(backbone);
-
       opt.step();
-      //opt2.step();
+      opt2.step();
 
       opt.zeroGrad();
-      //opt2.zeroGrad();
+      opt2.zeroGrad();
       //////////////////////////
       // Metrics
       /////////////////////////

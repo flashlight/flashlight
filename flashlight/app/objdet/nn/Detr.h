@@ -97,6 +97,24 @@ public:
     return "Detection Transformer!";
   }
 
+  std::vector<fl::Variable> paramsWithoutBackbone() {
+    std::vector<fl::Variable> results;
+    std::vector<std::vector<fl::Variable>> childParams;
+    childParams.push_back(transformer_->params());
+    childParams.push_back(classEmbed_->params());
+    childParams.push_back(bboxEmbed_->params());
+    childParams.push_back(queryEmbed_->params());
+    childParams.push_back(inputProj_->params());
+    for(auto params : childParams) {
+      results.insert(results.end(), params.begin(), params.end());
+    }
+    return results;
+  }
+
+  std::vector<fl::Variable> backboneParams() {
+    return backbone_->params();
+  }
+
 private:
   std::shared_ptr<Module> backbone_;
   std::shared_ptr<Transformer> transformer_;
