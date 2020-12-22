@@ -20,6 +20,10 @@ if(FL_USE_OPENCL)
   set(COMMON_SRCS ${COMMON_SRCS} ${CMAKE_CURRENT_LIST_DIR}/OpenClUtils.cpp)
 endif()
 
+if(FL_USE_OPENCL)
+  set(COMMON_SRCS ${COMMON_SRCS} ${CMAKE_CURRENT_LIST_DIR}/OpenclUtils.cpp)
+endif()
+
 target_sources(
   flashlight
   PRIVATE

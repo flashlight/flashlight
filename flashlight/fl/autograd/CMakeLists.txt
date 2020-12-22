@@ -94,21 +94,65 @@ endif ()
 
 
 # OpenCL
-# TODO(jacobkahn): enable, with dependencies, when needed
+# Build OpenClSourceVerifierAndHeaderGen executable that generate c++
+# header files from opencl source code and compile them code, using
+# the opencl driver, to verify syntax at compile time.
+# We find kernels under backend/opencl directory copy them as c++ headers to
+# [build directory]/opencl_kernels 
 if (FL_USE_OPENCL)
+  add_executable(
+    opencl_syntax_and_header 
+    ${PROJECT_SOURCE_DIR}/cmake/OpenClSourceVerifierAndHeaderGen.cpp
+    )
+
+  target_link_libraries(
+    opencl_syntax_and_header
+    PUBLIC
+    ${OpenCL_LIBRARIES}
+    ArrayFire::${FL_AF_BACKEND}
+    )
+
+  target_include_directories(
+    opencl_syntax_and_header
+    PUBLIC
+    ${OpenCL_INCLUDE_DIRS}
+    )
+
+
+  file(GLOB kernel_src ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/*.cl)
+  set(OPENCL_KERNEL_DIR "opencl_kernels")
+  include(OpenClSourceVerifierAndHeaderGen)
+
+  opencl_syntax_check_and_header_gen(
+      SOURCES ${kernel_src}
+      VARNAME kernel_files
+      EXTENSION "h"  # extention to the header file contining opencl source.
+      OUTPUT_DIR ${OPENCL_KERNEL_DIR}
+      TARGETS cl_kernel_targets
+      NAMESPACE "opencl" # namespace that wraps the string in the file.
+      )
+
+  set(opencl_compile_definitions
+          CL_TARGET_OPENCL_VERSION=120
+          CL_HPP_TARGET_OPENCL_VERSION=120
+          CL_HPP_MINIMUM_OPENCL_VERSION=120
+          CL_HPP_ENABLE_EXCEPTIONS
+          CL_USE_DEPRECATED_OPENCL_1_2_APIS)
+
   set(
     AUTOGRAD_OPENCL_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/operators/AdvancedIndex.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/Conv2D.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/Pool2D.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/RNN.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/backend/generic/BatchNorm.cpp # generic
+    ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/BatchNorm.cpp # generic
     )
 
   target_sources(
     flashlight
     PRIVATE
     ${AUTOGRAD_OPENCL_SOURCES}
+    ${kernel_files}
     )
 
   target_link_libraries(
@@ -122,4 +166,19 @@ if (FL_USE_OPENCL)
     PUBLIC
     ${OpenCL_INCLUDE_DIRS}
     )
+
+  target_include_directories(
+    flashlight
+    PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
+  )
+
+  target_compile_definitions(
+    flashlight
+    PRIVATE
+    ${opencl_compile_definitions}
+    )
+
+  add_dependencies(flashlight ${cl_kernel_targets})
 endif ()

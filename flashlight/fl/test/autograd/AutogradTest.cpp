@@ -964,6 +964,24 @@ TEST(AutogradTest, Pooling) {
   ASSERT_TRUE(jacobianTestImpl(func_pool, in, 1E-3));
 }
 
+TEST(AutogradTest, Pooling3) {
+  auto in = Variable(af::randu(3, 3, 2, 2, af::dtype::f32), true);
+  auto func_pool = [&](Variable& input) { return pool2d(input, 2, 2, 2, 2); };
+  ASSERT_TRUE(jacobianTestImpl(func_pool, in, 1E-3));
+}
+
+// TEST(AutogradTest, Pooling2) {
+//   for (int chan = 1; chan < 10; ++chan) {
+//     for (int batch = 1; batch < 10; ++batch) {
+//       auto in = Variable(af::randu(3, 3, chan, batch, af::dtype::f32), true);
+//       auto func_pool = [&](Variable& input) {
+//         return pool2d(input, 2, 2, 1, 1);
+//       };
+//       ASSERT_TRUE(jacobianTestImpl(func_pool, in, 1E-3));
+//     }
+//   }
+// }
+
 TEST_F(AutogradTestF16, PoolingF16) {
   if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";

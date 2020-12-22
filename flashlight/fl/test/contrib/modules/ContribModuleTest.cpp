@@ -47,7 +47,9 @@ TEST(ContribModuleTest, ResidualFwd) {
   resModule1.add(relu);
   resModule1.addShortcut(1, 3);
 
+  // af::print("ResidualFwd input=", input.array());
   auto output1 = resModule1.forward(input);
+  // af::print("ResidualFwd output1=", output1.array());
   auto output1True = relu.forward(outputBn + outputConv);
   ASSERT_TRUE(allClose(output1, output1True));
 
@@ -60,6 +62,7 @@ TEST(ContribModuleTest, ResidualFwd) {
   resModule2.addShortcut(2, 4);
 
   auto output2 = resModule2.forward(input);
+  // af::print("ResidualFwd output2=", output2.array());
   auto output2True =
       relu.forward(outputBn + outputConv) + outputBn + outputConv;
   ASSERT_TRUE(allClose(output2, output2True));
@@ -80,7 +83,9 @@ TEST(ContribModuleTest, ResidualFwdWithProjection) {
   auto projection2 = Linear(12, 4);
 
   auto input = Variable(af::randu(12, 10, 3, 4), false);
+  // af::print("ResidualFwdWithProjection input=", input.array());
   auto output1True = linear1.forward(input);
+  // af::print("ResidualFwdWithProjection output1True=", output1True.array());
   auto outputTrue = relu1.forward(output1True);
   outputTrue = linear2.forward(outputTrue * linFwdScale);
   outputTrue = relu2.forward(
@@ -104,6 +109,8 @@ TEST(ContribModuleTest, ResidualFwdWithProjection) {
   resModule.addShortcut(5, 7);
 
   auto outputRes = resModule.forward(input);
+  // af::print("ResidualFwdWithProjection outputRes=", outputRes.array());
+
   ASSERT_TRUE(allClose(outputRes, outputTrue));
 }
 
