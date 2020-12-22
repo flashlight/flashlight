@@ -8,9 +8,9 @@ This tutorial uses the following binaries with the following capabilities:
 
 See the [full documentation](https://github.com/jacobkahn/flashlight/blob/tutorial_docs/flashlight/app/asr) for more general training or decoding instructions.
 
-## Preparing Audio for Finetuning
+## Finetuning with Existing Model with Unlabeled Audio
 
-The outline below describes how to preparing audio for finetuning. This can be broken down into several steps:
+The outline below describes the end-to-end process of finetuning an existing acoustic model. In several steps:
 1. *Preprocessing the audio.*
   a. Most [audio formats](http://libsndfile.github.io/libsndfile/formats.html) are supported and are automatically detected.
   b. All audio used in training or inference must have the same sample rate; up/downsampling audio may be necessary. We recommend 16 kHz.
