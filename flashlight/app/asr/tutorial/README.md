@@ -6,7 +6,22 @@ This tutorial uses the following binaries with the following capabilities:
 - `fl_asr_align`: force align audio and transcriptions using a CTC model
 - `fl_asr_voice_activity_detection_ctc`: [coming soon] detect speech and perform general audio analysis
 
-See the [full documentation](https://github.com/jacobkahn/flashlight/blob/tutorial_docs/flashlight/app/asr) for more general training or decoding.
+See the [full documentation](https://github.com/jacobkahn/flashlight/blob/tutorial_docs/flashlight/app/asr) for more general training or decoding instructions.
+
+## Preparing Audio for Finetuning
+
+The outline below describes how to preparing audio for finetuning. This can be broken down into several steps:
+1. *Preprocessing the audio.*
+  a. Most [audio formats](http://libsndfile.github.io/libsndfile/formats.html) are supported and are automatically detected.
+  b. All audio used in training or inference must have the same sample rate; up/downsampling audio may be necessary. We recommend 16 kHz.
+2. *Labeling the audio.* (if needed)
+  a. Given audio, prepare a [list file](https://github.com/jacobkahn/flashlight/blob/tutorial_docs/flashlight/app/asr/README.md#audio-and-transcriptions-data) containing a sample ID, audio path, and duration. If the audio is unlabeled, no transcription column is required.
+  b. [Perform inference](https://github.com/jacobkahn/flashlight/blob/tutorial_docs/flashlight/app/asr/tutorial/README.md#inference-with-an-existing-ctc-model) using the `fl_asr_tutorial_inference_ctc` binary.
+3. *Force-aligning the labeled audio.*
+  a. Generate alignments for audio. Using the `fl_asr_align` binary. See the [full alignment documentation](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/asr/tools/alignment/).
+  b. Based on the alignments, trim the existing audio to include sections containing speech. Doing so typically increases training speed.
+4. Generate a final list file for training and validation sets using the trimmed audio and transcriptions. See the [list file documentation](https://github.com/jacobkahn/flashlight/blob/tutorial_docs/flashlight/app/asr/README.md#audio-and-transcriptions-data) for more details.
+5. Use the `fl_asr_tutorial_finetune_ctc` binaruy to [finetune the existing model](https://github.com/jacobkahn/flashlight/blob/tutorial_docs/flashlight/app/asr/tutorial/README.md#finetuning-with-an-existing-ctc-model) (or [train your own](https://github.com/jacobkahn/flashlight/blob/tutorial_docs/flashlight/app/asr/README.md#how-to-train-acoustic-model) from scratch). List files can be passed to finetuning or inference binaries using the `train`/`valid` or `test` flags, respectively.
 
 ## Inference with an Existing CTC Model
 
@@ -47,18 +62,3 @@ To finetune, you'll need the following components (with their corresponding `fla
 * Should be identical to that with which the original AM was trained. Will be provided with the AM in recipes/tutorials.
 
 See the aforementioned colab tutorial for robust pre-trained models and their accompanying components that can be easily used for finetuning. The [wav2letter Robust ASR (RASR) recipe](https://github.com/facebookresearch/wav2letter/tree/master/recipes/rasr) contains robust pre-trained models and resources for finetuning.
-
-## Preparing Audio for Finetuning
-
-The outline below describes how to preparing audio for finetuning. This can be broken down into several steps:
-1. *Preprocessing the audio.*
-  a. Most [audio formats](http://libsndfile.github.io/libsndfile/formats.html) are supported and are automatically detected.
-  b. All audio used in training or inference must have the same sample rate; up/downsampling audio may be necessary. We recommend 16 kHz.
-2. *Labeling the audio.* (if needed)
-  a. Given audio, prepare a [list file](https://github.com/jacobkahn/flashlight/blob/tutorial_docs/flashlight/app/asr/README.md#audio-and-transcriptions-data) containing a sample ID, audio path, and duration. If the audio is unlabeled, no transcription column is required.
-  b. Perform inference using the `fl_asr_tutorial_inference_ctc` binary.
-3. *Force-aligning the labeled audio.*
-  a. Generate alignments for audio. Using the `fl_asr_align` binary. See the [full alignment documentation](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/asr/tools/alignment/).
-  b. Based on the alignments, trim the existing audio to include sections containing speech. Doing so typically increases training speed.
-4. Generate a final list file for training and validation sets using the trimmed audio and transcriptions. See the [list file documentation](https://github.com/jacobkahn/flashlight/blob/tutorial_docs/flashlight/app/asr/README.md#audio-and-transcriptions-data) for more details.
-5. Use the `fl_asr_tutorial_finetune_ctc` to finetune the existing model (or train your own from scratch. List files can be passed to finetuning or inference binaries using the `train`/`valid` or `test` flags, respectively.
