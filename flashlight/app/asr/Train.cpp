@@ -1051,7 +1051,7 @@ int main(int argc, char** argv) {
         FLAGS_lr,
         FLAGS_lrcrit,
         true,
-        FLAGS_pretrainWindow - startUpdate);
+        FLAGS_pretrainWindow);
     startUpdate = FLAGS_pretrainWindow;
     FL_LOG_MASTER(INFO) << "Finished window pretraining.";
   }
