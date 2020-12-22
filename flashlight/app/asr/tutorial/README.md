@@ -1,10 +1,10 @@
 # Getting Started with Automatic Speech Recognition in Flashlight
 
 This tutorial uses the following binaries with the following capabilities:
-- [`fl_asr_tutorial_inference_ctc`](https://github.com/jacobkahn/flashlight/blob/tutorial_docs/flashlight/app/asr/tutorial/README.md#inference-with-an-existing-ctc-model): perform inference with an existing model with CTC loss
-- [`fl_asr_tutorial_finetune_ctc`](https://github.com/jacobkahn/flashlight/blob/tutorial_docs/flashlight/app/asr/tutorial/README.md#finetuning-with-an-existing-ctc-model): finetune an existing CTC model with additional data
+- [`fl_asr_tutorial_inference_ctc`](https://github.com/jacobkahn/flashlight/blob/tutorial_docs/flashlight/app/asr/tutorial/README.md#inference-with-an-existing-ctc-model): perform inference with an existing model with CTC loss [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/todo)
+- [`fl_asr_tutorial_finetune_ctc`](https://github.com/jacobkahn/flashlight/blob/tutorial_docs/flashlight/app/asr/tutorial/README.md#finetuning-with-an-existing-ctc-model): finetune an existing CTC model with additional data [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/todo)
 - [`fl_asr_align`](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/asr/tools/alignment): force align audio and transcriptions using a CTC model
-- [`fl_asr_voice_activity_detection_ctc`](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/asr/tools): [coming soon] detect speech and perform general audio analysis
+- [`fl_asr_voice_activity_detection_ctc`](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/asr/tools): [coming soon] detect speech and perform audio analysis
 
 See the [full documentation](https://github.com/jacobkahn/flashlight/blob/tutorial_docs/flashlight/app/asr) for more general training or decoding instructions.
 
