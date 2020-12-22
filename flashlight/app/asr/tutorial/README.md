@@ -6,6 +6,8 @@ This tutorial uses the following binaries with the following capabilities:
 - [`fl_asr_align`](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/asr/tools/alignment): force align audio and transcriptions using a CTC model
 - [`fl_asr_voice_activity_detection_ctc`](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/asr/tools): [coming soon] detect speech and perform audio analysis
 
+The [wav2letter Robust ASR (RASR) recipe](https://github.com/facebookresearch/wav2letter/tree/master/recipes/rasr) contains robust pre-trained models and resources for finetuning some of which are used in the Colab tutorials above.
+
 See the [full documentation](https://github.com/jacobkahn/flashlight/blob/tutorial_docs/flashlight/app/asr) for more general training or decoding instructions.
 
 ## Finetuning with Existing Model with Already-Labeled Audio
@@ -57,5 +59,3 @@ To finetune, you'll need the following components (with their corresponding `fla
 - Other training flags for flashlight training or audio processing as per the [ASR documentation](https://github.com/jacobkahn/flashlight/blob/tutorial_docs/flashlight/app/asr/README.md).
 
 * Should be identical to that with which the original AM was trained. Will be provided with the AM in recipes/tutorials.
-
-See the aforementioned colab tutorial for robust pre-trained models and their accompanying components that can be easily used for finetuning. The [wav2letter Robust ASR (RASR) recipe](https://github.com/facebookresearch/wav2letter/tree/master/recipes/rasr) contains robust pre-trained models and resources for finetuning.
