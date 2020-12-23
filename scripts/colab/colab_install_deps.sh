@@ -20,7 +20,7 @@ sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list
 rm -rf /usr/local/lib/libmkl*
 # Grab CMake 3.10.2
 cd /opt  && wget https://github.com/Kitware/CMake/releases/download/v3.10.2/cmake-3.10.2-Linux-x86_64.tar.gz && \
-    tar -xzf cmake-3.10.2-Linux-x86_64.tar.gz && rm /usr/local/bin/cmake && ln -s cmake-3.10.2-Linux-x86_64/bin/cmake /usr/local/bin/cmake
+    tar -xzf cmake-3.10.2-Linux-x86_64.tar.gz && rm /usr/local/bin/cmake && ln -s /opt/cmake-3.10.2-Linux-x86_64/bin/cmake /usr/local/bin/cmake
 
 # CUDA-backend specific
 # Use CUDA 10.0 - symlink to /usr/local/cuda
