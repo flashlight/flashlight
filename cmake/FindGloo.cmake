@@ -6,21 +6,22 @@
 find_path(Gloo_INCLUDE_DIR
   NAMES gloo/common/common.h
   DOC "The directory where Gloo includes reside"
-  PATHS GLOO_ROOT ENV{GLOO_ROOT}
-  PATH_SUFFIXES include
+  PATHS ${Gloo_ROOT} ENV{Gloo_ROOT}
+  PATH_SUFFIXES include include/gloo/common
   )
 
 find_library(Gloo_NATIVE_LIBRARY
   NAMES gloo
   DOC "The Gloo library (without CUDA)"
-  PATHS GLOO_ROOT ENV{GLOO_ROOT}
+  PATHS ${Gloo_ROOT} ENV{Gloo_ROOT}
   PATH_SUFFIXES lib
   )
 
 find_library(Gloo_CUDA_LIBRARY
   NAMES gloo_cuda
   DOC "The Gloo library (with CUDA)"
-  PATHS GLOO_ROOT
+  PATHS ${Gloo_ROOT} ENV{Gloo_ROOT}
+  PATH_SUFFIXES lib
   )
 
 set(Gloo_INCLUDE_DIRS ${Gloo_INCLUDE_DIR})

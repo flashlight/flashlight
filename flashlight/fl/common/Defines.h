@@ -8,6 +8,7 @@
 #pragma once
 
 #include <cstdlib>
+#include <string>
 #include <unordered_map>
 
 namespace fl {

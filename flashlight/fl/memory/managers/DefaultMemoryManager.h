@@ -103,8 +103,8 @@ class DefaultMemoryManager : public MemoryManagerAdapter {
   void removeMemoryManagement(int device) override;
   // Implementation-specific functions
   void setMaxMemorySize();
-  size_t getMemStepSize();
-  void setMemStepSize(size_t size);
+  size_t getMemStepSize() override;
+  void setMemStepSize(size_t size) override;
   size_t getMaxBytes();
   unsigned getMaxBuffers();
   bool checkMemoryLimit();
