@@ -1,13 +1,13 @@
 # Aligning text to speech using acoustic models
 
-This is a tutorial on how to force align text to speech with acoustic models using wav2letter++.
+This is a tutorial on how to force align text to speech with acoustic models using Flashlight.
 Force Alignment is a process which takes an audio sample and text target as an input, and outputs the time segments in the audio sample that corresponds to each word in the target.
 
 ### Step 1: Obtain a trained acoustic model
 
-To train your own model, please follow the steps outlined [here](https://github.com/facebookresearch/wav2letter/tree/master/tutorials/1-librispeech_clean)
+To train your own model, please follow the steps outlined [here](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr/experimental/tutorials/1-librispeech_clean)
 
-Pretrained models can also be found [here](https://github.com/facebookresearch/wav2letter/blob/master/recipes/models/lexicon_free/librispeech/README.md#acoustic-model).
+Pretrained models can also be found [here](https://github.com/facebookresearch/wav2letter/tree/master/recipes/lexicon_free/librispeech#acoustic-model).
 
 ### Step 2: Run alignment
 
@@ -18,7 +18,6 @@ First, create a flags file to configure the alignment. For the pretrained model 
 ```
 # align.cfg
 # Replace MODEL\_DST and DATA\_DST with the locations of the model (downloaded from above) and data respectively.
---tokensdir=[MODEL_DST]
 --tokens=tokens.lst
 --lexicon=[MODEL_DST]/lexicon.lst
 --am=[MODEL_DST]/baseline_dev-clean+other.bin
@@ -30,8 +29,8 @@ First, create a flags file to configure the alignment. For the pretrained model 
 Run alignment and write alignments to alignments.txt
 
 ```shell
-# Replace [...] with appropriate paths of build and wav2letter
-> [...]/wav2letter/build/tools/Align alignments.txt --flagsfile align.cfg
+# Replace [...] with the path to the binary
+> [...]/fl_asr_align alignments.txt --flagsfile align.cfg
 ```
 
 ### Step 3: Visualize using Audacity
@@ -45,7 +44,7 @@ There's a small utility script located at `tools/alignment/convertToAudacityLabe
 This script will create a label file for each sample in the test set.
 
 ```shell
-> python3 tools/alignment/convertToAudacityLabels.py -f alignments.txt -o labels/
+> python3 [...]/convertToAudacityLabels.py -f alignments.txt -o labels/
 > ls labels
 dev-clean-000001584  dev-clean-000002703  ....
 ```
