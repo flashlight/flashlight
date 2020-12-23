@@ -60,6 +60,12 @@ void parseCmdLineFlagsWrapper(int argc, char** argv) {
   // aren't
   handleDeprecatedFlags();
 }
+
+DEFINE_string(distill_model, "", "teacher model to distill from");
+DEFINE_double(distill_criterion_weight, 0., "weight of task criterion");
+DEFINE_double(distill_ce_weight, 1., "weight of cross entropy");
+DEFINE_double(distill_cd_weight, 1., "weight of cosine distance");
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -307,12 +313,23 @@ int main(int argc, char** argv) {
   }
 
   /* =========== Create Network & Optimizers / Reload Snapshot ============ */
+  std::shared_ptr<fl::Module> networkDistill;
+  std::shared_ptr<SequenceCriterion> criterionDistill;
+  fl::CrossEntropy crossEntropy;
+  fl::CosineDistance cosineDistance;
   std::shared_ptr<fl::Module> network;
   std::shared_ptr<SequenceCriterion> criterion;
   std::shared_ptr<fl::FirstOrderOptimizer> netoptim;
   std::shared_ptr<fl::FirstOrderOptimizer> critoptim;
   std::shared_ptr<fl::lib::text::LM> lm;
   std::shared_ptr<WordDecodeMaster> dm;
+
+  if (!FLAGS_distill_model.empty()) {
+    std::unordered_map<std::string, std::string> cfg; // unused
+    std::string version;
+    Serializer::load(
+        FLAGS_distill_model, version, cfg, networkDistill, criterionDistill);
+  }
 
   auto scalemode = getCriterionScaleMode(FLAGS_onorm, FLAGS_sqnorm);
   if (runStatus == kTrainMode) {
@@ -712,6 +729,10 @@ int main(int argc, char** argv) {
                 &validds,
                 &curEpoch,
                 &startUpdate,
+                &networkDistill,
+                &criterionDistill,
+                &crossEntropy,
+                &cosineDistance,
                 reducer](
                    std::shared_ptr<fl::Module> ntwrk,
                    std::shared_ptr<SequenceCriterion> crit,
@@ -885,8 +906,17 @@ int main(int argc, char** argv) {
               input, ntwrk, batch[kDurationIdx]);
           af::sync();
           meters.critfwdtimer.resume();
-          auto loss =
+          fl::Variable loss =
               crit->forward({output, fl::noGrad(batch[kTargetIdx])}).front();
+          if (!FLAGS_distill_model.empty()) {
+            auto teacherOut = fl::ext::forwardSequentialModuleWithPadMask(
+                input, networkDistill, batch[kDurationIdx]);
+            auto cd = cosineDistance(output, teacherOut);
+            auto ce =
+                crossEntropy(softmax(teacherOut, 0), logSoftmax(output, 0));
+            loss = FLAGS_distill_criterion_weight * loss +
+                FLAGS_distill_cd_weight * cd + FLAGS_distill_ce_weight * ce;
+          }
           af::sync();
           meters.fwdtimer.stopAndIncUnit();
           meters.critfwdtimer.stopAndIncUnit();
