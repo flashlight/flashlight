@@ -30,7 +30,7 @@ int64_t MemoryBlobDataset::writeData(
 int64_t MemoryBlobDataset::readData(int64_t offset, char* data, int64_t size)
     const {
   // what is available
-  int64_t maxSize = std::max(0UL, data_.size() - offset);
+  int64_t maxSize = std::max(0L, static_cast<int64_t>(data_.size()) - offset);
   // min(what is available, wanted)
   maxSize = std::min(maxSize, size);
   std::memcpy(data, data_.data() + offset, maxSize);
