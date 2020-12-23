@@ -20,6 +20,10 @@ function(build_tool SRCFILE target)
 endfunction(build_tool)
 
 build_tool(
+  ${CMAKE_CURRENT_LIST_DIR}/VoiceActivityDetection-CTC.cpp
+  fl_asr_voice_activity_detection_ctc
+  )
+build_tool(
   ${CMAKE_CURRENT_LIST_DIR}/alignment/Align.cpp
   fl_asr_align
   )
