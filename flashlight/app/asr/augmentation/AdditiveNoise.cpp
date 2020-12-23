@@ -33,17 +33,13 @@ std::string AdditiveNoise::Config::prettyString() const {
 std::string AdditiveNoise::prettyString() const {
   std::stringstream ss;
   ss << "AdditiveNoise{config={" << conf_.prettyString() << '}'
-     << " datasetRandomiser_={" << datasetRandomiser_->prettyString() << "}";
+     << " ListRandomizer_={" << ListRandomizer_->prettyString() << "}";
   return ss.str();
 };
 
 AdditiveNoise::AdditiveNoise(const AdditiveNoise::Config& config)
     : conf_(config),
-      randomEngine_(config.randomSeed_),
-      randomProba_(0, 1),
-      uniformDistribution_(0, std::numeric_limits<int>::max()),
-      randomNumClipsPerUtterance_(config.nClipsMin_, config.nClipsMax_),
-      randomSnr_(config.minSnr_, config.maxSnr_) {
+      rng_(config.randomSeed_) {
   std::ifstream listFile(conf_.listFilePath_);
   if (!listFile) {
     throw std::runtime_error(
@@ -64,10 +60,10 @@ AdditiveNoise::AdditiveNoise(const AdditiveNoise::Config& config)
     }
   }
 
-  DatasetRandomiser<std::string>::Config dsConf;
+  ListRandomizer<std::string>::Config dsConf;
   dsConf.policy_ = conf_.dsetRndPolicy_;
   dsConf.randomSeed_ = conf_.randomSeed_;
-  datasetRandomiser_ = std::make_unique<DatasetRandomiser<std::string>>(
+  ListRandomizer_ = std::make_unique<ListRandomizer<std::string>>(
       dsConf, std::move(noiseFiles));
 }
 
@@ -84,20 +80,20 @@ float rootMeanSquare(const std::vector<float>& signal) {
 } // namespace
 
 void AdditiveNoise::apply(std::vector<float>& signal) {
-  if (randomProba_(randomEngine_) >= conf_.proba_) {
+  if (rng_.random() >= conf_.proba_) {
     return;
   }
   const float signalRms = rootMeanSquare(signal);
-  const float snr = randomSnr_(randomEngine_);
-  const int nClips = randomNumClipsPerUtterance_(randomEngine_);
-  int augStart = uniformDistribution_(randomEngine_) % (signal.size() - 1);
+  const float snr = rng_.uniform(conf_.minSnr_, conf_.maxSnr_);
+  const int nClips = rng_.randInt(conf_.nClipsMin_, conf_.nClipsMax_);
+  int augStart = rng_.randInt(0, signal.size() - 1);
   // overflow implies we start at the beginning again.
   int augEnd = augStart + conf_.ratio_ * signal.size();
 
   std::vector<float> mixedNoise(signal.size(), 0.0f);
   for (int i = 0; i < nClips; ++i) {
-    auto curNoise = loadSound<float>(datasetRandomiser_->getRandom());
-    int shift = uniformDistribution_(randomEngine_) % (curNoise.size() - 1);
+    auto curNoise = loadSound<float>(ListRandomizer_->getRandom());
+    int shift = rng_.randInt(0, curNoise.size() - 1);
     for (int j = augStart; j < augEnd; ++j) {
       mixedNoise[j % mixedNoise.size()] +=
           curNoise[(shift + j) % curNoise.size()];
