@@ -1,8 +1,9 @@
 # Getting Started with Automatic Speech Recognition in Flashlight
 
 This tutorial uses the following binaries with the following capabilities:
-- [`fl_asr_tutorial_inference_ctc`](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/tutorial/README.md#inference-with-an-existing-ctc-model): perform inference with an existing model with CTC loss [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/todo)
-- [`fl_asr_tutorial_finetune_ctc`](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/tutorial/README.md#finetuning-with-an-existing-ctc-model): finetune an existing CTC model with additional data [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/todo)
+- [`fl_asr_tutorial_inference_ctc`](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/tutorial/README.md#inference-with-an-existing-ctc-model): perform inference with an existing model with CTC loss [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/facebookresearch/flashlight/blob/master/flashlight/app/asr/tutorial/notebooks/InferenceCTC.ipynb)
+- [`fl_asr_tutorial_finetune_ctc`](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/tutorial/README.md#finetuning-with-an-existing-ctc-model): finetune an existing CTC model with additional data [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/facebookresearch/flashlight/blob/master/flashligh
+t/app/asr/tutorial/notebooks/FinetuneCTC.ipynb)
 - [`fl_asr_align`](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/asr/tools/alignment): force align audio and transcriptions using a CTC model
 - [`fl_asr_voice_activity_detection_ctc`](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/asr/tools): [coming soon] detect speech and perform audio analysis
 
@@ -16,13 +17,13 @@ The outline below describes the end-to-end process of finetuning an existing aco
 1. *Preprocessing the audio.*
 
     a. Most [audio formats](http://libsndfile.github.io/libsndfile/formats.html) are supported and are automatically detected.
-    
+
     b. All audio used in training or inference must have the same sample rate; up/downsampling audio may be necessary. [Provided pretrained models](https://github.com/facebookresearch/wav2letter/tree/master/recipes/rasr) were trained using 16 kHz and will require that sample rate for finetuning, so up/downsample your audio as necessary.
 
 2. *Force-aligning the labeled audio.*
 
     a. Using the existing transcriptions, generate audio-text alignments using the `fl_asr_align` binary. See the [full alignment documentation](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/asr/tools/alignment).
-  
+
     b. Based on the alignments, trim the existing audio to include sections containing speech. Doing so typically increases training speed.
   
 3. Generate a final list file for training and validation sets using the trimmed audio and transcriptions. See the [list file documentation](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/README.md#audio-and-transcriptions-data) for more details.
