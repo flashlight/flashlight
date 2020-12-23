@@ -37,6 +37,24 @@ RandomPolicy stringToRandomPolicy(const std::string& policy) {
   }
 }
 
+RandomNumberGenerator::RandomNumberGenerator(int seed /* = 0 */)
+    : randomEngine_(seed), uniformDist_(0, 1) {}
+
+int RandomNumberGenerator::randInt(int a, int b) {
+  if (a > b) {
+    std::swap(a, b);
+  }
+  return randomEngine_() % (b - a + 1) + a;
+}
+
+float RandomNumberGenerator::random() {
+  return uniformDist_(randomEngine_);
+}
+
+float RandomNumberGenerator::uniform(float a, float b) {
+  return a + (b - a) * uniformDist_(randomEngine_);
+}
+
 } // namespace sfx
 } // namespace asr
 } // namespace app

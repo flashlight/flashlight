@@ -61,12 +61,8 @@ class AdditiveNoise : public SoundEffect {
 
  private:
   const AdditiveNoise::Config conf_;
-  std::mt19937 randomEngine_;
-  std::uniform_real_distribution<float> randomProba_;
-  std::uniform_int_distribution<> uniformDistribution_;
-  std::uniform_int_distribution<> randomNumClipsPerUtterance_;
-  std::uniform_real_distribution<> randomSnr_;
-  std::unique_ptr<DatasetRandomiser<std::string>> datasetRandomiser_;
+  RandomNumberGenerator rng_;
+  std::unique_ptr<ListRandomizer<std::string>> ListRandomizer_;
 };
 
 } // namespace sfx
