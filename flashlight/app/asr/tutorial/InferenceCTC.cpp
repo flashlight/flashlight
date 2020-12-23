@@ -231,8 +231,7 @@ int main(int argc, char** argv) {
     std::string audioPath;
     if (interactive) {
       LOG(INFO)
-          << "Waiting the input in the format [audio_path transcription]. "
-          << "Transcirpiton can be empty, if it is non-empty then word error rate will be computed.";
+          << "[Inference tutorial for CTC]: Waiting the input in the format [audio_path].";
       std::getline(std::cin, audioPath);
     } else {
       if (!std::getline(audioListStream, audioPath)) {

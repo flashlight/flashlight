@@ -16,8 +16,7 @@ from base64 import b64decode
 import ffmpeg
 import sox
 from google.colab.output import eval_js
-from IPython import display as displayIpython
-from IPython.display import HTML
+from IPython.display import HTML, display
 
 
 AUDIO_HTML = """
@@ -116,7 +115,7 @@ def convert(inputfile, outfile):
 
 
 def record_audio(filename):
-    displayIpython(HTML(AUDIO_HTML))
+    display(HTML(AUDIO_HTML))
     data = eval_js("data")
     binary = b64decode(data.split(",")[1])
 
