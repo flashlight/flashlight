@@ -1772,6 +1772,9 @@ TEST(AutogradTest, GetAdvancedIndexF16) {
     GTEST_SKIP()
         << "Advanced indexing operator unsupported for non-CUDA backends";
   }
+  if (!fl::f16Supported()) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
   auto x = Variable(af::randu(20, 50, 40, 30, f16), true);
   af::array a(6, s64);
   a(0) = 0;
