@@ -8,7 +8,6 @@
 #pragma once
 
 #include <memory>
-#include <mutex>
 #include <random>
 #include <sstream>
 #include <string>
@@ -24,7 +23,7 @@ std::string randomPolicyToString(RandomPolicy policy);
 RandomPolicy stringToRandomPolicy(const std::string& policy);
 
 template <typename T>
-class DatasetRandomiser {
+class ListRandomizer {
  public:
   struct Config {
     RandomPolicy policy_ = WITH_REPLACEMENT;
@@ -32,9 +31,7 @@ class DatasetRandomiser {
     std::string prettyString() const;
   };
 
-  DatasetRandomiser(
-      const DatasetRandomiser::Config& config,
-      std::vector<T> dataset);
+  ListRandomizer(const ListRandomizer::Config& config, std::vector<T> dataset);
 
   size_t size() const;
   const T& getIndex(int index) const;
@@ -51,8 +48,8 @@ class DatasetRandomiser {
 };
 
 template <typename T>
-DatasetRandomiser<T>::DatasetRandomiser(
-    const DatasetRandomiser::Config& config,
+ListRandomizer<T>::ListRandomizer(
+    const ListRandomizer::Config& config,
     std::vector<T> dataset)
     : conf_(config),
       randomEngine_(conf_.randomSeed_),
@@ -71,12 +68,12 @@ DatasetRandomiser<T>::DatasetRandomiser(
 }
 
 template <typename T>
-const T& DatasetRandomiser<T>::getIndex(int getIndex) const {
+const T& ListRandomizer<T>::getIndex(int getIndex) const {
   return dataset_[getIndex];
 }
 
 template <typename T>
-const T& DatasetRandomiser<T>::getRandom() {
+const T& ListRandomizer<T>::getRandom() {
   if (conf_.policy_ == WITHOUT_REPLACEMENT) {
     return getIndex(shuffle_[count_++ % shuffle_.size()]);
   } else {
@@ -85,23 +82,41 @@ const T& DatasetRandomiser<T>::getRandom() {
 }
 
 template <typename T>
-size_t DatasetRandomiser<T>::size() const {
+size_t ListRandomizer<T>::size() const {
   return dataset_.size();
 }
 
 template <typename T>
-std::string DatasetRandomiser<T>::prettyString() const {
+std::string ListRandomizer<T>::prettyString() const {
   std::stringstream ss;
-  ss << "DatasetRandomiser{conf_=" << conf_.prettyString()
+  ss << "ListRandomizer{conf_=" << conf_.prettyString()
      << " dataset_.size()=" << dataset_.size() << " count_=" << count_ << "}";
   return ss.str();
 }
 
 template <typename T>
-std::string DatasetRandomiser<T>::Config::prettyString() const {
-  return "DatasetRandomiser::Config{policy_=" + randomPolicyToString(policy_) +
+std::string ListRandomizer<T>::Config::prettyString() const {
+  return "ListRandomizer::Config{policy_=" + randomPolicyToString(policy_) +
       " randomSeed_=" + std::to_string(randomSeed_) + "}";
 }
+
+class RandomNumberGenerator {
+ public:
+  explicit RandomNumberGenerator(int seed = 0);
+
+  /// Returns a random integer N such that a <= N <= b
+  int randInt(int a, int b);
+
+  /// Returns a random floating point number in the range [0.0, 1.0).
+  float random();
+
+  /// Returns a random floating point number N such that a <= N <= b
+  float uniform(float a, float b);
+
+ private:
+  std::mt19937_64 randomEngine_;
+  std::uniform_real_distribution<float> uniformDist_;
+};
 
 } // namespace sfx
 } // namespace asr
