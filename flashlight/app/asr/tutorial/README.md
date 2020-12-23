@@ -1,8 +1,8 @@
 # Getting Started with Automatic Speech Recognition in Flashlight
 
 This tutorial uses the following binaries with the following capabilities:
-- [`fl_asr_tutorial_inference_ctc`](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/tutorial/README.md#inference-with-an-existing-ctc-model): perform inference with an existing model with CTC loss [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/facebookresearch/flashlight/blob/master/flashlight/app/asr/tutorial/notebooks/InferenceAndAlignmentCTC.ipynb)
-- [`fl_asr_tutorial_finetune_ctc`](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/tutorial/README.md#finetuning-with-an-existing-ctc-model): finetune an existing CTC model with additional data [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/facebookresearch/flashlight/blob/master/flashlight/app/asr/tutorial/notebooks/FinetuneCTC.ipynb)
+- [`fl_asr_tutorial_inference_ctc`](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/tutorial/README.md#inference-with-a-pretrained-ctc-model): perform inference with a pretrained model with CTC loss [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/facebookresearch/flashlight/blob/master/flashlight/app/asr/tutorial/notebooks/InferenceAndAlignmentCTC.ipynb)
+- [`fl_asr_tutorial_finetune_ctc`](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/tutorial/README.md#finetuning-with-a-pretrained-ctc-model): finetune a pretrained CTC model with additional data [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/facebookresearch/flashlight/blob/master/flashlight/app/asr/tutorial/notebooks/FinetuneCTC.ipynb)
 - [`fl_asr_align`](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/asr/tools/alignment): force align audio and transcriptions using a CTC model
 - [`fl_asr_voice_activity_detection_ctc`](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/asr/tools): [coming soon] detect speech and perform audio analysis
 
@@ -10,9 +10,9 @@ The [wav2letter Robust ASR (RASR) recipe](https://github.com/facebookresearch/wa
 
 See the [full documentation](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr) for more general training or decoding instructions.
 
-## Finetuning with Existing Model with Already-Labeled Audio
+## Finetuning a Pretrained Model with Already-Labeled Audio
 
-The outline below describes the end-to-end process of finetuning an existing acoustic model. In several steps:
+The outline below describes the end-to-end process of finetuning a pretrained acoustic model. In several steps:
 1. *Preprocessing the audio.*
 
     a. Most [audio formats](http://libsndfile.github.io/libsndfile/formats.html) are supported and are automatically detected.
@@ -27,9 +27,9 @@ The outline below describes the end-to-end process of finetuning an existing aco
 
 3. Generate a final list file for training and validation sets using the trimmed audio and transcriptions. See the [list file documentation](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/README.md#audio-and-transcriptions-data) for more details.
 
-4. Use the `fl_asr_tutorial_finetune_ctc` binary to [finetune the existing model](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/tutorial/README.md#finetuning-with-an-existing-ctc-model) (or [train your own](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/README.md#how-to-train-acoustic-model) from scratch). List files can be passed to finetuning or inference binaries using the `train`/`valid` or `test` flags, respectively.
+4. Use the `fl_asr_tutorial_finetune_ctc` binary to [finetune the pretrained model](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/tutorial/README.md#finetuning-with-a-pretrained-ctc-model) (or [train your own](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/README.md#how-to-train-acoustic-model) from scratch). List files can be passed to finetuning or inference binaries using the `train`/`valid` or `test` flags, respectively.
 
-## Inference with an Existing CTC Model
+## Inference with a Pretrained CTC Model
 
 See this colab notebook for a step-by-step tutorial.
 
@@ -49,11 +49,11 @@ The following parameters are also configurable when performing inference:
 
 See the [complete ASR app documentation](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/README.md) for a more detailed explanation of each of these flags. See the aforementioned colab tutorial for sensible values used in a demo.
 
-## Finetuning with an Existing CTC Model
+## Finetuning with a Pretrained CTC Model
 
 See this colab notebook for a step-by-step tutorial.
 
-The [`fl_asr_tutorial_finetune_ctc`](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/tutorial/FinetuneCTC.cpp) binary provides a means of finetuning an existing trained acoustic model on additional labeled audio. Usage of the binary is as follows:
+The [`fl_asr_tutorial_finetune_ctc`](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/tutorial/FinetuneCTC.cpp) binary provides a means of finetuning a pretrained acoustic model on additional labeled audio. Usage of the binary is as follows:
 ```
 ./fl_asr_tutorial_finetune_ctc [path to directory containing model] [...flags]
 ```
