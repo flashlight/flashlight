@@ -2,8 +2,7 @@
 
 This tutorial uses the following binaries with the following capabilities:
 - [`fl_asr_tutorial_inference_ctc`](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/tutorial/README.md#inference-with-an-existing-ctc-model): perform inference with an existing model with CTC loss [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/facebookresearch/flashlight/blob/master/flashlight/app/asr/tutorial/notebooks/InferenceCTC.ipynb)
-- [`fl_asr_tutorial_finetune_ctc`](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/tutorial/README.md#finetuning-with-an-existing-ctc-model): finetune an existing CTC model with additional data [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/facebookresearch/flashlight/blob/master/flashligh
-t/app/asr/tutorial/notebooks/FinetuneCTC.ipynb)
+- [`fl_asr_tutorial_finetune_ctc`](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/tutorial/README.md#finetuning-with-an-existing-ctc-model): finetune an existing CTC model with additional data [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/facebookresearch/flashlight/blob/master/flashlight/app/asr/tutorial/notebooks/FinetuneCTC.ipynb)
 - [`fl_asr_align`](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/asr/tools/alignment): force align audio and transcriptions using a CTC model
 - [`fl_asr_voice_activity_detection_ctc`](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/asr/tools): [coming soon] detect speech and perform audio analysis
 
