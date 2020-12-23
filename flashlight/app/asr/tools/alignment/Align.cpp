@@ -11,7 +11,7 @@
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/data/FeatureTransforms.h"
-#include "flashlight/app/asr/experimental/tools/alignment/Utils.h"
+#include "flashlight/app/asr/tools/alignment/Utils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/ext/common/Serializer.h"
