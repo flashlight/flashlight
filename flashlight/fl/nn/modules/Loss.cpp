@@ -44,6 +44,27 @@ std::string MeanAbsoluteError::prettyString() const {
   return "MeanAbsoluteError";
 }
 
+Variable CrossEntropy::forward(const Variable& p, const Variable& qLog) {
+  if (p.dims() != qLog.dims()) {
+    throw std::invalid_argument(
+        "CrossEntropy: dimension mismatch between inputs and targets");
+  }
+
+  auto ce = negate(sum(p * qLog, {0}));
+  if (reduction_ == ReduceMode::MEAN) {
+    ce = mean(ce, {1, 2, 3});
+  } else if (reduction_ == ReduceMode::SUM) {
+    ce = sum(ce, {1, 2, 3});
+  } else if (reduction_ != ReduceMode::NONE) {
+    throw std::invalid_argument("unknown reduction method cross entropy");
+  }
+  return ce;
+}
+
+std::string CrossEntropy::prettyString() const {
+  return "CrossEntropy";
+}
+
 Variable BinaryCrossEntropy::forward(
     const Variable& inputs,
     const Variable& targets) {

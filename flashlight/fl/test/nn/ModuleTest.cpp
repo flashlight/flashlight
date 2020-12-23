@@ -759,6 +759,26 @@ TEST(ModuleTest, ContainerReplaceParam) {
   ASSERT_TRUE(allClose(seq.param(6), new_param));
 }
 
+TEST(ModuleTest, CrossEntropyFwd) {
+  int N = 100;
+  int B1 = 100;
+  int B2 = 100;
+  int B3 = 100;
+
+  auto pRaw = af::randu(N, B1, B2, B3, af::dtype::f32);
+  auto qRaw = af::randu(N, B1, B2, B3, af::dtype::f32);
+  ASSERT_TRUE(!allClose(pRaw, qRaw));
+
+  auto p = softmax(input(pRaw), 0);
+  auto qLog = logSoftmax(input(qRaw), 0);
+  auto ce = CrossEntropy(ReduceMode::NONE);
+
+  // H(p, q) >= H(p)
+  auto hpq = ce(p, qLog);
+  auto hp = ce(p, log(p));
+  ASSERT_TRUE(af::allTrue<bool>(hpq.array() >= hp.array()));
+}
+
 TEST(ModuleTest, AdaptiveSoftMaxPredict) {
   // test predict gives the same as argmax along probs
   int N = 5;

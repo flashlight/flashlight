@@ -66,6 +66,48 @@ class MeanAbsoluteError : public BinaryModule {
 };
 
 /**
+ * Computes the cross entropy between two tensors of distributions.
+ *
+ * The first tensor is expected to contain probabilities of distribution `p`
+ * over a set of underlying events with size `N` on the first dimension. The
+ * second tensor is interpreted as log-probabilities of distribution `q` with
+ * the same shape of the first one.
+
+ * Specifically, we have
+ * \f[
+   \mathcal{H}(p, q) = - \sum_{x = 1}^N p(x)\log(q(x))
+   \f]
+ */
+class CrossEntropy : public BinaryModule {
+ private:
+  ReduceMode reduction_;
+
+  FL_SAVE_LOAD_WITH_BASE(BinaryModule, reduction_)
+
+ public:
+  /**
+   * Creates a `CrossEntropy`.
+   *
+   * @param reduction a reduction with which to compute the loss. See
+   * documentation on `ReduceMode` for available options.
+   */
+  explicit CrossEntropy(ReduceMode reduction = ReduceMode::MEAN)
+      : reduction_(reduction) {}
+
+  /**
+   * Computes the cross entropy loss for some input and target tensors.
+   *
+   * @param p a `Variable` with shape [\f$N\f$, \f$B_1\f$, \f$B_2\f$,
+   * \f$B_3\f$] where \f$N\f$ is the number of events.
+   * @param qLog a `Variable` with shape [\f$N\f$, \f$B_1\f$, \f$B_2\f$,
+   * \f$B_3\f$] where \f$N\f$ is the number of events.
+   */
+  Variable forward(const Variable& p, const Variable& qLog) override;
+
+  std::string prettyString() const override;
+};
+
+/**
  * Computes the binary cross entropy loss between an input tensor \f$x\f$ and a
  * target tensor \f$y\f$. The binary cross entropy loss is:
  * \f[
