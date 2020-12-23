@@ -1,11 +1,17 @@
 # Tools
 
-This directory contains tools for audio analysis and processing built on wav2letter.
+This directory contains tools for audio analysis and processing built on flashlight.
 
-To build the tools, simply pass `-DW2L_BUILD_TOOLS=ON` as a CMake flag when [building wav2letter](https://github.com/facebookresearch/wav2letter/wiki/General-building-instructions).
+To build the tools, ensure `-DFL_BUILD_APP_ASR_TOOLS=ON` as a CMake flag when building the ASR app.
 
 <details>
-<summary>VoiceActivityDetection-CTC.cpp</summary>
+<summary>Audio Force Alignment</summary>
+
+See the [`alignment` readme](https://github.com/jacobkahn/flashlight/tree/export-D25647716/flashlight/app/asr/tools/alignment) for documentation.
+</details>
+
+<details>
+<summary>Voice Activity Detection</summary>
 
 ## Voice Activity Detection with CTC + an n-gram Language Model
 `VoiceActivityDetection-CTC` contains a simple pipeline that supports a CTC-trained acoustic model trained with wav2letter and n-gram language model in an wav2letter binary format (see the [decoder documentation](https://github.com/facebookresearch/wav2letter/wiki/Beam-Search-Decoder) for more).
