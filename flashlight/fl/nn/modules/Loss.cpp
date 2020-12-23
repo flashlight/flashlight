@@ -205,4 +205,30 @@ std::string AdaptiveSoftMaxLoss::prettyString() const {
   return ss.str();
 }
 
+Variable CosineDistance::forward(
+    const Variable& inputs,
+    const Variable& targets) {
+  if (inputs.dims() != targets.dims()) {
+    throw std::invalid_argument(
+        "CrossEntropy: dimension mismatch between inputs and targets");
+  }
+
+  auto dis = 1.0 -
+      sum(inputs * targets, {0}) /
+          max(norm(inputs, {0}) * norm(targets, {0}), eps_);
+
+  if (reduction_ == ReduceMode::MEAN) {
+    dis = mean(dis, {1, 2, 3});
+  } else if (reduction_ == ReduceMode::SUM) {
+    dis = sum(dis, {1, 2, 3});
+  } else if (reduction_ != ReduceMode::NONE) {
+    throw std::invalid_argument("unknown reduction method cross entropy");
+  }
+  return dis;
+}
+
+std::string CosineDistance::prettyString() const {
+  return "CosineDistance";
+}
+
 } // namespace fl

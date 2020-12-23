@@ -266,6 +266,48 @@ class AdaptiveSoftMaxLoss : public BinaryModule {
   std::string prettyString() const override;
 };
 
+/**
+ * Computes the cosine distance between two tensors.
+ *
+ * Specifically, we have
+ * \f[
+    \mathcal{L}(x, y) = 1 - \frac{\sum_{i = 1}^N x_i y_i} {max(|x|_2 |y|_2,
+    \epsilon)}
+   \f]
+ */
+class CosineDistance : public BinaryModule {
+ private:
+  double eps_;
+  ReduceMode reduction_;
+
+  FL_SAVE_LOAD_WITH_BASE(BinaryModule, reduction_)
+
+ public:
+  /**
+   * Creates a `CosineDistance`.
+   *
+   * @param eps a small value to avoid division by zero.
+   * @param reduction a reduction with which to compute the loss. See
+   * documentation on `ReduceMode` for available options.
+   */
+  explicit CosineDistance(
+      double eps = 1e-8,
+      ReduceMode reduction = ReduceMode::MEAN)
+      : eps_(eps), reduction_(reduction) {}
+
+  /**
+   * Computes the cross entropy loss for some input and target tensors.
+   *
+   * @param inputs a `Variable` with shape [\f$N\f$, \f$B_1\f$, \f$B_2\f$,
+   * \f$B_3\f$] where \f$N\f$ is the number of events.
+   * @param targets a `Variable` with shape [\f$N\f$, \f$B_1\f$, \f$B_2\f$,
+   * \f$B_3\f$] where \f$N\f$ is the number of events.
+   */
+  Variable forward(const Variable& inputs, const Variable& targets) override;
+
+  std::string prettyString() const override;
+};
+
 typedef MeanSquaredError MSE;
 typedef MeanAbsoluteError MAE;
 typedef MeanAbsoluteError L1Loss;

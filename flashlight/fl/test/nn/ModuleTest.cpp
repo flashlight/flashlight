@@ -872,6 +872,28 @@ TEST(ModuleTest, IdentityFwd) {
   ASSERT_TRUE(allClose(out.at(1), in.at(1), 1e-20));
 }
 
+TEST(ModuleTest, CosineDistanceFwd) {
+  int N = 11;
+  int B1 = 12;
+  int B2 = 13;
+  int B3 = 14;
+
+  const auto inputs = Variable(af::randu(N, B1, B2, B3, af::dtype::f32), false);
+  const auto targets =
+      Variable(af::randu(N, B1, B2, B3, af::dtype::f32), false);
+  ASSERT_TRUE(!allClose(inputs, targets));
+
+  auto cd = CosineDistance(1e-8, ReduceMode::NONE);
+
+  auto dis = cd(inputs, targets);
+  ASSERT_TRUE(af::allTrue<bool>(dis.array() >= 0.));
+  ASSERT_TRUE(af::allTrue<bool>(dis.array() <= 2.));
+
+  dis = cd(inputs, inputs);
+  ASSERT_TRUE(allClose(
+      dis, Variable(af::constant(0., dis.dims(), af::dtype::f32), false)));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
