@@ -1767,6 +1767,58 @@ TEST(AutogradTest, GetAdvancedIndex) {
   ASSERT_TRUE(allClose(grad, res, 1e-3));
 }
 
+TEST(AutogradTest, GetAdvancedIndexF16) {
+  if (af::getActiveBackend() != AF_BACKEND_CUDA) {
+    GTEST_SKIP()
+        << "Advanced indexing operator unsupported for non-CUDA backends";
+  }
+  auto x = Variable(af::randu(20, 50, 40, 30, f16), true);
+  af::array a(6, s64);
+  a(0) = 0;
+  a(1) = 15;
+  a(2) = 6;
+  a(3) = 1;
+  a(4) = 10;
+  a(5) = 6;
+  af::array b(3, s64);
+  b(0) = 5;
+  b(1) = 11;
+  b(2) = 19;
+  auto x2 = x(a, b, af::span, af::seq(0, 3));
+  ASSERT_EQ(x2.type(), af::dtype::f16);
+  auto y = sum(x2 * x2, {0, 1, 2, 3});
+  auto res = 2 * sum(x2, {0, 1, 2, 3}).array();
+  y.backward();
+  ASSERT_EQ(x.grad().type(), af::dtype::f16);
+  auto grad = sum(x.grad(), {0, 1, 2, 3}).array();
+  ASSERT_TRUE(allClose(grad, res, 1e-3));
+}
+
+TEST(AutogradTest, GetAdvancedIndexS32) {
+  if (af::getActiveBackend() != AF_BACKEND_CUDA) {
+    GTEST_SKIP()
+        << "Advanced indexing operator unsupported for non-CUDA backends";
+  }
+  auto x = Variable(af::randu(20, 50, 40, 30, f32), true);
+  af::array a(6, s32);
+  a(0) = 0;
+  a(1) = 15;
+  a(2) = 6;
+  a(3) = 1;
+  a(4) = 10;
+  a(5) = 6;
+  af::array b(3, s32);
+  b(0) = 5;
+  b(1) = 11;
+  b(2) = 19;
+  auto x2 = x(a, b, af::span, af::seq(0, 3));
+  auto y = sum(x2 * x2, {0, 1, 2, 3});
+  auto res = 2 * sum(x2, {0, 1, 2, 3}).array();
+  y.backward();
+  auto grad = sum(x.grad(), {0, 1, 2, 3}).array();
+  ASSERT_TRUE(allClose(grad, res, 1e-3));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

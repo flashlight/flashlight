@@ -16,7 +16,7 @@
 #define GRID_SIZE 32
 #define BLOCK_SIZE 256
 
-template <class Float>
+template <class Float, class Index>
 __global__ void gradAdvancedIndexKernel(
     const Float* inp,
     const dim_t* idxStart,
@@ -57,7 +57,7 @@ __global__ void gradAdvancedIndexKernel(
     for (int i = 0; i < 4; i++) {
       // If indexing array specified, use it
       if (idxArr[i]) {
-        auto idxArrPtr = (dim_t*)idxArr[i];
+        auto idxArrPtr = (Index*)idxArr[i];
         outIdx += idxArrPtr[index[i]] * outStrides[i];
       } else {
         outIdx += (idxStart[i] + index[i]) * outStrides[i];
@@ -92,77 +92,65 @@ void gradAdvancedIndex(
   }
 
   DevicePtr idxArrRaw[4];
-  void* idxPtr[4];
+  af::dim4 idxPtr;
   // Extract raw device pointers for dimensions
   // that have an array as af::index variable
+
+  af::dtype idxType = s64;
   for (int i = 0; i < 4; i++) {
-    idxPtr[i] = NULL;
+    idxPtr[i] = 0;
     if (!idxArr[i].isempty()) {
-      auto idxType = idxArr[i].type();
-      if ((idxType != s64) && (idxType != s32)) {
-        throw std::invalid_argument("Index type must be s32/s64");
+      auto newIdxType = idxArr[i].type();
+      if ((newIdxType != idxType) && (newIdxType != s32)) {
+        throw std::invalid_argument(
+            "Index type must be s32/s64 and same across all dimensions");
       }
-      if (idxType == s32) {
-        idxArrRaw[i] = DevicePtr(idxArr[i].as(s64));
-      } else {
-        idxArrRaw[i] = DevicePtr(idxArr[i]);
-      }
-      idxPtr[i] = idxArrRaw[i].get();
+      idxType = newIdxType;
+      idxArrRaw[i] = DevicePtr(idxArr[i]);
+      idxPtr[i] = (dim_t)(idxArrRaw[i].get());
     }
+  }
+  Variable inpCast = inp;
+  if (inpType == f16) {
+    inpCast = inp.as(f32);
   }
   if (outType == f16) {
     out = out.as(f32);
   }
-  DevicePtr inpRaw(inp.array());
+  DevicePtr inpRaw(inpCast.array());
   DevicePtr outRaw(out.array());
-  if (inpType == f16) {
-    inpRaw = DevicePtr(inp.as(f32).array());
-  }
 
-  cudaStream_t stream = cuda::getActiveStream();
-
-  af::array arrIdxStart(4, s64);
-  af::array arrIdxEnd(4, s64);
-  af::array arrOutDims(4, s64);
-  af::array arrIdxPtr(4, s64);
+  af::array arrIdxPtr(4, idxPtr.get());
+  af::array arrIdxEnd(4, idxEnd.get());
+  af::array arrIdxStart(4, idxStart.get());
+  af::array arrOutDims(4, outDims.get());
   DevicePtr devIdxStart(arrIdxStart);
   DevicePtr devIdxEnd(arrIdxEnd);
   DevicePtr devOutDims(arrOutDims);
   DevicePtr devIdxPtr(arrIdxPtr);
 
-  // Transformer indexing information to device
-  FL_CUDA_CHECK(cudaMemcpyAsync(
-      devIdxStart.get(),
-      idxStart.get(),
-      4 * sizeof(dim_t),
-      cudaMemcpyHostToDevice,
-      stream));
-  FL_CUDA_CHECK(cudaMemcpyAsync(
-      devIdxEnd.get(),
-      idxEnd.get(),
-      4 * sizeof(dim_t),
-      cudaMemcpyHostToDevice,
-      stream));
-  FL_CUDA_CHECK(cudaMemcpyAsync(
-      devOutDims.get(),
-      outDims.get(),
-      4 * sizeof(dim_t),
-      cudaMemcpyHostToDevice,
-      stream));
-  FL_CUDA_CHECK(cudaMemcpyAsync(
-      devIdxPtr.get(),
-      reinterpret_cast<dim_t*>(idxPtr),
-      4 * sizeof(dim_t),
-      cudaMemcpyHostToDevice,
-      stream));
-
-  gradAdvancedIndexKernel<<<GRID_SIZE, BLOCK_SIZE, 0, stream>>>(
-      static_cast<const float*>(inpRaw.get()),
-      static_cast<const dim_t*>(devIdxStart.get()),
-      static_cast<const dim_t*>(devIdxEnd.get()),
-      static_cast<const dim_t*>(devOutDims.get()),
-      static_cast<const dim_t*>(devIdxPtr.get()),
-      static_cast<float*>(outRaw.get()));
+  cudaStream_t stream = cuda::getActiveStream();
+  if (idxType == s32) {
+    gradAdvancedIndexKernel<
+        float,
+        int32_t><<<GRID_SIZE, BLOCK_SIZE, 0, stream>>>(
+        static_cast<const float*>(inpRaw.get()),
+        static_cast<const dim_t*>(devIdxStart.get()),
+        static_cast<const dim_t*>(devIdxEnd.get()),
+        static_cast<const dim_t*>(devOutDims.get()),
+        static_cast<const dim_t*>(devIdxPtr.get()),
+        static_cast<float*>(outRaw.get()));
+  } else {
+    gradAdvancedIndexKernel<
+        float,
+        int64_t><<<GRID_SIZE, BLOCK_SIZE, 0, stream>>>(
+        static_cast<const float*>(inpRaw.get()),
+        static_cast<const dim_t*>(devIdxStart.get()),
+        static_cast<const dim_t*>(devIdxEnd.get()),
+        static_cast<const dim_t*>(devOutDims.get()),
+        static_cast<const dim_t*>(devIdxPtr.get()),
+        static_cast<float*>(outRaw.get()));
+  }
   FL_CUDA_CHECK(cudaPeekAtLastError());
 
   if (outType == f16) {
