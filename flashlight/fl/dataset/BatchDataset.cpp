@@ -9,6 +9,7 @@
 
 #include <math.h>
 #include <array>
+#include <numeric>
 #include <stdexcept>
 
 namespace fl {
@@ -47,63 +48,38 @@ BatchDataset::BatchDataset(
   }
 }
 
-std::vector<af::array> BatchDataset::get(const int64_t idx) const {
-  checkIndexBounds(idx);
-
-  std::vector<std::vector<af::array>> buffer;
-
-  int64_t start = batchSize_ * idx;
-  int64_t end = std::min(start + batchSize_, preBatchSize_);
-
-  for (int64_t batchidx = start; batchidx < end; ++batchidx) {
-    auto fds = dataset_->get(batchidx);
-    if (buffer.size() < fds.size()) {
-      buffer.resize(fds.size());
-    }
-    for (int64_t i = 0; i < fds.size(); ++i) {
-      buffer[i].emplace_back(fds[i]);
-    }
+BatchDataset::BatchDataset(
+    std::shared_ptr<const Dataset> dataset,
+    const std::vector<int64_t>& batchSizes,
+    const std::vector<BatchFunction>& batchfns /* = {} */)
+    : dataset_(dataset), cumSumBatchSize_(batchSizes), batchFns_(batchfns) {
+  if (!dataset_) {
+    throw std::invalid_argument("dataset to be batched is null");
   }
-  std::vector<af::array> result(buffer.size());
-  for (int64_t i = 0; i < buffer.size(); ++i) {
-    result[i] =
-        makeBatch(buffer[i], (i < batchFns_.size()) ? batchFns_[i] : nullptr);
+  if (cumSumBatchSize_.empty()) {
+    throw std::invalid_argument("batch size vector should not be empty");
   }
-  return result;
+  std::partial_sum(
+      cumSumBatchSize_.begin(),
+      cumSumBatchSize_.end(),
+      cumSumBatchSize_.begin());
+  preBatchSize_ = dataset_->size();
+  size_ = cumSumBatchSize_.size();
 }
 
-af::array BatchDataset::makeBatch(
-    const std::vector<af::array>& data,
-    const BatchFunction& batchFn) const {
-  if (batchFn) {
-    return batchFn(data);
+std::vector<af::array> BatchDataset::get(const int64_t idx) const {
+  checkIndexBounds(idx);
+  int64_t start, end;
+  if (cumSumBatchSize_.empty()) {
+    // batchsize is given
+    start = batchSize_ * idx;
+    end = std::min(start + batchSize_, preBatchSize_);
+  } else {
+    // specific batchsizes array is provided
+    start = idx == 0 ? 0 : cumSumBatchSize_[idx - 1];
+    end = std::min(cumSumBatchSize_[idx], preBatchSize_);
   }
-  // Using default batching function
-  if (data.empty()) {
-    return af::array();
-  }
-  auto dims = data[0].dims();
-
-  for (const auto& d : data) {
-    if (d.dims() != dims) {
-      throw std::invalid_argument("dimension mismatch while batching dataset");
-    }
-  }
-
-  int ndims = (data[0].elements() > 1) ? dims.ndims() : 0;
-
-  if (ndims >= 4) {
-    throw std::invalid_argument("# of dims must be < 4 for batching");
-  }
-  dims[ndims] = data.size();
-  auto batcharr = af::array(dims, data[0].type());
-
-  for (size_t i = 0; i < data.size(); ++i) {
-    std::array<af::seq, 4> sel{af::span, af::span, af::span, af::span};
-    sel[ndims] = af::seq(i, i);
-    batcharr(sel[0], sel[1], sel[2], sel[3]) = data[i];
-  }
-  return batcharr;
+  return makeBatchFromRange(dataset_, batchFns_, start, end);
 }
 
 int64_t BatchDataset::size() const {

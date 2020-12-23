@@ -74,6 +74,8 @@ DECLARE_int64(validbatchsize);
 DECLARE_int64(samplerate);
 DECLARE_int64(channels);
 DECLARE_string(tokens);
+DECLARE_string(batching_strategy);
+DECLARE_int64(batching_max_duration);
 DECLARE_bool(usewordpiece);
 DECLARE_int64(replabel);
 DECLARE_string(surround);

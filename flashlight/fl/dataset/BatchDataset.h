@@ -7,6 +7,7 @@
 
 #pragma once
 #include "flashlight/fl/dataset/Dataset.h"
+#include "flashlight/fl/dataset/Utils.h"
 
 namespace fl {
 
@@ -42,6 +43,14 @@ enum class BatchDatasetPolicy {
   BatchDataset batchds(ds, 10, BatchDatasetPolicy::INCLUDE_LAST);
   std::cout << batchds.get(0)[0].dims() << "\n"; // 5 4 10 1
   std::cout << batchds.get(4)[0].dims() << "\n"; // 5 4 2 1
+
+  // create batch sizes vector specifying the each batch size (dynamic)
+  std::vector<int64_t> batchSizes = {5, 10, 5, 10, 2, 10}
+
+  // Batch them with batchSizes
+  DynamicBatchDataset batchdsDynamic(ds, batchSizes);
+  std::cout << batchdsDynamic.get(0)[0].dims() << "\n"; // 5 4 5 1
+  std::cout << batchdsDynamic.get(5)[0].dims() << "\n"; // 5 4 10 1
   \endcode
  */
 class BatchDataset : public Dataset {
@@ -51,13 +60,23 @@ class BatchDataset : public Dataset {
    * @param[in] dataset The underlying dataset.
    * @param[in] batchsize The desired batch size.
    * @param[in] policy How to handle the last batch if sizes are indivisible.
-   * @param[in] permutationfn A permutation to be performed prior to batching.
    * @param[in] batchfns Custom batch function to use for difference indices.
    */
   BatchDataset(
       std::shared_ptr<const Dataset> dataset,
       int64_t batchsize,
       BatchDatasetPolicy policy = BatchDatasetPolicy::INCLUDE_LAST,
+      const std::vector<BatchFunction>& batchfns = {});
+
+  /**
+   * Creates a `BatchDataset`.
+   * @param[in] dataset The underlying dataset.
+   * @param[in] batchSizes desired batch sizes (dynamic).
+   * @param[in] batchfns Custom batch function to use for difference indices.
+   */
+  BatchDataset(
+      std::shared_ptr<const Dataset> dataset,
+      const std::vector<int64_t>& batchSizes,
       const std::vector<BatchFunction>& batchfns = {});
 
   int64_t size() const override;
@@ -68,13 +87,10 @@ class BatchDataset : public Dataset {
   std::shared_ptr<const Dataset> dataset_;
   int64_t batchSize_;
   BatchDatasetPolicy batchPolicy_;
+  std::vector<int64_t> cumSumBatchSize_;
   std::vector<BatchFunction> batchFns_;
 
   int64_t preBatchSize_; // Size of the dataset before batching
   int64_t size_;
-
-  af::array makeBatch(
-      const std::vector<af::array>& data,
-      const BatchFunction& batchFn) const;
 };
 } // namespace fl

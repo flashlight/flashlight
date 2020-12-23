@@ -82,6 +82,28 @@ TEST(DatasetTest, BatchDataset) {
       allClose(ff1[0], tensormap[0](af::span, af::span, af::seq(70, 76))));
 }
 
+TEST(DatasetTest, DynamicBatchDataset) {
+  // first create a tensor dataset
+  std::vector<af::array> tensormap = {af::randu(100, 200, 300)};
+  auto tensords = std::make_shared<TensorDataset>(tensormap);
+  std::vector<int64_t> bSzs = {20, 50, 20, 30, 10, 50, 20, 35, 15, 50};
+  BatchDataset batchds(tensords, bSzs);
+
+  // Check `size` method
+  ASSERT_EQ(batchds.size(), bSzs.size());
+
+  // Values using `get` method
+  auto ff1 = batchds.get(0);
+  ASSERT_EQ(ff1.size(), 1);
+  ASSERT_TRUE(
+      allClose(ff1[0], tensormap[0](af::span, af::span, af::seq(0, 19))));
+
+  ff1 = batchds.get(3);
+  ASSERT_EQ(ff1.size(), 1);
+  ASSERT_TRUE(
+      allClose(ff1[0], tensormap[0](af::span, af::span, af::seq(90, 119))));
+}
+
 TEST(DatasetTest, ShuffleDataset) {
   std::vector<af::array> tensormap = {af::randu(100, 200, 300)};
   auto tensords = std::make_shared<TensorDataset>(tensormap);
