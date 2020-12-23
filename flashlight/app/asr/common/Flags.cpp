@@ -59,6 +59,18 @@ DEFINE_string(
     tokens,
     "tokens.txt",
     "Tokens file path, the 'tokensdir' flag is used as a prefix for this path");
+DEFINE_string(
+    batching_strategy,
+    "none",
+    "Batching strategy to use, supports {'none', 'dynamic'}. "
+    "When using 'none' strategy then batchsize is used. "
+    "When using 'dynamic' batching for training, batchsize will be ignored "
+    "and max_tokens is used to define the effective batch size");
+DEFINE_int64(
+    batching_max_duration,
+    0,
+    "Maximum number of tokens/frames in the batch when using 'dynamic' batching strategy. "
+    "Measured with the same unit as input sizes are specified in data list files");
 DEFINE_bool(
     usewordpiece,
     false,
@@ -273,7 +285,10 @@ DEFINE_string(
 
 // RUN OPTIONS
 DEFINE_string(datadir, "", "Prefix to the 'train'/'valid'/'test' files paths");
-DEFINE_string(rundir, "", "[train] Name of the experiment root directory where logs, snapshots will be stored");
+DEFINE_string(
+    rundir,
+    "",
+    "[train] Name of the experiment root directory where logs, snapshots will be stored");
 DEFINE_string(
     flagsfile,
     "",
@@ -477,8 +492,14 @@ DEFINE_int32(
     std::numeric_limits<int>::max(),
     "[train] Hard attention limit in seq2seq decoder only for 'seq2seq' criterion");
 
-DEFINE_double(lmweight_low, 0.0, "language model weight (low boundary, search)");
-DEFINE_double(lmweight_high, 4.0, "language model weight (high boundary, search)");
+DEFINE_double(
+    lmweight_low,
+    0.0,
+    "language model weight (low boundary, search)");
+DEFINE_double(
+    lmweight_high,
+    4.0,
+    "language model weight (high boundary, search)");
 DEFINE_double(lmweight_step, 0.2, "language model weight (step, search)");
 
 // ASG OPTIONS

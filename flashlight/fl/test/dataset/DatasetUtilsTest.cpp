@@ -33,6 +33,26 @@ TEST(DatasetTest, RoundRobinPacker) {
   ASSERT_EQ(samples, std::vector<int64_t>({0, 1, 4, 5}));
 }
 
+TEST(DatasetTest, DynamicRoundRobinPacker) {
+  std::vector<float> length = {2, 4, 1, 2, 3, 7, 4, 3};
+  auto samples = dynamicPartitionByRoundRobin(length, 0, 2, 12);
+  ASSERT_EQ(samples.first.size(), 4);
+  // indices which packed into 0-th thread
+  ASSERT_EQ(samples.first, std::vector<int64_t>({0, 1, 2, 5}));
+  ASSERT_EQ(samples.second.size(), 2);
+  // sizes of batches in the 0-th thread
+  ASSERT_EQ(samples.second, std::vector<int64_t>({3, 1}));
+
+  length = {2, 4, 1, 2, 3, 7, 4, 3, 5};
+  samples = dynamicPartitionByRoundRobin(length, 0, 2, 12);
+  ASSERT_EQ(samples.first.size(), 4);
+  // indices which packed into 0-th thread
+  ASSERT_EQ(samples.first, std::vector<int64_t>({0, 1, 2, 5}));
+  ASSERT_EQ(samples.second.size(), 2);
+  // sizes of batches in the 0-th thread
+  ASSERT_EQ(samples.second, std::vector<int64_t>({3, 1}));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

@@ -150,8 +150,7 @@ int main(int argc, char** argv) {
         FLAGS_world_size,
         FLAGS_max_devices_per_node,
         FLAGS_rndv_filepath);
-    reducer = std::make_shared<fl::CoalescingReducer>(
-        1.0 / fl::getWorldSize(), true, true);
+    reducer = std::make_shared<fl::CoalescingReducer>(1.0, true, true);
   }
 
   int worldRank = fl::getWorldRank();
@@ -287,7 +286,9 @@ int main(int argc, char** argv) {
       wordTransform,
       std::make_tuple(0, targetpadVal, wordpadVal),
       worldRank,
-      worldSize);
+      worldSize,
+      FLAGS_batching_strategy,
+      FLAGS_batching_max_duration);
 
   std::map<std::string, std::shared_ptr<fl::Dataset>> validds;
   int64_t validBatchSize =
@@ -856,7 +857,7 @@ int main(int argc, char** argv) {
         af::sync();
         meters.timer.incUnit();
         meters.sampletimer.stopAndIncUnit();
-        meters.stats.add(batch[kInputIdx], batch[kTargetIdx]);
+        meters.stats.add(batch[kDurationIdx], batch[kTargetSizeIdx]);
         if (af::anyTrue<bool>(af::isNaN(batch[kInputIdx])) ||
             af::anyTrue<bool>(af::isNaN(batch[kTargetIdx]))) {
           LOG(FATAL) << "Sample has NaN values - "
@@ -931,11 +932,17 @@ int main(int argc, char** argv) {
           meters.optimtimer.resume();
 
           // scale down gradients by batchsize
+          af::array totalBatchSizeArr =
+              af::constant(batch[kInputIdx].dims(3), 1, f32);
+          if (reducer) {
+            fl::allReduce(totalBatchSizeArr);
+          }
+          float totalBatchSize = totalBatchSizeArr.scalar<float>();
           for (const auto& p : ntwrk->params()) {
             if (!p.isGradAvailable()) {
               continue;
             }
-            p.grad() = p.grad() / (FLAGS_batchsize * scaleFactor);
+            p.grad() = p.grad() / (totalBatchSize * scaleFactor);
             if (FLAGS_fl_amp_use_mixed_precision) {
               if (af::anyTrue<bool>(af::isNaN(p.grad().array())) ||
                   af::anyTrue<bool>(af::isInf(p.grad().array()))) {
@@ -961,7 +968,7 @@ int main(int argc, char** argv) {
             if (!p.isGradAvailable()) {
               continue;
             }
-            p.grad() = p.grad() / (FLAGS_batchsize * scaleFactor);
+            p.grad() = p.grad() / (totalBatchSize * scaleFactor);
           }
 
         } while (retrySample);
