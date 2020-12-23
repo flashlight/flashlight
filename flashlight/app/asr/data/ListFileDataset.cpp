@@ -100,8 +100,9 @@ std::vector<af::array> ListFileDataset::get(const int64_t idx) const {
   af::array sampleIdx = af::array(ids_[idx].length(), ids_[idx].data());
   af::array samplePath = af::array(inputs_[idx].length(), inputs_[idx].data());
   af::array sampleDuration = af::array(1, inputSizes_.data() + idx);
+  af::array sampleTargetSize = af::constant(float(target.elements()), 1);
 
-  return {input, target, words, sampleIdx, samplePath, sampleDuration};
+  return {input, target, words, sampleIdx, samplePath, sampleDuration, sampleTargetSize};
 }
 
 std::pair<std::vector<float>, af::dim4> ListFileDataset::loadAudio(

@@ -72,26 +72,30 @@ std::string getLogString(
   }
   auto stats = meters.stats.value();
   auto numsamples = std::max<int64_t>(stats[4], 1);
+  auto numbatches = std::max<int64_t>(stats[5], 1);
+  // assumed to be in ms of original audios
   auto isztotal = stats[0];
   auto tsztotal = stats[1];
   auto tszmax = stats[3];
-  insertItem("avg-isz", format("%03d", isztotal / numsamples));
+  auto iszAvrFrames = isztotal / numsamples;
+  if (FLAGS_pow || FLAGS_mfcc || FLAGS_mfsc) {
+    iszAvrFrames = iszAvrFrames / FLAGS_framestridems;
+  } else {
+    iszAvrFrames = iszAvrFrames / 1000 * FLAGS_samplerate;
+  }
+  insertItem("avg-isz", format("%03d", iszAvrFrames));
   insertItem("avg-tsz", format("%03d", tsztotal / numsamples));
   insertItem("max-tsz", format("%03d", tszmax));
 
-  double audioProcSec = isztotal * FLAGS_batchsize;
-  if (FLAGS_pow || FLAGS_mfcc || FLAGS_mfsc) {
-    audioProcSec = audioProcSec * FLAGS_framestridems / 1000.0;
-  } else {
-    audioProcSec /= FLAGS_samplerate;
-  }
   auto worldSize = fl::getWorldSize();
-  double timeTakenSec = meters.timer.value() * numsamples / worldSize;
+  double timeTakenSec = meters.timer.value() * numbatches / worldSize;
 
-  insertItem("hrs", format("%7.2f", audioProcSec / 3600.0));
+  insertItem("avr-batchsz", format("%7.2f", float(numsamples) / numbatches));
+  insertItem("hrs", format("%7.2f", isztotal / 1000 / 3600.0));
   insertItem(
       "thrpt(sec/sec)",
-      timeTakenSec > 0.0 ? format("%.2f", audioProcSec / timeTakenSec) : "n/a");
+      timeTakenSec > 0.0 ? format("%.2f", isztotal / 1000 / timeTakenSec)
+                         : "n/a");
   insertItem("timestamp", getCurrentDate() + " " + getCurrentTime());
   return status;
 }

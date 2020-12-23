@@ -68,6 +68,10 @@ std::vector<std::string> readSampleIds(const af::array& arr);
  * @param targetTransform - a function to featurize target
  * @param wordTransform - a function to featurize words
  * @param padVal - a tuple of padding values when batching input, target, word
+ * @param batchingStrategy - batching strategy for the data, for now "none" and
+ * "dynamic"
+ * @param maxDurationPerBatch - is used for batchingStrategy="dynamic", max total
+ * duration in a batch
  */
 std::shared_ptr<fl::Dataset> createDataset(
     const std::vector<std::string>& paths,
@@ -80,7 +84,9 @@ std::shared_ptr<fl::Dataset> createDataset(
                                                                         -1,
                                                                         -1},
     int worldRank = 0,
-    int worldSize = 1);
+    int worldSize = 1,
+    const std::string& batchingStrategy = kBatchStrategyNone,
+    int maxDurationPerBatch = 0);
 
 std::shared_ptr<fl::Dataset> loadPrefetchDataset(
     std::shared_ptr<fl::Dataset> dataset,

@@ -83,23 +83,27 @@ TEST(RuntimeTest, TestCleanFilepath) {
 
 TEST(RuntimeTest, SpeechStatMeter) {
   SpeechStatMeter meter;
-  std::array<int, 5> a{1, 2, 3, 4, 5};
-  std::array<int, 6> b{1, 1, 3, 3, 5, 6};
-  meter.add(af::array(5, a.data()), af::array(6, b.data()));
+  std::array<int, 2> inpSizes1{4, 5};
+  std::array<int, 2> tgSizes1{6, 10};
+  std::array<int, 4> inpSizes2{2, 4, 2, 8};
+  std::array<int, 4> tgSizes2{3, 7, 2, 4};
+  meter.add(af::array(1, 2, inpSizes1.data()), af::array(1, 2, tgSizes1.data()));
   af::array out;
   auto stats1 = meter.value();
-  ASSERT_EQ(stats1[0], 5.0);
-  ASSERT_EQ(stats1[1], 6.0);
+  ASSERT_EQ(stats1[0], 9.0);
+  ASSERT_EQ(stats1[1], 16.0);
   ASSERT_EQ(stats1[2], 5.0);
-  ASSERT_EQ(stats1[3], 6.0);
-  ASSERT_EQ(stats1[4], 1.0);
-  meter.add(af::array(3, a.data() + 1), af::array(3, b.data()));
+  ASSERT_EQ(stats1[3], 10.0);
+  ASSERT_EQ(stats1[4], 2.0);
+  ASSERT_EQ(stats1[5], 1);
+  meter.add(af::array(1, 4, inpSizes2.data()), af::array(1, 4, tgSizes2.data()));
   auto stats2 = meter.value();
-  ASSERT_EQ(stats2[0], 8.0);
-  ASSERT_EQ(stats2[1], 9.0);
-  ASSERT_EQ(stats2[2], 5.0);
-  ASSERT_EQ(stats2[3], 6.0);
-  ASSERT_EQ(stats2[4], 2.0);
+  ASSERT_EQ(stats2[0], 25.0);
+  ASSERT_EQ(stats2[1], 32.0);
+  ASSERT_EQ(stats2[2], 8.0);
+  ASSERT_EQ(stats2[3], 10.0);
+  ASSERT_EQ(stats2[4], 6.0);
+  ASSERT_EQ(stats2[5], 2);
 }
 
 TEST(RuntimeTest, parseValidSets) {

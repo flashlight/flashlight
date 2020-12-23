@@ -7,6 +7,7 @@
 
 #include "flashlight/app/asr/runtime/Helpers.h"
 
+#include <numeric>
 #include <random>
 #include <utility>
 
@@ -108,7 +109,9 @@ std::shared_ptr<fl::Dataset> createDataset(
     const fl::Dataset::DataTransformFunction& wordTransform /* = nullptr */,
     const std::tuple<int, int, int>& padVal /* = {0, -1, -1} */,
     int worldRank /* = 0 */,
-    int worldSize /* = 1 */) {
+    int worldSize /* = 1 */,
+    const std::string& batchingStrategy /* kBatchStrategyNone */,
+    int maxDurationPerBatch /* = 0 */) {
   std::vector<std::shared_ptr<const fl::Dataset>> allListDs;
   std::vector<float> sizes;
   for (auto& path : paths) {
@@ -147,39 +150,52 @@ std::shared_ptr<fl::Dataset> createDataset(
     return sizes[l] > sizes[r];
   };
   std::stable_sort(sortedIds.begin(), sortedIds.end(), cmp);
+  std::stable_sort(sizes.begin(), sizes.end(), std::greater<float>());
 
   auto concatListDs = std::make_shared<fl::ConcatDataset>(allListDs);
 
   auto sortedDs =
       std::make_shared<fl::ResampleDataset>(concatListDs, sortedIds);
 
-  // Partition the dataset and distribute
-  auto partitions = fl::partitionByRoundRobin(
-      sortedDs->size(), worldRank, worldSize, batchSize);
-  auto paritionDs = std::make_shared<fl::ResampleDataset>(sortedDs, partitions);
-
-  // Batch the dataset
   int inPad, tgtPad, wrdPad;
   std::tie(inPad, tgtPad, wrdPad) = padVal;
-  return std::make_shared<fl::BatchDataset>(
-      paritionDs,
-      batchSize,
-      fl::BatchDatasetPolicy::INCLUDE_LAST,
-      std::vector<fl::Dataset::BatchFunction>{
-          [inPad](const std::vector<af::array>& arr) {
-            return fl::join(arr, inPad, 3);
-          },
-          [tgtPad](const std::vector<af::array>& arr) {
-            return fl::join(arr, tgtPad, 1);
-          },
-          [wrdPad](const std::vector<af::array>& arr) {
-            return fl::join(arr, wrdPad, 1);
-          },
-          [](const std::vector<af::array>& arr) { return fl::join(arr, 0, 1); },
-          [](const std::vector<af::array>& arr) { return fl::join(arr, 0, 1); },
-          [](const std::vector<af::array>& arr) {
-            return fl::join(arr, 0, 1);
-          }});
+  auto batchFns = std::vector<fl::Dataset::BatchFunction>{
+      [inPad](const std::vector<af::array>& arr) {
+        return fl::join(arr, inPad, 3);
+      },
+      [tgtPad](const std::vector<af::array>& arr) {
+        return fl::join(arr, tgtPad, 1);
+      },
+      [wrdPad](const std::vector<af::array>& arr) {
+        return fl::join(arr, wrdPad, 1);
+      },
+      [](const std::vector<af::array>& arr) { return fl::join(arr, 0, 1); },
+      [](const std::vector<af::array>& arr) { return fl::join(arr, 0, 1); },
+      [](const std::vector<af::array>& arr) { return fl::join(arr, 0, 1); },
+      [](const std::vector<af::array>& arr) { return fl::join(arr, 0, 1); }};
+  if (batchingStrategy == kBatchStrategyDynamic) {
+    // Partition the dataset and distribute
+    auto result = fl::dynamicPartitionByRoundRobin(
+        sizes, worldRank, worldSize, maxDurationPerBatch);
+    auto partitions = result.first;
+    auto batchSizes = result.second;
+    auto paritionDs =
+        std::make_shared<fl::ResampleDataset>(sortedDs, partitions);
+    // Batch the dataset
+    return std::make_shared<fl::BatchDataset>(paritionDs, batchSizes, batchFns);
+  } else if (batchingStrategy == kBatchStrategyNone) {
+    // Partition the dataset and distribute
+    auto partitions = fl::partitionByRoundRobin(
+        sortedDs->size(), worldRank, worldSize, batchSize);
+    auto paritionDs =
+        std::make_shared<fl::ResampleDataset>(sortedDs, partitions);
+    // Batch the dataset
+    return std::make_shared<fl::BatchDataset>(
+        paritionDs, batchSize, fl::BatchDatasetPolicy::INCLUDE_LAST, batchFns);
+  } else {
+    throw std::runtime_error(
+        "Unsupported batching strategy '" + batchingStrategy + "'");
+  }
 }
 
 std::shared_ptr<fl::Dataset> loadPrefetchDataset(
@@ -212,8 +228,6 @@ std::vector<std::pair<std::string, std::string>> parseValidSets(
   }
   return validTagSets;
 }
-
-
 
 } // namespace asr
 } // namespace app
