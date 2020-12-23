@@ -37,7 +37,9 @@ var reader;
 var recorder, gumStream;
 
 function restyleButtonBeforeRecording() {
-  recordButton.style.padding = '35px';
+  recordButton.style.width = '270px';
+  recordButton.style.height = '90';
+  recordButton.style.padding = '25px';
   recordButton.style.backgroundColor = '#4CAF50';
   recordButton.style.fontSize = '18px';
 }
@@ -48,8 +50,8 @@ function restyleButtonForRecording() {
 }
 
 function restyleButtonForSaving() {
-  recordButton.style.backgroundColor = '#f44336';
-  recordButton.innerText = "Saving the recording... please wait!"
+  recordButton.style.backgroundColor = '#b34d4d';
+  recordButton.innerText = "Saving... please wait!"
 }
 
 var handleSuccess = function(stream) {
