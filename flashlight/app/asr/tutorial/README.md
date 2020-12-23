@@ -24,7 +24,7 @@ The outline below describes the end-to-end process of finetuning an existing aco
     a. Using the existing transcriptions, generate audio-text alignments using the `fl_asr_align` binary. See the [full alignment documentation](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/asr/tools/alignment).
 
     b. Based on the alignments, trim the existing audio to include sections containing speech. Doing so typically increases training speed.
-  
+
 3. Generate a final list file for training and validation sets using the trimmed audio and transcriptions. See the [list file documentation](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/README.md#audio-and-transcriptions-data) for more details.
 
 4. Use the `fl_asr_tutorial_finetune_ctc` binary to [finetune the existing model](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/tutorial/README.md#finetuning-with-an-existing-ctc-model) (or [train your own](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/README.md#how-to-train-acoustic-model) from scratch). List files can be passed to finetuning or inference binaries using the `train`/`valid` or `test` flags, respectively.
