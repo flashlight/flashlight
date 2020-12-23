@@ -14,13 +14,13 @@ See the [`alignment` readme](https://github.com/jacobkahn/flashlight/tree/export
 <summary>Voice Activity Detection</summary>
 
 ## Voice Activity Detection with CTC + an n-gram Language Model
-`VoiceActivityDetection-CTC` contains a simple pipeline that supports a CTC-trained acoustic model trained with wav2letter and n-gram language model in an wav2letter binary format (see the [decoder documentation](https://github.com/facebookresearch/wav2letter/wiki/Beam-Search-Decoder) for more).
+`VoiceActivityDetection-CTC` contains a simple pipeline that supports a CTC-trained acoustic model trained with Flashlight and n-gram language model in an accepted binary format (see the [decoder documentation](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/asr/README.md#beam-search-decoder) for more).
 
 ### Using the Pipeline
-Build the tool with `make VoiceActivityDetection-CTC`.
+Build the tool with `make fl_asr_voice_activity_detection_ctc -j$(nproc)`.
 
 #### Input List File
-First, create an input list file containing the audio data. The list file should exactly follow the standard wav2letter [list input format for training](https://github.com/facebookresearch/wav2letter/blob/master/docs/data_prep.md#audio-and-transcriptions-data), but the transcriptions column should be empty. For instance:
+First, create an input list file containing the audio data. The list file should exactly follow the standard wav2letter [list input format for training](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/asr/README.md#audio-and-transcriptions-data), but the transcriptions column should be empty. For instance:
 ```
 // Example input file
 
@@ -36,10 +36,10 @@ train004 /tmp/000000003.flac 999.99
 #### Running
 Run the binary:
 ```
-[path to binary]/VoiceActivityDetection-CTC \
-    -am [path to model] \
-    -lm [path to language model] \
-    -test [path to list file] \
+[path to binary]/fl_asr_voice_activity_detection_ctc \
+    --am [path to model] \
+    --lm [path to language model] \
+    --test [path to list file] \
     --lexicon [path to lexicon file] \
     --maxload -1 \
     --datadir= \
@@ -55,7 +55,7 @@ The script outputs four files named by each input sample ID in the directory spe
 
 ### Acoustic Models for Audio Analysis
 
-Below are models compatible with the below audio analysis pipelines.
+Below are baseline models usable with the tool, although any model/lexicon/token set can be used..
 
 | File | Dataset | Dev Set | Criterion | Architecture | Lexicon | Tokens |
 | - | - | - | - | - | - | - |
