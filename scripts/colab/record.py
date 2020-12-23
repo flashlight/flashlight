@@ -1,4 +1,9 @@
 """
+Copyright (c) Facebook, Inc. and its affiliates.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree.
+
 Here are some of the possible references:
 https://blog.addpipe.com/recording-audio-in-the-browser-using-pure-html5-and-minimal-javascript/
 https://stackoverflow.com/a/18650249
