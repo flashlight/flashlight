@@ -1,22 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
 
-# ------------------------- Library -------------------------
+cmake_dependent_option(FL_BUILD_APP_ASR_TOOLS "Build ASR App tools" ON "FL_BUILD_APP_ASR" OFF)
+
 add_library(
   flashlight-app-asr
   ""
   )
 
-# ------------------------- Dependency Fallback -------------------------
-
-if (FL_LIBRARIES_USE_MKL)
-  find_package(MKL)
-  if (NOT MKL_FOUND)
-    message(WARNING "MKL not found; forcing FL_LIBRARIES_USE_MKL=OFF.")
-    set(FL_LIBRARIES_USE_MKL OFF CACHE BOOL "" FORCE)
-  endif ()
-endif ()
-
-# ------------------------ Global External Dependencies ------------------------
 # Find GLog
 find_package(GLOG REQUIRED)
 if (GLOG_FOUND)
@@ -97,6 +87,11 @@ target_link_libraries(fl_asr_tutorial_finetune_ctc flashlight-app-asr ${CMAKE_DL
 
 set_executable_output_directory(fl_asr_tutorial_inference_ctc "${FL_BUILD_BINARY_OUTPUT_DIR}/asr")
 set_executable_output_directory(fl_asr_tutorial_finetune_ctc "${FL_BUILD_BINARY_OUTPUT_DIR}/asr")
+
+# --------------------------- Tools ---------------------------
+if (FL_BUILD_APP_ASR_TOOLS)
+  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/tools)
+endif()
 
 # --------------------------- Tests ---------------------------
 
