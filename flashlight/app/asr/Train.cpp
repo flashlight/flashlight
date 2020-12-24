@@ -23,6 +23,7 @@
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/data/FeatureTransforms.h"
 #include "flashlight/app/asr/decoder/DecodeMaster.h"
+#include "flashlight/app/asr/decoder/PlGenerator.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/ext/common/DistributedUtils.h"
@@ -47,6 +48,7 @@ using fl::lib::pathsConcat;
 using namespace fl::app::asr;
 
 namespace {
+
 void parseCmdLineFlagsWrapper(int argc, char** argv) {
   LOG(INFO) << "Parsing command line flags";
   gflags::ParseCommandLineFlags(&argc, &argv, false);
@@ -60,6 +62,34 @@ void parseCmdLineFlagsWrapper(int argc, char** argv) {
   // aren't
   handleDeprecatedFlags();
 }
+
+// Extra flags for IPL
+DEFINE_string(unsup_datadir, "", "datadir for unsupervised lists");
+DEFINE_string(
+    unsup_train,
+    "",
+    "comma-separated list of unsupervised training data");
+DEFINE_string(
+    ipl_relabel_epoch,
+    "10000000",
+    "comma-separated list of epoch to regenerate PL");
+DEFINE_string(
+    ipl_relabel_ratio,
+    "1",
+    "comma-separated list of number of files to regenerate PL");
+DEFINE_bool(ipl_use_existing_pl, false, "use existing pl from the list file");
+DEFINE_double(ipl_seed_model_wer, -1, "WER of seed model");
+DEFINE_double(ipl_minisz, 0, "minimum duration of audio");
+DEFINE_double(
+    ipl_maxisz,
+    std::numeric_limits<double>::max(),
+    "maximum duration of audio");
+DEFINE_int64(ipl_mintsz, 0, "minimum length of targets in words");
+DEFINE_int64(
+    ipl_maxtsz,
+    std::numeric_limits<int64_t>::max(),
+    "maximum length of targets in words");
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -275,6 +305,7 @@ int main(int argc, char** argv) {
       ? tokenDict.getIndex(fl::app::asr::kEosToken)
       : kTargetPadValue;
   int wordpadVal = kTargetPadValue;
+  auto padVal = std::make_tuple(0, targetpadVal, wordpadVal);
 
   std::vector<std::string> trainSplits = fl::lib::split(",", FLAGS_train, true);
   auto trainds = createDataset(
@@ -284,7 +315,7 @@ int main(int argc, char** argv) {
       inputTransform,
       targetTransform,
       wordTransform,
-      std::make_tuple(0, targetpadVal, wordpadVal),
+      padVal,
       worldRank,
       worldSize,
       FLAGS_batching_strategy,
@@ -301,7 +332,7 @@ int main(int argc, char** argv) {
         inputTransform,
         targetTransform,
         wordTransform,
-        std::make_tuple(0, targetpadVal, wordpadVal),
+        padVal,
         worldRank,
         worldSize);
   }
@@ -468,8 +499,64 @@ int main(int argc, char** argv) {
     ar(CEREAL_NVP(config));
   }
 
+  /* ===================== PL Generator ===================== */
+  TokenToWordFunc tokenToWord =
+      [](const std::vector<int>& tokens,
+         const fl::lib::text::Dictionary& dict,
+         bool isPrediction) -> std::vector<std::string> {
+    std::vector<std::string> letters;
+    if (isPrediction) {
+      letters = tknPrediction2Ltr(
+          tokens,
+          dict,
+          FLAGS_criterion,
+          FLAGS_surround,
+          FLAGS_eostoken,
+          FLAGS_replabel,
+          FLAGS_usewordpiece,
+          FLAGS_wordseparator);
+    } else {
+      letters = tknTarget2Ltr(
+          tokens,
+          dict,
+          FLAGS_criterion,
+          FLAGS_surround,
+          FLAGS_eostoken,
+          FLAGS_replabel,
+          FLAGS_usewordpiece,
+          FLAGS_wordseparator);
+    }
+    return tkn2Wrd(letters, FLAGS_wordseparator);
+  };
+
+  // PlGenerator will always be created. However, if no ipl-related flags are
+  // specified, the dummy PlGenerator created from the default values will be
+  // completely invisible in training.
+  auto plGenerator = PlGenerator(
+      tokenDict,
+      runPath,
+      worldRank,
+      worldSize,
+      FLAGS_batchsize,
+      FLAGS_unsup_datadir,
+      FLAGS_unsup_train,
+      FLAGS_ipl_relabel_epoch,
+      FLAGS_ipl_relabel_ratio,
+      FLAGS_ipl_use_existing_pl,
+      FLAGS_ipl_seed_model_wer,
+      FLAGS_ipl_minisz,
+      FLAGS_ipl_maxisz,
+      FLAGS_ipl_mintsz,
+      FLAGS_ipl_maxtsz,
+      padVal,
+      inputTransform,
+      targetTransform,
+      wordTransform,
+      tokenToWord);
+
+  /* ===================== Hooks ===================== */
   auto logStatus =
-      [&logFile, isMaster](
+      [&logFile, &validTagSets, &plGenerator, isMaster](
           TrainMeters& mtrs,
           std::unordered_map<std::string, double>& validWerWithDecoder,
           int64_t epoch,
@@ -477,6 +564,8 @@ int main(int argc, char** argv) {
           double lr,
           double lrcrit) {
         syncMeter(mtrs);
+        plGenerator.setModelWER(
+            mtrs.valid[validTagSets.front().first].wrdEdit.value()[0]);
 
         if (isMaster) {
           auto logMsg = getLogString(
@@ -563,7 +652,6 @@ int main(int argc, char** argv) {
     }
   };
 
-  /* ===================== Hooks ===================== */
   auto evalOutput = [&tokenDict, &criterion](
                         const af::array& op,
                         const af::array& target,
@@ -702,6 +790,17 @@ int main(int argc, char** argv) {
   };
 
   int64_t curEpoch = startEpoch;
+  // Try reloading existing PL
+  auto unsupDataDir = plGenerator.reloadPl(curEpoch);
+  // If loading failes, try regenerate PL
+  if (unsupDataDir.empty()) {
+    unsupDataDir = plGenerator.regeneratePl(curEpoch, network, criterion);
+  }
+  // If any PLs loaded, update train set
+  if (!unsupDataDir.empty()) {
+    trainds =
+        plGenerator.createTrainSet(FLAGS_datadir, FLAGS_train, unsupDataDir);
+  }
 
   auto train = [&meters,
                 &validWerWithDecoder,
@@ -712,6 +811,7 @@ int main(int argc, char** argv) {
                 &validds,
                 &curEpoch,
                 &startUpdate,
+                &plGenerator,
                 reducer](
                    std::shared_ptr<fl::Module> ntwrk,
                    std::shared_ptr<SequenceCriterion> crit,
@@ -1022,6 +1122,13 @@ int main(int argc, char** argv) {
       if (FLAGS_reportiters == 0) {
         runValAndSaveModel(
             curEpoch, curBatch, netopt->getLr(), critopt->getLr());
+      }
+
+      // Try regenerate PL
+      auto newUnsupDataDir = plGenerator.regeneratePl(curEpoch, ntwrk, crit);
+      if (!newUnsupDataDir.empty()) {
+        trainset = plGenerator.createTrainSet(
+            FLAGS_datadir, FLAGS_train, newUnsupDataDir);
       }
     }
   };
