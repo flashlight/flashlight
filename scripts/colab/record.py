@@ -111,7 +111,7 @@ var data = new Promise(resolve=>{
 def convert(inputfile, outfile):
     sox_tfm = sox.Transformer()
     sox_tfm.set_output_format(
-        file_type="wav", encoding="signed-integer", rate=16000, bits=16
+        file_type="wav", channels=1, encoding="signed-integer", rate=16000, bits=16
     )
     sox_tfm.build(inputfile, outfile)
 
