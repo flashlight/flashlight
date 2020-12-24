@@ -569,7 +569,7 @@ int main(int argc, char** argv) {
         af::sync();
         meters.timer.incUnit();
         meters.sampletimer.stopAndIncUnit();
-        meters.stats.add(batch[kInputIdx], batch[kTargetIdx]);
+        meters.stats.add(batch[kDurationIdx], batch[kTargetSizeIdx]);
         if (af::anyTrue<bool>(af::isNaN(batch[kInputIdx])) ||
             af::anyTrue<bool>(af::isNaN(batch[kTargetIdx]))) {
           LOG(FATAL) << "Sample has NaN values - "
