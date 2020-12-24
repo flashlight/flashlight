@@ -112,8 +112,8 @@ void appendToLog(std::ofstream& logfile, const std::string& logstr) {
 }
 
 af::array allreduceGet(SpeechStatMeter& mtr) {
-  auto mtrVal0 = mtr.value();
-  std::vector<long long> mtrVal(mtrVal0.begin(), mtrVal0.end());
+  auto mtrValRaw = mtr.value();
+  std::vector<long long> mtrVal(mtrValRaw.begin(), mtrValRaw.end());
   // Caveat: maxInputSz_, maxTargetSz_ would be approximate
   mtrVal[2] *= mtrVal[4];
   mtrVal[3] *= mtrVal[4];
@@ -131,6 +131,7 @@ void allreduceSet(SpeechStatMeter& mtr, af::array& val) {
   stats.maxInputSz_ = valVec[2] / denom;
   stats.maxTargetSz_ = valVec[3] / denom;
   stats.numSamples_ = valVec[4];
+  stats.numBatches_ = valVec[5];
   mtr.add(stats);
 }
 
