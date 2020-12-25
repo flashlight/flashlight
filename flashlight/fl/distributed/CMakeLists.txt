@@ -21,11 +21,7 @@ endif()
 # ----------------------------- Dependencies -----------------------------
 # Gloo
 if (USE_GLOO)
-  find_package(Gloo REQUIRED)
-  if (Gloo_FOUND)
-    message(STATUS "Gloo found (include: ${Gloo_INCLUDE_DIR} lib: ${Gloo_LIBRARY})")
-    setup_install_find_module(${CMAKE_MODULE_PATH}/FindGloo.cmake)
-  endif()
+  find_package(Gloo CONFIG REQUIRED)
 endif()
 
 # NCCL
@@ -125,12 +121,6 @@ if (USE_GLOO)
   target_link_libraries(
     flashlight
     PUBLIC
-    ${Gloo_LIBRARY}
-    )
-
-  target_include_directories(
-    flashlight
-    PUBLIC
-    ${Gloo_INCLUDE_DIR}
+    gloo
     )
 endif ()
