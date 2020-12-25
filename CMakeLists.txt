@@ -149,7 +149,7 @@ if (FL_BUILD_CORE)
   # If cereal is found in a user-defined location, use it rather than
   # downloading from source
   find_package(cereal)
-  if (NOT TARGET cereal AND NOT cereal_FOUND)
+  if (NOT TARGET cereal AND NOT cereal_FOUND AND FL_BUILD_STANDALONE)
     message(STATUS "cereal NOT found. Will download from source")
     set(CEREAL_INSTALL_PATH ${FL_INSTALL_INC_DIR}/cereal)
     include(${CMAKE_MODULE_PATH}/BuildCereal.cmake)

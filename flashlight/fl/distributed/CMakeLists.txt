@@ -21,7 +21,12 @@ endif()
 # ----------------------------- Dependencies -----------------------------
 # Gloo
 if (USE_GLOO)
-  find_package(Gloo CONFIG REQUIRED)
+  find_package(Gloo CONFIG)
+  if (NOT Gloo_FOUND AND FL_BUILD_STANDALONE)
+    message(STATUS "Gloo not found - downloading and building from source")
+    include(${CMAKE_MODULE_PATH}/BuildGloo.cmake)
+    add_dependencies(flashlight Gloo)
+  endif()
 endif()
 
 # NCCL
@@ -87,14 +92,14 @@ if (USE_NCCL)
 
   target_link_libraries(
     flashlight
-    PUBLIC
+    PRIVATE
     ${CUDA_LIBRARIES}
     ${NCCL_LIBRARIES}
     )
 
   target_include_directories(
     flashlight
-    PUBLIC
+    PRIVATE
     ${NCCL_INCLUDE_DIRS}
     )
 
@@ -120,7 +125,7 @@ if (USE_GLOO)
 
   target_link_libraries(
     flashlight
-    PUBLIC
+    PRIVATE
     gloo
     )
 endif ()
