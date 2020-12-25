@@ -24,7 +24,6 @@ target_sources(
 
 # A native threading library is needed for ThreadPool
 # (see flashlight/common/threadpool/ThreadPool.h)
-set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
 target_link_libraries(

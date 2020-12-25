@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.10.0)
 
 include(ExternalProject)
 
@@ -18,10 +18,11 @@ if (NOT TARGET gtest)
     BUILD_COMMAND ${CMAKE_COMMAND} --build . --config Release
     INSTALL_COMMAND ""
     CMAKE_CACHE_ARGS
-    -DCMAKE_BUILD_TYPE:STRING=Release
-        -DBUILD_GMOCK:BOOL=ON
-        -DBUILD_GTEST:BOOL=ON
-        -Dgtest_force_shared_crt:BOOL=OFF
+      -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
+      -DCMAKE_BUILD_TYPE:STRING=Release
+      -DBUILD_GMOCK:BOOL=ON
+      -DBUILD_GTEST:BOOL=ON
+      -Dgtest_force_shared_crt:BOOL=OFF
   )
 endif ()
 
@@ -30,18 +31,24 @@ set(GTEST_SOURCE_DIR ${source_dir})
 ExternalProject_Get_Property(gtest binary_dir)
 set(GTEST_BINARY_DIR ${binary_dir})
 
+if (BUILD_SHARED_LIBS)
+  set(LIB_TYPE SHARED)
+else()
+  set(LIB_TYPE STATIC)
+endif()
+
 # Library and include dirs
 set(GTEST_LIBRARIES
-  "${GTEST_BINARY_DIR}/${CMAKE_CFG_INTDIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}gtest${CMAKE_STATIC_LIBRARY_SUFFIX}"
+  "${GTEST_BINARY_DIR}/${CMAKE_CFG_INTDIR}/lib/${CMAKE_${LIB_TYPE}_LIBRARY_PREFIX}gtest${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}"
 )
 set(GTEST_LIBRARIES_MAIN
-  "${GTEST_BINARY_DIR}/${CMAKE_CFG_INTDIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}gtest_main${CMAKE_STATIC_LIBRARY_SUFFIX}"
+  "${GTEST_BINARY_DIR}/${CMAKE_CFG_INTDIR}/lib/${CMAKE_${LIB_TYPE}_LIBRARY_PREFIX}gtest_main${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}"
 )
 set(GMOCK_LIBRARIES
-  "${GTEST_BINARY_DIR}/${CMAKE_CFG_INTDIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}gmock${CMAKE_STATIC_LIBRARY_SUFFIX}"
+  "${GTEST_BINARY_DIR}/${CMAKE_CFG_INTDIR}/lib/${CMAKE_${LIB_TYPE}_LIBRARY_PREFIX}gmock${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}"
 )
 set(GMOCK_LIBRARIES_MAIN
-  "${GTEST_BINARY_DIR}/${CMAKE_CFG_INTDIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}gmock_main${CMAKE_STATIC_LIBRARY_SUFFIX}"
+  "${GTEST_BINARY_DIR}/${CMAKE_CFG_INTDIR}/lib/${CMAKE_${LIB_TYPE}_LIBRARY_PREFIX}gmock_main${CMAKE_${LIB_TYPE}_LIBRARY_SUFFIX}"
 )
 
 set(GTEST_INCLUDE_DIRS ${GTEST_SOURCE_DIR}/googletest/include)
@@ -50,10 +57,10 @@ set(GMOCK_INCLUDE_DIRS ${GTEST_SOURCE_DIR}/googlemock/include)
 file(MAKE_DIRECTORY ${GTEST_INCLUDE_DIRS})
 file(MAKE_DIRECTORY ${GMOCK_INCLUDE_DIRS})
 
-add_library(GTest::gtest STATIC IMPORTED)
-add_library(GTest::gtest_main STATIC IMPORTED)
-add_library(GTest::gmock STATIC IMPORTED)
-add_library(GTest::gmock_main STATIC IMPORTED)
+add_library(GTest::gtest ${LIB_TYPE} IMPORTED)
+add_library(GTest::gtest_main ${LIB_TYPE} IMPORTED)
+add_library(GTest::gmock ${LIB_TYPE} IMPORTED)
+add_library(GTest::gmock_main ${LIB_TYPE} IMPORTED)
 
 set_target_properties(GTest::gtest PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES ${GTEST_INCLUDE_DIRS}
