@@ -52,7 +52,7 @@ find_package_handle_standard_args (FLAC
 		FLAC_INCLUDE_DIR
 		OGG_FOUND
 	VERSION_VAR
-        FLAC_VERSION
+    FLAC_VERSION
 	)
 
 if (FLAC_FOUND)

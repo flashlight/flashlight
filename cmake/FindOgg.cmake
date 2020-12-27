@@ -5,7 +5,7 @@
 #  OGG_LIBRARIES    - List of libraries when using ogg.
 #  OGG_FOUND        - True if ogg found.
 
-find_package(Ogg CONFIG)
+find_package(Ogg CONFIG QUIET)
 
 if (NOT TARGET Ogg::ogg)
   if (OGG_INCLUDE_DIR)
@@ -53,11 +53,11 @@ if (NOT TARGET Ogg::ogg)
     set(OGG_INCLUDE_DIRS ${OGG_INCLUDE_DIR})
 
     if(NOT TARGET Ogg::ogg)
-    add_library(Ogg::ogg UNKNOWN IMPORTED)
+      add_library(Ogg::ogg UNKNOWN IMPORTED)
       set_target_properties(Ogg::ogg PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES "${OGG_INCLUDE_DIRS}"
-        IMPORTED_LOCATION "${OGG_LIBRARY}"
-      )
+        IMPORTED_LOCATION "${OGG_LIBRARIES}"
+        )
     endif()
   endif()
 
