@@ -12,6 +12,11 @@
 
 message(STATUS "Looking for KenLM")
 
+# Required for KenLM to read ARPA files in compressed format
+find_package(LibLZMA REQUIRED)
+find_package(BZip2 REQUIRED)
+find_package(ZLIB REQUIRED)
+
 find_library(
   KENLM_LIB
   kenlm
@@ -37,13 +42,13 @@ find_library(
 if(KENLM_LIB)
   message(STATUS "Using kenlm library found in ${KENLM_LIB}")
 else()
-  message(FATAL_ERROR "kenlm library not found; please set CMAKE_LIBRARY_PATH, KENLM_LIB or KENLM_ROOT environment variable")
+  message(STATUS "kenlm library not found; if you already have kenlm installed, please set CMAKE_LIBRARY_PATH, KENLM_LIB or KENLM_ROOT environment variable")
 endif()
 
 if(KENLM_UTIL_LIB)
   message(STATUS "Using kenlm utils library found in ${KENLM_UTIL_LIB}")
 else()
-  message(FATAL_ERROR "kenlm utils library not found; please set CMAKE_LIBRARY_PATH, KENLM_UTIL_LIB or KENLM_ROOT environment variable")
+  message(STATUS "kenlm utils library not found; if you already have kenlm installed, please set CMAKE_LIBRARY_PATH, KENLM_UTIL_LIB or KENLM_ROOT environment variable")
 endif()
 
 # find a model header, then get the entire include directory. We need to do this because
@@ -63,13 +68,20 @@ find_path(KENLM_MODEL_HEADER
 
 if(KENLM_MODEL_HEADER)
   message(STATUS "kenlm model.hh found in ${KENLM_MODEL_HEADER}")
-else()
-  message(FATAL_ERROR "kenlm model.hh not found; please set CMAKE_INCLUDE_PATH, KENLM_MODEL_HEADER or KENLM_ROOT environment variable")
-endif()
-get_filename_component(KENLM_INCLUDE_LM ${KENLM_MODEL_HEADER} DIRECTORY)
-get_filename_component(KENLM_INCLUDE_DIR ${KENLM_INCLUDE_LM} DIRECTORY)
 
-set(KENLM_LIBRARIES ${KENLM_LIB} ${KENLM_UTIL_LIB})
+  get_filename_component(KENLM_INCLUDE_LM ${KENLM_MODEL_HEADER} DIRECTORY)
+  get_filename_component(KENLM_INCLUDE_DIR ${KENLM_INCLUDE_LM} DIRECTORY)
+else()
+  message(STATUS "kenlm model.hh not found; if you already have kenlm installed, please set CMAKE_INCLUDE_PATH, KENLM_MODEL_HEADER or KENLM_ROOT environment variable")
+endif()
+
+set(KENLM_LIBRARIES
+  ${KENLM_LIB}
+  ${KENLM_UTIL_LIB}
+  ${LIBLZMA_LIBRARIES}
+  ${BZIP2_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+)
 # Some KenLM include paths are relative to [include dir]/kenlm, not just [include dir] (bad)
 set(KENLM_INCLUDE_DIRS_LM ${KENLM_INCLUDE_LM})
 set(KENLM_INCLUDE_DIRS ${KENLM_INCLUDE_DIR})

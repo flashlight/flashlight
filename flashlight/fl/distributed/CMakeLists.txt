@@ -25,7 +25,7 @@ if (USE_GLOO)
   if (NOT Gloo_FOUND AND FL_BUILD_STANDALONE)
     message(STATUS "Gloo not found - downloading and building from source")
     include(${CMAKE_MODULE_PATH}/BuildGloo.cmake)
-    add_dependencies(flashlight Gloo)
+    add_dependencies(flashlight Gloo) # ExternalProject target
   endif()
 endif()
 

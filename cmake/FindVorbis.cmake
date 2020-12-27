@@ -15,7 +15,7 @@
 #  VORBISENC_FOUND        - True if vorbisenc found.
 
 
-find_package(Vorbis CONFIG)
+find_package(Vorbis CONFIG QUIET)
 
 if (NOT TARGET Vorbis::vorbis OR NOT TARGET Vorbis::vorbisenc)
   if (VORBIS_INCLUDE_DIR)
