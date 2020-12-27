@@ -5,6 +5,7 @@ on:
       - master
 jobs:
   cuda_image_build:
+    if: github.repository_owner == 'facebookresearch'
     name: CUDA image build
     runs-on: ubuntu-latest
     steps:
@@ -25,6 +26,7 @@ jobs:
     - name: Docker logout
       run: docker logout
   cpu_image_build:
+    if: github.repository_owner == 'facebookresearch'
     name: CPU image build
     runs-on: ubuntu-latest
     steps:
