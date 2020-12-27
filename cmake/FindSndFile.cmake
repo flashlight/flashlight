@@ -14,11 +14,6 @@
 #  SndFile_LIBRARIES - Link these to use libsndfile
 #
 
-# We require sndfile having been built with external libs.
-find_package(Ogg REQUIRED)
-find_package(Vorbis REQUIRED)
-find_package(FLAC REQUIRED)
-
 find_package(SndFile CONFIG)
 
 if (TARGET SndFile::sndfile AND NOT SndFile_WITH_EXTERNAL_LIBS)
@@ -59,21 +54,12 @@ if (NOT TARGET SndFile::sndfile)
   include(FindPackageHandleStandardArgs)
   find_package_handle_standard_args(SndFile DEFAULT_MSG SndFile_INCLUDE_DIRS SndFile_LIBRARIES)
 
-  add_library(SndFile::sndfile UNKNOWN IMPORTED)
-  set_target_properties(SndFile::sndfile PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${SndFile_INCLUDE_DIRS}"
-    IMPORTED_LOCATION "${SndFile_LIBRARIES}"
-    )
-  set_property(
-    TARGET SndFile::sndfile
-    PROPERTY INTERFACE_LINK_LIBRARIES
-    Vorbis::vorbis
-    Vorbis::vorbisenc
-    Ogg::ogg
-    FLAC::FLAC
-    )
-
   if (SndFile_FOUND)
+    add_library(SndFile::sndfile UNKNOWN IMPORTED)
+    set_target_properties(SndFile::sndfile PROPERTIES
+      INTERFACE_INCLUDE_DIRECTORIES "${SndFile_INCLUDE_DIRS}"
+      IMPORTED_LOCATION "${SndFile_LIBRARIES}"
+      )
     message(STATUS "Found libsndfile: (lib: ${SndFile_LIBRARIES} include: ${SndFile_INCLUDE_DIRS}")
   else()
     message(STATUS "libsndfile not found.")
