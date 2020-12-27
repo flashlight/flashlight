@@ -32,6 +32,7 @@ option(FL_BUILD_RECIPES "Build recipes" ON)
 option(FL_BUILD_STANDALONE "Build standalone installation" ON)
 option(FL_BUILD_LIBRARIES "Build flashlight libraries" ON)
 cmake_dependent_option(FL_BUILD_CORE "Build flashlight core" ON "FL_BUILD_LIBRARIES" OFF)
+cmake_dependent_option(FL_BUILD_APPS "Build flashlight apps" ON "FL_BUILD_CORE" OFF)
 
 # Flashlight backend
 set(FL_BACKEND "CUDA" CACHE STRING "Backend with which to build flashlight")
@@ -236,8 +237,10 @@ if (FL_BUILD_CORE)
 endif() # if FL_BUILD_CORE
 
 # --------------------------- Apps ---------------------------
-set(FL_APPS_DIR "${FL_ROOT_DIR}/app")
-include(${FL_APPS_DIR}/CMakeLists.txt)
+if (FL_BUILD_APPS)
+  set(FL_APPS_DIR "${FL_ROOT_DIR}/app")
+  include(${FL_APPS_DIR}/CMakeLists.txt)
+endif()
 
 # --------------------------- Cleanup ---------------------------
 setup_install_targets(INSTALL_TARGETS ${INSTALLABLE_TARGETS})
