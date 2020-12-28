@@ -16,7 +16,7 @@ namespace ext {
 
 typedef Module* (*w2l_module_plugin_t)(int64_t nFeatures, int64_t nClasses);
 
-class ModulePlugin : public fl::Plugin {
+class ModulePlugin : public Plugin {
  public:
   explicit ModulePlugin(const std::string& name);
   std::shared_ptr<fl::Module> arch(int64_t nFeatures, int64_t nClasses);

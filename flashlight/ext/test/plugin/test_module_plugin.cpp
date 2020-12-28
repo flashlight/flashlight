@@ -7,6 +7,7 @@
  */
 
 #include "flashlight/fl/flashlight.h"
+#include "flashlight/fl/contrib/contrib.h"
 
 extern "C" fl::Module* createModule(int64_t nFeature, int64_t nLabel) {
   auto seq = new fl::Sequential();

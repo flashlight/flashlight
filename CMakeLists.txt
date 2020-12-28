@@ -22,6 +22,22 @@ set(FL_INSTALL_CMAKE_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/cmake" CACHE PATH "Insta
 set(FL_INSTALL_EXAMPLES_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/examples" CACHE PATH "Install path for example files")
 set(FL_INSTALL_DOC_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/doc" CACHE PATH "Install path for documentation")
 
+include(CheckCXXCompilerFlag)
+# All libraries should have their symbols exported so plugins can lazily
+# symbols from any of them
+check_cxx_compiler_flag("-rdynamic" COMPILER_SUPPORTS_RDYNAMIC)
+if(${COMPILER_SUPPORTS_RDYNAMIC})
+  message(STATUS "-rdynamic supported.")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -rdynamic")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
+else()
+  message(WARNING
+    "This compiler doesn't support dynamic symbol exports. "
+    "Plugin functionality likely won't work.")
+endif()
+
+include(InternalUtils)
+
 # ----------------------------- Configuration -----------------------------
 
 option(FL_BUILD_TESTS "Build tests" ON)
@@ -52,8 +68,7 @@ else ()
   message(FATAL_ERROR "Invalid FLASHLIGHT backend specified")
 endif ()
 
-# Installation utilities
-include(InternalUtils)
+# List of installable targets
 set(INSTALLABLE_TARGETS "")
 
 set(FL_ROOT_DIR ${PROJECT_SOURCE_DIR}/flashlight)
