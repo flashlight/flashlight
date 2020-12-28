@@ -18,8 +18,8 @@ tensor library.
 - An emphasis on efficiency and scale.
 
 Native support in C++ and simple extensibility makes Flashlight a powerful research framework that's *hackable to its core* and enables fast iteration on new experimental setups and algorithms without sacrificing performance. In a single repository, Flashlight provides [applications](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app) for research across multiple domains:
-- [Automatic speech recognition](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr) (the [wav2letter](https://github.com/facebookresearch/wav2letter/) project) — [Documentation](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr) | [Tutorial](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/tutorial)
-- [Image classification](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/imclass)
+- [Automatic speech recognition](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr) (the [wav2letter](https://github.com/facebookresearch/wav2letter/) project) — [Documentation](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/asr/README.md) | [Tutorial](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr/tutorial/)
+- [Image classification](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/imgclass)
 - [Language modeling](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/lm)
 - Image segmentation (coming soon)
 

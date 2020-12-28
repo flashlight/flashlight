@@ -2,7 +2,7 @@
 
 Flashlight's ASR application (formerly the [wav2letter](https://github.com/facebookresearch/wav2letter/) project) provides training and inference capabilities for end-to-end speech recognition systems. Outside of original research conducted with Flashlight and wav2letter, the codebase contains up-to-date implementations of recent architectures and developments in the speech domain.
 
-**To get started using the ASR library with existing/pre-trained models, see [tutorials](https://github.com/jacobkahn/flashlight/tree/tutorial_docs/flashlight/app/asr/tutorial).**
+**To get started using the ASR library with existing/pre-trained models, see [tutorials](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr/tutorial).**
 
 ### Table of Contents
 
