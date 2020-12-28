@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/ext/common/ModulePlugin.h"
+#include "flashlight/ext/plugin/ModulePlugin.h"
 
 namespace fl {
 namespace ext {

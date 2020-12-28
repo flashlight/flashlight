@@ -24,7 +24,7 @@
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/ext/common/DistributedUtils.h"
-#include "flashlight/ext/common/ModulePlugin.h"
+#include "flashlight/ext/plugin/ModulePlugin.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/ext/common/Serializer.h"
 #include "flashlight/fl/contrib/contrib.h"
