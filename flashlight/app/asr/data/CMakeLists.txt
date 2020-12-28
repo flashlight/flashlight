@@ -1,16 +1,31 @@
 cmake_minimum_required(VERSION 3.10)
 
 # ----------------------------- Dependencies -----------------------------
-find_package(SndFile REQUIRED)
+# SndFile must be built with encoder libs
+find_package(Ogg REQUIRED)
+find_package(Vorbis REQUIRED)
+find_package(Opus REQUIRED)
+find_package(FLAC REQUIRED)
+
+find_package(SndFile)
 if (TARGET SndFile::sndfile)
   message(STATUS "libsndfile found.")
+else ()
+  if (FL_BUILD_STANDALONE)
+    message(STATUS "libsndfile not found - will download and build from source.")
+    include(${CMAKE_MODULE_PATH}/BuildSndFile.cmake)
+    add_dependencies(flashlight-app-asr SndFile) # ExternalProject target
+  else()
+    message(FATAL_ERROR "Required dependency libsndfile not found")
+  endif()
+endif ()
+if (FL_BUILD_STANDALONE)
   setup_install_find_module(${CMAKE_MODULE_PATH}/FindSndFile.cmake)
   setup_install_find_module(${CMAKE_MODULE_PATH}/FindOgg.cmake)
   setup_install_find_module(${CMAKE_MODULE_PATH}/FindVorbis.cmake)
+  setup_install_find_module(${CMAKE_MODULE_PATH}/FindOpus.cmake)
   setup_install_find_module(${CMAKE_MODULE_PATH}/FindFLAC.cmake)
-else ()
-  message(FATAL_ERROR "Required dependency libsndfile not found.")
-endif ()
+endif()
 
 # ----------------------------- Lib -----------------------------
 target_sources(
@@ -26,4 +41,9 @@ target_link_libraries(
   flashlight-app-asr
   PRIVATE
   SndFile::sndfile
+  Vorbis::vorbis
+  Vorbis::vorbisenc
+  FLAC::FLAC
+  Opus::opus
+  Ogg::ogg
   )
