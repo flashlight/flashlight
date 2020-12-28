@@ -104,15 +104,85 @@ At minimum, compilation requires:
 - [CMake](https://cmake.org/) -- version 3.10 or later, and ``make``
 - A Unix-ish operating system. We're currently exploring experimental support on Windows.
 
+#### Dependencies
+<div class="tg-wrap"><table>
+<thead>
+  <tr>
+    <th>Component</th>
+    <th>Backend</th>
+    <th>Dependencies</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td rowspan="2">libraries</td>
+    <td>CUDA</td>
+    <td><a href="https://developer.nvidia.com/cuda-downloads">CUDA</a> &gt;= 9.2</td>
+  </tr>
+  <tr>
+    <td>CPU</td>
+    <td>A BLAS library (<a href="https://software.intel.com/content/www/us/en/develop/tools/oneapi/base-toolkit/download.html">Intel MKL</a> &gt;= 2018, OpenBLAS, etc)</td>
+  </tr>
+  <tr>
+    <td rowspan="3">core</td>
+    <td>Any</td>
+    <td><a href="https://github.com/arrayfire/arrayfire#installation">ArrayFire</a> &gt;= 3.7.3, an MPI library^(<a href="https://www.open-mpi.org/">OpenMPI</a>, etc),&nbsp;&nbsp;<a href="https://github.com/USCiLab/cereal">cereal</a>* &gt;= 1.3.0, <a href="https://github.com/nothings/stb">stb</a>*</td>
+  </tr>
+  <tr>
+    <td>CUDA</td>
+    <td><a href="https://developer.nvidia.com/cuda-downloads">CUDA</a> &gt;= 9.2, <a href="https://developer.nvidia.com/nccl">NCCL</a>^, <a href="https://developer.nvidia.com/cuDNN">cuDNN</a></td>
+  </tr>
+  <tr>
+    <td>CPU</td>
+    <td><a href="https://github.com/oneapi-src/oneDNN">oneDNN</a> &gt;= 2.0, <a href="https://github.com/facebookincubator/gloo">gloo</a> (<a href="https://github.com/facebookincubator/gloo/blob/01e2c2660cd43963ce1fe3e21220ac01f07d9a4b/docs/rendezvous.md#using-mpi">with MPI</a>)*^</td>
+  </tr>
+  <tr>
+    <td>applications: all </td>
+    <td>All</td>
+    <td><a href="https://github.com/google/glog">Google Glog</a>, </td>
+  </tr>
+  <tr>
+    <td>application: asr</td>
+    <td>All</td>
+    <td><a href="https://github.com/libsndfile/libsndfile">libsndfile</a>* &gt;= 10.0.28, a BLAS library (<a href="https://software.intel.com/content/www/us/en/develop/tools/oneapi/base-toolkit/download.html">Intel MKL</a> &gt;= 2018, OpenBLAS, etc)</td>
+  </tr>
+  <tr>
+    <td>application: imgclass</td>
+    <td>All</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td>application: lm</td>
+    <td>All</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td>tests</td>
+    <td>All</td>
+    <td><a href="https://github.com/google/googletest">Google Test (gtest, with gmock)</a>* &gt;= 1.10.0</td>
+  </tr>
+</tbody>
+</table></div>
+
+\* If not found on the system, this dependency is automatically downloaded and built from source.
+
+^ Required if building with distributed training enabled. Distributed training is required for all applications.
+
 ### Building
 
-Flashlight is most-easily built and installed with `vcpkg`. Only the CUDA backend is currently supported with `vcpkg`. First, install [`CUDA` >= 9.2](https://developer.nvidia.com/cuda-downloads), [`cuDNN`](https://docs.nvidia.com/deeplearning/cudnn/install-guide/index.html), and [`NCCL`](https://docs.nvidia.com/deeplearning/nccl/install-guide/index.html). Then, after [installing `vcpkg`](https://github.com/microsoft/vcpkg#getting-started) install the libraries and core with:
+There are two ways to work with Flashlight:
+1. **As an installed library** that you link to with your own project.
+2. **With in-source development** where you change the Flashlight project source and rebuild.
+
+#### Installing as a Library
+
+Flashlight is most-easily built and installed with `vcpkg`. Only the CUDA backend is currently supported with `vcpkg` (CPU backend coming soon). First, install [`CUDA` >= 9.2](https://developer.nvidia.com/cuda-downloads), [`cuDNN`](https://docs.nvidia.com/deeplearning/cudnn/install-guide/index.html), and [`NCCL`](https://docs.nvidia.com/deeplearning/nccl/install-guide/index.html). Then, after [installing `vcpkg`](https://github.com/microsoft/vcpkg#getting-started) install the libraries and core with:
 ```shell
 ./vcpkg install flashlight-cuda
 ```
 To see the features available for installation, run `./vcpkg search flashlight-cuda`. [Integrating Flashlight into your own project](https://vcpkg.readthedocs.io/en/latest/examples/installing-and-using-packages/#cmake) is simple. `vcpkg` [CMake toolchain integration](https://vcpkg.readthedocs.io/en/latest/examples/installing-and-using-packages/#cmake) is well-supported. OpenCL support in `vcpkg` is coming soon.
 
-### In-Source Build
+### In-Source Development
 
 To build your clone of Flashlight from source using `vcpkg` and `CMake`, first install dependencies:
 ```shell
@@ -139,6 +209,115 @@ make -j$(nproc)
 To build a subset of Flashlight's features, see the [installation options](https://fl.readthedocs.io/en/latest/installation.html) in the documentation.
 
 #### Building from Source
+
+<div class="tg-wrap"><table>
+<thead>
+  <tr>
+    <th>Name</th>
+    <th>Options</th>
+    <th>Default Value</th>
+    <th>Description</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td>FL_BACKEND</td>
+    <td>CUDA, CPU, OPENCL</td>
+    <td>CUDA</td>
+    <td>Backend to build all components with.</td>
+  </tr>
+  <tr>
+    <td>FL_BUILD_STANDALONE</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Downloads/builds some dependencies if not found.</td>
+  </tr>
+  <tr>
+    <td>FL_BUILD_LIBRARIES</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Build the Flashlight libraries.</td>
+  </tr>
+  <tr>
+    <td>FL_BUILD_CORE</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Build the Flashlight neural net library.</td>
+  </tr>
+  <tr>
+    <td>FL_BUILD_DISTRIBUTED</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Build with distributed training; required for apps.</td>
+  </tr>
+  <tr>
+    <td>FL_BUILD_CONTRIB</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Build contrib APIs subject to breaking changes.</td>
+  </tr>
+  <tr>
+    <td>FL_BUILD_APPS</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Build applications (see below).</td>
+  </tr>
+  <tr>
+    <td>FL_BUILD_APP_ASR</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Build the automatic speech recognition application.</td>
+  </tr>
+  <tr>
+    <td>FL_BUILD_APP_IMGCLASS</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Build the image classification application.</td>
+  </tr>
+  <tr>
+    <td>FL_BUILD_APP_LM</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Build the language modeling application.</td>
+  </tr>
+  <tr>
+    <td>FL_BUILD_APP_ASR_TOOLS</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Build automatic speech recognition app tools.</td>
+  </tr>
+  <tr>
+    <td>FL_BUILD_TESTS</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Build tests.</td>
+  </tr>
+  <tr>
+    <td>FL_BUILD_EXAMPLES</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Build examples.</td>
+  </tr>
+  <tr>
+    <td>FL_BUILD_EXPERIMENTAL</td>
+    <td>ON, OFF</td>
+    <td>OFF</td>
+    <td>Build experimental components.</td>
+  </tr>
+  <tr>
+    <td>CMAKE_BUILD_TYPE</td>
+    <td>See <a href="https://cmake.org/cmake/help/v3.10/variable/CMAKE_BUILD_TYPE.html">docs</a>.</td>
+    <td>Debug</td>
+    <td>See the <a href="https://cmake.org/cmake/help/v3.10/variable/CMAKE_BUILD_TYPE.html">CMake documentation</a>.</td>
+  </tr>
+  <tr>
+    <td>CMAKE_INSTALL_PREFIX</td>
+    <td>[Directory]</td>
+    <td>See <a href="https://cmake.org/cmake/help/v3.10/variable/CMAKE_INSTALL_PREFIX.html">docs</a>.</td>
+    <td>See the <a href="https://cmake.org/cmake/help/v3.10/variable/CMAKE_INSTALL_PREFIX.html">CMake documentation</a>.</td>
+  </tr>
+</tbody>
+</table></div>
 
 Instructions to build fully from source can be found [in the documentation](https://fl.readthedocs.io/en/latest/installation.html).
 
