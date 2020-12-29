@@ -27,9 +27,9 @@
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/ext/common/DistributedUtils.h"
-#include "flashlight/ext/plugin/ModulePlugin.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/ext/common/Serializer.h"
+#include "flashlight/ext/plugin/ModulePlugin.h"
 #include "flashlight/fl/contrib/contrib.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/System.h"
@@ -344,19 +344,22 @@ int main(int argc, char** argv) {
   std::shared_ptr<fl::FirstOrderOptimizer> critoptim;
   std::shared_ptr<fl::lib::text::LM> lm;
   std::shared_ptr<WordDecodeMaster> dm;
+  bool usePlugin = false;
 
   auto scalemode = getCriterionScaleMode(FLAGS_onorm, FLAGS_sqnorm);
+  if (fl::lib::endsWith(FLAGS_arch, ".so")) {
+    usePlugin = true;
+    (void) fl::ext::ModulePlugin(FLAGS_arch);
+  }
   if (runStatus == kTrainMode) {
-    auto archfile = FLAGS_arch;
-    FL_LOG_MASTER(INFO) << "Loading architecture file from " << archfile;
+    FL_LOG_MASTER(INFO) << "Loading architecture file from " << FLAGS_arch;
     // Encoder network, works on audio
-    if (fl::lib::endsWith(archfile, ".so")) {
-      network = fl::ext::ModulePlugin(archfile).arch(numFeatures, numClasses);
+    if (fl::lib::endsWith(FLAGS_arch, ".so")) {
+      network = fl::ext::ModulePlugin(FLAGS_arch).arch(numFeatures, numClasses);
     } else {
       network =
-          fl::ext::buildSequentialModule(archfile, numFeatures, numClasses);
+          fl::ext::buildSequentialModule(FLAGS_arch, numFeatures, numClasses);
     }
-
     if (FLAGS_criterion == kCtcCriterion) {
       criterion = std::make_shared<CTCLoss>(scalemode);
     } else if (FLAGS_criterion == kAsgCriterion) {
@@ -409,6 +412,7 @@ int main(int argc, char** argv) {
           network,
           lm,
           dummyTransition,
+          usePlugin,
           tokenDict,
           wordDict,
           DecodeMasterTrainOptions{.repLabel = int32_t(FLAGS_replabel),
@@ -696,7 +700,7 @@ int main(int argc, char** argv) {
     }
   };
 
-  auto test = [&evalOutput, &dm, &lexicon](
+  auto test = [&evalOutput, &dm, &lexicon, &usePlugin](
                   std::shared_ptr<fl::Module> ntwrk,
                   std::shared_ptr<SequenceCriterion> crit,
                   std::shared_ptr<fl::Dataset> validds,
@@ -779,8 +783,16 @@ int main(int argc, char** argv) {
     }
 
     for (auto& batch : *curValidset) {
-      auto output = fl::ext::forwardSequentialModuleWithPadMask(
-          fl::input(batch[kInputIdx]), ntwrk, batch[kDurationIdx]);
+      fl::Variable output;
+      if (usePlugin) {
+        output = ntwrk
+                     ->forward({fl::input(batch[kInputIdx]),
+                                fl::noGrad(batch[kDurationIdx])})
+                     .front();
+      } else {
+        output = fl::ext::forwardSequentialModuleWithPadMask(
+            fl::input(batch[kInputIdx]), ntwrk, batch[kDurationIdx]);
+      }
       auto loss =
           crit->forward({output, fl::Variable(batch[kTargetIdx], false)})
               .front();
@@ -794,7 +806,8 @@ int main(int argc, char** argv) {
   auto unsupDataDir = plGenerator.reloadPl(curEpoch);
   // If loading failes, try regenerate PL
   if (unsupDataDir.empty()) {
-    unsupDataDir = plGenerator.regeneratePl(curEpoch, network, criterion);
+    unsupDataDir =
+        plGenerator.regeneratePl(curEpoch, network, criterion, usePlugin);
   }
   // If any PLs loaded, update train set
   if (!unsupDataDir.empty()) {
@@ -812,6 +825,7 @@ int main(int argc, char** argv) {
                 &curEpoch,
                 &startUpdate,
                 &plGenerator,
+                &usePlugin,
                 reducer](
                    std::shared_ptr<fl::Module> ntwrk,
                    std::shared_ptr<SequenceCriterion> crit,
@@ -981,8 +995,14 @@ int main(int argc, char** argv) {
               curBatch >= FLAGS_saug_start_update) {
             input = saug->forward({input}).front();
           }
-          auto output = fl::ext::forwardSequentialModuleWithPadMask(
-              input, ntwrk, batch[kDurationIdx]);
+          fl::Variable output;
+          if (usePlugin) {
+            output = ntwrk->forward({input, fl::noGrad(batch[kDurationIdx])})
+                         .front();
+          } else {
+            output = fl::ext::forwardSequentialModuleWithPadMask(
+                input, ntwrk, batch[kDurationIdx]);
+          }
           af::sync();
           meters.critfwdtimer.resume();
           auto loss =
@@ -1125,7 +1145,8 @@ int main(int argc, char** argv) {
       }
 
       // Try regenerate PL
-      auto newUnsupDataDir = plGenerator.regeneratePl(curEpoch, ntwrk, crit);
+      auto newUnsupDataDir =
+          plGenerator.regeneratePl(curEpoch, ntwrk, crit, usePlugin);
       if (!newUnsupDataDir.empty()) {
         trainset = plGenerator.createTrainSet(
             FLAGS_datadir, FLAGS_train, newUnsupDataDir);

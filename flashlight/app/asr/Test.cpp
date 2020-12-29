@@ -26,6 +26,7 @@
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/ext/common/Serializer.h"
+#include "flashlight/ext/plugin/ModulePlugin.h"
 #include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
@@ -69,8 +70,13 @@ int main(int argc, char** argv) {
   std::shared_ptr<SequenceCriterion> criterion;
   std::unordered_map<std::string, std::string> cfg;
   std::string version;
+  bool usePlugin = false;
   LOG(INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
   af::setDevice(0);
+  if (fl::lib::endsWith(FLAGS_arch, ".so")) {
+    usePlugin = true;
+    (void) fl::ext::ModulePlugin(FLAGS_arch);
+  }
   Serializer::load(FLAGS_am, version, cfg, network, criterion);
   if (version != FL_APP_ASR_VERSION) {
     LOG(WARNING) << "[Network] Model version " << version
@@ -240,6 +246,7 @@ int main(int argc, char** argv) {
 
   // Run test
   auto run = [&network,
+              &usePlugin,
               &criterion,
               &nSamples,
               &ds,
@@ -280,8 +287,16 @@ int main(int argc, char** argv) {
     meters.timer.resume();
     int cnt = 0;
     for (auto& sample : *localDs) {
-      auto rawEmission = fl::ext::forwardSequentialModuleWithPadMask(
-          fl::input(sample[kInputIdx]), localNetwork, sample[kDurationIdx]);
+      fl::Variable rawEmission;
+      if (usePlugin) {
+        rawEmission = localNetwork
+                          ->forward({fl::input(sample[kInputIdx]),
+                                     fl::noGrad(sample[kDurationIdx])})
+                          .front();
+      } else {
+        rawEmission = fl::ext::forwardSequentialModuleWithPadMask(
+            fl::input(sample[kInputIdx]), localNetwork, sample[kDurationIdx]);
+      }
       auto emission = afToVector<float>(rawEmission);
       auto tokenTarget = afToVector<int>(sample[kTargetIdx]);
       auto wordTarget = afToVector<int>(sample[kWordIdx]);

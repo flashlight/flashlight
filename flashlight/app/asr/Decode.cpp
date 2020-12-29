@@ -30,6 +30,7 @@
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/ext/common/Serializer.h"
+#include "flashlight/ext/plugin/ModulePlugin.h"
 #include "flashlight/lib/common/ProducerConsumerQueue.h"
 #include "flashlight/lib/text/decoder/LexiconDecoder.h"
 #include "flashlight/lib/text/decoder/LexiconFreeDecoder.h"
@@ -87,11 +88,16 @@ int main(int argc, char** argv) {
   std::shared_ptr<SequenceCriterion> criterion;
   std::unordered_map<std::string, std::string> cfg;
   std::string version;
+  bool usePlugin = false;
 
   /* Using acoustic model */
   if (!FLAGS_am.empty()) {
     LOG(INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
     af::setDevice(0);
+    if (fl::lib::endsWith(FLAGS_arch, ".so")) {
+      usePlugin = true;
+      (void) fl::ext::ModulePlugin(FLAGS_arch);
+    }
     Serializer::load(FLAGS_am, version, cfg, network, criterion);
     network->eval();
     if (version != FL_APP_ASR_VERSION) {
@@ -352,6 +358,7 @@ int main(int argc, char** argv) {
   EmissionQueue emissionQueue(FLAGS_emission_queue_size);
 
   auto runAmForward = [&network,
+                       &usePlugin,
                        &criterion,
                        &nSamples,
                        &ds,
@@ -411,8 +418,16 @@ int main(int argc, char** argv) {
       /* 3. Load Emissions */
       EmissionUnit emissionUnit;
       if (FLAGS_emission_dir.empty()) {
-        auto rawEmission = fl::ext::forwardSequentialModuleWithPadMask(
-            fl::input(sample[kInputIdx]), localNetwork, sample[kDurationIdx]);
+        fl::Variable rawEmission;
+        if (usePlugin) {
+          rawEmission = localNetwork
+                            ->forward({fl::input(sample[kInputIdx]),
+                                       fl::noGrad(sample[kDurationIdx])})
+                            .front();
+        } else {
+          rawEmission = fl::ext::forwardSequentialModuleWithPadMask(
+              fl::input(sample[kInputIdx]), localNetwork, sample[kDurationIdx]);
+        }
         emissionUnit = EmissionUnit(
             afToVector<float>(rawEmission),
             sampleId,
