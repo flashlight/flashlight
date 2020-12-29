@@ -48,7 +48,11 @@ option(FL_BUILD_RECIPES "Build recipes" ON)
 option(FL_BUILD_STANDALONE "Build standalone installation" ON)
 option(FL_BUILD_LIBRARIES "Build flashlight libraries" ON)
 option(FL_BUILD_CORE "Build flashlight core" ON)
-cmake_dependent_option(FL_BUILD_APPS "Build flashlight apps" ON
+cmake_dependent_option(FL_BUILD_CONTRIB
+  "Build and link additional flashlight contrib assets." ON
+  "FL_BUILD_CORE" OFF)
+cmake_dependent_option(FL_BUILD_APPS
+  "Build flashlight apps" ON
   "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_LIBRARIES" OFF)
 
 # Flashlight backend
