@@ -151,6 +151,7 @@ mkdir -p build && cd build
 Then, build from source using `vcpkg`'s CMake toolchain:
 ```shell
 cmake .. \
+    -DCMAKE_BUILD_TYPE=Release
     -DFL_BACKEND=CUDA
     -DCMAKE_TOOLCHAIN_FILE=[path to your vcpkg clone]/scripts/buildsystems/vcpkg.cmake
 make -j$(nproc)
