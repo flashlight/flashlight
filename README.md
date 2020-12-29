@@ -14,14 +14,13 @@ from the Facebook AI Research Speech team and the creators of Torch and
 Deep Speech. Its core features include:
 - Just-in-time kernel compilation with modern C++ with the [ArrayFire](https://github.com/arrayfire/arrayfire)
 tensor library.
-- CUDA, CPU, and OpenCL (coming soon) backends for GPU and CPU training.
+- CUDA and CPU backends for GPU and CPU training.
 - An emphasis on efficiency and scale.
 
 Native support in C++ and simple extensibility makes Flashlight a powerful research framework that's *hackable to its core* and enables fast iteration on new experimental setups and algorithms without sacrificing performance. In a single repository, Flashlight provides [applications](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app) for research across multiple domains:
 - [Automatic speech recognition](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr) (the [wav2letter](https://github.com/facebookresearch/wav2letter/) project) — [Documentation](flashlight/app/asr) | [Tutorial](flashlight/app/asr/tutorial)
 - [Image classification](flashlight/app/imgclass)
 - [Language modeling](flashlight/app/lm)
-- Image segmentation (coming soon)
 
 
 ### Project Layout
@@ -98,6 +97,7 @@ D.backward(); // populates A.grad() along with gradients for B, C, and D.
 </details>
 
 ## Building and Installing
+[**Install with `vcpkg`**](#library-installation-with-vcpkg) | [**Build from Source**](#building-from-source) | [**Build from Source with `vcpkg`**](#from-source-build-with-vcpkg) | [**Building Your Own Project with Flashlight**](#building-your-own-project-with-flashlight)
 
 ### Requirements
 At minimum, compilation requires:
@@ -131,8 +131,6 @@ To install [Flashlight apps](flashlight/app), check the features available for i
 Flashlight [app binaries](flashlight/app) are also built for the selected features and are installed into the `vcpkg` install tree's `tools` directory.
 
 [Integrating Flashlight into your own project](#with-a-vcpkg-flashlight-installation) with is simple using `vcpkg`'s [CMake toolchain integration](https://vcpkg.readthedocs.io/en/latest/examples/installing-and-using-packages/#cmake).
-
-CPU and OpenCL support for Flashlight with `vcpkg` are coming soon.
 
 #### From-Source Build with `vcpkg`
 
@@ -361,7 +359,7 @@ The Flashlight CMake build accepts the following build options (prefixed with `-
 </tbody>
 </table></div>
 
-### Building your Own Project with Flashlight
+### Building Your Own Project with Flashlight
 Flashlight is most-easily linked to using CMake. Flashlight exports the following CMake targets when installed:
 - `flashlight::fl-libraries` — contains flashlight libraries headers and symbols.
 - `flashlight::flashlight` — contains flashlight libraries as well as the flashlight core autograd and neural network library.

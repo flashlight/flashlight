@@ -7,22 +7,6 @@ add_library(
   ""
   )
 
-# Find GLog
-find_package(GLOG REQUIRED)
-if (GLOG_FOUND)
-  message(STATUS "GLOG found")
-else()
-  message(FATAL_ERROR "GLOG not found")
-endif()
-
-# Find gflags
-find_package(gflags REQUIRED)
-if (gflags_FOUND)
-  message(STATUS "gflags found")
-else()
-  message(FATAL_ERROR "gflags not found")
-endif()
-
 target_link_libraries(
   flashlight-app-asr
   PUBLIC

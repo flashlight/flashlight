@@ -47,8 +47,13 @@ option(FL_BUILD_SCRIPTS "Build internal scripts for wav2letter++" OFF)
 option(FL_BUILD_RECIPES "Build recipes" ON)
 option(FL_BUILD_STANDALONE "Build standalone installation" ON)
 option(FL_BUILD_LIBRARIES "Build flashlight libraries" ON)
-cmake_dependent_option(FL_BUILD_CORE "Build flashlight core" ON "FL_BUILD_LIBRARIES" OFF)
-cmake_dependent_option(FL_BUILD_APPS "Build flashlight apps" ON "FL_BUILD_CORE" OFF)
+option(FL_BUILD_CORE "Build flashlight core" ON)
+cmake_dependent_option(FL_BUILD_CONTRIB
+  "Build and link additional flashlight contrib assets." ON
+  "FL_BUILD_CORE" OFF)
+cmake_dependent_option(FL_BUILD_APPS
+  "Build flashlight apps" ON
+  "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_LIBRARIES" OFF)
 
 # Flashlight backend
 set(FL_BACKEND "CUDA" CACHE STRING "Backend with which to build flashlight")
@@ -96,7 +101,8 @@ if (FL_BUILD_TESTS)
 endif ()
 
 # ------------------------ flashlight Libraries ------------------------
-if (FL_BUILD_LIBRARIES)
+# FIXME: libraries are required to build core tests - https://git.io/JL955
+if (FL_BUILD_LIBRARIES OR (FL_BUILD_CORE AND FL_BUILD_TESTS))
   message(STATUS "Will build flashlight libraries.")
 
   option(FL_LIBRARIES_USE_CUDA "Use CUDA in flashlight libraries build" ON)
@@ -135,8 +141,10 @@ if (FL_BUILD_CORE)
     CXX_STANDARD 14
     )
 
-  # Link libraries to flashlight core
-  target_link_libraries(flashlight PUBLIC fl-libraries)
+  # FIXME: libraries are required to build core tests - https://git.io/JL955
+  if (FL_BUILD_LIBRARIES OR (FL_BUILD_CORE AND FL_BUILD_TESTS))
+    target_link_libraries(flashlight PUBLIC fl-libraries)
+  endif()
 
   # ------------------------ Global External Dependencies ------------------------
   # ArrayFire
@@ -253,6 +261,7 @@ endif() # if FL_BUILD_CORE
 
 # --------------------------- Apps ---------------------------
 if (FL_BUILD_APPS)
+  message(STATUS "Will build Flashlight applications.")
   set(FL_APPS_DIR "${FL_ROOT_DIR}/app")
   include(${FL_APPS_DIR}/CMakeLists.txt)
 endif()

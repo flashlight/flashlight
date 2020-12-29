@@ -20,11 +20,6 @@ if (FL_BUILD_DISTRIBUTED)
 endif ()
 
 # -------------------------------- Components --------------------------------
-
-# Build and link resources from `flashlight/contrib`.
-cmake_dependent_option(FL_BUILD_CONTRIB
-  "Build and link additional flashlight contrib resources." ON
-  "FL_BUILD_CORE" OFF)
 if (FL_BUILD_CONTRIB)
   message(STATUS "Will build flashlight contrib assets.")
   include(${FL_CORE_COMPONENT_SRC_DIR}/contrib/CMakeLists.txt)

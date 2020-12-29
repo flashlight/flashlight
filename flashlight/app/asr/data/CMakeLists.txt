@@ -17,7 +17,6 @@ if (FL_BUILD_STANDALONE)
   setup_install_find_module(${CMAKE_MODULE_PATH}/FindSndFile.cmake)
   setup_install_find_module(${CMAKE_MODULE_PATH}/FindOgg.cmake)
   setup_install_find_module(${CMAKE_MODULE_PATH}/FindVorbis.cmake)
-  setup_install_find_module(${CMAKE_MODULE_PATH}/FindOpus.cmake)
   setup_install_find_module(${CMAKE_MODULE_PATH}/FindFLAC.cmake)
 endif()
 
