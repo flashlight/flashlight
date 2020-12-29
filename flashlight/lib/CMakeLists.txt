@@ -10,8 +10,8 @@ set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} fl-libraries)
 
 target_include_directories(
   fl-libraries
-  PUBLIC
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+  PRIVATE
+  ${PROJECT_SOURCE_DIR}
   )
 
 target_compile_definitions(
@@ -49,10 +49,7 @@ set(FL_LIBRARY_CUDA_SOURCES
   ${FL_LIBRARIES_SEQUENCE_CUDA_SOURCES}
   )
 
-# A library containing CUDA targets within libraries that may need to be linked
-# in. Only build a CUDA lib of libraries that require CUDA kernels are built
 if (FL_LIBRARIES_USE_CUDA)
-  # Qualify name because CUDA target is public
   target_sources(
     fl-libraries
     PRIVATE
