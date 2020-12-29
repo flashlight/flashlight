@@ -1,7 +1,7 @@
 # Flashlight: Fast, Flexible Machine Learning in C++
 
 [**Quickstart**](#quickstart)
-| [**Installation**](#installation)
+| [**Installation**](#build-and-installation)
 | [**Documentation**](https://fl.readthedocs.io/en/latest/)
 
 [![CircleCI](https://circleci.com/gh/facebookresearch/flashlight.svg?style=shield)](https://circleci.com/gh/facebookresearch/flashlight)
@@ -34,7 +34,7 @@ Flashlight is broken down into a few parts:
 
 ## Quickstart
 
-First, [install Flashlight](#installation). And [link it to your own project](https://fl.readthedocs.io/en/latest/installation.html#building-your-project-with-flashlight).
+First, [build and install install Flashlight](#build-and-installation) and [link it to your own project](https://fl.readthedocs.io/en/latest/installation.html#building-your-project-with-flashlight).
 
 [`Sequential`](https://fl.readthedocs.io/en/latest/modules.html#sequential) forms a sequence of Flashlight [`Module`](https://fl.readthedocs.io/en/latest/modules.html#module)s for chaining computation.
 
@@ -97,42 +97,53 @@ D.backward(); // populates A.grad() along with gradients for B, C, and D.
 
 </details>
 
-## Installation
+## Building and Installation
+
+Flashlight can be broken down into several components as [described above](https://github.com/facebookresearch/flashlight#project-layout). These components depend on one another: applications (`apps`) depend on the core deep learning library (`fl`) standalone libraries (`lib`), and extensions (`ext`). These are automatically resolved when building Flashlight. 
+
 ### Requirements
 At minimum, compilation requires:
 - A C++ compiler with good C++14 support (e.g. gcc/g++ >= 5)
 - [CMake](https://cmake.org/) -- version 3.10 or later, and ``make``
 - A Unix-ish operating system. We're currently exploring experimental support on Windows.
 
-See the [full build requirements](https://github.com/jacobkahn/flashlight/blob/fix_install_docs/README.md#build-options) for each component below.
+See the [full build requirements](https://github.com/facebookresearch/flashlight/blob/master/README.md#build-options) for more details if [building from source](https://github.com/jacobkahn/facebookresearch/flashlight/blob/master/README.md#building-from-source).
 
-### Building
+### Flashlight Build Setups
 
 There are two ways to work with Flashlight:
 1. **As an installed library** that you link to with your own project. This is best for building standalone applications dependent on Flashlight.
 2. **With in-source development** where you change the Flashlight project source and rebuild. This is best if using Flashlight-provided [app binaries](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app).
 
-#### Installing as a Library
+Flashlight can be built in one of two ways:
+1. With [`vcpkg`](https://github.com/microsoft/vcpkg), a C++ package manager. 
+2. From source.
 
-Flashlight is most-easily built and installed with `vcpkg`. Only the CUDA backend is currently supported with `vcpkg` (CPU backend coming soon). First, install [`CUDA` >= 9.2](https://developer.nvidia.com/cuda-downloads), [`cuDNN`](https://docs.nvidia.com/deeplearning/cudnn/install-guide/index.html), and [`NCCL`](https://docs.nvidia.com/deeplearning/nccl/install-guide/index.html). Then, after [installing `vcpkg`](https://github.com/microsoft/vcpkg#getting-started) install the libraries and core with:
+### Installing Flashlight with `vcpkg`
+#### Library Installation with `vcpkg`
+
+Flashlight is most-easily built and installed with `vcpkg`. Only the CUDA backend is currently supported with `vcpkg`. First, install [`CUDA` >= 9.2](https://developer.nvidia.com/cuda-downloads), [`cuDNN`](https://docs.nvidia.com/deeplearning/cudnn/install-guide/index.html), [`NCCL`](https://docs.nvidia.com/deeplearning/nccl/install-guide/index.html), and [Intel MKL](https://software.intel.com/content/www/us/en/develop/tools/oneapi/base-toolkit/download.html). Then, after [installing `vcpkg`](https://github.com/microsoft/vcpkg#getting-started) install the libraries and core with:
 ```shell
 ./vcpkg install flashlight-cuda
 ```
-To see the features available for installation, run `./vcpkg search flashlight-cuda`. [Integrating Flashlight into your own project](https://vcpkg.readthedocs.io/en/latest/examples/installing-and-using-packages/#cmake) is simple. `vcpkg` [CMake toolchain integration](https://vcpkg.readthedocs.io/en/latest/examples/installing-and-using-packages/#cmake) is well-supported. OpenCL support in `vcpkg` is coming soon.
+To install [Flashlight apps](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app), check the features available for installation by running `./vcpkg search flashlight-cuda`. Each app is a feature: for example, `./vcpkg install flashlight-cuda[asr]` installs the ASR application.
 
-### In-Source Development
+[Integrating Flashlight into your own project](https://vcpkg.readthedocs.io/en/latest/examples/installing-and-using-packages/#cmake) with is simple using `vcpkg`'s [CMake toolchain integration](https://vcpkg.readthedocs.io/en/latest/examples/installing-and-using-packages/#cmake).
 
-To build your clone of Flashlight from source using `vcpkg` and `CMake`, first install dependencies:
+CPU and OpenCL support for Flashlight with `vcpkg` are coming soon.
+
+#### In-Source Development with `vcpkg`
+
+To build Flashlight from source using dependencies installed with `vcpkg`, install [`CUDA` >= 9.2](https://developer.nvidia.com/cuda-downloads), [`cuDNN`](https://docs.nvidia.com/deeplearning/cudnn/install-guide/index.html), [`NCCL`](https://docs.nvidia.com/deeplearning/nccl/install-guide/index.html), and [Intel MKL](https://software.intel.com/content/www/us/en/develop/tools/oneapi/base-toolkit/download.html), then build the rest of the dependencies for the CUDA backend based on which Flashlight features you'd like to build:
 ```shell
 ./vcpkg install \
-    cuda intel-mkl fftw3 cub kenlm            \ # for flashlight libraries
-    arrayfire[cuda] cudnn nccl openmpi cereal \ # for the flashlight neural net library
-    gflags glog                               \ # for flashlight application libraries
-    libsndfile                                \ # for the flashlight asr application
-    stb                                       \ # for the flashlight imgclass application
-    gtest                                       # optional, if building tests
+    cuda intel-mkl fftw3 cub kenlm                \ # for flashlight libraries
+    arrayfire[cuda] cudnn nccl openmpi cereal stb \ # for the flashlight neural net library
+    gflags glog                                   \ # for all flashlight applications
+    libsndfile                                    \ # for the flashlight asr application
+    gtest                                           # optional, if building tests
 ```
-Clone the repository:
+To build Flashlight from source with these dependencies, clone the repository:
 ```shell
 git clone https://github.com/facebookresearch/flashlight.git && cd flashlight
 mkdir -p build && cd build
@@ -143,10 +154,26 @@ cmake .. \
     -DFL_BACKEND=CUDA
     -DCMAKE_TOOLCHAIN_FILE=[path to your vcpkg clone]/scripts/buildsystems/vcpkg.cmake
 make -j$(nproc)
+make install -j$(nproc) # only if you want to install Flashlight for external use
 ```
-To build a subset of Flashlight's features, see the [installation options](https://fl.readthedocs.io/en/latest/installation.html) in the documentation.
+To build a subset of Flashlight's features, see the [build options](https://github.com/facebookresearch/flashlight/blob/master/README.md#build-options) below.
 
-#### Building from Source
+### Building from Source
+To build from source, first install the below [dependencies](https://github.com/facebookresearch/flashlight/blob/master/README.md#dependencies). Most are available with your system's local package manager.
+
+Some dependencies marked below are downloaded and installed automatically if not found on the local system. `FL_BUILD_STANDALONE` determines this behavior — if disabled, dependencies won't be downloaded and built when building Flashlight.
+
+**Once all dependencies are installed**, build all Flashlight components with:
+```
+cmake .. -DCMAKE_BUILD_TYPE=Release -DFL_BACKEND=[backend] [...build options]
+make -j$(nproc)
+make install
+```
+To build a smaller subset of Flashlight features or applications, see the [build options](https://github.com/facebookresearch/flashlight/blob/master/README.md#build-options) below for a complete list of options.
+
+To install Flashlight in a custom directory, use CMake's [`CMAKE_INSTALL_PREFIX`](https://cmake.org/cmake/help/v3.10/variable/CMAKE_INSTALL_PREFIX.html) argument.
+
+Flashlight uses modern CMake and `IMPORTED` targets for most dependencies. If a dependency isn't found, passing `-D<package>_DIR` to your `cmake` command or exporting `<package>_DIR` as an environment variable equal to the path to `<package>Config.cmake` can help locate dependencies on your system. See [the documentation](https://cmake.org/cmake/help/v3.10/command/find_package.html) for more details. If CMake is failing to locate a package, check to see if a similar issue has been created.
 
 #### Dependencies
 <div class="tg-wrap"><table>
