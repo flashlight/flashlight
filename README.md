@@ -170,9 +170,11 @@ cmake .. -DCMAKE_BUILD_TYPE=Release -DFL_BACKEND=[backend] [...build options]
 make -j$(nproc)
 make install
 ```
+Setting the `MKLROOT` environment variable (`export MKLROOT=/opt/intel/mkl` on most Linux-based systems) can help CMake find Intel MKL if not initially found.
+
 To build a smaller subset of Flashlight features or applications, see the [build options](https://github.com/facebookresearch/flashlight/blob/master/README.md#build-options) below for a complete list of options.
 
-To install Flashlight in a custom directory, use CMake's [`CMAKE_INSTALL_PREFIX`](https://cmake.org/cmake/help/v3.10/variable/CMAKE_INSTALL_PREFIX.html) argument.
+To install Flashlight in a custom directory, use CMake's [`CMAKE_INSTALL_PREFIX`](https://cmake.org/cmake/help/v3.10/variable/CMAKE_INSTALL_PREFIX.html) argument. Flashlight libraries can be built as shared libraries using CMake's [`BUILD_SHARED_LIBS`](https://cmake.org/cmake/help/v3.10/variable/BUILD_SHARED_LIBS.html) argument.
 
 Flashlight uses modern CMake and `IMPORTED` targets for most dependencies. If a dependency isn't found, passing `-D<package>_DIR` to your `cmake` command or exporting `<package>_DIR` as an environment variable equal to the path to `<package>Config.cmake` can help locate dependencies on your system. See [the documentation](https://cmake.org/cmake/help/v3.10/command/find_package.html) for more details. If CMake is failing to locate a package, check to see if a similar issue has been created.
 
@@ -238,7 +240,7 @@ Flashlight uses modern CMake and `IMPORTED` targets for most dependencies. If a 
 
 \* If not found on the system, this dependency is automatically downloaded and built from source.
 
-^ Required if building with distributed training enabled. Distributed training is required for all applications.
+^ Required if building with distributed training enabled (`FL_BUILD_DISTRIBUTED` — see the [build options](#build-options) below). Distributed training is required for all applications.
 
 #### Build Options
 
@@ -375,7 +377,7 @@ int main() {
 }
 ```
 
-The following CMkae configuration links Flashlight and sets include directories:
+The following CMake configuration links Flashlight and sets include directories:
 
 ```cmake
 cmake_minimum_required(VERSION 3.10)
@@ -388,18 +390,18 @@ find_package(flashlight CONFIG REQUIRED)
 target_link_libraries(myProject PRIVATE flashlight::flashlight)
 ```
 
-#### With a `vcpkg` Installation
+#### With a `vcpkg` Flashlight Installation
 
-If using the above CMake configuration with a Flashlight `vcpkg` installation, Flashlight can be found by running:
+If you installed Flashlight with `vcpkg`, the above CMake configuration for `myProject` can be built by running:
 ```shell
 cd project && mkdir build && cd build
 cmake .. -DCMAKE_TOOLCHAIN_FILE=[path to vcpkg clone]/scripts/buildsystems/vcpkg.cmake
 make -j$(nproc)
 ```
 
-#### With a From-Source Build Installation
+#### With a From-Source Flashlight Installation
 
-If using an installation of Flashlight from an in-source build, Flashlight will be found automatically by CMake:
+If using an in-source installation of Flashlight, Flashlight will be found automatically by CMake:
 ```shell
 cd project && mkdir build && cd build
 cmake ..
@@ -407,6 +409,8 @@ make -j$(nproc)
 ```
 If installed in a custom directory using a custom `CMAKE_INSTALL_PREFIX`, passing `-Dflashlight_DIR=[install prefix]/share/flashlight/cmake` as an argument to your `cmake` command can help CMake find Flashlight.
 
+### Building and Running flashlight with Docker
+Flashlight and its dependencies can also be built with the provided Dockerfiles — see the accompanying [Docker documentation](https://github.com/facebookresearch/flashlight/tree/master/.docker) for more information.
 
 ### Contributing and Contact
 Contact: vineelkpratap@fb.com, awni@fb.com, jacobkahn@fb.com, qiantong@fb.com, antares@fb.com, padentomasello@fb.com,
