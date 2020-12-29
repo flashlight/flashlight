@@ -34,7 +34,7 @@ Flashlight is broken down into a few parts:
 
 ## Quickstart
 
-First, [build and install install Flashlight](#building-and-installation) and [link it to your own project](https://fl.readthedocs.io/en/latest/installation.html#building-your-project-with-flashlight).
+First, [build and install install Flashlight](#building-and-installing) and [link it to your own project](https://fl.readthedocs.io/en/latest/installation.html#building-your-project-with-flashlight).
 
 [`Sequential`](https://fl.readthedocs.io/en/latest/modules.html#sequential) forms a sequence of Flashlight [`Module`](https://fl.readthedocs.io/en/latest/modules.html#module)s for chaining computation.
 
@@ -97,15 +97,15 @@ D.backward(); // populates A.grad() along with gradients for B, C, and D.
 
 </details>
 
-## Building and Installation
+## Building and Installing
 
-Flashlight can be broken down into several components as [described above](https://github.com/facebookresearch/flashlight#project-layout). These components depend on one another: applications (`apps`) depend on the core deep learning library (`fl`) standalone libraries (`lib`), and extensions (`ext`). These are automatically resolved when building Flashlight. 
+Flashlight can be broken down into several components as [described above](https://github.com/facebookresearch/flashlight#project-layout). These components depend on one another: applications (`apps`) depend on the core deep learning library (`fl`), standalone libraries (`lib`), and extensions (`ext`). These dependencies are automatically resolved when building Flashlight. 
 
 ### Requirements
 At minimum, compilation requires:
 - A C++ compiler with good C++14 support (e.g. gcc/g++ >= 5)
 - [CMake](https://cmake.org/) -- version 3.10 or later, and ``make``
-- A Unix-ish operating system. We're currently exploring experimental support on Windows.
+- A Linux-based operating system.
 
 See the [full build requirements](https://github.com/facebookresearch/flashlight/blob/master/README.md#build-options) for more details if [building from source](https://github.com/jacobkahn/facebookresearch/flashlight/blob/master/README.md#building-from-source).
 
