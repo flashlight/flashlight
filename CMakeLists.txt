@@ -48,7 +48,7 @@ option(FL_BUILD_RECIPES "Build recipes" ON)
 option(FL_BUILD_STANDALONE "Build standalone installation" ON)
 option(FL_BUILD_LIBRARIES "Build flashlight libraries" ON)
 cmake_dependent_option(FL_BUILD_CORE "Build flashlight core" ON "FL_BUILD_LIBRARIES" OFF)
-cmake_dependent_option(FL_BUILD_APPS "Build flashlight apps" ON "FL_BUILD_CORE" OFF)
+cmake_dependent_option(FL_BUILD_APPS "Build flashlight apps" ON "FL_BUILD_CORE;FL_BUILD_LIBRARIES" OFF)
 
 # Flashlight backend
 set(FL_BACKEND "CUDA" CACHE STRING "Backend with which to build flashlight")
