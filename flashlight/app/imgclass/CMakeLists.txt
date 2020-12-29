@@ -38,12 +38,12 @@ target_include_directories(
 
 include(${CMAKE_CURRENT_LIST_DIR}/dataset/CMakeLists.txt)
 
-add_executable(fl_imageNetResnet34
+add_executable(fl_img_imagenet_resnet34
   ${CMAKE_CURRENT_LIST_DIR}/examples/ImageNetResnet34.cpp)
 target_link_libraries(
-  fl_imageNetResnet34
+  fl_img_imagenet_resnet34
   flashlight-app-imgclass
   ${GLOG_LIBRARIES}
   )
-install(TARGETS fl_imageNetResnet34 RUNTIME DESTINATION ${FL_INSTALL_BIN_DIR})
-set_executable_output_directory(fl_imageNetResnet34 ${FL_BUILD_BINARY_OUTPUT_DIR}/imgclass)
+install(TARGETS fl_img_imagenet_resnet34 RUNTIME DESTINATION ${FL_INSTALL_BIN_DIR})
+set_executable_output_directory(fl_img_imagenet_resnet34 ${FL_BUILD_BINARY_OUTPUT_DIR}/imgclass)
