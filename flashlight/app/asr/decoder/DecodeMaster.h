@@ -59,7 +59,8 @@ class DecodeMaster {
   explicit DecodeMaster(
       const std::shared_ptr<fl::Module> net,
       const std::shared_ptr<fl::lib::text::LM> lm,
-      bool isTokenLM,
+      const bool isTokenLM,
+      const bool usePlugin,
       const fl::lib::text::Dictionary& tokenDict,
       const fl::lib::text::Dictionary& wordDict,
       const DecodeMasterTrainOptions& trainOpt);
@@ -95,6 +96,7 @@ class DecodeMaster {
   std::shared_ptr<fl::Module> net_;
   std::shared_ptr<fl::lib::text::LM> lm_;
   bool isTokenLM_;
+  bool usePlugin_;
   fl::lib::text::Dictionary tokenDict_;
   fl::lib::text::Dictionary wordDict_;
   DecodeMasterTrainOptions trainOpt_;
@@ -107,6 +109,7 @@ class TokenDecodeMaster : public DecodeMaster {
       const std::shared_ptr<fl::Module> net,
       const std::shared_ptr<fl::lib::text::LM> lm,
       const std::vector<float>& transition,
+      const bool usePlugin,
       const fl::lib::text::Dictionary& tokenDict,
       const fl::lib::text::Dictionary& wordDict,
       const DecodeMasterTrainOptions& trainOpt);
@@ -141,6 +144,7 @@ class WordDecodeMaster : public DecodeMaster {
       const std::shared_ptr<fl::Module> net,
       const std::shared_ptr<fl::lib::text::LM> lm,
       const std::vector<float>& transition,
+      const bool usePlugin,
       const fl::lib::text::Dictionary& tokenDict,
       const fl::lib::text::Dictionary& wordDict,
       const DecodeMasterTrainOptions& trainOpt);

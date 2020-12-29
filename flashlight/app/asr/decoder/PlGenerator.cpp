@@ -145,7 +145,8 @@ std::string PlGenerator::reloadPl(int curEpoch) const {
 std::string PlGenerator::regeneratePl(
     int curEpoch,
     const std::shared_ptr<fl::Module>& ntwrk,
-    const std::shared_ptr<SequenceCriterion> criterion) const {
+    const std::shared_ptr<SequenceCriterion> criterion,
+    const bool usePlugin /* = false */) const {
   if (plUpdateMap_.find(curEpoch) == plUpdateMap_.end()) {
     return "";
   }
@@ -203,8 +204,16 @@ std::string PlGenerator::regeneratePl(
       auto tokenTarget = afToVector<int>(sample[kTargetIdx]);
       words = tokenToWord_(tokenTarget, tokenDict_, false);
     } else {
-      auto rawEmission = forwardSequentialModuleWithPadMask(
-          fl::input(sample[kInputIdx]), ntwrk, sample[kDurationIdx]);
+      fl::Variable rawEmission;
+      if (usePlugin) {
+        rawEmission = ntwrk
+                          ->forward({fl::input(sample[kInputIdx]),
+                                     fl::noGrad(sample[kDurationIdx])})
+                          .front();
+      } else {
+        rawEmission = fl::ext::forwardSequentialModuleWithPadMask(
+            fl::input(sample[kInputIdx]), ntwrk, sample[kDurationIdx]);
+      }
       auto tokenPrediction =
           afToVector<int>(criterion->viterbiPath(rawEmission.array()));
       words = tokenToWord_(tokenPrediction, tokenDict_, true);

@@ -40,13 +40,15 @@ namespace asr {
 DecodeMaster::DecodeMaster(
     const std::shared_ptr<fl::Module> net,
     const std::shared_ptr<fl::lib::text::LM> lm,
-    bool isTokenLM,
+    const bool isTokenLM,
+    const bool usePlugin,
     const fl::lib::text::Dictionary& tokenDict,
     const fl::lib::text::Dictionary& wordDict,
     const DecodeMasterTrainOptions& trainOpt)
     : net_(net),
       lm_(lm),
       isTokenLM_(isTokenLM),
+      usePlugin_(usePlugin),
       tokenDict_(tokenDict),
       wordDict_(wordDict),
       trainOpt_(trainOpt) {}
@@ -136,9 +138,17 @@ std::shared_ptr<fl::Dataset> DecodeMaster::forward(
     const std::shared_ptr<fl::Dataset>& ds) {
   auto emissionDataset = std::make_shared<fl::MemoryBlobDataset>();
   for (auto& batch : *ds) {
-    auto output = fl::ext::forwardSequentialModuleWithPadMask(
-                      fl::input(batch[kInputIdx]), net_, batch[kDurationIdx])
-                      .array();
+    af::array output;
+    if (usePlugin_) {
+      output = net_->forward({fl::input(batch[kInputIdx]),
+                              fl::noGrad(batch[kDurationIdx])})
+                   .front()
+                   .array();
+    } else {
+      output = fl::ext::forwardSequentialModuleWithPadMask(
+                   fl::input(batch[kInputIdx]), net_, batch[kDurationIdx])
+                   .array();
+    }
     if (output.numdims() > 3) {
       throw std::runtime_error("output should be NxTxB");
     }
@@ -212,10 +222,11 @@ TokenDecodeMaster::TokenDecodeMaster(
     const std::shared_ptr<fl::Module> net,
     const std::shared_ptr<fl::lib::text::LM> lm,
     const std::vector<float>& transition,
+    const bool usePlugin,
     const fl::lib::text::Dictionary& tokenDict,
     const fl::lib::text::Dictionary& wordDict,
     const DecodeMasterTrainOptions& trainOpt)
-    : DecodeMaster(net, lm, true, tokenDict, wordDict, trainOpt),
+    : DecodeMaster(net, lm, true, usePlugin, tokenDict, wordDict, trainOpt),
       transition_(transition) {}
 
 std::shared_ptr<fl::Dataset> TokenDecodeMaster::decode(
@@ -289,10 +300,11 @@ WordDecodeMaster::WordDecodeMaster(
     const std::shared_ptr<fl::Module> net,
     const std::shared_ptr<fl::lib::text::LM> lm,
     const std::vector<float>& transition,
+    const bool usePlugin,
     const fl::lib::text::Dictionary& tokenDict,
     const fl::lib::text::Dictionary& wordDict,
     const DecodeMasterTrainOptions& trainOpt)
-    : DecodeMaster(net, lm, false, tokenDict, wordDict, trainOpt),
+    : DecodeMaster(net, lm, false, usePlugin, tokenDict, wordDict, trainOpt),
       transition_(transition) {}
 
 std::shared_ptr<fl::Dataset> WordDecodeMaster::decode(
