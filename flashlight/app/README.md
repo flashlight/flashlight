@@ -30,4 +30,4 @@ The `imgclass` application is still in early, active development. It currently p
 
 #### Provided Artifacts
 - Binaries:
-  - `fl_imageNetResnet34`
+  - `fl_img_imagenet_resnet34`
