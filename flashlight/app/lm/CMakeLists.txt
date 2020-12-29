@@ -1,26 +1,9 @@
 cmake_minimum_required(VERSION 3.10)
 
-# ------------------------- Library -------------------------
 add_library(
   flashlight-app-lm
   ""
   )
-
-# ------------------------ Global External Dependencies ------------------------
-# Find gflags
-find_package(GLOG REQUIRED)
-if (GLOG_FOUND)
-  message(STATUS "GLOG found")
-else()
-  message(FATAL_ERROR "GLOG not found")
-endif()
-
-find_package(gflags REQUIRED)
-if (gflags_FOUND)
-  message(STATUS "gflags found")
-else()
-  message(FATAL_ERROR "gflags not found")
-endif()
 
 target_sources(
   flashlight-app-lm
@@ -43,6 +26,7 @@ target_include_directories(
   ${GLOG_INCLUDE_DIRS}
   ${gflags_INCLUDE_DIRS}
   )
+
 # ------------------------ Components ------------------------
 
 # Common

@@ -257,6 +257,7 @@ endif() # if FL_BUILD_CORE
 
 # --------------------------- Apps ---------------------------
 if (FL_BUILD_APPS)
+  message(STATUS "Will build Flashlight applications.")
   set(FL_APPS_DIR "${FL_ROOT_DIR}/app")
   include(${FL_APPS_DIR}/CMakeLists.txt)
 endif()
