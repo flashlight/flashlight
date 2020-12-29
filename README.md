@@ -351,6 +351,63 @@ Flashlight uses modern CMake and `IMPORTED` targets for most dependencies. If a 
 </tbody>
 </table></div>
 
+### Linking Your Application to Flashlight
+Flashlight is most-easily linked to using CMake. Flashlight exports the following CMake targets when installed:
+- `flashlight::fl-libraries` -- contains flashlight libraries headers and symbols.
+- `flashlight::flashlight` -- contains flashlight libraries as well as the flashlight core autograd and neural network library.
+- `flashlight::flashlight-app-asr` -- contains the automatic speech recognition application along with the flashlight core and flashlight libraries.
+- `flashlight::flashlight-app-imgclass` -- contains the image classification application along with the flashlight core and flashlight libraries.
+- `flashlight::flashlight-app-lm` -- contains the language modeling application along with the flashlight core and flashlight libraries.
+
+Given a simple `project.cpp` file that includes and links to Flashlight:
+```c++
+#include <iostream>
+
+#include <arrayfire.h>
+#include <flashlight/fl/flashlight.h>
+
+int main() {
+ fl::Variable v(af::constant(1, 1), true);
+ auto result = v + 10;
+ std::cout << "Hello World!" << std::endl;
+ af::print("Array value is ", result.array()); // 11.000
+ return 0;
+}
+```
+
+The following CMkae configuration links Flashlight and sets include directories:
+
+```cmake
+cmake_minimum_required(VERSION 3.10)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+add_executable(myProject project.cpp)
+
+find_package(flashlight CONFIG REQUIRED)
+target_link_libraries(myProject PRIVATE flashlight::flashlight)
+```
+
+#### With a `vcpkg` Installation
+
+If using the above CMake configuration with a Flashlight `vcpkg` installation, Flashlight can be found by running:
+```shell
+cd project && mkdir build && cd build
+cmake .. -DCMAKE_TOOLCHAIN_FILE=[path to vcpkg clone]/scripts/buildsystems/vcpkg.cmake
+make -j$(nproc)
+```
+
+#### With a From-Source Build Installation
+
+If using an installation of Flashlight from an in-source build, Flashlight will be found automatically by CMake:
+```shell
+cd project && mkdir build && cd build
+cmake ..
+make -j$(nproc)
+```
+If installed in a custom directory using a custom `CMAKE_INSTALL_PREFIX`, passing `-Dflashlight_DIR=[install prefix]/share/flashlight/cmake` as an argument to your `cmake` command can help CMake find Flashlight.
+
+
 ### Contributing and Contact
 Contact: vineelkpratap@fb.com, awni@fb.com, jacobkahn@fb.com, qiantong@fb.com, antares@fb.com, padentomasello@fb.com,
 jcai@fb.com,  gab@fb.com, vitaliy888@fb.com, locronan@fb.com
