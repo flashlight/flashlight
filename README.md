@@ -104,7 +104,7 @@ At minimum, compilation requires:
 - [CMake](https://cmake.org/) -- version 3.10 or later, and ``make``
 - A Unix-ish operating system. We're currently exploring experimental support on Windows.
 
-See the full build requirements for each component below.
+See the [full build requirements](https://github.com/jacobkahn/flashlight/blob/fix_install_docs/README.md#build-options) for each component below.
 
 ### Building
 
