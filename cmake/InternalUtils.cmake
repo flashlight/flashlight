@@ -57,6 +57,7 @@ function(setup_install_headers HEADER_DIR DEST_DIR)
     PATTERN "tests" EXCLUDE
     PATTERN "backend" EXCLUDE
     PATTERN "examples" EXCLUDE
+    PATTERN "tutorial" EXCLUDE
     PATTERN "third_party" EXCLUDE
     PATTERN "experimental" EXCLUDE
     PATTERN "plugincompiler" EXCLUDE
