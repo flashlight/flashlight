@@ -104,75 +104,13 @@ At minimum, compilation requires:
 - [CMake](https://cmake.org/) -- version 3.10 or later, and ``make``
 - A Unix-ish operating system. We're currently exploring experimental support on Windows.
 
-#### Dependencies
-<div class="tg-wrap"><table>
-<thead>
-  <tr>
-    <th>Component</th>
-    <th>Backend</th>
-    <th>Dependencies</th>
-  </tr>
-</thead>
-<tbody>
-  <tr>
-    <td rowspan="2">libraries</td>
-    <td>CUDA</td>
-    <td><a href="https://developer.nvidia.com/cuda-downloads">CUDA</a> &gt;= 9.2</td>
-  </tr>
-  <tr>
-    <td>CPU</td>
-    <td>A BLAS library (<a href="https://software.intel.com/content/www/us/en/develop/tools/oneapi/base-toolkit/download.html">Intel MKL</a> &gt;= 2018, OpenBLAS, etc)</td>
-  </tr>
-  <tr>
-    <td rowspan="3">core</td>
-    <td>Any</td>
-    <td><a href="https://github.com/arrayfire/arrayfire#installation">ArrayFire</a> &gt;= 3.7.3, an MPI library^(<a href="https://www.open-mpi.org/">OpenMPI</a>, etc),&nbsp;&nbsp;<a href="https://github.com/USCiLab/cereal">cereal</a>* &gt;= 1.3.0, <a href="https://github.com/nothings/stb">stb</a>*</td>
-  </tr>
-  <tr>
-    <td>CUDA</td>
-    <td><a href="https://developer.nvidia.com/cuda-downloads">CUDA</a> &gt;= 9.2, <a href="https://developer.nvidia.com/nccl">NCCL</a>^, <a href="https://developer.nvidia.com/cuDNN">cuDNN</a></td>
-  </tr>
-  <tr>
-    <td>CPU</td>
-    <td><a href="https://github.com/oneapi-src/oneDNN">oneDNN</a> &gt;= 2.0, <a href="https://github.com/facebookincubator/gloo">gloo</a> (<a href="https://github.com/facebookincubator/gloo/blob/01e2c2660cd43963ce1fe3e21220ac01f07d9a4b/docs/rendezvous.md#using-mpi">with MPI</a>)*^</td>
-  </tr>
-  <tr>
-    <td>applications: all </td>
-    <td>All</td>
-    <td><a href="https://github.com/google/glog">Google Glog</a>, </td>
-  </tr>
-  <tr>
-    <td>application: asr</td>
-    <td>All</td>
-    <td><a href="https://github.com/libsndfile/libsndfile">libsndfile</a>* &gt;= 10.0.28, a BLAS library (<a href="https://software.intel.com/content/www/us/en/develop/tools/oneapi/base-toolkit/download.html">Intel MKL</a> &gt;= 2018, OpenBLAS, etc)</td>
-  </tr>
-  <tr>
-    <td>application: imgclass</td>
-    <td>All</td>
-    <td>-</td>
-  </tr>
-  <tr>
-    <td>application: lm</td>
-    <td>All</td>
-    <td>-</td>
-  </tr>
-  <tr>
-    <td>tests</td>
-    <td>All</td>
-    <td><a href="https://github.com/google/googletest">Google Test (gtest, with gmock)</a>* &gt;= 1.10.0</td>
-  </tr>
-</tbody>
-</table></div>
-
-\* If not found on the system, this dependency is automatically downloaded and built from source.
-
-^ Required if building with distributed training enabled. Distributed training is required for all applications.
+See the full build requirements for each component below.
 
 ### Building
 
 There are two ways to work with Flashlight:
-1. **As an installed library** that you link to with your own project.
-2. **With in-source development** where you change the Flashlight project source and rebuild.
+1. **As an installed library** that you link to with your own project. This is best for building standalone applications dependent on Flashlight.
+2. **With in-source development** where you change the Flashlight project source and rebuild. This is best if using Flashlight-provided [app binaries](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app).
 
 #### Installing as a Library
 
@@ -209,6 +147,72 @@ make -j$(nproc)
 To build a subset of Flashlight's features, see the [installation options](https://fl.readthedocs.io/en/latest/installation.html) in the documentation.
 
 #### Building from Source
+
+#### Dependencies
+<div class="tg-wrap"><table>
+<thead>
+  <tr>
+    <th>Component</th>
+    <th>Backend</th>
+    <th>Dependencies</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td rowspan="2">libraries</td>
+    <td>CUDA</td>
+    <td><a href="https://developer.nvidia.com/cuda-downloads">CUDA</a> &gt;= 9.2, <a href="https://github.com/nvidia/cub">CUB</a> (if CUDA &lt; 11)</td>
+  </tr>
+  <tr>
+    <td>CPU</td>
+    <td>A BLAS library (<a href="https://software.intel.com/content/www/us/en/develop/tools/oneapi/base-toolkit/download.html">Intel MKL</a> &gt;= 2018, OpenBLAS, etc)</td>
+  </tr>
+  <tr>
+    <td rowspan="3">core</td>
+    <td>Any</td>
+    <td><a href="https://github.com/arrayfire/arrayfire#installation">ArrayFire</a> &gt;= 3.7.3, an MPI library^(<a href="https://www.open-mpi.org/">OpenMPI</a>, etc),&nbsp;&nbsp;<a href="https://github.com/USCiLab/cereal">cereal</a>* &gt;= 1.3.0, <a href="https://github.com/nothings/stb">stb</a>*</td>
+  </tr>
+  <tr>
+    <td>CUDA</td>
+    <td><a href="https://developer.nvidia.com/cuda-downloads">CUDA</a> &gt;= 9.2, <a href="https://developer.nvidia.com/nccl">NCCL</a>^, <a href="https://developer.nvidia.com/cuDNN">cuDNN</a></td>
+  </tr>
+  <tr>
+    <td>CPU</td>
+    <td><a href="https://github.com/oneapi-src/oneDNN">oneDNN</a> &gt;= 2.0, <a href="https://github.com/facebookincubator/gloo">gloo</a> (<a href="https://github.com/facebookincubator/gloo/blob/01e2c2660cd43963ce1fe3e21220ac01f07d9a4b/docs/rendezvous.md#using-mpi">with MPI</a>)*^</td>
+  </tr>
+  <tr>
+    <td>applications: all </td>
+    <td>Any</td>
+    <td><a href="https://github.com/google/glog">Google Glog</a>, <a href="https://github.com/gflags/gflags">Gflags</a></td>
+  </tr>
+  <tr>
+    <td>application: asr</td>
+    <td>Any</td>
+    <td><a href="https://github.com/libsndfile/libsndfile">libsndfile</a>* &gt;= 10.0.28, a BLAS library (<a href="https://software.intel.com/content/www/us/en/develop/tools/oneapi/base-toolkit/download.html">Intel MKL</a> &gt;= 2018, OpenBLAS, etc)</td>
+  </tr>
+  <tr>
+    <td>application: imgclass</td>
+    <td>Any</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td>application: lm</td>
+    <td>Any</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td>tests</td>
+    <td>Any</td>
+    <td><a href="https://github.com/google/googletest">Google Test (gtest, with gmock)</a>* &gt;= 1.10.0</td>
+  </tr>
+</tbody>
+</table></div>
+
+\* If not found on the system, this dependency is automatically downloaded and built from source.
+
+^ Required if building with distributed training enabled. Distributed training is required for all applications.
+
+#### Build Options
 
 <div class="tg-wrap"><table>
 <thead>
@@ -318,8 +322,6 @@ To build a subset of Flashlight's features, see the [installation options](https
   </tr>
 </tbody>
 </table></div>
-
-Instructions to build fully from source can be found [in the documentation](https://fl.readthedocs.io/en/latest/installation.html).
 
 ### Contributing and Contact
 Contact: vineelkpratap@fb.com, awni@fb.com, jacobkahn@fb.com, qiantong@fb.com, antares@fb.com, padentomasello@fb.com,
