@@ -142,8 +142,10 @@ Variable RawWavSpecAugment::forward(const Variable& input) {
         generateRandomInt(low, std::min(rawWavNMels_, low + freqMaskF_) + 1);
     if (high > low) {
       auto inputForFilter = fl::moddims(output, timeView);
-      auto midLowWav = lowPassFilters_[high]->forward(inputForFilter);
-      auto lowWav = lowPassFilters_[low]->forward(inputForFilter);
+      auto midLowWav =
+          lowPassFilters_[high]->forward(inputForFilter).as(input.type());
+      auto lowWav =
+          lowPassFilters_[low]->forward(inputForFilter).as(input.type());
       output = output - fl::moddims(midLowWav - lowWav, input.dims());
     }
   }
