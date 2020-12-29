@@ -25,11 +25,10 @@ endif()
 find_package(OpenMP REQUIRED)
 find_package(Threads REQUIRED)
 
-# OpenMP pollutes other compilers (e.g. nvcc) with flags
+# Threads/OpenMP pollutes other compilers (e.g. nvcc) with flags
 target_compile_options(fl-libraries PRIVATE $<$<COMPILE_LANGUAGE:C>:${OpenMP_C_FLAGS}>)
 target_compile_options(fl-libraries PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${OpenMP_CXX_FLAGS}>)
-
-target_link_libraries(fl-libraries PUBLIC Threads::Threads)
+target_compile_options(fl-libraries PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_THREAD_LIBS_INIT}>)
 
 # ----------------------------- Lib -----------------------------
 target_sources(

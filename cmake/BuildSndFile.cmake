@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.10.0)
 
+# SndFile must be built with encoder libs
+find_package(Ogg REQUIRED)
+find_package(Vorbis REQUIRED)
+find_package(Opus REQUIRED)
+find_package(FLAC REQUIRED)
+
 include(ExternalProject)
 
 set(SndFile_URL https://github.com/libsndfile/libsndfile.git)
@@ -51,8 +57,22 @@ set(SndFile_INCLUDE_DIRS "${SndFile_TEMP_INSTALL_DIR}/include")
 file(MAKE_DIRECTORY ${SndFile_TEMP_INSTALL_DIR})
 file(MAKE_DIRECTORY ${SndFile_INCLUDE_DIRS})
 
+get_target_property(VORBIS_LIB Vorbis::vorbis IMPORTED_LOCATION)
+get_target_property(VORBIS_ENC_LIB Vorbis::vorbisenc IMPORTED_LOCATION)
+get_target_property(FLAC_LIB FLAC::FLAC IMPORTED_LOCATION)
+get_target_property(OGG_LIB Ogg::ogg IMPORTED_LOCATION)
+get_target_property(OPUS_LIB Opus::opus IMPORTED_LOCATION)
+list(APPEND SNDFILE_DEP_LIBRARIES
+  ${VORBIS_LIB}
+  ${VORBIS_ENC_LIB}
+  ${FLAC_LIB}
+  ${OGG_LIB}
+  ${OPUS_LIB}
+  )
+
 add_library(SndFile::sndfile ${LIB_TYPE} IMPORTED)
 set_target_properties(SndFile::sndfile PROPERTIES
-  INTERFACE_INCLUDE_DIRECTORIES ${SndFile_INCLUDE_DIRS}
-  IMPORTED_LOCATION ${SndFile_LIBRARIES}
+  INTERFACE_INCLUDE_DIRECTORIES "${SndFile_INCLUDE_DIRS}"
+  IMPORTED_LOCATION "${SndFile_LIBRARIES}"
+  INTERFACE_LINK_LIBRARIES "${SNDFILE_DEP_LIBRARIES}"
   )

@@ -1,12 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
 # ----------------------------- Dependencies -----------------------------
-# SndFile must be built with encoder libs
-find_package(Ogg REQUIRED)
-find_package(Vorbis REQUIRED)
-find_package(Opus REQUIRED)
-find_package(FLAC REQUIRED)
-
 find_package(SndFile)
 if (TARGET SndFile::sndfile)
   message(STATUS "libsndfile found.")
@@ -41,9 +35,4 @@ target_link_libraries(
   flashlight-app-asr
   PRIVATE
   SndFile::sndfile
-  Vorbis::vorbis
-  Vorbis::vorbisenc
-  FLAC::FLAC
-  Opus::opus
-  Ogg::ogg
   )

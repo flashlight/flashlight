@@ -18,12 +18,10 @@ if (NOT TARGET GTest::gmock)
   find_path(GMOCK_INCLUDE_DIRS gmock/gmock.h PATHS ${GMOCK_ROOT})
   find_library(GMOCK_MAIN_LIBRARY NAMES gmock_main PATHS ${GMOCK_ROOT})
   find_library(GMOCK_LIBRARIES NAMES gmock PATHS ${GMOCK_ROOT})
-  find_package(Threads REQUIRED)
 
   set(GMOCK_BOTH_LIBRARIES
     ${GMOCK_MAIN_LIBRARY}
     ${GMOCK_LIBRARIES}
-    Threads::Threads
     )
 
   # handle the QUIETLY and REQUIRED arguments and set GMOCK_FOUND to TRUE if
