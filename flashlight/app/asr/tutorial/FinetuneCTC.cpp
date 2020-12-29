@@ -24,9 +24,9 @@
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/ext/common/DistributedUtils.h"
-#include "flashlight/ext/plugin/ModulePlugin.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/ext/common/Serializer.h"
+#include "flashlight/ext/plugin/ModulePlugin.h"
 #include "flashlight/fl/contrib/contrib.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/System.h"
@@ -224,7 +224,9 @@ int main(int argc, char** argv) {
       wordTransform,
       std::make_tuple(0, targetpadVal, wordpadVal),
       worldRank,
-      worldSize);
+      worldSize,
+      false // allowEmpty
+  );
 
   std::map<std::string, std::shared_ptr<fl::Dataset>> validds;
   int64_t validBatchSize =
@@ -239,7 +241,9 @@ int main(int argc, char** argv) {
         wordTransform,
         std::make_tuple(0, targetpadVal, wordpadVal),
         worldRank,
-        worldSize);
+        worldSize,
+        true // allowEmpty
+    );
   }
 
   /* =========== Create Network & Optimizers / Reload Snapshot ============ */
@@ -314,20 +318,12 @@ int main(int argc, char** argv) {
 
   auto logStatus =
       [&logFile, isMaster](
-          TrainMeters& mtrs,
-          int64_t epoch,
-          int64_t nupdates,
-          double lr) {
+          TrainMeters& mtrs, int64_t epoch, int64_t nupdates, double lr) {
         syncMeter(mtrs);
 
         if (isMaster) {
-          auto logMsg = getLogString(
-                            mtrs,
-                            {},
-                            epoch,
-                            nupdates,
-                            lr,
-                            0 /* lrcrit */);
+          auto logMsg =
+              getLogString(mtrs, {}, epoch, nupdates, lr, 0 /* lrcrit */);
           FL_LOG_MASTER(INFO) << logMsg;
           appendToLog(logFile, logMsg);
         }
@@ -491,39 +487,38 @@ int main(int argc, char** argv) {
       meters.optimtimer.reset();
       meters.timer.reset();
     };
-    auto runValAndSaveModel = [&](int64_t totalEpochs,
-                                  int64_t totalUpdates,
-                                  double lr) {
-      meters.runtime.stop();
-      meters.timer.stop();
-      meters.sampletimer.stop();
-      meters.fwdtimer.stop();
-      meters.critfwdtimer.stop();
-      meters.bwdtimer.stop();
-      meters.optimtimer.stop();
+    auto runValAndSaveModel =
+        [&](int64_t totalEpochs, int64_t totalUpdates, double lr) {
+          meters.runtime.stop();
+          meters.timer.stop();
+          meters.sampletimer.stop();
+          meters.fwdtimer.stop();
+          meters.critfwdtimer.stop();
+          meters.bwdtimer.stop();
+          meters.optimtimer.stop();
 
-      // valid
-      for (auto& vds : validds) {
-        test(ntwrk, crit, vds.second, meters.valid[vds.first]);
-      }
+          // valid
+          for (auto& vds : validds) {
+            test(ntwrk, crit, vds.second, meters.valid[vds.first]);
+          }
 
-      // print status
-      try {
-        logStatus(meters, totalEpochs, totalUpdates, lr);
-      } catch (const std::exception& ex) {
-        LOG(ERROR) << "Error while writing logs: " << ex.what();
-      }
-      // save last and best models
-      try {
-        saveModels(totalEpochs, totalUpdates);
-      } catch (const std::exception& ex) {
-        LOG(FATAL) << "Error while saving models: " << ex.what();
-      }
-      // reset meters for next readings
-      meters.train.loss.reset();
-      meters.train.tknEdit.reset();
-      meters.train.wrdEdit.reset();
-    };
+          // print status
+          try {
+            logStatus(meters, totalEpochs, totalUpdates, lr);
+          } catch (const std::exception& ex) {
+            LOG(ERROR) << "Error while writing logs: " << ex.what();
+          }
+          // save last and best models
+          try {
+            saveModels(totalEpochs, totalUpdates);
+          } catch (const std::exception& ex) {
+            LOG(FATAL) << "Error while saving models: " << ex.what();
+          }
+          // reset meters for next readings
+          meters.train.loss.reset();
+          meters.train.tknEdit.reset();
+          meters.train.wrdEdit.reset();
+        };
 
     int64_t curBatch = startUpdate;
     double scaleFactor =
