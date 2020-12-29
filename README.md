@@ -1,7 +1,7 @@
 # Flashlight: Fast, Flexible Machine Learning in C++
 
 [**Quickstart**](#quickstart)
-| [**Installation**](#build-and-installation)
+| [**Installation**](#building-and-installation)
 | [**Documentation**](https://fl.readthedocs.io/en/latest/)
 
 [![CircleCI](https://circleci.com/gh/facebookresearch/flashlight.svg?style=shield)](https://circleci.com/gh/facebookresearch/flashlight)
@@ -34,7 +34,7 @@ Flashlight is broken down into a few parts:
 
 ## Quickstart
 
-First, [build and install install Flashlight](#build-and-installation) and [link it to your own project](https://fl.readthedocs.io/en/latest/installation.html#building-your-project-with-flashlight).
+First, [build and install install Flashlight](#building-and-installation) and [link it to your own project](https://fl.readthedocs.io/en/latest/installation.html#building-your-project-with-flashlight).
 
 [`Sequential`](https://fl.readthedocs.io/en/latest/modules.html#sequential) forms a sequence of Flashlight [`Module`](https://fl.readthedocs.io/en/latest/modules.html#module)s for chaining computation.
 
@@ -255,7 +255,7 @@ Flashlight uses modern CMake and `IMPORTED` targets for most dependencies. If a 
     <td>FL_BACKEND</td>
     <td>CUDA, CPU, OPENCL</td>
     <td>CUDA</td>
-    <td>Backend to build all components with.</td>
+    <td>Backend with which to build all components.</td>
   </tr>
   <tr>
     <td>FL_BUILD_STANDALONE</td>
