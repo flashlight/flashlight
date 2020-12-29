@@ -4,7 +4,7 @@ Flashlight and its dependencies can also be built with the provided Dockerfile. 
  
 Docker images for the CUDA and CPU backends for each Flashlight commit are [available on Docker Hub](https://hub.docker.com/r/flml/flashlight/tags).
 
-### Building Flashlight with Docker
+### Running Flashlight with Docker
 
 - Install [Docker](https://docs.docker.com/engine/installation)
 - If using the CUDA backend, install [`nvidia-docker`](https://github.com/NVIDIA/nvidia-docker)
@@ -30,10 +30,10 @@ Using the Dockerfiles in this directory:
 git clone --recursive https://github.com/facebookresearch/flashlight.git
 cd flashlight
 # for CUDA backend
-sudo docker build -f ./Dockerfile-CUDA -t flashlight .
+sudo docker build -f .docker/Dockerfile-CUDA -t flashlight .
 # for CPU backend
-sudo docker build -f ./Dockerfile-CPU -t flashlight .
+sudo docker build -f .docker/Dockerfile-CPU -t flashlight .
 ```
 
 ## Logging inside Docker Containers
-To ensure logs rae displayed, using the `--logtostderr=1` and `--minloglevel=0` flags is best-practice.
+To ensure logs are displayed, using the `--logtostderr=1` and `--minloglevel=0` flags is best-practice.
