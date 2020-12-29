@@ -1,4 +1,4 @@
-Flashlight and its dependencies can also be built with the provided Dockerfile. Both CUDA and CPU backends are supported with Docker. The current Docker images are frozen at **Ubuntu 18.04** and **CUDA 10.0**; we update these periodically.
+Flashlight and its dependencies can also be built with the provided Dockerfiles. Both CUDA and CPU backends are supported with Docker. The current Docker images are frozen at **Ubuntu 18.04** and **CUDA 10.0**; we update these periodically.
 
 ## Docker images on [Docker Hub](https://hub.docker.com/r/flml/flashlight/tags)
  
