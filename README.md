@@ -83,7 +83,7 @@ loss.backward();
 
 See the [MNIST example](https://fl.readthedocs.io/en/latest/mnist.html) for a full tutorial including a training loop and dataset abstractions.
 
-[`Variable`](https://fl.readthedocs.io/en/latest/variable.html) is the base Fashlight tensor that operates on [ArrayFire `array`s](http://arrayfire.org/docs/classaf_1_1array.htm). Tape-based [Automatic differentiation in Flashlight](https://fl.readthedocs.io/en/latest/autograd.html) is simple and works as you'd expect.
+[`Variable`](https://fl.readthedocs.io/en/latest/variable.html) is the base Flashlight tensor that operates on [ArrayFire `array`s](http://arrayfire.org/docs/classaf_1_1array.htm). Tape-based [Automatic differentiation in Flashlight](https://fl.readthedocs.io/en/latest/autograd.html) is simple and works as you'd expect.
 
 <details><summary>Autograd Example</summary>
 
@@ -102,7 +102,7 @@ D.backward(); // populates A.grad() along with gradients for B, C, and D.
 ### Requirements
 At minimum, compilation requires:
 - A C++ compiler with good C++14 support (e.g. gcc/g++ >= 5)
-- [CMake](https://cmake.org/) -- version 3.10 or later, and ``make``
+- [CMake](https://cmake.org/) — version 3.10 or later, and ``make``
 - A Linux-based operating system.
 
 See the [full dependency](#dependencies) list for more details if [building from source](#building-from-source).
@@ -113,7 +113,7 @@ Flashlight can be broken down into several components as [described above](#proj
 
 There are two ways to work with Flashlight:
 1. **As an installed library** that you link to with your own project. This is best for building standalone applications dependent on Flashlight.
-2. **With in-source development** where you change the Flashlight project source and rebuild. This is best if using Flashlight-provided [app binaries](flashlight/app).
+2. **With in-source development** where the Flashlight project source is changed and rebuilt. This is best if customizing/hacking the core framework or the Flashlight-provided [app binaries](flashlight/app).
 
 Flashlight can be built in one of two ways:
 1. [With `vcpkg`](#installing-flashlight-with-vcpkg), a [C++ package manager](https://github.com/microsoft/vcpkg).
@@ -126,7 +126,9 @@ Flashlight is most-easily built and installed with `vcpkg`. Only the CUDA backen
 ```shell
 ./vcpkg install flashlight-cuda
 ```
-To install [Flashlight apps](flashlight/app), check the features available for installation by running `./vcpkg search flashlight-cuda`. Each app is a feature: for example, `./vcpkg install flashlight-cuda[asr]` installs the ASR application.
+To install [Flashlight apps](flashlight/app), check the features available for installation by running `./vcpkg search flashlight-cuda`. Each app is a "feature": for example, `./vcpkg install flashlight-cuda[asr]` installs the ASR application.
+
+Flashlight [app binaries](flashlight/app) are also built for the selected features and are installed into the `vcpkg` install tree's `tools` directory.
 
 [Integrating Flashlight into your own project](#with-a-vcpkg-flashlight-installation) with is simple using `vcpkg`'s [CMake toolchain integration](https://vcpkg.readthedocs.io/en/latest/examples/installing-and-using-packages/#cmake).
 
@@ -137,10 +139,10 @@ CPU and OpenCL support for Flashlight with `vcpkg` are coming soon.
 To build Flashlight from source using dependencies installed with `vcpkg`, install [`CUDA` >= 9.2](https://developer.nvidia.com/cuda-downloads), [`cuDNN`](https://docs.nvidia.com/deeplearning/cudnn/install-guide/index.html), [`NCCL`](https://docs.nvidia.com/deeplearning/nccl/install-guide/index.html), and [Intel MKL](https://software.intel.com/content/www/us/en/develop/tools/oneapi/base-toolkit/download.html), then build the rest of the dependencies for the CUDA backend based on which Flashlight features you'd like to build:
 ```shell
 ./vcpkg install \
-    cuda intel-mkl fftw3 cub kenlm                \ # for flashlight libraries
-    arrayfire[cuda] cudnn nccl openmpi cereal stb \ # for the flashlight neural net library
-    gflags glog                                   \ # for all flashlight applications
-    libsndfile                                    \ # for the flashlight asr application
+    cuda intel-mkl fftw3 cub kenlm                \ # if building flashlight libraries
+    arrayfire[cuda] cudnn nccl openmpi cereal stb \ # if building the flashlight neural net library
+    gflags glog                                   \ # if building any flashlight applications
+    libsndfile                                    \ # if building the flashlight asr application
     gtest                                           # optional, if building tests
 ```
 To build Flashlight from source with these dependencies, clone the repository:
@@ -148,7 +150,7 @@ To build Flashlight from source with these dependencies, clone the repository:
 git clone https://github.com/facebookresearch/flashlight.git && cd flashlight
 mkdir -p build && cd build
 ```
-Then, build from source using `vcpkg`'s CMake toolchain:
+Then, build from source using `vcpkg`'s [CMake toolchain](https://github.com/microsoft/vcpkg/blob/master/docs/users/integration.md#cmake-toolchain-file-recommended-for-open-source-cmake-projects):
 ```shell
 cmake .. \
     -DCMAKE_BUILD_TYPE=Release
@@ -164,7 +166,12 @@ To build from source, first install the below [dependencies](#dependencies). Mos
 
 Some dependencies marked below are downloaded and installed automatically if not found on the local system. `FL_BUILD_STANDALONE` determines this behavior — if disabled, dependencies won't be downloaded and built when building Flashlight.
 
-**Once all dependencies are installed**, build all Flashlight components with:
+**Once all dependencies are installed**, clone the repository:
+```shell
+git clone https://github.com/facebookresearch/flashlight.git && cd flashlight
+mkdir -p build && cd build
+```
+Then build all Flashlight components with:
 ```
 cmake .. -DCMAKE_BUILD_TYPE=Release -DFL_BACKEND=[backend] [...build options]
 make -j$(nproc)
@@ -176,9 +183,13 @@ To build a smaller subset of Flashlight features or applications, see the [build
 
 To install Flashlight in a custom directory, use CMake's [`CMAKE_INSTALL_PREFIX`](https://cmake.org/cmake/help/v3.10/variable/CMAKE_INSTALL_PREFIX.html) argument. Flashlight libraries can be built as shared libraries using CMake's [`BUILD_SHARED_LIBS`](https://cmake.org/cmake/help/v3.10/variable/BUILD_SHARED_LIBS.html) argument.
 
-Flashlight uses modern CMake and `IMPORTED` targets for most dependencies. If a dependency isn't found, passing `-D<package>_DIR` to your `cmake` command or exporting `<package>_DIR` as an environment variable equal to the path to `<package>Config.cmake` can help locate dependencies on your system. See [the documentation](https://cmake.org/cmake/help/v3.10/command/find_package.html) for more details. If CMake is failing to locate a package, check to see if a similar issue has been created.
+Flashlight uses modern CMake and `IMPORTED` targets for most dependencies. If a dependency isn't found, passing `-D<package>_DIR` to your `cmake` command or exporting `<package>_DIR` as an environment variable equal to the path to `<package>Config.cmake` can help locate dependencies on your system. See [the documentation](https://cmake.org/cmake/help/v3.10/command/find_package.html) for more details. If CMake is failing to locate a package, check to see if a corresponding [issue](https://github.com/facebookresearch/flashlight/issues) has already been created before creating your own.
 
 #### Dependencies
+Dependencies marked with `*` are automatically downloaded and built from source if not found on the system. Setting `FL_BUILD_STANDALONE` to `OFF` disables this behavior.
+
+Dependencies marked with `^` are required if building with distributed training enabled (`FL_BUILD_DISTRIBUTED` — see the [build options](#build-options) below). Distributed training is required for all applications.
+
 <div class="tg-wrap"><table>
 <thead>
   <tr>
@@ -191,7 +202,7 @@ Flashlight uses modern CMake and `IMPORTED` targets for most dependencies. If a 
   <tr>
     <td rowspan="2">libraries</td>
     <td>CUDA</td>
-    <td><a href="https://developer.nvidia.com/cuda-downloads">CUDA</a> &gt;= 9.2, <a href="https://github.com/nvidia/cub">CUB</a> (if CUDA &lt; 11)</td>
+    <td><a href="https://developer.nvidia.com/cuda-downloads">CUDA</a> &gt;= 9.2, <a href="https://github.com/nvidia/cub">CUB</a>* (if CUDA &lt; 11)</td>
   </tr>
   <tr>
     <td>CPU</td>
@@ -237,10 +248,6 @@ Flashlight uses modern CMake and `IMPORTED` targets for most dependencies. If a 
   </tr>
 </tbody>
 </table></div>
-
-\* If not found on the system, this dependency is automatically downloaded and built from source.
-
-^ Required if building with distributed training enabled (`FL_BUILD_DISTRIBUTED` — see the [build options](#build-options) below). Distributed training is required for all applications.
 
 #### Build Options
 The Flashlight CMake build accepts the following build options (prefixed with `-D` when running CMake from the command line):
@@ -356,11 +363,11 @@ The Flashlight CMake build accepts the following build options (prefixed with `-
 
 ### Building your Own Project with Flashlight
 Flashlight is most-easily linked to using CMake. Flashlight exports the following CMake targets when installed:
-- `flashlight::fl-libraries` -- contains flashlight libraries headers and symbols.
-- `flashlight::flashlight` -- contains flashlight libraries as well as the flashlight core autograd and neural network library.
-- `flashlight::flashlight-app-asr` -- contains the automatic speech recognition application along with the flashlight core and flashlight libraries.
-- `flashlight::flashlight-app-imgclass` -- contains the image classification application along with the flashlight core and flashlight libraries.
-- `flashlight::flashlight-app-lm` -- contains the language modeling application along with the flashlight core and flashlight libraries.
+- `flashlight::fl-libraries` — contains flashlight libraries headers and symbols.
+- `flashlight::flashlight` — contains flashlight libraries as well as the flashlight core autograd and neural network library.
+- `flashlight::flashlight-app-asr` — contains the automatic speech recognition application along with the flashlight core and flashlight libraries.
+- `flashlight::flashlight-app-imgclass` — contains the image classification application along with the flashlight core and flashlight libraries.
+- `flashlight::flashlight-app-lm` — contains the language modeling application along with the flashlight core and flashlight libraries.
 
 Given a simple `project.cpp` file that includes and links to Flashlight:
 ```c++
@@ -408,7 +415,7 @@ cd project && mkdir build && cd build
 cmake ..
 make -j$(nproc)
 ```
-If installed in a custom directory using a custom `CMAKE_INSTALL_PREFIX`, passing `-Dflashlight_DIR=[install prefix]/share/flashlight/cmake` as an argument to your `cmake` command can help CMake find Flashlight.
+If Flashlight is installed installed in a custom location using a `CMAKE_INSTALL_PREFIX`, passing `-Dflashlight_DIR=[install prefix]/share/flashlight/cmake` as an argument to your `cmake` command can help CMake find Flashlight.
 
 ### Building and Running flashlight with Docker
 Flashlight and its dependencies can also be built with the provided Dockerfiles — see the accompanying [Docker documentation](.docker) for more information.
