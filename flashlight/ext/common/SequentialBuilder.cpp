@@ -285,6 +285,24 @@ std::shared_ptr<Module> parseLines(
     return std::make_shared<Embedding>(embsz, ntokens);
   }
 
+  if (params[0] == "ADAPTIVEE") {
+    if (params.size() != 3) {
+      throw std::invalid_argument("Failed parsing - " + line);
+    }
+    int embsz = std::stoi(params[1]);
+    std::vector<int> cutoffs;
+    auto tokens = fl::lib::split(',', params[2], true);
+    for (const auto& token : tokens) {
+      cutoffs.push_back(std::stoi(fl::lib::trim(token)));
+    }
+    for (int i = 1; i < cutoffs.size(); ++i) {
+      if (cutoffs[i - 1] >= cutoffs[i]) {
+        throw std::invalid_argument("cutoffs must be strictly ascending");
+      }
+    }
+    return std::make_shared<AdaptiveEmbedding>(embsz, cutoffs);
+  }
+
   /* ========== NORMALIZATIONS ========== */
 
   if (params[0] == "BN") {
