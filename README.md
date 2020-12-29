@@ -116,8 +116,8 @@ There are two ways to work with Flashlight:
 2. **With in-source development** where the Flashlight project source is changed and rebuilt. This is best if customizing/hacking the core framework or the Flashlight-provided [app binaries](flashlight/app).
 
 Flashlight can be built in one of two ways:
-1. [With `vcpkg`](#installing-flashlight-with-vcpkg), a [C++ package manager](https://github.com/microsoft/vcpkg).
-2. [From source](#building-from-source) by installing dependencies as needed.
+1. [**With `vcpkg`**](#installing-flashlight-with-vcpkg), a [C++ package manager](https://github.com/microsoft/vcpkg).
+2. [**From source**](#building-from-source) by installing dependencies as needed.
 
 ### Installing Flashlight with `vcpkg`
 #### Library Installation with `vcpkg`
@@ -134,7 +134,7 @@ Flashlight [app binaries](flashlight/app) are also built for the selected featur
 
 CPU and OpenCL support for Flashlight with `vcpkg` are coming soon.
 
-#### In-Source Development with `vcpkg`
+#### From-Source Build with `vcpkg`
 
 To build Flashlight from source using dependencies installed with `vcpkg`, install [`CUDA` >= 9.2](https://developer.nvidia.com/cuda-downloads), [`cuDNN`](https://docs.nvidia.com/deeplearning/cudnn/install-guide/index.html), [`NCCL`](https://docs.nvidia.com/deeplearning/nccl/install-guide/index.html), and [Intel MKL](https://software.intel.com/content/www/us/en/develop/tools/oneapi/base-toolkit/download.html), then build the rest of the dependencies for the CUDA backend based on which Flashlight features you'd like to build:
 ```shell
@@ -409,7 +409,7 @@ make -j$(nproc)
 
 #### With a From-Source Flashlight Installation
 
-If using an in-source installation of Flashlight, Flashlight will be found automatically by CMake:
+If using a from-source installation of Flashlight, Flashlight will be found automatically by CMake:
 ```shell
 cd project && mkdir build && cd build
 cmake ..
