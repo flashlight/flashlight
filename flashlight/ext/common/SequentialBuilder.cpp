@@ -80,6 +80,31 @@ fl::Variable forwardSequentialModuleWithPadMask(
   }
   return output.as(input.type());
 }
+
+fl::Variable forwardSequentialModuleWithPadMaskForCPC(
+    const fl::Variable& input,
+    std::shared_ptr<fl::Module> ntwrk,
+    const af::array& inputSizes) {
+  // expected input dims T x C x 1 x B
+  int T = input.dims(1), B = input.dims(2);
+  auto inputMaxSize = af::tile(af::max(inputSizes), 1, B);
+  af::array inputNotPaddedSize = af::ceil(inputSizes * T / inputMaxSize);
+  auto padMask = af::iota(af::dim4(T, 1), af::dim4(1, B)) <
+      af::tile(inputNotPaddedSize, T, 1);
+  auto ntwrkSeq = std::dynamic_pointer_cast<fl::Sequential>(ntwrk);
+  auto output = input;
+  for (auto& module : ntwrkSeq->modules()) {
+    auto tr = std::dynamic_pointer_cast<fl::Transformer>(module);
+    auto cfr = std::dynamic_pointer_cast<fl::Conformer>(module);
+    if (tr != nullptr || cfr != nullptr) {
+      output = module->forward({output, fl::noGrad(padMask)}).front();
+    } else {
+      output = module->forward({output}).front();
+    }
+  }
+  return output.as(input.type());
+}
+
 } // namespace ext
 } // namespace fl
 
@@ -201,7 +226,7 @@ std::shared_ptr<Module> parseLines(
   /* ========== CONVOLUTIONS ========== */
 
   if (params[0] == "C" || params[0] == "C1") {
-    if (!inRange(5, params.size(), 7)) {
+    if (!inRange(5, params.size(), 9)) {
       throw std::invalid_argument("Failed parsing - " + line);
     }
     int cisz = std::stoi(params[1]);
@@ -210,7 +235,10 @@ std::shared_ptr<Module> parseLines(
     int csx = std::stoi(params[4]);
     int cpx = (params.size() >= 6) ? std::stoi(params[5]) : 0;
     int cdx = (params.size() >= 7) ? std::stoi(params[6]) : 1;
-    return std::make_shared<Conv2D>(cisz, cosz, cwx, 1, csx, 1, cpx, 0, cdx, 1);
+    bool cb = (params.size() >= 8) ? std::stoi(params[7]) : true;
+    int cg = (params.size() >= 9) ? std::stoi(params[8]) : 1;
+    return std::make_shared<Conv2D>(
+        cisz, cosz, cwx, 1, csx, 1, cpx, 0, cdx, 1, cb, cg);
   }
 
   if (params[0] == "TDS") {
@@ -489,8 +517,8 @@ std::shared_ptr<Module> parseLines(
       throw std::invalid_argument("Failed parsing - " + line);
     }
 
-    auto residualBlock = [&](const std::vector<std::string>& prms,
-                             int& numResLayerAndSkip) {
+    auto residualBlock = [&](
+        const std::vector<std::string>& prms, int& numResLayerAndSkip) {
       int numResLayers = std::stoi(prms[1]);
       int numSkipConnections = std::stoi(prms[2]);
       std::shared_ptr<Residual> resPtr = std::make_shared<Residual>();

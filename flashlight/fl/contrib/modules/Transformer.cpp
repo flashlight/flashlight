@@ -11,10 +11,22 @@
 #include "flashlight/fl/nn/Utils.h"
 
 namespace {
-fl::Variable transformerInitLinear(int32_t inDim, int32_t outDim) {
-  float std = std::sqrt(1.0 / float(inDim));
+fl::Variable
+transformerInitLinear(int32_t inDim, int32_t outDim, float gain = 1.0) {
+  // float std = std::sqrt(1.0 / float(inDim));
+  float std = gain * std::sqrt(6.0 / (float(inDim) + float(outDim)));
   return fl::uniform(outDim, inDim, -std, std, af::dtype::f32, true);
 }
+
+fl::Variable
+transformerInitLinearBias(int32_t inDim, int32_t outDim, bool zero = false) {
+  float std = std::sqrt(1.0 / float(inDim));
+  if (zero) {
+    std = 0;
+  }
+  return fl::uniform(af::dim4(outDim), -std, std);
+}
+
 } // namespace
 
 namespace fl {
@@ -28,25 +40,34 @@ Transformer::Transformer(
     float pDropout,
     float pLayerdrop,
     bool useMask,
-    bool preLN)
+    bool preLN,
+    double layerNormEps)
     : nHeads_(nHeads),
       bptt_(bptt),
       pDropout_(pDropout),
       pLayerdrop_(pLayerdrop),
       useMask_(useMask),
       preLN_(preLN),
-      w1_(std::make_shared<Linear>(transformerInitLinear(modelDim, mlpDim))),
-      w2_(std::make_shared<Linear>(transformerInitLinear(mlpDim, modelDim))),
+      layerNormEps_(layerNormEps),
+      w1_(std::make_shared<Linear>(modelDim, mlpDim)),
+      w2_(std::make_shared<Linear>(mlpDim, modelDim)),
       wq_(std::make_shared<Linear>(
-          transformerInitLinear(modelDim, headDim * nHeads))),
+          transformerInitLinear(modelDim, headDim * nHeads, 0.707),
+          transformerInitLinearBias(modelDim, headDim * nHeads))),
       wk_(std::make_shared<Linear>(
-          transformerInitLinear(modelDim, headDim * nHeads))),
+          transformerInitLinear(modelDim, headDim * nHeads, 0.707),
+          transformerInitLinearBias(modelDim, headDim * nHeads))),
       wv_(std::make_shared<Linear>(
-          transformerInitLinear(modelDim, headDim * nHeads))),
+          transformerInitLinear(modelDim, headDim * nHeads, 0.707),
+          transformerInitLinearBias(modelDim, headDim * nHeads))),
       wf_(std::make_shared<Linear>(
-          transformerInitLinear(headDim * nHeads, modelDim))),
-      norm1_(std::make_shared<LayerNorm>(std::vector<int>({0, 3}))),
-      norm2_(std::make_shared<LayerNorm>(std::vector<int>({0, 3}))) {
+          transformerInitLinear(headDim * nHeads, modelDim),
+          transformerInitLinearBias(headDim * nHeads, modelDim, true))),
+      norm1_(
+          std::make_shared<LayerNorm>(std::vector<int>({0, 3}), layerNormEps_)),
+      norm2_(std::make_shared<LayerNorm>(
+          std::vector<int>({0, 3}),
+          layerNormEps_)) {
   if (bptt > 0) {
     params_.push_back(
         uniform(2 * bptt - 1, headDim, -0.1, 0.1, af::dtype::f32, true));
@@ -64,7 +85,8 @@ Transformer::Transformer(
 
 Variable Transformer::mlp(const Variable& input) {
   float pDropout = train_ ? pDropout_ : 0.0;
-  return (*w2_)(dropout(relu((*w1_)(input)), pDropout));
+  // return (*w2_)(dropout(relu((*w1_)(input)), pDropout));
+  return (*w2_)(dropout(relu((*w1_)(input)), 0.0));
 }
 
 Variable Transformer::getMask(int32_t n, bool cache) {
@@ -87,6 +109,8 @@ Variable Transformer::selfAttention(const std::vector<Variable>& input) {
   std::vector<fl::Variable> inputWithState(input.begin(), input.end() - 1);
   auto k = transpose((*wk_)(concatenate(inputWithState, 1)));
   auto v = transpose((*wv_)(concatenate(inputWithState, 1)));
+
+  q = q * std::pow(q.dims(1) / nHeads_, -0.5);
 
   Variable mask, posEmb;
   if (bptt_ > 0) {

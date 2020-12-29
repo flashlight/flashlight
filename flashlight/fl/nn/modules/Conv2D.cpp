@@ -138,14 +138,22 @@ Variable Conv2D::forward(const Variable& input) {
 }
 
 void Conv2D::initialize() {
-  int fanIn = xFilter_ * yFilter_ * nIn_ / groups_;
-  auto wt = kaimingUniform(
+  int fanIn;
+  if (groups_ > 1) {
+    fanIn = xFilter_ * yFilter_ * nIn_ / 4;
+  } else {
+    fanIn = xFilter_ * yFilter_ * nIn_ / groups_;
+  }
+  auto wt = kaimingNormal(
       af::dim4(xFilter_, yFilter_, nIn_ / groups_, nOut_),
       fanIn,
       af::dtype::f32,
       true);
   if (bias_) {
     double bound = std::sqrt(1.0 / fanIn);
+    if (groups_ > 1) {
+      bound = 0.0;
+    }
     auto bs =
         uniform(af::dim4(1, 1, nOut_, 1), -bound, bound, af::dtype::f32, true);
     params_ = {wt, bs};

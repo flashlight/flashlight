@@ -1,5 +1,6 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
+ * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,7 +9,6 @@
 #include "flashlight/fl/nn/modules/LayerNorm.h"
 
 #include <algorithm>
-#include <array>
 #include <numeric>
 #include <stdexcept>
 
@@ -38,80 +38,39 @@ LayerNorm::LayerNorm(
   initialize();
 }
 
-Variable LayerNorm::forward(const Variable& input) {
-  Variable dummyInMean, dummyInVar;
-
-  Variable inputToBn = input;
-  std::vector<int> inNormAxes;
-  // reorder is only required if axisComplement_ is not continuous
-  std::array<int, AF_MAX_DIMS> reorderDims;
-  auto maxAxis =
-      *std::max_element(axisComplement_.begin(), axisComplement_.end());
-  auto minAxis =
-      *std::min_element(axisComplement_.begin(), axisComplement_.end());
-  bool axesContinuous = (axisComplement_.size() == (maxAxis - minAxis + 1));
-  if (axesContinuous) {
-    inNormAxes = axisComplement_;
+Variable LayerNorm::forward(const Variable& in) {
+  std::vector<int> axis;
+  for (int d = 0; d < AF_MAX_DIMS; ++d) {
+    if (std::find(axisComplement_.begin(), axisComplement_.end(), d) ==
+        axisComplement_.end()) {
+      axis.push_back(d);
+    }
+  }
+  Variable input;
+  if (in.type() == af::dtype::f16) {
+    input = in.as(af::dtype::f32);
   } else {
-    int i = 0;
-    for (int d = 0; d < AF_MAX_DIMS; ++d) {
-      if (std::find(axisComplement_.begin(), axisComplement_.end(), d) ==
-          axisComplement_.end()) {
-        reorderDims[i++] = d;
-      }
-    }
-    for (auto n : axisComplement_) {
-      inNormAxes.push_back(i);
-      reorderDims[i++] = n;
-    }
-    inputToBn = reorder(
-        input, reorderDims[0], reorderDims[1], reorderDims[2], reorderDims[3]);
+    input = in;
   }
-  auto paramsType =
-      (input.type() == af::dtype::f16) ? af::dtype::f32 : input.type();
-  auto output = batchnorm(
-      inputToBn,
-      Variable(af::array().as(paramsType), false),
-      Variable(af::array().as(paramsType), false),
-      dummyInMean,
-      dummyInVar,
-      inNormAxes,
-      true,
-      0.0,
-      epsilon_);
 
-  if (!axesContinuous) {
-    std::vector<std::pair<int, int>> restoreDims = {{reorderDims[0], 0},
-                                                    {reorderDims[1], 1},
-                                                    {reorderDims[2], 2},
-                                                    {reorderDims[3], 3}};
-    std::sort(restoreDims.begin(), restoreDims.end());
-    output = reorder(
-        output,
-        restoreDims[0].second,
-        restoreDims[1].second,
-        restoreDims[2].second,
-        restoreDims[3].second);
-  }
+  auto mean = fl::tileAs(fl::mean(input, axis), input);
+  auto stddev =
+      fl::tileAs(fl::sqrt(fl::var(input, axis, true) + epsilon_), input);
+
+  auto output = (input - mean) / stddev;
 
   if (affine_) {
-    Variable weight = params_[0].as(output.type());
-    Variable bias = params_[1].as(output.type());
+    Variable weight = params_[0], bias = params_[1];
     if (axisSize_ != kLnVariableAxisSize) {
-      af::dim4 affineDims = input.dims();
-      for (int ax : axisComplement_) {
-        affineDims[ax] = 1;
+      af::dim4 featDims(1, 1, 1, 1);
+      for (auto i : axis) {
+        featDims[i] = input.dims(i);
       }
-      if (affineDims.elements() != axisSize_) {
-        throw std::invalid_argument(
-            "[LayerNorm] Input size along the norm axis doesn't with axisSize.");
-      }
-      weight = moddims(params_[0].as(output.type()), affineDims);
-      bias = moddims(params_[1].as(output.type()), affineDims);
+      weight = fl::moddims(params_[0], featDims);
+      bias = fl::moddims(params_[1], featDims);
     }
     output = tileAs(weight, input) * output + tileAs(bias, input);
   }
-
   return output;
 }
 

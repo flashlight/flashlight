@@ -9,7 +9,8 @@
 
 #include "flashlight/fl/contrib/modules/AdaptiveEmbedding.h"
 #include "flashlight/fl/contrib/modules/AsymmetricConv1D.h"
-#include "flashlight/fl/contrib/modules/Conformer.h" 
+#include "flashlight/fl/contrib/modules/CPCSpecAugment.h"
+#include "flashlight/fl/contrib/modules/Conformer.h"
 #include "flashlight/fl/contrib/modules/PositionEmbedding.h"
 #include "flashlight/fl/contrib/modules/RawWavSpecAugment.h"
 #include "flashlight/fl/contrib/modules/Residual.h"

@@ -56,7 +56,8 @@ class Transformer : public Container {
       float pDropout,
       float pLayerdrop,
       bool useMask = false,
-      bool preLN = false);
+      bool preLN = false,
+      double layerNormEps = 1e-5);
 
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
   std::string prettyString() const override;
@@ -68,6 +69,7 @@ class Transformer : public Container {
   double pLayerdrop_;
   bool useMask_;
   bool preLN_;
+  double layerNormEps_;
   std::shared_ptr<Linear> w1_, w2_, wq_, wk_, wv_, wf_;
   std::shared_ptr<LayerNorm> norm1_, norm2_;
 
