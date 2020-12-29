@@ -18,7 +18,7 @@ tensor library.
 - An emphasis on efficiency and scale.
 
 Native support in C++ and simple extensibility makes Flashlight a powerful research framework that's *hackable to its core* and enables fast iteration on new experimental setups and algorithms without sacrificing performance. In a single repository, Flashlight provides [applications](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app) for research across multiple domains:
-- [Automatic speech recognition](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr) (the [wav2letter](https://github.com/facebookresearch/wav2letter/) project) — [Documentation](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/asr/README.md) | [Tutorial](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr/tutorial/)
+- [Automatic speech recognition](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr) (the [wav2letter](https://github.com/facebookresearch/wav2letter/) project) — [Documentation](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr) | [Tutorial](https://github.com/facebookresearch/flashlight/blob/tutorial_docs/flashlight/app/asr/tutorial)
 - [Image classification](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/imgclass)
 - [Language modeling](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/lm)
 - Image segmentation (coming soon)
@@ -27,10 +27,10 @@ Native support in C++ and simple extensibility makes Flashlight a powerful resea
 ### Project Layout
 
 Flashlight is broken down into a few parts:
-- **`flashlight/lib`** contains kernels and standalone utilities for sequence losses, beam search decoding, text processing, and more.
-- **`flashlight/fl`** is the core neural network library using the [ArrayFire](https://github.com/arrayfire/arrayfire) tensor library.
-- **`flashlight/app`** are applications of the core library to machine learning across domains.
-- **`flashlight/ext`** are extensions on top of Flashlight and ArrayFire that are useful across applications.
+- [**`flashlight/lib`**](https://github.com/facebookresearch/flashlight/tree/master/flashlight/lib) contains kernels and standalone utilities for sequence losses, beam search decoding, text processing, and more.
+- [**`flashlight/fl`**](https://github.com/facebookresearch/flashlight/tree/master/flashlight/fl) is the core neural network library using the [ArrayFire](https://github.com/arrayfire/arrayfire) tensor library.
+- [**`flashlight/app`**](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app) are applications of the core library to machine learning across domains.
+- [**`flashlight/ext`**](https://github.com/facebookresearch/flashlight/tree/master/flashlight/ext) are extensions on top of Flashlight and ArrayFire that are useful across applications.
 
 ## Quickstart
 
