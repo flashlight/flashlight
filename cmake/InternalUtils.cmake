@@ -59,6 +59,7 @@ function(setup_install_headers HEADER_DIR DEST_DIR)
     PATTERN "examples" EXCLUDE
     PATTERN "third_party" EXCLUDE
     PATTERN "experimental" EXCLUDE
+    PATTERN "plugincompiler" EXCLUDE
     PATTERN ".git" EXCLUDE
     )
 endfunction(setup_install_headers)
