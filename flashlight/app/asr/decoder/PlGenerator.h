@@ -93,7 +93,8 @@ class PlGenerator {
   std::string regeneratePl(
       int curEpoch,
       const std::shared_ptr<fl::Module>& ntwrk,
-      const std::shared_ptr<SequenceCriterion> criterion) const;
+      const std::shared_ptr<SequenceCriterion> criterion,
+      const bool usePlugin = false) const;
 
   /*
    * This function will create a mixture of supervised data and unalabeled data
