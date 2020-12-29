@@ -97,6 +97,7 @@ D.backward(); // populates A.grad() along with gradients for B, C, and D.
 </details>
 
 ## Building and Installing
+[**Install with `vcpkg`**](#library-installation-with-vcpkg) | [**Build from Source**](#building-from-source) | [**Build from Source with `vcpkg`**](#from-source-build-with-vcpkg)
 
 ### Requirements
 At minimum, compilation requires:
