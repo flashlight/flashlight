@@ -34,7 +34,7 @@ Flashlight is broken down into a few parts:
 
 ## Quickstart
 
-First, [build and install install Flashlight](#building-and-installing) and [link it to your own project](#building-your-own-project-with-flashlight).
+First, [build and install Flashlight](#building-and-installing) and [link it to your own project](#building-your-own-project-with-flashlight).
 
 [`Sequential`](https://fl.readthedocs.io/en/latest/modules.html#sequential) forms a sequence of Flashlight [`Module`](https://fl.readthedocs.io/en/latest/modules.html#module)s for chaining computation.
 
@@ -99,17 +99,17 @@ D.backward(); // populates A.grad() along with gradients for B, C, and D.
 
 ## Building and Installing
 
-Flashlight can be broken down into several components as [described above](#project-layout). These components depend on one another: applications (`apps`) depend on the core deep learning library (`fl`), standalone libraries (`lib`), and extensions (`ext`). These dependencies are automatically resolved when building Flashlight. 
-
 ### Requirements
 At minimum, compilation requires:
 - A C++ compiler with good C++14 support (e.g. gcc/g++ >= 5)
 - [CMake](https://cmake.org/) -- version 3.10 or later, and ``make``
 - A Linux-based operating system.
 
-See the [full dependency](#dependencies) for more details if [building from source](#building-from-source).
+See the [full dependency](#dependencies) list for more details if [building from source](#building-from-source).
 
 ### Flashlight Build Setups
+
+Flashlight can be broken down into several components as [described above](#project-layout). Each component can be incrementally built by specifying the correct [build options](#build-options).
 
 There are two ways to work with Flashlight:
 1. **As an installed library** that you link to with your own project. This is best for building standalone applications dependent on Flashlight.
@@ -122,7 +122,7 @@ Flashlight can be built in one of two ways:
 ### Installing Flashlight with `vcpkg`
 #### Library Installation with `vcpkg`
 
-Flashlight is most-easily built and installed with `vcpkg`. Only the CUDA backend is currently supported with `vcpkg`. First, install [`CUDA` >= 9.2](https://developer.nvidia.com/cuda-downloads), [`cuDNN`](https://docs.nvidia.com/deeplearning/cudnn/install-guide/index.html), [`NCCL`](https://docs.nvidia.com/deeplearning/nccl/install-guide/index.html), and [Intel MKL](https://software.intel.com/content/www/us/en/develop/tools/oneapi/base-toolkit/download.html). Then, after [installing `vcpkg`](https://github.com/microsoft/vcpkg#getting-started) install the libraries and core with:
+Flashlight is most-easily built and installed with `vcpkg`. Only the CUDA backend is currently supported with `vcpkg`. First, install [`CUDA` >= 9.2](https://developer.nvidia.com/cuda-downloads), [`cuDNN`](https://docs.nvidia.com/deeplearning/cudnn/install-guide/index.html), [`NCCL`](https://docs.nvidia.com/deeplearning/nccl/install-guide/index.html), and [Intel MKL](https://software.intel.com/content/www/us/en/develop/tools/oneapi/base-toolkit/download.html). Then, after [installing `vcpkg`](https://github.com/microsoft/vcpkg#getting-started), install the libraries and core with:
 ```shell
 ./vcpkg install flashlight-cuda
 ```
