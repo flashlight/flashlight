@@ -318,6 +318,7 @@ int main(int argc, char** argv) {
       padVal,
       worldRank,
       worldSize,
+      false, // allowEmpty
       FLAGS_batching_strategy,
       FLAGS_batching_max_duration);
 
@@ -334,7 +335,9 @@ int main(int argc, char** argv) {
         wordTransform,
         padVal,
         worldRank,
-        worldSize);
+        worldSize,
+        true // allowEmpty
+    );
   }
 
   /* =========== Create Network & Optimizers / Reload Snapshot ============ */
@@ -349,7 +352,7 @@ int main(int argc, char** argv) {
   auto scalemode = getCriterionScaleMode(FLAGS_onorm, FLAGS_sqnorm);
   if (fl::lib::endsWith(FLAGS_arch, ".so")) {
     usePlugin = true;
-    (void) fl::ext::ModulePlugin(FLAGS_arch);
+    (void)fl::ext::ModulePlugin(FLAGS_arch);
   }
   if (runStatus == kTrainMode) {
     FL_LOG_MASTER(INFO) << "Loading architecture file from " << FLAGS_arch;

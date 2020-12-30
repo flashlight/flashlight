@@ -110,6 +110,7 @@ std::shared_ptr<fl::Dataset> createDataset(
     const std::tuple<int, int, int>& padVal /* = {0, -1, -1} */,
     int worldRank /* = 0 */,
     int worldSize /* = 1 */,
+    const bool allowEmpty /* = false */,
     const std::string& batchingStrategy /* kBatchStrategyNone */,
     int maxDurationPerBatch /* = 0 */) {
   std::vector<std::shared_ptr<const fl::Dataset>> allListDs;
@@ -176,7 +177,7 @@ std::shared_ptr<fl::Dataset> createDataset(
   if (batchingStrategy == kBatchStrategyDynamic) {
     // Partition the dataset and distribute
     auto result = fl::dynamicPartitionByRoundRobin(
-        sizes, worldRank, worldSize, maxDurationPerBatch);
+        sizes, worldRank, worldSize, maxDurationPerBatch, allowEmpty);
     auto partitions = result.first;
     auto batchSizes = result.second;
     auto paritionDs =
@@ -186,7 +187,7 @@ std::shared_ptr<fl::Dataset> createDataset(
   } else if (batchingStrategy == kBatchStrategyNone) {
     // Partition the dataset and distribute
     auto partitions = fl::partitionByRoundRobin(
-        sortedDs->size(), worldRank, worldSize, batchSize);
+        sortedDs->size(), worldRank, worldSize, batchSize, allowEmpty);
     auto paritionDs =
         std::make_shared<fl::ResampleDataset>(sortedDs, partitions);
     // Batch the dataset

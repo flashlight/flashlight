@@ -1,12 +1,6 @@
 # Language Modeling
 
-## Build Instructions
-
-Please follow the general Flashlight building instructions in [here](https://github.com/facebookresearch/flashlight/blob/master/docs/source/installation.rst), with `FL_BUILD_APP_LM` option on.
-
-## Usage
-
-### Build Dictionary
+## Build Dictionary
 
 ```
 fl_lm_dictionary_builder \
@@ -21,14 +15,14 @@ fl_lm_dictionary_builder \
 
 Dictionary builder reads all the text files specified in `--data_train` from `--data_dir` and count the total number of tokens and sentences in it, using `--n_workers` threads in parallel. After filtering out the uncommon tokens with `--dictionary_min_appearence` and limiting the dictionary size by `--dictionary_max_size`, dictionary builder will save out a dictionary with tokens and their number of appearance in all the text files into `--dictionary`. If `--write_meta` is on, the meta data of each text file will be generated in `--data_dir` with suffix `.desc`. Meta data describes the beginning position (in byte) of each sentence and the number of tokens in it.
 
-### Train
+## Train
 
-#### Training modes
+### Training modes
 - `train`: Train a model from scratch, and save logs and checkpoints into `exp_rundir/exp_model_name`.
 - `continue`: Continue training an existing model in `exp_rundir/exp_model_name`.
 - `fork`: Training a new model with weights initialized to the one specified in `--FLAGS_exp_init_model_path`.
 
-#### Training tasks
+### Training tasks
 - Auto-regressive training (`--train_task=autoreg`)
 ```
 fl_lm_train \
@@ -86,6 +80,6 @@ fl_lm_train \
 A complete list of the flag definitions and short descriptions of their meaning can be found [here](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/lm/Trainer.cpp).
 
 
-### Evaluation
+## Evaluation
 
 Coming soon
