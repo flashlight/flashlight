@@ -58,7 +58,7 @@ commands:
             apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5 && \
             cd /flashlight && pwd && ls && mkdir -p build && cd build && \
             export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5 && \
-            export MKLROOT=/opt/intel/mkl && export KENLM_ROOT=/root/kenlm && \
+            export MKLROOT=/opt/intel/mkl && \
             cmake .. \
                 -DFL_BACKEND=<< parameters.fl_backend >> \
                 -DFL_BUILD_CORE=<< parameters.fl_build_fl_core >> \
@@ -111,9 +111,6 @@ commands:
           name: "Install vcpkg dependencies"
           command: |
             MKLROOT=/opt/intel/mkl ./vcpkg/vcpkg install << parameters.vcpkg_deps >>
-  # FIXME(jacobkahn): investigate why we need to force MKL to be off here. It seems that
-  # in the CI env, MKL is found but not MKL's iomp5 components which means no OpenMP
-  # implementation is linked - which causes a linker failure with omp symbols.
   flashlight_source_build_with_vcpkg:
     parameters:
       fl_build_fl_core:
@@ -132,7 +129,6 @@ commands:
             export MKLROOT=/opt/intel/mkl
             export CUDACXX=/usr/local/cuda/bin/nvcc
             cmake .. \
-              -DFL_LIBRARIES_USE_MKL=OFF \
               -DFL_BACKEND=CUDA \
               -DFL_BUILD_CORE=<< parameters.fl_build_fl_core >> \
               -DFL_BUILD_APP_ASR=<< parameters.fl_build_app_asr >> \
@@ -140,6 +136,17 @@ commands:
               -DFL_BUILD_APP_LM=<< parameters.fl_build_app_lm >> \
               -DCMAKE_TOOLCHAIN_FILE=$HOME/project/vcpkg/scripts/buildsystems/vcpkg.cmake
             make -j$(nproc)
+  flashlight_build_and_install_cpu_backend_from_source:
+    steps:
+      - run:
+          name: Build flashlight with CPU backend
+          command: |
+            cd flashlight && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5
+            export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5
+            export MKLROOT=/opt/intel/mkl
+            mkdir -p build && cd build
+            cmake .. -DFL_BACKEND=CPU
+            make -j36 && make install
   flashlight_source_test_with_vcpkg:
     parameters:
       fl_test_apex_dir:
@@ -150,7 +157,16 @@ commands:
           command: |
             cd $HOME/project/build/<< parameters.fl_test_apex_dir >>
             ctest
-
+  setup_flashlight_compile_and_link_external_project_script:
+    steps:
+      - run:
+          name: Set up script to build another project that depends on flashlight
+          command: |
+            set +H
+            echo "printf '#include <flashlight/fl/flashlight.h>\nint main() { auto x = fl::constant(1.0, 1); auto y = x + 1; return !fl::allClose(y, x + x); }\n' > main.cpp" >> flashlight_compile_and_link_external_project.sh
+            echo "printf 'cmake_minimum_required(VERSION 3.10)\nfind_package(flashlight CONFIG REQUIRED)\nadd_executable(main main.cpp)\ntarget_link_libraries(main PRIVATE flashlight::flashlight)\n' > CMakeLists.txt" >> flashlight_compile_and_link_external_project.sh
+            echo "mkdir -p build && cd build && cmake .. && make" >> flashlight_compile_and_link_external_project.sh
+            echo "./main" >> flashlight_compile_and_link_external_project.sh
   ############################ Dependency Commands ############################
   ubuntu_install_and_setup_cmake:
     parameters:
@@ -196,7 +212,6 @@ commands:
             sudo apt-get update || true
             sudo apt-get --yes --force-yes install cuda
             nvidia-smi
-
 ############################ Jobs ############################
 jobs:
   ubuntu1604_gcc5_cuda_10_1_vcpkg_flashlight_lib:
@@ -216,10 +231,8 @@ jobs:
           fl_build_app_lm: "OFF"
       - flashlight_source_test_with_vcpkg:
           fl_test_apex_dir: "flashlight/lib/test"
-  # TODO(jacobkahn): add jobs forversions for the fl core and apps
-  # once https://github.com/microsoft/vcpkg/issues/14864 is merged
-  # and forge can be built on Xenial
-
+  # TODO(jacobkahn): add jobs for versions for the fl core and apps.
+  # See if we can use a vcpkg cache in CircleCI to reduce build times
   ubuntu1804_gcc5_cuda10_0_docker_flashlight_lib:
     <<: *gpu
     steps:
@@ -307,19 +320,45 @@ jobs:
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
-    resource_class: 2xlarge
+    resource_class: 2xlarge+
     steps:
       - checkout:
           path: flashlight
+      - flashlight_build_and_install_cpu_backend_from_source
+
+  ubuntu1804_gcc5_cpu_docker_flashlight_build_external:
+    docker:
+      - image: flml/flashlight:cpu-base-consolidation-latest
+        auth:
+          username: $DOCKER_USERNAME
+          password: $DOCKER_PASSWORD
+    resource_class: 2xlarge+
+    steps:
+      - checkout:
+          path: flashlight
+      - flashlight_build_and_install_cpu_backend_from_source
+      - setup_flashlight_compile_and_link_external_project_script
       - run:
-          name: Build flashlight with CPU backend
-          command: |
-            cd flashlight && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5
-            export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5
-            export MKLROOT=/opt/intel/mkl && export KENLM_ROOT=/root/kenlm
-            mkdir -p build && cd build
-            cmake .. -DFL_BACKEND=CPU -DFL_LIBRARIES_USE_CUDA=OFF
-            make -j16 && make install
+          name: "Build another project that depends on flashlight"
+          command: bash flashlight_compile_and_link_external_project.sh
+
+  ubuntu1804_gcc5_cuda10_0_docker_flashlight_build_external:
+    <<: *gpu
+    steps:
+      - authenticate_docker
+      - install_nvidia_docker
+      - checkout
+      - start_nvidia_docker_and_copy_flashlight_source
+      - build_flashlight_inside_nvidia_docker:
+          fl_backend: "CUDA"
+          fl_build_fl_core: "ON"
+          fl_build_app_asr: "ON"
+          fl_build_app_img_class: "ON"
+          fl_build_app_lm: "ON"
+      - setup_flashlight_compile_and_link_external_project_script
+      - run:
+          name: "Build another project that depends on flashlight"
+          command: sudo docker exec -i flashlight bash < flashlight_compile_and_link_external_project.sh
 
 workflows:
   version: 2
@@ -336,3 +375,7 @@ workflows:
   docker_cpu_build_and_install:
     jobs:
       - ubuntu1804_gcc5_cpu_docker_flashlight_all
+  build_external_project_with_flashlight_dependency:
+    jobs:
+      - ubuntu1804_gcc5_cpu_docker_flashlight_build_external
+      - ubuntu1804_gcc5_cuda10_0_docker_flashlight_build_external
