@@ -572,7 +572,7 @@ int main(int argc, char** argv) {
           double lrcrit) {
         syncMeter(mtrs);
         plGenerator.setModelWER(
-            mtrs.valid[validTagSets.front().first].wrdEdit.value()[0]);
+            mtrs.valid[validTagSets.front().first].wrdEdit.errorRate()[0]);
 
         if (isMaster) {
           auto logMsg = getLogString(
@@ -814,8 +814,12 @@ int main(int argc, char** argv) {
   }
   // If any PLs loaded, update train set
   if (!unsupDataDir.empty()) {
-    trainds =
-        plGenerator.createTrainSet(FLAGS_datadir, FLAGS_train, unsupDataDir);
+    trainds = plGenerator.createTrainSet(
+        FLAGS_datadir,
+        FLAGS_train,
+        unsupDataDir,
+        FLAGS_batching_strategy,
+        FLAGS_batching_max_duration);
   }
 
   auto train = [&meters,
@@ -1152,7 +1156,11 @@ int main(int argc, char** argv) {
           plGenerator.regeneratePl(curEpoch, ntwrk, crit, usePlugin);
       if (!newUnsupDataDir.empty()) {
         trainset = plGenerator.createTrainSet(
-            FLAGS_datadir, FLAGS_train, newUnsupDataDir);
+            FLAGS_datadir,
+            FLAGS_train,
+            newUnsupDataDir,
+            FLAGS_batching_strategy,
+            FLAGS_batching_max_duration);
       }
     }
   };

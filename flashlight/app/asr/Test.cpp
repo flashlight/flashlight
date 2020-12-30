@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
   af::setDevice(0);
   if (fl::lib::endsWith(FLAGS_arch, ".so")) {
     usePlugin = true;
-    (void) fl::ext::ModulePlugin(FLAGS_arch);
+    (void)fl::ext::ModulePlugin(FLAGS_arch);
   }
   Serializer::load(FLAGS_am, version, cfg, network, criterion);
   if (version != FL_APP_ASR_VERSION) {
