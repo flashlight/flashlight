@@ -9,6 +9,7 @@ if (FL_LIBRARIES_USE_MKL)
   setup_install_find_module(${CMAKE_MODULE_PATH}/FindMKL.cmake)
 else ()
   find_package(CBLAS REQUIRED)
+  setup_install_find_module(${CMAKE_MODULE_PATH}/FindCBLAS.cmake)
 endif ()
 message(STATUS "CBLAS found (include: ${CBLAS_INCLUDE_DIR}, library: ${CBLAS_LIBRARIES})")
 
