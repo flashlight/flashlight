@@ -29,7 +29,8 @@ std::vector<int64_t> partitionByRoundRobin(
     int64_t numSamples,
     int64_t partitionId,
     int64_t numPartitions,
-    int64_t batchSz = 1);
+    int64_t batchSz = 1,
+    bool allowEmpty = false);
 
 /**
  * Partitions the samples in a round-robin manner and return ids of the samples
@@ -45,7 +46,8 @@ dynamicPartitionByRoundRobin(
     const std::vector<float>& samplesSize,
     int64_t partitionId,
     int64_t numPartitions,
-    int64_t maxSizePerBatch);
+    int64_t maxSizePerBatch,
+    bool allowEmpty = false);
 
 /**
  * Make batch by applying batchFn to the data

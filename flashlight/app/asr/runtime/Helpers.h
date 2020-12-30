@@ -85,6 +85,7 @@ std::shared_ptr<fl::Dataset> createDataset(
                                                                         -1},
     int worldRank = 0,
     int worldSize = 1,
+    const bool allowEmpty = false,
     const std::string& batchingStrategy = kBatchStrategyNone,
     int maxDurationPerBatch = 0);
 
