@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/fl/contrib/contrib.h"
 #include "flashlight/fl/flashlight.h"
@@ -103,7 +104,9 @@ class PlGenerator {
   std::shared_ptr<fl::Dataset> createTrainSet(
       const std::string& trainDir,
       const std::string& trainLists,
-      const std::string& trainUnsupDir) const;
+      const std::string& trainUnsupDir,
+      const std::string& batchingStrategy = kBatchStrategyNone,
+      int maxDurationPerBatch = 0) const;
 
   /* To set the WER of current model in PlGenerator */
   void setModelWER(const float& wer);

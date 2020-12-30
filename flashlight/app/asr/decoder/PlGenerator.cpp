@@ -243,7 +243,9 @@ std::string PlGenerator::regeneratePl(
 std::shared_ptr<fl::Dataset> PlGenerator::createTrainSet(
     const std::string& trainDir,
     const std::string& trainLists,
-    const std::string& trainUnsupDir) const {
+    const std::string& trainUnsupDir,
+    const std::string& batchingStrategy /* = kBatchStrategyNone */,
+    int maxDurationPerBatch /* = 0 */) const {
   std::vector<std::string> files;
   for (const auto& file : lib::split(",", trainLists, true)) {
     files.emplace_back(pathsConcat(trainDir, file));
@@ -262,8 +264,9 @@ std::shared_ptr<fl::Dataset> PlGenerator::createTrainSet(
       padVal_,
       worldRank_,
       worldSize_,
-      false // allowEmpty
-  );
+      false, // allowEmpty
+      batchingStrategy,
+      maxDurationPerBatch);
 }
 
 void PlGenerator::setModelWER(const float& wer) {
