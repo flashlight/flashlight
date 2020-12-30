@@ -7,8 +7,8 @@
 
 #pragma once
 
+#include <stddef.h>
 #include "flashlight/lib/text/dictionary/Defines.h"
-
 #define FL_APP_ASR_VERSION "0.1"
 
 namespace fl {
