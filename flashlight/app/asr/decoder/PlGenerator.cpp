@@ -261,7 +261,9 @@ std::shared_ptr<fl::Dataset> PlGenerator::createTrainSet(
       wordTransform_,
       padVal_,
       worldRank_,
-      worldSize_);
+      worldSize_,
+      false // allowEmpty
+  );
 }
 
 void PlGenerator::setModelWER(const float& wer) {
