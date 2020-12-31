@@ -11,8 +11,8 @@
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/data/FeatureTransforms.h"
-#include "flashlight/app/asr/tools/alignment/Utils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
+#include "flashlight/app/asr/tools/alignment/Utils.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/ext/common/Serializer.h"
 #include "flashlight/fl/flashlight.h"
@@ -76,12 +76,7 @@ int main(int argc, char** argv) {
   LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */
-  auto dictPath = FLAGS_tokens;
-  LOG(INFO) << "Loading dictionary from " << dictPath;
-  if (dictPath.empty() || !fileExists(dictPath)) {
-    throw std::invalid_argument("Invalid dictionary filepath specified.");
-  }
-  text::Dictionary tokenDict(dictPath);
+  text::Dictionary tokenDict(FLAGS_tokens);
   // Setup-specific modifications
   for (int64_t r = 1; r <= FLAGS_replabel; ++r) {
     tokenDict.addEntry("<" + std::to_string(r) + ">");
@@ -131,7 +126,7 @@ int main(int argc, char** argv) {
   /* ===================== Create Dataset ===================== */
   int worldRank = 0;
   int worldSize = 1;
-    fl::lib::audio::FeatureParams featParams(
+  fl::lib::audio::FeatureParams featParams(
       FLAGS_samplerate,
       FLAGS_framesizems,
       FLAGS_framestridems,
@@ -203,14 +198,8 @@ int main(int argc, char** argv) {
   for (auto& sample : *ds) {
     fwdMtr.resume();
     const auto input = fl::input(sample[kInputIdx]);
-    std::vector<fl::Variable> rawEmissions = network->forward({input});
-    fl::Variable rawEmission;
-    if (!rawEmissions.empty()) {
-      rawEmission = rawEmissions.front();
-    } else {
-      LOG(ERROR) << "Network did not produce any outputs";
-    }
-
+    fl::Variable rawEmission = fl::ext::forwardSequentialModuleWithPadMask(
+        input, network, sample[kDurationIdx]);
     fwdMtr.stop();
     alignMtr.resume();
     auto bestPaths =
@@ -240,8 +229,7 @@ int main(int argc, char** argv) {
     parseMtr.stop();
     ++batches;
     if (batches % 500 == 0) {
-      LOG(INFO) << "Done batches: " << batches
-                << " , samples: " << batches * FLAGS_batchsize;
+      LOG(INFO) << "Done samples: " << batches;
     }
   }
 

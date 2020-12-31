@@ -16,7 +16,7 @@
  * - The perplexity of the predicted sequence based on a specified input
  *   language model (first output in .sts file for each sample)
  * - The percentage of the audio containing speech based on the passed
- *   --vadthreshold flag (second output in .sts file for each sample)
+ *   --vad_threshold flag (second output in .sts file for each sample)
  * - The most likely token-level transcription of given audio based on the
  *   acoustic model output only (output in .tsc file for each sample).
  * - Frame wise token emissions based on the most-likely token emitted for each
@@ -38,6 +38,7 @@
 #include "flashlight/app/asr/data/FeatureTransforms.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
+#include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/ext/common/Serializer.h"
 #include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/decoder/lm/KenLM.h"
@@ -46,15 +47,15 @@
 namespace {
 
 DEFINE_double(
-    vadthreshold,
+    vad_threshold,
     0.99,
     "Blank probability threshold at which a frame is deemed voice-inactive");
 DEFINE_string(outpath, "", "Output path for generated results files");
 
 // Extensions for each output file
 const std::string kVadExt = ".vad";
-const std::string kFrameWiseTokensExt = ".fwt";
-const std::string kWordPieceTranscriptExt = ".tsc";
+const std::string kTknFrameWiseTokensExt = ".fwt";
+const std::string kLtrTranscriptExt = ".tsc";
 const std::string kPerplexityPctSpeechExt = ".sts";
 
 } // namespace
@@ -71,11 +72,6 @@ int main(int argc, char** argv) {
   for (int i = 0; i < argc; i++) {
     argvs.emplace_back(argv[i]);
   }
-  gflags::SetUsageMessage("Usage: Please refer to https://git.io/Je9lG");
-  if (argc <= 1) {
-    LOG(FATAL) << gflags::ProgramUsage();
-  }
-
   /* ===================== Parse Options ===================== */
   LOG(INFO) << "Parsing command line flags";
   gflags::ParseCommandLineFlags(&argc, &argv, false);
@@ -119,12 +115,7 @@ int main(int argc, char** argv) {
   LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */
-  auto dictPath = FLAGS_tokens;
-  if (dictPath.empty() || !fileExists(dictPath)) {
-    throw std::runtime_error(
-        "Invalid dictionary filepath specified " + dictPath);
-  }
-  fl::lib::text::Dictionary tokenDict(dictPath);
+  fl::lib::text::Dictionary tokenDict(FLAGS_tokens);
   // Setup-specific modifications
   for (int64_t r = 1; r <= FLAGS_replabel; ++r) {
     tokenDict.addEntry("<" + std::to_string(r) + ">");
@@ -150,11 +141,8 @@ int main(int argc, char** argv) {
     LOG(INFO) << "Number of words: " << wordDict.indexSize();
     wordDict.setDefaultIndex(wordDict.getIndex(text::kUnkToken));
   }
-
-  text::DictionaryMap dicts = {{kTargetIdx, tokenDict}, {kWordIdx, wordDict}};
-
   /* ===================== Create Dataset ===================== */
-    fl::lib::audio::FeatureParams featParams(
+  fl::lib::audio::FeatureParams featParams(
       FLAGS_samplerate,
       FLAGS_framesizems,
       FLAGS_framestridems,
@@ -217,23 +205,26 @@ int main(int argc, char** argv) {
 
   /* ===================== Build LM ===================== */
   std::shared_ptr<text::LM> lm;
-  if (FLAGS_lmtype == "kenlm") {
-    lm = std::make_shared<text::KenLM>(FLAGS_lm, wordDict);
-    if (!lm) {
+  if (!FLAGS_lm.empty()) {
+    if (FLAGS_lmtype == "kenlm") {
+      lm = std::make_shared<text::KenLM>(FLAGS_lm, wordDict);
+      if (!lm) {
+        throw std::runtime_error(
+            "[LM constructing] Failed to load LM: " + FLAGS_lm);
+      }
+    } else {
       throw std::runtime_error(
-          "[LM constructing] Failed to load LM: " + FLAGS_lm);
+          "[LM constructing] Invalid LM Type: " + FLAGS_lmtype);
     }
-  } else {
-    throw std::runtime_error(
-        "[LM constructing] Invalid LM Type: " + FLAGS_lmtype);
   }
 
   /* ===================== Test ===================== */
   int cnt = 0;
-  auto prefetchds = loadPrefetchDataset(
-        ds, FLAGS_nthread, false /* shuffle */, 0 /* seed */);
+  auto prefetchds =
+      loadPrefetchDataset(ds, FLAGS_nthread, false /* shuffle */, 0 /* seed */);
   for (auto& sample : *prefetchds) {
-    auto rawEmission = network->forward({fl::input(sample[kInputIdx])}).front();
+    auto rawEmission = fl::ext::forwardSequentialModuleWithPadMask(
+        fl::input(sample[kInputIdx]), network, sample[kDurationIdx]);
     auto sampleId = readSampleIds(sample[kSampleIdx]).front();
     LOG(INFO) << "Processing sample ID " << sampleId;
 
@@ -252,29 +243,32 @@ int main(int argc, char** argv) {
     std::vector<std::string> wordPrediction =
         tkn2Wrd(letterPrediction, FLAGS_wordseparator);
 
-    // LM score
     float lmScore = 0;
-    auto inState = lm->start(0);
-    for (const auto& word : wordPrediction) {
-      auto lmReturn = lm->score(inState, wordDict.getIndex(word));
-      inState = lmReturn.first;
+    if (!FLAGS_lm.empty()) {
+      // LM score
+      auto inState = lm->start(0);
+      for (const auto& word : wordPrediction) {
+        auto lmReturn = lm->score(inState, wordDict.getIndex(word));
+        inState = lmReturn.first;
+        lmScore += lmReturn.second;
+      }
+      auto lmReturn = lm->finish(inState);
       lmScore += lmReturn.second;
     }
-    auto lmReturn = lm->finish(inState);
-    lmScore += lmReturn.second;
 
     // Determine results basename. In case the sample id contains an extension,
     // else a noop
+    fl::lib::dirCreateRecursive(FLAGS_outpath);
     auto baseName = fl::lib::pathsConcat(
         FLAGS_outpath, sampleId.substr(0, sampleId.find_last_of(".")));
 
-    // Output chunk-level word piece outputs (or blanks)
-    std::ofstream wpOutStream(baseName + kFrameWiseTokensExt);
+    // Output chunk-level tokens outputs (or blanks)
+    std::ofstream tknOutStream(baseName + kTknFrameWiseTokensExt);
     for (auto token : tokenPrediction) {
-      wpOutStream << tokenDict.getEntry(token) << " ";
+      tknOutStream << tokenDict.getEntry(token) << " ";
     }
-    wpOutStream << std::endl;
-    wpOutStream.close();
+    tknOutStream << std::endl;
+    tknOutStream.close();
 
     int blank = tokenDict.getIndex(kBlankToken);
     int N = rawEmission.dims(0);
@@ -282,7 +276,7 @@ int main(int argc, char** argv) {
     float vadFrameCnt = 0;
     auto emissions = afToVector<float>(softmax(rawEmission, 0).array());
     for (int i = 0; i < T; i++) {
-      if (emissions[i * N + blank] < FLAGS_vadthreshold) {
+      if (emissions[i * N + blank] < FLAGS_vad_threshold) {
         vadFrameCnt += 1;
       }
     }
@@ -296,17 +290,20 @@ int main(int argc, char** argv) {
     vadProbOutStream << std::endl;
     vadProbOutStream.close();
 
-    // Word-piece transcript
-    std::ofstream tScriptOutStream(baseName + kWordPieceTranscriptExt);
+    // Token transcript
+    std::ofstream tScriptOutStream(baseName + kLtrTranscriptExt);
     tScriptOutStream << join("", letterPrediction) << std::endl;
     tScriptOutStream.close();
 
     // Perplexity under the given LM and % of audio containing speech given VAD
     // threshold
     std::ofstream statsOutStream(baseName + kPerplexityPctSpeechExt);
-    statsOutStream << sampleId << " "
-                   << std::pow(10.0, -lmScore / wordPrediction.size()) << " "
-                   << vadFrameCnt / T << std::endl;
+    float ppl = std::pow(10.0, -lmScore / wordPrediction.size());
+    statsOutStream << sampleId << " " << vadFrameCnt / T;
+    if (!FLAGS_lm.empty()) {
+      statsOutStream << " " << ppl;
+    }
+    statsOutStream << std::endl;
     statsOutStream.close();
 
     ++cnt;
