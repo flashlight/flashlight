@@ -1,5 +1,7 @@
-#include <stdio.h>
+#include <iostream>
+
 #include "Halide.h"
+
 using namespace Halide;
 
 int main(int argc, char** argv) {
@@ -8,15 +10,10 @@ int main(int argc, char** argv) {
   Var x, y;
 
   // The pipeline will depend on one scalar parameter.
-  Param<uint8_t> offset;
+  Param<float> offset;
 
-  // And take one grayscale 8-bit input buffer. The first
-  // constructor argument gives the type of a pixel, and the second
-  // specifies the number of dimensions (not the number of
-  // channels!). For a grayscale image this is two; for a color
-  // image it's three. Currently, four dimensions is the maximum for
-  // inputs and outputs.
-  ImageParam input(type_of<uint8_t>(), 2);
+  // ctor is pixel element type, number of dimensions
+  ImageParam input(type_of<float>(), 2);
 
   // If we were jit-compiling, these would just be an int and a
   // Buffer, but because we want to compile the pipeline once and
@@ -27,8 +24,19 @@ int main(int argc, char** argv) {
   // Define the Func.
   brighter(x, y) = input(x, y) + offset;
 
-  // Schedule it.
-  brighter.vectorize(x, 16).parallel(y);
+  Var x_outer, y_outer, x_inner, y_inner;
+  brighter.gpu_tile(
+      x,
+      y,
+      x_outer,
+      y_outer,
+      x_inner,
+      y_inner,
+      16, // blocks
+      16, // threads
+      Halide::TailStrategy::Auto,
+      Halide::DeviceAPI::CUDA);
+  // brighter.vectorize(x, 16).parallel(y);
 
   // This time, instead of calling brighter.realize(...), which
   // would compile and run the pipeline immediately, we'll call a
@@ -38,11 +46,15 @@ int main(int argc, char** argv) {
   // arguments to the routine. This routine takes two. Arguments are
   // usually Params or ImageParams.
   brighter.compile_to_static_library(
-      "HalideTestPipeline", {input, offset}, "brighter");
+      "HalideTestPipeline",
+      {input, offset},
+      "brighter",
+      Halide::get_target_from_environment()
+          .with_feature(Halide::Target::Feature::CUDA)
+          .with_feature(Halide::Target::Debug));
 
-  printf("Halide pipeline compiled, but not yet run.\n");
-
-  // To continue this lesson, look in the file lesson_10_aot_compilation_run.cpp
+  std::cout << "HalideTestPipeline pipeline compiled, but not yet run."
+            << std::endl;
 
   return 0;
 }

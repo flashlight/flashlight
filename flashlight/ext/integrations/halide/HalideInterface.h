@@ -7,6 +7,11 @@
 
 #pragma once
 
+#include <stdexcept>
+#include <vector>
+
+#include <cuda_runtime.h>
+
 #include <Halide.h>
 #include <HalideBuffer.h>
 // TODO: preproc
@@ -19,48 +24,120 @@
 #include "flashlight/fl/autograd/Variable.h"
 #include "flashlight/fl/common/DevicePtr.h"
 
-using namespace Halide;
+#define FL_HALIDE_CHECK(exp)                                       \
+  if (exp) {                                                       \
+    throw std::runtime_error(                                      \
+        "Halide exp " + std::string(#exp) + " failed with code " + \
+        std::to_string(exp));                                      \
+  }
 
-namespace {
+namespace fl {
+namespace ext {
 
 /**
  * Gets Halide dims from an ArrayFire array. Halide is column major, so reverse
  * all dimensions.
  */
-std::vector<int> getDims(const af::dim4& dims) {
-  const auto ndims = dims.ndims();
-  std::vector<int> halideDims(ndims);
-  for (int i = 0; i < ndims; ++i) {
-    halideDims[ndims - 1 - i] = dims.dims[i];
-  }
-  return halideDims;
-}
-}
-
-namespace fl {
+std::vector<int> afToHalideDims(const af::dim4& dims);
 
 /**
- * Convert an ArrayFire Array into a Halide Buffer.
+ * Gets Halide dims from an ArrayFire array. Halide is column major, so reverse
+ * all dimensions.
+ */
+af::dim4 halideToAfDims(const Halide::Buffer<void>& buffer);
+
+af::dtype halideRuntimeTypeToAfType(halide_type_t type);
+
+/**
+ * A thin wrapper around an ArrayFire array as converted to a Halide buffer.
+ *
+ * Uses RAII via DevicePtr to ensure that the memory associated with the
+ * underlying Array is properly managed as it relates to the lifetime of hte
+ * Halide Buffer.
+ *
+ * The toHalideBuffer and fromHalideBuffer functions provide indefinite lifetime
  */
 template <typename T>
-Buffer<T> toHalideBuffer(af::array& arr) {
-  T* deviceMem = arr.device<T>(); // TODO: leak, fixme
-  Buffer<T> buffer(getDims(arr.dims()));
-  // Target is CUDA only
-  const Target target = get_jit_target_from_environment().with_feature(Target::Feature::CUDA);
-  const DeviceAPI deviceApi = DeviceAPI::CUDA;
-  buffer.device_wrap_native(deviceApi, (uint64_t)deviceMem, target);
-  buffer.set_host_dirty();
-  // buffer.device_wrap_native(
-  //     halide_cuda_device_interface(), (uint64_t)deviceMem);
+class HalideBufferWrapper {
+ public:
+  HalideBufferWrapper(af::array& array) {
+    devicePtr_ = DevicePtr(array);
+    halideBuffer_ = Halide::Buffer<T>(afToHalideDims(array.dims()));
+    FL_HALIDE_CHECK(halideBuffer_.device_wrap_native(
+        halide_cuda_device_interface(), (uint64_t)devicePtr_.get()));
+    halideBuffer_.set_device_dirty();
+  }
+
+  Halide::Buffer<T>& getBuffer() {
+    return halideBuffer_;
+  }
+
+  Halide::Runtime::Buffer<T>& getRuntimeBuffer() {
+    return *halideBuffer_.get();
+  }
+
+ private:
+  DevicePtr devicePtr_;
+  Halide::Buffer<T> halideBuffer_;
+};
+
+namespace detail {
+
+/**
+ * You probably want to use HalideBufferWrapper rather than calling this
+ * function manually.
+ *
+ * USE WITH CAUTION: Convert an ArrayFire Array into a Halide Buffer. The
+ * resulting Halide buffer's memory will be **unmanaged** - the underlying array
+ * will need to be unlocked with `af_unlock_array` else memory will leak.
+ */
+template <typename T>
+Halide::Buffer<T> toHalideBuffer(af::array& arr) {
+  // Since the buffer manages the memory, give it a persistent pointer that
+  // won't be unlocked or invalidated if the Array falls out of scope.
+  void* deviceMem = arr.device<void>();
+  Halide::Buffer<T> buffer(afToHalideDims(arr.dims()));
+  // Target is CUDA only -- TODO: change based on location of af::array
+  // const Halide::Target target =
+  //     Halide::get_target_from_environment().with_feature(
+  //         Halide::Target::Feature::CUDA);
+  // const Halide::DeviceAPI deviceApi = Halide::DeviceAPI::CUDA;
+  // int err = buffer.device_wrap_native(deviceApi, (uint64_t)deviceMem,
+  // target);
+  FL_HALIDE_CHECK(buffer.device_wrap_native(
+      halide_cuda_device_interface(), (uint64_t)deviceMem));
+  buffer.set_device_dirty();
   return buffer;
 }
 
 /**
- * Convert an Flashlight Variable into a Halide Buffer.
+ * You probably want to use HalideBufferWrapper rather than calling this
+ * function manually.
+ *
+ * USE WITH CAUTION: convert a Halide Buffer into an ArrayFire Array. Grabs the
+ * Halide Buffer's underlying memory and creates a new Array with it. Only
+ * buffer types created with Halide::BufferDeviceOwnership::Unmanaged can be
+ * convered since otherwise the underlying memory will be freed once the Buffer
+ * is destroyed.
+ *
+ * @param buffer the Halide buffer with which to create the Array
+ * @return an af::array that has the same underlying memory and diensions as the
+ * Halide Buffer.
  */
 template <typename T>
-Buffer<T> toHalideBuffer(fl::Variable& var) {
-  return toHalideBuffer<T>(var.array());
+af::array fromHalideBuffer(Halide::Buffer<T>& buffer) {
+  T* deviceMem = reinterpret_cast<T*>(buffer.raw_buffer()->device);
+  if (buffer.get()->device_ownership() ==
+      Halide::Runtime::BufferDeviceOwnership::WrappedNative) {
+    FL_HALIDE_CHECK(buffer.device_detach_native());
+  } else {
+    throw std::invalid_argument(
+        "fromHalideBuffer can only be called with buffers created with "
+        "fl::ext::toHalideBuffer or buffers that have unmanaged buffer "
+        "device ownership policies.");
+  }
+  return af::array(halideToAfDims(buffer), deviceMem, afDevice);
+}
+}
 }
 }

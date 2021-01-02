@@ -43,6 +43,7 @@ add_custom_target(generate_test_halide_pipeline
   DEPENDS HalideTestPipeline.h "${FILTER_LIB}")
 add_dependencies(generate_test_halide_pipeline test_halide_pipeline_generator)
 # The test must have the generated output from the generator binary
+# TODO: fixme -- actually link Halide
 build_test(SRC ${DIR}/integrations/HalideTest.cpp LIBS ${LIBS} Halide::Halide "${CMAKE_CURRENT_BINARY_DIR}/${FILTER_LIB}")
 add_dependencies(HalideTest generate_test_halide_pipeline)
 target_include_directories(HalideTest PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
