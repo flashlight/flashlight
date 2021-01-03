@@ -7,15 +7,42 @@
 
 #include "flashlight/ext/integrations/halide/HalideInterface.h"
 
+#include <af/device.h>
 #include <af/dim4.hpp>
 
 namespace fl {
 namespace ext {
 
-/**
- * Gets Halide dims from an ArrayFire array. Halide is column major, so reverse
- * all dimensions.
- */
+namespace detail {
+// TODO: I think this needs to be moved to a file that is linked to the
+// generated pipeline
+void* fl_halide_malloc(void* /* context */, size_t bytes) {
+  // TODO(jacobkahn): replace me with af::allocV2 when using AF >= 3.8
+  return af::alloc(bytes, af::dtype::u8);
+}
+
+void fl_halide_free(void* /* context */, void* ptr) {
+  // TODO(jacobkahn): replace me with af::freeV2 when using AF >= 3.8
+  af::free(ptr);
+}
+}
+
+void initHalide() {
+  // Custom memory allocation functions - make sure these use the ArrayFire
+  // memory manager so as to avoid OOMs and properly-track and reuse memory
+  halide_set_custom_malloc(detail::fl_halide_malloc);
+  halide_set_custom_free(detail::fl_halide_free);
+
+#ifdef FL_USE_CUDA
+  // Distributed initialization sets the correct device based on the proc
+  if (getWorldSize() > 1 && isDistributedInit()) {
+    throw std::runtime_error(
+        "initHalide should be called after distributed initialization");
+  }
+  halide_set_gpu_device(af::getDevice());
+#endif
+}
+
 std::vector<int> afToHalideDims(const af::dim4& dims) {
   const auto ndims = dims.ndims();
   std::vector<int> halideDims(ndims);
@@ -25,10 +52,6 @@ std::vector<int> afToHalideDims(const af::dim4& dims) {
   return halideDims;
 }
 
-/**
- * Gets Halide dims from an ArrayFire array. Halide is column major, so reverse
- * all dimensions.
- */
 af::dim4 halideToAfDims(const Halide::Buffer<void>& buffer) {
   const int nDims = buffer.dimensions();
   if (nDims > 4) {

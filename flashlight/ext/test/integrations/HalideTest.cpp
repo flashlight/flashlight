@@ -61,7 +61,7 @@ TEST(HalideTest, ConvertArray) {
         reinterpret_cast<void*>(
             halideBufWrapper.getBuffer().raw_buffer()->device));
   }
-  // The underlying Array should remain unchanged
+  // The underlying Array should remain unchanged after the wrapper is destroyed
   EXPECT_TRUE(fl::allClose(arr, arrCopy));
 }
 

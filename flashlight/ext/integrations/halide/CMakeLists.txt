@@ -9,3 +9,11 @@ target_sources(
   PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/HalideInterface.cpp
   )
+
+# if (FL_USE_CUDA)
+#   target_sources(
+#     flashlight
+#     PRIVATE
+#     ${CMAKE_CURRENT_LIST_DIR}/HalideCudaInterface.cpp
+#     )
+# endif()

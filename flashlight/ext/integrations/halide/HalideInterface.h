@@ -35,6 +35,17 @@ namespace fl {
 namespace ext {
 
 /**
+ * Initializes Halide resources:
+ * 1. Sets the memory allocators and free functions
+ * 2. Sets up CUDA stream executions
+ *
+ * This function doesn't set any internal Halide or Flashlight state/can be
+ * called multiple times
+ * without consequence.
+ */
+void initHalide();
+
+/**
  * Gets Halide dims from an ArrayFire array. Halide is column major, so reverse
  * all dimensions.
  */
@@ -56,6 +67,8 @@ af::dtype halideRuntimeTypeToAfType(halide_type_t type);
  * Halide Buffer.
  *
  * The toHalideBuffer and fromHalideBuffer functions provide indefinite lifetime
+ * guarantees around their conversions which are unmanaged and require manual
+ * cleanup. Use this class instead for automatic lifetime management.
  */
 template <typename T>
 class HalideBufferWrapper {
@@ -63,6 +76,8 @@ class HalideBufferWrapper {
   HalideBufferWrapper(af::array& array) {
     devicePtr_ = DevicePtr(array);
     halideBuffer_ = Halide::Buffer<T>(afToHalideDims(array.dims()));
+    // Halide::Buffer::device_detach_native(...) is implicitly called by the
+    // Halide::Buffer dtor which will preserve the Array's underlying memory
     FL_HALIDE_CHECK(halideBuffer_.device_wrap_native(
         halide_cuda_device_interface(), (uint64_t)devicePtr_.get()));
     halideBuffer_.set_device_dirty();
@@ -132,8 +147,8 @@ af::array fromHalideBuffer(Halide::Buffer<T>& buffer) {
     FL_HALIDE_CHECK(buffer.device_detach_native());
   } else {
     throw std::invalid_argument(
-        "fromHalideBuffer can only be called with buffers created with "
-        "fl::ext::toHalideBuffer or buffers that have unmanaged buffer "
+        "fl::ext::fromHalideBuffer can only be called with buffers created "
+        "with fl::ext::toHalideBuffer or buffers that have unmanaged buffer "
         "device ownership policies.");
   }
   return af::array(halideToAfDims(buffer), deviceMem, afDevice);

@@ -29,6 +29,7 @@ add_dependencies(ModulePluginTest test_module_plugin)
 
 # Compile the generator binary
 add_executable(test_halide_pipeline_generator ${DIR}/integrations/HalideTestPipeline.cpp)
+# TODO: link HalideCudaIntegration.cpp to the generated pipeline
 target_link_libraries(test_halide_pipeline_generator Halide::Halide)
 # Run the generator
 # LLVM may leak memory during Halide compilation. If projects are built with address sanitizer enabled,
