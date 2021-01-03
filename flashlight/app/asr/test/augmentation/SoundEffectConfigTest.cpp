@@ -25,7 +25,7 @@ TEST(SoundEffectConfigFile, ReadWriteJson) {
   // configuration.
   std::cout << "configFile=" << configFile << std::endl;
 
-  std::vector<SoundEffectConfig> sfxConf1(5);
+  std::vector<SoundEffectConfig> sfxConf1(6);
 
   sfxConf1[0].type_ = kAdditiveNoise;
   sfxConf1[0].additiveNoiseConfig_.ratio_ = 0.8;
@@ -60,6 +60,16 @@ TEST(SoundEffectConfigFile, ReadWriteJson) {
 
   sfxConf1[4].type_ = kNormalize;
   sfxConf1[4].normalizeOnlyIfTooHigh_ = false;
+
+  sfxConf1[5].type_ = kTimeStretch;
+  sfxConf1[5].timeStretchConfig_.proba_ = 1.0;
+  sfxConf1[5].timeStretchConfig_.factorMin_ = 0.8;
+  sfxConf1[5].timeStretchConfig_.factorMax_ = 1.5;
+  sfxConf1[5].timeStretchConfig_.window_ = 20.0;
+  sfxConf1[5].timeStretchConfig_.shift_ = 0.8;
+  sfxConf1[5].timeStretchConfig_.fading_ = 0.25;
+  sfxConf1[3].reverbEchoConfig_.sampleRate_ = 1600;
+  sfxConf1[3].reverbEchoConfig_.randomSeed_ = 77;
 
   writeSoundEffectConfigFile(configFile, sfxConf1);
   const std::vector<SoundEffectConfig> sfxConf2 =

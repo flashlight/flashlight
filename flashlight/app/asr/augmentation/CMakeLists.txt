@@ -8,4 +8,5 @@ target_sources(
   ${CMAKE_CURRENT_LIST_DIR}/SoundEffect.cpp
   ${CMAKE_CURRENT_LIST_DIR}/SoundEffectConfig.cpp
   ${CMAKE_CURRENT_LIST_DIR}/SoundEffectUtil.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/TimeStretch.cpp
   )
