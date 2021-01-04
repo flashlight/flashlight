@@ -12,6 +12,7 @@
 #include <fstream>
 #include <sstream>
 
+#include "flashlight/app/asr/augmentation/SoundEffectUtil.h"
 #include "flashlight/app/asr/data/Sound.h"
 #include "flashlight/fl/common/Logging.h"
 
@@ -67,18 +68,6 @@ AdditiveNoise::AdditiveNoise(const AdditiveNoise::Config& config)
       dsConf, std::move(noiseFiles));
 }
 
-namespace {
-
-float rootMeanSquare(const std::vector<float>& signal) {
-  float meanSquares = 0;
-  for (int i = 0; i < signal.size(); ++i) {
-    meanSquares = (meanSquares * i + signal[i] * signal[i]) / (i + 1);
-  }
-  return std::sqrt(meanSquares);
-}
-
-} // namespace
-
 void AdditiveNoise::apply(std::vector<float>& signal) {
   if (rng_.random() >= conf_.proba_) {
     return;
@@ -104,7 +93,7 @@ void AdditiveNoise::apply(std::vector<float>& signal) {
   if (noiseRms > 0) {
     // https://en.wikipedia.org/wiki/Signal-to-noise_ratio
     const float noiseMult =
-        (signalRms / (noiseRms * std::sqrt(std::pow(10, snr / 20.0))));
+      (signalRms / (noiseRms * std::pow(10, snr / 20.0)));
     for (int i = 0; i < signal.size(); ++i) {
       signal[i] += mixedNoise[i] * noiseMult;
     }

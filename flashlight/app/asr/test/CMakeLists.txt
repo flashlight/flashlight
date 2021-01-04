@@ -35,6 +35,7 @@ build_test(
 build_test(SRC ${DIR}/runtime/RuntimeTest.cpp LIBS ${LIBS})
 # Augmentation
 build_test(SRC ${DIR}/augmentation/AdditiveNoiseTest.cpp LIBS ${LIBS})
+build_test(SRC ${DIR}/augmentation/GaussianNoiseTest.cpp LIBS ${LIBS})
 build_test(SRC ${DIR}/augmentation/SoundEffectTest.cpp LIBS ${LIBS})
 build_test(SRC ${DIR}/augmentation/SoundEffectConfigTest.cpp LIBS ${LIBS})
 build_test(SRC ${DIR}/augmentation/ReverberationTest.cpp  LIBS ${LIBS})
