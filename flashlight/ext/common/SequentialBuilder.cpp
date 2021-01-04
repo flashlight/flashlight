@@ -63,6 +63,15 @@ fl::Variable forwardSequentialModuleWithPadMask(
     const af::array& inputSizes) {
   // expected input dims T x C x 1 x B
   int T = input.dims(0), B = input.dims(3);
+  return forwardSequentialModuleWithPadMask(input, ntwrk, inputSizes, T, B);
+}
+
+fl::Variable forwardSequentialModuleWithPadMask(
+    const fl::Variable& input,
+    std::shared_ptr<fl::Module> ntwrk,
+    const af::array& inputSizes,
+    int T,
+    int B) {
   auto inputMaxSize = af::tile(af::max(inputSizes), 1, B);
   af::array inputNotPaddedSize = af::ceil(inputSizes * T / inputMaxSize);
   auto padMask = af::iota(af::dim4(T, 1), af::dim4(1, B)) <
@@ -78,8 +87,10 @@ fl::Variable forwardSequentialModuleWithPadMask(
       output = module->forward({output}).front();
     }
   }
-  return output.as(input.type());
+  // return output.as(input.type());
+  return output;
 }
+
 } // namespace ext
 } // namespace fl
 
@@ -285,6 +296,24 @@ std::shared_ptr<Module> parseLines(
     return std::make_shared<Embedding>(embsz, ntokens);
   }
 
+  if (params[0] == "ADAPTIVEE") {
+    if (params.size() != 3) {
+      throw std::invalid_argument("Failed parsing - " + line);
+    }
+    int embsz = std::stoi(params[1]);
+    std::vector<int> cutoffs;
+    auto tokens = fl::lib::split(',', params[2], true);
+    for (const auto& token : tokens) {
+      cutoffs.push_back(std::stoi(fl::lib::trim(token)));
+    }
+    for (int i = 1; i < cutoffs.size(); ++i) {
+      if (cutoffs[i - 1] >= cutoffs[i]) {
+        throw std::invalid_argument("cutoffs must be strictly ascending");
+      }
+    }
+    return std::make_shared<AdaptiveEmbedding>(embsz, cutoffs);
+  }
+
   /* ========== NORMALIZATIONS ========== */
 
   if (params[0] == "BN") {
@@ -471,8 +500,8 @@ std::shared_ptr<Module> parseLines(
       throw std::invalid_argument("Failed parsing - " + line);
     }
 
-    auto residualBlock = [&](const std::vector<std::string>& prms,
-                             int& numResLayerAndSkip) {
+    auto residualBlock = [&](
+        const std::vector<std::string>& prms, int& numResLayerAndSkip) {
       int numResLayers = std::stoi(prms[1]);
       int numSkipConnections = std::stoi(prms[2]);
       std::shared_ptr<Residual> resPtr = std::make_shared<Residual>();

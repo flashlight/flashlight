@@ -82,7 +82,7 @@ Variable AdaptiveEmbedding::forward(const Variable& input) {
   af::array tmpValues, tmpIndices;
   af::sort(tmpValues, tmpIndices, resultIndices.array(), 0);
   return moddims(
-      result(af::span, tmpIndices),
+      result(af::span, tmpIndices.as(s32)),
       af::dim4(embeddingDim_, input.dims(0), input.dims(1), input.dims(2)));
 }
 

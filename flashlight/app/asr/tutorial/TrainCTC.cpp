@@ -45,7 +45,9 @@ DEFINE_string(init_model, "", "[train] Path of a model to fork from");
 
 /* ============= Public functions ============= */
 Trainer::Trainer(const std::string& mode) {
-  // Parse from Gflags
+  createDictionary();
+  createDatasets();
+
   if (mode == "train") {
     initTrain();
   } else if (mode == "continue") {
@@ -59,7 +61,6 @@ Trainer::Trainer(const std::string& mode) {
   gflagsStr_ = serializeGflags();
   FL_LOG_MASTER(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
-  createDatasets();
   initArrayFire();
   if (FLAGS_enable_distributed) {
     reducer_ = std::make_shared<fl::CoalescingReducer>(
@@ -71,18 +72,9 @@ Trainer::Trainer(const std::string& mode) {
     logWriter_ = fl::lib::createOutputStream(
         fl::lib::pathsConcat(experimentDirectory_, "log"), std::ios_base::app);
   }
-
-  FL_LOG_MASTER(INFO) << "network (" << fl::numTotalParams(network_)
-                      << " params): " << network_->prettyString();
-  FL_LOG_MASTER(INFO) << "criterion (" << fl::numTotalParams(criterion_)
-                      << " params): " << criterion_->prettyString();
-  FL_LOG_MASTER(INFO) << "optimizer: " << networkOptimizer_->prettyString();
 }
 
 void Trainer::runTraining() {
-  FL_LOG_MASTER(INFO) << "training started (epoch=" << epoch_
-                      << " batch=" << batchIdx_ << ")";
-
   if (reducer_) {
     fl::distributeModuleGrads(network_, reducer_);
     fl::distributeModuleGrads(criterion_, reducer_);
@@ -94,10 +86,14 @@ void Trainer::runTraining() {
   createSpecAugmentation();
 
   while (batchIdx_ < FLAGS_iter) {
-    trainDataset_ = loadPrefetchDataset(
+    FL_LOG_MASTER(INFO) << "Training started (epoch=" << epoch_
+                        << " batch=" << batchIdx_ << ")";
+    FL_LOG_MASTER(INFO) << "Shuffling trainset";
+    auto curTrainSet = loadPrefetchDataset(
         trainDataset_, FLAGS_nthread, true /* shuffle */, epoch_ /* seed */);
+    af::sync();
 
-    for (auto& batch : *trainDataset_) {
+    for (auto& batch : *curTrainSet) {
       // Run train
       runTimeMeter_.resume();
       batchTimerMeter_.resume();
@@ -107,25 +103,7 @@ void Trainer::runTraining() {
 
       // Run evaluation and save best checkpoint
       if (FLAGS_reportiters && batchIdx_ % FLAGS_reportiters == 0) {
-        stopTimers();
-        evalStep();
-        syncMeters();
-        auto progress = getProgress();
-        FL_LOG_MASTER(INFO) << progress;
-        if (isMaster()) {
-          logWriter_ << progress << "\n" << std::flush;
-        }
-        resetMeters();
-
-        for (const auto& meter : validStatsMeters_) {
-          const auto& tag = meter.first;
-          auto wer = meter.second.wrdEdit.value()[0];
-          if (bestValidWer_.find(tag) == bestValidWer_.end() ||
-              wer < bestValidWer_[tag]) {
-            bestValidWer_[tag] = wer;
-            saveCheckpoint(modelPath, "." + tag);
-          }
-        }
+        runEvaluation();
       }
 
       // Force saving checkpoint every given interval
@@ -138,10 +116,37 @@ void Trainer::runTraining() {
 
     // Advance epoch
     stopTimers();
+    if (FLAGS_reportiters <= 0) {
+      runEvaluation();
+    } else {
+      saveCheckpoint(modelPath);
+    }
     ++epoch_;
-    saveCheckpoint(modelPath);
     logMemoryManagerStatus();
   }
+}
+
+void Trainer::runEvaluation() {
+  stopTimers();
+  evalStep();
+  syncMeters();
+  auto progress = getProgress();
+  FL_LOG_MASTER(INFO) << progress;
+  if (isMaster()) {
+    logWriter_ << progress << "\n" << std::flush;
+  }
+
+  auto modelPath = fl::lib::pathsConcat(experimentDirectory_, "model.bin");
+  for (const auto& meter : validStatsMeters_) {
+    const auto& tag = meter.first;
+    auto wer = meter.second.wrdEdit.value()[0];
+    if (bestValidWer_.find(tag) == bestValidWer_.end() ||
+        wer < bestValidWer_[tag]) {
+      bestValidWer_[tag] = wer;
+      saveCheckpoint(modelPath, "." + tag);
+    }
+  }
+  resetMeters();
 }
 
 void Trainer::trainStep(const std::vector<af::array>& batch) {
@@ -232,7 +237,6 @@ void Trainer::evalStep() {
 void Trainer::initTrain() {
   FL_LOG_MASTER(INFO) << "Creating a fresh model";
 
-  createDictionary();
   createNetwork();
   createCriterion();
   createOptimizer();
@@ -259,7 +263,6 @@ void Trainer::initContinue() {
   // overwrite flags using the ones from command line
   gflags::ReadFlagsFromString(gflagsStr_, gflags::GetArgv0(), true);
 
-  createDictionary();
   // the network, criterion and optimizer will be reused
 }
 
@@ -280,7 +283,6 @@ void Trainer::initFork() {
       epoch_,
       batchIdx_);
 
-  createDictionary();
   createOptimizer();
   // the network and criterion will be reused
 }
@@ -384,7 +386,7 @@ void Trainer::createDatasets() {
       path = parts[0];
     } else if (parts.size() == 2) {
       tag = parts[0];
-      path = parts[0];
+      path = parts[1];
     } else {
       LOG(FATAL) << "invalid valid set: " << s;
     }
@@ -586,8 +588,8 @@ void Trainer::saveCheckpoint(const std::string& path, const std::string& suffix)
     return;
   }
 
-  FL_LOG_MASTER(INFO) << "saving model checkpoint (epoch=" << epoch_
-                      << " batch=" << batchIdx_ << ") to: " << path;
+  // FL_LOG_MASTER(INFO) << "Saving model checkpoint (epoch=" << epoch_
+  //                     << " batch=" << batchIdx_ << ") to: " << path;
   fl::ext::Serializer::save(
       path,
       FL_APP_ASR_VERSION,
@@ -708,6 +710,7 @@ int main(int argc, char** argv) {
   if (argc <= 1) {
     LOG(FATAL) << gflags::ProgramUsage();
   }
+  std::string mode(argv[1]);
 
   /* Parse or load persistent states */
   gflags::ParseCommandLineFlags(&argc, &argv, false);
@@ -724,7 +727,7 @@ int main(int argc, char** argv) {
   }
 
   /* Run train */
-  Trainer trainer(argv[1]);
+  Trainer trainer(mode);
   // flags may be overridden from the model
   // so reloading from command line again
   gflags::ParseCommandLineFlags(&argc, &argv, false);

@@ -25,6 +25,7 @@ class Trainer {
   Trainer& operator=(const Trainer&) = delete;
 
   void runTraining();
+  void runEvaluation();
   void trainStep(const std::vector<af::array>& batch);
   void evalStep();
 
