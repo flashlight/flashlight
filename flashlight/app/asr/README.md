@@ -284,6 +284,12 @@ LSM [normDim]
 E [embeddingSize] [nTokens]
 ```
 
+**fl::AdaptiveEmbedding**
+```
+ADAPTIVEE [embeddingSize] [cutoffs]
+```
+Cuttofs must be strictly ascending. For example `10,50,100` means 3 groups of embeddings for 10, 40 and 50 tokens. Total tokens is 100.
+
 **fl::SinusoidalPositionEmbedding** (sinusoidal absolute embedding)
 ```
 SINPOSEMB [embeddingSize] [inputScale <OPTIONAL, DEFAULT=1.>]
