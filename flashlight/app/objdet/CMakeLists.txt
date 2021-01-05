@@ -9,7 +9,7 @@ add_library(
 target_link_libraries(
   flashlight-app-obj-det
   PUBLIC
-  ${GFLAGS_LIBRARIES}
+  ${gflags_LIBRARIES}
   ${GLOG_LIBRARIES}
   flashlight
   )
@@ -17,7 +17,7 @@ target_link_libraries(
 target_include_directories(
   flashlight-app-obj-det
   PUBLIC
-  ${GFLAGS_INCLUDE_DIRS}
+  ${gflags_INCLUDE_DIRS}
   ${GLOG_INCLUDE_DIRS}
   )
 
@@ -35,6 +35,6 @@ add_executable(Detr ${CMAKE_CURRENT_LIST_DIR}/examples/Detr.cpp)
 target_link_libraries(Detr flashlight-app-obj-det)
 
 # Build tests
-if (FL_BUILD_TESTS)
-  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test)
-endif ()
+#if (FL_BUILD_TESTS)
+  #add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test)
+#endif ()

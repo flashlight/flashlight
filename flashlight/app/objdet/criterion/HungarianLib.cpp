@@ -133,6 +133,7 @@ int step_four(float* costs, int* marks, int* colCover, int* rowCover, int nrows,
       }
     }
   }
+  return -1;
 }
 
 int findStarInCol(int* masks, int col, int nrows, int ncols) {

@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 cmake_dependent_option(FL_BUILD_APP_ASR "Build asr task for flashlight" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_APPS" OFF)
 cmake_dependent_option(FL_BUILD_APP_IMGCLASS "Build image classification app" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_APPS" OFF)
+cmake_dependent_option(FL_BUILD_APP_OBJ_DET "Build object detection app" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_APPS" OFF)
 cmake_dependent_option(FL_BUILD_APP_LM "Build lm task for flashlight" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_APPS" OFF)
 
 # Find GLog
@@ -54,11 +55,12 @@ if (FL_BUILD_APP_LM)
 endif ()
 
 if (FL_BUILD_APP_OBJ_DET)
+  message(STATUS "Building flashlight LM app")
   if (NOT FL_BUILD_DISTRIBUTED)
     message(FATAL_ERROR
     "FL_BUILD_DISTRIBUTED must be enabled for image classification")
   endif()
-  set(FL_APP_OBJ_DET_ROOT_DIR ${FLASHLIGHT_APPS_DIR}/objdet)
+  set(FL_APP_OBJ_DET_ROOT_DIR ${FL_APPS_DIR}/objdet)
   include(${FL_APP_OBJ_DET_ROOT_DIR}/CMakeLists.txt)
   set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} flashlight-app-obj-det)
   # TODO Fix this

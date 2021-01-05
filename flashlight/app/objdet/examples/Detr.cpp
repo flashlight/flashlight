@@ -448,7 +448,8 @@ int main(int argc, char** argv) {
         double forward_time = timers["forward"].value();
         double backward_time = timers["backward"].value();
         double criterion_time = timers["criterion"].value();
-        std::cout << "Epoch: " << e << std::setprecision(5) << " | Batch: " << idx
+        std::stringstream ss;
+        ss << "Epoch: " << e << std::setprecision(5) << " | Batch: " << idx
             << " | total_time: " << total_time
             << " | idx: " << idx
             << " | sample_per_second: " << sample_per_second
@@ -456,9 +457,10 @@ int main(int argc, char** argv) {
             << " | backward_time_avg: " << backward_time / idx
             << " | criterion_time_avg: " << criterion_time / idx;
         for(auto meter : meters) {
-          std::cout << " | " << meter.first << ": " << meter.second.value()[0];
+          ss << " | " << meter.first << ": " << meter.second.value()[0];
         }
-        std::cout << std::endl;
+        ss << std::endl;
+        std::cout << ss.str();
       }
     }
     for(auto timer : timers) {
