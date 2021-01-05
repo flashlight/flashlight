@@ -60,6 +60,7 @@ class CMakeBuild(build_ext):
         use_cuda = "OFF" if check_negative_env_flag("USE_CUDA") else "ON"
         use_kenlm = "OFF" if check_negative_env_flag("USE_KENLM") else "ON"
         use_mkl = "OFF" if check_negative_env_flag("USE_MKL") else "ON"
+        backend = "CPU" if check_negative_env_flag("USE_CUDA") else "CUDA"
         cmake_args = [
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + extdir,
             "-DPYTHON_EXECUTABLE=" + sys.executable,
@@ -70,6 +71,7 @@ class CMakeBuild(build_ext):
             "-DFL_BUILD_TESTS=OFF",
             "-DFL_BUILD_EXAMPLES=OFF",
             "-DFL_LIBRARIES_USE_CUDA=" + use_cuda,
+            "-DFL_BACKEND=" + backend,
             "-DFL_LIBRARIES_USE_KENLM=" + use_kenlm,
             "-DFL_LIBRARIES_USE_MKL=" + use_mkl,
         ]
