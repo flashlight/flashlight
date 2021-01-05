@@ -7,6 +7,7 @@
 
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <algorithm>
 #include <memory>
 #include <string>
 
@@ -251,7 +252,10 @@ TEST(NNSerializationTest, PrettyString) {
       "(6): LeakyReLU (0.200000)";
 
   auto remove_ws = [](std::string& str) {
-    str.erase(remove_if(str.begin(), str.end(), isspace), str.end());
+    str.erase(std::remove(str.begin(), str.end(), ' '), str.end());
+    str.erase(std::remove(str.begin(), str.end(), '\n'), str.end());
+    str.erase(std::remove(str.begin(), str.end(), '\t'), str.end());
+    str.erase(std::remove(str.begin(), str.end(), '\r'), str.end());
   };
 
   remove_ws(expectedstr);
