@@ -1,6 +1,8 @@
+# Build
 build
 release
 debug
+*.so
 
 # FB
 fb
@@ -12,3 +14,17 @@ conan.lock
 arrayfire
 conaninfo*
 graph_info.json
+
+# Python bindings
+__pycache__/
+*$py.class
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+*.egg-info/
+.installed.cfg
+*.egg
+wheels/

@@ -48,8 +48,8 @@ class CMakeBuild(build_ext):
             )
 
         cmake_version = re.search(r"version\s*([\d.]+)", out.decode().lower()).group(1)
-        if version.parse(cmake_version) < version.parse("3.5.1"):
-            raise RuntimeError("CMake >= 3.5.1 is required to build flashlight")
+        if version.parse(cmake_version) < version.parse("3.10"):
+            raise RuntimeError("CMake >= 3.10 is required to build flashlight")
 
         # our CMakeLists builds all the extensions at once
         self.build_extensions()
@@ -59,13 +59,16 @@ class CMakeBuild(build_ext):
         sourcedir = os.path.abspath("../..")
         use_cuda = "OFF" if check_negative_env_flag("USE_CUDA") else "ON"
         use_kenlm = "OFF" if check_negative_env_flag("USE_KENLM") else "ON"
-        use_mkl = "ON" if check_env_flag("USE_MKL") else "OFF"
+        use_mkl = "OFF" if check_negative_env_flag("USE_MKL") else "ON"
         cmake_args = [
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + extdir,
             "-DPYTHON_EXECUTABLE=" + sys.executable,
             "-DFL_BUILD_LIBRARIES=ON",
             "-DFL_LIBRARIES_BUILD_FOR_PYTHON=ON",
             "-DFL_BUILD_CORE=OFF",
+            "-DBUILD_SHARED_LIBS=ON",
+            "-DFL_BUILD_TESTS=OFF",
+            "-DFL_BUILD_EXAMPLES=OFF",
             "-DFL_LIBRARIES_USE_CUDA=" + use_cuda,
             "-DFL_LIBRARIES_USE_KENLM=" + use_kenlm,
             "-DFL_LIBRARIES_USE_MKL=" + use_mkl,
@@ -80,7 +83,7 @@ class CMakeBuild(build_ext):
             # if sys.maxsize > 2 ** 32:
             #     cmake_args += ["-A", "x64"]
             # build_args += ["--", "/m"]
-            raise RuntimeError("flashligth doesn't support building on Windows yet")
+            raise RuntimeError("flashlight doesn't support building on Windows yet")
         else:
             cmake_args += ["-DCMAKE_BUILD_TYPE=" + cfg]
             build_args += ["--", "-j4"]
@@ -89,6 +92,7 @@ class CMakeBuild(build_ext):
         env["CXXFLAGS"] = '{} -fPIC -DVERSION_INFO=\\"{}\\"'.format(
             env.get("CXXFLAGS", ""), self.distribution.get_version()
         )
+
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
             subprocess.check_call(
@@ -102,8 +106,8 @@ class CMakeBuild(build_ext):
 setup(
     name="flashlight",
     version="0.0.1",
-    author="Jeff Cai, Tatiana Likhomanenko",
-    author_email="jcai@fb.com, antares@fb.com",
+    author="Flashlight Contributors",
+    author_email="oncall+fair_speech@xmail.facebook.com",
     description="flashlight bindings for python",
     long_description="",
     ext_modules=[
