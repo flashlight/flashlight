@@ -49,6 +49,12 @@ set(FL_LIBRARY_CUDA_SOURCES
   ${FL_LIBRARIES_SEQUENCE_CUDA_SOURCES}
   )
 
+target_include_directories(
+  fl-libraries
+  PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+  )
+
 if (FL_LIBRARIES_USE_CUDA)
   target_sources(
     fl-libraries
@@ -72,7 +78,6 @@ if (FL_LIBRARIES_USE_CUDA)
     fl-libraries
     PUBLIC
     $<BUILD_INTERFACE:${cub_INCLUDE_DIRS}>
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CUDA_INCLUDE_DIRS}>
     )
 

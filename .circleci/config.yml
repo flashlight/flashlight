@@ -212,6 +212,25 @@ commands:
             sudo apt-get update || true
             sudo apt-get --yes --force-yes install cuda
             nvidia-smi
+  ubuntu_install_python_bindings:
+    parameters:
+      use_mkl:
+        type: string
+      use_cuda:
+        type: string
+      use_kenlm:
+        type: string
+    steps:
+      - run:
+          name: "Install Flashlight library Python bindings"
+          command: |
+            pip install packaging
+            cd bindings/python
+            export USE_MKL=<< parameters.use_mkl >>
+            export USE_CUDA=<< parameters.use_cuda >>
+            export USE_KENLM=<< parameters.use_kenlm >>
+            python setup.py install
+
 ############################ Jobs ############################
 jobs:
   ubuntu1604_gcc5_cuda_10_1_vcpkg_flashlight_lib:
@@ -326,6 +345,33 @@ jobs:
           path: flashlight
       - flashlight_build_and_install_cpu_backend_from_source
 
+  ubuntu1804_gcc5_cpu_python_bindings_simple:
+    docker:
+      - image: flml/flashlight:cpu-base-consolidation-latest
+        auth:
+          username: $DOCKER_USERNAME
+          password: $DOCKER_PASSWORD
+    steps:
+      - checkout
+      - ubuntu_install_python_bindings:
+          use_cuda: "OFF"
+          use_mkl: "OFF"
+          use_kenlm: "OFF"
+
+  # Aren't running code, so don't need the NVIDIA runtime
+  ubuntu1804_gcc5_cuda_python_bindings:
+    docker:
+      - image: flml/flashlight:cuda-base-consolidation-latest
+        auth:
+          username: $DOCKER_USERNAME
+          password: $DOCKER_PASSWORD
+    steps:
+      - checkout
+      - ubuntu_install_python_bindings:
+          use_cuda: "ON"
+          use_mkl: "ON"
+          use_kenlm: "ON"
+
   ubuntu1804_gcc5_cpu_docker_flashlight_build_external:
     docker:
       - image: flml/flashlight:cpu-base-consolidation-latest
@@ -379,3 +425,7 @@ workflows:
     jobs:
       - ubuntu1804_gcc5_cpu_docker_flashlight_build_external
       - ubuntu1804_gcc5_cuda10_0_docker_flashlight_build_external
+  test_python_bindings:
+    jobs:
+      - ubuntu1804_gcc5_cpu_python_bindings_simple
+      - ubuntu1804_gcc5_cuda_python_bindings
