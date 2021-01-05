@@ -8,6 +8,7 @@
 #include <iomanip>
 
 #include <gflags/gflags.h>
+#include <glog/logging.h>
 
 #include "flashlight/app/objdet/criterion/SetCriterion.h"
 #include "flashlight/app/objdet/dataset/BoxUtils.h"
@@ -316,6 +317,15 @@ int main(int argc, char** argv) {
 
   AdamOptimizer opt(detr->paramsWithoutBackbone(), FLAGS_lr, FLAGS_wd);
   AdamOptimizer opt2(detr->backboneParams(), FLAGS_lr * 0.1, FLAGS_wd);
+  auto lrScheduler = [&opt, &opt2](int epoch) {
+    // Adjust learning rate every 30 epoch after 30
+    if (epoch == 100) {
+      const float newLr = opt.getLr() * 0.1;
+      LOG(INFO) << "Setting learning rate to: " << newLr;
+      opt.setLr(newLr);
+      opt2.setLr(newLr * 0.1);
+    }
+  };
   //AdamOptimizer backbone_opt(backbone->params(), FLAGS_lr * 0.1);
 
   // Small utility functions to load and save models
