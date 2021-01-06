@@ -187,8 +187,8 @@ int main(int argc, char** argv) {
   // Trained
   //std::string modelPath = "/checkpoint/padentomasello/models/detr/from_pytorch";
   // untrained but initializaed
-  std::string modelPath = "/checkpoint/padentomasello/models/detr/pytorch_initializaition";
-  fl::load(modelPath, detr);
+  //std::string modelPath = "/checkpoint/padentomasello/models/detr/pytorch_initializaition";
+  //fl::load(modelPath, detr);
 
   detr->train();
 
