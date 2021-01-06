@@ -25,6 +25,7 @@ $BUILD_DIR/flashlight/build/Detr -lr 0.0001 --epochs 500 --batch_size 2 \
 --rndv_filepath $BUILD_DIR/rndv/ \
 --checkpointpath /checkpoint/padentomasello/models/detr \
 --eval_dir $EVAL_DIR \
+--pytorch_init \
 --tryfromenv=eval_iters,data_dir,metric_iters,pretrained,print_params 
 
 

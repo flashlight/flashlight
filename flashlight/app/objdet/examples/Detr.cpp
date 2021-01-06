@@ -196,6 +196,7 @@ int main(int argc, char** argv) {
   //std::string modelPath = "/checkpoint/padentomasello/models/detr/from_pytorch";
   // untrained but initializaed
   if (FLAGS_pytorch_init) {
+    std::cout << "Loading from pytorch intiialization" << std::endl;
     std::string modelPath = "/checkpoint/padentomasello/models/detr/pytorch_initializaition";
     fl::load(modelPath, detr);
   }
