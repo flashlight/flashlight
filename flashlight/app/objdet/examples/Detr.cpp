@@ -90,7 +90,7 @@ void printParamsAndGrads(std::shared_ptr<fl::Module> mod) {
 int main(int argc, char** argv) {
   std::stringstream ss;
   ss << "PYTHONPATH=/private/home/padentomasello/code/detection-transformer/ "
-    //<< "LD_LIBRARY_PATH=/private/home/padentomasello/usr/lib/:$LD_LIBRARY_PATH "
+    << "LD_LIBRARY_PATH=/private/home/padentomasello/usr/lib/:$LD_LIBRARY_PATH "
     << "/private/home/padentomasello/.conda/envs/coco/bin/python3.8 "
     << "-c 'import arrayfire as af'";
   system(ss.str().c_str());
@@ -187,8 +187,8 @@ int main(int argc, char** argv) {
   // Trained
   //std::string modelPath = "/checkpoint/padentomasello/models/detr/from_pytorch";
   // untrained but initializaed
-  //std::string modelPath = "/checkpoint/padentomasello/models/detr/pytorch_initializaition";
-  //fl::load(modelPath, detr);
+  std::string modelPath = "/checkpoint/padentomasello/models/detr/pytorch_initializaition";
+  fl::load(modelPath, detr);
 
   detr->train();
 
