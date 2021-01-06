@@ -202,7 +202,6 @@ int main(int argc, char** argv) {
   }
 
   detr->train();
-  std::cout << "Backbone train ? " << detr->backbonetrain() << std::endl;
 
   // synchronize parameters of tje model so that the parameters in each process
   // is the same
