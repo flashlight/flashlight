@@ -106,7 +106,6 @@ int halide_cuda_acquire_context(
     throw std::runtime_error("Could not get from CUDA context");
   };
   *ctx = _ctx;
-
   return 0;
 }
 

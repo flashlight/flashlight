@@ -20,7 +20,7 @@
 #include "flashlight/fl/autograd/Variable.h"
 
 // Generated at build time -- see the accompanying CMakeList
-#include "HalideTestPipeline.h"
+#include "flashlight/ext/test/HalideTestPipeline.h"
 
 using namespace fl;
 
