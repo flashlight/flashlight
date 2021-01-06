@@ -13,17 +13,22 @@
 
 #include <cuda.h> // Driver API needed for CUcontext
 
-/**
+/*
  * Replace Halide weakly-linked CUDA handles.
  *
  * The Halide CUDA runtime API facilitates defining hard links to handles
  * defined in libHalide by code that calls AOT-generated pipelines. These
  * include:
  * - CUDA memory alloc functions (which are linked to the AF memory manager)
+ *   - halide_cuda_device_malloc -- https://git.io/JLA8X
  * - CUDA memory free functions (which are linked to the AF memory manager)
+ *   - halide_cuda_device_free -- https://git.io/JLA81
  * - Getter for the CUstream (the CUDA Driver analog of cudaStream_t)
+ *   - halide_cuda_get_stream -- https://git.io/JLdYv
  * - Getter for CUcontext
+ *   - halide_cuda_acquire_context -- https://git.io/JLdYe
  * - Getter for the device ID.
+ *   - halide_get_gpu_device -- https://git.io/JLdYf
  *
  * Defining these hard links ensures we never have an memory or synchronization
  * issues between Halide pipelines that are dropped inside of any AF operations.

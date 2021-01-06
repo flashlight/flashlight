@@ -36,17 +36,6 @@ namespace fl {
 namespace ext {
 
 /**
- * Initializes Halide resources:
- * 1. Sets the memory allocators and free functions
- * 2. Sets up CUDA stream executions
- *
- * This function doesn't set any internal Halide or Flashlight state/can be
- * called multiple times
- * without consequence.
- */
-void initHalide();
-
-/**
  * Gets Halide dims from an ArrayFire array. Halide is column major, so reverse
  * all dimensions.
  */

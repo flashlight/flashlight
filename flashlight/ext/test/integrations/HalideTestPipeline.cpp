@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
 
   Func sinVals;
   sinVals(x, y) = sin(x * y);
-  sinVals.compute_root(); // ensure we allocate memory for the test
+  sinVals.compute_root(); // ensure we allocate memory in the test
 
   testFunc(x, y) = input(x, y) + sinVals(x, y) + offset;
 
