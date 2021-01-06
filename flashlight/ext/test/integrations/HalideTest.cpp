@@ -5,11 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// TODO remove
-#include <cuda.h>
-#include <cuda_runtime.h>
-#include "flashlight/fl/common/CudaUtils.h"
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <cmath>
@@ -90,32 +85,32 @@ TEST(HalideTest, RoundTripConvertArrayManual) {
 }
 
 TEST(HalideTest, SimpleAOTCompiledHalidePipeline) {
-  int yDim = 24, xDim = 24;
+  int yDim = 240, xDim = 240;
+  int offset = 5;
+
   auto input = af::randu({yDim, xDim}) * 100;
+  auto expected = af::array(input.dims(), af::dtype::f32);
   auto output = af::array({yDim, xDim}, af::dtype::f32);
+
+  // Reference implementation
+  for (int i = 0; i < input.dims(0); ++i) {
+    for (int j = 0; j < input.dims(1); ++j) {
+      expected(i, j) = input(i, j) + std::sin(i * j) + offset;
+    }
+  }
 
   // Halide buffers
   auto inputHalide = ext::HalideBufferWrapper<float>(input);
   auto outputHalide = ext::HalideBufferWrapper<float>(output);
 
-  // This Halide AOT-generated pipeline pixel-wise adds an offset to each
+  // This Halide AOT-generated pipeline pixel-wise adds offsets to each
   // element. It's has block and thread level tile-parallelism -- see the
   // accompanying schedule.
-  int offset = 5;
   FL_HALIDE_CHECK(testFunc(
       inputHalide.getRuntimeBuffer(), offset, outputHalide.getRuntimeBuffer()));
 
-  // Reference implementation - modifies input
-  for (int i = 0; i < input.dims(0); ++i) {
-    for (int j = 0; j < input.dims(1); ++j) {
-      input(i, j) = input(i, j) + std::sin(i * j) + offset;
-    }
-  }
-
-  cudaDeviceSynchronize();
-
   // Ensure the output buffer is correctly-modified
-  EXPECT_TRUE(fl::allClose(input, output));
+  EXPECT_TRUE(fl::allClose(expected, output));
 }
 
 TEST(HalideTest, SimpleJITHalidePipeline) {
