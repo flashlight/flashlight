@@ -474,7 +474,7 @@ CocoDataset::CocoDataset(
       );
 
       transformed = std::make_shared<TransformAllDataset>(
-           transformed, randomResize(scales, 1333));
+           transformed, trainTransform);
    }
 
   transformed = std::make_shared<TransformAllDataset>(
