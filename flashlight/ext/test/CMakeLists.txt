@@ -45,6 +45,6 @@ add_custom_target(generate_test_halide_pipeline
 add_dependencies(generate_test_halide_pipeline test_halide_pipeline_generator)
 # The test must have the generated output from the generator binary
 # TODO: fixme -- actually link Halide
-build_test(SRC ${DIR}/integrations/HalideTest.cpp LIBS ${LIBS} Halide::Halide "${CMAKE_CURRENT_BINARY_DIR}/${FILTER_LIB}")
+build_test(SRC ${DIR}/integrations/HalideTest.cpp LIBS ${LIBS} Halide::Halide "${CMAKE_CURRENT_BINARY_DIR}/${FILTER_LIB}" "/lib/x86_64-linux-gnu/libcuda.so.1") # libcuda is horrible sadness. bad times. we need a CUcontext to pass to Halide. Mak this link conditional on building Halide. Have mercy
 add_dependencies(HalideTest generate_test_halide_pipeline)
 target_include_directories(HalideTest PRIVATE ${CMAKE_CURRENT_BINARY_DIR})

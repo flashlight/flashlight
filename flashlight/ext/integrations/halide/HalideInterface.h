@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <vector>
 
+#include <cuda.h>
 #include <cuda_runtime.h>
 
 #include <Halide.h>
@@ -113,6 +114,7 @@ Halide::Buffer<T> toHalideBuffer(af::array& arr) {
   void* deviceMem = arr.device<void>();
   Halide::Buffer<T> buffer(afToHalideDims(arr.dims()));
   // Target is CUDA only -- TODO: change based on location of af::array
+  // and try to move away from halide_cuda_device_interface()
   // const Halide::Target target =
   //     Halide::get_target_from_environment().with_feature(
   //         Halide::Target::Feature::CUDA);
@@ -153,6 +155,6 @@ af::array fromHalideBuffer(Halide::Buffer<T>& buffer) {
   }
   return af::array(halideToAfDims(buffer), deviceMem, afDevice);
 }
-}
-}
-}
+} // namespace detail
+} // namespace ext
+} // namespace fl
