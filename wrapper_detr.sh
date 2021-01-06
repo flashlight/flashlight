@@ -26,7 +26,8 @@ $BUILD_DIR/flashlight/build/Detr -lr 0.0001 --epochs 500 --batch_size 2 \
 --checkpointpath /checkpoint/padentomasello/models/detr \
 --eval_dir $EVAL_DIR \
 --tryfromenv=eval_iters,data_dir,metric_iters,pretrained,print_params  \
---pytorch_init /checkpoint/padentomasello/models/detr/pytorch_initializaition_dropout
+--pytorch_init /checkpoint/padentomasello/models/detr/pytorch_initializaition_dropout \
+2>&1 # Ugh why does FL log send to std::err? 
 
 
 
