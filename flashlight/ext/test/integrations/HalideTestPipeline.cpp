@@ -4,45 +4,6 @@
 
 using namespace Halide;
 
-// int main(int argc, char** argv) {
-//   Var x;
-
-//   // This allocation is going to succeed
-
-//   ImageParam input(type_of<float>(), 1);
-
-//   Func f;
-//   f(x) = input(x);
-//   f.compute_root();
-
-//   Var xo, xi;
-//   f.gpu_tile(x, xo, xi, 16);
-
-//   // This one is going to fail (because we'll override
-//   // halide_malloc to make it fail). The first allocation should
-//   // be cleaned up when the second one fails.
-//   Func g;
-//   g(x) = f(x) + f(x) + 4;
-
-//   g.compute_root();
-
-//   Func testFunc;
-//   testFunc(x) = g(x) + 1;
-
-//   testFunc.compile_to_static_library(
-//       "HalideTestPipeline",
-//       {input}, // arguments
-//       "testFunc",
-//       Halide::get_target_from_environment()
-//           .with_feature(Halide::Target::Feature::CUDA)
-//           .with_feature(Halide::Target::Debug));
-
-//   std::cout << "HalideTestPipeline pipeline compiled, but not yet run."
-//             << std::endl;
-
-//   return 0;
-// }
-
 int main(int argc, char** argv) {
   Func testFunc;
   Var x, y;
