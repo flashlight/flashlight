@@ -55,7 +55,7 @@ DEFINE_int64(checkpoint, -1, "Load from checkpoint");
 DEFINE_string(eval_dir, "/private/home/padentomasello/data/coco/output/", "Directory to dump images to run evaluation script on");
 DEFINE_bool(print_params, false, "Directory to dump images to run evaluation script on");
 DEFINE_bool(pretrained, true, "Directory to dump images to run evaluation script on");
-DEFINE_bool(pytorch_init, false, "Directory to dump images to run evaluation script on");
+DEFINE_string(pytorch_init, "", "Directory to dump images to run evaluation script on");
 
 
 using namespace fl;
@@ -193,15 +193,16 @@ int main(int argc, char** argv) {
       }
 
   // Trained
-  //std::string modelPath = "/checkpoint/padentomasello/models/detr/from_pytorch";
   // untrained but initializaed
-  if (FLAGS_pytorch_init) {
-    std::cout << "Loading from pytorch intiialization" << std::endl;
-    std::string modelPath = "/checkpoint/padentomasello/models/detr/pytorch_initializaition";
-    fl::load(modelPath, detr);
+  if (!FLAGS_pytorch_init.empty()) {
+    std::cout << "Loading from pytorch intiialization path" << FLAGS_pytorch_init << std::endl;
+  //std::string modelPath = "/checkpoint/padentomasello/models/detr/from_pytorch";
+    //std::string modelPath = "/checkpoint/padentomasello/models/detr/pytorch_initializaition";
+    fl::load(FLAGS_pytorch_init, detr);
   }
 
   detr->train();
+  std::cout << "Backbone train ? " << detr->backbonetrain() << std::endl;
 
   // synchronize parameters of tje model so that the parameters in each process
   // is the same

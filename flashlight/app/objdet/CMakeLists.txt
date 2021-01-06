@@ -35,6 +35,6 @@ add_executable(Detr ${CMAKE_CURRENT_LIST_DIR}/examples/Detr.cpp)
 target_link_libraries(Detr flashlight-app-obj-det)
 
 # Build tests
-#if (FL_BUILD_TESTS)
-  #add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test)
-#endif ()
+if (FL_BUILD_TESTS)
+  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test)
+endif ()

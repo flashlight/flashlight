@@ -469,7 +469,7 @@ TEST(Pytorch, detr) {
 
   const int numLayers = 6;
 
-  auto transformer = std::make_shared<Transformer>(embeddingDim, numHead, numLayers, numLayers, 2048, 0.0f);
+  auto transformer = std::make_shared<Transformer>(embeddingDim, numHead, numLayers, numLayers, 2048, 0.1f);
   auto backbone = std::make_shared<fl::ext::image::Resnet50Backbone>();
 
   auto model = std::make_shared<Detr>(transformer, backbone, 256, 91, 100, true);
@@ -505,8 +505,8 @@ TEST(Pytorch, detr) {
   //model->eval();
   //backbone->eval();
   //std::string modelPath = "/checkpoint/padentomasello/models/detr/from_pytorch";
-  //std::string modelPath = "/checkpoint/padentomasello/models/detr/pytorch_initializaition";
-  //fl::save(modelPath, model);
+  std::string modelPath = "/checkpoint/padentomasello/models/detr/pytorch_initializaition_dropout";
+  fl::save(modelPath, model);
   //fl::load(modelPath, model);
 
   auto outputs = model->forward(inputs);
@@ -514,8 +514,8 @@ TEST(Pytorch, detr) {
   af::array expPredBoxes = af::readArray(filename.c_str(), "pred_boxes");
   auto predLogits = outputs[0];
   auto predBoxes = outputs[1];
-  ASSERT_TRUE(allClose(predLogits.array(), expPredLogits));
   ASSERT_TRUE(allClose(predBoxes.array(), expPredBoxes));
+  ASSERT_TRUE(allClose(predLogits.array(), expPredLogits));
   auto matcher = HungarianMatcher(1.0f, 5.0f, 2.0f);
 
   std::unordered_map<std::string, float> lossWeightsBase = 
