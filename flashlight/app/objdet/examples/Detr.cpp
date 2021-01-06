@@ -24,6 +24,7 @@
 #include "flashlight/ext/image/fl/models/Resnet.h"
 #include "flashlight/fl/meter/meters.h"
 #include "flashlight/fl/optim/optim.h"
+#include "flashlight/fl/flashlight.h"
 
 DEFINE_string(data_dir, "/private/home/padentomasello/data/coco3/", "Directory of imagenet data");
 DEFINE_double(lr, 0.0001f, "Learning rate");
@@ -54,6 +55,7 @@ DEFINE_int64(checkpoint, -1, "Load from checkpoint");
 DEFINE_string(eval_dir, "/private/home/padentomasello/data/coco/output/", "Directory to dump images to run evaluation script on");
 DEFINE_bool(print_params, false, "Directory to dump images to run evaluation script on");
 DEFINE_bool(pretrained, true, "Directory to dump images to run evaluation script on");
+DEFINE_bool(pytorch_init, false, "Directory to dump images to run evaluation script on");
 
 
 using namespace fl;
@@ -184,11 +186,19 @@ int main(int argc, char** argv) {
       numQueries,
       auxLoss);
 
+  auto* curMemMgr =
+          fl::MemoryManagerInstaller::currentlyInstalledMemoryManager();
+      if (curMemMgr) {
+        curMemMgr->printInfo("Memory Manager Stats", 0 /* device id */);
+      }
+
   // Trained
   //std::string modelPath = "/checkpoint/padentomasello/models/detr/from_pytorch";
   // untrained but initializaed
-  //std::string modelPath = "/checkpoint/padentomasello/models/detr/pytorch_initializaition";
-  //fl::load(modelPath, detr);
+  if (FLAGS_pytorch_init) {
+    std::string modelPath = "/checkpoint/padentomasello/models/detr/pytorch_initializaition";
+    fl::load(modelPath, detr);
+  }
 
   detr->train();
 
