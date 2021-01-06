@@ -8,8 +8,8 @@ def log_train_metrics(metrics, step, fields=('sum', 'loss_ce', 'loss_bbox', 'los
 
     # step = metrics['
     for key, value in metrics.items():
-        if key in fields:
-            tf.summary.scalar(key, value, step=step)
+        # if key in fields:
+        tf.summary.scalar(key, value, step=step)
 
 
 if __name__ == "__main__":
@@ -21,9 +21,11 @@ if __name__ == "__main__":
 
     logdir = ''
     if not args.output_dir:
-        logdir = "/private/home/padentomasello/tb_logs/" + datetime.now().strftime("%Y%m%d-%H%M%S")
+        logdir = "/private/home/padentomasello/tb_logs3/" + datetime.now().strftime("%Y%m%d-%H%M%S")
     else:
-        logdir = args.output_dir
+        logdir = "/private/home/padentomasello/tb_logs3/" + args.output_dir
+
+    print(f'Writing to log dir: ${logdir}')
 
     file_writer = tf.summary.create_file_writer(logdir + "/metrics")
     file_writer.set_as_default()
@@ -34,23 +36,27 @@ if __name__ == "__main__":
     with open(args.log_file, 'r') as infile:
         step = 0
         for line in infile:
-            if (train_matcher.match(line)):
-                parts = line.split('|')
-                # print(line)
-                metrics = {}
-                for part in parts:
-                    split = part.rsplit(':', 1);
-                    key = split[0].strip();
-                    # print(split)
-                    value = float(split[1].strip());
-                    metrics[key] = value
-                log_train_metrics(metrics, step)
-                step += 1
-            elif(valid_matcher.match(line)):
+            if(valid_matcher.match(line)):
                 split = line.rsplit('=', 1)
                 key = split[0];
                 value = float(split[1])
                 tf.summary.scalar(key, value, step)
+            else:
+                try:
+                    parts = line.split('|')
+                    # print(line)
+                    metrics = {}
+                    for part in parts:
+                        split = part.rsplit(':', 1);
+                        if len(split) < 2: continue
+                        key = split[0].strip();
+                        # print(split)
+                        value = float(split[1].strip());
+                        metrics[key] = value
+                    log_train_metrics(metrics, step)
+                except:
+                    continue
+                step += 1
 
 
 

@@ -1,1 +1,1 @@
-tensorboard --logdir ~/tb_logs2/
+tensorboard --logdir ~/tb_logs3/

@@ -26,6 +26,8 @@
 #include "flashlight/fl/optim/optim.h"
 #include "flashlight/fl/flashlight.h"
 
+#define FL_LOG_MASTER(lvl) LOG_IF(lvl, (fl::getWorldRank() == 0))
+
 DEFINE_string(data_dir, "/private/home/padentomasello/data/coco3/", "Directory of imagenet data");
 DEFINE_double(lr, 0.0001f, "Learning rate");
 DEFINE_double(momentum, 0.9f, "Momentum");
@@ -478,10 +480,11 @@ int main(int argc, char** argv) {
             << " | backward_time_avg: " << backward_time / idx
             << " | criterion_time_avg: " << criterion_time / idx;
         for(auto meter : meters) {
+          fl::ext::syncMeter(meter.second);
           ss << " | " << meter.first << ": " << meter.second.value()[0];
         }
         ss << std::endl;
-        std::cout << ss.str();
+        FL_LOG_MASTER(INFO) << ss.str();
       }
     }
     for(auto timer : timers) {
