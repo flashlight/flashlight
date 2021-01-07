@@ -20,14 +20,29 @@
 using namespace fl;
 
 TEST(HalideTest, TypeMapping) {
+  Halide::Buffer<Halide::float16_t> halfBuf({1});
+  EXPECT_EQ(ext::halideRuntimeTypeToAfType(halfBuf.type()), af::dtype::f16);
+
   Halide::Buffer<float> floatBuf({1});
   EXPECT_EQ(ext::halideRuntimeTypeToAfType(floatBuf.type()), af::dtype::f32);
 
-  Halide::Buffer<uint32_t> intBuf({1});
-  EXPECT_EQ(ext::halideRuntimeTypeToAfType(intBuf.type()), af::dtype::u32);
+  Halide::Buffer<double> doubleBuf({1});
+  EXPECT_EQ(ext::halideRuntimeTypeToAfType(doubleBuf.type()), af::dtype::f64);
 
-  Halide::Buffer<int> uintBuf({1});
-  EXPECT_EQ(ext::halideRuntimeTypeToAfType(uintBuf.type()), af::dtype::s32);
+  Halide::Buffer<uint16_t> uint16Buf({1});
+  EXPECT_EQ(ext::halideRuntimeTypeToAfType(uint16Buf.type()), af::dtype::u16);
+
+  Halide::Buffer<uint32_t> uint32Buf({1});
+  EXPECT_EQ(ext::halideRuntimeTypeToAfType(uint32Buf.type()), af::dtype::u32);
+
+  Halide::Buffer<uint64_t> uint64Buf({1});
+  EXPECT_EQ(ext::halideRuntimeTypeToAfType(uint64Buf.type()), af::dtype::u64);
+
+  Halide::Buffer<int> intBuf({1});
+  EXPECT_EQ(ext::halideRuntimeTypeToAfType(intBuf.type()), af::dtype::s32);
+
+  Halide::Buffer<long> longBuf({1});
+  EXPECT_EQ(ext::halideRuntimeTypeToAfType(longBuf.type()), af::dtype::s64);
 }
 
 TEST(HalideTest, ConvertDims) {

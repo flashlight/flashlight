@@ -12,7 +12,7 @@ int main(int argc, char** argv) {
   Param<float> offset;
 
   // ctor is element type, number of dimensions
-  ImageParam input(type_of<float>(), 2);
+  ImageParam input(Float(32), 2);
 
   Func sinVals;
   sinVals(x, y) = sin(x * y);

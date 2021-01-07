@@ -159,11 +159,32 @@ af::dtype halideRuntimeTypeToAfType(halide_type_t type) {
   halide_type_code_t typeCode = type.code;
   switch (typeCode) {
     case halide_type_int:
-      return af::dtype::s32;
+      switch (type.bytes()) {
+        case 2:
+          return af::dtype::s16;
+        case 4:
+          return af::dtype::s32;
+        case 8:
+          return af::dtype::s64;
+      }
     case halide_type_uint:
-      return af::dtype::u32;
+      switch (type.bytes()) {
+        case 2:
+          return af::dtype::u16;
+        case 4:
+          return af::dtype::u32;
+        case 8:
+          return af::dtype::u64;
+      }
     case halide_type_float:
-      return af::dtype::f32;
+      switch (type.bytes()) {
+        case 2:
+          return af::dtype::f16;
+        case 4:
+          return af::dtype::f32;
+        case 8:
+          return af::dtype::f64;
+      }
     default:
       throw std::invalid_argument(
           "halideRuntimeTypeToAfType: unsupported or unknown Halide type");

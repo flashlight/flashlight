@@ -15,8 +15,6 @@
 
 #include <Halide.h>
 #include <HalideBuffer.h>
-// TODO: preproc
-
 #include <HalideRuntime.h>
 #include <HalideRuntimeCuda.h>
 
