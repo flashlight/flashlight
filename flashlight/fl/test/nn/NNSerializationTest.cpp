@@ -15,8 +15,8 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/fl/autograd/autograd.h"
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/nn/nn.h"
-
 #include "flashlight/lib/common/System.h"
 
 using namespace fl;
@@ -377,5 +377,6 @@ TEST(NNSerializationTest, ContainerWithParams) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
   return RUN_ALL_TESTS();
 }

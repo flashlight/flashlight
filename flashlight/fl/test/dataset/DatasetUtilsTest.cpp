@@ -11,6 +11,7 @@
 #include <arrayfire.h>
 #include <gtest/gtest.h>
 
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/dataset/datasets.h"
 
 using namespace fl;
@@ -55,5 +56,6 @@ TEST(DatasetTest, DynamicRoundRobinPacker) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
   return RUN_ALL_TESTS();
 }

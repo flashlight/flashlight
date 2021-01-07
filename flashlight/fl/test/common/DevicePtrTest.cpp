@@ -8,6 +8,7 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/fl/common/DevicePtr.h"
+#include "flashlight/fl/common/Init.h"
 
 using namespace fl;
 
@@ -60,5 +61,6 @@ TEST(DevicePtrTest, Move) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
   return RUN_ALL_TESTS();
 }

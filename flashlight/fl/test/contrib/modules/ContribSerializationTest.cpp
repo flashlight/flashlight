@@ -12,9 +12,9 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/fl/autograd/autograd.h"
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/contrib/modules/modules.h"
 #include "flashlight/fl/nn/nn.h"
-
 #include "flashlight/lib/common/System.h"
 
 using namespace fl;
@@ -64,7 +64,7 @@ TEST(SerializationTest, Transformer) {
   int nheads = 4;
 
   auto model = std::make_shared<Transformer>(
-    c, c / nheads, c, nheads, timesteps, 0.2, 0.1, false, false);
+      c, c / nheads, c, nheads, timesteps, 0.2, 0.1, false, false);
   model->eval();
 
   const std::string path = fl::lib::getTmpPath("Transformer.mdl");
@@ -89,7 +89,7 @@ TEST(SerializationTest, ConformerSerialization) {
   int nheads = 4;
 
   auto model = std::make_shared<Conformer>(
-    c, c / nheads, c, nheads, timesteps, 33, 0.2, 0.1);
+      c, c / nheads, c, nheads, timesteps, 33, 0.2, 0.1);
   model->eval();
 
   const std::string path = fl::lib::getTmpPath("Conformer.mdl");
@@ -129,7 +129,8 @@ TEST(SerializationTest, PositionEmbedding) {
 TEST(SerializationTest, SinusoidalPositionEmbedding) {
   auto model = std::make_shared<SinusoidalPositionEmbedding>(128, 2.);
 
-  const std::string path = fl::lib::getTmpPath("SinusoidalPositionEmbedding.mdl");
+  const std::string path =
+      fl::lib::getTmpPath("SinusoidalPositionEmbedding.mdl");
   save(path, model);
 
   std::shared_ptr<SinusoidalPositionEmbedding> loaded;
@@ -163,7 +164,8 @@ TEST(SerializationTest, AdaptiveEmbedding) {
 }
 
 TEST(SerializationTest, RawWavSpecAugment) {
-  auto model = std::make_shared<RawWavSpecAugment>(0, 1, 1, 0, 0, 0, 1, 2000, 6000, 16000, 20000);
+  auto model = std::make_shared<RawWavSpecAugment>(
+      0, 1, 1, 0, 0, 0, 1, 2000, 6000, 16000, 20000);
   model->eval();
 
   const std::string path = fl::lib::getTmpPath("RawWavSpecAugment.mdl");
@@ -175,20 +177,23 @@ TEST(SerializationTest, RawWavSpecAugment) {
 
   int T = 300;
   auto time = 2 * M_PI * af::iota(af::dim4(T)) / 16000;
-  auto finalWav =
-    af::sin(time * 500) + af::sin(time * 1000) + af::sin(time * 7000) + af::sin(time * 7500);
-  auto inputWav = finalWav + af::sin(time * 3000) + af::sin(time * 4000) + af::sin(time * 5000);
+  auto finalWav = af::sin(time * 500) + af::sin(time * 1000) +
+      af::sin(time * 7000) + af::sin(time * 7500);
+  auto inputWav = finalWav + af::sin(time * 3000) + af::sin(time * 4000) +
+      af::sin(time * 5000);
 
   auto filteredWav = loaded->forward(fl::Variable(inputWav, false));
   // compare middle of filtered wave to avoid edge artifacts comparison
   int halfKernelWidth = 63;
   ASSERT_TRUE(fl::allClose(
-    fl::Variable(finalWav.rows(halfKernelWidth, T - halfKernelWidth - 1), false),
-    filteredWav.rows(halfKernelWidth, T - halfKernelWidth - 1),
-    1e-3));
+      fl::Variable(
+          finalWav.rows(halfKernelWidth, T - halfKernelWidth - 1), false),
+      filteredWav.rows(halfKernelWidth, T - halfKernelWidth - 1),
+      1e-3));
 }
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
   return RUN_ALL_TESTS();
 }

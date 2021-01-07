@@ -39,6 +39,7 @@ using fl::lib::pathsConcat;
 using namespace fl::app::asr;
 
 int main(int argc, char** argv) {
+  fl::init();
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
   std::string exec(argv[0]);
@@ -137,8 +138,8 @@ int main(int argc, char** argv) {
     LOG(INFO) << "Number of words: " << wordDict.indexSize();
   }
 
-  fl::lib::text::DictionaryMap dicts = {{kTargetIdx, tokenDict},
-                                        {kWordIdx, wordDict}};
+  fl::lib::text::DictionaryMap dicts = {
+      {kTargetIdx, tokenDict}, {kWordIdx, wordDict}};
 
   /* ===================== Create Dataset ===================== */
   fl::lib::audio::FeatureParams featParams(
@@ -290,8 +291,9 @@ int main(int argc, char** argv) {
       fl::Variable rawEmission;
       if (usePlugin) {
         rawEmission = localNetwork
-                          ->forward({fl::input(sample[kInputIdx]),
-                                     fl::noGrad(sample[kDurationIdx])})
+                          ->forward(
+                              {fl::input(sample[kInputIdx]),
+                               fl::noGrad(sample[kDurationIdx])})
                           .front();
       } else {
         rawEmission = fl::ext::forwardSequentialModuleWithPadMask(

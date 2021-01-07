@@ -14,6 +14,7 @@
 #include <arrayfire.h>
 #include <gtest/gtest.h>
 
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/memory/memory.h"
 
 class CachingMemoryManagerTest : public ::testing::Test {
@@ -193,5 +194,6 @@ TEST_F(CachingMemoryManagerTest, RecLimit) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
   return RUN_ALL_TESTS();
 }

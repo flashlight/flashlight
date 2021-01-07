@@ -12,6 +12,7 @@
 #include <sstream>
 
 #include "flashlight/app/asr/data/Sound.h"
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/lib/common/System.h"
 
 using namespace fl::lib;
@@ -162,6 +163,7 @@ TEST(SoundTest, StreamReadWrite) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
 
 // Resolve directory for data
 #ifdef DATA_TEST_DATADIR
