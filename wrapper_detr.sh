@@ -18,7 +18,7 @@ export LD_LIBRARY_PATH=/private/home/padentomasello/usr/lib/:$LD_LIBRARY_PATH
 
 BUILD_DIR=/scratch/slurm_tmpdir/$SLURM_JOB_ID/$1
 EVAL_DIR=$BUILD_DIR/eval/$SLURM_LOCALID/
-RUN_DIr=/checkpoint/padentomasello/models/$SLURM_JOB_ID/
+RUN_DIR=/checkpoint/padentomasello/models/$SLURM_JOB_ID/
 mkdir -p $CHECKPOINT_DIR
 mkdir -p $BUILD_DIR/rndv/
 mkdir -p $EVAL_DIR
