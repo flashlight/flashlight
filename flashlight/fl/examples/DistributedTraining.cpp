@@ -12,8 +12,8 @@
 using namespace fl;
 
 int main() {
+  fl::init();
   af::info();
-
   fl::distributedInit(
       fl::DistributedInit::MPI,
       -1, // worldRank - unused. Automatically derived from `MPI_Comm_Rank`

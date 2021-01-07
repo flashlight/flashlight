@@ -116,6 +116,7 @@ TEST(ConvLmModuleTest, SerializationGCNN14BAdaptiveSoftmax) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
 
 // Resolve directory for arch
 #ifdef DECODER_TEST_DATADIR

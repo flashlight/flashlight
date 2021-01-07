@@ -15,7 +15,7 @@
 #include "flashlight/app/asr/data/ListFileDataset.h"
 #include "flashlight/app/asr/data/Utils.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
-
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/lib/audio/feature/SpeechUtils.h"
 
 using namespace fl;
@@ -395,8 +395,8 @@ TEST(FeaturizationTest, targetFeaturizer) {
   auto tokenDict = getDict();
   tokenDict.addEntry(kEosToken);
   auto lexicon = getLexicon();
-  std::vector<std::vector<char>> targets = {{'a', 'b', 'c', 'c', 'c'},
-                                            {'b', 'c', 'd', 'd'}};
+  std::vector<std::vector<char>> targets = {
+      {'a', 'b', 'c', 'c', 'c'}, {'b', 'c', 'd', 'd'}};
 
   TargetGenerationConfig targetGenConfig(
       "",
@@ -452,5 +452,6 @@ TEST(FeaturizationTest, targetFeaturizer) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
   return RUN_ALL_TESTS();
 }

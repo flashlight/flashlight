@@ -11,7 +11,7 @@
 #include <array>
 
 #include "flashlight/app/asr/criterion/criterion.h"
-
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/lib/common/System.h"
 
 using namespace fl;
@@ -900,5 +900,6 @@ TEST(CriterionTest, AsgSerialization) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
   return RUN_ALL_TESTS();
 }

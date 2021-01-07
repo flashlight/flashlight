@@ -5,12 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/nn/nn.h"
 #include "flashlight/fl/optim/optim.h"
 
 using namespace fl;
 
 int main(int /* unused */, const char** /* unused */) {
+  fl::init();
   int nsamples = 100;
   int categories = 3;
   int feature_dim = 10;

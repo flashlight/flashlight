@@ -9,7 +9,6 @@
 
 #include "flashlight/fl/common/common.h"
 #include "flashlight/fl/optim/optim.h"
-
 #include "flashlight/lib/common/System.h"
 
 using namespace fl;
@@ -117,5 +116,6 @@ TEST(SerializationTest, OptimizerSerialize) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
   return RUN_ALL_TESTS();
 }

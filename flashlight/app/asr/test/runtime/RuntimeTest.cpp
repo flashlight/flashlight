@@ -12,11 +12,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "flashlight/fl/flashlight.h"
-
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/ext/common/Serializer.h"
-
+#include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/System.h"
 
 using namespace fl::app::asr;
@@ -87,7 +85,8 @@ TEST(RuntimeTest, SpeechStatMeter) {
   std::array<int, 2> tgSizes1{6, 10};
   std::array<int, 4> inpSizes2{2, 4, 2, 8};
   std::array<int, 4> tgSizes2{3, 7, 2, 4};
-  meter.add(af::array(1, 2, inpSizes1.data()), af::array(1, 2, tgSizes1.data()));
+  meter.add(
+      af::array(1, 2, inpSizes1.data()), af::array(1, 2, tgSizes1.data()));
   af::array out;
   auto stats1 = meter.value();
   ASSERT_EQ(stats1[0], 9.0);
@@ -96,7 +95,8 @@ TEST(RuntimeTest, SpeechStatMeter) {
   ASSERT_EQ(stats1[3], 10.0);
   ASSERT_EQ(stats1[4], 2.0);
   ASSERT_EQ(stats1[5], 1);
-  meter.add(af::array(1, 4, inpSizes2.data()), af::array(1, 4, tgSizes2.data()));
+  meter.add(
+      af::array(1, 4, inpSizes2.data()), af::array(1, 4, tgSizes2.data()));
   auto stats2 = meter.value();
   ASSERT_EQ(stats2[0], 25.0);
   ASSERT_EQ(stats2[1], 32.0);
@@ -127,5 +127,6 @@ TEST(RuntimeTest, parseValidSets) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
   return RUN_ALL_TESTS();
 }

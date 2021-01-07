@@ -9,6 +9,7 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/fl/autograd/autograd.h"
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/nn/nn.h"
 
 using namespace fl;
@@ -55,5 +56,6 @@ TEST(UtilsTest, Join) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
   return RUN_ALL_TESTS();
 }

@@ -129,9 +129,11 @@ class RnnLm : public Container {
 } // namespace
 
 int main(int argc, char** argv) {
+  fl::init();
   if (argc != 2) {
     throw af::exception("You must pass a data directory.");
   }
+
   std::string data_dir = argv[1];
 
   std::string train_dir = data_dir + "/ptb.train.txt";
@@ -269,6 +271,7 @@ LMDataset::LMDataset(
 std::vector<af::array> LMDataset::get(const int64_t idx) const {
   int start = idx * time_steps;
   int end = (idx + 1) * time_steps - 1;
-  return {data(af::span, af::seq(start, end)),
-          data(af::span, af::seq(start + 1, end + 1))};
+  return {
+      data(af::span, af::seq(start, end)),
+      data(af::span, af::seq(start + 1, end + 1))};
 }

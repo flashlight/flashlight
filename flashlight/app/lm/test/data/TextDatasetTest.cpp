@@ -10,12 +10,12 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "flashlight/app/lm/data/TextDataset.h"
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/lib/text/dictionary/Defines.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/tokenizer/PartialFileReader.h"
 #include "flashlight/lib/text/tokenizer/Tokenizer.h"
-
-#include "flashlight/app/lm/data/TextDataset.h"
 
 using fl::lib::pathsConcat;
 using namespace fl::lib;
@@ -134,6 +134,7 @@ TEST(TextDatasetTest, EosModeWithDynamicBatching) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
 
 #ifdef TEXTDATASET_TEST_DATADIR
   dataDir = TEXTDATASET_TEST_DATADIR;

@@ -20,6 +20,8 @@ using namespace fl::app::asr;
 
 int main() {
   af::setDevice(1);
+  fl::init();
+
   int N = 30, T = 487, L = 34, B = 20;
 
   auto asg = AutoSegmentationCriterion(N);

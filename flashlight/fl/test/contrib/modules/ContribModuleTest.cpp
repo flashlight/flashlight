@@ -497,5 +497,6 @@ TEST(ContribModuleTest, RawWavSpecAugmentFwd) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
   return RUN_ALL_TESTS();
 }

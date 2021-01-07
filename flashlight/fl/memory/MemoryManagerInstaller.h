@@ -89,7 +89,7 @@ class MemoryManagerInstaller {
    * @return a pointer to the `MemoryManagerInstaller` for the default memory
    * manager.
    */
-  static bool installDefaultMemoryManager();
+  static void installDefaultMemoryManager();
 
   /**
    * Unsets the currently-set custom ArrayFire memory manager. If no custom

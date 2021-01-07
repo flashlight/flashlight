@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <iostream>
 
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/nn/nn.h"
 
 using namespace fl;
@@ -140,6 +141,7 @@ double layerNorm() {
 
 int main() {
   af::info();
+  fl::init();
   TIME(alexnet);
   TIME(embedding);
   TIME(linear);

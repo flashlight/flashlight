@@ -325,38 +325,39 @@ TEST(Seq2SeqTest, BatchedDecoderStep) {
   std::vector<std::shared_ptr<AttentionBase>> neuralContentAttentions(
       nAttnRound, std::make_shared<NeuralContentAttention>(H));
 
-  std::vector<Seq2SeqCriterion> criterions{Seq2SeqCriterion(
-                                               N,
-                                               H,
-                                               N - 1,
-                                               maxoutputlen,
-                                               contentAttentions,
-                                               nullptr,
-                                               false,
-                                               100,
-                                               0.0,
-                                               false,
-                                               kRandSampling,
-                                               1.0,
-                                               nRnnLayer,
-                                               nAttnRound,
-                                               0.0),
-                                           Seq2SeqCriterion(
-                                               N,
-                                               H,
-                                               N - 1,
-                                               maxoutputlen,
-                                               neuralContentAttentions,
-                                               nullptr,
-                                               false,
-                                               100,
-                                               0.0,
-                                               false,
-                                               kRandSampling,
-                                               1.0,
-                                               nRnnLayer,
-                                               nAttnRound,
-                                               0.0)};
+  std::vector<Seq2SeqCriterion> criterions{
+      Seq2SeqCriterion(
+          N,
+          H,
+          N - 1,
+          maxoutputlen,
+          contentAttentions,
+          nullptr,
+          false,
+          100,
+          0.0,
+          false,
+          kRandSampling,
+          1.0,
+          nRnnLayer,
+          nAttnRound,
+          0.0),
+      Seq2SeqCriterion(
+          N,
+          H,
+          N - 1,
+          maxoutputlen,
+          neuralContentAttentions,
+          nullptr,
+          false,
+          100,
+          0.0,
+          false,
+          kRandSampling,
+          1.0,
+          nRnnLayer,
+          nAttnRound,
+          0.0)};
 
   for (auto& seq2seq : criterions) {
     seq2seq.eval();
@@ -466,5 +467,6 @@ TEST(Seq2SeqTest, Seq2SeqSampling) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
   return RUN_ALL_TESTS();
 }

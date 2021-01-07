@@ -36,8 +36,9 @@ int main(int argc, char** argv) {
   if (argc <= 2) {
     LOG(FATAL) << gflags::ProgramUsage();
   }
-
   std::string alignFilePath = argv[1];
+
+  fl::init();
 
   /* ===================== Parse Options ===================== */
   LOG(INFO) << "Parsing command line flags";
