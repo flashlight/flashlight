@@ -22,11 +22,55 @@
 //#include "flashlight/ext/image/fl/models/Resnet50Backbone.h"
 #include "flashlight/ext/image/fl/models/Resnet50Backbone.h"
 #include "flashlight/ext/image/fl/models/Resnet.h"
+#include "flashlight/ext/common/Serializer.h"
 #include "flashlight/fl/meter/meters.h"
 #include "flashlight/fl/optim/optim.h"
 #include "flashlight/fl/flashlight.h"
+#include "flashlight/lib/common/String.h"
+#include "flashlight/lib/common/System.h"
+
+constexpr const char* kTrainMode = "train";
+constexpr const char* kContinueMode = "continue";
+constexpr const char* kForkMode = "fork";
+constexpr const char* kGflags = "gflags";
+constexpr const char* kCommandLine = "commandline";
+constexpr const char* kProgramName = "programname";
+constexpr const char* kTimestamp = "timestamp";
+constexpr const char* kUserName = "username";
+constexpr const char* kHostName = "hostname";
+constexpr const char* kEpoch = "epoch";
+constexpr const char* kUpdates = "updates";
+constexpr const char* kRunIdx = "runIdx";
+constexpr const char* kRunPath = "runPath";
+
+using fl::lib::format;
+using fl::lib::pathsConcat;
+using fl::lib::fileExists;
+using fl::ext::Serializer;
+using fl::lib::getCurrentDate;
 
 #define FL_LOG_MASTER(lvl) LOG_IF(lvl, (fl::getWorldRank() == 0))
+
+//TODO move out of ASR
+std::string
+getRunFile(const std::string& name, int runidx, const std::string& runpath) {
+  auto fname = format("%03d_%s", runidx, name.c_str());
+  return pathsConcat(runpath, fname);
+};
+
+std::string serializeGflags(const std::string& separator = "\n") {
+  std::stringstream serialized;
+  std::vector<gflags::CommandLineFlagInfo> allFlags;
+  gflags::GetAllFlags(&allFlags);
+  std::string currVal;
+  for (auto itr = allFlags.begin(); itr != allFlags.end(); ++itr) {
+    gflags::GetCommandLineOption(itr->name.c_str(), &currVal);
+    serialized << "--" << itr->name << "=" << currVal << separator;
+  }
+  return serialized.str();
+}
+
+
 
 DEFINE_string(data_dir, "/private/home/padentomasello/data/coco3/", "Directory of imagenet data");
 DEFINE_double(lr, 0.0001f, "Learning rate");
@@ -58,6 +102,22 @@ DEFINE_string(eval_dir, "/private/home/padentomasello/data/coco/output/", "Direc
 DEFINE_bool(print_params, false, "Directory to dump images to run evaluation script on");
 DEFINE_bool(pretrained, true, "Directory to dump images to run evaluation script on");
 DEFINE_string(pytorch_init, "", "Directory to dump images to run evaluation script on");
+DEFINE_string(flagsfile, "", "Directory to dump images to run evaluation script on");
+DEFINE_string(rundir, "", "Directory to dump images to run evaluation script on");
+
+void parseCmdLineFlagsWrapper(int argc, char** argv) {
+  LOG(INFO) << "Parsing command line flags";
+  gflags::ParseCommandLineFlags(&argc, &argv, false);
+  if (!FLAGS_flagsfile.empty()) {
+    LOG(INFO) << "Reading flags from file " << FLAGS_flagsfile;
+    gflags::ReadFromFlagsFile(FLAGS_flagsfile, argv[0], true);
+  }
+  gflags::ParseCommandLineFlags(&argc, &argv, false);
+  // Only new flags are re-serialized. Copy any values from deprecated flags to
+  // new flags when deprecated flags are present and corresponding new flags
+  // aren't
+  //handleDeprecatedFlags();
+}
 
 
 using namespace fl;
@@ -100,6 +160,60 @@ int main(int argc, char** argv) {
   system(ss.str().c_str());
 
   gflags::ParseCommandLineFlags(&argc, &argv, true);
+  int runIdx = 1; // current #runs in this path
+  std::string runPath; // current experiment path
+  std::string reloadPath; // path to model to reload
+  std::string runStatus = argv[1];
+  int64_t startEpoch = 0;
+  int64_t startUpdate = 0;
+  std::string exec(argv[0]);
+  std::vector<std::string> argvs;
+  for (int i = 0; i < argc; i++) {
+    argvs.emplace_back(argv[i]);
+  }
+  // Saving checkpointing
+  if (argc <= 1) {
+    LOG(FATAL) << gflags::ProgramUsage();
+  }
+  if (runStatus == "train") {
+    parseCmdLineFlagsWrapper(argc, argv);
+    runPath = FLAGS_rundir;
+  } else if (runStatus == "continue") {
+    runPath = argv[2];
+    while (fileExists(getRunFile("model_last.bin", runIdx, runPath))) {
+      ++runIdx;
+    }
+    reloadPath = getRunFile("model_last.bin", runIdx - 1, runPath);
+    LOG(INFO) << "reload path is " << reloadPath;
+    std::unordered_map<std::string, std::string> cfg;
+    std::string version;
+    Serializer::load(reloadPath, version, cfg);
+    auto flags = cfg.find(kGflags);
+    if (flags == cfg.end()) {
+      LOG(FATAL) << "Invalid config loaded from " << reloadPath;
+    }
+    LOG(INFO) << "Reading flags from config file " << reloadPath;
+    gflags::ReadFlagsFromString(flags->second, gflags::GetArgv0(), true);
+    parseCmdLineFlagsWrapper(argc, argv);
+    auto epoch = cfg.find(kEpoch);
+    if (epoch == cfg.end()) {
+      LOG(WARNING) << "Did not find epoch to start from, starting from 0.";
+    } else {
+      startEpoch = std::stoi(epoch->second);
+    }
+    auto nbupdates = cfg.find(kUpdates);
+    if (nbupdates == cfg.end()) {
+      LOG(WARNING) << "Did not find #updates to start from, starting from 0.";
+    } else {
+      startUpdate = std::stoi(nbupdates->second);
+    }
+  } else {
+    LOG(FATAL) << gflags::ProgramUsage();
+  }
+
+  if (runPath.empty()) {
+    LOG(FATAL) << "'runpath' specified by --rundir, --runname cannot be empty";
+  }
 
   //const std::string label_path = FLAGS_data_dir + "labels.txt";
   //const std::string train_list = FLAGS_data_dir + "train";
@@ -121,6 +235,18 @@ int main(int argc, char** argv) {
   const int worldRank = fl::getWorldRank();
   const int worldSize = fl::getWorldSize();
 
+
+  std::string cmdLine= fl::lib::join(" ", argvs);
+  std::unordered_map<std::string, std::string> config = {
+      {kProgramName, exec},
+      {kCommandLine, cmdLine},
+      {kGflags, serializeGflags()},
+      // extra goodies
+      {kUserName, fl::lib::getEnvVar("USER")},
+      {kHostName, fl::lib::getEnvVar("HOSTNAME")},
+      {kTimestamp, getCurrentDate() + ", " + getCurrentDate()},
+      {kRunIdx, std::to_string(runIdx)},
+      {kRunPath, runPath}};
   //af::setDevice(worldRank);
   //af::setSeed(worldSize);
   std::cout << "World rank: " << worldRank << std::endl;
@@ -328,39 +454,34 @@ int main(int argc, char** argv) {
   //SGDOptimizer opt(detr.params(), FLAGS_lr, FLAGS_momentum, FLAGS_wd);
   //
 
-  AdamOptimizer opt(detr->paramsWithoutBackbone(), FLAGS_lr, FLAGS_wd);
-  AdamOptimizer opt2(detr->backboneParams(), FLAGS_lr * 0.1, FLAGS_wd);
+  auto opt = std::make_shared<AdamOptimizer>(detr->paramsWithoutBackbone(), FLAGS_lr, FLAGS_wd);
+  auto opt2 = std::make_shared<AdamOptimizer>(detr->backboneParams(), FLAGS_lr * 0.1, FLAGS_wd);
   auto lrScheduler = [&opt, &opt2](int epoch) {
     // Adjust learning rate every 30 epoch after 30
     if (epoch == 100) {
-      const float newLr = opt.getLr() * 0.1;
+      const float newLr = opt->getLr() * 0.1;
       LOG(INFO) << "Setting learning rate to: " << newLr;
-      opt.setLr(newLr);
-      opt2.setLr(newLr * 0.1);
+      opt->setLr(newLr);
+      opt2->setLr(newLr * 0.1);
     }
   };
+
+  if (runStatus == "continue") {
+    std::unordered_map<std::string, std::string> cfg; // unused
+    std::string version;
+        Serializer::load(
+            reloadPath,
+            version,
+            cfg,
+            detr,
+            opt,
+            opt2);
+  }
   //AdamOptimizer backbone_opt(backbone->params(), FLAGS_lr * 0.1);
 
-  // Small utility functions to load and save models
-  //auto saveModel = [&detr](int epoch) {
-    //if(worldRank == 0) {
-      //std::string modelPath = FLAGS_checkpointpath + std::to_string(epoch);
-      //std::cout <<  "Saving model to file: " << modelPath << std::endl;
-      //fl::save(modelPath, detr);
-    //}
-  //};
-
-  //auto loadModel = [&detr](int epoch) {
-      //std::string modelPath = FLAGS_checkpointpath + std::to_string(epoch);
-      //std::cout <<  "Loading model from file: " << modelPath << std::endl;
-      //fl::load(modelPath, detr);
-  //};
-  //if (FLAGS_checkpoint >= 0) {
-    //loadModel(FLAGS_checkpoint);
-  //}
 
   auto weightDict = criterion.getWeightDict();
-  for(int e = 0; e < FLAGS_epochs; e++) {
+  for(int epoch= startEpoch; epoch < FLAGS_epochs; epoch++) {
 
     std::map<std::string, AverageValueMeter> meters;
     std::map<std::string, TimeMeter> timers;
@@ -369,34 +490,13 @@ int main(int argc, char** argv) {
     train_ds->resample();
     //while(true) {
     for(auto& sample : *train_ds) {
-      //auto images =  { fl::Variable(sample.images, true) };
       std::vector<Variable> input =  { 
         fl::Variable(sample.images, false),
         fl::Variable(sample.masks, false) 
       };
-      //auto features = backbone->forward(images)[0];
-      ////auto features = input;
       auto output = detr->forward(input);
 
 
-      ////saveOutput(sample.imageSizes, sample.imageIds, sample.target_boxes[0], sample.target_labels[0], 
-          ////"/private/home/padentomasello/data/coco/scratch/labels.array");
-      ////return 0;
-
-      //timers["forward"].resume();
-      ////fl::Variable features = backbone->forward(images)[0];
-      //fl::Variable features = backbone->forward(images)[1];
-
-      //fl::Variable masks = fl::Variable(
-          //af::resize(
-            //sample.masks, 
-            //features.dims(0), 
-            //features.dims(1), 
-            //AF_INTERP_NEAREST),
-        //true
-      //);
-      ////auto features = input;
-      //auto output = detr->forward({features, masks});
       timers["forward"].stop();
 
       /////////////////////////
@@ -457,11 +557,11 @@ int main(int argc, char** argv) {
       }
       fl::clipGradNorm(detr->params(), 0.1);
 
-      opt.step();
-      opt2.step();
+      opt->step();
+      opt2->step();
 
-      opt.zeroGrad();
-      opt2.zeroGrad();
+      opt->zeroGrad();
+      opt2->zeroGrad();
       //////////////////////////
       // Metrics
       /////////////////////////
@@ -472,7 +572,7 @@ int main(int argc, char** argv) {
         double backward_time = timers["backward"].value();
         double criterion_time = timers["criterion"].value();
         std::stringstream ss;
-        ss << "Epoch: " << e << std::setprecision(5) << " | Batch: " << idx
+        ss << "Epoch: " <<epoch<< std::setprecision(5) << " | Batch: " << idx
             << " | total_time: " << total_time
             << " | idx: " << idx
             << " | sample_per_second: " << sample_per_second
@@ -493,10 +593,14 @@ int main(int argc, char** argv) {
     for(auto meter : meters) {
       meter.second.reset();
     }
-      if(e % FLAGS_eval_iters == 0 && e > 0) {
-        eval_loop(backbone, detr, val_ds);
-        //eval_loop(detr, val_ds);
-        //saveModel(e);
-      }
+    std::string filename = 
+      getRunFile(format("model_last.bin", idx), runIdx, runPath);
+    config[kEpoch] = std::to_string(epoch);
+    Serializer::save(filename, "0.1", config, detr, opt, opt2);
+    if(epoch % FLAGS_eval_iters == 0 && epoch> 0) {
+      eval_loop(backbone, detr, val_ds);
+      //eval_loop(detr, val_ds);
+      //saveModel(e);
+    }
   }
 }
