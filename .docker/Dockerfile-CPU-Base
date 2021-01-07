@@ -1,192 +1,162 @@
 # ==================================================================
 # module list
 # ------------------------------------------------------------------
-# Ubuntu           18.04
+# Ubuntu           20.04
 # OpenMPI          latest       (apt)
-# cmake            3.10         (oficial binaries)
+# cmake            3.16.3       (oficial binaries)
 # MKL              2020.4-912   (apt)
 # arrayfire        3.7.3        (git, CPU backend)
 # libsndfile       latest       (apt, v1.0.28-4)
-# oneDNN           master       (git)
+# oneDNN           v2.0         (git)
 # Gloo             1da2117      (git)
 # FFTW             latest       (apt)
-# KenLM            4a27753      (git)
+# KenLM            0c4dd4e      (git)
 # GLOG             latest       (apt)
 # gflags           latest       (apt)
 # python3          latest       (apt)
-# boost            1.75.0       (source)
 # ==================================================================
 
-FROM ubuntu:18.04 as cpu_base_builder
+#############################################################################
+#                             APT IMAGE + CMAKE                             #
+#############################################################################
 
-ENV DEBIAN_FRONTEND=noninteractive
+FROM ubuntu:20.04 as cpu_base_builder
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+ENV APT_INSTALL="apt-get install -y --no-install-recommends"
+ENV PATH="/opt/cmake/bin:$PATH"
+ENV MKLROOT="/opt/intel/mkl"
+ENV KENLM_ROOT=/opt/kenlm
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
         build-essential \
         ca-certificates \
-        curl \
+        wget \
         git \
-        g++
+        g++ \
         # for cmake
-        #zlib1g-dev libcurl4-openssl-dev \
-        # for MKL
-        #apt-transport-https \
-        #gpg-agent gnupg2 \
-        # ssh for OpenMPI
-        #openssh-server openssh-client \
-        ## gflags
-        #libgflags-dev libgflags2.2 \
-        ## for glog
-        #libgoogle-glog-dev libgoogle-glog0v5 \
-
-# Install boost 1.75
-RUN cd /tmp && \
-    curl -sSLo - https://dl.bintray.com/boostorg/release/1.75.0/source/boost_1_75_0.tar.bz2 | tar --bzip2 -x && \
-    cd boost_1_75_0 && \
-    ./bootstrap.sh --prefix=/opt/boost && \
-    ./b2 && \
-    ./b2 install
-ENV LD_LIBRARY_PATH="/opt/boost/lib:$LD_LIBRARY_PATH"
-
-# cmake 3.10
-RUN curl -sSLo - https://cmake.org/files/v3.10/cmake-3.10.3-Linux-x86_64.tar.gz | tar -xz -C /opt/cmake --strip-components 1
-ENV PATH="/opt/cmake/bin:$PATH"
-# ==================================================================
-# arrayfire with CPU backend https://github.com/arrayfire/arrayfire/wiki/Build-Instructions-for-Linux
-# ------------------------------------------------------------------
-FROM cpu_base_builder as cpu_arrayfire
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl \
+        # for arrayfire CPU backend
         # OpenBLAS
         libopenblas-dev liblapacke-dev \
         # ATLAS
         libatlas3-base libatlas-base-dev liblapacke-dev \
         # FFTW
-        libfftw3-dev
-
-# Install ArrayFire
-RUN cd /tmp && \
-    git clone --branch v3.7.3 --depth 1 --recursive --shallow-submodules https://github.com/arrayfire/arrayfire.git && \
-    mkdir -p arrayfire/build && \
-    cd arrayfire/build && \
-    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/arrayfire -DAF_BUILD_CUDA=OFF -DAF_BUILD_CPU=ON -DAF_BUILD_OPENCL=OFF -DAF_BUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF -DAF_WITH_IMAGEIO=OFF .. && \
-    make -j$(nproc) && \
-    make install -j$(nproc)
-
-# ==================================================================
-# oneDNN https://github.com/oneapi-src/oneDNN#requirements-for-building-from-source
-# ------------------------------------------------------------------
-FROM cpu_base_builder as cpu_onednn
-
-#Install OpenMP and TBB
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        ocl-icd-opencl-dev libtbb-dev
-
-RUN cd /tmp && \
-    git clone --branch v2.0 --depth 1 https://github.com/oneapi-src/onednn.git && \
-    mkdir -p onednn/build && \
-    cd onednn/build && \
-    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/onednn -DWITH_EXAMPLE=OFF -DWITH_TEST=OFF .. && \
-    make -j$(nproc) && \
-    make install -j$(nproc)
-# ==================================================================
-# Gloo https://github.com/facebookincubator/gloo.git
-# ------------------------------------------------------------------
-FROM cpu_base_builder as cpu_gloo
-
-# Install OpenMPI
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        libopenmpi-dev
-
-RUN cd /tmp && \
-    git clone --depth 1 https://github.com/facebookincubator/gloo.git && \
-    mkdir -p gloo/build && \
-    cd gloo/build && \
-    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/gloo -DUSE_MPI=ON .. && \
-    make -j$(nproc) && \
-    make install -j$(nproc)
-# ==================================================================
-# KenLM https://github.com/kpu/kenlm/blob/master/BUILDING
-# ------------------------------------------------------------------
-FROM cpu_base_builder as cpu_kenlm
-
-# Instal gzip, bz2 and xz
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        zlib1g-dev libbz2-dev liblzma-dev
-
-RUN cd /tmp && \
-    git clone --depth 1 https://github.com/kpu/kenlm.git && \
-    mkdir -p kenlm/build && \
-    cd kenlm/build && \
-    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/kenlm -DCMAKE_POSITION_INDEPENDENT_CODE=ON .. && \
-    make -j$(nproc) && \
-    make install -j$(nproc)
-
-
-
-#############################################################################
-#                            SECOND STAGE                                   #
-#############################################################################
-
-FROM cpu_base_builder as final
-
-# install dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
-        ca-certificates \
-        curl \
-        git \
-        g++ \
-        # for cmake
-        zlib1g-dev libcurl4-openssl-dev \
-        # for MKL
-        apt-transport-https gpg-agent gnupg2 \
-        # for arrayfire CPU backend
-        # OpenBLAS
-        libopenblas-dev libfftw3-dev liblapacke-dev \
-        # ATLAS
-        libatlas3-base libatlas-base-dev libfftw3-dev liblapacke-dev \
+        libfftw3-dev \
         # ssh for OpenMPI
         openssh-server openssh-client \
         # OpenMPI
         libopenmpi-dev libomp-dev openmpi-bin \
-        # libsndfile
-        libsndfile1-dev \
+        # for kenlm
+        zlib1g-dev libbz2-dev liblzma-dev libboost-all-dev &&
+# ==================================================================
+# cmake
+# ------------------------------------------------------------------
+    apt-get purge -y cmake && \
+    mkdir /opt/cmake && \
+    curl -sSLo - https://cmake.org/files/v3.16/cmake-3.16.3-Linux-x86_64.tar.gz | tar -xz -C /opt/cmake --strip-components 1 && \
+# ==================================================================
+# clean up everything
+# ------------------------------------------------------------------
+    ldconfig && \
+    apt-get clean && \
+    apt-get -y autoremove && \
+    rm -rf /var/lib/apt/lists/* /tmp/*
+
+
+#############################################################################
+#                                DEPS IMAGES                                #
+#############################################################################
+
+FROM cpu_base_builder as cpu_arrayfire
+# ==================================================================
+# arrayfire with CPU backend https://github.com/arrayfire/arrayfire/wiki/
+# ------------------------------------------------------------------
+RUN cd /tmp && git clone --recursive https://github.com/arrayfire/arrayfire.git && \
+    wget https://dl.bintray.com/boostorg/release/1.70.0/source/boost_1_70_0.tar.gz && tar xf boost_1_70_0.tar.gz && \
+    cd arrayfire && git checkout v3.7.3  && git submodule update --init --recursive && \
+    mkdir build && cd build && \
+    CXXFLAGS=-DOS_LNX cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/arrayfire -DAF_BUILD_CUDA=OFF -DAF_BUILD_OPENCL=OFF -DAF_BUILD_EXAMPLES=OFF -DBOOST_INCLUDEDIR=/tmp/boost_1_70_0 && \
+    make -j$(nproc) && make install
+
+FROM cpu_base_builder as cpu_onednn
+# ==================================================================
+# oneDNN https://github.com/oneapi-src/oneDNN
+# ------------------------------------------------------------------
+RUN cd /tmp && git clone https://github.com/oneapi-src/oneDNN && \
+    cd oneDNN && git checkout v2.0 && mkdir -p build && cd build && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/onednn && \
+    make -j$(nproc) && make install
+
+FROM cpu_base_builder as cpu_gloo
+# ==================================================================
+# Gloo https://github.com/facebookincubator/gloo.git
+# ------------------------------------------------------------------
+RUN cd /tmp && git clone https://github.com/facebookincubator/gloo.git && \
+    cd gloo && git checkout 1da2117 && mkdir build && cd build && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/gloo -DUSE_MPI=ON && \
+    make -j$(nproc) && make install
+
+FROM cpu_base_builder as cpu_kenlm
+# ==================================================================
+# KenLM https://github.com/kpu/kenlm
+# ------------------------------------------------------------------
+RUN cd /tmp && git clone https://github.com/kpu/kenlm.git && \
+    cd kenlm && git checkout 0c4dd4e && \
+    mkdir build && cd build && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/kenlm -DCMAKE_POSITION_INDEPENDENT_CODE=ON && \
+    make -j$(nproc) && make install
+
+#############################################################################
+#                             FINAL IMAGE                                   #
+#############################################################################
+
+FROM cpu_base_builder as cpu_final
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive $APT_INSTALL \
+        vim \
+        emacs \
+        nano \
+        htop \
+        # for MKL
+        apt-transport-https gpg-agent gnupg2 \
         # for libsndfile for ubuntu 18.04
         libopus-dev \
-        # FFTW
-        libfftw3-dev \
-        # for kenlm
-        zlib1g-dev libbz2-dev liblzma-dev \
+        # libsndfile
+        libsndfile1-dev \
         # gflags
         libgflags-dev libgflags2.2 \
         # for glog
         libgoogle-glog-dev libgoogle-glog0v5 \
-        # gtest
-        libgtest-dev \
-        # for receipts data processing
-        sox \
-        # for python
-        python3-dev python3-pip python3-distutils && \
+        # python sox
+        sox python3-dev python3-pip python3-distutils && \
+# ==================================================================
+# clean up everything
+# ------------------------------------------------------------------
     apt-get clean && \
     apt-get -y autoremove && \
-    rm -rf /var/lib/apt/lists/*
-
+    rm -rf /var/lib/apt/lists/* /tmp/*
 # ==================================================================
-# python (for bindings)
+# MKL https://software.intel.com/en-us/mkl
 # ------------------------------------------------------------------
-RUN ln -s /usr/bin/python3 /usr/local/bin/python && \
+RUN cd /tmp && wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB && \
+    apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB && \
+    sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list' && \
+    apt-get update && DEBIAN_FRONTEND=noninteractive $APT_INSTALL intel-mkl-64bit-2020.4-912 && \
+# ==================================================================
+# clean up everything
+# ------------------------------------------------------------------
+    apt-get clean && \
+    apt-get -y autoremove && \
+    rm -rf /var/lib/apt/lists/* /tmp/*
+# ==================================================================
+# python (for bindings and preprocessing)
+# ------------------------------------------------------------------
+RUN ln -s /usr/bin/python3 /usr/local/bin/python && ln -s /usr/bin/python3.6 /usr/local/bin/python3 && \
     python3 -m pip --no-cache-dir install --upgrade setuptools numpy sox tqdm
 
-# ==================================================================
-# Intel MKL https://software.intel.com/en-us/mkl
-# ------------------------------------------------------------------
-RUN cd /tmp && curl -sSLo - https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB | apt-key add && \
-    sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list' && \
-    apt-get update && apt-get install -y intel-mkl-64bit-2020.4-912
-ENV MKLROOT="/opt/intel/mkl"
-
-COPY --from=cpu_arrayfire /opt/arrayfire /opt/arrayfire
-COPY --from=cpu_kenlm     /opt/kenlm     /opt/kenlm
-COPY --from=cpu_gloo      /opt/gloo      /opt/gloo
-COPY --from=cpu_onednn    /opt/onednn    /opt/onednn
+COPY --from=cpu_arrayfire  /opt/arrayfire  /opt/arrayfire
+COPY --from=cpu_onednn     /opt/onednn     /opt/onednn
+COPY --from=cpu_gloo       /opt/gloo       /opt/gloo
+COPY --from=cpu_kenlm      /opt/kenlm      /opt/kenlm

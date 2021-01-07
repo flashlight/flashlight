@@ -4,75 +4,28 @@
 # flashlight       master     (git, CPU backend)
 # ==================================================================
 
-FROM flml/flashlight:cpu-base-consolidation-latest as build
+FROM flml/flashlight:cpu-base-consolidation-latest
+
+# just in case for visibility
+ENV PATH="/opt/cmake/bin:$PATH"
+ENV MKLROOT="/opt/intel/mkl"
+ENV KENLM_ROOT=/opt/kenlm
 
 # ==================================================================
 # flashlight with CPU backend
 # ------------------------------------------------------------------
 # Setup and build flashlight
-RUN mkdir /tmp/flashlight
+RUN mkdir /root/flashlight
 
-COPY . /tmp/flashlight
+COPY . /root/flashlight
 
-RUN mkdir -p /tmp/flashlight/build && \
-    cd /tmp/flashlight/build && \ 
-    cmake -DCMAKE_BUILD_TYPE="Release" -DCMAKE_INSTALL_PREFIX="/opt/flashlight" -DFL_BACKEND="CPU" -DFL_LIBRARIES_USE_CUDA="OFF" -DFL_BUILD_TESTS="ON" -DDNNL_DIR="/opt/onednn/lib/cmake/dnnl" -DGloo_INCLUDE_DIR="/opt/gloo/include" -DGloo_NATIVE_LIBRARY="/opt/gloo/lib/libgloo.a" .. && \
-    make -j$(nproc) && \
-    make install -j$(nproc)
-
-
-
-#############################################################################
-#                            SECOND STAGE                                   #
-#############################################################################
-
-FROM ubuntu:18.04
-
-ENV DEBIAN_FRONTEND=noninteractive
-
-# install dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        g++ \
-        # for cmake
-        zlib1g-dev libcurl4-openssl-dev \
-        # for MKL
-        apt-transport-https \
-        gpg-agent gnupg2 \
-        # for arrayfire CPU backend
-        # OpenBLAS
-        libopenblas-dev libfftw3-dev liblapacke-dev \
-        # ATLAS
-        libatlas3-base libatlas-base-dev libfftw3-dev liblapacke-dev \
-        # ssh for OpenMPI
-        openssh-server openssh-client \
-        # OpenMPI
-        libopenmpi-dev libomp-dev openmpi-bin \
-        # libsndfile
-        libsndfile1-dev \
-        # for libsndfile for ubuntu 18.04
-        libopus-dev \
-        # FFTW
-        libfftw3-dev \
-        # for kenlm
-        zlib1g-dev libbz2-dev liblzma-dev \
-        # gflags
-        libgflags-dev libgflags2.2 \
-        # for glog
-        libgoogle-glog-dev libgoogle-glog0v5 \
-        # for receipts data processing
-        sox \
-        # for python
-        python3-dev python3-pip python3-distutils && \
-    apt-get clean && \
-    apt-get -y autoremove && \
-    rm -rf /var/lib/apt/lists/*
-
-COPY --from=build /opt/arrayfire  /opt/arrayfire
-COPY --from=build /opt/kenlm      /opt/kenlm
-COPY --from=build /opt/intel      /opt/intel
-COPY --from=build /opt/boost      /opt/boost
-COPY --from=build /opt/flashlight /opt/flashlight
-
-ENV KENLM_ROOT_DIR=/opt/kenlm
-ENV MKLROOT="/opt/intel/mkl"
-ENV LD_LIBRARY_PATH="/opt/boost/lib:$LD_LIBRARY_PATH"
+RUN cd /root/flashlight && mkdir -p build && \
+    cd build && cmake .. -DCMAKE_BUILD_TYPE=Release \
+                         -DCMAKE_INSTALL_PREFIX=/opt/flashlight \
+                         -DFL_BACKEND=CPU \
+                         -DFL_LIBRARIES_USE_CUDA=OFF \
+                         -DDNNL_DIR=/opt/onednn/lib/cmake/dnnl \
+                         -DGloo_INCLUDE_DIR=/opt/gloo/include \
+                         -DGloo_NATIVE_LIBRARY=/opt/gloo/lib/libgloo.a && \
+    make -j$(nproc) && make install && \
+    cd ../ && rm -rf build
