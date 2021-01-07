@@ -8,7 +8,7 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/ext/common/SequentialBuilder.h"
-
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/lib/common/System.h"
 
 using namespace fl;
@@ -76,6 +76,7 @@ TEST(SequentialBuilderTest, Serialization) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
 
 // Resolve directory for arch
 #ifdef ARCHDIR

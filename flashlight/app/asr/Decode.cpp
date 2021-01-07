@@ -51,6 +51,7 @@ using fl::lib::text::SmearingMode;
 using namespace fl::app::asr;
 
 int main(int argc, char** argv) {
+  fl::init();
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
   std::string exec(argv[0]);
@@ -421,8 +422,9 @@ int main(int argc, char** argv) {
         fl::Variable rawEmission;
         if (usePlugin) {
           rawEmission = localNetwork
-                            ->forward({fl::input(sample[kInputIdx]),
-                                       fl::noGrad(sample[kDurationIdx])})
+                            ->forward(
+                                {fl::input(sample[kInputIdx]),
+                                 fl::noGrad(sample[kDurationIdx])})
                             .front();
         } else {
           rawEmission = fl::ext::forwardSequentialModuleWithPadMask(

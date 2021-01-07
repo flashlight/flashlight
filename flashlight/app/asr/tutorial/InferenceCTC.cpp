@@ -125,6 +125,8 @@ int main(int argc, char** argv) {
     argvs.emplace_back(argv[i]);
   }
 
+  fl::init();
+
   /* ===================== Parse Options ===================== */
   LOG(INFO) << "Parsing command line flags";
   gflags::ParseCommandLineFlags(&argc, &argv, false);

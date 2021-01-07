@@ -834,8 +834,9 @@ TEST(ModuleTest, AdaptiveSoftMaxLossIgnoreIndex) {
 
 TEST(ModuleTest, IdentityFwd) {
   auto module = Identity();
-  std::vector<Variable> in = {Variable(af::randu(af::dim4(1000, 1000)), true),
-                              Variable(af::randu(af::dim4(100, 100)), true)};
+  std::vector<Variable> in = {
+      Variable(af::randu(af::dim4(1000, 1000)), true),
+      Variable(af::randu(af::dim4(100, 100)), true)};
 
   // Train Mode
   module.train();
@@ -854,5 +855,6 @@ TEST(ModuleTest, IdentityFwd) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
   return RUN_ALL_TESTS();
 }

@@ -11,14 +11,15 @@
 #include "flashlight/app/asr/augmentation/AdditiveNoise.h"
 #include "flashlight/app/asr/augmentation/SoundEffectUtil.h"
 #include "flashlight/app/asr/data/Sound.h"
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/lib/common/System.h"
 
 using namespace ::fl::app::asr::sfx;
 using ::fl::app::asr::saveSound;
 using ::fl::lib::dirCreateRecursive;
+using ::fl::lib::getTmpPath;
 using ::fl::lib::pathsConcat;
 using ::testing::Pointwise;
-using ::fl::lib::getTmpPath;
 
 const size_t sampleRate = 16000;
 
@@ -64,7 +65,7 @@ TEST(AdditiveNoise, Snr) {
     listFile << noiseFilePath;
   }
 
-  float threshold = 0.02 ; // allow 2% difference from expected value
+  float threshold = 0.02; // allow 2% difference from expected value
 
   for (float snr = 1; snr < 30; ++snr) {
     AdditiveNoise::Config conf;
@@ -82,15 +83,20 @@ TEST(AdditiveNoise, Snr) {
 
     std::vector<float> extractNoise(augmented.size());
     for (int i = 0; i < extractNoise.size(); ++i) {
-      extractNoise[i] = (augmented[i] - signal[i]) ;
+      extractNoise[i] = (augmented[i] - signal[i]);
     }
 
-    ASSERT_LE(signalToNoiseRatio(signal, extractNoise), (conf.maxSnr_ * (1 + threshold)));
-    ASSERT_GE(signalToNoiseRatio(signal, extractNoise), (conf.minSnr_ * (1 - threshold)));
+    ASSERT_LE(
+        signalToNoiseRatio(signal, extractNoise),
+        (conf.maxSnr_ * (1 + threshold)));
+    ASSERT_GE(
+        signalToNoiseRatio(signal, extractNoise),
+        (conf.minSnr_ * (1 - threshold)));
   }
 }
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
   return RUN_ALL_TESTS();
 }

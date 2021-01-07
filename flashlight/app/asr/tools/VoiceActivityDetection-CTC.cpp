@@ -77,6 +77,8 @@ int main(int argc, char** argv) {
     LOG(FATAL) << gflags::ProgramUsage();
   }
 
+  fl::init();
+
   /* ===================== Parse Options ===================== */
   LOG(INFO) << "Parsing command line flags";
   gflags::ParseCommandLineFlags(&argc, &argv, false);

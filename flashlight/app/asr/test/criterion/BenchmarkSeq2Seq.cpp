@@ -79,6 +79,8 @@ void timeForwardBackward() {
 
 int main() {
   af::info();
+  fl::init();
+
   timeForwardBackward();
   timeBeamSearch();
   return 0;

@@ -93,6 +93,7 @@ DEFINE_int64(
 } // namespace
 
 int main(int argc, char** argv) {
+  fl::init();
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
   std::string exec(argv[0]);
@@ -418,11 +419,12 @@ int main(int argc, char** argv) {
           usePlugin,
           tokenDict,
           wordDict,
-          DecodeMasterTrainOptions{.repLabel = int32_t(FLAGS_replabel),
-                                   .wordSepIsPartOfToken = FLAGS_usewordpiece,
-                                   .surround = FLAGS_surround,
-                                   .wordSep = FLAGS_wordseparator,
-                                   .targetPadIdx = targetpadVal});
+          DecodeMasterTrainOptions{
+              .repLabel = int32_t(FLAGS_replabel),
+              .wordSepIsPartOfToken = FLAGS_usewordpiece,
+              .surround = FLAGS_surround,
+              .wordSep = FLAGS_wordseparator,
+              .targetPadIdx = targetpadVal});
     } else {
       throw std::runtime_error(
           "Other decoders are not supported yet during training");
@@ -789,8 +791,9 @@ int main(int argc, char** argv) {
       fl::Variable output;
       if (usePlugin) {
         output = ntwrk
-                     ->forward({fl::input(batch[kInputIdx]),
-                                fl::noGrad(batch[kDurationIdx])})
+                     ->forward(
+                         {fl::input(batch[kInputIdx]),
+                          fl::noGrad(batch[kDurationIdx])})
                      .front();
       } else {
         output = fl::ext::forwardSequentialModuleWithPadMask(

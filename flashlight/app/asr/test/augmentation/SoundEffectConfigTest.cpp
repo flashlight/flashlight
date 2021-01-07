@@ -10,6 +10,7 @@
 
 #include "flashlight/app/asr/augmentation/SoundEffect.h"
 #include "flashlight/app/asr/augmentation/SoundEffectConfig.h"
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/lib/common/System.h"
 
 using namespace ::fl::app::asr::sfx;
@@ -72,5 +73,6 @@ TEST(SoundEffectConfigFile, ReadWriteJson) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
   return RUN_ALL_TESTS();
 }

@@ -53,6 +53,8 @@ int main(int argc, char** argv) {
   }
   gflags::SetUsageMessage("Usage: \n " + exec + " [model] [flags]");
 
+  fl::init();
+
   /* ===================== Parse Options ===================== */
   int runIdx = 1; // current #runs in this path
   std::string reloadPath = argv[1]; // path to model to reload

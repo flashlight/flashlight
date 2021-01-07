@@ -9,6 +9,7 @@
 
 #include <gtest/gtest.h>
 
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/meter/meters.h"
 
 using namespace fl;
@@ -84,5 +85,6 @@ TEST(MeterTest, CountMeter) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
   return RUN_ALL_TESTS();
 }

@@ -88,6 +88,7 @@ std::tuple<double, double, double> evalLoop(
 };
 
 int main(int argc, char** argv) {
+  fl::init();
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
   gflags::ParseCommandLineFlags(&argc, &argv, true);

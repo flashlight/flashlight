@@ -11,6 +11,7 @@
 
 int main() {
   af::info();
+  fl::init();
 
   // Create data
   const int nSamples = 10000;
