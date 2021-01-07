@@ -19,7 +19,7 @@ export LD_LIBRARY_PATH=/private/home/padentomasello/usr/lib/:$LD_LIBRARY_PATH
 BUILD_DIR=/scratch/slurm_tmpdir/$SLURM_JOB_ID/$1
 EVAL_DIR=$BUILD_DIR/eval/$SLURM_LOCALID/
 RUN_DIR=/checkpoint/padentomasello/models/$SLURM_JOB_ID/
-mkdir -p $CHECKPOINT_DIR
+mkdir -p $RUN_DIR
 mkdir -p $BUILD_DIR/rndv/
 mkdir -p $EVAL_DIR
 $BUILD_DIR/flashlight/build/Detr train -lr 0.0001 --epochs 500 --batch_size 2 \
