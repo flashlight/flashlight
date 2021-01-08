@@ -328,6 +328,13 @@ DEFINE_string(
     "must be [FATAL, ERROR, WARNING, INFO]");
 DEFINE_int64(fl_vlog_level, 0, "Sets the verbose logging level");
 
+DEFINE_int64(
+    fl_log_mem_ops_interval,
+    0,
+    "Flushes memory manager logs after a specified "
+    "number of log entries. 1000000 is a reasonable "
+    "value which will reduce overhead.");
+
 // MIXED PRECISION OPTIONS
 DEFINE_bool(
     fl_amp_use_mixed_precision,
