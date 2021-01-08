@@ -8,7 +8,7 @@ version: 2.1
 
 gpu: &gpu
   machine:
-   image: ubuntu-1604-cuda-11.1:202012-01
+    image: ubuntu-1604-cuda-11.1:202012-01
   resource_class: gpu.small
 
 commands:
@@ -139,11 +139,9 @@ commands:
       - run:
           name: Build flashlight with CPU backend
           command: |
-            cd flashlight && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5
-            export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5
             export MKLROOT=/opt/intel/mkl
-            mkdir -p build && cd build
-            cmake .. -DFL_BACKEND=CPU
+            cd flashlight && mkdir -p build && cd build
+            cmake .. -DFL_BACKEND=CPU -DDNNL_DIR=/opt/onednn/lib/cmake/dnnl -DGloo_DIR=/opt/gloo/share/cmake
             make -j36 && make install
   flashlight_source_test_with_vcpkg:
     parameters:
@@ -197,19 +195,6 @@ commands:
             sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
             sudo sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list'
             sudo apt-get update && DEBIAN_FRONTEND=noninteractive sudo apt install << parameters.mkl_version >>
-  ubuntu_install_cuda10_0:
-    parameters:
-      version:
-        type: string
-    steps:
-      - run:
-          name: "Install CUDA 11.1"
-          command: |
-            wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-11-1_11.1.0-1_amd64.deb
-            sudo dpkg -i cuda-11-1_11.1.0-1_amd64.deb
-            sudo apt-get update || true
-            sudo apt-get --yes --force-yes install cuda
-            nvidia-smi
   ubuntu_install_python_bindings:
     parameters:
       use_mkl:
@@ -231,7 +216,7 @@ commands:
 
 ############################ Jobs ############################
 jobs:
-  ubuntu1604_gcc5_cuda_10_1_vcpkg_flashlight_lib:
+  ubuntu1604_gcc5_cuda_11_1_vcpkg_flashlight_lib:
     <<: *gpu
     steps:
       - checkout
@@ -250,7 +235,7 @@ jobs:
           fl_test_apex_dir: "flashlight/lib/test"
   # TODO(jacobkahn): add jobs for versions for the fl core and apps.
   # See if we can use a vcpkg cache in CircleCI to reduce build times
-  ubuntu1804_gcc5_cuda10_0_docker_flashlight_lib:
+  ubuntu2004_cuda11_1_docker_flashlight_lib:
     <<: *gpu
     steps:
       - authenticate_docker
@@ -266,7 +251,7 @@ jobs:
       - test_flashlight_inside_nvidia_docker:
           fl_test_apex_dir: "flashlight/lib/test"
 
-  ubuntu1804_gcc5_cuda10_0_docker_flashlight_fl_core:
+  ubuntu2004_cuda11_1_docker_flashlight_fl_core:
     <<: *gpu
     steps:
       - authenticate_docker
@@ -282,7 +267,7 @@ jobs:
       - test_flashlight_inside_nvidia_docker:
           fl_test_apex_dir: "flashlight/fl/test"
 
-  ubuntu1804_gcc5_cuda10_0_docker_flashlight_app_asr:
+  ubuntu2004_cuda11_1_docker_flashlight_app_asr:
     <<: *gpu
     steps:
       - authenticate_docker
@@ -298,7 +283,7 @@ jobs:
       - test_flashlight_inside_nvidia_docker:
           fl_test_apex_dir: "flashlight/app/asr/test"
 
-  ubuntu1804_gcc5_cuda10_0_docker_flashlight_app_imgclass:
+  ubuntu2004_cuda11_1_docker_flashlight_app_imgclass:
     <<: *gpu
     steps:
       - authenticate_docker
@@ -315,7 +300,7 @@ jobs:
       # - test_flashlight_inside_nvidia_docker:
       #     fl_test_apex_dir: "flashlight/app/imgclass/test"
 
-  ubuntu1804_gcc5_cuda10_0_docker_flashlight_app_lm:
+  ubuntu2004_cuda11_1_docker_flashlight_app_lm:
     <<: *gpu
     steps:
       - authenticate_docker
@@ -331,9 +316,9 @@ jobs:
       - test_flashlight_inside_nvidia_docker:
           fl_test_apex_dir: "flashlight/app/lm/test"
 
-  ubuntu1804_gcc5_cpu_docker_flashlight_all:
+  ubuntu2004_cpu_docker_flashlight_all:
     docker:
-      - image: flml/flashlight:cpu-base-consolidation-latest
+      - image: flml/flashlight:antares-cpu-base
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
@@ -343,9 +328,9 @@ jobs:
           path: flashlight
       - flashlight_build_and_install_cpu_backend_from_source
 
-  ubuntu1804_gcc5_cpu_python_bindings_simple:
+  ubuntu2004_cpu_python_bindings_simple:
     docker:
-      - image: flml/flashlight:cpu-base-consolidation-latest
+      - image: flml/flashlight:antares-cpu-base
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
@@ -357,9 +342,9 @@ jobs:
           use_kenlm: "OFF"
 
   # Aren't running code, so don't need the NVIDIA runtime
-  ubuntu1804_gcc5_cuda_python_bindings:
+  ubuntu2004_cuda_python_bindings:
     docker:
-      - image: flml/flashlight:cuda-base-consolidation-latest
+      - image: flml/flashlight:antares-cpu-base
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
@@ -370,9 +355,9 @@ jobs:
           use_mkl: "ON"
           use_kenlm: "ON"
 
-  ubuntu1804_gcc5_cpu_docker_flashlight_build_external:
+  ubuntu2004_cpu_docker_flashlight_build_external:
     docker:
-      - image: flml/flashlight:cpu-base-consolidation-latest
+      - image: flml/flashlight:antares-cpu-base
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
@@ -386,7 +371,7 @@ jobs:
           name: "Build another project that depends on flashlight"
           command: bash flashlight_compile_and_link_external_project.sh
 
-  ubuntu1804_gcc5_cuda10_0_docker_flashlight_build_external:
+  ubuntu2004_cuda11_1_docker_flashlight_build_external:
     <<: *gpu
     steps:
       - authenticate_docker
@@ -408,22 +393,22 @@ workflows:
   version: 2
   vcpkg_cuda_test_source_build_and_test:
     jobs:
-      - ubuntu1604_gcc5_cuda_10_1_vcpkg_flashlight_lib
+      - ubuntu1604_gcc5_cuda_11_1_vcpkg_flashlight_lib
   docker_cuda_build_test_and_install:
     jobs:
-      - ubuntu1804_gcc5_cuda10_0_docker_flashlight_lib
-      - ubuntu1804_gcc5_cuda10_0_docker_flashlight_fl_core
-      - ubuntu1804_gcc5_cuda10_0_docker_flashlight_app_asr
-      - ubuntu1804_gcc5_cuda10_0_docker_flashlight_app_imgclass
-      - ubuntu1804_gcc5_cuda10_0_docker_flashlight_app_lm
+      - ubuntu2004_cuda11_1_docker_flashlight_lib
+      - ubuntu2004_cuda11_1_docker_flashlight_fl_core
+      - ubuntu2004_cuda11_1_docker_flashlight_app_asr
+      - ubuntu2004_cuda11_1_docker_flashlight_app_imgclass
+      - ubuntu2004_cuda11_1_docker_flashlight_app_lm
   docker_cpu_build_and_install:
     jobs:
-      - ubuntu1804_gcc5_cpu_docker_flashlight_all
+      - ubuntu2004_cpu_docker_flashlight_all
   build_external_project_with_flashlight_dependency:
     jobs:
-      - ubuntu1804_gcc5_cpu_docker_flashlight_build_external
-      - ubuntu1804_gcc5_cuda10_0_docker_flashlight_build_external
+      - ubuntu2004_cpu_docker_flashlight_build_external
+      - ubuntu2004_cuda11_1_docker_flashlight_build_external
   test_python_bindings:
     jobs:
-      - ubuntu1804_gcc5_cpu_python_bindings_simple
-      - ubuntu1804_gcc5_cuda_python_bindings
+      - ubuntu2004_cpu_python_bindings_simple
+      - ubuntu2004_cuda_python_bindings
