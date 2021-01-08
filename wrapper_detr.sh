@@ -14,7 +14,7 @@ echo $SLURM_NTASKS
 echo $SLURM_LOCALID
 
 # Needed for arrayfire
-#export LD_LIBRARY_PATH=/private/home/padentomasello/usr/lib/:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/private/home/padentomasello/usr/lib/:$LD_LIBRARY_PATH
 
 BUILD_DIR=/scratch/slurm_tmpdir/$SLURM_JOB_ID/$1
 EVAL_DIR=$BUILD_DIR/eval/$SLURM_LOCALID/
