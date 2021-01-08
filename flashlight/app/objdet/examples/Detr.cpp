@@ -224,13 +224,11 @@ int main(int argc, char** argv) {
   // Setup distributed training
   ////////////////////////
   if (FLAGS_enable_distributed) {
-    fl::distributedInit(
-    fl::DistributedInit::FILE_SYSTEM,
-    FLAGS_world_rank,
-    FLAGS_world_size,
-    {{fl::DistributedConstants::kMaxDevicePerNode,
-      std::to_string(8)},
-     {fl::DistributedConstants::kFilePath, FLAGS_rndv_filepath}});
+    fl::ext::initDistributed(
+        FLAGS_world_rank,
+        FLAGS_world_size,
+        8,
+        FLAGS_rndv_filepath);
   }
   af::info();
   const int worldRank = fl::getWorldRank();
