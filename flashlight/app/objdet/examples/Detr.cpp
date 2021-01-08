@@ -90,7 +90,7 @@ DEFINE_int64(
     "total number of the process (Used if rndv_filepath is not empty)");
 DEFINE_string(
     rndv_filepath,
-    "/tmp/",
+    "",
     "Shared file path used for setting up rendezvous."
     "If empty, uses MPI to initialize.");
 DEFINE_bool(enable_distributed, true, "Enable distributed training");
