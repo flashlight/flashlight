@@ -55,9 +55,7 @@ commands:
           name: "Build and Install Flashlight inside of NVIDIA Docker"
           command: |
             sudo docker exec -it flashlight bash -c "\
-            apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-5 g++-5 && \
             cd /flashlight && pwd && ls && mkdir -p build && cd build && \
-            export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5 && \
             export MKLROOT=/opt/intel/mkl && \
             cmake .. \
                 -DFL_BACKEND=<< parameters.fl_backend >> \
