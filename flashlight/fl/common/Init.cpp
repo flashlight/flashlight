@@ -26,7 +26,12 @@ std::once_flag flInitFlag;
 void init() {
   std::call_once(flInitFlag, []() {
     af_init();
-    MemoryManagerInstaller::installDefaultMemoryManager();
+    // TODO: remove this temporary workaround for TextDatasetTest crash on CPU
+    // backend when tearing down the test environment. This is possibly due to
+    // AF race conditions when tearing down our custom memory manager.
+    if (!FL_BACKEND_CPU) {
+      MemoryManagerInstaller::installDefaultMemoryManager();
+    }
   });
 }
 
