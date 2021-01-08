@@ -161,6 +161,7 @@ DECLARE_bool(fl_benchmark_mode);
 DECLARE_string(fl_optim_mode);
 DECLARE_string(fl_log_level);
 DECLARE_int64(fl_vlog_level);
+DECLARE_int64(fl_log_mem_ops_interval);
 
 /* ========== MIXED PRECISION OPTIONS ========== */
 
