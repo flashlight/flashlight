@@ -18,6 +18,9 @@
 using namespace fl;
 
 TEST(MemoryInitTest, DefaultManagerInitializesCorrectType) {
+  if (FL_BACKEND_CPU) {
+    GTEST_SKIP() << "CachingMemoryManager is not used on CPU backend";
+  }
   auto* manager = MemoryManagerInstaller::currentlyInstalledMemoryManager();
   // A non-null value means that a) a custom memory manager has been installed
   // and b) that a CachingMemoryManager has been installed which is the desired
