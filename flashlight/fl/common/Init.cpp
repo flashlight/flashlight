@@ -26,7 +26,9 @@ std::once_flag flInitFlag;
 void init() {
   std::call_once(flInitFlag, []() {
     af_init();
-    MemoryManagerInstaller::installDefaultMemoryManager();
+    if (!FL_BACKEND_CPU) {
+      MemoryManagerInstaller::installDefaultMemoryManager();
+    }
   });
 }
 
