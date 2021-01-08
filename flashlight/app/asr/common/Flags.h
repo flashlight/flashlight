@@ -122,10 +122,8 @@ DECLARE_string(critoptim);
 
 /* ========== MFCC OPTIONS ========== */
 
-DECLARE_bool(mfcc);
-DECLARE_bool(pow);
+DECLARE_string(features_type);
 DECLARE_int64(mfcccoeffs);
-DECLARE_bool(mfsc);
 DECLARE_double(melfloor);
 DECLARE_int64(filterbanks);
 DECLARE_int64(devwin);
