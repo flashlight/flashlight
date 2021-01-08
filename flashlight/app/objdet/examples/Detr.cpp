@@ -104,6 +104,7 @@ DEFINE_bool(pretrained, true, "Directory to dump images to run evaluation script
 DEFINE_string(pytorch_init, "", "Directory to dump images to run evaluation script on");
 DEFINE_string(flagsfile, "", "Directory to dump images to run evaluation script on");
 DEFINE_string(rundir, "", "Directory to dump images to run evaluation script on");
+DEFINE_string(eval_script,"/private/home/padentomasello/code/flashlight/flashlight/app/objdet/scripts/eval_coco.py", "Script to run evaluation on dumped tensors");
 
 void parseCmdLineFlagsWrapper(int argc, char** argv) {
   LOG(INFO) << "Parsing command line flags";
@@ -414,11 +415,20 @@ int main(int argc, char** argv) {
     }
     std::stringstream ss;
     ss << "PYTHONPATH=/private/home/padentomasello/code/detection-transformer/ "
-      //<< "LD_LIBRARY_PATH=/private/home/padentomasello/usr/lib/:$LD_LIBRARY_PATH "
+      << "LD_LIBRARY_PATH=/private/home/padentomasello/usr/lib/:$LD_LIBRARY_PATH "
       << "/private/home/padentomasello/.conda/envs/coco/bin/python3.8 "
-      << "/private/home/padentomasello/code/flashlight/flashlight/app/objdet/scripts/eval_coco.py --dir "
+      << FLAGS_eval_script << " --dir "
       << FLAGS_eval_dir;
-    system(ss.str().c_str());
+    int numAttempts = 10;
+    for(int i = 0; i < numAttempts; i++) {
+      int rv = system(ss.str().c_str());
+      if (rv == 0) {
+        break;
+      }
+      std::cout << "Eval failed, retrying in 5 seconds" << std::endl;
+      sleep(5);
+    }
+    //system(ss.str().c_str());
     std::stringstream ss2;
     ss2 << "rm -rf " << FLAGS_eval_dir << "/detection*";
     system(ss2.str().c_str());
