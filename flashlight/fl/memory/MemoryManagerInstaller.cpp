@@ -17,9 +17,6 @@
 namespace fl {
 
 // Statics from MemoryManagerInstaller
-std::once_flag MemoryManagerInstaller::startupMemoryInitialize_;
-std::shared_ptr<MemoryManagerInstaller>
-    MemoryManagerInstaller::startupMemoryManagerInstaller_;
 std::shared_ptr<MemoryManagerAdapter>
     MemoryManagerInstaller::currentlyInstalledMemoryManager_;
 
@@ -222,15 +219,11 @@ MemoryManagerInstaller::currentlyInstalledMemoryManager() {
 }
 
 void MemoryManagerInstaller::installDefaultMemoryManager() {
-  std::call_once(startupMemoryInitialize_, []() {
-    auto deviceInterface = std::make_shared<MemoryManagerDeviceInterface>();
-    auto adapter = std::make_shared<CachingMemoryManager>(
-        af::getDeviceCount(), deviceInterface);
-    MemoryManagerInstaller::startupMemoryManagerInstaller_ =
-        std::make_shared<MemoryManagerInstaller>(adapter);
-    MemoryManagerInstaller::startupMemoryManagerInstaller_
-        ->setAsMemoryManager();
-  });
+  auto deviceInterface = std::make_shared<MemoryManagerDeviceInterface>();
+  auto adapter = std::make_shared<CachingMemoryManager>(
+      af::getDeviceCount(), deviceInterface);
+  auto installer = MemoryManagerInstaller(adapter);
+  installer.setAsMemoryManager();
 }
 
 void MemoryManagerInstaller::unsetMemoryManager() {
