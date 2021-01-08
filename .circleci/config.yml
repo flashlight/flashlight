@@ -8,7 +8,7 @@ version: 2.1
 
 gpu: &gpu
   machine:
-    image: ubuntu-2004-cuda-11.1:202010-01
+  image: ubuntu-1604-cuda-11.1:202012-01
   resource_class: gpu.small
 
 commands:
