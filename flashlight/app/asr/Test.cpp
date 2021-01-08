@@ -20,6 +20,7 @@
 #include "flashlight/app/asr/common/Flags.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/data/FeatureTransforms.h"
+#include "flashlight/app/asr/data/Utils.h"
 #include "flashlight/app/asr/decoder/Defines.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
@@ -138,8 +139,8 @@ int main(int argc, char** argv) {
     LOG(INFO) << "Number of words: " << wordDict.indexSize();
   }
 
-  fl::lib::text::DictionaryMap dicts = {
-      {kTargetIdx, tokenDict}, {kWordIdx, wordDict}};
+  fl::lib::text::DictionaryMap dicts = {{kTargetIdx, tokenDict},
+                                        {kWordIdx, wordDict}};
 
   /* ===================== Create Dataset ===================== */
   fl::lib::audio::FeatureParams featParams(
@@ -156,14 +157,9 @@ int main(int argc, char** argv) {
   featParams.useEnergy = false;
   featParams.usePower = false;
   featParams.zeroMeanFrame = false;
-  FeatureType featType = FeatureType::NONE;
-  if (FLAGS_pow) {
-    featType = FeatureType::POW_SPECTRUM;
-  } else if (FLAGS_mfsc) {
-    featType = FeatureType::MFSC;
-  } else if (FLAGS_mfcc) {
-    featType = FeatureType::MFCC;
-  }
+  FeatureType featType =
+      getFeaturesType(FLAGS_features_type, FLAGS_channels, featParams).second;
+
   TargetGenerationConfig targetGenConfig(
       FLAGS_wordseparator,
       FLAGS_sampletarget,
@@ -291,9 +287,8 @@ int main(int argc, char** argv) {
       fl::Variable rawEmission;
       if (usePlugin) {
         rawEmission = localNetwork
-                          ->forward(
-                              {fl::input(sample[kInputIdx]),
-                               fl::noGrad(sample[kDurationIdx])})
+                          ->forward({fl::input(sample[kInputIdx]),
+                                     fl::noGrad(sample[kDurationIdx])})
                           .front();
       } else {
         rawEmission = fl::ext::forwardSequentialModuleWithPadMask(
