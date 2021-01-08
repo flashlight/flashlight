@@ -29,7 +29,7 @@ $BUILD_DIR/flashlight/build/Detr train -lr 0.0001 --epochs 500 --batch_size 2 \
 --tryfromenv=eval_iters,data_dir,metric_iters,pretrained,print_params  \
 --pytorch_init /checkpoint/padentomasello/models/detr/pytorch_initializaition_dropout \
 --eval_script $BUILD_DIR/flashlight/flashlight/app/objdet/script/eval_coco.py \
---rundir $RUN_DIR
+--rundir $RUN_DIR \
 2>&1 # Ugh why does FL log send to std::err? 
 
 
