@@ -464,8 +464,13 @@ int main(int argc, char** argv) {
   //SGDOptimizer opt(detr.params(), FLAGS_lr, FLAGS_momentum, FLAGS_wd);
   //
 
-  auto opt = std::make_shared<AdamOptimizer>(detr->paramsWithoutBackbone(), FLAGS_lr, FLAGS_wd);
-  auto opt2 = std::make_shared<AdamOptimizer>(detr->backboneParams(), FLAGS_lr * 0.1, FLAGS_wd);
+  const float beta1 = 0.9;
+  const float beta2 = 0.999;
+  const float epsilon = 1e-8;
+  auto opt = std::make_shared<AdamOptimizer>(
+      detr->paramsWithoutBackbone(), FLAGS_lr, beta1, beta2, epsilon, FLAGS_wd);
+  auto opt2 = std::make_shared<AdamOptimizer>(
+      detr->backboneParams(), FLAGS_lr * 0.1, beta1, beta2, epsilon, FLAGS_wd);
   auto lrScheduler = [&opt, &opt2](int epoch) {
     // Adjust learning rate every 30 epoch after 30
     if (epoch == 100) {

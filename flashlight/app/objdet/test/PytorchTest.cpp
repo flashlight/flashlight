@@ -12,6 +12,7 @@
 #include "flashlight/app/objdet/nn/Detr.h"
 #include "flashlight/fl/autograd/autograd.h"
 #include "flashlight/fl/common/Defines.h"
+#include "flashlight/fl/optim/optim.h"
 
 #include <gtest/gtest.h>
 
@@ -540,6 +541,152 @@ TEST(Pytorch, detr) {
     //ASSERT_TRUE(allClose(result.second.array(), af::readArray(lossFilename.c_str(), result.first.c_str())));
   }
   results["loss_giou_0"].backward();
+
+}
+
+TEST(Pytorch, detr_grad_update) {
+
+
+  std::string filename = "/private/home/padentomasello/scratch/pytorch_testing/detr_grad_update.array";
+  af::array image = af::readArray(filename.c_str(), "image");
+  //af::array queries = af::readArray(filename.c_str(), "queries");
+  af::array mask = af::readArray(filename.c_str(), "mask");
+  mask = af::moddims(mask, { mask.dims(0), mask.dims(1), 1, mask.dims(2)});
+  mask = 1 - mask;
+
+  const int embeddingDim = 256;
+  const int numHead = 8;
+
+  const int numLayers = 6;
+
+  auto transformer = std::make_shared<Transformer>(embeddingDim, numHead, numLayers, numLayers, 2048, 0.0f);
+  auto backbone = std::make_shared<fl::ext::image::Resnet50Backbone>();
+
+  auto model = std::make_shared<Detr>(transformer, backbone, 256, 91, 100, true);
+  std::vector<fl::Variable> inputs = { 
+    fl::Variable(image, true), 
+    fl::Variable(mask, true), // mask
+  };
+
+  int paramSize = model->params().size();
+  for(int i = 0; i < paramSize; i++) {
+    auto array = af::readArray(filename.c_str(), i + 4);
+    if(i == 264) {
+      array = af::moddims(array, { 1, 1, 256, 1});
+    }
+    ASSERT_TRUE(model->param(i).dims() == array.dims());
+    model->setParams(param(array), i);
+  }
+
+  std::vector<std::shared_ptr<fl::Module>> bns;
+  getBns(backbone, bns);
+
+  int i = 0;
+  for(auto bn : bns) {
+    auto bn_ptr = dynamic_cast<fl::FrozenBatchNorm*>(bn.get());
+    bn_ptr->setRunningMean(af::readArray((filename + "running").c_str(), i));
+    i++;
+    bn_ptr->setRunningVar(af::readArray((filename + "running").c_str(), i));
+    i++;
+  }
+  float lr = 0.0001;
+  float wd = 0.0000;
+  float max_norm = 0.0;
+  const float beta1 = 0.9;
+  const float beta2 = 0.999;
+  const float epsilon = 1e-8;
+  auto opt = std::make_shared<fl::AdamOptimizer>(
+      model->paramsWithoutBackbone(), lr, beta1, beta2,  epsilon, wd);
+  //auto opt = std::make_shared<fl::SGDOptimizer>(
+      //model->params(), lr, 0.9, wd);
+  auto opt2 = std::make_shared<fl::AdamOptimizer>(model->backboneParams(), lr * 0.1, beta1, beta2, epsilon, wd);
+  model->train();
+  opt->zeroGrad();
+  opt2->zeroGrad();
+
+  auto outputs = model->forward(inputs);
+  af::array expPredLogits = af::readArray(filename.c_str(), "pred_logits");
+  af::array expPredBoxes = af::readArray(filename.c_str(), "pred_boxes");
+  auto predLogits = outputs[0];
+  auto predBoxes = outputs[1];
+  ASSERT_TRUE(allClose(predLogits.array()(af::span, af::span, af::span, predLogits.dims(3) - 1), expPredLogits));
+  ASSERT_TRUE(allClose(predBoxes.array()(af::span, af::span, af::span, predBoxes.dims(3) - 1), expPredBoxes));
+  auto matcher = HungarianMatcher(1.0f, 5.0f, 2.0f);
+
+  std::unordered_map<std::string, float> lossWeightsBase = 
+        { { "loss_ce" , 1.f} ,
+        { "loss_giou", 2.f },
+        { "loss_bbox", 5.f }
+  };
+  std::unordered_map<std::string, float> lossWeights;
+  for(int i = 0; i < 6; i++) {
+    for(auto l : lossWeightsBase) {
+      std::string key = l.first + "_" + std::to_string(i);
+      lossWeights[key] = l.second;
+    }
+  }
+  SetCriterion::LossDict losses;
+
+  auto criterion = SetCriterion(
+      91,
+      matcher,
+      lossWeights,
+      0.1f,
+      losses);
+  std::vector<fl::Variable> targetClasses = { {af::readArray(filename.c_str(), "target_labels"), false}};
+  std::vector<fl::Variable> targetBoxes = { { af::readArray(filename.c_str(), "target_boxes"), false }};
+  auto loss = criterion.forward(predBoxes, predLogits, targetBoxes, targetClasses);
+  for(auto result : loss) {
+    std::cout << "Checking: " << result.first << std::endl;
+    //af_print(result.second.array());
+    //ASSERT_TRUE(allClose(result.second.array(), af::readArray(lossFilename.c_str(), result.first.c_str())));
+  }
+  auto accumLoss = fl::Variable(af::constant(0, 1), true);
+  auto weightDict = criterion.getWeightDict();
+  for(auto losses : loss) {
+    fl::Variable scaled_loss = weightDict[losses.first] * losses.second;
+    accumLoss = scaled_loss + accumLoss;
+  }
+
+
+
+  opt->zeroGrad();
+  opt2->zeroGrad();
+  accumLoss.backward();
+  //af_print(accumLoss.array());
+  //if (max_norm > 0) {
+    //fl::clipGradNorm(model->params(), max_norm);
+  //}
+  //af_print(inputs[0].grad().array());
+  ASSERT_TRUE(allClose(inputs[0].grad().array(), af::readArray(filename.c_str(), "image_grad")));
+
+  //opt->zeroGrad();
+  //opt2->zeroGrad();
+  //accumLoss.backward();
+
+  opt->step();
+  opt2->step();
+
+  //int paramSize = model->params().size();
+  std::string filename_postupdate = "/private/home/padentomasello/scratch/pytorch_testing/detr_grad_post_update.array";
+  af_print(model->param(0).array());
+  std::cout << "here" << std::endl;
+  af_print(model->param(0).grad().array());
+  for(int i = 0; i < paramSize; i++) {
+    auto array = af::readArray(filename_postupdate.c_str(), i);
+    //af_print(array);
+    if(i == 264) {
+      array = af::moddims(array, { 1, 1, 256, 1});
+    }
+    //af_print(model->param(i).array());
+    //std::cout << " i " << i << std::endl;
+    //std::cout << " Array " << array.dims() << std::endl;
+    //std::cout << " Model " << model->param(i).dims() << std::endl;
+    ASSERT_TRUE(allClose(model->param(i).array(),array));
+  }
+
+
+  //results["loss_giou_0"].backward();
 
 }
 
