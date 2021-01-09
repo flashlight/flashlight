@@ -128,34 +128,40 @@ Variable RawWavSpecAugment::forward(const Variable& input) {
     throw std::invalid_argument("invalid RawWavSpecAugment, filters are empty");
   }
 
-  auto output = Variable(input.array(), false);
+  OptimLevel optimLevel = OptimMode::get().getOptimLevel();
+  fl::Variable inputCast;
+  if (optimLevel != OptimLevel::DEFAULT) {
+    inputCast = input.as(af::dtype::f16);
+  } else {
+    inputCast = input;
+  }
+  auto output = Variable(inputCast.array(), false);
   if (!train_) {
     return output;
   }
 
   // input is expected T x C x B (mostly C=1)
-  af::dim4 timeView =
-      af::dim4(input.dims(0), input.dims(1) * input.dims(2) * input.dims(3));
+  af::dim4 timeView = af::dim4(
+      inputCast.dims(0),
+      inputCast.dims(1) * inputCast.dims(2) * inputCast.dims(3));
   for (int i = 0; i < numFreqMask_; ++i) {
     auto low = generateRandomInt(ignoredLowPassFilters_, rawWavNMels_);
     auto high =
         generateRandomInt(low, std::min(rawWavNMels_, low + freqMaskF_) + 1);
     if (high > low) {
       auto inputForFilter = fl::moddims(output, timeView);
-      auto midLowWav =
-          lowPassFilters_[high]->forward(inputForFilter).as(input.type());
-      auto lowWav =
-          lowPassFilters_[low]->forward(inputForFilter).as(input.type());
-      output = output - fl::moddims(midLowWav - lowWav, input.dims());
+      auto midLowWav = lowPassFilters_[high]->forward(inputForFilter);
+      auto lowWav = lowPassFilters_[low]->forward(inputForFilter);
+      output = output - fl::moddims(midLowWav - lowWav, inputCast.dims());
     }
   }
 
   double replaceVal = (maskStrategy_ == MaskingStrategy::GLOBAL_MEAN)
-      ? af::mean<double>(input.array())
+      ? af::mean<double>(inputCast.array())
       : 0.0;
 
   auto& opArr = output.array();
-  auto numTimeSteps = input.dims(0); // number of time steps
+  auto numTimeSteps = inputCast.dims(0); // number of time steps
   // an upper bound on the time mask
   int T = std::min(timeMaskT_, static_cast<int>(numTimeSteps * timeMaskP_));
   if (T > 0) {
@@ -164,6 +170,9 @@ Variable RawWavSpecAugment::forward(const Variable& input) {
       auto t0 = generateRandomInt(0, numTimeSteps - t);
       opArr(af::seq(t0, t0 + t), af::span, af::span, af::span) = replaceVal;
     }
+  }
+  if (optimLevel != OptimLevel::DEFAULT) {
+    output = output.as(af::dtype::f32);
   }
   return output;
 }
