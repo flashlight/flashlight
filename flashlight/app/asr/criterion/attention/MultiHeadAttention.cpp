@@ -6,6 +6,7 @@
  */
 
 #include "flashlight/app/asr/criterion/attention/MultiHeadAttention.h"
+#include "flashlight/app/asr/criterion/attention/Utils.h"
 
 #include <cmath>
 
@@ -31,11 +32,12 @@ MultiHeadContentAttention::MultiHeadContentAttention(
   add(Linear(dim, dim));
 }
 
-std::pair<Variable, Variable> MultiHeadContentAttention::forward(
+std::pair<Variable, Variable> MultiHeadContentAttention::forwardBase(
     const Variable& state,
     const Variable& xEncoded,
     const Variable& /* unused */,
-    const Variable& attnWeight) {
+    const Variable& logAttnWeight,
+    const Variable& xEncodedSizes) {
   int hEncode = xEncoded.dims(0);
   int T = xEncoded.dims(1);
   int hState = state.dims(0);
@@ -64,15 +66,26 @@ std::pair<Variable, Variable> MultiHeadContentAttention::forward(
   auto innerProd =
       matmulNT(query, key) / std::sqrt(static_cast<float>(hiddenDim));
 
-  if (!attnWeight.isempty()) {
-    innerProd = innerProd + tile(log(attnWeight), {1, 1, numHeads_});
+  if (!logAttnWeight.isempty()) {
+    auto tiledLogAttnWeight = tile(logAttnWeight, {1, 1, numHeads_});
+    if (tiledLogAttnWeight.dims() != innerProd.dims()) {
+      throw std::invalid_argument(
+          "MultiHeadContentAttention: logAttnWeight has wong dimentions");
+    }
+    innerProd = innerProd + tiledLogAttnWeight;
+  }
+
+  if (!xEncodedSizes.isempty()) {
+    innerProd = maskAttention(
+        innerProd,
+        moddims(
+            tile(xEncodedSizes, {numHeads_, 1}), af::dim4(1, B * numHeads_)));
   }
 
   // [U, T, B * numHeads_]
   auto attention = softmax(innerProd, 1);
   // [U, hiddendim, B * numHeads_]
   auto summaries = matmul(attention, value);
-
   // [hiddendim * numHeads_, U, B];
   summaries = reorder(moddims(summaries, {U, hState, B}), 1, 0, 2);
 
