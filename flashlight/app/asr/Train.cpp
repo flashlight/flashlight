@@ -239,8 +239,11 @@ int main(int argc, char** argv) {
   if (FLAGS_criterion == kCtcCriterion) {
     tokenDict.addEntry(kBlankToken);
   }
-  if (FLAGS_eostoken) {
+  bool isSeq2seqCrit = FLAGS_criterion == kSeq2SeqTransformerCriterion ||
+      FLAGS_criterion == kSeq2SeqRNNCriterion;
+  if (isSeq2seqCrit) {
     tokenDict.addEntry(fl::app::asr::kEosToken);
+    tokenDict.addEntry(fl::lib::text::kPadToken);
   }
 
   int numClasses = tokenDict.indexSize();
@@ -279,7 +282,7 @@ int main(int argc, char** argv) {
       FLAGS_sampletarget,
       FLAGS_criterion,
       FLAGS_surround,
-      FLAGS_eostoken,
+      isSeq2seqCrit,
       FLAGS_replabel,
       true /* skip unk */,
       FLAGS_usewordpiece /* fallback2LetterWordSepLeft */,
@@ -296,8 +299,8 @@ int main(int argc, char** argv) {
       sfxConf);
   auto targetTransform = targetFeatures(tokenDict, lexicon, targetGenConfig);
   auto wordTransform = wordFeatures(wordDict);
-  int targetpadVal = FLAGS_eostoken
-      ? tokenDict.getIndex(fl::app::asr::kEosToken)
+  int targetpadVal = isSeq2seqCrit
+      ? tokenDict.getIndex(fl::lib::text::kPadToken)
       : kTargetPadValue;
   int wordpadVal = kTargetPadValue;
   auto padVal = std::make_tuple(0, targetpadVal, wordpadVal);
@@ -363,17 +366,43 @@ int main(int argc, char** argv) {
     } else if (FLAGS_criterion == kAsgCriterion) {
       criterion =
           std::make_shared<ASGLoss>(numClasses, scalemode, FLAGS_transdiag);
-    } else if (FLAGS_criterion == kSeq2SeqCriterion) {
-      criterion = std::make_shared<Seq2SeqCriterion>(buildSeq2Seq(
-          numClasses, tokenDict.getIndex(fl::app::asr::kEosToken)));
-    } else if (FLAGS_criterion == kTransformerCriterion) {
-      criterion =
-          std::make_shared<TransformerCriterion>(buildTransformerCriterion(
-              numClasses,
-              FLAGS_am_decoder_tr_layers,
-              FLAGS_am_decoder_tr_dropout,
-              FLAGS_am_decoder_tr_layerdrop,
-              tokenDict.getIndex(fl::app::asr::kEosToken)));
+    } else if (FLAGS_criterion == kSeq2SeqRNNCriterion) {
+      std::vector<std::shared_ptr<AttentionBase>> attentions;
+      for (int i = 0; i < FLAGS_decoderattnround; i++) {
+        attentions.push_back(createAttention());
+      }
+      criterion = std::make_shared<Seq2SeqCriterion>(
+          numClasses,
+          FLAGS_encoderdim,
+          tokenDict.getIndex(fl::app::asr::kEosToken),
+          tokenDict.getIndex(fl::lib::text::kPadToken),
+          FLAGS_maxdecoderoutputlen,
+          attentions,
+          createAttentionWindow(),
+          FLAGS_trainWithWindow,
+          FLAGS_pctteacherforcing,
+          FLAGS_labelsmooth,
+          FLAGS_inputfeeding,
+          FLAGS_samplingstrategy,
+          FLAGS_gumbeltemperature,
+          FLAGS_decoderrnnlayer,
+          FLAGS_decoderattnround,
+          FLAGS_decoderdropout);
+    } else if (FLAGS_criterion == kSeq2SeqTransformerCriterion) {
+      criterion = std::make_shared<TransformerCriterion>(
+          numClasses,
+          FLAGS_encoderdim,
+          tokenDict.getIndex(fl::app::asr::kEosToken),
+          tokenDict.getIndex(fl::lib::text::kPadToken),
+          FLAGS_maxdecoderoutputlen,
+          FLAGS_am_decoder_tr_layers,
+          createAttention(),
+          createAttentionWindow(),
+          FLAGS_trainWithWindow,
+          FLAGS_labelsmooth,
+          FLAGS_pctteacherforcing,
+          FLAGS_am_decoder_tr_dropout,
+          FLAGS_am_decoder_tr_layerdrop);
     } else {
       LOG(FATAL) << "unimplemented criterion";
     }
@@ -503,9 +532,10 @@ int main(int argc, char** argv) {
 
   /* ===================== PL Generator ===================== */
   TokenToWordFunc tokenToWord =
-      [](const std::vector<int>& tokens,
-         const fl::lib::text::Dictionary& dict,
-         bool isPrediction) -> std::vector<std::string> {
+      [&isSeq2seqCrit](
+          const std::vector<int>& tokens,
+          const fl::lib::text::Dictionary& dict,
+          bool isPrediction) -> std::vector<std::string> {
     std::vector<std::string> letters;
     if (isPrediction) {
       letters = tknPrediction2Ltr(
@@ -513,7 +543,7 @@ int main(int argc, char** argv) {
           dict,
           FLAGS_criterion,
           FLAGS_surround,
-          FLAGS_eostoken,
+          isSeq2seqCrit,
           FLAGS_replabel,
           FLAGS_usewordpiece,
           FLAGS_wordseparator);
@@ -523,7 +553,7 @@ int main(int argc, char** argv) {
           dict,
           FLAGS_criterion,
           FLAGS_surround,
-          FLAGS_eostoken,
+          isSeq2seqCrit,
           FLAGS_replabel,
           FLAGS_usewordpiece,
           FLAGS_wordseparator);
@@ -670,15 +700,16 @@ int main(int argc, char** argv) {
     }
   };
 
-  auto evalOutput = [&tokenDict, &criterion](
+  auto evalOutput = [&tokenDict, &criterion, &isSeq2seqCrit](
                         const af::array& op,
                         const af::array& target,
+                        const af::array& inputSizes,
                         DatasetMeters& mtr) {
     auto batchsz = op.dims(2);
     for (int b = 0; b < batchsz; ++b) {
       auto tgt = target(af::span, b);
-      auto viterbipath =
-          afToVector<int>(criterion->viterbiPath(op(af::span, af::span, b)));
+      auto viterbipath = afToVector<int>(
+          criterion->viterbiPath(op(af::span, af::span, b), inputSizes.col(b)));
       auto tgtraw = afToVector<int>(tgt);
 
       // Remove `-1`s appended to the target for batching (if any)
@@ -692,7 +723,7 @@ int main(int argc, char** argv) {
           tokenDict,
           FLAGS_criterion,
           FLAGS_surround,
-          FLAGS_eostoken,
+          isSeq2seqCrit,
           FLAGS_replabel,
           FLAGS_usewordpiece,
           FLAGS_wordseparator);
@@ -701,7 +732,7 @@ int main(int argc, char** argv) {
           tokenDict,
           FLAGS_criterion,
           FLAGS_surround,
-          FLAGS_eostoken,
+          isSeq2seqCrit,
           FLAGS_replabel,
           FLAGS_usewordpiece,
           FLAGS_wordseparator);
@@ -714,7 +745,7 @@ int main(int argc, char** argv) {
     }
   };
 
-  auto test = [&evalOutput, &dm, &lexicon, &usePlugin](
+  auto test = [&evalOutput, &dm, &lexicon, &usePlugin, &isSeq2seqCrit](
                   std::shared_ptr<fl::Module> ntwrk,
                   std::shared_ptr<SequenceCriterion> crit,
                   std::shared_ptr<fl::Dataset> validds,
@@ -807,11 +838,15 @@ int main(int argc, char** argv) {
         output = fl::ext::forwardSequentialModuleWithPadMask(
             fl::input(batch[kInputIdx]), ntwrk, batch[kDurationIdx]);
       }
-      auto loss =
-          crit->forward({output, fl::Variable(batch[kTargetIdx], false)})
-              .front();
+      std::vector<fl::Variable> critArgs = {
+          output, fl::Variable(batch[kTargetIdx], false)};
+      if (isSeq2seqCrit) {
+        critArgs.push_back(fl::Variable(batch[kDurationIdx], false));
+        critArgs.push_back(fl::Variable(batch[kTargetSizeIdx], false));
+      }
+      auto loss = crit->forward(critArgs).front();
       mtrs.loss.add(loss.array());
-      evalOutput(output.array(), batch[kTargetIdx], mtrs);
+      evalOutput(output.array(), batch[kTargetIdx], batch[kDurationIdx], mtrs);
     }
   };
 
@@ -844,6 +879,7 @@ int main(int argc, char** argv) {
                 &startUpdate,
                 &plGenerator,
                 &usePlugin,
+                &isSeq2seqCrit,
                 reducer](
                    std::shared_ptr<fl::Module> ntwrk,
                    std::shared_ptr<SequenceCriterion> crit,
@@ -1023,8 +1059,13 @@ int main(int argc, char** argv) {
           }
           af::sync();
           meters.critfwdtimer.resume();
-          auto loss =
-              crit->forward({output, fl::noGrad(batch[kTargetIdx])}).front();
+          std::vector<fl::Variable> critArgs = {
+              output, fl::Variable(batch[kTargetIdx], false)};
+          if (isSeq2seqCrit) {
+            critArgs.push_back(fl::Variable(batch[kDurationIdx], false));
+            critArgs.push_back(fl::Variable(batch[kTargetSizeIdx], false));
+          }
+          auto loss = crit->forward(critArgs).front();
           af::sync();
           meters.fwdtimer.stopAndIncUnit();
           meters.critfwdtimer.stopAndIncUnit();
@@ -1052,7 +1093,11 @@ int main(int argc, char** argv) {
 
           if (hasher(join(",", readSampleIds(batch[kSampleIdx]))) % 100 <=
               FLAGS_pcttraineval) {
-            evalOutput(output.array(), batch[kTargetIdx], meters.train);
+            evalOutput(
+                output.array(),
+                batch[kTargetIdx],
+                batch[kDurationIdx],
+                meters.train);
           }
 
           // backward

@@ -124,8 +124,12 @@ int main(int argc, char** argv) {
   if (FLAGS_criterion == kCtcCriterion) {
     tokenDict.addEntry(kBlankToken);
   }
-  if (FLAGS_eostoken) {
+
+  bool isSeq2seqCrit = FLAGS_criterion == kSeq2SeqTransformerCriterion ||
+      FLAGS_criterion == kSeq2SeqRNNCriterion;
+  if (isSeq2seqCrit) {
     tokenDict.addEntry(fl::app::asr::kEosToken);
+    tokenDict.addEntry(fl::lib::text::kPadToken);
   }
 
   int numClasses = tokenDict.indexSize();
@@ -165,7 +169,7 @@ int main(int argc, char** argv) {
       FLAGS_sampletarget,
       FLAGS_criterion,
       FLAGS_surround,
-      FLAGS_eostoken,
+      isSeq2seqCrit,
       FLAGS_replabel,
       true /* skip unk */,
       FLAGS_usewordpiece /* fallback2LetterWordSepLeft */,
@@ -178,9 +182,8 @@ int main(int argc, char** argv) {
       /*sfxConf=*/{});
   auto targetTransform = targetFeatures(tokenDict, lexicon, targetGenConfig);
   auto wordTransform = wordFeatures(wordDict);
-  int targetpadVal = FLAGS_eostoken
-      ? tokenDict.getIndex(fl::app::asr::kEosToken)
-      : kTargetPadValue;
+  int targetpadVal =
+      isSeq2seqCrit ? tokenDict.getIndex(fl::lib::text::kPadToken) : kTargetPadValue;
   int wordpadVal = wordDict.getIndex(fl::lib::text::kUnkToken);
 
   std::vector<std::string> testSplits = fl::lib::split(",", FLAGS_test, true);
@@ -257,7 +260,8 @@ int main(int argc, char** argv) {
               &sliceNumWords,
               &sliceNumTokens,
               &sliceNumSamples,
-              &sliceTime](int tid) {
+              &sliceTime,
+              &isSeq2seqCrit](int tid) {
     // Initialize AM
     af::setDevice(tid);
     std::shared_ptr<fl::Module> localNetwork = network;
@@ -304,7 +308,7 @@ int main(int argc, char** argv) {
           tokenDict,
           FLAGS_criterion,
           FLAGS_surround,
-          FLAGS_eostoken,
+          isSeq2seqCrit,
           FLAGS_replabel,
           FLAGS_usewordpiece,
           FLAGS_wordseparator);
@@ -323,7 +327,7 @@ int main(int argc, char** argv) {
           tokenDict,
           FLAGS_criterion,
           FLAGS_surround,
-          FLAGS_eostoken,
+          isSeq2seqCrit,
           FLAGS_replabel,
           FLAGS_usewordpiece,
           FLAGS_wordseparator);

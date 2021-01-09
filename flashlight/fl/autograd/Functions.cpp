@@ -1197,12 +1197,6 @@ fl::Variable multiheadAttention(
   int32_t modelDim = query.dims(1);
   int32_t headDim = modelDim / nHeads;
 
-  if (query.dims() != key.dims() ||
-      value.dims() != key.dims() ||
-      query.dims() != value.dims()) {
-      throw std::invalid_argument("multiheadAttention: invalid key, value, query dims");
-    }
-
   auto q = moddims(query, af::dim4(-1, headDim, nHeads * bsz));
   auto k = moddims(key, af::dim4(-1, headDim, nHeads * bsz));
   auto v = moddims(value, af::dim4(-1, headDim, nHeads * bsz));
@@ -1220,15 +1214,15 @@ fl::Variable multiheadAttention(
   }
   if (!padMask.isempty()) {
     if (padMask.dims(0) != query.dims(0)) {
-      throw std::invalid_argument("multiheadAttention: invalid padding mask size");
+      throw std::invalid_argument(
+          "multiheadAttention: invalid padding mask size");
     }
-    auto padMaskTile = moddims(
-      padMask, af::dim4(1, padMask.dims(0), 1, bsz));
+    auto padMaskTile = moddims(padMask, af::dim4(1, padMask.dims(0), 1, bsz));
     padMaskTile = tileAs(
-      padMaskTile, af::dim4(padMask.dims(0), padMask.dims(0), nHeads, bsz));
-    scores = scores + moddims(
-      padMaskTile.as(scores.type()),
-      af::dim4(padMask.dims(0), padMask.dims(0), nHeads * bsz));
+        padMaskTile, af::dim4(padMask.dims(0), padMask.dims(0), nHeads, bsz));
+    scores = scores +
+        moddims(padMaskTile.as(scores.type()),
+                af::dim4(padMask.dims(0), padMask.dims(0), nHeads * bsz));
   }
 
   auto attn = dropout(softmax(scores, 1), pDropout);

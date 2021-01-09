@@ -32,7 +32,8 @@ TEST(Seq2SeqTest, Seq2Seq) {
   Seq2SeqCriterion seq2seq(
       nclass,
       hiddendim,
-      nclass - 1 /* eos token index */,
+      nclass - 2 /* eos token index */,
+      nclass - 1 /* pad token index */,
       maxoutputlen,
       attentions,
       nullptr,
@@ -51,8 +52,8 @@ TEST(Seq2SeqTest, Seq2Seq) {
   target = target.as(s32);
 
   Variable output, attention;
-  std::tie(output, attention) =
-      seq2seq.vectorizedDecoder(noGrad(input), noGrad(target));
+  std::tie(output, attention) = seq2seq.vectorizedDecoder(
+      noGrad(input), noGrad(target), af::array(), af::array());
 
   ASSERT_EQ(output.dims(0), nclass);
   ASSERT_EQ(output.dims(1), outputsteps);
@@ -63,7 +64,9 @@ TEST(Seq2SeqTest, Seq2Seq) {
   ASSERT_EQ(attention.dims(1), inputsteps);
   ASSERT_EQ(attention.dims(2), batchsize);
 
-  auto losses = seq2seq({noGrad(input), noGrad(target)}).front();
+  auto losses =
+      seq2seq({fl::noGrad(input), fl::noGrad(target), fl::noGrad(af::array())})
+          .front();
   ASSERT_EQ(losses.dims(0), batchsize);
 
   // Backward runs.
@@ -71,23 +74,24 @@ TEST(Seq2SeqTest, Seq2Seq) {
 
   // Check that vecotrized decoder and sequential decoder give the same
   // results.
-  Variable out_seq, attention_seq;
-  std::tie(out_seq, attention_seq) =
-      seq2seq.decoder(noGrad(input), noGrad(target));
+  Variable outSeq, attentionSeq;
+  std::tie(outSeq, attentionSeq) =
+      seq2seq.decoder(noGrad(input), noGrad(target), af::array(), af::array());
 
-  ASSERT_TRUE(allClose(output, out_seq, 1e-6));
-  ASSERT_TRUE(allClose(attention, attention_seq, 1e-6));
+  ASSERT_TRUE(allClose(output, outSeq, 1e-6));
+  ASSERT_TRUE(allClose(attention, attentionSeq, 1e-6));
 
   // Check size 1 Target works
   target = target(0, af::span);
-  auto loss = seq2seq({noGrad(input), noGrad(target)}).front();
+  auto loss =
+      seq2seq({noGrad(input), noGrad(target), fl::noGrad(af::array())}).front();
 
   // Make sure eval mode is not storing variables.
   seq2seq.eval();
-  std::tie(out_seq, attention_seq) =
-      seq2seq.decoder(noGrad(input), noGrad(target));
-  ASSERT_FALSE(out_seq.isCalcGrad());
-  ASSERT_FALSE(attention_seq.isCalcGrad());
+  std::tie(outSeq, attentionSeq) =
+      seq2seq.decoder(noGrad(input), noGrad(target), af::array(), af::array());
+  ASSERT_FALSE(outSeq.isCalcGrad());
+  ASSERT_FALSE(attentionSeq.isCalcGrad());
 }
 
 TEST(Seq2SeqTest, Seq2SeqViterbi) {
@@ -101,6 +105,7 @@ TEST(Seq2SeqTest, Seq2SeqViterbi) {
       nclass,
       hiddendim,
       nclass - 1 /* eos token index */,
+      nclass - 2 /* pad token index */,
       maxoutputlen,
       {std::make_shared<ContentAttention>()});
 
@@ -121,7 +126,8 @@ TEST(Seq2SeqTest, Seq2SeqBeamSearchViterbi) {
   Seq2SeqCriterion seq2seq(
       nclass,
       hiddendim,
-      nclass - 1 /* eos token index */,
+      nclass - 2 /* eos token index */,
+      nclass - 1 /* pad token index */,
       maxoutputlen,
       {std::make_shared<ContentAttention>()});
 
@@ -129,7 +135,7 @@ TEST(Seq2SeqTest, Seq2SeqBeamSearchViterbi) {
   auto input = af::randn(hiddendim, inputsteps, 1, f32);
 
   auto viterbipath = seq2seq.viterbiPath(input);
-  auto beampath = seq2seq.beamPath(input, 1);
+  auto beampath = seq2seq.beamPath(input, af::array(), 1);
   ASSERT_EQ(beampath.size(), viterbipath.elements());
   for (int idx = 0; idx < beampath.size(); idx++) {
     ASSERT_EQ(beampath[idx], viterbipath(idx).scalar<int>());
@@ -145,7 +151,8 @@ TEST(Seq2SeqTest, Seq2SeqMedianWindow) {
   Seq2SeqCriterion seq2seq(
       nclass,
       hiddendim,
-      nclass - 1 /* eos token index */,
+      nclass - 2 /* eos token index */,
+      nclass - 1 /* pad token index */,
       maxoutputlen,
       {std::make_shared<ContentAttention>()},
       std::make_shared<MedianWindow>(10, 10));
@@ -154,7 +161,7 @@ TEST(Seq2SeqTest, Seq2SeqMedianWindow) {
   auto input = af::randn(hiddendim, inputsteps, 1, f32);
 
   auto viterbipath = seq2seq.viterbiPath(input);
-  auto beampath = seq2seq.beamPath(input, 1);
+  auto beampath = seq2seq.beamPath(input, af::array(), 1);
   ASSERT_EQ(beampath.size(), viterbipath.elements());
   for (int idx = 0; idx < beampath.size(); idx++) {
     ASSERT_EQ(beampath[idx], viterbipath(idx).scalar<int>());
@@ -170,7 +177,8 @@ TEST(Seq2SeqTest, Seq2SeqStepWindow) {
   Seq2SeqCriterion seq2seq(
       nclass,
       hiddendim,
-      nclass - 1 /* eos token index */,
+      nclass - 2 /* eos token index */,
+      nclass - 1 /* pad token index */,
       maxoutputlen,
       {std::make_shared<ContentAttention>()},
       std::make_shared<StepWindow>(1, 20, 2.2, 5.8));
@@ -179,7 +187,7 @@ TEST(Seq2SeqTest, Seq2SeqStepWindow) {
   auto input = af::randn(hiddendim, inputsteps, 1, f32);
 
   auto viterbipath = seq2seq.viterbiPath(input);
-  auto beampath = seq2seq.beamPath(input, 1);
+  auto beampath = seq2seq.beamPath(input, af::array(), 1);
   ASSERT_EQ(beampath.size(), viterbipath.elements());
   for (int idx = 0; idx < beampath.size(); idx++) {
     ASSERT_EQ(beampath[idx], viterbipath(idx).scalar<int>());
@@ -197,7 +205,8 @@ TEST(Seq2SeqTest, Seq2SeqStepWindowVectorized) {
   Seq2SeqCriterion seq2seq(
       nclass,
       hiddendim,
-      nclass - 1 /* eos token index */,
+      nclass - 2 /* eos token index */,
+      nclass - 1 /* pad token index */,
       maxoutputlen,
       {std::make_shared<ContentAttention>()},
       std::make_shared<StepWindow>(0, 5, 2.2, 5.8),
@@ -207,15 +216,15 @@ TEST(Seq2SeqTest, Seq2SeqStepWindowVectorized) {
   auto target = af::randu(outputsteps, batchsize, f32) * 0.99 * nclass;
   target = target.as(s32);
 
-  Variable output_v, attention_v, output_s, attention_s;
-  std::tie(output_v, attention_v) =
-      seq2seq.vectorizedDecoder(noGrad(input), noGrad(target));
+  Variable outputV, attentionV, outputS, attentionS;
+  std::tie(outputV, attentionV) = seq2seq.vectorizedDecoder(
+      noGrad(input), noGrad(target), af::array(), af::array());
 
-  std::tie(output_s, attention_s) =
-      seq2seq.decoder(noGrad(input), noGrad(target));
+  std::tie(outputS, attentionS) =
+      seq2seq.decoder(noGrad(input), noGrad(target), af::array(), af::array());
 
-  ASSERT_TRUE(allClose(output_v, output_s, 1e-6));
-  ASSERT_TRUE(allClose(attention_v, attention_s, 1e-6));
+  ASSERT_TRUE(allClose(outputV, outputS, 1e-6));
+  ASSERT_TRUE(allClose(attentionV, attentionS, 1e-6));
 }
 
 TEST(Seq2SeqTest, Seq2SeqAttn) {
@@ -223,6 +232,7 @@ TEST(Seq2SeqTest, Seq2SeqAttn) {
   Seq2SeqCriterion seq2seq(
       N,
       H,
+      N - 2,
       N - 1,
       maxoutputlen,
       {std::make_shared<ContentAttention>()},
@@ -233,7 +243,8 @@ TEST(Seq2SeqTest, Seq2SeqAttn) {
   auto target = noGrad((af::randu(U, B, f32) * 0.99 * N).as(s32));
 
   Variable output, attention;
-  std::tie(output, attention) = seq2seq.decoder(input, target);
+  std::tie(output, attention) =
+      seq2seq.decoder(input, target, af::array(), af::array());
   // check padding works
   ASSERT_EQ(attention.dims(), af::dim4({U, T, B}));
 }
@@ -243,6 +254,7 @@ TEST(Seq2SeqTest, Seq2SeqMixedAttn) {
   Seq2SeqCriterion seq2seq(
       N,
       H,
+      N - 2,
       N - 1,
       maxoutputlen,
       {std::make_shared<ContentAttention>(),
@@ -262,7 +274,8 @@ TEST(Seq2SeqTest, Seq2SeqMixedAttn) {
   auto target = noGrad((af::randu(U, B, f32) * 0.99 * N).as(s32));
 
   Variable output, attention;
-  std::tie(output, attention) = seq2seq.decoder(input, target);
+  std::tie(output, attention) =
+      seq2seq.decoder(input, target, af::array(), af::array());
   ASSERT_EQ(attention.dims(), af::dim4({U * nHead, T, B}));
 }
 
@@ -282,6 +295,7 @@ TEST(Seq2SeqTest, Serialization) {
   auto seq2seq = std::make_shared<Seq2SeqCriterion>(
       N,
       H,
+      N - 2,
       N - 1,
       maxoutputlen,
       attentions,
@@ -301,7 +315,8 @@ TEST(Seq2SeqTest, Serialization) {
   auto target = noGrad((af::randu(U, B, f32) * 0.99 * N).as(s32));
 
   Variable output, attention;
-  std::tie(output, attention) = seq2seq->decoder(input, target);
+  std::tie(output, attention) =
+      seq2seq->decoder(input, target, af::array(), af::array());
 
   save(path, seq2seq);
 
@@ -310,7 +325,8 @@ TEST(Seq2SeqTest, Serialization) {
   loaded->eval();
 
   Variable outputl, attentionl;
-  std::tie(outputl, attentionl) = loaded->decoder(input, target);
+  std::tie(outputl, attentionl) =
+      loaded->decoder(input, target, af::array(), af::array());
 
   ASSERT_TRUE(allParamsClose(*loaded, *seq2seq));
   ASSERT_TRUE(allClose(outputl, output));
@@ -325,39 +341,40 @@ TEST(Seq2SeqTest, BatchedDecoderStep) {
   std::vector<std::shared_ptr<AttentionBase>> neuralContentAttentions(
       nAttnRound, std::make_shared<NeuralContentAttention>(H));
 
-  std::vector<Seq2SeqCriterion> criterions{
-      Seq2SeqCriterion(
-          N,
-          H,
-          N - 1,
-          maxoutputlen,
-          contentAttentions,
-          nullptr,
-          false,
-          100,
-          0.0,
-          false,
-          kRandSampling,
-          1.0,
-          nRnnLayer,
-          nAttnRound,
-          0.0),
-      Seq2SeqCriterion(
-          N,
-          H,
-          N - 1,
-          maxoutputlen,
-          neuralContentAttentions,
-          nullptr,
-          false,
-          100,
-          0.0,
-          false,
-          kRandSampling,
-          1.0,
-          nRnnLayer,
-          nAttnRound,
-          0.0)};
+  std::vector<Seq2SeqCriterion> criterions{Seq2SeqCriterion(
+                                               N,
+                                               H,
+                                               N - 2,
+                                               N - 1,
+                                               maxoutputlen,
+                                               contentAttentions,
+                                               nullptr,
+                                               false,
+                                               100,
+                                               0.0,
+                                               false,
+                                               kRandSampling,
+                                               1.0,
+                                               nRnnLayer,
+                                               nAttnRound,
+                                               0.0),
+                                           Seq2SeqCriterion(
+                                               N,
+                                               H,
+                                               N - 2,
+                                               N - 1,
+                                               maxoutputlen,
+                                               neuralContentAttentions,
+                                               nullptr,
+                                               false,
+                                               100,
+                                               0.0,
+                                               false,
+                                               kRandSampling,
+                                               1.0,
+                                               nRnnLayer,
+                                               nAttnRound,
+                                               0.0)};
 
   for (auto& seq2seq : criterions) {
     seq2seq.eval();
@@ -383,7 +400,8 @@ TEST(Seq2SeqTest, BatchedDecoderStep) {
       // Single forward
       Seq2SeqState outstate(nAttnRound);
       Variable ox;
-      std::tie(ox, outstate) = seq2seq.decodeStep(input, y, inStates[i]);
+      std::tie(ox, outstate) =
+          seq2seq.decodeStep(input, y, inStates[i], af::array(), af::array(), input.dims(1));
       ox = logSoftmax(ox, 0);
       single_scores[i] = afToVector<float>(ox);
     }
@@ -413,6 +431,7 @@ TEST(Seq2SeqTest, Seq2SeqSampling) {
     Seq2SeqCriterion seq2seq(
         N,
         H,
+        N - 2,
         N - 1,
         maxoutputlen,
         {std::make_shared<ContentAttention>()},
@@ -425,7 +444,8 @@ TEST(Seq2SeqTest, Seq2SeqSampling) {
     seq2seq.train();
 
     Variable output, attention;
-    std::tie(output, attention) = seq2seq.decoder(input, target);
+    std::tie(output, attention) =
+        seq2seq.decoder(input, target, af::array(), af::array());
     ASSERT_EQ(attention.dims(), af::dim4({U, T, B}));
     ASSERT_EQ(output.dims(), af::dim4({N, U, B, 1}));
   }
@@ -433,6 +453,7 @@ TEST(Seq2SeqTest, Seq2SeqSampling) {
   Seq2SeqCriterion seq2seq1(
       N,
       H,
+      N - 2,
       N - 1,
       maxoutputlen,
       {std::make_shared<ContentAttention>()},
@@ -445,13 +466,15 @@ TEST(Seq2SeqTest, Seq2SeqSampling) {
   seq2seq1.train();
 
   Variable output, attention;
-  std::tie(output, attention) = seq2seq1.vectorizedDecoder(input, target);
+  std::tie(output, attention) =
+      seq2seq1.vectorizedDecoder(input, target, af::array(), af::array());
   ASSERT_EQ(attention.dims(), af::dim4({U, T, B}));
   ASSERT_EQ(output.dims(), af::dim4({N, U, B, 1}));
 
   Seq2SeqCriterion seq2seq2(
       N,
       H,
+      N - 2,
       N - 1,
       maxoutputlen,
       {std::make_shared<ContentAttention>()},
@@ -462,7 +485,9 @@ TEST(Seq2SeqTest, Seq2SeqSampling) {
       false,
       kModelSampling);
   seq2seq2.train();
-  ASSERT_THROW(seq2seq2.vectorizedDecoder(input, target), std::logic_error);
+  ASSERT_THROW(
+      seq2seq2.vectorizedDecoder(input, target, af::array(), af::array()),
+      std::logic_error);
 }
 
 int main(int argc, char** argv) {

@@ -188,7 +188,7 @@ int main(int argc, char** argv) {
       FLAGS_sampletarget,
       FLAGS_criterion,
       FLAGS_surround,
-      FLAGS_eostoken,
+      false /* isSeq2seqCrit */,
       FLAGS_replabel,
       true /* skip unk */,
       FLAGS_usewordpiece /* fallback2LetterWordSepLeft */,
@@ -205,9 +205,7 @@ int main(int argc, char** argv) {
       sfxConf);
   auto targetTransform = targetFeatures(tokenDict, lexicon, targetGenConfig);
   auto wordTransform = wordFeatures(wordDict);
-  int targetpadVal = FLAGS_eostoken
-      ? tokenDict.getIndex(fl::app::asr::kEosToken)
-      : kTargetPadValue;
+  int targetpadVal = kTargetPadValue;
   int wordpadVal = kTargetPadValue;
 
   std::vector<std::string> trainSplits = fl::lib::split(",", FLAGS_train, true);
@@ -389,7 +387,7 @@ int main(int argc, char** argv) {
           tokenDict,
           FLAGS_criterion,
           FLAGS_surround,
-          FLAGS_eostoken,
+          false, /* isSeq2seqCrit */
           FLAGS_replabel,
           FLAGS_usewordpiece,
           FLAGS_wordseparator);
@@ -398,7 +396,7 @@ int main(int argc, char** argv) {
           tokenDict,
           FLAGS_criterion,
           FLAGS_surround,
-          FLAGS_eostoken,
+          false, /* isSeq2seqCrit */
           FLAGS_replabel,
           FLAGS_usewordpiece,
           FLAGS_wordseparator);

@@ -149,8 +149,11 @@ int main(int argc, char** argv) {
   if (FLAGS_criterion == kCtcCriterion) {
     tokenDict.addEntry(kBlankToken);
   }
-  if (FLAGS_eostoken) {
+  bool isSeq2seqCrit = FLAGS_criterion == kSeq2SeqTransformerCriterion ||
+      FLAGS_criterion == kSeq2SeqRNNCriterion;
+  if (isSeq2seqCrit) {
     tokenDict.addEntry(fl::app::asr::kEosToken);
+    tokenDict.addEntry(fl::lib::text::kPadToken);
   }
 
   int numClasses = tokenDict.indexSize();
@@ -183,8 +186,8 @@ int main(int argc, char** argv) {
   if (FLAGS_criterion == kCtcCriterion) {
     criterionType = CriterionType::CTC;
   } else if (
-      FLAGS_criterion == kSeq2SeqCriterion ||
-      FLAGS_criterion == kTransformerCriterion) {
+      FLAGS_criterion == kSeq2SeqRNNCriterion ||
+      FLAGS_criterion == kSeq2SeqTransformerCriterion) {
     criterionType = CriterionType::S2S;
   } else if (FLAGS_criterion != kAsgCriterion) {
     LOG(FATAL) << "[Decoder] Invalid model type: " << FLAGS_criterion;
@@ -314,7 +317,7 @@ int main(int argc, char** argv) {
       FLAGS_sampletarget,
       FLAGS_criterion,
       FLAGS_surround,
-      FLAGS_eostoken,
+      isSeq2seqCrit,
       FLAGS_replabel,
       true /* skip unk */,
       FLAGS_usewordpiece /* fallback2LetterWordSepLeft */,
@@ -327,9 +330,8 @@ int main(int argc, char** argv) {
       /*sfxConf=*/{});
   auto targetTransform = targetFeatures(tokenDict, lexicon, targetGenConfig);
   auto wordTransform = wordFeatures(wordDict);
-  int targetpadVal = FLAGS_eostoken
-      ? tokenDict.getIndex(fl::app::asr::kEosToken)
-      : kTargetPadValue;
+  int targetpadVal =
+      isSeq2seqCrit ? tokenDict.getIndex(fl::lib::text::kPadToken) : kTargetPadValue;
   int wordpadVal = wordDict.getIndex(kUnkToken);
 
   std::vector<std::string> testSplits = fl::lib::split(",", FLAGS_test, true);
@@ -361,7 +363,8 @@ int main(int argc, char** argv) {
                        &ds,
                        &tokenDict,
                        &wordDict,
-                       &emissionQueue](int tid) {
+                       &emissionQueue,
+                       &isSeq2seqCrit](int tid) {
     // Initialize AM
     af::setDevice(tid);
     std::shared_ptr<fl::Module> localNetwork = network;
@@ -402,7 +405,7 @@ int main(int argc, char** argv) {
             tokenDict,
             FLAGS_criterion,
             FLAGS_surround,
-            FLAGS_eostoken,
+            isSeq2seqCrit,
             FLAGS_replabel,
             FLAGS_usewordpiece,
             FLAGS_wordseparator);
@@ -451,6 +454,7 @@ int main(int argc, char** argv) {
 
   /* ===================== Decode ===================== */
   auto runDecoder = [&criterion,
+                     &isSeq2seqCrit,
                      &lm,
                      &trie,
                      &silIdx,
@@ -520,9 +524,18 @@ int main(int argc, char** argv) {
     }
 
     if (criterionType == CriterionType::S2S) {
-      auto amUpdateFunc = FLAGS_criterion == kSeq2SeqCriterion
-          ? buildAmUpdateFunction(localCriterion)
-          : buildTransformerAmUpdateFunction(localCriterion);
+      auto amUpdateFunc = FLAGS_criterion == kSeq2SeqRNNCriterion
+          ? buildSeq2SeqRnnAmUpdateFunction(
+                localCriterion,
+                FLAGS_decoderattnround,
+                FLAGS_beamsize,
+                FLAGS_attentionthreshold,
+                FLAGS_smoothingtemperature)
+          : buildSeq2SeqTransformerAmUpdateFunction(
+                localCriterion,
+                FLAGS_beamsize,
+                FLAGS_attentionthreshold,
+                FLAGS_smoothingtemperature);
       int eosIdx = tokenDict.getIndex(fl::app::asr::kEosToken);
 
       if (FLAGS_decodertype == "wrd" || FLAGS_uselexicon) {
@@ -631,7 +644,7 @@ int main(int argc, char** argv) {
             tokenDict,
             FLAGS_criterion,
             FLAGS_surround,
-            FLAGS_eostoken,
+            isSeq2seqCrit,
             FLAGS_replabel,
             FLAGS_usewordpiece,
             FLAGS_wordseparator);
@@ -640,7 +653,7 @@ int main(int argc, char** argv) {
             tokenDict,
             FLAGS_criterion,
             FLAGS_surround,
-            FLAGS_eostoken,
+            isSeq2seqCrit,
             FLAGS_replabel,
             FLAGS_usewordpiece,
             FLAGS_wordseparator);
