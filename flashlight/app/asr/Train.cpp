@@ -22,6 +22,7 @@
 #include "flashlight/app/asr/common/Flags.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/data/FeatureTransforms.h"
+#include "flashlight/app/asr/data/Utils.h"
 #include "flashlight/app/asr/decoder/DecodeMaster.h"
 #include "flashlight/app/asr/decoder/PlGenerator.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
@@ -268,18 +269,11 @@ int main(int argc, char** argv) {
   featParams.useEnergy = false;
   featParams.usePower = false;
   featParams.zeroMeanFrame = false;
-  int numFeatures = FLAGS_channels;
-  FeatureType featType = FeatureType::NONE;
-  if (FLAGS_pow) {
-    featType = FeatureType::POW_SPECTRUM;
-    numFeatures = featParams.powSpecFeatSz();
-  } else if (FLAGS_mfsc) {
-    featType = FeatureType::MFSC;
-    numFeatures = featParams.mfscFeatSz();
-  } else if (FLAGS_mfcc) {
-    featType = FeatureType::MFCC;
-    numFeatures = featParams.mfccFeatSz();
-  }
+  auto featureRes =
+      getFeatureType(FLAGS_features_type, FLAGS_channels, featParams);
+  int numFeatures = featureRes.first;
+  FeatureType featType = featureRes.second;
+
   TargetGenerationConfig targetGenConfig(
       FLAGS_wordseparator,
       FLAGS_sampletarget,
@@ -419,12 +413,11 @@ int main(int argc, char** argv) {
           usePlugin,
           tokenDict,
           wordDict,
-          DecodeMasterTrainOptions{
-              .repLabel = int32_t(FLAGS_replabel),
-              .wordSepIsPartOfToken = FLAGS_usewordpiece,
-              .surround = FLAGS_surround,
-              .wordSep = FLAGS_wordseparator,
-              .targetPadIdx = targetpadVal});
+          DecodeMasterTrainOptions{.repLabel = int32_t(FLAGS_replabel),
+                                   .wordSepIsPartOfToken = FLAGS_usewordpiece,
+                                   .surround = FLAGS_surround,
+                                   .wordSep = FLAGS_wordseparator,
+                                   .targetPadIdx = targetpadVal});
     } else {
       throw std::runtime_error(
           "Other decoders are not supported yet during training");
@@ -807,9 +800,8 @@ int main(int argc, char** argv) {
       fl::Variable output;
       if (usePlugin) {
         output = ntwrk
-                     ->forward(
-                         {fl::input(batch[kInputIdx]),
-                          fl::noGrad(batch[kDurationIdx])})
+                     ->forward({fl::input(batch[kInputIdx]),
+                                fl::noGrad(batch[kDurationIdx])})
                      .front();
       } else {
         output = fl::ext::forwardSequentialModuleWithPadMask(
@@ -873,7 +865,7 @@ int main(int argc, char** argv) {
 
     std::shared_ptr<fl::Module> saug;
     if (FLAGS_saug_start_update >= 0) {
-      if (!(FLAGS_pow || FLAGS_mfsc || FLAGS_mfcc)) {
+      if (FLAGS_features_type == kFeaturesRaw) {
         saug = std::make_shared<fl::RawWavSpecAugment>(
             FLAGS_filterbanks,
             FLAGS_saug_fmaskf,
