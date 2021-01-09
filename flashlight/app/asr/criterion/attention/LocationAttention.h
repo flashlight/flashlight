@@ -17,11 +17,12 @@ class SimpleLocationAttention : public AttentionBase {
  public:
   explicit SimpleLocationAttention(int convKernel);
 
-  std::pair<fl::Variable, fl::Variable> forward(
-      const fl::Variable& state,
-      const fl::Variable& xEncoded,
-      const fl::Variable& prevAttn,
-      const fl::Variable& attnWeight) override;
+  std::pair<Variable, Variable> forwardBase(
+      const Variable& state,
+      const Variable& xEncoded,
+      const Variable& prevAttn,
+      const Variable& logAttnWeight,
+      const Variable& xEncodedSizes) override;
 
   std::string prettyString() const override;
 
@@ -35,11 +36,12 @@ class LocationAttention : public AttentionBase {
  public:
   LocationAttention(int encDim, int convKernel);
 
-  std::pair<fl::Variable, fl::Variable> forward(
-      const fl::Variable& state,
-      const fl::Variable& xEncoded,
-      const fl::Variable& prevAttn,
-      const fl::Variable& attnWeight) override;
+  std::pair<Variable, Variable> forwardBase(
+      const Variable& state,
+      const Variable& xEncoded,
+      const Variable& prevAttn,
+      const Variable& logAttnWeight,
+      const Variable& xEncodedSizes) override;
 
   std::string prettyString() const override;
 
@@ -57,11 +59,12 @@ class NeuralLocationAttention : public AttentionBase {
       int convChannel,
       int convKernel);
 
-  std::pair<fl::Variable, fl::Variable> forward(
-      const fl::Variable& state,
-      const fl::Variable& xEncoded,
-      const fl::Variable& prevAttn,
-      const fl::Variable& attnWeight) override;
+  std::pair<Variable, Variable> forwardBase(
+      const Variable& state,
+      const Variable& xEncoded,
+      const Variable& prevAttn,
+      const Variable& logAttnWeight,
+      const Variable& xEncodedSizes) override;
 
   std::string prettyString() const override;
 
