@@ -6,6 +6,7 @@
  */
 
 #include "flashlight/app/asr/criterion/attention/SoftWindow.h"
+#include "flashlight/app/asr/criterion/attention/Defines.h"
 
 namespace fl {
 namespace app {
@@ -15,45 +16,56 @@ SoftWindow::SoftWindow() {}
 SoftWindow::SoftWindow(double std, double avgRate, int offset)
     : std_(std), avgRate_(avgRate), offset_(offset) {}
 
-int SoftWindow::getCenter(int step, int inputSteps) {
-  return static_cast<int>(
-      std::round(std::min(offset_ + step * avgRate_, inputSteps - avgRate_)));
-}
-
-Variable SoftWindow::computeSingleStepWindow(
-    const Variable& /* unused */,
+Variable SoftWindow::compute(
+    int targetLen,
     int inputSteps,
     int batchSize,
-    int step) {
-  int cidx = getCenter(step, inputSteps);
+    const af::array& inputSizes,
+    const af::array& targetSizes,
+    af::array& decoderSteps) const {
+  int decoderStepsDim = decoderSteps.dims(0);
+  auto ts = af::range(af::dim4(decoderStepsDim, inputSteps, batchSize), 1);
+  af::array inputNotPaddedSize = computeInputNotPaddedSize(
+      inputSizes, inputSteps, batchSize, decoderStepsDim, true);
 
-  auto maskArray = af::range(af::dim4(inputSteps));
-  maskArray = exp(-pow(maskArray - cidx, 2) / (2 * std_ * std_));
+  af::array centers = af::round(af::min(
+      offset_ + decoderSteps * avgRate_, inputNotPaddedSize - avgRate_));
+  auto maskArray = -pow(ts - centers, 2) / (2 * std_ * std_);
+  maskArray(ts >= inputNotPaddedSize) = -std::numeric_limits<float>::infinity();
 
-  // [1, inputSteps, batchSize]
-  auto mask = Variable(
-      tile(moddims(maskArray, {1, inputSteps}), {1, 1, batchSize}), false);
-
-  return mask;
+  if (!targetSizes.isempty()) {
+    af::array targetNotPaddedSize = computeTargetNotPaddedSize(
+        targetSizes, inputSteps, targetLen, batchSize, decoderStepsDim);
+    maskArray(decoderSteps >= targetNotPaddedSize) = kAttentionMaskValue;
+  }
+  // [decoderStepsDim, inputSteps, batchSize]
+  return Variable(maskArray, false);
 }
 
-Variable
-SoftWindow::computeWindowMask(int targetLen, int inputSteps, int batchSize) {
-  std::vector<int> centerVec(targetLen, 0);
-  for (int u = 0; u < targetLen; ++u) {
-    centerVec[u] = getCenter(u, inputSteps);
-  }
+Variable SoftWindow::computeWindow(
+    const Variable& /* unused */,
+    int step,
+    int targetLen,
+    int inputSteps,
+    int batchSize,
+    const af::array& inputSizes,
+    const af::array& targetSizes) const {
+  af::array decoderSteps =
+      af::constant(step, af::dim4(1, inputSteps, batchSize));
+  return compute(
+      targetLen, inputSteps, batchSize, inputSizes, targetSizes, decoderSteps);
+}
 
-  auto ts = af::range(af::dim4(inputSteps));
-  ts = af::tile(af::moddims(ts, {1, inputSteps}), {targetLen, 1});
-  auto centers =
-      af::tile(af::array(targetLen, 1, centerVec.data()), {1, inputSteps});
-  auto maskArray = exp(-pow(ts - centers, 2) / (2 * std_ * std_));
-
-  // [targetLen, inputSteps, batchSize]
-  auto mask = Variable(tile(maskArray, {1, 1, batchSize}), false);
-
-  return mask;
+Variable SoftWindow::computeVectorizedWindow(
+    int targetLen,
+    int inputSteps,
+    int batchSize,
+    const af::array& inputSizes,
+    const af::array& targetSizes) const {
+  af::array decoderSteps =
+      af::range(af::dim4(targetLen, inputSteps, batchSize), 0);
+  return compute(
+      targetLen, inputSteps, batchSize, inputSizes, targetSizes, decoderSteps);
 }
 } // namespace asr
 } // namespace app

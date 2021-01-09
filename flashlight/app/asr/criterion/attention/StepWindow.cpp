@@ -6,6 +6,7 @@
  */
 
 #include "flashlight/app/asr/criterion/attention/StepWindow.h"
+#include "flashlight/app/asr/criterion/attention/Defines.h"
 
 namespace fl {
 namespace app {
@@ -15,43 +16,65 @@ StepWindow::StepWindow() {}
 StepWindow::StepWindow(int sMin, int sMax, double vMin, double vMax)
     : sMin_(sMin), sMax_(sMax), vMin_(vMin), vMax_(vMax) {}
 
-Variable StepWindow::computeSingleStepWindow(
-    const Variable& /* unused */,
+Variable StepWindow::compute(
+    int targetLen,
     int inputSteps,
     int batchSize,
-    int step) {
-  int start_idx = std::max(
+    const af::array& inputSizes,
+    const af::array& targetSizes,
+    af::array& decoderSteps) const {
+  int decoderStepsDim = decoderSteps.dims(0);
+  af::array inputNotPaddedSize = computeInputNotPaddedSize(
+      inputSizes, inputSteps, batchSize, decoderStepsDim, true);
+  auto startIdx = af::max(
       0,
-      static_cast<int>(
-          std::round(std::min(inputSteps - vMax_, sMin_ + step * vMin_))));
-  int end_idx =
-      std::min(static_cast<int>(std::round(sMax_ + step * vMax_)), inputSteps);
+      af::round(
+          af::min(inputNotPaddedSize - vMax_, sMin_ + decoderSteps * vMin_))
+          .as(s32));
+  auto endIdx = af::min(
+      inputNotPaddedSize, af::round(sMax_ + decoderSteps * vMax_).as(s32));
+  af::array indices = af::iota(
+      af::dim4(1, inputSteps, 1), af::dim4(decoderStepsDim, 1, batchSize));
 
-  std::vector<float> maskvec(inputSteps, 0.0);
-  std::fill(maskvec.begin() + start_idx, maskvec.begin() + end_idx, 1.0);
-
-  // [1, inputSteps]
-  auto maskarray = af::constant(0.0, 1, inputSteps);
-  maskarray(af::span, af::seq(start_idx, end_idx - 1)) = 1.0;
-
-  // [1, inputSteps, batchSize]
-  auto mask = Variable(tile(maskarray, {1, 1, batchSize}), false);
-
-  return mask;
+  // [decoderStepsDim, inputSteps, batchSize]
+  auto maskArray =
+      af::constant(1.0, af::dim4(decoderStepsDim, inputSteps, batchSize));
+  maskArray(indices < startIdx) = 0.0;
+  maskArray(indices >= endIdx) = 0.0;
+  if (!targetSizes.isempty()) {
+    af::array targetNotPaddedSize = computeTargetNotPaddedSize(
+        targetSizes, inputSteps, targetLen, batchSize, decoderStepsDim);
+    maskArray(decoderSteps >= targetNotPaddedSize) = 0.0;
+  }
+  // force all -inf values to be kAttentionMaskValue to avoid nan in softmax
+  maskArray = af::log(maskArray);
+  maskArray(maskArray < kAttentionMaskValue) = kAttentionMaskValue;
+  return Variable(maskArray, false);
 }
 
-Variable
-StepWindow::computeWindowMask(int targetLen, int inputSteps, int batchSize) {
-  std::vector<Variable> maskvec(targetLen, Variable());
-  for (int u = 0; u < targetLen; ++u) {
-    maskvec[u] = computeSingleStepWindow(
-        Variable() /* unused */, inputSteps, batchSize, u);
-  }
+Variable StepWindow::computeWindow(
+    const Variable& /* unused */,
+    int step,
+    int targetLen,
+    int inputSteps,
+    int batchSize,
+    const af::array& inputSizes,
+    const af::array& targetSizes) const {
+  auto decoderSteps = af::constant(step, af::dim4(1, inputSteps, batchSize));
+  return compute(
+      targetLen, inputSteps, batchSize, inputSizes, targetSizes, decoderSteps);
+}
 
-  // [targetLen, inputSteps, batchSize]
-  auto mask = concatenate(maskvec, 0);
-
-  return mask;
+Variable StepWindow::computeVectorizedWindow(
+    int targetLen,
+    int inputSteps,
+    int batchSize,
+    const af::array& inputSizes,
+    const af::array& targetSizes) const {
+  auto decoderSteps =
+      iota(af::dim4(targetLen), af::dim4(1, inputSteps, batchSize));
+  return compute(
+      targetLen, inputSteps, batchSize, inputSizes, targetSizes, decoderSteps);
 }
 } // namespace asr
 } // namespace app
