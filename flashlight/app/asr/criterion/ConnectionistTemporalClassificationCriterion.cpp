@@ -49,25 +49,29 @@ ConnectionistTemporalClassificationCriterion::
     : scaleMode_(scalemode) {}
 
 af::array ConnectionistTemporalClassificationCriterion::viterbiPath(
-    const af::array& input) {
+    const af::array& input,
+    const af::array& inputSize /* = af::array() */) {
   af::array bestpath, maxvalues;
   af::max(maxvalues, bestpath, input, 0);
   return af::moddims(bestpath, bestpath.dims(1), bestpath.dims(2));
 }
 
-af::array ConnectionistTemporalClassificationCriterion::viterbiPath(
-    const af::array& inputVar,
-    const af::array& targetVar) {
-  int N = inputVar.dims(0);
-  int T = inputVar.dims(1);
-  int B = inputVar.dims(2);
-  int L = targetVar.dims(0);
+af::array ConnectionistTemporalClassificationCriterion::viterbiPathWithTarget(
+    const af::array& input,
+    const af::array& target,
+    const af::array& inputSizes /* = af::array() */,
+    const af::array& targetSizes /* = af::array() */
+) {
+  int N = input.dims(0);
+  int T = input.dims(1);
+  int B = input.dims(2);
+  int L = target.dims(0);
 
-  const af::array targetSize = getTargetSizeArray(targetVar, T);
+  const af::array targetSize = getTargetSizeArray(target, T);
   std::shared_ptr<CTCContext> ctx = std::make_shared<CTCContext>();
-  af::array softmax = ::logSoftmax(inputVar, 0);
+  af::array softmax = ::logSoftmax(input, 0);
   std::vector<float> inputVec = afToVector<float>(softmax);
-  ctx->targetVec = afToVector<int>(targetVar);
+  ctx->targetVec = afToVector<int>(target);
   ctx->targetSizeVec = afToVector<int>(targetSize);
   ctx->workspaceVec.assign(CTC::getWorkspaceSize(B, T, N, L), 0);
   std::vector<int> bestPaths(B * T);

@@ -80,7 +80,6 @@ DECLARE_int64(batching_max_duration);
 DECLARE_bool(usewordpiece);
 DECLARE_int64(replabel);
 DECLARE_string(surround);
-DECLARE_bool(eostoken);
 DECLARE_string(wordseparator);
 DECLARE_double(sampletarget);
 

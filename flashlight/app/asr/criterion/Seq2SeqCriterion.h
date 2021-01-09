@@ -53,6 +53,7 @@ class Seq2SeqCriterion : public SequenceCriterion {
       int nClass,
       int hiddenDim,
       int eos,
+      int pad,
       int maxDecoderOutputLen,
       const std::vector<std::shared_ptr<AttentionBase>>& attentions,
       std::shared_ptr<WindowBase> window = nullptr,
@@ -74,25 +75,36 @@ class Seq2SeqCriterion : public SequenceCriterion {
    * be used for training purposes. */
   std::pair<fl::Variable, fl::Variable> decoder(
       const fl::Variable& input,
-      const fl::Variable& target);
+      const fl::Variable& target,
+      const af::array& inputSizes,
+      const af::array& targetSizes);
 
   std::pair<fl::Variable, fl::Variable> vectorizedDecoder(
       const fl::Variable& input,
-      const fl::Variable& target);
+      const fl::Variable& target,
+      const af::array& inputSizes,
+      const af::array& targetSizes);
 
-  af::array viterbiPath(const af::array& input) override;
+  af::array viterbiPath(
+      const af::array& input,
+      const af::array& inputSizes = af::array()) override;
 
   std::pair<af::array, fl::Variable> viterbiPathBase(
       const af::array& input,
+      const af::array& inputSizes,
       bool saveAttn);
 
   std::vector<CandidateHypo> beamSearch(
       const af::array& input,
+      const af::array& inputSizes,
       std::vector<Seq2SeqCriterion::CandidateHypo> beam,
       int beamSize,
       int maxLen);
 
-  std::vector<int> beamPath(const af::array& input, int beamSize = 10);
+  std::vector<int> beamPath(
+      const af::array& input,
+      const af::array& inputSizes,
+      int beamSize = 10);
 
   std::string prettyString() const override;
 
@@ -128,7 +140,9 @@ class Seq2SeqCriterion : public SequenceCriterion {
       const fl::Variable& xEncoded,
       const fl::Variable& y,
       const Seq2SeqState& instate,
-      int targetLen = -1) const;
+      const af::array& inputSizes,
+      const af::array& targetSizes,
+      int targetLen) const;
 
   void clearWindow() {
     trainWithWindow_ = false;
@@ -151,6 +165,7 @@ class Seq2SeqCriterion : public SequenceCriterion {
 
  private:
   int eos_;
+  int pad_;
   int maxDecoderOutputLen_;
   std::shared_ptr<WindowBase> window_;
   bool trainWithWindow_;
@@ -176,14 +191,13 @@ class Seq2SeqCriterion : public SequenceCriterion {
       nClass_,
       fl::versioned(samplingStrategy_, 1),
       fl::versioned(gumbelTemperature_, 2),
-      fl::versioned(nAttnRound_, 3))
+      fl::versioned(nAttnRound_, 3),
+      fl::versioned(pad_, 4))
 
   Seq2SeqCriterion() = default;
 
   void setUseSequentialDecoder();
 };
-
-fl::app::asr::Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx);
 
 /* Decoder helpers */
 struct Seq2SeqDecoderBuffer {
@@ -207,19 +221,12 @@ struct Seq2SeqDecoderBuffer {
   }
 };
 
-typedef std::shared_ptr<void> AMStatePtr;
-typedef std::function<
-    std::pair<std::vector<std::vector<float>>, std::vector<AMStatePtr>>(
-        const float*,
-        const int,
-        const int,
-        const std::vector<int>&,
-        const std::vector<AMStatePtr>&,
-        int&)>
-    AMUpdateFunc;
-
-AMUpdateFunc buildAmUpdateFunction(
-    std::shared_ptr<SequenceCriterion>& criterion);
+AMUpdateFunc buildSeq2SeqRnnAmUpdateFunction(
+    std::shared_ptr<SequenceCriterion>& criterion,
+    int attRound,
+    int beamSize,
+    float attThr,
+    float smoothingTemp);
 } // namespace asr
 } // namespace app
 } // namespace fl

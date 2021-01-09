@@ -945,8 +945,8 @@ Variable relativePositionalEmbeddingRotate(const Variable& input);
  * @param posEmb if non empty then compute relative
  * positional embedding in additon to standard computations
  * @param mask mask or not future in the computations T x T
- * if non-empty then don't use future (for example for autoregressive language models
- * or for decoder part in the encoder-decoder transformer models)
+ * if non-empty then don't use future (for example for autoregressive language
+ * models or for decoder part in the encoder-decoder transformer models)
  * @param padMask mask which is 1 for positions where pad token is,
  * don't attend to the pad-positions, of size T x B
  * @param nHeads number of heads

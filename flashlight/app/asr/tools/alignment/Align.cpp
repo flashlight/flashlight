@@ -87,8 +87,11 @@ int main(int argc, char** argv) {
   if (FLAGS_criterion == kCtcCriterion) {
     tokenDict.addEntry(kBlankToken);
   }
-  if (FLAGS_eostoken) {
-    tokenDict.addEntry(kEosToken);
+  bool isSeq2seqCrit = FLAGS_criterion == kSeq2SeqTransformerCriterion ||
+      FLAGS_criterion == kSeq2SeqRNNCriterion;
+  if (isSeq2seqCrit) {
+    tokenDict.addEntry(fl::app::asr::kEosToken);
+    tokenDict.addEntry(fl::lib::text::kPadToken);
   }
 
   int numClasses = tokenDict.indexSize();
@@ -150,7 +153,7 @@ int main(int argc, char** argv) {
       FLAGS_sampletarget,
       FLAGS_criterion,
       FLAGS_surround,
-      FLAGS_eostoken,
+      isSeq2seqCrit,
       FLAGS_replabel,
       true /* skip unk */,
       FLAGS_usewordpiece /* fallback2LetterWordSepLeft */,
@@ -163,8 +166,8 @@ int main(int argc, char** argv) {
       {});
   auto targetTransform = targetFeatures(tokenDict, lexicon, targetGenConfig);
   auto wordTransform = wordFeatures(wordDict);
-  int targetpadVal = FLAGS_eostoken
-      ? tokenDict.getIndex(fl::app::asr::kEosToken)
+  int targetpadVal = isSeq2seqCrit
+      ? tokenDict.getIndex(fl::lib::text::kPadToken)
       : kTargetPadValue;
   int wordpadVal = kTargetPadValue;
 
@@ -195,8 +198,8 @@ int main(int argc, char** argv) {
         input, network, sample[kDurationIdx]);
     fwdMtr.stop();
     alignMtr.resume();
-    auto bestPaths =
-        criterion->viterbiPath(rawEmission.array(), sample[kTargetIdx]);
+    auto bestPaths = criterion->viterbiPathWithTarget(
+        rawEmission.array(), sample[kTargetIdx]);
     alignMtr.stop();
     parseMtr.resume();
 

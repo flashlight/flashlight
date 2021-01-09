@@ -78,7 +78,6 @@ std::pair<Variable, Variable> NeuralContentAttention::forwardBase(
   auto hidden = tileHx + tileHy;
   // [targetlen, seqlen, batchsize]
   auto nnOut = moddims(module(0)->forward({hidden}).front(), {U, T, B});
-
   if (!logAttnWeight.isempty()) {
     if (logAttnWeight.dims() != nnOut.dims()) {
       throw std::invalid_argument(
