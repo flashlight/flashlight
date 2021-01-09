@@ -6,6 +6,7 @@
  */
 
 #include "flashlight/app/asr/criterion/attention/Utils.h"
+#include "flashlight/app/asr/criterion/attention/Defines.h"
 
 #include "flashlight/fl/flashlight.h"
 
