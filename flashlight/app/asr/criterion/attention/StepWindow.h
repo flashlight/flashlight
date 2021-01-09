@@ -18,20 +18,35 @@ class StepWindow : public WindowBase {
   StepWindow();
   StepWindow(int sMin, int sMax, double vMin, double vMax);
 
-  fl::Variable computeSingleStepWindow(
-      const fl::Variable& prevAttn,
+  Variable computeWindow(
+      const Variable& prevAttn,
+      int step,
+      int targetLen,
       int inputSteps,
       int batchSize,
-      int step) override;
+      const af::array& inputSizes = af::array(),
+      const af::array& targetSizes = af::array()) const override;
 
-  fl::Variable computeWindowMask(int targetLen, int inputSteps, int batchSize)
-      override;
+  Variable computeVectorizedWindow(
+      int targetLen,
+      int inputSteps,
+      int batchSize,
+      const af::array& inputSizes = af::array(),
+      const af::array& targetSizes = af::array()) const override;
 
  private:
   int sMin_;
   int sMax_;
   double vMin_;
   double vMax_;
+
+  Variable compute(
+      int targetLen,
+      int inputSteps,
+      int batchSize,
+      const af::array& inputSizes,
+      const af::array& targetSizes,
+      af::array& decoderSteps) const;
 
   FL_SAVE_LOAD_WITH_BASE(WindowBase, sMin_, sMax_, vMin_, vMax_)
 };

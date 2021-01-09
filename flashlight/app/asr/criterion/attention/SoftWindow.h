@@ -18,17 +18,30 @@ class SoftWindow : public WindowBase {
   SoftWindow();
   SoftWindow(double std, double avgRate, int offset);
 
-  fl::Variable computeSingleStepWindow(
-      const fl::Variable& prevAttn,
+  Variable computeWindow(
+      const Variable& prevAttn,
+      int step,
+      int targetLen,
       int inputSteps,
       int batchSize,
-      int step) override;
+      const af::array& inputSizes = af::array(),
+      const af::array& targetSizes = af::array()) const override;
 
-  fl::Variable computeWindowMask(int targetLen, int inputSteps, int batchSize)
-      override;
+  Variable computeVectorizedWindow(
+      int targetLen,
+      int inputSteps,
+      int batchSize,
+      const af::array& inputSizes = af::array(),
+      const af::array& targetSizes = af::array()) const override;
 
  private:
-  int getCenter(int step, int inputSteps);
+  Variable compute(
+      int targetLen,
+      int inputSteps,
+      int batchSize,
+      const af::array& inputSizes,
+      const af::array& targetSizes,
+      af::array& decoderSteps) const;
 
   double std_;
   double avgRate_;
