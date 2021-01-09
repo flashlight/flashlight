@@ -78,7 +78,7 @@ std::string getLogString(
   auto tsztotal = stats[1];
   auto tszmax = stats[3];
   auto iszAvrFrames = isztotal / numsamples;
-  if (FLAGS_pow || FLAGS_mfcc || FLAGS_mfsc) {
+  if (FLAGS_features_type != kFeaturesRaw) {
     iszAvrFrames = iszAvrFrames / FLAGS_framestridems;
   } else {
     iszAvrFrames = iszAvrFrames / 1000 * FLAGS_samplerate;

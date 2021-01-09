@@ -36,6 +36,7 @@
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/data/FeatureTransforms.h"
+#include "flashlight/app/asr/data/Utils.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
@@ -163,18 +164,9 @@ int main(int argc, char** argv) {
   featParams.useEnergy = false;
   featParams.usePower = false;
   featParams.zeroMeanFrame = false;
-  int numFeatures = FLAGS_channels;
-  FeatureType featType = FeatureType::NONE;
-  if (FLAGS_pow) {
-    featType = FeatureType::POW_SPECTRUM;
-    numFeatures = featParams.powSpecFeatSz();
-  } else if (FLAGS_mfsc) {
-    featType = FeatureType::MFSC;
-    numFeatures = featParams.mfscFeatSz();
-  } else if (FLAGS_mfcc) {
-    featType = FeatureType::MFCC;
-    numFeatures = featParams.mfccFeatSz();
-  }
+  FeatureType featType =
+      getFeaturesType(FLAGS_features_type, FLAGS_channels, featParams).second;
+
   TargetGenerationConfig targetGenConfig(
       FLAGS_wordseparator,
       FLAGS_sampletarget,

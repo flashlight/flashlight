@@ -54,6 +54,10 @@ constexpr const char* kSeq2SeqCriterion = "seq2seq";
 constexpr const char* kTransformerCriterion = "transformer";
 constexpr const char* kBatchStrategyNone = "none";
 constexpr const char* kBatchStrategyDynamic = "dynamic";
+constexpr const char* kFeaturesMFSC = "mfsc";
+constexpr const char* kFeaturesMFCC = "mfcc";
+constexpr const char* kFeaturesPow = "pow";
+constexpr const char* kFeaturesRaw = "raw";
 constexpr int kTargetPadValue = -1;
 
 // Feature params
