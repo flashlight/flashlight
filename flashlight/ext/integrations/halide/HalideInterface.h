@@ -34,7 +34,7 @@ namespace fl {
 namespace ext {
 
 /**
- * Gets Halide dims from an ArrayFire array. Halide is column major, so reverse
+ * Gets Halide dims from an ArrayFire array. Halide is row major, so reverse
  * all dimensions.
  */
 std::vector<int> afToHalideDims(const af::dim4& dims);

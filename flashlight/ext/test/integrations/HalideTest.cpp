@@ -38,6 +38,9 @@ TEST(HalideTest, TypeMapping) {
   Halide::Buffer<uint64_t> uint64Buf({1});
   EXPECT_EQ(ext::halideRuntimeTypeToAfType(uint64Buf.type()), af::dtype::u64);
 
+  Halide::Buffer<short> shortBuf({1});
+  EXPECT_EQ(ext::halideRuntimeTypeToAfType(shortBuf.type()), af::dtype::s16);
+
   Halide::Buffer<int> intBuf({1});
   EXPECT_EQ(ext::halideRuntimeTypeToAfType(intBuf.type()), af::dtype::s32);
 

@@ -6,6 +6,7 @@
 # NAME - the name of the resulting target
 # LIBS - libraries to which the generated library will be linked
 # PREPROC - preprocessor defs to pass to the new target
+# LINK_TO - target to which to link the generated pipeline
 function(fl_add_and_link_halide_lib)
   set(options)
   set(oneValueArgs SRC NAME LINK_TO)
@@ -44,7 +45,6 @@ function(fl_add_and_link_halide_lib)
     DEPENDS ${GENERATED_HEADER} "${GENERATED_LIB}")
   add_dependencies(${GENERATED_TARGET} ${GENERATOR_TARGET})
   
-  # Link the generated lib back to Flashlight
   set(LIB_PATH ${CMAKE_CURRENT_BINARY_DIR}/${GENERATED_LIB})
   message(STATUS "Will generate AOT Halide Pipeline ${fl_add_and_link_halide_lib_NAME}")
 
@@ -62,6 +62,9 @@ function(fl_add_and_link_halide_lib)
   target_include_directories(
     ${fl_add_and_link_halide_lib_LINK_TO} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
+  # For now, this linkeage is private, which means the Flashlight core needs
+  # to wrap Halide pipelines when exposing them to external binaries.
+  # Properly installing the Halide lib will facilitate public linkeage.
   target_link_libraries(${fl_add_and_link_halide_lib_LINK_TO} PRIVATE ${LIB_PATH})
 endfunction(fl_add_and_link_halide_lib_lib)
 
@@ -87,7 +90,7 @@ function(fl_add_halide_lib)
     LINK_TO flashlight
     )
 
-  # An IMPORTED target could help with this
+  # TODO: An IMPORTED target could help with this
   # cmake_policy(SET CMP0079 NEW)
   # target_link_libraries(flashlight PUBLIC ...)
   # add_dependencies(flashlight ${GENERATED_TARGET})
