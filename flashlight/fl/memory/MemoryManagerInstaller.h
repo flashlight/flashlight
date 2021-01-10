@@ -85,9 +85,6 @@ class MemoryManagerInstaller {
    *
    * Uses a `CachingMemoryManager` by default. Only sets the memory manager -
    * doesn't set an AF pinned memory manager.
-   *
-   * @return a pointer to the `MemoryManagerInstaller` for the default memory
-   * manager.
    */
   static void installDefaultMemoryManager();
 
@@ -103,10 +100,6 @@ class MemoryManagerInstaller {
   std::shared_ptr<MemoryManagerAdapter> impl_;
   // Points to the impl_ of the most recently installed manager.
   static std::shared_ptr<MemoryManagerAdapter> currentlyInstalledMemoryManager_;
-  // Used to gate global initialization of the default memory manager
-  static std::once_flag startupMemoryInitialize_;
-  // Installer for the default memory manager installed on startup
-  static std::shared_ptr<MemoryManagerInstaller> startupMemoryManagerInstaller_;
 };
 
 } // namespace fl
