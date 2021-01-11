@@ -45,7 +45,7 @@ std::vector<std::string> tknTarget2Ltr(
     const fl::lib::text::Dictionary& tokenDict,
     const std::string& criterion,
     const std::string& surround,
-    const bool eosTkn,
+    const bool isSeq2seqCrit,
     const int replabel,
     const bool useWordPiece,
     const std::string& wordSep);
@@ -55,7 +55,7 @@ std::vector<std::string> tknPrediction2Ltr(
     const fl::lib::text::Dictionary& tokenDict,
     const std::string& criterion,
     const std::string& surround,
-    const bool eosTkn,
+    const bool isSeq2seqCrit,
     const int replabel,
     const bool useWordPiece,
     const std::string& wordSep);
@@ -72,11 +72,17 @@ void remapLabels(
     std::vector<T>& labels,
     const fl::lib::text::Dictionary& dict,
     const std::string& surround,
-    const bool eosTkn,
+    const bool isSeq2seqCrit,
     const int replabel) {
-  if (eosTkn) {
+  if (isSeq2seqCrit) {
     int eosidx = dict.getIndex(kEosToken);
-    while (!labels.empty() && labels.back() == eosidx) {
+    int padidx = dict.getIndex(fl::lib::text::kPadToken);
+    while (!labels.empty() &&
+           (labels.back() == eosidx || labels.back() == padidx)) {
+      labels.pop_back();
+    }
+  } else {
+    while (!labels.empty() && labels.back() == kTargetPadValue) {
       labels.pop_back();
     }
   }

@@ -74,6 +74,28 @@ Variable getLinearTarget(const Variable& targetVar, int T) {
   return Variable(af::array(T, B, newTarget.data()), false);
 }
 
+fl::Variable applySeq2SeqMask(
+    const fl::Variable& input,
+    const af::array& targetClasses,
+    int padValue) {
+  if (input.dims() != targetClasses.dims()) {
+    throw std::runtime_error(
+        "applySeq2SeqMask: input and mask should have the same dimentions.");
+  }
+  af::array output = input.array();
+  af::array mask = targetClasses == padValue;
+  output(mask) = 0.;
+
+  auto gradFunc = [mask](
+                      std::vector<fl::Variable>& inputs,
+                      const fl::Variable& gradOutput) {
+    af::array gradArray = gradOutput.array();
+    gradArray(mask) = 0.;
+    inputs[0].addGrad(fl::Variable(gradArray, false));
+  };
+  return fl::Variable(output, {input.withoutData()}, gradFunc);
+}
+
 } // namespace asr
 } // namespace app
 } // namespace fl

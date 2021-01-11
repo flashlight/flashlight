@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "flashlight/app/asr/runtime/Attention.h"
 #include "flashlight/app/asr/runtime/Helpers.h"
 #include "flashlight/app/asr/runtime/Logger.h"
 #include "flashlight/app/asr/runtime/Optimizer.h"

@@ -12,7 +12,7 @@
 #include <queue>
 
 #include "flashlight/app/asr/common/Defines.h"
-#include "flashlight/app/asr/common/Flags.h"
+#include "flashlight/app/asr/criterion/CriterionUtils.h"
 
 using namespace fl::ext;
 
@@ -21,68 +21,6 @@ namespace app {
 namespace asr {
 
 namespace detail {
-std::shared_ptr<AttentionBase> buildAttention() {
-  std::shared_ptr<AttentionBase> attention;
-  if (FLAGS_attention == fl::app::asr::kContentAttention) {
-    attention = std::make_shared<ContentAttention>();
-  } else if (FLAGS_attention == fl::app::asr::kKeyValueAttention) {
-    attention = std::make_shared<ContentAttention>(true);
-  } else if (FLAGS_attention == fl::app::asr::kNeuralContentAttention) {
-    attention = std::make_shared<NeuralContentAttention>(FLAGS_encoderdim);
-  } else if (FLAGS_attention == fl::app::asr::kSimpleLocationAttention) {
-    attention = std::make_shared<SimpleLocationAttention>(FLAGS_attnconvkernel);
-  } else if (FLAGS_attention == fl::app::asr::kLocationAttention) {
-    attention = std::make_shared<LocationAttention>(
-        FLAGS_encoderdim, FLAGS_attnconvkernel);
-  } else if (FLAGS_attention == fl::app::asr::kNeuralLocationAttention) {
-    attention = std::make_shared<NeuralLocationAttention>(
-        FLAGS_encoderdim,
-        FLAGS_attndim,
-        FLAGS_attnconvchannel,
-        FLAGS_attnconvkernel);
-  } else if (FLAGS_attention == fl::app::asr::kMultiHeadContentAttention) {
-    attention = std::make_shared<MultiHeadContentAttention>(
-        FLAGS_encoderdim, FLAGS_numattnhead);
-  } else if (
-      FLAGS_attention == fl::app::asr::kMultiHeadKeyValueContentAttention) {
-    attention = std::make_shared<MultiHeadContentAttention>(
-        FLAGS_encoderdim, FLAGS_numattnhead, true);
-  } else if (FLAGS_attention == fl::app::asr::kMultiHeadSplitContentAttention) {
-    attention = std::make_shared<MultiHeadContentAttention>(
-        FLAGS_encoderdim, FLAGS_numattnhead, false, true);
-  } else if (
-      FLAGS_attention ==
-      fl::app::asr::kMultiHeadKeyValueSplitContentAttention) {
-    attention = std::make_shared<MultiHeadContentAttention>(
-        FLAGS_encoderdim, FLAGS_numattnhead, true, true);
-  } else {
-    throw std::runtime_error("Unimplmented attention: " + FLAGS_attention);
-  }
-
-  return attention;
-}
-
-std::shared_ptr<WindowBase> buildWindow() {
-  std::shared_ptr<WindowBase> window;
-  if (FLAGS_attnWindow == fl::app::asr::kNoWindow) {
-    window = nullptr;
-  } else if (FLAGS_attnWindow == fl::app::asr::kMedianWindow) {
-    window = std::make_shared<MedianWindow>(
-        FLAGS_leftWindowSize, FLAGS_rightWindowSize);
-  } else if (FLAGS_attnWindow == fl::app::asr::kStepWindow) {
-    window = std::make_shared<StepWindow>(
-        FLAGS_minsil, FLAGS_maxsil, FLAGS_minrate, FLAGS_maxrate);
-  } else if (FLAGS_attnWindow == fl::app::asr::kSoftWindow) {
-    window = std::make_shared<SoftWindow>(
-        FLAGS_softwstd, FLAGS_softwrate, FLAGS_softwoffset);
-  } else if (FLAGS_attnWindow == fl::app::asr::kSoftPretrainWindow) {
-    window = std::make_shared<SoftPretrainWindow>(FLAGS_softwstd);
-  } else {
-    throw std::runtime_error("Unimplmented window: " + FLAGS_attnWindow);
-  }
-  return window;
-}
-
 Seq2SeqState concatState(std::vector<Seq2SeqState>& stateVec) {
   if (stateVec.size() < 1) {
     throw std::runtime_error("Empty stateVec");
@@ -132,34 +70,11 @@ Seq2SeqState selectState(Seq2SeqState& state, int batchIdx) {
 }
 } // namespace detail
 
-Seq2SeqCriterion buildSeq2Seq(int numClasses, int eosIdx) {
-  std::vector<std::shared_ptr<AttentionBase>> attentions;
-  for (int i = 0; i < FLAGS_decoderattnround; i++) {
-    attentions.push_back(detail::buildAttention());
-  }
-
-  return Seq2SeqCriterion(
-      numClasses,
-      FLAGS_encoderdim,
-      eosIdx,
-      FLAGS_maxdecoderoutputlen,
-      attentions,
-      detail::buildWindow(),
-      FLAGS_trainWithWindow,
-      FLAGS_pctteacherforcing,
-      FLAGS_labelsmooth,
-      FLAGS_inputfeeding,
-      FLAGS_samplingstrategy,
-      FLAGS_gumbeltemperature,
-      FLAGS_decoderrnnlayer,
-      FLAGS_decoderattnround,
-      FLAGS_decoderdropout);
-}
-
 Seq2SeqCriterion::Seq2SeqCriterion(
     int nClass,
     int hiddenDim,
     int eos,
+    int pad,
     int maxDecoderOutputLen,
     const std::vector<std::shared_ptr<AttentionBase>>& attentions,
     std::shared_ptr<WindowBase> window /* = nullptr*/,
@@ -173,6 +88,7 @@ Seq2SeqCriterion::Seq2SeqCriterion(
     int nAttnRound /* = 1 */,
     float dropOut /* = 0.0 */)
     : eos_(eos),
+      pad_(pad),
       maxDecoderOutputLen_(maxDecoderOutputLen),
       window_(window),
       trainWithWindow_(trainWithWindow),
@@ -218,25 +134,37 @@ Seq2SeqCriterion::Seq2SeqCriterion(
 
 std::vector<Variable> Seq2SeqCriterion::forward(
     const std::vector<Variable>& inputs) {
-  if (inputs.size() != 2) {
-    throw std::invalid_argument("Invalid inputs size");
+  if (inputs.size() < 2 || (inputs.size() > 4)) {
+    throw std::invalid_argument(
+        "Invalid inputs size; Seq2Seq criterion takes input, target, inputSizes [optional]");
   }
   const auto& input = inputs[0];
   const auto& target = inputs[1];
+  const auto& inputSizes =
+      inputs.size() == 2 ? af::array() : inputs[2].array(); // 1 x B
+  const auto& targetSizes =
+      inputs.size() == 3 ? af::array() : inputs[3].array(); // 1 x B
 
   Variable out, alpha;
   if (useSequentialDecoder_) {
-    std::tie(out, alpha) = decoder(input, target);
+    std::tie(out, alpha) = decoder(input, target, inputSizes, targetSizes);
   } else {
-    std::tie(out, alpha) = vectorizedDecoder(input, target);
+    std::tie(out, alpha) =
+        vectorizedDecoder(input, target, inputSizes, targetSizes);
   }
 
   out = logSoftmax(out, 0); // C x U x B
 
   auto losses = moddims(
-      sum(categoricalCrossEntropy(out, target, ReduceMode::NONE), {0}), -1);
+      sum(categoricalCrossEntropy(out, target, ReduceMode::NONE, pad_), {0}),
+      -1);
   if (train_ && labelSmooth_ > 0) {
     size_t nClass = out.dims(0);
+    auto targetTiled = af::tile(
+        af::moddims(
+            target.array(), af::dim4(1, target.dims(0), target.dims(1))),
+        nClass);
+    out = applySeq2SeqMask(out, targetTiled, pad_);
     auto smoothLoss = moddims(sum(out, {0, 1}), -1);
     losses = (1 - labelSmooth_) * losses - (labelSmooth_ / nClass) * smoothLoss;
   }
@@ -246,7 +174,9 @@ std::vector<Variable> Seq2SeqCriterion::forward(
 
 std::pair<Variable, Variable> Seq2SeqCriterion::vectorizedDecoder(
     const Variable& input,
-    const Variable& target) {
+    const Variable& target,
+    const af::array& inputSizes,
+    const af::array& targetSizes) {
   int U = target.dims(0);
   int B = target.dims(1);
   int T = input.dims(1);
@@ -283,14 +213,16 @@ std::pair<Variable, Variable> Seq2SeqCriterion::vectorizedDecoder(
 
     Variable windowWeight;
     if (window_ && (!train_ || trainWithWindow_)) {
-      windowWeight = window_->computeVectorizedWindow(U, T, B);
+      windowWeight =
+          window_->computeVectorizedWindow(U, T, B, inputSizes, targetSizes);
     }
 
     std::tie(alpha, summaries) = attention(i)->forward(
         hy,
         input,
         Variable(), // vectorizedDecoder does not support prev_attn input
-        windowWeight);
+        windowWeight,
+        fl::noGrad(inputSizes));
     hy = hy + summaries;
   }
 
@@ -300,7 +232,9 @@ std::pair<Variable, Variable> Seq2SeqCriterion::vectorizedDecoder(
 
 std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
     const Variable& input,
-    const Variable& target) {
+    const Variable& target,
+    const af::array& inputSizes,
+    const af::array& targetSizes) {
   int U = target.dims(0);
 
   std::vector<Variable> outvec;
@@ -309,7 +243,8 @@ std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
   Variable y;
   for (int u = 0; u < U; u++) {
     Variable ox;
-    std::tie(ox, state) = decodeStep(input, y, state, U);
+    std::tie(ox, state) =
+        decodeStep(input, y, state, inputSizes, targetSizes, U);
 
     if (!train_) {
       y = target(u, af::span);
@@ -343,12 +278,15 @@ std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
   return std::make_pair(out, alpha);
 }
 
-af::array Seq2SeqCriterion::viterbiPath(const af::array& input) {
-  return viterbiPathBase(input, false).first;
+af::array Seq2SeqCriterion::viterbiPath(
+    const af::array& input,
+    const af::array& inputSizes /* = af::array() */) {
+  return viterbiPathBase(input, inputSizes, false).first;
 }
 
 std::pair<af::array, Variable> Seq2SeqCriterion::viterbiPathBase(
     const af::array& input,
+    const af::array& inputSizes,
     bool saveAttn) {
   // NB: xEncoded has to be with batchsize 1
   bool wasTrain = train_;
@@ -361,7 +299,13 @@ std::pair<af::array, Variable> Seq2SeqCriterion::viterbiPathBase(
   af::array maxIdx, maxValues;
   int pred;
   for (int u = 0; u < maxDecoderOutputLen_; u++) {
-    std::tie(ox, state) = decodeStep(Variable(input, false), y, state);
+    std::tie(ox, state) = decodeStep(
+        Variable(input, false),
+        y,
+        state,
+        inputSizes,
+        af::array(),
+        input.dims(1));
     max(maxValues, maxIdx, ox.array());
     maxIdx.host(&pred);
     if (saveAttn) {
@@ -388,16 +332,19 @@ std::pair<af::array, Variable> Seq2SeqCriterion::viterbiPathBase(
 
 std::vector<int> Seq2SeqCriterion::beamPath(
     const af::array& input,
+    const af::array& inputSizes,
     int beamSize /* = 10 */) {
   std::vector<Seq2SeqCriterion::CandidateHypo> beam;
   beam.emplace_back(CandidateHypo{});
-  auto beamPaths = beamSearch(input, beam, beamSize, maxDecoderOutputLen_);
+  auto beamPaths =
+      beamSearch(input, inputSizes, beam, beamSize, maxDecoderOutputLen_);
   return beamPaths[0].path;
 }
 
 // beam are candidates that need to be extended
 std::vector<Seq2SeqCriterion::CandidateHypo> Seq2SeqCriterion::beamSearch(
     const af::array& input, // H x T x 1
+    const af::array& inputSizes, // 1 x B
     std::vector<Seq2SeqCriterion::CandidateHypo> beam,
     int beamSize = 10,
     int maxLen = 200) {
@@ -431,7 +378,16 @@ std::vector<Seq2SeqCriterion::CandidateHypo> Seq2SeqCriterion::beamSearch(
 
     Variable ox;
     Seq2SeqState state;
-    std::tie(ox, state) = decodeStep(Variable(input, false), prevY, prevState);
+    // do proper cast of input size to batch size
+    // because we have beam now for the input
+    auto tiledInputSizes = af::tile(inputSizes, 1, prevY.dims(1));
+    std::tie(ox, state) = decodeStep(
+        Variable(input, false),
+        prevY,
+        prevState,
+        tiledInputSizes,
+        af::array(),
+        input.dims(1));
     ox = logSoftmax(ox, 0); // C x 1 x B
     ox = fl::reorder(ox, 0, 2, 1);
 
@@ -500,7 +456,9 @@ std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
     const Variable& xEncoded,
     const Variable& y,
     const Seq2SeqState& inState,
-    const int maxDecoderSteps /* -1 */) const {
+    const af::array& inputSizes,
+    const af::array& targetSizes,
+    const int maxDecoderSteps) const {
   Variable hy;
   if (y.isempty()) {
     hy = tile(startEmbedding(), {1, 1, static_cast<int>(xEncoded.dims(2))});
@@ -526,18 +484,24 @@ std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
     hy = moddims(hy, {hy.dims(0), 1, hy.dims(1)}); // H x B -> H x 1 x B
 
     Variable windowWeight;
+    // because of the beam search batchsize can be
+    // different for xEncoded and y (xEncoded batch = 1 and y batch = beam
+    // size)
+    int batchsize = y.isempty() ? xEncoded.dims(2) : y.dims(1);
     if (window_ && (!train_ || trainWithWindow_)) {
       // TODO fix for softpretrain where target size is used
       // for now force to xEncoded.dims(1)
       windowWeight = window_->computeWindow(
           inState.alpha,
           inState.step,
-          maxDecoderSteps != -1 ? maxDecoderSteps : xEncoded.dims(1),
+          maxDecoderSteps,
           xEncoded.dims(1),
-          xEncoded.dims(2));
+          batchsize,
+          inputSizes,
+          targetSizes);
     }
-    std::tie(outState.alpha, summaries) =
-        attention(i)->forward(hy, xEncoded, inState.alpha, windowWeight);
+    std::tie(outState.alpha, summaries) = attention(i)->forward(
+        hy, xEncoded, inState.alpha, windowWeight, fl::noGrad(inputSizes));
     hy = hy + summaries;
   }
   outState.summary = summaries;
@@ -658,13 +622,14 @@ std::string Seq2SeqCriterion::prettyString() const {
   return "Seq2SeqCriterion";
 }
 
-AMUpdateFunc buildAmUpdateFunction(
-    std::shared_ptr<SequenceCriterion>& criterion) {
+AMUpdateFunc buildSeq2SeqRnnAmUpdateFunction(
+    std::shared_ptr<SequenceCriterion>& criterion,
+    int attRound,
+    int beamSize,
+    float attThr,
+    float smoothingTemp) {
   auto buf = std::make_shared<Seq2SeqDecoderBuffer>(
-      FLAGS_decoderattnround,
-      FLAGS_beamsize,
-      FLAGS_attentionthreshold,
-      FLAGS_smoothingtemperature);
+      attRound, beamSize, attThr, smoothingTemp);
 
   const Seq2SeqCriterion* s2sCriterion =
       static_cast<Seq2SeqCriterion*>(criterion.get());
