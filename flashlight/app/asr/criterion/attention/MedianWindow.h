@@ -18,16 +18,21 @@ class MedianWindow : public WindowBase {
   MedianWindow();
   MedianWindow(int wL, int wR);
 
-  fl::Variable initialize(int inputSteps, int batchSize);
-
-  fl::Variable computeSingleStepWindow(
-      const fl::Variable& prevAttn,
+  Variable computeWindow(
+      const Variable& prevAttn,
+      int step,
+      int targetLen,
       int inputSteps,
       int batchSize,
-      int step) override;
+      const af::array& inputSizes = af::array(),
+      const af::array& targetSizes = af::array()) const override;
 
-  fl::Variable computeWindowMask(int targetLen, int inputSteps, int batchSize)
-      override;
+  Variable computeVectorizedWindow(
+      int targetLen,
+      int inputSteps,
+      int batchSize,
+      const af::array& inputSizes = af::array(),
+      const af::array& targetSizes = af::array()) const override;
 
  private:
   int wL_;

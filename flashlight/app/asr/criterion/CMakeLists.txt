@@ -79,4 +79,5 @@ target_sources(
   ${CMAKE_CURRENT_LIST_DIR}/attention/SoftPretrainWindow.cpp
   ${CMAKE_CURRENT_LIST_DIR}/attention/SoftWindow.cpp
   ${CMAKE_CURRENT_LIST_DIR}/attention/StepWindow.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/attention/WindowBase.cpp
   )
