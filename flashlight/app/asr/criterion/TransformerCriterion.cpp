@@ -181,7 +181,7 @@ std::pair<Variable, Variable> TransformerCriterion::vectorizedDecoder(
   if (!input.isempty()) {
     Variable windowWeight;
     if (window_ && (!train_ || trainWithWindow_)) {
-      windowWeight = window_->computeWindowMask(U, T, B);
+      windowWeight = window_->computeVectorizedWindow(U, T, B);
     }
 
     std::tie(alpha, summaries) =
@@ -262,8 +262,10 @@ std::pair<Variable, TS2SState> TransformerCriterion::decodeStep(
 
   Variable windowWeight, alpha, summary;
   if (window_ && (!train_ || trainWithWindow_)) {
-    windowWeight = window_->computeSingleStepWindow(
-        Variable(), xEncoded.dims(1), xEncoded.dims(2), inState.step);
+    // TODO fix for softpretrain where target size is used
+    // for now force to xEncoded.dims(1)
+    windowWeight = window_->computeWindow(
+        Variable(), inState.step, xEncoded.dims(1), xEncoded.dims(1), xEncoded.dims(2));
   }
 
   std::tie(alpha, summary) =

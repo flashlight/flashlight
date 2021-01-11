@@ -127,7 +127,8 @@ class Seq2SeqCriterion : public SequenceCriterion {
   std::pair<fl::Variable, Seq2SeqState> decodeStep(
       const fl::Variable& xEncoded,
       const fl::Variable& y,
-      const Seq2SeqState& instate) const;
+      const Seq2SeqState& instate,
+      int targetLen = -1) const;
 
   void clearWindow() {
     trainWithWindow_ = false;

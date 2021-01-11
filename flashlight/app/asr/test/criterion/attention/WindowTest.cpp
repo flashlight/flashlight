@@ -19,37 +19,77 @@ TEST(WindowTest, MedianWindow) {
   int inputsteps = 12;
   int batchsize = 4;
   int hiddendim = 16;
-  int w_l = 2;
-  int w_r = 3;
-  auto input_attn_array = af::abs(af::randn(1, w_l + w_r, batchsize, f32));
-  auto input_attn = Variable(
-      input_attn_array /
-          af::tile(sum(input_attn_array, 1), 1, input_attn_array.dims(1)),
+  int wl = 2;
+  int wr = 3;
+  auto inputAttnArray = af::abs(af::randn(1, wl + wr, batchsize, f32));
+  auto inputAttn = Variable(
+      inputAttnArray /
+          af::tile(sum(inputAttnArray, 1), 1, inputAttnArray.dims(1)),
       false);
 
-  MedianWindow window(w_l, w_r);
+  MedianWindow window(wl, wr);
 
   // check initialization
-  auto mask_0 = window.computeSingleStepWindow(
-      input_attn, inputsteps, batchsize, 0 /* step */);
+  auto mask0 = window.computeWindow(inputAttn, 0, -1, inputsteps, batchsize);
 
-  auto true_sum_mask_0 = af::constant(0.0, 1, inputsteps, 1, f32);
-  true_sum_mask_0(af::span, af::seq(0, w_l + w_r - 1), af::span) = batchsize;
+  auto trueSumMask0 = af::constant(0.0, 1, inputsteps, batchsize, f32);
+  trueSumMask0(af::span, af::seq(0, wl + wr - 1), af::span) = 1.0;
 
-  ASSERT_EQ(mask_0.dims(), af::dim4(1, inputsteps, batchsize));
-  ASSERT_TRUE(allClose(af::sum(mask_0.array(), 2), true_sum_mask_0));
+  ASSERT_EQ(mask0.dims(), af::dim4(1, inputsteps, batchsize));
+  ASSERT_TRUE(allClose(af::exp(mask0.array()), trueSumMask0));
 
   // check next step
-  auto mask_1 =
-      window.computeSingleStepWindow(input_attn, inputsteps, batchsize, 1);
-  ASSERT_EQ(mask_1.dims(), af::dim4(1, inputsteps, batchsize));
+  auto mask1 = window.computeWindow(inputAttn, 1, inputsteps, inputsteps, batchsize);
+  ASSERT_EQ(mask1.dims(), af::dim4(1, inputsteps, batchsize));
 
   // make sure large window size is handled
-  MedianWindow large_window(100, 100);
-  auto mask_large = large_window.computeSingleStepWindow(
-      input_attn, inputsteps, batchsize, 0);
-  true_sum_mask_0 = af::constant(batchsize, 1, inputsteps, 1, f32);
-  ASSERT_TRUE(allClose(af::sum(mask_large.array(), 2), true_sum_mask_0));
+  MedianWindow largeWindow(100, 100);
+  auto maskLarge =
+      largeWindow.computeWindow(inputAttn, 0, inputsteps, inputsteps, batchsize);
+  trueSumMask0 = af::constant(0, 1, inputsteps, batchsize, f32);
+  ASSERT_TRUE(allClose(maskLarge.array(), trueSumMask0));
+}
+
+TEST(WindowTest, MedianWindowWithPad) {
+  int inputsteps = 12;
+  int batchsize = 2;
+  int wl = 3;
+  int wr = 5;
+  auto inputAttnArray = af::abs(af::randn(1, wl + wr, batchsize, f32));
+  auto inputAttn = Variable(
+      inputAttnArray /
+          af::tile(sum(inputAttnArray, 1), 1, inputAttnArray.dims(1)),
+      false);
+
+  MedianWindow window(wl, wr);
+  std::vector<int> inpSzRaw = {1, 2};
+  af::array inpSz = af::array(af::dim4(1, batchsize), inpSzRaw.data());
+  std::vector<int> tgSzRaw = {1, 2};
+  af::array tgSz = af::array(af::dim4(1, batchsize), tgSzRaw.data());
+
+  // check initialization
+  auto mask0 = window.computeWindow(
+      inputAttn, 0, -1, inputsteps, batchsize, inpSz, tgSz);
+
+  auto trueSumMask0 = af::constant(0.0, 1, inputsteps, batchsize, f32);
+  trueSumMask0(af::span, af::seq(0, wl + wr - 1), af::span) = 1.0;
+  trueSumMask0(af::span, af::seq(inputsteps / 2, inputsteps - 1), 0) = 0.0;
+
+  ASSERT_EQ(mask0.dims(), af::dim4(1, inputsteps, batchsize));
+  ASSERT_TRUE(allClose(af::exp(mask0.array()), trueSumMask0));
+
+  // check next step
+  auto mask2 =
+      window.computeWindow(inputAttn, 2, 2, inputsteps, batchsize, inpSz, tgSz);
+  ASSERT_EQ(mask2.dims(), af::dim4(1, inputsteps, batchsize));
+  ASSERT_TRUE(
+      af::count<int>(
+          af::exp(mask2.array())(
+              0, af::seq(inputsteps - inputsteps / 2, inputsteps - 1), 0) ==
+          0) == inputsteps / 2);
+  ASSERT_TRUE(
+      af::count<int>(af::exp(mask2.array())(0, af::span, 0) == 0) ==
+      inputsteps);
 }
 
 TEST(WindowTest, StepWindow) {
@@ -57,59 +97,79 @@ TEST(WindowTest, StepWindow) {
   int batchsize = 4;
   int hiddendim = 16;
   int targetlen = 30;
-  int s_min = 3, s_max = 15;
-  double v_min = 2.3, v_max = 7.5;
+  int sMin = 3, sMax = 15;
+  double vMin = 2.3, vMax = 7.5;
 
-  Variable input_attn; // dummy
-  std::vector<int> window_boundaries(2, 0);
+  Variable inputAttn; // dummy
+  std::vector<int> windowBoundaries(2, 0);
 
-  StepWindow window(s_min, s_max, v_min, v_max);
+  StepWindow window(sMin, sMax, vMin, vMax);
 
   // check initialization
-  auto mask_0 = window.computeSingleStepWindow(
-      input_attn, inputsteps, batchsize, 0 /* step */);
-  auto true_sum_mask_0 = af::constant(0.0, 1, inputsteps, 1, f32);
-  window_boundaries[0] = s_min;
-  window_boundaries[1] = s_max;
+  auto mask0 = window.computeWindow(inputAttn, 0, inputsteps, inputsteps, batchsize);
+  auto trueSumMask0 = af::constant(0.0, 1, inputsteps, batchsize, f32);
+  windowBoundaries[0] = sMin;
+  windowBoundaries[1] = sMax;
 
-  true_sum_mask_0(
+  trueSumMask0(
       af::span,
-      af::seq(window_boundaries[0], window_boundaries[1] - 1),
-      af::span) = batchsize;
+      af::seq(windowBoundaries[0], windowBoundaries[1] - 1),
+      af::span) = 1.0;
 
-  ASSERT_EQ(mask_0.dims(), af::dim4(1, inputsteps, batchsize));
-  ASSERT_TRUE(allClose(af::sum(mask_0.array(), 2), true_sum_mask_0));
+  ASSERT_EQ(mask0.dims(), af::dim4(1, inputsteps, batchsize));
+  ASSERT_TRUE(allClose(af::exp(mask0.array()), trueSumMask0));
 
-  auto mask_1 = window.computeSingleStepWindow(
-      input_attn, inputsteps, batchsize, 1 /* step */);
-  auto true_sum_mask_1 = af::constant(0.0, 1, inputsteps, 1, f32);
-  window_boundaries[0] = static_cast<int>(std::round(s_min + v_min));
-  window_boundaries[1] = static_cast<int>(std::round(s_max + v_max));
+  auto mask1 = window.computeWindow(inputAttn, 1, inputsteps, inputsteps, batchsize);
+  auto trueSumMask1 = af::constant(0.0, 1, inputsteps, batchsize, f32);
+  windowBoundaries[0] = static_cast<int>(std::round(sMin + vMin));
+  windowBoundaries[1] = static_cast<int>(std::round(sMax + vMax));
 
-  true_sum_mask_1(
+  trueSumMask1(
       af::span,
-      af::seq(window_boundaries[0], window_boundaries[1] - 1),
-      af::span) = batchsize;
+      af::seq(windowBoundaries[0], windowBoundaries[1] - 1),
+      af::span) = 1.0;
 
-  ASSERT_EQ(mask_1.dims(), af::dim4(1, inputsteps, batchsize));
-  ASSERT_TRUE(allClose(af::sum(mask_1.array(), 2), true_sum_mask_1));
+  ASSERT_EQ(mask1.dims(), af::dim4(1, inputsteps, batchsize));
+  ASSERT_TRUE(allClose(af::exp(mask1.array()), trueSumMask1));
 
-  auto mask_large = window.computeSingleStepWindow(
-      input_attn, inputsteps, batchsize, 1000 /* step */);
-  auto true_sum_mask_large = af::constant(0.0, 1, inputsteps, 1, f32);
-  window_boundaries[0] = static_cast<int>(std::round(inputsteps - v_max));
-  window_boundaries[1] = inputsteps;
+  auto maskLarge =
+      window.computeWindow(inputAttn, 1000, inputsteps, inputsteps, batchsize);
+  auto trueSumMaskLarge = af::constant(0.0, 1, inputsteps, batchsize, f32);
+  windowBoundaries[0] = static_cast<int>(std::round(inputsteps - vMax));
+  windowBoundaries[1] = inputsteps;
 
-  true_sum_mask_large(
+  trueSumMaskLarge(
       af::span,
-      af::seq(window_boundaries[0], window_boundaries[1] - 1),
-      af::span) = batchsize;
+      af::seq(windowBoundaries[0], windowBoundaries[1] - 1),
+      af::span) = 1.0;
 
-  ASSERT_EQ(mask_large.dims(), af::dim4(1, inputsteps, batchsize));
-  ASSERT_TRUE(allClose(af::sum(mask_large.array(), 2), true_sum_mask_large));
+  ASSERT_EQ(maskLarge.dims(), af::dim4(1, inputsteps, batchsize));
+  ASSERT_TRUE(allClose(af::exp(maskLarge.array()), trueSumMaskLarge));
 
-  auto mask_v = window.computeWindowMask(targetlen, inputsteps, batchsize);
-  ASSERT_EQ(mask_v.dims(), af::dim4(targetlen, inputsteps, batchsize));
+  auto maskV = window.computeVectorizedWindow(targetlen, inputsteps, batchsize);
+  ASSERT_EQ(maskV.dims(), af::dim4(targetlen, inputsteps, batchsize));
+
+  std::vector<int> inpSzRaw = {1, 2, 2, 2};
+  af::array inpSz = af::array(af::dim4(1, batchsize), inpSzRaw.data());
+  std::vector<int> tgSzRaw = {1, 2, 2, 2};
+  af::array tgSz = af::array(af::dim4(1, batchsize), tgSzRaw.data());
+
+  auto maskVPad = af::exp(window
+                              .computeVectorizedWindow(
+                                  targetlen, inputsteps, batchsize, inpSz, tgSz)
+                              .array());
+  ASSERT_EQ(maskVPad.dims(), af::dim4(targetlen, inputsteps, batchsize));
+  ASSERT_TRUE(
+      af::count<int>(
+          maskVPad(
+              af::span,
+              af::seq(inputsteps - inputsteps / 2, inputsteps - 1),
+              0) == 0) == inputsteps / 2 * targetlen);
+  ASSERT_TRUE(
+      af::count<int>(
+          maskVPad(
+              af::seq(targetlen - targetlen / 2, targetlen - 1), af::span, 0) ==
+          0) == targetlen / 2 * inputsteps);
 }
 
 TEST(WindowTest, SoftWindow) {
@@ -117,25 +177,46 @@ TEST(WindowTest, SoftWindow) {
   int batchsize = 4;
   int targetlen = 15;
   int offset = 10;
-  double avg_rate = 5.2, std = 5.0;
+  double avgRate = 5.2, std = 5.0;
 
-  Variable input_attn; // dummy
-  SoftWindow window(std, avg_rate, offset);
+  Variable inputAttn; // dummy
+  SoftWindow window(std, avgRate, offset);
 
-  auto mask_0 = window.computeSingleStepWindow(
-      input_attn, inputsteps, batchsize, 0 /* step */);
+  auto mask0 = window.computeWindow(inputAttn, 0, inputsteps, inputsteps, batchsize);
 
   af::array maxv, maxidx;
-  max(maxv, maxidx, mask_0.array(), 1);
-  std::vector<int> true_maxidx(batchsize, offset);
+  max(maxv, maxidx, mask0.array(), 1);
+  std::vector<int> trueMaxidx(batchsize, offset);
 
-  ASSERT_EQ(mask_0.dims(), af::dim4(1, inputsteps, batchsize));
+  ASSERT_EQ(mask0.dims(), af::dim4(1, inputsteps, batchsize));
   ASSERT_TRUE(allClose(
       maxidx.as(af::dtype::s32),
-      af::array(1, 1, batchsize, true_maxidx.data())));
+      af::array(1, 1, batchsize, trueMaxidx.data())));
 
-  auto mask_v = window.computeWindowMask(targetlen, inputsteps, batchsize);
-  ASSERT_EQ(mask_v.dims(), af::dim4(targetlen, inputsteps, batchsize));
+  auto maskV = window.computeVectorizedWindow(targetlen, inputsteps, batchsize);
+  ASSERT_EQ(maskV.dims(), af::dim4(targetlen, inputsteps, batchsize));
+
+  std::vector<int> inpSzRaw = {1, 2, 2, 2};
+  af::array inpSz = af::array(af::dim4(1, batchsize), inpSzRaw.data());
+  std::vector<int> tgSzRaw = {1, 2, 2, 2};
+  af::array tgSz = af::array(af::dim4(1, batchsize), tgSzRaw.data());
+
+  auto maskVPad = af::exp(window
+                              .computeVectorizedWindow(
+                                  targetlen, inputsteps, batchsize, inpSz, tgSz)
+                              .array());
+  ASSERT_EQ(maskVPad.dims(), af::dim4(targetlen, inputsteps, batchsize));
+  ASSERT_TRUE(
+      af::count<int>(
+          maskVPad(
+              af::span,
+              af::seq(inputsteps - inputsteps / 2, inputsteps - 1),
+              0) == 0) == inputsteps / 2 * targetlen);
+  ASSERT_TRUE(
+      af::count<int>(
+          maskVPad(
+              af::seq(targetlen - targetlen / 2, targetlen - 1), af::span, 0) ==
+          0) == targetlen / 2 * inputsteps);
 }
 
 TEST(WindowTest, SoftPretrainWindow) {
@@ -146,31 +227,51 @@ TEST(WindowTest, SoftPretrainWindow) {
 
   std::vector<unsigned int> peaks = {0, 4, 8, 12, 16, 20, 24, 28};
 
-  Variable input_attn;
+  Variable inputAttn;
   SoftPretrainWindow window(std);
 
   // single step
-  window.setBatchStat(inputsteps, targetlen, batchsize);
   std::vector<Variable> masks;
   for (int step = 0; step < targetlen; ++step) {
-    masks.emplace_back(window.computeSingleStepWindow(
-        input_attn, inputsteps, batchsize, step));
+    masks.emplace_back(window.computeWindow(
+        inputAttn, step, targetlen, inputsteps, batchsize));
   }
-  auto mask_s = concatenate(masks, 0);
-  af::array maxv, maxid;
-  max(maxv, maxid, mask_s.array()(af::span, af::span, 0), 1);
+  auto maskS = concatenate(masks, 0);
+  af::array maxv, maxidx;
+  max(maxv, maxidx, maskS.array()(af::span, af::span, 0), 1);
 
-  ASSERT_EQ(mask_s.dims(), af::dim4(targetlen, inputsteps, batchsize));
-  ASSERT_TRUE(allClose(maxid, af::array(8, peaks.data())));
+  ASSERT_EQ(maskS.dims(), af::dim4(targetlen, inputsteps, batchsize));
+  ASSERT_TRUE(allClose(maxidx, af::array(8, peaks.data())));
 
   // vectorized
-  auto mask_v = window.computeWindowMask(targetlen, inputsteps, batchsize);
-  max(maxv, maxid, mask_v.array()(af::span, af::span, 0), 1);
+  auto maskV = window.computeVectorizedWindow(targetlen, inputsteps, batchsize);
+  max(maxv, maxidx, maskV.array()(af::span, af::span, 0), 1);
 
-  ASSERT_EQ(mask_v.dims(), af::dim4(targetlen, inputsteps, batchsize));
-  ASSERT_TRUE(allClose(maxid, af::array(8, peaks.data())));
+  ASSERT_EQ(maskV.dims(), af::dim4(targetlen, inputsteps, batchsize));
+  ASSERT_TRUE(allClose(maxidx, af::array(8, peaks.data())));
+  ASSERT_TRUE(allClose(maskS, maskV));
 
-  ASSERT_TRUE(allClose(mask_s, mask_v));
+  std::vector<int> inpSzRaw = {1, 2, 2, 2};
+  af::array inpSz = af::array(af::dim4(1, batchsize), inpSzRaw.data());
+  std::vector<int> tgSzRaw = {1, 2, 2, 2};
+  af::array tgSz = af::array(af::dim4(1, batchsize), tgSzRaw.data());
+
+  auto maskVPad = af::exp(window
+                              .computeVectorizedWindow(
+                                  targetlen, inputsteps, batchsize, inpSz, tgSz)
+                              .array());
+  ASSERT_EQ(maskVPad.dims(), af::dim4(targetlen, inputsteps, batchsize));
+  ASSERT_TRUE(
+      af::count<int>(
+          maskVPad(
+              af::span,
+              af::seq(inputsteps - inputsteps / 2, inputsteps - 1),
+              0) == 0) == inputsteps / 2 * targetlen);
+  ASSERT_TRUE(
+      af::count<int>(
+          maskVPad(
+              af::seq(targetlen - targetlen / 2, targetlen - 1), af::span, 0) ==
+          0) == targetlen / 2 * inputsteps);
 }
 
 int main(int argc, char** argv) {

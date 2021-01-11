@@ -283,7 +283,7 @@ std::pair<Variable, Variable> Seq2SeqCriterion::vectorizedDecoder(
 
     Variable windowWeight;
     if (window_ && (!train_ || trainWithWindow_)) {
-      windowWeight = window_->computeWindowMask(U, T, B);
+      windowWeight = window_->computeVectorizedWindow(U, T, B);
     }
 
     std::tie(alpha, summaries) = attention(i)->forward(
@@ -303,17 +303,13 @@ std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
     const Variable& target) {
   int U = target.dims(0);
 
-  if (window_) { // for softPretrainWindow
-    window_->setBatchStat(input.dims(1), U, input.dims(2));
-  }
-
   std::vector<Variable> outvec;
   std::vector<Variable> alphaVec;
   Seq2SeqState state(nAttnRound_);
   Variable y;
   for (int u = 0; u < U; u++) {
     Variable ox;
-    std::tie(ox, state) = decodeStep(input, y, state);
+    std::tie(ox, state) = decodeStep(input, y, state, U);
 
     if (!train_) {
       y = target(u, af::span);
@@ -503,7 +499,8 @@ std::vector<Seq2SeqCriterion::CandidateHypo> Seq2SeqCriterion::beamSearch(
 std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
     const Variable& xEncoded,
     const Variable& y,
-    const Seq2SeqState& inState) const {
+    const Seq2SeqState& inState,
+    const int maxDecoderSteps /* -1 */) const {
   Variable hy;
   if (y.isempty()) {
     hy = tile(startEmbedding(), {1, 1, static_cast<int>(xEncoded.dims(2))});
@@ -530,8 +527,14 @@ std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
 
     Variable windowWeight;
     if (window_ && (!train_ || trainWithWindow_)) {
-      windowWeight = window_->computeSingleStepWindow(
-          inState.alpha, xEncoded.dims(1), xEncoded.dims(2), inState.step);
+      // TODO fix for softpretrain where target size is used
+      // for now force to xEncoded.dims(1)
+      windowWeight = window_->computeWindow(
+          inState.alpha,
+          inState.step,
+          maxDecoderSteps != -1 ? maxDecoderSteps : xEncoded.dims(1),
+          xEncoded.dims(1),
+          xEncoded.dims(2));
     }
     std::tie(outState.alpha, summaries) =
         attention(i)->forward(hy, xEncoded, inState.alpha, windowWeight);
