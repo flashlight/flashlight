@@ -23,12 +23,6 @@ std::shared_ptr<MemoryManagerInstaller>
 std::shared_ptr<MemoryManagerAdapter>
     MemoryManagerInstaller::currentlyInstalledMemoryManager_;
 
-namespace {
-
-bool init = MemoryManagerInstaller::installDefaultMemoryManager();
-
-} // namespace
-
 MemoryManagerAdapter* MemoryManagerInstaller::getImpl(
     af_memory_manager manager) {
   void* ptr;
@@ -227,7 +221,7 @@ MemoryManagerInstaller::currentlyInstalledMemoryManager() {
   return currentlyInstalledMemoryManager_.get();
 }
 
-bool MemoryManagerInstaller::installDefaultMemoryManager() {
+void MemoryManagerInstaller::installDefaultMemoryManager() {
   std::call_once(startupMemoryInitialize_, []() {
     auto deviceInterface = std::make_shared<MemoryManagerDeviceInterface>();
     auto adapter = std::make_shared<CachingMemoryManager>(
@@ -237,7 +231,6 @@ bool MemoryManagerInstaller::installDefaultMemoryManager() {
     MemoryManagerInstaller::startupMemoryManagerInstaller_
         ->setAsMemoryManager();
   });
-  return true;
 }
 
 void MemoryManagerInstaller::unsetMemoryManager() {

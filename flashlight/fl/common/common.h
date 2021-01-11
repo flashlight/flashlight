@@ -8,6 +8,7 @@
 #pragma once
 
 #include "flashlight/fl/common/CppBackports.h"
+#include "flashlight/fl/common/Init.h" 
 #include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/common/DevicePtr.h"
 #include "flashlight/fl/common/DynamicBenchmark.h"
