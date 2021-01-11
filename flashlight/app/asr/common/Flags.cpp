@@ -62,10 +62,13 @@ DEFINE_string(
 DEFINE_string(
     batching_strategy,
     "none",
-    "Batching strategy to use, supports {'none', 'dynamic'}. "
-    "When using 'none' strategy then batchsize is used. "
-    "When using 'dynamic' batching for training, batchsize will be ignored "
-    "and max_tokens is used to define the effective batch size");
+    "Batching strategy to use, supports {'none', 'dynamic', 'rand', 'randdynamic'}. "
+    "When using 'none' strategy then batches of size 'batchsize' are created. "
+    "When using 'dynamic' batching for training, 'batchsize' will be ignored "
+    "and 'max_tokens' will be used to compute the effective batch size. "
+    "To use unordered input data to pack batches, use either 'rand' "
+    "or 'randdynamic' which shuffles data before packing, "
+    " then follows the same packing strategies as 'none' or 'dynamic', respectively.");
 DEFINE_int64(
     batching_max_duration,
     0,
