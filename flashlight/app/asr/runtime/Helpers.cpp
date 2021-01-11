@@ -229,7 +229,6 @@ std::vector<std::pair<std::string, std::string>> parseValidSets(
   }
   return validTagSets;
 }
-
 } // namespace asr
 } // namespace app
 } // namespace fl

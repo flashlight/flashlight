@@ -85,11 +85,6 @@ DEFINE_string(
     surround,
     "",
     "Surround target tokens sequence with provided token (duplicates are removed)");
-DEFINE_bool(
-    eostoken,
-    false,
-    "Add the eos (end of sentence) token into the token set and append target token sequences with it "
-    "at train, test, and decode time.");
 DEFINE_string(
     wordseparator,
     kSilToken,

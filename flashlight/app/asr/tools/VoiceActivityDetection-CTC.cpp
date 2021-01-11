@@ -134,9 +134,6 @@ int main(int argc, char** argv) {
   } else {
     LOG(FATAL) << "CTC-trained model required for VAD-CTC.";
   }
-  if (FLAGS_eostoken) {
-    tokenDict.addEntry(kEosToken);
-  }
 
   int numClasses = tokenDict.indexSize();
   LOG(INFO) << "Number of classes (network): " << numClasses;
@@ -172,7 +169,7 @@ int main(int argc, char** argv) {
       FLAGS_sampletarget,
       FLAGS_criterion,
       FLAGS_surround,
-      FLAGS_eostoken,
+      false /* isSeq2SeqCrit */,
       FLAGS_replabel,
       true /* skip unk */,
       FLAGS_usewordpiece /* fallback2LetterWordSepLeft */,
@@ -185,9 +182,7 @@ int main(int argc, char** argv) {
       {});
   auto targetTransform = targetFeatures(tokenDict, lexicon, targetGenConfig);
   auto wordTransform = wordFeatures(wordDict);
-  int targetpadVal = FLAGS_eostoken
-      ? tokenDict.getIndex(fl::app::asr::kEosToken)
-      : kTargetPadValue;
+  int targetpadVal = kTargetPadValue;
   int wordpadVal = kTargetPadValue;
 
   auto ds = createDataset(
@@ -235,7 +230,7 @@ int main(int argc, char** argv) {
         tokenDict,
         FLAGS_criterion,
         FLAGS_surround,
-        FLAGS_eostoken,
+        false /* isSeq2SeqCrit */,
         FLAGS_replabel,
         FLAGS_usewordpiece,
         FLAGS_wordseparator);
