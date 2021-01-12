@@ -471,12 +471,10 @@ int main(int argc, char** argv) {
       detr->backboneParams(), FLAGS_lr * 0.1, beta1, beta2, epsilon, FLAGS_wd);
   auto lrScheduler = [&opt, &opt2](int epoch) {
     // Adjust learning rate every 30 epoch after 30
-    if (epoch == 100) {
-      const float newLr = opt->getLr() * 0.1;
-      LOG(INFO) << "Setting learning rate to: " << newLr;
-      opt->setLr(newLr);
-      opt2->setLr(newLr * 0.1);
-    }
+    const float newLr = FLAGS_lr * pow(0.1, epoch / 100);
+    LOG(INFO) << "Setting learning rate to: " << newLr;
+    opt->setLr(newLr);
+    opt2->setLr(newLr * 0.1);
   };
 
   if (runStatus == "continue") {
@@ -495,6 +493,7 @@ int main(int argc, char** argv) {
 
   auto weightDict = criterion.getWeightDict();
   for(int epoch= startEpoch; epoch < FLAGS_epochs; epoch++) {
+    lrScheduler(epoch);
 
     std::map<std::string, AverageValueMeter> meters;
     std::map<std::string, TimeMeter> timers;
