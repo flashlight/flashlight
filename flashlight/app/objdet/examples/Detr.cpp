@@ -604,6 +604,7 @@ int main(int argc, char** argv) {
         }
         ss << std::endl;
         FL_LOG_MASTER(INFO) << ss.str();
+        break;
       }
     }
     for(auto timer : timers) {

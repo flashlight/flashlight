@@ -17,16 +17,17 @@ echo $SLURM_LOCALID
 # Needed for arrayfire
 export LD_LIBRARY_PATH=/private/home/padentomasello/usr/lib/:$LD_LIBRARY_PATH
 
+echo $SLURM_PROCID
 BUILD_DIR=/scratch/slurm_tmpdir/$SLURM_JOB_ID/$1
 EVAL_DIR=$BUILD_DIR/eval/$SLURM_LOCALID/
 RUN_DIR=/checkpoint/padentomasello/models/$2/
 mkdir -p $RUN_DIR
 mkdir -p $BUILD_DIR/rndv/
 mkdir -p $EVAL_DIR
-$BUILD_DIR/flashlight/build/Detr continue $RUN_DIR \  # Ugh why does FL log send to std::err? 
+$BUILD_DIR/flashlight/build/Detr continue $RUN_DIR \
 --eval_dir $EVAL_DIR \
 --eval_script $BUILD_DIR/flashlight/flashlight/app/objdet/scripts/eval_coco.py \
- 2>&1
+ 2>&1  # Ugh why does FL log send to std::err? 
 
 
 
