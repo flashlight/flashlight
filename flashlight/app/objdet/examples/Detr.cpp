@@ -160,7 +160,8 @@ int main(int argc, char** argv) {
     << "-c 'import arrayfire as af'";
   system(ss.str().c_str());
 
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
+
+  //gflags::ParseCommandLineFlags(&argc, &argv, false);
   int runIdx = 1; // current #runs in this path
   std::string runPath; // current experiment path
   std::string reloadPath; // path to model to reload
@@ -172,6 +173,10 @@ int main(int argc, char** argv) {
   for (int i = 0; i < argc; i++) {
     argvs.emplace_back(argv[i]);
   }
+  gflags::SetUsageMessage(
+    "Usage: \n " + exec + " train [flags]\n or " + exec +
+    " continue [directory] [flags]\n or " + exec +
+    " fork [directory/model] [flags]");
   // Saving checkpointing
   if (argc <= 1) {
     LOG(FATAL) << gflags::ProgramUsage();
@@ -195,6 +200,7 @@ int main(int argc, char** argv) {
     }
     LOG(INFO) << "Reading flags from config file " << reloadPath;
     gflags::ReadFlagsFromString(flags->second, gflags::GetArgv0(), true);
+    gflags::ParseCommandLineFlags(&argc, &argv, false);
     parseCmdLineFlagsWrapper(argc, argv);
     auto epoch = cfg.find(kEpoch);
     if (epoch == cfg.end()) {
@@ -216,6 +222,7 @@ int main(int argc, char** argv) {
     LOG(FATAL) << "'runpath' specified by --rundir, --runname cannot be empty";
   }
 
+  std::cout << serializeGflags() << std::endl;
   //const std::string label_path = FLAGS_data_dir + "labels.txt";
   //const std::string train_list = FLAGS_data_dir + "train";
   //const std::string val_list = FLAGS_data_dir + "val";

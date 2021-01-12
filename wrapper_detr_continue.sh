@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 set -x
 # Be very wary of this explicit setting of CUDA_VISIBLE_DEVICES. Say you are
 # running one task and asked for gres=gpu:1 then setting this variable will mean
@@ -22,7 +23,10 @@ RUN_DIR=/checkpoint/padentomasello/models/$2/
 mkdir -p $RUN_DIR
 mkdir -p $BUILD_DIR/rndv/
 mkdir -p $EVAL_DIR
-$BUILD_DIR/flashlight/build/Detr continue $RUN_DIR 2>&1 # Ugh why does FL log send to std::err? 
+$BUILD_DIR/flashlight/build/Detr continue $RUN_DIR \  # Ugh why does FL log send to std::err? 
+--eval_dir $EVAL_DIR \
+--eval_script $BUILD_DIR/flashlight/flashlight/app/objdet/scripts/eval_coco.py \
+ 2>&1
 
 
 
