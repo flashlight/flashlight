@@ -95,7 +95,6 @@ DEFINE_int64(
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
-  af::array ooo_test = af::array(100000000000000000);
   std::string exec(argv[0]);
   std::vector<std::string> argvs;
   for (int i = 0; i < argc; i++) {
@@ -409,25 +408,25 @@ int main(int argc, char** argv) {
     FL_LOG_MASTER(INFO) << "[Beam-search Decoder] Constructing language model "
                            "and beam search decoder";
     std::vector<float> dummyTransition;
-    //if (FLAGS_decodertype == "wrd" && FLAGS_lmtype == "kenlm" &&
-        //FLAGS_criterion == "ctc") {
-      //lm = std::make_shared<fl::lib::text::KenLM>(FLAGS_lm, wordDict);
-      //dm = std::make_shared<WordDecodeMaster>(
-          //network,
-          //lm,
-          //dummyTransition,
-          //usePlugin,
-          //tokenDict,
-          //wordDict,
-          //DecodeMasterTrainOptions{.repLabel = int32_t(FLAGS_replabel),
-                                   //.wordSepIsPartOfToken = FLAGS_usewordpiece,
-                                   //.surround = FLAGS_surround,
-                                   //.wordSep = FLAGS_wordseparator,
-                                   //.targetPadIdx = targetpadVal});
-    //} else {
-      //throw std::runtime_error(
-          //"Other decoders are not supported yet during training");
-    //}
+    if (FLAGS_decodertype == "wrd" && FLAGS_lmtype == "kenlm" &&
+        FLAGS_criterion == "ctc") {
+      lm = std::make_shared<fl::lib::text::KenLM>(FLAGS_lm, wordDict);
+      dm = std::make_shared<WordDecodeMaster>(
+          network,
+          lm,
+          dummyTransition,
+          usePlugin,
+          tokenDict,
+          wordDict,
+          DecodeMasterTrainOptions{.repLabel = int32_t(FLAGS_replabel),
+                                   .wordSepIsPartOfToken = FLAGS_usewordpiece,
+                                   .surround = FLAGS_surround,
+                                   .wordSep = FLAGS_wordseparator,
+                                   .targetPadIdx = targetpadVal});
+    } else {
+      throw std::runtime_error(
+          "Other decoders are not supported yet during training");
+    }
   }
 
   if (runStatus == kTrainMode || runStatus == kForkMode) {

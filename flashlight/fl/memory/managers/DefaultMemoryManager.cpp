@@ -19,7 +19,6 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <iostream>
 
 #include "flashlight/fl/memory/MemoryManagerDeviceInterface.h"
 

@@ -45,7 +45,6 @@ BatchNorm::BatchNorm(
 }
 
 Variable BatchNorm::forward(const Variable& input) {
-  momentum_ = 0.0f;
   double avgFactor = 0.0;
 
   if (train_ && trackStats_) {
@@ -66,7 +65,6 @@ Variable BatchNorm::forward(const Variable& input) {
       runningMean_,
       runningVar_,
       featAxis_,
-      //train_ || (!trackStats_),
       train_ || (!trackStats_),
       avgFactor,
       epsilon_);
@@ -83,20 +81,6 @@ void BatchNorm::initialize() {
     auto bs = constant(0.0, featSize_, af::dtype::f32, true);
     params_ = {wt, bs};
   }
-}
-
-void BatchNorm::freeze() {
-  for (auto& param : params_) {
-    param.setCalcGrad(false);
-  }
-}
-
-void BatchNorm::setRunningMean(af::array x) {
-  runningMean_ = fl::Variable(x, false);
-}
-
-void BatchNorm::setRunningVar(af::array x) {
-  runningVar_ = fl::Variable(x, false);
 }
 
 std::string BatchNorm::prettyString() const {
