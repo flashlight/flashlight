@@ -94,7 +94,6 @@ DEFINE_int64(
 } // namespace
 
 int main(int argc, char** argv) {
-  fl::init();
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
   std::string exec(argv[0]);
@@ -171,6 +170,8 @@ int main(int argc, char** argv) {
   if (runPath.empty()) {
     LOG(FATAL) << "'runpath' specified by --rundir, --runname cannot be empty";
   }
+
+  fl::init(FLAGS_fl_mem_recycling_size, FLAGS_fl_mem_split_size);
 
   af::setSeed(FLAGS_seed);
   fl::DynamicBenchmark::setBenchmarkMode(FLAGS_fl_benchmark_mode);
@@ -608,7 +609,7 @@ int main(int argc, char** argv) {
       };
 
   std::ofstream memLog;
-  if (FLAGS_fl_log_mem_ops_interval > 0 && isMaster) {
+  if (FLAGS_fl_mem_log_ops_interval > 0 && isMaster) {
     auto* curMemMgr =
         fl::MemoryManagerInstaller::currentlyInstalledMemoryManager();
     if (curMemMgr) {
@@ -619,7 +620,7 @@ int main(int argc, char** argv) {
       }
       curMemMgr->setLogStream(&memLog);
       curMemMgr->setLoggingEnabled(true);
-      curMemMgr->setLogFlushInterval(FLAGS_fl_log_mem_ops_interval);
+      curMemMgr->setLogFlushInterval(FLAGS_fl_mem_log_ops_interval);
     }
   }
 

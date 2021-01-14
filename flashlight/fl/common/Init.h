@@ -12,6 +12,6 @@ namespace fl {
 /**
  * Initialize Flashlight.
  */
-void init();
+void init(int memRecyclingSize=-1, int memSplitSize=-1);
 
 } // namespace fl
