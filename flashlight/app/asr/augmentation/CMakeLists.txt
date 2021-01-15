@@ -10,3 +10,14 @@ target_sources(
   ${CMAKE_CURRENT_LIST_DIR}/SoundEffectConfig.cpp
   ${CMAKE_CURRENT_LIST_DIR}/SoundEffectUtil.cpp
   )
+
+
+add_executable(
+  fl_asr_sfx_apply
+  ${CMAKE_CURRENT_LIST_DIR}/SoundEffectApply.cpp
+  )
+
+target_link_libraries(
+  fl_asr_sfx_apply
+  flashlight-app-asr
+  )
