@@ -6,6 +6,7 @@
  */
 
 #include <stdexcept>
+#include <utility>
 
 #include "flashlight/fl/autograd/backend/cpu/DnnlUtils.h"
 #include "flashlight/fl/common/Defines.h"
@@ -57,6 +58,58 @@ dnnl::memory::dims convertAfToDnnlDims(const std::vector<dim_t>& afDims) {
   // DNNL uses ints in dims
   std::vector<long int> intVec(afDims.begin(), afDims.end());
   return dnnl::memory::dims(intVec);
+}
+
+dnnl::memory::dims convertAfDim4ToDnnlDims(const af::dim4& afDims) {
+  std::vector<dim_t> dimVec(afDims.get(), afDims.get() + afDims.ndims());
+  return convertAfToDnnlDims(dimVec);
+}
+
+DnnlMemoryWrapper::DnnlMemoryWrapper(
+    const af::array& array,
+    dnnl::memory::dims dims,
+    dnnl::memory::format_tag format) {
+  devicePtr_ = fl::DevicePtr(array);
+  descriptor_ =
+      dnnl::memory::desc({dims}, detail::dnnlMapToType(array.type()), format);
+  memory_ = dnnl::memory(
+      descriptor_,
+      detail::DnnlEngine::getInstance().getEngine(),
+      devicePtr_.get());
+}
+
+DnnlMemoryWrapper& DnnlMemoryWrapper::operator=(DnnlMemoryWrapper&& other) {
+  devicePtr_ = std::move(other.devicePtr_);
+  memory_ = std::move(other.memory_);
+  descriptor_ = std::move(other.descriptor_);
+  return *this;
+}
+
+dnnl::memory DnnlMemoryWrapper::getMemory() const {
+  return memory_;
+}
+
+dnnl::memory::desc DnnlMemoryWrapper::getDescriptor() const {
+  return descriptor_;
+}
+
+dnnl::memory afToDnnlMemory(
+    const af::array& array,
+    const fl::DevicePtr& dPtr,
+    dnnl::memory::dims dims,
+    dnnl::memory::format_tag format) {
+  auto inputMemDesc =
+      dnnl::memory::desc(dims, detail::dnnlMapToType(array.type()), format);
+  return dnnl::memory(
+      inputMemDesc, detail::DnnlEngine::getInstance().getEngine(), dPtr.get());
+}
+
+dnnl::memory afToDnnlMemory(
+    const af::array& array,
+    const fl::DevicePtr& dPtr,
+    dnnl::memory::format_tag format) {
+  return afToDnnlMemory(
+      array, dPtr, convertAfDim4ToDnnlDims(array.dims()), format);
 }
 
 dnnl::memory dnnlAlignOrdering(

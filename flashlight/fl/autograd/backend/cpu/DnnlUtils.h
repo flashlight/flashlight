@@ -13,6 +13,7 @@
 #include <dnnl.hpp>
 
 #include "flashlight/fl/common/Defines.h"
+#include "flashlight/fl/common/DevicePtr.h"
 
 namespace fl {
 namespace detail {
@@ -60,6 +61,39 @@ class DnnlEngine {
  * for dnnl::memory::dims.
  */
 dnnl::memory::dims convertAfToDnnlDims(const std::vector<dim_t>& dims);
+dnnl::memory::dims convertAfDim4ToDnnlDims(const af::dim4& afDims);
+
+class DnnlMemoryWrapper {
+ public:
+  DnnlMemoryWrapper(
+      const af::array& array,
+      dnnl::memory::dims dims,
+      dnnl::memory::format_tag format);
+
+  DnnlMemoryWrapper& operator=(DnnlMemoryWrapper&& other);
+
+  dnnl::memory getMemory() const;
+
+  dnnl::memory::desc getDescriptor() const;
+
+ private:
+  dnnl::memory::desc descriptor_;
+  dnnl::memory memory_;
+  fl::DevicePtr devicePtr_;
+};
+
+/**
+ * Converts an ArrayFire array to a dnnl::memory struct.
+ */
+dnnl::memory afToDnnlMemory(
+    const af::array& array,
+    const fl::DevicePtr& dPtr,
+    dnnl::memory::dims dims,
+    dnnl::memory::format_tag format);
+dnnl::memory afToDnnlMemory(
+    const af::array& array,
+    const fl::DevicePtr& dPtr,
+    dnnl::memory::format_tag format);
 
 /**
  * Given some an dnnl network (a ``std::vector<dnnl::primitive>``), a
@@ -80,9 +114,9 @@ dnnl::memory dnnlAlignOrdering(
  * Executes a sequence of DNNL primitives in the default execution stream with
  * the default execution engine.
  *
- * For each primitive, passes the corresponding arguments map for that index to
- * the execution stream. The number of primitives and the number of arguments
- * must be equal, else throws.
+ * For each primitive, passes the corresponding arguments map for that index
+ * to the execution stream. The number of primitives and the number of
+ * arguments must be equal, else throws.
  *
  * Blocks calling thread until the enqueued work has been completed.
  */
