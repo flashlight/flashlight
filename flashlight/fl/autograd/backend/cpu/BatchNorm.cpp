@@ -15,7 +15,6 @@
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/autograd/Variable.h"
 #include "flashlight/fl/autograd/backend/cpu/DnnlUtils.h"
-#include "flashlight/fl/common/DevicePtr.h"
 
 namespace fl {
 

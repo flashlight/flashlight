@@ -63,12 +63,17 @@ class DnnlEngine {
 dnnl::memory::dims convertAfToDnnlDims(const std::vector<dim_t>& dims);
 dnnl::memory::dims convertAfDim4ToDnnlDims(const af::dim4& afDims);
 
+/**
+ * A light wrapper around dnnl::memory that manages underlying memory lifetime
+ * in accordance with fl::DevicePtr.
+ */
 class DnnlMemoryWrapper {
  public:
   DnnlMemoryWrapper(
       const af::array& array,
       dnnl::memory::dims dims,
       dnnl::memory::format_tag format);
+  DnnlMemoryWrapper() = default;
 
   DnnlMemoryWrapper& operator=(DnnlMemoryWrapper&& other);
 
@@ -81,19 +86,6 @@ class DnnlMemoryWrapper {
   dnnl::memory memory_;
   fl::DevicePtr devicePtr_;
 };
-
-/**
- * Converts an ArrayFire array to a dnnl::memory struct.
- */
-dnnl::memory afToDnnlMemory(
-    const af::array& array,
-    const fl::DevicePtr& dPtr,
-    dnnl::memory::dims dims,
-    dnnl::memory::format_tag format);
-dnnl::memory afToDnnlMemory(
-    const af::array& array,
-    const fl::DevicePtr& dPtr,
-    dnnl::memory::format_tag format);
 
 /**
  * Given some an dnnl network (a ``std::vector<dnnl::primitive>``), a

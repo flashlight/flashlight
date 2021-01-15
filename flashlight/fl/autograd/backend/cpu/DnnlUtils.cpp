@@ -93,25 +93,6 @@ dnnl::memory::desc DnnlMemoryWrapper::getDescriptor() const {
   return descriptor_;
 }
 
-dnnl::memory afToDnnlMemory(
-    const af::array& array,
-    const fl::DevicePtr& dPtr,
-    dnnl::memory::dims dims,
-    dnnl::memory::format_tag format) {
-  auto inputMemDesc =
-      dnnl::memory::desc(dims, detail::dnnlMapToType(array.type()), format);
-  return dnnl::memory(
-      inputMemDesc, detail::DnnlEngine::getInstance().getEngine(), dPtr.get());
-}
-
-dnnl::memory afToDnnlMemory(
-    const af::array& array,
-    const fl::DevicePtr& dPtr,
-    dnnl::memory::format_tag format) {
-  return afToDnnlMemory(
-      array, dPtr, convertAfDim4ToDnnlDims(array.dims()), format);
-}
-
 dnnl::memory dnnlAlignOrdering(
     std::vector<dnnl::primitive>& net,
     std::vector<std::unordered_map<int, dnnl::memory>>& netArgs,
