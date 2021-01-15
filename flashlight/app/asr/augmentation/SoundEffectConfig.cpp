@@ -13,6 +13,7 @@
 
 #include <cereal/archives/json.hpp>
 #include <cereal/types/vector.hpp>
+#include <glog/logging.h>
 
 #include "flashlight/app/asr/augmentation/SoundEffectUtil.h"
 #include "flashlight/lib/common/System.h"
@@ -130,12 +131,18 @@ std::shared_ptr<SoundEffect> createSoundEffect(
     const std::vector<SoundEffectConfig>& sfxConfigs) {
   auto sfxChain = std::make_shared<SoundEffectChain>();
   for (const SoundEffectConfig& conf : sfxConfigs) {
-    if (conf.type_ == kNormalize) {
-      sfxChain->add(std::make_shared<Normalize>(conf.normalizeOnlyIfTooHigh_));
-    } else if (conf.type_ == kClampAmplitude) {
-      sfxChain->add(std::make_shared<ClampAmplitude>());
+    if (conf.type_ == kAdditiveNoise) {
+      sfxChain->add(std::make_shared<AdditiveNoise>(conf.additiveNoiseConfig_));
     } else if (conf.type_ == kAmplify) {
       sfxChain->add(std::make_shared<Amplify>(conf.amplifyConfig_));
+    } else if (conf.type_ == kClampAmplitude) {
+      sfxChain->add(std::make_shared<ClampAmplitude>());
+    } else if (conf.type_ == kNormalize) {
+      sfxChain->add(std::make_shared<Normalize>(conf.normalizeOnlyIfTooHigh_));
+    } else if (conf.type_ == kReverbEcho) {
+      sfxChain->add(std::make_shared<ReverbEcho>(conf.reverbEchoConfig_));
+    } else {
+      LOG(FATAL) << "Invalid sound effect config type=" << conf.type_;
     }
   }
   return sfxChain;
