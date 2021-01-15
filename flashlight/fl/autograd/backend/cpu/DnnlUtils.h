@@ -22,7 +22,7 @@ namespace detail {
  */
 class DnnlStream {
  public:
-  DnnlStream(dnnl::engine engine) : stream_(engine) {}
+  DnnlStream(dnnl::engine engine);
   ~DnnlStream() = default;
 
   /// Prohibit assignment
@@ -41,7 +41,7 @@ class DnnlStream {
  */
 class DnnlEngine {
  public:
-  DnnlEngine() : engine_(dnnl::engine::kind::cpu, 0) {}
+  DnnlEngine();
   ~DnnlEngine() = default;
 
   /// Prohibit assignment

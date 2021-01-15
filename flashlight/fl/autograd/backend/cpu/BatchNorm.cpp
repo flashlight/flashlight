@@ -93,10 +93,11 @@ Variable batchnorm(
         1, input.elements() / (nfeatures * batchsz), nfeatures, batchsz);
   }
 
-  dnnl::memory::dims inputOutputDims = {inDescDims[kBatchSizeIdx],
-                                        inDescDims[kChannelSizeIdx],
-                                        inDescDims[kHIdx],
-                                        inDescDims[kWIdx]};
+  dnnl::memory::dims inputOutputDims = {
+      inDescDims[kBatchSizeIdx],
+      inDescDims[kChannelSizeIdx],
+      inDescDims[kHIdx],
+      inDescDims[kWIdx]};
   auto inputOutputMemDesc =
       dnnl::memory::desc({inputOutputDims}, dType, formatNCHW);
 
@@ -104,32 +105,28 @@ Variable batchnorm(
   // input
   DevicePtr inputRaw(input.array());
   auto inputMemDesc = dnnl::memory::desc({inputOutputDims}, dType, formatNCHW);
-  auto inputMemInit = dnnl::memory(inputMemDesc, dnnlEngine);
-  inputMemInit.set_data_handle(inputRaw.get());
+  auto inputMemInit = dnnl::memory(inputMemDesc, dnnlEngine, inputRaw.get());
   // out
   DevicePtr outputRaw(output);
   auto outputMemDesc = dnnl::memory::desc({inputOutputDims}, dType, formatNCHW);
-  auto outputMem = dnnl::memory(outputMemDesc, dnnlEngine);
-  outputMem.set_data_handle(outputRaw.get());
+  auto outputMem = dnnl::memory(outputMemDesc, dnnlEngine, outputRaw.get());
   // mean
   DevicePtr meanRaw(runningMean.array());
   auto meanDims = detail::convertAfToDnnlDims({runningMean.dims(0)});
   auto meanMemDesc = dnnl::memory::desc({meanDims}, dType, formatX);
-  auto meanMemInit = dnnl::memory(meanMemDesc, dnnlEngine);
-  meanMemInit.set_data_handle(meanRaw.get());
+  auto meanMemInit = dnnl::memory(meanMemDesc, dnnlEngine, meanRaw.get());
   // var
   DevicePtr varRaw(runningVar.array());
   auto varDims = detail::convertAfToDnnlDims({runningVar.dims(0)});
   auto varMemDesc = dnnl::memory::desc({varDims}, dType, formatX);
-  auto varMemInit = dnnl::memory(varMemDesc, dnnlEngine);
-  varMemInit.set_data_handle(varRaw.get());
+  auto varMemInit = dnnl::memory(varMemDesc, dnnlEngine, varRaw.get());
   // weightDNNL - combined scale and shift (weight and bias)
   DevicePtr weightsDnnlRaw(weightsDnnl);
   auto weightsDnnlDims = detail::convertAfToDnnlDims({2, nfeatures});
   auto weightsDnnlMemDesc =
       dnnl::memory::desc({weightsDnnlDims}, dType, format2d);
-  auto weightsDnnlMemInit = dnnl::memory(weightsDnnlMemDesc, dnnlEngine);
-  weightsDnnlMemInit.set_data_handle(weightsDnnlRaw.get());
+  auto weightsDnnlMemInit =
+      dnnl::memory(weightsDnnlMemDesc, dnnlEngine, weightsDnnlRaw.get());
 
   // Primitives and descriptors
   auto kind = train ? dnnl::prop_kind::forward_training
@@ -200,21 +197,20 @@ Variable batchnorm(
     DevicePtr gradOutputRaw(grad_output.array());
     auto gradOutputMemDesc =
         dnnl::memory::desc({inputOutputDims}, dType, formatNCHW);
-    auto gradOutputMemInit = dnnl::memory(gradOutputMemDesc, dnnlEngineBwd);
-    gradOutputMemInit.set_data_handle(gradOutputRaw.get());
+    auto gradOutputMemInit =
+        dnnl::memory(gradOutputMemDesc, dnnlEngineBwd, gradOutputRaw.get());
 
     DevicePtr gradInputRaw(grad_input.array());
     auto gradInputMemDesc =
         dnnl::memory::desc({inputOutputDims}, dType, formatNCHW);
-    auto gradInputMemInit = dnnl::memory(gradInputMemDesc, dnnlEngineBwd);
-    gradInputMemInit.set_data_handle(gradInputRaw.get());
+    auto gradInputMemInit =
+        dnnl::memory(gradInputMemDesc, dnnlEngineBwd, gradInputRaw.get());
 
     DevicePtr gradWeightsDnnlRaw(grad_weightsDNNL.array());
     auto gradWeightsDnnlMemDesc =
         dnnl::memory::desc({weightsDnnlDims}, dType, format2d);
-    auto gradWeightsDnnlMemInit =
-        dnnl::memory(gradWeightsDnnlMemDesc, dnnlEngineBwd);
-    gradWeightsDnnlMemInit.set_data_handle(gradWeightsDnnlRaw.get());
+    auto gradWeightsDnnlMemInit = dnnl::memory(
+        gradWeightsDnnlMemDesc, dnnlEngineBwd, gradWeightsDnnlRaw.get());
 
     // Primitives and descriptors
     auto bwdDesc = dnnl::batch_normalization_backward::desc(

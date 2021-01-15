@@ -10,8 +10,21 @@
 #include "flashlight/fl/autograd/backend/cpu/DnnlUtils.h"
 #include "flashlight/fl/common/Defines.h"
 
+#ifdef FL_USE_OPENCL
+#include "flashlight/fl/common/OpenClUtils.h"
+#endif
+
 namespace fl {
 namespace detail {
+
+DnnlStream::DnnlStream(dnnl::engine engine) {
+  af_init();
+#ifdef FL_USE_OPENCL
+  stream_ = dnnl::stream(engine, fl::ocl::getQueue());
+#else
+  stream_ = dnnl::stream(engine);
+#endif
+}
 
 dnnl::stream& DnnlStream::getStream() {
   return stream_;
@@ -20,6 +33,15 @@ dnnl::stream& DnnlStream::getStream() {
 DnnlStream& DnnlStream::getInstance() {
   static DnnlStream instance(DnnlEngine::getInstance().getEngine());
   return instance;
+}
+
+DnnlEngine::DnnlEngine() {
+#ifdef FL_USE_OPENCL
+  engine_ = dnnl::engine(
+      dnnl::engine::kind::gpu, fl::ocl::getDeviceId(), fl::ocl::getContext());
+#else
+  engine_ = dnnl::engine(dnnl::engine::kind::cpu, 0);
+#endif
 }
 
 dnnl::engine& DnnlEngine::getEngine() {
