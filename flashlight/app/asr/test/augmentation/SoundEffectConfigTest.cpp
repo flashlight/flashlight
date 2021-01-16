@@ -5,8 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <glog/logging.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
+#include <fstream>
 
 #include "flashlight/app/asr/augmentation/SoundEffect.h"
 #include "flashlight/app/asr/augmentation/SoundEffectConfig.h"
@@ -21,20 +24,26 @@ using namespace ::fl::app::asr::sfx;
  * configured sound effect chain.
  */
 TEST(SoundEffectConfigFile, ReadWriteJson) {
-  const std::string configFile = fl::lib::getTmpPath("sfxConfig.json");
-  // This log line alllows the user to ispect the config file or copy/paste
+  const std::string configPath = fl::lib::getTmpPath("sfxConfig.json");
+  // This log line alllows the user to inspect the config file or copy/paste
   // configuration.
-  std::cout << "configFile=" << configFile << std::endl;
+  LOG(INFO) << "output config file= " << configPath;
 
   std::vector<SoundEffectConfig> sfxConf1(5);
 
+  // Create mock noise list file.
+  const std::string noiseListPath = fl::lib::getTmpPath("noise.lst");
+  {
+    std::ofstream noiseListFile(noiseListPath);
+    noiseListFile << "/fake/path.flac";
+  }
   sfxConf1[0].type_ = kAdditiveNoise;
   sfxConf1[0].additiveNoiseConfig_.ratio_ = 0.8;
   sfxConf1[0].additiveNoiseConfig_.minSnr_ = 0;
   sfxConf1[0].additiveNoiseConfig_.maxSnr_ = 30;
   sfxConf1[0].additiveNoiseConfig_.nClipsMin_ = 0;
   sfxConf1[0].additiveNoiseConfig_.nClipsMax_ = 4;
-  sfxConf1[0].additiveNoiseConfig_.listFilePath_ = "/dataset/noise.lst";
+  sfxConf1[0].additiveNoiseConfig_.listFilePath_ = noiseListPath;
   sfxConf1[0].additiveNoiseConfig_.dsetRndPolicy_ =
       stringToRandomPolicy("with_replacment");
   sfxConf1[0].additiveNoiseConfig_.randomSeed_ = 1111;
@@ -62,9 +71,9 @@ TEST(SoundEffectConfigFile, ReadWriteJson) {
   sfxConf1[4].type_ = kNormalize;
   sfxConf1[4].normalizeOnlyIfTooHigh_ = false;
 
-  writeSoundEffectConfigFile(configFile, sfxConf1);
+  writeSoundEffectConfigFile(configPath, sfxConf1);
   const std::vector<SoundEffectConfig> sfxConf2 =
-      readSoundEffectConfigFile(configFile);
+      readSoundEffectConfigFile(configPath);
   EXPECT_EQ(sfxConf1.size(), sfxConf2.size());
 
   std::shared_ptr<SoundEffect> sfx = createSoundEffect(sfxConf2);
@@ -72,7 +81,9 @@ TEST(SoundEffectConfigFile, ReadWriteJson) {
 }
 
 int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
   fl::init();
+  google::InitGoogleLogging(argv[0]);
+  google::InstallFailureSignalHandler();
+  ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
