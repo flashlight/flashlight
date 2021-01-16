@@ -67,11 +67,6 @@ PlGenerator::PlGenerator(
       targetTransform_(targetTransform),
       wordTransform_(wordTransform),
       tokenToWord_(tokenToWord) {
-  /* 0. Parse PL flags */
-  if (isMaster_) {
-    dirCreate(plDir_);
-  }
-
   // 1. Load PL generating intervals
   auto plEpochVec = lib::split(',', plEpoch, true);
   auto plRatioVec = lib::split(',', plRatio, true);
@@ -112,6 +107,9 @@ PlGenerator::PlGenerator(
     allListDs.emplace_back(curListDs);
   }
   if (!allListDs.empty()) {
+    if (isMaster_) {
+      dirCreate(plDir_);
+    }
     fullUnsupDs_ = std::make_shared<fl::ConcatDataset>(allListDs);
   }
 }
@@ -150,6 +148,10 @@ std::string PlGenerator::regeneratePl(
   if (plUpdateMap_.find(curEpoch) == plUpdateMap_.end()) {
     return "";
   }
+  if (!fullUnsupDs_) {
+    throw std::runtime_error("No unlabeled data is provided");
+  }
+
   logMaster(
       "[PlGenerator] Regenerating PL at epoch " + std::to_string(curEpoch));
   std::string plDir =
@@ -207,8 +209,9 @@ std::string PlGenerator::regeneratePl(
       fl::Variable rawEmission;
       if (usePlugin) {
         rawEmission = ntwrk
-                          ->forward({fl::input(sample[kInputIdx]),
-                                     fl::noGrad(sample[kDurationIdx])})
+                          ->forward(
+                              {fl::input(sample[kInputIdx]),
+                               fl::noGrad(sample[kDurationIdx])})
                           .front();
       } else {
         rawEmission = fl::ext::forwardSequentialModuleWithPadMask(
