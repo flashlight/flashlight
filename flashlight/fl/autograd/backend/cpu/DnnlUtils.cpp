@@ -69,13 +69,17 @@ DnnlMemoryWrapper::DnnlMemoryWrapper(
     const af::array& array,
     dnnl::memory::dims dims,
     dnnl::memory::format_tag format) {
+#ifdef FL_USE_OPENCL
+  devicePtr_ = fl::DevicePtrOpenCl(array);
+  cl_mem* buffer = devicePtr_.getAs<cl_mem>();
+#else
   devicePtr_ = fl::DevicePtr(array);
+  void* buffer = devicePtr_.get();
+#endif
   descriptor_ =
       dnnl::memory::desc({dims}, detail::dnnlMapToType(array.type()), format);
   memory_ = dnnl::memory(
-      descriptor_,
-      detail::DnnlEngine::getInstance().getEngine(),
-      devicePtr_.get());
+      descriptor_, detail::DnnlEngine::getInstance().getEngine(), buffer);
 }
 
 DnnlMemoryWrapper& DnnlMemoryWrapper::operator=(DnnlMemoryWrapper&& other) {

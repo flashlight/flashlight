@@ -16,7 +16,7 @@ target_sources(
 
 # ----------------------------- Autograd Backends -----------------------------
 # CPU
-if (FL_USE_CPU OR FL_USE_OPENCL)
+if (FL_USE_CPU)
   find_package(DNNL 2.0 CONFIG REQUIRED)
 
   set(
@@ -96,19 +96,19 @@ endif ()
 # OpenCL
 # TODO(jacobkahn): enable, with dependencies, when needed
 if (FL_USE_OPENCL)
-  # set(
-  #   AUTOGRAD_OPENCL_SOURCES
-  #   ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/Conv2D.cpp
-  #   ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/Pool2D.cpp
-  #   ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/RNN.cpp
-  #   ${CMAKE_CURRENT_LIST_DIR}/backend/generic/BatchNorm.cpp # generic
-  #   )
+  set(
+    AUTOGRAD_OPENCL_SOURCES
+    ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/Conv2D.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/Pool2D.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/RNN.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/backend/generic/BatchNorm.cpp # generic
+    )
 
-  # target_sources(
-  #   flashlight
-  #   PRIVATE
-  #   ${AUTOGRAD_OPENCL_SOURCES}
-  #   )
+  target_sources(
+    flashlight
+    PRIVATE
+    ${AUTOGRAD_OPENCL_SOURCES}
+    )
 
   target_link_libraries(
     flashlight
