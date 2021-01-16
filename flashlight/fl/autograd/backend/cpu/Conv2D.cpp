@@ -428,10 +428,6 @@ Variable conv2d(
       auto formatBias = memory::format_tag::x;
       const detail::DnnlMemoryWrapper gradBiasMem(
           gradBias.array(), mBiasDims, formatBias);
-
-      // auto gradBiasMemory =
-      //     memory({{{mBiasDims}, dataType, formatBias}, dnnlEngineBwd});
-      // gradBiasMemory.set_data_handle(biasRawBackwards.get());
       if (hasBias) {
         bwdWeights =
             std::make_shared<convolution_backward_weights>(*bwdWeightPrimDesc);
