@@ -11,5 +11,6 @@ set(
   ${CMAKE_CURRENT_LIST_DIR}/SinusoidalPositionEmbedding.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Transformer.cpp
   ${CMAKE_CURRENT_LIST_DIR}/TDSBlock.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/SpecAugment.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/SpecAugment.cpp  
+  ${CMAKE_CURRENT_LIST_DIR}/VisionTransformer.cpp
   )

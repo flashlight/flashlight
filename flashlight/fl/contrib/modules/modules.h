@@ -17,3 +17,4 @@
 #include "flashlight/fl/contrib/modules/SpecAugment.h"
 #include "flashlight/fl/contrib/modules/TDSBlock.h"
 #include "flashlight/fl/contrib/modules/Transformer.h"
+#include "flashlight/fl/contrib/modules/VisionTransformer.h"
