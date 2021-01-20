@@ -49,13 +49,22 @@ The following dependencies **are not required** to build python bindings:
 
 ### Build Instructions
 
-Once the dependencies are satisfied, simply run from wav2letter root:
+Once the dependencies are satisfied, use:
 ```
 cd bindings/python
-pip install -e .
+python3 setup.py install
 ```
 
-Note that if you encounter errors, you'll probably have to ``rm -rf build`` before retrying the install.
+with `pip` either install from `pypi` (coming soon)
+```
+pip3 install pyflashlight
+```
+or locally in editable mode (wihout `-e` it will not work as we need to build some libs outside the python binding folder)
+```
+pip3 install -e .
+```
+
+Note that if you encounter errors, you'll probably have to ``rm -rf build dist`` before retrying the install.
 
 ### Advanced Options
 The following environment variables can be used to control various options:
@@ -68,15 +77,15 @@ The following environment variables can be used to control various options:
 ### Build inside docker container
 - For CUDA backend inside docker container run commands
 ```
-    pip install torch==1.2.0 packaging==19.1
-    cd /root/flashlight/bindings/python && pip install -e .
+    pip3 install torch==1.2.0 packaging==19.1
+    cd /root/flashlight/bindings/python && python3 setup.py install
 ```
 
 - For CPU backend inside docker container run commands
 ```
-    pip install torch==1.2.0 packaging==19.1
+    pip3 install torch==1.2.0 packaging==19.1
     export USE_CUDA=0 && \
-    cd /root/flashlight/bindings/python && pip install -e .
+    cd /root/flashlight/bindings/python && python3 setup.py install
 ```
 
 ## Python API
@@ -329,17 +338,20 @@ After flashlight python package is installed, please, have a look at the example
 
 - ASG criterion
 ```bash
+    cd [flashlight]
     # with cpu backend
-    python example/criterion_example.py --cpu
+    python3 bindings/python/example/criterion_example.py --cpu
     # with gpu backend
-    python example/criterion_example.py
+    python3 bindings/python/example/criterion_example.py
 ```
 
 - lexicon beam-search decoder with KenLM word-level language model
 ```bash
-    python example/decoder_example.py ../../flashlight/app/asr/test/decoder/data
+    cd [flashlight]
+    python3 bindings/python/example/decoder_example.py flashlight/app/asr/test/decoder/data
 ```
 - audio featurization
 ```bash
-    python example/feature_example.py ../../flashlight/lib/test/audio/feature/data
+    cd [flashlight]
+    python3 bindings/python/example/feature_example.py flashlight/lib/test/audio/feature/data
 ```
