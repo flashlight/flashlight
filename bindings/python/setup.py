@@ -15,7 +15,7 @@ import sys
 from packaging import version
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
-
+from pathlib import Path
 
 # Environment variables:
 # - `USE_CUDA=0` disables building CUDA components
@@ -52,26 +52,31 @@ class CMakeBuild(build_ext):
             raise RuntimeError("CMake >= 3.10 is required to build flashlight")
 
         # our CMakeLists builds all the extensions at once
-        self.build_extensions()
+        for ext in self.extensions:
+            self.build_extensions(ext)
 
-    def build_extensions(self):
-        extdir = os.path.abspath("flashlight")
-        sourcedir = os.path.abspath("../..")
+    def build_extensions(self, ext):
+        ext_dir = Path(self.get_ext_fullpath(ext.name)).absolute()
+        while ext_dir.name != "flashlight":
+            ext_dir = ext_dir.parent
+        ext_dir = str(ext_dir.parent)
+        source_dir = str(Path(__file__).absolute().parent.parent.parent)
         use_cuda = "OFF" if check_negative_env_flag("USE_CUDA") else "ON"
         use_kenlm = "OFF" if check_negative_env_flag("USE_KENLM") else "ON"
         use_mkl = "OFF" if check_negative_env_flag("USE_MKL") else "ON"
         backend = "CPU" if check_negative_env_flag("USE_CUDA") else "CUDA"
         cmake_args = [
-            "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + extdir,
+            "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + ext_dir,
             "-DPYTHON_EXECUTABLE=" + sys.executable,
-            "-DFL_BUILD_LIBRARIES=ON",
-            "-DFL_LIBRARIES_BUILD_FOR_PYTHON=ON",
-            "-DFL_BUILD_CORE=OFF",
+            "-DFL_BUILD_STANDALONE=OFF",
             "-DBUILD_SHARED_LIBS=ON",
+            "-DFL_BUILD_LIBRARIES=ON",
+            "-DFL_BUILD_CORE=OFF",
             "-DFL_BUILD_TESTS=OFF",
             "-DFL_BUILD_EXAMPLES=OFF",
-            "-DFL_LIBRARIES_USE_CUDA=" + use_cuda,
             "-DFL_BACKEND=" + backend,
+            "-DFL_LIBRARIES_BUILD_FOR_PYTHON=ON",
+            "-DFL_LIBRARIES_USE_CUDA=" + use_cuda,
             "-DFL_LIBRARIES_USE_KENLM=" + use_kenlm,
             "-DFL_LIBRARIES_USE_MKL=" + use_mkl,
         ]
@@ -80,7 +85,7 @@ class CMakeBuild(build_ext):
 
         if platform.system() == "Windows":
             # cmake_args += [
-            #     "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}".format(cfg.upper(), extdir)
+            #     "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}".format(cfg.upper(), ext_dir)
             # ]
             # if sys.maxsize > 2 ** 32:
             #     cmake_args += ["-A", "x64"]
@@ -97,27 +102,34 @@ class CMakeBuild(build_ext):
 
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
-            subprocess.check_call(
-                ["cmake", sourcedir] + cmake_args, cwd=self.build_temp, env=env
-            )
+        subprocess.check_call(
+            ["cmake", source_dir] + cmake_args, cwd=self.build_temp, env=env
+        )
         subprocess.check_call(
             ["cmake", "--build", "."] + build_args, cwd=self.build_temp
         )
-
-
 setup(
     name="flashlight",
-    version="0.0.1",
+    version="1.0.0",
     author="Flashlight Contributors",
     author_email="oncall+fair_speech@xmail.facebook.com",
-    description="flashlight bindings for python",
+    description="Flashlight bindings for python",
     long_description="",
+    packages=[
+        "flashlight",
+        "flashlight.lib",
+        "flashlight.lib.audio",
+        "flashlight.lib.sequence",
+        "flashlight.lib.text"
+        ],
     ext_modules=[
-        CMakeExtension("flashlight._lib_audio_feature"),
-        CMakeExtension("flashlight._lib_sequence_criterion"),
-        CMakeExtension("flashlight._lib_text_decoder"),
-        CMakeExtension("flashlight._lib_text_dictionary"),
+        CMakeExtension("flashlight.lib.audio.feature"),
+        CMakeExtension("flashlight.lib.sequence.criterion"),
+        CMakeExtension("flashlight.lib.text.decoder"),
+        CMakeExtension("flashlight.lib.text.dictionary"),
     ],
     cmdclass={"build_ext": CMakeBuild},
     zip_safe=False,
+    license="BSD licensed, as found in the LICENSE file",
+    python_requires=">=3.6",
 )

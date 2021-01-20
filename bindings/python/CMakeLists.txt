@@ -10,10 +10,19 @@ set_target_properties(
   TRUE
   )
 
-function (add_pybind11_extension ext_name file_name)
+function (add_pybind11_extension ext_name)
+  string(REPLACE "_" ";" modlist ${ext_name})
+  list(GET modlist -1 modname)
+  list(REMOVE_AT modlist -1)
+  if(modlist)
+    string(REPLACE ";" "/" relpath "${modlist}")
+  else()
+    set(relpath "")
+  endif()
+
   pybind11_add_module(
     ${ext_name}
-    ${CMAKE_CURRENT_LIST_DIR}/${file_name}.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/${relpath}/_${modname}.cpp
     )
 
   target_link_libraries(
@@ -23,9 +32,12 @@ function (add_pybind11_extension ext_name file_name)
     )
 
   add_dependencies(${ext_name} pybind11)
+  set_target_properties(${ext_name} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${relpath})
+  set_target_properties(${ext_name} PROPERTIES OUTPUT_NAME ${ext_name})
+
 endfunction ()
 
-add_pybind11_extension(_lib_audio_feature flashlight/lib/audio/_feature)
-add_pybind11_extension(_lib_sequence_criterion flashlight/lib/sequence/_criterion)
-add_pybind11_extension(_lib_text_decoder flashlight/lib/text/_decoder)
-add_pybind11_extension(_lib_text_dictionary flashlight/lib/text/_dictionary)
+add_pybind11_extension(flashlight_lib_audio_feature)
+add_pybind11_extension(flashlight_lib_sequence_criterion)
+add_pybind11_extension(flashlight_lib_text_decoder)
+add_pybind11_extension(flashlight_lib_text_dictionary)
