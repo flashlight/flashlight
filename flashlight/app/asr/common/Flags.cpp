@@ -318,11 +318,31 @@ DEFINE_string(
 DEFINE_int64(fl_vlog_level, 0, "Sets the verbose logging level");
 
 DEFINE_int64(
-    fl_log_mem_ops_interval,
+    fl_mem_log_ops_interval,
     0,
     "Flushes memory manager logs after a specified "
     "number of log entries. 1000000 is a reasonable "
     "value which will reduce overhead.");
+
+DEFINE_int64(
+    fl_mem_recycling_size,
+    (1L << 28), /* 256MB */
+    "prevents the caching memory manager from recycling buffers larger "
+    "than this value. Recycled buffers can be split by the caching "
+    "manager so it helps reduce fragmentation of buffers over this value."
+    "Default value of 256MB works well for typical workload where "
+    "number of allocation is exponentially decreasing with allocation "
+    "size and largest allocations are ~500MB.");
+
+DEFINE_int64(
+    fl_mem_split_size,
+    (1L << 29), /* 512MB */
+    "prevents the caching memory manager from splitting buffers larger "
+    "than this value. Helps reduce external fragmentation by allowing "
+    "higher internal fragmentation."
+    "Default value of 512MB works well for typical workload where "
+    "number of allocation is exponentially decreasing with allocation "
+    "size and largest allocations are ~500MB.");
 
 // MIXED PRECISION OPTIONS
 DEFINE_bool(

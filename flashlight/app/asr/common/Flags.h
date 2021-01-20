@@ -158,7 +158,9 @@ DECLARE_bool(fl_benchmark_mode);
 DECLARE_string(fl_optim_mode);
 DECLARE_string(fl_log_level);
 DECLARE_int64(fl_vlog_level);
-DECLARE_int64(fl_log_mem_ops_interval);
+DECLARE_int64(fl_mem_log_ops_interval);
+DECLARE_int64(fl_mem_recycling_size);
+DECLARE_int64(fl_mem_split_size);
 
 /* ========== MIXED PRECISION OPTIONS ========== */
 
