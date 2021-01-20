@@ -121,6 +121,7 @@ class MultiheadAttention : public Container {
       q = q / std::sqrt(float(headDim));
       auto posEmb = fl::Variable();
       //auto mask = fl::Variable();
+      float dropout = train_ ? pDropout_ : 0.0f;
       auto result = transformerMultiheadAttention(
           q, k, v, posEmb, keyPaddingMask, numHeads_, pDropout_);
       result = (*wf_)(result);
@@ -226,11 +227,13 @@ class TransformerEncoderLayer : public TransformerBaseLayer {
     auto mask = input[1];
     auto pos = input[2];
 
+    float pDropout = train_ ? pDropout_ : 0.0f;
+
     auto src2 = this->selfAttention(src, pos, mask);
-    src = src + dropout(src2, pDropout_);
+    src = src + dropout(src2, pDropout);
     src = (*norm1_)(src);
     src2 = mlp(src);
-    src = src + dropout(src2, pDropout_);
+    src = src + dropout(src2, pDropout);
     src = (*norm2_)(src);
 
     return { src, mask, pos }; 
@@ -300,9 +303,11 @@ class TransformerDecoderLayer  : public Container {
       auto queryPos = (input.size() > 3) ? input[3] : Variable();
       auto memoryKeyPaddingMask = (input.size() > 4) ? input[4] : Variable();
 
+      float pDropout = train_ ? pDropout_ : 0.0f;
+
       //auto q = withPosEmbed(tgt, queryPos);
       auto tgt2 = this->selfAttention(tgt, queryPos);
-      tgt = tgt + dropout(tgt2, pDropout_);
+      tgt = tgt + dropout(tgt2, pDropout);
       tgt = (*norm1_)(tgt);
       tgt2 = encoder_attn_->forward({
           this->withPosEmbed(tgt, queryPos), // queries
@@ -310,11 +315,10 @@ class TransformerDecoderLayer  : public Container {
           memory, // values
           memoryKeyPaddingMask // mask
           })[0];
-      tgt = tgt + dropout(tgt2, pDropout_);
+      tgt = tgt + dropout(tgt2, pDropout);
       tgt = (*norm2_)(tgt);
       tgt2 = mlp(tgt);
-      tgt = tgt + dropout(tgt2, pDropout_);
-      tgt = dropout(tgt, pDropout_);
+      tgt = tgt + dropout(tgt2, pDropout);
       tgt = (*norm3_)(tgt);
       return { tgt };
 

@@ -100,7 +100,9 @@ def main(directory):
     # imageIds = [f'/datasets01/COCO/022719/train2017/{id:012d}.jpg' for id in imageIds]
 
     postprocess = PostProcess();
-    for f in glob.glob(os.path.join(directory, 'detection*.array')):
+    files = glob.glob(os.path.join(directory, 'detection*.array'))
+    assert(len(files) > 0)
+    for f in files:
 
         imageSizes = af.read_array(f, key='imageSizes').to_ndarray()
         imageSizes = np.transpose(imageSizes, (1, 0))
