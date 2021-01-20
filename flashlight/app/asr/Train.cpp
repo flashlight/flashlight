@@ -193,6 +193,23 @@ int main(int argc, char** argv) {
   FL_LOG_MASTER(INFO) << "Experiment path: " << runPath;
   FL_LOG_MASTER(INFO) << "Experiment runidx: " << runIdx;
 
+  // log memory manager operations.
+  std::ofstream memLog;
+  if (FLAGS_fl_log_mem_ops_interval > 0 && isMaster) {
+    auto* curMemMgr =
+        fl::MemoryManagerInstaller::currentlyInstalledMemoryManager();
+    if (curMemMgr) {
+      memLog.open(getRunFile("mem", runIdx, runPath));
+      if (!memLog) {
+        LOG(FATAL) << "failed to open memory log file="
+                   << getRunFile("mem", runIdx, runPath) << " for writing";
+      }
+      curMemMgr->setLogStream(&memLog);
+      curMemMgr->setLoggingEnabled(true);
+      curMemMgr->setLogFlushInterval(FLAGS_fl_log_mem_ops_interval);
+    }
+  }
+
   // flashlight optim mode
   auto flOptimLevel = FLAGS_fl_optim_mode.empty()
       ? fl::OptimLevel::DEFAULT
@@ -606,22 +623,6 @@ int main(int argc, char** argv) {
           appendToLog(logFile, logMsg);
         }
       };
-
-  std::ofstream memLog;
-  if (FLAGS_fl_log_mem_ops_interval > 0 && isMaster) {
-    auto* curMemMgr =
-        fl::MemoryManagerInstaller::currentlyInstalledMemoryManager();
-    if (curMemMgr) {
-      memLog.open(getRunFile("mem", runIdx, runPath));
-      if (!memLog) {
-        LOG(FATAL) << "failed to open memory log file="
-                   << getRunFile("mem", runIdx, runPath) << " for writing";
-      }
-      curMemMgr->setLogStream(&memLog);
-      curMemMgr->setLoggingEnabled(true);
-      curMemMgr->setLogFlushInterval(FLAGS_fl_log_mem_ops_interval);
-    }
-  }
 
   auto saveModels = [&](int iter, int totalUpdates) {
     if (isMaster) {
