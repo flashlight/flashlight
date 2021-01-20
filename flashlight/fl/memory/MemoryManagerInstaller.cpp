@@ -83,7 +83,7 @@ MemoryManagerInstaller::MemoryManagerInstaller(
         "alloc",
         /* size */ dims[0], // HACK: dims[0] until af::memAlloc is size-aware
         userLock,
-        (std::uintptr_t)ptr);
+        (std::uintptr_t)*ptr);
     return AF_SUCCESS;
   };
   AF_CHECK(af_memory_manager_set_alloc_fn(itf, allocFn));
