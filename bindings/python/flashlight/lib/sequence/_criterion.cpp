@@ -274,7 +274,7 @@ static void CudaViterbi_compute(
 
 #endif // FL_LIBRARIES_USE_CUDA
 
-PYBIND11_MODULE(_lib_sequence_criterion, m) {
+PYBIND11_MODULE(flashlight_lib_sequence_criterion, m) {
   py::enum_<CriterionScaleMode>(m, "CriterionScaleMode")
       .value("NONE", CriterionScaleMode::NONE)
       .value("INPUT_SZ", CriterionScaleMode::INPUT_SZ)

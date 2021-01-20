@@ -9,7 +9,7 @@ LICENSE file in the root directory of this source tree.
 import struct
 import sys
 
-import flashlight._lib_sequence_criterion as _C
+import flashlight.lib.sequence.flashlight_lib_sequence_criterion as _C
 import torch
 import torch.nn as nn
 

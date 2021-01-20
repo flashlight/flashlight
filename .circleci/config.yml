@@ -224,12 +224,15 @@ commands:
       - run:
           name: "Install Flashlight library Python bindings"
           command: |
-            pip install packaging
+            pip3 install packaging nose
             cd bindings/python
             export USE_MKL=<< parameters.use_mkl >>
             export USE_CUDA=<< parameters.use_cuda >>
             export USE_KENLM=<< parameters.use_kenlm >>
-            python setup.py install
+            python3 setup.py install
+            # MKL doesn't work in current docker with CUDA
+            export LD_PRELOAD=/opt/intel/mkl/lib/intel64/libmkl_def.so:/opt/intel/mkl/lib/intel64/libmkl_avx2.so:/opt/intel/mkl/lib/intel64/libmkl_core.so:/opt/intel/mkl/lib/intel64/libmkl_intel_lp64.so:/opt/intel/mkl/lib/intel64/libmkl_intel_thread.so:/opt/intel/lib/intel64_lin/libiomp5.so
+            cd .. && python3 -m nose python/tests -vds
 
 ############################ Jobs ############################
 jobs:
