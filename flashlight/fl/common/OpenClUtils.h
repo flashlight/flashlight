@@ -34,7 +34,7 @@ class DevicePtrOpenCl : public fl::DevicePtr {
     delete clMemBuf_;
   }
 
-  cl_mem* getAs() const {
+  cl_mem* getAsClMem() const {
     return clMemBuf_;
   }
 

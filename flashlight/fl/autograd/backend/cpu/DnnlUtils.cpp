@@ -71,7 +71,7 @@ DnnlMemoryWrapper::DnnlMemoryWrapper(
     dnnl::memory::format_tag format) {
 #ifdef FL_USE_OPENCL
   devicePtr_ = fl::DevicePtrOpenCl(array);
-  cl_mem* buffer = devicePtr_.getAs<cl_mem>();
+  cl_mem* buffer = devicePtr_.getAsClMem();
 #else
   devicePtr_ = fl::DevicePtr(array);
   void* buffer = devicePtr_.get();

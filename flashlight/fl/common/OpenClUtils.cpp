@@ -11,11 +11,11 @@ namespace fl {
 namespace ocl {
 
 cl_context getContext() {
-  return afcl::getContext(/*retain=*/true);
+  return afcl::getContext();
 }
 
 cl_command_queue getQueue() {
-  return afcl::getQueue(/*retain=*/true);
+  return afcl::getQueue();
 }
 
 cl_device_id getDeviceId() {
