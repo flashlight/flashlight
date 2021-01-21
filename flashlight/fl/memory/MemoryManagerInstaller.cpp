@@ -226,6 +226,8 @@ void MemoryManagerInstaller::installDefaultMemoryManager() {
     auto deviceInterface = std::make_shared<MemoryManagerDeviceInterface>();
     auto adapter = std::make_shared<CachingMemoryManager>(
         af::getDeviceCount(), deviceInterface);
+    adapter->setRecyclingSizeLimit(268435456);
+    adapter->setSplitSizeLimit(1073741824);
     MemoryManagerInstaller::startupMemoryManagerInstaller_ =
         std::make_shared<MemoryManagerInstaller>(adapter);
     MemoryManagerInstaller::startupMemoryManagerInstaller_
