@@ -62,6 +62,16 @@ ImageTransform randomHorizontalFlipTransform(const float p = 0.5);
  */
 ImageTransform compose(std::vector<ImageTransform> transformfns);
 
+/*
+ * Randomly erase.
+ */
+ImageTransform randomEraseTransform(
+    const float p = 0.5,
+    const float areaRatioMin = 0.02,
+    const float areaRatioMax = 0.4,
+    const float edgeRatioMin = 0.3,
+    const float edgeRatioMax = 3);
+
 } // namespace image
 } // namespace ext
 } // namespace fl

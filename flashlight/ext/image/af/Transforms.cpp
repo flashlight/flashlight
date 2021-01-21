@@ -10,6 +10,8 @@
 #include <numeric>
 #include <random>
 
+#include <iostream>
+
 // TODO consider moving these outside of annonymous namespace
 namespace {
 
@@ -151,6 +153,41 @@ ImageTransform normalizeImage(
     af::array out = in.as(f32) / 255.f;
     out = af::batchFunc(out, mean, af::operator-);
     out = af::batchFunc(out, std, af::operator/);
+    return out;
+  };
+};
+
+ImageTransform randomEraseTransform(
+    const float p,
+    const float areaRatioMin,
+    const float areaRatioMax,
+    const float edgeRatioMin,
+    const float edgeRatioMax) {
+  return [p, areaRatioMin, areaRatioMax, edgeRatioMin, edgeRatioMax](
+             const af::array& in) {
+    if (p > static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX)) {
+      return in;
+    }
+
+    const int w = in.dims(0);
+    const int h = in.dims(1);
+    const int c = in.dims(2);
+    float s = w * h * randomFloat(areaRatioMin, areaRatioMax);
+    float r = randomFloat(edgeRatioMin, edgeRatioMax);
+
+    int maskW = std::min(w - 1, (int)std::sqrt(s * r));
+    int maskH = std::min(h - 1, (int)std::sqrt(s / r));
+
+    const int x = std::rand() % (w - maskW);
+    const int y = std::rand() % (h - maskH);
+    af::array fillValue =
+        (af::randu(af::dim4(maskW, maskH, c)) * 255).as(in.type());
+
+    af::array out = in;
+    out(af::seq(x, x + maskW - 1),
+        af::seq(y, y + maskH - 1),
+        af::span,
+        af::span) = fillValue;
     return out;
   };
 };

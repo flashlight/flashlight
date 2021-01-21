@@ -58,7 +58,8 @@ ViT::ViT(
     add(transformers_.back());
   }
 
-  linearOut_ = std::make_shared<Linear>(hiddenEmbSize_, nClasses);
+  linearOut_ = std::make_shared<Linear>(
+      VisionTransformer::initLinear(hiddenEmbSize_, nClasses));
   add(linearOut_);
 
   ln_ = std::make_shared<LayerNorm>(std::vector<int>({0, 3}), 1e-6);

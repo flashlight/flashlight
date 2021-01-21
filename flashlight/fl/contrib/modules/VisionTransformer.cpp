@@ -35,18 +35,18 @@ VisionTransformer::VisionTransformer(
       pLayerdrop_(pLayerdrop),
       w1_(std::make_shared<Linear>(initLinear(modelDim, mlpDim))),
       w2_(std::make_shared<Linear>(initLinear(mlpDim, modelDim))),
-      // wq_(std::make_shared<Linear>(
-      //     initLinear(modelDim, headDim * nHeads),
-      //     fl::constant(0., headDim * nHeads, 1))),
-      // wk_(std::make_shared<Linear>(
-      //     initLinear(modelDim, headDim * nHeads),
-      //     fl::constant(0., headDim * nHeads, 1))),
-      // wv_(std::make_shared<Linear>(
-      //     initLinear(modelDim, headDim * nHeads),
-      //     fl::constant(0., headDim * nHeads, 1))),
-      wq_(std::make_shared<Linear>(initLinear(modelDim, headDim * nHeads))),
-      wk_(std::make_shared<Linear>(initLinear(modelDim, headDim * nHeads))),
-      wv_(std::make_shared<Linear>(initLinear(modelDim, headDim * nHeads))),
+      wq_(std::make_shared<Linear>(
+          initLinear(modelDim, headDim * nHeads),
+          fl::constant(0., headDim * nHeads, 1))),
+      wk_(std::make_shared<Linear>(
+          initLinear(modelDim, headDim * nHeads),
+          fl::constant(0., headDim * nHeads, 1))),
+      wv_(std::make_shared<Linear>(
+          initLinear(modelDim, headDim * nHeads),
+          fl::constant(0., headDim * nHeads, 1))),
+      // wq_(std::make_shared<Linear>(initLinear(modelDim, headDim * nHeads))),
+      // wk_(std::make_shared<Linear>(initLinear(modelDim, headDim * nHeads))),
+      // wv_(std::make_shared<Linear>(initLinear(modelDim, headDim * nHeads))),
       wf_(std::make_shared<Linear>(initLinear(headDim * nHeads, modelDim))),
       norm1_(std::make_shared<LayerNorm>(std::vector<int>({0, 3}), 1e-6)),
       norm2_(std::make_shared<LayerNorm>(std::vector<int>({0, 3}), 1e-6)) {

@@ -7,6 +7,8 @@
 
 #include "flashlight/ext/image/fl/dataset/DistributedDataset.h"
 
+#include <iostream>
+
 namespace fl {
 namespace ext {
 namespace image {
@@ -17,20 +19,25 @@ DistributedDataset::DistributedDataset(
     int64_t worldSize,
     int64_t batchSize,
     int64_t numThreads,
-    int64_t prefetchSize) {
-  shuffle_ = std::make_shared<ShuffleDataset>(base);
+    int64_t prefetchSize,
+    BatchDatasetPolicy batchpolicy,
+    int64_t seed)
+    : prefetchSize_(prefetchSize),
+      numThreads_(numThreads),
+      batchSize_(batchSize),
+      batchpolicy_(batchpolicy) {
+  base_ = std::make_shared<ShuffleDataset>(base, seed);
   auto permfn = [worldSize, worldRank](int64_t idx) {
     return (idx * worldSize) + worldRank;
   };
 
-  int partitionSize = shuffle_->size() / worldSize;
-  int leftOver = shuffle_->size() % worldSize;
+  int partitionSize = base_->size() / worldSize;
+  int leftOver = base_->size() % worldSize;
   if (worldRank < leftOver) {
     partitionSize++;
   }
-  ds_ = std::make_shared<ResampleDataset>(shuffle_, permfn, partitionSize);
-  ds_ = std::make_shared<PrefetchDataset>(ds_, numThreads, prefetchSize);
-  ds_ = std::make_shared<BatchDataset>(ds_, batchSize);
+  base_ = std::make_shared<ResampleDataset>(base_, permfn, partitionSize);
+  resample(seed);
 }
 
 std::vector<af::array> DistributedDataset::get(const int64_t idx) const {
@@ -38,8 +45,11 @@ std::vector<af::array> DistributedDataset::get(const int64_t idx) const {
   return ds_->get(idx);
 }
 
-void DistributedDataset::resample() {
-  shuffle_->resample();
+void DistributedDataset::resample(int64_t seed) {
+  base_ = std::make_shared<ShuffleDataset>(base_, seed);
+  ds_ = std::make_shared<BatchDataset>(base_, batchSize_, batchpolicy_);
+  ds_ = std::make_shared<ShuffleDataset>(ds_, seed);
+  ds_ = std::make_shared<PrefetchDataset>(ds_, numThreads_, prefetchSize_);
 }
 
 int64_t DistributedDataset::size() const {

@@ -18,7 +18,7 @@ SBATCH_TEMPLATE = """#!/bin/bash
 module purge
 module load cuda/11.0
 module load cudnn/v8.0.3.33-cuda.11.0
-module load NCCL/2.8.3-1-cuda.11.0
+module load NCCL/2.7.8-1-cuda.11.0
 module load intel/mkl/2020.3.279
 module load kenlm/010421/gcc.9.3.0
 
