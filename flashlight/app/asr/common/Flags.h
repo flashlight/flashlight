@@ -143,6 +143,7 @@ DECLARE_int64(saug_tmaskn);
 /* ========== SOUND EFFECT AUGMENTATION OPTIONS ========== */
 
 DECLARE_string(sfx_config);
+DECLARE_int64(sfx_start_update);
 
 /* ========== RUN OPTIONS ========== */
 

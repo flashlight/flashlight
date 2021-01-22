@@ -18,88 +18,6 @@ namespace app {
 namespace asr {
 namespace sfx {
 
-enum RandomPolicy { WITH_REPLACEMENT, WITHOUT_REPLACEMENT };
-std::string randomPolicyToString(RandomPolicy policy);
-RandomPolicy stringToRandomPolicy(const std::string& policy);
-
-template <typename T>
-class ListRandomizer {
- public:
-  struct Config {
-    RandomPolicy policy_ = WITH_REPLACEMENT;
-    unsigned int randomSeed_ = std::mt19937::default_seed;
-    std::string prettyString() const;
-  };
-
-  ListRandomizer(const ListRandomizer::Config& config, std::vector<T> dataset);
-
-  size_t size() const;
-  const T& getIndex(int index) const;
-  const T& getRandom();
-  std::string prettyString() const;
-
- private:
-  Config conf_;
-  std::mt19937 randomEngine_;
-  std::uniform_int_distribution<> randomIndex_;
-  std::vector<T> dataset_;
-  std::vector<int> shuffle_;
-  int count_;
-};
-
-template <typename T>
-ListRandomizer<T>::ListRandomizer(
-    const ListRandomizer::Config& config,
-    std::vector<T> dataset)
-    : conf_(config),
-      randomEngine_(conf_.randomSeed_),
-      randomIndex_(0, dataset.size() - 1),
-      dataset_(std::move(dataset)),
-      shuffle_(dataset_.size()),
-      count_(0) {
-  if (conf_.policy_ == WITHOUT_REPLACEMENT) {
-    std::iota(shuffle_.begin(), shuffle_.end(), 0);
-    const int n = shuffle_.size();
-    // custom implementation of shuffle - https://stackoverflow.com/a/51931164
-    for (int i = n; i >= 1; --i) {
-      std::swap(shuffle_[i - 1], shuffle_[randomEngine_() % n]);
-    }
-  }
-}
-
-template <typename T>
-const T& ListRandomizer<T>::getIndex(int getIndex) const {
-  return dataset_[getIndex];
-}
-
-template <typename T>
-const T& ListRandomizer<T>::getRandom() {
-  if (conf_.policy_ == WITHOUT_REPLACEMENT) {
-    return getIndex(shuffle_[count_++ % shuffle_.size()]);
-  } else {
-    return getIndex(randomIndex_(randomEngine_));
-  }
-}
-
-template <typename T>
-size_t ListRandomizer<T>::size() const {
-  return dataset_.size();
-}
-
-template <typename T>
-std::string ListRandomizer<T>::prettyString() const {
-  std::stringstream ss;
-  ss << "ListRandomizer{conf_=" << conf_.prettyString()
-     << " dataset_.size()=" << dataset_.size() << " count_=" << count_ << "}";
-  return ss.str();
-}
-
-template <typename T>
-std::string ListRandomizer<T>::Config::prettyString() const {
-  return "ListRandomizer::Config{policy_=" + randomPolicyToString(policy_) +
-      " randomSeed_=" + std::to_string(randomSeed_) + "}";
-}
-
 class RandomNumberGenerator {
  public:
   explicit RandomNumberGenerator(int seed = 0);
@@ -125,7 +43,9 @@ class RandomNumberGenerator {
 
 float rootMeanSquare(const std::vector<float>& signal);
 
-float signalToNoiseRatio(const std::vector<float>& signal, const std::vector<float>& noise);
+float signalToNoiseRatio(
+    const std::vector<float>& signal,
+    const std::vector<float>& noise);
 
 } // namespace sfx
 } // namespace asr
