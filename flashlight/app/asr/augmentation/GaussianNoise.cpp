@@ -20,7 +20,7 @@ namespace sfx {
 std::string GaussianNoise::Config::prettyString() const {
   std::stringstream ss;
   ss << "GaussianNoise::Config{minSnr_=" << minSnr_ << " maxSnr_=" << maxSnr_
-     << " randomSeed_=" << randomSeed_ << '}';
+     << '}';
   return ss.str();
 }
 
@@ -30,8 +30,10 @@ std::string GaussianNoise::prettyString() const {
   return ss.str();
 };
 
-GaussianNoise::GaussianNoise(const GaussianNoise::Config& config)
-    : conf_(config), rng_(config.randomSeed_) {}
+GaussianNoise::GaussianNoise(
+    const GaussianNoise::Config& config,
+    unsigned int seed /* = 0 */)
+    : conf_(config), rng_(seed) {}
 
 void GaussianNoise::apply(std::vector<float>& signal) {
   if (rng_.random() >= conf_.proba_) {

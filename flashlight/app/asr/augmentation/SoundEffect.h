@@ -41,8 +41,9 @@ class SoundEffectChain : public SoundEffect {
   void apply(std::vector<float>& sound) override;
   std::string prettyString() const override;
   void add(std::shared_ptr<SoundEffect> SoundEffect);
+  bool empty();
 
- private:
+ protected:
   std::vector<std::shared_ptr<SoundEffect>> soundEffects_;
 };
 

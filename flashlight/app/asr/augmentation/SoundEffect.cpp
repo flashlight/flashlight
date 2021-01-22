@@ -36,6 +36,10 @@ void SoundEffectChain::apply(std::vector<float>& sound) {
   }
 }
 
+bool SoundEffectChain::empty() {
+  return soundEffects_.empty();
+}
+
 Normalize::Normalize(bool onlyIfTooHigh) : onlyIfTooHigh_(onlyIfTooHigh) {}
 
 void Normalize::apply(std::vector<float>& sound) {
