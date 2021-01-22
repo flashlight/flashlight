@@ -16,8 +16,10 @@ namespace app {
 namespace asr {
 namespace sfx {
 
-ReverbEcho::ReverbEcho(const ReverbEcho::Config& conf)
-    : conf_(conf), rng_(conf.randomSeed_) {}
+ReverbEcho::ReverbEcho(
+    const ReverbEcho::Config& conf,
+    unsigned int seed /* = 0 */)
+    : conf_(conf), rng_(seed) {}
 
 void ReverbEcho::reverb(
     std::vector<float>& source,
@@ -75,8 +77,7 @@ std::string ReverbEcho::Config::prettyString() const {
      << " initialMax_=" << initialMax_ << " rt60Min_=" << rt60Min_
      << " rt60Max_=" << rt60Max_ << " firstDelayMin_=" << firstDelayMin_
      << " firstDelayMax_=" << firstDelayMax_ << " repeat_=" << repeat_
-     << " jitter_=" << jitter_ << " sampleRate_=" << sampleRate_
-     << " randomSeed_=" << randomSeed_;
+     << " jitter_=" << jitter_ << " sampleRate_=" << sampleRate_;
   return ss.str();
 }
 

@@ -313,7 +313,8 @@ int main(int argc, char** argv) {
       featParams,
       featType,
       {FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx},
-      sfxConf);
+      sfxConf,
+      std::max(0L, FLAGS_sfx_start_update - startUpdate));
   auto targetTransform = targetFeatures(tokenDict, lexicon, targetGenConfig);
   auto wordTransform = wordFeatures(wordDict);
   int targetpadVal = isSeq2seqCrit

@@ -29,11 +29,12 @@ class GaussianNoise : public SoundEffect {
     float proba_ = 1.0;
     double minSnr_ = 0;
     double maxSnr_ = 30;
-    unsigned int randomSeed_ = std::mt19937::default_seed;
     std::string prettyString() const;
   };
 
-  explicit GaussianNoise(const GaussianNoise::Config& config);
+  explicit GaussianNoise(
+      const GaussianNoise::Config& config,
+      unsigned int seed = 0);
   ~GaussianNoise() override = default;
   void apply(std::vector<float>& signal) override;
   std::string prettyString() const override;

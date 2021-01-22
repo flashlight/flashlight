@@ -15,10 +15,32 @@
 #include <ctime>
 #include <functional>
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
+
 #include "flashlight/lib/common/String.h"
 
 namespace fl {
 namespace lib {
+
+size_t getProcessId() {
+#ifdef _WIN32
+  return GetCurrentProcessId();
+#else
+  return ::getpid();
+#endif
+}
+
+size_t getThreadId() {
+#ifdef _WIN32
+  return GetCurrentThreadId();
+#else
+  return std::hash<std::thread::id>()(std::this_thread::get_id());
+#endif
+}
 
 std::string pathSeperator() {
 #ifdef _WIN32

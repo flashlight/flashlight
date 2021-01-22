@@ -39,7 +39,8 @@ struct SoundEffectConfig {
 };
 
 std::shared_ptr<SoundEffect> createSoundEffect(
-    const std::vector<SoundEffectConfig>& config);
+    const std::vector<SoundEffectConfig>& config,
+    unsigned int seed = 0);
 
 // Write configuration vector into json file
 void writeSoundEffectConfigFile(

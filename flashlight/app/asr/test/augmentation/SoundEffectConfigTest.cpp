@@ -44,14 +44,10 @@ TEST(SoundEffectConfigFile, ReadWriteJson) {
   sfxConf1[0].additiveNoiseConfig_.nClipsMin_ = 0;
   sfxConf1[0].additiveNoiseConfig_.nClipsMax_ = 4;
   sfxConf1[0].additiveNoiseConfig_.listFilePath_ = noiseListPath;
-  sfxConf1[0].additiveNoiseConfig_.dsetRndPolicy_ =
-      stringToRandomPolicy("with_replacment");
-  sfxConf1[0].additiveNoiseConfig_.randomSeed_ = 1111;
 
   sfxConf1[1].type_ = kAmplify;
   sfxConf1[1].amplifyConfig_.ratioMin_ = 1;
   sfxConf1[1].amplifyConfig_.ratioMax_ = 10;
-  sfxConf1[1].amplifyConfig_.randomSeed_ = 123;
 
   sfxConf1[2].type_ = kClampAmplitude;
 
@@ -65,8 +61,7 @@ TEST(SoundEffectConfigFile, ReadWriteJson) {
   sfxConf1[3].reverbEchoConfig_.firstDelayMax_ = 0.03;
   sfxConf1[3].reverbEchoConfig_.repeat_ = 3;
   sfxConf1[3].reverbEchoConfig_.jitter_ = 0.2;
-  sfxConf1[3].reverbEchoConfig_.sampleRate_ = 1600;
-  sfxConf1[3].reverbEchoConfig_.randomSeed_ = 42;
+  sfxConf1[3].reverbEchoConfig_.sampleRate_ = 16000;
 
   sfxConf1[4].type_ = kNormalize;
   sfxConf1[4].normalizeOnlyIfTooHigh_ = false;

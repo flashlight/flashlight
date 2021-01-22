@@ -271,6 +271,10 @@ DEFINE_string(
     "",
     "[train] Path to a sound effect json config file. When set the sound effect is "
     "applied to augment the input data.");
+DEFINE_int64(
+    sfx_start_update,
+    std::numeric_limits<int>::max(),
+    "[train] Start sount effect augmentation starting at this update iteration.");
 
 // RUN OPTIONS
 DEFINE_string(datadir, "", "Prefix to the 'train'/'valid'/'test' files paths");
