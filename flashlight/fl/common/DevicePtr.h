@@ -62,8 +62,15 @@ class DevicePtr {
 
   void* get() const;
 
- private:
+  template <typename T>
+  T* getAs() const {
+    return reinterpret_cast<T*>(ptr_);
+  }
+
+ protected:
   af_array arr_;
+
+ private:
   void* ptr_;
 };
 
