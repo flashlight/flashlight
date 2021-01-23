@@ -13,6 +13,7 @@
 #include <dnnl.hpp>
 
 #include "flashlight/fl/common/Defines.h"
+#include "flashlight/fl/common/DevicePtr.h"
 
 namespace fl {
 namespace detail {
@@ -22,7 +23,7 @@ namespace detail {
  */
 class DnnlStream {
  public:
-  DnnlStream(dnnl::engine engine) : stream_(engine) {}
+  DnnlStream(dnnl::engine engine);
   ~DnnlStream() = default;
 
   /// Prohibit assignment
@@ -41,7 +42,7 @@ class DnnlStream {
  */
 class DnnlEngine {
  public:
-  DnnlEngine() : engine_(dnnl::engine::kind::cpu, 0) {}
+  DnnlEngine();
   ~DnnlEngine() = default;
 
   /// Prohibit assignment
@@ -60,6 +61,31 @@ class DnnlEngine {
  * for dnnl::memory::dims.
  */
 dnnl::memory::dims convertAfToDnnlDims(const std::vector<dim_t>& dims);
+dnnl::memory::dims convertAfDim4ToDnnlDims(const af::dim4& afDims);
+
+/**
+ * A light wrapper around dnnl::memory that manages underlying memory lifetime
+ * in accordance with fl::DevicePtr.
+ */
+class DnnlMemoryWrapper {
+ public:
+  DnnlMemoryWrapper(
+      const af::array& array,
+      dnnl::memory::dims dims,
+      dnnl::memory::format_tag format);
+  DnnlMemoryWrapper() = default;
+
+  DnnlMemoryWrapper& operator=(DnnlMemoryWrapper&& other);
+
+  dnnl::memory getMemory() const;
+
+  dnnl::memory::desc getDescriptor() const;
+
+ private:
+  dnnl::memory::desc descriptor_;
+  dnnl::memory memory_;
+  fl::DevicePtr devicePtr_;
+};
 
 /**
  * Given some an dnnl network (a ``std::vector<dnnl::primitive>``), a
@@ -80,9 +106,9 @@ dnnl::memory dnnlAlignOrdering(
  * Executes a sequence of DNNL primitives in the default execution stream with
  * the default execution engine.
  *
- * For each primitive, passes the corresponding arguments map for that index to
- * the execution stream. The number of primitives and the number of arguments
- * must be equal, else throws.
+ * For each primitive, passes the corresponding arguments map for that index
+ * to the execution stream. The number of primitives and the number of
+ * arguments must be equal, else throws.
  *
  * Blocks calling thread until the enqueued work has been completed.
  */

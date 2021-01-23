@@ -15,7 +15,6 @@
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/autograd/Variable.h"
 #include "flashlight/fl/autograd/backend/cpu/DnnlUtils.h"
-#include "flashlight/fl/common/DevicePtr.h"
 
 namespace fl {
 namespace {
@@ -276,72 +275,43 @@ RnnResult rnnImpl(
   }
 
   // Memory for forward
-  // input
-  DevicePtr inputPtr(input);
-  auto inputMemDesc =
-      dnnl::memory::desc(inputDims, dType, dnnl::memory::format_tag::tnc);
-  auto inputMemInit = dnnl::memory(inputMemDesc, dnnlEngine, inputPtr.get());
-  // output
-  DevicePtr outputPtr(y);
-  auto outputMemDesc =
-      dnnl::memory::desc(outputDims, dType, dnnl::memory::format_tag::tnc);
-  auto outputMemInit = dnnl::memory(outputMemDesc, dnnlEngine, outputPtr.get());
-  // input hidden state
-  DevicePtr hiddenInPtr(hiddenState);
-  dnnl::memory::desc hiddenInMemDesc;
-  dnnl::memory hiddenInMemInit;
+  auto tnc = dnnl::memory::format_tag::tnc;
+  auto ldnc = dnnl::memory::format_tag::ldnc;
+  auto ldgoi = dnnl::memory::format_tag::ldgoi;
+  auto ldgo = dnnl::memory::format_tag::ldgo;
+  const detail::DnnlMemoryWrapper inputMemInit(input, {inputDims}, tnc);
+  const detail::DnnlMemoryWrapper outputMemInit(y, {outputDims}, tnc);
+  detail::DnnlMemoryWrapper hiddenInMemInit;
   if (!hiddenState.isempty()) {
-    hiddenInMemDesc =
-        dnnl::memory::desc(hDims, dType, dnnl::memory::format_tag::ldnc);
-    hiddenInMemInit =
-        dnnl::memory(hiddenInMemDesc, dnnlEngine, hiddenInPtr.get());
-  } else {
-    hiddenInMemDesc = dnnl::memory::desc();
-    hiddenInMemInit = dnnl::memory();
+    hiddenInMemInit = detail::DnnlMemoryWrapper(hiddenState, {hDims}, ldnc);
   }
-  // output hidden state
-  DevicePtr hiddenOutPtr(hy);
-  auto hiddenOutMemDesc =
-      dnnl::memory::desc(hDims, dType, dnnl::memory::format_tag::ldnc);
-  auto hiddenOutMemInit =
-      dnnl::memory(hiddenOutMemDesc, dnnlEngine, hiddenOutPtr.get());
+  const detail::DnnlMemoryWrapper hiddenOutMemInit(hy, {hDims}, ldnc);
+  const detail::DnnlMemoryWrapper weightsInputMemRawInit(
+      weightsInput, {weightsInputDims}, ldgoi);
+  const detail::DnnlMemoryWrapper weightsHiddenMemRawInit(
+      weightsHidden, {weightsHiddenDims}, ldgoi);
+  const detail::DnnlMemoryWrapper biasMemInit(bias, {biasDims}, ldgo);
 
-  DevicePtr weightsInputPtr(weightsInput);
   // TODO(jacobkahn): don't force a format tag - use any and do a reorder based
   // on the format of the primitive - what it says - like you're supposed to
+  // Primitive for reordering input weights: ldgoi --> ldigo
   auto weightsInputMemDesc = dnnl::memory::desc(
       weightsInputDims, dType, dnnl::memory::format_tag::ldigo);
   auto weightsInputMemInit = dnnl::memory(weightsInputMemDesc, dnnlEngine);
-  // Primitive for reordering input weights: ldgoi --> ldigo
-  auto weightsInputMemRawDesc = dnnl::memory::desc(
-      weightsInputDims, dType, dnnl::memory::format_tag::ldgoi);
-  auto weightsInputMemRawInit =
-      dnnl::memory(weightsInputMemRawDesc, dnnlEngine, weightsInputPtr.get());
-
-  DevicePtr weightsHiddenPtr(weightsHidden);
+  // Primitive for reordering iter/hidden weights: ldgoi --> ldigo
   auto weightsHiddenMemDesc = dnnl::memory::desc(
       weightsHiddenDims, dType, dnnl::memory::format_tag::ldigo);
   auto weightsHiddenMemInit = dnnl::memory(weightsHiddenMemDesc, dnnlEngine);
-  // Primitive for reordering iter/hidden weights: ldgoi --> ldigo
-  auto weightsHiddenMemRawDesc = dnnl::memory::desc(
-      weightsHiddenDims, dType, dnnl::memory::format_tag::ldgoi);
-  auto weightsHiddenMemRawInit =
-      dnnl::memory(weightsHiddenMemRawDesc, dnnlEngine, weightsHiddenPtr.get());
-
-  DevicePtr biasPtr(bias);
-  auto biasMemDesc =
-      dnnl::memory::desc(biasDims, dType, dnnl::memory::format_tag::ldgo);
-  auto biasMemInit = dnnl::memory(biasMemDesc, dnnlEngine, biasPtr.get());
 
   // Add arguments
   std::unordered_map<int, dnnl::memory> rnnFwdArgs = {
-      {DNNL_ARG_SRC_LAYER, inputMemInit},
-      {DNNL_ARG_SRC_ITER, hiddenInMemInit},
+      {DNNL_ARG_SRC_LAYER, inputMemInit.getMemory()},
+      {DNNL_ARG_SRC_ITER, hiddenInMemInit.getMemory()},
       {DNNL_ARG_WEIGHTS_LAYER, weightsInputMemInit},
       {DNNL_ARG_WEIGHTS_ITER, weightsHiddenMemInit},
-      {DNNL_ARG_BIAS, biasMemInit},
-      {DNNL_ARG_DST_LAYER, outputMemInit},
-      {DNNL_ARG_DST_ITER, hiddenOutMemInit}};
+      {DNNL_ARG_BIAS, biasMemInit.getMemory()},
+      {DNNL_ARG_DST_LAYER, outputMemInit.getMemory()},
+      {DNNL_ARG_DST_ITER, hiddenOutMemInit.getMemory()}};
 
   // Workspace memory, if needed
   dnnl::memory workspace;
@@ -349,14 +319,17 @@ RnnResult rnnImpl(
   std::vector<std::unordered_map<int, dnnl::memory>> fwdArgs;
 
   // reorder input weights
-  network.push_back(dnnl::reorder(weightsInputMemRawInit, weightsInputMemInit));
-  fwdArgs.push_back({{DNNL_ARG_FROM, weightsInputMemRawInit},
-                     {DNNL_ARG_TO, weightsInputMemInit}});
+  network.push_back(
+      dnnl::reorder(weightsInputMemRawInit.getMemory(), weightsInputMemInit));
+  fwdArgs.push_back(
+      {{DNNL_ARG_FROM, weightsInputMemRawInit.getMemory()},
+       {DNNL_ARG_TO, weightsInputMemInit}});
   // reorder iter weights
   network.push_back(
-      dnnl::reorder(weightsHiddenMemRawInit, weightsHiddenMemInit));
-  fwdArgs.push_back({{DNNL_ARG_FROM, weightsHiddenMemRawInit},
-                     {DNNL_ARG_TO, weightsHiddenMemInit}});
+      dnnl::reorder(weightsHiddenMemRawInit.getMemory(), weightsHiddenMemInit));
+  fwdArgs.push_back(
+      {{DNNL_ARG_FROM, weightsHiddenMemRawInit.getMemory()},
+       {DNNL_ARG_TO, weightsHiddenMemInit}});
 
   // Initialize descriptors
   if (mode == RnnMode::RELU || mode == RnnMode::TANH) {
@@ -364,13 +337,13 @@ RnnResult rnnImpl(
         kind,
         activation,
         direction,
-        inputMemDesc,
-        hiddenInMemDesc,
+        inputMemInit.getDescriptor(),
+        hiddenInMemInit.getDescriptor(),
         weightsInputMemDesc, // weights "layer"
         weightsHiddenMemDesc, // weights "iter"
-        biasMemDesc,
-        outputMemDesc,
-        hiddenOutMemDesc);
+        biasMemInit.getDescriptor(),
+        outputMemInit.getDescriptor(),
+        hiddenOutMemInit.getDescriptor());
     auto vanillaPd =
         dnnl::vanilla_rnn_forward::primitive_desc(vanilla, dnnlEngine);
     network.push_back(dnnl::vanilla_rnn_forward(vanillaPd));
@@ -383,55 +356,43 @@ RnnResult rnnImpl(
     // returns the desciptor and memory -- takes an argument for
     // which determines whether or not it's ok to return empty
     // descriptors if the array is empty
-    DevicePtr cellInPtr(cellState);
-    dnnl::memory::desc cellInMemDesc;
-    dnnl::memory cellInMemInit;
+    detail::DnnlMemoryWrapper cellInMemInit;
     if (!cellState.isempty()) {
-      cellInMemDesc =
-          dnnl::memory::desc({cDims}, dType, dnnl::memory::format_tag::ldnc);
-      cellInMemInit = dnnl::memory(cellInMemDesc, dnnlEngine, cellInPtr.get());
-    } else {
-      cellInMemDesc = dnnl::memory::desc();
-      cellInMemInit = dnnl::memory();
+      cellInMemInit = detail::DnnlMemoryWrapper(cellState, {cDims}, ldnc);
     }
-
     // output cell state
-    DevicePtr cellOutPtr(cy);
-    auto cellOutMemDesc =
-        dnnl::memory::desc({cDims}, dType, dnnl::memory::format_tag::ldnc);
-    auto cellOutMemInit =
-        dnnl::memory(cellOutMemDesc, dnnlEngine, cellOutPtr.get());
+    detail::DnnlMemoryWrapper cellOutMemInit(cy, cDims, ldnc);
 
     auto lstm = dnnl::lstm_forward::desc(
         kind,
         direction,
-        inputMemDesc,
-        hiddenInMemDesc,
-        cellInMemDesc,
+        inputMemInit.getDescriptor(),
+        hiddenInMemInit.getDescriptor(),
+        cellInMemInit.getDescriptor(),
         weightsInputMemDesc, // weights "layer"
         weightsHiddenMemDesc, // weights "iter"
-        biasMemDesc,
-        outputMemDesc,
-        hiddenOutMemDesc,
-        cellOutMemDesc);
+        biasMemInit.getDescriptor(),
+        outputMemInit.getDescriptor(),
+        hiddenOutMemInit.getDescriptor(),
+        cellOutMemInit.getDescriptor());
     auto lstmPd = dnnl::lstm_forward::primitive_desc(lstm, dnnlEngine);
     network.push_back(dnnl::lstm_forward(lstmPd));
     workspace = dnnl::memory(lstmPd.workspace_desc(), dnnlEngine);
-    rnnFwdArgs.insert({DNNL_ARG_SRC_ITER_C, cellInMemInit});
-    rnnFwdArgs.insert({DNNL_ARG_DST_ITER_C, cellOutMemInit});
+    rnnFwdArgs.insert({DNNL_ARG_SRC_ITER_C, cellInMemInit.getMemory()});
+    rnnFwdArgs.insert({DNNL_ARG_DST_ITER_C, cellOutMemInit.getMemory()});
 
   } else if (mode == RnnMode::GRU) {
     // Use a linear-before-reset GRU so we can have parity with cuDNN
     auto gru = dnnl::lbr_gru_forward::desc(
         kind,
         direction,
-        inputMemDesc,
-        hiddenInMemDesc,
+        inputMemInit.getDescriptor(),
+        hiddenInMemInit.getDescriptor(),
         weightsInputMemDesc,
         weightsHiddenMemDesc,
-        biasMemDesc,
-        outputMemDesc,
-        hiddenOutMemDesc);
+        biasMemInit.getDescriptor(),
+        outputMemInit.getDescriptor(),
+        hiddenOutMemInit.getDescriptor());
     auto gruPd = dnnl::lbr_gru_forward::primitive_desc(gru, dnnlEngine);
     network.push_back(dnnl::lbr_gru_forward(gruPd));
     workspace = dnnl::memory(gruPd.workspace_desc(), dnnlEngine);

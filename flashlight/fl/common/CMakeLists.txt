@@ -16,6 +16,9 @@ set(
 if(FL_USE_CUDA)
   set(COMMON_SRCS ${COMMON_SRCS} ${CMAKE_CURRENT_LIST_DIR}/CudaUtils.cpp)
 endif()
+if(FL_USE_OPENCL)
+  set(COMMON_SRCS ${COMMON_SRCS} ${CMAKE_CURRENT_LIST_DIR}/OpenClUtils.cpp)
+endif()
 
 target_sources(
   flashlight
@@ -37,4 +40,7 @@ target_link_libraries(
 if (FL_USE_CUDA)
   target_link_libraries(flashlight PUBLIC ${CUDA_LIBRARIES})
   target_include_directories(flashlight PUBLIC ${CUDA_INCLUDE_DIRS})
+endif()
+if (FL_USE_OPENCL)
+  target_link_libraries(flashlight PUBLIC OpenCL::OpenCL)
 endif()
