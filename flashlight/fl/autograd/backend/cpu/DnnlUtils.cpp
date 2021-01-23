@@ -15,7 +15,7 @@
 #include "flashlight/fl/autograd/backend/cpu/DnnlUtils.h"
 #include "flashlight/fl/common/Defines.h"
 
-#ifdef FL_BACKEND_OPENCL
+#if FL_BACKEND_OPENCL
 #include "flashlight/fl/common/OpenClUtils.h"
 #endif
 
