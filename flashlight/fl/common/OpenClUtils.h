@@ -7,8 +7,10 @@
 
 #pragma once
 
+#ifndef CL_TARGET_OPENCL_VERSION
 // Version 2.2
 #define CL_TARGET_OPENCL_VERSION 220
+#endif
 
 #include <CL/cl.h>
 #include <af/opencl.h>
@@ -26,7 +28,8 @@ namespace ocl {
  * Handles the cl_mem provided by ArrayFire that must be explicitly deleted.
  */
 class DevicePtrOpenCl : public fl::DevicePtr {
-  DevicePtrOpenCl(const af::array& in) : DevicePtr(in) {
+ public:
+  DevicePtrOpenCl(const af::array& in) : fl::DevicePtr(in) {
     clMemBuf_ = in.device<cl_mem>();
   }
 

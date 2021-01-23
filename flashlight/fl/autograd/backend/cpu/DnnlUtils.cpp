@@ -8,10 +8,14 @@
 #include <stdexcept>
 #include <utility>
 
+#if FL_BACKEND_OPENCL
+#include <dnnl_ocl.hpp>
+#endif
+
 #include "flashlight/fl/autograd/backend/cpu/DnnlUtils.h"
 #include "flashlight/fl/common/Defines.h"
 
-#ifdef FL_USE_OPENCL
+#ifdef FL_BACKEND_OPENCL
 #include "flashlight/fl/common/OpenClUtils.h"
 #endif
 
@@ -20,8 +24,8 @@ namespace detail {
 
 DnnlStream::DnnlStream(dnnl::engine engine) {
   af_init();
-#ifdef FL_USE_OPENCL
-  stream_ = dnnl::stream(engine, fl::ocl::getQueue());
+#if FL_BACKEND_OPENCL
+  stream_ = dnnl::ocl_interop::make_stream(engine, fl::ocl::getQueue());
 #else
   stream_ = dnnl::stream(engine);
 #endif
@@ -37,9 +41,9 @@ DnnlStream& DnnlStream::getInstance() {
 }
 
 DnnlEngine::DnnlEngine() {
-#ifdef FL_USE_OPENCL
-  engine_ = dnnl::engine(
-      dnnl::engine::kind::gpu, fl::ocl::getDeviceId(), fl::ocl::getContext());
+#if FL_BACKEND_OPENCL
+  engine_ = dnnl::ocl_interop::make_engine(
+      fl::ocl::getDeviceId(), fl::ocl::getContext());
 #else
   engine_ = dnnl::engine(dnnl::engine::kind::cpu, 0);
 #endif
@@ -69,9 +73,10 @@ DnnlMemoryWrapper::DnnlMemoryWrapper(
     const af::array& array,
     dnnl::memory::dims dims,
     dnnl::memory::format_tag format) {
-#ifdef FL_USE_OPENCL
-  devicePtr_ = fl::DevicePtrOpenCl(array);
-  cl_mem* buffer = devicePtr_.getAsClMem();
+#if FL_BACKEND_OPENCL
+  fl::ocl::DevicePtrOpenCl _devicePtr(array);
+  cl_mem* buffer = _devicePtr.getAsClMem();
+  devicePtr_ = std::move(_devicePtr);
 #else
   devicePtr_ = fl::DevicePtr(array);
   void* buffer = devicePtr_.get();
