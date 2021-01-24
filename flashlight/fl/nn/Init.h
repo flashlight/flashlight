@@ -463,4 +463,14 @@ Variable glorotNormal(
     af::dtype type = af::dtype::f32,
     bool calcGrad = true);
 
+
+Variable truncNormal(
+    af::dim4 shape,
+    double stdv = 1.,
+    double mean = 0.,
+    double minCufOff = -2.,
+    double maxCutOff = 2.,
+    af::dtype type = af::dtype::f32,
+    bool calcGrad = true);
+
 } // namespace fl

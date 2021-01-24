@@ -72,6 +72,9 @@ ImageTransform randomEraseTransform(
     const float edgeRatioMin = 0.3,
     const float edgeRatioMax = 3);
 
+/* Randon Augmentation */
+ImageTransform randomAugmentationTransform(const float p = 0.5);
+
 } // namespace image
 } // namespace ext
 } // namespace fl

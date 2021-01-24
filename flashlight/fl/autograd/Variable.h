@@ -142,6 +142,16 @@ class Variable {
   bool isCalcGrad() const;
 
   /**
+   * Returns if weight decay is enabled
+   */
+  bool isWeightDecayEnabled() const;
+
+  /**
+   * Disable weight decay
+   */
+  void disableWeightDecay();
+
+  /**
    * Returns whether the gradient has been calculated for the Variable
    */
   bool isGradAvailable() const;
@@ -367,6 +377,7 @@ class Variable {
   struct SharedData {
     /// Array wrapped by this Variable
     af::array data;
+    bool enableWeightDecay{true};
 
     FL_SAVE_LOAD(data)
   };

@@ -51,7 +51,7 @@ void SGDOptimizer::step() {
     af::array& grad = parameters_[i].grad().array();
     af::array& data = parameters_[i].array();
 
-    if (wd_ != 0) {
+    if (wd_ != 0 && parameters_[i].isWeightDecayEnabled()) {
       // Weight decay term
       grad = grad + wd_ * data;
     }

@@ -44,9 +44,6 @@ VisionTransformer::VisionTransformer(
       wv_(std::make_shared<Linear>(
           initLinear(modelDim, headDim * nHeads),
           fl::constant(0., headDim * nHeads, 1))),
-      // wq_(std::make_shared<Linear>(initLinear(modelDim, headDim * nHeads))),
-      // wk_(std::make_shared<Linear>(initLinear(modelDim, headDim * nHeads))),
-      // wv_(std::make_shared<Linear>(initLinear(modelDim, headDim * nHeads))),
       wf_(std::make_shared<Linear>(initLinear(headDim * nHeads, modelDim))),
       norm1_(std::make_shared<LayerNorm>(std::vector<int>({0, 3}), 1e-6)),
       norm2_(std::make_shared<LayerNorm>(std::vector<int>({0, 3}), 1e-6)) {
@@ -125,11 +122,7 @@ fl::Variable VisionTransformer::initLinear(int32_t inDim, int32_t outDim) {
   float std = std::sqrt(1.0 / float(inDim));
   return fl::uniform(outDim, inDim, -std, std, af::dtype::f32, true);
 
-  // TODO: rigours truncated normal
-  // auto arr = af::normal(af::dim4(outDim, inDim), 0.02);
-  // arr = af::clamp(arr, -2., 2.);
-  // auto perterb = af::randu(arr.dims()) * 1e-8 - 5e-9;
-  // return fl::Variable(arr + perterb, false);
+  return truncNormal(af::dim4(outDim, inDim), 0.02);
 }
 
 } // namespace fl

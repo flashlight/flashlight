@@ -28,33 +28,24 @@ ViT::ViT(
           std::make_shared<Conv2D>(3, hiddenEmbSize_, 16, 16, 16, 16)) {
   // Class token
   params_.emplace_back(VisionTransformer::initLinear(1, hiddenEmbSize_));
-  // af::normal(af::dim4(hiddenEmbSize_, 1, 1, 1), 0.2), true);
+  params_.back().disableWeightDecay();
 
   // Positional embedding
-  // params_.emplace_back(
-  //     VisionTransformer::initLinear(14 * 14 + 1, hiddenEmbSize_));
   params_.emplace_back(
-      af::normal(af::dim4(hiddenEmbSize_, 14 * 14 + 1, 1, 1), 0.2), true);
+      VisionTransformer::initLinear(14 * 14 + 1, hiddenEmbSize_));
+  params_.back().disableWeightDecay();
 
   // Modules
   add(patchEmbedding_);
 
   for (int i = 0; i < nLayers_; ++i) {
-    // transformers_.emplace_back(std::make_shared<Transformer>(
-    //     hiddenEmbSize_,
-    //     hiddenEmbSize_ / nHeads_,
-    //     mlpSize_,
-    //     nHeads_,
-    //     0,
-    //     pDropout,
-    //     pLayerDrop));
     transformers_.emplace_back(std::make_shared<VisionTransformer>(
         hiddenEmbSize_,
         hiddenEmbSize_ / nHeads_,
         mlpSize_,
         nHeads_,
         pDropout,
-        pLayerDrop));
+        pLayerDrop * (i + 1) / nLayers_));
     add(transformers_.back());
   }
 
@@ -81,15 +72,13 @@ std::vector<fl::Variable> ViT::forward(
   // Positional embedding
   auto posEmb = tile(params_[1], af::dim4(1, 1, B));
   output = output + posEmb;
-  // if (train_) {
-  //   output = dropout(output, pDropout_);
-  // }
+  if (train_) {
+    output = dropout(output, pDropout_);
+  }
 
   // Transformers
   for (int i = 0; i < nLayers_; ++i) {
     output = transformers_[i]->forward({output}).front();
-    // output =
-    //     transformers_[i]->forward({output, fl::noGrad(af::array())}).front();
   }
 
   // Linear

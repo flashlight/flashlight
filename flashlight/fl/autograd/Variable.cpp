@@ -67,7 +67,7 @@ Variable Variable::operator()(
   // Extract af::index variable information,
   // it can either be af::span, af::seq or af::array
   auto idxFunc = [&idxStart, &idxEnd, &idxArr, &advancedIndex, unique, inDims](
-      const af::index& index, int pos) {
+                     const af::index& index, int pos) {
     if (index.isspan()) {
       idxStart[pos] = 0;
       idxEnd[pos] = inDims[pos];
@@ -125,8 +125,8 @@ af::array& Variable::array() const {
 
 Variable Variable::as(af::dtype newType) const {
   auto output = array().as(newType);
-  auto gradFunc = [](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
     auto& input = inputs[0];
     // Cast the grad output to match the type of the input's grad
     input.addGrad(Variable(gradOutput.array().as(input.type()), false));
@@ -159,6 +159,14 @@ bool Variable::isGradAvailable() const {
     return false;
   }
   return sharedGrad_->grad != nullptr;
+}
+
+bool Variable::isWeightDecayEnabled() const {
+  return sharedData_->enableWeightDecay;
+}
+
+void Variable::disableWeightDecay() {
+  sharedData_->enableWeightDecay = false;
 }
 
 af::dim4 Variable::dims() const {
@@ -300,7 +308,8 @@ Variable Variable::col(int index) const {
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [index, inDims, inType](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+                      std::vector<Variable>& inputs,
+                      const Variable& gradOutput) {
     auto grad = Variable(af::constant(0, inDims, inType), false);
     grad.array().col(index) = gradOutput.array();
     inputs[0].addGrad(grad);
@@ -313,7 +322,8 @@ Variable Variable::cols(int first, int last) const {
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [first, last, inDims, inType](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+                      std::vector<Variable>& inputs,
+                      const Variable& gradOutput) {
     auto grad = Variable(af::constant(0, inDims, inType), false);
     grad.array().cols(first, last) = gradOutput.array();
     inputs[0].addGrad(grad);
@@ -326,7 +336,8 @@ Variable Variable::row(int index) const {
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [index, inDims, inType](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+                      std::vector<Variable>& inputs,
+                      const Variable& gradOutput) {
     auto grad = Variable(af::constant(0, inDims, inType), false);
     grad.array().row(index) = gradOutput.array();
     inputs[0].addGrad(grad);
@@ -339,7 +350,8 @@ Variable Variable::rows(int first, int last) const {
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [first, last, inDims, inType](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+                      std::vector<Variable>& inputs,
+                      const Variable& gradOutput) {
     auto grad = Variable(af::constant(0, inDims, inType), false);
     grad.array().rows(first, last) = gradOutput.array();
     inputs[0].addGrad(grad);
@@ -352,7 +364,8 @@ Variable Variable::slice(int index) const {
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [index, inDims, inType](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+                      std::vector<Variable>& inputs,
+                      const Variable& gradOutput) {
     auto grad = Variable(af::constant(0, inDims, inType), false);
     grad.array().slice(index) = gradOutput.array();
     inputs[0].addGrad(grad);
@@ -365,7 +378,8 @@ Variable Variable::slices(int first, int last) const {
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [first, last, inDims, inType](
-      std::vector<Variable>& inputs, const Variable& gradOutput) {
+                      std::vector<Variable>& inputs,
+                      const Variable& gradOutput) {
     auto grad = Variable(af::constant(0, inDims, inType), false);
     grad.array().slices(first, last) = gradOutput.array();
     inputs[0].addGrad(grad);

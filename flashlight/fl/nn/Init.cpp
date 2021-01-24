@@ -173,4 +173,32 @@ Variable glorotNormal(
   return Variable(af::glorotNormal(shape, fanIn, fanOut, type), calcGrad);
 }
 
+Variable truncNormal(
+    af::dim4 shape,
+    double stdv,
+    double mean,
+    double minCufOff,
+    double maxCutOff,
+    af::dtype type,
+    bool calcGrad) {
+  // Rigorous implementation
+  // auto normCdf = [](double x) {
+  //   return (1. + std::erf(x / std::sqrt(2.))) / 2.;
+  // };
+
+  // auto l = 2 * normCdf((minCufOff - mean) / stdv) - 1;
+  // auto u = 2 * normCdf((maxCutOff - mean) / stdv) - 1;
+
+  // auto result = af::randu(shape, type) * (u - l) + l;
+  // result = af::erfinv(result);
+  // result = mean + result * (stdv * std::sqrt(2.));
+  // result = af::clamp(result, minCufOff, maxCutOff);
+
+  // Funky implementation
+  af::array result = mean + af::randn(shape, type) * stdv;
+  result = af::clamp(result, minCufOff, maxCutOff);
+
+  return Variable(result, calcGrad);
+}
+
 } // namespace fl

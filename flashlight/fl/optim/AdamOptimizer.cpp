@@ -64,7 +64,7 @@ void AdamOptimizer::step() {
     const af::array& grad = parameters_[i].grad().array();
     af::array& data = parameters_[i].array();
 
-    if (wd_ != 0) {
+    if (wd_ != 0 && parameters_[i].isWeightDecayEnabled()) {
       // Weight decay term
       data = data - wd_ * lr_ * data;
     }

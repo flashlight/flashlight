@@ -20,6 +20,8 @@ float randomFloat(float a, float b) {
   return a + (b - a) * r;
 }
 
+const float pi = std::acos(-1);
+
 /*
  * Resizes the smallest length edge of an image to be resize while keeping
  * the aspect ratio
@@ -175,22 +177,65 @@ ImageTransform randomEraseTransform(
     float s = w * h * randomFloat(areaRatioMin, areaRatioMax);
     float r = randomFloat(edgeRatioMin, edgeRatioMax);
 
-    int maskW = std::min(w - 1, (int)std::sqrt(s * r));
-    int maskH = std::min(h - 1, (int)std::sqrt(s / r));
-
-    const int x = std::rand() % (w - maskW);
-    const int y = std::rand() % (h - maskH);
-    af::array fillValue =
-        (af::randu(af::dim4(maskW, maskH, c)) * 255).as(in.type());
-
     af::array out = in;
-    out(af::seq(x, x + maskW - 1),
-        af::seq(y, y + maskH - 1),
-        af::span,
-        af::span) = fillValue;
+    for (int i = 0; i < 10; i++) {
+      int maskW = std::round(std::sqrt(s * r));
+      int maskH = std::round(std::sqrt(s / r));
+      if (maskW >= w || maskH >= h) {
+        continue;
+      }
+
+      const int x = std::rand() % (w - maskW);
+      const int y = std::rand() % (h - maskH);
+      af::array fillValue =
+          (af::randu(af::dim4(maskW, maskH, c)) * 255).as(in.type());
+
+      out(af::seq(x, x + maskW - 1),
+          af::seq(y, y + maskH - 1),
+          af::span,
+          af::span) = fillValue;
+      break;
+    }
+    out.eval();
     return out;
   };
 };
+
+ImageTransform randomAugmentationTransform(const float p) {
+  return [p](const af::array& in) {
+    if (p > static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX)) {
+      return in;
+    }
+
+    const int w = in.dims(0);
+    const int h = in.dims(1);
+    const int c = in.dims(2);
+
+    float mode = randomFloat(0, 1);
+    if (mode < 0.3) {
+      float theta = randomFloat(-pi / 6, pi / 6);
+      return af::rotate(in, theta);
+    } else if (mode < 0.5) {
+      float theta = randomFloat(-pi / 6, pi / 6);
+      return af::skew(in, theta, 0);
+    } else if (mode < 0.7) {
+      float theta = randomFloat(-pi / 6, pi / 6);
+      return af::skew(in, 0, theta);
+    } else if (mode < 0.8) {
+      int shift = w * randomFloat(-0.25, 0.25);
+      return af::translate(in, shift, 0);
+    } else if (mode < 0.9) {
+      int shift = h * randomFloat(-0.25, 0.25);
+      return af::translate(in, 0, shift);
+    } else {
+      float enhance = randomFloat(0, 2);
+      auto meanPic = af::mean(in, 2);
+      meanPic = af::tile(meanPic, af::dim4(1, 1, c));
+      return af::clamp(meanPic + enhance * (in - meanPic), 0., 255.)
+          .as(in.type());
+    }
+  };
+}
 
 } // namespace image
 } // namespace ext

@@ -36,7 +36,10 @@ DEFINE_double(train_layerdrop, 0., "Number of epochs to train");
 DEFINE_double(train_maxgradnorm, 1., "");
 
 DEFINE_double(train_p_randomerase, 1., "");
+DEFINE_double(train_p_randomeaug, 1., "");
 DEFINE_double(train_p_mixup, 0., "");
+DEFINE_double(train_p_cutmix, 1.0, "");
+DEFINE_double(train_p_label_smoothing, 0.1, "");
 
 DEFINE_bool(distributed_enable, true, "Enable distributed training");
 DEFINE_int64(
@@ -105,6 +108,22 @@ std::tuple<double, double, double> evalLoop(
   return std::make_tuple(loss, top5Acc.value(), top1Acc.value());
 };
 
+af::array oneHot(const af::array& targets, int C) {
+  float offValue = FLAGS_train_p_label_smoothing / C;
+  float onValue = 1. - FLAGS_train_p_label_smoothing;
+
+  int X = targets.elements();
+  auto y = af::moddims(targets, af::dim4(1, X));
+  auto A = af::range(af::dim4(C, X));
+  auto B = af::tile(y, af::dim4(C));
+  auto mask = A == B; // [C X]
+
+  af::array out = af::constant(onValue, af::dim4(C, X));
+  out = out * mask + offValue;
+
+  return out;
+}
+
 int main(int argc, char** argv) {
   fl::init();
   google::InitGoogleLogging(argv[0]);
@@ -154,6 +173,7 @@ int main(int argc, char** argv) {
        // scale invariance
        fl::ext::image::randomResizeTransform(randomResizeMin, randomResizeMax),
        fl::ext::image::randomCropTransform(randomCropSize, randomCropSize),
+       fl::ext::image::randomAugmentationTransform(FLAGS_train_p_randomeaug),
        fl::ext::image::randomEraseTransform(FLAGS_train_p_randomerase),
        fl::ext::image::normalizeImage(mean, std),
        // Randomly flip image with probability of 0.5
@@ -282,18 +302,23 @@ int main(int argc, char** argv) {
       opt.zeroGrad();
 
       // Make a Variable from the input array.
-      Variable inputs;
+      Variable inputs = noGrad(example[kImagenetInputIdx]);
       float mixP =
           static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
-      float lambda =
-          static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
-      float example1Weight = FLAGS_train_p_mixup;
+      float example1Weight = 0.;
       if (FLAGS_train_p_mixup > 0 && mixP > 0.5) {
         // mixup
-        inputs = FLAGS_train_p_mixup * noGrad(example1[kImagenetInputIdx]) +
-            (1 - FLAGS_train_p_mixup) * noGrad(example[kImagenetInputIdx]);
-      } else {
+        float lambda = FLAGS_train_p_mixup - 0.2 +
+            0.2 * static_cast<float>(std::rand()) /
+                static_cast<float>(RAND_MAX);
+        inputs = lambda * noGrad(example1[kImagenetInputIdx]) +
+            (1 - lambda) * noGrad(example[kImagenetInputIdx]);
+        example1Weight = lambda;
+      } else if (FLAGS_train_p_cutmix > 0 && mixP <= 0.5) {
+        // } else {
         // cut mix
+        float lambda =
+            static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
         auto in = example[kImagenetInputIdx];
         const int w = in.dims(0);
         const int h = in.dims(1);
@@ -322,21 +347,28 @@ int main(int argc, char** argv) {
           example1Weight = lambda * lambda;
         }
       }
+      // std::cout << inputs.dims() << std::endl;
+      inputs.eval();
 
       // Get the activations from the model.
       auto output = model->forward({inputs}).front();
 
       // Make a Variable from the target array.
-      auto target = noGrad(example[kImagenetTargetIdx]);
-      auto target1 = noGrad(example1[kImagenetTargetIdx]);
+      // auto target = noGrad(example[kImagenetTargetIdx]);
+      // auto target1 = noGrad(example1[kImagenetTargetIdx]);
+      // auto loss = example1Weight * categoricalCrossEntropy(output, target1) +
+      //     (1 - example1Weight) * categoricalCrossEntropy(output, target);
 
-      // Compute and record the loss.
-      auto loss = example1Weight * categoricalCrossEntropy(output, target1) +
-          (1 - example1Weight) * categoricalCrossEntropy(output, target);
+      // Compute and record the loss + label smoothing
+      auto target = oneHot(example[kImagenetTargetIdx], 1000);
+      auto target1 = oneHot(example1[kImagenetTargetIdx], 1000);
+
+      auto y = noGrad(example1Weight * target1 + (1 - example1Weight) * target);
+      auto loss = fl::mean(fl::sum(fl::negate(y * output), {0}), {1});
 
       trainLossMeter.add(loss.array());
-      top5Acc.add(output.array(), target.array());
-      top1Acc.add(output.array(), target.array());
+      top5Acc.add(output.array(), example[kImagenetTargetIdx]);
+      top1Acc.add(output.array(), example[kImagenetTargetIdx]);
 
       // Backprop, update the weights and then zero the gradients.
       loss.backward();

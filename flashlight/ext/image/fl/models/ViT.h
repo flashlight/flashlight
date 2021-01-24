@@ -35,7 +35,6 @@ class ViT : public fl::Container {
   float pDropout_;
 
   std::shared_ptr<Conv2D> patchEmbedding_;
-//   std::vector<std::shared_ptr<Transformer>> transformers_;
   std::vector<std::shared_ptr<VisionTransformer>> transformers_;
   std::shared_ptr<Linear> linearOut_;
   std::shared_ptr<LayerNorm> ln_;
