@@ -97,7 +97,7 @@ D.backward(); // populates A.grad() along with gradients for B, C, and D.
 </details>
 
 ## Building and Installing
-[**Install with `vcpkg`**](#library-installation-with-vcpkg) | [**Build from Source**](#building-from-source) | [**Build from Source with `vcpkg`**](#from-source-build-with-vcpkg) | [**Building Your Own Project with Flashlight**](#building-your-own-project-with-flashlight)
+[**Install with `vcpkg`**](#library-installation-with-vcpkg) | [**Build from Source**](#building-from-source) | [**Build from Source with `vcpkg`**](#from-source-build-with-vcpkg) | [**Build Your Own Project with Flashlight**](#building-your-own-project-with-flashlight)
 
 ### Requirements
 At minimum, compilation requires:
@@ -106,6 +106,8 @@ At minimum, compilation requires:
 - A Linux-based operating system.
 
 See the [full dependency](#dependencies) list for more details if [building from source](#building-from-source).
+
+Instructions for building/installing Python bindings [can be found here](bindings/python/README.md).
 
 ### Flashlight Build Setups
 
@@ -122,11 +124,12 @@ Flashlight can be built in one of two ways:
 ### Installing Flashlight with `vcpkg`
 #### Library Installation with `vcpkg`
 
-Flashlight is most-easily built and installed with `vcpkg`. Only the CUDA backend is currently supported with `vcpkg`. First, install [`CUDA` >= 9.2](https://developer.nvidia.com/cuda-downloads), [`cuDNN`](https://docs.nvidia.com/deeplearning/cudnn/install-guide/index.html), [`NCCL`](https://docs.nvidia.com/deeplearning/nccl/install-guide/index.html), and [Intel MKL](https://software.intel.com/content/www/us/en/develop/tools/oneapi/base-toolkit/download.html). Then, after [installing `vcpkg`](https://github.com/microsoft/vcpkg#getting-started), install the libraries and core with:
+Flashlight is most-easily built and installed with `vcpkg`. Both the CUDA and CPU backends are supported with `vcpkg`. For either backend, first install [Intel MKL](https://software.intel.com/content/www/us/en/develop/tools/oneapi/base-toolkit/download.html). For the CUDA backend, install [`CUDA` >= 9.2](https://developer.nvidia.com/cuda-downloads), [`cuDNN`](https://docs.nvidia.com/deeplearning/cudnn/install-guide/index.html), and [`NCCL`](https://docs.nvidia.com/deeplearning/nccl/install-guide/index.html). Then, after [installing `vcpkg`](https://github.com/microsoft/vcpkg#getting-started), install the libraries and core with:
 ```shell
-./vcpkg install flashlight-cuda
+./vcpkg install flashlight-cuda # CUDA backend, OR
+./vcpkg install flashlight-cpu  # CPU backend
 ```
-To install [Flashlight apps](flashlight/app), check the features available for installation by running `./vcpkg search flashlight-cuda`. Each app is a "feature": for example, `./vcpkg install flashlight-cuda[asr]` installs the ASR application.
+To install [Flashlight apps](flashlight/app), check the features available for installation by running `./vcpkg search flashlight-cuda` or `./vcpkg search flashlight-cpu`. Each app is a "feature": for example, `./vcpkg install flashlight-cuda[asr]` installs the ASR application with the CUDA backend.
 
 Flashlight [app binaries](flashlight/app) are also built for the selected features and are installed into the `vcpkg` install tree's `tools` directory.
 
