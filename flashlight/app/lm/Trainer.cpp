@@ -343,7 +343,8 @@ void Trainer::evalStep() {
     fl::Variable input, target;
     std::tie(input, target) = getInputAndTarget(sample);
     af::array inputSizes = af::flat(af::sum(input.array() != kPadIdx_, 0));
-    auto output = forwardSequentialModuleWithPadMask(input, network_, inputSizes);
+    auto output =
+        forwardSequentialModuleWithPadMask(input, network_, inputSizes);
     auto loss = criterion_->forward({output, target}).front();
     auto numTokens = af::count<int>(target.array() != kPadIdx_);
     if (numTokens > 0) {
@@ -502,10 +503,9 @@ void Trainer::createCriterion() {
 
 void Trainer::collectParameters() {
   parameters_ = network_->params();
+  const auto& criterionParams = criterion_->params();
   parameters_.insert(
-      parameters_.end(),
-      criterion_->params().begin(),
-      criterion_->params().end());
+      parameters_.end(), criterionParams.begin(), criterionParams.end());
 }
 
 void Trainer::createOptimizer() {
