@@ -100,23 +100,27 @@ void gradAdvancedIndex(
   // that have an array as af::index variable
 
   // Dtype checking
-  af::dtype idxType = idxArr[0].type();
-  if (validIndexTypes.find(idxType) == validIndexTypes.end()) {
-    throw std::invalid_argument("Index type must be one of s32/s64/u32/u64");
-  }
+  std::vector<af::dtype> idxTypes;
   for (int i = 0; i < 4; i++) {
     if (idxArr[i].isempty()) {
       idxPtr[i] = 0;
       continue;
     }
-    if (idxArr[i].type() != idxType) {
+    if (validIndexTypes.find(idxArr[i].type()) == validIndexTypes.end()) {
       throw std::invalid_argument(
-          "Index type must be the same across all dimensions");
+          "Index type must be one of s32/s64/u32/u64, observed type is " +
+          std::to_string(idxArr[i].type()));
     }
+    idxTypes.push_back(idxArr[i].type());
     idxArrRaw[i] = DevicePtr(idxArr[i]);
     idxPtr[i] = (dim_t)(idxArrRaw[i].get());
   }
-
+  for (int i = 0; i + 1 < idxTypes.size(); i++) {
+    if (idxTypes[i] != idxTypes[i + 1]) {
+      throw std::invalid_argument(
+          "Index type must be the same across all dimensions");
+    }
+  }
   Variable inpCast = inp;
   if (inpType == f16) {
     inpCast = inp.as(f32);
@@ -137,7 +141,7 @@ void gradAdvancedIndex(
   DevicePtr devIdxPtr(arrIdxPtr);
 
   cudaStream_t stream = cuda::getActiveStream();
-  if (idxType == s32) {
+  if (idxTypes.size() == 0 || idxTypes[0] == s32) {
     gradAdvancedIndexKernel<float, int32_t>
         <<<GRID_SIZE, BLOCK_SIZE, 0, stream>>>(
             static_cast<const float*>(inpRaw.get()),
@@ -146,7 +150,7 @@ void gradAdvancedIndex(
             static_cast<const dim_t*>(devOutDims.get()),
             static_cast<const dim_t*>(devIdxPtr.get()),
             static_cast<float*>(outRaw.get()));
-  } else if (idxType == s64) {
+  } else if (idxTypes[0] == s64) {
     gradAdvancedIndexKernel<float, int64_t>
         <<<GRID_SIZE, BLOCK_SIZE, 0, stream>>>(
             static_cast<const float*>(inpRaw.get()),
@@ -155,7 +159,7 @@ void gradAdvancedIndex(
             static_cast<const dim_t*>(devOutDims.get()),
             static_cast<const dim_t*>(devIdxPtr.get()),
             static_cast<float*>(outRaw.get()));
-  } else if (idxType == u32) {
+  } else if (idxTypes[0] == u32) {
     gradAdvancedIndexKernel<float, uint32_t>
         <<<GRID_SIZE, BLOCK_SIZE, 0, stream>>>(
             static_cast<const float*>(inpRaw.get()),
@@ -164,7 +168,7 @@ void gradAdvancedIndex(
             static_cast<const dim_t*>(devOutDims.get()),
             static_cast<const dim_t*>(devIdxPtr.get()),
             static_cast<float*>(outRaw.get()));
-  } else if (idxType == u64) {
+  } else if (idxTypes[0] == u64) {
     gradAdvancedIndexKernel<float, uint64_t>
         <<<GRID_SIZE, BLOCK_SIZE, 0, stream>>>(
             static_cast<const float*>(inpRaw.get()),

@@ -17,8 +17,10 @@
 #include "flashlight/app/lm/data/TextDataset.h"
 
 #include "flashlight/ext/common/DistributedUtils.h"
-#include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/ext/common/Serializer.h"
+#include "flashlight/ext/plugin/ModulePlugin.h"
+#include "flashlight/fl/contrib/contrib.h"
+#include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
