@@ -145,7 +145,7 @@ commands:
             export CC=/usr/bin/gcc-5 && export CXX=/usr/bin/g++-5
             export MKLROOT=/opt/intel/mkl
             mkdir -p build && cd build
-            cmake .. -DFL_BACKEND=CPU
+            cmake .. -DFL_BACKEND=CPU -DDNNL_DIR=/opt/onednn/lib/cmake/dnnl -DGloo_DIR=/opt/gloo/share/cmake
             make -j36 && make install
   flashlight_source_test_with_vcpkg:
     parameters:
