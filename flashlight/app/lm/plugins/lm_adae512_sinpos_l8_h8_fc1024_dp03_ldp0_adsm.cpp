@@ -30,7 +30,7 @@ class lm_adae512_sinpos_l8_h8_fc1024_dp03_ldp0_adsm : public fl::Container {
     add(frontend_);
     for (int trIdx = 0; trIdx < 8; trIdx++) {
       auto layer = std::make_shared<fl::Transformer>(
-          512, 64, 1024, 8, 0, 0.3, 0., false, true);
+          512, 64, 1024, 8, 0, 0.3, 0., true, false);
       transformers_.push_back(layer);
       add(layer);
     }
