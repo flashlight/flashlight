@@ -794,7 +794,7 @@ TEST(AutogradTest, Convolve) {
         /* groups */ 1,
         benchmarks);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_conv_wt, wt, 0.05));
+  ASSERT_TRUE(jacobianTestImpl(func_conv_wt, wt, 0.06));
   auto func_conv_bs = [&](Variable& bias) {
     return conv2d(
         in,
@@ -809,7 +809,7 @@ TEST(AutogradTest, Convolve) {
         /* groups */ 1,
         benchmarks);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_conv_bs, bs, 0.02));
+  ASSERT_TRUE(jacobianTestImpl(func_conv_bs, bs, 0.03));
 }
 
 TEST_F(AutogradTestF16, ConvolveF16) {
@@ -1146,7 +1146,7 @@ TEST(AutogradTest, WeightNormConv) {
         /* dy */ 1,
         /* groups */ 1);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_weightNorm_in, in, 1E-1));
+  ASSERT_TRUE(jacobianTestImpl(func_weightNorm_in, in, 3E-1));
 
   auto func_weightNorm_v = [&](Variable& input) {
     auto w = input * tileAs(g / norm(input, norm_dim), input);
@@ -1161,7 +1161,7 @@ TEST(AutogradTest, WeightNormConv) {
         /* dy */ 1,
         /* groups */ 1);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_weightNorm_v, v, 1E-1));
+  ASSERT_TRUE(jacobianTestImpl(func_weightNorm_v, v, 2E-1));
 
   auto func_weightNorm_g = [&](Variable& input) {
     auto w = v * tileAs(input / norm(v, norm_dim), v);
@@ -1176,7 +1176,7 @@ TEST(AutogradTest, WeightNormConv) {
         /* dy */ 1,
         /* groups */ 1);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_weightNorm_g, g, 1E-1));
+  ASSERT_TRUE(jacobianTestImpl(func_weightNorm_g, g, 2E-1));
 }
 
 void testRnnImpl(RnnMode mode, af::dtype precision = af::dtype::f64) {
