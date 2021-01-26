@@ -1,0 +1,8 @@
+# Ignore everything
+**
+
+# Allow files and directories
+!/bindings/**
+!/cmake/**
+!/flashlight/**
+!/CMakeLists.txt
