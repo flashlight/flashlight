@@ -354,7 +354,7 @@ DEFINE_uint64(
 DEFINE_string(
     arch,
     "default",
-    "[train] Network architecture file path prefixed with 'archdir'");
+    "[train] Network architecture file path");
 DEFINE_string(
     criterion,
     kAsgCriterion,

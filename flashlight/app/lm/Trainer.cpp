@@ -115,13 +115,9 @@ DEFINE_int64(
 /* TRAIN OPTIONS */
 DEFINE_string(train_task, "autoreg", "Task for training: autoreg or mask");
 DEFINE_string(
-    train_arch_dir,
-    "",
-    "Prefix for the arch file of a model description.");
-DEFINE_string(
     train_arch_file,
-    "model.arch",
-    "Arch file path for the model description. '--train_arch_dir' is used as prefix for this path.");
+    "model.so",
+    "Network .cpp architecture file path");
 DEFINE_int64(
     train_seed,
     0,
@@ -199,6 +195,7 @@ DEFINE_int64(
 /* ============= Public functions ============= */
 Trainer::Trainer(const std::string& mode) {
   // Parse from Gflags
+  (void)fl::ext::ModulePlugin(FLAGS_train_arch_file);
   if (mode == "train") {
     initTrain();
   } else if (mode == "continue") {
@@ -298,7 +295,7 @@ void Trainer::trainStep() {
 
   // 2. Forward
   fwdTimeMeter_.resume();
-  auto output = forwardSequentialModuleWithPadMask(input, network_, inputSizes);
+  auto output = network_->forward({input, fl::noGrad(inputSizes)}).front();
   af::sync();
   critFwdTimeMeter_.resume();
   auto loss = criterion_->forward({output, target}).front();
@@ -343,8 +340,7 @@ void Trainer::evalStep() {
     fl::Variable input, target;
     std::tie(input, target) = getInputAndTarget(sample);
     af::array inputSizes = af::flat(af::sum(input.array() != kPadIdx_, 0));
-    auto output =
-        forwardSequentialModuleWithPadMask(input, network_, inputSizes);
+    auto output = network_->forward({input, fl::noGrad(inputSizes)}).front();
     auto loss = criterion_->forward({output, target}).front();
     auto numTokens = af::count<int>(target.array() != kPadIdx_);
     if (numTokens > 0) {
@@ -476,10 +472,8 @@ void Trainer::createNetwork() {
   if (dictionary_.entrySize() == 0) {
     throw std::runtime_error("Dictionary is empty, number of classes is zero");
   }
-  network_ = buildSequentialModule(
-      pathsConcat(FLAGS_train_arch_dir, FLAGS_train_arch_file),
-      0,
-      dictionary_.entrySize());
+  network_ = fl::ext::ModulePlugin(FLAGS_train_arch_file)
+                 .arch(0, dictionary_.entrySize());
 }
 
 void Trainer::createCriterion() {
