@@ -55,6 +55,12 @@ cd bindings/python
 python3 setup.py install
 ```
 
+In case you used VCPKG to build flashlight, you also need to declare these variables before running setup.py:
+```
+export CMAKE_LIBRARY_PATH=[vcpkg_installation_location]/installed/x64-linux/lib
+export CMAKE_INCLUDE_PATH=[vcpkg_installation_location]/installed/x64-linux/include
+```
+
 with `pip` either install from `pypi` (coming soon)
 ```
 pip3 install pyflashlight
