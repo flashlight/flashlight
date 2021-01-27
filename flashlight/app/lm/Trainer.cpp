@@ -202,6 +202,8 @@ Trainer::Trainer(const std::string& mode) {
     initContinue();
   } else if (mode == "fork") {
     initFork();
+  } else if (mode == "eval") {
+    initEval();
   } else {
     throw std::invalid_argument("Trainer doesn't support mode: " + mode);
   }
@@ -209,11 +211,21 @@ Trainer::Trainer(const std::string& mode) {
   gflagsStr_ = serializeGflags();
   FL_LOG_MASTER(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
-  createDatasets();
   initArrayFire();
   if (FLAGS_distributed_enable) {
     reducer_ = std::make_shared<fl::CoalescingReducer>(1.0, true, true);
   }
+
+  FL_LOG_MASTER(INFO) << "network (" << fl::numTotalParams(network_)
+                      << " params): " << network_->prettyString();
+  FL_LOG_MASTER(INFO) << "criterion (" << fl::numTotalParams(criterion_)
+                      << " params): " << criterion_->prettyString();
+  if (optimizer_) {
+    FL_LOG_MASTER(INFO) << "optimizer: " << optimizer_->prettyString();
+  }
+}
+
+void Trainer::runTraining() {
   if (isMaster()) {
     dirCreate(FLAGS_exp_rundir);
     logWriter_ = createOutputStream(
@@ -221,14 +233,6 @@ Trainer::Trainer(const std::string& mode) {
         std::ios_base::app);
   }
 
-  FL_LOG_MASTER(INFO) << "network (" << fl::numTotalParams(network_)
-                      << " params): " << network_->prettyString();
-  FL_LOG_MASTER(INFO) << "criterion (" << fl::numTotalParams(criterion_)
-                      << " params): " << criterion_->prettyString();
-  FL_LOG_MASTER(INFO) << "optimizer: " << optimizer_->prettyString();
-}
-
-void Trainer::runTraining() {
   FL_LOG_MASTER(INFO) << "training started (epoch=" << epoch_
                       << " batch=" << batchIdx_ << ")";
 
@@ -256,21 +260,18 @@ void Trainer::runTraining() {
     // Run evaluation and save best checkpoint
     if (FLAGS_train_report_updates &&
         batchIdx_ % FLAGS_train_report_updates == 0) {
-      stopTimers();
-      evalStep();
-      syncMeters();
+      auto loss = runEvaluation();
+      if (loss < bestLoss_) {
+        bestLoss_ = loss;
+        saveCheckpoint(modelPath, ".best");
+      }
+
       auto progress = getProgress();
       FL_LOG_MASTER(INFO) << progress;
       if (isMaster()) {
         logWriter_ << progress << "\n" << std::flush;
       }
       resetMeters();
-
-      auto loss = validLossMeter_.value()[0];
-      if (loss < bestLoss_) {
-        bestLoss_ = loss;
-        saveCheckpoint(modelPath, ".best");
-      }
     }
 
     // Force saving checkpoint every given interval
@@ -352,6 +353,14 @@ void Trainer::evalStep() {
   }
 }
 
+float Trainer::runEvaluation() {
+  stopTimers();
+  evalStep();
+  syncMeters();
+  auto loss = validLossMeter_.value()[0];
+  return loss;
+}
+
 /* ============= Initializers ============= */
 void Trainer::initTrain() {
   FL_LOG_MASTER(INFO) << "Creating a fresh model";
@@ -359,6 +368,9 @@ void Trainer::initTrain() {
   createNetwork();
   createCriterion();
   createOptimizer();
+
+  createTrainDatasets();
+  createValidDatasets();
 }
 
 void Trainer::initContinue() {
@@ -383,6 +395,8 @@ void Trainer::initContinue() {
   gflags::ReadFlagsFromString(gflagsStr_, gflags::GetArgv0(), true);
 
   createDictionary();
+  createTrainDatasets();
+  createValidDatasets();
   // the network, criterion and optimizer will be reused
 }
 
@@ -407,6 +421,24 @@ void Trainer::initFork() {
 
   createDictionary();
   createOptimizer();
+  createTrainDatasets();
+  createValidDatasets();
+  // the network and criterion will be reused
+}
+
+void Trainer::initEval() {
+  if (!fileExists(FLAGS_exp_init_model_path)) {
+    throw std::invalid_argument(
+        "Checkpoint doesn't exist for evaluation: " +
+        FLAGS_exp_init_model_path);
+  }
+  FL_LOG_MASTER(INFO) << "Evaluate from file: " << FLAGS_exp_init_model_path;
+
+  fl::ext::Serializer::load(
+      FLAGS_exp_init_model_path, version_, network_, criterion_);
+
+  createDictionary();
+  createValidDatasets();
   // the network and criterion will be reused
 }
 
@@ -437,7 +469,7 @@ void Trainer::createDictionary() {
   dictionary_.setDefaultIndex(dictionary_.getIndex(fl::lib::text::kUnkToken));
 }
 
-void Trainer::createDatasets() {
+void Trainer::createTrainDatasets() {
   fl::lib::text::Tokenizer tokenizer;
   fl::lib::text::PartialFileReader partialFileReader(
       fl::getWorldRank(), fl::getWorldSize());
@@ -453,6 +485,12 @@ void Trainer::createDatasets() {
       true);
   FL_LOG_MASTER(INFO) << "train dataset: " << trainDataset_->size()
                       << " samples";
+}
+
+void Trainer::createValidDatasets() {
+  fl::lib::text::Tokenizer tokenizer;
+  fl::lib::text::PartialFileReader partialFileReader(
+      fl::getWorldRank(), fl::getWorldSize());
 
   validDataset_ = std::make_shared<TextDataset>(
       FLAGS_data_dir,
