@@ -16,9 +16,9 @@
  * This architecture is using also adaptive embedding and sinusoidal positional
  * embedding.
  */
-class lmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm : public fl::Container {
+class LmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm : public fl::Container {
  public:
-  lmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm(int64_t nLabel) {
+  LmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm(int64_t nLabel) {
     // Time x B x 1 x 1
     std::vector<int> cutoffs = {10000, 50000, (int)nLabel};
     frontend_ = std::make_shared<fl::Sequential>();
@@ -56,7 +56,7 @@ class lmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm : public fl::Container {
 
   std::string prettyString() const override {
     std::ostringstream ss;
-    ss << "Model lmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm: ";
+    ss << "Model LmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm: ";
     ss << frontend_->prettyString() << "\n";
     for (int trIdx = 0; trIdx < transformers_.size(); trIdx++) {
       ss << transformers_[trIdx]->prettyString() << "\n";
@@ -65,7 +65,7 @@ class lmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm : public fl::Container {
   }
 
  private:
-  lmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm() = default;
+  LmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm() = default;
 
   std::shared_ptr<fl::Sequential> frontend_;
   std::vector<std::shared_ptr<fl::Transformer>> transformers_;
@@ -76,8 +76,8 @@ class lmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm : public fl::Container {
 
 extern "C" fl::Module* createModule(int64_t, int64_t nLabel) {
   auto m =
-      std::make_unique<lmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm>(nLabel);
+      std::make_unique<LmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm>(nLabel);
   return m.release();
 }
 
-CEREAL_REGISTER_TYPE(lmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm)
+CEREAL_REGISTER_TYPE(LmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm)
