@@ -93,18 +93,18 @@ Variable VisionTransformer::selfAttention(const Variable& x) {
 
 std::vector<Variable> VisionTransformer::forward(
     const std::vector<Variable>& inputs) {
+  // layer drop
+  auto rand = af::randu(1).scalar<float>();
+  if (train_ && (rand < pLayerdrop_)) {
+    return inputs;
+  }
+
   if (inputs.size() != 1) {
     throw std::runtime_error("VisionTransformer forward, >1 inputs");
   }
   auto x = inputs.front();
-
-  float f = 1.0;
-  if (train_ && (af::randu(1).scalar<float>() < pLayerdrop_)) {
-    f = 0.0;
-  }
-
-  auto output = x + f * selfAttention((*norm1_)(x));
-  output = output + f * mlp((*norm2_)(output));
+  auto output = x + selfAttention((*norm1_)(x));
+  output = output + mlp((*norm2_)(output));
   return {output};
 }
 

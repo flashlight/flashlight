@@ -201,39 +201,51 @@ ImageTransform randomEraseTransform(
   };
 };
 
-ImageTransform randomAugmentationTransform(const float p) {
-  return [p](const af::array& in) {
-    if (p > static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX)) {
-      return in;
-    }
-
+ImageTransform randomAugmentationTransform(const float p, const int repeat) {
+  return [p, repeat](const af::array& in) {
     const int w = in.dims(0);
     const int h = in.dims(1);
     const int c = in.dims(2);
-
-    float mode = randomFloat(0, 1);
-    if (mode < 0.3) {
-      float theta = randomFloat(-pi / 6, pi / 6);
-      return af::rotate(in, theta);
-    } else if (mode < 0.5) {
-      float theta = randomFloat(-pi / 6, pi / 6);
-      return af::skew(in, theta, 0);
-    } else if (mode < 0.7) {
-      float theta = randomFloat(-pi / 6, pi / 6);
-      return af::skew(in, 0, theta);
-    } else if (mode < 0.8) {
-      int shift = w * randomFloat(-0.25, 0.25);
-      return af::translate(in, shift, 0);
-    } else if (mode < 0.9) {
-      int shift = h * randomFloat(-0.25, 0.25);
-      return af::translate(in, 0, shift);
-    } else {
-      float enhance = randomFloat(0, 2);
-      auto meanPic = af::mean(in, 2);
-      meanPic = af::tile(meanPic, af::dim4(1, 1, c));
-      return af::clamp(meanPic + enhance * (in - meanPic), 0., 255.)
-          .as(in.type());
+    if (in.dims(3) != 1) {
+      throw std::runtime_error(
+          "randomAugmentationTransform input batchsize need to be 1");
     }
+
+    af::array res(af::dim4(w, h, c, repeat), in.type());
+    for (int i = 0; i < repeat; i++) {
+      if (p > static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX)) {
+        res(af::span, af::span, af::span, i) = in;
+        continue;
+      }
+
+      float mode = randomFloat(0, 1);
+      if (mode < 0.3) {
+        float theta = randomFloat(-pi / 6, pi / 6);
+        res(af::span, af::span, af::span, i) = af::rotate(in, theta);
+      } else if (mode < 0.5) {
+        float theta = randomFloat(-pi / 6, pi / 6);
+        res(af::span, af::span, af::span, i) = af::skew(in, theta, 0);
+      } else if (mode < 0.7) {
+        float theta = randomFloat(-pi / 6, pi / 6);
+        res(af::span, af::span, af::span, i) = af::skew(in, 0, theta);
+      } else if (mode < 0.8) {
+        int shift = w * randomFloat(-0.25, 0.25);
+        res(af::span, af::span, af::span, i) = af::translate(in, shift, 0);
+      } else if (mode < 0.9) {
+        int shift = h * randomFloat(-0.25, 0.25);
+        res(af::span, af::span, af::span, i) = af::translate(in, 0, shift);
+      } else {
+        float enhance = randomFloat(0, 2);
+        auto meanPic = af::mean(in, 2);
+        meanPic = af::tile(meanPic, af::dim4(1, 1, c));
+        res(af::span, af::span, af::span, i) =
+            af::clamp(meanPic + enhance * (in - meanPic), 0., 255.)
+                .as(in.type());
+      }
+    }
+
+    res.eval();
+    return res;
   };
 }
 

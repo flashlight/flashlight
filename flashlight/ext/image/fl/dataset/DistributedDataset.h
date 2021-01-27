@@ -22,22 +22,17 @@ class DistributedDataset : public Dataset {
       int64_t batchSize,
       int64_t numThreads,
       int64_t prefetchSize,
-      BatchDatasetPolicy batchpolicy = fl::BatchDatasetPolicy::INCLUDE_LAST,
-      int64_t seed = 0);
+      BatchDatasetPolicy batchpolicy = fl::BatchDatasetPolicy::INCLUDE_LAST);
 
   std::vector<af::array> get(const int64_t idx) const override;
 
-  void resample(int64_t seed = 0);
+  void resample(const int seed = 0);
 
   int64_t size() const override;
 
  private:
-  int64_t prefetchSize_;
-  int64_t numThreads_;
-  int64_t batchSize_;
-  BatchDatasetPolicy batchpolicy_;
-  std::shared_ptr<Dataset> base_;
   std::shared_ptr<Dataset> ds_;
+  std::shared_ptr<ShuffleDataset> shuffle_;
 };
 
 } // namespace image

@@ -20,6 +20,7 @@
 #include "flashlight/fl/dataset/datasets.h"
 #include "flashlight/fl/meter/meters.h"
 #include "flashlight/fl/optim/optim.h"
+#include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
 
 DEFINE_string(data_dir, "", "Directory of imagenet data");
@@ -40,6 +41,7 @@ DEFINE_double(train_p_randomeaug, 1., "");
 DEFINE_double(train_p_mixup, 0., "");
 DEFINE_double(train_p_cutmix, 1.0, "");
 DEFINE_double(train_p_label_smoothing, 0.1, "");
+DEFINE_uint64(train_n_repeatedaug, 1, "");
 
 DEFINE_bool(distributed_enable, true, "Enable distributed training");
 DEFINE_int64(
@@ -185,7 +187,7 @@ int main(int argc, char** argv) {
                fl::ext::image::normalizeImage(mean, std)});
 
   const int64_t batchSizePerGpu = FLAGS_data_batch_size;
-  const int64_t prefetchThreads = 10;
+  const int64_t prefetchThreads = 20;
   const int64_t prefetchSize = FLAGS_data_batch_size;
   auto labelMap = getImagenetLabels(labelPath);
   auto trainDataset = std::make_shared<fl::ext::image::DistributedDataset>(
@@ -197,16 +199,6 @@ int main(int argc, char** argv) {
       prefetchSize,
       fl::BatchDatasetPolicy::SKIP_LAST);
   FL_LOG_MASTER(INFO) << "[trainDataset size] " << trainDataset->size();
-
-  auto trainDataset1 = std::make_shared<fl::ext::image::DistributedDataset>(
-      imagenetDataset(trainList, labelMap, {trainTransforms}),
-      worldRank,
-      worldSize,
-      batchSizePerGpu,
-      prefetchThreads,
-      prefetchSize,
-      fl::BatchDatasetPolicy::SKIP_LAST,
-      4399);
 
   auto valDataset = fl::ext::image::DistributedDataset(
       imagenetDataset(valList, labelMap, {valTransforms}),
@@ -229,7 +221,8 @@ int main(int argc, char** argv) {
       FLAGS_train_dropout,
       FLAGS_train_layerdrop,
       1000);
-  FL_LOG_MASTER(INFO) << "[model] " << model->prettyString();
+  FL_LOG_MASTER(INFO) << "[model with parameters " << fl::numTotalParams(model)
+                      << "] " << model->prettyString();
   // synchronize parameters of the model so that the parameters in each process
   // is the same
   fl::allReduceParameters(model);
@@ -262,47 +255,57 @@ int main(int argc, char** argv) {
   };
 
   // Small utility functions to load and save models
-  auto saveModel = [&model, &isMaster](int epoch) {
-    if (isMaster) {
-      std::string modelPath = FLAGS_exp_checkpoint_path + std::to_string(epoch);
-      LOG(INFO) << "Saving model to file: " << modelPath;
-      fl::save(modelPath, model);
-    }
-  };
+  int batchIdx = 0;
+  int epoch = 0;
 
-  auto loadModel = [&model](int epoch) {
-    std::string modelPath = FLAGS_exp_checkpoint_path + std::to_string(epoch);
-    LOG(INFO) << "Loading model from file: " << modelPath;
-    fl::load(modelPath, model);
+  auto saveModel =
+      [&model, &isMaster, &epoch, &batchIdx](const std::string& suffix = "") {
+        if (isMaster) {
+          std::string modelPath = FLAGS_exp_checkpoint_path + suffix;
+          LOG(INFO) << "Saving model to file: " << modelPath;
+          fl::save(modelPath, model, batchIdx, epoch);
+        }
+      };
+
+  auto loadModel = [&model, &epoch, &batchIdx]() {
+    LOG(INFO) << "Loading model from file: " << FLAGS_exp_checkpoint_path;
+    fl::load(FLAGS_exp_checkpoint_path, model, batchIdx, epoch);
   };
   if (FLAGS_exp_checkpoint_epoch >= 0) {
-    loadModel(FLAGS_exp_checkpoint_epoch);
+    loadModel();
   }
 
+  //////////////////////////
   // The main training loop
+  /////////////////////////
+  fl::TimeMeter sampleTimerMeter{true};
+  fl::TimeMeter fwdTimeMeter{true};
+  fl::TimeMeter critFwdTimeMeter{true};
+  fl::TimeMeter bwdTimeMeter{true};
+  fl::TimeMeter optimTimeMeter{true};
+
   FL_LOG_MASTER(INFO) << "[Training starts]";
   TimeMeter timeMeter;
   TopKMeter top5Acc(5);
   TopKMeter top1Acc(1);
   AverageValueMeter trainLossMeter;
-  int batchIdx = 0;
-  for (int epoch = (FLAGS_exp_checkpoint_epoch + 1); epoch < FLAGS_train_epochs;
-       epoch++) {
+  for (; epoch < FLAGS_train_epochs; epoch++) {
     trainDataset->resample(epoch);
-    trainDataset1->resample(epoch + 4399);
 
     // Get an iterator over the data
     timeMeter.resume();
-    int idx = 0;
-    // for (auto& example : trainDataset) {
-    for (; idx < trainDataset->size();) {
-      auto example = trainDataset->get(idx);
-      auto example1 = trainDataset1->get(idx);
+    for (int idx = 0; idx < trainDataset->size(); idx++) {
+      Variable loss;
+      sampleTimerMeter.resume();
+      auto sample = trainDataset->get(idx);
+      auto rawInput = sample[kImagenetInputIdx];
+      auto rawInput1 = af::flip(rawInput, 3);
+      rawInput1.eval();
       lrScheduler(epoch, batchIdx++);
       opt.zeroGrad();
 
       // Make a Variable from the input array.
-      Variable inputs = noGrad(example[kImagenetInputIdx]);
+      Variable inputs = noGrad(rawInput);
       float mixP =
           static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
       float example1Weight = 0.;
@@ -311,69 +314,81 @@ int main(int argc, char** argv) {
         float lambda = FLAGS_train_p_mixup - 0.2 +
             0.2 * static_cast<float>(std::rand()) /
                 static_cast<float>(RAND_MAX);
-        inputs = lambda * noGrad(example1[kImagenetInputIdx]) +
-            (1 - lambda) * noGrad(example[kImagenetInputIdx]);
+        inputs = lambda * noGrad(rawInput1) + (1 - lambda) * noGrad(rawInput);
         example1Weight = lambda;
       } else if (FLAGS_train_p_cutmix > 0 && mixP <= 0.5) {
-        // } else {
         // cut mix
         float lambda =
             static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
-        auto in = example[kImagenetInputIdx];
-        const int w = in.dims(0);
-        const int h = in.dims(1);
+        const int w = rawInput.dims(0);
+        const int h = rawInput.dims(1);
         const int maskW = std::round(w * lambda);
         const int maskH = std::round(h * lambda);
         if (maskW == 0 || maskH == 0) {
-          inputs = noGrad(in);
+          inputs = noGrad(rawInput);
           example1Weight = 0.;
         } else if (maskW == w || maskH == h) {
-          inputs = noGrad(example1[kImagenetInputIdx]);
+          inputs = noGrad(rawInput1);
           example1Weight = 1.;
         } else {
           const int x = std::rand() % (w - maskW);
           const int y = std::rand() % (h - maskH);
 
-          in(af::seq(x, x + maskW - 1),
-             af::seq(y, y + maskH - 1),
-             af::span,
-             af::span) =
-              example1[kImagenetInputIdx](
+          rawInput(
+              af::seq(x, x + maskW - 1),
+              af::seq(y, y + maskH - 1),
+              af::span,
+              af::span) =
+              rawInput1(
                   af::seq(x, x + maskW - 1),
                   af::seq(y, y + maskH - 1),
                   af::span,
                   af::span);
-          inputs = noGrad(in);
+          inputs = noGrad(rawInput);
           example1Weight = lambda * lambda;
         }
       }
-      // std::cout << inputs.dims() << std::endl;
       inputs.eval();
+      sampleTimerMeter.stopAndIncUnit();
 
       // Get the activations from the model.
+      fwdTimeMeter.resume();
       auto output = model->forward({inputs}).front();
 
-      // Make a Variable from the target array.
-      // auto target = noGrad(example[kImagenetTargetIdx]);
-      // auto target1 = noGrad(example1[kImagenetTargetIdx]);
-      // auto loss = example1Weight * categoricalCrossEntropy(output, target1) +
-      //     (1 - example1Weight) * categoricalCrossEntropy(output, target);
-
+      // Make a Variable from the target array.ß
       // Compute and record the loss + label smoothing
-      auto target = oneHot(example[kImagenetTargetIdx], 1000);
-      auto target1 = oneHot(example1[kImagenetTargetIdx], 1000);
+      critFwdTimeMeter.resume();
+      auto rawTarget = sample[kImagenetTargetIdx];
+      auto rawTarget1 = af::flip(rawTarget, 0);
+      rawInput1.eval();
+
+      auto target = oneHot(rawTarget, 1000);
+      auto target1 = oneHot(rawTarget1, 1000);
 
       auto y = noGrad(example1Weight * target1 + (1 - example1Weight) * target);
-      auto loss = fl::mean(fl::sum(fl::negate(y * output), {0}), {1});
 
+      loss = fl::mean(fl::sum(fl::negate(y * output), {0}), {1});
+      top5Acc.add(output.array(), rawTarget);
+      top1Acc.add(output.array(), rawTarget);
       trainLossMeter.add(loss.array());
-      top5Acc.add(output.array(), example[kImagenetTargetIdx]);
-      top1Acc.add(output.array(), example[kImagenetTargetIdx]);
+      fwdTimeMeter.stopAndIncUnit();
+      critFwdTimeMeter.stopAndIncUnit();
 
       // Backprop, update the weights and then zero the gradients.
+      bwdTimeMeter.resume();
       loss.backward();
+      bwdTimeMeter.stopAndIncUnit();
 
+      optimTimeMeter.resume();
       if (FLAGS_distributed_enable) {
+        for (auto& p : model->params()) {
+          if (!p.isGradAvailable()) {
+            p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
+          }
+          auto& grad = p.grad().array();
+          p.grad().array() = grad;
+          reducer->add(p.grad());
+        }
         reducer->finalize();
       }
       // clamp gradients
@@ -381,10 +396,11 @@ int main(int argc, char** argv) {
         fl::clipGradNorm(model->params(), FLAGS_train_maxgradnorm);
       }
       opt.step();
+      optimTimeMeter.stopAndIncUnit();
 
       // Compute and record the prediction error.
       double trainLoss = trainLossMeter.value()[0];
-      if (++idx % 100 == 0) {
+      if (idx && idx % 100 == 0) {
         timeMeter.stop();
         fl::ext::syncMeter(trainLossMeter);
         fl::ext::syncMeter(timeMeter);
@@ -392,11 +408,21 @@ int main(int argc, char** argv) {
         fl::ext::syncMeter(top1Acc);
         double time = timeMeter.value();
         double samplePerSecond =
-            (idx * FLAGS_data_batch_size * worldSize) / time;
+            (idx + 1) * FLAGS_data_batch_size * worldSize / time;
         FL_LOG_MASTER(INFO)
             << "Epoch " << epoch << std::setprecision(5) << " Batch: " << idx
-            << " Samples per second " << samplePerSecond
-            << ": LR: " << opt.getLr() << ": Avg Train Loss: " << trainLoss
+            << " Throughput " << samplePerSecond << " | "
+            << " : Sample Time(ms): "
+            << fl::lib::format("%.2f", sampleTimerMeter.value() * 1000)
+            << " : Forward Time(ms): "
+            << fl::lib::format("%.2f", fwdTimeMeter.value() * 1000)
+            << " : Criterion Forward Time(ms): "
+            << fl::lib::format("%.2f", critFwdTimeMeter.value() * 1000)
+            << " : Backward Time(ms): "
+            << fl::lib::format("%.2f", bwdTimeMeter.value() * 1000)
+            << " : Optimization Time(ms): "
+            << fl::lib::format("%.2f", optimTimeMeter.value() * 1000)
+            << " | LR: " << opt.getLr() << ": Avg Train Loss: " << trainLoss
             << ": Train Top5 Accuracy( %): " << top5Acc.value()
             << ": Train Top1 Accuracy( %): " << top1Acc.value();
         top5Acc.reset();
@@ -405,8 +431,34 @@ int main(int argc, char** argv) {
         timeMeter.resume();
       }
     }
-    timeMeter.reset();
     timeMeter.stop();
+
+    // Compute and record the prediction error.
+    // double trainLoss = trainLossMeter.value()[0];
+    // timeMeter.stop();
+    // fl::ext::syncMeter(trainLossMeter);
+    // fl::ext::syncMeter(timeMeter);
+    // fl::ext::syncMeter(top5Acc);
+    // fl::ext::syncMeter(top1Acc);
+    // double time = timeMeter.value();
+    // double samplePerSecond =
+    //     (trainDataset->size() * FLAGS_data_batch_size * worldSize) / time;
+    // FL_LOG_MASTER(INFO) << "Epoch " << epoch << std::setprecision(5)
+    //                     << " Batch: " << trainDataset->size()
+    //                     << " Samples per second " << samplePerSecond
+    //                     << ": LR: " << opt.getLr()
+    //                     << ": Avg Train Loss: " << trainLoss
+    //                     << ": Train Top5 Accuracy( %): " << top5Acc.value()
+    //                     << ": Train Top1 Accuracy( %): " << top1Acc.value();
+    // top5Acc.reset();
+    // top1Acc.reset();
+    // trainLossMeter.reset();
+    timeMeter.reset();
+    sampleTimerMeter.reset();
+    fwdTimeMeter.reset();
+    critFwdTimeMeter.reset();
+    bwdTimeMeter.reset();
+    optimTimeMeter.reset();
 
     double valLoss, valTop1Error, valTop5Err;
     std::tie(valLoss, valTop5Err, valTop1Error) = evalLoop(model, valDataset);
@@ -415,7 +467,7 @@ int main(int argc, char** argv) {
                         << " Validation Loss: " << valLoss
                         << " Validation Top5 Error (%): " << valTop5Err
                         << " Validation Top1 Error (%): " << valTop1Error;
-    saveModel(epoch);
+    saveModel();
   }
   FL_LOG_MASTER(INFO) << "Training complete";
 }

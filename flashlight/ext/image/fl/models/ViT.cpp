@@ -82,7 +82,7 @@ std::vector<fl::Variable> ViT::forward(
   }
 
   // Linear
-  output = ln_->forward(output);
+  output = ln_->forward(output); // C x T x B
   output = reorder(output, 0, 2, 1, 3).slice(0); // C x B x 1
   output = linearOut_->forward(output);
 
@@ -91,8 +91,10 @@ std::vector<fl::Variable> ViT::forward(
 
 std::string ViT::prettyString() const {
   std::ostringstream ss;
-  ss << "ViT with " << nLayers_ << " Transformers:\n"
-     << transformers_.front()->prettyString();
+  ss << "ViT with " << nLayers_ << " Transformers:\n";
+  for (const auto& transformers : transformers_) {
+    ss << transformers->prettyString() << "\n";
+  }
   return ss.str();
 }
 

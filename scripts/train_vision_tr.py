@@ -150,7 +150,7 @@ def main(binary, mode, config, model_path, extra, partition, comment, ngpu, gpu1
             return
 
         model_path = os.path.join(log_dir, exp_id)
-        model_path = os.path.join(model_path, "model_")
+        model_path = os.path.join(model_path, "model")
         flags += f" --exp_checkpoint_path={model_path}"
 
     # Continue mode
