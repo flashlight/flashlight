@@ -18,7 +18,7 @@ Dictionary builder reads all the text files specified in `--data_train` from `--
 Built dictionary will also contain special tokens at the beginning, so you don't need to tweak this dictionary before training.
 - `</s>` - end of sentence
 - `<unk>` - unknown token
-- `<pad>` - pad token 
+- `<pad>` - pad token
 - `<mask>` - mask token (is needed for BERT training)
 ```
 

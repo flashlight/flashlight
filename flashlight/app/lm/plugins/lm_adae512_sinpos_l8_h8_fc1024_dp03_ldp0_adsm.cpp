@@ -16,11 +16,12 @@
  * This architecture is using also adaptive embedding and sinusoidal positional
  * embedding.
  */
-class lm_adae512_sinpos_l8_h8_fc1024_dp03_ldp0_adsm : public fl::Container {
+class lmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm : public fl::Container {
  public:
-  lm_adae512_sinpos_l8_h8_fc1024_dp03_ldp0_adsm(int64_t nLabel) {
+  lmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm(int64_t nLabel) {
     // Time x B x 1 x 1
     std::vector<int> cutoffs = {10000, 50000, (int)nLabel};
+    frontend_ = std::make_shared<fl::Sequential>();
     frontend_->add(std::make_shared<fl::AdaptiveEmbedding>(512, cutoffs));
     // nFeature x Time x B x 1
     frontend_->add(
@@ -55,7 +56,7 @@ class lm_adae512_sinpos_l8_h8_fc1024_dp03_ldp0_adsm : public fl::Container {
 
   std::string prettyString() const override {
     std::ostringstream ss;
-    ss << "Model lm_adae512_sinpos_l8_h8_fc1024_dp03_ldp0_adsm: ";
+    ss << "Model lmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm: ";
     ss << frontend_->prettyString() << "\n";
     for (int trIdx = 0; trIdx < transformers_.size(); trIdx++) {
       ss << transformers_[trIdx]->prettyString() << "\n";
@@ -64,9 +65,9 @@ class lm_adae512_sinpos_l8_h8_fc1024_dp03_ldp0_adsm : public fl::Container {
   }
 
  private:
-  lm_adae512_sinpos_l8_h8_fc1024_dp03_ldp0_adsm() = default;
+  lmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm() = default;
 
-  std::shared_ptr<fl::Sequential> frontend_{std::make_shared<fl::Sequential>()};
+  std::shared_ptr<fl::Sequential> frontend_;
   std::vector<std::shared_ptr<fl::Transformer>> transformers_;
 
   FL_SAVE_LOAD_WITH_BASE(fl::Container, frontend_, transformers_)
@@ -75,8 +76,8 @@ class lm_adae512_sinpos_l8_h8_fc1024_dp03_ldp0_adsm : public fl::Container {
 
 extern "C" fl::Module* createModule(int64_t, int64_t nLabel) {
   auto m =
-      std::make_unique<lm_adae512_sinpos_l8_h8_fc1024_dp03_ldp0_adsm>(nLabel);
+      std::make_unique<lmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm>(nLabel);
   return m.release();
 }
 
-CEREAL_REGISTER_TYPE(lm_adae512_sinpos_l8_h8_fc1024_dp03_ldp0_adsm)
+CEREAL_REGISTER_TYPE(lmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm)
