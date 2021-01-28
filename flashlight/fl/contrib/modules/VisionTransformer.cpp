@@ -59,8 +59,10 @@ VisionTransformer::VisionTransformer(
 
 Variable VisionTransformer::gelu(const Variable& input) {
   // https://arxiv.org/pdf/1606.08415.pdf
-  return 0.5 * input *
-      (1 + tanh(geluConst1 * (input + geluConst2 * pow(input, 3))));
+  auto res = input + geluConst2 * pow(input, 3).as(input.type());
+  res = 1. + tanh(geluConst1 * res).as(input.type());
+  res = 0.5 * input * res;
+  return res;
 }
 
 Variable VisionTransformer::mlp(const Variable& input) {
@@ -105,6 +107,7 @@ std::vector<Variable> VisionTransformer::forward(
   auto x = inputs.front();
   auto output = x + selfAttention((*norm1_)(x));
   output = output + mlp((*norm2_)(output));
+  // auto output = x + mlp((*norm2_)(x));
   return {output};
 }
 

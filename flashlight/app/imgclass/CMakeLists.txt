@@ -50,3 +50,12 @@ target_link_libraries(
   )
 install(TARGETS eval RUNTIME DESTINATION ${FL_INSTALL_BIN_DIR})
 set_executable_output_directory(eval ${FL_BUILD_BINARY_OUTPUT_DIR}/imgclass)
+
+add_executable(benchmark ${CMAKE_CURRENT_LIST_DIR}/examples/benchmark.cpp)
+target_link_libraries(
+  benchmark
+  flashlight-app-imgclass
+  ${GLOG_LIBRARIES}
+  )
+install(TARGETS benchmark RUNTIME DESTINATION ${FL_INSTALL_BIN_DIR})
+set_executable_output_directory(benchmark ${FL_BUILD_BINARY_OUTPUT_DIR}/imgclass)

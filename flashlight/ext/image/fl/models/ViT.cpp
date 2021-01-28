@@ -66,11 +66,11 @@ std::vector<fl::Variable> ViT::forward(
   auto B = output.dims(2);
 
   // Prepending the class token
-  auto clsToken = tile(params_[0], af::dim4(1, 1, B)); // C x 1 x B
+  auto clsToken = tile(params_[0], af::dim4(1, 1, B)).as(output.type()); // C x 1 x B
   output = concatenate({clsToken, output}, 1);
 
   // Positional embedding
-  auto posEmb = tile(params_[1], af::dim4(1, 1, B));
+  auto posEmb = tile(params_[1], af::dim4(1, 1, B)).as(output.type());
   output = output + posEmb;
   if (train_) {
     output = dropout(output, pDropout_);
