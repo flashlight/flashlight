@@ -66,7 +66,7 @@ function(fl_add_and_link_halide_lib)
   # to wrap Halide pipelines when exposing them to external binaries.
   # Properly installing the Halide lib will facilitate public linkeage.
   target_link_libraries(${fl_add_and_link_halide_lib_LINK_TO} PRIVATE ${LIB_PATH})
-endfunction(fl_add_and_link_halide_lib_lib)
+endfunction(fl_add_and_link_halide_lib)
 
 # Adds a Halide library that is linked with Flashlight.
 #

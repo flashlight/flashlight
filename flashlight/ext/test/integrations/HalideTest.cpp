@@ -49,6 +49,12 @@ TEST(HalideTest, TypeMapping) {
 }
 
 TEST(HalideTest, ConvertDims) {
+  af::dim4 emptyAfDims;
+  EXPECT_EQ(ext::afToHalideDims(emptyAfDims).size(), 0);
+
+  af::dim4 singleDims(3);
+  EXPECT_THAT(ext::afToHalideDims(singleDims), testing::ElementsAre(3));
+
   af::dim4 dims(1, 5, 3, 6);
   EXPECT_THAT(ext::afToHalideDims(dims), testing::ElementsAre(6, 3, 5, 1));
 
@@ -63,7 +69,11 @@ TEST(HalideTest, ConvertDims) {
   // Zero dim
   std::vector<int> dimWithZero = {1, 2, 0, 3};
   Halide::Buffer<float> bufferWithZeroDim(dimWithZero);
-  EXPECT_EQ(ext::halideToAfDims(bufferWithZeroDim), af::dim4(3, 1, 2, 1));
+  EXPECT_EQ(ext::halideToAfDims(bufferWithZeroDim), af::dim4(0));
+
+  std::vector<int> emptyDims = {};
+  Halide::Buffer<float> bufferWithEmptyDim(emptyDims);
+  EXPECT_EQ(ext::halideToAfDims(bufferWithEmptyDim), af::dim4(0));
 }
 
 TEST(HalideTest, ConvertArray) {

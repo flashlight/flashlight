@@ -30,7 +30,7 @@
  * - Getter for the device ID.
  *   - halide_get_gpu_device -- https://git.io/JLdYf
  *
- * Defining these hard links ensures we never have an memory or synchronization
+ * Defining these hard links ensures we never have memory or synchronization
  * issues between Halide pipelines that are dropped inside of any AF operations.
  *
  * In hard links associated with the CUDA driver CUcontext, CUstream, or CUDA
@@ -142,6 +142,16 @@ std::vector<int> afToHalideDims(const af::dim4& dims) {
 
 af::dim4 halideToAfDims(const Halide::Buffer<void>& buffer) {
   const int nDims = buffer.dimensions();
+  // Fastpaths
+  if (nDims == 0) {
+    return af::dim4(0);
+  }
+  for (size_t i = 0; i < nDims; ++i) {
+    if (buffer.dim(i).extent() == 0) {
+      return af::dim4(0);
+    }
+  }
+
   if (nDims > 4) {
     throw std::invalid_argument(
         "getDims: Halide buffer has greater than 4 dimensions");
