@@ -9,6 +9,7 @@
 
 #include <af/memory.h>
 
+#include <fstream>
 #include <memory>
 #include <mutex>
 
@@ -95,9 +96,25 @@ class MemoryManagerInstaller {
    */
   static void unsetMemoryManager();
 
+  /**
+   * the currentlyInstalledMemoryManager is set to flush the log every
+   * 'interval' memory manager api calls. Each operation is written as a text
+   * line into memLogWriter.
+   */
+  static void logIfInstalled(const std::string& logFilename, size_t interval);
+
+  /**
+   * the currentlyInstalledMemoryManager is set to flush the log every
+   * 'interval' memory manager api calls. Each operation is written as a text
+   * line into memLogWriter
+   */
+  static void logIfInstalled(std::ofstream* log, size_t interval);
+
  private:
   // The given memory manager implementation
   std::shared_ptr<MemoryManagerAdapter> impl_;
+  // Used to keep file opened by logIfInstalled(string, size_t)
+  static std::unique_ptr<std::ofstream> log_;
   // Points to the impl_ of the most recently installed manager.
   static std::shared_ptr<MemoryManagerAdapter> currentlyInstalledMemoryManager_;
 };

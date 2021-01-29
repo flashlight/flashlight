@@ -48,6 +48,12 @@ DEFINE_string(
 DEFINE_uint64(data_batch_size, 256, "Total batch size across all gpus");
 DEFINE_string(exp_checkpoint_path, "/tmp/model", "Checkpointing prefix path");
 DEFINE_int64(exp_checkpoint_epoch, -1, "Checkpoint epoch to load from");
+DEFINE_int64(
+    exp_log_mem_ops_interval,
+    0,
+    "Flushes memory manager logs after a specified number of log entries. "
+    "1000000 is a reasonable value which will reduces overhead. "
+    "Logs when > 0");
 
 using namespace fl;
 using fl::ext::image::compose;
@@ -114,6 +120,13 @@ int main(int argc, char** argv) {
 
   af::setDevice(worldRank);
   af::setSeed(worldSize);
+
+  // log memory manager operations.
+  if (FLAGS_exp_log_mem_ops_interval > 0 && isMaster) {
+    fl::MemoryManagerInstaller::logIfInstalled(
+        lib::pathsConcat(FLAGS_exp_checkpoint_path, "mem.log"),
+        FLAGS_exp_log_mem_ops_interval);
+  }
 
   auto reducer =
       std::make_shared<fl::CoalescingReducer>(1.0 / worldSize, true, true);
