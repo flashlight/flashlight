@@ -25,6 +25,7 @@ constexpr const char* const kAdditiveNoise = "AdditiveNoise";
 constexpr const char* const kAmplify = "Amplify";
 constexpr const char* const kClampAmplitude = "ClampAmplitude";
 constexpr const char* const kNormalize = "Normalize";
+constexpr const char* const kReverbDataset = "ReverbDataset";
 constexpr const char* const kReverbEcho = "ReverbEcho";
 
 struct SoundEffectConfig {
@@ -35,6 +36,7 @@ struct SoundEffectConfig {
   bool normalizeOnlyIfTooHigh_ = true;
   AdditiveNoise::Config additiveNoiseConfig_;
   Amplify::Config amplifyConfig_;
+  ReverbDataset::Config reverbDatasetConfig_;
   ReverbEcho::Config reverbEchoConfig_;
 };
 
