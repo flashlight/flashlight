@@ -90,15 +90,15 @@ fl::Dataset::DataTransformFunction inputFeatures(
     std::vector<float> output;
     int featSz = 1;
     if (featureType == FeatureType::POW_SPECTRUM) {
-      thread_local PowerSpectrum powspec(params);
+      static PowerSpectrum powspec(params);
       featSz = params.powSpecFeatSz();
       output = powspec.batchApply(input, channels);
     } else if (featureType == FeatureType::MFSC) {
-      thread_local Mfsc mfsc(params);
+      static Mfsc mfsc(params);
       featSz = params.mfscFeatSz();
       output = mfsc.batchApply(input, channels);
     } else if (featureType == FeatureType::MFCC) {
-      thread_local Mfcc mfcc(params);
+      static Mfcc mfcc(params);
       featSz = params.mfccFeatSz();
       output = mfcc.batchApply(input, channels);
     } else {

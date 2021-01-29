@@ -47,6 +47,41 @@ float signalToNoiseRatio(
     const std::vector<float>& signal,
     const std::vector<float>& noise);
 
+void scale(std::vector<float>& signal, float scaleFactor);
+
+/**
+ * Returns the dot product of the first size elements of a and b vectors.
+ * when size < 0 size is set to be min(size(a), size(b))
+ */
+float dotProduct(
+    const std::vector<float>& a,
+    const std::vector<float>& b,
+    int size = -1);
+
+std::vector<std::string> loadListFile(
+    const std::string& filename,
+    const std::string& msg = "");
+
+/**
+ * testing support utilities are below.
+ */
+constexpr size_t testSampleRate = 16000;
+
+/**
+ * return the fullpath to generated list file containing the given sounds.
+ */
+std::string createTestListFile(
+    const std::string& dirName,
+    const std::string& basename,
+    const std::vector<std::vector<float>> sounds);
+
+/**
+ *  Generate a random RIR with exponential decay.
+ */
+std::vector<float> createTestImpulseResponse(size_t size);
+
+std::vector<float> genTestSinWave(size_t size, size_t freq, float amplitude);
+
 } // namespace sfx
 } // namespace asr
 } // namespace app

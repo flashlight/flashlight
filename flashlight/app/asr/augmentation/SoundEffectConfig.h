@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "flashlight/app/asr/augmentation/AdditiveNoise.h"
+#include "flashlight/app/asr/augmentation/ReverbAndNoise.h"
 #include "flashlight/app/asr/augmentation/Reverberation.h"
 #include "flashlight/app/asr/augmentation/SoundEffect.h"
 
@@ -26,6 +27,8 @@ constexpr const char* const kAmplify = "Amplify";
 constexpr const char* const kClampAmplitude = "ClampAmplitude";
 constexpr const char* const kNormalize = "Normalize";
 constexpr const char* const kReverbEcho = "ReverbEcho";
+constexpr const char* const kReverbDataset = "ReverbDataset";
+constexpr const char* const kReverbAndNoise = "ReverbAndNoise";
 
 struct SoundEffectConfig {
   std::string type_;
@@ -36,6 +39,8 @@ struct SoundEffectConfig {
   AdditiveNoise::Config additiveNoiseConfig_;
   Amplify::Config amplifyConfig_;
   ReverbEcho::Config reverbEchoConfig_;
+  ReverbDataset::Config reverbDatasetConfig_;
+  ReverbAndNoise::Config reverbAndNoiseConfig_;
 };
 
 std::shared_ptr<SoundEffect> createSoundEffect(

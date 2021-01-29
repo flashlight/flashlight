@@ -95,6 +95,47 @@ class ReverbEcho : public SoundEffect {
   RandomNumberGenerator rng_;
 };
 
+
+/**
+ * Applies reverberation from a RIR dataset specified by a list file.
+ */
+class ReverbDataset : public SoundEffect {
+ public:
+  struct Config {
+    /**
+     * probability of applying reverb.
+     */
+    float proba_ = 1.0;
+    std::string listFilePath_;
+    /**
+     * Force the scaling factor of RIR samples to the specified ratio. When
+     * value is zero, automatic scaling is applied. This functionality is the
+     * same as in
+     * https://kaldi-asr.org/doc/wav-reverberate_8cc_source.html#l00210. Scaling
+     * is required due to "...over-excitation caused by amplifying the audio
+     * using a RIR ..." (https://arxiv.org/pdf/1811.06795.pdf section VI.E).
+     */
+    float volume_ = 0;
+    size_t sampleRate_ = 16000;
+    std::string prettyString() const;
+  };
+
+  explicit ReverbDataset(const ReverbDataset::Config& config, int seed = 0);
+  ~ReverbDataset() override = default;
+  /**
+   * Augments sound with a randomly selected RIR from conf_.listFilePath_.
+   * After call sound.size() is the original sound.size() + rir.size() - 1
+   */
+  void apply(std::vector<float>& sound) override;
+  std::string prettyString() const override;
+
+ private:
+  const ReverbDataset::Config conf_;
+  std::vector<std::string> rirFiles_;
+  RandomNumberGenerator rng_;
+};
+
+
 } // namespace sfx
 } // namespace asr
 } // namespace app

@@ -4,7 +4,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-
+#include <algorithm>
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
@@ -18,6 +18,7 @@ DEFINE_string(
     "augmented.flac",
     "Path to store result of augmenting the input file");
 DEFINE_string(config, "", "Path to a sound effect json config file");
+DEFINE_int32(seed, 0, "seed");
 
 using namespace ::fl::app::asr::sfx;
 using ::fl::app::asr::loadSound;
@@ -51,7 +52,7 @@ int main(int argc, char** argv) {
   auto info = loadSoundInfo(FLAGS_input);
 
   std::shared_ptr<SoundEffect> sfx =
-      createSoundEffect(readSoundEffectConfigFile(FLAGS_config));
+      createSoundEffect(readSoundEffectConfigFile(FLAGS_config), FLAGS_seed);
   sfx->apply(sound);
 
   saveSound(

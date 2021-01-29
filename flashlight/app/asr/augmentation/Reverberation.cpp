@@ -9,7 +9,14 @@
 
 #include <algorithm>
 #include <cmath>
+#include <fstream>
 #include <sstream>
+
+#include <glog/logging.h>
+
+#include "flashlight/app/asr/augmentation/SoundEffectUtil.h"
+#include "flashlight/app/asr/data/Sound.h"
+#include "flashlight/lib/mkl/Conv.h"
 
 namespace fl {
 namespace app {
@@ -82,6 +89,74 @@ std::string ReverbEcho::Config::prettyString() const {
      << " rt60Max_=" << rt60Max_ << " firstDelayMin_=" << firstDelayMin_
      << " firstDelayMax_=" << firstDelayMax_ << " repeat_=" << repeat_
      << " jitter_=" << jitter_ << " sampleRate_=" << sampleRate_;
+  return ss.str();
+}
+
+ReverbDataset::ReverbDataset(const ReverbDataset::Config& conf, int seed)
+    : conf_(conf), rng_(seed) {
+  std::ifstream listFile(conf_.listFilePath_);
+  if (!listFile) {
+    throw std::runtime_error(
+        "ReverbDataset failed to open listFilePath_=" + conf_.listFilePath_);
+  }
+  while (!listFile.eof()) {
+    try {
+      std::string filename;
+      std::getline(listFile, filename);
+      if (!filename.empty()) {
+        rirFiles_.push_back(filename);
+      }
+    } catch (std::exception& ex) {
+      throw std::runtime_error(
+          "ReverbDataset failed to read listFilePath_=" + conf_.listFilePath_ +
+          " with error=" + ex.what());
+    }
+  }
+}
+
+/**
+ * Implemeneted algorithm is similar to the one found in
+ * https://kaldi-asr.org/doc/wav-reverberate_8cc_source.html
+ */
+void ReverbDataset::apply(std::vector<float>& signal) {
+  if (rng_.random() >= conf_.proba_) {
+    return;
+  }
+  auto curRirFileIdx = rng_.randInt(0, rirFiles_.size() - 1);
+  auto rir = loadSound<float>(rirFiles_[curRirFileIdx]);
+  if (rir.empty() || signal.empty()) {
+    return;
+  }
+  const size_t inputSize = signal.size();
+  const float powerBeforeRevereb =
+      dotProduct(signal, signal, inputSize) / inputSize;
+
+  signal = fl::lib::mkl::conv1D(signal, rir);
+
+  // leave length unchanged
+  signal.resize(inputSize); 
+
+  float scaleFactor = conf_.volume_;
+  if (scaleFactor <= 0) {
+    const float powerAfterRevereb =
+        dotProduct(signal, signal, inputSize) / inputSize;
+    scaleFactor = std::sqrt(powerBeforeRevereb / powerAfterRevereb);
+  }
+  scale(signal, scaleFactor);
+}
+
+std::string ReverbDataset::prettyString() const {
+  std::stringstream ss;
+  ss << "ReverbDataset{conf_=" << conf_.prettyString()
+     << "} rirFiles_.size()=" << rirFiles_.size() << "}";
+  return ss.str();
+}
+
+std::string ReverbDataset::Config::prettyString() const {
+  std::stringstream ss;
+  ss << "ReverbDataset::Config{proba_=" << proba_
+     << " listFilePath_=" << listFilePath_ << " volume_" << volume_
+     << '}';
   return ss.str();
 }
 
