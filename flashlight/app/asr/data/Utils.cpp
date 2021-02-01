@@ -77,16 +77,15 @@ std::vector<std::string> wrd2Target(
     bool skipUnk /* = false */) {
   std::vector<std::string> res;
   for (auto w : words) {
-    auto w2tokens =
-        wrd2Target(
-          w,
-          lexicon,
-          dict,
-          wordSeparator,
-          targetSamplePct,
-          fallback2LtrWordSepLeft,
-          fallback2LtrWordSepRight,
-          skipUnk);
+    auto w2tokens = wrd2Target(
+        w,
+        lexicon,
+        dict,
+        wordSeparator,
+        targetSamplePct,
+        fallback2LtrWordSepLeft,
+        fallback2LtrWordSepRight,
+        skipUnk);
 
     if (w2tokens.size() == 0) {
       continue;
@@ -95,6 +94,27 @@ std::vector<std::string> wrd2Target(
   }
   return res;
 }
+
+std::pair<int, FeatureType> getFeatureType(
+    const std::string& featuresType,
+    int channels,
+    const fl::lib::audio::FeatureParams& featParams) {
+  if (featuresType == kFeaturesPow) {
+    return std::make_pair(
+        featParams.powSpecFeatSz(), FeatureType::POW_SPECTRUM);
+  } else if (featuresType == kFeaturesMFSC) {
+    return std::make_pair(featParams.mfscFeatSz(), FeatureType::MFSC);
+  } else if (featuresType == kFeaturesMFSC) {
+    return std::make_pair(featParams.mfccFeatSz(), FeatureType::MFCC);
+  } else if (featuresType == kFeaturesRaw) {
+    return std::make_pair(channels, FeatureType::NONE);
+  } else {
+    throw std::runtime_error(
+        "Unsupported feature type for audio preprocessing '" + featuresType +
+        "'");
+  }
+}
+
 } // namespace asr
 } // namespace app
 } // namespace fl

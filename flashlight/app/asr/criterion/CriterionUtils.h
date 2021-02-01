@@ -105,6 +105,13 @@ inline af::array reorder(
   const af::array& result = af::reorder(in, x, y, z, w);
   return moddims(result, result.dims());
 }
+
+// apply mask to the input with proper grad.
+// Mask should be the same size as input
+fl::Variable applySeq2SeqMask(
+    const fl::Variable& input,
+    const af::array& targetClasses,
+    int padValue);
 } // namespace asr
 } // namespace app
 } // namespace fl

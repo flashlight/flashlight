@@ -9,6 +9,7 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/app/asr/augmentation/Reverberation.h"
+#include "flashlight/fl/common/Init.h"
 
 using namespace ::fl::app::asr::sfx;
 using testing::Pointwise;
@@ -131,5 +132,6 @@ TEST(ReverbEcho, SinWaveReverb) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
   return RUN_ALL_TESTS();
 }

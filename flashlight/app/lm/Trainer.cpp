@@ -115,13 +115,9 @@ DEFINE_int64(
 /* TRAIN OPTIONS */
 DEFINE_string(train_task, "autoreg", "Task for training: autoreg or mask");
 DEFINE_string(
-    train_arch_dir,
-    "",
-    "Prefix for the arch file of a model description.");
-DEFINE_string(
     train_arch_file,
-    "model.arch",
-    "Arch file path for the model description. '--train_arch_dir' is used as prefix for this path.");
+    "model.so",
+    "Network .cpp architecture file path");
 DEFINE_int64(
     train_seed,
     0,
@@ -199,12 +195,15 @@ DEFINE_int64(
 /* ============= Public functions ============= */
 Trainer::Trainer(const std::string& mode) {
   // Parse from Gflags
+  (void)fl::ext::ModulePlugin(FLAGS_train_arch_file);
   if (mode == "train") {
     initTrain();
   } else if (mode == "continue") {
     initContinue();
   } else if (mode == "fork") {
     initFork();
+  } else if (mode == "eval") {
+    initEval();
   } else {
     throw std::invalid_argument("Trainer doesn't support mode: " + mode);
   }
@@ -212,11 +211,21 @@ Trainer::Trainer(const std::string& mode) {
   gflagsStr_ = serializeGflags();
   FL_LOG_MASTER(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
-  createDatasets();
   initArrayFire();
   if (FLAGS_distributed_enable) {
     reducer_ = std::make_shared<fl::CoalescingReducer>(1.0, true, true);
   }
+
+  FL_LOG_MASTER(INFO) << "network (" << fl::numTotalParams(network_)
+                      << " params): " << network_->prettyString();
+  FL_LOG_MASTER(INFO) << "criterion (" << fl::numTotalParams(criterion_)
+                      << " params): " << criterion_->prettyString();
+  if (optimizer_) {
+    FL_LOG_MASTER(INFO) << "optimizer: " << optimizer_->prettyString();
+  }
+}
+
+void Trainer::runTraining() {
   if (isMaster()) {
     dirCreate(FLAGS_exp_rundir);
     logWriter_ = createOutputStream(
@@ -224,14 +233,6 @@ Trainer::Trainer(const std::string& mode) {
         std::ios_base::app);
   }
 
-  FL_LOG_MASTER(INFO) << "network (" << fl::numTotalParams(network_)
-                      << " params): " << network_->prettyString();
-  FL_LOG_MASTER(INFO) << "criterion (" << fl::numTotalParams(criterion_)
-                      << " params): " << criterion_->prettyString();
-  FL_LOG_MASTER(INFO) << "optimizer: " << optimizer_->prettyString();
-}
-
-void Trainer::runTraining() {
   FL_LOG_MASTER(INFO) << "training started (epoch=" << epoch_
                       << " batch=" << batchIdx_ << ")";
 
@@ -259,21 +260,18 @@ void Trainer::runTraining() {
     // Run evaluation and save best checkpoint
     if (FLAGS_train_report_updates &&
         batchIdx_ % FLAGS_train_report_updates == 0) {
-      stopTimers();
-      evalStep();
-      syncMeters();
+      auto loss = runEvaluation();
+      if (loss < bestLoss_) {
+        bestLoss_ = loss;
+        saveCheckpoint(modelPath, ".best");
+      }
+
       auto progress = getProgress();
       FL_LOG_MASTER(INFO) << progress;
       if (isMaster()) {
         logWriter_ << progress << "\n" << std::flush;
       }
       resetMeters();
-
-      auto loss = validLossMeter_.value()[0];
-      if (loss < bestLoss_) {
-        bestLoss_ = loss;
-        saveCheckpoint(modelPath, ".best");
-      }
     }
 
     // Force saving checkpoint every given interval
@@ -298,7 +296,7 @@ void Trainer::trainStep() {
 
   // 2. Forward
   fwdTimeMeter_.resume();
-  auto output = forwardSequentialModuleWithPadMask(input, network_, inputSizes);
+  auto output = network_->forward({input, fl::noGrad(inputSizes)}).front();
   af::sync();
   critFwdTimeMeter_.resume();
   auto loss = criterion_->forward({output, target}).front();
@@ -343,7 +341,7 @@ void Trainer::evalStep() {
     fl::Variable input, target;
     std::tie(input, target) = getInputAndTarget(sample);
     af::array inputSizes = af::flat(af::sum(input.array() != kPadIdx_, 0));
-    auto output = forwardSequentialModuleWithPadMask(input, network_, inputSizes);
+    auto output = network_->forward({input, fl::noGrad(inputSizes)}).front();
     auto loss = criterion_->forward({output, target}).front();
     auto numTokens = af::count<int>(target.array() != kPadIdx_);
     if (numTokens > 0) {
@@ -355,6 +353,14 @@ void Trainer::evalStep() {
   }
 }
 
+float Trainer::runEvaluation() {
+  stopTimers();
+  evalStep();
+  syncMeters();
+  auto loss = validLossMeter_.value()[0];
+  return loss;
+}
+
 /* ============= Initializers ============= */
 void Trainer::initTrain() {
   FL_LOG_MASTER(INFO) << "Creating a fresh model";
@@ -362,6 +368,9 @@ void Trainer::initTrain() {
   createNetwork();
   createCriterion();
   createOptimizer();
+
+  createTrainDatasets();
+  createValidDatasets();
 }
 
 void Trainer::initContinue() {
@@ -386,6 +395,8 @@ void Trainer::initContinue() {
   gflags::ReadFlagsFromString(gflagsStr_, gflags::GetArgv0(), true);
 
   createDictionary();
+  createTrainDatasets();
+  createValidDatasets();
   // the network, criterion and optimizer will be reused
 }
 
@@ -410,6 +421,24 @@ void Trainer::initFork() {
 
   createDictionary();
   createOptimizer();
+  createTrainDatasets();
+  createValidDatasets();
+  // the network and criterion will be reused
+}
+
+void Trainer::initEval() {
+  if (!fileExists(FLAGS_exp_init_model_path)) {
+    throw std::invalid_argument(
+        "Checkpoint doesn't exist for evaluation: " +
+        FLAGS_exp_init_model_path);
+  }
+  FL_LOG_MASTER(INFO) << "Evaluate from file: " << FLAGS_exp_init_model_path;
+
+  fl::ext::Serializer::load(
+      FLAGS_exp_init_model_path, version_, network_, criterion_);
+
+  createDictionary();
+  createValidDatasets();
   // the network and criterion will be reused
 }
 
@@ -440,7 +469,7 @@ void Trainer::createDictionary() {
   dictionary_.setDefaultIndex(dictionary_.getIndex(fl::lib::text::kUnkToken));
 }
 
-void Trainer::createDatasets() {
+void Trainer::createTrainDatasets() {
   fl::lib::text::Tokenizer tokenizer;
   fl::lib::text::PartialFileReader partialFileReader(
       fl::getWorldRank(), fl::getWorldSize());
@@ -456,6 +485,12 @@ void Trainer::createDatasets() {
       true);
   FL_LOG_MASTER(INFO) << "train dataset: " << trainDataset_->size()
                       << " samples";
+}
+
+void Trainer::createValidDatasets() {
+  fl::lib::text::Tokenizer tokenizer;
+  fl::lib::text::PartialFileReader partialFileReader(
+      fl::getWorldRank(), fl::getWorldSize());
 
   validDataset_ = std::make_shared<TextDataset>(
       FLAGS_data_dir,
@@ -475,10 +510,8 @@ void Trainer::createNetwork() {
   if (dictionary_.entrySize() == 0) {
     throw std::runtime_error("Dictionary is empty, number of classes is zero");
   }
-  network_ = buildSequentialModule(
-      pathsConcat(FLAGS_train_arch_dir, FLAGS_train_arch_file),
-      0,
-      dictionary_.entrySize());
+  network_ = fl::ext::ModulePlugin(FLAGS_train_arch_file)
+                 .arch(0, dictionary_.entrySize());
 }
 
 void Trainer::createCriterion() {
@@ -502,10 +535,9 @@ void Trainer::createCriterion() {
 
 void Trainer::collectParameters() {
   parameters_ = network_->params();
+  const auto& criterionParams = criterion_->params();
   parameters_.insert(
-      parameters_.end(),
-      criterion_->params().begin(),
-      criterion_->params().end());
+      parameters_.end(), criterionParams.begin(), criterionParams.end());
 }
 
 void Trainer::createOptimizer() {

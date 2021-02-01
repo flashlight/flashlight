@@ -12,6 +12,7 @@
 
 #include <gflags/gflags.h>
 
+
 namespace fl {
 namespace app {
 namespace asr {
@@ -79,7 +80,6 @@ DECLARE_int64(batching_max_duration);
 DECLARE_bool(usewordpiece);
 DECLARE_int64(replabel);
 DECLARE_string(surround);
-DECLARE_bool(eostoken);
 DECLARE_string(wordseparator);
 DECLARE_double(sampletarget);
 
@@ -121,10 +121,8 @@ DECLARE_string(critoptim);
 
 /* ========== MFCC OPTIONS ========== */
 
-DECLARE_bool(mfcc);
-DECLARE_bool(pow);
+DECLARE_string(features_type);
 DECLARE_int64(mfcccoeffs);
-DECLARE_bool(mfsc);
 DECLARE_double(melfloor);
 DECLARE_int64(filterbanks);
 DECLARE_int64(devwin);
@@ -145,6 +143,7 @@ DECLARE_int64(saug_tmaskn);
 /* ========== SOUND EFFECT AUGMENTATION OPTIONS ========== */
 
 DECLARE_string(sfx_config);
+DECLARE_int64(sfx_start_update);
 
 /* ========== RUN OPTIONS ========== */
 
@@ -160,6 +159,7 @@ DECLARE_bool(fl_benchmark_mode);
 DECLARE_string(fl_optim_mode);
 DECLARE_string(fl_log_level);
 DECLARE_int64(fl_vlog_level);
+DECLARE_int64(fl_log_mem_ops_interval);
 
 /* ========== MIXED PRECISION OPTIONS ========== */
 

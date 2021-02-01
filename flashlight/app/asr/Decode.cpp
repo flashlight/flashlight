@@ -23,6 +23,7 @@
 #include "flashlight/app/asr/common/Flags.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/data/FeatureTransforms.h"
+#include "flashlight/app/asr/data/Utils.h"
 #include "flashlight/app/asr/decoder/ConvLmModule.h"
 #include "flashlight/app/asr/decoder/DecodeUtils.h"
 #include "flashlight/app/asr/decoder/Defines.h"
@@ -51,6 +52,7 @@ using fl::lib::text::SmearingMode;
 using namespace fl::app::asr;
 
 int main(int argc, char** argv) {
+  fl::init();
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
   std::string exec(argv[0]);
@@ -96,7 +98,7 @@ int main(int argc, char** argv) {
     af::setDevice(0);
     if (fl::lib::endsWith(FLAGS_arch, ".so")) {
       usePlugin = true;
-      (void) fl::ext::ModulePlugin(FLAGS_arch);
+      (void)fl::ext::ModulePlugin(FLAGS_arch);
     }
     Serializer::load(FLAGS_am, version, cfg, network, criterion);
     network->eval();
@@ -147,8 +149,11 @@ int main(int argc, char** argv) {
   if (FLAGS_criterion == kCtcCriterion) {
     tokenDict.addEntry(kBlankToken);
   }
-  if (FLAGS_eostoken) {
+  bool isSeq2seqCrit = FLAGS_criterion == kSeq2SeqTransformerCriterion ||
+      FLAGS_criterion == kSeq2SeqRNNCriterion;
+  if (isSeq2seqCrit) {
     tokenDict.addEntry(fl::app::asr::kEosToken);
+    tokenDict.addEntry(fl::lib::text::kPadToken);
   }
 
   int numClasses = tokenDict.indexSize();
@@ -181,8 +186,8 @@ int main(int argc, char** argv) {
   if (FLAGS_criterion == kCtcCriterion) {
     criterionType = CriterionType::CTC;
   } else if (
-      FLAGS_criterion == kSeq2SeqCriterion ||
-      FLAGS_criterion == kTransformerCriterion) {
+      FLAGS_criterion == kSeq2SeqRNNCriterion ||
+      FLAGS_criterion == kSeq2SeqTransformerCriterion) {
     criterionType = CriterionType::S2S;
   } else if (FLAGS_criterion != kAsgCriterion) {
     LOG(FATAL) << "[Decoder] Invalid model type: " << FLAGS_criterion;
@@ -304,20 +309,15 @@ int main(int argc, char** argv) {
   featParams.useEnergy = false;
   featParams.usePower = false;
   featParams.zeroMeanFrame = false;
-  FeatureType featType = FeatureType::NONE;
-  if (FLAGS_pow) {
-    featType = FeatureType::POW_SPECTRUM;
-  } else if (FLAGS_mfsc) {
-    featType = FeatureType::MFSC;
-  } else if (FLAGS_mfcc) {
-    featType = FeatureType::MFCC;
-  }
+  FeatureType featType =
+      getFeatureType(FLAGS_features_type, FLAGS_channels, featParams).second;
+
   TargetGenerationConfig targetGenConfig(
       FLAGS_wordseparator,
       FLAGS_sampletarget,
       FLAGS_criterion,
       FLAGS_surround,
-      FLAGS_eostoken,
+      isSeq2seqCrit,
       FLAGS_replabel,
       true /* skip unk */,
       FLAGS_usewordpiece /* fallback2LetterWordSepLeft */,
@@ -330,9 +330,8 @@ int main(int argc, char** argv) {
       /*sfxConf=*/{});
   auto targetTransform = targetFeatures(tokenDict, lexicon, targetGenConfig);
   auto wordTransform = wordFeatures(wordDict);
-  int targetpadVal = FLAGS_eostoken
-      ? tokenDict.getIndex(fl::app::asr::kEosToken)
-      : kTargetPadValue;
+  int targetpadVal =
+      isSeq2seqCrit ? tokenDict.getIndex(fl::lib::text::kPadToken) : kTargetPadValue;
   int wordpadVal = wordDict.getIndex(kUnkToken);
 
   std::vector<std::string> testSplits = fl::lib::split(",", FLAGS_test, true);
@@ -364,7 +363,8 @@ int main(int argc, char** argv) {
                        &ds,
                        &tokenDict,
                        &wordDict,
-                       &emissionQueue](int tid) {
+                       &emissionQueue,
+                       &isSeq2seqCrit](int tid) {
     // Initialize AM
     af::setDevice(tid);
     std::shared_ptr<fl::Module> localNetwork = network;
@@ -405,7 +405,7 @@ int main(int argc, char** argv) {
             tokenDict,
             FLAGS_criterion,
             FLAGS_surround,
-            FLAGS_eostoken,
+            isSeq2seqCrit,
             FLAGS_replabel,
             FLAGS_usewordpiece,
             FLAGS_wordseparator);
@@ -454,6 +454,7 @@ int main(int argc, char** argv) {
 
   /* ===================== Decode ===================== */
   auto runDecoder = [&criterion,
+                     &isSeq2seqCrit,
                      &lm,
                      &trie,
                      &silIdx,
@@ -523,9 +524,18 @@ int main(int argc, char** argv) {
     }
 
     if (criterionType == CriterionType::S2S) {
-      auto amUpdateFunc = FLAGS_criterion == kSeq2SeqCriterion
-          ? buildAmUpdateFunction(localCriterion)
-          : buildTransformerAmUpdateFunction(localCriterion);
+      auto amUpdateFunc = FLAGS_criterion == kSeq2SeqRNNCriterion
+          ? buildSeq2SeqRnnAmUpdateFunction(
+                localCriterion,
+                FLAGS_decoderattnround,
+                FLAGS_beamsize,
+                FLAGS_attentionthreshold,
+                FLAGS_smoothingtemperature)
+          : buildSeq2SeqTransformerAmUpdateFunction(
+                localCriterion,
+                FLAGS_beamsize,
+                FLAGS_attentionthreshold,
+                FLAGS_smoothingtemperature);
       int eosIdx = tokenDict.getIndex(fl::app::asr::kEosToken);
 
       if (FLAGS_decodertype == "wrd" || FLAGS_uselexicon) {
@@ -634,7 +644,7 @@ int main(int argc, char** argv) {
             tokenDict,
             FLAGS_criterion,
             FLAGS_surround,
-            FLAGS_eostoken,
+            isSeq2seqCrit,
             FLAGS_replabel,
             FLAGS_usewordpiece,
             FLAGS_wordseparator);
@@ -643,7 +653,7 @@ int main(int argc, char** argv) {
             tokenDict,
             FLAGS_criterion,
             FLAGS_surround,
-            FLAGS_eostoken,
+            isSeq2seqCrit,
             FLAGS_replabel,
             FLAGS_usewordpiece,
             FLAGS_wordseparator);

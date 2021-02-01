@@ -10,7 +10,6 @@
 #include <memory>
 
 #include "flashlight/app/asr/criterion/Defines.h"
-#include "flashlight/app/asr/criterion/Seq2SeqCriterion.h"
 #include "flashlight/app/asr/criterion/SequenceCriterion.h"
 #include "flashlight/app/asr/criterion/attention/attention.h"
 #include "flashlight/app/asr/criterion/attention/window.h"
@@ -39,6 +38,7 @@ class TransformerCriterion : public SequenceCriterion {
       int nClass,
       int hiddenDim,
       int eos,
+      int pad,
       int maxDecoderOutputLen,
       int nLayer,
       std::shared_ptr<AttentionBase> attention,
@@ -46,26 +46,32 @@ class TransformerCriterion : public SequenceCriterion {
       bool trainWithWindow,
       double labelSmooth,
       double pctTeacherForcing,
-      double p_dropout,
-      double p_layerdrop);
+      double pDropout,
+      double pLayerDrop);
 
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;
 
-  af::array viterbiPath(const af::array& input) override;
+  af::array viterbiPath(
+      const af::array& input,
+      const af::array& inputSizes = af::array()) override;
 
   std::pair<af::array, fl::Variable> viterbiPathBase(
       const af::array& input,
+      const af::array& inputSizes,
       bool saveAttn);
 
   std::pair<fl::Variable, fl::Variable> vectorizedDecoder(
       const fl::Variable& input,
-      const fl::Variable& target);
+      const fl::Variable& target,
+      const af::array& inputSizes,
+      const af::array& targetSizes);
 
   std::pair<fl::Variable, TS2SState> decodeStep(
       const fl::Variable& xEncoded,
       const fl::Variable& y,
-      const TS2SState& inState) const;
+      const TS2SState& inState,
+      const af::array& inputSizes) const;
 
   std::pair<std::vector<std::vector<float>>, std::vector<TS2SStatePtr>>
   decodeBatchStep(
@@ -105,6 +111,7 @@ class TransformerCriterion : public SequenceCriterion {
  private:
   int nClass_;
   int eos_;
+  int pad_;
   int maxDecoderOutputLen_;
   int nLayer_;
   std::shared_ptr<WindowBase> window_;
@@ -121,17 +128,11 @@ class TransformerCriterion : public SequenceCriterion {
       window_,
       trainWithWindow_,
       labelSmooth_,
-      pctTeacherForcing_)
+      pctTeacherForcing_,
+      fl::versioned(pad_, 1))
 
   TransformerCriterion() = default;
 };
-
-TransformerCriterion buildTransformerCriterion(
-    int numClasses,
-    int numLayers,
-    float dropout,
-    float layerdrop,
-    int eosIdx);
 
 struct TS2SDecoderBuffer {
   fl::Variable input;
@@ -148,10 +149,14 @@ struct TS2SDecoderBuffer {
   }
 };
 
-AMUpdateFunc buildTransformerAmUpdateFunction(
-    std::shared_ptr<SequenceCriterion>& crit);
+AMUpdateFunc buildSeq2SeqTransformerAmUpdateFunction(
+    std::shared_ptr<SequenceCriterion>& criterion,
+    int beamSize,
+    float attThr,
+    float smoothingTemp);
 } // namespace asr
 } // namespace app
 } // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::app::asr::TransformerCriterion)
+CEREAL_CLASS_VERSION(fl::app::asr::TransformerCriterion, 1)

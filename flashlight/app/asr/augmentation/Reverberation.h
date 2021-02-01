@@ -75,11 +75,10 @@ class ReverbEcho : public SoundEffect {
      * truth .0 = dereverberation, 1 = no dereverberation.
      */
     size_t sampleRate_ = 16000;
-    unsigned int randomSeed_ = std::mt19937::default_seed;
     std::string prettyString() const;
   };
 
-  explicit ReverbEcho(const ReverbEcho::Config& config);
+  explicit ReverbEcho(const ReverbEcho::Config& config, unsigned int seed = 0);
   ~ReverbEcho() override = default;
   void apply(std::vector<float>& sound) override;
   std::string prettyString() const override;

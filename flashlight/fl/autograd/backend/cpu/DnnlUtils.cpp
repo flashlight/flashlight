@@ -6,12 +6,30 @@
  */
 
 #include <stdexcept>
+#include <utility>
+
+#if FL_BACKEND_OPENCL
+#include <dnnl_ocl.hpp>
+#endif
 
 #include "flashlight/fl/autograd/backend/cpu/DnnlUtils.h"
 #include "flashlight/fl/common/Defines.h"
 
+#if FL_BACKEND_OPENCL
+#include "flashlight/fl/common/OpenClUtils.h"
+#endif
+
 namespace fl {
 namespace detail {
+
+DnnlStream::DnnlStream(dnnl::engine engine) {
+  af_init();
+#if FL_BACKEND_OPENCL
+  stream_ = dnnl::ocl_interop::make_stream(engine, fl::ocl::getQueue());
+#else
+  stream_ = dnnl::stream(engine);
+#endif
+}
 
 dnnl::stream& DnnlStream::getStream() {
   return stream_;
@@ -20,6 +38,15 @@ dnnl::stream& DnnlStream::getStream() {
 DnnlStream& DnnlStream::getInstance() {
   static DnnlStream instance(DnnlEngine::getInstance().getEngine());
   return instance;
+}
+
+DnnlEngine::DnnlEngine() {
+#if FL_BACKEND_OPENCL
+  engine_ = dnnl::ocl_interop::make_engine(
+      fl::ocl::getDeviceId(), fl::ocl::getContext());
+#else
+  engine_ = dnnl::engine(dnnl::engine::kind::cpu, 0);
+#endif
 }
 
 dnnl::engine& DnnlEngine::getEngine() {
@@ -35,6 +62,44 @@ dnnl::memory::dims convertAfToDnnlDims(const std::vector<dim_t>& afDims) {
   // DNNL uses ints in dims
   std::vector<long int> intVec(afDims.begin(), afDims.end());
   return dnnl::memory::dims(intVec);
+}
+
+dnnl::memory::dims convertAfDim4ToDnnlDims(const af::dim4& afDims) {
+  std::vector<dim_t> dimVec(afDims.get(), afDims.get() + afDims.ndims());
+  return convertAfToDnnlDims(dimVec);
+}
+
+DnnlMemoryWrapper::DnnlMemoryWrapper(
+    const af::array& array,
+    dnnl::memory::dims dims,
+    dnnl::memory::format_tag format) {
+#if FL_BACKEND_OPENCL
+  fl::ocl::DevicePtrOpenCl _devicePtr(array);
+  cl_mem* buffer = _devicePtr.getAsClMem();
+  devicePtr_ = std::move(_devicePtr);
+#else
+  devicePtr_ = fl::DevicePtr(array);
+  void* buffer = devicePtr_.get();
+#endif
+  descriptor_ =
+      dnnl::memory::desc({dims}, detail::dnnlMapToType(array.type()), format);
+  memory_ = dnnl::memory(
+      descriptor_, detail::DnnlEngine::getInstance().getEngine(), buffer);
+}
+
+DnnlMemoryWrapper& DnnlMemoryWrapper::operator=(DnnlMemoryWrapper&& other) {
+  devicePtr_ = std::move(other.devicePtr_);
+  memory_ = std::move(other.memory_);
+  descriptor_ = std::move(other.descriptor_);
+  return *this;
+}
+
+dnnl::memory DnnlMemoryWrapper::getMemory() const {
+  return memory_;
+}
+
+dnnl::memory::desc DnnlMemoryWrapper::getDescriptor() const {
+  return descriptor_;
 }
 
 dnnl::memory dnnlAlignOrdering(

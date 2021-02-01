@@ -62,10 +62,13 @@ DEFINE_string(
 DEFINE_string(
     batching_strategy,
     "none",
-    "Batching strategy to use, supports {'none', 'dynamic'}. "
-    "When using 'none' strategy then batchsize is used. "
-    "When using 'dynamic' batching for training, batchsize will be ignored "
-    "and max_tokens is used to define the effective batch size");
+    "Batching strategy to use, supports {'none', 'dynamic', 'rand', 'randdynamic'}. "
+    "When using 'none' strategy then batches of size 'batchsize' are created. "
+    "When using 'dynamic' batching for training, 'batchsize' will be ignored "
+    "and 'max_tokens' will be used to compute the effective batch size. "
+    "To use unordered input data to pack batches, use either 'rand' "
+    "or 'randdynamic' which shuffles data before packing, "
+    " then follows the same packing strategies as 'none' or 'dynamic', respectively.");
 DEFINE_int64(
     batching_max_duration,
     0,
@@ -85,11 +88,6 @@ DEFINE_string(
     surround,
     "",
     "Surround target tokens sequence with provided token (duplicates are removed)");
-DEFINE_bool(
-    eostoken,
-    false,
-    "Add the eos (end of sentence) token into the token set and append target token sequences with it "
-    "at train, test, and decode time.");
 DEFINE_string(
     wordseparator,
     kSilToken,
@@ -209,22 +207,13 @@ DEFINE_string(
     "supported ones 'sgd', 'adam', 'rmsprop', 'adadelta', 'adagrad', 'amsgrad', 'novograd'");
 
 // MFCC OPTIONS
-DEFINE_bool(
-    mfcc,
-    false,
-    "Use standard htk mfcc features as input by processing audio "
-    "(if 'mfcc', 'pow', 'mfsc' all false raw wave will be used as input)");
+DEFINE_string(
+    features_type,
+    "mfsc",
+    "Features type to compute input by processing audio. Could be "
+    "mfcc: standard htk mfcc features; mfsc: standard mfsc features; "
+    "pow: standard power spectrum; raw: raw wave");
 DEFINE_int64(mfcccoeffs, 13, "Number of mfcc coefficients");
-DEFINE_bool(
-    pow,
-    false,
-    "Use standard power spectrum as input by processing audio "
-    "(if 'mfcc', 'pow', 'mfsc' all false raw wave will be used as input)");
-DEFINE_bool(
-    mfsc,
-    false,
-    "Use standard mfsc features as input "
-    "(if 'mfcc', 'pow', 'mfsc' all false raw wave will be used as input)");
 DEFINE_double(melfloor, 1.0, "Specify optional mel floor for mfcc/mfsc/pow");
 DEFINE_int64(
     filterbanks,
@@ -282,6 +271,10 @@ DEFINE_string(
     "",
     "[train] Path to a sound effect json config file. When set the sound effect is "
     "applied to augment the input data.");
+DEFINE_int64(
+    sfx_start_update,
+    std::numeric_limits<int>::max(),
+    "[train] Start sount effect augmentation starting at this update iteration.");
 
 // RUN OPTIONS
 DEFINE_string(datadir, "", "Prefix to the 'train'/'valid'/'test' files paths");
@@ -328,6 +321,13 @@ DEFINE_string(
     "must be [FATAL, ERROR, WARNING, INFO]");
 DEFINE_int64(fl_vlog_level, 0, "Sets the verbose logging level");
 
+DEFINE_int64(
+    fl_log_mem_ops_interval,
+    0,
+    "Flushes memory manager logs after a specified "
+    "number of log entries. 1000000 is a reasonable "
+    "value which will reduce overhead.");
+
 // MIXED PRECISION OPTIONS
 DEFINE_bool(
     fl_amp_use_mixed_precision,
@@ -354,7 +354,7 @@ DEFINE_uint64(
 DEFINE_string(
     arch,
     "default",
-    "[train] Network architecture file path prefixed with 'archdir'");
+    "[train] Network architecture file path");
 DEFINE_string(
     criterion,
     kAsgCriterion,

@@ -17,6 +17,10 @@
 namespace fl {
 namespace lib {
 
+size_t getProcessId();
+
+size_t getThreadId();
+
 std::string pathsConcat(const std::string& p1, const std::string& p2);
 
 std::string pathSeperator();

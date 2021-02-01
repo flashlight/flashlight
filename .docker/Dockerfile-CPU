@@ -6,6 +6,7 @@
 
 FROM flml/flashlight:cpu-base-consolidation-latest
 
+# just in case for visibility
 ENV MKLROOT="/opt/intel/mkl"
 
 # ==================================================================
@@ -17,5 +18,9 @@ RUN mkdir /root/flashlight
 COPY . /root/flashlight
 
 RUN cd /root/flashlight && mkdir -p build && \
-    cd build && cmake .. -DFL_BACKEND=CPU -DFL_LIBRARIES_USE_CUDA=OFF && \
-    make -j$(nproc) && make install
+    cd build && cmake .. -DCMAKE_BUILD_TYPE=Release \
+                         -DCMAKE_INSTALL_PREFIX=/opt/flashlight \
+                         -DFL_BACKEND=CPU \
+                         -DGloo_DIR=/opt/gloo/share/cmake \
+                         -DDNNL_DIR=/opt/onednn/lib/cmake/dnnl && \
+    make install -j$(nproc)

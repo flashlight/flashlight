@@ -12,6 +12,7 @@
 using namespace fl;
 
 int main() {
+  fl::init();
   af::info();
 
   // Create dataset

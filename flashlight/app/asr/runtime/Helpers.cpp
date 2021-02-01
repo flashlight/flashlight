@@ -110,6 +110,7 @@ std::shared_ptr<fl::Dataset> createDataset(
     const std::tuple<int, int, int>& padVal /* = {0, -1, -1} */,
     int worldRank /* = 0 */,
     int worldSize /* = 1 */,
+    const bool allowEmpty /* = false */,
     const std::string& batchingStrategy /* kBatchStrategyNone */,
     int maxDurationPerBatch /* = 0 */) {
   std::vector<std::shared_ptr<const fl::Dataset>> allListDs;
@@ -149,8 +150,18 @@ std::shared_ptr<fl::Dataset> createDataset(
   auto cmp = [&sizes](const int64_t& l, const int64_t& r) {
     return sizes[l] > sizes[r];
   };
-  std::stable_sort(sortedIds.begin(), sortedIds.end(), cmp);
-  std::stable_sort(sizes.begin(), sizes.end(), std::greater<float>());
+  if (batchingStrategy == kBatchStrategyRand ||
+      batchingStrategy == kBatchStrategyRandDynamic) {
+    auto rng = std::mt19937(sizes.size());
+    for (int i = sizes.size(); i >= 1; i--) {
+      int index = rng() % sizes.size();
+      std::swap(sortedIds[i - 1], sortedIds[index]);
+      std::swap(sizes[i - 1], sizes[index]);
+    }
+  } else {
+    std::stable_sort(sortedIds.begin(), sortedIds.end(), cmp);
+    std::stable_sort(sizes.begin(), sizes.end(), std::greater<float>());
+  }
 
   auto concatListDs = std::make_shared<fl::ConcatDataset>(allListDs);
 
@@ -173,20 +184,23 @@ std::shared_ptr<fl::Dataset> createDataset(
       [](const std::vector<af::array>& arr) { return fl::join(arr, 0, 1); },
       [](const std::vector<af::array>& arr) { return fl::join(arr, 0, 1); },
       [](const std::vector<af::array>& arr) { return fl::join(arr, 0, 1); }};
-  if (batchingStrategy == kBatchStrategyDynamic) {
+  if (batchingStrategy == kBatchStrategyDynamic ||
+      batchingStrategy == kBatchStrategyRandDynamic) {
     // Partition the dataset and distribute
     auto result = fl::dynamicPartitionByRoundRobin(
-        sizes, worldRank, worldSize, maxDurationPerBatch);
+        sizes, worldRank, worldSize, maxDurationPerBatch, allowEmpty);
     auto partitions = result.first;
     auto batchSizes = result.second;
     auto paritionDs =
         std::make_shared<fl::ResampleDataset>(sortedDs, partitions);
     // Batch the dataset
     return std::make_shared<fl::BatchDataset>(paritionDs, batchSizes, batchFns);
-  } else if (batchingStrategy == kBatchStrategyNone) {
+  } else if (
+      batchingStrategy == kBatchStrategyNone ||
+      batchingStrategy == kBatchStrategyRand) {
     // Partition the dataset and distribute
     auto partitions = fl::partitionByRoundRobin(
-        sortedDs->size(), worldRank, worldSize, batchSize);
+        sortedDs->size(), worldRank, worldSize, batchSize, allowEmpty);
     auto paritionDs =
         std::make_shared<fl::ResampleDataset>(sortedDs, partitions);
     // Batch the dataset
@@ -228,7 +242,6 @@ std::vector<std::pair<std::string, std::string>> parseValidSets(
   }
   return validTagSets;
 }
-
 } // namespace asr
 } // namespace app
 } // namespace fl

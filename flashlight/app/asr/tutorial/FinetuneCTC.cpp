@@ -21,12 +21,13 @@
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/data/FeatureTransforms.h"
+#include "flashlight/app/asr/data/Utils.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/ext/common/DistributedUtils.h"
-#include "flashlight/ext/plugin/ModulePlugin.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/ext/common/Serializer.h"
+#include "flashlight/ext/plugin/ModulePlugin.h"
 #include "flashlight/fl/contrib/contrib.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/System.h"
@@ -52,6 +53,8 @@ int main(int argc, char** argv) {
     argvs.emplace_back(argv[i]);
   }
   gflags::SetUsageMessage("Usage: \n " + exec + " [model] [flags]");
+
+  fl::init();
 
   /* ===================== Parse Options ===================== */
   int runIdx = 1; // current #runs in this path
@@ -175,24 +178,17 @@ int main(int argc, char** argv) {
   featParams.useEnergy = false;
   featParams.usePower = false;
   featParams.zeroMeanFrame = false;
-  int numFeatures = -1;
-  FeatureType featType = FeatureType::NONE;
-  if (FLAGS_pow) {
-    featType = FeatureType::POW_SPECTRUM;
-    numFeatures = featParams.powSpecFeatSz();
-  } else if (FLAGS_mfsc) {
-    featType = FeatureType::MFSC;
-    numFeatures = featParams.mfscFeatSz();
-  } else if (FLAGS_mfcc) {
-    featType = FeatureType::MFCC;
-    numFeatures = featParams.mfccFeatSz();
-  }
+  auto featureRes =
+      getFeatureType(FLAGS_features_type, FLAGS_channels, featParams);
+  int numFeatures = featureRes.first;
+  FeatureType featType = featureRes.second;
+
   TargetGenerationConfig targetGenConfig(
       FLAGS_wordseparator,
       FLAGS_sampletarget,
       FLAGS_criterion,
       FLAGS_surround,
-      FLAGS_eostoken,
+      false /* isSeq2seqCrit */,
       FLAGS_replabel,
       true /* skip unk */,
       FLAGS_usewordpiece /* fallback2LetterWordSepLeft */,
@@ -209,9 +205,7 @@ int main(int argc, char** argv) {
       sfxConf);
   auto targetTransform = targetFeatures(tokenDict, lexicon, targetGenConfig);
   auto wordTransform = wordFeatures(wordDict);
-  int targetpadVal = FLAGS_eostoken
-      ? tokenDict.getIndex(fl::app::asr::kEosToken)
-      : kTargetPadValue;
+  int targetpadVal = kTargetPadValue;
   int wordpadVal = kTargetPadValue;
 
   std::vector<std::string> trainSplits = fl::lib::split(",", FLAGS_train, true);
@@ -224,7 +218,9 @@ int main(int argc, char** argv) {
       wordTransform,
       std::make_tuple(0, targetpadVal, wordpadVal),
       worldRank,
-      worldSize);
+      worldSize,
+      false // allowEmpty
+  );
 
   std::map<std::string, std::shared_ptr<fl::Dataset>> validds;
   int64_t validBatchSize =
@@ -239,7 +235,9 @@ int main(int argc, char** argv) {
         wordTransform,
         std::make_tuple(0, targetpadVal, wordpadVal),
         worldRank,
-        worldSize);
+        worldSize,
+        true // allowEmpty
+    );
   }
 
   /* =========== Create Network & Optimizers / Reload Snapshot ============ */
@@ -314,20 +312,12 @@ int main(int argc, char** argv) {
 
   auto logStatus =
       [&logFile, isMaster](
-          TrainMeters& mtrs,
-          int64_t epoch,
-          int64_t nupdates,
-          double lr) {
+          TrainMeters& mtrs, int64_t epoch, int64_t nupdates, double lr) {
         syncMeter(mtrs);
 
         if (isMaster) {
-          auto logMsg = getLogString(
-                            mtrs,
-                            {},
-                            epoch,
-                            nupdates,
-                            lr,
-                            0 /* lrcrit */);
+          auto logMsg =
+              getLogString(mtrs, {}, epoch, nupdates, lr, 0 /* lrcrit */);
           FL_LOG_MASTER(INFO) << logMsg;
           appendToLog(logFile, logMsg);
         }
@@ -397,7 +387,7 @@ int main(int argc, char** argv) {
           tokenDict,
           FLAGS_criterion,
           FLAGS_surround,
-          FLAGS_eostoken,
+          false, /* isSeq2seqCrit */
           FLAGS_replabel,
           FLAGS_usewordpiece,
           FLAGS_wordseparator);
@@ -406,7 +396,7 @@ int main(int argc, char** argv) {
           tokenDict,
           FLAGS_criterion,
           FLAGS_surround,
-          FLAGS_eostoken,
+          false, /* isSeq2seqCrit */
           FLAGS_replabel,
           FLAGS_usewordpiece,
           FLAGS_wordseparator);
@@ -491,39 +481,38 @@ int main(int argc, char** argv) {
       meters.optimtimer.reset();
       meters.timer.reset();
     };
-    auto runValAndSaveModel = [&](int64_t totalEpochs,
-                                  int64_t totalUpdates,
-                                  double lr) {
-      meters.runtime.stop();
-      meters.timer.stop();
-      meters.sampletimer.stop();
-      meters.fwdtimer.stop();
-      meters.critfwdtimer.stop();
-      meters.bwdtimer.stop();
-      meters.optimtimer.stop();
+    auto runValAndSaveModel =
+        [&](int64_t totalEpochs, int64_t totalUpdates, double lr) {
+          meters.runtime.stop();
+          meters.timer.stop();
+          meters.sampletimer.stop();
+          meters.fwdtimer.stop();
+          meters.critfwdtimer.stop();
+          meters.bwdtimer.stop();
+          meters.optimtimer.stop();
 
-      // valid
-      for (auto& vds : validds) {
-        test(ntwrk, crit, vds.second, meters.valid[vds.first]);
-      }
+          // valid
+          for (auto& vds : validds) {
+            test(ntwrk, crit, vds.second, meters.valid[vds.first]);
+          }
 
-      // print status
-      try {
-        logStatus(meters, totalEpochs, totalUpdates, lr);
-      } catch (const std::exception& ex) {
-        LOG(ERROR) << "Error while writing logs: " << ex.what();
-      }
-      // save last and best models
-      try {
-        saveModels(totalEpochs, totalUpdates);
-      } catch (const std::exception& ex) {
-        LOG(FATAL) << "Error while saving models: " << ex.what();
-      }
-      // reset meters for next readings
-      meters.train.loss.reset();
-      meters.train.tknEdit.reset();
-      meters.train.wrdEdit.reset();
-    };
+          // print status
+          try {
+            logStatus(meters, totalEpochs, totalUpdates, lr);
+          } catch (const std::exception& ex) {
+            LOG(ERROR) << "Error while writing logs: " << ex.what();
+          }
+          // save last and best models
+          try {
+            saveModels(totalEpochs, totalUpdates);
+          } catch (const std::exception& ex) {
+            LOG(FATAL) << "Error while saving models: " << ex.what();
+          }
+          // reset meters for next readings
+          meters.train.loss.reset();
+          meters.train.tknEdit.reset();
+          meters.train.wrdEdit.reset();
+        };
 
     int64_t curBatch = startUpdate;
     double scaleFactor =

@@ -17,8 +17,10 @@
 #include "flashlight/app/lm/data/TextDataset.h"
 
 #include "flashlight/ext/common/DistributedUtils.h"
-#include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/ext/common/Serializer.h"
+#include "flashlight/ext/plugin/ModulePlugin.h"
+#include "flashlight/fl/contrib/contrib.h"
+#include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
@@ -50,7 +52,7 @@ DECLARE_string(exp_model_name);
 DECLARE_string(exp_init_model_path);
 
 /* DATA OPTIONS */
-DECLARE_string(data);
+DECLARE_string(data_dir);
 DECLARE_string(data_train);
 DECLARE_string(data_valid);
 DECLARE_int64(data_batch_size);
@@ -96,6 +98,7 @@ class Trainer {
   void runTraining();
   void trainStep();
   void evalStep();
+  float runEvaluation();
 
  protected:
   std::shared_ptr<fl::Module> network_;
@@ -134,9 +137,11 @@ class Trainer {
   void initTrain();
   void initContinue();
   void initFork();
+  void initEval();
 
   void createDictionary();
-  void createDatasets();
+  void createTrainDatasets();
+  void createValidDatasets();
   void createNetwork();
   void createCriterion();
   void collectParameters();

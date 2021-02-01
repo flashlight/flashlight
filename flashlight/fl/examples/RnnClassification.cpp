@@ -75,23 +75,24 @@ class ClassificationDataset : public Dataset {
 
   ClassificationDataset(const std::string datasetPath) {
     // As found in the dataset folder:
-    std::vector<std::string> lang = {"Arabic",
-                                     "Greek",
-                                     "Chinese",
-                                     "Czech",
-                                     "Dutch",
-                                     "Japanese",
-                                     "Korean",
-                                     "Russian",
-                                     "English",
-                                     "Scottish",
-                                     "Vietnamese",
-                                     "German",
-                                     "Spanish",
-                                     "French",
-                                     "Polish",
-                                     "Italian",
-                                     "Irish"};
+    std::vector<std::string> lang = {
+        "Arabic",
+        "Greek",
+        "Chinese",
+        "Czech",
+        "Dutch",
+        "Japanese",
+        "Korean",
+        "Russian",
+        "English",
+        "Scottish",
+        "Vietnamese",
+        "German",
+        "Spanish",
+        "French",
+        "Polish",
+        "Italian",
+        "Irish"};
     for (auto& l : lang)
       read(datasetPath, l);
     for (auto& it : Id2Label)
@@ -218,6 +219,7 @@ class RnnClassifier : public Container {
 };
 
 int main(int argc, char** argv) {
+  fl::init();
   std::cout << "RnnClassification (path to the data dir) (learning rate) (num "
                "epochs) (hiddensize)"
             << std::endl;

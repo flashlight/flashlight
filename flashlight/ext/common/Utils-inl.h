@@ -11,6 +11,12 @@
 namespace fl {
 namespace ext {
 
+/**
+ * Convert an arrayfire array into a std::vector.
+ *
+ * @param arr input array to convert
+ *
+ */
 template <typename T>
 std::vector<T> afToVector(const af::array& arr) {
   std::vector<T> vec(arr.elements());
@@ -18,19 +24,16 @@ std::vector<T> afToVector(const af::array& arr) {
   return vec;
 }
 
+/**
+ * Convert the array in a Variable into a std::vector.
+ *
+ * @param var input Variables to convert
+ *
+ */
 template <typename T>
 std::vector<T> afToVector(const fl::Variable& var) {
   return afToVector<T>(var.array());
 }
 
-template <typename T>
-void syncMeter(T& mtr) {
-  if (!fl::isDistributedInit()) {
-    return;
-  }
-  af::array arr = allreduceGet(mtr);
-  fl::allReduce(arr);
-  allreduceSet(mtr, arr);
-}
 } // namespace ext
 } // namespace fl

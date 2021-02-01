@@ -10,11 +10,14 @@
 #include <stdexcept>
 
 #include "flashlight/fl/autograd/Variable.h"
+#include "flashlight/fl/common/CppBackports.h"
 #include "flashlight/fl/common/CudaUtils.h"
 #include "flashlight/fl/common/DevicePtr.h"
 
 #define GRID_SIZE 32
 #define BLOCK_SIZE 256
+
+const fl::cpp::fl_unordered_set<af::dtype> validIndexTypes{s32, s64, u32, u64};
 
 template <class Float, class Index>
 __global__ void gradAdvancedIndexKernel(
@@ -96,18 +99,26 @@ void gradAdvancedIndex(
   // Extract raw device pointers for dimensions
   // that have an array as af::index variable
 
-  af::dtype idxType = s64;
+  // Dtype checking
+  std::vector<af::dtype> idxTypes;
   for (int i = 0; i < 4; i++) {
-    idxPtr[i] = 0;
-    if (!idxArr[i].isempty()) {
-      auto newIdxType = idxArr[i].type();
-      if ((newIdxType != idxType) && (newIdxType != s32)) {
-        throw std::invalid_argument(
-            "Index type must be s32/s64 and same across all dimensions");
-      }
-      idxType = newIdxType;
-      idxArrRaw[i] = DevicePtr(idxArr[i]);
-      idxPtr[i] = (dim_t)(idxArrRaw[i].get());
+    if (idxArr[i].isempty()) {
+      idxPtr[i] = 0;
+      continue;
+    }
+    if (validIndexTypes.find(idxArr[i].type()) == validIndexTypes.end()) {
+      throw std::invalid_argument(
+          "Index type must be one of s32/s64/u32/u64, observed type is " +
+          std::to_string(idxArr[i].type()));
+    }
+    idxTypes.push_back(idxArr[i].type());
+    idxArrRaw[i] = DevicePtr(idxArr[i]);
+    idxPtr[i] = (dim_t)(idxArrRaw[i].get());
+  }
+  for (int i = 0; i + 1 < idxTypes.size(); i++) {
+    if (idxTypes[i] != idxTypes[i + 1]) {
+      throw std::invalid_argument(
+          "Index type must be the same across all dimensions");
     }
   }
   Variable inpCast = inp;
@@ -130,26 +141,44 @@ void gradAdvancedIndex(
   DevicePtr devIdxPtr(arrIdxPtr);
 
   cudaStream_t stream = cuda::getActiveStream();
-  if (idxType == s32) {
-    gradAdvancedIndexKernel<
-        float,
-        int32_t><<<GRID_SIZE, BLOCK_SIZE, 0, stream>>>(
-        static_cast<const float*>(inpRaw.get()),
-        static_cast<const dim_t*>(devIdxStart.get()),
-        static_cast<const dim_t*>(devIdxEnd.get()),
-        static_cast<const dim_t*>(devOutDims.get()),
-        static_cast<const dim_t*>(devIdxPtr.get()),
-        static_cast<float*>(outRaw.get()));
+  if (idxTypes.size() == 0 || idxTypes[0] == s32) {
+    gradAdvancedIndexKernel<float, int32_t>
+        <<<GRID_SIZE, BLOCK_SIZE, 0, stream>>>(
+            static_cast<const float*>(inpRaw.get()),
+            static_cast<const dim_t*>(devIdxStart.get()),
+            static_cast<const dim_t*>(devIdxEnd.get()),
+            static_cast<const dim_t*>(devOutDims.get()),
+            static_cast<const dim_t*>(devIdxPtr.get()),
+            static_cast<float*>(outRaw.get()));
+  } else if (idxTypes[0] == s64) {
+    gradAdvancedIndexKernel<float, int64_t>
+        <<<GRID_SIZE, BLOCK_SIZE, 0, stream>>>(
+            static_cast<const float*>(inpRaw.get()),
+            static_cast<const dim_t*>(devIdxStart.get()),
+            static_cast<const dim_t*>(devIdxEnd.get()),
+            static_cast<const dim_t*>(devOutDims.get()),
+            static_cast<const dim_t*>(devIdxPtr.get()),
+            static_cast<float*>(outRaw.get()));
+  } else if (idxTypes[0] == u32) {
+    gradAdvancedIndexKernel<float, uint32_t>
+        <<<GRID_SIZE, BLOCK_SIZE, 0, stream>>>(
+            static_cast<const float*>(inpRaw.get()),
+            static_cast<const dim_t*>(devIdxStart.get()),
+            static_cast<const dim_t*>(devIdxEnd.get()),
+            static_cast<const dim_t*>(devOutDims.get()),
+            static_cast<const dim_t*>(devIdxPtr.get()),
+            static_cast<float*>(outRaw.get()));
+  } else if (idxTypes[0] == u64) {
+    gradAdvancedIndexKernel<float, uint64_t>
+        <<<GRID_SIZE, BLOCK_SIZE, 0, stream>>>(
+            static_cast<const float*>(inpRaw.get()),
+            static_cast<const dim_t*>(devIdxStart.get()),
+            static_cast<const dim_t*>(devIdxEnd.get()),
+            static_cast<const dim_t*>(devOutDims.get()),
+            static_cast<const dim_t*>(devIdxPtr.get()),
+            static_cast<float*>(outRaw.get()));
   } else {
-    gradAdvancedIndexKernel<
-        float,
-        int64_t><<<GRID_SIZE, BLOCK_SIZE, 0, stream>>>(
-        static_cast<const float*>(inpRaw.get()),
-        static_cast<const dim_t*>(devIdxStart.get()),
-        static_cast<const dim_t*>(devIdxEnd.get()),
-        static_cast<const dim_t*>(devOutDims.get()),
-        static_cast<const dim_t*>(devIdxPtr.get()),
-        static_cast<float*>(outRaw.get()));
+    throw std::invalid_argument("Index type must be one of s32/s64/u32/u64");
   }
   FL_CUDA_CHECK(cudaPeekAtLastError());
 

@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <stdexcept>
+#include <utility>
 
 #include <arrayfire.h>
 #include <dnnl.hpp>
@@ -14,7 +15,6 @@
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/autograd/Variable.h"
 #include "flashlight/fl/autograd/backend/cpu/DnnlUtils.h"
-#include "flashlight/fl/common/DevicePtr.h"
 
 namespace fl {
 
@@ -93,44 +93,28 @@ Variable batchnorm(
         1, input.elements() / (nfeatures * batchsz), nfeatures, batchsz);
   }
 
-  dnnl::memory::dims inputOutputDims = {inDescDims[kBatchSizeIdx],
-                                        inDescDims[kChannelSizeIdx],
-                                        inDescDims[kHIdx],
-                                        inDescDims[kWIdx]};
+  dnnl::memory::dims inputOutputDims = {
+      inDescDims[kBatchSizeIdx],
+      inDescDims[kChannelSizeIdx],
+      inDescDims[kHIdx],
+      inDescDims[kWIdx]};
   auto inputOutputMemDesc =
       dnnl::memory::desc({inputOutputDims}, dType, formatNCHW);
+  dnnl::memory::dims weightsDnnlDims =
+      detail::convertAfToDnnlDims({2, nfeatures});
 
   // Memory for forward
-  // input
-  DevicePtr inputRaw(input.array());
-  auto inputMemDesc = dnnl::memory::desc({inputOutputDims}, dType, formatNCHW);
-  auto inputMemInit = dnnl::memory(inputMemDesc, dnnlEngine);
-  inputMemInit.set_data_handle(inputRaw.get());
-  // out
-  DevicePtr outputRaw(output);
-  auto outputMemDesc = dnnl::memory::desc({inputOutputDims}, dType, formatNCHW);
-  auto outputMem = dnnl::memory(outputMemDesc, dnnlEngine);
-  outputMem.set_data_handle(outputRaw.get());
-  // mean
-  DevicePtr meanRaw(runningMean.array());
-  auto meanDims = detail::convertAfToDnnlDims({runningMean.dims(0)});
-  auto meanMemDesc = dnnl::memory::desc({meanDims}, dType, formatX);
-  auto meanMemInit = dnnl::memory(meanMemDesc, dnnlEngine);
-  meanMemInit.set_data_handle(meanRaw.get());
-  // var
-  DevicePtr varRaw(runningVar.array());
-  auto varDims = detail::convertAfToDnnlDims({runningVar.dims(0)});
-  auto varMemDesc = dnnl::memory::desc({varDims}, dType, formatX);
-  auto varMemInit = dnnl::memory(varMemDesc, dnnlEngine);
-  varMemInit.set_data_handle(varRaw.get());
-  // weightDNNL - combined scale and shift (weight and bias)
-  DevicePtr weightsDnnlRaw(weightsDnnl);
-  auto weightsDnnlDims = detail::convertAfToDnnlDims({2, nfeatures});
-  auto weightsDnnlMemDesc =
-      dnnl::memory::desc({weightsDnnlDims}, dType, format2d);
-  auto weightsDnnlMemInit = dnnl::memory(weightsDnnlMemDesc, dnnlEngine);
-  weightsDnnlMemInit.set_data_handle(weightsDnnlRaw.get());
-
+  const detail::DnnlMemoryWrapper inputMemory(
+      input.array(), inputOutputDims, formatNCHW);
+  const detail::DnnlMemoryWrapper outputMemory(
+      output, inputOutputDims, formatNCHW);
+  const detail::DnnlMemoryWrapper meanMemory(
+      runningMean.array(), {runningMean.dims(0)}, formatX);
+  const detail::DnnlMemoryWrapper varMemory(
+      runningVar.array(), {runningVar.dims(0)}, formatX);
+  // combined scale and shift (weight and bias)
+  const detail::DnnlMemoryWrapper weightsMemory(
+      weightsDnnl, weightsDnnlDims, format2d);
   // Primitives and descriptors
   auto kind = train ? dnnl::prop_kind::forward_training
                     : dnnl::prop_kind::forward_inference;
@@ -146,11 +130,11 @@ Variable batchnorm(
           fwdDesc, dnnlEngine);
   auto bn = dnnl::batch_normalization_forward(*fwdPrimDesc);
   std::unordered_map<int, dnnl::memory> bnFwdArgs = {
-      {DNNL_ARG_SRC, inputMemInit},
-      {DNNL_ARG_MEAN, meanMemInit},
-      {DNNL_ARG_VARIANCE, varMemInit},
-      {DNNL_ARG_DST, outputMem},
-      {DNNL_ARG_SCALE_SHIFT, weightsDnnlMemInit}};
+      {DNNL_ARG_SRC, inputMemory.getMemory()},
+      {DNNL_ARG_MEAN, meanMemory.getMemory()},
+      {DNNL_ARG_VARIANCE, varMemory.getMemory()},
+      {DNNL_ARG_DST, outputMemory.getMemory()},
+      {DNNL_ARG_SCALE_SHIFT, weightsMemory.getMemory()}};
 
   // Execute
   std::vector<dnnl::primitive> network;
@@ -165,19 +149,19 @@ Variable batchnorm(
                    epsilon,
                    nfeatures,
                    fwdPrimDesc,
-                   outputMemDesc,
+                   outputMemDesc = outputMemory.getDescriptor(),
                    inputOutputDims,
                    formatNCHW,
                    format2d,
                    dType,
                    weightsDnnl,
                    weightsDnnlDims,
-                   inputMemInit,
-                   meanMemInit,
-                   varMemInit,
-                   weightsDnnlMemInit](
+                   inputMemoryBwd = inputMemory.getMemory(),
+                   meanMemInit = meanMemory.getMemory(),
+                   varMemInit = varMemory.getMemory(),
+                   weightsDnnlMemInit = weightsMemory.getMemory()](
                       std::vector<Variable>& inputs,
-                      const Variable& grad_output) {
+                      const Variable& grad_output) mutable {
     if (!train) {
       throw std::logic_error(
           "can't compute batchnorm grad when train was not specified");
@@ -197,29 +181,17 @@ Variable batchnorm(
         Variable(af::array(weightsDnnl.dims(), weightsDnnl.type()), false);
 
     // Memory for gradient computation
-    DevicePtr gradOutputRaw(grad_output.array());
-    auto gradOutputMemDesc =
-        dnnl::memory::desc({inputOutputDims}, dType, formatNCHW);
-    auto gradOutputMemInit = dnnl::memory(gradOutputMemDesc, dnnlEngineBwd);
-    gradOutputMemInit.set_data_handle(gradOutputRaw.get());
-
-    DevicePtr gradInputRaw(grad_input.array());
-    auto gradInputMemDesc =
-        dnnl::memory::desc({inputOutputDims}, dType, formatNCHW);
-    auto gradInputMemInit = dnnl::memory(gradInputMemDesc, dnnlEngineBwd);
-    gradInputMemInit.set_data_handle(gradInputRaw.get());
-
-    DevicePtr gradWeightsDnnlRaw(grad_weightsDNNL.array());
-    auto gradWeightsDnnlMemDesc =
-        dnnl::memory::desc({weightsDnnlDims}, dType, format2d);
-    auto gradWeightsDnnlMemInit =
-        dnnl::memory(gradWeightsDnnlMemDesc, dnnlEngineBwd);
-    gradWeightsDnnlMemInit.set_data_handle(gradWeightsDnnlRaw.get());
+    const detail::DnnlMemoryWrapper gradOutputMem(
+        grad_output.array(), inputOutputDims, formatNCHW);
+    const detail::DnnlMemoryWrapper gradInputMem(
+        grad_input.array(), inputOutputDims, formatNCHW);
+    const detail::DnnlMemoryWrapper gradWeightsMem(
+        grad_weightsDNNL.array(), weightsDnnlDims, format2d);
 
     // Primitives and descriptors
     auto bwdDesc = dnnl::batch_normalization_backward::desc(
         dnnl::prop_kind::backward,
-        gradOutputMemDesc,
+        gradOutputMem.getDescriptor(),
         outputMemDesc,
         epsilon,
         dnnl::normalization_flags::use_scale_shift);
@@ -231,13 +203,13 @@ Variable batchnorm(
     // Execute
     std::vector<dnnl::primitive> networkBackwards;
     std::vector<std::unordered_map<int, dnnl::memory>> bwdArgs = {
-        {{DNNL_ARG_SRC, inputMemInit},
+        {{DNNL_ARG_SRC, inputMemoryBwd},
          {DNNL_ARG_MEAN, meanMemInit},
          {DNNL_ARG_VARIANCE, varMemInit},
          {DNNL_ARG_SCALE_SHIFT, weightsDnnlMemInit},
-         {DNNL_ARG_DIFF_SRC, gradInputMemInit},
-         {DNNL_ARG_DIFF_DST, gradOutputMemInit},
-         {DNNL_ARG_DIFF_SCALE_SHIFT, gradWeightsDnnlMemInit}}};
+         {DNNL_ARG_DIFF_SRC, gradInputMem.getMemory()},
+         {DNNL_ARG_DIFF_DST, gradOutputMem.getMemory()},
+         {DNNL_ARG_DIFF_SCALE_SHIFT, gradWeightsMem.getMemory()}}};
     networkBackwards.push_back(*bwdPrim);
     detail::executeNetwork(networkBackwards, bwdArgs);
 

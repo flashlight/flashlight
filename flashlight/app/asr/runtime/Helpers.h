@@ -23,6 +23,7 @@
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/common/Flags.h"
 #include "flashlight/app/asr/data/ListFileDataset.h"
+#include "flashlight/app/asr/criterion/criterion.h"
 
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
@@ -85,6 +86,7 @@ std::shared_ptr<fl::Dataset> createDataset(
                                                                         -1},
     int worldRank = 0,
     int worldSize = 1,
+    const bool allowEmpty = false,
     const std::string& batchingStrategy = kBatchStrategyNone,
     int maxDurationPerBatch = 0);
 

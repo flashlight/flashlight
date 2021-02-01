@@ -68,7 +68,8 @@ fl::Dataset::DataTransformFunction inputFeatures(
     const lib::audio::FeatureParams& params,
     const FeatureType& featureType,
     const std::pair<int, int>& localNormCtx,
-    const std::vector<sfx::SoundEffectConfig>& sfxConf);
+    const std::vector<sfx::SoundEffectConfig>& sfxConf = {},
+    const int sfxStartUpdate = 0 );
 
 fl::Dataset::DataTransformFunction targetFeatures(
     const lib::text::Dictionary& tokenDict,

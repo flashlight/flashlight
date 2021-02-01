@@ -10,11 +10,13 @@
 #include <string>
 #include <vector>
 
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/distributed/distributed.h"
 
 using namespace fl;
 
 int main() {
+  fl::init();
   distributedInit(
       DistributedInit::MPI,
       -1,

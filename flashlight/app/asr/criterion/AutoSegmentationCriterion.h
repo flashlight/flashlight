@@ -45,12 +45,17 @@ class AutoSegmentationCriterion : public SequenceCriterion {
             fac_.forward(inputs[0], inputs[1])};
   }
 
-  af::array viterbiPath(const af::array& input) override {
+  af::array viterbiPath(
+      const af::array& input,
+      const af::array& inputSize = af::array()) override {
     return fl::app::asr::viterbiPath(input, params_[0].array());
   }
 
-  af::array viterbiPath(const af::array& input, const af::array& target)
-      override {
+  af::array viterbiPathWithTarget(
+      const af::array& input,
+      const af::array& target,
+      const af::array& inputSizes = af::array(),
+      const af::array& targetSizes = af::array()) override {
     return fac_.viterbiPath(input, target);
   }
 

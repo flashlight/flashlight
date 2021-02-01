@@ -10,6 +10,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/common/Logging.h"
 
 using namespace fl;
@@ -137,5 +138,6 @@ TEST(LoggingDeathTest, FatalOnOff) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
   return RUN_ALL_TESTS();
 }

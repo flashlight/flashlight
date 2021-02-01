@@ -21,6 +21,8 @@ using namespace fl::app::asr;
 int main() {
   af::info();
   af::setDevice(1);
+  fl::init();
+
   auto ctc = ConnectionistTemporalClassificationCriterion();
 
   int N = 30, T = 487, L = 34, B = 10;

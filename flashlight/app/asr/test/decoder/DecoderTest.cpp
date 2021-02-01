@@ -17,6 +17,7 @@
 #include "flashlight/app/asr/decoder/Defines.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/decoder/LexiconDecoder.h"
 #include "flashlight/lib/text/decoder/Trie.h"
@@ -191,6 +192,7 @@ TEST(DecoderTest, run) {
 }
 
 int main(int argc, char** argv) {
+  fl::init();
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
   ::testing::InitGoogleTest(&argc, argv);

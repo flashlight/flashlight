@@ -39,7 +39,7 @@ using PreEmphasis = fl::lib::audio::PreEmphasis;
 using TriFilterbank = fl::lib::audio::TriFilterbank;
 using Windowing = fl::lib::audio::Windowing;
 
-PYBIND11_MODULE(_lib_audio_feature, m) {
+PYBIND11_MODULE(flashlight_lib_audio_feature, m) {
   py::enum_<WindowType>(m, "WindowType")
       .value("HAMMING", WindowType::HAMMING)
       .value("HANNING", WindowType::HANNING);

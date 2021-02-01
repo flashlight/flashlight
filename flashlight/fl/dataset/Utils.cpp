@@ -16,7 +16,8 @@ std::vector<int64_t> partitionByRoundRobin(
     int64_t numSamples,
     int64_t partitionId,
     int64_t numPartitions,
-    int64_t batchSz /* = 1 */) {
+    int64_t batchSz /* = 1 */,
+    bool allowEmpty /* = false */) {
   if (partitionId < 0 || partitionId >= numPartitions) {
     throw std::invalid_argument(
         "invalid partitionId, numPartitions for partitionByRoundRobin");
@@ -24,6 +25,9 @@ std::vector<int64_t> partitionByRoundRobin(
   int64_t nSamplesPerGlobalBatch = numPartitions * batchSz;
   int64_t nGlobalBatches = numSamples / nSamplesPerGlobalBatch;
   bool includeLast = (numSamples % nSamplesPerGlobalBatch) >= numPartitions;
+  if (allowEmpty && (numSamples % nSamplesPerGlobalBatch) > 0) {
+    includeLast = true;
+  }
   if (includeLast) {
     ++nGlobalBatches;
   }
@@ -58,7 +62,8 @@ dynamicPartitionByRoundRobin(
     const std::vector<float>& samplesSize,
     int64_t partitionId,
     int64_t numPartitions,
-    int64_t maxSizePerBatch) {
+    int64_t maxSizePerBatch,
+    bool allowEmpty /* = false */) {
   if (partitionId < 0 || partitionId >= numPartitions) {
     throw std::invalid_argument(
         "[dynamicPartitionByRoundRobin] invalid partitionId, numPartitions");
@@ -100,12 +105,17 @@ dynamicPartitionByRoundRobin(
   }
 
   int64_t nGlobalBatches = batchSizes.size() / numPartitions;
+  if (allowEmpty && (batchSizes.size() % numPartitions) > 0) {
+    ++nGlobalBatches;
+  }
   std::vector<int64_t> outSamples, outBatchSizes;
   for (size_t i = 0; i < nGlobalBatches; i++) {
     int index = i * numPartitions + partitionId;
-    outBatchSizes.emplace_back(batchSizes[index]);
-    for (int64_t b = 0; b < batchSizes[index]; ++b) {
-      outSamples.emplace_back(b + batchOffsets[index]);
+    if (index < batchSizes.size()) {
+      outBatchSizes.emplace_back(batchSizes[index]);
+      for (int64_t b = 0; b < batchSizes[index]; ++b) {
+        outSamples.emplace_back(b + batchOffsets[index]);
+      }
     }
   }
   return {outSamples, outBatchSizes};

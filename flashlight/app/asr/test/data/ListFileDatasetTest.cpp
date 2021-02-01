@@ -13,7 +13,7 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/app/asr/data/ListFileDataset.h"
-
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
 
@@ -64,6 +64,7 @@ TEST(ListFileDatasetTest, LoadData) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
 
 // Resolve directory for data
 #ifdef DATA_TEST_DATADIR

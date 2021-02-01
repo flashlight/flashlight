@@ -30,7 +30,7 @@ void Dictionary_addEntry_1(Dictionary& dict, const std::string& entry) {
 
 } // namespace
 
-PYBIND11_MODULE(_lib_text_dictionary, m) {
+PYBIND11_MODULE(flashlight_lib_text_dictionary, m) {
   py::class_<Dictionary>(m, "Dictionary")
       .def(py::init<>())
       .def(py::init<const std::string&>(), "filename"_a)

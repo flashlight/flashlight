@@ -1,12 +1,6 @@
 # Language Modeling
 
-## Build Instructions
-
-Please follow the general Flashlight building instructions in [here](https://github.com/facebookresearch/flashlight/blob/master/docs/source/installation.rst), with `FL_BUILD_APP_LM` option on.
-
-## Usage
-
-### Build Dictionary
+## Build Dictionary
 
 ```
 fl_lm_dictionary_builder \
@@ -21,14 +15,21 @@ fl_lm_dictionary_builder \
 
 Dictionary builder reads all the text files specified in `--data_train` from `--data_dir` and count the total number of tokens and sentences in it, using `--n_workers` threads in parallel. After filtering out the uncommon tokens with `--dictionary_min_appearence` and limiting the dictionary size by `--dictionary_max_size`, dictionary builder will save out a dictionary with tokens and their number of appearance in all the text files into `--dictionary`. If `--write_meta` is on, the meta data of each text file will be generated in `--data_dir` with suffix `.desc`. Meta data describes the beginning position (in byte) of each sentence and the number of tokens in it.
 
-### Train
+Built dictionary will also contain special tokens at the beginning, so you don't need to tweak this dictionary before training.
+- `</s>` - end of sentence
+- `<unk>` - unknown token
+- `<pad>` - pad token
+- `<mask>` - mask token (is needed for BERT training)
+```
 
-#### Training modes
+## Train
+
+### Training modes
 - `train`: Train a model from scratch, and save logs and checkpoints into `exp_rundir/exp_model_name`.
 - `continue`: Continue training an existing model in `exp_rundir/exp_model_name`.
 - `fork`: Training a new model with weights initialized to the one specified in `--FLAGS_exp_init_model_path`.
 
-#### Training tasks
+### Training tasks
 - Auto-regressive training (`--train_task=autoreg`)
 ```
 fl_lm_train \
@@ -40,8 +41,7 @@ fl_lm_train \
   --data_tokens_per_sample=4096 \
   --dictionary=<...>/my_dict.txt \
   --loss_type=ce \
-  --train_arch_dir=<...>/my_archs \
-  --train_arch_file=myarch.txt \
+  --train_arch_file=/path/to/compiled/myarch.so \
   --train_max_grad_norm=0.1 \
   --train_report_updates=1000 \
   --train_save_updates=13000 \
@@ -67,8 +67,7 @@ fl_lm_train \
   --loss_adsm_input_size=1024 \
   --loss_adsm_cutoffs=10000,50000,150000 \
   --train_task=mask
-  --train_arch_dir=<...>/my_archs \
-  --train_arch_file=myarch.txt \
+  --train_arch_file=/path/to/compiled/myarch.so \
   --train_max_grad_norm=0.1 \
   --train_report_updates=1000 \
   --train_save_updates=13000 \
@@ -86,6 +85,6 @@ fl_lm_train \
 A complete list of the flag definitions and short descriptions of their meaning can be found [here](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/lm/Trainer.cpp).
 
 
-### Evaluation
+## Evaluation
 
 Coming soon

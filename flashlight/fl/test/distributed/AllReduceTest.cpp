@@ -13,10 +13,10 @@
 
 #include <gtest/gtest.h>
 
+#include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/distributed/distributed.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
-
-#include "flashlight/fl/distributed/distributed.h"
 
 using namespace fl;
 
@@ -179,6 +179,7 @@ TEST(Distributed, CoalescingReducer) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
 
   try {
     distributedInit(

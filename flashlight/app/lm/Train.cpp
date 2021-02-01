@@ -12,8 +12,10 @@ using namespace fl::lib;
 using namespace fl::app::lm;
 
 int main(int argc, char** argv) {
+  fl::init();
   /* Parse or load persistent states */
   gflags::ParseCommandLineFlags(&argc, &argv, false);
+
   if (FLAGS_distributed_enable) {
     initDistributed(
         FLAGS_distributed_world_rank,

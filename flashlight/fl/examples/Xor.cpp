@@ -13,6 +13,7 @@
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
 
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/nn/nn.h"
 #include "flashlight/fl/optim/optim.h"
 
@@ -28,6 +29,7 @@ int main(int argc, const char** argv) {
     std::cerr << "usage: " << argv[0] << " [--adam | --rmsprop]\n";
     return 1;
   }
+  fl::init();
 
   int optim_mode = 0;
   std::string optimizer_arg = std::string(argv[1]);
