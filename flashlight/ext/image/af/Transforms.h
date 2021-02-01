@@ -74,8 +74,7 @@ ImageTransform randomEraseTransform(
 
 /* Randon Augmentation */
 ImageTransform randomAugmentationTransform(
-    const float p = 0.5,
-    const int repeat = 1);
+    const float p = 0.5);
 
 } // namespace image
 } // namespace ext

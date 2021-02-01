@@ -153,6 +153,10 @@ af::array oneHot(const af::array& targets, int C) {
   return out;
 }
 
+bool isBadArray(const af::array& arr) {
+  return af::anyTrue<bool>(af::isNaN(arr)) || af::anyTrue<bool>(af::isInf(arr));
+}
+
 int main(int argc, char** argv) {
   fl::init();
   google::InitGoogleLogging(argv[0]);
@@ -166,7 +170,6 @@ int main(int argc, char** argv) {
   /////////////////////////
   // Setup distributed training
   ////////////////////////
-  af::info();
   if (FLAGS_distributed_enable) {
     fl::ext::initDistributed(
         FLAGS_distributed_world_rank,
@@ -174,6 +177,7 @@ int main(int argc, char** argv) {
         FLAGS_distributed_max_devices_per_node,
         FLAGS_distributed_rndv_filepath);
   }
+  af::info();
   const int worldRank = fl::getWorldRank();
   const int worldSize = fl::getWorldSize();
   const bool isMaster = (worldRank == 0);
@@ -197,17 +201,16 @@ int main(int argc, char** argv) {
   // TransformDataset will apply each transform in a vector to the respective
   // af::array. Thus, we need to `compose` all of the transforms so are each
   // applied only to the image
-  ImageTransform trainTransforms = compose({
-      // randomly resize shortest side of image between 256 to 480 for
-      // scale invariance
-      fl::ext::image::randomResizeTransform(randomResizeMin, randomResizeMax),
-      fl::ext::image::randomCropTransform(randomCropSize, randomCropSize)
-      //  fl::ext::image::randomAugmentationTransform(FLAGS_train_p_randomeaug),
-      //  fl::ext::image::randomEraseTransform(FLAGS_train_p_randomerase),
-      //  fl::ext::image::normalizeImage(mean, std),
-      // Randomly flip image with probability of 0.5
-      //  fl::ext::image::randomHorizontalFlipTransform(horizontalFlipProb)
-  });
+  ImageTransform trainTransforms = compose(
+      {// randomly resize shortest side of image between 256 to 480 for
+       // scale invariance
+       fl::ext::image::randomResizeTransform(randomResizeMin, randomResizeMax),
+       fl::ext::image::randomCropTransform(randomCropSize, randomCropSize),
+       fl::ext::image::randomAugmentationTransform(FLAGS_train_p_randomeaug),
+       fl::ext::image::randomEraseTransform(FLAGS_train_p_randomerase),
+       fl::ext::image::normalizeImage(mean, std),
+       // Randomly flip image with probability of 0.5
+       fl::ext::image::randomHorizontalFlipTransform(horizontalFlipProb)});
   ImageTransform valTransforms =
       compose({// Resize shortest side to 256, then take a center crop
                fl::ext::image::resizeTransform(randomResizeMin),
@@ -216,7 +219,7 @@ int main(int argc, char** argv) {
 
   const int64_t batchSizePerGpu = FLAGS_data_batch_size;
   const int64_t prefetchThreads = 10;
-  const int64_t prefetchSize = 50;
+  const int64_t prefetchSize = FLAGS_data_batch_size * 2;
   auto labelMap = getImagenetLabels(labelPath);
   auto trainDataset = std::make_shared<fl::ext::image::DistributedDataset>(
       imagenetDataset(trainList, labelMap, {trainTransforms}),
@@ -254,10 +257,7 @@ int main(int argc, char** argv) {
   // synchronize parameters of the model so that the parameters in each process
   // is the same
   fl::allReduceParameters(model);
-
-  // Add a hook to synchronize gradients of model parameters as they are
-  // computed
-  fl::distributeModuleGrads(model, reducer);
+  // fl::distributeModuleGrads(model, reducer);
 
   auto opt = AdamOptimizer(
       model->params(),
@@ -310,9 +310,7 @@ int main(int argc, char** argv) {
     // Only set the optim mode to O1 if it was left empty
     LOG(INFO) << "Mixed precision training enabled. Will perform loss scaling.";
     if (FLAGS_fl_optim_mode.empty()) {
-      LOG(INFO) << "Mixed precision training enabled with no "
-                   "optim mode specified - setting optim mode to O1.";
-      fl::OptimMode::get().setOptimLevel(fl::OptimLevel::O1);
+      fl::OptimMode::get().setOptimLevel(fl::OptimLevel::DEFAULT);
     }
   }
   unsigned short scaleCounter = 1;
@@ -342,25 +340,18 @@ int main(int argc, char** argv) {
       Variable loss;
       sampleTimerMeter.resume();
       auto sample = trainDataset->get(idx);
-      auto rawInput = sample[kImagenetInputIdx].as(f16);
+      auto rawInput = sample[kImagenetInputIdx];
+      if (FLAGS_fl_amp_use_mixed_precision) {
+        rawInput = rawInput.as(f16);
+      }
       auto rawInput1 = af::flip(rawInput, 3);
       rawInput1.eval();
+      auto rawTarget = sample[kImagenetTargetIdx];
+      auto rawTarget1 = af::flip(rawTarget, 0);
+      rawTarget1.eval();
+
       lrScheduler(epoch, batchIdx++);
       opt.zeroGrad();
-
-      // while (1) {
-      //   Variable inputs = noGrad(rawInput);
-      //   auto rawTarget = sample[kImagenetTargetIdx];
-      //   rawInput1.eval();
-      //   auto target = noGrad(oneHot(rawTarget, 1000));
-      //   auto output = model->forward({inputs}).front();
-      //   loss = fl::mean(fl::sum(fl::negate(target * output), {0}), {1});
-      //   loss.backward();
-      //   if (FLAGS_train_maxgradnorm > 0) {
-      //     fl::clipGradNorm(model->params(), FLAGS_train_maxgradnorm);
-      //   }
-      //   opt.step();
-      // }
 
       // Make a Variable from the input array.
       Variable inputs = noGrad(rawInput);
@@ -408,6 +399,7 @@ int main(int argc, char** argv) {
       }
       inputs.eval();
       rawInput1 = af::array();
+      af::sync();
       sampleTimerMeter.stopAndIncUnit();
 
       bool retrySample = false;
@@ -420,10 +412,6 @@ int main(int argc, char** argv) {
         // Make a Variable from the target array.
         // Compute and record the loss + label smoothing
         critFwdTimeMeter.resume();
-        auto rawTarget = sample[kImagenetTargetIdx];
-        auto rawTarget1 = af::flip(rawTarget, 0);
-        rawInput1.eval();
-
         auto target = oneHot(rawTarget, 1000);
         auto target1 = oneHot(rawTarget1, 1000);
 
@@ -437,66 +425,76 @@ int main(int argc, char** argv) {
           loss = loss * scaleFactor;
         }
 
-        if (af::anyTrue<bool>(af::isNaN(loss.array())) ||
-            af::anyTrue<bool>(af::isInf(loss.array()))) {
-          if (FLAGS_fl_amp_use_mixed_precision &&
-              scaleFactor >= fl::kAmpMinimumScaleFactorValue) {
-            scaleFactor = scaleFactor / 2.0f;
-            FL_VLOG(2) << "AMP: Scale factor decreased. New value:\t"
-                       << scaleFactor;
-            scaleCounter = 1;
-            retrySample = true;
-            continue;
-          }
+        if (isBadArray(loss.array())) {
+          FL_LOG(FATAL) << "Loss has NaN values, in proc: "
+                        << fl::getWorldRank();
         }
+        af::sync();
+        fwdTimeMeter.stopAndIncUnit();
+        critFwdTimeMeter.stopAndIncUnit();
 
         // Backprop, update the weights and then zero the gradients.
         bwdTimeMeter.resume();
         loss.backward();
-        bwdTimeMeter.stopAndIncUnit();
 
-        optimTimeMeter.resume();
         if (FLAGS_distributed_enable) {
           for (auto& p : model->params()) {
             if (!p.isGradAvailable()) {
               p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
             }
-            auto& grad = p.grad().array();
-            p.grad().array() = grad;
+            if (isBadArray(p.grad().array())) {
+              FL_LOG(INFO) << "Grad has NaN values in 1, in proc: "
+                           << fl::getWorldRank();
+            }
+            p.grad() = p.grad() / scaleFactor;
+            if (isBadArray(p.grad().array())) {
+              FL_LOG(INFO) << "Grad has NaN values in 2, in proc: "
+                           << fl::getWorldRank();
+            }
             reducer->add(p.grad());
           }
           reducer->finalize();
         }
+        af::sync();
+        bwdTimeMeter.stopAndIncUnit();
 
+        optimTimeMeter.resume();
         for (auto& p : model->params()) {
           if (!p.isGradAvailable()) {
-            continue;
+            p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
           }
-          p.grad() = p.grad() / scaleFactor;
-          if (FLAGS_fl_amp_use_mixed_precision) {
-            if (af::anyTrue<bool>(af::isNaN(p.grad().array())) ||
-                af::anyTrue<bool>(af::isInf(p.grad().array()))) {
-              if (scaleFactor >= fl::kAmpMinimumScaleFactorValue) {
-                scaleFactor = scaleFactor / 2.0f;
-                FL_VLOG(2) << "AMP: Scale factor decreased. New value:\t"
+          // p.grad() = p.grad() / scaleFactor;
+          if (FLAGS_fl_amp_use_mixed_precision &&
+              isBadArray(p.grad().array())) {
+            FL_LOG(INFO) << "Grad has NaN values in 3, in proc: "
+                         << fl::getWorldRank();
+            if (scaleFactor >= fl::kAmpMinimumScaleFactorValue) {
+              scaleFactor = scaleFactor / 2.0f;
+              FL_LOG(INFO) << "AMP: Scale factor decreased (grad). New value:\t"
                            << scaleFactor;
-                retrySample = true;
-              }
-              scaleCounter = 1;
-              break;
+              retrySample = true;
+            } else {
+              FL_LOG(FATAL)
+                  << "Minimum loss scale reached: "
+                  << fl::kAmpMinimumScaleFactorValue
+                  << " with over/underflowing gradients. Lowering the "
+                  << "learning rate, using gradient clipping, or "
+                  << "increasing the batch size can help resolve "
+                  << "loss explosion.";
             }
+            scaleCounter = 1;
+            break;
           }
         }
         if (retrySample) {
           optimTimeMeter.stop();
+          opt.zeroGrad();
           continue;
         }
 
         top5Acc.add(output.array(), rawTarget);
         top1Acc.add(output.array(), rawTarget);
-        trainLossMeter.add(loss.array());
-        fwdTimeMeter.stopAndIncUnit();
-        critFwdTimeMeter.stopAndIncUnit();
+        trainLossMeter.add(loss.array() / scaleFactor);
       } while (retrySample);
 
       // clamp gradients
@@ -519,7 +517,8 @@ int main(int argc, char** argv) {
             (idx + 1) * FLAGS_data_batch_size * worldSize / time;
         FL_LOG_MASTER(INFO)
             << "Epoch " << epoch << std::setprecision(5) << " Batch: " << idx
-            << " Throughput " << samplePerSecond << " | "
+            << " Throughput " << samplePerSecond << " | : Batch time(ms): "
+            << fl::lib::format("%.2f", time / idx * 1000)
             << " : Sample Time(ms): "
             << fl::lib::format("%.2f", sampleTimerMeter.value() * 1000)
             << " : Forward Time(ms): "
@@ -540,27 +539,6 @@ int main(int argc, char** argv) {
       }
     }
     timeMeter.stop();
-
-    // Compute and record the prediction error.
-    // double trainLoss = trainLossMeter.value()[0];
-    // timeMeter.stop();
-    // fl::ext::syncMeter(trainLossMeter);
-    // fl::ext::syncMeter(timeMeter);
-    // fl::ext::syncMeter(top5Acc);
-    // fl::ext::syncMeter(top1Acc);
-    // double time = timeMeter.value();
-    // double samplePerSecond =
-    //     (trainDataset->size() * FLAGS_data_batch_size * worldSize) / time;
-    // FL_LOG_MASTER(INFO) << "Epoch " << epoch << std::setprecision(5)
-    //                     << " Batch: " << trainDataset->size()
-    //                     << " Samples per second " << samplePerSecond
-    //                     << ": LR: " << opt.getLr()
-    //                     << ": Avg Train Loss: " << trainLoss
-    //                     << ": Train Top5 Accuracy( %): " << top5Acc.value()
-    //                     << ": Train Top1 Accuracy( %): " << top1Acc.value();
-    // top5Acc.reset();
-    // top1Acc.reset();
-    // trainLossMeter.reset();
     timeMeter.reset();
     sampleTimerMeter.reset();
     fwdTimeMeter.reset();
