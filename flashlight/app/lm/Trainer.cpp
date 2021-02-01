@@ -291,7 +291,7 @@ void Trainer::trainStep() {
   fl::Variable input, target;
   sampleTimerMeter_.resume();
   std::tie(input, target) = getInputAndTarget(trainDataset_->get(batchIdx_));
-  af::array inputSizes = af::flat(af::sum(input.array() != kPadIdx_, 0));
+  af::array inputSizes = af::sum(input.array() != kPadIdx_, 0);
   sampleTimerMeter_.stopAndIncUnit();
 
   // 2. Forward
@@ -340,7 +340,7 @@ void Trainer::evalStep() {
   for (const auto& sample : *validDataset_) {
     fl::Variable input, target;
     std::tie(input, target) = getInputAndTarget(sample);
-    af::array inputSizes = af::flat(af::sum(input.array() != kPadIdx_, 0));
+    af::array inputSizes = af::sum(input.array() != kPadIdx_, 0);
     auto output = network_->forward({input, fl::noGrad(inputSizes)}).front();
     auto loss = criterion_->forward({output, target}).front();
     auto numTokens = af::count<int>(target.array() != kPadIdx_);
@@ -603,12 +603,15 @@ std::pair<fl::Variable, fl::Variable> Trainer::getInputAndTarget(
     if (af::sum(randMask).scalar<unsigned int>() > 0) {
       // exclude 4 special tokens from the consideration: pad, eos, unk and
       // mask
-      int nSpecialTokens = 4;
-      inputMasked(randMask) =
-          (af::randu(af::sum(randMask).scalar<unsigned int>()) *
-               (dictionary_.entrySize() - nSpecialTokens - 1) +
-           nSpecialTokens)
+      auto specialTokens = {kPadIdx_, kEosIdx_, kUnkIdx_, kMaskIdx_};
+      auto randVals = (af::randu(af::sum(randMask).scalar<unsigned int>()) *
+           (dictionary_.entrySize() - 1 - specialTokens.size()))
               .as(s32);
+      for (auto specialVal : specialTokens) {
+        auto specialMask = randVals >= specialVal;
+        randVals(specialMask) = randVals(specialMask) + 1;
+      }
+      inputMasked(randMask) = randVals;
     }
     // fix position where it was pad index to be pad
     inputMasked(af::flat(sample[0] == kPadIdx_)) = kPadIdx_;
