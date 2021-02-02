@@ -166,6 +166,7 @@ void MemoryManagerAdapter::log(std::string fname, Values... vs) {
     // Decide whether or not to flush
     if (logStreamBufferSize_ == logFlushInterval_) {
       *logStream_ << logStreamBuffer_.str();
+      logStreamBuffer_.str(""); // clear the log buffer.
       logStreamBufferSize_ = 0;
     }
   }
