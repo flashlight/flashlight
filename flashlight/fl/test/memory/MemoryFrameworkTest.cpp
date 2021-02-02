@@ -117,7 +117,10 @@ class TestMemoryManager : public MemoryManagerAdapter {
     }
   }
 
-  void printInfo(const char* msg, const int device) override {}
+  void printInfo(
+      const char* msg,
+      const int device,
+      std::ostream* sink = &std::cout) override {}
 
   void userLock(const void* cPtr) override {
     void* ptr = const_cast<void*>(cPtr);
@@ -212,10 +215,11 @@ class MockTestMemoryManager : public TestMemoryManager {
     ON_CALL(*this, signalMemoryCleanup()).WillByDefault(Invoke([this]() {
       real_->signalMemoryCleanup();
     }));
-    ON_CALL(*this, printInfo(_, _))
-        .WillByDefault(Invoke([this](const char* msg, const int device) {
-          real_->printInfo(msg, device);
-        }));
+    ON_CALL(*this, printInfo(_, _, _))
+        .WillByDefault(Invoke(
+            [this](const char* msg, const int device, std::ostream* sink) {
+              real_->printInfo(msg, device);
+            }));
     ON_CALL(*this, userLock(_)).WillByDefault(Invoke([this](const void* cPtr) {
       real_->userLock(cPtr);
     }));
@@ -240,7 +244,7 @@ class MockTestMemoryManager : public TestMemoryManager {
   MOCK_METHOD1(allocated, size_t(void*));
   MOCK_METHOD2(unlock, void(void*, bool));
   MOCK_METHOD0(signalMemoryCleanup, void());
-  MOCK_METHOD2(printInfo, void(const char*, const int));
+  MOCK_METHOD3(printInfo, void(const char*, const int, std::ostream*));
   MOCK_METHOD1(userLock, void(const void*));
   MOCK_METHOD1(userUnlock, void(const void*));
   MOCK_METHOD1(isUserLocked, bool(const void*));
@@ -370,7 +374,8 @@ TEST(MemoryFramework, AdapterInstallerDeviceInterfaceTest) {
     const std::string printInfoMsg = "testPrintInfo";
     int printInfoDeviceId = 0;
     EXPECT_CALL(
-        *mockMemoryManager, printInfo(printInfoMsg.c_str(), printInfoDeviceId))
+        *mockMemoryManager,
+        printInfo(printInfoMsg.c_str(), printInfoDeviceId, _))
         .Times(Exactly(1));
     af::printMemInfo(printInfoMsg.c_str(), printInfoDeviceId);
 
@@ -400,19 +405,18 @@ TEST(MemoryFramework, AdapterInstallerDeviceInterfaceTest) {
   }
   // The custom memory is destroyed; check that the log stream, which is flushed
   // on destruction, contains the correct output
-  std::vector<std::string> expectedLinePrefixes = {
-      "initialize",
-      "nativeAlloc",
-      "alloc",
-      "nativeAlloc",
-      "alloc",
-      "unlock",
-      "unlock",
-      "signalMemoryCleanup",
-      "nativeFree",
-      "nativeFree",
-      "shutdown",
-      "shutdown"};
+  std::vector<std::string> expectedLinePrefixes = {"initialize",
+                                                   "nativeAlloc",
+                                                   "alloc",
+                                                   "nativeAlloc",
+                                                   "alloc",
+                                                   "unlock",
+                                                   "unlock",
+                                                   "signalMemoryCleanup",
+                                                   "nativeFree",
+                                                   "nativeFree",
+                                                   "shutdown",
+                                                   "shutdown"};
   size_t idx = 0;
   for (std::string line; std::getline(logStream, line);) {
     EXPECT_EQ(line.substr(0, line.find(" ")), expectedLinePrefixes[idx]);

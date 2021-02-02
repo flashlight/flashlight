@@ -287,7 +287,10 @@ bool DefaultMemoryManager::jitTreeExceedsMemoryPressure(size_t bytes) {
   return 2 * bytes > current.lockBytes;
 }
 
-void DefaultMemoryManager::printInfo(const char* msg, const int device) {
+void DefaultMemoryManager::printInfo(
+    const char* msg,
+    const int device,
+    std::ostream* sink /*=&std::cout  unused*/) {
   const MemoryInfo& current = this->getCurrentMemoryInfo();
 
   printf("%s\n", msg);

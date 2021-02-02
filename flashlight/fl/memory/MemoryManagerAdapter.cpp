@@ -10,9 +10,78 @@
 #include <stdexcept>
 #include <utility>
 
+#include "flashlight/fl/common/Logging.h"
 #include "flashlight/fl/common/Utils.h"
 
 namespace fl {
+
+const size_t MemoryManagerAdapter::kDefaultLogFlushInterval;
+const size_t MemoryManagerAdapter::kLogStatsMask;
+const size_t MemoryManagerAdapter::kLogEveryOperationMask;
+
+namespace {
+
+constexpr const char* kMemLogFile = "FL_MEM_LOG_FILE";
+constexpr const char* kMemLogFlushInterval = "FL_MEM_LOG_FLUSH_INTERVAL";
+constexpr const char* kMemLogStats = "FL_MEM_LOG_STATS";
+constexpr const char* kMemLogEveryOperation = "FL_MEM_LOG_OPS";
+
+/**
+ * Return the value of the named environment variable interprested as unsigend
+ * long integer. Return the defaultVal on failure to read the environment
+ * variable as an integer.
+ */
+size_t getEnvAsSize(const char* name, size_t defaultVal) {
+  const char* env = std::getenv(name);
+  if (env) {
+    try {
+      return std::stoul(env);
+    } catch (std::exception& ex) {
+      FL_LOG(fl::ERROR) << "Invalid environment variable=" << name
+                        << " value=" << env;
+    }
+  }
+  return defaultVal;
+}
+
+/**
+ * Return true when the named environment variable is read as non zero integer.
+ * Return false when the value is zero. Return the defaultVal on failure to read
+ * the environment variable as an integer.
+ */
+bool getEnvAsBool(const char* name, bool defaultVal) {
+  return getEnvAsSize(name, defaultVal ? 1 : 0) != 0;
+}
+
+std::unique_ptr<std::ofstream> logFile;
+} // namespace
+
+void MemoryManagerAdapter::configFromEnvironmentVariables() {
+  const char* filename = std::getenv(kMemLogFile);
+  if (filename) {
+    logFile = std::make_unique<std::ofstream>(filename);
+    if (logFile && *logFile) {
+      setLogFlushInterval(getEnvAsSize(
+          kMemLogFlushInterval,
+          MemoryManagerAdapter::kDefaultLogFlushInterval));
+      size_t enableMask = 0;
+      if (getEnvAsBool(kMemLogStats, false)) {
+        enableMask |= MemoryManagerAdapter::kLogStatsMask;
+      }
+      if (getEnvAsBool(kMemLogEveryOperation, false)) {
+        enableMask |= MemoryManagerAdapter::kLogEveryOperationMask;
+      }
+      setLoggingEnabled(enableMask);
+      setLogStream(logFile.get());
+
+      FL_LOG(fl::INFO) << "MemoryManagerAdapter log filename=" << filename
+                       << " enableMask=" << enableMask;
+
+    } else {
+      FL_LOG(fl::ERROR) << "Failed to open memory log file=" << filename;
+    }
+  }
+}
 
 MemoryManagerAdapter::MemoryManagerAdapter(
     std::shared_ptr<MemoryManagerDeviceInterface> itf,
@@ -25,6 +94,8 @@ MemoryManagerAdapter::MemoryManagerAdapter(
   }
   if (logStream_) {
     loggingEnabled_ = true;
+  } else {
+    configFromEnvironmentVariables();
   }
 
   // Create handle and set payload to point to this instance
@@ -34,7 +105,7 @@ MemoryManagerAdapter::MemoryManagerAdapter(
 
 MemoryManagerAdapter::~MemoryManagerAdapter() {
   // Flush the log buffer and log stream
-  if (logStream_) {
+  if (logStream_ && *logStream_) {
     *logStream_ << logStreamBuffer_.str();
     logStream_->flush();
   }
@@ -45,10 +116,11 @@ MemoryManagerAdapter::~MemoryManagerAdapter() {
 }
 
 void MemoryManagerAdapter::setLogStream(std::ostream* logStream) {
+  std::cout << "setLogStream(logStream= " << logStream << ")" << std::endl;
   logStream_ = logStream;
 }
 
-void MemoryManagerAdapter::setLoggingEnabled(bool log) {
+void MemoryManagerAdapter::setLoggingEnabled(size_t log) {
   loggingEnabled_ = log;
 }
 

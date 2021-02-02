@@ -96,7 +96,9 @@ MemoryManagerInstaller::MemoryManagerInstaller(
   AF_CHECK(af_memory_manager_set_allocated_fn(itf, allocatedFn));
   auto unlockFn = [](af_memory_manager manager, void* ptr, int userLock) {
     MemoryManagerAdapter* m = MemoryManagerInstaller::getImpl(manager);
-    m->log("unlock", (std::uintptr_t)ptr, userLock);
+    if (ptr) {
+      m->log("unlock", (std::uintptr_t)ptr, userLock);
+    }
     m->unlock(ptr, (bool)userLock);
     return AF_SUCCESS;
   };

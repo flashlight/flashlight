@@ -20,6 +20,7 @@
 #include "flashlight/fl/memory/MemoryManagerDeviceInterface.h"
 
 namespace fl {
+constexpr size_t kMaxAllocSize2Pwr = 31;
 
 /**
  * Reimplementation of CudaCachingAllocator from Torch adapted for flashlight
@@ -42,7 +43,10 @@ class CachingMemoryManager : public MemoryManagerAdapter {
       const unsigned elSize) override;
   size_t allocated(void* ptr) override;
   void unlock(void* ptr, bool userLock) override;
-  void printInfo(const char* msg, const int device) override;
+  void printInfo(
+      const char* msg,
+      const int device,
+      std::ostream* sink = &std::cout) override;
   void userLock(const void* ptr) override;
   void userUnlock(const void* ptr) override;
   bool isUserLocked(const void* ptr) override;
@@ -51,13 +55,15 @@ class CachingMemoryManager : public MemoryManagerAdapter {
   bool jitTreeExceedsMemoryPressure(size_t bytes) override;
   void addMemoryManagement(int device) override;
   void removeMemoryManagement(int device) override;
-  // Set runtime options: RecyclingSizeLimit, SplitSizeLimit, ... Warning: not thread safe
+  // Set runtime options: RecyclingSizeLimit, SplitSizeLimit, ... Warning: not
+  // thread safe
   void setRecyclingSizeLimit(size_t);
   void setSplitSizeLimit(size_t);
 
   // Block denotes a single allocated unit of memory.
   struct Block {
     size_t size_; // size of block in bytes
+    size_t useSize_;
     void* ptr_; // memory address
     bool managerLock_; //  whether the memory is locked by the memory manager
     bool userLock_; // whether the memory is locked by the user
@@ -74,6 +80,7 @@ class CachingMemoryManager : public MemoryManagerAdapter {
 
     explicit Block(size_t size, void* ptr = nullptr)
         : size_(size),
+          useSize_(0),
           ptr_(ptr),
           managerLock_(false),
           userLock_(false),
@@ -87,15 +94,31 @@ class CachingMemoryManager : public MemoryManagerAdapter {
   // A structure to store allocation stats per device.
   struct MemoryAllocationStats {
     size_t totalNativeMallocs_;
+    size_t totalNativeMallocsRecentLogging_;
     size_t totalNativeFrees_;
     size_t allocatedBytes_; // memory allocated by mem manager for the program
     size_t cachedBytes_; // memory held by mem manager & not used by the program
+    // sum of the memory used by the caller.
+    size_t useAllocatedBytes_;
+    std::unordered_map<void*, size_t> nativeAllocated_;
+    std::vector<size_t> totalUseAllocatedBytesHist_;
+    std::vector<size_t> curUseAllocatedBytesHist_;
+    size_t largestContiguousCuda_;
+    size_t gpuMemSize_;
+    size_t gpuMemMask_;
 
     MemoryAllocationStats()
         : totalNativeMallocs_(0),
+          totalNativeMallocsRecentLogging_(0),
           totalNativeFrees_(0),
           allocatedBytes_(0),
-          cachedBytes_(0) {}
+          cachedBytes_(0),
+          useAllocatedBytes_(0),
+          totalUseAllocatedBytesHist_(kMaxAllocSize2Pwr, 0),
+          curUseAllocatedBytesHist_(kMaxAllocSize2Pwr, 0),
+          largestContiguousCuda_(0),
+          gpuMemSize_(0),
+          gpuMemMask_(0) {}
   };
 
   // Stores the mutex and misc variables per device so that we operate in a
@@ -145,7 +168,7 @@ class CachingMemoryManager : public MemoryManagerAdapter {
   // manager. Prevents to recycle some buffers, to be set by the user if
   // desired:
   size_t recyclingSizeLimit_{std::numeric_limits<size_t>::max()};
-  //size_t recyclingSizeLimit;
+  // size_t recyclingSizeLimit;
   // Prevents to split big buffers, to be set by the user if desired:
   size_t splitSizeLimit_{std::numeric_limits<size_t>::max()};
 };

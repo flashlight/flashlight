@@ -92,7 +92,10 @@ class DefaultMemoryManager : public MemoryManagerAdapter {
       const unsigned elSize) override;
   size_t allocated(void* ptr) override;
   void unlock(void* ptr, bool userLock) override;
-  void printInfo(const char* msg, const int device) override;
+  void printInfo(
+      const char* msg,
+      const int device,
+      std::ostream* sink = &std::cout /*unused*/) override;
   void userLock(const void* ptr) override;
   void userUnlock(const void* ptr) override;
   bool isUserLocked(const void* ptr) override;

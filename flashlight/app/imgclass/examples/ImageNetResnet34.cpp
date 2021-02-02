@@ -54,7 +54,8 @@ using fl::ext::image::compose;
 using fl::ext::image::ImageTransform;
 using namespace fl::app::imgclass;
 
-#define FL_LOG_MASTER(lvl) LOG_IF(lvl, (fl::getWorldRank() == 0))
+// #define FL_LOG_MASTER(lvl) LOG_IF(lvl, (fl::getWorldRank() == 0))
+#define FL_LOG_MASTER(lvl) LOG(lvl)
 
 // Returns the average loss, top 5 error, and top 1 error
 std::tuple<double, double, double> evalLoop(

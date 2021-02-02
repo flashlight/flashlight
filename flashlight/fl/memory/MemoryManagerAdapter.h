@@ -11,6 +11,7 @@
 
 #include <fstream>
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <sstream>
 #include <stdexcept>
@@ -19,12 +20,6 @@
 #include "flashlight/fl/memory/MemoryManagerDeviceInterface.h"
 
 namespace fl {
-
-namespace {
-
-const size_t kDefaultLogFlushInterval = 50;
-
-} // namespace
 
 /**
  * An interface for defining memory managers purely in C++.
@@ -49,6 +44,10 @@ const size_t kDefaultLogFlushInterval = 50;
  */
 class MemoryManagerAdapter {
  public:
+  static const size_t kDefaultLogFlushInterval = 50;
+  static const size_t kLogStatsMask = 0x1;
+  static const size_t kLogEveryOperationMask = 0x2;
+
   /**
    * Constructs a MemoryManagerAdapter.
    *
@@ -78,7 +77,10 @@ class MemoryManagerAdapter {
   virtual size_t allocated(void* ptr) = 0;
   virtual void unlock(void* ptr, bool userLock) = 0;
   virtual void signalMemoryCleanup() = 0;
-  virtual void printInfo(const char* msg, const int device) = 0;
+  virtual void printInfo(
+      const char* msg,
+      const int device,
+      std::ostream* sink = &std::cout) = 0;
   virtual void userLock(const void* ptr) = 0;
   virtual void userUnlock(const void* ptr) = 0;
   virtual bool isUserLocked(const void* ptr) = 0;
@@ -110,13 +112,14 @@ class MemoryManagerAdapter {
   void setLogStream(std::ostream* logStream);
 
   /**
-   * Sets the logging mode for the memory manager base. If disabled, no logs are
-   * written. If enabled, all function calls to virtual base class methods are
-   * logged.
+   * Sets the logging mask for the memory manager base. If disabled, no logs are
+   * written
+   * mask & 0x1: logs stats.
+   * mask & 0x2: logs all function calls to virtual base class methods.
    *
    * @param[in] log bool determinig whether logging is enabled.
    */
-  void setLoggingEnabled(bool log);
+  void setLoggingEnabled(size_t mask);
 
   /**
    * Sets a number of lines after which the adapter's temporary logging buffer
@@ -134,6 +137,8 @@ class MemoryManagerAdapter {
    */
   af_memory_manager getHandle() const;
 
+  void configFromEnvironmentVariables();
+
   // Native and device memory management functions
   const std::shared_ptr<MemoryManagerDeviceInterface> deviceInterface;
 
@@ -142,31 +147,39 @@ class MemoryManagerAdapter {
   af_memory_manager interface_;
 
  private:
-  // Logging components
-  bool loggingEnabled_{false};
+  // Mask for logging: summary (mask 0x1), details (mask 0x2)
+  size_t loggingEnabled_{0};
   std::ostream* logStream_;
   std::stringstream logStreamBuffer_;
-  size_t logStreamBufferSize_{0}; // in number of lines
+  size_t logsSinceFlush_{0};
   size_t logFlushInterval_{kDefaultLogFlushInterval};
 };
 
 template <typename... Values>
 void MemoryManagerAdapter::log(std::string fname, Values... vs) {
-  if (loggingEnabled_) {
+  if (loggingEnabled_ & (kLogStatsMask | kLogEveryOperationMask)) {
     if (!logStream_) {
       throw std::runtime_error(
           "MemoryManagerAdapter::log: cannot write to logStream_"
           " - stream is invalid or uninitialized");
     }
-    logStreamBuffer_ << fname << " ";
-    int unpack[]{0, (logStreamBuffer_ << std::to_string(vs) << " ", 0)...};
-    static_cast<void>(unpack);
-    logStreamBuffer_ << '\n';
-    logStreamBufferSize_++;
+    if (loggingEnabled_ & kLogEveryOperationMask) {
+      logStreamBuffer_ << fname << " ";
+      int unpack[]{0, (logStreamBuffer_ << std::to_string(vs) << " ", 0)...};
+      static_cast<void>(unpack);
+      logStreamBuffer_ << '\n';
+    }
     // Decide whether or not to flush
-    if (logStreamBufferSize_ == logFlushInterval_) {
+    logsSinceFlush_++;
+    if (logsSinceFlush_ >= logFlushInterval_) {
+      if (loggingEnabled_ & kLogStatsMask) {
+        printInfo("stats", 0 /* device id */, logStream_);
+      }
       *logStream_ << logStreamBuffer_.str();
-      logStreamBufferSize_ = 0;
+      logStream_->flush();
+      // std::cout <<  logStreamBuffer_.str();
+      logStreamBuffer_.str(""); // empty the stream.
+      logsSinceFlush_ = 0;
     }
   }
 }

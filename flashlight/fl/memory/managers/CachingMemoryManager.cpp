@@ -8,15 +8,22 @@
 #include "flashlight/fl/memory/managers/CachingMemoryManager.h"
 #include <arrayfire.h> // Needed for af exception
 
+#include <limits.h>
+#include <math.h>
 #include <algorithm>
+#include <iomanip>
 #include <iostream>
 #include <limits>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <numeric>
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+#include <flashlight/fl/common/CudaUtils.h>
+#include "flashlight/fl/common/Logging.h"
 
 namespace fl {
 
@@ -32,6 +39,24 @@ constexpr size_t kLargeBuffer =
 constexpr size_t kMinLargeAlloc =
     10485760; // allocations between 1 and 10 MiB may use kLargeBuffer
 constexpr size_t kRoundLarge = 2097152; // round up large allocs to 2 MiB
+
+// Environment variables names, specifying number of mega bytes as floats.
+constexpr const char* kMemRecyclingSize = "FL_MEM_RECYCLING_SIZE_MB";
+constexpr const char* kMemSplitSize = "FL_MEM_SPLIT_SIZE_MB";
+constexpr double kMB = static_cast<double>(1UL << 20);
+
+unsigned int log2int(unsigned int val) {
+  if (val == 0)
+    return UINT_MAX;
+  if (val == 1)
+    return 0;
+  unsigned int ret = 0;
+  while (val > 1) {
+    val >>= 1;
+    ret++;
+  }
+  return ret;
+}
 
 size_t roundSize(size_t size) {
   if (size < kMinBlockSize) {
@@ -70,6 +95,42 @@ std::string formatMemory(size_t bytes) {
   return bytesStr + " " + units[unitId];
 }
 
+std::string formatPercentOf(size_t numerator, size_t denominator) {
+  if (numerator == 0) {
+    return "0";
+  }
+  if (denominator == 0) {
+    return "100";
+  }
+  const double precent =
+      (1.0 -
+       (static_cast<double>(numerator) / static_cast<double>(denominator))) *
+      100.0;
+  std::stringstream ss;
+  // ss << std::setprecision(3) << precent << '%';
+  ss << precent;
+  return ss.str();
+}
+
+/**
+ * Returns number of bytes as represented by the named environment variable. The
+ * variable is interperested as a float string specifying value in MBs. Returns
+ * defaultVal on failure to read the variable or parse its value.
+ */
+size_t getEnvAsBytesFromFloatMb(const char* name, size_t defaultVal) {
+  const char* env = std::getenv(name);
+  if (env) {
+    try {
+      const double mb = std::stod(env);
+      return std::round(mb * kMB);
+    } catch (std::exception& ex) {
+      FL_LOG(fl::ERROR) << "Invalid environment variable=" << name
+                        << " value=" << env;
+    }
+  }
+  return defaultVal;
+}
+
 } // namespace
 
 CachingMemoryManager::DeviceMemoryInfo::DeviceMemoryInfo(int id)
@@ -81,6 +142,14 @@ CachingMemoryManager::CachingMemoryManager(
     int numDevices,
     std::shared_ptr<MemoryManagerDeviceInterface> deviceInterface)
     : MemoryManagerAdapter(deviceInterface) {
+  recyclingSizeLimit_ =
+      getEnvAsBytesFromFloatMb(kMemRecyclingSize, recyclingSizeLimit_);
+  splitSizeLimit_ = getEnvAsBytesFromFloatMb(kMemSplitSize, splitSizeLimit_);
+
+  FL_LOG(fl::INFO) << "CachingMemoryManager recyclingSizeLimit_="
+                   << recyclingSizeLimit_
+                   << " splitSizeLimit_=" << splitSizeLimit_;
+
   for (int i = 0; i < numDevices; ++i) {
     deviceMemInfos_.emplace(
         i, std::make_unique<CachingMemoryManager::DeviceMemoryInfo>(i));
@@ -123,14 +192,14 @@ void* CachingMemoryManager::alloc(
     const unsigned elementSize) {
   auto& memoryInfo = getDeviceMemoryInfo();
   std::lock_guard<std::recursive_mutex> lock(memoryInfo.mutexAll_);
-  size_t size = elementSize;
+  size_t useSize = elementSize;
   for (unsigned i = 0; i < ndims; ++i) {
-    size *= dims[i];
+    useSize *= dims[i];
   }
-  if (size == 0) {
+  if (useSize == 0) {
     return nullptr;
   }
-  size = roundSize(size);
+  size_t size = roundSize(useSize);
   const bool isSmallAlloc = (size <= kSmallSize);
   CachingMemoryManager::Block searchKey(size);
   CachingMemoryManager::BlockSet& pool =
@@ -165,6 +234,8 @@ void* CachingMemoryManager::alloc(
   ) {
     remaining = block;
     block = new Block(size, block->ptr_);
+    block->useSize_ = remaining->useSize_;
+    remaining->useSize_ = 0;
     block->prev_ = remaining->prev_;
     if (block->prev_) {
       block->prev_->next_ = block;
@@ -174,12 +245,19 @@ void* CachingMemoryManager::alloc(
     remaining->prev_ = block;
     remaining->ptr_ = static_cast<char*>(remaining->ptr_) + size;
     remaining->size_ -= size;
+    remaining->useSize_ = 0;
     pool.insert(remaining);
     memoryInfo.stats_.cachedBytes_ += remaining->size_;
   }
 
   block->managerLock_ = !userLock;
   block->userLock_ = userLock;
+  block->useSize_ = useSize;
+  memoryInfo.stats_.useAllocatedBytes_ += useSize;
+  const size_t nBits = log2int(useSize);
+  ++memoryInfo.stats_.totalUseAllocatedBytesHist_[nBits];
+  ++memoryInfo.stats_.curUseAllocatedBytesHist_[nBits];
+
   memoryInfo.allocatedBlocks_[block->ptr_] = block;
   return static_cast<void*>(block->ptr_);
 }
@@ -208,6 +286,7 @@ void CachingMemoryManager::unlock(void* ptr, bool userUnlock) {
     // Probably came from user, just free it
     this->deviceInterface->nativeFree(ptr);
     ++memoryInfo.stats_.totalNativeFrees_;
+    memoryInfo.stats_.nativeAllocated_.erase(ptr);
     return;
   }
 
@@ -241,6 +320,8 @@ void CachingMemoryManager::freeBlock(CachingMemoryManager::Block* block) {
 
   pool.insert(block);
   memoryInfo.stats_.cachedBytes_ += block->size_;
+  memoryInfo.stats_.useAllocatedBytes_ -= block->useSize_;
+  --memoryInfo.stats_.curUseAllocatedBytesHist_[log2int(block->useSize_)];
 }
 
 /** combine previously split blocks */
@@ -296,6 +377,7 @@ void CachingMemoryManager::mallocWithRetry(size_t size, void** ptr) {
       throw;
     }
   }
+  memInfo.stats_.nativeAllocated_[*ptr] = size;
 }
 
 void CachingMemoryManager::freeBlocks(
@@ -309,6 +391,8 @@ void CachingMemoryManager::freeBlocks(
     if (!block->isSplit()) {
       this->deviceInterface->nativeFree(static_cast<void*>(block->ptr_));
       ++memoryInfo.stats_.totalNativeFrees_;
+      memoryInfo.stats_.nativeAllocated_.erase(block->ptr_);
+
       memoryInfo.stats_.allocatedBytes_ -= block->size_;
       memoryInfo.stats_.cachedBytes_ -= block->size_;
       auto cur = it;
@@ -345,20 +429,162 @@ bool CachingMemoryManager::jitTreeExceedsMemoryPressure(size_t /* unused */) {
   return false; // TODO: check if this is optimal
 }
 
-void CachingMemoryManager::printInfo(const char* msg, const int /* unused */) {
+void subtractBlock(
+    std::map<void*, size_t>& cudaAvail,
+    CachingMemoryManager::Block* block,
+    size_t mask) {
+  // cudaPointerAttributes attributes = {};
+  void* blockPtr = (void*)(mask & (size_t)block->ptr_);
+  // FL_CUDA_CHECK(cudaPointerGetAttributes(&attributes, block->ptr_));
+
+  auto itr = cudaAvail.lower_bound(blockPtr);
+  if (itr != cudaAvail.end()) {
+    --itr;
+    if (blockPtr == itr->first) {
+      long leftOverSize = itr->second - block->size_;
+      size_t newPtr = (size_t)blockPtr + block->size_;
+      cudaAvail[(void*)newPtr] = leftOverSize;
+      cudaAvail.erase(itr);
+    } else if (blockPtr > itr->first) {
+      size_t origSize = itr->second;
+      long leftOverSize =
+          (long)itr->first + itr->second - (long)blockPtr - block->size_;
+      itr->second = (size_t)blockPtr - (size_t)itr->first;
+      if (leftOverSize > 0) {
+        size_t newPTr = (size_t)blockPtr + block->size_;
+        cudaAvail[(void*)newPTr] = leftOverSize;
+      }
+    } else {
+      FL_LOG(fl::INFO) << "lblockPtr=" << blockPtr
+                       << " itr->first=" << itr->first
+                       << " block->ptr_=" << block->ptr_ << " mask=" << mask;
+    }
+  } else {
+    std::stringstream ss;
+    for (auto x : cudaAvail) {
+      ss << "[" << x.first << ',' << formatMemory(x.second) << "],";
+    }
+    FL_LOG(fl::INFO) << "block_ [" << blockPtr << ','
+                     << formatMemory(block->size_)
+                     << "] not found in cudaAvail=" << ss.str();
+  }
+}
+
+int bitmaskSize(size_t val) {
+  int cnt = 0;
+  while (val) {
+    ++cnt;
+    val >>= 1;
+  }
+  return cnt;
+}
+
+void CachingMemoryManager::printInfo(
+    const char* msg,
+    const int /* unused */,
+    std::ostream* sink /*=&std::cout*/) {
   auto& memInfo = getDeviceMemoryInfo();
   std::lock_guard<std::recursive_mutex> lock(memInfo.mutexAll_);
 
-  std::cout << msg;
-  std::cout << "\nType: CachingMemoryManager";
-  std::cout << "\nDevice: " << memInfo.deviceId_ << ", Capacity: "
-            << formatMemory(
-                   this->deviceInterface->getMaxMemorySize(memInfo.deviceId_))
-            << ", Allocated: " << formatMemory(memInfo.stats_.allocatedBytes_)
-            << ", Cached: " << formatMemory(memInfo.stats_.cachedBytes_);
-  std::cout << "\nTotal native calls: " << memInfo.stats_.totalNativeMallocs_
-            << "(mallocs), " << memInfo.stats_.totalNativeFrees_ << "(frees)"
-            << std::endl;
+  const size_t capacity =
+      this->deviceInterface->getMaxMemorySize(memInfo.deviceId_);
+  // TODO: add estimate of cuda external fragmentation based on capacity
+  //   and nativeAllocated_
+
+  size_t largestContiguousCache = 0;
+  if (memInfo.stats_.gpuMemSize_ == 0) {
+    memInfo.stats_.gpuMemSize_ =
+        this->deviceInterface->getMaxMemorySize(memInfo.deviceId_);
+    memInfo.stats_.gpuMemMask_ =
+        (1UL << bitmaskSize(memInfo.stats_.gpuMemSize_)) - 1;
+    FL_LOG(fl::INFO) << "memInfo.stats_.gpuMemSize_="
+     << formatMemory(memInfo.stats_.gpuMemSize_)
+  }
+  std::map<void*, size_t> cudaAvail;
+
+  bool recalcCudaFragmentation = false;
+  if (memInfo.stats_.totalNativeMallocs_ !=
+      memInfo.stats_.totalNativeMallocsRecentLogging_) {
+    memInfo.stats_.totalNativeMallocsRecentLogging_ =
+        memInfo.stats_.totalNativeMallocs_;
+    recalcCudaFragmentation = true;
+
+    cudaAvail[0] = memInfo.stats_.gpuMemSize_;
+    cudaAvail[(void*)(memInfo.stats_.gpuMemSize_ + 1)] = 0;
+  }
+  for (auto block : memInfo.largeBlocks_) {
+    largestContiguousCache = std::max(largestContiguousCache, block->size_);
+    if (recalcCudaFragmentation) {
+      subtractBlock(cudaAvail, block, memInfo.stats_.gpuMemMask_);
+    }
+  }
+  if (recalcCudaFragmentation) {
+    for (auto block : memInfo.smallBlocks_) {
+      subtractBlock(cudaAvail, block, memInfo.stats_.gpuMemMask_);
+    }
+    for (auto& cuBlock : cudaAvail) {
+      memInfo.stats_.largestContiguousCuda_ =
+          std::max(memInfo.stats_.largestContiguousCuda_, cuBlock.second);
+    }
+  }
+
+  std::stringstream ss;
+  for (auto x : cudaAvail) {
+    ss << ", " << formatMemory(x.second);
+  };
+  *sink << msg << std::endl
+        << "Type: CachingMemoryManager" << std::endl
+        << "gpuMemSize: " << memInfo.stats_.gpuMemSize_ << std::endl
+        << "gpuMemMask: " << memInfo.stats_.gpuMemMask_ << std::endl
+        << "Device: " << memInfo.deviceId_ << std::endl
+        << "Capacity: " << (capacity) << std::endl
+        << "Allocated: " << (memInfo.stats_.allocatedBytes_) << std::endl
+        << "Used: " << (memInfo.stats_.useAllocatedBytes_) << std::endl
+        << "Cached: " << (memInfo.stats_.cachedBytes_) << std::endl
+        << "Internal Fragmentation: "
+        << formatPercentOf(
+               memInfo.stats_.useAllocatedBytes_,
+               memInfo.stats_.allocatedBytes_ - memInfo.stats_.cachedBytes_)
+        << std::endl
+        << "internalFragMem: "
+        << (memInfo.stats_.allocatedBytes_ - memInfo.stats_.cachedBytes_ -
+            memInfo.stats_.useAllocatedBytes_)
+        << std::endl
+        << "largestContiguousCache: " << largestContiguousCache << std::endl
+        << "largestContiguousCuda: " << memInfo.stats_.largestContiguousCuda_
+        << std::endl
+        << "largestContiguous: "
+        << std::max(
+               memInfo.stats_.largestContiguousCuda_, largestContiguousCache)
+        << std::endl
+        << "Native Malloc Count: " << memInfo.stats_.totalNativeMallocs_
+        << std::endl
+        << "Native Free Cout: " << memInfo.stats_.totalNativeFrees_ << std::endl
+        // << "getMaxMemorySize: "
+        // << this->deviceInterface->getMaxMemorySize(memInfo.deviceId_)
+        << std::endl
+        << "Native-memory: " << ss.str() << std::endl;
+  {
+    *sink << "totalUseAllocatedBytesHist: ";
+    for (int i = 0; i < kMaxAllocSize2Pwr; ++i) {
+      *sink << memInfo.stats_.totalUseAllocatedBytesHist_[i];
+      if (i < kMaxAllocSize2Pwr - 1) {
+        *sink << ':';
+      }
+    }
+    *sink << std::endl;
+  }
+
+  {
+    *sink << "curUseAllocatedBytesHist__: ";
+    for (int i = 0; i < kMaxAllocSize2Pwr; ++i) {
+      *sink << memInfo.stats_.curUseAllocatedBytesHist_[i];
+      if (i < kMaxAllocSize2Pwr - 1) {
+        *sink << ':';
+      }
+    }
+    *sink << std::endl;
+  }
 }
 
 void CachingMemoryManager::userLock(const void* ptr) {
