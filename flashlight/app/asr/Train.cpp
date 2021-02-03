@@ -150,14 +150,8 @@ int main(int argc, char** argv) {
     } else {
       startUpdate = std::stoi(nbupdates->second);
     }
-    auto scaleFactorI = cfg.find(kScaleFactor);
-    if (scaleFactorI == cfg.end()) {
-      LOG(WARNING) << "Did not find scalefactor, using the flag's value.";
-      scaleFactor =
-          FLAGS_fl_amp_use_mixed_precision ? FLAGS_fl_amp_scale_factor : 1.;
-    } else {
-      scaleFactor = std::stof(scaleFactorI->second);
-    }
+
+    scaleFactor = getScaleFactor(cfg);
   } else if (runStatus == kForkMode) {
     reloadPath = argv[2];
     std::unordered_map<std::string, std::string> cfg;
@@ -174,14 +168,7 @@ int main(int argc, char** argv) {
     parseCmdLineFlagsWrapper(argc, argv);
     runPath = FLAGS_rundir;
 
-    auto scaleFactorI = cfg.find(kScaleFactor);
-    if (scaleFactorI == cfg.end()) {
-      LOG(WARNING) << "Did not find scalefactor, using the flag's value.";
-      scaleFactor =
-          FLAGS_fl_amp_use_mixed_precision ? FLAGS_fl_amp_scale_factor : 1.;
-    } else {
-      scaleFactor = std::stof(scaleFactorI->second);
-    }
+    scaleFactor = getScaleFactor(cfg);
   } else {
     LOG(FATAL) << gflags::ProgramUsage();
   }
