@@ -110,7 +110,7 @@ Variable Transformer::selfAttention(const std::vector<Variable>& input) {
   auto k = transpose((*wk_)(concatenate(inputWithState, 1)));
   auto v = transpose((*wv_)(concatenate(inputWithState, 1)));
 
-  q = q * std::pow(q.dims(1) / nHeads_, -0.5);
+  q = q / std::sqrt(float(q.dims(1) / nHeads_));
 
   Variable mask, posEmb;
   if (bptt_ > 0) {
