@@ -310,18 +310,20 @@ int main(int argc, char** argv) {
     ar(CEREAL_NVP(config));
   }
 
-  auto logStatus =
-      [&logFile, isMaster](
-          TrainMeters& mtrs, int64_t epoch, int64_t nupdates, double lr) {
-        syncMeter(mtrs);
+  auto logStatus = [&logFile, isMaster](
+                       TrainMeters& mtrs,
+                       int64_t epoch,
+                       int64_t nupdates,
+                       double lr) {
+    syncMeter(mtrs);
 
-        if (isMaster) {
-          auto logMsg =
-              getLogString(mtrs, {}, epoch, nupdates, lr, 0 /* lrcrit */);
-          FL_LOG_MASTER(INFO) << logMsg;
-          appendToLog(logFile, logMsg);
-        }
-      };
+    if (isMaster) {
+      auto logMsg = getLogString(
+          mtrs, {}, epoch, nupdates, lr, 0 /* lrcrit */, 1 /* scaleFactor */);
+      FL_LOG_MASTER(INFO) << logMsg;
+      appendToLog(logFile, logMsg);
+    }
+  };
 
   auto saveModels = [&](int iter, int totalUpdates) {
     if (isMaster) {

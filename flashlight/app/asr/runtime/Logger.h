@@ -56,6 +56,7 @@ std::string getLogString(
     int64_t nupdates,
     double lr,
     double lrcrit,
+    double scaleFactor,
     const std::string& separator = " | ");
 
 void appendToLog(std::ofstream& logfile, const std::string& logstr);

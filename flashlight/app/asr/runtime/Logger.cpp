@@ -32,6 +32,7 @@ std::string getLogString(
     int64_t nupdates,
     double lr,
     double lrcrit,
+    double scaleFactor,
     const std::string& separator /* = " | " */) {
   std::string status;
   auto insertItem = [&](std::string key, std::string val) {
@@ -42,6 +43,7 @@ std::string getLogString(
   insertItem("nupdates", format("%12d", nupdates));
   insertItem("lr", format("%4.6lf", lr));
   insertItem("lrcriterion", format("%4.6lf", lrcrit));
+  insertItem("scale-factor", format("%4.6lf", scaleFactor));
 
   int rt = meters.runtime.value();
   insertItem(
