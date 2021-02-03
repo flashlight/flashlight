@@ -1079,18 +1079,8 @@ int main(int argc, char** argv) {
 
           if (af::anyTrue<bool>(af::isNaN(loss.array())) ||
               af::anyTrue<bool>(af::isInf(loss.array()))) {
-            if (FLAGS_fl_amp_use_mixed_precision &&
-                scaleFactor >= fl::kAmpMinimumScaleFactorValue) {
-              scaleFactor = scaleFactor / 2.0f;
-              FL_VLOG(2) << "AMP: Scale factor decreased. New value:\t"
-                         << scaleFactor;
-              scaleCounter = 1;
-              retrySample = true;
-              continue;
-            } else {
-              LOG(FATAL) << "Loss has NaN values. Samples - "
-                         << join(",", readSampleIds(batch[kSampleIdx]));
-            }
+            LOG(FATAL) << "Loss has NaN values. Samples - "
+                       << join(",", readSampleIds(batch[kSampleIdx]));
           }
 
           if (hasher(join(",", readSampleIds(batch[kSampleIdx]))) % 100 <=
@@ -1116,7 +1106,7 @@ int main(int argc, char** argv) {
           // optimizer
           meters.optimtimer.resume();
 
-          // scale down gradients by batchsize
+          // scale down gradients by batchsize * scale factor
           af::array totalBatchSizeArr =
               af::constant(batch[kInputIdx].dims(3), 1, f32);
           if (reducer) {
@@ -1136,6 +1126,14 @@ int main(int argc, char** argv) {
                   FL_VLOG(2) << "AMP: Scale factor decreased. New value:\t"
                              << scaleFactor;
                   retrySample = true;
+                } else {
+                  LOG(FATAL)
+                      << "Minimum loss scale reached: "
+                      << fl::kAmpMinimumScaleFactorValue
+                      << " with over/underflowing gradients. Lowering the "
+                      << "learning rate, using gradient clipping, or "
+                      << "increasing the batch size can help resolve "
+                      << "loss explosion.";
                 }
                 scaleCounter = 1;
                 break;
