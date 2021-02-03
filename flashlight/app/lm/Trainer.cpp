@@ -6,6 +6,7 @@
  */
 
 #include "flashlight/app/lm/Trainer.h"
+#include <algorithm>
 
 using namespace fl::ext;
 using namespace fl::lib;
@@ -291,7 +292,7 @@ void Trainer::trainStep() {
   fl::Variable input, target;
   sampleTimerMeter_.resume();
   std::tie(input, target) = getInputAndTarget(trainDataset_->get(batchIdx_));
-  af::array inputSizes = af::flat(af::sum(input.array() != kPadIdx_, 0));
+  af::array inputSizes = af::sum(input.array() != kPadIdx_, 0);
   sampleTimerMeter_.stopAndIncUnit();
 
   // 2. Forward
@@ -304,7 +305,7 @@ void Trainer::trainStep() {
   fwdTimeMeter_.stopAndIncUnit();
   critFwdTimeMeter_.stopAndIncUnit();
 
-  auto numTokens = af::count<float>(target.array() != kPadIdx_);
+  float numTokens = af::count<float>(target.array() != kPadIdx_);
   if (numTokens > 0) {
     auto weight =
         numTokens / (FLAGS_data_tokens_per_sample * FLAGS_data_batch_size);
@@ -340,7 +341,7 @@ void Trainer::evalStep() {
   for (const auto& sample : *validDataset_) {
     fl::Variable input, target;
     std::tie(input, target) = getInputAndTarget(sample);
-    af::array inputSizes = af::flat(af::sum(input.array() != kPadIdx_, 0));
+    af::array inputSizes = af::sum(input.array() != kPadIdx_, 0);
     auto output = network_->forward({input, fl::noGrad(inputSizes)}).front();
     auto loss = criterion_->forward({output, target}).front();
     auto numTokens = af::count<int>(target.array() != kPadIdx_);
@@ -583,16 +584,12 @@ std::pair<fl::Variable, fl::Variable> Trainer::getInputAndTarget(
     randMatrixSortedIndices = af::flat(randMatrixSortedIndices);
 
     af::array inputMasked = af::flat(sample[0]);
-    // set total mask
-    af::array totalMask = randMatrixSortedIndices < FLAGS_mask_prob * T;
     // set min length of the masked tokens
     int nTotalMask =
         std::max(int(FLAGS_mask_prob * T), (int)FLAGS_mask_min_length);
-    if (FLAGS_mask_min_length > 0) {
-      totalMask =
-          totalMask + (randMatrixSortedIndices < FLAGS_mask_min_length) > 0;
-    }
-    af::array notMasked = (1 - totalMask).as(b8);
+    // set total mask
+    af::array totalMask = randMatrixSortedIndices < nTotalMask;
+    af::array notMasked = !totalMask;
     af::array woMaskTokenMask = randMatrixSortedIndices <
         (FLAGS_mask_rand_token_prob + FLAGS_mask_same_token_prob) * nTotalMask;
     af::array randMask =
@@ -600,15 +597,20 @@ std::pair<fl::Variable, fl::Variable> Trainer::getInputAndTarget(
 
     inputMasked(totalMask) = kMaskIdx_;
     inputMasked(woMaskTokenMask) = af::flat(sample[0])(woMaskTokenMask);
-    if (af::sum(randMask).scalar<unsigned int>() > 0) {
+    if (af::anyTrue<bool>(randMask)) {
       // exclude 4 special tokens from the consideration: pad, eos, unk and
       // mask
-      int nSpecialTokens = 4;
-      inputMasked(randMask) =
-          (af::randu(af::sum(randMask).scalar<unsigned int>()) *
-               (dictionary_.entrySize() - nSpecialTokens - 1) +
-           nSpecialTokens)
-              .as(s32);
+      std::vector<int> specialTokens = {
+          kPadIdx_, kEosIdx_, kUnkIdx_, kMaskIdx_};
+      std::sort(specialTokens.begin(), specialTokens.end());
+      auto randVals = (af::randu(af::sum(randMask).scalar<unsigned int>()) *
+                       (dictionary_.entrySize() - 1 - specialTokens.size()))
+                          .as(s32);
+      for (auto specialVal : specialTokens) {
+        auto specialMask = randVals >= specialVal;
+        randVals(specialMask) = randVals(specialMask) + 1;
+      }
+      inputMasked(randMask) = randVals;
     }
     // fix position where it was pad index to be pad
     inputMasked(af::flat(sample[0] == kPadIdx_)) = kPadIdx_;
