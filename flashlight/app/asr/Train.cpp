@@ -114,6 +114,7 @@ int main(int argc, char** argv) {
   std::string runStatus = argv[1];
   int64_t startEpoch = 0;
   int64_t startUpdate = 0;
+  double scaleFactor = 1.; // for AMP
   if (argc <= 1) {
     LOG(FATAL) << gflags::ProgramUsage();
   }
@@ -149,6 +150,8 @@ int main(int argc, char** argv) {
     } else {
       startUpdate = std::stoi(nbupdates->second);
     }
+
+    scaleFactor = getScaleFactor(cfg);
   } else if (runStatus == kForkMode) {
     reloadPath = argv[2];
     std::unordered_map<std::string, std::string> cfg;
@@ -164,6 +167,8 @@ int main(int argc, char** argv) {
 
     parseCmdLineFlagsWrapper(argc, argv);
     runPath = FLAGS_rundir;
+
+    scaleFactor = getScaleFactor(cfg);
   } else {
     LOG(FATAL) << gflags::ProgramUsage();
   }
@@ -460,11 +465,12 @@ int main(int argc, char** argv) {
           usePlugin,
           tokenDict,
           wordDict,
-          DecodeMasterTrainOptions{.repLabel = int32_t(FLAGS_replabel),
-                                   .wordSepIsPartOfToken = FLAGS_usewordpiece,
-                                   .surround = FLAGS_surround,
-                                   .wordSep = FLAGS_wordseparator,
-                                   .targetPadIdx = targetpadVal});
+          DecodeMasterTrainOptions{
+              .repLabel = int32_t(FLAGS_replabel),
+              .wordSepIsPartOfToken = FLAGS_usewordpiece,
+              .surround = FLAGS_surround,
+              .wordSep = FLAGS_wordseparator,
+              .targetPadIdx = targetpadVal});
     } else {
       throw std::runtime_error(
           "Other decoders are not supported yet during training");
@@ -605,31 +611,33 @@ int main(int argc, char** argv) {
       tokenToWord);
 
   /* ===================== Hooks ===================== */
-  auto logStatus =
-      [&logFile, &validTagSets, &plGenerator, isMaster](
-          TrainMeters& mtrs,
-          std::unordered_map<std::string, double>& validWerWithDecoder,
-          int64_t epoch,
-          int64_t nupdates,
-          double lr,
-          double lrcrit) {
-        syncMeter(mtrs);
-        plGenerator.setModelWER(
-            mtrs.valid[validTagSets.front().first].wrdEdit.errorRate()[0]);
+  auto logStatus = [&logFile, &validTagSets, &plGenerator, isMaster](
+                       TrainMeters& mtrs,
+                       std::unordered_map<std::string, double>&
+                           validWerWithDecoder,
+                       int64_t epoch,
+                       int64_t nupdates,
+                       double lr,
+                       double lrcrit,
+                       double scaleFactor) {
+    syncMeter(mtrs);
+    plGenerator.setModelWER(
+        mtrs.valid[validTagSets.front().first].wrdEdit.errorRate()[0]);
 
-        if (isMaster) {
-          auto logMsg = getLogString(
-              mtrs, validWerWithDecoder, epoch, nupdates, lr, lrcrit);
-          FL_LOG_MASTER(INFO) << logMsg;
-          appendToLog(logFile, logMsg);
-        }
-      };
+    if (isMaster) {
+      auto logMsg = getLogString(
+          mtrs, validWerWithDecoder, epoch, nupdates, lr, lrcrit, scaleFactor);
+      FL_LOG_MASTER(INFO) << logMsg;
+      appendToLog(logFile, logMsg);
+    }
+  };
 
-  auto saveModels = [&](int iter, int totalUpdates) {
+  auto saveModels = [&](int iter, int totalUpdates, double scaleFactor) {
     if (isMaster) {
       // Save last epoch
       config[kEpoch] = std::to_string(iter);
       config[kUpdates] = std::to_string(totalUpdates);
+      config[kScaleFactor] = std::to_string(scaleFactor);
 
       std::string filename;
       if (FLAGS_itersave) {
@@ -833,8 +841,9 @@ int main(int argc, char** argv) {
       fl::Variable output;
       if (usePlugin) {
         output = ntwrk
-                     ->forward({fl::input(batch[kInputIdx]),
-                                fl::noGrad(batch[kDurationIdx])})
+                     ->forward(
+                         {fl::input(batch[kInputIdx]),
+                          fl::noGrad(batch[kDurationIdx])})
                      .front();
       } else {
         output = fl::ext::forwardSequentialModuleWithPadMask(
@@ -879,6 +888,7 @@ int main(int argc, char** argv) {
                 &validds,
                 &curEpoch,
                 &startUpdate,
+                &scaleFactor,
                 &plGenerator,
                 &usePlugin,
                 &isSeq2seqCrit,
@@ -942,7 +952,8 @@ int main(int argc, char** argv) {
     auto runValAndSaveModel = [&](int64_t totalEpochs,
                                   int64_t totalUpdates,
                                   double lr,
-                                  double lrcrit) {
+                                  double lrcrit,
+                                  double saveScaleFactor) {
       meters.runtime.stop();
       meters.timer.stop();
       meters.sampletimer.stop();
@@ -963,13 +974,19 @@ int main(int argc, char** argv) {
       // print status
       try {
         logStatus(
-            meters, validWerWithDecoder, totalEpochs, totalUpdates, lr, lrcrit);
+            meters,
+            validWerWithDecoder,
+            totalEpochs,
+            totalUpdates,
+            lr,
+            lrcrit,
+            saveScaleFactor);
       } catch (const std::exception& ex) {
         LOG(ERROR) << "Error while writing logs: " << ex.what();
       }
       // save last and best models
       try {
-        saveModels(totalEpochs, totalUpdates);
+        saveModels(totalEpochs, totalUpdates, saveScaleFactor);
       } catch (const std::exception& ex) {
         LOG(FATAL) << "Error while saving models: " << ex.what();
       }
@@ -980,8 +997,6 @@ int main(int argc, char** argv) {
     };
 
     int64_t curBatch = startUpdate;
-    double scaleFactor =
-        FLAGS_fl_amp_use_mixed_precision ? FLAGS_fl_amp_scale_factor : 1.;
     unsigned int kScaleFactorUpdateInterval =
         FLAGS_fl_amp_scale_factor_update_interval;
     unsigned int kMaxScaleFactor = FLAGS_fl_amp_max_scale_factor;
@@ -1189,7 +1204,11 @@ int main(int argc, char** argv) {
 
         if (FLAGS_reportiters > 0 && curBatch % FLAGS_reportiters == 0) {
           runValAndSaveModel(
-              curEpoch, curBatch, netopt->getLr(), critopt->getLr());
+              curEpoch,
+              curBatch,
+              netopt->getLr(),
+              critopt->getLr(),
+              scaleFactor);
           resetTimeStatMeters();
           ntwrk->train();
           crit->train();
@@ -1204,7 +1223,7 @@ int main(int argc, char** argv) {
       af::sync();
       if (FLAGS_reportiters == 0) {
         runValAndSaveModel(
-            curEpoch, curBatch, netopt->getLr(), critopt->getLr());
+            curEpoch, curBatch, netopt->getLr(), critopt->getLr(), scaleFactor);
       }
 
       // Try regenerate PL

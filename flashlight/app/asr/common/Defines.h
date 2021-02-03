@@ -41,6 +41,7 @@ constexpr const char* kRunPath = "runPath";
 constexpr const char* kProgramName = "programname";
 constexpr const char* kEpoch = "epoch";
 constexpr const char* kUpdates = "updates";
+constexpr const char* kScaleFactor = "scalefactor";
 constexpr const char* kSGDOptimizer = "sgd";
 constexpr const char* kAdamOptimizer = "adam";
 constexpr const char* kRMSPropOptimizer = "rmsprop";
