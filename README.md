@@ -9,8 +9,8 @@
 [![Docker Image Build Status](https://img.shields.io/github/workflow/status/facebookresearch/flashlight/Publish%20Docker%20images?label=docker%20image%20build)](https://hub.docker.com/r/flml/flashlight/tags)
 [![Join the chat at https://gitter.im/flashlight-ml/community](https://img.shields.io/gitter/room/flashlight-ml/community)](https://gitter.im/flashlight-ml/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-[![Docker Image for CUDA backend](https://img.shields.io/docker/image-size/flml/flashlight/cuda-consolidation-latest?label=docker%20%28cuda%29&logo=docker)](https://hub.docker.com/r/flml/flashlight/tags?page=1&ordering=last_updated&name=cpu-consolidation-latest)
-[![Docker Image for CPU backend](https://img.shields.io/docker/image-size/flml/flashlight/cpu-consolidation-latest?label=docker%20%28cpu%29&logo=docker)](https://hub.docker.com/r/flml/flashlight/tags?page=1&ordering=last_updated&name=cpu-consolidation-latest)
+[![Docker Image for CUDA backend](https://img.shields.io/docker/image-size/flml/flashlight/cuda-latest?label=docker%20%28cuda%29&logo=docker)](https://hub.docker.com/r/flml/flashlight/tags?page=1&ordering=last_updated&name=cuda-latest)
+[![Docker Image for CPU backend](https://img.shields.io/docker/image-size/flml/flashlight/cpu-latest?label=docker%20%28cpu%29&logo=docker)](https://hub.docker.com/r/flml/flashlight/tags?page=1&ordering=last_updated&name=cpu-latest)
 
 [![Install CUDA backend with vcpkg](https://img.shields.io/badge/dynamic/json?color=orange&label=get%20%28cuda%29&query=name&url=https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2Fvcpkg%2Fmaster%2Fports%2Fflashlight-cuda%2Fvcpkg.json&prefix=vcpkg%20install%20)](https://vcpkg.info/port/flashlight-cuda)
 [![Install CPU backend with vcpkg](https://img.shields.io/badge/dynamic/json?color=orange&label=get%20%28cpu%29&query=name&url=https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2Fvcpkg%2Fmaster%2Fports%2Fflashlight-cpu%2Fvcpkg.json&prefix=vcpkg%20install%20)](https://vcpkg.info/port/flashlight-cpu)
