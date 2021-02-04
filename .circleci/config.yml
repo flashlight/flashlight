@@ -35,7 +35,7 @@ commands:
       - run:
           name: "Start NVIDIA Docker and Copy Flashlight source"
           command: |
-            sudo docker run --runtime=nvidia --rm -itd --ipc=host --name flashlight flml/flashlight:cuda-base-consolidation-latest
+            sudo docker run --runtime=nvidia --rm -itd --ipc=host --name flashlight flml/flashlight:cuda-base-latest
             sudo docker exec -it flashlight bash -c "mkdir /flashlight"
             sudo docker cp . flashlight:/flashlight
   # Default cmake inside docker will be tested with docker build
@@ -360,7 +360,7 @@ jobs:
 
   ubuntu2004_cpu_docker_flashlight_all:
     docker:
-      - image: flml/flashlight:cpu-base-consolidation-latest
+      - image: flml/flashlight:cpu-base-latest
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
@@ -372,7 +372,7 @@ jobs:
 
   ubuntu2004_cmake10_cpu_docker_flashlight_all:
     docker:
-      - image: flml/flashlight:cpu-base-consolidation-latest
+      - image: flml/flashlight:cpu-base-latest
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
@@ -385,7 +385,7 @@ jobs:
 
   ubuntu2004_cpu_python_bindings_simple:
     docker:
-      - image: flml/flashlight:cpu-base-consolidation-latest
+      - image: flml/flashlight:cpu-base-latest
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
@@ -399,7 +399,7 @@ jobs:
   # Aren't running code, so don't need the NVIDIA runtime
   ubuntu2004_cuda_python_bindings:
     docker:
-      - image: flml/flashlight:cuda-base-consolidation-latest
+      - image: flml/flashlight:cuda-base-latest
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
@@ -412,7 +412,7 @@ jobs:
 
   ubuntu2004_cpu_docker_flashlight_build_external:
     docker:
-      - image: flml/flashlight:cpu-base-consolidation-latest
+      - image: flml/flashlight:cpu-base-latest
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
