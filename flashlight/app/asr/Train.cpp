@@ -346,12 +346,16 @@ int main(int argc, char** argv) {
   std::map<std::string, std::shared_ptr<fl::Dataset>> validds;
   int64_t validBatchSize =
       FLAGS_validbatchsize == -1 ? FLAGS_batchsize : FLAGS_validbatchsize;
+  auto validInputTransform = inputFeatures(
+      featParams,
+      featType,
+      {FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx});
   for (const auto& s : validTagSets) {
     validds[s.first] = createDataset(
         {s.second},
         FLAGS_datadir,
         validBatchSize,
-        inputTransform,
+        validInputTransform,
         targetTransform,
         wordTransform,
         padVal,

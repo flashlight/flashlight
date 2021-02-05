@@ -85,7 +85,7 @@ class ReverbEcho : public SoundEffect {
 
  private:
   // augments source with reverberation noise
-  void reverb(
+  void applyReverb(
       std::vector<float>& source,
       float initial,
       float firstDelay,
