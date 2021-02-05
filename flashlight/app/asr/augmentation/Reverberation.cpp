@@ -21,12 +21,13 @@ ReverbEcho::ReverbEcho(
     unsigned int seed /* = 0 */)
     : conf_(conf), rng_(seed) {}
 
-void ReverbEcho::reverb(
+void ReverbEcho::applyReverb(
     std::vector<float>& source,
     float initial,
     float firstDelay,
     float rt60) {
   size_t length = source.size();
+  std::vector<float> reverb(length, 0);
   for (int i = 0; i < conf_.repeat_; ++i) {
     float frac = 1;
     // echo = initial * source
@@ -43,7 +44,7 @@ void ReverbEcho::reverb(
         break;
       }
       for (int j = 0; j < length - delay - 1; ++j) {
-        source[delay + j] += echo[j] * frac;
+        reverb[delay + j] += echo[j] * frac;
       }
 
       // Add jitter noise for the attenuation
@@ -52,6 +53,9 @@ void ReverbEcho::reverb(
 
       frac *= attenuation;
     }
+  }
+  for (int i = 0; i < length; ++i) {
+    source[i] += reverb[i];
   }
 }
 
@@ -64,7 +68,7 @@ void ReverbEcho::apply(std::vector<float>& sound) {
   float firstDelay = rng_.uniform(conf_.firstDelayMin_, conf_.firstDelayMax_);
   float rt60 = rng_.uniform(conf_.rt60Min_, conf_.rt60Max_);
 
-  reverb(sound, initial, firstDelay, rt60);
+  applyReverb(sound, initial, firstDelay, rt60);
 }
 
 std::string ReverbEcho::prettyString() const {
