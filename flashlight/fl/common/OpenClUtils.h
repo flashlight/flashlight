@@ -26,7 +26,7 @@
 #include "flashlight/fl/common/DevicePtr.h"
 
 #define FL_OPENCL_CHECK(err) \
-  ::fl::opencl::detail::check(err, __FILE__, __LINE__, #err)
+  ::fl::ocl::detail::check(err, __FILE__, __LINE__, #err)
 
 namespace fl {
 namespace ocl {

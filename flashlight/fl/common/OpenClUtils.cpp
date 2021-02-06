@@ -71,6 +71,8 @@ void OpenClContext::enqueue(
       nullptr));
 }
 
+namespace detail {
+
 namespace {
 
 // https://stackoverflow.com/questions/24326432/convenient-way-to-show-opencl-error-codes
@@ -215,10 +217,8 @@ const char* getErrorString(cl_int error) {
       return "Unknown OpenCL error";
   }
 }
+
 } // namespace
-
-namespace detail {
-
 void check(cl_int err, const char* file, int line, const char* cmd) {
   std::ostringstream ess;
   ess << file << ':' << line << " OpenCL " << getErrorString(err) << " (" << err
@@ -228,5 +228,6 @@ void check(cl_int err, const char* file, int line, const char* cmd) {
   }
 }
 
+} // namespace detail
 } // namespace ocl
 } // namespace fl
