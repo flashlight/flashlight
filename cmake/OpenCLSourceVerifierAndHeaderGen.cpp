@@ -55,9 +55,8 @@ void verifySourceIsCompiling(
   cl_program program =
       clCreateProgramWithSource(context_, 1, &pSource, nullptr, &status);
   FL_OPENCL_CHECK(status, inputKernelFile);
-  FL_OPENCL_CHECK(
-      clBuildProgram(program, 1, &deviceId_, nullptr, nullptr, nullptr),
-      inputKernelFile);
+  std::cerr << inputKernelFile << " compile status=" <<
+      clBuildProgram(program, 1, &deviceId_, nullptr, nullptr, nullptr);
 }
 
 std::string readFileIntoString(const std::string& inputKernelFile) {
@@ -104,6 +103,7 @@ std::vector<std::string> tokenize(
 std::map<std::string, std::string> parseFlags(int argc, char* argv[]) {
   std::map<std::string, std::string> result;
   for (int i = 1; i < argc; ++i) {
+    std::cout << argv[i] << " ";
     const std::vector<std::string> tokens = tokenize(argv[i], "=");
     if (tokens.size() == 2 && tokens[0].find("--") == 0) {
       result[tokens[0]] = tokens[1];
@@ -113,6 +113,7 @@ std::map<std::string, std::string> parseFlags(int argc, char* argv[]) {
       throw std::invalid_argument(ss.str());
     }
   }
+  std::cout << std::endl;
   return result;
 }
 
@@ -159,7 +160,7 @@ int main(int argc, char* argv[]) {
   const auto varName = getFlagValue(flagToValue, "--var", argv[0]);
 
   const auto kernelSourceCode = readFileIntoString(inputKernelFile);
-  verifySourceIsCompiling(kernelSourceCode, inputKernelFile);
+  // verifySourceIsCompiling(kernelSourceCode, inputKernelFile);
   writeHeaderFile(
       kernelSourceCode, ouputKernelHeaderFile, namespaceName, varName);
 }

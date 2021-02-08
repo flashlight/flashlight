@@ -86,7 +86,7 @@ int main(int argc, char** argv) {
 
   float learning_rate = 1e-2;
   int epochs = 10;
-  int batch_size = 64;
+  int batch_size = 2;
 
   array train_x;
   array train_y;
@@ -141,6 +141,7 @@ int main(int argc, char** argv) {
 
   // The main training loop
   for (int e = 0; e < epochs; e++) {
+    af_print_mem_info("message", -1);
     AverageValueMeter train_loss_meter;
 
     // Get an iterator over the data

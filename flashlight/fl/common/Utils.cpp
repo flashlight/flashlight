@@ -232,3 +232,7 @@ std::string afTypeToString(const af::dtype& type) {
 }
 
 } // namespace fl
+
+std::ostream& operator<<(std::ostream& os, af::dtype type) {
+  return os << fl::afTypeToString(type);
+}

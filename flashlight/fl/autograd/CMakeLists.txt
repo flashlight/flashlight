@@ -131,3 +131,54 @@ if (FL_USE_OPENCL)
     ${OpenCL_INCLUDE_DIRS}
     )
 endif ()
+
+
+message("-------------------------- FL_USE_MIOPEN=${FL_USE_MIOPEN}")
+# MIOPEN
+if (FL_USE_MIOPEN)
+  find_package(MIOPEN)
+  if (MIOPEN_FOUND)
+    message(STATUS "MIOPEN found (library: ${MIOPEN_LIBRARIES} include: ${MIOPEN_INCLUDE_DIRS})")
+    setup_install_find_module(${CMAKE_MODULE_PATH}/FindMIOPEN.cmake)
+  else()
+    message(STATUS "MIOPEN not found")
+    message(FATAL_ERROR "MIOPEN required to build CUDA backend")
+  endif()
+
+  set(
+    AUTOGRAD_MIOPEN_SOURCES
+    ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/operators/AdvancedIndex.cpp
+    # ${CMAKE_CURRENT_LIST_DIR}/backend/miopen/BatchNorm.cpp # unsupported by AWS GPU gfx1011
+    ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/BatchNorm.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/backend/miopen/Conv2D.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/backend/miopen/MiOpenUtils.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/backend/miopen/Pool2D.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/backend/miopen/RNN.cpp
+    )
+
+  target_sources(
+    flashlight
+    PRIVATE
+    ${AUTOGRAD_MIOPEN_SOURCES}
+    )
+
+  target_link_libraries(
+    flashlight
+    PUBLIC
+    ${MIOPEN_LIBRARIES}
+    ${OpenCL_LIBRARIES}
+    )
+
+  target_include_directories(
+    flashlight
+    PUBLIC
+    ${MIOPEN_INCLUDE_DIRS}
+    ${OpenCL_INCLUDE_DIRS}
+    )
+
+  target_compile_definitions(
+    flashlight
+    PRIVATE
+    ${opencl_compile_definitions}
+    )
+endif ()

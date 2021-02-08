@@ -88,7 +88,10 @@ cudnnConvolutionFwdAlgoPerf_t getFwdAlgo(
       yDesc,
       numFwdAlgoRequested,
       &numFwdAlgoReturned,
-      fwdAlgoPerfs.data()));
+      &fwdAlgoPerfs,
+      workSpace,
+      workSpaceSize,
+      /*exhaustiveSearch=*/false));
 
   return getBestAlgorithm(
       fwdAlgoPerfs, kFwdPreferredAlgos, arithmeticPrecision);

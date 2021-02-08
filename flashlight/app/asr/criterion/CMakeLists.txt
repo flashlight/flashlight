@@ -40,7 +40,7 @@ if (FL_USE_CUDA)
     ${CUDA_INCLUDE_DIRS}
     ${WARPCTC_INCLUDE_DIR} # I hope to remove me one day
     )
-elseif (FL_USE_CPU OR FL_USE_OPENCL)
+elseif (FL_USE_CPU OR FL_USE_OPENCL OR FL_USE_MIOPEN)
   target_sources(
     flashlight-app-asr
     PRIVATE

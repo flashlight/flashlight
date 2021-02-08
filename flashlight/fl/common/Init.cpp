@@ -29,8 +29,7 @@ void init() {
     // TODO: remove this temporary workaround for TextDatasetTest crash on CPU
     // backend when tearing down the test environment. This is possibly due to
     // AF race conditions when tearing down our custom memory manager.
-    // TODO: remove this temporary workaround for crashes when using custom
-    // opencl kernels.
+    // TODO: remove this temporary workaround for crashes when using opencl.
     if (FL_BACKEND_CUDA) {
       MemoryManagerInstaller::installDefaultMemoryManager();
     }

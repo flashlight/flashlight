@@ -67,12 +67,15 @@ set_property(CACHE FL_BACKEND PROPERTY STRINGS CPU CUDA OPENCL)
 set(FL_USE_CPU OFF)
 set(FL_USE_CUDA OFF)
 set(FL_USE_OPENCL OFF)
+set(FL_USE_MIOPEN OFF)
 if (FL_BACKEND STREQUAL "CPU")
   set(FL_USE_CPU ON)
 elseif (FL_BACKEND STREQUAL "CUDA")
   set(FL_USE_CUDA ON)
 elseif (FL_BACKEND STREQUAL "OPENCL")
   set(FL_USE_OPENCL ON)
+elseif (FL_BACKEND STREQUAL "MIOPEN")
+  set(FL_USE_MIOPEN ON)
 else ()
   message(FATAL_ERROR "Invalid FLASHLIGHT backend specified")
 endif ()
@@ -179,6 +182,8 @@ if (FL_BUILD_CORE)
     message(FATAL_ERROR "ArrayFire CUDA not found: cannot build CUDA backend")
   elseif (FL_USE_OPENCL AND NOT ArrayFire_OpenCL_FOUND)
     message(FATAL_ERROR "ArrayFire OpenCL not found: cannot build OpenCL backend")
+  elseif (FL_USE_MIOPEN AND NOT ArrayFire_OpenCL_FOUND)
+    message(FATAL_ERROR "ArrayFire MIOPEN not found: cannot build MIOPEN backend")
   endif()
 
   # If cereal is found in a user-defined location, use it rather than
@@ -235,6 +240,18 @@ if (FL_BUILD_CORE)
     endif()
   endif()
 
+  if (FL_USE_MIOPEN)
+    find_package(MiOpen)
+    if (MiOpen_FOUND)
+      message(STATUS "MiOpen found (library: ${MiOpen_LIBRARIES} include: ${MiOpen_INCLUDE_DIRS})")
+    else()
+      message(STATUS "MiOpen not found")
+      if (FL_USE_MIOPEN)
+        message(FATAL_ERROR "MiOpen required to build MiOpen backend")
+      endif ()
+    endif()
+  endif()
+
   # Set up variables to link the right ArrayFire backend
   if (FL_USE_CPU)
     set(FL_AF_BACKEND "afcpu")
@@ -242,8 +259,10 @@ if (FL_BUILD_CORE)
     set(FL_AF_BACKEND "afcuda")
   elseif (FL_USE_OPENCL)
     set(FL_AF_BACKEND "afopencl")
+  elseif (FL_USE_MIOPEN)
+    set(FL_AF_BACKEND "afopencl")
   else()
-    message(FATAL_ERROR "flashlight backend ill-specified")
+      message(FATAL_ERROR "flashlight backend ill-specified")
   endif()
 
   # Link ArrayFire to flashlight
@@ -261,6 +280,7 @@ if (FL_BUILD_CORE)
     FL_BACKEND_CUDA=$<BOOL:${FL_USE_CUDA}>
     FL_BACKEND_OPENCL=$<BOOL:${FL_USE_OPENCL}>
     FL_BUILD_PROFILING=$<BOOL:${FL_BUILD_PROFILING}>
+    FL_BACKEND_MIOPEN=$<BOOL:${FL_USE_MIOPEN}>
     )
 
   # ------------------------ Extensions ------------------------

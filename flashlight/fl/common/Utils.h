@@ -29,6 +29,8 @@
         "ArrayFire error: ", __PRETTY_FUNCTION__, __FILE__, __LINE__, __err); \
   } while (0)
 
+std::ostream& operator<<(std::ostream& os, af::dtype type);
+
 namespace fl {
 
 /**
@@ -84,5 +86,7 @@ std::string prettyStringMemorySize(size_t size);
 std::string prettyStringCount(size_t count);
 
 /** @} */
+
+std::string prettyStringCount(af::dtype type);
 
 } // namespace fl

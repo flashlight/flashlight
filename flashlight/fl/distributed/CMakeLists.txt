@@ -38,6 +38,15 @@ if (USE_NCCL)
   endif()
 endif()
 
+# RCCL
+if (USE_RCCL)
+  find_package(RCCL REQUIRED)
+  if (RCCL_FOUND)
+    message(STATUS "RCCL found: (include: ${RCCL_INCLUDE_DIRS} lib: ${RCCL_LIBRARIES}")
+    setup_install_find_module(${CMAKE_MODULE_PATH}/FindRCCL.cmake)
+  endif()
+endif()
+
 # MPI
 find_package(MPI)
 if (MPI_C_FOUND AND MPI_CXX_FOUND)
@@ -107,6 +116,39 @@ if (USE_NCCL)
     flashlight
     PUBLIC
     "-DNO_NCCL_COMM_DESTROY_HANDLE"
+    )
+endif ()
+
+# Distributed
+if (USE_RCCL)
+  set(
+    DISTRIBUTED_RCCL_SOURCES
+    ${CMAKE_CURRENT_LIST_DIR}/backend/miopen/DistributedBackend.cpp
+    )
+
+  target_sources(
+    flashlight
+    PRIVATE
+    ${DISTRIBUTED_RCCL_SOURCES}
+    )
+
+  target_link_libraries(
+    flashlight
+    PRIVATE
+    ${MIOPEN_LIBRARIES}
+    ${RCCL_LIBRARIES}
+    )
+
+  target_include_directories(
+    flashlight
+    PRIVATE
+    ${RCCL_INCLUDE_DIRS}
+    )
+
+  target_compile_definitions(
+    flashlight
+    PUBLIC
+    "-DNO_RCCL_COMM_DESTROY_HANDLE"
     )
 endif ()
 

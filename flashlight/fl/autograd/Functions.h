@@ -86,13 +86,13 @@ T adjustInputType(const T& in, const char* funcname) {
  * Adjusts the input type to operators based on the optimization mode and the
  * operator name.
  */
-#define FL_ADJUST_INPUT_TYPE(INPUT) detail::adjustInputType(INPUT, __func__)
+#define FL_ADJUST_INPUT_TYPE(INPUT) fl::detail::adjustInputType(INPUT, __func__)
 
 /**
  * Checks if a variadic number of Variables have the same types.
  */
 #define FL_VARIABLE_DTYPES_MATCH_CHECK(...)              \
-  if (!detail::areVariableTypesEqual(__VA_ARGS__)) {     \
+  if (!fl::detail::areVariableTypesEqual(__VA_ARGS__)) {     \
     throw std::invalid_argument(                         \
         std::string(__func__) +                          \
         " doesn't support binary "                       \
@@ -638,7 +638,7 @@ Variable conv2d(
     int dx = 1,
     int dy = 1,
     int groups = 1,
-    std::shared_ptr<detail::ConvBenchmarks> benchmarks = nullptr);
+    std::shared_ptr<fl::detail::ConvBenchmarks> benchmarks = nullptr);
 
 /**
  * Applies a 2D convolution over an input signal given filter weights and
@@ -685,7 +685,7 @@ Variable conv2d(
     int dx = 1,
     int dy = 1,
     int groups = 1,
-    std::shared_ptr<detail::ConvBenchmarks> benchmarks = nullptr);
+    std::shared_ptr<fl::detail::ConvBenchmarks> benchmarks = nullptr);
 
 /**
  * Applies a 2D pooling over an input signal composed of several input planes.
