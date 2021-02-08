@@ -372,7 +372,7 @@ Variable pow(const Variable& input, double p) {
   auto gradFunc = [p](std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
     af::array grad = p * af::pow(inputs[0].array(), p - 1) * gradOutput.array();
-    inputs[0].addGrad(Variable(grad, false));
+    inputs[0].addGrad(Variable(grad.as(inputs[0].type()), false));
   };
   return Variable(result, {input}, gradFunc);
 }
@@ -618,7 +618,7 @@ Variable mean(const Variable& input, const std::vector<int>& axes) {
           count *= idims[i] / odims[i];
         }
         inputs[0].addGrad(
-            Variable((tileAs(gradOutput, idims) / count).array(), false));
+            Variable((tileAs(gradOutput, idims) / count).array().as(inputs[0].type()), false));
       };
   return Variable(result, {input.withoutData()}, gradFunc);
 }

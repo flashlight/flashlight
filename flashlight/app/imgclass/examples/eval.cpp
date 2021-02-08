@@ -25,7 +25,6 @@
 DEFINE_string(data_dir, "", "Directory of imagenet data");
 DEFINE_uint64(data_batch_size, 256, "Batch size per gpus");
 DEFINE_string(exp_checkpoint_path, "/tmp/model", "Checkpointing prefix path");
-DEFINE_string(exp_checkpoint_epoch, "-1", "Checkpoint epoch to load from");
 
 using namespace fl;
 using fl::ext::image::compose;
@@ -41,12 +40,9 @@ int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   std::shared_ptr<fl::ext::image::ViT> model;
-  fl::load(
-      fl::lib::pathsConcat(
-          FLAGS_exp_checkpoint_path, FLAGS_exp_checkpoint_epoch),
-      model);
+  fl::load(FLAGS_exp_checkpoint_path, model);
   const std::string labelPath = lib::pathsConcat(FLAGS_data_dir, "labels.txt");
-  const std::string testList = lib::pathsConcat(FLAGS_data_dir, "test");
+  const std::string testList = lib::pathsConcat(FLAGS_data_dir, "val");
 
   //  Create datasets
   FL_LOG_MASTER(INFO) << "Creating dataset";
@@ -68,8 +64,10 @@ int main(int argc, char** argv) {
       0,
       1,
       FLAGS_data_batch_size,
+      1,
       10,
-      FLAGS_data_batch_size);
+      FLAGS_data_batch_size,
+      fl::BatchDatasetPolicy::INCLUDE_LAST);
   FL_LOG_MASTER(INFO) << "[testDataset size] " << testDataset.size();
 
   // The main training loop

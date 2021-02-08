@@ -56,7 +56,8 @@ dynamicPartitionByRoundRobin(
  */
 af::array makeBatch(
     const std::vector<af::array>& data,
-    const Dataset::BatchFunction& batchFn);
+    const Dataset::BatchFunction& batchFn,
+    const std::vector<int64_t>& indices);
 
 /**
  * Make batch from part of indices (range [start, end) )

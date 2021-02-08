@@ -154,6 +154,7 @@ int main(int argc, char** argv) {
       worldRank,
       worldSize,
       batchSizePerGpu,
+      1,
       prefetchThreads,
       prefetchSize);
 
@@ -162,6 +163,7 @@ int main(int argc, char** argv) {
       worldRank,
       worldSize,
       batchSizePerGpu,
+      1,
       prefetchThreads,
       prefetchSize);
 

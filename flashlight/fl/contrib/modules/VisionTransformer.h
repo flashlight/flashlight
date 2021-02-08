@@ -30,15 +30,22 @@ class VisionTransformer : public Container {
   static fl::Variable initLinear(int32_t inDim, int32_t outDim);
 
  private:
+  int32_t modelDim_;
+  int32_t headDim_;
+  int32_t mlpDim_;
   int32_t nHeads_;
   double pDropout_;
   double pLayerdrop_;
-  std::shared_ptr<Linear> w1_, w2_, wq_, wk_, wv_, wf_;
+  std::shared_ptr<Linear> w1_, w2_;
+  std::shared_ptr<Linear> wq_, wk_, wv_;
+  //   std::shared_ptr<Linear> wqkv_;
+  std::shared_ptr<Linear> wf_;
   std::shared_ptr<LayerNorm> norm1_, norm2_;
 
   Variable gelu(const Variable& input);
   Variable mlp(const Variable& input);
   Variable selfAttention(const Variable& input);
+  Variable dropPath(const Variable& input);
 
   FL_SAVE_LOAD_WITH_BASE(
       Container,
@@ -47,9 +54,13 @@ class VisionTransformer : public Container {
       wq_,
       wk_,
       wv_,
+      //   wqkv_,
       wf_,
       norm1_,
       norm2_,
+      modelDim_,
+      headDim_,
+      mlpDim_,
       nHeads_,
       pDropout_,
       pLayerdrop_)

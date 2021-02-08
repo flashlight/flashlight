@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
       3072, // FLAGS_model_mlp_size,
       12, // FLAGS_model_heads,
       0.1, // FLAGS_train_dropout,
-      0.1, // FLAGS_train_layerdrop,
+      0.0, // FLAGS_train_layerdrop,
       1000);
 
   std::cout << "[Network] arch - " << network->prettyString() << std::endl;
@@ -79,10 +79,11 @@ int main(int argc, char** argv) {
       0.1 // FLAGS_train_wd
   );
   auto reducer = std::make_shared<fl::CoalescingReducer>(1.0, true, true);
-  // fl::distributeModuleGrads(network, reducer);
+  fl::distributeModuleGrads(network, reducer);
 
   auto batch_size = std::stoi(argv[1]);
   auto input = fl::Variable(af::randu(224, 224, 3, batch_size), false);
+  auto target = fl::Variable(af::randu(224, 224, 3, batch_size), false);
   if (std::stoi(argv[2]) == 16) {
     input = input.as(af::dtype::f16);
   }
@@ -100,21 +101,22 @@ int main(int argc, char** argv) {
   network->train();
   auto fwd_bwd_fn = [&]() {
     network->zeroGrad();
+    opt.zeroGrad();
     input.zeroGrad();
     auto output = network->forward({input}).front();
     output.backward();
 
     if (fl::getWorldSize() > 1) {
-      for (auto& p : network->params()) {
-        if (!p.isGradAvailable()) {
-          p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
-        }
-        p.grad() = p.grad() / 1.0;
-        reducer->add(p.grad());
-      }
+      // for (auto& p : network->params()) {
+      //   if (!p.isGradAvailable()) {
+      //     p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
+      //   }
+      //   p.grad() = p.grad() / 1.0;
+      //   reducer->add(p.grad());
+      // }
       reducer->finalize();
     }
-    fl::clipGradNorm(network->params(), 0.1);
+    // fl::clipGradNorm(network->params(), 0.1);
     opt.step();
   };
   auto batch_time = timeit(fwd_bwd_fn);

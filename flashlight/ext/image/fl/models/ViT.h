@@ -26,7 +26,8 @@ class ViT : public fl::Container {
       pDropout_,
       patchEmbedding_,
       transformers_,
-      linearOut_)
+      linearOut_,
+      ln_)
 
   int nLayers_;
   int hiddenEmbSize_;

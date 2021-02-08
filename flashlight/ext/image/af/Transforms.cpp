@@ -201,39 +201,47 @@ ImageTransform randomEraseTransform(
   };
 };
 
-ImageTransform randomAugmentationTransform(const float p) {
-  return [p](const af::array& in) {
+ImageTransform randomAugmentationTransform(const float p, const int n) {
+  return [p, n](const af::array& in) {
     const int w = in.dims(0);
     const int h = in.dims(1);
     const int c = in.dims(2);
 
-    if (p > static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX)) {
-      return in;
-    }
+    auto res = in;
+    for (int i = 0; i < n; i++) {
+      if (p < static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX)) {
+        continue;
+      }
 
-    float mode = randomFloat(0, 1);
-    if (mode < 0.3) {
-      float theta = randomFloat(-pi / 6, pi / 6);
-      return af::rotate(in, theta);
-    } else if (mode < 0.5) {
-      float theta = randomFloat(-pi / 6, pi / 6);
-      return af::skew(in, theta, 0);
-    } else if (mode < 0.7) {
-      float theta = randomFloat(-pi / 6, pi / 6);
-      return af::skew(in, 0, theta);
-    } else if (mode < 0.8) {
-      int shift = w * randomFloat(-0.25, 0.25);
-      return af::translate(in, shift, 0);
-    } else if (mode < 0.9) {
-      int shift = h * randomFloat(-0.25, 0.25);
-      return af::translate(in, 0, shift);
-    } else {
-      float enhance = randomFloat(0, 2);
-      auto meanPic = af::mean(in, 2);
-      meanPic = af::tile(meanPic, af::dim4(1, 1, c));
-      return af::clamp(meanPic + enhance * (in - meanPic), 0., 255.)
-          .as(in.type());
+      int mode = std::floor(randomFloat(0, 7));
+      if (mode == 0) {
+        float theta = randomFloat(-pi / 6, pi / 6);
+        res = af::rotate(res, theta);
+      } else if (mode == 1) {
+        float theta = randomFloat(-pi / 6, pi / 6);
+        res = af::skew(res, theta, 0);
+      } else if (mode == 2) {
+        float theta = randomFloat(-pi / 6, pi / 6);
+        res = af::skew(res, 0, theta);
+      } else if (mode == 3) {
+        int shift = w * randomFloat(-0.25, 0.25);
+        res = af::translate(res, shift, 0);
+      } else if (mode == 4) {
+        int shift = h * randomFloat(-0.25, 0.25);
+        res = af::translate(res, 0, shift);
+      } else if (mode == 5) {
+        float enhance = randomFloat(0, 2);
+        auto meanPic = af::mean(res, 2);
+        meanPic = af::tile(meanPic, af::dim4(1, 1, c));
+        res = af::clamp(meanPic + enhance * (res - meanPic), 0., 255.);
+      } else if (mode == 6) {
+        float enhance = randomFloat(0.4, 1.6);
+        res = af::clamp(res * enhance, 0., 255.);
+      }
+
+      res = res.as(in.type());
     }
+    return res;
   };
 }
 

@@ -23,6 +23,8 @@
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
 
+#include "beta_distribution.h"
+
 DEFINE_string(data_dir, "", "Directory of imagenet data");
 DEFINE_uint64(data_batch_size, 256, "Batch size per gpus");
 
@@ -36,12 +38,13 @@ DEFINE_double(train_dropout, 0., "Number of epochs to train");
 DEFINE_double(train_layerdrop, 0., "Number of epochs to train");
 DEFINE_double(train_maxgradnorm, 1., "");
 
-DEFINE_double(train_p_randomerase, 1., "");
-DEFINE_double(train_p_randomeaug, 1., "");
+DEFINE_double(train_p_randomerase, 0.25, "");
+DEFINE_double(train_p_randomeaug, 0.5, "");
+DEFINE_uint64(train_n_randomeaug, 2, "");
 DEFINE_double(train_p_mixup, 0., "");
 DEFINE_double(train_p_cutmix, 1.0, "");
 DEFINE_double(train_p_label_smoothing, 0.1, "");
-DEFINE_uint64(train_n_repeatedaug, 1, "");
+DEFINE_uint64(train_n_repeatedaug, 3, "");
 
 DEFINE_bool(distributed_enable, true, "Enable distributed training");
 DEFINE_int64(
@@ -206,7 +209,8 @@ int main(int argc, char** argv) {
        // scale invariance
        fl::ext::image::randomResizeTransform(randomResizeMin, randomResizeMax),
        fl::ext::image::randomCropTransform(randomCropSize, randomCropSize),
-       fl::ext::image::randomAugmentationTransform(FLAGS_train_p_randomeaug),
+       fl::ext::image::randomAugmentationTransform(
+           FLAGS_train_p_randomeaug, FLAGS_train_n_randomeaug),
        fl::ext::image::randomEraseTransform(FLAGS_train_p_randomerase),
        fl::ext::image::normalizeImage(mean, std),
        // Randomly flip image with probability of 0.5
@@ -226,16 +230,26 @@ int main(int argc, char** argv) {
       worldRank,
       worldSize,
       batchSizePerGpu,
+      FLAGS_train_n_repeatedaug,
       prefetchThreads,
       prefetchSize,
       fl::BatchDatasetPolicy::SKIP_LAST);
   FL_LOG_MASTER(INFO) << "[trainDataset size] " << trainDataset->size();
+  // auto trainDataset1 = std::make_shared<fl::ext::image::DistributedDataset>(
+  //     imagenetDataset(trainList, labelMap, {trainTransforms}),
+  //     worldRank,
+  //     worldSize,
+  //     batchSizePerGpu,
+  //     prefetchThreads,
+  //     prefetchSize,
+  //     fl::BatchDatasetPolicy::SKIP_LAST);
 
   auto valDataset = fl::ext::image::DistributedDataset(
       imagenetDataset(valList, labelMap, {valTransforms}),
       worldRank,
       worldSize,
       batchSizePerGpu,
+      1,
       prefetchThreads,
       prefetchSize,
       fl::BatchDatasetPolicy::INCLUDE_LAST);
@@ -257,7 +271,7 @@ int main(int argc, char** argv) {
   // synchronize parameters of the model so that the parameters in each process
   // is the same
   fl::allReduceParameters(model);
-  // fl::distributeModuleGrads(model, reducer);
+  fl::distributeModuleGrads(model, reducer);
 
   auto opt = AdamOptimizer(
       model->params(),
@@ -276,8 +290,10 @@ int main(int argc, char** argv) {
               (double(FLAGS_train_warmup_updates));
     } else {
       // cosine decay
-      lr = FLAGS_train_lr *
-          std::cos(((double)epoch) / ((double)FLAGS_train_epochs) * pi / 2.0);
+      lr = 1e-6 +
+          0.5 * FLAGS_train_lr *
+              (std::cos(((double)epoch) / ((double)FLAGS_train_epochs) * pi) +
+               1);
     }
     opt.setLr(lr);
   };
@@ -303,6 +319,8 @@ int main(int argc, char** argv) {
     loadModel();
   }
 
+  auto betaGenerator = sftrabbit::beta_distribution<float>(0.8, 0.8);
+
   //////////////////////////
   // The main training loop
   /////////////////////////
@@ -310,6 +328,7 @@ int main(int argc, char** argv) {
     // Only set the optim mode to O1 if it was left empty
     LOG(INFO) << "Mixed precision training enabled. Will perform loss scaling.";
     if (FLAGS_fl_optim_mode.empty()) {
+      // fl::OptimMode::get().setOptimLevel(fl::OptimLevel::O1);
       fl::OptimMode::get().setOptimLevel(fl::OptimLevel::DEFAULT);
     }
   }
@@ -333,6 +352,8 @@ int main(int argc, char** argv) {
   AverageValueMeter trainLossMeter;
   for (; epoch < FLAGS_train_epochs; epoch++) {
     trainDataset->resample(epoch);
+    // trainDataset1->resample(epoch + 4399);
+    std::mt19937_64 engine(epoch);
 
     // Get an iterator over the data
     timeMeter.resume();
@@ -340,14 +361,26 @@ int main(int argc, char** argv) {
       Variable loss;
       sampleTimerMeter.resume();
       auto sample = trainDataset->get(idx);
+      // auto sample1 = trainDataset1->get(idx);
+
       auto rawInput = sample[kImagenetInputIdx];
       if (FLAGS_fl_amp_use_mixed_precision) {
         rawInput = rawInput.as(f16);
       }
       auto rawInput1 = af::flip(rawInput, 3);
+      // auto rawInput1 = sample1[kImagenetInputIdx];
+      // if (FLAGS_fl_amp_use_mixed_precision) {
+      //   rawInput1 = rawInput.as(f16);
+      // }
+      // rawInput1 = af::flip(rawInput1, 3);
       rawInput1.eval();
+
       auto rawTarget = sample[kImagenetTargetIdx];
+      // af_print(af::flat(rawTarget));
+      // if (idx == 10) exit(0);
       auto rawTarget1 = af::flip(rawTarget, 0);
+      // auto rawTarget1 = sample1[kImagenetTargetIdx];
+      // rawTarget1 = af::flip(rawTarget1, 0);
       rawTarget1.eval();
 
       lrScheduler(epoch, batchIdx++);
@@ -360,19 +393,22 @@ int main(int argc, char** argv) {
       float example1Weight = 0.;
       if (FLAGS_train_p_mixup > 0 && mixP > 0.5) {
         // mixup
-        float lambda = FLAGS_train_p_mixup - 0.2 +
-            0.2 * static_cast<float>(std::rand()) /
-                static_cast<float>(RAND_MAX);
+        // float lambda = 0.9 +
+        //     0.1 * static_cast<float>(std::rand()) /
+        //         static_cast<float>(RAND_MAX);
+        float lambda = betaGenerator(engine);
+        // std::cout << lambda << std::endl;
         inputs = lambda * noGrad(rawInput1) + (1 - lambda) * noGrad(rawInput);
         example1Weight = lambda;
       } else if (FLAGS_train_p_cutmix > 0 && mixP <= 0.5) {
         // cut mix
         float lambda =
             static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+        float lambdaSqrt = std::sqrt(lambda);
         const int w = rawInput.dims(0);
         const int h = rawInput.dims(1);
-        const int maskW = std::round(w * lambda);
-        const int maskH = std::round(h * lambda);
+        const int maskW = std::round(w * lambdaSqrt);
+        const int maskH = std::round(h * lambdaSqrt);
         if (maskW == 0 || maskH == 0) {
           inputs = noGrad(rawInput);
           example1Weight = 0.;
@@ -394,7 +430,7 @@ int main(int argc, char** argv) {
                   af::span,
                   af::span);
           inputs = noGrad(rawInput);
-          example1Weight = lambda * lambda;
+          example1Weight = lambda;
         }
       }
       inputs.eval();
@@ -417,6 +453,8 @@ int main(int argc, char** argv) {
 
         auto y =
             noGrad(example1Weight * target1 + (1 - example1Weight) * target);
+        y = y.as(output.type());
+        // std::cout << inputs.type() << output.type() << y.type() << std::endl;
 
         loss = fl::mean(fl::sum(fl::negate(y * output), {0}), {1});
 
@@ -438,21 +476,21 @@ int main(int argc, char** argv) {
         loss.backward();
 
         if (FLAGS_distributed_enable) {
-          for (auto& p : model->params()) {
-            if (!p.isGradAvailable()) {
-              p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
-            }
-            if (isBadArray(p.grad().array())) {
-              FL_LOG(INFO) << "Grad has NaN values in 1, in proc: "
-                           << fl::getWorldRank();
-            }
-            p.grad() = p.grad() / scaleFactor;
-            if (isBadArray(p.grad().array())) {
-              FL_LOG(INFO) << "Grad has NaN values in 2, in proc: "
-                           << fl::getWorldRank();
-            }
-            reducer->add(p.grad());
-          }
+          // for (auto& p : model->params()) {
+          //   if (!p.isGradAvailable()) {
+          //     p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
+          //   }
+          //   if (isBadArray(p.grad().array())) {
+          //     FL_LOG(INFO) << "Grad has NaN values in 1, in proc: "
+          //                  << fl::getWorldRank();
+          //   }
+          //   p.grad() = p.grad() / scaleFactor;
+          //   if (isBadArray(p.grad().array())) {
+          //     FL_LOG(INFO) << "Grad has NaN values in 2, in proc: "
+          //                  << fl::getWorldRank();
+          //   }
+          //   reducer->add(p.grad());
+          // }
           reducer->finalize();
         }
         af::sync();
@@ -460,10 +498,10 @@ int main(int argc, char** argv) {
 
         optimTimeMeter.resume();
         for (auto& p : model->params()) {
-          if (!p.isGradAvailable()) {
-            p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
-          }
-          // p.grad() = p.grad() / scaleFactor;
+          // if (!p.isGradAvailable()) {
+          //   p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
+          // }
+          p.grad() = p.grad() / scaleFactor;
           if (FLAGS_fl_amp_use_mixed_precision &&
               isBadArray(p.grad().array())) {
             FL_LOG(INFO) << "Grad has NaN values in 3, in proc: "
@@ -498,9 +536,9 @@ int main(int argc, char** argv) {
       } while (retrySample);
 
       // clamp gradients
-      if (FLAGS_train_maxgradnorm > 0) {
-        fl::clipGradNorm(model->params(), FLAGS_train_maxgradnorm);
-      }
+      // if (FLAGS_train_maxgradnorm > 0) {
+      //   fl::clipGradNorm(model->params(), FLAGS_train_maxgradnorm);
+      // }
       opt.step();
       optimTimeMeter.stopAndIncUnit();
 

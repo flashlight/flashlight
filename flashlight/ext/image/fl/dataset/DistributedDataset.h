@@ -20,6 +20,7 @@ class DistributedDataset : public Dataset {
       int64_t worldRank,
       int64_t worldSize,
       int64_t batchSize,
+      int64_t nRepeated,
       int64_t numThreads,
       int64_t prefetchSize,
       BatchDatasetPolicy batchpolicy = fl::BatchDatasetPolicy::INCLUDE_LAST);

@@ -8,6 +8,7 @@
 #include "flashlight/fl/dataset/Utils.h"
 
 #include <algorithm>
+#include <random>
 #include <stdexcept>
 
 namespace fl {
@@ -136,27 +137,44 @@ std::vector<af::array> makeBatchFromRange(
       buffer[i].emplace_back(fds[i]);
     }
   }
+
+  // shuffle order,
+  std::mt19937_64 rng(start);
+  auto n = buffer[0].size();
+  std::vector<int64_t> indices(n);
+  std::iota(indices.begin(), indices.end(), 0);
+  for (auto i = n; i >= 1; --i) {
+    std::swap(indices[i - 1], indices[rng() % n]);
+  }
+
   std::vector<af::array> result(buffer.size());
   for (int64_t i = 0; i < buffer.size(); ++i) {
-    result[i] =
-        makeBatch(buffer[i], (i < batchFns.size()) ? batchFns[i] : nullptr);
+    result[i] = makeBatch(
+        buffer[i], (i < batchFns.size()) ? batchFns[i] : nullptr, indices);
   }
   return result;
 }
 
 af::array makeBatch(
     const std::vector<af::array>& data,
-    const Dataset::BatchFunction& batchFn) {
+    const Dataset::BatchFunction& batchFn,
+    const std::vector<int64_t>& indices) {
   if (batchFn) {
     return batchFn(data);
   }
+
   // Using default batching function
   if (data.empty()) {
     return af::array();
   }
-  auto dims = data[0].dims();
 
-  for (const auto& d : data) {
+  if (data.size() != indices.size()) {
+    throw std::invalid_argument("wtf");
+  }
+
+  auto dims = data[0].dims();
+  for (const auto& i : indices) {
+    auto& d = data[i];
     if (d.dims() != dims) {
       throw std::invalid_argument("dimension mismatch while batching dataset");
     }
@@ -170,10 +188,11 @@ af::array makeBatch(
   dims[ndims] = data.size();
   auto batcharr = af::array(dims, data[0].type());
 
-  for (size_t i = 0; i < data.size(); ++i) {
+  // for (const auto& i : indices) {
+  for (int i = 0; i < indices.size(); i++) {
     std::array<af::seq, 4> sel{af::span, af::span, af::span, af::span};
     sel[ndims] = af::seq(i, i);
-    batcharr(sel[0], sel[1], sel[2], sel[3]) = data[i];
+    batcharr(sel[0], sel[1], sel[2], sel[3]) = data[indices[i]];
   }
   return batcharr;
 }

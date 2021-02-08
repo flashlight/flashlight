@@ -82,6 +82,30 @@ TEST(SerializationTest, Transformer) {
   ASSERT_TRUE(allClose(outputl[0], output[0]));
 }
 
+TEST(SerializationTest, VisionTransformer) {
+  int hiddenEmbSize = 768;
+  int nHeads = 12;
+  int mlpSize = 3072;
+
+  auto model = std::make_shared<VisionTransformer>(
+      hiddenEmbSize, hiddenEmbSize / nHeads, mlpSize, nHeads, 0, 0);
+  model->eval();
+
+  const std::string path = fl::lib::getTmpPath("VisionTransformer.mdl");
+  save(path, model);
+
+  std::shared_ptr<VisionTransformer> loaded;
+  load(path, loaded);
+  loaded->eval();
+
+  auto input = Variable(af::randu(hiddenEmbSize, 197, 20, 1), false);
+  auto output = model->forward({input});
+  auto outputl = loaded->forward({input});
+
+  ASSERT_TRUE(allParamsClose(*loaded, *model));
+  ASSERT_TRUE(allClose(outputl[0], output[0]));
+}
+
 TEST(SerializationTest, ConformerSerialization) {
   int batchsize = 10;
   int timesteps = 120;
