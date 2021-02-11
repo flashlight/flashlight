@@ -111,6 +111,16 @@ void LexiconDecoder::decodeStep(const float* emissions, int T, int N) {
 
         // If we got a true word
         for (auto label : lex->labels) {
+          if (prevLex == lexicon_->getRoot() && prevHyp.token == n) {
+            // This is to avoid an situation that, when there is word with
+            // single token spelling (e.g. X -> x) in the lexicon and token `x`
+            // is predicted in several consecutive frames, multiple word `X`
+            // will be emitted. This violates the property of CTC, where
+            // there must be an blank token in between to predict 2 identical
+            // tokens consecutively.
+            continue;
+          }
+
           if (!isLmToken_) {
             auto lmStateScorePair = lm_->score(prevHyp.lmState, label);
             lmState = lmStateScorePair.first;
