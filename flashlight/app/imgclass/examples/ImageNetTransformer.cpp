@@ -27,6 +27,7 @@
 
 DEFINE_string(data_dir, "", "Directory of imagenet data");
 DEFINE_uint64(data_batch_size, 256, "Batch size per gpus");
+DEFINE_uint64(data_prefetch_thread, 10, "Batch size per gpus");
 
 DEFINE_double(train_lr, 5e-4, "Learning rate");
 DEFINE_double(train_warmup_updates, 10000, "train_warmup_updates");
@@ -45,6 +46,7 @@ DEFINE_double(train_p_mixup, 0., "");
 DEFINE_double(train_p_cutmix, 1.0, "");
 DEFINE_double(train_p_label_smoothing, 0.1, "");
 DEFINE_uint64(train_n_repeatedaug, 3, "");
+DEFINE_double(train_p_switchmix, 0.5, "");
 
 DEFINE_bool(distributed_enable, true, "Enable distributed training");
 DEFINE_int64(
@@ -212,9 +214,8 @@ int main(int argc, char** argv) {
        fl::ext::image::randomAugmentationTransform(
            FLAGS_train_p_randomeaug, FLAGS_train_n_randomeaug),
        fl::ext::image::randomEraseTransform(FLAGS_train_p_randomerase),
-       fl::ext::image::normalizeImage(mean, std),
-       // Randomly flip image with probability of 0.5
-       fl::ext::image::randomHorizontalFlipTransform(horizontalFlipProb)});
+       fl::ext::image::randomHorizontalFlipTransform(horizontalFlipProb),
+       fl::ext::image::normalizeImage(mean, std)});
   ImageTransform valTransforms =
       compose({// Resize shortest side to 256, then take a center crop
                fl::ext::image::resizeTransform(randomResizeMin),
@@ -222,8 +223,7 @@ int main(int argc, char** argv) {
                fl::ext::image::normalizeImage(mean, std)});
 
   const int64_t batchSizePerGpu = FLAGS_data_batch_size;
-  const int64_t prefetchThreads = 10;
-  const int64_t prefetchSize = FLAGS_data_batch_size * 2;
+  const int64_t prefetchSize = FLAGS_data_batch_size * 10;
   auto labelMap = getImagenetLabels(labelPath);
   auto trainDataset = std::make_shared<fl::ext::image::DistributedDataset>(
       imagenetDataset(trainList, labelMap, {trainTransforms}),
@@ -231,7 +231,7 @@ int main(int argc, char** argv) {
       worldSize,
       batchSizePerGpu,
       FLAGS_train_n_repeatedaug,
-      prefetchThreads,
+      FLAGS_data_prefetch_thread,
       prefetchSize,
       fl::BatchDatasetPolicy::SKIP_LAST);
   FL_LOG_MASTER(INFO) << "[trainDataset size] " << trainDataset->size();
@@ -250,7 +250,7 @@ int main(int argc, char** argv) {
       worldSize,
       batchSizePerGpu,
       1,
-      prefetchThreads,
+      FLAGS_data_prefetch_thread,
       prefetchSize,
       fl::BatchDatasetPolicy::INCLUDE_LAST);
   FL_LOG_MASTER(INFO) << "[valDataset size] " << valDataset.size();
@@ -281,13 +281,33 @@ int main(int argc, char** argv) {
       1e-8,
       FLAGS_train_wd);
 
-  auto lrScheduler = [&opt](int epoch, int update) {
+  // auto opt =
+  //     fl::SGDOptimizer(model->params(), FLAGS_train_lr, 0, FLAGS_train_wd);
+
+  // auto lrScheduler = [&opt](int epoch, int update) {
+  //   double lr = FLAGS_train_lr;
+  //   if (update < FLAGS_train_warmup_updates) {
+  //     // warmup stage
+  //     lr = 1e-7 +
+  //         (FLAGS_train_lr - 1e-7) * update /
+  //             (double(FLAGS_train_warmup_updates));
+  //   } else {
+  //     // cosine decay
+  //     lr = 1e-6 +
+  //         0.5 * FLAGS_train_lr *
+  //             (std::cos(((double)epoch) / ((double)FLAGS_train_epochs) * pi)
+  //             +
+  //              1);
+  //   }
+  //   opt.setLr(lr);
+  // };
+
+  auto lrScheduler = [&opt](int epoch) {
     double lr = FLAGS_train_lr;
-    if (update < FLAGS_train_warmup_updates) {
+    if (epoch <= 5) {
       // warmup stage
-      lr = 1e-7 +
-          (FLAGS_train_lr - 1e-7) * update /
-              (double(FLAGS_train_warmup_updates));
+      lr = (epoch - 1) * FLAGS_train_lr / 5;
+      lr = std::max(lr, 1e-6);
     } else {
       // cosine decay
       lr = 1e-6 +
@@ -357,16 +377,42 @@ int main(int argc, char** argv) {
 
     // Get an iterator over the data
     timeMeter.resume();
-    for (int idx = 0; idx < trainDataset->size(); idx++) {
+    for (int idx = 0; idx < trainDataset->size(); idx++, batchIdx++) {
       Variable loss;
       sampleTimerMeter.resume();
+
+#if 0
+      af::array input = trainDataset->get(idx)[kImagenetInputIdx];
+      input = trainTransforms(input);
+      for (int i = 1;
+           i < std::min((int)FLAGS_data_batch_size, (int)trainDataset->size());
+           i++) {
+        auto tmp = trainDataset->get(idx + i)[kImagenetInputIdx];
+        tmp = trainTransforms(tmp);
+        input = af::join(3, input, tmp);
+      }
+
+      // af::array input = af::randu(224, 224, 3);
+      // for (int i = 1; i < FLAGS_data_batch_size; i++) {
+      //   auto tmp = af::randu(224, 224, 3);
+      //   tmp = trainTransforms(tmp);
+      //   input = af::join(3, input, tmp);
+      // }
+
+      auto inputs = fl::Variable(input, false);
+      auto y = fl::Variable(af::randu(1000, FLAGS_data_batch_size), false);
+      // if (FLAGS_fl_amp_use_mixed_precision) {
+      //   inputs = inputs.as(f16);
+      // }
+#endif
+#if 1
       auto sample = trainDataset->get(idx);
       // auto sample1 = trainDataset1->get(idx);
 
       auto rawInput = sample[kImagenetInputIdx];
-      if (FLAGS_fl_amp_use_mixed_precision) {
-        rawInput = rawInput.as(f16);
-      }
+      // if (FLAGS_fl_amp_use_mixed_precision) {
+      //   rawInput = rawInput.as(f16);
+      // }
       auto rawInput1 = af::flip(rawInput, 3);
       // auto rawInput1 = sample1[kImagenetInputIdx];
       // if (FLAGS_fl_amp_use_mixed_precision) {
@@ -376,14 +422,17 @@ int main(int argc, char** argv) {
       rawInput1.eval();
 
       auto rawTarget = sample[kImagenetTargetIdx];
-      // af_print(af::flat(rawTarget));
+      // af_print(af::transpose(rawTarget));
       // if (idx == 10) exit(0);
       auto rawTarget1 = af::flip(rawTarget, 0);
+      // af_print(af::transpose(rawTarget1));
       // auto rawTarget1 = sample1[kImagenetTargetIdx];
       // rawTarget1 = af::flip(rawTarget1, 0);
+      auto target = oneHot(rawTarget, 1000);
+      auto target1 = oneHot(rawTarget1, 1000);
       rawTarget1.eval();
 
-      lrScheduler(epoch, batchIdx++);
+      lrScheduler(epoch);
       opt.zeroGrad();
 
       // Make a Variable from the input array.
@@ -391,7 +440,7 @@ int main(int argc, char** argv) {
       float mixP =
           static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
       float example1Weight = 0.;
-      if (FLAGS_train_p_mixup > 0 && mixP > 0.5) {
+      if (FLAGS_train_p_mixup > 0 && mixP > FLAGS_train_p_switchmix) {
         // mixup
         // float lambda = 0.9 +
         //     0.1 * static_cast<float>(std::rand()) /
@@ -400,7 +449,7 @@ int main(int argc, char** argv) {
         // std::cout << lambda << std::endl;
         inputs = lambda * noGrad(rawInput1) + (1 - lambda) * noGrad(rawInput);
         example1Weight = lambda;
-      } else if (FLAGS_train_p_cutmix > 0 && mixP <= 0.5) {
+      } else if (FLAGS_train_p_cutmix > 0 && mixP <= FLAGS_train_p_switchmix) {
         // cut mix
         float lambda =
             static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
@@ -418,6 +467,7 @@ int main(int argc, char** argv) {
         } else {
           const int x = std::rand() % (w - maskW);
           const int y = std::rand() % (h - maskH);
+          // std::cout << x << " " << y << ", " << maskW << std::endl;
 
           rawInput(
               af::seq(x, x + maskW - 1),
@@ -432,9 +482,15 @@ int main(int argc, char** argv) {
           inputs = noGrad(rawInput);
           example1Weight = lambda;
         }
+        // std::cout << example1Weight << std::endl;
+      } else {
+        throw std::runtime_error("wtf no mix is used");
       }
       inputs.eval();
+
+      auto y = noGrad(example1Weight * target1 + (1 - example1Weight) * target);
       rawInput1 = af::array();
+#endif
       af::sync();
       sampleTimerMeter.stopAndIncUnit();
 
@@ -448,11 +504,7 @@ int main(int argc, char** argv) {
         // Make a Variable from the target array.
         // Compute and record the loss + label smoothing
         critFwdTimeMeter.resume();
-        auto target = oneHot(rawTarget, 1000);
-        auto target1 = oneHot(rawTarget1, 1000);
 
-        auto y =
-            noGrad(example1Weight * target1 + (1 - example1Weight) * target);
         y = y.as(output.type());
         // std::cout << inputs.type() << output.type() << y.type() << std::endl;
 
@@ -463,10 +515,10 @@ int main(int argc, char** argv) {
           loss = loss * scaleFactor;
         }
 
-        if (isBadArray(loss.array())) {
-          FL_LOG(FATAL) << "Loss has NaN values, in proc: "
-                        << fl::getWorldRank();
-        }
+        // if (isBadArray(loss.array())) {
+        //   FL_LOG(FATAL) << "Loss has NaN values, in proc: "
+        //                 << fl::getWorldRank();
+        // }
         af::sync();
         fwdTimeMeter.stopAndIncUnit();
         critFwdTimeMeter.stopAndIncUnit();
@@ -530,8 +582,8 @@ int main(int argc, char** argv) {
           continue;
         }
 
-        top5Acc.add(output.array(), rawTarget);
-        top1Acc.add(output.array(), rawTarget);
+        // top5Acc.add(output.array(), rawTarget);
+        // top1Acc.add(output.array(), rawTarget);
         trainLossMeter.add(loss.array() / scaleFactor);
       } while (retrySample);
 
@@ -543,20 +595,21 @@ int main(int argc, char** argv) {
       optimTimeMeter.stopAndIncUnit();
 
       // Compute and record the prediction error.
+      int interval = 100;
       double trainLoss = trainLossMeter.value()[0];
-      if (idx && idx % 100 == 0) {
+      if (idx && idx % interval == 0) {
         timeMeter.stop();
         fl::ext::syncMeter(trainLossMeter);
         fl::ext::syncMeter(timeMeter);
         fl::ext::syncMeter(top5Acc);
         fl::ext::syncMeter(top1Acc);
-        double time = timeMeter.value();
-        double samplePerSecond =
-            (idx + 1) * FLAGS_data_batch_size * worldSize / time;
+        double time = timeMeter.value() / interval;
+        double samplePerSecond = FLAGS_data_batch_size * worldSize / time;
         FL_LOG_MASTER(INFO)
-            << "Epoch " << epoch << std::setprecision(5) << " Batch: " << idx
-            << " Throughput " << samplePerSecond << " | : Batch time(ms): "
-            << fl::lib::format("%.2f", time / idx * 1000)
+            << "Epoch " << epoch << std::setprecision(5)
+            << " Batch: " << idx << " Throughput "
+            << samplePerSecond
+            << " | : Batch time(ms): " << fl::lib::format("%.2f", time * 1000)
             << " : Sample Time(ms): "
             << fl::lib::format("%.2f", sampleTimerMeter.value() * 1000)
             << " : Forward Time(ms): "
@@ -573,6 +626,7 @@ int main(int argc, char** argv) {
         top5Acc.reset();
         top1Acc.reset();
         trainLossMeter.reset();
+        timeMeter.reset();
         timeMeter.resume();
       }
     }

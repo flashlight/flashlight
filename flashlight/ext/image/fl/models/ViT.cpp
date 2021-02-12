@@ -51,7 +51,7 @@ ViT::ViT(
 
   linearOut_ = std::make_shared<Linear>(
       VisionTransformer::initLinear(hiddenEmbSize_, nClasses),
-      fl::constant(0., nClasses, 1));
+      fl::constant(0., nClasses, 1, af::dtype::f32));
   add(linearOut_);
 
   ln_ = std::make_shared<LayerNorm>(
@@ -65,6 +65,7 @@ std::vector<fl::Variable> ViT::forward(
 
   // Patching
   auto output = patchEmbedding_->forward(inputs[0]); // H x W x C x B
+  output = output.as(f16);
   output = moddims(output, af::dim4(-1, 1, 0, 0)); // T x 1 x C x B
   output = reorder(output, 2, 0, 3, 1); // C x T x B
   auto B = output.dims(2);

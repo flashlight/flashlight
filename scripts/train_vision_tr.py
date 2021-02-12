@@ -42,7 +42,7 @@ trap 'trap_handler USR1' USR1
 trap 'trap_handler TERM' TERM
 
 # 3. Your job
-/usr/mpi/gcc/openmpi-4.0.4rc3/bin/orterun {job_script}
+srun {job_script}
 
 # 4. sleep 60 days in the background
 sleep 5184000 &
@@ -152,6 +152,9 @@ def main(binary, mode, config, model_path, extra, partition, comment, ngpu, gpu1
         model_path = os.path.join(log_dir, exp_id)
         model_path = os.path.join(model_path, "model")
         flags += f" --exp_checkpoint_path={model_path}"
+        flags += f" --distributed_rndv_filepath={sub_log_dir}"
+        flags += f" --distributed_world_size={ngpu}"
+        flags += " --distributed_world_rank=${SLURM_PROCID}"
 
     # Continue mode
     elif mode == 'continue':

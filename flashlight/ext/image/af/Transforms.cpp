@@ -167,7 +167,7 @@ ImageTransform randomEraseTransform(
     const float edgeRatioMax) {
   return [p, areaRatioMin, areaRatioMax, edgeRatioMin, edgeRatioMax](
              const af::array& in) {
-    if (p > static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX)) {
+    if (p < static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX)) {
       return in;
     }
 

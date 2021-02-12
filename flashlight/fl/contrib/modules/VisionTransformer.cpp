@@ -38,25 +38,25 @@ VisionTransformer::VisionTransformer(
       pLayerdrop_(pLayerdrop),
       w1_(std::make_shared<Linear>(
           initLinear(modelDim, mlpDim),
-          fl::constant(0., mlpDim, 1))),
+          fl::constant(0., mlpDim, 1, af::dtype::f32))),
       w2_(std::make_shared<Linear>(
           initLinear(mlpDim, modelDim),
-          fl::constant(0., modelDim, 1))),
+          fl::constant(0., modelDim, 1, af::dtype::f32))),
       wq_(std::make_shared<Linear>(
           initLinear(modelDim, headDim * nHeads),
-          fl::constant(0., headDim * nHeads, 1))),
+          fl::constant(0., headDim * nHeads, 1, af::dtype::f32))),
       wk_(std::make_shared<Linear>(
           initLinear(modelDim, headDim * nHeads),
-          fl::constant(0., headDim * nHeads, 1))),
+          fl::constant(0., headDim * nHeads, 1, af::dtype::f32))),
       wv_(std::make_shared<Linear>(
           initLinear(modelDim, headDim * nHeads),
-          fl::constant(0., headDim * nHeads, 1))),
+          fl::constant(0., headDim * nHeads, 1, af::dtype::f32))),
       // wqkv_(std::make_shared<Linear>(
       //     initLinear(modelDim, headDim * nHeads * 3),
       //     fl::constant(0., headDim * nHeads * 3, 1))),
       wf_(std::make_shared<Linear>(
           initLinear(headDim * nHeads, modelDim),
-          fl::constant(0., headDim * nHeads, 1))),
+          fl::constant(0., headDim * nHeads, 1, af::dtype::f32))),
       norm1_(std::make_shared<LayerNorm>(
           std::vector<int>({0}),
           1e-6,
@@ -123,7 +123,8 @@ Variable VisionTransformer::selfAttention(const Variable& x) {
   q = q / std::sqrt(float(headDim_));
 
   auto scores = matmulNT(q, k);
-  auto attn = dropout(softmax(scores, 1), pDrop);
+  auto attn = softmax(scores, 1);
+  // attn = dropout(attn, pDrop);
   auto result = matmul(attn.as(v.type()), v);
   result = moddims(result, af::dim4(-1, headDim_ * nHeads_, B));
 
