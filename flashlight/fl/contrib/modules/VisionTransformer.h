@@ -16,6 +16,7 @@ namespace fl {
 
 class VisionTransformer : public Container {
  public:
+  VisionTransformer(const std::string& prefix);
   VisionTransformer(
       int32_t modelDim,
       int32_t headDim,

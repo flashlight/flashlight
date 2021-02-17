@@ -39,8 +39,11 @@ int main(int argc, char** argv) {
   google::InstallFailureSignalHandler();
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-  std::shared_ptr<fl::ext::image::ViT> model;
-  fl::load(FLAGS_exp_checkpoint_path, model);
+  // std::shared_ptr<fl::ext::image::ViT> model;
+  // fl::load(FLAGS_exp_checkpoint_path, model);
+
+  auto model = std::make_shared<fl::ext::image::ViT>(FLAGS_exp_checkpoint_path);
+
   const std::string labelPath = lib::pathsConcat(FLAGS_data_dir, "labels.txt");
   const std::string testList = lib::pathsConcat(FLAGS_data_dir, "val");
 

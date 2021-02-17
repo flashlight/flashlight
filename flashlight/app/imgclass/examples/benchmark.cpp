@@ -23,6 +23,36 @@
 
 int main(int argc, char** argv) {
   fl::init();
+
+#if 0
+  auto a = fl::VisionTransformer::initLinear(20, 20).array();
+  af_print(a);
+  af_print(max(a));
+  af_print(min(a));
+  return 0;
+
+  std::vector<float> weights = {1, 3, 4, 5, 2, 6};
+  auto arr = af::array(3, 2, weights.data());
+  af_print(arr);
+  auto network = fl::Linear(fl::Variable(arr, true));
+  auto opt = fl::AdamOptimizer(
+      network.params(),
+      0.001, // FLAGS_train_lr,
+      0.9, // FLAGS_train_beta1,
+      0.999, // FLAGS_train_beta2,
+      1e-8,
+      0.05 // FLAGS_train_wd
+  );
+
+  std::vector<float> inputs = {1, 5};
+  auto input = fl::noGrad(af::array(2, inputs.data()));
+  for (int i = 0; i < 100; i++) {
+    auto loss = fl::sum(network(input), {0});
+    af_print(loss.array());
+    loss.backward();
+    opt.step();
+  }
+
   fl::ext::initDistributed(0, 1, 8, "");
   af::info();
   if (argc < 3) {
@@ -49,6 +79,7 @@ int main(int argc, char** argv) {
       fl::OptimMode::get().setOptimLevel(fl::OptimLevel::DEFAULT);
     }
   }
+#endif
 
   // 1.
   auto network = std::make_shared<fl::ext::image::ViT>(
@@ -73,6 +104,12 @@ int main(int argc, char** argv) {
   FL_LOG_MASTER(fl::INFO) << "[Network] params - "
                           << fl::numTotalParams(network);
 
+  for (auto i : network->modules()) {
+    std::cout << i->prettyString() << std::endl;
+  }
+  return 0;
+
+#if 0
   // 2.
   auto opt = fl::AdamOptimizer(
       network->params(),
@@ -204,6 +241,6 @@ int main(int argc, char** argv) {
 
   std::cout << "Throughput/GPU: " << batch_size * n / total_time << " images/s"
             << std::endl;
-
+#endif
   return 0;
 }

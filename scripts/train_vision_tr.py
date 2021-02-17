@@ -152,9 +152,10 @@ def main(binary, mode, config, model_path, extra, partition, comment, ngpu, gpu1
         model_path = os.path.join(log_dir, exp_id)
         model_path = os.path.join(model_path, "model")
         flags += f" --exp_checkpoint_path={model_path}"
-        flags += f" --distributed_rndv_filepath={sub_log_dir}"
-        flags += f" --distributed_world_size={ngpu}"
-        flags += " --distributed_world_rank=${SLURM_PROCID}"
+        if not local:
+            flags += f" --distributed_rndv_filepath={sub_log_dir}"
+            flags += f" --distributed_world_size={ngpu}"
+            flags += " --distributed_world_rank=${SLURM_PROCID}"
 
     # Continue mode
     elif mode == 'continue':

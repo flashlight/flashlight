@@ -310,8 +310,8 @@ int main(int argc, char** argv) {
       lr = std::max(lr, 1e-6);
     } else {
       // cosine decay
-      lr = 1e-6 +
-          0.5 * FLAGS_train_lr *
+      lr = 1e-5 +
+          0.5 * (FLAGS_train_lr - 1e-5) *
               (std::cos(((double)epoch) / ((double)FLAGS_train_epochs) * pi) +
                1);
     }
@@ -447,7 +447,7 @@ int main(int argc, char** argv) {
         //         static_cast<float>(RAND_MAX);
         float lambda = betaGenerator(engine);
         // std::cout << lambda << std::endl;
-        inputs = lambda * noGrad(rawInput1) + (1 - lambda) * noGrad(rawInput);
+        inputs = noGrad(lambda * rawInput1 + (1 - lambda) * rawInput);
         example1Weight = lambda;
       } else if (FLAGS_train_p_cutmix > 0 && mixP <= FLAGS_train_p_switchmix) {
         // cut mix
@@ -458,33 +458,47 @@ int main(int argc, char** argv) {
         const int h = rawInput.dims(1);
         const int maskW = std::round(w * lambdaSqrt);
         const int maskH = std::round(h * lambdaSqrt);
-        if (maskW == 0 || maskH == 0) {
-          inputs = noGrad(rawInput);
-          example1Weight = 0.;
-        } else if (maskW == w || maskH == h) {
-          inputs = noGrad(rawInput1);
-          example1Weight = 1.;
-        } else {
-          const int x = std::rand() % (w - maskW);
-          const int y = std::rand() % (h - maskH);
-          // std::cout << x << " " << y << ", " << maskW << std::endl;
+        // if (maskW == 0 || maskH == 0) {
+        //   inputs = noGrad(rawInput);
+        //   example1Weight = 0.;
+        // } else if (maskW == w || maskH == h) {
+        //   inputs = noGrad(rawInput1);
+        //   example1Weight = 1.;
+        // } else {
+        //   const int x = std::rand() % (w - maskW);
+        //   const int y = std::rand() % (h - maskH);
+        //   // std::cout << x << " " << y << ", " << maskW << std::endl;
 
-          rawInput(
-              af::seq(x, x + maskW - 1),
-              af::seq(y, y + maskH - 1),
-              af::span,
-              af::span) =
-              rawInput1(
-                  af::seq(x, x + maskW - 1),
-                  af::seq(y, y + maskH - 1),
-                  af::span,
-                  af::span);
-          inputs = noGrad(rawInput);
-          example1Weight = lambda;
-        }
+        //   rawInput(
+        //       af::seq(x, x + maskW - 1),
+        //       af::seq(y, y + maskH - 1),
+        //       af::span,
+        //       af::span) =
+        //       rawInput1(
+        //           af::seq(x, x + maskW - 1),
+        //           af::seq(y, y + maskH - 1),
+        //           af::span,
+        //           af::span);
+        //   inputs = noGrad(rawInput);
+        //   example1Weight = lambda;
+        // }
+
+        const int centerW =
+            static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX) * w;
+        const int centerH =
+            static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX) * h;
+
+        const int x1 = std::max(0, centerW - maskW / 2);
+        const int x2 = std::min(w - 1, centerW + maskW / 2);
+        const int y1 = std::max(0, centerH - maskH / 2);
+        const int y2 = std::min(h - 1, centerH + maskH / 2);
+        rawInput(af::seq(x1, x2), af::seq(y1, y2), af::span, af::span) =
+            rawInput1(af::seq(x1, x2), af::seq(y1, y2), af::span, af::span);
+        inputs = noGrad(rawInput);
+        example1Weight = (float)(x2 - x1) * (y2 - y1) / (w * h);
         // std::cout << example1Weight << std::endl;
-      } else {
-        throw std::runtime_error("wtf no mix is used");
+      // } else {
+      //   throw std::runtime_error("wtf no mix is used");
       }
       inputs.eval();
 
@@ -606,9 +620,8 @@ int main(int argc, char** argv) {
         double time = timeMeter.value() / interval;
         double samplePerSecond = FLAGS_data_batch_size * worldSize / time;
         FL_LOG_MASTER(INFO)
-            << "Epoch " << epoch << std::setprecision(5)
-            << " Batch: " << idx << " Throughput "
-            << samplePerSecond
+            << "Epoch " << epoch << std::setprecision(5) << " Batch: " << idx
+            << " Throughput " << samplePerSecond
             << " | : Batch time(ms): " << fl::lib::format("%.2f", time * 1000)
             << " : Sample Time(ms): "
             << fl::lib::format("%.2f", sampleTimerMeter.value() * 1000)
@@ -648,4 +661,6 @@ int main(int argc, char** argv) {
     saveModel();
   }
   FL_LOG_MASTER(INFO) << "Training complete";
+
+  return 0;
 }

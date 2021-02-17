@@ -20,6 +20,12 @@ float randomFloat(float a, float b) {
   return a + (b - a) * r;
 }
 
+template <class T>
+T randomNegate(T a) {
+  float r = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+  return r > 0.5 ? a : -a;
+}
+
 const float pi = std::acos(-1);
 
 /*
@@ -213,28 +219,33 @@ ImageTransform randomAugmentationTransform(const float p, const int n) {
         continue;
       }
 
-      int mode = std::floor(randomFloat(0, 7));
-      if (mode == 0) {
-        float theta = randomFloat(-pi / 6, pi / 6);
+      int mode = std::floor(randomFloat(0, 14));
+      if (mode < 4) {
+        float theta = randomFloat(0.13 * pi, 0.19 * pi);
+        theta = randomNegate(theta);
         res = af::rotate(res, theta);
-      } else if (mode == 1) {
-        float theta = randomFloat(-pi / 6, pi / 6);
+      } else if (mode < 6) {
+        float theta = randomFloat(0.13 * pi, 0.19 * pi);
+        theta = randomNegate(theta);
         res = af::skew(res, theta, 0);
-      } else if (mode == 2) {
-        float theta = randomFloat(-pi / 6, pi / 6);
+      } else if (mode < 8) {
+        float theta = randomFloat(0.13 * pi, 0.19 * pi);
+        theta = randomNegate(theta);
         res = af::skew(res, 0, theta);
-      } else if (mode == 3) {
-        int shift = w * randomFloat(-0.25, 0.25);
+      } else if (mode < 10) {
+        int shift = h * randomFloat(0.22, 0.27);
+        shift = randomNegate(shift);
         res = af::translate(res, shift, 0);
-      } else if (mode == 4) {
-        int shift = h * randomFloat(-0.25, 0.25);
+      } else if (mode < 12) {
+        int shift = h * randomFloat(0.22, 0.27);
+        shift = randomNegate(shift);
         res = af::translate(res, 0, shift);
-      } else if (mode == 5) {
+      } else if (mode < 13) {
         float enhance = randomFloat(0, 2);
         auto meanPic = af::mean(res, 2);
         meanPic = af::tile(meanPic, af::dim4(1, 1, c));
         res = af::clamp(meanPic + enhance * (res - meanPic), 0., 255.);
-      } else if (mode == 6) {
+      } else {
         float enhance = randomFloat(0.4, 1.6);
         res = af::clamp(res * enhance, 0., 255.);
       }

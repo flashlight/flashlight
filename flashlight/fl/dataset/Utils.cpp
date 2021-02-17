@@ -169,7 +169,9 @@ af::array makeBatch(
   }
 
   if (data.size() != indices.size()) {
-    throw std::invalid_argument("wtf");
+    throw std::invalid_argument(
+        "wtf! data: " + std::to_string(data.size()) +
+        ", indicies: " + std::to_string(indices.size()));
   }
 
   auto dims = data[0].dims();

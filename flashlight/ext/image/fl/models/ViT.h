@@ -43,6 +43,7 @@ class ViT : public fl::Container {
   ViT() = default;
 
  public:
+  ViT(const std::string& prefix);
   ViT(const int nLayers,
       const int hiddenEmbSize,
       const int mlpSize,

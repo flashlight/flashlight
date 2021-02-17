@@ -13,11 +13,30 @@
 #include "flashlight/fl/nn/Init.h"
 #include "flashlight/fl/nn/Utils.h"
 
+#include <fstream>
+#include <iostream>
+
 namespace {
 
 const float pi = std::acos(-1);
 const float geluConst1 = std::sqrt(2 / pi);
 const float geluConst2 = 0.044715;
+
+std::vector<float> readfloats(const std::string& filepath) {
+  std::ifstream fin(filepath, std::ios::binary);
+  if (!fin) {
+    std::cout << " Error, Couldn't find the file\n";
+    return {};
+  }
+
+  fin.seekg(0, std::ios::end);
+  const size_t num_elements = fin.tellg() / sizeof(float);
+  fin.seekg(0, std::ios::beg);
+
+  std::vector<float> res(num_elements);
+  fin.read(reinterpret_cast<char*>(res.data()), num_elements * sizeof(float));
+  return res;
+}
 
 } // namespace
 
@@ -189,6 +208,113 @@ fl::Variable VisionTransformer::initLinear(int32_t inDim, int32_t outDim) {
   // return fl::uniform(outDim, inDim, -std, std, af::dtype::f32, true);
 
   return truncNormal(af::dim4(outDim, inDim), 0.02);
+}
+
+VisionTransformer::VisionTransformer(const std::string& prefix)
+    : modelDim_(768),
+      headDim_(768 / 12),
+      mlpDim_(768 * 4),
+      nHeads_(12),
+      pDropout_(0.),
+      pLayerdrop_(0.) {
+  auto w = readfloats(prefix + ".mlp.fc1.weight.bin");
+  if (w.size() != 768 * 3072) {
+    throw std::runtime_error(".mlp.fc1.weight.bin");
+  }
+  auto b = readfloats(prefix + ".mlp.fc1.bias.bin");
+  if (b.size() != 3072) {
+    throw std::runtime_error(".mlp.fc1.bias.bin");
+  }
+  auto arr_w = fl::noGrad(af::array(3072, 768, w.data()));
+  auto arr_b = fl::noGrad(af::array(3072, b.data()));
+  w1_ = std::make_shared<Linear>(arr_w, arr_b);
+
+  w = readfloats(prefix + ".mlp.fc2.weight.bin");
+  if (w.size() != 768 * 3072) {
+    throw std::runtime_error(".mlp.fc2.weight.bin");
+  }
+  b = readfloats(prefix + ".mlp.fc2.bias.bin");
+  if (b.size() != 768) {
+    throw std::runtime_error(".mlp.fc2.bias.bin");
+  }
+  arr_w = fl::noGrad(af::array(768, 3072, w.data()));
+  arr_b = fl::noGrad(af::array(768, b.data()));
+  w2_ = std::make_shared<Linear>(arr_w, arr_b);
+
+  w = readfloats(prefix + ".attn.qkv.weight.bin");
+  if (w.size() != 768 * 2304) {
+    throw std::runtime_error(".attn.qkv.weight.bin");
+  }
+  b = readfloats(prefix + ".attn.qkv.bias.bin");
+  if (b.size() != 2304) {
+    throw std::runtime_error(".attn.qkv.bias.bin");
+  }
+  auto all_w = af::array(2304, 768, w.data());
+  auto all_b = af::array(2304, b.data());
+
+  arr_w = fl::noGrad(all_w(af::seq(0, 768 - 1), af::span));
+  arr_b = fl::noGrad(all_b(af::seq(0, 768 - 1)));
+  wq_ = std::make_shared<Linear>(arr_w, arr_b);
+
+  arr_w = fl::noGrad(all_w(af::seq(768, 2 * 768 - 1), af::span));
+  arr_b = fl::noGrad(all_b(af::seq(768, 2 * 768 - 1)));
+  wk_ = std::make_shared<Linear>(arr_w, arr_b);
+
+  arr_w = fl::noGrad(all_w(af::seq(2 * 768, 3 * 768 - 1), af::span));
+  arr_b = fl::noGrad(all_b(af::seq(2 * 768, 3 * 768 - 1)));
+  wv_ = std::make_shared<Linear>(arr_w, arr_b);
+
+  w = readfloats(prefix + ".attn.proj.weight.bin");
+  if (w.size() != 768 * 768) {
+    throw std::runtime_error(".attn.proj.weight.bin");
+  }
+  b = readfloats(prefix + ".attn.proj.bias.bin");
+  if (b.size() != 768) {
+    throw std::runtime_error(".attn.proj.bias.bin");
+  }
+  arr_w = fl::noGrad(af::array(768, 768, w.data()));
+  arr_b = fl::noGrad(af::array(768, b.data()));
+  wf_ = std::make_shared<Linear>(arr_w, arr_b);
+
+  w = readfloats(prefix + ".norm1.weight.bin");
+  if (w.size() != 768) {
+    throw std::runtime_error(".norm1.weight.bin");
+  }
+  b = readfloats(prefix + ".norm1.bias.bin");
+  if (b.size() != 768) {
+    throw std::runtime_error(".norm1.bias.bin");
+  }
+  arr_w = fl::noGrad(af::array(768, w.data()));
+  arr_b = fl::noGrad(af::array(768, b.data()));
+  norm1_ =
+      std::make_shared<LayerNorm>(std::vector<int>({0}), 1e-6, true, modelDim_);
+  norm1_->setParams(arr_w, 0);
+  norm1_->setParams(arr_b, 1);
+
+  w = readfloats(prefix + ".norm2.weight.bin");
+  if (w.size() != 768) {
+    throw std::runtime_error(".norm2.weight.bin");
+  }
+  b = readfloats(prefix + ".norm2.bias.bin");
+  if (b.size() != 768) {
+    throw std::runtime_error(".norm2.bias.bin");
+  }
+  arr_w = fl::noGrad(af::array(768, w.data()));
+  arr_b = fl::noGrad(af::array(768, b.data()));
+  norm2_ =
+      std::make_shared<LayerNorm>(std::vector<int>({0}), 1e-6, true, modelDim_);
+  norm2_->setParams(arr_w, 0);
+  norm2_->setParams(arr_b, 1);
+
+  add(w1_);
+  add(w2_);
+  add(wq_);
+  add(wk_);
+  add(wv_);
+  // add(wqkv_);
+  add(wf_);
+  add(norm1_);
+  add(norm2_);
 }
 
 } // namespace fl
