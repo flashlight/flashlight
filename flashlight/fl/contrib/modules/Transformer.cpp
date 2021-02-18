@@ -142,6 +142,12 @@ std::vector<Variable> Transformer::forward(const std::vector<Variable>& input) {
     return {(*norm2_)((f * mlp(h)).as(h.type()) + h)};
   }
 }
+std::vector<Variable> Transformer::forward(
+    const std::vector<Variable>& input,
+    bool useMask) {
+  useMask_ = useMask;
+  return forward(input);
+}
 
 std::string Transformer::prettyString() const {
   std::ostringstream ss;

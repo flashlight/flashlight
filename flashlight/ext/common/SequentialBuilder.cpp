@@ -63,13 +63,15 @@ fl::Variable forwardSequentialModuleWithPadMask(
     const af::array& inputSizes) {
   // expected input dims T x C x 1 x B
   int T = input.dims(0), B = input.dims(3);
-  return forwardSequentialModuleWithPadMask(input, ntwrk, inputSizes, T, B);
+  return forwardSequentialModuleWithPadMask(
+      input, ntwrk, inputSizes, false, T, B);
 }
 
 fl::Variable forwardSequentialModuleWithPadMask(
     const fl::Variable& input,
     std::shared_ptr<fl::Module> ntwrk,
     const af::array& inputSizes,
+    bool useMask,
     int T,
     int B) {
   auto inputMaxSize = af::tile(af::max(inputSizes), 1, B);
@@ -81,8 +83,10 @@ fl::Variable forwardSequentialModuleWithPadMask(
   for (auto& module : ntwrkSeq->modules()) {
     auto tr = std::dynamic_pointer_cast<fl::Transformer>(module);
     auto cfr = std::dynamic_pointer_cast<fl::Conformer>(module);
-    if (tr != nullptr || cfr != nullptr) {
-      output = module->forward({output, fl::noGrad(padMask)}).front();
+    if (tr != nullptr) {
+      output = tr->forward({output, fl::noGrad(padMask)}, useMask).front();
+    } else if (cfr != nullptr) {
+      output = cfr->forward({output, fl::noGrad(padMask)}).front();
     } else {
       output = module->forward({output}).front();
     }
@@ -500,8 +504,8 @@ std::shared_ptr<Module> parseLines(
       throw std::invalid_argument("Failed parsing - " + line);
     }
 
-    auto residualBlock = [&](
-        const std::vector<std::string>& prms, int& numResLayerAndSkip) {
+    auto residualBlock = [&](const std::vector<std::string>& prms,
+                             int& numResLayerAndSkip) {
       int numResLayers = std::stoi(prms[1]);
       int numSkipConnections = std::stoi(prms[2]);
       std::shared_ptr<Residual> resPtr = std::make_shared<Residual>();

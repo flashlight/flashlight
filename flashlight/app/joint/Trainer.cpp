@@ -19,12 +19,17 @@ namespace joint {
 
 /* ============= Public functions ============= */
 Trainer::Trainer(const std::string& mode) {
+  experimentDirectory_ =
+      fl::lib::pathsConcat(FLAGS_exp_rundir, FLAGS_exp_model_name);
+
   if (mode == "train") {
     initTrain();
   } else if (mode == "continue") {
     initContinue();
   } else if (mode == "fork") {
     initFork();
+  } else if (mode == "eval") {
+    initEval();
   } else {
     throw std::invalid_argument("Trainer doesn't support mode: " + mode);
   }
@@ -37,8 +42,6 @@ Trainer::Trainer(const std::string& mode) {
   if (FLAGS_distributed_enable) {
     reducer_ = std::make_shared<fl::CoalescingReducer>(1.0, true, true);
   }
-  experimentDirectory_ =
-      fl::lib::pathsConcat(FLAGS_exp_rundir, FLAGS_exp_model_name);
   FL_LOG_MASTER(INFO) << "[Log directory] " << experimentDirectory_;
   if (isMaster()) {
     dirCreate(experimentDirectory_);
@@ -182,12 +185,29 @@ void Trainer::trainStep(
   auto asrOutput =
       forwardSequentialModuleWithPadMask(asrInput, asrFrontEnd_, asrInputSizes);
   asrOutput = forwardSequentialModuleWithPadMask(
-      asrOutput, encoder_, asrInputSizes, asrOutput.dims(1), asrOutput.dims(2));
+      asrOutput,
+      encoder_,
+      asrInputSizes,
+      false,
+      asrOutput.dims(1),
+      asrOutput.dims(2));
   asrOutput = asrCriterionLinear_->forward({asrOutput}).front();
 
   auto lmOutput = lmFrontEnd_->forward({lmInput}).front();
   lmOutput = forwardSequentialModuleWithPadMask(
-      lmOutput, encoder_, lmInputSizes, lmOutput.dims(1), lmOutput.dims(2));
+      lmOutput,
+      encoder_,
+      lmInputSizes,
+      true,
+      lmOutput.dims(1),
+      lmOutput.dims(2));
+  if (!FLAGS_dictionary_wordlm) {
+    if (FLAGS_loss_type != "ce") {
+      throw std::runtime_error("FLAGS_loss_type != ce");
+    }
+    lmOutput = asrCriterionLinear_->forward({lmOutput}).front();
+    lmOutput = logSoftmax(lmOutput, 0);
+  }
   af::sync();
 
   critFwdTimeMeter_.resume();
@@ -267,7 +287,7 @@ void Trainer::evalStep() {
       auto output =
           forwardSequentialModuleWithPadMask(input, asrFrontEnd_, inputSizes);
       output = ext::forwardSequentialModuleWithPadMask(
-          output, encoder_, inputSizes, output.dims(1), output.dims(2));
+          output, encoder_, inputSizes, false, output.dims(1), output.dims(2));
       output = asrCriterionLinear_->forward({output}).front();
       auto loss = asrCriterion_->forward({output, target}).front();
 
@@ -288,19 +308,126 @@ void Trainer::evalStep() {
       af::array inputSizes = af::flat(af::sum(input.array() != kPadIdx_, 0));
       auto output = lmFrontEnd_->forward({input}).front();
       output = forwardSequentialModuleWithPadMask(
-          output, encoder_, inputSizes, output.dims(1), output.dims(2));
+          output, encoder_, inputSizes, true, output.dims(1), output.dims(2));
+      if (!FLAGS_dictionary_wordlm) {
+        if (FLAGS_loss_type != "ce") {
+          throw std::runtime_error("FLAGS_loss_type != ce");
+        }
+        output = asrCriterionLinear_->forward({output}).front();
+        output = logSoftmax(output, 0);
+      }
       auto loss = lmCriterion_->forward({output, target}).front();
       auto numTokens = af::count<int>(target.array() != kPadIdx_);
       if (numTokens > 0) {
-        auto weight = numTokens / static_cast<double>(
-                                      FLAGS_data_lm_tokens_per_sample *
-                                      FLAGS_data_lm_batch_size);
+        auto weight =
+            numTokens /
+            static_cast<double>(
+                FLAGS_data_lm_tokens_per_sample * FLAGS_data_lm_batch_size);
         validMeter.add(af::mean<double>(loss.array()) / numTokens, weight);
       }
     }
   }
 }
 
+void Trainer::evalLM() {
+  FL_LOG_MASTER(INFO) << "LM evaluation started.";
+  asrFrontEnd_->eval();
+  lmFrontEnd_->eval();
+  encoder_->eval();
+  asrCriterionLinear_->eval();
+  asrCriterion_->eval();
+  lmCriterion_->eval();
+
+  int cnt = 0;
+  for (const auto& set : lmValidDatasets_) {
+    const auto tag = set.first;
+    const auto validDataset = set.second;
+
+    for (const auto& batch : *validDataset) {
+      if (cnt++ == 100) {
+        break;
+      }
+      fl::Variable input, target;
+      std::tie(input, target) = getInputAndTarget(batch);
+      af::array inputSizes = af::flat(af::sum(input.array() != kPadIdx_, 0));
+      auto output = lmFrontEnd_->forward({input}).front();
+      output = forwardSequentialModuleWithPadMask(
+          output, encoder_, inputSizes, true, output.dims(1), output.dims(2));
+      if (!FLAGS_dictionary_wordlm) {
+        if (FLAGS_loss_type != "ce") {
+          throw std::runtime_error("FLAGS_loss_type != ce");
+        }
+        output = asrCriterionLinear_->forward({output}).front();
+        output = logSoftmax(output, 0);
+      }
+
+      for (int b = 0; b < output.dims(2); ++b) {
+        auto viterbiPath = fl::ext::afToVector<int>(
+            asrCriterion_->viterbiPath(output.array()(af::span, af::span, b)));
+        auto rawTarget = fl::ext::afToVector<int>(target.array()(af::span, b));
+
+        std::cout << "\n|T|: ";
+        for (auto& word : rawTarget) {
+          std::cout << tokenDictionary_.getEntry(word) << " ";
+        }
+        std::cout << "\n|P|: ";
+        for (auto& word : viterbiPath) {
+          std::cout << tokenDictionary_.getEntry(word) << " ";
+        }
+        std::cout << "\n---";
+      }
+    }
+  }
+}
+
+#if 0
+void Trainer::evalASR() {
+  FL_LOG_MASTER(INFO) << "ASR evaluation started.";
+  asrFrontEnd_->eval();
+  lmFrontEnd_->eval();
+  encoder_->eval();
+  asrCriterionLinear_->eval();
+  asrCriterion_->eval();
+  lmCriterion_->eval();
+
+  for (const auto& set : asrValidDatasets_) {
+    const auto tag = set.first;
+    const auto validDataset = set.second;
+
+    int cnt = 0;
+    for (const auto& batch : *validDataset) {
+      if (cnt++ == 100) {
+        break;
+      }
+      auto input = fl::input(batch[fl::app::asr::kInputIdx]);
+      auto target = fl::noGrad(batch[fl::app::asr::kTargetIdx]);
+      auto inputSizes = batch[fl::app::asr::kDurationIdx];
+
+      auto output =
+          forwardSequentialModuleWithPadMask(input, asrFrontEnd_, inputSizes);
+      output = ext::forwardSequentialModuleWithPadMask(
+          output, encoder_, inputSizes, false, output.dims(1), output.dims(2));
+      output = asrCriterionLinear_->forward({output}).front();
+
+      for (int b = 0; b < output.dims(2); ++b) {
+        auto viterbiPath = fl::ext::afToVector<int>(
+            asrCriterion_->viterbiPath(output.array()(af::span, af::span, b)));
+        auto rawTarget = fl::ext::afToVector<int>(target.array()(af::span, b));
+
+        std::cout << "\n|T|: ";
+        for (auto& word : rawTarget) {
+          std::cout << tokenDictionary_.getEntry(word) << " ";
+        }
+        std::cout << "\n|P|: ";
+        for (auto& word : viterbiPath) {
+          std::cout << tokenDictionary_.getEntry(word) << " ";
+        }
+        std::cout << "\n---";
+      }
+    }
+  }
+}
+#endif
 /* ============= Initializers ============= */
 void Trainer::initTrain() {
   FL_LOG_MASTER(INFO) << "Creating a fresh model";
@@ -377,6 +504,39 @@ void Trainer::initFork() {
   // the network and criterion will be reused
 }
 
+void Trainer::initEval() {
+  if (!fileExists(FLAGS_exp_init_model_path)) {
+    throw std::invalid_argument(
+        "Checkpoint doesn't exist for finetuning: " +
+        FLAGS_exp_init_model_path);
+  }
+  FL_LOG_MASTER(INFO) << "Fork training from file: "
+                      << FLAGS_exp_init_model_path;
+
+  std::shared_ptr<fl::FirstOrderOptimizer> dummyOptimizer;
+  fl::ext::Serializer::load(
+      FLAGS_exp_init_model_path,
+      version_,
+      encoder_,
+      asrFrontEnd_,
+      lmFrontEnd_,
+      asrCriterionLinear_,
+      asrCriterion_,
+      lmCriterion_,
+      optimizer_,
+      asrEpoch_,
+      lmEpoch_,
+      batchIdx_,
+      gflagsStr_,
+      asrBestValidWer_,
+      lmBestValidLoss_);
+
+  createDictionary();
+  createDatasets();
+  // createOptimizer();
+  // the network and criterion will be reused
+}
+
 void Trainer::createDictionary() {
   if (FLAGS_dictionary_tokens.empty() ||
       !fl::lib::fileExists(FLAGS_dictionary_tokens)) {
@@ -385,37 +545,70 @@ void Trainer::createDictionary() {
         "--tokensdir and --tokens: \"" +
         FLAGS_dictionary_tokens + "\"");
   }
+
+  // Token dictionary
   tokenDictionary_ = fl::lib::text::Dictionary(FLAGS_dictionary_tokens);
   tokenDictionary_.addEntry(fl::app::asr::kBlankToken);
   numClasses_ = tokenDictionary_.indexSize();
   FL_LOG_MASTER(INFO) << "[Number of tokens] " << numClasses_;
 
+  // Word dictionary
   if (FLAGS_dictionary.empty()) {
     throw std::invalid_argument("Lexicon is empty");
   }
   lexicon_ =
       fl::lib::text::loadWords(FLAGS_dictionary, FLAGS_dictionary_max_size);
-  wordDictionary_ = fl::lib::text::Dictionary();
-  wordDictionary_.addEntry(fl::lib::text::kPadToken);
-  wordDictionary_.addEntry(fl::lib::text::kEosToken);
-  wordDictionary_.addEntry(fl::lib::text::kMaskToken);
-  wordDictionary_.addEntry(fl::lib::text::kUnkToken);
-  for (const auto& it : lexicon_) {
-    if (it.first == fl::lib::text::kUnkToken) {
-      continue;
-    }
-    wordDictionary_.addEntry(it.first);
-  }
+  wordDictionary_ = fl::lib::text::createWordDict(lexicon_);
+  // wordDictionary_.addEntry(fl::lib::text::kPadToken);
+  // wordDictionary_.addEntry(fl::lib::text::kEosToken);
+  // wordDictionary_.addEntry(fl::lib::text::kMaskToken);
+  // wordDictionary_.addEntry(fl::lib::text::kUnkToken);
+  // for (const auto& it : lexicon_) {
+  //   if (it.first == fl::lib::text::kUnkToken) {
+  //     continue;
+  //   }
+  //   wordDictionary_.addEntry(it.first);
+  // }
   FL_LOG_MASTER(INFO) << "[Number of words] " << wordDictionary_.indexSize();
 
-  if (!wordDictionary_.isContiguous()) {
-    throw std::runtime_error("Invalid wordDictionary_ format - not contiguous");
+  // if (!wordDictionary_.isContiguous()) {
+  //   throw std::runtime_error("Invalid wordDictionary_ format - not
+  //   contiguous");
+  // }
+  // kPadIdx_ = wordDictionary_.getIndex(fl::lib::text::kPadToken);
+  // kEosIdx_ = wordDictionary_.getIndex(fl::lib::text::kEosToken);
+  // kUnkIdx_ = wordDictionary_.getIndex(fl::lib::text::kUnkToken);
+  // kMaskIdx_ = wordDictionary_.getIndex(fl::lib::text::kMaskToken);
+  // wordDictionary_.setDefaultIndex(kUnkIdx_);
+
+  // LM dictionary
+  lmDictionary_ = fl::lib::text::Dictionary();
+  lmDictionary_.addEntry(fl::lib::text::kPadToken);
+  lmDictionary_.addEntry(fl::lib::text::kEosToken);
+  lmDictionary_.addEntry(fl::lib::text::kMaskToken);
+  lmDictionary_.addEntry(fl::lib::text::kUnkToken);
+  if (FLAGS_dictionary_wordlm) {
+    for (int i = 0; i < wordDictionary_.indexSize(); i++) {
+      auto word = wordDictionary_.getEntry(i);
+      if (word == fl::lib::text::kUnkToken) {
+        continue;
+      }
+      lmDictionary_.addEntry(word);
+    }
+  } else {
+    for (int i = 0; i < tokenDictionary_.indexSize(); i++) {
+      auto word = tokenDictionary_.getEntry(i);
+      lmDictionary_.addEntry(word);
+    }
+    numClasses_ = lmDictionary_.indexSize();
+    tokenDictionary_ = lmDictionary_;
   }
-  kPadIdx_ = wordDictionary_.getIndex(fl::lib::text::kPadToken);
-  kEosIdx_ = wordDictionary_.getIndex(fl::lib::text::kEosToken);
-  kUnkIdx_ = wordDictionary_.getIndex(fl::lib::text::kUnkToken);
-  kMaskIdx_ = wordDictionary_.getIndex(fl::lib::text::kMaskToken);
-  wordDictionary_.setDefaultIndex(kUnkIdx_);
+  kPadIdx_ = lmDictionary_.getIndex(fl::lib::text::kPadToken);
+  kEosIdx_ = lmDictionary_.getIndex(fl::lib::text::kEosToken);
+  kUnkIdx_ = lmDictionary_.getIndex(fl::lib::text::kUnkToken);
+  kMaskIdx_ = lmDictionary_.getIndex(fl::lib::text::kMaskToken);
+  lmDictionary_.setDefaultIndex(kUnkIdx_);
+  FL_LOG_MASTER(INFO) << "[Number of LM words] " << lmDictionary_.indexSize();
 }
 
 void Trainer::createDatasets() {
@@ -522,7 +715,7 @@ void Trainer::createDatasets() {
       FLAGS_data_lm_train,
       partialFileReader,
       tokenizer,
-      wordDictionary_,
+      lmDictionary_,
       FLAGS_data_lm_tokens_per_sample,
       FLAGS_data_lm_batch_size,
       FLAGS_data_lm_sample_break_mode,
@@ -540,7 +733,7 @@ void Trainer::createDatasets() {
         path,
         partialFileReader,
         tokenizer,
-        wordDictionary_,
+        lmDictionary_,
         FLAGS_data_lm_tokens_per_sample,
         FLAGS_data_lm_batch_size,
         "eos",
@@ -572,7 +765,7 @@ void Trainer::createNetwork() {
   archfile = fl::lib::pathsConcat(
       FLAGS_train_arch_dir, FLAGS_train_lm_frontend_arch_file);
   lmFrontEnd_ =
-      fl::ext::buildSequentialModule(archfile, 0, wordDictionary_.entrySize());
+      fl::ext::buildSequentialModule(archfile, 0, lmDictionary_.entrySize());
   FL_LOG_MASTER(INFO) << "[LM front-end] " << lmFrontEnd_->prettyString();
   FL_LOG_MASTER(INFO) << "[LM front-end Params: " << numTotalParams(lmFrontEnd_)
                       << "]";
@@ -591,12 +784,12 @@ void Trainer::createCriterion() {
 
   // LM
   if (FLAGS_loss_type == "adsm") {
-    if (wordDictionary_.entrySize() == 0) {
+    if (lmDictionary_.entrySize() == 0) {
       throw std::runtime_error(
           "Dictionary is empty, number of classes is zero");
     }
     auto softmax = std::make_shared<fl::AdaptiveSoftMax>(
-        FLAGS_loss_adsm_input_size, parseCutoffs(wordDictionary_.entrySize()));
+        FLAGS_loss_adsm_input_size, parseCutoffs(lmDictionary_.entrySize()));
     lmCriterion_ = std::make_shared<fl::AdaptiveSoftMaxLoss>(
         softmax, fl::ReduceMode::SUM, kPadIdx_);
   } else if (FLAGS_loss_type == "ce") {
@@ -722,7 +915,7 @@ std::pair<fl::Variable, fl::Variable> Trainer::getInputAndTarget(
       int nSpecialTokens = 4;
       inputMasked(randMask) =
           (af::randu(af::sum(randMask).scalar<unsigned int>()) *
-               (wordDictionary_.entrySize() - nSpecialTokens - 1) +
+               (lmDictionary_.entrySize() - nSpecialTokens - 1) +
            nSpecialTokens)
               .as(s32);
     }
@@ -826,6 +1019,15 @@ void Trainer::evalWer(
     auto wordTarget =
         fl::app::asr::tkn2Wrd(letterTarget, FLAGS_data_asr_wordseparator);
 
+    // std::cout << "\n|T|: ";
+    // for (auto& word : wordTarget) {
+    //   std::cout << word << " ";
+    // }
+    // std::cout << "\n|P|: ";
+    // for (auto& word : wordPrediction) {
+    //   std::cout << word << " ";
+    // }
+    // std::cout << "\n---";
     meter.tknEdit.add(letterPrediction, letterTarget);
     meter.wrdEdit.add(wordPrediction, wordTarget);
   }
@@ -1093,6 +1295,6 @@ std::string Trainer::getProgress() const {
   }
   return status;
 }
-}
+} // namespace joint
 } // namespace app
 } // namespace fl

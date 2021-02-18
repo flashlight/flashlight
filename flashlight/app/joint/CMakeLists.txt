@@ -33,9 +33,11 @@ target_include_directories(
 
 # ------------------------ Binary ------------------------
 add_executable(fl_joint_train ${CMAKE_CURRENT_LIST_DIR}/JointTrain.cpp)
-
 target_link_libraries(fl_joint_train flashlight-app-joint)
-
 set_executable_output_directory(fl_joint_train "${FL_BUILD_BINARY_OUTPUT_DIR}")
-
 install(TARGETS fl_joint_train RUNTIME DESTINATION ${FL_INSTALL_BIN_DIR})
+
+add_executable(fl_joint_eval ${CMAKE_CURRENT_LIST_DIR}/eval.cpp)
+target_link_libraries(fl_joint_eval flashlight-app-joint)
+set_executable_output_directory(fl_joint_eval "${FL_BUILD_BINARY_OUTPUT_DIR}")
+install(TARGETS fl_joint_eval RUNTIME DESTINATION ${FL_INSTALL_BIN_DIR})

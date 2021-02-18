@@ -40,6 +40,7 @@ fl::Variable forwardSequentialModuleWithPadMask(
     const fl::Variable& input,
     std::shared_ptr<fl::Module> ntwrk,
     const af::array& inputSizes,
+    bool useMask,
     int T,
     int B);
 

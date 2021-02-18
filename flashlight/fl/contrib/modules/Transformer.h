@@ -59,6 +59,7 @@ class Transformer : public Container {
       bool preLN = false);
 
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
+  std::vector<Variable> forward(const std::vector<Variable>& input, bool useMask);
   std::string prettyString() const override;
 
  private:

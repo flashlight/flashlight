@@ -58,6 +58,7 @@ DECLARE_int64(data_prefetch_threads);
 DECLARE_string(dictionary);
 DECLARE_int64(dictionary_max_size);
 DECLARE_string(dictionary_tokens);
+DECLARE_bool(dictionary_wordlm);
 
 
 /* TRAIN OPTIONS */

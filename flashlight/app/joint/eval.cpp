@@ -15,8 +15,6 @@ using namespace fl::app::joint;
 using namespace fl::app::lm;
 
 int main(int argc, char** argv) {
-  std::string mode = argv[1];
-
   /* Parse or load persistent states */
   gflags::ParseCommandLineFlags(&argc, &argv, false);
   if (!FLAGS_flagsfile.empty()) {
@@ -33,9 +31,9 @@ int main(int argc, char** argv) {
   }
 
   /* Run train */
-  Trainer trainer(mode);
+  Trainer trainer("eval");
   // flags may be overridden from the model
   // so reloading from command line again
   gflags::ParseCommandLineFlags(&argc, &argv, false);
-  trainer.runTraining();
+  trainer.evalLM();
 }

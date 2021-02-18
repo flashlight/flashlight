@@ -55,6 +55,8 @@ class Trainer {
   void runEvaluation();
   void evalStep();
 
+  void evalLM();
+
  protected:
   // Shared components
   std::shared_ptr<fl::Module> encoder_;
@@ -64,7 +66,6 @@ class Trainer {
   int kPadIdx_, kEosIdx_, kUnkIdx_, kMaskIdx_;
   std::hash<std::string> hasher_;
   std::string experimentDirectory_;
-  fl::lib::text::Dictionary wordDictionary_;
   double lr_{0};
 
   // ASR specifics
@@ -76,6 +77,7 @@ class Trainer {
 
   fl::lib::text::LexiconMap lexicon_;
   fl::lib::text::Dictionary tokenDictionary_;
+  fl::lib::text::Dictionary wordDictionary_;
   int numFeatures_, numClasses_;
 
   std::shared_ptr<fl::Dataset> asrTrainDataset_;
@@ -87,6 +89,7 @@ class Trainer {
   int64_t lmEpoch_{1};
   std::shared_ptr<fl::Module> lmFrontEnd_;
   std::shared_ptr<fl::Module> lmCriterion_;
+  fl::lib::text::Dictionary lmDictionary_;
 
   std::shared_ptr<fl::app::lm::TextDataset> lmTrainDataset_;
   std::unordered_map<std::string, std::shared_ptr<fl::app::lm::TextDataset>>
@@ -122,6 +125,7 @@ class Trainer {
   void initTrain();
   void initContinue();
   void initFork();
+  void initEval();
 
   void createDictionary();
   void createDatasets();

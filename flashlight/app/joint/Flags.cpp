@@ -173,6 +173,7 @@ DEFINE_string(
     dictionary_tokens,
     "tokens.txt",
     "Tokens file path, the 'tokensdir' flag is used as a prefix for this path");
+DEFINE_bool(dictionary_wordlm, true, "trianing a word LM?");
 
 /* TRAIN OPTIONS */
 DEFINE_string(train_task, "autoreg", "Task for training: autoreg or mask");
@@ -379,6 +380,6 @@ DEFINE_string(
     "",
     "[train] Path to a sound effect json config file. When set the sound effect is "
     "applied to augment the input data.");
-}
-}
-}
+} // namespace joint
+} // namespace app
+} // namespace fl
