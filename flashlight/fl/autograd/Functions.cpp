@@ -65,21 +65,28 @@ bool areVariableTypesEqual(const Variable& a, const Variable& b) {
 } // namespace detail
 
 Variable operator+(const Variable& lhs, const Variable& rhs) {
-  FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
-  auto result = lhs.array() + rhs.array();
+  auto lhsArr = FL_ADJUST_INPUT_TYPE(lhs.array());
+  auto rhsArr = FL_ADJUST_INPUT_TYPE(rhs.array());
+  // FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
+  // auto result = lhs.array() + rhs.array();
+  auto result = lhsArr + rhsArr;
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
-    inputs[0].addGrad(Variable(gradOutput.array(), false));
-    inputs[1].addGrad(Variable(gradOutput.array(), false));
+    // auto garr = gradOutput.array().as(inputs[0].type());
+    inputs[0].addGrad(Variable(gradOutput.array().as(inputs[0].type()), false));
+    inputs[1].addGrad(Variable(gradOutput.array().as(inputs[1].type()), false));
   };
   return Variable(result, {lhs.withoutData(), rhs.withoutData()}, gradFunc);
 }
 
 Variable operator+(const Variable& lhs, const double& rhsVal) {
-  auto result = (lhs.array() + rhsVal).as(lhs.type());
+  auto lhsArr = FL_ADJUST_INPUT_TYPE(lhs.array());
+  auto result = (lhsArr + rhsVal).as(lhsArr.type());
+  // auto result = (lhs.array() + rhsVal).as(lhs.type());
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
-    inputs[0].addGrad(Variable(gradOutput.array(), false));
+    auto garr = gradOutput.array().as(inputs[0].type());
+    inputs[0].addGrad(Variable(garr, false));
   };
   return Variable(result, {lhs.withoutData()}, gradFunc);
 }
@@ -1197,11 +1204,11 @@ fl::Variable multiheadAttention(
   int32_t modelDim = query.dims(1);
   int32_t headDim = modelDim / nHeads;
 
-  if (query.dims() != key.dims() ||
-      value.dims() != key.dims() ||
+  if (query.dims() != key.dims() || value.dims() != key.dims() ||
       query.dims() != value.dims()) {
-      throw std::invalid_argument("multiheadAttention: invalid key, value, query dims");
-    }
+    throw std::invalid_argument(
+        "multiheadAttention: invalid key, value, query dims");
+  }
 
   auto q = moddims(query, af::dim4(-1, headDim, nHeads * bsz));
   auto k = moddims(key, af::dim4(-1, headDim, nHeads * bsz));
@@ -1220,15 +1227,15 @@ fl::Variable multiheadAttention(
   }
   if (!padMask.isempty()) {
     if (padMask.dims(0) != query.dims(0)) {
-      throw std::invalid_argument("multiheadAttention: invalid padding mask size");
+      throw std::invalid_argument(
+          "multiheadAttention: invalid padding mask size");
     }
-    auto padMaskTile = moddims(
-      padMask, af::dim4(1, padMask.dims(0), 1, bsz));
+    auto padMaskTile = moddims(padMask, af::dim4(1, padMask.dims(0), 1, bsz));
     padMaskTile = tileAs(
-      padMaskTile, af::dim4(padMask.dims(0), padMask.dims(0), nHeads, bsz));
-    scores = scores + moddims(
-      padMaskTile.as(scores.type()),
-      af::dim4(padMask.dims(0), padMask.dims(0), nHeads * bsz));
+        padMaskTile, af::dim4(padMask.dims(0), padMask.dims(0), nHeads, bsz));
+    scores = scores +
+        moddims(padMaskTile.as(scores.type()),
+                af::dim4(padMask.dims(0), padMask.dims(0), nHeads * bsz));
   }
 
   auto attn = dropout(softmax(scores, 1), pDropout);

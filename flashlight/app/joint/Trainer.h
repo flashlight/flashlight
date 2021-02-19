@@ -68,6 +68,9 @@ class Trainer {
   std::string experimentDirectory_;
   double lr_{0};
 
+  double scaleFactor_;
+  unsigned short scaleCounter_;
+  
   // ASR specifics
   int64_t asrEpoch_{1};
   std::shared_ptr<fl::Module> specAug_;

@@ -380,6 +380,35 @@ DEFINE_string(
     "",
     "[train] Path to a sound effect json config file. When set the sound effect is "
     "applied to augment the input data.");
+
+// MIXED PRECISION OPTIONS
+
+DEFINE_string(
+    amp_optim_mode,
+    "",
+    "[train] Sets the flashlight optimization mode. "
+    "Optim modes can be O1, O2, or O3.");
+DEFINE_bool(
+    amp_use_mixed_precision,
+    false,
+    "[train] Use mixed precision for training - scale loss and gradients up and down "
+    "by a scale factor that changes over time. If no fl optim mode is "
+    "specified with --fl_optim_mode when passing this flag, automatically "
+    "sets the optim mode to O1.");
+DEFINE_double(
+    amp_scale_factor,
+    4096.,
+    "[train] Starting scale factor to use for loss scaling "
+    " with mixed precision training");
+DEFINE_uint64(
+    amp_scale_factor_update_interval,
+    2000,
+    "[train] Update interval for adjusting loss scaling in mixed precision training");
+DEFINE_uint64(
+    amp_max_scale_factor,
+    32000,
+    "[train] Maximum value for the loss scale factor in mixed precision training");
+
 } // namespace joint
 } // namespace app
 } // namespace fl

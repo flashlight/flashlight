@@ -62,6 +62,21 @@ void Trainer::runTraining() {
   fl::allReduceParameters(lmCriterion_);
   auto modelPath = pathsConcat(experimentDirectory_, "model_last.bin");
 
+  // flashlight optim mode
+  auto flOptimLevel = FLAGS_amp_optim_mode.empty()
+      ? fl::OptimLevel::DEFAULT
+      : fl::OptimMode::toOptimLevel(FLAGS_amp_optim_mode);
+  fl::OptimMode::get().setOptimLevel(flOptimLevel);
+  if (FLAGS_amp_use_mixed_precision) {
+    // Only set the optim mode to O1 if it was left empty
+    LOG(INFO) << "Mixed precision training enabled. Will perform loss scaling.";
+    if (FLAGS_amp_optim_mode.empty()) {
+      LOG(INFO) << "Mixed precision training enabled with no "
+                   "optim mode specified - setting optim mode to O1.";
+      fl::OptimMode::get().setOptimLevel(fl::OptimLevel::O1);
+    }
+  }
+
   createSpecAugmentation();
   auto curAsrTrainSet = fl::app::asr::loadPrefetchDataset(
       asrTrainDataset_,
@@ -175,84 +190,137 @@ void Trainer::trainStep(
 
   sampleTimerMeter_.stopAndIncUnit();
   asrDataStatsMeter_.add(asrInput.array(), asrTarget.array());
+  auto T = asrTarget.dims(0);
+  if (T > 600) {
+    FL_LOG(INFO) << "skipping";
+  }
 
   // 2. Forward
-  fwdTimeMeter_.resume();
-  if (FLAGS_specaug_start_update >= 0 &&
-      batchIdx_ >= FLAGS_specaug_start_update) {
-    asrInput = specAug_->forward({asrInput}).front();
-  }
-  auto asrOutput =
-      forwardSequentialModuleWithPadMask(asrInput, asrFrontEnd_, asrInputSizes);
-  asrOutput = forwardSequentialModuleWithPadMask(
-      asrOutput,
-      encoder_,
-      asrInputSizes,
-      false,
-      asrOutput.dims(1),
-      asrOutput.dims(2));
-  asrOutput = asrCriterionLinear_->forward({asrOutput}).front();
-
-  auto lmOutput = lmFrontEnd_->forward({lmInput}).front();
-  lmOutput = forwardSequentialModuleWithPadMask(
-      lmOutput,
-      encoder_,
-      lmInputSizes,
-      true,
-      lmOutput.dims(1),
-      lmOutput.dims(2));
-  if (!FLAGS_dictionary_wordlm) {
-    if (FLAGS_loss_type != "ce") {
-      throw std::runtime_error("FLAGS_loss_type != ce");
+  bool retrySample = false;
+  do {
+    retrySample = false;
+    fwdTimeMeter_.resume();
+    if (FLAGS_specaug_start_update >= 0 &&
+        batchIdx_ >= FLAGS_specaug_start_update) {
+      asrInput = specAug_->forward({asrInput}).front();
     }
-    lmOutput = asrCriterionLinear_->forward({lmOutput}).front();
-    lmOutput = logSoftmax(lmOutput, 0);
-  }
-  af::sync();
+    // std::cout << "1: " << asrInput.type() << std::endl;
+    auto asrOutput = forwardSequentialModuleWithPadMask(
+        asrInput, asrFrontEnd_, asrInputSizes);
+    // std::cout << "2: " << asrOutput.type() << std::endl;
+    asrOutput = forwardSequentialModuleWithPadMask(
+        asrOutput,
+        encoder_,
+        asrInputSizes,
+        false,
+        asrOutput.dims(1),
+        asrOutput.dims(2));
+    // std::cout << "3: " << asrOutput.type() << std::endl;
+    asrOutput = asrCriterionLinear_->forward({asrOutput}).front();
+    // std::cout << "4: " << asrOutput.type() << std::endl;
 
-  critFwdTimeMeter_.resume();
-  auto asrLoss =
-      sum(asrCriterion_->forward({asrOutput, asrTarget}).front(), {0});
-  auto lmLoss = lmCriterion_->forward({lmOutput, lmTarget}).front();
-  af::sync();
-  fwdTimeMeter_.stopAndIncUnit();
-  critFwdTimeMeter_.stopAndIncUnit();
-
-  // check and logging training stats
-  if (af::anyTrue<bool>(af::isNaN(asrLoss.array())) ||
-      af::anyTrue<bool>(af::isInf(asrLoss.array()))) {
-    LOG(FATAL) << "Loss has NaN/Inf values. Samples - "
-               << lib::join(",", asrSampleNames);
-  }
-  auto numTokens = af::count<float>(lmTarget.array() != kPadIdx_);
-
-  if (hasher_(lib::join(",", asrSampleNames)) % 100 <=
-      FLAGS_exp_pct_train_eval) {
-    asrTrainStatsMeter_.loss.add(asrLoss.array());
-    evalWer(asrOutput.array(), asrTarget.array(), asrTrainStatsMeter_);
-
-    if (numTokens > 0) {
-      auto weight = numTokens /
-          (FLAGS_data_lm_tokens_per_sample * FLAGS_data_lm_batch_size);
-      lmTrainLossMeter_.add(
-          af::mean<float>(lmLoss.array()) / numTokens, weight);
-      lmTokenCountMeter_.add(numTokens);
+    // std::cout << "11: " << lmInput.type() << std::endl;
+    auto lmOutput = lmFrontEnd_->forward({lmInput}).front();
+    // std::cout << "12: " << lmOutput.type() << std::endl;
+    lmOutput = forwardSequentialModuleWithPadMask(
+        lmOutput,
+        encoder_,
+        lmInputSizes,
+        true,
+        lmOutput.dims(1),
+        lmOutput.dims(2));
+    // std::cout << "13: " << lmOutput.type() << std::endl;
+    if (!FLAGS_dictionary_wordlm) {
+      if (FLAGS_loss_type != "ce") {
+        throw std::runtime_error("FLAGS_loss_type != ce");
+      }
+      lmOutput = asrCriterionLinear_->forward({lmOutput}).front();
+      // std::cout << "14: " << lmOutput.type() << std::endl;
+      lmOutput = logSoftmax(lmOutput, 0).as(asrOutput.type());
+      // std::cout << "15: " << lmOutput.type() << std::endl;
     }
-  }
+    af::sync();
 
-  // 3. Backward
-  bwdTimeMeter_.resume();
-  optimizer_->zeroGrad();
-  af::array numTokensArr = af::array(1, &numTokens);
-  if (FLAGS_distributed_enable) {
-    fl::allReduce(numTokensArr);
-  }
-  auto loss = asrLoss / (fl::getWorldSize() * FLAGS_data_asr_batch_size) +
-      lmLoss / fl::Variable(numTokensArr, false);
-  loss.backward();
-  reduceGrads();
-  af::sync();
-  bwdTimeMeter_.stopAndIncUnit();
+    critFwdTimeMeter_.resume();
+    auto asrLoss = sum(
+        asrCriterion_->forward({asrOutput.as(f32), asrTarget}).front(), {0});
+    // std::cout << "5: " << asrLoss.type() << std::endl;
+    auto lmLoss = lmCriterion_->forward({lmOutput, lmTarget}).front();
+    // std::cout << "6: " << lmLoss.type() << std::endl;
+    af::sync();
+    fwdTimeMeter_.stopAndIncUnit();
+    critFwdTimeMeter_.stopAndIncUnit();
+
+    // check and logging training stats
+    if (af::anyTrue<bool>(af::isNaN(asrLoss.array())) ||
+        af::anyTrue<bool>(af::isInf(asrLoss.array()))) {
+      LOG(FATAL) << "Loss has NaN/Inf values. Samples - "
+                 << lib::join(",", asrSampleNames);
+    }
+    auto numTokens = af::count<float>(lmTarget.array() != kPadIdx_);
+
+    if (hasher_(lib::join(",", asrSampleNames)) % 100 <=
+        FLAGS_exp_pct_train_eval) {
+      asrTrainStatsMeter_.loss.add(asrLoss.array());
+      evalWer(asrOutput.array(), asrTarget.array(), asrTrainStatsMeter_);
+
+      if (numTokens > 0) {
+        auto weight = numTokens /
+            (FLAGS_data_lm_tokens_per_sample * FLAGS_data_lm_batch_size);
+        lmTrainLossMeter_.add(
+            af::mean<float>(lmLoss.array()) / numTokens, weight);
+        lmTokenCountMeter_.add(numTokens);
+      }
+    }
+
+    af::array numTokensArr = af::array(1, &numTokens);
+    if (FLAGS_distributed_enable) {
+      fl::allReduce(numTokensArr);
+    }
+    auto loss = asrLoss / (fl::getWorldSize() * FLAGS_data_asr_batch_size) +
+        lmLoss / fl::Variable(numTokensArr, false);
+    if (FLAGS_amp_use_mixed_precision) {
+      loss = loss * scaleFactor_;
+    }
+    if (scaleCounter_ == 20) {
+      LOG(FATAL) << "WTF";
+    }
+
+    // 3. Backward
+    bwdTimeMeter_.resume();
+    optimizer_->zeroGrad();
+    loss.backward();
+    reduceGrads();
+    for (auto& p : parameters_) {
+      if (!p.isGradAvailable()) {
+        p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
+      }
+      p.grad() = p.grad() / scaleFactor_;
+      if (FLAGS_amp_use_mixed_precision) {
+        if (af::anyTrue<bool>(af::isNaN(p.grad().array())) ||
+            af::anyTrue<bool>(af::isInf(p.grad().array()))) {
+          if (scaleFactor_ >= fl::kAmpMinimumScaleFactorValue) {
+            scaleFactor_ = scaleFactor_ / 2.0f;
+            FL_LOG(INFO) << "AMP: Scale factor decreased. New value:\t"
+                         << scaleFactor_;
+            retrySample = true;
+            ++scaleCounter_;
+          } else {
+            FL_LOG(FATAL) << "Minimum loss scale reached: "
+                          << fl::kAmpMinimumScaleFactorValue
+                          << " with over/underflowing gradients. Lowering the "
+                          << "learning rate, using gradient clipping, or "
+                          << "increasing the batch size can help resolve "
+                          << "loss explosion.";
+          }
+          break;
+        }
+      }
+    }
+    af::sync();
+    bwdTimeMeter_.stopAndIncUnit();
+  } while (retrySample);
+  scaleCounter_ = 1;
 
   // 4. Optimization
   optimTimeMeter_.resume();
@@ -260,6 +328,19 @@ void Trainer::trainStep(
   optimizer_->step();
   af::sync();
   optimTimeMeter_.stopAndIncUnit();
+
+  // 5. update scale factor
+  if (FLAGS_amp_use_mixed_precision &&
+      scaleFactor_ < FLAGS_amp_max_scale_factor) {
+    if (scaleCounter_ % FLAGS_amp_scale_factor_update_interval == 0) {
+      scaleFactor_ *= 2;
+      FL_VLOG(2) << "AMP: Scale factor doubled. New value:\t" << scaleFactor_;
+    } else {
+      scaleFactor_ += 2;
+      FL_VLOG(3) << "AMP: Scale factor incremented. New value\t"
+                 << scaleFactor_;
+    }
+  }
 }
 
 void Trainer::evalStep() {
@@ -288,7 +369,7 @@ void Trainer::evalStep() {
           forwardSequentialModuleWithPadMask(input, asrFrontEnd_, inputSizes);
       output = ext::forwardSequentialModuleWithPadMask(
           output, encoder_, inputSizes, false, output.dims(1), output.dims(2));
-      output = asrCriterionLinear_->forward({output}).front();
+      output = asrCriterionLinear_->forward({output}).front().as(f32);
       auto loss = asrCriterion_->forward({output, target}).front();
 
       validMeter.loss.add(af::sum<double>(loss.array()));
@@ -432,6 +513,9 @@ void Trainer::evalASR() {
 void Trainer::initTrain() {
   FL_LOG_MASTER(INFO) << "Creating a fresh model";
 
+  scaleFactor_ = FLAGS_amp_use_mixed_precision ? FLAGS_amp_scale_factor : 1.;
+  scaleCounter_ = 1;
+
   createDictionary();
   createDatasets();
   createNetwork();
@@ -459,6 +543,8 @@ void Trainer::initContinue() {
       asrEpoch_,
       lmEpoch_,
       batchIdx_,
+      scaleFactor_,
+      scaleCounter_,
       gflagsStr_,
       asrBestValidWer_,
       lmBestValidLoss_);
@@ -494,6 +580,8 @@ void Trainer::initFork() {
       asrEpoch_,
       lmEpoch_,
       batchIdx_,
+      scaleFactor_,
+      scaleCounter_,
       gflagsStr_,
       asrBestValidWer_,
       lmBestValidLoss_);
@@ -527,6 +615,8 @@ void Trainer::initEval() {
       asrEpoch_,
       lmEpoch_,
       batchIdx_,
+      scaleFactor_,
+      scaleCounter_,
       gflagsStr_,
       asrBestValidWer_,
       lmBestValidLoss_);
@@ -1177,6 +1267,8 @@ void Trainer::saveCheckpoint(const std::string& path, const std::string& suffix)
       asrEpoch_,
       lmEpoch_,
       batchIdx_,
+      scaleFactor_,
+      scaleCounter_,
       gflagsStr_,
       asrBestValidWer_,
       lmBestValidLoss_);
@@ -1195,6 +1287,8 @@ void Trainer::saveCheckpoint(const std::string& path, const std::string& suffix)
         asrEpoch_,
         lmEpoch_,
         batchIdx_,
+        scaleFactor_,
+        scaleCounter_,
         gflagsStr_,
         asrBestValidWer_,
         lmBestValidLoss_);

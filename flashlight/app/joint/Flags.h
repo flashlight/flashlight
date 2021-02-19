@@ -53,13 +53,11 @@ DECLARE_bool(data_lm_use_dynamic_batching);
 
 DECLARE_int64(data_prefetch_threads);
 
-
 /* DICTIONARY OPTIONS */
 DECLARE_string(dictionary);
 DECLARE_int64(dictionary_max_size);
 DECLARE_string(dictionary_tokens);
 DECLARE_bool(dictionary_wordlm);
-
 
 /* TRAIN OPTIONS */
 DECLARE_string(train_task);
@@ -118,6 +116,13 @@ DECLARE_int64(specaug_start_update);
 /* SOUND EFFECT AUGMENTATION OPTIONS */
 DECLARE_string(ssfx_config);
 
-}
-}
-}
+/* MIXED PRECISION OPTIONS */
+DECLARE_string(amp_optim_mode);
+DECLARE_bool(amp_use_mixed_precision);
+DECLARE_double(amp_scale_factor);
+DECLARE_uint64(amp_scale_factor_update_interval);
+DECLARE_uint64(amp_max_scale_factor);
+
+} // namespace joint
+} // namespace app
+} // namespace fl

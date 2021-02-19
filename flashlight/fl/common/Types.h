@@ -27,6 +27,7 @@ const fl::cpp::
             {OptimLevel::O1,
              // Perform all operations in fp16 except for:
              {"batchnorm",
+              "conv2d",
               "reciprocal",
               "exp",
               "log",

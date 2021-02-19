@@ -206,9 +206,10 @@ const fl::cpp::fl_unordered_map<KernelMode, cudnnMathType_t>
 std::shared_ptr<fl::DynamicBenchmark> createBenchmarkOptions() {
   return std::make_shared<fl::DynamicBenchmark>(
       std::make_shared<fl::DynamicBenchmarkOptions<KernelMode>>(
-          std::vector<KernelMode>({KernelMode::F32,
-                                   KernelMode::F32_ALLOW_CONVERSION,
-                                   KernelMode::F16}),
+          std::vector<KernelMode>(
+              {KernelMode::F32,
+               KernelMode::F32_ALLOW_CONVERSION,
+               KernelMode::F16}),
           fl::kDynamicBenchmarkDefaultCount));
 }
 
