@@ -130,7 +130,7 @@ std::vector<DecodeResult> LexiconFreeDecoder_decode(
 
 } // namespace
 
-PYBIND11_MODULE(_lib_text_decoder, m) {
+PYBIND11_MODULE(flashlight_lib_text_decoder, m) {
   py::enum_<SmearingMode>(m, "SmearingMode")
       .value("NONE", SmearingMode::NONE)
       .value("MAX", SmearingMode::MAX)

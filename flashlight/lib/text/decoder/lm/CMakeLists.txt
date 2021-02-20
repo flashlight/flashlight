@@ -12,13 +12,17 @@ target_sources(
 # ------------------------- KenLM-specific -------------------------
 
 if (FL_LIBRARIES_USE_KENLM)
-  find_package(kenlm REQUIRED)
-  setup_install_find_module(${CMAKE_MODULE_PATH}/Findkenlm.cmake)
-
-  # Required for KenLM to read ARPA files in compressed format
-  find_package(LibLZMA)
-  find_package(BZip2)
-  find_package(ZLIB)
+  find_package(kenlm)
+  if (NOT kenlm_FOUND)
+    if (FL_BUILD_STANDALONE)
+      message(STATUS "KenLM not found - will download and build from source")
+      include(${CMAKE_MODULE_PATH}/BuildKenlm.cmake)
+      add_dependencies(fl-libraries kenlm) # ExternalProject target
+    endif()
+  endif()
+  if (FL_BUILD_STANDALONE)
+    setup_install_find_module(${CMAKE_MODULE_PATH}/Findkenlm.cmake)
+  endif()
 
   target_sources(
     fl-libraries
@@ -30,15 +34,6 @@ if (FL_LIBRARIES_USE_KENLM)
     fl-libraries
     PRIVATE
     ${KENLM_LIBRARIES}
-    ${LIBLZMA_LIBRARIES}
-    ${BZIP2_LIBRARIES}
-    ${ZLIB_LIBRARIES}
-    )
-
-  set(KENLM_AND_DEP_INCLUDE_DIRS
-    ${LIBLZMA_INCLUDE_DIRS}
-    ${BZIP2_INCLUDE_DIRS}
-    ${ZLIB_INCLUDE_DIRS}
     )
 
   target_include_directories(

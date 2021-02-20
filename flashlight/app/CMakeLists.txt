@@ -1,9 +1,25 @@
 cmake_minimum_required(VERSION 3.10)
 
-cmake_dependent_option(FL_BUILD_APP_ASR "Build asr task for flashlight" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
-cmake_dependent_option(FL_BUILD_APP_IMGCLASS "Build image classification app" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
-cmake_dependent_option(FL_BUILD_APP_LM "Build lm task for flashlight" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
-cmake_dependent_option(FL_BUILD_APP_JOINT "Build joint task for flashlight" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
+cmake_dependent_option(FL_BUILD_APP_ASR "Build asr task for flashlight" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_APPS" OFF)
+cmake_dependent_option(FL_BUILD_APP_IMGCLASS "Build image classification app" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_APPS" OFF)
+cmake_dependent_option(FL_BUILD_APP_LM "Build lm task for flashlight" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_APPS" OFF)
+cmake_dependent_option(FL_BUILD_APP_JOINT "Build joint task for flashlight" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_APPS" OFF)
+
+# Find GLog
+find_package(GLOG REQUIRED)
+if (GLOG_FOUND)
+  message(STATUS "GLOG found")
+else()
+  message(FATAL_ERROR "GLOG not found")
+endif()
+
+# Find gflags
+find_package(gflags REQUIRED)
+if (gflags_FOUND)
+  message(STATUS "gflags found")
+else()
+  message(FATAL_ERROR "gflags not found")
+endif()
 
 if (FL_BUILD_APP_ASR)
   message(STATUS "Building flashlight ASR app")
@@ -17,9 +33,9 @@ if (FL_BUILD_APP_ASR)
 endif ()
 
 if (FL_BUILD_APP_IMGCLASS)
+  message(STATUS "Building flashlight imgclass app")
   if (NOT FL_BUILD_DISTRIBUTED)
-    message(FATAL_ERROR
-    "FL_BUILD_DISTRIBUTED must be enabled for image classification")
+    message(FATAL_ERROR "FL_BUILD_DISTRIBUTED must be enabled for image classification")
   endif()
   set(FL_APP_IMGCLASS_ROOT_DIR ${FL_APPS_DIR}/imgclass)
   include(${FL_APP_IMGCLASS_ROOT_DIR}/CMakeLists.txt)

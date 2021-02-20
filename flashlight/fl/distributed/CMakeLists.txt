@@ -20,27 +20,22 @@ endif()
 
 # ----------------------------- Dependencies -----------------------------
 # Gloo
-find_package(Gloo QUIET)
-if (Gloo_FOUND)
-  message(STATUS "Gloo found")
-  setup_install_find_module(${CMAKE_MODULE_PATH}/FindGloo.cmake)
-else()
-  message(STATUS "Gloo not found")
-  if (USE_GLOO)
-    message(FATAL_ERROR "Cannot build Gloo backend without Gloo")
-  endif ()
+if (USE_GLOO)
+  find_package(Gloo CONFIG)
+  if (NOT Gloo_FOUND AND FL_BUILD_STANDALONE)
+    message(STATUS "Gloo not found - downloading and building from source")
+    include(${CMAKE_MODULE_PATH}/BuildGloo.cmake)
+    add_dependencies(flashlight Gloo) # ExternalProject target
+  endif()
 endif()
 
 # NCCL
-find_package(NCCL QUIET)
-if (NCCL_FOUND)
-  message(STATUS "NCCL found")
-  setup_install_find_module(${CMAKE_MODULE_PATH}/FindNCCL.cmake)
-else()
-  message(STATUS "NCCL not found")
-  if (USE_NCCL)
-    message(FATAL_ERROR "Cannot build NCCL backend without NCCL")
-  endif ()
+if (USE_NCCL)
+  find_package(NCCL REQUIRED)
+  if (NCCL_FOUND)
+    message(STATUS "NCCL found: (include: ${NCCL_INCLUDE_DIRS} lib: ${NCCL_LIBRARIES}")
+    setup_install_find_module(${CMAKE_MODULE_PATH}/FindNCCL.cmake)
+  endif()
 endif()
 
 # MPI
@@ -97,14 +92,14 @@ if (USE_NCCL)
 
   target_link_libraries(
     flashlight
-    PUBLIC
+    PRIVATE
     ${CUDA_LIBRARIES}
     ${NCCL_LIBRARIES}
     )
 
   target_include_directories(
     flashlight
-    PUBLIC
+    PRIVATE
     ${NCCL_INCLUDE_DIRS}
     )
 
@@ -130,13 +125,7 @@ if (USE_GLOO)
 
   target_link_libraries(
     flashlight
-    PUBLIC
-    ${Gloo_LIBRARY}
-    )
-
-  target_include_directories(
-    flashlight
-    PUBLIC
-    ${Gloo_INCLUDE_DIR}
+    PRIVATE
+    gloo
     )
 endif ()

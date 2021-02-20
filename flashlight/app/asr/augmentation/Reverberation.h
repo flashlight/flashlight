@@ -13,6 +13,8 @@
 #include <string>
 #include <vector>
 
+#include "flashlight/app/asr/augmentation/SoundEffectUtil.h"
+
 namespace fl {
 namespace app {
 namespace asr {
@@ -73,30 +75,24 @@ class ReverbEcho : public SoundEffect {
      * truth .0 = dereverberation, 1 = no dereverberation.
      */
     size_t sampleRate_ = 16000;
-    unsigned int randomSeed_ = std::mt19937::default_seed;
     std::string prettyString() const;
   };
 
-  explicit ReverbEcho(const ReverbEcho::Config& config);
+  explicit ReverbEcho(const ReverbEcho::Config& config, unsigned int seed = 0);
   ~ReverbEcho() override = default;
   void apply(std::vector<float>& sound) override;
   std::string prettyString() const override;
 
  private:
   // augments source with reverberation noise
-  void reverb(
+  void applyReverb(
       std::vector<float>& source,
       float initial,
       float firstDelay,
       float rt60);
 
   const ReverbEcho::Config conf_;
-  std::mt19937 randomEngine_;
-  std::uniform_real_distribution<float> randomProba_;
-  std::uniform_real_distribution<float> randomInitial_;
-  std::uniform_real_distribution<float> randomFirstDeplay_;
-  std::uniform_real_distribution<float> randomRt60_;
-  std::uniform_real_distribution<float> randomJitter_;
+  RandomNumberGenerator rng_;
 };
 
 } // namespace sfx

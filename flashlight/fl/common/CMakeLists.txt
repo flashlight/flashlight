@@ -7,6 +7,7 @@ set(
   ${CMAKE_CURRENT_LIST_DIR}/DevicePtr.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Defines.cpp
   ${CMAKE_CURRENT_LIST_DIR}/DynamicBenchmark.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/Init.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Logging.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Histogram.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Plugin.cpp
@@ -14,6 +15,9 @@ set(
 
 if(FL_USE_CUDA)
   set(COMMON_SRCS ${COMMON_SRCS} ${CMAKE_CURRENT_LIST_DIR}/CudaUtils.cpp)
+endif()
+if(FL_USE_OPENCL)
+  set(COMMON_SRCS ${COMMON_SRCS} ${CMAKE_CURRENT_LIST_DIR}/OpenClUtils.cpp)
 endif()
 
 target_sources(
@@ -24,7 +28,6 @@ target_sources(
 
 # A native threading library is needed for ThreadPool
 # (see flashlight/common/threadpool/ThreadPool.h)
-set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
 target_link_libraries(
@@ -37,4 +40,7 @@ target_link_libraries(
 if (FL_USE_CUDA)
   target_link_libraries(flashlight PUBLIC ${CUDA_LIBRARIES})
   target_include_directories(flashlight PUBLIC ${CUDA_INCLUDE_DIRS})
+endif()
+if (FL_USE_OPENCL)
+  target_link_libraries(flashlight PUBLIC OpenCL::OpenCL)
 endif()

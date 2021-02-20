@@ -4,12 +4,6 @@ flashlight
 A C++ library for machine learning.
 
 .. toctree::
-   :caption: INSTALLATION
-   :maxdepth: 2
-
-   installation
-
-.. toctree::
    :caption: USAGE
    :maxdepth: 1
 

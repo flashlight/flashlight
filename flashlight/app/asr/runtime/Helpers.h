@@ -22,6 +22,7 @@
 
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/common/Flags.h"
+#include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/data/ListFileDataset.h"
 
 #include "flashlight/lib/common/String.h"
@@ -51,6 +52,14 @@ std::string cleanFilepath(const std::string& inputFileName);
 std::string serializeGflags(const std::string& separator = "\n");
 
 /**
+ * Gets the initial scale factor to be used by the model. Checks for a value
+ * serialized in a config; if not found, uses a default value.
+ *
+ * @param[in] cfg - the configuration map loaded from the serializer
+ */
+float getScaleFactor(const std::unordered_map<std::string, std::string>& cfg);
+
+/**
  * Sample indices for the `--pcttraineval` flag.
  */
 std::unordered_set<int64_t>
@@ -68,6 +77,10 @@ std::vector<std::string> readSampleIds(const af::array& arr);
  * @param targetTransform - a function to featurize target
  * @param wordTransform - a function to featurize words
  * @param padVal - a tuple of padding values when batching input, target, word
+ * @param batchingStrategy - batching strategy for the data, for now "none" and
+ * "dynamic"
+ * @param maxDurationPerBatch - is used for batchingStrategy="dynamic", max
+ * total duration in a batch
  */
 std::shared_ptr<fl::Dataset> createDataset(
     const std::vector<std::string>& paths,
@@ -76,11 +89,13 @@ std::shared_ptr<fl::Dataset> createDataset(
     const fl::Dataset::DataTransformFunction& inputTransform = nullptr,
     const fl::Dataset::DataTransformFunction& targetTransform = nullptr,
     const fl::Dataset::DataTransformFunction& wordTransform = nullptr,
-    const std::tuple<int, int, int>& padVal = std::tuple<int, int, int>{0,
-                                                                        -1,
-                                                                        -1},
+    const std::tuple<int, int, int>& padVal =
+        std::tuple<int, int, int>{0, -1, -1},
     int worldRank = 0,
-    int worldSize = 1);
+    int worldSize = 1,
+    const bool allowEmpty = false,
+    const std::string& batchingStrategy = kBatchStrategyNone,
+    int maxDurationPerBatch = 0);
 
 std::shared_ptr<fl::Dataset> loadPrefetchDataset(
     std::shared_ptr<fl::Dataset> dataset,

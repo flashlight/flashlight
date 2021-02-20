@@ -16,21 +16,18 @@ namespace app {
 namespace asr {
 namespace sfx {
 
-ReverbEcho::ReverbEcho(const ReverbEcho::Config& conf)
-    : conf_(conf),
-      randomEngine_(conf.randomSeed_),
-      randomProba_(0, 1),
-      randomInitial_(conf.initialMin_, conf.initialMax_),
-      randomFirstDeplay_(conf.firstDelayMin_, conf.firstDelayMax_),
-      randomRt60_(conf.rt60Min_, conf.rt60Max_),
-      randomJitter_(1 - conf.jitter_, 1 + conf.jitter_) {}
+ReverbEcho::ReverbEcho(
+    const ReverbEcho::Config& conf,
+    unsigned int seed /* = 0 */)
+    : conf_(conf), rng_(seed) {}
 
-void ReverbEcho::reverb(
+void ReverbEcho::applyReverb(
     std::vector<float>& source,
     float initial,
     float firstDelay,
     float rt60) {
   size_t length = source.size();
+  std::vector<float> reverb(length, 0);
   for (int i = 0; i < conf_.repeat_; ++i) {
     float frac = 1;
     // echo = initial * source
@@ -41,34 +38,37 @@ void ReverbEcho::reverb(
         });
     while (frac > 1e-3) {
       // Add jitter noise for the delay
-      size_t delay = 1 +
-          int(randomJitter_(randomEngine_) * firstDelay * conf_.sampleRate_);
+      float jitter = 1 + rng_.uniform(-conf_.jitter_, conf_.jitter_);
+      size_t delay = 1 + int(jitter * firstDelay * conf_.sampleRate_);
       if (delay > length - 1) {
         break;
       }
       for (int j = 0; j < length - delay - 1; ++j) {
-        source[delay + j] += echo[j] * frac;
+        reverb[delay + j] += echo[j] * frac;
       }
 
       // Add jitter noise for the attenuation
-      const float attenuation =
-          std::pow(10, -3 * randomJitter_(randomEngine_) * firstDelay / rt60);
+      jitter = 1 + rng_.uniform(-conf_.jitter_, conf_.jitter_);
+      const float attenuation = std::pow(10, -3 * jitter * firstDelay / rt60);
 
       frac *= attenuation;
     }
   }
+  for (int i = 0; i < length; ++i) {
+    source[i] += reverb[i];
+  }
 }
 
 void ReverbEcho::apply(std::vector<float>& sound) {
-  if (randomProba_(randomEngine_) >= conf_.proba_) {
+  if (rng_.random() >= conf_.proba_) {
     return;
   }
   // Sample characteristics for the reverb
-  float initial = randomInitial_(randomEngine_);
-  float firstDelay = randomFirstDeplay_(randomEngine_);
-  float rt60 = randomRt60_(randomEngine_);
+  float initial = rng_.uniform(conf_.initialMin_, conf_.initialMax_);
+  float firstDelay = rng_.uniform(conf_.firstDelayMin_, conf_.firstDelayMax_);
+  float rt60 = rng_.uniform(conf_.rt60Min_, conf_.rt60Max_);
 
-  reverb(sound, initial, firstDelay, rt60);
+  applyReverb(sound, initial, firstDelay, rt60);
 }
 
 std::string ReverbEcho::prettyString() const {
@@ -81,8 +81,7 @@ std::string ReverbEcho::Config::prettyString() const {
      << " initialMax_=" << initialMax_ << " rt60Min_=" << rt60Min_
      << " rt60Max_=" << rt60Max_ << " firstDelayMin_=" << firstDelayMin_
      << " firstDelayMax_=" << firstDelayMax_ << " repeat_=" << repeat_
-     << " jitter_=" << jitter_ << " sampleRate_=" << sampleRate_
-     << " randomSeed_=" << randomSeed_;
+     << " jitter_=" << jitter_ << " sampleRate_=" << sampleRate_;
   return ss.str();
 }
 

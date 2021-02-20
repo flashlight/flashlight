@@ -19,6 +19,7 @@ struct SpeechStats {
   int64_t maxInputSz_;
   int64_t maxTargetSz_;
   int64_t numSamples_;
+  int64_t numBatches_;
 
   SpeechStats();
   void reset();
@@ -28,7 +29,7 @@ struct SpeechStats {
 class SpeechStatMeter {
  public:
   SpeechStatMeter();
-  void add(const af::array& input, const af::array& target);
+  void add(const af::array& inputSizes, const af::array& targetSizes);
   void add(const SpeechStats& stats);
   std::vector<int64_t> value() const;
   void reset();

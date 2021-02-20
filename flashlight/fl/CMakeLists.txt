@@ -5,7 +5,9 @@ set(FL_CORE_COMPONENT_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}") # module root
 
 # ----------------------------- Configuration -----------------------------
 # Distributed Training Backend
-set(FL_BUILD_DISTRIBUTED ON CACHE BOOL "Whether to build and link the distributed backend with flashlight")
+cmake_dependent_option(FL_BUILD_DISTRIBUTED
+  "Build and link a distributed backend with flashlight" ON
+  "FL_BUILD_CORE" OFF)
 # If building with CUDA, use NCCL to on; if using CPU or OpenCL, use GLOO
 set(USE_NCCL FALSE)
 set(USE_GLOO FALSE)
@@ -18,11 +20,6 @@ if (FL_BUILD_DISTRIBUTED)
 endif ()
 
 # -------------------------------- Components --------------------------------
-
-# Build and link resources from `flashlight/contrib`.
-cmake_dependent_option(FL_BUILD_CONTRIB
-  "Build and link additional flashlight contrib resources." ON
-  "FL_BUILD_CORE" OFF)
 if (FL_BUILD_CONTRIB)
   message(STATUS "Will build flashlight contrib assets.")
   include(${FL_CORE_COMPONENT_SRC_DIR}/contrib/CMakeLists.txt)

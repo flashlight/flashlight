@@ -13,6 +13,7 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/fl/common/DynamicBenchmark.h"
+#include "flashlight/fl/common/Init.h"
 
 namespace {
 
@@ -142,4 +143,10 @@ TEST_F(DynamicBenchmark, DynamicBenchmarkMatmul) {
   auto ops = dynamicBench->getOptions<fl::DynamicBenchmarkOptions<int>>();
   ASSERT_TRUE(ops->timingsComplete());
   ASSERT_EQ(ops->currentOption(), 4);
+}
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
+  return RUN_ALL_TESTS();
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Copyright (c) Facebook, Inc. and its affiliates.
-All rights reserved.
+
 This source code is licensed under the BSD-style license found in the
 LICENSE file in the root directory of this source tree.
 """
@@ -9,7 +9,7 @@ LICENSE file in the root directory of this source tree.
 import struct
 import sys
 
-import flashlight._lib_sequence_criterion as _C
+import flashlight.lib.sequence.flashlight_lib_sequence_criterion as _C
 import torch
 import torch.nn as nn
 

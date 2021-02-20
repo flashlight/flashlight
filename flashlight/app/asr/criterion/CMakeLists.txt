@@ -73,9 +73,11 @@ target_sources(
   ${CMAKE_CURRENT_LIST_DIR}/attention/ContentAttention.cpp
   ${CMAKE_CURRENT_LIST_DIR}/attention/LocationAttention.cpp
   ${CMAKE_CURRENT_LIST_DIR}/attention/MultiHeadAttention.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/attention/Utils.cpp
   # Window
   ${CMAKE_CURRENT_LIST_DIR}/attention/MedianWindow.cpp
   ${CMAKE_CURRENT_LIST_DIR}/attention/SoftPretrainWindow.cpp
   ${CMAKE_CURRENT_LIST_DIR}/attention/SoftWindow.cpp
   ${CMAKE_CURRENT_LIST_DIR}/attention/StepWindow.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/attention/WindowBase.cpp
   )

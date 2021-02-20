@@ -14,6 +14,7 @@
 
 #include <gtest/gtest.h>
 
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/common/Serialization.h"
 
 // ========== utility functions ==========
@@ -240,5 +241,6 @@ TEST(SerializationTest, TemporaryRvalues) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
   return RUN_ALL_TESTS();
 }

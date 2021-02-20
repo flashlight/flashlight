@@ -75,23 +75,24 @@ class ClassificationDataset : public Dataset {
 
   ClassificationDataset(const std::string datasetPath) {
     // As found in the dataset folder:
-    std::vector<std::string> lang = {"Arabic",
-                                     "Greek",
-                                     "Chinese",
-                                     "Czech",
-                                     "Dutch",
-                                     "Japanese",
-                                     "Korean",
-                                     "Russian",
-                                     "English",
-                                     "Scottish",
-                                     "Vietnamese",
-                                     "German",
-                                     "Spanish",
-                                     "French",
-                                     "Polish",
-                                     "Italian",
-                                     "Irish"};
+    std::vector<std::string> lang = {
+        "Arabic",
+        "Greek",
+        "Chinese",
+        "Czech",
+        "Dutch",
+        "Japanese",
+        "Korean",
+        "Russian",
+        "English",
+        "Scottish",
+        "Vietnamese",
+        "German",
+        "Spanish",
+        "French",
+        "Polish",
+        "Italian",
+        "Irish"};
     for (auto& l : lang)
       read(datasetPath, l);
     for (auto& it : Id2Label)
@@ -202,10 +203,12 @@ class RnnClassifier : public Container {
   bool unittest(const std::string& input, const std::string& expectedLabel) {
     Variable output, h, c;
     auto p = ClassificationDataset::Id2Label[infer(input, h, c)];
-    const std::string s = (p == expectedLabel ? "✓ " : "✗ ");
+    const bool passes = p == expectedLabel;
+    const std::string s = (passes ? "✓ " : "✗ ");
     std::cout << "input: " << std::setw(20) << input
               << "\t expected: " << expectedLabel << "\t prediction: " << p
               << "\t" << s << std::endl;
+    return passes;
   }
 
  private:
@@ -216,6 +219,7 @@ class RnnClassifier : public Container {
 };
 
 int main(int argc, char** argv) {
+  fl::init();
   std::cout << "RnnClassification (path to the data dir) (learning rate) (num "
                "epochs) (hiddensize)"
             << std::endl;
@@ -223,7 +227,8 @@ int main(int argc, char** argv) {
             << std::endl;
   if (argc < 2) {
     std::cout << "To setup the dataset: " << std::endl;
-    std::cout << "wget https://download.pytorch.org/tutorial/data.zip" << std::endl;
+    std::cout << "wget https://download.pytorch.org/tutorial/data.zip"
+              << std::endl;
     std::cout << "unzip data.zip" << std::endl;
     std::cout << "./RnnClassification data/names" << std::endl;
     return 0;

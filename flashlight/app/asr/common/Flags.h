@@ -12,6 +12,7 @@
 
 #include <gflags/gflags.h>
 
+
 namespace fl {
 namespace app {
 namespace asr {
@@ -74,19 +75,13 @@ DECLARE_int64(validbatchsize);
 DECLARE_int64(samplerate);
 DECLARE_int64(channels);
 DECLARE_string(tokens);
+DECLARE_string(batching_strategy);
+DECLARE_int64(batching_max_duration);
 DECLARE_bool(usewordpiece);
 DECLARE_int64(replabel);
 DECLARE_string(surround);
-DECLARE_bool(eostoken);
 DECLARE_string(wordseparator);
 DECLARE_double(sampletarget);
-
-/* ========== FILTERING OPTIONS ========== */
-
-DECLARE_int64(minisz);
-DECLARE_int64(maxisz);
-DECLARE_int64(mintsz);
-DECLARE_int64(maxtsz);
 
 /* ========== NORMALIZATION OPTIONS ========== */
 
@@ -126,10 +121,8 @@ DECLARE_string(critoptim);
 
 /* ========== MFCC OPTIONS ========== */
 
-DECLARE_bool(mfcc);
-DECLARE_bool(pow);
+DECLARE_string(features_type);
 DECLARE_int64(mfcccoeffs);
-DECLARE_bool(mfsc);
 DECLARE_double(melfloor);
 DECLARE_int64(filterbanks);
 DECLARE_int64(devwin);
@@ -150,15 +143,13 @@ DECLARE_int64(saug_tmaskn);
 /* ========== SOUND EFFECT AUGMENTATION OPTIONS ========== */
 
 DECLARE_string(sfx_config);
+DECLARE_int64(sfx_start_update);
 
 /* ========== RUN OPTIONS ========== */
 
 DECLARE_string(datadir);
-DECLARE_string(tokensdir);
 DECLARE_string(rundir);
-DECLARE_string(archdir);
 DECLARE_string(flagsfile);
-DECLARE_string(runname);
 DECLARE_int64(nthread);
 DECLARE_int64(seed);
 DECLARE_int64(memstepsize);
@@ -168,6 +159,7 @@ DECLARE_bool(fl_benchmark_mode);
 DECLARE_string(fl_optim_mode);
 DECLARE_string(fl_log_level);
 DECLARE_int64(fl_vlog_level);
+DECLARE_int64(fl_log_mem_ops_interval);
 
 /* ========== MIXED PRECISION OPTIONS ========== */
 

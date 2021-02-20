@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.10)
 set(
   DATASET_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/BatchDataset.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/BatchDataset.h
   ${CMAKE_CURRENT_LIST_DIR}/BlobDataset.cpp
   ${CMAKE_CURRENT_LIST_DIR}/ConcatDataset.cpp
   ${CMAKE_CURRENT_LIST_DIR}/DatasetIterator.h

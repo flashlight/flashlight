@@ -143,13 +143,20 @@ void allReduceMultiple(
     std::vector<af::array*> arrs,
     bool async /* = false */,
     bool contiguous /* = false */) {
-  throw std::runtime_error(
-      "allReduceMultiple not yet supported for Gloo backend");
+  if (contiguous) {
+    throw std::runtime_error(
+        "contiguous allReduceMultiple is not yet supported for Gloo backend");
+  }
+
+  for (auto& arr : arrs) {
+    allReduce(*arr, async);
+  }
 }
 
 void syncDistributed() {
-  throw std::runtime_error(
-      "Asynchronous allReduce not yet supported for Gloo backend");
+  // NOOP since async distributed operations aren't yet supported with the Gloo
+  // backend
+  return;
 }
 
 int getWorldRank() {

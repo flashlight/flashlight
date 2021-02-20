@@ -10,8 +10,10 @@
 
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/criterion/criterion.h"
-#include "flashlight/app/asr/experimental/tools/alignment/Utils.h"
+#include "flashlight/app/asr/data/FeatureTransforms.h"
+#include "flashlight/app/asr/data/Utils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
+#include "flashlight/app/asr/tools/alignment/Utils.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/ext/common/Serializer.h"
 #include "flashlight/fl/flashlight.h"
@@ -35,8 +37,9 @@ int main(int argc, char** argv) {
   if (argc <= 2) {
     LOG(FATAL) << gflags::ProgramUsage();
   }
-
   std::string alignFilePath = argv[1];
+
+  fl::init();
 
   /* ===================== Parse Options ===================== */
   LOG(INFO) << "Parsing command line flags";
@@ -75,12 +78,7 @@ int main(int argc, char** argv) {
   LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */
-  auto dictPath = fl::lib::pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
-  LOG(INFO) << "Loading dictionary from " << dictPath;
-  if (dictPath.empty() || !fileExists(dictPath)) {
-    throw std::invalid_argument("Invalid dictionary filepath specified.");
-  }
-  text::Dictionary tokenDict(dictPath);
+  text::Dictionary tokenDict(FLAGS_tokens);
   // Setup-specific modifications
   for (int64_t r = 1; r <= FLAGS_replabel; ++r) {
     tokenDict.addEntry("<" + std::to_string(r) + ">");
@@ -89,8 +87,11 @@ int main(int argc, char** argv) {
   if (FLAGS_criterion == kCtcCriterion) {
     tokenDict.addEntry(kBlankToken);
   }
-  if (FLAGS_eostoken) {
-    tokenDict.addEntry(kEosToken);
+  bool isSeq2seqCrit = FLAGS_criterion == kSeq2SeqTransformerCriterion ||
+      FLAGS_criterion == kSeq2SeqRNNCriterion;
+  if (isSeq2seqCrit) {
+    tokenDict.addEntry(fl::app::asr::kEosToken);
+    tokenDict.addEntry(fl::lib::text::kPadToken);
   }
 
   int numClasses = tokenDict.indexSize();
@@ -108,9 +109,13 @@ int main(int argc, char** argv) {
     LOG(INFO) << "Writing alignment to: " << alignFilePath;
   }
 
+  fl::lib::text::Dictionary wordDict;
   text::LexiconMap lexicon;
   if (!FLAGS_lexicon.empty()) {
     lexicon = text::loadWords(FLAGS_lexicon, FLAGS_maxword);
+    wordDict = text::createWordDict(lexicon);
+    LOG(INFO) << "Number of words: " << wordDict.indexSize();
+    wordDict.setDefaultIndex(wordDict.getIndex(text::kUnkToken));
   }
 
   LOG(INFO) << "Loaded lexicon";
@@ -126,9 +131,56 @@ int main(int argc, char** argv) {
   /* ===================== Create Dataset ===================== */
   int worldRank = 0;
   int worldSize = 1;
-  std::shared_ptr<Dataset> ds;
-  ds = createDataset(
-      FLAGS_test, dicts, lexicon, FLAGS_batchsize, worldRank, worldSize);
+  fl::lib::audio::FeatureParams featParams(
+      FLAGS_samplerate,
+      FLAGS_framesizems,
+      FLAGS_framestridems,
+      FLAGS_filterbanks,
+      FLAGS_lowfreqfilterbank,
+      FLAGS_highfreqfilterbank,
+      FLAGS_mfcccoeffs,
+      kLifterParam /* lifterparam */,
+      FLAGS_devwin /* delta window */,
+      FLAGS_devwin /* delta-delta window */);
+  featParams.useEnergy = false;
+  featParams.usePower = false;
+  featParams.zeroMeanFrame = false;
+  FeatureType featType =
+      getFeatureType(FLAGS_features_type, FLAGS_channels, featParams).second;
+
+  TargetGenerationConfig targetGenConfig(
+      FLAGS_wordseparator,
+      FLAGS_sampletarget,
+      FLAGS_criterion,
+      FLAGS_surround,
+      isSeq2seqCrit,
+      FLAGS_replabel,
+      true /* skip unk */,
+      FLAGS_usewordpiece /* fallback2LetterWordSepLeft */,
+      !FLAGS_usewordpiece /* fallback2LetterWordSepLeft */);
+
+  auto inputTransform = inputFeatures(
+      featParams,
+      featType,
+      {FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx},
+      {});
+  auto targetTransform = targetFeatures(tokenDict, lexicon, targetGenConfig);
+  auto wordTransform = wordFeatures(wordDict);
+  int targetpadVal = isSeq2seqCrit
+      ? tokenDict.getIndex(fl::lib::text::kPadToken)
+      : kTargetPadValue;
+  int wordpadVal = kTargetPadValue;
+
+  auto ds = createDataset(
+      {FLAGS_test},
+      FLAGS_datadir,
+      1,
+      inputTransform,
+      targetTransform,
+      wordTransform,
+      std::make_tuple(0, targetpadVal, wordpadVal),
+      worldRank,
+      worldSize);
 
   LOG(INFO) << "[Dataset] Dataset loaded";
 
@@ -142,18 +194,12 @@ int main(int argc, char** argv) {
   for (auto& sample : *ds) {
     fwdMtr.resume();
     const auto input = fl::input(sample[kInputIdx]);
-    std::vector<fl::Variable> rawEmissions = network->forward({input});
-    fl::Variable rawEmission;
-    if (!rawEmissions.empty()) {
-      rawEmission = rawEmissions.front();
-    } else {
-      LOG(ERROR) << "Network did not produce any outputs";
-    }
-
+    fl::Variable rawEmission = fl::ext::forwardSequentialModuleWithPadMask(
+        input, network, sample[kDurationIdx]);
     fwdMtr.stop();
     alignMtr.resume();
-    auto bestPaths =
-        criterion->viterbiPath(rawEmission.array(), sample[kTargetIdx]);
+    auto bestPaths = criterion->viterbiPathWithTarget(
+        rawEmission.array(), sample[kTargetIdx]);
     alignMtr.stop();
     parseMtr.resume();
 
@@ -179,8 +225,7 @@ int main(int argc, char** argv) {
     parseMtr.stop();
     ++batches;
     if (batches % 500 == 0) {
-      LOG(INFO) << "Done batches: " << batches
-                << " , samples: " << batches * FLAGS_batchsize;
+      LOG(INFO) << "Done samples: " << batches;
     }
   }
 

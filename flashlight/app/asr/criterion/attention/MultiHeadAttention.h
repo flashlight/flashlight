@@ -22,11 +22,12 @@ class MultiHeadContentAttention : public AttentionBase {
       bool keyValue = false,
       bool splitInput = false);
 
-  std::pair<fl::Variable, fl::Variable> forward(
-      const fl::Variable& state,
-      const fl::Variable& xEncoded,
-      const fl::Variable& prevAttn,
-      const fl::Variable& attnWeight) override;
+  std::pair<Variable, Variable> forwardBase(
+      const Variable& state,
+      const Variable& xEncoded,
+      const Variable& prevAttn,
+      const Variable& logAttnWeight,
+      const Variable& xEncodedSizes) override;
 
   std::string prettyString() const override;
 

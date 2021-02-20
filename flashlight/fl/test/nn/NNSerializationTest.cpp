@@ -7,6 +7,7 @@
 
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <algorithm>
 #include <memory>
 #include <string>
 
@@ -14,8 +15,8 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/fl/autograd/autograd.h"
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/nn/nn.h"
-
 #include "flashlight/lib/common/System.h"
 
 using namespace fl;
@@ -149,7 +150,7 @@ TEST(NNSerializationTest, BaseModule) {
 }
 
 TEST(NNSerializationTest, PrecisionCast) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half precision not available on this device";
   }
 
@@ -251,7 +252,10 @@ TEST(NNSerializationTest, PrettyString) {
       "(6): LeakyReLU (0.200000)";
 
   auto remove_ws = [](std::string& str) {
-    str.erase(remove_if(str.begin(), str.end(), isspace), str.end());
+    str.erase(std::remove(str.begin(), str.end(), ' '), str.end());
+    str.erase(std::remove(str.begin(), str.end(), '\n'), str.end());
+    str.erase(std::remove(str.begin(), str.end(), '\t'), str.end());
+    str.erase(std::remove(str.begin(), str.end(), '\r'), str.end());
   };
 
   remove_ws(expectedstr);
@@ -373,5 +377,6 @@ TEST(NNSerializationTest, ContainerWithParams) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
   return RUN_ALL_TESTS();
 }

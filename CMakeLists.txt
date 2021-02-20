@@ -6,6 +6,10 @@ include(CTest)
 include(CMakeDependentOption)
 
 # ----------------------------- Setup -----------------------------
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
+endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 set(CMAKE_CXX_STANDARD 14)
@@ -22,6 +26,22 @@ set(FL_INSTALL_CMAKE_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/cmake" CACHE PATH "Insta
 set(FL_INSTALL_EXAMPLES_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/examples" CACHE PATH "Install path for example files")
 set(FL_INSTALL_DOC_DIR "${FL_INSTALL_ASSETS_BASE_DIR}/doc" CACHE PATH "Install path for documentation")
 
+include(CheckCXXCompilerFlag)
+# All libraries should have their symbols exported so plugins can lazily
+# symbols from any of them
+check_cxx_compiler_flag("-rdynamic" COMPILER_SUPPORTS_RDYNAMIC)
+if(${COMPILER_SUPPORTS_RDYNAMIC})
+  message(STATUS "-rdynamic supported.")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -rdynamic")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
+else()
+  message(WARNING
+    "This compiler doesn't support dynamic symbol exports. "
+    "Plugin functionality likely won't work.")
+endif()
+
+include(InternalUtils)
+
 # ----------------------------- Configuration -----------------------------
 
 option(FL_BUILD_TESTS "Build tests" ON)
@@ -31,7 +51,13 @@ option(FL_BUILD_SCRIPTS "Build internal scripts for wav2letter++" OFF)
 option(FL_BUILD_RECIPES "Build recipes" ON)
 option(FL_BUILD_STANDALONE "Build standalone installation" ON)
 option(FL_BUILD_LIBRARIES "Build flashlight libraries" ON)
-cmake_dependent_option(FL_BUILD_CORE "Build flashlight core" ON "FL_BUILD_LIBRARIES" OFF)
+option(FL_BUILD_CORE "Build flashlight core" ON)
+cmake_dependent_option(FL_BUILD_CONTRIB
+  "Build and link additional flashlight contrib assets." ON
+  "FL_BUILD_CORE" OFF)
+cmake_dependent_option(FL_BUILD_APPS
+  "Build flashlight apps" ON
+  "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_LIBRARIES" OFF)
 
 # Flashlight backend
 set(FL_BACKEND "CUDA" CACHE STRING "Backend with which to build flashlight")
@@ -51,8 +77,7 @@ else ()
   message(FATAL_ERROR "Invalid FLASHLIGHT backend specified")
 endif ()
 
-# Installation utilities
-include(InternalUtils)
+# List of installable targets
 set(INSTALLABLE_TARGETS "")
 
 set(FL_ROOT_DIR ${PROJECT_SOURCE_DIR}/flashlight)
@@ -80,7 +105,8 @@ if (FL_BUILD_TESTS)
 endif ()
 
 # ------------------------ flashlight Libraries ------------------------
-if (FL_BUILD_LIBRARIES)
+# FIXME: libraries are required to build core tests - https://git.io/JL955
+if (FL_BUILD_LIBRARIES OR (FL_BUILD_CORE AND FL_BUILD_TESTS))
   message(STATUS "Will build flashlight libraries.")
 
   option(FL_LIBRARIES_USE_CUDA "Use CUDA in flashlight libraries build" ON)
@@ -119,8 +145,10 @@ if (FL_BUILD_CORE)
     CXX_STANDARD 14
     )
 
-  # Link libraries to flashlight core
-  target_link_libraries(flashlight PUBLIC fl-libraries)
+  # FIXME: libraries are required to build core tests - https://git.io/JL955
+  if (FL_BUILD_LIBRARIES OR (FL_BUILD_CORE AND FL_BUILD_TESTS))
+    target_link_libraries(flashlight PUBLIC fl-libraries)
+  endif()
 
   # ------------------------ Global External Dependencies ------------------------
   # ArrayFire
@@ -149,7 +177,7 @@ if (FL_BUILD_CORE)
   # If cereal is found in a user-defined location, use it rather than
   # downloading from source
   find_package(cereal)
-  if (NOT TARGET cereal AND NOT cereal_FOUND)
+  if (NOT TARGET cereal AND NOT cereal_FOUND AND FL_BUILD_STANDALONE)
     message(STATUS "cereal NOT found. Will download from source")
     set(CEREAL_INSTALL_PATH ${FL_INSTALL_INC_DIR}/cereal)
     include(${CMAKE_MODULE_PATH}/BuildCereal.cmake)
@@ -215,12 +243,17 @@ if (FL_BUILD_CORE)
   target_link_libraries(flashlight PUBLIC ArrayFire::${FL_AF_BACKEND})
 
   # ------------------------ flashlight Core ------------------------
-
   set(FL_CORE_DIR "${FL_ROOT_DIR}/fl")
   include(${FL_CORE_DIR}/CMakeLists.txt)
   set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} flashlight)
   # flashlight core components keep their relative paths with respect to project
   setup_install_headers(${FL_CORE_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
+  target_compile_definitions(flashlight
+    PUBLIC
+    FL_BACKEND_CPU=$<BOOL:${FL_USE_CPU}>
+    FL_BACKEND_CUDA=$<BOOL:${FL_USE_CUDA}>
+    FL_BACKEND_OPENCL=$<BOOL:${FL_USE_OPENCL}>
+    )
 
   # ------------------------ Extensions ------------------------
   set(FL_EXT_DIR "${FL_ROOT_DIR}/ext")
@@ -231,8 +264,11 @@ if (FL_BUILD_CORE)
 endif() # if FL_BUILD_CORE
 
 # --------------------------- Apps ---------------------------
-set(FL_APPS_DIR "${FL_ROOT_DIR}/app")
-include(${FL_APPS_DIR}/CMakeLists.txt)
+if (FL_BUILD_APPS)
+  message(STATUS "Will build Flashlight applications.")
+  set(FL_APPS_DIR "${FL_ROOT_DIR}/app")
+  include(${FL_APPS_DIR}/CMakeLists.txt)
+endif()
 
 # --------------------------- Cleanup ---------------------------
 setup_install_targets(INSTALL_TARGETS ${INSTALLABLE_TARGETS})

@@ -11,8 +11,8 @@
 #include <arrayfire.h>
 #include <gtest/gtest.h>
 
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/dataset/datasets.h"
-
 #include "flashlight/lib/common/System.h"
 
 using namespace fl;
@@ -28,8 +28,8 @@ bool allClose(
 }
 
 TEST(DatasetTest, TensorDataset) {
-  std::vector<af::array> tensormap = {af::randu(100, 200, 300),
-                                      af::randu(150, 300)};
+  std::vector<af::array> tensormap = {
+      af::randu(100, 200, 300), af::randu(150, 300)};
   TensorDataset tensords(tensormap);
 
   // Check `size` method
@@ -80,6 +80,28 @@ TEST(DatasetTest, BatchDataset) {
   ASSERT_EQ(ff1.size(), 1);
   ASSERT_TRUE(
       allClose(ff1[0], tensormap[0](af::span, af::span, af::seq(70, 76))));
+}
+
+TEST(DatasetTest, DynamicBatchDataset) {
+  // first create a tensor dataset
+  std::vector<af::array> tensormap = {af::randu(100, 200, 300)};
+  auto tensords = std::make_shared<TensorDataset>(tensormap);
+  std::vector<int64_t> bSzs = {20, 50, 20, 30, 10, 50, 20, 35, 15, 50};
+  BatchDataset batchds(tensords, bSzs);
+
+  // Check `size` method
+  ASSERT_EQ(batchds.size(), bSzs.size());
+
+  // Values using `get` method
+  auto ff1 = batchds.get(0);
+  ASSERT_EQ(ff1.size(), 1);
+  ASSERT_TRUE(
+      allClose(ff1[0], tensormap[0](af::span, af::span, af::seq(0, 19))));
+
+  ff1 = batchds.get(3);
+  ASSERT_EQ(ff1.size(), 1);
+  ASSERT_TRUE(
+      allClose(ff1[0], tensormap[0](af::span, af::span, af::seq(90, 119))));
 }
 
 TEST(DatasetTest, ShuffleDataset) {
@@ -258,7 +280,8 @@ TEST(DatasetTest, FileBlobDataset) {
   // multi-threaded read
   {
     std::vector<std::vector<af::array>> thdata(data.size());
-    auto blob = std::make_shared<FileBlobDataset>(fl::lib::getTmpPath("data.blob"));
+    auto blob =
+        std::make_shared<FileBlobDataset>(fl::lib::getTmpPath("data.blob"));
     std::vector<std::thread> workers;
     const int nworker = 4;
     int nperworker = data.size() / nworker;
@@ -296,8 +319,8 @@ TEST(DatasetTest, FileBlobDataset) {
       data[i].push_back(af::constant(i, 1, f32));
     }
     {
-      auto blob =
-          std::make_shared<FileBlobDataset>(fl::lib::getTmpPath("data.blob"), true, true);
+      auto blob = std::make_shared<FileBlobDataset>(
+          fl::lib::getTmpPath("data.blob"), true, true);
       std::vector<std::thread> workers;
       const int nworker = 10;
       int nperworker = data.size() / nworker;
@@ -316,7 +339,8 @@ TEST(DatasetTest, FileBlobDataset) {
       blob->writeIndex();
     }
     {
-      auto blob = std::make_shared<FileBlobDataset>(fl::lib::getTmpPath("data.blob"));
+      auto blob =
+          std::make_shared<FileBlobDataset>(fl::lib::getTmpPath("data.blob"));
       ASSERT_EQ(data.size(), blob->size());
       for (int64_t i = 0; i < data.size(); i++) {
         auto blobSample = blob->get(i);
@@ -552,5 +576,6 @@ TEST(DatasetTest, DISABLED_PrefetchDatasetPerformance) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
   return RUN_ALL_TESTS();
 }

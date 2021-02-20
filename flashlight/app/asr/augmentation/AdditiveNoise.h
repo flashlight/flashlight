@@ -49,24 +49,20 @@ class AdditiveNoise : public SoundEffect {
     int nClipsMin_ = 1;
     int nClipsMax_ = 3;
     std::string listFilePath_;
-    unsigned int randomSeed_ = std::mt19937::default_seed;
-    RandomPolicy dsetRndPolicy_;
     std::string prettyString() const;
   };
 
-  explicit AdditiveNoise(const AdditiveNoise::Config& config);
+  explicit AdditiveNoise(
+      const AdditiveNoise::Config& config,
+      unsigned int seed = 0);
   ~AdditiveNoise() override = default;
   void apply(std::vector<float>& signal) override;
   std::string prettyString() const override;
 
  private:
   const AdditiveNoise::Config conf_;
-  std::mt19937 randomEngine_;
-  std::uniform_real_distribution<float> randomProba_;
-  std::uniform_int_distribution<> uniformDistribution_;
-  std::uniform_int_distribution<> randomNumClipsPerUtterance_;
-  std::uniform_real_distribution<> randomSnr_;
-  std::unique_ptr<DatasetRandomiser<std::string>> datasetRandomiser_;
+  std::vector<std::string> noiseFiles_;
+  RandomNumberGenerator rng_;
 };
 
 } // namespace sfx

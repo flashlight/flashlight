@@ -82,6 +82,7 @@ double nag() {
 
 int main() {
   af::info();
+  fl::init();
   TIME(sgd);
   TIME(nag);
   TIME(adam);

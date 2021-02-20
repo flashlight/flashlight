@@ -31,6 +31,11 @@ const std::string kNoWindow = "no";
 const std::string kSoftWindow = "soft";
 const std::string kSoftPretrainWindow = "softPretrain";
 const std::string kStepWindow = "step";
+
+// to avoid nans when apply log to these var
+// which cannot be propagated correctly if we set -inf
+constexpr float kAttentionMaskValue = -10000;
+
 } // namespace asr
 } // namespace app
 } // namespace fl

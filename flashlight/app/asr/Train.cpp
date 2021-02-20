@@ -22,13 +22,15 @@
 #include "flashlight/app/asr/common/Flags.h"
 #include "flashlight/app/asr/criterion/criterion.h"
 #include "flashlight/app/asr/data/FeatureTransforms.h"
+#include "flashlight/app/asr/data/Utils.h"
 #include "flashlight/app/asr/decoder/DecodeMaster.h"
+#include "flashlight/app/asr/decoder/PlGenerator.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/ext/common/DistributedUtils.h"
-#include "flashlight/ext/common/ModulePlugin.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/ext/common/Serializer.h"
+#include "flashlight/ext/plugin/ModulePlugin.h"
 #include "flashlight/fl/contrib/contrib.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/System.h"
@@ -47,6 +49,7 @@ using fl::lib::pathsConcat;
 using namespace fl::app::asr;
 
 namespace {
+
 void parseCmdLineFlagsWrapper(int argc, char** argv) {
   LOG(INFO) << "Parsing command line flags";
   gflags::ParseCommandLineFlags(&argc, &argv, false);
@@ -60,9 +63,38 @@ void parseCmdLineFlagsWrapper(int argc, char** argv) {
   // aren't
   handleDeprecatedFlags();
 }
+
+// Extra flags for IPL
+DEFINE_string(unsup_datadir, "", "datadir for unsupervised lists");
+DEFINE_string(
+    unsup_train,
+    "",
+    "comma-separated list of unsupervised training data");
+DEFINE_string(
+    ipl_relabel_epoch,
+    "10000000",
+    "comma-separated list of epoch to regenerate PL");
+DEFINE_string(
+    ipl_relabel_ratio,
+    "1",
+    "comma-separated list of number of files to regenerate PL");
+DEFINE_bool(ipl_use_existing_pl, false, "use existing pl from the list file");
+DEFINE_double(ipl_seed_model_wer, -1, "WER of seed model");
+DEFINE_double(ipl_minisz, 0, "minimum duration of audio");
+DEFINE_double(
+    ipl_maxisz,
+    std::numeric_limits<double>::max(),
+    "maximum duration of audio");
+DEFINE_int64(ipl_mintsz, 0, "minimum length of targets in words");
+DEFINE_int64(
+    ipl_maxtsz,
+    std::numeric_limits<int64_t>::max(),
+    "maximum length of targets in words");
+
 } // namespace
 
 int main(int argc, char** argv) {
+  fl::init();
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
   std::string exec(argv[0]);
@@ -82,12 +114,13 @@ int main(int argc, char** argv) {
   std::string runStatus = argv[1];
   int64_t startEpoch = 0;
   int64_t startUpdate = 0;
+  double scaleFactor = 1.; // for AMP
   if (argc <= 1) {
     LOG(FATAL) << gflags::ProgramUsage();
   }
   if (runStatus == kTrainMode) {
     parseCmdLineFlagsWrapper(argc, argv);
-    runPath = pathsConcat(FLAGS_rundir, FLAGS_runname);
+    runPath = FLAGS_rundir;
   } else if (runStatus == kContinueMode) {
     runPath = argv[2];
     while (fileExists(getRunFile("model_last.bin", runIdx, runPath))) {
@@ -117,6 +150,8 @@ int main(int argc, char** argv) {
     } else {
       startUpdate = std::stoi(nbupdates->second);
     }
+
+    scaleFactor = getScaleFactor(cfg);
   } else if (runStatus == kForkMode) {
     reloadPath = argv[2];
     std::unordered_map<std::string, std::string> cfg;
@@ -131,7 +166,9 @@ int main(int argc, char** argv) {
     gflags::ReadFlagsFromString(flags->second, gflags::GetArgv0(), true);
 
     parseCmdLineFlagsWrapper(argc, argv);
-    runPath = pathsConcat(FLAGS_rundir, FLAGS_runname);
+    runPath = FLAGS_rundir;
+
+    scaleFactor = getScaleFactor(cfg);
   } else {
     LOG(FATAL) << gflags::ProgramUsage();
   }
@@ -150,8 +187,7 @@ int main(int argc, char** argv) {
         FLAGS_world_size,
         FLAGS_max_devices_per_node,
         FLAGS_rndv_filepath);
-    reducer = std::make_shared<fl::CoalescingReducer>(
-        1.0 / fl::getWorldSize(), true, true);
+    reducer = std::make_shared<fl::CoalescingReducer>(1.0, true, true);
   }
 
   int worldRank = fl::getWorldRank();
@@ -161,6 +197,23 @@ int main(int argc, char** argv) {
   FL_LOG_MASTER(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
   FL_LOG_MASTER(INFO) << "Experiment path: " << runPath;
   FL_LOG_MASTER(INFO) << "Experiment runidx: " << runIdx;
+
+  // log memory manager operations.
+  std::ofstream memLog;
+  if (FLAGS_fl_log_mem_ops_interval > 0 && isMaster) {
+    auto* curMemMgr =
+        fl::MemoryManagerInstaller::currentlyInstalledMemoryManager();
+    if (curMemMgr) {
+      memLog.open(getRunFile("mem", runIdx, runPath));
+      if (!memLog) {
+        LOG(FATAL) << "failed to open memory log file="
+                   << getRunFile("mem", runIdx, runPath) << " for writing";
+      }
+      curMemMgr->setLogStream(&memLog);
+      curMemMgr->setLoggingEnabled(true);
+      curMemMgr->setLogFlushInterval(FLAGS_fl_log_mem_ops_interval);
+    }
+  }
 
   // flashlight optim mode
   auto flOptimLevel = FLAGS_fl_optim_mode.empty()
@@ -192,11 +245,11 @@ int main(int argc, char** argv) {
       parseValidSets(FLAGS_valid);
 
   /* ===================== Create Dictionary & Lexicon ===================== */
-  auto dictPath = pathsConcat(FLAGS_tokensdir, FLAGS_tokens);
+  auto dictPath = FLAGS_tokens;
   if (dictPath.empty() || !fileExists(dictPath)) {
     throw std::runtime_error(
         "Invalid dictionary filepath specified with "
-        "--tokensdir and --tokens: \"" +
+        " --tokens: \"" +
         dictPath + "\"");
   }
   fl::lib::text::Dictionary tokenDict(dictPath);
@@ -208,8 +261,11 @@ int main(int argc, char** argv) {
   if (FLAGS_criterion == kCtcCriterion) {
     tokenDict.addEntry(kBlankToken);
   }
-  if (FLAGS_eostoken) {
+  bool isSeq2seqCrit = FLAGS_criterion == kSeq2SeqTransformerCriterion ||
+      FLAGS_criterion == kSeq2SeqRNNCriterion;
+  if (isSeq2seqCrit) {
     tokenDict.addEntry(fl::app::asr::kEosToken);
+    tokenDict.addEntry(fl::lib::text::kPadToken);
   }
 
   int numClasses = tokenDict.indexSize();
@@ -238,24 +294,17 @@ int main(int argc, char** argv) {
   featParams.useEnergy = false;
   featParams.usePower = false;
   featParams.zeroMeanFrame = false;
-  int numFeatures = -1;
-  FeatureType featType = FeatureType::NONE;
-  if (FLAGS_pow) {
-    featType = FeatureType::POW_SPECTRUM;
-    numFeatures = featParams.powSpecFeatSz();
-  } else if (FLAGS_mfsc) {
-    featType = FeatureType::MFSC;
-    numFeatures = featParams.mfscFeatSz();
-  } else if (FLAGS_mfcc) {
-    featType = FeatureType::MFCC;
-    numFeatures = featParams.mfccFeatSz();
-  }
+  auto featureRes =
+      getFeatureType(FLAGS_features_type, FLAGS_channels, featParams);
+  int numFeatures = featureRes.first;
+  FeatureType featType = featureRes.second;
+
   TargetGenerationConfig targetGenConfig(
       FLAGS_wordseparator,
       FLAGS_sampletarget,
       FLAGS_criterion,
       FLAGS_surround,
-      FLAGS_eostoken,
+      isSeq2seqCrit,
       FLAGS_replabel,
       true /* skip unk */,
       FLAGS_usewordpiece /* fallback2LetterWordSepLeft */,
@@ -269,13 +318,15 @@ int main(int argc, char** argv) {
       featParams,
       featType,
       {FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx},
-      sfxConf);
+      sfxConf,
+      std::max(0L, FLAGS_sfx_start_update - startUpdate));
   auto targetTransform = targetFeatures(tokenDict, lexicon, targetGenConfig);
   auto wordTransform = wordFeatures(wordDict);
-  int targetpadVal = FLAGS_eostoken
-      ? tokenDict.getIndex(fl::app::asr::kEosToken)
+  int targetpadVal = isSeq2seqCrit
+      ? tokenDict.getIndex(fl::lib::text::kPadToken)
       : kTargetPadValue;
   int wordpadVal = kTargetPadValue;
+  auto padVal = std::make_tuple(0, targetpadVal, wordpadVal);
 
   std::vector<std::string> trainSplits = fl::lib::split(",", FLAGS_train, true);
   auto trainds = createDataset(
@@ -285,24 +336,33 @@ int main(int argc, char** argv) {
       inputTransform,
       targetTransform,
       wordTransform,
-      std::make_tuple(0, targetpadVal, wordpadVal),
+      padVal,
       worldRank,
-      worldSize);
+      worldSize,
+      false, // allowEmpty
+      FLAGS_batching_strategy,
+      FLAGS_batching_max_duration);
 
   std::map<std::string, std::shared_ptr<fl::Dataset>> validds;
   int64_t validBatchSize =
       FLAGS_validbatchsize == -1 ? FLAGS_batchsize : FLAGS_validbatchsize;
+  auto validInputTransform = inputFeatures(
+      featParams,
+      featType,
+      {FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx});
   for (const auto& s : validTagSets) {
     validds[s.first] = createDataset(
         {s.second},
         FLAGS_datadir,
         validBatchSize,
-        inputTransform,
+        validInputTransform,
         targetTransform,
         wordTransform,
-        std::make_tuple(0, targetpadVal, wordpadVal),
+        padVal,
         worldRank,
-        worldSize);
+        worldSize,
+        true // allowEmpty
+    );
   }
 
   /* =========== Create Network & Optimizers / Reload Snapshot ============ */
@@ -312,35 +372,64 @@ int main(int argc, char** argv) {
   std::shared_ptr<fl::FirstOrderOptimizer> critoptim;
   std::shared_ptr<fl::lib::text::LM> lm;
   std::shared_ptr<WordDecodeMaster> dm;
+  bool usePlugin = false;
 
   auto scalemode = getCriterionScaleMode(FLAGS_onorm, FLAGS_sqnorm);
+  if (fl::lib::endsWith(FLAGS_arch, ".so")) {
+    usePlugin = true;
+    (void)fl::ext::ModulePlugin(FLAGS_arch);
+  }
   if (runStatus == kTrainMode) {
-    auto archfile = pathsConcat(FLAGS_archdir, FLAGS_arch);
-    FL_LOG_MASTER(INFO) << "Loading architecture file from " << archfile;
+    FL_LOG_MASTER(INFO) << "Loading architecture file from " << FLAGS_arch;
     // Encoder network, works on audio
-    if (fl::lib::endsWith(archfile, ".so")) {
-      network = fl::ext::ModulePlugin(archfile).arch(numFeatures, numClasses);
+    if (fl::lib::endsWith(FLAGS_arch, ".so")) {
+      network = fl::ext::ModulePlugin(FLAGS_arch).arch(numFeatures, numClasses);
     } else {
       network =
-          fl::ext::buildSequentialModule(archfile, numFeatures, numClasses);
+          fl::ext::buildSequentialModule(FLAGS_arch, numFeatures, numClasses);
     }
-
     if (FLAGS_criterion == kCtcCriterion) {
       criterion = std::make_shared<CTCLoss>(scalemode);
     } else if (FLAGS_criterion == kAsgCriterion) {
       criterion =
           std::make_shared<ASGLoss>(numClasses, scalemode, FLAGS_transdiag);
-    } else if (FLAGS_criterion == kSeq2SeqCriterion) {
-      criterion = std::make_shared<Seq2SeqCriterion>(buildSeq2Seq(
-          numClasses, tokenDict.getIndex(fl::app::asr::kEosToken)));
-    } else if (FLAGS_criterion == kTransformerCriterion) {
-      criterion =
-          std::make_shared<TransformerCriterion>(buildTransformerCriterion(
-              numClasses,
-              FLAGS_am_decoder_tr_layers,
-              FLAGS_am_decoder_tr_dropout,
-              FLAGS_am_decoder_tr_layerdrop,
-              tokenDict.getIndex(fl::app::asr::kEosToken)));
+    } else if (FLAGS_criterion == kSeq2SeqRNNCriterion) {
+      std::vector<std::shared_ptr<AttentionBase>> attentions;
+      for (int i = 0; i < FLAGS_decoderattnround; i++) {
+        attentions.push_back(createAttention());
+      }
+      criterion = std::make_shared<Seq2SeqCriterion>(
+          numClasses,
+          FLAGS_encoderdim,
+          tokenDict.getIndex(fl::app::asr::kEosToken),
+          tokenDict.getIndex(fl::lib::text::kPadToken),
+          FLAGS_maxdecoderoutputlen,
+          attentions,
+          createAttentionWindow(),
+          FLAGS_trainWithWindow,
+          FLAGS_pctteacherforcing,
+          FLAGS_labelsmooth,
+          FLAGS_inputfeeding,
+          FLAGS_samplingstrategy,
+          FLAGS_gumbeltemperature,
+          FLAGS_decoderrnnlayer,
+          FLAGS_decoderattnround,
+          FLAGS_decoderdropout);
+    } else if (FLAGS_criterion == kSeq2SeqTransformerCriterion) {
+      criterion = std::make_shared<TransformerCriterion>(
+          numClasses,
+          FLAGS_encoderdim,
+          tokenDict.getIndex(fl::app::asr::kEosToken),
+          tokenDict.getIndex(fl::lib::text::kPadToken),
+          FLAGS_maxdecoderoutputlen,
+          FLAGS_am_decoder_tr_layers,
+          createAttention(),
+          createAttentionWindow(),
+          FLAGS_trainWithWindow,
+          FLAGS_labelsmooth,
+          FLAGS_pctteacherforcing,
+          FLAGS_am_decoder_tr_dropout,
+          FLAGS_am_decoder_tr_layerdrop);
     } else {
       LOG(FATAL) << "unimplemented criterion";
     }
@@ -377,13 +466,15 @@ int main(int argc, char** argv) {
           network,
           lm,
           dummyTransition,
+          usePlugin,
           tokenDict,
           wordDict,
-          DecodeMasterTrainOptions{.repLabel = int32_t(FLAGS_replabel),
-                                   .wordSepIsPartOfToken = FLAGS_usewordpiece,
-                                   .surround = FLAGS_surround,
-                                   .wordSep = FLAGS_wordseparator,
-                                   .targetPadIdx = targetpadVal});
+          DecodeMasterTrainOptions{
+              .repLabel = int32_t(FLAGS_replabel),
+              .wordSepIsPartOfToken = FLAGS_usewordpiece,
+              .surround = FLAGS_surround,
+              .wordSep = FLAGS_wordseparator,
+              .targetPadIdx = targetpadVal});
     } else {
       throw std::runtime_error(
           "Other decoders are not supported yet during training");
@@ -458,7 +549,7 @@ int main(int argc, char** argv) {
   if (isMaster) {
     fl::lib::dirCreate(runPath);
     logFile.open(getRunFile("log", runIdx, runPath));
-    if (!logFile.is_open()) {
+    if (!logFile) {
       LOG(FATAL) << "failed to open log file for writing";
     }
     // write config
@@ -467,29 +558,90 @@ int main(int argc, char** argv) {
     ar(CEREAL_NVP(config));
   }
 
-  auto logStatus =
-      [&logFile, isMaster](
-          TrainMeters& mtrs,
-          std::unordered_map<std::string, double>& validWerWithDecoder,
-          int64_t epoch,
-          int64_t nupdates,
-          double lr,
-          double lrcrit) {
-        syncMeter(mtrs);
+  /* ===================== PL Generator ===================== */
+  TokenToWordFunc tokenToWord =
+      [&isSeq2seqCrit](
+          const std::vector<int>& tokens,
+          const fl::lib::text::Dictionary& dict,
+          bool isPrediction) -> std::vector<std::string> {
+    std::vector<std::string> letters;
+    if (isPrediction) {
+      letters = tknPrediction2Ltr(
+          tokens,
+          dict,
+          FLAGS_criterion,
+          FLAGS_surround,
+          isSeq2seqCrit,
+          FLAGS_replabel,
+          FLAGS_usewordpiece,
+          FLAGS_wordseparator);
+    } else {
+      letters = tknTarget2Ltr(
+          tokens,
+          dict,
+          FLAGS_criterion,
+          FLAGS_surround,
+          isSeq2seqCrit,
+          FLAGS_replabel,
+          FLAGS_usewordpiece,
+          FLAGS_wordseparator);
+    }
+    return tkn2Wrd(letters, FLAGS_wordseparator);
+  };
 
-        if (isMaster) {
-          auto logMsg = getLogString(
-              mtrs, validWerWithDecoder, epoch, nupdates, lr, lrcrit);
-          FL_LOG_MASTER(INFO) << logMsg;
-          appendToLog(logFile, logMsg);
-        }
-      };
+  // PlGenerator will always be created. However, if no ipl-related flags are
+  // specified, the dummy PlGenerator created from the default values will be
+  // completely invisible in training.
+  auto plGenerator = PlGenerator(
+      tokenDict,
+      runPath,
+      worldRank,
+      worldSize,
+      FLAGS_batchsize,
+      FLAGS_unsup_datadir,
+      FLAGS_unsup_train,
+      FLAGS_ipl_relabel_epoch,
+      FLAGS_ipl_relabel_ratio,
+      FLAGS_ipl_use_existing_pl,
+      FLAGS_ipl_seed_model_wer,
+      FLAGS_ipl_minisz,
+      FLAGS_ipl_maxisz,
+      FLAGS_ipl_mintsz,
+      FLAGS_ipl_maxtsz,
+      padVal,
+      inputTransform,
+      targetTransform,
+      wordTransform,
+      tokenToWord);
 
-  auto saveModels = [&](int iter, int totalUpdates) {
+  /* ===================== Hooks ===================== */
+  auto logStatus = [&logFile, &validTagSets, &plGenerator, isMaster](
+                       TrainMeters& mtrs,
+                       std::unordered_map<std::string, double>&
+                           validWerWithDecoder,
+                       int64_t epoch,
+                       int64_t nupdates,
+                       double lr,
+                       double lrcrit,
+                       double scaleFactor) {
+    syncMeter(mtrs);
+    plGenerator.setModelWER(
+        mtrs.valid[validTagSets.front().first].wrdEdit.errorRate()[0]);
+
+    if (isMaster) {
+      auto logMsg = getLogString(
+          mtrs, validWerWithDecoder, epoch, nupdates, lr, lrcrit, scaleFactor);
+      FL_LOG_MASTER(INFO) << logMsg;
+      appendToLog(logFile, logMsg);
+    }
+  };
+
+  auto saveModels = [&](int iter, int totalUpdates, double scaleFactor) {
     if (isMaster) {
       // Save last epoch
       config[kEpoch] = std::to_string(iter);
       config[kUpdates] = std::to_string(totalUpdates);
+      config[kScaleFactor] = std::to_string(scaleFactor);
 
       std::string filename;
       if (FLAGS_itersave) {
@@ -562,16 +714,16 @@ int main(int argc, char** argv) {
     }
   };
 
-  /* ===================== Hooks ===================== */
-  auto evalOutput = [&tokenDict, &criterion](
+  auto evalOutput = [&tokenDict, &criterion, &isSeq2seqCrit](
                         const af::array& op,
                         const af::array& target,
+                        const af::array& inputSizes,
                         DatasetMeters& mtr) {
     auto batchsz = op.dims(2);
     for (int b = 0; b < batchsz; ++b) {
       auto tgt = target(af::span, b);
-      auto viterbipath =
-          afToVector<int>(criterion->viterbiPath(op(af::span, af::span, b)));
+      auto viterbipath = afToVector<int>(
+          criterion->viterbiPath(op(af::span, af::span, b), inputSizes.col(b)));
       auto tgtraw = afToVector<int>(tgt);
 
       // Remove `-1`s appended to the target for batching (if any)
@@ -585,7 +737,7 @@ int main(int argc, char** argv) {
           tokenDict,
           FLAGS_criterion,
           FLAGS_surround,
-          FLAGS_eostoken,
+          isSeq2seqCrit,
           FLAGS_replabel,
           FLAGS_usewordpiece,
           FLAGS_wordseparator);
@@ -594,7 +746,7 @@ int main(int argc, char** argv) {
           tokenDict,
           FLAGS_criterion,
           FLAGS_surround,
-          FLAGS_eostoken,
+          isSeq2seqCrit,
           FLAGS_replabel,
           FLAGS_usewordpiece,
           FLAGS_wordseparator);
@@ -607,7 +759,7 @@ int main(int argc, char** argv) {
     }
   };
 
-  auto test = [&evalOutput, &dm, &lexicon](
+  auto test = [&evalOutput, &dm, &lexicon, &usePlugin, &isSeq2seqCrit](
                   std::shared_ptr<fl::Module> ntwrk,
                   std::shared_ptr<SequenceCriterion> crit,
                   std::shared_ptr<fl::Dataset> validds,
@@ -690,17 +842,46 @@ int main(int argc, char** argv) {
     }
 
     for (auto& batch : *curValidset) {
-      auto output = fl::ext::forwardSequentialModuleWithPadMask(
-          fl::input(batch[kInputIdx]), ntwrk, batch[kDurationIdx]);
-      auto loss =
-          crit->forward({output, fl::Variable(batch[kTargetIdx], false)})
-              .front();
+      fl::Variable output;
+      if (usePlugin) {
+        output = ntwrk
+                     ->forward(
+                         {fl::input(batch[kInputIdx]),
+                          fl::noGrad(batch[kDurationIdx])})
+                     .front();
+      } else {
+        output = fl::ext::forwardSequentialModuleWithPadMask(
+            fl::input(batch[kInputIdx]), ntwrk, batch[kDurationIdx]);
+      }
+      std::vector<fl::Variable> critArgs = {
+          output, fl::Variable(batch[kTargetIdx], false)};
+      if (isSeq2seqCrit) {
+        critArgs.push_back(fl::Variable(batch[kDurationIdx], false));
+        critArgs.push_back(fl::Variable(batch[kTargetSizeIdx], false));
+      }
+      auto loss = crit->forward(critArgs).front();
       mtrs.loss.add(loss.array());
-      evalOutput(output.array(), batch[kTargetIdx], mtrs);
+      evalOutput(output.array(), batch[kTargetIdx], batch[kDurationIdx], mtrs);
     }
   };
 
   int64_t curEpoch = startEpoch;
+  // Try reloading existing PL
+  auto unsupDataDir = plGenerator.reloadPl(curEpoch);
+  // If loading failes, try regenerate PL
+  if (unsupDataDir.empty()) {
+    unsupDataDir =
+        plGenerator.regeneratePl(curEpoch, network, criterion, usePlugin);
+  }
+  // If any PLs loaded, update train set
+  if (!unsupDataDir.empty()) {
+    trainds = plGenerator.createTrainSet(
+        FLAGS_datadir,
+        FLAGS_train,
+        unsupDataDir,
+        FLAGS_batching_strategy,
+        FLAGS_batching_max_duration);
+  }
 
   auto train = [&meters,
                 &validWerWithDecoder,
@@ -711,6 +892,10 @@ int main(int argc, char** argv) {
                 &validds,
                 &curEpoch,
                 &startUpdate,
+                &scaleFactor,
+                &plGenerator,
+                &usePlugin,
+                &isSeq2seqCrit,
                 reducer](
                    std::shared_ptr<fl::Module> ntwrk,
                    std::shared_ptr<SequenceCriterion> crit,
@@ -732,7 +917,7 @@ int main(int argc, char** argv) {
 
     std::shared_ptr<fl::Module> saug;
     if (FLAGS_saug_start_update >= 0) {
-      if (!(FLAGS_pow || FLAGS_mfsc || FLAGS_mfcc)) {
+      if (FLAGS_features_type == kFeaturesRaw) {
         saug = std::make_shared<fl::RawWavSpecAugment>(
             FLAGS_filterbanks,
             FLAGS_saug_fmaskf,
@@ -771,7 +956,8 @@ int main(int argc, char** argv) {
     auto runValAndSaveModel = [&](int64_t totalEpochs,
                                   int64_t totalUpdates,
                                   double lr,
-                                  double lrcrit) {
+                                  double lrcrit,
+                                  double saveScaleFactor) {
       meters.runtime.stop();
       meters.timer.stop();
       meters.sampletimer.stop();
@@ -792,13 +978,19 @@ int main(int argc, char** argv) {
       // print status
       try {
         logStatus(
-            meters, validWerWithDecoder, totalEpochs, totalUpdates, lr, lrcrit);
+            meters,
+            validWerWithDecoder,
+            totalEpochs,
+            totalUpdates,
+            lr,
+            lrcrit,
+            saveScaleFactor);
       } catch (const std::exception& ex) {
         LOG(ERROR) << "Error while writing logs: " << ex.what();
       }
       // save last and best models
       try {
-        saveModels(totalEpochs, totalUpdates);
+        saveModels(totalEpochs, totalUpdates, saveScaleFactor);
       } catch (const std::exception& ex) {
         LOG(FATAL) << "Error while saving models: " << ex.what();
       }
@@ -809,8 +1001,6 @@ int main(int argc, char** argv) {
     };
 
     int64_t curBatch = startUpdate;
-    double scaleFactor =
-        FLAGS_fl_amp_use_mixed_precision ? FLAGS_fl_amp_scale_factor : 1.;
     unsigned int kScaleFactorUpdateInterval =
         FLAGS_fl_amp_scale_factor_update_interval;
     unsigned int kMaxScaleFactor = FLAGS_fl_amp_max_scale_factor;
@@ -856,7 +1046,7 @@ int main(int argc, char** argv) {
         af::sync();
         meters.timer.incUnit();
         meters.sampletimer.stopAndIncUnit();
-        meters.stats.add(batch[kInputIdx], batch[kTargetIdx]);
+        meters.stats.add(batch[kDurationIdx], batch[kTargetSizeIdx]);
         if (af::anyTrue<bool>(af::isNaN(batch[kInputIdx])) ||
             af::anyTrue<bool>(af::isNaN(batch[kTargetIdx]))) {
           LOG(FATAL) << "Sample has NaN values - "
@@ -880,12 +1070,23 @@ int main(int argc, char** argv) {
               curBatch >= FLAGS_saug_start_update) {
             input = saug->forward({input}).front();
           }
-          auto output = fl::ext::forwardSequentialModuleWithPadMask(
-              input, ntwrk, batch[kDurationIdx]);
+          fl::Variable output;
+          if (usePlugin) {
+            output = ntwrk->forward({input, fl::noGrad(batch[kDurationIdx])})
+                         .front();
+          } else {
+            output = fl::ext::forwardSequentialModuleWithPadMask(
+                input, ntwrk, batch[kDurationIdx]);
+          }
           af::sync();
           meters.critfwdtimer.resume();
-          auto loss =
-              crit->forward({output, fl::noGrad(batch[kTargetIdx])}).front();
+          std::vector<fl::Variable> critArgs = {
+              output, fl::Variable(batch[kTargetIdx], false)};
+          if (isSeq2seqCrit) {
+            critArgs.push_back(fl::Variable(batch[kDurationIdx], false));
+            critArgs.push_back(fl::Variable(batch[kTargetSizeIdx], false));
+          }
+          auto loss = crit->forward(critArgs).front();
           af::sync();
           meters.fwdtimer.stopAndIncUnit();
           meters.critfwdtimer.stopAndIncUnit();
@@ -897,23 +1098,17 @@ int main(int argc, char** argv) {
 
           if (af::anyTrue<bool>(af::isNaN(loss.array())) ||
               af::anyTrue<bool>(af::isInf(loss.array()))) {
-            if (FLAGS_fl_amp_use_mixed_precision &&
-                scaleFactor >= fl::kAmpMinimumScaleFactorValue) {
-              scaleFactor = scaleFactor / 2.0f;
-              FL_VLOG(2) << "AMP: Scale factor decreased. New value:\t"
-                         << scaleFactor;
-              scaleCounter = 1;
-              retrySample = true;
-              continue;
-            } else {
-              LOG(FATAL) << "Loss has NaN values. Samples - "
-                         << join(",", readSampleIds(batch[kSampleIdx]));
-            }
+            LOG(FATAL) << "Loss has NaN values. Samples - "
+                       << join(",", readSampleIds(batch[kSampleIdx]));
           }
 
           if (hasher(join(",", readSampleIds(batch[kSampleIdx]))) % 100 <=
               FLAGS_pcttraineval) {
-            evalOutput(output.array(), batch[kTargetIdx], meters.train);
+            evalOutput(
+                output.array(),
+                batch[kTargetIdx],
+                batch[kDurationIdx],
+                meters.train);
           }
 
           // backward
@@ -930,12 +1125,18 @@ int main(int argc, char** argv) {
           // optimizer
           meters.optimtimer.resume();
 
-          // scale down gradients by batchsize
+          // scale down gradients by batchsize * scale factor
+          af::array totalBatchSizeArr =
+              af::constant(batch[kInputIdx].dims(3), 1, f32);
+          if (reducer) {
+            fl::allReduce(totalBatchSizeArr);
+          }
+          float totalBatchSize = totalBatchSizeArr.scalar<float>();
           for (const auto& p : ntwrk->params()) {
             if (!p.isGradAvailable()) {
               continue;
             }
-            p.grad() = p.grad() / (FLAGS_batchsize * scaleFactor);
+            p.grad() = p.grad() / (totalBatchSize * scaleFactor);
             if (FLAGS_fl_amp_use_mixed_precision) {
               if (af::anyTrue<bool>(af::isNaN(p.grad().array())) ||
                   af::anyTrue<bool>(af::isInf(p.grad().array()))) {
@@ -944,6 +1145,14 @@ int main(int argc, char** argv) {
                   FL_VLOG(2) << "AMP: Scale factor decreased. New value:\t"
                              << scaleFactor;
                   retrySample = true;
+                } else {
+                  LOG(FATAL)
+                      << "Minimum loss scale reached: "
+                      << fl::kAmpMinimumScaleFactorValue
+                      << " with over/underflowing gradients. Lowering the "
+                      << "learning rate, using gradient clipping, or "
+                      << "increasing the batch size can help resolve "
+                      << "loss explosion.";
                 }
                 scaleCounter = 1;
                 break;
@@ -961,7 +1170,7 @@ int main(int argc, char** argv) {
             if (!p.isGradAvailable()) {
               continue;
             }
-            p.grad() = p.grad() / (FLAGS_batchsize * scaleFactor);
+            p.grad() = p.grad() / (totalBatchSize * scaleFactor);
           }
 
         } while (retrySample);
@@ -999,7 +1208,11 @@ int main(int argc, char** argv) {
 
         if (FLAGS_reportiters > 0 && curBatch % FLAGS_reportiters == 0) {
           runValAndSaveModel(
-              curEpoch, curBatch, netopt->getLr(), critopt->getLr());
+              curEpoch,
+              curBatch,
+              netopt->getLr(),
+              critopt->getLr(),
+              scaleFactor);
           resetTimeStatMeters();
           ntwrk->train();
           crit->train();
@@ -1014,7 +1227,19 @@ int main(int argc, char** argv) {
       af::sync();
       if (FLAGS_reportiters == 0) {
         runValAndSaveModel(
-            curEpoch, curBatch, netopt->getLr(), critopt->getLr());
+            curEpoch, curBatch, netopt->getLr(), critopt->getLr(), scaleFactor);
+      }
+
+      // Try regenerate PL
+      auto newUnsupDataDir =
+          plGenerator.regeneratePl(curEpoch, ntwrk, crit, usePlugin);
+      if (!newUnsupDataDir.empty()) {
+        trainset = plGenerator.createTrainSet(
+            FLAGS_datadir,
+            FLAGS_train,
+            newUnsupDataDir,
+            FLAGS_batching_strategy,
+            FLAGS_batching_max_duration);
       }
     }
   };
@@ -1051,7 +1276,7 @@ int main(int argc, char** argv) {
         FLAGS_lr,
         FLAGS_lrcrit,
         true,
-        FLAGS_pretrainWindow - startUpdate);
+        FLAGS_pretrainWindow);
     startUpdate = FLAGS_pretrainWindow;
     FL_LOG_MASTER(INFO) << "Finished window pretraining.";
   }

@@ -1,18 +1,25 @@
-Flashlight Python Bindings
-==========================
-
-flashlight Python binding supports for now part of the ``lib``:
+# Flashlight Python Bindings
+`Flashlight` Python binding supports for now part of the `lib`:
 
 - featurization of raw audio (MFCC, MFSC, etc.)
-- ASG criterion (CUDA and CPU backends)
+- ASG loss (CUDA and CPU backends)
 - Beam-search decoder (lexicon and lexicon free for CTC/ASG models with zerolm/kenlm language models)
 
-Installation
-************
+**Content**
+- [Installation](#installation)
+  * [Dependencies](#dependencies)
+  * [Build Instructions](#build-instructions)
+  * [Advanced Options](#advanced-options)
+  * [Build inside docker container](#build-inside-docker-container)
+- [Python API](#python-api)
+  * [Featurization](#featurization)
+  * [ASG Loss](#asg-loss)
+  * [Beam-search decoder](#beam-search-decoder)
+  * [Define your own language model for beam-search decoding](#define-your-own-language-model-for-beam-search-decoding)
+- [Examples](#examples)
 
-Dependencies
-############
-
+## Installation
+### Dependencies
 We require ``python >= 3.6`` with the following packages installed:
 
 - [packaging](https://pypi.org/project/packaging/)
@@ -28,33 +35,44 @@ The following dependencies **are required** to build python bindings:
 - [KenLM](https://github.com/kpu/kenlm)
 - [ATLAS](http://math-atlas.sourceforge.net/) or [OpenBLAS](https://www.openblas.net/)
 - [FFTW3](http://www.fftw.org/)
-- [cmake](https://cmake.org/) >= 3.5.1, and ``make``
+- [cmake](https://cmake.org/) >= 3.10, and ``make``
 - [CUDA](https://developer.nvidia.com/cuda-downloads) >= 9.2
 
 Please refer to the flashlight dependencies sections for details on how to install the above packages.
 
 The following dependencies **are not required** to build python bindings:
 
-- flashlight itself
-- libsndfile
-- gflags
-- glog
+- `Flashlight` itself
+- `libsndfile`
+- `gflags`
+- `glog`
 
-Build Instructions
-##################
+### Build Instructions
 
-Once the dependencies are satisfied, simply run from wav2letter root:
+Once the dependencies are satisfied, use:
+```
+cd bindings/python
+python3 setup.py install
+```
 
-.. code-block:: shell
+In case you used VCPKG to build flashlight, you also need to declare these variables before running setup.py:
+```
+export CMAKE_LIBRARY_PATH=[vcpkg_installation_location]/installed/x64-linux/lib
+export CMAKE_INCLUDE_PATH=[vcpkg_installation_location]/installed/x64-linux/include
+```
 
-    cd bindings/python
-    pip install -e .
+with `pip` either install from `pypi` (coming soon)
+```
+pip3 install pyflashlight
+```
+or locally in editable mode (wihout `-e` it will not work as we need to build some libs outside the python binding folder)
+```
+pip3 install -e .
+```
 
-Note that if you encounter errors, you'll probably have to ``rm -rf build`` before retrying the install.
+Note that if you encounter errors, you'll probably have to ``rm -rf build dist`` before retrying the install.
 
-Advanced Options
-################
-
+### Advanced Options
 The following environment variables can be used to control various options:
 
 - ``USE_CUDA=0`` removes the CUDA dependency, but you won't be able to use ASG criterion with CUDA tensors.
@@ -62,38 +80,29 @@ The following environment variables can be used to control various options:
 - ``USE_MKL=1`` will use Intel MKL for featurization but this may cause dynamic loading conflicts.
 - If you do not have ``torch``, you'll only have a raw pointer interface to ASG criterion instead of ``class ASGLoss(torch.nn.Module)``.
 
-Build inside docker container
-#############################
-
+### Build inside docker container
 - For CUDA backend inside docker container run commands
-
-  .. code-block:: shell
-
-    pip install torch==1.2.0 packaging==19.1
-    cd /root/flashlight/bindings/python && pip install -e .
-
+```
+    pip3 install torch==1.2.0 packaging==19.1
+    cd /root/flashlight/bindings/python && python3 setup.py install
+```
 
 - For CPU backend inside docker container run commands
-
-  .. code-block:: shell
-
-    pip install torch==1.2.0 packaging==19.1
+```
+    pip3 install torch==1.2.0 packaging==19.1
     export USE_CUDA=0 && \
-    cd /root/flashlight/bindings/python && pip install -e .
+    cd /root/flashlight/bindings/python && python3 setup.py install
+```
 
-Python API
-************
+## Python API
 
-Featurization
-#############
-
+### Featurization
 Featurization module provides a bunch of classes for standard feature extraction from the audio data:
 Ceplifter, Dct, Derivatives, Dither, Mfcc, Mfsc, PowerSpectrum, PreEmphasis, TriFilterbank, Windowing.
 
 All of them have the method ``apply`` which can be used to transform the input data. For example:
 
-.. code-block:: python
-
+```python
   # imports
   from flashlight.lib.audio.feature import FeatureParams, Mfcc
   import itertools as it
@@ -116,41 +125,35 @@ All of them have the method ``apply`` which can be used to transform the input d
   # define transformation and apply to the wave
   mfcc = Mfcc(params)
   features = mfcc.apply(wavinput)
+```
 
-
-ASG Loss
-########
+### ASG Loss
 
 ASG loss is a pytorch module (``nn.Module``) which supports CPU and CUDA backends.
 It can be defined as
 
-.. code-block:: python
-
+```python
     from flashlight.lib.sequence.criterion import ASGLoss
     asg_loss = ASGLoss(ntokens, scale_mode).to(device)
-
+```
 
 where ``ntokens`` is the number of tokens predicted for each frame (number of classes), ``scale_mode`` is a scaling factor which can be:
 
-.. code-block:: python
-
+```python
     NONE = 0, # no scaling
     INPUT_SZ = 1, # scale to the input size
     INPUT_SZ_SQRT = 2, # scale to the sqrt of the input size
     TARGET_SZ = 3, # scale to the target size
     TARGET_SZ_SQRT = 4, # scale to the sqrt of the target size
+```
 
-
-Beam-search decoder
-###################
-Currently only lexicon-based beam-search decoder is supported. Also only n-gram (KenLM) language model is supported for python bindings.
+### Beam-search decoder
+Currently lexicon-based and lexicon-free based beam-search decoder is supported for CTC/ASG models only (no seq2seq models support). Also only n-gram (KenLM) language model is supported for python bindings.
 However, one can define custom language model inside python and use it for decoding, details see below.
-To have better understanding how this beam-search decoder works please see [Beam-search decoder section](TODO).
+To have better understanding how this beam-search decoder works please see [Beam-search decoder section](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr#beam-search-decoders).
 
 To run decoder one first should define its options:
-
-.. code-block:: python
-
+```python
     from flashlight.lib.text.decoder import LexiconDecoderOptions, LexiconFreeDecoderOptions
 
     // for lexicon-based decoder
@@ -175,17 +178,14 @@ To run decoder one first should define its options:
         log_add, # the way how to combine scores during hypotheses merging (log add operation, max)
         criterion_type # supports only CriterionType.ASG or CriterionType.CTC
         )
-
+```
 
 Then we should prepare tokens dictionary (tokens for which acoustic models
 returns probability for each frame), lexicon (mapping between words and its spelling with the tokens set).
-Details on the tokens and lexicon files format have a look at
-[Data Preparation](TODO).
+Details on the tokens and lexicon files format have a look at [Data Preparation](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr#data-preparation).
 
-.. code-block:: python
-
+```python
     from flashlight.lib.text.dictionary import Dictionary, load_words, create_word_dict
-
 
     tokens_dict = Dictionary("path/tokens.txt")
     # for ASG add used repetition symbols, for example
@@ -194,31 +194,27 @@ Details on the tokens and lexicon files format have a look at
 
     lexicon = load_words("path/lexicon.txt") # returns LexiconMap
     word_dict = create_word_dict(lexicon) # returns Dictionary
-
+```
 
 To create language model for KenLM use
 
-.. code-block:: python
-
+```python
     from flashlight.lib.text.decoder import KenLM
-
-
     lm = KenLM("path/lm.arpa", word_dict) # or "path/lm.bin"
+```
 
 Get the unknown and silence indices from the token dict and word dict to pass them into decoder:
 
-.. code-block:: python
-
+```python
     sil_idx = token_dict.get_index("|")
     unk_idx = word_dict.get_index("<unk>")
+```
 
 Now define the lexicon ``Trie`` to restrict beam-search decoder search:
 
-.. code-block:: python
-
+```python
     from flashlight.lib.text.decoder import Trie, SmearingMode
     from flashlight.lib.text.dictionary import pack_replabels
-
 
     trie = Trie(token_dict.index_size(), sil_idx)
     start_state = lm.start(False)
@@ -239,12 +235,11 @@ Now define the lexicon ``Trie`` to restrict beam-search decoder search:
             trie.insert(spelling_idxs, usr_idx, score)
 
         trie.smear(SmearingMode.MAX) # propagate word score to each spelling node to have some lm proxy score in each node.
-
+```
 
 Now we can run lexicon-based decoder:
 
-.. code-block:: python
-
+```python
     import numpy
     from flashlight.lib.text.decoder import LexiconDecoder
 
@@ -258,18 +253,15 @@ Now we can run lexicon-based decoder:
     # results[i].tokens contains tokens sequence (with length T)
     # results[i].score contains score of the hypothesis
     # results is sorted array with the best hypothesis stored with index=0.
+```
 
-
-Define your own language model for beam-search decoding
-#######################################################
-
+### Define your own language model for beam-search decoding
 One can define custom language model in python and use it for beam-search decoding.
 
 To deal with language model state we use the base class ``LMState`` and one can define additional
 info corresponding to each state via creating ``dict(LMState, info)`` inside language model class:
 
-.. code-block:: python
-
+```python
     import numpy
     from flashlight.lib.text.decoder import LM
 
@@ -316,6 +308,7 @@ info corresponding to each state via creating ``dict(LMState, info)`` inside lan
             if outstate not in self.mapping_states:
                 self.mapping_states[outstate] = self.mapping_states[state] + 1
             return (outstate, -1)
+```
 
 LMState is a C++ base class for language model state. Its method ``compare`` (compare one state with another) is used inside the beam-search decoder.
 It also has method ``LMState child(int index)`` returning a state which we obtained by following token with this index from current state.
@@ -325,8 +318,7 @@ and then we can store additional info about state inside ``mapping_states``.
 
 This language model can be used as (also printing the state and its additional stored info inside ``lm.mapping_states``):
 
-.. code-block:: python
-
+```python
     custom_lm = MyLM()
 
     state = custom_lm.start(True)
@@ -338,37 +330,34 @@ This language model can be used as (also printing the state and its additional s
 
     state, score = custom_lm.finish(state)
     print(state, custom_lm.mapping_states[state], score)
+```
 
 and for decoder:
 
-.. code-block:: python
-
+```python
     decoder = LexiconDecoder(options, trie, custom_lm, sil_idx, blank_inx, unk_idx, transitions, False)
+```
 
-
-Examples
-********
+## Examples
 
 After flashlight python package is installed, please, have a look at the examples how to use classes and methods of flashlight from python.
 
 - ASG criterion
-
-  .. code-block:: shell
-
+```bash
+    cd [flashlight]
     # with cpu backend
-    python example/criterion_example.py --cpu
+    python3 bindings/python/example/criterion_example.py --cpu
     # with gpu backend
-    python example/criterion_example.py
-
+    python3 bindings/python/example/criterion_example.py
+```
 
 - lexicon beam-search decoder with KenLM word-level language model
-
-  .. code-block:: shell
-
-    python example/decoder_example.py ../../flashlight/app/asr/test/decoder/data
-
+```bash
+    cd [flashlight]
+    python3 bindings/python/example/decoder_example.py flashlight/app/asr/test/decoder/data
+```
 - audio featurization
-
-  .. code-block:: shell
-
-    python example/feature_example.py ../../flashlight/lib/test/audio/feature/data
+```bash
+    cd [flashlight]
+    python3 bindings/python/example/feature_example.py flashlight/lib/test/audio/feature/data
+```

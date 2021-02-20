@@ -39,6 +39,7 @@ find_library(NCCL_LIBRARIES
   ${NCCL_ROOT_DIR}/lib
   ${NCCL_ROOT_DIR}/lib/x86_64-linux-gnu
   ${NCCL_ROOT_DIR}/lib64
+  ${CUDA_TOOLKIT_ROOT_DIR}/lib
   ${CUDA_TOOLKIT_ROOT_DIR}/lib64)
 
 include(FindPackageHandleStandardArgs)

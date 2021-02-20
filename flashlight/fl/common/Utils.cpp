@@ -18,6 +18,12 @@
 
 namespace fl {
 
+bool f16Supported() {
+  return af::isHalfAvailable(af::getDevice()) &&
+      // f16 isn't [yet] supported with the CPU backend per onednn limitations
+      !FL_BACKEND_CPU;
+}
+
 bool allClose(
     const af::array& a,
     const af::array& b,

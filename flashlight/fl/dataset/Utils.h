@@ -29,7 +29,48 @@ std::vector<int64_t> partitionByRoundRobin(
     int64_t numSamples,
     int64_t partitionId,
     int64_t numPartitions,
-    int64_t batchSz = 1);
+    int64_t batchSz = 1,
+    bool allowEmpty = false);
+
+/**
+ * Partitions the samples in a round-robin manner and return ids of the samples
+ * with dynamic batching: max number of tokens in the batch (including padded
+ * tokens) should be maxTokens.
+ * @param samplesSize samples length in tokens
+ * @param partitionId rank of the current partition [0, numPartitions)
+ * @param numPartitions total partitions
+ * @param maxTokens total number of tokens in the batch
+ */
+std::pair<std::vector<int64_t>, std::vector<int64_t>>
+dynamicPartitionByRoundRobin(
+    const std::vector<float>& samplesSize,
+    int64_t partitionId,
+    int64_t numPartitions,
+    int64_t maxSizePerBatch,
+    bool allowEmpty = false);
+
+/**
+ * Make batch by applying batchFn to the data
+ * @param data data to be batchified
+ * @param batchFn function which is applied to make a batch
+ */
+af::array makeBatch(
+    const std::vector<af::array>& data,
+    const Dataset::BatchFunction& batchFn);
+
+/**
+ * Make batch from part of indices (range [start, end) )
+ * by applying set of batch functions
+ * @param data dataset from which we take particular samples
+ * @param batchFns set of functions which are applied to make a batch
+ * @param start start index
+ * @param end end index
+ */
+std::vector<af::array> makeBatchFromRange(
+    std::shared_ptr<const Dataset> dataset,
+    std::vector<Dataset::BatchFunction> batchFns,
+    int64_t start,
+    int64_t end);
 
 /** @} */
 

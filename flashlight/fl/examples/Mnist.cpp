@@ -77,6 +77,7 @@ std::pair<array, array> load_dataset(
 } // namespace
 
 int main(int argc, char** argv) {
+  fl::init();
   if (argc != 2) {
     throw af::exception("You must pass a data directory.");
   }

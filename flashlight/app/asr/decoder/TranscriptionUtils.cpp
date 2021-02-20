@@ -84,7 +84,7 @@ std::vector<std::string> tknTarget2Ltr(
     const Dictionary& tokenDict,
     const std::string& criterion,
     const std::string& surround,
-    const bool eosTkn,
+    const bool isSeq2seqCrit,
     const int replabel,
     const bool useWordPiece,
     const std::string& wordSep) {
@@ -92,12 +92,12 @@ std::vector<std::string> tknTarget2Ltr(
     return std::vector<std::string>{};
   }
 
-  if (criterion == kSeq2SeqCriterion) {
+  if (isSeq2seqCrit) {
     if (tokens.back() == tokenDict.getIndex(kEosToken)) {
       tokens.pop_back();
     }
   }
-  remapLabels(tokens, tokenDict, surround, eosTkn, replabel);
+  remapLabels(tokens, tokenDict, surround, isSeq2seqCrit, replabel);
 
   return tknIdx2Ltr(tokens, tokenDict, useWordPiece, wordSep);
 }
@@ -107,7 +107,7 @@ std::vector<std::string> tknPrediction2Ltr(
     const Dictionary& tokenDict,
     const std::string& criterion,
     const std::string& surround,
-    const bool eosTkn,
+    const bool isSeq2seqCrit,
     const int replabel,
     const bool useWordPiece,
     const std::string& wordSep) {
@@ -124,7 +124,7 @@ std::vector<std::string> tknPrediction2Ltr(
         std::remove(tokens.begin(), tokens.end(), blankIdx), tokens.end());
   }
   tokens = validateIdx(tokens, -1);
-  remapLabels(tokens, tokenDict, surround, eosTkn, replabel);
+  remapLabels(tokens, tokenDict, surround, isSeq2seqCrit, replabel);
 
   return tknIdx2Ltr(tokens, tokenDict, useWordPiece, wordSep);
 }

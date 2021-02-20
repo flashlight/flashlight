@@ -8,7 +8,7 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/ext/common/SequentialBuilder.h"
-
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/lib/common/System.h"
 
 using namespace fl;
@@ -22,6 +22,9 @@ std::string archDir = "";
 } // namespace
 
 TEST(SequentialBuilderTest, SeqModule) {
+  if (FL_BACKEND_CPU) {
+    GTEST_SKIP() << "Bidirectional RNN not supported";
+  }
   const std::string archfile = pathsConcat(archDir, "arch.txt");
   int nchannel = 4;
   int nclass = 40;
@@ -43,6 +46,9 @@ TEST(SequentialBuilderTest, SeqModule) {
 }
 
 TEST(SequentialBuilderTest, Serialization) {
+  if (FL_BACKEND_CPU) {
+    GTEST_SKIP() << "Bidirectional RNN not supported";
+  }
   char* user = getenv("USER");
   std::string userstr = "unknown";
   if (user != nullptr) {
@@ -70,6 +76,7 @@ TEST(SequentialBuilderTest, Serialization) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
 
 // Resolve directory for arch
 #ifdef ARCHDIR

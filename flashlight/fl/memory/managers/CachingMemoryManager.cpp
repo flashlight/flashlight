@@ -127,6 +127,9 @@ void* CachingMemoryManager::alloc(
   for (unsigned i = 0; i < ndims; ++i) {
     size *= dims[i];
   }
+  if (size == 0) {
+    return nullptr;
+  }
   size = roundSize(size);
   const bool isSmallAlloc = (size <= kSmallSize);
   CachingMemoryManager::Block searchKey(size);
@@ -195,11 +198,11 @@ size_t CachingMemoryManager::allocated(void* ptr) {
 }
 
 void CachingMemoryManager::unlock(void* ptr, bool userUnlock) {
-  auto& memoryInfo = getDeviceMemoryInfo();
-  std::lock_guard<std::recursive_mutex> lock(memoryInfo.mutexAll_);
   if (!ptr) {
     return;
   }
+  auto& memoryInfo = getDeviceMemoryInfo();
+  std::lock_guard<std::recursive_mutex> lock(memoryInfo.mutexAll_);
   auto it = memoryInfo.allocatedBlocks_.find(ptr);
   if (it == memoryInfo.allocatedBlocks_.end()) {
     // Probably came from user, just free it

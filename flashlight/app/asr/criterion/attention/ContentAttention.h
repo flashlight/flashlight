@@ -17,11 +17,12 @@ class ContentAttention : public AttentionBase {
  public:
   ContentAttention(bool keyValue = false) : keyValue_(keyValue) {}
 
-  std::pair<fl::Variable, fl::Variable> forward(
-      const fl::Variable& state,
-      const fl::Variable& xEncoded,
-      const fl::Variable& prevAttn,
-      const fl::Variable& attnWeight) override;
+  std::pair<Variable, Variable> forwardBase(
+      const Variable& state,
+      const Variable& xEncoded,
+      const Variable& prevAttn,
+      const Variable& logAttnWeight,
+      const Variable& xEncodedSizes) override;
 
   std::string prettyString() const override;
 
@@ -36,11 +37,12 @@ class NeuralContentAttention : public AttentionBase {
   NeuralContentAttention() {}
   explicit NeuralContentAttention(int dim, int layers = 1);
 
-  std::pair<fl::Variable, fl::Variable> forward(
-      const fl::Variable& state,
-      const fl::Variable& xEncoded,
-      const fl::Variable& prevAttn,
-      const fl::Variable& attnWeight) override;
+  std::pair<Variable, Variable> forwardBase(
+      const Variable& state,
+      const Variable& xEncoded,
+      const Variable& prevAttn,
+      const Variable& logAttnWeight,
+      const Variable& xEncodedSizes) override;
 
   std::string prettyString() const override;
 

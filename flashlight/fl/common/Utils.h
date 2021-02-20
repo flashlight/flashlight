@@ -32,6 +32,12 @@
 namespace fl {
 
 /**
+ * @return if fp16 operations are supported with the current flashlight
+ * configuration.
+ */
+bool f16Supported();
+
+/**
  * Returns true if two arrays are of same type and are element-wise equal within
  * a given tolerance limit.
  *

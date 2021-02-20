@@ -9,7 +9,8 @@
 #include <arrayfire.h>
 #include <gtest/gtest.h>
 
-#include "flashlight/ext/common/ModulePlugin.h"
+#include "flashlight/ext/plugin/ModulePlugin.h"
+#include "flashlight/fl/contrib/modules/modules.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/System.h"
 
@@ -46,6 +47,7 @@ TEST(ModulePluginTest, ModulePlugin) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
 
   // Resolve directory for arch
 #ifdef PLUGINDIR

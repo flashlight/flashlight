@@ -16,7 +16,6 @@
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/autograd/Variable.h"
 #include "flashlight/fl/autograd/backend/cpu/DnnlUtils.h"
-#include "flashlight/fl/common/DevicePtr.h"
 
 using namespace dnnl;
 
@@ -105,18 +104,18 @@ Variable conv2d(
 
   /********************************* Forward *******************************/
   // Create memory dims
-  memory::dims mInputDims =
-      detail::convertAfToDnnlDims({input.dims(kIOBatchSizeIdx),
-                                   input.dims(kIOChannelSizeIdx),
-                                   input.dims(kHIdx),
-                                   input.dims(kWIdx)});
+  memory::dims mInputDims = detail::convertAfToDnnlDims(
+      {input.dims(kIOBatchSizeIdx),
+       input.dims(kIOChannelSizeIdx),
+       input.dims(kHIdx),
+       input.dims(kWIdx)});
   memory::dims mWeightDims;
   if (groups == 1) {
-    mWeightDims =
-        detail::convertAfToDnnlDims({weights.dims(kWeightOutputChannelSizeIdx),
-                                     input.dims(kIOChannelSizeIdx),
-                                     weights.dims(kHIdx),
-                                     weights.dims(kWIdx)});
+    mWeightDims = detail::convertAfToDnnlDims(
+        {weights.dims(kWeightOutputChannelSizeIdx),
+         input.dims(kIOChannelSizeIdx),
+         weights.dims(kHIdx),
+         weights.dims(kWIdx)});
   } else {
     mWeightDims = detail::convertAfToDnnlDims(
         {groups,
@@ -125,11 +124,11 @@ Variable conv2d(
          weights.dims(kHIdx),
          weights.dims(kWIdx)});
   }
-  memory::dims mOutputDims =
-      detail::convertAfToDnnlDims({input.dims(kIOBatchSizeIdx),
-                                   weights.dims(kWeightOutputChannelSizeIdx),
-                                   output.dims(kHIdx),
-                                   output.dims(kWIdx)});
+  memory::dims mOutputDims = detail::convertAfToDnnlDims(
+      {input.dims(kIOBatchSizeIdx),
+       weights.dims(kWeightOutputChannelSizeIdx),
+       output.dims(kHIdx),
+       output.dims(kWIdx)});
   memory::dims mBiasDims =
       detail::convertAfToDnnlDims({weights.dims(kWeightOutputChannelSizeIdx)});
   memory::dims mStrideDims = {sy, sx};
@@ -183,18 +182,12 @@ Variable conv2d(
       *fwdDescriptor, dnnlEngine);
 
   // Create memory
-  DevicePtr inputRaw(input.array());
-  auto inputMemoryInit =
-      memory({{{mInputDims}, dataType, formatNCHW}, dnnlEngine});
-  inputMemoryInit.set_data_handle(inputRaw.get());
-  DevicePtr outputRaw(output);
-  auto outputMemoryInit =
-      memory({{{mOutputDims}, dataType, formatNCHW}, dnnlEngine});
-  outputMemoryInit.set_data_handle(outputRaw.get());
-  DevicePtr weightsRaw(weights.array());
-  auto weightsMemoryInit =
-      memory({{{mWeightDims}, dataType, formatWeight}, dnnlEngine});
-  weightsMemoryInit.set_data_handle(weightsRaw.get());
+  const detail::DnnlMemoryWrapper inputMemInit(
+      input.array(), {mInputDims}, formatNCHW);
+  const detail::DnnlMemoryWrapper outputMemInit(
+      output, {mOutputDims}, formatNCHW);
+  const detail::DnnlMemoryWrapper weightsMem(
+      weights.array(), {mWeightDims}, formatWeight);
 
   // Network for execution
   std::vector<primitive> network;
@@ -208,22 +201,21 @@ Variable conv2d(
   auto weightsDesc = fwdPrimDesc->weights_desc();
   auto outputDesc = fwdPrimDesc->dst_desc();
   // Input
-  auto inputMemory =
-      detail::dnnlAlignOrdering(network, fwdArgs, inputMemoryInit, inputDesc);
+  auto inputMemory = detail::dnnlAlignOrdering(
+      network, fwdArgs, inputMemInit.getMemory(), inputDesc);
   auto weightsMemory = detail::dnnlAlignOrdering(
-      network, fwdArgs, weightsMemoryInit, weightsDesc);
+      network, fwdArgs, weightsMem.getMemory(), weightsDesc);
   // Output - adds a reorder after the conv if needed
-  auto outputMemory = outputMemoryInit;
-  if (outputMemoryInit.get_desc() != outputDesc) {
+  auto outputMemory = outputMemInit.getMemory();
+  if (outputMemInit.getMemory().get_desc() != outputDesc) {
     outputMemory = memory(outputDesc, dnnlEngine);
   }
 
   // Create convolution
   std::shared_ptr<convolution_forward> conv;
-  DevicePtr biasRaw(bias.array());
   auto formatBias = memory::format_tag::x;
-  auto biasMemory = memory({{{mBiasDims}, dataType, formatBias}, dnnlEngine});
-  biasMemory.set_data_handle(biasRaw.get());
+  const detail::DnnlMemoryWrapper biasMemory(
+      bias.array(), mBiasDims, formatBias);
   if (hasBias) {
     conv = std::make_shared<convolution_forward>(*fwdPrimDesc);
   } else {
@@ -237,15 +229,16 @@ Variable conv2d(
       {DNNL_ARG_WEIGHTS, weightsMemory},
       {DNNL_ARG_DST, outputMemory}};
   if (hasBias) {
-    convFwdArgs[DNNL_ARG_BIAS] = biasMemory;
+    convFwdArgs[DNNL_ARG_BIAS] = biasMemory.getMemory();
   }
   fwdArgs.push_back(convFwdArgs);
 
   // Add output reordering if needed
-  if (outputMemory != outputMemoryInit) {
-    network.push_back(dnnl::reorder(outputMemory, outputMemoryInit));
+  if (outputMemory != outputMemInit.getMemory()) {
+    network.push_back(dnnl::reorder(outputMemory, outputMemInit.getMemory()));
     fwdArgs.push_back(
-        {{DNNL_ARG_FROM, outputMemory}, {DNNL_ARG_TO, outputMemoryInit}});
+        {{DNNL_ARG_FROM, outputMemory},
+         {DNNL_ARG_TO, outputMemInit.getMemory()}});
   }
 
   // Run
@@ -299,18 +292,12 @@ Variable conv2d(
               *bwdDataDesc, dnnlEngineBwd, *fwdPrimDesc);
 
       // Create memory
-      DevicePtr gradOutputRaw(grad_output.array());
-      auto gradOutputMemoryInit =
-          memory({{{mOutputDims}, dataType, formatNCHW}, dnnlEngineBwd});
-      gradOutputMemoryInit.set_data_handle(gradOutputRaw.get());
-      DevicePtr gradInputRaw(gradInput.array());
-      auto gradInputMemoryInit =
-          memory({{{mInputDims}, dataType, formatNCHW}, dnnlEngineBwd});
-      gradInputMemoryInit.set_data_handle(gradInputRaw.get());
-      DevicePtr weightRaw(weightRef.array());
-      auto weightsMemoryInitBackwards =
-          memory({{{mWeightDims}, dataType, formatWeight}, dnnlEngineBwd});
-      weightsMemoryInitBackwards.set_data_handle(weightRaw.get());
+      const detail::DnnlMemoryWrapper gradOutputMemInit(
+          grad_output.array(), mOutputDims, formatNCHW);
+      const detail::DnnlMemoryWrapper gradInputMemInit(
+          gradInput.array(), mInputDims, formatNCHW);
+      const detail::DnnlMemoryWrapper weightsMemInitBwd(
+          weightRef.array(), mWeightDims, formatWeight);
 
       std::vector<primitive> networkBackwards;
       std::vector<std::unordered_map<int, dnnl::memory>> bwdDataArgs;
@@ -320,15 +307,18 @@ Variable conv2d(
       auto weightsDesc = bwdDataPrimDesc->weights_desc();
       auto gradInputDesc = bwdDataPrimDesc->diff_src_desc();
       auto gradOutputMemory = detail::dnnlAlignOrdering(
-          networkBackwards, bwdDataArgs, gradOutputMemoryInit, gradOutputDesc);
+          networkBackwards,
+          bwdDataArgs,
+          gradOutputMemInit.getMemory(),
+          gradOutputDesc);
       auto weightsMemoryBackwards = detail::dnnlAlignOrdering(
           networkBackwards,
           bwdDataArgs,
-          weightsMemoryInitBackwards,
+          weightsMemInitBwd.getMemory(),
           weightsDesc);
-      auto gradInputMemory = gradInputMemoryInit;
+      auto gradInputMemory = gradInputMemInit.getMemory();
       // Don't reorder the gradient until after the conv
-      if (gradInputMemoryInit.get_desc() != gradInputDesc) {
+      if (gradInputMemInit.getMemory().get_desc() != gradInputDesc) {
         gradInputMemory = memory(gradInputDesc, dnnlEngineBwd);
       }
 
@@ -336,17 +326,19 @@ Variable conv2d(
       auto convBwdData =
           std::make_shared<convolution_backward_data>(*bwdDataPrimDesc);
 
-      bwdDataArgs.push_back({{DNNL_ARG_DIFF_SRC, gradInputMemory},
-                             {DNNL_ARG_WEIGHTS, weightsMemoryBackwards},
-                             {DNNL_ARG_DIFF_DST, gradOutputMemory}});
+      bwdDataArgs.push_back(
+          {{DNNL_ARG_DIFF_SRC, gradInputMemory},
+           {DNNL_ARG_WEIGHTS, weightsMemoryBackwards},
+           {DNNL_ARG_DIFF_DST, gradOutputMemory}});
       networkBackwards.push_back(*convBwdData);
 
       // Reorder the output (which is gradInput here) if necessary
-      if (gradInputMemory != gradInputMemoryInit) {
+      if (gradInputMemory != gradInputMemInit.getMemory()) {
         networkBackwards.push_back(
-            dnnl::reorder(gradInputMemory, gradInputMemoryInit));
-        bwdDataArgs.push_back({{DNNL_ARG_FROM, gradInputMemory},
-                               {DNNL_ARG_TO, gradInputMemoryInit}});
+            dnnl::reorder(gradInputMemory, gradInputMemInit.getMemory()));
+        bwdDataArgs.push_back(
+            {{DNNL_ARG_FROM, gradInputMemory},
+             {DNNL_ARG_TO, gradInputMemInit.getMemory()}});
       }
 
       detail::executeNetwork(networkBackwards, bwdDataArgs);
@@ -396,18 +388,12 @@ Variable conv2d(
               *bwdWeightDesc, dnnlEngineBwd, *fwdPrimDesc);
 
       // Create memory
-      DevicePtr inputRawBackwards(inputRef.array());
-      auto inputMemoryInitBackwards =
-          memory({{{mInputDims}, dataType, formatNCHW}, dnnlEngineBwd});
-      inputMemoryInitBackwards.set_data_handle(inputRawBackwards.get());
-      DevicePtr gradOutputRaw(grad_output.array());
-      auto gradOutputMemoryInit =
-          memory({{{mOutputDims}, dataType, formatNCHW}, dnnlEngineBwd});
-      gradOutputMemoryInit.set_data_handle(gradOutputRaw.get());
-      DevicePtr gradWeightsRaw(gradWeights.array());
-      auto gradWeightsMemoryInit =
-          memory({{{mWeightDims}, dataType, formatWeight}, dnnlEngineBwd});
-      gradWeightsMemoryInit.set_data_handle(gradWeightsRaw.get());
+      const detail::DnnlMemoryWrapper inputRawMemInitBwd(
+          inputRef.array(), mInputDims, formatNCHW);
+      const detail::DnnlMemoryWrapper gradOutputMemInit(
+          grad_output.array(), mOutputDims, formatNCHW);
+      const detail::DnnlMemoryWrapper gradWeightsMemInit(
+          gradWeights.array(), mWeightDims, formatWeight);
 
       std::vector<primitive> networkBackwards;
       std::vector<std::unordered_map<int, dnnl::memory>> bwdWeightsArgs;
@@ -419,16 +405,16 @@ Variable conv2d(
       auto inputMemoryBackwards = detail::dnnlAlignOrdering(
           networkBackwards,
           bwdWeightsArgs,
-          inputMemoryInitBackwards,
+          inputRawMemInitBwd.getMemory(),
           inputDesc);
       auto gradOutputMemory = detail::dnnlAlignOrdering(
           networkBackwards,
           bwdWeightsArgs,
-          gradOutputMemoryInit,
+          gradOutputMemInit.getMemory(),
           gradOutputDesc);
       // Don't reorder the grads until after the conv bwd
-      auto gradWeightsMemory = gradWeightsMemoryInit;
-      if (gradWeightsMemoryInit.get_desc() != gradWeightsDesc) {
+      auto gradWeightsMemory = gradWeightsMemInit.getMemory();
+      if (gradWeightsMemInit.getMemory().get_desc() != gradWeightsDesc) {
         gradWeightsMemory = memory(gradWeightsDesc, dnnlEngineBwd);
       }
 
@@ -438,15 +424,14 @@ Variable conv2d(
           {DNNL_ARG_SRC, inputMemoryBackwards},
           {DNNL_ARG_DIFF_WEIGHTS, gradWeightsMemory},
           {DNNL_ARG_DIFF_DST, gradOutputMemory}};
-      DevicePtr biasRawBackwards(gradBias.array());
+
       auto formatBias = memory::format_tag::x;
-      auto gradBiasMemory =
-          memory({{{mBiasDims}, dataType, formatBias}, dnnlEngineBwd});
-      gradBiasMemory.set_data_handle(biasRawBackwards.get());
+      const detail::DnnlMemoryWrapper gradBiasMem(
+          gradBias.array(), mBiasDims, formatBias);
       if (hasBias) {
         bwdWeights =
             std::make_shared<convolution_backward_weights>(*bwdWeightPrimDesc);
-        bwdConvWeightsArgs[DNNL_ARG_DIFF_BIAS] = gradBiasMemory;
+        bwdConvWeightsArgs[DNNL_ARG_DIFF_BIAS] = gradBiasMem.getMemory();
       } else {
         bwdWeights =
             std::make_shared<convolution_backward_weights>(*bwdWeightPrimDesc);
@@ -455,11 +440,12 @@ Variable conv2d(
       bwdWeightsArgs.push_back(bwdConvWeightsArgs);
 
       // Reorder weight gradients if necessary
-      if (gradWeightsMemory != gradWeightsMemoryInit) {
+      if (gradWeightsMemory != gradWeightsMemInit.getMemory()) {
         networkBackwards.push_back(
-            dnnl::reorder(gradWeightsMemory, gradWeightsMemoryInit));
-        bwdWeightsArgs.push_back({{DNNL_ARG_FROM, gradWeightsMemory},
-                                  {DNNL_ARG_TO, gradWeightsMemoryInit}});
+            dnnl::reorder(gradWeightsMemory, gradWeightsMemInit.getMemory()));
+        bwdWeightsArgs.push_back(
+            {{DNNL_ARG_FROM, gradWeightsMemory},
+             {DNNL_ARG_TO, gradWeightsMemInit.getMemory()}});
       }
 
       detail::executeNetwork(networkBackwards, bwdWeightsArgs);

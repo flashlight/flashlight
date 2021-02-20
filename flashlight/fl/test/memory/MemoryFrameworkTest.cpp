@@ -16,6 +16,8 @@
 #include <arrayfire.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/memory/memory.h"
 
 using namespace fl;
@@ -269,6 +271,13 @@ class MockTestMemoryManager : public TestMemoryManager {
  *   memory manager
  */
 TEST(MemoryFramework, AdapterInstallerDeviceInterfaceTest) {
+  // The CPU backend in AF allocates a buffer for empty arrays - see
+  // https://github.com/arrayfire/arrayfire/issues/3058. When this is fixed,
+  // this can be relaxed/this test will pass
+  if (FL_BACKEND_CPU) {
+    GTEST_SKIP() << "ArrayFire CPU backend allocates buffers for empty arrays";
+  }
+
   std::stringstream logStream;
   std::stringstream mockLogStream;
   {
@@ -391,18 +400,19 @@ TEST(MemoryFramework, AdapterInstallerDeviceInterfaceTest) {
   }
   // The custom memory is destroyed; check that the log stream, which is flushed
   // on destruction, contains the correct output
-  std::vector<std::string> expectedLinePrefixes = {"initialize",
-                                                   "nativeAlloc",
-                                                   "alloc",
-                                                   "nativeAlloc",
-                                                   "alloc",
-                                                   "unlock",
-                                                   "unlock",
-                                                   "signalMemoryCleanup",
-                                                   "nativeFree",
-                                                   "nativeFree",
-                                                   "shutdown",
-                                                   "shutdown"};
+  std::vector<std::string> expectedLinePrefixes = {
+      "initialize",
+      "nativeAlloc",
+      "alloc",
+      "nativeAlloc",
+      "alloc",
+      "unlock",
+      "unlock",
+      "signalMemoryCleanup",
+      "nativeFree",
+      "nativeFree",
+      "shutdown",
+      "shutdown"};
   size_t idx = 0;
   for (std::string line; std::getline(logStream, line);) {
     EXPECT_EQ(line.substr(0, line.find(" ")), expectedLinePrefixes[idx]);
@@ -420,5 +430,6 @@ TEST(MemoryFramework, AdapterInstallerDeviceInterfaceTest) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
   return RUN_ALL_TESTS();
 }

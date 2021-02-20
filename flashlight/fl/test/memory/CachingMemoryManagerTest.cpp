@@ -14,6 +14,7 @@
 #include <arrayfire.h>
 #include <gtest/gtest.h>
 
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/memory/memory.h"
 
 class CachingMemoryManagerTest : public ::testing::Test {
@@ -54,6 +55,12 @@ TEST_F(CachingMemoryManagerTest, BasicOps) {
 
 TEST_F(CachingMemoryManagerTest, DevicePtr) {
   // This test checks whether device pointer API works for the arrays
+  // The CPU backend in AF allocates a buffer for empty arrays - see
+  // https://github.com/arrayfire/arrayfire/issues/3058. When this is fixed,
+  // this can be relaxed.
+  if (FL_BACKEND_CPU) {
+    GTEST_SKIP() << "ArrayFire CPU backend allocates buffers for empty arrays";
+  }
 
   // Empty array
   auto arr1 = af::array(0, 0, 0, 0, af::dtype::f32);
@@ -187,5 +194,6 @@ TEST_F(CachingMemoryManagerTest, RecLimit) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
   return RUN_ALL_TESTS();
 }

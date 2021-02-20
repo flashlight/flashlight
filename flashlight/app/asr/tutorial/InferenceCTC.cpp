@@ -16,6 +16,7 @@
 #include "flashlight/app/asr/common/Defines.h"
 #include "flashlight/app/asr/data/FeatureTransforms.h"
 #include "flashlight/app/asr/data/Sound.h"
+#include "flashlight/app/asr/data/Utils.h"
 #include "flashlight/app/asr/decoder/DecodeUtils.h"
 #include "flashlight/app/asr/decoder/Defines.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
@@ -125,6 +126,8 @@ int main(int argc, char** argv) {
     argvs.emplace_back(argv[i]);
   }
 
+  fl::init();
+
   /* ===================== Parse Options ===================== */
   LOG(INFO) << "Parsing command line flags";
   gflags::ParseCommandLineFlags(&argc, &argv, false);
@@ -206,13 +209,23 @@ int main(int argc, char** argv) {
   featParams.useEnergy = false;
   featParams.usePower = false;
   featParams.zeroMeanFrame = false;
-  fl::app::asr::FeatureType featType = fl::app::asr::FeatureType::NONE;
-  if (networkFlags["pow"] == "true") {
-    featType = fl::app::asr::FeatureType::POW_SPECTRUM;
-  } else if (networkFlags["mfsc"] == "true") {
-    featType = fl::app::asr::FeatureType::MFSC;
-  } else if (networkFlags["mfcc"] == "true") {
-    featType = fl::app::asr::FeatureType::MFCC;
+  fl::app::asr::FeatureType featType;
+  if (networkFlags.find("features_type") != networkFlags.end()) {
+    featType = fl::app::asr::getFeatureType(
+                   networkFlags["features_type"], 1, featParams)
+                   .second;
+  } else {
+    // old models TODO remove as per @avidov converting scirpt
+    if (networkFlags["pow"] == "true") {
+      featType = fl::app::asr::FeatureType::POW_SPECTRUM;
+    } else if (networkFlags["mfsc"] == "true") {
+      featType = fl::app::asr::FeatureType::MFSC;
+    } else if (networkFlags["mfcc"] == "true") {
+      featType = fl::app::asr::FeatureType::MFCC;
+    } else {
+      // raw wave
+      featType = fl::app::asr::FeatureType::NONE;
+    }
   }
   auto inputTransform = fl::app::asr::inputFeatures(
       featParams,
@@ -231,8 +244,7 @@ int main(int argc, char** argv) {
     std::string audioPath;
     if (interactive) {
       LOG(INFO)
-          << "Waiting the input in the format [audio_path transcription]. "
-          << "Transcirpiton can be empty, if it is non-empty then word error rate will be computed.";
+          << "[Inference tutorial for CTC]: Waiting the input in the format [audio_path].";
       std::getline(std::cin, audioPath);
     } else {
       if (!std::getline(audioListStream, audioPath)) {

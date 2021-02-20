@@ -11,7 +11,7 @@
 #include <queue>
 
 #include "flashlight/app/asr/common/Defines.h"
-#include "flashlight/app/asr/common/Flags.h"
+#include "flashlight/app/asr/criterion/CriterionUtils.h"
 
 using namespace fl::ext;
 
@@ -19,71 +19,11 @@ namespace fl {
 namespace app {
 namespace asr {
 
-TransformerCriterion buildTransformerCriterion(
-    int numClasses,
-    int numLayers,
-    float dropout,
-    float layerdrop,
-    int eosIdx) {
-  std::shared_ptr<AttentionBase> attention;
-  if (FLAGS_attention == fl::app::asr::kContentAttention) {
-    attention = std::make_shared<ContentAttention>();
-  } else if (FLAGS_attention == fl::app::asr::kKeyValueAttention) {
-    attention = std::make_shared<ContentAttention>(true);
-  } else if (FLAGS_attention == fl::app::asr::kNeuralContentAttention) {
-    attention = std::make_shared<NeuralContentAttention>(FLAGS_encoderdim);
-  } else if (FLAGS_attention == fl::app::asr::kSimpleLocationAttention) {
-    attention = std::make_shared<SimpleLocationAttention>(FLAGS_attnconvkernel);
-  } else if (FLAGS_attention == fl::app::asr::kLocationAttention) {
-    attention = std::make_shared<LocationAttention>(
-        FLAGS_encoderdim, FLAGS_attnconvkernel);
-  } else if (FLAGS_attention == fl::app::asr::kNeuralLocationAttention) {
-    attention = std::make_shared<NeuralLocationAttention>(
-        FLAGS_encoderdim,
-        FLAGS_attndim,
-        FLAGS_attnconvchannel,
-        FLAGS_attnconvkernel);
-  } else {
-    throw std::runtime_error("Unimplmented attention: " + FLAGS_attention);
-  }
-
-  std::shared_ptr<WindowBase> window;
-  if (FLAGS_attnWindow == fl::app::asr::kNoWindow) {
-    window = nullptr;
-  } else if (FLAGS_attnWindow == fl::app::asr::kMedianWindow) {
-    window = std::make_shared<MedianWindow>(
-        FLAGS_leftWindowSize, FLAGS_rightWindowSize);
-  } else if (FLAGS_attnWindow == fl::app::asr::kStepWindow) {
-    window = std::make_shared<StepWindow>(
-        FLAGS_minsil, FLAGS_maxsil, FLAGS_minrate, FLAGS_maxrate);
-  } else if (FLAGS_attnWindow == fl::app::asr::kSoftWindow) {
-    window = std::make_shared<SoftWindow>(
-        FLAGS_softwstd, FLAGS_softwrate, FLAGS_softwoffset);
-  } else if (FLAGS_attnWindow == fl::app::asr::kSoftPretrainWindow) {
-    window = std::make_shared<SoftPretrainWindow>(FLAGS_softwstd);
-  } else {
-    throw std::runtime_error("Unimplmented window: " + FLAGS_attnWindow);
-  }
-
-  return TransformerCriterion(
-      numClasses,
-      FLAGS_encoderdim,
-      eosIdx,
-      FLAGS_maxdecoderoutputlen,
-      numLayers,
-      attention,
-      window,
-      FLAGS_trainWithWindow,
-      FLAGS_labelsmooth,
-      FLAGS_pctteacherforcing,
-      dropout,
-      layerdrop);
-}
-
 TransformerCriterion::TransformerCriterion(
     int nClass,
     int hiddenDim,
     int eos,
+    int pad,
     int maxDecoderOutputLen,
     int nLayer,
     std::shared_ptr<AttentionBase> attention,
@@ -91,10 +31,11 @@ TransformerCriterion::TransformerCriterion(
     bool trainWithWindow,
     double labelSmooth,
     double pctTeacherForcing,
-    double p_dropout,
-    double p_layerdrop)
+    double pDropout,
+    double pLayerDrop)
     : nClass_(nClass),
       eos_(eos),
+      pad_(pad),
       maxDecoderOutputLen_(maxDecoderOutputLen),
       nLayer_(nLayer),
       window_(window),
@@ -109,8 +50,8 @@ TransformerCriterion::TransformerCriterion(
         hiddenDim * 4,
         4,
         maxDecoderOutputLen,
-        p_dropout,
-        p_layerdrop,
+        pDropout,
+        pLayerDrop,
         true));
   }
   add(std::make_shared<fl::Linear>(hiddenDim, nClass));
@@ -120,21 +61,34 @@ TransformerCriterion::TransformerCriterion(
 
 std::vector<Variable> TransformerCriterion::forward(
     const std::vector<Variable>& inputs) {
-  if (inputs.size() != 2) {
-    throw std::invalid_argument("Invalid inputs size");
+  if (inputs.size() < 2 || inputs.size() > 4) {
+    throw std::invalid_argument(
+        "Invalid inputs size; Transformer criterion takes input,"
+        " target, inputSizes [optional], targetSizes [optional]");
   }
   const auto& input = inputs[0];
   const auto& target = inputs[1];
+  const auto& inputSizes =
+      inputs.size() == 2 ? af::array() : inputs[2].array(); // 1 x B
+  const auto& targetSizes =
+      inputs.size() == 3 ? af::array() : inputs[3].array(); // 1 x B
 
   Variable out, alpha;
-  std::tie(out, alpha) = vectorizedDecoder(input, target);
+  std::tie(out, alpha) =
+      vectorizedDecoder(input, target, inputSizes, targetSizes);
 
   out = logSoftmax(out, 0);
 
   auto losses = moddims(
-      sum(categoricalCrossEntropy(out, target, ReduceMode::NONE), {0}), -1);
+      sum(categoricalCrossEntropy(out, target, ReduceMode::NONE, pad_), {0}),
+      -1);
   if (train_ && labelSmooth_ > 0) {
     size_t nClass = out.dims(0);
+    auto targetTiled = af::tile(
+        af::moddims(
+            target.array(), af::dim4(1, target.dims(0), target.dims(1))),
+        nClass);
+    out = applySeq2SeqMask(out, targetTiled, pad_);
     auto smoothLoss = moddims(sum(out, {0, 1}), -1);
     losses = (1 - labelSmooth_) * losses - (labelSmooth_ / nClass) * smoothLoss;
   }
@@ -144,10 +98,11 @@ std::vector<Variable> TransformerCriterion::forward(
 
 // input : D x T x B
 // target: U x B
-
 std::pair<Variable, Variable> TransformerCriterion::vectorizedDecoder(
     const Variable& input,
-    const Variable& target) {
+    const Variable& target,
+    const af::array& inputSizes,
+    const af::array& targetSizes) {
   int U = target.dims(0);
   int B = target.dims(1);
   int T = input.isempty() ? 0 : input.dims(1);
@@ -173,7 +128,7 @@ std::pair<Variable, Variable> TransformerCriterion::vectorizedDecoder(
   }
 
   Variable alpha, summaries;
-  Variable padMask;
+  Variable padMask; // no mask, decoder is not looking into future
   for (int i = 0; i < nLayer_; i++) {
     hy = layer(i)->forward(std::vector<Variable>({hy, padMask})).front();
   }
@@ -181,11 +136,12 @@ std::pair<Variable, Variable> TransformerCriterion::vectorizedDecoder(
   if (!input.isempty()) {
     Variable windowWeight;
     if (window_ && (!train_ || trainWithWindow_)) {
-      windowWeight = window_->computeWindowMask(U, T, B);
+      windowWeight =
+          window_->computeVectorizedWindow(U, T, B, inputSizes, targetSizes);
     }
 
-    std::tie(alpha, summaries) =
-        attention()->forward(hy, input, Variable(), windowWeight);
+    std::tie(alpha, summaries) = attention()->forward(
+        hy, input, Variable(), windowWeight, fl::noGrad(inputSizes));
 
     hy = hy + summaries;
   }
@@ -195,12 +151,15 @@ std::pair<Variable, Variable> TransformerCriterion::vectorizedDecoder(
   return std::make_pair(out, alpha);
 }
 
-af::array TransformerCriterion::viterbiPath(const af::array& input) {
-  return viterbiPathBase(input, false).first;
+af::array TransformerCriterion::viterbiPath(
+    const af::array& input,
+    const af::array& inputSizes /* = af::array() */) {
+  return viterbiPathBase(input, inputSizes, false).first;
 }
 
 std::pair<af::array, Variable> TransformerCriterion::viterbiPathBase(
     const af::array& input,
+    const af::array& inputSizes,
     bool /* TODO: saveAttn */) {
   bool wasTrain = train_;
   eval();
@@ -213,7 +172,8 @@ std::pair<af::array, Variable> TransformerCriterion::viterbiPathBase(
   int pred;
 
   for (int u = 0; u < maxDecoderOutputLen_; u++) {
-    std::tie(ox, state) = decodeStep(Variable(input, false), y, state);
+    std::tie(ox, state) =
+        decodeStep(Variable(input, false), y, state, inputSizes);
     max(maxValues, maxIdx, ox.array());
     maxIdx.host(&pred);
     // TODO: saveAttn
@@ -237,7 +197,8 @@ std::pair<af::array, Variable> TransformerCriterion::viterbiPathBase(
 std::pair<Variable, TS2SState> TransformerCriterion::decodeStep(
     const Variable& xEncoded,
     const Variable& y,
-    const TS2SState& inState) const {
+    const TS2SState& inState,
+    const af::array& inputSizes) const {
   Variable hy;
   if (y.isempty()) {
     hy = tile(startEmbedding(), {1, 1, xEncoded.dims(2)});
@@ -249,25 +210,38 @@ std::pair<Variable, TS2SState> TransformerCriterion::decodeStep(
 
   TS2SState outState;
   outState.step = inState.step + 1;
+  af::array padMask; // no mask because we are doing step by step decoding here,
+                     // no look in the future
   for (int i = 0; i < nLayer_; i++) {
     if (inState.step == 0) {
       outState.hidden.push_back(hy);
-      hy = layer(i)->forward(std::vector<Variable>({hy})).front();
+      hy = layer(i)
+               ->forward(std::vector<Variable>({hy, fl::noGrad(padMask)}))
+               .front();
     } else {
-      auto tmp = std::vector<Variable>({inState.hidden[i], hy});
-      outState.hidden.push_back(concatenate(tmp, 1));
-      hy = layer(i)->forward(tmp).front();
+      outState.hidden.push_back(concatenate({inState.hidden[i], hy}, 1));
+      hy = layer(i)
+               ->forward({inState.hidden[i], hy, fl::noGrad(padMask)})
+               .front();
     }
   }
 
   Variable windowWeight, alpha, summary;
   if (window_ && (!train_ || trainWithWindow_)) {
-    windowWeight = window_->computeSingleStepWindow(
-        Variable(), xEncoded.dims(1), xEncoded.dims(2), inState.step);
+    // TODO fix for softpretrain where target size is used
+    // for now force to xEncoded.dims(1)
+    windowWeight = window_->computeWindow(
+        Variable(),
+        inState.step,
+        xEncoded.dims(1),
+        xEncoded.dims(1),
+        xEncoded.dims(2),
+        inputSizes,
+        af::array());
   }
 
-  std::tie(alpha, summary) =
-      attention()->forward(hy, xEncoded, Variable(), windowWeight);
+  std::tie(alpha, summary) = attention()->forward(
+      hy, xEncoded, Variable(), windowWeight, fl::noGrad(inputSizes));
 
   hy = hy + summary;
 
@@ -282,6 +256,7 @@ TransformerCriterion::decodeBatchStep(
     const std::vector<TS2SState*>& inStates,
     const int /* attentionThreshold */,
     const float smoothingTemperature) const {
+  // assume xEncoded has batch 1
   int B = ys.size();
 
   for (int i = 0; i < B; i++) {
@@ -339,15 +314,18 @@ TransformerCriterion::decodeBatchStep(
   return std::make_pair(out, outstates);
 }
 
-AMUpdateFunc buildTransformerAmUpdateFunction(
-    std::shared_ptr<SequenceCriterion>& c) {
-  auto buf = std::make_shared<TS2SDecoderBuffer>(
-      FLAGS_beamsize, FLAGS_attentionthreshold, FLAGS_smoothingtemperature);
+AMUpdateFunc buildSeq2SeqTransformerAmUpdateFunction(
+    std::shared_ptr<SequenceCriterion>& criterion,
+    int beamSize,
+    float attThr,
+    float smoothingTemp) {
+  auto buf =
+      std::make_shared<TS2SDecoderBuffer>(beamSize, attThr, smoothingTemp);
 
-  const TransformerCriterion* criterion =
-      static_cast<TransformerCriterion*>(c.get());
+  const TransformerCriterion* criterionCast =
+      static_cast<TransformerCriterion*>(criterion.get());
 
-  auto amUpdateFunc = [buf, criterion](
+  auto amUpdateFunc = [buf, criterionCast](
                           const float* emissions,
                           const int N,
                           const int T,
@@ -390,7 +368,7 @@ AMUpdateFunc buildTransformerAmUpdateFunction(
       }
       std::vector<std::vector<float>> amScores;
       std::vector<TS2SStatePtr> outStates;
-      std::tie(amScores, outStates) = criterion->decodeBatchStep(
+      std::tie(amScores, outStates) = criterionCast->decodeBatchStep(
           buf->input,
           buf->ys,
           buf->prevStates,

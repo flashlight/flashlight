@@ -95,6 +95,7 @@ void printDiscrepancies(
 } // namespace
 
 int main(int argc, char** argv) {
+  fl::init();
   if (argc < 2) {
     usage(argv[0]);
   }

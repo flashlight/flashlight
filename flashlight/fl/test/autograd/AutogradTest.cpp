@@ -18,7 +18,9 @@
 #include <stdexcept>
 
 #include <gtest/gtest.h>
+
 #include "flashlight/fl/autograd/autograd.h"
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/common/common.h"
 
 using namespace fl;
@@ -244,7 +246,7 @@ TEST(AutogradTest, MultiplyAdd) {
 }
 
 TEST(AutogradTest, AutogradOperatorTypeCompatibility) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -311,7 +313,7 @@ TEST(AutogradTest, AutogradOperatorTypeCompatibility) {
 }
 
 TEST(AutogradTest, CastingAs) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -335,7 +337,7 @@ TEST(AutogradTest, CastingAs) {
 }
 
 TEST(AutogradTest, CastingAsInPlace) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -360,7 +362,7 @@ TEST(AutogradTest, CastingAsInPlace) {
 }
 
 TEST(AutogradTest, CastingAsDifferentGradTypes) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -371,7 +373,7 @@ TEST(AutogradTest, CastingAsDifferentGradTypes) {
 }
 
 TEST(AutogradTest, CastingAsGrad) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -564,7 +566,7 @@ TEST(AutogradTest, TileAs) {
 }
 
 TEST_F(AutogradTestF16, TileAsF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -792,7 +794,7 @@ TEST(AutogradTest, Convolve) {
         /* groups */ 1,
         benchmarks);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_conv_wt, wt, 0.05));
+  ASSERT_TRUE(jacobianTestImpl(func_conv_wt, wt, 0.06));
   auto func_conv_bs = [&](Variable& bias) {
     return conv2d(
         in,
@@ -807,11 +809,11 @@ TEST(AutogradTest, Convolve) {
         /* groups */ 1,
         benchmarks);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_conv_bs, bs, 0.02));
+  ASSERT_TRUE(jacobianTestImpl(func_conv_bs, bs, 0.03));
 }
 
 TEST_F(AutogradTestF16, ConvolveF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -963,7 +965,7 @@ TEST(AutogradTest, Pooling) {
 }
 
 TEST_F(AutogradTestF16, PoolingF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -981,7 +983,7 @@ TEST(AutogradTest, Softmax) {
 }
 
 TEST_F(AutogradTestF16, SoftmaxF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -999,7 +1001,7 @@ TEST(AutogradTest, LogSoftmax) {
 }
 
 TEST_F(AutogradTestF16, LogSoftmaxF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -1081,7 +1083,7 @@ TEST(AutogradTest, Linear) {
 }
 
 TEST_F(AutogradTestF16, LinearF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -1144,7 +1146,7 @@ TEST(AutogradTest, WeightNormConv) {
         /* dy */ 1,
         /* groups */ 1);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_weightNorm_in, in, 1E-1));
+  ASSERT_TRUE(jacobianTestImpl(func_weightNorm_in, in, 3E-1));
 
   auto func_weightNorm_v = [&](Variable& input) {
     auto w = input * tileAs(g / norm(input, norm_dim), input);
@@ -1159,7 +1161,7 @@ TEST(AutogradTest, WeightNormConv) {
         /* dy */ 1,
         /* groups */ 1);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_weightNorm_v, v, 1E-1));
+  ASSERT_TRUE(jacobianTestImpl(func_weightNorm_v, v, 2E-1));
 
   auto func_weightNorm_g = [&](Variable& input) {
     auto w = v * tileAs(input / norm(v, norm_dim), v);
@@ -1174,7 +1176,7 @@ TEST(AutogradTest, WeightNormConv) {
         /* dy */ 1,
         /* groups */ 1);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_weightNorm_g, g, 1E-1));
+  ASSERT_TRUE(jacobianTestImpl(func_weightNorm_g, g, 2E-1));
 }
 
 void testRnnImpl(RnnMode mode, af::dtype precision = af::dtype::f64) {
@@ -1316,11 +1318,15 @@ void testRnnImpl(RnnMode mode, af::dtype precision = af::dtype::f64) {
 }
 
 TEST(AutogradTest, Rnn) {
+  if (FL_BACKEND_CPU) {
+    GTEST_SKIP() << "RNN gradient computation not yet supported on CPU";
+  }
+
   testRnnImpl(RnnMode::TANH);
 }
 
 TEST_F(AutogradTestF16, RnnF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -1328,10 +1334,14 @@ TEST_F(AutogradTestF16, RnnF16) {
 }
 
 TEST(AutogradTest, Lstm) {
+  if (FL_BACKEND_CPU) {
+    GTEST_SKIP() << "RNN LSTM graident computation not yet supported on CPU";
+  }
+
   testRnnImpl(RnnMode::LSTM);
 }
 TEST_F(AutogradTestF16, LstmF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -1339,11 +1349,14 @@ TEST_F(AutogradTestF16, LstmF16) {
 }
 
 TEST(AutogradTest, Gru) {
+  if (FL_BACKEND_CPU) {
+    GTEST_SKIP() << "RNN GRU graident computation not yet supported on CPU";
+  }
   testRnnImpl(RnnMode::GRU);
 }
 
 TEST_F(AutogradTestF16, GruF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -1358,7 +1371,7 @@ TEST(AutogradTest, Embedding) {
   ASSERT_TRUE(jacobianTestImpl(func_embed, weights, 1E-5));
 }
 
-TEST(AutogradTest, BatchnormEvalModeOutputSingleAxis) {
+TEST(AutogradTest, BatchNormEvalModeOutputSingleAxis) {
   int feat_dims = 3;
   std::vector<int> featAxes = {2};
   // input order: HWCN, following the docs
@@ -1415,7 +1428,7 @@ TEST(AutogradTest, BatchnormEvalModeOutputSingleAxis) {
   }
 }
 
-TEST(AutogradTest, BatchnormEvalModeOutputMultipleAxis) {
+TEST(AutogradTest, BatchNormEvalModeOutputMultipleAxis) {
   // input order: HWCN, following the docs
   std::vector<int> featAxes = {0, 1, 2};
   auto input = Variable(af::randu(13, 13, 4, 16), false);
@@ -1478,7 +1491,7 @@ TEST(AutogradTest, BatchnormEvalModeOutputMultipleAxis) {
   }
 }
 
-TEST(AutogradTest, BatchnormTrainModeOutputSingleAxis) {
+TEST(AutogradTest, BatchNormTrainModeOutputSingleAxis) {
   int numFeat = 3;
   std::vector<int> featAxes = {2};
   double epsilon = 1E-5;
@@ -1511,7 +1524,7 @@ TEST(AutogradTest, BatchnormTrainModeOutputSingleAxis) {
   ASSERT_TRUE(allClose(out.array(), expectedOut.array(), 1e-5));
 }
 
-TEST(AutogradTest, BatchnormTrainModeOutputMultipleAxis) {
+TEST(AutogradTest, BatchNormTrainModeOutputMultipleAxis) {
   std::vector<int> featAxes = {0, 1, 2};
   auto input = Variable(af::randu(13, 13, 4, 8), true);
 
@@ -1548,7 +1561,7 @@ TEST(AutogradTest, BatchnormTrainModeOutputMultipleAxis) {
   }
 }
 
-TEST(AutogradTest, BatchnormJacobian) {
+TEST(AutogradTest, BatchNormJacobian) {
   // Jacobian Test with  train_mode = true;
 
   int numFeat = 3;
@@ -1558,10 +1571,6 @@ TEST(AutogradTest, BatchnormJacobian) {
   auto runningVar = Variable(af::randu(numFeat, af::dtype::f32), false);
   auto weight = Variable(af::randu(numFeat, af::dtype::f32), true);
   auto bias = Variable(af::randu(numFeat, af::dtype::f32), true);
-
-  // Observation:
-  // When testing on CPU/DNNL backend, precision 1E-2 is a good choice.
-  // Higher precision may lead to testing failure on some elements.
 
   auto func_bn_in = [&](Variable& in) {
     return (batchnorm(
@@ -1582,8 +1591,8 @@ TEST(AutogradTest, BatchnormJacobian) {
   ASSERT_TRUE(jacobianTestImpl(func_bn_bs, bias, 1e-2, 1e-4));
 }
 
-TEST_F(AutogradTestF16, BatchnormJacobianF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+TEST_F(AutogradTestF16, BatchNormJacobianF16) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -1618,7 +1627,7 @@ TEST_F(AutogradTestF16, BatchnormJacobianF16) {
   ASSERT_TRUE(jacobianTestImpl(func_bn_bs, bias, 5e-2, 1e-1));
 }
 
-TEST(AutogradTest, BatchnormJacobianMultipleAxes) {
+TEST(AutogradTest, BatchNormJacobianMultipleAxes) {
   // Jacobian Test with  train_mode = true;
   std::vector<int> featAxes = {0, 1, 2};
   auto input = Variable(af::randu(8, 8, 3, 16, af::dtype::f32), true);
@@ -1630,10 +1639,6 @@ TEST(AutogradTest, BatchnormJacobianMultipleAxes) {
   auto runningVar = Variable(af::randu(nfeatures, af::dtype::f32), false);
   auto weight = Variable(af::randu(nfeatures, af::dtype::f32), true);
   auto bias = Variable(af::randu(nfeatures, af::dtype::f32), true);
-
-  // Observation:
-  // When testing on CPU/DNNL backend, precision 1E-2 is a good choice.
-  // Higher precision may lead to testing failure on some elements.
 
   auto func_bn_in = [&](Variable& in) {
     return (batchnorm(
@@ -1654,8 +1659,8 @@ TEST(AutogradTest, BatchnormJacobianMultipleAxes) {
   ASSERT_TRUE(jacobianTestImpl(func_bn_bs, bias, 1e-2, 1e-3));
 }
 
-TEST_F(AutogradTestF16, BatchnormJacobianMultipleAxesF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+TEST_F(AutogradTestF16, BatchNormJacobianMultipleAxesF16) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -1714,7 +1719,7 @@ TEST(AutogradTest, LayerNormJacobian) {
 }
 
 TEST_F(AutogradTestF16, LayerNormJacobianF16) {
-  if (!af::isHalfAvailable(af::getDevice())) {
+  if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
@@ -1744,27 +1749,64 @@ TEST(AutogradTest, GetAdvancedIndex) {
     GTEST_SKIP()
         << "Advanced indexing operator unsupported for non-CUDA backends";
   }
-  auto x = Variable(af::randu(20, 50, 40, 30, f32), true);
-  af::array a(6, s64);
-  a(0) = 0;
-  a(1) = 15;
-  a(2) = 6;
-  a(3) = 1;
-  a(4) = 10;
-  a(5) = 6;
-  af::array b(3, s64);
-  b(0) = 5;
-  b(1) = 11;
-  b(2) = 19;
-  auto x2 = x(a, b, af::span, af::seq(0, 3));
-  auto y = sum(x2 * x2, {0, 1, 2, 3});
-  auto res = 2 * sum(x2, {0, 1, 2, 3}).array();
-  y.backward();
-  auto grad = sum(x.grad(), {0, 1, 2, 3}).array();
-  ASSERT_TRUE(allClose(grad, res, 1e-3));
+  std::vector<af::dtype> validIndexTypes{s32, s64, u32, u64};
+  for (const auto& dtype : validIndexTypes) {
+    auto x = Variable(af::randu(20, 50, 40, 30, f32), true);
+    af::array a(6, dtype);
+    a(0) = 0;
+    a(1) = 15;
+    a(2) = 6;
+    a(3) = 1;
+    a(4) = 10;
+    a(5) = 6;
+    af::array b(3, dtype);
+    b(0) = 5;
+    b(1) = 11;
+    b(2) = 19;
+    auto x2 = x(a, b, af::span, af::seq(0, 3));
+    auto y = sum(x2 * x2, {0, 1, 2, 3});
+    auto res = 2 * sum(x2, {0, 1, 2, 3}).array();
+    y.backward();
+    auto grad = sum(x.grad(), {0, 1, 2, 3}).array();
+    ASSERT_TRUE(allClose(grad, res, 1e-3));
+  }
+}
+
+TEST(AutogradTest, GetAdvancedIndexF16) {
+  if (af::getActiveBackend() != AF_BACKEND_CUDA) {
+    GTEST_SKIP()
+        << "Advanced indexing operator unsupported for non-CUDA backends";
+  }
+  if (!fl::f16Supported()) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+  std::vector<af::dtype> validIndexTypes{s32, s64, u32, u64};
+  for (const auto& dtype : validIndexTypes) {
+    auto x = Variable(af::randu(20, 50, 40, 30, f16), true);
+    af::array a(6, dtype);
+    a(0) = 0;
+    a(1) = 15;
+    a(2) = 6;
+    a(3) = 1;
+    a(4) = 10;
+    a(5) = 6;
+    af::array b(3, dtype);
+    b(0) = 5;
+    b(1) = 11;
+    b(2) = 19;
+    auto x2 = x(a, b, af::span, af::seq(0, 3));
+    ASSERT_EQ(x2.type(), af::dtype::f16);
+    auto y = sum(x2 * x2, {0, 1, 2, 3});
+    auto res = 2 * sum(x2, {0, 1, 2, 3}).array();
+    y.backward();
+    ASSERT_EQ(x.grad().type(), af::dtype::f16);
+    auto grad = sum(x.grad(), {0, 1, 2, 3}).array();
+    ASSERT_TRUE(allClose(grad, res, 1e-3));
+  }
 }
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
   return RUN_ALL_TESTS();
 }

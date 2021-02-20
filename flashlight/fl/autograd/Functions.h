@@ -802,7 +802,11 @@ Variable gatedlinearunit(const Variable& input, const int dim);
  * \f]
  * where \f$h_t\f$, \f$c_t\f$ are the hidden/cell state at time \f$t\f$,
  * \f$x_t\f$ is the input at time \f$t\f$
-
+ *
+ * \note{cuDNN and oneDNN RNN weights are incompatible since the structure of
+ * the computation is different for each. There is no mapping between weights
+ * from each of those backends.}
+ *
  * @param input Variable of input with shape [input size, batch size, sequence
  * length]
  * @param hiddenState Variable of hidden state with shape [hidden size, batch
@@ -941,8 +945,8 @@ Variable relativePositionalEmbeddingRotate(const Variable& input);
  * @param posEmb if non empty then compute relative
  * positional embedding in additon to standard computations
  * @param mask mask or not future in the computations T x T
- * if non-empty then don't use future (for example for autoregressive language models
- * or for decoder part in the encoder-decoder transformer models)
+ * if non-empty then don't use future (for example for autoregressive language
+ * models or for decoder part in the encoder-decoder transformer models)
  * @param padMask mask which is 1 for positions where pad token is,
  * don't attend to the pad-positions, of size T x B
  * @param nHeads number of heads

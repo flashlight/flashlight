@@ -11,8 +11,8 @@
 
 #include "flashlight/app/lm/common/Defines.h"
 #include "flashlight/app/lm/common/Helpers.h"
+#include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/common/Logging.h"
-
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/tokenizer/Tokenizer.h"
@@ -70,6 +70,7 @@ DEFINE_bool(
 } // namespace
 
 int main(int argc, char** argv) {
+  fl::init();
   std::string exec(argv[0]);
   gflags::SetUsageMessage(
       "Preparation of tokens dictionary from the text data. \n Usage: " + exec +

@@ -17,17 +17,8 @@
 namespace fl {
 
 // Statics from MemoryManagerInstaller
-std::once_flag MemoryManagerInstaller::startupMemoryInitialize_;
-std::shared_ptr<MemoryManagerInstaller>
-    MemoryManagerInstaller::startupMemoryManagerInstaller_;
 std::shared_ptr<MemoryManagerAdapter>
     MemoryManagerInstaller::currentlyInstalledMemoryManager_;
-
-namespace {
-
-bool init = MemoryManagerInstaller::installDefaultMemoryManager();
-
-} // namespace
 
 MemoryManagerAdapter* MemoryManagerInstaller::getImpl(
     af_memory_manager manager) {
@@ -92,7 +83,7 @@ MemoryManagerInstaller::MemoryManagerInstaller(
         "alloc",
         /* size */ dims[0], // HACK: dims[0] until af::memAlloc is size-aware
         userLock,
-        (std::uintptr_t)ptr);
+        (std::uintptr_t)*ptr);
     return AF_SUCCESS;
   };
   AF_CHECK(af_memory_manager_set_alloc_fn(itf, allocFn));
@@ -227,17 +218,12 @@ MemoryManagerInstaller::currentlyInstalledMemoryManager() {
   return currentlyInstalledMemoryManager_.get();
 }
 
-bool MemoryManagerInstaller::installDefaultMemoryManager() {
-  std::call_once(startupMemoryInitialize_, []() {
-    auto deviceInterface = std::make_shared<MemoryManagerDeviceInterface>();
-    auto adapter = std::make_shared<CachingMemoryManager>(
-        af::getDeviceCount(), deviceInterface);
-    MemoryManagerInstaller::startupMemoryManagerInstaller_ =
-        std::make_shared<MemoryManagerInstaller>(adapter);
-    MemoryManagerInstaller::startupMemoryManagerInstaller_
-        ->setAsMemoryManager();
-  });
-  return true;
+void MemoryManagerInstaller::installDefaultMemoryManager() {
+  auto deviceInterface = std::make_shared<MemoryManagerDeviceInterface>();
+  auto adapter = std::make_shared<CachingMemoryManager>(
+      af::getDeviceCount(), deviceInterface);
+  auto installer = MemoryManagerInstaller(adapter);
+  installer.setAsMemoryManager();
 }
 
 void MemoryManagerInstaller::unsetMemoryManager() {

@@ -46,7 +46,7 @@ struct TestMeters {
 
 /*
  * Utility function to log results (learning rate, WER, TER, epoch, timing)
- * From gflags it uses FLAGS_batchsize, FLAGS_pow, FLAGS_mfcc, FLAGS_mfsc
+ * From gflags it uses FLAGS_batchsize, FLAGS_features_type
  * FLAGS_framestridems, FLAGS_samplerate
  */
 std::string getLogString(
@@ -56,6 +56,7 @@ std::string getLogString(
     int64_t nupdates,
     double lr,
     double lrcrit,
+    double scaleFactor,
     const std::string& separator = " | ");
 
 void appendToLog(std::ofstream& logfile, const std::string& logstr);

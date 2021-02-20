@@ -7,37 +7,42 @@
 
 #include "flashlight/app/asr/criterion/attention/ContentAttention.h"
 #include <cmath>
+#include "flashlight/app/asr/criterion/attention/Utils.h"
 
 namespace fl {
 namespace app {
 namespace asr {
 
-std::pair<Variable, Variable> ContentAttention::forward(
+std::pair<Variable, Variable> ContentAttention::forwardBase(
     const Variable& state,
     const Variable& xEncoded,
     const Variable& /* unused */,
-    const Variable& attnWeight) {
+    const Variable& logAttnWeight,
+    const Variable& xEncodedSizes) {
   int dim = xEncoded.dims(0);
   if (dim != (1 + ((keyValue_) ? 1 : 0)) * state.dims(0)) {
-    throw std::invalid_argument("Invalid dimension for content attention");
+    throw std::invalid_argument(
+        "ContentAttention: Invalid dimension for content attention");
   }
-
   auto keys = keyValue_ ? xEncoded(af::seq(0, dim / 2 - 1)) : xEncoded;
   auto values = keyValue_ ? xEncoded(af::seq(dim / 2, dim - 1)) : xEncoded;
-
   // [targetlen, seqlen, batchsize]
   auto innerProd = matmulTN(state, keys) / std::sqrt(state.dims(0));
-
-  if (!attnWeight.isempty()) {
-    innerProd = innerProd + log(attnWeight);
+  if (!logAttnWeight.isempty()) {
+    if (logAttnWeight.dims() != innerProd.dims()) {
+      throw std::invalid_argument(
+          "ContentAttention: logAttnWeight has wong dimentions");
+    }
+    innerProd = innerProd + logAttnWeight;
   }
-
+  af::array padMask;
+  if (!xEncodedSizes.isempty()) {
+    innerProd = maskAttention(innerProd, xEncodedSizes);
+  }
   // [targetlen, seqlen, batchsize]
   auto attention = softmax(innerProd, 1);
-
   // [hiddendim, targetlen, batchsize]
   auto summaries = matmulNT(values, attention);
-
   return std::make_pair(attention, summaries);
 }
 
@@ -56,11 +61,12 @@ NeuralContentAttention::NeuralContentAttention(int dim, int layers /* = 1 */) {
   add(net);
 }
 
-std::pair<Variable, Variable> NeuralContentAttention::forward(
+std::pair<Variable, Variable> NeuralContentAttention::forwardBase(
     const Variable& state,
     const Variable& xEncoded,
     const Variable& /* unused */,
-    const Variable& attnWeight) {
+    const Variable& logAttnWeight,
+    const Variable& xEncodedSizes) {
   int U = state.dims(1);
   int H = xEncoded.dims(0);
   int T = xEncoded.dims(1);
@@ -68,23 +74,25 @@ std::pair<Variable, Variable> NeuralContentAttention::forward(
 
   auto tileHx = tile(moddims(xEncoded, {H, 1, T, B}), {1, U, 1, 1});
   auto tileHy = tile(moddims(state, {H, U, 1, B}), {1, 1, T, 1});
-
   // [hiddendim, targetlen, seqlen, batchsize]
   auto hidden = tileHx + tileHy;
-
   // [targetlen, seqlen, batchsize]
   auto nnOut = moddims(module(0)->forward({hidden}).front(), {U, T, B});
-
-  if (!attnWeight.isempty()) {
-    nnOut = nnOut + log(attnWeight);
+  if (!logAttnWeight.isempty()) {
+    if (logAttnWeight.dims() != nnOut.dims()) {
+      throw std::invalid_argument(
+          "ContentAttention: logAttnWeight has wong dimentions");
+    }
+    nnOut = nnOut + logAttnWeight;
   }
 
+  if (!xEncodedSizes.isempty()) {
+    nnOut = maskAttention(nnOut, xEncodedSizes);
+  }
   // [targetlen, seqlen, batchsize]
   auto attention = softmax(nnOut, 1);
-
   // [hiddendim, targetlen, batchsize]
   auto summaries = matmulNT(xEncoded, attention);
-
   return std::make_pair(attention, summaries);
 }
 
