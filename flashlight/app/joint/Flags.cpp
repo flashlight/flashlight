@@ -409,6 +409,23 @@ DEFINE_uint64(
     32000,
     "[train] Maximum value for the loss scale factor in mixed precision training");
 
+// Seq2Seq Transformer decoder
+DEFINE_int64(
+    decoder_tr_layers,
+    1,
+    "[train]: 'transformer' criterion decoder architecture: number of layers");
+DEFINE_double(
+    decoder_tr_dropout,
+    0.0,
+    "[train]: 'transformer' criterion decoder architecture: dropout");
+DEFINE_double(
+    decoder_tr_layerdrop,
+    0.0,
+    "[train]: 'transformer' criterion decoder architecture: layerdrop");
+DEFINE_int64(
+    decoder_tr_pretrainWindow,
+    1,
+    "[train]: 'transformer' criterion decoder architecture: number of layers");
 } // namespace joint
 } // namespace app
 } // namespace fl

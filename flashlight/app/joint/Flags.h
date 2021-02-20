@@ -123,6 +123,11 @@ DECLARE_double(amp_scale_factor);
 DECLARE_uint64(amp_scale_factor_update_interval);
 DECLARE_uint64(amp_max_scale_factor);
 
+// Seq2Seq Transformer decoder
+DECLARE_int64(decoder_tr_layers);
+DECLARE_double(decoder_tr_dropout);
+DECLARE_double(decoder_tr_layerdrop);
+DECLARE_int64(decoder_tr_pretrainWindow);
 } // namespace joint
 } // namespace app
 } // namespace fl

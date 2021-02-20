@@ -55,11 +55,11 @@ class Trainer {
   void runEvaluation();
   void evalStep();
 
-  void evalLM();
+  //   void evalLM();
 
  protected:
   // Shared components
-  std::shared_ptr<fl::Module> encoder_;
+  std::shared_ptr<fl::Module> encoder_; // !!!
   int64_t batchIdx_{0};
   std::string gflagsStr_;
   std::string version_{FL_APP_LM_VERSION};
@@ -70,13 +70,13 @@ class Trainer {
 
   double scaleFactor_;
   unsigned short scaleCounter_;
-  
+
   // ASR specifics
   int64_t asrEpoch_{1};
   std::shared_ptr<fl::Module> specAug_;
-  std::shared_ptr<fl::Module> asrFrontEnd_;
-  std::shared_ptr<fl::Module> asrCriterionLinear_;
-  std::shared_ptr<fl::app::asr::SequenceCriterion> asrCriterion_;
+  //   std::shared_ptr<fl::Module> asrFrontEnd_;
+  //   std::shared_ptr<fl::Module> asrCriterionLinear_;
+  //   std::shared_ptr<fl::app::asr::SequenceCriterion> asrCriterion_;
 
   fl::lib::text::LexiconMap lexicon_;
   fl::lib::text::Dictionary tokenDictionary_;
@@ -90,8 +90,9 @@ class Trainer {
 
   // LM specifics
   int64_t lmEpoch_{1};
-  std::shared_ptr<fl::Module> lmFrontEnd_;
-  std::shared_ptr<fl::Module> lmCriterion_;
+  //   std::shared_ptr<fl::Module> lmFrontEnd_;
+  //   std::shared_ptr<fl::Module> lmCriterion_;
+  std::shared_ptr<fl::app::asr::TransformerCriterion> lmCriterion_;
   fl::lib::text::Dictionary lmDictionary_;
 
   std::shared_ptr<fl::app::lm::TextDataset> lmTrainDataset_;
@@ -101,8 +102,10 @@ class Trainer {
 
   // Optimization
   std::shared_ptr<fl::Reducer> reducer_;
-  std::shared_ptr<fl::FirstOrderOptimizer> optimizer_;
+  //   std::shared_ptr<fl::FirstOrderOptimizer> optimizer_;
   std::vector<fl::Variable> parameters_;
+  std::shared_ptr<fl::FirstOrderOptimizer> ecdOptimizer_;
+  std::shared_ptr<fl::FirstOrderOptimizer> critOptimizer_;
 
   // Meters
   fl::TimeMeter runTimeMeter_;
@@ -167,6 +170,6 @@ class Trainer {
   void logMemoryManagerStatus() const;
   std::string getProgress() const;
 };
-}
+} // namespace joint
 } // namespace app
 } // namespace fl

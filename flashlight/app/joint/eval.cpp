@@ -35,5 +35,5 @@ int main(int argc, char** argv) {
   // flags may be overridden from the model
   // so reloading from command line again
   gflags::ParseCommandLineFlags(&argc, &argv, false);
-  trainer.evalLM();
+  // trainer.evalLM();
 }

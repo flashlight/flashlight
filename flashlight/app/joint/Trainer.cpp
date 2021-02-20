@@ -55,10 +55,10 @@ void Trainer::runTraining() {
                       << ", lm-epoch=" << lmEpoch_ << ", batch=" << batchIdx_
                       << ")";
 
-  fl::allReduceParameters(asrFrontEnd_);
-  fl::allReduceParameters(lmFrontEnd_);
   fl::allReduceParameters(encoder_);
-  fl::allReduceParameters(asrCriterionLinear_);
+  // fl::allReduceParameters(asrFrontEnd_);
+  // fl::allReduceParameters(lmFrontEnd_);
+  // fl::allReduceParameters(asrCriterionLinear_);
   fl::allReduceParameters(lmCriterion_);
   auto modelPath = pathsConcat(experimentDirectory_, "model_last.bin");
 
@@ -86,6 +86,10 @@ void Trainer::runTraining() {
   af::sync();
 
   while (batchIdx_ < FLAGS_train_total_updates) {
+    if (batchIdx_ >= FLAGS_decoder_tr_pretrainWindow) {
+      lmCriterion_->clearWindow();
+    }
+
     // Advance Epoch
     if (batchIdx_ && batchIdx_ % asrTrainDataset_->size() == 0) {
       stopTimers();
@@ -168,11 +172,11 @@ void Trainer::runEvaluation() {
 void Trainer::trainStep(
     const std::vector<af::array>& asrBatch,
     const std::vector<af::array>& lmBatch) {
-  asrFrontEnd_->train();
-  lmFrontEnd_->train();
   encoder_->train();
-  asrCriterionLinear_->train();
-  asrCriterion_->train();
+  // asrFrontEnd_->train();
+  // lmFrontEnd_->train();
+  // asrCriterionLinear_->train();
+  // asrCriterion_->train();
   lmCriterion_->train();
   setLr();
 
@@ -184,8 +188,10 @@ void Trainer::trainStep(
   auto asrSampleNames =
       fl::app::asr::readSampleIds(asrBatch[fl::app::asr::kSampleIdx]);
 
-  fl::Variable lmInput, lmTarget;
-  std::tie(lmInput, lmTarget) = getInputAndTarget(lmBatch);
+  // fl::Variable lmInput, lmTarget;
+  // std::tie(lmInput, lmTarget) = getInputAndTarget(lmBatch);
+  fl::Variable lmInput = fl::noGrad(lmBatch[0]),
+               lmTarget = fl::noGrad(lmBatch[0]);
   af::array lmInputSizes = af::flat(af::sum(lmInput.array() != kPadIdx_, 0));
 
   sampleTimerMeter_.stopAndIncUnit();
@@ -205,47 +211,51 @@ void Trainer::trainStep(
       asrInput = specAug_->forward({asrInput}).front();
     }
     // std::cout << "1: " << asrInput.type() << std::endl;
-    auto asrOutput = forwardSequentialModuleWithPadMask(
-        asrInput, asrFrontEnd_, asrInputSizes);
+    // auto asrOutput = forwardSequentialModuleWithPadMask(
+    //     asrInput, asrFrontEnd_, asrInputSizes);
     // std::cout << "2: " << asrOutput.type() << std::endl;
-    asrOutput = forwardSequentialModuleWithPadMask(
-        asrOutput,
-        encoder_,
-        asrInputSizes,
-        false,
-        asrOutput.dims(1),
-        asrOutput.dims(2));
+    auto asrOutput =
+        forwardSequentialModuleWithPadMask(asrInput, encoder_, asrInputSizes);
     // std::cout << "3: " << asrOutput.type() << std::endl;
-    asrOutput = asrCriterionLinear_->forward({asrOutput}).front();
+    // asrOutput = asrCriterionLinear_->forward({asrOutput}).front();
     // std::cout << "4: " << asrOutput.type() << std::endl;
 
     // std::cout << "11: " << lmInput.type() << std::endl;
-    auto lmOutput = lmFrontEnd_->forward({lmInput}).front();
+    // auto lmOutput = lmFrontEnd_->forward({lmInput}).front();
     // std::cout << "12: " << lmOutput.type() << std::endl;
-    lmOutput = forwardSequentialModuleWithPadMask(
-        lmOutput,
-        encoder_,
-        lmInputSizes,
-        true,
-        lmOutput.dims(1),
-        lmOutput.dims(2));
+    // lmOutput = forwardSequentialModuleWithPadMask(
+    //     lmOutput,
+    //     encoder_,
+    //     lmInputSizes,
+    //     true,
+    //     lmOutput.dims(1),
+    //     lmOutput.dims(2));
     // std::cout << "13: " << lmOutput.type() << std::endl;
-    if (!FLAGS_dictionary_wordlm) {
-      if (FLAGS_loss_type != "ce") {
-        throw std::runtime_error("FLAGS_loss_type != ce");
-      }
-      lmOutput = asrCriterionLinear_->forward({lmOutput}).front();
-      // std::cout << "14: " << lmOutput.type() << std::endl;
-      lmOutput = logSoftmax(lmOutput, 0).as(asrOutput.type());
-      // std::cout << "15: " << lmOutput.type() << std::endl;
-    }
+    // if (!FLAGS_dictionary_wordlm) {
+    //   if (FLAGS_loss_type != "ce") {
+    //     throw std::runtime_error("FLAGS_loss_type != ce");
+    //   }
+    //   lmOutput = asrCriterionLinear_->forward({lmOutput}).front();
+    //   // std::cout << "14: " << lmOutput.type() << std::endl;
+    //   lmOutput = logSoftmax(lmOutput, 0).as(asrOutput.type());
+    //   // std::cout << "15: " << lmOutput.type() << std::endl;
+    // }
     af::sync();
 
     critFwdTimeMeter_.resume();
-    auto asrLoss = sum(
-        asrCriterion_->forward({asrOutput.as(f32), asrTarget}).front(), {0});
+    // auto asrLoss = sum(
+    //     asrCriterion_->forward({asrOutput.as(f32), asrTarget}).front(), {0});
+    auto asrLoss =
+        sum(lmCriterion_->forward({asrOutput, asrTarget}).front(), {0});
+    // af_print(asrLoss.array());
     // std::cout << "5: " << asrLoss.type() << std::endl;
-    auto lmLoss = lmCriterion_->forward({lmOutput, lmTarget}).front();
+    // auto lmLoss = lmCriterion_->forward({lmOutput, lmTarget}).front();
+    // auto lmLoss = sum(lmCriterion_->forward({fl::Variable(),
+    // lmInput}).front(), {0});
+    auto lmLoss = batchIdx_ >= FLAGS_decoder_tr_pretrainWindow
+        ? sum(lmCriterion_->forward({fl::Variable(), lmInput}).front(), {0})
+        : fl::constant(0, 1, f32, false);
+    // af_print(lmLoss.array());
     // std::cout << "6: " << lmLoss.type() << std::endl;
     af::sync();
     fwdTimeMeter_.stopAndIncUnit();
@@ -261,6 +271,7 @@ void Trainer::trainStep(
 
     if (hasher_(lib::join(",", asrSampleNames)) % 100 <=
         FLAGS_exp_pct_train_eval) {
+      std::cout << "trying to eval\n";
       asrTrainStatsMeter_.loss.add(asrLoss.array());
       evalWer(asrOutput.array(), asrTarget.array(), asrTrainStatsMeter_);
 
@@ -288,13 +299,27 @@ void Trainer::trainStep(
 
     // 3. Backward
     bwdTimeMeter_.resume();
-    optimizer_->zeroGrad();
+    // optimizer_->zeroGrad();
+    ecdOptimizer_->zeroGrad();
+    critOptimizer_->zeroGrad();
     loss.backward();
     reduceGrads();
+
+    // for (auto& p : parameters_) {
+    //   if (!p.isGradAvailable()) {
+    //     FL_LOG(INFO) << "no grad";
+    //   } else {
+    //     std::cout << p.grad().dims() << std::endl;
+    //   }
+    //   if (af::anyTrue<bool>(af::isNaN(p.grad().array())) ||
+    //       af::anyTrue<bool>(af::isInf(p.grad().array()))) {
+    //     FL_LOG(INFO) << "bad grad";
+    //   }
+    // }
     for (auto& p : parameters_) {
-      if (!p.isGradAvailable()) {
-        p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
-      }
+      // if (!p.isGradAvailable()) {
+      //   p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
+      // }
       p.grad() = p.grad() / scaleFactor_;
       if (FLAGS_amp_use_mixed_precision) {
         if (af::anyTrue<bool>(af::isNaN(p.grad().array())) ||
@@ -325,7 +350,9 @@ void Trainer::trainStep(
   // 4. Optimization
   optimTimeMeter_.resume();
   fl::clipGradNorm(parameters_, FLAGS_train_max_grad_norm);
-  optimizer_->step();
+  // optimizer_->step();
+  ecdOptimizer_->step();
+  critOptimizer_->step();
   af::sync();
   optimTimeMeter_.stopAndIncUnit();
 
@@ -344,11 +371,11 @@ void Trainer::trainStep(
 }
 
 void Trainer::evalStep() {
-  asrFrontEnd_->eval();
-  lmFrontEnd_->eval();
   encoder_->eval();
-  asrCriterionLinear_->eval();
-  asrCriterion_->eval();
+  // asrFrontEnd_->eval();
+  // lmFrontEnd_->eval();
+  // asrCriterionLinear_->eval();
+  // asrCriterion_->eval();
   lmCriterion_->eval();
 
   // ASR
@@ -365,12 +392,14 @@ void Trainer::evalStep() {
       auto target = fl::noGrad(batch[fl::app::asr::kTargetIdx]);
       auto inputSizes = batch[fl::app::asr::kDurationIdx];
 
+      // auto output =
+      //     forwardSequentialModuleWithPadMask(input, asrFrontEnd_,
+      //     inputSizes);
       auto output =
-          forwardSequentialModuleWithPadMask(input, asrFrontEnd_, inputSizes);
-      output = ext::forwardSequentialModuleWithPadMask(
-          output, encoder_, inputSizes, false, output.dims(1), output.dims(2));
-      output = asrCriterionLinear_->forward({output}).front().as(f32);
-      auto loss = asrCriterion_->forward({output, target}).front();
+          ext::forwardSequentialModuleWithPadMask(input, encoder_, inputSizes);
+      // output = asrCriterionLinear_->forward({output}).front().as(f32);
+      // auto loss = asrCriterion_->forward({output, target}).front();
+      auto loss = lmCriterion_->forward({output, target}).front();
 
       validMeter.loss.add(af::sum<double>(loss.array()));
       evalWer(output.array(), target.array(), validMeter);
@@ -384,20 +413,22 @@ void Trainer::evalStep() {
     auto& validMeter = lmValidLossMeters_[tag];
 
     for (const auto& batch : *validDataset) {
-      fl::Variable input, target;
-      std::tie(input, target) = getInputAndTarget(batch);
+      fl::Variable input = fl::noGrad(batch[0]), target = fl::noGrad(batch[0]);
+      // fl::Variable input, target;
+      // std::tie(input, target) = getInputAndTarget(batch);
       af::array inputSizes = af::flat(af::sum(input.array() != kPadIdx_, 0));
-      auto output = lmFrontEnd_->forward({input}).front();
-      output = forwardSequentialModuleWithPadMask(
-          output, encoder_, inputSizes, true, output.dims(1), output.dims(2));
-      if (!FLAGS_dictionary_wordlm) {
-        if (FLAGS_loss_type != "ce") {
-          throw std::runtime_error("FLAGS_loss_type != ce");
-        }
-        output = asrCriterionLinear_->forward({output}).front();
-        output = logSoftmax(output, 0);
-      }
-      auto loss = lmCriterion_->forward({output, target}).front();
+      // auto output = lmFrontEnd_->forward({input}).front();
+      // output = forwardSequentialModuleWithPadMask(
+      //     output, encoder_, inputSizes, true, output.dims(1),
+      //     output.dims(2));
+      // if (!FLAGS_dictionary_wordlm) {
+      //   if (FLAGS_loss_type != "ce") {
+      //     throw std::runtime_error("FLAGS_loss_type != ce");
+      //   }
+      //   output = asrCriterionLinear_->forward({output}).front();
+      //   output = logSoftmax(output, 0);
+      // }
+      auto loss = lmCriterion_->forward({fl::Variable(), input}).front();
       auto numTokens = af::count<int>(target.array() != kPadIdx_);
       if (numTokens > 0) {
         auto weight =
@@ -410,105 +441,6 @@ void Trainer::evalStep() {
   }
 }
 
-void Trainer::evalLM() {
-  FL_LOG_MASTER(INFO) << "LM evaluation started.";
-  asrFrontEnd_->eval();
-  lmFrontEnd_->eval();
-  encoder_->eval();
-  asrCriterionLinear_->eval();
-  asrCriterion_->eval();
-  lmCriterion_->eval();
-
-  int cnt = 0;
-  for (const auto& set : lmValidDatasets_) {
-    const auto tag = set.first;
-    const auto validDataset = set.second;
-
-    for (const auto& batch : *validDataset) {
-      if (cnt++ == 100) {
-        break;
-      }
-      fl::Variable input, target;
-      std::tie(input, target) = getInputAndTarget(batch);
-      af::array inputSizes = af::flat(af::sum(input.array() != kPadIdx_, 0));
-      auto output = lmFrontEnd_->forward({input}).front();
-      output = forwardSequentialModuleWithPadMask(
-          output, encoder_, inputSizes, true, output.dims(1), output.dims(2));
-      if (!FLAGS_dictionary_wordlm) {
-        if (FLAGS_loss_type != "ce") {
-          throw std::runtime_error("FLAGS_loss_type != ce");
-        }
-        output = asrCriterionLinear_->forward({output}).front();
-        output = logSoftmax(output, 0);
-      }
-
-      for (int b = 0; b < output.dims(2); ++b) {
-        auto viterbiPath = fl::ext::afToVector<int>(
-            asrCriterion_->viterbiPath(output.array()(af::span, af::span, b)));
-        auto rawTarget = fl::ext::afToVector<int>(target.array()(af::span, b));
-
-        std::cout << "\n|T|: ";
-        for (auto& word : rawTarget) {
-          std::cout << tokenDictionary_.getEntry(word) << " ";
-        }
-        std::cout << "\n|P|: ";
-        for (auto& word : viterbiPath) {
-          std::cout << tokenDictionary_.getEntry(word) << " ";
-        }
-        std::cout << "\n---";
-      }
-    }
-  }
-}
-
-#if 0
-void Trainer::evalASR() {
-  FL_LOG_MASTER(INFO) << "ASR evaluation started.";
-  asrFrontEnd_->eval();
-  lmFrontEnd_->eval();
-  encoder_->eval();
-  asrCriterionLinear_->eval();
-  asrCriterion_->eval();
-  lmCriterion_->eval();
-
-  for (const auto& set : asrValidDatasets_) {
-    const auto tag = set.first;
-    const auto validDataset = set.second;
-
-    int cnt = 0;
-    for (const auto& batch : *validDataset) {
-      if (cnt++ == 100) {
-        break;
-      }
-      auto input = fl::input(batch[fl::app::asr::kInputIdx]);
-      auto target = fl::noGrad(batch[fl::app::asr::kTargetIdx]);
-      auto inputSizes = batch[fl::app::asr::kDurationIdx];
-
-      auto output =
-          forwardSequentialModuleWithPadMask(input, asrFrontEnd_, inputSizes);
-      output = ext::forwardSequentialModuleWithPadMask(
-          output, encoder_, inputSizes, false, output.dims(1), output.dims(2));
-      output = asrCriterionLinear_->forward({output}).front();
-
-      for (int b = 0; b < output.dims(2); ++b) {
-        auto viterbiPath = fl::ext::afToVector<int>(
-            asrCriterion_->viterbiPath(output.array()(af::span, af::span, b)));
-        auto rawTarget = fl::ext::afToVector<int>(target.array()(af::span, b));
-
-        std::cout << "\n|T|: ";
-        for (auto& word : rawTarget) {
-          std::cout << tokenDictionary_.getEntry(word) << " ";
-        }
-        std::cout << "\n|P|: ";
-        for (auto& word : viterbiPath) {
-          std::cout << tokenDictionary_.getEntry(word) << " ";
-        }
-        std::cout << "\n---";
-      }
-    }
-  }
-}
-#endif
 /* ============= Initializers ============= */
 void Trainer::initTrain() {
   FL_LOG_MASTER(INFO) << "Creating a fresh model";
@@ -534,12 +466,14 @@ void Trainer::initContinue() {
       checkPoint,
       version_,
       encoder_,
-      asrFrontEnd_,
-      lmFrontEnd_,
-      asrCriterionLinear_,
-      asrCriterion_,
+      // asrFrontEnd_,
+      // lmFrontEnd_,
+      // asrCriterionLinear_,
+      // asrCriterion_,
       lmCriterion_,
-      optimizer_,
+      // optimizer_,
+      ecdOptimizer_,
+      critOptimizer_,
       asrEpoch_,
       lmEpoch_,
       batchIdx_,
@@ -571,12 +505,14 @@ void Trainer::initFork() {
       FLAGS_exp_init_model_path,
       version_,
       encoder_,
-      asrFrontEnd_,
-      lmFrontEnd_,
-      asrCriterionLinear_,
-      asrCriterion_,
+      // asrFrontEnd_,
+      // lmFrontEnd_,
+      // asrCriterionLinear_,
+      // asrCriterion_,
       lmCriterion_,
-      optimizer_,
+      // optimizer_,
+      ecdOptimizer_,
+      critOptimizer_,
       asrEpoch_,
       lmEpoch_,
       batchIdx_,
@@ -606,12 +542,14 @@ void Trainer::initEval() {
       FLAGS_exp_init_model_path,
       version_,
       encoder_,
-      asrFrontEnd_,
-      lmFrontEnd_,
-      asrCriterionLinear_,
-      asrCriterion_,
+      // asrFrontEnd_,
+      // lmFrontEnd_,
+      // asrCriterionLinear_,
+      // asrCriterion_,
       lmCriterion_,
-      optimizer_,
+      // optimizer_,
+      ecdOptimizer_,
+      critOptimizer_,
       asrEpoch_,
       lmEpoch_,
       batchIdx_,
@@ -844,70 +782,84 @@ void Trainer::createNetwork() {
   FL_LOG_MASTER(INFO) << "[Encoder Params: " << numTotalParams(encoder_) << "]";
 
   // Front-ends
-  archfile = fl::lib::pathsConcat(
-      FLAGS_train_arch_dir, FLAGS_train_asr_frontend_arch_file);
-  asrFrontEnd_ =
-      fl::ext::buildSequentialModule(archfile, numFeatures_, numClasses_);
-  FL_LOG_MASTER(INFO) << "[ASR front-end] " << asrFrontEnd_->prettyString();
-  FL_LOG_MASTER(INFO) << "[ASR front-end Params: "
-                      << numTotalParams(asrFrontEnd_) << "]";
+  // archfile = fl::lib::pathsConcat(
+  //     FLAGS_train_arch_dir, FLAGS_train_asr_frontend_arch_file);
+  // asrFrontEnd_ =
+  //     fl::ext::buildSequentialModule(archfile, numFeatures_, numClasses_);
+  // FL_LOG_MASTER(INFO) << "[ASR front-end] " << asrFrontEnd_->prettyString();
+  // FL_LOG_MASTER(INFO) << "[ASR front-end Params: "
+  //                     << numTotalParams(asrFrontEnd_) << "]";
 
-  archfile = fl::lib::pathsConcat(
-      FLAGS_train_arch_dir, FLAGS_train_lm_frontend_arch_file);
-  lmFrontEnd_ =
-      fl::ext::buildSequentialModule(archfile, 0, lmDictionary_.entrySize());
-  FL_LOG_MASTER(INFO) << "[LM front-end] " << lmFrontEnd_->prettyString();
-  FL_LOG_MASTER(INFO) << "[LM front-end Params: " << numTotalParams(lmFrontEnd_)
-                      << "]";
+  // archfile = fl::lib::pathsConcat(
+  //     FLAGS_train_arch_dir, FLAGS_train_lm_frontend_arch_file);
+  // lmFrontEnd_ =
+  //     fl::ext::buildSequentialModule(archfile, 0, lmDictionary_.entrySize());
+  // FL_LOG_MASTER(INFO) << "[LM front-end] " << lmFrontEnd_->prettyString();
+  // FL_LOG_MASTER(INFO) << "[LM front-end Params: " <<
+  // numTotalParams(lmFrontEnd_)
+  //                     << "]";
 }
 
 void Trainer::createCriterion() {
   // ASR
-  asrCriterionLinear_ =
-      std::make_shared<Linear>(FLAGS_loss_adsm_input_size, numClasses_, false);
-  auto scalemode =
-      fl::app::asr::getCriterionScaleMode(FLAGS_norm_onorm, FLAGS_norm_sqnorm);
-  asrCriterion_ = std::make_shared<fl::app::asr::CTCLoss>(scalemode);
-  FL_LOG_MASTER(INFO) << "[ASR Criterion] "
-                      << asrCriterionLinear_->prettyString() << " + "
-                      << asrCriterion_->prettyString();
+  // asrCriterionLinear_ =
+  //     std::make_shared<Linear>(FLAGS_loss_adsm_input_size, numClasses_,
+  //     false);
+  // auto scalemode =
+  //     fl::app::asr::getCriterionScaleMode(FLAGS_norm_onorm,
+  //     FLAGS_norm_sqnorm);
+  // asrCriterion_ = std::make_shared<fl::app::asr::CTCLoss>(scalemode);
+  // FL_LOG_MASTER(INFO) << "[ASR Criterion] "
+  //                     << asrCriterionLinear_->prettyString() << " + "
+  //                     << asrCriterion_->prettyString();
 
   // LM
-  if (FLAGS_loss_type == "adsm") {
-    if (lmDictionary_.entrySize() == 0) {
-      throw std::runtime_error(
-          "Dictionary is empty, number of classes is zero");
-    }
-    auto softmax = std::make_shared<fl::AdaptiveSoftMax>(
-        FLAGS_loss_adsm_input_size, parseCutoffs(lmDictionary_.entrySize()));
-    lmCriterion_ = std::make_shared<fl::AdaptiveSoftMaxLoss>(
-        softmax, fl::ReduceMode::SUM, kPadIdx_);
-  } else if (FLAGS_loss_type == "ce") {
-    lmCriterion_ = std::make_shared<fl::CategoricalCrossEntropy>(
-        fl::ReduceMode::SUM, kPadIdx_);
-  } else {
-    throw std::runtime_error(
-        "Criterion is not supported, check 'loss_type' flag possible values");
-  }
+  // if (FLAGS_loss_type == "adsm") {
+  //   if (lmDictionary_.entrySize() == 0) {
+  //     throw std::runtime_error(
+  //         "Dictionary is empty, number of classes is zero");
+  //   }
+  //   auto softmax = std::make_shared<fl::AdaptiveSoftMax>(
+  //       FLAGS_loss_adsm_input_size, parseCutoffs(lmDictionary_.entrySize()));
+  //   lmCriterion_ = std::make_shared<fl::AdaptiveSoftMaxLoss>(
+  //       softmax, fl::ReduceMode::SUM, kPadIdx_);
+  // } else if (FLAGS_loss_type == "ce") {
+  //   lmCriterion_ = std::make_shared<fl::CategoricalCrossEntropy>(
+  //       fl::ReduceMode::SUM, kPadIdx_);
+  // } else {
+  //   throw std::runtime_error(
+  //       "Criterion is not supported, check 'loss_type' flag possible
+  //       values");
+  // }
+
+  lmCriterion_ = std::make_shared<fl::app::asr::TransformerCriterion>(
+      fl::app::asr::buildTransformerCriterion(
+          lmDictionary_.entrySize(),
+          FLAGS_decoder_tr_layers,
+          FLAGS_decoder_tr_dropout,
+          FLAGS_decoder_tr_layerdrop,
+          lmDictionary_.getIndex(fl::lib::text::kEosToken)));
   FL_LOG_MASTER(INFO) << "[LM Criterion] " << lmCriterion_->prettyString();
 }
 
 void Trainer::collectParameters() {
   parameters_ = encoder_->params();
-  const auto& asrFrontEndParams = asrFrontEnd_->params();
-  parameters_.insert(
-      parameters_.end(), asrFrontEndParams.begin(), asrFrontEndParams.end());
-  const auto& lmFrontEndParams = lmFrontEnd_->params();
-  parameters_.insert(
-      parameters_.end(), lmFrontEndParams.begin(), lmFrontEndParams.end());
-  const auto& asrCriterionLinearParams = asrCriterionLinear_->params();
-  parameters_.insert(
-      parameters_.end(),
-      asrCriterionLinearParams.begin(),
-      asrCriterionLinearParams.end());
-  const auto& asrCriterionParams = asrCriterion_->params();
-  parameters_.insert(
-      parameters_.end(), asrCriterionParams.begin(), asrCriterionParams.end());
+  // const auto& asrFrontEndParams = asrFrontEnd_->params();
+  // parameters_.insert(
+  //     parameters_.end(), asrFrontEndParams.begin(), asrFrontEndParams.end());
+  // // const auto& lmFrontEndParams = lmFrontEnd_->params();
+  // // parameters_.insert(
+  // //     parameters_.end(), lmFrontEndParams.begin(),
+  // lmFrontEndParams.end());
+  // // const auto& asrCriterionLinearParams = asrCriterionLinear_->params();
+  // // parameters_.insert(
+  // //     parameters_.end(),
+  // //     asrCriterionLinearParams.begin(),
+  // //     asrCriterionLinearParams.end());
+  // // const auto& asrCriterionParams = asrCriterion_->params();
+  // // parameters_.insert(
+  // //     parameters_.end(), asrCriterionParams.begin(),
+  // asrCriterionParams.end());
   const auto& lmCriterionParams = lmCriterion_->params();
   parameters_.insert(
       parameters_.end(), lmCriterionParams.begin(), lmCriterionParams.end());
@@ -916,21 +868,34 @@ void Trainer::collectParameters() {
 void Trainer::createOptimizer() {
   collectParameters();
   if (FLAGS_train_optimizer == "nag") {
-    optimizer_ = std::make_shared<fl::NAGOptimizer>(
-        parameters_,
+    ecdOptimizer_ = std::make_shared<fl::NAGOptimizer>(
+        encoder_->params(),
+        FLAGS_train_lr,
+        FLAGS_train_momentum,
+        FLAGS_train_weight_decay);
+    critOptimizer_ = std::make_shared<fl::NAGOptimizer>(
+        lmCriterion_->params(),
         FLAGS_train_lr,
         FLAGS_train_momentum,
         FLAGS_train_weight_decay);
   } else if (FLAGS_train_optimizer == "sgd") {
-    optimizer_ = std::make_shared<fl::SGDOptimizer>(
-        parameters_,
+    ecdOptimizer_ = std::make_shared<fl::SGDOptimizer>(
+        encoder_->params(),
+        FLAGS_train_lr,
+        FLAGS_train_momentum,
+        FLAGS_train_weight_decay,
+        false);
+    critOptimizer_ = std::make_shared<fl::SGDOptimizer>(
+        lmCriterion_->params(),
         FLAGS_train_lr,
         FLAGS_train_momentum,
         FLAGS_train_weight_decay,
         false);
   } else if (FLAGS_train_optimizer == "adagrad") {
-    optimizer_ = std::make_shared<fl::AdagradOptimizer>(
-        parameters_, FLAGS_train_lr, 1e-8, FLAGS_train_weight_decay);
+    ecdOptimizer_ = std::make_shared<fl::AdagradOptimizer>(
+        encoder_->params(), FLAGS_train_lr, 1e-8, FLAGS_train_weight_decay);
+    critOptimizer_ = std::make_shared<fl::AdagradOptimizer>(
+        lmCriterion_->params(), FLAGS_train_lr, 1e-8, FLAGS_train_weight_decay);
   } else {
     throw std::runtime_error(
         "Optimizer is not supported, check 'train_optimizer' flag possible values");
@@ -1050,20 +1015,22 @@ void Trainer::setLr() {
           "LR schedule is not supported, check train_lr_schedule flag possible values");
     }
   }
-  optimizer_->setLr(lr_);
+  // optimizer_->setLr(lr_);
+  ecdOptimizer_->setLr(lr_);
+  critOptimizer_->setLr(lr_);
 }
 
 void Trainer::reduceGrads() {
   collectParameters();
   if (reducer_) {
-    for (auto& p : parameters_) {
-      if (!p.isGradAvailable()) {
-        p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
-      }
-      auto& grad = p.grad().array();
-      p.grad().array() = grad;
-      reducer_->add(p.grad());
-    }
+    // for (auto& p : parameters_) {
+    //   if (!p.isGradAvailable()) {
+    //     p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
+    //   }
+    //   auto& grad = p.grad().array();
+    //   p.grad().array() = grad;
+    //   reducer_->add(p.grad());
+    // }
     reducer_->finalize();
   }
 }
@@ -1076,7 +1043,8 @@ void Trainer::evalWer(
 
   for (int b = 0; b < batchSize; ++b) {
     auto viterbiPath = fl::ext::afToVector<int>(
-        asrCriterion_->viterbiPath(output(af::span, af::span, b)));
+        lmCriterion_->viterbiPath(output(af::span, af::span, b)));
+    // asrCriterion_->viterbiPath(output(af::span, af::span, b)));
     auto rawTarget = fl::ext::afToVector<int>(target(af::span, b));
 
     // Remove `-1`s appended to the target for batching (if any)
@@ -1258,12 +1226,14 @@ void Trainer::saveCheckpoint(const std::string& path, const std::string& suffix)
       path,
       FL_APP_JOINT_VERSION,
       encoder_,
-      asrFrontEnd_,
-      lmFrontEnd_,
-      asrCriterionLinear_,
-      asrCriterion_,
+      // asrFrontEnd_,
+      // lmFrontEnd_,
+      // asrCriterionLinear_,
+      // asrCriterion_,
       lmCriterion_,
-      optimizer_,
+      // optimizer_,
+      ecdOptimizer_,
+      critOptimizer_,
       asrEpoch_,
       lmEpoch_,
       batchIdx_,
@@ -1278,12 +1248,14 @@ void Trainer::saveCheckpoint(const std::string& path, const std::string& suffix)
         path + suffix,
         FL_APP_JOINT_VERSION,
         encoder_,
-        asrFrontEnd_,
-        lmFrontEnd_,
-        asrCriterionLinear_,
-        asrCriterion_,
+        // asrFrontEnd_,
+        // lmFrontEnd_,
+        // asrCriterionLinear_,
+        // asrCriterion_,
         lmCriterion_,
-        optimizer_,
+        // optimizer_,
+        ecdOptimizer_,
+        critOptimizer_,
         asrEpoch_,
         lmEpoch_,
         batchIdx_,
@@ -1389,6 +1361,107 @@ std::string Trainer::getProgress() const {
   }
   return status;
 }
+
+#if 0
+void Trainer::evalLM() {
+  FL_LOG_MASTER(INFO) << "LM evaluation started.";
+  asrFrontEnd_->eval();
+  lmFrontEnd_->eval();
+  encoder_->eval();
+  asrCriterionLinear_->eval();
+  asrCriterion_->eval();
+  lmCriterion_->eval();
+
+  int cnt = 0;
+  for (const auto& set : lmValidDatasets_) {
+    const auto tag = set.first;
+    const auto validDataset = set.second;
+
+    for (const auto& batch : *validDataset) {
+      if (cnt++ == 100) {
+        break;
+      }
+      fl::Variable input, target;
+      std::tie(input, target) = getInputAndTarget(batch);
+      af::array inputSizes = af::flat(af::sum(input.array() != kPadIdx_, 0));
+      auto output = lmFrontEnd_->forward({input}).front();
+      output = forwardSequentialModuleWithPadMask(
+          output, encoder_, inputSizes, true, output.dims(1), output.dims(2));
+      if (!FLAGS_dictionary_wordlm) {
+        if (FLAGS_loss_type != "ce") {
+          throw std::runtime_error("FLAGS_loss_type != ce");
+        }
+        output = asrCriterionLinear_->forward({output}).front();
+        output = logSoftmax(output, 0);
+      }
+
+      for (int b = 0; b < output.dims(2); ++b) {
+        auto viterbiPath = fl::ext::afToVector<int>(
+            asrCriterion_->viterbiPath(output.array()(af::span, af::span, b)));
+        auto rawTarget = fl::ext::afToVector<int>(target.array()(af::span, b));
+
+        std::cout << "\n|T|: ";
+        for (auto& word : rawTarget) {
+          std::cout << tokenDictionary_.getEntry(word) << " ";
+        }
+        std::cout << "\n|P|: ";
+        for (auto& word : viterbiPath) {
+          std::cout << tokenDictionary_.getEntry(word) << " ";
+        }
+        std::cout << "\n---";
+      }
+    }
+  }
+}
+
+void Trainer::evalASR() {
+  FL_LOG_MASTER(INFO) << "ASR evaluation started.";
+  asrFrontEnd_->eval();
+  lmFrontEnd_->eval();
+  encoder_->eval();
+  asrCriterionLinear_->eval();
+  asrCriterion_->eval();
+  lmCriterion_->eval();
+
+  for (const auto& set : asrValidDatasets_) {
+    const auto tag = set.first;
+    const auto validDataset = set.second;
+
+    int cnt = 0;
+    for (const auto& batch : *validDataset) {
+      if (cnt++ == 100) {
+        break;
+      }
+      auto input = fl::input(batch[fl::app::asr::kInputIdx]);
+      auto target = fl::noGrad(batch[fl::app::asr::kTargetIdx]);
+      auto inputSizes = batch[fl::app::asr::kDurationIdx];
+
+      auto output =
+          forwardSequentialModuleWithPadMask(input, asrFrontEnd_, inputSizes);
+      output = ext::forwardSequentialModuleWithPadMask(
+          output, encoder_, inputSizes, false, output.dims(1), output.dims(2));
+      output = asrCriterionLinear_->forward({output}).front();
+
+      for (int b = 0; b < output.dims(2); ++b) {
+        auto viterbiPath = fl::ext::afToVector<int>(
+            asrCriterion_->viterbiPath(output.array()(af::span, af::span, b)));
+        auto rawTarget = fl::ext::afToVector<int>(target.array()(af::span, b));
+
+        std::cout << "\n|T|: ";
+        for (auto& word : rawTarget) {
+          std::cout << tokenDictionary_.getEntry(word) << " ";
+        }
+        std::cout << "\n|P|: ";
+        for (auto& word : viterbiPath) {
+          std::cout << tokenDictionary_.getEntry(word) << " ";
+        }
+        std::cout << "\n---";
+      }
+    }
+  }
+}
+#endif
+
 } // namespace joint
 } // namespace app
 } // namespace fl
