@@ -68,8 +68,8 @@ ImageTransform compose(std::vector<ImageTransform> transformfns);
 ImageTransform randomEraseTransform(
     const float p = 0.5,
     const float areaRatioMin = 0.02,
-    const float areaRatioMax = 0.4,
-    const float edgeRatioMin = 0.3,
+    const float areaRatioMax = 0.333,
+    const float edgeRatioMin = 0.333,
     const float edgeRatioMax = 3);
 
 /* Randon Augmentation */

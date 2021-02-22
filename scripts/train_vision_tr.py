@@ -99,7 +99,8 @@ def _get_slrum_params(partition='learnfair',
     slrum_params['signal'] = 'B:USR1@200'
     slrum_params['comment'] = 'flashlight_h2_release'
     slrum_params['open-mode'] = 'append'
-
+    slrum_params['exclude'] = 'learnfair5054,learnfair5057,learnfair5112,learnfair5167,learnfair5237,learnfair5262,learnfair5289,learnfair5290,learnfair5060,learnfair5104,learnfair5179,learnfair5182,learnfair5271,learnfair5278,learnfair5287,learnfair5288'
+    
     return slrum_params
 
 

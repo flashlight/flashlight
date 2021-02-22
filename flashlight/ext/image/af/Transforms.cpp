@@ -174,17 +174,19 @@ ImageTransform randomEraseTransform(
   return [p, areaRatioMin, areaRatioMax, edgeRatioMin, edgeRatioMax](
              const af::array& in) {
     if (p < static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX)) {
+      std::cout << 1 << std::endl;
       return in;
     }
 
     const int w = in.dims(0);
     const int h = in.dims(1);
     const int c = in.dims(2);
-    float s = w * h * randomFloat(areaRatioMin, areaRatioMax);
-    float r = randomFloat(edgeRatioMin, edgeRatioMax);
 
     af::array out = in;
     for (int i = 0; i < 10; i++) {
+      float s = w * h * randomFloat(areaRatioMin, areaRatioMax);
+      float r =
+          std::exp(randomFloat(std::log(edgeRatioMin), std::log(edgeRatioMax)));
       int maskW = std::round(std::sqrt(s * r));
       int maskH = std::round(std::sqrt(s / r));
       if (maskW >= w || maskH >= h) {
@@ -193,8 +195,9 @@ ImageTransform randomEraseTransform(
 
       const int x = std::rand() % (w - maskW);
       const int y = std::rand() % (h - maskH);
-      af::array fillValue =
-          (af::randu(af::dim4(maskW, maskH, c)) * 255).as(in.type());
+      // af::array fillValue =
+      //     (af::randu(af::dim4(maskW, maskH, c)) * 255).as(in.type());
+      af::array fillValue = af::randn(af::dim4(maskW, maskH, c), in.type());
 
       out(af::seq(x, x + maskW - 1),
           af::seq(y, y + maskH - 1),
@@ -203,6 +206,7 @@ ImageTransform randomEraseTransform(
       break;
     }
     out.eval();
+    std::cout << af::allTrue<bool>(out == in) << std::endl;
     return out;
   };
 };
@@ -219,36 +223,65 @@ ImageTransform randomAugmentationTransform(const float p, const int n) {
         continue;
       }
 
-      int mode = std::floor(randomFloat(0, 14));
-      if (mode < 4) {
+      int mode = std::floor(randomFloat(0, 11));
+      if (mode < 1) {
+        // rotate
         float theta = randomFloat(0.13 * pi, 0.19 * pi);
         theta = randomNegate(theta);
         res = af::rotate(res, theta);
-      } else if (mode < 6) {
+      } else if (mode < 2) {
+        // skew
         float theta = randomFloat(0.13 * pi, 0.19 * pi);
         theta = randomNegate(theta);
         res = af::skew(res, theta, 0);
-      } else if (mode < 8) {
+      } else if (mode < 3) {
+        // skew
         float theta = randomFloat(0.13 * pi, 0.19 * pi);
         theta = randomNegate(theta);
         res = af::skew(res, 0, theta);
-      } else if (mode < 10) {
+      } else if (mode < 4) {
+        // translate
         int shift = h * randomFloat(0.22, 0.27);
         shift = randomNegate(shift);
         res = af::translate(res, shift, 0);
-      } else if (mode < 12) {
+      } else if (mode < 5) {
+        // translate
         int shift = h * randomFloat(0.22, 0.27);
         shift = randomNegate(shift);
         res = af::translate(res, 0, shift);
-      } else if (mode < 13) {
+      } else if (mode < 6) {
+        // color
         float enhance = randomFloat(0, 2);
         auto meanPic = af::mean(res, 2);
         meanPic = af::tile(meanPic, af::dim4(1, 1, c));
         res = af::clamp(meanPic + enhance * (res - meanPic), 0., 255.);
-      } else {
+      } else if (mode < 7) {
+        // brightness
         float enhance = randomFloat(0.4, 1.6);
         res = af::clamp(res * enhance, 0., 255.);
+      } else if (mode < 8) {
+        // invert
+        res = 255 - res;
+      } else if (mode < 9) {
+        // solarize
+        auto mask = (res > 230.).as(in.type());
+        res = mask * res + (1 - mask) * (255 - res);
+      } else if (mode < 10) {
+        // equalize
+        res = flat(res);
+        auto hist = af::histogram(res, 128);
+        res = af::histEqual(res, hist);
+        res = moddims(res, in.dims());
+      } else if (mode < 11) {
+        // posterize
+        int mask = ~31;
+        res = res.as(s32) & mask;
       }
+
+      // TODO:
+      // - autocontrast
+      // - Sharpness
+      // - Contrast
 
       res = res.as(in.type());
     }

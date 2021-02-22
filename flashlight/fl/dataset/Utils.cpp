@@ -137,46 +137,27 @@ std::vector<af::array> makeBatchFromRange(
       buffer[i].emplace_back(fds[i]);
     }
   }
-
-  // shuffle order,
-  std::mt19937_64 rng(start);
-  auto n = buffer[0].size();
-  std::vector<int64_t> indices(n);
-  std::iota(indices.begin(), indices.end(), 0);
-  for (auto i = n; i >= 1; --i) {
-    std::swap(indices[i - 1], indices[rng() % n]);
-  }
-
   std::vector<af::array> result(buffer.size());
   for (int64_t i = 0; i < buffer.size(); ++i) {
-    result[i] = makeBatch(
-        buffer[i], (i < batchFns.size()) ? batchFns[i] : nullptr, indices);
+    result[i] =
+        makeBatch(buffer[i], (i < batchFns.size()) ? batchFns[i] : nullptr);
   }
   return result;
 }
 
 af::array makeBatch(
     const std::vector<af::array>& data,
-    const Dataset::BatchFunction& batchFn,
-    const std::vector<int64_t>& indices) {
+    const Dataset::BatchFunction& batchFn) {
   if (batchFn) {
     return batchFn(data);
   }
-
   // Using default batching function
   if (data.empty()) {
     return af::array();
   }
-
-  if (data.size() != indices.size()) {
-    throw std::invalid_argument(
-        "wtf! data: " + std::to_string(data.size()) +
-        ", indicies: " + std::to_string(indices.size()));
-  }
-
   auto dims = data[0].dims();
-  for (const auto& i : indices) {
-    auto& d = data[i];
+
+  for (const auto& d : data) {
     if (d.dims() != dims) {
       throw std::invalid_argument("dimension mismatch while batching dataset");
     }
@@ -190,11 +171,10 @@ af::array makeBatch(
   dims[ndims] = data.size();
   auto batcharr = af::array(dims, data[0].type());
 
-  // for (const auto& i : indices) {
-  for (int i = 0; i < indices.size(); i++) {
+  for (size_t i = 0; i < data.size(); ++i) {
     std::array<af::seq, 4> sel{af::span, af::span, af::span, af::span};
     sel[ndims] = af::seq(i, i);
-    batcharr(sel[0], sel[1], sel[2], sel[3]) = data[indices[i]];
+    batcharr(sel[0], sel[1], sel[2], sel[3]) = data[i];
   }
   return batcharr;
 }

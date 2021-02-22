@@ -59,3 +59,7 @@ target_link_libraries(
   )
 install(TARGETS benchmark RUNTIME DESTINATION ${FL_INSTALL_BIN_DIR})
 set_executable_output_directory(benchmark ${FL_BUILD_BINARY_OUTPUT_DIR}/imgclass)
+
+if (FL_BUILD_TESTS)
+  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test)
+endif ()

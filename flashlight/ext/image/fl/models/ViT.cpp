@@ -64,7 +64,7 @@ ViT::ViT(
         mlpSize_,
         nHeads_,
         pDropout,
-        pLayerDrop * (i + 1) / nLayers_));
+        pLayerDrop * i / (nLayers_ - 1)));
     add(transformers_.back());
   }
 

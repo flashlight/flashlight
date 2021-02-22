@@ -24,13 +24,18 @@
 int main(int argc, char** argv) {
   fl::init();
 
-#if 0
-  auto a = fl::VisionTransformer::initLinear(20, 20).array();
-  af_print(a);
-  af_print(max(a));
-  af_print(min(a));
+  auto a = fl::VisionTransformer::initLinear(1000, 1000).array();
+  auto res = fl::ext::afToVector<float>(a);
+  // af_print(a);
+  // af_print(max(a));
+  // af_print(min(a));
+  std::ofstream fout(
+      "/private/home/qiantong/tmp/fl_trunc_normal.bin", std::ios::binary);
+  fout.write((char*)res.data(), res.size() * sizeof(float));
+
   return 0;
 
+#if 0
   std::vector<float> weights = {1, 3, 4, 5, 2, 6};
   auto arr = af::array(3, 2, weights.data());
   af_print(arr);

@@ -24,12 +24,13 @@ DistributedDataset::DistributedDataset(
     BatchDatasetPolicy batchpolicy) {
   shuffle_ = std::make_shared<ShuffleDataset>(base);
   auto permfn = [worldSize, worldRank, nRepeated](int64_t idx) {
-    return (idx / nRepeated * worldSize) + worldRank;
+    return ((idx * worldSize) + worldRank) / nRepeated;
   };
 
   int partitionSize = shuffle_->size() / worldSize;
   int leftOver = shuffle_->size() % worldSize;
-  if (worldRank < leftOver) {
+  if (batchpolicy == fl::BatchDatasetPolicy::INCLUDE_LAST &&
+      worldRank < leftOver) {
     partitionSize++;
   }
   ds_ = std::make_shared<ResampleDataset>(shuffle_, permfn, partitionSize);

@@ -189,8 +189,9 @@ int main(int argc, char** argv) {
 
   af::setSeed(worldSize);
 
-  auto reducer =
-      std::make_shared<fl::CoalescingReducer>(1.0 / worldSize, true, true);
+  // auto reducer =
+  //     std::make_shared<fl::CoalescingReducer>(1.0 / worldSize, true, true);
+  auto reducer = std::make_shared<fl::InlineReducer>(1.0 / worldSize);
 
   //////////////////////////
   //  Create datasets
@@ -206,16 +207,18 @@ int main(int argc, char** argv) {
   // TransformDataset will apply each transform in a vector to the respective
   // af::array. Thus, we need to `compose` all of the transforms so are each
   // applied only to the image
-  ImageTransform trainTransforms = compose(
-      {// randomly resize shortest side of image between 256 to 480 for
-       // scale invariance
-       fl::ext::image::randomResizeTransform(randomResizeMin, randomResizeMax),
-       fl::ext::image::randomCropTransform(randomCropSize, randomCropSize),
-       fl::ext::image::randomAugmentationTransform(
-           FLAGS_train_p_randomeaug, FLAGS_train_n_randomeaug),
-       fl::ext::image::randomEraseTransform(FLAGS_train_p_randomerase),
-       fl::ext::image::randomHorizontalFlipTransform(horizontalFlipProb),
-       fl::ext::image::normalizeImage(mean, std)});
+  ImageTransform trainTransforms = compose({
+      // randomly resize shortest side of image between 256 to 480 for
+      // scale invariance
+      fl::ext::image::randomResizeTransform(randomResizeMin, randomResizeMax),
+      fl::ext::image::randomCropTransform(randomCropSize, randomCropSize),
+      fl::ext::image::randomHorizontalFlipTransform(horizontalFlipProb),
+      fl::ext::image::randomAugmentationTransform(
+          FLAGS_train_p_randomeaug, FLAGS_train_n_randomeaug),
+      fl::ext::image::normalizeImage(mean, std),
+      fl::ext::image::randomEraseTransform(FLAGS_train_p_randomerase)
+      // end
+  });
   ImageTransform valTransforms =
       compose({// Resize shortest side to 256, then take a center crop
                fl::ext::image::resizeTransform(randomResizeMin),
@@ -227,6 +230,7 @@ int main(int argc, char** argv) {
   auto labelMap = getImagenetLabels(labelPath);
   auto trainDataset = std::make_shared<fl::ext::image::DistributedDataset>(
       imagenetDataset(trainList, labelMap, {trainTransforms}),
+      // imagenetDataset(trainList, labelMap, {valTransforms}),
       worldRank,
       worldSize,
       batchSizePerGpu,
@@ -497,8 +501,8 @@ int main(int argc, char** argv) {
         inputs = noGrad(rawInput);
         example1Weight = (float)(x2 - x1) * (y2 - y1) / (w * h);
         // std::cout << example1Weight << std::endl;
-      // } else {
-      //   throw std::runtime_error("wtf no mix is used");
+        // } else {
+        //   throw std::runtime_error("wtf no mix is used");
       }
       inputs.eval();
 
@@ -540,6 +544,12 @@ int main(int argc, char** argv) {
         // Backprop, update the weights and then zero the gradients.
         bwdTimeMeter.resume();
         loss.backward();
+        for (auto& p : model->params()) {
+          // if (!p.isGradAvailable()) {
+          //   p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
+          // }
+          p.grad() = p.grad() / scaleFactor;
+        }
 
         if (FLAGS_distributed_enable) {
           // for (auto& p : model->params()) {
@@ -563,31 +573,29 @@ int main(int argc, char** argv) {
         bwdTimeMeter.stopAndIncUnit();
 
         optimTimeMeter.resume();
-        for (auto& p : model->params()) {
-          // if (!p.isGradAvailable()) {
-          //   p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
-          // }
-          p.grad() = p.grad() / scaleFactor;
-          if (FLAGS_fl_amp_use_mixed_precision &&
-              isBadArray(p.grad().array())) {
-            FL_LOG(INFO) << "Grad has NaN values in 3, in proc: "
-                         << fl::getWorldRank();
-            if (scaleFactor >= fl::kAmpMinimumScaleFactorValue) {
-              scaleFactor = scaleFactor / 2.0f;
-              FL_LOG(INFO) << "AMP: Scale factor decreased (grad). New value:\t"
-                           << scaleFactor;
-              retrySample = true;
-            } else {
-              FL_LOG(FATAL)
-                  << "Minimum loss scale reached: "
-                  << fl::kAmpMinimumScaleFactorValue
-                  << " with over/underflowing gradients. Lowering the "
-                  << "learning rate, using gradient clipping, or "
-                  << "increasing the batch size can help resolve "
-                  << "loss explosion.";
+        if (FLAGS_fl_amp_use_mixed_precision) {
+          for (auto& p : model->params()) {
+            if (isBadArray(p.grad().array())) {
+              FL_LOG(INFO) << "Grad has NaN values in 3, in proc: "
+                           << fl::getWorldRank();
+              if (scaleFactor >= fl::kAmpMinimumScaleFactorValue) {
+                scaleFactor = scaleFactor / 2.0f;
+                FL_LOG(INFO)
+                    << "AMP: Scale factor decreased (grad). New value:\t"
+                    << scaleFactor;
+                retrySample = true;
+              } else {
+                FL_LOG(FATAL)
+                    << "Minimum loss scale reached: "
+                    << fl::kAmpMinimumScaleFactorValue
+                    << " with over/underflowing gradients. Lowering the "
+                    << "learning rate, using gradient clipping, or "
+                    << "increasing the batch size can help resolve "
+                    << "loss explosion.";
+              }
+              scaleCounter = 1;
+              break;
             }
-            scaleCounter = 1;
-            break;
           }
         }
         if (retrySample) {
@@ -610,7 +618,6 @@ int main(int argc, char** argv) {
 
       // Compute and record the prediction error.
       int interval = 100;
-      double trainLoss = trainLossMeter.value()[0];
       if (idx && idx % interval == 0) {
         timeMeter.stop();
         fl::ext::syncMeter(trainLossMeter);
@@ -633,7 +640,8 @@ int main(int argc, char** argv) {
             << fl::lib::format("%.2f", bwdTimeMeter.value() * 1000)
             << " : Optimization Time(ms): "
             << fl::lib::format("%.2f", optimTimeMeter.value() * 1000)
-            << " | LR: " << opt.getLr() << ": Avg Train Loss: " << trainLoss
+            << " | LR: " << opt.getLr()
+            << ": Avg Train Loss: " << trainLossMeter.value()[0]
             << ": Train Top5 Accuracy( %): " << top5Acc.value()
             << ": Train Top1 Accuracy( %): " << top1Acc.value();
         top5Acc.reset();
