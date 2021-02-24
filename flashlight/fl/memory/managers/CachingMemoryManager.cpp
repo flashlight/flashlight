@@ -18,6 +18,8 @@
 #include <string>
 #include <vector>
 
+#include "flashlight/fl/common/Logging.h"
+
 namespace fl {
 
 namespace {
@@ -32,6 +34,11 @@ constexpr size_t kLargeBuffer =
 constexpr size_t kMinLargeAlloc =
     10485760; // allocations between 1 and 10 MiB may use kLargeBuffer
 constexpr size_t kRoundLarge = 2097152; // round up large allocs to 2 MiB
+
+// Environment variables names, specifying number of mega bytes as floats.
+constexpr const char* kMemRecyclingSize = "FL_MEM_RECYCLING_SIZE_MB";
+constexpr const char* kMemSplitSize = "FL_MEM_SPLIT_SIZE_MB";
+constexpr double kMB = static_cast<double>(1UL << 20);
 
 size_t roundSize(size_t size) {
   if (size < kMinBlockSize) {
@@ -70,6 +77,25 @@ std::string formatMemory(size_t bytes) {
   return bytesStr + " " + units[unitId];
 }
 
+/**
+ * Returns number of bytes as represented by the named environment variable. The
+ * variable is interperested as a float string specifying value in MBs. Returns
+ * defaultVal on failure to read the variable or parse its value.
+ */
+size_t getEnvAsBytesFromFloatMb(const char* name, size_t defaultVal) {
+  const char* env = std::getenv(name);
+  if (env) {
+    try {
+      const double mb = std::stod(env);
+      return std::round(mb * kMB);
+    } catch (std::exception& ex) {
+      FL_LOG(fl::ERROR) << "Invalid environment variable=" << name
+                        << " value=" << env;
+    }
+  }
+  return defaultVal;
+}
+
 } // namespace
 
 CachingMemoryManager::DeviceMemoryInfo::DeviceMemoryInfo(int id)
@@ -81,6 +107,16 @@ CachingMemoryManager::CachingMemoryManager(
     int numDevices,
     std::shared_ptr<MemoryManagerDeviceInterface> deviceInterface)
     : MemoryManagerAdapter(deviceInterface) {
+  recyclingSizeLimit_ =
+      getEnvAsBytesFromFloatMb(kMemRecyclingSize, recyclingSizeLimit_);
+  splitSizeLimit_ = getEnvAsBytesFromFloatMb(kMemSplitSize, splitSizeLimit_);
+
+  FL_LOG(fl::INFO) << "CachingMemoryManager recyclingSizeLimit_="
+                   << recyclingSizeLimit_ << " ("
+                   << formatMemory(recyclingSizeLimit_)
+                   << ") splitSizeLimit_=" << splitSizeLimit_ << " ("
+                   << formatMemory(splitSizeLimit_) << ')';
+
   for (int i = 0; i < numDevices; ++i) {
     deviceMemInfos_.emplace(
         i, std::make_unique<CachingMemoryManager::DeviceMemoryInfo>(i));
