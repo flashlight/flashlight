@@ -347,9 +347,7 @@ int main(int argc, char** argv) {
   int64_t validBatchSize =
       FLAGS_validbatchsize == -1 ? FLAGS_batchsize : FLAGS_validbatchsize;
   auto validInputTransform = inputFeatures(
-      featParams,
-      featType,
-      {FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx});
+      featParams, featType, {FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx});
   for (const auto& s : validTagSets) {
     validds[s.first] = createDataset(
         {s.second},
@@ -1000,6 +998,10 @@ int main(int argc, char** argv) {
       meters.train.wrdEdit.reset();
     };
 
+    auto params = ntwrk->params();
+    auto critparams = crit->params();
+    params.insert(params.end(), critparams.begin(), critparams.end());
+
     int64_t curBatch = startUpdate;
     unsigned int kScaleFactorUpdateInterval =
         FLAGS_fl_amp_scale_factor_update_interval;
@@ -1132,7 +1134,7 @@ int main(int argc, char** argv) {
             fl::allReduce(totalBatchSizeArr);
           }
           float totalBatchSize = totalBatchSizeArr.scalar<float>();
-          for (const auto& p : ntwrk->params()) {
+          for (const auto& p : params) {
             if (!p.isGradAvailable()) {
               continue;
             }
@@ -1165,24 +1167,15 @@ int main(int argc, char** argv) {
           }
 
           meters.train.loss.add((loss / scaleFactor).array());
-
-          for (const auto& p : crit->params()) {
-            if (!p.isGradAvailable()) {
-              continue;
-            }
-            p.grad() = p.grad() / (totalBatchSize * scaleFactor);
-          }
-
         } while (retrySample);
 
         // clamp gradients
         if (FLAGS_maxgradnorm > 0) {
-          auto params = ntwrk->params();
           if (clampCrit) {
-            auto critparams = crit->params();
-            params.insert(params.end(), critparams.begin(), critparams.end());
+            fl::clipGradNorm(params, FLAGS_maxgradnorm);
+          } else {
+            fl::clipGradNorm(ntwrk->params(), FLAGS_maxgradnorm);
           }
-          fl::clipGradNorm(params, FLAGS_maxgradnorm);
         }
 
         // update weights
