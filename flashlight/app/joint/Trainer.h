@@ -48,9 +48,10 @@ class Trainer {
   Trainer& operator=(const Trainer&) = delete;
 
   void runTraining();
-  void trainStep(
-      const std::vector<af::array>& asrBatch,
-      const std::vector<af::array>& lmBatch);
+  void trainAsrStep(
+      const std::vector<af::array>& batch);
+  void trainLmStep(
+      const std::vector<af::array>& batch);
 
   void runEvaluation();
   void evalStep();
@@ -109,7 +110,8 @@ class Trainer {
 
   // Meters
   fl::TimeMeter runTimeMeter_;
-  fl::TimeMeter batchTimerMeter_{true};
+  fl::TimeMeter asrBatchTimerMeter_{true};
+  fl::TimeMeter lmBatchTimerMeter_{true};
   fl::TimeMeter sampleTimerMeter_{true};
   fl::TimeMeter fwdTimeMeter_{true};
   fl::TimeMeter critFwdTimeMeter_{true};

@@ -207,6 +207,11 @@ DEFINE_int64(
     0,
     "Use warmup. Ramp learning rate from '--train_warmup_init_lr' till '--train_lr' \
     linearly during '--train_warmup_updates' number of updates.");
+DEFINE_int64(
+    train_lm_start_updates,
+    0,
+    "Use warmup. Ramp learning rate from '--train_warmup_init_lr' till '--train_lr' \
+    linearly during '--train_warmup_updates' number of updates.");
 DEFINE_double(
     train_warmup_init_lr,
     0.0,
@@ -426,6 +431,10 @@ DEFINE_int64(
     decoder_tr_pretrainWindow,
     1,
     "[train]: 'transformer' criterion decoder architecture: number of layers");
+DEFINE_int64(
+    decoder_tr_encoderdim,
+    0,
+    "[train]: Dimension of encoded hidden state for 'seq2seq' and 'transformer' criterions");
 } // namespace joint
 } // namespace app
 } // namespace fl

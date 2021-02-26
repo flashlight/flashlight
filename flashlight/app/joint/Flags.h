@@ -68,6 +68,7 @@ DECLARE_string(train_lm_frontend_arch_file);
 DECLARE_int64(train_seed);
 DECLARE_string(train_optimizer);
 DECLARE_int64(train_warmup_updates);
+DECLARE_int64(train_lm_start_updates);
 DECLARE_double(train_warmup_init_lr);
 DECLARE_double(train_lr);
 DECLARE_string(train_lr_schedule);
@@ -128,6 +129,8 @@ DECLARE_int64(decoder_tr_layers);
 DECLARE_double(decoder_tr_dropout);
 DECLARE_double(decoder_tr_layerdrop);
 DECLARE_int64(decoder_tr_pretrainWindow);
+DECLARE_int64(decoder_tr_encoderdim);
+
 } // namespace joint
 } // namespace app
 } // namespace fl

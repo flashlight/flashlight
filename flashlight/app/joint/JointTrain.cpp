@@ -15,6 +15,7 @@ using namespace fl::app::joint;
 using namespace fl::app::lm;
 
 int main(int argc, char** argv) {
+  fl::init();
   std::string mode = argv[1];
 
   /* Parse or load persistent states */
