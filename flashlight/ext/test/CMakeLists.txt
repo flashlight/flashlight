@@ -26,3 +26,11 @@ build_test(
   PREPROC "PLUGINDIR=\"${CMAKE_CURRENT_BINARY_DIR}\""
   )
 add_dependencies(ModulePluginTest test_module_plugin)
+
+if (FL_EXT_BUILD_HALIDE)
+  build_test(SRC ${DIR}/integrations/HalideTest.cpp LIBS ${LIBS})
+  fl_add_and_link_halide_lib(
+    SRC ${DIR}/integrations/HalideTestPipeline.cpp
+    NAME HalideTestPipeline
+    LINK_TO HalideTest)
+endif()
