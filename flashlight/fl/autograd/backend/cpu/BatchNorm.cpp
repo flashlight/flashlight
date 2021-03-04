@@ -36,7 +36,12 @@ Variable batchnorm(
     Variable& runningVar,
     const std::vector<int>& axes,
     bool train,
+    double momentum,
     double epsilon) {
+  if (input.type() == f16) {
+    throw std::runtime_error("Half precision is not supported in CPU.");
+  }
+
   auto output = af::array(input.dims(), input.type());
 
   int nfeatures = 1;
@@ -51,6 +56,9 @@ Variable batchnorm(
   if (runningMean.isempty()) {
     runningMean = Variable(af::constant(0.0, nfeatures, input.type()), false);
   }
+
+  Variable inputMean(runningMean.array().copy(), false);
+  Variable inputVar(runningVar.array().copy(), false);
 
   // Check if axes are valid
   auto maxAxis = *std::max_element(axes.begin(), axes.end());
@@ -109,9 +117,9 @@ Variable batchnorm(
   const detail::DnnlMemoryWrapper outputMemory(
       output, inputOutputDims, formatNCHW);
   const detail::DnnlMemoryWrapper meanMemory(
-      runningMean.array(), {runningMean.dims(0)}, formatX);
+      inputMean.array(), {inputMean.dims(0)}, formatX);
   const detail::DnnlMemoryWrapper varMemory(
-      runningVar.array(), {runningVar.dims(0)}, formatX);
+      inputVar.array(), {inputVar.dims(0)}, formatX);
   // combined scale and shift (weight and bias)
   const detail::DnnlMemoryWrapper weightsMemory(
       weightsDnnl, weightsDnnlDims, format2d);
@@ -141,6 +149,12 @@ Variable batchnorm(
   std::vector<std::unordered_map<int, dnnl::memory>> fwdArgs = {bnFwdArgs};
   network.push_back(bn);
   detail::executeNetwork(network, fwdArgs);
+
+  // Update running mean and variance using momentum
+  if (train) {
+    runningMean = (1 - momentum) * runningMean + momentum * inputMean;
+    runningVar = momentum * runningVar + (1 - momentum) * inputVar;
+  }
 
   /****************************************************************************/
   // Setup backward func
@@ -237,29 +251,6 @@ Variable batchnorm(
   };
 
   return Variable(output, {input, weight, bias}, gradFunc);
-}
-
-Variable batchnorm(
-    const Variable& input,
-    const Variable& weight,
-    const Variable& bias,
-    Variable& runningMean,
-    Variable& runningVar,
-    const std::vector<int>& axes,
-    bool train,
-    double momentum,
-    double epsilon) {
-  if (input.type() == f16) {
-    throw std::runtime_error("Half precision is not supported in CPU.");
-  }
-  // CPU backend DNNL doesn't support a momentum factor.
-  // If momentum is enabled, throw.
-  if (momentum == 0.0) {
-    return batchnorm(
-        input, weight, bias, runningMean, runningVar, axes, train, epsilon);
-  } else {
-    throw std::runtime_error("BatchNorm CPU backend doesn't support momentum.");
-  }
 }
 
 } // namespace fl

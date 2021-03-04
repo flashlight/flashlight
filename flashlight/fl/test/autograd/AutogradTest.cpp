@@ -1524,6 +1524,44 @@ TEST(AutogradTest, BatchNormTrainModeOutputSingleAxis) {
   ASSERT_TRUE(allClose(out.array(), expectedOut.array(), 1e-5));
 }
 
+TEST(AutogradTest, BatchNormTrainModeOutputSingleAxisMomentum) {
+  int numFeat = 3;
+  std::vector<int> featAxes = {2};
+  double momentum = 2.2;
+  double epsilon = 1E-5;
+  auto input = Variable(af::randu(13, 13, numFeat, 8), true);
+  af::print("input", input.array());
+  auto weight = Variable(af::randu(numFeat), true);
+  auto bias = Variable(af::randu(numFeat), true);
+  auto runningMean = Variable(af::randu(numFeat), false);
+  auto runningVar = Variable(af::randu(numFeat), false);
+
+  auto out = batchnorm(
+      input,
+      weight,
+      bias,
+      runningMean,
+      runningVar,
+      featAxes,
+      true,
+      momentum,
+      epsilon);
+
+  auto todim = af::dim4(1, 1, numFeat);
+  std::vector<int> nrm_axes = {0, 1, 3};
+  auto avg = moddims(mean(input, nrm_axes), todim);
+  auto variance =
+      moddims(var(input, nrm_axes, true /* population var */), todim);
+  auto expectedOut = (input - tileAs(avg, input)) /
+      fl::sqrt(tileAs(variance, input) + epsilon);
+  expectedOut = expectedOut * tileAs(moddims(weight, todim), input) +
+      tileAs(moddims(bias, todim), input);
+  ASSERT_TRUE(allClose(out.array(), expectedOut.array(), 1e-5));
+
+  af::print("runningMean momentum", runningMean.array());
+  af::print("runningVar momentum", runningVar.array());
+}
+
 TEST(AutogradTest, BatchNormTrainModeOutputMultipleAxis) {
   std::vector<int> featAxes = {0, 1, 2};
   auto input = Variable(af::randu(13, 13, 4, 8), true);
