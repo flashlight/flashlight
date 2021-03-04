@@ -20,14 +20,14 @@ int main(int argc, char** argv) {
 
   testFunc(x, y) = input(x, y) + sinVals(x, y) + offset;
 
-  Var x_outer, y_outer, x_inner, y_inner;
+  Var xOuter, yOuter, xInner, yInner;
   testFunc.gpu_tile(
       x,
       y,
-      x_outer,
-      y_outer,
-      x_inner,
-      y_inner,
+      xOuter,
+      yOuter,
+      xInner,
+      yInner,
       16, // blocks
       16, // threads
       Halide::TailStrategy::Auto,
