@@ -27,3 +27,7 @@ build_tool(
   ${CMAKE_CURRENT_LIST_DIR}/alignment/Align.cpp
   fl_asr_align
   )
+build_tool(
+  ${CMAKE_CURRENT_LIST_DIR}/benchmark/ArchBenchmark.cpp
+  fl_asr_arch_benchmark
+  )
