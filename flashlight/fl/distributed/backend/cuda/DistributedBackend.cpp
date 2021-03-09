@@ -13,7 +13,7 @@
 #include <mpi.h>
 #include <nccl.h>
 
-#include "flashlight/fl/common/CudaUtils.h"
+#include "flashlight/fl/common/backend/cuda/CudaUtils.h"
 #include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/common/DevicePtr.h"
 #include "flashlight/fl/distributed/DistributedApi.h"

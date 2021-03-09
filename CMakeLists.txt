@@ -77,6 +77,13 @@ else ()
   message(FATAL_ERROR "Invalid FLASHLIGHT backend specified")
 endif ()
 
+# Profiling
+# TODO: for now, profiling is only enabled with the CUDA backend -
+# can enable other profiling once an implementation is in place
+cmake_dependent_option(FL_BUILD_PROFILING
+  "Enable profiling with Flashlight" OFF
+  "FL_USE_CUDA" OFF)
+
 # List of installable targets
 set(INSTALLABLE_TARGETS "")
 
@@ -253,6 +260,7 @@ if (FL_BUILD_CORE)
     FL_BACKEND_CPU=$<BOOL:${FL_USE_CPU}>
     FL_BACKEND_CUDA=$<BOOL:${FL_USE_CUDA}>
     FL_BACKEND_OPENCL=$<BOOL:${FL_USE_OPENCL}>
+    FL_BUILD_PROFILING=$<BOOL:${FL_BUILD_PROFILING}>
     )
 
   # ------------------------ Extensions ------------------------

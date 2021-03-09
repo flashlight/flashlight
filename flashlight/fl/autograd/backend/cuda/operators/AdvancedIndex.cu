@@ -11,7 +11,7 @@
 
 #include "flashlight/fl/autograd/Variable.h"
 #include "flashlight/fl/common/CppBackports.h"
-#include "flashlight/fl/common/CudaUtils.h"
+#include "flashlight/fl/common/backend/cuda/CudaUtils.h"
 #include "flashlight/fl/common/DevicePtr.h"
 
 #define GRID_SIZE 32
