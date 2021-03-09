@@ -133,8 +133,8 @@ Flashlight can be built in one of two ways:
 
 Flashlight is most-easily built and installed with `vcpkg`. Both the CUDA and CPU backends are supported with `vcpkg`. For either backend, first install [Intel MKL](https://software.intel.com/content/www/us/en/develop/tools/oneapi/base-toolkit/download.html). For the CUDA backend, install [`CUDA` >= 9.2](https://developer.nvidia.com/cuda-downloads), [`cuDNN`](https://docs.nvidia.com/deeplearning/cudnn/install-guide/index.html), and [`NCCL`](https://docs.nvidia.com/deeplearning/nccl/install-guide/index.html). Then, after [installing `vcpkg`](https://github.com/microsoft/vcpkg#getting-started), install the libraries and core with:
 ```shell
-./vcpkg install flashlight-cuda # CUDA backend, OR
-./vcpkg install flashlight-cpu  # CPU backend
+./vcpkg/vcpkg install flashlight-cuda # CUDA backend, OR
+./vcpkg/vcpkg install flashlight-cpu  # CPU backend
 ```
 To install [Flashlight apps](flashlight/app), check the features available for installation by running `./vcpkg search flashlight-cuda` or `./vcpkg search flashlight-cpu`. Each app is a "feature": for example, `./vcpkg install flashlight-cuda[asr]` installs the ASR app with the CUDA backend.
 
