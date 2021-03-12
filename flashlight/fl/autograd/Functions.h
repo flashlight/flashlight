@@ -346,6 +346,8 @@ Variable sigmoid(const Variable& input);
  */
 Variable swish(const Variable& input, double beta);
 
+Variable erf(const Variable& input);
+
 /**
  * Returns element-wise maximum value of two Variables.
  * \f[ out = max(var_1, var_2) \f]

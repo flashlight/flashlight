@@ -7,6 +7,7 @@
 
 #include "flashlight/ext/image/af/Transforms.h"
 
+#include <ctime>
 #include <numeric>
 #include <random>
 
@@ -93,6 +94,8 @@ ImageTransform randomHorizontalFlipTransform(const float p) {
     if (static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX) > p) {
       const uint64_t w = in.dims(0);
       out = out(af::seq(w - 1, 0, -1), af::span, af::span, af::span);
+      // const uint64_t w = in.dims(1);
+      // out = out(af::span, af::seq(w - 1, 0, -1), af::span, af::span);
     }
     return out;
   };
@@ -174,7 +177,7 @@ ImageTransform randomEraseTransform(
   return [p, areaRatioMin, areaRatioMax, edgeRatioMin, edgeRatioMax](
              const af::array& in) {
     if (p < static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX)) {
-      std::cout << 1 << std::endl;
+      // std::cout << 1 << std::endl;
       return in;
     }
 
@@ -195,7 +198,8 @@ ImageTransform randomEraseTransform(
 
       const int x = std::rand() % (w - maskW);
       const int y = std::rand() % (h - maskH);
-      // af::array fillValue =
+      // std::cout << x << " " << y << " " << maskW << " " << maskH <<
+      // std::endl; af::array fillValue =
       //     (af::randu(af::dim4(maskW, maskH, c)) * 255).as(in.type());
       af::array fillValue = af::randn(af::dim4(maskW, maskH, c), in.type());
 
@@ -206,85 +210,149 @@ ImageTransform randomEraseTransform(
       break;
     }
     out.eval();
-    std::cout << af::allTrue<bool>(out == in) << std::endl;
+    // std::cout << af::allTrue<bool>(out == in) << std::endl;
     return out;
   };
 };
 
 ImageTransform randomAugmentationTransform(const float p, const int n) {
-  return [p, n](const af::array& in) {
+  const std::vector<float> mean = {0.485 * 256, 0.456 * 256, 0.406 * 256};
+  auto meanArr = af::array(1, 1, 3, 1, mean.data());
+  float delta = 1e-2;
+
+  return [p, n, delta, meanArr](const af::array& in) {
+    // std::srand(std::time(nullptr));
     const int w = in.dims(0);
     const int h = in.dims(1);
     const int c = in.dims(2);
+    auto background = af::tile(meanArr, w, h);
 
-    auto res = in;
+    auto res = in.as(f32);
     for (int i = 0; i < n; i++) {
       if (p < static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX)) {
         continue;
       }
 
-      int mode = std::floor(randomFloat(0, 11));
+      int mode = std::floor(randomFloat(0, 15 - 1e-5));
+      // std::cout << mode << std::endl;
       if (mode < 1) {
         // rotate
-        float theta = randomFloat(0.13 * pi, 0.19 * pi);
+        float theta = pi / 6 + randomFloat(-0.1, 0.1);
         theta = randomNegate(theta);
-        res = af::rotate(res, theta);
+        res = af::rotate(res + delta, theta);
+
+        auto mask = af::sum(res, 2) == 0;
+        mask = af::tile(mask, 1, 1, 3).as(f32);
+        res = mask * background + (1 - mask) * res - delta;
       } else if (mode < 2) {
         // skew
-        float theta = randomFloat(0.13 * pi, 0.19 * pi);
+        float theta = pi / 6 + randomFloat(-0.1, 0.1);
         theta = randomNegate(theta);
-        res = af::skew(res, theta, 0);
+        res = af::skew(res + delta, theta, 0);
+
+        auto mask = af::sum(res, 2) == 0;
+        mask = af::tile(mask, 1, 1, 3).as(f32);
+        res = mask * background + (1 - mask) * res - delta;
       } else if (mode < 3) {
         // skew
-        float theta = randomFloat(0.13 * pi, 0.19 * pi);
+        float theta = pi / 6 + randomFloat(-0.1, 0.1);
         theta = randomNegate(theta);
-        res = af::skew(res, 0, theta);
+        res = af::skew(res + delta, 0, theta);
+
+        auto mask = af::sum(res, 2) == 0;
+        mask = af::tile(mask, 1, 1, 3).as(f32);
+        res = mask * background + (1 - mask) * res - delta;
       } else if (mode < 4) {
         // translate
-        int shift = h * randomFloat(0.22, 0.27);
+        int shift = 100 + randomFloat(-10, 10);
         shift = randomNegate(shift);
-        res = af::translate(res, shift, 0);
+        res = af::translate(res + delta, shift, 0);
+
+        auto mask = af::sum(res, 2) == 0;
+        mask = af::tile(mask, 1, 1, 3).as(f32);
+        res = mask * background + (1 - mask) * res - delta;
       } else if (mode < 5) {
         // translate
-        int shift = h * randomFloat(0.22, 0.27);
+        int shift = 100 + randomFloat(-10, 10);
         shift = randomNegate(shift);
-        res = af::translate(res, 0, shift);
+        res = af::translate(res + delta, 0, shift);
+
+        auto mask = af::sum(res, 2) == 0;
+        mask = af::tile(mask, 1, 1, 3).as(f32);
+        res = mask * background + (1 - mask) * res - delta;
       } else if (mode < 6) {
         // color
-        float enhance = randomFloat(0, 2);
+        float enhance = .8 + randomFloat(-0.1, 0.1);
+        enhance = 1 + randomNegate(enhance);
         auto meanPic = af::mean(res, 2);
         meanPic = af::tile(meanPic, af::dim4(1, 1, c));
-        res = af::clamp(meanPic + enhance * (res - meanPic), 0., 255.);
+        res = meanPic + enhance * (res - meanPic);
       } else if (mode < 7) {
-        // brightness
-        float enhance = randomFloat(0.4, 1.6);
-        res = af::clamp(res * enhance, 0., 255.);
+        // auto contrast
+        auto minPic = res;
+        auto maxPic = res;
+        for (int j = 0; j < 3; j++) {
+          minPic = af::min(minPic, j);
+          maxPic = af::max(maxPic, j);
+        }
+        minPic = af::tile(minPic, af::dim4(w, h, c));
+        maxPic = af::tile(maxPic, af::dim4(w, h, c));
+        auto scale = 256. / (maxPic - minPic + 1);
+        res = scale * (res - minPic);
       } else if (mode < 8) {
+        // contrast
+        float enhance = .8 + randomFloat(-0.1, 0.1);
+        enhance = 1 + randomNegate(enhance);
+        auto meanPic = res;
+        for (int j = 0; j < 3; j++) {
+          meanPic = af::mean(meanPic, j);
+        }
+        meanPic = af::tile(meanPic, af::dim4(w, h, c));
+        res = meanPic + enhance * (res - meanPic);
+      } else if (mode < 9) {
+        // brightness
+        float enhance = .8 + randomFloat(-0.1, 0.1);
+        enhance = 1 + randomNegate(enhance);
+        res = res * enhance;
+      } else if (mode < 10) {
         // invert
         res = 255 - res;
-      } else if (mode < 9) {
+      } else if (mode < 11) {
         // solarize
-        auto mask = (res > 230.).as(in.type());
+        auto mask = (res < 26.).as(f32);
         res = mask * res + (1 - mask) * (255 - res);
-      } else if (mode < 10) {
+      } else if (mode < 12) {
+        // solarize
+        auto mask = (res < 128.).as(f32);
+        res = mask * (res + 100) + (1 - mask) * res;
+      } else if (mode < 13) {
         // equalize
         res = flat(res);
-        auto hist = af::histogram(res, 128);
+        auto hist = af::histogram(res, 256);
         res = af::histEqual(res, hist);
         res = moddims(res, in.dims());
-      } else if (mode < 11) {
+      } else if (mode < 14) {
         // posterize
-        int mask = ~31;
+        int mask = ~127; // 0x1f
         res = res.as(s32) & mask;
+      } else if (mode < 15) {
+        // sharpness
+        float enhance = 1.7 + randomFloat(-0.2, 0.2);
+        enhance = randomNegate(enhance);
+
+        auto meanPic = af::mean(res, 2);
+        auto blurKernel = af::gaussianKernel(7, 7);
+        auto blur = af::convolve(meanPic, blurKernel);
+        auto diff = af::tile(meanPic - blur, af::dim4(1, 1, c));
+
+        res = res + enhance * diff;
       }
 
-      // TODO:
-      // - autocontrast
-      // - Sharpness
-      // - Contrast
-
-      res = res.as(in.type());
+      res = res.as(f32);
+      res = af::clamp(res, 0., 255.);
     }
+    // std::cout << af::allTrue<bool>(res == in) << std::endl;
+    // res = res.as(in.type());
     return res;
   };
 }

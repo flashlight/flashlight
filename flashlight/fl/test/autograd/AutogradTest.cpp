@@ -494,6 +494,22 @@ TEST(AutogradTest, Sigmoid) {
       dx.array(), (af::sigmoid(x.array()) * (1 - af::sigmoid(x.array())))));
 }
 
+TEST(AutogradTest, Erf) {
+  auto x = Variable(af::randu(5), true);
+  auto y = erf(x);
+  ASSERT_TRUE(allClose(af::erf(x.array()), y.array()));
+
+  auto dy = Variable(af::constant(1.0, 5), false);
+  y.backward(dy);
+  const float pi = std::acos(-1);
+  auto targetGrads = 2 / std::sqrt(pi) * exp(negate(x * x));
+  auto dx = x.grad();
+  ASSERT_TRUE(allClose(dx.array(), targetGrads.array()));
+
+  auto func_erf = [](Variable& in) { return erf(in); };
+  ASSERT_TRUE(jacobianTestImpl(func_erf, x, 5e-4, 1e-4));
+}
+
 TEST(AutogradTest, Tanh) {
   auto x = Variable(af::randu(5), true);
   auto y = tanh(x);

@@ -187,11 +187,13 @@ int main(int argc, char** argv) {
   const int worldSize = fl::getWorldSize();
   const bool isMaster = (worldRank == 0);
 
-  af::setSeed(worldSize);
+  // af::setSeed(worldRank * 4399);
+  // af::setSeed(worldSize);
+  af::setSeed(worldRank);
+  std::srand(worldRank * 4399);
 
-  // auto reducer =
-  //     std::make_shared<fl::CoalescingReducer>(1.0 / worldSize, true, true);
-  auto reducer = std::make_shared<fl::InlineReducer>(1.0 / worldSize);
+  auto reducer =
+      std::make_shared<fl::CoalescingReducer>(1.0 / worldSize, true, true);
 
   //////////////////////////
   //  Create datasets
@@ -210,8 +212,11 @@ int main(int argc, char** argv) {
   ImageTransform trainTransforms = compose({
       // randomly resize shortest side of image between 256 to 480 for
       // scale invariance
-      fl::ext::image::randomResizeTransform(randomResizeMin, randomResizeMax),
-      fl::ext::image::randomCropTransform(randomCropSize, randomCropSize),
+      // fl::ext::image::c(randomResizeMin,
+      // randomResizeMax),
+      // fl::ext::image::randomCropTransform(randomCropSize, randomCropSize),
+      fl::ext::image::randomResizeCropTransform(
+          randomCropSize, 0.08, 1.0, 3. / 4., 4. / 3.),
       fl::ext::image::randomHorizontalFlipTransform(horizontalFlipProb),
       fl::ext::image::randomAugmentationTransform(
           FLAGS_train_p_randomeaug, FLAGS_train_n_randomeaug),
@@ -270,6 +275,8 @@ int main(int argc, char** argv) {
       FLAGS_train_dropout,
       FLAGS_train_layerdrop,
       1000);
+  // auto model = std::make_shared<fl::ext::image::ViT>(
+  //     "/private/home/qiantong/tmp/vitb_pt_init/");
   FL_LOG_MASTER(INFO) << "[model with parameters " << fl::numTotalParams(model)
                       << "] " << model->prettyString();
   // synchronize parameters of the model so that the parameters in each process
@@ -316,7 +323,7 @@ int main(int argc, char** argv) {
       // cosine decay
       lr = 1e-5 +
           0.5 * (FLAGS_train_lr - 1e-5) *
-              (std::cos(((double)epoch) / ((double)FLAGS_train_epochs) * pi) +
+              (std::cos(((double)epoch - 1) / ((double)FLAGS_train_epochs) * pi) +
                1);
     }
     opt.setLr(lr);
@@ -330,13 +337,14 @@ int main(int argc, char** argv) {
       [&model, &isMaster, &epoch, &batchIdx](const std::string& suffix = "") {
         if (isMaster) {
           std::string modelPath = FLAGS_exp_checkpoint_path + suffix;
-          LOG(INFO) << "Saving model to file: " << modelPath;
+          FL_LOG_MASTER(INFO) << "Saving model to file: " << modelPath;
           fl::save(modelPath, model, batchIdx, epoch);
         }
       };
 
   auto loadModel = [&model, &epoch, &batchIdx]() {
-    LOG(INFO) << "Loading model from file: " << FLAGS_exp_checkpoint_path;
+    FL_LOG_MASTER(INFO) << "Loading model from file: "
+                        << FLAGS_exp_checkpoint_path;
     fl::load(FLAGS_exp_checkpoint_path, model, batchIdx, epoch);
   };
   if (FLAGS_exp_checkpoint_epoch >= 0) {
@@ -350,7 +358,8 @@ int main(int argc, char** argv) {
   /////////////////////////
   if (FLAGS_fl_amp_use_mixed_precision) {
     // Only set the optim mode to O1 if it was left empty
-    LOG(INFO) << "Mixed precision training enabled. Will perform loss scaling.";
+    FL_LOG_MASTER(INFO)
+        << "Mixed precision training enabled. Will perform loss scaling.";
     if (FLAGS_fl_optim_mode.empty()) {
       // fl::OptimMode::get().setOptimLevel(fl::OptimLevel::O1);
       fl::OptimMode::get().setOptimLevel(fl::OptimLevel::DEFAULT);
@@ -375,6 +384,7 @@ int main(int argc, char** argv) {
   TopKMeter top1Acc(1);
   AverageValueMeter trainLossMeter;
   for (; epoch < FLAGS_train_epochs; epoch++) {
+    // std::cout << "---" << std::endl;
     trainDataset->resample(epoch);
     // trainDataset1->resample(epoch + 4399);
     std::mt19937_64 engine(epoch);
@@ -382,6 +392,7 @@ int main(int argc, char** argv) {
     // Get an iterator over the data
     timeMeter.resume();
     for (int idx = 0; idx < trainDataset->size(); idx++, batchIdx++) {
+      // std::cout << fl::getWorldRank() << ": " << scaleFactor << std::endl;
       Variable loss;
       sampleTimerMeter.resume();
 
@@ -511,6 +522,9 @@ int main(int argc, char** argv) {
 #endif
       af::sync();
       sampleTimerMeter.stopAndIncUnit();
+      // if (idx == 0) {
+      //   af_print(rawTarget(af::seq(0, 9)));
+      // }
 
       bool retrySample = false;
       do {
@@ -544,29 +558,7 @@ int main(int argc, char** argv) {
         // Backprop, update the weights and then zero the gradients.
         bwdTimeMeter.resume();
         loss.backward();
-        for (auto& p : model->params()) {
-          // if (!p.isGradAvailable()) {
-          //   p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
-          // }
-          p.grad() = p.grad() / scaleFactor;
-        }
-
         if (FLAGS_distributed_enable) {
-          // for (auto& p : model->params()) {
-          //   if (!p.isGradAvailable()) {
-          //     p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
-          //   }
-          //   if (isBadArray(p.grad().array())) {
-          //     FL_LOG(INFO) << "Grad has NaN values in 1, in proc: "
-          //                  << fl::getWorldRank();
-          //   }
-          //   p.grad() = p.grad() / scaleFactor;
-          //   if (isBadArray(p.grad().array())) {
-          //     FL_LOG(INFO) << "Grad has NaN values in 2, in proc: "
-          //                  << fl::getWorldRank();
-          //   }
-          //   reducer->add(p.grad());
-          // }
           reducer->finalize();
         }
         af::sync();
@@ -575,6 +567,7 @@ int main(int argc, char** argv) {
         optimTimeMeter.resume();
         if (FLAGS_fl_amp_use_mixed_precision) {
           for (auto& p : model->params()) {
+            p.grad() = p.grad() / scaleFactor;
             if (isBadArray(p.grad().array())) {
               FL_LOG(INFO) << "Grad has NaN values in 3, in proc: "
                            << fl::getWorldRank();
@@ -604,8 +597,6 @@ int main(int argc, char** argv) {
           continue;
         }
 
-        // top5Acc.add(output.array(), rawTarget);
-        // top1Acc.add(output.array(), rawTarget);
         trainLossMeter.add(loss.array() / scaleFactor);
       } while (retrySample);
 

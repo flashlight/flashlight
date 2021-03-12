@@ -108,55 +108,54 @@ TEST(DistributedDatasetTest, RepeatedAug) {
       // end
   });
   auto labelMap = getImagenetLabels(labelPath);
-  auto trainDataset1 = fl::ext::image::DistributedDataset(
-      imagenetDataset(trainList, labelMap, {trainTransforms}),
-      0, // worldRank,
-      3, // worldSize,
-      batchSizePerGpu,
-      3, // FLAGS_train_n_repeatedaug,
-      10, // FLAGS_data_prefetch_thread,
-      prefetchSize,
-      fl::BatchDatasetPolicy::INCLUDE_LAST);
-  auto trainDataset2 = fl::ext::image::DistributedDataset(
-      imagenetDataset(trainList, labelMap, {trainTransforms}),
-      1, // worldRank,
-      3, // worldSize,
-      batchSizePerGpu,
-      3, // FLAGS_train_n_repeatedaug,
-      10, // FLAGS_data_prefetch_thread,
-      prefetchSize,
-      fl::BatchDatasetPolicy::INCLUDE_LAST);
-  auto trainDataset3 = fl::ext::image::DistributedDataset(
-      imagenetDataset(trainList, labelMap, {trainTransforms}),
-      2, // worldRank,
-      3, // worldSize,
-      batchSizePerGpu,
-      3, // FLAGS_train_n_repeatedaug,
-      10, // FLAGS_data_prefetch_thread,
-      prefetchSize,
-      fl::BatchDatasetPolicy::INCLUDE_LAST);
+  auto imnet = imagenetDataset(trainList, labelMap, {trainTransforms});
 
-  af::array target1;
-  for (int i = 0; i < 10; i++) {
-    target1 = trainDataset1.get(i)[kImagenetTargetIdx];
-    auto target2 = trainDataset2.get(i)[kImagenetTargetIdx];
-    auto target3 = trainDataset3.get(i)[kImagenetTargetIdx];
-    // af_print(target1);
-    // af_print(target2);
-    // af_print(target3);
-    ASSERT_TRUE(af::allTrue<bool>(target1 == target2));
-    ASSERT_TRUE(af::allTrue<bool>(target1 == target3));
+  int worldSize = 8;
+  std::vector<fl::ext::image::DistributedDataset> datasets;
+  for (int i = 0; i < worldSize; i++) {
+    datasets.emplace_back(
+        imagenetDataset(trainList, labelMap, {trainTransforms}),
+        i, // worldRank,
+        worldSize, // worldSize,
+        10, // batchSizePerGpu,
+        3, // FLAGS_train_n_repeatedaug,
+        10, // FLAGS_data_prefetch_thread,
+        prefetchSize,
+        fl::BatchDatasetPolicy::INCLUDE_LAST);
   }
-  trainDataset1.resample(4399);
-  trainDataset2.resample(4399);
-  trainDataset3.resample(4399);
-  auto newTarget1 = trainDataset1.get(9)[kImagenetTargetIdx];
-  auto newTarget2 = trainDataset2.get(9)[kImagenetTargetIdx];
-  auto newTarget3 = trainDataset3.get(9)[kImagenetTargetIdx];
-  // af_print(newTarget1);
-  ASSERT_TRUE(!af::allTrue<bool>(target1 == newTarget1));
-  ASSERT_TRUE(af::allTrue<bool>(newTarget1 == newTarget2));
-  ASSERT_TRUE(af::allTrue<bool>(newTarget1 == newTarget3));
+
+  for (int e = 0; e < 10; e++) {
+    for (int i = 0; i < worldSize; i++) {
+      datasets[i].resample(e);
+    }
+  }
+
+  for (int i = 0; i < worldSize; i++) {
+    auto target = datasets[i].get(1)[kImagenetTargetIdx];
+    af_print(target);
+  }
+
+  // af::array target1;
+  // for (int i = 0; i < 10; i++) {
+  //   target1 = trainDataset1.get(i)[kImagenetTargetIdx];
+  //   auto target2 = trainDataset2.get(i)[kImagenetTargetIdx];
+  //   auto target3 = trainDataset3.get(i)[kImagenetTargetIdx];
+  //   // af_print(target1);
+  //   // af_print(target2);
+  //   // af_print(target3);
+  //   ASSERT_TRUE(af::allTrue<bool>(target1 == target2));
+  //   ASSERT_TRUE(af::allTrue<bool>(target1 == target3));
+  // }
+  // trainDataset1.resample(4399);
+  // trainDataset2.resample(4399);
+  // trainDataset3.resample(4399);
+  // auto newTarget1 = trainDataset1.get(9)[kImagenetTargetIdx];
+  // auto newTarget2 = trainDataset2.get(9)[kImagenetTargetIdx];
+  // auto newTarget3 = trainDataset3.get(9)[kImagenetTargetIdx];
+  // // af_print(newTarget1);
+  // ASSERT_TRUE(!af::allTrue<bool>(target1 == newTarget1));
+  // ASSERT_TRUE(af::allTrue<bool>(newTarget1 == newTarget2));
+  // ASSERT_TRUE(af::allTrue<bool>(newTarget1 == newTarget3));
 }
 
 int main(int argc, char** argv) {

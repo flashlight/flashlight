@@ -87,7 +87,7 @@ class Variable {
    * @param[in] calcGrad specifies whether to the gradient is required for this
    * Variable
    */
-  Variable(af::array data, bool calcGrad);
+  Variable(af::array data, bool calcGrad = true);
 
   /**
    * Creates a Variable which wraps the array and inputs specified

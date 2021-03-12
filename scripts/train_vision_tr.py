@@ -42,7 +42,7 @@ trap 'trap_handler USR1' USR1
 trap 'trap_handler TERM' TERM
 
 # 3. Your job
-srun {job_script}
+srun --label {job_script}
 
 # 4. sleep 60 days in the background
 sleep 5184000 &
@@ -99,7 +99,7 @@ def _get_slrum_params(partition='learnfair',
     slrum_params['signal'] = 'B:USR1@200'
     slrum_params['comment'] = 'flashlight_h2_release'
     slrum_params['open-mode'] = 'append'
-    slrum_params['exclude'] = 'learnfair5054,learnfair5057,learnfair5112,learnfair5167,learnfair5237,learnfair5262,learnfair5289,learnfair5290,learnfair5060,learnfair5104,learnfair5179,learnfair5182,learnfair5271,learnfair5278,learnfair5287,learnfair5288'
+    slrum_params['exclude'] = 'learnfair5054,learnfair5057,learnfair5112,learnfair5167,learnfair5237,learnfair5262,learnfair5289,learnfair5290,learnfair5060,learnfair5104,learnfair5179,learnfair5182,learnfair5271,learnfair5278,learnfair5287,learnfair5288,learnfair5027,learnfair5133,learnfair5149,learnfair5266,learnfair5047,learnfair5064,learnfair5093,learnfair5204,learnfair5038,learnfair5053,learnfair5281,learnfair5286,learnfair5029,learnfair5039,learnfair5150,learnfair5160,learnfair5163,learnfair5178,learnfair5221,learnfair5244,learnfair5148,learnfair5196,learnfair5185,learnfair5191,learnfair5166,learnfair5295,learnfair5107,learnfair5121,learnfair5102,learnfair5232,learnfair5058,learnfair5059,learnfair5101,learnfair5106,learnfair5239,learnfair5279,learnfair5201,learnfair5225,learnfair5297,learnfair5103,learnfair5140,learnfair5297,learnfair5298,learnfair5141,learnfair5189,learnfair5226,learnfair5074,learnfair5124,learnfair5071,learnfair5117,learnfair5130,learnfair5146,learnfair5164,learnfair5165'
     
     return slrum_params
 

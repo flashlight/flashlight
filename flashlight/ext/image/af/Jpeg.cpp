@@ -9,6 +9,8 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 namespace fl {
 namespace ext {
@@ -34,6 +36,20 @@ af::array loadJpeg(const std::string& fp, int desiredNumberOfChannels) {
   } else {
     throw std::invalid_argument("Could not load from filepath" + fp);
   }
+}
+
+void saveJpeg(const std::string& fp, const af::array& arr) {
+  auto w = arr.dims(0);
+  auto h = arr.dims(1);
+  auto c = arr.dims(2);
+  auto toOut = af::reorder(arr, 2, 0, 1).as(u8); // C x W x H
+
+  // std::cout << w << ", " << h << ", " << c << std::endl;
+  // std::cout << arr.elements() << std::endl;
+  std::vector<uint8_t> vec(arr.elements());
+  toOut.host(vec.data());
+
+  stbi_write_jpg(fp.c_str(), w, h, c, vec.data(), 100);
 }
 
 } // namespace image

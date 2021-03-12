@@ -22,6 +22,8 @@
 #include "flashlight/fl/optim/optim.h"
 #include "flashlight/lib/common/System.h"
 
+#include "flashlight/fl/common/threadpool/ThreadPool.h"
+
 DEFINE_string(data_dir, "", "Directory of imagenet data");
 DEFINE_uint64(data_batch_size, 256, "Batch size per gpus");
 DEFINE_string(exp_checkpoint_path, "/tmp/model", "Checkpointing prefix path");
@@ -39,11 +41,55 @@ int main(int argc, char** argv) {
   google::InstallFailureSignalHandler();
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
+  fl::ext::initDistributed(0, 1, 8, "");
+  af::info();
+  const int worldRank = fl::getWorldRank();
+  const int worldSize = fl::getWorldSize();
+  const bool isMaster = (worldRank == 0);
+
   // std::shared_ptr<fl::ext::image::ViT> model;
   // fl::load(FLAGS_exp_checkpoint_path, model);
 
   auto model = std::make_shared<fl::ext::image::ViT>(FLAGS_exp_checkpoint_path);
+#if 0
+  std::ifstream fin(
+      "/private/home/qiantong/tmp/vitb_pt/sample.bin", std::ios::binary);
+  if (!fin) {
+    throw std::runtime_error(" Error, Couldn't find the file");
+  }
 
+  fin.seekg(0, std::ios::end);
+  const size_t num_elements = fin.tellg() / sizeof(float);
+  fin.seekg(0, std::ios::beg);
+
+  std::vector<float> res(num_elements);
+  fin.read(reinterpret_cast<char*>(res.data()), num_elements * sizeof(float));
+
+  if (res.size() != 9633792) {
+    throw std::runtime_error("wrong size");
+  }
+  auto var = fl::Variable(af::array(af::dim4(224, 224, 3, 64), res.data()));
+  // af_print(var.array()(af::seq(0, 19), 0, 0, 0));
+  // af_print(var.array()(0, 0, af::span, 0));
+
+  model->eval();
+  auto out = model->forward({var}).front();
+  // return 0;
+  std::cout << out.dims() << std::endl;
+  af_print(out.array()(af::seq(0, 19), 0));
+
+  af::array randMatrixSorted, randMatrixSortedIndices;
+  // create random permutation
+  af::sort(
+      randMatrixSorted, randMatrixSortedIndices, out.array().as(f32), 0, false);
+  std::cout << randMatrixSortedIndices.dims() << std::endl;
+  std::cout << randMatrixSorted.dims() << std::endl;
+
+  af_print(randMatrixSortedIndices(0, af::seq(0, 19)));
+  af_print(randMatrixSorted(0, af::seq(0, 19)));
+
+  return 0;
+#endif
   const std::string labelPath = lib::pathsConcat(FLAGS_data_dir, "labels.txt");
   const std::string testList = lib::pathsConcat(FLAGS_data_dir, "val");
 
@@ -64,8 +110,8 @@ int main(int argc, char** argv) {
   auto labelMap = getImagenetLabels(labelPath);
   auto testDataset = fl::ext::image::DistributedDataset(
       imagenetDataset(testList, labelMap, {testTransforms}),
-      0,
-      1,
+      worldRank,
+      worldSize,
       FLAGS_data_batch_size,
       1,
       10,
@@ -88,6 +134,8 @@ int main(int argc, char** argv) {
     top5Acc.add(output.array(), target.array());
     top1Acc.add(output.array(), target.array());
   }
+  fl::ext::syncMeter(top5Acc);
+  fl::ext::syncMeter(top1Acc);
 
   FL_LOG_MASTER(INFO) << "Top 5 acc: " << top5Acc.value();
   FL_LOG_MASTER(INFO) << "Top 1 acc: " << top1Acc.value();

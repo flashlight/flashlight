@@ -15,6 +15,8 @@ namespace image {
 
 af::array loadJpeg(const std::string& fp, int desiredNumberOfChannels = 3);
 
+void saveJpeg(const std::string& fp, const af::array& arr);
+
 } // namespace image
 } // namespace ext
 } // namespace fl

@@ -18,9 +18,7 @@
 
 namespace {
 
-const float pi = std::acos(-1);
-const float geluConst1 = std::sqrt(2 / pi);
-const float geluConst2 = 0.044715;
+const float geluConst = 1 / std::sqrt(2);
 
 std::vector<float> readfloats(const std::string& filepath) {
   std::ifstream fin(filepath, std::ios::binary);
@@ -99,18 +97,22 @@ VisionTransformer::VisionTransformer(
 
 Variable VisionTransformer::gelu(const Variable& input) {
   // https://arxiv.org/pdf/1606.08415.pdf
-  auto res = input + geluConst2 * pow(input, 3).as(input.type());
-  res = 1. + tanh(geluConst1 * res).as(input.type());
-  res = 0.5 * input * res;
+  auto res = 0.5 * input * (1 + erf(input * geluConst));
   return res;
 }
 
 Variable VisionTransformer::mlp(const Variable& input) {
   float pDropout = train_ ? pDropout_ : 0.0;
   auto output = (*w1_)(input);
-  output = gelu(output);
+  // std::cout << " ++ " << 1 << " - \n";
+  // af_print(output.array()(af::seq(0, 9), 0, 0));
+  output = gelu(output.as(f32)).as(input.type());
+  // std::cout << " ++ " << 2 << " - \n";
+  // af_print(output.array()(af::seq(0, 9), 0, 0));
   output = dropout(output, pDropout);
   output = (*w2_)(output);
+  // std::cout << " ++ " << 3 << " - \n";
+  // af_print(output.array()(af::seq(0, 9), 0, 0));
   output = dropout(output, pDropout);
 
   return output;
@@ -176,21 +178,13 @@ std::vector<Variable> VisionTransformer::forward(
   }
 
   auto x = inputs.front();
-  auto output = x + dropPath(selfAttention((*norm1_)(x)));
-  output = output + dropPath(mlp((*norm2_)(output)));
-
-  // double pLayerdrop = train_ ? pLayerdrop_ : 0.0;
-  // float rand = 1. -
-  //     std::floor(pLayerdrop +
-  //                static_cast<float>(std::rand()) /
-  //                    static_cast<float>(RAND_MAX));
-  // auto output = x + rand * selfAttention((*norm1_)(x));
-  // rand = 1. -
-  //     std::floor(
-  //            pLayerdrop +
-  //            static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX));
-  // output = output + rand * mlp((*norm2_)(output));
-  return {output};
+  // std::cout << " + " << 1 << " - \n";
+  // af_print(x.array()(af::seq(0, 9), 0, 0));
+  x = x + dropPath(selfAttention((*norm1_)(x)));
+  // std::cout << " + " << 2 << " - \n";
+  // af_print(x.array()(af::seq(0, 9), 0, 0));
+  x = x + dropPath(mlp((*norm2_)(x)));
+  return {x};
 }
 
 std::string VisionTransformer::prettyString() const {
@@ -210,13 +204,15 @@ fl::Variable VisionTransformer::initLinear(int32_t inDim, int32_t outDim) {
   return truncNormal(af::dim4(outDim, inDim), 0.02);
 }
 
-VisionTransformer::VisionTransformer(const std::string& prefix)
+VisionTransformer::VisionTransformer(
+    const std::string& prefix,
+    float pLayerdrop)
     : modelDim_(768),
       headDim_(768 / 12),
       mlpDim_(768 * 4),
       nHeads_(12),
-      pDropout_(0.),
-      pLayerdrop_(0.) {
+      pDropout_(0.1),
+      pLayerdrop_(pLayerdrop) {
   auto w = readfloats(prefix + ".mlp.fc1.weight.bin");
   if (w.size() != 768 * 3072) {
     throw std::runtime_error(".mlp.fc1.weight.bin");
@@ -225,8 +221,8 @@ VisionTransformer::VisionTransformer(const std::string& prefix)
   if (b.size() != 3072) {
     throw std::runtime_error(".mlp.fc1.bias.bin");
   }
-  auto arr_w = fl::noGrad(af::array(3072, 768, w.data()));
-  auto arr_b = fl::noGrad(af::array(3072, b.data()));
+  auto arr_w = fl::Variable(af::array(3072, 768, w.data()));
+  auto arr_b = fl::Variable(af::array(3072, b.data()));
   w1_ = std::make_shared<Linear>(arr_w, arr_b);
 
   w = readfloats(prefix + ".mlp.fc2.weight.bin");
@@ -237,8 +233,8 @@ VisionTransformer::VisionTransformer(const std::string& prefix)
   if (b.size() != 768) {
     throw std::runtime_error(".mlp.fc2.bias.bin");
   }
-  arr_w = fl::noGrad(af::array(768, 3072, w.data()));
-  arr_b = fl::noGrad(af::array(768, b.data()));
+  arr_w = fl::Variable(af::array(768, 3072, w.data()));
+  arr_b = fl::Variable(af::array(768, b.data()));
   w2_ = std::make_shared<Linear>(arr_w, arr_b);
 
   w = readfloats(prefix + ".attn.qkv.weight.bin");
@@ -252,16 +248,22 @@ VisionTransformer::VisionTransformer(const std::string& prefix)
   auto all_w = af::array(2304, 768, w.data());
   auto all_b = af::array(2304, b.data());
 
-  arr_w = fl::noGrad(all_w(af::seq(0, 768 - 1), af::span));
-  arr_b = fl::noGrad(all_b(af::seq(0, 768 - 1)));
+  arr_w = fl::Variable(all_w(af::seq(0, 768 - 1), af::span));
+  arr_b = fl::Variable(all_b(af::seq(0, 768 - 1)));
+  arr_w.linear();
+  arr_b.linear();
   wq_ = std::make_shared<Linear>(arr_w, arr_b);
 
-  arr_w = fl::noGrad(all_w(af::seq(768, 2 * 768 - 1), af::span));
-  arr_b = fl::noGrad(all_b(af::seq(768, 2 * 768 - 1)));
+  arr_w = fl::Variable(all_w(af::seq(768, 2 * 768 - 1), af::span));
+  arr_b = fl::Variable(all_b(af::seq(768, 2 * 768 - 1)));
+  arr_w.linear();
+  arr_b.linear();
   wk_ = std::make_shared<Linear>(arr_w, arr_b);
 
-  arr_w = fl::noGrad(all_w(af::seq(2 * 768, 3 * 768 - 1), af::span));
-  arr_b = fl::noGrad(all_b(af::seq(2 * 768, 3 * 768 - 1)));
+  arr_w = fl::Variable(all_w(af::seq(2 * 768, 3 * 768 - 1), af::span));
+  arr_b = fl::Variable(all_b(af::seq(2 * 768, 3 * 768 - 1)));
+  arr_w.linear();
+  arr_b.linear();
   wv_ = std::make_shared<Linear>(arr_w, arr_b);
 
   w = readfloats(prefix + ".attn.proj.weight.bin");
@@ -272,8 +274,8 @@ VisionTransformer::VisionTransformer(const std::string& prefix)
   if (b.size() != 768) {
     throw std::runtime_error(".attn.proj.bias.bin");
   }
-  arr_w = fl::noGrad(af::array(768, 768, w.data()));
-  arr_b = fl::noGrad(af::array(768, b.data()));
+  arr_w = fl::Variable(af::array(768, 768, w.data()));
+  arr_b = fl::Variable(af::array(768, b.data()));
   wf_ = std::make_shared<Linear>(arr_w, arr_b);
 
   w = readfloats(prefix + ".norm1.weight.bin");
@@ -284,8 +286,8 @@ VisionTransformer::VisionTransformer(const std::string& prefix)
   if (b.size() != 768) {
     throw std::runtime_error(".norm1.bias.bin");
   }
-  arr_w = fl::noGrad(af::array(768, w.data()));
-  arr_b = fl::noGrad(af::array(768, b.data()));
+  arr_w = fl::Variable(af::array(768, w.data()));
+  arr_b = fl::Variable(af::array(768, b.data()));
   norm1_ =
       std::make_shared<LayerNorm>(std::vector<int>({0}), 1e-6, true, modelDim_);
   norm1_->setParams(arr_w, 0);
@@ -299,8 +301,8 @@ VisionTransformer::VisionTransformer(const std::string& prefix)
   if (b.size() != 768) {
     throw std::runtime_error(".norm2.bias.bin");
   }
-  arr_w = fl::noGrad(af::array(768, w.data()));
-  arr_b = fl::noGrad(af::array(768, b.data()));
+  arr_w = fl::Variable(af::array(768, w.data()));
+  arr_b = fl::Variable(af::array(768, b.data()));
   norm2_ =
       std::make_shared<LayerNorm>(std::vector<int>({0}), 1e-6, true, modelDim_);
   norm2_->setParams(arr_w, 0);

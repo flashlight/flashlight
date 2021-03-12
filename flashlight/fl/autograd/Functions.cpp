@@ -443,6 +443,21 @@ Variable swish(const Variable& input, double beta) {
   return input * sigmoid(beta * input);
 }
 
+Variable erf(const Variable& input) {
+  const float pi = std::acos(-1);
+  const float coefficient = 2 / std::sqrt(pi);
+
+  auto result = af::erf(input.array());
+  auto gradFunc = [coefficient](
+                      std::vector<Variable>& inputs,
+                      const Variable& gradOutput) {
+    auto x = inputs[0].array();
+    auto grad = gradOutput.array() * coefficient * af::exp(-(x * x));
+    inputs[0].addGrad(Variable(grad, false));
+  };
+  return Variable(result, {input}, gradFunc);
+}
+
 Variable transpose(const Variable& input) {
   auto result = af::transpose(input.array());
   auto gradFunc = [](std::vector<Variable>& inputs,
@@ -617,8 +632,9 @@ Variable mean(const Variable& input, const std::vector<int>& axes) {
         for (int i = 0; i < 4; i++) {
           count *= idims[i] / odims[i];
         }
-        inputs[0].addGrad(
-            Variable((tileAs(gradOutput, idims) / count).array().as(inputs[0].type()), false));
+        inputs[0].addGrad(Variable(
+            (tileAs(gradOutput, idims) / count).array().as(inputs[0].type()),
+            false));
       };
   return Variable(result, {input.withoutData()}, gradFunc);
 }
