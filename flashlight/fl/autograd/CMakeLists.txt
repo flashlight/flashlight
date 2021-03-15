@@ -102,7 +102,7 @@ if (FL_USE_OPENCL)
     ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/Conv2D.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/Pool2D.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/RNN.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/BatchNorm.cpp # generic
+    ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/BatchNorm.cpp
     )
 
   target_sources(
