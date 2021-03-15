@@ -98,10 +98,11 @@ endif ()
 if (FL_USE_OPENCL)
   set(
     AUTOGRAD_OPENCL_SOURCES
+    ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/operators/AdvancedIndex.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/Conv2D.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/Pool2D.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/RNN.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/backend/generic/BatchNorm.cpp # generic
+    ${CMAKE_CURRENT_LIST_DIR}/backend/opencl/BatchNorm.cpp # generic
     )
 
   target_sources(
