@@ -94,8 +94,16 @@ endif ()
 
 
 # OpenCL
-# TODO(jacobkahn): enable, with dependencies, when needed
 if (FL_USE_OPENCL)
+  include(OpenCLUtils)
+
+  # Scan for OpenCL kernels under the backend/opencl directory and copy them
+  # as c++ headers to [build directory]/opencl_kernels
+  opencl_add_kernels_in_dir_to_target(
+    DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/backend/opencl
+    TARGET flashlight
+    )
+
   set(
     AUTOGRAD_OPENCL_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/operators/AdvancedIndex.cpp

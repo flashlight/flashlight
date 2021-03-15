@@ -43,4 +43,22 @@ if (FL_USE_CUDA)
 endif()
 if (FL_USE_OPENCL)
   target_link_libraries(flashlight PUBLIC OpenCL::OpenCL)
+
+  add_executable(
+    opencl_syntax_and_header
+    ${PROJECT_SOURCE_DIR}/cmake/OpenCLSourceVerifierAndHeaderGen.cpp
+  )
+
+  target_include_directories(
+    opencl_syntax_and_header
+    PUBLIC
+    ${OpenCL_INCLUDE_DIRS}
+  )
+
+  target_link_libraries(
+    opencl_syntax_and_header
+    PUBLIC
+    ${OpenCL_LIBRARIES}
+    ArrayFire::afopencl
+  )
 endif()
