@@ -467,6 +467,11 @@ void NcclContext::initWithFileSystem(
   // initializing NCCL
   NCCLCHECK(ncclCommInitRank(&comm_, worldSize_, id, worldRank_));
 
+  // Remove the temporary file created for initialization
+  if (worldRank_ == 0) {
+    fs.clear(kNcclKey);
+  }
+
   createCudaResources();
 }
 
