@@ -7,7 +7,7 @@
 
 #include "flashlight/app/asr/criterion/ForceAlignmentCriterion.h"
 
-#include "flashlight/fl/common/cuda.h"
+#include "flashlight/fl/common/backend/cuda/cuda.h"
 
 #include "flashlight/app/asr/criterion/CriterionUtils.h"
 #include "flashlight/lib/sequence/criterion/cuda/ForceAlignmentCriterion.cuh"
