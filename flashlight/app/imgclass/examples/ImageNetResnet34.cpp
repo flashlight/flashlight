@@ -12,7 +12,7 @@
 #include <glog/logging.h>
 
 #include "flashlight/app/imgclass/dataset/Imagenet.h"
-#include "flashlight/ext/common/DistributedUtils.h"
+// #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/image/af/Transforms.h"
 #include "flashlight/ext/image/fl/dataset/DistributedDataset.h"
 #include "flashlight/ext/image/fl/models/Resnet.h"
@@ -54,7 +54,8 @@ using fl::ext::image::compose;
 using fl::ext::image::ImageTransform;
 using namespace fl::app::imgclass;
 
-#define FL_LOG_MASTER(lvl) LOG_IF(lvl, (fl::getWorldRank() == 0))
+int tmp_getWorldRank() { return 0; }
+#define FL_LOG_MASTER(lvl) LOG_IF(lvl, (tmp_getWorldRank() == 0))
 
 // Returns the average loss, top 5 error, and top 1 error
 std::tuple<double, double, double> evalLoop(
@@ -79,21 +80,21 @@ std::tuple<double, double, double> evalLoop(
     top1Acc.add(output.array(), target.array());
   }
   model->train();
-  fl::ext::syncMeter(lossMeter);
-  fl::ext::syncMeter(top5Acc);
-  fl::ext::syncMeter(top1Acc);
+  // fl::ext::syncMeter(lossMeter);
+  // fl::ext::syncMeter(top5Acc);
+  // fl::ext::syncMeter(top1Acc);
 
   double loss = lossMeter.value()[0];
   return std::make_tuple(loss, top5Acc.value(), top1Acc.value());
 };
 
 int main(int argc, char** argv) {
-  fl::init();
+  // fl::init();
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-  const std::string labelPath = lib::pathsConcat(FLAGS_data_dir, "labels.txt");
+  const std::string labelPath = lib::pathsConcat(FLAGS_data_dir, "words.txt");
   const std::string trainList = lib::pathsConcat(FLAGS_data_dir, "train");
   const std::string valList = lib::pathsConcat(FLAGS_data_dir, "val");
 
@@ -101,22 +102,22 @@ int main(int argc, char** argv) {
   // Setup distributed training
   ////////////////////////
   af::info();
-  if (FLAGS_distributed_enable) {
-    fl::ext::initDistributed(
-        FLAGS_distributed_world_rank,
-        FLAGS_distributed_world_size,
-        FLAGS_distributed_max_devices_per_node,
-        FLAGS_distributed_rndv_filepath);
-  }
-  const int worldRank = fl::getWorldRank();
-  const int worldSize = fl::getWorldSize();
+  // if (FLAGS_distributed_enable) {
+  //   fl::ext::initDistributed(
+  //       FLAGS_distributed_world_rank,
+  //       FLAGS_distributed_world_size,
+  //       FLAGS_distributed_max_devices_per_node,
+  //       FLAGS_distributed_rndv_filepath);
+  // }
+  const int worldRank = 0; // fl::getWorldRank();
+  const int worldSize = 0 ;// fl::getWorldSize();
   const bool isMaster = (worldRank == 0);
 
   af::setDevice(worldRank);
   af::setSeed(worldSize);
 
-  auto reducer =
-      std::make_shared<fl::CoalescingReducer>(1.0 / worldSize, true, true);
+  // auto reducer =
+  //     std::make_shared<fl::CoalescingReducer>(1.0 / worldSize, true, true);
 
   //////////////////////////
   //  Create datasets
@@ -171,11 +172,11 @@ int main(int argc, char** argv) {
   auto model = fl::ext::image::resnet34();
   // synchronize parameters of the model so that the parameters in each process
   // is the same
-  fl::allReduceParameters(model);
+  // fl::allReduceParameters(model);
 
   // Add a hook to synchronize gradients of model parameters as they are
   // computed
-  fl::distributeModuleGrads(model, reducer);
+  // fl::distributeModuleGrads(model, reducer);
 
   SGDOptimizer opt(
       model->params(), FLAGS_train_lr, FLAGS_train_momentum, FLAGS_train_wd);
@@ -242,17 +243,17 @@ int main(int argc, char** argv) {
       loss.backward();
 
       if (FLAGS_distributed_enable) {
-        reducer->finalize();
+        // reducer->finalize();
       }
       opt.step();
 
       // Compute and record the prediction error.
       double trainLoss = trainLossMeter.value()[0];
       if (++idx % 50 == 0) {
-        fl::ext::syncMeter(trainLossMeter);
-        fl::ext::syncMeter(timeMeter);
-        fl::ext::syncMeter(top5Acc);
-        fl::ext::syncMeter(top1Acc);
+        // fl::ext::syncMeter(trainLossMeter);
+        // fl::ext::syncMeter(timeMeter);
+        // fl::ext::syncMeter(top5Acc);
+        // fl::ext::syncMeter(top1Acc);
         double time = timeMeter.value();
         double samplePerSecond = (idx * FLAGS_data_batch_size) / time;
         FL_LOG_MASTER(INFO)
