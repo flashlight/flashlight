@@ -78,7 +78,8 @@ if (FL_BUILD_DISTRIBUTED)
     PUBLIC
     ${MPI_LIBRARIES}
     )
-
+message("-------------------- MPI_INCLUDE_DIRS=${MPI_INCLUDE_DIRS}")
+message("-------------------- MPI_LIBRARIES=${MPI_LIBRARIES}")
   target_include_directories(
     flashlight
     PUBLIC
