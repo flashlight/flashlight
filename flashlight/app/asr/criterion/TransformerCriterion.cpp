@@ -68,10 +68,11 @@ std::vector<Variable> TransformerCriterion::forward(
   }
   const auto& input = inputs[0];
   const auto& target = inputs[1];
+  af::array empty;
   const auto& inputSizes =
-      inputs.size() == 2 ? af::array() : inputs[2].array(); // 1 x B
+      inputs.size() == 2 ? empty : inputs[2].array(); // 1 x B
   const auto& targetSizes =
-      inputs.size() == 3 ? af::array() : inputs[3].array(); // 1 x B
+      inputs.size() == 3 ? empty : inputs[3].array(); // 1 x B
 
   Variable out, alpha;
   std::tie(out, alpha) =

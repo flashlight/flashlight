@@ -67,7 +67,7 @@ constexpr int kTargetPadValue = -1;
 constexpr int kLifterParam = 22;
 constexpr int kPrefetchSize = 2;
 
-constexpr const char* kEosToken = "$";
+constexpr const char* kEosToken = "</s>";
 constexpr const char* kBlankToken = "#";
 constexpr const char* kSilToken = "|";
 

@@ -65,21 +65,28 @@ bool areVariableTypesEqual(const Variable& a, const Variable& b) {
 } // namespace detail
 
 Variable operator+(const Variable& lhs, const Variable& rhs) {
-  FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
-  auto result = lhs.array() + rhs.array();
+  auto lhsArr = FL_ADJUST_INPUT_TYPE(lhs.array());
+  auto rhsArr = FL_ADJUST_INPUT_TYPE(rhs.array());
+  // FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
+  // auto result = lhs.array() + rhs.array();
+  auto result = lhsArr + rhsArr;
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
-    inputs[0].addGrad(Variable(gradOutput.array(), false));
-    inputs[1].addGrad(Variable(gradOutput.array(), false));
+    // auto garr = gradOutput.array().as(inputs[0].type());
+    inputs[0].addGrad(Variable(gradOutput.array().as(inputs[0].type()), false));
+    inputs[1].addGrad(Variable(gradOutput.array().as(inputs[1].type()), false));
   };
   return Variable(result, {lhs.withoutData(), rhs.withoutData()}, gradFunc);
 }
 
 Variable operator+(const Variable& lhs, const double& rhsVal) {
-  auto result = (lhs.array() + rhsVal).as(lhs.type());
+  auto lhsArr = FL_ADJUST_INPUT_TYPE(lhs.array());
+  auto result = (lhsArr + rhsVal).as(lhsArr.type());
+  // auto result = (lhs.array() + rhsVal).as(lhs.type());
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
-    inputs[0].addGrad(Variable(gradOutput.array(), false));
+    auto garr = gradOutput.array().as(inputs[0].type());
+    inputs[0].addGrad(Variable(garr, false));
   };
   return Variable(result, {lhs.withoutData()}, gradFunc);
 }
@@ -695,82 +702,90 @@ Variable normalize(
 }
 
 Variable matmul(const Variable& lhs, const Variable& rhs) {
-  FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
+  auto lhsArr = FL_ADJUST_INPUT_TYPE(lhs.array());
+  auto rhsArr = FL_ADJUST_INPUT_TYPE(rhs.array());
+  // FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
   // lhs:Input[0] -- [M, N]
   // rhs:Input[1] -- [N, K]
   // matmul(lhs, rhs)
   // -- matmul([M, N], [N, K]) --  [M, K]
   // result:gradOutput -- [M, K]
-  auto result = matmul(lhs.array(), rhs.array());
+  auto result = matmul(lhsArr, rhsArr);
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
     if (inputs[0].isCalcGrad()) {
       // matmulNT(gradOutput, inputs[1])
       // -- matmulNT([M, K], [N, K])
       // -- matmul([M, K], [K, N]) -- [M, K]
-      inputs[0].addGrad(
-          Variable(matmulNT(gradOutput, inputs[1]).array(), false));
+      inputs[0].addGrad(Variable(
+          matmulNT(gradOutput, inputs[1]).array().as(inputs[0].type()), false));
     }
     if (inputs[1].isCalcGrad()) {
       // matmulTN(inputs[0], gradOutput)
       // -- matmulTN([M, N], [M, K])
       // -- matmul([N, M], [M, K]) -- [N, K]
-      inputs[1].addGrad(
-          Variable(matmulTN(inputs[0], gradOutput).array(), false));
+      inputs[1].addGrad(Variable(
+          matmulTN(inputs[0], gradOutput).array().as(inputs[1].type()), false));
     }
   };
   return Variable(result, {lhs, rhs}, gradFunc);
 }
 
 Variable matmulTN(const Variable& lhs, const Variable& rhs) {
-  FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
+  auto lhsArr = FL_ADJUST_INPUT_TYPE(lhs.array());
+  auto rhsArr = FL_ADJUST_INPUT_TYPE(rhs.array());
+  // FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
   // lhs:Input[0] -- [N, M]
   // rhs:Input[1] -- [N, K]
   // matmulTN(lhs, rhs)
   // -- matmulTN([N, M], [N, K])
   // -- matmul([M, N], [N, K]) -- [M, K]
   // result:gradOutput -- [M, K]
-  auto result = matmulTN(lhs.array(), rhs.array());
+  auto result = matmulTN(lhsArr, rhsArr);
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
     if (inputs[0].isCalcGrad()) {
       // matmulNT(inputs[1], gradOutput)
       // -- matmulNT([N, K], [M, K])
       // -- matmul([N, K], [K, M]) -- [N, M]
-      inputs[0].addGrad(
-          Variable(matmulNT(inputs[1], gradOutput).array(), false));
+      inputs[0].addGrad(Variable(
+          matmulNT(inputs[1], gradOutput).array().as(inputs[0].type()), false));
     }
     if (inputs[1].isCalcGrad()) {
       // matmul(inputs[0], gradOutput)
       // -- matmulNT([N, M], [M, K]) -- [N, K]
-      inputs[1].addGrad(Variable(matmul(inputs[0], gradOutput).array(), false));
+      inputs[1].addGrad(Variable(
+          matmul(inputs[0], gradOutput).array().as(inputs[1].type()), false));
     }
   };
   return Variable(result, {lhs, rhs}, gradFunc);
 }
 
 Variable matmulNT(const Variable& lhs, const Variable& rhs) {
-  FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
+  auto lhsArr = FL_ADJUST_INPUT_TYPE(lhs.array());
+  auto rhsArr = FL_ADJUST_INPUT_TYPE(rhs.array());
+  // FL_VARIABLE_DTYPES_MATCH_CHECK(lhs, rhs);
   // lhs:Input[0] -- [M, N]
   // rhs:Input[1] -- [K, N]
   // matmulNT(lhs, rhs)
   // -- matmulNT([M, N], [K, N])
   // -- matmul([M, N], [N, K]) -- [M, K]
   // result:gradOutput -- [M, K]
-  auto result = matmulNT(lhs.array(), rhs.array());
+  auto result = matmulNT(lhsArr, rhsArr);
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
     if (inputs[0].isCalcGrad()) {
       // matmul(gradOutput, inputs[1])
       // -- matmul([M, K], [K, N]) -- [M, N]
-      inputs[0].addGrad(Variable(matmul(gradOutput, inputs[1]).array(), false));
+      inputs[0].addGrad(Variable(
+          matmul(gradOutput, inputs[1]).array().as(inputs[0].type()), false));
     }
     if (inputs[1].isCalcGrad()) {
       // matmulTN(gradOutput, inputs[0])
       // -- matmulTN([M, K], [M, N])
       // -- matmul([K, M], [M, N]) -- [K, N]
-      inputs[1].addGrad(
-          Variable(matmulTN(gradOutput, inputs[0]).array(), false));
+      inputs[1].addGrad(Variable(
+          matmulTN(gradOutput, inputs[0]).array().as(inputs[1].type()), false));
     }
   };
   return Variable(result, {lhs, rhs}, gradFunc);

@@ -346,9 +346,9 @@ void Trainer::evalStep() {
     auto loss = criterion_->forward({output, target}).front();
     auto numTokens = af::count<int>(target.array() != kPadIdx_);
     if (numTokens > 0) {
-      auto weight = numTokens /
-          static_cast<double>(
-                        FLAGS_data_tokens_per_sample * FLAGS_data_batch_size);
+      auto weight =
+          numTokens / static_cast<double>(
+                          FLAGS_data_tokens_per_sample * FLAGS_data_batch_size);
       validLossMeter_.add(af::mean<double>(loss.array()) / numTokens, weight);
     }
   }
