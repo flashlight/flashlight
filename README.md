@@ -1,4 +1,4 @@
-# Flashlight: Fast, Flexible Machine Learning in C++
+![Flashlight: Fast, Flexible Machine Learning in C++](./logo.svg) 
 
 [**Quickstart**](#quickstart)
 | [**Installation**](#building-and-installing)
