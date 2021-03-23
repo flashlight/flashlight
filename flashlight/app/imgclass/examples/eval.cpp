@@ -47,10 +47,10 @@ int main(int argc, char** argv) {
   const int worldSize = fl::getWorldSize();
   const bool isMaster = (worldRank == 0);
 
-  // std::shared_ptr<fl::ext::image::ViT> model;
-  // fl::load(FLAGS_exp_checkpoint_path, model);
+  std::shared_ptr<fl::ext::image::ViT> model;
+  fl::load(FLAGS_exp_checkpoint_path, model);
 
-  auto model = std::make_shared<fl::ext::image::ViT>(FLAGS_exp_checkpoint_path);
+  // auto model = std::make_shared<fl::ext::image::ViT>(FLAGS_exp_checkpoint_path);
 #if 0
   std::ifstream fin(
       "/private/home/qiantong/tmp/vitb_pt/sample.bin", std::ios::binary);

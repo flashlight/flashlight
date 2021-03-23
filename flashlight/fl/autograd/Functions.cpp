@@ -979,7 +979,7 @@ Variable reorder(
     const int dim1,
     const int dim2,
     const int dim3) {
-  auto result = reorder(input.array(), dim0, dim1, dim2, dim3);
+  auto result = af::reorder(input.array(), dim0, dim1, dim2, dim3);
   if (!af::isLinear(result)) {
     auto tmp = af::array(result.dims(), input.type());
     af::copy(tmp, result, af::span);

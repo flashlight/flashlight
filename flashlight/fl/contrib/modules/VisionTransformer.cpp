@@ -211,7 +211,7 @@ VisionTransformer::VisionTransformer(
       headDim_(768 / 12),
       mlpDim_(768 * 4),
       nHeads_(12),
-      pDropout_(0.1),
+      pDropout_(0.),
       pLayerdrop_(pLayerdrop) {
   auto w = readfloats(prefix + ".mlp.fc1.weight.bin");
   if (w.size() != 768 * 3072) {

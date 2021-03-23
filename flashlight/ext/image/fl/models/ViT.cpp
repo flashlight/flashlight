@@ -84,6 +84,7 @@ std::vector<fl::Variable> ViT::forward(
 
   // Patching
   auto output = patchEmbedding_->forward(inputs[0]); // H x W x C x B
+  output = output.as(f16);
   output = moddims(output, af::dim4(-1, 1, 0, 0)); // T x 1 x C x B
   output = reorder(output, 2, 0, 3, 1); // C x T x B
   auto B = output.dims(2);
@@ -106,7 +107,6 @@ std::vector<fl::Variable> ViT::forward(
   // af_print(output.array()(af::seq(0, 9), 0, 0));
 
   // Transformers
-  output = output.as(f16);
   for (int i = 0; i < nLayers_; ++i) {
     output = transformers_[i]->forward({output}).front();
     // std::cout << " - " << i << " - \n";
@@ -141,7 +141,7 @@ ViT::ViT(const std::string& prefix)
       hiddenEmbSize_(768),
       mlpSize_(3072),
       nHeads_(12),
-      pDropout_(0.1) {
+      pDropout_(0.) {
   // Class token
   auto w = readfloats(prefix + "cls_token.bin");
   if (w.size() != hiddenEmbSize_) {

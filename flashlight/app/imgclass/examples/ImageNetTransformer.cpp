@@ -48,6 +48,8 @@ DEFINE_double(train_p_label_smoothing, 0.1, "");
 DEFINE_uint64(train_n_repeatedaug, 3, "");
 DEFINE_double(train_p_switchmix, 0.5, "");
 
+DEFINE_int64(train_seed, 41, "");
+
 DEFINE_bool(distributed_enable, true, "Enable distributed training");
 DEFINE_int64(
     distributed_max_devices_per_node,
@@ -85,6 +87,8 @@ DEFINE_bool(
     "sets the optim mode to O1.");
 DEFINE_double(
     fl_amp_scale_factor,
+    // 8192.,
+    // 65536.,
     4096.,
     "[train] Starting scale factor to use for loss scaling "
     " with mixed precision training");
@@ -92,9 +96,11 @@ DEFINE_uint64(
     fl_amp_scale_factor_update_interval,
     2000,
     "[train] Update interval for adjusting loss scaling in mixed precision training");
-DEFINE_uint64(
+DEFINE_double(
     fl_amp_max_scale_factor,
-    32000,
+    // 16384,
+    // 65536.,
+    8192.,
     "[train] Maximum value for the loss scale factor in mixed precision training");
 DEFINE_string(
     fl_optim_mode,
@@ -186,12 +192,6 @@ int main(int argc, char** argv) {
   const int worldRank = fl::getWorldRank();
   const int worldSize = fl::getWorldSize();
   const bool isMaster = (worldRank == 0);
-
-  // af::setSeed(worldRank * 4399);
-  // af::setSeed(worldSize);
-  af::setSeed(worldRank);
-  std::srand(worldRank * 4399);
-
   auto reducer =
       std::make_shared<fl::CoalescingReducer>(1.0 / worldSize, true, true);
 
@@ -210,11 +210,6 @@ int main(int argc, char** argv) {
   // af::array. Thus, we need to `compose` all of the transforms so are each
   // applied only to the image
   ImageTransform trainTransforms = compose({
-      // randomly resize shortest side of image between 256 to 480 for
-      // scale invariance
-      // fl::ext::image::c(randomResizeMin,
-      // randomResizeMax),
-      // fl::ext::image::randomCropTransform(randomCropSize, randomCropSize),
       fl::ext::image::randomResizeCropTransform(
           randomCropSize, 0.08, 1.0, 3. / 4., 4. / 3.),
       fl::ext::image::randomHorizontalFlipTransform(horizontalFlipProb),
@@ -224,18 +219,25 @@ int main(int argc, char** argv) {
       fl::ext::image::randomEraseTransform(FLAGS_train_p_randomerase)
       // end
   });
-  ImageTransform valTransforms =
-      compose({// Resize shortest side to 256, then take a center crop
-               fl::ext::image::resizeTransform(randomResizeMin),
-               fl::ext::image::centerCropTransform(randomCropSize),
-               fl::ext::image::normalizeImage(mean, std)});
+
+  ImageTransform trainBaseTransforms = compose({
+      fl::ext::image::randomResizeTransform(randomResizeMin, randomResizeMax),
+      fl::ext::image::randomCropTransform(randomCropSize, randomCropSize),
+      fl::ext::image::normalizeImage(mean, std)
+      // end
+  });
+
+  ImageTransform valTransforms = compose(
+      {fl::ext::image::resizeTransform(randomResizeMin),
+       fl::ext::image::centerCropTransform(randomCropSize),
+       fl::ext::image::normalizeImage(mean, std)});
 
   const int64_t batchSizePerGpu = FLAGS_data_batch_size;
   const int64_t prefetchSize = FLAGS_data_batch_size * 10;
   auto labelMap = getImagenetLabels(labelPath);
   auto trainDataset = std::make_shared<fl::ext::image::DistributedDataset>(
       imagenetDataset(trainList, labelMap, {trainTransforms}),
-      // imagenetDataset(trainList, labelMap, {valTransforms}),
+      // imagenetDataset(trainList, labelMap, {trainBaseTransforms}),
       worldRank,
       worldSize,
       batchSizePerGpu,
@@ -267,6 +269,7 @@ int main(int argc, char** argv) {
   //////////////////////////
   //  Load model and optimizer
   /////////////////////////
+  af::setSeed(FLAGS_train_seed);
   auto model = std::make_shared<fl::ext::image::ViT>(
       FLAGS_model_layers,
       FLAGS_model_hidden_emb_size,
@@ -283,6 +286,14 @@ int main(int argc, char** argv) {
   // is the same
   fl::allReduceParameters(model);
   fl::distributeModuleGrads(model, reducer);
+
+  af::setSeed(worldRank * FLAGS_train_seed);
+  std::srand(worldRank * FLAGS_train_seed);
+
+  // usleep(worldRank * 1e5);
+  // af_print(model->params()[0].array()(af::seq(0, 9), 0, 0, 0));
+  // af_print(model->params().back().array()(af::seq(0, 9), 0, 0, 0));
+  // exit(1);
 
   auto opt = AdamOptimizer(
       model->params(),
@@ -323,7 +334,8 @@ int main(int argc, char** argv) {
       // cosine decay
       lr = 1e-5 +
           0.5 * (FLAGS_train_lr - 1e-5) *
-              (std::cos(((double)epoch - 1) / ((double)FLAGS_train_epochs) * pi) +
+              (std::cos(
+                   ((double)epoch - 1) / ((double)FLAGS_train_epochs) * pi) +
                1);
     }
     opt.setLr(lr);
@@ -351,7 +363,8 @@ int main(int argc, char** argv) {
     loadModel();
   }
 
-  auto betaGenerator = sftrabbit::beta_distribution<float>(0.8, 0.8);
+  auto betaGeneratorMixup = sftrabbit::beta_distribution<float>(0.8, 0.8);
+  auto betaGeneratorCutmix = sftrabbit::beta_distribution<float>(1.0, 1.0);
 
   //////////////////////////
   // The main training loop
@@ -370,7 +383,7 @@ int main(int argc, char** argv) {
       FLAGS_fl_amp_use_mixed_precision ? FLAGS_fl_amp_scale_factor : 1.;
   unsigned int kScaleFactorUpdateInterval =
       FLAGS_fl_amp_scale_factor_update_interval;
-  unsigned int kMaxScaleFactor = FLAGS_fl_amp_max_scale_factor;
+  double kMaxScaleFactor = FLAGS_fl_amp_max_scale_factor;
 
   fl::TimeMeter sampleTimerMeter{true};
   fl::TimeMeter fwdTimeMeter{true};
@@ -385,9 +398,9 @@ int main(int argc, char** argv) {
   AverageValueMeter trainLossMeter;
   for (; epoch < FLAGS_train_epochs; epoch++) {
     // std::cout << "---" << std::endl;
-    trainDataset->resample(epoch);
+    trainDataset->resample(epoch + FLAGS_train_seed);
     // trainDataset1->resample(epoch + 4399);
-    std::mt19937_64 engine(epoch);
+    std::mt19937_64 engine(epoch * FLAGS_train_seed + worldRank);
 
     // Get an iterator over the data
     timeMeter.resume();
@@ -396,31 +409,6 @@ int main(int argc, char** argv) {
       Variable loss;
       sampleTimerMeter.resume();
 
-#if 0
-      af::array input = trainDataset->get(idx)[kImagenetInputIdx];
-      input = trainTransforms(input);
-      for (int i = 1;
-           i < std::min((int)FLAGS_data_batch_size, (int)trainDataset->size());
-           i++) {
-        auto tmp = trainDataset->get(idx + i)[kImagenetInputIdx];
-        tmp = trainTransforms(tmp);
-        input = af::join(3, input, tmp);
-      }
-
-      // af::array input = af::randu(224, 224, 3);
-      // for (int i = 1; i < FLAGS_data_batch_size; i++) {
-      //   auto tmp = af::randu(224, 224, 3);
-      //   tmp = trainTransforms(tmp);
-      //   input = af::join(3, input, tmp);
-      // }
-
-      auto inputs = fl::Variable(input, false);
-      auto y = fl::Variable(af::randu(1000, FLAGS_data_batch_size), false);
-      // if (FLAGS_fl_amp_use_mixed_precision) {
-      //   inputs = inputs.as(f16);
-      // }
-#endif
-#if 1
       auto sample = trainDataset->get(idx);
       // auto sample1 = trainDataset1->get(idx);
 
@@ -460,14 +448,15 @@ int main(int argc, char** argv) {
         // float lambda = 0.9 +
         //     0.1 * static_cast<float>(std::rand()) /
         //         static_cast<float>(RAND_MAX);
-        float lambda = betaGenerator(engine);
+        float lambda = betaGeneratorMixup(engine);
         // std::cout << lambda << std::endl;
         inputs = noGrad(lambda * rawInput1 + (1 - lambda) * rawInput);
         example1Weight = lambda;
       } else if (FLAGS_train_p_cutmix > 0 && mixP <= FLAGS_train_p_switchmix) {
         // cut mix
-        float lambda =
-            static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+        // float lambda =
+        //     static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+        float lambda = betaGeneratorCutmix(engine);
         float lambdaSqrt = std::sqrt(lambda);
         const int w = rawInput.dims(0);
         const int h = rawInput.dims(1);
@@ -519,7 +508,7 @@ int main(int argc, char** argv) {
 
       auto y = noGrad(example1Weight * target1 + (1 - example1Weight) * target);
       rawInput1 = af::array();
-#endif
+
       af::sync();
       sampleTimerMeter.stopAndIncUnit();
       // if (idx == 0) {
@@ -547,13 +536,22 @@ int main(int argc, char** argv) {
           loss = loss * scaleFactor;
         }
 
-        // if (isBadArray(loss.array())) {
-        //   FL_LOG(FATAL) << "Loss has NaN values, in proc: "
-        //                 << fl::getWorldRank();
-        // }
         af::sync();
         fwdTimeMeter.stopAndIncUnit();
         critFwdTimeMeter.stopAndIncUnit();
+
+        // auto scaledLoss = loss.array() / worldSize;
+        // if (FLAGS_distributed_enable) {
+        //   fl::allReduce(scaledLoss);
+        // }
+        // if (isBadArray(scaledLoss)) {
+        //   FL_LOG(INFO) << "Loss has NaN values in 2, in proc: "
+        //                << fl::getWorldRank();
+        //   scaleFactor = scaleFactor / 2.0f;
+        //   FL_LOG(INFO) << "AMP: Scale factor decreased (loss). New value:\t"
+        //                << scaleFactor;
+        //   continue;
+        // }
 
         // Backprop, update the weights and then zero the gradients.
         bwdTimeMeter.resume();
@@ -597,6 +595,8 @@ int main(int argc, char** argv) {
           continue;
         }
 
+        // af_print(loss.array());
+        // std::cout << scaleFactor << std::endl;
         trainLossMeter.add(loss.array() / scaleFactor);
       } while (retrySample);
 
@@ -606,6 +606,19 @@ int main(int argc, char** argv) {
       // }
       opt.step();
       optimTimeMeter.stopAndIncUnit();
+
+      // update scale factor
+      if (FLAGS_fl_amp_use_mixed_precision && scaleFactor < kMaxScaleFactor) {
+        if (scaleCounter % kScaleFactorUpdateInterval == 0) {
+          scaleFactor *= 2;
+          FL_VLOG(2) << "AMP: Scale factor doubled. New value:\t"
+                     << scaleFactor;
+        } else {
+          scaleFactor += 2;
+          FL_VLOG(3) << "AMP: Scale factor incremented. New value\t"
+                     << scaleFactor;
+        }
+      }
 
       // Compute and record the prediction error.
       int interval = 100;

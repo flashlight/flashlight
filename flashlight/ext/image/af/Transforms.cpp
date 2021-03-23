@@ -16,14 +16,19 @@
 // TODO consider moving these outside of annonymous namespace
 namespace {
 
+using distr_t = std::uniform_int_distribution<unsigned int>;
+distr_t D;
+
 float randomFloat(float a, float b) {
-  float r = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+  std::random_device rd;
+  std::mt19937 g(rd());
+  float r = D(g) / static_cast<float>(std::numeric_limits<unsigned int>::max());
   return a + (b - a) * r;
 }
 
 template <class T>
 T randomNegate(T a) {
-  float r = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+  float r = randomFloat(0, 1);
   return r > 0.5 ? a : -a;
 }
 
@@ -91,11 +96,9 @@ ImageTransform centerCropTransform(const int size) {
 ImageTransform randomHorizontalFlipTransform(const float p) {
   return [p](const af::array& in) {
     af::array out = in;
-    if (static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX) > p) {
+    if (randomFloat(0, 1) > p) {
       const uint64_t w = in.dims(0);
       out = out(af::seq(w - 1, 0, -1), af::span, af::span, af::span);
-      // const uint64_t w = in.dims(1);
-      // out = out(af::span, af::seq(w - 1, 0, -1), af::span, af::span);
     }
     return out;
   };
@@ -121,8 +124,10 @@ ImageTransform randomResizeCropTransform(
       const int tw = std::round(std::sqrt(targetArea * targetRatio));
       const int th = std::round(std::sqrt(targetArea / targetRatio));
       if (0 < tw && tw <= w && 0 < th && th <= h) {
-        const int x = std::rand() % (w - tw + 1);
-        const int y = std::rand() % (h - th + 1);
+        // const int x = std::rand() % (w - tw + 1);
+        // const int y = std::rand() % (h - th + 1);
+        const int x = int(randomFloat(0, w - tw + 0.999));
+        const int y = int(randomFloat(0, h - th + 0.999));
         return resize(crop(in, x, y, tw, th), size);
       }
     }
@@ -133,8 +138,7 @@ ImageTransform randomResizeCropTransform(
 
 ImageTransform randomResizeTransform(const int low, const int high) {
   return [low, high](const af::array& in) {
-    const float scale =
-        static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+    const float scale = randomFloat(0, 1);
     const int resize = low + (high - low) * scale;
     return resizeSmallest(in, resize);
   };
@@ -149,8 +153,10 @@ ImageTransform randomCropTransform(const int tw, const int th) {
       throw std::runtime_error(
           "Target th and target width are great the image size");
     }
-    const int x = std::rand() % (w - tw + 1);
-    const int y = std::rand() % (h - th + 1);
+    // const int x = std::rand() % (w - tw + 1);
+    // const int y = std::rand() % (h - th + 1);
+    const int x = int(randomFloat(0, w - tw + 0.999));
+    const int y = int(randomFloat(0, h - th + 0.999));
     return crop(in, x, y, tw, th);
   };
 };
@@ -176,7 +182,7 @@ ImageTransform randomEraseTransform(
     const float edgeRatioMax) {
   return [p, areaRatioMin, areaRatioMax, edgeRatioMin, edgeRatioMax](
              const af::array& in) {
-    if (p < static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX)) {
+    if (p < randomFloat(0, 1)) {
       // std::cout << 1 << std::endl;
       return in;
     }
@@ -196,8 +202,10 @@ ImageTransform randomEraseTransform(
         continue;
       }
 
-      const int x = std::rand() % (w - maskW);
-      const int y = std::rand() % (h - maskH);
+      // const int x = std::rand() % (w - maskW);
+      // const int y = std::rand() % (h - maskH);
+      const int x = int(randomFloat(0, w - maskW - 1e-5));
+      const int y = int(randomFloat(0, h - maskH - 1e-5));
       // std::cout << x << " " << y << " " << maskW << " " << maskH <<
       // std::endl; af::array fillValue =
       //     (af::randu(af::dim4(maskW, maskH, c)) * 255).as(in.type());
@@ -216,12 +224,12 @@ ImageTransform randomEraseTransform(
 };
 
 ImageTransform randomAugmentationTransform(const float p, const int n) {
-  const std::vector<float> mean = {0.485 * 256, 0.456 * 256, 0.406 * 256};
+  const std::vector<float> mean = {0.485 * 255, 0.456 * 255, 0.406 * 255};
   auto meanArr = af::array(1, 1, 3, 1, mean.data());
   float delta = 1e-2;
 
   return [p, n, delta, meanArr](const af::array& in) {
-    // std::srand(std::time(nullptr));
+  // return [p, n](const af::array& in) {
     const int w = in.dims(0);
     const int h = in.dims(1);
     const int c = in.dims(2);
@@ -229,60 +237,76 @@ ImageTransform randomAugmentationTransform(const float p, const int n) {
 
     auto res = in.as(f32);
     for (int i = 0; i < n; i++) {
-      if (p < static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX)) {
+      if (p < randomFloat(0, 1)) {
         continue;
       }
 
       int mode = std::floor(randomFloat(0, 15 - 1e-5));
-      // std::cout << mode << std::endl;
       if (mode < 1) {
         // rotate
-        float theta = pi / 6 + randomFloat(-0.1, 0.1);
+        float theta = pi / 6;
+        // theta += randomFloat(-0.02, 0.02);
+        theta += randomFloat(-0.1, 0.1);
         theta = randomNegate(theta);
-        res = af::rotate(res + delta, theta);
+        // res = af::rotate(res, theta);
 
+        res = af::rotate(res + delta, theta);
         auto mask = af::sum(res, 2) == 0;
         mask = af::tile(mask, 1, 1, 3).as(f32);
         res = mask * background + (1 - mask) * res - delta;
       } else if (mode < 2) {
         // skew
-        float theta = pi / 6 + randomFloat(-0.1, 0.1);
+        float theta = 0.35;
+        // theta += randomFloat(-0.02, 0.02);
+        theta += randomFloat(-0.1, 0.1);
         theta = randomNegate(theta);
-        res = af::skew(res + delta, theta, 0);
+        // res = af::skew(res, theta, 0);
 
+        res = af::skew(res + delta, theta, 0);
         auto mask = af::sum(res, 2) == 0;
         mask = af::tile(mask, 1, 1, 3).as(f32);
         res = mask * background + (1 - mask) * res - delta;
       } else if (mode < 3) {
         // skew
-        float theta = pi / 6 + randomFloat(-0.1, 0.1);
+        float theta = 0.35;
+        // theta += randomFloat(-0.02, 0.02);
+        theta += randomFloat(-0.1, 0.1);
         theta = randomNegate(theta);
-        res = af::skew(res + delta, 0, theta);
+        // res = af::skew(res, 0, theta);
 
+        res = af::skew(res + delta, 0, theta);
         auto mask = af::sum(res, 2) == 0;
         mask = af::tile(mask, 1, 1, 3).as(f32);
         res = mask * background + (1 - mask) * res - delta;
       } else if (mode < 4) {
         // translate
-        int shift = 100 + randomFloat(-10, 10);
+        int shift = 100;
+        // shift += randomFloat(-3, 3);
+        shift += randomFloat(-10, 10);
         shift = randomNegate(shift);
-        res = af::translate(res + delta, shift, 0);
+        // res = af::translate(res, shift, 0);
 
+        res = af::translate(res + delta, shift, 0);
         auto mask = af::sum(res, 2) == 0;
         mask = af::tile(mask, 1, 1, 3).as(f32);
         res = mask * background + (1 - mask) * res - delta;
       } else if (mode < 5) {
         // translate
-        int shift = 100 + randomFloat(-10, 10);
+        int shift = 100;
+        // shift += randomFloat(-3, 3);
+        shift += randomFloat(-10, 10);
         shift = randomNegate(shift);
-        res = af::translate(res + delta, 0, shift);
+        // res = af::translate(res, 0, shift);
 
+        res = af::translate(res + delta, 0, shift);
         auto mask = af::sum(res, 2) == 0;
         mask = af::tile(mask, 1, 1, 3).as(f32);
         res = mask * background + (1 - mask) * res - delta;
       } else if (mode < 6) {
         // color
-        float enhance = .8 + randomFloat(-0.1, 0.1);
+        float enhance = .8;
+        // enhance += randomFloat(-0.02, 0.02);
+        enhance += randomFloat(-0.1, 0.1);
         enhance = 1 + randomNegate(enhance);
         auto meanPic = af::mean(res, 2);
         meanPic = af::tile(meanPic, af::dim4(1, 1, c));
@@ -301,7 +325,9 @@ ImageTransform randomAugmentationTransform(const float p, const int n) {
         res = scale * (res - minPic);
       } else if (mode < 8) {
         // contrast
-        float enhance = .8 + randomFloat(-0.1, 0.1);
+        float enhance = .8;
+        // enhance += randomFloat(-0.02, 0.02);
+        enhance += randomFloat(-0.1, 0.1);
         enhance = 1 + randomNegate(enhance);
         auto meanPic = res;
         for (int j = 0; j < 3; j++) {
@@ -311,7 +337,9 @@ ImageTransform randomAugmentationTransform(const float p, const int n) {
         res = meanPic + enhance * (res - meanPic);
       } else if (mode < 9) {
         // brightness
-        float enhance = .8 + randomFloat(-0.1, 0.1);
+        float enhance = .8;
+        // enhance += randomFloat(-0.02, 0.02);
+        enhance += randomFloat(-0.1, 0.1);
         enhance = 1 + randomNegate(enhance);
         res = res * enhance;
       } else if (mode < 10) {
@@ -337,7 +365,9 @@ ImageTransform randomAugmentationTransform(const float p, const int n) {
         res = res.as(s32) & mask;
       } else if (mode < 15) {
         // sharpness
-        float enhance = 1.7 + randomFloat(-0.2, 0.2);
+        float enhance = 1.5;
+        // enhance += randomFloat(-0.02, 0.02);
+        enhance += randomFloat(-0.1, 0.1);
         enhance = randomNegate(enhance);
 
         auto meanPic = af::mean(res, 2);
@@ -351,8 +381,6 @@ ImageTransform randomAugmentationTransform(const float p, const int n) {
       res = res.as(f32);
       res = af::clamp(res, 0., 255.);
     }
-    // std::cout << af::allTrue<bool>(res == in) << std::endl;
-    // res = res.as(in.type());
     return res;
   };
 }

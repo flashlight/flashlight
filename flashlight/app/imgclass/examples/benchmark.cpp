@@ -147,6 +147,160 @@ af::array flip(const af::array& in) {
 int main(int argc, char** argv) {
   fl::init();
 
+  auto worldRank = std::stoi(argv[1]);
+  fl::ext::initDistributed(worldRank, 2, 8, "/checkpoint/qiantong/tmp");
+  af::info();
+  const int worldSize = fl::getWorldSize();
+
+#if 0
+  // std::srand((worldRank + 1) * 41);
+  // std::srand(worldRank * 4399);
+  // std::mt19937_64 rng_(worldSize);
+
+  using distr_t = std::uniform_int_distribution<unsigned int>;
+  distr_t D;
+  // std::mt19937 g(worldSize);
+
+  // for (int i = 0; i < 30; i++) {
+  //   std::random_device rd;
+  //   std::mt19937 g(rd());
+  //   std::cout << D(g) << " ";
+  // }
+  // std::cout << std::endl;
+
+  // auto threadPool = std::make_unique<fl::ThreadPool>(10);
+  // for (int i = 0; i < 30; i++) {
+  //   threadPool->enqueue(
+  //       [&D, &g]() { std::cout << std::to_string(D(g)) + "\n"; });
+  // }
+
+  // auto threadPool = std::make_unique<fl::ThreadPool>(10);
+  // for (int i = 0; i < 30; i++) {
+  //   threadPool->enqueue([&D]() {
+  //     std::random_device rd;
+  //     std::mt19937 g(rd());
+  //     std::cout << std::to_string(D(g)) + "\n";
+  //   });
+  // }
+
+  // for (int i = 0; i < 100; i++) {
+  //   std::random_device rd;
+  //   std::mt19937 g(rd());
+  //   std::cout << std::to_string(
+  //                    D(g) / (float)std::numeric_limits<unsigned int>::max()) +
+  //           "\n";
+  // }
+
+  // return 0;
+
+  // auto n = 30;
+  // std::vector<int> resampleVec_(n);
+  // std::iota(resampleVec_.begin(), resampleVec_.end(), 0);
+  // using diff_t = std::uniform_int_distribution<int>;
+  // diff_t D;
+  // for (int i = n - 1; i > 0; --i) {
+  //   std::swap(resampleVec_[i], resampleVec_[D(rng_, diff_t::param_type(0,
+  //   i))]);
+  // }
+  // for (int i = 0; i < n; i ++) {
+  //   std::cout << resampleVec_[i] << " ";
+  // }
+  // std::cout << std::endl;
+
+  // std::iota(resampleVec_.begin(), resampleVec_.end(), 0);
+  // for (int i = n - 1; i > 0; --i) {
+  //   std::swap(resampleVec_[i - 1], resampleVec_[rng_() % n]);
+  // }
+  // for (int i = 0; i < n; i ++) {
+  //   std::cout << resampleVec_[i] << " ";
+  // }
+  // std::cout << std::endl;
+
+  // return 0;
+
+  // std::mt19937_64 rng(worldSize);
+  // // std::mt19937_64 rng(worldRank);
+  // auto threadPool = std::make_unique<fl::ThreadPool>(10);
+  // for (int i = 0; i < 10; i++) {
+  //   threadPool->enqueue([&rng, i]() {
+  //     usleep(i * 1e6);
+  //     std::cout << rng() << std::endl;
+  //   });
+  // }
+  // return 0;
+
+#endif
+
+  const std::string labelPath =
+      "/datasets01/imagenet_full_size/061417/labels.txt";
+  const std::string trainList = "/datasets01/imagenet_full_size/061417/train";
+  const std::vector<float> mean = {0.485, 0.456, 0.406};
+  const std::vector<float> std = {0.229, 0.224, 0.225};
+  const int randomResizeMax = 480;
+  const int randomResizeMin = 256;
+  const int randomCropSize = 224;
+  const float horizontalFlipProb = 0.5f;
+  fl::ext::image::ImageTransform trainTransforms = fl::ext::image::compose({
+      fl::ext::image::randomResizeCropTransform(
+          randomCropSize, 0.08, 1.0, 3. / 4., 4. / 3.),
+      fl::ext::image::randomHorizontalFlipTransform(horizontalFlipProb),
+      fl::ext::image::randomAugmentationTransform(0.5, 2),
+      fl::ext::image::normalizeImage(mean, std),
+      fl::ext::image::randomEraseTransform(0.25)
+      // end
+  });
+
+  auto batch_size = 64;
+  const int64_t batchSizePerGpu = batch_size;
+  const int64_t prefetchThreads = 8;
+  const int64_t prefetchSize = batch_size * 10;
+  auto labelMap = fl::app::imgclass::getImagenetLabels(labelPath);
+  auto trainDataset = std::make_shared<fl::ext::image::DistributedDataset>(
+      fl::app::imgclass::imagenetDataset(
+          trainList, labelMap, {trainTransforms}),
+      worldRank,
+      worldSize,
+      batchSizePerGpu,
+      3, // FLAGS_train_n_repeatedaug,
+      prefetchThreads,
+      prefetchSize,
+      fl::BatchDatasetPolicy::SKIP_LAST);
+  FL_LOG_MASTER(fl::INFO) << "[trainDataset size] " << trainDataset->size();
+
+  // for (int i = 0; i < 5; i++) {
+  //   trainDataset->resample(i);
+  // }
+  // return 0;
+
+  // usleep(worldRank * 2e6);
+  // for (int i = 0; i < 5; i++) {
+  //   auto sample = trainDataset->get(i);
+  //   // af_print(sample[fl::app::imgclass::kImagenetTargetIdx]);
+  //   fl::allReduce(sample[0]);
+  //   fl::barrier();
+  //   std::cout << "---" << worldRank << ": " << i << "\n";
+  // }
+
+  std::string root = "/private/home/qiantong/tmp/fl_trans/batch_";
+  const af::array meanArr(1, 1, 3, 1, mean.data());
+  const af::array stdArr(1, 1, 3, 1, std.data());
+  for (int i = 0; i < 1; i++) {
+    auto sample = trainDataset->get(i)[fl::app::imgclass::kImagenetInputIdx];
+    sample = af::batchFunc(sample, stdArr, af::operator*);
+    sample = af::batchFunc(sample, meanArr, af::operator+);
+    sample = sample.as(af::dtype::f32) * 255.;
+    sample = af::clamp(sample, 0., 255.);
+    // af_print(sample);
+
+    for (int j = 0; j < batch_size; j++) {
+      fl::ext::image::saveJpeg(
+          root + std::to_string(worldRank) + "_" + std::to_string(j) + ".JPEG",
+          sample(af::span, af::span, af::span, j).as(af::dtype::u8));
+    }
+  }
+
+  return 0;
+
 #if 0
   for (int j = 0; j < 10; j++) {
     std::vector<int> selectOp(15);
@@ -175,83 +329,10 @@ int main(int argc, char** argv) {
   }
   return 0;
 
-  auto worldRank = std::stoi(argv[1]);
-  // fl::ext::initDistributed(worldRank, 2, 8, "/tmp/rndv");
-  // af::info();
-  // // const int worldRank = fl::getWorldRank();
-  const int worldSize = fl::getWorldSize();
-  // std::srand(worldRank * 4399);
-
-  // auto deviceId = af::getDevice();
-  // std::unique_ptr<fl::ThreadPool> threadPool =
-  // std::make_unique<fl::ThreadPool>(
-  //     5, [deviceId](int /* threadId */) { af::setDevice(deviceId); });
-
-  // for (int i = 0; i < 10; i++) {
-  //   threadPool->enqueue([i]() {
-  //     usleep((10 - i) * 2e5);
-  //     std::cout << std::rand() << std::endl;
-  //     // std::cout << "wtf: " << std::rand() << " / " << RAND_MAX <<
-  //     std::endl; return;
-  //   });
-  // }
-  // return 0;
-  const std::string labelPath =
-      "/datasets01/imagenet_full_size/061417/labels.txt";
-  const std::string trainList = "/datasets01/imagenet_full_size/061417/train";
-  const std::vector<float> mean = {0.485, 0.456, 0.406};
-  const std::vector<float> std = {0.229, 0.224, 0.225};
-  const int randomResizeMax = 480;
-  const int randomResizeMin = 256;
-  const int randomCropSize = 224;
-  const float horizontalFlipProb = 0.5f;
-  fl::ext::image::ImageTransform trainTransforms = fl::ext::image::compose({
-      fl::ext::image::randomResizeTransform(randomResizeMin, randomResizeMax),
-      fl::ext::image::randomCropTransform(randomCropSize, randomCropSize),
-      fl::ext::image::randomHorizontalFlipTransform(horizontalFlipProb),
-      //  fl::ext::image::randomAugmentationTransform(0.5, 2),
-      fl::ext::image::randomAugmentationTransform(1, 1),
-      fl::ext::image::normalizeImage(mean, std),
-      fl::ext::image::randomEraseTransform(0.25)
-      // end
-  });
-
-  auto batch_size = 3;
-  const int64_t batchSizePerGpu = batch_size;
-  const int64_t prefetchThreads = 3;
-  const int64_t prefetchSize = batch_size * 10;
-  auto labelMap = fl::app::imgclass::getImagenetLabels(labelPath);
-  auto trainDataset = std::make_shared<fl::ext::image::DistributedDataset>(
-      fl::app::imgclass::imagenetDataset(
-          trainList, labelMap, {trainTransforms}),
-      worldRank,
-      worldSize,
-      batchSizePerGpu,
-      3, // FLAGS_train_n_repeatedaug,
-      prefetchThreads,
-      prefetchSize,
-      fl::BatchDatasetPolicy::SKIP_LAST);
-  FL_LOG_MASTER(fl::INFO) << "[trainDataset size] " << trainDataset->size();
-
-  for (int i = 0; i < 10; i++) {
-    // if (worldRank == 1) {
-    //   usleep(2e6);
-    // }
-    auto sample = trainDataset->get(i);
-    fl::allReduce(sample[0]);
-    usleep(1e6);
-    fl::barrier();
-    std::cout << "---" << worldRank << ": " << i << "\n";
-  }
-
-  return 0;
-#endif
-
   auto img = fl::ext::image::loadJpeg(
       "/datasets01/imagenet_full_size/061417/test/ILSVRC2012_test_00036355.JPEG");
   std::cout << img.type() << std::endl;
 
-  std::string root = "/private/home/qiantong/tmp/fl_trans/";
   for (int i = 0; i < 10; i++) {
     fl::ext::image::saveJpeg(
         root + "re" + std::to_string(i) + ".JPEG", randomerase(img));
@@ -487,6 +568,8 @@ int main(int argc, char** argv) {
   }
 
   return 0;
+
+#endif
 
 #if 0
   auto a = fl::VisionTransformer::initLinear(1000, 1000).array();

@@ -37,65 +37,65 @@ const std::string dataDir = "/datasets01/imagenet_full_size/061417";
 const std::string labelPath = lib::pathsConcat(dataDir, "labels.txt");
 const std::string trainList = lib::pathsConcat(dataDir, "val");
 
-TEST(DistributedDatasetTest, Loading) {
-  const ImageTransform trainTransforms = compose({
-      fl::ext::image::randomResizeTransform(randomResizeMin, randomResizeMax),
-      fl::ext::image::randomCropTransform(randomCropSize, randomCropSize),
-      fl::ext::image::randomAugmentationTransform(pRandomeaug, nRandomeaug),
-      fl::ext::image::randomHorizontalFlipTransform(horizontalFlipProb),
-      fl::ext::image::normalizeImage(mean, stdv),
-      fl::ext::image::randomEraseTransform(pRandomerase)
-      // end
-  });
-  auto labelMap = getImagenetLabels(labelPath);
-  auto trainDataset = fl::ext::image::DistributedDataset(
-      imagenetDataset(trainList, labelMap, {trainTransforms}),
-      0, // worldRank,s
-      1, // worldSize,
-      batchSizePerGpu,
-      1, // FLAGS_train_n_repeatedaug,
-      10, // FLAGS_data_prefetch_thread,
-      prefetchSize,
-      fl::BatchDatasetPolicy::INCLUDE_LAST);
+// TEST(DistributedDatasetTest, Loading) {
+//   const ImageTransform trainTransforms = compose({
+//       fl::ext::image::randomResizeTransform(randomResizeMin, randomResizeMax),
+//       fl::ext::image::randomCropTransform(randomCropSize, randomCropSize),
+//       fl::ext::image::randomAugmentationTransform(pRandomeaug, nRandomeaug),
+//       fl::ext::image::randomHorizontalFlipTransform(horizontalFlipProb),
+//       fl::ext::image::normalizeImage(mean, stdv),
+//       fl::ext::image::randomEraseTransform(pRandomerase)
+//       // end
+//   });
+//   auto labelMap = getImagenetLabels(labelPath);
+//   auto trainDataset = fl::ext::image::DistributedDataset(
+//       imagenetDataset(trainList, labelMap, {trainTransforms}),
+//       0, // worldRank,s
+//       1, // worldSize,
+//       batchSizePerGpu,
+//       1, // FLAGS_train_n_repeatedaug,
+//       10, // FLAGS_data_prefetch_thread,
+//       prefetchSize,
+//       fl::BatchDatasetPolicy::INCLUDE_LAST);
 
-  ASSERT_EQ(trainDataset.size(), nSamples / batchSizePerGpu);
+//   ASSERT_EQ(trainDataset.size(), nSamples / batchSizePerGpu);
 
-  auto sample = trainDataset.get(0)[kImagenetInputIdx];
-  ASSERT_EQ(sample.dims(0), 224);
-  ASSERT_EQ(sample.dims(1), 224);
-  ASSERT_EQ(sample.dims(2), 3);
-  ASSERT_EQ(sample.dims(3), batchSizePerGpu);
+//   auto sample = trainDataset.get(0)[kImagenetInputIdx];
+//   ASSERT_EQ(sample.dims(0), 224);
+//   ASSERT_EQ(sample.dims(1), 224);
+//   ASSERT_EQ(sample.dims(2), 3);
+//   ASSERT_EQ(sample.dims(3), batchSizePerGpu);
 
-  auto target = trainDataset.get(0)[kImagenetTargetIdx];
-  ASSERT_EQ(target.dims(0), batchSizePerGpu);
-}
+//   auto target = trainDataset.get(0)[kImagenetTargetIdx];
+//   ASSERT_EQ(target.dims(0), batchSizePerGpu);
+// }
 
-TEST(DistributedDatasetTest, Shuffle) {
-  const ImageTransform trainTransforms = compose({
-      fl::ext::image::randomResizeTransform(randomResizeMin, randomResizeMax),
-      fl::ext::image::randomCropTransform(randomCropSize, randomCropSize),
-      fl::ext::image::randomAugmentationTransform(pRandomeaug, nRandomeaug),
-      fl::ext::image::randomHorizontalFlipTransform(horizontalFlipProb),
-      fl::ext::image::normalizeImage(mean, stdv),
-      fl::ext::image::randomEraseTransform(pRandomerase)
-      // end
-  });
-  auto labelMap = getImagenetLabels(labelPath);
-  auto trainDataset = fl::ext::image::DistributedDataset(
-      imagenetDataset(trainList, labelMap, {trainTransforms}),
-      0, // worldRank,
-      1, // worldSize,
-      batchSizePerGpu,
-      3, // FLAGS_train_n_repeatedaug,
-      10, // FLAGS_data_prefetch_thread,
-      prefetchSize,
-      fl::BatchDatasetPolicy::INCLUDE_LAST);
+// TEST(DistributedDatasetTest, Shuffle) {
+//   const ImageTransform trainTransforms = compose({
+//       fl::ext::image::randomResizeTransform(randomResizeMin, randomResizeMax),
+//       fl::ext::image::randomCropTransform(randomCropSize, randomCropSize),
+//       fl::ext::image::randomAugmentationTransform(pRandomeaug, nRandomeaug),
+//       fl::ext::image::randomHorizontalFlipTransform(horizontalFlipProb),
+//       fl::ext::image::normalizeImage(mean, stdv),
+//       fl::ext::image::randomEraseTransform(pRandomerase)
+//       // end
+//   });
+//   auto labelMap = getImagenetLabels(labelPath);
+//   auto trainDataset = fl::ext::image::DistributedDataset(
+//       imagenetDataset(trainList, labelMap, {trainTransforms}),
+//       0, // worldRank,
+//       1, // worldSize,
+//       batchSizePerGpu,
+//       3, // FLAGS_train_n_repeatedaug,
+//       10, // FLAGS_data_prefetch_thread,
+//       prefetchSize,
+//       fl::BatchDatasetPolicy::INCLUDE_LAST);
 
-  auto target1 = trainDataset.get(0)[kImagenetTargetIdx];
-  trainDataset.resample(4399);
-  auto target2 = trainDataset.get(0)[kImagenetTargetIdx];
-  ASSERT_TRUE(!af::allTrue<bool>(target1 == target2));
-}
+//   auto target1 = trainDataset.get(0)[kImagenetTargetIdx];
+//   trainDataset.resample(4399);
+//   auto target2 = trainDataset.get(0)[kImagenetTargetIdx];
+//   ASSERT_TRUE(!af::allTrue<bool>(target1 == target2));
+// }
 
 TEST(DistributedDatasetTest, RepeatedAug) {
   const ImageTransform trainTransforms = compose({

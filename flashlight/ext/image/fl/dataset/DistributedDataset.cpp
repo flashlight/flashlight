@@ -24,7 +24,7 @@ DistributedDataset::DistributedDataset(
     BatchDatasetPolicy batchpolicy) {
   shuffle_ = std::make_shared<ShuffleDataset>(base);
   auto permfn = [worldSize, worldRank, nRepeated](int64_t idx) {
-    return ((idx * worldSize) + worldRank) / nRepeated;
+    return (idx * worldSize + worldRank) / nRepeated;
   };
 
   int partitionSize = shuffle_->size() / worldSize;

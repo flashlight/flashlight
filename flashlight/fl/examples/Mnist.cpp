@@ -56,7 +56,7 @@ std::pair<double, double> eval_loop(Sequential& model, BatchDataset& dataset) {
     auto target = noGrad(example[TARGET_IDX]);
 
     // Compute and record the prediction error.
-    error_meter.add(reorder(max_ids, 1, 0), target.array());
+    error_meter.add(af::reorder(max_ids, 1, 0), target.array());
 
     // Compute and record the loss.
     auto loss = categoricalCrossEntropy(output, target);
