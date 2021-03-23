@@ -217,7 +217,7 @@ cmake .. -DCMAKE_BUILD_TYPE=Release -DFL_BACKEND=[backend] [...build options]
 make -j$(nproc)
 make install
 ```
-Setting the `MKLROOT` environment variable (`export MKLROOT=/opt/intel/mkl` on most Linux-based systems) can help CMake find Intel MKL if not initially found.
+Setting the `MKLROOT` environment variable (`export MKLROOT=/opt/intel/oneapi/mkl/latest` or `export MKLROOT=/opt/intel/mkl` on most Linux-based systems) can help CMake find Intel MKL if not initially found. 
 
 To build a smaller subset of Flashlight features/apps, see the [build options](#build-options) below for a complete list of options.
 
