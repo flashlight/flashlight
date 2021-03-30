@@ -29,7 +29,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         # for glog
         libgoogle-glog-dev libgoogle-glog0v5 \
         # for receipts data processing
-        sox && \
+        sox libsox-dev && \
 # ==================================================================
 # python (for receipts data processing)
 # ------------------------------------------------------------------
