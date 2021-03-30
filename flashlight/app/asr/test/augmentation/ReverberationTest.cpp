@@ -9,32 +9,17 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/app/asr/augmentation/Reverberation.h"
+#include "flashlight/app/asr/augmentation/SoundEffectUtil.h"
 #include "flashlight/fl/common/Init.h"
 
 using namespace ::fl::app::asr::sfx;
 using testing::Pointwise;
 
-namespace {
 // Arbitrary audioable signal values.
 const int numSamples = 200;
 const size_t freq = 1000;
 const size_t sampleRate = 16000;
 const float amplitude = 1.0;
-
-std::vector<float>
-genSinWave(size_t numSamples, size_t freq, size_t sampleRate, float amplitude) {
-  std::vector<float> output(numSamples, 0);
-  const float waveLenSamples =
-      static_cast<float>(sampleRate) / static_cast<float>(freq);
-  const float ratio = (2 * M_PI) / waveLenSamples;
-
-  for (size_t i = 0; i < numSamples; ++i) {
-    output.at(i) = amplitude * std::sin(static_cast<float>(i) * ratio);
-  }
-  return output;
-}
-
-} // namespace
 
 MATCHER_P(FloatNearPointwise, tol, "Out of range") {
   return (
@@ -82,7 +67,7 @@ TEST(ReverbEcho, SinWaveReverb) {
   conf.initialMax_ = 1;
 
   std::vector<float> signal =
-      genSinWave(numSamples, freq, sampleRate, amplitude);
+      genTestSinWave(numSamples, freq, sampleRate, amplitude);
 
   std::vector<float> input = signal;
   std::vector<float> inpuBeforeDelay(

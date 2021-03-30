@@ -47,6 +47,12 @@ float signalToNoiseRatio(
     const std::vector<float>& signal,
     const std::vector<float>& noise);
 
+std::vector<float> genTestSinWave(
+    size_t numSamples,
+    size_t freq,
+    size_t sampleRate,
+    float amplitude);
+
 } // namespace sfx
 } // namespace asr
 } // namespace app

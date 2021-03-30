@@ -10,6 +10,7 @@
 
 #include "flashlight/app/asr/augmentation/SoundEffect.h"
 #include "flashlight/fl/common/Init.h"
+#include "flashlight/app/asr/augmentation/SoundEffectUtil.h"
 
 using namespace ::fl::app::asr::sfx;
 using ::testing::AllOf;
@@ -23,23 +24,6 @@ const int numSamples = 10000;
 const size_t freq = 1000;
 const size_t sampleRate = 16000;
 
-namespace {
-
-std::vector<float>
-genSinWave(size_t numSamples, size_t freq, size_t sampleRate, float amplitude) {
-  std::vector<float> output(numSamples, 0);
-  const float waveLenSamples =
-      static_cast<float>(sampleRate) / static_cast<float>(freq);
-  const float ratio = (2 * M_PI) / waveLenSamples;
-
-  for (size_t i = 0; i < numSamples; ++i) {
-    output.at(i) = amplitude * std::sin(static_cast<float>(i) * ratio);
-  }
-  return output;
-}
-
-} // namespace
-
 /**
  * Test that after clamping the amplitude the resulting amplitude is in [-1..1]
  * range. This test first generate a sine-wave with amplitude of 2.0 then clamp
@@ -49,7 +33,7 @@ TEST(SoundEffect, ClampAmplitude) {
   ClampAmplitude sfx;
   const float amplitude = 2.0;
   std::vector<float> signal =
-      genSinWave(numSamples, freq, sampleRate, amplitude);
+      genTestSinWave(numSamples, freq, sampleRate, amplitude);
   sfx.apply(signal);
   EXPECT_THAT(signal, Each(AllOf(Ge(-1.0), Le(1.0))));
 }
@@ -63,7 +47,7 @@ TEST(SoundEffect, NormalizeTooHigh) {
   Normalize sfx(/*onlyIfTooHigh=*/true);
   const float amplitude = 2.0;
   std::vector<float> signal =
-      genSinWave(numSamples, freq, sampleRate, amplitude);
+      genTestSinWave(numSamples, freq, sampleRate, amplitude);
   sfx.apply(signal);
   EXPECT_THAT(signal, Each(AllOf(Ge(-1.0), Le(1.0))));
 }
@@ -76,7 +60,7 @@ TEST(SoundEffect, NoNormalizeTooLow) {
   Normalize sfx(/*onlyIfTooHigh=*/true);
   const float amplitude = 0.5;
   std::vector<float> signal =
-      genSinWave(numSamples, freq, sampleRate, amplitude);
+      genTestSinWave(numSamples, freq, sampleRate, amplitude);
   std::vector<float> signalCopy = signal;
   sfx.apply(signalCopy);
   EXPECT_EQ(signal, signalCopy);
@@ -90,7 +74,7 @@ TEST(SoundEffect, NormalizeTooLow) {
   Normalize sfx(/*onlyIfTooHigh=*/false);
   const float amplitude = 0.5;
   std::vector<float> signal =
-      genSinWave(numSamples, freq, sampleRate, amplitude);
+      genTestSinWave(numSamples, freq, sampleRate, amplitude);
   sfx.apply(signal);
   EXPECT_THAT(signal, Each(AllOf(Ge(-1.0f), Le(1.0f))));
   EXPECT_THAT(signal, testing::Contains(-1.0f));
@@ -112,7 +96,7 @@ TEST(SoundEffect, Amplify) {
   Amplify sfx(conf);
 
   std::vector<float> sound =
-      genSinWave(numSamples, freq, sampleRate, amplitude);
+      genTestSinWave(numSamples, freq, sampleRate, amplitude);
 
   // get min/max amplification after 100 apply, each chooses a random value with
   // in range.
@@ -155,7 +139,7 @@ TEST(SoundEffect, SfxChain) {
   sfxChain->add(std::make_shared<Amplify>(amp2));
 
   std::vector<float> signal =
-      genSinWave(numSamples, freq, sampleRate, amplitude);
+      genTestSinWave(numSamples, freq, sampleRate, amplitude);
   sfxChain->apply(signal);
   EXPECT_THAT(signal, Each(AllOf(Ge(-amplitude), Le(amplitude))));
 }
