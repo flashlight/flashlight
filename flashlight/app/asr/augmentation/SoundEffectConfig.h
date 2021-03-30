@@ -14,6 +14,7 @@
 #include "flashlight/app/asr/augmentation/AdditiveNoise.h"
 #include "flashlight/app/asr/augmentation/Reverberation.h"
 #include "flashlight/app/asr/augmentation/SoundEffect.h"
+#include "flashlight/app/asr/augmentation/TimeStretch.h"
 
 namespace fl {
 namespace app {
@@ -26,6 +27,7 @@ constexpr const char* const kAmplify = "Amplify";
 constexpr const char* const kClampAmplitude = "ClampAmplitude";
 constexpr const char* const kNormalize = "Normalize";
 constexpr const char* const kReverbEcho = "ReverbEcho";
+constexpr const char* const kTimeStretch = "TimeStretch";
 
 struct SoundEffectConfig {
   std::string type_;
@@ -36,6 +38,7 @@ struct SoundEffectConfig {
   AdditiveNoise::Config additiveNoiseConfig_;
   Amplify::Config amplifyConfig_;
   ReverbEcho::Config reverbEchoConfig_;
+  TimeStretch::Config timeStretchConfig_;
 };
 
 std::shared_ptr<SoundEffect> createSoundEffect(
