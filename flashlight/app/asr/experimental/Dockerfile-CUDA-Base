@@ -35,7 +35,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
         # for glog
         libgoogle-glog-dev libgoogle-glog0v5 \
         # for receipts data processing
-        sox \
+        sox libsox-dev \
         # for python
         python3-distutils && \
 # ==================================================================
@@ -85,7 +85,7 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
     cd kenlm && git checkout e47088ddfae810a5ee4c8a9923b5f8071bed1ae8 && \
     mkdir build && cd build && \
     cmake .. -DCMAKE_POSITION_INDEPENDENT_CODE=ON && \
-    make -j$(nproc) && make install && \ 
+    make -j$(nproc) && make install && \
 # ==================================================================
 # config & cleanup
 # ------------------------------------------------------------------
