@@ -65,6 +65,8 @@ DEFINE_string(distill_model, "", "teacher model to distill from");
 DEFINE_double(distill_criterion_weight, 0., "weight of task criterion");
 DEFINE_double(distill_ce_weight, 1., "weight of cross entropy");
 DEFINE_double(distill_cd_weight, 1., "weight of cosine distance");
+DEFINE_double(distill_temperature, 1., "temperature");
+DEFINE_int64(distill_cd_layer, -1, "distill_cd_layer");
 
 } // namespace
 
@@ -329,6 +331,8 @@ int main(int argc, char** argv) {
     std::string version;
     Serializer::load(
         FLAGS_distill_model, version, cfg, networkDistill, criterionDistill);
+    networkDistill->eval();
+    criterionDistill->eval();
   }
 
   auto scalemode = getCriterionScaleMode(FLAGS_onorm, FLAGS_sqnorm);
@@ -397,11 +401,12 @@ int main(int argc, char** argv) {
           dummyTransition,
           tokenDict,
           wordDict,
-          DecodeMasterTrainOptions{.repLabel = int32_t(FLAGS_replabel),
-                                   .wordSepIsPartOfToken = FLAGS_usewordpiece,
-                                   .surround = FLAGS_surround,
-                                   .wordSep = FLAGS_wordseparator,
-                                   .targetPadIdx = targetpadVal});
+          DecodeMasterTrainOptions{
+              .repLabel = int32_t(FLAGS_replabel),
+              .wordSepIsPartOfToken = FLAGS_usewordpiece,
+              .surround = FLAGS_surround,
+              .wordSep = FLAGS_wordseparator,
+              .targetPadIdx = targetpadVal});
     } else {
       throw std::runtime_error(
           "Other decoders are not supported yet during training");
@@ -902,19 +907,34 @@ int main(int argc, char** argv) {
               curBatch >= FLAGS_saug_start_update) {
             input = saug->forward({input}).front();
           }
-          auto output = fl::ext::forwardSequentialModuleWithPadMask(
-              input, ntwrk, batch[kDurationIdx]);
+          auto outputs = fl::ext::forwardSequentialModuleWithPadMask(
+              input, ntwrk, batch[kDurationIdx], {FLAGS_distill_cd_layer, -1});
+
           af::sync();
           meters.critfwdtimer.resume();
           fl::Variable loss =
-              crit->forward({output, fl::noGrad(batch[kTargetIdx])}).front();
+              crit->forward({outputs.back(), fl::noGrad(batch[kTargetIdx])})
+                  .front();
           if (!FLAGS_distill_model.empty()) {
             auto teacherOut = fl::ext::forwardSequentialModuleWithPadMask(
-                input, networkDistill, batch[kDurationIdx]);
-            auto cd = cosineDistance(output, teacherOut);
-            auto ce =
-                crossEntropy(softmax(teacherOut, 0), logSoftmax(output, 0));
-            loss = FLAGS_distill_criterion_weight * loss +
+                input,
+                networkDistill,
+                batch[kDurationIdx],
+                {FLAGS_distill_cd_layer, -1});
+            auto cd = cosineDistance(outputs.front(), teacherOut.front()); // layer[-2]
+            auto ce = crossEntropy(
+                softmax(teacherOut.back() / FLAGS_distill_temperature, 0),
+                logSoftmax(outputs.back() / FLAGS_distill_temperature, 0));
+            if (hasher(join(",", readSampleIds(batch[kSampleIdx]))) % 100 <=
+                1) {
+              std::cout << outputs.front().dims() << " " << outputs.back().dims()
+                        << std::endl;
+              std::cout << "[losses]" << fl::getWorldRank() << " | "
+                        << mean(loss, {0}).scalar<float>() << ", "
+                        << cd.scalar<float>() << ", " << ce.scalar<float>()
+                        << std::endl;
+            }
+            loss = FLAGS_distill_criterion_weight * sum(loss, {0}) +
                 FLAGS_distill_cd_weight * cd + FLAGS_distill_ce_weight * ce;
           }
           af::sync();
@@ -944,7 +964,7 @@ int main(int argc, char** argv) {
 
           if (hasher(join(",", readSampleIds(batch[kSampleIdx]))) % 100 <=
               FLAGS_pcttraineval) {
-            evalOutput(output.array(), batch[kTargetIdx], meters.train);
+            evalOutput(outputs.back().array(), batch[kTargetIdx], meters.train);
           }
 
           // backward
