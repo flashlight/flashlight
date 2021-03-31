@@ -71,6 +71,39 @@ af::array glorotNormal(
   return normal(shape, stdv, 0, type);
 }
 
+af::array erfinv(const af::array& y) {
+  if (af::anyTrue<bool>(af::abs(y) >= 1.)) {
+    throw std::runtime_error("[erfinv] input is out of range (-1, 1)");
+  }
+  double a[4] = {0.886226899, -1.645349621, 0.914624893, -0.140543331};
+  double b[4] = {-2.118377725, 1.442710462, -0.329097515, 0.012229801};
+  double c[4] = {-1.970840454, -1.624906493, 3.429567803, 1.641345311};
+  double d[2] = {3.543889200, 1.637067800};
+
+  auto centralMask = af::abs(y) <= 0.7;
+
+  auto z = y * y;
+  auto num = (((a[3] * z + a[2]) * z + a[1]) * z + a[0]);
+  auto dem = ((((b[3] * z + b[2]) * z + b[1]) * z + b[0]) * z + 1.0);
+  z = y * num / dem;
+  auto x = z * centralMask;
+
+  z = af::sqrt(-af::log((1.0 - af::abs(y)) / 2.0));
+  num = ((c[3] * z + c[2]) * z + c[1]) * z + c[0];
+  dem = (d[1] * z + d[0]) * z + 1.0;
+  z = 1 - 2 * af::sign(y).as(f32); // -1 for negative, 1 for positive
+  z = z * num / dem;
+  x = x + z * !centralMask;
+
+  /* Two steps of Newton-Raphson correction */
+  x = x - (af::erf(x) - y) / ((2.0 / std::sqrt(M_PI)) * af::exp(-x * x));
+  x = x - (af::erf(x) - y) / ((2.0 / std::sqrt(M_PI)) * af::exp(-x * x));
+  if (af::anyTrue<bool>(af::isNaN(x)) || af::anyTrue<bool>(af::isInf(x))) {
+    throw std::runtime_error("[erfinv] invalid result");
+  }
+  return x;
+}
+
 } // namespace af
 
 namespace fl {
@@ -171,6 +204,31 @@ Variable glorotNormal(
     af::dtype type /* = af::dtype::f32 */,
     bool calcGrad /* = true */) {
   return Variable(af::glorotNormal(shape, fanIn, fanOut, type), calcGrad);
+}
+
+Variable truncNormal(
+    af::dim4 shape,
+    double stdv,
+    double mean,
+    double minCufOff,
+    double maxCutOff,
+    af::dtype type,
+    bool calcGrad) {
+  // following: https://git.io/JYYAr
+  auto normCdf = [](double x) {
+    return (1. + std::erf(x / std::sqrt(2.))) / 2.;
+  };
+
+  auto l = 2 * normCdf((minCufOff - mean) / stdv) - 1;
+  auto u = 2 * normCdf((maxCutOff - mean) / stdv) - 1;
+
+  float eps = 1e-7;
+  auto result = af::randu(shape, type) * (u - l) + l;
+  result = af::clamp(result, -1 + eps, 1 - eps); // make sure erf is in range
+  result = erfinv(result);
+  result = mean + result * (stdv * std::sqrt(2.));
+  result = af::clamp(result, minCufOff, maxCutOff);
+  return Variable(result, calcGrad);
 }
 
 } // namespace fl

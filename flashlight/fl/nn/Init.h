@@ -151,6 +151,49 @@ af::array glorotNormal(
     int fanOut,
     af::dtype type = af::dtype::f32);
 
+/*
+ * Approximation of inverse error function.
+ * TODO: to be removed once it's directly supported in AF.
+ *
+ * Implementation follows: https://git.io/JYuWA
+ *
+    Copyright (c) 2014 Indiana University
+    All rights reserved.
+    Written by Prof. Gary L. Pavlis, Dept. of Geol. Sci.,
+            Indiana University, Bloomington, IN
+    This software is licensed under the New BSD license:
+    Redistribution and use in source and binary forms,
+    with or without modification, are permitted provided
+    that the following conditions are met:
+    Redistributions of source code must retain the above
+    copyright notice, this list of conditions and the
+    following disclaimer.
+    Redistributions in binary form must reproduce the
+    above copyright notice, this list of conditions and
+    the following disclaimer in the documentation and/or
+    other materials provided with the distribution.
+    Neither the name of Indiana University nor
+    the names of its contributors may be used to endorse
+    or promote products derived from this software without
+    specific prior written permission.
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+    CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+    WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+    PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+    THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY
+    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+    CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+    USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+    HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+    IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+    NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+    USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+    POSSIBILITY OF SUCH DAMAGE.
+ */
+af::array erfinv(const af::array& y);
+
 } // namespace af
 
 namespace fl {
@@ -460,6 +503,34 @@ Variable glorotNormal(
     af::dim4 shape,
     int fanIn,
     int fanOut,
+    af::dtype type = af::dtype::f32,
+    bool calcGrad = true);
+
+/**
+ * Creates a `Variable` representing a tensor with given input dimensions where
+ * elements are distributed according to the a truncated normal distribution as
+ * in [here](https://en.wikipedia.org/wiki/Truncated_normal_distribution).
+ *
+ * @param dims an ArrayFire tensor shape
+ * @param stdv the standard deviation by which to parameterize the distribution
+ * @param mean the mean by which to parameterize the distribution
+ * @param minCufOff the minimum value of the distribution
+ * @param maxCutOff the maximum value of the distribution
+ * @param type the ArrayFire datatype for which to create the tensor
+ * @param calcGrad flag denoting whether gradient calculation on the resulting
+ * `Variable` should be enabled
+ *
+ * @return A `Variable` containing a tensor with random values distributed
+ * accordingly.
+ *
+ * \ingroup nn_init_utils
+ */
+Variable truncNormal(
+    af::dim4 shape,
+    double stdv = 1.,
+    double mean = 0.,
+    double minCufOff = -2.,
+    double maxCutOff = 2.,
     af::dtype type = af::dtype::f32,
     bool calcGrad = true);
 
