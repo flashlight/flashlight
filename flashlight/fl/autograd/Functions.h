@@ -347,6 +347,12 @@ Variable sigmoid(const Variable& input);
 Variable swish(const Variable& input, double beta);
 
 /**
+ * Computes the error function of each element in a Variable
+ * from as in [here](https://en.wikipedia.org/wiki/Error_function)
+ */
+Variable erf(const Variable& input);
+
+/**
  * Returns element-wise maximum value of two Variables.
  * \f[ out = max(var_1, var_2) \f]
  */
