@@ -237,9 +237,10 @@ int main(int argc, char** argv) {
   FL_LOG_MASTER(INFO) << "[valDataset size] " << valDataset.size();
 
   //////////////////////////
-  //  Load model and optimizer
+  //  Create model
   /////////////////////////
-  af::setSeed(FLAGS_train_seed);
+  af::setSeed(FLAGS_train_seed); // Making sure the models are initialized in
+                                 // the same way across different processes
   auto model = std::make_shared<fl::ext::image::ViT>(
       FLAGS_model_layers,
       FLAGS_model_hidden_emb_size,
@@ -253,18 +254,38 @@ int main(int argc, char** argv) {
   fl::allReduceParameters(model);
   fl::distributeModuleGrads(model, reducer);
 
+  // Setting different seeds for better randomness
   af::setSeed(worldRank + FLAGS_train_seed);
   std::srand(worldRank + FLAGS_train_seed);
 
-  auto opt = AdamOptimizer(
-      model->params(),
+  //////////////////////////
+  //  Optimizer
+  /////////////////////////
+  std::vector<fl::Variable> paramsWithWeightDecay(
+      model->params().begin() + 2, model->params().end());
+  auto optWithWeightDecay = AdamOptimizer(
+      paramsWithWeightDecay,
       FLAGS_train_lr,
       FLAGS_train_beta1,
       FLAGS_train_beta2,
       1e-8,
       FLAGS_train_wd);
 
-  auto lrScheduler = [&opt](int epoch) {
+  // Excluding class token and positional embedding from weight decay
+  std::vector<fl::Variable> paramsNoWeightDecay(
+      model->params().begin(), model->params().begin() + 2);
+  auto optNoWeightDecay = AdamOptimizer(
+      paramsNoWeightDecay,
+      FLAGS_train_lr,
+      FLAGS_train_beta1,
+      FLAGS_train_beta2,
+      1e-8,
+      0);
+
+  //////////////////////////
+  //  Small utility functions
+  /////////////////////////
+  auto lrScheduler = [&optWithWeightDecay, &optNoWeightDecay](int epoch) {
     // following https://git.io/JYOOV
     double lr;
     if (epoch <= FLAGS_train_warmup_epochs) {
@@ -277,13 +298,12 @@ int main(int argc, char** argv) {
                    ((double)epoch - 1) / ((double)FLAGS_train_epochs) * M_PI) +
                1);
     }
-    opt.setLr(lr);
+    optWithWeightDecay.setLr(lr);
+    optNoWeightDecay.setLr(lr);
   };
 
-  // Small utility functions to load and save models
   int batchIdx = 0;
   int epoch = 0;
-
   auto saveModel =
       [&model, &isMaster, &epoch, &batchIdx](const std::string& suffix = "") {
         if (isMaster) {
@@ -292,7 +312,6 @@ int main(int argc, char** argv) {
           fl::save(modelPath, model, batchIdx, epoch);
         }
       };
-
   auto loadModel = [&model, &epoch, &batchIdx]() {
     FL_LOG_MASTER(INFO) << "Loading model from file: "
                         << FLAGS_exp_checkpoint_path;
@@ -383,7 +402,8 @@ int main(int argc, char** argv) {
 
         // 3. Backward
         bwdTimeMeter.resume();
-        opt.zeroGrad();
+        optWithWeightDecay.zeroGrad();
+        optNoWeightDecay.zeroGrad();
         loss.backward();
         if (FLAGS_distributed_enable) {
           reducer->finalize();
@@ -429,7 +449,8 @@ int main(int argc, char** argv) {
       if (FLAGS_train_maxgradnorm > 0) {
         fl::clipGradNorm(model->params(), FLAGS_train_maxgradnorm);
       }
-      opt.step();
+      optWithWeightDecay.step();
+      optNoWeightDecay.step();
       optimTimeMeter.stopAndIncUnit();
 
       // 5. update scale factor
@@ -467,7 +488,7 @@ int main(int argc, char** argv) {
             << fl::lib::format("%.2f", bwdTimeMeter.value() * 1000)
             << " : Optimization Time(ms): "
             << fl::lib::format("%.2f", optimTimeMeter.value() * 1000)
-            << " | LR: " << opt.getLr()
+            << " | LR: " << optNoWeightDecay.getLr()
             << ": Avg Train Loss: " << trainLossMeter.value()[0];
         trainLossMeter.reset();
         timeMeter.reset();
