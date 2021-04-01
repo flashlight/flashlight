@@ -28,6 +28,7 @@ const fl::cpp::
              // Perform all operations in fp16 except for:
              {"batchnorm",
               "reciprocal",
+              "erf",
               "exp",
               "log",
               "log1p",
