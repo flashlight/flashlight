@@ -443,6 +443,17 @@ Variable swish(const Variable& input, double beta) {
   return input * sigmoid(beta * input);
 }
 
+Variable erf(const Variable& input) {
+  auto result = af::erf(FL_ADJUST_INPUT_TYPE(input.array()));
+  auto gradFunc = [](std::vector<Variable>& inputs,
+                     const Variable& gradOutput) {
+    auto x = inputs[0].array();
+    auto grad = gradOutput.array() * 2 / std::sqrt(M_PI) * af::exp(-(x * x));
+    inputs[0].addGrad(Variable(grad, false));
+  };
+  return Variable(result, {input}, gradFunc);
+}
+
 Variable transpose(const Variable& input) {
   auto result = af::transpose(input.array());
   auto gradFunc = [](std::vector<Variable>& inputs,
