@@ -100,7 +100,6 @@ std::vector<fl::Variable> ViT::forward(
   output = ln_->forward(output); // C x T x B
   output = reorder(output, 0, 2, 1, 3).slice(0); // C x B x 1
   output = linearOut_->forward(output);
-  output = logSoftmax(output, 0).as(output.type());
 
   return {output};
 }

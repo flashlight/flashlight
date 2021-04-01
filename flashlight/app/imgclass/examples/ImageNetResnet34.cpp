@@ -12,6 +12,7 @@
 #include <glog/logging.h>
 
 #include "flashlight/app/imgclass/dataset/Imagenet.h"
+#include "flashlight/app/imgclass/examples/Defines.h"
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/image/af/Transforms.h"
 #include "flashlight/ext/image/fl/dataset/DistributedDataset.h"
@@ -122,8 +123,6 @@ int main(int argc, char** argv) {
   //  Create datasets
   /////////////////////////
   // These are the mean and std for each channel of Imagenet
-  const std::vector<float> mean = {0.485, 0.456, 0.406};
-  const std::vector<float> std = {0.229, 0.224, 0.225};
   const int randomResizeMax = 480;
   const int randomResizeMin = 256;
   const int randomCropSize = 224;
@@ -136,14 +135,16 @@ int main(int argc, char** argv) {
        // scale invariance
        fl::ext::image::randomResizeTransform(randomResizeMin, randomResizeMax),
        fl::ext::image::randomCropTransform(randomCropSize, randomCropSize),
-       fl::ext::image::normalizeImage(mean, std),
+       fl::ext::image::normalizeImage(
+           fl::app::image::kImageNetMean, fl::app::image::kImageNetStd),
        // Randomly flip image with probability of 0.5
        fl::ext::image::randomHorizontalFlipTransform(horizontalFlipProb)});
-  ImageTransform valTransforms =
-      compose({// Resize shortest side to 256, then take a center crop
-               fl::ext::image::resizeTransform(randomResizeMin),
-               fl::ext::image::centerCropTransform(randomCropSize),
-               fl::ext::image::normalizeImage(mean, std)});
+  ImageTransform valTransforms = compose(
+      {// Resize shortest side to 256, then take a center crop
+       fl::ext::image::resizeTransform(randomResizeMin),
+       fl::ext::image::centerCropTransform(randomCropSize),
+       fl::ext::image::normalizeImage(
+           fl::app::image::kImageNetMean, fl::app::image::kImageNetStd)});
 
   const int64_t batchSizePerGpu = FLAGS_data_batch_size;
   const int64_t prefetchThreads = 10;
