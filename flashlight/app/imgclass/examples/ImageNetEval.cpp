@@ -96,8 +96,10 @@ int main(int argc, char** argv) {
       worldRank,
       worldSize,
       FLAGS_data_batch_size,
-      10,
-      FLAGS_data_batch_size);
+      1, // train_n_repeatedaug
+      10, // prefetch threads
+      FLAGS_data_batch_size,
+      fl::BatchDatasetPolicy::INCLUDE_LAST);
   FL_LOG_MASTER(INFO) << "[testDataset size] " << testDataset.size();
 
   // The main evaluation loop

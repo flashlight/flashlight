@@ -22,8 +22,11 @@ void ShuffleDataset::resample() {
   std::iota(resampleVec_.begin(), resampleVec_.end(), 0);
   auto n = resampleVec_.size();
   // custom implementation of shuffle - https://stackoverflow.com/a/51931164
-  for (auto i = n; i >= 1; --i) {
-    std::swap(resampleVec_[i - 1], resampleVec_[rng_() % n]);
+  using distr_t = std::uniform_int_distribution<unsigned int>;
+  distr_t D;
+  for (int i = n - 1; i > 0; --i) {
+    std::swap(
+        resampleVec_[i], resampleVec_[D(rng_, distr_t::param_type(0, i))]);
   }
 }
 
