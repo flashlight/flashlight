@@ -9,6 +9,7 @@
 
 #include <numeric>
 #include <random>
+#include <stdexcept>
 
 // TODO consider moving these outside of annonymous namespace
 namespace {
@@ -16,6 +17,18 @@ namespace {
 float randomFloat(float a, float b) {
   float r = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
   return a + (b - a) * r;
+}
+
+template <class T>
+T randomNegate(T a) {
+  float r = randomFloat(0, 1);
+  return r > 0.5 ? a : -a;
+}
+
+template <class T>
+T randomPerturbNegate(T base, T minNoise, T maxNoise) {
+  float noise = randomFloat(minNoise, maxNoise);
+  return randomNegate(base + noise);
 }
 
 /*
@@ -51,6 +64,170 @@ af::array centerCrop(const af::array& in, const int size) {
   const int cropLeft = std::round((static_cast<float>(w) - size) / 2.);
   const int cropTop = std::round((static_cast<float>(h) - size) / 2.);
   return crop(in, cropLeft, cropTop, size, size);
+}
+
+// TODO: for af::rotate, af::skew, af::translate
+//  - they only support zero-filling on empty spots
+//  - we add a hack to manually fill from fillImg
+//  - to be removed once customized filling is supported in AF directly
+af::array
+rotate(const af::array& input, const float theta, const af::array& fillImg) {
+  float delta = 1e-2;
+  auto res = input;
+  if (!fillImg.isempty()) {
+    res = res + delta;
+  }
+
+  res = af::rotate(res, theta);
+
+  if (!fillImg.isempty()) {
+    auto mask = af::sum(res, 2) == 0;
+    mask = af::tile(mask, 1, 1, 3);
+    res = mask * fillImg + (1 - mask) * (res - delta);
+  }
+  return res;
+}
+
+af::array
+skewX(const af::array& input, const float theta, const af::array& fillImg) {
+  float delta = 1e-2;
+  auto res = input;
+  if (!fillImg.isempty()) {
+    res = res + delta;
+  }
+
+  res = af::skew(res, theta, 0);
+
+  if (!fillImg.isempty()) {
+    auto mask = af::sum(res, 2) == 0;
+    mask = af::tile(mask, 1, 1, 3);
+    res = mask * fillImg + (1 - mask) * (res - delta);
+  }
+  return res;
+}
+
+af::array
+skewY(const af::array& input, const float theta, const af::array& fillImg) {
+  float delta = 1e-2;
+  auto res = input;
+  if (!fillImg.isempty()) {
+    res = res + delta;
+  }
+
+  res = af::skew(res, 0, theta);
+
+  if (!fillImg.isempty()) {
+    auto mask = af::sum(res, 2) == 0;
+    mask = af::tile(mask, 1, 1, 3);
+    res = mask * fillImg + (1 - mask) * (res - delta);
+  }
+  return res;
+}
+
+af::array
+translateX(const af::array& input, const int shift, const af::array& fillImg) {
+  float delta = 1e-2;
+  auto res = input;
+  if (!fillImg.isempty()) {
+    res = res + delta;
+  }
+
+  res = af::translate(res, shift, 0);
+
+  if (!fillImg.isempty()) {
+    auto mask = af::sum(res, 2) == 0;
+    mask = af::tile(mask, 1, 1, 3);
+    res = mask * fillImg + (1 - mask) * (res - delta);
+  }
+  return res;
+}
+
+af::array
+translateY(const af::array& input, const int shift, const af::array& fillImg) {
+  float delta = 1e-2;
+  auto res = input;
+  if (!fillImg.isempty()) {
+    res = res + delta;
+  }
+
+  res = af::translate(res, 0, shift);
+
+  if (!fillImg.isempty()) {
+    auto mask = af::sum(res, 2) == 0;
+    mask = af::tile(mask, 1, 1, 3);
+    res = mask * fillImg + (1 - mask) * (res - delta);
+  }
+  return res;
+}
+
+af::array colorEnhance(const af::array& input, const float enhance) {
+  auto c = input.dims(2);
+  auto meanPic = af::mean(input, 2);
+  meanPic = af::tile(meanPic, af::dim4(1, 1, c));
+  return meanPic + enhance * (input - meanPic);
+}
+
+af::array autoContrast(const af::array& input) {
+  auto inputFlat = af::flat(input);
+  auto minPic = af::tile(af::min(inputFlat, 0), input.dims());
+  auto maxPic = af::tile(af::max(inputFlat, 0), input.dims());
+  auto scale = 256. / (maxPic - minPic + 1);
+  return scale * (input - minPic);
+}
+
+af::array contrastEnhance(const af::array& input, const float enhance) {
+  auto inputFlat = af::flat(input);
+  auto meanPic = af::mean(inputFlat, 0);
+  meanPic = af::tile(meanPic, input.dims());
+  return meanPic + enhance * (input - meanPic);
+}
+
+af::array brightnessEnhance(const af::array& input, const float enhance) {
+  return input * enhance;
+}
+
+af::array invert(const af::array& input) {
+  return 255. - input;
+}
+
+af::array solarize(const af::array& input, const float threshold) {
+  auto mask = (input < threshold);
+  return mask * input + (1 - mask) * (255 - input);
+}
+
+af::array solarizeAdd(
+    const af::array& input,
+    const float threshold,
+    const float addValue) {
+  auto mask = (input < threshold);
+  return mask * (input + addValue) + (1 - mask) * input;
+}
+
+af::array equalize(const af::array& input) {
+  auto res = flat(input);
+  auto hist = af::histogram(res, 256);
+  res = af::histEqual(res, hist);
+  res = moddims(res, input.dims());
+  return res;
+}
+
+af::array posterize(const af::array& input, const int bitsToKeep) {
+  if (bitsToKeep < 1 || bitsToKeep > 8) {
+    throw std::invalid_argument("bitsToKeep needs to be in [1, 8]");
+  }
+  uint8_t mask = ~((1 << (8 - bitsToKeep)) - 1);
+  auto res = input.as(u8) & mask;
+  return res.as(input.type());
+}
+
+af::array sharpnessEnhance(const af::array& input, const float enhance) {
+  const int c = input.dims(2);
+
+  auto meanPic = af::mean(input, 2);
+  auto blurKernel = af::gaussianKernel(7, 7);
+  auto blur = af::convolve(meanPic, blurKernel);
+  auto diff = af::tile(meanPic - blur, af::dim4(1, 1, c));
+  return input + enhance * diff;
 }
 
 } // namespace
@@ -197,6 +374,100 @@ ImageTransform randomEraseTransform(
     return out;
   };
 };
+
+ImageTransform randomAugmentationDeitTransform(
+    const float p,
+    const int n,
+    const af::array& fillImg) {
+  // Selected 15 transform functions with specific parameters
+  // following https://git.io/JYGG6
+
+  return [p, n, fillImg](const af::array& in) {
+    auto res = in;
+    for (int i = 0; i < n; i++) {
+      if (p < randomFloat(0, 1)) {
+        continue;
+      }
+
+      int mode = std::floor(randomFloat(0, 15 - 1e-5));
+      if (mode == 0) {
+        // rotate
+        float baseTheta = M_PI / 6;
+        float theta = randomPerturbNegate<float>(baseTheta, -0.02, 0.02);
+
+        res = rotate(res, theta, fillImg);
+      } else if (mode == 1) {
+        // skew-x
+        float baseTheta = M_PI / 6;
+        float theta = randomPerturbNegate<float>(baseTheta, -0.02, 0.02);
+
+        res = skewX(res, theta, fillImg);
+      } else if (mode == 2) {
+        // skew-y
+        float baseTheta = .3;
+        float theta = randomPerturbNegate<float>(baseTheta, -0.02, 0.02);
+
+        res = skewY(res, theta, fillImg);
+      } else if (mode == 3) {
+        // translate-x
+        int baseDelta = 100;
+        int delta = randomPerturbNegate<int>(baseDelta, -3, 3);
+
+        res = translateX(res, delta, fillImg);
+      } else if (mode == 4) {
+        // translate-y
+        int baseDelta = 100;
+        int delta = randomPerturbNegate<int>(baseDelta, -3, 3);
+
+        res = translateY(res, delta, fillImg);
+      } else if (mode == 5) {
+        // color
+        float baseEnhance = .8;
+        float enhance = 1 + randomPerturbNegate<float>(baseEnhance, -0.03, 0.03);
+
+        res = colorEnhance(res, enhance);
+      } else if (mode == 6) {
+        // auto contrast
+        res = autoContrast(res);
+      } else if (mode == 7) {
+        // contrast
+        float baseEnhance = .8;
+        float enhance = 1 + randomPerturbNegate<float>(baseEnhance, -0.03, 0.03);
+
+        res = contrastEnhance(res, enhance);
+      } else if (mode == 8) {
+        // brightness
+        float baseEnhance = .8;
+        float enhance = 1 + randomPerturbNegate<float>(baseEnhance, -0.03, 0.03);
+
+        res = brightnessEnhance(res, enhance);
+      } else if (mode == 9) {
+        // invert
+        res = invert(res);
+      } else if (mode == 10) {
+        // solarize
+        res = solarize(res, 26.);
+      } else if (mode == 11) {
+        // solarize add
+        res = solarizeAdd(res, 128., 100.);
+      } else if (mode == 12) {
+        // equalize
+        res = equalize(res);
+      } else if (mode == 13) {
+        // posterize
+        res = posterize(res, 1);
+      } else if (mode == 14) {
+        // sharpness
+        float baseEnhance = .5;
+        float enhance = randomPerturbNegate<float>(baseEnhance, -0.01, 0.01);
+
+        res = sharpnessEnhance(res, enhance);
+      }
+      res = af::clamp(res, 0., 255.).as(res.type());
+    }
+    return res;
+  };
+}
 
 } // namespace image
 } // namespace ext

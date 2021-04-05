@@ -40,6 +40,14 @@ DEFINE_int64(train_seed, 1, "Seed");
 
 DEFINE_double(train_p_label_smoothing, 0.1, "Label smoothing probability");
 DEFINE_double(train_p_randomerase, 0.25, "Random erasing probablity");
+DEFINE_double(
+    train_p_randomeaug,
+    0.5,
+    "Probablity of applying random augentation transform to each sample");
+DEFINE_uint64(
+    train_n_randomeaug,
+    2,
+    "Number of random augentation transforms applied to each sample");
 DEFINE_uint64(
     train_n_repeatedaug,
     3,
@@ -196,6 +204,10 @@ int main(int argc, char** argv) {
   const int imageSize = 224;
   // Conventional image resize parameter used for evaluation
   const int randomResizeMin = imageSize / .875;
+  auto fillImg = af::tile(
+      af::array(1, 1, 3, 1, fl::app::image::kImageNetMean.data()),
+      imageSize,
+      imageSize);
 
   ImageTransform trainTransforms = compose(
       {fl::ext::image::randomResizeCropTransform(
@@ -207,6 +219,8 @@ int main(int argc, char** argv) {
            ),
        fl::ext::image::randomHorizontalFlipTransform(0.5 // flipping probablity
                                                      ),
+       fl::ext::image::randomAugmentationDeitTransform(
+           FLAGS_train_p_randomeaug, FLAGS_train_n_randomeaug, fillImg),
        fl::ext::image::normalizeImage(
            fl::app::image::kImageNetMean, fl::app::image::kImageNetStd),
        fl::ext::image::randomEraseTransform(FLAGS_train_p_randomerase)});
