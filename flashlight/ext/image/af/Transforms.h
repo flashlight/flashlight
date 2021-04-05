@@ -74,6 +74,27 @@ ImageTransform randomEraseTransform(
     const float edgeRatioMax = 10 / 3.);
 
 /*
+ * Randon Augmentation
+ *
+ * This implementation follows strictly the implementation used in
+ * [DeiT](https://arxiv.org/abs/2012.12877). It's ource code can be found in
+ * https://github.com/facebookresearch/deit.
+ *
+ * 15 augmentation transforms are randomly selected.
+ *
+ *
+ * @param[p] the probablity of applying a certain transform, (1 - p) means the
+ * probablity of skipping.
+ * @param[n] number of transform functions to be applied on the input
+ * @param[fillImg] filling values on the empty spots generated in some
+ * transforms
+ */
+ImageTransform randomAugmentationDeitTransform(
+    const float p = 0.5,
+    const int n = 2,
+    const af::array& fillImg = af::array());
+
+/*
  * Utility method for composing multiple transform functions
  */
 ImageTransform compose(std::vector<ImageTransform> transformfns);
