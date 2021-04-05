@@ -58,6 +58,22 @@ ImageTransform centerCropTransform(const int size);
 ImageTransform randomHorizontalFlipTransform(const float p = 0.5);
 
 /*
+ * Randomly erase.
+ * The default parameters are defined as https://git.io/JY9R7
+ *
+ * @param[areaRatioMin] minimum area to erase
+ * @param[areaRatioMax] maximum area to erase
+ * @param[edgeRatioMin] minimum w/h ratio for the area to erase
+ * @param[edgeRatioMax] maximum w/h ratio for the area to erase
+ */
+ImageTransform randomEraseTransform(
+    const float p = 0.5,
+    const float areaRatioMin = 0.02,
+    const float areaRatioMax = 1. / 3.,
+    const float edgeRatioMin = 0.3,
+    const float edgeRatioMax = 10 / 3.);
+
+/*
  * Utility method for composing multiple transform functions
  */
 ImageTransform compose(std::vector<ImageTransform> transformfns);

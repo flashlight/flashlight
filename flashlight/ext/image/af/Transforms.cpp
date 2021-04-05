@@ -155,6 +155,49 @@ ImageTransform normalizeImage(
   };
 };
 
+ImageTransform randomEraseTransform(
+    const float p,
+    const float areaRatioMin,
+    const float areaRatioMax,
+    const float edgeRatioMin,
+    const float edgeRatioMax) {
+  // follows: https://git.io/JY9R7
+  return [p, areaRatioMin, areaRatioMax, edgeRatioMin, edgeRatioMax](
+             const af::array& in) {
+    if (p < randomFloat(0, 1)) {
+      return in;
+    }
+
+    const float epsilon = 1e-7;
+    const int w = in.dims(0);
+    const int h = in.dims(1);
+    const int c = in.dims(2);
+
+    af::array out = in;
+    for (int i = 0; i < 10; i++) {
+      const float s = w * h * randomFloat(areaRatioMin, areaRatioMax);
+      const float r =
+          std::exp(randomFloat(std::log(edgeRatioMin), std::log(edgeRatioMax)));
+      const int maskW = std::round(std::sqrt(s * r));
+      const int maskH = std::round(std::sqrt(s / r));
+      if (maskW >= w || maskH >= h) {
+        continue;
+      }
+
+      const int x = static_cast<int>(randomFloat(0, w - maskW - epsilon));
+      const int y = static_cast<int>(randomFloat(0, h - maskH - epsilon));
+      af::array fillValue = af::randn(af::dim4(maskW, maskH, c), in.type());
+
+      out(af::seq(x, x + maskW - 1),
+          af::seq(y, y + maskH - 1),
+          af::span,
+          af::span) = fillValue;
+      break;
+    }
+    return out;
+  };
+};
+
 } // namespace image
 } // namespace ext
 } // namespace fl
