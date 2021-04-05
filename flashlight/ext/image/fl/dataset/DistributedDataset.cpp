@@ -16,11 +16,13 @@ DistributedDataset::DistributedDataset(
     int64_t worldRank,
     int64_t worldSize,
     int64_t batchSize,
+    int64_t nRepeated,
     int64_t numThreads,
-    int64_t prefetchSize) {
+    int64_t prefetchSize,
+    BatchDatasetPolicy batchPolicy) {
   shuffle_ = std::make_shared<ShuffleDataset>(base);
-  auto permfn = [worldSize, worldRank](int64_t idx) {
-    return (idx * worldSize) + worldRank;
+  auto permfn = [worldSize, worldRank, nRepeated](int64_t idx) {
+    return (idx * worldSize + worldRank) / nRepeated;
   };
 
   int partitionSize = shuffle_->size() / worldSize;
@@ -30,7 +32,7 @@ DistributedDataset::DistributedDataset(
   }
   ds_ = std::make_shared<ResampleDataset>(shuffle_, permfn, partitionSize);
   ds_ = std::make_shared<PrefetchDataset>(ds_, numThreads, prefetchSize);
-  ds_ = std::make_shared<BatchDataset>(ds_, batchSize);
+  ds_ = std::make_shared<BatchDataset>(ds_, batchSize, batchPolicy);
 }
 
 std::vector<af::array> DistributedDataset::get(const int64_t idx) const {
@@ -38,7 +40,8 @@ std::vector<af::array> DistributedDataset::get(const int64_t idx) const {
   return ds_->get(idx);
 }
 
-void DistributedDataset::resample() {
+void DistributedDataset::resample(const int seed) {
+  shuffle_->setSeed(seed);
   shuffle_->resample();
 }
 
