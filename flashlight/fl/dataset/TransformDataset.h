@@ -14,8 +14,8 @@ namespace fl {
 /**
  * A view into a dataset with values transformed via the specified function(s).
  *
- * A different transformation may be specified for each `int64_t`.
- * A missing `int64_t` specifies the identity transformation.
+ * A different transformation may be specified for each array in the input.
+ * A null TransformFunction specifies the identity transformation.
  * The dataset size remains unchanged.
  *
  * Example:
@@ -38,7 +38,8 @@ class TransformDataset : public Dataset {
    * Creates a `TransformDataset`.
    * @param[in] dataset The underlying dataset.
    * @param[in] transformfns The mappings used to transform the values.
-   * If a `int64_t` is missing then the corresponding value is not transformed.
+   * If a `TransformFunction` is null then the corresponding value is not
+   * transformed.
    */
   TransformDataset(
       std::shared_ptr<const Dataset> dataset,

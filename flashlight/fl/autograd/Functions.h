@@ -787,6 +787,31 @@ Variable categoricalCrossEntropy(
     int ignoreIndex = -1);
 
 /**
+ * Computes the weighted cross entropy loss. The input is expected to
+ * contain log-probabilities for each class. The targets should be the
+ * index of the ground truth class for each input example.
+ * \f[
+ *   \ell(x, y) = \frac{\sum_{n=1}^N weight[y_n] * -x_{n,y_n}}\;
+ *   {\sum_{n=1}^N weight[y_n]
+ * \f]
+
+ * @param input a `Variable` with shape [\f$C\f$, \f$B_1\f$, \f$B_2\f$,
+ * \f$B_3\f$] where \f$C\f$ is the number of classes.
+ * @param targets an integer `Variable` with shape [\f$B_1\f$, \f$B_2\f$,
+ * The values must be in \f$[0, C - 1]\f$.
+ * @param weights an `Variable` with shape f$[0, C - 1]\f.
+ * @param ignoreIndex a target value that is ignored and does not contribute
+ * to the loss or the input gradient. If `reduce` is MEAN, the loss is
+ * averaged over non-ignored targets. Only indicies in \f$[0, C - 1]\f$ are
+ * considered to be valid.
+ * @return a `Variable` of loss value with shape scalar by default.  */
+Variable weightedCategoricalCrossEntropy(
+    const Variable& input,
+    const Variable& targets,
+    const Variable& weight,
+    int ignoreIndex);
+
+/**
  * The gated linear unit.
  * \f[
         H = A \times \sigma(B)

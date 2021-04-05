@@ -21,6 +21,8 @@ target_compile_definitions(
   )
 
 # --------------------------- Components ---------------------------
+# set
+include(${CMAKE_CURRENT_LIST_DIR}/set/CMakeLists.txt)
 
 # sequence
 include(${CMAKE_CURRENT_LIST_DIR}/sequence/CMakeLists.txt)

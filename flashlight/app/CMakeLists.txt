@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 cmake_dependent_option(FL_BUILD_APP_ASR "Build asr task for flashlight" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_APPS" OFF)
 cmake_dependent_option(FL_BUILD_APP_IMGCLASS "Build image classification app" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_APPS" OFF)
+cmake_dependent_option(FL_BUILD_APP_OBJDET "Build object detection app" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_APPS" OFF)
 cmake_dependent_option(FL_BUILD_APP_LM "Build lm task for flashlight" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_APPS" OFF)
 
 # Find GLog
@@ -51,4 +52,21 @@ if (FL_BUILD_APP_LM)
   include(${FL_APP_LM_ROOT_DIR}/CMakeLists.txt)
   set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} flashlight-app-lm)
   setup_install_headers(${FL_APP_LM_ROOT_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC}/app)
+endif ()
+
+if (FL_BUILD_APP_OBJDET)
+  message(STATUS "Building flashlight Object Detection app")
+  # TODO (padentomasello) revist if we can pull out some functionality from IMGCLASS
+  if(NOT FL_BUILD_APP_IMGCLASS)
+    message(FATAL_ERROR
+      "FL_BUILD_APP_IMGCLASS must be enabled for object detection")
+  endif()
+  if (NOT FL_BUILD_DISTRIBUTED)
+    message(FATAL_ERROR
+    "FL_BUILD_DISTRIBUTED must be enabled for object detection")
+  endif()
+  set(FL_APP_OBJDET_ROOT_DIR ${FL_APPS_DIR}/objdet)
+  include(${FL_APP_OBJDET_ROOT_DIR}/CMakeLists.txt)
+  set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} flashlight-app-objdet)
+  setup_install_headers(${FL_APP_OBJDET_ROOT_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC}/app)
 endif ()

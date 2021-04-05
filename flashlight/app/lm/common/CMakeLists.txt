@@ -4,5 +4,4 @@ target_sources(
   flashlight-app-lm
   PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/Defines.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/Helpers.cpp
   )

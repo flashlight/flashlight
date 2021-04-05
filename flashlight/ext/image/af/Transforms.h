@@ -14,6 +14,32 @@ namespace fl {
 namespace ext {
 namespace image {
 
+/*
+ * Resizes the smallest length edge of an image to be resize while keeping
+ * the aspect ratio
+ */
+af::array resizeSmallest(const af::array& in, const int resize);
+
+/*
+ * Resize both sides of image to be length
+ * @param resize`
+ * will change aspect ratio
+ */
+af::array resize(const af::array& in, const int resize);
+
+/*
+ * Crop image @param in, starting from position @param x and @param y
+ * with a target width and height of @param w and @param h respectively
+ */
+af::array
+crop(const af::array& in, const int x, const int y, const int w, const int h);
+
+/*
+ * Take a center crop of image @param in,
+ * where both image sides with be of length @param size
+ */
+af::array centerCrop(const af::array& in, const int size);
+
 // Same function signature as DataTransform but removes fl dep
 using ImageTransform = std::function<af::array(const af::array&)>;
 

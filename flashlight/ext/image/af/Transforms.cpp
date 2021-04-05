@@ -18,10 +18,12 @@ float randomFloat(float a, float b) {
   return a + (b - a) * r;
 }
 
-/*
- * Resizes the smallest length edge of an image to be resize while keeping
- * the aspect ratio
- */
+} // namespace
+
+namespace fl {
+namespace ext {
+namespace image {
+
 af::array resizeSmallest(const af::array& in, const int resize) {
   const int w = in.dims(0);
   const int h = in.dims(1);
@@ -52,12 +54,6 @@ af::array centerCrop(const af::array& in, const int size) {
   const int cropTop = std::round((static_cast<float>(h) - size) / 2.);
   return crop(in, cropLeft, cropTop, size, size);
 }
-
-} // namespace
-
-namespace fl {
-namespace ext {
-namespace image {
 
 ImageTransform resizeTransform(const uint64_t resize) {
   return [resize](const af::array& in) { return resizeSmallest(in, resize); };

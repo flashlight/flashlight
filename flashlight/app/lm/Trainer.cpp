@@ -209,7 +209,7 @@ Trainer::Trainer(const std::string& mode) {
     throw std::invalid_argument("Trainer doesn't support mode: " + mode);
   }
   checkArgs();
-  gflagsStr_ = serializeGflags();
+  gflagsStr_ = fl::ext::serializeGflags();
   FL_LOG_MASTER(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   initArrayFire();
