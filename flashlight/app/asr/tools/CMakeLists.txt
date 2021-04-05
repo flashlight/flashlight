@@ -31,3 +31,8 @@ build_tool(
   ${CMAKE_CURRENT_LIST_DIR}/benchmark/ArchBenchmark.cpp
   fl_asr_arch_benchmark
   )
+build_tool(
+  ${CMAKE_CURRENT_LIST_DIR}/serialization/ModelConverter.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/serialization/Compat.cpp
+  fl_asr_model_converter
+)
