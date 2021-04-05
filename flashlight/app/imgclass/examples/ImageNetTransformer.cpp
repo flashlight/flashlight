@@ -39,6 +39,7 @@ DEFINE_double(train_maxgradnorm, 0., "Maximum gradient norm");
 DEFINE_int64(train_seed, 1, "Seed");
 
 DEFINE_double(train_p_label_smoothing, 0.1, "Label smoothing probability");
+DEFINE_double(train_p_randomerase, 0.25, "Random erasing probablity");
 DEFINE_uint64(
     train_n_repeatedaug,
     3,
@@ -207,7 +208,8 @@ int main(int argc, char** argv) {
        fl::ext::image::randomHorizontalFlipTransform(0.5 // flipping probablity
                                                      ),
        fl::ext::image::normalizeImage(
-           fl::app::image::kImageNetMean, fl::app::image::kImageNetStd)});
+           fl::app::image::kImageNetMean, fl::app::image::kImageNetStd),
+       fl::ext::image::randomEraseTransform(FLAGS_train_p_randomerase)});
 
   ImageTransform valTransforms = compose(
       {fl::ext::image::resizeTransform(randomResizeMin),
