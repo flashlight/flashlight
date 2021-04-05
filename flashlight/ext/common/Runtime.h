@@ -7,14 +7,18 @@
 
 #pragma once
 
-#include <gflags/gflags.h>
-
 namespace fl {
-namespace app {
-namespace lm {
+namespace ext {
+/**
+ * Get a certain checkpoint by `runidx`.
+ */
+std::string
+getRunFile(const std::string& name, int runidx, const std::string& runpath);
 
+/**
+ * Serialize gflags into a buffer.
+ */
 std::string serializeGflags(const std::string& separator = "\n");
 
-} // namespace lm
-} // namespace app
+} // namespace ext
 } // namespace fl

@@ -1,0 +1,4 @@
+pycocotools==2.0
+arrayfire==3.6.20181017
+numpy==1.18.1
+Pillow=7.1.2

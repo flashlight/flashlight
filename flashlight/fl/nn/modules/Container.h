@@ -116,6 +116,13 @@ class Container : public Module {
    * `params_`
    */
   void setParams(const Variable& var, int position) override;
+
+  /**
+   * Generates a stringified representation of the module.
+   *
+   * @return a string containing the module label
+   */
+  virtual std::string prettyString() const override;
 };
 
 /**

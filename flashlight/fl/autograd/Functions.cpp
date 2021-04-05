@@ -968,6 +968,71 @@ Variable categoricalCrossEntropy(
   return Variable(result, {input.withoutData(), targets}, gradFunc);
 }
 
+Variable weightedCategoricalCrossEntropy(
+    const Variable& input,
+    const Variable& targets,
+    const Variable& weight,
+    int ignoreIndex /* = -1 */) {
+  // input -- [C, X1, X2, X3]
+  // target -- [X1, X2, X3, 1]
+  for (int i = 1; i < 4; i++) {
+    if (input.dims(i) != targets.dims(i - 1)) {
+      throw std::invalid_argument(
+          "dimension mismatch in categorical cross entropy");
+    }
+  }
+  if (targets.dims(3) != 1) {
+    throw std::invalid_argument(
+        "dimension mismatch in categorical cross entropy");
+  }
+  if(weight.dims(0) != input.dims(0)) {
+    throw std::invalid_argument(
+        "dimension mismatch in categorical cross entropy");
+  }
+
+  int C = input.dims(0);
+  int X = targets.elements();
+  if (af::anyTrue<bool>((targets.array() < 0) || (targets.array() >= C))) {
+    throw std::invalid_argument(
+        "target contains elements out of valid range [0, num_categories) "
+        "in categorical cross entropy");
+  }
+
+  auto x = af::moddims(input.array(), af::dim4(C, X));
+  auto y = af::moddims(targets.array(), af::dim4(1, X));
+
+  auto A = af::range(af::dim4(C, X));
+  auto B = af::tile(y, af::dim4(C));
+  auto mask = -(A == B); // [C X]
+
+  auto weightSum = (-mask) * af::tile(weight.array(), af::dim4(1, X));
+  Variable denominator = {af::sum(af::sum(weightSum, 0), 1), false};
+
+  auto result = mask * x;
+  result = af::batchFunc(result, weight.array(), af::operator*);
+
+  auto ignoreMask = (y != ignoreIndex).as(s32); // [1 X]
+  result = ignoreMask * af::sum(result, 0); // [1 X]
+  result = af::sum(result, 1) / denominator.array();
+  auto inputDims = input.dims();
+  auto gradFunc = [C, X, mask, ignoreMask, denominator, inputDims](
+                      std::vector<Variable>& inputs,
+                      const Variable& gradOutput) {
+    auto grad = gradOutput.array();
+    grad = af::tile(grad / denominator.array(), af::dim4(1, X));
+
+    auto weightArray = inputs[2].array();
+    grad *= ignoreMask;
+    grad = af::tile(grad, af::dim4(C)) * mask;
+    grad = af::moddims(grad, inputDims);
+    grad = af::batchFunc(grad, weightArray, af::operator*);
+    ;
+    inputs[0].addGrad(Variable(af::moddims(grad, inputDims), false));
+  };
+
+  return Variable(result, {input.withoutData(), targets, weight}, gradFunc);
+}
+
 Variable reorder(
     const Variable& input,
     const int dim0,

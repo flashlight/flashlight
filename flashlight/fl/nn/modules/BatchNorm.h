@@ -24,9 +24,9 @@ namespace fl {
  * \f$\beta\f$ are learnable parameters for affine transformation.
  */
 class BatchNorm : public UnaryModule {
- private:
-  BatchNorm() = default; // intentionally private
 
+protected:
+  BatchNorm() = default; // intentionally protected
   std::vector<int> featAxis_;
   int featSize_;
   int numBatchesTracked_;

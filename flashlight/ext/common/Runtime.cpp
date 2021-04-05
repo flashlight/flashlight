@@ -5,15 +5,26 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/app/lm/common/Helpers.h"
-
+#include <gflags/gflags.h>
 #include <sstream>
 
-namespace fl {
-namespace app {
-namespace lm {
+#include "flashlight/ext/common/Runtime.h"
+#include "flashlight/lib/common/String.h"
+#include "flashlight/lib/common/System.h"
 
-std::string serializeGflags(const std::string& separator /* = "\n" */) {
+namespace fl {
+namespace ext {
+
+using fl::lib::format;
+using fl::lib::pathsConcat;
+
+std::string
+getRunFile(const std::string& name, int runidx, const std::string& runpath) {
+  auto fname = format("%03d_%s", runidx, name.c_str());
+  return pathsConcat(runpath, fname);
+};
+
+std::string serializeGflags(const std::string& separator) {
   std::stringstream serialized;
   std::vector<gflags::CommandLineFlagInfo> allFlags;
   gflags::GetAllFlags(&allFlags);
@@ -25,6 +36,5 @@ std::string serializeGflags(const std::string& separator /* = "\n" */) {
   return serialized.str();
 }
 
-} // namespace lm
-} // namespace app
-} // namespace fl
+} // end namespace ext
+} // end namespace fl

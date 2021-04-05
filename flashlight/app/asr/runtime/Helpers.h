@@ -33,12 +33,6 @@ namespace app {
 namespace asr {
 
 /**
- * Get a certain checkpoint by `runidx`.
- */
-std::string
-getRunFile(const std::string& name, int runidx, const std::string& runpath);
-
-/**
  * Given a filename, remove any filepath delimiters - returns a contiguous
  * string that won't be subdivided into a filepath.
  */

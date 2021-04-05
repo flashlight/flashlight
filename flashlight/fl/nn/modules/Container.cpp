@@ -67,6 +67,19 @@ void Container::setParams(const Variable& var, int position) {
   }
 }
 
+std::string Container::prettyString() const {
+  std::ostringstream ss;
+  ss << " [input";
+  for (int i = 0; i < modules_.size(); ++i) {
+    ss << " -> (" << i << ")";
+  }
+  ss << " -> output]";
+  for (int i = 0; i < modules_.size(); ++i) {
+    ss << "\n\t(" << i << "): " << modules_[i]->prettyString();
+  }
+  return ss.str();
+}
+
 Sequential::Sequential() = default;
 
 std::vector<Variable> Sequential::forward(const std::vector<Variable>& input) {

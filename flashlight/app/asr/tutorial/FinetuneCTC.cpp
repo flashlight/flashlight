@@ -27,6 +27,7 @@
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/ext/common/Serializer.h"
+#include "flashlight/ext/common/Runtime.h"
 #include "flashlight/ext/plugin/ModulePlugin.h"
 #include "flashlight/fl/contrib/contrib.h"
 #include "flashlight/fl/flashlight.h"
@@ -34,8 +35,9 @@
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
 
-using fl::ext::afToVector;
 using fl::ext::Serializer;
+using fl::ext::afToVector;
+using fl::ext::getRunFile;
 using fl::lib::fileExists;
 using fl::lib::format;
 using fl::lib::getCurrentDate;

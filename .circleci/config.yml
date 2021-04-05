@@ -47,7 +47,9 @@ commands:
         type: string
       fl_build_app_asr:
         type: string
-      fl_build_app_img_class:
+      fl_build_app_imgclass:
+        type: string
+      fl_build_app_objdet:
         type: string
       fl_build_app_lm:
         type: string
@@ -77,7 +79,8 @@ commands:
                 -DFL_BACKEND=<< parameters.fl_backend >> \
                 -DFL_BUILD_CORE=<< parameters.fl_build_fl_core >> \
                 -DFL_BUILD_APP_ASR=<< parameters.fl_build_app_asr >> \
-                -DFL_BUILD_APP_IMGCLASS=<< parameters.fl_build_app_img_class >> \
+                -DFL_BUILD_APP_IMGCLASS=<< parameters.fl_build_app_imgclass >> \
+                -DFL_BUILD_APP_OBJDET=<< parameters.fl_build_app_objdet >> \
                 -DFL_BUILD_APP_LM=<< parameters.fl_build_app_lm >> && \
             make -j$(nproc) && make install"
   test_flashlight_inside_nvidia_docker:
@@ -131,7 +134,9 @@ commands:
         type: string
       fl_build_app_asr:
         type: string
-      fl_build_app_img_class:
+      fl_build_app_imgclass:
+        type: string
+      fl_build_app_objdet:
         type: string
       fl_build_app_lm:
         type: string
@@ -146,7 +151,8 @@ commands:
               -DFL_BACKEND=CUDA \
               -DFL_BUILD_CORE=<< parameters.fl_build_fl_core >> \
               -DFL_BUILD_APP_ASR=<< parameters.fl_build_app_asr >> \
-              -DFL_BUILD_APP_IMGCLASS=<< parameters.fl_build_app_img_class >> \
+              -DFL_BUILD_APP_IMGCLASS=<< parameters.fl_build_app_imgclass >> \
+              -DFL_BUILD_APP_OBJDET=<< parameters.fl_build_app_objdet >> \
               -DFL_BUILD_APP_LM=<< parameters.fl_build_app_lm >> \
               -DCMAKE_TOOLCHAIN_FILE=$HOME/project/vcpkg/scripts/buildsystems/vcpkg.cmake
             make -j$(nproc)
@@ -271,7 +277,8 @@ jobs:
       - flashlight_source_build_with_vcpkg:
           fl_build_fl_core: "OFF"
           fl_build_app_asr: "OFF"
-          fl_build_app_img_class: "OFF"
+          fl_build_app_imgclass: "OFF"
+          fl_build_app_objdet: "OFF"
           fl_build_app_lm: "OFF"
       - flashlight_source_test_with_vcpkg:
           fl_test_apex_dir: "flashlight/lib/test"
@@ -288,7 +295,8 @@ jobs:
           fl_backend: "CUDA"
           fl_build_fl_core: "OFF"
           fl_build_app_asr: "OFF"
-          fl_build_app_img_class: "OFF"
+          fl_build_app_imgclass: "OFF"
+          fl_build_app_objdet: "OFF"
           fl_build_app_lm: "OFF"
       - test_flashlight_inside_nvidia_docker:
           fl_test_apex_dir: "flashlight/lib/test"
@@ -304,7 +312,8 @@ jobs:
           fl_backend: "CUDA"
           fl_build_fl_core: "ON"
           fl_build_app_asr: "OFF"
-          fl_build_app_img_class: "OFF"
+          fl_build_app_imgclass: "OFF"
+          fl_build_app_objdet: "OFF"
           fl_build_app_lm: "OFF"
       - test_flashlight_inside_nvidia_docker:
           fl_test_apex_dir: "flashlight/fl/test"
@@ -320,7 +329,8 @@ jobs:
           fl_backend: "CUDA"
           fl_build_fl_core: "ON"
           fl_build_app_asr: "ON"
-          fl_build_app_img_class: "OFF"
+          fl_build_app_imgclass: "OFF"
+          fl_build_app_objdet: "OFF"
           fl_build_app_lm: "OFF"
       - test_flashlight_inside_nvidia_docker:
           fl_test_apex_dir: "flashlight/app/asr/test"
@@ -336,11 +346,25 @@ jobs:
           fl_backend: "CUDA"
           fl_build_fl_core: "ON"
           fl_build_app_asr: "OFF"
-          fl_build_app_img_class: "ON"
+          fl_build_app_imgclass: "ON"
+          fl_build_app_objdet: "OFF"
           fl_build_app_lm: "OFF"
-      # TODO (jacobkahn/padentomasello): add the below once we have tests inside imgclass
-      # - test_flashlight_inside_nvidia_docker:
-      #     fl_test_apex_dir: "flashlight/app/imgclass/test"
+  ubuntu2004_cuda11_1_docker_flashlight_app_objdet:
+    <<: *gpu
+    steps:
+      - authenticate_docker
+      - install_nvidia_docker
+      - checkout
+      - start_nvidia_docker_and_copy_flashlight_source
+      - build_flashlight_inside_nvidia_docker:
+          fl_backend: "CUDA"
+          fl_build_fl_core: "ON"
+          fl_build_app_asr: "OFF"
+          fl_build_app_imgclass: "ON"
+          fl_build_app_objdet: "ON"
+          fl_build_app_lm: "OFF"
+      - test_flashlight_inside_nvidia_docker:
+          fl_test_apex_dir: "flashlight/app/objdet/test"
 
   ubuntu2004_cuda11_1_docker_flashlight_app_lm:
     <<: *gpu
@@ -353,7 +377,8 @@ jobs:
           fl_backend: "CUDA"
           fl_build_fl_core: "ON"
           fl_build_app_asr: "OFF"
-          fl_build_app_img_class: "OFF"
+          fl_build_app_imgclass: "OFF"
+          fl_build_app_objdet: "OFF"
           fl_build_app_lm: "ON"
       - test_flashlight_inside_nvidia_docker:
           fl_test_apex_dir: "flashlight/app/lm/test"
@@ -437,7 +462,8 @@ jobs:
           fl_backend: "CUDA"
           fl_build_fl_core: "ON"
           fl_build_app_asr: "ON"
-          fl_build_app_img_class: "ON"
+          fl_build_app_imgclass: "ON"
+          fl_build_app_objdet: "ON"
           fl_build_app_lm: "ON"
       - setup_flashlight_compile_and_link_external_project_script
       - run:
@@ -455,6 +481,7 @@ workflows:
       - ubuntu2004_cuda11_1_docker_flashlight_fl_core
       - ubuntu2004_cuda11_1_docker_flashlight_app_asr
       - ubuntu2004_cuda11_1_docker_flashlight_app_imgclass
+      - ubuntu2004_cuda11_1_docker_flashlight_app_objdet
       - ubuntu2004_cuda11_1_docker_flashlight_app_lm
   docker_cpu_build_and_install:
     jobs:
