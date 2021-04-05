@@ -14,6 +14,28 @@ namespace fl {
 namespace ext {
 namespace image {
 
+// Transform a target array with label indices into a one-hot matrix
+af::array oneHot(
+    const af::array& targets,
+    const int numClasses,
+    const float labelSmoothing);
+
+// Apply mixup for a given batch as in https://arxiv.org/abs/1710.09412
+std::pair<af::array, af::array> mixupBatch(
+    const float lambda,
+    const af::array& input,
+    const af::array& target,
+    const int numClasses,
+    const float labelSmoothing);
+
+// Apply cutmix as in https://arxiv.org/abs/1905.04899
+std::pair<af::array, af::array> cutmixBatch(
+    const float lambda,
+    const af::array& input,
+    const af::array& target,
+    const int numClasses,
+    const float labelSmoothing);
+
 // Same function signature as DataTransform but removes fl dep
 using ImageTransform = std::function<af::array(const af::array&)>;
 
