@@ -93,7 +93,10 @@ set(FL_BUILD_BINARY_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/bin")
 # CUDA/nvcc setup
 if (FL_USE_CUDA)
   enable_language(CUDA)
-  set(CMAKE_CUDA_STANDARD 17)
+  # The CUDA standard is still C++14 to enable interopability with
+  # slightly older and still well-supported versions of CUDA/nvcc
+  # (e.g. CUDA < 11).
+  set(CMAKE_CUDA_STANDARD 14)
   set(CMAKE_CUDA_STANDARD_REQUIRED ON)
   include(${CMAKE_MODULE_PATH}/CUDAUtils.cmake)
   set_cuda_arch_nvcc_flags()
