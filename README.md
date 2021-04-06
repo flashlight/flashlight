@@ -110,7 +110,7 @@ D.backward(); // populates A.grad() along with gradients for B, C, and D.
 
 ### Requirements
 At minimum, compilation requires:
-- A C++ compiler with good C++14 support (e.g. gcc/g++ >= 5)
+- A C++ compiler with good C++17 support (e.g. gcc/g++ >= 7)
 - [CMake](https://cmake.org/) — version 3.10 or later, and ``make``
 - A Linux-based operating system.
 
@@ -432,7 +432,7 @@ The following CMake configuration links Flashlight and sets include directories:
 
 ```cmake
 cmake_minimum_required(VERSION 3.10)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_executable(myProject project.cpp)
