@@ -42,9 +42,8 @@ void TimeMeter::stop() {
   if (isStopped_) {
     return;
   }
-  std::chrono::duration<double> duration =
-      std::chrono::system_clock::now() - start_;
-  start_ = std::chrono::system_clock::now();
+  auto now = std::chrono::system_clock::now();
+  std::chrono::duration<double> duration = now - start_;
   curValue_ += duration.count();
   isStopped_ = true;
 }
