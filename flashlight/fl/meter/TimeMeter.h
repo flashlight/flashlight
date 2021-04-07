@@ -36,7 +36,7 @@ class TimeMeter {
    * time spend per unit, otherwise the total time in the current timing period.
    * Time is measured in seconds.
    */
-  double value() const;
+  double value();
 
   /** Refreshes the counters and stops the timer. */
   void reset();
