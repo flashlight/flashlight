@@ -70,12 +70,12 @@ enum class DistributedInit {
   FILE_SYSTEM = 1,
 };
 
-struct DistributedConstants {
-  static constexpr const char* kMaxDevicePerNode = "MAX_DEVICE_PER_NODE";
-  static constexpr const char* kFilePath = "FILE_PATH";
-  static constexpr const std::size_t kCoalesceCacheSize =
+namespace DistributedConstants {
+  constexpr const char* kMaxDevicePerNode = "MAX_DEVICE_PER_NODE";
+  constexpr const char* kFilePath = "FILE_PATH";
+  constexpr const std::size_t kCoalesceCacheSize =
       ((size_t)(20) << 20); // 20 MB
-};
+}
 
 constexpr std::size_t kDynamicBenchmarkDefaultCount = 10;
 constexpr double kAmpMinimumScaleFactorValue = 1e-4;

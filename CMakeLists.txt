@@ -12,7 +12,7 @@ if(CCACHE_PROGRAM)
 endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Default directories for installation
@@ -93,6 +93,9 @@ set(FL_BUILD_BINARY_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/bin")
 # CUDA/nvcc setup
 if (FL_USE_CUDA)
   enable_language(CUDA)
+  # The CUDA standard is still C++14 to enable interopability with
+  # slightly older and still well-supported versions of CUDA/nvcc
+  # (e.g. CUDA < 11).
   set(CMAKE_CUDA_STANDARD 14)
   set(CMAKE_CUDA_STANDARD_REQUIRED ON)
   include(${CMAKE_MODULE_PATH}/CUDAUtils.cmake)
