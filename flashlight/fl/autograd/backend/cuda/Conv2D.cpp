@@ -244,9 +244,9 @@ Variable conv2d(
     int dy,
     int groups,
     std::shared_ptr<detail::ConvBenchmarks> benchmarks) {
-  auto dummy_bias = Variable(af::array(input.type()), false);
+  auto dummyBias = Variable(af::array(af::dim4(0, 1, 1, 1), input.type()), false);
   return conv2d(
-      input, weights, dummy_bias, sx, sy, px, py, dx, dy, groups, benchmarks);
+      input, weights, dummyBias, sx, sy, px, py, dx, dy, groups, benchmarks);
 }
 
 Variable conv2d(

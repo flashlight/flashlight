@@ -130,56 +130,17 @@ TEST(ContribModuleTest, AsymmetricConv1DFwd) {
   ASSERT_FALSE(allClose(output, outputFuture));
 }
 
-TEST(ContribModuleTest, TransformerPadMaskFwd) {
+void transformerPadMaskFwd(bool isfp16) {
   int timesteps = 10;
   int c = 4;
   int nheads = 2;
+  auto dtype = isfp16 ? af::dtype::f16 : af::dtype::f32;
 
   auto tr =
       Transformer(c, c / nheads, c, nheads, timesteps, 0, 0, false, false);
-  auto input1 = Variable(af::randu(c, timesteps, 1, 1), false);
+  auto input1 = Variable(af::randu(c, timesteps, 1, 1, dtype), false);
   auto input1NoPad = input1.cols(0, timesteps / 2 - 1);
-  auto input2 = Variable(af::randu(c, timesteps, 1, 1), false);
-  auto input = fl::concatenate({input1, input2}, 2);
-  auto padMask = af::constant(1, af::dim4(timesteps, 2));
-  padMask(af::iota(timesteps / 2) + timesteps / 2, 0) = 0;
-  auto noPadMask = af::constant(1, af::dim4(timesteps, 2));
-
-  auto output = tr.forward({input, Variable(padMask, false)}).front();
-  auto outputNoPad = tr.forward({input, Variable(noPadMask, false)}).front();
-
-  ASSERT_EQ(output.dims(0), c);
-  ASSERT_EQ(output.dims(1), timesteps);
-  ASSERT_EQ(output.dims(2), 2);
-
-  auto output1 =
-      tr.forward({input1NoPad,
-                  Variable(padMask.rows(0, timesteps / 2 - 1).col(0), false)})
-          .front();
-  auto output2 = tr.forward({input2, Variable(padMask.col(1), false)}).front();
-  ASSERT_TRUE(allClose(output.array()(af::span, af::span, 1), output2.array()));
-  ASSERT_TRUE(
-      allClose(outputNoPad.array()(af::span, af::span, 1), output2.array()));
-  ASSERT_TRUE(allClose(
-      output.array()(af::span, af::iota(timesteps / 2), 0), output1.array()));
-  ASSERT_FALSE(allClose(
-      outputNoPad.array()(af::span, af::iota(timesteps / 2), 0),
-      output1.array()));
-}
-
-TEST_F(ContribModuleTestF16, TransformerPadMaskFwd16) {
-  if (!fl::f16Supported()) {
-    GTEST_SKIP() << "Half-precision not supported on this device";
-  }
-  int timesteps = 10;
-  int c = 4;
-  int nheads = 2;
-
-  auto tr =
-      Transformer(c, c / nheads, c, nheads, timesteps, 0, 0, false, false);
-  auto input1 = Variable(af::randu(c, timesteps, 1, 1, af::dtype::f16), false);
-  auto input1NoPad = input1.cols(0, timesteps / 2 - 1);
-  auto input2 = Variable(af::randu(c, timesteps, 1, 1, af::dtype::f16), false);
+  auto input2 = Variable(af::randu(c, timesteps, 1, 1, dtype), false);
   auto input = fl::concatenate({input1, input2}, 2);
   auto padMask = af::constant(1, af::dim4(timesteps, 2));
   padMask(af::iota(timesteps / 2) + timesteps / 2, 0) = 0;
@@ -213,41 +174,65 @@ TEST_F(ContribModuleTestF16, TransformerPadMaskFwd16) {
       output1.array()));
 }
 
-TEST(ContribModuleTest, TransformerFwd) {
+TEST(ContribModuleTest, TransformerPadMaskFwd) {
+  transformerPadMaskFwd(false);
+}
+
+TEST_F(ContribModuleTestF16, TransformerPadMaskFwd16) {
+  if (!fl::f16Supported()) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+  transformerPadMaskFwd(true);
+}
+
+void transformerFwd(bool isfp16) {
   int batchsize = 10;
   int timesteps = 120;
   int c = 32;
   int nheads = 4;
+  auto dtype = isfp16 ? af::dtype::f16 : af::dtype::f32;
 
   auto tr =
       Transformer(c, c / nheads, c, nheads, timesteps, 0.2, 0.1, true, false);
-  auto input = Variable(af::randu(c, timesteps, batchsize, 1), false);
+  auto input =
+      Variable(af::randu(c, timesteps, batchsize, 1, dtype), false);
 
   fl::Variable padMask;
   auto output = tr.forward({input, padMask});
+  if (OptimMode::get().getOptimLevel() == OptimLevel::O3) {
+    ASSERT_EQ(output[0].type(), input.type());
+  } else {
+    ASSERT_EQ(output[0].type(), af::dtype::f32); // result is upcast
+  }
 
   ASSERT_EQ(output[0].dims(0), c);
   ASSERT_EQ(output[0].dims(1), timesteps);
   ASSERT_EQ(output[0].dims(2), batchsize);
 }
 
+TEST(ContribModuleTest, TransformerFwd) {
+  transformerFwd(false);
+}
+
 TEST_F(ContribModuleTestF16, TransformerFwdF16) {
   if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
+  transformerFwd(true);
+}
 
+void conformerFwd(bool isfp16) {
   int batchsize = 10;
   int timesteps = 120;
   int c = 32;
   int nheads = 4;
+  auto dtype = isfp16 ? af::dtype::f16 : af::dtype::f32;
 
-  auto tr =
-      Transformer(c, c / nheads, c, nheads, timesteps, 0.2, 0.1, true, false);
+  auto tr = Conformer(c, c / nheads, c, nheads, timesteps, 33, 0.2, 0.1);
   auto input =
-      Variable(af::randu(c, timesteps, batchsize, 1, af::dtype::f16), false);
+      Variable(af::randu(c, timesteps, batchsize, 1, dtype), false);
 
-  fl::Variable padMask;
-  auto output = tr.forward({input, padMask});
+  auto output = tr.forward({input, Variable()});
   if (OptimMode::get().getOptimLevel() == OptimLevel::O3) {
     ASSERT_EQ(output[0].type(), input.type());
   } else {
@@ -260,54 +245,25 @@ TEST_F(ContribModuleTestF16, TransformerFwdF16) {
 }
 
 TEST(ContribModuleTest, ConformerFwd) {
-  int batchsize = 10;
-  int timesteps = 120;
-  int c = 32;
-  int nheads = 4;
-
-  auto tr = Conformer(c, c / nheads, c, nheads, timesteps, 33, 0.2, 0.1);
-  auto input = Variable(af::randu(c, timesteps, batchsize, 1), false);
-
-  auto output = tr.forward({input, Variable()});
-
-  ASSERT_EQ(output[0].dims(0), c);
-  ASSERT_EQ(output[0].dims(1), timesteps);
-  ASSERT_EQ(output[0].dims(2), batchsize);
+  conformerFwd(false);
 }
 
 TEST_F(ContribModuleTestF16, ConformerFwdF16) {
   if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
-
-  int batchsize = 10;
-  int timesteps = 120;
-  int c = 32;
-  int nheads = 4;
-
-  auto tr = Conformer(c, c / nheads, c, nheads, timesteps, 33, 0.2, 0.1);
-  auto input =
-      Variable(af::randu(c, timesteps, batchsize, 1, af::dtype::f16), false);
-
-  auto output = tr.forward({input, Variable()});
-  if (OptimMode::get().getOptimLevel() == OptimLevel::O3) {
-    ASSERT_EQ(output[0].type(), input.type());
-  } else {
-    ASSERT_EQ(output[0].type(), af::dtype::f32); // result is upcast
-  }
-
-  ASSERT_EQ(output[0].dims(0), c);
-  ASSERT_EQ(output[0].dims(1), timesteps);
-  ASSERT_EQ(output[0].dims(2), batchsize);
+  conformerFwd(true);
 }
 
-TEST(ContribModuleTest, PositionEmbeddingFwd) {
+void positionEmbeddingFwd(bool isfp16) {
   int batchsize = 10;
   int timesteps = 120;
   int csz = 256;
+  auto dtype = isfp16 ? af::dtype::f16 : af::dtype::f32;
 
   auto posemb = PositionEmbedding(csz, timesteps, 0.5);
-  auto input = Variable(af::randu(csz, timesteps, batchsize, 1), false);
+  auto input =
+      Variable(af::randu(csz, timesteps, batchsize, 1, dtype), false);
 
   auto output = posemb.forward({input});
 
@@ -316,59 +272,28 @@ TEST(ContribModuleTest, PositionEmbeddingFwd) {
   ASSERT_EQ(output[0].dims(2), batchsize);
 
   ASSERT_FALSE(allClose(output[0], input));
+}
+
+TEST(ContribModuleTest, PositionEmbeddingFwd) {
+  positionEmbeddingFwd(false);
 }
 
 TEST_F(ContribModuleTestF16, PositionEmbeddingFwdF16) {
   if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
-
-  int batchsize = 10;
-  int timesteps = 120;
-  int csz = 256;
-
-  auto posemb = PositionEmbedding(csz, timesteps, 0.5);
-  auto input =
-      Variable(af::randu(csz, timesteps, batchsize, 1, af::dtype::f16), false);
-
-  auto output = posemb.forward({input});
-
-  ASSERT_EQ(output[0].dims(0), csz);
-  ASSERT_EQ(output[0].dims(1), timesteps);
-  ASSERT_EQ(output[0].dims(2), batchsize);
-
-  ASSERT_FALSE(allClose(output[0], input));
+  positionEmbeddingFwd(true);
 }
 
-TEST(ContribModuleTest, SinusoidalPositionEmbeddingFwd) {
+void sinusoidalPositionEmbeddingFwd(bool isfp16) {
   int batchsize = 10;
   int timesteps = 120;
   int csz = 256;
-
-  auto posemb = SinusoidalPositionEmbedding(csz, 2.);
-  auto input = Variable(af::randu(csz, timesteps, batchsize, 1), false) - 0.5;
-
-  auto output = posemb.forward({input});
-
-  ASSERT_EQ(output[0].dims(0), csz);
-  ASSERT_EQ(output[0].dims(1), timesteps);
-  ASSERT_EQ(output[0].dims(2), batchsize);
-  ASSERT_TRUE((af::max(output[0].array())).scalar<float>() <= 2);
-  ASSERT_TRUE((af::min(output[0].array())).scalar<float>() >= -2);
-}
-
-TEST_F(ContribModuleTestF16, SinusoidalPositionEmbeddingFwdF16) {
-  if (!fl::f16Supported()) {
-    GTEST_SKIP() << "Half-precision not supported on this device";
-  }
-
-  int batchsize = 10;
-  int timesteps = 120;
-  int csz = 256;
+  auto dtype = isfp16 ? af::dtype::f16 : af::dtype::f32;
 
   auto posemb = SinusoidalPositionEmbedding(csz, 2.);
   auto input =
-      Variable(af::randu(csz, timesteps, batchsize, 1, af::dtype::f16), false) -
+      Variable(af::randu(csz, timesteps, batchsize, 1, dtype), false) -
       0.5;
 
   auto output = posemb.forward({input});
@@ -376,9 +301,23 @@ TEST_F(ContribModuleTestF16, SinusoidalPositionEmbeddingFwdF16) {
   ASSERT_EQ(output[0].dims(0), csz);
   ASSERT_EQ(output[0].dims(1), timesteps);
   ASSERT_EQ(output[0].dims(2), batchsize);
-  auto outfp16 = output[0].as(af::dtype::f32).array();
-  ASSERT_TRUE((af::max(outfp16)).scalar<float>() <= 2);
-  ASSERT_TRUE((af::min(outfp16)).scalar<float>() >= -2);
+  auto castOutput = output[0].array();
+  if (isfp16) {
+    castOutput = output[0].as(af::dtype::f32).array();
+  }
+  ASSERT_TRUE((af::max(castOutput)).scalar<float>() <= 2);
+  ASSERT_TRUE((af::min(castOutput)).scalar<float>() >= -2);
+}
+
+TEST(ContribModuleTest, SinusoidalPositionEmbeddingFwd) {
+  sinusoidalPositionEmbeddingFwd(false);
+}
+
+TEST_F(ContribModuleTestF16, SinusoidalPositionEmbeddingFwdF16) {
+  if (!fl::f16Supported()) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+  sinusoidalPositionEmbeddingFwd(true);
 }
 
 TEST(ContribModuleTest, AdaptiveEmbedding) {
@@ -394,23 +333,36 @@ TEST(ContribModuleTest, AdaptiveEmbedding) {
   ASSERT_EQ(output.dims(2), B);
 }
 
-TEST(ContribModuleTest, TDSFwd) {
+void tdsFwd(bool isfp16) {
   int batchsize = 10;
   int timesteps = 120;
   int w = 4;
   int c = 10;
 
   auto tds = TDSBlock(c, 9, w);
-  auto input = Variable(af::randu(timesteps, w, c, batchsize), false);
+  auto dtype = isfp16 ? af::dtype::f16 : af::dtype::f32;
+  auto input = Variable(af::randu(timesteps, w, c, batchsize, dtype), false);
 
   auto output = tds.forward({input})[0];
 
   ASSERT_EQ(output.dims(0), timesteps);
   ASSERT_EQ(output.dims(1), w);
   ASSERT_EQ(output.dims(2), c);
+  ASSERT_EQ(output.type(), input.type());
 }
 
-TEST(ContribModuleTest, StreamingTDSFwd) {
+TEST(ContribModuleTest, TDSFwd) {
+  tdsFwd(false);
+}
+
+TEST_F(ContribModuleTestF16, TDSFwdF16) {
+  if (!fl::f16Supported()) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+  tdsFwd(true);
+}
+
+void streamingTDSFwd(bool isfp16) {
   int batchsize = 10;
   int timesteps = 120;
   int w = 4;
@@ -420,14 +372,26 @@ TEST(ContribModuleTest, StreamingTDSFwd) {
 
   auto stds =
       TDSBlock(c, kw, w, 0 /* dropout */, 0 /* innerLinearDim */, rPad, true);
-
-  auto input = Variable(af::randu(timesteps, w, c, batchsize), false);
+  auto dtype = isfp16 ? af::dtype::f16 : af::dtype::f32;
+  auto input = Variable(af::randu(timesteps, w, c, batchsize, dtype), false);
 
   auto output = stds.forward({input})[0];
 
   ASSERT_EQ(output.dims(0), timesteps);
   ASSERT_EQ(output.dims(1), w);
   ASSERT_EQ(output.dims(2), c);
+  ASSERT_EQ(output.type(), input.type());
+}
+
+TEST(ContribModuleTest, StreamingTDSFwd) {
+  streamingTDSFwd(false);
+}
+
+TEST_F(ContribModuleTestF16, StreamingTDSFwdF16) {
+  if (!fl::f16Supported()) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+  streamingTDSFwd(true);
 }
 
 TEST(ContribModuleTest, SpecAugmentFwd) {
@@ -468,7 +432,7 @@ TEST(ContribModuleTest, SpecAugmentFwd) {
   ASSERT_GT(fZeros, 0);
 }
 
-TEST(ContribModuleTest, RawWavSpecAugmentFwd) {
+void computeRawWavSpecAug(bool isfp16, float epsilon) {
   // no time, only freq masking
   for (int nmask = 1; nmask < 3; nmask++) {
     RawWavSpecAugment specAug(
@@ -483,6 +447,10 @@ TEST(ContribModuleTest, RawWavSpecAugmentFwd) {
         af::sin(time * 5000);
     inputWav = af::tile(inputWav, 1, C, B);
     finalWav = af::tile(finalWav, 1, C, B);
+    if (isfp16) {
+      inputWav = inputWav.as(af::dtype::f16);
+      finalWav = finalWav.as(af::dtype::f16);
+    }
 
     auto filteredWav = specAug(fl::Variable(inputWav, false));
     // compare middle of filtered wave to avoid edge artifacts comparison
@@ -491,8 +459,19 @@ TEST(ContribModuleTest, RawWavSpecAugmentFwd) {
         fl::Variable(
             finalWav.rows(halfKernelWidth, T - halfKernelWidth - 1), false),
         filteredWav.rows(halfKernelWidth, T - halfKernelWidth - 1),
-        1e-3));
+        epsilon));
   }
+}
+
+TEST(ContribModuleTest, RawWavSpecAugmentFwd) {
+  computeRawWavSpecAug(false, 1e-3);
+}
+
+TEST_F(ContribModuleTestF16, RawWavSpecAugmentFwdF16) {
+  if (!fl::f16Supported()) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+  computeRawWavSpecAug(true, 1e-2);
 }
 
 int main(int argc, char** argv) {
