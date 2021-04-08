@@ -20,6 +20,7 @@
 #include "flashlight/fl/dataset/datasets.h"
 #include "flashlight/fl/meter/meters.h"
 #include "flashlight/fl/optim/optim.h"
+#include "flashlight/lib/common/BetaDistribution.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
 
@@ -38,20 +39,33 @@ DEFINE_double(train_layerdrop, 0.1, "Layer drop");
 DEFINE_double(train_maxgradnorm, 0., "Maximum gradient norm");
 DEFINE_int64(train_seed, 1, "Seed");
 
-DEFINE_double(train_p_label_smoothing, 0.1, "Label smoothing probability");
-DEFINE_double(train_p_randomerase, 0.25, "Random erasing probablity");
+DEFINE_double(train_aug_p_label_smoothing, 0.1, "Label smoothing probability");
+DEFINE_double(train_aug_p_randomerase, 0.25, "Random erasing probablity");
 DEFINE_double(
-    train_p_randomeaug,
+    train_aug_p_randomeaug,
     0.5,
     "Probablity of applying random augentation transform to each sample");
 DEFINE_uint64(
-    train_n_randomeaug,
+    train_aug_n_randomeaug,
     2,
     "Number of random augentation transforms applied to each sample");
 DEFINE_uint64(
-    train_n_repeatedaug,
+    train_aug_n_repeatedaug,
     3,
     "Number of repetitions created for each sample");
+DEFINE_bool(train_aug_use_mix, true, "Enable mixup and cutmix in training");
+DEFINE_double(
+    train_aug_p_mixup,
+    0.8,
+    "Alpha of mixup. Mixup is disabled with 0");
+DEFINE_double(
+    train_aug_p_cutmix,
+    1.0,
+    "Alpha of cutmix. Cutmix is disabled with 0");
+DEFINE_double(
+    train_aug_p_switchmix,
+    0.5,
+    "Probability of switching between cutmix and mixup");
 
 DEFINE_bool(distributed_enable, true, "Enable distributed training");
 DEFINE_int64(
@@ -148,22 +162,6 @@ std::tuple<double, double, double> evalLoop(
   return std::make_tuple(loss, top5Acc.value(), top1Acc.value());
 }
 
-af::array oneHot(const af::array& targets, int C) {
-  float offValue = FLAGS_train_p_label_smoothing / C;
-  float onValue = 1. - FLAGS_train_p_label_smoothing;
-
-  int X = targets.elements();
-  auto y = af::moddims(targets, af::dim4(1, X));
-  auto A = af::range(af::dim4(C, X));
-  auto B = af::tile(y, af::dim4(C));
-  auto mask = A == B; // [C X]
-
-  af::array out = af::constant(onValue, af::dim4(C, X));
-  out = out * mask + offValue;
-
-  return out;
-}
-
 bool isBadArray(const af::array& arr) {
   return af::anyTrue<bool>(af::isNaN(arr)) || af::anyTrue<bool>(af::isInf(arr));
 }
@@ -220,10 +218,10 @@ int main(int argc, char** argv) {
        fl::ext::image::randomHorizontalFlipTransform(0.5 // flipping probablity
                                                      ),
        fl::ext::image::randomAugmentationDeitTransform(
-           FLAGS_train_p_randomeaug, FLAGS_train_n_randomeaug, fillImg),
+           FLAGS_train_aug_p_randomeaug, FLAGS_train_aug_n_randomeaug, fillImg),
        fl::ext::image::normalizeImage(
            fl::app::image::kImageNetMean, fl::app::image::kImageNetStd),
-       fl::ext::image::randomEraseTransform(FLAGS_train_p_randomerase)});
+       fl::ext::image::randomEraseTransform(FLAGS_train_aug_p_randomerase)});
 
   ImageTransform valTransforms = compose(
       {fl::ext::image::resizeTransform(randomResizeMin),
@@ -243,7 +241,7 @@ int main(int argc, char** argv) {
       worldRank,
       worldSize,
       FLAGS_data_batch_size,
-      FLAGS_train_n_repeatedaug,
+      FLAGS_train_aug_n_repeatedaug,
       FLAGS_data_prefetch_thread,
       prefetchSize,
       fl::BatchDatasetPolicy::SKIP_LAST);
@@ -346,6 +344,12 @@ int main(int argc, char** argv) {
     loadModel();
   }
 
+  auto betaGeneratorMixup = fl::lib::beta_distribution<float>(
+      FLAGS_train_aug_p_mixup, FLAGS_train_aug_p_mixup);
+  auto betaGeneratorCutmix = fl::lib::beta_distribution<float>(
+      FLAGS_train_aug_p_cutmix, FLAGS_train_aug_p_cutmix);
+  std::mt19937_64 engine(worldRank);
+
   //////////////////////////
   // The main training loop
   /////////////////////////
@@ -382,10 +386,42 @@ int main(int argc, char** argv) {
       // 1. Sample
       sampleTimerMeter.resume();
       auto sample = trainDataset->get(idx);
-      auto rawInput = sample[kImagenetInputIdx];
-      auto rawTarget = sample[kImagenetTargetIdx];
-      auto inputs = noGrad(rawInput);
-      auto target = noGrad(oneHot(rawTarget, labelMap.size()));
+      auto inputArray = sample[kImagenetInputIdx];
+      auto targetArray = sample[kImagenetTargetIdx];
+
+      // Mixup + Cutmix + label smoothing
+      if (FLAGS_train_aug_use_mix) {
+        float mixP =
+            static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+
+        if (mixP > FLAGS_train_aug_p_switchmix) {
+          // using mixup
+          float lambda = betaGeneratorMixup(engine);
+          std::tie(inputArray, targetArray) = fl::ext::image::mixupBatch(
+              lambda,
+              inputArray,
+              targetArray,
+              fl::app::image::kNumImageNetClasses,
+              FLAGS_train_aug_p_label_smoothing);
+        } else {
+          // using cutmix
+          float lambda = betaGeneratorCutmix(engine);
+          std::tie(inputArray, targetArray) = fl::ext::image::cutmixBatch(
+              lambda,
+              inputArray,
+              targetArray,
+              fl::app::image::kNumImageNetClasses,
+              FLAGS_train_aug_p_label_smoothing);
+        }
+      } else {
+        targetArray = fl::ext::image::oneHot(
+            targetArray,
+            fl::app::image::kNumImageNetClasses,
+            FLAGS_train_aug_p_label_smoothing);
+      }
+      auto input = noGrad(inputArray);
+      auto target = noGrad(targetArray);
+
       af::sync();
       sampleTimerMeter.stopAndIncUnit();
 
@@ -396,8 +432,7 @@ int main(int argc, char** argv) {
 
         // 2. Forward
         fwdTimeMeter.resume();
-        auto output =
-            model->forward({inputs}, FLAGS_distributed_enable).front();
+        auto output = model->forward({input}, FLAGS_distributed_enable).front();
         output = logSoftmax(output, 0).as(output.type());
 
         critFwdTimeMeter.resume();
