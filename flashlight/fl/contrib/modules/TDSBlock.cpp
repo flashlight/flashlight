@@ -69,9 +69,9 @@ TDSBlock::TDSBlock(
 
 std::vector<Variable> TDSBlock::forward(const std::vector<Variable>& inputs) {
   auto out = inputs[0];
-  out = module(0)->forward({out})[0] + out;
+  out = module(0)->forward({out})[0].as(out.type()) + out;
   out = module(1)->forward({out})[0];
-  out = module(2)->forward({out})[0] + out;
+  out = module(2)->forward({out})[0].as(out.type()) + out;
   return module(3)->forward({out});
 }
 
