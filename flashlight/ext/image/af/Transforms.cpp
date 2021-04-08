@@ -178,6 +178,7 @@ af::array autoContrast(const af::array& input) {
   }
 
   auto scale = af::tile(255. / (maxPic - minPic), input.dims());
+  minPic = af::tile(minPic, input.dims());
   return scale * (input - minPic);
 }
 
@@ -315,7 +316,7 @@ std::pair<af::array, af::array> cutmixBatch(
   auto inputMixed = input;
   inputMixed(af::seq(x1, x2), af::seq(y1, y2), af::span, af::span) =
       inputFlipped(af::seq(x1, x2), af::seq(y1, y2), af::span, af::span);
-  auto newLambda = static_cast<float>(x2 - x1) * (y2 - y1) / (w * h);
+  auto newLambda = static_cast<float>(x2 - x1 + 1) * (y2 - y1 + 1) / (w * h);
 
   // mix target
   auto targetOneHotFlipped =

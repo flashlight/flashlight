@@ -14,6 +14,7 @@
 #include "flashlight/app/imgclass/dataset/Imagenet.h"
 #include "flashlight/app/imgclass/examples/Defines.h"
 #include "flashlight/ext/common/DistributedUtils.h"
+#include "flashlight/ext/common/Runtime.h"
 #include "flashlight/ext/image/af/Transforms.h"
 #include "flashlight/ext/image/fl/dataset/DistributedDataset.h"
 #include "flashlight/ext/image/fl/models/ViT.h"
@@ -187,6 +188,9 @@ int main(int argc, char** argv) {
         FLAGS_distributed_rndv_filepath);
   }
   af::info();
+  FL_LOG_MASTER(INFO) << "Gflags after parsing \n"
+                      << fl::ext::serializeGflags("; ");
+
   const int worldRank = fl::getWorldRank();
   const int worldSize = fl::getWorldSize();
   const bool isMaster = (worldRank == 0);
