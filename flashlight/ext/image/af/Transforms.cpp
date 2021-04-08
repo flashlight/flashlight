@@ -238,6 +238,94 @@ af::array sharpnessEnhance(const af::array& input, const float enhance) {
   return input + enhance * diff;
 }
 
+af::array oneHot(
+    const af::array& targets,
+    const int numClasses,
+    const float labelSmoothing) {
+  float offValue = labelSmoothing / numClasses;
+  float onValue = 1. - labelSmoothing;
+
+  int X = targets.elements();
+  auto y = af::moddims(targets, af::dim4(1, X));
+  auto A = af::range(af::dim4(numClasses, X));
+  auto B = af::tile(y, af::dim4(numClasses));
+  auto mask = A == B; // [C X]
+
+  af::array out = af::constant(onValue, af::dim4(numClasses, X));
+  out = out * mask + offValue;
+
+  return out;
+}
+
+std::pair<af::array, af::array> mixupBatch(
+    const float lambda,
+    const af::array& input,
+    const af::array& target,
+    const int numClasses,
+    const float labelSmoothing) {
+  // in : W x H x C x B
+  // target: B x 1
+  auto targetOneHot = oneHot(target, numClasses, labelSmoothing);
+  if (lambda == 0) {
+    return {input, targetOneHot};
+  }
+
+  // mix input
+  auto inputFlipped = af::flip(input, 3);
+  auto inputMixed = lambda * inputFlipped + (1 - lambda) * input;
+
+  // mix target
+  auto targetOneHotFlipped =
+      oneHot(af::flip(target, 0), numClasses, labelSmoothing);
+  auto targetOneHotMixed =
+      lambda * targetOneHotFlipped + (1 - lambda) * targetOneHot;
+
+  return {inputMixed, targetOneHotMixed};
+}
+
+std::pair<af::array, af::array> cutmixBatch(
+    const float lambda,
+    const af::array& input,
+    const af::array& target,
+    const int numClasses,
+    const float labelSmoothing) {
+  // in : W x H x C x B
+  // target: B x 1
+  auto targetOneHot = oneHot(target, numClasses, labelSmoothing);
+  if (lambda == 0) {
+    return {input, targetOneHot};
+  }
+
+  // mix input
+  auto inputFlipped = af::flip(input, 3);
+
+  const float lambdaSqrt = std::sqrt(lambda);
+  const int w = input.dims(0);
+  const int h = input.dims(1);
+  const int maskW = std::round(w * lambdaSqrt);
+  const int maskH = std::round(h * lambdaSqrt);
+  const int centerW = randomFloat(0, w);
+  const int centerH = randomFloat(0, h);
+
+  const int x1 = std::max(0, centerW - maskW / 2);
+  const int x2 = std::min(w - 1, centerW + maskW / 2);
+  const int y1 = std::max(0, centerH - maskH / 2);
+  const int y2 = std::min(h - 1, centerH + maskH / 2);
+
+  auto inputMixed = input;
+  inputMixed(af::seq(x1, x2), af::seq(y1, y2), af::span, af::span) =
+      inputFlipped(af::seq(x1, x2), af::seq(y1, y2), af::span, af::span);
+  auto newLambda = static_cast<float>(x2 - x1) * (y2 - y1) / (w * h);
+
+  // mix target
+  auto targetOneHotFlipped =
+      oneHot(af::flip(target, 0), numClasses, labelSmoothing);
+  auto targetOneHotMixed =
+      newLambda * targetOneHotFlipped + (1 - newLambda) * targetOneHot;
+
+  return {inputMixed, targetOneHotMixed};
+}
+
 ImageTransform resizeTransform(const uint64_t resize) {
   return [resize](const af::array& in) { return resizeSmallest(in, resize); };
 }
