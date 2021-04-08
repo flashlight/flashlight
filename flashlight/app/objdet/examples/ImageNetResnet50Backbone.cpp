@@ -12,10 +12,10 @@
 #include <glog/logging.h>
 
 #include "flashlight/app/imgclass/dataset/Imagenet.h"
+#include "flashlight/app/objdet/models/Resnet50Backbone.h"
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/image/af/Transforms.h"
 #include "flashlight/ext/image/fl/dataset/DistributedDataset.h"
-#include "flashlight/app/objdet/models/Resnet50Backbone.h"
 #include "flashlight/fl/dataset/datasets.h"
 #include "flashlight/fl/meter/meters.h"
 #include "flashlight/fl/optim/optim.h"
@@ -154,16 +154,20 @@ int main(int argc, char** argv) {
       worldRank,
       worldSize,
       batchSizePerGpu,
+      1, // train_n_repeatedaug
       prefetchThreads,
-      prefetchSize);
+      prefetchSize,
+      fl::BatchDatasetPolicy::INCLUDE_LAST);
 
   auto valDataset = fl::ext::image::DistributedDataset(
       imagenetDataset(valList, labelMap, {valTransforms}),
       worldRank,
       worldSize,
       batchSizePerGpu,
+      1, // train_n_repeatedaug
       prefetchThreads,
-      prefetchSize);
+      prefetchSize,
+      fl::BatchDatasetPolicy::INCLUDE_LAST);
 
   //////////////////////////
   //  Load model and optimizer

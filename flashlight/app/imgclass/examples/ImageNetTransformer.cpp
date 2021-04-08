@@ -39,6 +39,10 @@ DEFINE_double(train_maxgradnorm, 0., "Maximum gradient norm");
 DEFINE_int64(train_seed, 1, "Seed");
 
 DEFINE_double(train_p_label_smoothing, 0.1, "Label smoothing probability");
+DEFINE_uint64(
+    train_n_repeatedaug,
+    3,
+    "Number of repetitions created for each sample");
 
 DEFINE_bool(distributed_enable, true, "Enable distributed training");
 DEFINE_int64(
@@ -223,8 +227,10 @@ int main(int argc, char** argv) {
       worldRank,
       worldSize,
       FLAGS_data_batch_size,
+      FLAGS_train_n_repeatedaug,
       FLAGS_data_prefetch_thread,
-      prefetchSize);
+      prefetchSize,
+      fl::BatchDatasetPolicy::SKIP_LAST);
   FL_LOG_MASTER(INFO) << "[trainDataset size] " << trainDataset->size();
 
   auto valDataset = fl::ext::image::DistributedDataset(
@@ -232,8 +238,10 @@ int main(int argc, char** argv) {
       worldRank,
       worldSize,
       FLAGS_data_batch_size,
+      1, // train_n_repeatedaug
       FLAGS_data_prefetch_thread,
-      prefetchSize);
+      prefetchSize,
+      fl::BatchDatasetPolicy::INCLUDE_LAST);
   FL_LOG_MASTER(INFO) << "[valDataset size] " << valDataset.size();
 
   //////////////////////////
@@ -350,7 +358,7 @@ int main(int argc, char** argv) {
   TimeMeter timeMeter;
   AverageValueMeter trainLossMeter;
   for (; epoch < FLAGS_train_epochs; epoch++) {
-    trainDataset->resample();
+    trainDataset->resample(epoch);
     lrScheduler(epoch);
 
     timeMeter.resume();
