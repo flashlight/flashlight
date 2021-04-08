@@ -155,16 +155,20 @@ int main(int argc, char** argv) {
       worldRank,
       worldSize,
       batchSizePerGpu,
+      1, // train_n_repeatedaug
       prefetchThreads,
-      prefetchSize);
+      prefetchSize,
+      fl::BatchDatasetPolicy::SKIP_LAST);
 
   auto valDataset = fl::ext::image::DistributedDataset(
       imagenetDataset(valList, labelMap, {valTransforms}),
       worldRank,
       worldSize,
       batchSizePerGpu,
+      1, // train_n_repeatedaug
       prefetchThreads,
-      prefetchSize);
+      prefetchSize,
+      fl::BatchDatasetPolicy::INCLUDE_LAST);
 
   //////////////////////////
   //  Load model and optimizer
@@ -215,7 +219,7 @@ int main(int argc, char** argv) {
   AverageValueMeter trainLossMeter;
   for (int epoch = (FLAGS_exp_checkpoint_epoch + 1); epoch < FLAGS_train_epochs;
        epoch++) {
-    trainDataset.resample();
+    trainDataset.resample(epoch);
     lrScheduler(epoch);
 
     // Get an iterator over the data
