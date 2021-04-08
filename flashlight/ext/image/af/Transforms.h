@@ -40,6 +40,105 @@ crop(const af::array& in, const int x, const int y, const int w, const int h);
  */
 af::array centerCrop(const af::array& in, const int size);
 
+/*
+ * Rotate an image
+ * @param theta to which degree (in radius) a image will rotate
+ * @param fillImg filling values on the empty spots
+ */
+af::array
+rotate(const af::array& input, const float theta, const af::array& fillImg);
+
+/*
+ * Skew an image on the first dimension
+ * @param theta to which degree (in radius) a image will skew
+ * @param fillImg filling values on the empty spots
+ */
+af::array
+skewX(const af::array& input, const float theta, const af::array& fillImg);
+
+/*
+ * Skew an image on the second dimension
+ * @param theta to which degree (in radius) a image will skew
+ * @param fillImg filling values on the empty spots
+ */
+af::array
+skewY(const af::array& input, const float theta, const af::array& fillImg);
+
+/*
+ * Translate an image on the first dimension
+ * @param shift number of pixels a image will translate
+ * @param fillImg filling values on the empty spots
+ */
+af::array
+translateX(const af::array& input, const int shift, const af::array& fillImg);
+
+/*
+ * Translate an image on the second dimension
+ * @param shift number of pixels a image will translate
+ * @param fillImg filling values on the empty spots
+ */
+af::array
+translateY(const af::array& input, const int shift, const af::array& fillImg);
+
+/*
+ * Enhance the color of an image
+ * @param enhance to which extend the color will change.
+ */
+af::array colorEnhance(const af::array& input, const float enhance);
+
+/*
+ * Remaps the image so that the darkest pixel becomes black (0), and the
+ * lightest becomes white (255).
+ */
+af::array autoContrast(const af::array& input);
+
+/*
+ * Enhance the contrast of an image
+ * @param enhance to which extend the contrast will change.
+ */
+af::array contrastEnhance(const af::array& input, const float enhance);
+
+/*
+ * Enhance the brightness of an image
+ * @param enhance to which extend the brightness will change.
+ */
+af::array brightnessEnhance(const af::array& input, const float enhance);
+
+/*
+ * Enhance the sharpness of an image
+ * @param enhance to which extend the sharpness will change.
+ */
+af::array sharpnessEnhance(const af::array& input, const float enhance);
+
+/*
+ * Invert each pixel of the image
+ */
+af::array invert(const af::array& input);
+
+/*
+ * Invert all pixel values above a threshold.
+ */
+af::array solarize(const af::array& input, const float threshold);
+
+/*
+ * Increase all pixel values below a threshold.
+ */
+af::array solarizeAdd(
+    const af::array& input,
+    const float threshold,
+    const float addValue);
+
+/*
+ * Applies a non-linear mapping to the input image, in order to create a uniform
+ * distribution of grayscale values in the output image.
+ */
+af::array equalize(const af::array& input);
+
+/*
+ * Reduce the number of bits for each color channel.
+ */
+af::array posterize(const af::array& input, const int bitsToKeep);
+
 // Same function signature as DataTransform but removes fl dep
 using ImageTransform = std::function<af::array(const af::array&)>;
 
@@ -98,6 +197,27 @@ ImageTransform randomEraseTransform(
     const float areaRatioMax = 1. / 3.,
     const float edgeRatioMin = 0.3,
     const float edgeRatioMax = 10 / 3.);
+
+/*
+ * Randon Augmentation
+ *
+ * This implementation follows strictly the implementation used in
+ * [DeiT](https://arxiv.org/abs/2012.12877). It's ource code can be found in
+ * https://github.com/facebookresearch/deit.
+ *
+ * 15 augmentation transforms are randomly selected.
+ *
+ *
+ * @param[p] the probablity of applying a certain transform, (1 - p) means the
+ * probablity of skipping.
+ * @param[n] number of transform functions to be applied on the input
+ * @param[fillImg] filling values on the empty spots generated in some
+ * transforms
+ */
+ImageTransform randomAugmentationDeitTransform(
+    const float p = 0.5,
+    const int n = 2,
+    const af::array& fillImg = af::array());
 
 /*
  * Utility method for composing multiple transform functions
