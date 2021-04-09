@@ -22,6 +22,7 @@ void TimeMeter::reset() {
 void TimeMeter::set(double val, int64_t num /* = 1 */) {
   curValue_ = val;
   curN_ = num;
+  start_ = std::chrono::system_clock::now();
 }
 
 double TimeMeter::value() const {
