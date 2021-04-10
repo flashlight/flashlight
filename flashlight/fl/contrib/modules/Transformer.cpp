@@ -130,16 +130,21 @@ std::vector<Variable> Transformer::forward(const std::vector<Variable>& input) {
         "Invalid inputs for transformer block: input and Mask batch sizes are different");
   }
 
-  float f = 1.0;
   if (train_ && (af::randu(1).scalar<float>() < pLayerdrop_)) {
-    f = 0.0;
+    if (preLN_) {
+      return {x};
+    } else {
+      return {(*norm2_)((*norm1_)(x))};
+    }
   }
-  if (preLN_) {
-    auto h = (f * (*norm1_)(selfAttention(input))).as(x.type()) + x;
-    return {f * (*norm2_)(mlp(h)).as(h.type()) + h};
-  } else {
-    auto h = (*norm1_)((f * selfAttention(input)).as(x.type()) + x);
-    return {(*norm2_)((f * mlp(h)).as(h.type()) + h)};
+  else {
+    if (preLN_) {
+      auto h = ((*norm1_)(selfAttention(input))).as(x.type()) + x;
+      return {(*norm2_)(mlp(h)).as(h.type()) + h};
+    } else {
+      auto h = (*norm1_)((selfAttention(input)).as(x.type()) + x);
+      return {(*norm2_)((mlp(h)).as(h.type()) + h)};
+    }
   }
 }
 
