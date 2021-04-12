@@ -208,7 +208,6 @@ std::shared_ptr<Sequential> resnet34() {
 
   model->add(View(af::dim4(512, -1, 1, 1)));
   model->add(Linear(512, 1000));
-  model->add(LogSoftmax());
   return model;
 };
 
@@ -231,7 +230,6 @@ std::shared_ptr<Sequential> resnet50() {
 
   model->add(View(af::dim4(512 * 4, -1, 1, 1)));
   model->add(Linear(512 * 4, 1000));
-  model->add(LogSoftmax());
   return model;
 }
 
