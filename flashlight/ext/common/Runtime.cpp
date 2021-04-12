@@ -36,5 +36,9 @@ std::string serializeGflags(const std::string& separator) {
   return serialized.str();
 }
 
+bool isInvalidArray(const af::array& arr) {
+  return af::anyTrue<bool>(af::isNaN(arr)) || af::anyTrue<bool>(af::isInf(arr));
+}
+
 } // end namespace ext
 } // end namespace fl

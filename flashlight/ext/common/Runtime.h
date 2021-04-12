@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "flashlight/fl/flashlight.h"
+
 namespace fl {
 namespace ext {
 /**
@@ -19,6 +21,11 @@ getRunFile(const std::string& name, int runidx, const std::string& runpath);
  * Serialize gflags into a buffer.
  */
 std::string serializeGflags(const std::string& separator = "\n");
+
+/**
+ * Check if an array contains any NAN or INF.
+ */
+bool isInvalidArray(const af::array& arr);
 
 } // namespace ext
 } // namespace fl
