@@ -57,6 +57,10 @@ using namespace fl::app::imgclass;
 
 #define FL_LOG_MASTER(lvl) LOG_IF(lvl, (fl::getWorldRank() == 0))
 
+fl::Variable criterion(const fl::Variable& in, const fl::Variable& target) {
+  return categoricalCrossEntropy(logSoftmax(in, 0), target);
+}
+
 // Returns the average loss, top 5 error, and top 1 error
 std::tuple<double, double, double> evalLoop(
     std::shared_ptr<Sequential> model,
@@ -74,7 +78,7 @@ std::tuple<double, double, double> evalLoop(
     auto target = noGrad(example[kImagenetTargetIdx]);
 
     // Compute and record the loss.
-    auto loss = categoricalCrossEntropy(output, target);
+    auto loss = criterion(output, target);
     lossMeter.add(loss.array().scalar<float>());
     top5Acc.add(output.array(), target.array());
     top1Acc.add(output.array(), target.array());
@@ -237,7 +241,7 @@ int main(int argc, char** argv) {
       auto target = noGrad(example[kImagenetTargetIdx]);
 
       // Compute and record the loss.
-      auto loss = categoricalCrossEntropy(output, target);
+      auto loss = criterion(output, target);
 
       trainLossMeter.add(loss.array());
       top5Acc.add(output.array(), target.array());
