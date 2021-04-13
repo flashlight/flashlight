@@ -20,6 +20,7 @@ COPY . /root/flashlight
 RUN cd /root/flashlight && mkdir -p build && \
     cd build && cmake .. -DCMAKE_BUILD_TYPE=Release \
                          -DCMAKE_INSTALL_PREFIX=/opt/flashlight \
+                         -DFL_BUILD_ALL_APPS=ON \
                          -DFL_BACKEND=CPU \
                          -DGloo_DIR=/opt/gloo/share/cmake \
                          -DDNNL_DIR=/opt/onednn/lib/cmake/dnnl && \
