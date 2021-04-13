@@ -5,14 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/fl/autograd/Functions.h"
+#include <vector>
 
+#include "flashlight/fl/autograd/Functions.h"
+#include "flashlight/fl/autograd/Utils.h"
 #include "flashlight/fl/autograd/Variable.h"
-#include "flashlight/fl/autograd/backend/cuda/CudnnUtils.h"
+#include "flashlight/fl/autograd/backend/miopen/MiOpenUtils.h"
 #include "flashlight/fl/common/DevicePtr.h"
+#include "flashlight/fl/common/Logging.h"
+#include "flashlight/fl/common/backend/miopen/MiOpenUtils.h"
+
+using namespace ::fl::miopen;
 
 namespace fl {
-
 Variable pool2d(
     const Variable& input,
     int wx,
@@ -35,25 +40,33 @@ Variable pool2d(
 
   auto output = af::randu(ox, oy, input.dims(2), input.dims(3), input.type());
   auto out_desc = TensorDescriptor(output);
+  size_t workSpaceSize = 0;
+  MIOPEN_CHECK_ERR(miopenPoolingGetWorkSpaceSizeV2(
+      pool_desc.descriptor, out_desc.descriptor, &workSpaceSize));
+  workSpaceSize = std::max(workSpaceSize, sizeof(float));
+  auto wspace = af::array(workSpaceSize, af::dtype::b8);
   {
     DevicePtr inputraw(input.array());
     DevicePtr resultraw(output);
+    DevicePtr wspacePtr(wspace);
 
-    auto handle = getCudnnHandle();
     const void* one = kOne(input.type());
     const void* zero = kZero(input.type());
 
-    CUDNN_CHECK_ERR(cudnnPoolingForward(
-        handle,
+    MIOPEN_CHECK_ERR(miopenPoolingForward(
+        getMiOpenHandle(),
         pool_desc.descriptor,
-        one,
+        /* alpha= */ one,
         in_desc.descriptor,
         inputraw.get(),
-        zero,
+        /* beta = */ zero,
         out_desc.descriptor,
-        resultraw.get()));
+        resultraw.get(),
+        /* do_backward= */ true,
+        wspacePtr.get(),
+        workSpaceSize));
   }
-  auto gradFunc = [wx, wy, sx, sy, px, py, mode, output](
+  auto gradFunc = [wx, wy, sx, sy, px, py, mode, output, wspace, workSpaceSize](
                       std::vector<Variable>& inputs,
                       const Variable& grad_output) {
     auto& in = inputs[0];
@@ -66,7 +79,7 @@ Variable pool2d(
 
     auto grad_input = Variable(af::array(in.dims(), in.type()), false);
 
-    auto hndl = getCudnnHandle();
+    auto hndl = getMiOpenHandle();
     const void* oneg = kOne(in.type());
     const void* zerog = kZero(in.type());
 
@@ -75,20 +88,22 @@ Variable pool2d(
       DevicePtr outraw(output);
       DevicePtr gradresultraw(grad_output.array());
       DevicePtr gradinputraw(grad_input.array());
+      DevicePtr wspacePtr(wspace);
 
-      CUDNN_CHECK_ERR(cudnnPoolingBackward(
+      MIOPEN_CHECK_ERR(miopenPoolingBackward(
           hndl,
           p_desc.descriptor,
-          oneg,
+          /* alpha= */ oneg,
           o_desc.descriptor,
           outraw.get(),
           o_desc.descriptor,
           gradresultraw.get(),
           i_desc.descriptor,
           inraw.get(),
-          zerog,
+          /* beta = */ zerog,
           i_desc.descriptor,
-          gradinputraw.get()));
+          gradinputraw.get(),
+          wspacePtr.get()));
     }
     in.addGrad(grad_input);
   };
