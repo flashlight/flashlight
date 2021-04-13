@@ -20,9 +20,12 @@ Built dictionary will also contain special tokens at the beginning, so you don't
 - `<unk>` - unknown token
 - `<pad>` - pad token
 - `<mask>` - mask token (is needed for BERT training)
-```
 
 ## Train
+
+### Compile the model plugin
+
+Add a compiler flag `-DFL_PLUGIN_MODULE_SRC_PATH` to the cmake command pointing to the model you want to use. For example, `-DFL_PLUGIN_MODULE_SRC_PATH=../flashlight/app/lm/plugins/LmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm.cpp`. With the dynamic library created for the model, you can simply pass it into the training binary like `--train_arch_file=LmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm.so`.
 
 ### Training modes
 - `train`: Train a model from scratch, and save logs and checkpoints into `exp_rundir/exp_model_name`.
@@ -87,4 +90,13 @@ A complete list of the flag definitions and short descriptions of their meaning 
 
 ## Evaluation
 
-Coming soon
+To evaluate a model, simple run
+```
+fl_lm_test \
+  --train_arch_file=/path/to/your/arch.so \
+  --exp_init_model_path=/path/to/your/model.bin \
+  --dictionary=/path/to/your/dict.txt \
+  --dictionary_max_size=200000 \
+  --data_dir=/path/to/your_data \
+  --data_valid=data.txt
+```
