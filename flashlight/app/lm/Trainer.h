@@ -87,6 +87,13 @@ DECLARE_double(mask_rand_token_prob);
 DECLARE_double(mask_same_token_prob);
 DECLARE_int64(mask_min_length);
 
+/* AMP OPTIONS */
+DECLARE_bool(fl_amp_use_mixed_precision);
+DECLARE_double(fl_amp_scale_factor);
+DECLARE_uint64(fl_amp_scale_factor_update_interval);
+DECLARE_double(fl_amp_max_scale_factor);
+DECLARE_string(fl_optim_mode);
+
 class Trainer {
  public:
   explicit Trainer(const std::string& mode);
@@ -111,6 +118,8 @@ class Trainer {
   int kPadIdx_, kEosIdx_, kUnkIdx_, kMaskIdx_;
   std::string gflagsStr_;
   std::string version_{FL_APP_LM_VERSION};
+  unsigned short scaleCounter_;
+  double scaleFactor_;
 
   fl::lib::text::Dictionary dictionary_;
   std::shared_ptr<TextDataset> trainDataset_;

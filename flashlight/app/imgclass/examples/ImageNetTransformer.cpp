@@ -163,10 +163,6 @@ std::tuple<double, double, double> evalLoop(
   return std::make_tuple(loss, top5Acc.value(), top1Acc.value());
 }
 
-bool isBadArray(const af::array& arr) {
-  return af::anyTrue<bool>(af::isNaN(arr)) || af::anyTrue<bool>(af::isInf(arr));
-}
-
 int main(int argc, char** argv) {
   fl::init();
   google::InitGoogleLogging(argv[0]);
@@ -451,7 +447,7 @@ int main(int argc, char** argv) {
           if (FLAGS_distributed_enable) {
             fl::allReduce(scaledLoss);
           }
-          if (isBadArray(scaledLoss)) {
+          if (fl::ext::isInvalidArray(scaledLoss)) {
             FL_LOG(INFO) << "Loss has NaN values in 2, in proc: "
                          << fl::getWorldRank();
             scaleFactor = scaleFactor / 2.0f;
@@ -476,7 +472,7 @@ int main(int argc, char** argv) {
         if (FLAGS_fl_amp_use_mixed_precision) {
           for (auto& p : modelParams) {
             p.grad() = p.grad() / scaleFactor;
-            if (isBadArray(p.grad().array())) {
+            if (fl::ext::isInvalidArray(p.grad().array())) {
               FL_LOG(INFO) << "Grad has NaN values in 3, in proc: "
                            << fl::getWorldRank();
               if (scaleFactor >= fl::kAmpMinimumScaleFactorValue) {

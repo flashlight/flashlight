@@ -191,6 +191,33 @@ DEFINE_int64(
     1,
     "[mask lm task] Min number of masked tokens in each sample.");
 
+/* AMP OPTIONS */
+DEFINE_bool(
+    fl_amp_use_mixed_precision,
+    false,
+    "[train] Use mixed precision for training - scale loss and gradients up and down "
+    "by a scale factor that changes over time. If no fl optim mode is "
+    "specified with --fl_optim_mode when passing this flag, automatically "
+    "sets the optim mode to O1.");
+DEFINE_double(
+    fl_amp_scale_factor,
+    65536.,
+    "[train] Starting scale factor to use for loss scaling "
+    " with mixed precision training");
+DEFINE_uint64(
+    fl_amp_scale_factor_update_interval,
+    2000,
+    "[train] Update interval for adjusting loss scaling in mixed precision training");
+DEFINE_double(
+    fl_amp_max_scale_factor,
+    65536.,
+    "[train] Maximum value for the loss scale factor in mixed precision training");
+DEFINE_string(
+    fl_optim_mode,
+    "",
+    "[train] Sets the flashlight optimization mode. "
+    "Optim modes can be O1, O2, or O3.");
+
 /* ================================ Trainer ================================ */
 
 /* ============= Public functions ============= */
@@ -215,6 +242,15 @@ Trainer::Trainer(const std::string& mode) {
   initArrayFire();
   if (FLAGS_distributed_enable) {
     reducer_ = std::make_shared<fl::CoalescingReducer>(1.0, true, true);
+  }
+
+  if (FLAGS_fl_amp_use_mixed_precision) {
+    FL_LOG_MASTER(INFO)
+        << "Mixed precision training enabled. Will perform loss scaling.";
+    auto flOptimLevel = FLAGS_fl_optim_mode.empty()
+        ? fl::OptimLevel::DEFAULT
+        : fl::OptimMode::toOptimLevel(FLAGS_fl_optim_mode);
+    fl::OptimMode::get().setOptimLevel(flOptimLevel);
   }
 
   FL_LOG_MASTER(INFO) << "network (" << fl::numTotalParams(network_)
@@ -287,6 +323,7 @@ void Trainer::trainStep() {
   network_->train();
   criterion_->train();
   setLr();
+  bool skipBatch = false;
 
   // 1. Sample
   fl::Variable input, target;
@@ -301,15 +338,37 @@ void Trainer::trainStep() {
   af::sync();
   critFwdTimeMeter_.resume();
   auto loss = criterion_->forward({output, target}).front();
+
+  if (FLAGS_fl_amp_use_mixed_precision) {
+    ++scaleCounter_;
+    loss = loss * scaleFactor_;
+
+    auto scaledLoss = loss.array() / fl::getWorldSize();
+    if (FLAGS_distributed_enable) {
+      fl::allReduce(scaledLoss);
+    }
+    if (isInvalidArray(scaledLoss)) {
+      FL_LOG_MASTER(INFO) << "AMP: Loss has NaN values";
+      scaleFactor_ = scaleFactor_ / 2.0f;
+      FL_LOG_MASTER(INFO)
+          << "AMP: Scale factor decreased (loss). New value :\t "
+          << scaleFactor_;
+      skipBatch = true;
+    }
+  }
   af::sync();
   fwdTimeMeter_.stopAndIncUnit();
   critFwdTimeMeter_.stopAndIncUnit();
+  if (skipBatch) {
+    return;
+  }
 
   float numTokens = af::count<float>(target.array() != kPadIdx_);
   if (numTokens > 0) {
     auto weight =
         numTokens / (FLAGS_data_tokens_per_sample * FLAGS_data_batch_size);
-    trainLossMeter_.add(af::mean<float>(loss.array()) / numTokens, weight);
+    trainLossMeter_.add(
+        af::mean<float>(loss.array()) / (numTokens * scaleFactor_), weight);
     tokenCountMeter_.add(numTokens);
   }
 
@@ -323,8 +382,36 @@ void Trainer::trainStep() {
   loss = loss / fl::Variable(numTokensArr, false);
   loss.backward();
   reduceGrads();
+
+  if (FLAGS_fl_amp_use_mixed_precision) {
+    for (auto& p : parameters_) {
+      p.grad() = p.grad() / scaleFactor_;
+      if (isInvalidArray(p.grad().array())) {
+        FL_LOG_MASTER(INFO) << "AMP: Grad has NaN values";
+        if (scaleFactor_ >= fl::kAmpMinimumScaleFactorValue) {
+          scaleFactor_ = scaleFactor_ / 2.0f;
+          FL_LOG_MASTER(INFO)
+              << "AMP: Scale factor decreased (grad). New value:\t"
+              << scaleFactor_;
+          skipBatch = true;
+        } else {
+          FL_LOG(FATAL) << "Minimum loss scale reached: "
+                        << fl::kAmpMinimumScaleFactorValue
+                        << " with over/underflowing gradients. Lowering the "
+                        << "learning rate, using gradient clipping, or "
+                        << "increasing the batch size can help resolve "
+                        << "loss explosion.";
+        }
+        scaleCounter_ = 1;
+        break;
+      }
+    }
+  }
   af::sync();
   bwdTimeMeter_.stopAndIncUnit();
+  if (skipBatch) {
+    return;
+  }
 
   // 4. Optimization
   optimTimeMeter_.resume();
@@ -332,6 +419,18 @@ void Trainer::trainStep() {
   optimizer_->step();
   af::sync();
   optimTimeMeter_.stopAndIncUnit();
+
+  if (FLAGS_fl_amp_use_mixed_precision &&
+      scaleFactor_ < FLAGS_fl_amp_max_scale_factor) {
+    if (scaleCounter_ % FLAGS_fl_amp_scale_factor_update_interval == 0) {
+      scaleFactor_ *= 2;
+      FL_VLOG(2) << "AMP: Scale factor doubled. New value:\t" << scaleFactor_;
+    } else {
+      scaleFactor_ += 2;
+      FL_VLOG(3) << "AMP: Scale factor incremented. New value\t"
+                 << scaleFactor_;
+    }
+  }
 }
 
 void Trainer::evalStep() {
@@ -372,6 +471,10 @@ void Trainer::initTrain() {
 
   createTrainDatasets();
   createValidDatasets();
+
+  scaleCounter_ = 1;
+  scaleFactor_ =
+      FLAGS_fl_amp_use_mixed_precision ? FLAGS_fl_amp_scale_factor : 1.;
 }
 
 void Trainer::initContinue() {
@@ -390,7 +493,9 @@ void Trainer::initContinue() {
       optimizer_,
       epoch_,
       batchIdx_,
-      gflagsStr_);
+      gflagsStr_,
+      scaleCounter_,
+      scaleFactor_);
 
   // overwrite flags using the ones from command line
   gflags::ReadFlagsFromString(gflagsStr_, gflags::GetArgv0(), true);
@@ -418,7 +523,9 @@ void Trainer::initFork() {
       criterion_,
       dummyOptimizer,
       epoch_,
-      batchIdx_);
+      batchIdx_,
+      scaleCounter_,
+      scaleFactor_);
 
   createDictionary();
   createOptimizer();
@@ -766,7 +873,9 @@ void Trainer::saveCheckpoint(const std::string& path, const std::string& suffix)
       optimizer_,
       epoch_,
       batchIdx_,
-      gflagsStr_);
+      gflagsStr_,
+      scaleCounter_,
+      scaleFactor_);
 
   if (!suffix.empty()) {
     Serializer::save(
@@ -777,7 +886,9 @@ void Trainer::saveCheckpoint(const std::string& path, const std::string& suffix)
         optimizer_,
         epoch_,
         batchIdx_,
-        gflagsStr_);
+        gflagsStr_,
+        scaleCounter_,
+        scaleFactor_);
   }
 }
 
@@ -819,6 +930,7 @@ std::string Trainer::getProgress() const {
              tokenCountMeter_.value()[0] * fl::getWorldSize() /
                  batchTimerMeter_.value());
   oss << " | Learning Rate " << format("%.6f", optimizer_->getLr());
+  oss << " | Scale factor " << format("%.6f", scaleFactor_);
   // Losses
   double loss = trainLossMeter_.value()[0];
   oss << " | Loss: " << format("%.2f", loss)
