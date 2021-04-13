@@ -92,7 +92,7 @@ T adjustInputType(const T& in, const char* funcname) {
  * Checks if a variadic number of Variables have the same types.
  */
 #define FL_VARIABLE_DTYPES_MATCH_CHECK(...)              \
-  if (!detail::areVariableTypesEqual(__VA_ARGS__)) {     \
+  if (!fl::detail::areVariableTypesEqual(__VA_ARGS__)) { \
     throw std::invalid_argument(                         \
         std::string(__func__) +                          \
         " doesn't support binary "                       \
