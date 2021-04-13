@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/fl/autograd/backend/cuda/CudnnUtils.h"
+#include "flashlight/fl/autograd/backend/miopen/MiOpenUtils.h"
 
 #include <array>
 #include <stdexcept>
@@ -13,102 +13,101 @@
 
 #include <af/internal.h>
 
-#include "flashlight/fl/common/backend/cuda/CudaUtils.h"
 #include "flashlight/fl/common/DevicePtr.h"
+#include "flashlight/fl/common/OpenClUtils.h"
+#include "flashlight/fl/common/backend/miopen/MiOpenUtils.h"
 
 namespace {
 
 struct Handle {
-  cudnnHandle_t handle;
+  miopenHandle_t handle;
   Handle() : handle(nullptr) {
-    CUDNN_CHECK_ERR(cudnnCreate(&handle));
-    CUDNN_CHECK_ERR(cudnnSetStream(handle, fl::cuda::getActiveStream()));
+    MIOPEN_CHECK_ERR(miopenCreateWithStream(
+        &handle, static_cast<miopenAcceleratorQueue_t>(fl::ocl::getQueue())));
   }
   ~Handle() {
-    if (handle) {
-// See https://git.io/fNQnM - sometimes, at exit, the CUDA context
-// (or something) is already destroyed by the time a handle gets destroyed
-// because of an issue with the destruction order.
-#ifdef NO_CUDNN_DESTROY_HANDLE
-#else
-      CUDNN_CHECK_ERR(cudnnDestroy(handle));
-#endif
-    }
+    MIOPEN_CHECK_ERR(miopenDestroy(handle));
   }
 };
 
 const float kFloatZero = 0.0;
 const float kFloatOne = 1.0;
 
-const double kDoubleZero = 0.0;
-const double kDoubleOne = 1.0;
-
 std::unordered_map<int, Handle> handles;
 
-// See https://git.io/fp9oo for an explanation.
-#if CUDNN_VERSION < 7000
-struct CudnnDropoutStruct {
-  float dropout;
-  int nstates;
-  void* states;
-};
-#endif
+miopenTensorDescriptor_t createAndSetTensorDescriptor(const af::array& input) {
+  miopenTensorDescriptor_t descriptor;
+  MIOPEN_CHECK_ERR(miopenCreateTensorDescriptor(&descriptor));
+  miopenDataType_t miopentype = fl::miopenMapToType(input.type());
+
+  const auto afstrides = af::getStrides(input);
+  const auto afdims = input.dims();
+
+  // reverse the arrays and cast to int type
+  std::vector<int> strides(afstrides.elements());
+  std::vector<int> dims(afdims.elements());
+
+  for (int i = 0; i < afstrides.elements(); ++i) {
+    strides[i] = static_cast<int>(afstrides[afstrides.elements() - i - 1]);
+  }
+
+  for (int j = 0; j < afstrides.elements(); ++j) {
+    dims[j] = static_cast<int>(afdims[afdims.elements() - j - 1]);
+  }
+
+  MIOPEN_CHECK_ERR(miopenSetTensorDescriptor(
+      descriptor /* descriptor handle */,
+      miopentype /* = dataType */,
+      /* nbDims= */ 4,
+      dims.data(),
+      strides.data()));
+
+  return descriptor;
+}
 
 } // namespace
 
 namespace fl {
 
-void cudnnCheckErr(cudnnStatus_t status) {
-  if (status == CUDNN_STATUS_SUCCESS) {
-    return;
-  }
-  const char* err = cudnnGetErrorString(status);
-  switch (status) {
-    case CUDNN_STATUS_BAD_PARAM:
-      throw std::invalid_argument(err);
-    default:
-      throw std::runtime_error(err);
-  }
-}
-
-cudnnDataType_t cudnnMapToType(const af::dtype& t) {
+miopenDataType_t miopenMapToType(const af::dtype& t) {
   switch (t) {
     case af::dtype::f16:
-      return CUDNN_DATA_HALF;
+      return miopenHalf;
     case af::dtype::f32:
-      return CUDNN_DATA_FLOAT;
-    case af::dtype::f64:
-      return CUDNN_DATA_DOUBLE;
+      return miopenFloat;
+    case af::dtype::s32:
+      return miopenInt32;
     default:
-      throw std::invalid_argument("unsupported data type for cuDNN");
+      throw std::invalid_argument(
+          "unsupported data type for MiOpen type=" + std::to_string((int)t));
   }
 }
 
-cudnnPoolingMode_t cudnnMapToPoolingMode(const PoolingMode mode) {
+miopenPoolingMode_t miopenMapToPoolingMode(const PoolingMode mode) {
   switch (mode) {
     case PoolingMode::MAX:
-      return CUDNN_POOLING_MAX;
+      return miopenPoolingMax;
     case PoolingMode::AVG_INCLUDE_PADDING:
-      return CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING;
+      return miopenPoolingAverageInclusive;
     case PoolingMode::AVG_EXCLUDE_PADDING:
-      return CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING;
+      return miopenPoolingAverage;
     default:
-      throw std::invalid_argument("unsupported pooling mode for cuDNN");
+      throw std::invalid_argument("unsupported pooling mode for MiOpen");
   }
 }
 
-cudnnRNNMode_t cudnnMapToRNNMode(const RnnMode mode) {
+miopenRNNMode_t miopenMapToRNNMode(const RnnMode mode) {
   switch (mode) {
     case RnnMode::RELU:
-      return CUDNN_RNN_RELU;
+      return miopenRNNRELU;
     case RnnMode::TANH:
-      return CUDNN_RNN_TANH;
+      return miopenRNNTANH;
     case RnnMode::LSTM:
-      return CUDNN_LSTM;
+      return miopenLSTM;
     case RnnMode::GRU:
-      return CUDNN_GRU;
+      return miopenGRU;
     default:
-      throw std::invalid_argument("unsupported RNN mode for cuDNN");
+      throw std::invalid_argument("unsupported RNN mode for MiOpen");
   }
 }
 
@@ -118,48 +117,29 @@ TensorDescriptor::TensorDescriptor(const Variable& input)
 TensorDescriptor::TensorDescriptor(
     const af::dtype type,
     const af::dim4& af_dims) {
-  CUDNN_CHECK_ERR(cudnnCreateTensorDescriptor(&descriptor));
-  cudnnDataType_t cudnntype = cudnnMapToType(type);
+  MIOPEN_CHECK_ERR(miopenCreateTensorDescriptor(&descriptor));
+  miopenDataType_t miopentype = miopenMapToType(type);
 
   std::array<int, 4> dims = {
       (int)af_dims[3], (int)af_dims[2], (int)af_dims[1], (int)af_dims[0]};
 
-  // Sets strides so array is contiguous row-major for cudnn
+  // Sets strides so array is contiguous row-major for miopen
   std::vector<int> r_strides = {1};
   for (auto it = dims.rbegin(); it != dims.rend() - 1; ++it) {
     r_strides.push_back(r_strides.back() * (*it));
   }
   std::vector<int> strides(r_strides.rbegin(), r_strides.rend());
 
-  CUDNN_CHECK_ERR(cudnnSetTensorNdDescriptor(
-      descriptor, cudnntype, dims.size(), dims.data(), strides.data()));
+  MIOPEN_CHECK_ERR(miopenSetTensorDescriptor(
+      descriptor, miopentype, dims.size(), dims.data(), strides.data()));
 }
 
 TensorDescriptor::TensorDescriptor(const af::array& input) {
-  CUDNN_CHECK_ERR(cudnnCreateTensorDescriptor(&descriptor));
-  cudnnDataType_t cudnntype = cudnnMapToType(input.type());
-
-  auto afstrides = af::getStrides(input);
-  auto afdims = input.dims();
-
-  // reverse the arrays and cast to int type
-  std::array<int, 4> strides = {(int)afstrides[3],
-                                (int)afstrides[2],
-                                (int)afstrides[1],
-                                (int)afstrides[0]};
-  std::array<int, 4> dims = {
-      (int)afdims[3], (int)afdims[2], (int)afdims[1], (int)afdims[0]};
-
-  CUDNN_CHECK_ERR(cudnnSetTensorNdDescriptor(
-      descriptor /* descriptor handle */,
-      cudnntype /* = dataType */,
-      4,
-      dims.data(),
-      strides.data()));
+  descriptor = createAndSetTensorDescriptor(input);
 }
 
 TensorDescriptor::~TensorDescriptor() {
-  CUDNN_CHECK_ERR(cudnnDestroyTensorDescriptor(descriptor));
+  MIOPEN_CHECK_ERR(miopenDestroyTensorDescriptor(descriptor));
 }
 
 TensorDescriptorArray::TensorDescriptorArray(
@@ -184,73 +164,73 @@ PoolingDescriptor::PoolingDescriptor(
     int px,
     int py,
     PoolingMode mode) {
-  CUDNN_CHECK_ERR(cudnnCreatePoolingDescriptor(&descriptor));
+  MIOPEN_CHECK_ERR(miopenCreatePoolingDescriptor(&descriptor));
   std::array<int, 2> window = {(int)wy, (int)wx};
   std::array<int, 2> padding = {(int)py, (int)px};
   std::array<int, 2> stride = {(int)sy, (int)sx};
 
-  auto cudnnpoolingmode = cudnnMapToPoolingMode(mode);
-  CUDNN_CHECK_ERR(cudnnSetPoolingNdDescriptor(
+  auto miopenPoolingMode = miopenMapToPoolingMode(mode);
+  MIOPEN_CHECK_ERR(miopenSetNdPoolingDescriptor(
       descriptor,
-      cudnnpoolingmode,
-      CUDNN_PROPAGATE_NAN,
-      2,
+      miopenPoolingMode,
+      /* nbDims = */ 2,
       window.data(),
       padding.data(),
       stride.data()));
 }
 
 PoolingDescriptor::~PoolingDescriptor() {
-  CUDNN_CHECK_ERR(cudnnDestroyPoolingDescriptor(descriptor));
+  MIOPEN_CHECK_ERR(miopenDestroyPoolingDescriptor(descriptor));
 }
 
 FilterDescriptor::FilterDescriptor(const Variable& input)
     : FilterDescriptor(input.array()) {}
 
 FilterDescriptor::FilterDescriptor(const af::array& input) {
-  CUDNN_CHECK_ERR(cudnnCreateFilterDescriptor(&descriptor));
-  cudnnDataType_t cudnntype = cudnnMapToType(input.type());
-  auto afdims = input.dims();
-  std::array<int, 4> dims = {
-      (int)afdims[3], (int)afdims[2], (int)afdims[1], (int)afdims[0]};
-
-  CUDNN_CHECK_ERR(cudnnSetFilterNdDescriptor(
-      descriptor, cudnntype, CUDNN_TENSOR_NCHW, 4, dims.data()));
+  descriptor = createAndSetTensorDescriptor(input);
 }
 
 FilterDescriptor::~FilterDescriptor() {
-  CUDNN_CHECK_ERR(cudnnDestroyFilterDescriptor(descriptor));
+  MIOPEN_CHECK_ERR(miopenDestroyTensorDescriptor(descriptor));
 }
 
 DropoutDescriptor::DropoutDescriptor(float drop_prob) {
-  CUDNN_CHECK_ERR(cudnnCreateDropoutDescriptor(&descriptor));
-  auto handle = getCudnnHandle();
+  MIOPEN_CHECK_ERR(miopenCreateDropoutDescriptor(&descriptor));
+  auto handle = getMiOpenHandle();
   unsigned long long seed = 0;
   size_t state_size;
-  CUDNN_CHECK_ERR(cudnnDropoutGetStatesSize(handle, &state_size));
+  MIOPEN_CHECK_ERR(miopenDropoutGetStatesSize(handle, &state_size));
   auto& dropout_states = getDropoutStates();
   if (dropout_states.isempty()) {
     dropout_states = af::array(state_size, af::dtype::b8);
     DevicePtr statesraw(dropout_states);
-    CUDNN_CHECK_ERR(cudnnSetDropoutDescriptor(
-        descriptor, handle, drop_prob, statesraw.get(), state_size, seed));
+    MIOPEN_CHECK_ERR(miopenSetDropoutDescriptor(
+        descriptor,
+        handle,
+        drop_prob,
+        statesraw.get(),
+        state_size,
+        seed,
+        /* use_mask= */ true,
+        /* state_evo= */ false,
+        /* rng_mode= */ miopenRNGType_t::MIOPEN_RNG_PSEUDO_XORWOW));
   } else {
     DevicePtr statesraw(dropout_states);
-// See https://git.io/fp9oo for an explanation.
-#if CUDNN_VERSION >= 7000
-    CUDNN_CHECK_ERR(cudnnRestoreDropoutDescriptor(
-        descriptor, handle, drop_prob, statesraw.get(), state_size, seed));
-#else
-    auto dropout_struct = reinterpret_cast<CudnnDropoutStruct*>(descriptor);
-    dropout_struct->dropout = drop_prob;
-    dropout_struct->nstates = state_size;
-    dropout_struct->states = statesraw.get();
-#endif
+    MIOPEN_CHECK_ERR(miopenRestoreDropoutDescriptor(
+        descriptor,
+        handle,
+        drop_prob,
+        statesraw.get(),
+        state_size,
+        seed,
+        /* use_mask= */ true,
+        /* state_evo= */ false,
+        /* rng_mode= */ miopenRNGType_t::MIOPEN_RNG_PSEUDO_XORWOW));
   }
 }
 
 DropoutDescriptor::~DropoutDescriptor() {
-  CUDNN_CHECK_ERR(cudnnDestroyDropoutDescriptor(descriptor));
+  MIOPEN_CHECK_ERR(miopenDestroyDropoutDescriptor(descriptor));
 }
 
 af::array& DropoutDescriptor::getDropoutStates() {
@@ -265,48 +245,34 @@ RNNDescriptor::RNNDescriptor(
     RnnMode mode,
     bool bidirectional,
     DropoutDescriptor& dropout) {
-  CUDNN_CHECK_ERR(cudnnCreateRNNDescriptor(&descriptor));
+  MIOPEN_CHECK_ERR(miopenCreateRNNDescriptor(&descriptor));
 
-  auto handle = getCudnnHandle();
+  auto handle = getMiOpenHandle();
 
-  cudnnRNNInputMode_t in_mode = CUDNN_LINEAR_INPUT;
+  miopenRNNInputMode_t in_mode = miopenRNNlinear;
 
-  cudnnDirectionMode_t dir =
-      bidirectional ? CUDNN_BIDIRECTIONAL : CUDNN_UNIDIRECTIONAL;
+  miopenRNNDirectionMode_t dir =
+      bidirectional ? miopenRNNbidirection : miopenRNNunidirection;
 
-  cudnnRNNMode_t cell = cudnnMapToRNNMode(mode);
-  cudnnRNNAlgo_t algo = CUDNN_RNN_ALGO_STANDARD;
-  cudnnDataType_t cudnntype = cudnnMapToType(type);
+  miopenRNNMode_t cell = miopenMapToRNNMode(mode);
+  miopenRNNAlgo_t algo = miopenRNNdefault;
+  miopenDataType_t miopentype = miopenMapToType(type);
 
-#if CUDNN_VERSION >= 7000 && CUDNN_VERSION < 8000 
-  CUDNN_CHECK_ERR(cudnnSetRNNDescriptor(
-      handle,
+  MIOPEN_CHECK_ERR(miopenSetRNNDescriptor_V2(
       descriptor,
       hidden_size,
       num_layers,
       dropout.descriptor,
       in_mode,
-      dir,
-      cell,
+      /* direction= */ dir,
+      /* rnnMode= */ cell,
+      /* biasMode= */ miopenRNNwithBias,
       algo,
-      cudnntype));
-#else
-  CUDNN_CHECK_ERR(cudnnSetRNNDescriptor_v6(
-      handle,
-      descriptor,
-      hidden_size,
-      num_layers,
-      dropout.descriptor,
-      in_mode,
-      dir,
-      cell,
-      algo,
-      cudnntype));
-#endif
+      miopentype));
 }
 
 RNNDescriptor::~RNNDescriptor() {
-  CUDNN_CHECK_ERR(cudnnDestroyRNNDescriptor(descriptor));
+  MIOPEN_CHECK_ERR(miopenDestroyRNNDescriptor(descriptor));
 }
 
 ConvDescriptor::ConvDescriptor(
@@ -318,29 +284,30 @@ ConvDescriptor::ConvDescriptor(
     int dx,
     int dy,
     int groups) {
-  CUDNN_CHECK_ERR(cudnnCreateConvolutionDescriptor(&descriptor));
-  cudnnDataType_t cudnntype = cudnnMapToType(type);
+  MIOPEN_CHECK_ERR(miopenCreateConvolutionDescriptor(&descriptor));
+  miopenDataType_t miopentype = miopenMapToType(type);
   std::array<int, 2> padding = {(int)py, (int)px};
   std::array<int, 2> stride = {(int)sy, (int)sx};
   std::array<int, 2> dilation = {(int)dy, (int)dx};
 
-  CUDNN_CHECK_ERR(cudnnSetConvolutionNdDescriptor(
+  MIOPEN_CHECK_ERR(miopenInitConvolutionNdDescriptor(
       descriptor,
-      2,
+      /* spatialDim= */ 2,
       padding.data(),
       stride.data(),
       dilation.data(),
-      CUDNN_CROSS_CORRELATION,
-      cudnntype));
+      miopenConvolutionMode_t::miopenConvolution));
 
-  CUDNN_CHECK_ERR(cudnnSetConvolutionGroupCount(descriptor, groups));
+  if (groups > 1) {
+    MIOPEN_CHECK_ERR(miopenSetConvolutionGroupCount(descriptor, groups));
+  }
 }
 
 ConvDescriptor::~ConvDescriptor() {
-  CUDNN_CHECK_ERR(cudnnDestroyConvolutionDescriptor(descriptor));
+  MIOPEN_CHECK_ERR(miopenDestroyConvolutionDescriptor(descriptor));
 }
 
-cudnnHandle_t getCudnnHandle() {
+miopenHandle_t getMiOpenHandle() {
   int af_id = af::getDevice();
   return handles[af_id].handle;
 }
@@ -351,9 +318,8 @@ const void* kOne(const af::dtype t) {
     case af::dtype::f32:
       return &kFloatOne;
     case af::dtype::f64:
-      return &kDoubleOne;
     default:
-      throw std::invalid_argument("unsupported data type for cuDNN");
+      throw std::invalid_argument("unsupported data type for MiOpen");
   }
 }
 
@@ -363,9 +329,8 @@ const void* kZero(const af::dtype t) {
     case af::dtype::f32:
       return &kFloatZero;
     case af::dtype::f64:
-      return &kDoubleZero;
     default:
-      throw std::invalid_argument("unsupported data type for cuDNN");
+      throw std::invalid_argument("unsupported data type for MiOpen");
   }
 }
 
