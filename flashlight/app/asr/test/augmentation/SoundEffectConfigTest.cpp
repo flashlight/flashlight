@@ -29,13 +29,18 @@ TEST(SoundEffectConfigFile, ReadWriteJson) {
   // configuration.
   LOG(INFO) << "output config file= " << configPath;
 
-  std::vector<SoundEffectConfig> sfxConf1(5);
+  std::vector<SoundEffectConfig> sfxConf1(6);
 
   // Create mock noise list file.
   const std::string noiseListPath = fl::lib::getTmpPath("noise.lst");
   {
     std::ofstream noiseListFile(noiseListPath);
     noiseListFile << "/fake/path.flac";
+  }
+  const std::string rirListPath = fl::lib::getTmpPath("rir.lst");
+  {
+    std::ofstream noiseListFile(rirListPath);
+    noiseListFile << "/fake/rir.flac";
   }
   sfxConf1[0].type_ = kAdditiveNoise;
   sfxConf1[0].additiveNoiseConfig_.ratio_ = 0.8;
@@ -63,8 +68,15 @@ TEST(SoundEffectConfigFile, ReadWriteJson) {
   sfxConf1[3].reverbEchoConfig_.jitter_ = 0.2;
   sfxConf1[3].reverbEchoConfig_.sampleRate_ = 16000;
 
-  sfxConf1[4].type_ = kNormalize;
-  sfxConf1[4].normalizeOnlyIfTooHigh_ = false;
+  sfxConf1[4].type_ = kReverbDataset;
+  sfxConf1[4].reverbDatasetConfig_.proba_ = 0.5;
+  sfxConf1[4].reverbDatasetConfig_.listFilePath_ = rirListPath;
+  sfxConf1[4].reverbDatasetConfig_.volume_ = 0;
+  sfxConf1[4].reverbDatasetConfig_.sampleRate_ = 16000,
+  sfxConf1[4].reverbDatasetConfig_.randomSeed_ = 77;
+
+  sfxConf1[5].type_ = kNormalize;
+  sfxConf1[5].normalizeOnlyIfTooHigh_ = false;
 
   writeSoundEffectConfigFile(configPath, sfxConf1);
   const std::vector<SoundEffectConfig> sfxConf2 =

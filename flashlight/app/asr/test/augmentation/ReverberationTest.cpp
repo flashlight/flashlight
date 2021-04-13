@@ -8,11 +8,23 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <math.h>
+
 #include "flashlight/app/asr/augmentation/Reverberation.h"
+#include "flashlight/app/asr/augmentation/SoundEffectUtil.h"
+#include "flashlight/app/asr/data/Sound.h"
 #include "flashlight/fl/common/Init.h"
+#include "flashlight/lib/common/System.h"
 
 using namespace ::fl::app::asr::sfx;
-using testing::Pointwise;
+using ::fl::lib::dirCreateRecursive;
+using ::fl::lib::getTmpPath;
+using ::fl::lib::pathsConcat;
+using ::testing::AllOf;
+using ::testing::Each;
+using ::testing::Gt;
+using ::testing::Lt;
+using ::testing::Pointwise;
 
 namespace {
 // Arbitrary audioable signal values.
@@ -77,7 +89,7 @@ TEST(ReverbEcho, SinWaveReverb) {
   conf.rt60Min_ = firstDelay * 100;
   conf.rt60Min_ = firstDelay * 100;
   conf.repeat_ = 3;
-  // Keep inital echo aplitude same as orig.
+  // Keep inital echo amplitude same as orig.
   conf.initialMin_ = 1;
   conf.initialMax_ = 1;
 
@@ -130,8 +142,94 @@ TEST(ReverbEcho, SinWaveReverb) {
   EXPECT_THAT(noiseMain, Pointwise(FloatNearPointwise(0.1), noiseSrc));
 }
 
+/**
+ * Tests that reverberation using randomly generated RIR yields the expected
+ * noise. We generate a “signal” with value 1 at the zero location.
+ * Reverberation over such a simple signal yields a vector containing the
+ * The original signal plus the RIR concatenated with a vector of the same
+ * length as the RIR. This whole output is scaled by a constant to keep the
+ * energy intensity of the input.
+ * The test verifies that:
+ * - output length is the input length + the RIR length.
+ * - the extracted noise, which is the output minus the input, is the same as
+ * the RIR multiplied by a constant.
+ */
+TEST(ReverbDataset, ImpulseReverb) {
+  const std::string tmpDir = getTmpPath("ReverbDataset");
+  dirCreateRecursive(tmpDir);
+  const std::string listFilePath = pathsConcat(tmpDir, "rir.lst");
+  const std::string rirFilePath = pathsConcat(tmpDir, "rir.flac");
+
+  // Signal with value 1 at location zero makes the calculation of result very
+  // easy. The added noise is simply the RIR itself.
+  std::vector<float> signal(numSamples, 0);
+  signal[0] = 1;
+
+  // Generate a random RIR with exponential decay.
+  const int rirLen = numSamples / 2;
+  const float firstDelay = 0.0001;
+  const float rt60 = (float)rirLen / (float)sampleRate;
+  RandomNumberGenerator rng;
+  std::vector<float> rir(rirLen, 0);
+  float frac = 1;
+  for (int i = 0; i < rir.size(); ++i) {
+    float jitter = 1 + rng.uniform(-0.1, 0.1);
+    const float attenuation = std::pow(10, -3 * jitter * firstDelay / rt60);
+    frac *= attenuation;
+    rir[i] = frac;
+  }
+
+  // Create a test list file pointing to the RIR as flac file.
+  saveSound(
+      rirFilePath,
+      rir,
+      sampleRate,
+      1,
+      fl::app::asr::SoundFormat::FLAC,
+      fl::app::asr::SoundSubFormat::PCM_16);
+  {
+    std::ofstream listFile(listFilePath);
+    listFile << rirFilePath;
+  }
+
+  ReverbDataset::Config conf{.proba_ = 1.0, .listFilePath_ = listFilePath};
+  ReverbDataset sfx(conf);
+  auto augmented = signal;
+  sfx.apply(augmented);
+
+  EXPECT_EQ(augmented.size(), signal.size() + rir.size() - 1);
+  EXPECT_THAT(augmented, Each(AllOf(Gt(-1.0), Lt(1.0))));
+
+  std::vector<float> extractNoise(rir.size());
+  for (int i = 0; i < extractNoise.size(); ++i) {
+    extractNoise[i] = (augmented[i] - signal[i]);
+  }
+
+  // To reduce test flakiness, we trim the edges of the extracted noise and the
+  // rir such that we compare the center part.
+  const size_t trimSize = 10;
+  std::vector<float> extractNoiseCenter(
+      extractNoise.begin() + trimSize, extractNoise.end() - trimSize);
+  std::vector<float> rirCenter(rir.begin() + trimSize, rir.end() - trimSize);
+
+  // The reverb output is scaled linearly by a constant ratio. If we multiply
+  // the extract noise by that constant we should get the original rir back.
+  // That constant is the ratio = rirCenter[0] / extractNoiseCenter[i] for any
+  // i.
+  float ratio = rirCenter[0] / extractNoiseCenter[0];
+  // Scale the extracted noise by the constant ratio,
+  std::transform(
+      extractNoiseCenter.begin(),
+      extractNoiseCenter.end(),
+      extractNoiseCenter.begin(),
+      [ratio](float f) -> float { return f * ratio; });
+
+  // Expect the extracted noise to match the RIR.
+  EXPECT_THAT(
+      extractNoiseCenter, Pointwise(FloatNearPointwise(10e-3), rirCenter));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  fl::init();
   return RUN_ALL_TESTS();
 }

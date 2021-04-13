@@ -56,6 +56,15 @@ void serialize(Archive& ar, ReverbEcho::Config& conf) {
 }
 
 template <class Archive>
+void serialize(Archive& ar, ReverbDataset::Config& conf) {
+  ar(cereal::make_nvp("proba", conf.proba_),
+     cereal::make_nvp("listFilePath", conf.listFilePath_),
+     cereal::make_nvp("volume", conf.volume_),
+     cereal::make_nvp("sampleRate", conf.sampleRate_),
+     cereal::make_nvp("randomSeed", conf.randomSeed_));
+}
+
+template <class Archive>
 void serialize(Archive& ar, SoundEffectConfig& conf) {
   ar(cereal::make_nvp("type", conf.type_));
   if (conf.type_ == kAdditiveNoise) {
@@ -65,6 +74,8 @@ void serialize(Archive& ar, SoundEffectConfig& conf) {
   } else if (conf.type_ == kNormalize) {
     ar(cereal::make_nvp(
         "normalizeOnlyIfTooHigh", conf.normalizeOnlyIfTooHigh_));
+  } else if (conf.type_ == kReverbDataset) {
+    ar(cereal::make_nvp("reverbDatasetConfig", conf.reverbDatasetConfig_));
   } else if (conf.type_ == kReverbEcho) {
     ar(cereal::make_nvp("reverbEchoConfig", conf.reverbEchoConfig_));
   }
@@ -116,13 +127,16 @@ std::shared_ptr<SoundEffect> createSoundEffect(
   auto sfxChain = std::make_shared<SoundEffectChain>();
   for (const SoundEffectConfig& conf : sfxConfigs) {
     if (conf.type_ == kAdditiveNoise) {
-      sfxChain->add(std::make_shared<AdditiveNoise>(conf.additiveNoiseConfig_, seed));
+      sfxChain->add(
+          std::make_shared<AdditiveNoise>(conf.additiveNoiseConfig_, seed));
     } else if (conf.type_ == kAmplify) {
       sfxChain->add(std::make_shared<Amplify>(conf.amplifyConfig_));
     } else if (conf.type_ == kClampAmplitude) {
       sfxChain->add(std::make_shared<ClampAmplitude>());
     } else if (conf.type_ == kNormalize) {
       sfxChain->add(std::make_shared<Normalize>(conf.normalizeOnlyIfTooHigh_));
+    } else if (conf.type_ == kReverbDataset) {
+      sfxChain->add(std::make_shared<ReverbDataset>(conf.reverbDatasetConfig_));
     } else if (conf.type_ == kReverbEcho) {
       sfxChain->add(std::make_shared<ReverbEcho>(conf.reverbEchoConfig_, seed));
     } else {

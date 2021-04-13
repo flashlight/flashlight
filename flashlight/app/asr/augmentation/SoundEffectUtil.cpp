@@ -54,6 +54,25 @@ float signalToNoiseRatio(
   return 20 * std::log10(singalRms / noiseRms);
 }
 
+float dotProduct(
+    const std::vector<float>& a,
+    const std::vector<float>& b,
+    size_t size) {
+  float ret = 0;
+  for (int i = 0; i < size; ++i) {
+    ret += a[i] * b[i];
+  }
+  return ret;
+}
+
+void scale(std::vector<float>& signal, float ratio) {
+  std::transform(
+      signal.begin(),
+      signal.end(),
+      signal.begin(),
+      [ratio](float f) -> float { return f * ratio; });
+}
+
 } // namespace sfx
 } // namespace asr
 } // namespace app
