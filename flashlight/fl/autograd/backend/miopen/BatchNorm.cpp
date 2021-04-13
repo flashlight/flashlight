@@ -8,12 +8,14 @@
 #include <algorithm>
 #include <stdexcept>
 
-#include <cudnn.h>
+#include <miopen/miopen.h>
 
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/autograd/Variable.h"
-#include "flashlight/fl/autograd/backend/cuda/CudnnUtils.h"
+#include "flashlight/fl/autograd/autograd.h"
+#include "flashlight/fl/autograd/backend/miopen/MiOpenUtils.h"
 #include "flashlight/fl/common/DevicePtr.h"
+#include "flashlight/fl/common/backend/miopen/MiOpenUtils.h"
 
 namespace fl {
 
@@ -28,7 +30,6 @@ Variable batchnorm(
     double momentum,
     double epsilon) {
   auto input = FL_ADJUST_INPUT_TYPE(in);
-
   if (input.type() == af::dtype::f16 && weight.type() != af::dtype::f32) {
     throw std::invalid_argument(
         "fl::batchnorm: non-input tensors must be of type f32");
@@ -42,7 +43,7 @@ Variable batchnorm(
     nfeatures *= input.dims(ax);
   }
 
-  cudnnBatchNormMode_t mode;
+  miopenBatchNormMode_t mode;
   af::dim4 inDescDims, wtDescDims;
 
   auto max_axis = *std::max_element(axes.begin(), axes.end());
@@ -51,20 +52,15 @@ Variable batchnorm(
   // assuming no duplicates
   bool axes_continuous = (axes.size() == (max_axis - min_axis + 1));
   if (!axes_continuous) {
-    throw std::invalid_argument("unsupported axis config for cuDNN batchnorm");
+    throw std::invalid_argument("unsupported axis config for MiOpen batchnorm");
   }
 
   if (min_axis == 0) {
-    mode = CUDNN_BATCHNORM_PER_ACTIVATION;
+    mode = miopenBNPerActivation;
     inDescDims = af::dim4(1, 1, nfeatures, input.elements() / nfeatures);
     wtDescDims = af::dim4(1, 1, nfeatures);
   } else {
-    mode = CUDNN_BATCHNORM_SPATIAL;
-#if CUDNN_VERSION >= 7003
-    if (train) {
-      mode = CUDNN_BATCHNORM_SPATIAL_PERSISTENT;
-    }
-#endif
+    mode = miopenBNSpatial;
     int batchsz = 1;
     for (int i = max_axis + 1; i < 4; ++i) {
       batchsz *= input.dims(i);
@@ -110,11 +106,12 @@ Variable batchnorm(
 
       DevicePtr saveMeanRaw(saveMean);
       DevicePtr saveVarRaw(saveVar);
-      CUDNN_CHECK_ERR(cudnnBatchNormalizationForwardTraining(
-          getCudnnHandle(),
+
+      MIOPEN_CHECK_ERR(miopenBatchNormalizationForwardTraining(
+          getMiOpenHandle(),
           mode,
-          kOne(scalarsType),
-          kZero(scalarsType),
+          /* alpha= */ const_cast<void*>(kOne(scalarsType)),
+          /* beta= */ const_cast<void*>(kZero(scalarsType)),
           inDesc.descriptor,
           inRaw.get(),
           inDesc.descriptor,
@@ -127,13 +124,13 @@ Variable batchnorm(
           runVarRaw.get(),
           epsilon,
           saveMeanRaw.get(),
-          saveVarRaw.get()));
+          const_cast<void*>(saveVarRaw.get())));
     } else {
-      CUDNN_CHECK_ERR(cudnnBatchNormalizationForwardInference(
-          getCudnnHandle(),
+      MIOPEN_CHECK_ERR(miopenBatchNormalizationForwardInference(
+          getMiOpenHandle(),
           mode,
-          kOne(scalarsType),
-          kZero(scalarsType),
+          /* alpha= */ const_cast<void*>(kOne(scalarsType)),
+          /* beta= */ const_cast<void*>(kZero(scalarsType)),
           inDesc.descriptor,
           inRaw.get(),
           inDesc.descriptor,
@@ -155,9 +152,8 @@ Variable batchnorm(
         }
 
         auto& in = inputs[0];
-        auto inArray = detail::adjustInputType(in.array(), "batchnorm");
-        auto gradOutputArray =
-            detail::adjustInputType(gradOutput.array(), "batchnorm");
+        auto inArray = in.array();
+        auto gradOutputArray = gradOutput.array();
         // Weight, bias, and running mean/var arrays can't be fp16 (must be
         // fp32)
         auto wt = inputs[1].isempty()
@@ -166,8 +162,6 @@ Variable batchnorm(
         auto& bs = inputs[2];
 
         auto scalarsType = inArray.type() == f16 ? f32 : inArray.type();
-        const void* one1 = kOne(scalarsType);
-        const void* zero0 = kZero(scalarsType);
 
         auto iDesc = TensorDescriptor(inArray.type(), inDescDims);
         auto wDesc = TensorDescriptor(wt.type(), wtDescDims);
@@ -189,13 +183,13 @@ Variable batchnorm(
           DevicePtr saveMeanRaw(saveMean);
           DevicePtr saveVarRaw(saveVar);
 
-          CUDNN_CHECK_ERR(cudnnBatchNormalizationBackward(
-              getCudnnHandle(),
+          MIOPEN_CHECK_ERR(miopenBatchNormalizationBackward(
+              getMiOpenHandle(),
               mode,
-              one1,
-              zero0,
-              one1,
-              zero0,
+              /* alphaDataDiff= */ const_cast<void*>(kOne(scalarsType)),
+              /* betaDataDiff= */ const_cast<void*>(kZero(scalarsType)),
+              /* alphaParamDiff= */ const_cast<void*>(kOne(scalarsType)),
+              /* betaParamDiff= */ const_cast<void*>(kZero(scalarsType)),
               iDesc.descriptor,
               iRaw.get(),
               iDesc.descriptor,
