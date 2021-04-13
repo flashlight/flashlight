@@ -22,6 +22,13 @@ endif()
 if(FL_USE_OPENCL)
   set(COMMON_SRCS ${COMMON_SRCS} ${CMAKE_CURRENT_LIST_DIR}/OpenClUtils.cpp)
 endif()
+if(FL_USE_MIOPEN)
+  list(APPEND
+      COMMON_SRCS
+      ${CMAKE_CURRENT_LIST_DIR}/backend/miopen/MiOpenUtils.cpp
+      ${CMAKE_CURRENT_LIST_DIR}/OpenClUtils.cpp
+    )
+endif()
 
 target_sources(
   flashlight
@@ -84,4 +91,14 @@ if (FL_USE_OPENCL)
     ${OpenCL_LIBRARIES}
     ArrayFire::afopencl
   )
+endif()
+
+if (FL_USE_MIOPEN)
+  if (NOT MIOPEN_FOUND)
+    message(STATUS "MIOPEN not found")
+    message(FATAL_ERROR "MIOPEN required to build MIOPEN backend")
+  endif()
+
+  target_link_libraries(flashlight PUBLIC ${MIOPEN_LIBRARIES})
+  target_include_directories(flashlight PUBLIC ${MIOPEN_INCLUDE_DIRS})
 endif()
