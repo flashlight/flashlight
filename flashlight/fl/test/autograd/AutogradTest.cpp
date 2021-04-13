@@ -1194,15 +1194,36 @@ TEST(AutogradTest, WeightNormConv) {
   ASSERT_TRUE(jacobianTestImpl(func_weightNorm_g, g, 2E-1));
 }
 
-void testRnnImpl(RnnMode mode, af::dtype precision = af::dtype::f64) {
+#ifdef FL_BACKEND_MIOPEN
+static af::dtype kDefaultRnnPrecision = af::dtype::f32;
+#else
+static af::dtype kDefaultRnnPrecision = af::dtype::f64;
+#endif
+
+void testRnnImpl(RnnMode mode, af::dtype precision = kDefaultRnnPrecision) {
   int numLayers = 2;
   int hiddenSize = 2;
   int inputSize = 2;
   int batchSize = 2;
   int seqLength = 3;
   bool bidirectional = true;
-  float expectedPrecision = precision == af::dtype::f16 ? 5E-2 : 1E-5;
-  float perturbation = precision == af::dtype::f16 ? 1E-1 : 1E-4;
+  float expectedPrecision = 0;;
+  float perturbation = 0;
+  switch (precision) {
+    case af::dtype::f16:
+      expectedPrecision = 5E-2 ;
+      perturbation =  1E-1;
+      break;
+    case af::dtype::f32:
+      expectedPrecision = 1E-2 ;
+      perturbation =  1E-3;
+      break;
+    case af::dtype::f64:
+    default:
+      expectedPrecision = 1E-5 ;
+      perturbation =  1E-4;
+      break;
+  }
 
   auto in =
       Variable(af::randu(inputSize, batchSize, seqLength, precision), true);

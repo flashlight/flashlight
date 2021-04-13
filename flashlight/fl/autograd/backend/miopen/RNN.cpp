@@ -5,13 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <memory>
+#include <vector>
+
+#include <miopen/miopen.h>
+
 #include "flashlight/fl/autograd/Functions.h"
-
-#include <cudnn.h>
-
 #include "flashlight/fl/autograd/Variable.h"
-#include "flashlight/fl/autograd/backend/cuda/CudnnUtils.h"
+#include "flashlight/fl/autograd/autograd.h"
+#include "flashlight/fl/autograd/backend/miopen/MiOpenUtils.h"
 #include "flashlight/fl/common/DevicePtr.h"
+#include "flashlight/fl/common/backend/miopen/MiOpenUtils.h"
 
 namespace {
 struct RNNGradData {
@@ -52,7 +56,7 @@ void rnnBackward(
     return;
   }
 
-  auto handle = getCudnnHandle();
+  auto handle = fl::getMiOpenHandle();
 
   auto& x = input.array();
   auto dims = x.dims();
@@ -65,13 +69,6 @@ void rnnBackward(
   DropoutDescriptor dropout(dropProb);
   RNNDescriptor rnnDesc(
       input.type(), hiddenSize, numLayers, mode, bidirectional, dropout);
-  if (input.type() == f16) {
-    CUDNN_CHECK_ERR(cudnnSetRNNMatrixMathType(
-        rnnDesc.descriptor, CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION));
-  } else {
-    CUDNN_CHECK_ERR(
-        cudnnSetRNNMatrixMathType(rnnDesc.descriptor, CUDNN_DEFAULT_MATH));
-  }
 
   TensorDescriptorArray yDesc(seqLength, y.type(), {1, 1, outSize, batchSize});
 
@@ -121,9 +118,7 @@ void rnnBackward(
     DevicePtr dhxRaw(dhx.array());
     DevicePtr dcxRaw(dcx.array());
 
-    /* We need to update reserveSpace even if we just want the
-     * weight gradients. */
-    CUDNN_CHECK_ERR(cudnnRNNBackwardData(
+    MIOPEN_CHECK_ERR(miopenRNNBackwardData(
         handle,
         rnnDesc.descriptor,
         seqLength,
@@ -165,13 +160,6 @@ void rnnBackward(
   }
 
   if (weights.isCalcGrad()) {
-    if (input.type() == f16) {
-      CUDNN_CHECK_ERR(cudnnSetRNNMatrixMathType(
-          rnnDesc.descriptor, CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION));
-    } else {
-      CUDNN_CHECK_ERR(
-          cudnnSetRNNMatrixMathType(rnnDesc.descriptor, CUDNN_DEFAULT_MATH));
-    }
     TensorDescriptorArray xDescs(
         seqLength, x.type(), {1, 1, inputSize, batchSize});
     Variable dw(
@@ -184,7 +172,7 @@ void rnnBackward(
       DevicePtr dwRaw(dw.array());
       DevicePtr hxRaw(hxArray);
 
-      CUDNN_CHECK_ERR(cudnnRNNBackwardWeights(
+      MIOPEN_CHECK_ERR(miopenRNNBackwardWeights(
           handle,
           rnnDesc.descriptor,
           seqLength,
@@ -194,10 +182,10 @@ void rnnBackward(
           hxRaw.get(),
           yDesc.descriptors,
           yRaw.get(),
-          workspaceRaw.get(),
-          workspaceSize,
           dwDesc.descriptor,
           dwRaw.get(),
+          workspaceRaw.get(),
+          workspaceSize,
           reserveSpaceRaw.get(),
           reserveSize));
     }
@@ -215,6 +203,10 @@ std::tuple<Variable, Variable, Variable> rnn(
     RnnMode mode,
     bool bidirectional,
     float dropProb) {
+  if (input.type() != f32) {
+    throw std::invalid_argument("MiOpen RNN supports only f32 input type");
+  }
+
   FL_VARIABLE_DTYPES_MATCH_CHECK(input, hiddenState, cellState, weights);
 
   auto& x = input.array();
@@ -225,13 +217,6 @@ std::tuple<Variable, Variable, Variable> rnn(
   DropoutDescriptor dropout(dropProb);
   RNNDescriptor rnnDesc(
       input.type(), hiddenSize, numLayers, mode, bidirectional, dropout);
-  if (input.type() == f16) {
-    CUDNN_CHECK_ERR(cudnnSetRNNMatrixMathType(
-        rnnDesc.descriptor, CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION));
-  } else {
-    CUDNN_CHECK_ERR(
-        cudnnSetRNNMatrixMathType(rnnDesc.descriptor, CUDNN_DEFAULT_MATH));
-  }
 
   auto dims = x.dims();
 
@@ -261,19 +246,8 @@ std::tuple<Variable, Variable, Variable> rnn(
   TensorDescriptor hxDesc(x.type(), hDims);
   TensorDescriptor cxDesc(x.type(), hDims);
 
-  auto handle = getCudnnHandle();
+  auto handle = fl::getMiOpenHandle();
 
-  size_t paramSize;
-  CUDNN_CHECK_ERR(cudnnGetRNNParamsSize(
-      handle,
-      rnnDesc.descriptor,
-      xDescs.descriptors[0],
-      &paramSize,
-      cudnnMapToType(weights.array().type())));
-  if (paramSize != weights.array().bytes()) {
-    throw std::invalid_argument(
-        "invalid # of parameters or wrong input shape for RNN");
-  }
   FilterDescriptor wDesc(weights);
 
   af::array y(outSize, batchSize, seqLength, input.type());
@@ -290,7 +264,7 @@ std::tuple<Variable, Variable, Variable> rnn(
   TensorDescriptor cyDesc(x.type(), hDims);
 
   size_t workspaceSize;
-  CUDNN_CHECK_ERR(cudnnGetRNNWorkspaceSize(
+  MIOPEN_CHECK_ERR(miopenGetRNNWorkspaceSize(
       handle,
       rnnDesc.descriptor,
       seqLength,
@@ -299,7 +273,7 @@ std::tuple<Variable, Variable, Variable> rnn(
   af::array workspace(workspaceSize, af::dtype::b8);
 
   size_t reserveSize;
-  CUDNN_CHECK_ERR(cudnnGetRNNTrainingReserveSize(
+  MIOPEN_CHECK_ERR(miopenGetRNNTrainingReserveSize(
       handle, rnnDesc.descriptor, seqLength, xDescs.descriptors, &reserveSize));
   af::array reserveSpace(reserveSize, af::dtype::b8);
   {
@@ -313,7 +287,7 @@ std::tuple<Variable, Variable, Variable> rnn(
     DevicePtr workspaceRaw(workspace);
     DevicePtr reserveSpaceRaw(reserveSpace);
 
-    CUDNN_CHECK_ERR(cudnnRNNForwardTraining(
+    MIOPEN_CHECK_ERR(miopenRNNForwardTraining(
         handle,
         rnnDesc.descriptor,
         seqLength,
