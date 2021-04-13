@@ -114,7 +114,7 @@ RUN apt-get update && \
         # for glog
         libgoogle-glog-dev libgoogle-glog0v5 \
         # python sox
-        sox python3-dev python3-pip python3-distutils && \
+        sox libsox-dev python3-dev python3-pip python3-distutils && \
         # python (for bindings and preprocessing)
         python3 -m pip --no-cache-dir install --upgrade setuptools numpy sox tqdm && \
 # ==================================================================
