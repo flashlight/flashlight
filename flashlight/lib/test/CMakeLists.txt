@@ -19,6 +19,7 @@ build_test(SRC ${DIR}/audio/feature/WindowingTest.cpp LIBS ${LIBS})
 build_test(SRC ${DIR}/common/ProducerConsumerQueueTest.cpp LIBS ${LIBS})
 build_test(SRC ${DIR}/common/StringTest.cpp LIBS ${LIBS})
 build_test(SRC ${DIR}/common/SystemTest.cpp LIBS ${LIBS})
+build_test(SRC ${DIR}/mkl/FunctionsTest.cpp LIBS ${LIBS})
 build_test(
   SRC ${DIR}/text/dictionary/DictionaryTest.cpp
   LIBS ${LIBS}
