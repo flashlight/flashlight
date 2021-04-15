@@ -70,6 +70,10 @@ class ReverbEcho : public SoundEffect {
      * being resampled after each single echo.-
      */
     float jitter_ = 0.1;
+    /**
+     * fraction of the reverb of the clean speech to add back to the ground
+     * truth .0 = dereverberation, 1 = no dereverberation.
+     */
     size_t sampleRate_ = 16000;
     std::string prettyString() const;
   };
@@ -88,46 +92,6 @@ class ReverbEcho : public SoundEffect {
       float rt60);
 
   const ReverbEcho::Config conf_;
-  RandomNumberGenerator rng_;
-};
-
-/**
- * Applies reverberation from a RIR dataset specified by a list file.
- */
-class ReverbDataset : public SoundEffect {
- public:
-  struct Config {
-    /**
-     * probability of applying reverb.
-     */
-    float proba_ = 1.0;
-    std::string listFilePath_;
-    /**
-     * Force the scaling factor of RIR samples to the specified ratio. When
-     * value is zero, automatic scaling is applied. This functionality is the
-     * same as in
-     * https://kaldi-asr.org/doc/wav-reverberate_8cc_source.html#l00210. Scaling
-     * is required due to "...over-excitation caused by amplifying the audio
-     * using a RIR ..." (https://arxiv.org/pdf/1811.06795.pdf section VI.E).
-     */
-    float volume_ = 0;
-    size_t sampleRate_ = 16000;
-    unsigned int randomSeed_ = std::mt19937::default_seed;
-    std::string prettyString() const;
-  };
-
-  explicit ReverbDataset(const ReverbDataset::Config& config);
-  ~ReverbDataset() override = default;
-  /**
-   * Augments sound with a randomly selected RIR from conf_.listFilePath_.
-   * After call sound.size() is the original sound.size() + rir.size() - 1
-   */
-  void apply(std::vector<float>& sound) override;
-  std::string prettyString() const override;
-
- private:
-  const ReverbDataset::Config conf_;
-  std::vector<std::string> rirFiles_;
   RandomNumberGenerator rng_;
 };
 
