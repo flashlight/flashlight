@@ -55,9 +55,6 @@ option(FL_BUILD_CORE "Build flashlight core" ON)
 cmake_dependent_option(FL_BUILD_CONTRIB
   "Build and link additional flashlight contrib assets." ON
   "FL_BUILD_CORE" OFF)
-cmake_dependent_option(FL_BUILD_APPS
-  "Build flashlight apps" ON
-  "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_LIBRARIES" OFF)
 
 # Flashlight backend
 set(FL_BACKEND "CUDA" CACHE STRING "Backend with which to build flashlight")
@@ -275,11 +272,9 @@ if (FL_BUILD_CORE)
 endif() # if FL_BUILD_CORE
 
 # --------------------------- Apps ---------------------------
-if (FL_BUILD_APPS)
-  message(STATUS "Will build Flashlight applications.")
-  set(FL_APPS_DIR "${FL_ROOT_DIR}/app")
-  include(${FL_APPS_DIR}/CMakeLists.txt)
-endif()
+
+set(FL_APPS_DIR "${FL_ROOT_DIR}/app")
+include(${FL_APPS_DIR}/CMakeLists.txt)
 
 # --------------------------- Cleanup ---------------------------
 setup_install_targets(INSTALL_TARGETS ${INSTALLABLE_TARGETS})
