@@ -5,9 +5,9 @@ Force Alignment is a process which takes an audio sample and text target as an i
 
 ### Step 1: Obtain a trained acoustic model
 
-To train your own model, please follow the steps outlined [here](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr/experimental/tutorials/1-librispeech_clean)
+To train your own model, please follow the steps outlined [here](https://github.com/flashlight/flashlight/tree/master/flashlight/app/asr/experimental/tutorials/1-librispeech_clean)
 
-Pretrained models can also be found [here](https://github.com/facebookresearch/wav2letter/tree/master/recipes/lexicon_free/librispeech#acoustic-model).
+Pretrained models can also be found [here](https://github.com/flashlight/wav2letter/tree/master/recipes/lexicon_free/librispeech#acoustic-model).
 
 ### Step 2: Run alignment
 

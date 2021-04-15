@@ -14,13 +14,13 @@ See the [`alignment` readme](https://github.com/jacobkahn/flashlight/tree/export
 <summary>Voice Activity Detection</summary>
 
 ## Voice Activity Detection with CTC + an n-gram Language Model
-`VoiceActivityDetection-CTC` contains a simple pipeline that supports a CTC-trained acoustic model trained with Flashlight and n-gram language model in an accepted binary format (see the [decoder documentation](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/asr/README.md#beam-search-decoder) for more).
+`VoiceActivityDetection-CTC` contains a simple pipeline that supports a CTC-trained acoustic model trained with Flashlight and n-gram language model in an accepted binary format (see the [decoder documentation](https://github.com/flashlight/flashlight/blob/master/flashlight/app/asr/README.md#beam-search-decoder) for more).
 
 ### Using the Pipeline
 Build the tool with `make fl_asr_voice_activity_detection_ctc -j$(nproc)`.
 
 #### Input List File
-First, create an input list file containing the audio data. The list file should exactly follow the standard wav2letter [list input format for training](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/asr/README.md#audio-and-transcriptions-data), but the transcriptions column should be empty. For instance:
+First, create an input list file containing the audio data. The list file should exactly follow the standard wav2letter [list input format for training](https://github.com/flashlight/flashlight/blob/master/flashlight/app/asr/README.md#audio-and-transcriptions-data), but the transcriptions column should be empty. For instance:
 ```
 // Example input file
 

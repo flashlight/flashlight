@@ -1,8 +1,8 @@
 # Automatic Speech Recognition (ASR)
 
-Flashlight's ASR application (formerly the [wav2letter](https://github.com/facebookresearch/wav2letter/) project) provides training and inference capabilities for end-to-end speech recognition systems. Outside of original research conducted with Flashlight and wav2letter, the codebase contains up-to-date implementations of recent architectures and developments in the speech domain.
+Flashlight's ASR application (formerly the [wav2letter](https://github.com/flashlight/wav2letter/) project) provides training and inference capabilities for end-to-end speech recognition systems. Outside of original research conducted with Flashlight and wav2letter, the codebase contains up-to-date implementations of recent architectures and developments in the speech domain.
 
-**To get started using the ASR library with existing/pre-trained models, see [tutorials](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr/tutorial).**
+**To get started using the ASR library with existing/pre-trained models, see [tutorials](https://github.com/flashlight/flashlight/tree/master/flashlight/app/asr/tutorial).**
 
 ### Table of Contents
 
@@ -407,7 +407,7 @@ epoch:        6 | nupdates:         1000 | lr: 0.000469 | lrcriterion: 0.000000 
 where we report epochs, number of updates, learning rates, timing, loss and WER/LER for train and validation data.
 
 #### Flags
-We give a short description of some of the more important flags here. A complete list of the flag definitions and short descriptions of their meaning can be found [here](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/asr/common/Defines.cpp).
+We give a short description of some of the more important flags here. A complete list of the flag definitions and short descriptions of their meaning can be found [here](https://github.com/flashlight/flashlight/blob/master/flashlight/app/asr/common/Defines.cpp).
 
 The `datadir` flag is the base path to where all the `train` and `valid` dataset list files live. Every `train` path will be prefixed by `datadir`. Multiple datasets can be passed to `train` and `valid` as a comma-separated list.
 
@@ -504,7 +504,7 @@ root → w → o → r → l → d ([world])
 root → p → i → n → e ([pine]) → a → p → p → l → e → ([pineapple])
 ```
 
-**Note** We forced to have up to 6 words with the same spelling, others will be ignored in the inference. So if you have more than 6 words in the lexicon, you need to [update this constant](https://github.com/facebookresearch/flashlight/blob/master/flashlight/lib/text/decoder/Trie.h#L17).
+**Note** We forced to have up to 6 words with the same spelling, others will be ignored in the inference. So if you have more than 6 words in the lexicon, you need to [update this constant](https://github.com/flashlight/flashlight/blob/master/flashlight/lib/text/decoder/Trie.h#L17).
 
 ##### 1.2 Lexicon-free beam-search decoder (`uselexicon=false`)
 The lexicon-free beam-search decoder considers any possible token as candidates and there is no notion of words during decoding. In this case, a word separator should be set by `wordseparator` and included into tokens set for AM training. The word separator is treated and predicted as all the other normal tokens. After obtaining the transcription in tokens, word separator is used to split the sequence into words. Usually, when we use word-pieces as target units, the word separator can be part of the token. To correctly handle this case, one should set `--usewordpiece=true`.
@@ -529,7 +529,7 @@ Currently we are supporting decoding with the following language models: ZeroLM,
 
 **KenLM** language model can be trained standalone with [KenLM library](https://kheafield.com/code/kenlm/). The text data should be prepared accordingly to the acoustic model data. For example, in case of word-level LM if your AM token set doesn’t contain punctuation, then remove all punctuation from the data. In case of token-level LM training one should split words into tokens set sequence and only then train LM on such data in a way that LM predicts probability for a token (not for a word). Both of the `.arpa` and the binarized `.bin` LM can be used. However it is recommended to convert arpa files to the [binary format](https://github.com/kpu/kenlm#querying) for faster loading.
 
-**ConvLM** models are convolutional neural networks. They are currently trained in the [fairseq](https://github.com/pytorch/fairseq) and then converted into flashlight-serializable models ([example](https://github.com/facebookresearch/wav2letter/blob/master/recipes/lexicon_free/librispeech/convert_convlm.sh) how we are doing this) to be able to load. `lm_vocab` should be specified as it is a dictionary to map tokens into indices in the ConvLM training. Note that this token set is usually different from the one used in AM training. Each line of this file is a single token (char, word, word-piece, etc.) and the token index is exactly its line number.
+**ConvLM** models are convolutional neural networks. They are currently trained in the [fairseq](https://github.com/pytorch/fairseq) and then converted into flashlight-serializable models ([example](https://github.com/flashlight/wav2letter/blob/master/recipes/lexicon_free/librispeech/convert_convlm.sh) how we are doing this) to be able to load. `lm_vocab` should be specified as it is a dictionary to map tokens into indices in the ConvLM training. Note that this token set is usually different from the one used in AM training. Each line of this file is a single token (char, word, word-piece, etc.) and the token index is exactly its line number.
 
 To efficiently decode with ConvLM, which is pretty expensive on running the forward pass, we design a dynamic cache to hold the probabilities over all the tokens given the candidates generated from the previous frame. This way, when we want to propose new candidates, we can easily check the cache for its pre-computed LM score. In other words, we only need to run the ConvLM forward pass in batches at the end of decoding each frame, when all the possible new candidates are gathered. Thus, the batching and caching can greatly reduce the number of the forward passes we need to run in total.
 
