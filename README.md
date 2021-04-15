@@ -6,9 +6,9 @@
 | [**Installation**](#building-and-installing)
 | [**Documentation**](https://fl.readthedocs.io/en/latest/)
 
-[![CircleCI](https://circleci.com/gh/facebookresearch/flashlight.svg?style=shield)](https://circleci.com/gh/facebookresearch/flashlight)
+[![CircleCI](https://circleci.com/gh/flashlight/flashlight.svg?style=shield)](https://app.circleci.com/pipelines/github/flashlight/flashlight)
 [![Documentation Status](https://img.shields.io/readthedocs/fl.svg)](https://fl.readthedocs.io/en/latest/)
-[![Docker Image Build Status](https://img.shields.io/github/workflow/status/facebookresearch/flashlight/Publish%20Docker%20images?label=docker%20image%20build)](https://hub.docker.com/r/flml/flashlight/tags)
+[![Docker Image Build Status](https://img.shields.io/github/workflow/status/flashlight/flashlight/Publish%20Docker%20images?label=docker%20image%20build)](https://hub.docker.com/r/flml/flashlight/tags)
 [![Join the chat at https://gitter.im/flashlight-ml/community](https://img.shields.io/gitter/room/flashlight-ml/community)](https://gitter.im/flashlight-ml/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 [![Docker Image for CUDA backend](https://img.shields.io/docker/image-size/flml/flashlight/cuda-latest?label=docker%20%28cuda%29&logo=docker)](https://hub.docker.com/r/flml/flashlight/tags?page=1&ordering=last_updated&name=cuda-latest)
@@ -26,8 +26,8 @@ tensor library.
 - CUDA and CPU backends for GPU and CPU training.
 - An emphasis on efficiency and scale.
 
-Native support in C++ and simple extensibility makes Flashlight a powerful research framework that's *hackable to its core* and enables fast iteration on new experimental setups and algorithms without sacrificing performance. In a single repository, Flashlight provides [apps](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app) for research across multiple domains:
-- [Automatic speech recognition](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr) (the [wav2letter](https://github.com/facebookresearch/wav2letter/) project) — [Documentation](flashlight/app/asr) | [Tutorial](flashlight/app/asr/tutorial)
+Native support in C++ and simple extensibility makes Flashlight a powerful research framework that's *hackable to its core* and enables fast iteration on new experimental setups and algorithms without sacrificing performance. In a single repository, Flashlight provides [apps](https://github.com/flashlight/flashlight/tree/master/flashlight/app) for research across multiple domains:
+- [Automatic speech recognition](https://github.com/flashlight/flashlight/tree/master/flashlight/app/asr) (the [wav2letter](https://github.com/flashlight/wav2letter/) project) — [Documentation](flashlight/app/asr) | [Tutorial](flashlight/app/asr/tutorial)
 - [Image classification](flashlight/app/imgclass)
 - [Object detection](flashlight/app/objdet)
 - [Language modeling](flashlight/app/lm)
@@ -188,7 +188,7 @@ To build the Flashlight CPU backend from source using dependencies installed wit
 ##### Build Using the `vcpkg` Toolchain File
 To build Flashlight from source with these dependencies, clone the repository:
 ```shell
-git clone https://github.com/facebookresearch/flashlight.git && cd flashlight
+git clone https://github.com/flashlight/flashlight.git && cd flashlight
 mkdir -p build && cd build
 ```
 Then, build from source using `vcpkg`'s [CMake toolchain](https://github.com/microsoft/vcpkg/blob/master/docs/users/integration.md#cmake-toolchain-file-recommended-for-open-source-cmake-projects):
@@ -209,7 +209,7 @@ Some dependencies marked below are downloaded and installed automatically if not
 
 **Once all dependencies are installed**, clone the repository:
 ```shell
-git clone https://github.com/facebookresearch/flashlight.git && cd flashlight
+git clone https://github.com/flashlight/flashlight.git && cd flashlight
 mkdir -p build && cd build
 ```
 Then build all Flashlight components with:
@@ -224,7 +224,7 @@ To build a smaller subset of Flashlight features/apps, see the [build options](#
 
 To install Flashlight in a custom directory, use CMake's [`CMAKE_INSTALL_PREFIX`](https://cmake.org/cmake/help/v3.10/variable/CMAKE_INSTALL_PREFIX.html) argument. Flashlight libraries can be built as shared libraries using CMake's [`BUILD_SHARED_LIBS`](https://cmake.org/cmake/help/v3.10/variable/BUILD_SHARED_LIBS.html) argument.
 
-Flashlight uses modern CMake and `IMPORTED` targets for most dependencies. If a dependency isn't found, passing `-D<package>_DIR` to your `cmake` command or exporting `<package>_DIR` as an environment variable equal to the path to `<package>Config.cmake` can help locate dependencies on your system. See [the documentation](https://cmake.org/cmake/help/v3.10/command/find_package.html) for more details. If CMake is failing to locate a package, check to see if a corresponding [issue](https://github.com/facebookresearch/flashlight/issues) has already been created before creating your own.
+Flashlight uses modern CMake and `IMPORTED` targets for most dependencies. If a dependency isn't found, passing `-D<package>_DIR` to your `cmake` command or exporting `<package>_DIR` as an environment variable equal to the path to `<package>Config.cmake` can help locate dependencies on your system. See [the documentation](https://cmake.org/cmake/help/v3.10/command/find_package.html) for more details. If CMake is failing to locate a package, check to see if a corresponding [issue](https://github.com/flashlight/flashlight/issues) has already been created before creating your own.
 
 #### Dependencies
 

@@ -150,7 +150,7 @@ where ``ntokens`` is the number of tokens predicted for each frame (number of cl
 ### Beam-search decoder
 Currently lexicon-based and lexicon-free based beam-search decoder is supported for CTC/ASG models only (no seq2seq models support). Also only n-gram (KenLM) language model is supported for python bindings.
 However, one can define custom language model inside python and use it for decoding, details see below.
-To have better understanding how this beam-search decoder works please see [Beam-search decoder section](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr#beam-search-decoders).
+To have better understanding how this beam-search decoder works please see [Beam-search decoder section](https://github.com/flashlight/flashlight/tree/master/flashlight/app/asr#beam-search-decoders).
 
 To run decoder one first should define its options:
 ```python
@@ -182,7 +182,7 @@ To run decoder one first should define its options:
 
 Then we should prepare tokens dictionary (tokens for which acoustic models
 returns probability for each frame), lexicon (mapping between words and its spelling with the tokens set).
-Details on the tokens and lexicon files format have a look at [Data Preparation](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr#data-preparation).
+Details on the tokens and lexicon files format have a look at [Data Preparation](https://github.com/flashlight/flashlight/tree/master/flashlight/app/asr#data-preparation).
 
 ```python
     from flashlight.lib.text.dictionary import Dictionary, load_words, create_word_dict
