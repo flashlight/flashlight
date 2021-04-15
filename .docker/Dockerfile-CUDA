@@ -20,5 +20,6 @@ COPY . /root/flashlight
 RUN cd /root/flashlight && mkdir -p build && \
     cd build && cmake .. -DCMAKE_BUILD_TYPE=Release \
                          -DCMAKE_INSTALL_PREFIX=/opt/flashlight \
-                         -DFL_BACKEND=CUDA && \
+                         -DFL_BACKEND=CUDA \
+                         -DFL_BUILD_ALL_APPS=ON && \
     make install -j$(nproc)
