@@ -16,11 +16,12 @@ namespace objdet {
 
 // TODO (padentomasello) this can just be a function
 class MLP : public Sequential {
-  public:
+ public:
   MLP(const int32_t inputDim,
       const int32_t hiddenDim,
       const int32_t outputDim,
       const int32_t numLayers);
+
  private:
   MLP() = default;
   FL_SAVE_LOAD_WITH_BASE(fl::Sequential)
@@ -37,6 +38,7 @@ class Detr : public Container {
       const bool auxLoss);
 
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
+  std::vector<Variable> forwardBackbone(const std::vector<Variable>& input);
 
   std::string prettyString() const override;
 

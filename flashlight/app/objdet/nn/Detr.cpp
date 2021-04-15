@@ -88,7 +88,8 @@ Detr::Detr(
 }
 
 std::vector<Variable> Detr::forward(const std::vector<Variable>& input) {
-  auto features = backbone_->forward({input[0]})[1];
+  // auto features = backbone_->forward({input[0]})[1];
+  auto features = input[0];
   fl::Variable mask = fl::Variable(
       af::resize(
           input[1].array(),
@@ -96,16 +97,52 @@ std::vector<Variable> Detr::forward(const std::vector<Variable>& input) {
           features.dims(1),
           AF_INTERP_NEAREST),
       true);
-  auto backboneFeatures = input;
-  auto inputProjection = inputProj_->forward(features);
+  auto inputProjection = inputProj_->forward(features).as(features.type());
   auto posEmbed = posEmbed_->forward({mask})[0];
   auto hs = transformer_->forward(
-      inputProjection, mask, queryEmbed_->param(0), posEmbed);
+      {inputProjection, mask, queryEmbed_->param(0), posEmbed});
 
   auto outputClasses = classEmbed_->forward(hs[0]);
   auto outputCoord = sigmoid(bboxEmbed_->forward(hs)[0]);
 
   return {outputClasses, outputCoord};
+}
+
+// std::vector<Variable> Detr::forward(const std::vector<Variable>& input) {
+//   // std::cout << "1: " << input[0].type() << std::endl;
+//   auto features = input[0];
+//   // std::cout << "2.1: " << features.type() << std::endl;
+//   fl::Variable mask = fl::Variable(
+//       af::resize(
+//           input[1].array(),
+//           features.dims(0),
+//           features.dims(1),
+//           AF_INTERP_NEAREST),
+//       true);
+//   // std::cout << "3: " << mask.type() << std::endl;
+//   auto inputProjection = inputProj_->forward(features);
+//   // std::cout << "4: " << inputProjection.type() << std::endl;
+//   auto posEmbed = posEmbed_->forward({mask})[0].as(features.type());
+//   // std::cout << "5: " << posEmbed.type() << std::endl;
+//   auto hs = transformer_->forward(
+//       {inputProjection,
+//        mask.as(features.type()),
+//        queryEmbed_->param(0).as(features.type()),
+//        posEmbed});
+//   // std::cout << "6: " << hs.front().type() << std::endl;
+
+//   auto outputClasses = classEmbed_->forward(hs[0]);
+//   // std::cout << "7: " << outputClasses.type() << std::endl;
+//   auto outputCoord = sigmoid(bboxEmbed_->forward(hs)[0]);
+
+//   return {outputClasses, outputCoord};
+// }
+
+std::vector<Variable> Detr::forwardBackbone(
+    const std::vector<Variable>& input) {
+  auto bo = backbone_->forward({input[0]})[1];
+  return {bo.as(input[0].type()), input[1]};
+  // return {backbone_->forward({input[0].as(f16)})[1], input[1]};
 }
 
 std::string Detr::prettyString() const {

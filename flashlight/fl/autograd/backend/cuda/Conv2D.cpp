@@ -18,18 +18,19 @@
 
 namespace {
 const fl::cpp::fl_unordered_set<cudnnConvolutionFwdAlgo_t> kFwdPreferredAlgos =
-    {CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM,
-     CUDNN_CONVOLUTION_FWD_ALGO_WINOGRAD_NONFUSED};
+    {
+        // CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM,
+        CUDNN_CONVOLUTION_FWD_ALGO_WINOGRAD};
 
 const fl::cpp::fl_unordered_set<cudnnConvolutionBwdDataAlgo_t>
     kBwdDataPreferredAlgos = {
-        CUDNN_CONVOLUTION_BWD_DATA_ALGO_1,
-        CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD_NONFUSED};
+        // CUDNN_CONVOLUTION_BWD_DATA_ALGO_1,
+        CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD};
 
 const fl::cpp::fl_unordered_set<cudnnConvolutionBwdFilterAlgo_t>
     kBwdFilterPreferredAlgos = {
-        CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1,
-        CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD_NONFUSED};
+        // CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1,
+        CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD};
 
 constexpr size_t kWorkspaceSizeLimitBytes = 512 * 1024 * 1024; // 512 MB
 constexpr cudnnConvolutionFwdAlgo_t kFwdDefaultAlgo =
@@ -206,9 +207,10 @@ const fl::cpp::fl_unordered_map<KernelMode, cudnnMathType_t>
 std::shared_ptr<fl::DynamicBenchmark> createBenchmarkOptions() {
   return std::make_shared<fl::DynamicBenchmark>(
       std::make_shared<fl::DynamicBenchmarkOptions<KernelMode>>(
-          std::vector<KernelMode>({KernelMode::F32,
-                                   KernelMode::F32_ALLOW_CONVERSION,
-                                   KernelMode::F16}),
+          std::vector<KernelMode>(
+              {KernelMode::F32,
+               KernelMode::F32_ALLOW_CONVERSION,
+               KernelMode::F16}),
           fl::kDynamicBenchmarkDefaultCount));
 }
 
@@ -244,7 +246,8 @@ Variable conv2d(
     int dy,
     int groups,
     std::shared_ptr<detail::ConvBenchmarks> benchmarks) {
-  auto dummyBias = Variable(af::array(af::dim4(0, 1, 1, 1), input.type()), false);
+  auto dummyBias =
+      Variable(af::array(af::dim4(0, 1, 1, 1), input.type()), false);
   return conv2d(
       input, weights, dummyBias, sx, sy, px, py, dx, dy, groups, benchmarks);
 }
@@ -325,6 +328,7 @@ Variable conv2d(
     const void* one = kOne(scalarsType);
     const void* zero = kZero(scalarsType);
 
+    // std::cout << "fwd algo: " << fwdAlgoBestPerf.algo << std::endl;
     CUDNN_CHECK_ERR(cudnnConvolutionForward(
         handle,
         one,
@@ -503,6 +507,8 @@ Variable conv2d(
             auto gradInput =
                 Variable(af::array(inArray.dims(), inArray.type()), false);
             {
+              // std::cout << "bwd data algo: " << bwdDataAlgoBestPerf.algo
+              //           << std::endl;
               DevicePtr gradInputPtr(gradInput.array());
               DevicePtr gradResultPtr(gradOutputArray);
               DevicePtr wsPtr(ws);
@@ -649,6 +655,8 @@ Variable conv2d(
         auto gradWeight =
             Variable(af::array(wtArray.dims(), wtArray.type()), false);
         {
+          // std::cout << "bwd filter algo: " << bwdFilterAlgoBestPerf.algo
+          //           << std::endl;
           DevicePtr gradWeightPtr(gradWeight.array());
           DevicePtr gradResultPtr(gradOutputArray);
           DevicePtr wsPtr(ws);

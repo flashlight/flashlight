@@ -103,13 +103,13 @@ fl::Variable index(const fl::Variable& in, std::vector<af::array> idxs) {
                           std::vector<Variable>& inputs,
                           const Variable& grad_output) {
     if (!inputs[0].isGradAvailable()) {
-      auto grad = af::constant(0.0, idims);
+      auto grad = af::constant(0.0, idims, inputs[0].type());
       inputs[0].addGrad(Variable(grad, false));
     }
-    auto grad = fl::Variable(af::constant(0, idims), false);
+    auto grad = fl::Variable(af::constant(0, idims, inputs[0].type()), false);
     auto linearIndices = ravelIndices(idxs, idims);
     grad.array()(linearIndices) =
-        grad_output.array()(af::seq(linearIndices.elements()));
+        grad_output.array()(af::seq(linearIndices.elements())).as(inputs[0].type());
     // TODO Can parallize this if needed but does not work for duplicate keys
     // for(int i = 0; i < linearIndices.elements(); i++) {
     // af::array index = linearIndices(i);
@@ -203,8 +203,9 @@ SetCriterion::LossDict SetCriterion::lossBoxes(
     const int numBoxes) {
   auto srcIdx = this->getSrcPermutationIdx(indices);
   if (srcIdx.first.isempty()) {
-    return {{"lossGiou", fl::Variable(af::constant(0, {1, 1, 1, 1}), false)},
-            {"lossBbox", fl::Variable(af::constant(0, {1, 1, 1, 1}), false)}};
+    return {
+        {"lossGiou", fl::Variable(af::constant(0, {1, 1, 1, 1}), false)},
+        {"lossBbox", fl::Variable(af::constant(0, {1, 1, 1, 1}), false)}};
   }
   auto colIdxs = af::moddims(srcIdx.second, {1, srcIdx.second.dims(0)});
   auto batchIdxs = af::moddims(srcIdx.first, {1, srcIdx.first.dims(0)});

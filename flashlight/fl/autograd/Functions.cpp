@@ -985,7 +985,7 @@ Variable weightedCategoricalCrossEntropy(
     throw std::invalid_argument(
         "dimension mismatch in categorical cross entropy");
   }
-  if(weight.dims(0) != input.dims(0)) {
+  if (weight.dims(0) != input.dims(0)) {
     throw std::invalid_argument(
         "dimension mismatch in categorical cross entropy");
   }
@@ -1089,6 +1089,7 @@ Variable linear(const Variable& in, const Variable& wt, const Variable& bs) {
     tiledims[0] = 1;
     output = output + tile(bias.array(), tiledims);
   }
+  output = output.as(in.type());
   auto gradFunc = [hasBias](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
@@ -1096,26 +1097,28 @@ Variable linear(const Variable& in, const Variable& wt, const Variable& bs) {
     auto& wt = inputs[1];
 
     af::array wtArray = wt.array();
-    af::array gradOutputArray = gradOutput.array();
+    af::array gradOutputArray = gradOutput.array().as(in.type());
 
     auto nframes = in.elements() / in.dims(0);
 
     if (hasBias && inputs[2].isCalcGrad()) {
       auto& bs = inputs[2];
-      bs.addGrad(Variable(sumAs(gradOutput, bs).array(), false));
+      bs.addGrad(Variable(detail::sumAs(gradOutputArray, bs.dims()), false));
     }
     if (in.isCalcGrad()) {
       af::dim4 to2dout(wtArray.dims(0), nframes);
       in.addGrad(Variable(
-          moddims(matmulTN(wt, moddims(gradOutput, to2dout)), in.dims())
-              .array(),
+          moddims(
+              matmulTN(wt.array(), moddims(gradOutputArray, to2dout)),
+              in.dims()),
           false));
     }
     if (wt.isCalcGrad()) {
       af::dim4 to2din(wtArray.dims(1), nframes);
       af::dim4 to2dout(wtArray.dims(0), nframes);
       wt.addGrad(Variable(
-          matmulNT(moddims(gradOutput, to2dout), moddims(in, to2din)).array(),
+          matmulNT(
+              moddims(gradOutputArray, to2dout), moddims(in.array(), to2din)),
           false));
     }
   };
