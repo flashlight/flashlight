@@ -29,6 +29,7 @@ tensor library.
 Native support in C++ and simple extensibility makes Flashlight a powerful research framework that's *hackable to its core* and enables fast iteration on new experimental setups and algorithms without sacrificing performance. In a single repository, Flashlight provides [apps](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app) for research across multiple domains:
 - [Automatic speech recognition](https://github.com/facebookresearch/flashlight/tree/master/flashlight/app/asr) (the [wav2letter](https://github.com/facebookresearch/wav2letter/) project) — [Documentation](flashlight/app/asr) | [Tutorial](flashlight/app/asr/tutorial)
 - [Image classification](flashlight/app/imgclass)
+- [Object detection](flashlight/app/objdet)
 - [Language modeling](flashlight/app/lm)
 
 
@@ -217,7 +218,7 @@ cmake .. -DCMAKE_BUILD_TYPE=Release -DFL_BACKEND=[backend] [...build options]
 make -j$(nproc)
 make install
 ```
-Setting the `MKLROOT` environment variable (`export MKLROOT=/opt/intel/oneapi/mkl/latest` or `export MKLROOT=/opt/intel/mkl` on most Linux-based systems) can help CMake find Intel MKL if not initially found. 
+Setting the `MKLROOT` environment variable (`export MKLROOT=/opt/intel/oneapi/mkl/latest` or `export MKLROOT=/opt/intel/mkl` on most Linux-based systems) can help CMake find Intel MKL if not initially found.
 
 To build a smaller subset of Flashlight features/apps, see the [build options](#build-options) below for a complete list of options.
 
@@ -276,6 +277,11 @@ Dependencies marked with `†` are installable via `vcpkg`. See the [instruction
   </tr>
   <tr>
     <td>app: imgclass</td>
+    <td>Any</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td>app: objdet</td>
     <td>Any</td>
     <td>-</td>
   </tr>
@@ -342,33 +348,39 @@ The Flashlight CMake build accepts the following build options (prefixed with `-
     <td>Build contrib APIs subject to breaking changes.</td>
   </tr>
   <tr>
-    <td>FL_BUILD_APPS</td>
+    <td>FL_BUILD_ALL_APPS</td>
     <td>ON, OFF</td>
-    <td>ON</td>
-    <td>Build apps (see below).</td>
+    <td>OFF</td>
+    <td>Defines default value for every app (see below).</td>
   </tr>
   <tr>
     <td>FL_BUILD_APP_ASR</td>
     <td>ON, OFF</td>
-    <td>ON</td>
+    <td>FL_BUILD_ALL_APPS</td>
     <td>Build the automatic speech recognition app.</td>
   </tr>
   <tr>
     <td>FL_BUILD_APP_IMGCLASS</td>
     <td>ON, OFF</td>
-    <td>ON</td>
+    <td>FL_BUILD_ALL_APPS</td>
     <td>Build the image classification app.</td>
+  </tr>
+    <tr>
+    <td>FL_BUILD_APP_OBJDET</td>
+    <td>ON, OFF</td>
+    <td>FL_BUILD_ALL_APPS</td>
+    <td>Build automatic speech recognition app tools.</td>
   </tr>
   <tr>
     <td>FL_BUILD_APP_LM</td>
     <td>ON, OFF</td>
-    <td>ON</td>
+    <td>FL_BUILD_ALL_APPS</td>
     <td>Build the language modeling app.</td>
   </tr>
   <tr>
     <td>FL_BUILD_APP_ASR_TOOLS</td>
     <td>ON, OFF</td>
-    <td>ON</td>
+    <td>FL_BUILD_APP_ASR</td>
     <td>Build automatic speech recognition app tools.</td>
   </tr>
   <tr>
@@ -410,6 +422,7 @@ Flashlight is most-easily linked to using CMake. Flashlight exports the followin
 - `flashlight::flashlight` — contains flashlight libraries as well as the flashlight core autograd and neural network library.
 - `flashlight::flashlight-app-asr` — contains the automatic speech recognition app along with the flashlight core and flashlight libraries.
 - `flashlight::flashlight-app-imgclass` — contains the image classification app along with the flashlight core and flashlight libraries.
+- `flashlight::flashlight-app-objdet` — contains the object detection app along with the flashlight core and flashlight libraries.
 - `flashlight::flashlight-app-lm` — contains the language modeling app along with the flashlight core and flashlight libraries.
 
 Given a simple `project.cpp` file that includes and links to Flashlight:
