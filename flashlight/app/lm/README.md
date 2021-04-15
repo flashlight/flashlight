@@ -85,7 +85,7 @@ fl_lm_train \
   --mask_prob=0.15
 ```
 
-A complete list of the flag definitions and short descriptions of their meaning can be found [here](https://github.com/facebookresearch/flashlight/blob/master/flashlight/app/lm/Trainer.cpp).
+A complete list of the flag definitions and short descriptions of their meaning can be found [here](https://github.com/flashlight/flashlight/blob/master/flashlight/app/lm/Trainer.cpp).
 
 
 ## Evaluation

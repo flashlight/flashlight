@@ -17,7 +17,7 @@ All contributors must sign the CLA for their pull requests to be eligible for me
 You can find the CLA [here](https://code.facebook.com/cla).
 
 ## Issues
-We use [GitHub issues](https://github.com/facebookresearch/flashlight/issues) to track public bugs. When filing, a bug, please make sure your description is clear and include sufficient instructions to reproduce the issue (for instance, your OS, compiler version, and selected backend).
+We use [GitHub issues](https://github.com/flashlight/flashlight/issues) to track public bugs. When filing, a bug, please make sure your description is clear and include sufficient instructions to reproduce the issue (for instance, your OS, compiler version, and selected backend).
 
 ## License
 By contributing to flashlight, you agree that your contributions will be licensed
