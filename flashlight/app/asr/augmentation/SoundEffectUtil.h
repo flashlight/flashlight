@@ -47,13 +47,6 @@ float signalToNoiseRatio(
     const std::vector<float>& signal,
     const std::vector<float>& noise);
 
-float dotProduct(
-    const std::vector<float>& a,
-    const std::vector<float>& b,
-    size_t size);
-
-void scale(std::vector<float>& signal, float ratio);
-
 } // namespace sfx
 } // namespace asr
 } // namespace app
