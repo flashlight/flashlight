@@ -36,11 +36,6 @@ include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
 # text
 include(${CMAKE_CURRENT_LIST_DIR}/text/CMakeLists.txt)
 
-# MKL
-if (FL_LIBRARIES_USE_MKL)
-  include(${CMAKE_CURRENT_LIST_DIR}/mkl/CMakeLists.txt)
-endif()
-
 # ---------------------- CUDA Library -----------------------
 
 # Only build the library if the FL CUDA backend is enabled.
