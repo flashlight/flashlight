@@ -35,11 +35,19 @@ function(setup_install_targets)
     ${FL_INSTALL_CMAKE_DIR}
     PATH_VARS INCLUDE_DIRS CMAKE_DIR
     )
+  write_basic_package_version_file(
+    cmake/install/${FL_CONFIG_CMAKE_BUILD_DIR}/flashlightConfigVersion.cmake
+    COMPATIBILITY SameMajorVersion
+    )
   install(FILES
     ${PROJECT_BINARY_DIR}/cmake/install/flashlightConfig.cmake
+    ${PROJECT_BINARY_DIR}/cmake/install/flashlightConfigVersion.cmake
     DESTINATION ${FL_INSTALL_CMAKE_DIR}
     COMPONENT flashlight
     )
+  set_target_properties(${setup_install_targets_INSTALL_TARGETS} PROPERTIES
+    VERSION "${flashlight_VERSION}"
+    SOVERSION "${flashlight_VERSION_MAJOR}")
 endfunction(setup_install_targets)
 
 function(setup_install_headers HEADER_DIR DEST_DIR)
