@@ -40,8 +40,8 @@
 #include "flashlight/lib/text/dictionary/Utils.h"
 
 using fl::ext::afToVector;
-using fl::ext::Serializer;
 using fl::ext::getRunFile;
+using fl::ext::Serializer;
 using fl::lib::fileExists;
 using fl::lib::format;
 using fl::lib::getCurrentDate;
@@ -906,11 +906,6 @@ int main(int argc, char** argv) {
                    double initcritlr,
                    bool clampCrit,
                    int64_t nbatches) {
-    if (reducer) {
-      fl::distributeModuleGrads(ntwrk, reducer);
-      fl::distributeModuleGrads(crit, reducer);
-    }
-
     meters.train.loss.reset();
     meters.train.tknEdit.reset();
     meters.train.wrdEdit.reset();
@@ -1121,6 +1116,18 @@ int main(int argc, char** argv) {
           critopt->zeroGrad();
           loss.backward();
           if (reducer) {
+            for (auto& p : ntwrk->params()) {
+              if (!p.isGradAvailable()) {
+                p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
+              }
+              reducer->add(p.grad());
+            }
+            for (auto& p : crit->params()) {
+              if (!p.isGradAvailable()) {
+                p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
+              }
+              reducer->add(p.grad());
+            }
             reducer->finalize();
           }
           af::sync();

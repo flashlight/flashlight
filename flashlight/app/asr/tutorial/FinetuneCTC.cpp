@@ -454,10 +454,6 @@ int main(int argc, char** argv) {
                    std::shared_ptr<fl::FirstOrderOptimizer> netopt,
                    double initlr,
                    int64_t nbatches) {
-    if (reducer) {
-      fl::distributeModuleGrads(ntwrk, reducer);
-    }
-
     meters.train.loss.reset();
     meters.train.tknEdit.reset();
     meters.train.wrdEdit.reset();
@@ -627,6 +623,12 @@ int main(int argc, char** argv) {
           netopt->zeroGrad();
           loss.backward();
           if (reducer) {
+            for (auto& p : ntwrk->params()) {
+              if (!p.isGradAvailable()) {
+                p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
+              }
+              reducer->add(p.grad());
+            }
             reducer->finalize();
           }
           af::sync();
