@@ -53,6 +53,9 @@ commands:
         type: string
       fl_build_app_lm:
         type: string
+      build_shared_libs:
+        default: "OFF"
+        type: string
       version:
         default: "3.10"
         type: string
@@ -81,7 +84,8 @@ commands:
                 -DFL_BUILD_APP_ASR=<< parameters.fl_build_app_asr >> \
                 -DFL_BUILD_APP_IMGCLASS=<< parameters.fl_build_app_imgclass >> \
                 -DFL_BUILD_APP_OBJDET=<< parameters.fl_build_app_objdet >> \
-                -DFL_BUILD_APP_LM=<< parameters.fl_build_app_lm >> && \
+                -DFL_BUILD_APP_LM=<< parameters.fl_build_app_lm >> \
+                -DBUILD_SHARED_LIBS=<< parameters.build_shared_libs >> && \
             make -j$(nproc) && make install"
   test_flashlight_inside_nvidia_docker:
     parameters:
@@ -386,6 +390,22 @@ jobs:
       - test_flashlight_inside_nvidia_docker:
           fl_test_apex_dir: "flashlight/app/lm/test"
 
+  ubuntu2004_cuda11_1_docker_flashlight_all_shared_build:
+    <<: *gpu
+    steps:
+      - authenticate_docker
+      - install_nvidia_docker
+      - checkout
+      - start_nvidia_docker_and_copy_flashlight_source
+      - build_flashlight_inside_nvidia_docker:
+          fl_backend: "CUDA"
+          fl_build_fl_core: "ON"
+          fl_build_app_asr: "ON"
+          fl_build_app_imgclass: "ON"
+          fl_build_app_objdet: "ON"
+          fl_build_app_lm: "ON"
+          build_shared_libs: "ON"
+
   ubuntu2004_cpu_docker_flashlight_all:
     docker:
       - image: flml/flashlight:cpu-base-latest
@@ -486,6 +506,7 @@ workflows:
       - ubuntu2004_cuda11_1_docker_flashlight_app_imgclass
       - ubuntu2004_cuda11_1_docker_flashlight_app_objdet
       - ubuntu2004_cuda11_1_docker_flashlight_app_lm
+      - ubuntu2004_cuda11_1_docker_flashlight_all_shared_build
   docker_cpu_build_and_install:
     jobs:
       - ubuntu2004_cpu_docker_flashlight_all
