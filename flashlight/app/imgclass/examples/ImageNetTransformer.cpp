@@ -14,7 +14,7 @@
 #include "flashlight/app/imgclass/dataset/Imagenet.h"
 #include "flashlight/app/imgclass/examples/Defines.h"
 #include "flashlight/ext/common/DistributedUtils.h"
-#include "flashlight/ext/common/Runtime.h"
+#include "flashlight/app/common/Runtime.h"
 #include "flashlight/ext/image/af/Transforms.h"
 #include "flashlight/ext/image/fl/dataset/DistributedDataset.h"
 #include "flashlight/ext/image/fl/models/ViT.h"
@@ -185,7 +185,7 @@ int main(int argc, char** argv) {
   }
   af::info();
   FL_LOG_MASTER(INFO) << "Gflags after parsing \n"
-                      << fl::ext::serializeGflags("; ");
+                      << fl::app::serializeGflags("; ");
 
   const int worldRank = fl::getWorldRank();
   const int worldSize = fl::getWorldSize();
@@ -447,7 +447,7 @@ int main(int argc, char** argv) {
           if (FLAGS_distributed_enable) {
             fl::allReduce(scaledLoss);
           }
-          if (fl::ext::isInvalidArray(scaledLoss)) {
+          if (fl::app::isInvalidArray(scaledLoss)) {
             FL_LOG(INFO) << "Loss has NaN values in 2, in proc: "
                          << fl::getWorldRank();
             scaleFactor = scaleFactor / 2.0f;
@@ -472,7 +472,7 @@ int main(int argc, char** argv) {
         if (FLAGS_fl_amp_use_mixed_precision) {
           for (auto& p : modelParams) {
             p.grad() = p.grad() / scaleFactor;
-            if (fl::ext::isInvalidArray(p.grad().array())) {
+            if (fl::app::isInvalidArray(p.grad().array())) {
               FL_LOG(INFO) << "Grad has NaN values in 3, in proc: "
                            << fl::getWorldRank();
               if (scaleFactor >= fl::kAmpMinimumScaleFactorValue) {

@@ -11,6 +11,7 @@ target_link_libraries(
   ${GLOG_LIBRARIES}
   ${gflags_LIBRARIES}
   flashlight
+  flashlight-app-common
   )
 
 target_include_directories(
