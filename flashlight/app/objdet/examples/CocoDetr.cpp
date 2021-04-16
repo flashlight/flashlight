@@ -19,7 +19,7 @@
 #include "flashlight/app/objdet/nn/Detr.h"
 #include "flashlight/app/objdet/nn/Transformer.h"
 #include "flashlight/ext/common/DistributedUtils.h"
-#include "flashlight/ext/common/Runtime.h"
+#include "flashlight/app/common/Runtime.h"
 #include "flashlight/ext/common/Serializer.h"
 #include "flashlight/ext/image/af/Transforms.h"
 #include "flashlight/fl/meter/meters.h"
@@ -31,8 +31,8 @@ using namespace fl::ext::image;
 using namespace fl::app::objdet;
 
 using fl::ext::Serializer;
-using fl::ext::getRunFile;
-using fl::ext::serializeGflags;
+using fl::app::getRunFile;
+using fl::app::serializeGflags;
 using fl::lib::fileExists;
 using fl::lib::format;
 using fl::lib::getCurrentDate;
