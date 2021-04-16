@@ -14,7 +14,7 @@
 
 #include "flashlight/app/lm/common/Defines.h"
 #include "flashlight/app/lm/data/TextDataset.h"
-#include "flashlight/ext/common/Runtime.h"
+#include "flashlight/app/common/Runtime.h"
 
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/common/Serializer.h"
