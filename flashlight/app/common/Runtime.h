@@ -10,7 +10,7 @@
 #include "flashlight/fl/flashlight.h"
 
 namespace fl {
-namespace ext {
+namespace app {
 /**
  * Get a certain checkpoint by `runidx`.
  */

@@ -28,7 +28,7 @@
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
 #include "flashlight/ext/common/DistributedUtils.h"
-#include "flashlight/ext/common/Runtime.h"
+#include "flashlight/app/common/Runtime.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/ext/common/Serializer.h"
 #include "flashlight/ext/plugin/ModulePlugin.h"
@@ -41,7 +41,7 @@
 
 using fl::ext::afToVector;
 using fl::ext::Serializer;
-using fl::ext::getRunFile;
+using fl::app::getRunFile;
 using fl::lib::fileExists;
 using fl::lib::format;
 using fl::lib::getCurrentDate;

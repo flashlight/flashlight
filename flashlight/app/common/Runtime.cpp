@@ -8,12 +8,12 @@
 #include <gflags/gflags.h>
 #include <sstream>
 
-#include "flashlight/ext/common/Runtime.h"
+#include "flashlight/app/common/Runtime.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
 
 namespace fl {
-namespace ext {
+namespace app {
 
 using fl::lib::format;
 using fl::lib::pathsConcat;
@@ -40,5 +40,6 @@ bool isInvalidArray(const af::array& arr) {
   return af::anyTrue<bool>(af::isNaN(arr)) || af::anyTrue<bool>(af::isInf(arr));
 }
 
-} // end namespace ext
+
+} // end namespace app
 } // end namespace fl

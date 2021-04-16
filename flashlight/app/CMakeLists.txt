@@ -31,6 +31,11 @@ if (FL_BUILD_APP_ASR OR FL_BUILD_APP_IMGCLASS OR FL_BUILD_APP_LM OR FL_BUILD_APP
   else()
     message(FATAL_ERROR "gflags not found")
   endif()
+
+  set(FL_APP_COMMON_ROOT_DIR ${FL_APPS_DIR}/common)
+  include(${FL_APP_COMMON_ROOT_DIR}/CMakeLists.txt)
+  set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} flashlight-app-common)
+  setup_install_headers(${FL_APP_COMMON_ROOT_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC}/app)
 endif ()
 
 if (FL_BUILD_APP_ASR)
