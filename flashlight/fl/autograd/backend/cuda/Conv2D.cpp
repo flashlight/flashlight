@@ -206,9 +206,10 @@ const fl::cpp::fl_unordered_map<KernelMode, cudnnMathType_t>
 std::shared_ptr<fl::DynamicBenchmark> createBenchmarkOptions() {
   return std::make_shared<fl::DynamicBenchmark>(
       std::make_shared<fl::DynamicBenchmarkOptions<KernelMode>>(
-          std::vector<KernelMode>({KernelMode::F32,
-                                   KernelMode::F32_ALLOW_CONVERSION,
-                                   KernelMode::F16}),
+          std::vector<KernelMode>(
+              {KernelMode::F32,
+               KernelMode::F32_ALLOW_CONVERSION,
+               KernelMode::F16}),
           fl::kDynamicBenchmarkDefaultCount));
 }
 
@@ -244,7 +245,8 @@ Variable conv2d(
     int dy,
     int groups,
     std::shared_ptr<detail::ConvBenchmarks> benchmarks) {
-  auto dummyBias = Variable(af::array(af::dim4(0, 1, 1, 1), input.type()), false);
+  auto dummyBias =
+      Variable(af::array(af::dim4(0, 1, 1, 1), input.type()), false);
   return conv2d(
       input, weights, dummyBias, sx, sy, px, py, dx, dy, groups, benchmarks);
 }
@@ -381,6 +383,13 @@ Variable conv2d(
     auto wDesc = FilterDescriptor(wt.array());
     auto cDesc = ConvDescriptor(in.type(), px, py, sx, sy, dx, dy, groups);
     auto oDesc = TensorDescriptor(gradOutput.array());
+    if (in.type() == f16) {
+      CUDNN_CHECK_ERR(cudnnSetConvolutionMathType(
+          cDesc.descriptor, CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION));
+    } else {
+      CUDNN_CHECK_ERR(
+          cudnnSetConvolutionMathType(cDesc.descriptor, CUDNN_DEFAULT_MATH));
+    }
 
     auto hndl = getCudnnHandle();
 
