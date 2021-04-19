@@ -3,11 +3,16 @@ on:
   push:
     branches:
       - master
+
 jobs:
   cuda_image_build:
     if: github.repository_owner == 'flashlight'
     name: CUDA image build
     runs-on: ubuntu-latest
+    env:
+       CC: gcc-10
+       CXX: g++-10
+
     steps:
     - uses: actions/checkout@master
     - name: Build the CUDA Docker image
@@ -25,10 +30,15 @@ jobs:
       run: docker push flml/flashlight:cuda-`git rev-parse --short HEAD`
     - name: Docker logout
       run: docker logout
+
   cpu_image_build:
     if: github.repository_owner == 'flashlight'
     name: CPU image build
     runs-on: ubuntu-latest
+    env:
+       CC: gcc-10
+       CXX: g++-10
+ 
     steps:
     - uses: actions/checkout@master
     - name: Build the CPU Docker image
