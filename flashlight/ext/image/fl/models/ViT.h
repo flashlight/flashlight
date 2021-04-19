@@ -61,13 +61,6 @@ class ViT : public fl::Container {
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;
 
-  // TODO: to be removed after
-  //  1. comprehensive benchmarking
-  //  2. AMP config updated accordingly
-  std::vector<fl::Variable> forward(
-      const std::vector<fl::Variable>& inputs,
-      bool useFp16);
-
   std::string prettyString() const override;
 };
 

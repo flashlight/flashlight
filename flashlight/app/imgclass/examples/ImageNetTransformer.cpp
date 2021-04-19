@@ -11,10 +11,10 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
+#include "flashlight/app/common/Runtime.h"
 #include "flashlight/app/imgclass/dataset/Imagenet.h"
 #include "flashlight/app/imgclass/examples/Defines.h"
 #include "flashlight/ext/common/DistributedUtils.h"
-#include "flashlight/app/common/Runtime.h"
 #include "flashlight/ext/image/af/Transforms.h"
 #include "flashlight/ext/image/fl/dataset/DistributedDataset.h"
 #include "flashlight/ext/image/fl/models/ViT.h"
@@ -143,7 +143,7 @@ std::tuple<double, double, double> evalLoop(
   model->eval();
   for (auto& example : dataset) {
     auto inputs = noGrad(example[kImagenetInputIdx]);
-    auto output = model->forward({inputs}, FLAGS_distributed_enable).front();
+    auto output = model->forward({inputs}).front();
     output = logSoftmax(output, 0).as(output.type());
 
     auto target = noGrad(example[kImagenetTargetIdx]);
@@ -279,6 +279,7 @@ int main(int argc, char** argv) {
   // Setting different seeds for better randomness
   af::setSeed(worldRank + FLAGS_train_seed);
   std::srand(worldRank + FLAGS_train_seed);
+  fl::DynamicBenchmark::setBenchmarkMode(true);
 
   //////////////////////////
   //  Optimizer
@@ -356,10 +357,11 @@ int main(int argc, char** argv) {
   if (FLAGS_fl_amp_use_mixed_precision) {
     FL_LOG_MASTER(INFO)
         << "Mixed precision training enabled. Will perform loss scaling.";
-    // TODO: force using `DEFAULT` level for now, until
-    //  1. comprehensive benchmarking
-    //  2. AMP config updated accordingly
-    fl::OptimMode::get().setOptimLevel(fl::OptimLevel::DEFAULT);
+    auto flOptimLevel = FLAGS_fl_optim_mode.empty()
+        ? fl::OptimLevel::DEFAULT
+        : fl::OptimMode::toOptimLevel(FLAGS_fl_optim_mode);
+    std::cout << FLAGS_fl_optim_mode << std::endl;
+    fl::OptimMode::get().setOptimLevel(flOptimLevel);
   }
   unsigned short scaleCounter = 1;
   double scaleFactor =
@@ -421,6 +423,11 @@ int main(int argc, char** argv) {
       }
       auto input = noGrad(inputArray);
       auto target = noGrad(targetArray);
+      if (FLAGS_fl_amp_use_mixed_precision && FLAGS_fl_optim_mode.empty()) {
+        // In case AMP is activated with DEFAULT mode,
+        // we manually cast input to fp16.
+        input = input.as(f16);
+      }
 
       af::sync();
       sampleTimerMeter.stopAndIncUnit();
@@ -432,7 +439,7 @@ int main(int argc, char** argv) {
 
         // 2. Forward
         fwdTimeMeter.resume();
-        auto output = model->forward({input}, FLAGS_distributed_enable).front();
+        auto output = model->forward({input}).front();
         output = logSoftmax(output, 0).as(output.type());
 
         critFwdTimeMeter.resume();
