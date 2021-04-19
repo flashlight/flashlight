@@ -63,6 +63,8 @@ function(setup_install_headers HEADER_DIR DEST_DIR)
     PATTERN "*.cuh" # TODO: make this conditional, e.g. $<IF:FLASHLIGHT_USE_CUDA,"*.cuh","a^">
     PATTERN "test*" EXCLUDE
     PATTERN "tests" EXCLUDE
+    PATTERN "tools" EXCLUDE
+    PATTERN "plugins" EXCLUDE
     PATTERN "backend" EXCLUDE
     PATTERN "examples" EXCLUDE
     PATTERN "tutorial" EXCLUDE
