@@ -49,7 +49,11 @@ if (FL_BUILD_APP_ASR)
   setup_install_headers(${FL_APP_ASR_ROOT_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC}/app)
 endif ()
 
-if (FL_BUILD_APP_IMGCLASS)
+if (FL_BUILD_APP_IMGCLASS OR FL_BUILD_APP_OBJDET) # imgclass is required to build objdet
+  # TODO(padentomasello): remove or better organize this code
+  if (NOT FL_BUILD_APP_IMGCLASS AND FL_BUILD_APP_OBJDET)
+    message(STATUS "FL_BUILD_APP_OBJDET is enabled - forcing FL_BUILD_APP_IMGCLASS to ON")
+  endif()
   message(STATUS "Building flashlight Image Classification app")
   if (NOT FL_BUILD_DISTRIBUTED)
     message(FATAL_ERROR "FL_BUILD_DISTRIBUTED must be enabled for image classification")
@@ -74,10 +78,6 @@ endif ()
 if (FL_BUILD_APP_OBJDET)
   message(STATUS "Building flashlight Object Detection app")
   # TODO (padentomasello) revist if we can pull out some functionality from IMGCLASS
-  if(NOT FL_BUILD_APP_IMGCLASS)
-    message(FATAL_ERROR
-      "FL_BUILD_APP_IMGCLASS must be enabled for object detection")
-  endif()
   if (NOT FL_BUILD_DISTRIBUTED)
     message(FATAL_ERROR
     "FL_BUILD_DISTRIBUTED must be enabled for object detection")
