@@ -54,3 +54,7 @@ target_link_libraries(
   )
 install(TARGETS fl_img_imagenet_eval RUNTIME DESTINATION ${FL_INSTALL_BIN_DIR})
 set_executable_output_directory(fl_img_imagenet_eval ${FL_BUILD_BINARY_OUTPUT_DIR}/imgclass)
+
+if (FL_CODE_COVERAGE)
+  add_coverage_to_target(TARGET flashlight-app-imgclass)
+endif()

@@ -25,3 +25,7 @@ target_include_directories(
   ${GLOG_INCLUDE_DIRS}
   ${gflags_INCLUDE_DIRS}
 )
+
+if (FL_CODE_COVERAGE)
+  add_coverage_to_target(TARGET flashlight-app-common)
+endif()

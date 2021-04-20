@@ -8,12 +8,14 @@ include(CMakeDependentOption)
 # ----------------------------- Setup -----------------------------
 find_program(CCACHE_PROGRAM ccache)
 if(CCACHE_PROGRAM)
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
 endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+option(FL_CODE_COVERAGE "Enable coverage reporting" OFF)
 
 # Default directories for installation
 set(FL_INSTALL_INC_DIR "include" CACHE PATH "Install path for headers")
@@ -136,6 +138,9 @@ if (FL_BUILD_LIBRARIES OR (FL_BUILD_CORE AND FL_BUILD_TESTS))
   endif ()
 
   setup_install_headers(${FL_LIB_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
+  if (FL_CODE_COVERAGE)
+    add_coverage_to_target(TARGET fl-libraries)
+  endif()
 endif() # if FL_BUILD_LIBRARIES
 
 # --------------------------- flashlight ---------------------------
@@ -155,6 +160,10 @@ if (FL_BUILD_CORE)
   # FIXME: libraries are required to build core tests - https://git.io/JL955
   if (FL_BUILD_LIBRARIES OR (FL_BUILD_CORE AND FL_BUILD_TESTS))
     target_link_libraries(flashlight PUBLIC fl-libraries)
+  endif()
+
+  if (FL_CODE_COVERAGE)
+    add_coverage_to_target(TARGET flashlight)
   endif()
 
   # ------------------------ Global External Dependencies ------------------------
