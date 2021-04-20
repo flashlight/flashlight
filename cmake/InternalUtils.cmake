@@ -17,7 +17,7 @@ function(add_coverage_to_target)
     else()
       target_link_libraries(${add_coverage_to_target_TARGET}
         PUBLIC
-        --coverage>)
+        --coverage)
     endif()
   endif()
 endfunction()

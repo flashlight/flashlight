@@ -114,7 +114,9 @@ commands:
             sudo docker exec -it flashlight bash -c "\
                 cd /flashlight && \
                 lcov --capture --directory << parameters.base_dir >> --output-file coverage.info && \
-                lcov --remove coverage.info '/usr/*' --output-file coverage.info && \
+                lcov --remove coverage.info '/usr/*' --output-file coverage.info &&
+                lcov --remove coverage.info '*/include/af/*' --output-file coverage.info && \
+                lcov --remove coverage.info '*/gtest/*' --output-file coverage.info && \
                 lcov --list coverage.info && \
                 bash <(curl -s https://codecov.io/bash) -f coverage.info \
                 -F << parameters.coverage_flag >> \
