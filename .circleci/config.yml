@@ -114,7 +114,7 @@ commands:
           name: "Get code coverage inside of NVIDIA Docker"
           command: |
             sudo docker exec -it flashlight bash -c "\
-                cd /flashlight && \
+                cd /flashlight/build && \
                 lcov --capture --directory << parameters.base_dir >> --output-file coverage.info && \
                 lcov --remove coverage.info '/usr/*' --output-file coverage.info &&
                 lcov --remove coverage.info '*/include/af/*' --output-file coverage.info && \
