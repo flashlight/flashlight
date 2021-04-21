@@ -62,19 +62,8 @@ ViT::ViT(
 
 std::vector<fl::Variable> ViT::forward(
     const std::vector<fl::Variable>& inputs) {
-  return forward(inputs, false);
-}
-
-std::vector<fl::Variable> ViT::forward(
-    const std::vector<fl::Variable>& inputs,
-    bool useFp16) {
   // Patching
   auto output = patchEmbedding_->forward(inputs[0]); // H x W x C x B
-  if (useFp16) {
-    // Avoid running conv2D in fp16 in this case.
-    // All the other part of the network can be run in fp16 if compatible.
-    output = output.as(f16);
-  }
   output = moddims(output, af::dim4(-1, 1, 0, 0)); // T x 1 x C x B
   output = reorder(output, 2, 0, 3, 1); // C x T x B
   auto B = output.dims(2);
