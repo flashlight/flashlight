@@ -113,7 +113,7 @@ commands:
       - run:
           name: "Get code coverage inside of NVIDIA Docker"
           command: |
-            if [[ -z "${CODECOV_TOKEN}" ]]; then echo "CODECOV_TOKEN env var is not defined"; fi
+            if [[ -z "${CODECOV_TOKEN}" ]]; then echo "CODECOV_TOKEN env var is not defined"; else echo "$CODECOV_TOKEN is defined!"; fi
             sudo docker exec -it --env CODECOV_TOKEN=$CODECOV_TOKEN flashlight bash -c "\
                 DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends lcov curl && \
                 cd /flashlight/build && \
@@ -471,6 +471,17 @@ jobs:
     steps:
       - checkout:
           path: flashlight
+      - run:
+          name: "echo CODECOV TOKEN"
+          command: |
+            echo $CODECOV_TOKEN
+            if [[ -z "${CODECOV_TOKEN}" ]]; then echo "CODECOV_TOKEN env var is not defined"; else echo "$CODECOV_TOKEN is defined!"; fi
+            if [[ -z "$CODECOV_TOKEN" ]]; then echo "CODECOV_TOKEN env var is not defined"; else echo "$CODECOV_TOKEN is defined!"; fi
+            echo "$CODECOV_TOKEN" > /tmp/file.txt
+            echo "Counting characters:"
+            wc -c /tmp/file.txt
+
+
       - flashlight_build_and_install_cpu_backend_from_source
 
   ubuntu2004_cmake10_cpu_docker_flashlight_all:
