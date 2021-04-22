@@ -11,6 +11,8 @@
 [![Docker Image Build Status](https://img.shields.io/github/workflow/status/flashlight/flashlight/Publish%20Docker%20images?label=docker%20image%20build)](https://hub.docker.com/r/flml/flashlight/tags)
 [![Join the chat at https://gitter.im/flashlight-ml/community](https://img.shields.io/gitter/room/flashlight-ml/community)](https://gitter.im/flashlight-ml/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
+[![codecov](https://codecov.io/gh/flashlight/flashlight/branch/master/graph/badge.svg?token=rBp4AilMc0)](https://codecov.io/gh/flashlight/flashlight)
+
 [![Docker Image for CUDA backend](https://img.shields.io/docker/image-size/flml/flashlight/cuda-latest?label=docker%20%28cuda%29&logo=docker)](https://hub.docker.com/r/flml/flashlight/tags?page=1&ordering=last_updated&name=cuda-latest)
 [![Docker Image for CPU backend](https://img.shields.io/docker/image-size/flml/flashlight/cpu-latest?label=docker%20%28cpu%29&logo=docker)](https://hub.docker.com/r/flml/flashlight/tags?page=1&ordering=last_updated&name=cpu-latest)
 
