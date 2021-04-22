@@ -1,3 +1,27 @@
+function(add_coverage_to_target)
+  set(oneValueArgs TARGET)
+  cmake_parse_arguments(add_coverage_to_target "${options}" "${oneValueArgs}"
+    "${multiValueArgs}" ${ARGN})
+
+  if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    # Add required flags (GCC & LLVM/Clang)
+    target_compile_options(${add_coverage_to_target_TARGET} PUBLIC
+      -O0 # TODO: reconcile this with CMake modes for something cleaner
+      -g
+      $<$<COMPILE_LANGUAGE:CXX>:--coverage>
+      )
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.13)
+      target_link_options(${add_coverage_to_target_TARGET}
+        PUBLIC
+        $<$<COMPILE_LANGUAGE:CXX>:--coverage>)
+    else()
+      target_link_libraries(${add_coverage_to_target_TARGET}
+        PUBLIC
+        --coverage)
+    endif()
+  endif()
+endfunction()
+
 function(setup_install_targets)
   set(multiValueArgs INSTALL_TARGETS INSTALL_HEADERS)
   cmake_parse_arguments(setup_install_targets "${options}" "${oneValueArgs}"
