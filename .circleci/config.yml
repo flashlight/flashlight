@@ -107,8 +107,6 @@ commands:
     parameters:
       coverage_flag:
         type: string
-      base_dir:
-        type: string
     steps:
       - run:
           name: "Get code coverage inside of NVIDIA Docker"
@@ -339,7 +337,6 @@ jobs:
           fl_test_apex_dir: "flashlight/lib/test"
       - run_codecov_inside_nvidia_docker:
           coverage_flag: "lib"
-          base_dir: "flashlight/lib"
 
   ubuntu2004_cuda11_1_docker_flashlight_fl_core:
     <<: *gpu
@@ -359,7 +356,6 @@ jobs:
           fl_test_apex_dir: "flashlight/fl/test"
       - run_codecov_inside_nvidia_docker:
           coverage_flag: "core"
-          base_dir: "flashlight/fl"
 
   ubuntu2004_cuda11_1_docker_flashlight_app_asr:
     <<: *gpu
@@ -379,7 +375,6 @@ jobs:
           fl_test_apex_dir: "flashlight/app/asr/test"
       - run_codecov_inside_nvidia_docker:
           coverage_flag: "asr"
-          base_dir: "flashlight/app/asr"
 
   ubuntu2004_cuda11_1_docker_flashlight_app_imgclass:
     <<: *gpu
@@ -414,7 +409,6 @@ jobs:
           fl_test_apex_dir: "flashlight/app/objdet/test"
       - run_codecov_inside_nvidia_docker:
           coverage_flag: "objdet"
-          base_dir: "flashlight/app/objdet"
 
   ubuntu2004_cuda11_1_docker_flashlight_app_lm:
     <<: *gpu
@@ -434,7 +428,6 @@ jobs:
           fl_test_apex_dir: "flashlight/app/lm/test"
       - run_codecov_inside_nvidia_docker:
           coverage_flag: "lm"
-          base_dir: "flashlight/app/lm"
 
   ubuntu2004_cuda11_1_docker_flashlight_all_shared_build:
     <<: *gpu
