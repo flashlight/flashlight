@@ -109,11 +109,14 @@ commands:
         type: string
       base_dir:
         type: string
+      codecov_token:
+        type: string
+        default: $CODECOV_TOKEN
     steps:
       - run:
           name: "Get code coverage inside of NVIDIA Docker"
           command: |
-            sudo docker exec -it --env CODECOV_TOKEN=$CODECOV_TOKEN flashlight bash -c "\
+            sudo docker exec -it --env CODECOV_TOKEN=<< parameters.codecov_token>> flashlight bash -c "\
                 DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends lcov curl && \
                 cd /flashlight/build && \
                 lcov --capture --directory << parameters.base_dir >> --output-file coverage.info && \
