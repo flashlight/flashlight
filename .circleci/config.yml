@@ -56,6 +56,9 @@ commands:
       build_shared_libs:
         default: "OFF"
         type: string
+      fl_code_coverage:
+        default: "ON"
+        type: string
       version:
         default: "3.10"
         type: string
@@ -71,7 +74,9 @@ commands:
             apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends software-properties-common && \
             apt-add-repository -r universe && apt-add-repository 'deb http://dk.archive.ubuntu.com/ubuntu/ bionic main' && apt-add-repository 'deb http://dk.archive.ubuntu.com/ubuntu/ bionic universe' && apt-get update && \
             DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-7 g++-7 && \
-            export CC=/usr/bin/gcc-7 && export CXX=/usr/bin/g++-7 && \
+            update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 7 &&\
+            update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 7 && \
+            update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-7 7 && \
             wget https://cmake.org/files/v<< parameters.version >>/cmake-<< parameters.version >>.<< parameters.version_build >>-Linux-x86_64.sh && \
             mkdir /opt/cmake && \
             sh cmake-<< parameters.version >>.<< parameters.version_build >>-Linux-x86_64.sh --prefix=/opt/cmake --skip-license && \
@@ -85,7 +90,8 @@ commands:
                 -DFL_BUILD_APP_IMGCLASS=<< parameters.fl_build_app_imgclass >> \
                 -DFL_BUILD_APP_OBJDET=<< parameters.fl_build_app_objdet >> \
                 -DFL_BUILD_APP_LM=<< parameters.fl_build_app_lm >> \
-                -DBUILD_SHARED_LIBS=<< parameters.build_shared_libs >> && \
+                -DBUILD_SHARED_LIBS=<< parameters.build_shared_libs >> \
+                -DFL_CODE_COVERAGE=<< parameters.fl_code_coverage >> && \
             make -j$(nproc) && make install"
   test_flashlight_inside_nvidia_docker:
     parameters:
@@ -97,6 +103,28 @@ commands:
           command: |
             sudo docker exec -it flashlight bash -c "\
                 cd /flashlight/build/<< parameters.fl_test_apex_dir >> && ctest"
+  run_codecov_inside_nvidia_docker:
+    parameters:
+      coverage_flag:
+        type: string
+      base_dir:
+        type: string
+    steps:
+      - run:
+          name: "Get code coverage inside of NVIDIA Docker"
+          command: |
+            sudo docker exec -it --env CODECOV_TOKEN=$CODECOV_TOKEN flashlight bash -c "\
+                DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends lcov curl && \
+                cd /flashlight/build && \
+                lcov --capture --directory << parameters.base_dir >> --output-file coverage.info && \
+                lcov --remove coverage.info '/usr/*' --output-file coverage.info &&
+                lcov --remove coverage.info '*/include/af/*' --output-file coverage.info && \
+                lcov --remove coverage.info '*/gtest/*' --output-file coverage.info && \
+                lcov --list coverage.info && \
+                bash <(curl -s https://codecov.io/bash) -f coverage.info \
+                -F << parameters.coverage_flag >> \
+                -t $CODECOV_TOKEN \
+                || echo 'Codecov did not collect coverage reports'"
   ############################### vcpkg Commands ###############################
   install_gcc_7:
     steps:
@@ -169,7 +197,9 @@ commands:
             apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends software-properties-common
             apt-add-repository -r universe && apt-add-repository "deb http://dk.archive.ubuntu.com/ubuntu/ bionic main" && apt-add-repository "deb http://dk.archive.ubuntu.com/ubuntu/ bionic universe" && apt-get update
             DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-7 g++-7
-            export CC=/usr/bin/gcc-7 && export CXX=/usr/bin/g++-7
+            update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 7
+            update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 7
+            update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-7 7
             export MKLROOT=/opt/intel/mkl
             cd flashlight && mkdir -p build && cd build
             cmake .. -DFL_BACKEND=CPU \
@@ -307,6 +337,9 @@ jobs:
           fl_build_app_lm: "OFF"
       - test_flashlight_inside_nvidia_docker:
           fl_test_apex_dir: "flashlight/lib/test"
+      - run_codecov_inside_nvidia_docker:
+          coverage_flag: "lib"
+          base_dir: "flashlight/lib"
 
   ubuntu2004_cuda11_1_docker_flashlight_fl_core:
     <<: *gpu
@@ -324,6 +357,9 @@ jobs:
           fl_build_app_lm: "OFF"
       - test_flashlight_inside_nvidia_docker:
           fl_test_apex_dir: "flashlight/fl/test"
+      - run_codecov_inside_nvidia_docker:
+          coverage_flag: "core"
+          base_dir: "flashlight/fl"
 
   ubuntu2004_cuda11_1_docker_flashlight_app_asr:
     <<: *gpu
@@ -341,6 +377,9 @@ jobs:
           fl_build_app_lm: "OFF"
       - test_flashlight_inside_nvidia_docker:
           fl_test_apex_dir: "flashlight/app/asr/test"
+      - run_codecov_inside_nvidia_docker:
+          coverage_flag: "asr"
+          base_dir: "flashlight/app/asr"
 
   ubuntu2004_cuda11_1_docker_flashlight_app_imgclass:
     <<: *gpu
@@ -356,6 +395,7 @@ jobs:
           fl_build_app_imgclass: "ON"
           fl_build_app_objdet: "OFF"
           fl_build_app_lm: "OFF"
+
   ubuntu2004_cuda11_1_docker_flashlight_app_objdet:
     <<: *gpu
     steps:
@@ -372,6 +412,9 @@ jobs:
           fl_build_app_lm: "OFF"
       - test_flashlight_inside_nvidia_docker:
           fl_test_apex_dir: "flashlight/app/objdet/test"
+      - run_codecov_inside_nvidia_docker:
+          coverage_flag: "objdet"
+          base_dir: "flashlight/app/objdet"
 
   ubuntu2004_cuda11_1_docker_flashlight_app_lm:
     <<: *gpu
@@ -389,6 +432,9 @@ jobs:
           fl_build_app_lm: "ON"
       - test_flashlight_inside_nvidia_docker:
           fl_test_apex_dir: "flashlight/app/lm/test"
+      - run_codecov_inside_nvidia_docker:
+          coverage_flag: "lm"
+          base_dir: "flashlight/app/lm"
 
   ubuntu2004_cuda11_1_docker_flashlight_all_shared_build:
     <<: *gpu
