@@ -23,13 +23,6 @@ commands:
             then
                 sudo docker login -u=$DOCKER_USERNAME -p=$DOCKER_PASSWORD
             fi
-            if [ ! -z "$CODECOV_TOKEN" ]
-            then
-                echo "CODECOV_TOKEN is defined! Token:"
-                echo "$CODECOV_TOKEN"
-            else
-                echo "CODECOV_TOKEN isn't defined"
-            fi
   install_nvidia_docker:
     steps:
       - run:
@@ -120,7 +113,6 @@ commands:
       - run:
           name: "Get code coverage inside of NVIDIA Docker"
           command: |
-            if [[ -z "${CODECOV_TOKEN}" ]]; then echo "CODECOV_TOKEN env var is not defined"; else echo "$CODECOV_TOKEN is defined!"; fi
             sudo docker exec -it --env CODECOV_TOKEN=$CODECOV_TOKEN flashlight bash -c "\
                 DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends lcov curl && \
                 cd /flashlight/build && \
@@ -133,10 +125,6 @@ commands:
                 -F << parameters.coverage_flag >> \
                 -t $CODECOV_TOKEN \
                 || echo 'Codecov did not collect coverage reports'"
-          environment:
-            - CODECOV_TOKEN: "$CODECOV_TOKEN"
-
-
   ############################### vcpkg Commands ###############################
   install_gcc_7:
     steps:
@@ -336,10 +324,6 @@ jobs:
   ubuntu2004_cuda11_1_docker_flashlight_lib:
     <<: *gpu
     steps:
-      - run:
-          name: "Test codecov var"
-          command: |
-            echo "Codecov token is $CODECOV_TOKEN"
       - authenticate_docker
       - install_nvidia_docker
       - checkout
@@ -478,17 +462,6 @@ jobs:
     steps:
       - checkout:
           path: flashlight
-      - run:
-          name: "echo CODECOV TOKEN"
-          command: |
-            echo $CODECOV_TOKEN
-            if [[ -z "${CODECOV_TOKEN}" ]]; then echo "CODECOV_TOKEN env var is not defined"; else echo "$CODECOV_TOKEN is defined!"; fi
-            if [[ -z "$CODECOV_TOKEN" ]]; then echo "CODECOV_TOKEN env var is not defined"; else echo "$CODECOV_TOKEN is defined!"; fi
-            echo "$CODECOV_TOKEN" > /tmp/file.txt
-            echo "Counting characters:"
-            wc -c /tmp/file.txt
-
-
       - flashlight_build_and_install_cpu_backend_from_source
 
   ubuntu2004_cmake10_cpu_docker_flashlight_all:
