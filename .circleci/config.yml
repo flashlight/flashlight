@@ -113,6 +113,7 @@ commands:
       - run:
           name: "Get code coverage inside of NVIDIA Docker"
           command: |
+            if [[ -z "${CODECOV_TOKEN}" ]]; then echo "CODECOV_TOKEN env var is not defined"; fi
             sudo docker exec -it --env CODECOV_TOKEN=$CODECOV_TOKEN flashlight bash -c "\
                 DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends lcov curl && \
                 cd /flashlight/build && \
@@ -127,6 +128,7 @@ commands:
                 || echo 'Codecov did not collect coverage reports'"
           environment:
             - CODECOV_TOKEN: "$CODECOV_TOKEN"
+
 
   ############################### vcpkg Commands ###############################
   install_gcc_7:
@@ -327,6 +329,10 @@ jobs:
   ubuntu2004_cuda11_1_docker_flashlight_lib:
     <<: *gpu
     steps:
+      - run:
+          name: "Test codecov var"
+          command: |
+            echo "Codecov token is $CODECOV_TOKEN"
       - authenticate_docker
       - install_nvidia_docker
       - checkout
