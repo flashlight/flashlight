@@ -6,9 +6,6 @@
 
 version: 2.1
 
-orbs:
-  codecov: codecov/codecov@1.1.5
-
 gpu: &gpu
   machine:
     image: ubuntu-1604-cuda-11.1:202012-01
@@ -25,6 +22,13 @@ commands:
             if [ ! -z "$DOCKER_USERNAME" ]
             then
                 sudo docker login -u=$DOCKER_USERNAME -p=$DOCKER_PASSWORD
+            fi
+            if [ ! -z "$CODECOV_TOKEN" ]
+            then
+                echo "CODECOV_TOKEN is defined! Token:"
+                echo "$CODECOV_TOKEN"
+            else
+                echo "CODECOV_TOKEN isn't defined"
             fi
   install_nvidia_docker:
     steps:
