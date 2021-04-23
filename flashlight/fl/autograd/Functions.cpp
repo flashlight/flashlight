@@ -985,7 +985,7 @@ Variable weightedCategoricalCrossEntropy(
     throw std::invalid_argument(
         "dimension mismatch in categorical cross entropy");
   }
-  if(weight.dims(0) != input.dims(0)) {
+  if (weight.dims(0) != input.dims(0)) {
     throw std::invalid_argument(
         "dimension mismatch in categorical cross entropy");
   }

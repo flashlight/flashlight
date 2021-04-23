@@ -170,7 +170,6 @@ class TransformerDecoder : public Container {
   std::string prettyString() const override;
 
  private:
-
   TransformerDecoder() = default;
   FL_SAVE_LOAD_WITH_BASE(fl::Container)
 };
