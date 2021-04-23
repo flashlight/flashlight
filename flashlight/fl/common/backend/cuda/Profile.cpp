@@ -10,15 +10,17 @@
 #include <cuda_profiler_api.h>
 #include <nvToolsExt.h>
 
+#include "flashlight/fl/common/backend/cuda/CudaUtils.h"
+
 namespace fl {
 namespace detail {
 
 ScopedProfiler::ScopedProfiler() {
-  cudaProfilerStart();
+  FL_CUDA_CHECK(cudaProfilerStart());
 }
 
 ScopedProfiler::~ScopedProfiler() {
-  cudaProfilerStop();
+  FL_CUDA_CHECK(cudaProfilerStop());
 }
 
 ProfileTracer::ProfileTracer(const std::string& name) {
