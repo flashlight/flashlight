@@ -75,7 +75,7 @@ fl::Variable transformerMultiheadAttention(
   }
 
   auto attn = dropout(softmax(scores, 1), pDropout);
-  auto result = matmulNT(attn, v);
+  auto result = matmulNT(attn.as(v.type()), v);
   result = moddims(result, af::dim4(tgtLen, modelDim, bsz));
   result = reorder(result, 1, 2, 0);
   return result;
@@ -142,7 +142,6 @@ std::string MultiheadAttention::prettyString() const {
   ss << Container::prettyString();
   return ss.str();
 }
-
 
 TransformerBaseLayer::TransformerBaseLayer(
     int32_t modelDim,
@@ -224,7 +223,7 @@ std::vector<Variable> TransformerEncoderLayer::forward(
 
 std::string TransformerEncoderLayer::prettyString() const {
   std::ostringstream ss;
-  ss <<  "TransformerEncoderLayer";
+  ss << "TransformerEncoderLayer";
   ss << Container::prettyString();
   return ss.str();
 }
@@ -323,7 +322,7 @@ std::vector<Variable> TransformerDecoderLayer::forward(
 
 std::string TransformerDecoderLayer::prettyString() const {
   std::ostringstream ss;
-  ss <<  "TransformerDecoderLayer";
+  ss << "TransformerDecoderLayer";
   ss << Container::prettyString();
   return ss.str();
 }
@@ -361,7 +360,7 @@ std::vector<Variable> TransformerDecoder::forward(
 }
 std::string TransformerDecoder::prettyString() const {
   std::ostringstream ss;
-  ss <<  "TransformerDecoder";
+  ss << "TransformerDecoder";
   ss << Container::prettyString();
   return ss.str();
 }
@@ -442,7 +441,8 @@ std::vector<Variable> Transformer::forward(
   assert(queryEmbed.dims(1) == src.dims(1));
   assert(queryEmbed.dims(0) == src.dims(0));
 
-  auto tgt = fl::Variable(af::constant(0, queryEmbed.dims()), false);
+  auto tgt =
+      fl::Variable(af::constant(0, queryEmbed.dims(), src.type()), false);
 
   auto memory = encoder_->forward({src, mask, posEmbed});
   auto hs = decoder_->forward({tgt, memory[0], posEmbed, queryEmbed, mask})[0];

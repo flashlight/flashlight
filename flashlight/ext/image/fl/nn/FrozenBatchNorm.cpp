@@ -34,16 +34,15 @@ FrozenBatchNorm::FrozenBatchNorm(
     double eps /* = 1e-5 */,
     bool affine /* = true*/,
     bool trackStats /* = true*/)
-  : BatchNorm(featAxis, featSize, momentum, eps, affine, trackStats)
-{
+    : BatchNorm(featAxis, featSize, momentum, eps, affine, trackStats) {
   BatchNorm::initialize();
 }
 
 Variable FrozenBatchNorm::forward(const Variable& input) {
   auto scale = params_[0] / fl::sqrt(runningVar_ + epsilon_);
   auto bias = params_[1] - runningMean_ * scale;
-  bias = fl::moddims(bias, {1, 1, bias.dims(0), 1});
-  scale = fl::moddims(scale, {1, 1, scale.dims(0), 1});
+  bias = fl::moddims(bias, {1, 1, bias.dims(0), 1}).as(input.type());
+  scale = fl::moddims(scale, {1, 1, scale.dims(0), 1}).as(input.type());
   return (input * fl::tileAs(scale, input)) + fl::tileAs(bias, input);
 }
 

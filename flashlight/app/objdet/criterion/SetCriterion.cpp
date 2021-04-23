@@ -91,7 +91,7 @@ af::array ravelIndices(
 
 af::array index(const af::array& in, const std::vector<af::array>& idxs) {
   auto linearIndices = ravelIndices(idxs, in.dims());
-  af::array output = af::constant(0.0, linearIndices.dims());
+  af::array output = af::constant(0.0, linearIndices.dims(), in.type());
   output(af::seq(linearIndices.elements())) = in(linearIndices);
   return output;
 }
@@ -103,10 +103,11 @@ fl::Variable index(const fl::Variable& in, std::vector<af::array> idxs) {
                           std::vector<Variable>& inputs,
                           const Variable& grad_output) {
     if (!inputs[0].isGradAvailable()) {
-      auto grad = af::constant(0.0, idims);
+      auto grad = af::constant(0.0, idims, inputs[0].type());
       inputs[0].addGrad(Variable(grad, false));
+      return;
     }
-    auto grad = fl::Variable(af::constant(0, idims), false);
+    auto grad = fl::Variable(af::constant(0, idims, inputs[0].type()), false);
     auto linearIndices = ravelIndices(idxs, idims);
     grad.array()(linearIndices) =
         grad_output.array()(af::seq(linearIndices.elements()));
@@ -203,8 +204,11 @@ SetCriterion::LossDict SetCriterion::lossBoxes(
     const int numBoxes) {
   auto srcIdx = this->getSrcPermutationIdx(indices);
   if (srcIdx.first.isempty()) {
-    return {{"lossGiou", fl::Variable(af::constant(0, {1, 1, 1, 1}), false)},
-            {"lossBbox", fl::Variable(af::constant(0, {1, 1, 1, 1}), false)}};
+    return {
+        {"lossGiou",
+         fl::Variable(af::constant(0, {1, 1, 1, 1}, predBoxes.type()), false)},
+        {"lossBbox",
+         fl::Variable(af::constant(0, {1, 1, 1, 1}, predBoxes.type()), false)}};
   }
   auto colIdxs = af::moddims(srcIdx.second, {1, srcIdx.second.dims(0)});
   auto batchIdxs = af::moddims(srcIdx.first, {1, srcIdx.first.dims(0)});
@@ -250,7 +254,7 @@ SetCriterion::LossDict SetCriterion::lossLabels(
   auto target_classes_full = af::constant(
       numClasses_,
       {predLogits.dims(1), predLogits.dims(2), predLogits.dims(3)},
-      f32);
+      predLogits.type());
 
   int i = 0;
   for (auto idx : indices) {
@@ -267,7 +271,7 @@ SetCriterion::LossDict SetCriterion::lossLabels(
   auto weightVar = Variable(weight, false);
   auto lossCe = weightedCategoricalCrossEntropy(
       softmaxed, fl::Variable(target_classes_full, false), weightVar, -1);
-  return {{"lossCe", lossCe}};
+  return {{"lossCe", lossCe.as(predLogits.type())}};
 }
 
 std::unordered_map<std::string, float> SetCriterion::getWeightDict() {

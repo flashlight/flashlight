@@ -11,6 +11,7 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
+#include "flashlight/app/common/Runtime.h"
 #include "flashlight/app/objdet/common/Defines.h"
 #include "flashlight/app/objdet/criterion/SetCriterion.h"
 #include "flashlight/app/objdet/dataset/BoxUtils.h"
@@ -19,7 +20,6 @@
 #include "flashlight/app/objdet/nn/Detr.h"
 #include "flashlight/app/objdet/nn/Transformer.h"
 #include "flashlight/ext/common/DistributedUtils.h"
-#include "flashlight/app/common/Runtime.h"
 #include "flashlight/ext/common/Serializer.h"
 #include "flashlight/ext/image/af/Transforms.h"
 #include "flashlight/fl/meter/meters.h"
@@ -30,9 +30,9 @@ using namespace fl;
 using namespace fl::ext::image;
 using namespace fl::app::objdet;
 
-using fl::ext::Serializer;
 using fl::app::getRunFile;
 using fl::app::serializeGflags;
+using fl::ext::Serializer;
 using fl::lib::fileExists;
 using fl::lib::format;
 using fl::lib::getCurrentDate;
@@ -85,11 +85,35 @@ DEFINE_string(
     exp_rundir,
     "",
     "Directory to dump images to run evaluation script on");
-DEFINE_string(
-    eval_command,
-    "",
-    "Command to run  on dumped tensors");
+DEFINE_string(eval_command, "", "Command to run  on dumped tensors");
 DEFINE_bool(eval_only, false, "Weather to just run eval");
+
+/* AMP OPTIONS */
+DEFINE_bool(
+    fl_amp_use_mixed_precision,
+    false,
+    "[train] Use mixed precision for training - scale loss and gradients up and down "
+    "by a scale factor that changes over time. If no fl optim mode is "
+    "specified with --fl_optim_mode when passing this flag, automatically "
+    "sets the optim mode to O1.");
+DEFINE_double(
+    fl_amp_scale_factor,
+    65536.,
+    "[train] Starting scale factor to use for loss scaling "
+    " with mixed precision training");
+DEFINE_uint64(
+    fl_amp_scale_factor_update_interval,
+    2000,
+    "[train] Update interval for adjusting loss scaling in mixed precision training");
+DEFINE_double(
+    fl_amp_max_scale_factor,
+    65536.,
+    "[train] Maximum value for the loss scale factor in mixed precision training");
+DEFINE_string(
+    fl_optim_mode,
+    "",
+    "[train] Sets the flashlight optimization mode. "
+    "Optim modes can be O1, O2, or O3.");
 
 // Utility function that overrides flags file with command line arguments
 void parseCmdLineFlagsWrapper(int argc, char** argv) {
@@ -111,8 +135,8 @@ void evalLoop(
   mkdir_command << "mkdir -p " << FLAGS_eval_dir << fl::getWorldRank();
   system(mkdir_command.str().c_str());
   for (auto& sample : *dataset) {
-    std::vector<Variable> input = {fl::Variable(sample.images, false),
-                                   fl::Variable(sample.masks, false)};
+    std::vector<Variable> input = {
+        fl::Variable(sample.images, false), fl::Variable(sample.masks, false)};
     auto output = model->forward(input);
     std::stringstream ss;
     ss << FLAGS_eval_dir << fl::getWorldRank() << "/detection" << idx
@@ -244,6 +268,19 @@ int main(int argc, char** argv) {
   const int worldRank = fl::getWorldRank();
   const int worldSize = fl::getWorldSize();
 
+  if (FLAGS_fl_amp_use_mixed_precision) {
+    FL_LOG_MASTER(INFO)
+        << "Mixed precision training enabled. Will perform loss scaling.";
+    auto flOptimLevel = FLAGS_fl_optim_mode.empty()
+        ? fl::OptimLevel::DEFAULT
+        : fl::OptimMode::toOptimLevel(FLAGS_fl_optim_mode);
+    fl::OptimMode::get().setOptimLevel(flOptimLevel);
+  }
+  int scaleCounter = 1;
+  double scaleFactor =
+      FLAGS_fl_amp_use_mixed_precision ? FLAGS_fl_amp_scale_factor : 1.;
+  fl::DynamicBenchmark::setBenchmarkMode(true);
+
   ////////////////////////////
   // Create models
   ////////////////////////////
@@ -260,7 +297,7 @@ int main(int argc, char** argv) {
   std::shared_ptr<Resnet50Backbone> backbone;
   if (FLAGS_model_pretrained) {
     std::string modelPath =
-        "/checkpoint/padentomasello/models/resnet50/pretrained2";
+        "/private/home/padentomasello/models/resnet50/pretrained";
     fl::load(modelPath, backbone);
   } else {
     backbone = std::make_shared<Resnet50Backbone>();
@@ -389,45 +426,75 @@ int main(int argc, char** argv) {
   ////////////////
   // Training loop
   //////////////
+  auto dataType = af::dtype::f32;
+  if (FLAGS_fl_amp_use_mixed_precision && FLAGS_fl_optim_mode.empty()) {
+    // In case AMP is activated with DEFAULT mode,
+    // we manually cast input to fp16.
+    dataType = af::dtype::f16;
+  }
   for (int epoch = startEpoch; epoch < FLAGS_train_epochs; epoch++) {
     int idx = 0;
     std::map<std::string, AverageValueMeter> meters;
-    std::map<std::string, TimeMeter> timers;
 
-    timers["total"].resume();
+    fl::TimeMeter sampleTimerMeter{true};
+    fl::TimeMeter fwdTimeMeter{true};
+    fl::TimeMeter fwdBackboneTimeMeter{true};
+    fl::TimeMeter critFwdTimeMeter{true};
+    fl::TimeMeter bwdTimeMeter{true};
+    fl::TimeMeter optimTimeMeter{true};
+    fl::TimeMeter timeMeter{true};
+
     lrScheduler(epoch);
     train_ds->resample();
     for (auto& sample : *train_ds) {
-      std::vector<Variable> input = {fl::Variable(sample.images, false),
-                                     fl::Variable(sample.masks, false)};
-      auto output = detr->forward(input);
-
-      timers["forward"].stop();
+      timeMeter.resume();
 
       /////////////////////////
-      // Criterion
+      // Sample
       /////////////////////////
+      sampleTimerMeter.resume();
+      auto input = fl::Variable(sample.images, false);
+      auto mask = fl::Variable(sample.masks, false);
+      input = input.as(dataType);
       std::vector<Variable> targetBoxes(sample.target_boxes.size());
       std::vector<Variable> targetClasses(sample.target_labels.size());
-
       std::transform(
           sample.target_boxes.begin(),
           sample.target_boxes.end(),
           targetBoxes.begin(),
-          [](const af::array& in) { return fl::Variable(in, false); });
-
+          [&dataType](const af::array& in) {
+            return fl::Variable(in.as(dataType), false);
+          });
       std::transform(
           sample.target_labels.begin(),
           sample.target_labels.end(),
           targetClasses.begin(),
-          [](const af::array& in) { return fl::Variable(in, false); });
+          [&dataType](const af::array& in) {
+            return fl::Variable(in.as(dataType), false);
+          });
+      af::sync();
+      sampleTimerMeter.stopAndIncUnit();
 
-      timers["criterion"].resume();
+      /////////////////////////
+      // Forward
+      /////////////////////////
+      fwdBackboneTimeMeter.resume();
+      input = detr->forwardBackbone(input);
+      af::sync();
+      fwdBackboneTimeMeter.stopAndIncUnit();
 
+      fwdTimeMeter.resume();
+      auto output = detr->forward({input, mask});
+      af::sync();
+      fwdTimeMeter.stopAndIncUnit();
+
+      /////////////////////////
+      // Criterion
+      /////////////////////////
+      critFwdTimeMeter.resume();
       auto loss =
           criterion.forward(output[1], output[0], targetBoxes, targetClasses);
-
-      auto accumLoss = fl::Variable(af::constant(0, 1), true);
+      auto accumLoss = fl::Variable(af::constant(0, 1, dataType), true);
       for (auto losses : loss) {
         fl::Variable scaled_loss = weightDict[losses.first] * losses.second;
         meters[losses.first].add(losses.second.array());
@@ -435,56 +502,136 @@ int main(int argc, char** argv) {
         accumLoss = scaled_loss + accumLoss;
       }
       meters["sum"].add(accumLoss.array());
-      timers["criterion"].stop();
+
+      if (FLAGS_fl_amp_use_mixed_precision) {
+        ++scaleCounter;
+        accumLoss = accumLoss * scaleFactor;
+
+        auto scaledLoss = accumLoss.array() / fl::getWorldSize();
+        if (FLAGS_distributed_enable) {
+          fl::allReduce(scaledLoss);
+        }
+        if (fl::app::isInvalidArray(scaledLoss)) {
+          FL_LOG_MASTER(INFO) << "AMP: Loss has NaN values";
+          scaleFactor = scaleFactor / 2.0f;
+          FL_LOG_MASTER(INFO)
+              << "AMP: Scale factor decreased (loss). New value :\t "
+              << scaleFactor;
+          continue;
+        }
+      }
+      af::sync();
+      critFwdTimeMeter.stopAndIncUnit();
 
       /////////////////////////
-      // Backward and update gradients
+      // Backward
       //////////////////////////
-      timers["backward"].resume();
-      accumLoss.backward();
-      timers["backward"].stop();
+      opt->zeroGrad();
+      opt2->zeroGrad();
 
+      bwdTimeMeter.resume();
+      accumLoss.backward();
       if (FLAGS_distributed_enable) {
         reducer->finalize();
       }
 
-      fl::clipGradNorm(detr->params(), 0.1);
+      bool skipBatch = false;
+      if (FLAGS_fl_amp_use_mixed_precision) {
+        for (auto& p : detr->params()) {
+          if (!p.isGradAvailable()) {
+            continue;
+            // p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
+          }
+          p.grad() = p.grad() / scaleFactor;
+          if (fl::app::isInvalidArray(p.grad().array())) {
+            FL_LOG_MASTER(INFO) << "AMP: Grad has NaN values";
+            if (scaleFactor >= fl::kAmpMinimumScaleFactorValue) {
+              scaleFactor = scaleFactor / 2.0f;
+              FL_LOG_MASTER(INFO)
+                  << "AMP: Scale factor decreased (grad). New value:\t"
+                  << scaleFactor;
+              skipBatch = true;
+            } else {
+              FL_LOG(FATAL)
+                  << "Minimum loss scale reached: "
+                  << fl::kAmpMinimumScaleFactorValue
+                  << " with over/underflowing gradients. Lowering the "
+                  << "learning rate, using gradient clipping, or "
+                  << "increasing the batch size can help resolve "
+                  << "loss explosion.";
+            }
+            scaleCounter = 1;
+            skipBatch = true;
+            break;
+          }
+        }
+      }
+      if (skipBatch) {
+        continue;
+      }
+      af::sync();
+      bwdTimeMeter.stopAndIncUnit();
 
+      optimTimeMeter.resume();
+      fl::clipGradNorm(detr->params(), 0.1);
       opt->step();
       opt2->step();
+      optimTimeMeter.stopAndIncUnit();
 
-      opt->zeroGrad();
-      opt2->zeroGrad();
+      timeMeter.stopAndIncUnit();
       //////////////////////////
       // Metrics
       /////////////////////////
       if (++idx % FLAGS_metric_iters == 0) {
-        double total_time = timers["total"].value();
+        double total_time = timeMeter.value();
         double sample_per_second =
-            (idx * FLAGS_data_batch_size * worldSize) / total_time;
-        double forward_time = timers["forward"].value();
-        double backward_time = timers["backward"].value();
-        double criterion_time = timers["criterion"].value();
+            (FLAGS_data_batch_size * worldSize) / total_time;
+        double sample_time = sampleTimerMeter.value();
+        double forward_backbone_time = fwdBackboneTimeMeter.value();
+        double forward_time = fwdTimeMeter.value();
+        double criterion_time = critFwdTimeMeter.value();
+        double backward_time = bwdTimeMeter.value();
+        double optimize_time = optimTimeMeter.value();
         std::stringstream ss;
         ss << "Epoch: " << epoch << std::setprecision(5) << " | Batch: " << idx
-           << " | total_time: " << total_time << " | idx: " << idx
-           << " | sample_per_second: " << sample_per_second
-           << " | forward_time_avg: " << forward_time / idx
-           << " | backward_time_avg: " << backward_time / idx
-           << " | criterion_time_avg: " << criterion_time / idx;
+           << " | idx: " << idx << " | sample_per_second: " << sample_per_second
+           << " | total_time: " << total_time * 1000
+           << " | sample_time_avg: " << sample_time * 1000
+           << " | forward_backbone_time_avg: " << forward_backbone_time * 1000
+           << " | forward_time_avg: " << forward_time * 1000
+           << " | criterion_time_avg: " << criterion_time * 1000
+           << " | backward_time_avg: " << backward_time * 1000
+           << " | optimize_time_avg: " << optimize_time * 1000;
         for (auto meter : meters) {
           fl::ext::syncMeter(meter.second);
           ss << " | " << meter.first << ": " << meter.second.value()[0];
         }
         ss << std::endl;
         FL_LOG_MASTER(INFO) << ss.str();
+
+        timeMeter.reset();
+        sampleTimerMeter.reset();
+        fwdTimeMeter.reset();
+        critFwdTimeMeter.reset();
+        bwdTimeMeter.reset();
+        optimTimeMeter.reset();
+        for (auto meter : meters) {
+          meter.second.reset();
+        }
       }
-    }
-    for (auto timer : timers) {
-      timer.second.reset();
-    }
-    for (auto meter : meters) {
-      meter.second.reset();
+
+      if (FLAGS_fl_amp_use_mixed_precision &&
+          scaleFactor < FLAGS_fl_amp_max_scale_factor) {
+        if (scaleCounter % FLAGS_fl_amp_scale_factor_update_interval == 0) {
+          scaleFactor *= 2;
+          FL_VLOG(2) << "AMP: Scale factor doubled. New value:\t"
+                     << scaleFactor;
+        } else {
+          scaleFactor += 2;
+          FL_VLOG(3) << "AMP: Scale factor incremented. New value\t"
+                     << scaleFactor;
+        }
+      }
     }
     if (fl::getWorldRank() == 0) {
       std::string filename =

@@ -88,24 +88,30 @@ Detr::Detr(
 }
 
 std::vector<Variable> Detr::forward(const std::vector<Variable>& input) {
-  auto features = backbone_->forward({input[0]})[1];
+  // input: {feature, mask}
   fl::Variable mask = fl::Variable(
       af::resize(
           input[1].array(),
-          features.dims(0),
-          features.dims(1),
+          input[0].dims(0),
+          input[0].dims(1),
           AF_INTERP_NEAREST),
       true);
-  auto backboneFeatures = input;
-  auto inputProjection = inputProj_->forward(features);
+  auto inputProjection = inputProj_->forward(input[0]);
   auto posEmbed = posEmbed_->forward({mask})[0];
   auto hs = transformer_->forward(
-      inputProjection, mask, queryEmbed_->param(0), posEmbed);
+      inputProjection,
+      mask.as(inputProjection.type()),
+      queryEmbed_->param(0).as(inputProjection.type()),
+      posEmbed.as(inputProjection.type()));
 
   auto outputClasses = classEmbed_->forward(hs[0]);
   auto outputCoord = sigmoid(bboxEmbed_->forward(hs)[0]);
 
   return {outputClasses, outputCoord};
+}
+
+Variable Detr::forwardBackbone(const Variable& input) {
+  return backbone_->forward({input})[1];
 }
 
 std::string Detr::prettyString() const {
