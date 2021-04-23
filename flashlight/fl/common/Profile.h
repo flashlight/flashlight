@@ -49,7 +49,7 @@ class ProfileTracer {
   fl::detail::ProfileTracer _FL_PROFILE_CAT(profileTracer, __LINE__)(name);
 
 #define FL_SCOPED_PROFILE() \
-  fl::detail::ScopedProfiler _FL_PROFILE_CAT(scopedProfile, __LINE__)();
+  fl::detail::ScopedProfiler _FL_PROFILE_CAT(scopedProfile, __LINE__);
 
 #else
 #define FL_PROFILE_TRACE(_)
