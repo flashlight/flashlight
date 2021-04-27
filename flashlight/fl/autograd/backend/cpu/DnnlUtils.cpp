@@ -14,6 +14,7 @@
 
 #include "flashlight/fl/autograd/backend/cpu/DnnlUtils.h"
 #include "flashlight/fl/common/Defines.h"
+#include "flashlight/fl/tensor/Compute.h"
 
 #if FL_BACKEND_OPENCL
 #include "flashlight/fl/common/OpenClUtils.h"
