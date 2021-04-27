@@ -12,6 +12,7 @@
 
 #include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/distributed/distributed.h"
+#include "flashlight/fl/tensor/Compute.h"
 
 using namespace fl;
 
