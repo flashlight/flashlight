@@ -428,7 +428,7 @@ int main(int argc, char** argv) {
         input = input.as(f16);
       }
 
-      af::sync();
+      fl::sync();
       sampleTimerMeter.stopAndIncUnit();
 
       Variable loss;
@@ -462,7 +462,7 @@ int main(int argc, char** argv) {
             continue;
           }
         }
-        af::sync();
+        fl::sync();
         fwdTimeMeter.stopAndIncUnit();
         critFwdTimeMeter.stopAndIncUnit();
 
@@ -501,7 +501,7 @@ int main(int argc, char** argv) {
             }
           }
         }
-        af::sync();
+        fl::sync();
         bwdTimeMeter.stopAndIncUnit();
         if (retrySample) {
           continue;

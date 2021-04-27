@@ -194,8 +194,7 @@ void transformerFwd(bool isfp16) {
 
   auto tr =
       Transformer(c, c / nheads, c, nheads, timesteps, 0.2, 0.1, true, false);
-  auto input =
-      Variable(af::randu(c, timesteps, batchsize, 1, dtype), false);
+  auto input = Variable(af::randu(c, timesteps, batchsize, 1, dtype), false);
 
   fl::Variable padMask;
   auto output = tr.forward({input, padMask});
@@ -229,8 +228,7 @@ void conformerFwd(bool isfp16) {
   auto dtype = isfp16 ? af::dtype::f16 : af::dtype::f32;
 
   auto tr = Conformer(c, c / nheads, c, nheads, timesteps, 33, 0.2, 0.1);
-  auto input =
-      Variable(af::randu(c, timesteps, batchsize, 1, dtype), false);
+  auto input = Variable(af::randu(c, timesteps, batchsize, 1, dtype), false);
 
   auto output = tr.forward({input, Variable()});
   if (OptimMode::get().getOptimLevel() == OptimLevel::O3) {
@@ -262,8 +260,7 @@ void positionEmbeddingFwd(bool isfp16) {
   auto dtype = isfp16 ? af::dtype::f16 : af::dtype::f32;
 
   auto posemb = PositionEmbedding(csz, timesteps, 0.5);
-  auto input =
-      Variable(af::randu(csz, timesteps, batchsize, 1, dtype), false);
+  auto input = Variable(af::randu(csz, timesteps, batchsize, 1, dtype), false);
 
   auto output = posemb.forward({input});
 
@@ -293,8 +290,7 @@ void sinusoidalPositionEmbeddingFwd(bool isfp16) {
 
   auto posemb = SinusoidalPositionEmbedding(csz, 2.);
   auto input =
-      Variable(af::randu(csz, timesteps, batchsize, 1, dtype), false) -
-      0.5;
+      Variable(af::randu(csz, timesteps, batchsize, 1, dtype), false) - 0.5;
 
   auto output = posemb.forward({input});
 

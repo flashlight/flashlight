@@ -335,7 +335,7 @@ void Trainer::trainStep() {
   // 2. Forward
   fwdTimeMeter_.resume();
   auto output = network_->forward({input, fl::noGrad(inputSizes)}).front();
-  af::sync();
+  fl::sync();
   critFwdTimeMeter_.resume();
   auto loss = criterion_->forward({output, target}).front();
 
@@ -356,7 +356,7 @@ void Trainer::trainStep() {
       skipBatch = true;
     }
   }
-  af::sync();
+  fl::sync();
   fwdTimeMeter_.stopAndIncUnit();
   critFwdTimeMeter_.stopAndIncUnit();
   if (skipBatch) {
@@ -407,7 +407,7 @@ void Trainer::trainStep() {
       }
     }
   }
-  af::sync();
+  fl::sync();
   bwdTimeMeter_.stopAndIncUnit();
   if (skipBatch) {
     return;
@@ -417,7 +417,7 @@ void Trainer::trainStep() {
   optimTimeMeter_.resume();
   fl::clipGradNorm(parameters_, FLAGS_train_max_grad_norm);
   optimizer_->step();
-  af::sync();
+  fl::sync();
   optimTimeMeter_.stopAndIncUnit();
 
   if (FLAGS_fl_amp_use_mixed_precision &&

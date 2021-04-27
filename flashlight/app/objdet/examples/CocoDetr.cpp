@@ -472,7 +472,7 @@ int main(int argc, char** argv) {
           [&dataType](const af::array& in) {
             return fl::Variable(in.as(dataType), false);
           });
-      af::sync();
+      fl::sync();
       sampleTimerMeter.stopAndIncUnit();
 
       /////////////////////////
@@ -480,12 +480,12 @@ int main(int argc, char** argv) {
       /////////////////////////
       fwdBackboneTimeMeter.resume();
       input = detr->forwardBackbone(input);
-      af::sync();
+      fl::sync();
       fwdBackboneTimeMeter.stopAndIncUnit();
 
       fwdTimeMeter.resume();
       auto output = detr->forward({input, mask});
-      af::sync();
+      fl::sync();
       fwdTimeMeter.stopAndIncUnit();
 
       /////////////////////////
@@ -520,7 +520,7 @@ int main(int argc, char** argv) {
           continue;
         }
       }
-      af::sync();
+      fl::sync();
       critFwdTimeMeter.stopAndIncUnit();
 
       /////////////////////////
@@ -569,7 +569,7 @@ int main(int argc, char** argv) {
       if (skipBatch) {
         continue;
       }
-      af::sync();
+      fl::sync();
       bwdTimeMeter.stopAndIncUnit();
 
       optimTimeMeter.resume();

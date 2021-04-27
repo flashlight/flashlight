@@ -292,19 +292,19 @@ int main(int argc, char** argv) {
         inputs = inputs.as(f16);
       }
       auto target = noGrad(example[kImagenetTargetIdx]);
-      af::sync();
+      fl::sync();
       sampleTimerMeter.stopAndIncUnit();
 
       // Get the activations from the model.
       fwdTimeMeter.resume();
       auto output = model->forward(inputs);
-      af::sync();
+      fl::sync();
       fwdTimeMeter.stopAndIncUnit();
 
       // Compute and record the loss.
       critFwdTimeMeter.resume();
       auto loss = criterion(output, target);
-      af::sync();
+      fl::sync();
       critFwdTimeMeter.stopAndIncUnit();
 
       if (FLAGS_fl_amp_use_mixed_precision) {
@@ -336,7 +336,7 @@ int main(int argc, char** argv) {
       if (FLAGS_distributed_enable) {
         reducer->finalize();
       }
-      af::sync();
+      fl::sync();
       bwdTimeMeter.stopAndIncUnit();
 
       optimTimeMeter.resume();
@@ -373,7 +373,7 @@ int main(int argc, char** argv) {
       }
 
       opt.step();
-      af::sync();
+      fl::sync();
       optimTimeMeter.stopAndIncUnit();
       timeMeter.stopAndIncUnit();
 

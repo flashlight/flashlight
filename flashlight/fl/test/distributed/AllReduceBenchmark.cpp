@@ -39,11 +39,11 @@ int main() {
     for (auto& size : sizes) {
       for (size_t i = 0; i < kNumIters; ++i) {
         af::array in = af::randu(size);
-        in.eval();
-        af::sync();
+        fl::eval(in);
+        fl::sync();
         auto start = af::timer::start();
         allReduce(in);
-        af::sync();
+        fl::sync();
         times[i] = af::timer::stop(start);
       }
       auto timesAf = af::array(kNumIters, times.data());

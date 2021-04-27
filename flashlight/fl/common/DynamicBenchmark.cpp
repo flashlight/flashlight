@@ -7,6 +7,7 @@
  */
 
 #include "flashlight/fl/common/DynamicBenchmark.h"
+#include "flashlight/fl/tensor/Compute.h"
 
 namespace fl {
 
@@ -29,12 +30,12 @@ void DynamicBenchmark::audit(
 }
 
 void DynamicBenchmark::start() {
-  af::sync();
+  fl::sync();
   currentTimer_ = af::timer::start();
 }
 
 void DynamicBenchmark::stop(bool incrementCount) {
-  af::sync();
+  fl::sync();
   auto elapsedTime = af::timer::stop(currentTimer_);
   options_->accumulateTimeToCurrentOption(elapsedTime, incrementCount);
 }

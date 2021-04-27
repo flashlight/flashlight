@@ -130,7 +130,7 @@ void executeNetwork(
   // enforcing that inputs to computation are ready; we're required to wait
   // until all AF operations are done
   if (cpuBackend) {
-    af::sync();
+    fl::sync();
   }
   for (size_t i = 0; i < net.size(); ++i) {
     net.at(i).execute(DnnlStream::getInstance().getStream(), netArgs.at(i));
