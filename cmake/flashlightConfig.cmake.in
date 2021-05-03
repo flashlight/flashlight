@@ -22,15 +22,17 @@
 # Dependencies
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
 include(CMakeFindDependencyMacro)
-# Lib dependencies
-find_dependency(OpenMP)
-find_dependency(kenlm)
-find_dependency(Threads)
-find_dependency(FFTW3)
-if (@FL_LIBRARIES_USE_MKL@)
-  find_dependency(MKL)
-else()
-  find_dependency(CBLAS)
+if (@FL_BUILD_LIBRARIES@)
+  # Lib dependencies
+  find_dependency(OpenMP)
+  find_dependency(kenlm)
+  find_dependency(Threads)
+  find_dependency(FFTW3)
+  if (@FL_LIBRARIES_USE_MKL@)
+    find_dependency(MKL)
+  else()
+    find_dependency(CBLAS)
+  endif()
 endif()
 # Core dependencies
 if (@FL_BUILD_CORE@)
@@ -52,7 +54,15 @@ if (@FL_USE_CUDA@)
     find_dependency(NCCL)
   endif()
 endif()
-# Additional ASR dependencies
+# App dependencies
+if (@FL_BUILD_APP_ASR@ OR
+    @FL_BUILD_APP_IMGCLASS@ OR
+    @FL_BUILD_APP_OBJDET@ OR
+    @FL_BUILD_APP_LM@)
+  find_dependency(gflags)
+  find_dependency(GLOG)
+endif()
+# Additional app-specific dependencies
 if (@FL_BUILD_APP_ASR@)
   find_dependency(SndFile)
 endif()
