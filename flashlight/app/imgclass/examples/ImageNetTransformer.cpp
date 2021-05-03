@@ -67,6 +67,8 @@ DEFINE_double(
     train_aug_p_switchmix,
     0.5,
     "Probability of switching between cutmix and mixup");
+DEFINE_bool(train_finetune, true, "Fine-tune");
+DEFINE_uint64(train_imgsize, 224, "Fine-tune image size");
 
 DEFINE_bool(distributed_enable, true, "Enable distributed training");
 DEFINE_int64(
@@ -89,6 +91,7 @@ DEFINE_string(
 
 DEFINE_string(exp_checkpoint_path, "/tmp/model", "Checkpointing prefix path");
 DEFINE_int64(exp_checkpoint_epoch, -1, "Checkpoint epoch to load from");
+DEFINE_string(exp_finetune_path, "/tmp/model", "Checkpointing prefix path");
 
 DEFINE_int64(model_layers, 12, "Number of transformer layers");
 DEFINE_int64(
@@ -198,18 +201,16 @@ int main(int argc, char** argv) {
   /////////////////////////
   FL_LOG_MASTER(INFO) << "Creating dataset";
 
-  // TODO: only support training with image shape 224 x 224 in this example
-  const int imageSize = 224;
   // Conventional image resize parameter used for evaluation
-  const int randomResizeMin = imageSize / .875;
+  const int randomResizeMin = FLAGS_train_imgsize / .875;
   auto fillImg = af::tile(
       af::array(1, 1, 3, 1, fl::app::image::kImageNetMean.data()),
-      imageSize,
-      imageSize);
+      FLAGS_train_imgsize,
+      FLAGS_train_imgsize);
 
   ImageTransform trainTransforms = compose(
       {fl::ext::image::randomResizeCropTransform(
-           imageSize,
+           FLAGS_train_imgsize,
            0.08, // scaleLow
            1.0, // scaleHigh
            3. / 4., // ratioLow
@@ -225,7 +226,7 @@ int main(int argc, char** argv) {
 
   ImageTransform valTransforms = compose(
       {fl::ext::image::resizeTransform(randomResizeMin),
-       fl::ext::image::centerCropTransform(imageSize),
+       fl::ext::image::centerCropTransform(FLAGS_train_imgsize),
        fl::ext::image::normalizeImage(
            fl::app::image::kImageNetMean, fl::app::image::kImageNetStd)});
 
@@ -263,16 +264,22 @@ int main(int argc, char** argv) {
   /////////////////////////
   af::setSeed(FLAGS_train_seed); // Making sure the models are initialized in
                                  // the same way across different processes
-  auto model = std::make_shared<fl::ext::image::ViT>(
-      FLAGS_model_layers,
-      FLAGS_model_hidden_emb_size,
-      FLAGS_model_mlp_size,
-      FLAGS_model_heads,
-      FLAGS_train_dropout,
-      FLAGS_train_layerdrop,
-      labelMap.size());
+  // auto model = std::make_shared<fl::ext::image::ViT>(
+  //     FLAGS_model_layers,
+  //     FLAGS_model_hidden_emb_size,
+  //     FLAGS_model_mlp_size,
+  //     FLAGS_model_heads,
+  //     FLAGS_train_dropout,
+  //     FLAGS_train_layerdrop,
+  //     labelMap.size());
+
+  std::shared_ptr<fl::ext::image::ViT> model;
+  fl::load(FLAGS_exp_finetune_path, model);
+  model->resizePosEmd(24 * 24);
+
   FL_LOG_MASTER(INFO) << "[model with parameters " << fl::numTotalParams(model)
                       << "] " << model->prettyString();
+
   fl::allReduceParameters(model);
   fl::distributeModuleGrads(model, reducer);
 
@@ -311,17 +318,17 @@ int main(int argc, char** argv) {
   /////////////////////////
   auto lrScheduler = [&optWithWeightDecay, &optNoWeightDecay](int epoch) {
     // following https://git.io/JYOOV
-    double lr;
-    if (epoch <= FLAGS_train_warmup_epochs) {
-      lr = (epoch - 1) * FLAGS_train_lr / FLAGS_train_warmup_epochs;
-      lr = std::max(lr, 1e-6);
-    } else {
-      lr = 1e-5 +
-          0.5 * (FLAGS_train_lr - 1e-5) *
-              (std::cos(
-                   ((double)epoch - 1) / ((double)FLAGS_train_epochs) * M_PI) +
-               1);
-    }
+    double lr = FLAGS_train_lr;
+    // if (epoch <= FLAGS_train_warmup_epochs) {
+    //   lr = (epoch - 1) * FLAGS_train_lr / FLAGS_train_warmup_epochs;
+    //   lr = std::max(lr, 1e-6);
+    // } else {
+    //   lr = 1e-5 +
+    //       0.5 * (FLAGS_train_lr - 1e-5) *
+    //           (std::cos(
+    //                ((double)epoch - 1) / ((double)FLAGS_train_epochs) * M_PI) +
+    //            1);
+    // }
     optWithWeightDecay.setLr(lr);
     optNoWeightDecay.setLr(lr);
   };

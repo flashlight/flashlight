@@ -61,6 +61,8 @@ class ViT : public fl::Container {
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;
 
+  void resizePosEmd(const int length);
+
   std::string prettyString() const override;
 };
 

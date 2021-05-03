@@ -93,6 +93,26 @@ std::vector<fl::Variable> ViT::forward(
   return {output};
 }
 
+void ViT::resizePosEmd(const int length) {
+  af::array posEmbArr = params_[1].array();
+  af::array clsEmb = posEmbArr.col(0);
+  af::array posEmb = posEmbArr.cols(1, posEmbArr.dims(1) - 1);
+
+  // std::cout << "1 " << posEmb.dims() << std::endl;
+  // af_print(posEmb(0, af::seq(0, 13), 0));
+  // af_print(posEmb(0, af::seq(182, 195), 0));
+  auto newPosEmb = af::resize(posEmb, posEmbArr.dims(0), length, AF_INTERP_BICUBIC);
+  // std::cout << "2 " << newPosEmb.dims() << std::endl;
+  // af_print(newPosEmb(0, af::seq(0, 23), 0));
+  // af_print(newPosEmb(0, af::seq(528, 575), 0));
+
+  posEmbArr = af::join(1, clsEmb, newPosEmb);
+  // std::cout << posEmbArr.dims() << std::endl;
+
+  params_[1] = fl::Variable(posEmbArr, true);
+  // exit(1);
+}
+
 std::string ViT::prettyString() const {
   std::ostringstream ss;
   ss << "ViT (" << nClasses_ << " classes) with " << nLayers_
