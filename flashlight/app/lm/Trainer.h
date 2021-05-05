@@ -50,6 +50,7 @@ DECLARE_string(distributed_rndv_filepath);
 DECLARE_string(exp_rundir);
 DECLARE_string(exp_model_name);
 DECLARE_string(exp_init_model_path);
+DECLARE_int64(exp_log_mem_ops_interval);
 
 /* DATA OPTIONS */
 DECLARE_string(data_dir);
@@ -141,6 +142,7 @@ class Trainer {
   fl::AverageValueMeter tokenCountMeter_;
 
   std::ofstream logWriter_;
+  std::ofstream memLogWriter_;
 
   /* Initializers */
   void initTrain();

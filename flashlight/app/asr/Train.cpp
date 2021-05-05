@@ -201,20 +201,9 @@ int main(int argc, char** argv) {
   FL_LOG_MASTER(INFO) << "Experiment runidx: " << runIdx;
 
   // log memory manager operations.
-  std::ofstream memLog;
   if (FLAGS_fl_log_mem_ops_interval > 0 && isMaster) {
-    auto* curMemMgr =
-        fl::MemoryManagerInstaller::currentlyInstalledMemoryManager();
-    if (curMemMgr) {
-      memLog.open(getRunFile("mem", runIdx, runPath));
-      if (!memLog) {
-        LOG(FATAL) << "failed to open memory log file="
-                   << getRunFile("mem", runIdx, runPath) << " for writing";
-      }
-      curMemMgr->setLogStream(&memLog);
-      curMemMgr->setLoggingEnabled(true);
-      curMemMgr->setLogFlushInterval(FLAGS_fl_log_mem_ops_interval);
-    }
+    fl::MemoryManagerInstaller::logIfInstalled(
+        getRunFile("mem", runIdx, runPath), FLAGS_fl_log_mem_ops_interval);
   }
 
   // flashlight optim mode

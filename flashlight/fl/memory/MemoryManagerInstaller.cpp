@@ -11,14 +11,19 @@
 #include <cstdlib>
 #include <stdexcept>
 
+#include "flashlight/fl/common/Logging.h"
 #include "flashlight/fl/common/Utils.h"
 #include "flashlight/fl/memory/managers/CachingMemoryManager.h"
+#include "flashlight/lib/common/System.h"
+
+using ::fl::lib::createOutputStream;
 
 namespace fl {
 
 // Statics from MemoryManagerInstaller
 std::shared_ptr<MemoryManagerAdapter>
     MemoryManagerInstaller::currentlyInstalledMemoryManager_;
+std::unique_ptr<std::ofstream> MemoryManagerInstaller::log_;
 
 MemoryManagerAdapter* MemoryManagerInstaller::getImpl(
     af_memory_manager manager) {
@@ -231,6 +236,27 @@ void MemoryManagerInstaller::unsetMemoryManager() {
   if (currentlyInstalledMemoryManager_) {
     AF_CHECK(af_unset_memory_manager());
     currentlyInstalledMemoryManager_ = nullptr;
+  }
+}
+
+void MemoryManagerInstaller::logIfInstalled(
+    const std::string& logFilename,
+    size_t interval) {
+  if (currentlyInstalledMemoryManager_) {
+    log_ = std::make_unique<std::ofstream>(
+        createOutputStream(logFilename, std::ios_base::trunc));
+    FL_LOG(fl::INFO) << "Saving memory log to file=" << logFilename;
+    logIfInstalled(log_.get(), interval);
+  }
+}
+
+void MemoryManagerInstaller::logIfInstalled(
+    std::ofstream* log,
+    size_t interval) {
+  if (currentlyInstalledMemoryManager_) {
+    currentlyInstalledMemoryManager_->setLogStream(log);
+    currentlyInstalledMemoryManager_->setLoggingEnabled(true);
+    currentlyInstalledMemoryManager_->setLogFlushInterval(interval);
   }
 }
 

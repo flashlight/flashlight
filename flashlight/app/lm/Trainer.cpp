@@ -8,6 +8,8 @@
 #include "flashlight/app/lm/Trainer.h"
 #include <algorithm>
 
+#include "flashlight/fl/memory/MemoryManagerInstaller.h"
+
 using namespace fl::ext;
 using namespace fl::lib;
 
@@ -65,6 +67,12 @@ DEFINE_string(
     exp_init_model_path,
     "",
     "Initialization model full path, used as init model to start training.");
+DEFINE_int64(
+    exp_log_mem_ops_interval,
+    0,
+    "Flushes memory manager logs after a specified "
+    "number of log entries. 1000000 is a reasonable "
+    "value which will reduces overhead. Logs when > 0");
 
 /* DATA OPTIONS */
 DEFINE_string(
@@ -268,6 +276,15 @@ void Trainer::runTraining() {
     logWriter_ = createOutputStream(
         pathsConcat(FLAGS_exp_rundir, FLAGS_exp_model_name + ".log"),
         std::ios_base::app);
+
+    // log memory manager operations.
+    if (FLAGS_exp_log_mem_ops_interval > 0) {
+      logWriter_ = createOutputStream(
+          pathsConcat(FLAGS_exp_rundir, FLAGS_exp_model_name + "_mem.log"),
+          std::ios_base::trunc);
+      fl::MemoryManagerInstaller::logIfInstalled(
+          &logWriter_, FLAGS_exp_log_mem_ops_interval);
+    }
   }
 
   FL_LOG_MASTER(INFO) << "training started (epoch=" << epoch_
