@@ -127,6 +127,23 @@ DEFINE_string(
     "[train] Sets the flashlight optimization mode. "
     "Optim modes can be O1, O2, or O3.");
 
+DEFINE_bool(noaug, false, "no use of augmentation in train");
+DEFINE_bool(use_pos_emb, true, "use pos emb in training");
+DEFINE_bool(
+    use_aug_pos_emb,
+    false,
+    "if use_pos_emb = false then if true use augPosEmb");
+DEFINE_bool(use_aug_pos_emb_aug, false, "use random shift/shrink");
+DEFINE_int64(image_size, 224, "image size");
+DEFINE_bool(do_shrink, true, "use shrink");
+DEFINE_bool(is_mnist, false, "mnist data");
+DEFINE_bool(random_size, false, "use randomly sized images for training");
+DEFINE_int64(
+    random_size_min,
+    32,
+    "use randomly sized images for training, min size");
+DEFINE_bool(dyn_batch, false, "use dyn batch for different size");
+
 using namespace fl;
 using fl::ext::image::compose;
 using fl::ext::image::ImageTransform;
@@ -275,7 +292,7 @@ int main(int argc, char** argv) {
 
   std::shared_ptr<fl::ext::image::ViT> model;
   fl::load(FLAGS_exp_finetune_path, model);
-  model->resizePosEmd(24 * 24);
+  // model->resizePosEmd(24 * 24);
 
   FL_LOG_MASTER(INFO) << "[model with parameters " << fl::numTotalParams(model)
                       << "] " << model->prettyString();
@@ -326,7 +343,8 @@ int main(int argc, char** argv) {
     //   lr = 1e-5 +
     //       0.5 * (FLAGS_train_lr - 1e-5) *
     //           (std::cos(
-    //                ((double)epoch - 1) / ((double)FLAGS_train_epochs) * M_PI) +
+    //                ((double)epoch - 1) / ((double)FLAGS_train_epochs) * M_PI)
+    //                +
     //            1);
     // }
     optWithWeightDecay.setLr(lr);
@@ -445,7 +463,16 @@ int main(int argc, char** argv) {
 
         // 2. Forward
         fwdTimeMeter.resume();
-        auto output = model->forward({input}).front();
+        auto output = model
+                          ->forward(
+                              {input},
+                              FLAGS_distributed_enable,
+                              false, // eval
+                              FLAGS_use_aug_pos_emb_aug,
+                              1., // region
+                              FLAGS_do_shrink)
+                          .front();
+
         output = logSoftmax(output, 0).as(output.type());
 
         critFwdTimeMeter.resume();

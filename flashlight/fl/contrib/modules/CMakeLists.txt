@@ -9,6 +9,7 @@ set(
   ${CMAKE_CURRENT_LIST_DIR}/RawWavSpecAugment.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Residual.cpp
   ${CMAKE_CURRENT_LIST_DIR}/SinusoidalPositionEmbedding.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/SinusoidalPositionEmbedding2D.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Transformer.cpp
   ${CMAKE_CURRENT_LIST_DIR}/TDSBlock.cpp
   ${CMAKE_CURRENT_LIST_DIR}/SpecAugment.cpp

@@ -14,6 +14,7 @@
 #include "flashlight/fl/contrib/modules/RawWavSpecAugment.h"
 #include "flashlight/fl/contrib/modules/Residual.h"
 #include "flashlight/fl/contrib/modules/SinusoidalPositionEmbedding.h"
+#include "flashlight/fl/contrib/modules/SinusoidalPositionEmbedding2D.h"
 #include "flashlight/fl/contrib/modules/SpecAugment.h"
 #include "flashlight/fl/contrib/modules/TDSBlock.h"
 #include "flashlight/fl/contrib/modules/Transformer.h"
