@@ -511,7 +511,7 @@ int main(int argc, char** argv) {
         if (FLAGS_distributed_enable) {
           fl::allReduce(scaledLoss);
         }
-        if (fl::app::isInvalidArray(scaledLoss)) {
+        if (fl::isInvalidArray(scaledLoss)) {
           FL_LOG_MASTER(INFO) << "AMP: Loss has NaN values";
           scaleFactor = scaleFactor / 2.0f;
           FL_LOG_MASTER(INFO)
@@ -543,7 +543,7 @@ int main(int argc, char** argv) {
             // p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
           }
           p.grad() = p.grad() / scaleFactor;
-          if (fl::app::isInvalidArray(p.grad().array())) {
+          if (fl::isInvalidArray(p.grad().array())) {
             FL_LOG_MASTER(INFO) << "AMP: Grad has NaN values";
             if (scaleFactor >= fl::kAmpMinimumScaleFactorValue) {
               scaleFactor = scaleFactor / 2.0f;

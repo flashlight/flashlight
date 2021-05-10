@@ -14,6 +14,7 @@
 #include "flashlight/app/common/Runtime.h"
 #include "flashlight/app/imgclass/dataset/Imagenet.h"
 #include "flashlight/app/imgclass/examples/Defines.h"
+#include "flashlight/ext/amp/DynamicScaler.h"
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/image/af/Transforms.h"
 #include "flashlight/ext/image/fl/dataset/DistributedDataset.h"
@@ -176,12 +177,15 @@ int main(int argc, char** argv) {
   /////////////////////////
   // Setup distributed training
   ////////////////////////
+  std::shared_ptr<fl::Reducer> reducer;
   if (FLAGS_distributed_enable) {
     fl::ext::initDistributed(
         FLAGS_distributed_world_rank,
         FLAGS_distributed_world_size,
         FLAGS_distributed_max_devices_per_node,
         FLAGS_distributed_rndv_filepath);
+    reducer = std::make_shared<fl::CoalescingReducer>(
+        1.0 / fl::getWorldSize(), true, true);
   }
   af::info();
   FL_LOG_MASTER(INFO) << "Gflags after parsing \n"
@@ -190,8 +194,6 @@ int main(int argc, char** argv) {
   const int worldRank = fl::getWorldRank();
   const int worldSize = fl::getWorldSize();
   const bool isMaster = (worldRank == 0);
-  auto reducer =
-      std::make_shared<fl::CoalescingReducer>(1.0 / worldSize, true, true);
 
   //////////////////////////
   //  Create datasets
@@ -273,8 +275,11 @@ int main(int argc, char** argv) {
       labelMap.size());
   FL_LOG_MASTER(INFO) << "[model with parameters " << fl::numTotalParams(model)
                       << "] " << model->prettyString();
-  fl::allReduceParameters(model);
-  fl::distributeModuleGrads(model, reducer);
+
+  if (FLAGS_distributed_enable) {
+    fl::allReduceParameters(model);
+    fl::distributeModuleGrads(model, reducer);
+  }
 
   // Setting different seeds for better randomness
   af::setSeed(worldRank + FLAGS_train_seed);
@@ -354,6 +359,7 @@ int main(int argc, char** argv) {
   //////////////////////////
   // The main training loop
   /////////////////////////
+  std::shared_ptr<fl::ext::DynamicScaler> dynamicScaler;
   if (FLAGS_fl_amp_use_mixed_precision) {
     FL_LOG_MASTER(INFO)
         << "Mixed precision training enabled. Will perform loss scaling.";
@@ -361,13 +367,12 @@ int main(int argc, char** argv) {
         ? fl::OptimLevel::DEFAULT
         : fl::OptimMode::toOptimLevel(FLAGS_fl_optim_mode);
     fl::OptimMode::get().setOptimLevel(flOptimLevel);
+
+    dynamicScaler = std::make_shared<fl::ext::DynamicScaler>(
+        FLAGS_fl_amp_scale_factor,
+        FLAGS_fl_amp_max_scale_factor,
+        FLAGS_fl_amp_scale_factor_update_interval);
   }
-  unsigned short scaleCounter = 1;
-  double scaleFactor =
-      FLAGS_fl_amp_use_mixed_precision ? FLAGS_fl_amp_scale_factor : 1.;
-  unsigned int kScaleFactorUpdateInterval =
-      FLAGS_fl_amp_scale_factor_update_interval;
-  double kMaxScaleFactor = FLAGS_fl_amp_max_scale_factor;
 
   fl::TimeMeter sampleTimerMeter{true};
   fl::TimeMeter fwdTimeMeter{true};
@@ -431,11 +436,7 @@ int main(int argc, char** argv) {
       af::sync();
       sampleTimerMeter.stopAndIncUnit();
 
-      Variable loss;
-      bool retrySample = false;
-      do {
-        retrySample = false;
-
+      while (true) {
         // 2. Forward
         fwdTimeMeter.resume();
         auto output = model->forward({input}).front();
@@ -443,25 +444,7 @@ int main(int argc, char** argv) {
 
         critFwdTimeMeter.resume();
         auto y = target.as(output.type());
-        loss = fl::mean(fl::sum(fl::negate(y * output), {0}), {1});
-
-        if (FLAGS_fl_amp_use_mixed_precision) {
-          ++scaleCounter;
-          loss = loss * scaleFactor;
-
-          auto scaledLoss = loss.array() / worldSize;
-          if (FLAGS_distributed_enable) {
-            fl::allReduce(scaledLoss);
-          }
-          if (fl::app::isInvalidArray(scaledLoss)) {
-            FL_LOG(INFO) << "Loss has NaN values in 2, in proc: "
-                         << fl::getWorldRank();
-            scaleFactor = scaleFactor / 2.0f;
-            FL_LOG(INFO) << "AMP: Scale factor decreased (loss). New value :\t "
-                         << scaleFactor;
-            continue;
-          }
-        }
+        auto loss = fl::mean(fl::sum(fl::negate(y * output), {0}), {1});
         af::sync();
         fwdTimeMeter.stopAndIncUnit();
         critFwdTimeMeter.stopAndIncUnit();
@@ -470,45 +453,16 @@ int main(int argc, char** argv) {
         bwdTimeMeter.resume();
         optWithWeightDecay.zeroGrad();
         optNoWeightDecay.zeroGrad();
-        loss.backward();
-        if (FLAGS_distributed_enable) {
-          reducer->finalize();
-        }
-
-        if (FLAGS_fl_amp_use_mixed_precision) {
-          for (auto& p : modelParams) {
-            p.grad() = p.grad() / scaleFactor;
-            if (fl::app::isInvalidArray(p.grad().array())) {
-              FL_LOG(INFO) << "Grad has NaN values in 3, in proc: "
-                           << fl::getWorldRank();
-              if (scaleFactor >= fl::kAmpMinimumScaleFactorValue) {
-                scaleFactor = scaleFactor / 2.0f;
-                FL_LOG(INFO)
-                    << "AMP: Scale factor decreased (grad). New value:\t"
-                    << scaleFactor;
-                retrySample = true;
-              } else {
-                FL_LOG(FATAL)
-                    << "Minimum loss scale reached: "
-                    << fl::kAmpMinimumScaleFactorValue
-                    << " with over/underflowing gradients. Lowering the "
-                    << "learning rate, using gradient clipping, or "
-                    << "increasing the batch size can help resolve "
-                    << "loss explosion.";
-              }
-              scaleCounter = 1;
-              break;
-            }
-          }
-        }
+        bool scaleIsValid = fl::app::backwardWithScaling(
+            loss, modelParams, dynamicScaler, reducer);
         af::sync();
         bwdTimeMeter.stopAndIncUnit();
-        if (retrySample) {
+        if (!scaleIsValid) {
           continue;
         }
-
-        trainLossMeter.add(loss.array() / scaleFactor);
-      } while (retrySample);
+        trainLossMeter.add(loss.array());
+        break;
+      }
 
       // 4. Optimize
       optimTimeMeter.resume();
@@ -519,20 +473,7 @@ int main(int argc, char** argv) {
       optNoWeightDecay.step();
       optimTimeMeter.stopAndIncUnit();
 
-      // 5. update scale factor
-      if (FLAGS_fl_amp_use_mixed_precision && scaleFactor < kMaxScaleFactor) {
-        if (scaleCounter % kScaleFactorUpdateInterval == 0) {
-          scaleFactor *= 2;
-          FL_VLOG(2) << "AMP: Scale factor doubled. New value:\t"
-                     << scaleFactor;
-        } else {
-          scaleFactor += 2;
-          FL_VLOG(3) << "AMP: Scale factor incremented. New value\t"
-                     << scaleFactor;
-        }
-      }
-
-      // 6. Compute and record the prediction error.
+      // 5. Compute and record the prediction error.
       int interval = 100;
       if (idx && idx % interval == 0) {
         timeMeter.stop();
