@@ -49,6 +49,11 @@ bool allClose(
     const af::array& b,
     double absTolerance = 1e-5);
 
+/**
+ * @return if an array contains any NAN or INF.
+ */
+bool isInvalidArray(const af::array& arr);
+
 // Returns high resolution time formatted as:
 // MMDD HH MM SS UUUUUU
 // 0206 08:42:42.123456
