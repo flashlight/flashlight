@@ -411,7 +411,7 @@ int main(int argc, char** argv) {
   if (runStatus == "continue") {
     std::unordered_map<std::string, std::string> cfg; // unused
     std::string version;
-    Serializer::load(reloadPath, version, cfg, detr, opt, opt2);
+    Serializer::load(reloadPath, version, cfg, detr, opt, opt2, dynamicScaler);
   }
 
   // Run eval if continuing
@@ -581,10 +581,10 @@ int main(int argc, char** argv) {
       std::string filename =
           getRunFile(format("model_last.bin", idx), runIdx, runPath);
       config[kEpoch] = std::to_string(epoch);
-      Serializer::save(filename, "0.1", config, detr, opt, opt2);
+      Serializer::save(filename, "0.1", config, detr, opt, opt2, dynamicScaler);
       filename =
           getRunFile(format("model_iter_%03d.bin", epoch), runIdx, runPath);
-      Serializer::save(filename, "0.1", config, detr, opt, opt2);
+      Serializer::save(filename, "0.1", config, detr, opt, opt2, dynamicScaler);
     }
     if (epoch % FLAGS_eval_iters == 0) {
       evalLoop(detr, val_ds);
