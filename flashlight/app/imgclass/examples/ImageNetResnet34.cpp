@@ -315,7 +315,7 @@ int main(int argc, char** argv) {
         if (FLAGS_distributed_enable) {
           fl::allReduce(scaledLoss);
         }
-        if (fl::app::isInvalidArray(scaledLoss)) {
+        if (fl::isInvalidArray(scaledLoss)) {
           FL_LOG(INFO) << "Loss has NaN values in 2, in proc: "
                        << fl::getWorldRank();
           scaleFactor = scaleFactor / 2.0f;
@@ -344,7 +344,7 @@ int main(int argc, char** argv) {
       if (FLAGS_fl_amp_use_mixed_precision) {
         for (auto& p : model->params()) {
           p.grad() = p.grad() / scaleFactor;
-          if (fl::app::isInvalidArray(p.grad().array())) {
+          if (fl::isInvalidArray(p.grad().array())) {
             FL_LOG(INFO) << "Grad has NaN values in 3, in proc: "
                          << fl::getWorldRank();
             if (scaleFactor >= fl::kAmpMinimumScaleFactorValue) {
