@@ -72,6 +72,9 @@ class DynamicScaler {
   unsigned int successCounter_{0};
   // Double up the scaleFactor_ when successCounter_ equals updateInterval_.
   unsigned int updateInterval_;
+
+  FL_SAVE_LOAD(scaleFactor_, maxScaleFactor_, updateInterval_, successCounter_)
+  DynamicScaler() = default;
 };
 
 } // namespace ext

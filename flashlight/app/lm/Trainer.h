@@ -12,10 +12,11 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
+#include "flashlight/app/common/Runtime.h"
 #include "flashlight/app/lm/common/Defines.h"
 #include "flashlight/app/lm/data/TextDataset.h"
-#include "flashlight/app/common/Runtime.h"
 
+#include "flashlight/ext/amp/DynamicScaler.h"
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/common/Serializer.h"
 #include "flashlight/ext/plugin/ModulePlugin.h"
@@ -118,8 +119,7 @@ class Trainer {
   int kPadIdx_, kEosIdx_, kUnkIdx_, kMaskIdx_;
   std::string gflagsStr_;
   std::string version_{FL_APP_LM_VERSION};
-  unsigned short scaleCounter_;
-  double scaleFactor_;
+  std::shared_ptr<fl::ext::DynamicScaler> dynamicScaler;
 
   fl::lib::text::Dictionary dictionary_;
   std::shared_ptr<TextDataset> trainDataset_;

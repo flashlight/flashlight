@@ -83,21 +83,6 @@ std::string serializeGflags(const std::string& separator /* = "\n" */) {
   return serialized.str();
 }
 
-float getScaleFactor(const std::unordered_map<std::string, std::string>& cfg) {
-  float scaleFactor;
-  // Check gflags for the scale factor; if not present, use the default
-  auto scaleFactorI = cfg.find(kScaleFactor);
-  if (scaleFactorI == cfg.end()) {
-    LOG(WARNING) << "Did not find scalefactor, using the flag's value.";
-    scaleFactor =
-        FLAGS_fl_amp_use_mixed_precision ? FLAGS_fl_amp_scale_factor : 1.;
-  } else {
-    scaleFactor = std::stof(scaleFactorI->second);
-  }
-  LOG(INFO) << "Using initial scale factor " << scaleFactor;
-  return scaleFactor;
-}
-
 std::unordered_set<int64_t>
 getTrainEvalIds(int64_t dsSize, double pctTrainEval, int64_t seed) {
   std::mt19937_64 rng(seed);
