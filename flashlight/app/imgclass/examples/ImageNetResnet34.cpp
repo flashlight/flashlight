@@ -14,6 +14,7 @@
 #include "flashlight/app/common/Runtime.h"
 #include "flashlight/app/imgclass/dataset/Imagenet.h"
 #include "flashlight/app/imgclass/examples/Defines.h"
+#include "flashlight/ext/amp/DynamicScaler.h"
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/image/af/Transforms.h"
 #include "flashlight/ext/image/fl/dataset/DistributedDataset.h"
@@ -133,14 +134,17 @@ int main(int argc, char** argv) {
   /////////////////////////
   // Setup distributed training
   ////////////////////////
-  af::info();
+  std::shared_ptr<fl::Reducer> reducer;
   if (FLAGS_distributed_enable) {
     fl::ext::initDistributed(
         FLAGS_distributed_world_rank,
         FLAGS_distributed_world_size,
         FLAGS_distributed_max_devices_per_node,
         FLAGS_distributed_rndv_filepath);
+    reducer = std::make_shared<fl::CoalescingReducer>(
+        1.0 / fl::getWorldSize(), true, true);
   }
+  af::info();
   const int worldRank = fl::getWorldRank();
   const int worldSize = fl::getWorldSize();
   const bool isMaster = (worldRank == 0);
@@ -149,23 +153,20 @@ int main(int argc, char** argv) {
   af::setSeed(worldSize);
   fl::DynamicBenchmark::setBenchmarkMode(true);
 
-  auto reducer =
-      std::make_shared<fl::CoalescingReducer>(1.0 / worldSize, true, true);
-
+  std::shared_ptr<fl::ext::DynamicScaler> dynamicScaler;
   if (FLAGS_fl_amp_use_mixed_precision) {
-    // Only set the optim mode to O1 if it was left empty
-    LOG(INFO) << "Mixed precision training enabled. Will perform loss scaling.";
+    FL_LOG_MASTER(INFO)
+        << "Mixed precision training enabled. Will perform loss scaling.";
     auto flOptimLevel = FLAGS_fl_optim_mode.empty()
         ? fl::OptimLevel::DEFAULT
         : fl::OptimMode::toOptimLevel(FLAGS_fl_optim_mode);
     fl::OptimMode::get().setOptimLevel(flOptimLevel);
+
+    dynamicScaler = std::make_shared<fl::ext::DynamicScaler>(
+        FLAGS_fl_amp_scale_factor,
+        FLAGS_fl_amp_max_scale_factor,
+        FLAGS_fl_amp_scale_factor_update_interval);
   }
-  unsigned short scaleCounter = 1;
-  double scaleFactor =
-      FLAGS_fl_amp_use_mixed_precision ? FLAGS_fl_amp_scale_factor : 1.;
-  unsigned int kScaleFactorUpdateInterval =
-      FLAGS_fl_amp_scale_factor_update_interval;
-  double kMaxScaleFactor = FLAGS_fl_amp_max_scale_factor;
 
   //////////////////////////
   //  Create datasets
@@ -222,16 +223,19 @@ int main(int argc, char** argv) {
   //  Load model and optimizer
   /////////////////////////
   auto model = fl::ext::image::resnet34();
-  // synchronize parameters of the model so that the parameters in each process
-  // is the same
-  fl::allReduceParameters(model);
+  if (FLAGS_distributed_enable) {
+    // synchronize parameters of the model so that the parameters in each
+    // process is the same
+    fl::allReduceParameters(model);
 
-  // Add a hook to synchronize gradients of model parameters as they are
-  // computed
-  fl::distributeModuleGrads(model, reducer);
+    // Add a hook to synchronize gradients of model parameters as they are
+    // computed
+    fl::distributeModuleGrads(model, reducer);
+  }
 
+  auto modelParams = model->params();
   SGDOptimizer opt(
-      model->params(), FLAGS_train_lr, FLAGS_train_momentum, FLAGS_train_wd);
+      modelParams, FLAGS_train_lr, FLAGS_train_momentum, FLAGS_train_wd);
 
   auto lrScheduler = [&opt](int epoch) {
     // Adjust learning rate every 30 epoch after 30
@@ -295,83 +299,36 @@ int main(int argc, char** argv) {
       af::sync();
       sampleTimerMeter.stopAndIncUnit();
 
-      // Get the activations from the model.
-      fwdTimeMeter.resume();
-      auto output = model->forward(inputs);
-      af::sync();
-      fwdTimeMeter.stopAndIncUnit();
+      while (true) {
+        // Forward
+        fwdTimeMeter.resume();
+        auto output = model->forward(inputs);
+        af::sync();
 
-      // Compute and record the loss.
-      critFwdTimeMeter.resume();
-      auto loss = criterion(output, target);
-      af::sync();
-      critFwdTimeMeter.stopAndIncUnit();
+        critFwdTimeMeter.resume();
+        auto loss = criterion(output, target);
+        af::sync();
+        fwdTimeMeter.stopAndIncUnit();
+        critFwdTimeMeter.stopAndIncUnit();
 
-      if (FLAGS_fl_amp_use_mixed_precision) {
-        ++scaleCounter;
-        loss = loss * scaleFactor;
-
-        auto scaledLoss = loss.array() / worldSize;
-        if (FLAGS_distributed_enable) {
-          fl::allReduce(scaledLoss);
-        }
-        if (fl::isInvalidArray(scaledLoss)) {
-          FL_LOG(INFO) << "Loss has NaN values in 2, in proc: "
-                       << fl::getWorldRank();
-          scaleFactor = scaleFactor / 2.0f;
-          FL_LOG(INFO) << "AMP: Scale factor decreased (loss). New value :\t "
-                       << scaleFactor;
+        // Backward
+        bwdTimeMeter.resume();
+        opt.zeroGrad();
+        bool scaleIsValid = fl::app::backwardWithScaling(
+            loss, modelParams, dynamicScaler, reducer);
+        af::sync();
+        bwdTimeMeter.stopAndIncUnit();
+        if (!scaleIsValid) {
           continue;
         }
+
+        trainLossMeter.add(loss.array());
+        top5Acc.add(output.array(), target.array());
+        top1Acc.add(output.array(), target.array());
+        break;
       }
-
-      trainLossMeter.add(loss.array());
-      top5Acc.add(output.array(), target.array());
-      top1Acc.add(output.array(), target.array());
-
-      // Backprop, update the weights and then zero the gradients.
-      bwdTimeMeter.resume();
-      loss.backward();
-
-      if (FLAGS_distributed_enable) {
-        reducer->finalize();
-      }
-      af::sync();
-      bwdTimeMeter.stopAndIncUnit();
 
       optimTimeMeter.resume();
-      auto retrySample = false;
-      if (FLAGS_fl_amp_use_mixed_precision) {
-        for (auto& p : model->params()) {
-          p.grad() = p.grad() / scaleFactor;
-          if (fl::isInvalidArray(p.grad().array())) {
-            FL_LOG(INFO) << "Grad has NaN values in 3, in proc: "
-                         << fl::getWorldRank();
-            if (scaleFactor >= fl::kAmpMinimumScaleFactorValue) {
-              scaleFactor = scaleFactor / 2.0f;
-              FL_LOG(INFO) << "AMP: Scale factor decreased (grad). New value:\t"
-                           << scaleFactor;
-              retrySample = true;
-            } else {
-              FL_LOG(FATAL)
-                  << "Minimum loss scale reached: "
-                  << fl::kAmpMinimumScaleFactorValue
-                  << " with over/underflowing gradients. Lowering the "
-                  << "learning rate, using gradient clipping, or "
-                  << "increasing the batch size can help resolve "
-                  << "loss explosion.";
-            }
-            scaleCounter = 1;
-            break;
-          }
-        }
-      }
-      if (retrySample) {
-        timeMeter.stopAndIncUnit();
-        optimTimeMeter.stopAndIncUnit();
-        continue;
-      }
-
       opt.step();
       af::sync();
       optimTimeMeter.stopAndIncUnit();
@@ -412,18 +369,6 @@ int main(int argc, char** argv) {
         critFwdTimeMeter.reset();
         bwdTimeMeter.reset();
         optimTimeMeter.reset();
-      }
-
-      if (FLAGS_fl_amp_use_mixed_precision && scaleFactor < kMaxScaleFactor) {
-        if (scaleCounter % kScaleFactorUpdateInterval == 0) {
-          scaleFactor *= 2;
-          FL_VLOG(2) << "AMP: Scale factor doubled. New value:\t"
-                     << scaleFactor;
-        } else {
-          scaleFactor += 2;
-          FL_VLOG(3) << "AMP: Scale factor incremented. New value\t"
-                     << scaleFactor;
-        }
       }
     }
     timeMeter.reset();
