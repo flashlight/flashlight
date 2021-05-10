@@ -19,6 +19,7 @@
 #include "flashlight/app/objdet/models/Resnet50Backbone.h"
 #include "flashlight/app/objdet/nn/Detr.h"
 #include "flashlight/app/objdet/nn/Transformer.h"
+#include "flashlight/ext/amp/DynamicScaler.h"
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/common/Serializer.h"
 #include "flashlight/ext/image/af/Transforms.h"
@@ -255,7 +256,7 @@ int main(int argc, char** argv) {
   /////////////////////////
   // Setup distributed training
   ////////////////////////
-  std::shared_ptr<fl::Reducer> reducer = nullptr;
+  std::shared_ptr<fl::Reducer> reducer;
   if (FLAGS_distributed_enable) {
     fl::ext::initDistributed(
         FLAGS_distributed_world_rank,
@@ -268,6 +269,7 @@ int main(int argc, char** argv) {
   const int worldRank = fl::getWorldRank();
   const int worldSize = fl::getWorldSize();
 
+  std::shared_ptr<fl::ext::DynamicScaler> dynamicScaler;
   if (FLAGS_fl_amp_use_mixed_precision) {
     FL_LOG_MASTER(INFO)
         << "Mixed precision training enabled. Will perform loss scaling.";
@@ -275,10 +277,12 @@ int main(int argc, char** argv) {
         ? fl::OptimLevel::DEFAULT
         : fl::OptimMode::toOptimLevel(FLAGS_fl_optim_mode);
     fl::OptimMode::get().setOptimLevel(flOptimLevel);
+
+    dynamicScaler = std::make_shared<fl::ext::DynamicScaler>(
+        FLAGS_fl_amp_scale_factor,
+        FLAGS_fl_amp_max_scale_factor,
+        FLAGS_fl_amp_scale_factor_update_interval);
   }
-  int scaleCounter = 1;
-  double scaleFactor =
-      FLAGS_fl_amp_use_mixed_precision ? FLAGS_fl_amp_scale_factor : 1.;
   fl::DynamicBenchmark::setBenchmarkMode(true);
 
   ////////////////////////////
@@ -351,20 +355,26 @@ int main(int argc, char** argv) {
   const float beta1 = 0.9;
   const float beta2 = 0.999;
   const float epsilon = 1e-8;
+  auto paramsWithoutBackbone = detr->paramsWithoutBackbone();
   auto opt = std::make_shared<AdamOptimizer>(
-      detr->paramsWithoutBackbone(),
+      paramsWithoutBackbone,
       FLAGS_train_lr,
       beta1,
       beta2,
       epsilon,
       FLAGS_train_wd);
+  auto backboneParams = detr->backboneParams();
   auto opt2 = std::make_shared<AdamOptimizer>(
-      detr->backboneParams(),
+      backboneParams,
       FLAGS_train_lr * 0.1,
       beta1,
       beta2,
       epsilon,
       FLAGS_train_wd);
+  auto modelParams = paramsWithoutBackbone;
+  modelParams.insert(
+      modelParams.end(), backboneParams.begin(), backboneParams.end());
+
   auto lrScheduler = [&opt, &opt2](int epoch) {
     // Adjust learning rate every 30 epoch after 30
     const float newLr = FLAGS_train_lr * pow(0.1, epoch / 100);
@@ -449,9 +459,7 @@ int main(int argc, char** argv) {
     for (auto& sample : *train_ds) {
       timeMeter.resume();
 
-      /////////////////////////
-      // Sample
-      /////////////////////////
+      // 1. Sample
       sampleTimerMeter.resume();
       auto input = fl::Variable(sample.images, false);
       auto mask = fl::Variable(sample.masks, false);
@@ -475,103 +483,53 @@ int main(int argc, char** argv) {
       af::sync();
       sampleTimerMeter.stopAndIncUnit();
 
-      /////////////////////////
-      // Forward
-      /////////////////////////
-      fwdBackboneTimeMeter.resume();
-      input = detr->forwardBackbone(input);
-      af::sync();
-      fwdBackboneTimeMeter.stopAndIncUnit();
+      while (true) {
+        // 2. Forward
+        fwdBackboneTimeMeter.resume();
+        input = detr->forwardBackbone(input);
+        af::sync();
+        fwdBackboneTimeMeter.stopAndIncUnit();
 
-      fwdTimeMeter.resume();
-      auto output = detr->forward({input, mask});
-      af::sync();
-      fwdTimeMeter.stopAndIncUnit();
+        fwdTimeMeter.resume();
+        auto output = detr->forward({input, mask});
+        af::sync();
+        fwdTimeMeter.stopAndIncUnit();
 
-      /////////////////////////
-      // Criterion
-      /////////////////////////
-      critFwdTimeMeter.resume();
-      auto loss =
-          criterion.forward(output[1], output[0], targetBoxes, targetClasses);
-      auto accumLoss = fl::Variable(af::constant(0, 1, dataType), true);
-      for (auto losses : loss) {
-        fl::Variable scaled_loss = weightDict[losses.first] * losses.second;
-        meters[losses.first].add(losses.second.array());
-        meters[losses.first + "_weighted"].add(scaled_loss.array());
-        accumLoss = scaled_loss + accumLoss;
-      }
-      meters["sum"].add(accumLoss.array());
-
-      if (FLAGS_fl_amp_use_mixed_precision) {
-        ++scaleCounter;
-        accumLoss = accumLoss * scaleFactor;
-
-        auto scaledLoss = accumLoss.array() / fl::getWorldSize();
-        if (FLAGS_distributed_enable) {
-          fl::allReduce(scaledLoss);
+        // 3. Criterion
+        critFwdTimeMeter.resume();
+        auto loss =
+            criterion.forward(output[1], output[0], targetBoxes, targetClasses);
+        auto accumLoss = fl::Variable(af::constant(0, 1, dataType), true);
+        for (auto losses : loss) {
+          fl::Variable scaled_loss = weightDict[losses.first] * losses.second;
+          accumLoss = scaled_loss + accumLoss;
         }
-        if (fl::isInvalidArray(scaledLoss)) {
-          FL_LOG_MASTER(INFO) << "AMP: Loss has NaN values";
-          scaleFactor = scaleFactor / 2.0f;
-          FL_LOG_MASTER(INFO)
-              << "AMP: Scale factor decreased (loss). New value :\t "
-              << scaleFactor;
+        af::sync();
+        critFwdTimeMeter.stopAndIncUnit();
+
+        // 4. Backward
+        opt->zeroGrad();
+        opt2->zeroGrad();
+
+        bwdTimeMeter.resume();
+        bool scaleIsValid = fl::app::backwardWithScaling(
+            accumLoss, modelParams, dynamicScaler, reducer);
+        af::sync();
+        bwdTimeMeter.stopAndIncUnit();
+        if (!scaleIsValid) {
           continue;
         }
-      }
-      af::sync();
-      critFwdTimeMeter.stopAndIncUnit();
 
-      /////////////////////////
-      // Backward
-      //////////////////////////
-      opt->zeroGrad();
-      opt2->zeroGrad();
-
-      bwdTimeMeter.resume();
-      accumLoss.backward();
-      if (FLAGS_distributed_enable) {
-        reducer->finalize();
-      }
-
-      bool skipBatch = false;
-      if (FLAGS_fl_amp_use_mixed_precision) {
-        for (auto& p : detr->params()) {
-          if (!p.isGradAvailable()) {
-            continue;
-            // p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
-          }
-          p.grad() = p.grad() / scaleFactor;
-          if (fl::isInvalidArray(p.grad().array())) {
-            FL_LOG_MASTER(INFO) << "AMP: Grad has NaN values";
-            if (scaleFactor >= fl::kAmpMinimumScaleFactorValue) {
-              scaleFactor = scaleFactor / 2.0f;
-              FL_LOG_MASTER(INFO)
-                  << "AMP: Scale factor decreased (grad). New value:\t"
-                  << scaleFactor;
-              skipBatch = true;
-            } else {
-              FL_LOG(FATAL)
-                  << "Minimum loss scale reached: "
-                  << fl::kAmpMinimumScaleFactorValue
-                  << " with over/underflowing gradients. Lowering the "
-                  << "learning rate, using gradient clipping, or "
-                  << "increasing the batch size can help resolve "
-                  << "loss explosion.";
-            }
-            scaleCounter = 1;
-            skipBatch = true;
-            break;
-          }
+        for (auto losses : loss) {
+          fl::Variable scaled_loss = weightDict[losses.first] * losses.second;
+          meters[losses.first].add(losses.second.array());
+          meters[losses.first + "_weighted"].add(scaled_loss.array());
         }
+        meters["sum"].add(accumLoss.array());
+        break;
       }
-      if (skipBatch) {
-        continue;
-      }
-      af::sync();
-      bwdTimeMeter.stopAndIncUnit();
 
+      // 5. Optimization
       optimTimeMeter.resume();
       fl::clipGradNorm(detr->params(), 0.1);
       opt->step();
@@ -579,9 +537,8 @@ int main(int argc, char** argv) {
       optimTimeMeter.stopAndIncUnit();
 
       timeMeter.stopAndIncUnit();
-      //////////////////////////
-      // Metrics
-      /////////////////////////
+
+      // 6. Metrics
       if (++idx % FLAGS_metric_iters == 0) {
         double total_time = timeMeter.value();
         double sample_per_second =
@@ -617,19 +574,6 @@ int main(int argc, char** argv) {
         optimTimeMeter.reset();
         for (auto meter : meters) {
           meter.second.reset();
-        }
-      }
-
-      if (FLAGS_fl_amp_use_mixed_precision &&
-          scaleFactor < FLAGS_fl_amp_max_scale_factor) {
-        if (scaleCounter % FLAGS_fl_amp_scale_factor_update_interval == 0) {
-          scaleFactor *= 2;
-          FL_VLOG(2) << "AMP: Scale factor doubled. New value:\t"
-                     << scaleFactor;
-        } else {
-          scaleFactor += 2;
-          FL_VLOG(3) << "AMP: Scale factor incremented. New value\t"
-                     << scaleFactor;
         }
       }
     }
