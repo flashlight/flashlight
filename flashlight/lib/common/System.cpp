@@ -13,6 +13,7 @@
 #include <array>
 #include <cstdlib>
 #include <ctime>
+#include <filesystem>
 #include <functional>
 
 #ifdef _WIN32
@@ -193,16 +194,7 @@ std::string getCurrentTime() {
 }
 
 std::string getTmpPath(const std::string& filename) {
-  std::string tmpDir = "/tmp";
-  auto getTmpDir = [&tmpDir](const std::string& env) {
-    char* dir = std::getenv(env.c_str());
-    if (dir != nullptr) {
-      tmpDir = std::string(dir);
-    }
-  };
-  getTmpDir("TMPDIR");
-  getTmpDir("TEMP");
-  getTmpDir("TMP");
+  auto tmpDir = std::filesystem::temp_directory_path().string();
   return tmpDir + "/fl_tmp_" + getEnvVar("USER", "unknown") + "_" + filename;
 }
 
