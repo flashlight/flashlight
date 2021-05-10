@@ -36,10 +36,30 @@ std::string serializeGflags(const std::string& separator) {
   return serialized.str();
 }
 
-bool isInvalidArray(const af::array& arr) {
-  return af::anyTrue<bool>(af::isNaN(arr)) || af::anyTrue<bool>(af::isInf(arr));
-}
+bool backwardWithScaling(
+    const fl::Variable& loss,
+    std::vector<fl::Variable>& params,
+    std::shared_ptr<fl::ext::DynamicScaler> dynamicScaler,
+    std::shared_ptr<fl::Reducer> reducer) {
+  auto scaledLoss = loss;
+  if (dynamicScaler) {
+    scaledLoss = dynamicScaler->scale(loss);
+  }
 
+  scaledLoss.backward();
+  if (reducer) {
+    reducer->finalize();
+  }
+
+  if (dynamicScaler) {
+    if (!dynamicScaler->unscale(params)) {
+      return false;
+    }
+    dynamicScaler->update();
+  }
+
+  return true;
+}
 
 } // end namespace app
 } // end namespace fl

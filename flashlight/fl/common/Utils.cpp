@@ -40,6 +40,10 @@ bool allClose(
   return af::max<double>(af::abs(a - b)) < absTolerance;
 }
 
+bool isInvalidArray(const af::array& arr) {
+  return af::anyTrue<bool>(af::isNaN(arr)) || af::anyTrue<bool>(af::isInf(arr));
+}
+
 std::string dateTimeWithMicroSeconds() {
   std::chrono::system_clock::time_point highResTime =
       std::chrono::high_resolution_clock::now();
