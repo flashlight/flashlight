@@ -46,14 +46,6 @@ std::string cleanFilepath(const std::string& inputFileName);
 std::string serializeGflags(const std::string& separator = "\n");
 
 /**
- * Gets the initial scale factor to be used by the model. Checks for a value
- * serialized in a config; if not found, uses a default value.
- *
- * @param[in] cfg - the configuration map loaded from the serializer
- */
-float getScaleFactor(const std::unordered_map<std::string, std::string>& cfg);
-
-/**
  * Sample indices for the `--pcttraineval` flag.
  */
 std::unordered_set<int64_t>

@@ -27,8 +27,9 @@
 #include "flashlight/app/asr/decoder/PlGenerator.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
-#include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/app/common/Runtime.h"
+#include "flashlight/ext/amp/DynamicScaler.h"
+#include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/ext/common/Serializer.h"
 #include "flashlight/ext/plugin/ModulePlugin.h"
@@ -39,9 +40,9 @@
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
 
+using fl::app::getRunFile;
 using fl::ext::afToVector;
 using fl::ext::Serializer;
-using fl::app::getRunFile;
 using fl::lib::fileExists;
 using fl::lib::format;
 using fl::lib::getCurrentDate;
@@ -116,7 +117,6 @@ int main(int argc, char** argv) {
   std::string runStatus = argv[1];
   int64_t startEpoch = 0;
   int64_t startUpdate = 0;
-  double scaleFactor = 1.; // for AMP
   if (argc <= 1) {
     LOG(FATAL) << gflags::ProgramUsage();
   }
@@ -152,8 +152,6 @@ int main(int argc, char** argv) {
     } else {
       startUpdate = std::stoi(nbupdates->second);
     }
-
-    scaleFactor = getScaleFactor(cfg);
   } else if (runStatus == kForkMode) {
     reloadPath = argv[2];
     std::unordered_map<std::string, std::string> cfg;
@@ -169,8 +167,6 @@ int main(int argc, char** argv) {
 
     parseCmdLineFlagsWrapper(argc, argv);
     runPath = FLAGS_rundir;
-
-    scaleFactor = getScaleFactor(cfg);
   } else {
     LOG(FATAL) << gflags::ProgramUsage();
   }
@@ -182,7 +178,7 @@ int main(int argc, char** argv) {
   af::setSeed(FLAGS_seed);
   fl::DynamicBenchmark::setBenchmarkMode(FLAGS_fl_benchmark_mode);
 
-  std::shared_ptr<fl::Reducer> reducer = nullptr;
+  std::shared_ptr<fl::Reducer> reducer;
   if (FLAGS_enable_distributed) {
     fl::ext::initDistributed(
         FLAGS_world_rank,
@@ -222,6 +218,7 @@ int main(int argc, char** argv) {
       ? fl::OptimLevel::DEFAULT
       : fl::OptimMode::toOptimLevel(FLAGS_fl_optim_mode);
   fl::OptimMode::get().setOptimLevel(flOptimLevel);
+  std::shared_ptr<fl::ext::DynamicScaler> dynamicScaler;
   if (FLAGS_fl_amp_use_mixed_precision) {
     // Only set the optim mode to O1 if it was left empty
     LOG(INFO) << "Mixed precision training enabled. Will perform loss scaling.";
@@ -230,6 +227,11 @@ int main(int argc, char** argv) {
                    "optim mode specified - setting optim mode to O1.";
       fl::OptimMode::get().setOptimLevel(fl::OptimLevel::O1);
     }
+
+    dynamicScaler = std::make_shared<fl::ext::DynamicScaler>(
+        FLAGS_fl_amp_scale_factor,
+        FLAGS_fl_amp_max_scale_factor,
+        FLAGS_fl_amp_scale_factor_update_interval);
   }
 
   std::unordered_map<std::string, std::string> config = {
@@ -436,7 +438,8 @@ int main(int argc, char** argv) {
   } else if (runStatus == kForkMode) {
     std::unordered_map<std::string, std::string> cfg; // unused
     std::string version;
-    Serializer::load(reloadPath, version, cfg, network, criterion);
+    Serializer::load(
+        reloadPath, version, cfg, network, criterion, dynamicScaler);
     if (version != FL_APP_ASR_VERSION) {
       LOG(WARNING) << "Model version " << version << " and code version "
                    << FL_APP_ASR_VERSION;
@@ -445,7 +448,14 @@ int main(int argc, char** argv) {
     std::unordered_map<std::string, std::string> cfg; // unused
     std::string version;
     Serializer::load(
-        reloadPath, version, cfg, network, criterion, netoptim, critoptim);
+        reloadPath,
+        version,
+        cfg,
+        network,
+        criterion,
+        dynamicScaler,
+        netoptim,
+        critoptim);
     if (version != FL_APP_ASR_VERSION) {
       LOG(WARNING) << "Model version " << version << " and code version "
                    << FL_APP_ASR_VERSION;
@@ -615,33 +625,37 @@ int main(int argc, char** argv) {
       tokenToWord);
 
   /* ===================== Hooks ===================== */
-  auto logStatus = [&logFile, &validTagSets, &plGenerator, isMaster](
-                       TrainMeters& mtrs,
-                       std::unordered_map<std::string, double>&
-                           validWerWithDecoder,
-                       int64_t epoch,
-                       int64_t nupdates,
-                       double lr,
-                       double lrcrit,
-                       double scaleFactor) {
-    syncMeter(mtrs);
-    plGenerator.setModelWER(
-        mtrs.valid[validTagSets.front().first].wrdEdit.errorRate()[0]);
+  auto logStatus =
+      [&logFile, &validTagSets, &plGenerator, isMaster, dynamicScaler](
+          TrainMeters& mtrs,
+          std::unordered_map<std::string, double>& validWerWithDecoder,
+          int64_t epoch,
+          int64_t nupdates,
+          double lr,
+          double lrcrit) {
+        syncMeter(mtrs);
+        plGenerator.setModelWER(
+            mtrs.valid[validTagSets.front().first].wrdEdit.errorRate()[0]);
 
-    if (isMaster) {
-      auto logMsg = getLogString(
-          mtrs, validWerWithDecoder, epoch, nupdates, lr, lrcrit, scaleFactor);
-      FL_LOG_MASTER(INFO) << logMsg;
-      appendToLog(logFile, logMsg);
-    }
-  };
+        if (isMaster) {
+          auto logMsg = getLogString(
+              mtrs,
+              validWerWithDecoder,
+              epoch,
+              nupdates,
+              lr,
+              lrcrit,
+              dynamicScaler->getScaleFactor());
+          FL_LOG_MASTER(INFO) << logMsg;
+          appendToLog(logFile, logMsg);
+        }
+      };
 
-  auto saveModels = [&](int iter, int totalUpdates, double scaleFactor) {
+  auto saveModels = [&](int iter, int totalUpdates) {
     if (isMaster) {
       // Save last epoch
       config[kEpoch] = std::to_string(iter);
       config[kUpdates] = std::to_string(totalUpdates);
-      config[kScaleFactor] = std::to_string(scaleFactor);
 
       std::string filename;
       if (FLAGS_itersave) {
@@ -653,6 +667,7 @@ int main(int argc, char** argv) {
             config,
             network,
             criterion,
+            dynamicScaler,
             netoptim,
             critoptim);
       }
@@ -665,6 +680,7 @@ int main(int argc, char** argv) {
           config,
           network,
           criterion,
+          dynamicScaler,
           netoptim,
           critoptim);
 
@@ -682,6 +698,7 @@ int main(int argc, char** argv) {
               config,
               network,
               criterion,
+              dynamicScaler,
               netoptim,
               critoptim);
         }
@@ -701,6 +718,7 @@ int main(int argc, char** argv) {
               config,
               network,
               criterion,
+              dynamicScaler,
               netoptim,
               critoptim);
         }
@@ -892,11 +910,11 @@ int main(int argc, char** argv) {
                 &validds,
                 &curEpoch,
                 &startUpdate,
-                &scaleFactor,
                 &plGenerator,
                 &usePlugin,
                 &isSeq2seqCrit,
-                reducer](
+                reducer,
+                dynamicScaler](
                    std::shared_ptr<fl::Module> ntwrk,
                    std::shared_ptr<SequenceCriterion> crit,
                    std::shared_ptr<fl::Dataset> trainset,
@@ -956,8 +974,7 @@ int main(int argc, char** argv) {
     auto runValAndSaveModel = [&](int64_t totalEpochs,
                                   int64_t totalUpdates,
                                   double lr,
-                                  double lrcrit,
-                                  double saveScaleFactor) {
+                                  double lrcrit) {
       meters.runtime.stop();
       meters.timer.stop();
       meters.sampletimer.stop();
@@ -978,19 +995,13 @@ int main(int argc, char** argv) {
       // print status
       try {
         logStatus(
-            meters,
-            validWerWithDecoder,
-            totalEpochs,
-            totalUpdates,
-            lr,
-            lrcrit,
-            saveScaleFactor);
+            meters, validWerWithDecoder, totalEpochs, totalUpdates, lr, lrcrit);
       } catch (const std::exception& ex) {
         LOG(ERROR) << "Error while writing logs: " << ex.what();
       }
       // save last and best models
       try {
-        saveModels(totalEpochs, totalUpdates, saveScaleFactor);
+        saveModels(totalEpochs, totalUpdates);
       } catch (const std::exception& ex) {
         LOG(FATAL) << "Error while saving models: " << ex.what();
       }
@@ -1005,10 +1016,6 @@ int main(int argc, char** argv) {
     params.insert(params.end(), critparams.begin(), critparams.end());
 
     int64_t curBatch = startUpdate;
-    unsigned int kScaleFactorUpdateInterval =
-        FLAGS_fl_amp_scale_factor_update_interval;
-    unsigned int kMaxScaleFactor = FLAGS_fl_amp_max_scale_factor;
-    unsigned short scaleCounter = 1;
     while (curBatch < nbatches) {
       ++curEpoch; // counts partial epochs too!
       int64_t epochsAfterDecay = curEpoch - FLAGS_lr_decay;
@@ -1064,9 +1071,7 @@ int main(int argc, char** argv) {
         // - https://arxiv.org/abs/1710.03740
         // - https://bit.ly/35F5GqX
         // - https://bit.ly/3mn2qr0
-        bool retrySample = false;
-        do {
-          retrySample = false;
+        while (true) {
           // forward
           meters.fwdtimer.resume();
           auto input = fl::input(batch[kInputIdx]);
@@ -1083,6 +1088,8 @@ int main(int argc, char** argv) {
                 input, ntwrk, batch[kDurationIdx]);
           }
           af::sync();
+
+          // forward crit
           meters.critfwdtimer.resume();
           std::vector<fl::Variable> critArgs = {
               output, fl::Variable(batch[kTargetIdx], false)};
@@ -1094,11 +1101,6 @@ int main(int argc, char** argv) {
           af::sync();
           meters.fwdtimer.stopAndIncUnit();
           meters.critfwdtimer.stopAndIncUnit();
-
-          if (FLAGS_fl_amp_use_mixed_precision) {
-            ++scaleCounter;
-            loss = loss * scaleFactor;
-          }
 
           if (af::anyTrue<bool>(af::isNaN(loss.array())) ||
               af::anyTrue<bool>(af::isInf(loss.array()))) {
@@ -1119,59 +1121,29 @@ int main(int argc, char** argv) {
           meters.bwdtimer.resume();
           netopt->zeroGrad();
           critopt->zeroGrad();
-          loss.backward();
-          if (reducer) {
-            reducer->finalize();
-          }
-          af::sync();
-          meters.bwdtimer.stopAndIncUnit();
 
-          // optimizer
-          meters.optimtimer.resume();
-
-          // scale down gradients by batchsize * scale factor
+          float totalBatchSize = batch[kInputIdx].dims(3);
           af::array totalBatchSizeArr =
               af::constant(batch[kInputIdx].dims(3), 1, f32);
           if (reducer) {
             fl::allReduce(totalBatchSizeArr);
           }
-          float totalBatchSize = totalBatchSizeArr.scalar<float>();
-          for (const auto& p : params) {
-            if (!p.isGradAvailable()) {
-              continue;
-            }
-            p.grad() = p.grad() / (totalBatchSize * scaleFactor);
-            if (FLAGS_fl_amp_use_mixed_precision) {
-              if (af::anyTrue<bool>(af::isNaN(p.grad().array())) ||
-                  af::anyTrue<bool>(af::isInf(p.grad().array()))) {
-                if (scaleFactor >= fl::kAmpMinimumScaleFactorValue) {
-                  scaleFactor = scaleFactor / 2.0f;
-                  FL_VLOG(2) << "AMP: Scale factor decreased. New value:\t"
-                             << scaleFactor;
-                  retrySample = true;
-                } else {
-                  LOG(FATAL)
-                      << "Minimum loss scale reached: "
-                      << fl::kAmpMinimumScaleFactorValue
-                      << " with over/underflowing gradients. Lowering the "
-                      << "learning rate, using gradient clipping, or "
-                      << "increasing the batch size can help resolve "
-                      << "loss explosion.";
-                }
-                scaleCounter = 1;
-                break;
-              }
-            }
-          }
-          if (retrySample) {
-            meters.optimtimer.stop();
+          totalBatchSize = totalBatchSizeArr.scalar<float>();
+          auto scaledLoss = loss / totalBatchSize;
+          bool scaleIsValid = fl::app::backwardWithScaling(
+              scaledLoss, params, dynamicScaler, reducer);
+          af::sync();
+          meters.bwdtimer.stopAndIncUnit();
+          if (!scaleIsValid) {
             continue;
           }
 
-          meters.train.loss.add((loss / scaleFactor).array());
-        } while (retrySample);
+          meters.train.loss.add(loss.array());
+          break;
+        }
 
-        // clamp gradients
+        // optimizer
+        meters.optimtimer.resume();
         if (FLAGS_maxgradnorm > 0) {
           if (clampCrit) {
             fl::clipGradNorm(params, FLAGS_maxgradnorm);
@@ -1186,28 +1158,9 @@ int main(int argc, char** argv) {
         af::sync();
         meters.optimtimer.stopAndIncUnit();
 
-        // update scale factor
-        if (FLAGS_fl_amp_use_mixed_precision && scaleFactor < kMaxScaleFactor) {
-          if (scaleCounter % kScaleFactorUpdateInterval == 0) {
-            scaleFactor *= 2;
-            FL_VLOG(2) << "AMP: Scale factor doubled. New value:\t"
-                       << scaleFactor;
-          } else {
-            scaleFactor += 2;
-            FL_VLOG(3) << "AMP: Scale factor incremented. New value\t"
-                       << scaleFactor;
-          }
-        }
-
-        meters.sampletimer.resume();
-
         if (FLAGS_reportiters > 0 && curBatch % FLAGS_reportiters == 0) {
           runValAndSaveModel(
-              curEpoch,
-              curBatch,
-              netopt->getLr(),
-              critopt->getLr(),
-              scaleFactor);
+              curEpoch, curBatch, netopt->getLr(), critopt->getLr());
           resetTimeStatMeters();
           ntwrk->train();
           crit->train();
@@ -1222,7 +1175,7 @@ int main(int argc, char** argv) {
       af::sync();
       if (FLAGS_reportiters == 0) {
         runValAndSaveModel(
-            curEpoch, curBatch, netopt->getLr(), critopt->getLr(), scaleFactor);
+            curEpoch, curBatch, netopt->getLr(), critopt->getLr());
       }
 
       // Try regenerate PL
