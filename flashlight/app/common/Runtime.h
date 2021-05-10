@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "flashlight/ext/amp/DynamicScaler.h"
 #include "flashlight/fl/flashlight.h"
 
 namespace fl {
@@ -23,9 +24,20 @@ getRunFile(const std::string& name, int runidx, const std::string& runpath);
 std::string serializeGflags(const std::string& separator = "\n");
 
 /**
- * Check if an array contains any NAN or INF.
+ * Properly scale the loss for back-propogation.
+ * Return false when NAN or INF occurs in gradients, true otherwise.
+ *
+ * @param[in] loss - the loss to back propogate from.
+ * @param[in] params - the whole set of learnable parameters.
+ * @param[in] dynamicScaler - dynamic scaler to scale the loss and unscale the
+ * gradients.
+ * @param[in] reducer - to synchronize gradients in back-propogation.
  */
-bool isInvalidArray(const af::array& arr);
+bool backwardWithScaling(
+    const fl::Variable& loss,
+    std::vector<fl::Variable>& params,
+    std::shared_ptr<fl::ext::DynamicScaler> dynamicScaler,
+    std::shared_ptr<fl::Reducer> reducer);
 
-} // namespace ext
+} // namespace app
 } // namespace fl
