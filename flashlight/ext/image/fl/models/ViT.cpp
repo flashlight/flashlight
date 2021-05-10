@@ -96,19 +96,19 @@ std::vector<fl::Variable> ViT::forward(
   output = concatenate({clsToken, output}, 1);
 
   // Positional embedding
-  // if (usePosEmb_) {
-  //   auto posEmb = params_[1];
-  //   if (eval && posEmb.dims(1) != output.dims(1)) {
-  //     af::array posEmbArr = params_[1].array();
-  //     af::array clsEmb = posEmbArr.col(0);
-  //     af::array posEmbAll = posEmbArr.cols(1, posEmbArr.dims(1) - 1);
-  //     auto newPosEmb = af::resize(posEmbAll, output.dims(0), output.dims(1) - 1, AF_INTERP_BICUBIC);
-  //     posEmb = fl::Variable(af::join(1, clsEmb, newPosEmb), false);
-  //   }
-  //   output = output + tile(posEmb, af::dim4(1, 1, B)).as(output.type());;
-  // } else if (useAugPosEmb_) {
-  //   output = augPosEmb_->forward({output}, aug, region, doShrink).front();
-  // }
+  if (usePosEmb_) {
+    auto posEmb = params_[1];
+    if (eval && posEmb.dims(1) != output.dims(1)) {
+      af::array posEmbArr = params_[1].array();
+      af::array clsEmb = posEmbArr.col(0);
+      af::array posEmbAll = posEmbArr.cols(1, posEmbArr.dims(1) - 1);
+      auto newPosEmb = af::resize(posEmbAll, output.dims(0), output.dims(1) - 1, AF_INTERP_BICUBIC);
+      posEmb = fl::Variable(af::join(1, clsEmb, newPosEmb), false);
+    }
+    output = output + tile(posEmb, af::dim4(1, 1, B)).as(output.type());;
+  } else if (useAugPosEmb_) {
+    output = augPosEmb_->forward({output}, aug, region, doShrink).front();
+  }
   if (train_) {
     output = dropout(output, pDropout_);
   }

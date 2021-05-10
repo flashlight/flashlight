@@ -26,9 +26,9 @@ SinusoidalPositionEmbedding2D::SinusoidalPositionEmbedding2D(
   // size is layerDim_ / 2 + 1 x 1 x 1 x 1
   auto componentRange = af::iota(af::dim4(halfDim)) + 1;
   scaleX_ = af::cos(componentRange) *
-      af::exp(2 * componentRange * std::log(100) / layerDim_);
+      af::exp(2 * componentRange * std::log(10) / layerDim_);
   scaleY_ = af::sin(componentRange) *
-      af::exp(2 * componentRange * std::log(100) / layerDim_);
+      af::exp(2 * componentRange * std::log(10) / layerDim_);
   params_.emplace_back(fl::truncNormal(af::dim4(layerDim), 0.02));
 }
 
@@ -63,10 +63,10 @@ std::vector<Variable> SinusoidalPositionEmbedding2D::forward(
   // std::cerr << "here before aug" << std::endl;
   if (train_ && aug) {
     // do global shift in [-1, 1]
-    xPositions =
-        xPositions + af::tile(af::randu(af::dim4(1, 1, B)), 1, axisDimTotal) - 0.5;
-    yPositions =
-        yPositions + af::tile(af::randu(af::dim4(1, 1, B)), 1, axisDimTotal) - 0.5;
+    xPositions = xPositions +
+        af::tile(af::randu(af::dim4(1, 1, B)), 1, axisDimTotal) - 0.5;
+    yPositions = yPositions +
+        af::tile(af::randu(af::dim4(1, 1, B)), 1, axisDimTotal) - 0.5;
     // std::cerr << "here after global shift" << std::endl;
     // do local shift
     float deltaMax = 2. / axisDim;
@@ -94,10 +94,8 @@ std::vector<Variable> SinusoidalPositionEmbedding2D::forward(
       M_PI;
   // std::cerr << "here before y pos * scale" << std::endl;
   af::array positionsScaledCos =
-      (xPositions *
-           af::tile(scaleX_(af::seq(halfDim)), 1, axisDimTotal, B) +
-       yPositions *
-           af::tile(scaleY_(af::seq(halfDim)), 1, axisDimTotal, B)) *
+      (xPositions * af::tile(scaleX_(af::seq(halfDim)), 1, axisDimTotal, B) +
+       yPositions * af::tile(scaleY_(af::seq(halfDim)), 1, axisDimTotal, B)) *
       M_PI;
   // std::cerr << "here before sin/cos" << std::endl;
   Variable sinPos = Variable(af::sin(positionsScaledSin), false);

@@ -68,6 +68,7 @@ DEFINE_double(
     0.5,
     "Probability of switching between cutmix and mixup");
 DEFINE_bool(train_finetune, true, "Fine-tune");
+DEFINE_bool(train_mixsize, true, "train_missize");
 DEFINE_uint64(train_imgsize, 224, "Fine-tune image size");
 
 DEFINE_bool(distributed_enable, true, "Enable distributed training");
@@ -218,52 +219,100 @@ int main(int argc, char** argv) {
   /////////////////////////
   FL_LOG_MASTER(INFO) << "Creating dataset";
 
-  // Conventional image resize parameter used for evaluation
-  const int randomResizeMin = FLAGS_train_imgsize / .875;
-  auto fillImg = af::tile(
-      af::array(1, 1, 3, 1, fl::app::image::kImageNetMean.data()),
-      FLAGS_train_imgsize,
-      FLAGS_train_imgsize);
-
-  ImageTransform trainTransforms = compose(
-      {fl::ext::image::randomResizeCropTransform(
-           FLAGS_train_imgsize,
-           0.08, // scaleLow
-           1.0, // scaleHigh
-           3. / 4., // ratioLow
-           4. / 3. // ratioHigh
-           ),
-       fl::ext::image::randomHorizontalFlipTransform(0.5 // flipping probablity
-                                                     ),
-       fl::ext::image::randomAugmentationDeitTransform(
-           FLAGS_train_aug_p_randomeaug, FLAGS_train_aug_n_randomeaug, fillImg),
-       fl::ext::image::normalizeImage(
-           fl::app::image::kImageNetMean, fl::app::image::kImageNetStd),
-       fl::ext::image::randomEraseTransform(FLAGS_train_aug_p_randomerase)});
-
-  ImageTransform valTransforms = compose(
-      {fl::ext::image::resizeTransform(randomResizeMin),
-       fl::ext::image::centerCropTransform(FLAGS_train_imgsize),
-       fl::ext::image::normalizeImage(
-           fl::app::image::kImageNetMean, fl::app::image::kImageNetStd)});
-
-  const int64_t prefetchSize = FLAGS_data_batch_size * 10;
   auto labelMap = getImagenetLabels(labelPath);
   if (labelMap.size() != fl::app::image::kNumImageNetClasses) {
     FL_LOG_MASTER(INFO)
         << "[Warning] You are not using all ImageNet classes (1000)";
   }
 
-  auto trainDataset = std::make_shared<fl::ext::image::DistributedDataset>(
-      imagenetDataset(trainList, labelMap, {trainTransforms}),
-      worldRank,
-      worldSize,
-      FLAGS_data_batch_size,
-      FLAGS_train_aug_n_repeatedaug,
-      FLAGS_data_prefetch_thread,
-      prefetchSize,
-      fl::BatchDatasetPolicy::SKIP_LAST);
-  FL_LOG_MASTER(INFO) << "[trainDataset size] " << trainDataset->size();
+  // Conventional image resize parameter used for evaluation
+  std::vector<std::shared_ptr<fl::ext::image::DistributedDataset>>
+      trainDatasets;
+  if (!FLAGS_train_mixsize) {
+    auto fillImg = af::tile(
+        af::array(1, 1, 3, 1, fl::app::image::kImageNetMean.data()),
+        FLAGS_train_imgsize,
+        FLAGS_train_imgsize);
+
+    ImageTransform trainTransforms = compose(
+        {fl::ext::image::randomResizeCropTransform(
+             FLAGS_train_imgsize,
+             0.08, // scaleLow
+             1.0, // scaleHigh
+             3. / 4., // ratioLow
+             4. / 3. // ratioHigh
+             ),
+         fl::ext::image::randomHorizontalFlipTransform(
+             0.5 // flipping probablity
+             ),
+         fl::ext::image::randomAugmentationDeitTransform(
+             FLAGS_train_aug_p_randomeaug,
+             FLAGS_train_aug_n_randomeaug,
+             fillImg),
+         fl::ext::image::normalizeImage(
+             fl::app::image::kImageNetMean, fl::app::image::kImageNetStd),
+         fl::ext::image::randomEraseTransform(FLAGS_train_aug_p_randomerase)});
+
+    trainDatasets.emplace_back(
+        std::make_shared<fl::ext::image::DistributedDataset>(
+            imagenetDataset(trainList, labelMap, {trainTransforms}),
+            worldRank,
+            worldSize,
+            FLAGS_data_batch_size,
+            FLAGS_train_aug_n_repeatedaug,
+            FLAGS_data_prefetch_thread,
+            FLAGS_data_batch_size * 10,
+            fl::BatchDatasetPolicy::SKIP_LAST));
+  } else {
+    for (int imgsize = 128; imgsize <= 320; imgsize += 32) {
+      auto fillImg = af::tile(
+          af::array(1, 1, 3, 1, fl::app::image::kImageNetMean.data()),
+          imgsize,
+          imgsize);
+
+      ImageTransform trainTransforms = compose(
+          {fl::ext::image::randomResizeCropTransform(
+               imgsize,
+               0.08, // scaleLow
+               1.0, // scaleHigh
+               3. / 4., // ratioLow
+               4. / 3. // ratioHigh
+               ),
+           fl::ext::image::randomHorizontalFlipTransform(
+               0.5 // flipping probablity
+               ),
+           fl::ext::image::randomAugmentationDeitTransform(
+               FLAGS_train_aug_p_randomeaug,
+               FLAGS_train_aug_n_randomeaug,
+               fillImg),
+           fl::ext::image::normalizeImage(
+               fl::app::image::kImageNetMean, fl::app::image::kImageNetStd),
+           fl::ext::image::randomEraseTransform(
+               FLAGS_train_aug_p_randomerase)});
+
+      // int batchsize = imgsize <= 320 ? 64 : 32;
+      int batchsize = 64;
+      trainDatasets.emplace_back(
+          std::make_shared<fl::ext::image::DistributedDataset>(
+              imagenetDataset(trainList, labelMap, {trainTransforms}),
+              worldRank,
+              worldSize,
+              batchsize,
+              FLAGS_train_aug_n_repeatedaug,
+              FLAGS_data_prefetch_thread,
+              batchsize * 10,
+              fl::BatchDatasetPolicy::SKIP_LAST));
+    }
+  }
+  FL_LOG_MASTER(INFO) << "[trainDatasets size] " << trainDatasets.size();
+  FL_LOG_MASTER(INFO) << "[trainDataset size] " << trainDatasets[0]->size();
+
+  const int randomResizeMin = FLAGS_train_imgsize / .875;
+  ImageTransform valTransforms = compose(
+      {fl::ext::image::resizeTransform(randomResizeMin),
+       fl::ext::image::centerCropTransform(FLAGS_train_imgsize),
+       fl::ext::image::normalizeImage(
+           fl::app::image::kImageNetMean, fl::app::image::kImageNetStd)});
 
   auto valDataset = fl::ext::image::DistributedDataset(
       imagenetDataset(valList, labelMap, {valTransforms}),
@@ -272,7 +321,7 @@ int main(int argc, char** argv) {
       FLAGS_data_batch_size,
       1, // train_n_repeatedaug
       FLAGS_data_prefetch_thread,
-      prefetchSize,
+      FLAGS_data_batch_size * 10,
       fl::BatchDatasetPolicy::INCLUDE_LAST);
   FL_LOG_MASTER(INFO) << "[valDataset size] " << valDataset.size();
 
@@ -291,8 +340,22 @@ int main(int argc, char** argv) {
   //     labelMap.size());
 
   std::shared_ptr<fl::ext::image::ViT> model;
-  fl::load(FLAGS_exp_finetune_path, model);
-  // model->resizePosEmd(24 * 24);
+  if (!FLAGS_train_finetune) {
+    model = std::make_shared<fl::ext::image::ViT>(
+        FLAGS_model_layers,
+        FLAGS_model_hidden_emb_size,
+        FLAGS_model_mlp_size,
+        FLAGS_model_heads,
+        FLAGS_train_dropout,
+        FLAGS_train_layerdrop,
+        labelMap.size(),
+        FLAGS_use_pos_emb,
+        FLAGS_use_aug_pos_emb,
+        FLAGS_train_imgsize);
+  } else {
+    fl::load(FLAGS_exp_finetune_path, model);
+    // model->resizePosEmd(24 * 24);
+  }
 
   FL_LOG_MASTER(INFO) << "[model with parameters " << fl::numTotalParams(model)
                       << "] " << model->prettyString();
@@ -336,17 +399,19 @@ int main(int argc, char** argv) {
   auto lrScheduler = [&optWithWeightDecay, &optNoWeightDecay](int epoch) {
     // following https://git.io/JYOOV
     double lr = FLAGS_train_lr;
-    // if (epoch <= FLAGS_train_warmup_epochs) {
-    //   lr = (epoch - 1) * FLAGS_train_lr / FLAGS_train_warmup_epochs;
-    //   lr = std::max(lr, 1e-6);
-    // } else {
-    //   lr = 1e-5 +
-    //       0.5 * (FLAGS_train_lr - 1e-5) *
-    //           (std::cos(
-    //                ((double)epoch - 1) / ((double)FLAGS_train_epochs) * M_PI)
-    //                +
-    //            1);
-    // }
+    if (!FLAGS_train_finetune) {
+      if (epoch <= FLAGS_train_warmup_epochs) {
+        lr = (epoch - 1) * FLAGS_train_lr / FLAGS_train_warmup_epochs;
+        lr = std::max(lr, 1e-6);
+      } else {
+        lr = 1e-5 +
+            0.5 * (FLAGS_train_lr - 1e-5) *
+                (std::cos(
+                     ((double)epoch - 1) / ((double)FLAGS_train_epochs) *
+                     M_PI) +
+                 1);
+      }
+    }
     optWithWeightDecay.setLr(lr);
     optNoWeightDecay.setLr(lr);
   };
@@ -404,176 +469,186 @@ int main(int argc, char** argv) {
   TimeMeter timeMeter;
   AverageValueMeter trainLossMeter;
   for (; epoch < FLAGS_train_epochs; epoch++) {
-    trainDataset->resample(epoch);
+    for (int i = 0; i < trainDatasets.size(); i++) {
+      trainDatasets[i]->resample(epoch * trainDatasets.size() + i);
+    }
+    // trainDataset->setSeed(epoch);
+    // trainDataset->resample();
     lrScheduler(epoch);
 
     timeMeter.resume();
-    for (int idx = 0; idx < trainDataset->size(); idx++, batchIdx++) {
-      // 1. Sample
-      sampleTimerMeter.resume();
-      auto sample = trainDataset->get(idx);
-      auto inputArray = sample[kImagenetInputIdx];
-      auto targetArray = sample[kImagenetTargetIdx];
+    for (int idx = 0; idx < trainDatasets[0]->size() / trainDatasets.size();
+         idx++, batchIdx++) {
+      for (const auto& trainDataset : trainDatasets) {
+        // 1. Sample
+        sampleTimerMeter.resume();
+        auto sample = trainDataset->get(idx);
+        auto inputArray = sample[kImagenetInputIdx];
+        auto targetArray = sample[kImagenetTargetIdx];
 
-      // Mixup + Cutmix + label smoothing
-      if (FLAGS_train_aug_use_mix) {
-        float mixP =
-            static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+        // Mixup + Cutmix + label smoothing
+        if (FLAGS_train_aug_use_mix) {
+          float mixP =
+              static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
 
-        if (mixP > FLAGS_train_aug_p_switchmix) {
-          // using mixup
-          float lambda = betaGeneratorMixup(engine);
-          std::tie(inputArray, targetArray) = fl::ext::image::mixupBatch(
-              lambda,
-              inputArray,
-              targetArray,
-              fl::app::image::kNumImageNetClasses,
-              FLAGS_train_aug_p_label_smoothing);
+          if (mixP > FLAGS_train_aug_p_switchmix) {
+            // using mixup
+            float lambda = betaGeneratorMixup(engine);
+            std::tie(inputArray, targetArray) = fl::ext::image::mixupBatch(
+                lambda,
+                inputArray,
+                targetArray,
+                fl::app::image::kNumImageNetClasses,
+                FLAGS_train_aug_p_label_smoothing);
+          } else {
+            // using cutmix
+            float lambda = betaGeneratorCutmix(engine);
+            std::tie(inputArray, targetArray) = fl::ext::image::cutmixBatch(
+                lambda,
+                inputArray,
+                targetArray,
+                fl::app::image::kNumImageNetClasses,
+                FLAGS_train_aug_p_label_smoothing);
+          }
         } else {
-          // using cutmix
-          float lambda = betaGeneratorCutmix(engine);
-          std::tie(inputArray, targetArray) = fl::ext::image::cutmixBatch(
-              lambda,
-              inputArray,
+          targetArray = fl::ext::image::oneHot(
               targetArray,
               fl::app::image::kNumImageNetClasses,
               FLAGS_train_aug_p_label_smoothing);
         }
-      } else {
-        targetArray = fl::ext::image::oneHot(
-            targetArray,
-            fl::app::image::kNumImageNetClasses,
-            FLAGS_train_aug_p_label_smoothing);
-      }
-      auto input = noGrad(inputArray);
-      auto target = noGrad(targetArray);
-      if (FLAGS_fl_amp_use_mixed_precision && FLAGS_fl_optim_mode.empty()) {
-        // In case AMP is activated with DEFAULT mode,
-        // we manually cast input to fp16.
-        input = input.as(f16);
-      }
+        auto input = noGrad(inputArray);
+        auto target = noGrad(targetArray);
+        // if (FLAGS_fl_amp_use_mixed_precision && FLAGS_fl_optim_mode.empty())
+        // {
+        //   // In case AMP is activated with DEFAULT mode,
+        //   // we manually cast input to fp16.
+        //   input = input.as(f16);
+        // }
 
-      af::sync();
-      sampleTimerMeter.stopAndIncUnit();
-
-      Variable loss;
-      bool retrySample = false;
-      do {
-        retrySample = false;
-
-        // 2. Forward
-        fwdTimeMeter.resume();
-        auto output = model
-                          ->forward(
-                              {input},
-                              FLAGS_distributed_enable,
-                              false, // eval
-                              FLAGS_use_aug_pos_emb_aug,
-                              1., // region
-                              FLAGS_do_shrink)
-                          .front();
-
-        output = logSoftmax(output, 0).as(output.type());
-
-        critFwdTimeMeter.resume();
-        auto y = target.as(output.type());
-        loss = fl::mean(fl::sum(fl::negate(y * output), {0}), {1});
-
-        if (FLAGS_fl_amp_use_mixed_precision) {
-          ++scaleCounter;
-          loss = loss * scaleFactor;
-
-          auto scaledLoss = loss.array() / worldSize;
-          if (FLAGS_distributed_enable) {
-            fl::allReduce(scaledLoss);
-          }
-          if (fl::app::isInvalidArray(scaledLoss)) {
-            FL_LOG(INFO) << "Loss has NaN values in 2, in proc: "
-                         << fl::getWorldRank();
-            scaleFactor = scaleFactor / 2.0f;
-            FL_LOG(INFO) << "AMP: Scale factor decreased (loss). New value :\t "
-                         << scaleFactor;
-            continue;
-          }
-        }
         af::sync();
-        fwdTimeMeter.stopAndIncUnit();
-        critFwdTimeMeter.stopAndIncUnit();
+        sampleTimerMeter.stopAndIncUnit();
 
-        // 3. Backward
-        bwdTimeMeter.resume();
-        optWithWeightDecay.zeroGrad();
-        optNoWeightDecay.zeroGrad();
-        loss.backward();
-        if (FLAGS_distributed_enable) {
-          reducer->finalize();
-        }
+        Variable loss;
+        bool retrySample = false;
+        do {
+          retrySample = false;
 
-        if (FLAGS_fl_amp_use_mixed_precision) {
-          for (auto& p : modelParams) {
-            p.grad() = p.grad() / scaleFactor;
-            if (fl::app::isInvalidArray(p.grad().array())) {
-              FL_LOG(INFO) << "Grad has NaN values in 3, in proc: "
+          // 2. Forward
+          fwdTimeMeter.resume();
+          auto output = model
+                            ->forward(
+                                {input},
+                                FLAGS_fl_amp_use_mixed_precision,
+                                false, // eval
+                                FLAGS_use_aug_pos_emb_aug,
+                                1., // region
+                                FLAGS_do_shrink)
+                            .front();
+
+          output = logSoftmax(output, 0).as(output.type());
+
+          critFwdTimeMeter.resume();
+          auto y = target.as(output.type());
+          loss = fl::mean(fl::sum(fl::negate(y * output), {0}), {1});
+
+          if (FLAGS_fl_amp_use_mixed_precision) {
+            ++scaleCounter;
+            loss = loss * scaleFactor;
+
+            auto scaledLoss = loss.array() / worldSize;
+            if (FLAGS_distributed_enable) {
+              fl::allReduce(scaledLoss);
+            }
+            if (fl::app::isInvalidArray(scaledLoss)) {
+              FL_LOG(INFO) << "Loss has NaN values in 2, in proc: "
                            << fl::getWorldRank();
-              if (scaleFactor >= fl::kAmpMinimumScaleFactorValue) {
-                scaleFactor = scaleFactor / 2.0f;
-                FL_LOG(INFO)
-                    << "AMP: Scale factor decreased (grad). New value:\t"
-                    << scaleFactor;
-                retrySample = true;
-              } else {
-                FL_LOG(FATAL)
-                    << "Minimum loss scale reached: "
-                    << fl::kAmpMinimumScaleFactorValue
-                    << " with over/underflowing gradients. Lowering the "
-                    << "learning rate, using gradient clipping, or "
-                    << "increasing the batch size can help resolve "
-                    << "loss explosion.";
-              }
-              scaleCounter = 1;
-              break;
+              scaleFactor = scaleFactor / 2.0f;
+              FL_LOG(INFO)
+                  << "AMP: Scale factor decreased (loss). New value :\t "
+                  << scaleFactor;
+              continue;
             }
           }
+          af::sync();
+          fwdTimeMeter.stopAndIncUnit();
+          critFwdTimeMeter.stopAndIncUnit();
+
+          // 3. Backward
+          bwdTimeMeter.resume();
+          optWithWeightDecay.zeroGrad();
+          optNoWeightDecay.zeroGrad();
+          loss.backward();
+          if (FLAGS_distributed_enable) {
+            reducer->finalize();
+          }
+
+          if (FLAGS_fl_amp_use_mixed_precision) {
+            for (auto& p : modelParams) {
+              p.grad() = p.grad() / scaleFactor;
+              if (fl::app::isInvalidArray(p.grad().array())) {
+                FL_LOG(INFO) << "Grad has NaN values in 3, in proc: "
+                             << fl::getWorldRank();
+                if (scaleFactor >= fl::kAmpMinimumScaleFactorValue) {
+                  scaleFactor = scaleFactor / 2.0f;
+                  FL_LOG(INFO)
+                      << "AMP: Scale factor decreased (grad). New value:\t"
+                      << scaleFactor;
+                  retrySample = true;
+                } else {
+                  FL_LOG(FATAL)
+                      << "Minimum loss scale reached: "
+                      << fl::kAmpMinimumScaleFactorValue
+                      << " with over/underflowing gradients. Lowering the "
+                      << "learning rate, using gradient clipping, or "
+                      << "increasing the batch size can help resolve "
+                      << "loss explosion.";
+                }
+                scaleCounter = 1;
+                break;
+              }
+            }
+          }
+          af::sync();
+          bwdTimeMeter.stopAndIncUnit();
+          if (retrySample) {
+            continue;
+          }
+
+          trainLossMeter.add(loss.array() / scaleFactor);
+        } while (retrySample);
+
+        // 4. Optimize
+        optimTimeMeter.resume();
+        if (FLAGS_train_maxgradnorm > 0) {
+          fl::clipGradNorm(modelParams, FLAGS_train_maxgradnorm);
         }
-        af::sync();
-        bwdTimeMeter.stopAndIncUnit();
-        if (retrySample) {
-          continue;
-        }
+        optWithWeightDecay.step();
+        optNoWeightDecay.step();
+        optimTimeMeter.stopAndIncUnit();
 
-        trainLossMeter.add(loss.array() / scaleFactor);
-      } while (retrySample);
-
-      // 4. Optimize
-      optimTimeMeter.resume();
-      if (FLAGS_train_maxgradnorm > 0) {
-        fl::clipGradNorm(modelParams, FLAGS_train_maxgradnorm);
-      }
-      optWithWeightDecay.step();
-      optNoWeightDecay.step();
-      optimTimeMeter.stopAndIncUnit();
-
-      // 5. update scale factor
-      if (FLAGS_fl_amp_use_mixed_precision && scaleFactor < kMaxScaleFactor) {
-        if (scaleCounter % kScaleFactorUpdateInterval == 0) {
-          scaleFactor *= 2;
-          FL_VLOG(2) << "AMP: Scale factor doubled. New value:\t"
-                     << scaleFactor;
-        } else {
-          scaleFactor += 2;
-          FL_VLOG(3) << "AMP: Scale factor incremented. New value\t"
-                     << scaleFactor;
+        // 5. update scale factor
+        if (FLAGS_fl_amp_use_mixed_precision && scaleFactor < kMaxScaleFactor) {
+          if (scaleCounter % kScaleFactorUpdateInterval == 0) {
+            scaleFactor *= 2;
+            FL_VLOG(2) << "AMP: Scale factor doubled. New value:\t"
+                       << scaleFactor;
+          } else {
+            scaleFactor += 2;
+            FL_VLOG(3) << "AMP: Scale factor incremented. New value\t"
+                       << scaleFactor;
+          }
         }
       }
 
       // 6. Compute and record the prediction error.
-      int interval = 100;
+      int interval = 100 / trainDatasets.size();
       if (idx && idx % interval == 0) {
         timeMeter.stop();
         fl::ext::syncMeter(trainLossMeter);
         fl::ext::syncMeter(timeMeter);
         double time = timeMeter.value() / interval;
-        double samplePerSecond = FLAGS_data_batch_size * worldSize / time;
+        double samplePerSecond =
+            FLAGS_data_batch_size * worldSize * trainDatasets.size() / time;
         FL_LOG_MASTER(INFO)
             << "Epoch " << epoch << std::setprecision(5) << " Batch: " << idx
             << " Throughput " << samplePerSecond
