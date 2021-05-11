@@ -13,6 +13,7 @@
 
 #include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/dataset/datasets.h"
+#include "flashlight/fl/tensor/Compute.h"
 #include "flashlight/lib/common/System.h"
 
 using namespace fl;
@@ -286,9 +287,9 @@ TEST(DatasetTest, FileBlobDataset) {
     const int nworker = 4;
     int nperworker = data.size() / nworker;
     for (int i = 0; i < nworker; i++) {
-      auto device = af::getDevice();
+      auto device = fl::getDevice();
       workers.push_back(std::thread([i, blob, nperworker, device, &thdata]() {
-        af::setDevice(device);
+        fl::setDevice(device);
         for (int j = 0; j < nperworker; j++) {
           thdata[i * nperworker + j] = blob->get(i * nperworker + j);
         }
@@ -324,10 +325,10 @@ TEST(DatasetTest, FileBlobDataset) {
       std::vector<std::thread> workers;
       const int nworker = 10;
       int nperworker = data.size() / nworker;
-      auto device = af::getDevice();
+      auto device = fl::getDevice();
       for (int i = 0; i < nworker; i++) {
         workers.push_back(std::thread([i, blob, nperworker, device, &data]() {
-          af::setDevice(device);
+          fl::setDevice(device);
           for (int j = 0; j < nperworker; j++) {
             blob->add(data[i * nperworker + j]);
           }
@@ -444,9 +445,9 @@ TEST(DatasetTest, MemoryBlobDataset) {
     const int nworker = 4;
     int nperworker = data.size() / nworker;
     for (int i = 0; i < nworker; i++) {
-      auto device = af::getDevice();
+      auto device = fl::getDevice();
       workers.push_back(std::thread([i, &blob, nperworker, device, &thdata]() {
-        af::setDevice(device);
+        fl::setDevice(device);
         for (int j = 0; j < nperworker; j++) {
           thdata[i * nperworker + j] = blob.get(i * nperworker + j);
         }
@@ -481,10 +482,10 @@ TEST(DatasetTest, MemoryBlobDataset) {
       std::vector<std::thread> workers;
       const int nworker = 10;
       int nperworker = data.size() / nworker;
-      auto device = af::getDevice();
+      auto device = fl::getDevice();
       for (int i = 0; i < nworker; i++) {
         workers.push_back(std::thread([i, &wblob, nperworker, device, &data]() {
-          af::setDevice(device);
+          fl::setDevice(device);
           for (int j = 0; j < nperworker; j++) {
             wblob.add(data[i * nperworker + j]);
           }
