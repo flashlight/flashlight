@@ -296,18 +296,18 @@ int main(int argc, char** argv) {
         inputs = inputs.as(f16);
       }
       auto target = noGrad(example[kImagenetTargetIdx]);
-      af::sync();
+      fl::sync();
       sampleTimerMeter.stopAndIncUnit();
 
       while (true) {
         // Forward
         fwdTimeMeter.resume();
         auto output = model->forward(inputs);
-        af::sync();
+        fl::sync();
 
         critFwdTimeMeter.resume();
         auto loss = criterion(output, target);
-        af::sync();
+        fl::sync();
         fwdTimeMeter.stopAndIncUnit();
         critFwdTimeMeter.stopAndIncUnit();
 
@@ -316,7 +316,7 @@ int main(int argc, char** argv) {
         opt.zeroGrad();
         bool scaleIsValid = fl::app::backwardWithScaling(
             loss, modelParams, dynamicScaler, reducer);
-        af::sync();
+        fl::sync();
         bwdTimeMeter.stopAndIncUnit();
         if (!scaleIsValid) {
           continue;
@@ -330,7 +330,7 @@ int main(int argc, char** argv) {
 
       optimTimeMeter.resume();
       opt.step();
-      af::sync();
+      fl::sync();
       optimTimeMeter.stopAndIncUnit();
       timeMeter.stopAndIncUnit();
 
