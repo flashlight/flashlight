@@ -93,7 +93,7 @@ fl::dtype Tensor::type() const {
 /******************** Tensor Creation Functions ********************/
 #define AF_FULL_FUN_DEF(TYPE)                                               \
   template <>                                                               \
-  Tensor full(const Shape& dims, TYPE value, fl::dtype type) {              \
+  Tensor full(const Shape& dims, TYPE value, const dtype type) {            \
     return Tensor(af::constant(value, flToAfDims(dims), flToAfType(type))); \
   }
 AF_FULL_FUN_DEF(const double&);
@@ -108,7 +108,11 @@ AF_FULL_FUN_DEF(const long long&);
 AF_FULL_FUN_DEF(const unsigned long long&);
 AF_FULL_FUN_DEF(const bool&);
 AF_FULL_FUN_DEF(const short&);
-AF_FULL_FUN_DEF(const unsigned short&)
+AF_FULL_FUN_DEF(const unsigned short&);
+
+Tensor identity(const Dim dim, const dtype type) {
+  return Tensor(af::identity({dim, dim}, flToAfType(type)));
+}
 
 /************************** Binary Operators ***************************/
 // For ArrayFire, af::array already implements overloads for all needed
