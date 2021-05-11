@@ -154,7 +154,6 @@ if (FL_BUILD_CORE)
     flashlight
     PROPERTIES
     LINKER_LANGUAGE CXX
-    CXX_STANDARD 14
     )
 
   # FIXME: libraries are required to build core tests - https://git.io/JL955
