@@ -17,6 +17,8 @@
 
 #include <cmath>
 
+#include "flashlight/fl/tensor/Compute.h"
+
 namespace fl {
 
 AdadeltaOptimizer::AdadeltaOptimizer(
@@ -38,8 +40,8 @@ AdadeltaOptimizer::AdadeltaOptimizer(
     accGrad_.emplace_back(af::constant(0, parameter.dims(), parameter.type()));
     accDelta_.emplace_back(af::constant(0, parameter.dims(), parameter.type()));
 
-    accGrad_.back().eval();
-    accDelta_.back().eval();
+    fl::eval(accGrad_.back());
+    fl::eval(accDelta_.back());
   }
 }
 
@@ -61,15 +63,15 @@ void AdadeltaOptimizer::step() {
     af::array& accDelta = accDelta_[i];
 
     accGrad = rho_ * accGrad + (1 - rho_) * grad * grad;
-    af::eval(accGrad);
+    fl::eval(accGrad);
 
     auto delta = af::sqrt(accDelta + eps_) / af::sqrt(accGrad + eps_) * grad;
 
     data = data - lr_ * delta;
-    af::eval(data);
+    fl::eval(data);
 
     accDelta = rho_ * accDelta + (1 - rho_) * delta * delta;
-    af::eval(accDelta);
+    fl::eval(accDelta);
   }
 }
 
