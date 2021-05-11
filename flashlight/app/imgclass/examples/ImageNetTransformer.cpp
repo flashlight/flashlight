@@ -263,7 +263,7 @@ int main(int argc, char** argv) {
   //////////////////////////
   //  Create model
   /////////////////////////
-  af::setSeed(FLAGS_train_seed); // Making sure the models are initialized in
+  fl::setSeed(FLAGS_train_seed); // Making sure the models are initialized in
                                  // the same way across different processes
   auto model = std::make_shared<fl::ext::image::ViT>(
       FLAGS_model_layers,
@@ -282,7 +282,7 @@ int main(int argc, char** argv) {
   }
 
   // Setting different seeds for better randomness
-  af::setSeed(worldRank + FLAGS_train_seed);
+  fl::setSeed(worldRank + FLAGS_train_seed);
   std::srand(worldRank + FLAGS_train_seed);
   fl::DynamicBenchmark::setBenchmarkMode(true);
 
