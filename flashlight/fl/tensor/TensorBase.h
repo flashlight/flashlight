@@ -44,6 +44,54 @@ class Tensor {
 
   // TODO:fl::Tensor {af} remove me when not dependent on AF
   af::array& getArray();
+  const af::array& getArray() const;
 };
+
+/************************** Binary Operators ***************************/
+#define BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, TYPE) \
+  Tensor FUNC(TYPE lhs, const Tensor& rhs);         \
+  Tensor FUNC(const Tensor& lhs, TYPE rhs);         \
+  Tensor operator OP(TYPE lhs, const Tensor& rhs);  \
+  Tensor operator OP(const Tensor& lhs, TYPE rhs);
+#define BINARY_OP_LITERALS_DECL(OP, FUNC)                           \
+  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const bool&);               \
+  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const int&);                \
+  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const unsigned&);           \
+  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const char&);               \
+  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const unsigned char&);      \
+  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const long&);               \
+  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const unsigned long&);      \
+  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const long long&);          \
+  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const unsigned long long&); \
+  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const double&);             \
+  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const float&);              \
+  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const short&);              \
+  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const unsigned short&);
+#define BINARY_OP_DECL(OP, FUNC)                                    \
+  Tensor FUNC(const Tensor& lhs, const Tensor& rhs);                \
+  inline Tensor operator OP(const Tensor& lhs, const Tensor& rhs) { \
+    return FUNC(lhs, rhs);                                          \
+  }                                                                 \
+  BINARY_OP_LITERALS_DECL(OP, FUNC);
+// Definitions. Each declares:
+// - a functional operator that takes two tensors (e.g. add)
+// - a symbolic operator that takes two tensors (calls the functional one)
+// - functional and symbolic operators for all lhs/rhs primitive types
+BINARY_OP_DECL(+, add);
+BINARY_OP_DECL(-, sub);
+BINARY_OP_DECL(*, mul);
+BINARY_OP_DECL(/, div);
+BINARY_OP_DECL(==, eq);
+BINARY_OP_DECL(!=, neq);
+BINARY_OP_DECL(<, lessThan);
+BINARY_OP_DECL(<=, lessThanEqual);
+BINARY_OP_DECL(>, greaterThan);
+BINARY_OP_DECL(>=, greaterThanEqual);
+BINARY_OP_DECL(||, logicalOr);
+BINARY_OP_DECL(%, mod);
+BINARY_OP_DECL(|, bitwiseOr);
+BINARY_OP_DECL(^, bitwiseXor);
+BINARY_OP_DECL(<<, lShift);
+BINARY_OP_DECL(>>, rShift);
 
 } // namespace fl
