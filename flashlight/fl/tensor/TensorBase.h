@@ -10,6 +10,8 @@
 // TODO:fl::Tensor {af} remove me when ArrayFire is a particular subimpl
 #include <af/array.h>
 
+#include <optional>
+
 #include "flashlight/fl/tensor/ShapeBase.h"
 #include "flashlight/fl/tensor/Types.h"
 
@@ -130,10 +132,53 @@ BINARY_OP_DECL(<=, lessThanEqual);
 BINARY_OP_DECL(>, greaterThan);
 BINARY_OP_DECL(>=, greaterThanEqual);
 BINARY_OP_DECL(||, logicalOr);
+BINARY_OP_DECL(&&, logicalAnd);
 BINARY_OP_DECL(%, mod);
 BINARY_OP_DECL(|, bitwiseOr);
 BINARY_OP_DECL(^, bitwiseXor);
 BINARY_OP_DECL(<<, lShift);
 BINARY_OP_DECL(>>, rShift);
+
+/**
+ * Returns the element-wise minimum of tensor elements.
+ *
+ * @param[in] lhs left hand side tensor for the minimum
+ * @param[in] rhs right hand side tensor for the minimum
+ * @return a tensor containing the minimum values in each tensor
+ */
+Tensor minimum(const Tensor& lhs, const Tensor& rhs);
+
+/**
+ * Returns the element-wise maximum of tensor elements.
+ *
+ * @param[in] lhs left hand side tensor for the minimum
+ * @param[in] rhs right hand side tensor for the minimum
+ * @return a tensor containing the maximum values in each tensor
+ */
+Tensor maximum(const Tensor& lhs, const Tensor& rhs);
+
+/************************** Reductions ***************************/
+
+/**
+ * Compute the minimum value along an axis.
+ *
+ * @param[in] input the input along which to operate
+ * @param[in] dim the dimension along which to reduce.
+ *
+ * TODO: add fl::Tensor::min to call this?
+ * TODO: investigate taking a tuple of dims
+ */
+Tensor amin(const Tensor& input, std::optional<const int> dim = {});
+
+/**
+ * Compute the maximum value along an axis.
+ *
+ * @param[in] input the input along which to operate
+ * @param[in] dim the dimension along which to reduce.
+ *
+ * TODO: add fl::Tensor::max to call this?
+ * TODO: investigate taking a tuple of dims
+ */
+Tensor amax(const Tensor& input, std::optional<const int> dim = {});
 
 } // namespace fl

@@ -8,6 +8,8 @@
 #include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/fl/tensor/backend/af/Utils.h"
 
+#include <af/algorithm.h>
+#include <af/arith.h>
 #include <af/data.h>
 
 namespace fl {
@@ -106,10 +108,31 @@ AF_BINARY_OP_DEF(<=, lessThanEqual);
 AF_BINARY_OP_DEF(>, greaterThan);
 AF_BINARY_OP_DEF(>=, greaterThanEqual);
 AF_BINARY_OP_DEF(||, logicalOr);
+AF_BINARY_OP_DEF(&&, logicalAnd);
 AF_BINARY_OP_DEF(%, mod);
 AF_BINARY_OP_DEF(|, bitwiseOr);
 AF_BINARY_OP_DEF(^, bitwiseXor);
 AF_BINARY_OP_DEF(<<, lShift);
 AF_BINARY_OP_DEF(>>, rShift);
+
+Tensor minimum(const Tensor& lhs, const Tensor& rhs) {
+  return Tensor(af::min(lhs.getArray(), rhs.getArray()));
+}
+
+Tensor maximum(const Tensor& lhs, const Tensor& rhs) {
+  return Tensor(af::max(lhs.getArray(), rhs.getArray()));
+}
+
+/************************** Reductions ***************************/
+
+Tensor amin(const Tensor& input, std::optional<const int> dim) {
+  // in ArrayFire, -1 --> all axes
+  return Tensor(af::min(input.getArray(), dim ? dim.value() : -1));
+}
+
+Tensor amax(const Tensor& input, std::optional<const int> dim) {
+  // in ArrayFire, -1 --> all axes
+  return Tensor(af::max(input.getArray(), dim ? dim.value() : -1));
+}
 
 } // namespace fl
