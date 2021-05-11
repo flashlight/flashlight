@@ -5,7 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#pragma once
-
-#include "flashlight/fl/tensor/Compute.h"
 #include "flashlight/fl/tensor/Random.h"
+
+#include <af/random.h>
+
+namespace fl {
+
+void setSeed(int seed) {
+  af::setSeed(seed);
+}
+
+} // namespace fl

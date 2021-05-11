@@ -735,7 +735,7 @@ void Trainer::reduceGrads() {
 /* ============= Stateless training helpers ============= */
 void Trainer::initArrayFire() const {
   // Set arrayfire seed for reproducibility
-  af::setSeed(FLAGS_train_seed);
+  fl::setSeed(FLAGS_train_seed);
 }
 
 std::vector<int> Trainer::parseCutoffs(int64_t nClasses) const {

@@ -100,7 +100,7 @@ TEST(Seq2SeqTest, Seq2SeqViterbi) {
   int inputsteps = 200;
   int maxoutputlen = 100;
 
-  af::setSeed(1);
+  fl::setSeed(1);
   Seq2SeqCriterion seq2seq(
       nclass,
       hiddendim,

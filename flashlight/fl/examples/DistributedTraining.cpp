@@ -24,7 +24,7 @@ int main() {
   auto worldSize = fl::getWorldSize();
   auto worldRank = fl::getWorldRank();
   bool isMaster = (worldRank == 0);
-  af::setSeed(worldRank);
+  fl::setSeed(worldRank);
 
   auto reducer = std::make_shared<fl::CoalescingReducer>(
       /*scale=*/1.0 / worldSize,
