@@ -71,12 +71,23 @@ class Tensor {
  *
  * @param[in] dims the shape of the tensor to create
  * @param[in] val the value with which to fill the tensor
- * @param[in] t the type of the tensor to create. Defaults to a value based on
- * the value type
+ * @param[in] type the type of the tensor to create. Defaults to a value based
+ * on the value type
  * @return a tensor of the specified shape filled with the specified value
  */
 template <typename T>
-Tensor full(const Shape& dims, const T& val, dtype t = dtype_traits<T>::ctype);
+Tensor full(
+    const Shape& dims,
+    const T& val,
+    const dtype type = dtype_traits<T>::ctype);
+
+/**
+ * Return a the identity tensor of a given size and type.
+ *
+ * @param[in] dim the size of the dimension of the matrix (dim x dim)
+ * @param[in] type the type of the resulting matrix
+ */
+Tensor identity(const Dim dim, const dtype type = dtype::f32);
 
 /************************** Binary Operators ***************************/
 #define BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, TYPE) \

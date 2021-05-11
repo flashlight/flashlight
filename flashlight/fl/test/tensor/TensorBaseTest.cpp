@@ -90,3 +90,12 @@ TEST(TensorBaseTest, FullConstant) {
   ASSERT_EQ(b.type(), fl::dtype::f32);
   ASSERT_TRUE(allClose(b.getArray(), af::constant(4.5, {1, 1, 5, 4})));
 }
+
+TEST(TensorBaseTest, Identity) {
+  auto a = fl::identity(6);
+  ASSERT_EQ(a.shape(), Shape({6, 6}));
+  ASSERT_EQ(a.type(), fl::dtype::f32);
+  ASSERT_TRUE(allClose(a.getArray(), af::identity({6, 6})));
+
+  ASSERT_EQ(fl::identity(6, fl::dtype::f64).type(), fl::dtype::f64);
+}
