@@ -150,7 +150,7 @@ int main(int argc, char** argv) {
   const bool isMaster = (worldRank == 0);
 
   fl::setDevice(worldRank);
-  af::setSeed(worldSize);
+  fl::setSeed(worldSize);
   fl::DynamicBenchmark::setBenchmarkMode(true);
 
   std::shared_ptr<fl::ext::DynamicScaler> dynamicScaler;
