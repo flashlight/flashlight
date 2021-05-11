@@ -480,19 +480,19 @@ int main(int argc, char** argv) {
           [&dataType](const af::array& in) {
             return fl::Variable(in.as(dataType), false);
           });
-      af::sync();
+      fl::sync();
       sampleTimerMeter.stopAndIncUnit();
 
       while (true) {
         // 2. Forward
         fwdBackboneTimeMeter.resume();
         input = detr->forwardBackbone(input);
-        af::sync();
+        fl::sync();
         fwdBackboneTimeMeter.stopAndIncUnit();
 
         fwdTimeMeter.resume();
         auto output = detr->forward({input, mask});
-        af::sync();
+        fl::sync();
         fwdTimeMeter.stopAndIncUnit();
 
         // 3. Criterion
@@ -504,7 +504,7 @@ int main(int argc, char** argv) {
           fl::Variable scaled_loss = weightDict[losses.first] * losses.second;
           accumLoss = scaled_loss + accumLoss;
         }
-        af::sync();
+        fl::sync();
         critFwdTimeMeter.stopAndIncUnit();
 
         // 4. Backward
@@ -514,7 +514,7 @@ int main(int argc, char** argv) {
         bwdTimeMeter.resume();
         bool scaleIsValid = fl::app::backwardWithScaling(
             accumLoss, modelParams, dynamicScaler, reducer);
-        af::sync();
+        fl::sync();
         bwdTimeMeter.stopAndIncUnit();
         if (!scaleIsValid) {
           continue;

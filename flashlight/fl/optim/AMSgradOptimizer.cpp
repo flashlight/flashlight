@@ -17,6 +17,8 @@
 
 #include <cmath>
 
+#include "flashlight/fl/tensor/Compute.h"
+
 using std::vector;
 
 namespace fl {
@@ -48,9 +50,9 @@ AMSgradOptimizer::AMSgradOptimizer(
     maxExpAvgSq_.emplace_back(
         af::constant(0, parameter.dims(), parameter.type()));
 
-    biasedFirst_.back().eval();
-    biasedSecond_.back().eval();
-    maxExpAvgSq_.back().eval();
+    fl::eval(biasedFirst_.back());
+    fl::eval(biasedSecond_.back());
+    fl::eval(maxExpAvgSq_.back());
   }
 }
 
@@ -74,13 +76,13 @@ void AMSgradOptimizer::step() {
     biasedFirst = beta1_ * biasedFirst + (1 - beta1_) * grad;
     biasedSecond = beta2_ * biasedSecond + (1 - beta2_) * grad * grad;
     maxExpAvgSq = af::max(maxExpAvgSq, biasedSecond);
-    af::eval(biasedFirst);
-    af::eval(biasedSecond);
-    af::eval(maxExpAvgSq);
+    fl::eval(biasedFirst);
+    fl::eval(biasedSecond);
+    fl::eval(maxExpAvgSq);
 
     data = data - (lr_ * biasedFirst) / (af::sqrt(maxExpAvgSq) + eps_);
 
-    af::eval(data);
+    fl::eval(data);
   }
 }
 
