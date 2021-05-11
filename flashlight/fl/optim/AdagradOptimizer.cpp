@@ -17,6 +17,8 @@
 
 #include <cmath>
 
+#include "flashlight/fl/tensor/Compute.h"
+
 namespace fl {
 
 AdagradOptimizer::AdagradOptimizer(
@@ -30,7 +32,7 @@ AdagradOptimizer::AdagradOptimizer(
   variance_.reserve(parameters.size());
   for (const auto& param : parameters_) {
     variance_.push_back(af::constant(0, param.dims(), param.type()));
-    variance_.back().eval();
+    fl::eval(variance_.back());
   }
 }
 
@@ -50,9 +52,9 @@ void AdagradOptimizer::step() {
     }
 
     variance = variance + grad * grad;
-    af::eval(variance);
+    fl::eval(variance);
     data = data - lr_ * grad / (af::sqrt(variance) + eps_);
-    af::eval(data);
+    fl::eval(data);
   }
 }
 

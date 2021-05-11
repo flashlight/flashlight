@@ -17,6 +17,8 @@
 
 #include <cmath>
 
+#include "flashlight/fl/tensor/Compute.h"
+
 using std::vector;
 
 namespace fl {
@@ -42,7 +44,7 @@ NovogradOptimizer::NovogradOptimizer(
     accGradNorm_.emplace_back(0.0);
     accGrad_.emplace_back(af::constant(0, parameter.dims(), parameter.type()));
 
-    accGrad_.back().eval();
+    fl::eval(accGrad_.back());
   }
 }
 
@@ -63,11 +65,11 @@ void NovogradOptimizer::step() {
         (1 - beta1_) *
             (grad / (static_cast<float>(std::sqrt(accGradNorm_[i]) + eps_)) +
              wd_ * data);
-    af::eval(accGrad);
+    fl::eval(accGrad);
 
     data = data - (lr_ * accGrad);
 
-    af::eval(data);
+    fl::eval(data);
   }
 }
 

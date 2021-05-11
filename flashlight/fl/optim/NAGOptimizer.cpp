@@ -9,6 +9,8 @@
 
 #include <cmath>
 
+#include "flashlight/fl/tensor/Compute.h"
+
 using std::vector;
 
 namespace fl {
@@ -31,7 +33,7 @@ NAGOptimizer::NAGOptimizer(
   for (const auto& parameter : parameters_) {
     velocities_.emplace_back(
         af::constant(0, parameter.dims(), parameter.type()));
-    velocities_.back().eval();
+    fl::eval(velocities_.back());
   }
 }
 
@@ -53,10 +55,10 @@ void NAGOptimizer::step() {
     af::array& velocity = velocities_[i];
     // this velocity corresponds to fairseq velocity * -1
     velocity = mu_ * velocity * correctedLr + lr_ * grad;
-    af::eval(velocity);
+    fl::eval(velocity);
     grad = grad * lr_ + velocity * mu_;
     data = data - grad;
-    af::eval(data);
+    fl::eval(data);
   }
   oldLr_ = lr_;
 }
