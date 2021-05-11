@@ -17,6 +17,8 @@
 
 #include <cmath>
 
+#include "flashlight/fl/tensor/Compute.h"
+
 using std::vector;
 
 namespace fl {
@@ -43,11 +45,11 @@ RMSPropOptimizer::RMSPropOptimizer(
   for (const auto& parameter : parameters_) {
     if (useFirst_) {
       first_.emplace_back(af::constant(0, parameter.dims(), parameter.type()));
-      first_.back().eval();
+      fl::eval(first_.back());
     }
 
     second_.emplace_back(af::constant(0, parameter.dims(), parameter.type()));
-    second_.back().eval();
+    fl::eval(second_.back());
   }
 }
 
@@ -67,7 +69,7 @@ void RMSPropOptimizer::step() {
 
     af::array& second = second_[i];
     second = rho_ * second + (1 - rho_) * grad * grad;
-    af::eval(second);
+    fl::eval(second);
 
     // Create shallow copy of second so that we don't update
     // "second" below
@@ -76,12 +78,12 @@ void RMSPropOptimizer::step() {
       af::array& first = first_[i];
       first = rho_ * first + (1 - rho_) * grad;
       moments = moments - first * first;
-      af::eval(first);
+      fl::eval(first);
     }
 
     data = data - (lr_ * grad) / (af::sqrt(moments) + eps_);
 
-    af::eval(data);
+    fl::eval(data);
   }
 }
 
