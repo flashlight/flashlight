@@ -540,7 +540,7 @@ int main(int argc, char** argv) {
       FL_LOG_MASTER(INFO) << "Shuffling trainset";
       auto curTrainset = loadPrefetchDataset(
           trainset, FLAGS_nthread, true /* shuffle */, curEpoch /* seed */);
-      af::sync();
+      fl::sync();
       meters.sampletimer.resume();
       meters.runtime.resume();
       meters.timer.resume();
@@ -559,7 +559,7 @@ int main(int argc, char** argv) {
         netopt->setLr(
             initlr * lrDecayScale * lrScheduleScale *
             std::min(curBatch / double(FLAGS_warmup), 1.0));
-        af::sync();
+        fl::sync();
         meters.timer.incUnit();
         meters.sampletimer.stopAndIncUnit();
         meters.stats.add(batch[kDurationIdx], batch[kTargetSizeIdx]);
@@ -588,11 +588,11 @@ int main(int argc, char** argv) {
           }
           auto output = fl::ext::forwardSequentialModuleWithPadMask(
               input, ntwrk, batch[kDurationIdx]);
-          af::sync();
+          fl::sync();
           meters.critfwdtimer.resume();
           auto loss =
               crit->forward({output, fl::noGrad(batch[kTargetIdx])}).front();
-          af::sync();
+          fl::sync();
           meters.fwdtimer.stopAndIncUnit();
           meters.critfwdtimer.stopAndIncUnit();
 
@@ -629,7 +629,7 @@ int main(int argc, char** argv) {
           if (reducer) {
             reducer->finalize();
           }
-          af::sync();
+          fl::sync();
           meters.bwdtimer.stopAndIncUnit();
 
           // optimizer
@@ -673,7 +673,7 @@ int main(int argc, char** argv) {
 
         // update weights
         netopt->step();
-        af::sync();
+        fl::sync();
         meters.optimtimer.stopAndIncUnit();
 
         // update scale factor
@@ -703,7 +703,7 @@ int main(int argc, char** argv) {
           break;
         }
       }
-      af::sync();
+      fl::sync();
       if (FLAGS_reportiters == 0) {
         runValAndSaveModel(curEpoch, curBatch, netopt->getLr());
       }

@@ -135,7 +135,7 @@ ArrayFire uses a JIT compiler to combine many small function calls into a single
   auto B = 2.0 * A; // 'B' is not allocated, Total Memory : 4 MB
   auto C = 1.0 + B; // 'C' is not allocated, Total Memory :  4 MB
   auto D = log(C); // 'D' is not allocated (yet), Total Memory :  4 MB
-  D.eval(); // only 'D' is allocated, Total Memory : 8 MB
+  fl::eval(D); // only 'D' is allocated, Total Memory : 8 MB
 
 
 The JIT both improves performance and reduces memory usage. For further documentation, see docs for the `ArrayFire JIT <https://arrayfire.com/performance-improvements-to-jit-in-arrayfire-v3-4/>`_.
