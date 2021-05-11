@@ -8,6 +8,7 @@
 #include <arrayfire.h>
 #include <gtest/gtest.h>
 
+#include "flashlight/fl/tensor/Random.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
 using namespace ::testing;
@@ -43,7 +44,7 @@ bool allClose(
     const fl::Tensor& a,
     const fl::Tensor& b,
     double absTolerance = 1e-5) {
-  return allClose(a.getArray(), b.getArray());
+  return allClose(a.getArray(), b.getArray(), absTolerance);
 }
 } // namespace
 
@@ -98,4 +99,15 @@ TEST(TensorBaseTest, Identity) {
   ASSERT_TRUE(allClose(a.getArray(), af::identity({6, 6})));
 
   ASSERT_EQ(fl::identity(6, fl::dtype::f64).type(), fl::dtype::f64);
+}
+
+TEST(TensorBaseTest, randn) {
+  int s = 30;
+  auto a = fl::randn({s, s});
+  ASSERT_EQ(a.shape(), Shape({s, s}));
+  ASSERT_EQ(a.type(), fl::dtype::f32);
+  ASSERT_TRUE(af::allTrue<bool>(
+      af::abs(af::mean(af::moddims(a.getArray(), s * s, 1, 1, 1))) < 2));
+
+  ASSERT_EQ(fl::randn({1}, fl::dtype::f64).type(), fl::dtype::f64);
 }
