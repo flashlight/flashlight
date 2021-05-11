@@ -90,7 +90,7 @@ int main(int argc, char** argv) {
   std::string runPath = FLAGS_rundir;
   handleDeprecatedFlags();
 
-  af::setSeed(FLAGS_seed);
+  fl::setSeed(FLAGS_seed);
   fl::DynamicBenchmark::setBenchmarkMode(FLAGS_fl_benchmark_mode);
 
   std::shared_ptr<fl::Reducer> reducer = nullptr;
