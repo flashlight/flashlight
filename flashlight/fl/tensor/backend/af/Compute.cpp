@@ -24,4 +24,12 @@ void eval(af::array& tensor) {
   tensor.eval();
 }
 
+int getDevice() {
+  return af::getDevice();
+}
+
+void setDevice(int deviceId) {
+  af::setDevice(deviceId);
+}
+
 } // namespace fl
