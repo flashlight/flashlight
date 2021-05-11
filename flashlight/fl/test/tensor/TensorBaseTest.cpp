@@ -111,3 +111,14 @@ TEST(TensorBaseTest, randn) {
 
   ASSERT_EQ(fl::randn({1}, fl::dtype::f64).type(), fl::dtype::f64);
 }
+
+TEST(TensorBaseTest, rand) {
+  int s = 30;
+  auto a = fl::rand({s, s});
+  ASSERT_EQ(a.shape(), Shape({s, s}));
+  ASSERT_EQ(a.type(), fl::dtype::f32);
+  ASSERT_TRUE(af::allTrue<bool>(a.getArray() <= 1));
+  ASSERT_TRUE(af::allTrue<bool>(a.getArray() >= 0));
+
+  ASSERT_EQ(fl::rand({1}, fl::dtype::f64).type(), fl::dtype::f64);
+}
