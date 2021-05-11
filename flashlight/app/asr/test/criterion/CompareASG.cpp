@@ -133,7 +133,7 @@ int main(int argc, char** argv) {
     uint64_t afSeed = rng();
     afSeed <<= 32;
     afSeed ^= rng();
-    af::setSeed(afSeed);
+    fl::setSeed(afSeed);
 
     auto input = af::randn(N, T, B);
     auto target = af::array(L, B, targetHost.data());
