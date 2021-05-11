@@ -12,11 +12,13 @@
 
 #include <af/device.h>
 
+#include "flashlight/fl/tensor/Compute.h"
+
 namespace fl {
 namespace cuda {
 
 cudaStream_t getActiveStream() {
-  auto af_id = af::getDevice();
+  auto af_id = fl::getDevice();
   return afcu::getStream(af_id);
 }
 

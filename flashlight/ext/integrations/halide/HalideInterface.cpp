@@ -61,7 +61,7 @@
  * \code
 
    // Setup CUDA -- shield your eyes
-   int deviceId = af::getDevice();
+   int deviceId = fl::getDevice();
    CUcontext ctx = 0;
    CUresult res = cuCtxGetCurrent(&ctx);
    if (res != CUDA_SUCCESS) throw std::runtime_error("cuCtxGetCurrent failed");
@@ -123,7 +123,7 @@ int halide_cuda_get_stream(
 }
 
 int halide_get_gpu_device(void* /* user_context */) {
-  return af::getDevice();
+  return fl::getDevice();
 }
 
 } // extern "C"

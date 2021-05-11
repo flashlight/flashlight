@@ -15,11 +15,12 @@
 #include <unordered_map>
 
 #include "flashlight/fl/common/CppBackports.h"
+#include "flashlight/fl/tensor/Compute.h"
 
 namespace fl {
 
 bool f16Supported() {
-  return af::isHalfAvailable(af::getDevice()) &&
+  return af::isHalfAvailable(fl::getDevice()) &&
       // f16 isn't [yet] supported with the CPU backend per onednn limitations
       !FL_BACKEND_CPU;
 }

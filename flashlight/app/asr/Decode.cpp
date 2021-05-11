@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
   /* Using acoustic model */
   if (!FLAGS_am.empty()) {
     LOG(INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
-    af::setDevice(0);
+    fl::setDevice(0);
     if (fl::lib::endsWith(FLAGS_arch, ".so")) {
       usePlugin = true;
       (void)fl::ext::ModulePlugin(FLAGS_arch);
@@ -251,7 +251,7 @@ int main(int argc, char** argv) {
         LOG(FATAL) << "[LM constructing] Failed to load LM: " << FLAGS_lm;
       }
     } else if (FLAGS_lmtype == "convlm") {
-      af::setDevice(0);
+      fl::setDevice(0);
       LOG(INFO) << "[ConvLM]: Loading LM from " << FLAGS_lm;
       std::shared_ptr<fl::Module> convLmModel;
       std::string convlmVersion;
@@ -366,7 +366,7 @@ int main(int argc, char** argv) {
                        &emissionQueue,
                        &isSeq2seqCrit](int tid) {
     // Initialize AM
-    af::setDevice(tid);
+    fl::setDevice(tid);
     std::shared_ptr<fl::Module> localNetwork = network;
     std::shared_ptr<SequenceCriterion> localCriterion = criterion;
     if (tid != 0) {
@@ -488,7 +488,7 @@ int main(int argc, char** argv) {
         LOG(FATAL)
             << "FLAGS_nthread_decoder exceeds the number of visible GPUs";
       }
-      af::setDevice(tid);
+      fl::setDevice(tid);
     }
 
     // Make a copy for non-main threads.

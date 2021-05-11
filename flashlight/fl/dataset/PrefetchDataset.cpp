@@ -10,6 +10,7 @@
 
 #include "flashlight/fl/common/Serialization.h"
 #include "flashlight/fl/dataset/PrefetchDataset.h"
+#include "flashlight/fl/tensor/Compute.h"
 
 namespace fl {
 
@@ -29,10 +30,10 @@ PrefetchDataset::PrefetchDataset(
     throw std::invalid_argument("invalid numThreads or prefetchSize");
   }
   if (numThreads_ > 0) {
-    auto deviceId = af::getDevice();
+    auto deviceId = fl::getDevice();
     threadPool_ = std::make_unique<ThreadPool>(
         numThreads_,
-        [deviceId](int /* threadId */) { af::setDevice(deviceId); });
+        [deviceId](int /* threadId */) { fl::setDevice(deviceId); });
   }
 }
 
