@@ -43,7 +43,7 @@ void timeBeamSearch() {
     for (int i = 0; i < iters; ++i) {
       seq2seq.beamPath(input, af::array(), b);
     }
-    af::sync();
+    fl::sync();
     auto e = af::timer::stop(s);
     std::cout << "Total time (beam size: " << b << ") " << std::setprecision(5)
               << e * 1000.0 / iters << " msec" << std::endl;
@@ -69,7 +69,7 @@ void timeForwardBackward() {
     auto loss = seq2seq({input, target}).front();
     loss.backward();
   }
-  af::sync();
+  fl::sync();
 
   int iters = 100;
   auto s = af::timer::start();
@@ -77,7 +77,7 @@ void timeForwardBackward() {
     auto loss = seq2seq({input, target}).front();
     loss.backward();
   }
-  af::sync();
+  fl::sync();
   auto e = af::timer::stop(s);
   std::cout << "Total time (fwd+bwd pass) " << std::setprecision(5)
             << e * 1000.0 / iters << " msec" << std::endl;

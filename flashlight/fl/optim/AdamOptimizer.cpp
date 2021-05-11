@@ -17,6 +17,8 @@
 
 #include <cmath>
 
+#include "flashlight/fl/tensor/Compute.h"
+
 using std::vector;
 
 namespace fl {
@@ -45,8 +47,8 @@ AdamOptimizer::AdamOptimizer(
     biasedSecond_.emplace_back(
         af::constant(0, parameter.dims(), parameter.type()));
 
-    biasedFirst_.back().eval();
-    biasedSecond_.back().eval();
+    fl::eval(biasedFirst_.back());
+    fl::eval(biasedSecond_.back());
   }
 }
 
@@ -75,12 +77,12 @@ void AdamOptimizer::step() {
     biasedFirst = beta1_ * biasedFirst + (1 - beta1_) * grad;
     biasedSecond = beta2_ * biasedSecond + (1 - beta2_) * grad * grad;
 
-    af::eval(biasedFirst);
-    af::eval(biasedSecond);
+    fl::eval(biasedFirst);
+    fl::eval(biasedSecond);
 
     data = data - (correctedLr * biasedFirst) / (af::sqrt(biasedSecond) + eps_);
 
-    af::eval(data);
+    fl::eval(data);
   }
 }
 
