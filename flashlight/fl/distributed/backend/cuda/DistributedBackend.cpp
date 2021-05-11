@@ -13,11 +13,12 @@
 #include <mpi.h>
 #include <nccl.h>
 
-#include "flashlight/fl/common/backend/cuda/CudaUtils.h"
 #include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/common/DevicePtr.h"
+#include "flashlight/fl/common/backend/cuda/CudaUtils.h"
 #include "flashlight/fl/distributed/DistributedApi.h"
 #include "flashlight/fl/distributed/FileStore.h"
+#include "flashlight/fl/tensor/Compute.h"
 
 #define NCCLCHECK(expr) ::fl::detail::ncclCheck((expr))
 #define MPICHECK(expr) ::fl::detail::mpiCheck((expr))
@@ -412,7 +413,7 @@ void NcclContext::initWithMPI(
   ncclUniqueId id;
 
   // TODO: Determining device is ugly. Find a better way.
-  af::setDevice(worldRank_ % std::stoi(maxDevicePerNode->second));
+  fl::setDevice(worldRank_ % std::stoi(maxDevicePerNode->second));
 
   // get NCCL unique ID at rank 0 and broadcast it to all others
   if (worldRank_ == 0) {
@@ -446,7 +447,7 @@ void NcclContext::initWithFileSystem(
 
   ncclUniqueId id;
 
-  af::setDevice(worldRank_ % std::stoi(maxDevicePerNode->second));
+  fl::setDevice(worldRank_ % std::stoi(maxDevicePerNode->second));
 
   // get NCCL unique ID at rank 0 and broadcast it to all others
   if (worldRank_ == 0) {
