@@ -113,7 +113,7 @@ int main(int argc, char** argv) {
   const bool isMaster = (worldRank == 0);
 
   fl::setDevice(worldRank);
-  af::setSeed(worldSize);
+  fl::setSeed(worldSize);
 
   auto reducer =
       std::make_shared<fl::CoalescingReducer>(1.0 / worldSize, true, true);
