@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
   std::string version;
   bool usePlugin = false;
   LOG(INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
-  af::setDevice(0);
+  fl::setDevice(0);
   if (fl::lib::endsWith(FLAGS_arch, ".so")) {
     usePlugin = true;
     (void)fl::ext::ModulePlugin(FLAGS_arch);
@@ -263,7 +263,7 @@ int main(int argc, char** argv) {
               &sliceTime,
               &isSeq2seqCrit](int tid) {
     // Initialize AM
-    af::setDevice(tid);
+    fl::setDevice(tid);
     std::shared_ptr<fl::Module> localNetwork = network;
     std::shared_ptr<SequenceCriterion> localCriterion = criterion;
     if (tid != 0) {
