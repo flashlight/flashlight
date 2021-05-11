@@ -32,7 +32,7 @@ af::array logSoftmax(const af::array& input, const int dim) {
   auto result = input -
       tile(log(sum(exp(input - tile(maxvals, tiledims)), dim)) + maxvals,
            tiledims);
-  result.eval();
+  fl::eval(result);
   return result;
 };
 

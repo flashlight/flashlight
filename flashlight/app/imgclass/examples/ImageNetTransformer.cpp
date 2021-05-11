@@ -433,7 +433,7 @@ int main(int argc, char** argv) {
         input = input.as(f16);
       }
 
-      af::sync();
+      fl::sync();
       sampleTimerMeter.stopAndIncUnit();
 
       while (true) {
@@ -445,7 +445,7 @@ int main(int argc, char** argv) {
         critFwdTimeMeter.resume();
         auto y = target.as(output.type());
         auto loss = fl::mean(fl::sum(fl::negate(y * output), {0}), {1});
-        af::sync();
+        fl::sync();
         fwdTimeMeter.stopAndIncUnit();
         critFwdTimeMeter.stopAndIncUnit();
 
@@ -455,7 +455,7 @@ int main(int argc, char** argv) {
         optNoWeightDecay.zeroGrad();
         bool scaleIsValid = fl::app::backwardWithScaling(
             loss, modelParams, dynamicScaler, reducer);
-        af::sync();
+        fl::sync();
         bwdTimeMeter.stopAndIncUnit();
         if (!scaleIsValid) {
           continue;
