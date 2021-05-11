@@ -88,7 +88,7 @@ void loadModel(
 
   LOG(INFO) << "[Inference tutorial for CTC] Reading acoustic model from "
             << FLAGS_am_path;
-  af::setDevice(0);
+  fl::setDevice(0);
   fl::ext::Serializer::load(FLAGS_am_path, version, cfg, network);
   if (version != FL_APP_ASR_VERSION) {
     LOG(WARNING) << "[Inference tutorial for CTC] Acostuc model version "

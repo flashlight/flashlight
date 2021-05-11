@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
   const int worldSize = fl::getWorldSize();
   const bool isMaster = (worldRank == 0);
 
-  af::setDevice(worldRank);
+  fl::setDevice(worldRank);
   af::setSeed(worldSize);
 
   auto reducer =
