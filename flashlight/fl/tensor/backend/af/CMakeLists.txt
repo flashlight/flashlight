@@ -43,4 +43,5 @@ target_sources(
   PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/Compute.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Random.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/TensorBase.cpp
   )
