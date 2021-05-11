@@ -21,4 +21,8 @@ Tensor randn(const Shape& shape, dtype type) {
   return Tensor(af::randn(detail::flToAfDims(shape), detail::flToAfType(type)));
 }
 
+Tensor rand(const Shape& shape, dtype type) {
+  return Tensor(af::randu(detail::flToAfDims(shape), detail::flToAfType(type)));
+}
+
 } // namespace fl

@@ -32,4 +32,13 @@ void setSeed(int seed);
  */
 Tensor randn(const Shape& shape, dtype type = dtype::f32);
 
+/**
+ * Initialize a tensor with elements sampled uniformly from the interval [0, 1).
+ *
+ * @param[in] shape the shape of the tensor to create
+ * @param[in] type the type of the tensor. Defaults to float
+ * @return a tensor with the given dimensions with elements sampled accordingly
+ */
+Tensor rand(const Shape& shape, dtype type = dtype::f32);
+
 } // namespace fl
