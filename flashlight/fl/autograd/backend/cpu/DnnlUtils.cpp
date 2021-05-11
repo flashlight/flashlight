@@ -14,6 +14,7 @@
 
 #include "flashlight/fl/autograd/backend/cpu/DnnlUtils.h"
 #include "flashlight/fl/common/Defines.h"
+#include "flashlight/fl/tensor/Compute.h"
 
 #if FL_BACKEND_OPENCL
 #include "flashlight/fl/common/OpenClUtils.h"
@@ -130,7 +131,7 @@ void executeNetwork(
   // enforcing that inputs to computation are ready; we're required to wait
   // until all AF operations are done
   if (cpuBackend) {
-    af::sync();
+    fl::sync();
   }
   for (size_t i = 0; i < net.size(); ++i) {
     net.at(i).execute(DnnlStream::getInstance().getStream(), netArgs.at(i));

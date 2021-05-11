@@ -209,7 +209,7 @@ class DynamicBenchmark {
    * DynamicBenchmark's options' currently-active option.
    *
    * If the timings are complete for the benchmark options, simply executes the
-   passed function. Calls `af::sync()` before and after function execution to
+   passed function. Calls `fl::sync()` before and after function execution to
    get an accurate count.
    *
    * @param[in] function the function to benchmark

@@ -39,13 +39,13 @@ int main() {
     b = asg.forward({input, target}).front();
     b.backward();
   }
-  af::sync();
+  fl::sync();
   auto s = af::timer::start();
   for (int i = 0; i < ntimes; ++i) {
     b = asg.forward({input, target}).front();
     b.backward(gradoutput);
   }
-  af::sync();
+  fl::sync();
   auto e = af::timer::stop(s);
   std::cout << "Total time (fwd+bwd pass) " << std::setprecision(5)
             << e * 1000.0 / ntimes << " msec" << std::endl;
