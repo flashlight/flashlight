@@ -79,7 +79,7 @@ TEST(TensorBaseTest, BinaryOperators) {
   ASSERT_TRUE(allClose((a + b), add(a, b)));
 }
 
-TEST(TensorBaseTest, FullConstant) {
+TEST(TensorBaseTest, full) {
   // TODO: expand with fixtures for each type
   auto a = fl::full({3, 4}, 3.);
   ASSERT_EQ(a.shape(), Shape({3, 4}));
@@ -92,7 +92,7 @@ TEST(TensorBaseTest, FullConstant) {
   ASSERT_TRUE(allClose(b.getArray(), af::constant(4.5, {1, 1, 5, 4})));
 }
 
-TEST(TensorBaseTest, Identity) {
+TEST(TensorBaseTest, identity) {
   auto a = fl::identity(6);
   ASSERT_EQ(a.shape(), Shape({6, 6}));
   ASSERT_EQ(a.type(), fl::dtype::f32);
@@ -149,4 +149,18 @@ TEST(TensorBaseTest, amax) {
   auto a = fl::rand({3, 3});
   ASSERT_TRUE(allClose(fl::amax(a).getArray(), af::max(a.getArray())));
   ASSERT_TRUE(allClose(fl::amax(a, 0).getArray(), af::max(a.getArray(), 0)));
+}
+
+TEST(TensorBaseTest, negative) {
+  auto a = fl::full({3, 3}, 1);
+  auto b = fl::full({3, 3}, 2);
+  auto c = a - b;
+  ASSERT_TRUE(allClose(c, -a));
+  ASSERT_TRUE(allClose(c, negative(a)));
+}
+
+TEST(TensorBaseTest, astype) {
+  auto a = fl::full({3, 3}, 1.0);
+  ASSERT_EQ(a.type(), dtype::f32);
+  ASSERT_EQ(a.astype(dtype::f64).type(), dtype::f64);
 }
