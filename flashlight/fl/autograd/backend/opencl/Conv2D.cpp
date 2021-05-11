@@ -12,6 +12,7 @@
 
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/autograd/Variable.h"
+#include "flashlight/fl/tensor/Compute.h"
 
 namespace fl {
 
@@ -53,7 +54,7 @@ Variable conv2dWithoutBiasAndGroups(
   auto gradFunc = [stride, padding, dilation, convOut, deviceId, weightsFlip](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
-    af::setDevice(deviceId);
+    fl::setDevice(deviceId);
 
     auto& in = inputs[0];
     auto& wt = inputs[1];
@@ -128,7 +129,7 @@ Variable conv2d(
     throw std::runtime_error(
         "Number of channels must be devisible by number of groups");
   }
-  auto deviceId = af::getDevice();
+  auto deviceId = fl::getDevice();
 
   std::vector<Variable> groupInput = fl::split(
       input, input.dims(kIOChannelSizeIdx) / groups, kIOChannelSizeIdx);

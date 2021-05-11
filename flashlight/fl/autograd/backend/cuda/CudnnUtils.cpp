@@ -13,8 +13,9 @@
 
 #include <af/internal.h>
 
-#include "flashlight/fl/common/backend/cuda/CudaUtils.h"
 #include "flashlight/fl/common/DevicePtr.h"
+#include "flashlight/fl/common/backend/cuda/CudaUtils.h"
+#include "flashlight/fl/tensor/Compute.h"
 
 namespace {
 
@@ -143,10 +144,11 @@ TensorDescriptor::TensorDescriptor(const af::array& input) {
   auto afdims = input.dims();
 
   // reverse the arrays and cast to int type
-  std::array<int, 4> strides = {(int)afstrides[3],
-                                (int)afstrides[2],
-                                (int)afstrides[1],
-                                (int)afstrides[0]};
+  std::array<int, 4> strides = {
+      (int)afstrides[3],
+      (int)afstrides[2],
+      (int)afstrides[1],
+      (int)afstrides[0]};
   std::array<int, 4> dims = {
       (int)afdims[3], (int)afdims[2], (int)afdims[1], (int)afdims[0]};
 
@@ -278,7 +280,7 @@ RNNDescriptor::RNNDescriptor(
   cudnnRNNAlgo_t algo = CUDNN_RNN_ALGO_STANDARD;
   cudnnDataType_t cudnntype = cudnnMapToType(type);
 
-#if CUDNN_VERSION >= 7000 && CUDNN_VERSION < 8000 
+#if CUDNN_VERSION >= 7000 && CUDNN_VERSION < 8000
   CUDNN_CHECK_ERR(cudnnSetRNNDescriptor(
       handle,
       descriptor,
@@ -341,7 +343,7 @@ ConvDescriptor::~ConvDescriptor() {
 }
 
 cudnnHandle_t getCudnnHandle() {
-  int af_id = af::getDevice();
+  int af_id = fl::getDevice();
   return handles[af_id].handle;
 }
 
