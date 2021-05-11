@@ -7,6 +7,7 @@
 
 #include "flashlight/fl/distributed/reducers/CoalescingReducer.h"
 #include "flashlight/fl/distributed/DistributedApi.h"
+#include "flashlight/fl/tensor/Compute.h"
 
 namespace fl {
 

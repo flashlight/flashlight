@@ -14,6 +14,7 @@
 
 #include "flashlight/fl/common/DynamicBenchmark.h"
 #include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/tensor/Compute.h"
 
 namespace {
 
@@ -137,7 +138,7 @@ TEST_F(DynamicBenchmark, DynamicBenchmarkMatmul) {
       auto a = af::randu({size, size});
       auto b = af::randu({size, size});
       auto c = af::matmul(a, b);
-      c.eval();
+      fl::eval(c);
     });
   }
   auto ops = dynamicBench->getOptions<fl::DynamicBenchmarkOptions<int>>();

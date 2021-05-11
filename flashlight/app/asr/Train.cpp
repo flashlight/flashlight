@@ -1032,7 +1032,7 @@ int main(int argc, char** argv) {
       FL_LOG_MASTER(INFO) << "Shuffling trainset";
       auto curTrainset = loadPrefetchDataset(
           trainset, FLAGS_nthread, true /* shuffle */, curEpoch /* seed */);
-      af::sync();
+      fl::sync();
       meters.sampletimer.resume();
       meters.runtime.resume();
       meters.timer.resume();
@@ -1054,7 +1054,7 @@ int main(int argc, char** argv) {
         critopt->setLr(
             initcritlr * lrDecayScale * lrScheduleScale *
             std::min(curBatch / double(FLAGS_warmup), 1.0));
-        af::sync();
+        fl::sync();
         meters.timer.incUnit();
         meters.sampletimer.stopAndIncUnit();
         meters.stats.add(batch[kDurationIdx], batch[kTargetSizeIdx]);
@@ -1087,7 +1087,7 @@ int main(int argc, char** argv) {
             output = fl::ext::forwardSequentialModuleWithPadMask(
                 input, ntwrk, batch[kDurationIdx]);
           }
-          af::sync();
+          fl::sync();
 
           // forward crit
           meters.critfwdtimer.resume();
@@ -1098,7 +1098,7 @@ int main(int argc, char** argv) {
             critArgs.push_back(fl::Variable(batch[kTargetSizeIdx], false));
           }
           auto loss = crit->forward(critArgs).front();
-          af::sync();
+          fl::sync();
           meters.fwdtimer.stopAndIncUnit();
           meters.critfwdtimer.stopAndIncUnit();
 
@@ -1132,7 +1132,7 @@ int main(int argc, char** argv) {
           auto scaledLoss = loss / totalBatchSize;
           bool scaleIsValid = fl::app::backwardWithScaling(
               scaledLoss, params, dynamicScaler, reducer);
-          af::sync();
+          fl::sync();
           meters.bwdtimer.stopAndIncUnit();
           if (!scaleIsValid) {
             continue;
@@ -1155,7 +1155,7 @@ int main(int argc, char** argv) {
         // update weights
         critopt->step();
         netopt->step();
-        af::sync();
+        fl::sync();
         meters.optimtimer.stopAndIncUnit();
 
         if (FLAGS_reportiters > 0 && curBatch % FLAGS_reportiters == 0) {
@@ -1172,7 +1172,7 @@ int main(int argc, char** argv) {
           break;
         }
       }
-      af::sync();
+      fl::sync();
       if (FLAGS_reportiters == 0) {
         runValAndSaveModel(
             curEpoch, curBatch, netopt->getLr(), critopt->getLr());

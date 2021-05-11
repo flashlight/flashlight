@@ -21,6 +21,7 @@
 
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/autograd/Variable.h"
+#include "flashlight/fl/tensor/Compute.h"
 
 namespace fl {
 namespace detail {
@@ -678,7 +679,7 @@ norm(const Variable& input, const std::vector<int>& axes, double p /* = 2 */) {
   }
   af::array sumap = result;
   result = af::pow(result, 1 / p);
-  result.eval();
+  fl::eval(result);
 
   auto gradFunc =
       [sumap, p](std::vector<Variable>& inputs, const Variable& gradOutput) {
@@ -853,7 +854,7 @@ Variable softmax(const Variable& input, const int dim) {
   auto expInput = af::exp(inputArr - af::tile(maxvals, tiledims));
   auto result = expInput / af::tile(af::sum(expInput, dim), tiledims);
 
-  result.eval();
+  fl::eval(result);
   auto gradFunc = [dim, tiledims, result](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
@@ -875,7 +876,7 @@ Variable logSoftmax(const Variable& input, const int dim) {
                    maxvals,
                tiledims);
 
-  result.eval();
+  fl::eval(result);
   auto gradFunc = [dim, tiledims, result](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
