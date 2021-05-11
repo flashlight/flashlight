@@ -42,4 +42,5 @@ target_sources(
   flashlight
   PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/Compute.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/Random.cpp
   )
