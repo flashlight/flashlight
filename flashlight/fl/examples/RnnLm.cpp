@@ -199,7 +199,7 @@ int main(int argc, char** argv) {
       clipGradNorm(model.params(), max_grad_norm);
       opt.step();
 
-      af::sync();
+      fl::sync();
       timer.incUnit();
     }
 
