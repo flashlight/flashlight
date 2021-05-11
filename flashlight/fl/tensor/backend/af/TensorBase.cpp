@@ -38,6 +38,11 @@ fl::dtype Tensor::type() const {
   return detail::afToFlType(array_.type());
 }
 
+Tensor Tensor::astype(const dtype type) {
+  auto a = array_.as(detail::flToAfType(type));
+  return Tensor(std::move(a));
+}
+
 /******************** Tensor Creation Functions ********************/
 #define AF_FULL_FUN_DEF(TYPE)                                        \
   template <>                                                        \
@@ -61,6 +66,11 @@ AF_FULL_FUN_DEF(const unsigned short&);
 
 Tensor identity(const Dim dim, const dtype type) {
   return Tensor(af::identity({dim, dim}, detail::flToAfType(type)));
+}
+
+/************************** Unary Operators ***************************/
+Tensor negative(const Tensor& tensor) {
+  return Tensor(-tensor.getArray());
 }
 
 /************************** Binary Operators ***************************/
