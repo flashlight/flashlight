@@ -10,6 +10,7 @@
 
 #include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/nn/nn.h"
+#include "flashlight/fl/tensor/tensor.h"
 
 using namespace fl;
 
@@ -22,15 +23,15 @@ double timeit(std::function<void()> fn) {
   for (int i = 0; i < 10; ++i) {
     fn();
   }
-  af::sync();
+  fl::sync();
 
   int num_iters = 100;
-  af::sync();
+  fl::sync();
   auto start = af::timer::start();
   for (int i = 0; i < num_iters; i++) {
     fn();
   }
-  af::sync();
+  fl::sync();
   return af::timer::stop(start) / num_iters;
 }
 
