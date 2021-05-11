@@ -7,6 +7,7 @@
 
 #pragma once
 
+// TODO:fl::Tensor {misc} remove me when not dependent on AF
 namespace af {
 class array;
 }
@@ -35,5 +36,26 @@ void sync();
  * @param[in] tensor the tensor on which to launch computation.
  */
 void eval(af::array& tensor);
+
+/**
+ * Returns the device ID of the active device in the current thread. This is
+ * backend agnostic - the ID may correspond to a CUDA-device, an OpenCL device,
+ * or other arbitrary hardware. The default device (in the case where operations
+ * are occuring on the CPU) should give 0.
+ *
+ * If unimplemented, an implementation should return 0.
+ *
+ * @return the active device ID
+ */
+int getDevice();
+
+/**
+ * Sets the active device in the current thread. This is backend agnostic - the
+ * ID may correspond to a CUDA-device, an OpenCL device, or other arbitrary
+ * hardware. The default device is 0.
+ *
+ * @param[in] deviceId
+ */
+void setDevice(int deviceId);
 
 } // namespace fl
