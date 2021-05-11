@@ -7,7 +7,11 @@
 
 #pragma once
 
+// TODO:fl::Tensor {af} remove me when ArrayFire is a particular subimpl
 #include <af/array.h>
+
+#include "flashlight/fl/tensor/ShapeBase.h"
+#include "flashlight/fl/tensor/Types.h"
 
 namespace fl {
 
@@ -45,7 +49,34 @@ class Tensor {
   // TODO:fl::Tensor {af} remove me when not dependent on AF
   af::array& getArray();
   const af::array& getArray() const;
+
+  /**
+   * Get the shape of a tensor.
+   *
+   * @return the shape of the tensor
+   */
+  Shape shape() const;
+
+  /**
+   * Get the data type of tensor.
+   *
+   * @return the dtype of the tensor
+   */
+  dtype type() const;
 };
+
+/******************** Tensor Creation Functions ********************/
+/**
+ * Creates a new tensor with a given shape and filled with a particular value.
+ *
+ * @param[in] dims the shape of the tensor to create
+ * @param[in] val the value with which to fill the tensor
+ * @param[in] t the type of the tensor to create. Defaults to a value based on
+ * the value type
+ * @return a tensor of the specified shape filled with the specified value
+ */
+template <typename T>
+Tensor full(const Shape& dims, const T& val, dtype t = dtype_traits<T>::ctype);
 
 /************************** Binary Operators ***************************/
 #define BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, TYPE) \
