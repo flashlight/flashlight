@@ -17,6 +17,8 @@
 
 #include <cmath>
 
+#include "flashlight/fl/tensor/Compute.h"
+
 using std::vector;
 
 namespace fl {
@@ -37,7 +39,7 @@ SGDOptimizer::SGDOptimizer(
     for (const auto& parameter : parameters_) {
       velocities_.emplace_back(
           af::constant(0, parameter.dims(), parameter.type()));
-      velocities_.back().eval();
+      fl::eval(velocities_.back());
     }
   }
 }
@@ -61,7 +63,7 @@ void SGDOptimizer::step() {
 
       // Regular momentum
       velocity = mu_ * velocity + grad;
-      af::eval(velocity);
+      fl::eval(velocity);
       if (useNesterov_) {
         // Update for nesterov momentum
         grad += velocity * mu_;
@@ -70,7 +72,7 @@ void SGDOptimizer::step() {
       }
     }
     data = data - lr_ * grad;
-    af::eval(data);
+    fl::eval(data);
   }
 }
 
