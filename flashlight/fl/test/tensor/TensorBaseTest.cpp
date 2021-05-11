@@ -122,3 +122,31 @@ TEST(TensorBaseTest, rand) {
 
   ASSERT_EQ(fl::rand({1}, fl::dtype::f64).type(), fl::dtype::f64);
 }
+
+TEST(TensorBaseTest, minumum) {
+  auto a = fl::full({3, 3}, 1);
+  auto b = fl::full({3, 3}, 2);
+  auto c = fl::minimum(a, b);
+  ASSERT_EQ(a.type(), c.type());
+  ASSERT_TRUE(allClose(a, c));
+}
+
+TEST(TensorBaseTest, maximum) {
+  auto a = fl::full({3, 3}, 1);
+  auto b = fl::full({3, 3}, 2);
+  auto c = fl::maximum(a, b);
+  ASSERT_EQ(b.type(), c.type());
+  ASSERT_TRUE(allClose(b, c));
+}
+
+TEST(TensorBaseTest, amin) {
+  auto a = fl::rand({3, 3});
+  ASSERT_TRUE(allClose(fl::amin(a).getArray(), af::min(a.getArray())));
+  ASSERT_TRUE(allClose(fl::amin(a, 0).getArray(), af::min(a.getArray(), 0)));
+}
+
+TEST(TensorBaseTest, amax) {
+  auto a = fl::rand({3, 3});
+  ASSERT_TRUE(allClose(fl::amax(a).getArray(), af::max(a.getArray())));
+  ASSERT_TRUE(allClose(fl::amax(a, 0).getArray(), af::max(a.getArray(), 0)));
+}
