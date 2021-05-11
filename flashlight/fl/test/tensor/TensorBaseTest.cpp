@@ -11,6 +11,7 @@
 #include "flashlight/fl/tensor/TensorBase.h"
 
 using namespace ::testing;
+using namespace fl;
 
 /*
  * Below this point are ArrayFire-specific implementation tests. They should be
@@ -36,6 +37,13 @@ bool allClose(
     return true;
   }
   return af::max<double>(af::abs(a - b)) < absTolerance;
+}
+
+bool allClose(
+    const fl::Tensor& a,
+    const fl::Tensor& b,
+    double absTolerance = 1e-5) {
+  return allClose(a.getArray(), b.getArray());
 }
 } // namespace
 
@@ -65,7 +73,20 @@ TEST(TensorBaseTest, BinaryOperators) {
   auto c = fl::Tensor(af::constant(3, {2, 2}));
 
   ASSERT_TRUE(allClose((a == b).getArray(), (a.getArray() == b.getArray())));
-  ASSERT_TRUE(allClose((a == b).getArray(), eq(a, b).getArray()));
-  ASSERT_TRUE(allClose((a + b).getArray(), c.getArray()));
-  ASSERT_TRUE(allClose((a + b).getArray(), add(a, b).getArray()));
+  ASSERT_TRUE(allClose((a == b), eq(a, b)));
+  ASSERT_TRUE(allClose((a + b), c));
+  ASSERT_TRUE(allClose((a + b), add(a, b)));
+}
+
+TEST(TensorBaseTest, FullConstant) {
+  // TODO: expand with fixtures for each type
+  auto a = fl::full({3, 4}, 3.);
+  ASSERT_EQ(a.shape(), Shape({3, 4}));
+  ASSERT_EQ(a.type(), fl::dtype::f32);
+  ASSERT_TRUE(allClose(a.getArray(), af::constant(3., {3, 4})));
+
+  auto b = fl::full({1, 1, 5, 4}, 4.5);
+  ASSERT_EQ(b.shape(), Shape({1, 1, 5, 4}));
+  ASSERT_EQ(b.type(), fl::dtype::f32);
+  ASSERT_TRUE(allClose(b.getArray(), af::constant(4.5, {1, 1, 5, 4})));
 }
