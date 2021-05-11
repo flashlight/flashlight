@@ -111,6 +111,100 @@ inline Tensor operator-(const Tensor& tensor) {
   return negative(tensor);
 }
 
+/**
+ * Performs element-wise logical-not on the elements of a tensor
+ *
+ * @param[in] tensor the tensor on which to perform logical not
+ * @return a tensor with element-wise logical not of the input
+ */
+Tensor logicalNot(const Tensor& tensor);
+inline Tensor operator!(const Tensor& tensor) {
+  return logicalNot(tensor);
+}
+
+/**
+ * Compute the element-wise exponential of a tensor
+ *
+ * @param[in] tensor the tensor to exponentiate
+ * @return the exponentiated tensor
+ */
+Tensor exp(const Tensor& tensor);
+
+/**
+ * Compute the element-wise natural logarithm of a tensor
+ *
+ * @param[in] tensor the tensor on which to compute
+ * @return the resulting tensor
+ */
+Tensor log(const Tensor& tensor);
+
+/**
+ * Returns the natural logarithm of one plus the input, element-wise.
+ *
+ * @param[in] tensor the tensor on which to compute
+ * @return the resulting tensor
+ */
+Tensor log1p(const Tensor& tensor);
+
+/**
+ * Returns the element-wise sine of the input.
+ *
+ * @param[in] tensor the tensor on which to compute
+ * @return the resulting tensor
+ */
+Tensor sin(const Tensor& tensor);
+
+/**
+ * Returns the element-wise cosine of the input.
+ *
+ * @param[in] tensor the tensor on which to compute
+ * @return the resulting tensor
+ */
+Tensor cos(const Tensor& tensor);
+
+/**
+ * Returns the element-wise non-negative square root of the input.
+ *
+ * @param[in] tensor the tensor on which to compute
+ * @return the resulting tensor
+ */
+Tensor sqrt(const Tensor& tensor);
+
+/**
+ * Returns the element-wise hyperbolic tangent of the input.
+ *
+ * @param[in] tensor the tensor on which to compute
+ * @return the resulting tensor
+ */
+Tensor tanh(const Tensor& tensor);
+
+/**
+ * Returns the element-wise absolute value of the input.
+ *
+ * @param[in] tensor the tensor on which to compute
+ * @return the resulting tensor
+ */
+Tensor absolute(const Tensor& tensor);
+inline Tensor abs(const Tensor& tensor) {
+  return absolute(tensor);
+}
+
+/**
+ * Clip (limit) the values of a tensor. Given some interval of values, set
+ * values outside of that interval to be the boundaries of the interval. All
+ * values larger than the max become the max, and all values smaller than the
+ * min become the min.
+ *
+ * TODO: consider requiring broadcasting behavior/enforcing in a test
+ * TODO: add overloads for low and high scalar values
+ *
+ * @param[in] tensor the tensor to clip
+ * @param[in] low a tensor containing
+ * @param[in] high
+ * @return a tensor with all values clipped between high and low
+ */
+Tensor clip(const Tensor& tensor, const Tensor& low, const Tensor& high);
+
 /************************** Binary Operators ***************************/
 #define BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, TYPE) \
   Tensor FUNC(TYPE lhs, const Tensor& rhs);         \
@@ -162,6 +256,8 @@ BINARY_OP_DECL(>>, rShift);
 /**
  * Returns the element-wise minimum of tensor elements.
  *
+ * TODO: add overloads for lhs and rhs scalar values
+ *
  * @param[in] lhs left hand side tensor for the minimum
  * @param[in] rhs right hand side tensor for the minimum
  * @return a tensor containing the minimum values in each tensor
@@ -171,11 +267,22 @@ Tensor minimum(const Tensor& lhs, const Tensor& rhs);
 /**
  * Returns the element-wise maximum of tensor elements.
  *
+ * TODO: add overloads for lhs and rhs scalar values
+ *
  * @param[in] lhs left hand side tensor for the minimum
  * @param[in] rhs right hand side tensor for the minimum
  * @return a tensor containing the maximum values in each tensor
  */
 Tensor maximum(const Tensor& lhs, const Tensor& rhs);
+
+/**
+ * Returns the element-wise maximum of tensor elements.
+ *
+ * @param[in] lhs the base tensor
+ * @param[in] rhs the exponent tensor
+ * @return a tensor containing the maximum values in each tensor
+ */
+Tensor power(const Tensor& lhs, const Tensor& rhs);
 
 /************************** Reductions ***************************/
 

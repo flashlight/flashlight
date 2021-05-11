@@ -160,7 +160,65 @@ TEST(TensorBaseTest, negative) {
 }
 
 TEST(TensorBaseTest, astype) {
-  auto a = fl::full({3, 3}, 1.0);
+  auto a = fl::rand({3, 3});
   ASSERT_EQ(a.type(), dtype::f32);
   ASSERT_EQ(a.astype(dtype::f64).type(), dtype::f64);
+}
+
+TEST(TensorBaseTest, logicalNot) {
+  ASSERT_TRUE(allClose(
+      !fl::full({3, 3}, true), fl::full({3, 3}, false).astype(dtype::b8)));
+}
+
+TEST(TensorBaseTest, exp) {
+  auto in = fl::full({3, 3}, 4.f);
+  ASSERT_TRUE(allClose(fl::exp(in).getArray(), af::exp(in.getArray())));
+}
+
+TEST(TensorBaseTest, log) {
+  auto in = fl::full({3, 3}, 2.f);
+  ASSERT_TRUE(allClose(fl::log(in).getArray(), af::log(in.getArray())));
+}
+
+TEST(TensorBaseTest, log1p) {
+  auto in = fl::rand({3, 3});
+  ASSERT_TRUE(allClose(fl::log1p(in), fl::log(1 + in)));
+}
+
+TEST(TensorBaseTest, sin) {
+  auto in = fl::rand({3, 3});
+  ASSERT_TRUE(allClose(fl::sin(in).getArray(), af::sin(in.getArray())));
+}
+
+TEST(TensorBaseTest, cos) {
+  auto in = fl::rand({3, 3});
+  ASSERT_TRUE(allClose(fl::cos(in).getArray(), af::cos(in.getArray())));
+}
+
+TEST(TensorBaseTest, sqrt) {
+  auto in = fl::full({3, 3}, 4.f);
+  ASSERT_TRUE(allClose(fl::sqrt(in), in / 2));
+}
+
+TEST(TensorBaseTest, tanh) {
+  auto in = fl::rand({3, 3});
+  ASSERT_TRUE(allClose(fl::tanh(in).getArray(), af::tanh(in.getArray())));
+}
+
+TEST(TensorBaseTest, absolute) {
+  float val = -3.1;
+  ASSERT_TRUE(allClose(fl::abs(fl::full({3, 3}, val)), fl::full({3, 3}, -val)));
+}
+
+TEST(TensorBaseTest, clip) {
+  Shape s = {3, 3};
+  auto high = fl::full(s, 3.);
+  auto low = fl::full(s, 2.);
+  ASSERT_TRUE(allClose(fl::clip(fl::full({3, 3}, 4.), low, high), high));
+}
+
+TEST(TensorBaseTest, power) {
+  auto a = fl::full({3, 3}, 2.);
+  auto b = fl::full({3, 3}, 2.);
+  ASSERT_TRUE(allClose(fl::power(a, b), a * b));
 }
