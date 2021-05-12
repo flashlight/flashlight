@@ -26,8 +26,18 @@ The `lm` application provides tools for text preprocessing and language model tr
 
 ### [Image Classification](https://github.com/flashlight/flashlight/tree/master/flashlight/app/imgclass) — `imgclass`
 
-The `imgclass` application is still in early, active development. It currently provides dataset abstractions for ImageNet and an example training pipeline for `Resnet34` which can be easily extended to more complex setups.
+The `imgclass` application is still in early, active development. It currently provides dataset abstractions for ImageNet and example training pipelines for `Resnet34` and `ViT` (vision transformer) which can be easily extended to more complex setups.
 
 #### Provided Artifacts
 - Binaries:
   - `fl_img_imagenet_resnet34`
+  - `fl_img_imagenet_vit`
+  - `fl_img_eval`
+
+### [Object Detection](https://github.com/flashlight/flashlight/tree/master/flashlight/app/objdet) — `objdet`
+
+The `objdet` application provides tools for objet detection. It is still under active development, but currently provides dataset abstractions for COCO and an example training pipeline for `DETR`.
+
+#### Provided Artifacts
+- Binaries:
+  - `fl_img_coco_detr`
