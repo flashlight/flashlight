@@ -6,6 +6,7 @@
  */
 
 #include "flashlight/ext/image/af/Jpeg.h"
+#include "flashlight/fl/dataset/Sample.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -18,7 +19,10 @@ namespace image {
  * Loads a jpeg from filepath fp. Note: It will automatically convert from any
  * number of channels to create an array with 3 channels
  */
-af::array loadJpeg(const std::string& fp, int desiredNumberOfChannels) {
+void loadJpeg(
+    const std::string& fp,
+    fl::SamplePtr samplePtr,
+    int desiredNumberOfChannels) {
   int w, h, c;
   // STB image will automatically return desiredNumberOfChannels.
   // NB: c will be the original number of channels
@@ -27,10 +31,13 @@ af::array loadJpeg(const std::string& fp, int desiredNumberOfChannels) {
   if (img) {
     // Load array first as C X W X H, since stb has channel along first
     // dimension
-    af::array result = af::array(desiredNumberOfChannels, w, h, img);
+
+    size_t sizeInBytes = desiredNumberOfChannels * w * h;
+
+    samplePtr->copyFromHost(
+        img, af::dim4(desiredNumberOfChannels, w, h), sizeInBytes, u8);
+
     stbi_image_free(img);
-    // Then reorder to W X H X C
-    return af::reorder(result, 1, 2, 0);
   } else {
     throw std::invalid_argument("Could not load from filepath" + fp);
   }

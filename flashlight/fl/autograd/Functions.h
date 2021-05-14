@@ -21,6 +21,7 @@
 
 #include <arrayfire.h>
 
+#include <flashlight/fl/common/configs.h>
 #include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/common/Types.h"
 #include "flashlight/fl/common/Utils.h"
@@ -629,8 +630,8 @@ linear(const Variable& input, const Variable& weight, const Variable& bias);
  * @param dy dilation along the second kernel dimension. A dilation of 1
  * is equivalent to a standard convolution along this axis.
  * @param groups number of filter groups
- * @param benchmarks [optional] a `ConvBenchmarks` instance to use to
- * dynamically benchmark configuration attributes for computations.
+ * @param convAlgoConfigPtr Pointer to `ConvAlgoConfigs` struct. This parameter
+ * is used to cache the most performant algorithms for each layer shape.
  * @return a Variable with shape [\f$X_{out}\f$, \f$Y_{out}\f$, \f$C_{out}\f$,
  * \f$N\f$]]
  */
@@ -644,7 +645,7 @@ Variable conv2d(
     int dx = 1,
     int dy = 1,
     int groups = 1,
-    std::shared_ptr<detail::ConvBenchmarks> benchmarks = nullptr);
+    detail::ConvAlgoConfigsPtr convAlgoConfigPtr = nullptr);
 
 /**
  * Applies a 2D convolution over an input signal given filter weights and
@@ -674,8 +675,8 @@ Variable conv2d(
  * @param dy dilation along the second kernel dimension. A dilation of 1
  * is equivalent to a standard convolution along this axis.
  * @param groups number of filter groups
- * @param benchmarks [optional] a `ConvBenchmarks` instance to use to
- * dynamically benchmark configuration attributes for computations.
+ * @param convAlgoConfigPtr Pointer to `ConvAlgoConfigs` struct. This parameter
+ * is used to cache the most performant algorithms for each layer shape.
  * @param bias a Variable with shape [\f$C_{out}\f$]
  * @return a Variable with shape [\f$X_{out}\f$, \f$Y_{out}\f$, \f$C_{out}\f$,
  * \f$N\f$]]
@@ -691,7 +692,7 @@ Variable conv2d(
     int dx = 1,
     int dy = 1,
     int groups = 1,
-    std::shared_ptr<detail::ConvBenchmarks> benchmarks = nullptr);
+    detail::ConvAlgoConfigsPtr convAlgoConfigPtr = nullptr);
 
 /**
  * Applies a 2D pooling over an input signal composed of several input planes.

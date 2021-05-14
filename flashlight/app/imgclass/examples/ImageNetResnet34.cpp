@@ -19,6 +19,7 @@
 #include "flashlight/ext/image/af/Transforms.h"
 #include "flashlight/ext/image/fl/dataset/DistributedDataset.h"
 #include "flashlight/ext/image/fl/models/Resnet.h"
+#include "flashlight/fl/dataset/Sample.h"
 #include "flashlight/fl/dataset/datasets.h"
 #include "flashlight/fl/meter/meters.h"
 #include "flashlight/fl/optim/optim.h"
@@ -52,6 +53,12 @@ DEFINE_string(
 DEFINE_uint64(data_batch_size, 256, "Total batch size across all gpus");
 DEFINE_string(exp_checkpoint_path, "/tmp/model", "Checkpointing prefix path");
 DEFINE_int64(exp_checkpoint_epoch, -1, "Checkpoint epoch to load from");
+DEFINE_bool(
+    generate_detailed_timing,
+    false,
+    "Enable if detailed timing for "
+    "each training step is desired. Enabling this option may adversely "
+    "impact the performance.");
 
 DEFINE_bool(
     fl_amp_use_mixed_precision,
@@ -182,6 +189,7 @@ int main(int argc, char** argv) {
   ImageTransform trainTransforms = compose(
       {// randomly resize shortest side of image between 256 to 480 for
        // scale invariance
+       fl::ext::image::reorder(1, 2, 0), // stb has channel along the first dim.
        fl::ext::image::randomResizeTransform(randomResizeMin, randomResizeMax),
        fl::ext::image::randomCropTransform(randomCropSize, randomCropSize),
        fl::ext::image::normalizeImage(
@@ -190,6 +198,7 @@ int main(int argc, char** argv) {
        fl::ext::image::randomHorizontalFlipTransform(horizontalFlipProb)});
   ImageTransform valTransforms = compose(
       {// Resize shortest side to 256, then take a center crop
+       fl::ext::image::reorder(1, 2, 0), // stb has channel along the first dim.
        fl::ext::image::resizeTransform(randomResizeMin),
        fl::ext::image::centerCropTransform(randomCropSize),
        fl::ext::image::normalizeImage(
@@ -200,24 +209,28 @@ int main(int argc, char** argv) {
   const int64_t prefetchSize = FLAGS_data_batch_size;
   auto labelMap = getImagenetLabels(labelPath);
   auto trainDataset = fl::ext::image::DistributedDataset(
-      imagenetDataset(trainList, labelMap, {trainTransforms}),
+      imagenetDataset(trainList, labelMap),
       worldRank,
       worldSize,
       batchSizePerGpu,
       1, // train_n_repeatedaug
       prefetchThreads,
       prefetchSize,
-      fl::BatchDatasetPolicy::SKIP_LAST);
+      {trainTransforms},
+      fl::BatchDatasetPolicy::SKIP_LAST,
+      true /* usePreallocatedSamples */);
 
   auto valDataset = fl::ext::image::DistributedDataset(
-      imagenetDataset(valList, labelMap, {valTransforms}),
+      imagenetDataset(valList, labelMap),
       worldRank,
       worldSize,
       batchSizePerGpu,
       1, // train_n_repeatedaug
       prefetchThreads,
       prefetchSize,
-      fl::BatchDatasetPolicy::INCLUDE_LAST);
+      {valTransforms},
+      fl::BatchDatasetPolicy::INCLUDE_LAST,
+      true /* usePreallocatedSamples */);
 
   //////////////////////////
   //  Load model and optimizer
@@ -301,23 +314,34 @@ int main(int argc, char** argv) {
 
       while (true) {
         // Forward
-        fwdTimeMeter.resume();
+        if (FLAGS_generate_detailed_timing) {
+          fwdTimeMeter.resume();
+        }
         auto output = model->forward(inputs);
-        fl::sync();
 
-        critFwdTimeMeter.resume();
+        if (FLAGS_generate_detailed_timing) {
+          fl::sync();
+          critFwdTimeMeter.resume();
+        }
         auto loss = criterion(output, target);
-        fl::sync();
-        fwdTimeMeter.stopAndIncUnit();
-        critFwdTimeMeter.stopAndIncUnit();
+        if (FLAGS_generate_detailed_timing) {
+          fl::sync();
+          fwdTimeMeter.stopAndIncUnit();
+          critFwdTimeMeter.stopAndIncUnit();
+        }
 
         // Backward
-        bwdTimeMeter.resume();
+        if (FLAGS_generate_detailed_timing) {
+          bwdTimeMeter.resume();
+        }
         opt.zeroGrad();
         bool scaleIsValid = fl::app::backwardWithScaling(
             loss, modelParams, dynamicScaler, reducer);
-        fl::sync();
-        bwdTimeMeter.stopAndIncUnit();
+        if (FLAGS_generate_detailed_timing) {
+          fl::sync();
+          bwdTimeMeter.stopAndIncUnit();
+        }
+
         if (!scaleIsValid) {
           continue;
         }
@@ -328,10 +352,14 @@ int main(int argc, char** argv) {
         break;
       }
 
-      optimTimeMeter.resume();
+      if (FLAGS_generate_detailed_timing) {
+        optimTimeMeter.resume();
+      }
       opt.step();
       fl::sync();
-      optimTimeMeter.stopAndIncUnit();
+      if (FLAGS_generate_detailed_timing) {
+        optimTimeMeter.stopAndIncUnit();
+      }
       timeMeter.stopAndIncUnit();
 
       // Compute and record the prediction error.
@@ -343,21 +371,28 @@ int main(int argc, char** argv) {
         fl::ext::syncMeter(top1Acc);
         double time = timeMeter.value();
         double samplePerSecond = FLAGS_data_batch_size * worldSize / time;
+        std::string detailedTiming = "";
+        if (FLAGS_generate_detailed_timing) {
+          detailedTiming += " : Forward Time(ms): ";
+          detailedTiming +=
+              fl::lib::format("%.2f", fwdTimeMeter.value() * 1000);
+          detailedTiming += " : Criterion Forward Time(ms): ";
+          detailedTiming +=
+              fl::lib::format("%.2f", critFwdTimeMeter.value() * 1000);
+          detailedTiming += " : Backward Time(ms): ";
+          detailedTiming +=
+              fl::lib::format("%.2f", bwdTimeMeter.value() * 1000);
+          detailedTiming += " : Optim Time(ms): ";
+          detailedTiming +=
+              fl::lib::format("%.2f", optimTimeMeter.value() * 1000);
+        }
         FL_LOG_MASTER(INFO)
             << "Epoch " << epoch << std::setprecision(5) << " Batch: " << idx
             << " Samples per second " << samplePerSecond
             << " : Total Time(ms): " << fl::lib::format("%.2f", time * 1000)
             << " : Sample Time(ms): "
             << fl::lib::format("%.2f", sampleTimerMeter.value() * 1000)
-            << " : Forward Time(ms): "
-            << fl::lib::format("%.2f", fwdTimeMeter.value() * 1000)
-            << " : Criterion Forward Time(ms): "
-            << fl::lib::format("%.2f", critFwdTimeMeter.value() * 1000)
-            << " : Backward Time(ms): "
-            << fl::lib::format("%.2f", bwdTimeMeter.value() * 1000)
-            << " : Optim Time(ms): "
-            << fl::lib::format("%.2f", optimTimeMeter.value() * 1000)
-            << ": Avg Train Loss: " << trainLoss
+            << detailedTiming << ": Avg Train Loss: " << trainLoss
             << ": Train Top5 Accuracy( %): " << top5Acc.value()
             << ": Train Top1 Accuracy( %): " << top1Acc.value();
         top5Acc.reset();
@@ -365,10 +400,12 @@ int main(int argc, char** argv) {
         trainLossMeter.reset();
         timeMeter.reset();
         sampleTimerMeter.reset();
-        fwdTimeMeter.reset();
-        critFwdTimeMeter.reset();
-        bwdTimeMeter.reset();
-        optimTimeMeter.reset();
+        if (FLAGS_generate_detailed_timing) {
+          fwdTimeMeter.reset();
+          critFwdTimeMeter.reset();
+          bwdTimeMeter.reset();
+          optimTimeMeter.reset();
+        }
       }
     }
     timeMeter.reset();

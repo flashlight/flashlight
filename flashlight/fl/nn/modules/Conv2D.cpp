@@ -121,7 +121,7 @@ Variable Conv2D::forward(const Variable& input) {
         xDilation_,
         yDilation_,
         groups_,
-        benchmarks_);
+        convAlgoConfigs_);
   } else {
     return conv2d(
         input,
@@ -133,7 +133,7 @@ Variable Conv2D::forward(const Variable& input) {
         xDilation_,
         yDilation_,
         groups_,
-        benchmarks_);
+        convAlgoConfigs_);
   }
 }
 
@@ -152,8 +152,6 @@ void Conv2D::initialize() {
   } else {
     params_ = {wt};
   }
-
-  benchmarks_ = std::make_shared<detail::ConvBenchmarks>();
 }
 
 std::string Conv2D::prettyString() const {
