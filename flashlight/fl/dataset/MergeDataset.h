@@ -52,6 +52,10 @@ class MergeDataset : public Dataset {
   int64_t size() const override;
 
   std::vector<af::array> get(const int64_t idx) const override;
+  void get(
+      const int64_t idx,
+      std::vector<SamplePtr>& samplePtrs,
+      const int dst = 0) const override;
 
  private:
   std::vector<std::shared_ptr<const Dataset>> datasets_;

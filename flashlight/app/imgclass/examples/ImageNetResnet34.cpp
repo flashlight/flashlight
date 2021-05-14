@@ -20,6 +20,7 @@
 #include "flashlight/ext/image/fl/dataset/DistributedDataset.h"
 #include "flashlight/ext/image/fl/models/Resnet.h"
 #include "flashlight/fl/dataset/datasets.h"
+#include "flashlight/fl/dataset/Sample.h"
 #include "flashlight/fl/meter/meters.h"
 #include "flashlight/fl/optim/optim.h"
 #include "flashlight/lib/common/String.h"
@@ -182,6 +183,7 @@ int main(int argc, char** argv) {
   ImageTransform trainTransforms = compose(
       {// randomly resize shortest side of image between 256 to 480 for
        // scale invariance
+       fl::ext::image::reorder(1, 2, 0), // stb has channel along the first dim.
        fl::ext::image::randomResizeTransform(randomResizeMin, randomResizeMax),
        fl::ext::image::randomCropTransform(randomCropSize, randomCropSize),
        fl::ext::image::normalizeImage(
@@ -190,6 +192,7 @@ int main(int argc, char** argv) {
        fl::ext::image::randomHorizontalFlipTransform(horizontalFlipProb)});
   ImageTransform valTransforms = compose(
       {// Resize shortest side to 256, then take a center crop
+       fl::ext::image::reorder(1, 2, 0), // stb has channel along the first dim.
        fl::ext::image::resizeTransform(randomResizeMin),
        fl::ext::image::centerCropTransform(randomCropSize),
        fl::ext::image::normalizeImage(
@@ -200,24 +203,28 @@ int main(int argc, char** argv) {
   const int64_t prefetchSize = FLAGS_data_batch_size;
   auto labelMap = getImagenetLabels(labelPath);
   auto trainDataset = fl::ext::image::DistributedDataset(
-      imagenetDataset(trainList, labelMap, {trainTransforms}),
+      imagenetDataset(trainList, labelMap),
       worldRank,
       worldSize,
       batchSizePerGpu,
       1, // train_n_repeatedaug
       prefetchThreads,
       prefetchSize,
-      fl::BatchDatasetPolicy::SKIP_LAST);
+      {trainTransforms},
+      fl::BatchDatasetPolicy::SKIP_LAST,
+      true /* usePreallocatedSamples */);
 
   auto valDataset = fl::ext::image::DistributedDataset(
-      imagenetDataset(valList, labelMap, {valTransforms}),
+      imagenetDataset(valList, labelMap),
       worldRank,
       worldSize,
       batchSizePerGpu,
       1, // train_n_repeatedaug
       prefetchThreads,
       prefetchSize,
-      fl::BatchDatasetPolicy::INCLUDE_LAST);
+      {valTransforms},
+      fl::BatchDatasetPolicy::INCLUDE_LAST,
+      true /* usePreallocatedSamples */);
 
   //////////////////////////
   //  Load model and optimizer

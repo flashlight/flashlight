@@ -65,7 +65,7 @@ class DynamicScaler {
   double getScaleFactor() const;
 
  private:
-  double scaleFactor_;
+  fl::Variable scaleFactor_;
   // The maximum value of scaleFactor_.
   double maxScaleFactor_;
   // Number of iterations without changing scaleFactor_.
@@ -73,7 +73,15 @@ class DynamicScaler {
   // Double up the scaleFactor_ when successCounter_ equals updateInterval_.
   unsigned int updateInterval_;
 
-  FL_SAVE_LOAD(scaleFactor_, maxScaleFactor_, updateInterval_, successCounter_)
+  
+  af::array flag_;
+
+  FL_SAVE_LOAD(
+      maxScaleFactor_,
+      updateInterval_,
+      successCounter_,
+      scaleFactor_,
+      flag_)
   DynamicScaler() = default;
 };
 

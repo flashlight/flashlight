@@ -43,11 +43,16 @@ class PrefetchDataset : public Dataset {
    * @param[in] dataset The underlying dataset.
    * @param[in] numThreads Number of threads used by the threadpool
    * @param[in] prefetchSize Number of samples to be prefetched
+   * @param[in] usePreallocatedSamples If true, samples are initialized once and
+   * will be reused as long as the training/validation continues. As a result,
+   * the cost of acquiring expensive resources such as non-pageable memory or
+   * CUDA streams (if applicable) will be amortized among all the iterations.
    */
   explicit PrefetchDataset(
       std::shared_ptr<const Dataset> dataset,
       int64_t numThreads,
-      int64_t prefetchSize);
+      int64_t prefetchSize,
+      bool usePreallocatedSamples = false);
 
   int64_t size() const override;
 
@@ -59,9 +64,20 @@ class PrefetchDataset : public Dataset {
 
  private:
   std::unique_ptr<ThreadPool> threadPool_;
+  bool usePreallocatedSamples_;
   // state variables
   mutable std::queue<std::future<std::vector<af::array>>> prefetchCache_;
   mutable int64_t curIdx_;
+
+  mutable std::vector<SamplePtr> data_;
+  mutable std::vector<SamplePtr> labels_;
+
+  // Queue of samples that are being loaded from the storage to host memory.
+  mutable std::queue<std::future<std::vector<SamplePtr>>> storageToSysmemQueue_;
+
+  // Queue of samples that are being transferred from host memory to device
+  // memory.
+  mutable std::queue<std::vector<SamplePtr>> hostToDeviceQueue_;
 };
 
 } // namespace fl
