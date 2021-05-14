@@ -65,6 +65,7 @@ if (FL_BUILD_APP_ASR_SFX_SOX)
     flashlight-app-asr
     PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/SoxWrapper.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/TimeStretch.cpp
   )
 
 endif()
