@@ -881,7 +881,8 @@ std::string Trainer::getProgress() const {
              tokenCountMeter_.value()[0] * fl::getWorldSize() /
                  batchTimerMeter_.value());
   oss << " | Learning Rate " << format("%.6f", optimizer_->getLr());
-  oss << " | Scale factor " << format("%.6f", dynamicScaler->getScaleFactor());
+  auto scaleFactor = dynamicScaler ? dynamicScaler->getScaleFactor() : 0;
+  oss << " | Scale factor " << format("%.6f", scaleFactor);
   // Losses
   double loss = trainLossMeter_.value()[0];
   oss << " | Loss: " << format("%.2f", loss)

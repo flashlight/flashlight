@@ -638,6 +638,8 @@ int main(int argc, char** argv) {
             mtrs.valid[validTagSets.front().first].wrdEdit.errorRate()[0]);
 
         if (isMaster) {
+          auto scaleFactor =
+              dynamicScaler ? dynamicScaler->getScaleFactor() : 0;
           auto logMsg = getLogString(
               mtrs,
               validWerWithDecoder,
@@ -645,7 +647,7 @@ int main(int argc, char** argv) {
               nupdates,
               lr,
               lrcrit,
-              dynamicScaler->getScaleFactor());
+              scaleFactor);
           FL_LOG_MASTER(INFO) << logMsg;
           appendToLog(logFile, logMsg);
         }
