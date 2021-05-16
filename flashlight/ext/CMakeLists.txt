@@ -4,7 +4,6 @@ cmake_minimum_required(VERSION 3.10)
 
 include(${CMAKE_CURRENT_LIST_DIR}/amp/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/image/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/plugin/CMakeLists.txt)
 
 cmake_dependent_option(FL_EXT_BUILD_INTEGRATIONS

@@ -11,13 +11,13 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/app/imgclass/dataset/Imagenet.h"
+#include "flashlight/pkg/vision/dataset/Imagenet.h"
 #include "flashlight/app/imgclass/examples/Defines.h"
 #include "flashlight/ext/common/DistributedUtils.h"
-#include "flashlight/ext/image/af/Transforms.h"
-#include "flashlight/ext/image/fl/dataset/DistributedDataset.h"
-#include "flashlight/ext/image/fl/models/Resnet.h"
-#include "flashlight/ext/image/fl/models/ViT.h"
+#include "flashlight/pkg/vision/dataset/Transforms.h"
+#include "flashlight/pkg/vision/dataset/DistributedDataset.h"
+#include "flashlight/pkg/vision/models/Resnet.h"
+#include "flashlight/pkg/vision/models/ViT.h"
 #include "flashlight/fl/dataset/datasets.h"
 #include "flashlight/fl/meter/meters.h"
 #include "flashlight/fl/optim/optim.h"

@@ -247,5 +247,8 @@ endif() # if FL_BUILD_CORE
 set(FL_APPS_DIR "${FL_ROOT_DIR}/app")
 include(${FL_APPS_DIR}/CMakeLists.txt)
 
+set(FL_PKG_DIR "${FL_ROOT_DIR}/pkg")
+include(${FL_PKG_DIR}/CMakeLists.txt)
+
 # --------------------------- Cleanup ---------------------------
 setup_install_targets(INSTALL_TARGETS ${INSTALLABLE_TARGETS})

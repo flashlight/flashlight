@@ -24,7 +24,7 @@ target_link_libraries(
   ${gflags_LIBRARIES}
   ${MKL_LIBRARIES}
   flashlight
-  flashlight-app-common
+  fl_pkg_runtime
   )
 
 target_include_directories(

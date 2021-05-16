@@ -27,7 +27,7 @@
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/ext/common/Serializer.h"
-#include "flashlight/app/common/Runtime.h"
+#include "flashlight/pkg/runtime/Runtime.h"
 #include "flashlight/ext/plugin/ModulePlugin.h"
 #include "flashlight/fl/contrib/contrib.h"
 #include "flashlight/fl/flashlight.h"

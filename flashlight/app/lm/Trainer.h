@@ -12,7 +12,7 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/app/common/Runtime.h"
+#include "flashlight/pkg/runtime/Runtime.h"
 #include "flashlight/app/lm/common/Defines.h"
 #include "flashlight/app/lm/data/TextDataset.h"
 

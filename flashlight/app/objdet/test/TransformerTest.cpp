@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/app/objdet/nn/Transformer.h"
+#include "flashlight/pkg/vision/nn/Transformer.h"
 #include "flashlight/app/objdet/nn/PositionalEmbeddingSine.h"
 
 #include <gtest/gtest.h>

@@ -11,20 +11,20 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/app/common/Runtime.h"
-#include "flashlight/app/imgclass/dataset/Imagenet.h"
 #include "flashlight/app/imgclass/examples/Defines.h"
 #include "flashlight/ext/amp/DynamicScaler.h"
 #include "flashlight/ext/common/DistributedUtils.h"
-#include "flashlight/ext/image/af/Transforms.h"
-#include "flashlight/ext/image/fl/dataset/DistributedDataset.h"
-#include "flashlight/ext/image/fl/models/ViT.h"
+#include "flashlight/pkg/vision/dataset/Transforms.h"
+#include "flashlight/pkg/vision/dataset/DistributedDataset.h"
+#include "flashlight/pkg/vision/models/ViT.h"
 #include "flashlight/fl/dataset/datasets.h"
 #include "flashlight/fl/meter/meters.h"
 #include "flashlight/fl/optim/optim.h"
 #include "flashlight/lib/common/BetaDistribution.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
+#include "flashlight/pkg/runtime/Runtime.h"
+#include "flashlight/pkg/vision/dataset/Imagenet.h"
 
 DEFINE_string(data_dir, "", "Directory of imagenet data");
 DEFINE_uint64(data_batch_size, 64, "Batch size per gpus");
