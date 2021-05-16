@@ -6,7 +6,7 @@
  */
 #include <arrayfire.h>
 
-#include "flashlight/app/objdet/dataset/BoxUtils.h"
+#include "flashlight/pkg/vision/dataset/BoxUtils.h"
 
 #include <gtest/gtest.h>
 

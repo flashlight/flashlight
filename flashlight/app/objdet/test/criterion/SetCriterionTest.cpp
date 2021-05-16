@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/app/objdet/criterion/SetCriterion.h"
-#include "flashlight/app/objdet/nn/Transformer.h"
+#include "flashlight/pkg/vision/criterion/SetCriterion.h"
+#include "flashlight/pkg/vision/nn/Transformer.h"
 
 #include <gtest/gtest.h>
 #include <unordered_map>

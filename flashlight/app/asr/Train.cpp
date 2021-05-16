@@ -27,7 +27,7 @@
 #include "flashlight/app/asr/decoder/PlGenerator.h"
 #include "flashlight/app/asr/decoder/TranscriptionUtils.h"
 #include "flashlight/app/asr/runtime/runtime.h"
-#include "flashlight/app/common/Runtime.h"
+#include "flashlight/pkg/runtime/Runtime.h"
 #include "flashlight/ext/amp/DynamicScaler.h"
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/common/SequentialBuilder.h"

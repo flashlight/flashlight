@@ -7,8 +7,8 @@
 
 #include <gtest/gtest.h>
 
-#include "flashlight/ext/image/fl/models/ViT.h"
-#include "flashlight/ext/image/fl/nn/VisionTransformer.h"
+#include "flashlight/pkg/vision/models/ViT.h"
+#include "flashlight/pkg/vision/nn/VisionTransformer.h"
 
 #include "flashlight/fl/autograd/autograd.h"
 #include "flashlight/fl/common/Init.h"
