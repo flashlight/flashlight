@@ -73,6 +73,46 @@ Tensor negative(const Tensor& tensor) {
   return Tensor(-tensor.getArray());
 }
 
+Tensor logicalNot(const Tensor& tensor) {
+  return Tensor(!tensor.getArray());
+}
+
+Tensor exp(const Tensor& tensor) {
+  return Tensor(af::exp(tensor.getArray()));
+}
+
+Tensor log(const Tensor& tensor) {
+  return Tensor(af::log(tensor.getArray()));
+}
+
+Tensor log1p(const Tensor& tensor) {
+  return Tensor(af::log1p(tensor.getArray()));
+}
+
+Tensor sin(const Tensor& tensor) {
+  return Tensor(af::sin(tensor.getArray()));
+}
+
+Tensor cos(const Tensor& tensor) {
+  return Tensor(af::cos(tensor.getArray()));
+}
+
+Tensor sqrt(const Tensor& tensor) {
+  return Tensor(af::sqrt(tensor.getArray()));
+}
+
+Tensor tanh(const Tensor& tensor) {
+  return Tensor(af::tanh(tensor.getArray()));
+}
+
+Tensor absolute(const Tensor& tensor) {
+  return Tensor(af::abs(tensor.getArray()));
+}
+
+Tensor clip(const Tensor& tensor, const Tensor& low, const Tensor& high) {
+  return Tensor(af::clamp(tensor.getArray(), low.getArray(), high.getArray()));
+}
+
 /************************** Binary Operators ***************************/
 // For ArrayFire, af::array already implements overloads for all needed
 // operators -- use these by default.
@@ -131,6 +171,10 @@ Tensor minimum(const Tensor& lhs, const Tensor& rhs) {
 
 Tensor maximum(const Tensor& lhs, const Tensor& rhs) {
   return Tensor(af::max(lhs.getArray(), rhs.getArray()));
+}
+
+Tensor power(const Tensor& lhs, const Tensor& rhs) {
+  return Tensor(af::pow(lhs.getArray(), rhs.getArray()));
 }
 
 /************************** Reductions ***************************/
