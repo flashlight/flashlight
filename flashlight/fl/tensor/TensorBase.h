@@ -65,6 +65,14 @@ class Tensor {
    * @return the dtype of the tensor
    */
   dtype type() const;
+
+  /**
+   * Returns a tensor with elements cast as a particular type
+   *
+   * @param[in] the type to which to cast the tensor
+   * @return a tensor with element-wise cast to the new type
+   */
+  Tensor astype(const dtype type);
 };
 
 /******************** Tensor Creation Functions ********************/
@@ -90,6 +98,18 @@ Tensor full(
  * @param[in] type the type of the resulting matrix
  */
 Tensor identity(const Dim dim, const dtype type = dtype::f32);
+
+/************************** Unary Operators ***************************/
+/**
+ * Element-wise negation of a tensor.
+ *
+ * @param[in] tensor the input tensor to negate.
+ * @return a tensor with elements negated.
+ */
+Tensor negative(const Tensor& tensor);
+inline Tensor operator-(const Tensor& tensor) {
+  return negative(tensor);
+}
 
 /************************** Binary Operators ***************************/
 #define BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, TYPE) \
