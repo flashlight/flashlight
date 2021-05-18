@@ -129,6 +129,8 @@ TEST(TensorBaseTest, minumum) {
   auto c = fl::minimum(a, b);
   ASSERT_EQ(a.type(), c.type());
   ASSERT_TRUE(allClose(a, c));
+  ASSERT_TRUE(allClose(fl::minimum(1, b).astype(a.type()), a));
+  ASSERT_TRUE(allClose(fl::minimum(b, 1).astype(a.type()), a));
 }
 
 TEST(TensorBaseTest, maximum) {
@@ -137,6 +139,8 @@ TEST(TensorBaseTest, maximum) {
   auto c = fl::maximum(a, b);
   ASSERT_EQ(b.type(), c.type());
   ASSERT_TRUE(allClose(b, c));
+  ASSERT_TRUE(allClose(fl::maximum(1, b).astype(a.type()), b));
+  ASSERT_TRUE(allClose(fl::maximum(b, 1).astype(a.type()), b));
 }
 
 TEST(TensorBaseTest, amin) {
@@ -211,10 +215,22 @@ TEST(TensorBaseTest, absolute) {
 }
 
 TEST(TensorBaseTest, clip) {
+  float h = 3.;
+  float l = 2.;
   Shape s = {3, 3};
-  auto high = fl::full(s, 3.);
-  auto low = fl::full(s, 2.);
+  auto high = fl::full(s, h);
+  auto low = fl::full(s, l);
   ASSERT_TRUE(allClose(fl::clip(fl::full({3, 3}, 4.), low, high), high));
+  ASSERT_TRUE(allClose(fl::clip(fl::full({3, 3}, 4.), l, high), high));
+  ASSERT_TRUE(allClose(fl::clip(fl::full({3, 3}, 4.), low, h), high));
+  ASSERT_TRUE(allClose(fl::clip(fl::full({3, 3}, 4.), l, h), high));
+}
+
+TEST(TensorBaseTest, isnan) {
+  Shape s = {3, 3};
+  ASSERT_TRUE(allClose(
+      fl::isnan(fl::full(s, 1.) / 3),
+      fl::full(s, false).astype(fl::dtype::b8)));
 }
 
 TEST(TensorBaseTest, power) {

@@ -113,6 +113,22 @@ Tensor clip(const Tensor& tensor, const Tensor& low, const Tensor& high) {
   return Tensor(af::clamp(tensor.getArray(), low.getArray(), high.getArray()));
 }
 
+Tensor clip(const Tensor& tensor, const Tensor& low, const double& high) {
+  return clip(tensor, low, full(tensor.shape(), high));
+}
+
+Tensor clip(const Tensor& tensor, const double& low, const Tensor& high) {
+  return clip(tensor, full(tensor.shape(), low), high);
+}
+
+Tensor clip(const Tensor& tensor, const double& low, const double& high) {
+  return clip(tensor, full(tensor.shape(), low), full(tensor.shape(), high));
+}
+
+Tensor isnan(const Tensor& tensor) {
+  return Tensor(af::isNaN(tensor.getArray()));
+}
+
 /************************** Binary Operators ***************************/
 // For ArrayFire, af::array already implements overloads for all needed
 // operators -- use these by default.
@@ -169,8 +185,24 @@ Tensor minimum(const Tensor& lhs, const Tensor& rhs) {
   return Tensor(af::min(lhs.getArray(), rhs.getArray()));
 }
 
+Tensor minimum(const Tensor& lhs, const double& rhs) {
+  return minimum(lhs, full(lhs.shape(), rhs));
+}
+
+Tensor minimum(const double& lhs, const Tensor& rhs) {
+  return minimum(full(rhs.shape(), lhs), rhs);
+}
+
 Tensor maximum(const Tensor& lhs, const Tensor& rhs) {
   return Tensor(af::max(lhs.getArray(), rhs.getArray()));
+}
+
+Tensor maximum(const Tensor& lhs, const double& rhs) {
+  return maximum(lhs, full(lhs.shape(), rhs));
+}
+
+Tensor maximum(const double& lhs, const Tensor& rhs) {
+  return maximum(full(rhs.shape(), lhs), rhs);
 }
 
 Tensor power(const Tensor& lhs, const Tensor& rhs) {

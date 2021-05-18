@@ -196,7 +196,6 @@ inline Tensor abs(const Tensor& tensor) {
  * min become the min.
  *
  * TODO: consider requiring broadcasting behavior/enforcing in a test
- * TODO: add overloads for low and high scalar values
  *
  * @param[in] tensor the tensor to clip
  * @param[in] low a tensor containing
@@ -204,6 +203,19 @@ inline Tensor abs(const Tensor& tensor) {
  * @return a tensor with all values clipped between high and low
  */
 Tensor clip(const Tensor& tensor, const Tensor& low, const Tensor& high);
+Tensor clip(const Tensor& tensor, const Tensor& low, const double& high);
+Tensor clip(const Tensor& tensor, const double& low, const Tensor& high);
+Tensor clip(const Tensor& tensor, const double& low, const double& high);
+
+/**
+ * Returns a boolean tensor which is true where the input tensor was NaN, and
+ * false otherwise.
+ *
+ * @param[in] tensor the input tensor
+ * @return a boolean array with true in positions that contained NaN in the
+ * input tensor
+ */
+Tensor isnan(const Tensor& tensor);
 
 /************************** Binary Operators ***************************/
 #define BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, TYPE) \
@@ -256,24 +268,28 @@ BINARY_OP_DECL(>>, rShift);
 /**
  * Returns the element-wise minimum of tensor elements.
  *
- * TODO: add overloads for lhs and rhs scalar values
+ * TODO: consider requiring broadcasting behavior/enforcing in a test
  *
  * @param[in] lhs left hand side tensor for the minimum
  * @param[in] rhs right hand side tensor for the minimum
  * @return a tensor containing the minimum values in each tensor
  */
 Tensor minimum(const Tensor& lhs, const Tensor& rhs);
+Tensor minimum(const Tensor& lhs, const double& rhs);
+Tensor minimum(const double& lhs, const Tensor& rhs);
 
 /**
  * Returns the element-wise maximum of tensor elements.
  *
- * TODO: add overloads for lhs and rhs scalar values
+ * TODO: consider requiring broadcasting behavior/enforcing in a test
  *
  * @param[in] lhs left hand side tensor for the minimum
  * @param[in] rhs right hand side tensor for the minimum
  * @return a tensor containing the maximum values in each tensor
  */
 Tensor maximum(const Tensor& lhs, const Tensor& rhs);
+Tensor maximum(const Tensor& lhs, const double& rhs);
+Tensor maximum(const double& lhs, const Tensor& rhs);
 
 /**
  * Returns the element-wise exponentiation of tensors; the left hand tensor is
@@ -288,10 +304,11 @@ Tensor power(const Tensor& lhs, const Tensor& rhs);
 /************************** Reductions ***************************/
 
 /**
- * Compute the minimum value along an axis.
+ * Compute the minimum value along an axis. If the dimension is omitted, the
+ * minimum is computed over all tensors.
  *
  * @param[in] input the input along which to operate
- * @param[in] dim the dimension along which to reduce.
+ * @param[in] dim optional - the dimension along which to reduce.
  *
  * TODO: add fl::Tensor::min to call this?
  * TODO: investigate taking a tuple of dims
@@ -299,10 +316,11 @@ Tensor power(const Tensor& lhs, const Tensor& rhs);
 Tensor amin(const Tensor& input, std::optional<const int> dim = {});
 
 /**
- * Compute the maximum value along an axis.
+ * Compute the maximum value along an axis. If the dimension is omitted, the
+ * maximum is computed over all elements.
  *
  * @param[in] input the input along which to operate
- * @param[in] dim the dimension along which to reduce.
+ * @param[in] dim optional - the dimension along which to reduce.
  *
  * TODO: add fl::Tensor::max to call this?
  * TODO: investigate taking a tuple of dims
