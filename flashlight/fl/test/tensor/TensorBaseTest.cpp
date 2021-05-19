@@ -265,3 +265,8 @@ TEST(TensorBaseTest, var) {
       fl::var(a, {0, 1}, true).getArray().scalar<float>(),
       af::var<float>(a.getArray(), true));
 }
+
+TEST(TensorBaseTest, norm) {
+  auto a = fl::rand({3, 3});
+  ASSERT_EQ(fl::norm(a), af::norm(a.getArray()));
+}

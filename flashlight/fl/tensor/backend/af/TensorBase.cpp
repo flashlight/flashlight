@@ -12,6 +12,7 @@
 #include <af/arith.h>
 #include <af/data.h>
 #include <af/gfor.h>
+#include <af/lapack.h>
 
 namespace {
 
@@ -272,6 +273,10 @@ Tensor var(const Tensor& input, const std::vector<int>& axes, bool bias) {
 
   x = x / denominator;
   return Tensor(std::move(x));
+}
+
+double norm(const Tensor& input) {
+  return af::norm(input.getArray());
 }
 
 } // namespace fl

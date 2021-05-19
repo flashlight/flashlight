@@ -407,4 +407,12 @@ T var(const Tensor& input, bool bias = false) {
   return af::var<T>(input.getArray(), bias);
 }
 
+/**
+ * norm of array over all axes.
+ *
+ * @param[in] input the input along which to operate
+ * @return a double containing the norm
+ */
+double norm(const Tensor& input);
+
 } // namespace fl
