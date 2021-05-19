@@ -8,8 +8,9 @@
 #pragma once
 
 // TODO:fl::Tensor {af} remove me when ArrayFire is a particular subimpl
-#include <af/array.h>
 #include <af/algorithm.h>
+#include <af/array.h>
+#include <af/statistics.h>
 
 #include "flashlight/fl/tensor/ShapeBase.h"
 #include "flashlight/fl/tensor/Types.h"
@@ -303,13 +304,13 @@ Tensor power(const Tensor& lhs, const Tensor& rhs);
 /************************** Reductions ***************************/
 
 /**
- * Compute the minimum value along multiple axis.
+ * Compute the minimum value along multiple axes.
  *
  * @param[in] input the input along which to operate
  * @param[in] dim the dimension along which to reduce.
  * @return a tensor containing the minimum values
  */
-Tensor amin(const Tensor& input, const std::vector<int>& axis);
+Tensor amin(const Tensor& input, const std::vector<int>& axes);
 
 /**
  * Compute the minimum value across all axes.
@@ -324,7 +325,7 @@ T amin(const Tensor& input) {
 }
 
 /**
- * Compute the maximum value along multiple axis.
+ * Compute the maximum value along multiple axes.
  *
  * @param[in] input the input along which to operate
  * @param[in] dim the dimension along which to reduce.
@@ -363,6 +364,47 @@ Tensor sum(const Tensor& input, const std::vector<int>& axes);
 template<typename T>
 T sum(const Tensor& input) {
   return af::sum<T>(input.getArray());
+}
+
+/**
+ * Mean of array over given axes.
+ *
+ * @param[in] input the input along which to operate
+ * @param[in] axes the dimension along which to reduce.
+ * @return a tensor containing the mean across given axes
+ */
+Tensor mean(const Tensor& input, const std::vector<int>& axes);
+
+/**
+ * Mean of array over all axes.
+ *
+ * @param[in] input the input along which to operate
+ * @return a scalar T containing the mean
+ */
+template <typename T>
+T mean(const Tensor& input) {
+  return af::mean<T>(input.getArray());
+}
+
+/**
+ * var of array over given axes.
+ *
+ * @param[in] input the input along which to operate
+ * @param[in] axes the dimension along which to reduce.
+ * @return a tensor containing the var across given axes
+ */
+Tensor
+var(const Tensor& input, const std::vector<int>& axes, bool bias = false);
+
+/**
+ * var of array over all axes.
+ *
+ * @param[in] input the input along which to operate
+ * @return a scalar T containing the var
+ */
+template <typename T>
+T var(const Tensor& input, bool bias = false) {
+  return af::var<T>(input.getArray(), bias);
 }
 
 } // namespace fl

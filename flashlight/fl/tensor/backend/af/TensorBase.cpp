@@ -11,6 +11,7 @@
 #include <af/algorithm.h>
 #include <af/arith.h>
 #include <af/data.h>
+#include <af/gfor.h>
 
 namespace {
 
@@ -237,6 +238,40 @@ Tensor amax(const Tensor& input, const std::vector<int>& axes) {
 
 Tensor sum(const Tensor& input, const std::vector<int>& axes) {
   return Tensor(afReduceAxes(input.getArray(), axes, af::sum));
+}
+
+Tensor mean(const Tensor& input, const std::vector<int>& axes) {
+  // Cannot use afReduceAxes because sum uses dim instead of int
+  auto arr = input.getArray();
+  for (int dim : axes) {
+    arr = af::mean(arr, dim);
+  }
+  return Tensor(std::move(arr));
+}
+
+Tensor var(const Tensor& input, const std::vector<int>& axes, bool bias) {
+  // Use arrayfire default for one dimension which may be optimized
+  auto& arr = input.getArray();
+  if (axes.size() == 1) {
+    return Tensor(af::var(arr, bias, axes[0]));
+  }
+  auto meanArr = mean(input, axes);
+  // TODO Replace when we have batchFunc for fl::Tensor
+  auto x = af::batchFunc(arr, meanArr.getArray(), af::operator-);
+  x = af::pow(x, 2);
+  x = afReduceAxes(x, axes, af::sum);
+
+  int denominator = 1;
+  auto dims = input.getArray().dims();
+  for (auto dim : axes) {
+    denominator *= dims[dim];
+  }
+  if (bias) {
+    denominator--;
+  }
+
+  x = x / denominator;
+  return Tensor(std::move(x));
 }
 
 } // namespace fl

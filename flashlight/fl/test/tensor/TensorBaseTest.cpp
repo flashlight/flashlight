@@ -244,3 +244,24 @@ TEST(TensorBaseTest, power) {
   auto b = fl::full({3, 3}, 2.);
   ASSERT_TRUE(allClose(fl::power(a, b), a * b));
 }
+
+TEST(TensorBaseTest, mean) {
+  auto a = fl::rand({3, 50});
+  ASSERT_EQ(fl::mean<float>(a), af::mean<float>(a.getArray()));
+  ASSERT_TRUE(allClose(fl::mean(a, {0}).getArray(), af::mean(a.getArray(), 0)));
+}
+
+TEST(TensorBaseTest, var) {
+  auto a = fl::rand({3, 3});
+  ASSERT_EQ(fl::var<float>(a), af::var<float>(a.getArray()));
+  ASSERT_TRUE(allClose(fl::var(a, {0}).getArray(), af::var(a.getArray(), 0)));
+  ASSERT_TRUE(allClose(
+      fl::var(a, {1}, false).getArray(), af::var(a.getArray(), false, 1)));
+  // Make sure multidimension matches computing for all
+  ASSERT_FLOAT_EQ(
+      fl::var(a, {0, 1}, false).getArray().scalar<float>(),
+      af::var<float>(a.getArray()));
+  ASSERT_FLOAT_EQ(
+      fl::var(a, {0, 1}, true).getArray().scalar<float>(),
+      af::var<float>(a.getArray(), true));
+}
