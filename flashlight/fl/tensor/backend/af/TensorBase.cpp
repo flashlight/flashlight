@@ -12,6 +12,22 @@
 #include <af/arith.h>
 #include <af/data.h>
 
+namespace {
+
+typedef af::array (*reduceFunc_t)(const af::array&, const int);
+
+af::array afReduceAxes(const af::array& input,
+    const std::vector<int>& axes,
+    reduceFunc_t func) {
+  auto arr = input;
+  for(int dim : axes){
+    arr = func(arr, dim);
+  }
+  return arr;
+}
+
+}
+
 namespace fl {
 
 /*
@@ -211,14 +227,16 @@ Tensor power(const Tensor& lhs, const Tensor& rhs) {
 
 /************************** Reductions ***************************/
 
-Tensor amin(const Tensor& input, std::optional<const int> dim) {
-  // in ArrayFire, -1 --> all axes
-  return Tensor(af::min(input.getArray(), dim ? dim.value() : -1));
+Tensor amin(const Tensor& input, const std::vector<int>& axes) {
+  return Tensor(afReduceAxes(input.getArray(), axes, af::min));
 }
 
-Tensor amax(const Tensor& input, std::optional<const int> dim) {
-  // in ArrayFire, -1 --> all axes
-  return Tensor(af::max(input.getArray(), dim ? dim.value() : -1));
+Tensor amax(const Tensor& input, const std::vector<int>& axes) {
+  return Tensor(afReduceAxes(input.getArray(), axes, af::max));
+}
+
+Tensor sum(const Tensor& input, const std::vector<int>& axes) {
+  return Tensor(afReduceAxes(input.getArray(), axes, af::sum));
 }
 
 } // namespace fl

@@ -145,14 +145,20 @@ TEST(TensorBaseTest, maximum) {
 
 TEST(TensorBaseTest, amin) {
   auto a = fl::rand({3, 3});
-  ASSERT_TRUE(allClose(fl::amin(a).getArray(), af::min(a.getArray())));
-  ASSERT_TRUE(allClose(fl::amin(a, 0).getArray(), af::min(a.getArray(), 0)));
+  ASSERT_EQ(fl::amin<float>(a), af::min<float>(a.getArray()));
+  ASSERT_TRUE(allClose(fl::amin(a, { 0 }).getArray(), af::min(a.getArray(), 0)));
 }
 
 TEST(TensorBaseTest, amax) {
   auto a = fl::rand({3, 3});
-  ASSERT_TRUE(allClose(fl::amax(a).getArray(), af::max(a.getArray())));
-  ASSERT_TRUE(allClose(fl::amax(a, 0).getArray(), af::max(a.getArray(), 0)));
+  ASSERT_EQ(fl::amax<float>(a), af::max<float>(a.getArray()));
+  ASSERT_TRUE(allClose(fl::amax(a, { 0 }).getArray(), af::max(a.getArray(), 0)));
+}
+
+TEST(TensorBaseTest, sum) {
+  auto a = fl::rand({3, 3});
+  ASSERT_EQ(fl::sum<float>(a), af::sum<float>(a.getArray()));
+  ASSERT_TRUE(allClose(fl::sum(a, { 0 }).getArray(), af::sum(a.getArray(), 0)));
 }
 
 TEST(TensorBaseTest, negative) {

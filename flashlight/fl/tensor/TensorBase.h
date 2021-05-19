@@ -9,8 +9,7 @@
 
 // TODO:fl::Tensor {af} remove me when ArrayFire is a particular subimpl
 #include <af/array.h>
-
-#include <optional>
+#include <af/algorithm.h>
 
 #include "flashlight/fl/tensor/ShapeBase.h"
 #include "flashlight/fl/tensor/Types.h"
@@ -304,27 +303,66 @@ Tensor power(const Tensor& lhs, const Tensor& rhs);
 /************************** Reductions ***************************/
 
 /**
- * Compute the minimum value along an axis. If the dimension is omitted, the
- * minimum is computed over all tensors.
+ * Compute the minimum value along multiple axis.
  *
  * @param[in] input the input along which to operate
- * @param[in] dim optional - the dimension along which to reduce.
- *
- * TODO: add fl::Tensor::min to call this?
- * TODO: investigate taking a tuple of dims
+ * @param[in] dim the dimension along which to reduce.
+ * @return a tensor containing the minimum values
  */
-Tensor amin(const Tensor& input, std::optional<const int> dim = {});
+Tensor amin(const Tensor& input, const std::vector<int>& axis);
 
 /**
- * Compute the maximum value along an axis. If the dimension is omitted, the
- * maximum is computed over all elements.
+ * Compute the minimum value across all axes.
  *
  * @param[in] input the input along which to operate
- * @param[in] dim optional - the dimension along which to reduce.
+ * @return a scalar T containing the mim
  *
- * TODO: add fl::Tensor::max to call this?
- * TODO: investigate taking a tuple of dims
  */
-Tensor amax(const Tensor& input, std::optional<const int> dim = {});
+template<typename T>
+T amin(const Tensor& input) {
+  return af::min<T>(input.getArray());
+}
+
+/**
+ * Compute the maximum value along multiple axis.
+ *
+ * @param[in] input the input along which to operate
+ * @param[in] dim the dimension along which to reduce.
+ * @return a tensor containing the max
+ *
+ */
+Tensor amax(const Tensor& input, const std::vector<int>& axes);
+
+/**
+ * Compute the maximum value across all axes.
+ *
+ * @param[in] input the input along which to operate
+ * @return a scalar T containing the max value
+ *
+ */
+template<typename T>
+T amax(const Tensor& input) {
+  return af::max<T>(input.getArray());
+}
+
+/**
+ * Sum of array over given axes.
+ *
+ * @param[in] input the input along which to operate
+ * @param[in] axes the dimension along which to reduce.
+ * @return a tensor containing the sum across given axes
+ */
+Tensor sum(const Tensor& input, const std::vector<int>& axes);
+
+/**
+ * Sum of array over all axes.
+ *
+ * @param[in] input the input along which to operate
+ * @return a scalar T containing the sum
+ */
+template<typename T>
+T sum(const Tensor& input) {
+  return af::sum<T>(input.getArray());
+}
 
 } // namespace fl
