@@ -11,8 +11,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "flashlight/app/asr/common/Defines.h"
-#include "flashlight/app/asr/criterion/criterion.h"
+#include "flashlight/pkg/speech/common/Defines.h"
+#include "flashlight/pkg/speech/criterion/criterion.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 
 using namespace fl::app::asr;

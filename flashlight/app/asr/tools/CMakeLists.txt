@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.13)
 
 # TODO: move this to another place once we have other working tools.
 # Use something similar to build_test where libs can be specified in a
@@ -8,7 +8,7 @@ function(build_tool SRCFILE target)
   target_link_libraries(
     ${target}
     PRIVATE
-    flashlight-app-asr
+    fl_pkg_speech
     )
   target_include_directories(
     ${target}
