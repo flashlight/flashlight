@@ -40,8 +40,8 @@ ViT::ViT(
   // Positional embedding
   if (usePosEmb_) {
     int nPatches = imageSize / 16;
-    params_.emplace_back(
-        fl::truncNormal(af::dim4(hiddenEmbSize_, nPatches * nPatches + 1), 0.02));
+    params_.emplace_back(fl::truncNormal(
+        af::dim4(hiddenEmbSize_, nPatches * nPatches + 1), 0.02));
   } else if (useAugPosEmb_) {
     augPosEmb_ =
         std::make_shared<SinusoidalPositionEmbedding2D>(hiddenEmbSize_, 1.);
@@ -98,14 +98,7 @@ std::vector<fl::Variable> ViT::forward(
   // Positional embedding
   if (usePosEmb_) {
     auto posEmb = params_[1];
-    if (eval && posEmb.dims(1) != output.dims(1)) {
-      af::array posEmbArr = params_[1].array();
-      af::array clsEmb = posEmbArr.col(0);
-      af::array posEmbAll = posEmbArr.cols(1, posEmbArr.dims(1) - 1);
-      auto newPosEmb = af::resize(posEmbAll, output.dims(0), output.dims(1) - 1, AF_INTERP_BICUBIC);
-      posEmb = fl::Variable(af::join(1, clsEmb, newPosEmb), false);
-    }
-    output = output + tile(posEmb, af::dim4(1, 1, B)).as(output.type());;
+    output = output + tile(posEmb, af::dim4(1, 1, B)).as(output.type());
   } else if (useAugPosEmb_) {
     output = augPosEmb_->forward({output}, aug, region, doShrink).front();
   }
@@ -127,6 +120,26 @@ std::vector<fl::Variable> ViT::forward(
   output = reorder(output, 0, 2, 1, 3).slice(0); // C x B x 1
   output = linearOut_->forward(output);
   return {output};
+}
+
+void ViT::resizePosEmd(const int w, const int h) {
+  af::array posEmbArr = params_[1].array();
+  af::array clsEmb = posEmbArr.col(0);
+  af::array posEmb = posEmbArr.cols(1, posEmbArr.dims(1) - 1); // C x T x B
+  posEmb = af::transpose(posEmb); // T x C x B
+
+  int oldT = std::sqrt(posEmb.dims(0));
+  int C = posEmb.dims(1);
+  int B = posEmb.dims(2);
+  posEmb = af::moddims(posEmb, af::dim4(oldT, oldT, C, B));
+
+  auto newPosEmb = af::resize(posEmb, w, h, AF_INTERP_BICUBIC);
+  newPosEmb = af::moddims(newPosEmb, af::dim4(w * h, C, B));
+  newPosEmb = af::transpose(newPosEmb); 
+
+  posEmbArr = af::join(1, clsEmb, newPosEmb);
+  // std::cout << posEmbArr.dims() << std::endl;
+  params_[1] = fl::Variable(posEmbArr, true);
 }
 
 std::string ViT::prettyString() const {

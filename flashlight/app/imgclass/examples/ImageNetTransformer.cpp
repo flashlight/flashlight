@@ -67,7 +67,7 @@ DEFINE_double(
     train_aug_p_switchmix,
     0.5,
     "Probability of switching between cutmix and mixup");
-DEFINE_bool(train_finetune, true, "Fine-tune");
+DEFINE_bool(train_finetune, false, "Fine-tune");
 DEFINE_bool(train_mixsize, true, "train_missize");
 DEFINE_uint64(train_imgsize, 224, "Fine-tune image size");
 
@@ -354,7 +354,9 @@ int main(int argc, char** argv) {
         FLAGS_train_imgsize);
   } else {
     fl::load(FLAGS_exp_finetune_path, model);
-    // model->resizePosEmd(24 * 24);
+    if (FLAGS_use_pos_emb) {
+      model->resizePosEmd(FLAGS_train_imgsize / 16, FLAGS_train_imgsize / 16);
+    }
   }
 
   FL_LOG_MASTER(INFO) << "[model with parameters " << fl::numTotalParams(model)

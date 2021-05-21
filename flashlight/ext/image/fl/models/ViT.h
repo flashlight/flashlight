@@ -82,6 +82,8 @@ class ViT : public fl::Container {
       float region = 1,
       bool doShrink = true);
 
+  void resizePosEmd(const int w, const int h);
+
   std::string prettyString() const override;
 };
 
