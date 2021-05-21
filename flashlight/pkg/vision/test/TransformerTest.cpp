@@ -6,7 +6,7 @@
  */
 
 #include "flashlight/pkg/vision/nn/Transformer.h"
-#include "flashlight/app/objdet/nn/PositionalEmbeddingSine.h"
+#include "flashlight/pkg/vision/nn/PositionalEmbeddingSine.h"
 
 #include <gtest/gtest.h>
 

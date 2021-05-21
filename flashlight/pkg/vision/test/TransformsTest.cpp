@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/app/objdet/dataset/Transforms.h"
+#include "flashlight/pkg/vision/dataset/CocoTransforms.h"
 
 #include <gtest/gtest.h>
 
