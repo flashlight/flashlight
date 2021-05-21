@@ -18,6 +18,8 @@ Tensor::Tensor(std::unique_ptr<TensorAdapterBase> adapter)
 
 Tensor::~Tensor() {}
 
+Tensor::Tensor() : impl_(detail::getDefaultAdapter()) {}
+
 const Shape& Tensor::shape() const {
   return impl_->shape();
 }

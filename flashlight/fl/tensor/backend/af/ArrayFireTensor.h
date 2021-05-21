@@ -50,6 +50,11 @@ class ArrayFireTensor : public TensorAdapterBase {
   explicit ArrayFireTensor(af::array&& array);
 
   /**
+   * Default initialization - empty ArrayFire array and empty shape.
+   */
+  ArrayFireTensor();
+
+  /**
    * Gets an ArrayFire Array from this impl.
    */
   af::array& getHandle();

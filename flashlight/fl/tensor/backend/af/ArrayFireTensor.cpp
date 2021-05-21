@@ -42,6 +42,8 @@ af::array afReduceAxes(
 ArrayFireTensor::ArrayFireTensor(af::array&& array)
     : array_(std::move(array)), shape_(detail::afToFlDims(array_.dims())) {}
 
+ArrayFireTensor::ArrayFireTensor() {}
+
 TensorBackend ArrayFireTensor::backend() const {
   return TensorBackend::ArrayFire;
 }
