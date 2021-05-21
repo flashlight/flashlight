@@ -50,7 +50,7 @@ class TensorAdapterBase {
    *
    * @return the shape of the tensor
    */
-  virtual Shape shape() const = 0;
+  virtual const Shape& shape() = 0;
 
   /**
    * Get the data type of tensor.
