@@ -643,7 +643,7 @@ We assume that saved `datadir`, `tokens` are stored with existing paths inside t
   --decodertype=[wrd, tkn] \
   --beamsize=100 \
   --beamsizetoken=100 \
-  --beamthreashould=20 \
+  --beamthreshold=20 \
   --lmweight=1 \
   --wordscore=0 \
   --eosscore=0 \
