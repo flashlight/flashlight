@@ -1,4 +1,4 @@
-#include "flashlight/app/objdet/nn/PositionalEmbeddingSine.h"
+#include "flashlight/pkg/vision/nn/PositionalEmbeddingSine.h"
 #include "flashlight/pkg/vision/nn/Transformer.h"
 //#include "flashlight/pkg/vision/models/Resnet.h"
 #include "flashlight/pkg/vision/models/Resnet50Backbone.h"

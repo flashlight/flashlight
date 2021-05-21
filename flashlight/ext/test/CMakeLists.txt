@@ -32,11 +32,6 @@ build_test(
   )
 add_dependencies(ModulePluginTest test_module_plugin)
 
-build_test(
-  SRC ${DIR}/image/ModelSerializationTest.cpp
-  LIBS ${LIBS}
-)
-
 if (FL_EXT_BUILD_HALIDE)
   build_test(SRC ${DIR}/integrations/HalideTest.cpp LIBS ${LIBS})
   fl_add_and_link_halide_lib(

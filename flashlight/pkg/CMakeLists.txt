@@ -1,10 +1,13 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.13)
 
 set(FL_PKG_VISION_DIR ${FL_PKG_DIR}/vision)
 include(${FL_PKG_VISION_DIR}/CMakeLists.txt)
 
 set(FL_PKG_RUNTIME_DIR ${FL_PKG_DIR}/runtime)
 include(${FL_PKG_RUNTIME_DIR}/CMakeLists.txt)
+
+set(FL_PKG_SPEECH_DIR ${FL_PKG_DIR}/speech)
+include(${FL_PKG_SPEECH_DIR}/CMakeLists.txt)
 
 # TODO find a nicer way of setting this instead of if/else
 #cmake_dependent_option(FL_BUILD_ALL_APPS "Set all Flashlight apps ON by default" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)

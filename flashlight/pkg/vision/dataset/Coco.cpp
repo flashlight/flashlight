@@ -14,7 +14,6 @@
 
 #include "flashlight/pkg/vision/dataset/BoxUtils.h"
 #include "flashlight/pkg/vision/dataset/CocoTransforms.h"
-#include "flashlight/ext/image/af/Jpeg.h"
 #include "flashlight/pkg/vision/dataset/Transforms.h"
 #include "flashlight/pkg/vision/dataset/DistributedDataset.h"
 #include "flashlight/pkg/vision/dataset/LoaderDataset.h"

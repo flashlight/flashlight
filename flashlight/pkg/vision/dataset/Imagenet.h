@@ -10,7 +10,6 @@
 #include <string>
 #include <unordered_map>
 
-#include "flashlight/ext/image/af/Jpeg.h"
 #include "flashlight/fl/dataset/datasets.h"
 /**
  * Utilities for creating an ImageDataset with imagenet data
