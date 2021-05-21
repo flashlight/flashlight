@@ -11,6 +11,9 @@
 #include "flashlight/fl/tensor/Random.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
+// TODO: remove me when not ArrayFire specific
+#include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
+
 using namespace ::testing;
 using namespace fl;
 
@@ -44,7 +47,7 @@ bool allClose(
     const fl::Tensor& a,
     const fl::Tensor& b,
     double absTolerance = 1e-5) {
-  return allClose(a.getArray(), b.getArray(), absTolerance);
+  return allClose(toArray(a), toArray(b), absTolerance);
 }
 } // namespace
 
@@ -56,12 +59,12 @@ TEST(TensorBaseTest, AfRefCountBasic) {
   af_get_data_ref_count(&refCount, a.get());
   ASSERT_EQ(refCount, 1);
 
-  auto tensor = fl::Tensor(std::move(a));
-  auto& aRef = tensor.getArray();
+  auto tensor = toTensor<ArrayFireTensor>(std::move(a));
+  auto& aRef = toArray(tensor);
   af_get_data_ref_count(&refCount, aRef.get());
   ASSERT_EQ(refCount, 1);
   // Sanity check copying bumps things
-  auto aNoRef = tensor.getArray();
+  auto aNoRef = toArray(tensor);
   af_get_data_ref_count(&refCount, aNoRef.get());
   ASSERT_EQ(refCount, 2);
 }
@@ -69,11 +72,11 @@ TEST(TensorBaseTest, AfRefCountBasic) {
 TEST(TensorBaseTest, BinaryOperators) {
   // TODO:fl::Tensor {testing} expand this test
   // Ensure that some binary operators work properly.
-  auto a = fl::Tensor(af::constant(1, {2, 2}));
-  auto b = fl::Tensor(af::constant(2, {2, 2}));
-  auto c = fl::Tensor(af::constant(3, {2, 2}));
+  auto a = toTensor<ArrayFireTensor>(af::constant(1, {2, 2}));
+  auto b = toTensor<ArrayFireTensor>(af::constant(2, {2, 2}));
+  auto c = toTensor<ArrayFireTensor>(af::constant(3, {2, 2}));
 
-  ASSERT_TRUE(allClose((a == b).getArray(), (a.getArray() == b.getArray())));
+  ASSERT_TRUE(allClose(toArray(a == b), (toArray(a) == toArray(b))));
   ASSERT_TRUE(allClose((a == b), eq(a, b)));
   ASSERT_TRUE(allClose((a + b), c));
   ASSERT_TRUE(allClose((a + b), add(a, b)));
@@ -84,19 +87,19 @@ TEST(TensorBaseTest, full) {
   auto a = fl::full({3, 4}, 3.);
   ASSERT_EQ(a.shape(), Shape({3, 4}));
   ASSERT_EQ(a.type(), fl::dtype::f32);
-  ASSERT_TRUE(allClose(a.getArray(), af::constant(3., {3, 4})));
+  ASSERT_TRUE(allClose(toArray(a), af::constant(3., {3, 4})));
 
   auto b = fl::full({1, 1, 5, 4}, 4.5);
   ASSERT_EQ(b.shape(), Shape({1, 1, 5, 4}));
   ASSERT_EQ(b.type(), fl::dtype::f32);
-  ASSERT_TRUE(allClose(b.getArray(), af::constant(4.5, {1, 1, 5, 4})));
+  ASSERT_TRUE(allClose(toArray(b), af::constant(4.5, {1, 1, 5, 4})));
 }
 
 TEST(TensorBaseTest, identity) {
   auto a = fl::identity(6);
   ASSERT_EQ(a.shape(), Shape({6, 6}));
   ASSERT_EQ(a.type(), fl::dtype::f32);
-  ASSERT_TRUE(allClose(a.getArray(), af::identity({6, 6})));
+  ASSERT_TRUE(allClose(toArray(a), af::identity({6, 6})));
 
   ASSERT_EQ(fl::identity(6, fl::dtype::f64).type(), fl::dtype::f64);
 }
@@ -107,7 +110,7 @@ TEST(TensorBaseTest, randn) {
   ASSERT_EQ(a.shape(), Shape({s, s}));
   ASSERT_EQ(a.type(), fl::dtype::f32);
   ASSERT_TRUE(af::allTrue<bool>(
-      af::abs(af::mean(af::moddims(a.getArray(), s * s, 1, 1, 1))) < 2));
+      af::abs(af::mean(af::moddims(toArray(a), s * s, 1, 1, 1))) < 2));
 
   ASSERT_EQ(fl::randn({1}, fl::dtype::f64).type(), fl::dtype::f64);
 }
@@ -117,8 +120,8 @@ TEST(TensorBaseTest, rand) {
   auto a = fl::rand({s, s});
   ASSERT_EQ(a.shape(), Shape({s, s}));
   ASSERT_EQ(a.type(), fl::dtype::f32);
-  ASSERT_TRUE(af::allTrue<bool>(a.getArray() <= 1));
-  ASSERT_TRUE(af::allTrue<bool>(a.getArray() >= 0));
+  ASSERT_TRUE(af::allTrue<bool>(toArray(a) <= 1));
+  ASSERT_TRUE(af::allTrue<bool>(toArray(a) >= 0));
 
   ASSERT_EQ(fl::rand({1}, fl::dtype::f64).type(), fl::dtype::f64);
 }
@@ -145,20 +148,20 @@ TEST(TensorBaseTest, maximum) {
 
 TEST(TensorBaseTest, amin) {
   auto a = fl::rand({3, 3});
-  ASSERT_EQ(fl::amin<float>(a), af::min<float>(a.getArray()));
-  ASSERT_TRUE(allClose(fl::amin(a, { 0 }).getArray(), af::min(a.getArray(), 0)));
+  ASSERT_EQ(fl::amin<float>(a), af::min<float>(toArray(a)));
+  ASSERT_TRUE(allClose(toArray(fl::amin(a, {0})), af::min(toArray(a), 0)));
 }
 
 TEST(TensorBaseTest, amax) {
   auto a = fl::rand({3, 3});
-  ASSERT_EQ(fl::amax<float>(a), af::max<float>(a.getArray()));
-  ASSERT_TRUE(allClose(fl::amax(a, { 0 }).getArray(), af::max(a.getArray(), 0)));
+  ASSERT_EQ(fl::amax<float>(a), af::max<float>(toArray(a)));
+  ASSERT_TRUE(allClose(toArray(fl::amax(a, {0})), af::max(toArray(a), 0)));
 }
 
 TEST(TensorBaseTest, sum) {
   auto a = fl::rand({3, 3});
-  ASSERT_EQ(fl::sum<float>(a), af::sum<float>(a.getArray()));
-  ASSERT_TRUE(allClose(fl::sum(a, { 0 }).getArray(), af::sum(a.getArray(), 0)));
+  ASSERT_EQ(fl::sum<float>(a), af::sum<float>(toArray(a)));
+  ASSERT_TRUE(allClose(toArray(fl::sum(a, {0})), af::sum(toArray(a), 0)));
 }
 
 TEST(TensorBaseTest, negative) {
@@ -182,12 +185,12 @@ TEST(TensorBaseTest, logicalNot) {
 
 TEST(TensorBaseTest, exp) {
   auto in = fl::full({3, 3}, 4.f);
-  ASSERT_TRUE(allClose(fl::exp(in).getArray(), af::exp(in.getArray())));
+  ASSERT_TRUE(allClose(toArray(fl::exp(in)), af::exp(toArray(in))));
 }
 
 TEST(TensorBaseTest, log) {
   auto in = fl::full({3, 3}, 2.f);
-  ASSERT_TRUE(allClose(fl::log(in).getArray(), af::log(in.getArray())));
+  ASSERT_TRUE(allClose(toArray(fl::log(in)), af::log(toArray(in))));
 }
 
 TEST(TensorBaseTest, log1p) {
@@ -197,12 +200,12 @@ TEST(TensorBaseTest, log1p) {
 
 TEST(TensorBaseTest, sin) {
   auto in = fl::rand({3, 3});
-  ASSERT_TRUE(allClose(fl::sin(in).getArray(), af::sin(in.getArray())));
+  ASSERT_TRUE(allClose(toArray(fl::sin(in)), af::sin(toArray(in))));
 }
 
 TEST(TensorBaseTest, cos) {
   auto in = fl::rand({3, 3});
-  ASSERT_TRUE(allClose(fl::cos(in).getArray(), af::cos(in.getArray())));
+  ASSERT_TRUE(allClose(toArray(fl::cos(in)), af::cos(toArray(in))));
 }
 
 TEST(TensorBaseTest, sqrt) {
@@ -212,7 +215,7 @@ TEST(TensorBaseTest, sqrt) {
 
 TEST(TensorBaseTest, tanh) {
   auto in = fl::rand({3, 3});
-  ASSERT_TRUE(allClose(fl::tanh(in).getArray(), af::tanh(in.getArray())));
+  ASSERT_TRUE(allClose(toArray(fl::tanh(in)), af::tanh(toArray(in))));
 }
 
 TEST(TensorBaseTest, absolute) {
@@ -247,26 +250,26 @@ TEST(TensorBaseTest, power) {
 
 TEST(TensorBaseTest, mean) {
   auto a = fl::rand({3, 50});
-  ASSERT_EQ(fl::mean<float>(a), af::mean<float>(a.getArray()));
-  ASSERT_TRUE(allClose(fl::mean(a, {0}).getArray(), af::mean(a.getArray(), 0)));
+  ASSERT_EQ(fl::mean<float>(a), af::mean<float>(toArray(a)));
+  ASSERT_TRUE(allClose(toArray(fl::mean(a, {0})), af::mean(toArray(a), 0)));
 }
 
 TEST(TensorBaseTest, var) {
   auto a = fl::rand({3, 3});
-  ASSERT_EQ(fl::var<float>(a), af::var<float>(a.getArray()));
-  ASSERT_TRUE(allClose(fl::var(a, {0}).getArray(), af::var(a.getArray(), 0)));
-  ASSERT_TRUE(allClose(
-      fl::var(a, {1}, false).getArray(), af::var(a.getArray(), false, 1)));
+  ASSERT_EQ(fl::var<float>(a), af::var<float>(toArray(a)));
+  ASSERT_TRUE(allClose(toArray(fl::var(a, {0})), af::var(toArray(a), 0)));
+  ASSERT_TRUE(
+      allClose(toArray(fl::var(a, {1}, false)), af::var(toArray(a), false, 1)));
   // Make sure multidimension matches computing for all
   ASSERT_FLOAT_EQ(
-      fl::var(a, {0, 1}, false).getArray().scalar<float>(),
-      af::var<float>(a.getArray()));
+      toArray(fl::var(a, {0, 1}, false)).scalar<float>(),
+      af::var<float>(toArray(a)));
   ASSERT_FLOAT_EQ(
-      fl::var(a, {0, 1}, true).getArray().scalar<float>(),
-      af::var<float>(a.getArray(), true));
+      toArray(fl::var(a, {0, 1}, true)).scalar<float>(),
+      af::var<float>(toArray(a), true));
 }
 
 TEST(TensorBaseTest, norm) {
   auto a = fl::rand({3, 3});
-  ASSERT_EQ(fl::norm(a), af::norm(a.getArray()));
+  ASSERT_EQ(fl::norm(a), af::norm(toArray(a)));
 }

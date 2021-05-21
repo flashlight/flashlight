@@ -5,6 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
+
+#include <memory>
+#include <stdexcept>
+#include <utility>
+
 #include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/fl/tensor/backend/af/Utils.h"
 
@@ -14,58 +20,53 @@
 #include <af/gfor.h>
 #include <af/lapack.h>
 
+namespace fl {
+
 namespace {
 
 typedef af::array (*reduceFunc_t)(const af::array&, const int);
 
-af::array afReduceAxes(const af::array& input,
+af::array afReduceAxes(
+    const af::array& input,
     const std::vector<int>& axes,
     reduceFunc_t func) {
   auto arr = input;
-  for(int dim : axes){
+  for (int dim : axes) {
     arr = func(arr, dim);
   }
   return arr;
 }
 
-}
+} // namespace
 
-namespace fl {
+ArrayFireTensor::ArrayFireTensor(af::array&& array)
+    : array_(std::move(array)) {}
 
-/*
- * Below this point are ArrayFire-specific implementations. They should be
- * [re]moved to a specific ArrayFire backend implementation (along with other
- * flashlight/fl/tensor assets once migration is complete).
- */
-
-Tensor::Tensor(af::array&& array) : array_(std::move(array)) {}
-
-af::array& Tensor::getArray() {
-  return array_;
-}
-
-const af::array& Tensor::getArray() const {
-  return array_;
-}
-
-Shape Tensor::shape() const {
+Shape ArrayFireTensor::shape() const {
   return detail::afToFlDims(array_.dims());
 }
 
-fl::dtype Tensor::type() const {
+fl::dtype ArrayFireTensor::type() const {
   return detail::afToFlType(array_.type());
 }
 
-Tensor Tensor::astype(const dtype type) {
+Tensor ArrayFireTensor::astype(const dtype type) {
   auto a = array_.as(detail::flToAfType(type));
-  return Tensor(std::move(a));
+  return toTensor<ArrayFireTensor>(std::move(a));
+}
+
+af::array& toArray(const Tensor& tensor) {
+  if (tensor.backend() != TensorBackend::ArrayFire) {
+    throw std::invalid_argument("toArray: tensor is not ArrayFire-backed");
+  }
+  return tensor.getAdapter<ArrayFireTensor>().getHandle();
 }
 
 /******************** Tensor Creation Functions ********************/
 #define AF_FULL_FUN_DEF(TYPE)                                        \
   template <>                                                        \
   Tensor full(const Shape& dims, TYPE value, const dtype type) {     \
-    return Tensor(af::constant(                                      \
+    return toTensor<ArrayFireTensor>(af::constant(                   \
         value, detail::flToAfDims(dims), detail::flToAfType(type))); \
   }
 AF_FULL_FUN_DEF(const double&);
@@ -83,52 +84,54 @@ AF_FULL_FUN_DEF(const short&);
 AF_FULL_FUN_DEF(const unsigned short&);
 
 Tensor identity(const Dim dim, const dtype type) {
-  return Tensor(af::identity({dim, dim}, detail::flToAfType(type)));
+  return toTensor<ArrayFireTensor>(
+      af::identity({dim, dim}, detail::flToAfType(type)));
 }
 
 /************************** Unary Operators ***************************/
 Tensor negative(const Tensor& tensor) {
-  return Tensor(-tensor.getArray());
+  return toTensor<ArrayFireTensor>(-toArray(tensor));
 }
 
 Tensor logicalNot(const Tensor& tensor) {
-  return Tensor(!tensor.getArray());
+  return toTensor<ArrayFireTensor>(!toArray(tensor));
 }
 
 Tensor exp(const Tensor& tensor) {
-  return Tensor(af::exp(tensor.getArray()));
+  return toTensor<ArrayFireTensor>(af::exp(toArray(tensor)));
 }
 
 Tensor log(const Tensor& tensor) {
-  return Tensor(af::log(tensor.getArray()));
+  return toTensor<ArrayFireTensor>(af::log(toArray(tensor)));
 }
 
 Tensor log1p(const Tensor& tensor) {
-  return Tensor(af::log1p(tensor.getArray()));
+  return toTensor<ArrayFireTensor>(af::log1p(toArray(tensor)));
 }
 
 Tensor sin(const Tensor& tensor) {
-  return Tensor(af::sin(tensor.getArray()));
+  return toTensor<ArrayFireTensor>(af::sin(toArray(tensor)));
 }
 
 Tensor cos(const Tensor& tensor) {
-  return Tensor(af::cos(tensor.getArray()));
+  return toTensor<ArrayFireTensor>(af::cos(toArray(tensor)));
 }
 
 Tensor sqrt(const Tensor& tensor) {
-  return Tensor(af::sqrt(tensor.getArray()));
+  return toTensor<ArrayFireTensor>(af::sqrt(toArray(tensor)));
 }
 
 Tensor tanh(const Tensor& tensor) {
-  return Tensor(af::tanh(tensor.getArray()));
+  return toTensor<ArrayFireTensor>(af::tanh(toArray(tensor)));
 }
 
 Tensor absolute(const Tensor& tensor) {
-  return Tensor(af::abs(tensor.getArray()));
+  return toTensor<ArrayFireTensor>(af::abs(toArray(tensor)));
 }
 
 Tensor clip(const Tensor& tensor, const Tensor& low, const Tensor& high) {
-  return Tensor(af::clamp(tensor.getArray(), low.getArray(), high.getArray()));
+  return toTensor<ArrayFireTensor>(
+      af::clamp(toArray(tensor), toArray(low), toArray(high)));
 }
 
 Tensor clip(const Tensor& tensor, const Tensor& low, const double& high) {
@@ -144,18 +147,18 @@ Tensor clip(const Tensor& tensor, const double& low, const double& high) {
 }
 
 Tensor isnan(const Tensor& tensor) {
-  return Tensor(af::isNaN(tensor.getArray()));
+  return toTensor<ArrayFireTensor>(af::isNaN(toArray(tensor)));
 }
 
 /************************** Binary Operators ***************************/
 // For ArrayFire, af::array already implements overloads for all needed
 // operators -- use these by default.
-#define AF_BINARY_OP_TYPE_DEF(OP, TYPE)           \
-  Tensor operator OP(const Tensor& a, TYPE rhs) { \
-    return Tensor(a.getArray() OP rhs);           \
-  }                                               \
-  Tensor operator OP(TYPE lhs, const Tensor& a) { \
-    return Tensor(lhs OP a.getArray());           \
+#define AF_BINARY_OP_TYPE_DEF(OP, TYPE)                  \
+  Tensor operator OP(const Tensor& a, TYPE rhs) {        \
+    return toTensor<ArrayFireTensor>(toArray(a) OP rhs); \
+  }                                                      \
+  Tensor operator OP(TYPE lhs, const Tensor& a) {        \
+    return toTensor<ArrayFireTensor>(lhs OP toArray(a)); \
   }
 #define AF_BINARY_OP_LITERALS_DEF(OP)                   \
   AF_BINARY_OP_TYPE_DEF(OP, const bool&);               \
@@ -173,10 +176,10 @@ Tensor isnan(const Tensor& tensor) {
   AF_BINARY_OP_TYPE_DEF(OP, const unsigned short&);
 // Operations on fl::Tensor call the respective operator overloads that are
 // already defined on af::arrays
-#define AF_BINARY_OP_DEF(OP, FUNC)                    \
-  Tensor FUNC(const Tensor& lhs, const Tensor& rhs) { \
-    return Tensor(lhs.getArray() OP rhs.getArray());  \
-  }                                                   \
+#define AF_BINARY_OP_DEF(OP, FUNC)                                  \
+  Tensor FUNC(const Tensor& lhs, const Tensor& rhs) {               \
+    return toTensor<ArrayFireTensor>(toArray(lhs) OP toArray(rhs)); \
+  }                                                                 \
   AF_BINARY_OP_LITERALS_DEF(OP);
 // Definitions
 // Since ArrayFire implements operator overloads, map both fl::Tensor functions
@@ -200,7 +203,7 @@ AF_BINARY_OP_DEF(<<, lShift);
 AF_BINARY_OP_DEF(>>, rShift);
 
 Tensor minimum(const Tensor& lhs, const Tensor& rhs) {
-  return Tensor(af::min(lhs.getArray(), rhs.getArray()));
+  return toTensor<ArrayFireTensor>(af::min(toArray(lhs), toArray(rhs)));
 }
 
 Tensor minimum(const Tensor& lhs, const double& rhs) {
@@ -212,7 +215,7 @@ Tensor minimum(const double& lhs, const Tensor& rhs) {
 }
 
 Tensor maximum(const Tensor& lhs, const Tensor& rhs) {
-  return Tensor(af::max(lhs.getArray(), rhs.getArray()));
+  return toTensor<ArrayFireTensor>(af::max(toArray(lhs), toArray(rhs)));
 }
 
 Tensor maximum(const Tensor& lhs, const double& rhs) {
@@ -224,46 +227,46 @@ Tensor maximum(const double& lhs, const Tensor& rhs) {
 }
 
 Tensor power(const Tensor& lhs, const Tensor& rhs) {
-  return Tensor(af::pow(lhs.getArray(), rhs.getArray()));
+  return toTensor<ArrayFireTensor>(af::pow(toArray(lhs), toArray(rhs)));
 }
 
 /************************** Reductions ***************************/
 
 Tensor amin(const Tensor& input, const std::vector<int>& axes) {
-  return Tensor(afReduceAxes(input.getArray(), axes, af::min));
+  return toTensor<ArrayFireTensor>(afReduceAxes(toArray(input), axes, af::min));
 }
 
 Tensor amax(const Tensor& input, const std::vector<int>& axes) {
-  return Tensor(afReduceAxes(input.getArray(), axes, af::max));
+  return toTensor<ArrayFireTensor>(afReduceAxes(toArray(input), axes, af::max));
 }
 
 Tensor sum(const Tensor& input, const std::vector<int>& axes) {
-  return Tensor(afReduceAxes(input.getArray(), axes, af::sum));
+  return toTensor<ArrayFireTensor>(afReduceAxes(toArray(input), axes, af::sum));
 }
 
 Tensor mean(const Tensor& input, const std::vector<int>& axes) {
   // Cannot use afReduceAxes because sum uses dim instead of int
-  auto arr = input.getArray();
+  auto arr = toArray(input);
   for (int dim : axes) {
     arr = af::mean(arr, dim);
   }
-  return Tensor(std::move(arr));
+  return toTensor<ArrayFireTensor>(std::move(arr));
 }
 
 Tensor var(const Tensor& input, const std::vector<int>& axes, bool bias) {
   // Use arrayfire default for one dimension which may be optimized
-  auto& arr = input.getArray();
+  auto& arr = toArray(input);
   if (axes.size() == 1) {
-    return Tensor(af::var(arr, bias, axes[0]));
+    return toTensor<ArrayFireTensor>(af::var(arr, bias, axes[0]));
   }
   auto meanArr = mean(input, axes);
   // TODO Replace when we have batchFunc for fl::Tensor
-  auto x = af::batchFunc(arr, meanArr.getArray(), af::operator-);
+  auto x = af::batchFunc(arr, toArray(meanArr), af::operator-);
   x = af::pow(x, 2);
   x = afReduceAxes(x, axes, af::sum);
 
   int denominator = 1;
-  auto dims = input.getArray().dims();
+  auto dims = toArray(input).dims();
   for (auto dim : axes) {
     denominator *= dims[dim];
   }
@@ -272,11 +275,11 @@ Tensor var(const Tensor& input, const std::vector<int>& axes, bool bias) {
   }
 
   x = x / denominator;
-  return Tensor(std::move(x));
+  return toTensor<ArrayFireTensor>(std::move(x));
 }
 
 double norm(const Tensor& input) {
-  return af::norm(input.getArray());
+  return af::norm(toArray(input));
 }
 
 } // namespace fl

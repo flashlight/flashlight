@@ -7,10 +7,8 @@
 
 #pragma once
 
-// TODO:fl::Tensor {af} remove me when ArrayFire is a particular subimpl
-#include <af/algorithm.h>
-#include <af/array.h>
-#include <af/statistics.h>
+#include <memory>
+#include <optional>
 
 #include "flashlight/fl/tensor/ShapeBase.h"
 #include "flashlight/fl/tensor/Types.h"
@@ -18,39 +16,35 @@
 namespace fl {
 
 /**
- * A base tensor interface under which implementations can define tensor
- * operations. These operations may differ across tensor libraries,
- * hardware-specific libraries or compilers and DSLs.
+ * Enum for various tensor backends.
+ */
+enum class TensorBackend { ArrayFire };
+
+// Forward declaration - see TensorAdapter.h
+class TensorAdapterBase;
+
+/**
+ * A Tensor on which computation can be performed.
  *
- * TODO:fl::Tensor {doc} more documentation. For now, this class serves as a
- * simple shim between tensor operations expressed in Flashlight and underlying
- * tensor computations in ArrayFire; for now, this API will wrap the ArrayFire
- * API using semantics similar to
- * [numpy](https://numpy.org/doc/stable/reference/) and translating those into
- * ArrayFire semantics. NOTE: this API will break frequently and is not yet
- * stable.
+ * Underlying implementations of tensor operations are implemented via types
+ * derived from `TensorAdapterBase`; these implementations also store state
+ * associated with the tensor. Tensor stores a pointer to the implementation,
+ * which can be swapped out if the implementation of backend
+ * changes.`TensorAdapterBase` implementations may differ across tensor
+ * libraries, hardware-specific libraries or compilers and DSLs.
+ *
+ * TODO:fl::Tensor {doc} more documentation. NOTE: this API will break
+ * frequently and is not yet stable.
  */
 class Tensor {
-  // TODO:fl::Tensor {af} remove me when ArrayFire is a particular subimpl
-  af::array array_;
+  // The backend adapter for the tensor
+  std::unique_ptr<TensorAdapterBase> impl_;
 
  public:
-  /**
-   * Temporary. Since af::arrays are refcounted, an instance of this class
-   * should only be created using arrays that are moved therein. Tensor
-   * operations occurring on that array, while adapting functions in Flashlight,
-   * should operate on references and should not copy the array else take a
-   * performance penalty (via an internal copy if refcount is > 1 in some
-   * cases).
-   *
-   * @param[in] array&& construct a tensor from an ArrayFire array rvalue
-   * reference.
-   */
-  explicit Tensor(af::array&& array);
-
-  // TODO:fl::Tensor {af} remove me when not dependent on AF
-  af::array& getArray();
-  const af::array& getArray() const;
+  explicit Tensor(std::unique_ptr<TensorAdapterBase> adapter);
+  Tensor() = default; // TODO: default construct an empty tensor with the
+                      // default active backend
+  virtual ~Tensor();
 
   /**
    * Get the shape of a tensor.
@@ -73,6 +67,23 @@ class Tensor {
    * @return a tensor with element-wise cast to the new type
    */
   Tensor astype(const dtype type);
+
+  /**
+   * Gets the backend enum from the underlying TensorAdapter.
+   *
+   * @return the backend in question
+   */
+  TensorBackend backend() const;
+
+  /**
+   * Gets the underlying tensor adapter implementation.
+   *
+   * @return the tensor adapter.
+   */
+  template <typename T>
+  T& getAdapter() const {
+    return *static_cast<T*>(impl_.get());
+  }
 };
 
 /******************** Tensor Creation Functions ********************/
@@ -313,18 +324,6 @@ Tensor power(const Tensor& lhs, const Tensor& rhs);
 Tensor amin(const Tensor& input, const std::vector<int>& axes);
 
 /**
- * Compute the minimum value across all axes.
- *
- * @param[in] input the input along which to operate
- * @return a scalar T containing the mim
- *
- */
-template<typename T>
-T amin(const Tensor& input) {
-  return af::min<T>(input.getArray());
-}
-
-/**
  * Compute the maximum value along multiple axes.
  *
  * @param[in] input the input along which to operate
@@ -333,18 +332,6 @@ T amin(const Tensor& input) {
  *
  */
 Tensor amax(const Tensor& input, const std::vector<int>& axes);
-
-/**
- * Compute the maximum value across all axes.
- *
- * @param[in] input the input along which to operate
- * @return a scalar T containing the max value
- *
- */
-template<typename T>
-T amax(const Tensor& input) {
-  return af::max<T>(input.getArray());
-}
 
 /**
  * Sum of array over given axes.
@@ -356,17 +343,6 @@ T amax(const Tensor& input) {
 Tensor sum(const Tensor& input, const std::vector<int>& axes);
 
 /**
- * Sum of array over all axes.
- *
- * @param[in] input the input along which to operate
- * @return a scalar T containing the sum
- */
-template<typename T>
-T sum(const Tensor& input) {
-  return af::sum<T>(input.getArray());
-}
-
-/**
  * Mean of array over given axes.
  *
  * @param[in] input the input along which to operate
@@ -374,17 +350,6 @@ T sum(const Tensor& input) {
  * @return a tensor containing the mean across given axes
  */
 Tensor mean(const Tensor& input, const std::vector<int>& axes);
-
-/**
- * Mean of array over all axes.
- *
- * @param[in] input the input along which to operate
- * @return a scalar T containing the mean
- */
-template <typename T>
-T mean(const Tensor& input) {
-  return af::mean<T>(input.getArray());
-}
 
 /**
  * var of array over given axes.
@@ -395,17 +360,6 @@ T mean(const Tensor& input) {
  */
 Tensor
 var(const Tensor& input, const std::vector<int>& axes, bool bias = false);
-
-/**
- * var of array over all axes.
- *
- * @param[in] input the input along which to operate
- * @return a scalar T containing the var
- */
-template <typename T>
-T var(const Tensor& input, bool bias = false) {
-  return af::var<T>(input.getArray(), bias);
-}
 
 /**
  * norm of array over all axes.
