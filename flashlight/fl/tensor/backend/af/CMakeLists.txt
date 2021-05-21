@@ -44,6 +44,5 @@ target_sources(
   ${CMAKE_CURRENT_LIST_DIR}/ArrayFireTensor.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Compute.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Random.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/ShapeBase.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Utils.cpp
   )

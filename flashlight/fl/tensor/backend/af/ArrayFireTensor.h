@@ -11,6 +11,7 @@
 #include <af/array.h>
 #include <af/statistics.h>
 
+#include "flashlight/fl/tensor/Shape.h"
 #include "flashlight/fl/tensor/TensorAdapter.h"
 
 namespace fl {
@@ -22,6 +23,15 @@ namespace fl {
 class ArrayFireTensor : public TensorAdapterBase {
   // The internal ArrayFire array handle
   af::array array_;
+
+  /*
+   * A Flashlight shape that mirrors ArrayFire dims.
+   *
+   * NOTE: this shape is only updated on calls to ArrayFireTensor::shape() so as
+   * to satisfy API requirements. af::array::dims() should be used for internal
+   * computation where shape/dimensions are needed.
+   */
+  Shape shape_;
 
  public:
   /**
@@ -38,23 +48,18 @@ class ArrayFireTensor : public TensorAdapterBase {
    * reference.
    */
   explicit ArrayFireTensor(af::array&& array);
+
+  /**
+   * Gets an ArrayFire Array from this impl.
+   */
+  af::array& getHandle();
+  const af::array& getHandle() const;
+
   ~ArrayFireTensor() override = default;
-
-  TensorBackend backend() const override {
-    return TensorBackend::ArrayFire;
-  }
-
-  Shape shape() const override;
+  TensorBackend backend() const override;
+  const Shape& shape() override;
   dtype type() const override;
   Tensor astype(const dtype type) override;
-
-  af::array& getHandle() {
-    return array_;
-  }
-
-  const af::array& getHandle() const {
-    return array_;
-  }
 };
 
 /**

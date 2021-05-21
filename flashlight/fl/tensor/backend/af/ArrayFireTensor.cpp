@@ -40,10 +40,16 @@ af::array afReduceAxes(
 } // namespace
 
 ArrayFireTensor::ArrayFireTensor(af::array&& array)
-    : array_(std::move(array)) {}
+    : array_(std::move(array)), shape_(detail::afToFlDims(array_.dims())) {}
 
-Shape ArrayFireTensor::shape() const {
-  return detail::afToFlDims(array_.dims());
+TensorBackend ArrayFireTensor::backend() const {
+  return TensorBackend::ArrayFire;
+}
+
+const Shape& ArrayFireTensor::shape() {
+  // Update the Shape in-place
+  detail::afToFlDims(array_.dims(), shape_);
+  return shape_;
 }
 
 fl::dtype ArrayFireTensor::type() const {
@@ -53,6 +59,14 @@ fl::dtype ArrayFireTensor::type() const {
 Tensor ArrayFireTensor::astype(const dtype type) {
   auto a = array_.as(detail::flToAfType(type));
   return toTensor<ArrayFireTensor>(std::move(a));
+}
+
+af::array& ArrayFireTensor::getHandle() {
+  return array_;
+}
+
+const af::array& ArrayFireTensor::getHandle() const {
+  return array_;
 }
 
 af::array& toArray(const Tensor& tensor) {

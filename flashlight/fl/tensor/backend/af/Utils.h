@@ -9,7 +9,7 @@
 
 #include <af/data.h>
 
-#include "flashlight/fl/tensor/ShapeBase.h"
+#include "flashlight/fl/tensor/Shape.h"
 #include "flashlight/fl/tensor/Types.h"
 
 namespace fl {
@@ -33,7 +33,12 @@ af::dim4 flToAfDims(const Shape& shape);
 /**
  * Convert an ArrayFire af::dim4 into an fl::Shape
  */
-Shape afToFlDims(af::dim4 d);
+Shape afToFlDims(const af::dim4& d);
+
+/**
+ * Convert an ArrayFire af::dim4 into an fl::Shape, in-place
+ */
+void afToFlDims(const af::dim4& d, Shape& s);
 
 } // namespace detail
 } // namespace fl

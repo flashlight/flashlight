@@ -10,7 +10,7 @@
 #include <memory>
 #include <optional>
 
-#include "flashlight/fl/tensor/ShapeBase.h"
+#include "flashlight/fl/tensor/Shape.h"
 #include "flashlight/fl/tensor/Types.h"
 
 namespace fl {
@@ -51,7 +51,7 @@ class Tensor {
    *
    * @return the shape of the tensor
    */
-  Shape shape() const;
+  const Shape& shape() const;
 
   /**
    * Get the data type of tensor.

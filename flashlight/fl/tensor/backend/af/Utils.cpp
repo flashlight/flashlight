@@ -59,8 +59,33 @@ af::dim4 flToAfDims(const Shape& shape) {
   return out;
 }
 
-Shape afToFlDims(af::dim4 d) {
-  return Shape({d.dims[0], d.dims[1], d.dims[2], d.dims[3]});
+void afToFlDims(const af::dim4& d, Shape& s) {
+  auto& storage = s.get();
+  if (d.elements() == 0) {
+    storage.resize(0);
+    return;
+  }
+  if (d.elements() == 1) {
+    storage.resize(1);
+    s[0] = 1;
+    return;
+  }
+  // Number of non-trailing-1 dims
+  unsigned idx = AF_MAX_DIMS - 1;
+  while (d[idx] == 1) {
+    --idx;
+  }
+
+  storage.resize(idx + 1);
+  for (unsigned i = 0; i <= idx; ++i) {
+    s[i] = d[i];
+  }
+}
+
+Shape afToFlDims(const af::dim4& d) {
+  Shape s;
+  afToFlDims(d, s);
+  return s;
 }
 
 } // namespace detail

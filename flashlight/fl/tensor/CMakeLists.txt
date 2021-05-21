@@ -9,6 +9,7 @@ endif()
 target_sources(
   flashlight
   PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/Shape.cpp
   ${CMAKE_CURRENT_LIST_DIR}/TensorBase.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Types.cpp
 )

@@ -10,7 +10,10 @@
 
 #include <stdexcept>
 
-#include "flashlight/fl/tensor/ShapeBase.h"
+#include "flashlight/fl/tensor/Shape.h"
+
+// TODO: move me to an independent AF test suite
+#include "flashlight/fl/tensor/backend/af/Utils.h"
 
 using namespace ::testing;
 using namespace fl;
@@ -34,23 +37,44 @@ TEST(ShapeTest, ManyDims) {
 
 TEST(ShapeTest, nDims) {
   ASSERT_EQ(Shape().nDims(), 0);
-  ASSERT_EQ(Shape({1, 1, 1}).nDims(), 1);
+  ASSERT_EQ(Shape({1, 1, 1}).nDims(), 3);
   ASSERT_EQ(Shape({5, 2, 3}).nDims(), 3);
-  ASSERT_EQ(Shape({1, 2, 3, 6}).nDims(), 4); // leading 1
-  std::cout << "Shape max dims " << Shape::kMaxDims << std::endl;
+  ASSERT_EQ(Shape({1, 2, 3, 6}).nDims(), 4);
   if (Shape::kMaxDims > 4) {
-    ASSERT_EQ(Shape({1, 2, 3, 1, 1, 1}).nDims(), 3);
+    ASSERT_EQ(Shape({1, 2, 3, 1, 1, 1}).nDims(), 6);
     ASSERT_EQ(Shape({1, 2, 3, 1, 1, 1, 5}).nDims(), 7);
     ASSERT_EQ(Shape({4, 2, 3, 1, 1, 1, 5}).nDims(), 7);
   }
 }
 
+TEST(ShapeTest, elements) {
+  ASSERT_EQ(Shape().elements(), 0);
+  ASSERT_EQ(Shape({1, 1, 1, 1}).elements(), 1);
+  ASSERT_EQ(Shape({1, 2, 3, 4}).elements(), 24);
+  ASSERT_EQ(Shape({1, 2, 3, 0}).elements(), 0);
+}
+
 TEST(ShapeTest, Equality) {
-  // TODO: test fixtures for every type, etc.
   auto a = Shape({1, 2, 3, 4});
   ASSERT_EQ(a, Shape({1, 2, 3, 4}));
   ASSERT_NE(a, Shape({4, 3, 4}));
   ASSERT_NE(Shape({1, 2}), Shape({1, 1, 1, 2}));
-  ASSERT_EQ(Shape({5, 2, 3}), Shape({5, 2, 3, 1}));
+  ASSERT_NE(Shape({5, 2, 3}), Shape({5, 2, 3, 1}));
+  ASSERT_EQ(Shape({5, 2, 3, 1}), Shape({5, 2, 3, 1}));
   ASSERT_NE(Shape({5, 2, 1, 1}), Shape({5, 2, 1, 4}));
+}
+
+// TODO: move me to an independent AF test suite
+TEST(ShapeTest, ArrayFireInterop) {
+  auto dimsEq = [](const af::dim4& d, const Shape& s) {
+    return detail::afToFlDims(d) == s;
+  };
+
+  ASSERT_TRUE(dimsEq(af::dim4(), {}));
+  ASSERT_TRUE(dimsEq(af::dim4(3), {3})); // not 3, 1, 1, 1
+  ASSERT_TRUE(dimsEq(af::dim4(3, 2), {3, 2})); // not 3, 2, 1, 1
+  ASSERT_TRUE(dimsEq(af::dim4(3, 1), {3})); // 1 is indistinguishable in AF
+  ASSERT_TRUE(dimsEq(af::dim4(1, 3, 2), {1, 3, 2}));
+  ASSERT_TRUE(dimsEq(af::dim4(1), {1}));
+  ASSERT_TRUE(dimsEq(af::dim4(1, 1, 1), {1}));
 }
