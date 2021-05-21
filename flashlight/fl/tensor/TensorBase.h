@@ -42,9 +42,12 @@ class Tensor {
 
  public:
   explicit Tensor(std::unique_ptr<TensorAdapterBase> adapter);
-  Tensor() = default; // TODO: default construct an empty tensor with the
-                      // default active backend
   virtual ~Tensor();
+
+  /**
+   * Construct an empty tensor with the default tensor backend's tensor adapter.
+   */
+  Tensor();
 
   /**
    * Get the shape of a tensor.

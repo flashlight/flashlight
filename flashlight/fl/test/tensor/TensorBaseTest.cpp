@@ -51,6 +51,11 @@ bool allClose(
 }
 } // namespace
 
+TEST(TensorBaseTest, DefaultBackend) {
+  Tensor t;
+  ASSERT_EQ(t.backend(), TensorBackend::ArrayFire);
+}
+
 TEST(TensorBaseTest, AfRefCountBasic) {
   // Sanity check that af::arrays moved into fl::Tensors don't have their
   // refcount inrcremented/show proper usage of refs in tensor ops

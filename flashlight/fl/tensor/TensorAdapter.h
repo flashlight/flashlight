@@ -68,4 +68,13 @@ class TensorAdapterBase {
   virtual Tensor astype(const dtype type) = 0;
 };
 
+namespace detail {
+
+/**
+ * Get the default tensor adapter.
+ */
+std::unique_ptr<TensorAdapterBase> getDefaultAdapter();
+
+} // namespace detail
+
 } // namespace fl
