@@ -18,7 +18,7 @@ Tensor::Tensor(std::unique_ptr<TensorAdapterBase> adapter)
 
 Tensor::~Tensor() {}
 
-Shape Tensor::shape() const {
+const Shape& Tensor::shape() const {
   return impl_->shape();
 }
 

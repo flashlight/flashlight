@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "flashlight/fl/tensor/ShapeBase.h"
+#include "flashlight/fl/tensor/Shape.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/fl/tensor/Types.h"
 
