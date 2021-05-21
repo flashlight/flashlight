@@ -17,13 +17,13 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/app/asr/augmentation/SoundEffectConfig.h"
-#include "flashlight/app/asr/common/Defines.h"
-#include "flashlight/app/asr/criterion/criterion.h"
-#include "flashlight/app/asr/data/FeatureTransforms.h"
-#include "flashlight/app/asr/data/Utils.h"
-#include "flashlight/app/asr/decoder/TranscriptionUtils.h"
-#include "flashlight/app/asr/runtime/runtime.h"
+#include "flashlight/pkg/speech/augmentation/SoundEffectConfig.h"
+#include "flashlight/pkg/speech/common/Defines.h"
+#include "flashlight/pkg/speech/criterion/criterion.h"
+#include "flashlight/pkg/speech/data/FeatureTransforms.h"
+#include "flashlight/pkg/speech/data/Utils.h"
+#include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
+#include "flashlight/pkg/speech/runtime/runtime.h"
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/ext/common/Serializer.h"
