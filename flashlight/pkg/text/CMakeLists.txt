@@ -1,0 +1,27 @@
+cmake_minimum_required(VERSION 3.13)
+
+add_library(
+  fl_pkg_text
+  ""
+  )
+
+target_link_libraries(
+  fl_pkg_text
+  PUBLIC
+  flashlight
+  )
+# ------------------------ Components ------------------------
+
+# Data
+include(${CMAKE_CURRENT_LIST_DIR}/data/CMakeLists.txt)
+
+## --------------------------- Tests ---------------------------
+
+## Build tests
+if (FL_BUILD_TESTS)
+  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test)
+endif()
+
+if (FL_CODE_COVERAGE)
+  add_coverage_to_target(TARGET fl_pkg_text)
+endif()

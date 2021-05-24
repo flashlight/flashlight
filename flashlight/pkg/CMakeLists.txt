@@ -9,6 +9,9 @@ include(${FL_PKG_RUNTIME_DIR}/CMakeLists.txt)
 set(FL_PKG_SPEECH_DIR ${FL_PKG_DIR}/speech)
 include(${FL_PKG_SPEECH_DIR}/CMakeLists.txt)
 
+set(FL_PKG_TEXT_DIR ${FL_PKG_DIR}/text)
+include(${FL_PKG_TEXT_DIR}/CMakeLists.txt)
+
 # TODO find a nicer way of setting this instead of if/else
 #cmake_dependent_option(FL_BUILD_ALL_APPS "Set all Flashlight apps ON by default" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
 
