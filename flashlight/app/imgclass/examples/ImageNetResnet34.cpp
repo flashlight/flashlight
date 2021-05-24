@@ -12,7 +12,7 @@
 #include <glog/logging.h>
 
 #include "flashlight/app/imgclass/examples/Defines.h"
-#include "flashlight/ext/amp/DynamicScaler.h"
+#include "flashlight/pkg/runtime/amp/DynamicScaler.h"
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/pkg/vision/dataset/Transforms.h"
 #include "flashlight/pkg/vision/dataset/DistributedDataset.h"

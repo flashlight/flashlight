@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/ext/amp/DynamicScaler.h"
+#include "flashlight/pkg/runtime/amp/DynamicScaler.h"
 
 #include "flashlight/fl/flashlight.h"
 
