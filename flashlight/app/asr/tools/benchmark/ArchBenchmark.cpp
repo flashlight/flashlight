@@ -11,7 +11,7 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/ext/common/SequentialBuilder.h"
+#include "flashlight/fl/common/SequentialBuilder.h"
 #include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/String.h"

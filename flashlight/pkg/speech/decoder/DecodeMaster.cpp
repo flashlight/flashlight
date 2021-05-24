@@ -10,7 +10,7 @@
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
 #include "flashlight/pkg/speech/runtime/Helpers.h"
-#include "flashlight/ext/common/SequentialBuilder.h"
+#include "flashlight/fl/common/SequentialBuilder.h"
 #include "flashlight/fl/dataset/MemoryBlobDataset.h"
 #include "flashlight/fl/meter/EditDistanceMeter.h"
 #include "flashlight/lib/text/decoder/LexiconDecoder.h"

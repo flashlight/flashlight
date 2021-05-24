@@ -9,7 +9,7 @@
 
 #include <string>
 
-#include "flashlight/ext/common/DistributedUtils.h"
+#include "flashlight/fl/distributed/DistributedUtils.h"
 
 namespace fl {
 namespace app {

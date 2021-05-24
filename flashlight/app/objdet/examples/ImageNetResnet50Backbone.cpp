@@ -13,7 +13,7 @@
 
 #include "flashlight/pkg/vision/dataset/Imagenet.h"
 #include "flashlight/pkg/vision/models/Resnet50Backbone.h"
-#include "flashlight/ext/common/DistributedUtils.h"
+#include "flashlight/fl/distributed/DistributedUtils.h"
 #include "flashlight/pkg/vision/dataset/Transforms.h"
 #include "flashlight/pkg/vision/dataset/DistributedDataset.h"
 #include "flashlight/fl/dataset/datasets.h"

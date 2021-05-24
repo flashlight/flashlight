@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "flashlight/ext/common/Utils-inl.h"
+#include "flashlight/fl/common/Utils-inl.h"
 #include "flashlight/fl/dataset/datasets.h"
 #include "flashlight/fl/nn/nn.h"
 #include "flashlight/lib/text/decoder/Decoder.h"
