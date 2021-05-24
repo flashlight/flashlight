@@ -9,7 +9,7 @@
 #include <arrayfire.h>
 #include <gtest/gtest.h>
 
-#include "flashlight/ext/plugin/ModulePlugin.h"
+#include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
 #include "flashlight/fl/contrib/modules/modules.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/System.h"

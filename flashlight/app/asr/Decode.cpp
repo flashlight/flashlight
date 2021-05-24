@@ -31,7 +31,7 @@
 #include "flashlight/pkg/speech/runtime/runtime.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/ext/common/Serializer.h"
-#include "flashlight/ext/plugin/ModulePlugin.h"
+#include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
 #include "flashlight/lib/common/ProducerConsumerQueue.h"
 #include "flashlight/lib/text/decoder/LexiconDecoder.h"
 #include "flashlight/lib/text/decoder/LexiconFreeDecoder.h"

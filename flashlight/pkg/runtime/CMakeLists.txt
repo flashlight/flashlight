@@ -33,6 +33,7 @@ target_sources(
 )
 
 include(${CMAKE_CURRENT_LIST_DIR}/amp/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/plugin/CMakeLists.txt)
 
 target_link_libraries(
   fl_pkg_runtime
