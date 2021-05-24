@@ -9,6 +9,7 @@ function(build_tool SRCFILE target)
     ${target}
     PRIVATE
     fl_pkg_speech
+    fl_pkg_runtime
     )
   target_include_directories(
     ${target}
