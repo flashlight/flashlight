@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/app/lm/data/TextDataset.h"
+#include "flashlight/pkg/text/data/TextDataset.h"
 
 #include <algorithm>
 #include <cstring>

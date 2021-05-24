@@ -8,3 +8,6 @@ include(${FL_PKG_RUNTIME_DIR}/CMakeLists.txt)
 
 set(FL_PKG_SPEECH_DIR ${FL_PKG_DIR}/speech)
 include(${FL_PKG_SPEECH_DIR}/CMakeLists.txt)
+
+set(FL_PKG_TEXT_DIR ${FL_PKG_DIR}/text)
+include(${FL_PKG_TEXT_DIR}/CMakeLists.txt)

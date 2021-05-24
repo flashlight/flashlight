@@ -10,7 +10,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "flashlight/app/lm/data/TextDataset.h"
+#include "flashlight/pkg/text/data/TextDataset.h"
 #include "flashlight/fl/common/Init.h"
 #include "flashlight/lib/text/dictionary/Defines.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
