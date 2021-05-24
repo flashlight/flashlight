@@ -28,7 +28,7 @@
 #include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
 #include "flashlight/pkg/speech/runtime/runtime.h"
 #include "flashlight/pkg/runtime/Runtime.h"
-#include "flashlight/ext/amp/DynamicScaler.h"
+#include "flashlight/pkg/runtime/amp/DynamicScaler.h"
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/ext/common/Serializer.h"

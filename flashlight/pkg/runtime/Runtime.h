@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "flashlight/ext/amp/DynamicScaler.h"
+#include "flashlight/pkg/runtime/amp/DynamicScaler.h"
 #include "flashlight/fl/flashlight.h"
 
 namespace fl {

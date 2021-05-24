@@ -7,7 +7,7 @@
 
 #include <gtest/gtest.h>
 
-#include "flashlight/ext/amp/DynamicScaler.h"
+#include "flashlight/pkg/runtime/amp/DynamicScaler.h"
 
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/autograd/Utils.h"

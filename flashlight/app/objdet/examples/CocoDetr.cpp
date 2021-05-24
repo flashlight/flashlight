@@ -19,7 +19,7 @@
 #include "flashlight/pkg/vision/models/Resnet50Backbone.h"
 #include "flashlight/pkg/vision/models/Detr.h"
 #include "flashlight/pkg/vision/nn/Transformer.h"
-#include "flashlight/ext/amp/DynamicScaler.h"
+#include "flashlight/pkg/runtime/amp/DynamicScaler.h"
 #include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/ext/common/Serializer.h"
 #include "flashlight/pkg/vision/dataset/Transforms.h"
