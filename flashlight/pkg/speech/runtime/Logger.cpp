@@ -11,7 +11,7 @@
 
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/common/Flags.h"
-#include "flashlight/ext/common/DistributedUtils.h"
+#include "flashlight/fl/distributed/DistributedUtils.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
 

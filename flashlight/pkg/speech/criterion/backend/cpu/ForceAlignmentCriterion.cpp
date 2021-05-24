@@ -8,7 +8,7 @@
 #include "flashlight/pkg/speech/criterion/ForceAlignmentCriterion.h"
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
-#include "flashlight/ext/common/DistributedUtils.h"
+#include "flashlight/fl/distributed/DistributedUtils.h"
 #include "flashlight/lib/sequence/criterion/cpu/ForceAlignmentCriterion.h"
 
 using fl::Variable;
