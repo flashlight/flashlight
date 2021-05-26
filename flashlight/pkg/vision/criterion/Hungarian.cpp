@@ -39,8 +39,8 @@ std::pair<af::array, af::array> hungarian(af::array& cost) {
 } // namespace
 
 namespace fl {
-namespace app {
-namespace objdet {
+namespace pkg {
+namespace vision {
 
 HungarianMatcher::HungarianMatcher(
     const float costClass,
@@ -97,6 +97,6 @@ std::vector<std::pair<af::array, af::array>> HungarianMatcher::compute(
   return results;
 };
 
-} // namespace objdet
-} // namespace app
+} // namespace vision
+} // namespace pkg
 } // namespace fl

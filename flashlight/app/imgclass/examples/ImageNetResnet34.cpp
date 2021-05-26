@@ -82,7 +82,7 @@ DEFINE_string(
 using namespace fl;
 using fl::ext::image::compose;
 using fl::ext::image::ImageTransform;
-using namespace fl::app::imgclass;
+using namespace fl::pkg::vision;
 
 #define FL_LOG_MASTER(lvl) LOG_IF(lvl, (fl::getWorldRank() == 0))
 

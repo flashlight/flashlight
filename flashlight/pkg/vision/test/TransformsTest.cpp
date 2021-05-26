@@ -39,7 +39,7 @@ TEST(Crop, CropBasic) {
                                af::constant(0.0, {1, 2})};
 
   // Crop from x, y (10, 10), with target heigh and width to be ten
-  std::vector<af::array> out = fl::app::objdet::crop(in, 10, 5, 20, 25);
+  std::vector<af::array> out = fl::pkg::vision::crop(in, 10, 5, 20, 25);
   auto outBoxes = out[4];
   std::vector<float> expVector = {
       0,
@@ -83,7 +83,7 @@ TEST(Crop, CropClip) {
       af::iota({1, 3})};
 
   // Crop from x, y (10, 10), with target heigh and width to be ten
-  std::vector<af::array> out = fl::app::objdet::crop(in, 5, 5, 100, 100);
+  std::vector<af::array> out = fl::pkg::vision::crop(in, 5, 5, 100, 100);
   auto outBoxes = out[4];
   auto outClasses = out[5];
   std::vector<float> expVector = {

@@ -11,7 +11,7 @@
 #include <gtest/gtest.h>
 
 using namespace fl;
-using namespace fl::app::objdet;
+using namespace fl::pkg::vision;
 
 TEST(Tranformer, BasicAttention) {
   int B = 1;
@@ -204,7 +204,7 @@ TEST(Tranformer, Size) {
   int numEncoderDecoder = 2;
   int mlpDim = 32;
   int numHeads = 8;
-  fl::app::objdet::Transformer tr(
+  fl::pkg::vision::Transformer tr(
       C, numHeads, numEncoderDecoder, numEncoderDecoder, mlpDim, dropout);
 
   std::vector<Variable> inputs = {
@@ -235,7 +235,7 @@ TEST(Tranformer, Masked) {
   int mlpDim = 32;
   int numHeads = 8;
   int hiddenDim = 8;
-  fl::app::objdet::Transformer tr(
+  fl::pkg::vision::Transformer tr(
       C, numHeads, numEncoderDecoder, numEncoderDecoder, mlpDim, dropout);
 
   PositionalEmbeddingSine pos(C / 2, 10000.0f, false, 0.0f);

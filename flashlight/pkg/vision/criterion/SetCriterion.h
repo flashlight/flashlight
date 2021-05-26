@@ -14,8 +14,8 @@
 #include "flashlight/fl/autograd/Variable.h"
 
 namespace fl {
-namespace app {
-namespace objdet {
+namespace pkg {
+namespace vision {
 
 class SetCriterion {
  public:
@@ -82,6 +82,6 @@ class SetCriterion {
   const float eosCoef_;
 };
 
-} // namespace objdet
-} // namespace app
+} // namespace vision
+} // namespace pkg
 } // namespace fl

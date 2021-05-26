@@ -124,8 +124,8 @@ fl::Variable index(const fl::Variable& in, std::vector<af::array> idxs) {
 } // namespace
 
 namespace fl {
-namespace app {
-namespace objdet {
+namespace pkg {
+namespace vision {
 
 SetCriterion::SetCriterion(
     const int numClasses,
@@ -314,6 +314,6 @@ std::pair<af::array, af::array> SetCriterion::getSrcPermutationIdx(
   return {batchIdx.array(), srcIdx.array()};
 }
 
-} // namespace objdet
-} // namespace app
+} // namespace vision
+} // namespace pkg
 } // namespace fl

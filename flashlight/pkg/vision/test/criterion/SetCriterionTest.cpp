@@ -12,7 +12,7 @@
 #include <unordered_map>
 
 using namespace fl;
-using namespace fl::app::objdet;
+using namespace fl::pkg::vision;
 
 std::unordered_map<std::string, float> getLossWeights() {
   const std::unordered_map<std::string, float> lossWeightsBase = {

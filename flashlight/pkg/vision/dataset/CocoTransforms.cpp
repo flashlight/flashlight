@@ -21,8 +21,8 @@ int randomInt(int min, int max) {
 } // namespace
 
 namespace fl {
-namespace app {
-namespace objdet {
+namespace pkg {
+namespace vision {
 
 std::vector<af::array>
 crop(const std::vector<af::array>& in, int x, int y, int tw, int th) {
@@ -247,6 +247,6 @@ TransformAllFunction compose(std::vector<TransformAllFunction> fns) {
   };
 }
 
-} // namespace objdet
-} // namespace app
+} // namespace vision
+} // namespace pkg
 } // namespace fl

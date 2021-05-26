@@ -12,8 +12,8 @@
 #include "flashlight/fl/dataset/datasets.h"
 
 namespace fl {
-namespace app {
-namespace objdet {
+namespace pkg {
+namespace vision {
 
 using TransformAllFunction =
     std::function<std::vector<af::array>(const std::vector<af::array>&)>;
@@ -46,6 +46,6 @@ class TransformAllDataset : public Dataset {
   const TransformAllFunction fn_;
 };
 
-} // namespace objdet
-} // namespace app
+} // namespace vision
+} // namespace pkg
 } // namespace fl

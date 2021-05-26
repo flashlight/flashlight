@@ -8,8 +8,8 @@
 #include "flashlight/pkg/vision/models/Resnet50Backbone.h"
 
 namespace fl {
-namespace app {
-namespace objdet {
+namespace pkg {
+namespace vision {
 
 Resnet50Backbone::Resnet50Backbone()
     : backbone_(std::make_shared<Sequential>()),
@@ -46,6 +46,6 @@ std::string Resnet50Backbone::prettyString() const {
   return "Resnet50Backbone";
 }
 
-} // namespace objdet
-} // namespace app
+} // namespace vision
+} // namespace pkg
 } // namespace fl

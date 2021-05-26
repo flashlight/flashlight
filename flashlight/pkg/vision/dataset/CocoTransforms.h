@@ -12,8 +12,8 @@
 #include "flashlight/pkg/vision/dataset/TransformAllDataset.h"
 
 namespace fl {
-namespace app {
-namespace objdet {
+namespace pkg {
+namespace vision {
 
 enum DatasetIndices {
   ImageIdx = 0,
@@ -98,6 +98,6 @@ TransformAllFunction randomHorizontalFlip(float p);
  */
 TransformAllFunction compose(std::vector<TransformAllFunction> fns);
 
-} // namespace objdet
-} // namespace app
+} // namespace vision
+} // namespace pkg
 } // namespace fl

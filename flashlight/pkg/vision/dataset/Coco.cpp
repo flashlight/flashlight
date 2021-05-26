@@ -20,7 +20,7 @@
 
 namespace {
 
-using namespace fl::app::objdet;
+using namespace fl::pkg::vision;
 using namespace fl::ext::image;
 using namespace fl;
 
@@ -83,8 +83,8 @@ int64_t getImageId(const std::string& fp) {
 } // namespace
 
 namespace fl {
-namespace app {
-namespace objdet {
+namespace pkg {
+namespace vision {
 
 CocoDataset::CocoDataset(
     const std::string& list_file,
@@ -203,6 +203,6 @@ CocoData CocoDataset::get(const uint64_t idx) {
   return batched_->get(idx);
 }
 
-} // namespace objdet
-} // namespace app
+} // namespace vision
+} // namespace pkg
 } // namespace fl

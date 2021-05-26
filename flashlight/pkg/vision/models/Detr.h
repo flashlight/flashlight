@@ -11,8 +11,8 @@
 #include "flashlight/pkg/vision/nn/Transformer.h"
 
 namespace fl {
-namespace app {
-namespace objdet {
+namespace pkg {
+namespace vision {
 
 // TODO (padentomasello) this can just be a function
 class MLP : public Sequential {
@@ -71,8 +71,8 @@ class Detr : public Container {
       inputProj_)
 };
 
-} // namespace objdet
-} // namespace app
+} // namespace vision
+} // namespace pkg
 } // namespace fl
-CEREAL_REGISTER_TYPE(fl::app::objdet::Detr)
-CEREAL_REGISTER_TYPE(fl::app::objdet::MLP)
+CEREAL_REGISTER_TYPE(fl::pkg::vision::Detr)
+CEREAL_REGISTER_TYPE(fl::pkg::vision::MLP)

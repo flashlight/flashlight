@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 
 using namespace fl;
-using namespace fl::app::objdet;
+using namespace fl::pkg::vision;
 
 TEST(PositionalEmbeddingSine, PytorchComparision) {
   int hiddenDim = 8;
