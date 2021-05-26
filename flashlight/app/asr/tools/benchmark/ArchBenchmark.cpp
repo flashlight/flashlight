@@ -86,7 +86,7 @@ int main(int argc, char** argv) {
   std::shared_ptr<fl::Module> network;
   bool usePlugin = fl::lib::endsWith(FLAGS_arch, ".so");
   if (usePlugin) {
-    network = fl::ext::ModulePlugin(FLAGS_arch)
+    network = fl::pkg::runtime::ModulePlugin(FLAGS_arch)
                   .arch(FLAGS_in_features, FLAGS_out_channels);
   } else {
     network = fl::ext::buildSequentialModule(

@@ -11,7 +11,8 @@
 #include "flashlight/fl/flashlight.h"
 
 namespace fl {
-namespace app {
+namespace pkg {
+namespace runtime {
 /**
  * Get a certain checkpoint by `runidx`.
  */
@@ -36,8 +37,9 @@ std::string serializeGflags(const std::string& separator = "\n");
 bool backwardWithScaling(
     const fl::Variable& loss,
     std::vector<fl::Variable>& params,
-    std::shared_ptr<fl::ext::DynamicScaler> dynamicScaler,
+    std::shared_ptr<fl::pkg::runtime::DynamicScaler> dynamicScaler,
     std::shared_ptr<fl::Reducer> reducer);
 
-} // namespace app
+} // namespace runtime
+} // namespace pkg
 } // namespace fl

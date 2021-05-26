@@ -16,7 +16,7 @@
 #include "flashlight/lib/common/System.h"
 
 TEST(DynamicScalerTest, Scaling) {
-  auto dynamicScaler = fl::ext::DynamicScaler(
+  auto dynamicScaler = fl::pkg::runtime::DynamicScaler(
       32, // initFactor
       32, // maxFactor
       100 // updateInterval
@@ -35,7 +35,7 @@ TEST(DynamicScalerTest, Scaling) {
 }
 
 TEST(DynamicScalerTest, Serialization) {
-  auto dynamicScaler = std::make_shared<fl::ext::DynamicScaler>(
+  auto dynamicScaler = std::make_shared<fl::pkg::runtime::DynamicScaler>(
       32, // initFactor
       32, // maxFactor
       100 // updateInterval
@@ -44,7 +44,7 @@ TEST(DynamicScalerTest, Serialization) {
   const std::string path = fl::lib::getTmpPath("DynamicScaler.bin");
   fl::save(path, dynamicScaler);
 
-  std::shared_ptr<fl::ext::DynamicScaler> dynamicScaler1;
+  std::shared_ptr<fl::pkg::runtime::DynamicScaler> dynamicScaler1;
   fl::load(path, dynamicScaler1);
   ASSERT_TRUE(
       dynamicScaler->getScaleFactor() == dynamicScaler1->getScaleFactor());

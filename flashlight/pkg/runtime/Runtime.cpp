@@ -13,7 +13,8 @@
 #include "flashlight/lib/common/System.h"
 
 namespace fl {
-namespace app {
+namespace pkg {
+namespace runtime {
 
 using fl::lib::format;
 using fl::lib::pathsConcat;
@@ -39,7 +40,7 @@ std::string serializeGflags(const std::string& separator) {
 bool backwardWithScaling(
     const fl::Variable& loss,
     std::vector<fl::Variable>& params,
-    std::shared_ptr<fl::ext::DynamicScaler> dynamicScaler,
+    std::shared_ptr<fl::pkg::runtime::DynamicScaler> dynamicScaler,
     std::shared_ptr<fl::Reducer> reducer) {
   auto scaledLoss = loss;
   if (dynamicScaler) {
@@ -61,5 +62,6 @@ bool backwardWithScaling(
   return true;
 }
 
-} // end namespace app
+} // end namespace runtime
+} // end namespace pkg
 } // end namespace fl

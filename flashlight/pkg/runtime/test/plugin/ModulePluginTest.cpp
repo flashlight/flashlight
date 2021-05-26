@@ -33,12 +33,12 @@ TEST(ModulePluginTest, ModulePlugin) {
   // Note: the following works only if the plugin is *not* statically
   // linked against AF/FL.
   //
-  // auto model = fl::ext::ModulePlugin(libfile).arch(ninput, noutput);
+  // auto model = fl::pkg::runtime::ModulePlugin(libfile).arch(ninput, noutput);
   //
   // If AF/FL are linked, then there will be some issue at deallocation of
   // the plugin.  For that reason, we stick to the following conservative
   // way in this test (plugin destroyed after model).
-  fl::ext::ModulePlugin plugin(libfile);
+  fl::pkg::runtime::ModulePlugin plugin(libfile);
   auto model = plugin.arch(ninput, noutput);
   auto input = af::randn(ninput, batchsize, f32);
   auto output = model->forward({noGrad(input)}).front();

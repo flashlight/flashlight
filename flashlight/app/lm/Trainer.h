@@ -119,7 +119,7 @@ class Trainer {
   int kPadIdx_, kEosIdx_, kUnkIdx_, kMaskIdx_;
   std::string gflagsStr_;
   std::string version_{FL_APP_LM_VERSION};
-  std::shared_ptr<fl::ext::DynamicScaler> dynamicScaler;
+  std::shared_ptr<fl::pkg::runtime::DynamicScaler> dynamicScaler;
 
   fl::lib::text::Dictionary dictionary_;
   std::shared_ptr<TextDataset> trainDataset_;

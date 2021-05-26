@@ -40,7 +40,7 @@
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
 
-using fl::app::getRunFile;
+using fl::pkg::runtime::getRunFile;
 using fl::ext::afToVector;
 using fl::ext::Serializer;
 using fl::lib::fileExists;
@@ -218,7 +218,7 @@ int main(int argc, char** argv) {
       ? fl::OptimLevel::DEFAULT
       : fl::OptimMode::toOptimLevel(FLAGS_fl_optim_mode);
   fl::OptimMode::get().setOptimLevel(flOptimLevel);
-  std::shared_ptr<fl::ext::DynamicScaler> dynamicScaler;
+  std::shared_ptr<fl::pkg::runtime::DynamicScaler> dynamicScaler;
   if (FLAGS_fl_amp_use_mixed_precision) {
     // Only set the optim mode to O1 if it was left empty
     LOG(INFO) << "Mixed precision training enabled. Will perform loss scaling.";
@@ -228,7 +228,7 @@ int main(int argc, char** argv) {
       fl::OptimMode::get().setOptimLevel(fl::OptimLevel::O1);
     }
 
-    dynamicScaler = std::make_shared<fl::ext::DynamicScaler>(
+    dynamicScaler = std::make_shared<fl::pkg::runtime::DynamicScaler>(
         FLAGS_fl_amp_scale_factor,
         FLAGS_fl_amp_max_scale_factor,
         FLAGS_fl_amp_scale_factor_update_interval);
@@ -379,13 +379,13 @@ int main(int argc, char** argv) {
   auto scalemode = getCriterionScaleMode(FLAGS_onorm, FLAGS_sqnorm);
   if (fl::lib::endsWith(FLAGS_arch, ".so")) {
     usePlugin = true;
-    (void)fl::ext::ModulePlugin(FLAGS_arch);
+    (void)fl::pkg::runtime::ModulePlugin(FLAGS_arch);
   }
   if (runStatus == kTrainMode) {
     FL_LOG_MASTER(INFO) << "Loading architecture file from " << FLAGS_arch;
     // Encoder network, works on audio
     if (fl::lib::endsWith(FLAGS_arch, ".so")) {
-      network = fl::ext::ModulePlugin(FLAGS_arch).arch(numFeatures, numClasses);
+      network = fl::pkg::runtime::ModulePlugin(FLAGS_arch).arch(numFeatures, numClasses);
     } else {
       network =
           fl::ext::buildSequentialModule(FLAGS_arch, numFeatures, numClasses);
@@ -1132,7 +1132,7 @@ int main(int argc, char** argv) {
           }
           totalBatchSize = totalBatchSizeArr.scalar<float>();
           auto scaledLoss = loss / totalBatchSize;
-          bool scaleIsValid = fl::app::backwardWithScaling(
+          bool scaleIsValid =fl::pkg::runtime::backwardWithScaling(
               scaledLoss, params, dynamicScaler, reducer);
           fl::sync();
           meters.bwdtimer.stopAndIncUnit();

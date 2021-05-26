@@ -37,7 +37,7 @@
 
 using fl::ext::Serializer;
 using fl::ext::afToVector;
-using fl::app::getRunFile;
+using fl::pkg::runtime::getRunFile;
 using fl::lib::fileExists;
 using fl::lib::format;
 using fl::lib::getCurrentDate;
@@ -248,7 +248,7 @@ int main(int argc, char** argv) {
   FL_LOG_MASTER(INFO) << "Loading architecture file from " << archfile;
   // Encoder network, works on audio
   if (fl::lib::endsWith(archfile, ".so")) {
-    network = fl::ext::ModulePlugin(archfile).arch(numFeatures, numClasses);
+    network = fl::pkg::runtime::ModulePlugin(archfile).arch(numFeatures, numClasses);
   } else {
     network = fl::ext::buildSequentialModule(archfile, numFeatures, numClasses);
   }

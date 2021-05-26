@@ -9,7 +9,8 @@
 #include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
 
 namespace fl {
-namespace ext {
+namespace pkg {
+namespace runtime {
 
 ModulePlugin::ModulePlugin(const std::string& name) : fl::Plugin(name) {
   arch_ = getSymbol<w2l_module_plugin_t>("createModule");
@@ -21,5 +22,6 @@ std::shared_ptr<fl::Module> ModulePlugin::arch(
   return std::shared_ptr<fl::Module>(arch_(nFeatures, nClasses));
 }
 
-} // namespace ext
+} // namespace runtime
+} // namespace pkg
 } // namespace fl
