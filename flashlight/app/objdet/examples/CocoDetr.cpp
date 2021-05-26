@@ -32,8 +32,8 @@ using namespace fl::ext::image;
 using namespace fl::pkg::vision;
 using namespace fl::app::objdet;
 
-using fl::app::getRunFile;
-using fl::app::serializeGflags;
+using fl::pkg::runtime::getRunFile;
+using fl::pkg::runtime::serializeGflags;
 using fl::ext::Serializer;
 using fl::lib::fileExists;
 using fl::lib::format;
@@ -270,7 +270,7 @@ int main(int argc, char** argv) {
   const int worldRank = fl::getWorldRank();
   const int worldSize = fl::getWorldSize();
 
-  std::shared_ptr<fl::ext::DynamicScaler> dynamicScaler;
+  std::shared_ptr<fl::pkg::runtime::DynamicScaler> dynamicScaler;
   if (FLAGS_fl_amp_use_mixed_precision) {
     FL_LOG_MASTER(INFO)
         << "Mixed precision training enabled. Will perform loss scaling.";
@@ -279,7 +279,7 @@ int main(int argc, char** argv) {
         : fl::OptimMode::toOptimLevel(FLAGS_fl_optim_mode);
     fl::OptimMode::get().setOptimLevel(flOptimLevel);
 
-    dynamicScaler = std::make_shared<fl::ext::DynamicScaler>(
+    dynamicScaler = std::make_shared<fl::pkg::runtime::DynamicScaler>(
         FLAGS_fl_amp_scale_factor,
         FLAGS_fl_amp_max_scale_factor,
         FLAGS_fl_amp_scale_factor_update_interval);
@@ -513,7 +513,7 @@ int main(int argc, char** argv) {
         opt2->zeroGrad();
 
         bwdTimeMeter.resume();
-        bool scaleIsValid = fl::app::backwardWithScaling(
+        bool scaleIsValid =fl::pkg::runtime::backwardWithScaling(
             accumLoss, modelParams, dynamicScaler, reducer);
         fl::sync();
         bwdTimeMeter.stopAndIncUnit();

@@ -11,7 +11,8 @@
 #include "flashlight/fl/autograd/Variable.h"
 
 namespace fl {
-namespace ext {
+namespace pkg {
+namespace runtime {
 
 /**
  * Dynamically scales up the training loss as well as all the gradients in back
@@ -77,5 +78,6 @@ class DynamicScaler {
   DynamicScaler() = default;
 };
 
-} // namespace ext
+} // namespace runtime
+} // namespace pkg
 } // namespace fl

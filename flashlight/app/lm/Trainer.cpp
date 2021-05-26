@@ -9,6 +9,7 @@
 #include <algorithm>
 
 using namespace fl::ext;
+using namespace fl::pkg::runtime;
 using namespace fl::lib;
 
 namespace fl {
@@ -223,7 +224,7 @@ DEFINE_string(
 /* ============= Public functions ============= */
 Trainer::Trainer(const std::string& mode) {
   // Parse from Gflags
-  (void)fl::ext::ModulePlugin(FLAGS_train_arch_file);
+  (void)fl::pkg::runtime::ModulePlugin(FLAGS_train_arch_file);
   if (mode == "train") {
     initTrain();
   } else if (mode == "continue") {
@@ -236,7 +237,7 @@ Trainer::Trainer(const std::string& mode) {
     throw std::invalid_argument("Trainer doesn't support mode: " + mode);
   }
   checkArgs();
-  gflagsStr_ = fl::app::serializeGflags();
+  gflagsStr_ = fl::pkg::runtime::serializeGflags();
   FL_LOG_MASTER(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   initArrayFire();
@@ -425,7 +426,7 @@ void Trainer::initTrain() {
   createValidDatasets();
 
   if (FLAGS_fl_amp_use_mixed_precision) {
-    dynamicScaler = std::make_shared<fl::ext::DynamicScaler>(
+    dynamicScaler = std::make_shared<fl::pkg::runtime::DynamicScaler>(
         FLAGS_fl_amp_scale_factor,
         FLAGS_fl_amp_max_scale_factor,
         FLAGS_fl_amp_scale_factor_update_interval);
@@ -571,7 +572,7 @@ void Trainer::createNetwork() {
   if (dictionary_.entrySize() == 0) {
     throw std::runtime_error("Dictionary is empty, number of classes is zero");
   }
-  network_ = fl::ext::ModulePlugin(FLAGS_train_arch_file)
+  network_ = fl::pkg::runtime::ModulePlugin(FLAGS_train_arch_file)
                  .arch(0, dictionary_.entrySize());
 }
 
