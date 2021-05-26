@@ -20,7 +20,7 @@
 using fl::lib::pathsConcat;
 using namespace fl::lib;
 using namespace fl::lib::text;
-using namespace fl::app::lm;
+using namespace fl::pkg::text;
 
 std::string dataDir = "";
 

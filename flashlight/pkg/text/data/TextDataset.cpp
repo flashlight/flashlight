@@ -20,8 +20,8 @@ using fl::lib::text::PartialFileReader;
 using fl::lib::text::Tokenizer;
 
 namespace fl {
-namespace app {
-namespace lm {
+namespace pkg {
+namespace text {
 
 namespace {
 
@@ -182,6 +182,6 @@ void TextDataset::shuffle(uint64_t seed) {
   }
 }
 
-} // namespace lm
-} // namespace app
+} // namespace text
+} // namespace pkg
 } // namespace fl
