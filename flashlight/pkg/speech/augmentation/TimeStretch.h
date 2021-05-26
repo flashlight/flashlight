@@ -17,8 +17,8 @@
 #include "flashlight/pkg/speech/augmentation/SoxWrapper.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 namespace sfx {
 
 #ifdef FL_BUILD_APP_ASR_SFX_SOX
@@ -82,6 +82,6 @@ class TimeStretch : public SoundEffect {
 #endif
 
 } // namespace sfx
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

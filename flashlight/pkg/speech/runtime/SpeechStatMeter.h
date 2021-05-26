@@ -10,8 +10,8 @@
 #include "flashlight/fl/flashlight.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 struct SpeechStats {
   int64_t totalInputSz_;
@@ -37,6 +37,6 @@ class SpeechStatMeter {
  private:
   SpeechStats stats_;
 };
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

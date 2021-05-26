@@ -16,8 +16,8 @@
 #include "flashlight/lib/text/dictionary/Utils.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 enum class FeatureType { POW_SPECTRUM, MFSC, MFCC, NONE };
 
@@ -179,6 +179,6 @@ std::vector<T> normalize(
   }
   return out;
 }
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

@@ -10,8 +10,8 @@
 #include "flashlight/fl/flashlight.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 // attention
 const std::string kContentAttention = "content";
@@ -36,6 +36,6 @@ const std::string kStepWindow = "step";
 // which cannot be propagated correctly if we set -inf
 constexpr float kAttentionMaskValue = -10000;
 
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

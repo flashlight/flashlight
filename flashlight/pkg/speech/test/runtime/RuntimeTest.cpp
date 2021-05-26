@@ -17,7 +17,7 @@
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/System.h"
 
-using namespace fl::app::asr;
+using namespace fl::pkg::speech;
 
 namespace {
 const std::string kPath = fl::lib::getTmpPath("test.mdl");

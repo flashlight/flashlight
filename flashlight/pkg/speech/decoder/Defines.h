@@ -12,8 +12,8 @@
 #include "flashlight/fl/flashlight.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 // Convenience structs for serializing emissions and targets
 struct EmissionUnit {
@@ -45,6 +45,6 @@ struct TargetUnit {
 };
 
 using EmissionTargetPair = std::pair<EmissionUnit, TargetUnit>;
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

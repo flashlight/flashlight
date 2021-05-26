@@ -21,8 +21,8 @@
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 /* A series of vector to vector mapping operations */
 
@@ -37,6 +37,6 @@ std::shared_ptr<fl::lib::text::Trie> buildTrie(
     const int wordSeparatorIdx,
     const int repLabel);
 
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

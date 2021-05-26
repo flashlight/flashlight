@@ -12,7 +12,7 @@
 #include "flashlight/pkg/speech/augmentation/TimeStretch.h"
 #include "flashlight/fl/common/Init.h"
 
-using namespace ::fl::app::asr::sfx;
+using namespace ::fl::pkg::speech::sfx;
 
 // Arbitrary audioable signalSoxFmt values.
 const int numSamples = 20000;

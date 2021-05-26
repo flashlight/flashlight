@@ -13,8 +13,8 @@
 #include "flashlight/pkg/speech/common/Flags.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 /*
  * Utility function to create an optimizer.
@@ -28,6 +28,6 @@ std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
     double lr,
     double momentum,
     double weightdecay);
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

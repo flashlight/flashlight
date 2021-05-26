@@ -12,8 +12,8 @@
 #include "flashlight/pkg/runtime/common/DistributedUtils.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 GetConvLmScoreFunc buildGetConvLmScoreFunction(
     std::shared_ptr<Module> network) {
@@ -64,6 +64,6 @@ GetConvLmScoreFunc buildGetConvLmScoreFunction(
 
   return getConvLmScoreFunc;
 }
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

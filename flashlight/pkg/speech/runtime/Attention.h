@@ -15,8 +15,8 @@
 #include "flashlight/pkg/speech/criterion/attention/window.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 /*
  * Utility function to create an attention for s2s in encoder-decoder.
@@ -34,6 +34,6 @@ std::shared_ptr<AttentionBase> createAttention();
  */
 std::shared_ptr<WindowBase> createAttentionWindow();
 
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

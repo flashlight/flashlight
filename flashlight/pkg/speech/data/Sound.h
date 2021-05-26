@@ -12,8 +12,8 @@
 #include <vector>
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 enum class SoundFormat {
   WAV, // Microsoft WAV format (little endian)
@@ -100,6 +100,6 @@ void saveSound(
     int64_t channels,
     const SoundFormat format,
     const SoundSubFormat subformat);
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

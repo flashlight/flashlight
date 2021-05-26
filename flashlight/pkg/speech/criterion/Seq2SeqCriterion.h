@@ -17,8 +17,8 @@
 #include "flashlight/pkg/runtime/common/DistributedUtils.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 struct Seq2SeqState {
   fl::Variable alpha;
@@ -61,7 +61,7 @@ class Seq2SeqCriterion : public SequenceCriterion {
       int pctTeacherForcing = 100,
       double labelSmooth = 0.0,
       bool inputFeeding = false,
-      std::string samplingStrategy = fl::app::asr::kRandSampling,
+      std::string samplingStrategy = fl::pkg::speech::kRandSampling,
       double gumbelTemperature = 1.0,
       int nRnnLayer = 1,
       int nAttnRound = 1,
@@ -227,9 +227,9 @@ AMUpdateFunc buildSeq2SeqRnnAmUpdateFunction(
     int beamSize,
     float attThr,
     float smoothingTemp);
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::app::asr::Seq2SeqCriterion)
-CEREAL_CLASS_VERSION(fl::app::asr::Seq2SeqCriterion, 3)
+CEREAL_REGISTER_TYPE(fl::pkg::speech::Seq2SeqCriterion)
+CEREAL_CLASS_VERSION(fl::pkg::speech::Seq2SeqCriterion, 3)

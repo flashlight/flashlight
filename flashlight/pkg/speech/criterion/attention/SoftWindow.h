@@ -10,8 +10,8 @@
 #include "flashlight/pkg/speech/criterion/attention/WindowBase.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 class SoftWindow : public WindowBase {
  public:
@@ -49,8 +49,8 @@ class SoftWindow : public WindowBase {
 
   FL_SAVE_LOAD_WITH_BASE(WindowBase, std_, avgRate_, offset_)
 };
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::app::asr::SoftWindow)
+CEREAL_REGISTER_TYPE(fl::pkg::speech::SoftWindow)

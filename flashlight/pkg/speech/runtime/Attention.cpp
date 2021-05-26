@@ -8,42 +8,42 @@
 #include "flashlight/pkg/speech/runtime/Attention.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 std::shared_ptr<AttentionBase> createAttention() {
   std::shared_ptr<AttentionBase> attention;
-  if (FLAGS_attention == fl::app::asr::kContentAttention) {
+  if (FLAGS_attention == fl::pkg::speech::kContentAttention) {
     attention = std::make_shared<ContentAttention>();
-  } else if (FLAGS_attention == fl::app::asr::kKeyValueAttention) {
+  } else if (FLAGS_attention == fl::pkg::speech::kKeyValueAttention) {
     attention = std::make_shared<ContentAttention>(true);
-  } else if (FLAGS_attention == fl::app::asr::kNeuralContentAttention) {
+  } else if (FLAGS_attention == fl::pkg::speech::kNeuralContentAttention) {
     attention = std::make_shared<NeuralContentAttention>(FLAGS_encoderdim);
-  } else if (FLAGS_attention == fl::app::asr::kSimpleLocationAttention) {
+  } else if (FLAGS_attention == fl::pkg::speech::kSimpleLocationAttention) {
     attention = std::make_shared<SimpleLocationAttention>(FLAGS_attnconvkernel);
-  } else if (FLAGS_attention == fl::app::asr::kLocationAttention) {
+  } else if (FLAGS_attention == fl::pkg::speech::kLocationAttention) {
     attention = std::make_shared<LocationAttention>(
         FLAGS_encoderdim, FLAGS_attnconvkernel);
-  } else if (FLAGS_attention == fl::app::asr::kNeuralLocationAttention) {
+  } else if (FLAGS_attention == fl::pkg::speech::kNeuralLocationAttention) {
     attention = std::make_shared<NeuralLocationAttention>(
         FLAGS_encoderdim,
         FLAGS_attndim,
         FLAGS_attnconvchannel,
         FLAGS_attnconvkernel);
   } // is it fine for transformer criterion?
-  else if (FLAGS_attention == fl::app::asr::kMultiHeadContentAttention) {
+  else if (FLAGS_attention == fl::pkg::speech::kMultiHeadContentAttention) {
     attention = std::make_shared<MultiHeadContentAttention>(
         FLAGS_encoderdim, FLAGS_numattnhead);
   } else if (
-      FLAGS_attention == fl::app::asr::kMultiHeadKeyValueContentAttention) {
+      FLAGS_attention == fl::pkg::speech::kMultiHeadKeyValueContentAttention) {
     attention = std::make_shared<MultiHeadContentAttention>(
         FLAGS_encoderdim, FLAGS_numattnhead, true);
-  } else if (FLAGS_attention == fl::app::asr::kMultiHeadSplitContentAttention) {
+  } else if (FLAGS_attention == fl::pkg::speech::kMultiHeadSplitContentAttention) {
     attention = std::make_shared<MultiHeadContentAttention>(
         FLAGS_encoderdim, FLAGS_numattnhead, false, true);
   } else if (
       FLAGS_attention ==
-      fl::app::asr::kMultiHeadKeyValueSplitContentAttention) {
+      fl::pkg::speech::kMultiHeadKeyValueSplitContentAttention) {
     attention = std::make_shared<MultiHeadContentAttention>(
         FLAGS_encoderdim, FLAGS_numattnhead, true, true);
   } else {
@@ -54,24 +54,24 @@ std::shared_ptr<AttentionBase> createAttention() {
 
 std::shared_ptr<WindowBase> createAttentionWindow() {
   std::shared_ptr<WindowBase> window;
-  if (FLAGS_attnWindow == fl::app::asr::kNoWindow) {
+  if (FLAGS_attnWindow == fl::pkg::speech::kNoWindow) {
     window = nullptr;
-  } else if (FLAGS_attnWindow == fl::app::asr::kMedianWindow) {
+  } else if (FLAGS_attnWindow == fl::pkg::speech::kMedianWindow) {
     window = std::make_shared<MedianWindow>(
         FLAGS_leftWindowSize, FLAGS_rightWindowSize);
-  } else if (FLAGS_attnWindow == fl::app::asr::kStepWindow) {
+  } else if (FLAGS_attnWindow == fl::pkg::speech::kStepWindow) {
     window = std::make_shared<StepWindow>(
         FLAGS_minsil, FLAGS_maxsil, FLAGS_minrate, FLAGS_maxrate);
-  } else if (FLAGS_attnWindow == fl::app::asr::kSoftWindow) {
+  } else if (FLAGS_attnWindow == fl::pkg::speech::kSoftWindow) {
     window = std::make_shared<SoftWindow>(
         FLAGS_softwstd, FLAGS_softwrate, FLAGS_softwoffset);
-  } else if (FLAGS_attnWindow == fl::app::asr::kSoftPretrainWindow) {
+  } else if (FLAGS_attnWindow == fl::pkg::speech::kSoftPretrainWindow) {
     window = std::make_shared<SoftPretrainWindow>(FLAGS_softwstd);
   } else {
     throw std::runtime_error("Unimplmented window: " + FLAGS_attnWindow);
   }
   return window;
 }
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

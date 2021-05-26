@@ -9,8 +9,8 @@
 #include <array>
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 SpeechStatMeter::SpeechStatMeter() {
   reset();
 }
@@ -75,6 +75,6 @@ std::vector<int64_t> SpeechStats::toArray() const {
   arr[5] = numBatches_;
   return arr;
 }
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

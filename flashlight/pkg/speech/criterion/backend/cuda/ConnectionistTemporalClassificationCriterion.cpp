@@ -21,8 +21,8 @@ using namespace fl::ext;
 using CriterionUtils = fl::lib::cuda::CriterionUtils<float>;
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 namespace {
 inline void throw_on_error(ctcStatus_t status, const char* message) {
@@ -101,7 +101,7 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
 
     // A heuristic to modify target length to be able to compute CTC loss
     L = std::min(L, T);
-    const int R = fl::app::asr::countRepeats(targetVec, L);
+    const int R = fl::pkg::speech::countRepeats(targetVec, L);
     L = std::min(L + R, T) - R;
 
     labelLengths.push_back(L);
@@ -164,6 +164,6 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
 
   return {Variable(result, {input, target}, gradFunc)};
 }
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

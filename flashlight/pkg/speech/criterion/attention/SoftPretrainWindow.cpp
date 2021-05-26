@@ -9,8 +9,8 @@
 #include "flashlight/pkg/speech/criterion/attention/Defines.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 SoftPretrainWindow::SoftPretrainWindow(double std) : std_(std) {}
 
@@ -72,6 +72,6 @@ Variable SoftPretrainWindow::computeVectorizedWindow(
   return compute(
       targetLen, inputSteps, batchSize, inputSizes, targetSizes, decoderSteps);
 }
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

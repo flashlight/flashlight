@@ -12,7 +12,7 @@
 #include "flashlight/pkg/speech/augmentation/SoundEffectUtil.h"
 #include "flashlight/fl/common/Init.h"
 
-using namespace ::fl::app::asr::sfx;
+using namespace ::fl::pkg::speech::sfx;
 using testing::Pointwise;
 
 // Arbitrary audioable signal values.

@@ -17,8 +17,8 @@
 #include "flashlight/pkg/speech/augmentation/TimeStretch.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 namespace sfx {
 
 // Values for SoundEffectConfig.type_
@@ -55,6 +55,6 @@ std::vector<SoundEffectConfig> readSoundEffectConfigFile(
     const std::string& filename);
 
 } // namespace sfx
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

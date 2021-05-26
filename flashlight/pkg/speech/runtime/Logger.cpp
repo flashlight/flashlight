@@ -22,8 +22,8 @@ using fl::lib::getCurrentTime;
 using fl::lib::retryWithBackoff;
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 std::string getLogString(
     TrainMeters& meters,
@@ -155,6 +155,6 @@ void syncMeter(TrainMeters& mtrs) {
   }
 }
 
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

@@ -17,8 +17,8 @@
 #include "flashlight/lib/text/dictionary/Utils.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 struct DecodeMasterLexiconFreeOptions {
   int beamSize;
@@ -166,6 +166,6 @@ class WordDecodeMaster : public DecodeMaster {
  private:
   std::vector<float> transition_;
 };
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

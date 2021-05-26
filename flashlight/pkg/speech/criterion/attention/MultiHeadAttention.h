@@ -10,8 +10,8 @@
 #include "flashlight/pkg/speech/criterion/attention/AttentionBase.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 class MultiHeadContentAttention : public AttentionBase {
  public:
@@ -37,8 +37,8 @@ class MultiHeadContentAttention : public AttentionBase {
   bool splitInput_;
   FL_SAVE_LOAD_WITH_BASE(AttentionBase, numHeads_, keyValue_, splitInput_)
 };
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::app::asr::MultiHeadContentAttention)
+CEREAL_REGISTER_TYPE(fl::pkg::speech::MultiHeadContentAttention)

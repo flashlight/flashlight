@@ -14,8 +14,8 @@ using fl::lib::text::LexiconMap;
 using fl::lib::text::splitWrd;
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 std::vector<std::string> wrd2Target(
     const std::string& word,
@@ -115,6 +115,6 @@ std::pair<int, FeatureType> getFeatureType(
   }
 }
 
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

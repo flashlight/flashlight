@@ -18,8 +18,8 @@
 #include "flashlight/fl/contrib/modules/Transformer.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 struct TS2SState {
   fl::Variable alpha;
@@ -154,9 +154,9 @@ AMUpdateFunc buildSeq2SeqTransformerAmUpdateFunction(
     int beamSize,
     float attThr,
     float smoothingTemp);
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::app::asr::TransformerCriterion)
-CEREAL_CLASS_VERSION(fl::app::asr::TransformerCriterion, 1)
+CEREAL_REGISTER_TYPE(fl::pkg::speech::TransformerCriterion)
+CEREAL_CLASS_VERSION(fl::pkg::speech::TransformerCriterion, 1)

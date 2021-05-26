@@ -12,8 +12,8 @@
 #include "flashlight/fl/flashlight.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 class FullConnectionCriterion : public fl::BinaryModule {
  public:
@@ -41,8 +41,8 @@ class FullConnectionCriterion : public fl::BinaryModule {
 };
 
 typedef FullConnectionCriterion FCCLoss;
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::app::asr::FullConnectionCriterion)
+CEREAL_REGISTER_TYPE(fl::pkg::speech::FullConnectionCriterion)

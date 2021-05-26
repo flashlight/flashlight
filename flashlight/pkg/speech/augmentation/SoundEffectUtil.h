@@ -14,8 +14,8 @@
 #include <vector>
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 namespace sfx {
 
 class RandomNumberGenerator {
@@ -54,6 +54,6 @@ std::vector<float> genTestSinWave(
     float amplitude);
 
 } // namespace sfx
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

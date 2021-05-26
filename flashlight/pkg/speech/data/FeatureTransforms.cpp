@@ -52,8 +52,8 @@ class StartSfxCounter {
 } // namespace
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 fl::Dataset::DataTransformFunction inputFeatures(
     const FeatureParams& params,
@@ -182,6 +182,6 @@ fl::Dataset::DataTransformFunction wordFeatures(const Dictionary& wrdDict) {
     return af::array(wrdVec.size(), wrdVec.data());
   };
 }
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

@@ -14,8 +14,8 @@
 #define FL_LOG_MASTER(lvl) LOG_IF(lvl, (fl::getWorldRank() == 0))
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 struct DatasetMeters {
   fl::EditDistanceMeter tknEdit, wrdEdit;
   fl::AverageValueMeter loss;
@@ -65,6 +65,6 @@ af::array allreduceGet(SpeechStatMeter& mtr);
 void allreduceSet(SpeechStatMeter& mtr, af::array& val);
 
 void syncMeter(TrainMeters& mtrs);
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

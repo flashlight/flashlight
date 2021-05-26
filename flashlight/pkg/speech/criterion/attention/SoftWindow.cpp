@@ -9,8 +9,8 @@
 #include "flashlight/pkg/speech/criterion/attention/Defines.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 SoftWindow::SoftWindow() {}
 SoftWindow::SoftWindow(double std, double avgRate, int offset)
@@ -67,6 +67,6 @@ Variable SoftWindow::computeVectorizedWindow(
   return compute(
       targetLen, inputSteps, batchSize, inputSizes, targetSizes, decoderSteps);
 }
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

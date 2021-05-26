@@ -16,7 +16,7 @@
 #include "flashlight/fl/common/Init.h"
 #include "flashlight/lib/common/System.h"
 
-using namespace ::fl::app::asr::sfx;
+using namespace ::fl::pkg::speech::sfx;
 
 /**
  * Test creation of arbitrary sound effect chain configuration, writing of that

@@ -13,7 +13,7 @@
 
 #include <sndfile.h>
 
-using namespace fl::app::asr;
+using namespace fl::pkg::speech;
 
 namespace {
 
@@ -78,8 +78,8 @@ const std::unordered_map<SoundSubFormat, int, EnumClassHash> subformats{
 } // namespace
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 extern "C" {
 
@@ -401,6 +401,6 @@ template void saveSound(
     int64_t,
     SoundFormat,
     SoundSubFormat);
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

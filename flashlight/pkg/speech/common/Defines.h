@@ -13,8 +13,8 @@
 #define FL_APP_ASR_VERSION "0.1"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 // Dataset indices
 // If a new field is added, `kNumDataIdx` should be modified accordingly.
@@ -71,6 +71,6 @@ constexpr const char* kEosToken = "$";
 constexpr const char* kBlankToken = "#";
 constexpr const char* kSilToken = "|";
 
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

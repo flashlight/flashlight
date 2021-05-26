@@ -9,8 +9,8 @@
 #include "flashlight/pkg/speech/criterion/attention/Defines.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 MedianWindow::MedianWindow() {}
 MedianWindow::MedianWindow(int wL, int wR) : wL_(wL), wR_(wR) {}
@@ -87,6 +87,6 @@ Variable MedianWindow::computeVectorizedWindow(
     const af::array& /* unused */) const {
   throw af::exception("MedianWindow does not support vectorized window mask");
 }
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

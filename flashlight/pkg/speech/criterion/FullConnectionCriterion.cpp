@@ -12,8 +12,8 @@
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 FullConnectionCriterion::FullConnectionCriterion(
     int N,
@@ -30,6 +30,6 @@ FullConnectionCriterion::FullConnectionCriterion(
 std::string FullConnectionCriterion::prettyString() const {
   return "FullConnectionCriterion";
 }
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

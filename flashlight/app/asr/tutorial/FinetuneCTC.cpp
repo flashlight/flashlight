@@ -44,7 +44,7 @@ using fl::lib::getCurrentDate;
 using fl::lib::join;
 using fl::lib::pathsConcat;
 
-using namespace fl::app::asr;
+using namespace fl::pkg::speech;
 
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);

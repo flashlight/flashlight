@@ -21,7 +21,7 @@
 #include "flashlight/lib/text/dictionary/Defines.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 
-using namespace fl::app::asr;
+using namespace fl::pkg::speech;
 using namespace fl::lib;
 using namespace fl::app::asr::alignment;
 
@@ -90,7 +90,7 @@ int main(int argc, char** argv) {
   bool isSeq2seqCrit = FLAGS_criterion == kSeq2SeqTransformerCriterion ||
       FLAGS_criterion == kSeq2SeqRNNCriterion;
   if (isSeq2seqCrit) {
-    tokenDict.addEntry(fl::app::asr::kEosToken);
+    tokenDict.addEntry(fl::pkg::speech::kEosToken);
     tokenDict.addEntry(fl::lib::text::kPadToken);
   }
 

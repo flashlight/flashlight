@@ -14,7 +14,7 @@
 #include "flashlight/pkg/speech/criterion/attention/attention.h"
 
 using namespace fl;
-using namespace fl::app::asr;
+using namespace fl::pkg::speech;
 
 namespace {
 using JacobianFunc = std::function<Variable(Variable&)>;
@@ -219,7 +219,7 @@ TEST(AttentionTest, JacobianMaskAttention) {
   std::vector<int> inpSzRaw = {1, 2, 4, 8, 16};
   af::array inpSz = af::array(af::dim4(1, inpSzRaw.size()), inpSzRaw.data());
   auto func_in = [&](Variable& input) {
-    return fl::app::asr::maskAttention(input, fl::Variable(inpSz, false));
+    return fl::pkg::speech::maskAttention(input, fl::Variable(inpSz, false));
   };
   ASSERT_TRUE(jacobianTestImpl(func_in, in, 2e-4));
 }

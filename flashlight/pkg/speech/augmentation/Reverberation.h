@@ -16,8 +16,8 @@
 #include "flashlight/pkg/speech/augmentation/SoundEffectUtil.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 namespace sfx {
 
 /**
@@ -96,6 +96,6 @@ class ReverbEcho : public SoundEffect {
 };
 
 } // namespace sfx
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

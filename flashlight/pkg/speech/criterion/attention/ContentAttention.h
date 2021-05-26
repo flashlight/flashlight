@@ -10,8 +10,8 @@
 #include "flashlight/pkg/speech/criterion/attention/AttentionBase.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 class ContentAttention : public AttentionBase {
  public:
@@ -49,10 +49,10 @@ class NeuralContentAttention : public AttentionBase {
  private:
   FL_SAVE_LOAD_WITH_BASE(AttentionBase)
 };
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::app::asr::ContentAttention)
-CEREAL_CLASS_VERSION(fl::app::asr::ContentAttention, 1)
-CEREAL_REGISTER_TYPE(fl::app::asr::NeuralContentAttention)
+CEREAL_REGISTER_TYPE(fl::pkg::speech::ContentAttention)
+CEREAL_CLASS_VERSION(fl::pkg::speech::ContentAttention, 1)
+CEREAL_REGISTER_TYPE(fl::pkg::speech::NeuralContentAttention)

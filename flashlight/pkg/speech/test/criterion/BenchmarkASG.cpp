@@ -16,7 +16,7 @@
 #include "flashlight/pkg/speech/criterion/criterion.h"
 
 using namespace fl;
-using namespace fl::app::asr;
+using namespace fl::pkg::speech;
 
 int main() {
   fl::setDevice(1);

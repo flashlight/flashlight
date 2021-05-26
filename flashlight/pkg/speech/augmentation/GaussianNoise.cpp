@@ -13,8 +13,8 @@
 #include <sstream>
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 namespace sfx {
 
 std::string GaussianNoise::Config::prettyString() const {
@@ -49,6 +49,6 @@ void GaussianNoise::apply(std::vector<float>& signal) {
 }
 
 } // namespace sfx
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl
