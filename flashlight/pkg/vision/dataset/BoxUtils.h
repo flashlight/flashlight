@@ -13,8 +13,8 @@
 #include "flashlight/fl/autograd/Variable.h"
 
 namespace fl {
-namespace app {
-namespace objdet {
+namespace pkg {
+namespace vision {
 
 using batchFuncVar_t = Variable (*)(const Variable &, const Variable &);
 
@@ -144,6 +144,6 @@ std::tuple<fl::Variable, fl::Variable> boxIou(
  */
 Variable l1Loss(const Variable& input, const Variable& target);
 
-} // namespace objdet
-} // namespace app
+} // namespace vision
+} // namespace pkg
 } // namespace fl

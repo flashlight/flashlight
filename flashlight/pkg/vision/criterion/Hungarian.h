@@ -9,8 +9,8 @@
 #include <arrayfire.h>
 
 namespace fl {
-namespace app {
-namespace objdet {
+namespace pkg {
+namespace vision {
 
 class HungarianMatcher {
  public:
@@ -42,6 +42,6 @@ class HungarianMatcher {
   af::array getCostMatrix(const af::array& input, const af::array& target);
 };
 
-} // namespace objdet
-} // namespace app
+} // namespace vision
+} // namespace pkg
 } // namespace fl

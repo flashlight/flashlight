@@ -14,8 +14,8 @@
 #include "flashlight/fl/autograd/Functions.h"
 
 namespace fl {
-namespace app {
-namespace objdet {
+namespace pkg {
+namespace vision {
 
 af::array cxcywh2xyxy(const af::array& bboxes) {
   auto transformed = af::constant(0, 4, bboxes.dims(1));
@@ -205,6 +205,6 @@ Variable l1Loss(const Variable& input, const Variable& target) {
   return flatten(fl::sum(fl::abs(input - target), {0}), 0, 1);
 }
 
-} // namespace objdet
-} // namespace app
+} // namespace vision
+} // namespace pkg
 } // namespace fl

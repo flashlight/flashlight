@@ -12,8 +12,8 @@
 #include "flashlight/fl/nn/modules/Container.h"
 
 namespace fl {
-namespace app {
-namespace objdet {
+namespace pkg {
+namespace vision {
 
 using namespace fl::ext::image;
 
@@ -31,8 +31,8 @@ class Resnet50Backbone : public Container {
   FL_SAVE_LOAD_WITH_BASE(fl::Container)
 };
 
-} // namespace objdet
-} // namespace app
+} // namespace vision
+} // namespace pkg
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::app::objdet::Resnet50Backbone)
+CEREAL_REGISTER_TYPE(fl::pkg::vision::Resnet50Backbone)

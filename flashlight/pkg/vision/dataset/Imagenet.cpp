@@ -18,8 +18,8 @@
 using LabelLoader = fl::ext::image::LoaderDataset<uint64_t>;
 
 namespace fl {
-namespace app {
-namespace imgclass {
+namespace pkg {
+namespace vision {
 
 std::unordered_map<std::string, uint64_t> getImagenetLabels(
     const std::string& labelFile) {
@@ -81,6 +81,6 @@ std::shared_ptr<Dataset> imagenetDataset(
       MergeDataset({imageDataset, labelDataset}));
 }
 
-} // namespace imgclass
-} // namespace app
+} // namespace vision
+} // namespace pkg
 } // namespace fl

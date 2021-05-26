@@ -11,7 +11,7 @@
 
 #include <gtest/gtest.h>
 
-using namespace fl::app::objdet;
+using namespace fl::pkg::vision;
 
 TEST(BoxUtils, IOU) {
   std::vector<float> labels = {0, 0, 10, 10, 1};

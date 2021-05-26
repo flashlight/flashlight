@@ -10,8 +10,8 @@
 #include <cassert>
 
 namespace fl {
-namespace app {
-namespace objdet {
+namespace pkg {
+namespace vision {
 
 std::string PositionalEmbeddingSine::prettyString() const {
   return "PositionalEmbeddingSine";
@@ -94,6 +94,6 @@ std::vector<Variable> PositionalEmbeddingSine::operator()(
   return forward(input);
 }
 
-} // namespace objdet
-} // namespace app
+} // namespace vision
+} // namespace pkg
 } // namespace fl

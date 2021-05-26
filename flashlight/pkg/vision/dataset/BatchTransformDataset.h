@@ -10,8 +10,8 @@
 #include "flashlight/fl/dataset/datasets.h"
 
 namespace fl {
-namespace app {
-namespace objdet {
+namespace pkg {
+namespace vision {
 
 template <class T>
 using BatchTransformFunction =
@@ -98,6 +98,6 @@ class BatchTransformDataset {
   int64_t size_;
 };
 
-} // namespace objdet
-} // namespace app
+} // namespace vision
+} // namespace pkg
 } // namespace fl

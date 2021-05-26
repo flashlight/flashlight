@@ -13,8 +13,8 @@
 #include "flashlight/fl/nn/nn.h"
 
 namespace fl {
-namespace app {
-namespace objdet {
+namespace pkg {
+namespace vision {
 
 fl::Variable transformerMultiheadAttention(
     const fl::Variable& query,
@@ -224,12 +224,12 @@ class Transformer : public Container {
   FL_SAVE_LOAD_WITH_BASE(fl::Container, encoder_, decoder_)
 };
 
-} // namespace objdet
-} // namespace app
+} // namespace vision
+} // namespace pkg
 } // namespace fl
-CEREAL_REGISTER_TYPE(fl::app::objdet::Transformer)
-CEREAL_REGISTER_TYPE(fl::app::objdet::MultiheadAttention)
-CEREAL_REGISTER_TYPE(fl::app::objdet::TransformerEncoder)
-CEREAL_REGISTER_TYPE(fl::app::objdet::TransformerEncoderLayer)
-CEREAL_REGISTER_TYPE(fl::app::objdet::TransformerDecoder)
-CEREAL_REGISTER_TYPE(fl::app::objdet::TransformerDecoderLayer)
+CEREAL_REGISTER_TYPE(fl::pkg::vision::Transformer)
+CEREAL_REGISTER_TYPE(fl::pkg::vision::MultiheadAttention)
+CEREAL_REGISTER_TYPE(fl::pkg::vision::TransformerEncoder)
+CEREAL_REGISTER_TYPE(fl::pkg::vision::TransformerEncoderLayer)
+CEREAL_REGISTER_TYPE(fl::pkg::vision::TransformerDecoder)
+CEREAL_REGISTER_TYPE(fl::pkg::vision::TransformerDecoderLayer)

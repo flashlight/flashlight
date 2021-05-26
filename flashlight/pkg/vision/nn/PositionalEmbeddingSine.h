@@ -11,8 +11,8 @@
 #include "flashlight/fl/nn/nn.h"
 
 namespace fl {
-namespace app {
-namespace objdet {
+namespace pkg {
+namespace vision {
 
 class PositionalEmbeddingSine : public Container {
  public:
@@ -42,7 +42,7 @@ class PositionalEmbeddingSine : public Container {
   float scale_;
 };
 
-} // namespace objdet
-} // namespace app
+} // namespace vision
+} // namespace pkg
 } // namespace fl
-CEREAL_REGISTER_TYPE(fl::app::objdet::PositionalEmbeddingSine)
+CEREAL_REGISTER_TYPE(fl::pkg::vision::PositionalEmbeddingSine)

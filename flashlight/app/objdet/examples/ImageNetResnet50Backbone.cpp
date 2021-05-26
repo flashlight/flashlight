@@ -52,7 +52,7 @@ DEFINE_int64(exp_checkpoint_epoch, -1, "Checkpoint epoch to load from");
 using namespace fl;
 using fl::ext::image::compose;
 using fl::ext::image::ImageTransform;
-using namespace fl::app::imgclass;
+using namespace fl::pkg::vision;
 
 #define FL_LOG_MASTER(lvl) LOG_IF(lvl, (fl::getWorldRank() == 0))
 
@@ -172,7 +172,7 @@ int main(int argc, char** argv) {
   //////////////////////////
   //  Load model and optimizer
   /////////////////////////
-  auto model = std::make_shared<fl::app::objdet::Resnet50Backbone>();
+  auto model = std::make_shared<fl::pkg::vision::Resnet50Backbone>();
   // synchronize parameters of the model so that the parameters in each process
   // is the same
   fl::allReduceParameters(model);

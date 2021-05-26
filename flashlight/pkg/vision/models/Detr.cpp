@@ -39,8 +39,8 @@ std::shared_ptr<fl::Conv2D> makeConv2D(int inDim, int outDim, int wx, int wy) {
 } // namespace
 
 namespace fl {
-namespace app {
-namespace objdet {
+namespace pkg {
+namespace vision {
 
 MLP::MLP(
     const int32_t inputDim,
@@ -150,6 +150,6 @@ std::vector<fl::Variable> Detr::backboneParams() {
   return backbone_->params();
 }
 
-} // namespace objdet
-} // namespace app
+} // namespace vision
+} // namespace pkg
 } // namespace fl

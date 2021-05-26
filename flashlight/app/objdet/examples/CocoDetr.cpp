@@ -29,6 +29,7 @@
 
 using namespace fl;
 using namespace fl::ext::image;
+using namespace fl::pkg::vision;
 using namespace fl::app::objdet;
 
 using fl::app::getRunFile;

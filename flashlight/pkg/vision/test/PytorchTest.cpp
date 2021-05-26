@@ -15,7 +15,7 @@
 
 #include <gtest/gtest.h>
 
-using namespace fl::app::objdet;
+using namespace fl::pkg::vision;
 // using namespace fl;
 
 fl::Variable param(af::array x) {
@@ -355,7 +355,7 @@ TEST(Pytorch, detr_backbone) {
   af::array image = af::readArray(filename.c_str(), "image");
   af::array expOutput = af::readArray(filename.c_str(), "output");
 
-  auto model = std::make_shared<fl::app::objdet::Resnet50Backbone>();
+  auto model = std::make_shared<fl::pkg::vision::Resnet50Backbone>();
   std::vector<fl::Variable> inputs = {
       fl::Variable(image, false),
   };
@@ -397,7 +397,7 @@ TEST(Pytorch, detr_backbone_grad) {
   af::array image = af::readArray(filename.c_str(), "image");
   af::array expOutput = af::readArray(filename.c_str(), "output");
 
-  auto model = std::make_shared<fl::app::objdet::Resnet50Backbone>();
+  auto model = std::make_shared<fl::pkg::vision::Resnet50Backbone>();
   std::vector<fl::Variable> inputs = {
       fl::Variable(image, true),
   };
@@ -456,7 +456,7 @@ TEST(Pytorch, detr) {
 
   auto transformer = std::make_shared<Transformer>(
       embeddingDim, numHead, numLayers, numLayers, 2048, 0.1f);
-  auto backbone = std::make_shared<fl::app::objdet::Resnet50Backbone>();
+  auto backbone = std::make_shared<fl::pkg::vision::Resnet50Backbone>();
 
   auto model =
       std::make_shared<Detr>(transformer, backbone, 256, 91, 100, true);
@@ -550,7 +550,7 @@ TEST(Pytorch, detr_pretrained) {
 
   auto transformer = std::make_shared<Transformer>(
       embeddingDim, numHead, numLayers, numLayers, 2048, 0.1f);
-  auto backbone = std::make_shared<fl::app::objdet::Resnet50Backbone>();
+  auto backbone = std::make_shared<fl::pkg::vision::Resnet50Backbone>();
 
   auto model =
       std::make_shared<Detr>(transformer, backbone, 256, 91, 100, true);
@@ -642,7 +642,7 @@ TEST(Pytorch, detr_grad_update) {
 
   auto transformer = std::make_shared<Transformer>(
       embeddingDim, numHead, numLayers, numLayers, 2048, 0.0f);
-  auto backbone = std::make_shared<fl::app::objdet::Resnet50Backbone>();
+  auto backbone = std::make_shared<fl::pkg::vision::Resnet50Backbone>();
 
   auto model =
       std::make_shared<Detr>(transformer, backbone, 256, 91, 100, true);
@@ -788,7 +788,7 @@ TEST(Pytorch, detr_grad) {
 
   auto transformer = std::make_shared<Transformer>(
       embeddingDim, numHead, numLayers, numLayers, 2048, 0.0f);
-  auto backbone = std::make_shared<fl::app::objdet::Resnet50Backbone>();
+  auto backbone = std::make_shared<fl::pkg::vision::Resnet50Backbone>();
 
   auto model =
       std::make_shared<Detr>(transformer, backbone, 256, 91, 100, true);
@@ -1188,7 +1188,7 @@ TEST(Pytorch, resnet50_backbone) {
   af::array x = af::readArray(filename.c_str(), "input");
   af::array expOutput = af::readArray(filename.c_str(), "output");
 
-  auto model = std::make_shared<fl::app::objdet::Detr>();
+  auto model = std::make_shared<fl::pkg::vision::Detr>();
 
   int paramSize = resnet50->params().size();
   // Hack! Don't read the last two!
