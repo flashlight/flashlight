@@ -21,6 +21,9 @@ target_link_libraries(
   PUBLIC
   flashlight
   fl_pkg_runtime
+  fl_lib_text
+  fl_lib_audio
+  fl_lib_sequence
   )
 
 # ------------------------ Components ------------------------

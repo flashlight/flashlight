@@ -7,3 +7,9 @@ target_sources(
   ${CMAKE_CURRENT_LIST_DIR}/SetCriterion.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Hungarian.cpp
 )
+
+target_link_libraries(
+  fl_pkg_vision
+  PRIVATE
+  fl_lib_set
+)

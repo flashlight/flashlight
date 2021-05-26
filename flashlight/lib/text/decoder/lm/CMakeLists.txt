@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 set(KENLM_MAX_ORDER 6 CACHE STRING "Maximum ngram order for KenLM")
 
 target_sources(
-  fl-libraries
+  fl_lib_text
   PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/ConvLM.cpp
   ${CMAKE_CURRENT_LIST_DIR}/ZeroLM.cpp
@@ -17,7 +17,7 @@ if (FL_LIBRARIES_USE_KENLM)
     if (FL_BUILD_STANDALONE)
       message(STATUS "KenLM not found - will download and build from source")
       include(${CMAKE_MODULE_PATH}/BuildKenlm.cmake)
-      add_dependencies(fl-libraries kenlm) # ExternalProject target
+      add_dependencies(fl_lib_text kenlm) # ExternalProject target
     endif()
   endif()
   if (FL_BUILD_STANDALONE)
@@ -25,26 +25,26 @@ if (FL_LIBRARIES_USE_KENLM)
   endif()
 
   target_sources(
-    fl-libraries
+    fl_lib_text
     PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/KenLM.cpp
     )
 
   target_link_libraries(
-    fl-libraries
+    fl_lib_text
     PRIVATE
     ${KENLM_LIBRARIES}
     )
 
   target_include_directories(
-    fl-libraries
+    fl_lib_text
     PUBLIC
     $<BUILD_INTERFACE:${KENLM_INCLUDE_DIRS}>
     $<BUILD_INTERFACE:${KENLM_INCLUDE_DIRS_LM}>
     )
 
   target_compile_definitions(
-    fl-libraries
+    fl_lib_text
     PUBLIC
     KENLM_MAX_ORDER=${KENLM_MAX_ORDER}
     )

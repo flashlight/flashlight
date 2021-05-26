@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 target_sources(
-  fl-libraries
+  fl_lib_sequence
   PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/cpu/CriterionUtils.cpp
   ${CMAKE_CURRENT_LIST_DIR}/cpu/ForceAlignmentCriterion.cpp

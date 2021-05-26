@@ -9,6 +9,7 @@ target_link_libraries(
   fl_pkg_text
   PUBLIC
   flashlight
+  fl_lib_text
   )
 # ------------------------ Components ------------------------
 
