@@ -12,8 +12,8 @@
 #include "flashlight/fl/autograd/Functions.h"
 
 namespace fl {
-namespace ext {
-namespace image {
+namespace pkg {
+namespace vision {
 
 VisionTransformer::VisionTransformer(
     int32_t modelDim,
@@ -143,6 +143,6 @@ std::shared_ptr<fl::Linear> VisionTransformer::initLinear(
       fl::truncNormal(af::dim4(outDim, inDim), 0.02),
       fl::constant(0., outDim, 1, af::dtype::f32));
 }
-} // namespace image
-} // namespace ext
+} // namespace vision
+} // namespace pkg
 } // namespace fl

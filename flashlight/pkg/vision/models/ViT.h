@@ -11,8 +11,8 @@
 #include "flashlight/fl/nn/nn.h"
 
 namespace fl {
-namespace ext {
-namespace image {
+namespace pkg {
+namespace vision {
 
 /*
  * Implementation of Vision Transformer (ViT) models following [AN IMAGE IS
@@ -64,8 +64,8 @@ class ViT : public fl::Container {
   std::string prettyString() const override;
 };
 
-} // namespace image
-} // namespace ext
+} // namespace vision
+} // namespace pkg
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::ext::image::ViT);
+CEREAL_REGISTER_TYPE(fl::pkg::vision::ViT);

@@ -10,8 +10,8 @@
 #include <fstream>
 
 namespace fl {
-namespace ext {
-namespace image {
+namespace pkg {
+namespace vision {
 
 ViT::ViT(
     const int nLayers,
@@ -103,6 +103,6 @@ std::string ViT::prettyString() const {
   return ss.str();
 }
 
-} // namespace image
-} // namespace ext
+} // namespace vision
+} // namespace pkg
 } // namespace fl

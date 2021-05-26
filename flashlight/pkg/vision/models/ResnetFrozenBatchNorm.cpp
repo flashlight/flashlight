@@ -8,8 +8,8 @@
 #include "flashlight/pkg/vision/models/ResnetFrozenBatchNorm.h"
 
 namespace fl {
-namespace ext {
-namespace image {
+namespace pkg {
+namespace vision {
 
 namespace {
 
@@ -193,6 +193,6 @@ ResNetStageFrozenBatchNorm::ResNetStageFrozenBatchNorm(
   }
 }
 
-} // namespace image
-} // namespace ext
+} // namespace vision
+} // namespace pkg
 } // namespace fl

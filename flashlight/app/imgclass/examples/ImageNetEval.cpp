@@ -49,8 +49,8 @@ DEFINE_string(
     "If empty, uses MPI to initialize.");
 
 using namespace fl;
-using fl::ext::image::compose;
-using fl::ext::image::ImageTransform;
+using fl::pkg::vision::compose;
+using fl::pkg::vision::ImageTransform;
 using namespace fl::pkg::vision;
 
 #define FL_LOG_MASTER(lvl) LOG_IF(lvl, (fl::getWorldRank() == 0))
@@ -85,13 +85,13 @@ int main(int argc, char** argv) {
   // Conventional image resize parameter used for evaluation
   const int randomResizeMin = imageSize / .875;
   ImageTransform testTransforms = compose(
-      {fl::ext::image::resizeTransform(randomResizeMin),
-       fl::ext::image::centerCropTransform(imageSize),
-       fl::ext::image::normalizeImage(
+      {fl::pkg::vision::resizeTransform(randomResizeMin),
+       fl::pkg::vision::centerCropTransform(imageSize),
+       fl::pkg::vision::normalizeImage(
            fl::app::image::kImageNetMean, fl::app::image::kImageNetStd)});
 
   auto labelMap = getImagenetLabels(labelPath);
-  auto testDataset = fl::ext::image::DistributedDataset(
+  auto testDataset = fl::pkg::vision::DistributedDataset(
       imagenetDataset(testList, labelMap, {testTransforms}),
       worldRank,
       worldSize,

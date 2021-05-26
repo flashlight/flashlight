@@ -10,8 +10,8 @@
 #include "flashlight/fl/dataset/datasets.h"
 
 namespace fl {
-namespace ext {
-namespace image {
+namespace pkg {
+namespace vision {
 
 class DistributedDataset : public Dataset {
  public:
@@ -36,6 +36,6 @@ class DistributedDataset : public Dataset {
   std::shared_ptr<ShuffleDataset> shuffle_;
 };
 
-} // namespace image
-} // namespace ext
+} // namespace vision
+} // namespace pkg
 } // namespace fl

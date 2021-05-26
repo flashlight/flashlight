@@ -49,7 +49,7 @@ class CocoDataset {
 
   std::shared_ptr<Dataset> getImages(
       std::string list_file,
-      std::vector<ext::image::ImageTransform>& transformfns);
+      std::vector<pkg::vision::ImageTransform>& transformfns);
 
   using iterator = detail::DatasetIterator<CocoDataset, CocoData>;
 

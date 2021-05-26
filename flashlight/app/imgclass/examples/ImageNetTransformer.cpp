@@ -126,15 +126,15 @@ DEFINE_string(
     "Optim modes can be O1, O2, or O3.");
 
 using namespace fl;
-using fl::ext::image::compose;
-using fl::ext::image::ImageTransform;
+using fl::pkg::vision::compose;
+using fl::pkg::vision::ImageTransform;
 using namespace fl::pkg::vision;
 
 #define FL_LOG_MASTER(lvl) LOG_IF(lvl, (fl::getWorldRank() == 0))
 
 // Returns the average loss, top 5 error, and top 1 error
 std::tuple<double, double, double> evalLoop(
-    std::shared_ptr<fl::ext::image::ViT> model,
+    std::shared_ptr<fl::pkg::vision::ViT> model,
     Dataset& dataset) {
   AverageValueMeter lossMeter;
   TopKMeter top5Acc(5);
@@ -210,25 +210,25 @@ int main(int argc, char** argv) {
       imageSize);
 
   ImageTransform trainTransforms = compose(
-      {fl::ext::image::randomResizeCropTransform(
+      {fl::pkg::vision::randomResizeCropTransform(
            imageSize,
            0.08, // scaleLow
            1.0, // scaleHigh
            3. / 4., // ratioLow
            4. / 3. // ratioHigh
            ),
-       fl::ext::image::randomHorizontalFlipTransform(0.5 // flipping probablity
+       fl::pkg::vision::randomHorizontalFlipTransform(0.5 // flipping probablity
                                                      ),
-       fl::ext::image::randomAugmentationDeitTransform(
+       fl::pkg::vision::randomAugmentationDeitTransform(
            FLAGS_train_aug_p_randomeaug, FLAGS_train_aug_n_randomeaug, fillImg),
-       fl::ext::image::normalizeImage(
+       fl::pkg::vision::normalizeImage(
            fl::app::image::kImageNetMean, fl::app::image::kImageNetStd),
-       fl::ext::image::randomEraseTransform(FLAGS_train_aug_p_randomerase)});
+       fl::pkg::vision::randomEraseTransform(FLAGS_train_aug_p_randomerase)});
 
   ImageTransform valTransforms = compose(
-      {fl::ext::image::resizeTransform(randomResizeMin),
-       fl::ext::image::centerCropTransform(imageSize),
-       fl::ext::image::normalizeImage(
+      {fl::pkg::vision::resizeTransform(randomResizeMin),
+       fl::pkg::vision::centerCropTransform(imageSize),
+       fl::pkg::vision::normalizeImage(
            fl::app::image::kImageNetMean, fl::app::image::kImageNetStd)});
 
   const int64_t prefetchSize = FLAGS_data_batch_size * 10;
@@ -238,7 +238,7 @@ int main(int argc, char** argv) {
         << "[Warning] You are not using all ImageNet classes (1000)";
   }
 
-  auto trainDataset = std::make_shared<fl::ext::image::DistributedDataset>(
+  auto trainDataset = std::make_shared<fl::pkg::vision::DistributedDataset>(
       imagenetDataset(trainList, labelMap, {trainTransforms}),
       worldRank,
       worldSize,
@@ -249,7 +249,7 @@ int main(int argc, char** argv) {
       fl::BatchDatasetPolicy::SKIP_LAST);
   FL_LOG_MASTER(INFO) << "[trainDataset size] " << trainDataset->size();
 
-  auto valDataset = fl::ext::image::DistributedDataset(
+  auto valDataset = fl::pkg::vision::DistributedDataset(
       imagenetDataset(valList, labelMap, {valTransforms}),
       worldRank,
       worldSize,
@@ -265,7 +265,7 @@ int main(int argc, char** argv) {
   /////////////////////////
   fl::setSeed(FLAGS_train_seed); // Making sure the models are initialized in
                                  // the same way across different processes
-  auto model = std::make_shared<fl::ext::image::ViT>(
+  auto model = std::make_shared<fl::pkg::vision::ViT>(
       FLAGS_model_layers,
       FLAGS_model_hidden_emb_size,
       FLAGS_model_mlp_size,
@@ -403,7 +403,7 @@ int main(int argc, char** argv) {
         if (mixP > FLAGS_train_aug_p_switchmix) {
           // using mixup
           float lambda = betaGeneratorMixup(engine);
-          std::tie(inputArray, targetArray) = fl::ext::image::mixupBatch(
+          std::tie(inputArray, targetArray) = fl::pkg::vision::mixupBatch(
               lambda,
               inputArray,
               targetArray,
@@ -412,7 +412,7 @@ int main(int argc, char** argv) {
         } else {
           // using cutmix
           float lambda = betaGeneratorCutmix(engine);
-          std::tie(inputArray, targetArray) = fl::ext::image::cutmixBatch(
+          std::tie(inputArray, targetArray) = fl::pkg::vision::cutmixBatch(
               lambda,
               inputArray,
               targetArray,
@@ -420,7 +420,7 @@ int main(int argc, char** argv) {
               FLAGS_train_aug_p_label_smoothing);
         }
       } else {
-        targetArray = fl::ext::image::oneHot(
+        targetArray = fl::pkg::vision::oneHot(
             targetArray,
             fl::app::image::kNumImageNetClasses,
             FLAGS_train_aug_p_label_smoothing);

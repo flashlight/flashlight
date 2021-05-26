@@ -50,8 +50,8 @@ DEFINE_string(exp_checkpoint_path, "/tmp/model", "Checkpointing prefix path");
 DEFINE_int64(exp_checkpoint_epoch, -1, "Checkpoint epoch to load from");
 
 using namespace fl;
-using fl::ext::image::compose;
-using fl::ext::image::ImageTransform;
+using fl::pkg::vision::compose;
+using fl::pkg::vision::ImageTransform;
 using namespace fl::pkg::vision;
 
 #define FL_LOG_MASTER(lvl) LOG_IF(lvl, (fl::getWorldRank() == 0))
@@ -134,22 +134,22 @@ int main(int argc, char** argv) {
   ImageTransform trainTransforms = compose(
       {// randomly resize shortest side of image between 256 to 480 for
        // scale invariance
-       fl::ext::image::randomResizeTransform(randomResizeMin, randomResizeMax),
-       fl::ext::image::randomCropTransform(randomCropSize, randomCropSize),
-       fl::ext::image::normalizeImage(mean, std),
+       fl::pkg::vision::randomResizeTransform(randomResizeMin, randomResizeMax),
+       fl::pkg::vision::randomCropTransform(randomCropSize, randomCropSize),
+       fl::pkg::vision::normalizeImage(mean, std),
        // Randomly flip image with probability of 0.5
-       fl::ext::image::randomHorizontalFlipTransform(horizontalFlipProb)});
+       fl::pkg::vision::randomHorizontalFlipTransform(horizontalFlipProb)});
   ImageTransform valTransforms =
       compose({// Resize shortest side to 256, then take a center crop
-               fl::ext::image::resizeTransform(randomResizeMin),
-               fl::ext::image::centerCropTransform(randomCropSize),
-               fl::ext::image::normalizeImage(mean, std)});
+               fl::pkg::vision::resizeTransform(randomResizeMin),
+               fl::pkg::vision::centerCropTransform(randomCropSize),
+               fl::pkg::vision::normalizeImage(mean, std)});
 
   const int64_t batchSizePerGpu = FLAGS_data_batch_size;
   const int64_t prefetchThreads = 10;
   const int64_t prefetchSize = FLAGS_data_batch_size;
   auto labelMap = getImagenetLabels(labelPath);
-  auto trainDataset = fl::ext::image::DistributedDataset(
+  auto trainDataset = fl::pkg::vision::DistributedDataset(
       imagenetDataset(trainList, labelMap, {trainTransforms}),
       worldRank,
       worldSize,
@@ -159,7 +159,7 @@ int main(int argc, char** argv) {
       prefetchSize,
       fl::BatchDatasetPolicy::INCLUDE_LAST);
 
-  auto valDataset = fl::ext::image::DistributedDataset(
+  auto valDataset = fl::pkg::vision::DistributedDataset(
       imagenetDataset(valList, labelMap, {valTransforms}),
       worldRank,
       worldSize,

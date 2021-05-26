@@ -34,8 +34,8 @@ T randomPerturbNegate(T base, T minNoise, T maxNoise) {
 } // namespace
 
 namespace fl {
-namespace ext {
-namespace image {
+namespace pkg {
+namespace vision {
 
 af::array resizeSmallest(const af::array& in, const int resize) {
   const int w = in.dims(0);
@@ -563,6 +563,6 @@ ImageTransform randomAugmentationDeitTransform(
   };
 }
 
-} // namespace image
-} // namespace ext
+} // namespace vision
+} // namespace pkg
 } // namespace fl

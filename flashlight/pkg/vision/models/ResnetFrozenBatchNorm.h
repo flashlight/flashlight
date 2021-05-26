@@ -11,8 +11,8 @@
 #include "flashlight/fl/nn/nn.h"
 
 namespace fl {
-namespace ext {
-namespace image {
+namespace pkg {
+namespace vision {
 
 // Note these are identical to those in Resnet.h. There are a number of ways to
 // refactor and consolidate including passing norm factory functions to the
@@ -95,11 +95,11 @@ class ResNetStageFrozenBatchNorm : public fl::Sequential {
   FL_SAVE_LOAD_WITH_BASE(fl::Sequential)
 };
 
-} // namespace image
-} // namespace ext
+} // namespace vision
+} // namespace pkg
 } // namespace fl
-CEREAL_REGISTER_TYPE(fl::ext::image::ConvFrozenBatchNormActivation)
-CEREAL_REGISTER_TYPE(fl::ext::image::ResNetBlockFrozenBatchNorm)
-CEREAL_REGISTER_TYPE(fl::ext::image::ResNetStageFrozenBatchNorm)
-CEREAL_REGISTER_TYPE(fl::ext::image::ResNetBottleneckBlockFrozenBatchNorm)
-CEREAL_REGISTER_TYPE(fl::ext::image::ResNetBottleneckStageFrozenBatchNorm)
+CEREAL_REGISTER_TYPE(fl::pkg::vision::ConvFrozenBatchNormActivation)
+CEREAL_REGISTER_TYPE(fl::pkg::vision::ResNetBlockFrozenBatchNorm)
+CEREAL_REGISTER_TYPE(fl::pkg::vision::ResNetStageFrozenBatchNorm)
+CEREAL_REGISTER_TYPE(fl::pkg::vision::ResNetBottleneckBlockFrozenBatchNorm)
+CEREAL_REGISTER_TYPE(fl::pkg::vision::ResNetBottleneckStageFrozenBatchNorm)

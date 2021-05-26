@@ -10,8 +10,8 @@
 #include "flashlight/fl/dataset/datasets.h"
 
 namespace fl {
-namespace ext {
-namespace image {
+namespace pkg {
+namespace vision {
 
 /*
  * Small generic utility class for loading data from a vector of type T into an
@@ -38,6 +38,6 @@ class LoaderDataset : public fl::Dataset {
   LoadFunc loadfn_;
 };
 
-} // namespace image
-} // namespace ext
+} // namespace vision
+} // namespace pkg
 } // namespace fl
