@@ -16,8 +16,8 @@
 #include "flashlight/lib/text/dictionary/Utils.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 std::vector<std::string> wrd2Target(
     const std::string& word,
@@ -44,6 +44,6 @@ std::pair<int, FeatureType> getFeatureType(
     int channels,
     const fl::lib::audio::FeatureParams& featParams);
 
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

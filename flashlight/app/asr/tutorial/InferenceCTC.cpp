@@ -94,12 +94,12 @@ void loadModel(
     LOG(WARNING) << "[Inference tutorial for CTC] Acostuc model version "
                  << version << " and code version " << FL_APP_ASR_VERSION;
   }
-  if (cfg.find(fl::app::asr::kGflags) == cfg.end()) {
+  if (cfg.find(fl::pkg::speech::kGflags) == cfg.end()) {
     LOG(FATAL)
         << "[Inference tutorial for CTC] Invalid config is loaded from acoustic model"
         << FLAGS_am_path;
   }
-  for (auto line : fl::lib::split("\n", cfg[fl::app::asr::kGflags])) {
+  for (auto line : fl::lib::split("\n", cfg[fl::pkg::speech::kGflags])) {
     if (line == "") {
       continue;
     }
@@ -109,7 +109,7 @@ void loadModel(
       networkFlags[key] = res[1];
     }
   }
-  if (networkFlags["criterion"] != fl::app::asr::kCtcCriterion) {
+  if (networkFlags["criterion"] != fl::pkg::speech::kCtcCriterion) {
     LOG(FATAL)
         << "[Inference tutorial for CTC]: provided model is trained not with CTC, but with "
         << networkFlags["criterion"]
@@ -140,8 +140,8 @@ int main(int argc, char** argv) {
   LOG(INFO) << "[Inference tutorial for CTC] Network is loaded.";
   /* ===================== Set All Dictionaries ===================== */
   fl::lib::text::Dictionary tokenDict(FLAGS_tokens_path);
-  tokenDict.addEntry(fl::app::asr::kBlankToken);
-  int blankIdx = tokenDict.getIndex(fl::app::asr::kBlankToken);
+  tokenDict.addEntry(fl::pkg::speech::kBlankToken);
+  int blankIdx = tokenDict.getIndex(fl::pkg::speech::kBlankToken);
   int wordSepIdx = networkFlags["wordseparator"] == ""
       ? -1
       : tokenDict.getIndex(networkFlags["wordseparator"]);
@@ -164,7 +164,7 @@ int main(int argc, char** argv) {
         << "Failed to load kenlm LM: " << FLAGS_lm_path;
   }
   LOG(INFO) << "[Inference tutorial for CTC] Language model is constructed.";
-  std::shared_ptr<fl::lib::text::Trie> trie = fl::app::asr::buildTrie(
+  std::shared_ptr<fl::lib::text::Trie> trie = fl::pkg::speech::buildTrie(
       "wrd" /* decoderType */,
       true /* useLexicon */,
       lm,
@@ -203,31 +203,31 @@ int main(int argc, char** argv) {
       std::atoll(networkFlags["lowfreqfilterbank"].c_str()),
       std::atoll(networkFlags["highfreqfilterbank"].c_str()),
       std::atoll(networkFlags["mfcccoeffs"].c_str()),
-      fl::app::asr::kLifterParam /* lifterparam */,
+      fl::pkg::speech::kLifterParam /* lifterparam */,
       std::atoll(networkFlags["devwin"].c_str()) /* delta window */,
       std::atoll(networkFlags["devwin"].c_str()) /* delta-delta window */);
   featParams.useEnergy = false;
   featParams.usePower = false;
   featParams.zeroMeanFrame = false;
-  fl::app::asr::FeatureType featType;
+  fl::pkg::speech::FeatureType featType;
   if (networkFlags.find("features_type") != networkFlags.end()) {
-    featType = fl::app::asr::getFeatureType(
+    featType = fl::pkg::speech::getFeatureType(
                    networkFlags["features_type"], 1, featParams)
                    .second;
   } else {
     // old models TODO remove as per @avidov converting scirpt
     if (networkFlags["pow"] == "true") {
-      featType = fl::app::asr::FeatureType::POW_SPECTRUM;
+      featType = fl::pkg::speech::FeatureType::POW_SPECTRUM;
     } else if (networkFlags["mfsc"] == "true") {
-      featType = fl::app::asr::FeatureType::MFSC;
+      featType = fl::pkg::speech::FeatureType::MFSC;
     } else if (networkFlags["mfcc"] == "true") {
-      featType = fl::app::asr::FeatureType::MFCC;
+      featType = fl::pkg::speech::FeatureType::MFCC;
     } else {
       // raw wave
-      featType = fl::app::asr::FeatureType::NONE;
+      featType = fl::pkg::speech::FeatureType::NONE;
     }
   }
-  auto inputTransform = fl::app::asr::inputFeatures(
+  auto inputTransform = fl::pkg::speech::inputFeatures(
       featParams,
       featType,
       {networkFlags["localnrmlleftctx"] == "true",
@@ -261,8 +261,8 @@ int main(int argc, char** argv) {
                 << "' doesn't exist, please provide valid audio path";
       continue;
     }
-    auto audioInfo = fl::app::asr::loadSoundInfo(audioPath.c_str());
-    auto audio = fl::app::asr::loadSound<float>(audioPath.c_str());
+    auto audioInfo = fl::pkg::speech::loadSoundInfo(audioPath.c_str());
+    auto audio = fl::pkg::speech::loadSound<float>(audioPath.c_str());
     af::array input = inputTransform(
         static_cast<void*>(audio.data()),
         af::dim4(audioInfo.channels, audioInfo.frames),
@@ -281,18 +281,18 @@ int main(int argc, char** argv) {
     auto rawWordPrediction = result[0].words;
     auto rawTokenPrediction = result[0].tokens;
 
-    auto tokenPrediction = fl::app::asr::tknPrediction2Ltr(
+    auto tokenPrediction = fl::pkg::speech::tknPrediction2Ltr(
         rawTokenPrediction,
         tokenDict,
-        fl::app::asr::kCtcCriterion,
+        fl::pkg::speech::kCtcCriterion,
         networkFlags["surround"],
         false /* eostoken */,
         0 /* replabel */,
         false /* usewordpiece */,
         networkFlags["wordseparator"]);
     rawWordPrediction =
-        fl::app::asr::validateIdx(rawWordPrediction, unkWordIdx);
-    auto wordPrediction = fl::app::asr::wrdIdx2Wrd(rawWordPrediction, wordDict);
+        fl::pkg::speech::validateIdx(rawWordPrediction, unkWordIdx);
+    auto wordPrediction = fl::pkg::speech::wrdIdx2Wrd(rawWordPrediction, wordDict);
     auto wordPredictionStr = fl::lib::join(" ", wordPrediction);
     LOG(INFO) << "[Inference tutorial for CTC]: predicted output for "
               << audioPath << "\n"

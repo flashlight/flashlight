@@ -49,7 +49,7 @@ using fl::lib::getCurrentDate;
 using fl::lib::join;
 using fl::lib::pathsConcat;
 
-using namespace fl::app::asr;
+using namespace fl::pkg::speech;
 
 namespace {
 
@@ -268,7 +268,7 @@ int main(int argc, char** argv) {
   bool isSeq2seqCrit = FLAGS_criterion == kSeq2SeqTransformerCriterion ||
       FLAGS_criterion == kSeq2SeqRNNCriterion;
   if (isSeq2seqCrit) {
-    tokenDict.addEntry(fl::app::asr::kEosToken);
+    tokenDict.addEntry(fl::pkg::speech::kEosToken);
     tokenDict.addEntry(fl::lib::text::kPadToken);
   }
 
@@ -403,7 +403,7 @@ int main(int argc, char** argv) {
       criterion = std::make_shared<Seq2SeqCriterion>(
           numClasses,
           FLAGS_encoderdim,
-          tokenDict.getIndex(fl::app::asr::kEosToken),
+          tokenDict.getIndex(fl::pkg::speech::kEosToken),
           tokenDict.getIndex(fl::lib::text::kPadToken),
           FLAGS_maxdecoderoutputlen,
           attentions,
@@ -421,7 +421,7 @@ int main(int argc, char** argv) {
       criterion = std::make_shared<TransformerCriterion>(
           numClasses,
           FLAGS_encoderdim,
-          tokenDict.getIndex(fl::app::asr::kEosToken),
+          tokenDict.getIndex(fl::pkg::speech::kEosToken),
           tokenDict.getIndex(fl::lib::text::kPadToken),
           FLAGS_maxdecoderoutputlen,
           FLAGS_am_decoder_tr_layers,

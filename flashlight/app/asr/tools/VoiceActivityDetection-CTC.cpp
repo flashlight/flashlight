@@ -61,7 +61,7 @@ const std::string kPerplexityPctSpeechExt = ".sts";
 
 } // namespace
 
-using namespace fl::app::asr;
+using namespace fl::pkg::speech;
 using namespace fl::lib;
 using namespace fl::ext;
 

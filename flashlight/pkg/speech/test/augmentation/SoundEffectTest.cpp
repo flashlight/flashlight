@@ -12,7 +12,7 @@
 #include "flashlight/fl/common/Init.h"
 #include "flashlight/pkg/speech/augmentation/SoundEffectUtil.h"
 
-using namespace ::fl::app::asr::sfx;
+using namespace ::fl::pkg::speech::sfx;
 using ::testing::AllOf;
 using ::testing::Contains;
 using ::testing::Each;

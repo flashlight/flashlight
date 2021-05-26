@@ -20,7 +20,7 @@
 
 #include "flashlight/pkg/speech/criterion/AutoSegmentationCriterion.h"
 
-using namespace fl::app::asr;
+using namespace fl::pkg::speech;
 
 namespace {
 

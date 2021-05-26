@@ -19,10 +19,10 @@ DEFINE_string(
     "Path to store result of augmenting the input file");
 DEFINE_string(config, "", "Path to a sound effect json config file");
 
-using namespace ::fl::app::asr::sfx;
-using ::fl::app::asr::loadSound;
-using ::fl::app::asr::loadSoundInfo;
-using ::fl::app::asr::saveSound;
+using namespace ::fl::pkg::speech::sfx;
+using ::fl::pkg::speech::loadSound;
+using ::fl::pkg::speech::loadSoundInfo;
+using ::fl::pkg::speech::saveSound;
 
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
@@ -59,8 +59,8 @@ int main(int argc, char** argv) {
       sound,
       info.samplerate,
       info.channels,
-      fl::app::asr::SoundFormat::FLAC,
-      fl::app::asr::SoundSubFormat::PCM_16);
+      fl::pkg::speech::SoundFormat::FLAC,
+      fl::pkg::speech::SoundSubFormat::PCM_16);
 
   LOG(INFO) << "Saving augmented file to=" << FLAGS_output;
 

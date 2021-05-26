@@ -13,8 +13,8 @@
 using fl::lib::seq::CriterionScaleMode;
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 int countRepeats(const int* labels, int len) {
   int r = 0;
@@ -61,7 +61,7 @@ Variable getLinearTarget(const Variable& targetVar, int T) {
     const auto pTarget = target.data() + b * L;
     auto pNewTarget = newTarget.data() + b * T;
 
-    int targetSize = std::min(T, fl::app::asr::getTargetSize(pTarget, L));
+    int targetSize = std::min(T, fl::pkg::speech::getTargetSize(pTarget, L));
     if (targetSize == 0) {
       // hacky way to make ASG think L == 0.
       std::fill(pNewTarget, pNewTarget + T, -1);
@@ -96,6 +96,6 @@ fl::Variable applySeq2SeqMask(
   return fl::Variable(output, {input.withoutData()}, gradFunc);
 }
 
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

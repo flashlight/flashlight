@@ -11,13 +11,13 @@
 #include "flashlight/fl/flashlight.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 using GetConvLmScoreFunc = std::function<std::vector<
     float>(const std::vector<int>&, const std::vector<int>&, int, int)>;
 
 GetConvLmScoreFunc buildGetConvLmScoreFunction(std::shared_ptr<Module> network);
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

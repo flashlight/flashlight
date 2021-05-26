@@ -16,7 +16,7 @@
 
 using namespace fl;
 using namespace fl::ext;
-using namespace fl::app::asr;
+using namespace fl::pkg::speech;
 
 TEST(Seq2SeqTest, Seq2Seq) {
   int nclass = 40;

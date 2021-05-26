@@ -15,8 +15,8 @@
 using FAC = fl::lib::cuda::ForceAlignmentCriterion<float>;
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 static void backward(
     std::vector<Variable>& inputs,
@@ -164,6 +164,6 @@ af::array ForceAlignmentCriterion::viterbiPath(
   }
   return bestPathsVar;
 }
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

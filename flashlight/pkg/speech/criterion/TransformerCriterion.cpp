@@ -16,8 +16,8 @@
 using namespace fl::ext;
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 TransformerCriterion::TransformerCriterion(
     int nClass,
@@ -401,6 +401,6 @@ AMUpdateFunc buildSeq2SeqTransformerAmUpdateFunction(
 std::string TransformerCriterion::prettyString() const {
   return "TransformerCriterion";
 }
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

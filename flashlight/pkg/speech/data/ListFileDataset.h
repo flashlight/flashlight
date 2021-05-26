@@ -15,8 +15,8 @@
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 /**
  *
@@ -72,6 +72,6 @@ class ListFileDataset : public fl::Dataset {
   mutable std::vector<int64_t> targetSizesCache_;
 };
 
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

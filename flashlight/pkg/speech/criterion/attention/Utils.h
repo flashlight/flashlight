@@ -10,12 +10,12 @@
 #include "flashlight/fl/flashlight.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 fl::Variable maskAttention(
     const fl::Variable& input,
     const fl::Variable& sizes);
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

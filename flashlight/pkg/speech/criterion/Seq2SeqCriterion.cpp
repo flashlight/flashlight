@@ -17,8 +17,8 @@
 using namespace fl::ext;
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 namespace detail {
 Seq2SeqState concatState(std::vector<Seq2SeqState>& stateVec) {
@@ -82,7 +82,7 @@ Seq2SeqCriterion::Seq2SeqCriterion(
     int pctTeacherForcing /* = 100 */,
     double labelSmooth /* = 0.0 */,
     bool inputFeeding /* = false */,
-    std::string samplingStrategy, /* = fl::app::asr::kRandSampling */
+    std::string samplingStrategy, /* = fl::pkg::speech::kRandSampling */
     double gumbelTemperature /* = 1.0 */,
     int nRnnLayer /* = 1 */,
     int nAttnRound /* = 1 */,
@@ -187,10 +187,10 @@ std::pair<Variable, Variable> Seq2SeqCriterion::vectorizedDecoder(
     // Slice off eos
     auto y = target(af::seq(0, U - 2), af::span);
     if (train_) {
-      if (samplingStrategy_ == fl::app::asr::kModelSampling) {
+      if (samplingStrategy_ == fl::pkg::speech::kModelSampling) {
         throw std::logic_error(
             "vectorizedDecoder does not support model sampling");
-      } else if (samplingStrategy_ == fl::app::asr::kRandSampling) {
+      } else if (samplingStrategy_ == fl::pkg::speech::kRandSampling) {
         auto mask = Variable(
             (af::randu(y.dims()) * 100 <= pctTeacherForcing_).as(y.type()),
             false);
@@ -248,7 +248,7 @@ std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
 
     if (!train_) {
       y = target(u, af::span);
-    } else if (samplingStrategy_ == fl::app::asr::kGumbelSampling) {
+    } else if (samplingStrategy_ == fl::pkg::speech::kGumbelSampling) {
       double eps = 1e-7;
       auto gb = -log(-log((1 - 2 * eps) * af::randu(ox.dims()) + eps));
       ox = logSoftmax((ox + Variable(gb, false)) / gumbelTemperature_, 0);
@@ -256,11 +256,11 @@ std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
     } else if (af::allTrue<bool>(
                    af::randu(1) * 100 <= af::constant(pctTeacherForcing_, 1))) {
       y = target(u, af::span);
-    } else if (samplingStrategy_ == fl::app::asr::kModelSampling) {
+    } else if (samplingStrategy_ == fl::pkg::speech::kModelSampling) {
       af::array maxIdx, maxValues;
       max(maxValues, maxIdx, ox.array());
       y = Variable(maxIdx, false);
-    } else if (samplingStrategy_ == fl::app::asr::kRandSampling) {
+    } else if (samplingStrategy_ == fl::pkg::speech::kRandSampling) {
       y = Variable(
           (af::randu(af::dim4{1, target.dims(1)}) * (nClass_ - 1)).as(s32),
           false);
@@ -462,7 +462,7 @@ std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
   Variable hy;
   if (y.isempty()) {
     hy = tile(startEmbedding(), {1, 1, static_cast<int>(xEncoded.dims(2))});
-  } else if (train_ && samplingStrategy_ == fl::app::asr::kGumbelSampling) {
+  } else if (train_ && samplingStrategy_ == fl::pkg::speech::kGumbelSampling) {
     hy = linear(y, embedding()->param(0));
   } else {
     hy = embedding()->forward(y);
@@ -603,8 +603,8 @@ Seq2SeqCriterion::decodeBatchStep(
 void Seq2SeqCriterion::setUseSequentialDecoder() {
   useSequentialDecoder_ = false;
   if ((pctTeacherForcing_ < 100 &&
-       samplingStrategy_ == fl::app::asr::kModelSampling) ||
-      samplingStrategy_ == fl::app::asr::kGumbelSampling || inputFeeding_) {
+       samplingStrategy_ == fl::pkg::speech::kModelSampling) ||
+      samplingStrategy_ == fl::pkg::speech::kGumbelSampling || inputFeeding_) {
     useSequentialDecoder_ = true;
   } else if (
       std::dynamic_pointer_cast<SimpleLocationAttention>(attention(0)) ||
@@ -686,6 +686,6 @@ AMUpdateFunc buildSeq2SeqRnnAmUpdateFunction(
 
   return amUpdateFunc;
 }
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

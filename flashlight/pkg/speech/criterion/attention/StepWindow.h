@@ -10,8 +10,8 @@
 #include "flashlight/pkg/speech/criterion/attention/WindowBase.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 class StepWindow : public WindowBase {
  public:
@@ -50,8 +50,8 @@ class StepWindow : public WindowBase {
 
   FL_SAVE_LOAD_WITH_BASE(WindowBase, sMin_, sMax_, vMin_, vMax_)
 };
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::app::asr::StepWindow)
+CEREAL_REGISTER_TYPE(fl::pkg::speech::StepWindow)

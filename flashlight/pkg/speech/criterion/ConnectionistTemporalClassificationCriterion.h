@@ -12,8 +12,8 @@
 #include "flashlight/pkg/speech/criterion/SequenceCriterion.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 class ConnectionistTemporalClassificationCriterion : public SequenceCriterion {
  public:
@@ -45,8 +45,8 @@ class ConnectionistTemporalClassificationCriterion : public SequenceCriterion {
 };
 
 typedef ConnectionistTemporalClassificationCriterion CTCLoss;
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::app::asr::ConnectionistTemporalClassificationCriterion)
+CEREAL_REGISTER_TYPE(fl::pkg::speech::ConnectionistTemporalClassificationCriterion)

@@ -15,7 +15,7 @@
 #include "flashlight/pkg/speech/criterion/criterion.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 
-using namespace fl::app::asr;
+using namespace fl::pkg::speech;
 
 namespace fl {
 namespace app {

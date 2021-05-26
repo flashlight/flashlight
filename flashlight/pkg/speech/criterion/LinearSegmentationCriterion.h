@@ -13,8 +13,8 @@
 using fl::lib::seq::CriterionScaleMode;
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 class LinearSegmentationCriterion : public AutoSegmentationCriterion {
  public:
@@ -45,8 +45,8 @@ class LinearSegmentationCriterion : public AutoSegmentationCriterion {
 };
 
 using LinSegCriterion = LinearSegmentationCriterion;
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::app::asr::LinearSegmentationCriterion)
+CEREAL_REGISTER_TYPE(fl::pkg::speech::LinearSegmentationCriterion)

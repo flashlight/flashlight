@@ -37,7 +37,7 @@ using fl::ext::Serializer;
 using fl::lib::join;
 using fl::lib::pathsConcat;
 
-using namespace fl::app::asr;
+using namespace fl::pkg::speech;
 
 int main(int argc, char** argv) {
   fl::init();
@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
   bool isSeq2seqCrit = FLAGS_criterion == kSeq2SeqTransformerCriterion ||
       FLAGS_criterion == kSeq2SeqRNNCriterion;
   if (isSeq2seqCrit) {
-    tokenDict.addEntry(fl::app::asr::kEosToken);
+    tokenDict.addEntry(fl::pkg::speech::kEosToken);
     tokenDict.addEntry(fl::lib::text::kPadToken);
   }
 

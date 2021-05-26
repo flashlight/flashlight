@@ -16,7 +16,7 @@
 #include "flashlight/lib/common/System.h"
 
 using namespace fl::lib;
-using namespace fl::app::asr;
+using namespace fl::pkg::speech;
 
 namespace {
 std::string loadPath = "";

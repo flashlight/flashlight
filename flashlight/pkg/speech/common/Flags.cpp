@@ -15,8 +15,8 @@
 #include <sstream>
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 // Flags that are specific to an executable are marked
 // in the description with the executable usage in square parenthesis,
@@ -742,6 +742,6 @@ void handleDeprecatedFlags() {
     // user set neither flag, noop.
   }
 }
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

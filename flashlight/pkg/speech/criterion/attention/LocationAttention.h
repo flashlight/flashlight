@@ -10,8 +10,8 @@
 #include "flashlight/pkg/speech/criterion/attention/AttentionBase.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 class SimpleLocationAttention : public AttentionBase {
  public:
@@ -73,10 +73,10 @@ class NeuralLocationAttention : public AttentionBase {
 
   FL_SAVE_LOAD_WITH_BASE(AttentionBase)
 };
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::app::asr::SimpleLocationAttention)
-CEREAL_REGISTER_TYPE(fl::app::asr::LocationAttention)
-CEREAL_REGISTER_TYPE(fl::app::asr::NeuralLocationAttention)
+CEREAL_REGISTER_TYPE(fl::pkg::speech::SimpleLocationAttention)
+CEREAL_REGISTER_TYPE(fl::pkg::speech::LocationAttention)
+CEREAL_REGISTER_TYPE(fl::pkg::speech::NeuralLocationAttention)

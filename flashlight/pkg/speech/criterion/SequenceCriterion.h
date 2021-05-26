@@ -12,8 +12,8 @@
 #include "flashlight/fl/flashlight.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 class SequenceCriterion : public fl::Container {
  public:
@@ -52,8 +52,8 @@ typedef std::function<
         const std::vector<AMStatePtr>&,
         int&)>
     AMUpdateFunc;
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::app::asr::SequenceCriterion)
+CEREAL_REGISTER_TYPE(fl::pkg::speech::SequenceCriterion)

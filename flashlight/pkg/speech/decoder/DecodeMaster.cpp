@@ -34,8 +34,8 @@ af::array removePad(const af::array& arr, int32_t padIdx) {
 // TODO threading?
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 DecodeMaster::DecodeMaster(
     const std::shared_ptr<fl::Module> net,
@@ -356,6 +356,6 @@ std::vector<std::string> WordDecodeMaster::computeStringTarget(
       trainOpt_.wordSep);
 }
 
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

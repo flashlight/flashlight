@@ -24,8 +24,8 @@ struct Context {
 } // namespace
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 static void backward(
     std::vector<Variable>& inputs,
@@ -150,6 +150,6 @@ af::array ForceAlignmentCriterion::viterbiPath(
       ctx->workspaceVec.data());
   return af::array(T, B, bestPaths.data());
 }
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

@@ -8,8 +8,8 @@
 #include "flashlight/pkg/speech/criterion/attention/WindowBase.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 af::array WindowBase::computeInputNotPaddedSize(
     const af::array& inputSizes,
@@ -67,6 +67,6 @@ af::array WindowBase::computeTargetNotPaddedSize(
   return targetNotPaddedSize;
 }
 
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

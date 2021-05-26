@@ -14,8 +14,8 @@
 #include "flashlight/fl/common/Init.h"
 #include "flashlight/lib/common/System.h"
 
-using namespace ::fl::app::asr::sfx;
-using ::fl::app::asr::saveSound;
+using namespace ::fl::pkg::speech::sfx;
+using ::fl::pkg::speech::saveSound;
 using ::fl::lib::dirCreateRecursive;
 using ::fl::lib::getTmpPath;
 using ::fl::lib::pathsConcat;
@@ -56,8 +56,8 @@ TEST(AdditiveNoise, Snr) {
       noise,
       sampleRate,
       1,
-      fl::app::asr::SoundFormat::FLAC,
-      fl::app::asr::SoundSubFormat::PCM_16);
+      fl::pkg::speech::SoundFormat::FLAC,
+      fl::pkg::speech::SoundSubFormat::PCM_16);
 
   // Create test list file
   {

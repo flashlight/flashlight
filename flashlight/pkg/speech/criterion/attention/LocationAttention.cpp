@@ -9,8 +9,8 @@
 #include "flashlight/pkg/speech/criterion/attention/Utils.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 SimpleLocationAttention::SimpleLocationAttention(int convKernel) {
   Sequential pa;
@@ -186,6 +186,6 @@ std::pair<Variable, Variable> NeuralLocationAttention::forwardBase(
 std::string NeuralLocationAttention::prettyString() const {
   return "NeuralLocationBasedAttention";
 }
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

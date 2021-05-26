@@ -21,7 +21,7 @@
 using namespace fl;
 using namespace fl::lib::audio;
 using namespace fl::lib::text;
-using namespace fl::app::asr;
+using namespace fl::pkg::speech;
 
 namespace {
 template <typename T>
@@ -390,7 +390,7 @@ TEST(FeaturizationTest, inputFeaturizer) {
 }
 
 TEST(FeaturizationTest, targetFeaturizer) {
-  using fl::app::asr::kEosToken;
+  using fl::pkg::speech::kEosToken;
 
   auto tokenDict = getDict();
   tokenDict.addEntry(kEosToken);

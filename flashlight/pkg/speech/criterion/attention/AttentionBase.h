@@ -10,8 +10,8 @@
 #include "flashlight/fl/flashlight.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 /**
  * Attention base class for encoder-decoder: decoder attends to particular
@@ -91,8 +91,8 @@ class AttentionBase : public fl::Container {
  private:
   FL_SAVE_LOAD_WITH_BASE(fl::Container)
 };
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::app::asr::AttentionBase)
+CEREAL_REGISTER_TYPE(fl::pkg::speech::AttentionBase)

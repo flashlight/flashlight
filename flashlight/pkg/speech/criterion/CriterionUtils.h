@@ -16,8 +16,8 @@
 #include "flashlight/pkg/speech/criterion/Defines.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 #define NEG_INFINITY_FLT -std::numeric_limits<float>::infinity()
 #define NEG_INFINITY_DBL -std::numeric_limits<double>::infinity()
@@ -112,6 +112,6 @@ fl::Variable applySeq2SeqMask(
     const fl::Variable& input,
     const af::array& targetClasses,
     int padValue);
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

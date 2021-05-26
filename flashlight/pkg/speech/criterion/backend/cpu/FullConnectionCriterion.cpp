@@ -23,8 +23,8 @@ struct Context {
 } // namespace
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 static void backward(
     std::vector<Variable>& inputs,
@@ -101,6 +101,6 @@ Variable FullConnectionCriterion::forward(
         backward(inputs, gradVar, B, T, N, ctx);
       });
 }
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

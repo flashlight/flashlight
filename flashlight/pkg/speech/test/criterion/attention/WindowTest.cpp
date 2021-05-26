@@ -13,7 +13,7 @@
 #include "flashlight/pkg/speech/criterion/attention/window.h"
 
 using namespace fl;
-using namespace fl::app::asr;
+using namespace fl::pkg::speech;
 
 TEST(WindowTest, MedianWindow) {
   int inputsteps = 12;

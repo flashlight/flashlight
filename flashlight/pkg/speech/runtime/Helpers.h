@@ -29,8 +29,8 @@
 #include "flashlight/lib/text/dictionary/Utils.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 /**
  * Given a filename, remove any filepath delimiters - returns a contiguous
@@ -97,6 +97,6 @@ std::shared_ptr<fl::Dataset> loadPrefetchDataset(
 std::vector<std::pair<std::string, std::string>> parseValidSets(
     const std::string& valid);
 
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

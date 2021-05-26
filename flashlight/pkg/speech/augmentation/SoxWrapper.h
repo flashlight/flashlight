@@ -17,7 +17,7 @@
 #include "flashlight/pkg/speech/augmentation/SoundEffectUtil.h"
 
 #define FL_SOX_CHECK(expr) \
-  ::fl::app::asr::sfx::detail::check((expr), #expr, __FILE__, __LINE__)
+  ::fl::pkg::speech::sfx::detail::check((expr), #expr, __FILE__, __LINE__)
 
 // Add forward declareations of sox.h related types so we can keep the include
 // of sox.h in the cpp file, thus avoiding proliferation of dependency on a
@@ -28,8 +28,8 @@ class sox_effect_handler_t;
 class sox_signalinfo_t;
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 namespace sfx {
 #ifdef FL_BUILD_APP_ASR_SFX_SOX
 
@@ -99,6 +99,6 @@ void check(const void* ptr, const char* msg, const char* file, int line);
 } // namespace detail
 
 } // namespace sfx
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

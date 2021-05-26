@@ -15,8 +15,8 @@
 
 using fl::lib::seq::CriterionScaleMode;
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 class AutoSegmentationCriterion : public SequenceCriterion {
  public:
@@ -48,7 +48,7 @@ class AutoSegmentationCriterion : public SequenceCriterion {
   af::array viterbiPath(
       const af::array& input,
       const af::array& inputSize = af::array()) override {
-    return fl::app::asr::viterbiPath(input, params_[0].array());
+    return fl::pkg::speech::viterbiPath(input, params_[0].array());
   }
 
   af::array viterbiPathWithTarget(
@@ -91,8 +91,8 @@ class AutoSegmentationCriterion : public SequenceCriterion {
 };
 
 using ASGLoss = AutoSegmentationCriterion;
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::app::asr::AutoSegmentationCriterion)
+CEREAL_REGISTER_TYPE(fl::pkg::speech::AutoSegmentationCriterion)

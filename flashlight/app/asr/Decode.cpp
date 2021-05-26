@@ -49,7 +49,7 @@ using fl::lib::text::CriterionType;
 using fl::lib::text::kUnkToken;
 using fl::lib::text::SmearingMode;
 
-using namespace fl::app::asr;
+using namespace fl::pkg::speech;
 
 int main(int argc, char** argv) {
   fl::init();
@@ -152,7 +152,7 @@ int main(int argc, char** argv) {
   bool isSeq2seqCrit = FLAGS_criterion == kSeq2SeqTransformerCriterion ||
       FLAGS_criterion == kSeq2SeqRNNCriterion;
   if (isSeq2seqCrit) {
-    tokenDict.addEntry(fl::app::asr::kEosToken);
+    tokenDict.addEntry(fl::pkg::speech::kEosToken);
     tokenDict.addEntry(fl::lib::text::kPadToken);
   }
 
@@ -536,7 +536,7 @@ int main(int argc, char** argv) {
                 FLAGS_beamsize,
                 FLAGS_attentionthreshold,
                 FLAGS_smoothingtemperature);
-      int eosIdx = tokenDict.getIndex(fl::app::asr::kEosToken);
+      int eosIdx = tokenDict.getIndex(fl::pkg::speech::kEosToken);
 
       if (FLAGS_decodertype == "wrd" || FLAGS_uselexicon) {
         decoder.reset(new fl::lib::text::LexiconSeq2SeqDecoder(

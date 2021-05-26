@@ -17,7 +17,7 @@
 #include "flashlight/pkg/speech/criterion/criterion.h"
 
 using namespace fl;
-using namespace fl::app::asr;
+using namespace fl::pkg::speech;
 
 void timeBeamSearch() {
   int N = 40, H = 256, T = 200;

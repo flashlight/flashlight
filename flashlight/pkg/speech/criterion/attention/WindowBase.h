@@ -10,8 +10,8 @@
 #include "flashlight/fl/flashlight.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 /**
  * Pretraining window class which defines attention mask
@@ -102,6 +102,6 @@ class WindowBase {
  private:
   FL_SAVE_LOAD()
 };
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

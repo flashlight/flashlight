@@ -10,8 +10,8 @@
 #include "flashlight/pkg/speech/criterion/attention/WindowBase.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 class MedianWindow : public WindowBase {
  public:
@@ -40,8 +40,8 @@ class MedianWindow : public WindowBase {
 
   FL_SAVE_LOAD_WITH_BASE(WindowBase, wL_, wR_)
 };
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::app::asr::MedianWindow)
+CEREAL_REGISTER_TYPE(fl::pkg::speech::MedianWindow)

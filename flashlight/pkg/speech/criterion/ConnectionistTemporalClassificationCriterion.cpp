@@ -39,8 +39,8 @@ af::array logSoftmax(const af::array& input, const int dim) {
 } // namespace
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 ConnectionistTemporalClassificationCriterion::
     ConnectionistTemporalClassificationCriterion(
@@ -111,6 +111,6 @@ void ConnectionistTemporalClassificationCriterion::validate(
     throw(af::exception("CTC: Batchsize mismatch for input and target"));
   }
 }
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

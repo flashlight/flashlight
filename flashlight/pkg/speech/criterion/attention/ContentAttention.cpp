@@ -10,8 +10,8 @@
 #include "flashlight/pkg/speech/criterion/attention/Utils.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 std::pair<Variable, Variable> ContentAttention::forwardBase(
     const Variable& state,
@@ -99,6 +99,6 @@ std::pair<Variable, Variable> NeuralContentAttention::forwardBase(
 std::string NeuralContentAttention::prettyString() const {
   return "NeuralContentBasedAttention";
 }
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

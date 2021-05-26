@@ -15,8 +15,8 @@
 using FCC = fl::lib::cuda::FullConnectionCriterion<float>;
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 static void backward(
     std::vector<Variable>& inputs,
@@ -106,6 +106,6 @@ Variable FullConnectionCriterion::forward(
         backward(inputs, gradVar, B, T, N, trans, workspace);
       });
 }
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

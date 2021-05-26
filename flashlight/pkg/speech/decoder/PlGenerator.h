@@ -17,8 +17,8 @@
 #include "flashlight/lib/text/dictionary/Utils.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 using TokenToWordFunc = std::function<std::vector<
     std::string>(const std::vector<int>&, const lib::text::Dictionary&, bool)>;
@@ -143,6 +143,6 @@ class PlGenerator {
   void logMaster(const std::string& message) const;
 };
 
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

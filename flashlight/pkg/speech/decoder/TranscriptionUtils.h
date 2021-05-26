@@ -21,8 +21,8 @@
 #include "flashlight/lib/text/dictionary/Utils.h"
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 /* A series of vector to vector mapping operations */
 
@@ -104,6 +104,6 @@ void remapLabels(
     trimLabels(dict.getIndex(surround));
   }
 };
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

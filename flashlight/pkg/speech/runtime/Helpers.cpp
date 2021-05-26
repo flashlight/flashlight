@@ -31,8 +31,8 @@ using fl::lib::text::DictionaryMap;
 using fl::lib::text::LexiconMap;
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 template <class T>
 std::vector<std::string> afMatrixToStrings(const af::array& arr, T terminator) {
@@ -119,7 +119,7 @@ std::shared_ptr<fl::Dataset> createDataset(
     std::shared_ptr<ListFileDataset> curListDs;
     if (FLAGS_everstoredb) {
 #ifdef FL_BUILD_FB_DEPENDENCIES
-      curListDs = std::make_shared<fl::app::asr::EverstoreDataset>(
+      curListDs = std::make_shared<fl::pkg::speech::EverstoreDataset>(
           pathsConcat(rootDir, path),
           inputTransform,
           targetTransform,
@@ -242,6 +242,6 @@ std::vector<std::pair<std::string, std::string>> parseValidSets(
   }
   return validTagSets;
 }
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

@@ -14,8 +14,8 @@
 
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 namespace detail {
 
@@ -268,6 +268,6 @@ DECLARE_string(rndv_filepath);
 /* ========== FB SPECIFIC ========== */
 DECLARE_bool(everstoredb);
 DECLARE_bool(use_memcache);
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl

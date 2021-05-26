@@ -9,8 +9,8 @@
 using fl::lib::text::SmearingMode;
 
 namespace fl {
-namespace app {
-namespace asr {
+namespace pkg {
+namespace speech {
 
 std::shared_ptr<fl::lib::text::Trie> buildTrie(
     const std::string& decoderType,
@@ -57,6 +57,6 @@ std::shared_ptr<fl::lib::text::Trie> buildTrie(
   return trie;
 }
 
-} // namespace asr
-} // namespace app
+} // namespace speech
+} // namespace pkg
 } // namespace fl
