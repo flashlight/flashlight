@@ -16,8 +16,8 @@
 #include "flashlight/lib/text/tokenizer/Tokenizer.h"
 
 namespace fl {
-namespace app {
-namespace lm {
+namespace pkg {
+namespace text {
 
 /**
  * TextDataset prepares text data for LM training. It returns a single tensor of
@@ -79,6 +79,6 @@ class TextDataset : public fl::Dataset {
   std::vector<std::vector<SamplePosition>> batches_;
 };
 
-} // namespace lm
-} // namespace app
+} // namespace text
+} // namespace pkg
 } // namespace fl

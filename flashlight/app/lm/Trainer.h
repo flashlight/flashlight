@@ -29,6 +29,8 @@
 #include "flashlight/lib/text/tokenizer/PartialFileReader.h"
 #include "flashlight/lib/text/tokenizer/Tokenizer.h"
 
+using namespace fl::pkg::text;
+
 namespace fl {
 namespace app {
 namespace lm {
