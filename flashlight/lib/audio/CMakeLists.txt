@@ -1,6 +1,16 @@
 cmake_minimum_required(VERSION 3.10)
 
 # ------------------------- Components -------------------------
+add_library(
+  fl_lib_audio
+  ""
+)
+
+target_include_directories(
+  fl_lib_audio
+  PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  )
 
 # feature-library
 include(${CMAKE_CURRENT_LIST_DIR}/feature/CMakeLists.txt)

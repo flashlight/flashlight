@@ -23,6 +23,9 @@ target_link_libraries(
   ${gflags_LIBRARIES}
   ${MKL_LIBRARIES}
   flashlight
+  fl_lib_text
+  fl_lib_audio
+  fl_lib_sequence
   )
 
 target_include_directories(

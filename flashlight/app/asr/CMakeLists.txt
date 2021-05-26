@@ -22,6 +22,7 @@ target_link_libraries(
   fl_asr_train
   fl_pkg_speech
   fl_pkg_runtime
+  fl_lib_sequence
   ${CMAKE_DL_LIBS}
   )
 target_link_libraries(
@@ -50,7 +51,7 @@ install(TARGETS fl_asr_decode RUNTIME DESTINATION ${FL_INSTALL_BIN_DIR})
 add_executable(fl_asr_tutorial_inference_ctc ${CMAKE_CURRENT_LIST_DIR}/tutorial/InferenceCTC.cpp)
 add_executable(fl_asr_tutorial_finetune_ctc ${CMAKE_CURRENT_LIST_DIR}/tutorial/FinetuneCTC.cpp)
 
-target_link_libraries(fl_asr_tutorial_inference_ctc fl_pkg_speech fl_pkg_runtime ${CMAKE_DL_LIBS})
+target_link_libraries(fl_asr_tutorial_inference_ctc fl_pkg_speech fl_pkg_runtime fl_lib_text ${CMAKE_DL_LIBS})
 target_link_libraries(fl_asr_tutorial_finetune_ctc fl_pkg_speech fl_pkg_runtime ${CMAKE_DL_LIBS})
 
 set_executable_output_directory(fl_asr_tutorial_inference_ctc "${FL_BUILD_BINARY_OUTPUT_DIR}/asr")

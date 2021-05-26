@@ -158,7 +158,7 @@ if (FL_BUILD_CORE)
 
   # FIXME: libraries are required to build core tests - https://git.io/JL955
   if (FL_BUILD_LIBRARIES OR (FL_BUILD_CORE AND FL_BUILD_TESTS))
-    target_link_libraries(flashlight PUBLIC fl-libraries)
+    target_link_libraries(flashlight PUBLIC fl_lib_common)
   endif()
 
   if (FL_CODE_COVERAGE)

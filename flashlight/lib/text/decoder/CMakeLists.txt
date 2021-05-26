@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 include(${CMAKE_CURRENT_LIST_DIR}/lm/CMakeLists.txt)
 
 target_sources(
-  fl-libraries
+  fl_lib_text
   PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/LexiconDecoder.cpp
   ${CMAKE_CURRENT_LIST_DIR}/LexiconFreeDecoder.cpp
