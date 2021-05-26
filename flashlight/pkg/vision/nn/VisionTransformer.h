@@ -10,8 +10,8 @@
 #include "flashlight/fl/nn/nn.h"
 
 namespace fl {
-namespace ext {
-namespace image {
+namespace pkg {
+namespace vision {
 
 /*
  * Implementation of the transformer blocks of Vision Transformer (ViT) models
@@ -72,8 +72,8 @@ class VisionTransformer : public Container {
   std::shared_ptr<fl::Linear> initLinear(int inDim, int outDim);
 };
 
-} // namespace image
-} // namespace ext
+} // namespace vision
+} // namespace pkg
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::ext::image::VisionTransformer);
+CEREAL_REGISTER_TYPE(fl::pkg::vision::VisionTransformer);

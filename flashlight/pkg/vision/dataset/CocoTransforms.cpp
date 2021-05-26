@@ -27,7 +27,7 @@ namespace vision {
 std::vector<af::array>
 crop(const std::vector<af::array>& in, int x, int y, int tw, int th) {
   const af::array& image = in[ImageIdx];
-  const af::array croppedImage = fl::ext::image::crop(image, x, y, tw, th);
+  const af::array croppedImage = fl::pkg::vision::crop(image, x, y, tw, th);
 
   const af::array& boxes = in[BboxesIdx];
 

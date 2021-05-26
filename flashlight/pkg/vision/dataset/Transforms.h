@@ -11,8 +11,8 @@
 #include <functional>
 
 namespace fl {
-namespace ext {
-namespace image {
+namespace pkg {
+namespace vision {
 
 /*
  * Resizes the smallest length edge of an image to be resize while keeping
@@ -252,6 +252,6 @@ ImageTransform randomAugmentationDeitTransform(
  */
 ImageTransform compose(std::vector<ImageTransform> transformfns);
 
-} // namespace image
-} // namespace ext
+} // namespace vision
+} // namespace pkg
 } // namespace fl

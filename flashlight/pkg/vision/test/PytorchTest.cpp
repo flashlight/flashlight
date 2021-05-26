@@ -44,7 +44,7 @@ bool allClose(
   return (af::max<double>(af::abs(a - b)) < precision);
 }
 
-using namespace fl::ext::image;
+using namespace fl::pkg::vision;
 
 // TEST(Pytorch, basic_conv) {
 // af::info();
@@ -113,7 +113,7 @@ TEST(Pytorch, resnet34) {
   af::array x = af::readArray(filename.c_str(), "input");
   af::array expOutput = af::readArray(filename.c_str(), "output");
 
-  auto resnet34 = fl::ext::image::resnet34();
+  auto resnet34 = fl::pkg::vision::resnet34();
 
   int paramSize = resnet34->params().size();
   for(int i = 0; i < paramSize; i++) {
@@ -1106,7 +1106,7 @@ TEST(Pytorch, resnet50) {
   af::array x = af::readArray(filename.c_str(), "input");
   af::array expOutput = af::readArray(filename.c_str(), "output");
 
-  auto resnet50 = fl::ext::image::resnet50();
+  auto resnet50 = fl::pkg::vision::resnet50();
 
   int paramSize = resnet50->params().size();
   for(int i = 0; i < paramSize; i++) {
@@ -1149,7 +1149,7 @@ TEST(Pytorch, bottleneck) {
   af::array x = af::readArray(filename.c_str(), "input");
   af::array expOutput = af::readArray(filename.c_str(), "output");
 
-  auto model = std::make_shared<fl::ext::image::ResNetBottleneckBlock>(40, 10, 1);
+  auto model = std::make_shared<fl::pkg::vision::ResNetBottleneckBlock>(40, 10, 1);
 
   int paramSize = model->params().size();
   for(int i = 0; i < paramSize; i++) {

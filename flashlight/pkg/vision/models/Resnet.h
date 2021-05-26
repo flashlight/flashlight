@@ -11,8 +11,8 @@
 #include "flashlight/fl/nn/nn.h"
 
 namespace fl {
-namespace ext {
-namespace image {
+namespace pkg {
+namespace vision {
 
 class ConvBnAct : public fl::Sequential {
  public:
@@ -94,11 +94,11 @@ class ResNetStage : public fl::Sequential {
 std::shared_ptr<Sequential> resnet34();
 std::shared_ptr<Sequential> resnet50();
 
-} // namespace image
-} // namespace ext
+} // namespace vision
+} // namespace pkg
 } // namespace fl
-CEREAL_REGISTER_TYPE(fl::ext::image::ConvBnAct)
-CEREAL_REGISTER_TYPE(fl::ext::image::ResNetBlock)
-CEREAL_REGISTER_TYPE(fl::ext::image::ResNetStage)
-CEREAL_REGISTER_TYPE(fl::ext::image::ResNetBottleneckBlock)
-CEREAL_REGISTER_TYPE(fl::ext::image::ResNetBottleneckStage)
+CEREAL_REGISTER_TYPE(fl::pkg::vision::ConvBnAct)
+CEREAL_REGISTER_TYPE(fl::pkg::vision::ResNetBlock)
+CEREAL_REGISTER_TYPE(fl::pkg::vision::ResNetStage)
+CEREAL_REGISTER_TYPE(fl::pkg::vision::ResNetBottleneckBlock)
+CEREAL_REGISTER_TYPE(fl::pkg::vision::ResNetBottleneckStage)

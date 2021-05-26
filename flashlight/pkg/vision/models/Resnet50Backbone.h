@@ -15,7 +15,7 @@ namespace fl {
 namespace pkg {
 namespace vision {
 
-using namespace fl::ext::image;
+using namespace fl::pkg::vision;
 
 class Resnet50Backbone : public Container {
  public:

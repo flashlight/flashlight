@@ -8,8 +8,8 @@
 #include "flashlight/pkg/vision/models/Resnet.h"
 
 namespace fl {
-namespace ext {
-namespace image {
+namespace pkg {
+namespace vision {
 
 namespace {
 
@@ -233,6 +233,6 @@ std::shared_ptr<Sequential> resnet50() {
   return model;
 }
 
-} // namespace image
-} // namespace ext
+} // namespace vision
+} // namespace pkg
 } // namespace fl

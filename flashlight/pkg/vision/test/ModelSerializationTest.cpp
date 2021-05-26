@@ -16,7 +16,7 @@
 #include "flashlight/lib/common/System.h"
 
 using namespace fl;
-using namespace fl::ext::image;
+using namespace fl::pkg::vision;
 
 TEST(SerializationTest, VisionTransformer) {
   int hiddenEmbSize = 768;
@@ -47,7 +47,7 @@ TEST(SerializationTest, ViT) {
   int nHeads = 12;
   int mlpSize = 3072;
 
-  auto model = std::make_shared<fl::ext::image::ViT>(
+  auto model = std::make_shared<fl::pkg::vision::ViT>(
       12, // FLAGS_model_layers,
       hiddenEmbSize,
       mlpSize,

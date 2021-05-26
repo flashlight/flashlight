@@ -12,13 +12,13 @@
 #include "flashlight/fl/dataset/datasets.h"
 
 namespace fl {
-namespace ext {
-namespace image {
+namespace pkg {
+namespace vision {
 
 af::array loadJpeg(const std::string& fp, int desiredNumberOfChannels = 3);
 
 std::shared_ptr<Dataset> jpegLoader(std::vector<std::string> fps);
 
-} // namespace image
-} // namespace ext
+} // namespace vision
+} // namespace pkg
 } // namespace fl

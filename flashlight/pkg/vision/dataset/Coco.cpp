@@ -21,7 +21,7 @@
 namespace {
 
 using namespace fl::pkg::vision;
-using namespace fl::ext::image;
+using namespace fl::pkg::vision;
 using namespace fl;
 
 constexpr int kElementsPerBbox = 4;

@@ -15,7 +15,7 @@
 #include "flashlight/fl/dataset/datasets.h"
 #include "flashlight/lib/common/System.h"
 
-using LabelLoader = fl::ext::image::LoaderDataset<uint64_t>;
+using LabelLoader = fl::pkg::vision::LoaderDataset<uint64_t>;
 
 namespace fl {
 namespace pkg {
@@ -54,7 +54,7 @@ std::shared_ptr<Dataset> imagenetDataset(
   }
 
   // Create image dataset
-  std::shared_ptr<Dataset> imageDataset = fl::ext::image::jpegLoader(filepaths);
+  std::shared_ptr<Dataset> imageDataset = fl::pkg::vision::jpegLoader(filepaths);
   imageDataset = std::make_shared<TransformDataset>(imageDataset, transformfns);
 
   // Create labels from filepaths
