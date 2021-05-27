@@ -48,12 +48,12 @@ TEST(RuntimeTest, LoadAndSave) {
   model.add(fl::GatedLinearUnit(2));
   model.add(fl::Dropout(0.214));
 
-  fl::ext::Serializer::save(kPath, FL_APP_ASR_VERSION, config, model);
+  fl::Serializer::save(kPath, FL_APP_ASR_VERSION, config, model);
 
   fl::Sequential modelload;
   std::unordered_map<std::string, std::string> configload;
   std::string versionload;
-  fl::ext::Serializer::load(kPath, versionload, configload, modelload);
+  fl::Serializer::load(kPath, versionload, configload, modelload);
 
   EXPECT_EQ(configload.size(), config.size());
   EXPECT_EQ(versionload, FL_APP_ASR_VERSION);

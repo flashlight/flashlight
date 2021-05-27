@@ -12,7 +12,6 @@
 #include "flashlight/fl/flashlight.h"
 
 namespace fl {
-namespace ext {
 
 /**
  * Build a sequential module by parsing a file that
@@ -37,4 +36,3 @@ fl::Variable forwardSequentialModuleWithPadMask(
     const af::array& inputSizes);
 
 } // namespace ext
-} // namespace fl

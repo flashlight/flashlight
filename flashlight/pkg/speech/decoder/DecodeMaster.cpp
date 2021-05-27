@@ -89,8 +89,8 @@ DecodeMaster::computeMetrics(const std::shared_ptr<fl::Dataset>& predDataset) {
           "computeMetrics: prediction and target do not match");
     }
     // token predictions and target
-    std::vector<int> predictionV = fl::ext::afToVector<int>(prediction);
-    std::vector<int> targetV = fl::ext::afToVector<int>(target);
+    std::vector<int> predictionV = fl::afToVector<int>(prediction);
+    std::vector<int> targetV = fl::afToVector<int>(target);
 
     auto predictionS = computeStringPred(predictionV);
     auto targetS = computeStringTarget(targetV);
@@ -98,9 +98,9 @@ DecodeMaster::computeMetrics(const std::shared_ptr<fl::Dataset>& predDataset) {
 
     std::vector<std::string> targetWrdS, predictionWrdS;
     if (isPredictingWrd) {
-      targetWrdS = wrdIdx2Wrd(fl::ext::afToVector<int>(targetWrd), wordDict_);
+      targetWrdS = wrdIdx2Wrd(fl::afToVector<int>(targetWrd), wordDict_);
       predictionWrdS =
-          wrdIdx2Wrd(fl::ext::afToVector<int>(predictionWrd), wordDict_);
+          wrdIdx2Wrd(fl::afToVector<int>(predictionWrd), wordDict_);
     } else {
       targetWrdS = tkn2Wrd(targetS, trainOpt_.wordSep);
       predictionWrdS = tkn2Wrd(predictionS, trainOpt_.wordSep);
@@ -145,7 +145,7 @@ std::shared_ptr<fl::Dataset> DecodeMaster::forward(
                    .front()
                    .array();
     } else {
-      output = fl::ext::forwardSequentialModuleWithPadMask(
+      output = fl::forwardSequentialModuleWithPadMask(
                    fl::input(batch[kInputIdx]), net_, batch[kDurationIdx])
                    .array();
     }
