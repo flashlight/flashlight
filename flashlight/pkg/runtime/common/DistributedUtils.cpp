@@ -10,7 +10,6 @@
 #include "flashlight/fl/flashlight.h"
 
 namespace fl {
-namespace ext {
 
 void initDistributed(
     int worldRank,
@@ -101,5 +100,4 @@ void allreduceSet(fl::TopKMeter& mtr, af::array& val) {
   auto valVec = afToVector<int32_t>(val);
   mtr.set(valVec[0], valVec[1]);
 }
-} // namespace ext
 } // namespace fl

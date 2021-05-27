@@ -16,7 +16,7 @@
 #include "flashlight/pkg/runtime/common/DistributedUtils.h"
 #include "flashlight/lib/sequence/criterion/cuda/CriterionUtils.cuh"
 
-using namespace fl::ext;
+using namespace fl;
 
 using CriterionUtils = fl::lib::cuda::CriterionUtils<float>;
 

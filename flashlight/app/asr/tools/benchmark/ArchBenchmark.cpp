@@ -52,7 +52,7 @@ float run(
       output = network->forward({input, fl::noGrad(duration)}).front();
     } else {
       output =
-          fl::ext::forwardSequentialModuleWithPadMask(input, network, duration);
+          fl::forwardSequentialModuleWithPadMask(input, network, duration);
     }
     if (runBwd) {
       output.backward();
@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
     network = fl::pkg::runtime::ModulePlugin(FLAGS_arch)
                   .arch(FLAGS_in_features, FLAGS_out_channels);
   } else {
-    network = fl::ext::buildSequentialModule(
+    network = fl::buildSequentialModule(
         FLAGS_arch, FLAGS_in_features, FLAGS_out_channels);
   }
   std::cout << network->prettyString() << std::endl;

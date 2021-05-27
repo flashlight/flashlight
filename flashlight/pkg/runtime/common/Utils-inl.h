@@ -9,7 +9,6 @@
 #include "flashlight/fl/flashlight.h"
 
 namespace fl {
-namespace ext {
 
 /**
  * Convert an arrayfire array into a std::vector.
@@ -35,5 +34,4 @@ std::vector<T> afToVector(const fl::Variable& var) {
   return afToVector<T>(var.array());
 }
 
-} // namespace ext
 } // namespace fl

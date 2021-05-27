@@ -34,7 +34,7 @@ using namespace fl::app::objdet;
 
 using fl::pkg::runtime::getRunFile;
 using fl::pkg::runtime::serializeGflags;
-using fl::ext::Serializer;
+using fl::Serializer;
 using fl::lib::fileExists;
 using fl::lib::format;
 using fl::lib::getCurrentDate;
@@ -259,7 +259,7 @@ int main(int argc, char** argv) {
   ////////////////////////
   std::shared_ptr<fl::Reducer> reducer;
   if (FLAGS_distributed_enable) {
-    fl::ext::initDistributed(
+    fl::initDistributed(
         FLAGS_distributed_world_rank,
         FLAGS_distributed_world_size,
         8,
@@ -561,7 +561,7 @@ int main(int argc, char** argv) {
            << " | backward_time_avg: " << backward_time * 1000
            << " | optimize_time_avg: " << optimize_time * 1000;
         for (auto meter : meters) {
-          fl::ext::syncMeter(meter.second);
+          fl::syncMeter(meter.second);
           ss << " | " << meter.first << ": " << meter.second.value()[0];
         }
         ss << std::endl;

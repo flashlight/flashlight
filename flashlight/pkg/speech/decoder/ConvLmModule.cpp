@@ -59,7 +59,7 @@ GetConvLmScoreFunc buildGetConvLmScoreFunction(
     af::array preds =
         af::moddims(af::flat(output.array())(af::flat(globalIndices)), C, B);
     // vector of B X C predictions
-    return ext::afToVector<float>(preds);
+    return afToVector<float>(preds);
   };
 
   return getConvLmScoreFunc;

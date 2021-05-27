@@ -37,7 +37,7 @@ static void backward(
     throw std::invalid_argument("FCC: grad must be float32");
   }
 
-  auto gradVec = fl::ext::afToVector<float>(gradVar);
+  auto gradVec = fl::afToVector<float>(gradVar);
   std::vector<float> inputGradVec(B * T * N);
   std::vector<float> transGradVec(N * N);
 
@@ -76,10 +76,10 @@ Variable FullConnectionCriterion::forward(
 
   const auto& targetSize = getTargetSizeArray(targetVar.array(), T);
   auto ctx = std::make_shared<Context>();
-  auto inputVec = fl::ext::afToVector<float>(inputVar);
-  auto targetVec = fl::ext::afToVector<int>(targetVar);
-  auto targetSizeVec = fl::ext::afToVector<int>(targetSize);
-  ctx->transVec = fl::ext::afToVector<float>(transVar);
+  auto inputVec = fl::afToVector<float>(inputVar);
+  auto targetVec = fl::afToVector<int>(targetVar);
+  auto targetSizeVec = fl::afToVector<int>(targetSize);
+  ctx->transVec = fl::afToVector<float>(transVar);
   std::vector<float> lossVec(B);
   ctx->workspaceVec.assign(FCC::getWorkspaceSize(B, T, N), 0);
 
