@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.10)
 
 # TODO: move this to another place once we have other working tools.
 # Use something similar to build_test where libs can be specified in a

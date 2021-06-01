@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.10)
 
 # ----------------------------- Dependencies -----------------------------
 # CBLAS
@@ -30,6 +30,12 @@ find_package(Threads REQUIRED)
 target_compile_options(fl_lib_audio PRIVATE $<$<COMPILE_LANGUAGE:C>:${OpenMP_C_FLAGS}>)
 target_compile_options(fl_lib_audio PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${OpenMP_CXX_FLAGS}>)
 target_compile_options(fl_lib_audio PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_THREAD_LIBS_INIT}>)
+
+target_compile_definitions(
+  fl_lib_audio
+  PUBLIC
+  ${FL_COMPILE_DEFINITIONS}
+)
 
 # ----------------------------- Lib -----------------------------
 target_sources(

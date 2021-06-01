@@ -1,9 +1,15 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.10)
 
 add_library(
   fl_pkg_text
   ""
   )
+
+target_include_directories(
+  fl_pkg_text
+  PRIVATE
+  ${PROJECT_SOURCE_DIR}
+)
 
 target_link_libraries(
   fl_pkg_text

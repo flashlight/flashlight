@@ -4,7 +4,7 @@ include(${CMAKE_MODULE_PATH}/Buildpybind11.cmake)
 include(${CMAKE_MODULE_PATH}/pybind11Tools.cmake)
 
 set_target_properties(
-  fl-libraries
+  fl_lib_text
   PROPERTIES
   INTERFACE_POSITION_INDEPENDENT_CODE
   TRUE
@@ -28,7 +28,10 @@ function (add_pybind11_extension ext_name)
   target_link_libraries(
     ${ext_name}
     PUBLIC
-    fl-libraries
+    fl_lib_text
+    fl_lib_audio
+    fl_lib_sequence
+    fl_lib_common
     )
 
   add_dependencies(${ext_name} pybind11)

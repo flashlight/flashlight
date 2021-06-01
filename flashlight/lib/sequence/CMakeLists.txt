@@ -36,7 +36,6 @@ target_include_directories(
   )
 
 if (FL_LIBRARIES_USE_CUDA)
-message("here!!! using")
   target_sources(
     fl_lib_sequence
     PRIVATE
@@ -49,7 +48,7 @@ message("here!!! using")
     if (NOT cub_FOUND)
       message(STATUS "Could not find cub - will download from source")
       include(${CMAKE_MODULE_PATH}/BuildCUB.cmake)
-      add_dependencies(fl-libraries CUB)
+      add_dependencies(fl_lib_sequence CUB)
     else ()
       message(STATUS "Found cub: (include: ${cub_INCLUDE_DIRS})")
     endif()

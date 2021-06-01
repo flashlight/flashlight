@@ -21,3 +21,9 @@ include(${CMAKE_CURRENT_LIST_DIR}/dictionary/CMakeLists.txt)
 
 # tokenizer
 include(${CMAKE_CURRENT_LIST_DIR}/tokenizer/CMakeLists.txt)
+
+if(FL_BUILD_TESTS)
+  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test)
+endif()
+
+

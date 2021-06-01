@@ -95,11 +95,14 @@ commands:
             make -j$(nproc) && make install"
   test_flashlight_inside_nvidia_docker:
     parameters:
+      test_name:
+        type: string
+        default: ""
       fl_test_apex_dir:
         type: string
     steps:
       - run:
-          name: "Test Flashlight inside of NVIDIA Docker"
+          name: "Test Flashlight inside of NVIDIA Docker:  << parameters.test_name >>"
           command: |
             sudo docker exec -it flashlight bash -c "\
                 cd /flashlight/build/<< parameters.fl_test_apex_dir >> && ctest"
@@ -209,9 +212,11 @@ commands:
     parameters:
       fl_test_apex_dir:
         type: string
+      test_name:
+        type: string
     steps:
       - run:
-          name: "Run Flashlight CUDA tests for in-source build with vcpkg dependencies"
+          name: "Run Flashlight CUDA tests for in-source build with vcpkg dependencies << parameters.test_name >>"
           command: |
             cd $HOME/project/build/<< parameters.fl_test_apex_dir >>
             ctest
@@ -299,7 +304,7 @@ commands:
 
 ############################ Jobs ############################
 jobs:
-  ubuntu1604_gcc7_cuda_11_1_vcpkg_flashlight_lib:
+  ubuntu1604_gcc7_cuda_11_1_vcpkg_flashlight_libs:
     <<: *gpu
     steps:
       - checkout
@@ -316,10 +321,15 @@ jobs:
           fl_build_app_objdet: "OFF"
           fl_build_app_lm: "OFF"
       - flashlight_source_test_with_vcpkg:
-          fl_test_apex_dir: "flashlight/lib/test"
-  # TODO(jacobkahn): add jobs for versions for the fl core and apps.
-  # See if we can use a vcpkg cache in CircleCI to reduce build times
-  ubuntu2004_cuda11_1_docker_flashlight_lib:
+          test_name: "fl_lib_common"
+          fl_test_apex_dir: "flashlight/lib/common/test"
+      - flashlight_source_test_with_vcpkg:
+          test_name: "fl_lib_audio"
+          fl_test_apex_dir: "flashlight/lib/audio/test"
+      - flashlight_source_test_with_vcpkg:
+          test_name: "fl_lib_text"
+          fl_test_apex_dir: "flashlight/lib/text/test"
+  ubuntu2004_cuda11_1_docker_flashlight_libs:
     <<: *gpu
     steps:
       - authenticate_docker
@@ -334,9 +344,42 @@ jobs:
           fl_build_app_objdet: "OFF"
           fl_build_app_lm: "OFF"
       - test_flashlight_inside_nvidia_docker:
-          fl_test_apex_dir: "flashlight/lib/test"
+          test_name: "fl_lib_common"
+          fl_test_apex_dir: "flashlight/lib/common/test"
+      - test_flashlight_inside_nvidia_docker:
+          test_name: "fl_lib_audio"
+          fl_test_apex_dir: "flashlight/lib/audio/test"
+      - test_flashlight_inside_nvidia_docker:
+          test_name: "fl_lib_text"
+          fl_test_apex_dir: "flashlight/lib/text/test"
       - run_codecov_inside_nvidia_docker:
-          coverage_flag: "lib"
+          coverage_flag: "libs"
+
+  ubuntu2004_cuda11_1_docker_flashlight_pkgs:
+    <<: *gpu
+    steps:
+      - authenticate_docker
+      - install_nvidia_docker
+      - checkout
+      - start_nvidia_docker_and_copy_flashlight_source
+      - build_flashlight_inside_nvidia_docker:
+          fl_backend: "CUDA"
+          fl_build_fl_core: "OFF"
+          fl_build_app_asr: "OFF"
+          fl_build_app_imgclass: "OFF"
+          fl_build_app_objdet: "OFF"
+          fl_build_app_lm: "OFF"
+      - test_flashlight_inside_nvidia_docker:
+          test_name: "fl_pkg_speech"
+          fl_test_apex_dir: "flashlight/pkg/speech/test"
+      - test_flashlight_inside_nvidia_docker:
+          test_name: "fl_pkg_vision"
+          fl_test_apex_dir: "flashlight/pkg/vision/test"
+      - test_flashlight_inside_nvidia_docker:
+          test_name: "fl_pkg_text"
+          fl_test_apex_dir: "flashlight/pkg/text/test"
+      - run_codecov_inside_nvidia_docker:
+          coverage_flag: "pkgs"
 
   ubuntu2004_cuda11_1_docker_flashlight_fl_core:
     <<: *gpu
@@ -371,10 +414,6 @@ jobs:
           fl_build_app_imgclass: "OFF"
           fl_build_app_objdet: "OFF"
           fl_build_app_lm: "OFF"
-      - test_flashlight_inside_nvidia_docker:
-          fl_test_apex_dir: "flashlight/app/asr/test"
-      - run_codecov_inside_nvidia_docker:
-          coverage_flag: "asr"
 
   ubuntu2004_cuda11_1_docker_flashlight_app_imgclass:
     <<: *gpu
@@ -405,8 +444,6 @@ jobs:
           fl_build_app_imgclass: "ON"
           fl_build_app_objdet: "ON"
           fl_build_app_lm: "OFF"
-      - test_flashlight_inside_nvidia_docker:
-          fl_test_apex_dir: "flashlight/app/objdet/test"
       - run_codecov_inside_nvidia_docker:
           coverage_flag: "objdet"
 
@@ -424,8 +461,6 @@ jobs:
           fl_build_app_imgclass: "OFF"
           fl_build_app_objdet: "OFF"
           fl_build_app_lm: "ON"
-      - test_flashlight_inside_nvidia_docker:
-          fl_test_apex_dir: "flashlight/app/lm/test"
       - run_codecov_inside_nvidia_docker:
           coverage_flag: "lm"
 
@@ -536,10 +571,10 @@ workflows:
   version: 2
   vcpkg_cuda_test_source_build_and_test:
     jobs:
-      - ubuntu1604_gcc7_cuda_11_1_vcpkg_flashlight_lib
+      - ubuntu1604_gcc7_cuda_11_1_vcpkg_flashlight_libs
   docker_cuda_build_test_and_install:
     jobs:
-      - ubuntu2004_cuda11_1_docker_flashlight_lib
+      - ubuntu2004_cuda11_1_docker_flashlight_libs
       - ubuntu2004_cuda11_1_docker_flashlight_fl_core
       - ubuntu2004_cuda11_1_docker_flashlight_app_asr
       - ubuntu2004_cuda11_1_docker_flashlight_app_imgclass

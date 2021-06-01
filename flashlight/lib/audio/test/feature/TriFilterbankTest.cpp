@@ -8,7 +8,7 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/lib/audio/feature/TriFilterbank.h"
-#include "flashlight/lib/test/audio/feature/TestUtils.h"
+#include "flashlight/lib/audio/test/feature/TestUtils.h"
 
 using fl::lib::audio::FrequencyScale;
 using fl::lib::audio::TriFilterbank;

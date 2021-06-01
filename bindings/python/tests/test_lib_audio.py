@@ -22,7 +22,7 @@ def test_mfcc():
     data_path = (
         Path(__file__)
         .absolute()
-        .parent.joinpath("../../../flashlight/lib/test/audio/feature/data")
+        .parent.joinpath("../../../flashlight/lib/audio/test/feature/data")
     )
 
     wavinput = load_data(data_path.joinpath("sa1.dat"))
