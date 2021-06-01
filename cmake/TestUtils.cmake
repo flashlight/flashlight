@@ -48,6 +48,7 @@ function(build_test)
     PUBLIC
     ${GTEST_IMPORTED_TARGETS}
     ${build_test_LIBS}
+    pthread
     )
   target_include_directories(
     ${target}

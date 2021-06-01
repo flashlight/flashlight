@@ -16,10 +16,10 @@
 #include "flashlight/lib/audio/feature/Mfcc.h"
 #include "flashlight/lib/common/System.h"
 
-#include "flashlight/lib/test/audio/feature/TestUtils.h"
+#include "flashlight/lib/audio/test/feature/TestUtils.h"
 
-using fl::lib::pathsConcat;
 using namespace fl::lib::audio;
+using fl::lib::pathsConcat;
 
 namespace {
 std::string loadPath = "";
@@ -32,6 +32,7 @@ auto loadData = [](const std::string& filepath) {
   std::copy(iit, eos, std::back_inserter(data));
   return data;
 };
+
 } // namespace
 
 // HTK Code used -
