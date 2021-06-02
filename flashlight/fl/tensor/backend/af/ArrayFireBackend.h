@@ -26,8 +26,36 @@ class ArrayFireBackend : public TensorBackend {
 
   static ArrayFireBackend& getInstance();
 
+  /* --------------------------- Tensor Operators --------------------------- */
+
+  /************************** Unary Operators ***************************/
   Tensor exp(const Tensor& tensor) override;
   Tensor log(const Tensor& tensor) override;
+  Tensor negative(const Tensor& tensor) override;
+  Tensor logicalNot(const Tensor& tensor) override;
+  Tensor log1p(const Tensor& tensor) override;
+  Tensor sin(const Tensor& tensor) override;
+  Tensor cos(const Tensor& tensor) override;
+  Tensor sqrt(const Tensor& tensor) override;
+  Tensor tanh(const Tensor& tensor) override;
+  Tensor absolute(const Tensor& tensor) override;
+  Tensor clip(const Tensor& tensor, const Tensor& low, const Tensor& high)
+      override;
+  Tensor isnan(const Tensor& tensor) override;
+
+  /************************** Binary Operators ***************************/
+  Tensor minimum(const Tensor& lhs, const Tensor& rhs) override;
+  Tensor maximum(const Tensor& lhs, const Tensor& rhs) override;
+  Tensor power(const Tensor& lhs, const Tensor& rhs) override;
+
+  /************************** Reductions ***************************/
+  Tensor amin(const Tensor& input, const std::vector<int>& axes) override;
+  Tensor amax(const Tensor& input, const std::vector<int>& axes) override;
+  Tensor sum(const Tensor& input, const std::vector<int>& axes) override;
+  Tensor mean(const Tensor& input, const std::vector<int>& axes) override;
+  Tensor var(const Tensor& input, const std::vector<int>& axes, bool bias)
+      override;
+  double norm(const Tensor& input) override;
 };
 
 } // namespace fl
