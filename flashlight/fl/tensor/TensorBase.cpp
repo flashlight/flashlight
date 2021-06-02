@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "flashlight/fl/tensor/TensorAdapter.h"
+#include "flashlight/fl/tensor/TensorBackend.h"
 
 namespace fl {
 
@@ -32,8 +33,23 @@ Tensor Tensor::astype(const dtype type) {
   return impl_->astype(type);
 }
 
-TensorBackend Tensor::backend() const {
+TensorBackendType Tensor::backendType() const {
+  return impl_->backendType();
+}
+
+TensorBackend& Tensor::backend() const {
   return impl_->backend();
+}
+
+/* --------------------------- Tensor Operators --------------------------- */
+
+/************************** Unary Operators ***************************/
+Tensor exp(const Tensor& tensor) {
+  return tensor.backend().exp(tensor);
+}
+
+Tensor log(const Tensor& tensor) {
+  return tensor.backend().log(tensor);
 }
 
 } // namespace fl

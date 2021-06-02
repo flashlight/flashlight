@@ -41,9 +41,16 @@ class TensorAdapterBase {
   /**
    * Gets the tensor's associated backend.
    *
-   * @return TensorBackend enum associated with the backend
+   * @return TensorBackendType enum associated with the backend
    */
-  virtual TensorBackend backend() const = 0;
+  virtual TensorBackendType backendType() const = 0;
+
+  /**
+   * Gets the backend for a tensor with this adapter implementation.
+   *
+   * @return the TensorBackend instance backing this particular tensor.
+   */
+  virtual TensorBackend& backend() const = 0;
 
   /**
    * Get the shape of a tensor.
