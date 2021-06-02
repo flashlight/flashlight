@@ -93,3 +93,16 @@ if (FL_BUILD_APP_OBJDET)
   set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} flashlight-app-objdet)
   setup_install_headers(${FL_APP_OBJDET_ROOT_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC}/app)
 endif ()
+
+# Build benchmark additionally
+if (FL_BUILD_ALL_APPS)
+  message(STATUS "Building flashlight app benchmark")
+  if (NOT FL_BUILD_DISTRIBUTED)
+    message(FATAL_ERROR
+    "FL_BUILD_DISTRIBUTED must be enabled for benchmarking")
+  endif()
+  set(FL_APP_BENCHMARK_ROOT_DIR ${FL_APPS_DIR}/benchmark)
+  include(${FL_APP_BENCHMARK_ROOT_DIR}/CMakeLists.txt)
+  set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} flashlight-app-benchmark)
+  setup_install_headers(${FL_APP_BENCHMARK_ROOT_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC}/app)
+endif()
