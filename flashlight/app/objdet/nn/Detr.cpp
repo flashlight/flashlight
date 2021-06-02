@@ -88,6 +88,21 @@ Detr::Detr(
 }
 
 std::vector<Variable> Detr::forward(const std::vector<Variable>& input) {
+  // input: {input, mask}
+  if (input.size() != 2) {
+    throw std::invalid_argument(
+        "Detr takes 2 Variables as input but gets " +
+        std::to_string(input.size()));
+  }
+  auto feature = forwardBackbone(input.front());
+  return forwardTransformer({feature, input[1]});
+}
+
+Variable Detr::forwardBackbone(const Variable& input) {
+  return backbone_->forward({input})[1];
+}
+
+std::vector<Variable> Detr::forwardTransformer(const std::vector<Variable>& input) {
   // input: {feature, mask}
   fl::Variable mask = fl::Variable(
       af::resize(
@@ -108,10 +123,6 @@ std::vector<Variable> Detr::forward(const std::vector<Variable>& input) {
   auto outputCoord = sigmoid(bboxEmbed_->forward(hs)[0]);
 
   return {outputClasses, outputCoord};
-}
-
-Variable Detr::forwardBackbone(const Variable& input) {
-  return backbone_->forward({input})[1];
 }
 
 std::string Detr::prettyString() const {

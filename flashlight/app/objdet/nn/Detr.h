@@ -39,6 +39,7 @@ class Detr : public Container {
 
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
   Variable forwardBackbone(const Variable& input);
+  std::vector<Variable> forwardTransformer(const std::vector<Variable>& input);
 
   std::string prettyString() const override;
 
