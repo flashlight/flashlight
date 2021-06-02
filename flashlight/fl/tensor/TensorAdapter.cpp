@@ -10,6 +10,9 @@
 #include <memory>
 #include <stdexcept>
 
+#include "flashlight/fl/tensor/TensorBackend.h"
+#include "flashlight/fl/tensor/TensorBase.h"
+
 #if FL_USE_ARRAYFIRE
 #include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
 #endif

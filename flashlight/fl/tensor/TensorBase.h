@@ -18,10 +18,13 @@ namespace fl {
 /**
  * Enum for various tensor backends.
  */
-enum class TensorBackend { ArrayFire };
+enum class TensorBackendType { ArrayFire };
 
 // Forward declaration - see TensorAdapter.h
 class TensorAdapterBase;
+
+// Forward declaration - see TensorBackend.h
+class TensorBackend;
 
 /**
  * A Tensor on which computation can be performed.
@@ -37,7 +40,7 @@ class TensorAdapterBase;
  * frequently and is not yet stable.
  */
 class Tensor {
-  // The backend adapter for the tensor
+  // The tensor adapter for the tensor
   std::unique_ptr<TensorAdapterBase> impl_;
 
  public:
@@ -76,7 +79,7 @@ class Tensor {
    *
    * @return the backend in question
    */
-  TensorBackend backend() const;
+  TensorBackendType backendType() const;
 
   /**
    * Gets the underlying tensor adapter implementation.
@@ -87,6 +90,13 @@ class Tensor {
   T& getAdapter() const {
     return *static_cast<T*>(impl_.get());
   }
+
+  /**
+   * Return the TensorBackend associated with this tensor.
+   *
+   * @return a TensorBackend.
+   */
+  TensorBackend& backend() const;
 };
 
 /******************** Tensor Creation Functions ********************/

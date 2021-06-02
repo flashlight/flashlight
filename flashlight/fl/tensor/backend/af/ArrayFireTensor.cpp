@@ -12,6 +12,7 @@
 #include <utility>
 
 #include "flashlight/fl/tensor/TensorBase.h"
+#include "flashlight/fl/tensor/backend/af/ArrayFireBackend.h"
 #include "flashlight/fl/tensor/backend/af/Utils.h"
 
 #include <af/algorithm.h>
@@ -44,8 +45,13 @@ ArrayFireTensor::ArrayFireTensor(af::array&& array)
 
 ArrayFireTensor::ArrayFireTensor() {}
 
-TensorBackend ArrayFireTensor::backend() const {
-  return TensorBackend::ArrayFire;
+TensorBackendType ArrayFireTensor::backendType() const {
+  return TensorBackendType::ArrayFire;
+}
+
+TensorBackend& ArrayFireTensor::backend() const {
+  // The ArrayFire backend has a single ArrayFireBackend instance per process.
+  return ::fl::ArrayFireBackend::getInstance();
 }
 
 const Shape& ArrayFireTensor::shape() {
@@ -72,7 +78,7 @@ const af::array& ArrayFireTensor::getHandle() const {
 }
 
 af::array& toArray(const Tensor& tensor) {
-  if (tensor.backend() != TensorBackend::ArrayFire) {
+  if (tensor.backendType() != TensorBackendType::ArrayFire) {
     throw std::invalid_argument("toArray: tensor is not ArrayFire-backed");
   }
   return tensor.getAdapter<ArrayFireTensor>().getHandle();
@@ -111,14 +117,6 @@ Tensor negative(const Tensor& tensor) {
 
 Tensor logicalNot(const Tensor& tensor) {
   return toTensor<ArrayFireTensor>(!toArray(tensor));
-}
-
-Tensor exp(const Tensor& tensor) {
-  return toTensor<ArrayFireTensor>(af::exp(toArray(tensor)));
-}
-
-Tensor log(const Tensor& tensor) {
-  return toTensor<ArrayFireTensor>(af::log(toArray(tensor)));
 }
 
 Tensor log1p(const Tensor& tensor) {

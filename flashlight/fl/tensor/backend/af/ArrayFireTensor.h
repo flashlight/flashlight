@@ -61,7 +61,8 @@ class ArrayFireTensor : public TensorAdapterBase {
   const af::array& getHandle() const;
 
   ~ArrayFireTensor() override = default;
-  TensorBackend backend() const override;
+  TensorBackendType backendType() const override;
+  TensorBackend& backend() const override;
   const Shape& shape() override;
   dtype type() const override;
   Tensor astype(const dtype type) override;

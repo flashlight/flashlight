@@ -41,6 +41,7 @@ target_link_libraries(flashlight PUBLIC ArrayFire::${FL_AF_BACKEND})
 target_sources(
   flashlight
   PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/ArrayFireBackend.cpp
   ${CMAKE_CURRENT_LIST_DIR}/ArrayFireTensor.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Compute.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Random.cpp

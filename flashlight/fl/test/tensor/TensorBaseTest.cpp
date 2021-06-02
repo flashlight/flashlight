@@ -53,7 +53,7 @@ bool allClose(
 
 TEST(TensorBaseTest, DefaultBackend) {
   Tensor t;
-  ASSERT_EQ(t.backend(), TensorBackend::ArrayFire);
+  ASSERT_EQ(t.backendType(), TensorBackendType::ArrayFire);
 }
 
 TEST(TensorBaseTest, AfRefCountBasic) {
