@@ -9,3 +9,6 @@
 
 #include "flashlight/fl/tensor/Compute.h"
 #include "flashlight/fl/tensor/Random.h"
+#include "flashlight/fl/tensor/Shape.h"
+#include "flashlight/fl/tensor/TensorBase.h"
+#include "flashlight/fl/tensor/Types.h"
