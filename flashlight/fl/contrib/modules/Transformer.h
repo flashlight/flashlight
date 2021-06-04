@@ -56,10 +56,14 @@ class Transformer : public Container {
       float pDropout,
       float pLayerdrop,
       bool useMask = false,
-      bool preLN = false);
+      bool preLN = false,
+      int window = 0);
 
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
   std::string prettyString() const override;
+  void setWindow(int window) {
+      window_ = window;
+  }
 
  private:
   int32_t nHeads_;
@@ -68,6 +72,7 @@ class Transformer : public Container {
   double pLayerdrop_;
   bool useMask_;
   bool preLN_;
+  int window_{0};
   std::shared_ptr<Linear> w1_, w2_, wq_, wk_, wv_, wf_;
   std::shared_ptr<LayerNorm> norm1_, norm2_;
 
@@ -90,11 +95,13 @@ class Transformer : public Container {
       pLayerdrop_,
       bptt_,
       useMask_,
-      preLN_)
+      preLN_,
+      fl::versioned(window_, 1))
 
   Transformer();
 };
 
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::Transformer);
+CEREAL_REGISTER_TYPE(fl::Transformer)
+CEREAL_CLASS_VERSION(fl::Transformer, 1)

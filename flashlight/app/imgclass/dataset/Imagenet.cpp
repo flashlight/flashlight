@@ -48,6 +48,14 @@ std::shared_ptr<Dataset> imagenetDataset(
     const std::unordered_map<std::string, uint64_t>& labelMap,
     std::vector<Dataset::TransformFunction> transformfns) {
   std::vector<std::string> filepaths = lib::fileGlob(imgDir + "/**/*.JPEG");
+  std::vector<std::string> filepaths2 = lib::fileGlob(imgDir + "/**/*.jpeg");
+  std::vector<std::string> filepaths3 = lib::fileGlob(imgDir + "/**/*.png");
+  for (auto elem : filepaths2) {
+    filepaths.push_back(elem);
+  }
+  for (auto elem : filepaths3) {
+    filepaths.push_back(elem);
+  }
   if (filepaths.empty()) {
     throw std::runtime_error(
         "No images were found in imagenet directory: " + imgDir);

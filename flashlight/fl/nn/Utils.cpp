@@ -12,6 +12,8 @@
 #include "flashlight/fl/autograd/Utils.h"
 #include "flashlight/fl/common/Utils.h"
 
+#include <iostream>
+
 namespace fl {
 
 int64_t numTotalParams(std::shared_ptr<fl::Module> module) {
@@ -100,21 +102,32 @@ int derivePadding(int inSz, int filterSz, int stride, int pad, int dilation) {
 af::array join(
     const std::vector<af::array>& inputs,
     double padValue /* = 0.0 */,
-    dim_t batchDim /* = -1 */) {
+    dim_t batchDim /* = -1 */,
+    const bool nopad) {
   if (inputs.empty()) {
     return af::array();
   }
   af::dim4 maxDims;
   af::dtype type = inputs[0].type();
   bool isEmpty = true;
+  bool first = true;
   for (const auto& in : inputs) {
     isEmpty = isEmpty && in.isempty();
     for (int d = 0; d < AF_MAX_DIMS; ++d) {
-      maxDims[d] = std::max(maxDims[d], in.dims(d));
+      if (nopad) {
+        if (first) {
+          maxDims[d] = in.dims(d);
+        } else {
+          maxDims[d] = std::min(maxDims[d], in.dims(d));
+        }
+      } else {
+        maxDims[d] = std::max(maxDims[d], in.dims(d));
+      }
       if (in.type() != type) {
         throw std::invalid_argument("all arrays should of same type for join");
       }
     }
+    first = false;
   }
 
   if (batchDim < 0) {
@@ -132,18 +145,38 @@ af::array join(
     // To avoid this we directly create empty array here with correct sizes
     return af::array(maxDims, type);
   }
-  auto padSeq = af::constant(padValue, maxDims, type);
-  std::array<af::seq, AF_MAX_DIMS> sel;
-  for (int i = 0; i < inputs.size(); ++i) {
-    for (int d = 0; d < AF_MAX_DIMS; ++d) {
-      sel[d] = af::seq(inputs[i].dims(d));
+  if (nopad) {
+    // std::cerr << "No pad to create a batch " << maxDims << std::endl;
+    auto seq = af::constant(0, maxDims, type);
+    for (int i = 0; i < inputs.size(); ++i) {
+      if (!inputs[i].isempty()) {
+        // T x F x 1
+        auto indicesRand = af::randu(af::dim4(inputs[i].dims(0)));
+        af::array indices, values;
+        af::sort(values, indices, indicesRand, 0);
+        indicesRand = indices.rows(0, maxDims[0] - 1);
+        af::sort(values, indices, indicesRand, 0);
+        // af::print("Batch taking these values", values);
+        seq(af::span, af::span, af::span, i) = inputs[i](values, af::span);
+      } else {
+        throw std::invalid_argument("Error in batching");
+      }
     }
-    sel[batchDim] = af::seq(i, i);
-    if (!inputs[i].isempty()) {
-      padSeq(sel[0], sel[1], sel[2], sel[3]) = inputs[i];
+    return seq;
+  } else {
+    auto padSeq = af::constant(padValue, maxDims, type);
+    std::array<af::seq, AF_MAX_DIMS> sel;
+    for (int i = 0; i < inputs.size(); ++i) {
+      for (int d = 0; d < AF_MAX_DIMS; ++d) {
+        sel[d] = af::seq(inputs[i].dims(d));
+      }
+      sel[batchDim] = af::seq(i, i);
+      if (!inputs[i].isempty()) {
+        padSeq(sel[0], sel[1], sel[2], sel[3]) = inputs[i];
+      }
     }
+    return padSeq;
   }
-  return padSeq;
 }
 
 } // namespace fl

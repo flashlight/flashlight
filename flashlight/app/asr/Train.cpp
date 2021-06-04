@@ -40,8 +40,8 @@
 #include "flashlight/lib/text/dictionary/Utils.h"
 
 using fl::ext::afToVector;
-using fl::ext::Serializer;
 using fl::ext::getRunFile;
+using fl::ext::Serializer;
 using fl::lib::fileExists;
 using fl::lib::format;
 using fl::lib::getCurrentDate;
@@ -92,6 +92,7 @@ DEFINE_int64(
     ipl_maxtsz,
     std::numeric_limits<int64_t>::max(),
     "maximum length of targets in words");
+DEFINE_bool(nopad, false, "not use pad in the batching, throw random frames");
 
 } // namespace
 
@@ -343,13 +344,19 @@ int main(int argc, char** argv) {
       worldSize,
       false, // allowEmpty
       FLAGS_batching_strategy,
-      FLAGS_batching_max_duration);
+      FLAGS_batching_max_duration,
+      FLAGS_nopad,
+      featType == FeatureType::CAPEMFSCFILE);
 
   std::map<std::string, std::shared_ptr<fl::Dataset>> validds;
   int64_t validBatchSize =
       FLAGS_validbatchsize == -1 ? FLAGS_batchsize : FLAGS_validbatchsize;
   auto validInputTransform = inputFeatures(
-      featParams, featType, {FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx});
+      featParams,
+      featType == FeatureType::CAPEMFSC || featType == FeatureType::CAPEMFSCFILE
+          ? FeatureType::MFSC
+          : featType,
+      {FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx});
   for (const auto& s : validTagSets) {
     validds[s.first] = createDataset(
         {s.second},
@@ -759,7 +766,12 @@ int main(int argc, char** argv) {
     }
   };
 
-  auto test = [&evalOutput, &dm, &lexicon, &usePlugin, &isSeq2seqCrit](
+  auto test = [&evalOutput,
+               &dm,
+               &lexicon,
+               &usePlugin,
+               &isSeq2seqCrit,
+               &worldRank](
                   std::shared_ptr<fl::Module> ntwrk,
                   std::shared_ptr<SequenceCriterion> crit,
                   std::shared_ptr<fl::Dataset> validds,
@@ -789,8 +801,9 @@ int main(int argc, char** argv) {
       std::vector<std::vector<int64_t>> wordEditDst(lmweights.size());
       std::vector<std::thread> threads;
       for (int i = 0; i < lmweights.size(); i++) {
-        threads.push_back(
-            std::thread([&lmweights, &wordEditDst, dm, eds, &lexicon, i]() {
+        threads.push_back(std::thread(
+            [&lmweights, &wordEditDst, dm, eds, &lexicon, i, &worldRank]() {
+              af::setDevice(worldRank % 8);
               double lmweight = lmweights[i];
               DecodeMasterLexiconOptions opt = {
                   .beamSize = FLAGS_beamsize,
@@ -896,6 +909,13 @@ int main(int argc, char** argv) {
                 &plGenerator,
                 &usePlugin,
                 &isSeq2seqCrit,
+                &trainSplits,
+                &inputTransform,
+                &targetTransform,
+                &wordTransform,
+                &padVal,
+                &worldRank,
+                &worldSize,
                 reducer](
                    std::shared_ptr<fl::Module> ntwrk,
                    std::shared_ptr<SequenceCriterion> crit,
@@ -1023,6 +1043,32 @@ int main(int argc, char** argv) {
       }
       std::hash<std::string> hasher;
       FL_LOG_MASTER(INFO) << "Shuffling trainset";
+      if (FLAGS_batching_strategy == "cape") {
+        FL_LOG_MASTER(INFO) << "Shuffling also batches in trainset";
+        std::vector<std::string> trainSplits =
+            fl::lib::split(",", FLAGS_train, true);
+        if (FLAGS_features_type == "capefile") {
+          for (int index = 0; index < trainSplits.size(); index++) {
+            trainSplits[index] = trainSplits[index] + ".epoch_" + std::to_string(curEpoch);
+          }
+        }
+        trainset = createDataset(
+            trainSplits,
+            FLAGS_datadir,
+            FLAGS_batchsize,
+            inputTransform,
+            targetTransform,
+            wordTransform,
+            padVal,
+            worldRank,
+            worldSize,
+            false, // allowEmpty
+            FLAGS_batching_strategy,
+            FLAGS_batching_max_duration,
+            FLAGS_nopad,
+            FLAGS_features_type == "capefile");
+      }
+
       auto curTrainset = loadPrefetchDataset(
           trainset, FLAGS_nthread, true /* shuffle */, curEpoch /* seed */);
       af::sync();
@@ -1140,6 +1186,14 @@ int main(int argc, char** argv) {
             if (!p.isGradAvailable()) {
               continue;
             }
+            // if (af::anyTrue<bool>(af::isNaN(p.grad().array()))) {
+            //   LOG(FATAL) << "Grad has NaN values. Samples - "
+            //              << join(",", readSampleIds(batch[kSampleIdx]));
+            // }
+            // if (af::anyTrue<bool>(af::isInf(p.grad().array()))) {
+            //   LOG(FATAL) << "Grad has Inf values. Samples - "
+            //              << join(",", readSampleIds(batch[kSampleIdx]));
+            // }
             p.grad() = p.grad() / (totalBatchSize * scaleFactor);
             if (FLAGS_fl_amp_use_mixed_precision) {
               if (af::anyTrue<bool>(af::isNaN(p.grad().array())) ||
@@ -1240,6 +1294,7 @@ int main(int argc, char** argv) {
   };
 
   /* ===================== Train ===================== */
+  af::setSeed(worldRank + FLAGS_seed);
   if (FLAGS_linseg - startUpdate > 0) {
     train(
         network,

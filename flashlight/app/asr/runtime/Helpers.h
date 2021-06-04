@@ -89,7 +89,9 @@ std::shared_ptr<fl::Dataset> createDataset(
     int worldSize = 1,
     const bool allowEmpty = false,
     const std::string& batchingStrategy = kBatchStrategyNone,
-    int maxDurationPerBatch = 0);
+    int maxDurationPerBatch = 0,
+    const bool nopadSet = false,
+    const bool strideFile = false);
 
 std::shared_ptr<fl::Dataset> loadPrefetchDataset(
     std::shared_ptr<fl::Dataset> dataset,

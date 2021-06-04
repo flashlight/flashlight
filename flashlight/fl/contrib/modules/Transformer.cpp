@@ -28,13 +28,15 @@ Transformer::Transformer(
     float pDropout,
     float pLayerdrop,
     bool useMask,
-    bool preLN)
+    bool preLN,
+    int window)
     : nHeads_(nHeads),
       bptt_(bptt),
       pDropout_(pDropout),
       pLayerdrop_(pLayerdrop),
       useMask_(useMask),
       preLN_(preLN),
+      window_(window),
       w1_(std::make_shared<Linear>(transformerInitLinear(modelDim, mlpDim))),
       w2_(std::make_shared<Linear>(transformerInitLinear(mlpDim, modelDim))),
       wq_(std::make_shared<Linear>(
@@ -96,6 +98,16 @@ Variable Transformer::selfAttention(const std::vector<Variable>& input) {
   if (useMask_ && encoderInput.dims(1) > 1) {
     // mask future if we use the previous state (then n is previous time)
     mask = getMask(n, input.size() == 3);
+  }
+  if (window_ > 0) {
+    af::array positions = af::range(af::dim4(n, n), 1) - af::range(af::dim4(n, n), 0);
+    af::array maskContext = af::constant(-1e-7, n, n) * ((positions < -window_) || (positions > window_));
+    auto maskContextVar = Variable(maskContext, false);
+    if (mask.isempty()) {
+      mask = maskContextVar;
+    } else {
+      mask = mask + maskContextVar;
+    }
   }
 
   int offset = (input.size() == 2) ? 0 : n;

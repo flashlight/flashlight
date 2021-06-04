@@ -49,7 +49,8 @@ class ListFileDataset : public fl::Dataset {
       const std::string& filename,
       const DataTransformFunction& inFeatFunc = nullptr,
       const DataTransformFunction& tgtFeatFunc = nullptr,
-      const DataTransformFunction& wrdFeatFunc = nullptr);
+      const DataTransformFunction& wrdFeatFunc = nullptr,
+      const bool strideFile = false);
 
   int64_t size() const override;
 
@@ -68,7 +69,7 @@ class ListFileDataset : public fl::Dataset {
   std::vector<std::string> ids_;
   std::vector<std::string> inputs_;
   std::vector<std::string> targets_;
-  std::vector<float> inputSizes_;
+  std::vector<float> inputSizes_, stride_;
   mutable std::vector<int64_t> targetSizesCache_;
 };
 

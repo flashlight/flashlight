@@ -240,7 +240,7 @@ void Variable::addGrad(const Variable& childGrad) {
           sharedGrad_->grad->array() + childGrad.array(), false);
       // Eval the JIT as a temporary workaround for
       // https://github.com/arrayfire/arrayfire/issues/2281
-      sharedGrad_->grad->eval();
+      // sharedGrad_->grad->eval();
     } else {
       // Copy the childGrad Variable so as to share a reference
       // to the underlying childGrad.array() rather than copying

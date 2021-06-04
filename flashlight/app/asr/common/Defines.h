@@ -57,6 +57,7 @@ constexpr const char* kBatchStrategyNone = "none";
 constexpr const char* kBatchStrategyDynamic = "dynamic";
 constexpr const char* kBatchStrategyRandDynamic = "randdynamic";
 constexpr const char* kBatchStrategyRand = "rand";
+constexpr const char* kBatchStrategyCape = "cape";
 constexpr const char* kFeaturesMFSC = "mfsc";
 constexpr const char* kFeaturesMFCC = "mfcc";
 constexpr const char* kFeaturesPow = "pow";

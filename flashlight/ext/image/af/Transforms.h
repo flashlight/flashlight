@@ -210,6 +210,8 @@ ImageTransform centerCropTransform(const int size);
  */
 ImageTransform randomHorizontalFlipTransform(const float p = 0.5);
 
+ImageTransform translateXtr(const int shift);
+ImageTransform translateYtr(const int shift);
 /*
  * Randomly erase.
  * The default parameters are defined as https://git.io/JY9R7
@@ -245,7 +247,8 @@ ImageTransform randomEraseTransform(
 ImageTransform randomAugmentationDeitTransform(
     const float p = 0.5,
     const int n = 2,
-    const af::array& fillImg = af::array());
+    const af::array& fillImg = af::array(),
+    const int imgSize = 224);
 
 /*
  * Utility method for composing multiple transform functions

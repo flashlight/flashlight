@@ -127,7 +127,9 @@ std::shared_ptr<fl::Dataset> createDataset(
     int worldSize /* = 1 */,
     const bool allowEmpty /* = false */,
     const std::string& batchingStrategy /* kBatchStrategyNone */,
-    int maxDurationPerBatch /* = 0 */) {
+    int maxDurationPerBatch /* = 0 */,
+    const bool nopadSet,
+    const bool strideFile) {
   std::vector<std::shared_ptr<const fl::Dataset>> allListDs;
   std::vector<float> sizes;
   for (auto& path : paths) {
@@ -149,7 +151,8 @@ std::shared_ptr<fl::Dataset> createDataset(
           pathsConcat(rootDir, path),
           inputTransform,
           targetTransform,
-          wordTransform);
+          wordTransform,
+          strideFile);
     }
 
     allListDs.emplace_back(curListDs);
@@ -165,7 +168,9 @@ std::shared_ptr<fl::Dataset> createDataset(
   auto cmp = [&sizes](const int64_t& l, const int64_t& r) {
     return sizes[l] > sizes[r];
   };
-  if (batchingStrategy == kBatchStrategyRand ||
+  if (strideFile) {
+
+  } else if (batchingStrategy == kBatchStrategyRand ||
       batchingStrategy == kBatchStrategyRandDynamic) {
     auto rng = std::mt19937(sizes.size());
     for (int i = sizes.size(); i >= 1; i--) {
@@ -173,6 +178,22 @@ std::shared_ptr<fl::Dataset> createDataset(
       std::swap(sortedIds[i - 1], sortedIds[index]);
       std::swap(sizes[i - 1], sizes[index]);
     }
+  } else if (batchingStrategy == kBatchStrategyCape) {
+    // nothing todo use list order
+    std::vector<float> sizesRand;
+    float factor = std::rand() * 0.2 + 0.9;
+    for (auto s : sizes) {
+      sizesRand.push_back(s * factor);
+    }
+    auto cmpRand = [&sizesRand](const int64_t& l, const int64_t& r) {
+      return sizesRand[l] > sizesRand[r];
+    };
+    std::stable_sort(sortedIds.begin(), sortedIds.end(), cmp);
+    std::vector<float> sizesNew;
+    for (auto index : sortedIds) {
+      sizesNew.push_back(sizes[index]);
+    }
+    sizes = sizesNew;
   } else {
     std::stable_sort(sortedIds.begin(), sortedIds.end(), cmp);
     std::stable_sort(sizes.begin(), sizes.end(), std::greater<float>());
@@ -186,10 +207,10 @@ std::shared_ptr<fl::Dataset> createDataset(
   int inPad, tgtPad, wrdPad;
   std::tie(inPad, tgtPad, wrdPad) = padVal;
   auto batchFns = std::vector<fl::Dataset::BatchFunction>{
-      [inPad](const std::vector<af::array>& arr) {
-        return fl::join(arr, inPad, 3);
+      [inPad, nopadSet](const std::vector<af::array>& arr) {
+        return fl::join(arr, inPad, 3, nopadSet);
       },
-      [tgtPad](const std::vector<af::array>& arr) {
+      [tgtPad](const std::vector<af::array>& arr) { 
         return fl::join(arr, tgtPad, 1);
       },
       [wrdPad](const std::vector<af::array>& arr) {
@@ -200,7 +221,8 @@ std::shared_ptr<fl::Dataset> createDataset(
       [](const std::vector<af::array>& arr) { return fl::join(arr, 0, 1); },
       [](const std::vector<af::array>& arr) { return fl::join(arr, 0, 1); }};
   if (batchingStrategy == kBatchStrategyDynamic ||
-      batchingStrategy == kBatchStrategyRandDynamic) {
+      batchingStrategy == kBatchStrategyRandDynamic ||
+      batchingStrategy == kBatchStrategyCape) {
     // Partition the dataset and distribute
     auto result = fl::dynamicPartitionByRoundRobin(
         sizes, worldRank, worldSize, maxDurationPerBatch, allowEmpty);
@@ -225,7 +247,7 @@ std::shared_ptr<fl::Dataset> createDataset(
     throw std::runtime_error(
         "Unsupported batching strategy '" + batchingStrategy + "'");
   }
-}
+} // namespace asr
 
 std::shared_ptr<fl::Dataset> loadPrefetchDataset(
     std::shared_ptr<fl::Dataset> dataset,

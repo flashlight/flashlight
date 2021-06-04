@@ -25,8 +25,23 @@ PositionEmbedding::PositionEmbedding(
 std::vector<Variable> PositionEmbedding::forward(
     const std::vector<Variable>& input) {
   int n = input[0].dims(1);
+  af::array indices = af::iota(af::dim4(n)) % (params_[0].dims(1) - 1);
+  // Variable posEmb =
+  //     tileAs(params_[0].as(input[0].type()).cols(0, n - 1), input[0]);
   Variable posEmb =
-      tileAs(params_[0].as(input[0].type()).cols(0, n - 1), input[0]);
+      tileAs(params_[0].as(input[0].type())(af::span, indices.as(s64)), input[0]);
+
+  // int maxVal = std::min(n, int(params_[0].dims(1)));
+  // std::vector<Variable> result = {
+  //     params_[0].as(input[0].type()).cols(0, maxVal - 1)};
+  // int remain = n - maxVal;
+  // while (remain > 0) {
+  //   maxVal = std::min(remain, int(params_[0].dims(1)));
+  //   result.push_back(params_[0].as(input[0].type()).cols(0, maxVal - 1));
+  //   remain -= maxVal;
+  // }
+  // Variable posEmb = tileAs(fl::concatenate(result, 1), input[0]);
+
   if (dropout_ > 0.0 && train_) {
     return {input[0] + dropout(posEmb, dropout_)};
   } else {

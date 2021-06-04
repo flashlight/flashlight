@@ -13,6 +13,7 @@
 #include <stdexcept>
 #include <thread>
 
+#include <experimental/random>
 #include "flashlight/app/asr/data/Utils.h"
 #include "flashlight/lib/audio/feature/Mfcc.h"
 #include "flashlight/lib/audio/feature/Mfsc.h"
@@ -44,6 +45,7 @@ class StartSfxCounter {
     iters_ = iters_ > 0 ? iters_ - 1 : iters_;
     return iters_ <= 0;
   }
+
  private:
   int iters_;
   std::mutex mutex_;
@@ -101,6 +103,34 @@ fl::Dataset::DataTransformFunction inputFeatures(
       thread_local Mfcc mfcc(params);
       featSz = params.mfccFeatSz();
       output = mfcc.batchApply(input, channels);
+    } else if (featureType == FeatureType::CAPEMFSC || featureType == FeatureType::CAPEMFSCFILE) {
+      int stride;
+      if (featureType == FeatureType::CAPEMFSC) {
+        stride = std::experimental::randint(8, 12);
+      } else {
+        stride = static_cast<const float*>(data)[input.size()];
+      }
+      fl::lib::audio::FeatureParams featParams(
+          params.samplingFreq,
+          params.frameSizeMs,
+          stride,
+          params.numFilterbankChans,
+          params.lowFreqFilterbank,
+          params.highFreqFilterbank,
+          params.numCepstralCoeffs,
+          params.lifterParam /* lifterparam */,
+          params.deltaWindow /* delta window */,
+          params.accWindow /* delta-delta window */);
+      featParams.useEnergy = params.useEnergy;
+      featParams.usePower = params.usePower;
+      featParams.zeroMeanFrame = params.zeroMeanFrame;
+
+      Mfsc mfsc(featParams);
+      featSz = featParams.mfscFeatSz();
+      output = mfsc.batchApply(input, channels);
+      // int T = output.size() / (featSz * channels);
+      // std::cerr << "Sample size " << input.size() << " After FFT " << T << "
+      // Stride " << input.size() / 16. / T << " " << std::endl;
     } else {
       // use raw audio
       output = input; // T X CHANNELS (Col Major)

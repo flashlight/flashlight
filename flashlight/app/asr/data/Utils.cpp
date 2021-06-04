@@ -106,6 +106,10 @@ std::pair<int, FeatureType> getFeatureType(
     return std::make_pair(featParams.mfscFeatSz(), FeatureType::MFSC);
   } else if (featuresType == kFeaturesMFSC) {
     return std::make_pair(featParams.mfccFeatSz(), FeatureType::MFCC);
+  } else if (featuresType == kBatchStrategyCape) {
+    return std::make_pair(featParams.mfscFeatSz(), FeatureType::CAPEMFSC);
+  } else if (featuresType == "capefile") {
+    return std::make_pair(featParams.mfscFeatSz(), FeatureType::CAPEMFSCFILE);
   } else if (featuresType == kFeaturesRaw) {
     return std::make_pair(channels, FeatureType::NONE);
   } else {

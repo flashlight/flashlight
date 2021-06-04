@@ -916,6 +916,8 @@ Variable categoricalCrossEntropy(
   if (af::anyTrue<bool>(
           ((targets.array() < 0) || (targets.array() >= C)) &&
           (targets.array() != ignoreIndex))) {
+    std::cerr << "Labels " << C << std::endl;
+    af_print(targets.array());
     throw std::invalid_argument(
         "target contains elements out of valid range [0, num_categories) "
         "in categorical cross entropy");
@@ -985,7 +987,7 @@ Variable weightedCategoricalCrossEntropy(
     throw std::invalid_argument(
         "dimension mismatch in categorical cross entropy");
   }
-  if(weight.dims(0) != input.dims(0)) {
+  if (weight.dims(0) != input.dims(0)) {
     throw std::invalid_argument(
         "dimension mismatch in categorical cross entropy");
   }
@@ -1285,8 +1287,9 @@ fl::Variable multiheadAttention(
         relativePositionEmbeddingRotate(matmulNT(posEmb.as(q.type()), q));
     scores = scores + transpose(pscores.rows(n, n + k.dims(0) - 1));
   }
+  fl::Variable totalMask;
   if (!mask.isempty()) {
-    scores = scores + tileAs(mask.as(scores.type()), scores);
+    totalMask = tileAs(mask.as(scores.type()), scores);
   }
   if (!padMask.isempty()) {
     if (padMask.dims(0) != query.dims(0)) {
@@ -1296,12 +1299,20 @@ fl::Variable multiheadAttention(
     auto padMaskTile = moddims(padMask, af::dim4(1, padMask.dims(0), 1, bsz));
     padMaskTile = tileAs(
         padMaskTile, af::dim4(padMask.dims(0), padMask.dims(0), nHeads, bsz));
-    scores = scores +
-        moddims(padMaskTile.as(scores.type()),
-                af::dim4(padMask.dims(0), padMask.dims(0), nHeads * bsz));
+    padMaskTile = moddims(
+        padMaskTile.as(scores.type()),
+        af::dim4(padMask.dims(0), padMask.dims(0), nHeads * bsz));
+    if (totalMask.isempty()) {
+      totalMask = padMaskTile;
+    } else {
+      totalMask = totalMask + padMaskTile;
+    }
   }
-
-  auto attn = dropout(softmax(scores, 1), pDropout);
+  if (!totalMask.isempty()) {
+    scores = scores + totalMask;
+  }
+  scores = softmax(scores, 1);
+  auto attn = dropout(scores, pDropout);
   auto result = matmul(attn.as(v.type()), v);
   result = moddims(result, af::dim4(-1, headDim * nHeads, bsz));
   return result;

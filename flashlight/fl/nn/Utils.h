@@ -69,7 +69,8 @@ int derivePadding(int inSz, int filterSz, int stride, int pad, int dilation);
 af::array join(
     const std::vector<af::array>& inputs,
     double padValue = 0.0,
-    dim_t batchDim = -1);
+    dim_t batchDim = -1,
+    const bool nopad = false);
 
 /** @} */
 

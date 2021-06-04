@@ -54,7 +54,9 @@ TEST(SerializationTest, ViT) {
       nHeads,
       0.1, // setting non-zero drop prob for testing purpose
       0.1, // setting non-zero drop prob for testing purpose
-      1000);
+      1000,
+      true,
+      false);
   model->eval();
 
   const std::string path = fl::lib::getTmpPath("ViT.mdl");

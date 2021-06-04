@@ -122,14 +122,15 @@ void gradAdvancedIndex(
     }
   }
   Variable inpCast = inp;
+  Variable outCast = out;
   if (inpType == f16) {
     inpCast = inp.as(f32);
   }
   if (outType == f16) {
-    out = out.as(f32);
+    outCast = out.as(f32);
   }
   DevicePtr inpRaw(inpCast.array());
-  DevicePtr outRaw(out.array());
+  DevicePtr outRaw(outCast.array());
 
   af::array arrIdxPtr(4, idxPtr.get());
   af::array arrIdxEnd(4, idxEnd.get());
@@ -182,8 +183,9 @@ void gradAdvancedIndex(
   }
   FL_CUDA_CHECK(cudaPeekAtLastError());
 
+  out = outCast;
   if (outType == f16) {
-    out = out.as(f16);
+    out = outCast.as(f16);
   }
 }
 

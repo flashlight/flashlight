@@ -1,4 +1,5 @@
 /**
+ *
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -33,14 +34,25 @@ namespace fl {
  */
 class SinusoidalPositionEmbedding : public Container {
  public:
-  explicit SinusoidalPositionEmbedding(int32_t layerDim, double inputScale = 1.);
+  explicit SinusoidalPositionEmbedding(
+      int32_t layerDim,
+      double inputScale = 1.);
   /**
    * SinusoidalPositionEmbedding::forward(input) expects input[0] to be of
    * dimensions CxTxBx1 with C = layerDim.
    * output[0] = input[0] * inputScale + sinPosEmb, where sinPosEmb is a Tensor
    * of dimensions CxTxBx1 computed based on position and C.
    */
-  std::vector<Variable> forward(const std::vector<Variable>& input) override;
+  std::vector<Variable> forward(const std::vector<Variable>& input) override {
+    return forward(input, false);
+  }
+  std::vector<Variable> forward(
+      const std::vector<Variable>& input,
+      bool aug,
+      int globalShift = 0,
+      float shrink = 1.0,
+      af::array duration = af::array(),
+      bool uselocal = true);
 
   std::vector<Variable> operator()(const std::vector<Variable>& input);
 

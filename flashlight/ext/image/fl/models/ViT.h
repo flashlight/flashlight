@@ -8,6 +8,7 @@
 #pragma once
 
 #include "flashlight/ext/image/fl/nn/VisionTransformer.h"
+#include "flashlight/fl/contrib/modules/modules.h"
 #include "flashlight/fl/nn/nn.h"
 
 namespace fl {
@@ -33,7 +34,10 @@ class ViT : public fl::Container {
       patchEmbedding_,
       transformers_,
       linearOut_,
-      ln_)
+      ln_,
+      fl::versioned(augPosEmb_, 1),
+      fl::versioned(usePosEmb_, 1),
+      fl::versioned(useAugPosEmb_, 1))
 
   int nLayers_;
   int hiddenEmbSize_;
@@ -41,8 +45,12 @@ class ViT : public fl::Container {
   int nHeads_;
   float pDropout_;
   int nClasses_;
+  bool usePosEmb_{true};
+  bool useAugPosEmb_{false};
+  fl::Variable posembResize_;
 
   std::shared_ptr<Conv2D> patchEmbedding_;
+  std::shared_ptr<SinusoidalPositionEmbedding2D> augPosEmb_;
   std::vector<std::shared_ptr<VisionTransformer>> transformers_;
   std::shared_ptr<Linear> linearOut_;
   std::shared_ptr<LayerNorm> ln_;
@@ -56,7 +64,11 @@ class ViT : public fl::Container {
       const int nHeads,
       const float pDropout,
       const float pLayerDrop,
-      const int nClasses);
+      const int nClasses,
+      const bool usePosEmb,
+      const bool useAugPosEmb,
+      const int imageSize = 224,
+      const int patchSize = 16);
 
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;
@@ -66,7 +78,14 @@ class ViT : public fl::Container {
   //  2. AMP config updated accordingly
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs,
-      bool useFp16);
+      bool useFp16,
+      bool eval = false,
+      bool aug = false,
+      float region = 1,
+      bool doShrink = true,
+      float embDropout = 0.0);
+
+  void resetPosEmb(const int newImgSize);
 
   std::string prettyString() const override;
 };
@@ -76,3 +95,4 @@ class ViT : public fl::Container {
 } // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::ext::image::ViT);
+CEREAL_CLASS_VERSION(fl::ext::image::ViT, 1)

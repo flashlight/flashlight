@@ -143,8 +143,8 @@ int main(int argc, char** argv) {
     LOG(INFO) << "Number of words: " << wordDict.indexSize();
   }
 
-  fl::lib::text::DictionaryMap dicts = {{kTargetIdx, tokenDict},
-                                        {kWordIdx, wordDict}};
+  fl::lib::text::DictionaryMap dicts = {
+      {kTargetIdx, tokenDict}, {kWordIdx, wordDict}};
 
   /* ===================== Create Dataset ===================== */
   fl::lib::audio::FeatureParams featParams(
@@ -177,13 +177,16 @@ int main(int argc, char** argv) {
 
   auto inputTransform = inputFeatures(
       featParams,
-      featType,
+      featType == FeatureType::CAPEMFSC || featType == FeatureType::CAPEMFSCFILE
+          ? FeatureType::MFSC
+          : featType,
       {FLAGS_localnrmlleftctx, FLAGS_localnrmlrightctx},
       /*sfxConf=*/{});
   auto targetTransform = targetFeatures(tokenDict, lexicon, targetGenConfig);
   auto wordTransform = wordFeatures(wordDict);
-  int targetpadVal =
-      isSeq2seqCrit ? tokenDict.getIndex(fl::lib::text::kPadToken) : kTargetPadValue;
+  int targetpadVal = isSeq2seqCrit
+      ? tokenDict.getIndex(fl::lib::text::kPadToken)
+      : kTargetPadValue;
   int wordpadVal = wordDict.getIndex(fl::lib::text::kUnkToken);
 
   std::vector<std::string> testSplits = fl::lib::split(",", FLAGS_test, true);
@@ -291,8 +294,9 @@ int main(int argc, char** argv) {
       fl::Variable rawEmission;
       if (usePlugin) {
         rawEmission = localNetwork
-                          ->forward({fl::input(sample[kInputIdx]),
-                                     fl::noGrad(sample[kDurationIdx])})
+                          ->forward(
+                              {fl::input(sample[kInputIdx]),
+                               fl::noGrad(sample[kDurationIdx])})
                           .front();
       } else {
         rawEmission = fl::ext::forwardSequentialModuleWithPadMask(

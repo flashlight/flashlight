@@ -29,7 +29,8 @@ ListFileDataset::ListFileDataset(
     const std::string& filename,
     const DataTransformFunction& inFeatFunc /* = nullptr */,
     const DataTransformFunction& tgtFeatFunc /* = nullptr */,
-    const DataTransformFunction& wrdFeatFunc /* = nullptr */)
+    const DataTransformFunction& wrdFeatFunc /* = nullptr */,
+    const bool strideFile)
     : inFeatFunc_(inFeatFunc),
       tgtFeatFunc_(tgtFeatFunc),
       wrdFeatFunc_(wrdFeatFunc),
@@ -54,8 +55,17 @@ ListFileDataset::ListFileDataset(
     ids_.emplace_back(std::move(splits[kIdIdx]));
     inputs_.emplace_back(std::move(splits[kInIdx]));
     inputSizes_.emplace_back(std::stof(splits[kSzIdx]));
-    targets_.emplace_back(fl::lib::join(
-        " ", std::vector<std::string>(splits.begin() + kTgtIdx, splits.end())));
+    if (strideFile) {
+      stride_.emplace_back(std::stof(splits[kTgtIdx]));
+      targets_.emplace_back(fl::lib::join(
+          " ",
+          std::vector<std::string>(
+              splits.begin() + kTgtIdx + 1, splits.end())));
+    } else {
+      targets_.emplace_back(fl::lib::join(
+          " ",
+          std::vector<std::string>(splits.begin() + kTgtIdx, splits.end())));
+    }
     ++numRows_;
   }
   inFile.close();
@@ -72,6 +82,9 @@ std::vector<af::array> ListFileDataset::get(const int64_t idx) const {
   auto audio = loadAudio(inputs_[idx]); // channels x time
   af::array input;
   if (inFeatFunc_) {
+    if (stride_.size() > 0) {
+      audio.first.push_back(stride_[idx]);
+    }
     input = inFeatFunc_(
         static_cast<void*>(audio.first.data()), audio.second, af::dtype::f32);
   } else {
@@ -102,7 +115,14 @@ std::vector<af::array> ListFileDataset::get(const int64_t idx) const {
   af::array sampleDuration = af::array(1, inputSizes_.data() + idx);
   af::array sampleTargetSize = af::constant(float(target.elements()), 1);
 
-  return {input, target, words, sampleIdx, samplePath, sampleDuration, sampleTargetSize};
+  return {
+      input,
+      target,
+      words,
+      sampleIdx,
+      samplePath,
+      sampleDuration,
+      sampleTargetSize};
 }
 
 std::pair<std::vector<float>, af::dim4> ListFileDataset::loadAudio(

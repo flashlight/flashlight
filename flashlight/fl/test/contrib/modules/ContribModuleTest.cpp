@@ -320,6 +320,41 @@ TEST_F(ContribModuleTestF16, SinusoidalPositionEmbeddingFwdF16) {
   sinusoidalPositionEmbeddingFwd(true);
 }
 
+void sinusoidalPositionEmbedding2dFwd(bool isfp16) {
+  int batchsize = 1;
+  int timesteps = 30 * 30 + 1;
+  int csz = 16;
+  auto dtype = isfp16 ? af::dtype::f16 : af::dtype::f32;
+
+  auto posemb = SinusoidalPositionEmbedding2D(csz, 2.);
+  auto input =
+      Variable(af::randu(csz, timesteps, batchsize, 1, dtype), false) -
+      0.5;
+
+  auto output = posemb.forward({input}, true);
+
+  ASSERT_EQ(output[0].dims(0), csz);
+  ASSERT_EQ(output[0].dims(1), timesteps);
+  ASSERT_EQ(output[0].dims(2), batchsize);
+  auto castOutput = output[0].array();
+  if (isfp16) {
+    castOutput = output[0].as(af::dtype::f32).array();
+  }
+  ASSERT_TRUE((af::max(castOutput)).scalar<float>() <= 2);
+  ASSERT_TRUE((af::min(castOutput)).scalar<float>() >= -2);
+}
+
+TEST(ContribModuleTest, SinusoidalPositionEmbedding2dFwd) {
+  sinusoidalPositionEmbedding2dFwd(false);
+}
+
+TEST_F(ContribModuleTestF16, SinusoidalPositionEmbedding2dFwdF16) {
+  if (!fl::f16Supported()) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+  sinusoidalPositionEmbedding2dFwd(true);
+}
+
 TEST(ContribModuleTest, AdaptiveEmbedding) {
   std::vector<int> values = {1, 4, 6, 2, 12, 7, 4, 21, 22, 18, 3, 23};
   int T = 6, B = 2, dim = 128;

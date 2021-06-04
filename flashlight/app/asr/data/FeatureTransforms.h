@@ -19,7 +19,7 @@ namespace fl {
 namespace app {
 namespace asr {
 
-enum class FeatureType { POW_SPECTRUM, MFSC, MFCC, NONE };
+enum class FeatureType { POW_SPECTRUM, MFSC, MFCC, NONE, CAPEMFSC, CAPEMFSCFILE};
 
 struct TargetGenerationConfig {
   TargetGenerationConfig(

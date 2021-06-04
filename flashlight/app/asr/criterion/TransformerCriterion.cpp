@@ -219,7 +219,13 @@ std::pair<Variable, TS2SState> TransformerCriterion::decodeStep(
                ->forward(std::vector<Variable>({hy, fl::noGrad(padMask)}))
                .front();
     } else {
-      outState.hidden.push_back(concatenate({inState.hidden[i], hy}, 1));
+      auto tmp = concatenate({inState.hidden[i], hy}, 1);
+      if (tmp.dims(1) > maxDecoderOutputLen_ - 1) {
+        tmp = tmp.cols(tmp.dims(1) - maxDecoderOutputLen_ + 1, tmp.dims(1) - 1);
+      }
+      outState.hidden.push_back(tmp);
+      // std::cerr << maxDecoderOutputLen_ << " state " << inState.hidden[i].dims()
+      //           << " hy " << hy.dims() << " tmp " << tmp.dims() << std::endl;
       hy = layer(i)
                ->forward({inState.hidden[i], hy, fl::noGrad(padMask)})
                .front();

@@ -466,14 +466,27 @@ ImageTransform randomEraseTransform(
   };
 };
 
+ImageTransform translateXtr(const int shift) {
+  return [shift](const af::array& in) {
+    return translateX(in, shift, af::constant(0, in.dims()));
+  };
+}
+
+ImageTransform translateYtr(const int shift) {
+  return [shift](const af::array& in) {
+    return translateX(in, shift, af::constant(0, in.dims()));
+  };
+}
+
 ImageTransform randomAugmentationDeitTransform(
     const float p,
     const int n,
-    const af::array& fillImg) {
+    const af::array& fillImg,
+    const int imgSize) {
   // Selected 15 transform functions with specific parameters
   // following https://git.io/JYGG6
 
-  return [p, n, fillImg](const af::array& in) {
+  return [p, n, fillImg, imgSize](const af::array& in) {
     auto res = in;
     for (int i = 0; i < n; i++) {
       if (p < randomFloat(0, 1)) {
@@ -501,13 +514,13 @@ ImageTransform randomAugmentationDeitTransform(
         res = skewY(res, theta, fillImg);
       } else if (mode == 3) {
         // translate-x
-        int baseDelta = 90;
+        int baseDelta = 0.45 * 0.4 * imgSize;
         int delta = randomPerturbNegate<int>(baseDelta, -3, 3);
 
         res = translateX(res, delta, fillImg);
       } else if (mode == 4) {
         // translate-y
-        int baseDelta = 90;
+        int baseDelta = 0.45 * 0.4 * imgSize;
         int delta = randomPerturbNegate<int>(baseDelta, -3, 3);
 
         res = translateY(res, delta, fillImg);
