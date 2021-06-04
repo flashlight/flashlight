@@ -514,13 +514,13 @@ ImageTransform randomAugmentationDeitTransform(
         res = skewY(res, theta, fillImg);
       } else if (mode == 3) {
         // translate-x
-        int baseDelta = 0.45 * 0.4 * imgSize;
+        int baseDelta = 0.45 * 0.9 * imgSize;
         int delta = randomPerturbNegate<int>(baseDelta, -3, 3);
 
         res = translateX(res, delta, fillImg);
       } else if (mode == 4) {
         // translate-y
-        int baseDelta = 0.45 * 0.4 * imgSize;
+        int baseDelta = 0.45 * 0.9 * imgSize;
         int delta = randomPerturbNegate<int>(baseDelta, -3, 3);
 
         res = translateY(res, delta, fillImg);
