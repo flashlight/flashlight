@@ -12,16 +12,18 @@ target_sources(
 # ------------------------- KenLM-specific -------------------------
 
 if (FL_LIBRARIES_USE_KENLM)
-  find_package(kenlm)
+  # Try to find the CMake config first
+  find_package(kenlm CONFIG)
   if (NOT kenlm_FOUND)
-    if (FL_BUILD_STANDALONE)
-      message(STATUS "KenLM not found - will download and build from source")
-      include(${CMAKE_MODULE_PATH}/BuildKenlm.cmake)
-      add_dependencies(fl-libraries kenlm) # ExternalProject target
+    # No luck - use Findkenlm.cmake
+    find_package(kenlm MODULE)
+    if (NOT kenlm_FOUND)
+      if (FL_BUILD_STANDALONE)
+        message(STATUS "KenLM not found - will download and build from source")
+        include(${CMAKE_MODULE_PATH}/BuildKenlm.cmake)
+        add_dependencies(fl-libraries kenlm) # ExternalProject target
+      endif()
     endif()
-  endif()
-  if (FL_BUILD_STANDALONE)
-    setup_install_find_module(${CMAKE_MODULE_PATH}/Findkenlm.cmake)
   endif()
 
   target_sources(
@@ -30,22 +32,32 @@ if (FL_LIBRARIES_USE_KENLM)
     ${CMAKE_CURRENT_LIST_DIR}/KenLM.cpp
     )
 
-  target_link_libraries(
-    fl-libraries
-    PRIVATE
-    ${KENLM_LIBRARIES}
-    )
-
-  target_include_directories(
-    fl-libraries
-    PUBLIC
-    $<BUILD_INTERFACE:${KENLM_INCLUDE_DIRS}>
-    $<BUILD_INTERFACE:${KENLM_INCLUDE_DIRS_LM}>
-    )
-
   target_compile_definitions(
     fl-libraries
     PUBLIC
     KENLM_MAX_ORDER=${KENLM_MAX_ORDER}
     )
-endif ()
+
+  # Link imported kenlm target if we have it
+  if (TARGET kenlm::kenlm AND TARGET kenlm::kenlm_util)
+    target_link_libraries(
+      fl-libraries
+      PRIVATE
+      kenlm::kenlm
+      kenlm::kenlm_util
+      )
+  else()
+    target_link_libraries(
+      fl-libraries
+      PRIVATE
+      ${KENLM_LIBRARIES}
+      )
+
+    target_include_directories(
+      fl-libraries
+      PUBLIC
+      $<BUILD_INTERFACE:${KENLM_INCLUDE_DIRS}>
+      $<BUILD_INTERFACE:${KENLM_INCLUDE_DIRS_LM}>
+      )
+  endif()
+endif()
