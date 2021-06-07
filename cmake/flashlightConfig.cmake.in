@@ -71,7 +71,7 @@ if (@FL_BUILD_STANDALONE@)
   endif()
   # Remove this dir from module path
   list(REMOVE_AT CMAKE_MODULE_PATH -1)
-endif()
+endif() # FL_BUILD_STANDALONE
 
 ################################################################################
 
