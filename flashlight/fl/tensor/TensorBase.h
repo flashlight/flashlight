@@ -7,8 +7,10 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <optional>
+#include <vector>
 
 #include "flashlight/fl/tensor/Shape.h"
 #include "flashlight/fl/tensor/Types.h"
@@ -20,11 +22,14 @@ namespace fl {
  */
 enum class TensorBackendType { ArrayFire };
 
-// Forward declaration - see TensorAdapter.h
+// See TensorAdapter.h
 class TensorAdapterBase;
 
-// Forward declaration - see TensorBackend.h
+// See TensorBackend.h
 class TensorBackend;
+
+// See Index.h
+class Index;
 
 /**
  * A Tensor on which computation can be performed.
@@ -46,6 +51,12 @@ class Tensor {
  public:
   explicit Tensor(std::unique_ptr<TensorAdapterBase> adapter);
   virtual ~Tensor();
+
+  /**
+   * Copy constructor - calls the implementation-defined copy constructor for
+   * the TensorAdapter.
+   */
+  Tensor(const Tensor& tensor);
 
   /**
    * Construct an empty tensor with the default tensor backend's tensor adapter.
@@ -73,6 +84,26 @@ class Tensor {
    * @return a tensor with element-wise cast to the new type
    */
   Tensor astype(const dtype type);
+
+  /**
+   * Index into a tensor using a vector of fl::Index references.
+   *
+   * @param[in] indices a vector of fl::Index references with which to index.
+   * @return an indexed tensor
+   */
+  Tensor operator()(const std::vector<Index>& indices) const;
+
+  /**
+   * Index into a tensor using a variable number of fl::Index.
+   *
+   * @param[in] indices fl::Index instances to use
+   * @return an indexed tensor
+   */
+  template <typename... Ts>
+  Tensor operator()(const Ts&... args) const {
+    std::vector<Index> indices{{args...}};
+    return this->operator()(indices);
+  }
 
   /**
    * Gets the backend enum from the underlying TensorAdapter.

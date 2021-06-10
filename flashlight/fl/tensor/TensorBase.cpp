@@ -27,6 +27,8 @@ Tensor::Tensor(std::unique_ptr<TensorAdapterBase> adapter)
 
 Tensor::~Tensor() {}
 
+Tensor::Tensor(const Tensor& tensor) : impl_(tensor.impl_->clone()) {}
+
 Tensor::Tensor() : impl_(detail::getDefaultAdapter()) {}
 
 const Shape& Tensor::shape() const {
@@ -39,6 +41,10 @@ dtype Tensor::type() const {
 
 Tensor Tensor::astype(const dtype type) {
   return impl_->astype(type);
+}
+
+Tensor Tensor::operator()(const std::vector<Index>& indices) const {
+  return impl_->index(indices);
 }
 
 TensorBackendType Tensor::backendType() const {

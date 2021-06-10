@@ -102,4 +102,9 @@ class Shape {
   std::vector<Dim>& get();
 };
 
+/**
+ * Write a shape representation to an output stream.
+ */
+std::ostream& operator<<(std::ostream& ostr, const Shape& s);
+
 } // namespace fl

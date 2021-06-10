@@ -11,6 +11,7 @@
 #include <stdexcept>
 #include <utility>
 
+#include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/fl/tensor/backend/af/ArrayFireBackend.h"
 #include "flashlight/fl/tensor/backend/af/Utils.h"
@@ -23,6 +24,11 @@ ArrayFireTensor::ArrayFireTensor(af::array&& array)
     : array_(std::move(array)), shape_(detail::afToFlDims(array_.dims())) {}
 
 ArrayFireTensor::ArrayFireTensor() {}
+
+std::unique_ptr<TensorAdapterBase> ArrayFireTensor::clone() const {
+  af::array arr = array_; // increment internal AF refcount
+  return std::make_unique<ArrayFireTensor>(std::move(arr));
+}
 
 TensorBackendType ArrayFireTensor::backendType() const {
   return TensorBackendType::ArrayFire;
@@ -46,6 +52,21 @@ fl::dtype ArrayFireTensor::type() const {
 Tensor ArrayFireTensor::astype(const dtype type) {
   auto a = array_.as(detail::flToAfType(type));
   return toTensor<ArrayFireTensor>(std::move(a));
+}
+
+Tensor ArrayFireTensor::index(const std::vector<Index>& indices) const {
+  if (indices.size() > AF_MAX_DIMS) {
+    throw std::invalid_argument(
+        "ArrayFire-backed tensor was indexed with > 4 elements:"
+        "ArrayFire tensors support up to 4 dimensions.");
+  }
+  std::vector<af::index> afIndices(4, af::span);
+  for (size_t i = 0; i < indices.size(); ++i) {
+    afIndices[i] = detail::flToAfIndex(indices[i]);
+  }
+  af::array out = detail::condenseIndices(
+      array_(afIndices[0], afIndices[1], afIndices[2], afIndices[3]));
+  return toTensor<ArrayFireTensor>(std::move(out));
 }
 
 af::array& ArrayFireTensor::getHandle() {

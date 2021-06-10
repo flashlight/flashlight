@@ -39,6 +39,12 @@ class TensorAdapterBase {
   virtual ~TensorAdapterBase() = default;
 
   /**
+   * Copies the tensor adapter. The implementation defines whether or not tensor
+   * data itself is copied - this is not an implementation requirement.
+   */
+  virtual std::unique_ptr<TensorAdapterBase> clone() const = 0;
+
+  /**
    * Gets the tensor's associated backend.
    *
    * @return TensorBackendType enum associated with the backend
@@ -73,6 +79,14 @@ class TensorAdapterBase {
    * @return a tensor with element-wise cast to the new type
    */
   virtual Tensor astype(const dtype type) = 0;
+
+  /**
+   * Index into a tensor with a variable number of indices.
+   *
+   * @param[in] indices a vector of Index references
+   * @return an indexed tensor
+   */
+  virtual Tensor index(const std::vector<Index>& indices) const = 0;
 };
 
 namespace detail {

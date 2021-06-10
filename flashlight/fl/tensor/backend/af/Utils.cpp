@@ -10,6 +10,9 @@
 #include <stdexcept>
 #include <unordered_map>
 
+#include "flashlight/fl/tensor/Index.h"
+#include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
+
 namespace fl {
 namespace detail {
 
@@ -70,6 +73,7 @@ void afToFlDims(const af::dim4& d, Shape& s) {
     s[0] = 1;
     return;
   }
+
   // Number of non-trailing-1 dims
   unsigned idx = AF_MAX_DIMS - 1;
   while (d[idx] == 1) {
@@ -86,6 +90,47 @@ Shape afToFlDims(const af::dim4& d) {
   Shape s;
   afToFlDims(d, s);
   return s;
+}
+
+af::seq flRangeToAfSeq(const fl::range& range) {
+  return af::seq(range.start(), range.end(), range.stride());
+}
+
+af::index flToAfIndex(const fl::Index& idx) {
+  switch (idx.type()) {
+    case IndexType::Tensor:
+      return af::index(toArray(idx.get<Tensor>()));
+    case IndexType::Range:
+      if (idx.isSpan()) {
+        return af::index(af::span);
+      } else {
+        return af::index(flRangeToAfSeq(idx.get<range>()));
+      }
+    case IndexType::Literal:
+      return af::index(idx.get<int>());
+    default:
+      throw std::invalid_argument(
+          "flToAfIndex: fl::Index has unknown or invalid type.");
+  }
+}
+
+af::array condenseIndices(const af::array& arr) {
+  // Fast path - Array has zero elements or a dim of size zero
+  if (arr.elements() == 0) {
+    return arr;
+  }
+
+  // Find the condensed shape
+  af::dim4 newDims(1, 1, 1, 1);
+  unsigned newDimIdx = 0;
+  for (unsigned i = 0; i < AF_MAX_DIMS; ++i) {
+    if (arr.dims(i) != 1) {
+      // found a non-1 dim size - populate newDims
+      newDims[newDimIdx] = arr.dims(i);
+      newDimIdx++;
+    }
+  }
+  return af::moddims(arr, newDims);
 }
 
 } // namespace detail
