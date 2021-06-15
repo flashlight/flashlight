@@ -50,11 +50,17 @@ class ArrayFireBackend : public TensorBackend {
 
   /************************** Reductions ***************************/
   Tensor amin(const Tensor& input, const std::vector<int>& axes) override;
+  double amin(const Tensor& input) override; // TODO: consolidate w/ above
   Tensor amax(const Tensor& input, const std::vector<int>& axes) override;
+  double amax(const Tensor& input) override; // TODO: consolidate w/ above
   Tensor sum(const Tensor& input, const std::vector<int>& axes) override;
+  double sum(const Tensor& input) override; // TODO: consolidate w/ above
   Tensor mean(const Tensor& input, const std::vector<int>& axes) override;
+  double mean(const Tensor& input) override; // TODO: consolidate w/ above
   Tensor var(const Tensor& input, const std::vector<int>& axes, bool bias)
       override;
+  double var(const Tensor& input, bool bias)
+      override; // TODO: consolidate w/ above
   double norm(const Tensor& input) override;
 };
 

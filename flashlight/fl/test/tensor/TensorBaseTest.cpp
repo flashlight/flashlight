@@ -43,12 +43,6 @@ bool allClose(
   return af::max<double>(af::abs(a - b)) < absTolerance;
 }
 
-bool allClose(
-    const fl::Tensor& a,
-    const fl::Tensor& b,
-    double absTolerance = 1e-5) {
-  return allClose(toArray(a), toArray(b), absTolerance);
-}
 } // namespace
 
 TEST(TensorBaseTest, DefaultBackend) {
@@ -85,6 +79,43 @@ TEST(TensorBaseTest, BinaryOperators) {
   ASSERT_TRUE(allClose((a == b), eq(a, b)));
   ASSERT_TRUE(allClose((a + b), c));
   ASSERT_TRUE(allClose((a + b), add(a, b)));
+}
+
+TEST(TensorBaseTest, AssignmentOperators) {
+  auto a = fl::full({3, 3}, 1.);
+  a += 2;
+  ASSERT_TRUE(allClose(a, fl::full({3, 3}, 3.)));
+  a -= 1;
+  ASSERT_TRUE(allClose(a, fl::full({3, 3}, 2.)));
+  a *= 8;
+  ASSERT_TRUE(allClose(a, fl::full({3, 3}, 16.)));
+  a /= 4;
+  ASSERT_TRUE(allClose(a, fl::full({3, 3}, 4.)));
+
+  a = fl::full({4, 4}, 7.);
+  ASSERT_TRUE(allClose(a, fl::full({4, 4}, 7.)));
+  auto b = a;
+  ASSERT_TRUE(allClose(b, fl::full({4, 4}, 7.)));
+  a = 6.;
+  ASSERT_TRUE(allClose(a, fl::full({4, 4}, 6.)));
+}
+
+TEST(TensorBaseTest, ArrayFireAssignmentOperators) {
+  int refCount = 0;
+
+  fl::Tensor a = fl::full({3, 3}, 1.);
+  af::array& aArr = toArray(a);
+  af_get_data_ref_count(&refCount, aArr.get());
+  ASSERT_EQ(refCount, 1);
+
+  auto b = a;
+  af_get_data_ref_count(&refCount, aArr.get());
+  ASSERT_EQ(refCount, 2);
+
+  af::array& bArr = toArray(b);
+  b = fl::full({4, 4}, 2.);
+  af_get_data_ref_count(&refCount, bArr.get());
+  ASSERT_EQ(refCount, 1);
 }
 
 TEST(TensorBaseTest, full) {

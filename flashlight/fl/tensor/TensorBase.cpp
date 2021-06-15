@@ -55,6 +55,68 @@ TensorBackend& Tensor::backend() const {
   return impl_->backend();
 }
 
+// Generate template specializations for functions that return types
+#define EXPAND_MACRO_FUNCTION_TYPE(FUN, TYPE)             \
+  template <>                                             \
+  TYPE FUN(const Tensor& input) {                         \
+    return static_cast<TYPE>(input.backend().FUN(input)); \
+  }
+#define EXPAND_MACRO_FUNCTION(FUN)                     \
+  EXPAND_MACRO_FUNCTION_TYPE(FUN, int);                \
+  EXPAND_MACRO_FUNCTION_TYPE(FUN, unsigned);           \
+  EXPAND_MACRO_FUNCTION_TYPE(FUN, char);               \
+  EXPAND_MACRO_FUNCTION_TYPE(FUN, unsigned char);      \
+  EXPAND_MACRO_FUNCTION_TYPE(FUN, long);               \
+  EXPAND_MACRO_FUNCTION_TYPE(FUN, unsigned long);      \
+  EXPAND_MACRO_FUNCTION_TYPE(FUN, long long);          \
+  EXPAND_MACRO_FUNCTION_TYPE(FUN, unsigned long long); \
+  EXPAND_MACRO_FUNCTION_TYPE(FUN, double);             \
+  EXPAND_MACRO_FUNCTION_TYPE(FUN, float);              \
+  EXPAND_MACRO_FUNCTION_TYPE(FUN, short);              \
+  EXPAND_MACRO_FUNCTION_TYPE(FUN, unsigned short);
+
+// fl::amin<T>(const Tensor&)
+EXPAND_MACRO_FUNCTION(amin);
+// fl::amax<T>(const Tensor&)
+EXPAND_MACRO_FUNCTION(amax);
+// fl::sum<T>(const Tensor&)
+EXPAND_MACRO_FUNCTION(sum);
+// fl::mean<T>(const Tensor&)
+EXPAND_MACRO_FUNCTION(mean);
+#undef EXPAND_MACRO_FUNCTION_TYPE
+#undef EXPAND_MACRO_FUNCTION
+
+/******************** Assignment Operators ********************/
+#define ASSIGN_OP_TYPE(OP, FUN, TYPE)   \
+  Tensor& Tensor::OP(const TYPE& val) { \
+    impl_->FUN(val);                    \
+    return *this;                       \
+  }
+#define ASSIGN_OP(OP, FUN)                 \
+  ASSIGN_OP_TYPE(OP, FUN, Tensor);         \
+  ASSIGN_OP_TYPE(OP, FUN, double);         \
+  ASSIGN_OP_TYPE(OP, FUN, float);          \
+  ASSIGN_OP_TYPE(OP, FUN, int);            \
+  ASSIGN_OP_TYPE(OP, FUN, unsigned);       \
+  ASSIGN_OP_TYPE(OP, FUN, bool);           \
+  ASSIGN_OP_TYPE(OP, FUN, char);           \
+  ASSIGN_OP_TYPE(OP, FUN, unsigned char);  \
+  ASSIGN_OP_TYPE(OP, FUN, short);          \
+  ASSIGN_OP_TYPE(OP, FUN, unsigned short); \
+  ASSIGN_OP_TYPE(OP, FUN, long);           \
+  ASSIGN_OP_TYPE(OP, FUN, unsigned long);  \
+  ASSIGN_OP_TYPE(OP, FUN, long long);      \
+  ASSIGN_OP_TYPE(OP, FUN, unsigned long long);
+
+// (operator, function name on impl)
+ASSIGN_OP(operator=, assign);
+ASSIGN_OP(operator+=, inPlaceAdd);
+ASSIGN_OP(operator-=, inPlaceSubtract);
+ASSIGN_OP(operator*=, inPlaceMultiply);
+ASSIGN_OP(operator/=, inPlaceDivide);
+#undef ASSIGN_OP_TYPE
+#undef ASSIGN_OP
+
 /* --------------------------- Tensor Operators --------------------------- */
 
 /************************** Unary Operators ***************************/
@@ -174,8 +236,52 @@ Tensor var(const Tensor& input, const std::vector<int>& axes, bool bias) {
   return input.backend().var(input, axes, bias);
 }
 
+// fl::var<T>(const Tensor&)
+#define GENERATE_VAR(TYPE)                                      \
+  template <>                                                   \
+  TYPE var(const Tensor& input, bool bias) {                    \
+    return static_cast<TYPE>(input.backend().var(input, bias)); \
+  }
+
+GENERATE_VAR(int);
+GENERATE_VAR(unsigned);
+GENERATE_VAR(char);
+GENERATE_VAR(unsigned char);
+GENERATE_VAR(long);
+GENERATE_VAR(unsigned long);
+GENERATE_VAR(long long);
+GENERATE_VAR(unsigned long long);
+GENERATE_VAR(double);
+GENERATE_VAR(float);
+GENERATE_VAR(short);
+GENERATE_VAR(unsigned short);
+#undef GENERATE_VAR
+
 double norm(const Tensor& input) {
   return input.backend().norm(input);
+}
+
+template <typename T>
+T amin(const Tensor& input) {
+  return static_cast<T>(input.backend().amin(input));
+}
+
+/************************** Utilities ***************************/
+
+bool allClose(
+    const fl::Tensor& a,
+    const fl::Tensor& b,
+    const double absTolerance) {
+  if (a.type() != b.type()) {
+    return false;
+  }
+  if (a.shape() != b.shape()) {
+    return false;
+  }
+  if (a.shape().elements() == 0 || b.shape().elements() == 0) {
+    return false;
+  }
+  return fl::amax<double>(fl::abs(a - b)) < absTolerance;
 }
 
 } // namespace fl

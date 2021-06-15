@@ -137,16 +137,31 @@ Tensor ArrayFireBackend::amin(
   return toTensor<ArrayFireTensor>(afReduceAxes(toArray(input), axes, af::min));
 }
 
+// TODO: consolidate with above
+double ArrayFireBackend::amin(const Tensor& input) {
+  return af::min<double>(toArray(input));
+}
+
 Tensor ArrayFireBackend::amax(
     const Tensor& input,
     const std::vector<int>& axes) {
   return toTensor<ArrayFireTensor>(afReduceAxes(toArray(input), axes, af::max));
 }
 
+// TODO: consolidate with above
+double ArrayFireBackend::amax(const Tensor& input) {
+  return af::max<double>(toArray(input));
+}
+
 Tensor ArrayFireBackend::sum(
     const Tensor& input,
     const std::vector<int>& axes) {
   return toTensor<ArrayFireTensor>(afReduceAxes(toArray(input), axes, af::sum));
+}
+
+// TODO: consolidate with above
+double ArrayFireBackend::sum(const Tensor& input) {
+  return af::sum<double>(toArray(input));
 }
 
 Tensor ArrayFireBackend::mean(
@@ -158,6 +173,11 @@ Tensor ArrayFireBackend::mean(
     arr = af::mean(arr, dim);
   }
   return toTensor<ArrayFireTensor>(std::move(arr));
+}
+
+// TODO: consolidate with above
+double ArrayFireBackend::mean(const Tensor& input) {
+  return af::mean<double>(toArray(input));
 }
 
 Tensor ArrayFireBackend::var(
@@ -186,6 +206,11 @@ Tensor ArrayFireBackend::var(
 
   x = x / denominator;
   return toTensor<ArrayFireTensor>(std::move(x));
+}
+
+// TODO: consolidate with above
+double ArrayFireBackend::var(const Tensor& input, bool bias) {
+  return af::var<double>(toArray(input), bias);
 }
 
 double ArrayFireBackend::norm(const Tensor& input) {
