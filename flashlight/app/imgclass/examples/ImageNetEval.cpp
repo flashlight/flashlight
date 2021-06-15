@@ -85,24 +85,21 @@ int main(int argc, char** argv) {
   // Conventional image resize parameter used for evaluation
   const int randomResizeMin = imageSize / .875;
   ImageTransform testTransforms = compose(
-      {fl::ext::image::reorder(1, 2, 0), // stb has channel along the first dim.
-       fl::ext::image::resizeTransform(randomResizeMin),
+      {fl::ext::image::resizeTransform(randomResizeMin),
        fl::ext::image::centerCropTransform(imageSize),
        fl::ext::image::normalizeImage(
            fl::app::image::kImageNetMean, fl::app::image::kImageNetStd)});
 
   auto labelMap = getImagenetLabels(labelPath);
   auto testDataset = fl::ext::image::DistributedDataset(
-      imagenetDataset(testList, labelMap),
+      imagenetDataset(testList, labelMap, {testTransforms}),
       worldRank,
       worldSize,
       FLAGS_data_batch_size,
       1, // train_n_repeatedaug
       10, // prefetch threads
       FLAGS_data_batch_size,
-      {testTransforms},
-      fl::BatchDatasetPolicy::INCLUDE_LAST,
-      true /* usePreallocatedSamples */);
+      fl::BatchDatasetPolicy::INCLUDE_LAST);
   FL_LOG_MASTER(INFO) << "[testDataset size] " << testDataset.size();
 
   // The main evaluation loop

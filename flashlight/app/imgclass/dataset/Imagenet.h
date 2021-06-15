@@ -67,7 +67,7 @@ std::unordered_map<std::string, uint64_t> getImagenetLabels(
 std::shared_ptr<Dataset> imagenetDataset(
     const std::string& fp,
     const std::unordered_map<std::string, uint64_t>& labelMap,
-    std::vector<Dataset::TransformFunction> transformfns = {});
+    std::vector<Dataset::TransformFunction> transformfns);
 
 constexpr uint64_t kImagenetInputIdx = 0;
 constexpr uint64_t kImagenetTargetIdx = 1;

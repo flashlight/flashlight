@@ -13,12 +13,15 @@ namespace fl {
 namespace ext {
 
 DynamicScaler::DynamicScaler(
-    double initFactor,
-    double maxFactor,
+    float initFactor,
+    float maxScaleFactor,
     unsigned int updateInterval)
-    : maxScaleFactor_(maxFactor), updateInterval_(updateInterval) {
+    : updateInterval_(updateInterval) {
   scaleFactor_ = fl::Variable(af::constant(initFactor, 1, 1, 1, 1, f32), false);
-  flag_ = af::constant(0, 1, 1, 1, 1, s32);
+  isInvalidArray_ = af::constant(0, 1, 1, 1, 1, s32);
+  minScaleFactor_ =
+      af::constant(fl::kAmpMinimumScaleFactorValue, 1, 1, 1, 1, f32);
+  maxScaleFactor_ = af::constant(maxScaleFactor, 1, 1, 1, 1, f32);
 }
 
 fl::Variable DynamicScaler::scale(const fl::Variable& loss) {
@@ -30,23 +33,28 @@ fl::Variable DynamicScaler::scale(const fl::Variable& loss) {
 
 bool DynamicScaler::unscale(std::vector<fl::Variable>& params) {
   for (auto& p : params) {
-    validityCheck(p.grad().array(), flag_);
+    validityCheck(p.grad().array(), isInvalidArray_);
   }
   for (auto& p : params) {
-    scaleGrads(p.grad().array(), scaleFactor_.array(), flag_);
+    scaleGrads(p.grad().array(), scaleFactor_.array(), isInvalidArray_);
   }
   ++successCounter_;
-  return adjustScaleFactor(scaleFactor_.array(), flag_);
+  return decreaseScaleFactor(
+      scaleFactor_.array(), isInvalidArray_, minScaleFactor_);
 }
 
 void DynamicScaler::update() {
   if (successCounter_ == updateInterval_) {
-    scaleFactor_.array() = scaleFactor_.array() * 2;
-    FL_VLOG(2) << "AMP: Scale factor doubled";
+    increaseScaleFactor(
+        scaleFactor_.array(),
+        maxScaleFactor_,
+        fl::ext::ScaleFactorIncreaseForm::MULTIPLICATIVE);
     successCounter_ = 0;
   } else {
-    scaleFactor_.array() = scaleFactor_.array() + 2;
-    FL_VLOG(3) << "AMP: Scale factor incremented";
+    increaseScaleFactor(
+        scaleFactor_.array(),
+        maxScaleFactor_,
+        fl::ext::ScaleFactorIncreaseForm::ADDITIVE);
   }
 }
 

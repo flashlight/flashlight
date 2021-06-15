@@ -21,7 +21,7 @@
 
 #include <arrayfire.h>
 
-#include <flashlight/fl/common/configs.h>
+#include "flashlight/fl/autograd/configs.h"
 #include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/common/Types.h"
 #include "flashlight/fl/common/Utils.h"

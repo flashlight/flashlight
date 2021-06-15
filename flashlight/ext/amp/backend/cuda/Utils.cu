@@ -14,13 +14,13 @@ namespace fl {
 namespace ext {
 __global__ void validityCheckKernel(
     float* __restrict inputs,
-    int* __restrict flagPtr,
+    int* __restrict isInvalidArrayPtr,
     int size) {
   int idx = threadIdx.x + blockDim.x * blockIdx.x;
   for (int i = idx; i < size; i += blockDim.x * gridDim.x) {
     auto in = inputs[i];
     if (isnan(in) || isinf(in)) {
-      *flagPtr = 1;
+      *isInvalidArrayPtr = 1;
     }
   }
 }
@@ -28,12 +28,12 @@ __global__ void validityCheckKernel(
 __global__ void scaleGradsKernel(
     float* __restrict grads,
     float* __restrict scaleFactorPtr,
-    int* __restrict flagPtr,
+    int* __restrict isInvalidArrayPtr,
     int size) {
   int idx = threadIdx.x + blockDim.x * blockIdx.x;
   for (int i = idx; i < size; i += blockDim.x * gridDim.x) {
     auto grad = grads[i];
-    if ((*flagPtr) == 1) {
+    if ((*isInvalidArrayPtr) == 1) {
       grad = 0;
     } else {
       grad = grad / (*scaleFactorPtr);
@@ -63,46 +63,64 @@ __global__ void scaleLossKernelBackward(
   }
 }
 
-__global__ void adjustScaleFactorKernel(
+__global__ void decreaseScaleFactorKernel(
     float* __restrict scaleFactorPtr,
-    int* __restrict flagPtr) {
-  if ((*flagPtr) == 1) {
-    *scaleFactorPtr = *scaleFactorPtr / 2;
-    *flagPtr = 0;
+    int* __restrict isInvalidArrayPtr,
+    float* __restrict minScaleFactorPtr) {
+  if ((*isInvalidArrayPtr) == 1) {
+    if ((*scaleFactorPtr) / 2 >= (*minScaleFactorPtr)) {
+      *scaleFactorPtr = *scaleFactorPtr / 2;
+    }
+    *isInvalidArrayPtr = 0;
   }
 }
 
-void validityCheck(af::array& in, af::array& flag) {
+__global__ void increaseScaleFactorKernel(
+    float* __restrict scaleFactorPtr,
+    float* __restrict maxScaleFactorPtr,
+    int multiplicativeIncreasePtr) {
+  if (multiplicativeIncreasePtr == 1) {
+    if ((*scaleFactorPtr) * 2 <= (*maxScaleFactorPtr)) {
+      *scaleFactorPtr = *scaleFactorPtr * 2;
+    }
+  } else {
+    if ((*scaleFactorPtr) + 2 <= (*maxScaleFactorPtr)) {
+      *scaleFactorPtr = *scaleFactorPtr + 2;
+    }
+  }
+}
+
+void validityCheck(af::array& in, af::array& isInvalidArray) {
   auto size = in.elements();
   in.eval();
-  flag.eval();
+  isInvalidArray.eval();
   auto dIn = in.device<float>();
-  auto dFlag = flag.device<int>();
+  auto dIsInvalidArray = isInvalidArray.device<int>();
   uint numBlocks = (size + NUM_THREADS - 1) / NUM_THREADS;
   validityCheckKernel<<<
       numBlocks,
       NUM_THREADS,
       0,
-      fl::cuda::getActiveStream()>>>(dIn, dFlag, size);
+      fl::cuda::getActiveStream()>>>(dIn, dIsInvalidArray, size);
   in.unlock();
-  flag.unlock();
+  isInvalidArray.unlock();
 }
 
-void scaleGrads(af::array& grads, af::array& scaleFactor, af::array& flag) {
+void scaleGrads(af::array& grads, af::array& scaleFactor, af::array& isInvalidArray) {
   auto size = grads.elements();
   grads.eval();
   scaleFactor.eval();
-  flag.eval();
+  isInvalidArray.eval();
   auto dGrads = grads.device<float>();
   auto dScaleFactor = scaleFactor.device<float>();
-  auto dFlag = flag.device<int>();
+  auto disInvalidArray = isInvalidArray.device<int>();
   uint numBlocks = (size + NUM_THREADS - 1) / NUM_THREADS;
 
   scaleGradsKernel<<<numBlocks, NUM_THREADS, 0, fl::cuda::getActiveStream()>>>(
-      dGrads, dScaleFactor, dFlag, size);
+      dGrads, dScaleFactor, disInvalidArray, size);
   grads.unlock();
   scaleFactor.unlock();
-  flag.unlock();
+  isInvalidArray.unlock();
 }
 
 fl::Variable scaleLoss(fl::Variable& loss, fl::Variable& scaleFactor) {
@@ -141,16 +159,38 @@ fl::Variable scaleLoss(fl::Variable& loss, fl::Variable& scaleFactor) {
   return fl::Variable(loss.array(), {loss, scaleFactor}, gradFunc);
 }
 
-bool adjustScaleFactor(af::array& scaleFactor, af::array& flag) {
+bool decreaseScaleFactor(
+    af::array& scaleFactor,
+    af::array& isInvalidArray,
+    const af::array& minScaleFactor) {
+  bool scaleIsValid = true;
+  if (isInvalidArray.scalar<int>() == 1) {
+    scaleIsValid = false;
+  }
   scaleFactor.eval();
-  flag.eval();
+  isInvalidArray.eval();
   auto dScaleFactor = scaleFactor.device<float>();
-  auto dFlag = flag.device<int>();
-  adjustScaleFactorKernel<<<1, 1, 0, fl::cuda::getActiveStream()>>>(
-      dScaleFactor, dFlag);
+  auto disInvalidArray = isInvalidArray.device<int>();
+  auto dMinScaleFactor = minScaleFactor.device<float>();
+  decreaseScaleFactorKernel<<<1, 1, 0, fl::cuda::getActiveStream()>>>(
+      dScaleFactor, disInvalidArray, dMinScaleFactor);
   scaleFactor.unlock();
-  flag.unlock();
-  return true;
+  isInvalidArray.unlock();
+  minScaleFactor.unlock();
+  return scaleIsValid;
+}
+
+void increaseScaleFactor(
+    af::array& scaleFactor,
+    const af::array& maxScaleFactor,
+    const ScaleFactorIncreaseForm& increaseForm) {
+  auto dScaleFactor = scaleFactor.device<float>();
+  auto dMaxScaleFactor = maxScaleFactor.device<float>();
+  int multiply = increaseForm == ScaleFactorIncreaseForm::MULTIPLICATIVE;
+  increaseScaleFactorKernel<<<1, 1, 0, fl::cuda::getActiveStream()>>>(
+      dScaleFactor, dMaxScaleFactor, multiply);
+  scaleFactor.unlock();
+  maxScaleFactor.unlock();
 }
 } // namespace ext
 } // namespace fl

@@ -15,7 +15,6 @@
 #include <arrayfire.h>
 
 #include "flashlight/fl/dataset/DatasetIterator.h"
-#include "flashlight/fl/dataset/Sample.h"
 
 namespace fl {
 
@@ -41,9 +40,9 @@ class Dataset {
   using TransformFunction = std::function<af::array(const af::array&)>;
 
   /**
-   * A function to load data from a file into a `Sample`.
+   * A function to load data from a file into an array.
    */
-  using LoadFunction = std::function<SamplePtr(const std::string&)>;
+  using LoadFunction = std::function<af::array(const std::string&)>;
 
   /**
    * A function to pack arrays into a batched array.
@@ -66,19 +65,6 @@ class Dataset {
    * @return The sample fields (a `std::vector<af::array>`).
    */
   virtual std::vector<af::array> get(const int64_t idx) const = 0;
-
-  /**
-   * @param[in] idx Index of the sample in the dataset. Must be in [0, size()).
-   * @param[in] samplePtrs A vector of `SamplePtr` in which the loaded sample 
-   * will be placed. The location of the newly loaded sample in the vector can 
-   * be specified with `dst`.
-   * @param[in] dst Specified in which location of the `samplePtrs`, the newly 
-   * loaded sample shall be placed. 
-   */
-  virtual void get(
-      const int64_t idx,
-      std::vector<SamplePtr>& samplePtrs,
-      const int dst = 0) const {}
 
   virtual ~Dataset() = default;
 

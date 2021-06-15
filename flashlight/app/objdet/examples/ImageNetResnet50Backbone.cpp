@@ -132,36 +132,32 @@ int main(int argc, char** argv) {
   // af::array. Thus, we need to `compose` all of the transforms so are each
   // applied only to the image
   ImageTransform trainTransforms = compose(
-      {fl::ext::image::reorder(1, 2, 0), // stb has channel along the first dim.
-       // randomly resize shortest side of image between 256 to
-       // 480 for scale invariance
+      {// randomly resize shortest side of image between 256 to 480 for
+       // scale invariance
        fl::ext::image::randomResizeTransform(randomResizeMin, randomResizeMax),
        fl::ext::image::randomCropTransform(randomCropSize, randomCropSize),
        fl::ext::image::normalizeImage(mean, std),
        // Randomly flip image with probability of 0.5
        fl::ext::image::randomHorizontalFlipTransform(horizontalFlipProb)});
-  ImageTransform valTransforms = compose(
-      {// Resize shortest side to 256, then take a center crop
-       fl::ext::image::reorder(1, 2, 0), // stb has channel along the first dim.
-       fl::ext::image::resizeTransform(randomResizeMin),
-       fl::ext::image::centerCropTransform(randomCropSize),
-       fl::ext::image::normalizeImage(mean, std)});
+  ImageTransform valTransforms =
+      compose({// Resize shortest side to 256, then take a center crop
+               fl::ext::image::resizeTransform(randomResizeMin),
+               fl::ext::image::centerCropTransform(randomCropSize),
+               fl::ext::image::normalizeImage(mean, std)});
 
   const int64_t batchSizePerGpu = FLAGS_data_batch_size;
   const int64_t prefetchThreads = 10;
   const int64_t prefetchSize = FLAGS_data_batch_size;
   auto labelMap = getImagenetLabels(labelPath);
   auto trainDataset = fl::ext::image::DistributedDataset(
-      imagenetDataset(trainList, labelMap),
+      imagenetDataset(trainList, labelMap, {trainTransforms}),
       worldRank,
       worldSize,
       batchSizePerGpu,
       1, // train_n_repeatedaug
       prefetchThreads,
       prefetchSize,
-      {trainTransforms},
-      fl::BatchDatasetPolicy::INCLUDE_LAST,
-      true /* usePreallocatedSamples */);
+      fl::BatchDatasetPolicy::INCLUDE_LAST);
 
   auto valDataset = fl::ext::image::DistributedDataset(
       imagenetDataset(valList, labelMap, {valTransforms}),
@@ -171,9 +167,7 @@ int main(int argc, char** argv) {
       1, // train_n_repeatedaug
       prefetchThreads,
       prefetchSize,
-      {trainTransforms},
-      fl::BatchDatasetPolicy::INCLUDE_LAST,
-      true /* usePreallocatedSamples */);
+      fl::BatchDatasetPolicy::INCLUDE_LAST);
 
   //////////////////////////
   //  Load model and optimizer

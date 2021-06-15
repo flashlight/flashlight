@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <flashlight/fl/common/configs.h>
+#include "flashlight/fl/autograd/configs.h"
 #include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/nn/Utils.h"
 #include "flashlight/fl/nn/modules/Module.h"

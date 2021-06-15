@@ -410,11 +410,6 @@ ImageTransform randomCropTransform(const int tw, const int th) {
   };
 };
 
-ImageTransform reorder(const uint x, const uint y, const uint z, const uint w) {
-  return
-      [x, y, z, w](const af::array& in) { return af::reorder(in, x, y, z, w); };
-};
-
 ImageTransform normalizeImage(
     const std::vector<float>& meanVector,
     const std::vector<float>& stdVector) {

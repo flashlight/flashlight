@@ -8,16 +8,12 @@
 #pragma once
 
 #include <arrayfire.h>
-#include <flashlight/fl/dataset/Sample.h>
 
 namespace fl {
 namespace ext {
 namespace image {
 
-void loadJpeg(
-    const std::string& fp,
-    fl::SamplePtr samplePtr,
-    int desiredNumberOfChannels = 3);
+af::array loadJpeg(const std::string& fp, int desiredNumberOfChannels = 3);
 
 } // namespace image
 } // namespace ext

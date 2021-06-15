@@ -132,9 +132,7 @@ CocoDataset::CocoDataset(
   // Now define how to load the data from CocoDataSampoles in arrayfire
   std::shared_ptr<Dataset> ds = std::make_shared<LoaderDataset<CocoDataSample>>(
       data, [](const CocoDataSample& sample) {
-        auto samplePtr = std::make_shared<Sample>();
-        loadJpeg(sample.filepath, samplePtr);
-        af::array image = samplePtr->array();
+        af::array image = loadJpeg(sample.filepath);
 
         long long int imageSizeArray[] = {image.dims(1), image.dims(0)};
 

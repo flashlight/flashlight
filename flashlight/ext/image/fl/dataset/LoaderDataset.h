@@ -21,20 +21,12 @@ template <typename T>
 class LoaderDataset : public fl::Dataset {
  public:
   using LoadFunc = std::function<std::vector<af::array>(const T&)>;
-  using InPlaceLoadFunc = std::function<void(const T&, SamplePtr samplePtr)>;
 
   LoaderDataset(const std::vector<T>& list, LoadFunc loadfn)
       : list_(list), loadfn_(loadfn) {}
-  LoaderDataset(const std::vector<T>& list, InPlaceLoadFunc loadfn)
-      : list_(list), inPlaceLoadFn_(loadfn) {}
 
   std::vector<af::array> get(const int64_t idx) const override {
     return loadfn_(list_[idx]);
-  }
-
-  void get(const int64_t idx, std::vector<SamplePtr>& samplePtrs, const int dst)
-      const override {
-    inPlaceLoadFn_(list_[idx], samplePtrs[dst]);
   }
 
   int64_t size() const override {
@@ -44,7 +36,6 @@ class LoaderDataset : public fl::Dataset {
  private:
   std::vector<T> list_;
   LoadFunc loadfn_;
-  InPlaceLoadFunc inPlaceLoadFn_;
 };
 
 } // namespace image
