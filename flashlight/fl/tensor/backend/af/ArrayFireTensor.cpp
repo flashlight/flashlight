@@ -20,6 +20,13 @@
 
 namespace fl {
 
+af::array& toArray(const Tensor& tensor) {
+  if (tensor.backendType() != TensorBackendType::ArrayFire) {
+    throw std::invalid_argument("toArray: tensor is not ArrayFire-backed");
+  }
+  return tensor.getAdapter<ArrayFireTensor>().getHandle();
+}
+
 ArrayFireTensor::ArrayFireTensor(af::array&& array)
     : array_(std::move(array)), shape_(detail::afToFlDims(array_.dims())) {}
 
@@ -77,12 +84,37 @@ const af::array& ArrayFireTensor::getHandle() const {
   return array_;
 }
 
-af::array& toArray(const Tensor& tensor) {
-  if (tensor.backendType() != TensorBackendType::ArrayFire) {
-    throw std::invalid_argument("toArray: tensor is not ArrayFire-backed");
+/******************** Assignment Operators ********************/
+#define ASSIGN_OP_TYPE(FUN, AF_OP, TYPE)       \
+  void ArrayFireTensor::FUN(const TYPE& val) { \
+    array_ AF_OP val;                          \
   }
-  return tensor.getAdapter<ArrayFireTensor>().getHandle();
-}
+#define ASSIGN_OP(FUN, AF_OP)                       \
+  void ArrayFireTensor::FUN(const Tensor& tensor) { \
+    array_ AF_OP toArray(tensor);                   \
+  }                                                 \
+  ASSIGN_OP_TYPE(FUN, AF_OP, double);               \
+  ASSIGN_OP_TYPE(FUN, AF_OP, float);                \
+  ASSIGN_OP_TYPE(FUN, AF_OP, int);                  \
+  ASSIGN_OP_TYPE(FUN, AF_OP, unsigned);             \
+  ASSIGN_OP_TYPE(FUN, AF_OP, bool);                 \
+  ASSIGN_OP_TYPE(FUN, AF_OP, char);                 \
+  ASSIGN_OP_TYPE(FUN, AF_OP, unsigned char);        \
+  ASSIGN_OP_TYPE(FUN, AF_OP, short);                \
+  ASSIGN_OP_TYPE(FUN, AF_OP, unsigned short);       \
+  ASSIGN_OP_TYPE(FUN, AF_OP, long);                 \
+  ASSIGN_OP_TYPE(FUN, AF_OP, unsigned long);        \
+  ASSIGN_OP_TYPE(FUN, AF_OP, long long);            \
+  ASSIGN_OP_TYPE(FUN, AF_OP, unsigned long long);
+
+// (function name, AF op). Use build-in AF operators.
+ASSIGN_OP(assign, =);
+ASSIGN_OP(inPlaceAdd, +=);
+ASSIGN_OP(inPlaceSubtract, -=);
+ASSIGN_OP(inPlaceMultiply, *=);
+ASSIGN_OP(inPlaceDivide, /=);
+#undef ASSIGN_OP_TYPE
+#undef ASSIGN_OP
 
 /******************** Tensor Creation Functions ********************/
 #define AF_FULL_FUN_DEF(TYPE)                                        \

@@ -68,6 +68,33 @@ class ArrayFireTensor : public TensorAdapterBase {
   dtype type() const override;
   Tensor astype(const dtype type) override;
   Tensor index(const std::vector<Index>& indices) const override;
+
+  /******************** Assignment Operators ********************/
+#define ASSIGN_OP_TYPE(OP, TYPE) void OP(const TYPE& val) override;
+
+#define ASSIGN_OP(OP)                 \
+  ASSIGN_OP_TYPE(OP, Tensor);         \
+  ASSIGN_OP_TYPE(OP, double);         \
+  ASSIGN_OP_TYPE(OP, float);          \
+  ASSIGN_OP_TYPE(OP, int);            \
+  ASSIGN_OP_TYPE(OP, unsigned);       \
+  ASSIGN_OP_TYPE(OP, bool);           \
+  ASSIGN_OP_TYPE(OP, char);           \
+  ASSIGN_OP_TYPE(OP, unsigned char);  \
+  ASSIGN_OP_TYPE(OP, short);          \
+  ASSIGN_OP_TYPE(OP, unsigned short); \
+  ASSIGN_OP_TYPE(OP, long);           \
+  ASSIGN_OP_TYPE(OP, unsigned long);  \
+  ASSIGN_OP_TYPE(OP, long long);      \
+  ASSIGN_OP_TYPE(OP, unsigned long long);
+
+  ASSIGN_OP(assign); // =
+  ASSIGN_OP(inPlaceAdd); // +=
+  ASSIGN_OP(inPlaceSubtract); // -=
+  ASSIGN_OP(inPlaceMultiply); // *=
+  ASSIGN_OP(inPlaceDivide); // /=
+#undef ASSIGN_OP_TYPE
+#undef ASSIGN_OP
 };
 
 /**
@@ -78,68 +105,5 @@ class ArrayFireTensor : public TensorAdapterBase {
  * @return the array underying the Tensor
  */
 af::array& toArray(const Tensor& tensor);
-
-/************************** Generic Reductions ***************************/
-/*
- * TODO: move me to a singleton backend abstraction interface once available so
- * generics can be properly handled.
- */
-
-/**
- * Compute the minimum value across all axes.
- *
- * @param[in] input the input along which to operate
- * @return a scalar T containing the mim
- *
- */
-template <typename T>
-T amin(const Tensor& input) {
-  return af::min<T>(toArray(input));
-}
-
-/**
- * Compute the maximum value across all axes.
- *
- * @param[in] input the input along which to operate
- * @return a scalar T containing the max value
- *
- */
-template <typename T>
-T amax(const Tensor& input) {
-  return af::max<T>(toArray(input));
-}
-
-/**
- * Sum of array over all axes.
- *
- * @param[in] input the input along which to operate
- * @return a scalar T containing the sum
- */
-template <typename T>
-T sum(const Tensor& input) {
-  return af::sum<T>(toArray(input));
-}
-
-/**
- * Mean of array over all axes.
- *
- * @param[in] input the input along which to operate
- * @return a scalar T containing the mean
- */
-template <typename T>
-T mean(const Tensor& input) {
-  return af::mean<T>(toArray(input));
-}
-
-/**
- * var of array over all axes.
- *
- * @param[in] input the input along which to operate
- * @return a scalar T containing the var
- */
-template <typename T>
-T var(const Tensor& input, bool bias = false) {
-  return af::var<T>(toArray(input), bias);
-}
 
 } // namespace fl

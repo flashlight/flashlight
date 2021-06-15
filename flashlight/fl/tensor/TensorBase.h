@@ -128,7 +128,47 @@ class Tensor {
    * @return a TensorBackend.
    */
   TensorBackend& backend() const;
+
+  /******************** Assignment Operators ********************/
+#define ASSIGN_OP(OP)                    \
+  Tensor& OP(const Tensor& val);         \
+  Tensor& OP(const double& val);         \
+  Tensor& OP(const float& val);          \
+  Tensor& OP(const int& val);            \
+  Tensor& OP(const unsigned& val);       \
+  Tensor& OP(const bool& val);           \
+  Tensor& OP(const char& val);           \
+  Tensor& OP(const unsigned char& val);  \
+  Tensor& OP(const short& val);          \
+  Tensor& OP(const unsigned short& val); \
+  Tensor& OP(const long& val);           \
+  Tensor& OP(const unsigned long& val);  \
+  Tensor& OP(const long long& val);      \
+  Tensor& OP(const unsigned long long& val);
+
+  ASSIGN_OP(operator=);
+  ASSIGN_OP(operator+=);
+  ASSIGN_OP(operator-=);
+  ASSIGN_OP(operator*=);
+  ASSIGN_OP(operator/=);
+#undef ASSIGN_OP
 };
+
+/**
+ * Returns of two tensors are close. Checks:
+ * - Tensor data types
+ * - Tensor shapes
+ * - Emptiness
+ * - Absolute distance between elements
+ *
+ * @param[in] a lhs tensor
+ * @param[in] b rhs tensor
+ * @param[in] absTolerance the maximum-allowable distance between the tensors
+ */
+bool allClose(
+    const fl::Tensor& a,
+    const fl::Tensor& b,
+    const double absTolerance = 1e-5);
 
 /******************** Tensor Creation Functions ********************/
 /**
@@ -368,6 +408,16 @@ Tensor power(const Tensor& lhs, const Tensor& rhs);
 Tensor amin(const Tensor& input, const std::vector<int>& axes);
 
 /**
+ * Compute the minimum value across all axes.
+ * TODO: consolidate with amin above.
+ *
+ * @param[in] input the input along which to operate
+ * @return a scalar T containing the mim
+ */
+template <typename T>
+T amin(const Tensor& input);
+
+/**
  * Compute the maximum value along multiple axes.
  *
  * @param[in] input the input along which to operate
@@ -376,6 +426,16 @@ Tensor amin(const Tensor& input, const std::vector<int>& axes);
  *
  */
 Tensor amax(const Tensor& input, const std::vector<int>& axes);
+
+/**
+ * Compute the minimum value across all axes.
+ * TODO: consolidate with amax above.
+ *
+ * @param[in] input the input along which to operate
+ * @return a scalar T containing the mim
+ */
+template <typename T>
+T amax(const Tensor& input);
 
 /**
  * Sum of array over given axes.
@@ -387,6 +447,16 @@ Tensor amax(const Tensor& input, const std::vector<int>& axes);
 Tensor sum(const Tensor& input, const std::vector<int>& axes);
 
 /**
+ * Sum of array over all axes.
+ * TODO: consolidate with sum above.
+ *
+ * @param[in] input the input along which to operate
+ * @return a scalar T containing the sum
+ */
+template <typename T>
+T sum(const Tensor& input);
+
+/**
  * Mean of array over given axes.
  *
  * @param[in] input the input along which to operate
@@ -394,6 +464,15 @@ Tensor sum(const Tensor& input, const std::vector<int>& axes);
  * @return a tensor containing the mean across given axes
  */
 Tensor mean(const Tensor& input, const std::vector<int>& axes);
+
+/**
+ * Mean of array over all axes.
+ *
+ * @param[in] input the input along which to operate
+ * @return a scalar T containing the mean
+ */
+template <typename T>
+T mean(const Tensor& input);
 
 /**
  * var of array over given axes.
@@ -404,6 +483,15 @@ Tensor mean(const Tensor& input, const std::vector<int>& axes);
  */
 Tensor
 var(const Tensor& input, const std::vector<int>& axes, bool bias = false);
+
+/**
+ * var of array over all axes.
+ *
+ * @param[in] input the input along which to operate
+ * @return a scalar T containing the var
+ */
+template <typename T>
+T var(const Tensor& input, bool bias = false);
 
 /**
  * norm of array over all axes.

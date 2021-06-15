@@ -87,6 +87,32 @@ class TensorAdapterBase {
    * @return an indexed tensor
    */
   virtual Tensor index(const std::vector<Index>& indices) const = 0;
+
+  /******************** Assignment Operators ********************/
+#define ASSIGN_OP_TYPE(OP, TYPE) virtual void OP(const TYPE& val) = 0;
+#define ASSIGN_OP(OP)                 \
+  ASSIGN_OP_TYPE(OP, Tensor);         \
+  ASSIGN_OP_TYPE(OP, double);         \
+  ASSIGN_OP_TYPE(OP, float);          \
+  ASSIGN_OP_TYPE(OP, int);            \
+  ASSIGN_OP_TYPE(OP, unsigned);       \
+  ASSIGN_OP_TYPE(OP, bool);           \
+  ASSIGN_OP_TYPE(OP, char);           \
+  ASSIGN_OP_TYPE(OP, unsigned char);  \
+  ASSIGN_OP_TYPE(OP, short);          \
+  ASSIGN_OP_TYPE(OP, unsigned short); \
+  ASSIGN_OP_TYPE(OP, long);           \
+  ASSIGN_OP_TYPE(OP, unsigned long);  \
+  ASSIGN_OP_TYPE(OP, long long);      \
+  ASSIGN_OP_TYPE(OP, unsigned long long);
+
+  ASSIGN_OP(assign); // =
+  ASSIGN_OP(inPlaceAdd); // +=
+  ASSIGN_OP(inPlaceSubtract); // -=
+  ASSIGN_OP(inPlaceMultiply); // *=
+  ASSIGN_OP(inPlaceDivide); // /=
+#undef ASSIGN_OP_TYPE
+#undef ASSIGN_OP
 };
 
 namespace detail {

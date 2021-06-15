@@ -53,11 +53,18 @@ class TensorBackend {
 
   /************************** Reductions ***************************/
   virtual Tensor amin(const Tensor& input, const std::vector<int>& axes) = 0;
+  virtual double amin(const Tensor& input) = 0; // TODO: consoildate w/ above
   virtual Tensor amax(const Tensor& input, const std::vector<int>& axes) = 0;
+  virtual double amax(const Tensor& input) = 0; // TODO: consoildate w/ above
   virtual Tensor sum(const Tensor& input, const std::vector<int>& axes) = 0;
+  virtual double sum(const Tensor& input) = 0; // TODO: consolidate w/ above
   virtual Tensor mean(const Tensor& input, const std::vector<int>& axes) = 0;
+  virtual double mean(const Tensor& input) = 0; // TODO: consolidate w/ above
   virtual Tensor
   var(const Tensor& input, const std::vector<int>& axes, bool bias) = 0;
+  virtual double var(
+      const Tensor& input,
+      bool bias) = 0; // TODO: consolidate w/ above
   virtual double norm(const Tensor& input) = 0;
 };
 
