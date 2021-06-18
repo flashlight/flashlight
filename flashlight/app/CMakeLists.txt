@@ -48,8 +48,6 @@ if (FL_BUILD_APP_LM)
   endif()
   set(FL_APP_LM_ROOT_DIR ${FL_APPS_DIR}/lm)
   include(${FL_APP_LM_ROOT_DIR}/CMakeLists.txt)
-  #set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} flashlight-app-lm)
-  #setup_install_headers(${FL_APP_LM_ROOT_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC}/app)
 endif ()
 
 if (FL_BUILD_APP_OBJDET)
