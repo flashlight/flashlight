@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.10)
 
 set(FL_PKG_VISION_DIR ${FL_PKG_DIR}/vision)
 include(${FL_PKG_VISION_DIR}/CMakeLists.txt)

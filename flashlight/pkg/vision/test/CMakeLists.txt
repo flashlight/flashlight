@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.10)
 
 set(DIR ${CMAKE_CURRENT_LIST_DIR})
 set(LIBS fl_pkg_vision)
