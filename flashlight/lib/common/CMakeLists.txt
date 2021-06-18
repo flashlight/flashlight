@@ -1,8 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
 
-# TODO (padentomasello) remove once we replace this functionality with
-# c++17 features
-
 add_library(
   fl_lib_common
   ""

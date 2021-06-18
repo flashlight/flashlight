@@ -36,7 +36,6 @@ target_include_directories(
   )
 
 if (FL_LIBRARIES_USE_CUDA)
-message("here!!! using")
   target_sources(
     fl_lib_sequence
     PRIVATE
@@ -68,11 +67,3 @@ message("here!!! using")
     ${CUDA_LIBRARIES}
     )
 endif()
-
-# --------------------------- Tests ---------------------------
-
-#if (FL_BUILD_TESTS)
-  #add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test)
-#endif ()
-
-
