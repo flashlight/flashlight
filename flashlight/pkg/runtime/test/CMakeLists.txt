@@ -7,8 +7,6 @@ build_test(
   SRC ${DIR}/DynamicScalerTest.cpp
   LIBS ${LIBS}
 )
-<<<<<<< HEAD
-=======
 
 add_library(test_module_plugin MODULE
   ${DIR}/plugin/test_module_plugin.cpp)
@@ -25,8 +23,3 @@ build_test(
   PREPROC "PLUGINDIR=\"${CMAKE_CURRENT_BINARY_DIR}\""
   )
 add_dependencies(ModulePluginTest test_module_plugin)
-
-
-
-
->>>>>>> e6d3de83 (Add pkg/test/CMakeLists.txt)
