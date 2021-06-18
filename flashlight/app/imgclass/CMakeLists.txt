@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.10)
 
 add_executable(fl_img_imagenet_resnet34
   ${CMAKE_CURRENT_LIST_DIR}/examples/Defines.cpp
