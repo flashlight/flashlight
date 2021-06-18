@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.10)
 
 # ------------------------ libsox ------------------------
 # Add the include dir and the libraries that are required for
