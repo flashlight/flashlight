@@ -178,6 +178,17 @@ Tensor full(
  */
 Tensor identity(const Dim dim, const dtype type = dtype::f32);
 
+/************************ Shaping and Indexing *************************/
+
+/**
+ * Change a tensor's shape without changing its underlying data.
+ *
+ * @param[in] tensor the tensor to reshape
+ * @param[in] shape the new shape for the tensor
+ * @return the reshaped tensor
+ */
+Tensor reshape(const Tensor& tensor, const Shape& shape);
+
 /************************** Unary Operators ***************************/
 /**
  * Element-wise negation of a tensor.

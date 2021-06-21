@@ -31,6 +31,9 @@ class TensorBackend {
   /* --------------------------- Tensor Operators ---------------------------
    * For operator documentation and expected behavior, see TensorBase.h.
    */
+  /************************ Shaping and Indexing *************************/
+  virtual Tensor reshape(const Tensor& tensor, const Shape& shape) = 0;
+
   /************************** Unary Operators ***************************/
   virtual Tensor exp(const Tensor& tensor) = 0;
   virtual Tensor log(const Tensor& tensor) = 0;
