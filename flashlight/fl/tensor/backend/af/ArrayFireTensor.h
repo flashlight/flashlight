@@ -68,6 +68,7 @@ class ArrayFireTensor : public TensorAdapterBase {
   dtype type() const override;
   Tensor astype(const dtype type) override;
   Tensor index(const std::vector<Index>& indices) const override;
+  Tensor flatten() const override;
 
   /******************** Assignment Operators ********************/
 #define ASSIGN_OP_TYPE(OP, TYPE) void OP(const TYPE& val) override;

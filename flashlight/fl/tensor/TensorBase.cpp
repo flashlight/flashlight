@@ -47,6 +47,10 @@ Tensor Tensor::operator()(const std::vector<Index>& indices) const {
   return impl_->index(indices);
 }
 
+Tensor Tensor::flatten() const {
+  return impl_->flatten();
+}
+
 TensorBackendType Tensor::backendType() const {
   return impl_->backendType();
 }

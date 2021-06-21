@@ -58,6 +58,14 @@ TEST(TensorBaseTest, reshape) {
   ASSERT_TRUE(allClose(a, fl::reshape(b, {4, 4})));
 }
 
+TEST(TensorBaseTest, flatten) {
+  unsigned s = 6;
+  auto a = fl::full({s, s, s}, 2.);
+  auto flat = a.flatten();
+  ASSERT_EQ(flat.shape(), Shape({s * s * s}));
+  ASSERT_TRUE(allClose(flat, fl::full({s * s * s}, 2.)));
+}
+
 TEST(TensorBaseTest, minimum) {
   auto a = fl::full({3, 3}, 1);
   auto b = fl::full({3, 3}, 2);
