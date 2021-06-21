@@ -119,6 +119,12 @@ ASSIGN_OP(operator/=, inPlaceDivide);
 
 /* --------------------------- Tensor Operators --------------------------- */
 
+/************************ Shaping and Indexing *************************/
+
+Tensor reshape(const Tensor& tensor, const Shape& shape) {
+  return tensor.backend().reshape(tensor, shape);
+}
+
 /************************** Unary Operators ***************************/
 Tensor exp(const Tensor& tensor) {
   return tensor.backend().exp(tensor);

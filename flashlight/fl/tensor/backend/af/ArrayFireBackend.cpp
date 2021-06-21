@@ -16,6 +16,7 @@
 #include <af/lapack.h>
 
 #include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
+#include "flashlight/fl/tensor/backend/af/Utils.h"
 
 /*
  * TODO: this is duplicative - remove this from flashlight/fl/common/Utils.h
@@ -60,6 +61,12 @@ ArrayFireBackend& ArrayFireBackend::getInstance() {
 }
 
 /* --------------------------- Tensor Operators --------------------------- */
+
+/************************ Shaping and Indexing *************************/
+Tensor ArrayFireBackend::reshape(const Tensor& tensor, const Shape& shape) {
+  return toTensor<ArrayFireTensor>(
+      af::moddims(toArray(tensor), detail::flToAfDims(shape)));
+}
 
 /************************** Unary Operators ***************************/
 
