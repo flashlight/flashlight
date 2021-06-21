@@ -154,22 +154,6 @@ class Tensor {
 #undef ASSIGN_OP
 };
 
-/**
- * Returns of two tensors are close. Checks:
- * - Tensor data types
- * - Tensor shapes
- * - Emptiness
- * - Absolute distance between elements
- *
- * @param[in] a lhs tensor
- * @param[in] b rhs tensor
- * @param[in] absTolerance the maximum-allowable distance between the tensors
- */
-bool allClose(
-    const fl::Tensor& a,
-    const fl::Tensor& b,
-    const double absTolerance = 1e-5);
-
 /******************** Tensor Creation Functions ********************/
 /**
  * Creates a new tensor with a given shape and filled with a particular value.
@@ -500,5 +484,31 @@ T var(const Tensor& input, bool bias = false);
  * @return a double containing the norm
  */
 double norm(const Tensor& input);
+
+/************************** Utilities ***************************/
+
+/**
+ * Print a string representation of a tensor to standard out.
+ *
+ * @param[in] tensor the tensor to print
+ */
+void print(const Tensor& tensor);
+
+/**
+ * Returns of two tensors are close. Checks:
+ * - Tensor data types
+ * - Tensor shapes
+ * - Emptiness
+ * - Absolute distance between elements
+ *
+ * @param[in] a lhs tensor
+ * @param[in] b rhs tensor
+ * @param[in] absTolerance the maximum-allowable distance between the
+ * tensors
+ */
+bool allClose(
+    const fl::Tensor& a,
+    const fl::Tensor& b,
+    const double absTolerance = 1e-5);
 
 } // namespace fl

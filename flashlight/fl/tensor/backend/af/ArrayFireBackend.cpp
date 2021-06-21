@@ -217,4 +217,7 @@ double ArrayFireBackend::norm(const Tensor& input) {
   return af::norm(toArray(input));
 }
 
+void ArrayFireBackend::print(const Tensor& tensor) {
+  af::print("", toArray(tensor));
+}
 } // namespace fl

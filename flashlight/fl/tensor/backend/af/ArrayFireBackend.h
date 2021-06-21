@@ -62,6 +62,9 @@ class ArrayFireBackend : public TensorBackend {
   double var(const Tensor& input, bool bias)
       override; // TODO: consolidate w/ above
   double norm(const Tensor& input) override;
+
+  /************************** Utils ***************************/
+  void print(const Tensor& tensor) override;
 };
 
 } // namespace fl

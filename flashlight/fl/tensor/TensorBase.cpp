@@ -268,6 +268,10 @@ T amin(const Tensor& input) {
 
 /************************** Utilities ***************************/
 
+void print(const Tensor& tensor) {
+  tensor.backend().print(tensor);
+}
+
 bool allClose(
     const fl::Tensor& a,
     const fl::Tensor& b,
