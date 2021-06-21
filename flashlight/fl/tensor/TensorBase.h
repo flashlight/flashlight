@@ -196,6 +196,17 @@ Tensor identity(const Dim dim, const dtype type = dtype::f32);
  */
 Tensor reshape(const Tensor& tensor, const Shape& shape);
 
+/**
+ * Repeat the contents of a tensor a given number of times along specified
+ * dimensions.
+ *
+ * @param[in] tensor the tensor to tile
+ * @param[in] shape the number of times, along each dimension, which to tile the
+ * tensor
+ * @return the tiled tensor
+ */
+Tensor tile(const Tensor& tensor, const Shape& shape);
+
 /************************** Unary Operators ***************************/
 /**
  * Element-wise negation of a tensor.

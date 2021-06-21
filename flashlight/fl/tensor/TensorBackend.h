@@ -33,6 +33,7 @@ class TensorBackend {
    */
   /************************ Shaping and Indexing *************************/
   virtual Tensor reshape(const Tensor& tensor, const Shape& shape) = 0;
+  virtual Tensor tile(const Tensor& tensor, const Shape& shape) = 0;
 
   /************************** Unary Operators ***************************/
   virtual Tensor exp(const Tensor& tensor) = 0;

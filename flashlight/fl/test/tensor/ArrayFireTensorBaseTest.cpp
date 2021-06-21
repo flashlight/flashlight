@@ -57,7 +57,7 @@ TEST(ArrayFireTensorBaseTest, AfRefCountBasic) {
   ASSERT_EQ(refCount, 2);
 }
 
-TEST(TensorBaseTest, ArrayFireAssignmentOperators) {
+TEST(ArrayFireTensorBaseTest, ArrayFireAssignmentOperators) {
   int refCount = 0;
 
   fl::Tensor a = fl::full({3, 3}, 1.);
@@ -86,7 +86,7 @@ TEST(ArrayFireTensorBaseTest, BinaryOperators) {
   ASSERT_TRUE(allClose((a + b), add(a, b)));
 }
 
-TEST(TensorBaseTest, full) {
+TEST(ArrayFireTensorBaseTest, full) {
   // TODO: expand with fixtures for each type
   auto a = fl::full({3, 4}, 3.);
   ASSERT_EQ(a.shape(), Shape({3, 4}));
@@ -99,7 +99,7 @@ TEST(TensorBaseTest, full) {
   ASSERT_TRUE(allClose(toArray(b), af::constant(4.5, {1, 1, 5, 4})));
 }
 
-TEST(TensorBaseTest, identity) {
+TEST(ArrayFireTensorBaseTest, identity) {
   auto a = fl::identity(6);
   ASSERT_EQ(a.shape(), Shape({6, 6}));
   ASSERT_EQ(a.type(), fl::dtype::f32);
@@ -108,7 +108,7 @@ TEST(TensorBaseTest, identity) {
   ASSERT_EQ(fl::identity(6, fl::dtype::f64).type(), fl::dtype::f64);
 }
 
-TEST(TensorBaseTest, randn) {
+TEST(ArrayFireTensorBaseTest, randn) {
   int s = 30;
   auto a = fl::randn({s, s});
   ASSERT_EQ(a.shape(), Shape({s, s}));
@@ -119,7 +119,7 @@ TEST(TensorBaseTest, randn) {
   ASSERT_EQ(fl::randn({1}, fl::dtype::f64).type(), fl::dtype::f64);
 }
 
-TEST(TensorBaseTest, rand) {
+TEST(ArrayFireTensorBaseTest, rand) {
   int s = 30;
   auto a = fl::rand({s, s});
   ASSERT_EQ(a.shape(), Shape({s, s}));
@@ -130,71 +130,71 @@ TEST(TensorBaseTest, rand) {
   ASSERT_EQ(fl::rand({1}, fl::dtype::f64).type(), fl::dtype::f64);
 }
 
-TEST(TensorBaseTest, amin) {
+TEST(ArrayFireTensorBaseTest, amin) {
   auto a = fl::rand({3, 3});
   ASSERT_EQ(fl::amin<float>(a), af::min<float>(toArray(a)));
   ASSERT_TRUE(allClose(toArray(fl::amin(a, {0})), af::min(toArray(a), 0)));
 }
 
-TEST(TensorBaseTest, amax) {
+TEST(ArrayFireTensorBaseTest, amax) {
   auto a = fl::rand({3, 3});
   ASSERT_EQ(fl::amax<float>(a), af::max<float>(toArray(a)));
   ASSERT_TRUE(allClose(toArray(fl::amax(a, {0})), af::max(toArray(a), 0)));
 }
 
-TEST(TensorBaseTest, sum) {
+TEST(ArrayFireTensorBaseTest, sum) {
   auto a = fl::rand({3, 3});
   ASSERT_EQ(fl::sum<float>(a), af::sum<float>(toArray(a)));
   ASSERT_TRUE(allClose(toArray(fl::sum(a, {0})), af::sum(toArray(a), 0)));
 }
 
-TEST(TensorBaseTest, exp) {
+TEST(ArrayFireTensorBaseTest, exp) {
   auto in = fl::full({3, 3}, 4.f);
   ASSERT_TRUE(allClose(toArray(fl::exp(in)), af::exp(toArray(in))));
 }
 
-TEST(TensorBaseTest, log) {
+TEST(ArrayFireTensorBaseTest, log) {
   auto in = fl::full({3, 3}, 2.f);
   ASSERT_TRUE(allClose(toArray(fl::log(in)), af::log(toArray(in))));
 }
 
-TEST(TensorBaseTest, log1p) {
+TEST(ArrayFireTensorBaseTest, log1p) {
   auto in = fl::rand({3, 3});
   ASSERT_TRUE(allClose(fl::log1p(in), fl::log(1 + in)));
 }
 
-TEST(TensorBaseTest, sin) {
+TEST(ArrayFireTensorBaseTest, sin) {
   auto in = fl::rand({3, 3});
   ASSERT_TRUE(allClose(toArray(fl::sin(in)), af::sin(toArray(in))));
 }
 
-TEST(TensorBaseTest, cos) {
+TEST(ArrayFireTensorBaseTest, cos) {
   auto in = fl::rand({3, 3});
   ASSERT_TRUE(allClose(toArray(fl::cos(in)), af::cos(toArray(in))));
 }
 
-TEST(TensorBaseTest, sqrt) {
+TEST(ArrayFireTensorBaseTest, sqrt) {
   auto in = fl::full({3, 3}, 4.f);
   ASSERT_TRUE(allClose(fl::sqrt(in), in / 2));
 }
 
-TEST(TensorBaseTest, tanh) {
+TEST(ArrayFireTensorBaseTest, tanh) {
   auto in = fl::rand({3, 3});
   ASSERT_TRUE(allClose(toArray(fl::tanh(in)), af::tanh(toArray(in))));
 }
 
-TEST(TensorBaseTest, absolute) {
+TEST(ArrayFireTensorBaseTest, absolute) {
   float val = -3.1;
   ASSERT_TRUE(allClose(fl::abs(fl::full({3, 3}, val)), fl::full({3, 3}, -val)));
 }
 
-TEST(TensorBaseTest, mean) {
+TEST(ArrayFireTensorBaseTest, mean) {
   auto a = fl::rand({3, 50});
   ASSERT_EQ(fl::mean<float>(a), af::mean<float>(toArray(a)));
   ASSERT_TRUE(allClose(toArray(fl::mean(a, {0})), af::mean(toArray(a), 0)));
 }
 
-TEST(TensorBaseTest, var) {
+TEST(ArrayFireTensorBaseTest, var) {
   auto a = fl::rand({3, 3});
   ASSERT_EQ(fl::var<float>(a), af::var<float>(toArray(a)));
   ASSERT_TRUE(allClose(toArray(fl::var(a, {0})), af::var(toArray(a), 0)));
@@ -209,7 +209,13 @@ TEST(TensorBaseTest, var) {
       af::var<float>(toArray(a), true));
 }
 
-TEST(TensorBaseTest, norm) {
+TEST(ArrayFireTensorBaseTest, norm) {
   auto a = fl::rand({3, 3});
   ASSERT_EQ(fl::norm(a), af::norm(toArray(a)));
+}
+
+TEST(ArrayFireTensorBaseTest, tile) {
+  auto a = fl::rand({3, 3});
+  ASSERT_TRUE(allClose(
+      toArray(fl::tile(a, {4, 5, 6})), af::tile(toArray(a), {4, 5, 6})));
 }

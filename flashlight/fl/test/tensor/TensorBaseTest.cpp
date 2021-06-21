@@ -58,6 +58,13 @@ TEST(TensorBaseTest, reshape) {
   ASSERT_TRUE(allClose(a, fl::reshape(b, {4, 4})));
 }
 
+TEST(TensorBaseTest, tile) {
+  auto a = fl::full({4, 4}, 3.);
+  auto tiled = fl::tile(a, {2, 2});
+  ASSERT_EQ(tiled.shape(), Shape({8, 8}));
+  ASSERT_TRUE(allClose(tiled, fl::full({8, 8}, 3.)));
+}
+
 TEST(TensorBaseTest, flatten) {
   unsigned s = 6;
   auto a = fl::full({s, s, s}, 2.);
