@@ -106,6 +106,13 @@ class Tensor {
   }
 
   /**
+   * Returns a representation of the tensor in 1 dimension.
+   *
+   * @return a 1D version of this tensor
+   */
+  Tensor flatten() const;
+
+  /**
    * Gets the backend enum from the underlying TensorAdapter.
    *
    * @return the backend in question

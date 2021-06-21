@@ -88,6 +88,13 @@ class TensorAdapterBase {
    */
   virtual Tensor index(const std::vector<Index>& indices) const = 0;
 
+  /**
+   * Returns a representation of the tensor in 1 dimension.
+   *
+   * @return a 1D version of this tensor
+   */
+  virtual Tensor flatten() const = 0;
+
   /******************** Assignment Operators ********************/
 #define ASSIGN_OP_TYPE(OP, TYPE) virtual void OP(const TYPE& val) = 0;
 #define ASSIGN_OP(OP)                 \
