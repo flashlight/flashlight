@@ -51,6 +51,13 @@ TEST(TensorBaseTest, AssignmentOperators) {
   ASSERT_TRUE(allClose(a, fl::full({4, 4}, 6.)));
 }
 
+TEST(TensorBaseTest, reshape) {
+  auto a = fl::full({4, 4}, 3.);
+  auto b = fl::reshape(a, Shape({8, 2}));
+  ASSERT_EQ(b.shape(), Shape({8, 2}));
+  ASSERT_TRUE(allClose(a, fl::reshape(b, {4, 4})));
+}
+
 TEST(TensorBaseTest, minimum) {
   auto a = fl::full({3, 3}, 1);
   auto b = fl::full({3, 3}, 2);

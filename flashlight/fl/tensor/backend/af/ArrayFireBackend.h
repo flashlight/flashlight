@@ -28,6 +28,9 @@ class ArrayFireBackend : public TensorBackend {
 
   /* --------------------------- Tensor Operators --------------------------- */
 
+  /************************ Shaping and Indexing *************************/
+  Tensor reshape(const Tensor& tensor, const Shape& shape) override;
+
   /************************** Unary Operators ***************************/
   Tensor exp(const Tensor& tensor) override;
   Tensor log(const Tensor& tensor) override;
