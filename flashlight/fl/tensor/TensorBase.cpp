@@ -129,6 +129,10 @@ Tensor reshape(const Tensor& tensor, const Shape& shape) {
   return tensor.backend().reshape(tensor, shape);
 }
 
+Tensor tile(const Tensor& tensor, const Shape& shape) {
+  return tensor.backend().tile(tensor, shape);
+}
+
 /************************** Unary Operators ***************************/
 Tensor exp(const Tensor& tensor) {
   return tensor.backend().exp(tensor);

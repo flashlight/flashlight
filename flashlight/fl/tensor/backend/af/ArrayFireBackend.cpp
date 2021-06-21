@@ -68,6 +68,11 @@ Tensor ArrayFireBackend::reshape(const Tensor& tensor, const Shape& shape) {
       af::moddims(toArray(tensor), detail::flToAfDims(shape)));
 }
 
+Tensor ArrayFireBackend::tile(const Tensor& tensor, const Shape& shape) {
+  return toTensor<ArrayFireTensor>(
+      af::tile(toArray(tensor), detail::flToAfDims(shape)));
+}
+
 /************************** Unary Operators ***************************/
 
 Tensor ArrayFireBackend::exp(const Tensor& tensor) {

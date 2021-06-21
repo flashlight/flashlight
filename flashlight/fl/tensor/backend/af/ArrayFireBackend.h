@@ -30,6 +30,7 @@ class ArrayFireBackend : public TensorBackend {
 
   /************************ Shaping and Indexing *************************/
   Tensor reshape(const Tensor& tensor, const Shape& shape) override;
+  Tensor tile(const Tensor& tensor, const Shape& shape) override;
 
   /************************** Unary Operators ***************************/
   Tensor exp(const Tensor& tensor) override;
