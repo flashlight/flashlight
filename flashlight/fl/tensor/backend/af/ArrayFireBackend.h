@@ -28,6 +28,10 @@ class ArrayFireBackend : public TensorBackend {
 
   /* --------------------------- Tensor Operators --------------------------- */
 
+  /************************ Shaping and Indexing *************************/
+  Tensor reshape(const Tensor& tensor, const Shape& shape) override;
+  Tensor tile(const Tensor& tensor, const Shape& shape) override;
+
   /************************** Unary Operators ***************************/
   Tensor exp(const Tensor& tensor) override;
   Tensor log(const Tensor& tensor) override;
@@ -62,6 +66,9 @@ class ArrayFireBackend : public TensorBackend {
   double var(const Tensor& input, bool bias)
       override; // TODO: consolidate w/ above
   double norm(const Tensor& input) override;
+
+  /************************** Utils ***************************/
+  void print(const Tensor& tensor) override;
 };
 
 } // namespace fl

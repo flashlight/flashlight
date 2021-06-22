@@ -31,6 +31,10 @@ class TensorBackend {
   /* --------------------------- Tensor Operators ---------------------------
    * For operator documentation and expected behavior, see TensorBase.h.
    */
+  /************************ Shaping and Indexing *************************/
+  virtual Tensor reshape(const Tensor& tensor, const Shape& shape) = 0;
+  virtual Tensor tile(const Tensor& tensor, const Shape& shape) = 0;
+
   /************************** Unary Operators ***************************/
   virtual Tensor exp(const Tensor& tensor) = 0;
   virtual Tensor log(const Tensor& tensor) = 0;
@@ -66,6 +70,9 @@ class TensorBackend {
       const Tensor& input,
       bool bias) = 0; // TODO: consolidate w/ above
   virtual double norm(const Tensor& input) = 0;
+
+  /************************** Utils ***************************/
+  virtual void print(const Tensor& tensor) = 0;
 };
 
 namespace detail {

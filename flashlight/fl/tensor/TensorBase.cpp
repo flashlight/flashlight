@@ -47,6 +47,10 @@ Tensor Tensor::operator()(const std::vector<Index>& indices) const {
   return impl_->index(indices);
 }
 
+Tensor Tensor::flatten() const {
+  return impl_->flatten();
+}
+
 TensorBackendType Tensor::backendType() const {
   return impl_->backendType();
 }
@@ -118,6 +122,16 @@ ASSIGN_OP(operator/=, inPlaceDivide);
 #undef ASSIGN_OP
 
 /* --------------------------- Tensor Operators --------------------------- */
+
+/************************ Shaping and Indexing *************************/
+
+Tensor reshape(const Tensor& tensor, const Shape& shape) {
+  return tensor.backend().reshape(tensor, shape);
+}
+
+Tensor tile(const Tensor& tensor, const Shape& shape) {
+  return tensor.backend().tile(tensor, shape);
+}
 
 /************************** Unary Operators ***************************/
 Tensor exp(const Tensor& tensor) {
@@ -267,6 +281,10 @@ T amin(const Tensor& input) {
 }
 
 /************************** Utilities ***************************/
+
+void print(const Tensor& tensor) {
+  tensor.backend().print(tensor);
+}
 
 bool allClose(
     const fl::Tensor& a,

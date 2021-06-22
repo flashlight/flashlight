@@ -76,6 +76,10 @@ Tensor ArrayFireTensor::index(const std::vector<Index>& indices) const {
   return toTensor<ArrayFireTensor>(std::move(out));
 }
 
+Tensor ArrayFireTensor::flatten() const {
+  return toTensor<ArrayFireTensor>(af::flat(array_));
+}
+
 af::array& ArrayFireTensor::getHandle() {
   return array_;
 }

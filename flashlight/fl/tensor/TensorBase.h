@@ -106,6 +106,13 @@ class Tensor {
   }
 
   /**
+   * Returns a representation of the tensor in 1 dimension.
+   *
+   * @return a 1D version of this tensor
+   */
+  Tensor flatten() const;
+
+  /**
    * Gets the backend enum from the underlying TensorAdapter.
    *
    * @return the backend in question
@@ -154,22 +161,6 @@ class Tensor {
 #undef ASSIGN_OP
 };
 
-/**
- * Returns of two tensors are close. Checks:
- * - Tensor data types
- * - Tensor shapes
- * - Emptiness
- * - Absolute distance between elements
- *
- * @param[in] a lhs tensor
- * @param[in] b rhs tensor
- * @param[in] absTolerance the maximum-allowable distance between the tensors
- */
-bool allClose(
-    const fl::Tensor& a,
-    const fl::Tensor& b,
-    const double absTolerance = 1e-5);
-
 /******************** Tensor Creation Functions ********************/
 /**
  * Creates a new tensor with a given shape and filled with a particular value.
@@ -193,6 +184,28 @@ Tensor full(
  * @param[in] type the type of the resulting matrix
  */
 Tensor identity(const Dim dim, const dtype type = dtype::f32);
+
+/************************ Shaping and Indexing *************************/
+
+/**
+ * Change a tensor's shape without changing its underlying data.
+ *
+ * @param[in] tensor the tensor to reshape
+ * @param[in] shape the new shape for the tensor
+ * @return the reshaped tensor
+ */
+Tensor reshape(const Tensor& tensor, const Shape& shape);
+
+/**
+ * Repeat the contents of a tensor a given number of times along specified
+ * dimensions.
+ *
+ * @param[in] tensor the tensor to tile
+ * @param[in] shape the number of times, along each dimension, which to tile the
+ * tensor
+ * @return the tiled tensor
+ */
+Tensor tile(const Tensor& tensor, const Shape& shape);
 
 /************************** Unary Operators ***************************/
 /**
@@ -500,5 +513,31 @@ T var(const Tensor& input, bool bias = false);
  * @return a double containing the norm
  */
 double norm(const Tensor& input);
+
+/************************** Utilities ***************************/
+
+/**
+ * Print a string representation of a tensor to standard out.
+ *
+ * @param[in] tensor the tensor to print
+ */
+void print(const Tensor& tensor);
+
+/**
+ * Returns of two tensors are close. Checks:
+ * - Tensor data types
+ * - Tensor shapes
+ * - Emptiness
+ * - Absolute distance between elements
+ *
+ * @param[in] a lhs tensor
+ * @param[in] b rhs tensor
+ * @param[in] absTolerance the maximum-allowable distance between the
+ * tensors
+ */
+bool allClose(
+    const fl::Tensor& a,
+    const fl::Tensor& b,
+    const double absTolerance = 1e-5);
 
 } // namespace fl
