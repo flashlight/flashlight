@@ -75,6 +75,16 @@ TEST(TensorBaseTest, tile) {
   ASSERT_TRUE(allClose(tiled, fl::full({8, 8}, 3.)));
 }
 
+TEST(TensorBaseTest, concatenate) {
+  auto a = fl::full({3, 3}, 1.);
+  auto b = fl::full({3, 3}, 2.);
+  auto c = fl::full({3, 3}, 3.);
+  ASSERT_TRUE(
+      allClose(fl::concatenate(0, a, b, c), fl::concatenate({a, b, c})));
+  auto out = fl::concatenate(0, a, b, c);
+  ASSERT_EQ(out.shape(), Shape({9, 3}));
+}
+
 TEST(TensorBaseTest, flatten) {
   unsigned s = 6;
   auto a = fl::full({s, s, s}, 2.);

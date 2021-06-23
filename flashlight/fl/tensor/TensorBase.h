@@ -218,6 +218,26 @@ Tensor transpose(const Tensor& tensor, const Shape& dims = {});
  */
 Tensor tile(const Tensor& tensor, const Shape& shape);
 
+/**
+ * Join or concatenate tensors together along a particular axis.
+ *
+ * @param[in] tensors a vector of tensors to concatenate
+ * @return a concatenated tensor
+ */
+Tensor concatenate(const std::vector<Tensor>& tensors, unsigned axis = 0);
+
+/**
+ * Join or concatenate tensors together along a particular axis.
+ *
+ * @param[in] args tensors to concatenate
+ * @return a concatenated tensor
+ */
+template <typename... Ts>
+Tensor concatenate(unsigned axis, const Ts&... args) {
+  std::vector<Tensor> tensors{{args...}};
+  return concatenate(std::move(tensors), axis);
+}
+
 /************************** Unary Operators ***************************/
 /**
  * Element-wise negation of a tensor.

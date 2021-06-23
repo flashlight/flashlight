@@ -7,6 +7,7 @@
 
 #include <arrayfire.h>
 #include <gtest/gtest.h>
+#include <stdexcept>
 
 #include "flashlight/fl/tensor/Random.h"
 #include "flashlight/fl/tensor/TensorBase.h"
@@ -228,4 +229,9 @@ TEST(ArrayFireTensorBaseTest, transpose) {
   auto b = fl::rand({3, 5, 4, 8});
   ASSERT_TRUE(allClose(
       toArray(fl::transpose(b, {2, 0, 1})), af::reorder(toArray(b), 2, 0, 1)));
+}
+
+TEST(ArrayFireTensorBaseTest, concatenate) {
+  std::vector<fl::Tensor> tensors(11);
+  ASSERT_THROW(fl::concatenate(tensors), std::invalid_argument);
 }

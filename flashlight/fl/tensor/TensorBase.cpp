@@ -137,6 +137,20 @@ Tensor tile(const Tensor& tensor, const Shape& shape) {
   return tensor.backend().tile(tensor, shape);
 }
 
+Tensor concatenate(const std::vector<Tensor>& tensors, unsigned axis) {
+  if (tensors.empty()) {
+    throw std::invalid_argument("join called on empty set of tensors");
+  }
+
+  // Check all backends match
+  TensorBackendType b = tensors.front().backendType();
+  std::all_of(tensors.begin(), tensors.end(), [b](const Tensor& t) {
+    return t.backendType() == b;
+  });
+
+  return tensors.front().backend().concatenate(tensors, axis);
+}
+
 /************************** Unary Operators ***************************/
 Tensor exp(const Tensor& tensor) {
   return tensor.backend().exp(tensor);
@@ -300,8 +314,8 @@ bool allClose(
   if (a.shape() != b.shape()) {
     return false;
   }
-  if (a.shape().elements() == 0 || b.shape().elements() == 0) {
-    return false;
+  if (a.shape().elements() == 0 && b.shape().elements() == 0) {
+    return true;
   }
   return fl::amax<double>(fl::abs(a - b)) < absTolerance;
 }
