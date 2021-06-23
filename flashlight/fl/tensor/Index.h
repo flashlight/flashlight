@@ -16,20 +16,42 @@ namespace fl {
 /**
  * Represents the last index along an axis of a tensor.
  */
-constexpr int end = -1;
+struct end_t {
+  operator int() const {
+    return -1;
+  }
+};
+
+// A static alias for end that can properly decay to an index type
+static const end_t end = end_t();
 
 /**
  * An entity representing a contiguous or strided sequence of indices.
  */
 class range {
+  using idx = std::variant<end_t, int>;
+
   int start_{0};
   int end_{fl::end};
   int stride_{1};
 
  public:
-  explicit range(int idx);
-  range(int start, int end);
-  range(int start, int end, int stride);
+  /**
+   * Construct a range with the indices [0, idx) (i.e. [0, idx - 1])
+   */
+  explicit range(idx idx);
+
+  /**
+   * Construct a range with the indices [start, end) (i.e. [start, end - 1])
+   */
+  range(idx start, idx end);
+
+  /**
+   * Construct a range with the indices [start, end) (i.e. [start, end - 1])
+   * with the given stride.
+   */
+  range(idx start, idx end, int stride);
+
   int start() const;
   int end() const;
   int stride() const;

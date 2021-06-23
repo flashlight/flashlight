@@ -46,7 +46,7 @@ class Shape {
 
  public:
   Shape() = default;
-  virtual ~Shape() = default;
+  ~Shape() = default;
   /**
    * Gives the maximum number of dimensions a tensor of a particular shape can
    * have.
@@ -69,12 +69,12 @@ class Shape {
   /**
    * @return the number of elements in a tensor that has the given shape.
    */
-  virtual size_t elements() const;
+  size_t elements() const;
 
   /**
    * @return Number of dimensions in the shape.
    */
-  virtual size_t nDims() const;
+  size_t nDims() const;
 
   /**
    * Get the size of a given dimension. Throws if the given dimension is larger
@@ -82,7 +82,7 @@ class Shape {
    *
    * @return the Dim at the given dimension
    */
-  virtual Dim dim(const size_t dim) const;
+  Dim dim(const size_t dim) const;
 
   /**
    * Returns a reference to the given index
@@ -93,8 +93,8 @@ class Shape {
   /**
    * Compares two shapes. Returns true if their dim vectors are equal.
    */
-  virtual bool operator==(const Shape& other) const;
-  virtual bool operator!=(const Shape& other) const;
+  bool operator==(const Shape& other) const;
+  bool operator!=(const Shape& other) const;
 
   /**
    * Compare a shape to an initializer list.

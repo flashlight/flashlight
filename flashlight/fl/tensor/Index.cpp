@@ -9,12 +9,18 @@
 
 namespace fl {
 
-range::range(int idx) : range(0, idx) {}
+range::range(idx idx) : range(0, idx) {}
 
-range::range(int start, int end) : range(start, end, /* stride */ 1) {}
+range::range(idx start, idx end) : range(start, end, /* stride */ 1) {}
 
-range::range(int start, int end, int stride)
-    : start_(start), end_(end - 1), stride_(stride) {}
+range::range(idx start, idx end, int stride)
+    : // fl::end decays to int
+      start_(std::visit([](int idx) -> int { return idx; }, start)),
+      // fl::end --> -1, else idx as int
+      end_(
+          std::holds_alternative<fl::end_t>(end) ? std::get<fl::end_t>(end)
+                                                 : std::get<int>(end) - 1),
+      stride_(stride) {}
 
 int range::start() const {
   return start_;
