@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <initializer_list>
 #include <limits>
 #include <ostream>
 #include <utility>
@@ -94,6 +95,12 @@ class Shape {
    */
   virtual bool operator==(const Shape& other) const;
   virtual bool operator!=(const Shape& other) const;
+
+  /**
+   * Compare a shape to an initializer list.
+   */
+  bool operator==(const std::initializer_list<Dim>& other) const;
+  bool operator!=(const std::initializer_list<Dim>& other) const;
 
   /**
    * Gets a reference to the underying dims vector.

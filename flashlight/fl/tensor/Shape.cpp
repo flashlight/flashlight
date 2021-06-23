@@ -53,6 +53,15 @@ bool Shape::operator!=(const Shape& other) const {
   return !(this->operator==(other));
 }
 
+bool Shape::operator==(const std::initializer_list<Dim>& other) const {
+  return dims_.size() == other.size() &&
+      std::equal(std::begin(dims_), std::end(dims_), std::begin(other));
+}
+
+bool Shape::operator!=(const std::initializer_list<Dim>& other) const {
+  return !(this->operator==(other));
+}
+
 std::ostream& operator<<(std::ostream& ostr, const Shape& s) {
   for (size_t i = 0; i < s.nDims(); ++i) {
     ostr << s.dim(i) << " ";

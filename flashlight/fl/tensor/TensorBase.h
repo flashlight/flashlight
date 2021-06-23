@@ -197,6 +197,17 @@ Tensor identity(const Dim dim, const dtype type = dtype::f32);
 Tensor reshape(const Tensor& tensor, const Shape& shape);
 
 /**
+ * Permute the axes of a tensor. If no arguments are given, reverses the axes of
+ * a tensor.
+ *
+ * @param[in] tensor the tensor to transpose
+ * @param[in] dims (optional) the permuted indices of the tensor the kth access
+ * of the output tensor will correspond to dims[k] in the input tensor
+ * @return the permuted tensor
+ */
+Tensor transpose(const Tensor& tensor, const Shape& dims = {});
+
+/**
  * Repeat the contents of a tensor a given number of times along specified
  * dimensions.
  *

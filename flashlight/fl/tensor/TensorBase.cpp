@@ -129,6 +129,10 @@ Tensor reshape(const Tensor& tensor, const Shape& shape) {
   return tensor.backend().reshape(tensor, shape);
 }
 
+Tensor transpose(const Tensor& tensor, const Shape& dims /* = {} */) {
+  return tensor.backend().transpose(tensor, dims);
+}
+
 Tensor tile(const Tensor& tensor, const Shape& shape) {
   return tensor.backend().tile(tensor, shape);
 }

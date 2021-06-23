@@ -8,6 +8,7 @@
 #include <arrayfire.h>
 #include <gtest/gtest.h>
 
+#include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/Random.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
@@ -56,6 +57,15 @@ TEST(TensorBaseTest, reshape) {
   auto b = fl::reshape(a, Shape({8, 2}));
   ASSERT_EQ(b.shape(), Shape({8, 2}));
   ASSERT_TRUE(allClose(a, fl::reshape(b, {4, 4})));
+}
+
+TEST(TensorBaseTest, transpose) {
+  // TODO: expand to check els
+  ASSERT_TRUE(
+      allClose(fl::transpose(fl::full({3, 4}, 3.)), fl::full({4, 3}, 3.)));
+  ASSERT_TRUE(allClose(
+      fl::transpose(fl::full({4, 5, 6, 7}, 3.), {2, 0, 1}),
+      fl::full({6, 4, 5, 7}, 3.)));
 }
 
 TEST(TensorBaseTest, tile) {
