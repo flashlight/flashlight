@@ -15,7 +15,7 @@
 using namespace ::testing;
 using namespace fl;
 
-TEST(IndexTest, seq) {
+TEST(IndexTest, range) {
   auto s1 = fl::range(3);
   ASSERT_EQ(s1.start(), 0);
   ASSERT_EQ(s1.end(), 2);
@@ -30,7 +30,7 @@ TEST(IndexTest, seq) {
   ASSERT_EQ(s3.stride(), 9);
 }
 
-TEST(IndexTest, seqEq) {
+TEST(IndexTest, rangeEq) {
   ASSERT_EQ(fl::range(4), fl::range(4));
   ASSERT_EQ(fl::range(2, 3), fl::range(2, 3));
   ASSERT_EQ(fl::range(5, 6, 7), fl::range(5, 6, 7));
@@ -61,6 +61,7 @@ TEST(IndexTest, Shape) {
   ASSERT_EQ(t(2).shape(), Shape({4}));
   ASSERT_EQ(t(fl::range(3)).shape(), Shape({3, 4}));
   ASSERT_EQ(t(fl::range(1, 2)).shape(), Shape({4}));
+  ASSERT_EQ(t(fl::range(0, fl::end)).shape(), Shape({4, 4}));
   ASSERT_EQ(t(fl::range(0, fl::end, 2)).shape(), Shape({2, 4}));
 
   auto t2 = fl::full({5, 6, 7, 8}, 3.);
