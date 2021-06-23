@@ -250,14 +250,14 @@ Tensor mean(const Tensor& input, const std::vector<int>& axes) {
   return input.backend().mean(input, axes);
 }
 
-Tensor var(const Tensor& input, const std::vector<int>& axes, bool bias) {
+Tensor var(const Tensor& input, const std::vector<int>& axes, const bool bias) {
   return input.backend().var(input, axes, bias);
 }
 
 // fl::var<T>(const Tensor&)
 #define GENERATE_VAR(TYPE)                                      \
   template <>                                                   \
-  TYPE var(const Tensor& input, bool bias) {                    \
+  TYPE var(const Tensor& input, const bool bias) {              \
     return static_cast<TYPE>(input.backend().var(input, bias)); \
   }
 
@@ -275,12 +275,21 @@ GENERATE_VAR(short);
 GENERATE_VAR(unsigned short);
 #undef GENERATE_VAR
 
+Tensor std(const Tensor& input, const std::vector<int>& axes, const bool bias) {
+  return input.backend().std(input, axes, bias);
+}
+
 double norm(const Tensor& input) {
   return input.backend().norm(input);
 }
 
 template <typename T>
 T amin(const Tensor& input) {
+  return static_cast<T>(input.backend().amin(input));
+}
+
+template <typename T>
+T amax(const Tensor& input) {
   return static_cast<T>(input.backend().amin(input));
 }
 

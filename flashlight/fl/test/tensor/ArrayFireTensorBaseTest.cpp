@@ -197,16 +197,37 @@ TEST(ArrayFireTensorBaseTest, mean) {
 TEST(ArrayFireTensorBaseTest, var) {
   auto a = fl::rand({3, 3});
   ASSERT_EQ(fl::var<float>(a), af::var<float>(toArray(a)));
-  ASSERT_TRUE(allClose(toArray(fl::var(a, {0})), af::var(toArray(a), 0)));
-  ASSERT_TRUE(
-      allClose(toArray(fl::var(a, {1}, false)), af::var(toArray(a), false, 1)));
+  ASSERT_TRUE(allClose(
+      toArray(fl::var(a, {0})),
+      af::var(toArray(a), AF_VARIANCE_POPULATION, 0)));
+  ASSERT_TRUE(allClose(
+      toArray(fl::var(a, {1}, false)),
+      af::var(toArray(a), AF_VARIANCE_POPULATION, 1)));
   // Make sure multidimension matches computing for all
   ASSERT_FLOAT_EQ(
       toArray(fl::var(a, {0, 1}, false)).scalar<float>(),
       af::var<float>(toArray(a)));
   ASSERT_FLOAT_EQ(
       toArray(fl::var(a, {0, 1}, true)).scalar<float>(),
-      af::var<float>(toArray(a), true));
+      af::var<float>(toArray(a), AF_VARIANCE_SAMPLE));
+}
+
+TEST(ArrayFireTensorBaseTest, std) {
+  auto a = fl::rand({3, 3});
+  ASSERT_TRUE(allClose(toArray(fl::std(a, {0})), af::stdev(toArray(a), 0)));
+  ASSERT_TRUE(allClose(
+      toArray(fl::std(a, {1}, false)),
+      af::stdev(toArray(a), AF_VARIANCE_POPULATION, 1)));
+  ASSERT_TRUE(allClose(
+      toArray(fl::std(a, {1}, true)),
+      af::stdev(toArray(a), AF_VARIANCE_SAMPLE, 1)));
+  // Make sure multidimension matches computing for all
+  ASSERT_FLOAT_EQ(
+      toArray(fl::std(a, {0, 1}, false)).scalar<float>(),
+      std::sqrt(af::var<float>(toArray(a))));
+  ASSERT_FLOAT_EQ(
+      toArray(fl::std(a, {0, 1}, true)).scalar<float>(),
+      std::sqrt(af::var<float>(toArray(a), AF_VARIANCE_SAMPLE)));
 }
 
 TEST(ArrayFireTensorBaseTest, norm) {

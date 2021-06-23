@@ -499,23 +499,33 @@ template <typename T>
 T mean(const Tensor& input);
 
 /**
- * var of array over given axes.
+ * Variance of an array over given axes.
  *
  * @param[in] input the input along which to operate
  * @param[in] axes the dimension along which to reduce.
  * @return a tensor containing the var across given axes
  */
 Tensor
-var(const Tensor& input, const std::vector<int>& axes, bool bias = false);
+var(const Tensor& input, const std::vector<int>& axes, const bool bias = false);
 
 /**
- * var of array over all axes.
+ * Variance of an array over all axes.
  *
  * @param[in] input the input along which to operate
  * @return a scalar T containing the var
  */
 template <typename T>
-T var(const Tensor& input, bool bias = false);
+T var(const Tensor& input, const bool bias = false);
+
+/**
+ * Standard deviation of an array over given axes.
+ *
+ * @param[in] input the input along which to operate
+ * @param[in] axes the dimension along which to reduce.
+ * @return a tensor containing the var across given axes
+ */
+Tensor
+std(const Tensor& input, const std::vector<int>& axes, const bool bias = false);
 
 /**
  * norm of array over all axes.

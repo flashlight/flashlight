@@ -62,10 +62,12 @@ class ArrayFireBackend : public TensorBackend {
   double sum(const Tensor& input) override; // TODO: consolidate w/ above
   Tensor mean(const Tensor& input, const std::vector<int>& axes) override;
   double mean(const Tensor& input) override; // TODO: consolidate w/ above
-  Tensor var(const Tensor& input, const std::vector<int>& axes, bool bias)
+  Tensor var(const Tensor& input, const std::vector<int>& axes, const bool bias)
       override;
-  double var(const Tensor& input, bool bias)
+  double var(const Tensor& input, const bool bias)
       override; // TODO: consolidate w/ above
+  Tensor std(const Tensor& input, const std::vector<int>& axes, const bool bias)
+      override;
   double norm(const Tensor& input) override;
 
   /************************** Utils ***************************/

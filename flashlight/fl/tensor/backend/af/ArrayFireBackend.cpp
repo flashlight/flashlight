@@ -227,11 +227,12 @@ double ArrayFireBackend::mean(const Tensor& input) {
 Tensor ArrayFireBackend::var(
     const Tensor& input,
     const std::vector<int>& axes,
-    bool bias) {
+    const bool bias) {
   // Use arrayfire default for one dimension which may be optimized
   auto& arr = toArray(input);
   if (axes.size() == 1) {
-    return toTensor<ArrayFireTensor>(af::var(arr, bias, axes[0]));
+    return toTensor<ArrayFireTensor>(af::var(
+        arr, bias ? AF_VARIANCE_SAMPLE : AF_VARIANCE_POPULATION, axes[0]));
   }
   auto meanArr = mean(input, axes);
   // TODO Replace when we have batchFunc for fl::Tensor
@@ -253,8 +254,22 @@ Tensor ArrayFireBackend::var(
 }
 
 // TODO: consolidate with above
-double ArrayFireBackend::var(const Tensor& input, bool bias) {
+double ArrayFireBackend::var(const Tensor& input, const bool bias) {
   return af::var<double>(toArray(input), bias);
+}
+
+Tensor ArrayFireBackend::std(
+    const Tensor& input,
+    const std::vector<int>& axes,
+    const bool bias) {
+  if (axes.size() == 1) {
+    // Use arrayfire default for one dimension which may be optimized
+    return toTensor<ArrayFireTensor>(af::stdev(
+        toArray(input),
+        bias ? AF_VARIANCE_SAMPLE : AF_VARIANCE_POPULATION,
+        axes[0]));
+  }
+  return this->sqrt(this->var(input, axes, bias));
 }
 
 double ArrayFireBackend::norm(const Tensor& input) {
