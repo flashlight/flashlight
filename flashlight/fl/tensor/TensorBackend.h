@@ -73,6 +73,8 @@ class TensorBackend {
   virtual double var(
       const Tensor& input,
       bool bias) = 0; // TODO: consolidate w/ above
+  virtual Tensor
+  std(const Tensor& input, const std::vector<int>& axes, const bool bias) = 0;
   virtual double norm(const Tensor& input) = 0;
 
   /************************** Utils ***************************/
