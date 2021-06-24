@@ -57,11 +57,16 @@ af::seq flRangeToAfSeq(const fl::range& range);
 af::index flToAfIndex(const fl::Index& idx);
 
 /**
+ * Strip leading 1 indices from an ArrayFire dim4.
+ */
+af::dim4 condenseDims(const af::dim4& dims);
+
+/**
  * Modify the dimensions (in place via af::moddims) or an Array to have no 1
  * indices. For example, an Array of shape (1, 2, 1, 6) becomes (2, 6).
  *
- * This operation is performed after indexing, etc where the resulting ArrayFire
- * shape would have 1's in it.
+ * This operation is performed before returning Array shape, etc where the
+ * resulting ArrayFire shape would have 1's in it.
  */
 af::array condenseIndices(const af::array& arr);
 

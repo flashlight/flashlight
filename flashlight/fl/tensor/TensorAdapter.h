@@ -70,7 +70,7 @@ class TensorAdapterBase {
    *
    * @return the dtype of the tensor
    */
-  virtual dtype type() const = 0;
+  virtual dtype type() = 0;
 
   /**
    * Returns a tensor with elements cast as a particular type
@@ -86,7 +86,7 @@ class TensorAdapterBase {
    * @param[in] indices a vector of Index references
    * @return an indexed tensor
    */
-  virtual Tensor index(const std::vector<Index>& indices) const = 0;
+  virtual Tensor index(const std::vector<Index>& indices) = 0;
 
   /**
    * Returns a representation of the tensor in 1 dimension.
