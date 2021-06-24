@@ -278,16 +278,12 @@ double ArrayFireBackend::var(const Tensor& input, const bool bias) {
 
 Tensor ArrayFireBackend::std(
     const Tensor& input,
-    const std::vector<int>& axes,
-    const bool bias) {
+    const std::vector<int>& axes) {
   if (axes.size() == 1) {
     // Use arrayfire default for one dimension which may be optimized
-    return toTensor<ArrayFireTensor>(af::stdev(
-        toArray(input),
-        bias ? AF_VARIANCE_SAMPLE : AF_VARIANCE_POPULATION,
-        axes[0]));
+    return toTensor<ArrayFireTensor>(af::stdev(toArray(input), axes[0]));
   }
-  return this->sqrt(this->var(input, axes, bias));
+  return this->sqrt(this->var(input, axes, /* bias = */ false));
 }
 
 double ArrayFireBackend::norm(const Tensor& input) {
