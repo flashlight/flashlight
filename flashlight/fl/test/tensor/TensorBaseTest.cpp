@@ -85,6 +85,18 @@ TEST(TensorBaseTest, concatenate) {
   ASSERT_EQ(out.shape(), Shape({9, 3}));
 }
 
+TEST(TensorBaseTest, nonzero) {
+  std::vector<int> idxs = {0, 1, 4, 9, 11, 23, 55, 82, 91};
+  auto a = fl::full({10, 10}, 1, fl::dtype::u32);
+  for (const auto idx : idxs) {
+    a(idx / 10, idx % 10) = 0;
+  }
+  auto indices = fl::nonzero(a);
+  int nnz = a.shape().elements() - idxs.size();
+  ASSERT_EQ(indices.shape(), Shape({nnz}));
+  ASSERT_TRUE(allClose(a.flatten()(indices), fl::full({nnz}, 1, fl::dtype::u32)));
+}
+
 TEST(TensorBaseTest, flatten) {
   unsigned s = 6;
   auto a = fl::full({s, s, s}, 2.);

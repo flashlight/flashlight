@@ -234,6 +234,12 @@ TEST(ArrayFireTensorBaseTest, tile) {
       toArray(fl::tile(a, {4, 5, 6})), af::tile(toArray(a), {4, 5, 6})));
 }
 
+TEST(ArrayFireTensorBaseTest, nonzero) {
+  auto a = fl::rand({10, 10}).astype(fl::dtype::u32);
+  auto nz = fl::nonzero(a);
+  ASSERT_TRUE(allClose(toArray(nz), af::where(toArray(a))));
+}
+
 TEST(ArrayFireTensorBaseTest, transpose) {
   auto a = fl::rand({3, 5});
   ASSERT_THROW(fl::transpose(a, {0, 1, 2, 3, 4}), std::invalid_argument);

@@ -123,6 +123,10 @@ Tensor ArrayFireBackend::concatenate(
   return toTensor<ArrayFireTensor>(af::array(handle));
 }
 
+Tensor ArrayFireBackend::nonzero(const Tensor& tensor) {
+  return toTensor<ArrayFireTensor>(af::where(toArray(tensor)));
+}
+
 /************************** Unary Operators ***************************/
 
 Tensor ArrayFireBackend::exp(const Tensor& tensor) {
