@@ -37,6 +37,7 @@ class TensorBackend {
       const Tensor& tensor,
       const Shape& dims /* = {} */) = 0;
   virtual Tensor tile(const Tensor& tensor, const Shape& shape) = 0;
+  virtual Tensor concatenate(const std::vector<Tensor>& tensors, unsigned axis) = 0;
 
   /************************** Unary Operators ***************************/
   virtual Tensor exp(const Tensor& tensor) = 0;

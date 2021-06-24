@@ -93,7 +93,8 @@ Shape afToFlDims(const af::dim4& d) {
 }
 
 af::seq flRangeToAfSeq(const fl::range& range) {
-  return af::seq(range.start(), range.end(), range.stride());
+  const int end = range.end();
+  return af::seq(range.start(), end == fl::end ? -1 : end, range.stride());
 }
 
 af::index flToAfIndex(const fl::Index& idx) {

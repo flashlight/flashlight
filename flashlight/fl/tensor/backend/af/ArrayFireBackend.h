@@ -32,6 +32,8 @@ class ArrayFireBackend : public TensorBackend {
   Tensor reshape(const Tensor& tensor, const Shape& shape) override;
   Tensor transpose(const Tensor& tensor, const Shape& dims /* = {} */) override;
   Tensor tile(const Tensor& tensor, const Shape& shape) override;
+  Tensor concatenate(const std::vector<Tensor>& tensors, unsigned axis)
+      override;
 
   /************************** Unary Operators ***************************/
   Tensor exp(const Tensor& tensor) override;

@@ -15,6 +15,7 @@
 #include <af/exception.h>
 #include <af/gfor.h>
 #include <af/lapack.h>
+#include <algorithm>
 #include <numeric>
 #include <stdexcept>
 
@@ -103,6 +104,23 @@ Tensor ArrayFireBackend::transpose(
 Tensor ArrayFireBackend::tile(const Tensor& tensor, const Shape& shape) {
   return toTensor<ArrayFireTensor>(
       af::tile(toArray(tensor), detail::flToAfDims(shape)));
+}
+
+Tensor ArrayFireBackend::concatenate(
+    const std::vector<Tensor>& tensors,
+    unsigned axis) {
+  if (tensors.size() > 10) {
+    throw std::invalid_argument(
+        "ArrayFire concatenate doesn't support > 10 tensors");
+  }
+  std::vector<af_array> arrs(tensors.size());
+  std::transform(
+      tensors.begin(), tensors.end(), arrs.begin(), [](const Tensor& t) {
+        return toArray(t).get();
+      });
+  af_array handle = nullptr;
+  AF_CHECK(af_join_many(&handle, axis, tensors.size(), arrs.data()));
+  return toTensor<ArrayFireTensor>(af::array(handle));
 }
 
 /************************** Unary Operators ***************************/
