@@ -66,5 +66,21 @@ TEST(IndexTest, Shape) {
 
   auto t2 = fl::full({5, 6, 7, 8}, 3.);
   ASSERT_EQ(t2(2, fl::range(2, 4), fl::span, 3).shape(), Shape({2, 7}));
-  // TODO: add more comprehensive tests
+}
+
+TEST(IndexTest, IndexAssignment) {
+  auto t = fl::full({4, 4}, 0, fl::dtype::s32);
+
+  t(fl::span, 0) = 1;
+  t(fl::span, 1) += 1;
+  t(fl::span, fl::range(2, fl::end)) += 1;
+  t(fl::span, fl::span) *= 7;
+  t /= 7;
+  ASSERT_TRUE(allClose(t, fl::full({4, 4}, 1)));
+
+  auto a = fl::full({6, 6}, 0.);
+  a(3, 4) = 4.;
+  ASSERT_TRUE(allClose(a(3, 4), fl::full({1}, 4.)));
+  a(2) = fl::full({6}, 8.);
+  ASSERT_TRUE(allClose(a(2), fl::full({6}, 8.)));
 }
