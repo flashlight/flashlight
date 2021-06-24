@@ -308,7 +308,9 @@ jobs:
       - build_vcpkg
       - install_vcpkg_deps:
           vcpkg_deps: "intel-mkl fftw3 cub kenlm"
-      - ubuntu_install_and_setup_cmake
+      - ubuntu_install_and_setup_cmake:
+          version: "3.15"
+          version_build: "2"
       - flashlight_source_build_with_vcpkg:
           fl_build_fl_core: "OFF"
           fl_build_app_asr: "OFF"
