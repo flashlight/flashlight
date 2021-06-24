@@ -68,8 +68,7 @@ class ArrayFireBackend : public TensorBackend {
       override;
   double var(const Tensor& input, const bool bias)
       override; // TODO: consolidate w/ above
-  Tensor std(const Tensor& input, const std::vector<int>& axes, const bool bias)
-      override;
+  Tensor std(const Tensor& input, const std::vector<int>& axes) override;
   double norm(const Tensor& input) override;
 
   /************************** Utils ***************************/

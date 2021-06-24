@@ -544,8 +544,7 @@ T var(const Tensor& input, const bool bias = false);
  * @param[in] axes the dimension along which to reduce.
  * @return a tensor containing the var across given axes
  */
-Tensor
-std(const Tensor& input, const std::vector<int>& axes, const bool bias = false);
+Tensor std(const Tensor& input, const std::vector<int>& axes);
 
 /**
  * norm of array over all axes.

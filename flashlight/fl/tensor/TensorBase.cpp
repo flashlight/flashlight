@@ -289,8 +289,8 @@ GENERATE_VAR(short);
 GENERATE_VAR(unsigned short);
 #undef GENERATE_VAR
 
-Tensor std(const Tensor& input, const std::vector<int>& axes, const bool bias) {
-  return input.backend().std(input, axes, bias);
+Tensor std(const Tensor& input, const std::vector<int>& axes) {
+  return input.backend().std(input, axes);
 }
 
 double norm(const Tensor& input) {
