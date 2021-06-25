@@ -192,6 +192,14 @@ Tensor tanh(const Tensor& tensor) {
   return tensor.backend().tanh(tensor);
 }
 
+Tensor floor(const Tensor& tensor) {
+  return tensor.backend().floor(tensor);
+}
+
+Tensor ceil(const Tensor& tensor) {
+  return tensor.backend().ceil(tensor);
+}
+
 Tensor absolute(const Tensor& tensor) {
   return tensor.backend().absolute(tensor);
 }

@@ -94,7 +94,8 @@ TEST(TensorBaseTest, nonzero) {
   auto indices = fl::nonzero(a);
   int nnz = a.shape().elements() - idxs.size();
   ASSERT_EQ(indices.shape(), Shape({nnz}));
-  ASSERT_TRUE(allClose(a.flatten()(indices), fl::full({nnz}, 1, fl::dtype::u32)));
+  ASSERT_TRUE(
+      allClose(a.flatten()(indices), fl::full({nnz}, 1, fl::dtype::u32)));
 }
 
 TEST(TensorBaseTest, flatten) {
@@ -167,4 +168,14 @@ TEST(TensorBaseTest, power) {
   auto a = fl::full({3, 3}, 2.);
   auto b = fl::full({3, 3}, 2.);
   ASSERT_TRUE(allClose(fl::power(a, b), a * b));
+}
+
+TEST(TensorBaseTest, floor) {
+  auto a = fl::rand({10, 10}) + 0.5;
+  ASSERT_TRUE(allClose((a >= 1.).astype(fl::dtype::f32), fl::floor(a)));
+}
+
+TEST(TensorBaseTest, ceil) {
+  auto a = fl::rand({10, 10}) + 0.5;
+  ASSERT_TRUE(allClose((a >= 1).astype(fl::dtype::f32), fl::ceil(a) - 1));
 }

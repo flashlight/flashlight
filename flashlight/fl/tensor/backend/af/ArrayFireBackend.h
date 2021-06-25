@@ -46,6 +46,8 @@ class ArrayFireBackend : public TensorBackend {
   Tensor cos(const Tensor& tensor) override;
   Tensor sqrt(const Tensor& tensor) override;
   Tensor tanh(const Tensor& tensor) override;
+  Tensor floor(const Tensor& tensor) override;
+  Tensor ceil(const Tensor& tensor) override;
   Tensor absolute(const Tensor& tensor) override;
   Tensor clip(const Tensor& tensor, const Tensor& low, const Tensor& high)
       override;

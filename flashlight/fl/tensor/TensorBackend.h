@@ -52,6 +52,8 @@ class TensorBackend {
   virtual Tensor cos(const Tensor& tensor) = 0;
   virtual Tensor sqrt(const Tensor& tensor) = 0;
   virtual Tensor tanh(const Tensor& tensor) = 0;
+  virtual Tensor floor(const Tensor& tensor) = 0;
+  virtual Tensor ceil(const Tensor& tensor) = 0;
   virtual Tensor absolute(const Tensor& tensor) = 0;
   virtual Tensor
   clip(const Tensor& tensor, const Tensor& low, const Tensor& high) = 0;
