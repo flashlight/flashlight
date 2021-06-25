@@ -9,6 +9,8 @@
 
 #include "flashlight/fl/dataset/datasets.h"
 
+#include <cmath>
+
 namespace fl {
 namespace app {
 namespace objdet {
@@ -44,24 +46,24 @@ class BatchTransformDataset {
     preBatchSize_ = dataset_->size();
     switch (batchPolicy_) {
       case BatchDatasetPolicy::INCLUDE_LAST:
-        size_ = ceil(static_cast<double>(preBatchSize_) / batchSize_);
+        size_ = std::ceil(static_cast<double>(preBatchSize_) / batchSize_);
         break;
       case BatchDatasetPolicy::SKIP_LAST:
-        size_ = floor(static_cast<double>(preBatchSize_) / batchSize_);
+        size_ = std::floor(static_cast<double>(preBatchSize_) / batchSize_);
         break;
       case BatchDatasetPolicy::DIVISIBLE_ONLY:
         if (size_ % batchSize_ != 0) {
           throw std::invalid_argument(
               "dataset is not evenly divisible into batches");
         }
-        size_ = ceil(static_cast<double>(preBatchSize_) / batchSize_);
+        size_ = std::ceil(static_cast<double>(preBatchSize_) / batchSize_);
         break;
       default:
         throw std::invalid_argument("unknown BatchDatasetPolicy");
     }
   }
 
-  ~BatchTransformDataset(){}
+  ~BatchTransformDataset() {}
 
   T get(const int64_t idx) {
     if (!(idx >= 0 && idx < size())) {

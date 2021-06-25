@@ -326,6 +326,22 @@ Tensor sqrt(const Tensor& tensor);
 Tensor tanh(const Tensor& tensor);
 
 /**
+ * Returns the element-wise floor of the input.
+ *
+ * @param[in] tensor the tensor on which to compute the floor
+ * @return the resulting tensor
+ */
+Tensor floor(const Tensor& tensor);
+
+/**
+ * Returns the element-wise ceiling of the input.
+ *
+ * @param[in] tensor the tensor on which to compute the ceiling
+ * @return the resulting tensor
+ */
+Tensor ceil(const Tensor& tensor);
+
+/**
  * Returns the element-wise absolute value of the input.
  *
  * @param[in] tensor the tensor on which to compute

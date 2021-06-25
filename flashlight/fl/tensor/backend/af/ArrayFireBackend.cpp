@@ -165,6 +165,14 @@ Tensor ArrayFireBackend::tanh(const Tensor& tensor) {
   return toTensor<ArrayFireTensor>(af::tanh(toArray(tensor)));
 }
 
+Tensor ArrayFireBackend::floor(const Tensor& tensor) {
+  return toTensor<ArrayFireTensor>(af::floor(toArray(tensor)));
+}
+
+Tensor ArrayFireBackend::ceil(const Tensor& tensor) {
+  return toTensor<ArrayFireTensor>(af::ceil(toArray(tensor)));
+}
+
 Tensor ArrayFireBackend::absolute(const Tensor& tensor) {
   return toTensor<ArrayFireTensor>(af::abs(toArray(tensor)));
 }
