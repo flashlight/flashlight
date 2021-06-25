@@ -9,6 +9,7 @@
 
 #include <math.h>
 #include <stdint.h>
+#include <cmath>
 
 namespace fl {
 namespace lib {
@@ -131,7 +132,9 @@ struct FeatureParams {
 
   int64_t nFft() const {
     int64_t nsamples = numFrameSizeSamples();
-    return (nsamples > 0) ? 1 << static_cast<int>(ceil(log2(nsamples))) : 0;
+    return (nsamples > 0)
+        ? 1 << static_cast<int>(std::ceil(std::log2(nsamples)))
+        : 0;
   }
 
   int64_t filterFreqResponseLen() const {
@@ -160,7 +163,7 @@ struct FeatureParams {
     if (frameStride <= 0 || inSize < frameSize) {
       return 0;
     }
-    return 1 + floor((inSize - frameSize) * 1.0 / frameStride);
+    return 1 + std::floor((inSize - frameSize) * 1.0 / frameStride);
   }
 };
 } // namespace audio
