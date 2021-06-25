@@ -11,6 +11,8 @@
 #include <af/array.h>
 #include <af/statistics.h>
 
+#include <variant>
+
 #include "flashlight/fl/tensor/Shape.h"
 #include "flashlight/fl/tensor/TensorAdapter.h"
 
@@ -21,17 +23,34 @@ namespace fl {
  * Flashlight Tensors to ArrayFire
  */
 class ArrayFireTensor : public TensorAdapterBase {
-  // The internal ArrayFire array handle
-  af::array array_;
+  // The internal ArrayFire handle. This can be an af::array or an
+  // af::array::array_proxy as in the case of a view (lvalues only)
+  std::variant<af::array, af::array::array_proxy> handle_;
 
   /*
    * A Flashlight shape that mirrors ArrayFire dims.
    *
-   * NOTE: this shape is only updated on calls to ArrayFireTensor::shape() so as
-   * to satisfy API requirements. af::array::dims() should be used for internal
-   * computation where shape/dimensions are needed.
+   * NOTE: this shape is only updated on calls to ArrayFireTensor::shape() so
+   * as to satisfy API requirements. af::array::dims() should be used for
+   * internal computation where shape/dimensions are needed.
    */
   Shape shape_;
+
+  /**
+   * Constructs an ArrayFireTensor from an af::array::array_proxy.
+   *
+   * This constructor is for internal use only. In order to properly construct
+   * views/proxies of arrays when they're lvalues, we need to sometimes create
+   * ArrayFireTensors which hold proxies and not arrays.
+   *
+   * Whenever these ArrayFireTensors are mutated, ArrayFireTensor::handle() is
+   * called, which upcasts the array_proxy to a full af::array on which
+   * operations can be performed.
+   *
+   * @param[in] arrayProxy construct a tensor from an ArrayFire array_proxy
+   * rvalue reference.
+   */
+  explicit ArrayFireTensor(af::array::array_proxy&& arrayProxy);
 
  public:
   /**
@@ -40,11 +59,11 @@ class ArrayFireTensor : public TensorAdapterBase {
    * Since af::arrays are refcounted, an instance of this class
    * can only be created using arrays that are moved therein.
    *
-   * Tensor operations occurring directly on this tensor's underlying af::array
-   * should not copy the array else take a performance penalty (via an internal
-   * copy if refcount is > 1 in some cases).
+   * Tensor operations occurring directly on this tensor's underlying
+   * af::array should not copy the array else take a performance penalty (via
+   * an internal copy if refcount is > 1 in some cases).
    *
-   * @param[in] array&& construct a tensor from an ArrayFire array rvalue
+   * @param[in] array construct a tensor from an ArrayFire array rvalue
    * reference.
    */
   explicit ArrayFireTensor(af::array&& array);
@@ -56,18 +75,27 @@ class ArrayFireTensor : public TensorAdapterBase {
 
   /**
    * Gets an ArrayFire Array from this impl.
+   *
+   * Throws if this tensor represents an array_proxy, since it precludes
+   * promotion to an array.
+   */
+  const af::array& getHandle() const;
+
+  /**
+   * Gets an ArrayFire Array from this impl. If the underlying handle is an
+   * array_proxy, may promote it to an af::array condense dimensions as needed,
+   * replace the handle variant, and return a reference.
    */
   af::array& getHandle();
-  const af::array& getHandle() const;
 
   ~ArrayFireTensor() override = default;
   std::unique_ptr<TensorAdapterBase> clone() const override;
   TensorBackendType backendType() const override;
   TensorBackend& backend() const override;
   const Shape& shape() override;
-  dtype type() const override;
+  dtype type() override;
   Tensor astype(const dtype type) override;
-  Tensor index(const std::vector<Index>& indices) const override;
+  Tensor index(const std::vector<Index>& indices) override;
   Tensor flatten() const override;
 
   /******************** Assignment Operators ********************/
@@ -105,6 +133,7 @@ class ArrayFireTensor : public TensorAdapterBase {
  * @param[in] tensor the input tensor
  * @return the array underying the Tensor
  */
-af::array& toArray(const Tensor& tensor);
+const af::array& toArray(const Tensor& tensor);
+af::array& toArray(Tensor& tensor);
 
 } // namespace fl

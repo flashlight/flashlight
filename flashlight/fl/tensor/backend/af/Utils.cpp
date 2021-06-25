@@ -115,23 +115,37 @@ af::index flToAfIndex(const fl::Index& idx) {
   }
 }
 
-af::array condenseIndices(const af::array& arr) {
-  // Fast path - Array has zero elements or a dim of size zero
-  if (arr.elements() == 0) {
-    return arr;
+af::dim4 condenseDims(const af::dim4& dims) {
+  if (dims.elements() == 0) {
+    return af::dim4(0);
   }
 
   // Find the condensed shape
   af::dim4 newDims(1, 1, 1, 1);
   unsigned newDimIdx = 0;
   for (unsigned i = 0; i < AF_MAX_DIMS; ++i) {
-    if (arr.dims(i) != 1) {
+    if (dims[i] != 1) {
       // found a non-1 dim size - populate newDims
-      newDims[newDimIdx] = arr.dims(i);
+      newDims[newDimIdx] = dims[i];
       newDimIdx++;
     }
   }
-  return af::moddims(arr, newDims);
+  return newDims;
+}
+
+af::array condenseIndices(const af::array& arr) {
+  // Fast path - Array has zero elements or a dim of size zero
+  if (arr.elements() == 0) {
+    return arr;
+  }
+
+  // Only change dims if condensing is possible
+  af::dim4 newDims = condenseDims(arr.dims());
+  if (newDims != arr.dims()) {
+    return af::moddims(arr, newDims);
+  } else {
+    return arr;
+  }
 }
 
 } // namespace detail

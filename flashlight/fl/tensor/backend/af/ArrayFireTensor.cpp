@@ -20,7 +20,14 @@
 
 namespace fl {
 
-af::array& toArray(const Tensor& tensor) {
+const af::array& toArray(const Tensor& tensor) {
+  if (tensor.backendType() != TensorBackendType::ArrayFire) {
+    throw std::invalid_argument("toArray: tensor is not ArrayFire-backed");
+  }
+  return tensor.getAdapter<ArrayFireTensor>().getHandle();
+}
+
+af::array& toArray(Tensor& tensor) {
   if (tensor.backendType() != TensorBackendType::ArrayFire) {
     throw std::invalid_argument("toArray: tensor is not ArrayFire-backed");
   }
@@ -28,12 +35,36 @@ af::array& toArray(const Tensor& tensor) {
 }
 
 ArrayFireTensor::ArrayFireTensor(af::array&& array)
-    : array_(std::move(array)), shape_(detail::afToFlDims(array_.dims())) {}
+    : handle_(std::move(array)) {}
+
+ArrayFireTensor::ArrayFireTensor(af::array::array_proxy&& proxy)
+    : handle_(std::move(proxy)) {}
 
 ArrayFireTensor::ArrayFireTensor() {}
 
+const af::array& ArrayFireTensor::getHandle() const {
+  if (!std::holds_alternative<af::array>(handle_)) {
+    throw std::logic_error(
+        "ArrayFireTensor::getHandle() - underlying tensor is an array_proxy");
+  }
+  return std::get<af::array>(handle_);
+}
+
+af::array& ArrayFireTensor::getHandle() {
+  // If the handle is currently an af::array::array_proxy, upcast to an
+  // af::array via its operator array() and update the handle.
+  // Additionally, since we can't directly mutate the dimensions of an
+  // af::array::array_proxy, condense the indices of the resulting array after
+  // the conversion.
+  if (!std::holds_alternative<af::array>(handle_)) {
+    handle_ = detail::condenseIndices(
+        af::array(std::get<af::array::array_proxy>(handle_)));
+  }
+  return std::get<af::array>(handle_);
+}
+
 std::unique_ptr<TensorAdapterBase> ArrayFireTensor::clone() const {
-  af::array arr = array_; // increment internal AF refcount
+  af::array arr = getHandle(); // increment internal AF refcount
   return std::make_unique<ArrayFireTensor>(std::move(arr));
 }
 
@@ -47,21 +78,22 @@ TensorBackend& ArrayFireTensor::backend() const {
 }
 
 const Shape& ArrayFireTensor::shape() {
-  // Update the Shape in-place
-  detail::afToFlDims(array_.dims(), shape_);
+  // Update the Shape in-place. Doesn't change any underlying data; only the
+  // mirrored Shape metadata.
+  detail::afToFlDims(getHandle().dims(), shape_);
   return shape_;
 }
 
-fl::dtype ArrayFireTensor::type() const {
-  return detail::afToFlType(array_.type());
+fl::dtype ArrayFireTensor::type() {
+  return detail::afToFlType(getHandle().type());
 }
 
 Tensor ArrayFireTensor::astype(const dtype type) {
-  auto a = array_.as(detail::flToAfType(type));
+  auto a = getHandle().as(detail::flToAfType(type));
   return toTensor<ArrayFireTensor>(std::move(a));
 }
 
-Tensor ArrayFireTensor::index(const std::vector<Index>& indices) const {
+Tensor ArrayFireTensor::index(const std::vector<Index>& indices) {
   if (indices.size() > AF_MAX_DIMS) {
     throw std::invalid_argument(
         "ArrayFire-backed tensor was indexed with > 4 elements:"
@@ -71,44 +103,39 @@ Tensor ArrayFireTensor::index(const std::vector<Index>& indices) const {
   for (size_t i = 0; i < indices.size(); ++i) {
     afIndices[i] = detail::flToAfIndex(indices[i]);
   }
-  af::array out = detail::condenseIndices(
-      array_(afIndices[0], afIndices[1], afIndices[2], afIndices[3]));
-  return toTensor<ArrayFireTensor>(std::move(out));
+  // Returns a tensor whose internal handle is an af::array::array_proxy
+  af::array::array_proxy _p =
+      getHandle()(afIndices[0], afIndices[1], afIndices[2], afIndices[3]);
+  // Calling the private ctor that takes an array_proxy.
+  return fl::Tensor(
+      std::unique_ptr<ArrayFireTensor>(new ArrayFireTensor(std::move(_p))));
 }
 
 Tensor ArrayFireTensor::flatten() const {
-  return toTensor<ArrayFireTensor>(af::flat(array_));
-}
-
-af::array& ArrayFireTensor::getHandle() {
-  return array_;
-}
-
-const af::array& ArrayFireTensor::getHandle() const {
-  return array_;
+  return toTensor<ArrayFireTensor>(af::flat(getHandle()));
 }
 
 /******************** Assignment Operators ********************/
-#define ASSIGN_OP_TYPE(FUN, AF_OP, TYPE)       \
-  void ArrayFireTensor::FUN(const TYPE& val) { \
-    array_ AF_OP val;                          \
+#define ASSIGN_OP_TYPE(FUN, AF_OP, TYPE)                       \
+  void ArrayFireTensor::FUN(const TYPE& val) {                 \
+    std::visit([val](auto&& arr) { arr AF_OP val; }, handle_); \
   }
-#define ASSIGN_OP(FUN, AF_OP)                       \
-  void ArrayFireTensor::FUN(const Tensor& tensor) { \
-    array_ AF_OP toArray(tensor);                   \
-  }                                                 \
-  ASSIGN_OP_TYPE(FUN, AF_OP, double);               \
-  ASSIGN_OP_TYPE(FUN, AF_OP, float);                \
-  ASSIGN_OP_TYPE(FUN, AF_OP, int);                  \
-  ASSIGN_OP_TYPE(FUN, AF_OP, unsigned);             \
-  ASSIGN_OP_TYPE(FUN, AF_OP, bool);                 \
-  ASSIGN_OP_TYPE(FUN, AF_OP, char);                 \
-  ASSIGN_OP_TYPE(FUN, AF_OP, unsigned char);        \
-  ASSIGN_OP_TYPE(FUN, AF_OP, short);                \
-  ASSIGN_OP_TYPE(FUN, AF_OP, unsigned short);       \
-  ASSIGN_OP_TYPE(FUN, AF_OP, long);                 \
-  ASSIGN_OP_TYPE(FUN, AF_OP, unsigned long);        \
-  ASSIGN_OP_TYPE(FUN, AF_OP, long long);            \
+#define ASSIGN_OP(FUN, AF_OP)                                                  \
+  void ArrayFireTensor::FUN(const Tensor& tensor) {                            \
+    std::visit([&tensor](auto&& arr) { arr AF_OP toArray(tensor); }, handle_); \
+  }                                                                            \
+  ASSIGN_OP_TYPE(FUN, AF_OP, double);                                          \
+  ASSIGN_OP_TYPE(FUN, AF_OP, float);                                           \
+  ASSIGN_OP_TYPE(FUN, AF_OP, int);                                             \
+  ASSIGN_OP_TYPE(FUN, AF_OP, unsigned);                                        \
+  ASSIGN_OP_TYPE(FUN, AF_OP, bool);                                            \
+  ASSIGN_OP_TYPE(FUN, AF_OP, char);                                            \
+  ASSIGN_OP_TYPE(FUN, AF_OP, unsigned char);                                   \
+  ASSIGN_OP_TYPE(FUN, AF_OP, short);                                           \
+  ASSIGN_OP_TYPE(FUN, AF_OP, unsigned short);                                  \
+  ASSIGN_OP_TYPE(FUN, AF_OP, long);                                            \
+  ASSIGN_OP_TYPE(FUN, AF_OP, unsigned long);                                   \
+  ASSIGN_OP_TYPE(FUN, AF_OP, long long);                                       \
   ASSIGN_OP_TYPE(FUN, AF_OP, unsigned long long);
 
 // (function name, AF op). Use build-in AF operators.
