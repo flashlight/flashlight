@@ -151,6 +151,10 @@ Tensor concatenate(const std::vector<Tensor>& tensors, unsigned axis) {
   return tensors.front().backend().concatenate(tensors, axis);
 }
 
+Tensor nonzero(const Tensor& tensor) {
+  return tensor.backend().nonzero(tensor);
+}
+
 /************************** Unary Operators ***************************/
 Tensor exp(const Tensor& tensor) {
   return tensor.backend().exp(tensor);

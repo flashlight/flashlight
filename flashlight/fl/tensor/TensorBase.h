@@ -238,6 +238,15 @@ Tensor concatenate(unsigned axis, const Ts&... args) {
   return concatenate(std::move(tensors), axis);
 }
 
+/**
+ * Return the indices of elements that are non-zero. Indices correspond to a
+ * flattened version of the input tensor.
+ *
+ * @param[in] tensor input tensor
+ * @return a tensor containing the indices of the nonzero elements
+ */
+Tensor nonzero(const Tensor& tensor);
+
 /************************** Unary Operators ***************************/
 /**
  * Element-wise negation of a tensor.
