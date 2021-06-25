@@ -34,6 +34,7 @@ class ArrayFireBackend : public TensorBackend {
   Tensor tile(const Tensor& tensor, const Shape& shape) override;
   Tensor concatenate(const std::vector<Tensor>& tensors, unsigned axis)
       override;
+  Tensor nonzero(const Tensor& tensor) override;
 
   /************************** Unary Operators ***************************/
   Tensor exp(const Tensor& tensor) override;

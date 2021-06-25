@@ -40,6 +40,7 @@ class TensorBackend {
   virtual Tensor concatenate(
       const std::vector<Tensor>& tensors,
       unsigned axis) = 0;
+  virtual Tensor nonzero(const Tensor& tensor) = 0;
 
   /************************** Unary Operators ***************************/
   virtual Tensor exp(const Tensor& tensor) = 0;
