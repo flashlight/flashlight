@@ -29,7 +29,13 @@ Tensor::~Tensor() {}
 
 Tensor::Tensor(const Tensor& tensor) : impl_(tensor.impl_->clone()) {}
 
+Tensor::Tensor(Tensor&& other) noexcept : impl_(std::move(other.impl_)) {}
+
 Tensor::Tensor() : impl_(detail::getDefaultAdapter()) {}
+
+Tensor Tensor::copy() const {
+  return impl_->copy();
+}
 
 const Shape& Tensor::shape() const {
   return impl_->shape();
@@ -316,7 +322,7 @@ T amin(const Tensor& input) {
 
 template <typename T>
 T amax(const Tensor& input) {
-  return static_cast<T>(input.backend().amin(input));
+  return static_cast<T>(input.backend().amax(input));
 }
 
 /************************** Utilities ***************************/

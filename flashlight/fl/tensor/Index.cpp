@@ -51,6 +51,9 @@ Index::Index(const range& range)
 
 Index::Index(const int idx) : type_(detail::IndexType::Literal), index_(idx) {}
 
+Index::Index(Index&& other) noexcept
+    : type_(other.type_), index_(std::move(other.index_)) {}
+
 detail::IndexType Index::type() const {
   return type_;
 }

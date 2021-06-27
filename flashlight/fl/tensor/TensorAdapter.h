@@ -59,6 +59,11 @@ class TensorAdapterBase {
   virtual TensorBackend& backend() const = 0;
 
   /**
+   * Deep copy the tensor, including underlying data.
+   */
+  virtual Tensor copy() = 0;
+
+  /**
    * Get the shape of a tensor.
    *
    * @return the shape of the tensor

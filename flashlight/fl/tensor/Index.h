@@ -97,6 +97,12 @@ class Index {
   /* implicit */ Index(const int idx);
 
   /**
+   * Move constructor - moves the index data.
+   */
+  Index(Index&& index) noexcept;
+  Index(const Index& index) = default;
+
+  /**
    * Get the index type for this index.
    *
    * @return the index type.

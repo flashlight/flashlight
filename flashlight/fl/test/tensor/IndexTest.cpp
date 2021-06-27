@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <arrayfire.h>
 #include <gtest/gtest.h>
 
 #include "flashlight/fl/tensor/Index.h"
@@ -70,7 +69,6 @@ TEST(IndexTest, Shape) {
 
 TEST(IndexTest, IndexAssignment) {
   auto t = fl::full({4, 4}, 0, fl::dtype::s32);
-
   t(fl::span, 0) = 1;
   t(fl::span, 1) += 1;
   t(fl::span, fl::range(2, fl::end)) += 1;
@@ -83,4 +81,27 @@ TEST(IndexTest, IndexAssignment) {
   ASSERT_TRUE(allClose(a(3, 4), fl::full({1}, 4.)));
   a(2) = fl::full({6}, 8.);
   ASSERT_TRUE(allClose(a(2), fl::full({6}, 8.)));
+
+  auto b = fl::full({3, 3}, 1.);
+  auto c = b;
+  b += 1;
+  ASSERT_TRUE(allClose(b, fl::full({3, 3}, 2.)));
+  ASSERT_TRUE(allClose(c, fl::full({3, 3}, 1.)));
+}
+
+TEST(IndexTest, TensorIndex) {
+  std::vector<int> idxs = {0, 1, 4, 9, 11, 13, 16, 91};
+  unsigned size = idxs.size();
+  auto indices = fl::full({size}, 0);
+  for (int i = 0; i < size; ++i) {
+    indices(i) = idxs[i];
+  }
+  auto a = fl::rand({100});
+  auto indexed = a(indices);
+  for (int i = 0; i < size; ++i) {
+    ASSERT_TRUE(allClose(indexed(i), a(idxs[i])));
+  }
+
+  a(indices) = 5.;
+  ASSERT_TRUE(allClose(a(indices), fl::full({size}, 5.)));
 }

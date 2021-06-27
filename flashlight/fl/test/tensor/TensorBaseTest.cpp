@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <arrayfire.h>
 #include <gtest/gtest.h>
 
 #include "flashlight/fl/tensor/Index.h"
@@ -85,7 +84,7 @@ TEST(TensorBaseTest, concatenate) {
   ASSERT_EQ(out.shape(), Shape({9, 3}));
 }
 
-TEST(TensorBaseTest, DISABLED_nonzero) {
+TEST(TensorBaseTest, nonzero) {
   std::vector<int> idxs = {0, 1, 4, 9, 11, 23, 55, 82, 91};
   auto a = fl::full({10, 10}, 1, fl::dtype::u32);
   for (const auto idx : idxs) {
