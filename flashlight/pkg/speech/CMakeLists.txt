@@ -19,18 +19,7 @@ add_library(
 target_link_libraries(
   fl_pkg_speech
   PUBLIC
-  ${GLOG_LIBRARIES}
-  ${gflags_LIBRARIES}
-  ${MKL_LIBRARIES}
   flashlight
-  )
-
-target_include_directories(
-  fl_pkg_speech
-  PUBLIC
-  ${GLOG_INCLUDE_DIRS}
-  ${gflags_INCLUDE_DIRS}
-  ${MKL_INCLUDE_DIR}
   )
 
 # ------------------------ Components ------------------------
