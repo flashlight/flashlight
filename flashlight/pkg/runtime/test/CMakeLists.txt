@@ -8,6 +8,11 @@ build_test(
   LIBS ${LIBS}
 )
 
+build_test(
+  SRC ${DIR}/common/SequentialBuilderTest.cpp
+  LIBS ${LIBS}
+)
+
 add_library(test_module_plugin MODULE
   ${DIR}/plugin/test_module_plugin.cpp)
 target_include_directories(test_module_plugin

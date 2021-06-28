@@ -7,7 +7,7 @@
 
 #include "flashlight/app/benchmark/ModelBenchmarker.h"
 
-#include "flashlight/ext/common/DistributedUtils.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
 #include "flashlight/fl/flashlight.h"
 
 namespace fl {

@@ -234,12 +234,6 @@ if (FL_BUILD_CORE)
     FL_BUILD_PROFILING=$<BOOL:${FL_BUILD_PROFILING}>
     )
 
-  # ------------------------ Extensions ------------------------
-  set(FL_EXT_DIR "${FL_ROOT_DIR}/ext")
-  include(${FL_EXT_DIR}/CMakeLists.txt)
-
-  # Make #include "flashlight/lib" work by adding to the inner incl dir
-  setup_install_headers(${FL_EXT_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
 endif() # if FL_BUILD_CORE
 
 # --------------------------- Apps ---------------------------

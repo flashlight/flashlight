@@ -14,7 +14,7 @@
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
 #include "flashlight/pkg/speech/runtime/Helpers.h"
-#include "flashlight/ext/common/SequentialBuilder.h"
+#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
 
 namespace {
 constexpr const char* kPlDir = "generated_pl/";

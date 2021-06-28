@@ -20,9 +20,9 @@
 #include "flashlight/pkg/speech/decoder/DecodeUtils.h"
 #include "flashlight/pkg/speech/decoder/Defines.h"
 #include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
-#include "flashlight/ext/common/DistributedUtils.h"
-#include "flashlight/ext/common/SequentialBuilder.h"
-#include "flashlight/ext/common/Serializer.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
+#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
+#include "flashlight/pkg/runtime/common/Serializer.h"
 #include "flashlight/lib/text/decoder/LexiconDecoder.h"
 #include "flashlight/lib/text/decoder/lm/KenLM.h"
 

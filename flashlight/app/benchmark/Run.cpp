@@ -15,7 +15,7 @@
 #include "flashlight/app/objdet/criterion/SetCriterion.h"
 #include "flashlight/app/objdet/models/Resnet50Backbone.h"
 #include "flashlight/app/objdet/nn/Detr.h"
-#include "flashlight/ext/common/DistributedUtils.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
 #include "flashlight/ext/image/fl/models/Resnet.h"
 #include "flashlight/ext/image/fl/models/ViT.h"
 #include "flashlight/lib/common/String.h"
