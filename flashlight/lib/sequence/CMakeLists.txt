@@ -7,6 +7,8 @@ add_library(
   ""
   )
 
+set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} fl_lib_sequence)
+
 target_include_directories(
   fl_lib_sequence
   PRIVATE
