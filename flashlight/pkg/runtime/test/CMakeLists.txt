@@ -11,6 +11,7 @@ build_test(
 build_test(
   SRC ${DIR}/common/SequentialBuilderTest.cpp
   LIBS ${LIBS}
+  PREPROC "ARCHDIR=\"${DIR}/common/\""
 )
 
 add_library(test_module_plugin MODULE

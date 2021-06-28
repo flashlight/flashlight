@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 
 set(DIR ${CMAKE_CURRENT_LIST_DIR})
-set(LIBS fl_pkg_speech)
+# TODO remove dependency on runtime components for these tests
+set(LIBS fl_pkg_speech fl_pkg_runtime)
 
 # Criterion
 build_test(SRC ${DIR}/criterion/CriterionTest.cpp LIBS ${LIBS})

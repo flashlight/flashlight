@@ -20,6 +20,7 @@ target_link_libraries(
   fl_pkg_speech
   PUBLIC
   flashlight
+  fl_pkg_runtime
   )
 
 # ------------------------ Components ------------------------
