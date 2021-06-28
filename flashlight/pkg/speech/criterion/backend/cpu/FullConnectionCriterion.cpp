@@ -8,7 +8,7 @@
 #include "flashlight/pkg/speech/criterion/FullConnectionCriterion.h"
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
-#include "flashlight/fl/distributed/DistributedUtils.h"
+#include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/lib/sequence/criterion/cpu/FullConnectionCriterion.h"
 
 using fl::Variable;

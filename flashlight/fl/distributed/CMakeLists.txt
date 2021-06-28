@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.10)
 set(
   DISTRIBUTED_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/DistributedApi.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/DistributedUtils.cpp
   ${CMAKE_CURRENT_LIST_DIR}/FileStore.cpp
   ${CMAKE_CURRENT_LIST_DIR}/reducers/InlineReducer.cpp
   ${CMAKE_CURRENT_LIST_DIR}/reducers/CoalescingReducer.cpp

@@ -58,4 +58,4 @@ template void syncMeter<TopKMeter>(TopKMeter& mtr);
 } // namespace ext
 } // namespace fl
 
-#include "flashlight/fl/common/Utils-inl.h"
+#include "flashlight/ext/common/Utils-inl.h"

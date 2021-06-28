@@ -13,7 +13,7 @@
 #include "flashlight/pkg/speech/criterion/ConnectionistTemporalClassificationCriterion.h"
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
-#include "flashlight/fl/distributed/DistributedUtils.h"
+#include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/lib/sequence/criterion/cuda/CriterionUtils.cuh"
 
 using namespace fl::ext;

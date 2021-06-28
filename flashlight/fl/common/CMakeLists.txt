@@ -11,7 +11,6 @@ set(
   ${CMAKE_CURRENT_LIST_DIR}/Logging.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Histogram.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Plugin.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/SequentialBuilder.cpp
 )
 
 if(FL_USE_CUDA)

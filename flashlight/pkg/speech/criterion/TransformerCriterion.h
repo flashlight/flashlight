@@ -14,7 +14,7 @@
 #include "flashlight/pkg/speech/criterion/attention/attention.h"
 #include "flashlight/pkg/speech/criterion/attention/window.h"
 
-#include "flashlight/fl/distributed/DistributedUtils.h"
+#include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/fl/contrib/modules/Transformer.h"
 
 namespace fl {

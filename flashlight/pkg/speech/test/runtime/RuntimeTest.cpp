@@ -13,7 +13,7 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/pkg/speech/runtime/runtime.h"
-#include "flashlight/fl/common/Serializer.h"
+#include "flashlight/ext/common/Serializer.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/System.h"
 

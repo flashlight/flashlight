@@ -13,7 +13,7 @@
 
 #include "flashlight/app/imgclass/examples/Defines.h"
 #include "flashlight/pkg/runtime/amp/DynamicScaler.h"
-#include "flashlight/fl/distributed/DistributedUtils.h"
+#include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/pkg/vision/dataset/Transforms.h"
 #include "flashlight/pkg/vision/dataset/DistributedDataset.h"
 #include "flashlight/pkg/vision/models/ViT.h"

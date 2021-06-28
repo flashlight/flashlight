@@ -13,7 +13,7 @@
 
 #include <glog/logging.h>
 
-#include "flashlight/fl/distributed/DistributedUtils.h"
+#include "flashlight/ext/common/DistributedUtils.h"
 #include "flashlight/lib/common/System.h"
 
 #ifdef FL_BUILD_FB_DEPENDENCIES

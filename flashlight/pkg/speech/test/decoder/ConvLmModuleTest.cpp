@@ -10,7 +10,7 @@
 #include <arrayfire.h>
 #include "flashlight/fl/flashlight.h"
 
-#include "flashlight/fl/common/SequentialBuilder.h"
+#include "flashlight/ext/common/SequentialBuilder.h"
 #include "flashlight/lib/common/System.h"
 
 using namespace fl;

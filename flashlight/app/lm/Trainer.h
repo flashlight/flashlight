@@ -17,8 +17,8 @@
 #include "flashlight/pkg/text/data/TextDataset.h"
 
 #include "flashlight/pkg/runtime/amp/DynamicScaler.h"
-#include "flashlight/fl/distributed/DistributedUtils.h"
-#include "flashlight/fl/common/Serializer.h"
+#include "flashlight/ext/common/DistributedUtils.h"
+#include "flashlight/ext/common/Serializer.h"
 #include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
 #include "flashlight/fl/contrib/contrib.h"
 #include "flashlight/fl/flashlight.h"
