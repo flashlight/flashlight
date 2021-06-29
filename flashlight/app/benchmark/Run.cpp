@@ -7,17 +7,17 @@
 
 #include <gflags/gflags.h>
 
-#include "flashlight/app/asr/criterion/criterion.h"
+#include "flashlight/pkg/speech/criterion/criterion.h"
 #include "flashlight/app/benchmark/ModelBenchmarker.h"
 #include "flashlight/app/benchmark/Utils.h"
 #include "flashlight/app/benchmark/models/AsrTransformer.h"
 #include "flashlight/app/benchmark/models/LmTransformer.h"
-#include "flashlight/app/objdet/criterion/SetCriterion.h"
-#include "flashlight/app/objdet/models/Resnet50Backbone.h"
-#include "flashlight/app/objdet/nn/Detr.h"
+#include "flashlight/pkg/vision/criterion/SetCriterion.h"
+#include "flashlight/pkg/vision/models/Resnet50Backbone.h"
+#include "flashlight/pkg/vision/models/Detr.h"
 #include "flashlight/pkg/runtime/common/DistributedUtils.h"
-#include "flashlight/ext/image/fl/models/Resnet.h"
-#include "flashlight/ext/image/fl/models/ViT.h"
+#include "flashlight/pkg/vision/models/Resnet.h"
+#include "flashlight/pkg/vision/models/ViT.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
 
@@ -56,7 +56,7 @@ void runViTBase(bool fp16 = false) {
   }
 
   // Model
-  std::shared_ptr<fl::Module> model = std::make_shared<fl::pkg::runtime::image::ViT>(
+  std::shared_ptr<fl::Module> model = std::make_shared<fl::pkg::vision::ViT>(
       12, // FLAGS_model_layers,
       768, // FLAGS_model_hidden_emb_size,
       3072, // FLAGS_model_mlp_size,
@@ -96,7 +96,7 @@ void runResNet34(bool fp16 = false) {
   }
 
   // Model
-  std::shared_ptr<fl::Module> model = fl::pkg::runtime::image::resnet34();
+  std::shared_ptr<fl::Module> model = fl::pkg::vision::resnet34();
 
   auto criterion =
       [&target](const std::vector<fl::Variable>& input) -> fl::Variable {
@@ -126,7 +126,7 @@ void runResNet50(bool fp16 = false) {
   }
 
   // Model
-  std::shared_ptr<fl::Module> model = fl::pkg::runtime::image::resnet50();
+  std::shared_ptr<fl::Module> model = fl::pkg::vision::resnet50();
 
   auto criterion =
       [&target](const std::vector<fl::Variable>& input) -> fl::Variable {
@@ -164,8 +164,8 @@ void runDetr(bool fp16 = false) {
   }
 
   // Model
-  auto backbone = std::make_shared<fl::app::objdet::Resnet50Backbone>();
-  auto transformer = std::make_shared<fl::app::objdet::Transformer>(
+  auto backbone = std::make_shared<fl::pkg::vision::Resnet50Backbone>();
+  auto transformer = std::make_shared<fl::pkg::vision::Transformer>(
       256, // modelDim
       8, // numHeads
       6, // numEncoderLayers
@@ -173,7 +173,7 @@ void runDetr(bool fp16 = false) {
       2048, // mlpDim,
       0.1 // pDropout
   );
-  std::shared_ptr<fl::Module> model = std::make_shared<fl::app::objdet::Detr>(
+  std::shared_ptr<fl::Module> model = std::make_shared<fl::pkg::vision::Detr>(
       transformer,
       backbone,
       256, // hiddenDim
@@ -190,7 +190,7 @@ void runDetr(bool fp16 = false) {
   const float giouLossCoef = 2.f;
 
   auto matcher =
-      fl::app::objdet::HungarianMatcher(setCostClass, setCostBBox, setCostGiou);
+      fl::pkg::vision::HungarianMatcher(setCostClass, setCostBBox, setCostGiou);
   const std::unordered_map<std::string, float> lossWeightsBase = {
       {"lossCe", 1.f}, {"lossGiou", giouLossCoef}, {"lossBbox", bboxLossCoef}};
 
@@ -202,7 +202,7 @@ void runDetr(bool fp16 = false) {
     }
   }
   auto setCriterion =
-      fl::app::objdet::SetCriterion(91, matcher, lossWeights, 0.1);
+      fl::pkg::vision::SetCriterion(91, matcher, lossWeights, 0.1);
   auto weightDict = setCriterion.getWeightDict();
 
   auto criterion =
@@ -292,7 +292,7 @@ void runAsrTransformer(bool fp16 = false) {
           numFeatures, numTarget);
 
   // Criterion
-  auto ctc = std::make_shared<fl::app::asr::CTCLoss>(
+  auto ctc = std::make_shared<fl::pkg::speech::CTCLoss>(
       fl::lib::seq::CriterionScaleMode::NONE);
 
   auto criterion =
