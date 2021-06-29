@@ -20,7 +20,7 @@
 #include "flashlight/fl/fb/EverstoreDataset.h"
 #endif
 
-using fl::ext::afToVector;
+using fl::pkg::runtime::afToVector;
 using fl::lib::format;
 using fl::lib::getCurrentDate;
 using fl::lib::getCurrentTime;

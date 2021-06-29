@@ -14,7 +14,8 @@
 #include "flashlight/lib/common/System.h"
 
 namespace fl {
-namespace ext {
+namespace pkg {
+namespace runtime {
 
 struct Serializer {
  public:
@@ -83,5 +84,6 @@ struct Serializer {
     }
   }
 };
-} // namespace ext
+} // namespace runtime
+} // namespace pkg
 } // namespace fl

@@ -89,7 +89,7 @@ void loadModel(
   LOG(INFO) << "[Inference tutorial for CTC] Reading acoustic model from "
             << FLAGS_am_path;
   fl::setDevice(0);
-  fl::ext::Serializer::load(FLAGS_am_path, version, cfg, network);
+  fl::pkg::runtime::Serializer::load(FLAGS_am_path, version, cfg, network);
   if (version != FL_APP_ASR_VERSION) {
     LOG(WARNING) << "[Inference tutorial for CTC] Acostuc model version "
                  << version << " and code version " << FL_APP_ASR_VERSION;
@@ -268,9 +268,9 @@ int main(int argc, char** argv) {
         af::dim4(audioInfo.channels, audioInfo.frames),
         af::dtype::f32);
     auto inputLen = af::constant(input.dims(0), af::dim4(1));
-    auto rawEmission = fl::ext::forwardSequentialModuleWithPadMask(
+    auto rawEmission = fl::pkg::runtime::forwardSequentialModuleWithPadMask(
         fl::input(input), network, inputLen);
-    auto emission = fl::ext::afToVector<float>(rawEmission);
+    auto emission = fl::pkg::runtime::afToVector<float>(rawEmission);
 
     const auto& result = decoder.decode(
         emission.data(),

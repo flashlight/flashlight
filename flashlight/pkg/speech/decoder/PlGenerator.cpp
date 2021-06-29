@@ -21,7 +21,7 @@ constexpr const char* kPlDir = "generated_pl/";
 constexpr const char* kPlSubdirPrefix = "epoch_";
 } // namespace
 
-using namespace fl::ext;
+using namespace fl::pkg::runtime;
 using namespace fl::lib;
 using namespace fl::lib::text;
 
@@ -214,7 +214,7 @@ std::string PlGenerator::regeneratePl(
                                fl::noGrad(sample[kDurationIdx])})
                           .front();
       } else {
-        rawEmission = fl::ext::forwardSequentialModuleWithPadMask(
+        rawEmission = fl::pkg::runtime::forwardSequentialModuleWithPadMask(
             fl::input(sample[kInputIdx]), ntwrk, sample[kDurationIdx]);
       }
       auto tokenPrediction =

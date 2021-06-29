@@ -8,7 +8,7 @@
 #include "flashlight/app/lm/Trainer.h"
 #include <algorithm>
 
-using namespace fl::ext;
+using namespace fl::pkg::runtime;
 using namespace fl::pkg::runtime;
 using namespace fl::pkg::text;
 using namespace fl::lib;
@@ -442,7 +442,7 @@ void Trainer::initContinue() {
         "Checkpoint doesn't exist to continue training: " + checkPoint);
   }
   FL_LOG_MASTER(INFO) << "Continue training from file: " << checkPoint;
-  fl::ext::Serializer::load(
+  fl::pkg::runtime::Serializer::load(
       checkPoint,
       version_,
       network_,
@@ -472,7 +472,7 @@ void Trainer::initFork() {
                       << FLAGS_exp_init_model_path;
 
   std::shared_ptr<fl::FirstOrderOptimizer> dummyOptimizer;
-  fl::ext::Serializer::load(
+  fl::pkg::runtime::Serializer::load(
       FLAGS_exp_init_model_path,
       version_,
       network_,
@@ -497,7 +497,7 @@ void Trainer::initEval() {
   }
   FL_LOG_MASTER(INFO) << "Evaluate from file: " << FLAGS_exp_init_model_path;
 
-  fl::ext::Serializer::load(
+  fl::pkg::runtime::Serializer::load(
       FLAGS_exp_init_model_path, version_, network_, criterion_);
 
   createDictionary();

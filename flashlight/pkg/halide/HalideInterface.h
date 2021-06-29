@@ -136,8 +136,8 @@ af::array fromHalideBuffer(Halide::Buffer<T>& buffer) {
     FL_HALIDE_CHECK(buffer.device_detach_native());
   } else {
     throw std::invalid_argument(
-        "fl::ext::fromHalideBuffer can only be called with buffers created "
-        "with fl::ext::toHalideBuffer or buffers that have unmanaged buffer "
+        "fl::pkg::runtime::fromHalideBuffer can only be called with buffers created "
+        "with fl::pkg::runtime::toHalideBuffer or buffers that have unmanaged buffer "
         "device ownership policies.");
   }
   return af::array(halideToAfDims(buffer), deviceMem, afDevice);

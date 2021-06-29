@@ -35,8 +35,8 @@
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
 
-using fl::ext::Serializer;
-using fl::ext::afToVector;
+using fl::pkg::runtime::Serializer;
+using fl::pkg::runtime::afToVector;
 using fl::pkg::runtime::getRunFile;
 using fl::lib::fileExists;
 using fl::lib::format;
@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
 
   std::shared_ptr<fl::Reducer> reducer = nullptr;
   if (FLAGS_enable_distributed) {
-    fl::ext::initDistributed(
+    fl::pkg::runtime::initDistributed(
         FLAGS_world_rank,
         FLAGS_world_size,
         FLAGS_max_devices_per_node,
@@ -250,7 +250,7 @@ int main(int argc, char** argv) {
   if (fl::lib::endsWith(archfile, ".so")) {
     network = fl::pkg::runtime::ModulePlugin(archfile).arch(numFeatures, numClasses);
   } else {
-    network = fl::ext::buildSequentialModule(archfile, numFeatures, numClasses);
+    network = fl::pkg::runtime::buildSequentialModule(archfile, numFeatures, numClasses);
   }
 
   std::shared_ptr<fl::Module> forkingNetwork;
@@ -427,7 +427,7 @@ int main(int argc, char** argv) {
         validds, FLAGS_nthread, false /* shuffle */, 0 /* seed */);
 
     for (auto& batch : *curValidset) {
-      auto output = fl::ext::forwardSequentialModuleWithPadMask(
+      auto output = fl::pkg::runtime::forwardSequentialModuleWithPadMask(
           fl::input(batch[kInputIdx]), ntwrk, batch[kDurationIdx]);
       auto loss =
           crit->forward({output, fl::Variable(batch[kTargetIdx], false)})
@@ -586,7 +586,7 @@ int main(int argc, char** argv) {
               curBatch >= FLAGS_saug_start_update) {
             input = saug->forward({input}).front();
           }
-          auto output = fl::ext::forwardSequentialModuleWithPadMask(
+          auto output = fl::pkg::runtime::forwardSequentialModuleWithPadMask(
               input, ntwrk, batch[kDurationIdx]);
           fl::sync();
           meters.critfwdtimer.resume();

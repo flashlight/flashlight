@@ -101,11 +101,11 @@ double ModelBenchmarker::getOptimizationTime() const {
 }
 
 void ModelBenchmarker::syncMeters() {
-  fl::ext::syncMeter(batchTimerMeter_);
-  fl::ext::syncMeter(fwdTimeMeter_);
-  fl::ext::syncMeter(critFwdTimeMeter_);
-  fl::ext::syncMeter(bwdTimeMeter_);
-  fl::ext::syncMeter(optimTimeMeter_);
+  fl::pkg::runtime::syncMeter(batchTimerMeter_);
+  fl::pkg::runtime::syncMeter(fwdTimeMeter_);
+  fl::pkg::runtime::syncMeter(critFwdTimeMeter_);
+  fl::pkg::runtime::syncMeter(bwdTimeMeter_);
+  fl::pkg::runtime::syncMeter(optimTimeMeter_);
 }
 
 void ModelBenchmarker::createOptimizer() {

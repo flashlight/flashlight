@@ -56,7 +56,7 @@ void runViTBase(bool fp16 = false) {
   }
 
   // Model
-  std::shared_ptr<fl::Module> model = std::make_shared<fl::ext::image::ViT>(
+  std::shared_ptr<fl::Module> model = std::make_shared<fl::pkg::runtime::image::ViT>(
       12, // FLAGS_model_layers,
       768, // FLAGS_model_hidden_emb_size,
       3072, // FLAGS_model_mlp_size,
@@ -96,7 +96,7 @@ void runResNet34(bool fp16 = false) {
   }
 
   // Model
-  std::shared_ptr<fl::Module> model = fl::ext::image::resnet34();
+  std::shared_ptr<fl::Module> model = fl::pkg::runtime::image::resnet34();
 
   auto criterion =
       [&target](const std::vector<fl::Variable>& input) -> fl::Variable {
@@ -126,7 +126,7 @@ void runResNet50(bool fp16 = false) {
   }
 
   // Model
-  std::shared_ptr<fl::Module> model = fl::ext::image::resnet50();
+  std::shared_ptr<fl::Module> model = fl::pkg::runtime::image::resnet50();
 
   auto criterion =
       [&target](const std::vector<fl::Variable>& input) -> fl::Variable {
@@ -319,7 +319,7 @@ int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
   if (FLAGS_distributed_enable) {
-    fl::ext::initDistributed(
+    fl::pkg::runtime::initDistributed(
         FLAGS_distributed_world_rank,
         FLAGS_distributed_world_size,
         FLAGS_distributed_max_devices_per_node,

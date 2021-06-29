@@ -66,7 +66,7 @@
    CUresult res = cuCtxGetCurrent(&ctx);
    if (res != CUDA_SUCCESS) throw std::runtime_error("cuCtxGetCurrent failed");
    cudaStream_t stream = fl::cuda::getActiveStream();
-   fl::ext::detail::UserContext userCtx(deviceId, &ctx, &stream);
+   fl::pkg::runtime::detail::UserContext userCtx(deviceId, &ctx, &stream);
    // This symbol is searched for by LLVM on the stack before
    // JMPing to a function pointer
    void* __user_context = (void*)&userCtx;

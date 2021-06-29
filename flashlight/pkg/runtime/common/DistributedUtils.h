@@ -13,7 +13,8 @@
 #include "flashlight/fl/flashlight.h"
 
 namespace fl {
-namespace ext {
+namespace pkg {
+namespace runtime {
 
 /**
  * Call Flashlight API to initialize distributed environment.
@@ -55,7 +56,8 @@ template void syncMeter<CountMeter>(CountMeter& mtr);
 template void syncMeter<TimeMeter>(TimeMeter& mtr);
 template void syncMeter<TopKMeter>(TopKMeter& mtr);
 
-} // namespace ext
+} // namespace runtime
+} // namespace pkg
 } // namespace fl
 
 #include "flashlight/pkg/runtime/common/Utils-inl.h"

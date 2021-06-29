@@ -39,7 +39,7 @@ static void backward(
     throw std::invalid_argument("FAC: grad must be float32");
   }
 
-  auto gradVec = fl::ext::afToVector<float>(gradVar);
+  auto gradVec = fl::pkg::runtime::afToVector<float>(gradVar);
   std::vector<float> inputGradVec(B * T * N);
   std::vector<float> transGradVec(N * N);
 
@@ -84,10 +84,10 @@ Variable ForceAlignmentCriterion::forward(
 
   const auto& targetSize = getTargetSizeArray(targetVar.array(), T);
   auto ctx = std::make_shared<Context>();
-  auto inputVec = fl::ext::afToVector<float>(inputVar);
-  ctx->targetVec = fl::ext::afToVector<int>(targetVar);
-  ctx->targetSizeVec = fl::ext::afToVector<int>(targetSize);
-  auto transVec = fl::ext::afToVector<float>(transVar);
+  auto inputVec = fl::pkg::runtime::afToVector<float>(inputVar);
+  ctx->targetVec = fl::pkg::runtime::afToVector<int>(targetVar);
+  ctx->targetSizeVec = fl::pkg::runtime::afToVector<int>(targetSize);
+  auto transVec = fl::pkg::runtime::afToVector<float>(transVar);
   std::vector<float> lossVec(B);
   ctx->workspaceVec.assign(FAC::getWorkspaceSize(B, T, N, L), 0);
 
@@ -130,10 +130,10 @@ af::array ForceAlignmentCriterion::viterbiPath(
   }
   const af::array targetSize = getTargetSizeArray(targetVar, T);
   std::shared_ptr<Context> ctx = std::make_shared<Context>();
-  std::vector<float> inputVec = fl::ext::afToVector<float>(inputVar);
-  ctx->targetVec = fl::ext::afToVector<int>(targetVar);
-  ctx->targetSizeVec = fl::ext::afToVector<int>(targetSize);
-  std::vector<float> transVec = fl::ext::afToVector<float>(transVar);
+  std::vector<float> inputVec = fl::pkg::runtime::afToVector<float>(inputVar);
+  ctx->targetVec = fl::pkg::runtime::afToVector<int>(targetVar);
+  ctx->targetSizeVec = fl::pkg::runtime::afToVector<int>(targetSize);
+  std::vector<float> transVec = fl::pkg::runtime::afToVector<float>(transVar);
   std::vector<float> lossVec(B);
   ctx->workspaceVec.assign(FAC::getWorkspaceSize(B, T, N, L), 0);
   std::vector<int> bestPaths(B * T);

@@ -21,66 +21,66 @@ using namespace fl;
 
 TEST(HalideTest, TypeMapping) {
   Halide::Buffer<Halide::float16_t> halfBuf({1});
-  EXPECT_EQ(ext::halideRuntimeTypeToAfType(halfBuf.type()), af::dtype::f16);
+  EXPECT_EQ(pkg::runtimehalideRuntimeTypeToAfType(halfBuf.type()), af::dtype::f16);
 
   Halide::Buffer<float> floatBuf({1});
-  EXPECT_EQ(ext::halideRuntimeTypeToAfType(floatBuf.type()), af::dtype::f32);
+  EXPECT_EQ(pkg::runtimehalideRuntimeTypeToAfType(floatBuf.type()), af::dtype::f32);
 
   Halide::Buffer<double> doubleBuf({1});
-  EXPECT_EQ(ext::halideRuntimeTypeToAfType(doubleBuf.type()), af::dtype::f64);
+  EXPECT_EQ(pkg::runtimehalideRuntimeTypeToAfType(doubleBuf.type()), af::dtype::f64);
 
   Halide::Buffer<uint16_t> uint16Buf({1});
-  EXPECT_EQ(ext::halideRuntimeTypeToAfType(uint16Buf.type()), af::dtype::u16);
+  EXPECT_EQ(pkg::runtimehalideRuntimeTypeToAfType(uint16Buf.type()), af::dtype::u16);
 
   Halide::Buffer<uint32_t> uint32Buf({1});
-  EXPECT_EQ(ext::halideRuntimeTypeToAfType(uint32Buf.type()), af::dtype::u32);
+  EXPECT_EQ(pkg::runtimehalideRuntimeTypeToAfType(uint32Buf.type()), af::dtype::u32);
 
   Halide::Buffer<uint64_t> uint64Buf({1});
-  EXPECT_EQ(ext::halideRuntimeTypeToAfType(uint64Buf.type()), af::dtype::u64);
+  EXPECT_EQ(pkg::runtimehalideRuntimeTypeToAfType(uint64Buf.type()), af::dtype::u64);
 
   Halide::Buffer<short> shortBuf({1});
-  EXPECT_EQ(ext::halideRuntimeTypeToAfType(shortBuf.type()), af::dtype::s16);
+  EXPECT_EQ(pkg::runtimehalideRuntimeTypeToAfType(shortBuf.type()), af::dtype::s16);
 
   Halide::Buffer<int> intBuf({1});
-  EXPECT_EQ(ext::halideRuntimeTypeToAfType(intBuf.type()), af::dtype::s32);
+  EXPECT_EQ(pkg::runtimehalideRuntimeTypeToAfType(intBuf.type()), af::dtype::s32);
 
   Halide::Buffer<long> longBuf({1});
-  EXPECT_EQ(ext::halideRuntimeTypeToAfType(longBuf.type()), af::dtype::s64);
+  EXPECT_EQ(pkg::runtimehalideRuntimeTypeToAfType(longBuf.type()), af::dtype::s64);
 }
 
 TEST(HalideTest, ConvertDims) {
   af::dim4 emptyAfDims;
-  EXPECT_EQ(ext::afToHalideDims(emptyAfDims).size(), 0);
+  EXPECT_EQ(pkg::runtimeafToHalideDims(emptyAfDims).size(), 0);
 
   af::dim4 singleDims(3);
-  EXPECT_THAT(ext::afToHalideDims(singleDims), testing::ElementsAre(3));
+  EXPECT_THAT(pkg::runtimeafToHalideDims(singleDims), testing::ElementsAre(3));
 
   af::dim4 dims(1, 5, 3, 6);
-  EXPECT_THAT(ext::afToHalideDims(dims), testing::ElementsAre(6, 3, 5, 1));
+  EXPECT_THAT(pkg::runtimeafToHalideDims(dims), testing::ElementsAre(6, 3, 5, 1));
 
-  Halide::Buffer<float> buffer(ext::afToHalideDims(dims));
-  EXPECT_EQ(ext::halideToAfDims(buffer), dims);
+  Halide::Buffer<float> buffer(pkg::runtimeafToHalideDims(dims));
+  EXPECT_EQ(pkg::runtimehalideToAfDims(buffer), dims);
 
   // AF doesn't support > 4 dimensions
   std::vector<int> wideDims = {1, 2, 3, 4, 5};
   Halide::Buffer<float> wideBuffer(wideDims);
-  EXPECT_THROW(ext::halideToAfDims(wideBuffer), std::invalid_argument);
+  EXPECT_THROW(pkg::runtimehalideToAfDims(wideBuffer), std::invalid_argument);
 
   // Zero dim
   std::vector<int> dimWithZero = {1, 2, 0, 3};
   Halide::Buffer<float> bufferWithZeroDim(dimWithZero);
-  EXPECT_EQ(ext::halideToAfDims(bufferWithZeroDim), af::dim4(0));
+  EXPECT_EQ(pkg::runtimehalideToAfDims(bufferWithZeroDim), af::dim4(0));
 
   std::vector<int> emptyDims = {};
   Halide::Buffer<float> bufferWithEmptyDim(emptyDims);
-  EXPECT_EQ(ext::halideToAfDims(bufferWithEmptyDim), af::dim4(0));
+  EXPECT_EQ(pkg::runtimehalideToAfDims(bufferWithEmptyDim), af::dim4(0));
 }
 
 TEST(HalideTest, ConvertArray) {
   auto arr = af::randu({5, 4, 3, 2});
   auto arrCopy = arr.copy();
   {
-    ext::HalideBufferWrapper<float> halideBufWrapper(arr);
+    pkg::runtimeHalideBufferWrapper<float> halideBufWrapper(arr);
     // Underlying memory should be the same
     DevicePtr arrPtr(arr);
     EXPECT_EQ(
@@ -94,7 +94,7 @@ TEST(HalideTest, ConvertArray) {
 
 TEST(HalideTest, ConvertArrayManual) {
   auto arr = af::randu({5, 4, 3});
-  auto halideBuffer = ext::detail::toHalideBuffer<float>(arr);
+  auto halideBuffer = pkg::runtimedetail::toHalideBuffer<float>(arr);
 
   const float* afHostPtr = arr.host<float>();
 
@@ -107,8 +107,8 @@ TEST(HalideTest, ConvertArrayManual) {
 
 TEST(HalideTest, RoundTripConvertArrayManual) {
   auto arr = af::randu({10, 14, 3});
-  auto halideBuffer2 = ext::detail::toHalideBuffer<float>(arr);
-  auto out = ext::detail::fromHalideBuffer(halideBuffer2);
+  auto halideBuffer2 = pkg::runtimedetail::toHalideBuffer<float>(arr);
+  auto out = pkg::runtimedetail::fromHalideBuffer(halideBuffer2);
   EXPECT_TRUE(fl::allClose(arr, out));
 }
 
@@ -128,8 +128,8 @@ TEST(HalideTest, SimpleAOTCompiledHalidePipeline) {
   }
 
   // Halide buffers
-  auto inputHalide = ext::HalideBufferWrapper<float>(input);
-  auto outputHalide = ext::HalideBufferWrapper<float>(output);
+  auto inputHalide = pkg::runtimeHalideBufferWrapper<float>(input);
+  auto outputHalide = pkg::runtimeHalideBufferWrapper<float>(output);
 
   // This Halide AOT-generated pipeline pixel-wise adds offsets to each
   // element. It's has block and thread level tile-parallelism -- see the

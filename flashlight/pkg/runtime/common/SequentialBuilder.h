@@ -12,7 +12,8 @@
 #include "flashlight/fl/flashlight.h"
 
 namespace fl {
-namespace ext {
+namespace pkg {
+namespace runtime {
 
 /**
  * Build a sequential module by parsing a file that
@@ -36,5 +37,6 @@ fl::Variable forwardSequentialModuleWithPadMask(
     std::shared_ptr<fl::Module> ntwrk,
     const af::array& inputSizes);
 
-} // namespace ext
+} // namespace runtime
+} // namespace pkg
 } // namespace fl

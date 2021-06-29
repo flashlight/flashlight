@@ -32,8 +32,8 @@
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
 
-using fl::ext::afToVector;
-using fl::ext::Serializer;
+using fl::pkg::runtime::afToVector;
+using fl::pkg::runtime::Serializer;
 using fl::lib::join;
 using fl::lib::pathsConcat;
 
@@ -295,7 +295,7 @@ int main(int argc, char** argv) {
                                      fl::noGrad(sample[kDurationIdx])})
                           .front();
       } else {
-        rawEmission = fl::ext::forwardSequentialModuleWithPadMask(
+        rawEmission = fl::pkg::runtime::forwardSequentialModuleWithPadMask(
             fl::input(sample[kInputIdx]), localNetwork, sample[kDurationIdx]);
       }
       auto emission = afToVector<float>(rawEmission);

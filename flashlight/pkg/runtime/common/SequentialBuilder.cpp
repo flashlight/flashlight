@@ -25,7 +25,9 @@ std::shared_ptr<Module> parseLines(
 
 namespace fl {
 
-namespace ext {
+namespace pkg {
+
+namespace runtime {
 
 std::shared_ptr<Sequential> buildSequentialModule(
     const std::string& archfile,
@@ -80,7 +82,8 @@ fl::Variable forwardSequentialModuleWithPadMask(
   }
   return output.as(input.type());
 }
-} // namespace ext
+} // namespace runtime
+} // namespace pkg
 } // namespace fl
 
 namespace {
