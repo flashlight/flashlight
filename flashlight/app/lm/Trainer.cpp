@@ -10,6 +10,7 @@
 
 using namespace fl::ext;
 using namespace fl::pkg::runtime;
+using namespace fl::pkg::text;
 using namespace fl::lib;
 
 namespace fl {
