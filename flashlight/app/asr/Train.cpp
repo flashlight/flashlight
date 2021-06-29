@@ -41,8 +41,8 @@
 #include "flashlight/lib/text/dictionary/Utils.h"
 
 using fl::pkg::runtime::getRunFile;
-using fl::afToVector;
-using fl::Serializer;
+using fl::ext::afToVector;
+using fl::ext::Serializer;
 using fl::lib::fileExists;
 using fl::lib::format;
 using fl::lib::getCurrentDate;
@@ -180,7 +180,7 @@ int main(int argc, char** argv) {
 
   std::shared_ptr<fl::Reducer> reducer;
   if (FLAGS_enable_distributed) {
-    fl::initDistributed(
+    fl::ext::initDistributed(
         FLAGS_world_rank,
         FLAGS_world_size,
         FLAGS_max_devices_per_node,
@@ -388,7 +388,7 @@ int main(int argc, char** argv) {
       network = fl::pkg::runtime::ModulePlugin(FLAGS_arch).arch(numFeatures, numClasses);
     } else {
       network =
-          fl::buildSequentialModule(FLAGS_arch, numFeatures, numClasses);
+          fl::ext::buildSequentialModule(FLAGS_arch, numFeatures, numClasses);
     }
     if (FLAGS_criterion == kCtcCriterion) {
       criterion = std::make_shared<CTCLoss>(scalemode);
@@ -877,7 +877,7 @@ int main(int argc, char** argv) {
                           fl::noGrad(batch[kDurationIdx])})
                      .front();
       } else {
-        output = fl::forwardSequentialModuleWithPadMask(
+        output = fl::ext::forwardSequentialModuleWithPadMask(
             fl::input(batch[kInputIdx]), ntwrk, batch[kDurationIdx]);
       }
       std::vector<fl::Variable> critArgs = {
@@ -1093,7 +1093,7 @@ int main(int argc, char** argv) {
             output = ntwrk->forward({input, fl::noGrad(batch[kDurationIdx])})
                          .front();
           } else {
-            output = fl::forwardSequentialModuleWithPadMask(
+            output = fl::ext::forwardSequentialModuleWithPadMask(
                 input, ntwrk, batch[kDurationIdx]);
           }
           fl::sync();

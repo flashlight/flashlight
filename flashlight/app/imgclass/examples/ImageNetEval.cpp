@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   if (FLAGS_distributed_enable) {
-    fl::initDistributed(
+    fl::ext::initDistributed(
         FLAGS_distributed_world_rank,
         FLAGS_distributed_world_size,
         FLAGS_distributed_max_devices_per_node,
@@ -115,8 +115,8 @@ int main(int argc, char** argv) {
     top5Acc.add(output.array(), target.array());
     top1Acc.add(output.array(), target.array());
   }
-  fl::syncMeter(top5Acc);
-  fl::syncMeter(top1Acc);
+  fl::ext::syncMeter(top5Acc);
+  fl::ext::syncMeter(top1Acc);
 
   FL_LOG_MASTER(INFO) << "Top 5 acc: " << top5Acc.value();
   FL_LOG_MASTER(INFO) << "Top 1 acc: " << top1Acc.value();

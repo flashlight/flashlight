@@ -15,7 +15,7 @@
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
 
-using fl::afToVector;
+using fl::ext::afToVector;
 using fl::lib::format;
 using fl::lib::getCurrentDate;
 using fl::lib::getCurrentTime;
@@ -138,20 +138,20 @@ void allreduceSet(SpeechStatMeter& mtr, af::array& val) {
 }
 
 void syncMeter(TrainMeters& mtrs) {
-  fl::syncMeter(mtrs.stats);
-  fl::syncMeter(mtrs.runtime);
-  fl::syncMeter(mtrs.timer);
-  fl::syncMeter(mtrs.fwdtimer);
-  fl::syncMeter(mtrs.critfwdtimer);
-  fl::syncMeter(mtrs.bwdtimer);
-  fl::syncMeter(mtrs.optimtimer);
-  fl::syncMeter(mtrs.train.tknEdit);
-  fl::syncMeter(mtrs.train.wrdEdit);
-  fl::syncMeter(mtrs.train.loss);
+  fl::ext::syncMeter(mtrs.stats);
+  fl::ext::syncMeter(mtrs.runtime);
+  fl::ext::syncMeter(mtrs.timer);
+  fl::ext::syncMeter(mtrs.fwdtimer);
+  fl::ext::syncMeter(mtrs.critfwdtimer);
+  fl::ext::syncMeter(mtrs.bwdtimer);
+  fl::ext::syncMeter(mtrs.optimtimer);
+  fl::ext::syncMeter(mtrs.train.tknEdit);
+  fl::ext::syncMeter(mtrs.train.wrdEdit);
+  fl::ext::syncMeter(mtrs.train.loss);
   for (auto& v : mtrs.valid) {
-    fl::syncMeter(v.second.tknEdit);
-    fl::syncMeter(v.second.wrdEdit);
-    fl::syncMeter(v.second.loss);
+    fl::ext::syncMeter(v.second.tknEdit);
+    fl::ext::syncMeter(v.second.wrdEdit);
+    fl::ext::syncMeter(v.second.loss);
   }
 }
 

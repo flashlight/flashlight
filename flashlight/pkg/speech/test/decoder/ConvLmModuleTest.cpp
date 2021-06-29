@@ -15,7 +15,7 @@
 
 using namespace fl;
 using namespace fl::lib;
-using namespace fl;
+using namespace fl::ext;
 
 namespace {
 

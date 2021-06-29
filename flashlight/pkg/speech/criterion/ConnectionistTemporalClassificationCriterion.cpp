@@ -10,7 +10,7 @@
 #include "flashlight/lib/sequence/criterion/cpu/ConnectionistTemporalClassificationCriterion.h"
 
 using CTC = fl::lib::cpu::ConnectionistTemporalClassificationCriterion<float>;
-using namespace fl;
+using namespace fl::ext;
 
 namespace {
 

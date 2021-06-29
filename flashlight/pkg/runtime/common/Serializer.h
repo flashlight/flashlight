@@ -14,6 +14,7 @@
 #include "flashlight/lib/common/System.h"
 
 namespace fl {
+namespace ext {
 
 struct Serializer {
  public:
@@ -82,4 +83,5 @@ struct Serializer {
     }
   }
 };
+} // namespace ext
 } // namespace fl

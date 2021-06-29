@@ -25,6 +25,8 @@ std::shared_ptr<Module> parseLines(
 
 namespace fl {
 
+namespace ext {
+
 std::shared_ptr<Sequential> buildSequentialModule(
     const std::string& archfile,
     int64_t nFeatures,
@@ -78,6 +80,7 @@ fl::Variable forwardSequentialModuleWithPadMask(
   }
   return output.as(input.type());
 }
+} // namespace ext
 } // namespace fl
 
 namespace {

@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
   std::unordered_map<std::string, std::string> cfg;
   std::string version;
   LOG(INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
-  fl::Serializer::load(FLAGS_am, version, cfg, network, criterion);
+  fl::ext::Serializer::load(FLAGS_am, version, cfg, network, criterion);
   network->eval();
   criterion->eval();
 
@@ -194,7 +194,7 @@ int main(int argc, char** argv) {
   for (auto& sample : *ds) {
     fwdMtr.resume();
     const auto input = fl::input(sample[kInputIdx]);
-    fl::Variable rawEmission = fl::forwardSequentialModuleWithPadMask(
+    fl::Variable rawEmission = fl::ext::forwardSequentialModuleWithPadMask(
         input, network, sample[kDurationIdx]);
     fwdMtr.stop();
     alignMtr.resume();

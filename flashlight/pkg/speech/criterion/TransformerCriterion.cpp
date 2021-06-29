@@ -13,7 +13,7 @@
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
-using namespace fl;
+using namespace fl::ext;
 
 namespace fl {
 namespace pkg {

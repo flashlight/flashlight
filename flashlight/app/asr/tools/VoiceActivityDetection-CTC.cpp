@@ -63,7 +63,7 @@ const std::string kPerplexityPctSpeechExt = ".sts";
 
 using namespace fl::pkg::speech;
 using namespace fl::lib;
-using namespace fl;
+using namespace fl::ext;
 
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
   std::unordered_map<std::string, std::string> cfg;
   std::string version;
   LOG(INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
-  fl::Serializer::load(FLAGS_am, version, cfg, network, criterion);
+  fl::ext::Serializer::load(FLAGS_am, version, cfg, network, criterion);
   if (version != FL_APP_ASR_VERSION) {
     LOG(WARNING) << "[Network] Model version " << version
                  << " and code version " << FL_APP_ASR_VERSION;
@@ -217,7 +217,7 @@ int main(int argc, char** argv) {
   auto prefetchds =
       loadPrefetchDataset(ds, FLAGS_nthread, false /* shuffle */, 0 /* seed */);
   for (auto& sample : *prefetchds) {
-    auto rawEmission = fl::forwardSequentialModuleWithPadMask(
+    auto rawEmission = fl::ext::forwardSequentialModuleWithPadMask(
         fl::input(sample[kInputIdx]), network, sample[kDurationIdx]);
     auto sampleId = readSampleIds(sample[kSampleIdx]).front();
     LOG(INFO) << "Processing sample ID " << sampleId;

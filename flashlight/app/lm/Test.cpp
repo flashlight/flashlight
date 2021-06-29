@@ -7,7 +7,7 @@
 
 #include "flashlight/app/lm/Trainer.h"
 
-using namespace fl;
+using namespace fl::ext;
 using namespace fl::lib;
 using namespace fl::app::lm;
 

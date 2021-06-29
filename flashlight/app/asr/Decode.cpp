@@ -41,8 +41,8 @@
 #include "flashlight/lib/text/decoder/lm/KenLM.h"
 #include "flashlight/lib/text/decoder/lm/ZeroLM.h"
 
-using fl::afToVector;
-using fl::Serializer;
+using fl::ext::afToVector;
+using fl::ext::Serializer;
 using fl::lib::join;
 using fl::lib::pathsConcat;
 using fl::lib::text::CriterionType;
@@ -425,7 +425,7 @@ int main(int argc, char** argv) {
                                        fl::noGrad(sample[kDurationIdx])})
                             .front();
         } else {
-          rawEmission = fl::forwardSequentialModuleWithPadMask(
+          rawEmission = fl::ext::forwardSequentialModuleWithPadMask(
               fl::input(sample[kInputIdx]), localNetwork, sample[kDurationIdx]);
         }
         emissionUnit = EmissionUnit(

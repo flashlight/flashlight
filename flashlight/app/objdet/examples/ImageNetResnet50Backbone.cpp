@@ -79,9 +79,9 @@ std::tuple<double, double, double> evalLoop(
     top1Acc.add(output.array(), target.array());
   }
   model->train();
-  fl::syncMeter(lossMeter);
-  fl::syncMeter(top5Acc);
-  fl::syncMeter(top1Acc);
+  fl::ext::syncMeter(lossMeter);
+  fl::ext::syncMeter(top5Acc);
+  fl::ext::syncMeter(top1Acc);
 
   double loss = lossMeter.value()[0];
   return std::make_tuple(loss, top5Acc.value(), top1Acc.value());
@@ -102,7 +102,7 @@ int main(int argc, char** argv) {
   ////////////////////////
   af::info();
   if (FLAGS_distributed_enable) {
-    fl::initDistributed(
+    fl::ext::initDistributed(
         FLAGS_distributed_world_rank,
         FLAGS_distributed_world_size,
         FLAGS_distributed_max_devices_per_node,
@@ -253,10 +253,10 @@ int main(int argc, char** argv) {
       // Compute and record the prediction error.
       double trainLoss = trainLossMeter.value()[0];
       if (++idx % 50 == 0) {
-        fl::syncMeter(trainLossMeter);
-        fl::syncMeter(timeMeter);
-        fl::syncMeter(top5Acc);
-        fl::syncMeter(top1Acc);
+        fl::ext::syncMeter(trainLossMeter);
+        fl::ext::syncMeter(timeMeter);
+        fl::ext::syncMeter(top5Acc);
+        fl::ext::syncMeter(top1Acc);
         double time = timeMeter.value();
         double samplePerSecond = (idx * FLAGS_data_batch_size) / time;
         FL_LOG_MASTER(INFO)
