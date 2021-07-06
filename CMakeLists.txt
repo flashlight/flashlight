@@ -54,6 +54,7 @@ option(FL_BUILD_RECIPES "Build recipes" ON)
 option(FL_BUILD_STANDALONE "Build standalone installation" ON)
 
 
+# --------------------------- Lib Options  ---------------------------
 # Build all libs by default. In order to selectively build libs,
 # disable this option and opt-in to each using the individual build
 # options. For example, if you are only building core, you only need
@@ -72,6 +73,58 @@ if(FL_BUILD_ALL_LIBS)
   set(FL_BUILD_LIB_AUDIO ON)
   set(FL_BUILD_LIB_COMMON ON)
   set(FL_BUILD_LIB_TEXT ON)
+endif()
+
+# --------------------------- Apps / Pkgs Options  ---------------------------
+cmake_dependent_option(FL_BUILD_ALL_APPS "Set all Flashlight apps ON by default" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
+
+if (FL_BUILD_ALL_APPS)
+  cmake_dependent_option(FL_BUILD_APP_ASR "Build asr task for Flashlight" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
+  cmake_dependent_option(FL_BUILD_APP_IMGCLASS "Build image classification app" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
+  cmake_dependent_option(FL_BUILD_APP_OBJDET "Build object detection app" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
+  cmake_dependent_option(FL_BUILD_APP_LM "Build lm task for Flashlight" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
+else()
+  cmake_dependent_option(FL_BUILD_APP_ASR "Build asr task for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
+  cmake_dependent_option(FL_BUILD_APP_IMGCLASS "Build image classification app" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
+  cmake_dependent_option(FL_BUILD_APP_OBJDET "Build object detection app" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
+  cmake_dependent_option(FL_BUILD_APP_LM "Build lm task for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
+endif ()
+
+cmake_dependent_option(FL_BUILD_ALL_PKGS "Set all Flashlight apps ON by default" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
+
+# Set build options for pkgs depending on which apps you are build. (App -> Pkg  + app -> lib dependencies)
+# runtime ---------------------------
+cmake_dependent_option(FL_BUILD_PKG_RUNTIME "Build runtime package for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
+if(FL_BUILD_ALL_PKGS OR FL_BUILD_APP_LM OR FL_BUILD_APP_ASR OR FL_BUILD_APP_OBJDET OR FL_BUILD_APP_IMGCLASS)
+  set(FL_BUILD_PKG_RUNTIME ON)
+endif()
+
+# vision ---------------------------
+cmake_dependent_option(FL_BUILD_PKG_VISION "Build vision package for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
+if(FL_BUILD_ALL_PKGS OR FL_BUILD_APP_IMGCLASS OR FL_BUILD_APP_OBJDET)
+  set(FL_BUILD_PKG_VISION ON)
+  set(FL_BUILD_LIB_COMMON ON)
+  set(FL_BUILD_LIB_SET ON)
+endif()
+
+# text ---------------------------
+cmake_dependent_option(FL_BUILD_PKG_TEXT "Build text package for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
+if(FL_BUILD_ALL_PKGS OR FL_BUILD_APP_LM)
+  set(FL_BUILD_PKG_TEXT ON)
+  set(FL_BUILD_LIB_TEXT ON)
+endif()
+
+# speech ---------------------------
+cmake_dependent_option(FL_BUILD_PKG_SPEECH "Build speech package for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
+if(FL_BUILD_ALL_PKGS OR FL_BUILD_APP_ASR)
+  set(FL_BUILD_PKG_SPEECH ON)
+  set(FL_BUILD_LIB_AUDIO ON)
+  set(FL_BUILD_LIB_COMMON ON)
+endif()
+# halide ---------------------------
+cmake_dependent_option(FL_BUILD_PKG_HALIDE "Build speech package for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
+if(FL_BUILD_ALL_PKGS)
+  set(FL_BUILD_PKG_HALIDE ON)
 endif()
 
 option(FL_BUILD_CORE "Build flashlight core" ON)
@@ -255,52 +308,6 @@ if (FL_BUILD_CORE)
 
 endif() # if FL_BUILD_CORE
 
-# --------------------------- Apps / Pkgs ---------------------------
-cmake_dependent_option(FL_BUILD_ALL_APPS "Set all Flashlight apps ON by default" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
-
-if (FL_BUILD_ALL_APPS)
-  cmake_dependent_option(FL_BUILD_APP_ASR "Build asr task for Flashlight" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
-  cmake_dependent_option(FL_BUILD_APP_IMGCLASS "Build image classification app" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
-  cmake_dependent_option(FL_BUILD_APP_OBJDET "Build object detection app" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
-  cmake_dependent_option(FL_BUILD_APP_LM "Build lm task for Flashlight" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
-else()
-  cmake_dependent_option(FL_BUILD_APP_ASR "Build asr task for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
-  cmake_dependent_option(FL_BUILD_APP_IMGCLASS "Build image classification app" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
-  cmake_dependent_option(FL_BUILD_APP_OBJDET "Build object detection app" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
-  cmake_dependent_option(FL_BUILD_APP_LM "Build lm task for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
-endif ()
-
-cmake_dependent_option(FL_BUILD_ALL_PKGS "Set all Flashlight apps ON by default" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
-
-# Set build options for pkgs depending on which apps you are build
-# runtime ---------------------------
-cmake_dependent_option(FL_BUILD_PKG_RUNTIME "Build runtime package for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
-if(FL_BUILD_ALL_PKGS OR FL_BUILD_APP_LM OR FL_BUILD_APP_ASR OR FL_BUILD_APP_OBJDET OR FL_BUILD_APP_IMGCLASS)
-  set(FL_BUILD_PKG_RUNTIME ON)
-endif()
-
-# vision ---------------------------
-cmake_dependent_option(FL_BUILD_PKG_VISION "Build vision package for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
-if(FL_BUILD_ALL_PKGS OR FL_BUILD_APP_IMGCLASS OR FL_BUILD_APP_OBJDET)
-  set(FL_BUILD_PKG_VISION ON)
-endif()
-
-# text ---------------------------
-cmake_dependent_option(FL_BUILD_PKG_TEXT "Build text package for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
-if(FL_BUILD_ALL_PKGS OR FL_BUILD_APP_LM)
-  set(FL_BUILD_PKG_TEXT ON)
-endif()
-
-# speech ---------------------------
-cmake_dependent_option(FL_BUILD_PKG_SPEECH "Build speech package for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
-if(FL_BUILD_ALL_PKGS OR FL_BUILD_APP_ASR)
-  set(FL_BUILD_PKG_SPEECH ON)
-endif()
-# halide ---------------------------
-cmake_dependent_option(FL_BUILD_PKG_HALIDE "Build speech package for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
-if(FL_BUILD_ALL_PKGS)
-  set(FL_BUILD_PKG_HALIDE ON)
-endif()
 
 set(FL_PKG_DIR "${FL_ROOT_DIR}/pkg")
 include(${FL_PKG_DIR}/CMakeLists.txt)
