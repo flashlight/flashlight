@@ -5,12 +5,6 @@ add_library(
   ""
   )
 
-target_include_directories(
-  fl_pkg_text
-  PRIVATE
-  ${PROJECT_SOURCE_DIR}
-)
-
 target_link_libraries(
   fl_pkg_text
   PUBLIC
