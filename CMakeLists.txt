@@ -75,6 +75,12 @@ if(FL_BUILD_ALL_LIBS)
   set(FL_BUILD_LIB_TEXT ON)
 endif()
 
+option(FL_BUILD_CORE "Build flashlight core" ON)
+
+cmake_dependent_option(FL_BUILD_CONTRIB
+  "Build and link additional flashlight contrib assets." ON
+  "FL_BUILD_CORE" OFF)
+
 # --------------------------- Apps / Pkgs Options  ---------------------------
 cmake_dependent_option(FL_BUILD_ALL_APPS "Set all Flashlight apps ON by default" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
 
@@ -109,6 +115,7 @@ endif()
 
 # text ---------------------------
 cmake_dependent_option(FL_BUILD_PKG_TEXT "Build text package for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
+message("FL_BUILD_APP_LM ${FL_BUILD_APP_LM}")
 if(FL_BUILD_ALL_PKGS OR FL_BUILD_APP_LM)
   set(FL_BUILD_PKG_TEXT ON)
   set(FL_BUILD_LIB_TEXT ON)
@@ -116,7 +123,7 @@ endif()
 
 # speech ---------------------------
 cmake_dependent_option(FL_BUILD_PKG_SPEECH "Build speech package for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
-if(FL_BUILD_ALL_PKGS OR FL_BUILD_APP_ASR)
+if(FL_BUILD_ALL_PKGS OR FL_BUILD_APP_ASR OR FL_BUILD_ALL_APPS)
   set(FL_BUILD_PKG_SPEECH ON)
   set(FL_BUILD_LIB_AUDIO ON)
   set(FL_BUILD_LIB_COMMON ON)
@@ -127,11 +134,6 @@ if(FL_BUILD_ALL_PKGS)
   set(FL_BUILD_PKG_HALIDE ON)
 endif()
 
-option(FL_BUILD_CORE "Build flashlight core" ON)
-
-cmake_dependent_option(FL_BUILD_CONTRIB
-  "Build and link additional flashlight contrib assets." ON
-  "FL_BUILD_CORE" OFF)
 
 # Flashlight backend
 set(FL_BACKEND "CUDA" CACHE STRING "Backend with which to build flashlight")
