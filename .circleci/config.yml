@@ -93,7 +93,7 @@ commands:
                 -DFL_BUILD_APP_IMGCLASS=<< parameters.fl_build_app_imgclass >> \
                 -DFL_BUILD_APP_OBJDET=<< parameters.fl_build_app_objdet >> \
                 -DFL_BUILD_APP_LM=<< parameters.fl_build_app_lm >> \
-                -DFL_BUILD_ALL_PKGS =<< parameters.fl_build_all_pkgs >> \
+                -DFL_BUILD_ALL_PKGS=<< parameters.fl_build_all_pkgs >> \
                 -DFL_BUILD_SHARED_LIBS=<< parameters.build_shared_libs >> \
                 -DFL_CODE_COVERAGE=<< parameters.fl_code_coverage >> && \
             make -j$(nproc) && make install"
