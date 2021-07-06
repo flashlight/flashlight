@@ -191,7 +191,6 @@ commands:
               -DFL_BUILD_APP_IMGCLASS=<< parameters.fl_build_app_imgclass >> \
               -DFL_BUILD_APP_OBJDET=<< parameters.fl_build_app_objdet >> \
               -DFL_BUILD_APP_LM=<< parameters.fl_build_app_lm >> \
-              -DFL_BUILD_ALL_PKGS=<<parameters.fl_build_all_pkgs>> \
               -DCMAKE_TOOLCHAIN_FILE=$HOME/project/vcpkg/scripts/buildsystems/vcpkg.cmake
             make -j$(nproc)
   flashlight_build_and_install_cpu_backend_from_source:
