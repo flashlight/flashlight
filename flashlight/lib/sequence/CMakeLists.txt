@@ -69,3 +69,7 @@ if (FL_LIBRARIES_USE_CUDA)
     ${CUDA_LIBRARIES}
     )
 endif()
+
+if (FL_CODE_COVERAGE)
+  add_coverage_to_target(TARGET fl_lib_sequence)
+endif()

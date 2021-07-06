@@ -19,3 +19,7 @@ target_sources(
   PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/Hungarian.cpp
   )
+
+if (FL_CODE_COVERAGE)
+  add_coverage_to_target(TARGET fl_lib_set)
+endif()

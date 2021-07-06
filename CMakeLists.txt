@@ -53,8 +53,29 @@ option(FL_BUILD_SCRIPTS "Build internal scripts for wav2letter++" OFF)
 option(FL_BUILD_RECIPES "Build recipes" ON)
 option(FL_BUILD_STANDALONE "Build standalone installation" ON)
 
-option(FL_BUILD_LIBRARIES "Build flashlight libraries" ON)
+
+# Build all libs by default. In order to selectively build libs,
+# disable this option and opt-in to each using the individual build
+# options. For example, if you are only building core, you only need
+# the common library, so you can use -DFL_BUILD_ALL_LIBS=OFF and
+# -DFL_BUILD_LIB_COMMON_ON
+option(FL_BUILD_ALL_LIBS "Build flashlight libraries" ON)
+option(FL_BUILD_LIB_SET "Build flashlight set library" OFF)
+option(FL_BUILD_LIB_SEQUENCE "Build flashlight sequence library" OFF)
+option(FL_BUILD_LIB_AUDIO "Build flashlight audio library" OFF)
+option(FL_BUILD_LIB_COMMON "Build flashlight common library" OFF)
+option(FL_BUILD_LIB_TEXT "Build flashlight text library" OFF)
+
+if(FL_BUILD_ALL_LIBS)
+  set(FL_BUILD_LIB_SET ON)
+  set(FL_BUILD_LIB_SEQUENCE ON)
+  set(FL_BUILD_LIB_AUDIO ON)
+  set(FL_BUILD_LIB_COMMON ON)
+  set(FL_BUILD_LIB_TEXT ON)
+endif()
+
 option(FL_BUILD_CORE "Build flashlight core" ON)
+
 cmake_dependent_option(FL_BUILD_CONTRIB
   "Build and link additional flashlight contrib assets." ON
   "FL_BUILD_CORE" OFF)
@@ -116,37 +137,30 @@ endif ()
 
 # ------------------------ flashlight Libraries ------------------------
 # FIXME: libraries are required to build core tests - https://git.io/JL955
-if (FL_BUILD_LIBRARIES OR (FL_BUILD_CORE AND FL_BUILD_TESTS))
-  message(STATUS "Will build flashlight libraries.")
+if (FL_BUILD_CORE AND FL_BUILD_TESTS)
+  set(FL_BUILD_LIB_COMMON ON)
+endif()
 
-  option(FL_LIBRARIES_USE_CUDA "Use CUDA in flashlight libraries build" ON)
-  option(FL_LIBRARIES_USE_KENLM "Use KenLM in flashlight libraries build" ON)
-  option(FL_LIBRARIES_USE_MKL "Use MKL in flashlight libraries build" ON)
-  option(FL_LIBRARIES_BUILD_FOR_PYTHON "Build Python bindings" OFF)
+option(FL_LIBRARIES_USE_CUDA "Use CUDA in flashlight libraries build" ON)
+option(FL_LIBRARIES_USE_KENLM "Use KenLM in flashlight libraries build" ON)
+option(FL_LIBRARIES_USE_MKL "Use MKL in flashlight libraries build" ON)
+option(FL_LIBRARIES_BUILD_FOR_PYTHON "Build Python bindings" OFF)
 
-  set(FL_COMPILE_DEFINITIONS
-    $<$<BOOL:${FL_LIBRARIES_USE_CUDA}>:FL_LIBRARIES_USE_CUDA>
-    $<$<BOOL:${FL_LIBRARIES_USE_MKL}>:FL_LIBRARIES_USE_MKL>
-    $<$<BOOL:${FL_LIBRARIES_USE_KENLM}>:FL_LIBRARIES_USE_KENLM>
-    )
+set(FL_COMPILE_DEFINITIONS
+  $<$<BOOL:${FL_LIBRARIES_USE_CUDA}>:FL_LIBRARIES_USE_CUDA>
+  $<$<BOOL:${FL_LIBRARIES_USE_MKL}>:FL_LIBRARIES_USE_MKL>
+  $<$<BOOL:${FL_LIBRARIES_USE_KENLM}>:FL_LIBRARIES_USE_KENLM>
+  )
 
-  set(FL_LIB_DIR "${FL_ROOT_DIR}/lib")
-  include(${FL_LIB_DIR}/CMakeLists.txt)
+set(FL_LIB_DIR "${FL_ROOT_DIR}/lib")
+include(${FL_LIB_DIR}/CMakeLists.txt)
 
-  if (FL_LIBRARIES_BUILD_FOR_PYTHON)
-    set(FL_BINDING_PYTHON "${PROJECT_SOURCE_DIR}/bindings/python")
-    include(${FL_BINDING_PYTHON}/CMakeLists.txt)
-  endif ()
+if (FL_LIBRARIES_BUILD_FOR_PYTHON)
+  set(FL_BINDING_PYTHON "${PROJECT_SOURCE_DIR}/bindings/python")
+  include(${FL_BINDING_PYTHON}/CMakeLists.txt)
+endif ()
 
-  setup_install_headers(${FL_LIB_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
-  if (FL_CODE_COVERAGE)
-    add_coverage_to_target(TARGET fl_lib_audio)
-    add_coverage_to_target(TARGET fl_lib_common)
-    add_coverage_to_target(TARGET fl_lib_sequence)
-    add_coverage_to_target(TARGET fl_lib_set)
-    add_coverage_to_target(TARGET fl_lib_text)
-  endif()
-endif() # if FL_BUILD_LIBRARIES
+setup_install_headers(${FL_LIB_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
 
 # --------------------------- flashlight ---------------------------
 if (FL_BUILD_CORE)
