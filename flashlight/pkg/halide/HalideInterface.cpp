@@ -5,8 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/ext/integrations/halide/HalideInterface.h"
-#include "flashlight/fl/common/CudaUtils.h"
+#include "flashlight/pkg/halide/HalideInterface.h"
+#include "flashlight/fl/common/backend/cuda/CudaUtils.h"
+#include "flashlight/fl/tensor/Compute.h"
 
 #include <af/device.h>
 #include <af/dim4.hpp>
@@ -129,7 +130,8 @@ int halide_get_gpu_device(void* /* user_context */) {
 } // extern "C"
 
 namespace fl {
-namespace ext {
+namespace pkg {
+namespace halide {
 
 std::vector<int> afToHalideDims(const af::dim4& dims) {
   const auto ndims = dims.ndims();
@@ -200,5 +202,6 @@ af::dtype halideRuntimeTypeToAfType(halide_type_t type) {
           "halideRuntimeTypeToAfType: unsupported or unknown Halide type");
   }
 }
-} // namespace ext
+} // namespace halide
+} // namespace pkg
 } // namespace fl

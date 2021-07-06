@@ -20,6 +20,7 @@ include(${CMAKE_MODULE_PATH}/HalideUtils.cmake)
 target_link_libraries(
   fl_pkg_halide
   PUBLIC
+  flashlight
   Halide::Halide
   Halide::Runtime
   Halide::Tools)
@@ -39,8 +40,8 @@ target_include_directories(fl_pkg_halide PUBLIC $<BUILD_INTERFACE:${CMAKE_CURREN
 
 set(DIR ${CMAKE_CURRENT_LIST_DIR})
 set(LIBS fl_pkg_halide)
-build_test(SRC ${DIR}/integrations/HalideTest.cpp LIBS ${LIBS})
+build_test(SRC ${DIR}/test/HalideTest.cpp LIBS ${LIBS})
 fl_add_and_link_halide_lib(
-  SRC ${DIR}/integrations/HalideTestPipeline.cpp
+  SRC ${DIR}/test/HalideTestPipeline.cpp
   NAME HalideTestPipeline
   LINK_TO HalideTest)

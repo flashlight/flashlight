@@ -115,7 +115,6 @@ endif()
 
 # text ---------------------------
 cmake_dependent_option(FL_BUILD_PKG_TEXT "Build text package for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
-message("FL_BUILD_APP_LM ${FL_BUILD_APP_LM}")
 if(FL_BUILD_ALL_PKGS OR FL_BUILD_APP_LM)
   set(FL_BUILD_PKG_TEXT ON)
   set(FL_BUILD_LIB_TEXT ON)
@@ -128,11 +127,13 @@ if(FL_BUILD_ALL_PKGS OR FL_BUILD_APP_ASR OR FL_BUILD_ALL_APPS)
   set(FL_BUILD_LIB_AUDIO ON)
   set(FL_BUILD_LIB_COMMON ON)
 endif()
+
 # halide ---------------------------
 cmake_dependent_option(FL_BUILD_PKG_HALIDE "Build speech package for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
-if(FL_BUILD_ALL_PKGS)
-  set(FL_BUILD_PKG_HALIDE ON)
-endif()
+# for right now, don't build halide pkg with all pkgs to make CI easier
+#if(FL_BUILD_ALL_PKGS)
+  #set(FL_BUILD_PKG_HALIDE ON)
+#endif()
 
 
 # Flashlight backend

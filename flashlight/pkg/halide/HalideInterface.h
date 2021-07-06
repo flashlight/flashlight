@@ -31,7 +31,8 @@
   }
 
 namespace fl {
-namespace ext {
+namespace pkg {
+namespace halide {
 
 /**
  * Gets Halide dims from an ArrayFire array. Halide is row major, so reverse
@@ -142,6 +143,9 @@ af::array fromHalideBuffer(Halide::Buffer<T>& buffer) {
   }
   return af::array(halideToAfDims(buffer), deviceMem, afDevice);
 }
-} // namespace detail
-} // namespace ext
+
+} // detail
+
+} // namespace halide
+} // namespace pkg
 } // namespace fl
