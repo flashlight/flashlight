@@ -53,6 +53,9 @@ commands:
         type: string
       fl_build_app_lm:
         type: string
+      fl_build_all_pkgs:
+        default: "OFF"
+        type: string
       build_shared_libs:
         default: "OFF"
         type: string
@@ -90,7 +93,8 @@ commands:
                 -DFL_BUILD_APP_IMGCLASS=<< parameters.fl_build_app_imgclass >> \
                 -DFL_BUILD_APP_OBJDET=<< parameters.fl_build_app_objdet >> \
                 -DFL_BUILD_APP_LM=<< parameters.fl_build_app_lm >> \
-                -DBUILD_SHARED_LIBS=<< parameters.build_shared_libs >> \
+                -DFL_BUILD_ALL_PKGS =<< parameters.fl_build_all_pkgs >> \
+                -DFL_BUILD_SHARED_LIBS=<< parameters.build_shared_libs >> \
                 -DFL_CODE_COVERAGE=<< parameters.fl_code_coverage >> && \
             make -j$(nproc) && make install"
   test_flashlight_inside_nvidia_docker:
@@ -187,6 +191,7 @@ commands:
               -DFL_BUILD_APP_IMGCLASS=<< parameters.fl_build_app_imgclass >> \
               -DFL_BUILD_APP_OBJDET=<< parameters.fl_build_app_objdet >> \
               -DFL_BUILD_APP_LM=<< parameters.fl_build_app_lm >> \
+              -DFL_BUILD_ALL_PKGS=<<parameters.fl_build_all_pkgs>> \
               -DCMAKE_TOOLCHAIN_FILE=$HOME/project/vcpkg/scripts/buildsystems/vcpkg.cmake
             make -j$(nproc)
   flashlight_build_and_install_cpu_backend_from_source:
@@ -366,7 +371,8 @@ jobs:
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
-          fl_build_fl_core: "OFF"
+          fl_build_fl_core: "ON"
+          fl_build_all_pkgs: "ON"
           fl_build_app_asr: "OFF"
           fl_build_app_imgclass: "OFF"
           fl_build_app_objdet: "OFF"
@@ -577,6 +583,7 @@ workflows:
   docker_cuda_build_test_and_install:
     jobs:
       - ubuntu2004_cuda11_1_docker_flashlight_libs
+      - ubuntu2004_cuda11_1_docker_flashlight_pkgs
       - ubuntu2004_cuda11_1_docker_flashlight_fl_core
       - ubuntu2004_cuda11_1_docker_flashlight_app_asr
       - ubuntu2004_cuda11_1_docker_flashlight_app_imgclass
