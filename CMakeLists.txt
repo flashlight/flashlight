@@ -100,7 +100,7 @@ fl_dependent_option(
   "Build text package for Flashlight"
   "${FL_BUILD_ALL_PKGS}"
   "FL_BUILD_CORE;FL_BUILD_CONTRIB"
-  ON)
+  OFF)
 
 fl_dependent_option(
   FL_BUILD_PKG_SPEECH

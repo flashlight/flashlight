@@ -417,6 +417,7 @@ jobs:
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
           fl_build_fl_core: "ON"
+          fl_build_all_pkgs: "ON"
           fl_build_app_asr: "ON"
           fl_build_app_imgclass: "OFF"
           fl_build_app_objdet: "OFF"
@@ -432,6 +433,7 @@ jobs:
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
           fl_build_fl_core: "ON"
+          fl_build_all_pkgs: "ON"
           fl_build_app_asr: "OFF"
           fl_build_app_imgclass: "ON"
           fl_build_app_objdet: "OFF"
@@ -447,6 +449,7 @@ jobs:
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
           fl_build_fl_core: "ON"
+          fl_build_all_pkgs: "ON"
           fl_build_app_asr: "OFF"
           fl_build_app_imgclass: "ON"
           fl_build_app_objdet: "ON"
@@ -464,6 +467,7 @@ jobs:
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
           fl_build_fl_core: "ON"
+          fl_build_all_pkgs: "ON"
           fl_build_app_asr: "OFF"
           fl_build_app_imgclass: "OFF"
           fl_build_app_objdet: "OFF"
@@ -481,6 +485,7 @@ jobs:
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
           fl_build_fl_core: "ON"
+          fl_build_all_pkgs: "ON"
           fl_build_app_asr: "ON"
           fl_build_app_imgclass: "ON"
           fl_build_app_objdet: "ON"
