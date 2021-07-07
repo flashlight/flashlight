@@ -569,6 +569,7 @@ jobs:
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
+          fl_build_all_pkgs: "ON"
           fl_build_fl_core: "ON"
           fl_build_app_asr: "ON"
           fl_build_app_imgclass: "ON"
