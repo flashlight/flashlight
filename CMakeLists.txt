@@ -61,80 +61,111 @@ option(FL_BUILD_STANDALONE "Build standalone installation" ON)
 # the common library, so you can use -DFL_BUILD_ALL_LIBS=OFF and
 # -DFL_BUILD_LIB_COMMON_ON
 option(FL_BUILD_ALL_LIBS "Build flashlight libraries" ON)
-option(FL_BUILD_LIB_SET "Build flashlight set library" OFF)
-option(FL_BUILD_LIB_SEQUENCE "Build flashlight sequence library" OFF)
-option(FL_BUILD_LIB_AUDIO "Build flashlight audio library" OFF)
-option(FL_BUILD_LIB_COMMON "Build flashlight common library" OFF)
-option(FL_BUILD_LIB_TEXT "Build flashlight text library" OFF)
+option(FL_BUILD_LIB_SET "Build flashlight set library" ${FL_BUILD_ALL_LIBS})
+option(FL_BUILD_LIB_SEQUENCE "Build flashlight sequence library" ${FL_BUILD_ALL_LIBS})
+option(FL_BUILD_LIB_AUDIO "Build flashlight audio library" ${FL_BUILD_ALL_LIBS})
+option(FL_BUILD_LIB_COMMON "Build flashlight common library" ${FL_BUILD_ALL_LIBS})
+option(FL_BUILD_LIB_TEXT "Build flashlight text library" ${FL_BUILD_ALL_LIBS})
 
-if(FL_BUILD_ALL_LIBS)
-  set(FL_BUILD_LIB_SET ON)
-  set(FL_BUILD_LIB_SEQUENCE ON)
-  set(FL_BUILD_LIB_AUDIO ON)
-  set(FL_BUILD_LIB_COMMON ON)
-  set(FL_BUILD_LIB_TEXT ON)
-endif()
-
+# --------------------------- Core Options  ---------------------------
 option(FL_BUILD_CORE "Build flashlight core" ON)
 
-cmake_dependent_option(FL_BUILD_CONTRIB
-  "Build and link additional flashlight contrib assets." ON
-  "FL_BUILD_CORE" OFF)
+# Small utility function which wraps cmake_dependent options and throws an error if the user
+# is trying to build something without the proper dependencies.
+macro(FL_DEPENDENT_OPTION OPTION TEXT VAL DEPS FRCE)
+  foreach(DEP IN ITEMS ${DEPS})
+    if(NOT ${${DEP}} AND ${OPTION} AND "${${OPTION}}")
+      message(FATAL_ERROR "${DEP} Required to build ${OPTION}")
+    endif()
+  endforeach()
+  cmake_dependent_option(${OPTION} ${TEXT} "${VAL}" "${DEPS}" ${FRCE})
+endmacro()
 
-# --------------------------- Apps / Pkgs Options  ---------------------------
-cmake_dependent_option(FL_BUILD_ALL_APPS "Set all Flashlight apps ON by default" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
+fl_dependent_option(
+  FL_BUILD_CONTRIB
+  "Build and link additional flashlight contrib assets."
+  ON "FL_BUILD_CORE" OFF)
 
-if (FL_BUILD_ALL_APPS)
-  cmake_dependent_option(FL_BUILD_APP_ASR "Build asr task for Flashlight" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
-  cmake_dependent_option(FL_BUILD_APP_IMGCLASS "Build image classification app" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
-  cmake_dependent_option(FL_BUILD_APP_OBJDET "Build object detection app" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
-  cmake_dependent_option(FL_BUILD_APP_LM "Build lm task for Flashlight" ON "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
-else()
-  cmake_dependent_option(FL_BUILD_APP_ASR "Build asr task for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
-  cmake_dependent_option(FL_BUILD_APP_IMGCLASS "Build image classification app" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
-  cmake_dependent_option(FL_BUILD_APP_OBJDET "Build object detection app" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
-  cmake_dependent_option(FL_BUILD_APP_LM "Build lm task for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
-endif ()
 
-cmake_dependent_option(FL_BUILD_ALL_PKGS "Set all Flashlight apps ON by default" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB;" OFF)
+fl_dependent_option(
+  FL_BUILD_ALL_PKGS
+  "Build all flashlight packages"
+  OFF
+  "FL_BUILD_CORE;FL_BUILD_CONTRIB"
+  OFF
+)
 
-# Set build options for pkgs depending on which apps you are build. (App -> Pkg  + app -> lib dependencies)
-# runtime ---------------------------
-cmake_dependent_option(FL_BUILD_PKG_RUNTIME "Build runtime package for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
-if(FL_BUILD_ALL_PKGS OR FL_BUILD_APP_LM OR FL_BUILD_APP_ASR OR FL_BUILD_APP_OBJDET OR FL_BUILD_APP_IMGCLASS)
-  set(FL_BUILD_PKG_RUNTIME ON)
-endif()
+fl_dependent_option(
+  FL_BUILD_PKG_TEXT
+  "Build text package for Flashlight"
+  "${FL_BUILD_ALL_PKGS}"
+  "FL_BUILD_CORE;FL_BUILD_CONTRIB"
+  ON)
 
-# vision ---------------------------
-cmake_dependent_option(FL_BUILD_PKG_VISION "Build vision package for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
-if(FL_BUILD_ALL_PKGS OR FL_BUILD_APP_IMGCLASS OR FL_BUILD_APP_OBJDET)
-  set(FL_BUILD_PKG_VISION ON)
-  set(FL_BUILD_LIB_COMMON ON)
-  set(FL_BUILD_LIB_SET ON)
-endif()
+fl_dependent_option(
+  FL_BUILD_PKG_SPEECH
+  "Build speech package for Flashlight"
+  "${FL_BUILD_ALL_PKGS}"
+  "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_LIB_AUDIO"
+  OFF)
 
-# text ---------------------------
-cmake_dependent_option(FL_BUILD_PKG_TEXT "Build text package for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
-if(FL_BUILD_ALL_PKGS OR FL_BUILD_APP_LM)
-  set(FL_BUILD_PKG_TEXT ON)
-  set(FL_BUILD_LIB_TEXT ON)
-endif()
+fl_dependent_option(
+  FL_BUILD_PKG_VISION
+  "Build vision package for Flashlight"
+  "${FL_BUILD_ALL_PKGS}"
+  "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_LIB_COMMON;FL_BUILD_LIB_SET"
+  OFF)
 
-# speech ---------------------------
-cmake_dependent_option(FL_BUILD_PKG_SPEECH "Build speech package for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
-if(FL_BUILD_ALL_PKGS OR FL_BUILD_APP_ASR OR FL_BUILD_ALL_APPS)
-  set(FL_BUILD_PKG_SPEECH ON)
-  set(FL_BUILD_LIB_AUDIO ON)
-  set(FL_BUILD_LIB_COMMON ON)
-endif()
+fl_dependent_option(
+  FL_BUILD_PKG_RUNTIME
+  "Build runtime package for Flashlight"
+  "${FL_BUILD_ALL_PKGS}"
+  "FL_BUILD_CORE;FL_BUILD_CONTRIB"
+  OFF)
 
 # halide ---------------------------
-cmake_dependent_option(FL_BUILD_PKG_HALIDE "Build speech package for Flashlight" OFF "FL_BUILD_CORE;FL_BUILD_CONTRIB" OFF)
-# for right now, don't build halide pkg with all pkgs to make CI easier
-#if(FL_BUILD_ALL_PKGS)
-  #set(FL_BUILD_PKG_HALIDE ON)
-#endif()
+fl_dependent_option(
+  FL_BUILD_PKG_HALIDE
+  "Build speech package for Flashlight"
+  OFF # for right now, don't build halide pkg with all pkgs to make CI easier
+  "FL_BUILD_CORE;FL_BUILD_CONTRIB"
+  OFF)
 
+# --------------------------- Apps Options  ---------------------------
+fl_dependent_option(
+  FL_BUILD_ALL_APPS
+  "Set all Flashlight apps ON by default"
+  OFF
+  "FL_BUILD_CORE;FL_BUILD_CONTRIB;"
+  OFF)
+
+fl_dependent_option(
+  FL_BUILD_APP_ASR
+  "Build asr task for Flashlight"
+  ${FL_BUILD_ALL_APPS}
+  "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_PKG_VISION;FL_BUILD_LIB_COMMON;FL_BUILD_LIB_SET"
+  OFF)
+
+fl_dependent_option(
+  FL_BUILD_APP_IMGCLASS
+  "Build image classification app"
+  "${FL_BUILD_ALL_APPS}"
+  "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_PKG_VISION"
+  OFF)
+
+fl_dependent_option(
+  FL_BUILD_APP_OBJDET
+  "Build image classification app"
+  "${FL_BUILD_ALL_APPS}"
+  "FL_BUILD_CORE;FL_BUILD_CONTRIB;"
+  OFF)
+
+fl_dependent_option(
+  FL_BUILD_APP_LM
+  "Build image classification app"
+  "${FL_BUILD_ALL_APPS}"
+  "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_PKG_TEXT"
+  OFF)
 
 # Flashlight backend
 set(FL_BACKEND "CUDA" CACHE STRING "Backend with which to build flashlight")
