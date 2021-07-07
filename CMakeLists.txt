@@ -90,7 +90,7 @@ fl_dependent_option(
 fl_dependent_option(
   FL_BUILD_ALL_PKGS
   "Build all flashlight packages"
-  OFF
+  ON
   "FL_BUILD_CORE;FL_BUILD_CONTRIB"
   OFF
 )
