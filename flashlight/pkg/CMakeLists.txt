@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 fl_dependent_option(
   FL_BUILD_ALL_PKGS
   "Build all flashlight packages"
-  ON
+  OFF
   "FL_BUILD_CORE;FL_BUILD_CONTRIB"
   OFF
 )
@@ -41,7 +41,7 @@ fl_dependent_option(
   FL_BUILD_PKG_TEXT
   "Build text package for Flashlight"
   "${FL_BUILD_ALL_PKGS}"
-  "FL_BUILD_CORE;FL_BUILD_CONTRIB"
+  "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_LIB_TEXT"
   OFF)
 if(FL_BUILD_PKG_TEXT)
   set(FL_PKG_TEXT_DIR ${FL_PKG_DIR}/text)
@@ -55,7 +55,7 @@ fl_dependent_option(
   FL_BUILD_PKG_SPEECH
   "Build speech package for Flashlight"
   "${FL_BUILD_ALL_PKGS}"
-  "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_LIB_AUDIO"
+  "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_LIB_AUDIO;FL_BUILD_LIB_TEXT;FL_BUILD_LIB_SEQUENCE"
   OFF)
 
 if(FL_BUILD_PKG_SPEECH)

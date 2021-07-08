@@ -25,7 +25,7 @@
 if (@FL_BUILD_STANDALONE@)
   list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
   include(CMakeFindDependencyMacro)
-  if (@FL_BUILD_LIBRARIES@)
+  if (@FL_BUILD_LIB_AUDIO@)
     # Lib dependencies
     find_dependency(OpenMP)
     find_dependency(kenlm)
@@ -58,15 +58,12 @@ if (@FL_BUILD_STANDALONE@)
     endif()
   endif()
   # App dependencies
-  if (@FL_BUILD_APP_ASR@ OR
-      @FL_BUILD_APP_IMGCLASS@ OR
-      @FL_BUILD_APP_OBJDET@ OR
-      @FL_BUILD_APP_LM@)
+  if (@FL_BUILD_PKG_RUNTIME@)
     find_dependency(gflags)
     find_dependency(GLOG)
   endif()
   # Additional app-specific dependencies
-  if (@FL_BUILD_APP_ASR@)
+  if (@FL_BUILD_PKG_SPEECH@)
     find_dependency(SndFile)
   endif()
   # Remove this dir from module path
@@ -96,21 +93,46 @@ endif()
 
 # For legacy configurations
 # Libraries
-set(flashlight_LIBRARIES flashlight::fl-libraries)
+set(flashlight_LIBRARIES "")
+
+# "libs"
+if (@FL_BUILD_LIB_COMMON@)
+  set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::fl_lib_common)
+endif()
+if (@FL_BUILD_LIB_SET@)
+  set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::fl_lib_set)
+endif()
+if (@FL_BUILD_LIB_SEQUENCE@)
+  set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::fl_lib_sequence)
+endif()
+if (@FL_BUILD_LIB_AUDIO@)
+  set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::fl_lib_audio)
+endif()
+if (@FL_BUILD_LIB_TEXT@)
+  set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::fl_lib_text)
+endif()
+
+# core
+
 if (@FL_BUILD_CORE@)
   set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::flashlight)
 endif()
-if (@FL_BUILD_APP_ASR@)
-  set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::flashlight-app-asr)
+
+# pkgs
+if (@FL_BUILD_PKG_RUNTIME@)
+  set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::fl_pkg_runtime)
 endif()
-if (@FL_BUILD_APP_IMGCLASS@)
-  set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::flashlight-app-imgclass)
+if (@FL_BUILD_PKG_VISION@)
+  set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::fl_pkg_vision)
 endif()
-if (@FL_BUILD_APP_LM@)
-  set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::flashlight-app-lm)
+if (@FL_BUILD_PKG_TEXT@)
+  set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::fl_pkg_text)
 endif()
-if (@FL_BUILD_APP_OBJDDET@)
-  set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::flashlight-app-objdet)
+if (@FL_BUILD_PKG_SPEECH@)
+  set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::fl_pkg_speech)
+endif()
+if (@FL_BUILD_PKG_HALIDE@)
+  set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::fl_pkg_halide)
 endif()
 # Include dirs
 if (EXISTS @PACKAGE_INCLUDE_DIRS@)

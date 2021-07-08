@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.10)
 # options. For example, if you are only building core, you only need
 # the common library, so you can use -DFL_BUILD_ALL_LIBS=OFF and
 # -DFL_BUILD_LIB_COMMON_ON
-option(FL_BUILD_ALL_LIBS "Build flashlight libraries" ON)
+option(FL_BUILD_ALL_LIBS "Build flashlight libraries" OFF)
 
 # --------------------------- Components ---------------------------
 # set
