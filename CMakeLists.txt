@@ -53,120 +53,6 @@ option(FL_BUILD_SCRIPTS "Build internal scripts for wav2letter++" OFF)
 option(FL_BUILD_RECIPES "Build recipes" ON)
 option(FL_BUILD_STANDALONE "Build standalone installation" ON)
 
-
-# --------------------------- Lib Options  ---------------------------
-# Build all libs by default. In order to selectively build libs,
-# disable this option and opt-in to each using the individual build
-# options. For example, if you are only building core, you only need
-# the common library, so you can use -DFL_BUILD_ALL_LIBS=OFF and
-# -DFL_BUILD_LIB_COMMON_ON
-option(FL_BUILD_ALL_LIBS "Build flashlight libraries" ON)
-option(FL_BUILD_LIB_SET "Build flashlight set library" ${FL_BUILD_ALL_LIBS})
-option(FL_BUILD_LIB_SEQUENCE "Build flashlight sequence library" ${FL_BUILD_ALL_LIBS})
-option(FL_BUILD_LIB_AUDIO "Build flashlight audio library" ${FL_BUILD_ALL_LIBS})
-option(FL_BUILD_LIB_COMMON "Build flashlight common library" ${FL_BUILD_ALL_LIBS})
-option(FL_BUILD_LIB_TEXT "Build flashlight text library" ${FL_BUILD_ALL_LIBS})
-
-# --------------------------- Core Options  ---------------------------
-option(FL_BUILD_CORE "Build flashlight core" ON)
-
-# Small utility function which wraps cmake_dependent options and throws an error if the user
-# is trying to build something without the proper dependencies.
-macro(FL_DEPENDENT_OPTION OPTION TEXT VAL DEPS FRCE)
-  foreach(DEP IN ITEMS ${DEPS})
-    if(NOT ${${DEP}} AND ${OPTION} AND "${${OPTION}}")
-      message(FATAL_ERROR "${DEP} Required to build ${OPTION}")
-    endif()
-  endforeach()
-  cmake_dependent_option(${OPTION} ${TEXT} "${VAL}" "${DEPS}" ${FRCE})
-endmacro()
-
-fl_dependent_option(
-  FL_BUILD_CONTRIB
-  "Build and link additional flashlight contrib assets."
-  ON "FL_BUILD_CORE" OFF)
-
-
-fl_dependent_option(
-  FL_BUILD_ALL_PKGS
-  "Build all flashlight packages"
-  ON
-  "FL_BUILD_CORE;FL_BUILD_CONTRIB"
-  OFF
-)
-
-fl_dependent_option(
-  FL_BUILD_PKG_TEXT
-  "Build text package for Flashlight"
-  "${FL_BUILD_ALL_PKGS}"
-  "FL_BUILD_CORE;FL_BUILD_CONTRIB"
-  OFF)
-
-fl_dependent_option(
-  FL_BUILD_PKG_SPEECH
-  "Build speech package for Flashlight"
-  "${FL_BUILD_ALL_PKGS}"
-  "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_LIB_AUDIO"
-  OFF)
-
-fl_dependent_option(
-  FL_BUILD_PKG_VISION
-  "Build vision package for Flashlight"
-  "${FL_BUILD_ALL_PKGS}"
-  "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_LIB_COMMON;FL_BUILD_LIB_SET"
-  OFF)
-
-fl_dependent_option(
-  FL_BUILD_PKG_RUNTIME
-  "Build runtime package for Flashlight"
-  "${FL_BUILD_ALL_PKGS}"
-  "FL_BUILD_CORE;FL_BUILD_CONTRIB"
-  OFF)
-
-# halide ---------------------------
-fl_dependent_option(
-  FL_BUILD_PKG_HALIDE
-  "Build speech package for Flashlight"
-  OFF # for right now, don't build halide pkg with all pkgs to make CI easier
-  "FL_BUILD_CORE;FL_BUILD_CONTRIB"
-  OFF)
-
-# --------------------------- Apps Options  ---------------------------
-fl_dependent_option(
-  FL_BUILD_ALL_APPS
-  "Set all Flashlight apps ON by default"
-  OFF
-  "FL_BUILD_CORE;FL_BUILD_CONTRIB;"
-  OFF)
-
-fl_dependent_option(
-  FL_BUILD_APP_ASR
-  "Build asr task for Flashlight"
-  ${FL_BUILD_ALL_APPS}
-  "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_PKG_VISION;FL_BUILD_LIB_COMMON;FL_BUILD_LIB_SET"
-  OFF)
-
-fl_dependent_option(
-  FL_BUILD_APP_IMGCLASS
-  "Build image classification app"
-  "${FL_BUILD_ALL_APPS}"
-  "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_PKG_VISION;FL_BUILD_PKG_RUNTIME"
-  OFF)
-
-fl_dependent_option(
-  FL_BUILD_APP_OBJDET
-  "Build image classification app"
-  "${FL_BUILD_ALL_APPS}"
-  "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_PKG_VISION;FL_BUILD_PKG_RUNTIME"
-  OFF)
-
-fl_dependent_option(
-  FL_BUILD_APP_LM
-  "Build image classification app"
-  "${FL_BUILD_ALL_APPS}"
-  "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_PKG_TEXT;FL_BUILD_PKG_VISION;FL_BUILD_PKG_RUNTIME"
-  OFF)
-
 # Flashlight backend
 set(FL_BACKEND "CUDA" CACHE STRING "Backend with which to build flashlight")
 # Select from exactly one backend
@@ -223,10 +109,6 @@ if (FL_BUILD_TESTS)
 endif ()
 
 # ------------------------ flashlight Libraries ------------------------
-# FIXME: libraries are required to build core tests - https://git.io/JL955
-if (FL_BUILD_CORE AND FL_BUILD_TESTS)
-  set(FL_BUILD_LIB_COMMON ON)
-endif()
 
 option(FL_LIBRARIES_USE_CUDA "Use CUDA in flashlight libraries build" ON)
 option(FL_LIBRARIES_USE_KENLM "Use KenLM in flashlight libraries build" ON)
@@ -248,6 +130,21 @@ if (FL_LIBRARIES_BUILD_FOR_PYTHON)
 endif ()
 
 setup_install_headers(${FL_LIB_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
+
+# --------------------------- Core Options  ---------------------------
+
+fl_dependent_option(FL_BUILD_CORE "Build flashlight core" ON "FL_BUILD_LIB_COMMON" OFF)
+
+# Small utility function which wraps cmake_dependent options and throws an error if the user
+# is trying to build something without the proper dependencies.
+
+fl_dependent_option(
+  FL_BUILD_CONTRIB
+  "Build and link additional flashlight contrib assets."
+  ON "FL_BUILD_CORE" OFF)
+
+
+
 
 # --------------------------- flashlight ---------------------------
 if (FL_BUILD_CORE)
@@ -342,12 +239,16 @@ if (FL_BUILD_CORE)
 
 endif() # if FL_BUILD_CORE
 
-
+# --------------------------- Pkgs  ---------------------------
 set(FL_PKG_DIR "${FL_ROOT_DIR}/pkg")
 include(${FL_PKG_DIR}/CMakeLists.txt)
 
+# --------------------------- Apps Options  ---------------------------
 set(FL_APPS_DIR "${FL_ROOT_DIR}/app")
 include(${FL_APPS_DIR}/CMakeLists.txt)
+
+
+
 
 
 # --------------------------- Cleanup ---------------------------

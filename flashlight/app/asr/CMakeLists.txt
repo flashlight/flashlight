@@ -1,17 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
 cmake_dependent_option(FL_BUILD_APP_ASR_TOOLS "Build ASR App tools" ON "FL_BUILD_APP_ASR" OFF)
-cmake_dependent_option(
-  FL_BUILD_APP_ASR_SFX_SOX
-  "Build libsox-based sound effects augmentation" OFF
-  "FL_BUILD_APP_ASR" OFF
-  )
-cmake_dependent_option(
-  FL_USE_SOX_STATIC
-  "Statically link libsox with sound effects" OFF
-  "NOT BUILD_SHARED_LIBS" OFF
-  )
-
 
 # ----------------------------- Binaries -----------------------------
 add_executable(fl_asr_train ${CMAKE_CURRENT_LIST_DIR}/Train.cpp)

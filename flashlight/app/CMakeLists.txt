@@ -1,5 +1,19 @@
 cmake_minimum_required(VERSION 3.10)
 
+fl_dependent_option(
+  FL_BUILD_ALL_APPS
+  "Set all Flashlight apps ON by default"
+  OFF
+  "FL_BUILD_CORE;FL_BUILD_CONTRIB;"
+  OFF)
+
+# --------------------------- ASR  ---------------------------
+fl_dependent_option(
+  FL_BUILD_APP_ASR
+  "Build asr task for Flashlight"
+  ${FL_BUILD_ALL_APPS}
+  "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_PKG_VISION;FL_BUILD_LIB_COMMON;FL_BUILD_LIB_SET"
+  OFF)
 if (FL_BUILD_APP_ASR)
   message(STATUS "Building flashlight ASR app")
   if (NOT FL_BUILD_DISTRIBUTED)
@@ -9,10 +23,14 @@ if (FL_BUILD_APP_ASR)
   include(${FL_APP_ASR_ROOT_DIR}/CMakeLists.txt)
 endif ()
 
-if (FL_BUILD_APP_IMGCLASS OR FL_BUILD_APP_OBJDET) # imgclass is required to build objdet
-  if (NOT FL_BUILD_APP_IMGCLASS AND FL_BUILD_APP_OBJDET)
-    message(STATUS "FL_BUILD_APP_OBJDET is enabled - forcing FL_BUILD_APP_IMGCLASS to ON")
-  endif()
+# --------------------------- Image Classificiation  ---------------------------
+fl_dependent_option(
+  FL_BUILD_APP_IMGCLASS
+  "Build image classification app"
+  "${FL_BUILD_ALL_APPS}"
+  "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_PKG_VISION;FL_BUILD_PKG_RUNTIME"
+  OFF)
+if (FL_BUILD_APP_IMGCLASS) # imgclass is required to build objdet
   message(STATUS "Building flashlight Image Classification app")
   if (NOT FL_BUILD_DISTRIBUTED)
     message(FATAL_ERROR "FL_BUILD_DISTRIBUTED must be enabled for image classification")
@@ -21,6 +39,13 @@ if (FL_BUILD_APP_IMGCLASS OR FL_BUILD_APP_OBJDET) # imgclass is required to buil
   include(${FL_APP_IMGCLASS_ROOT_DIR}/CMakeLists.txt)
 endif ()
 
+# --------------------------- LM  ---------------------------
+fl_dependent_option(
+  FL_BUILD_APP_LM
+  "Build image classification app"
+  "${FL_BUILD_ALL_APPS}"
+  "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_PKG_TEXT;FL_BUILD_PKG_VISION;FL_BUILD_PKG_RUNTIME"
+  OFF)
 if (FL_BUILD_APP_LM)
   message(STATUS "Building flashlight LM app")
   if (NOT FL_BUILD_DISTRIBUTED)
@@ -30,6 +55,13 @@ if (FL_BUILD_APP_LM)
   include(${FL_APP_LM_ROOT_DIR}/CMakeLists.txt)
 endif ()
 
+# --------------------------- Objdet Detection  ---------------------------
+fl_dependent_option(
+  FL_BUILD_APP_OBJDET
+  "Build image classification app"
+  "${FL_BUILD_ALL_APPS}"
+  "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_PKG_VISION;FL_BUILD_PKG_RUNTIME"
+  OFF)
 if (FL_BUILD_APP_OBJDET)
   message(STATUS "Building flashlight Object Detection app")
   if (NOT FL_BUILD_DISTRIBUTED)

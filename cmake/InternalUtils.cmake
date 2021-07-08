@@ -117,3 +117,12 @@ function(set_executable_output_directory EXEC_TARGET DIRECTORY)
     ${DIRECTORY}
     )
 endfunction()
+
+macro(FL_DEPENDENT_OPTION OPTION TEXT VAL DEPS FRCE)
+  foreach(DEP IN ITEMS ${DEPS})
+    if(NOT ${${DEP}} AND ${OPTION} AND "${${OPTION}}")
+      message(FATAL_ERROR "${DEP} Required to build ${OPTION}")
+    endif()
+  endforeach()
+  cmake_dependent_option(${OPTION} ${TEXT} "${VAL}" "${DEPS}" ${FRCE})
+endmacro()
