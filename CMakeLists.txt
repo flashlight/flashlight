@@ -135,16 +135,10 @@ setup_install_headers(${FL_LIB_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
 
 fl_dependent_option(FL_BUILD_CORE "Build flashlight core" ON "FL_BUILD_LIB_COMMON" OFF)
 
-# Small utility function which wraps cmake_dependent options and throws an error if the user
-# is trying to build something without the proper dependencies.
-
 fl_dependent_option(
   FL_BUILD_CONTRIB
   "Build and link additional flashlight contrib assets."
   ON "FL_BUILD_CORE" OFF)
-
-
-
 
 # --------------------------- flashlight ---------------------------
 if (FL_BUILD_CORE)

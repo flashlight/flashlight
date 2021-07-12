@@ -1,11 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 
 # --------------------------- Lib Options  ---------------------------
-# Build all libs by default. In order to selectively build libs,
-# disable this option and opt-in to each using the individual build
-# options. For example, if you are only building core, you only need
-# the common library, so you can use -DFL_BUILD_ALL_LIBS=OFF and
-# -DFL_BUILD_LIB_COMMON_ON
+# Option to allow users to essentially be opt-opt. You can still selectively
+# turn of libraries with something like
+# `FL_BUILD_ALL_LIBS=ON -DFL_BUILD_LIB_AUDIO=OFF` to build everything but the
+# audio library
 option(FL_BUILD_ALL_LIBS "Build flashlight libraries" OFF)
 
 # --------------------------- Components ---------------------------

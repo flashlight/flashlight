@@ -113,7 +113,6 @@ if (@FL_BUILD_LIB_TEXT@)
 endif()
 
 # core
-
 if (@FL_BUILD_CORE@)
   set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::flashlight)
 endif()

@@ -41,7 +41,7 @@ Flashlight is broken down into a few parts:
 - [**`flashlight/lib`**](flashlight/lib) contains kernels and standalone utilities for sequence losses, beam search decoding, text processing, and more.
 - [**`flashlight/fl`**](flashlight/fl) is the core neural network library using the [ArrayFire](https://github.com/arrayfire/arrayfire) tensor library.
 - [**`flashlight/app`**](flashlight/app) are applications of the core library to machine learning across domains.
-- [**`flashlight/pkg**](flashlight/pkg) are packages built on top of Flashlight and ArrayFires for specific purposes (Domain libraries for speech and vision, halide extensions).
+- [**`flashlight/pkg**](flashlight/pkg) are packages built on top of Flashlight and ArrayFire for specific purposes (Domain libraries for speech, vision, and text, and Halide extensions).
 
 ## Quickstart
 
