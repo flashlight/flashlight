@@ -20,37 +20,59 @@ namespace fl {
 
 /**
  * Tensor adapter for the ArrayFire tensor library. Maps operations expressed in
- * Flashlight Tensors to ArrayFire
+ * Flashlight Tensors to ArrayFire.
  */
 class ArrayFireTensor : public TensorAdapterBase {
-  // The internal ArrayFire handle. This can be an af::array or an
-  // af::array::array_proxy as in the case of a view (lvalues only)
-  std::variant<af::array, af::array::array_proxy> handle_;
+  // A pointer to the internal ArrayFire array. Shared amongst tensors that are
+  // shallow-copied.
+  std::shared_ptr<af::array> arrayHandle_;
+
+  // Indices in the event that this tensor is about to be indexed. Cleared the
+  // next time this array handle is acquired. See getHandle().
+  std::optional<std::vector<af::index>> indices_;
+  // To be visited when this tensor is to be indexed. Indexes the underlying
+  // af::array, and returns the proxy to be used as a temporary lvalue.
+  struct IndexedArrayComponent {
+    af::array::array_proxy get(const ArrayFireTensor& inst);
+  };
+  // To be visited when this tensor is holding an array without needing
+  // indexing. Passthrough - returns the array directly.
+  struct ArrayComponent {
+    af::array& get(const ArrayFireTensor& inst);
+  };
+  // An interface to visit when getting an array handle. Indexes lazily
+  // because we can't store an af::array::proxy as an lvalue. See getHandle().
+  std::variant<ArrayComponent, IndexedArrayComponent> handle_{ArrayComponent()};
+
+  /**
+   * Constructs an ArrayFireTensor that will be lazily indexed.
+   *
+   * This constructor is for internal use only. Because af::array::array_proxy
+   * objects don't work properly as lvalues, they need to be used as temporary
+   * lvalues when doing in-place assignment. As such, Tensors are lazily-indexed
+   * if operators that might need to operate on array proxies are called. This
+   * ctor sets up that lazy indexing.
+   *
+   * Whenever these ArrayFireTensors are mutated, ArrayFireTensor::getHandle()
+   * is called, which performs indexing if needed and upcasts the array_proxy to
+   * a full af::array on which operations can be performed.
+   *
+   * @param[in] handle a pointer to the ArrayFire array
+   * @param[in] indices a vector of ArrayFire indices to lazily index.
+   */
+  ArrayFireTensor(
+      std::shared_ptr<af::array> handle,
+      std::vector<af::index>&& indices);
 
   /*
    * A Flashlight shape that mirrors ArrayFire dims.
    *
    * NOTE: this shape is only updated on calls to ArrayFireTensor::shape() so
-   * as to satisfy API requirements. af::array::dims() should be used for
-   * internal computation where shape/dimensions are needed.
+   * as to satisfy API requirements as per returning a const reference..
+   * af::array::dims() should be used for internal computation where
+   * shape/dimensions are needed.
    */
   Shape shape_;
-
-  /**
-   * Constructs an ArrayFireTensor from an af::array::array_proxy.
-   *
-   * This constructor is for internal use only. In order to properly construct
-   * views/proxies of arrays when they're lvalues, we need to sometimes create
-   * ArrayFireTensors which hold proxies and not arrays.
-   *
-   * Whenever these ArrayFireTensors are mutated, ArrayFireTensor::handle() is
-   * called, which upcasts the array_proxy to a full af::array on which
-   * operations can be performed.
-   *
-   * @param[in] arrayProxy construct a tensor from an ArrayFire array_proxy
-   * rvalue reference.
-   */
-  explicit ArrayFireTensor(af::array::array_proxy&& arrayProxy);
 
  public:
   /**
@@ -89,9 +111,11 @@ class ArrayFireTensor : public TensorAdapterBase {
   af::array& getHandle();
 
   ~ArrayFireTensor() override = default;
+  // Used with the fl::Tensor copy constructor
   std::unique_ptr<TensorAdapterBase> clone() const override;
   TensorBackendType backendType() const override;
   TensorBackend& backend() const override;
+  Tensor copy() override;
   const Shape& shape() override;
   dtype type() override;
   Tensor astype(const dtype type) override;

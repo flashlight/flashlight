@@ -59,9 +59,20 @@ class Tensor {
   Tensor(const Tensor& tensor);
 
   /**
+   * Move constructor - moves the pointer to the TensorAdapter - performs no
+   * other operations.
+   */
+  Tensor(Tensor&& tensor) noexcept;
+
+  /**
    * Construct an empty tensor with the default tensor backend's tensor adapter.
    */
   Tensor();
+
+  /**
+   * Deep-copies the tensor, including underlying data.
+   */
+  Tensor copy() const;
 
   /**
    * Get the shape of a tensor.
@@ -235,7 +246,7 @@ Tensor concatenate(const std::vector<Tensor>& tensors, unsigned axis = 0);
 template <typename... Ts>
 Tensor concatenate(unsigned axis, const Ts&... args) {
   std::vector<Tensor> tensors{{args...}};
-  return concatenate(std::move(tensors), axis);
+  return concatenate(tensors, axis);
 }
 
 /**

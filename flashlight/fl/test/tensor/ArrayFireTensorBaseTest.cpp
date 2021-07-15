@@ -11,7 +11,6 @@
 
 #include "flashlight/fl/tensor/Random.h"
 #include "flashlight/fl/tensor/TensorBase.h"
-
 #include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
 
 using namespace ::testing;
@@ -66,13 +65,20 @@ TEST(ArrayFireTensorBaseTest, ArrayFireAssignmentOperators) {
   af_get_data_ref_count(&refCount, aArr.get());
   ASSERT_EQ(refCount, 1);
 
-  auto b = a;
+  auto b = a; // share the same underlying array but bump refcount
+  af_get_data_ref_count(&refCount, aArr.get());
+  ASSERT_EQ(refCount, 2);
+
+  auto c = a.copy(); // defers deep copy to AF
   af_get_data_ref_count(&refCount, aArr.get());
   ASSERT_EQ(refCount, 2);
 
   af::array& bArr = toArray(b);
   b = fl::full({4, 4}, 2.);
   af_get_data_ref_count(&refCount, bArr.get());
+  ASSERT_EQ(refCount, 1);
+
+  af_get_data_ref_count(&refCount, aArr.get());
   ASSERT_EQ(refCount, 1);
 }
 
