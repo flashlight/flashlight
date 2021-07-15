@@ -55,6 +55,9 @@ af::dim4 flToAfDims(const Shape& shape) {
     throw std::invalid_argument(
         "flToAfDims: ArrayFire shapes can't be more than 4 dimensions");
   }
+  if (shape.elements() == 0) {
+    return af::dim4(0);
+  }
   af::dim4 out(1, 1, 1, 1);
   for (size_t i = 0; i < shape.nDims(); ++i) {
     out.dims[i] = shape.dim(i);
@@ -145,6 +148,61 @@ af::array condenseIndices(const af::array& arr) {
     return af::moddims(arr, newDims);
   } else {
     return arr;
+  }
+}
+
+af_source flToAfLocation(Location location) {
+  switch (location) {
+    case Location::Host:
+      return afHost;
+    case Location::Device:
+      return afDevice;
+    default:
+      throw std::invalid_argument(
+          "flToAfLocation: no valid ArrayFire location exists "
+          " for given Flashlight location.");
+  }
+}
+
+af::array fromFlData(
+    const Shape& shape,
+    void* ptr,
+    fl::dtype type,
+    fl::Location memoryLocation) {
+  af::dim4 dims = detail::flToAfDims(shape);
+  af::dtype afType = detail::flToAfType(type);
+  af_source loc = detail::flToAfLocation(memoryLocation);
+
+  // No or null buffer
+  if (!ptr) {
+    return af::array(dims, afType);
+  }
+
+  using af::dtype;
+  switch (afType) {
+    case f32:
+      return af::array(dims, reinterpret_cast<float*>(ptr), loc);
+    case f64:
+      return af::array(dims, reinterpret_cast<double*>(ptr), loc);
+    case s32:
+      return af::array(dims, reinterpret_cast<int*>(ptr), loc);
+    case u32:
+      return af::array(dims, reinterpret_cast<unsigned*>(ptr), loc);
+    case s64:
+      return af::array(dims, reinterpret_cast<long long*>(ptr), loc);
+    case u64:
+      return af::array(dims, reinterpret_cast<unsigned long long*>(ptr), loc);
+    case s16:
+      return af::array(dims, reinterpret_cast<short*>(ptr), loc);
+    case u16:
+      return af::array(dims, reinterpret_cast<unsigned short*>(ptr), loc);
+    case b8:
+      return af::array(dims, reinterpret_cast<char*>(ptr), loc);
+    case u8:
+      return af::array(dims, reinterpret_cast<unsigned char*>(ptr), loc);
+    default:
+      throw std::invalid_argument(
+          "fromFlData: can't construct ArrayFire array from given type.");
   }
 }
 

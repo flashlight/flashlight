@@ -22,20 +22,6 @@
 #include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
 #include "flashlight/fl/tensor/backend/af/Utils.h"
 
-/*
- * TODO: this is duplicative - remove this from flashlight/fl/common/Utils.h
- * once the rest of the proj depends on headers here.
- */
-#define AF_CHECK(fn)                                                          \
-  do {                                                                        \
-    af_err __err = fn;                                                        \
-    if (__err == AF_SUCCESS) {                                                \
-      break;                                                                  \
-    }                                                                         \
-    throw af::exception(                                                      \
-        "ArrayFire error: ", __PRETTY_FUNCTION__, __FILE__, __LINE__, __err); \
-  } while (0)
-
 namespace {
 
 typedef af::array (*reduceFunc_t)(const af::array&, const int);

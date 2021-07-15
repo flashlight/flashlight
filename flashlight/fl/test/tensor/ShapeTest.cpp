@@ -77,4 +77,5 @@ TEST(ShapeTest, ArrayFireInterop) {
   ASSERT_TRUE(dimsEq(af::dim4(1, 3, 2), {1, 3, 2}));
   ASSERT_TRUE(dimsEq(af::dim4(1), {1}));
   ASSERT_TRUE(dimsEq(af::dim4(1, 1, 1), {1}));
+  ASSERT_TRUE(dimsEq(af::dim4(0, 1, 1, 1), {}));
 }

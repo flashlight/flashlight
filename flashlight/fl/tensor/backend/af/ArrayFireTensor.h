@@ -16,6 +16,20 @@
 #include "flashlight/fl/tensor/Shape.h"
 #include "flashlight/fl/tensor/TensorAdapter.h"
 
+/*
+ * TODO: this is duplicative - remove this from flashlight/fl/common/Utils.h
+ * once the rest of the proj depends on headers here.
+ */
+#define AF_CHECK(fn)                                                          \
+  do {                                                                        \
+    af_err __err = fn;                                                        \
+    if (__err == AF_SUCCESS) {                                                \
+      break;                                                                  \
+    }                                                                         \
+    throw af::exception(                                                      \
+        "ArrayFire error: ", __PRETTY_FUNCTION__, __FILE__, __LINE__, __err); \
+  } while (0)
+
 namespace fl {
 
 /**
@@ -64,11 +78,17 @@ class ArrayFireTensor : public TensorAdapterBase {
       std::shared_ptr<af::array> handle,
       std::vector<af::index>&& indices);
 
+  /**
+   * Construct an ArrayFireTensor from an ArrayFire array handle without copying
+   * the handle. Used for creating guaranteed-shallow copies.
+   */
+  explicit ArrayFireTensor(std::shared_ptr<af::array> arr);
+
   /*
    * A Flashlight shape that mirrors ArrayFire dims.
    *
-   * NOTE: this shape is only updated on calls to ArrayFireTensor::shape() so
-   * as to satisfy API requirements as per returning a const reference..
+   * NOTE: this shape is only updated on calls to ArrayFireTensor::shape()
+   * so as to satisfy API requirements as per returning a const reference..
    * af::array::dims() should be used for internal computation where
    * shape/dimensions are needed.
    */
@@ -96,6 +116,20 @@ class ArrayFireTensor : public TensorAdapterBase {
   ArrayFireTensor();
 
   /**
+   * Construct an ArrayFire tensor using some data.
+   *
+   * @param[in] shape the shape of the new tensor
+   * @param[in] ptr the buffer containing underlying tensor data
+   * @param[in] type the type of the new tensor
+   * @param[in] memoryLocation the location of the buffer
+   */
+  ArrayFireTensor(
+      const Shape& shape,
+      fl::dtype type,
+      void* ptr,
+      Location memoryLocation);
+
+  /**
    * Gets an ArrayFire Array from this impl.
    *
    * Throws if this tensor represents an array_proxy, since it precludes
@@ -116,8 +150,12 @@ class ArrayFireTensor : public TensorAdapterBase {
   TensorBackendType backendType() const override;
   TensorBackend& backend() const override;
   Tensor copy() override;
+  Tensor shallowCopy() override;
   const Shape& shape() override;
   dtype type() override;
+  void scalar(void* out) override;
+  void device(void** out) override;
+  void unlock() override;
   Tensor astype(const dtype type) override;
   Tensor index(const std::vector<Index>& indices) override;
   Tensor flatten() const override;

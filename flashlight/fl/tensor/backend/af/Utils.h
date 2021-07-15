@@ -12,6 +12,7 @@
 #include <af/seq.h>
 
 #include "flashlight/fl/tensor/Shape.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/fl/tensor/Types.h"
 
 namespace fl {
@@ -69,6 +70,20 @@ af::dim4 condenseDims(const af::dim4& dims);
  * resulting ArrayFire shape would have 1's in it.
  */
 af::array condenseIndices(const af::array& arr);
+
+/**
+ * Convert a Flashlight Location into an ArrayFire location (host or device).
+ */
+af_source flToAfLocation(Location location);
+
+/**
+ * Construct an ArrayFire array from a buffer and Flashlight details.
+ */
+af::array fromFlData(
+    const Shape& shape,
+    void* ptr,
+    fl::dtype type,
+    fl::Location memoryLocation);
 
 } // namespace detail
 } // namespace fl

@@ -44,7 +44,19 @@ ArrayFireTensor::ArrayFireTensor(
       indices_(std::move(indices)),
       handle_(IndexedArrayComponent()) {}
 
+ArrayFireTensor::ArrayFireTensor(std::shared_ptr<af::array> arr)
+    : arrayHandle_(arr) {}
+
 ArrayFireTensor::ArrayFireTensor() : handle_(ArrayComponent()) {}
+
+ArrayFireTensor::ArrayFireTensor(
+    const Shape& shape,
+    fl::dtype type,
+    void* ptr,
+    Location memoryLocation)
+    : arrayHandle_(std::make_shared<af::array>(
+          detail::fromFlData(shape, ptr, type, memoryLocation))),
+      handle_(ArrayComponent()) {}
 
 af::array::array_proxy ArrayFireTensor::IndexedArrayComponent::get(
     const ArrayFireTensor& inst) {
@@ -90,6 +102,14 @@ Tensor ArrayFireTensor::copy() {
   return toTensor<ArrayFireTensor>(arrayHandle_->copy());
 }
 
+Tensor ArrayFireTensor::shallowCopy() {
+  // ensure indexing is resolved so copying a handle ref is sufficient
+  getHandle();
+
+  return Tensor(
+      std::unique_ptr<ArrayFireTensor>(new ArrayFireTensor(arrayHandle_)));
+}
+
 TensorBackendType ArrayFireTensor::backendType() const {
   return TensorBackendType::ArrayFire;
 }
@@ -108,6 +128,18 @@ const Shape& ArrayFireTensor::shape() {
 
 fl::dtype ArrayFireTensor::type() {
   return detail::afToFlType(getHandle().type());
+}
+
+void ArrayFireTensor::scalar(void* out) {
+  AF_CHECK(af_get_scalar(out, getHandle().get()));
+}
+
+void ArrayFireTensor::device(void** out) {
+  AF_CHECK(af_get_device_ptr(out, getHandle().get()));
+}
+
+void ArrayFireTensor::unlock() {
+  AF_CHECK(af_unlock_array(getHandle().get()));
 }
 
 Tensor ArrayFireTensor::astype(const dtype type) {

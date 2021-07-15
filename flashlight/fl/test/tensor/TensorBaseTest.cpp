@@ -19,6 +19,20 @@ TEST(TensorBaseTest, DefaultBackend) {
   ASSERT_EQ(t.backendType(), TensorBackendType::ArrayFire);
 }
 
+TEST(TensorBaseTest, DefaultConstruction) {
+  Tensor t;
+  ASSERT_EQ(t.shape(), Shape());
+  ASSERT_EQ(t.type(), fl::dtype::f32);
+
+  Tensor u({1, 2, 3});
+  ASSERT_EQ(u.shape(), Shape({1, 2, 3}));
+  ASSERT_EQ(u.type(), fl::dtype::f32);
+
+  Tensor v({4, 5, 6}, fl::dtype::u64);
+  ASSERT_EQ(v.shape(), Shape({4, 5, 6}));
+  ASSERT_EQ(v.type(), fl::dtype::u64);
+}
+
 TEST(TensorBaseTest, BinaryOperators) {
   // TODO:fl::Tensor {testing} expand this test
   // Ensure that some binary operators work properly.
@@ -49,6 +63,46 @@ TEST(TensorBaseTest, AssignmentOperators) {
   ASSERT_TRUE(allClose(b, fl::full({4, 4}, 7.)));
   a = 6.;
   ASSERT_TRUE(allClose(a, fl::full({4, 4}, 6.)));
+}
+
+TEST(TensorBaseTest, CopyOperators) {
+  auto a = fl::full({3, 3}, 1.);
+  auto b = a;
+  a += 1;
+  ASSERT_TRUE(allClose(b, fl::full({3, 3}, 1.)));
+  ASSERT_TRUE(allClose(a, fl::full({3, 3}, 2.)));
+
+  auto c = a.copy();
+  a += 1;
+  ASSERT_TRUE(allClose(a, fl::full({3, 3}, 3.)));
+  ASSERT_TRUE(allClose(c, fl::full({3, 3}, 2.)));
+
+  auto d = c.shallowCopy();
+  d += 1;
+  ASSERT_TRUE(allClose(c, fl::full({3, 3}, 3.)));
+  ASSERT_TRUE(allClose(d, fl::full({3, 3}, 3.)));
+}
+
+TEST(TensorBaseTest, ConstructFromData) {
+  float val = 3.;
+  std::vector<float> vec(100, val);
+  fl::Shape s = {10, 10};
+  ASSERT_TRUE(allClose(fl::Tensor::fromVector(s, vec), fl::full(s, val)));
+
+  ASSERT_TRUE(allClose(
+      fl::Tensor::fromBuffer(s, vec.data(), fl::Location::Host),
+      fl::full(s, val)));
+
+  std::vector<float> ascending = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  auto t = fl::Tensor::fromVector({3, 4}, ascending);
+  ASSERT_EQ(t.type(), fl::dtype::f32);
+  for (int i = 0; i < ascending.size(); ++i) {
+    ASSERT_FLOAT_EQ(t(i % 3, i / 3).scalar<float>(), ascending[i]);
+  }
+
+  // TODO: add fixtures/check stuff
+  std::vector<int> intV = {1, 2, 3};
+  ASSERT_EQ(fl::Tensor::fromVector({3, 4}, intV).type(), fl::dtype::s32);
 }
 
 TEST(TensorBaseTest, reshape) {
@@ -177,4 +231,16 @@ TEST(TensorBaseTest, floor) {
 TEST(TensorBaseTest, ceil) {
   auto a = fl::rand({10, 10}) + 0.5;
   ASSERT_TRUE(allClose((a >= 1).astype(fl::dtype::f32), fl::ceil(a) - 1));
+}
+
+TEST(TensorBaseTest, scalar) {
+  // TODO: exhaustively test all types + fixture
+  float val = 8.47;
+  auto one = fl::full({1}, val);
+  ASSERT_FLOAT_EQ(one.scalar<float>(), val);
+
+  auto a = fl::rand({5, 6});
+  ASSERT_TRUE(allClose(fl::full({1}, a.scalar<float>()), a(0, 0)));
+
+  ASSERT_THROW(a.scalar<int>(), std::invalid_argument);
 }

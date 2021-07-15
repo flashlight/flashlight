@@ -39,6 +39,20 @@ class TensorAdapterBase {
   virtual ~TensorAdapterBase() = default;
 
   /**
+   * Construct a tensor from some existing data.
+   *
+   * @param[in] shape the shape of the new tensor
+   * @param[in] ptr the buffer containing underlying tensor data
+   * @param[in] type the type of the new tensor
+   * @param[in] memoryLocation the location of the buffer
+   */
+  TensorAdapterBase(
+      const Shape& shape,
+      fl::dtype type,
+      void* ptr,
+      MemoryLocation memoryLocation);
+
+  /**
    * Copies the tensor adapter. The implementation defines whether or not tensor
    * data itself is copied - this is not an implementation requirement.
    */
@@ -64,6 +78,12 @@ class TensorAdapterBase {
   virtual Tensor copy() = 0;
 
   /**
+   * Shallow copy the tensor - return a tensor that points to the same
+   * underlying data.
+   */
+  virtual Tensor shallowCopy() = 0;
+
+  /**
    * Get the shape of a tensor.
    *
    * @return the shape of the tensor
@@ -76,6 +96,22 @@ class TensorAdapterBase {
    * @return the dtype of the tensor
    */
   virtual dtype type() = 0;
+
+  /**
+   * Populate a pointer with a scalar for the first element of the tensor.
+   */
+  virtual void scalar(void* out) = 0;
+
+  /**
+   * Returns a pointer to the tensor in device memory
+   */
+  virtual void device(void** out) = 0;
+
+  /**
+   * Unlocks any device memory associated with the tensor that was acquired with
+   * Tensor::device(), making it eligible to be freed.
+   */
+  virtual void unlock() = 0;
 
   /**
    * Returns a tensor with elements cast as a particular type
@@ -130,10 +166,13 @@ class TensorAdapterBase {
 namespace detail {
 
 /**
- * Get the default tensor adapter.
+ * Get an instance of the default tensor adapter.
  */
-std::unique_ptr<TensorAdapterBase> getDefaultAdapter();
+std::unique_ptr<TensorAdapterBase> getDefaultAdapter(
+    const Shape& shape = Shape(),
+    fl::dtype type = fl::dtype::f32,
+    void* ptr = nullptr,
+    MemoryLocation memoryLocation = MemoryLocation::Host);
 
 } // namespace detail
-
 } // namespace fl

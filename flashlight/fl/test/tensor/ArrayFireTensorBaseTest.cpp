@@ -260,3 +260,13 @@ TEST(ArrayFireTensorBaseTest, concatenate) {
   std::vector<fl::Tensor> tensors(11);
   ASSERT_THROW(fl::concatenate(tensors), std::invalid_argument);
 }
+
+TEST(ArrayFireTensorBaseTest, device) {
+  auto a = fl::rand({5, 5});
+  float* flPtr = a.device<float>();
+  af::array& arr = toArray(a);
+  float* afPtr = arr.device<float>();
+  ASSERT_EQ(flPtr, afPtr);
+  a.unlock();
+  AF_CHECK(af_unlock_array(arr.get())); // safety
+}

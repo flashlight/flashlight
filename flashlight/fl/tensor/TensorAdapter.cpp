@@ -17,6 +17,17 @@
 #include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
 #endif
 
+/**
+ * The default tensor backend in Flashlight. Currently ArrayFire.
+ */
+using DefaultBackend = fl::ArrayFireTensor;
+
+/**
+ * The compile time value which will be true if the default backend is
+ * available.
+ */
+#define FL_DEFAULT_BACKEND_COMPILE_FLAG FL_USE_ARRAYFIRE
+
 namespace fl {
 namespace detail {
 
@@ -25,9 +36,13 @@ namespace detail {
  *
  * For now, ArrayFire is required. If not available, throw.
  */
-std::unique_ptr<TensorAdapterBase> getDefaultAdapter() {
-#if FL_USE_ARRAYFIRE
-  return std::make_unique<ArrayFireTensor>();
+std::unique_ptr<TensorAdapterBase> getDefaultAdapter(
+    const Shape& shape /* = Shape() */,
+    fl::dtype type /* = fl::dtype::f32 */,
+    void* ptr /* = nullptr */,
+    MemoryLocation memoryLocation /* = Location::Host */) {
+#if FL_DEFAULT_BACKEND_COMPILE_FLAG
+  return std::make_unique<DefaultBackend>(shape, type, ptr, memoryLocation);
 #else
   throw std::runtime_error(
       "Cannot construct tensor: Flashlight built "

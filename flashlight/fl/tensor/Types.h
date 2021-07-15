@@ -26,7 +26,15 @@ enum class dtype {
   // TODO: add support for complex-valued tensors? (AF)
 };
 
+/**
+ * Convert a dtype to its string representation.
+ */
 const std::string& dtypeToString(dtype type);
+
+/**
+ * Write a type's string representation to an output stream.
+ */
+std::ostream& operator<<(std::ostream& ostr, const dtype& s);
 
 template <typename T>
 struct dtype_traits;

@@ -33,8 +33,22 @@ Tensor::Tensor(Tensor&& other) noexcept : impl_(std::move(other.impl_)) {}
 
 Tensor::Tensor() : impl_(detail::getDefaultAdapter()) {}
 
+Tensor::Tensor(
+    const Shape& shape,
+    fl::dtype type,
+    void* ptr,
+    MemoryLocation memoryLocation)
+    : impl_(detail::getDefaultAdapter(shape, type, ptr, memoryLocation)) {}
+
+Tensor::Tensor(const Shape& shape, fl::dtype type /* = fl::dtype::f32 */)
+    : impl_(detail::getDefaultAdapter(shape, type)) {}
+
 Tensor Tensor::copy() const {
   return impl_->copy();
+}
+
+Tensor Tensor::shallowCopy() const {
+  return impl_->shallowCopy();
 }
 
 const Shape& Tensor::shape() const {
@@ -63,6 +77,44 @@ TensorBackendType Tensor::backendType() const {
 
 TensorBackend& Tensor::backend() const {
   return impl_->backend();
+}
+
+#define FL_CREATE_MEMORY_OPS(TYPE)                        \
+  template <>                                             \
+  TYPE Tensor::scalar() const {                           \
+    if (type() != dtype_traits<TYPE>::fl_type) {          \
+      throw std::invalid_argument(                        \
+          "Tensor::scalar: requested type doesn't match " \
+          "tensor type, which is " +                      \
+          std::string(dtype_traits<TYPE>::getName()));    \
+    }                                                     \
+    TYPE out;                                             \
+    impl_->scalar(&out);                                  \
+    return out;                                           \
+  }                                                       \
+  template <>                                             \
+  TYPE* Tensor::device() const {                          \
+    TYPE* out;                                            \
+    void** addr = reinterpret_cast<void**>(&out);         \
+    impl_->device(addr);                                  \
+    return out;                                           \
+  }
+FL_CREATE_MEMORY_OPS(int);
+FL_CREATE_MEMORY_OPS(unsigned);
+FL_CREATE_MEMORY_OPS(char);
+FL_CREATE_MEMORY_OPS(unsigned char);
+FL_CREATE_MEMORY_OPS(long);
+FL_CREATE_MEMORY_OPS(unsigned long);
+FL_CREATE_MEMORY_OPS(long long);
+FL_CREATE_MEMORY_OPS(unsigned long long);
+FL_CREATE_MEMORY_OPS(double);
+FL_CREATE_MEMORY_OPS(float);
+FL_CREATE_MEMORY_OPS(short);
+FL_CREATE_MEMORY_OPS(unsigned short);
+#undef FL_CREATE_MEMORY_OPS
+
+void Tensor::unlock() const {
+  impl_->unlock();
 }
 
 // Generate template specializations for functions that return types

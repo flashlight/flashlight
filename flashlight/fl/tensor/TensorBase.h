@@ -32,6 +32,13 @@ class TensorBackend;
 class Index;
 
 /**
+ * Location of memory or tensors.
+ */
+enum class Location { Host, Device };
+// Alias to make it semantically clearer when referring to buffer location
+using MemoryLocation = Location;
+
+/**
  * A Tensor on which computation can be performed.
  *
  * Underlying implementations of tensor operations are implemented via types
@@ -47,6 +54,18 @@ class Index;
 class Tensor {
   // The tensor adapter for the tensor
   std::unique_ptr<TensorAdapterBase> impl_;
+
+  /*
+   * Construct a tensor with a given shape and using an existing buffer.
+   *
+   * This constructor is a void* specialization to facilitate interface
+   * compliance with TensorAdapter and is intentionally private.
+   */
+  Tensor(
+      const Shape& shape,
+      fl::dtype type,
+      void* ptr,
+      MemoryLocation memoryLocation);
 
  public:
   explicit Tensor(std::unique_ptr<TensorAdapterBase> adapter);
@@ -70,9 +89,50 @@ class Tensor {
   Tensor();
 
   /**
+   * Construct a tensor of a given shape (and optionally type) without
+   * populating its data.
+   *
+   * @param[in] shape the shape of the tensor
+   * @param[in] type (optional) the type of the tensor
+   */
+  explicit Tensor(const Shape& shape, fl::dtype type = fl::dtype::f32);
+
+  /**
+   * Create a tensor from a vector of values.
+   *
+   * @param[in] s the shape of the resulting tensor.
+   * @param[in] vec values with which to populate the tensor.
+   * @return a tensor with values and shape as given.
+   */
+  template <typename T>
+  static Tensor fromVector(Shape s, std::vector<T> v) {
+    return Tensor(s, fl::dtype_traits<T>::fl_type, v.data(), Location::Host);
+  }
+
+  /**
+   * Create a tensor from an existing buffer.
+   *
+   * @param[in] s the shape of the resulting tensor.
+   * @param[in] ptr the buffer containing the data
+   * @param[in] memoryLocation the location in memory where the input buffer
+   * with which to create the tensor resides.
+   * @return a tensor with values and shape as given.
+   */
+  template <typename T>
+  static Tensor fromBuffer(Shape s, T* ptr, Location memoryLocation) {
+    return Tensor(s, fl::dtype_traits<T>::fl_type, ptr, memoryLocation);
+  }
+
+  /**
    * Deep-copies the tensor, including underlying data.
    */
   Tensor copy() const;
+
+  /**
+   * Shallow-copies the tensor, returning a tensor that points to the same
+   * underlying data.
+   */
+  Tensor shallowCopy() const;
 
   /**
    * Get the shape of a tensor.
@@ -146,6 +206,33 @@ class Tensor {
    * @return a TensorBackend.
    */
   TensorBackend& backend() const;
+
+  /**
+   * Return a scalar of a specified type for the tensor. If the tensor has more
+   * than one element, returns the first element as a scalar.
+   *
+   * @return a scalar of the first element in the tensor.
+   */
+  template <typename T>
+  T scalar() const;
+
+  /**
+   * Return a pointer to the tensor's underlying data per a certain type. This
+   * pointer exists on the computation device.
+   *
+   * \note The memory allocated here will not be freed until Tensor:unlock() is
+   * called.
+   *
+   * @return the requested pointer
+   */
+  template <typename T>
+  T* device() const;
+
+  /**
+   * Unlocks any device memory associated with the tensor that was acquired with
+   * Tensor::device(), making it eligible to be freed.
+   */
+  void unlock() const;
 
   /******************** Assignment Operators ********************/
 #define ASSIGN_OP(OP)                    \

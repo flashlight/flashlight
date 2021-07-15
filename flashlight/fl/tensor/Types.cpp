@@ -29,4 +29,9 @@ const std::string& dtypeToString(dtype type) {
   return kTypeToString.at(type);
 }
 
+std::ostream& operator<<(std::ostream& ostr, const dtype& s) {
+  ostr << dtypeToString(s);
+  return ostr;
+}
+
 } // namespace fl
