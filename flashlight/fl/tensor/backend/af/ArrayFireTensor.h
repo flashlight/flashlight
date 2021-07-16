@@ -9,6 +9,7 @@
 
 #include <af/algorithm.h>
 #include <af/array.h>
+#include <af/exception.h>
 #include <af/statistics.h>
 
 #include <variant>
@@ -155,6 +156,7 @@ class ArrayFireTensor : public TensorAdapterBase {
   dtype type() override;
   void scalar(void* out) override;
   void device(void** out) override;
+  void host(void** out) override;
   void unlock() override;
   Tensor astype(const dtype type) override;
   Tensor index(const std::vector<Index>& indices) override;

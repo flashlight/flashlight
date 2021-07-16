@@ -223,10 +223,20 @@ class Tensor {
    * \note The memory allocated here will not be freed until Tensor:unlock() is
    * called.
    *
-   * @return the requested pointer
+   * @return the requested pointer on the device.
    */
   template <typename T>
   T* device() const;
+
+  /**
+   * Returns a pointer to the tensor's underlying data, but on the host. If the
+   * tensor is located on a device, makes a copy of device memory and returns a
+   * buffer on the host containing the relevant memory.
+   *
+   * @return the requested pointer on the host.
+   */
+  template <typename T>
+  T* host() const;
 
   /**
    * Unlocks any device memory associated with the tensor that was acquired with

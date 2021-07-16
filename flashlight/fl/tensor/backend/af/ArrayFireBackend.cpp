@@ -12,7 +12,6 @@
 #include <af/blas.h>
 #include <af/data.h>
 #include <af/device.h>
-#include <af/exception.h>
 #include <af/gfor.h>
 #include <af/lapack.h>
 #include <algorithm>
