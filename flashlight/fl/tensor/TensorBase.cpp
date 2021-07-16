@@ -98,6 +98,13 @@ TensorBackend& Tensor::backend() const {
     void** addr = reinterpret_cast<void**>(&out);         \
     impl_->device(addr);                                  \
     return out;                                           \
+  }                                                       \
+  template <>                                             \
+  TYPE* Tensor::host() const {                            \
+    TYPE* out;                                            \
+    void** addr = reinterpret_cast<void**>(&out);         \
+    impl_->host(addr);                                    \
+    return out;                                           \
   }
 FL_CREATE_MEMORY_OPS(int);
 FL_CREATE_MEMORY_OPS(unsigned);

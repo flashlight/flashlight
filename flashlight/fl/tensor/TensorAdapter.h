@@ -108,6 +108,11 @@ class TensorAdapterBase {
   virtual void device(void** out) = 0;
 
   /**
+   * Returns a pointer to the tensor in host memory.
+   */
+  virtual void host(void** out) = 0;
+
+  /**
    * Unlocks any device memory associated with the tensor that was acquired with
    * Tensor::device(), making it eligible to be freed.
    */
