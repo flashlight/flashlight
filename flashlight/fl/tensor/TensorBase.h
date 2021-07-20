@@ -244,6 +244,13 @@ class Tensor {
    */
   void unlock() const;
 
+  /**
+   * Returns if the Tensor is contiguous in its memory-based representation.
+   *
+   * @return a bool denoting Tensor contiguousness
+   */
+  bool isContiguous() const;
+
   /******************** Assignment Operators ********************/
 #define ASSIGN_OP(OP)                    \
   Tensor& OP(const Tensor& val);         \
