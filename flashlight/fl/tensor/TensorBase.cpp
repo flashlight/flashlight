@@ -59,6 +59,10 @@ size_t Tensor::size() const {
   return impl_->shape().elements();
 }
 
+Dim Tensor::dim(const size_t dim) const {
+  return shape().dim(dim);
+}
+
 size_t Tensor::bytes() const {
   return size() * getTypeSize(type());
 }
@@ -431,6 +435,16 @@ Tensor maximum(const double& lhs, const Tensor& rhs) {
 Tensor power(const Tensor& lhs, const Tensor& rhs) {
   FL_TENSOR_BACKENDS_MATCH_CHECK(lhs, rhs);
   return lhs.backend().power(lhs, rhs);
+}
+
+/******************************* BLAS ********************************/
+Tensor matmul(
+    const Tensor& lhs,
+    const Tensor& rhs,
+    MatrixProperty lhsProp,
+    MatrixProperty rhsProp) {
+  FL_TENSOR_BACKENDS_MATCH_CHECK(lhs, rhs);
+  return lhs.backend().matmul(lhs, rhs, lhsProp, rhsProp);
 }
 
 /************************** Reductions ***************************/

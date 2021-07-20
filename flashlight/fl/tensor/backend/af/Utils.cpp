@@ -50,6 +50,18 @@ fl::dtype afToFlType(af::dtype type) {
   return kArrayFireTypeToFlashlight.at(type);
 }
 
+af_mat_prop flToAfMatrixProperty(MatrixProperty property) {
+  switch (property) {
+    case MatrixProperty::None:
+      return AF_MAT_NONE;
+    case MatrixProperty::Transpose:
+      return AF_MAT_TRANS;
+    default:
+      throw std::invalid_argument(
+          "flToAfMatrixProperty: invalid property specified");
+  }
+}
+
 af::dim4 flToAfDims(const Shape& shape) {
   if (shape.nDims() > 4) {
     throw std::invalid_argument(
