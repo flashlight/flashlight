@@ -176,37 +176,62 @@ EXPAND_MACRO_FUNCTION(mean);
 #undef EXPAND_MACRO_FUNCTION
 
 /******************** Assignment Operators ********************/
-#define ASSIGN_OP_TYPE(OP, FUN, TYPE)   \
-  Tensor& Tensor::OP(const TYPE& val) { \
-    impl_->FUN(val);                    \
-    return *this;                       \
+#define FL_ASSIGN_OP_TYPE(OP, FUN, TYPE) \
+  Tensor& Tensor::OP(const TYPE& val) {  \
+    impl_->FUN(val);                     \
+    return *this;                        \
   }
-#define ASSIGN_OP(OP, FUN)                 \
-  ASSIGN_OP_TYPE(OP, FUN, Tensor);         \
-  ASSIGN_OP_TYPE(OP, FUN, double);         \
-  ASSIGN_OP_TYPE(OP, FUN, float);          \
-  ASSIGN_OP_TYPE(OP, FUN, int);            \
-  ASSIGN_OP_TYPE(OP, FUN, unsigned);       \
-  ASSIGN_OP_TYPE(OP, FUN, bool);           \
-  ASSIGN_OP_TYPE(OP, FUN, char);           \
-  ASSIGN_OP_TYPE(OP, FUN, unsigned char);  \
-  ASSIGN_OP_TYPE(OP, FUN, short);          \
-  ASSIGN_OP_TYPE(OP, FUN, unsigned short); \
-  ASSIGN_OP_TYPE(OP, FUN, long);           \
-  ASSIGN_OP_TYPE(OP, FUN, unsigned long);  \
-  ASSIGN_OP_TYPE(OP, FUN, long long);      \
-  ASSIGN_OP_TYPE(OP, FUN, unsigned long long);
+#define FL_ASSIGN_OP(OP, FUN)                 \
+  FL_ASSIGN_OP_TYPE(OP, FUN, Tensor);         \
+  FL_ASSIGN_OP_TYPE(OP, FUN, double);         \
+  FL_ASSIGN_OP_TYPE(OP, FUN, float);          \
+  FL_ASSIGN_OP_TYPE(OP, FUN, int);            \
+  FL_ASSIGN_OP_TYPE(OP, FUN, unsigned);       \
+  FL_ASSIGN_OP_TYPE(OP, FUN, bool);           \
+  FL_ASSIGN_OP_TYPE(OP, FUN, char);           \
+  FL_ASSIGN_OP_TYPE(OP, FUN, unsigned char);  \
+  FL_ASSIGN_OP_TYPE(OP, FUN, short);          \
+  FL_ASSIGN_OP_TYPE(OP, FUN, unsigned short); \
+  FL_ASSIGN_OP_TYPE(OP, FUN, long);           \
+  FL_ASSIGN_OP_TYPE(OP, FUN, unsigned long);  \
+  FL_ASSIGN_OP_TYPE(OP, FUN, long long);      \
+  FL_ASSIGN_OP_TYPE(OP, FUN, unsigned long long);
 
 // (operator, function name on impl)
-ASSIGN_OP(operator=, assign);
-ASSIGN_OP(operator+=, inPlaceAdd);
-ASSIGN_OP(operator-=, inPlaceSubtract);
-ASSIGN_OP(operator*=, inPlaceMultiply);
-ASSIGN_OP(operator/=, inPlaceDivide);
-#undef ASSIGN_OP_TYPE
-#undef ASSIGN_OP
+FL_ASSIGN_OP(operator=, assign);
+FL_ASSIGN_OP(operator+=, inPlaceAdd);
+FL_ASSIGN_OP(operator-=, inPlaceSubtract);
+FL_ASSIGN_OP(operator*=, inPlaceMultiply);
+FL_ASSIGN_OP(operator/=, inPlaceDivide);
+#undef FL_ASSIGN_OP_TYPE
+#undef FL_ASSIGN_OP
 
 /* --------------------------- Tensor Operators --------------------------- */
+
+/******************** Tensor Creation Functions ********************/
+#define FL_FULL_FUN_DEF(TYPE)                                    \
+  template <>                                                    \
+  Tensor full(const Shape& dims, TYPE value, const dtype type) { \
+    return Tensor().backend().full(dims, value, type);           \
+  }
+FL_FULL_FUN_DEF(const double&);
+FL_FULL_FUN_DEF(const float&);
+FL_FULL_FUN_DEF(const int&);
+FL_FULL_FUN_DEF(const unsigned&);
+FL_FULL_FUN_DEF(const char&);
+FL_FULL_FUN_DEF(const unsigned char&);
+FL_FULL_FUN_DEF(const long&);
+FL_FULL_FUN_DEF(const unsigned long&);
+FL_FULL_FUN_DEF(const long long&);
+FL_FULL_FUN_DEF(const unsigned long long&);
+FL_FULL_FUN_DEF(const bool&);
+FL_FULL_FUN_DEF(const short&);
+FL_FULL_FUN_DEF(const unsigned short&);
+#undef FL_FULL_FUN_DEF
+
+Tensor identity(const Dim dim, const dtype type) {
+  return Tensor().backend().identity(dim, type);
+}
 
 /************************ Shaping and Indexing *************************/
 
@@ -224,14 +249,19 @@ Tensor tile(const Tensor& tensor, const Shape& shape) {
 
 Tensor concatenate(const std::vector<Tensor>& tensors, unsigned axis) {
   if (tensors.empty()) {
-    throw std::invalid_argument("join called on empty set of tensors");
+    throw std::invalid_argument("concatenate: called on empty set of tensors");
   }
 
   // Check all backends match
   TensorBackendType b = tensors.front().backendType();
-  std::all_of(tensors.begin(), tensors.end(), [b](const Tensor& t) {
-    return t.backendType() == b;
-  });
+  const bool matches =
+      std::all_of(tensors.begin(), tensors.end(), [b](const Tensor& t) {
+        return t.backendType() == b;
+      });
+  if (!matches) {
+    throw std::invalid_argument(
+        "concatenate: tried to concatenate tensors of different backends");
+  }
 
   return tensors.front().backend().concatenate(tensors, axis);
 }
@@ -311,6 +341,66 @@ Tensor isnan(const Tensor& tensor) {
 }
 
 /************************** Binary Operators ***************************/
+#define FL_BINARY_OP_LITERAL_TYPE_DEF(OP, FUNC, TYPE) \
+  Tensor FUNC(TYPE lhs, const Tensor& rhs) {          \
+    return rhs.backend().FUNC(lhs, rhs);              \
+  }                                                   \
+  Tensor FUNC(const Tensor& lhs, TYPE rhs) {          \
+    return lhs.backend().FUNC(lhs, rhs);              \
+  }                                                   \
+  Tensor operator OP(TYPE lhs, const Tensor& rhs) {   \
+    return FUNC(lhs, rhs);                            \
+  }                                                   \
+  Tensor operator OP(const Tensor& lhs, TYPE rhs) {   \
+    return FUNC(lhs, rhs);                            \
+  }
+
+#define FL_BINARY_OP_LITERALS_DEF(OP, FUNC)                           \
+  FL_BINARY_OP_LITERAL_TYPE_DEF(OP, FUNC, const bool&);               \
+  FL_BINARY_OP_LITERAL_TYPE_DEF(OP, FUNC, const int&);                \
+  FL_BINARY_OP_LITERAL_TYPE_DEF(OP, FUNC, const unsigned&);           \
+  FL_BINARY_OP_LITERAL_TYPE_DEF(OP, FUNC, const char&);               \
+  FL_BINARY_OP_LITERAL_TYPE_DEF(OP, FUNC, const unsigned char&);      \
+  FL_BINARY_OP_LITERAL_TYPE_DEF(OP, FUNC, const long&);               \
+  FL_BINARY_OP_LITERAL_TYPE_DEF(OP, FUNC, const unsigned long&);      \
+  FL_BINARY_OP_LITERAL_TYPE_DEF(OP, FUNC, const long long&);          \
+  FL_BINARY_OP_LITERAL_TYPE_DEF(OP, FUNC, const unsigned long long&); \
+  FL_BINARY_OP_LITERAL_TYPE_DEF(OP, FUNC, const double&);             \
+  FL_BINARY_OP_LITERAL_TYPE_DEF(OP, FUNC, const float&);              \
+  FL_BINARY_OP_LITERAL_TYPE_DEF(OP, FUNC, const short&);              \
+  FL_BINARY_OP_LITERAL_TYPE_DEF(OP, FUNC, const unsigned short&);
+
+#define FL_BINARY_OP_DEF(OP, FUNC)                           \
+  Tensor FUNC(const Tensor& lhs, const Tensor& rhs) {        \
+    FL_TENSOR_BACKENDS_MATCH_CHECK(lhs, rhs);                \
+    return lhs.backend().FUNC(lhs, rhs);                     \
+  }                                                          \
+  Tensor operator OP(const Tensor& lhs, const Tensor& rhs) { \
+    return FUNC(lhs, rhs);                                   \
+  }                                                          \
+  FL_BINARY_OP_LITERALS_DEF(OP, FUNC);
+
+FL_BINARY_OP_DEF(+, add);
+FL_BINARY_OP_DEF(-, sub);
+FL_BINARY_OP_DEF(*, mul);
+FL_BINARY_OP_DEF(/, div);
+FL_BINARY_OP_DEF(==, eq);
+FL_BINARY_OP_DEF(!=, neq);
+FL_BINARY_OP_DEF(<, lessThan);
+FL_BINARY_OP_DEF(<=, lessThanEqual);
+FL_BINARY_OP_DEF(>, greaterThan);
+FL_BINARY_OP_DEF(>=, greaterThanEqual);
+FL_BINARY_OP_DEF(||, logicalOr);
+FL_BINARY_OP_DEF(&&, logicalAnd);
+FL_BINARY_OP_DEF(%, mod);
+FL_BINARY_OP_DEF(|, bitwiseOr);
+FL_BINARY_OP_DEF(^, bitwiseXor);
+FL_BINARY_OP_DEF(<<, lShift);
+FL_BINARY_OP_DEF(>>, rShift);
+
+#undef FL_BINARY_OP_DEF
+#undef FL_BINARY_OP_LITERALS_DEF
+#undef FL_BINARY_OP_LITERAL_TYPE_DEF
 
 Tensor minimum(const Tensor& lhs, const Tensor& rhs) {
   FL_TENSOR_BACKENDS_MATCH_CHECK(lhs, rhs);
