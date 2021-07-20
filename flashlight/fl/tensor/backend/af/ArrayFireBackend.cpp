@@ -14,6 +14,7 @@
 #include <af/device.h>
 #include <af/gfor.h>
 #include <af/lapack.h>
+#include <af/random.h>
 
 #include <algorithm>
 #include <numeric>
@@ -48,6 +49,44 @@ ArrayFireBackend::ArrayFireBackend() {
 ArrayFireBackend& ArrayFireBackend::getInstance() {
   static ArrayFireBackend instance;
   return instance;
+}
+
+/* -------------------------- Compute Functions -------------------------- */
+
+void ArrayFireBackend::sync() {
+  af::sync();
+}
+
+void ArrayFireBackend::sync(int deviceId) {
+  af::sync(deviceId);
+}
+
+void ArrayFireBackend::eval(const Tensor& tensor) {
+  af::eval(toArray(tensor));
+}
+
+int ArrayFireBackend::getDevice() {
+  return af::getDevice();
+}
+
+void ArrayFireBackend::setDevice(int deviceId) {
+  af::setDevice(deviceId);
+}
+
+/* -------------------------- Rand Functions -------------------------- */
+
+void ArrayFireBackend::setSeed(int seed) {
+  af::setSeed(seed);
+}
+
+Tensor ArrayFireBackend::randn(const Shape& shape, dtype type) {
+  return toTensor<ArrayFireTensor>(
+      af::randn(detail::flToAfDims(shape), detail::flToAfType(type)));
+}
+
+Tensor ArrayFireBackend::rand(const Shape& shape, dtype type) {
+  return toTensor<ArrayFireTensor>(
+      af::randu(detail::flToAfDims(shape), detail::flToAfType(type)));
 }
 
 /* --------------------------- Tensor Operators --------------------------- */

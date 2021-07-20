@@ -14,14 +14,25 @@ class array;
 
 namespace fl {
 
+class Tensor;
+
 /**
  * Block the calling host thread until all outstanding computation has
- * completed.
+ * completed on all devices.
  *
  * The implementation of this function should synchronize any outstanding
  * computation abstractions, blocking accordingly.
  */
 void sync();
+
+/**
+ * Block the calling host thread until all outstanding computation on the device
+ * with the given ID has completed.
+ *
+ * @param[in] deviceId the id of the device on which to block until computation
+ * has completed.
+ */
+void sync(int deviceId);
 
 // TODO:fl::Tensor {signature}
 /**
@@ -33,9 +44,12 @@ void sync();
  * pressure or where computation might be prudent to perform as per the user's
  * discretion.
  *
+ * To block the calling thread until evaluation is complete, see `fl::sync`.
+ *
  * @param[in] tensor the tensor on which to launch computation.
  */
-void eval(af::array& tensor);
+void eval(af::array& array);
+void eval(fl::Tensor& tensor);
 
 /**
  * Returns the device ID of the active device in the current thread. This is

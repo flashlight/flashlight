@@ -26,6 +26,18 @@ class ArrayFireBackend : public TensorBackend {
 
   static ArrayFireBackend& getInstance();
 
+  /* -------------------------- Compute Functions -------------------------- */
+  void sync() override;
+  void sync(int deviceId) override;
+  void eval(const Tensor& tensor) override;
+  int getDevice() override;
+  void setDevice(int deviceId) override;
+
+  /* -------------------------- Rand Functions -------------------------- */
+  void setSeed(int seed) override;
+  Tensor randn(const Shape& shape, dtype type) override;
+  Tensor rand(const Shape& shape, dtype type) override;
+
   /* --------------------------- Tensor Operators --------------------------- */
   /******************** Tensor Creation Functions ********************/
 #define FL_FULL_FUN_BACKEND_DEF(TYPE) \
