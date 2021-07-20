@@ -28,6 +28,17 @@ class TensorBackend {
   TensorBackend() = default;
   virtual ~TensorBackend() = default;
 
+  /* -------------------------- Compute Functions -------------------------- */
+  virtual void sync() = 0;
+  virtual void eval(const Tensor& tensor) = 0;
+  virtual int getDevice() = 0;
+  virtual void setDevice(int deviceId) = 0;
+
+  /* -------------------------- Rand Functions -------------------------- */
+  virtual void setSeed(int seed) = 0;
+  virtual Tensor randn(const Shape& shape, dtype type) = 0;
+  virtual Tensor rand(const Shape& shape, dtype type) = 0;
+
   /* --------------------------- Tensor Operators ---------------------------
    * For operator documentation and expected behavior, see TensorBase.h.
    */

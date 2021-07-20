@@ -14,6 +14,8 @@ class array;
 
 namespace fl {
 
+class Tensor;
+
 /**
  * Block the calling host thread until all outstanding computation has
  * completed.
@@ -35,7 +37,8 @@ void sync();
  *
  * @param[in] tensor the tensor on which to launch computation.
  */
-void eval(af::array& tensor);
+void eval(af::array& array);
+void eval(fl::Tensor& tensor);
 
 /**
  * Returns the device ID of the active device in the current thread. This is
