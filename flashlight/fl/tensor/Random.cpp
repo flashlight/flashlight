@@ -7,25 +7,21 @@
 
 #include "flashlight/fl/tensor/Random.h"
 
-#include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
-#include "flashlight/fl/tensor/backend/af/Utils.h"
-
-#include <af/random.h>
+#include "flashlight/fl/tensor/TensorBackend.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 
 void setSeed(int seed) {
-  af::setSeed(seed);
+  Tensor().backend().setSeed(seed);
 }
 
 Tensor randn(const Shape& shape, dtype type) {
-  return toTensor<ArrayFireTensor>(
-      af::randn(detail::flToAfDims(shape), detail::flToAfType(type)));
+  return Tensor().backend().randn(shape, type);
 }
 
 Tensor rand(const Shape& shape, dtype type) {
-  return toTensor<ArrayFireTensor>(
-      af::randu(detail::flToAfDims(shape), detail::flToAfType(type)));
+  return Tensor().backend().rand(shape, type);
 }
 
 } // namespace fl
