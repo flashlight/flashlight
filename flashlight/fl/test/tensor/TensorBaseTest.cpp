@@ -110,6 +110,9 @@ TEST(TensorBaseTest, ConstructFromData) {
   // TODO: add fixtures/check stuff
   std::vector<int> intV = {1, 2, 3};
   ASSERT_EQ(fl::Tensor::fromVector({3}, intV).type(), fl::dtype::s32);
+  ASSERT_EQ(
+      fl::Tensor::fromVector<float>({5}, {0., 1., 2., 3., 4.}).type(),
+      fl::dtype::f32);
 
   std::vector<float> flat = {0, 1, 2, 3, 4, 5, 6, 7};
   unsigned size = flat.size();
@@ -183,12 +186,12 @@ TEST(TensorBaseTest, countNonzero) {
   b(0, 1, 1) = 0;
   b(1, 0, 1) = 0;
   b(1, 1, 1) = 0;
-  std::vector<unsigned> b0 = {2, 2, 1, 0};
-  ASSERT_TRUE(
-      allClose(fl::Tensor::fromVector({2, 2}, b0), fl::countNonzero(b, {0})));
-  std::vector<unsigned> b01 = {4, 1};
-  ASSERT_TRUE(
-      allClose(fl::Tensor::fromVector({2}, b01), fl::countNonzero(b, {0, 1})));
+  ASSERT_TRUE(allClose(
+      fl::Tensor::fromVector<unsigned>({2, 2}, {2, 2, 1, 0}),
+      fl::countNonzero(b, {0})));
+  ASSERT_TRUE(allClose(
+      fl::Tensor::fromVector<unsigned>({2}, {4, 1}),
+      fl::countNonzero(b, {0, 1})));
   ASSERT_TRUE(
       allClose(fl::full({1}, b.size() - 3), fl::countNonzero(b, {0, 1, 2})));
 }
@@ -339,7 +342,7 @@ TEST(TensorBaseTest, matmul) {
   auto a = fl::rand({i, j});
   auto b = fl::rand({j, k});
   auto ref = matmulRef(a, b);
-  ASSERT_TRUE(allClose(fl::matmul(a, b), ref));
-  ASSERT_TRUE(allClose(fl::matmulNT(a, fl::transpose(b)), ref));
-  ASSERT_TRUE(allClose(fl::matmulTN(fl::transpose(a), b), ref));
+  ASSERT_TRUE(allClose(fl::matmul(a, b), ref, 1e-4));
+  ASSERT_TRUE(allClose(fl::matmulNT(a, fl::transpose(b)), ref, 1e-4));
+  ASSERT_TRUE(allClose(fl::matmulTN(fl::transpose(a), b), ref, 1e-4));
 }

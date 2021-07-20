@@ -64,7 +64,20 @@ af::array::array_proxy ArrayFireTensor::IndexedArrayComponent::get(
     const ArrayFireTensor& inst) {
   auto& i = inst.indices_.value();
   auto& a = *(inst.arrayHandle_);
-  return a(i[0], i[1], i[2], i[3]);
+  switch (i.size()) {
+    case 1:
+      return a(i[0]);
+    case 2:
+      return a(i[0], i[1]);
+    case 3:
+      return a(i[0], i[1], i[2]);
+    case 4:
+      return a(i[0], i[1], i[2], i[3]);
+    default:
+      throw std::invalid_argument(
+          "ArrayFireTensor::IndexedArrayComponent::get - "
+          "given invalid number of index components.");
+  }
 }
 
 af::array& ArrayFireTensor::ArrayComponent::get(const ArrayFireTensor& inst) {
@@ -163,10 +176,20 @@ Tensor ArrayFireTensor::index(const std::vector<Index>& indices) {
         "ArrayFire-backed tensor was indexed with > 4 elements:"
         "ArrayFire tensors support up to 4 dimensions.");
   }
-  std::vector<af::index> afIndices(4, af::span);
+
+  // If indexing with a single element and it's an Array, don't use spans
+  // TODO: vet and stress test this a lot more
+  std::vector<af::index> afIndices;
+  if (indices.size() == 1 &&
+      indices.front().type() == detail::IndexType::Tensor) {
+    afIndices = {af::index(0)};
+  } else {
+    afIndices = {af::span, af::span, af::span, af::span};
+  }
   for (size_t i = 0; i < indices.size(); ++i) {
     afIndices[i] = detail::flToAfIndex(indices[i]);
   }
+
   getHandle(); // if this tensor was a view, run indexing and promote
   return fl::Tensor(std::unique_ptr<ArrayFireTensor>(
       new ArrayFireTensor(arrayHandle_, std::move(afIndices))));

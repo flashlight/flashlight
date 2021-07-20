@@ -105,3 +105,8 @@ TEST(IndexTest, TensorIndex) {
   a(indices) = 5.;
   ASSERT_TRUE(allClose(a(indices), fl::full({size}, 5.)));
 }
+
+TEST(IndexTest, ExpressionIndex) {
+  auto a = Tensor::fromVector<int>({2, 5}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
+  ASSERT_TRUE(allClose(a(a < 5), Tensor::fromVector<int>({0, 1, 2, 3, 4})));
+}
