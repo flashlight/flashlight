@@ -262,6 +262,13 @@ TEST(TensorBaseTest, isnan) {
       fl::full(s, false).astype(fl::dtype::b8)));
 }
 
+TEST(TensorBaseTest, where) {
+  auto a = Tensor::fromVector<int>({2, 5}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
+  auto out = fl::where(a < 5, a, a * 10);
+  a(a >= 5) *= 10;
+  ASSERT_TRUE(allClose(out, a));
+}
+
 TEST(TensorBaseTest, power) {
   auto a = fl::full({3, 3}, 2.);
   auto b = fl::full({3, 3}, 2.);

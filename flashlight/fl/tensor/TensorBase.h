@@ -552,6 +552,21 @@ Tensor clip(const Tensor& tensor, const double& low, const double& high);
  */
 Tensor isnan(const Tensor& tensor);
 
+/**
+ * Conditionally return elements from one of two tensors based on a condition.
+ *
+ * @param[in] condition a tensor that, where true, uses values from x
+ * positionally, else values from y
+ * @param[in] x the tensor from which values are chosen for true values in
+ * condition
+ * @param[in] y the tensor from which values are chosen for false values in
+ * condition
+ *
+ * @return the resulting tensor that contains elements of x where condition is
+ * true and elements of y where condition is false.
+ */
+Tensor where(const Tensor& condition, const Tensor& x, const Tensor& y);
+
 /************************** Binary Operators ***************************/
 #define FL_BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, TYPE) \
   Tensor FUNC(TYPE lhs, const Tensor& rhs);            \

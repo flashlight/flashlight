@@ -236,6 +236,15 @@ Tensor ArrayFireBackend::isnan(const Tensor& tensor) {
   return toTensor<ArrayFireTensor>(af::isNaN(toArray(tensor)));
 }
 
+Tensor ArrayFireBackend::where(
+    const Tensor& condition,
+    const Tensor& x,
+    const Tensor& y) {
+  Tensor orig = x;
+  af::replace(toArray(orig), toArray(condition), toArray(y));
+  return orig;
+}
+
 /************************** Binary Operators ***************************/
 // For ArrayFire, af::array already implements overloads for all needed
 // operators -- use these by default.
