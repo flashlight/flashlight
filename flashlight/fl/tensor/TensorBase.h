@@ -707,7 +707,7 @@ Tensor amin(const Tensor& input, const std::vector<int>& axes);
 
 /**
  * Compute the minimum value across all axes.
- * TODO: consolidate with amin above.
+ * TODO: benchmark against amin(amin(amin(...)))/maybe avoid device-host memcpy
  *
  * @param[in] input the input along which to operate
  * @return a scalar T containing the mim
@@ -727,7 +727,7 @@ Tensor amax(const Tensor& input, const std::vector<int>& axes);
 
 /**
  * Compute the minimum value across all axes.
- * TODO: consolidate with amax above.
+ * TODO: benchmark against amax(amax(amax(...)))/maybe avoid device-host memcpy
  *
  * @param[in] input the input along which to operate
  * @return a scalar T containing the mim
@@ -746,7 +746,7 @@ Tensor sum(const Tensor& input, const std::vector<int>& axes);
 
 /**
  * Sum of array over all axes.
- * TODO: consolidate with sum above.
+ * TODO: benchmark against sum(sum(sum(...)))/maybe avoid device-host memcpy
  *
  * @param[in] input the input along which to operate
  * @return a scalar T containing the sum
@@ -765,6 +765,7 @@ Tensor mean(const Tensor& input, const std::vector<int>& axes);
 
 /**
  * Mean of array over all axes.
+ * TODO: benchmark against mean(mean(mean(...)))/maybe avoid device-host memcpy
  *
  * @param[in] input the input along which to operate
  * @return a scalar T containing the mean
@@ -784,6 +785,7 @@ var(const Tensor& input, const std::vector<int>& axes, const bool bias = false);
 
 /**
  * Variance of an array over all axes.
+ * TODO: benchmark against var(var(var(...)))/maybe avoid device-host memcpy
  *
  * @param[in] input the input along which to operate
  * @return a scalar T containing the var
@@ -802,6 +804,7 @@ Tensor std(const Tensor& input, const std::vector<int>& axes);
 
 /**
  * norm of array over all axes.
+ * TODO: benchmark against norm(norm(norm(...)))/maybe avoid device-host memcpy
  *
  * @param[in] input the input along which to operate
  * @return a double containing the norm
@@ -821,6 +824,55 @@ double norm(const Tensor& input);
  * over the entire tensor.
  */
 Tensor countNonzero(const Tensor& input, const std::vector<int>& axes = {});
+
+/**
+ * Checks for any true values in a tensor along one or more axes; returns true
+ * if any exist. If k axes are passed, returns a tensor of size k with
+ * truthiness checks along each axis.
+ *
+ * @param[in] input the input tensor
+ * @param[in] axes the axes along which to check for truthy values
+ *
+ * @return a bool tensor containing axis-wise values denoting truthy values
+ * along that axis in the input tensor.
+ */
+Tensor any(const Tensor& input, const std::vector<int>& axes);
+
+/**
+ * Checks for any true values in a tensor; returns true if any exist.
+ * TODO: benchmark against any(any(any(...)))/maybe avoid
+ * device-host memcpy
+ *
+ * @param[in] the tensor input
+ *
+ * @return true if the input tensor contains any truthy values, else false
+ */
+bool any(const Tensor& input);
+
+/**
+ * Checks if all values are true in a tensor along one or more axes; returns
+ * true if all are true and false otherwise. If k axes are passed, returns a
+ * tensor of size k with all-true checks along each axis.
+ *
+ * @param[in] input the input tensor
+ * @param[in] axes the axes along which to
+ *
+ * @return a bool tensor containing axis-wise values with true along
+ * axes that contain only true values.
+ */
+Tensor all(const Tensor& input, const std::vector<int>& axes);
+
+/**
+ * Checks if all values are true in a tensor along one or more axes; returns
+ * true if all are true and false otherwise.
+ * TODO: benchmark against all(all(all(...)))/maybe avoid
+ * device-host memcpy
+ *
+ * @param[in] the tensor input
+ *
+ * @return true if the input tensor contains all truthy values, else false
+ */
+bool all(const Tensor& input);
 
 /************************** Utilities ***************************/
 

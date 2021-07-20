@@ -12,6 +12,7 @@
 #include "flashlight/fl/tensor/Random.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
+#include "flashlight/fl/tensor/backend/af/Utils.h"
 
 using namespace ::testing;
 using namespace fl;
@@ -140,19 +141,25 @@ TEST(ArrayFireTensorBaseTest, rand) {
 TEST(ArrayFireTensorBaseTest, amin) {
   auto a = fl::rand({3, 3});
   ASSERT_EQ(fl::amin<float>(a), af::min<float>(toArray(a)));
-  ASSERT_TRUE(allClose(toArray(fl::amin(a, {0})), af::min(toArray(a), 0)));
+  ASSERT_TRUE(allClose(
+      toArray(fl::amin(a, {0})),
+      fl::detail::condenseIndices(af::min(toArray(a), 0))));
 }
 
 TEST(ArrayFireTensorBaseTest, amax) {
   auto a = fl::rand({3, 3});
   ASSERT_EQ(fl::amax<float>(a), af::max<float>(toArray(a)));
-  ASSERT_TRUE(allClose(toArray(fl::amax(a, {0})), af::max(toArray(a), 0)));
+  ASSERT_TRUE(allClose(
+      toArray(fl::amax(a, {0})),
+      fl::detail::condenseIndices(af::max(toArray(a), 0))));
 }
 
 TEST(ArrayFireTensorBaseTest, sum) {
   auto a = fl::rand({3, 3});
   ASSERT_EQ(fl::sum<float>(a), af::sum<float>(toArray(a)));
-  ASSERT_TRUE(allClose(toArray(fl::sum(a, {0})), af::sum(toArray(a), 0)));
+  ASSERT_TRUE(allClose(
+      toArray(fl::sum(a, {0})),
+      fl::detail::condenseIndices(af::sum(toArray(a), 0))));
 }
 
 TEST(ArrayFireTensorBaseTest, exp) {

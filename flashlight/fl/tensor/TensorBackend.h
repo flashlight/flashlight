@@ -164,10 +164,14 @@ class TensorBackend {
       const Tensor& input,
       bool bias) = 0; // TODO: consolidate w/ above
   virtual Tensor std(const Tensor& input, const std::vector<int>& axes) = 0;
-  virtual double norm(const Tensor& input) = 0;
+  virtual double norm(const Tensor& input) = 0; // TODO: consolidate w/ above
   virtual Tensor countNonzero(
       const Tensor& input,
       const std::vector<int>& axes) = 0;
+  virtual Tensor any(const Tensor& input, const std::vector<int>& axes) = 0;
+  virtual bool any(const Tensor& input) = 0; // TODO: consolidate w/ above
+  virtual Tensor all(const Tensor& input, const std::vector<int>& axes) = 0;
+  virtual bool all(const Tensor& input) = 0; // TODO: consolidate w/ above
 
   /************************** Utils ***************************/
   virtual void print(const Tensor& tensor) = 0;
