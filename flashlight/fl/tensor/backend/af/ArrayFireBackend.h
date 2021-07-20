@@ -83,6 +83,8 @@ class ArrayFireBackend : public TensorBackend {
   Tensor clip(const Tensor& tensor, const Tensor& low, const Tensor& high)
       override;
   Tensor isnan(const Tensor& tensor) override;
+  Tensor where(const Tensor& condition, const Tensor& x, const Tensor& y)
+      override;
 
   /************************** Binary Operators ***************************/
 #define FL_AF_BINARY_OP_TYPE_DECL(FUNC, TYPE)      \

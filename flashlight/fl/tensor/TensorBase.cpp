@@ -344,6 +344,11 @@ Tensor isnan(const Tensor& tensor) {
   return tensor.backend().isnan(tensor);
 }
 
+Tensor where(const Tensor& condition, const Tensor& x, const Tensor& y) {
+  FL_TENSOR_BACKENDS_MATCH_CHECK(condition, x, y);
+  return condition.backend().where(condition, x, y);
+}
+
 /************************** Binary Operators ***************************/
 #define FL_BINARY_OP_LITERAL_TYPE_DEF(OP, FUNC, TYPE) \
   Tensor FUNC(TYPE lhs, const Tensor& rhs) {          \
