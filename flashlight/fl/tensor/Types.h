@@ -27,6 +27,13 @@ enum class dtype {
 };
 
 /**
+ * Returns the size of the type in bytes.
+ *
+ * @param[in] type the input type to query.
+ */
+size_t getTypeSize(dtype type);
+
+/**
  * Convert a dtype to its string representation.
  */
 const std::string& dtypeToString(dtype type);

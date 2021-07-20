@@ -55,6 +55,14 @@ const Shape& Tensor::shape() const {
   return impl_->shape();
 }
 
+size_t Tensor::size() const {
+  return impl_->shape().elements();
+}
+
+size_t Tensor::bytes() const {
+  return size() * getTypeSize(type());
+}
+
 dtype Tensor::type() const {
   return impl_->type();
 }
@@ -79,32 +87,40 @@ TensorBackend& Tensor::backend() const {
   return impl_->backend();
 }
 
-#define FL_CREATE_MEMORY_OPS(TYPE)                        \
-  template <>                                             \
-  TYPE Tensor::scalar() const {                           \
-    if (type() != dtype_traits<TYPE>::fl_type) {          \
-      throw std::invalid_argument(                        \
-          "Tensor::scalar: requested type doesn't match " \
-          "tensor type, which is " +                      \
-          std::string(dtype_traits<TYPE>::getName()));    \
-    }                                                     \
-    TYPE out;                                             \
-    impl_->scalar(&out);                                  \
-    return out;                                           \
-  }                                                       \
-  template <>                                             \
-  TYPE* Tensor::device() const {                          \
-    TYPE* out;                                            \
-    void** addr = reinterpret_cast<void**>(&out);         \
-    impl_->device(addr);                                  \
-    return out;                                           \
-  }                                                       \
-  template <>                                             \
-  TYPE* Tensor::host() const {                            \
-    TYPE* out;                                            \
-    void** addr = reinterpret_cast<void**>(&out);         \
-    impl_->host(addr);                                    \
-    return out;                                           \
+#define FL_CREATE_MEMORY_OPS(TYPE)                          \
+  template <>                                               \
+  TYPE Tensor::scalar() const {                             \
+    if (type() != dtype_traits<TYPE>::fl_type) {            \
+      throw std::invalid_argument(                          \
+          "Tensor::scalar: requested type doesn't match "   \
+          "tensor type, which is " +                        \
+          std::string(dtype_traits<TYPE>::getName()));      \
+    }                                                       \
+    TYPE out;                                               \
+    impl_->scalar(&out);                                    \
+    return out;                                             \
+  }                                                         \
+                                                            \
+  template <>                                               \
+  TYPE* Tensor::device() const {                            \
+    TYPE* out;                                              \
+    void** addr = reinterpret_cast<void**>(&out);           \
+    impl_->device(addr);                                    \
+    return out;                                             \
+  }                                                         \
+                                                            \
+  template <>                                               \
+  TYPE* Tensor::host() const {                              \
+    TYPE* out = reinterpret_cast<TYPE*>(new char[bytes()]); \
+    void** addr = reinterpret_cast<void**>(&out);           \
+    impl_->host(addr);                                      \
+    return out;                                             \
+  }                                                         \
+                                                            \
+  template <>                                               \
+  void Tensor::host(TYPE* ptr) const {                      \
+    void** addr = reinterpret_cast<void**>(&ptr);           \
+    impl_->host(addr);                                      \
   }
 FL_CREATE_MEMORY_OPS(int);
 FL_CREATE_MEMORY_OPS(unsigned);
@@ -408,7 +424,7 @@ bool allClose(
   if (a.shape() != b.shape()) {
     return false;
   }
-  if (a.shape().elements() == 0 && b.shape().elements() == 0) {
+  if (a.size() == 0 && b.size() == 0) {
     return true;
   }
   return fl::amax<double>(fl::abs(a - b)) < absTolerance;

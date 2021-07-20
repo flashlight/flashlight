@@ -33,6 +33,13 @@ TEST(TensorBaseTest, DefaultConstruction) {
   ASSERT_EQ(v.type(), fl::dtype::u64);
 }
 
+TEST(TensorBaseTest, Metadata) {
+  int s = 9;
+  auto t = fl::rand({s, s});
+  ASSERT_EQ(t.size(), s * s);
+  ASSERT_EQ(t.bytes(), s * s * sizeof(float));
+}
+
 TEST(TensorBaseTest, BinaryOperators) {
   // TODO:fl::Tensor {testing} expand this test
   // Ensure that some binary operators work properly.
@@ -90,7 +97,7 @@ TEST(TensorBaseTest, ConstructFromData) {
   ASSERT_TRUE(allClose(fl::Tensor::fromVector(s, vec), fl::full(s, val)));
 
   ASSERT_TRUE(allClose(
-      fl::Tensor::fromBuffer(s, vec.data(), fl::Location::Host),
+      fl::Tensor::fromBuffer(s, vec.data(), fl::MemoryLocation::Host),
       fl::full(s, val)));
 
   std::vector<float> ascending = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
@@ -102,7 +109,11 @@ TEST(TensorBaseTest, ConstructFromData) {
 
   // TODO: add fixtures/check stuff
   std::vector<int> intV = {1, 2, 3};
-  ASSERT_EQ(fl::Tensor::fromVector({3, 4}, intV).type(), fl::dtype::s32);
+  ASSERT_EQ(fl::Tensor::fromVector({3}, intV).type(), fl::dtype::s32);
+
+  std::vector<float> flat = {0, 1, 2, 3, 4, 5, 6, 7};
+  unsigned size = flat.size();
+  ASSERT_EQ(fl::Tensor::fromVector(flat).shape(), Shape({size}));
 }
 
 TEST(TensorBaseTest, reshape) {
@@ -145,7 +156,7 @@ TEST(TensorBaseTest, nonzero) {
     a(idx / 10, idx % 10) = 0;
   }
   auto indices = fl::nonzero(a);
-  int nnz = a.shape().elements() - idxs.size();
+  int nnz = a.size() - idxs.size();
   ASSERT_EQ(indices.shape(), Shape({nnz}));
   ASSERT_TRUE(
       allClose(a.flatten()(indices), fl::full({nnz}, 1, fl::dtype::u32)));
@@ -158,8 +169,8 @@ TEST(TensorBaseTest, countNonzero) {
     a(idx / 10, idx % 10) = 0;
   }
 
-  ASSERT_TRUE(allClose(
-      fl::full({1}, a.shape().elements() - idxs.size()), fl::countNonzero(a)));
+  ASSERT_TRUE(
+      allClose(fl::full({1}, a.size() - idxs.size()), fl::countNonzero(a)));
 
   std::vector<unsigned> sizes(a.shape().dim(0));
   for (unsigned i = 0; i < a.shape().dim(0); ++i) {
@@ -178,8 +189,8 @@ TEST(TensorBaseTest, countNonzero) {
   std::vector<unsigned> b01 = {4, 1};
   ASSERT_TRUE(
       allClose(fl::Tensor::fromVector({2}, b01), fl::countNonzero(b, {0, 1})));
-  ASSERT_TRUE(allClose(
-      fl::full({1}, b.shape().elements() - 3), fl::countNonzero(b, {0, 1, 2})));
+  ASSERT_TRUE(
+      allClose(fl::full({1}, b.size() - 3), fl::countNonzero(b, {0, 1, 2})));
 }
 
 TEST(TensorBaseTest, flatten) {
@@ -280,4 +291,19 @@ TEST(TensorBaseTest, isContiguous) {
   // Contiguous by default
   auto a = fl::rand({10, 10});
   ASSERT_TRUE(a.isContiguous());
+}
+
+TEST(TensorBaseTest, host) {
+  auto a = fl::rand({10, 10});
+
+  float* ptr = a.host<float>();
+  for (int i = 0; i < a.size(); ++i) {
+    ASSERT_EQ(ptr[i], a.flatten()(i).scalar<float>());
+  }
+
+  float* existingBuffer = new float[100];
+  a.host(existingBuffer);
+  for (int i = 0; i < a.size(); ++i) {
+    ASSERT_EQ(existingBuffer[i], a.flatten()(i).scalar<float>());
+  }
 }
