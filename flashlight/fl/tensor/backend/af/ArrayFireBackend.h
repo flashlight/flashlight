@@ -27,6 +27,25 @@ class ArrayFireBackend : public TensorBackend {
   static ArrayFireBackend& getInstance();
 
   /* --------------------------- Tensor Operators --------------------------- */
+  /******************** Tensor Creation Functions ********************/
+#define FL_FULL_FUN_BACKEND_DEF(TYPE) \
+  Tensor full(const Shape& dims, TYPE value, const dtype type) override;
+  FL_FULL_FUN_BACKEND_DEF(const double&);
+  FL_FULL_FUN_BACKEND_DEF(const float&);
+  FL_FULL_FUN_BACKEND_DEF(const int&);
+  FL_FULL_FUN_BACKEND_DEF(const unsigned&);
+  FL_FULL_FUN_BACKEND_DEF(const char&);
+  FL_FULL_FUN_BACKEND_DEF(const unsigned char&);
+  FL_FULL_FUN_BACKEND_DEF(const long&);
+  FL_FULL_FUN_BACKEND_DEF(const unsigned long&);
+  FL_FULL_FUN_BACKEND_DEF(const long long&);
+  FL_FULL_FUN_BACKEND_DEF(const unsigned long long&);
+  FL_FULL_FUN_BACKEND_DEF(const bool&);
+  FL_FULL_FUN_BACKEND_DEF(const short&);
+  FL_FULL_FUN_BACKEND_DEF(const unsigned short&);
+#undef FL_FULL_FUN_BACKEND_DEF
+
+  Tensor identity(const Dim dim, const dtype type) override;
 
   /************************ Shaping and Indexing *************************/
   Tensor reshape(const Tensor& tensor, const Shape& shape) override;
@@ -54,6 +73,50 @@ class ArrayFireBackend : public TensorBackend {
   Tensor isnan(const Tensor& tensor) override;
 
   /************************** Binary Operators ***************************/
+#define FL_AF_BINARY_OP_TYPE_DECL(FUNC, TYPE)      \
+  Tensor FUNC(const Tensor& a, TYPE rhs) override; \
+  Tensor FUNC(TYPE lhs, const Tensor& a) override;
+
+#define FL_AF_BINARY_OP_LITERALS_DECL(FUNC)                   \
+  FL_AF_BINARY_OP_TYPE_DECL(FUNC, const bool&);               \
+  FL_AF_BINARY_OP_TYPE_DECL(FUNC, const int&);                \
+  FL_AF_BINARY_OP_TYPE_DECL(FUNC, const unsigned&);           \
+  FL_AF_BINARY_OP_TYPE_DECL(FUNC, const char&);               \
+  FL_AF_BINARY_OP_TYPE_DECL(FUNC, const unsigned char&);      \
+  FL_AF_BINARY_OP_TYPE_DECL(FUNC, const long&);               \
+  FL_AF_BINARY_OP_TYPE_DECL(FUNC, const unsigned long&);      \
+  FL_AF_BINARY_OP_TYPE_DECL(FUNC, const long long&);          \
+  FL_AF_BINARY_OP_TYPE_DECL(FUNC, const unsigned long long&); \
+  FL_AF_BINARY_OP_TYPE_DECL(FUNC, const double&);             \
+  FL_AF_BINARY_OP_TYPE_DECL(FUNC, const float&);              \
+  FL_AF_BINARY_OP_TYPE_DECL(FUNC, const short&);              \
+  FL_AF_BINARY_OP_TYPE_DECL(FUNC, const unsigned short&);
+
+#define FL_AF_BINARY_OP_DECL(FUNC)                            \
+  Tensor FUNC(const Tensor& lhs, const Tensor& rhs) override; \
+  FL_AF_BINARY_OP_LITERALS_DECL(FUNC);
+
+  FL_AF_BINARY_OP_DECL(add);
+  FL_AF_BINARY_OP_DECL(sub);
+  FL_AF_BINARY_OP_DECL(mul);
+  FL_AF_BINARY_OP_DECL(div);
+  FL_AF_BINARY_OP_DECL(eq);
+  FL_AF_BINARY_OP_DECL(neq);
+  FL_AF_BINARY_OP_DECL(lessThan);
+  FL_AF_BINARY_OP_DECL(lessThanEqual);
+  FL_AF_BINARY_OP_DECL(greaterThan);
+  FL_AF_BINARY_OP_DECL(greaterThanEqual);
+  FL_AF_BINARY_OP_DECL(logicalOr);
+  FL_AF_BINARY_OP_DECL(logicalAnd);
+  FL_AF_BINARY_OP_DECL(mod);
+  FL_AF_BINARY_OP_DECL(bitwiseOr);
+  FL_AF_BINARY_OP_DECL(bitwiseXor);
+  FL_AF_BINARY_OP_DECL(lShift);
+  FL_AF_BINARY_OP_DECL(rShift);
+#undef FL_AF_BINARY_OP_DECL
+#undef FL_AF_BINARY_OP_TYPE_DECL
+#undef FL_AF_BINARY_OP_LITERALS_DECL
+
   Tensor minimum(const Tensor& lhs, const Tensor& rhs) override;
   Tensor maximum(const Tensor& lhs, const Tensor& rhs) override;
   Tensor power(const Tensor& lhs, const Tensor& rhs) override;

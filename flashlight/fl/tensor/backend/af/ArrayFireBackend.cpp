@@ -52,6 +52,32 @@ ArrayFireBackend& ArrayFireBackend::getInstance() {
 
 /* --------------------------- Tensor Operators --------------------------- */
 
+/******************** Tensor Creation Functions ********************/
+#define AF_BACKEND_FULL_FUN_DEF(TYPE)                                \
+  Tensor ArrayFireBackend::full(                                     \
+      const Shape& dims, TYPE value, const dtype type) {             \
+    return toTensor<ArrayFireTensor>(af::constant(                   \
+        value, detail::flToAfDims(dims), detail::flToAfType(type))); \
+  }
+AF_BACKEND_FULL_FUN_DEF(const double&);
+AF_BACKEND_FULL_FUN_DEF(const float&);
+AF_BACKEND_FULL_FUN_DEF(const int&);
+AF_BACKEND_FULL_FUN_DEF(const unsigned&);
+AF_BACKEND_FULL_FUN_DEF(const char&);
+AF_BACKEND_FULL_FUN_DEF(const unsigned char&);
+AF_BACKEND_FULL_FUN_DEF(const long&);
+AF_BACKEND_FULL_FUN_DEF(const unsigned long&);
+AF_BACKEND_FULL_FUN_DEF(const long long&);
+AF_BACKEND_FULL_FUN_DEF(const unsigned long long&);
+AF_BACKEND_FULL_FUN_DEF(const bool&);
+AF_BACKEND_FULL_FUN_DEF(const short&);
+AF_BACKEND_FULL_FUN_DEF(const unsigned short&);
+
+Tensor ArrayFireBackend::identity(const Dim dim, const dtype type) {
+  return toTensor<ArrayFireTensor>(
+      af::identity({dim, dim}, detail::flToAfType(type)));
+}
+
 /************************ Shaping and Indexing *************************/
 Tensor ArrayFireBackend::reshape(const Tensor& tensor, const Shape& shape) {
   return toTensor<ArrayFireTensor>(
@@ -176,6 +202,63 @@ Tensor ArrayFireBackend::isnan(const Tensor& tensor) {
 }
 
 /************************** Binary Operators ***************************/
+// For ArrayFire, af::array already implements overloads for all needed
+// operators -- use these by default.
+#define FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, TYPE)             \
+  Tensor ArrayFireBackend::FUNC(const Tensor& a, TYPE rhs) { \
+    return toTensor<ArrayFireTensor>(toArray(a) OP rhs);     \
+  }                                                          \
+  Tensor ArrayFireBackend::FUNC(TYPE lhs, const Tensor& a) { \
+    return toTensor<ArrayFireTensor>(lhs OP toArray(a));     \
+  }
+
+#define FL_AF_BINARY_OP_LITERALS_DEF(FUNC, OP)                   \
+  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const bool&);               \
+  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const int&);                \
+  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const unsigned&);           \
+  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const char&);               \
+  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const unsigned char&);      \
+  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const long&);               \
+  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const unsigned long&);      \
+  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const long long&);          \
+  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const unsigned long long&); \
+  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const double&);             \
+  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const float&);              \
+  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const short&);              \
+  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const unsigned short&);
+
+// Operations on fl::Tensor call the respective operator overloads that are
+// already defined on af::arrays
+#define FL_AF_BINARY_OP_DEF(OP, FUNC)                                   \
+  Tensor ArrayFireBackend::FUNC(const Tensor& lhs, const Tensor& rhs) { \
+    return toTensor<ArrayFireTensor>(toArray(lhs) OP toArray(rhs));     \
+  }                                                                     \
+  FL_AF_BINARY_OP_LITERALS_DEF(FUNC, OP);
+
+// Definitions
+// Since ArrayFire implements operator overloads, map both fl::Tensor
+// functions and fl::Tensor operator overloads back to the af::array
+// overloads.
+FL_AF_BINARY_OP_DEF(+, add);
+FL_AF_BINARY_OP_DEF(-, sub);
+FL_AF_BINARY_OP_DEF(*, mul);
+FL_AF_BINARY_OP_DEF(/, div);
+FL_AF_BINARY_OP_DEF(==, eq);
+FL_AF_BINARY_OP_DEF(!=, neq);
+FL_AF_BINARY_OP_DEF(<, lessThan);
+FL_AF_BINARY_OP_DEF(<=, lessThanEqual);
+FL_AF_BINARY_OP_DEF(>, greaterThan);
+FL_AF_BINARY_OP_DEF(>=, greaterThanEqual);
+FL_AF_BINARY_OP_DEF(||, logicalOr);
+FL_AF_BINARY_OP_DEF(&&, logicalAnd);
+FL_AF_BINARY_OP_DEF(%, mod);
+FL_AF_BINARY_OP_DEF(|, bitwiseOr);
+FL_AF_BINARY_OP_DEF(^, bitwiseXor);
+FL_AF_BINARY_OP_DEF(<<, lShift);
+FL_AF_BINARY_OP_DEF(>>, rShift);
+#undef FL_AF_BINARY_OP_DEF
+#undef FL_AF_BINARY_OP_TYPE_DEF
+#undef FL_AF_BINARY_OP_LITERALS_DEF
 
 Tensor ArrayFireBackend::minimum(const Tensor& lhs, const Tensor& rhs) {
   return toTensor<ArrayFireTensor>(af::min(toArray(lhs), toArray(rhs)));
@@ -307,6 +390,6 @@ Tensor ArrayFireBackend::countNonzero(
 }
 
 void ArrayFireBackend::print(const Tensor& tensor) {
-  af::print("", toArray(tensor));
+  af::print("ArrayFireTensor", toArray(tensor));
 }
 } // namespace fl
