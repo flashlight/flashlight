@@ -43,7 +43,5 @@ target_sources(
   PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/ArrayFireBackend.cpp
   ${CMAKE_CURRENT_LIST_DIR}/ArrayFireTensor.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/Compute.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/Random.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Utils.cpp
   )
