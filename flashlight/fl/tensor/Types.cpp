@@ -7,6 +7,7 @@
 
 #include "flashlight/fl/tensor/Types.h"
 
+#include <stdexcept>
 #include <unordered_map>
 
 namespace fl {
@@ -24,6 +25,35 @@ const std::unordered_map<dtype, std::string> kTypeToString = {
     {dtype::u32, "u32"},
     {dtype::u64, "u64"},
 };
+
+size_t getTypeSize(dtype type) {
+  switch (type) {
+    case dtype::f16:
+      return sizeof(float) / 2;
+    case dtype::f32:
+      return sizeof(float);
+    case dtype::f64:
+      return sizeof(double);
+    case dtype::b8:
+      return sizeof(unsigned char);
+    case dtype::s16:
+      return sizeof(short);
+    case dtype::s64:
+      return sizeof(long long);
+    case dtype::s32:
+      return sizeof(int);
+    case dtype::u8:
+      return sizeof(unsigned char);
+    case dtype::u16:
+      return sizeof(unsigned short);
+    case dtype::u32:
+      return sizeof(unsigned);
+    case dtype::u64:
+      return sizeof(unsigned long long);
+    default:
+      throw std::invalid_argument("getTypeSize - invalid type queried.");
+  }
+}
 
 const std::string& dtypeToString(dtype type) {
   return kTypeToString.at(type);
