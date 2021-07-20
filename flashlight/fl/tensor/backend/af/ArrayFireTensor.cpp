@@ -18,6 +18,7 @@
 
 #include <af/arith.h>
 #include <af/device.h>
+#include <af/internal.h>
 
 namespace fl {
 
@@ -144,6 +145,10 @@ void ArrayFireTensor::host(void** out) {
 
 void ArrayFireTensor::unlock() {
   AF_CHECK(af_unlock_array(getHandle().get()));
+}
+
+bool ArrayFireTensor::isContiguous() {
+  return af::isLinear(getHandle());
 }
 
 Tensor ArrayFireTensor::astype(const dtype type) {

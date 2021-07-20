@@ -158,6 +158,7 @@ class ArrayFireTensor : public TensorAdapterBase {
   void device(void** out) override;
   void host(void** out) override;
   void unlock() override;
+  bool isContiguous() override;
   Tensor astype(const dtype type) override;
   Tensor index(const std::vector<Index>& indices) override;
   Tensor flatten() const override;
