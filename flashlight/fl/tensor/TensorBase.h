@@ -530,52 +530,53 @@ Tensor clip(const Tensor& tensor, const double& low, const double& high);
 Tensor isnan(const Tensor& tensor);
 
 /************************** Binary Operators ***************************/
-#define BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, TYPE) \
-  Tensor FUNC(TYPE lhs, const Tensor& rhs);         \
-  Tensor FUNC(const Tensor& lhs, TYPE rhs);         \
-  Tensor operator OP(TYPE lhs, const Tensor& rhs);  \
+#define FL_BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, TYPE) \
+  Tensor FUNC(TYPE lhs, const Tensor& rhs);            \
+  Tensor FUNC(const Tensor& lhs, TYPE rhs);            \
+  Tensor operator OP(TYPE lhs, const Tensor& rhs);     \
   Tensor operator OP(const Tensor& lhs, TYPE rhs);
-#define BINARY_OP_LITERALS_DECL(OP, FUNC)                           \
-  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const bool&);               \
-  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const int&);                \
-  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const unsigned&);           \
-  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const char&);               \
-  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const unsigned char&);      \
-  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const long&);               \
-  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const unsigned long&);      \
-  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const long long&);          \
-  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const unsigned long long&); \
-  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const double&);             \
-  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const float&);              \
-  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const short&);              \
-  BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const unsigned short&);
-#define BINARY_OP_DECL(OP, FUNC)                                    \
-  Tensor FUNC(const Tensor& lhs, const Tensor& rhs);                \
-  inline Tensor operator OP(const Tensor& lhs, const Tensor& rhs) { \
-    return FUNC(lhs, rhs);                                          \
-  }                                                                 \
-  BINARY_OP_LITERALS_DECL(OP, FUNC);
-// Definitions. Each declares:
-// - a functional operator that takes two tensors (e.g. add)
-// - a symbolic operator that takes two tensors (calls the functional one)
-// - functional and symbolic operators for all lhs/rhs primitive types
-BINARY_OP_DECL(+, add);
-BINARY_OP_DECL(-, sub);
-BINARY_OP_DECL(*, mul);
-BINARY_OP_DECL(/, div);
-BINARY_OP_DECL(==, eq);
-BINARY_OP_DECL(!=, neq);
-BINARY_OP_DECL(<, lessThan);
-BINARY_OP_DECL(<=, lessThanEqual);
-BINARY_OP_DECL(>, greaterThan);
-BINARY_OP_DECL(>=, greaterThanEqual);
-BINARY_OP_DECL(||, logicalOr);
-BINARY_OP_DECL(&&, logicalAnd);
-BINARY_OP_DECL(%, mod);
-BINARY_OP_DECL(|, bitwiseOr);
-BINARY_OP_DECL(^, bitwiseXor);
-BINARY_OP_DECL(<<, lShift);
-BINARY_OP_DECL(>>, rShift);
+
+#define FL_BINARY_OP_LITERALS_DECL(OP, FUNC)                           \
+  FL_BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const bool&);               \
+  FL_BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const int&);                \
+  FL_BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const unsigned&);           \
+  FL_BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const char&);               \
+  FL_BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const unsigned char&);      \
+  FL_BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const long&);               \
+  FL_BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const unsigned long&);      \
+  FL_BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const long long&);          \
+  FL_BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const unsigned long long&); \
+  FL_BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const double&);             \
+  FL_BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const float&);              \
+  FL_BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const short&);              \
+  FL_BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const unsigned short&);
+
+#define FL_BINARY_OP_DECL(OP, FUNC)                         \
+  Tensor FUNC(const Tensor& lhs, const Tensor& rhs);        \
+  Tensor operator OP(const Tensor& lhs, const Tensor& rhs); \
+  FL_BINARY_OP_LITERALS_DECL(OP, FUNC);
+
+FL_BINARY_OP_DECL(+, add);
+FL_BINARY_OP_DECL(-, sub);
+FL_BINARY_OP_DECL(*, mul);
+FL_BINARY_OP_DECL(/, div);
+FL_BINARY_OP_DECL(==, eq);
+FL_BINARY_OP_DECL(!=, neq);
+FL_BINARY_OP_DECL(<, lessThan);
+FL_BINARY_OP_DECL(<=, lessThanEqual);
+FL_BINARY_OP_DECL(>, greaterThan);
+FL_BINARY_OP_DECL(>=, greaterThanEqual);
+FL_BINARY_OP_DECL(||, logicalOr);
+FL_BINARY_OP_DECL(&&, logicalAnd);
+FL_BINARY_OP_DECL(%, mod);
+FL_BINARY_OP_DECL(|, bitwiseOr);
+FL_BINARY_OP_DECL(^, bitwiseXor);
+FL_BINARY_OP_DECL(<<, lShift);
+FL_BINARY_OP_DECL(>>, rShift);
+
+#undef FL_BINARY_OP_DECL
+#undef FL_BINARY_OP_LITERALS_DECL
+#undef FL_BINARY_OP_LITERAL_TYPE_DECL
 
 /**
  * Returns the element-wise minimum of tensor elements.
