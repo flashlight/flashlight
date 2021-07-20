@@ -139,8 +139,9 @@ void ArrayFireTensor::scalar(void* out) {
 void ArrayFireTensor::device(void** out) {
   AF_CHECK(af_get_device_ptr(out, getHandle().get()));
 }
+
 void ArrayFireTensor::host(void** out) {
-  AF_CHECK(af_get_data_ptr(out, getHandle().get()));
+  AF_CHECK(af_get_data_ptr(*out, getHandle().get()));
 }
 
 void ArrayFireTensor::unlock() {
