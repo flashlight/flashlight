@@ -119,6 +119,11 @@ class TensorAdapterBase {
   virtual void unlock() = 0;
 
   /**
+   * Returns a bool based on Tensor contiguousness in memory.
+   */
+  virtual bool isContiguous() = 0;
+
+  /**
    * Returns a tensor with elements cast as a particular type
    *
    * @param[in] the type to which to cast the tensor
