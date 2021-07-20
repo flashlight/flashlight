@@ -151,6 +151,20 @@ class Tensor {
   const Shape& shape() const;
 
   /**
+   * Get the number of elements in the tensor.
+   *
+   * @return the size of the tensor in elements.
+   */
+  size_t size() const;
+
+  /**
+   * Get the tensor size in bytes.
+   *
+   * @return the size of the tensor in bytes.
+   */
+  size_t bytes() const;
+
+  /**
    * Get the data type of tensor.
    *
    * @return the dtype of the tensor
@@ -246,6 +260,16 @@ class Tensor {
    */
   template <typename T>
   T* host() const;
+
+  /**
+   * Populates an existinb buffer with the tensor's underlying data, but on the
+   * host. If the tensor is located on a device, makes a copy of device memory
+   * and returns a buffer on the host containing the relevant memory.
+   *
+   * @return the requested pointer on the host.
+   */
+  template <typename T>
+  void host(T* ptr) const;
 
   /**
    * Unlocks any device memory associated with the tensor that was acquired with

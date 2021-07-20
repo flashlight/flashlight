@@ -108,7 +108,8 @@ class TensorAdapterBase {
   virtual void device(void** out) = 0;
 
   /**
-   * Returns a pointer to the tensor in host memory.
+   * Populates a pointer with a pointer value in memory pointing to a host
+   * buffer containing tensor data.
    */
   virtual void host(void** out) = 0;
 
