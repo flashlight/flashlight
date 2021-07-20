@@ -378,6 +378,10 @@ double norm(const Tensor& input) {
   return input.backend().norm(input);
 }
 
+Tensor countNonzero(const Tensor& input, const std::vector<int>& axes) {
+  return input.backend().countNonzero(input, axes);
+}
+
 template <typename T>
 T amin(const Tensor& input) {
   return static_cast<T>(input.backend().amin(input));
