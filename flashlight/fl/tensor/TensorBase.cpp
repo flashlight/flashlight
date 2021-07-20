@@ -59,6 +59,10 @@ size_t Tensor::size() const {
   return impl_->shape().elements();
 }
 
+Dim Tensor::dim(const size_t dim) const {
+  return shape().dim(dim);
+}
+
 size_t Tensor::bytes() const {
   return size() * getTypeSize(type());
 }
@@ -431,6 +435,22 @@ Tensor maximum(const double& lhs, const Tensor& rhs) {
 Tensor power(const Tensor& lhs, const Tensor& rhs) {
   FL_TENSOR_BACKENDS_MATCH_CHECK(lhs, rhs);
   return lhs.backend().power(lhs, rhs);
+}
+
+/************************** Matrix Multiply ***************************/
+Tensor matmul(const Tensor& lhs, const Tensor& rhs) {
+  FL_TENSOR_BACKENDS_MATCH_CHECK(lhs, rhs);
+  return lhs.backend().matmul(lhs, rhs);
+}
+
+Tensor matmulNT(const Tensor& lhs, const Tensor& rhs) {
+  FL_TENSOR_BACKENDS_MATCH_CHECK(lhs, rhs);
+  return lhs.backend().matmulNT(lhs, rhs);
+}
+
+Tensor matmulTN(const Tensor& lhs, const Tensor& rhs) {
+  FL_TENSOR_BACKENDS_MATCH_CHECK(lhs, rhs);
+  return lhs.backend().matmulTN(lhs, rhs);
 }
 
 /************************** Reductions ***************************/

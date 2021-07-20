@@ -301,3 +301,45 @@ TEST(TensorBaseTest, host) {
     ASSERT_EQ(existingBuffer[i], a.flatten()(i).scalar<float>());
   }
 }
+
+TEST(TensorBaseTest, toVector) {
+  auto a = fl::rand({10, 10});
+  auto vec = a.toVector<float>();
+
+  for (int i = 0; i < a.size(); ++i) {
+    ASSERT_EQ(vec[i], a.flatten()(i).scalar<float>());
+  }
+}
+
+TEST(TensorBaseTest, matmul) {
+  // TODO: test tensors with order > 2
+
+  // Reference impl
+  auto matmulRef = [](const Tensor& lhs, const Tensor& rhs) {
+    // (M x N) x (N x K) --> (M x K)
+    int M = lhs.dim(0);
+    int N = lhs.dim(1);
+    int K = rhs.dim(1);
+
+    Tensor out({M, K});
+    for (unsigned i = 0; i < M; ++i) {
+      for (unsigned j = 0; j < K; ++j) {
+        for (unsigned k = 0; k < N; ++k) {
+          out(i, j) += lhs(i, k) * rhs(k, j);
+        }
+      }
+    }
+    return out;
+  };
+
+  int i = 10;
+  int j = 20;
+  int k = 12;
+
+  auto a = fl::rand({i, j});
+  auto b = fl::rand({j, k});
+  auto ref = matmulRef(a, b);
+  ASSERT_TRUE(allClose(fl::matmul(a, b), ref));
+  ASSERT_TRUE(allClose(fl::matmulNT(a, fl::transpose(b)), ref));
+  ASSERT_TRUE(allClose(fl::matmulTN(fl::transpose(a), b), ref));
+}

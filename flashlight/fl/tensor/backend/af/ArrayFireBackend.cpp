@@ -307,6 +307,18 @@ Tensor ArrayFireBackend::power(const Tensor& lhs, const Tensor& rhs) {
   return toTensor<ArrayFireTensor>(af::pow(toArray(lhs), toArray(rhs)));
 }
 
+/************************** Matrix Multiply ***************************/
+
+Tensor ArrayFireBackend::matmul(const Tensor& lhs, const Tensor& rhs) {
+  return toTensor<ArrayFireTensor>(af::matmul(toArray(lhs), toArray(rhs)));
+}
+Tensor ArrayFireBackend::matmulNT(const Tensor& lhs, const Tensor& rhs) {
+  return toTensor<ArrayFireTensor>(af::matmulNT(toArray(lhs), toArray(rhs)));
+}
+Tensor ArrayFireBackend::matmulTN(const Tensor& lhs, const Tensor& rhs) {
+  return toTensor<ArrayFireTensor>(af::matmulTN(toArray(lhs), toArray(rhs)));
+}
+
 /************************** Reductions ***************************/
 
 Tensor ArrayFireBackend::amin(
