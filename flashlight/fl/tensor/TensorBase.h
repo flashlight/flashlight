@@ -109,6 +109,15 @@ class Tensor {
     return Tensor(s, fl::dtype_traits<T>::fl_type, v.data(), Location::Host);
   }
 
+  template <typename T>
+  static Tensor fromVector(std::vector<T> v) {
+    return Tensor(
+        {static_cast<long long>(v.size())},
+        fl::dtype_traits<T>::fl_type,
+        v.data(),
+        Location::Host);
+  }
+
   /**
    * Create a tensor from an existing buffer.
    *
@@ -693,6 +702,20 @@ Tensor std(const Tensor& input, const std::vector<int>& axes);
  * @return a double containing the norm
  */
 double norm(const Tensor& input);
+
+/**
+ * Counts the number of nonzero elements in a tensor.
+ *
+ * If k axes are passed, returns a tensor of size k with element-wise nonzero
+ * counts along each axis.
+ *
+ * @param[in] input the tensor on which to operate.
+ * @param[in] dims (optional) the axis along which to give nonzeros.
+ *
+ * @return a tensor containing the number of nonzero elements along each axis or
+ * over the entire tensor.
+ */
+Tensor countNonzero(const Tensor& input, const std::vector<int>& axes = {});
 
 /************************** Utilities ***************************/
 
