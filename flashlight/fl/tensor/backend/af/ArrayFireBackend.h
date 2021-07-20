@@ -73,6 +73,8 @@ class ArrayFireBackend : public TensorBackend {
       override; // TODO: consolidate w/ above
   Tensor std(const Tensor& input, const std::vector<int>& axes) override;
   double norm(const Tensor& input) override;
+  Tensor countNonzero(const Tensor& input, const std::vector<int>& axes)
+      override;
 
   /************************** Utils ***************************/
   void print(const Tensor& tensor) override;

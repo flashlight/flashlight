@@ -14,6 +14,7 @@
 #include <af/device.h>
 #include <af/gfor.h>
 #include <af/lapack.h>
+
 #include <algorithm>
 #include <numeric>
 #include <stdexcept>
@@ -285,6 +286,24 @@ Tensor ArrayFireBackend::std(
 
 double ArrayFireBackend::norm(const Tensor& input) {
   return af::norm(toArray(input));
+}
+
+Tensor ArrayFireBackend::countNonzero(
+    const Tensor& input,
+    const std::vector<int>& axes) {
+  auto& arr = toArray(input);
+  af::array out;
+  if (axes.size() == 0) {
+    out = af::sum(af::count(arr));
+  } else if (axes.size() == 1) {
+    out = af::count(arr, axes.front());
+  } else {
+    out = afReduceAxes(
+        af::count(arr, axes.front()),
+        std::vector<int>(axes.begin() + 1, axes.end()),
+        af::sum);
+  }
+  return toTensor<ArrayFireTensor>(detail::condenseIndices(out));
 }
 
 void ArrayFireBackend::print(const Tensor& tensor) {
