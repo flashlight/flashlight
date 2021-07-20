@@ -15,7 +15,9 @@ target_compile_definitions(
 target_sources(
   flashlight
   PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/Compute.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Index.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/Random.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Shape.cpp
   ${CMAKE_CURRENT_LIST_DIR}/TensorBackend.cpp
   ${CMAKE_CURRENT_LIST_DIR}/TensorBase.cpp  
