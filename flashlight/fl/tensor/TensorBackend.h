@@ -140,6 +140,13 @@ class TensorBackend {
   virtual Tensor maximum(const Tensor& lhs, const Tensor& rhs) = 0;
   virtual Tensor power(const Tensor& lhs, const Tensor& rhs) = 0;
 
+  /******************************* BLAS ********************************/
+  virtual Tensor matmul(
+      const Tensor& lhs,
+      const Tensor& rhs,
+      MatrixProperty lhsProp,
+      MatrixProperty rhsProp) = 0;
+
   /************************** Reductions ***************************/
   virtual Tensor amin(const Tensor& input, const std::vector<int>& axes) = 0;
   virtual double amin(const Tensor& input) = 0; // TODO: consoildate w/ above

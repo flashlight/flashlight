@@ -158,6 +158,15 @@ class Tensor {
   size_t size() const;
 
   /**
+   * Get the size of a given dimension of a tensor in the number of arguments.
+   * Throws if the given dimension is larger than the number of tensor
+   * dimensions.
+   *
+   * @return the number of elements at the given dimension
+   */
+  Dim dim(const size_t dim) const;
+
+  /**
    * Get the tensor size in bytes.
    *
    * @return the size of the tensor in bytes.
@@ -270,6 +279,20 @@ class Tensor {
    */
   template <typename T>
   void host(T* ptr) const;
+
+  /**
+   * Returns a vector on the host contaning a flat representation of the tensor.
+   * The resulting vector is a copy of the underlying tensor memory, even if on
+   * the host.
+   *
+   * @return a vector in host memory containing
+   */
+  template <typename T>
+  std::vector<T> toHostVector() const {
+    std::vector<T> vec(this->size());
+    host(vec.data());
+    return vec;
+  }
 
   /**
    * Unlocks any device memory associated with the tensor that was acquired with
@@ -613,6 +636,47 @@ Tensor maximum(const double& lhs, const Tensor& rhs);
  * @return a tensor containing the exponentiated values
  */
 Tensor power(const Tensor& lhs, const Tensor& rhs);
+
+/******************************* BLAS ********************************/
+
+enum class MatrixProperty { None = 0, Transpose = 1 };
+/**
+ * Perform matrix multiplication between two tensors.
+ *
+ * @param[in] lhs the Tensor on the left hand side
+ * @param[in] rhs the Tensor on the right hand side
+ *
+ * @return an output tensor containing the matrix product.
+ */
+Tensor matmul(
+    const Tensor& lhs,
+    const Tensor& rhs,
+    MatrixProperty lhsProp = MatrixProperty::None,
+    MatrixProperty rhsProp = MatrixProperty::None);
+
+/**
+ * Perform matrix multiplication between two tensors, multiplying the left hand
+ * side by the transpose of the right hand side.
+ *
+ * @param[in] lhs the Tensor on the left hand side
+ * @param[in] rhs the Tensor on the right hand side to be transposed.
+ *
+ * @return an output tensor containing the matrix product of \p lhs,
+ * transpose(\p rhs)
+ */
+Tensor matmulNT(const Tensor& lhs, const Tensor& rhs);
+
+/**
+ * Perform matrix multiplication between two tensors, multiplying the transpose
+ * of the left hand side by the right hand side.
+ *
+ * @param[in] lhs the Tensor on the left hand side to be transposed
+ * @param[in] rhs the Tensor on the right hand side
+ *
+ * @return an output tensor containing the matrix product of transpose(\p lhs),
+ * \p rhs
+ */
+Tensor matmulTN(const Tensor& lhs, const Tensor& rhs);
 
 /************************** Reductions ***************************/
 
