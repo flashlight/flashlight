@@ -124,6 +124,10 @@ void Tensor::unlock() const {
   impl_->unlock();
 }
 
+bool Tensor::isContiguous() const {
+  return impl_->isContiguous();
+}
+
 // Generate template specializations for functions that return types
 #define EXPAND_MACRO_FUNCTION_TYPE(FUN, TYPE)             \
   template <>                                             \

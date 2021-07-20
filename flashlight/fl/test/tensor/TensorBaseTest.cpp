@@ -244,3 +244,9 @@ TEST(TensorBaseTest, scalar) {
 
   ASSERT_THROW(a.scalar<int>(), std::invalid_argument);
 }
+
+TEST(TensorBaseTest, isContiguous) {
+  // Contiguous by default
+  auto a = fl::rand({10, 10});
+  ASSERT_TRUE(a.isContiguous());
+}
