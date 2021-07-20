@@ -77,10 +77,10 @@ class Shape {
   size_t nDims() const;
 
   /**
-   * Get the size of a given dimension. Throws if the given dimension is larger
-   * than the number of dimensions.
+   * Get the size of a given dimension in the number of arguments. Throws if the
+   * given dimension is larger than the number of dimensions.
    *
-   * @return the Dim at the given dimension
+   * @return the number of elements at the given dimension
    */
   Dim dim(const size_t dim) const;
 

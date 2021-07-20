@@ -33,6 +33,11 @@ af::dtype flToAfType(fl::dtype type);
 fl::dtype afToFlType(af::dtype type);
 
 /**
+ * Convert a Flashlight matrix property into an ArrayFire matrix property.
+ */
+af_mat_prop flToAfMatrixProperty(MatrixProperty property);
+
+/**
  * Convert an fl::Shape into an ArrayFire af::dim4
  */
 af::dim4 flToAfDims(const Shape& shape);

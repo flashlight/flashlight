@@ -133,6 +133,13 @@ class ArrayFireBackend : public TensorBackend {
   Tensor maximum(const Tensor& lhs, const Tensor& rhs) override;
   Tensor power(const Tensor& lhs, const Tensor& rhs) override;
 
+  /******************************* BLAS ********************************/
+  Tensor matmul(
+      const Tensor& lhs,
+      const Tensor& rhs,
+      MatrixProperty lhsProp,
+      MatrixProperty rhsProp) override;
+
   /************************** Reductions ***************************/
   Tensor amin(const Tensor& input, const std::vector<int>& axes) override;
   double amin(const Tensor& input) override; // TODO: consolidate w/ above
