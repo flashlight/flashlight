@@ -151,6 +151,37 @@ TEST(TensorBaseTest, nonzero) {
       allClose(a.flatten()(indices), fl::full({nnz}, 1, fl::dtype::u32)));
 }
 
+TEST(TensorBaseTest, countNonzero) {
+  std::vector<int> idxs = {0, 3, 4, 7, 24, 78};
+  auto a = fl::full({10, 10}, 1, fl::dtype::u32);
+  for (const auto idx : idxs) {
+    a(idx / 10, idx % 10) = 0;
+  }
+
+  ASSERT_TRUE(allClose(
+      fl::full({1}, a.shape().elements() - idxs.size()), fl::countNonzero(a)));
+
+  std::vector<unsigned> sizes(a.shape().dim(0));
+  for (unsigned i = 0; i < a.shape().dim(0); ++i) {
+    sizes[i] =
+        a.shape().dim(0) - fl::sum(a(fl::span, i) == 0, {0}).scalar<unsigned>();
+  }
+  ASSERT_TRUE(allClose(Tensor::fromVector(sizes), Tensor::fromVector(sizes)));
+
+  auto b = fl::full({2, 2, 2}, 1, fl::dtype::u32);
+  b(0, 1, 1) = 0;
+  b(1, 0, 1) = 0;
+  b(1, 1, 1) = 0;
+  std::vector<unsigned> b0 = {2, 2, 1, 0};
+  ASSERT_TRUE(
+      allClose(fl::Tensor::fromVector({2, 2}, b0), fl::countNonzero(b, {0})));
+  std::vector<unsigned> b01 = {4, 1};
+  ASSERT_TRUE(
+      allClose(fl::Tensor::fromVector({2}, b01), fl::countNonzero(b, {0, 1})));
+  ASSERT_TRUE(allClose(
+      fl::full({1}, b.shape().elements() - 3), fl::countNonzero(b, {0, 1, 2})));
+}
+
 TEST(TensorBaseTest, flatten) {
   unsigned s = 6;
   auto a = fl::full({s, s, s}, 2.);

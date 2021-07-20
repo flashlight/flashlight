@@ -80,6 +80,9 @@ class TensorBackend {
       bool bias) = 0; // TODO: consolidate w/ above
   virtual Tensor std(const Tensor& input, const std::vector<int>& axes) = 0;
   virtual double norm(const Tensor& input) = 0;
+  virtual Tensor countNonzero(
+      const Tensor& input,
+      const std::vector<int>& axes) = 0;
 
   /************************** Utils ***************************/
   virtual void print(const Tensor& tensor) = 0;
