@@ -35,7 +35,7 @@ af::array afReduceAxes(
   for (int dim : axes) {
     arr = func(arr, dim);
   }
-  return arr;
+  return fl::detail::condenseIndices(arr);
 }
 
 } // namespace
@@ -449,6 +449,28 @@ Tensor ArrayFireBackend::countNonzero(
         af::sum);
   }
   return toTensor<ArrayFireTensor>(detail::condenseIndices(out));
+}
+
+Tensor ArrayFireBackend::any(
+    const Tensor& input,
+    const std::vector<int>& axes) {
+  return toTensor<ArrayFireTensor>(
+      afReduceAxes(toArray(input), axes, af::anyTrue));
+}
+
+bool ArrayFireBackend::any(const Tensor& input) {
+  return af::anyTrue<bool>(toArray(input));
+}
+
+Tensor ArrayFireBackend::all(
+    const Tensor& input,
+    const std::vector<int>& axes) {
+  return toTensor<ArrayFireTensor>(
+      afReduceAxes(toArray(input), axes, af::allTrue));
+}
+
+bool ArrayFireBackend::all(const Tensor& input) {
+  return af::allTrue<bool>(toArray(input));
 }
 
 void ArrayFireBackend::print(const Tensor& tensor) {
