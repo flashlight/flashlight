@@ -396,3 +396,35 @@ TEST(TensorBaseTest, all) {
   ASSERT_FALSE(fl::all(t));
   ASSERT_TRUE(fl::all(Tensor::fromVector<unsigned>({1, 1, 1})));
 }
+
+TEST(TensorBaseTest, arange) {
+  // Range/step overload
+  ASSERT_TRUE(
+      allClose(fl::arange(2, 10, 2), Tensor::fromVector<int>({2, 4, 6, 8})));
+  ASSERT_TRUE(
+      allClose(fl::arange(0, 6), Tensor::fromVector<int>({0, 1, 2, 3, 4, 5})));
+  ASSERT_TRUE(allClose(
+      fl::arange(0., 1.22, 0.25),
+      Tensor::fromVector<float>({0., 0.25, 0.5, 0.75})));
+  ASSERT_TRUE(allClose(
+      fl::arange(0., 4.1), Tensor::fromVector<float>({0., 1., 2., 3.})));
+
+  // Shape overload
+  auto v = Tensor::fromVector<float>({0., 1., 2., 3.});
+  ASSERT_TRUE(allClose(fl::arange({4}), v));
+
+  ASSERT_TRUE(allClose(fl::arange({4, 5}), fl::tile(v, {1, 5})));
+  ASSERT_TRUE(allClose(
+      fl::arange({4, 5}, 1),
+      fl::tile(
+          fl::reshape(Tensor::fromVector<float>({0., 1., 2., 3., 4.}), {1, 5}),
+          {4})));
+  ASSERT_EQ(fl::arange({2, 6}, 0, fl::dtype::f64).type(), fl::dtype::f64);
+}
+
+TEST(TensorBaseTest, iota) {
+  ASSERT_TRUE(allClose(
+      fl::iota({5, 3}, {1, 2}),
+      fl::tile(fl::reshape(fl::arange({15}), {5, 3}), {1, 2})));
+  ASSERT_EQ(fl::iota({2, 2}, {2, 2}, fl::dtype::f64).type(), fl::dtype::f64);
+}

@@ -181,25 +181,25 @@ EXPAND_MACRO_FUNCTION(mean);
 
 /******************** Assignment Operators ********************/
 #define FL_ASSIGN_OP_TYPE(OP, FUN, TYPE) \
-  Tensor& Tensor::OP(const TYPE& val) {  \
+  Tensor& Tensor::OP(TYPE val) {         \
     impl_->FUN(val);                     \
     return *this;                        \
   }
-#define FL_ASSIGN_OP(OP, FUN)                 \
-  FL_ASSIGN_OP_TYPE(OP, FUN, Tensor);         \
-  FL_ASSIGN_OP_TYPE(OP, FUN, double);         \
-  FL_ASSIGN_OP_TYPE(OP, FUN, float);          \
-  FL_ASSIGN_OP_TYPE(OP, FUN, int);            \
-  FL_ASSIGN_OP_TYPE(OP, FUN, unsigned);       \
-  FL_ASSIGN_OP_TYPE(OP, FUN, bool);           \
-  FL_ASSIGN_OP_TYPE(OP, FUN, char);           \
-  FL_ASSIGN_OP_TYPE(OP, FUN, unsigned char);  \
-  FL_ASSIGN_OP_TYPE(OP, FUN, short);          \
-  FL_ASSIGN_OP_TYPE(OP, FUN, unsigned short); \
-  FL_ASSIGN_OP_TYPE(OP, FUN, long);           \
-  FL_ASSIGN_OP_TYPE(OP, FUN, unsigned long);  \
-  FL_ASSIGN_OP_TYPE(OP, FUN, long long);      \
-  FL_ASSIGN_OP_TYPE(OP, FUN, unsigned long long);
+#define FL_ASSIGN_OP(OP, FUN)                        \
+  FL_ASSIGN_OP_TYPE(OP, FUN, const Tensor&);         \
+  FL_ASSIGN_OP_TYPE(OP, FUN, const double&);         \
+  FL_ASSIGN_OP_TYPE(OP, FUN, const float&);          \
+  FL_ASSIGN_OP_TYPE(OP, FUN, const int&);            \
+  FL_ASSIGN_OP_TYPE(OP, FUN, const unsigned&);       \
+  FL_ASSIGN_OP_TYPE(OP, FUN, const bool&);           \
+  FL_ASSIGN_OP_TYPE(OP, FUN, const char&);           \
+  FL_ASSIGN_OP_TYPE(OP, FUN, const unsigned char&);  \
+  FL_ASSIGN_OP_TYPE(OP, FUN, const short&);          \
+  FL_ASSIGN_OP_TYPE(OP, FUN, const unsigned short&); \
+  FL_ASSIGN_OP_TYPE(OP, FUN, const long&);           \
+  FL_ASSIGN_OP_TYPE(OP, FUN, const unsigned long&);  \
+  FL_ASSIGN_OP_TYPE(OP, FUN, const long long&);      \
+  FL_ASSIGN_OP_TYPE(OP, FUN, const unsigned long long&);
 
 // (operator, function name on impl)
 FL_ASSIGN_OP(operator=, assign);
@@ -235,6 +235,30 @@ FL_FULL_FUN_DEF(const unsigned short&);
 
 Tensor identity(const Dim dim, const dtype type) {
   return Tensor().backend().identity(dim, type);
+}
+
+#define FL_ARANGE_FUN_DEF(TYPE)                                             \
+  template <>                                                               \
+  Tensor arange(TYPE start, TYPE end, TYPE step, const dtype type) {        \
+    return fl::arange({static_cast<long>((end - start) / step)}, 0, type) * \
+        step +                                                              \
+        start;                                                              \
+  }
+FL_ARANGE_FUN_DEF(const double&);
+FL_ARANGE_FUN_DEF(const float&);
+FL_ARANGE_FUN_DEF(const int&);
+FL_ARANGE_FUN_DEF(const unsigned&);
+FL_ARANGE_FUN_DEF(const long&);
+FL_ARANGE_FUN_DEF(const unsigned long&);
+FL_ARANGE_FUN_DEF(const long long&);
+FL_ARANGE_FUN_DEF(const unsigned long long&);
+
+Tensor arange(const Shape& shape, const Dim seqDim, const dtype type) {
+  return Tensor().backend().arange(shape, seqDim, type);
+}
+
+Tensor iota(const Shape& dims, const Shape& tileDims, const dtype type) {
+  return Tensor().backend().iota(dims, tileDims, type);
 }
 
 /************************ Shaping and Indexing *************************/

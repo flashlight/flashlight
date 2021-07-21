@@ -117,6 +117,24 @@ Tensor ArrayFireBackend::identity(const Dim dim, const dtype type) {
       af::identity({dim, dim}, detail::flToAfType(type)));
 }
 
+Tensor ArrayFireBackend::arange(
+    const Shape& shape,
+    const Dim seqDim,
+    const dtype type) {
+  return toTensor<ArrayFireTensor>(
+      af::range(detail::flToAfDims(shape), seqDim, detail::flToAfType(type)));
+}
+
+Tensor ArrayFireBackend::iota(
+    const Shape& dims,
+    const Shape& tileDims,
+    const dtype type) {
+  return toTensor<ArrayFireTensor>(af::iota(
+      detail::flToAfDims(dims),
+      detail::flToAfDims(tileDims),
+      detail::flToAfType(type)));
+}
+
 /************************ Shaping and Indexing *************************/
 Tensor ArrayFireBackend::reshape(const Tensor& tensor, const Shape& shape) {
   return toTensor<ArrayFireTensor>(
