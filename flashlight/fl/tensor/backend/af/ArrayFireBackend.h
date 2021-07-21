@@ -159,6 +159,10 @@ class ArrayFireBackend : public TensorBackend {
   double norm(const Tensor& input) override;
   Tensor countNonzero(const Tensor& input, const std::vector<int>& axes)
       override;
+  Tensor any(const Tensor& input, const std::vector<int>& axes) override;
+  bool any(const Tensor& input) override;
+  Tensor all(const Tensor& input, const std::vector<int>& axes) override;
+  bool all(const Tensor& input) override;
 
   /************************** Utils ***************************/
   void print(const Tensor& tensor) override;

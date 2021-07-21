@@ -372,3 +372,27 @@ TEST(TensorBaseTest, matmul) {
       ref,
       1e-4));
 }
+
+TEST(TensorBaseTest, any) {
+  using fl::dtype;
+  auto t = Tensor::fromVector<unsigned>({3, 3}, {1, 0, 0, 0, 0, 0, 0, 0, 1});
+  ASSERT_TRUE(allClose(
+      fl::any(t, {0}),
+      Tensor::fromVector<unsigned>({1, 0, 1}).astype(dtype::b8)));
+  ASSERT_TRUE(allClose(
+      fl::any(t, {0, 1}), Tensor::fromVector<unsigned>({1}).astype(dtype::b8)));
+  ASSERT_TRUE(fl::any(t));
+  ASSERT_FALSE(fl::any(Tensor::fromVector<unsigned>({0, 0, 0})));
+}
+
+TEST(TensorBaseTest, all) {
+  using fl::dtype;
+  auto t = Tensor::fromVector<unsigned>({3, 3}, {1, 0, 0, 0, 0, 0, 0, 0, 1});
+  ASSERT_TRUE(allClose(
+      fl::all(t, {0}),
+      Tensor::fromVector<unsigned>({0, 0, 0}).astype(dtype::b8)));
+  ASSERT_TRUE(allClose(
+      fl::all(t, {0, 1}), Tensor::fromVector<unsigned>({0}).astype(dtype::b8)));
+  ASSERT_FALSE(fl::all(t));
+  ASSERT_TRUE(fl::all(Tensor::fromVector<unsigned>({1, 1, 1})));
+}

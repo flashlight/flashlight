@@ -507,6 +507,22 @@ Tensor countNonzero(const Tensor& input, const std::vector<int>& axes) {
   return input.backend().countNonzero(input, axes);
 }
 
+Tensor any(const Tensor& input, const std::vector<int>& axes) {
+  return input.backend().any(input, axes);
+}
+
+bool any(const Tensor& input) {
+  return input.backend().any(input);
+}
+
+Tensor all(const Tensor& input, const std::vector<int>& axes) {
+  return input.backend().all(input, axes);
+}
+
+bool all(const Tensor& input) {
+  return input.backend().all(input);
+}
+
 template <typename T>
 T amin(const Tensor& input) {
   return static_cast<T>(input.backend().amin(input));
