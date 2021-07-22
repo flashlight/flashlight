@@ -62,6 +62,10 @@ class TensorBackend {
 #undef FL_FULL_FUN_BACKEND_DEF
 
   virtual Tensor identity(const Dim dim, const dtype type) = 0;
+  virtual Tensor
+  arange(const Shape& shape, const Dim seqDim, const dtype type) = 0;
+  virtual Tensor
+  iota(const Shape& dims, const Shape& tileDims, const dtype type) = 0;
 
   /************************ Shaping and Indexing *************************/
   virtual Tensor reshape(const Tensor& tensor, const Shape& shape) = 0;
