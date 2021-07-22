@@ -298,6 +298,13 @@ Tensor nonzero(const Tensor& tensor) {
   return tensor.backend().nonzero(tensor);
 }
 
+Tensor pad(
+    const Tensor& input,
+    const std::vector<std::pair<int, int>>& padWidths,
+    const PadType type) {
+  return input.backend().pad(input, padWidths, type);
+}
+
 /************************** Unary Operators ***************************/
 Tensor exp(const Tensor& tensor) {
   return tensor.backend().exp(tensor);

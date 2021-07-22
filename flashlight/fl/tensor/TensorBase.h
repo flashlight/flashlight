@@ -10,6 +10,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <utility>
 #include <vector>
 
 #include "flashlight/fl/tensor/Shape.h"
@@ -468,6 +469,29 @@ Tensor concatenate(unsigned axis, const Ts&... args) {
  */
 Tensor nonzero(const Tensor& tensor);
 
+/**
+ * Padding types for the pad operator.
+ * - Constant: pad with a constant zero value symmetrically.
+ * - Edge: pad with the values at the edges of the tensor
+ * - Symmetric: pad with a reflection of the tensor mirrored along each edge
+ */
+enum class PadType { Constant, Edge, Symmetric };
+
+/**
+ * Pad a tensor with zeros.
+ *
+ * @param[in] the input tensor to pad
+ * @param[in] padWidths a vector of tuples representing padding (before, after)
+ * tuples for each axis
+ * @param[in] type the padding mode with which to pad the tensor - see `PadType`
+ *
+ * @return the padded tensor
+ */
+Tensor pad(
+    const Tensor& input,
+    const std::vector<std::pair<int, int>>& padWidths,
+    const PadType type = PadType::Constant);
+
 /************************** Unary Operators ***************************/
 /**
  * Element-wise negation of a tensor.
@@ -597,7 +621,7 @@ Tensor clip(const Tensor& tensor, const double& low, const double& high);
  * false otherwise.
  *
  * @param[in] tensor the input tensor
- * @return a boolean array with true in positions that contained NaN in the
+ * @return a boolean tensor with true in positions that contained NaN in the
  * input tensor
  */
 Tensor isnan(const Tensor& tensor);
@@ -786,7 +810,7 @@ template <typename T>
 T amax(const Tensor& input);
 
 /**
- * Sum of array over given axes.
+ * Sum of tensor over given axes.
  *
  * @param[in] input the input along which to operate
  * @param[in] axes the dimension along which to reduce.
@@ -795,7 +819,7 @@ T amax(const Tensor& input);
 Tensor sum(const Tensor& input, const std::vector<int>& axes);
 
 /**
- * Sum of array over all axes.
+ * Sum of tensor over all axes.
  * TODO: benchmark against sum(sum(sum(...)))/maybe avoid device-host memcpy
  *
  * @param[in] input the input along which to operate
@@ -805,7 +829,7 @@ template <typename T>
 T sum(const Tensor& input);
 
 /**
- * Mean of array over given axes.
+ * Mean of tensor over given axes.
  *
  * @param[in] input the input along which to operate
  * @param[in] axes the dimension along which to reduce.
@@ -814,7 +838,7 @@ T sum(const Tensor& input);
 Tensor mean(const Tensor& input, const std::vector<int>& axes);
 
 /**
- * Mean of array over all axes.
+ * Mean of tensor over all axes.
  * TODO: benchmark against mean(mean(mean(...)))/maybe avoid device-host memcpy
  *
  * @param[in] input the input along which to operate
@@ -824,7 +848,7 @@ template <typename T>
 T mean(const Tensor& input);
 
 /**
- * Variance of an array over given axes.
+ * Variance of an tensor over given axes.
  *
  * @param[in] input the input along which to operate
  * @param[in] axes the dimension along which to reduce.
@@ -834,7 +858,7 @@ Tensor
 var(const Tensor& input, const std::vector<int>& axes, const bool bias = false);
 
 /**
- * Variance of an array over all axes.
+ * Variance of an tensor over all axes.
  * TODO: benchmark against var(var(var(...)))/maybe avoid device-host memcpy
  *
  * @param[in] input the input along which to operate
@@ -844,7 +868,7 @@ template <typename T>
 T var(const Tensor& input, const bool bias = false);
 
 /**
- * Standard deviation of an array over given axes.
+ * Standard deviation of an tensor over given axes.
  *
  * @param[in] input the input along which to operate
  * @param[in] axes the dimension along which to reduce.
@@ -853,7 +877,7 @@ T var(const Tensor& input, const bool bias = false);
 Tensor std(const Tensor& input, const std::vector<int>& axes);
 
 /**
- * norm of array over all axes.
+ * norm of tensor over all axes.
  * TODO: benchmark against norm(norm(norm(...)))/maybe avoid device-host memcpy
  *
  * @param[in] input the input along which to operate

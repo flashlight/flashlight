@@ -90,5 +90,11 @@ af::array fromFlData(
     fl::dtype type,
     fl::Location memoryLocation);
 
+/**
+ * Convert a Flashlight PadType to an ArrayFire af_border_type for describing
+ * padding.
+ */
+af_border_type flToAfPadType(PadType type);
+
 } // namespace detail
 } // namespace fl

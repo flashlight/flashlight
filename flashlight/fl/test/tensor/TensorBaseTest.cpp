@@ -428,3 +428,33 @@ TEST(TensorBaseTest, iota) {
       fl::tile(fl::reshape(fl::arange({15}), {5, 3}), {1, 2})));
   ASSERT_EQ(fl::iota({2, 2}, {2, 2}, fl::dtype::f64).type(), fl::dtype::f64);
 }
+
+TEST(TensorBaseTest, pad) {
+  auto t = fl::rand({5, 2});
+  auto zeroPadded = fl::pad(t, {{1, 2}, {3, 4}});
+  auto zeroTest = fl::concatenate(
+      1,
+      fl::full({8, 3}, 0.),
+      fl::concatenate(0, fl::full({1, 2}, 0.), t, fl::full({2, 2}, 0.)),
+      fl::full({8, 4}, 0.));
+  ASSERT_TRUE(allClose(zeroPadded, zeroTest));
+
+  auto edgePadded = fl::pad(t, {{1, 1}, {2, 2}}, PadType::Edge);
+  auto vertTiled = fl::concatenate(
+      0,
+      fl::reshape(t(0, fl::span), {1, 2}),
+      t,
+      fl::reshape(t(t.dim(0) - 1, fl::span), {1, 2}));
+  auto vTiled0 = vertTiled(fl::span, 0);
+  auto vTiled1 = vertTiled(fl::span, 1);
+  ASSERT_TRUE(allClose(
+      edgePadded,
+      fl::concatenate(
+          1, fl::tile(vTiled0, {1, 3}), fl::tile(vTiled1, {1, 3}))));
+
+  auto symmetricPadded = fl::pad(t, {{1, 1}, {2, 2}}, PadType::Symmetric);
+  ASSERT_TRUE(allClose(
+      symmetricPadded,
+      fl::concatenate(
+          1, vTiled1, vTiled0, vTiled0, vTiled1, vTiled1, vTiled0)));
+}

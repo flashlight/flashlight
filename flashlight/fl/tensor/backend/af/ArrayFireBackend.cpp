@@ -196,6 +196,28 @@ Tensor ArrayFireBackend::nonzero(const Tensor& tensor) {
   return toTensor<ArrayFireTensor>(af::where(toArray(tensor)));
 }
 
+Tensor ArrayFireBackend::pad(
+    const Tensor& input,
+    const std::vector<std::pair<int, int>>& padWidths,
+    const PadType type) {
+  if (padWidths.size() > AF_MAX_DIMS) {
+    throw std::invalid_argument(
+        "ArrayFireBackend::pad - given padWidths for more than 4 dimensions");
+  }
+
+  // convert ((begin_1, end_1), ..., (begin_k, end_k)) to ((begin_1, ...,
+  // begin_k), (end_1, ..., end_k)) for ArrayFire
+  af::dim4 beginPadding, endPadding;
+  for (size_t i = 0; i < padWidths.size(); ++i) {
+    auto& [first, second] = padWidths[i];
+    beginPadding[i] = first;
+    endPadding[i] = second;
+  }
+
+  return toTensor<ArrayFireTensor>(af::pad(
+      toArray(input), beginPadding, endPadding, detail::flToAfPadType(type)));
+}
+
 /************************** Unary Operators ***************************/
 
 Tensor ArrayFireBackend::exp(const Tensor& tensor) {

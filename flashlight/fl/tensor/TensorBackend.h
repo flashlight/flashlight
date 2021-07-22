@@ -77,6 +77,10 @@ class TensorBackend {
       const std::vector<Tensor>& tensors,
       unsigned axis) = 0;
   virtual Tensor nonzero(const Tensor& tensor) = 0;
+  virtual Tensor pad(
+      const Tensor& input,
+      const std::vector<std::pair<int, int>>& padWidths,
+      const PadType type) = 0;
 
   /************************** Unary Operators ***************************/
   virtual Tensor exp(const Tensor& tensor) = 0;

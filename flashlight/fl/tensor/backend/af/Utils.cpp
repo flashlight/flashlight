@@ -218,5 +218,20 @@ af::array fromFlData(
   }
 }
 
+af_border_type flToAfPadType(PadType type) {
+  switch (type) {
+    case PadType::Constant:
+      return AF_PAD_ZERO; // constant padding --> zero padding in AF
+    case PadType::Edge:
+      return AF_PAD_CLAMP_TO_EDGE;
+    case PadType::Symmetric:
+      return AF_PAD_SYM;
+    default:
+      throw std::invalid_argument(
+          "flToAfPadType: Flashlight padding "
+          "type not supported by ArrayFire");
+  }
+}
+
 } // namespace detail
 } // namespace fl

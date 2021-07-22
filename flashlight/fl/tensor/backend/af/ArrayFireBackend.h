@@ -70,6 +70,10 @@ class ArrayFireBackend : public TensorBackend {
   Tensor concatenate(const std::vector<Tensor>& tensors, unsigned axis)
       override;
   Tensor nonzero(const Tensor& tensor) override;
+  Tensor pad(
+      const Tensor& input,
+      const std::vector<std::pair<int, int>>& padWidths,
+      const PadType type) override;
 
   /************************** Unary Operators ***************************/
   Tensor exp(const Tensor& tensor) override;
