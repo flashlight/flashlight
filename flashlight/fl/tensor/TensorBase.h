@@ -151,6 +151,13 @@ class Tensor {
   const Shape& shape() const;
 
   /**
+   * Get a tensor's location, host or some device.
+   *
+   * @return the tensor's location
+   */
+  Location location() const;
+
+  /**
    * Get the number of elements in the tensor.
    *
    * @return the size of the tensor in elements.

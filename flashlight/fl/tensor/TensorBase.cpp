@@ -55,6 +55,10 @@ const Shape& Tensor::shape() const {
   return impl_->shape();
 }
 
+Location Tensor::location() const {
+  return impl_->location();
+}
+
 size_t Tensor::size() const {
   return impl_->shape().elements();
 }

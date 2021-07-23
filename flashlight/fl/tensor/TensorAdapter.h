@@ -98,6 +98,13 @@ class TensorAdapterBase {
   virtual dtype type() = 0;
 
   /**
+   * Get a tensor's location, host or some device.
+   *
+   * @return the tensor's location
+   */
+  virtual Location location() = 0;
+
+  /**
    * Populate a pointer with a scalar for the first element of the tensor.
    */
   virtual void scalar(void* out) = 0;

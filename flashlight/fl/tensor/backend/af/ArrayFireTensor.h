@@ -154,6 +154,7 @@ class ArrayFireTensor : public TensorAdapterBase {
   Tensor shallowCopy() override;
   const Shape& shape() override;
   dtype type() override;
+  Location location() override;
   void scalar(void* out) override;
   void device(void** out) override;
   void host(void** out) override;
