@@ -81,6 +81,12 @@ int main(int argc, char** argv) {
   }
   fl::VerboseLogging::setMaxLoggingLevel(FLAGS_fl_vlog_level);
 
+  // flashlight optim mode
+  auto flOptimLevel = FLAGS_fl_optim_mode.empty()
+      ? fl::OptimLevel::DEFAULT
+      : fl::OptimMode::toOptimLevel(FLAGS_fl_optim_mode);
+  fl::OptimMode::get().setOptimLevel(flOptimLevel);
+
   /* ===================== Create Network ===================== */
   if (FLAGS_emission_dir.empty() && FLAGS_am.empty()) {
     LOG(FATAL) << "Both flags are empty: `-emission_dir` and `-am`";
@@ -330,15 +336,16 @@ int main(int argc, char** argv) {
       /*sfxConf=*/{});
   auto targetTransform = targetFeatures(tokenDict, lexicon, targetGenConfig);
   auto wordTransform = wordFeatures(wordDict);
-  int targetpadVal =
-      isSeq2seqCrit ? tokenDict.getIndex(fl::lib::text::kPadToken) : kTargetPadValue;
-  int wordpadVal = wordDict.getIndex(kUnkToken);
+  int targetpadVal = isSeq2seqCrit
+      ? tokenDict.getIndex(fl::lib::text::kPadToken)
+      : kTargetPadValue;
+  int wordpadVal = -1;
 
   std::vector<std::string> testSplits = fl::lib::split(",", FLAGS_test, true);
   auto ds = createDataset(
       testSplits,
       FLAGS_datadir,
-      1 /* batchsize */,
+      FLAGS_batchsize,
       inputTransform,
       targetTransform,
       wordTransform,
@@ -364,7 +371,9 @@ int main(int argc, char** argv) {
                        &tokenDict,
                        &wordDict,
                        &emissionQueue,
-                       &isSeq2seqCrit](int tid) {
+                       &isSeq2seqCrit,
+                       targetpadVal,
+                       wordpadVal](int tid) {
     // Initialize AM
     fl::setDevice(tid);
     std::shared_ptr<fl::Module> localNetwork = network;
@@ -387,62 +396,127 @@ int main(int argc, char** argv) {
     localDs = std::make_shared<fl::PrefetchDataset>(
         localDs, FLAGS_nthread, FLAGS_nthread);
 
+    auto trimPad = [](std::vector<int>& vec, const int padToken) {
+      if (vec.back() != padToken) {
+        return;
+      }
+      int left = 0;
+      int right = vec.size() - 1;
+      while (left < right) {
+        int mid = (left + right) / 2;
+        if (vec[mid] != padToken && vec[mid + 1] == padToken) {
+          vec.resize(mid + 1);
+          return;
+        } else if (vec[mid] == padToken) {
+          right = mid;
+        } else {
+          left = mid;
+        }
+      }
+      throw std::runtime_error("[Decoder] Could not identify a non-pad token.");
+    };
+
     for (auto& sample : *localDs) {
-      auto sampleId = readSampleIds(sample[kSampleIdx]).front();
+      auto sampleIds = readSampleIds(sample[kSampleIdx]);
+      auto tokenTargetArray = sample[kTargetIdx];
+      auto wordTargetArray = sample[kWordIdx];
+      int effectiveBatchSize = tokenTargetArray.dims(1);
 
       /* 2. Load Targets */
-      TargetUnit targetUnit;
-      auto tokenTarget = afToVector<int>(sample[kTargetIdx]);
-      auto wordTarget = afToVector<int>(sample[kWordIdx]);
-      // TODO: we will reform the dataset so that the loaded word
-      // targets are strings already
-      std::vector<std::string> wordTargetStr;
-      if (FLAGS_uselexicon) {
-        wordTargetStr = wrdIdx2Wrd(wordTarget, wordDict);
-      } else {
-        auto letterTarget = tknTarget2Ltr(
-            tokenTarget,
-            tokenDict,
-            FLAGS_criterion,
-            FLAGS_surround,
-            isSeq2seqCrit,
-            FLAGS_replabel,
-            FLAGS_usewordpiece,
-            FLAGS_wordseparator);
-        wordTargetStr = tkn2Wrd(letterTarget, FLAGS_wordseparator);
+      std::vector<TargetUnit> targetUnits(effectiveBatchSize);
+      auto tokenTargetLength = tokenTargetArray.dims(0);
+      auto wordTargetLength = wordTargetArray.dims(0);
+
+      // MTMD: Shouldn't we skip placing these two (i.e., tokenTargetArray and
+      // wordTargetArray) in an array in the first place?
+      auto tokenTargets = afToVector<int>(tokenTargetArray);
+      auto wordTargets = afToVector<int>(wordTargetArray);
+
+      auto tokenTarget = std::vector<int>(tokenTargetLength);
+      auto wordTarget = std::vector<int>(wordTargetLength);
+      for (int i = 0; i < effectiveBatchSize; i++) {
+        tokenTarget.resize(tokenTargetLength);
+        wordTarget.resize(wordTargetLength);
+
+        copy(
+            tokenTargets.begin() + i * tokenTargetLength,
+            tokenTargets.begin() + (i + 1) * tokenTargetLength,
+            tokenTarget.begin());
+
+        copy(
+            wordTargets.begin() + i * wordTargetLength,
+            wordTargets.begin() + (i + 1) * wordTargetLength,
+            wordTarget.begin());
+
+        trimPad(tokenTarget, targetpadVal);
+        trimPad(wordTarget, wordpadVal);
+
+        // TODO: we will reform the dataset so that the loaded word
+        // targets are strings already
+        std::vector<std::string> wordTargetStr;
+        if (FLAGS_uselexicon) {
+          wordTargetStr = wrdIdx2Wrd(wordTarget, wordDict);
+        } else {
+          auto letterTarget = tknTarget2Ltr(
+              tokenTarget,
+              tokenDict,
+              FLAGS_criterion,
+              FLAGS_surround,
+              isSeq2seqCrit,
+              FLAGS_replabel,
+              FLAGS_usewordpiece,
+              FLAGS_wordseparator);
+          wordTargetStr = tkn2Wrd(letterTarget, FLAGS_wordseparator);
+        }
+        targetUnits[i].wordTargetStr = wordTargetStr;
+        targetUnits[i].tokenTarget = tokenTarget;
       }
 
-      targetUnit.wordTargetStr = wordTargetStr;
-      targetUnit.tokenTarget = tokenTarget;
-
       /* 3. Load Emissions */
-      EmissionUnit emissionUnit;
+      std::vector<EmissionUnit> emissionUnit;
+      auto mathType = FLAGS_fl_amp_use_mixed_precision ? f16 : f32;
       if (FLAGS_emission_dir.empty()) {
         fl::Variable rawEmission;
         if (usePlugin) {
-          rawEmission = localNetwork
-                            ->forward({fl::input(sample[kInputIdx]),
-                                       fl::noGrad(sample[kDurationIdx])})
-                            .front();
+          rawEmission =
+              localNetwork
+                  ->forward({fl::input(sample[kInputIdx].as(mathType)),
+                             fl::noGrad(sample[kDurationIdx])})
+                  .front();
+
         } else {
           rawEmission = fl::ext::forwardSequentialModuleWithPadMask(
               fl::input(sample[kInputIdx]), localNetwork, sample[kDurationIdx]);
         }
-        emissionUnit = EmissionUnit(
-            afToVector<float>(rawEmission),
-            sampleId,
-            rawEmission.dims(1),
-            rawEmission.dims(0));
+        auto emissionSize = rawEmission.dims(0) * rawEmission.dims(1);
+        auto rawEmissions = afToVector<float>(rawEmission);
+        std::vector<float> rawEmissionHost(emissionSize);
+        for (int i = 0; i < effectiveBatchSize; i++) {
+          std::copy(
+              rawEmissions.begin() + i * emissionSize,
+              rawEmissions.begin() + (i + 1) * emissionSize,
+              rawEmissionHost.begin());
+          emissionUnit.emplace_back(
+              rawEmissionHost,
+              sampleIds[i],
+              rawEmission.dims(1),
+              rawEmission.dims(0));
+        }
       } else {
         auto cleanTestPath = cleanFilepath(FLAGS_test);
         std::string emissionDir =
             pathsConcat(FLAGS_emission_dir, cleanTestPath);
-        std::string savePath = pathsConcat(emissionDir, sampleId + ".bin");
-        std::string eVersion;
-        Serializer::load(savePath, eVersion, emissionUnit);
+        for (auto sampleId : sampleIds) {
+          std::string savePath = pathsConcat(emissionDir, sampleId + ".bin");
+          std::string eVersion;
+          EmissionUnit tmpEmissionUnit;
+          Serializer::load(savePath, eVersion, tmpEmissionUnit);
+          emissionUnit.push_back(tmpEmissionUnit);
+        }
       }
-
-      emissionQueue.add({emissionUnit, targetUnit});
+      for (int i = 0; i < effectiveBatchSize; i++) {
+        emissionQueue.add({emissionUnit[i], targetUnits[i]});
+      }
     }
 
     localNetwork.reset(); // AM is only used in running forward pass. So we will

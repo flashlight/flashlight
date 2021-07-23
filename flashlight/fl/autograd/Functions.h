@@ -964,6 +964,13 @@ Variable gelu(const Variable& input);
 /**
  * Relative positional embedding for the multihead attention
  * Implementation partially follows https://arxiv.org/pdf/1803.02155.pdf
+ * The overloaded version of this function will be called for `Variables`.
+ */
+af::array relativePositionalEmbeddingRotate(const af::array& input);
+
+/**
+ * Relative positional embedding for the multihead attention
+ * Implementation partially follows https://arxiv.org/pdf/1803.02155.pdf
  */
 Variable relativePositionalEmbeddingRotate(const Variable& input);
 

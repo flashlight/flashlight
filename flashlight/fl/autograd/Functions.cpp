@@ -1236,16 +1236,13 @@ Variable gelu(const Variable& in) {
        fl::tanh(0.7978845608 * (input + 0.044715 * input * input * input)));
 }
 
-fl::Variable relativePositionEmbeddingRotate(const fl::Variable& input) {
+fl::Variable relativePositionalEmbeddingRotate(const fl::Variable& input) {
   auto data = input.array();
   int d0 = data.dims(0);
   int d1 = data.dims(1);
   int d2 = data.dims(2);
   int d3 = data.dims(3);
-  data = af::join(0, data, af::constant(0.0, d1, d1, d2, d3, data.type()));
-  data = af::moddims(data, af::dim4((d0 + d1) * d1, 1, d2, d3));
-  data = data.rows(0, (d1 + d0 - 1) * d1 - 1);
-  data = af::moddims(data, af::dim4(d0 + d1 - 1, d1, d2, d3));
+  data = relativePositionalEmbeddingRotate(data);
   auto gradFunc = [d0, d1, d2, d3](
                       std::vector<fl::Variable>& inputs,
                       const fl::Variable& gradOutput) {
@@ -1283,7 +1280,7 @@ fl::Variable multiheadAttention(
   if (!posEmb.isempty()) {
     int n = posEmb.dims(0) / 2 - offset;
     auto pscores =
-        relativePositionEmbeddingRotate(matmulNT(posEmb.as(q.type()), q));
+        relativePositionalEmbeddingRotate(matmulNT(posEmb.as(q.type()), q));
     scores = scores + transpose(pscores.rows(n, n + k.dims(0) - 1));
   }
   if (!mask.isempty()) {
