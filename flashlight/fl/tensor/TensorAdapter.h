@@ -158,6 +158,18 @@ class TensorAdapterBase {
    */
   virtual Tensor flatten() const = 0;
 
+  /**
+   * Sets arbitrary data on a tensor. May be a no-op for some backends.
+   */
+  virtual void setContext(void* context) = 0;
+
+  /**
+   * Sets arbitrary data on a tensor. May be a no-op for some backends.
+   *
+   * @return An arbitrary payload
+   */
+  virtual void* getContext() = 0;
+
   /******************** Assignment Operators ********************/
 #define ASSIGN_OP_TYPE(OP, TYPE) virtual void OP(const TYPE& val) = 0;
 #define ASSIGN_OP(OP)                 \
