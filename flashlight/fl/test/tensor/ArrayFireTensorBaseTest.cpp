@@ -7,9 +7,12 @@
 
 #include <arrayfire.h>
 #include <gtest/gtest.h>
+
 #include <stdexcept>
+#include <utility>
 
 #include "flashlight/fl/tensor/Random.h"
+#include "flashlight/fl/tensor/TensorBackend.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
 #include "flashlight/fl/tensor/backend/af/Utils.h"
@@ -56,6 +59,16 @@ TEST(ArrayFireTensorBaseTest, AfRefCountBasic) {
   auto aNoRef = toArray(tensor);
   af_get_data_ref_count(&refCount, aNoRef.get());
   ASSERT_EQ(refCount, 2);
+}
+
+TEST(ArrayFireTensorBaseTest, BackendInterop) {
+  // test toTensorBackend here since we know we have a backend available
+  auto a = fl::rand({10, 12});
+  ASSERT_EQ(a.backendType(), TensorBackendType::ArrayFire);
+  auto b = a;
+  auto t = fl::toTensorBackend<ArrayFireTensor>(std::move(a));
+  ASSERT_EQ(t.backendType(), TensorBackendType::ArrayFire);
+  ASSERT_TRUE(allClose(b, t));
 }
 
 TEST(ArrayFireTensorBaseTest, ArrayFireAssignmentOperators) {
