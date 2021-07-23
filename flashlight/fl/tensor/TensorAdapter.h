@@ -7,6 +7,10 @@
 
 #pragma once
 
+#include <functional>
+#include <memory>
+#include <utility>
+
 #include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
@@ -183,6 +187,33 @@ class TensorAdapterBase {
 
 namespace detail {
 
+using DefaultTensorTypeFunc_t =
+    std::function<std::unique_ptr<TensorAdapterBase>(
+        const Shape& shape,
+        fl::dtype type,
+        void* ptr,
+        MemoryLocation memoryLocation)>;
+
+/*
+ * A singleton to hold a closure which creates a new tensor of default type. For
+ * internal use only - use setDefaultTensorType<T>() to set the type with which
+ * to create a default tensor.
+ */
+class DefaultTensorType {
+  // The function to use to create a tensor of default type.
+  DefaultTensorTypeFunc_t creationFunc_;
+
+ public:
+  static DefaultTensorType& getInstance();
+  DefaultTensorType();
+
+  void setCreationFunc(DefaultTensorTypeFunc_t&& func);
+  const DefaultTensorTypeFunc_t& getCreationFunc() const;
+
+  DefaultTensorType(DefaultTensorType const&) = delete;
+  void operator=(DefaultTensorType const&) = delete;
+};
+
 /**
  * Get an instance of the default tensor adapter.
  */
@@ -193,4 +224,43 @@ std::unique_ptr<TensorAdapterBase> getDefaultAdapter(
     MemoryLocation memoryLocation = MemoryLocation::Host);
 
 } // namespace detail
+
+/**
+ * Set the default tensor type for which new tensors will be created.
+ *
+ * This function is parameterized by the tensor type. Usage is as follows:
+ * \code
+   fl::setDefaultTensorType<TensorType>()
+   \endcode
+ *
+ * Where TensorType is derived from TensorAdapterBase.
+ */
+template <typename T>
+void setDefaultTensorType() {
+  static_assert(
+      std::is_base_of<TensorAdapterBase, T>::value,
+      "setDefaultTensorType: T must be a derived type of TensorAdapterBase");
+
+  fl::detail::DefaultTensorType::getInstance().setCreationFunc(
+      [](const Shape& shape,
+         fl::dtype type,
+         void* ptr,
+         MemoryLocation memoryLocation) {
+        return std::make_unique<T>(shape, type, ptr, memoryLocation);
+      });
+}
+
+template <typename T, typename B>
+void withTensorType(B func) {
+  // Save for later. Copy
+  auto oldCreationFunc =
+      fl::detail::DefaultTensorType::getInstance().getCreationFunc();
+  // Set new tensor type and execute
+  fl::setDefaultTensorType<T>();
+  func();
+  // Restore old func
+  fl::detail::DefaultTensorType::getInstance().setCreationFunc(
+      std::move(oldCreationFunc));
+}
+
 } // namespace fl

@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <stdexcept>
+#include <utility>
 
 #include "flashlight/fl/tensor/TensorBackend.h"
 #include "flashlight/fl/tensor/TensorBase.h"
@@ -20,7 +21,7 @@
 /**
  * The default tensor type in Flashlight. Currently ArrayFire.
  */
-using DefaultTensorType = fl::ArrayFireTensor;
+using DefaultTensorType_t = fl::ArrayFireTensor;
 
 /**
  * The compile time value which will be true if the default backend is
@@ -30,6 +31,37 @@ using DefaultTensorType = fl::ArrayFireTensor;
 
 namespace fl {
 namespace detail {
+
+DefaultTensorType& DefaultTensorType::getInstance() {
+  static DefaultTensorType instance;
+  return instance;
+}
+
+DefaultTensorType::DefaultTensorType() {
+  creationFunc_ = [](const Shape& shape,
+                     fl::dtype type,
+                     void* ptr,
+                     MemoryLocation memoryLocation) {
+  // Resolve the default backend in order of preference/availability
+#if FL_DEFAULT_BACKEND_COMPILE_FLAG
+    return std::make_unique<DefaultTensorType_t>(
+        shape, type, ptr, memoryLocation);
+#else
+    throw std::runtime_error(
+        "Cannot construct tensor: Flashlight built "
+        "without an available tensor backend.");
+
+#endif
+  };
+}
+
+void DefaultTensorType::setCreationFunc(DefaultTensorTypeFunc_t&& func) {
+  creationFunc_ = std::move(func);
+}
+
+const DefaultTensorTypeFunc_t& DefaultTensorType::getCreationFunc() const {
+  return creationFunc_;
+}
 
 /*
  * Resolve the default tensor backend based on compile-time dependencies.
@@ -41,13 +73,8 @@ std::unique_ptr<TensorAdapterBase> getDefaultAdapter(
     fl::dtype type /* = fl::dtype::f32 */,
     void* ptr /* = nullptr */,
     MemoryLocation memoryLocation /* = Location::Host */) {
-#if FL_DEFAULT_BACKEND_COMPILE_FLAG
-  return std::make_unique<DefaultTensorType>(shape, type, ptr, memoryLocation);
-#else
-  throw std::runtime_error(
-      "Cannot construct tensor: Flashlight built "
-      "without an available tensor backend.");
-#endif
+  return DefaultTensorType::getInstance().getCreationFunc()(
+      shape, type, ptr, memoryLocation);
 }
 
 } // namespace detail
