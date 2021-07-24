@@ -137,7 +137,7 @@ Variable Conformer::mhsa(const Variable& input, const Variable& inputPadMask) {
   auto result =
       multiheadAttention(q, k, v, posEmb, mask, padMask, nHeads_, pDropout, 0);
   result = (*wf_)(transpose(result));
-  result = input + dropout(result, pDropout);
+  result = dropout(result, pDropout);
   return result;
 }
 
@@ -147,7 +147,7 @@ Variable Conformer::conv(const Variable& input) {
   // apply first pointwise conv
   auto result =
       gatedlinearunit((*conv1_)(((*normConv1_)(input)).as(input.type())), 0);
-  result = reorder(input, 1, 3, 0, 2);
+  result = reorder(result, 1, 3, 0, 2);
   // T x 1 x C x B
   // apply depthwise separable convolutions
   result = (*convDepthWise_)(result);
@@ -156,7 +156,7 @@ Variable Conformer::conv(const Variable& input) {
   result = fl::swish(((*normConv2_)(result)).as(input.type()), 1.);
   // apply second pointwise conv
   result = dropout((*conv2_)(result), pDropout);
-  return result + input;
+  return result;
 }
 
 std::vector<Variable> Conformer::forward(const std::vector<Variable>& input) {
@@ -173,7 +173,6 @@ std::vector<Variable> Conformer::forward(const std::vector<Variable>& input) {
   auto x = input[0];
   // apply first feed-forward module
   auto ffn1 =
-      x +
       dropout(
           (*w12_)(dropout(
               fl::swish((*w11_)(((*norm1_)(x)).as(x.type())), 1.), pDropout)),
@@ -185,7 +184,6 @@ std::vector<Variable> Conformer::forward(const std::vector<Variable>& input) {
   x = x + f * conv(x);
   // apply second feed-forward module
   auto ffn2 =
-      x +
       dropout(
           (*w22_)(dropout(
               fl::swish((*w21_)(((*norm2_)(x)).as(x.type())), 1.), pDropout)),
