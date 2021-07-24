@@ -63,6 +63,14 @@ Dim Tensor::dim(const size_t dim) const {
   return shape().dim(dim);
 }
 
+unsigned Tensor::ndim() const {
+  return shape().ndim();
+}
+
+bool Tensor::isEmpty() const {
+  return size() == 0;
+}
+
 size_t Tensor::bytes() const {
   return size() * getTypeSize(type());
 }

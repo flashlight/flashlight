@@ -63,7 +63,7 @@ af_mat_prop flToAfMatrixProperty(MatrixProperty property) {
 }
 
 af::dim4 flToAfDims(const Shape& shape) {
-  if (shape.nDims() > 4) {
+  if (shape.ndim() > 4) {
     throw std::invalid_argument(
         "flToAfDims: ArrayFire shapes can't be more than 4 dimensions");
   }
@@ -71,7 +71,7 @@ af::dim4 flToAfDims(const Shape& shape) {
     return af::dim4(0);
   }
   af::dim4 out(1, 1, 1, 1);
-  for (size_t i = 0; i < shape.nDims(); ++i) {
+  for (size_t i = 0; i < shape.ndim(); ++i) {
     out.dims[i] = shape.dim(i);
   }
   return out;
