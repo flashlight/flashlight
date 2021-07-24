@@ -356,6 +356,56 @@ Tensor full(
  */
 Tensor identity(const Dim dim, const dtype type = dtype::f32);
 
+/**
+ * Return evenly-spaced values in a given interval. Generate values in the
+ * interval `[start, stop)` steppping each element by the passed step.
+ *
+ * @param[in] start the start of the range
+ * @param[in] end the end of the range, inclusive
+ * @param[in] step the increment for each consecutive value in the range
+ * @param[in] type the dtype of the resulting tensor
+ *
+ * @return a tensor containing the evenly-spaced values
+ */
+template <typename T>
+Tensor arange(
+    const T& start,
+    const T& end,
+    const T& step = 1,
+    const dtype type = dtype_traits<T>::ctype);
+
+/**
+ * Create a tensor with [0, N] values along dimension given by seqDim and
+ * tiled along the other dimensions. N is equal to the size of the shape along
+ * the seqDim dimension.
+ *
+ * @param[in] shape the shape of the output tensor.
+ * @param[in] seqDim (optional) the dimension along which the sequence increases
+ * @param[in] type (optional) the dtype of the resulting tensor
+ *
+ * @return a tensor with the given shape with the sequence along the given
+ * dimension, tiled along other dimensions.
+ */
+Tensor
+arange(const Shape& shape, const Dim seqDim = 0, const dtype type = dtype::f32);
+
+/**
+ * Creates a sequence with the range `[0, dims.elements())` sequentially in the
+ * shape given by dims, then tiles the result along the specified tile
+ * dimensions.
+ * TODO: this is an AF-specific function.
+ *
+ * @param[in] dims the dimensions of the range
+ * @param[in] tileDims the dimensions along which to tile
+ * @param[in] type the dtype of the resulting tensoe
+ *
+ * @return
+ */
+Tensor iota(
+    const Shape& dims,
+    const Shape& tileDims = {1},
+    const dtype type = dtype::f32);
+
 /************************ Shaping and Indexing *************************/
 
 /**

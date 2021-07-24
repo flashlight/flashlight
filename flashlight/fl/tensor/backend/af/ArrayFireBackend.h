@@ -58,6 +58,10 @@ class ArrayFireBackend : public TensorBackend {
 #undef FL_FULL_FUN_BACKEND_DEF
 
   Tensor identity(const Dim dim, const dtype type) override;
+  Tensor arange(const Shape& shape, const Dim seqDim, const dtype type)
+      override;
+  Tensor iota(const Shape& dims, const Shape& tileDims, const dtype type)
+      override;
 
   /************************ Shaping and Indexing *************************/
   Tensor reshape(const Tensor& tensor, const Shape& shape) override;
