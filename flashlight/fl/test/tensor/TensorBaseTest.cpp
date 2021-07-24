@@ -37,7 +37,11 @@ TEST(TensorBaseTest, Metadata) {
   int s = 9;
   auto t = fl::rand({s, s});
   ASSERT_EQ(t.size(), s * s);
+  ASSERT_FALSE(t.isEmpty());
   ASSERT_EQ(t.bytes(), s * s * sizeof(float));
+
+  Tensor e;
+  ASSERT_TRUE(e.isEmpty());
 }
 
 TEST(TensorBaseTest, BinaryOperators) {

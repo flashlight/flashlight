@@ -168,6 +168,20 @@ class Tensor {
   Dim dim(const size_t dim) const;
 
   /**
+   * Get the number of directions of the tensor.
+   *
+   * @return the number of dimensions
+   */
+  unsigned ndim() const;
+
+  /**
+   * Returns true if the tensor has zero elements, else false.
+   *
+   * @return true if the tensor is empty
+   */
+  bool isEmpty() const;
+
+  /**
    * Get the tensor size in bytes.
    *
    * @return the size of the tensor in bytes.

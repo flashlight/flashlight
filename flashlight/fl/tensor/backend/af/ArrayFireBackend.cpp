@@ -144,17 +144,17 @@ Tensor ArrayFireBackend::reshape(const Tensor& tensor, const Shape& shape) {
 Tensor ArrayFireBackend::transpose(
     const Tensor& tensor,
     const Shape& dims /* = {} */) {
-  if (tensor.shape().nDims() == 2 &&
-      (dims.nDims() == 0 || dims == Shape({1, 0}))) {
+  if (tensor.shape().ndim() == 2 &&
+      (dims.ndim() == 0 || dims == Shape({1, 0}))) {
     // fastpath for matrices
     return toTensor<ArrayFireTensor>(
         detail::condenseIndices(af::transpose(toArray(tensor))));
-  } else if (dims.nDims() == 0) {
+  } else if (dims.ndim() == 0) {
     // flip all dimensions
     return toTensor<ArrayFireTensor>(
         detail::condenseIndices(af::reorder(toArray(tensor), 3, 2, 1, 0)));
   } else {
-    if (dims.nDims() > AF_MAX_DIMS) {
+    if (dims.ndim() > AF_MAX_DIMS) {
       throw std::invalid_argument(
           "ArrayFire tensor transpose was given "
           "permutation dims with > 4 axes");
@@ -162,7 +162,7 @@ Tensor ArrayFireBackend::transpose(
     // reorder based on specified dimensions
     std::vector<dim_t> d(AF_MAX_DIMS);
     std::iota(std::begin(d), std::end(d), 0);
-    for (size_t i = 0; i < dims.nDims(); ++i) {
+    for (size_t i = 0; i < dims.ndim(); ++i) {
       d[i] = dims[i];
     }
     return toTensor<ArrayFireTensor>(detail::condenseIndices(

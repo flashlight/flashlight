@@ -20,7 +20,7 @@ using namespace fl;
 
 TEST(ShapeTest, Basic) {
   auto s = Shape({3, 4});
-  ASSERT_EQ(s.nDims(), 2);
+  ASSERT_EQ(s.ndim(), 2);
   ASSERT_EQ(s.dim(0), 3);
   ASSERT_EQ(s.dim(1), 4);
   EXPECT_THROW(s.dim(5), std::invalid_argument);
@@ -31,19 +31,19 @@ TEST(ShapeTest, ManyDims) {
     GTEST_SKIP() << "Max shape dimensions is <= 4";
   }
   auto many = Shape({1, 2, 3, 4, 5, 6, 7});
-  ASSERT_EQ(many.nDims(), 7);
+  ASSERT_EQ(many.ndim(), 7);
   ASSERT_EQ(many.dim(5), 6);
 }
 
-TEST(ShapeTest, nDims) {
-  ASSERT_EQ(Shape().nDims(), 0);
-  ASSERT_EQ(Shape({1, 1, 1}).nDims(), 3);
-  ASSERT_EQ(Shape({5, 2, 3}).nDims(), 3);
-  ASSERT_EQ(Shape({1, 2, 3, 6}).nDims(), 4);
+TEST(ShapeTest, ndim) {
+  ASSERT_EQ(Shape().ndim(), 0);
+  ASSERT_EQ(Shape({1, 1, 1}).ndim(), 3);
+  ASSERT_EQ(Shape({5, 2, 3}).ndim(), 3);
+  ASSERT_EQ(Shape({1, 2, 3, 6}).ndim(), 4);
   if (Shape::kMaxDims > 4) {
-    ASSERT_EQ(Shape({1, 2, 3, 1, 1, 1}).nDims(), 6);
-    ASSERT_EQ(Shape({1, 2, 3, 1, 1, 1, 5}).nDims(), 7);
-    ASSERT_EQ(Shape({4, 2, 3, 1, 1, 1, 5}).nDims(), 7);
+    ASSERT_EQ(Shape({1, 2, 3, 1, 1, 1}).ndim(), 6);
+    ASSERT_EQ(Shape({1, 2, 3, 1, 1, 1, 5}).ndim(), 7);
+    ASSERT_EQ(Shape({4, 2, 3, 1, 1, 1, 5}).ndim(), 7);
   }
 }
 

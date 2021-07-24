@@ -24,7 +24,7 @@ size_t Shape::elements() const {
   return std::accumulate(dims_.begin(), dims_.end(), 1, std::multiplies<Dim>());
 }
 
-size_t Shape::nDims() const {
+size_t Shape::ndim() const {
   return dims_.size();
 }
 
@@ -63,7 +63,7 @@ bool Shape::operator!=(const std::initializer_list<Dim>& other) const {
 }
 
 std::ostream& operator<<(std::ostream& ostr, const Shape& s) {
-  for (size_t i = 0; i < s.nDims(); ++i) {
+  for (size_t i = 0; i < s.ndim(); ++i) {
     ostr << s.dim(i) << " ";
   }
   return ostr;

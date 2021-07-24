@@ -74,7 +74,7 @@ class Shape {
   /**
    * @return Number of dimensions in the shape.
    */
-  size_t nDims() const;
+  size_t ndim() const;
 
   /**
    * Get the size of a given dimension in the number of arguments. Throws if the
