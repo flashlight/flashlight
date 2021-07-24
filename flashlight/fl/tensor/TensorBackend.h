@@ -7,6 +7,10 @@
 
 #pragma once
 
+#include <memory>
+#include <type_traits>
+#include <utility>
+
 #include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
@@ -184,6 +188,32 @@ class TensorBackend {
   /************************** Utils ***************************/
   virtual void print(const Tensor& tensor) = 0;
 };
+
+/**
+ * Convert a Tensor from one backend to another.
+ *
+ * The resulting tensor will have the same shape, type, and contents.
+ *
+ * @param[in]
+ */
+template <typename T>
+Tensor toTensorType(Tensor&& in) {
+  static_assert(
+      std::is_base_of<TensorAdapterBase, T>::value,
+      "toTensorType: T must be a derived type of TensorAdapterBase");
+  // Fast path - backend is the same
+  if (in.backendType() == T().backendType()) {
+    return std::move(in);
+  }
+
+  // As per impl requirements, Tensor::device() should return a pointer to host
+  // memory if the tensor resides on the host.
+  return Tensor(std::make_unique<T>(
+      in.shape(),
+      in.type(),
+      reinterpret_cast<void*>(in.device<char>()), // expects contiguous memory
+      in.location()));
+}
 
 namespace detail {
 
