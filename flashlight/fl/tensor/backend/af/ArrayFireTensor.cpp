@@ -17,6 +17,7 @@
 #include "flashlight/fl/tensor/backend/af/Utils.h"
 
 #include <af/arith.h>
+#include <af/backend.h>
 #include <af/device.h>
 #include <af/internal.h>
 
@@ -139,6 +140,19 @@ const Shape& ArrayFireTensor::shape() {
 
 fl::dtype ArrayFireTensor::type() {
   return detail::afToFlType(getHandle().type());
+}
+
+Location ArrayFireTensor::location() {
+  switch (af::getBackendId(getHandle())) {
+    case AF_BACKEND_CUDA:
+    case AF_BACKEND_OPENCL:
+      return Location::Device;
+    case AF_BACKEND_CPU:
+      return Location::Host;
+    default:
+      throw std::logic_error(
+          "ArrayFireTensor::location got an unmatched location");
+  }
 }
 
 void ArrayFireTensor::scalar(void* out) {
