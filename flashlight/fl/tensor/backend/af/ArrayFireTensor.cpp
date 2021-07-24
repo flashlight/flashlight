@@ -85,11 +85,7 @@ af::array& ArrayFireTensor::ArrayComponent::get(const ArrayFireTensor& inst) {
 }
 
 const af::array& ArrayFireTensor::getHandle() const {
-  if (!std::holds_alternative<ArrayComponent>(handle_)) {
-    throw std::logic_error(
-        "ArrayFireTensor::getHandle() - underlying tensor is an array_proxy");
-  }
-  return *arrayHandle_;
+  return const_cast<ArrayFireTensor*>(this)->getHandle();
 }
 
 af::array& ArrayFireTensor::getHandle() {
