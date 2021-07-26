@@ -175,6 +175,11 @@ bool ArrayFireTensor::isContiguous() {
   return af::isLinear(getHandle());
 }
 
+Shape ArrayFireTensor::strides() {
+  // TODO(jacobkahn) do we need to condenseDims here?
+  return detail::afToFlDims(af::getStrides(getHandle()));
+}
+
 Tensor ArrayFireTensor::astype(const dtype type) {
   auto a = getHandle().as(detail::flToAfType(type));
   return toTensor<ArrayFireTensor>(std::move(a));

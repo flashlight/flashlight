@@ -136,6 +136,12 @@ class TensorAdapterBase {
   virtual bool isContiguous() = 0;
 
   /**
+   * Get the dimension-wise strides for this tensor - the number of bytes to
+   * step in each direction when traversing.
+   */
+  virtual Shape strides() = 0;
+
+  /**
    * Returns a tensor with elements cast as a particular type
    *
    * @param[in] the type to which to cast the tensor
