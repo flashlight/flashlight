@@ -268,6 +268,14 @@ Tensor ArrayFireBackend::absolute(const Tensor& tensor) {
   return toTensor<ArrayFireTensor>(af::abs(toArray(tensor)));
 }
 
+Tensor ArrayFireBackend::sigmoid(const Tensor& tensor) {
+  return toTensor<ArrayFireTensor>(af::sigmoid(toArray(tensor)));
+}
+
+Tensor ArrayFireBackend::erf(const Tensor& tensor) {
+  return toTensor<ArrayFireTensor>(af::erf(toArray(tensor)));
+}
+
 Tensor ArrayFireBackend::clip(
     const Tensor& tensor,
     const Tensor& low,

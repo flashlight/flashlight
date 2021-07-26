@@ -645,6 +645,21 @@ inline Tensor abs(const Tensor& tensor) {
 }
 
 /**
+ * Returns the element-wise sigmoid the input:
+ * \f[ out_i = \frac{1}{1 + \exp(-var_i)} \f]
+ *
+ * @param[in] tensor the tensor on which to compute
+ * @return the resulting tensor
+ */
+Tensor sigmoid(const Tensor& tensor);
+
+/**
+ * Computes the element-wise error function the input: see
+ * [here](https://en.wikipedia.org/wiki/Error_function) for details.
+ */
+Tensor erf(const Tensor& tensor);
+
+/**
  * Clip (limit) the values of a tensor. Given some interval of values, set
  * values outside of that interval to be the boundaries of the interval. All
  * values larger than the max become the max, and all values smaller than the

@@ -378,6 +378,14 @@ Tensor absolute(const Tensor& tensor) {
   return tensor.backend().absolute(tensor);
 }
 
+Tensor sigmoid(const Tensor& tensor) {
+  return tensor.backend().sigmoid(tensor);
+}
+
+Tensor erf(const Tensor& tensor) {
+  return tensor.backend().erf(tensor);
+}
+
 Tensor clip(const Tensor& tensor, const Tensor& low, const Tensor& high) {
   FL_TENSOR_BACKENDS_MATCH_CHECK(tensor, low, high);
   return tensor.backend().clip(tensor, low, high);
