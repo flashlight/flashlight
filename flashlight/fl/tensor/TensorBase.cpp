@@ -160,6 +160,10 @@ bool Tensor::isContiguous() const {
   return impl_->isContiguous();
 }
 
+Shape Tensor::strides() const {
+  return impl_->strides();
+}
+
 void Tensor::setContext(void* context) {
   impl_->setContext(context);
 }

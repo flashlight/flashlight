@@ -203,6 +203,14 @@ class Tensor {
   dtype type() const;
 
   /**
+   * Get this tensor's strides - the number of elements/coefficients to step
+   * when moving along each dimension when traversing the tensor.
+   *
+   * @return a Shape containing strides in each dimension.
+   */
+  Shape strides() const;
+
+  /**
    * Returns a tensor with elements cast as a particular type
    *
    * @param[in] the type to which to cast the tensor
