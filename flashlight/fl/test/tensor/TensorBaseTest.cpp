@@ -344,7 +344,7 @@ TEST(TensorBaseTest, matmul) {
     int N = lhs.dim(1);
     int K = rhs.dim(1);
 
-    Tensor out({M, K});
+    auto out = fl::full({M, K}, 0.);
     for (unsigned i = 0; i < M; ++i) {
       for (unsigned j = 0; j < K; ++j) {
         for (unsigned k = 0; k < N; ++k) {
@@ -362,19 +362,16 @@ TEST(TensorBaseTest, matmul) {
   auto a = fl::rand({i, j});
   auto b = fl::rand({j, k});
   auto ref = matmulRef(a, b);
-  ASSERT_TRUE(allClose(fl::matmul(a, b), ref, 1e-4));
+  ASSERT_TRUE(allClose(fl::matmul(a, b), ref));
   ASSERT_TRUE(allClose(
       fl::matmul(
           a,
           fl::transpose(b),
           fl::MatrixProperty::None,
           fl::MatrixProperty::Transpose),
-      ref,
-      1e-4));
+      ref));
   ASSERT_TRUE(allClose(
-      fl::matmul(fl::transpose(a), b, fl::MatrixProperty::Transpose),
-      ref,
-      1e-4));
+      fl::matmul(fl::transpose(a), b, fl::MatrixProperty::Transpose), ref));
 }
 
 TEST(TensorBaseTest, any) {

@@ -62,13 +62,25 @@ TEST(ArrayFireTensorBaseTest, AfRefCountBasic) {
 }
 
 TEST(ArrayFireTensorBaseTest, BackendInterop) {
-  // test toTensorType here since we know we have a backend available
+  // TODO: test toTensorBackend here since we know we have a backend available;
+  // design a test that tests with mulitple backends once available
   auto a = fl::rand({10, 12});
   ASSERT_EQ(a.backendType(), TensorBackendType::ArrayFire);
   auto b = a;
   auto t = fl::toTensorType<ArrayFireTensor>(std::move(a));
   ASSERT_EQ(t.backendType(), TensorBackendType::ArrayFire);
   ASSERT_TRUE(allClose(b, t));
+}
+
+TEST(ArrayFireTensorBaseTest, withTensorType) {
+  // TODO: test with here since we know we have a backend available;
+  // design a test that tests with mulitple backends once available
+  Tensor t;
+  fl::withTensorType<ArrayFireTensor>([&t]() {
+    t = fl::full({5, 5}, 6.);
+    t += 1;
+  });
+  ASSERT_TRUE(allClose(t, fl::full({5, 5}, 7.)));
 }
 
 TEST(ArrayFireTensorBaseTest, ArrayFireAssignmentOperators) {
