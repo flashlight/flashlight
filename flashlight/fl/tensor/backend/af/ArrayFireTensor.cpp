@@ -209,6 +209,12 @@ Tensor ArrayFireTensor::flatten() const {
   return toTensor<ArrayFireTensor>(af::flat(getHandle()));
 }
 
+void ArrayFireTensor::setContext(void* context) {} // noop
+
+void* ArrayFireTensor::getContext() {
+  return nullptr; // noop
+}
+
 /******************** Assignment Operators ********************/
 #define ASSIGN_OP_TYPE(FUN, AF_OP, TYPE)                                 \
   void ArrayFireTensor::FUN(const TYPE& val) {                           \

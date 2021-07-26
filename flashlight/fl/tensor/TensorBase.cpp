@@ -160,6 +160,14 @@ bool Tensor::isContiguous() const {
   return impl_->isContiguous();
 }
 
+void Tensor::setContext(void* context) {
+  impl_->setContext(context);
+}
+
+void* Tensor::getContext() const {
+  return impl_->getContext();
+}
+
 // Generate template specializations for functions that return types
 #define EXPAND_MACRO_FUNCTION_TYPE(FUN, TYPE)             \
   template <>                                             \

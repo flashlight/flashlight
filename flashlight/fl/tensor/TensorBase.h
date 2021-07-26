@@ -329,6 +329,23 @@ class Tensor {
    */
   bool isContiguous() const;
 
+  /**
+   * Stores arbitrary data on a tensor. For internal use/benchmarking only. This
+   * may be a no-op for some backends.
+   *
+   * @param[in] data a pointer to arbitrary data to pass to a tensor impl.
+   */
+  void setContext(void* data);
+
+  /**
+   * Gets arbitrary data stored on a tensor. For internal use/benchmarking only.
+   * This may be a no-op for some backends.
+   *
+   * @return a pointer to some implementation-defined data, else nullptr if a
+   * no-op.
+   */
+  void* getContext() const;
+
   /******************** Assignment Operators ********************/
 #define ASSIGN_OP(OP)                    \
   Tensor& OP(const Tensor& val);         \
