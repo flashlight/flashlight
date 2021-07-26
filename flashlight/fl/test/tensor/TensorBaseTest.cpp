@@ -310,6 +310,12 @@ TEST(TensorBaseTest, isContiguous) {
   ASSERT_TRUE(a.isContiguous());
 }
 
+TEST(TensorBaseTest, strides) {
+  // TODO(jacobkahn): fix this up/see if there's something universal
+  auto t = fl::rand({10, 10});
+  ASSERT_EQ(t.strides(), Shape({1, 10, 100, 100}));
+}
+
 TEST(TensorBaseTest, host) {
   auto a = fl::rand({10, 10});
 
