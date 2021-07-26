@@ -292,6 +292,11 @@ TEST(TensorBaseTest, ceil) {
   ASSERT_TRUE(allClose((a >= 1).astype(fl::dtype::f32), fl::ceil(a) - 1));
 }
 
+TEST(TensorBaseTest, sigmoid) {
+  auto a = fl::rand({10, 10});
+  ASSERT_TRUE(allClose(1 / (1 + fl::exp(-a)), fl::sigmoid(a)));
+}
+
 TEST(TensorBaseTest, scalar) {
   // TODO: exhaustively test all types + fixture
   float val = 8.47;

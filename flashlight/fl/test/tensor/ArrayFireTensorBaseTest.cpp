@@ -227,6 +227,11 @@ TEST(ArrayFireTensorBaseTest, absolute) {
   ASSERT_TRUE(allClose(fl::abs(fl::full({3, 3}, val)), fl::full({3, 3}, -val)));
 }
 
+TEST(ArrayFireTensorBaseTest, erf) {
+  auto in = fl::rand({3, 3});
+  ASSERT_TRUE(allClose(toArray(fl::erf(in)), af::erf(toArray(in))));
+}
+
 TEST(ArrayFireTensorBaseTest, mean) {
   auto a = fl::rand({3, 50});
   ASSERT_EQ(fl::mean<float>(a), af::mean<float>(toArray(a)));

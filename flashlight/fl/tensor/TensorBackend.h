@@ -99,6 +99,8 @@ class TensorBackend {
   virtual Tensor floor(const Tensor& tensor) = 0;
   virtual Tensor ceil(const Tensor& tensor) = 0;
   virtual Tensor absolute(const Tensor& tensor) = 0;
+  virtual Tensor sigmoid(const Tensor& tensor) = 0;
+  virtual Tensor erf(const Tensor& tensor) = 0;
   virtual Tensor
   clip(const Tensor& tensor, const Tensor& low, const Tensor& high) = 0;
   virtual Tensor isnan(const Tensor& tensor) = 0;
