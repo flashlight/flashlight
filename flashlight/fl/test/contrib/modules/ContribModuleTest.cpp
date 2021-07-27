@@ -288,7 +288,7 @@ void sinusoidalPositionEmbeddingFwd(bool isfp16) {
   int csz = 256;
   auto dtype = isfp16 ? af::dtype::f16 : af::dtype::f32;
 
-  auto posemb = SinusoidalPositionEmbedding(csz, 2.);
+  auto posemb = SinusoidalPositionEmbedding(csz, /* inputScale = */ 2.);
   auto input =
       Variable(af::randu(csz, timesteps, batchsize, 1, dtype), false) - 0.5;
 

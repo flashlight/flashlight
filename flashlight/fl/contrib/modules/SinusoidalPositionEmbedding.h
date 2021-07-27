@@ -47,11 +47,12 @@ class SinusoidalPositionEmbedding : public Container {
   std::string prettyString() const override;
 
  private:
-  FL_SAVE_LOAD_WITH_BASE(Container, layerDim_, inputScale_, scale_)
+  FL_SAVE_LOAD_WITH_BASE(Container, layerDim_, inputScale_, scale_, fl::versioned(cosShifts_, 1))
 
   int32_t layerDim_;
   double inputScale_;
   af::array scale_;
+  af::array cosShifts_;
 
   SinusoidalPositionEmbedding();
 };
@@ -59,3 +60,4 @@ class SinusoidalPositionEmbedding : public Container {
 } // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::SinusoidalPositionEmbedding);
+CEREAL_CLASS_VERSION(fl::SinusoidalPositionEmbedding, 1);
