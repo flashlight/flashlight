@@ -438,6 +438,20 @@ double ArrayFireBackend::mean(const Tensor& input) {
   return af::mean<double>(toArray(input));
 }
 
+Tensor ArrayFireBackend::median(
+    const Tensor& input,
+    const std::vector<int>& axes,
+    bool keepDims) {
+  return toTensor<ArrayFireTensor>(
+      afReduceAxes<af::array(const af::array&, const dim_t)>(
+          toArray(input), axes, af::median, keepDims));
+}
+
+// TODO: consolidate with above
+double ArrayFireBackend::median(const Tensor& input) {
+  return af::median<double>(toArray(input));
+}
+
 Tensor ArrayFireBackend::var(
     const Tensor& input,
     const std::vector<int>& axes,

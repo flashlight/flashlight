@@ -246,6 +246,14 @@ TEST(ArrayFireTensorBaseTest, mean) {
       detail::condenseIndices(af::mean(toArray(a), 0))));
 }
 
+TEST(ArrayFireTensorBaseTest, median) {
+  auto a = fl::rand({3, 50});
+  ASSERT_EQ(fl::median<float>(a), af::median<float>(toArray(a)));
+  ASSERT_TRUE(allClose(
+      toArray(fl::median(a, {0})),
+      detail::condenseIndices(af::median(toArray(a), 0))));
+}
+
 TEST(ArrayFireTensorBaseTest, var) {
   auto a = fl::rand({3, 3});
   ASSERT_EQ(fl::var<float>(a), af::var<float>(toArray(a)));
