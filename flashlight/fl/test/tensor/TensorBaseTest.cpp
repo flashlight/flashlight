@@ -409,6 +409,16 @@ TEST(TensorBaseTest, sum) {
       allClose(fl::reshape(res, {t.dim(0), t.dim(3)}), fl::sum(t, {2, 1})));
 }
 
+TEST(TensorBaseTest, median) {
+  auto a = Tensor::fromVector<int>({0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
+  ASSERT_EQ(fl::median<double>(a), 4.5);
+  ASSERT_TRUE(allClose(fl::median(a, {0}), fl::full({1}, 4.5)));
+  ASSERT_EQ(fl::median(fl::rand({5, 6, 7, 8}), {1, 2}).shape(), Shape({5, 8}));
+  ASSERT_EQ(
+      fl::median(fl::rand({5, 6, 7, 8}), {1, 2}, /* keepDims = */ true).shape(),
+      Shape({5, 1, 1, 8}));
+}
+
 TEST(TensorBaseTest, any) {
   using fl::dtype;
   auto t = Tensor::fromVector<unsigned>({3, 3}, {1, 0, 0, 0, 0, 0, 0, 0, 1});
