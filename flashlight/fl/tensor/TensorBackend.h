@@ -164,27 +164,38 @@ class TensorBackend {
       MatrixProperty rhsProp) = 0;
 
   /************************** Reductions ***************************/
-  virtual Tensor amin(const Tensor& input, const std::vector<int>& axes) = 0;
-  virtual double amin(const Tensor& input) = 0; // TODO: consoildate w/ above
-  virtual Tensor amax(const Tensor& input, const std::vector<int>& axes) = 0;
-  virtual double amax(const Tensor& input) = 0; // TODO: consoildate w/ above
-  virtual Tensor sum(const Tensor& input, const std::vector<int>& axes) = 0;
-  virtual double sum(const Tensor& input) = 0; // TODO: consolidate w/ above
-  virtual Tensor mean(const Tensor& input, const std::vector<int>& axes) = 0;
-  virtual double mean(const Tensor& input) = 0; // TODO: consolidate w/ above
   virtual Tensor
-  var(const Tensor& input, const std::vector<int>& axes, bool bias) = 0;
+  amin(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
+  virtual double amin(const Tensor& input) = 0; // TODO: consoildate w/ above
+  virtual Tensor
+  amax(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
+  virtual double amax(const Tensor& input) = 0; // TODO: consoildate w/ above
+  virtual Tensor
+  sum(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
+  virtual double sum(const Tensor& input) = 0; // TODO: consolidate w/ above
+  virtual Tensor
+  mean(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
+  virtual double mean(const Tensor& input) = 0; // TODO: consolidate w/ above
+  virtual Tensor var(
+      const Tensor& input,
+      const std::vector<int>& axes,
+      bool bias,
+      bool keepDims) = 0;
   virtual double var(
       const Tensor& input,
       bool bias) = 0; // TODO: consolidate w/ above
-  virtual Tensor std(const Tensor& input, const std::vector<int>& axes) = 0;
+  virtual Tensor
+  std(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
   virtual double norm(const Tensor& input) = 0; // TODO: consolidate w/ above
   virtual Tensor countNonzero(
       const Tensor& input,
-      const std::vector<int>& axes) = 0;
-  virtual Tensor any(const Tensor& input, const std::vector<int>& axes) = 0;
+      const std::vector<int>& axes,
+      bool keepDims) = 0;
+  virtual Tensor
+  any(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
   virtual bool any(const Tensor& input) = 0; // TODO: consolidate w/ above
-  virtual Tensor all(const Tensor& input, const std::vector<int>& axes) = 0;
+  virtual Tensor
+  all(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
   virtual bool all(const Tensor& input) = 0; // TODO: consolidate w/ above
 
   /************************** Utils ***************************/
