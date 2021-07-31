@@ -10,6 +10,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -68,6 +69,18 @@ class Tensor {
       void* ptr,
       MemoryLocation memoryLocation);
 
+  /**
+   * Shallow-copies the tensor, returning a tensor that points to the same
+   * underlying data.
+   *
+   * For internal use only. Tensor implementations should define when and where
+   * deep copies happen based on their dataflow graph abstractions.
+   */
+  Tensor shallowCopy() const;
+  // shallowCopy() above is used in DevicePtr given that it doesn't mutate
+  // tensors in place with tensor operations, and only pulls out memory.
+  friend class DevicePtr;
+
  public:
   explicit Tensor(std::unique_ptr<TensorAdapterBase> adapter);
   virtual ~Tensor();
@@ -97,6 +110,13 @@ class Tensor {
    * @param[in] type (optional) the type of the tensor
    */
   explicit Tensor(const Shape& shape, fl::dtype type = fl::dtype::f32);
+
+  /**
+   * Construct an empty tensor of a given type.
+   *
+   * @param[in] type (optional) the type of the tensor
+   */
+  explicit Tensor(fl::dtype type);
 
   /**
    * Create a tensor from a vector of values.
@@ -137,12 +157,6 @@ class Tensor {
    * Deep-copies the tensor, including underlying data.
    */
   Tensor copy() const;
-
-  /**
-   * Shallow-copies the tensor, returning a tensor that points to the same
-   * underlying data.
-   */
-  Tensor shallowCopy() const;
 
   /**
    * Get the shape of a tensor.
@@ -216,7 +230,7 @@ class Tensor {
    * @param[in] the type to which to cast the tensor
    * @return a tensor with element-wise cast to the new type
    */
-  Tensor astype(const dtype type);
+  Tensor astype(const dtype type) const;
 
   /**
    * Index into a tensor using a vector of fl::Index references.
@@ -234,6 +248,11 @@ class Tensor {
    */
   template <typename... Ts>
   Tensor operator()(const Ts&... args) const {
+    // TODO: add this back if acceptable with C++ 17 ABIs and a nvcc
+    // static_assert(
+    //     std::conjunction<std::is_constructible<Index, Ts>...>::value,
+    //     "Tensor index operator can only take Index-compatible types - "
+    //     "fl::range, fl::Tensor, fl::span, and integer types.");
     std::vector<Index> indices{{args...}};
     return this->operator()(indices);
   }
@@ -702,6 +721,8 @@ Tensor isnan(const Tensor& tensor);
  * true and elements of y where condition is false.
  */
 Tensor where(const Tensor& condition, const Tensor& x, const Tensor& y);
+Tensor where(const Tensor& condition, const Tensor& x, const double& y);
+Tensor where(const Tensor& condition, const double& x, const Tensor& y);
 
 /************************** Binary Operators ***************************/
 #define FL_BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, TYPE) \
@@ -787,6 +808,7 @@ Tensor maximum(const double& lhs, const Tensor& rhs);
  * @return a tensor containing the exponentiated values
  */
 Tensor power(const Tensor& lhs, const Tensor& rhs);
+Tensor power(const Tensor& lhs, const double& rhs);
 
 /******************************* BLAS ********************************/
 
@@ -805,30 +827,6 @@ Tensor matmul(
     MatrixProperty lhsProp = MatrixProperty::None,
     MatrixProperty rhsProp = MatrixProperty::None);
 
-/**
- * Perform matrix multiplication between two tensors, multiplying the left hand
- * side by the transpose of the right hand side.
- *
- * @param[in] lhs the Tensor on the left hand side
- * @param[in] rhs the Tensor on the right hand side to be transposed.
- *
- * @return an output tensor containing the matrix product of \p lhs,
- * transpose(\p rhs)
- */
-Tensor matmulNT(const Tensor& lhs, const Tensor& rhs);
-
-/**
- * Perform matrix multiplication between two tensors, multiplying the transpose
- * of the left hand side by the right hand side.
- *
- * @param[in] lhs the Tensor on the left hand side to be transposed
- * @param[in] rhs the Tensor on the right hand side
- *
- * @return an output tensor containing the matrix product of transpose(\p lhs),
- * \p rhs
- */
-Tensor matmulTN(const Tensor& lhs, const Tensor& rhs);
-
 /************************** Reductions ***************************/
 
 /**
@@ -838,7 +836,8 @@ Tensor matmulTN(const Tensor& lhs, const Tensor& rhs);
  * @param[in] dim the dimension along which to reduce.
  * @return a tensor containing the minimum values
  */
-Tensor amin(const Tensor& input, const std::vector<int>& axes);
+Tensor
+amin(const Tensor& input, const std::vector<int>& axes, bool keepDims = false);
 
 /**
  * Compute the minimum value across all axes.
@@ -858,7 +857,8 @@ T amin(const Tensor& input);
  * @return a tensor containing the max
  *
  */
-Tensor amax(const Tensor& input, const std::vector<int>& axes);
+Tensor
+amax(const Tensor& input, const std::vector<int>& axes, bool keepDims = false);
 
 /**
  * Compute the minimum value across all axes.
@@ -877,7 +877,8 @@ T amax(const Tensor& input);
  * @param[in] axes the dimension along which to reduce.
  * @return a tensor containing the sum across given axes
  */
-Tensor sum(const Tensor& input, const std::vector<int>& axes);
+Tensor
+sum(const Tensor& input, const std::vector<int>& axes, bool keepDims = false);
 
 /**
  * Sum of tensor over all axes.
@@ -896,7 +897,8 @@ T sum(const Tensor& input);
  * @param[in] axes the dimension along which to reduce.
  * @return a tensor containing the mean across given axes
  */
-Tensor mean(const Tensor& input, const std::vector<int>& axes);
+Tensor
+mean(const Tensor& input, const std::vector<int>& axes, bool keepDims = false);
 
 /**
  * Mean of tensor over all axes.
@@ -915,8 +917,11 @@ T mean(const Tensor& input);
  * @param[in] axes the dimension along which to reduce.
  * @return a tensor containing the var across given axes
  */
-Tensor
-var(const Tensor& input, const std::vector<int>& axes, const bool bias = false);
+Tensor var(
+    const Tensor& input,
+    const std::vector<int>& axes,
+    const bool bias = false,
+    bool keepDims = false);
 
 /**
  * Variance of an tensor over all axes.
@@ -935,7 +940,8 @@ T var(const Tensor& input, const bool bias = false);
  * @param[in] axes the dimension along which to reduce.
  * @return a tensor containing the var across given axes
  */
-Tensor std(const Tensor& input, const std::vector<int>& axes);
+Tensor
+std(const Tensor& input, const std::vector<int>& axes, bool keepDims = false);
 
 /**
  * norm of tensor over all axes.
@@ -958,7 +964,10 @@ double norm(const Tensor& input);
  * @return a tensor containing the number of nonzero elements along each axis or
  * over the entire tensor.
  */
-Tensor countNonzero(const Tensor& input, const std::vector<int>& axes = {});
+Tensor countNonzero(
+    const Tensor& input,
+    const std::vector<int>& axes = {},
+    bool keepDims = false);
 
 /**
  * Checks for any true values in a tensor along one or more axes; returns true
@@ -971,7 +980,8 @@ Tensor countNonzero(const Tensor& input, const std::vector<int>& axes = {});
  * @return a bool tensor containing axis-wise values denoting truthy values
  * along that axis in the input tensor.
  */
-Tensor any(const Tensor& input, const std::vector<int>& axes);
+Tensor
+any(const Tensor& input, const std::vector<int>& axes, bool keepDims = false);
 
 /**
  * Checks for any true values in a tensor; returns true if any exist.
@@ -995,7 +1005,8 @@ bool any(const Tensor& input);
  * @return a bool tensor containing axis-wise values with true along
  * axes that contain only true values.
  */
-Tensor all(const Tensor& input, const std::vector<int>& axes);
+Tensor
+all(const Tensor& input, const std::vector<int>& axes, bool keepDims = false);
 
 /**
  * Checks if all values are true in a tensor along one or more axes; returns
