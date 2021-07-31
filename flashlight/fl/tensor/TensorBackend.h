@@ -106,6 +106,8 @@ class TensorBackend {
   virtual Tensor isnan(const Tensor& tensor) = 0;
   virtual Tensor isinf(const Tensor& tensor) = 0;
   virtual Tensor sign(const Tensor& tensor) = 0;
+  virtual Tensor tril(const Tensor& tensor) = 0;
+  virtual Tensor triu(const Tensor& tensor) = 0;
   virtual Tensor
   where(const Tensor& condition, const Tensor& x, const Tensor& y) = 0;
 

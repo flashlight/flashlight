@@ -105,6 +105,8 @@ class ArrayFireBackend : public TensorBackend {
   Tensor isnan(const Tensor& tensor) override;
   Tensor isinf(const Tensor& tensor) override;
   Tensor sign(const Tensor& tensor) override;
+  Tensor tril(const Tensor& tensor) override;
+  Tensor triu(const Tensor& tensor) override;
   Tensor where(const Tensor& condition, const Tensor& x, const Tensor& y)
       override;
 

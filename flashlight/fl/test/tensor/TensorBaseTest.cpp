@@ -285,6 +285,37 @@ TEST(TensorBaseTest, sign) {
   ASSERT_TRUE(allClose(signs, vals));
 }
 
+TEST(TensorBaseTest, tril) {
+  Dim dim = 10;
+  auto t = fl::rand({dim, dim});
+  auto out = fl::tril(t);
+  for (unsigned i = 0; i < dim; ++i) {
+    for (unsigned j = i + 1; j < dim; ++j) {
+      ASSERT_EQ(out(i, j).scalar<float>(), 0.);
+    }
+  }
+  for (unsigned i = 0; i < dim; ++i) {
+    for (unsigned j = 0; j < i; ++j) {
+      ASSERT_TRUE(allClose(out(i, j), t(i, j)));
+    }
+  }
+}
+
+TEST(TensorBaseTest, triu) {
+  Dim dim = 10;
+  auto t = fl::rand({dim, dim});
+  auto out = fl::triu(t);
+  for (unsigned i = 0; i < dim; ++i) {
+    for (unsigned j = i + 1; j < dim; ++j) {
+      ASSERT_TRUE(allClose(out(i, j), t(i, j)));
+    }
+  }
+  for (unsigned i = 0; i < dim; ++i) {
+    for (unsigned j = 0; j < i; ++j) {
+      ASSERT_EQ(out(i, j).scalar<float>(), 0.);
+    }
+  }
+}
 TEST(TensorBaseTest, where) {
   auto a = Tensor::fromVector<int>({2, 5}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
   auto out = fl::where(a < 5, a, a * 10);

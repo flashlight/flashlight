@@ -299,6 +299,16 @@ Tensor ArrayFireBackend::sign(const Tensor& tensor) {
   return toTensor<ArrayFireTensor>(std::move(wSigned));
 }
 
+Tensor ArrayFireBackend::tril(const Tensor& tensor) {
+  return toTensor<ArrayFireTensor>(
+      af::lower(toArray(tensor), /* is_unit_diag = */ false));
+}
+
+Tensor ArrayFireBackend::triu(const Tensor& tensor) {
+  return toTensor<ArrayFireTensor>(
+      af::upper(toArray(tensor), /* is_unit_diag = */ false));
+}
+
 Tensor ArrayFireBackend::where(
     const Tensor& condition,
     const Tensor& x,
