@@ -185,6 +185,12 @@ TEST(ArrayFireTensorBaseTest, sum) {
   ASSERT_TRUE(allClose(
       toArray(fl::sum(a, {0})),
       fl::detail::condenseIndices(af::sum(toArray(a), 0))));
+
+  auto b = fl::rand({5, 6, 7, 8});
+  ASSERT_EQ(fl::sum<float>(b), af::sum<float>(toArray(b)));
+  ASSERT_TRUE(allClose(
+      toArray(fl::sum(b, {1, 2})),
+      fl::detail::condenseIndices(af::sum(af::sum(toArray(b), 1), 2))));
 }
 
 TEST(ArrayFireTensorBaseTest, exp) {
@@ -235,7 +241,9 @@ TEST(ArrayFireTensorBaseTest, erf) {
 TEST(ArrayFireTensorBaseTest, mean) {
   auto a = fl::rand({3, 50});
   ASSERT_EQ(fl::mean<float>(a), af::mean<float>(toArray(a)));
-  ASSERT_TRUE(allClose(toArray(fl::mean(a, {0})), af::mean(toArray(a), 0)));
+  ASSERT_TRUE(allClose(
+      toArray(fl::mean(a, {0})),
+      detail::condenseIndices(af::mean(toArray(a), 0))));
 }
 
 TEST(ArrayFireTensorBaseTest, var) {
@@ -243,10 +251,10 @@ TEST(ArrayFireTensorBaseTest, var) {
   ASSERT_EQ(fl::var<float>(a), af::var<float>(toArray(a)));
   ASSERT_TRUE(allClose(
       toArray(fl::var(a, {0})),
-      af::var(toArray(a), AF_VARIANCE_POPULATION, 0)));
+      detail::condenseIndices(af::var(toArray(a), AF_VARIANCE_POPULATION, 0))));
   ASSERT_TRUE(allClose(
       toArray(fl::var(a, {1}, false)),
-      af::var(toArray(a), AF_VARIANCE_POPULATION, 1)));
+      detail::condenseIndices(af::var(toArray(a), AF_VARIANCE_POPULATION, 1))));
   // Make sure multidimension matches computing for all
   ASSERT_FLOAT_EQ(
       toArray(fl::var(a, {0, 1}, false)).scalar<float>(),

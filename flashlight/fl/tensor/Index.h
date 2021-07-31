@@ -37,6 +37,11 @@ class range {
 
  public:
   /**
+   * Default ctor.
+   */
+  range() = default;
+
+  /**
    * Construct a range with the indices [0, idx) (i.e. [0, idx - 1])
    */
   explicit range(idx idx);
@@ -95,6 +100,11 @@ class Index {
   /* implicit */ Index(const Tensor& tensor);
   /* implicit */ Index(const range& range);
   /* implicit */ Index(const int idx);
+
+  /**
+   * Default copy assignment operator.
+   */
+  Index& operator=(const Index&) = default;
 
   /**
    * Move constructor - moves the index data.

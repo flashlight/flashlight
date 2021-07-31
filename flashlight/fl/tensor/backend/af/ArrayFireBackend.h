@@ -20,11 +20,21 @@ namespace fl {
 class ArrayFireBackend : public TensorBackend {
   // TODO: consolidate the ArrayFire memory manager here so its global state can
   // be stored/we can reduce the number of singletons.
- public:
+
+  // Intentionally private. Only one instance should exist/it should be accessed
+  // via getInstance().
   ArrayFireBackend();
+
+ public:
+  static ArrayFireBackend& getInstance();
+
   ~ArrayFireBackend() override = default;
 
-  static ArrayFireBackend& getInstance();
+  // No copy or move construction or assignment
+  ArrayFireBackend(ArrayFireBackend&&) = delete;
+  ArrayFireBackend(const ArrayFireBackend&) = delete;
+  ArrayFireBackend& operator=(ArrayFireBackend&&) = delete;
+  ArrayFireBackend& operator=(const ArrayFireBackend&) = delete;
 
   /* -------------------------- Compute Functions -------------------------- */
   void sync() override;
@@ -153,25 +163,37 @@ class ArrayFireBackend : public TensorBackend {
       MatrixProperty rhsProp) override;
 
   /************************** Reductions ***************************/
-  Tensor amin(const Tensor& input, const std::vector<int>& axes) override;
-  double amin(const Tensor& input) override; // TODO: consolidate w/ above
-  Tensor amax(const Tensor& input, const std::vector<int>& axes) override;
-  double amax(const Tensor& input) override; // TODO: consolidate w/ above
-  Tensor sum(const Tensor& input, const std::vector<int>& axes) override;
-  double sum(const Tensor& input) override; // TODO: consolidate w/ above
-  Tensor mean(const Tensor& input, const std::vector<int>& axes) override;
-  double mean(const Tensor& input) override; // TODO: consolidate w/ above
-  Tensor var(const Tensor& input, const std::vector<int>& axes, const bool bias)
+  Tensor amin(const Tensor& input, const std::vector<int>& axes, bool keepDims)
       override;
+  double amin(const Tensor& input) override; // TODO: consolidate w/ above
+  Tensor amax(const Tensor& input, const std::vector<int>& axes, bool keepDims)
+      override;
+  double amax(const Tensor& input) override; // TODO: consolidate w/ above
+  Tensor sum(const Tensor& input, const std::vector<int>& axes, bool keepDims)
+      override;
+  double sum(const Tensor& input) override; // TODO: consolidate w/ above
+  Tensor mean(const Tensor& input, const std::vector<int>& axes, bool keepDims)
+      override;
+  double mean(const Tensor& input) override; // TODO: consolidate w/ above
+  Tensor var(
+      const Tensor& input,
+      const std::vector<int>& axes,
+      const bool bias,
+      bool keepDims) override;
   double var(const Tensor& input, const bool bias)
       override; // TODO: consolidate w/ above
-  Tensor std(const Tensor& input, const std::vector<int>& axes) override;
-  double norm(const Tensor& input) override;
-  Tensor countNonzero(const Tensor& input, const std::vector<int>& axes)
+  Tensor std(const Tensor& input, const std::vector<int>& axes, bool keepDims)
       override;
-  Tensor any(const Tensor& input, const std::vector<int>& axes) override;
+  double norm(const Tensor& input) override;
+  Tensor countNonzero(
+      const Tensor& input,
+      const std::vector<int>& axes,
+      bool keepDims) override;
+  Tensor any(const Tensor& input, const std::vector<int>& axes, bool keepDims)
+      override;
   bool any(const Tensor& input) override;
-  Tensor all(const Tensor& input, const std::vector<int>& axes) override;
+  Tensor all(const Tensor& input, const std::vector<int>& axes, bool keepDims)
+      override;
   bool all(const Tensor& input) override;
 
   /************************** Utils ***************************/

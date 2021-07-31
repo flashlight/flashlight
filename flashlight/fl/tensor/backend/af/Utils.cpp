@@ -148,7 +148,11 @@ af::dim4 condenseDims(const af::dim4& dims) {
   return newDims;
 }
 
-af::array condenseIndices(const af::array& arr) {
+af::array condenseIndices(const af::array& arr, bool keepDims) {
+  // Fast path - return the Array as is if keepDims - don't consolidate
+  if (keepDims) {
+    return arr;
+  }
   // Fast path - Array has zero elements or a dim of size zero
   if (arr.elements() == 0) {
     return arr;
