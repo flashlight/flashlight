@@ -707,6 +707,26 @@ Tensor clip(const Tensor& tensor, const double& low, const double& high);
 Tensor isnan(const Tensor& tensor);
 
 /**
+ * Returns a boolean tensor which is true where the input tensor was infinity,
+ * and false otherwise.
+ *
+ * @param[in] tensor the input tensor
+ * @return a boolean tensor with true in positions that contained Inf in the
+ * input tensor
+ */
+Tensor isinf(const Tensor& tensor);
+
+/**
+ * Returns a tensor that contains -1 if an element is less than 0, 0 if an
+ * element is 0, and 1 if an element is greater than zero. Returns NaN for NaN
+ * values.
+ *
+ * @param[in] tensor the input tensor
+ * @return a tensor containing element-wise sign values.
+ */
+Tensor sign(const Tensor& tensor);
+
+/**
  * Conditionally return elements from one of two tensors based on a condition.
  *
  * @param[in] condition a tensor that, where true, uses values from x

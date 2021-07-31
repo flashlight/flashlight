@@ -103,6 +103,8 @@ class ArrayFireBackend : public TensorBackend {
   Tensor clip(const Tensor& tensor, const Tensor& low, const Tensor& high)
       override;
   Tensor isnan(const Tensor& tensor) override;
+  Tensor isinf(const Tensor& tensor) override;
+  Tensor sign(const Tensor& tensor) override;
   Tensor where(const Tensor& condition, const Tensor& x, const Tensor& y)
       override;
 
