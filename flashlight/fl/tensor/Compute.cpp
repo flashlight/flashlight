@@ -31,11 +31,9 @@ void eval(Tensor& tensor) {
   Tensor().backend().eval(tensor);
 }
 
-// TODO:fl::Tensor remove once no more `af::eval` calls
+// TODO:fl::Tensor remove once no more `fl::eval` calls that take `af::array`s
 void eval(af::array& array) {
-  af::array a = array;
-  Tensor t = toTensor<ArrayFireTensor>(std::move(a));
-  fl::eval(t);
+  af::eval(array);
 }
 
 int getDevice() {
