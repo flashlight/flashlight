@@ -143,6 +143,14 @@ std::vector<Variable> Transformer::forward(const std::vector<Variable>& input) {
   }
 }
 
+void Transformer::setDropout(float value) {
+  pDropout_ = value;
+}
+
+void Transformer::setLayerDropout(float value) {
+  pLayerdrop_ = value;
+}
+
 std::string Transformer::prettyString() const {
   std::ostringstream ss;
   ss << "Transformer (nHeads: " << nHeads_ << "), "
