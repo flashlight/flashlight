@@ -207,6 +207,12 @@ void transformerFwd(bool isfp16) {
   ASSERT_EQ(output[0].dims(0), c);
   ASSERT_EQ(output[0].dims(1), timesteps);
   ASSERT_EQ(output[0].dims(2), batchsize);
+
+  tr.setDropout(0);
+  tr.setLayerDropout(0);
+  auto output1 = tr.forward({input, padMask}).front();
+  auto output2 = tr.forward({input, padMask}).front();
+  ASSERT_TRUE(allClose(output1, output2, 1E-7));
 }
 
 TEST(ContribModuleTest, TransformerFwd) {
