@@ -779,7 +779,12 @@ int main(int argc, char** argv) {
     }
   };
 
-  auto test = [&evalOutput, &dm, &lexicon, &usePlugin, &isSeq2seqCrit](
+  auto test = [&evalOutput,
+               &dm,
+               &lexicon,
+               &usePlugin,
+               &isSeq2seqCrit,
+               &worldRank](
                   std::shared_ptr<fl::Module> ntwrk,
                   std::shared_ptr<SequenceCriterion> crit,
                   std::shared_ptr<fl::Dataset> validds,
@@ -797,7 +802,8 @@ int main(int argc, char** argv) {
     if (dm) {
       fl::TimeMeter timer;
       timer.resume();
-      FL_LOG_MASTER(INFO) << "[Beam-search decoder]   * DM: compute emissions";
+      FL_LOG_MASTER(INFO) << "[Beam-search decoder]   * DM: compute emissions"
+                          << curValidset->size();
       auto eds = dm->forward(curValidset);
       FL_LOG_MASTER(INFO) << "[Beam-search decoder]   * DM: decode";
       std::vector<double> lmweights;
@@ -809,9 +815,10 @@ int main(int argc, char** argv) {
       std::vector<std::vector<int64_t>> wordEditDst(lmweights.size());
       std::vector<std::thread> threads;
       for (int i = 0; i < lmweights.size(); i++) {
-        threads.push_back(
-            std::thread([&lmweights, &wordEditDst, dm, eds, &lexicon, i]() {
+        threads.push_back(std::thread(
+            [&lmweights, &wordEditDst, dm, eds, &lexicon, i, worldRank]() {
               double lmweight = lmweights[i];
+              fl::setDevice(worldRank % 8);
               DecodeMasterLexiconOptions opt = {
                   .beamSize = FLAGS_beamsize,
                   .beamSizeToken = FLAGS_beamsizetoken,

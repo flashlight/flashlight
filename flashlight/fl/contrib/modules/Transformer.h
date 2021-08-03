@@ -59,6 +59,8 @@ class Transformer : public Container {
       bool preLN = false);
 
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
+  void setDropout(float value);
+  void setLayerDropout(float value);
   std::string prettyString() const override;
 
  private:
