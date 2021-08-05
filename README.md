@@ -492,4 +492,4 @@ Some of Flashlight's code is derived from
 [arrayfire-ml](https://github.com/arrayfire/arrayfire-ml/).
 
 ## License
-Flashlight is under a BSD license. See [LICENSE](LICENSE) for more information.
+Flashlight is under an MIT license. See [LICENSE](LICENSE) for more information.
