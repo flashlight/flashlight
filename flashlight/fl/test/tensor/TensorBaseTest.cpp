@@ -285,6 +285,67 @@ TEST(TensorBaseTest, sign) {
   ASSERT_TRUE(allClose(signs, vals));
 }
 
+TEST(TensorBaseTest, tril) {
+  auto checkSquareTril =
+      [](const Dim dim, const Tensor& res, const Tensor& in) {
+        for (int i = 0; i < dim; ++i) {
+          for (int j = i + 1; j < dim; ++j) {
+            ASSERT_EQ(res(i, j).scalar<float>(), 0.);
+          }
+        }
+        for (int i = 0; i < dim; ++i) {
+          for (int j = 0; j < i; ++j) {
+            ASSERT_TRUE(allClose(res(i, j), in(i, j)));
+          }
+        }
+      };
+  int dim = 10;
+  auto t = fl::rand({dim, dim});
+  auto out = fl::tril(t);
+  checkSquareTril(dim, out, t);
+
+  // TODO: this could be bogus behavior
+  // > 2 dims
+  int dim2 = 3;
+  auto t2 = fl::rand({dim2, dim2, dim2});
+  auto out2 = fl::tril(t2);
+  for (int i = 0; i < dim2; ++i) {
+    checkSquareTril(
+        dim2, out2(fl::span, fl::span, i), t2(fl::span, fl::span, i));
+  }
+}
+
+TEST(TensorBaseTest, triu) {
+  auto checkSquareTriu =
+      [](const Dim dim, const Tensor& res, const Tensor& in) {
+        for (unsigned i = 0; i < dim; ++i) {
+          for (unsigned j = i + 1; j < dim; ++j) {
+            ASSERT_TRUE(allClose(res(i, j), in(i, j)));
+          }
+        }
+        for (unsigned i = 0; i < dim; ++i) {
+          for (unsigned j = 0; j < i; ++j) {
+            ASSERT_EQ(res(i, j).scalar<float>(), 0.);
+          }
+        }
+      };
+
+  int dim = 10;
+  auto t = fl::rand({dim, dim});
+  auto out = fl::triu(t);
+  checkSquareTriu(dim, out, t);
+
+  // TODO: this could be bogus behavior
+  // > 2 dims
+  int dim2 = 3;
+  auto t2 = fl::rand({dim2, dim2, dim2});
+  auto out2 = fl::triu(t2);
+  for (int i = 0; i < dim2; ++i) {
+    checkSquareTriu(
+        dim2, out2(fl::span, fl::span, i), t2(fl::span, fl::span, i));
+  }
+}
+
 TEST(TensorBaseTest, where) {
   auto a = Tensor::fromVector<int>({2, 5}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
   auto out = fl::where(a < 5, a, a * 10);

@@ -441,6 +441,14 @@ Tensor sign(const Tensor& tensor) {
   return tensor.backend().sign(tensor);
 }
 
+Tensor tril(const Tensor& tensor) {
+  return tensor.backend().tril(tensor);
+}
+
+Tensor triu(const Tensor& tensor) {
+  return tensor.backend().triu(tensor);
+}
+
 Tensor where(const Tensor& condition, const Tensor& x, const Tensor& y) {
   FL_TENSOR_BACKENDS_MATCH_CHECK(condition, x, y);
   return condition.backend().where(condition, x, y);

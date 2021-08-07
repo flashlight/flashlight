@@ -727,6 +727,32 @@ Tensor isinf(const Tensor& tensor);
 Tensor sign(const Tensor& tensor);
 
 /**
+ * Returns an upper triangular version of the tensor.
+ *
+ * For tensors that have greater than two dimensions, this function outputs a
+ * tensor with lower triangular submatrices along the last two dimensions of the
+ * input tensor.
+ *
+ * @param[in] tensor the input tensor
+ * @return a copy of the input tensor with elements above the diagonal zeroed
+ * out
+ */
+Tensor tril(const Tensor& tensor);
+
+/**
+ * Returns an upper triangular version of the tensor.
+ *
+ * For tensors that have greater than two dimensions, this function outputs a
+ * tensor with upper triangular submatrices along the last two dimensions of the
+ * input tensor.
+ *
+ * @param[in] tensor the input tensor
+ * @return a copy of the input tensor with elements below the diagonal zeroed
+ * out
+ */
+Tensor triu(const Tensor& tensor);
+
+/**
  * Conditionally return elements from one of two tensors based on a condition.
  *
  * @param[in] condition a tensor that, where true, uses values from x
