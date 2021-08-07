@@ -28,6 +28,10 @@ TEST(TensorBaseTest, DefaultConstruction) {
   ASSERT_EQ(u.shape(), Shape({1, 2, 3}));
   ASSERT_EQ(u.type(), fl::dtype::f32);
 
+  Tensor q(fl::dtype::f64);
+  ASSERT_EQ(q.shape(), Shape());
+  ASSERT_EQ(q.type(), fl::dtype::f64);
+
   Tensor v({4, 5, 6}, fl::dtype::u64);
   ASSERT_EQ(v.shape(), Shape({4, 5, 6}));
   ASSERT_EQ(v.type(), fl::dtype::u64);
@@ -87,11 +91,6 @@ TEST(TensorBaseTest, CopyOperators) {
   a += 1;
   ASSERT_TRUE(allClose(a, fl::full({3, 3}, 3.)));
   ASSERT_TRUE(allClose(c, fl::full({3, 3}, 2.)));
-
-  auto d = c.shallowCopy();
-  d += 1;
-  ASSERT_TRUE(allClose(c, fl::full({3, 3}, 3.)));
-  ASSERT_TRUE(allClose(d, fl::full({3, 3}, 3.)));
 }
 
 TEST(TensorBaseTest, ConstructFromData) {
@@ -269,17 +268,29 @@ TEST(TensorBaseTest, isnan) {
 TEST(TensorBaseTest, where) {
   auto a = Tensor::fromVector<int>({2, 5}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
   auto out = fl::where(a < 5, a, a * 10);
+  a(a >= 5) *= 10;
+  ASSERT_TRUE(allClose(out, a));
+  auto outC = fl::where(a < 5, a, 3);
+  a(a >= 5) = 3;
+  ASSERT_TRUE(allClose(outC, a));
+  auto outC2 = fl::where(a < 5, 3, a);
+  a(a < 5) = 3;
+  ASSERT_TRUE(allClose(outC2, a));
+
   // non b8-type vector throws
   EXPECT_THROW(
       fl::where((a < 5).astype(fl::dtype::f32), a, a * 10), std::exception);
-  a(a >= 5) *= 10;
-  ASSERT_TRUE(allClose(out, a));
 }
 
 TEST(TensorBaseTest, power) {
   auto a = fl::full({3, 3}, 2.);
   auto b = fl::full({3, 3}, 2.);
   ASSERT_TRUE(allClose(fl::power(a, b), a * b));
+}
+
+TEST(TensorBaseTest, powerDouble) {
+  auto a = fl::full({3, 3}, 2.);
+  ASSERT_TRUE(allClose(fl::power(a, 3), a * a * a));
 }
 
 TEST(TensorBaseTest, floor) {
@@ -356,6 +367,7 @@ TEST(TensorBaseTest, matmul) {
     int K = rhs.dim(1);
 
     auto out = fl::full({M, K}, 0.);
+
     for (unsigned i = 0; i < M; ++i) {
       for (unsigned j = 0; j < K; ++j) {
         for (unsigned k = 0; k < N; ++k) {
@@ -385,6 +397,18 @@ TEST(TensorBaseTest, matmul) {
       fl::matmul(fl::transpose(a), b, fl::MatrixProperty::Transpose), ref));
 }
 
+TEST(TensorBaseTest, sum) {
+  auto t = fl::full({3, 4, 5, 6}, 1.0);
+  ASSERT_TRUE(allClose(fl::sum(t, {0}), fl::full({4, 5, 6}, 3.0)));
+  ASSERT_TRUE(
+      allClose(fl::sum(t, {1, 2}), fl::full({3, 6}, 4 * 5, fl::dtype::f32)));
+  auto res = fl::sum(
+      fl::sum(t, {2}, /* keepDims = */ true), {1}, /* keepDims = */ true);
+  ASSERT_EQ(res.shape(), Shape({t.dim(0), 1, 1, t.dim(3)}));
+  ASSERT_TRUE(
+      allClose(fl::reshape(res, {t.dim(0), t.dim(3)}), fl::sum(t, {2, 1})));
+}
+
 TEST(TensorBaseTest, any) {
   using fl::dtype;
   auto t = Tensor::fromVector<unsigned>({3, 3}, {1, 0, 0, 0, 0, 0, 0, 0, 1});
@@ -395,6 +419,10 @@ TEST(TensorBaseTest, any) {
       fl::any(t, {0, 1}), Tensor::fromVector<unsigned>({1}).astype(dtype::b8)));
   ASSERT_TRUE(fl::any(t));
   ASSERT_FALSE(fl::any(Tensor::fromVector<unsigned>({0, 0, 0})));
+  ASSERT_TRUE(allClose(
+      fl::any(
+          fl::any(t, {1}, /* keepDims = */ true), {0}, /* keepDims = */ true),
+      fl::any(t, {0, 1})));
 }
 
 TEST(TensorBaseTest, all) {
@@ -407,6 +435,10 @@ TEST(TensorBaseTest, all) {
       fl::all(t, {0, 1}), Tensor::fromVector<unsigned>({0}).astype(dtype::b8)));
   ASSERT_FALSE(fl::all(t));
   ASSERT_TRUE(fl::all(Tensor::fromVector<unsigned>({1, 1, 1})));
+  ASSERT_TRUE(allClose(
+      fl::all(
+          fl::all(t, {1}, /* keepDims = */ true), {0}, /* keepDims = */ true),
+      fl::all(t, {0, 1})));
 }
 
 TEST(TensorBaseTest, arange) {

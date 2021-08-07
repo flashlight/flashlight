@@ -73,8 +73,10 @@ af::dim4 condenseDims(const af::dim4& dims);
  *
  * This operation is performed before returning Array shape, etc where the
  * resulting ArrayFire shape would have 1's in it.
+ *
+ * If keepDims is true, this is a noop, and the array is returned as is.
  */
-af::array condenseIndices(const af::array& arr);
+af::array condenseIndices(const af::array& arr, bool keepDims = false);
 
 /**
  * Convert a Flashlight Location into an ArrayFire location (host or device).

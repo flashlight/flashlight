@@ -60,6 +60,7 @@ TEST(IndexTest, Shape) {
   ASSERT_EQ(t(2).shape(), Shape({4}));
   ASSERT_EQ(t(fl::range(3)).shape(), Shape({3, 4}));
   ASSERT_EQ(t(fl::range(1, 2)).shape(), Shape({4}));
+  ASSERT_EQ(t(fl::range(1, 2), fl::range(1, 2)).shape(), Shape({1}));
   ASSERT_EQ(t(fl::range(0, fl::end)).shape(), Shape({4, 4}));
   ASSERT_EQ(t(fl::range(0, fl::end, 2)).shape(), Shape({2, 4}));
 
@@ -87,6 +88,12 @@ TEST(IndexTest, IndexAssignment) {
   b += 1;
   ASSERT_TRUE(allClose(b, fl::full({3, 3}, 2.)));
   ASSERT_TRUE(allClose(c, fl::full({3, 3}, 1.)));
+
+  auto q = fl::full({4, 4}, 2.);
+  auto r = fl::full({4}, 3.);
+  q(0) = r;
+  ASSERT_TRUE(allClose(q(0), r));
+  ASSERT_TRUE(allClose(q(fl::range(1, fl::end)), fl::full({3, 4}, 2.)));
 }
 
 TEST(IndexTest, TensorIndex) {

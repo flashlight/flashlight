@@ -43,6 +43,9 @@ Tensor::Tensor(
 Tensor::Tensor(const Shape& shape, fl::dtype type /* = fl::dtype::f32 */)
     : impl_(detail::getDefaultAdapter(shape, type)) {}
 
+Tensor::Tensor(fl::dtype type)
+    : impl_(detail::getDefaultAdapter(Shape(), type)) {}
+
 Tensor Tensor::copy() const {
   return impl_->copy();
 }
@@ -83,7 +86,7 @@ dtype Tensor::type() const {
   return impl_->type();
 }
 
-Tensor Tensor::astype(const dtype type) {
+Tensor Tensor::astype(const dtype type) const {
   return impl_->astype(type);
 }
 
@@ -150,6 +153,25 @@ FL_CREATE_MEMORY_OPS(double);
 FL_CREATE_MEMORY_OPS(float);
 FL_CREATE_MEMORY_OPS(short);
 FL_CREATE_MEMORY_OPS(unsigned short);
+// void specializations
+template <>
+void* Tensor::device() const {
+  void* out;
+  impl_->device(&out);
+  return out;
+}
+
+template <>
+void* Tensor::host() const {
+  void* out = reinterpret_cast<void*>(new char[bytes()]);
+  impl_->host(&out);
+  return out;
+}
+
+template <>
+void Tensor::host(void* ptr) const {
+  impl_->host(&ptr);
+}
 #undef FL_CREATE_MEMORY_OPS
 
 void Tensor::unlock() const {
@@ -392,10 +414,12 @@ Tensor clip(const Tensor& tensor, const Tensor& low, const Tensor& high) {
 }
 
 Tensor clip(const Tensor& tensor, const Tensor& low, const double& high) {
+  FL_TENSOR_BACKENDS_MATCH_CHECK(tensor, low);
   return clip(tensor, low, full(tensor.shape(), high));
 }
 
 Tensor clip(const Tensor& tensor, const double& low, const Tensor& high) {
+  FL_TENSOR_BACKENDS_MATCH_CHECK(tensor, high);
   return clip(tensor, full(tensor.shape(), low), high);
 }
 
@@ -410,6 +434,18 @@ Tensor isnan(const Tensor& tensor) {
 Tensor where(const Tensor& condition, const Tensor& x, const Tensor& y) {
   FL_TENSOR_BACKENDS_MATCH_CHECK(condition, x, y);
   return condition.backend().where(condition, x, y);
+}
+
+Tensor where(const Tensor& condition, const Tensor& x, const double& y) {
+  FL_TENSOR_BACKENDS_MATCH_CHECK(condition, x);
+  return condition.backend().where(
+      condition, x, fl::full(condition.shape(), y, x.type()));
+}
+
+Tensor where(const Tensor& condition, const double& x, const Tensor& y) {
+  FL_TENSOR_BACKENDS_MATCH_CHECK(condition, y);
+  return condition.backend().where(
+      condition, fl::full(condition.shape(), x, y.type()), y);
 }
 
 /************************** Binary Operators ***************************/
@@ -505,6 +541,10 @@ Tensor power(const Tensor& lhs, const Tensor& rhs) {
   return lhs.backend().power(lhs, rhs);
 }
 
+Tensor power(const Tensor& lhs, const double& rhs) {
+  return lhs.backend().power(lhs, full(lhs.shape(), rhs));
+}
+
 /******************************* BLAS ********************************/
 Tensor matmul(
     const Tensor& lhs,
@@ -517,24 +557,28 @@ Tensor matmul(
 
 /************************** Reductions ***************************/
 
-Tensor amin(const Tensor& input, const std::vector<int>& axes) {
-  return input.backend().amin(input, axes);
+Tensor amin(const Tensor& input, const std::vector<int>& axes, bool keepDims) {
+  return input.backend().amin(input, axes, keepDims);
 }
 
-Tensor amax(const Tensor& input, const std::vector<int>& axes) {
-  return input.backend().amax(input, axes);
+Tensor amax(const Tensor& input, const std::vector<int>& axes, bool keepDims) {
+  return input.backend().amax(input, axes, keepDims);
 }
 
-Tensor sum(const Tensor& input, const std::vector<int>& axes) {
-  return input.backend().sum(input, axes);
+Tensor sum(const Tensor& input, const std::vector<int>& axes, bool keepDims) {
+  return input.backend().sum(input, axes, keepDims);
 }
 
-Tensor mean(const Tensor& input, const std::vector<int>& axes) {
-  return input.backend().mean(input, axes);
+Tensor mean(const Tensor& input, const std::vector<int>& axes, bool keepDims) {
+  return input.backend().mean(input, axes, keepDims);
 }
 
-Tensor var(const Tensor& input, const std::vector<int>& axes, const bool bias) {
-  return input.backend().var(input, axes, bias);
+Tensor var(
+    const Tensor& input,
+    const std::vector<int>& axes,
+    const bool bias,
+    bool keepDims) {
+  return input.backend().var(input, axes, bias, keepDims);
 }
 
 // fl::var<T>(const Tensor&)
@@ -558,28 +602,29 @@ GENERATE_VAR(short);
 GENERATE_VAR(unsigned short);
 #undef GENERATE_VAR
 
-Tensor std(const Tensor& input, const std::vector<int>& axes) {
-  return input.backend().std(input, axes);
+Tensor std(const Tensor& input, const std::vector<int>& axes, bool keepDims) {
+  return input.backend().std(input, axes, keepDims);
 }
 
 double norm(const Tensor& input) {
   return input.backend().norm(input);
 }
 
-Tensor countNonzero(const Tensor& input, const std::vector<int>& axes) {
-  return input.backend().countNonzero(input, axes);
+Tensor
+countNonzero(const Tensor& input, const std::vector<int>& axes, bool keepDims) {
+  return input.backend().countNonzero(input, axes, keepDims);
 }
 
-Tensor any(const Tensor& input, const std::vector<int>& axes) {
-  return input.backend().any(input, axes);
+Tensor any(const Tensor& input, const std::vector<int>& axes, bool keepDims) {
+  return input.backend().any(input, axes, keepDims);
 }
 
 bool any(const Tensor& input) {
   return input.backend().any(input);
 }
 
-Tensor all(const Tensor& input, const std::vector<int>& axes) {
-  return input.backend().all(input, axes);
+Tensor all(const Tensor& input, const std::vector<int>& axes, bool keepDims) {
+  return input.backend().all(input, axes, keepDims);
 }
 
 bool all(const Tensor& input) {

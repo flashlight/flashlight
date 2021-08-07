@@ -23,24 +23,25 @@
 #include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
 #include "flashlight/fl/tensor/backend/af/Utils.h"
 
+namespace fl {
 namespace {
 
 typedef af::array (*reduceFunc_t)(const af::array&, const int);
 
+template <typename T = reduceFunc_t>
 af::array afReduceAxes(
     const af::array& input,
     const std::vector<int>& axes,
-    reduceFunc_t func) {
+    T func,
+    bool keepDims = false) {
   auto arr = input;
   for (int dim : axes) {
     arr = func(arr, dim);
   }
-  return fl::detail::condenseIndices(arr);
+  return fl::detail::condenseIndices(arr, keepDims);
 }
 
 } // namespace
-
-namespace fl {
 
 ArrayFireBackend::ArrayFireBackend() {
   AF_CHECK(af_init());
@@ -386,8 +387,10 @@ Tensor ArrayFireBackend::matmul(
 
 Tensor ArrayFireBackend::amin(
     const Tensor& input,
-    const std::vector<int>& axes) {
-  return toTensor<ArrayFireTensor>(afReduceAxes(toArray(input), axes, af::min));
+    const std::vector<int>& axes,
+    bool keepDims) {
+  return toTensor<ArrayFireTensor>(
+      afReduceAxes(toArray(input), axes, af::min, keepDims));
 }
 
 // TODO: consolidate with above
@@ -397,8 +400,10 @@ double ArrayFireBackend::amin(const Tensor& input) {
 
 Tensor ArrayFireBackend::amax(
     const Tensor& input,
-    const std::vector<int>& axes) {
-  return toTensor<ArrayFireTensor>(afReduceAxes(toArray(input), axes, af::max));
+    const std::vector<int>& axes,
+    bool keepDims) {
+  return toTensor<ArrayFireTensor>(
+      afReduceAxes(toArray(input), axes, af::max, keepDims));
 }
 
 // TODO: consolidate with above
@@ -408,8 +413,10 @@ double ArrayFireBackend::amax(const Tensor& input) {
 
 Tensor ArrayFireBackend::sum(
     const Tensor& input,
-    const std::vector<int>& axes) {
-  return toTensor<ArrayFireTensor>(afReduceAxes(toArray(input), axes, af::sum));
+    const std::vector<int>& axes,
+    bool keepDims) {
+  return toTensor<ArrayFireTensor>(
+      afReduceAxes(toArray(input), axes, af::sum, keepDims));
 }
 
 // TODO: consolidate with above
@@ -419,13 +426,11 @@ double ArrayFireBackend::sum(const Tensor& input) {
 
 Tensor ArrayFireBackend::mean(
     const Tensor& input,
-    const std::vector<int>& axes) {
-  // Cannot use afReduceAxes because sum uses dim instead of int
-  auto arr = toArray(input);
-  for (int dim : axes) {
-    arr = af::mean(arr, dim);
-  }
-  return toTensor<ArrayFireTensor>(std::move(arr));
+    const std::vector<int>& axes,
+    bool keepDims) {
+  return toTensor<ArrayFireTensor>(
+      afReduceAxes<af::array(const af::array&, const dim_t)>(
+          toArray(input), axes, af::mean, keepDims));
 }
 
 // TODO: consolidate with above
@@ -436,14 +441,17 @@ double ArrayFireBackend::mean(const Tensor& input) {
 Tensor ArrayFireBackend::var(
     const Tensor& input,
     const std::vector<int>& axes,
-    const bool bias) {
+    const bool bias,
+    bool keepDims) {
   // Use arrayfire default for one dimension which may be optimized
   auto& arr = toArray(input);
   if (axes.size() == 1) {
-    return toTensor<ArrayFireTensor>(af::var(
-        arr, bias ? AF_VARIANCE_SAMPLE : AF_VARIANCE_POPULATION, axes[0]));
+    return toTensor<ArrayFireTensor>(detail::condenseIndices(
+        af::var(
+            arr, bias ? AF_VARIANCE_SAMPLE : AF_VARIANCE_POPULATION, axes[0]),
+        keepDims));
   }
-  auto meanArr = mean(input, axes);
+  auto meanArr = mean(input, axes, /* keepDims = */ false);
   // TODO Replace when we have batchFunc for fl::Tensor
   auto x = af::batchFunc(arr, toArray(meanArr), af::operator-);
   x = af::pow(x, 2);
@@ -459,7 +467,7 @@ Tensor ArrayFireBackend::var(
   }
 
   x = x / denominator;
-  return toTensor<ArrayFireTensor>(std::move(x));
+  return toTensor<ArrayFireTensor>(detail::condenseIndices(x, keepDims));
 }
 
 // TODO: consolidate with above
@@ -469,12 +477,13 @@ double ArrayFireBackend::var(const Tensor& input, const bool bias) {
 
 Tensor ArrayFireBackend::std(
     const Tensor& input,
-    const std::vector<int>& axes) {
+    const std::vector<int>& axes,
+    bool keepDims) {
   if (axes.size() == 1) {
     // Use arrayfire default for one dimension which may be optimized
     return toTensor<ArrayFireTensor>(af::stdev(toArray(input), axes[0]));
   }
-  return this->sqrt(this->var(input, axes, /* bias = */ false));
+  return this->sqrt(this->var(input, axes, /* bias = */ false, keepDims));
 }
 
 double ArrayFireBackend::norm(const Tensor& input) {
@@ -483,7 +492,8 @@ double ArrayFireBackend::norm(const Tensor& input) {
 
 Tensor ArrayFireBackend::countNonzero(
     const Tensor& input,
-    const std::vector<int>& axes) {
+    const std::vector<int>& axes,
+    bool keepDims) {
   auto& arr = toArray(input);
   af::array out;
   if (axes.size() == 0) {
@@ -494,16 +504,18 @@ Tensor ArrayFireBackend::countNonzero(
     out = afReduceAxes(
         af::count(arr, axes.front()),
         std::vector<int>(axes.begin() + 1, axes.end()),
-        af::sum);
+        af::sum,
+        keepDims);
   }
-  return toTensor<ArrayFireTensor>(detail::condenseIndices(out));
+  return toTensor<ArrayFireTensor>(detail::condenseIndices(out, keepDims));
 }
 
 Tensor ArrayFireBackend::any(
     const Tensor& input,
-    const std::vector<int>& axes) {
+    const std::vector<int>& axes,
+    bool keepDims) {
   return toTensor<ArrayFireTensor>(
-      afReduceAxes(toArray(input), axes, af::anyTrue));
+      afReduceAxes(toArray(input), axes, af::anyTrue, keepDims));
 }
 
 bool ArrayFireBackend::any(const Tensor& input) {
@@ -512,9 +524,10 @@ bool ArrayFireBackend::any(const Tensor& input) {
 
 Tensor ArrayFireBackend::all(
     const Tensor& input,
-    const std::vector<int>& axes) {
+    const std::vector<int>& axes,
+    bool keepDims) {
   return toTensor<ArrayFireTensor>(
-      afReduceAxes(toArray(input), axes, af::allTrue));
+      afReduceAxes(toArray(input), axes, af::allTrue, keepDims));
 }
 
 bool ArrayFireBackend::all(const Tensor& input) {
