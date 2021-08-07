@@ -289,6 +289,16 @@ Tensor ArrayFireBackend::isnan(const Tensor& tensor) {
   return toTensor<ArrayFireTensor>(af::isNaN(toArray(tensor)));
 }
 
+Tensor ArrayFireBackend::isinf(const Tensor& tensor) {
+  return toTensor<ArrayFireTensor>(af::isInf(toArray(tensor)));
+}
+
+Tensor ArrayFireBackend::sign(const Tensor& tensor) {
+  auto wSigned = 1 - 2 * af::sign(toArray(tensor));
+  wSigned(toArray(tensor) == 0) = 0;
+  return toTensor<ArrayFireTensor>(std::move(wSigned));
+}
+
 Tensor ArrayFireBackend::where(
     const Tensor& condition,
     const Tensor& x,

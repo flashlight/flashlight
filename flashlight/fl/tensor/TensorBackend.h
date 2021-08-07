@@ -104,6 +104,8 @@ class TensorBackend {
   virtual Tensor
   clip(const Tensor& tensor, const Tensor& low, const Tensor& high) = 0;
   virtual Tensor isnan(const Tensor& tensor) = 0;
+  virtual Tensor isinf(const Tensor& tensor) = 0;
+  virtual Tensor sign(const Tensor& tensor) = 0;
   virtual Tensor
   where(const Tensor& condition, const Tensor& x, const Tensor& y) = 0;
 

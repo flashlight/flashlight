@@ -265,6 +265,26 @@ TEST(TensorBaseTest, isnan) {
       fl::full(s, false).astype(fl::dtype::b8)));
 }
 
+TEST(TensorBaseTest, isinf) {
+  Shape s = {3, 3};
+  ASSERT_TRUE(allClose(
+      fl::isinf(fl::full(s, 1.) / 3),
+      fl::full(s, false).astype(fl::dtype::b8)));
+  ASSERT_TRUE(allClose(
+      fl::isinf(fl::full(s, 1.) / 0.),
+      fl::full(s, true).astype(fl::dtype::b8)));
+}
+
+TEST(TensorBaseTest, sign) {
+  auto vals = fl::rand({5, 5}) - 0.5;
+  vals(2, 2) = 0.;
+  auto signs = fl::sign(vals);
+  vals(vals > 0) = 1;
+  vals(vals == 0) = 0;
+  vals(vals < 0) = -1;
+  ASSERT_TRUE(allClose(signs, vals));
+}
+
 TEST(TensorBaseTest, where) {
   auto a = Tensor::fromVector<int>({2, 5}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
   auto out = fl::where(a < 5, a, a * 10);

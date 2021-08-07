@@ -433,6 +433,14 @@ Tensor isnan(const Tensor& tensor) {
   return tensor.backend().isnan(tensor);
 }
 
+Tensor isinf(const Tensor& tensor) {
+  return tensor.backend().isinf(tensor);
+}
+
+Tensor sign(const Tensor& tensor) {
+  return tensor.backend().sign(tensor);
+}
+
 Tensor where(const Tensor& condition, const Tensor& x, const Tensor& y) {
   FL_TENSOR_BACKENDS_MATCH_CHECK(condition, x, y);
   return condition.backend().where(condition, x, y);
