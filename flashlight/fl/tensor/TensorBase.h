@@ -911,6 +911,29 @@ template <typename T>
 T mean(const Tensor& input);
 
 /**
+ * Median of tensor over given axes.
+ *
+ * @param[in] input the input along which to operate
+ * @param[in] axes the dimension along which to reduce.
+ * @return a tensor containing the median across given axes
+ */
+Tensor median(
+    const Tensor& input,
+    const std::vector<int>& axes,
+    bool keepDims = false);
+
+/**
+ * Median of tensor over all axes.
+ * TODO: benchmark against median(median(median(...)))/maybe avoid device-host
+ * memcpy
+ *
+ * @param[in] input the input along which to operate
+ * @return a scalar T containing the median
+ */
+template <typename T>
+T median(const Tensor& input);
+
+/**
  * Variance of an tensor over given axes.
  *
  * @param[in] input the input along which to operate

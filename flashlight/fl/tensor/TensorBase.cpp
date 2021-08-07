@@ -222,6 +222,8 @@ EXPAND_MACRO_FUNCTION(amax);
 EXPAND_MACRO_FUNCTION(sum);
 // fl::mean<T>(const Tensor&)
 EXPAND_MACRO_FUNCTION(mean);
+// fl::mean<T>(const Tensor&)
+EXPAND_MACRO_FUNCTION(median);
 #undef EXPAND_MACRO_FUNCTION_TYPE
 #undef EXPAND_MACRO_FUNCTION
 
@@ -571,6 +573,11 @@ Tensor sum(const Tensor& input, const std::vector<int>& axes, bool keepDims) {
 
 Tensor mean(const Tensor& input, const std::vector<int>& axes, bool keepDims) {
   return input.backend().mean(input, axes, keepDims);
+}
+
+Tensor
+median(const Tensor& input, const std::vector<int>& axes, bool keepDims) {
+  return input.backend().median(input, axes, keepDims);
 }
 
 Tensor var(

@@ -175,6 +175,11 @@ class ArrayFireBackend : public TensorBackend {
   Tensor mean(const Tensor& input, const std::vector<int>& axes, bool keepDims)
       override;
   double mean(const Tensor& input) override; // TODO: consolidate w/ above
+  Tensor median(
+      const Tensor& input,
+      const std::vector<int>& axes,
+      bool keepDims) override;
+  double median(const Tensor& input) override; // TODO: consolidate w/ above
   Tensor var(
       const Tensor& input,
       const std::vector<int>& axes,

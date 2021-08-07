@@ -176,6 +176,9 @@ class TensorBackend {
   virtual Tensor
   mean(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
   virtual double mean(const Tensor& input) = 0; // TODO: consolidate w/ above
+  virtual Tensor
+  median(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
+  virtual double median(const Tensor& input) = 0; // TODO: consolidate w/ above
   virtual Tensor var(
       const Tensor& input,
       const std::vector<int>& axes,
