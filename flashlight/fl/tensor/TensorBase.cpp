@@ -98,6 +98,10 @@ Tensor Tensor::flatten() const {
   return impl_->flatten();
 }
 
+Tensor Tensor::asContiguousTensor() const {
+  return impl_->asContiguousTensor();
+}
+
 TensorBackendType Tensor::backendType() const {
   return impl_->backendType();
 }
