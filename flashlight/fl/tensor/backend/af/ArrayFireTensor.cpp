@@ -37,18 +37,25 @@ af::array& toArray(Tensor& tensor) {
   return tensor.getAdapter<ArrayFireTensor>().getHandle();
 }
 
-ArrayFireTensor::ArrayFireTensor(af::array&& array)
-    : arrayHandle_(std::make_shared<af::array>(std::move(array))) {}
+ArrayFireTensor::ArrayFireTensor(af::array&& array, unsigned numDims)
+    : arrayHandle_(std::make_shared<af::array>(std::move(array))),
+      numDims_(numDims) {}
 
 ArrayFireTensor::ArrayFireTensor(
     std::shared_ptr<af::array> arr,
-    std::vector<af::index>&& indices)
+    std::vector<af::index>&& afIndices,
+    std::vector<detail::IndexType>&& indexTypes,
+    unsigned numDims)
     : arrayHandle_(arr),
-      indices_(std::move(indices)),
-      handle_(IndexedArrayComponent()) {}
+      indices_(std::move(afIndices)),
+      indexTypes_(std::move(indexTypes)),
+      handle_(IndexedArrayComponent()),
+      numDims_(numDims) {}
 
-ArrayFireTensor::ArrayFireTensor(std::shared_ptr<af::array> arr)
-    : arrayHandle_(arr) {}
+ArrayFireTensor::ArrayFireTensor(
+    std::shared_ptr<af::array> arr,
+    unsigned numDims)
+    : arrayHandle_(arr), numDims_(numDims) {}
 
 ArrayFireTensor::ArrayFireTensor() : handle_(ArrayComponent()) {}
 
@@ -59,7 +66,12 @@ ArrayFireTensor::ArrayFireTensor(
     Location memoryLocation)
     : arrayHandle_(std::make_shared<af::array>(
           detail::fromFlData(shape, ptr, type, memoryLocation))),
-      handle_(ArrayComponent()) {}
+      handle_(ArrayComponent()),
+      numDims_(shape.ndim()) {}
+
+unsigned ArrayFireTensor::numDims() const {
+  return numDims_;
+}
 
 af::array::array_proxy ArrayFireTensor::IndexedArrayComponent::get(
     const ArrayFireTensor& inst) {
@@ -98,28 +110,33 @@ af::array& ArrayFireTensor::getHandle() {
   // the conversion.
   if (!std::holds_alternative<ArrayComponent>(handle_)) {
     arrayHandle_ = std::make_shared<af::array>(detail::condenseIndices(
-        std::get<IndexedArrayComponent>(handle_).get(*this)));
+        std::get<IndexedArrayComponent>(handle_).get(*this),
+        /* keepDims = */ false,
+        indexTypes_));
+    // Clear state
     handle_ = ArrayComponent(); // set to passthrough
     indices_ = {}; // remove indices
+    indexTypes_ = {}; // remove IndexTypes
   }
   return *arrayHandle_;
 }
 
 std::unique_ptr<TensorAdapterBase> ArrayFireTensor::clone() const {
   af::array arr = getHandle(); // increment internal AF refcount
-  return std::unique_ptr<ArrayFireTensor>(new ArrayFireTensor(std::move(arr)));
+  return std::unique_ptr<ArrayFireTensor>(
+      new ArrayFireTensor(std::move(arr), numDims()));
 }
 
 Tensor ArrayFireTensor::copy() {
-  return toTensor<ArrayFireTensor>(arrayHandle_->copy());
+  return toTensor<ArrayFireTensor>(arrayHandle_->copy(), numDims());
 }
 
 Tensor ArrayFireTensor::shallowCopy() {
   // ensure indexing is resolved so copying a handle ref is sufficient
   getHandle();
 
-  return Tensor(
-      std::unique_ptr<ArrayFireTensor>(new ArrayFireTensor(arrayHandle_)));
+  return Tensor(std::unique_ptr<ArrayFireTensor>(
+      new ArrayFireTensor(arrayHandle_, numDims())));
 }
 
 TensorBackendType ArrayFireTensor::backendType() const {
@@ -134,7 +151,7 @@ TensorBackend& ArrayFireTensor::backend() const {
 const Shape& ArrayFireTensor::shape() {
   // Update the Shape in-place. Doesn't change any underlying data; only the
   // mirrored Shape metadata.
-  detail::afToFlDims(getHandle().dims(), shape_);
+  detail::afToFlDims(getHandle().dims(), numDims(), shape_);
   return shape_;
 }
 
@@ -176,13 +193,12 @@ bool ArrayFireTensor::isContiguous() {
 }
 
 Shape ArrayFireTensor::strides() {
-  // TODO(jacobkahn) do we need to condenseDims here?
-  return detail::afToFlDims(af::getStrides(getHandle()));
+  return detail::afToFlDims(af::getStrides(getHandle()), numDims());
 }
 
 Tensor ArrayFireTensor::astype(const dtype type) {
   auto a = getHandle().as(detail::flToAfType(type));
-  return toTensor<ArrayFireTensor>(std::move(a));
+  return toTensor<ArrayFireTensor>(std::move(a), numDims());
 }
 
 Tensor ArrayFireTensor::index(const std::vector<Index>& indices) {
@@ -193,25 +209,52 @@ Tensor ArrayFireTensor::index(const std::vector<Index>& indices) {
   }
 
   // If indexing with a single element and it's an Array, don't use spans
-  // TODO: vet and stress test this a lot more
+  // TODO: vet and stress test this a lot more/add proper support for
+  // multi-tensor
+  bool tensorIndex = indices.size() == 1 &&
+      indices.front().type() == detail::IndexType::Tensor;
   std::vector<af::index> afIndices;
-  if (indices.size() == 1 &&
-      indices.front().type() == detail::IndexType::Tensor) {
+  if (tensorIndex) {
+    tensorIndex = true;
     afIndices = {af::index(0)};
   } else {
-    afIndices = {af::span, af::span, af::span, af::span};
+    afIndices = {af::span, af::span, af::span, af::span}; // implicit spans
   }
-  for (size_t i = 0; i < indices.size(); ++i) {
+
+  // Fill in corresponding index types for each af index
+  std::vector<detail::IndexType> indexTypes(afIndices.size());
+  size_t i = 0;
+  for (; i < indices.size(); ++i) {
+    indexTypes[i] = indices[i].type();
     afIndices[i] = detail::flToAfIndex(indices[i]);
+  }
+  // If we're adding implicit spans, fill those indexTypes in
+  for (; i < afIndices.size(); ++i) {
+    indexTypes[i] = detail::IndexType::Span;
   }
 
   getHandle(); // if this tensor was a view, run indexing and promote
-  return fl::Tensor(std::unique_ptr<ArrayFireTensor>(
-      new ArrayFireTensor(arrayHandle_, std::move(afIndices))));
+
+  // Compute numDums for the new Tensor
+  unsigned newNumDims = numDims();
+  if (tensorIndex) {
+    // TODO/FIXME: compute this based on the number of els in the indexing
+    // tensor(s)
+    newNumDims = 1;
+  } else {
+    for (const auto& type : indexTypes) {
+      if (type == detail::IndexType::Literal) {
+        newNumDims--;
+      }
+    }
+  }
+
+  return fl::Tensor(std::unique_ptr<ArrayFireTensor>(new ArrayFireTensor(
+      arrayHandle_, std::move(afIndices), std::move(indexTypes), newNumDims)));
 }
 
 Tensor ArrayFireTensor::flatten() const {
-  return toTensor<ArrayFireTensor>(af::flat(getHandle()));
+  return toTensor<ArrayFireTensor>(af::flat(getHandle()), /* numDims = */ 1);
 }
 
 void ArrayFireTensor::setContext(void* context) {} // noop
@@ -226,25 +269,49 @@ void* ArrayFireTensor::getContext() {
     std::visit(                                                          \
         [val, this](auto&& arr) { arr.get(*this) AF_OP val; }, handle_); \
   }
-#define ASSIGN_OP(FUN, AF_OP)                                                  \
-  void ArrayFireTensor::FUN(const Tensor& tensor) {                            \
-    std::visit(                                                                \
-        [&tensor, this](auto&& arr) { arr.get(*this) AF_OP toArray(tensor); }, \
-        handle_);                                                              \
-  }                                                                            \
-  ASSIGN_OP_TYPE(FUN, AF_OP, double);                                          \
-  ASSIGN_OP_TYPE(FUN, AF_OP, float);                                           \
-  ASSIGN_OP_TYPE(FUN, AF_OP, int);                                             \
-  ASSIGN_OP_TYPE(FUN, AF_OP, unsigned);                                        \
-  ASSIGN_OP_TYPE(FUN, AF_OP, bool);                                            \
-  ASSIGN_OP_TYPE(FUN, AF_OP, char);                                            \
-  ASSIGN_OP_TYPE(FUN, AF_OP, unsigned char);                                   \
-  ASSIGN_OP_TYPE(FUN, AF_OP, short);                                           \
-  ASSIGN_OP_TYPE(FUN, AF_OP, unsigned short);                                  \
-  ASSIGN_OP_TYPE(FUN, AF_OP, long);                                            \
-  ASSIGN_OP_TYPE(FUN, AF_OP, unsigned long);                                   \
-  ASSIGN_OP_TYPE(FUN, AF_OP, long long);                                       \
+
+#define ASSIGN_OP_LITERALS(FUN, AF_OP)        \
+  ASSIGN_OP_TYPE(FUN, AF_OP, double);         \
+  ASSIGN_OP_TYPE(FUN, AF_OP, float);          \
+  ASSIGN_OP_TYPE(FUN, AF_OP, int);            \
+  ASSIGN_OP_TYPE(FUN, AF_OP, unsigned);       \
+  ASSIGN_OP_TYPE(FUN, AF_OP, bool);           \
+  ASSIGN_OP_TYPE(FUN, AF_OP, char);           \
+  ASSIGN_OP_TYPE(FUN, AF_OP, unsigned char);  \
+  ASSIGN_OP_TYPE(FUN, AF_OP, short);          \
+  ASSIGN_OP_TYPE(FUN, AF_OP, unsigned short); \
+  ASSIGN_OP_TYPE(FUN, AF_OP, long);           \
+  ASSIGN_OP_TYPE(FUN, AF_OP, unsigned long);  \
+  ASSIGN_OP_TYPE(FUN, AF_OP, long long);      \
   ASSIGN_OP_TYPE(FUN, AF_OP, unsigned long long);
+
+#define ASSIGN_OP_TENSOR(FUN, AF_OP)                                       \
+  void ArrayFireTensor::FUN(const Tensor& tensor) {                        \
+    std::visit(                                                            \
+        [&tensor, this](auto&& arr) {                                      \
+          /* optimstically try to moddims the operand's singleton dims */  \
+          const af::dim4& preIdxDims = arrayHandle_->dims();               \
+          const af::array& operandArr = toArray(tensor);                   \
+          const af::dim4 newDims = detail::remapToIndexedDims(             \
+              preIdxDims,                                                  \
+              indices_.value_or(std::vector<af::index>()),                 \
+              indexTypes_.value_or(std::vector<detail::IndexType>()),      \
+              operandArr.dims());                                          \
+          /* af::moddims involves in an eval. This will be fixed in        \
+           * AF 3.8.1/3.8.2 */                                             \
+          bool doModdims = operandArr.dims() != newDims;                   \
+          af::array operandArrNew =                                        \
+              (doModdims ? af::moddims(operandArr, newDims) : operandArr); \
+          arr.get(*this) AF_OP operandArrNew;                              \
+          /* this is wrong - fix this behavior */                          \
+          this->numDims_ = tensor.ndim();                                  \
+        },                                                                 \
+        handle_);                                                          \
+  }
+
+#define ASSIGN_OP(FUN, AF_OP)  \
+  ASSIGN_OP_TENSOR(FUN, AF_OP) \
+  ASSIGN_OP_LITERALS(FUN, AF_OP)
 
 // (function name, AF op). Use build-in AF operators.
 ASSIGN_OP(assign, =);

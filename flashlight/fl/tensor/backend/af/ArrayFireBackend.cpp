@@ -41,6 +41,14 @@ af::array afReduceAxes(
   return fl::detail::condenseIndices(arr, keepDims);
 }
 
+unsigned getReducedNumDims(unsigned inSize, unsigned axisSize, bool keepDims) {
+  if (keepDims) {
+    return inSize;
+  } else {
+    return inSize - axisSize;
+  }
+}
+
 } // namespace
 
 ArrayFireBackend::ArrayFireBackend() {
@@ -82,22 +90,26 @@ void ArrayFireBackend::setSeed(int seed) {
 
 Tensor ArrayFireBackend::randn(const Shape& shape, dtype type) {
   return toTensor<ArrayFireTensor>(
-      af::randn(detail::flToAfDims(shape), detail::flToAfType(type)));
+      af::randn(detail::flToAfDims(shape), detail::flToAfType(type)),
+      shape.ndim());
 }
 
 Tensor ArrayFireBackend::rand(const Shape& shape, dtype type) {
   return toTensor<ArrayFireTensor>(
-      af::randu(detail::flToAfDims(shape), detail::flToAfType(type)));
+      af::randu(detail::flToAfDims(shape), detail::flToAfType(type)),
+      shape.ndim());
 }
 
 /* --------------------------- Tensor Operators --------------------------- */
 
 /******************** Tensor Creation Functions ********************/
-#define AF_BACKEND_FULL_FUN_DEF(TYPE)                                \
-  Tensor ArrayFireBackend::full(                                     \
-      const Shape& dims, TYPE value, const dtype type) {             \
-    return toTensor<ArrayFireTensor>(af::constant(                   \
-        value, detail::flToAfDims(dims), detail::flToAfType(type))); \
+#define AF_BACKEND_FULL_FUN_DEF(TYPE)                                    \
+  Tensor ArrayFireBackend::full(                                         \
+      const Shape& shape, TYPE value, const dtype type) {                \
+    return toTensor<ArrayFireTensor>(                                    \
+        af::constant(                                                    \
+            value, detail::flToAfDims(shape), detail::flToAfType(type)), \
+        shape.ndim());                                                   \
   }
 AF_BACKEND_FULL_FUN_DEF(const double&);
 AF_BACKEND_FULL_FUN_DEF(const float&);
@@ -115,7 +127,7 @@ AF_BACKEND_FULL_FUN_DEF(const unsigned short&);
 
 Tensor ArrayFireBackend::identity(const Dim dim, const dtype type) {
   return toTensor<ArrayFireTensor>(
-      af::identity({dim, dim}, detail::flToAfType(type)));
+      af::identity({dim, dim}, detail::flToAfType(type)), /* numDims = */ 2);
 }
 
 Tensor ArrayFireBackend::arange(
@@ -123,37 +135,41 @@ Tensor ArrayFireBackend::arange(
     const Dim seqDim,
     const dtype type) {
   return toTensor<ArrayFireTensor>(
-      af::range(detail::flToAfDims(shape), seqDim, detail::flToAfType(type)));
+      af::range(detail::flToAfDims(shape), seqDim, detail::flToAfType(type)),
+      shape.ndim());
 }
 
 Tensor ArrayFireBackend::iota(
     const Shape& dims,
     const Shape& tileDims,
     const dtype type) {
-  return toTensor<ArrayFireTensor>(af::iota(
-      detail::flToAfDims(dims),
-      detail::flToAfDims(tileDims),
-      detail::flToAfType(type)));
+  return toTensor<ArrayFireTensor>(
+      af::iota(
+          detail::flToAfDims(dims),
+          detail::flToAfDims(tileDims),
+          detail::flToAfType(type)),
+      // TODO: check
+      tileDims.ndim());
 }
 
 /************************ Shaping and Indexing *************************/
 Tensor ArrayFireBackend::reshape(const Tensor& tensor, const Shape& shape) {
   return toTensor<ArrayFireTensor>(
-      af::moddims(toArray(tensor), detail::flToAfDims(shape)));
+      af::moddims(toArray(tensor), detail::flToAfDims(shape)), shape.ndim());
 }
 
 Tensor ArrayFireBackend::transpose(
     const Tensor& tensor,
     const Shape& dims /* = {} */) {
-  if (tensor.shape().ndim() == 2 &&
-      (dims.ndim() == 0 || dims == Shape({1, 0}))) {
+  if (tensor.ndim() == 2 && (dims.ndim() == 0 || dims == Shape({1, 0}))) {
     // fastpath for matrices
     return toTensor<ArrayFireTensor>(
-        detail::condenseIndices(af::transpose(toArray(tensor))));
+        detail::condenseIndices(af::transpose(toArray(tensor))), tensor.ndim());
   } else if (dims.ndim() == 0) {
     // flip all dimensions
     return toTensor<ArrayFireTensor>(
-        detail::condenseIndices(af::reorder(toArray(tensor), 3, 2, 1, 0)));
+        detail::condenseIndices(af::reorder(toArray(tensor), 3, 2, 1, 0)),
+        tensor.ndim());
   } else {
     if (dims.ndim() > AF_MAX_DIMS) {
       throw std::invalid_argument(
@@ -166,23 +182,33 @@ Tensor ArrayFireBackend::transpose(
     for (size_t i = 0; i < dims.ndim(); ++i) {
       d[i] = dims[i];
     }
-    return toTensor<ArrayFireTensor>(detail::condenseIndices(
-        af::reorder(toArray(tensor), d[0], d[1], d[2], d[3])));
+    return toTensor<ArrayFireTensor>(
+        detail::condenseIndices(
+            af::reorder(toArray(tensor), d[0], d[1], d[2], d[3])),
+        tensor.ndim());
   }
 }
 
 Tensor ArrayFireBackend::tile(const Tensor& tensor, const Shape& shape) {
   return toTensor<ArrayFireTensor>(
-      af::tile(toArray(tensor), detail::flToAfDims(shape)));
+      af::tile(toArray(tensor), detail::flToAfDims(shape)),
+      // TODO: check
+      std::max(tensor.ndim(), shape.ndim()));
 }
 
 Tensor ArrayFireBackend::concatenate(
     const std::vector<Tensor>& tensors,
     unsigned axis) {
+  // TODO: write this in a custom way with index assignment so as to avoid this
+  // limitation
   if (tensors.size() > 10) {
     throw std::invalid_argument(
         "ArrayFire concatenate doesn't support > 10 tensors");
   }
+  if (tensors.size() == 0) {
+    return toTensor<ArrayFireTensor>(ArrayFireTensor()); // empty tensor
+  }
+
   std::vector<af_array> arrs(tensors.size());
   std::transform(
       tensors.begin(), tensors.end(), arrs.begin(), [](const Tensor& t) {
@@ -190,11 +216,19 @@ Tensor ArrayFireBackend::concatenate(
       });
   af_array handle = nullptr;
   AF_CHECK(af_join_many(&handle, axis, tensors.size(), arrs.data()));
-  return toTensor<ArrayFireTensor>(af::array(handle));
+
+  unsigned numDims = tensors[0].ndim();
+  if (axis > numDims - 1) {
+    numDims = axis + 1;
+  }
+
+  // All tensors have the same numdims
+  return toTensor<ArrayFireTensor>(af::array(handle), numDims);
 }
 
 Tensor ArrayFireBackend::nonzero(const Tensor& tensor) {
-  return toTensor<ArrayFireTensor>(af::where(toArray(tensor)));
+  return toTensor<ArrayFireTensor>(
+      af::where(toArray(tensor)), /* numDims = */ 1);
 }
 
 Tensor ArrayFireBackend::pad(
@@ -215,66 +249,72 @@ Tensor ArrayFireBackend::pad(
     endPadding[i] = second;
   }
 
-  return toTensor<ArrayFireTensor>(af::pad(
-      toArray(input), beginPadding, endPadding, detail::flToAfPadType(type)));
+  return toTensor<ArrayFireTensor>(
+      af::pad(
+          toArray(input),
+          beginPadding,
+          endPadding,
+          detail::flToAfPadType(type)),
+      /* numDims = */ // TODO: check
+      std::max(input.ndim(), padWidths.size()));
 }
 
 /************************** Unary Operators ***************************/
 
 Tensor ArrayFireBackend::exp(const Tensor& tensor) {
-  return toTensor<ArrayFireTensor>(af::exp(toArray(tensor)));
+  return toTensor<ArrayFireTensor>(af::exp(toArray(tensor)), tensor.ndim());
 }
 
 Tensor ArrayFireBackend::log(const Tensor& tensor) {
-  return toTensor<ArrayFireTensor>(af::log(toArray(tensor)));
+  return toTensor<ArrayFireTensor>(af::log(toArray(tensor)), tensor.ndim());
 }
 
 Tensor ArrayFireBackend::negative(const Tensor& tensor) {
-  return toTensor<ArrayFireTensor>(-toArray(tensor));
+  return toTensor<ArrayFireTensor>(-toArray(tensor), tensor.ndim());
 }
 
 Tensor ArrayFireBackend::logicalNot(const Tensor& tensor) {
-  return toTensor<ArrayFireTensor>(!toArray(tensor));
+  return toTensor<ArrayFireTensor>(!toArray(tensor), tensor.ndim());
 }
 
 Tensor ArrayFireBackend::log1p(const Tensor& tensor) {
-  return toTensor<ArrayFireTensor>(af::log1p(toArray(tensor)));
+  return toTensor<ArrayFireTensor>(af::log1p(toArray(tensor)), tensor.ndim());
 }
 
 Tensor ArrayFireBackend::sin(const Tensor& tensor) {
-  return toTensor<ArrayFireTensor>(af::sin(toArray(tensor)));
+  return toTensor<ArrayFireTensor>(af::sin(toArray(tensor)), tensor.ndim());
 }
 
 Tensor ArrayFireBackend::cos(const Tensor& tensor) {
-  return toTensor<ArrayFireTensor>(af::cos(toArray(tensor)));
+  return toTensor<ArrayFireTensor>(af::cos(toArray(tensor)), tensor.ndim());
 }
 
 Tensor ArrayFireBackend::sqrt(const Tensor& tensor) {
-  return toTensor<ArrayFireTensor>(af::sqrt(toArray(tensor)));
+  return toTensor<ArrayFireTensor>(af::sqrt(toArray(tensor)), tensor.ndim());
 }
 
 Tensor ArrayFireBackend::tanh(const Tensor& tensor) {
-  return toTensor<ArrayFireTensor>(af::tanh(toArray(tensor)));
+  return toTensor<ArrayFireTensor>(af::tanh(toArray(tensor)), tensor.ndim());
 }
 
 Tensor ArrayFireBackend::floor(const Tensor& tensor) {
-  return toTensor<ArrayFireTensor>(af::floor(toArray(tensor)));
+  return toTensor<ArrayFireTensor>(af::floor(toArray(tensor)), tensor.ndim());
 }
 
 Tensor ArrayFireBackend::ceil(const Tensor& tensor) {
-  return toTensor<ArrayFireTensor>(af::ceil(toArray(tensor)));
+  return toTensor<ArrayFireTensor>(af::ceil(toArray(tensor)), tensor.ndim());
 }
 
 Tensor ArrayFireBackend::absolute(const Tensor& tensor) {
-  return toTensor<ArrayFireTensor>(af::abs(toArray(tensor)));
+  return toTensor<ArrayFireTensor>(af::abs(toArray(tensor)), tensor.ndim());
 }
 
 Tensor ArrayFireBackend::sigmoid(const Tensor& tensor) {
-  return toTensor<ArrayFireTensor>(af::sigmoid(toArray(tensor)));
+  return toTensor<ArrayFireTensor>(af::sigmoid(toArray(tensor)), tensor.ndim());
 }
 
 Tensor ArrayFireBackend::erf(const Tensor& tensor) {
-  return toTensor<ArrayFireTensor>(af::erf(toArray(tensor)));
+  return toTensor<ArrayFireTensor>(af::erf(toArray(tensor)), tensor.ndim());
 }
 
 Tensor ArrayFireBackend::clip(
@@ -282,31 +322,31 @@ Tensor ArrayFireBackend::clip(
     const Tensor& low,
     const Tensor& high) {
   return toTensor<ArrayFireTensor>(
-      af::clamp(toArray(tensor), toArray(low), toArray(high)));
+      af::clamp(toArray(tensor), toArray(low), toArray(high)), tensor.ndim());
 }
 
 Tensor ArrayFireBackend::isnan(const Tensor& tensor) {
-  return toTensor<ArrayFireTensor>(af::isNaN(toArray(tensor)));
+  return toTensor<ArrayFireTensor>(af::isNaN(toArray(tensor)), tensor.ndim());
 }
 
 Tensor ArrayFireBackend::isinf(const Tensor& tensor) {
-  return toTensor<ArrayFireTensor>(af::isInf(toArray(tensor)));
+  return toTensor<ArrayFireTensor>(af::isInf(toArray(tensor)), tensor.ndim());
 }
 
 Tensor ArrayFireBackend::sign(const Tensor& tensor) {
   auto wSigned = 1 - 2 * af::sign(toArray(tensor));
   wSigned(toArray(tensor) == 0) = 0;
-  return toTensor<ArrayFireTensor>(std::move(wSigned));
+  return toTensor<ArrayFireTensor>(std::move(wSigned), tensor.ndim());
 }
 
 Tensor ArrayFireBackend::tril(const Tensor& tensor) {
   return toTensor<ArrayFireTensor>(
-      af::lower(toArray(tensor), /* is_unit_diag = */ false));
+      af::lower(toArray(tensor), /* is_unit_diag = */ false), tensor.ndim());
 }
 
 Tensor ArrayFireBackend::triu(const Tensor& tensor) {
   return toTensor<ArrayFireTensor>(
-      af::upper(toArray(tensor), /* is_unit_diag = */ false));
+      af::upper(toArray(tensor), /* is_unit_diag = */ false), tensor.ndim());
 }
 
 Tensor ArrayFireBackend::where(
@@ -321,12 +361,12 @@ Tensor ArrayFireBackend::where(
 /************************** Binary Operators ***************************/
 // For ArrayFire, af::array already implements overloads for all needed
 // operators -- use these by default.
-#define FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, TYPE)             \
-  Tensor ArrayFireBackend::FUNC(const Tensor& a, TYPE rhs) { \
-    return toTensor<ArrayFireTensor>(toArray(a) OP rhs);     \
-  }                                                          \
-  Tensor ArrayFireBackend::FUNC(TYPE lhs, const Tensor& a) { \
-    return toTensor<ArrayFireTensor>(lhs OP toArray(a));     \
+#define FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, TYPE)                   \
+  Tensor ArrayFireBackend::FUNC(const Tensor& a, TYPE rhs) {       \
+    return toTensor<ArrayFireTensor>(toArray(a) OP rhs, a.ndim()); \
+  }                                                                \
+  Tensor ArrayFireBackend::FUNC(TYPE lhs, const Tensor& a) {       \
+    return toTensor<ArrayFireTensor>(lhs OP toArray(a), a.ndim()); \
   }
 
 #define FL_AF_BINARY_OP_LITERALS_DEF(FUNC, OP)                   \
@@ -348,7 +388,8 @@ Tensor ArrayFireBackend::where(
 // already defined on af::arrays
 #define FL_AF_BINARY_OP_DEF(OP, FUNC)                                   \
   Tensor ArrayFireBackend::FUNC(const Tensor& lhs, const Tensor& rhs) { \
-    return toTensor<ArrayFireTensor>(toArray(lhs) OP toArray(rhs));     \
+    return toTensor<ArrayFireTensor>(                                   \
+        toArray(lhs) OP toArray(rhs), lhs.ndim());                      \
   }                                                                     \
   FL_AF_BINARY_OP_LITERALS_DEF(FUNC, OP);
 
@@ -378,29 +419,34 @@ FL_AF_BINARY_OP_DEF(>>, rShift);
 #undef FL_AF_BINARY_OP_LITERALS_DEF
 
 Tensor ArrayFireBackend::minimum(const Tensor& lhs, const Tensor& rhs) {
-  return toTensor<ArrayFireTensor>(af::min(toArray(lhs), toArray(rhs)));
+  return toTensor<ArrayFireTensor>(
+      af::min(toArray(lhs), toArray(rhs)), lhs.ndim());
 }
 
 Tensor ArrayFireBackend::maximum(const Tensor& lhs, const Tensor& rhs) {
-  return toTensor<ArrayFireTensor>(af::max(toArray(lhs), toArray(rhs)));
+  return toTensor<ArrayFireTensor>(
+      af::max(toArray(lhs), toArray(rhs)), lhs.ndim());
 }
 
 Tensor ArrayFireBackend::power(const Tensor& lhs, const Tensor& rhs) {
-  return toTensor<ArrayFireTensor>(af::pow(toArray(lhs), toArray(rhs)));
+  return toTensor<ArrayFireTensor>(
+      af::pow(toArray(lhs), toArray(rhs)), lhs.ndim());
 }
 
-/************************** Matrix Multiply ***************************/
+/************************** BLAS ***************************/
 
 Tensor ArrayFireBackend::matmul(
     const Tensor& lhs,
     const Tensor& rhs,
     MatrixProperty lhsProp,
     MatrixProperty rhsProp) {
-  return toTensor<ArrayFireTensor>(af::matmul(
-      toArray(lhs),
-      toArray(rhs),
-      detail::flToAfMatrixProperty(lhsProp),
-      detail::flToAfMatrixProperty(rhsProp)));
+  return toTensor<ArrayFireTensor>(
+      af::matmul(
+          toArray(lhs),
+          toArray(rhs),
+          detail::flToAfMatrixProperty(lhsProp),
+          detail::flToAfMatrixProperty(rhsProp)),
+      /* numDims = */ std::max(lhs.ndim(), rhs.ndim()));
 }
 
 /************************** Reductions ***************************/
@@ -410,7 +456,8 @@ Tensor ArrayFireBackend::amin(
     const std::vector<int>& axes,
     bool keepDims) {
   return toTensor<ArrayFireTensor>(
-      afReduceAxes(toArray(input), axes, af::min, keepDims));
+      afReduceAxes(toArray(input), axes, af::min, keepDims),
+      getReducedNumDims(input.ndim(), axes.size(), keepDims));
 }
 
 // TODO: consolidate with above
@@ -423,7 +470,8 @@ Tensor ArrayFireBackend::amax(
     const std::vector<int>& axes,
     bool keepDims) {
   return toTensor<ArrayFireTensor>(
-      afReduceAxes(toArray(input), axes, af::max, keepDims));
+      afReduceAxes(toArray(input), axes, af::max, keepDims),
+      getReducedNumDims(input.ndim(), axes.size(), keepDims));
 }
 
 // TODO: consolidate with above
@@ -436,7 +484,8 @@ Tensor ArrayFireBackend::sum(
     const std::vector<int>& axes,
     bool keepDims) {
   return toTensor<ArrayFireTensor>(
-      afReduceAxes(toArray(input), axes, af::sum, keepDims));
+      afReduceAxes(toArray(input), axes, af::sum, keepDims),
+      getReducedNumDims(input.ndim(), axes.size(), keepDims));
 }
 
 // TODO: consolidate with above
@@ -450,7 +499,8 @@ Tensor ArrayFireBackend::mean(
     bool keepDims) {
   return toTensor<ArrayFireTensor>(
       afReduceAxes<af::array(const af::array&, const dim_t)>(
-          toArray(input), axes, af::mean, keepDims));
+          toArray(input), axes, af::mean, keepDims),
+      getReducedNumDims(input.ndim(), axes.size(), keepDims));
 }
 
 // TODO: consolidate with above
@@ -464,7 +514,8 @@ Tensor ArrayFireBackend::median(
     bool keepDims) {
   return toTensor<ArrayFireTensor>(
       afReduceAxes<af::array(const af::array&, const dim_t)>(
-          toArray(input), axes, af::median, keepDims));
+          toArray(input), axes, af::median, keepDims),
+      getReducedNumDims(input.ndim(), axes.size(), keepDims));
 }
 
 // TODO: consolidate with above
@@ -477,13 +528,17 @@ Tensor ArrayFireBackend::var(
     const std::vector<int>& axes,
     const bool bias,
     bool keepDims) {
-  // Use arrayfire default for one dimension which may be optimized
+  // Use ArrayFire default for one dimension which may be optimized
   auto& arr = toArray(input);
   if (axes.size() == 1) {
-    return toTensor<ArrayFireTensor>(detail::condenseIndices(
-        af::var(
-            arr, bias ? AF_VARIANCE_SAMPLE : AF_VARIANCE_POPULATION, axes[0]),
-        keepDims));
+    return toTensor<ArrayFireTensor>(
+        detail::condenseIndices(
+            af::var(
+                arr,
+                bias ? AF_VARIANCE_SAMPLE : AF_VARIANCE_POPULATION,
+                axes[0]),
+            keepDims),
+        /* numDims = */ input.ndim() - 1);
   }
   auto meanArr = mean(input, axes, /* keepDims = */ false);
   // TODO Replace when we have batchFunc for fl::Tensor
@@ -501,7 +556,9 @@ Tensor ArrayFireBackend::var(
   }
 
   x = x / denominator;
-  return toTensor<ArrayFireTensor>(detail::condenseIndices(x, keepDims));
+  return toTensor<ArrayFireTensor>(
+      detail::condenseIndices(x, keepDims),
+      getReducedNumDims(input.ndim(), axes.size(), keepDims));
 }
 
 // TODO: consolidate with above
@@ -515,7 +572,8 @@ Tensor ArrayFireBackend::std(
     bool keepDims) {
   if (axes.size() == 1) {
     // Use arrayfire default for one dimension which may be optimized
-    return toTensor<ArrayFireTensor>(af::stdev(toArray(input), axes[0]));
+    return toTensor<ArrayFireTensor>(
+        af::stdev(toArray(input), axes[0]), /* numDims = */ input.ndim() - 1);
   }
   return this->sqrt(this->var(input, axes, /* bias = */ false, keepDims));
 }
@@ -529,19 +587,24 @@ Tensor ArrayFireBackend::countNonzero(
     const std::vector<int>& axes,
     bool keepDims) {
   auto& arr = toArray(input);
+  unsigned numDims = input.ndim();
   af::array out;
   if (axes.size() == 0) {
     out = af::sum(af::count(arr));
+    numDims = 1;
   } else if (axes.size() == 1) {
     out = af::count(arr, axes.front());
+    numDims = getReducedNumDims(input.ndim(), axes.size(), keepDims);
   } else {
     out = afReduceAxes(
         af::count(arr, axes.front()),
         std::vector<int>(axes.begin() + 1, axes.end()),
         af::sum,
         keepDims);
+    numDims = getReducedNumDims(input.ndim(), axes.size(), keepDims);
   }
-  return toTensor<ArrayFireTensor>(detail::condenseIndices(out, keepDims));
+  return toTensor<ArrayFireTensor>(
+      detail::condenseIndices(out, keepDims), numDims);
 }
 
 Tensor ArrayFireBackend::any(
@@ -549,7 +612,8 @@ Tensor ArrayFireBackend::any(
     const std::vector<int>& axes,
     bool keepDims) {
   return toTensor<ArrayFireTensor>(
-      afReduceAxes(toArray(input), axes, af::anyTrue, keepDims));
+      afReduceAxes(toArray(input), axes, af::anyTrue, keepDims),
+      getReducedNumDims(input.ndim(), axes.size(), keepDims));
 }
 
 bool ArrayFireBackend::any(const Tensor& input) {
@@ -561,7 +625,8 @@ Tensor ArrayFireBackend::all(
     const std::vector<int>& axes,
     bool keepDims) {
   return toTensor<ArrayFireTensor>(
-      afReduceAxes(toArray(input), axes, af::allTrue, keepDims));
+      afReduceAxes(toArray(input), axes, af::allTrue, keepDims),
+      getReducedNumDims(input.ndim(), axes.size(), keepDims));
 }
 
 bool ArrayFireBackend::all(const Tensor& input) {
