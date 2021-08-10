@@ -47,7 +47,10 @@ Index::Index(const Tensor& tensor)
     : type_(detail::IndexType::Tensor), index_(tensor) {}
 
 Index::Index(const range& range)
-    : type_(detail::IndexType::Range), index_(range) {}
+    : type_(
+          range == fl::range(-1, -1, 0) ? detail::IndexType::Span
+                                        : detail::IndexType::Range),
+      index_(range) {}
 
 Index::Index(const int idx) : type_(detail::IndexType::Literal), index_(idx) {}
 
@@ -59,10 +62,7 @@ detail::IndexType Index::type() const {
 }
 
 bool Index::isSpan() const {
-  if (type_ != detail::IndexType::Range) {
-    return false;
-  }
-  return get<range>() == fl::span;
+  return type_ == detail::IndexType::Span;
 }
 
 } // namespace fl
