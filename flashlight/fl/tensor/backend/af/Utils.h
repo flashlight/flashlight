@@ -37,6 +37,11 @@ fl::dtype afToFlType(af::dtype type);
 af_mat_prop flToAfMatrixProperty(MatrixProperty property);
 
 /**
+ * Convert a Flashlight tensor storage type into an ArrayFire storage type.
+ */
+af_storage flToAfStorageType(StorageType storageType);
+
+/**
  * Convert an fl::Shape into an ArrayFire af::dim4
  */
 af::dim4 flToAfDims(const Shape& shape);

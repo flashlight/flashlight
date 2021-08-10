@@ -145,6 +145,14 @@ class ArrayFireTensor : public TensorAdapterBase {
       void* ptr,
       Location memoryLocation);
 
+  ArrayFireTensor(
+      const Dim nRows,
+      const Dim nCols,
+      const Tensor& values,
+      const Tensor& rowIdx,
+      const Tensor& colIdx,
+      StorageType storageType);
+
   /**
    * Gets an ArrayFire Array from this impl.
    *

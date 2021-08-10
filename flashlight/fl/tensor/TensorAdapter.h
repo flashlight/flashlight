@@ -56,6 +56,14 @@ class TensorAdapterBase {
       void* ptr,
       MemoryLocation memoryLocation);
 
+  TensorAdapterBase(
+      const Dim nRows,
+      const Dim nCols,
+      const Tensor& values,
+      const Tensor& rowIdx,
+      const Tensor& colIdx,
+      StorageType storageType);
+
   /**
    * Copies the tensor adapter. The implementation defines whether or not tensor
    * data itself is copied - this is not an implementation requirement.
@@ -223,6 +231,15 @@ struct TensorCreator {
       fl::dtype type = fl::dtype::f32,
       void* ptr = nullptr,
       MemoryLocation memoryLocation = MemoryLocation::Host) const = 0;
+
+  // Sparse tensor ctor
+  virtual std::unique_ptr<TensorAdapterBase> get(
+      const Dim nRows,
+      const Dim nCols,
+      const Tensor& values,
+      const Tensor& rowIdx,
+      const Tensor& colIdx,
+      StorageType storageType) const = 0;
 };
 
 template <typename T>
@@ -236,6 +253,17 @@ struct TensorCreatorImpl : public TensorCreator {
       void* ptr = nullptr,
       MemoryLocation memoryLocation = MemoryLocation::Host) const override {
     return std::make_unique<T>(shape, type, ptr, memoryLocation);
+  }
+
+  std::unique_ptr<TensorAdapterBase> get(
+      const Dim nRows,
+      const Dim nCols,
+      const Tensor& values,
+      const Tensor& rowIdx,
+      const Tensor& colIdx,
+      StorageType storageType) const override {
+    return std::make_unique<T>(
+        nRows, nCols, values, rowIdx, colIdx, storageType);
   }
 };
 

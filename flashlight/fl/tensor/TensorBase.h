@@ -41,6 +41,11 @@ enum class Location { Host, Device };
 using MemoryLocation = Location;
 
 /**
+ * Tensor storage types.
+ */
+enum class StorageType { Dense = 0, CSR = 1, CSC = 2, COO = 3 };
+
+/**
  * A Tensor on which computation can be performed.
  *
  * Underlying implementations of tensor operations are implemented via types
@@ -117,6 +122,26 @@ class Tensor {
    * @param[in] type (optional) the type of the tensor
    */
   explicit Tensor(fl::dtype type);
+
+  /**
+   * Construct a sparse tensor.
+   *
+   * @param[in] nRows the number of rows of the tensor
+   * @param[in] nCols the number of columns of the tensor
+   * @param[in] value the values associated with the tensor
+   * @param[in] rowIdx the row indices of the sparse array
+   * @param[in] colIdx the the column indices of the sparse array
+   * @param[in] storageType the storage type of the underlying tensor
+   *
+   * TODO(jacobkahn): expand this API with getters, isSparse() as needed, etc.
+   */
+  Tensor(
+      const Dim nRows,
+      const Dim nCols,
+      const Tensor& values,
+      const Tensor& rowIdx,
+      const Tensor& colIdx,
+      StorageType storageType);
 
   /**
    * Create a tensor from a vector of values.
