@@ -40,7 +40,7 @@ TEST(IndexTest, Type) {
   using namespace detail;
   ASSERT_EQ(fl::Index(3).type(), IndexType::Literal);
   ASSERT_EQ(fl::Index(fl::range(3)).type(), IndexType::Range);
-  ASSERT_EQ(fl::Index(fl::span).type(), IndexType::Range);
+  ASSERT_EQ(fl::Index(fl::span).type(), IndexType::Span);
   ASSERT_EQ(fl::Index(fl::full({2, 2}, 4)).type(), IndexType::Tensor);
   ASSERT_TRUE(fl::Index(fl::span).isSpan());
 }
@@ -59,13 +59,17 @@ TEST(IndexTest, Shape) {
   ASSERT_EQ(t(2, fl::span).shape(), Shape({4}));
   ASSERT_EQ(t(2).shape(), Shape({4}));
   ASSERT_EQ(t(fl::range(3)).shape(), Shape({3, 4}));
-  ASSERT_EQ(t(fl::range(1, 2)).shape(), Shape({4}));
-  ASSERT_EQ(t(fl::range(1, 2), fl::range(1, 2)).shape(), Shape({1}));
+  ASSERT_EQ(t(fl::range(1, 2)).shape(), Shape({1, 4}));
+  ASSERT_EQ(t(fl::range(1, 2), fl::range(1, 2)).shape(), Shape({1, 1}));
   ASSERT_EQ(t(fl::range(0, fl::end)).shape(), Shape({4, 4}));
   ASSERT_EQ(t(fl::range(0, fl::end, 2)).shape(), Shape({2, 4}));
 
   auto t2 = fl::full({5, 6, 7, 8}, 3.);
   ASSERT_EQ(t2(2, fl::range(2, 4), fl::span, 3).shape(), Shape({2, 7}));
+  ASSERT_EQ(t2(fl::span, 3, fl::span, fl::span).shape(), Shape({5, 7, 8}));
+  ASSERT_EQ(
+      t2(fl::span, fl::range(1, 2), fl::span, fl::span).shape(),
+      Shape({5, 1, 7, 8}));
 }
 
 TEST(IndexTest, IndexAssignment) {
@@ -94,6 +98,37 @@ TEST(IndexTest, IndexAssignment) {
   q(0) = r;
   ASSERT_TRUE(allClose(q(0), r));
   ASSERT_TRUE(allClose(q(fl::range(1, fl::end)), fl::full({3, 4}, 2.)));
+
+  auto k = fl::rand({100, 200});
+  k(3) = fl::full({200}, 0.);
+  ASSERT_TRUE(allClose(k(3), fl::full({200}, 0.)));
+
+  auto x = fl::rand({5, 6, 7, 8});
+  x(3) = fl::full({6, 7, 8}, 0.);
+  ASSERT_TRUE(allClose(x(3), fl::full({6, 7, 8}, 0.)));
+  x(fl::span, fl::span, 2) = fl::full({5, 6, 8}, 3.);
+  ASSERT_TRUE(allClose(x(fl::span, fl::span, 2), fl::full({5, 6, 8}, 3.)));
+  ASSERT_THROW(
+      x(fl::span, fl::span, 4) -= fl::rand({5, 6, 1, 8}),
+      std::invalid_argument);
+
+  x(fl::span, fl::range(1, 3), fl::span) = fl::full({5, 2, 7, 8}, 2.);
+  ASSERT_TRUE(allClose(
+      x(fl::span, fl::range(1, 3), fl::span), fl::full({5, 2, 7, 8}, 2.)));
+
+  x(fl::span, fl::arange({5}), fl::span, fl::arange({5})) =
+      fl::full({5, 5, 7, 5}, 2.);
+  ASSERT_TRUE(allClose(
+      x(fl::span, fl::range(1, 3), fl::span), fl::full({5, 2, 7, 8}, 2.)));
+}
+
+TEST(IndexTest, IndexInPlaceOps) {
+  auto a = fl::full({4, 5, 6}, 0.);
+  auto b = fl::full({5, 6}, 1.);
+  a(2) += b;
+  ASSERT_TRUE(allClose(a(2), b));
+  a(2) -= b;
+  ASSERT_TRUE(allClose(a, fl::full({4, 5, 6}, 0.)));
 }
 
 TEST(IndexTest, TensorIndex) {
