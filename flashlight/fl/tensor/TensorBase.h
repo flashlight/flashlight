@@ -265,6 +265,14 @@ class Tensor {
   Tensor flatten() const;
 
   /**
+   * Return a copy (depending on copy-on-write behavior of the underlying
+   * implementation) of this tensor that is contigous in memory.
+   *
+   * @return an identical tensor that is contiguous in memory
+   */
+  Tensor asContiguousTensor() const;
+
+  /**
    * Gets the backend enum from the underlying TensorAdapter.
    *
    * @return the backend in question

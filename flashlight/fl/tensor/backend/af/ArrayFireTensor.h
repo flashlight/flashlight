@@ -180,6 +180,7 @@ class ArrayFireTensor : public TensorAdapterBase {
   Tensor astype(const dtype type) override;
   Tensor index(const std::vector<Index>& indices) override;
   Tensor flatten() const override;
+  Tensor asContiguousTensor() override;
   void setContext(void* context) override; // noop
   void* getContext() override; // noop
 
