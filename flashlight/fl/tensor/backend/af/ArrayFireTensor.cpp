@@ -257,6 +257,18 @@ Tensor ArrayFireTensor::flatten() const {
   return toTensor<ArrayFireTensor>(af::flat(getHandle()), /* numDims = */ 1);
 }
 
+Tensor ArrayFireTensor::asContiguousTensor() {
+  if (isContiguous()) {
+    af::array other = getHandle();
+    return toTensor<ArrayFireTensor>(std::move(other), numDims());
+  }
+
+  const af::array& array = getHandle();
+  auto linearArray = af::array(array.dims(), array.type());
+  af::copy(linearArray, array, af::span);
+  return toTensor<ArrayFireTensor>(std::move(linearArray), numDims());
+}
+
 void ArrayFireTensor::setContext(void* context) {} // noop
 
 void* ArrayFireTensor::getContext() {

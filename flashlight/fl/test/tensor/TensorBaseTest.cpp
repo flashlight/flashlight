@@ -412,6 +412,24 @@ TEST(TensorBaseTest, strides) {
   ASSERT_EQ(t.strides(), Shape({1, 10}));
 }
 
+TEST(TensorBaseTest, asContiguousTensor) {
+  auto t = fl::rand({5, 6, 7, 8});
+  auto indexed =
+      t(fl::range(1, 4, 2),
+        fl::range(0, 6, 2),
+        fl::range(0, 6, 3),
+        fl::range(0, 5, 3));
+
+  auto contiguous = indexed.asContiguousTensor();
+  std::vector<Dim> strides;
+  unsigned stride = 1;
+  for (unsigned i = 0; i < contiguous.ndim(); ++i) {
+    strides.push_back(stride);
+    stride *= contiguous.dim(i);
+  }
+  ASSERT_EQ(contiguous.strides(), Shape(strides));
+}
+
 TEST(TensorBaseTest, host) {
   auto a = fl::rand({10, 10});
 
