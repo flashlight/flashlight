@@ -11,15 +11,14 @@
 #include <af/index.h>
 #include <af/seq.h>
 
+#include <vector>
+
+#include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/Shape.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/fl/tensor/Types.h"
 
 namespace fl {
-
-class Index; // see Index.h
-class range; // see Index.h
-
 namespace detail {
 
 /**
@@ -45,12 +44,12 @@ af::dim4 flToAfDims(const Shape& shape);
 /**
  * Convert an ArrayFire af::dim4 into an fl::Shape
  */
-Shape afToFlDims(const af::dim4& d);
+Shape afToFlDims(const af::dim4& d, const unsigned numDims);
 
 /**
  * Convert an ArrayFire af::dim4 into an fl::Shape, in-place
  */
-void afToFlDims(const af::dim4& d, Shape& s);
+void afToFlDims(const af::dim4& d, const unsigned numDims, Shape& s);
 
 /**
  * Convert an fl::range into an af::seq.
@@ -61,6 +60,8 @@ af::seq flRangeToAfSeq(const fl::range& range);
  * Convert an fl::Index into an af::index.
  */
 af::index flToAfIndex(const fl::Index& idx);
+
+std::vector<af::index> flToAfIndices(const std::vector<fl::Index>& flIndices);
 
 /**
  * Strip leading 1 indices from an ArrayFire dim4.
@@ -76,7 +77,10 @@ af::dim4 condenseDims(const af::dim4& dims);
  *
  * If keepDims is true, this is a noop, and the array is returned as is.
  */
-af::array condenseIndices(const af::array& arr, bool keepDims = false);
+af::array condenseIndices(
+    const af::array& arr,
+    bool keepDims = false,
+    const std::optional<std::vector<detail::IndexType>>& indexTypes = {});
 
 /**
  * Convert a Flashlight Location into an ArrayFire location (host or device).
@@ -97,6 +101,25 @@ af::array fromFlData(
  * padding.
  */
 af_border_type flToAfPadType(PadType type);
+
+/**
+ * When indexing ArrayFire arrays, their dimensions are condensed (i.e. {3, 4,
+ * 5, 6}(fl::span, 1) --> {3, 5, 6} rather than {3, 1, 5, 6}) when arrays are
+ * returned as lvalues. In the case of lvalue temporary af::array::array_proxy
+ * objects that have in-place operations applied to them, one can't modify their
+ * dimensions without upcasting them into an af::array, which breaks in-place op
+ * logic.
+ *
+ * The only option is thus to modify the dimensions of the operand of the
+ * inplace operation in order to make the shapes match, but this should only be
+ * done if the shapes are actually compatible. This function performs that op
+ * before in-place operations are applied.
+ */
+af::dim4 remapToIndexedDims(
+    const af::dim4& preIdxDims,
+    const std::vector<af::index>& indices,
+    const std::vector<IndexType>& indexTypes,
+    const af::dim4& operandDims);
 
 } // namespace detail
 } // namespace fl

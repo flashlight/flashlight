@@ -77,33 +77,33 @@ af::dim4 flToAfDims(const Shape& shape) {
   return out;
 }
 
-void afToFlDims(const af::dim4& d, Shape& s) {
+void afToFlDims(const af::dim4& d, const unsigned numDims, Shape& s) {
+  if (numDims > AF_MAX_DIMS) {
+    throw std::invalid_argument("afToFlDims - numDims > AF_MAX_DIMS");
+  }
+
   auto& storage = s.get();
   if (d.elements() == 0) {
     storage.resize(0);
     return;
   }
-  if (d.elements() == 1) {
+
+  // Scalars have shape {1}
+  if (numDims == 0) {
     storage.resize(1);
     s[0] = 1;
     return;
   }
 
-  // Number of non-trailing-1 dims
-  unsigned idx = AF_MAX_DIMS - 1;
-  while (d[idx] == 1) {
-    --idx;
-  }
-
-  storage.resize(idx + 1);
-  for (unsigned i = 0; i <= idx; ++i) {
+  storage.resize(numDims);
+  for (unsigned i = 0; i < numDims; ++i) {
     s[i] = d[i];
   }
 }
 
-Shape afToFlDims(const af::dim4& d) {
+Shape afToFlDims(const af::dim4& d, const unsigned numDims) {
   Shape s;
-  afToFlDims(d, s);
+  afToFlDims(d, numDims, s);
   return s;
 }
 
@@ -116,12 +116,10 @@ af::index flToAfIndex(const fl::Index& idx) {
   switch (idx.type()) {
     case IndexType::Tensor:
       return af::index(toArray(idx.get<Tensor>()));
+    case IndexType::Span:
+      return af::index(af::span);
     case IndexType::Range:
-      if (idx.isSpan()) {
-        return af::index(af::span);
-      } else {
-        return af::index(flRangeToAfSeq(idx.get<range>()));
-      }
+      return af::index(flRangeToAfSeq(idx.get<range>()));
     case IndexType::Literal:
       return af::index(idx.get<int>());
     default:
@@ -148,7 +146,11 @@ af::dim4 condenseDims(const af::dim4& dims) {
   return newDims;
 }
 
-af::array condenseIndices(const af::array& arr, bool keepDims) {
+af::array condenseIndices(
+    const af::array& arr,
+    bool keepDims /* = false */,
+    const std::optional<std::vector<detail::IndexType>>&
+        indexTypes /* = {} */) {
   // Fast path - return the Array as is if keepDims - don't consolidate
   if (keepDims) {
     return arr;
@@ -158,8 +160,27 @@ af::array condenseIndices(const af::array& arr, bool keepDims) {
     return arr;
   }
 
+  const af::dim4& dims = arr.dims();
+  af::dim4 newDims(1, 1, 1, 1);
+  unsigned newDimIdx = 0;
+  for (unsigned i = 0; i < AF_MAX_DIMS; ++i) {
+    if (dims[i] == 1 && indexTypes && indexTypes.value().size() > i) {
+    }
+
+    // If we're doing an index op (indexTypes is non-empty), then only collapse
+    // the dimension if it contains an index literal
+    if (dims[i] == 1 && indexTypes && indexTypes.value().size() > i &&
+        indexTypes.value()[i] != detail::IndexType::Literal) {
+      newDims[newDimIdx] = 1;
+      newDimIdx++;
+    } else if (dims[i] != 1) {
+      // found a non-1 dim size - populate newDims.
+      newDims[newDimIdx] = dims[i];
+      newDimIdx++;
+    }
+  }
+
   // Only change dims if condensing is possible
-  af::dim4 newDims = condenseDims(arr.dims());
   if (newDims != arr.dims()) {
     return af::moddims(arr, newDims);
   } else {
@@ -234,6 +255,76 @@ af_border_type flToAfPadType(PadType type) {
       throw std::invalid_argument(
           "flToAfPadType: Flashlight padding "
           "type not supported by ArrayFire");
+  }
+}
+
+af::dim4 remapToIndexedDims(
+    const af::dim4& preIdxDims,
+    const std::vector<af::index>& indices,
+    const std::vector<IndexType>& indexTypes,
+    const af::dim4& operandDims) {
+  // No indexing so no change in dimensions required
+  if (indices.size() == 0) {
+    return operandDims;
+  }
+
+  if (indices.size() != indexTypes.size()) {
+    throw std::invalid_argument(
+        "ArrayFireTensor remapToIndexedDims - passed indices and indexTypes "
+        "are of different sizes.");
+  }
+
+  // If the dimensions being indexed are 1 and collapsing them yields the same
+  // shape as the operand, we can safely moddims, the operand, else there's a
+  // dimension mismatch. For example:
+  // {4, 5, 6, 7}(span, span, 5) --> {4, 5, 1, 7} --> {4, 5, 7}
+  // {4, 5, 6, 7}(4) --> {1, 5, 1, 7} --> {5, 1, 7, 1}
+  std::vector<unsigned> indicesToCompress;
+  for (unsigned i = 0; i < indices.size(); ++i) {
+    // If an index literal, the corresponding dimension in the indexed array
+    // is 1, then we indexed the input to a dim of 1, so we can condense that
+    // index
+    if (indexTypes[i] == IndexType::Literal) {
+      indicesToCompress.push_back(i);
+    }
+  }
+
+  af::dim4 condensedDims(1, 1, 1, 1);
+  af::dim4 postIdxDims = preIdxDims;
+  unsigned outDimIdx = 0;
+  unsigned compressIdx = 0;
+  for (unsigned i = 0; i < AF_MAX_DIMS; ++i) {
+    if (compressIdx < indicesToCompress.size() &&
+        i == indicesToCompress[compressIdx]) {
+      compressIdx++;
+      postIdxDims[i] = 1;
+    } else {
+      // Use the size of the dim post-indexing. Span uses the preIdx dim
+      // and literals are pushed to 1.
+      if (i < indexTypes.size()) {
+        if (indexTypes[i] == IndexType::Tensor) {
+          dim_t size;
+          AF_CHECK(af_get_elements(&size, indices[i].get().idx.arr));
+          postIdxDims[i] = size;
+        } else if (indexTypes[i] == IndexType::Range) {
+          postIdxDims[i] = af::seq(indices[i].get().idx.seq).size;
+        } else if (indexTypes[i] == IndexType::Literal) {
+          postIdxDims[i] = 1;
+        }
+      }
+      condensedDims[outDimIdx] = postIdxDims[i];
+      outDimIdx++;
+    }
+  }
+
+  // Can modify the operand to work with the proxy or array input only by
+  // removing singleton dimensions
+  if (condensedDims == operandDims) {
+    return postIdxDims;
+  } else {
+    throw std::invalid_argument(
+        "remapToIndexedDims: can't apply operation in-place to indexed "
+        "ArrayFireTensor - dimensions don't match.");
   }
 }
 

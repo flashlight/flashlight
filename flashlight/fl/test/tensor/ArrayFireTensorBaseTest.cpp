@@ -43,6 +43,23 @@ bool allClose(
 
 } // namespace
 
+TEST(ShapeTest, ArrayFireInterop) {
+  auto dimsEq = [](const af::dim4& d, const Shape& s) {
+    return detail::afToFlDims(d, s.ndim()) == s;
+  };
+
+  ASSERT_TRUE(dimsEq(af::dim4(), {}));
+  ASSERT_TRUE(dimsEq(af::dim4(3), {3})); // not 3, 1, 1, 1
+  ASSERT_TRUE(dimsEq(af::dim4(3, 2), {3, 2})); // not 3, 2, 1, 1
+  ASSERT_TRUE(dimsEq(af::dim4(3, 1), {3}));
+  // if explicitly specified, uses implicit 1 dim
+  ASSERT_TRUE(dimsEq(af::dim4(3, 1), {3, 1}));
+  ASSERT_TRUE(dimsEq(af::dim4(1, 3, 2), {1, 3, 2}));
+  ASSERT_TRUE(dimsEq(af::dim4(1), {1}));
+  ASSERT_TRUE(dimsEq(af::dim4(1, 1, 1), {1}));
+  ASSERT_TRUE(dimsEq(af::dim4(0, 1, 1, 1), {}));
+}
+
 TEST(ArrayFireTensorBaseTest, AfRefCountBasic) {
   // Sanity check that af::arrays moved into fl::Tensors don't have their
   // refcount inrcremented/show proper usage of refs in tensor ops
@@ -51,7 +68,7 @@ TEST(ArrayFireTensorBaseTest, AfRefCountBasic) {
   af_get_data_ref_count(&refCount, a.get());
   ASSERT_EQ(refCount, 1);
 
-  auto tensor = toTensor<ArrayFireTensor>(std::move(a));
+  auto tensor = toTensor<ArrayFireTensor>(std::move(a), /* numDims = */ 2);
   auto& aRef = toArray(tensor);
   af_get_data_ref_count(&refCount, aRef.get());
   ASSERT_EQ(refCount, 1);
@@ -109,9 +126,12 @@ TEST(ArrayFireTensorBaseTest, ArrayFireAssignmentOperators) {
 }
 
 TEST(ArrayFireTensorBaseTest, BinaryOperators) {
-  auto a = toTensor<ArrayFireTensor>(af::constant(1, {2, 2}));
-  auto b = toTensor<ArrayFireTensor>(af::constant(2, {2, 2}));
-  auto c = toTensor<ArrayFireTensor>(af::constant(3, {2, 2}));
+  auto a =
+      toTensor<ArrayFireTensor>(af::constant(1, {2, 2}), /* numDims = */ 2);
+  auto b =
+      toTensor<ArrayFireTensor>(af::constant(2, {2, 2}), /* numDims = */ 2);
+  auto c =
+      toTensor<ArrayFireTensor>(af::constant(3, {2, 2}), /* numDims = */ 2);
 
   ASSERT_TRUE(allClose(toArray(a == b), (toArray(a) == toArray(b))));
   ASSERT_TRUE(allClose((a == b), eq(a, b)));

@@ -12,9 +12,6 @@
 
 #include "flashlight/fl/tensor/Shape.h"
 
-// TODO: move me to an independent AF test suite
-#include "flashlight/fl/tensor/backend/af/Utils.h"
-
 using namespace ::testing;
 using namespace fl;
 
@@ -62,20 +59,4 @@ TEST(ShapeTest, Equality) {
   ASSERT_NE(Shape({5, 2, 3}), Shape({5, 2, 3, 1}));
   ASSERT_EQ(Shape({5, 2, 3, 1}), Shape({5, 2, 3, 1}));
   ASSERT_NE(Shape({5, 2, 1, 1}), Shape({5, 2, 1, 4}));
-}
-
-// TODO: move me to an independent AF test suite
-TEST(ShapeTest, ArrayFireInterop) {
-  auto dimsEq = [](const af::dim4& d, const Shape& s) {
-    return detail::afToFlDims(d) == s;
-  };
-
-  ASSERT_TRUE(dimsEq(af::dim4(), {}));
-  ASSERT_TRUE(dimsEq(af::dim4(3), {3})); // not 3, 1, 1, 1
-  ASSERT_TRUE(dimsEq(af::dim4(3, 2), {3, 2})); // not 3, 2, 1, 1
-  ASSERT_TRUE(dimsEq(af::dim4(3, 1), {3})); // 1 is indistinguishable in AF
-  ASSERT_TRUE(dimsEq(af::dim4(1, 3, 2), {1, 3, 2}));
-  ASSERT_TRUE(dimsEq(af::dim4(1), {1}));
-  ASSERT_TRUE(dimsEq(af::dim4(1, 1, 1), {1}));
-  ASSERT_TRUE(dimsEq(af::dim4(0, 1, 1, 1), {}));
 }

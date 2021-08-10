@@ -193,7 +193,7 @@ class Tensor {
    *
    * @return the number of dimensions
    */
-  unsigned ndim() const;
+  size_t ndim() const;
 
   /**
    * Returns true if the tensor has zero elements, else false.
