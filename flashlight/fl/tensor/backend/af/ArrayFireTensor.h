@@ -14,6 +14,7 @@
 
 #include <variant>
 
+#include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/Shape.h"
 #include "flashlight/fl/tensor/TensorAdapter.h"
 
@@ -45,6 +46,10 @@ class ArrayFireTensor : public TensorAdapterBase {
   // Indices in the event that this tensor is about to be indexed. Cleared the
   // next time this array handle is acquired. See getHandle().
   std::optional<std::vector<af::index>> indices_;
+  // Need to maintain the types of each index, as ArrayFire doesn't distinguish
+  // between an integer index literal and an af::seq of size one; both have
+  // slightly different behavior with fl::Tensor
+  std::optional<std::vector<detail::IndexType>> indexTypes_;
   // To be visited when this tensor is to be indexed. Indexes the underlying
   // af::array, and returns the proxy to be used as a temporary lvalue.
   struct IndexedArrayComponent {
@@ -77,23 +82,33 @@ class ArrayFireTensor : public TensorAdapterBase {
    */
   ArrayFireTensor(
       std::shared_ptr<af::array> handle,
-      std::vector<af::index>&& indices);
+      std::vector<af::index>&& afIndices,
+      std::vector<detail::IndexType>&& indexTypes,
+      unsigned numDims);
 
   /**
    * Construct an ArrayFireTensor from an ArrayFire array handle without copying
    * the handle. Used for creating guaranteed-shallow copies.
    */
-  explicit ArrayFireTensor(std::shared_ptr<af::array> arr);
+  explicit ArrayFireTensor(std::shared_ptr<af::array> arr, unsigned numDims);
 
   /*
    * A Flashlight shape that mirrors ArrayFire dims.
    *
    * NOTE: this shape is only updated on calls to ArrayFireTensor::shape()
-   * so as to satisfy API requirements as per returning a const reference..
+   * so as to satisfy API requirements as per returning a const reference.
    * af::array::dims() should be used for internal computation where
    * shape/dimensions are needed.
    */
   Shape shape_;
+
+  /**
+   * The number of dimensions in this ArrayFire tensor that are "expected" per
+   * interoperability with other tensors. Because ArrayFire doesn't distinguish
+   * between singleton dimensions that are defaults and those that are
+   * explicitly specified, this must be explicitly tracked.
+   */
+  unsigned numDims_{1};
 
  public:
   /**
@@ -109,7 +124,7 @@ class ArrayFireTensor : public TensorAdapterBase {
    * @param[in] array construct a tensor from an ArrayFire array rvalue
    * reference.
    */
-  explicit ArrayFireTensor(af::array&& array);
+  explicit ArrayFireTensor(af::array&& array, unsigned numDims);
 
   /**
    * Default initialization - empty ArrayFire array and empty shape.
@@ -146,6 +161,7 @@ class ArrayFireTensor : public TensorAdapterBase {
   af::array& getHandle();
 
   ~ArrayFireTensor() override = default;
+  unsigned numDims() const;
   // Used with the fl::Tensor copy constructor
   std::unique_ptr<TensorAdapterBase> clone() const override;
   TensorBackendType backendType() const override;
@@ -169,6 +185,24 @@ class ArrayFireTensor : public TensorAdapterBase {
 
   /******************** Assignment Operators ********************/
 #define ASSIGN_OP_TYPE(OP, TYPE) void OP(const TYPE& val) override;
+
+  /**
+   * When indexing ArrayFire arrays, their dimensions are condensed (i.e. {3, 4,
+   * 5, 6}(fl::span, 1) --> {3, 5, 6} rather than {3, 1, 5, 6}) when arrays are
+   * returned as lvalues. In the case of lvalue temporary af::array::array_proxy
+   * objects that have in-place operations applied to them, one can't modify
+   * their dimensions without upcasting them into an af::array, which breaks
+   * in-place op logic.
+   *
+   * The only option is thus to modify the dimensions of the operand of the
+   * inplace operation in order to make the shapes match, but this should only
+   * be done if the shapes are actually compatible. This function performs that
+   * op before in-place operations are applied.
+   *
+   * @param[in] operand the tensor operand
+   * @param[in] newNumDims the number of dims of the resulting tensor
+   */
+  af::array adjustInPlaceOperandDims(const Tensor& operand);
 
 #define ASSIGN_OP(OP)                 \
   ASSIGN_OP_TYPE(OP, Tensor);         \
