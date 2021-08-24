@@ -38,43 +38,26 @@ DefaultTensorType& DefaultTensorType::getInstance() {
 }
 
 DefaultTensorType::DefaultTensorType() {
-  creationFunc_ = [](const Shape& shape,
-                     fl::dtype type,
-                     void* ptr,
-                     MemoryLocation memoryLocation) {
   // Resolve the default backend in order of preference/availability
 #if FL_DEFAULT_BACKEND_COMPILE_FLAG
-    return std::make_unique<DefaultTensorType_t>(
-        shape, type, ptr, memoryLocation);
+  creationFunc_ = std::make_unique<TensorCreatorImpl<DefaultTensorType_t>>();
 #else
-    throw std::runtime_error(
-        "Cannot construct tensor: Flashlight built "
-        "without an available tensor backend.");
+  throw std::runtime_error(
+      "Cannot construct DefaultTensorType singleton: Flashlight built "
+      "without an available tensor backend.");
 
 #endif
-  };
 }
 
-void DefaultTensorType::setCreationFunc(DefaultTensorTypeFunc_t&& func) {
-  creationFunc_ = std::move(func);
+std::unique_ptr<TensorCreator> DefaultTensorType::swap(
+    std::unique_ptr<TensorCreator> creator) noexcept {
+  std::unique_ptr<TensorCreator> old = std::move(creationFunc_);
+  creationFunc_ = std::move(creator);
+  return old;
 }
 
-const DefaultTensorTypeFunc_t& DefaultTensorType::getCreationFunc() const {
-  return creationFunc_;
-}
-
-/*
- * Resolve the default tensor backend based on compile-time dependencies.
- *
- * For now, ArrayFire is required. If not available, throw.
- */
-std::unique_ptr<TensorAdapterBase> getDefaultAdapter(
-    const Shape& shape /* = Shape() */,
-    fl::dtype type /* = fl::dtype::f32 */,
-    void* ptr /* = nullptr */,
-    MemoryLocation memoryLocation /* = Location::Host */) {
-  return DefaultTensorType::getInstance().getCreationFunc()(
-      shape, type, ptr, memoryLocation);
+const TensorCreator& DefaultTensorType::getTensorCreator() const {
+  return *creationFunc_;
 }
 
 } // namespace detail
