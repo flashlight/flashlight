@@ -42,6 +42,11 @@ af_mat_prop flToAfMatrixProperty(MatrixProperty property);
 af_storage flToAfStorageType(StorageType storageType);
 
 /**
+ * Convert a Flashlight tensor sort mode into an ArrayFire topk sort mode.
+ */
+af_topk_function flToAfSortMode(SortMode sortMode);
+
+/**
  * Convert an fl::Shape into an ArrayFire af::dim4
  */
 af::dim4 flToAfDims(const Shape& shape);

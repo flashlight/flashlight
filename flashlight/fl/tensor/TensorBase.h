@@ -815,6 +815,53 @@ Tensor where(const Tensor& condition, const Tensor& x, const Tensor& y);
 Tensor where(const Tensor& condition, const Tensor& x, const double& y);
 Tensor where(const Tensor& condition, const double& x, const Tensor& y);
 
+/**
+ * Sorting mode for sorting-related functions.
+ */
+enum class SortMode { Descending = 0, Ascending = 1 };
+
+/**
+ * Get the top-k values and indices from a Tensor.
+ *
+ * @param[in] values
+ * @param[in] indices
+ * @param[in] input the input tensor to sort
+ * @param[in] k the top number of elements to return
+ * @param[in] axis the axis along which to sort.
+ * @param[in] sortMode the ordering with which to sort. Defaults to descending.
+ */
+void topk(
+    Tensor& values,
+    Tensor& indices,
+    const Tensor& input,
+    const unsigned k,
+    const Dim axis,
+    const SortMode sortMode = SortMode::Descending);
+
+/**
+ * Sort the values of a tensor, and return the sorted tensor.
+ *
+ * @param[in] input the input Tensor
+ * @param[in] axis the axis along which to sort
+ * @param[in] sortMode the ordering with which to sort. Defaults to descending
+ */
+Tensor sort(
+    const Tensor& input,
+    const Dim axis,
+    const SortMode sortMode = SortMode::Descending);
+
+/**
+ * Sort the values of a tensor and return the sorted indices.
+ *
+ * @param[in] input the input Tensor
+ * @param[in] axis the axis along which to sort
+ * @param[in] sortMode the ordering with which to sort. Defaults to descending
+ */
+Tensor argsort(
+    const Tensor& input,
+    const Dim axis,
+    const SortMode sortMode = SortMode::Descending);
+
 /************************** Binary Operators ***************************/
 #define FL_BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, TYPE) \
   Tensor FUNC(TYPE lhs, const Tensor& rhs);            \

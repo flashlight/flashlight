@@ -109,6 +109,17 @@ class ArrayFireBackend : public TensorBackend {
   Tensor triu(const Tensor& tensor) override;
   Tensor where(const Tensor& condition, const Tensor& x, const Tensor& y)
       override;
+  void topk(
+      Tensor& values,
+      Tensor& indices,
+      const Tensor& input,
+      const unsigned k,
+      const Dim axis,
+      const SortMode sortMode) override;
+  Tensor sort(const Tensor& input, const Dim axis, const SortMode sortMode)
+      override;
+  Tensor argsort(const Tensor& input, const Dim axis, const SortMode sortMode)
+      override;
 
   /************************** Binary Operators ***************************/
 #define FL_AF_BINARY_OP_TYPE_DECL(FUNC, TYPE)      \

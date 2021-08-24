@@ -17,7 +17,7 @@ namespace fl {
  * Represents the last index along an axis of a tensor.
  */
 struct end_t {
-  operator int() const {
+  operator Dim() const {
     return -1;
   }
 };
@@ -29,11 +29,11 @@ static const end_t end = end_t();
  * An entity representing a contiguous or strided sequence of indices.
  */
 class range {
-  using idx = std::variant<end_t, int>;
+  using idx = std::variant<end_t, Dim>;
 
-  int start_{0};
-  int end_{fl::end};
-  int stride_{1};
+  Dim start_{0};
+  Dim end_{fl::end};
+  Dim stride_{1};
 
  public:
   /**
@@ -55,11 +55,11 @@ class range {
    * Construct a range with the indices [start, end) (i.e. [start, end - 1])
    * with the given stride.
    */
-  range(idx start, idx end, int stride);
+  range(idx start, idx end, Dim stride);
 
-  int start() const;
-  int end() const;
-  int stride() const;
+  Dim start() const;
+  Dim end() const;
+  Dim stride() const;
   bool operator==(const range& other) const;
   bool operator!=(const range& other) const;
 };
@@ -91,7 +91,7 @@ class Index {
   // The type of indexing operator.
   detail::IndexType type_;
   // Underlying data referred to by the index
-  std::variant<int, range, Tensor> index_;
+  std::variant<Dim, range, Tensor> index_;
 
   // Intentionally private
   Index() = default;
@@ -99,7 +99,7 @@ class Index {
  public:
   /* implicit */ Index(const Tensor& tensor);
   /* implicit */ Index(const range& range);
-  /* implicit */ Index(const int idx);
+  /* implicit */ Index(const Dim idx);
 
   /**
    * Default copy assignment operator.

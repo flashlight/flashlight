@@ -358,6 +358,62 @@ Tensor ArrayFireBackend::where(
   return orig;
 }
 
+void ArrayFireBackend::topk(
+    Tensor& values,
+    Tensor& indices,
+    const Tensor& input,
+    const unsigned k,
+    const Dim axis,
+    const SortMode sortMode) {
+  if (axis != 0) {
+    throw std::invalid_argument(
+        "ArrayFireTensor topk: operation only supported along zero axis.");
+  }
+  af::array valuesArr, indicesArr;
+  af::topk(
+      valuesArr,
+      indicesArr,
+      toArray(input),
+      k,
+      axis,
+      detail::flToAfSortMode(sortMode));
+
+  values = toTensor<ArrayFireTensor>(std::move(valuesArr), input.ndim());
+  indices = toTensor<ArrayFireTensor>(std::move(indicesArr), input.ndim());
+}
+
+Tensor ArrayFireBackend::sort(
+    const Tensor& input,
+    const Dim axis,
+    const SortMode sortMode) {
+  if (sortMode != SortMode::Descending && sortMode != SortMode::Ascending) {
+    throw std::invalid_argument(
+        "Cannot sort ArrayFire tensor with given SortMode: "
+        "only Descending and Ascending supported.");
+  }
+
+  af::array values, indices;
+  af::sort(
+      values, indices, toArray(input), axis, sortMode == SortMode::Ascending);
+  return toTensor<ArrayFireTensor>(std::move(values), input.ndim());
+}
+
+Tensor ArrayFireBackend::argsort(
+    const Tensor& input,
+    const Dim axis,
+    const SortMode sortMode) {
+  if (sortMode != SortMode::Descending && sortMode != SortMode::Ascending) {
+    throw std::invalid_argument(
+        "Cannot sort ArrayFire tensor with given SortMode: "
+        "only Descending and Ascending supported.");
+  }
+
+  af::array values, indices;
+  af::sort(
+      values, indices, toArray(input), axis, sortMode == SortMode::Ascending);
+  return toTensor<ArrayFireTensor>(std::move(indices), input.ndim());
+}
+
 /************************** Binary Operators ***************************/
 // For ArrayFire, af::array already implements overloads for all needed
 // operators -- use these by default.

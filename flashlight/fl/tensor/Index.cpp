@@ -13,24 +13,24 @@ range::range(idx idx) : range(0, idx) {}
 
 range::range(idx start, idx end) : range(start, end, /* stride */ 1) {}
 
-range::range(idx start, idx end, int stride)
+range::range(idx start, idx end, Dim stride)
     : // fl::end decays to int
-      start_(std::visit([](int idx) -> int { return idx; }, start)),
-      // fl::end --> -1, else idx as int
+      start_(std::visit([](Dim idx) -> Dim { return idx; }, start)),
+      // fl::end --> -1, else idx as Dim
       end_(
           std::holds_alternative<fl::end_t>(end) ? std::get<fl::end_t>(end)
-                                                 : std::get<int>(end) - 1),
+                                                 : std::get<Dim>(end) - 1),
       stride_(stride) {}
 
-int range::start() const {
+Dim range::start() const {
   return start_;
 }
 
-int range::end() const {
+Dim range::end() const {
   return end_;
 }
 
-int range::stride() const {
+Dim range::stride() const {
   return stride_;
 }
 
@@ -52,7 +52,7 @@ Index::Index(const range& range)
                                         : detail::IndexType::Range),
       index_(range) {}
 
-Index::Index(const int idx) : type_(detail::IndexType::Literal), index_(idx) {}
+Index::Index(const Dim idx) : type_(detail::IndexType::Literal), index_(idx) {}
 
 Index::Index(Index&& other) noexcept
     : type_(other.type_), index_(std::move(other.index_)) {}
