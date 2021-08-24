@@ -40,6 +40,21 @@ Tensor::Tensor(
     MemoryLocation memoryLocation)
     : impl_(detail::getDefaultAdapter(shape, type, ptr, memoryLocation)) {}
 
+Tensor::Tensor(
+    const Dim nRows,
+    const Dim nCols,
+    const Tensor& values,
+    const Tensor& rowIdx,
+    const Tensor& colIdx,
+    StorageType storageType)
+    : impl_(detail::getDefaultAdapter(
+          nRows,
+          nCols,
+          values,
+          rowIdx,
+          colIdx,
+          storageType)) {}
+
 Tensor::Tensor(const Shape& shape, fl::dtype type /* = fl::dtype::f32 */)
     : impl_(detail::getDefaultAdapter(shape, type)) {}
 
@@ -84,6 +99,10 @@ size_t Tensor::bytes() const {
 
 dtype Tensor::type() const {
   return impl_->type();
+}
+
+bool Tensor::isSparse() const {
+  return impl_->isSparse();
 }
 
 Tensor Tensor::astype(const dtype type) const {

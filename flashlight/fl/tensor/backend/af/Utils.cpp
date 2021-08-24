@@ -62,6 +62,23 @@ af_mat_prop flToAfMatrixProperty(MatrixProperty property) {
   }
 }
 
+af_storage flToAfStorageType(StorageType storageType) {
+  switch (storageType) {
+    case StorageType::Dense:
+      return AF_STORAGE_DENSE;
+    case StorageType::CSR:
+      return AF_STORAGE_CSR;
+    case StorageType::CSC:
+      return AF_STORAGE_CSC;
+    case StorageType::COO:
+      return AF_STORAGE_COO;
+    default:
+      throw std::invalid_argument(
+          "flToAfStorageType: Flashlight storage type "
+          "doesn't have an ArrayFire analog");
+  }
+}
+
 af::dim4 flToAfDims(const Shape& shape) {
   if (shape.ndim() > 4) {
     throw std::invalid_argument(
