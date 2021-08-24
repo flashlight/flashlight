@@ -289,6 +289,18 @@ Tensor ArrayFireTensor::flatten() const {
   return toTensor<ArrayFireTensor>(af::flat(getHandle()), /* numDims = */ 1);
 }
 
+Tensor ArrayFireTensor::flat(const Index& idx) const {
+  getHandle(); // if this tensor was a view, run indexing and promote
+  // Return a lazy indexing operation. Indexing with a single index on an
+  // ArrayFire tensor (with a type that is not an af::array) ends up doing
+  // flat indexing, so all index assignment operators will work as they are.
+  return fl::Tensor(std::unique_ptr<ArrayFireTensor>(new ArrayFireTensor(
+      arrayHandle_,
+      {detail::flToAfIndex(idx)},
+      {idx.type()},
+      /* numDims = */ 1)));
+}
+
 Tensor ArrayFireTensor::asContiguousTensor() {
   if (isContiguous()) {
     af::array other = getHandle();

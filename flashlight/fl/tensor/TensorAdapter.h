@@ -180,6 +180,14 @@ class TensorAdapterBase {
   virtual Tensor flatten() const = 0;
 
   /**
+   * Returns a tensor indexed from this tensor but indexed as a 1D/flattened
+   * tensor.
+   *
+   * @return a 1D version of this tensor 1D-indexed with the given index.
+   */
+  virtual Tensor flat(const Index& idx) const = 0;
+
+  /**
    * Returns a copy of the tensor that is contiguous in memory.
    */
   virtual Tensor asContiguousTensor() = 0;
