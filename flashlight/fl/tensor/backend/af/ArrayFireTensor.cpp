@@ -20,6 +20,7 @@
 #include <af/backend.h>
 #include <af/device.h>
 #include <af/internal.h>
+#include <af/sparse.h>
 
 namespace fl {
 
@@ -68,6 +69,24 @@ ArrayFireTensor::ArrayFireTensor(
           detail::fromFlData(shape, ptr, type, memoryLocation))),
       handle_(ArrayComponent()),
       numDims_(shape.ndim()) {}
+
+ArrayFireTensor::ArrayFireTensor(
+    const Dim nRows,
+    const Dim nCols,
+    const Tensor& values,
+    const Tensor& rowIdx,
+    const Tensor& colIdx,
+    StorageType storageType)
+    : arrayHandle_(std::make_shared<af::array>(af::sparse(
+          nRows,
+          nCols,
+          toArray(values),
+          toArray(rowIdx),
+          toArray(colIdx),
+          detail::flToAfStorageType(storageType)))),
+      handle_(ArrayComponent()),
+      // ArrayFire only supports 2D sparsity
+      numDims_(2) {}
 
 unsigned ArrayFireTensor::numDims() const {
   return numDims_;
@@ -157,6 +176,14 @@ const Shape& ArrayFireTensor::shape() {
 
 fl::dtype ArrayFireTensor::type() {
   return detail::afToFlType(getHandle().type());
+}
+
+bool ArrayFireTensor::isSparse() {
+  return getHandle().issparse();
+}
+
+af::dtype ArrayFireTensor::afHandleType() {
+  return arrayHandle_->type();
 }
 
 Location ArrayFireTensor::location() {

@@ -46,6 +46,7 @@ TEST(TensorBaseTest, Metadata) {
 
   Tensor e;
   ASSERT_TRUE(e.isEmpty());
+  ASSERT_FALSE(e.isSparse());
 }
 
 TEST(TensorBaseTest, BinaryOperators) {

@@ -145,6 +145,14 @@ class ArrayFireTensor : public TensorAdapterBase {
       void* ptr,
       Location memoryLocation);
 
+  ArrayFireTensor(
+      const Dim nRows,
+      const Dim nCols,
+      const Tensor& values,
+      const Tensor& rowIdx,
+      const Tensor& colIdx,
+      StorageType storageType);
+
   /**
    * Gets an ArrayFire Array from this impl.
    *
@@ -170,6 +178,8 @@ class ArrayFireTensor : public TensorAdapterBase {
   Tensor shallowCopy() override;
   const Shape& shape() override;
   dtype type() override;
+  bool isSparse() override;
+  af::dtype afHandleType(); // for internal use only
   Location location() override;
   void scalar(void* out) override;
   void device(void** out) override;
