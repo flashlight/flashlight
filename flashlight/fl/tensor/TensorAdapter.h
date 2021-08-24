@@ -146,6 +146,14 @@ class TensorAdapterBase {
   virtual void unlock() = 0;
 
   /**
+   * Returns true if the tensor has been memory-locked per a call to
+   * Tensor::device<T>().
+   *
+   * @return true if the tensor is locked and a device pointer is active.
+   */
+  virtual bool isLocked() = 0;
+
+  /**
    * Returns a bool based on Tensor contiguousness in memory.
    */
   virtual bool isContiguous() = 0;

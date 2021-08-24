@@ -47,6 +47,7 @@ TEST(TensorBaseTest, Metadata) {
   Tensor e;
   ASSERT_TRUE(e.isEmpty());
   ASSERT_FALSE(e.isSparse());
+  ASSERT_FALSE(e.isLocked());
 }
 
 TEST(TensorBaseTest, ostream) {
