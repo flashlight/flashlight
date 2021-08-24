@@ -297,9 +297,17 @@ class Tensor {
   /**
    * Returns a representation of the tensor in 1 dimension.
    *
-   * @return a 1D version of this tensor
+   * @return a 1D version of this tensor 1D-indexed with the given index.
    */
   Tensor flatten() const;
+
+  /**
+   * Returns a tensor indexed from this tensor but indexed as a 1D/flattened
+   * tensor.
+   *
+   * @return an indexed, 1D version of this tensor.
+   */
+  Tensor flat(const Index& idx) const;
 
   /**
    * Return a copy (depending on copy-on-write behavior of the underlying
