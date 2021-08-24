@@ -221,6 +221,10 @@ void* Tensor::getContext() const {
   return impl_->getContext();
 }
 
+std::ostream& Tensor::operator<<(std::ostream& ostr) const {
+  return impl_->operator<<(ostr);
+}
+
 // Generate template specializations for functions that return types
 #define EXPAND_MACRO_FUNCTION_TYPE(FUN, TYPE)             \
   template <>                                             \
@@ -711,6 +715,11 @@ T amax(const Tensor& input) {
 }
 
 /************************** Utilities ***************************/
+
+std::ostream& operator<<(std::ostream& ostr, const Tensor& t) {
+  t.operator<<(ostr);
+  return ostr;
+}
 
 void print(const Tensor& tensor) {
   tensor.backend().print(tensor);

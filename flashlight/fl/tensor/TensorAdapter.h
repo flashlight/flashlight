@@ -204,6 +204,11 @@ class TensorAdapterBase {
    */
   virtual void* getContext() = 0;
 
+  /**
+   * Write a string representation of a tensor to an output stream.
+   */
+  virtual std::ostream& operator<<(std::ostream& ostr) = 0;
+
   /******************** Assignment Operators ********************/
 #define ASSIGN_OP_TYPE(OP, TYPE) virtual void OP(const TYPE& val) = 0;
 #define ASSIGN_OP(OP)                 \
