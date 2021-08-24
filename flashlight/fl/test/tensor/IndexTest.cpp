@@ -150,6 +150,57 @@ TEST(IndexTest, IndexInPlaceOps) {
   ASSERT_TRUE(allClose(s(0, 1), sA + 5));
 }
 
+TEST(IndexTest, flat) {
+  auto m = fl::rand({4, 6});
+  for (unsigned i = 0; i < m.size(); ++i) {
+    ASSERT_TRUE(allClose(m.flat(i), m(i % 4, i / 4)));
+  }
+
+  auto n = fl::rand({4, 6, 8});
+  for (unsigned i = 0; i < n.size(); ++i) {
+    ASSERT_TRUE(allClose(n.flat(i), n(i % 4, (i / 4) % 6, (i / (4 * 6)) % 8)));
+  }
+
+  auto a = fl::full({5, 6, 7, 8}, 9.);
+  std::vector<int> testIndices = {0, 1, 4, 11, 62, 104, 288};
+  for (const int i : testIndices) {
+    ASSERT_EQ(a.flat(i).scalar<float>(), 9.);
+  }
+
+  a.flat(8) = 5.;
+  ASSERT_EQ(a.flat(8).scalar<float>(), 5.);
+
+  for (const int i : testIndices) {
+    a.flat(i) = i + 1;
+  }
+  for (const int i : testIndices) {
+    ASSERT_EQ(
+        a(i % 5, (i / 5) % 6, (i / (5 * 6)) % 7, (i / (5 * 6 * 7)) % 8)
+            .scalar<float>(),
+        i + 1);
+  }
+
+  // Tensor assignment
+  a.flat(32) = fl::full({1}, 7.4);
+  ASSERT_TRUE(allClose(a.flatten()(32), fl::full({1}, 7.4)));
+  // In-place
+  a.flat(100) += 33;
+  ASSERT_TRUE(allClose(a.flatten()(100), fl::full({1}, 33 + 9.)));
+
+  // Tensor indexing
+  auto indexer = Tensor::fromVector(testIndices);
+  auto ref = a.flat(indexer).copy();
+  ASSERT_EQ(ref.shape(), Shape({(Dim)indexer.size()}));
+  a.flat(indexer) -= 10;
+  ASSERT_TRUE(allClose(a.flat(indexer), ref - 10));
+  for (const int i : testIndices) {
+    ASSERT_EQ(
+        a(i % 5, (i / 5) % 6, (i / (5 * 6)) % 7, (i / (5 * 6 * 7)) % 8)
+            .scalar<float>(),
+        i + 1 - 10);
+  }
+}
+
 TEST(IndexTest, TensorIndex) {
   std::vector<int> idxs = {0, 1, 4, 9, 11, 13, 16, 91};
   unsigned size = idxs.size();

@@ -117,6 +117,10 @@ Tensor Tensor::flatten() const {
   return impl_->flatten();
 }
 
+Tensor Tensor::flat(const Index& idx) const {
+  return impl_->flat(idx);
+}
+
 Tensor Tensor::asContiguousTensor() const {
   return impl_->asContiguousTensor();
 }
