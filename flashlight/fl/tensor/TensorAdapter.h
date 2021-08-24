@@ -165,6 +165,11 @@ class TensorAdapterBase {
   virtual Tensor flatten() const = 0;
 
   /**
+   * Returns a copy of the tensor that is contiguous in memory.
+   */
+  virtual Tensor asContiguousTensor() = 0;
+
+  /**
    * Sets arbitrary data on a tensor. May be a no-op for some backends.
    */
   virtual void setContext(void* context) = 0;
