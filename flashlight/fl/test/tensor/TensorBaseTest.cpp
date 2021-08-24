@@ -306,17 +306,17 @@ TEST(TensorBaseTest, tril) {
           }
         }
       };
-  int dim = 10;
+  Dim dim = 10;
   auto t = fl::rand({dim, dim});
   auto out = fl::tril(t);
   checkSquareTril(dim, out, t);
 
   // TODO: this could be bogus behavior
   // > 2 dims
-  int dim2 = 3;
+  Dim dim2 = 3;
   auto t2 = fl::rand({dim2, dim2, dim2});
   auto out2 = fl::tril(t2);
-  for (int i = 0; i < dim2; ++i) {
+  for (unsigned i = 0; i < dim2; ++i) {
     checkSquareTril(
         dim2, out2(fl::span, fl::span, i), t2(fl::span, fl::span, i));
   }
@@ -368,6 +368,50 @@ TEST(TensorBaseTest, where) {
   // non b8-type vector throws
   EXPECT_THROW(
       fl::where((a < 5).astype(fl::dtype::f32), a, a * 10), std::exception);
+}
+
+TEST(TensorBaseTest, topk) {
+  auto a = fl::arange({10, 2});
+  Tensor values;
+  Tensor indices;
+  fl::topk(values, indices, a, /* k = */ 3, /* axis = */ 0); // descending sort
+  ASSERT_TRUE(
+      allClose(values, Tensor::fromVector<float>({3, 2}, {9, 8, 7, 9, 8, 7})));
+
+  fl::topk(
+      values, indices, a, /* k = */ 4, /* axis = */ 0, fl::SortMode::Ascending);
+  ASSERT_TRUE(allClose(
+      values, Tensor::fromVector<float>({4, 2}, {0, 1, 2, 3, 0, 1, 2, 3})));
+}
+
+TEST(TensorBaseTest, sort) {
+  Shape dims({10, 2});
+  auto a = fl::arange(dims);
+  auto sorted = fl::sort(a, /* axis = */ 0, SortMode::Descending);
+
+  Tensor expected({dims[0]}, a.type());
+  for (int i = 0; i < dims[0]; ++i) {
+    expected(i) = dims[0] - i - 1;
+  }
+  auto tiled = fl::tile(expected, {1, 2});
+  ASSERT_TRUE(allClose(sorted, tiled));
+
+  ASSERT_TRUE(allClose(a, fl::sort(tiled, 0, SortMode::Ascending)));
+}
+
+TEST(TensorBaseTest, argsort) {
+  Shape dims({10, 2});
+  auto a = fl::arange(dims);
+  auto sorted = fl::argsort(a, /* axis = */ 0, SortMode::Descending);
+
+  Tensor expected({dims[0]}, fl::dtype::u32);
+  for (int i = 0; i < dims[0]; ++i) {
+    expected(i) = dims[0] - i - 1;
+  }
+  auto tiled = fl::tile(expected, {1, 2});
+  ASSERT_TRUE(allClose(sorted, tiled));
+
+  ASSERT_TRUE(allClose(tiled, fl::argsort(tiled, 0, SortMode::Ascending)));
 }
 
 TEST(TensorBaseTest, power) {

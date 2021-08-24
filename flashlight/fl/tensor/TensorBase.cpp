@@ -129,40 +129,40 @@ TensorBackend& Tensor::backend() const {
   return impl_->backend();
 }
 
-#define FL_CREATE_MEMORY_OPS(TYPE)                          \
-  template <>                                               \
-  TYPE Tensor::scalar() const {                             \
-    if (type() != dtype_traits<TYPE>::fl_type) {            \
-      throw std::invalid_argument(                          \
-          "Tensor::scalar: requested type doesn't match "   \
-          "tensor type, which is " +                        \
-          std::string(dtype_traits<TYPE>::getName()));      \
-    }                                                       \
-    TYPE out;                                               \
-    impl_->scalar(&out);                                    \
-    return out;                                             \
-  }                                                         \
-                                                            \
-  template <>                                               \
-  TYPE* Tensor::device() const {                            \
-    TYPE* out;                                              \
-    void** addr = reinterpret_cast<void**>(&out);           \
-    impl_->device(addr);                                    \
-    return out;                                             \
-  }                                                         \
-                                                            \
-  template <>                                               \
-  TYPE* Tensor::host() const {                              \
-    TYPE* out = reinterpret_cast<TYPE*>(new char[bytes()]); \
-    void** addr = reinterpret_cast<void**>(&out);           \
-    impl_->host(addr);                                      \
-    return out;                                             \
-  }                                                         \
-                                                            \
-  template <>                                               \
-  void Tensor::host(TYPE* ptr) const {                      \
-    void** addr = reinterpret_cast<void**>(&ptr);           \
-    impl_->host(addr);                                      \
+#define FL_CREATE_MEMORY_OPS(TYPE)                                          \
+  template <>                                                               \
+  TYPE Tensor::scalar() const {                                             \
+    if (type() != dtype_traits<TYPE>::fl_type) {                            \
+      throw std::invalid_argument(                                          \
+          "Tensor::scalar: requested type of " +                            \
+          std::string(dtype_traits<TYPE>::getName()) +                      \
+          " doesn't match tensor type, which is " + dtypeToString(type())); \
+    }                                                                       \
+    TYPE out;                                                               \
+    impl_->scalar(&out);                                                    \
+    return out;                                                             \
+  }                                                                         \
+                                                                            \
+  template <>                                                               \
+  TYPE* Tensor::device() const {                                            \
+    TYPE* out;                                                              \
+    void** addr = reinterpret_cast<void**>(&out);                           \
+    impl_->device(addr);                                                    \
+    return out;                                                             \
+  }                                                                         \
+                                                                            \
+  template <>                                                               \
+  TYPE* Tensor::host() const {                                              \
+    TYPE* out = reinterpret_cast<TYPE*>(new char[bytes()]);                 \
+    void** addr = reinterpret_cast<void**>(&out);                           \
+    impl_->host(addr);                                                      \
+    return out;                                                             \
+  }                                                                         \
+                                                                            \
+  template <>                                                               \
+  void Tensor::host(TYPE* ptr) const {                                      \
+    void** addr = reinterpret_cast<void**>(&ptr);                           \
+    impl_->host(addr);                                                      \
   }
 FL_CREATE_MEMORY_OPS(int);
 FL_CREATE_MEMORY_OPS(unsigned);
@@ -487,6 +487,25 @@ Tensor where(const Tensor& condition, const double& x, const Tensor& y) {
   FL_TENSOR_BACKENDS_MATCH_CHECK(condition, y);
   return condition.backend().where(
       condition, fl::full(condition.shape(), x, y.type()), y);
+}
+
+void topk(
+    Tensor& values,
+    Tensor& indices,
+    const Tensor& input,
+    const unsigned k,
+    const Dim axis,
+    const SortMode sortMode) {
+  FL_TENSOR_BACKENDS_MATCH_CHECK(values, indices, input);
+  input.backend().topk(values, indices, input, k, axis, sortMode);
+}
+
+Tensor sort(const Tensor& input, const Dim axis, const SortMode sortMode) {
+  return input.backend().sort(input, axis, sortMode);
+}
+
+Tensor argsort(const Tensor& input, const Dim axis, const SortMode sortMode) {
+  return input.backend().argsort(input, axis, sortMode);
 }
 
 /************************** Binary Operators ***************************/

@@ -79,6 +79,18 @@ af_storage flToAfStorageType(StorageType storageType) {
   }
 }
 
+af_topk_function flToAfSortMode(SortMode sortMode) {
+  switch (sortMode) {
+    case SortMode::Descending:
+      return AF_TOPK_MAX;
+    case SortMode::Ascending:
+      return AF_TOPK_MIN;
+    default:
+      throw std::invalid_argument(
+          "flToAfSortMode: sort mode with no ArrayFire analog specified");
+  }
+}
+
 af::dim4 flToAfDims(const Shape& shape) {
   if (shape.ndim() > 4) {
     throw std::invalid_argument(
@@ -138,7 +150,7 @@ af::index flToAfIndex(const fl::Index& idx) {
     case IndexType::Range:
       return af::index(flRangeToAfSeq(idx.get<range>()));
     case IndexType::Literal:
-      return af::index(idx.get<int>());
+      return af::index(idx.get<Dim>());
     default:
       throw std::invalid_argument(
           "flToAfIndex: fl::Index has unknown or invalid type.");
