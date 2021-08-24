@@ -607,10 +607,11 @@ TEST(TensorBaseTest, all) {
 
 TEST(TensorBaseTest, arange) {
   // Range/step overload
-  ASSERT_TRUE(
-      allClose(fl::arange(2, 10, 2), Tensor::fromVector<int>({2, 4, 6, 8})));
-  ASSERT_TRUE(
-      allClose(fl::arange(0, 6), Tensor::fromVector<int>({0, 1, 2, 3, 4, 5})));
+  ASSERT_TRUE(allClose(
+      fl::arange(2, 10, 2, fl::dtype::s32),
+      Tensor::fromVector<int>({2, 4, 6, 8})));
+  ASSERT_TRUE(allClose(
+      fl::arange(0, 6), Tensor::fromVector<float>({0, 1, 2, 3, 4, 5})));
   ASSERT_TRUE(allClose(
       fl::arange(0., 1.22, 0.25),
       Tensor::fromVector<float>({0., 0.25, 0.5, 0.75})));

@@ -79,7 +79,7 @@ TEST(IndexTest, IndexAssignment) {
   t(fl::span, fl::range(2, fl::end)) += 1;
   t(fl::span, fl::span) *= 7;
   t /= 7;
-  ASSERT_TRUE(allClose(t, fl::full({4, 4}, 1)));
+  ASSERT_TRUE(allClose(t, fl::full({4, 4}, 1, fl::dtype::s32)));
 
   auto a = fl::full({6, 6}, 0.);
   a(3, 4) = 4.;
