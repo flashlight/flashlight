@@ -49,6 +49,17 @@ TEST(TensorBaseTest, Metadata) {
   ASSERT_FALSE(e.isSparse());
 }
 
+TEST(TensorBaseTest, ostream) {
+  // Different backends might print tensors differently - check for consistency
+  // across two identical tensors
+  auto a = fl::full({3, 4, 5}, 6.);
+  auto b = fl::full({3, 4, 5}, 6.);
+  std::stringstream ssa, ssb;
+  ssa << a;
+  ssb << b;
+  ASSERT_EQ(ssa.str(), ssb.str());
+}
+
 TEST(TensorBaseTest, BinaryOperators) {
   // TODO:{fl::Tensor}{testing} expand this test/add a million fixtures, etc
   auto a = fl::full({2, 2}, 1);

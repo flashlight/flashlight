@@ -426,6 +426,11 @@ class Tensor {
    */
   void* getContext() const;
 
+  /**
+   * Write a string representation of a tensor to an output stream.
+   */
+  std::ostream& operator<<(std::ostream& ostr) const;
+
   /******************** Assignment Operators ********************/
 #define ASSIGN_OP(OP)                    \
   Tensor& OP(const Tensor& val);         \
@@ -1190,6 +1195,11 @@ all(const Tensor& input, const std::vector<int>& axes, bool keepDims = false);
 bool all(const Tensor& input);
 
 /************************** Utilities ***************************/
+
+/**
+ * Write a string representation of a tensor to an output stream.
+ */
+std::ostream& operator<<(std::ostream& ostr, const Tensor& s);
 
 /**
  * Print a string representation of a tensor to standard out.

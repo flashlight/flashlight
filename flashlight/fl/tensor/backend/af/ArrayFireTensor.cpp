@@ -153,7 +153,6 @@ Tensor ArrayFireTensor::copy() {
 
 Tensor ArrayFireTensor::shallowCopy() {
   getHandle(); // if this tensor was a view, run indexing and promote
-
   return Tensor(std::unique_ptr<ArrayFireTensor>(
       new ArrayFireTensor(arrayHandle_, numDims())));
 }
@@ -317,6 +316,11 @@ void ArrayFireTensor::setContext(void* context) {} // noop
 
 void* ArrayFireTensor::getContext() {
   return nullptr; // noop
+}
+
+std::ostream& ArrayFireTensor::operator<<(std::ostream& ostr) {
+  ostr << "ArrayFireTensor " << std::string(af::toString("", getHandle()));
+  return ostr;
 }
 
 /******************** Assignment Operators ********************/

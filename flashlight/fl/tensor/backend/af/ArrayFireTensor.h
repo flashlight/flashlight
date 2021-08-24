@@ -194,6 +194,7 @@ class ArrayFireTensor : public TensorAdapterBase {
   Tensor asContiguousTensor() override;
   void setContext(void* context) override; // noop
   void* getContext() override; // noop
+  std::ostream& operator<<(std::ostream& ostr) override;
 
   /******************** Assignment Operators ********************/
 #define ASSIGN_OP_TYPE(OP, TYPE) void OP(const TYPE& val) override;
