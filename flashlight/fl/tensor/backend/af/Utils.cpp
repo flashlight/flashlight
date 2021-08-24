@@ -77,33 +77,33 @@ af::dim4 flToAfDims(const Shape& shape) {
   return out;
 }
 
-void afToFlDims(const af::dim4& d, Shape& s) {
+void afToFlDims(const af::dim4& d, const unsigned numDims, Shape& s) {
+  if (numDims > AF_MAX_DIMS) {
+    throw std::invalid_argument("afToFlDims - numDims > AF_MAX_DIMS");
+  }
+
   auto& storage = s.get();
   if (d.elements() == 0) {
     storage.resize(0);
     return;
   }
-  if (d.elements() == 1) {
+
+  // Scalars have shape {1}
+  if (numDims == 0) {
     storage.resize(1);
     s[0] = 1;
     return;
   }
 
-  // Number of non-trailing-1 dims
-  unsigned idx = AF_MAX_DIMS - 1;
-  while (d[idx] == 1) {
-    --idx;
-  }
-
-  storage.resize(idx + 1);
-  for (unsigned i = 0; i <= idx; ++i) {
+  storage.resize(numDims);
+  for (unsigned i = 0; i < numDims; ++i) {
     s[i] = d[i];
   }
 }
 
-Shape afToFlDims(const af::dim4& d) {
+Shape afToFlDims(const af::dim4& d, const unsigned numDims) {
   Shape s;
-  afToFlDims(d, s);
+  afToFlDims(d, numDims, s);
   return s;
 }
 
@@ -116,12 +116,10 @@ af::index flToAfIndex(const fl::Index& idx) {
   switch (idx.type()) {
     case IndexType::Tensor:
       return af::index(toArray(idx.get<Tensor>()));
+    case IndexType::Span:
+      return af::index(af::span);
     case IndexType::Range:
-      if (idx.isSpan()) {
-        return af::index(af::span);
-      } else {
-        return af::index(flRangeToAfSeq(idx.get<range>()));
-      }
+      return af::index(flRangeToAfSeq(idx.get<range>()));
     case IndexType::Literal:
       return af::index(idx.get<int>());
     default:
@@ -148,7 +146,11 @@ af::dim4 condenseDims(const af::dim4& dims) {
   return newDims;
 }
 
-af::array condenseIndices(const af::array& arr, bool keepDims) {
+af::array condenseIndices(
+    const af::array& arr,
+    bool keepDims /* = false */,
+    const std::optional<std::vector<detail::IndexType>>&
+        indexTypes /* = {} */) {
   // Fast path - return the Array as is if keepDims - don't consolidate
   if (keepDims) {
     return arr;
@@ -158,8 +160,27 @@ af::array condenseIndices(const af::array& arr, bool keepDims) {
     return arr;
   }
 
+  const af::dim4& dims = arr.dims();
+  af::dim4 newDims(1, 1, 1, 1);
+  unsigned newDimIdx = 0;
+  for (unsigned i = 0; i < AF_MAX_DIMS; ++i) {
+    if (dims[i] == 1 && indexTypes && indexTypes.value().size() > i) {
+    }
+
+    // If we're doing an index op (indexTypes is non-empty), then only collapse
+    // the dimension if it contains an index literal
+    if (dims[i] == 1 && indexTypes && indexTypes.value().size() > i &&
+        indexTypes.value()[i] != detail::IndexType::Literal) {
+      newDims[newDimIdx] = 1;
+      newDimIdx++;
+    } else if (dims[i] != 1) {
+      // found a non-1 dim size - populate newDims.
+      newDims[newDimIdx] = dims[i];
+      newDimIdx++;
+    }
+  }
+
   // Only change dims if condensing is possible
-  af::dim4 newDims = condenseDims(arr.dims());
   if (newDims != arr.dims()) {
     return af::moddims(arr, newDims);
   } else {

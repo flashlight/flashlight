@@ -49,8 +49,7 @@ TEST(TensorBaseTest, Metadata) {
 }
 
 TEST(TensorBaseTest, BinaryOperators) {
-  // TODO:fl::Tensor {testing} expand this test
-  // Ensure that some binary operators work properly.
+  // TODO:{fl::Tensor}{testing} expand this test/add a million fixtures, etc
   auto a = fl::full({2, 2}, 1);
   auto b = fl::full({2, 2}, 2);
   auto c = fl::full({2, 2}, 3);
@@ -59,6 +58,10 @@ TEST(TensorBaseTest, BinaryOperators) {
   ASSERT_TRUE(allClose((a + b), c));
   ASSERT_TRUE(allClose((c - b), a));
   ASSERT_TRUE(allClose((c * b), fl::full({2, 2}, 6)));
+
+  auto d = fl::full({4, 5, 6}, 6.);
+  ASSERT_THROW(a + d, std::invalid_argument);
+  ASSERT_THROW(a + fl::full({7, 8}, 9.), std::exception);
 }
 
 TEST(TensorBaseTest, AssignmentOperators) {
@@ -78,6 +81,9 @@ TEST(TensorBaseTest, AssignmentOperators) {
   ASSERT_TRUE(allClose(b, fl::full({4, 4}, 7.)));
   a = 6.;
   ASSERT_TRUE(allClose(a, fl::full({4, 4}, 6.)));
+
+  a = fl::full({5, 6, 7}, 8.);
+  ASSERT_TRUE(allClose(a, fl::full({5, 6, 7}, 8.)));
 }
 
 TEST(TensorBaseTest, CopyOperators) {
@@ -408,9 +414,8 @@ TEST(TensorBaseTest, isContiguous) {
 }
 
 TEST(TensorBaseTest, strides) {
-  // TODO(jacobkahn): fix this up/see if there's something universal
   auto t = fl::rand({10, 10});
-  ASSERT_EQ(t.strides(), Shape({1, 10, 100, 100}));
+  ASSERT_EQ(t.strides(), Shape({1, 10}));
 }
 
 TEST(TensorBaseTest, host) {
@@ -510,10 +515,13 @@ TEST(TensorBaseTest, any) {
       fl::any(t, {0, 1}), Tensor::fromVector<unsigned>({1}).astype(dtype::b8)));
   ASSERT_TRUE(fl::any(t));
   ASSERT_FALSE(fl::any(Tensor::fromVector<unsigned>({0, 0, 0})));
-  ASSERT_TRUE(allClose(
-      fl::any(
-          fl::any(t, {1}, /* keepDims = */ true), {0}, /* keepDims = */ true),
-      fl::any(t, {0, 1})));
+
+  auto keptDims = fl::any(
+      fl::any(t, {1}, /* keepDims = */ true), {0}, /* keepDims = */ true);
+  ASSERT_EQ(keptDims.shape(), Shape({1, 1}));
+  ASSERT_EQ(
+      keptDims.astype(dtype::s32).scalar<int>(),
+      fl::any(t, {0, 1}).astype(dtype::s32).scalar<int>());
 }
 
 TEST(TensorBaseTest, all) {
@@ -526,10 +534,12 @@ TEST(TensorBaseTest, all) {
       fl::all(t, {0, 1}), Tensor::fromVector<unsigned>({0}).astype(dtype::b8)));
   ASSERT_FALSE(fl::all(t));
   ASSERT_TRUE(fl::all(Tensor::fromVector<unsigned>({1, 1, 1})));
-  ASSERT_TRUE(allClose(
-      fl::all(
-          fl::all(t, {1}, /* keepDims = */ true), {0}, /* keepDims = */ true),
-      fl::all(t, {0, 1})));
+  auto keptDims = fl::all(
+      fl::all(t, {1}, /* keepDims = */ true), {0}, /* keepDims = */ true);
+  ASSERT_EQ(keptDims.shape(), Shape({1, 1}));
+  ASSERT_EQ(
+      keptDims.astype(dtype::s32).scalar<int>(),
+      fl::all(t, {0, 1}).astype(dtype::s32).scalar<int>());
 }
 
 TEST(TensorBaseTest, arange) {
@@ -549,6 +559,7 @@ TEST(TensorBaseTest, arange) {
   ASSERT_TRUE(allClose(fl::arange({4}), v));
 
   ASSERT_TRUE(allClose(fl::arange({4, 5}), fl::tile(v, {1, 5})));
+  ASSERT_EQ(fl::arange({4, 5}, 1).shape(), Shape({4, 5}));
   ASSERT_TRUE(allClose(
       fl::arange({4, 5}, 1),
       fl::tile(

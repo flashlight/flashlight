@@ -70,7 +70,7 @@ Dim Tensor::dim(const size_t dim) const {
   return shape().dim(dim);
 }
 
-unsigned Tensor::ndim() const {
+size_t Tensor::ndim() const {
   return shape().ndim();
 }
 
