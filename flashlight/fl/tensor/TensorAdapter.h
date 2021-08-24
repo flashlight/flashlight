@@ -210,12 +210,34 @@ class TensorAdapterBase {
 
 namespace detail {
 
-using DefaultTensorTypeFunc_t =
-    std::function<std::unique_ptr<TensorAdapterBase>(
-        const Shape& shape,
-        fl::dtype type,
-        void* ptr,
-        MemoryLocation memoryLocation)>;
+/*
+ * An interface with which to construct a tensor. Templated based on used tensor
+ * adapters.
+ */
+struct TensorCreator {
+  virtual ~TensorCreator() = default;
+
+  // General tensor ctor
+  virtual std::unique_ptr<TensorAdapterBase> get(
+      const Shape& shape = {},
+      fl::dtype type = fl::dtype::f32,
+      void* ptr = nullptr,
+      MemoryLocation memoryLocation = MemoryLocation::Host) const = 0;
+};
+
+template <typename T>
+struct TensorCreatorImpl : public TensorCreator {
+  TensorCreatorImpl() = default;
+  ~TensorCreatorImpl() override = default;
+
+  std::unique_ptr<TensorAdapterBase> get(
+      const Shape& shape = {},
+      fl::dtype type = fl::dtype::f32,
+      void* ptr = nullptr,
+      MemoryLocation memoryLocation = MemoryLocation::Host) const override {
+    return std::make_unique<T>(shape, type, ptr, memoryLocation);
+  }
+};
 
 /*
  * A singleton to hold a closure which creates a new tensor of default type. For
@@ -224,14 +246,14 @@ using DefaultTensorTypeFunc_t =
  */
 class DefaultTensorType {
   // The function to use to create a tensor of default type.
-  DefaultTensorTypeFunc_t creationFunc_;
+  std::unique_ptr<TensorCreator> creationFunc_;
 
  public:
   static DefaultTensorType& getInstance();
   DefaultTensorType();
 
-  void setCreationFunc(DefaultTensorTypeFunc_t&& func);
-  const DefaultTensorTypeFunc_t& getCreationFunc() const;
+  std::unique_ptr<TensorCreator> swap(std::unique_ptr<TensorCreator> creator) noexcept;
+  const TensorCreator& getTensorCreator() const;
 
   DefaultTensorType(DefaultTensorType const&) = delete;
   void operator=(DefaultTensorType const&) = delete;
@@ -240,11 +262,11 @@ class DefaultTensorType {
 /**
  * Get an instance of the default tensor adapter.
  */
-std::unique_ptr<TensorAdapterBase> getDefaultAdapter(
-    const Shape& shape = Shape(),
-    fl::dtype type = fl::dtype::f32,
-    void* ptr = nullptr,
-    MemoryLocation memoryLocation = MemoryLocation::Host);
+template <typename... T>
+std::unique_ptr<TensorAdapterBase> getDefaultAdapter(T&&... t) {
+  return DefaultTensorType::getInstance().getTensorCreator().get(
+      std::forward<T>(t)...);
+}
 
 } // namespace detail
 
@@ -263,27 +285,22 @@ void setDefaultTensorType() {
   static_assert(
       std::is_base_of<TensorAdapterBase, T>::value,
       "setDefaultTensorType: T must be a derived type of TensorAdapterBase");
-
-  fl::detail::DefaultTensorType::getInstance().setCreationFunc(
-      [](const Shape& shape,
-         fl::dtype type,
-         void* ptr,
-         MemoryLocation memoryLocation) {
-        return std::make_unique<T>(shape, type, ptr, memoryLocation);
-      });
+  fl::detail::DefaultTensorType::getInstance().swap(
+      std::make_unique<detail::TensorCreatorImpl<T>>());
 }
 
 template <typename T, typename B>
 void withTensorType(B func) {
-  // Save for later. Copy
-  auto oldCreationFunc =
-      fl::detail::DefaultTensorType::getInstance().getCreationFunc();
-  // Set new tensor type and execute
-  fl::setDefaultTensorType<T>();
+  static_assert(
+      std::is_base_of<TensorAdapterBase, T>::value,
+      "withTensorType: T must be a derived type of TensorAdapterBase");
+
+  // Swap
+  auto oldCreator = fl::detail::DefaultTensorType::getInstance().swap(
+      std::make_unique<detail::TensorCreatorImpl<T>>());
   func();
-  // Restore old func
-  fl::detail::DefaultTensorType::getInstance().setCreationFunc(
-      std::move(oldCreationFunc));
+  // Restore
+  fl::detail::DefaultTensorType::getInstance().swap(std::move(oldCreator));
 }
 
 } // namespace fl
