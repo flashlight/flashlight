@@ -246,6 +246,84 @@ TEST(TensorBaseTest, maximum) {
   ASSERT_TRUE(allClose(fl::maximum(b, 1).astype(a.type()), b));
 }
 
+TEST(TensorBaseTest, argmin) {
+  Tensor in = Tensor::fromVector<float>({2, 3}, {4, 8, 6, 3, 5, 9});
+  auto a0 = fl::argmin(in, 0);
+  auto a1 = fl::argmin(in, 1);
+
+  ASSERT_EQ(a0.shape(), Shape({in.dim(1)}));
+  ASSERT_EQ(a1.shape(), Shape({in.dim(0)}));
+  ASSERT_TRUE(allClose(a0, Tensor::fromVector<unsigned>({3}, {0, 1, 0})));
+  ASSERT_TRUE(allClose(a1, Tensor::fromVector<unsigned>({2}, {0, 1})));
+  ASSERT_EQ(
+      fl::argmin(in, 0, /* keepDims = */ true).shape(), Shape({1, in.dim(1)}));
+  ASSERT_EQ(
+      fl::argmin(in, 1, /* keepDims = */ true).shape(), Shape({in.dim(0), 1}));
+}
+
+TEST(TensorBaseTest, argmax) {
+  Tensor in = Tensor::fromVector<float>({2, 3}, {4, 8, 6, 3, 5, 9});
+  auto a0 = fl::argmax(in, 0);
+  auto a1 = fl::argmax(in, 1);
+
+  ASSERT_EQ(a0.shape(), Shape({in.dim(1)}));
+  ASSERT_EQ(a1.shape(), Shape({in.dim(0)}));
+  ASSERT_TRUE(allClose(a0, Tensor::fromVector<unsigned>({3}, {1, 0, 1})));
+  ASSERT_TRUE(allClose(a1, Tensor::fromVector<unsigned>({2}, {1, 2})));
+  ASSERT_EQ(
+      fl::argmax(in, 0, /* keepDims = */ true).shape(), Shape({1, in.dim(1)}));
+  ASSERT_EQ(
+      fl::argmax(in, 1, /* keepDims = */ true).shape(), Shape({in.dim(0), 1}));
+}
+
+TEST(TensorBaseTest, min) {
+  Tensor in = Tensor::fromVector<float>({2, 3}, {4, 8, 6, 3, 5, 9});
+  Tensor values, indices;
+  fl::min(values, indices, in, 0);
+  ASSERT_EQ(indices.shape(), Shape({in.dim(1)}));
+  ASSERT_TRUE(allClose(indices, Tensor::fromVector<unsigned>({3}, {0, 1, 0})));
+  for (unsigned i = 0; i < values.size(); ++i) {
+    ASSERT_TRUE(allClose(values.flat(i), in(fl::span, i)(indices(i))));
+  }
+
+  fl::min(values, indices, in, 1);
+  ASSERT_EQ(indices.shape(), Shape({in.dim(0)}));
+  ASSERT_TRUE(allClose(indices, Tensor::fromVector<unsigned>({2}, {0, 1})));
+  for (unsigned i = 0; i < values.size(); ++i) {
+    ASSERT_TRUE(allClose(values.flat(i), in(i)(indices(i))));
+  }
+
+  fl::min(values, indices, in, 0, /* keepDims = */ true);
+  ASSERT_EQ(values.shape(), Shape({1, in.dim(1)}));
+
+  fl::min(values, indices, in, 1, /* keepDims = */ true);
+  ASSERT_EQ(values.shape(), Shape({in.dim(0), 1}));
+}
+
+TEST(TensorBaseTest, max) {
+  Tensor in = Tensor::fromVector<float>({2, 3}, {4, 8, 6, 3, 5, 9});
+  Tensor values, indices;
+  fl::max(values, indices, in, 0);
+  ASSERT_EQ(indices.shape(), Shape({in.dim(1)}));
+  ASSERT_TRUE(allClose(indices, Tensor::fromVector<unsigned>({3}, {1, 0, 1})));
+  for (unsigned i = 0; i < values.size(); ++i) {
+    ASSERT_TRUE(allClose(values.flat(i), in(fl::span, i)(indices(i))));
+  }
+
+  fl::max(values, indices, in, 1);
+  ASSERT_EQ(indices.shape(), Shape({in.dim(0)}));
+  ASSERT_TRUE(allClose(indices, Tensor::fromVector<unsigned>({2}, {1, 2})));
+  for (unsigned i = 0; i < values.size(); ++i) {
+    ASSERT_TRUE(allClose(values.flat(i), in(i)(indices(i))));
+  }
+
+  fl::max(values, indices, in, 0, /* keepDims = */ true);
+  ASSERT_EQ(values.shape(), Shape({1, in.dim(1)}));
+
+  fl::max(values, indices, in, 1, /* keepDims = */ true);
+  ASSERT_EQ(values.shape(), Shape({in.dim(0), 1}));
+}
+
 TEST(TensorBaseTest, negative) {
   auto a = fl::full({3, 3}, 1);
   auto b = fl::full({3, 3}, 2);

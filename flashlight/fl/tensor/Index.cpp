@@ -18,8 +18,11 @@ range::range(idx start, idx end, Dim stride)
       start_(std::visit([](Dim idx) -> Dim { return idx; }, start)),
       // fl::end --> -1, else idx as Dim
       end_(
-          std::holds_alternative<fl::end_t>(end) ? std::get<fl::end_t>(end)
-                                                 : std::get<Dim>(end) - 1),
+          std::holds_alternative<fl::end_t>(end)
+              ? std::get<fl::end_t>(end)
+              // If start == end, set start_ == end_, else end_ = end - 1
+              : (std::get<Dim>(end) == start_ ? start_
+                                              : std::get<Dim>(end) - 1)),
       stride_(stride) {}
 
 Dim range::start() const {

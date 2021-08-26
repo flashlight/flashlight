@@ -59,7 +59,9 @@ TEST(IndexTest, Shape) {
   ASSERT_EQ(t(2, fl::span).shape(), Shape({4}));
   ASSERT_EQ(t(2).shape(), Shape({4}));
   ASSERT_EQ(t(fl::range(3)).shape(), Shape({3, 4}));
+  ASSERT_EQ(t(fl::range(1, 1)).shape(), Shape({1, 4}));
   ASSERT_EQ(t(fl::range(1, 2)).shape(), Shape({1, 4}));
+  ASSERT_EQ(t(fl::span, fl::range(1, 1)).shape(), Shape({4, 1}));
   ASSERT_EQ(t(fl::range(1, 2), fl::range(1, 2)).shape(), Shape({1, 1}));
   ASSERT_EQ(t(fl::range(0, fl::end)).shape(), Shape({4, 4}));
   ASSERT_EQ(t(fl::range(0, fl::end, 2)).shape(), Shape({2, 4}));

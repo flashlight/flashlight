@@ -17,7 +17,7 @@ namespace fl {
 Shape::Shape(std::vector<Dim> d) : dims_(std::move(d)) {}
 Shape::Shape(std::initializer_list<Dim> d) : Shape(std::vector<Dim>(d)) {}
 
-size_t Shape::elements() const {
+Dim Shape::elements() const {
   if (dims_.size() == 0) {
     return 0;
   }
