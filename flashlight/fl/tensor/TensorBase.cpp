@@ -205,6 +205,10 @@ void Tensor::unlock() const {
   impl_->unlock();
 }
 
+bool Tensor::isLocked() const {
+  return impl_->isLocked();
+}
+
 bool Tensor::isContiguous() const {
   return impl_->isContiguous();
 }

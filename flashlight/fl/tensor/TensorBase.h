@@ -403,6 +403,15 @@ class Tensor {
   void unlock() const;
 
   /**
+   * Returns true if the tensor has been memory-locked per a call to
+   * Tensor::device<T>(). After unlocking via Tensor::unlock(), the tensor is no
+   * longer locked.
+   *
+   * @return true if the tensor is locked and a device pointer is active.
+   */
+  bool isLocked() const;
+
+  /**
    * Returns if the Tensor is contiguous in its memory-based representation.
    *
    * @return a bool denoting Tensor contiguousness

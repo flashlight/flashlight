@@ -214,6 +214,17 @@ void ArrayFireTensor::unlock() {
   AF_CHECK(af_unlock_array(getHandle().get()));
 }
 
+bool ArrayFireTensor::isLocked() {
+  bool res;
+  auto err = af_is_locked_array(&res, getHandle().get());
+  if (err != AF_SUCCESS) {
+    throw std::runtime_error(
+        "ArrayFireTensor::isLocked - af_is_locked_array returned error: " +
+        std::to_string(err));
+  }
+  return res;
+}
+
 bool ArrayFireTensor::isContiguous() {
   return af::isLinear(getHandle());
 }
