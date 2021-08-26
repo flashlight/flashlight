@@ -629,24 +629,66 @@ Tensor matmul(
 
 /************************** Reductions ***************************/
 
-Tensor amin(const Tensor& input, const std::vector<int>& axes, bool keepDims) {
+Tensor amin(
+    const Tensor& input,
+    const std::vector<int>& axes,
+    bool keepDims /* = false */) {
   return input.backend().amin(input, axes, keepDims);
 }
 
-Tensor amax(const Tensor& input, const std::vector<int>& axes, bool keepDims) {
+Tensor amax(
+    const Tensor& input,
+    const std::vector<int>& axes,
+    bool keepDims /* = false */) {
   return input.backend().amax(input, axes, keepDims);
 }
 
-Tensor sum(const Tensor& input, const std::vector<int>& axes, bool keepDims) {
+void min(
+    Tensor& values,
+    Tensor& indices,
+    const Tensor& input,
+    const unsigned axis,
+    bool keepDims) {
+  FL_TENSOR_BACKENDS_MATCH_CHECK(values, indices, input);
+  return input.backend().min(values, indices, input, axis, keepDims);
+}
+
+void max(
+    Tensor& values,
+    Tensor& indices,
+    const Tensor& input,
+    const unsigned axis,
+    bool keepDims /* = false */) {
+  FL_TENSOR_BACKENDS_MATCH_CHECK(values, indices, input);
+  return input.backend().max(values, indices, input, axis, keepDims);
+}
+
+Tensor sum(
+    const Tensor& input,
+    const std::vector<int>& axes,
+    bool keepDims /* = false */) {
   return input.backend().sum(input, axes, keepDims);
 }
 
-Tensor mean(const Tensor& input, const std::vector<int>& axes, bool keepDims) {
+Tensor argmax(const Tensor& input, unsigned axis, bool keepDims /* = false */) {
+  return input.backend().argmax(input, axis, keepDims);
+}
+
+Tensor argmin(const Tensor& input, unsigned axis, bool keepDims /* = false */) {
+  return input.backend().argmin(input, axis, keepDims);
+}
+
+Tensor mean(
+    const Tensor& input,
+    const std::vector<int>& axes,
+    bool keepDims /* = false */) {
   return input.backend().mean(input, axes, keepDims);
 }
 
-Tensor
-median(const Tensor& input, const std::vector<int>& axes, bool keepDims) {
+Tensor median(
+    const Tensor& input,
+    const std::vector<int>& axes,
+    bool keepDims /* = false */) {
   return input.backend().median(input, axes, keepDims);
 }
 
@@ -654,7 +696,7 @@ Tensor var(
     const Tensor& input,
     const std::vector<int>& axes,
     const bool bias,
-    bool keepDims) {
+    bool keepDims /* = false */) {
   return input.backend().var(input, axes, bias, keepDims);
 }
 
@@ -679,7 +721,10 @@ GENERATE_VAR(short);
 GENERATE_VAR(unsigned short);
 #undef GENERATE_VAR
 
-Tensor std(const Tensor& input, const std::vector<int>& axes, bool keepDims) {
+Tensor std(
+    const Tensor& input,
+    const std::vector<int>& axes,
+    bool keepDims /* = false */) {
   return input.backend().std(input, axes, keepDims);
 }
 
@@ -687,12 +732,17 @@ double norm(const Tensor& input) {
   return input.backend().norm(input);
 }
 
-Tensor
-countNonzero(const Tensor& input, const std::vector<int>& axes, bool keepDims) {
+Tensor countNonzero(
+    const Tensor& input,
+    const std::vector<int>& axes,
+    bool keepDims /* = false */) {
   return input.backend().countNonzero(input, axes, keepDims);
 }
 
-Tensor any(const Tensor& input, const std::vector<int>& axes, bool keepDims) {
+Tensor any(
+    const Tensor& input,
+    const std::vector<int>& axes,
+    bool keepDims /* = false */) {
   return input.backend().any(input, axes, keepDims);
 }
 
@@ -700,7 +750,10 @@ bool any(const Tensor& input) {
   return input.backend().any(input);
 }
 
-Tensor all(const Tensor& input, const std::vector<int>& axes, bool keepDims) {
+Tensor all(
+    const Tensor& input,
+    const std::vector<int>& axes,
+    bool keepDims /* = false */) {
   return input.backend().all(input, axes, keepDims);
 }
 

@@ -69,7 +69,7 @@ class Shape {
   /**
    * @return the number of elements in a tensor that has the given shape.
    */
-  size_t elements() const;
+  Dim elements() const;
 
   /**
    * @return Number of dimensions in the shape.

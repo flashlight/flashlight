@@ -184,9 +184,23 @@ class ArrayFireBackend : public TensorBackend {
   Tensor amax(const Tensor& input, const std::vector<int>& axes, bool keepDims)
       override;
   double amax(const Tensor& input) override; // TODO: consolidate w/ above
+  void min(
+      Tensor& values,
+      Tensor& indices,
+      const Tensor& input,
+      const unsigned axis,
+      bool keepDims) override;
+  void max(
+      Tensor& values,
+      Tensor& indices,
+      const Tensor& input,
+      const unsigned axis,
+      bool keepDims) override;
   Tensor sum(const Tensor& input, const std::vector<int>& axes, bool keepDims)
       override;
   double sum(const Tensor& input) override; // TODO: consolidate w/ above
+  Tensor argmax(const Tensor& input, unsigned axis, bool keepDims) override;
+  Tensor argmin(const Tensor& input, unsigned axis, bool keepDims) override;
   Tensor mean(const Tensor& input, const std::vector<int>& axes, bool keepDims)
       override;
   double mean(const Tensor& input) override; // TODO: consolidate w/ above

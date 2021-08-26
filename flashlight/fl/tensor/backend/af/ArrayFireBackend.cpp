@@ -541,6 +541,36 @@ double ArrayFireBackend::amax(const Tensor& input) {
   return af::max<double>(toArray(input));
 }
 
+void ArrayFireBackend::min(
+    Tensor& values,
+    Tensor& indices,
+    const Tensor& input,
+    const unsigned axis,
+    bool keepDims) {
+  af::min(toArray(values), toArray(indices), toArray(input), axis);
+  values = toTensor<ArrayFireTensor>(
+      detail::condenseIndices(toArray(values), keepDims),
+      getReducedNumDims(input.ndim(), 1, keepDims));
+  indices = toTensor<ArrayFireTensor>(
+      detail::condenseIndices(toArray(indices), keepDims),
+      getReducedNumDims(input.ndim(), 1, keepDims));
+}
+
+void ArrayFireBackend::max(
+    Tensor& values,
+    Tensor& indices,
+    const Tensor& input,
+    const unsigned axis,
+    bool keepDims) {
+  af::max(toArray(values), toArray(indices), toArray(input), axis);
+  values = toTensor<ArrayFireTensor>(
+      detail::condenseIndices(toArray(values), keepDims),
+      getReducedNumDims(input.ndim(), 1, keepDims));
+  indices = toTensor<ArrayFireTensor>(
+      detail::condenseIndices(toArray(indices), keepDims),
+      getReducedNumDims(input.ndim(), 1, keepDims));
+}
+
 Tensor ArrayFireBackend::sum(
     const Tensor& input,
     const std::vector<int>& axes,
@@ -553,6 +583,24 @@ Tensor ArrayFireBackend::sum(
 // TODO: consolidate with above
 double ArrayFireBackend::sum(const Tensor& input) {
   return af::sum<double>(toArray(input));
+}
+
+Tensor
+ArrayFireBackend::argmax(const Tensor& input, unsigned axis, bool keepDims) {
+  af::array tmpVal, indices;
+  af::max(tmpVal, indices, toArray(input), axis);
+  return toTensor<ArrayFireTensor>(
+      detail::condenseIndices(indices, keepDims),
+      getReducedNumDims(input.ndim(), 1, keepDims));
+}
+
+Tensor
+ArrayFireBackend::argmin(const Tensor& input, unsigned axis, bool keepDims) {
+  af::array tmpVal, indices;
+  af::min(tmpVal, indices, toArray(input), axis);
+  return toTensor<ArrayFireTensor>(
+      detail::condenseIndices(indices, keepDims),
+      getReducedNumDims(input.ndim(), 1, keepDims));
 }
 
 Tensor ArrayFireBackend::mean(

@@ -994,6 +994,8 @@ Tensor matmul(
  *
  * @param[in] input the input along which to operate
  * @param[in] dim the dimension along which to reduce.
+ * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
+ * as singleton dimensions rather than collapsing them
  * @return a tensor containing the minimum values
  */
 Tensor
@@ -1014,8 +1016,9 @@ T amin(const Tensor& input);
  *
  * @param[in] input the input along which to operate
  * @param[in] dim the dimension along which to reduce.
+ * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
+ * as singleton dimensions rather than collapsing them
  * @return a tensor containing the max
- *
  */
 Tensor
 amax(const Tensor& input, const std::vector<int>& axes, bool keepDims = false);
@@ -1031,10 +1034,74 @@ template <typename T>
 T amax(const Tensor& input);
 
 /**
+ * Compute the maximum value along multiple axes for a tensor, returning both
+ * the maximum values and the indices of the input tensor in which they appear.
+ *
+ * @param[out] values a Tensor into which to populate the max values from the
+ * tensor along the specified axes
+ * @param[out] indices a Tensor into which to populate the indices of the max
+ * values from the tensor along the specified axes
+ * @param[in] input the input tensor
+ * @param[in] axis the axis along which to find minimum values
+ * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
+ * as singleton dimensions rather than collapsing them
+ */
+void min(
+    Tensor& values,
+    Tensor& indices,
+    const Tensor& input,
+    const unsigned axis,
+    bool keepDims = false);
+
+/**
+ * Compute the maximum value along multiple axes for a tensor, returning both
+ * the maximum values and the indices of the input tensor in which they appear.
+ *
+ * @param[out] values a Tensor into which to populate the max values from the
+ * tensor along the specified axes
+ * @param[out] indices a Tensor into which to populate the indices of the max
+ * values from the tensor along the specified axes
+ * @param[in] input the input tensor
+ * @param[in] axis the axis along which to find maximum values
+ * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
+ * as singleton dimensions rather than collapsing them
+ */
+void max(
+    Tensor& values,
+    Tensor& indices,
+    const Tensor& input,
+    const unsigned axis,
+    bool keepDims = false);
+
+/**
+ * Return the indices of the maximum values along an axis.
+ *
+ * @param[in] input the input tensor
+ * @param[in] axis the axis along which to find maximum values
+ * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
+ * as singleton dimensions rather than collapsing them
+ * @return a tensor containing the indices of the max values along each axis
+ */
+Tensor argmax(const Tensor& input, unsigned axis, bool keepDims = false);
+
+/**
+ * Return the indices of the minimum values along an axis.
+ *
+ * @param[in] input the input tensor
+ * @param[in] axis the axis along which to find minimum values
+ * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
+ * as singleton dimensions rather than collapsing them
+ * @return a tensor containing the indices of the max values along each axis
+ */
+Tensor argmin(const Tensor& input, unsigned axis, bool keepDims = false);
+
+/**
  * Sum of tensor over given axes.
  *
  * @param[in] input the input along which to operate
  * @param[in] axes the dimension along which to reduce.
+ * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
+ * as singleton dimensions rather than collapsing them
  * @return a tensor containing the sum across given axes
  */
 Tensor
@@ -1055,6 +1122,8 @@ T sum(const Tensor& input);
  *
  * @param[in] input the input along which to operate
  * @param[in] axes the dimension along which to reduce.
+ * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
+ * as singleton dimensions rather than collapsing them
  * @return a tensor containing the mean across given axes
  */
 Tensor
@@ -1075,6 +1144,8 @@ T mean(const Tensor& input);
  *
  * @param[in] input the input along which to operate
  * @param[in] axes the dimension along which to reduce.
+ * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
+ * as singleton dimensions rather than collapsing them
  * @return a tensor containing the median across given axes
  */
 Tensor median(
@@ -1098,6 +1169,9 @@ T median(const Tensor& input);
  *
  * @param[in] input the input along which to operate
  * @param[in] axes the dimension along which to reduce.
+ * @param[in] bias defaults false. Compute biased or unbiased variance
+ * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
+ * as singleton dimensions rather than collapsing them
  * @return a tensor containing the var across given axes
  */
 Tensor var(
@@ -1121,6 +1195,8 @@ T var(const Tensor& input, const bool bias = false);
  *
  * @param[in] input the input along which to operate
  * @param[in] axes the dimension along which to reduce.
+ * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
+ * as singleton dimensions rather than collapsing them
  * @return a tensor containing the var across given axes
  */
 Tensor
@@ -1143,7 +1219,8 @@ double norm(const Tensor& input);
  *
  * @param[in] input the tensor on which to operate.
  * @param[in] dims (optional) the axis along which to give nonzeros.
- *
+ * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
+ * as singleton dimensions rather than collapsing them
  * @return a tensor containing the number of nonzero elements along each axis or
  * over the entire tensor.
  */
@@ -1159,7 +1236,8 @@ Tensor countNonzero(
  *
  * @param[in] input the input tensor
  * @param[in] axes the axes along which to check for truthy values
- *
+ * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
+ * as singleton dimensions rather than collapsing them
  * @return a bool tensor containing axis-wise values denoting truthy values
  * along that axis in the input tensor.
  */
@@ -1184,7 +1262,8 @@ bool any(const Tensor& input);
  *
  * @param[in] input the input tensor
  * @param[in] axes the axes along which to
- *
+ * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
+ * as singleton dimensions rather than collapsing them
  * @return a bool tensor containing axis-wise values with true along
  * axes that contain only true values.
  */

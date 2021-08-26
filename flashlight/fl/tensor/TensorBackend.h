@@ -185,9 +185,23 @@ class TensorBackend {
   virtual Tensor
   amax(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
   virtual double amax(const Tensor& input) = 0; // TODO: consoildate w/ above
+  virtual void min(
+      Tensor& values,
+      Tensor& indices,
+      const Tensor& input,
+      const unsigned axis,
+      bool keepDims) = 0;
+  virtual void max(
+      Tensor& values,
+      Tensor& indices,
+      const Tensor& input,
+      const unsigned axis,
+      bool keepDims) = 0;
   virtual Tensor
   sum(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
   virtual double sum(const Tensor& input) = 0; // TODO: consolidate w/ above
+  virtual Tensor argmax(const Tensor& input, unsigned axis, bool keepDims) = 0;
+  virtual Tensor argmin(const Tensor& input, unsigned axis, bool keepDims) = 0;
   virtual Tensor
   mean(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
   virtual double mean(const Tensor& input) = 0; // TODO: consolidate w/ above
