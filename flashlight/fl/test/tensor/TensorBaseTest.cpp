@@ -153,8 +153,22 @@ TEST(TensorBaseTest, transpose) {
   ASSERT_TRUE(
       allClose(fl::transpose(fl::full({3, 4}, 3.)), fl::full({4, 3}, 3.)));
   ASSERT_TRUE(allClose(
-      fl::transpose(fl::full({4, 5, 6, 7}, 3.), {2, 0, 1}),
+      fl::transpose(fl::full({4, 5, 6, 7}, 3.), {2, 0, 1, 3}),
       fl::full({6, 4, 5, 7}, 3.)));
+  ASSERT_THROW(fl::transpose(fl::rand({3, 4, 5}), {0, 1}), std::exception);
+  ASSERT_THROW(
+      fl::transpose(fl::rand({2, 4, 6, 8}), {1, 0, 2}), std::exception);
+  ASSERT_THROW(
+      fl::transpose(fl::rand({2, 4, 6, 8}), {1, 0, 2, 4}), std::exception);
+
+  auto a = fl::rand({4});
+  ASSERT_TRUE(allClose(fl::transpose(a), a));
+
+  ASSERT_EQ(fl::transpose(fl::rand({5, 6, 1, 7})).shape(), Shape({7, 1, 6, 5}));
+  ASSERT_EQ(fl::transpose(fl::rand({1, 1})).shape(), Shape({1, 1}));
+  ASSERT_EQ(
+      fl::transpose(fl::rand({7, 2, 1, 3}), {0, 2, 1, 3}).shape(),
+      Shape({7, 1, 2, 3}));
 }
 
 TEST(TensorBaseTest, tile) {
@@ -636,6 +650,40 @@ TEST(TensorBaseTest, matmul) {
       fl::matmul(fl::transpose(a), b, fl::MatrixProperty::Transpose), ref));
 }
 
+TEST(TensorBaseTest, matmulShapes) {
+  ASSERT_EQ(fl::matmul(fl::rand({10}), fl::rand({10})).shape(), Shape({1}));
+  ASSERT_EQ(
+      fl::matmul(fl::rand({10}), fl::rand({10}), fl::MatrixProperty::Transpose)
+          .shape(),
+      Shape({1}));
+  ASSERT_EQ(
+      fl::matmul(
+          fl::rand({10}),
+          fl::rand({10}),
+          fl::MatrixProperty::Transpose,
+          fl::MatrixProperty::Transpose)
+          .shape(),
+      Shape({1}));
+  ASSERT_EQ(
+      fl::matmul(
+          fl::rand({10}),
+          fl::rand({10}),
+          fl::MatrixProperty::None,
+          fl::MatrixProperty::Transpose)
+          .shape(),
+      Shape({1}));
+  ASSERT_EQ(fl::matmul(fl::rand({1, 10}), fl::rand({10})).shape(), Shape({1}));
+  ASSERT_EQ(fl::matmul(fl::rand({1}), fl::rand({1, 10})).shape(), Shape({10}));
+  ASSERT_EQ(
+      fl::matmul(fl::rand({10}), fl::rand({10}), fl::MatrixProperty::Transpose)
+          .shape(),
+      Shape({1}));
+  ASSERT_EQ(fl::matmul(fl::rand({3, 4}), fl::rand({4})).shape(), Shape({3}));
+  ASSERT_EQ(fl::matmul(fl::rand({5}), fl::rand({5, 7})).shape(), Shape({7}));
+  ASSERT_THROW(fl::matmul(fl::rand({1}), fl::rand({10})), std::exception);
+  ASSERT_THROW(fl::matmul(fl::rand({3}), fl::rand({5, 7})), std::exception);
+}
+
 TEST(TensorBaseTest, sum) {
   auto t = fl::full({3, 4, 5, 6}, 1.0);
   ASSERT_TRUE(allClose(fl::sum(t, {0}), fl::full({4, 5, 6}, 3.0)));
@@ -726,6 +774,7 @@ TEST(TensorBaseTest, iota) {
       fl::iota({5, 3}, {1, 2}),
       fl::tile(fl::reshape(fl::arange({15}), {5, 3}), {1, 2})));
   ASSERT_EQ(fl::iota({2, 2}, {2, 2}, fl::dtype::f64).type(), fl::dtype::f64);
+  ASSERT_EQ(fl::iota({1, 10}, {5}).shape(), Shape({5, 10}));
 }
 
 TEST(TensorBaseTest, pad) {

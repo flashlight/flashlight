@@ -183,7 +183,7 @@ class ArrayFireTensor : public TensorAdapterBase {
   Location location() override;
   void scalar(void* out) override;
   void device(void** out) override;
-  void host(void** out) override;
+  void host(void* out) override;
   void unlock() override;
   bool isLocked() override;
   bool isContiguous() override;

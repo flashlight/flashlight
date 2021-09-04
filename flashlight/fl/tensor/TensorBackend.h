@@ -75,7 +75,7 @@ class TensorBackend {
   virtual Tensor reshape(const Tensor& tensor, const Shape& shape) = 0;
   virtual Tensor transpose(
       const Tensor& tensor,
-      const Shape& dims /* = {} */) = 0;
+      const Shape& axes /* = {} */) = 0;
   virtual Tensor tile(const Tensor& tensor, const Shape& shape) = 0;
   virtual Tensor concatenate(
       const std::vector<Tensor>& tensors,

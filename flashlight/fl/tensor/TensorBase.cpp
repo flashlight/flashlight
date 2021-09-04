@@ -158,15 +158,13 @@ TensorBackend& Tensor::backend() const {
   template <>                                                               \
   TYPE* Tensor::host() const {                                              \
     TYPE* out = reinterpret_cast<TYPE*>(new char[bytes()]);                 \
-    void** addr = reinterpret_cast<void**>(&out);                           \
-    impl_->host(addr);                                                      \
+    impl_->host(out);                                                       \
     return out;                                                             \
   }                                                                         \
                                                                             \
   template <>                                                               \
   void Tensor::host(TYPE* ptr) const {                                      \
-    void** addr = reinterpret_cast<void**>(&ptr);                           \
-    impl_->host(addr);                                                      \
+    impl_->host(ptr);                                                       \
   }
 FL_CREATE_MEMORY_OPS(int);
 FL_CREATE_MEMORY_OPS(unsigned);
@@ -191,13 +189,13 @@ void* Tensor::device() const {
 template <>
 void* Tensor::host() const {
   void* out = reinterpret_cast<void*>(new char[bytes()]);
-  impl_->host(&out);
+  impl_->host(out);
   return out;
 }
 
 template <>
 void Tensor::host(void* ptr) const {
-  impl_->host(&ptr);
+  impl_->host(ptr);
 }
 #undef FL_CREATE_MEMORY_OPS
 
@@ -350,8 +348,8 @@ Tensor reshape(const Tensor& tensor, const Shape& shape) {
   return tensor.backend().reshape(tensor, shape);
 }
 
-Tensor transpose(const Tensor& tensor, const Shape& dims /* = {} */) {
-  return tensor.backend().transpose(tensor, dims);
+Tensor transpose(const Tensor& tensor, const Shape& axes /* = {} */) {
+  return tensor.backend().transpose(tensor, axes);
 }
 
 Tensor tile(const Tensor& tensor, const Shape& shape) {

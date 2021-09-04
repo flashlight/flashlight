@@ -184,6 +184,21 @@ class Tensor {
   }
 
   /**
+   * Create a tensor from an existing byte buffer given a type.
+   *
+   * @param[in] s the shape of the resulting tensor.
+   * @param[in] t the type of the underlying tensor
+   * @param[in] ptr the buffer of bytes containing the data
+   * @param[in] memoryLocation the location in memory where the input buffer
+   * with which to create the tensor resides.
+   * @return a tensor with values and shape as given.
+   */
+  static Tensor
+  fromBuffer(Shape s, fl::dtype t, uint8_t* ptr, Location memoryLocation) {
+    return Tensor(s, t, ptr, memoryLocation);
+  }
+
+  /**
    * Deep-copies the tensor, including underlying data.
    */
   Tensor copy() const;
@@ -377,7 +392,8 @@ class Tensor {
    * host. If the tensor is located on a device, makes a copy of device memory
    * and returns a buffer on the host containing the relevant memory.
    *
-   * @return the requested pointer on the host.
+   * @param[in] ptr a pointer to the region of memory to populate with tensor
+   * values
    */
   template <typename T>
   void host(T* ptr) const;
@@ -555,11 +571,12 @@ Tensor reshape(const Tensor& tensor, const Shape& shape);
  * a tensor.
  *
  * @param[in] tensor the tensor to transpose
- * @param[in] dims (optional) the permuted indices of the tensor the kth access
- * of the output tensor will correspond to dims[k] in the input tensor
+ * @param[in] axes (optional) the permuted indices of the tensor the kth access
+ * of the output tensor will correspond to dims[k] in the input tensor. If this
+ * argument is not passed, the axes of the input tensor will be reversed.
  * @return the permuted tensor
  */
-Tensor transpose(const Tensor& tensor, const Shape& dims = {});
+Tensor transpose(const Tensor& tensor, const Shape& axes = {});
 
 /**
  * Repeat the contents of a tensor a given number of times along specified

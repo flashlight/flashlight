@@ -43,7 +43,9 @@ bool allClose(
 
 } // namespace
 
-TEST(ShapeTest, ArrayFireInterop) {
+namespace fl {
+
+TEST(ArrayFireTensorBaseTest, ArrayFireShapeInterop) {
   auto dimsEq = [](const af::dim4& d, const Shape& s) {
     return detail::afToFlDims(d, s.ndim()) == s;
   };
@@ -59,6 +61,8 @@ TEST(ShapeTest, ArrayFireInterop) {
   ASSERT_TRUE(dimsEq(af::dim4(1, 1, 1), {1}));
   ASSERT_TRUE(dimsEq(af::dim4(0, 1, 1, 1), {}));
 }
+
+} // namespace fl
 
 TEST(ArrayFireTensorBaseTest, AfRefCountBasic) {
   // Sanity check that af::arrays moved into fl::Tensors don't have their
@@ -326,7 +330,8 @@ TEST(ArrayFireTensorBaseTest, transpose) {
 
   auto b = fl::rand({3, 5, 4, 8});
   ASSERT_TRUE(allClose(
-      toArray(fl::transpose(b, {2, 0, 1})), af::reorder(toArray(b), 2, 0, 1)));
+      toArray(fl::transpose(b, {2, 0, 1, 3})),
+      af::reorder(toArray(b), 2, 0, 1, 3)));
 }
 
 TEST(ArrayFireTensorBaseTest, concatenate) {
