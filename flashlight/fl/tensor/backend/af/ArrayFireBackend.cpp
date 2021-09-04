@@ -20,6 +20,7 @@
 #include <numeric>
 #include <stdexcept>
 
+#include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
 #include "flashlight/fl/tensor/backend/af/Utils.h"
 
@@ -148,8 +149,7 @@ Tensor ArrayFireBackend::iota(
           detail::flToAfDims(dims),
           detail::flToAfDims(tileDims),
           detail::flToAfType(type)),
-      // TODO: check
-      tileDims.ndim());
+      /* numDims = */ std::max(dims.ndim(), tileDims.ndim()));
 }
 
 /************************ Shaping and Indexing *************************/
@@ -160,32 +160,44 @@ Tensor ArrayFireBackend::reshape(const Tensor& tensor, const Shape& shape) {
 
 Tensor ArrayFireBackend::transpose(
     const Tensor& tensor,
-    const Shape& dims /* = {} */) {
-  if (tensor.ndim() == 2 && (dims.ndim() == 0 || dims == Shape({1, 0}))) {
+    const Shape& axes /* = {} */) {
+  if (tensor.ndim() == 1) {
+    return tensor;
+  } else if (
+      tensor.ndim() == 2 && (axes.ndim() == 0 || axes == Shape({1, 0}))) {
     // fastpath for matrices
     return toTensor<ArrayFireTensor>(
-        detail::condenseIndices(af::transpose(toArray(tensor))), tensor.ndim());
-  } else if (dims.ndim() == 0) {
+        af::transpose(toArray(tensor)), tensor.ndim());
+  } else if (axes.ndim() == 0) {
     // flip all dimensions
     return toTensor<ArrayFireTensor>(
-        detail::condenseIndices(af::reorder(toArray(tensor), 3, 2, 1, 0)),
-        tensor.ndim());
+        af::reorder(toArray(tensor), 3, 2, 1, 0), tensor.ndim());
   } else {
-    if (dims.ndim() > AF_MAX_DIMS) {
+    if (axes.ndim() > AF_MAX_DIMS) {
       throw std::invalid_argument(
           "ArrayFire tensor transpose was given "
           "permutation dims with > 4 axes");
     }
+    if (axes.ndim() != tensor.ndim()) {
+      throw std::invalid_argument(
+          "ArrayFire tensor transpose axes don't match tensor's for "
+          "permutation - axes must have the same number of "
+          "dimensions as the tensor");
+    }
     // reorder based on specified dimensions
     std::vector<dim_t> d(AF_MAX_DIMS);
     std::iota(std::begin(d), std::end(d), 0);
-    for (size_t i = 0; i < dims.ndim(); ++i) {
-      d[i] = dims[i];
+    for (size_t i = 0; i < axes.ndim(); ++i) {
+      if (axes[i] > tensor.ndim() - 1) {
+        throw std::invalid_argument(
+            "ArrayFireBackend::transpose - given dimension is larger "
+            "than the number of dimensions in the tensor");
+      }
+
+      d[i] = axes[i];
     }
     return toTensor<ArrayFireTensor>(
-        detail::condenseIndices(
-            af::reorder(toArray(tensor), d[0], d[1], d[2], d[3])),
-        tensor.ndim());
+        af::reorder(toArray(tensor), d[0], d[1], d[2], d[3]), tensor.ndim());
   }
 }
 
@@ -502,13 +514,43 @@ Tensor ArrayFireBackend::matmul(
     const Tensor& rhs,
     MatrixProperty lhsProp,
     MatrixProperty rhsProp) {
-  return toTensor<ArrayFireTensor>(
-      af::matmul(
-          toArray(lhs),
-          toArray(rhs),
-          detail::flToAfMatrixProperty(lhsProp),
-          detail::flToAfMatrixProperty(rhsProp)),
-      /* numDims = */ std::max(lhs.ndim(), rhs.ndim()));
+  unsigned numDims = std::max(lhs.ndim(), rhs.ndim());
+  if ((lhs.ndim() == 1 || rhs.ndim() == 1) && numDims > 1) {
+    numDims -= 1;
+  }
+
+  af::array lhsArray = toArray(lhs);
+  af::array rhsArray = toArray(rhs);
+
+  if (lhs.ndim() == 1 && rhs.ndim() == 1) {
+    // Simulate a dot product by transpoing the lhs:
+    // (1, k) x (k, 1) --> (1, 1) --> reshape to (1)
+    // Ignore other transposes since 1D tensors are the transpose of themselves.
+    // ArrayFire would otherwise transpose a (k) tensor to (1, k) since (k) =
+    // (k, 1, 1, 1) and ArrayFire transpose transposes the first two dimensions.
+    lhsProp = MatrixProperty::Transpose;
+    rhsProp = MatrixProperty::None;
+    numDims = 1;
+  } else {
+    if (rhs.ndim() == 1) {
+      rhsArray = af::moddims(toArray(rhs), {rhs.dim(0), 1});
+    }
+    if (lhs.ndim() == 1) {
+      lhsArray = af::moddims(toArray(lhs), {1, lhs.dim(0)});
+    }
+  }
+
+  auto arr = af::matmul(
+      lhsArray,
+      rhsArray,
+      detail::flToAfMatrixProperty(lhsProp),
+      detail::flToAfMatrixProperty(rhsProp));
+
+  if (lhs.ndim() == 1 && rhs.ndim() == 2) {
+    arr = af::moddims(arr, arr.dims(1));
+  }
+
+  return toTensor<ArrayFireTensor>(std::move(arr), numDims);
 }
 
 /************************** Reductions ***************************/
@@ -648,7 +690,7 @@ Tensor ArrayFireBackend::var(
                 bias ? AF_VARIANCE_SAMPLE : AF_VARIANCE_POPULATION,
                 axes[0]),
             keepDims),
-        /* numDims = */ input.ndim() - 1);
+        getReducedNumDims(input.ndim(), axes.size(), keepDims));
   }
   auto meanArr = mean(input, axes, /* keepDims = */ false);
   // TODO Replace when we have batchFunc for fl::Tensor

@@ -137,7 +137,7 @@ class TensorAdapterBase {
    * Populates a pointer with a pointer value in memory pointing to a host
    * buffer containing tensor data.
    */
-  virtual void host(void** out) = 0;
+  virtual void host(void* out) = 0;
 
   /**
    * Unlocks any device memory associated with the tensor that was acquired with
