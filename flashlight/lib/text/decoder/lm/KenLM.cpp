@@ -15,6 +15,9 @@ namespace fl {
 namespace lib {
 namespace text {
 
+// log 10^e
+const float LogTenExp = 0.4342945;
+
 KenLMState::KenLMState() : ken_(std::make_unique<lm::ngram::State>()) {}
 
 KenLM::KenLM(const std::string& path, const Dictionary& usrTknDict) {
@@ -58,7 +61,7 @@ std::pair<LMStatePtr, float> KenLM::score(
   auto inState = std::static_pointer_cast<KenLMState>(state);
   auto outState = inState->child<KenLMState>(usrTokenIdx);
   float score = model_->BaseScore(
-      inState->ken(), usrToLmIdxMap_[usrTokenIdx], outState->ken());
+      inState->ken(), usrToLmIdxMap_[usrTokenIdx], outState->ken()) / LogTenExp;
   return std::make_pair(std::move(outState), score);
 }
 
@@ -66,7 +69,7 @@ std::pair<LMStatePtr, float> KenLM::finish(const LMStatePtr& state) {
   auto inState = std::static_pointer_cast<KenLMState>(state);
   auto outState = inState->child<KenLMState>(-1);
   float score =
-      model_->BaseScore(inState->ken(), vocab_->EndSentence(), outState->ken());
+      model_->BaseScore(inState->ken(), vocab_->EndSentence(), outState->ken()) / LogTenExp;
   return std::make_pair(std::move(outState), score);
 }
 } // namespace text
