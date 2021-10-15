@@ -24,6 +24,7 @@ if (FL_USE_CPU)
     ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/operators/AdvancedIndex.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/Conv2D.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/Pool2D.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/PositionalEmbedding.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/RNN.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/BatchNorm.cpp # generic
     ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/DnnlUtils.cpp # generic
@@ -62,6 +63,7 @@ if (FL_USE_CUDA)
     ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/CudnnUtils.h
     ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/CudnnUtils.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/Pool2D.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/PositionalEmbedding.cu
     ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/RNN.cpp
     )
 

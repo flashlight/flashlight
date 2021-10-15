@@ -312,7 +312,7 @@ DEFINE_bool(
 DEFINE_string(
     fl_optim_mode,
     "",
-    "[train] Sets the flashlight optimization mode. "
+    "Sets the flashlight optimization mode. "
     "Optim modes can be O1, O2, or O3.");
 DEFINE_string(
     fl_log_level,
@@ -332,7 +332,7 @@ DEFINE_int64(
 DEFINE_bool(
     fl_amp_use_mixed_precision,
     false,
-    "[train] Use mixed precision for training - scale loss and gradients up and down "
+    "Use mixed precision for training - scale loss and gradients up and down "
     "by a scale factor that changes over time. If no fl optim mode is "
     "specified with --fl_optim_mode when passing this flag, automatically "
     "sets the optim mode to O1.");

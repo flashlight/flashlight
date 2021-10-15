@@ -40,7 +40,7 @@ std::vector<std::string> tknIdx2Ltr(
     if (result.front() == wordSep) {
       result.erase(result.begin());
     }
-    if (!result.empty() && result.back() == wordSep) {
+    while (!result.empty() && result.back() == wordSep) {
       result.pop_back();
     }
   }
