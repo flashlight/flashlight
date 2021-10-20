@@ -771,7 +771,7 @@ TEST(AutogradTest, Convolve) {
   int px = 2, py = 1;
   int sx = 1, sy = 1;
   int dx = 1, dy = 1;
-  auto benchmarks = std::make_shared<detail::ConvBenchmarks>();
+  auto convAlgoConfigs = std::make_shared<detail::ConvAlgoConfigs>();
   auto func_conv_in = [&](Variable& input) {
     return conv2d(
         input,
@@ -784,7 +784,7 @@ TEST(AutogradTest, Convolve) {
         dx,
         dy,
         /* groups */ 1,
-        benchmarks);
+        convAlgoConfigs);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_in, in, 0.06));
   auto func_conv_wt = [&](Variable& weight) {
@@ -799,7 +799,7 @@ TEST(AutogradTest, Convolve) {
         dx,
         dy,
         /* groups */ 1,
-        benchmarks);
+        convAlgoConfigs);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_wt, wt, 0.06));
   auto func_conv_bs = [&](Variable& bias) {
@@ -814,7 +814,7 @@ TEST(AutogradTest, Convolve) {
         dx,
         dy,
         /* groups */ 1,
-        benchmarks);
+        convAlgoConfigs);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_bs, bs, 0.03));
 }
@@ -831,7 +831,7 @@ TEST_F(AutogradTestF16, ConvolveF16) {
   int px = 1, py = 1;
   int sx = 1, sy = 1;
   int dx = 1, dy = 1;
-  auto benchmarks = std::make_shared<detail::ConvBenchmarks>();
+  auto convAlgoConfigs = std::make_shared<detail::ConvAlgoConfigs>();
   auto func_conv_in = [&](Variable& input) {
     return conv2d(
         input,
@@ -844,7 +844,7 @@ TEST_F(AutogradTestF16, ConvolveF16) {
         dx,
         dy,
         /* groups */ 1,
-        benchmarks);
+        convAlgoConfigs);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_in, in, 5e-1, 0.1));
   auto func_conv_wt = [&](Variable& weight) {
@@ -859,7 +859,7 @@ TEST_F(AutogradTestF16, ConvolveF16) {
         dx,
         dy,
         /* groups */ 1,
-        benchmarks);
+        convAlgoConfigs);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_wt, wt, 5e-2, 0.1));
   auto func_conv_bs = [&](Variable& bias) {
@@ -874,7 +874,7 @@ TEST_F(AutogradTestF16, ConvolveF16) {
         dx,
         dy,
         /* groups */ 1,
-        benchmarks);
+        convAlgoConfigs);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_bs, bs, 3e-2, 0.1));
 }
@@ -888,20 +888,23 @@ TEST(AutogradTest, ConvolveFilterGroups) {
   auto wt =
       Variable(af::randu(4, 3, channel / groups, 6, af::dtype::f32), true);
   auto bs = Variable(af::randu(1, 1, 6, 1, af::dtype::f32), true);
-
+  auto convAlgoConfigs = std::make_shared<detail::ConvAlgoConfigs>();
   int px = 2, py = 1;
   int sx = 1, sy = 1;
   int dx = 1, dy = 1;
   auto func_conv_in = [&](Variable& input) {
-    return conv2d(input, wt, bs, sx, sy, px, py, dx, dy, groups);
+    return conv2d(
+        input, wt, bs, sx, sy, px, py, dx, dy, groups, convAlgoConfigs);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_in, in, 0.06));
   auto func_conv_wt = [&](Variable& weight) {
-    return conv2d(in, weight, bs, sx, sy, px, py, dx, dy, groups);
+    return conv2d(
+        in, weight, bs, sx, sy, px, py, dx, dy, groups, convAlgoConfigs);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_wt, wt, 0.05));
   auto func_conv_bs = [&](Variable& bias) {
-    return conv2d(in, wt, bias, sx, sy, px, py, dx, dy, groups);
+    return conv2d(
+        in, wt, bias, sx, sy, px, py, dx, dy, groups, convAlgoConfigs);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_bs, bs, 0.02));
 }
@@ -910,6 +913,7 @@ TEST(AutogradTest, ConvolveDilation) {
   auto in = Variable(af::randu(10, 9, 8, 7, af::dtype::f32), true);
   auto wt = Variable(af::randu(4, 3, 8, 6, af::dtype::f32), true);
   auto bs = Variable(af::randu(1, 1, 6, 1, af::dtype::f32), true);
+  auto convAlgoConfigs = std::make_shared<detail::ConvAlgoConfigs>();
   int px = 2, py = 1;
   int sx = 1, sy = 1;
   int dx = 2, dy = 1;
@@ -924,7 +928,7 @@ TEST(AutogradTest, ConvolveDilation) {
         py,
         dx,
         dy,
-        /* groups */ 1);
+        /* groups */ 1, convAlgoConfigs);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_in, in, 0.06));
   auto func_conv_wt = [&](Variable& weight) {
@@ -938,7 +942,7 @@ TEST(AutogradTest, ConvolveDilation) {
         py,
         dx,
         dy,
-        /* groups */ 1);
+        /* groups */ 1, convAlgoConfigs);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_wt, wt, 0.05));
   auto func_conv_bs = [&](Variable& bias) {
@@ -952,7 +956,7 @@ TEST(AutogradTest, ConvolveDilation) {
         py,
         dx,
         dy,
-        /* groups */ 1);
+        /* groups */ 1, convAlgoConfigs);
   };
   ASSERT_TRUE(jacobianTestImpl(func_conv_bs, bs, 0.02));
 }
@@ -1139,7 +1143,7 @@ TEST(AutogradTest, WeightNormConv) {
   auto norm_dim = {0, 1, 2};
   auto g = Variable(norm(v, norm_dim).array(), true);
   auto in = Variable(af::randu(7, 7, 3, 8) * 2 - 2, true);
-
+  auto convAlgoConfigs = std::make_shared<detail::ConvAlgoConfigs>();
   auto func_weightNorm_in = [&](Variable& input) {
     auto w = v * tileAs(g / norm(v, norm_dim), v);
     return conv2d(
@@ -1151,7 +1155,7 @@ TEST(AutogradTest, WeightNormConv) {
         /* py */ 0,
         /* dx */ 1,
         /* dy */ 1,
-        /* groups */ 1);
+        /* groups */ 1, convAlgoConfigs);
   };
   ASSERT_TRUE(jacobianTestImpl(func_weightNorm_in, in, 3E-1));
 
@@ -1166,7 +1170,7 @@ TEST(AutogradTest, WeightNormConv) {
         /* py */ 0,
         /* dx */ 1,
         /* dy */ 1,
-        /* groups */ 1);
+        /* groups */ 1, convAlgoConfigs);
   };
   ASSERT_TRUE(jacobianTestImpl(func_weightNorm_v, v, 2E-1));
 
@@ -1181,7 +1185,7 @@ TEST(AutogradTest, WeightNormConv) {
         /* py */ 0,
         /* dx */ 1,
         /* dy */ 1,
-        /* groups */ 1);
+        /* groups */ 1, convAlgoConfigs);
   };
   ASSERT_TRUE(jacobianTestImpl(func_weightNorm_g, g, 2E-1));
 }

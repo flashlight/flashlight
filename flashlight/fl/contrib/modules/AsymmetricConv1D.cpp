@@ -80,7 +80,8 @@ Variable AsymmetricConv1D::forward(const Variable& input) {
         0,
         xDilation_,
         yDilation_,
-        groups_);
+        groups_,
+        convAlgoConfigs_);
   } else {
     output = conv2d(
         input,
@@ -91,7 +92,8 @@ Variable AsymmetricConv1D::forward(const Variable& input) {
         0,
         xDilation_,
         yDilation_,
-        groups_);
+        groups_,
+        convAlgoConfigs_);
   }
   if (futurePart_ < 0.5) {
     output = output.rows(0, output.dims(0) - 1 - 2 * cutPx);

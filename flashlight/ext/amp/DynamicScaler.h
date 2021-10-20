@@ -38,8 +38,8 @@ namespace ext {
 class DynamicScaler {
  public:
   DynamicScaler(
-      double initFactor,
-      double maxFactor,
+      float initFactor,
+      float maxScaleFactor,
       unsigned int updateInterval);
 
   /*
@@ -65,15 +65,25 @@ class DynamicScaler {
   double getScaleFactor() const;
 
  private:
-  double scaleFactor_;
-  // The maximum value of scaleFactor_.
-  double maxScaleFactor_;
+  fl::Variable scaleFactor_;
   // Number of iterations without changing scaleFactor_.
   unsigned int successCounter_{0};
   // Double up the scaleFactor_ when successCounter_ equals updateInterval_.
   unsigned int updateInterval_;
 
-  FL_SAVE_LOAD(scaleFactor_, maxScaleFactor_, updateInterval_, successCounter_)
+  
+  af::array isInvalidArray_;
+  // The minimum and maximum value of scaleFactor_.
+  af::array minScaleFactor_;
+  af::array maxScaleFactor_;
+
+  FL_SAVE_LOAD(
+      maxScaleFactor_,
+      updateInterval_,
+      successCounter_,
+      scaleFactor_,
+      isInvalidArray_,
+      minScaleFactor_)
   DynamicScaler() = default;
 };
 

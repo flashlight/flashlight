@@ -59,6 +59,9 @@ class AsymmetricConv1D : public fl::Conv2D {
   float futurePart_;
   void checkParams();
 
+  detail::ConvAlgoConfigsPtr convAlgoConfigs_{
+      std::make_shared<detail::ConvAlgoConfigs>()};
+
   AsymmetricConv1D() = default;
 };
 

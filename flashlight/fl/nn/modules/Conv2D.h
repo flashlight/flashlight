@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "flashlight/fl/autograd/configs.h"
 #include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/nn/Utils.h"
 #include "flashlight/fl/nn/modules/Module.h"
@@ -181,7 +182,8 @@ class Conv2D : public UnaryModule {
   std::string prettyString() const override;
 
  protected:
-  std::shared_ptr<detail::ConvBenchmarks> benchmarks_;
+  detail::ConvAlgoConfigsPtr convAlgoConfigs_{
+      std::make_shared<detail::ConvAlgoConfigs>()};
 };
 
 } // namespace fl

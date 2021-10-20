@@ -46,7 +46,7 @@ Variable conv2d(
     int dx,
     int dy,
     int groups,
-    std::shared_ptr<detail::ConvBenchmarks> benchmarks) {
+    detail::ConvAlgoConfigsPtr convAlgoConfigPtr) {
   if (input.type() == f16) {
     throw std::runtime_error("Half precision is not supported in CPU.");
   }
@@ -65,7 +65,7 @@ Variable conv2d(
     int dx,
     int dy,
     int groups,
-    std::shared_ptr<detail::ConvBenchmarks> benchmarks) {
+    detail::ConvAlgoConfigsPtr convAlgoConfigPtr) {
   if (input.type() == f16) {
     throw std::runtime_error("Half precision is not supported in CPU.");
   }

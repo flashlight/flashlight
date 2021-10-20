@@ -52,6 +52,12 @@ DEFINE_string(
 DEFINE_uint64(data_batch_size, 256, "Total batch size across all gpus");
 DEFINE_string(exp_checkpoint_path, "/tmp/model", "Checkpointing prefix path");
 DEFINE_int64(exp_checkpoint_epoch, -1, "Checkpoint epoch to load from");
+DEFINE_bool(
+    generate_detailed_timing,
+    false,
+    "Enable if detailed timing for "
+    "each training step is desired. Enabling this option may adversely "
+    "impact the performance.");
 
 DEFINE_bool(
     fl_amp_use_mixed_precision,
@@ -301,23 +307,34 @@ int main(int argc, char** argv) {
 
       while (true) {
         // Forward
-        fwdTimeMeter.resume();
+        if (FLAGS_generate_detailed_timing) {
+          fwdTimeMeter.resume();
+        }
         auto output = model->forward(inputs);
-        fl::sync();
 
-        critFwdTimeMeter.resume();
+        if (FLAGS_generate_detailed_timing) {
+          fl::sync();
+          critFwdTimeMeter.resume();
+        }
         auto loss = criterion(output, target);
-        fl::sync();
-        fwdTimeMeter.stopAndIncUnit();
-        critFwdTimeMeter.stopAndIncUnit();
+        if (FLAGS_generate_detailed_timing) {
+          fl::sync();
+          fwdTimeMeter.stopAndIncUnit();
+          critFwdTimeMeter.stopAndIncUnit();
+        }
 
         // Backward
-        bwdTimeMeter.resume();
+        if (FLAGS_generate_detailed_timing) {
+          bwdTimeMeter.resume();
+        }
         opt.zeroGrad();
         bool scaleIsValid = fl::app::backwardWithScaling(
             loss, modelParams, dynamicScaler, reducer);
-        fl::sync();
-        bwdTimeMeter.stopAndIncUnit();
+        if (FLAGS_generate_detailed_timing) {
+          fl::sync();
+          bwdTimeMeter.stopAndIncUnit();
+        }
+
         if (!scaleIsValid) {
           continue;
         }
@@ -328,10 +345,14 @@ int main(int argc, char** argv) {
         break;
       }
 
-      optimTimeMeter.resume();
+      if (FLAGS_generate_detailed_timing) {
+        optimTimeMeter.resume();
+      }
       opt.step();
       fl::sync();
-      optimTimeMeter.stopAndIncUnit();
+      if (FLAGS_generate_detailed_timing) {
+        optimTimeMeter.stopAndIncUnit();
+      }
       timeMeter.stopAndIncUnit();
 
       // Compute and record the prediction error.
@@ -343,21 +364,28 @@ int main(int argc, char** argv) {
         fl::ext::syncMeter(top1Acc);
         double time = timeMeter.value();
         double samplePerSecond = FLAGS_data_batch_size * worldSize / time;
+        std::string detailedTiming = "";
+        if (FLAGS_generate_detailed_timing) {
+          detailedTiming += " : Forward Time(ms): ";
+          detailedTiming +=
+              fl::lib::format("%.2f", fwdTimeMeter.value() * 1000);
+          detailedTiming += " : Criterion Forward Time(ms): ";
+          detailedTiming +=
+              fl::lib::format("%.2f", critFwdTimeMeter.value() * 1000);
+          detailedTiming += " : Backward Time(ms): ";
+          detailedTiming +=
+              fl::lib::format("%.2f", bwdTimeMeter.value() * 1000);
+          detailedTiming += " : Optim Time(ms): ";
+          detailedTiming +=
+              fl::lib::format("%.2f", optimTimeMeter.value() * 1000);
+        }
         FL_LOG_MASTER(INFO)
             << "Epoch " << epoch << std::setprecision(5) << " Batch: " << idx
             << " Samples per second " << samplePerSecond
             << " : Total Time(ms): " << fl::lib::format("%.2f", time * 1000)
             << " : Sample Time(ms): "
             << fl::lib::format("%.2f", sampleTimerMeter.value() * 1000)
-            << " : Forward Time(ms): "
-            << fl::lib::format("%.2f", fwdTimeMeter.value() * 1000)
-            << " : Criterion Forward Time(ms): "
-            << fl::lib::format("%.2f", critFwdTimeMeter.value() * 1000)
-            << " : Backward Time(ms): "
-            << fl::lib::format("%.2f", bwdTimeMeter.value() * 1000)
-            << " : Optim Time(ms): "
-            << fl::lib::format("%.2f", optimTimeMeter.value() * 1000)
-            << ": Avg Train Loss: " << trainLoss
+            << detailedTiming << ": Avg Train Loss: " << trainLoss
             << ": Train Top5 Accuracy( %): " << top5Acc.value()
             << ": Train Top1 Accuracy( %): " << top1Acc.value();
         top5Acc.reset();
@@ -365,10 +393,12 @@ int main(int argc, char** argv) {
         trainLossMeter.reset();
         timeMeter.reset();
         sampleTimerMeter.reset();
-        fwdTimeMeter.reset();
-        critFwdTimeMeter.reset();
-        bwdTimeMeter.reset();
-        optimTimeMeter.reset();
+        if (FLAGS_generate_detailed_timing) {
+          fwdTimeMeter.reset();
+          critFwdTimeMeter.reset();
+          bwdTimeMeter.reset();
+          optimTimeMeter.reset();
+        }
       }
     }
     timeMeter.reset();
