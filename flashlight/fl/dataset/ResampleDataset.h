@@ -66,6 +66,11 @@ class ResampleDataset : public Dataset {
 
   std::vector<af::array> get(const int64_t idx) const override;
 
+  void get(
+      const int64_t idx,
+      std::vector<SamplePtr>& samplePtr,
+      const int /* unused */) const override;
+
   /**
    * Changes the mapping used to resample the dataset.
    * @param[in] resamplevec The vector specifying the new mapping.

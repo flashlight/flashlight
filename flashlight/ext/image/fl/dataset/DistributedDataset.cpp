@@ -19,7 +19,9 @@ DistributedDataset::DistributedDataset(
     int64_t nRepeated,
     int64_t numThreads,
     int64_t prefetchSize,
-    BatchDatasetPolicy batchPolicy) {
+    const std::vector<TransformFunction>& transformfns,
+    BatchDatasetPolicy batchPolicy,
+    bool usePreallocatedSamples) {
   shuffle_ = std::make_shared<ShuffleDataset>(base);
   auto permfn = [worldSize, worldRank, nRepeated](int64_t idx) {
     return (idx * worldSize + worldRank) / nRepeated;
@@ -31,7 +33,9 @@ DistributedDataset::DistributedDataset(
     partitionSize++;
   }
   ds_ = std::make_shared<ResampleDataset>(shuffle_, permfn, partitionSize);
-  ds_ = std::make_shared<PrefetchDataset>(ds_, numThreads, prefetchSize);
+  ds_ = std::make_shared<PrefetchDataset>(
+      ds_, numThreads, prefetchSize, usePreallocatedSamples);
+  ds_ = std::make_shared<TransformDataset>(ds_, transformfns);
   ds_ = std::make_shared<BatchDataset>(ds_, batchSize, batchPolicy);
 }
 

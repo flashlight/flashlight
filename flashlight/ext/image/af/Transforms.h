@@ -170,6 +170,17 @@ std::pair<af::array, af::array> cutmixBatch(
 // Same function signature as DataTransform but removes fl dep
 using ImageTransform = std::function<af::array(const af::array&)>;
 
+/**
+ * Returns a function that reorders the layout of its input as specified here.
+ * 
+ * @param x Specifies which dimension should be 1st.
+ * @param y Specifies which dimension should be 2nd.
+ * @param z Specifies which dimension should be 3rd.
+ * @param w Specifies which dimension should be 4th.
+ */
+ImageTransform
+reorder(const uint x, const uint y, const uint z, const uint w = 3);
+
 ImageTransform normalizeImage(
     const std::vector<float>& meanVec,
     const std::vector<float>& stdVec);

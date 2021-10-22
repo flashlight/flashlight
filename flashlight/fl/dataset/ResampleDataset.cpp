@@ -64,6 +64,14 @@ std::vector<af::array> ResampleDataset::get(const int64_t idx) const {
   return dataset_->get(resampleVec_[idx]);
 }
 
+void ResampleDataset::get(
+    const int64_t idx,
+    std::vector<SamplePtr>& samplePtrs,
+    const int /* unused */) const {
+  checkIndexBounds(idx);
+  dataset_->get(resampleVec_[idx], samplePtrs);
+}
+
 int64_t ResampleDataset::size() const {
   return resampleVec_.size();
 }

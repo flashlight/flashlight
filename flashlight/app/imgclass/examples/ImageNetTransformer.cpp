@@ -210,7 +210,8 @@ int main(int argc, char** argv) {
       imageSize);
 
   ImageTransform trainTransforms = compose(
-      {fl::ext::image::randomResizeCropTransform(
+      {fl::ext::image::reorder(1, 2, 0), // stb has channel along the first dim.
+       fl::ext::image::randomResizeCropTransform(
            imageSize,
            0.08, // scaleLow
            1.0, // scaleHigh
@@ -226,7 +227,8 @@ int main(int argc, char** argv) {
        fl::ext::image::randomEraseTransform(FLAGS_train_aug_p_randomerase)});
 
   ImageTransform valTransforms = compose(
-      {fl::ext::image::resizeTransform(randomResizeMin),
+      {fl::ext::image::reorder(1, 2, 0), // stb has channel along the first dim.
+       fl::ext::image::resizeTransform(randomResizeMin),
        fl::ext::image::centerCropTransform(imageSize),
        fl::ext::image::normalizeImage(
            fl::app::image::kImageNetMean, fl::app::image::kImageNetStd)});
@@ -238,25 +240,28 @@ int main(int argc, char** argv) {
         << "[Warning] You are not using all ImageNet classes (1000)";
   }
 
+  auto trainTransformVec = {trainTransforms};
   auto trainDataset = std::make_shared<fl::ext::image::DistributedDataset>(
-      imagenetDataset(trainList, labelMap, {trainTransforms}),
+      imagenetDataset(trainList, labelMap),
       worldRank,
       worldSize,
       FLAGS_data_batch_size,
       FLAGS_train_aug_n_repeatedaug,
       FLAGS_data_prefetch_thread,
       prefetchSize,
+      trainTransformVec,
       fl::BatchDatasetPolicy::SKIP_LAST);
   FL_LOG_MASTER(INFO) << "[trainDataset size] " << trainDataset->size();
 
   auto valDataset = fl::ext::image::DistributedDataset(
-      imagenetDataset(valList, labelMap, {valTransforms}),
+      imagenetDataset(valList, labelMap),
       worldRank,
       worldSize,
       FLAGS_data_batch_size,
       1, // train_n_repeatedaug
       FLAGS_data_prefetch_thread,
       prefetchSize,
+      {valTransforms},
       fl::BatchDatasetPolicy::INCLUDE_LAST);
   FL_LOG_MASTER(INFO) << "[valDataset size] " << valDataset.size();
 

@@ -35,6 +35,16 @@ std::vector<af::array> MergeDataset::get(const int64_t idx) const {
   return result;
 }
 
+void MergeDataset::get(
+    const int64_t idx,
+    std::vector<SamplePtr>& samplePtrs,
+    const int /* unused */) const {
+  checkIndexBounds(idx);
+  for (int i = 0; i < datasets_.size(); i++) {
+    datasets_[i]->get(idx, samplePtrs, i);
+  }
+}
+
 int64_t MergeDataset::size() const {
   return size_;
 }

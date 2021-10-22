@@ -55,7 +55,10 @@ std::shared_ptr<Dataset> imagenetDataset(
 
   // Create image dataset
   std::shared_ptr<Dataset> imageDataset = fl::ext::image::jpegLoader(filepaths);
-  imageDataset = std::make_shared<TransformDataset>(imageDataset, transformfns);
+  if (!transformfns.empty()) {
+    imageDataset =
+        std::make_shared<TransformDataset>(imageDataset, transformfns);
+  }
 
   // Create labels from filepaths
   auto getLabelIdxs = [&labelMap](const std::string& s) -> uint64_t {
@@ -73,10 +76,11 @@ std::shared_ptr<Dataset> imagenetDataset(
   std::transform(
       filepaths.begin(), filepaths.end(), labels.begin(), getLabelIdxs);
 
-  auto labelDataset = std::make_shared<LabelLoader>(labels, [](uint64_t x) {
-    std::vector<af::array> result{af::constant(x, 1, 1, 1, 1, af::dtype::u64)};
-    return result;
-  });
+  auto labelDataset = std::make_shared<LabelLoader>(
+      labels, [](uint64_t x, SamplePtr samplePtr) {
+        auto label = af::constant(x, 1, 1, 1, 1, af::dtype::u64);
+        samplePtr->setArray(label);
+      });
   return std::make_shared<MergeDataset>(
       MergeDataset({imageDataset, labelDataset}));
 }

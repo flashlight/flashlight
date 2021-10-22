@@ -23,7 +23,9 @@ class DistributedDataset : public Dataset {
       int64_t nRepeated,
       int64_t numThreads,
       int64_t prefetchSize,
-      BatchDatasetPolicy batchpolicy = fl::BatchDatasetPolicy::INCLUDE_LAST);
+      const std::vector<TransformFunction>& transformfns,
+      BatchDatasetPolicy batchpolicy = fl::BatchDatasetPolicy::INCLUDE_LAST,
+      bool usePreallocatedSamples = false);
 
   std::vector<af::array> get(const int64_t idx) const override;
 
