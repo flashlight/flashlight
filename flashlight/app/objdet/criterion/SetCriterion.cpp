@@ -260,8 +260,11 @@ SetCriterion::LossDict SetCriterion::lossLabels(
   for (auto idx : indices) {
     auto targetIdxs = idx.first;
     auto srcIdxs = idx.second;
-    auto reordered = targetClasses[i](targetIdxs);
-    target_classes_full(srcIdxs, i) = targetClasses[i].array()(targetIdxs);
+    if (!srcIdxs.isempty()) {
+      af::array t = targetClasses[i].array()(targetIdxs);
+      t =  af::moddims(t, {t.dims(1)});
+      target_classes_full(srcIdxs, i) = t;
+    }
     i += 1;
   }
 

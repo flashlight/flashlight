@@ -52,7 +52,7 @@ TEST(SetCriterion, PytorchRepro) {
       af::array(4, NUM_TARGETS, NUM_BATCHES, targetBoxesVec.data()), false)};
 
   std::vector<fl::Variable> targetClasses = {fl::Variable(
-      af::array(NUM_TARGETS, NUM_BATCHES, targetClassVec.data()), false)};
+      af::array(1, NUM_TARGETS, NUM_BATCHES, targetClassVec.data()), false)};
   auto matcher = HungarianMatcher(1, 1, 1);
   auto crit = SetCriterion(80, matcher, getLossWeights(), 0.0);
   auto loss = crit.forward(predBoxes, predLogits, targetBoxes, targetClasses);
@@ -123,7 +123,7 @@ TEST(SetCriterion, PytorchReproMultipleTargets) {
       af::array(4, NUM_TARGETS, NUM_BATCHES, targetBoxesVec.data()), false)};
 
   std::vector<fl::Variable> targetClasses = {fl::Variable(
-      af::array(NUM_TARGETS, NUM_BATCHES, targetClassVec.data()), false)};
+      af::array(1, NUM_TARGETS, NUM_BATCHES, targetClassVec.data()), false)};
   auto matcher = HungarianMatcher(1, 1, 1);
   auto crit = SetCriterion(80, matcher, getLossWeights(), 0.0);
   auto loss = crit.forward(predBoxes, predLogits, targetBoxes, targetClasses);
@@ -156,7 +156,7 @@ TEST(SetCriterion, PytorchReproNoPerfectMatch) {
       af::array(4, NUM_TARGETS, NUM_BATCHES, targetBoxesVec.data()), false)};
 
   std::vector<fl::Variable> targetClasses = {fl::Variable(
-      af::array(NUM_TARGETS, NUM_BATCHES, targetClassVec.data()), false)};
+      af::array(1, NUM_TARGETS, NUM_BATCHES, targetClassVec.data()), false)};
   auto matcher = HungarianMatcher(1, 1, 1);
   auto crit = SetCriterion(80, matcher, getLossWeights(), 0.0);
   auto loss = crit.forward(predBoxes, predLogits, targetBoxes, targetClasses);
@@ -298,9 +298,9 @@ TEST(SetCriterion, PytorchReproBatching) {
 
   std::vector<fl::Variable> targetClasses = {
       fl::Variable(
-          af::array(NUM_TARGETS, NUM_PREDS, 1, targetClassVec.data()), false),
+          af::array(1, NUM_TARGETS, NUM_PREDS, 1, targetClassVec.data()), false),
       fl::Variable(
-          af::array(NUM_TARGETS, NUM_PREDS, 1, targetClassVec.data()), false)};
+          af::array(1, NUM_TARGETS, NUM_PREDS, 1, targetClassVec.data()), false)};
   auto matcher = HungarianMatcher(1, 1, 1);
   auto crit = SetCriterion(80, matcher, getLossWeights(), 0.0);
   auto loss = crit.forward(predBoxes, predLogits, targetBoxes, targetClasses);
@@ -349,8 +349,8 @@ TEST(SetCriterion, DifferentNumberOfLabels) {
       fl::Variable(af::array(4, 1, 1, targetBoxesVec2.data()), false)};
 
   std::vector<fl::Variable> targetClasses = {
-      fl::Variable(af::constant(1, {2, 1, 1}), false),
-      fl::Variable(af::constant(1, {1, 1, 1}), false)};
+      fl::Variable(af::constant(1, {1, 2, 1, 1}), false),
+      fl::Variable(af::constant(1, {1, 1, 1, 1}), false)};
   auto matcher = HungarianMatcher(1, 1, 1);
   auto crit = SetCriterion(80, matcher, getLossWeights(), 0.0);
   auto loss = crit.forward(predBoxes, predLogits, targetBoxes, targetClasses);
@@ -387,8 +387,10 @@ TEST(SetCriterion, DifferentNumberOfLabelsClass) {
       fl::Variable(af::array(4, 2, 1, targetBoxesVec1.data()), false),
       fl::Variable(af::array(4, 1, 1, targetBoxesVec2.data()), false)};
 
+  auto iota = af::iota({2});
+  iota = af::moddims(iota, { 1, iota.dims(0) });
   std::vector<fl::Variable> targetClasses = {
-      fl::Variable(af::iota({2}), false),
+      fl::Variable(iota, false),
       fl::Variable(af::constant(9, {1, 1, 1}), false)};
   auto matcher = HungarianMatcher(1, 1, 1);
   auto crit = SetCriterion(80, matcher, getLossWeights(), 0.0);
