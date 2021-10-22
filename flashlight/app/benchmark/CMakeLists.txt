@@ -10,7 +10,6 @@ target_link_libraries(
   PUBLIC
   ${GLOG_LIBRARIES}
   ${gflags_LIBRARIES}
-  ${MKL_LIBRARIES}
   flashlight
   )
 
@@ -19,7 +18,6 @@ target_include_directories(
   PUBLIC
   ${gflags_INCLUDE_DIRS}
   ${GLOG_INCLUDE_DIRS}
-  ${MKL_INCLUDE_DIR}
   )
 
 target_sources(
@@ -33,11 +31,12 @@ include(${CMAKE_CURRENT_LIST_DIR}/models/CMakeLists.txt)
 
 add_executable(benchmark ${CMAKE_CURRENT_LIST_DIR}/Run.cpp)
 target_link_libraries(
-    benchmark
-    flashlight-app-asr
-    flashlight-app-benchmark
-    flashlight-app-imgclass
-    flashlight-app-objdet
-    ${CMAKE_DL_LIBS})
+  benchmark
+  PRIVATE
+  flashlight-app-asr
+  flashlight-app-benchmark
+  flashlight-app-imgclass
+  flashlight-app-objdet
+  ${CMAKE_DL_LIBS})
 set_executable_output_directory(benchmark "${FL_BUILD_BINARY_OUTPUT_DIR}")
 install(TARGETS benchmark RUNTIME DESTINATION ${FL_INSTALL_BIN_DIR})

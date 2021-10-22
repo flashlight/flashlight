@@ -12,6 +12,15 @@ cmake_dependent_option(
   "NOT BUILD_SHARED_LIBS" OFF
   )
 
+# BLAS
+if (FL_LIBRARIES_USE_MKL)
+  set(BLA_VENDOR "Intel10_64lp")
+else()
+  set(BLA_VENDOR "OpenBLAS")
+endif()
+find_package(BLAS REQUIRED)
+message(STATUS "Found BLAS: (library: ${BLAS_LIBRARIES})")
+
 add_library(
   flashlight-app-asr
   ""
@@ -22,7 +31,7 @@ target_link_libraries(
   PUBLIC
   ${GLOG_LIBRARIES}
   ${gflags_LIBRARIES}
-  ${MKL_LIBRARIES}
+  ${BLAS_LIBRARIES}
   flashlight
   flashlight-app-common
   )
@@ -32,7 +41,6 @@ target_include_directories(
   PUBLIC
   ${gflags_INCLUDE_DIRS}
   ${GLOG_INCLUDE_DIRS}
-  ${MKL_INCLUDE_DIR}
   )
 
 # ------------------------ Components ------------------------

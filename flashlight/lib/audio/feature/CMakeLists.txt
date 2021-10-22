@@ -1,17 +1,14 @@
 cmake_minimum_required(VERSION 3.10)
 
 # ----------------------------- Dependencies -----------------------------
-# CBLAS
+# BLAS
 if (FL_LIBRARIES_USE_MKL)
-  find_package(MKL REQUIRED)
-  set(CBLAS_LIBRARIES ${MKL_LIBRARIES})
-  set(CBLAS_INCLUDE_DIR ${MKL_INCLUDE_DIR})
-  setup_install_find_module(${CMAKE_MODULE_PATH}/FindMKL.cmake)
-else ()
-  find_package(CBLAS REQUIRED)
-  setup_install_find_module(${CMAKE_MODULE_PATH}/FindCBLAS.cmake)
-endif ()
-message(STATUS "CBLAS found (include: ${CBLAS_INCLUDE_DIR}, library: ${CBLAS_LIBRARIES})")
+  set(BLA_VENDOR "Intel10_64lp")
+else()
+  set(BLA_VENDOR "OpenBLAS")
+endif()
+find_package(BLAS REQUIRED)
+message(STATUS "Found BLAS: (library: ${BLAS_LIBRARIES})")
 
 # FFTW
 find_package(FFTW3 REQUIRED)
@@ -60,11 +57,5 @@ target_link_libraries(
     $<BUILD_INTERFACE:FFTW3::fftw3>
   PRIVATE
     ${OMPLIB}
-    ${CBLAS_LIBRARIES}
-  )
-
-target_include_directories(
-  fl-libraries
-  PRIVATE
-  ${CBLAS_INCLUDE_DIR}
+    ${BLAS_LIBRARIES}
   )

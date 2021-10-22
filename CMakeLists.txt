@@ -120,7 +120,7 @@ if (FL_BUILD_LIBRARIES OR (FL_BUILD_CORE AND FL_BUILD_TESTS))
 
   option(FL_LIBRARIES_USE_CUDA "Use CUDA in flashlight libraries build" ON)
   option(FL_LIBRARIES_USE_KENLM "Use KenLM in flashlight libraries build" ON)
-  option(FL_LIBRARIES_USE_MKL "Use MKL in flashlight libraries build" ON)
+  option(FL_LIBRARIES_USE_MKL "Require MKL in flashlight libraries build" ON)
   option(FL_LIBRARIES_BUILD_FOR_PYTHON "Build Python bindings" OFF)
 
   set(FL_COMPILE_DEFINITIONS
