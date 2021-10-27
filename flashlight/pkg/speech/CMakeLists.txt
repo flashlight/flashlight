@@ -24,6 +24,7 @@ target_link_libraries(
   fl_lib_text
   fl_lib_audio
   fl_lib_sequence
+  fl_lib_common
   )
 
 # ------------------------ Components ------------------------
