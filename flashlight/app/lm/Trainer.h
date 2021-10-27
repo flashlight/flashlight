@@ -12,14 +12,14 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/app/common/Runtime.h"
+#include "flashlight/pkg/runtime/Runtime.h"
 #include "flashlight/app/lm/common/Defines.h"
-#include "flashlight/app/lm/data/TextDataset.h"
+#include "flashlight/pkg/text/data/TextDataset.h"
 
-#include "flashlight/ext/amp/DynamicScaler.h"
-#include "flashlight/ext/common/DistributedUtils.h"
-#include "flashlight/ext/common/Serializer.h"
-#include "flashlight/ext/plugin/ModulePlugin.h"
+#include "flashlight/pkg/runtime/amp/DynamicScaler.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
+#include "flashlight/pkg/runtime/common/Serializer.h"
+#include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
 #include "flashlight/fl/contrib/contrib.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/String.h"
@@ -119,11 +119,11 @@ class Trainer {
   int kPadIdx_, kEosIdx_, kUnkIdx_, kMaskIdx_;
   std::string gflagsStr_;
   std::string version_{FL_APP_LM_VERSION};
-  std::shared_ptr<fl::ext::DynamicScaler> dynamicScaler;
+  std::shared_ptr<fl::pkg::runtime::DynamicScaler> dynamicScaler;
 
   fl::lib::text::Dictionary dictionary_;
-  std::shared_ptr<TextDataset> trainDataset_;
-  std::shared_ptr<TextDataset> validDataset_;
+  std::shared_ptr<fl::pkg::text::TextDataset> trainDataset_;
+  std::shared_ptr<fl::pkg::text::TextDataset> validDataset_;
 
   std::shared_ptr<fl::Reducer> reducer_;
   std::shared_ptr<fl::FirstOrderOptimizer> optimizer_;

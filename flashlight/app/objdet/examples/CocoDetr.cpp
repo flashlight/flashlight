@@ -11,29 +11,30 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/app/common/Runtime.h"
+#include "flashlight/pkg/runtime/Runtime.h"
 #include "flashlight/app/objdet/common/Defines.h"
-#include "flashlight/app/objdet/criterion/SetCriterion.h"
-#include "flashlight/app/objdet/dataset/BoxUtils.h"
-#include "flashlight/app/objdet/dataset/Coco.h"
-#include "flashlight/app/objdet/models/Resnet50Backbone.h"
-#include "flashlight/app/objdet/nn/Detr.h"
-#include "flashlight/app/objdet/nn/Transformer.h"
-#include "flashlight/ext/amp/DynamicScaler.h"
-#include "flashlight/ext/common/DistributedUtils.h"
-#include "flashlight/ext/common/Serializer.h"
-#include "flashlight/ext/image/af/Transforms.h"
+#include "flashlight/pkg/vision/criterion/SetCriterion.h"
+#include "flashlight/pkg/vision/dataset/BoxUtils.h"
+#include "flashlight/pkg/vision/dataset/Coco.h"
+#include "flashlight/pkg/vision/models/Resnet50Backbone.h"
+#include "flashlight/pkg/vision/models/Detr.h"
+#include "flashlight/pkg/vision/nn/Transformer.h"
+#include "flashlight/pkg/runtime/amp/DynamicScaler.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
+#include "flashlight/pkg/runtime/common/Serializer.h"
+#include "flashlight/pkg/vision/dataset/Transforms.h"
 #include "flashlight/fl/meter/meters.h"
 #include "flashlight/fl/optim/optim.h"
 #include "flashlight/lib/common/String.h"
 
 using namespace fl;
-using namespace fl::ext::image;
+using namespace fl::pkg::vision;
+using namespace fl::pkg::vision;
 using namespace fl::app::objdet;
 
-using fl::app::getRunFile;
-using fl::app::serializeGflags;
-using fl::ext::Serializer;
+using fl::pkg::runtime::getRunFile;
+using fl::pkg::runtime::serializeGflags;
+using fl::pkg::runtime::Serializer;
 using fl::lib::fileExists;
 using fl::lib::format;
 using fl::lib::getCurrentDate;
@@ -258,7 +259,7 @@ int main(int argc, char** argv) {
   ////////////////////////
   std::shared_ptr<fl::Reducer> reducer;
   if (FLAGS_distributed_enable) {
-    fl::ext::initDistributed(
+    fl::pkg::runtime::initDistributed(
         FLAGS_distributed_world_rank,
         FLAGS_distributed_world_size,
         8,
@@ -269,7 +270,7 @@ int main(int argc, char** argv) {
   const int worldRank = fl::getWorldRank();
   const int worldSize = fl::getWorldSize();
 
-  std::shared_ptr<fl::ext::DynamicScaler> dynamicScaler;
+  std::shared_ptr<fl::pkg::runtime::DynamicScaler> dynamicScaler;
   if (FLAGS_fl_amp_use_mixed_precision) {
     FL_LOG_MASTER(INFO)
         << "Mixed precision training enabled. Will perform loss scaling.";
@@ -278,7 +279,7 @@ int main(int argc, char** argv) {
         : fl::OptimMode::toOptimLevel(FLAGS_fl_optim_mode);
     fl::OptimMode::get().setOptimLevel(flOptimLevel);
 
-    dynamicScaler = std::make_shared<fl::ext::DynamicScaler>(
+    dynamicScaler = std::make_shared<fl::pkg::runtime::DynamicScaler>(
         FLAGS_fl_amp_scale_factor,
         FLAGS_fl_amp_max_scale_factor,
         FLAGS_fl_amp_scale_factor_update_interval);
@@ -512,7 +513,7 @@ int main(int argc, char** argv) {
         opt2->zeroGrad();
 
         bwdTimeMeter.resume();
-        bool scaleIsValid = fl::app::backwardWithScaling(
+        bool scaleIsValid =fl::pkg::runtime::backwardWithScaling(
             accumLoss, modelParams, dynamicScaler, reducer);
         fl::sync();
         bwdTimeMeter.stopAndIncUnit();
@@ -560,7 +561,7 @@ int main(int argc, char** argv) {
            << " | backward_time_avg: " << backward_time * 1000
            << " | optimize_time_avg: " << optimize_time * 1000;
         for (auto meter : meters) {
-          fl::ext::syncMeter(meter.second);
+          fl::pkg::runtime::syncMeter(meter.second);
           ss << " | " << meter.first << ": " << meter.second.value()[0];
         }
         ss << std::endl;

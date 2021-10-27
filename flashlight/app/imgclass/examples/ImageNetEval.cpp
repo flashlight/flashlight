@@ -11,13 +11,13 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/app/imgclass/dataset/Imagenet.h"
+#include "flashlight/pkg/vision/dataset/Imagenet.h"
 #include "flashlight/app/imgclass/examples/Defines.h"
-#include "flashlight/ext/common/DistributedUtils.h"
-#include "flashlight/ext/image/af/Transforms.h"
-#include "flashlight/ext/image/fl/dataset/DistributedDataset.h"
-#include "flashlight/ext/image/fl/models/Resnet.h"
-#include "flashlight/ext/image/fl/models/ViT.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
+#include "flashlight/pkg/vision/dataset/Transforms.h"
+#include "flashlight/pkg/vision/dataset/DistributedDataset.h"
+#include "flashlight/pkg/vision/models/Resnet.h"
+#include "flashlight/pkg/vision/models/ViT.h"
 #include "flashlight/fl/dataset/datasets.h"
 #include "flashlight/fl/meter/meters.h"
 #include "flashlight/fl/optim/optim.h"
@@ -49,9 +49,9 @@ DEFINE_string(
     "If empty, uses MPI to initialize.");
 
 using namespace fl;
-using fl::ext::image::compose;
-using fl::ext::image::ImageTransform;
-using namespace fl::app::imgclass;
+using fl::pkg::vision::compose;
+using fl::pkg::vision::ImageTransform;
+using namespace fl::pkg::vision;
 
 #define FL_LOG_MASTER(lvl) LOG_IF(lvl, (fl::getWorldRank() == 0))
 
@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   if (FLAGS_distributed_enable) {
-    fl::ext::initDistributed(
+    fl::pkg::runtime::initDistributed(
         FLAGS_distributed_world_rank,
         FLAGS_distributed_world_size,
         FLAGS_distributed_max_devices_per_node,
@@ -85,13 +85,13 @@ int main(int argc, char** argv) {
   // Conventional image resize parameter used for evaluation
   const int randomResizeMin = imageSize / .875;
   ImageTransform testTransforms = compose(
-      {fl::ext::image::resizeTransform(randomResizeMin),
-       fl::ext::image::centerCropTransform(imageSize),
-       fl::ext::image::normalizeImage(
+      {fl::pkg::vision::resizeTransform(randomResizeMin),
+       fl::pkg::vision::centerCropTransform(imageSize),
+       fl::pkg::vision::normalizeImage(
            fl::app::image::kImageNetMean, fl::app::image::kImageNetStd)});
 
   auto labelMap = getImagenetLabels(labelPath);
-  auto testDataset = fl::ext::image::DistributedDataset(
+  auto testDataset = fl::pkg::vision::DistributedDataset(
       imagenetDataset(testList, labelMap, {testTransforms}),
       worldRank,
       worldSize,
@@ -115,8 +115,8 @@ int main(int argc, char** argv) {
     top5Acc.add(output.array(), target.array());
     top1Acc.add(output.array(), target.array());
   }
-  fl::ext::syncMeter(top5Acc);
-  fl::ext::syncMeter(top1Acc);
+  fl::pkg::runtime::syncMeter(top5Acc);
+  fl::pkg::runtime::syncMeter(top1Acc);
 
   FL_LOG_MASTER(INFO) << "Top 5 acc: " << top5Acc.value();
   FL_LOG_MASTER(INFO) << "Top 1 acc: " << top1Acc.value();

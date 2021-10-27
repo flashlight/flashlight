@@ -19,19 +19,19 @@
 #include <glog/logging.h>
 #include "flashlight/fl/flashlight.h"
 
-#include "flashlight/app/asr/common/Defines.h"
-#include "flashlight/app/asr/common/Flags.h"
-#include "flashlight/app/asr/criterion/criterion.h"
-#include "flashlight/app/asr/data/FeatureTransforms.h"
-#include "flashlight/app/asr/data/Utils.h"
-#include "flashlight/app/asr/decoder/ConvLmModule.h"
-#include "flashlight/app/asr/decoder/DecodeUtils.h"
-#include "flashlight/app/asr/decoder/Defines.h"
-#include "flashlight/app/asr/decoder/TranscriptionUtils.h"
-#include "flashlight/app/asr/runtime/runtime.h"
-#include "flashlight/ext/common/SequentialBuilder.h"
-#include "flashlight/ext/common/Serializer.h"
-#include "flashlight/ext/plugin/ModulePlugin.h"
+#include "flashlight/pkg/speech/common/Defines.h"
+#include "flashlight/pkg/speech/common/Flags.h"
+#include "flashlight/pkg/speech/criterion/criterion.h"
+#include "flashlight/pkg/speech/data/FeatureTransforms.h"
+#include "flashlight/pkg/speech/data/Utils.h"
+#include "flashlight/pkg/speech/decoder/ConvLmModule.h"
+#include "flashlight/pkg/speech/decoder/DecodeUtils.h"
+#include "flashlight/pkg/speech/decoder/Defines.h"
+#include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
+#include "flashlight/pkg/speech/runtime/runtime.h"
+#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
+#include "flashlight/pkg/runtime/common/Serializer.h"
+#include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
 #include "flashlight/lib/common/ProducerConsumerQueue.h"
 #include "flashlight/lib/text/decoder/LexiconDecoder.h"
 #include "flashlight/lib/text/decoder/LexiconFreeDecoder.h"
@@ -41,15 +41,15 @@
 #include "flashlight/lib/text/decoder/lm/KenLM.h"
 #include "flashlight/lib/text/decoder/lm/ZeroLM.h"
 
-using fl::ext::afToVector;
-using fl::ext::Serializer;
+using fl::pkg::runtime::afToVector;
+using fl::pkg::runtime::Serializer;
 using fl::lib::join;
 using fl::lib::pathsConcat;
 using fl::lib::text::CriterionType;
 using fl::lib::text::kUnkToken;
 using fl::lib::text::SmearingMode;
 
-using namespace fl::app::asr;
+using namespace fl::pkg::speech;
 
 int main(int argc, char** argv) {
   fl::init();
@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
     fl::setDevice(0);
     if (fl::lib::endsWith(FLAGS_arch, ".so")) {
       usePlugin = true;
-      (void)fl::ext::ModulePlugin(FLAGS_arch);
+      (void)fl::pkg::runtime::ModulePlugin(FLAGS_arch);
     }
     Serializer::load(FLAGS_am, version, cfg, network, criterion);
     network->eval();
@@ -152,7 +152,7 @@ int main(int argc, char** argv) {
   bool isSeq2seqCrit = FLAGS_criterion == kSeq2SeqTransformerCriterion ||
       FLAGS_criterion == kSeq2SeqRNNCriterion;
   if (isSeq2seqCrit) {
-    tokenDict.addEntry(fl::app::asr::kEosToken);
+    tokenDict.addEntry(fl::pkg::speech::kEosToken);
     tokenDict.addEntry(fl::lib::text::kPadToken);
   }
 
@@ -425,7 +425,7 @@ int main(int argc, char** argv) {
                                        fl::noGrad(sample[kDurationIdx])})
                             .front();
         } else {
-          rawEmission = fl::ext::forwardSequentialModuleWithPadMask(
+          rawEmission = fl::pkg::runtime::forwardSequentialModuleWithPadMask(
               fl::input(sample[kInputIdx]), localNetwork, sample[kDurationIdx]);
         }
         emissionUnit = EmissionUnit(
@@ -536,7 +536,7 @@ int main(int argc, char** argv) {
                 FLAGS_beamsize,
                 FLAGS_attentionthreshold,
                 FLAGS_smoothingtemperature);
-      int eosIdx = tokenDict.getIndex(fl::app::asr::kEosToken);
+      int eosIdx = tokenDict.getIndex(fl::pkg::speech::kEosToken);
 
       if (FLAGS_decodertype == "wrd" || FLAGS_uselexicon) {
         decoder.reset(new fl::lib::text::LexiconSeq2SeqDecoder(

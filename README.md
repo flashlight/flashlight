@@ -41,7 +41,7 @@ Flashlight is broken down into a few parts:
 - [**`flashlight/lib`**](flashlight/lib) contains kernels and standalone utilities for sequence losses, beam search decoding, text processing, and more.
 - [**`flashlight/fl`**](flashlight/fl) is the core neural network library using the [ArrayFire](https://github.com/arrayfire/arrayfire) tensor library.
 - [**`flashlight/app`**](flashlight/app) are applications of the core library to machine learning across domains.
-- [**`flashlight/ext`**](flashlight/ext) are extensions on top of Flashlight and ArrayFire that are useful across apps.
+- [**`flashlight/pkg**](flashlight/pkg) are packages built on top of Flashlight and ArrayFire for specific purposes (Domain libraries for speech, vision, and text, and Halide extensions).
 
 ## Quickstart
 
@@ -180,8 +180,8 @@ To build the Flashlight CPU backend from source using dependencies installed wit
 ./vcpkg install \
     intel-mkl fftw3 kenlm                              \ # for flashlight libraries
     arrayfire[cpu] gloo[mpi] openmpi onednn cereal stb \ # for the flashlight neural net library
-    gflags glog                                        \ # for any flashlight apps
-    libsndfile                                         \ # for the flashlight asr app
+    gflags glog                                        \ # for the flashlight runtime pkg (any flashlight apps using it)
+    libsndfile                                         \ # for the flashlight speech pkg
     gtest                                                # optional, for tests
 ```
 
@@ -246,7 +246,7 @@ Dependencies marked with `†` are installable via `vcpkg`. See the [instruction
 </thead>
 <tbody>
   <tr>
-    <td rowspan="2">libraries</td>
+    <td rowspan="2"> Audio library (fl_lib_audio) </td>
     <td>CUDA</td>
     <td><a href="https://developer.nvidia.com/cuda-downloads">CUDA</a> &gt;= 9.2, <a href="https://github.com/nvidia/cub">CUB</a>*† (if CUDA &lt; 11)</td>
   </tr>
@@ -268,12 +268,12 @@ Dependencies marked with `†` are installable via `vcpkg`. See the [instruction
     <td><a href="https://github.com/oneapi-src/oneDNN">oneDNN</a>† &gt;= 2.0, <a href="https://github.com/facebookincubator/gloo">gloo</a> (<a href="https://github.com/facebookincubator/gloo/blob/01e2c2660cd43963ce1fe3e21220ac01f07d9a4b/docs/rendezvous.md#using-mpi">with MPI</a>)*^†</td>
   </tr>
   <tr>
-    <td>app: all </td>
+    <td> Runtime package (fl_pkg_runtime)  </td>
     <td>Any</td>
     <td><a href="https://github.com/google/glog">Google Glog</a>†, <a href="https://github.com/gflags/gflags">Gflags</a>†</td>
   </tr>
   <tr>
-    <td>app: asr</td>
+    <td> Speech package (fl_pkg_speech) </td>
     <td>Any</td>
     <td><a href="https://github.com/libsndfile/libsndfile">libsndfile</a>*† &gt;= 10.0.28, a BLAS library (<a href="https://software.intel.com/content/www/us/en/develop/tools/oneapi/base-toolkit/download.html">Intel MKL</a> &gt;= 2018, OpenBLAS†, etc)</td>
   </tr>
@@ -326,10 +326,40 @@ The Flashlight CMake build accepts the following build options (prefixed with `-
     <td>Downloads/builds some dependencies if not found.</td>
   </tr>
   <tr>
-    <td>FL_BUILD_LIBRARIES</td>
+    <td>FL_BUILD_ALL_LIBS</td>
     <td>ON, OFF</td>
-    <td>ON</td>
-    <td>Build the Flashlight libraries.</td>
+    <td>OFF</td>
+    <td>Build all the Flashlight libraries.</td>
+  </tr>
+  <tr>
+    <td>FL_BUILD_LIB_SET</td>
+    <td>ON, OFF</td>
+    <td>OFF</td>
+    <td>Build the Flashlight set library.</td>
+  </tr>
+  <tr>
+    <td>FL_BUILD_LIB_SEQUENCE</td>
+    <td>ON, OFF</td>
+    <td>OFF</td>
+    <td>Build the Flashlight sequence library.</td>
+  </tr>
+  <tr>
+    <td>FL_BUILD_LIB_AUDIO</td>
+    <td>ON, OFF</td>
+    <td>OFF</td>
+    <td>Build the Flashlight audio library.</td>
+  </tr>
+  <tr>
+    <td>FL_BUILD_LIB_COMMON</td>
+    <td>ON, OFF</td>
+    <td>OFF</td>
+    <td>Build the Flashlight common library.</td>
+  </tr>
+  <tr>
+    <td>FL_BUILD_LIB_TEXT</td>
+    <td>ON, OFF</td>
+    <td>OFF</td>
+    <td>Build the Flashlight text library.</td>
   </tr>
   <tr>
     <td>FL_BUILD_CORE</td>
@@ -348,6 +378,42 @@ The Flashlight CMake build accepts the following build options (prefixed with `-
     <td>ON, OFF</td>
     <td>ON</td>
     <td>Build contrib APIs subject to breaking changes.</td>
+  </tr>
+  <tr>
+    <td>FL_BUILD_ALL_PKGS</td>
+    <td>ON, OFF</td>
+    <td>OFF</td>
+    <td>Defines default value for every pkg (see below).</td>
+  </tr>
+  <tr>
+    <td>FL_BUILD_PKG_RUNTIME</td>
+    <td>ON, OFF</td>
+    <td> FL_BUILD_ALL_PKGS </td>
+    <td> Build the runtime package </td>
+  </tr>
+  <tr>
+    <td>FL_BUILD_PKG_VISION</td>
+    <td>ON, OFF</td>
+    <td> FL_BUILD_ALL_PKGS </td>
+    <td> Build the flashlight vision package </td>
+  </tr>
+  <tr>
+    <td>FL_BUILD_PKG_TEXT</td>
+    <td>ON, OFF</td>
+    <td> FL_BUILD_ALL_PKGS </td>
+    <td> Build the flashlight text package </td>
+  </tr>
+  <tr>
+    <td>FL_BUILD_PKG_SPEECH</td>
+    <td>ON, OFF</td>
+    <td> FL_BUILD_ALL_PKGS </td>
+    <td> Build the flashlight speech package </td>
+  </tr>
+  <tr>
+    <td>FL_BUILD_PKG_HALIDE</td>
+    <td>ON, OFF</td>
+    <td> FL_BUILD_ALL_PKGS </td>
+    <td> Build the flashlight halide package </td>
   </tr>
   <tr>
     <td>FL_BUILD_ALL_APPS</td>
@@ -420,12 +486,17 @@ The Flashlight CMake build accepts the following build options (prefixed with `-
 
 ### Building Your Own Project with Flashlight
 Flashlight is most-easily linked to using CMake. Flashlight exports the following CMake targets when installed:
-- `flashlight::fl-libraries` — contains flashlight libraries headers and symbols.
+- `flashlight::fl_lib_common` — contains flashlight libraries for common headers and symbols used throughout flashlight.
+- `flashlight::fl_lib_set` — contains flashlight libraries for headers and symbols pertaining to sets.
+- `flashlight::fl_lib_sequence` — contains flashlight libraries for headers and symbols pertaining to sequences.
+- `flashlight::fl_lib_audio` — contains flashlight libraries for headers and symbols pertaining to audio.
+- `flashlight::fl_lib_text` — contains flashlight libraries for headers and symbols pertaining to text.
 - `flashlight::flashlight` — contains flashlight libraries as well as the flashlight core autograd and neural network library.
-- `flashlight::flashlight-app-asr` — contains the automatic speech recognition app along with the flashlight core and flashlight libraries.
-- `flashlight::flashlight-app-imgclass` — contains the image classification app along with the flashlight core and flashlight libraries.
-- `flashlight::flashlight-app-objdet` — contains the object detection app along with the flashlight core and flashlight libraries.
-- `flashlight::flashlight-app-lm` — contains the language modeling app along with the flashlight core and flashlight libraries.
+- `flashlight::fl_pkg_runtime` — contains flashlight core as well as common utilities for training (logging / flags / distributed utils).
+- `flashlight::fl_pkg_vision` — contains flashlight core as well as common utilities for vision pipelines.
+- `flashlight::fl_pkg_text` — contains flashlight core as well as common utilities for dealing with text data.
+- `flashlight::fl_pkg_speech` — contains flashlight core as well as common utilities for dealing with speech data.
+- `flashlight::fl_pkg_halide` — contains flashlight core and extentions to easily interface with halide.
 
 Given a simple `project.cpp` file that includes and links to Flashlight:
 ```c++

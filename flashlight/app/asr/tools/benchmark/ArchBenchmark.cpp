@@ -11,8 +11,8 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/ext/common/SequentialBuilder.h"
-#include "flashlight/ext/plugin/ModulePlugin.h"
+#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
+#include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/String.h"
 
@@ -52,7 +52,7 @@ float run(
       output = network->forward({input, fl::noGrad(duration)}).front();
     } else {
       output =
-          fl::ext::forwardSequentialModuleWithPadMask(input, network, duration);
+          fl::pkg::runtime::forwardSequentialModuleWithPadMask(input, network, duration);
     }
     if (runBwd) {
       output.backward();
@@ -86,10 +86,10 @@ int main(int argc, char** argv) {
   std::shared_ptr<fl::Module> network;
   bool usePlugin = fl::lib::endsWith(FLAGS_arch, ".so");
   if (usePlugin) {
-    network = fl::ext::ModulePlugin(FLAGS_arch)
+    network = fl::pkg::runtime::ModulePlugin(FLAGS_arch)
                   .arch(FLAGS_in_features, FLAGS_out_channels);
   } else {
-    network = fl::ext::buildSequentialModule(
+    network = fl::pkg::runtime::buildSequentialModule(
         FLAGS_arch, FLAGS_in_features, FLAGS_out_channels);
   }
   std::cout << network->prettyString() << std::endl;

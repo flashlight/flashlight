@@ -27,13 +27,28 @@ find_package(OpenMP REQUIRED)
 find_package(Threads REQUIRED)
 
 # Threads/OpenMP pollutes other compilers (e.g. nvcc) with flags
-target_compile_options(fl-libraries PRIVATE $<$<COMPILE_LANGUAGE:C>:${OpenMP_C_FLAGS}>)
-target_compile_options(fl-libraries PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${OpenMP_CXX_FLAGS}>)
-target_compile_options(fl-libraries PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_THREAD_LIBS_INIT}>)
+target_compile_options(
+  fl_lib_audio
+  PRIVATE
+  $<$<COMPILE_LANGUAGE:C>:${OpenMP_C_FLAGS}>)
+target_compile_options(
+  fl_lib_audio
+  PRIVATE
+  $<$<COMPILE_LANGUAGE:CXX>:${OpenMP_CXX_FLAGS}>)
+target_compile_options(
+  fl_lib_audio
+  PRIVATE
+  $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_THREAD_LIBS_INIT}>)
+
+target_compile_definitions(
+  fl_lib_audio
+  PUBLIC
+  ${FL_COMPILE_DEFINITIONS}
+)
 
 # ----------------------------- Lib -----------------------------
 target_sources(
-  fl-libraries
+  fl_lib_audio
   PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/Ceplifter.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Dct.cpp
@@ -55,16 +70,16 @@ if (NOT FL_LIBRARIES_USE_MKL)
 endif()
 
 target_link_libraries(
-  fl-libraries
+  fl_lib_audio
   PUBLIC
     $<BUILD_INTERFACE:FFTW3::fftw3>
   PRIVATE
     ${OMPLIB}
     ${CBLAS_LIBRARIES}
-  )
+)
 
 target_include_directories(
-  fl-libraries
+  fl_lib_audio
   PRIVATE
   ${CBLAS_INCLUDE_DIR}
-  )
+)

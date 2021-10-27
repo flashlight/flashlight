@@ -33,14 +33,14 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/app/asr/common/Defines.h"
-#include "flashlight/app/asr/criterion/criterion.h"
-#include "flashlight/app/asr/data/FeatureTransforms.h"
-#include "flashlight/app/asr/data/Utils.h"
-#include "flashlight/app/asr/decoder/TranscriptionUtils.h"
-#include "flashlight/app/asr/runtime/runtime.h"
-#include "flashlight/ext/common/SequentialBuilder.h"
-#include "flashlight/ext/common/Serializer.h"
+#include "flashlight/pkg/speech/common/Defines.h"
+#include "flashlight/pkg/speech/criterion/criterion.h"
+#include "flashlight/pkg/speech/data/FeatureTransforms.h"
+#include "flashlight/pkg/speech/data/Utils.h"
+#include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
+#include "flashlight/pkg/speech/runtime/runtime.h"
+#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
+#include "flashlight/pkg/runtime/common/Serializer.h"
 #include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/decoder/lm/KenLM.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
@@ -61,9 +61,9 @@ const std::string kPerplexityPctSpeechExt = ".sts";
 
 } // namespace
 
-using namespace fl::app::asr;
+using namespace fl::pkg::speech;
 using namespace fl::lib;
-using namespace fl::ext;
+using namespace fl::pkg::runtime;
 
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
   std::unordered_map<std::string, std::string> cfg;
   std::string version;
   LOG(INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
-  fl::ext::Serializer::load(FLAGS_am, version, cfg, network, criterion);
+  fl::pkg::runtime::Serializer::load(FLAGS_am, version, cfg, network, criterion);
   if (version != FL_APP_ASR_VERSION) {
     LOG(WARNING) << "[Network] Model version " << version
                  << " and code version " << FL_APP_ASR_VERSION;
@@ -217,7 +217,7 @@ int main(int argc, char** argv) {
   auto prefetchds =
       loadPrefetchDataset(ds, FLAGS_nthread, false /* shuffle */, 0 /* seed */);
   for (auto& sample : *prefetchds) {
-    auto rawEmission = fl::ext::forwardSequentialModuleWithPadMask(
+    auto rawEmission = fl::pkg::runtime::forwardSequentialModuleWithPadMask(
         fl::input(sample[kInputIdx]), network, sample[kDurationIdx]);
     auto sampleId = readSampleIds(sample[kSampleIdx]).front();
     LOG(INFO) << "Processing sample ID " << sampleId;

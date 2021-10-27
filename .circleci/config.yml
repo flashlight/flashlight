@@ -44,14 +44,52 @@ commands:
       fl_backend:
         type: string
       fl_build_fl_core:
+        default: "OFF"
         type: string
+      # libs
+      fl_build_lib_set:
+        default: "OFF"
+        type: string
+      fl_build_lib_sequence:
+        default: "OFF"
+        type: string
+      fl_build_lib_audio:
+        default: "OFF"
+        type: string
+      fl_build_lib_common:
+        default: "OFF"
+        type: string
+      fl_build_lib_text:
+        default: "OFF"
+        type: string
+      # pkgs
+      fl_build_pkg_vision:
+        default: "OFF"
+        type: string
+      fl_build_pkg_common:
+        default: "OFF"
+        type: string
+      fl_build_pkg_speech:
+        default: "OFF"
+        type: string
+      fl_build_pkg_text:
+        default: "OFF"
+        type: string
+      fl_build_pkg_runtime:
+        default: "OFF"
+        type: string
+      # Apps
       fl_build_app_asr:
+        default: "OFF"
         type: string
       fl_build_app_imgclass:
+        default: "OFF"
         type: string
       fl_build_app_objdet:
+        default: "OFF"
         type: string
       fl_build_app_lm:
+        default: "OFF"
         type: string
       build_shared_libs:
         default: "OFF"
@@ -86,6 +124,15 @@ commands:
             cmake .. \
                 -DFL_BACKEND=<< parameters.fl_backend >> \
                 -DFL_BUILD_CORE=<< parameters.fl_build_fl_core >> \
+                -DFL_BUILD_LIB_SET=<< parameters.fl_build_lib_set >> \
+                -DFL_BUILD_LIB_SEQUENCE=<< parameters.fl_build_lib_sequence >> \
+                -DFL_BUILD_LIB_AUDIO=<< parameters.fl_build_lib_audio >> \
+                -DFL_BUILD_LIB_COMMON=<< parameters.fl_build_lib_common >> \
+                -DFL_BUILD_LIB_TEXT=<< parameters.fl_build_lib_text >> \
+                -DFL_BUILD_PKG_RUNTIME=<< parameters.fl_build_pkg_runtime >> \
+                -DFL_BUILD_PKG_VISION=<< parameters.fl_build_pkg_vision >> \
+                -DFL_BUILD_PKG_TEXT=<< parameters.fl_build_pkg_text >> \
+                -DFL_BUILD_PKG_SPEECH=<< parameters.fl_build_pkg_speech >> \
                 -DFL_BUILD_APP_ASR=<< parameters.fl_build_app_asr >> \
                 -DFL_BUILD_APP_IMGCLASS=<< parameters.fl_build_app_imgclass >> \
                 -DFL_BUILD_APP_OBJDET=<< parameters.fl_build_app_objdet >> \
@@ -95,11 +142,14 @@ commands:
             make -j$(nproc) && make install"
   test_flashlight_inside_nvidia_docker:
     parameters:
+      test_name:
+        type: string
+        default: ""
       fl_test_apex_dir:
         type: string
     steps:
       - run:
-          name: "Test Flashlight inside of NVIDIA Docker"
+          name: "Test Flashlight inside of NVIDIA Docker:  << parameters.test_name >>"
           command: |
             sudo docker exec -it flashlight bash -c "\
                 cd /flashlight/build/<< parameters.fl_test_apex_dir >> && ctest"
@@ -170,6 +220,8 @@ commands:
         type: string
       fl_build_app_lm:
         type: string
+      fl_build_all_libs:
+        type: string
     steps:
       - run:
           name: "Build Flashlight CUDA from source with vcpkg dependencies"
@@ -184,6 +236,7 @@ commands:
               -DFL_BUILD_APP_IMGCLASS=<< parameters.fl_build_app_imgclass >> \
               -DFL_BUILD_APP_OBJDET=<< parameters.fl_build_app_objdet >> \
               -DFL_BUILD_APP_LM=<< parameters.fl_build_app_lm >> \
+              -DFL_BUILD_ALL_LIBS=<< parameters.fl_build_all_libs >> \
               -DCMAKE_TOOLCHAIN_FILE=$HOME/project/vcpkg/scripts/buildsystems/vcpkg.cmake
             make -j$(nproc)
   flashlight_build_and_install_cpu_backend_from_source:
@@ -203,15 +256,20 @@ commands:
             cmake .. -DFL_BACKEND=CPU \
                      -DDNNL_DIR=/opt/onednn/lib/cmake/dnnl \
                      -DGloo_DIR=/opt/gloo/share/cmake \
+                     -DFL_BUILD_ALL_LIBS=ON \
+                     -DFL_BUILD_CORE=ON \
+                     -DFL_BUILD_ALL_PKGS=ON \
                      -DFL_BUILD_ALL_APPS=ON
             make -j36 && make install
   flashlight_source_test_with_vcpkg:
     parameters:
       fl_test_apex_dir:
         type: string
+      test_name:
+        type: string
     steps:
       - run:
-          name: "Run Flashlight CUDA tests for in-source build with vcpkg dependencies"
+          name: "Run Flashlight CUDA tests for in-source build with vcpkg dependencies << parameters.test_name >>"
           command: |
             cd $HOME/project/build/<< parameters.fl_test_apex_dir >>
             ctest
@@ -299,7 +357,7 @@ commands:
 
 ############################ Jobs ############################
 jobs:
-  ubuntu1604_gcc7_cuda_11_1_vcpkg_flashlight_lib:
+  ubuntu1604_gcc7_cuda_11_1_vcpkg_flashlight_libs:
     <<: *gpu
     steps:
       - checkout
@@ -313,15 +371,21 @@ jobs:
           version_build: "2"
       - flashlight_source_build_with_vcpkg:
           fl_build_fl_core: "OFF"
-          fl_build_app_asr: "OFF"
-          fl_build_app_imgclass: "OFF"
+          fl_build_all_libs: "ON"
           fl_build_app_objdet: "OFF"
+          fl_build_app_imgclass: "OFF"
           fl_build_app_lm: "OFF"
+          fl_build_app_asr: "OFF"
       - flashlight_source_test_with_vcpkg:
-          fl_test_apex_dir: "flashlight/lib/test"
-  # TODO(jacobkahn): add jobs for versions for the fl core and apps.
-  # See if we can use a vcpkg cache in CircleCI to reduce build times
-  ubuntu2004_cuda11_1_docker_flashlight_lib:
+          test_name: "fl_lib_common"
+          fl_test_apex_dir: "flashlight/lib/common/test"
+      - flashlight_source_test_with_vcpkg:
+          test_name: "fl_lib_audio"
+          fl_test_apex_dir: "flashlight/lib/audio/test"
+      - flashlight_source_test_with_vcpkg:
+          test_name: "fl_lib_text"
+          fl_test_apex_dir: "flashlight/lib/text/test"
+  ubuntu2004_cuda11_1_docker_flashlight_libs:
     <<: *gpu
     steps:
       - authenticate_docker
@@ -330,15 +394,53 @@ jobs:
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
-          fl_build_fl_core: "OFF"
-          fl_build_app_asr: "OFF"
-          fl_build_app_imgclass: "OFF"
-          fl_build_app_objdet: "OFF"
-          fl_build_app_lm: "OFF"
+          fl_build_lib_set:  "ON"
+          fl_build_lib_sequence:  "ON"
+          fl_build_lib_audio:  "ON"
+          fl_build_lib_common:  "ON"
+          fl_build_lib_text:  "ON"
       - test_flashlight_inside_nvidia_docker:
-          fl_test_apex_dir: "flashlight/lib/test"
+          test_name: "fl_lib_common"
+          fl_test_apex_dir: "flashlight/lib/common/test"
+      - test_flashlight_inside_nvidia_docker:
+          test_name: "fl_lib_audio"
+          fl_test_apex_dir: "flashlight/lib/audio/test"
+      - test_flashlight_inside_nvidia_docker:
+          test_name: "fl_lib_text"
+          fl_test_apex_dir: "flashlight/lib/text/test"
       - run_codecov_inside_nvidia_docker:
-          coverage_flag: "lib"
+          coverage_flag: "libs"
+
+  ubuntu2004_cuda11_1_docker_flashlight_pkgs:
+    <<: *gpu
+    steps:
+      - authenticate_docker
+      - install_nvidia_docker
+      - checkout
+      - start_nvidia_docker_and_copy_flashlight_source
+      - build_flashlight_inside_nvidia_docker:
+          fl_backend: "CUDA"
+          fl_build_fl_core: "ON"
+          fl_build_lib_set:  "ON"
+          fl_build_lib_sequence:  "ON"
+          fl_build_lib_audio:  "ON"
+          fl_build_lib_common:  "ON"
+          fl_build_lib_text:  "ON"
+          fl_build_pkg_runtime: "ON"
+          fl_build_pkg_speech: "ON"
+          fl_build_pkg_vision: "ON"
+          fl_build_pkg_text: "ON"
+      - test_flashlight_inside_nvidia_docker:
+          test_name: "fl_pkg_speech"
+          fl_test_apex_dir: "flashlight/pkg/speech/test"
+      - test_flashlight_inside_nvidia_docker:
+          test_name: "fl_pkg_vision"
+          fl_test_apex_dir: "flashlight/pkg/vision/test"
+      - test_flashlight_inside_nvidia_docker:
+          test_name: "fl_pkg_text"
+          fl_test_apex_dir: "flashlight/pkg/text/test"
+      - run_codecov_inside_nvidia_docker:
+          coverage_flag: "pkgs"
 
   ubuntu2004_cuda11_1_docker_flashlight_fl_core:
     <<: *gpu
@@ -349,11 +451,8 @@ jobs:
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
+          fl_build_lib_common: "ON"
           fl_build_fl_core: "ON"
-          fl_build_app_asr: "OFF"
-          fl_build_app_imgclass: "OFF"
-          fl_build_app_objdet: "OFF"
-          fl_build_app_lm: "OFF"
       - test_flashlight_inside_nvidia_docker:
           fl_test_apex_dir: "flashlight/fl/test"
       - run_codecov_inside_nvidia_docker:
@@ -369,14 +468,13 @@ jobs:
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
           fl_build_fl_core: "ON"
+          fl_build_lib_common: "ON"
+          fl_build_lib_audio: "ON"
+          fl_build_lib_text: "ON"
+          fl_build_lib_sequence: "ON"
+          fl_build_pkg_speech: "ON"
+          fl_build_pkg_runtime: "ON"
           fl_build_app_asr: "ON"
-          fl_build_app_imgclass: "OFF"
-          fl_build_app_objdet: "OFF"
-          fl_build_app_lm: "OFF"
-      - test_flashlight_inside_nvidia_docker:
-          fl_test_apex_dir: "flashlight/app/asr/test"
-      - run_codecov_inside_nvidia_docker:
-          coverage_flag: "asr"
 
   ubuntu2004_cuda11_1_docker_flashlight_app_imgclass:
     <<: *gpu
@@ -387,11 +485,12 @@ jobs:
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
+          fl_build_lib_common: "ON"
+          fl_build_lib_set: "ON"
           fl_build_fl_core: "ON"
-          fl_build_app_asr: "OFF"
+          fl_build_pkg_vision: "ON"
+          fl_build_pkg_runtime: "ON"
           fl_build_app_imgclass: "ON"
-          fl_build_app_objdet: "OFF"
-          fl_build_app_lm: "OFF"
 
   ubuntu2004_cuda11_1_docker_flashlight_app_objdet:
     <<: *gpu
@@ -402,13 +501,12 @@ jobs:
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
+          fl_build_lib_common: "ON"
+          fl_build_lib_set: "ON"
           fl_build_fl_core: "ON"
-          fl_build_app_asr: "OFF"
-          fl_build_app_imgclass: "ON"
+          fl_build_pkg_vision: "ON"
+          fl_build_pkg_runtime: "ON"
           fl_build_app_objdet: "ON"
-          fl_build_app_lm: "OFF"
-      - test_flashlight_inside_nvidia_docker:
-          fl_test_apex_dir: "flashlight/app/objdet/test"
       - run_codecov_inside_nvidia_docker:
           coverage_flag: "objdet"
 
@@ -421,13 +519,12 @@ jobs:
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
+          fl_build_lib_common: "ON"
+          fl_build_lib_text: "ON"
           fl_build_fl_core: "ON"
-          fl_build_app_asr: "OFF"
-          fl_build_app_imgclass: "OFF"
-          fl_build_app_objdet: "OFF"
+          fl_build_pkg_text: "ON"
+          fl_build_pkg_runtime: "ON"
           fl_build_app_lm: "ON"
-      - test_flashlight_inside_nvidia_docker:
-          fl_test_apex_dir: "flashlight/app/lm/test"
       - run_codecov_inside_nvidia_docker:
           coverage_flag: "lm"
 
@@ -441,6 +538,15 @@ jobs:
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
           fl_build_fl_core: "ON"
+          fl_build_lib_set:  "ON"
+          fl_build_lib_sequence:  "ON"
+          fl_build_lib_audio:  "ON"
+          fl_build_lib_common:  "ON"
+          fl_build_lib_text:  "ON"
+          fl_build_pkg_runtime: "ON"
+          fl_build_pkg_speech: "ON"
+          fl_build_pkg_vision: "ON"
+          fl_build_pkg_text: "ON"
           fl_build_app_asr: "ON"
           fl_build_app_imgclass: "ON"
           fl_build_app_objdet: "ON"
@@ -524,11 +630,8 @@ jobs:
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
+          fl_build_lib_common: "ON"
           fl_build_fl_core: "ON"
-          fl_build_app_asr: "ON"
-          fl_build_app_imgclass: "ON"
-          fl_build_app_objdet: "ON"
-          fl_build_app_lm: "ON"
       - setup_flashlight_compile_and_link_external_project_script
       - run:
           name: "Build another project that depends on flashlight"
@@ -536,13 +639,13 @@ jobs:
 
 workflows:
   version: 2
-  # TODO: bring back vcpkg jobs once https://github.com/microsoft/vcpkg/issues/19022 is resolved
-  # vcpkg_cuda_test_source_build_and_test:
-  #   jobs:
-  #     - ubuntu1604_gcc7_cuda_11_1_vcpkg_flashlight_lib
+  vcpkg_cuda_test_source_build_and_test:
+    jobs:
+      - ubuntu1604_gcc7_cuda_11_1_vcpkg_flashlight_libs
   docker_cuda_build_test_and_install:
     jobs:
-      - ubuntu2004_cuda11_1_docker_flashlight_lib
+      - ubuntu2004_cuda11_1_docker_flashlight_libs
+      - ubuntu2004_cuda11_1_docker_flashlight_pkgs
       - ubuntu2004_cuda11_1_docker_flashlight_fl_core
       - ubuntu2004_cuda11_1_docker_flashlight_app_asr
       - ubuntu2004_cuda11_1_docker_flashlight_app_imgclass

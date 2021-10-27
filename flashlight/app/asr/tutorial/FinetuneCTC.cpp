@@ -17,34 +17,34 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/app/asr/augmentation/SoundEffectConfig.h"
-#include "flashlight/app/asr/common/Defines.h"
-#include "flashlight/app/asr/criterion/criterion.h"
-#include "flashlight/app/asr/data/FeatureTransforms.h"
-#include "flashlight/app/asr/data/Utils.h"
-#include "flashlight/app/asr/decoder/TranscriptionUtils.h"
-#include "flashlight/app/asr/runtime/runtime.h"
-#include "flashlight/ext/common/DistributedUtils.h"
-#include "flashlight/ext/common/SequentialBuilder.h"
-#include "flashlight/ext/common/Serializer.h"
-#include "flashlight/app/common/Runtime.h"
-#include "flashlight/ext/plugin/ModulePlugin.h"
+#include "flashlight/pkg/speech/augmentation/SoundEffectConfig.h"
+#include "flashlight/pkg/speech/common/Defines.h"
+#include "flashlight/pkg/speech/criterion/criterion.h"
+#include "flashlight/pkg/speech/data/FeatureTransforms.h"
+#include "flashlight/pkg/speech/data/Utils.h"
+#include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
+#include "flashlight/pkg/speech/runtime/runtime.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
+#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
+#include "flashlight/pkg/runtime/common/Serializer.h"
+#include "flashlight/pkg/runtime/Runtime.h"
+#include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
 #include "flashlight/fl/contrib/contrib.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
 
-using fl::ext::Serializer;
-using fl::ext::afToVector;
-using fl::app::getRunFile;
+using fl::pkg::runtime::Serializer;
+using fl::pkg::runtime::afToVector;
+using fl::pkg::runtime::getRunFile;
 using fl::lib::fileExists;
 using fl::lib::format;
 using fl::lib::getCurrentDate;
 using fl::lib::join;
 using fl::lib::pathsConcat;
 
-using namespace fl::app::asr;
+using namespace fl::pkg::speech;
 
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
 
   std::shared_ptr<fl::Reducer> reducer = nullptr;
   if (FLAGS_enable_distributed) {
-    fl::ext::initDistributed(
+    fl::pkg::runtime::initDistributed(
         FLAGS_world_rank,
         FLAGS_world_size,
         FLAGS_max_devices_per_node,
@@ -248,9 +248,9 @@ int main(int argc, char** argv) {
   FL_LOG_MASTER(INFO) << "Loading architecture file from " << archfile;
   // Encoder network, works on audio
   if (fl::lib::endsWith(archfile, ".so")) {
-    network = fl::ext::ModulePlugin(archfile).arch(numFeatures, numClasses);
+    network = fl::pkg::runtime::ModulePlugin(archfile).arch(numFeatures, numClasses);
   } else {
-    network = fl::ext::buildSequentialModule(archfile, numFeatures, numClasses);
+    network = fl::pkg::runtime::buildSequentialModule(archfile, numFeatures, numClasses);
   }
 
   std::shared_ptr<fl::Module> forkingNetwork;
@@ -427,7 +427,7 @@ int main(int argc, char** argv) {
         validds, FLAGS_nthread, false /* shuffle */, 0 /* seed */);
 
     for (auto& batch : *curValidset) {
-      auto output = fl::ext::forwardSequentialModuleWithPadMask(
+      auto output = fl::pkg::runtime::forwardSequentialModuleWithPadMask(
           fl::input(batch[kInputIdx]), ntwrk, batch[kDurationIdx]);
       auto loss =
           crit->forward({output, fl::Variable(batch[kTargetIdx], false)})
@@ -586,7 +586,7 @@ int main(int argc, char** argv) {
               curBatch >= FLAGS_saug_start_update) {
             input = saug->forward({input}).front();
           }
-          auto output = fl::ext::forwardSequentialModuleWithPadMask(
+          auto output = fl::pkg::runtime::forwardSequentialModuleWithPadMask(
               input, ntwrk, batch[kDurationIdx]);
           fl::sync();
           meters.critfwdtimer.resume();

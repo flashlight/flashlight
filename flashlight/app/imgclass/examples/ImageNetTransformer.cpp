@@ -11,20 +11,20 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/app/common/Runtime.h"
-#include "flashlight/app/imgclass/dataset/Imagenet.h"
 #include "flashlight/app/imgclass/examples/Defines.h"
-#include "flashlight/ext/amp/DynamicScaler.h"
-#include "flashlight/ext/common/DistributedUtils.h"
-#include "flashlight/ext/image/af/Transforms.h"
-#include "flashlight/ext/image/fl/dataset/DistributedDataset.h"
-#include "flashlight/ext/image/fl/models/ViT.h"
+#include "flashlight/pkg/runtime/amp/DynamicScaler.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
+#include "flashlight/pkg/vision/dataset/Transforms.h"
+#include "flashlight/pkg/vision/dataset/DistributedDataset.h"
+#include "flashlight/pkg/vision/models/ViT.h"
 #include "flashlight/fl/dataset/datasets.h"
 #include "flashlight/fl/meter/meters.h"
 #include "flashlight/fl/optim/optim.h"
 #include "flashlight/lib/common/BetaDistribution.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
+#include "flashlight/pkg/runtime/Runtime.h"
+#include "flashlight/pkg/vision/dataset/Imagenet.h"
 
 DEFINE_string(data_dir, "", "Directory of imagenet data");
 DEFINE_uint64(data_batch_size, 64, "Batch size per gpus");
@@ -126,15 +126,15 @@ DEFINE_string(
     "Optim modes can be O1, O2, or O3.");
 
 using namespace fl;
-using fl::ext::image::compose;
-using fl::ext::image::ImageTransform;
-using namespace fl::app::imgclass;
+using fl::pkg::vision::compose;
+using fl::pkg::vision::ImageTransform;
+using namespace fl::pkg::vision;
 
 #define FL_LOG_MASTER(lvl) LOG_IF(lvl, (fl::getWorldRank() == 0))
 
 // Returns the average loss, top 5 error, and top 1 error
 std::tuple<double, double, double> evalLoop(
-    std::shared_ptr<fl::ext::image::ViT> model,
+    std::shared_ptr<fl::pkg::vision::ViT> model,
     Dataset& dataset) {
   AverageValueMeter lossMeter;
   TopKMeter top5Acc(5);
@@ -156,9 +156,9 @@ std::tuple<double, double, double> evalLoop(
     top1Acc.add(output.array(), target.array());
   }
   model->train();
-  fl::ext::syncMeter(lossMeter);
-  fl::ext::syncMeter(top5Acc);
-  fl::ext::syncMeter(top1Acc);
+  fl::pkg::runtime::syncMeter(lossMeter);
+  fl::pkg::runtime::syncMeter(top5Acc);
+  fl::pkg::runtime::syncMeter(top1Acc);
 
   double loss = lossMeter.value()[0];
   return std::make_tuple(loss, top5Acc.value(), top1Acc.value());
@@ -179,7 +179,7 @@ int main(int argc, char** argv) {
   ////////////////////////
   std::shared_ptr<fl::Reducer> reducer;
   if (FLAGS_distributed_enable) {
-    fl::ext::initDistributed(
+    fl::pkg::runtime::initDistributed(
         FLAGS_distributed_world_rank,
         FLAGS_distributed_world_size,
         FLAGS_distributed_max_devices_per_node,
@@ -189,7 +189,7 @@ int main(int argc, char** argv) {
   }
   af::info();
   FL_LOG_MASTER(INFO) << "Gflags after parsing \n"
-                      << fl::app::serializeGflags("; ");
+                      << fl::pkg::runtime::serializeGflags("; ");
 
   const int worldRank = fl::getWorldRank();
   const int worldSize = fl::getWorldSize();
@@ -210,25 +210,25 @@ int main(int argc, char** argv) {
       imageSize);
 
   ImageTransform trainTransforms = compose(
-      {fl::ext::image::randomResizeCropTransform(
+      {fl::pkg::vision::randomResizeCropTransform(
            imageSize,
            0.08, // scaleLow
            1.0, // scaleHigh
            3. / 4., // ratioLow
            4. / 3. // ratioHigh
            ),
-       fl::ext::image::randomHorizontalFlipTransform(0.5 // flipping probablity
+       fl::pkg::vision::randomHorizontalFlipTransform(0.5 // flipping probablity
                                                      ),
-       fl::ext::image::randomAugmentationDeitTransform(
+       fl::pkg::vision::randomAugmentationDeitTransform(
            FLAGS_train_aug_p_randomeaug, FLAGS_train_aug_n_randomeaug, fillImg),
-       fl::ext::image::normalizeImage(
+       fl::pkg::vision::normalizeImage(
            fl::app::image::kImageNetMean, fl::app::image::kImageNetStd),
-       fl::ext::image::randomEraseTransform(FLAGS_train_aug_p_randomerase)});
+       fl::pkg::vision::randomEraseTransform(FLAGS_train_aug_p_randomerase)});
 
   ImageTransform valTransforms = compose(
-      {fl::ext::image::resizeTransform(randomResizeMin),
-       fl::ext::image::centerCropTransform(imageSize),
-       fl::ext::image::normalizeImage(
+      {fl::pkg::vision::resizeTransform(randomResizeMin),
+       fl::pkg::vision::centerCropTransform(imageSize),
+       fl::pkg::vision::normalizeImage(
            fl::app::image::kImageNetMean, fl::app::image::kImageNetStd)});
 
   const int64_t prefetchSize = FLAGS_data_batch_size * 10;
@@ -238,7 +238,7 @@ int main(int argc, char** argv) {
         << "[Warning] You are not using all ImageNet classes (1000)";
   }
 
-  auto trainDataset = std::make_shared<fl::ext::image::DistributedDataset>(
+  auto trainDataset = std::make_shared<fl::pkg::vision::DistributedDataset>(
       imagenetDataset(trainList, labelMap, {trainTransforms}),
       worldRank,
       worldSize,
@@ -249,7 +249,7 @@ int main(int argc, char** argv) {
       fl::BatchDatasetPolicy::SKIP_LAST);
   FL_LOG_MASTER(INFO) << "[trainDataset size] " << trainDataset->size();
 
-  auto valDataset = fl::ext::image::DistributedDataset(
+  auto valDataset = fl::pkg::vision::DistributedDataset(
       imagenetDataset(valList, labelMap, {valTransforms}),
       worldRank,
       worldSize,
@@ -265,7 +265,7 @@ int main(int argc, char** argv) {
   /////////////////////////
   fl::setSeed(FLAGS_train_seed); // Making sure the models are initialized in
                                  // the same way across different processes
-  auto model = std::make_shared<fl::ext::image::ViT>(
+  auto model = std::make_shared<fl::pkg::vision::ViT>(
       FLAGS_model_layers,
       FLAGS_model_hidden_emb_size,
       FLAGS_model_mlp_size,
@@ -359,7 +359,7 @@ int main(int argc, char** argv) {
   //////////////////////////
   // The main training loop
   /////////////////////////
-  std::shared_ptr<fl::ext::DynamicScaler> dynamicScaler;
+  std::shared_ptr<fl::pkg::runtime::DynamicScaler> dynamicScaler;
   if (FLAGS_fl_amp_use_mixed_precision) {
     FL_LOG_MASTER(INFO)
         << "Mixed precision training enabled. Will perform loss scaling.";
@@ -368,7 +368,7 @@ int main(int argc, char** argv) {
         : fl::OptimMode::toOptimLevel(FLAGS_fl_optim_mode);
     fl::OptimMode::get().setOptimLevel(flOptimLevel);
 
-    dynamicScaler = std::make_shared<fl::ext::DynamicScaler>(
+    dynamicScaler = std::make_shared<fl::pkg::runtime::DynamicScaler>(
         FLAGS_fl_amp_scale_factor,
         FLAGS_fl_amp_max_scale_factor,
         FLAGS_fl_amp_scale_factor_update_interval);
@@ -403,7 +403,7 @@ int main(int argc, char** argv) {
         if (mixP > FLAGS_train_aug_p_switchmix) {
           // using mixup
           float lambda = betaGeneratorMixup(engine);
-          std::tie(inputArray, targetArray) = fl::ext::image::mixupBatch(
+          std::tie(inputArray, targetArray) = fl::pkg::vision::mixupBatch(
               lambda,
               inputArray,
               targetArray,
@@ -412,7 +412,7 @@ int main(int argc, char** argv) {
         } else {
           // using cutmix
           float lambda = betaGeneratorCutmix(engine);
-          std::tie(inputArray, targetArray) = fl::ext::image::cutmixBatch(
+          std::tie(inputArray, targetArray) = fl::pkg::vision::cutmixBatch(
               lambda,
               inputArray,
               targetArray,
@@ -420,7 +420,7 @@ int main(int argc, char** argv) {
               FLAGS_train_aug_p_label_smoothing);
         }
       } else {
-        targetArray = fl::ext::image::oneHot(
+        targetArray = fl::pkg::vision::oneHot(
             targetArray,
             fl::app::image::kNumImageNetClasses,
             FLAGS_train_aug_p_label_smoothing);
@@ -453,7 +453,7 @@ int main(int argc, char** argv) {
         bwdTimeMeter.resume();
         optWithWeightDecay.zeroGrad();
         optNoWeightDecay.zeroGrad();
-        bool scaleIsValid = fl::app::backwardWithScaling(
+        bool scaleIsValid =fl::pkg::runtime::backwardWithScaling(
             loss, modelParams, dynamicScaler, reducer);
         fl::sync();
         bwdTimeMeter.stopAndIncUnit();
@@ -477,8 +477,8 @@ int main(int argc, char** argv) {
       int interval = 100;
       if (idx && idx % interval == 0) {
         timeMeter.stop();
-        fl::ext::syncMeter(trainLossMeter);
-        fl::ext::syncMeter(timeMeter);
+        fl::pkg::runtime::syncMeter(trainLossMeter);
+        fl::pkg::runtime::syncMeter(timeMeter);
         double time = timeMeter.value() / interval;
         double samplePerSecond = FLAGS_data_batch_size * worldSize / time;
         FL_LOG_MASTER(INFO)

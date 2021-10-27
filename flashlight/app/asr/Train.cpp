@@ -17,22 +17,22 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/app/asr/augmentation/SoundEffectConfig.h"
-#include "flashlight/app/asr/common/Defines.h"
-#include "flashlight/app/asr/common/Flags.h"
-#include "flashlight/app/asr/criterion/criterion.h"
-#include "flashlight/app/asr/data/FeatureTransforms.h"
-#include "flashlight/app/asr/data/Utils.h"
-#include "flashlight/app/asr/decoder/DecodeMaster.h"
-#include "flashlight/app/asr/decoder/PlGenerator.h"
-#include "flashlight/app/asr/decoder/TranscriptionUtils.h"
-#include "flashlight/app/asr/runtime/runtime.h"
-#include "flashlight/app/common/Runtime.h"
-#include "flashlight/ext/amp/DynamicScaler.h"
-#include "flashlight/ext/common/DistributedUtils.h"
-#include "flashlight/ext/common/SequentialBuilder.h"
-#include "flashlight/ext/common/Serializer.h"
-#include "flashlight/ext/plugin/ModulePlugin.h"
+#include "flashlight/pkg/speech/augmentation/SoundEffectConfig.h"
+#include "flashlight/pkg/speech/common/Defines.h"
+#include "flashlight/pkg/speech/common/Flags.h"
+#include "flashlight/pkg/speech/criterion/criterion.h"
+#include "flashlight/pkg/speech/data/FeatureTransforms.h"
+#include "flashlight/pkg/speech/data/Utils.h"
+#include "flashlight/pkg/speech/decoder/DecodeMaster.h"
+#include "flashlight/pkg/speech/decoder/PlGenerator.h"
+#include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
+#include "flashlight/pkg/speech/runtime/runtime.h"
+#include "flashlight/pkg/runtime/Runtime.h"
+#include "flashlight/pkg/runtime/amp/DynamicScaler.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
+#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
+#include "flashlight/pkg/runtime/common/Serializer.h"
+#include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
 #include "flashlight/fl/contrib/contrib.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/System.h"
@@ -40,16 +40,16 @@
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
 
-using fl::app::getRunFile;
-using fl::ext::afToVector;
-using fl::ext::Serializer;
+using fl::pkg::runtime::getRunFile;
+using fl::pkg::runtime::afToVector;
+using fl::pkg::runtime::Serializer;
 using fl::lib::fileExists;
 using fl::lib::format;
 using fl::lib::getCurrentDate;
 using fl::lib::join;
 using fl::lib::pathsConcat;
 
-using namespace fl::app::asr;
+using namespace fl::pkg::speech;
 
 namespace {
 
@@ -180,7 +180,7 @@ int main(int argc, char** argv) {
 
   std::shared_ptr<fl::Reducer> reducer;
   if (FLAGS_enable_distributed) {
-    fl::ext::initDistributed(
+    fl::pkg::runtime::initDistributed(
         FLAGS_world_rank,
         FLAGS_world_size,
         FLAGS_max_devices_per_node,
@@ -218,7 +218,7 @@ int main(int argc, char** argv) {
       ? fl::OptimLevel::DEFAULT
       : fl::OptimMode::toOptimLevel(FLAGS_fl_optim_mode);
   fl::OptimMode::get().setOptimLevel(flOptimLevel);
-  std::shared_ptr<fl::ext::DynamicScaler> dynamicScaler;
+  std::shared_ptr<fl::pkg::runtime::DynamicScaler> dynamicScaler;
   if (FLAGS_fl_amp_use_mixed_precision) {
     // Only set the optim mode to O1 if it was left empty
     LOG(INFO) << "Mixed precision training enabled. Will perform loss scaling.";
@@ -228,7 +228,7 @@ int main(int argc, char** argv) {
       fl::OptimMode::get().setOptimLevel(fl::OptimLevel::O1);
     }
 
-    dynamicScaler = std::make_shared<fl::ext::DynamicScaler>(
+    dynamicScaler = std::make_shared<fl::pkg::runtime::DynamicScaler>(
         FLAGS_fl_amp_scale_factor,
         FLAGS_fl_amp_max_scale_factor,
         FLAGS_fl_amp_scale_factor_update_interval);
@@ -268,7 +268,7 @@ int main(int argc, char** argv) {
   bool isSeq2seqCrit = FLAGS_criterion == kSeq2SeqTransformerCriterion ||
       FLAGS_criterion == kSeq2SeqRNNCriterion;
   if (isSeq2seqCrit) {
-    tokenDict.addEntry(fl::app::asr::kEosToken);
+    tokenDict.addEntry(fl::pkg::speech::kEosToken);
     tokenDict.addEntry(fl::lib::text::kPadToken);
   }
 
@@ -379,16 +379,16 @@ int main(int argc, char** argv) {
   auto scalemode = getCriterionScaleMode(FLAGS_onorm, FLAGS_sqnorm);
   if (fl::lib::endsWith(FLAGS_arch, ".so")) {
     usePlugin = true;
-    (void)fl::ext::ModulePlugin(FLAGS_arch);
+    (void)fl::pkg::runtime::ModulePlugin(FLAGS_arch);
   }
   if (runStatus == kTrainMode) {
     FL_LOG_MASTER(INFO) << "Loading architecture file from " << FLAGS_arch;
     // Encoder network, works on audio
     if (fl::lib::endsWith(FLAGS_arch, ".so")) {
-      network = fl::ext::ModulePlugin(FLAGS_arch).arch(numFeatures, numClasses);
+      network = fl::pkg::runtime::ModulePlugin(FLAGS_arch).arch(numFeatures, numClasses);
     } else {
       network =
-          fl::ext::buildSequentialModule(FLAGS_arch, numFeatures, numClasses);
+          fl::pkg::runtime::buildSequentialModule(FLAGS_arch, numFeatures, numClasses);
     }
     if (FLAGS_criterion == kCtcCriterion) {
       criterion = std::make_shared<CTCLoss>(scalemode);
@@ -403,7 +403,7 @@ int main(int argc, char** argv) {
       criterion = std::make_shared<Seq2SeqCriterion>(
           numClasses,
           FLAGS_encoderdim,
-          tokenDict.getIndex(fl::app::asr::kEosToken),
+          tokenDict.getIndex(fl::pkg::speech::kEosToken),
           tokenDict.getIndex(fl::lib::text::kPadToken),
           FLAGS_maxdecoderoutputlen,
           attentions,
@@ -421,7 +421,7 @@ int main(int argc, char** argv) {
       criterion = std::make_shared<TransformerCriterion>(
           numClasses,
           FLAGS_encoderdim,
-          tokenDict.getIndex(fl::app::asr::kEosToken),
+          tokenDict.getIndex(fl::pkg::speech::kEosToken),
           tokenDict.getIndex(fl::lib::text::kPadToken),
           FLAGS_maxdecoderoutputlen,
           FLAGS_am_decoder_tr_layers,
@@ -877,7 +877,7 @@ int main(int argc, char** argv) {
                           fl::noGrad(batch[kDurationIdx])})
                      .front();
       } else {
-        output = fl::ext::forwardSequentialModuleWithPadMask(
+        output = fl::pkg::runtime::forwardSequentialModuleWithPadMask(
             fl::input(batch[kInputIdx]), ntwrk, batch[kDurationIdx]);
       }
       std::vector<fl::Variable> critArgs = {
@@ -1093,7 +1093,7 @@ int main(int argc, char** argv) {
             output = ntwrk->forward({input, fl::noGrad(batch[kDurationIdx])})
                          .front();
           } else {
-            output = fl::ext::forwardSequentialModuleWithPadMask(
+            output = fl::pkg::runtime::forwardSequentialModuleWithPadMask(
                 input, ntwrk, batch[kDurationIdx]);
           }
           fl::sync();
@@ -1139,7 +1139,7 @@ int main(int argc, char** argv) {
           }
           totalBatchSize = totalBatchSizeArr.scalar<float>();
           auto scaledLoss = loss / totalBatchSize;
-          bool scaleIsValid = fl::app::backwardWithScaling(
+          bool scaleIsValid =fl::pkg::runtime::backwardWithScaling(
               scaledLoss, params, dynamicScaler, reducer);
           fl::sync();
           meters.bwdtimer.stopAndIncUnit();
