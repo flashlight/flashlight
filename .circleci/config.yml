@@ -260,7 +260,7 @@ commands:
                      -DFL_BUILD_CORE=ON \
                      -DFL_BUILD_ALL_PKGS=ON \
                      -DFL_BUILD_ALL_APPS=ON
-            make -j36 && make install
+            make -j 24 && make install
   flashlight_source_test_with_vcpkg:
     parameters:
       fl_test_apex_dir:
