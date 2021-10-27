@@ -82,11 +82,6 @@ target_sources(
   ${CMAKE_CURRENT_LIST_DIR}/SoundEffectUtil.cpp
   )
 
-target_link_libraries(
-  fl_pkg_speech
-  fl_lib_common
-  )
-
 
 add_executable(
   fl_asr_sfx_apply
