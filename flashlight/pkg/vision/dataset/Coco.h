@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include <gflags/gflags.h>
-
 #include "flashlight/pkg/vision/dataset/BatchTransformDataset.h"
 #include "flashlight/pkg/vision/dataset/Transforms.h"
 #include "flashlight/pkg/vision/dataset/Jpeg.h"
