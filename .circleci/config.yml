@@ -639,9 +639,10 @@ jobs:
 
 workflows:
   version: 2
-  vcpkg_cuda_test_source_build_and_test:
-    jobs:
-      - ubuntu1604_gcc7_cuda_11_1_vcpkg_flashlight_libs
+  # TODO: bring back vcpkg jobs once https://github.com/microsoft/vcpkg/issues/19022 is resolved
+  # vcpkg_cuda_test_source_build_and_test:
+  #   jobs:
+  #     - ubuntu1604_gcc7_cuda_11_1_vcpkg_flashlight_lib
   docker_cuda_build_test_and_install:
     jobs:
       - ubuntu2004_cuda11_1_docker_flashlight_libs
