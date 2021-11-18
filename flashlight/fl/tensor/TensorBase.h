@@ -850,8 +850,21 @@ Tensor sigmoid(const Tensor& tensor);
 /**
  * Computes the element-wise error function the input: see
  * [here](https://en.wikipedia.org/wiki/Error_function) for details.
+ *
+ * @param[in] tensor the tensor on which to compute
+ * @return ther resulting tensor
  */
 Tensor erf(const Tensor& tensor);
+
+/**
+ * Flip a Tensor along a specified dimension.
+ *
+ * @param[in] tensor the tensor on which to compute
+ * @param[in] dim the dimension along which to flip the tensor
+ *
+ * @return the resulting flipped tensor
+ */
+Tensor flip(const Tensor& tensor, const unsigned dim);
 
 /**
  * Clip (limit) the values of a tensor. Given some interval of values, set
