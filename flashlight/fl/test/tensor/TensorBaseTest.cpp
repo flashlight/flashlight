@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <cmath>
+
 #include <gtest/gtest.h>
 
 #include "flashlight/fl/tensor/Index.h"
@@ -238,6 +240,40 @@ TEST(TensorBaseTest, flatten) {
   auto flat = a.flatten();
   ASSERT_EQ(flat.shape(), Shape({s * s * s}));
   ASSERT_TRUE(allClose(flat, fl::full({s * s * s}, 2.)));
+}
+
+TEST(TensorBaseTest, amin) {
+  auto a = fl::rand({4, 5, 6});
+  const float val = -300;
+  a(2, 3, 4) = val;
+  ASSERT_EQ(fl::amin(a).shape(), Shape({1}));
+  ASSERT_EQ(fl::amin(a).scalar<float>(), val);
+  auto b = fl::rand({4, 4});
+  b(1, 1) = val;
+  ASSERT_EQ(fl::amin(b, {0}).shape(), Shape({4}));
+  ASSERT_EQ(fl::amin(b, {0}, /* keepDims = */ true).shape(), Shape({1, 4}));
+  ASSERT_EQ(fl::amin(b, {0})(1).scalar<float>(), val);
+  ASSERT_EQ(fl::amin(b, {1})(1).scalar<float>(), val);
+  auto q = fl::amin(fl::full({5, 5, 5, 5}, 1));
+  ASSERT_EQ(q.shape(), Shape({1}));
+  ASSERT_EQ(q.scalar<int>(), 1);
+}
+
+TEST(TensorBaseTest, amax) {
+  auto a = fl::rand({4, 5, 6});
+  const float val = 300;
+  a(2, 3, 4) = val;
+  ASSERT_EQ(fl::amax(a).shape(), Shape({1}));
+  ASSERT_EQ(fl::amax(a).scalar<float>(), val);
+  auto b = fl::rand({4, 4});
+  b(1, 1) = val;
+  ASSERT_EQ(fl::amax(b, {0}).shape(), Shape({4}));
+  ASSERT_EQ(fl::amax(b, {0}, /* keepDims = */ true).shape(), Shape({1, 4}));
+  ASSERT_EQ(fl::amax(b, {0})(1).scalar<float>(), val);
+  ASSERT_EQ(fl::amax(b, {1})(1).scalar<float>(), val);
+  auto q = fl::amax(fl::full({5, 5, 5, 5}, 1));
+  ASSERT_EQ(q.shape(), Shape({1}));
+  ASSERT_EQ(q.scalar<int>(), 1);
 }
 
 TEST(TensorBaseTest, minimum) {
@@ -694,53 +730,116 @@ TEST(TensorBaseTest, sum) {
   ASSERT_EQ(res.shape(), Shape({t.dim(0), 1, 1, t.dim(3)}));
   ASSERT_TRUE(
       allClose(fl::reshape(res, {t.dim(0), t.dim(3)}), fl::sum(t, {2, 1})));
+  unsigned dim = 5;
+  auto q = fl::sum(fl::full({dim, dim, dim, dim}, 1));
+  ASSERT_EQ(q.shape(), Shape({1}));
+  ASSERT_EQ(q.scalar<int>(), dim * dim * dim * dim);
+}
+
+TEST(TensorBaseTest, mean) {
+  auto r = fl::rand({8, 7, 6});
+  ASSERT_NEAR(fl::mean(r).scalar<float>(), 0.5, 0.01);
+  ASSERT_EQ(
+      fl::mean(r, {0, 1}, /* keepDims = */ true).shape(), Shape({1, 1, 6}));
+
+  auto s = fl::full({5, 6, 7}, 1);
+  ASSERT_TRUE(allClose(fl::mean(s, {0}), fl::full({6, 7}, 1.)));
+  auto a = fl::mean(fl::full({5, 5, 5, 5}, 1));
+  ASSERT_EQ(a.shape(), Shape({1}));
+  ASSERT_EQ(a.scalar<float>(), 1.);
 }
 
 TEST(TensorBaseTest, median) {
   auto a = Tensor::fromVector<int>({0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
-  ASSERT_EQ(fl::median<double>(a), 4.5);
+  ASSERT_EQ(fl::median(a).scalar<float>(), 4.5);
   ASSERT_TRUE(allClose(fl::median(a, {0}), fl::full({1}, 4.5)));
   ASSERT_EQ(fl::median(fl::rand({5, 6, 7, 8}), {1, 2}).shape(), Shape({5, 8}));
   ASSERT_EQ(
       fl::median(fl::rand({5, 6, 7, 8}), {1, 2}, /* keepDims = */ true).shape(),
       Shape({5, 1, 1, 8}));
+  auto b = fl::median(fl::full({5, 5, 5, 5}, 1));
+  ASSERT_EQ(b.shape(), Shape({1}));
+  ASSERT_EQ(b.scalar<float>(), 1.);
+}
+
+TEST(TensorBaseTest, var) {
+  auto r = fl::rand({7, 8, 9});
+  ASSERT_NEAR(fl::var(r).scalar<float>(), 0.08333, 0.01);
+  ASSERT_EQ(
+      fl::var(r, {0, 1}, /* bias = */ false, /* keepDims = */ true).shape(),
+      Shape({1, 1, 9}));
+
+  auto s = fl::full({5, 6, 7}, 1);
+  ASSERT_TRUE(allClose(fl::var(s, {0}), fl::full({6, 7}, 0.)));
+  auto a = fl::rand({5, 5});
+  ASSERT_TRUE(allClose(fl::var(a), fl::var(a, {0, 1})));
+}
+
+TEST(TensorBaseTest, std) {
+  auto r = fl::rand({7, 8, 9});
+  ASSERT_NEAR(fl::std(r).scalar<float>(), 0.2886, 0.005);
+  ASSERT_EQ(
+      fl::std(r, {0, 1}, /* keepDims = */ true).shape(), Shape({1, 1, 9}));
+
+  auto s = fl::full({5, 6, 7}, 1);
+  ASSERT_TRUE(allClose(fl::std(s, {0}), fl::full({6, 7}, 0.)));
+  ASSERT_TRUE(allClose(fl::std(s, {1}), fl::sqrt(fl::var(s, {1}))));
+}
+
+TEST(TensorBaseTest, norm) {
+  auto r = fl::full({7, 8, 9}, 1);
+  ASSERT_FLOAT_EQ(fl::norm(r).scalar<float>(), std::sqrt(7 * 8 * 9));
+  ASSERT_FLOAT_EQ(
+      fl::norm(fl::full({5, 5}, 1.)).scalar<float>(), std::sqrt(5 * 5));
+  ASSERT_EQ(
+      fl::norm(r, {0, 1}, /* p = */ 2, /* keepDims = */ true).shape(),
+      Shape({1, 1, 9}));
+
+  ASSERT_FLOAT_EQ(fl::norm(r, {0}).scalar<float>(), std::sqrt(7));
 }
 
 TEST(TensorBaseTest, any) {
   using fl::dtype;
   auto t = Tensor::fromVector<unsigned>({3, 3}, {1, 0, 0, 0, 0, 0, 0, 0, 1});
+  ASSERT_EQ(fl::any(t).shape(), Shape({1}));
+  ASSERT_EQ(fl::any(t).scalar<char>(), true);
   ASSERT_TRUE(allClose(
       fl::any(t, {0}),
       Tensor::fromVector<unsigned>({1, 0, 1}).astype(dtype::b8)));
   ASSERT_TRUE(allClose(
       fl::any(t, {0, 1}), Tensor::fromVector<unsigned>({1}).astype(dtype::b8)));
-  ASSERT_TRUE(fl::any(t));
-  ASSERT_FALSE(fl::any(Tensor::fromVector<unsigned>({0, 0, 0})));
+  ASSERT_TRUE(fl::any(t).scalar<char>());
+  ASSERT_FALSE(fl::any(Tensor::fromVector<unsigned>({0, 0, 0})).scalar<char>());
 
   auto keptDims = fl::any(
       fl::any(t, {1}, /* keepDims = */ true), {0}, /* keepDims = */ true);
   ASSERT_EQ(keptDims.shape(), Shape({1, 1}));
-  ASSERT_EQ(
-      keptDims.astype(dtype::s32).scalar<int>(),
-      fl::any(t, {0, 1}).astype(dtype::s32).scalar<int>());
+  ASSERT_EQ(keptDims.scalar<char>(), fl::any(t, {0, 1}).scalar<char>());
+  auto q = fl::any(fl::full({5, 5, 5, 5}, 1));
+  ASSERT_EQ(q.shape(), Shape({1}));
+  ASSERT_EQ(q.scalar<char>(), true);
 }
 
 TEST(TensorBaseTest, all) {
   using fl::dtype;
   auto t = Tensor::fromVector<unsigned>({3, 3}, {1, 0, 0, 0, 0, 0, 0, 0, 1});
+  ASSERT_EQ(fl::all(t).shape(), Shape({1}));
+  ASSERT_EQ(fl::all(t).scalar<char>(), false);
   ASSERT_TRUE(allClose(
       fl::all(t, {0}),
       Tensor::fromVector<unsigned>({0, 0, 0}).astype(dtype::b8)));
   ASSERT_TRUE(allClose(
       fl::all(t, {0, 1}), Tensor::fromVector<unsigned>({0}).astype(dtype::b8)));
-  ASSERT_FALSE(fl::all(t));
-  ASSERT_TRUE(fl::all(Tensor::fromVector<unsigned>({1, 1, 1})));
+  ASSERT_FALSE(fl::all(t).scalar<char>());
+  ASSERT_TRUE(fl::all(Tensor::fromVector<unsigned>({1, 1, 1})).scalar<char>());
+
   auto keptDims = fl::all(
       fl::all(t, {1}, /* keepDims = */ true), {0}, /* keepDims = */ true);
   ASSERT_EQ(keptDims.shape(), Shape({1, 1}));
-  ASSERT_EQ(
-      keptDims.astype(dtype::s32).scalar<int>(),
-      fl::all(t, {0, 1}).astype(dtype::s32).scalar<int>());
+  ASSERT_EQ(keptDims.scalar<char>(), fl::all(t, {0, 1}).scalar<char>());
+  auto q = fl::all(fl::full({5, 5, 5, 5}, 1));
+  ASSERT_EQ(q.shape(), Shape({1}));
+  ASSERT_EQ(q.scalar<char>(), true);
 }
 
 TEST(TensorBaseTest, arange) {

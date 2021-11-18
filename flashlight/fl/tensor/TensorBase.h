@@ -10,6 +10,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -360,10 +361,54 @@ class Tensor {
    * Return a scalar of a specified type for the tensor. If the tensor has more
    * than one element, returns the first element as a scalar.
    *
+   * Throws an exception if the specified type does not match the dtype trait of
+   * the underlying tensor. To implicitly cast the scalar regardless of the
+   * underlying Tensor's dtype, use `asScalar`.
+   *
    * @return a scalar of the first element in the tensor.
    */
   template <typename T>
   T scalar() const;
+
+  /**
+   * Return a scalar of the specified type of the tensor. If the specified type
+   * does not match the tensor's underlying dtype, the scalar value is
+   * implicitly cast.
+   *
+   * @return a scalar of the first element in the tensor cast to the specified
+   * type.
+   */
+  template <typename T>
+  T asScalar() const {
+    // Implicitly cast to the requested return type
+    switch (type()) {
+      case dtype::f16:
+        return astype(dtype::f32).scalar<float>();
+      case dtype::f32:
+        return scalar<float>();
+      case dtype::f64:
+        return scalar<double>();
+      case dtype::s32:
+        return scalar<long>();
+      case dtype::u32:
+        return scalar<unsigned long>();
+      case dtype::b8:
+        return scalar<char>();
+      case dtype::u8:
+        return scalar<unsigned char>();
+      case dtype::s64:
+        return scalar<long long>();
+      case dtype::u64:
+        return scalar<unsigned long long>();
+      case dtype::s16:
+        return scalar<short>();
+      case dtype::u16:
+        return scalar<unsigned short>();
+      default:
+        throw std::invalid_argument(
+            "Tensor::asScaler - no castable type exists.");
+    }
+  }
 
   /**
    * Return a pointer to the tensor's underlying data per a certain type. This
@@ -1007,48 +1052,36 @@ Tensor matmul(
 /************************** Reductions ***************************/
 
 /**
- * Compute the minimum value along multiple axes.
+ * Compute the minimum value along multiple axes. If axes is left empty,
+ * computes the minumum along all axes.
  *
  * @param[in] input the input along which to operate
- * @param[in] dim the dimension along which to reduce.
+ * @param[in] dim the dimension along which to reduce. If empty, computes along
+ * all axes
  * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
  * as singleton dimensions rather than collapsing them
- * @return a tensor containing the minimum values
+ * @return a tensor containing the max(es)
  */
-Tensor
-amin(const Tensor& input, const std::vector<int>& axes, bool keepDims = false);
+Tensor amin(
+    const Tensor& input,
+    const std::vector<int>& axes = {},
+    bool keepDims = false);
 
 /**
- * Compute the minimum value across all axes.
- * TODO: benchmark against amin(amin(amin(...)))/maybe avoid device-host memcpy
+ * Compute the maximum value along multiple axes. If axes is left empty,
+ * computes the maximum along all axes.
  *
  * @param[in] input the input along which to operate
- * @return a scalar T containing the mim
- */
-template <typename T>
-T amin(const Tensor& input);
-
-/**
- * Compute the maximum value along multiple axes.
- *
- * @param[in] input the input along which to operate
- * @param[in] dim the dimension along which to reduce.
+ * @param[in] dim the dimension along which to reduce. If empty, computes along
+ * all axes
  * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
  * as singleton dimensions rather than collapsing them
- * @return a tensor containing the max
+ * @return a tensor containing the max(es)
  */
-Tensor
-amax(const Tensor& input, const std::vector<int>& axes, bool keepDims = false);
-
-/**
- * Compute the minimum value across all axes.
- * TODO: benchmark against amax(amax(amax(...)))/maybe avoid device-host memcpy
- *
- * @param[in] input the input along which to operate
- * @return a scalar T containing the mim
- */
-template <typename T>
-T amax(const Tensor& input);
+Tensor amax(
+    const Tensor& input,
+    const std::vector<int>& axes = {},
+    bool keepDims = false);
 
 /**
  * Compute the maximum value along multiple axes for a tensor, returning both
@@ -1113,120 +1146,103 @@ Tensor argmax(const Tensor& input, unsigned axis, bool keepDims = false);
 Tensor argmin(const Tensor& input, unsigned axis, bool keepDims = false);
 
 /**
- * Sum of tensor over given axes.
+ * Sum of tensor over given axes. If axes is left empty, computes the sum along
+ * all axes.
  *
  * @param[in] input the input along which to operate
- * @param[in] axes the dimension along which to reduce.
+ * @param[in] axes the dimension along which to reduce. If empty, computes along
+ * all axes
  * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
  * as singleton dimensions rather than collapsing them
- * @return a tensor containing the sum across given axes
+ * @return a tensor containing the sum(s)
  */
-Tensor
-sum(const Tensor& input, const std::vector<int>& axes, bool keepDims = false);
-
-/**
- * Sum of tensor over all axes.
- * TODO: benchmark against sum(sum(sum(...)))/maybe avoid device-host memcpy
- *
- * @param[in] input the input along which to operate
- * @return a scalar T containing the sum
- */
-template <typename T>
-T sum(const Tensor& input);
-
-/**
- * Mean of tensor over given axes.
- *
- * @param[in] input the input along which to operate
- * @param[in] axes the dimension along which to reduce.
- * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
- * as singleton dimensions rather than collapsing them
- * @return a tensor containing the mean across given axes
- */
-Tensor
-mean(const Tensor& input, const std::vector<int>& axes, bool keepDims = false);
-
-/**
- * Mean of tensor over all axes.
- * TODO: benchmark against mean(mean(mean(...)))/maybe avoid device-host memcpy
- *
- * @param[in] input the input along which to operate
- * @return a scalar T containing the mean
- */
-template <typename T>
-T mean(const Tensor& input);
-
-/**
- * Median of tensor over given axes.
- *
- * @param[in] input the input along which to operate
- * @param[in] axes the dimension along which to reduce.
- * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
- * as singleton dimensions rather than collapsing them
- * @return a tensor containing the median across given axes
- */
-Tensor median(
+Tensor sum(
     const Tensor& input,
-    const std::vector<int>& axes,
+    const std::vector<int>& axes = {},
     bool keepDims = false);
 
 /**
- * Median of tensor over all axes.
- * TODO: benchmark against median(median(median(...)))/maybe avoid device-host
- * memcpy
+ * Mean of tensor over given axes. If axes is left empty, computes the mean
+ * along all axes.
  *
  * @param[in] input the input along which to operate
- * @return a scalar T containing the median
+ * @param[in] axes the dimension along which to reduce. If empty, computes along
+ * all axes
+ * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
+ * as singleton dimensions rather than collapsing them
+ * @return a tensor containing the mean(s)
  */
-template <typename T>
-T median(const Tensor& input);
+Tensor mean(
+    const Tensor& input,
+    const std::vector<int>& axes = {},
+    bool keepDims = false);
 
 /**
- * Variance of an tensor over given axes.
+ * Median of tensor over given axes. If axes is left empty, computes the median
+ * along all axes.
  *
  * @param[in] input the input along which to operate
- * @param[in] axes the dimension along which to reduce.
+ * @param[in] axes the dimension along which to reduce. If empty, computes along
+ * all axes
+ * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
+ * as singleton dimensions rather than collapsing them
+ * @return a tensor containing the median(s)
+ */
+Tensor median(
+    const Tensor& input,
+    const std::vector<int>& axes = {},
+    bool keepDims = false);
+
+/**
+ * Variance of an tensor over given axes. If axes is left empty, computes the
+ * variance along all axes.
+ *
+ * @param[in] input the input along which to operate
+ * @param[in] axes the dimension along which to reduce. If empty, computes along
+ * all axes
  * @param[in] bias defaults false. Compute biased or unbiased variance
  * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
  * as singleton dimensions rather than collapsing them
- * @return a tensor containing the var across given axes
+ * @return a tensor containing the variance(s)
  */
 Tensor var(
     const Tensor& input,
-    const std::vector<int>& axes,
+    const std::vector<int>& axes = {},
     const bool bias = false,
     bool keepDims = false);
 
 /**
- * Variance of an tensor over all axes.
- * TODO: benchmark against var(var(var(...)))/maybe avoid device-host memcpy
+ * Standard deviation of an tensor over given axes. If axes is left empty,
+ * computes the standard deviation along all axes.
  *
  * @param[in] input the input along which to operate
- * @return a scalar T containing the var
- */
-template <typename T>
-T var(const Tensor& input, const bool bias = false);
-
-/**
- * Standard deviation of an tensor over given axes.
- *
- * @param[in] input the input along which to operate
- * @param[in] axes the dimension along which to reduce.
+ * @param[in] axes the dimension along which to reduce. If empty, computes along
+ * all axes
  * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
  * as singleton dimensions rather than collapsing them
- * @return a tensor containing the var across given axes
+ * @return a tensor containing the standard deviation(s)
  */
-Tensor
-std(const Tensor& input, const std::vector<int>& axes, bool keepDims = false);
+Tensor std(
+    const Tensor& input,
+    const std::vector<int>& axes = {},
+    bool keepDims = false);
 
 /**
- * norm of tensor over all axes.
- * TODO: benchmark against norm(norm(norm(...)))/maybe avoid device-host memcpy
+ * Perform Lp-norm computation, reduced over specified dimensions. If axes is
+ * left blank, computes the norm along all dimensions.
  *
- * @param[in] input the input along which to operate
- * @return a double containing the norm
+ * @param[in] input tensor on which the Lp norm is going to be computed.
+ * @param[in] p the p value of the Lp norm.
+ * @param[in] axes dimensions over which the reduction is performed.
+ * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
+ * as singleton dimensions rather than collapsing them
+ * @return a tensor containing the norm(s)
  */
-double norm(const Tensor& input);
+Tensor norm(
+    const Tensor& input,
+    const std::vector<int>& axes = {},
+    double p = 2,
+    bool keepDims = false);
 
 /**
  * Counts the number of nonzero elements in a tensor.
@@ -1249,55 +1265,40 @@ Tensor countNonzero(
 /**
  * Checks for any true values in a tensor along one or more axes; returns true
  * if any exist. If k axes are passed, returns a tensor of size k with
- * truthiness checks along each axis.
+ * truthiness checks along each axis. If axes is left empty, computes the
+ * variance along all axes.
  *
  * @param[in] input the input tensor
- * @param[in] axes the axes along which to check for truthy values
+ * @param[in] axes the axes along which to check for truthy values. If empty,
+ * computes along all axes
  * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
  * as singleton dimensions rather than collapsing them
  * @return a bool tensor containing axis-wise values denoting truthy values
  * along that axis in the input tensor.
  */
-Tensor
-any(const Tensor& input, const std::vector<int>& axes, bool keepDims = false);
-
-/**
- * Checks for any true values in a tensor; returns true if any exist.
- * TODO: benchmark against any(any(any(...)))/maybe avoid
- * device-host memcpy
- *
- * @param[in] the tensor input
- *
- * @return true if the input tensor contains any truthy values, else false
- */
-bool any(const Tensor& input);
+Tensor any(
+    const Tensor& input,
+    const std::vector<int>& axes = {},
+    bool keepDims = false);
 
 /**
  * Checks if all values are true in a tensor along one or more axes; returns
  * true if all are true and false otherwise. If k axes are passed, returns a
- * tensor of size k with all-true checks along each axis.
+ * tensor of size k with all-true checks along each axis. If axes is left empty,
+ * computes the variance along all axes.
  *
  * @param[in] input the input tensor
- * @param[in] axes the axes along which to
+ * @param[in] axes the axes along which to check. If empty, computes along
+ * all axes
  * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
  * as singleton dimensions rather than collapsing them
  * @return a bool tensor containing axis-wise values with true along
  * axes that contain only true values.
  */
-Tensor
-all(const Tensor& input, const std::vector<int>& axes, bool keepDims = false);
-
-/**
- * Checks if all values are true in a tensor along one or more axes; returns
- * true if all are true and false otherwise.
- * TODO: benchmark against all(all(all(...)))/maybe avoid
- * device-host memcpy
- *
- * @param[in] the tensor input
- *
- * @return true if the input tensor contains all truthy values, else false
- */
-bool all(const Tensor& input);
+Tensor all(
+    const Tensor& input,
+    const std::vector<int>& axes = {},
+    bool keepDims = false);
 
 /************************** Utilities ***************************/
 

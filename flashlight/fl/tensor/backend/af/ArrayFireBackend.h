@@ -180,10 +180,8 @@ class ArrayFireBackend : public TensorBackend {
   /************************** Reductions ***************************/
   Tensor amin(const Tensor& input, const std::vector<int>& axes, bool keepDims)
       override;
-  double amin(const Tensor& input) override; // TODO: consolidate w/ above
   Tensor amax(const Tensor& input, const std::vector<int>& axes, bool keepDims)
       override;
-  double amax(const Tensor& input) override; // TODO: consolidate w/ above
   void min(
       Tensor& values,
       Tensor& indices,
@@ -198,37 +196,34 @@ class ArrayFireBackend : public TensorBackend {
       bool keepDims) override;
   Tensor sum(const Tensor& input, const std::vector<int>& axes, bool keepDims)
       override;
-  double sum(const Tensor& input) override; // TODO: consolidate w/ above
   Tensor argmax(const Tensor& input, unsigned axis, bool keepDims) override;
   Tensor argmin(const Tensor& input, unsigned axis, bool keepDims) override;
   Tensor mean(const Tensor& input, const std::vector<int>& axes, bool keepDims)
       override;
-  double mean(const Tensor& input) override; // TODO: consolidate w/ above
   Tensor median(
       const Tensor& input,
       const std::vector<int>& axes,
       bool keepDims) override;
-  double median(const Tensor& input) override; // TODO: consolidate w/ above
   Tensor var(
       const Tensor& input,
       const std::vector<int>& axes,
       const bool bias,
       bool keepDims) override;
-  double var(const Tensor& input, const bool bias)
-      override; // TODO: consolidate w/ above
   Tensor std(const Tensor& input, const std::vector<int>& axes, bool keepDims)
       override;
-  double norm(const Tensor& input) override;
+  Tensor norm(
+      const Tensor& input,
+      const std::vector<int>& axes,
+      double p,
+      bool keepDims) override;
   Tensor countNonzero(
       const Tensor& input,
       const std::vector<int>& axes,
       bool keepDims) override;
   Tensor any(const Tensor& input, const std::vector<int>& axes, bool keepDims)
       override;
-  bool any(const Tensor& input) override;
   Tensor all(const Tensor& input, const std::vector<int>& axes, bool keepDims)
       override;
-  bool all(const Tensor& input) override;
 
   /************************** Utils ***************************/
   void print(const Tensor& tensor) override;
