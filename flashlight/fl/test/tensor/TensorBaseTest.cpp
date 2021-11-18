@@ -690,37 +690,122 @@ TEST(TensorBaseTest, matmul) {
 }
 
 TEST(TensorBaseTest, matmulShapes) {
+  using T = fl::MatrixProperty;
+  // Matrix/vector/scalar multiplies
   ASSERT_EQ(fl::matmul(fl::rand({10}), fl::rand({10})).shape(), Shape({1}));
   ASSERT_EQ(
-      fl::matmul(fl::rand({10}), fl::rand({10}), fl::MatrixProperty::Transpose)
+      fl::matmul(fl::rand({10}), fl::rand({10}), T::Transpose).shape(),
+      Shape({1}));
+  ASSERT_EQ(
+      fl::matmul(fl::rand({10}), fl::rand({10}), T::Transpose, T::Transpose)
           .shape(),
       Shape({1}));
   ASSERT_EQ(
-      fl::matmul(
-          fl::rand({10}),
-          fl::rand({10}),
-          fl::MatrixProperty::Transpose,
-          fl::MatrixProperty::Transpose)
-          .shape(),
-      Shape({1}));
-  ASSERT_EQ(
-      fl::matmul(
-          fl::rand({10}),
-          fl::rand({10}),
-          fl::MatrixProperty::None,
-          fl::MatrixProperty::Transpose)
-          .shape(),
+      fl::matmul(fl::rand({10}), fl::rand({10}), T::None, T::Transpose).shape(),
       Shape({1}));
   ASSERT_EQ(fl::matmul(fl::rand({1, 10}), fl::rand({10})).shape(), Shape({1}));
   ASSERT_EQ(fl::matmul(fl::rand({1}), fl::rand({1, 10})).shape(), Shape({10}));
   ASSERT_EQ(
-      fl::matmul(fl::rand({10}), fl::rand({10}), fl::MatrixProperty::Transpose)
-          .shape(),
+      fl::matmul(fl::rand({10}), fl::rand({10}), T::Transpose).shape(),
       Shape({1}));
   ASSERT_EQ(fl::matmul(fl::rand({3, 4}), fl::rand({4})).shape(), Shape({3}));
   ASSERT_EQ(fl::matmul(fl::rand({5}), fl::rand({5, 7})).shape(), Shape({7}));
   ASSERT_THROW(fl::matmul(fl::rand({1}), fl::rand({10})), std::exception);
   ASSERT_THROW(fl::matmul(fl::rand({3}), fl::rand({5, 7})), std::exception);
+
+  // Batch matrix multiply
+  unsigned M = 10;
+  unsigned K = 12;
+  unsigned N = 14;
+  unsigned b2 = 2;
+  unsigned b3 = 4;
+  ASSERT_EQ(
+      fl::matmul(fl::rand({M, K}), fl::rand({K, N})).shape(), Shape({M, N}));
+  ASSERT_EQ(
+      fl::matmul(fl::rand({M, K, b2}), fl::rand({K, N, b2})).shape(),
+      Shape({M, N, b2}));
+  ASSERT_EQ(
+      fl::matmul(fl::rand({M, K, b2, b3}), fl::rand({K, N, b2, b3})).shape(),
+      Shape({M, N, b2, b3}));
+  ASSERT_EQ(
+      fl::matmul(fl::rand({M, K, b2, b3}), fl::rand({K, N})).shape(),
+      Shape({M, N, b2, b3}));
+  ASSERT_EQ(
+      fl::matmul(fl::rand({M, K}), fl::rand({K, N, b2, b3})).shape(),
+      Shape({M, N, b2, b3}));
+  // Batch matrix multiply with transpose
+  ASSERT_EQ(
+      fl::matmul(fl::rand({K, M}), fl::rand({K, N}), T::Transpose).shape(),
+      Shape({M, N}));
+  ASSERT_EQ(
+      fl::matmul(fl::rand({M, K}), fl::rand({N, K}), T::None, T::Transpose)
+          .shape(),
+      Shape({M, N}));
+  // b2 transpose
+  ASSERT_EQ(
+      fl::matmul(fl::rand({K, M, b2}), fl::rand({K, N}), T::Transpose).shape(),
+      Shape({M, N, b2}));
+  ASSERT_EQ(
+      fl::matmul(fl::rand({M, K, b2}), fl::rand({N, K}), T::None, T::Transpose)
+          .shape(),
+      Shape({M, N, b2}));
+  ASSERT_EQ(
+      fl::matmul(fl::rand({K, M}), fl::rand({K, N, b2}), T::Transpose).shape(),
+      Shape({M, N, b2}));
+  ASSERT_EQ(
+      fl::matmul(fl::rand({M, K}), fl::rand({N, K, b2}), T::None, T::Transpose)
+          .shape(),
+      Shape({M, N, b2}));
+  ASSERT_EQ(
+      fl::matmul(fl::rand({K, M, b2}), fl::rand({K, N, b2}), T::Transpose)
+          .shape(),
+      Shape({M, N, b2}));
+  ASSERT_EQ(
+      fl::matmul(
+          fl::rand({M, K, b2}), fl::rand({N, K, b2}), T::None, T::Transpose)
+          .shape(),
+      Shape({M, N, b2}));
+  // b2, b3 transpose
+  ASSERT_EQ(
+      fl::matmul(fl::rand({K, M, b2, b3}), fl::rand({K, N}), T::Transpose)
+          .shape(),
+      Shape({M, N, b2, b3}));
+  ASSERT_EQ(
+      fl::matmul(
+          fl::rand({M, K, b2, b3}), fl::rand({N, K}), T::None, T::Transpose)
+          .shape(),
+      Shape({M, N, b2, b3}));
+  ASSERT_EQ(
+      fl::matmul(fl::rand({K, M}), fl::rand({K, N, b2, b3}), T::Transpose)
+          .shape(),
+      Shape({M, N, b2, b3}));
+  ASSERT_EQ(
+      fl::matmul(
+          fl::rand({M, K}), fl::rand({N, K, b2, b3}), T::None, T::Transpose)
+          .shape(),
+      Shape({M, N, b2, b3}));
+  ASSERT_EQ(
+      fl::matmul(
+          fl::rand({K, M, b2, b3}), fl::rand({K, N, b2, b3}), T::Transpose)
+          .shape(),
+      Shape({M, N, b2, b3}));
+  ASSERT_EQ(
+      fl::matmul(
+          fl::rand({M, K, b2, b3}),
+          fl::rand({N, K, b2, b3}),
+          T::None,
+          T::Transpose)
+          .shape(),
+      Shape({M, N, b2, b3}));
+
+  ASSERT_EQ(
+      fl::matmul(
+          fl::rand({256, 200, 2}),
+          fl::rand({256, 200, 2}),
+          T::None,
+          T::Transpose)
+          .shape(),
+      Shape({256, 256, 2}));
 }
 
 TEST(TensorBaseTest, sum) {

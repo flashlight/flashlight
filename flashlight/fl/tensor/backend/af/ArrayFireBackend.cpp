@@ -465,10 +465,12 @@ Tensor ArrayFireBackend::argsort(
 #define FL_AF_BINARY_OP_DEF(OP, FUNC)                                          \
   Tensor ArrayFireBackend::FUNC(const Tensor& lhs, const Tensor& rhs) {        \
     if (lhs.ndim() != rhs.ndim()) {                                            \
-      throw std::invalid_argument(                                             \
-          "ArrayFireTensor arguments to operator " + std::string(#OP) + " (" + \
-          std::string(#FUNC) + ") " +                                          \
-          "have a differing number of dimensions.");                           \
+      std::stringstream ss;                                                    \
+      ss << "ArrayFireTensor arguments to operator " << std::string(#OP)       \
+         << " (" << std::string(#FUNC) << ") "                                 \
+         << "have a differing number of dimensions " << lhs.shape() << " and " \
+         << rhs.shape();                                                       \
+      throw std::invalid_argument(ss.str());                                   \
     }                                                                          \
     return toTensor<ArrayFireTensor>(                                          \
         toArray(lhs) OP toArray(rhs), lhs.ndim());                             \

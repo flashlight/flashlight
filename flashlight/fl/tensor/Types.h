@@ -39,6 +39,15 @@ size_t getTypeSize(dtype type);
 const std::string& dtypeToString(dtype type);
 
 /**
+ * Converts string to a Flashlight dtype
+ *
+ * @param[in] string type name as a string.
+ *
+ * @return returns the corresponding Flashlight dtype
+ */
+fl::dtype stringToDtype(const std::string& string);
+
+/**
  * Write a type's string representation to an output stream.
  */
 std::ostream& operator<<(std::ostream& ostr, const dtype& s);
