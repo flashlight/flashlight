@@ -1068,6 +1068,73 @@ TEST(AutogradTest, Reorder) {
   ASSERT_TRUE(jacobianTestImpl(func_reorder, in, 1E-3));
 }
 
+TEST(AutogradTest, matmul) {
+  unsigned M = 10;
+  unsigned K = 12;
+  unsigned N = 14;
+  unsigned b2 = 2;
+  unsigned b3 = 4;
+  auto mk = af::dim4({M, K});
+  auto mkb2 = af::dim4({M, K, b2}); // 1 batch dim
+  auto mkb2b3 = af::dim4({M, K, b2, b3}); // 2 batch dims
+  auto kn = af::dim4({K, N});
+  auto knb2 = af::dim4({K, N, b2}); // 1 batch dim
+  auto knb2b3 = af::dim4({K, N, b2, b3}); // 2 batch dims
+
+  // lhs, rhs
+  std::vector<std::pair<af::dim4, af::dim4>> inputs = {
+      {mk, kn},
+      {mk, knb2},
+      {mk, knb2b3},
+      {mkb2, kn},
+      {mkb2, knb2},
+      {mkb2b3, kn},
+      {mkb2b3, knb2b3}};
+
+  auto trFirstTwoDims = [](const af::dim4& in) -> af::dim4 {
+    af::dim4 out = in;
+    auto out1 = out[1];
+    out[1] = out[0];
+    out[0] = out1;
+    return out;
+  };
+
+  for (auto& pair : inputs) {
+    auto& aShape = pair.first;
+    auto& bShape = pair.second;
+
+    auto a = Variable(af::randu(aShape, af::dtype::f64) * 2 - 1, true);
+    auto b = Variable(af::randu(bShape, af::dtype::f64) * 2 - 1, true);
+
+    auto aT = Variable(af::randu(trFirstTwoDims(aShape), af::dtype::f64), true);
+    auto bT = Variable(af::randu(trFirstTwoDims(bShape), af::dtype::f64), true);
+
+    // matmul
+    auto funcMatmulLhs = [&](Variable& input) { return matmul(input, b); };
+    ASSERT_TRUE(jacobianTestImpl(funcMatmulLhs, a, 1E-6))
+        << "matmul lhs gradient: lhs " << a.dims() << " rhs " << b.dims();
+    auto funcMatmulRhs = [&](Variable& input) { return matmul(a, input); };
+    ASSERT_TRUE(jacobianTestImpl(funcMatmulRhs, b, 1E-6))
+        << "matmul rhs gradient: lhs " << a.dims() << " rhs " << b.dims();
+
+    // matmulTN
+    auto funcMatmulTNLhs = [&](Variable& input) { return matmulTN(input, b); };
+    ASSERT_TRUE(jacobianTestImpl(funcMatmulTNLhs, aT, 1E-6))
+        << "matmulTN lhs gradient: lhs " << a.dims() << " rhs " << b.dims();
+    auto funcMatmulTNRhs = [&](Variable& input) { return matmulTN(aT, input); };
+    ASSERT_TRUE(jacobianTestImpl(funcMatmulTNRhs, b, 1E-6))
+        << "matmulTN rhs gradient: lhs " << a.dims() << " rhs " << b.dims();
+
+    // matmulNT
+    auto funcMatmulNTLhs = [&](Variable& input) { return matmulNT(input, bT); };
+    ASSERT_TRUE(jacobianTestImpl(funcMatmulNTLhs, a, 1E-6))
+        << "matmulTN lhs gradient: lhs " << a.dims() << " rhs " << b.dims();
+    auto funcMatmulNTRhs = [&](Variable& input) { return matmulNT(a, input); };
+    ASSERT_TRUE(jacobianTestImpl(funcMatmulNTRhs, bT, 1E-6))
+        << "matmulTN rhs gradient: lhs " << a.dims() << " rhs " << b.dims();
+  }
+}
+
 TEST(AutogradTest, Glu) {
   auto in = Variable(af::randu(3, 4, 5, af::dtype::f64), true);
   auto func_glu = [&](Variable& input) { return gatedlinearunit(input, 1); };
