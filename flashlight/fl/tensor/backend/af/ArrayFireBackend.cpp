@@ -83,6 +83,10 @@ ArrayFireBackend& ArrayFireBackend::getInstance() {
   return instance;
 }
 
+TensorBackendType ArrayFireBackend::backendType() const {
+  return TensorBackendType::ArrayFire;
+}
+
 /* -------------------------- Compute Functions -------------------------- */
 
 void ArrayFireBackend::sync() {

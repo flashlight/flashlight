@@ -8,10 +8,13 @@
 #pragma once
 
 #include <memory>
+#include <stdexcept>
 #include <type_traits>
+#include <unordered_map>
 #include <utility>
 
 #include "flashlight/fl/tensor/TensorBase.h"
+#include "flashlight/fl/tensor/TensorExtension.h"
 
 namespace fl {
 
@@ -31,6 +34,7 @@ class TensorBackend {
  public:
   TensorBackend() = default;
   virtual ~TensorBackend() = default;
+  virtual TensorBackendType backendType() const = 0;
 
   /* -------------------------- Compute Functions -------------------------- */
   virtual void sync() = 0;
@@ -231,6 +235,31 @@ class TensorBackend {
 
   /************************** Utils ***************************/
   virtual void print(const Tensor& tensor) = 0;
+
+  /********************* Tensor Extensions **********************/
+  template <typename T>
+  T& getExtension() {
+    static_assert(
+        std::is_base_of<TensorExtensionBase, T>::value,
+        "TensorBackend::getExtension<T>() called with type T "
+        "that is not derived from TensorExtensionBase.");
+
+    TensorExtensionType e = T::getExtensionType();
+
+    // If an extension isn't present, instantiate it via its registered
+    // creation function - only do this once per extension.
+    if (extensions_.find(e) == extensions_.end()) {
+      auto& creationFunc =
+          detail::TensorExtensionRegistrar::getInstance()
+              .getTensorExtensionCreationFunc(this->backendType(), e);
+      extensions_.emplace(e, creationFunc());
+    }
+    return *(static_cast<T*>(extensions_.at(e).get()));
+  }
+
+ protected:
+  std::unordered_map<TensorExtensionType, std::unique_ptr<TensorExtensionBase>>
+      extensions_;
 };
 
 /**

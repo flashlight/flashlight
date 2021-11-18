@@ -27,8 +27,8 @@ class ArrayFireBackend : public TensorBackend {
 
  public:
   static ArrayFireBackend& getInstance();
-
   ~ArrayFireBackend() override = default;
+  TensorBackendType backendType() const override;
 
   // No copy or move construction or assignment
   ArrayFireBackend(ArrayFireBackend&&) = delete;
