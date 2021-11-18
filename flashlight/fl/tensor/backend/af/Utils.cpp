@@ -231,7 +231,7 @@ af_source flToAfLocation(Location location) {
 
 af::array fromFlData(
     const Shape& shape,
-    void* ptr,
+    const void* ptr,
     fl::dtype type,
     fl::Location memoryLocation) {
   af::dim4 dims = detail::flToAfDims(shape);
@@ -246,25 +246,26 @@ af::array fromFlData(
   using af::dtype;
   switch (afType) {
     case f32:
-      return af::array(dims, reinterpret_cast<float*>(ptr), loc);
+      return af::array(dims, reinterpret_cast<const float*>(ptr), loc);
     case f64:
-      return af::array(dims, reinterpret_cast<double*>(ptr), loc);
+      return af::array(dims, reinterpret_cast<const double*>(ptr), loc);
     case s32:
-      return af::array(dims, reinterpret_cast<int*>(ptr), loc);
+      return af::array(dims, reinterpret_cast<const int*>(ptr), loc);
     case u32:
-      return af::array(dims, reinterpret_cast<unsigned*>(ptr), loc);
+      return af::array(dims, reinterpret_cast<const unsigned*>(ptr), loc);
     case s64:
-      return af::array(dims, reinterpret_cast<long long*>(ptr), loc);
+      return af::array(dims, reinterpret_cast<const long long*>(ptr), loc);
     case u64:
-      return af::array(dims, reinterpret_cast<unsigned long long*>(ptr), loc);
+      return af::array(
+          dims, reinterpret_cast<const unsigned long long*>(ptr), loc);
     case s16:
-      return af::array(dims, reinterpret_cast<short*>(ptr), loc);
+      return af::array(dims, reinterpret_cast<const short*>(ptr), loc);
     case u16:
-      return af::array(dims, reinterpret_cast<unsigned short*>(ptr), loc);
+      return af::array(dims, reinterpret_cast<const unsigned short*>(ptr), loc);
     case b8:
-      return af::array(dims, reinterpret_cast<char*>(ptr), loc);
+      return af::array(dims, reinterpret_cast<const char*>(ptr), loc);
     case u8:
-      return af::array(dims, reinterpret_cast<unsigned char*>(ptr), loc);
+      return af::array(dims, reinterpret_cast<const unsigned char*>(ptr), loc);
     default:
       throw std::invalid_argument(
           "fromFlData: can't construct ArrayFire array from given type.");

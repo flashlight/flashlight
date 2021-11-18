@@ -142,7 +142,7 @@ class ArrayFireTensor : public TensorAdapterBase {
   ArrayFireTensor(
       const Shape& shape,
       fl::dtype type,
-      void* ptr,
+      const void* ptr,
       Location memoryLocation);
 
   ArrayFireTensor(
