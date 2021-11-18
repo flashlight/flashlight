@@ -117,6 +117,7 @@ TEST(TensorBaseTest, CopyOperators) {
 }
 
 TEST(TensorBaseTest, ConstructFromData) {
+  // Tensor::fromVector
   float val = 3.;
   std::vector<float> vec(100, val);
   fl::Shape s = {10, 10};
@@ -143,6 +144,23 @@ TEST(TensorBaseTest, ConstructFromData) {
   std::vector<float> flat = {0, 1, 2, 3, 4, 5, 6, 7};
   unsigned size = flat.size();
   ASSERT_EQ(fl::Tensor::fromVector(flat).shape(), Shape({size}));
+
+  // Tensor::fromArray
+  constexpr unsigned arrFSize = 5;
+  std::array<float, arrFSize> arrF = {1, 2, 3, 4, 5};
+  auto tArrF = Tensor::fromArray(arrF);
+  ASSERT_EQ(tArrF.type(), fl::dtype::f32);
+  ASSERT_EQ(tArrF.shape(), Shape({arrFSize}));
+  auto tArrD = Tensor::fromArray({arrFSize}, arrF, fl::dtype::f64);
+  ASSERT_EQ(tArrD.type(), fl::dtype::f64);
+
+  constexpr unsigned arrISize = 8;
+  std::array<unsigned, arrISize> arrI = {1, 2, 3, 4, 5, 6, 7, 8};
+  auto tArrI = Tensor::fromArray(arrI);
+  ASSERT_EQ(tArrI.type(), fl::dtype::u32);
+  ASSERT_EQ(tArrI.shape(), Shape({arrISize}));
+  auto tArrIs = Tensor::fromArray({2, 4}, arrI);
+  ASSERT_EQ(tArrIs.shape(), Shape({2, 4}));
 }
 
 TEST(TensorBaseTest, reshape) {
@@ -637,6 +655,8 @@ TEST(TensorBaseTest, host) {
   for (int i = 0; i < a.size(); ++i) {
     ASSERT_EQ(existingBuffer[i], a.flatten()(i).scalar<float>());
   }
+
+  ASSERT_EQ(Tensor().host<void>(), nullptr);
 }
 
 TEST(TensorBaseTest, toHostVector) {
@@ -646,6 +666,8 @@ TEST(TensorBaseTest, toHostVector) {
   for (int i = 0; i < a.size(); ++i) {
     ASSERT_EQ(vec[i], a.flatten()(i).scalar<float>());
   }
+
+  ASSERT_EQ(Tensor().toHostVector<float>().size(), 0);
 }
 
 TEST(TensorBaseTest, matmul) {
@@ -826,7 +848,7 @@ TEST(TensorBaseTest, sum) {
 
 TEST(TensorBaseTest, mean) {
   auto r = fl::rand({8, 7, 6});
-  ASSERT_NEAR(fl::mean(r).scalar<float>(), 0.5, 0.01);
+  ASSERT_NEAR(fl::mean(r).scalar<float>(), 0.5, 0.05);
   ASSERT_EQ(
       fl::mean(r, {0, 1}, /* keepDims = */ true).shape(), Shape({1, 1, 6}));
 

@@ -36,7 +36,7 @@ Tensor::Tensor() : impl_(detail::getDefaultAdapter()) {}
 Tensor::Tensor(
     const Shape& shape,
     fl::dtype type,
-    void* ptr,
+    const void* ptr,
     MemoryLocation memoryLocation)
     : impl_(detail::getDefaultAdapter(shape, type, ptr, memoryLocation)) {}
 
@@ -136,6 +136,9 @@ TensorBackend& Tensor::backend() const {
 #define FL_CREATE_MEMORY_OPS(TYPE)                                          \
   template <>                                                               \
   TYPE Tensor::scalar() const {                                             \
+    if (isEmpty()) {                                                        \
+      throw std::invalid_argument("Tensor::scalar called on empty tensor"); \
+    }                                                                       \
     if (type() != dtype_traits<TYPE>::fl_type) {                            \
       throw std::invalid_argument(                                          \
           "Tensor::scalar: requested type of " +                            \
@@ -149,6 +152,9 @@ TensorBackend& Tensor::backend() const {
                                                                             \
   template <>                                                               \
   TYPE* Tensor::device() const {                                            \
+    if (isEmpty()) {                                                        \
+      return nullptr;                                                       \
+    }                                                                       \
     TYPE* out;                                                              \
     void** addr = reinterpret_cast<void**>(&out);                           \
     impl_->device(addr);                                                    \
@@ -157,6 +163,9 @@ TensorBackend& Tensor::backend() const {
                                                                             \
   template <>                                                               \
   TYPE* Tensor::host() const {                                              \
+    if (isEmpty()) {                                                        \
+      return nullptr;                                                       \
+    }                                                                       \
     TYPE* out = reinterpret_cast<TYPE*>(new char[bytes()]);                 \
     impl_->host(out);                                                       \
     return out;                                                             \
@@ -164,7 +173,9 @@ TensorBackend& Tensor::backend() const {
                                                                             \
   template <>                                                               \
   void Tensor::host(TYPE* ptr) const {                                      \
-    impl_->host(ptr);                                                       \
+    if (!isEmpty()) {                                                       \
+      impl_->host(ptr);                                                     \
+    }                                                                       \
   }
 FL_CREATE_MEMORY_OPS(int);
 FL_CREATE_MEMORY_OPS(unsigned);
@@ -181,6 +192,9 @@ FL_CREATE_MEMORY_OPS(unsigned short);
 // void specializations
 template <>
 void* Tensor::device() const {
+  if (isEmpty()) {
+    return nullptr;
+  }
   void* out;
   impl_->device(&out);
   return out;
@@ -188,6 +202,9 @@ void* Tensor::device() const {
 
 template <>
 void* Tensor::host() const {
+  if (isEmpty()) {
+    return nullptr;
+  }
   void* out = reinterpret_cast<void*>(new char[bytes()]);
   impl_->host(out);
   return out;
