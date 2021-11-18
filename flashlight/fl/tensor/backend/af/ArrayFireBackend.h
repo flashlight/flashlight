@@ -196,8 +196,9 @@ class ArrayFireBackend : public TensorBackend {
       bool keepDims) override;
   Tensor sum(const Tensor& input, const std::vector<int>& axes, bool keepDims)
       override;
-  Tensor argmax(const Tensor& input, unsigned axis, bool keepDims) override;
-  Tensor argmin(const Tensor& input, unsigned axis, bool keepDims) override;
+  Tensor cumsum(const Tensor& input, const unsigned axis) override;
+  Tensor argmax(const Tensor& input, const unsigned axis, bool keepDims) override;
+  Tensor argmin(const Tensor& input, const unsigned axis, bool keepDims) override;
   Tensor mean(const Tensor& input, const std::vector<int>& axes, bool keepDims)
       override;
   Tensor median(

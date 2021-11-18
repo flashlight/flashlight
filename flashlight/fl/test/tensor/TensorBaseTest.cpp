@@ -596,6 +596,22 @@ TEST(TensorBaseTest, ceil) {
   ASSERT_TRUE(allClose((a >= 1).astype(fl::dtype::f32), fl::ceil(a) - 1));
 }
 
+TEST(TensorBaseTest, cumsum) {
+  int max = 30;
+  auto a = fl::tile(fl::arange(1, max), {1, 2});
+
+  auto ref = fl::arange(1, max);
+  for (int i = 1; i < max - 1; ++i) {
+    ref += fl::concatenate({fl::full({i}, 0), fl::arange(1, max - i)});
+  }
+
+  ASSERT_TRUE(allClose(fl::cumsum(a, 0), fl::tile(ref, {1, 2})));
+  ASSERT_TRUE(allClose(
+      fl::cumsum(a, 1),
+      fl::concatenate(
+          {fl::arange(1, max), 2 * fl::arange(1, max)}, /* axis = */ 1)));
+}
+
 TEST(TensorBaseTest, sigmoid) {
   auto a = fl::rand({10, 10});
   ASSERT_TRUE(allClose(1 / (1 + fl::exp(-a)), fl::sigmoid(a)));

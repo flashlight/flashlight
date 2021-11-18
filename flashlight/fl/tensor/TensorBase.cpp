@@ -652,11 +652,17 @@ Tensor sum(
   return input.backend().sum(input, axes, keepDims);
 }
 
-Tensor argmax(const Tensor& input, unsigned axis, bool keepDims /* = false */) {
+Tensor cumsum(const Tensor& input, const unsigned axis) {
+  return input.backend().cumsum(input, axis);
+}
+
+Tensor
+argmax(const Tensor& input, const unsigned axis, bool keepDims /* = false */) {
   return input.backend().argmax(input, axis, keepDims);
 }
 
-Tensor argmin(const Tensor& input, unsigned axis, bool keepDims /* = false */) {
+Tensor
+argmin(const Tensor& input, const unsigned axis, bool keepDims /* = false */) {
   return input.backend().argmin(input, axis, keepDims);
 }
 

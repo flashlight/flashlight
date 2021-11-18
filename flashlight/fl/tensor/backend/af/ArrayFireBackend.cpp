@@ -652,8 +652,15 @@ Tensor ArrayFireBackend::sum(
   }
 }
 
-Tensor
-ArrayFireBackend::argmax(const Tensor& input, unsigned axis, bool keepDims) {
+Tensor ArrayFireBackend::cumsum(const Tensor& input, const unsigned axis) {
+  return toTensor<ArrayFireTensor>(
+      af::accum(toArray(input), axis), /* numDims = */ input.ndim());
+}
+
+Tensor ArrayFireBackend::argmax(
+    const Tensor& input,
+    const unsigned axis,
+    bool keepDims) {
   af::array tmpVal, indices;
   af::max(tmpVal, indices, toArray(input), axis);
   return toTensor<ArrayFireTensor>(
@@ -661,8 +668,10 @@ ArrayFireBackend::argmax(const Tensor& input, unsigned axis, bool keepDims) {
       getReducedNumDims(input.ndim(), 1, keepDims));
 }
 
-Tensor
-ArrayFireBackend::argmin(const Tensor& input, unsigned axis, bool keepDims) {
+Tensor ArrayFireBackend::argmin(
+    const Tensor& input,
+    const unsigned axis,
+    bool keepDims) {
   af::array tmpVal, indices;
   af::min(tmpVal, indices, toArray(input), axis);
   return toTensor<ArrayFireTensor>(

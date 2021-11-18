@@ -1157,7 +1157,7 @@ void max(
  * as singleton dimensions rather than collapsing them
  * @return a tensor containing the indices of the max values along each axis
  */
-Tensor argmax(const Tensor& input, unsigned axis, bool keepDims = false);
+Tensor argmax(const Tensor& input, const unsigned axis, bool keepDims = false);
 
 /**
  * Return the indices of the minimum values along an axis.
@@ -1168,7 +1168,7 @@ Tensor argmax(const Tensor& input, unsigned axis, bool keepDims = false);
  * as singleton dimensions rather than collapsing them
  * @return a tensor containing the indices of the max values along each axis
  */
-Tensor argmin(const Tensor& input, unsigned axis, bool keepDims = false);
+Tensor argmin(const Tensor& input, const unsigned axis, bool keepDims = false);
 
 /**
  * Sum of tensor over given axes. If axes is left empty, computes the sum along
@@ -1185,6 +1185,16 @@ Tensor sum(
     const Tensor& input,
     const std::vector<int>& axes = {},
     bool keepDims = false);
+
+/**
+ * Compute the cumulative sum (or the prefix sum, scan, or inclusive scan) of a
+ * tensor along a given axis.
+ *
+ * @param[in] input the input tensor
+ * @param[in] axis the axis along which to accumulate
+ * @return a tensor of the same shape containing the accumulated sum
+ */
+Tensor cumsum(const Tensor& input, const unsigned axis);
 
 /**
  * Mean of tensor over given axes. If axes is left empty, computes the mean
