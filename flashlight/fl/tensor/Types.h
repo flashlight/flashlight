@@ -61,7 +61,7 @@ FL_TYPE_TRAIT(float, dtype::f32, dtype::f32, "float");
 FL_TYPE_TRAIT(double, dtype::f64, dtype::f32, "double");
 FL_TYPE_TRAIT(int, dtype::s32, dtype::s32, "int");
 FL_TYPE_TRAIT(unsigned, dtype::u32, dtype::u32, "unsigned int");
-FL_TYPE_TRAIT(char, dtype::s32, dtype::s32, "char");
+FL_TYPE_TRAIT(char, dtype::b8, dtype::s32, "char");
 FL_TYPE_TRAIT(unsigned char, dtype::u8, dtype::u32, "unsigned char");
 FL_TYPE_TRAIT(long, dtype::s32, dtype::s32, "long int");
 FL_TYPE_TRAIT(unsigned long, dtype::u32, dtype::u32, "unsigned long");
