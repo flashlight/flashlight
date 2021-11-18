@@ -657,6 +657,20 @@ TEST(TensorBaseTest, sigmoid) {
   ASSERT_TRUE(allClose(1 / (1 + fl::exp(-a)), fl::sigmoid(a)));
 }
 
+TEST(TensorBaseTest, flip) {
+  const unsigned high = 10;
+  auto a = fl::arange({high});
+  auto flipped = fl::flip(a, /* dim = */ 0);
+  a *= -1;
+  a += (high - 1);
+  ASSERT_TRUE(allClose(a, flipped));
+
+  auto b = fl::arange({high, high}, /* seqDim = */ 0);
+  ASSERT_TRUE(allClose(fl::flip(b, 1), b));
+  auto c = fl::arange({high, high}, /* seqDim = */ 1);
+  ASSERT_TRUE(allClose(fl::flip(c, 0), c));
+}
+
 TEST(TensorBaseTest, scalar) {
   // TODO: exhaustively test all types + fixture
   float val = 8.47;
