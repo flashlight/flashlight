@@ -48,22 +48,23 @@ class TensorBackend {
    * For operator documentation and expected behavior, see TensorBase.h.
    */
   /******************** Tensor Creation Functions ********************/
-#define FL_FULL_FUN_BACKEND_DEF(TYPE) \
+#define FL_CREATE_FUN_LITERAL_BACKEND_DECL(TYPE)               \
+  virtual Tensor fromScalar(TYPE value, const dtype type) = 0; \
   virtual Tensor full(const Shape& dims, TYPE value, const dtype type) = 0;
-  FL_FULL_FUN_BACKEND_DEF(const double&);
-  FL_FULL_FUN_BACKEND_DEF(const float&);
-  FL_FULL_FUN_BACKEND_DEF(const int&);
-  FL_FULL_FUN_BACKEND_DEF(const unsigned&);
-  FL_FULL_FUN_BACKEND_DEF(const char&);
-  FL_FULL_FUN_BACKEND_DEF(const unsigned char&);
-  FL_FULL_FUN_BACKEND_DEF(const long&);
-  FL_FULL_FUN_BACKEND_DEF(const unsigned long&);
-  FL_FULL_FUN_BACKEND_DEF(const long long&);
-  FL_FULL_FUN_BACKEND_DEF(const unsigned long long&);
-  FL_FULL_FUN_BACKEND_DEF(const bool&);
-  FL_FULL_FUN_BACKEND_DEF(const short&);
-  FL_FULL_FUN_BACKEND_DEF(const unsigned short&);
-#undef FL_FULL_FUN_BACKEND_DEF
+  FL_CREATE_FUN_LITERAL_BACKEND_DECL(const double&);
+  FL_CREATE_FUN_LITERAL_BACKEND_DECL(const float&);
+  FL_CREATE_FUN_LITERAL_BACKEND_DECL(const int&);
+  FL_CREATE_FUN_LITERAL_BACKEND_DECL(const unsigned&);
+  FL_CREATE_FUN_LITERAL_BACKEND_DECL(const char&);
+  FL_CREATE_FUN_LITERAL_BACKEND_DECL(const unsigned char&);
+  FL_CREATE_FUN_LITERAL_BACKEND_DECL(const long&);
+  FL_CREATE_FUN_LITERAL_BACKEND_DECL(const unsigned long&);
+  FL_CREATE_FUN_LITERAL_BACKEND_DECL(const long long&);
+  FL_CREATE_FUN_LITERAL_BACKEND_DECL(const unsigned long long&);
+  FL_CREATE_FUN_LITERAL_BACKEND_DECL(const bool&);
+  FL_CREATE_FUN_LITERAL_BACKEND_DECL(const short&);
+  FL_CREATE_FUN_LITERAL_BACKEND_DECL(const unsigned short&);
+#undef FL_CREATE_FUN_LITERAL_BACKEND_DECL
 
   virtual Tensor identity(const Dim dim, const dtype type) = 0;
   virtual Tensor

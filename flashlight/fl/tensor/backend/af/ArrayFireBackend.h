@@ -50,22 +50,23 @@ class ArrayFireBackend : public TensorBackend {
 
   /* --------------------------- Tensor Operators --------------------------- */
   /******************** Tensor Creation Functions ********************/
-#define FL_FULL_FUN_BACKEND_DEF(TYPE) \
+#define AF_BACKEND_CREATE_FUN_LITERAL_DECL(TYPE)            \
+  Tensor fromScalar(TYPE value, const dtype type) override; \
   Tensor full(const Shape& dims, TYPE value, const dtype type) override;
-  FL_FULL_FUN_BACKEND_DEF(const double&);
-  FL_FULL_FUN_BACKEND_DEF(const float&);
-  FL_FULL_FUN_BACKEND_DEF(const int&);
-  FL_FULL_FUN_BACKEND_DEF(const unsigned&);
-  FL_FULL_FUN_BACKEND_DEF(const char&);
-  FL_FULL_FUN_BACKEND_DEF(const unsigned char&);
-  FL_FULL_FUN_BACKEND_DEF(const long&);
-  FL_FULL_FUN_BACKEND_DEF(const unsigned long&);
-  FL_FULL_FUN_BACKEND_DEF(const long long&);
-  FL_FULL_FUN_BACKEND_DEF(const unsigned long long&);
-  FL_FULL_FUN_BACKEND_DEF(const bool&);
-  FL_FULL_FUN_BACKEND_DEF(const short&);
-  FL_FULL_FUN_BACKEND_DEF(const unsigned short&);
-#undef FL_FULL_FUN_BACKEND_DEF
+  AF_BACKEND_CREATE_FUN_LITERAL_DECL(const double&);
+  AF_BACKEND_CREATE_FUN_LITERAL_DECL(const float&);
+  AF_BACKEND_CREATE_FUN_LITERAL_DECL(const int&);
+  AF_BACKEND_CREATE_FUN_LITERAL_DECL(const unsigned&);
+  AF_BACKEND_CREATE_FUN_LITERAL_DECL(const char&);
+  AF_BACKEND_CREATE_FUN_LITERAL_DECL(const unsigned char&);
+  AF_BACKEND_CREATE_FUN_LITERAL_DECL(const long&);
+  AF_BACKEND_CREATE_FUN_LITERAL_DECL(const unsigned long&);
+  AF_BACKEND_CREATE_FUN_LITERAL_DECL(const long long&);
+  AF_BACKEND_CREATE_FUN_LITERAL_DECL(const unsigned long long&);
+  AF_BACKEND_CREATE_FUN_LITERAL_DECL(const bool&);
+  AF_BACKEND_CREATE_FUN_LITERAL_DECL(const short&);
+  AF_BACKEND_CREATE_FUN_LITERAL_DECL(const unsigned short&);
+#undef AF_BACKEND_CREATE_FUN_LITERAL_DECL
 
   Tensor identity(const Dim dim, const dtype type) override;
   Tensor arange(const Shape& shape, const Dim seqDim, const dtype type)
@@ -198,8 +199,10 @@ class ArrayFireBackend : public TensorBackend {
   Tensor sum(const Tensor& input, const std::vector<int>& axes, bool keepDims)
       override;
   Tensor cumsum(const Tensor& input, const unsigned axis) override;
-  Tensor argmax(const Tensor& input, const unsigned axis, bool keepDims) override;
-  Tensor argmin(const Tensor& input, const unsigned axis, bool keepDims) override;
+  Tensor argmax(const Tensor& input, const unsigned axis, bool keepDims)
+      override;
+  Tensor argmin(const Tensor& input, const unsigned axis, bool keepDims)
+      override;
   Tensor mean(const Tensor& input, const std::vector<int>& axes, bool keepDims)
       override;
   Tensor median(

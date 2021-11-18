@@ -93,20 +93,25 @@ class ArrayFireTensor : public TensorAdapterBase {
   explicit ArrayFireTensor(std::shared_ptr<af::array> arr, unsigned numDims);
 
   /*
-   * A Flashlight shape that mirrors ArrayFire dims.
+   * A Flashlight Shape that mirrors ArrayFire dims.
    *
    * NOTE: this shape is only updated on calls to ArrayFireTensor::shape()
    * so as to satisfy API requirements as per returning a const reference.
    * af::array::dims() should be used for internal computation where
    * shape/dimensions are needed.
+   *
+   * The default shape is the empty Tensor 0.
    */
   Shape shape_;
 
-  /**
+  /*
    * The number of dimensions in this ArrayFire tensor that are "expected" per
    * interoperability with other tensors. Because ArrayFire doesn't distinguish
    * between singleton dimensions that are defaults and those that are
    * explicitly specified, this must be explicitly tracked.
+   *
+   * The fl::Tensor default Tensor shape is {0} - the default number of numDims
+   * is thus 1. Scalars have numDims == 0;
    */
   unsigned numDims_{1};
 
@@ -124,7 +129,7 @@ class ArrayFireTensor : public TensorAdapterBase {
    * @param[in] array construct a tensor from an ArrayFire array rvalue
    * reference.
    */
-  explicit ArrayFireTensor(af::array&& array, unsigned numDims);
+  explicit ArrayFireTensor(af::array&& array, const unsigned numDims);
 
   /**
    * Default initialization - empty ArrayFire array and empty shape.
