@@ -111,15 +111,17 @@ void afToFlDims(const af::dim4& d, const unsigned numDims, Shape& s) {
 
   auto& storage = s.get();
 
-  if (numDims == 0) {
-    storage.resize(0);
+  // numdims constraint is enforced by the internal API per condenseDims
+  if (numDims == 1 && d.elements() == 0) {
+    // Empty tensor
+    storage.resize(1);
+    s[0] = 0;
     return;
   }
 
-  // Scalars have shape {1}
+  // numDims == 0 --> scalar tensor
   if (numDims == 0) {
-    storage.resize(1);
-    s[0] = 1;
+    storage.resize(0);
     return;
   }
 

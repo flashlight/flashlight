@@ -46,7 +46,8 @@ TEST(ShapeTest, ndim) {
 }
 
 TEST(ShapeTest, elements) {
-  ASSERT_EQ(Shape().elements(), 0);
+  ASSERT_EQ(Shape().elements(), 1); // empty shape = scalar
+  ASSERT_EQ(Shape({0}).elements(), 0); // empty tensor
   ASSERT_EQ(Shape({1, 1, 1, 1}).elements(), 1);
   ASSERT_EQ(Shape({1, 2, 3, 4}).elements(), 24);
   ASSERT_EQ(Shape({1, 2, 3, 0}).elements(), 0);
