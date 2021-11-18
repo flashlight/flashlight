@@ -97,6 +97,7 @@ class ArrayFireBackend : public TensorBackend {
   Tensor tanh(const Tensor& tensor) override;
   Tensor floor(const Tensor& tensor) override;
   Tensor ceil(const Tensor& tensor) override;
+  Tensor rint(const Tensor& tensor) override;
   Tensor absolute(const Tensor& tensor) override;
   Tensor sigmoid(const Tensor& tensor) override;
   Tensor erf(const Tensor& tensor) override;

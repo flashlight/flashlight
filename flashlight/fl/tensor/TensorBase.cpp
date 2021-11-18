@@ -415,6 +415,10 @@ Tensor ceil(const Tensor& tensor) {
   return tensor.backend().ceil(tensor);
 }
 
+Tensor rint(const Tensor& tensor) {
+  return tensor.backend().rint(tensor);
+}
+
 Tensor absolute(const Tensor& tensor) {
   return tensor.backend().absolute(tensor);
 }
