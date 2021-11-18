@@ -29,6 +29,8 @@ TEST(TensorBaseTest, DefaultConstruction) {
   Tensor u({1, 2, 3});
   ASSERT_EQ(u.shape(), Shape({1, 2, 3}));
   ASSERT_EQ(u.type(), fl::dtype::f32);
+  Tensor x({0, 3});
+  ASSERT_EQ(x.shape(), Shape({0, 3}));
 
   Tensor q(fl::dtype::f64);
   ASSERT_EQ(q.shape(), Shape());
@@ -166,6 +168,7 @@ TEST(TensorBaseTest, transpose) {
   auto a = fl::rand({4});
   ASSERT_TRUE(allClose(fl::transpose(a), a));
 
+  ASSERT_EQ(fl::transpose(fl::rand({5, 6, 7})).shape(), Shape({7, 6, 5}));
   ASSERT_EQ(fl::transpose(fl::rand({5, 6, 1, 7})).shape(), Shape({7, 1, 6, 5}));
   ASSERT_EQ(fl::transpose(fl::rand({1, 1})).shape(), Shape({1, 1}));
   ASSERT_EQ(

@@ -96,9 +96,7 @@ af::dim4 flToAfDims(const Shape& shape) {
     throw std::invalid_argument(
         "flToAfDims: ArrayFire shapes can't be more than 4 dimensions");
   }
-  if (shape.elements() == 0) {
-    return af::dim4(0);
-  }
+
   af::dim4 out(1, 1, 1, 1);
   for (size_t i = 0; i < shape.ndim(); ++i) {
     out.dims[i] = shape.dim(i);
@@ -112,7 +110,8 @@ void afToFlDims(const af::dim4& d, const unsigned numDims, Shape& s) {
   }
 
   auto& storage = s.get();
-  if (d.elements() == 0) {
+
+  if (numDims == 0) {
     storage.resize(0);
     return;
   }

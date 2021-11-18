@@ -290,6 +290,7 @@ Tensor ArrayFireTensor::index(const std::vector<Index>& indices) {
       }
     }
   }
+  newNumDims = std::max(newNumDims, 1u); // can never index to a 0 dim tensor
 
   return fl::Tensor(std::unique_ptr<ArrayFireTensor>(new ArrayFireTensor(
       arrayHandle_, std::move(afIndices), std::move(indexTypes), newNumDims)));
