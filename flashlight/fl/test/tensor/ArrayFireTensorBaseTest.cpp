@@ -46,11 +46,16 @@ bool allClose(
 namespace fl {
 
 TEST(ArrayFireTensorBaseTest, ArrayFireShapeInterop) {
+  ASSERT_EQ(detail::afToFlDims(af::dim4(), 0), Shape({}));
+  ASSERT_EQ(detail::afToFlDims(af::dim4(0, 5), 2), Shape({0, 5}));
+  ASSERT_EQ(detail::afToFlDims(af::dim4(1, 0, 2), 3), Shape({1, 0, 2}));
+  ASSERT_EQ(detail::afToFlDims(af::dim4(0, 1, 1, 1), 4), Shape({0, 1, 1, 1}));
+
+  using namespace fl::detail;
   auto dimsEq = [](const af::dim4& d, const Shape& s) {
     return detail::afToFlDims(d, s.ndim()) == s;
   };
 
-  ASSERT_TRUE(dimsEq(af::dim4(), {}));
   ASSERT_TRUE(dimsEq(af::dim4(3), {3})); // not 3, 1, 1, 1
   ASSERT_TRUE(dimsEq(af::dim4(3, 2), {3, 2})); // not 3, 2, 1, 1
   ASSERT_TRUE(dimsEq(af::dim4(3, 1), {3}));
@@ -59,7 +64,6 @@ TEST(ArrayFireTensorBaseTest, ArrayFireShapeInterop) {
   ASSERT_TRUE(dimsEq(af::dim4(1, 3, 2), {1, 3, 2}));
   ASSERT_TRUE(dimsEq(af::dim4(1), {1}));
   ASSERT_TRUE(dimsEq(af::dim4(1, 1, 1), {1}));
-  ASSERT_TRUE(dimsEq(af::dim4(0, 1, 1, 1), {}));
 }
 
 } // namespace fl
