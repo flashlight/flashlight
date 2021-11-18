@@ -63,9 +63,11 @@ bool Shape::operator!=(const std::initializer_list<Dim>& other) const {
 }
 
 std::ostream& operator<<(std::ostream& ostr, const Shape& s) {
+  ostr << "(";
   for (size_t i = 0; i < s.ndim(); ++i) {
-    ostr << s.dim(i) << " ";
+    ostr << s.dim(i) << (i == s.ndim() - 1 ? "" : ", ");
   }
+  ostr << ")";
   return ostr;
 }
 

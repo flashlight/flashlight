@@ -46,7 +46,7 @@ unsigned getReducedNumDims(unsigned inSize, unsigned axisSize, bool keepDims) {
   if (keepDims) {
     return inSize;
   } else {
-    return inSize - axisSize;
+    return std::max(inSize - axisSize, 1u);
   }
 }
 
@@ -169,9 +169,17 @@ Tensor ArrayFireBackend::transpose(
     return toTensor<ArrayFireTensor>(
         af::transpose(toArray(tensor)), tensor.ndim());
   } else if (axes.ndim() == 0) {
+    std::vector<Dim> dims(AF_MAX_DIMS);
+    std::iota(std::begin(dims), std::end(dims), 0);
+    // Compute the reversed dimensions for as many ndims as are in the input
+    for (unsigned i = 0; i < tensor.ndim(); ++i) {
+      dims[i] = tensor.ndim() - 1 - i;
+    }
+
     // flip all dimensions
     return toTensor<ArrayFireTensor>(
-        af::reorder(toArray(tensor), 3, 2, 1, 0), tensor.ndim());
+        af::reorder(toArray(tensor), dims[0], dims[1], dims[2], dims[3]),
+        tensor.ndim());
   } else {
     if (axes.ndim() > AF_MAX_DIMS) {
       throw std::invalid_argument(

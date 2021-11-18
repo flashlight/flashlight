@@ -34,6 +34,7 @@ TEST(ShapeTest, ManyDims) {
 
 TEST(ShapeTest, ndim) {
   ASSERT_EQ(Shape().ndim(), 0);
+  ASSERT_EQ(Shape({1, 0, 1}).ndim(), 3);
   ASSERT_EQ(Shape({1, 1, 1}).ndim(), 3);
   ASSERT_EQ(Shape({5, 2, 3}).ndim(), 3);
   ASSERT_EQ(Shape({1, 2, 3, 6}).ndim(), 4);
