@@ -181,10 +181,8 @@ class TensorBackend {
   /************************** Reductions ***************************/
   virtual Tensor
   amin(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
-  virtual double amin(const Tensor& input) = 0; // TODO: consoildate w/ above
   virtual Tensor
   amax(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
-  virtual double amax(const Tensor& input) = 0; // TODO: consoildate w/ above
   virtual void min(
       Tensor& values,
       Tensor& indices,
@@ -199,36 +197,32 @@ class TensorBackend {
       bool keepDims) = 0;
   virtual Tensor
   sum(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
-  virtual double sum(const Tensor& input) = 0; // TODO: consolidate w/ above
   virtual Tensor argmax(const Tensor& input, unsigned axis, bool keepDims) = 0;
   virtual Tensor argmin(const Tensor& input, unsigned axis, bool keepDims) = 0;
   virtual Tensor
   mean(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
-  virtual double mean(const Tensor& input) = 0; // TODO: consolidate w/ above
   virtual Tensor
   median(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
-  virtual double median(const Tensor& input) = 0; // TODO: consolidate w/ above
   virtual Tensor var(
       const Tensor& input,
       const std::vector<int>& axes,
       bool bias,
       bool keepDims) = 0;
-  virtual double var(
-      const Tensor& input,
-      bool bias) = 0; // TODO: consolidate w/ above
   virtual Tensor
   std(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
-  virtual double norm(const Tensor& input) = 0; // TODO: consolidate w/ above
+  virtual Tensor norm(
+      const Tensor& input,
+      const std::vector<int>& axes,
+      double p,
+      bool keepDims) = 0;
   virtual Tensor countNonzero(
       const Tensor& input,
       const std::vector<int>& axes,
       bool keepDims) = 0;
   virtual Tensor
   any(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
-  virtual bool any(const Tensor& input) = 0; // TODO: consolidate w/ above
   virtual Tensor
   all(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
-  virtual bool all(const Tensor& input) = 0; // TODO: consolidate w/ above
 
   /************************** Utils ***************************/
   virtual void print(const Tensor& tensor) = 0;
@@ -239,7 +233,8 @@ class TensorBackend {
  *
  * The resulting tensor will have the same shape, type, and contents.
  *
- * @param[in]
+ * @param[in] in a tensor rvalue reference
+ * @return a tensor with backend type specified by the template
  */
 template <typename T>
 Tensor toTensorType(Tensor&& in) {
@@ -247,6 +242,8 @@ Tensor toTensorType(Tensor&& in) {
       std::is_base_of<TensorAdapterBase, T>::value,
       "toTensorType: T must be a derived type of TensorAdapterBase");
   // Fast path - backend is the same
+  // TODO: make fl::TensorBackendType a static constexpr on the class as well so
+  // as to not need to instantiate a backend to check the type
   if (in.backendType() == T().backendType()) {
     return std::move(in);
   }
@@ -256,6 +253,7 @@ Tensor toTensorType(Tensor&& in) {
   return Tensor(std::make_unique<T>(
       in.shape(),
       in.type(),
+      // TODO: use the void specialization instead of a reinterpret cast
       reinterpret_cast<void*>(in.device<char>()), // expects contiguous memory
       in.location()));
 }
