@@ -197,8 +197,11 @@ class TensorBackend {
       bool keepDims) = 0;
   virtual Tensor
   sum(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
-  virtual Tensor argmax(const Tensor& input, unsigned axis, bool keepDims) = 0;
-  virtual Tensor argmin(const Tensor& input, unsigned axis, bool keepDims) = 0;
+  virtual Tensor cumsum(const Tensor& input, const unsigned axis) = 0;
+  virtual Tensor
+  argmax(const Tensor& input, const unsigned axis, bool keepDims) = 0;
+  virtual Tensor
+  argmin(const Tensor& input, const unsigned axis, bool keepDims) = 0;
   virtual Tensor
   mean(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
   virtual Tensor
