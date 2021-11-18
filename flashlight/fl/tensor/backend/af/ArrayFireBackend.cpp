@@ -372,6 +372,11 @@ Tensor ArrayFireBackend::erf(const Tensor& tensor) {
   return toTensor<ArrayFireTensor>(af::erf(toArray(tensor)), tensor.ndim());
 }
 
+Tensor ArrayFireBackend::flip(const Tensor& tensor, const unsigned dim) {
+  return toTensor<ArrayFireTensor>(
+      af::flip(toArray(tensor), dim), tensor.ndim());
+}
+
 Tensor ArrayFireBackend::clip(
     const Tensor& tensor,
     const Tensor& low,

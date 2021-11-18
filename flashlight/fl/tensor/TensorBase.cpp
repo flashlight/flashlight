@@ -438,6 +438,10 @@ Tensor erf(const Tensor& tensor) {
   return tensor.backend().erf(tensor);
 }
 
+Tensor flip(const Tensor& tensor, const unsigned dim) {
+  return tensor.backend().flip(tensor, dim);
+}
+
 Tensor clip(const Tensor& tensor, const Tensor& low, const Tensor& high) {
   FL_TENSOR_BACKENDS_MATCH_CHECK(tensor, low, high);
   return tensor.backend().clip(tensor, low, high);
