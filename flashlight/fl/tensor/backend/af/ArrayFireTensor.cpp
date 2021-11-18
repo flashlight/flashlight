@@ -13,6 +13,7 @@
 
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/TensorBase.h"
+#include "flashlight/fl/tensor/backend/af/AdvancedIndex.h"
 #include "flashlight/fl/tensor/backend/af/ArrayFireBackend.h"
 #include "flashlight/fl/tensor/backend/af/Utils.h"
 
@@ -461,11 +462,11 @@ af::array ArrayFireTensor::adjustInPlaceOperandDims(const Tensor& operand) {
   ASSIGN_OP_LITERALS(FUN, AF_OP)
 
 // (function name, AF op). Use build-in AF operators.
-ASSIGN_OP(inPlaceAdd, +=);
 ASSIGN_OP(inPlaceSubtract, -=);
 ASSIGN_OP(inPlaceMultiply, *=);
 ASSIGN_OP(inPlaceDivide, /=);
-// Assignment operator
+
+// Instantiate definitions for type literals - those remain unchanged:
 ASSIGN_OP_LITERALS(assign, =);
 void ArrayFireTensor::assign(const Tensor& tensor) {
   std::visit(
@@ -483,7 +484,81 @@ void ArrayFireTensor::assign(const Tensor& tensor) {
       },
       handle_);
 }
+
+/*
+ * A custom advanced index kernel is used for the in-place-add operator.
+ *
+ * If performing someTensor(index1, ...) += anotherTensor, call this kernel, as
+ * it properly-handles the case of repeated indices.
+ */
+// Instantiate definitions for type literals - those remain unchanged:
+ASSIGN_OP_LITERALS(inPlaceAdd, +=);
+// Special tensor op:
+void ArrayFireTensor::inPlaceAdd(const Tensor& tensor) {
+  // First, check if this a tensor that's going to be lazily indexed. Don't
+  // implicitly cast to an array, else that will trigger indexing.
+  // Carefully get the handle types without calling type(), which will lazily
+  // evaluate indexing
+  af::dtype operandHandleType =
+      tensor.getAdapter<ArrayFireTensor>().afHandleType();
+  af::dtype handleType = arrayHandle_->type();
+  // not all types are compatible with the kernel
+  bool typeIncompatible =
+      (handleType != af::dtype::f32 && handleType != af::dtype::f16) ||
+      (operandHandleType != af::dtype::f32 &&
+       operandHandleType != af::dtype::f16);
+  if (!std::holds_alternative<IndexedArrayComponent>(handle_) ||
+      typeIncompatible) {
+    // Call the regular af::array::operator+=
+    std::visit(
+        [&tensor, this](auto&& arr) {
+          arr.get(*this) += this->adjustInPlaceOperandDims(tensor);
+        },
+        handle_);
+    return;
+  } else {
+    af::dim4 inDims = arrayHandle_->dims();
+    af::dim4 idxStart;
+    af::dim4 idxEnd;
+    std::vector<af::array> idxArr(4);
+    auto idxFunc = [&idxStart, &idxEnd, &idxArr, &inDims](
+                       const af::index& index, int pos) {
+      if (index.isspan()) {
+        idxStart[pos] = 0;
+        idxEnd[pos] = inDims[pos];
+      } else {
+        const auto& idxSeq = index.get();
+        if (idxSeq.isSeq) {
+          // arrayfire uses inclusive last dimension, we use exclusive
+          idxStart[pos] = idxSeq.idx.seq.begin;
+          idxEnd[pos] = idxSeq.idx.seq.end + 1;
+        } else {
+          af_array arr;
+          af_retain_array(&arr, idxSeq.idx.arr);
+          idxArr[pos] = af::array(arr);
+          idxStart[pos] = 0;
+          idxEnd[pos] = idxArr[pos].dims(0);
+        }
+      }
+    };
+
+    unsigned i = 0;
+    for (; i < indices_.value().size(); ++i) {
+      idxFunc(indices_.value()[i], i);
+    }
+    // The kernel needs to be padded with spans for remaining dims
+    for (; i < AF_MAX_DIMS; ++i) {
+      idxFunc(af::span, i);
+    }
+
+    fl::detail::advancedIndex(
+        toArray(tensor), idxStart, idxEnd, inDims, idxArr, *arrayHandle_);
+  }
+}
+
 #undef ASSIGN_OP_TYPE
+#undef ASSIGN_OP_LITERALS
+#undef ASSIGN_OP_TENSOR
 #undef ASSIGN_OP
 
 } // namespace fl
