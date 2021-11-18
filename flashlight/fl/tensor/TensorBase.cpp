@@ -227,39 +227,6 @@ std::ostream& Tensor::operator<<(std::ostream& ostr) const {
   return impl_->operator<<(ostr);
 }
 
-// Generate template specializations for functions that return types
-#define EXPAND_MACRO_FUNCTION_TYPE(FUN, TYPE)             \
-  template <>                                             \
-  TYPE FUN(const Tensor& input) {                         \
-    return static_cast<TYPE>(input.backend().FUN(input)); \
-  }
-#define EXPAND_MACRO_FUNCTION(FUN)                     \
-  EXPAND_MACRO_FUNCTION_TYPE(FUN, int);                \
-  EXPAND_MACRO_FUNCTION_TYPE(FUN, unsigned);           \
-  EXPAND_MACRO_FUNCTION_TYPE(FUN, char);               \
-  EXPAND_MACRO_FUNCTION_TYPE(FUN, unsigned char);      \
-  EXPAND_MACRO_FUNCTION_TYPE(FUN, long);               \
-  EXPAND_MACRO_FUNCTION_TYPE(FUN, unsigned long);      \
-  EXPAND_MACRO_FUNCTION_TYPE(FUN, long long);          \
-  EXPAND_MACRO_FUNCTION_TYPE(FUN, unsigned long long); \
-  EXPAND_MACRO_FUNCTION_TYPE(FUN, double);             \
-  EXPAND_MACRO_FUNCTION_TYPE(FUN, float);              \
-  EXPAND_MACRO_FUNCTION_TYPE(FUN, short);              \
-  EXPAND_MACRO_FUNCTION_TYPE(FUN, unsigned short);
-
-// fl::amin<T>(const Tensor&)
-EXPAND_MACRO_FUNCTION(amin);
-// fl::amax<T>(const Tensor&)
-EXPAND_MACRO_FUNCTION(amax);
-// fl::sum<T>(const Tensor&)
-EXPAND_MACRO_FUNCTION(sum);
-// fl::mean<T>(const Tensor&)
-EXPAND_MACRO_FUNCTION(mean);
-// fl::mean<T>(const Tensor&)
-EXPAND_MACRO_FUNCTION(median);
-#undef EXPAND_MACRO_FUNCTION_TYPE
-#undef EXPAND_MACRO_FUNCTION
-
 /******************** Assignment Operators ********************/
 #define FL_ASSIGN_OP_TYPE(OP, FUN, TYPE) \
   Tensor& Tensor::OP(TYPE val) {         \
@@ -629,14 +596,14 @@ Tensor matmul(
 
 Tensor amin(
     const Tensor& input,
-    const std::vector<int>& axes,
+    const std::vector<int>& axes /* = {} */,
     bool keepDims /* = false */) {
   return input.backend().amin(input, axes, keepDims);
 }
 
 Tensor amax(
     const Tensor& input,
-    const std::vector<int>& axes,
+    const std::vector<int>& axes /* = {} */,
     bool keepDims /* = false */) {
   return input.backend().amax(input, axes, keepDims);
 }
@@ -663,7 +630,7 @@ void max(
 
 Tensor sum(
     const Tensor& input,
-    const std::vector<int>& axes,
+    const std::vector<int>& axes /* = {} */,
     bool keepDims /* = false */) {
   return input.backend().sum(input, axes, keepDims);
 }
@@ -678,95 +645,60 @@ Tensor argmin(const Tensor& input, unsigned axis, bool keepDims /* = false */) {
 
 Tensor mean(
     const Tensor& input,
-    const std::vector<int>& axes,
+    const std::vector<int>& axes /* = {} */,
     bool keepDims /* = false */) {
   return input.backend().mean(input, axes, keepDims);
 }
 
 Tensor median(
     const Tensor& input,
-    const std::vector<int>& axes,
+    const std::vector<int>& axes /* = {} */,
     bool keepDims /* = false */) {
   return input.backend().median(input, axes, keepDims);
 }
 
 Tensor var(
     const Tensor& input,
-    const std::vector<int>& axes,
+    const std::vector<int>& axes /* = {} */,
     const bool bias,
     bool keepDims /* = false */) {
   return input.backend().var(input, axes, bias, keepDims);
 }
 
-// fl::var<T>(const Tensor&)
-#define GENERATE_VAR(TYPE)                                      \
-  template <>                                                   \
-  TYPE var(const Tensor& input, const bool bias) {              \
-    return static_cast<TYPE>(input.backend().var(input, bias)); \
-  }
-
-GENERATE_VAR(int);
-GENERATE_VAR(unsigned);
-GENERATE_VAR(char);
-GENERATE_VAR(unsigned char);
-GENERATE_VAR(long);
-GENERATE_VAR(unsigned long);
-GENERATE_VAR(long long);
-GENERATE_VAR(unsigned long long);
-GENERATE_VAR(double);
-GENERATE_VAR(float);
-GENERATE_VAR(short);
-GENERATE_VAR(unsigned short);
-#undef GENERATE_VAR
-
 Tensor std(
     const Tensor& input,
-    const std::vector<int>& axes,
+    const std::vector<int>& axes /* = {} */,
     bool keepDims /* = false */) {
   return input.backend().std(input, axes, keepDims);
 }
 
-double norm(const Tensor& input) {
-  return input.backend().norm(input);
+Tensor norm(
+    const Tensor& input,
+    const std::vector<int>& axes /* = {} */,
+    double p /* = 2 */,
+    bool keepDims /* = false */) {
+  return input.backend().norm(input, axes, p, keepDims);
 }
 
 Tensor countNonzero(
     const Tensor& input,
-    const std::vector<int>& axes,
+    const std::vector<int>& axes /* = {} */,
     bool keepDims /* = false */) {
   return input.backend().countNonzero(input, axes, keepDims);
 }
 
 Tensor any(
     const Tensor& input,
-    const std::vector<int>& axes,
+    const std::vector<int>& axes /* = {} */,
     bool keepDims /* = false */) {
   return input.backend().any(input, axes, keepDims);
 }
 
-bool any(const Tensor& input) {
-  return input.backend().any(input);
-}
-
 Tensor all(
     const Tensor& input,
-    const std::vector<int>& axes,
+    const std::vector<int>& axes /* = {} */,
     bool keepDims /* = false */) {
   return input.backend().all(input, axes, keepDims);
-}
-
-bool all(const Tensor& input) {
-  return input.backend().all(input);
-}
-
-template <typename T>
-T amin(const Tensor& input) {
-  return static_cast<T>(input.backend().amin(input));
-}
-
-template <typename T>
-T amax(const Tensor& input) {
-  return static_cast<T>(input.backend().amax(input));
 }
 
 /************************** Utilities ***************************/
@@ -793,7 +725,8 @@ bool allClose(
   if (a.size() == 0 && b.size() == 0) {
     return true;
   }
-  return fl::amax<double>(fl::abs(a - b)) < absTolerance;
+  return fl::amax(fl::abs(a - b)).astype(dtype::f64).scalar<double>() <
+      absTolerance;
 }
 
 } // namespace fl
