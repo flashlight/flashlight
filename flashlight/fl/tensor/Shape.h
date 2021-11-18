@@ -40,8 +40,8 @@ using Dim = long long;
  * backing storage or handles.
  */
 class Shape {
-  // Storage for the dimension values.
-  // TODO: revisit initializing all dimensions to 1
+  // Storage for the dimension values. Defaults to an empty Shape {0}, whereas
+  // {} is a scalar shape.
   std::vector<Dim> dims_;
 
  public:

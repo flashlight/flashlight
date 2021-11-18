@@ -552,8 +552,21 @@ class Tensor {
 };
 
 /******************** Tensor Creation Functions ********************/
+
 /**
- * Creates a new tensor with a given shape and filled with a particular value.
+ * Creates a new scalar Tensor with a particular value. Scalar tensors have an
+ * empty Shape and 1 element by definition.
+ *
+ * @param[in] val the value with which to fill the tensor
+ * @param[in] type the type of the tensor to create. Defaults to a value based
+ * on the value type
+ * @return a tensor of the specified shape filled with the specified value
+ */
+template <typename T>
+Tensor fromScalar(const T& val, const dtype type = dtype_traits<T>::ctype);
+
+/**
+ * Creates a new Tensor with a given Shape and filled with a particular value.
  *
  * @param[in] dims the shape of the tensor to create
  * @param[in] val the value with which to fill the tensor

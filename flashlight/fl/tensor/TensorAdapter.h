@@ -255,7 +255,7 @@ struct TensorCreator {
 
   // General tensor ctor
   virtual std::unique_ptr<TensorAdapterBase> get(
-      const Shape& shape = {},
+      const Shape& shape = {0}, // 0 shape is an empty Tensor
       fl::dtype type = fl::dtype::f32,
       const void* ptr = nullptr,
       MemoryLocation memoryLocation = MemoryLocation::Host) const = 0;
@@ -276,7 +276,7 @@ struct TensorCreatorImpl : public TensorCreator {
   ~TensorCreatorImpl() override = default;
 
   std::unique_ptr<TensorAdapterBase> get(
-      const Shape& shape = {},
+      const Shape& shape = {0}, // 0 shape is an empty Tensor
       fl::dtype type = fl::dtype::f32,
       const void* ptr = nullptr,
       MemoryLocation memoryLocation = MemoryLocation::Host) const override {

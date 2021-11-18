@@ -46,7 +46,8 @@ bool allClose(
 namespace fl {
 
 TEST(ArrayFireTensorBaseTest, ArrayFireShapeInterop) {
-  ASSERT_EQ(detail::afToFlDims(af::dim4(), 0), Shape({}));
+  ASSERT_EQ(detail::afToFlDims(af::dim4(), 0), Shape({})); // scalar
+  ASSERT_EQ(detail::afToFlDims(af::dim4(0), 1), Shape({0}));
   ASSERT_EQ(detail::afToFlDims(af::dim4(0, 5), 2), Shape({0, 5}));
   ASSERT_EQ(detail::afToFlDims(af::dim4(1, 0, 2), 3), Shape({1, 0, 2}));
   ASSERT_EQ(detail::afToFlDims(af::dim4(0, 1, 1, 1), 4), Shape({0, 1, 1, 1}));

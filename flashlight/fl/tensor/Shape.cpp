@@ -17,9 +17,11 @@ namespace fl {
 Shape::Shape(std::vector<Dim> d) : dims_(std::move(d)) {}
 Shape::Shape(std::initializer_list<Dim> d) : Shape(std::vector<Dim>(d)) {}
 
+const Dim kEmptyShapeNumberOfElements = 1;
+
 Dim Shape::elements() const {
   if (dims_.size() == 0) {
-    return 0;
+    return kEmptyShapeNumberOfElements;
   }
   return std::accumulate(dims_.begin(), dims_.end(), 1, std::multiplies<Dim>());
 }

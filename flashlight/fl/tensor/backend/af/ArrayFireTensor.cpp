@@ -38,7 +38,7 @@ af::array& toArray(Tensor& tensor) {
   return tensor.getAdapter<ArrayFireTensor>().getHandle();
 }
 
-ArrayFireTensor::ArrayFireTensor(af::array&& array, unsigned numDims)
+ArrayFireTensor::ArrayFireTensor(af::array&& array, const unsigned numDims)
     : arrayHandle_(std::make_shared<af::array>(std::move(array))),
       numDims_(numDims) {}
 

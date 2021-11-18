@@ -59,7 +59,7 @@ Tensor::Tensor(const Shape& shape, fl::dtype type /* = fl::dtype::f32 */)
     : impl_(detail::getDefaultAdapter(shape, type)) {}
 
 Tensor::Tensor(fl::dtype type)
-    : impl_(detail::getDefaultAdapter(Shape(), type)) {}
+    : impl_(detail::getDefaultAdapter(Shape({0}), type)) {}
 
 Tensor Tensor::copy() const {
   return impl_->copy();
@@ -278,25 +278,29 @@ FL_ASSIGN_OP(operator/=, inPlaceDivide);
 /* --------------------------- Tensor Operators --------------------------- */
 
 /******************** Tensor Creation Functions ********************/
-#define FL_FULL_FUN_DEF(TYPE)                                    \
+#define FL_CREATE_FUN_LITERAL_TYPE(TYPE)                         \
+  template <>                                                    \
+  Tensor fromScalar(TYPE value, const dtype type) {              \
+    return Tensor().backend().fromScalar(value, type);           \
+  }                                                              \
   template <>                                                    \
   Tensor full(const Shape& dims, TYPE value, const dtype type) { \
     return Tensor().backend().full(dims, value, type);           \
   }
-FL_FULL_FUN_DEF(const double&);
-FL_FULL_FUN_DEF(const float&);
-FL_FULL_FUN_DEF(const int&);
-FL_FULL_FUN_DEF(const unsigned&);
-FL_FULL_FUN_DEF(const char&);
-FL_FULL_FUN_DEF(const unsigned char&);
-FL_FULL_FUN_DEF(const long&);
-FL_FULL_FUN_DEF(const unsigned long&);
-FL_FULL_FUN_DEF(const long long&);
-FL_FULL_FUN_DEF(const unsigned long long&);
-FL_FULL_FUN_DEF(const bool&);
-FL_FULL_FUN_DEF(const short&);
-FL_FULL_FUN_DEF(const unsigned short&);
-#undef FL_FULL_FUN_DEF
+FL_CREATE_FUN_LITERAL_TYPE(const double&);
+FL_CREATE_FUN_LITERAL_TYPE(const float&);
+FL_CREATE_FUN_LITERAL_TYPE(const int&);
+FL_CREATE_FUN_LITERAL_TYPE(const unsigned&);
+FL_CREATE_FUN_LITERAL_TYPE(const char&);
+FL_CREATE_FUN_LITERAL_TYPE(const unsigned char&);
+FL_CREATE_FUN_LITERAL_TYPE(const long&);
+FL_CREATE_FUN_LITERAL_TYPE(const unsigned long&);
+FL_CREATE_FUN_LITERAL_TYPE(const long long&);
+FL_CREATE_FUN_LITERAL_TYPE(const unsigned long long&);
+FL_CREATE_FUN_LITERAL_TYPE(const bool&);
+FL_CREATE_FUN_LITERAL_TYPE(const short&);
+FL_CREATE_FUN_LITERAL_TYPE(const unsigned short&);
+#undef FL_CREATE_FUN_LITERAL_TYPE
 
 Tensor identity(const Dim dim, const dtype type) {
   return Tensor().backend().identity(dim, type);
