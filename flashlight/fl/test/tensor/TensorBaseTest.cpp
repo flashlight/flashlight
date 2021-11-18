@@ -596,6 +596,14 @@ TEST(TensorBaseTest, ceil) {
   ASSERT_TRUE(allClose((a >= 1).astype(fl::dtype::f32), fl::ceil(a) - 1));
 }
 
+TEST(TensorBaseTest, rint) {
+  Shape s = {10, 10};
+  auto a = fl::rand(s) - 0.5;
+  ASSERT_TRUE(allClose(fl::rint(a), fl::full(s, 0.)));
+  auto b = fl::rand(s) + 0.5;
+  ASSERT_TRUE(allClose(fl::rint(b), fl::full(s, 1.)));
+}
+
 TEST(TensorBaseTest, cumsum) {
   int max = 30;
   auto a = fl::tile(fl::arange(1, max), {1, 2});

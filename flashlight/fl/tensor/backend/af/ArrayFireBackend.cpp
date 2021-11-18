@@ -325,6 +325,10 @@ Tensor ArrayFireBackend::ceil(const Tensor& tensor) {
   return toTensor<ArrayFireTensor>(af::ceil(toArray(tensor)), tensor.ndim());
 }
 
+Tensor ArrayFireBackend::rint(const Tensor& tensor) {
+  return toTensor<ArrayFireTensor>(af::round(toArray(tensor)), tensor.ndim());
+}
+
 Tensor ArrayFireBackend::absolute(const Tensor& tensor) {
   return toTensor<ArrayFireTensor>(af::abs(toArray(tensor)), tensor.ndim());
 }

@@ -98,6 +98,7 @@ class TensorBackend {
   virtual Tensor tanh(const Tensor& tensor) = 0;
   virtual Tensor floor(const Tensor& tensor) = 0;
   virtual Tensor ceil(const Tensor& tensor) = 0;
+  virtual Tensor rint(const Tensor& tensor) = 0;
   virtual Tensor absolute(const Tensor& tensor) = 0;
   virtual Tensor sigmoid(const Tensor& tensor) = 0;
   virtual Tensor erf(const Tensor& tensor) = 0;

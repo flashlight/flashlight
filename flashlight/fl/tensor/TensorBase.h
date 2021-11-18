@@ -807,6 +807,14 @@ Tensor floor(const Tensor& tensor);
 Tensor ceil(const Tensor& tensor);
 
 /**
+ * Returns the tensor with element-wise rounding to the nearest integer.
+ *
+ * @param[in] tensor the input tensor
+ * @return the resulting tensor
+ */
+Tensor rint(const Tensor& tensor);
+
+/**
  * Returns the element-wise absolute value of the input.
  *
  * @param[in] tensor the tensor on which to compute
