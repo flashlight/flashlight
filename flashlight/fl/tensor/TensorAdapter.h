@@ -257,7 +257,7 @@ struct TensorCreator {
   virtual std::unique_ptr<TensorAdapterBase> get(
       const Shape& shape = {},
       fl::dtype type = fl::dtype::f32,
-      void* ptr = nullptr,
+      const void* ptr = nullptr,
       MemoryLocation memoryLocation = MemoryLocation::Host) const = 0;
 
   // Sparse tensor ctor
@@ -278,7 +278,7 @@ struct TensorCreatorImpl : public TensorCreator {
   std::unique_ptr<TensorAdapterBase> get(
       const Shape& shape = {},
       fl::dtype type = fl::dtype::f32,
-      void* ptr = nullptr,
+      const void* ptr = nullptr,
       MemoryLocation memoryLocation = MemoryLocation::Host) const override {
     return std::make_unique<T>(shape, type, ptr, memoryLocation);
   }

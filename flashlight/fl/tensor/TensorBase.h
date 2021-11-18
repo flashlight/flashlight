@@ -72,7 +72,7 @@ class Tensor {
   Tensor(
       const Shape& shape,
       fl::dtype type,
-      void* ptr,
+      const void* ptr,
       MemoryLocation memoryLocation);
 
   /**
@@ -156,9 +156,19 @@ class Tensor {
     return Tensor(s, fl::dtype_traits<T>::fl_type, v.data(), Location::Host);
   }
 
+  template <typename T, std::size_t S>
+  static Tensor fromArray(Shape s, std::array<T, S> a) {
+    return Tensor(s, fl::dtype_traits<T>::fl_type, a.data(), Location::Host);
+  }
+
   template <typename T>
   static Tensor fromVector(Shape s, std::vector<T> v, dtype type) {
     return Tensor(s, type, v.data(), Location::Host);
+  }
+
+  template <typename T, std::size_t S>
+  static Tensor fromArray(Shape s, std::array<T, S> a, dtype type) {
+    return Tensor(s, type, a.data(), Location::Host);
   }
 
   template <typename T>
@@ -167,6 +177,15 @@ class Tensor {
         {static_cast<long long>(v.size())},
         fl::dtype_traits<T>::fl_type,
         v.data(),
+        Location::Host);
+  }
+
+  template <typename T, std::size_t S>
+  static Tensor fromArray(std::array<T, S> a) {
+    return Tensor(
+        {static_cast<long long>(a.size())},
+        fl::dtype_traits<T>::fl_type,
+        a.data(),
         Location::Host);
   }
 
@@ -180,7 +199,7 @@ class Tensor {
    * @return a tensor with values and shape as given.
    */
   template <typename T>
-  static Tensor fromBuffer(Shape s, T* ptr, Location memoryLocation) {
+  static Tensor fromBuffer(Shape s, const T* ptr, Location memoryLocation) {
     return Tensor(s, fl::dtype_traits<T>::fl_type, ptr, memoryLocation);
   }
 
@@ -194,8 +213,11 @@ class Tensor {
    * with which to create the tensor resides.
    * @return a tensor with values and shape as given.
    */
-  static Tensor
-  fromBuffer(Shape s, fl::dtype t, uint8_t* ptr, Location memoryLocation) {
+  static Tensor fromBuffer(
+      Shape s,
+      fl::dtype t,
+      const uint8_t* ptr,
+      Location memoryLocation) {
     return Tensor(s, t, ptr, memoryLocation);
   }
 
@@ -452,6 +474,9 @@ class Tensor {
    */
   template <typename T>
   std::vector<T> toHostVector() const {
+    if (isEmpty()) {
+      return std::vector<T>();
+    }
     std::vector<T> vec(this->size());
     host(vec.data());
     return vec;

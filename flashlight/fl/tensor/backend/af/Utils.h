@@ -102,7 +102,7 @@ af_source flToAfLocation(Location location);
  */
 af::array fromFlData(
     const Shape& shape,
-    void* ptr,
+    const void* ptr,
     fl::dtype type,
     fl::Location memoryLocation);
 

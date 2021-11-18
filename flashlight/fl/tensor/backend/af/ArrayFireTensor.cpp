@@ -63,7 +63,7 @@ ArrayFireTensor::ArrayFireTensor() : handle_(ArrayComponent()) {}
 ArrayFireTensor::ArrayFireTensor(
     const Shape& shape,
     fl::dtype type,
-    void* ptr,
+    const void* ptr,
     Location memoryLocation)
     : arrayHandle_(std::make_shared<af::array>(
           detail::fromFlData(shape, ptr, type, memoryLocation))),
