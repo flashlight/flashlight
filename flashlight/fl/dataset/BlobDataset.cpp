@@ -69,7 +69,7 @@ std::vector<af::array> BlobDataset::get(const int64_t idx) const {
   return sample;
 };
 
-std::vector<std::vector<uint8_t>> BlobDataset::getSingleOrEmpty(const int64_t idx) const {
+std::vector<std::vector<uint8_t>> BlobDataset::rawGet(const int64_t idx) const {
   std::vector<std::vector<uint8_t>> sample;
   for (int64_t i = 0; i < sizes_.at(idx); i++) {
     auto entry = entries_.get(offsets_.at(idx) + i);

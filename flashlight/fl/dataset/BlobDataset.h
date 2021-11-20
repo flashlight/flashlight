@@ -138,7 +138,7 @@ class BlobDataset : public Dataset {
    * can be retrieved with getEntries().
    * @param[in] idx An index in the dataset.
    */
-  std::vector<std::vector<uint8_t>> getSingleOrEmpty(const int64_t idx) const;
+  std::vector<std::vector<uint8_t>> rawGet(const int64_t idx) const;
 
   /**
    * Add a new sample in the dataset. The dataset must have been opened in
