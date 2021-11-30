@@ -13,12 +13,16 @@
 
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/autograd/Variable.h"
+#include "flashlight/fl/autograd/tensor/AutogradExtension.h"
+#include "flashlight/fl/autograd/tensor/AutogradOps.h"
+#include "flashlight/fl/common/DynamicBenchmark.h"
 #include "flashlight/fl/tensor/Compute.h"
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/Random.h"
+#include "flashlight/fl/tensor/TensorBackend.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 // TODO{fl::Tensor}{remove}
-#include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
 
 namespace fl {
@@ -1361,6 +1365,240 @@ Variable linear(const Variable& in, const Variable& wt, const Variable& bs) {
   return Variable(output, {input, weight}, gradFunc);
 }
 
+Variable conv2d(
+    const Variable& input,
+    const Variable& weights,
+    int sx,
+    int sy,
+    int px,
+    int py,
+    int dx,
+    int dy,
+    int groups,
+    std::shared_ptr<detail::ConvBenchmarks> benchmarks) {
+  auto dummyBias = Variable(Tensor(input.type()), false);
+  return conv2d(
+      input, weights, dummyBias, sx, sy, px, py, dx, dy, groups, benchmarks);
+}
+
+Variable conv2d(
+    const Variable& in,
+    const Variable& wt,
+    const Variable& bs,
+    int sx,
+    int sy,
+    int px,
+    int py,
+    int dx,
+    int dy,
+    int groups,
+    std::shared_ptr<detail::ConvBenchmarks> benchmarks) {
+  FL_VARIABLE_DTYPES_MATCH_CHECK(in, wt, bs);
+
+  bool hasBias = !bs.isempty();
+
+  auto input = FL_ADJUST_INPUT_TYPE(in);
+  auto weights = FL_ADJUST_INPUT_TYPE(wt);
+  auto bias = FL_ADJUST_INPUT_TYPE(bs);
+
+  Tensor output = fl::conv2d(
+      input.tensor(),
+      weights.tensor(),
+      bias.tensor(),
+      sx,
+      sy,
+      px,
+      py,
+      dx,
+      dy,
+      groups);
+
+  auto gradFunc = [sx, sy, px, py, dx, dy, hasBias, groups, benchmarks](
+                      std::vector<Variable>& inputs,
+                      const Variable& gradOutput) {
+    // Create benchmarks if needed
+    auto& autogradExtension =
+        inputs[0].tensor().backend().getExtension<AutogradExtension>();
+
+    std::shared_ptr<DynamicBenchmark> dataBench;
+    std::shared_ptr<DynamicBenchmark> filterBench;
+    std::shared_ptr<DynamicBenchmark> biasBench;
+    if (benchmarks && DynamicBenchmark::getBenchmarkMode()) {
+      if (!benchmarks->bwdFilterBenchmark) {
+        benchmarks->bwdFilterBenchmark =
+            autogradExtension.createBenchmarkOptions();
+        filterBench = benchmarks->bwdFilterBenchmark;
+      }
+      if (!benchmarks->bwdDataBenchmark) {
+        benchmarks->bwdDataBenchmark =
+            autogradExtension.createBenchmarkOptions();
+        dataBench = benchmarks->bwdDataBenchmark;
+      }
+      if (!benchmarks->bwdBiasBenchmark) {
+        benchmarks->bwdBiasBenchmark =
+            autogradExtension.createBenchmarkOptions();
+        biasBench = benchmarks->bwdBiasBenchmark;
+      }
+    }
+
+    // Bias gradients
+    if (hasBias && inputs.size() > 2 && inputs[2].isCalcGrad()) {
+      auto& bias = inputs[2].tensor();
+      auto biasGrad =
+          bias.backend().getExtension<AutogradExtension>().conv2dBackwardBias(
+              gradOutput.tensor(), bias, biasBench);
+
+      inputs[2].addGrad(Variable(biasGrad, false)); // bias
+    }
+
+    auto& in = inputs[0].tensor();
+    auto& wt = inputs[1].tensor();
+
+    // Data (input) gradients
+    if (inputs[0].isCalcGrad()) {
+      auto dataGrad =
+          in.backend().getExtension<AutogradExtension>().conv2dBackwardData(
+              gradOutput.tensor(),
+              in,
+              wt,
+              sx,
+              sy,
+              px,
+              py,
+              dx,
+              dy,
+              groups,
+              dataBench);
+
+      inputs[0].addGrad(Variable(dataGrad, false)); // input/data
+    }
+
+    // Filter (weight) gradients
+    if (inputs[1].isCalcGrad()) {
+      auto filterGrad =
+          wt.backend().getExtension<AutogradExtension>().conv2dBackwardFilter(
+              gradOutput.tensor(),
+              in,
+              wt,
+              sx,
+              sy,
+              px,
+              py,
+              dx,
+              dy,
+              groups,
+              filterBench);
+
+      inputs[1].addGrad(Variable(filterGrad, false)); // filter/weight
+    }
+  };
+  if (hasBias) {
+    return Variable(output, {input, weights, bias}, gradFunc);
+  }
+  return Variable(output, {input, weights}, gradFunc);
+}
+
+Variable pool2d(
+    const Variable& input,
+    int wx,
+    int wy,
+    int sx,
+    int sy,
+    int px,
+    int py,
+    PoolingMode mode /* = PoolingMode::MAX */) {
+  Tensor output = fl::pool2d(input.tensor(), wx, wy, sx, sy, px, py, mode);
+
+  auto gradFunc = [wx, wy, sx, sy, px, py, mode, output](
+                      std::vector<Variable>& inputs,
+                      const Variable& gradOutput) {
+    auto& in = inputs[0];
+    if (!in.isCalcGrad()) {
+      return;
+    }
+
+    in.addGrad(Variable(
+        in.tensor().backend().getExtension<AutogradExtension>().pool2dBackward(
+            gradOutput.tensor(),
+            in.tensor(),
+            output,
+            wx,
+            wy,
+            sx,
+            sy,
+            px,
+            py,
+            mode),
+        false));
+  };
+  return Variable(output, {input}, gradFunc);
+}
+
+Variable batchnorm(
+    const Variable& _input,
+    const Variable& weight,
+    const Variable& bias,
+    Variable& runningMean,
+    Variable& runningVar,
+    const std::vector<int>& axes,
+    bool train,
+    double momentum,
+    double epsilon) {
+  auto input = FL_ADJUST_INPUT_TYPE(_input);
+
+  Tensor saveMean, saveVar;
+  Tensor output = fl::batchnorm(
+      saveMean,
+      saveVar,
+      input.tensor(),
+      weight.tensor(),
+      bias.tensor(),
+      runningMean.tensor(),
+      runningVar.tensor(),
+      axes,
+      train,
+      momentum,
+      epsilon);
+
+  auto gradFunc =
+      [saveMean = std::move(saveMean),
+       saveVar = std::move(saveVar),
+       train,
+       axes,
+       epsilon](std::vector<Variable>& inputs, const Variable& _gradOutput) {
+        auto& in = inputs[0];
+        auto& wt = inputs[1];
+        auto& bs = inputs[2];
+
+        auto gradOutput = detail::adjustInputType(_gradOutput, "batchnorm");
+
+        if (!in.isCalcGrad() && !wt.isCalcGrad() && !bs.isCalcGrad()) {
+          return;
+        }
+
+        auto [gradIn, gradWt, gradBs] =
+            in.tensor()
+                .backend()
+                .getExtension<AutogradExtension>()
+                .batchnormBackward(
+                    gradOutput.tensor(),
+                    saveMean,
+                    saveVar,
+                    detail::adjustInputType(in.tensor(), "batchnorm"),
+                    wt.tensor(),
+                    axes,
+                    train,
+                    epsilon);
+
+        in.addGrad(Variable(gradIn.astype(in.type()), false));
+        wt.addGrad(Variable(gradWt.astype(wt.type()), false));
+        if (!bs.isempty()) {
+          bs.addGrad(Variable(gradBs.astype(bs.type()), false));
+        }
+      };
+  return Variable(output, {input, weight, bias}, gradFunc);
+}
+
 Variable gatedlinearunit(const Variable& input, const int dim) {
   if (dim >= input.numdims()) {
     throw std::invalid_argument(
@@ -1396,6 +1634,106 @@ Variable gatedlinearunit(const Variable& input, const int dim) {
     inputs[0].addGrad(Variable(gradGlu, false));
   };
   return Variable(fhalfout * shalfout, {input.withoutData()}, gradFunc);
+}
+
+std::tuple<Variable, Variable, Variable> rnn(
+    const Variable& input,
+    const Variable& hiddenState,
+    const Variable& cellState,
+    const Variable& weights,
+    int hiddenSize,
+    int numLayers,
+    RnnMode mode,
+    bool bidirectional,
+    float dropProb) {
+  Tensor output, hiddenOut, cellStateOut, reserveSpace;
+  std::tie(output, hiddenOut, cellStateOut) =
+      input.tensor().backend().getExtension<AutogradExtension>().rnn(
+          reserveSpace, // out
+          input.tensor(),
+          hiddenState.tensor(),
+          cellState.tensor(),
+          weights.tensor(),
+          hiddenSize,
+          numLayers,
+          mode,
+          bidirectional,
+          dropProb);
+
+  auto gradData = std::make_shared<detail::RNNGradData>();
+
+  auto gradFunc = [reserveSpace =
+                       std::move(reserveSpace), // shared between fwd and bwd
+                   output,
+                   numLayers,
+                   hiddenSize,
+                   mode,
+                   bidirectional,
+                   dropProb,
+                   gradData](
+                      std::vector<Variable>& inputs,
+                      const Variable& /* gradOutput */) {
+    auto& input = inputs[0];
+    auto& hiddenState = inputs[1];
+    auto& cellState = inputs[2];
+    auto& weights = inputs[3];
+
+    if (!(input.isCalcGrad() || hiddenState.isCalcGrad() ||
+          cellState.isCalcGrad() || weights.isCalcGrad())) {
+      return;
+    }
+
+    auto [dy, dhy, dcy, dweights] =
+        input.tensor().backend().getExtension<AutogradExtension>().rnnBackward(
+            input.tensor(),
+            hiddenState.tensor(),
+            cellState.tensor(),
+            weights.tensor(),
+            gradData,
+            reserveSpace,
+            output,
+            numLayers,
+            hiddenSize,
+            mode,
+            bidirectional,
+            dropProb);
+
+    input.addGrad(Variable(dy.astype(input.type()), false));
+    hiddenState.addGrad(Variable(dhy.astype(hiddenState.type()), false));
+    cellState.addGrad(Variable(dcy.astype(cellState.type()), false));
+    weights.addGrad(Variable(dweights.astype(weights.type()), false));
+  };
+
+  Variable dummy(Tensor(), {input, hiddenState, cellState, weights}, gradFunc);
+
+  auto dyGradFunc =
+      [gradData](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        if (!inputs[0].isGradAvailable()) {
+          inputs[0].addGrad(Variable(Tensor(), false));
+        }
+        gradData->dy = gradOutput.tensor().asContiguousTensor();
+      };
+
+  auto dhyGradFunc =
+      [gradData](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        if (!inputs[0].isGradAvailable()) {
+          inputs[0].addGrad(Variable(Tensor(), false));
+        }
+        gradData->dhy = gradOutput.tensor().asContiguousTensor();
+      };
+
+  auto dcyGradFunc =
+      [gradData](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        if (!inputs[0].isGradAvailable()) {
+          inputs[0].addGrad(Variable(Tensor(), false));
+        }
+        gradData->dcy = gradOutput.tensor().asContiguousTensor();
+      };
+
+  Variable yv(output, {dummy}, dyGradFunc); // output
+  Variable hyv(hiddenOut, {dummy}, dhyGradFunc); // hidden state output
+  Variable cyv(cellStateOut, {dummy}, dcyGradFunc); // cell state output
+  return std::make_tuple(yv, hyv, cyv);
 }
 
 Variable embedding(const Variable& input, const Variable& embeddings) {
