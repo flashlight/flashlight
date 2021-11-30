@@ -9,16 +9,6 @@
 
 #include <gtest/gtest.h>
 
-bool allClose(
-    const af::array& a,
-    const af::array& b,
-    const double precision = 1e-5) {
-  if ((a.numdims() != b.numdims()) || (a.dims() != b.dims())) {
-    return false;
-  }
-  return (af::max<double>(af::abs(a - b)) < precision);
-}
-
 TEST(Crop, CropBasic) {
   std::vector<float> bboxesVector = {
       10,
@@ -31,15 +21,16 @@ TEST(Crop, CropBasic) {
       30 // box2
   };
 
-  std::vector<af::array> in = {af::constant(1.0, {256, 256, 10}),
-                               af::array(),
-                               af::array(),
-                               af::array(),
-                               af::array({4, 2}, bboxesVector.data()),
-                               af::constant(0.0, {1, 2})};
+  std::vector<Tensor> in = {
+      fl::full({256, 256, 10}, 1.),
+      Tensor(),
+      Tensor(),
+      Tensor(),
+      Tensor::fromVector({4, 2}, bboxesVector),
+      fl::full({1, 2}, 0.)};
 
   // Crop from x, y (10, 10), with target heigh and width to be ten
-  std::vector<af::array> out = fl::pkg::vision::crop(in, 10, 5, 20, 25);
+  std::vector<Tensor> out = fl::pkg::vision::crop(in, 10, 5, 20, 25);
   auto outBoxes = out[4];
   std::vector<float> expVector = {
       0,
@@ -51,7 +42,7 @@ TEST(Crop, CropBasic) {
       20,
       25 // box2
   };
-  af::array expOut = af::array({4, 2}, expVector.data());
+  Tensor expOut = Tensor::fromVector({4, 2}, expVector);
   ASSERT_TRUE(allClose(expOut, outBoxes, 1e-5));
 }
 
@@ -74,16 +65,16 @@ TEST(Crop, CropClip) {
       105 // box2
   };
 
-  std::vector<af::array> in = {
-      af::constant(1.0, {256, 256, 10}),
-      af::array(),
-      af::array(),
-      af::array(),
-      af::array({numElementsPerBoxes, numBoxes}, bboxesVector.data()),
-      af::iota({1, 3})};
+  std::vector<Tensor> in = {
+      fl::full({256, 256, 10}, 1.),
+      Tensor(),
+      Tensor(),
+      Tensor(),
+      Tensor::fromVector({numElementsPerBoxes, numBoxes}, bboxesVector),
+      fl::iota({1, 3})};
 
   // Crop from x, y (10, 10), with target heigh and width to be ten
-  std::vector<af::array> out = fl::pkg::vision::crop(in, 5, 5, 100, 100);
+  std::vector<Tensor> out = fl::pkg::vision::crop(in, 5, 5, 100, 100);
   auto outBoxes = out[4];
   auto outClasses = out[5];
   std::vector<float> expVector = {
@@ -96,9 +87,9 @@ TEST(Crop, CropClip) {
       100,
       100 // box2
   };
-  af::array expOut = af::array({4, 2}, expVector.data());
+  Tensor expOut = Tensor::fromVector({4, 2}, expVector);
   std::vector<float> expClassVector = {0, 2};
-  af::array expClassOut = af::array({1, 2}, expClassVector.data());
+  Tensor expClassOut = Tensor::fromVector({1, 2}, expClassVector);
   ASSERT_TRUE(allClose(expOut, outBoxes, 1e-5));
   ASSERT_TRUE(allClose(expClassOut, outClasses, 1e-5));
 }
