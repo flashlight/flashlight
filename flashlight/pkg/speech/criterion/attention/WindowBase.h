@@ -41,8 +41,8 @@ class WindowBase {
       int targetLen,
       int inputSteps,
       int batchSize,
-      const af::array& inputSizes = af::array(),
-      const af::array& targetSizes = af::array()) const = 0;
+      const Tensor& inputSizes = Tensor(),
+      const Tensor& targetSizes = Tensor()) const = 0;
 
   /**
    * Compute window for the data for entire decoder known target size
@@ -59,8 +59,8 @@ class WindowBase {
       int targetLen,
       int inputSteps,
       int batchSize,
-      const af::array& inputSizes = af::array(),
-      const af::array& targetSizes = af::array()) const = 0;
+      const Tensor& inputSizes = Tensor(),
+      const Tensor& targetSizes = Tensor()) const = 0;
 
   virtual ~WindowBase() {}
 
@@ -76,8 +76,8 @@ class WindowBase {
    * @param doTile Do necessary tile to (decoderStepsDim, inputSteps, BatchSize)
    * or return (1, 1, BatchSize) vector (depends on the window we need to use)
    */
-  af::array computeInputNotPaddedSize(
-      const af::array& inputSizes,
+  Tensor computeInputNotPaddedSize(
+      const Tensor& inputSizes,
       int inputSteps,
       int batchSize,
       int decoderStepsDim,
@@ -91,9 +91,10 @@ class WindowBase {
    * @param targetLen target size (max in the batch)
    * @param batchSize batch size
    * @param decoderStepsDim max decoder steps
+   * @return A tensor with shape {decoderStepsDim, inputSteps, batchSize}
    */
-  af::array computeTargetNotPaddedSize(
-      const af::array& targetSizes,
+  Tensor computeTargetNotPaddedSize(
+      const Tensor& targetSizes,
       int inputSteps,
       int targetLen,
       int batchSize,

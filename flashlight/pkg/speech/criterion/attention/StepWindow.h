@@ -24,15 +24,15 @@ class StepWindow : public WindowBase {
       int targetLen,
       int inputSteps,
       int batchSize,
-      const af::array& inputSizes = af::array(),
-      const af::array& targetSizes = af::array()) const override;
+      const Tensor& inputSizes = Tensor(),
+      const Tensor& targetSizes = Tensor()) const override;
 
   Variable computeVectorizedWindow(
       int targetLen,
       int inputSteps,
       int batchSize,
-      const af::array& inputSizes = af::array(),
-      const af::array& targetSizes = af::array()) const override;
+      const Tensor& inputSizes = Tensor(),
+      const Tensor& targetSizes = Tensor()) const override;
 
  private:
   int sMin_;
@@ -44,9 +44,9 @@ class StepWindow : public WindowBase {
       int targetLen,
       int inputSteps,
       int batchSize,
-      const af::array& inputSizes,
-      const af::array& targetSizes,
-      af::array& decoderSteps) const;
+      const Tensor& inputSizes,
+      const Tensor& targetSizes,
+      Tensor& decoderSteps) const;
 
   FL_SAVE_LOAD_WITH_BASE(WindowBase, sMin_, sMax_, vMin_, vMax_)
 };
