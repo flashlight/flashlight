@@ -11,6 +11,11 @@
 #include <random>
 #include <stdexcept>
 
+#include "flashlight/fl/autograd/tensor/AutogradOps.h"
+#include "flashlight/fl/tensor/Index.h"
+#include "flashlight/fl/tensor/Random.h"
+#include "flashlight/pkg/vision/tensor/VisionOps.h"
+
 // TODO consider moving these outside of annonymous namespace
 namespace {
 
@@ -37,9 +42,9 @@ namespace fl {
 namespace pkg {
 namespace vision {
 
-af::array resizeSmallest(const af::array& in, const int resize) {
-  const int w = in.dims(0);
-  const int h = in.dims(1);
+Tensor resizeSmallest(const Tensor& in, const int resize) {
+  const int w = in.dim(0);
+  const int h = in.dim(1);
   int th, tw;
   if (h > w) {
     th = (resize * h) / w;
@@ -48,220 +53,143 @@ af::array resizeSmallest(const af::array& in, const int resize) {
     th = resize;
     tw = (resize * w) / h;
   }
-  return af::resize(in, tw, th, AF_INTERP_BILINEAR);
+  return fl::resize(in, {tw, th}, InterpolationMode::Bilinear);
 }
 
-af::array resize(const af::array& in, const int resize) {
-  return af::resize(in, resize, resize, AF_INTERP_BILINEAR);
+Tensor resize(const Tensor& in, const int resize) {
+  return fl::resize(in, {resize, resize}, InterpolationMode::Bilinear);
 }
 
-af::array
-crop(const af::array& in, const int x, const int y, const int w, const int h) {
-  return in(af::seq(x, x + w - 1), af::seq(y, y + h - 1), af::span, af::span);
+Tensor
+crop(const Tensor& in, const int x, const int y, const int w, const int h) {
+  return in(fl::range(x, x + w), fl::range(y, y + h));
 }
 
-af::array centerCrop(const af::array& in, const int size) {
-  const int w = in.dims(0);
-  const int h = in.dims(1);
+Tensor centerCrop(const Tensor& in, const int size) {
+  const int w = in.dim(0);
+  const int h = in.dim(1);
   const int cropLeft = std::round((static_cast<float>(w) - size) / 2.);
   const int cropTop = std::round((static_cast<float>(h) - size) / 2.);
   return crop(in, cropLeft, cropTop, size, size);
 }
 
-// TODO: for af::rotate, af::skew, af::translate
-//  - they only support zero-filling on empty spots
-//  - we add a hack to manually fill from fillImg
-//  - to be removed once customized filling is supported in AF directly
-af::array
-rotate(const af::array& input, const float theta, const af::array& fillImg) {
-  float delta = 1e-2;
-  auto res = input;
-  if (!fillImg.isempty()) {
-    res = res + delta;
-  }
-
-  res = af::rotate(res, theta);
-
-  if (!fillImg.isempty()) {
-    auto mask = af::sum(res, 2) == 0;
-    mask = af::tile(mask, 1, 1, 3);
-    res = mask * fillImg + (1 - mask) * (res - delta);
-  }
-  return res;
+Tensor rotate(const Tensor& input, const float theta, const Tensor& fillImg) {
+  return fl::rotate(input, theta, fillImg);
 }
 
-af::array
-skewX(const af::array& input, const float theta, const af::array& fillImg) {
-  float delta = 1e-2;
-  auto res = input;
-  if (!fillImg.isempty()) {
-    res = res + delta;
-  }
-
-  res = af::skew(res, theta, 0);
-
-  if (!fillImg.isempty()) {
-    auto mask = af::sum(res, 2) == 0;
-    mask = af::tile(mask, 1, 1, 3);
-    res = mask * fillImg + (1 - mask) * (res - delta);
-  }
-  return res;
+Tensor skewX(const Tensor& input, const float theta, const Tensor& fillImg) {
+  return fl::shear(input, {theta, 0}, {}, fillImg);
 }
 
-af::array
-skewY(const af::array& input, const float theta, const af::array& fillImg) {
-  float delta = 1e-2;
-  auto res = input;
-  if (!fillImg.isempty()) {
-    res = res + delta;
-  }
-
-  res = af::skew(res, 0, theta);
-
-  if (!fillImg.isempty()) {
-    auto mask = af::sum(res, 2) == 0;
-    mask = af::tile(mask, 1, 1, 3);
-    res = mask * fillImg + (1 - mask) * (res - delta);
-  }
-  return res;
+Tensor skewY(const Tensor& input, const float theta, const Tensor& fillImg) {
+  return fl::shear(input, {0, theta}, {}, fillImg);
 }
 
-af::array
-translateX(const af::array& input, const int shift, const af::array& fillImg) {
-  float delta = 1e-2;
-  auto res = input;
-  if (!fillImg.isempty()) {
-    res = res + delta;
-  }
-
-  res = af::translate(res, shift, 0);
-
-  if (!fillImg.isempty()) {
-    auto mask = af::sum(res, 2) == 0;
-    mask = af::tile(mask, 1, 1, 3);
-    res = mask * fillImg + (1 - mask) * (res - delta);
-  }
-  return res;
+Tensor translateX(const Tensor& input, const int shift, const Tensor& fillImg) {
+  return fl::translate(input, {shift, 0}, {}, fillImg);
 }
 
-af::array
-translateY(const af::array& input, const int shift, const af::array& fillImg) {
-  float delta = 1e-2;
-  auto res = input;
-  if (!fillImg.isempty()) {
-    res = res + delta;
-  }
-
-  res = af::translate(res, 0, shift);
-
-  if (!fillImg.isempty()) {
-    auto mask = af::sum(res, 2) == 0;
-    mask = af::tile(mask, 1, 1, 3);
-    res = mask * fillImg + (1 - mask) * (res - delta);
-  }
-  return res;
+Tensor translateY(const Tensor& input, const int shift, const Tensor& fillImg) {
+  return fl::translate(input, {0, shift}, {}, fillImg);
 }
 
-af::array colorEnhance(const af::array& input, const float enhance) {
-  auto c = input.dims(2);
-  auto meanPic = af::mean(input, 2);
-  meanPic = af::tile(meanPic, af::dim4(1, 1, c));
+Tensor colorEnhance(const Tensor& input, const float enhance) {
+  auto c = input.dim(2);
+  auto meanPic = fl::mean(input, {2}, /* keepDims = */ true);
+  meanPic = fl::tile(meanPic, {1, 1, c});
   return meanPic + enhance * (input - meanPic);
 }
 
-af::array autoContrast(const af::array& input) {
-  auto inputFlat = af::flat(input);
-  auto minPic = af::min(inputFlat, 0);
-  auto maxPic = af::max(inputFlat, 0);
-  if (af::allTrue<bool>(minPic == maxPic)) {
+Tensor autoContrast(const Tensor& input) {
+  auto minPic = fl::amin(input);
+  auto maxPic = fl::amax(input);
+  if (fl::all(minPic == maxPic).asScalar<bool>()) {
     return input;
   }
 
-  auto scale = af::tile(255. / (maxPic - minPic), input.dims());
-  minPic = af::tile(minPic, input.dims());
+  auto scale = fl::tile(255. / (maxPic - minPic), input.shape());
+  minPic = fl::tile(minPic, input.shape());
   return scale * (input - minPic);
 }
 
-af::array contrastEnhance(const af::array& input, const float enhance) {
-  auto inputFlat = af::flat(input);
-  auto meanPic = af::mean(inputFlat, 0);
-  meanPic = af::tile(meanPic, input.dims());
+Tensor contrastEnhance(const Tensor& input, const float enhance) {
+  auto meanPic = fl::mean(input);
+  meanPic = fl::tile(meanPic, input.shape());
   return meanPic + enhance * (input - meanPic);
 }
 
-af::array brightnessEnhance(const af::array& input, const float enhance) {
+Tensor brightnessEnhance(const Tensor& input, const float enhance) {
   return input * enhance;
 }
 
-af::array invert(const af::array& input) {
+Tensor invert(const Tensor& input) {
   return 255. - input;
 }
 
-af::array solarize(const af::array& input, const float threshold) {
+Tensor solarize(const Tensor& input, const float threshold) {
   auto mask = (input < threshold);
   return mask * input + (1 - mask) * (255 - input);
 }
 
-af::array solarizeAdd(
-    const af::array& input,
-    const float threshold,
-    const float addValue) {
+Tensor
+solarizeAdd(const Tensor& input, const float threshold, const float addValue) {
   auto mask = (input < threshold);
   return mask * (input + addValue) + (1 - mask) * input;
 }
 
-af::array equalize(const af::array& input) {
+Tensor equalize(const Tensor& input) {
   auto res = input;
   for (int i = 0; i < 3; i++) {
-    auto resSlice = res(af::span, af::span, i);
-    auto hist = af::histogram(resSlice, 256, 0, 255);
-    resSlice = af::histEqual(resSlice, hist);
+    auto resSlice = res(fl::span, fl::span, i);
+    auto hist = fl::histogram(
+        resSlice, /* numBins = */ 256, /* minVal = */ 0, /* maxVal = */ 255);
+    resSlice = fl::equalize(resSlice, hist);
   }
   return res;
 }
 
-af::array posterize(const af::array& input, const int bitsToKeep) {
+Tensor posterize(const Tensor& input, const int bitsToKeep) {
   if (bitsToKeep < 1 || bitsToKeep > 8) {
     throw std::invalid_argument("bitsToKeep needs to be in [1, 8]");
   }
   uint8_t mask = ~((1 << (8 - bitsToKeep)) - 1);
-  auto res = input.as(u8) & mask;
-  return res.as(input.type());
+  auto res = input.astype(fl::dtype::u8) && mask;
+  return res.astype(input.type());
 }
 
-af::array sharpnessEnhance(const af::array& input, const float enhance) {
-  const int c = input.dims(2);
+Tensor sharpnessEnhance(const Tensor& input, const float enhance) {
+  const int c = input.dim(2);
 
-  auto meanPic = af::mean(input, 2);
-  auto blurKernel = af::gaussianKernel(7, 7);
-  auto blur = af::convolve(meanPic, blurKernel);
-  auto diff = af::tile(meanPic - blur, af::dim4(1, 1, c));
+  auto meanPic = fl::mean(input, {2});
+  auto blurKernel = fl::gaussianFilter({7, 7});
+  auto blur = fl::conv2d(meanPic, blurKernel);
+  auto diff = fl::tile(meanPic - blur, {1, 1, c});
   return input + enhance * diff;
 }
 
-af::array oneHot(
-    const af::array& targets,
+Tensor oneHot(
+    const Tensor& targets,
     const int numClasses,
     const float labelSmoothing) {
   float offValue = labelSmoothing / numClasses;
   float onValue = 1. - labelSmoothing;
 
-  int X = targets.elements();
-  auto y = af::moddims(targets, af::dim4(1, X));
-  auto A = af::range(af::dim4(numClasses, X));
-  auto B = af::tile(y, af::dim4(numClasses));
+  int X = targets.size();
+  auto y = fl::reshape(targets, {1, X});
+  auto A = fl::arange({numClasses, X});
+  auto B = fl::tile(y, {numClasses});
   auto mask = A == B; // [C X]
 
-  af::array out = af::constant(onValue, af::dim4(numClasses, X));
+  Tensor out = fl::full({numClasses, X}, onValue);
   out = out * mask + offValue;
 
   return out;
 }
 
-std::pair<af::array, af::array> mixupBatch(
+std::pair<Tensor, Tensor> mixupBatch(
     const float lambda,
-    const af::array& input,
-    const af::array& target,
+    const Tensor& input,
+    const Tensor& target,
     const int numClasses,
     const float labelSmoothing) {
   // in : W x H x C x B
@@ -272,22 +200,22 @@ std::pair<af::array, af::array> mixupBatch(
   }
 
   // mix input
-  auto inputFlipped = af::flip(input, 3);
+  auto inputFlipped = fl::flip(input, 3);
   auto inputMixed = lambda * inputFlipped + (1 - lambda) * input;
 
   // mix target
   auto targetOneHotFlipped =
-      oneHot(af::flip(target, 0), numClasses, labelSmoothing);
+      oneHot(fl::flip(target, 0), numClasses, labelSmoothing);
   auto targetOneHotMixed =
       lambda * targetOneHotFlipped + (1 - lambda) * targetOneHot;
 
   return {inputMixed, targetOneHotMixed};
 }
 
-std::pair<af::array, af::array> cutmixBatch(
+std::pair<Tensor, Tensor> cutmixBatch(
     const float lambda,
-    const af::array& input,
-    const af::array& target,
+    const Tensor& input,
+    const Tensor& target,
     const int numClasses,
     const float labelSmoothing) {
   // in : W x H x C x B
@@ -298,11 +226,11 @@ std::pair<af::array, af::array> cutmixBatch(
   }
 
   // mix input
-  auto inputFlipped = af::flip(input, 3);
+  auto inputFlipped = fl::flip(input, 3);
 
   const float lambdaSqrt = std::sqrt(lambda);
-  const int w = input.dims(0);
-  const int h = input.dims(1);
+  const int w = input.dim(0);
+  const int h = input.dim(1);
   const int maskW = std::round(w * lambdaSqrt);
   const int maskH = std::round(h * lambdaSqrt);
   const int centerW = randomFloat(0, w);
@@ -314,13 +242,13 @@ std::pair<af::array, af::array> cutmixBatch(
   const int y2 = std::min(h - 1, centerH + maskH / 2);
 
   auto inputMixed = input;
-  inputMixed(af::seq(x1, x2), af::seq(y1, y2), af::span, af::span) =
-      inputFlipped(af::seq(x1, x2), af::seq(y1, y2), af::span, af::span);
+  inputMixed(fl::range(x1, x2 - 1), fl::range(y1, y2 - 1)) =
+      inputFlipped(fl::range(x1, x2), fl::range(y1, y2));
   auto newLambda = static_cast<float>(x2 - x1 + 1) * (y2 - y1 + 1) / (w * h);
 
   // mix target
   auto targetOneHotFlipped =
-      oneHot(af::flip(target, 0), numClasses, labelSmoothing);
+      oneHot(fl::flip(target, 0), numClasses, labelSmoothing);
   auto targetOneHotMixed =
       newLambda * targetOneHotFlipped + (1 - newLambda) * targetOneHot;
 
@@ -328,12 +256,12 @@ std::pair<af::array, af::array> cutmixBatch(
 }
 
 ImageTransform resizeTransform(const uint64_t resize) {
-  return [resize](const af::array& in) { return resizeSmallest(in, resize); };
+  return [resize](const Tensor& in) { return resizeSmallest(in, resize); };
 }
 
 ImageTransform compose(std::vector<ImageTransform> transformfns) {
-  return [transformfns](const af::array& in) {
-    af::array out = in;
+  return [transformfns](const Tensor& in) {
+    Tensor out = in;
     for (auto fn : transformfns) {
       out = fn(out);
     }
@@ -342,15 +270,16 @@ ImageTransform compose(std::vector<ImageTransform> transformfns) {
 }
 
 ImageTransform centerCropTransform(const int size) {
-  return [size](const af::array& in) { return centerCrop(in, size); };
+  return [size](const Tensor& in) { return centerCrop(in, size); };
 };
 
 ImageTransform randomHorizontalFlipTransform(const float p) {
-  return [p](const af::array& in) {
-    af::array out = in;
+  return [p](const Tensor& in) {
+    Tensor out = in;
     if (static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX) > p) {
-      const uint64_t w = in.dims(0);
-      out = out(af::seq(w - 1, 0, -1), af::span, af::span, af::span);
+      const uint64_t w = in.dim(0);
+      // TODO{fl::Tensor} check indexing
+      out = out(fl::range(w - 1, -1, -1));
     }
     return out;
   };
@@ -362,9 +291,9 @@ ImageTransform randomResizeCropTransform(
     const float scaleHigh,
     const float ratioLow,
     const float ratioHigh) {
-  return [=](const af::array& in) mutable {
-    const int w = in.dims(0);
-    const int h = in.dims(1);
+  return [=](const Tensor& in) mutable {
+    const int w = in.dim(0);
+    const int h = in.dim(1);
     const float area = w * h;
     for (int i = 0; i < 10; i++) {
       const float scale = randomFloat(scaleLow, scaleHigh);
@@ -387,7 +316,7 @@ ImageTransform randomResizeCropTransform(
 }
 
 ImageTransform randomResizeTransform(const int low, const int high) {
-  return [low, high](const af::array& in) {
+  return [low, high](const Tensor& in) {
     const float scale =
         static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
     const int resize = low + (high - low) * scale;
@@ -396,10 +325,10 @@ ImageTransform randomResizeTransform(const int low, const int high) {
 };
 
 ImageTransform randomCropTransform(const int tw, const int th) {
-  return [th, tw](const af::array& in) {
-    af::array out = in;
-    const uint64_t w = in.dims(0);
-    const uint64_t h = in.dims(1);
+  return [th, tw](const Tensor& in) {
+    Tensor out = in;
+    const uint64_t w = in.dim(0);
+    const uint64_t h = in.dim(1);
     if (th > h || tw > w) {
       throw std::runtime_error(
           "Target th and target width are great the image size");
@@ -413,12 +342,12 @@ ImageTransform randomCropTransform(const int tw, const int th) {
 ImageTransform normalizeImage(
     const std::vector<float>& meanVector,
     const std::vector<float>& stdVector) {
-  const af::array mean(1, 1, 3, 1, meanVector.data());
-  const af::array std(1, 1, 3, 1, stdVector.data());
-  return [mean, std](const af::array& in) {
-    af::array out = in.as(f32) / 255.f;
-    out = af::batchFunc(out, mean, af::operator-);
-    out = af::batchFunc(out, std, af::operator/);
+  const Tensor mean = Tensor::fromVector({1, 1, 3}, meanVector);
+  const Tensor std = Tensor::fromVector({1, 1, 3}, stdVector);
+  return [mean, std](const Tensor& in) {
+    Tensor out = in.astype(fl::dtype::f32) / 255.f;
+    out = out - mean;
+    out = out / std;
     return out;
   };
 };
@@ -431,17 +360,17 @@ ImageTransform randomEraseTransform(
     const float edgeRatioMax) {
   // follows: https://git.io/JY9R7
   return [p, areaRatioMin, areaRatioMax, edgeRatioMin, edgeRatioMax](
-             const af::array& in) {
+             const Tensor& in) {
     if (p < randomFloat(0, 1)) {
       return in;
     }
 
     const float epsilon = 1e-7;
-    const int w = in.dims(0);
-    const int h = in.dims(1);
-    const int c = in.dims(2);
+    const int w = in.dim(0);
+    const int h = in.dim(1);
+    const int c = in.dim(2);
 
-    af::array out = in;
+    Tensor out = in;
     for (int i = 0; i < 10; i++) {
       const float s = w * h * randomFloat(areaRatioMin, areaRatioMax);
       const float r =
@@ -454,12 +383,9 @@ ImageTransform randomEraseTransform(
 
       const int x = static_cast<int>(randomFloat(0, w - maskW - epsilon));
       const int y = static_cast<int>(randomFloat(0, h - maskH - epsilon));
-      af::array fillValue = af::randn(af::dim4(maskW, maskH, c), in.type());
+      Tensor fillValue = fl::randn({maskW, maskH, c}, in.type());
 
-      out(af::seq(x, x + maskW - 1),
-          af::seq(y, y + maskH - 1),
-          af::span,
-          af::span) = fillValue;
+      out(fl::range(x, x + maskW), fl::range(y, y + maskH)) = fillValue;
       break;
     }
     return out;
@@ -469,11 +395,11 @@ ImageTransform randomEraseTransform(
 ImageTransform randomAugmentationDeitTransform(
     const float p,
     const int n,
-    const af::array& fillImg) {
+    const Tensor& fillImg) {
   // Selected 15 transform functions with specific parameters
   // following https://git.io/JYGG6
 
-  return [p, n, fillImg](const af::array& in) {
+  return [p, n, fillImg](const Tensor& in) {
     auto res = in;
     for (int i = 0; i < n; i++) {
       if (p < randomFloat(0, 1)) {
@@ -486,7 +412,7 @@ ImageTransform randomAugmentationDeitTransform(
         float baseTheta = .47;
         float theta = randomPerturbNegate<float>(baseTheta, -0.02, 0.02);
 
-        res = rotate(res, theta, fillImg);
+        res = fl::rotate(res, theta, fillImg);
       } else if (mode == 1) {
         // skew-x
         float baseTheta = .27;
@@ -557,7 +483,7 @@ ImageTransform randomAugmentationDeitTransform(
 
         res = sharpnessEnhance(res, enhance);
       }
-      res = af::clamp(res, 0., 255.).as(res.type());
+      res = fl::clip(res, 0., 255.).astype(res.type());
     }
     return res;
   };

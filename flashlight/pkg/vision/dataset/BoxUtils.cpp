@@ -9,49 +9,53 @@
 
 #include <arrayfire.h>
 #include <assert.h>
+#include <stdexcept>
 #include <tuple>
 
 #include "flashlight/fl/autograd/Functions.h"
+#include "flashlight/fl/tensor/Index.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 namespace pkg {
 namespace vision {
 
-af::array cxcywh2xyxy(const af::array& bboxes) {
-  auto transformed = af::constant(0, 4, bboxes.dims(1));
-  auto xc = bboxes.row(0);
-  auto yc = bboxes.row(1);
-  auto w = bboxes.row(2);
-  auto h = bboxes.row(3);
-  transformed =
-      af::join(0, xc - 0.5 * w, yc - 0.5 * h, xc + 0.5 * w, yc + 0.5 * h);
+Tensor cxcywh2xyxy(const Tensor& bboxes) {
+  auto transformed = fl::full({4, bboxes.dim(1)}, 0);
+  auto xc = bboxes(fl::range(0, 0));
+  auto yc = bboxes(fl::range(1, 1));
+  auto w = bboxes(fl::range(2, 2));
+  auto h = bboxes(fl::range(3, 3));
+  transformed = fl::concatenate(
+      0, xc - 0.5 * w, yc - 0.5 * h, xc + 0.5 * w, yc + 0.5 * h);
   return transformed;
 }
 
 fl::Variable cxcywh2xyxy(const Variable& bboxes) {
-  auto transformed = Variable(af::constant(0, 4, bboxes.dims(1)), true);
-  auto xc = bboxes.row(0);
-  auto yc = bboxes.row(1);
-  auto w = bboxes.row(2);
-  auto h = bboxes.row(3);
+  auto transformed = Variable(fl::full({4, bboxes.dims(1)}, 0), true);
+  auto xc = bboxes(fl::range(0, 0));
+  auto yc = bboxes(fl::range(1, 1));
+  auto w = bboxes(fl::range(2, 2));
+  auto h = bboxes(fl::range(3, 3));
   transformed = fl::concatenate(
       {xc - 0.5 * w, yc - 0.5 * h, xc + 0.5 * w, yc + 0.5 * h}, 0);
   return transformed;
 }
 
-af::array xyxy2cxcywh(const af::array& bboxes) {
-  auto x0 = bboxes.row(0);
-  auto y0 = bboxes.row(1);
-  auto x1 = bboxes.row(2);
-  auto y1 = bboxes.row(3);
-  af::array result =
-      af::join(0, (x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0), (y1 - y0));
+Tensor xyxy2cxcywh(const Tensor& bboxes) {
+  auto x0 = bboxes(fl::range(0, 0));
+  auto y0 = bboxes(fl::range(1, 1));
+  auto x1 = bboxes(fl::range(2, 2));
+  auto y1 = bboxes(fl::range(3, 3));
+  Tensor result =
+      fl::concatenate(0, (x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0), (y1 - y0));
   return result;
 }
 
-af::array flatten(const af::array& x, int start, int stop) {
-  auto dims = x.dims();
-  af::dim4 newDims = {1, 1, 1, 1};
+Tensor flatten(const Tensor& x, int start, int stop) {
+  std::cout << "------ flatten: x dims " << x.shape() << std::endl;
+  auto dims = x.shape();
+  Shape newDims(std::vector<Dim>(x.ndim(), 1));
   int flattenedDims = 1;
   for (int i = start; i <= stop; i++) {
     flattenedDims = flattenedDims * dims[i];
@@ -59,16 +63,18 @@ af::array flatten(const af::array& x, int start, int stop) {
   for (int i = 0; i < start; i++) {
     newDims[i] = dims[i];
   }
+  std::cout << "flattenedDims " << flattenedDims << std::endl;
   newDims[start] = flattenedDims;
-  for (int i = start + 1; i < (4 - stop); i++) {
+  for (int i = start + 1; i < (x.ndim() - stop); i++) {
     newDims[i] = dims[i + stop];
   }
-  return af::moddims(x, newDims);
+  return fl::reshape(x, newDims);
 };
 
 fl::Variable flatten(const fl::Variable& x, int start, int stop) {
+  unsigned n = x.numdims();
   auto dims = x.dims();
-  af::dim4 newDims = {1, 1, 1, 1};
+  Shape newDims(std::vector<Dim>(n, 1));
   int flattenedDims = 1;
   for (int i = start; i <= stop; i++) {
     flattenedDims = flattenedDims * dims[i];
@@ -76,71 +82,95 @@ fl::Variable flatten(const fl::Variable& x, int start, int stop) {
   for (int i = 0; i < start; i++) {
     newDims[i] = dims[i];
   }
+  std::cout << "flattenedDims " << flattenedDims << std::endl;
   newDims[start] = flattenedDims;
-  for (int i = start + 1; i < (4 - stop); i++) {
+  for (int i = start + 1; i < (n - stop); i++) {
     newDims[i] = dims[i + stop];
   }
-  return fl::moddims(x, newDims);
+  return moddims(x, newDims);
 };
 
-af::array boxArea(const af::array& bboxes) {
-  auto x0 = bboxes.row(0);
-  auto y0 = bboxes.row(1);
-  auto x1 = bboxes.row(2);
-  auto y1 = bboxes.row(3);
+Tensor boxArea(const Tensor& bboxes) {
+  auto x0 = bboxes(fl::range(0, 0));
+  auto y0 = bboxes(fl::range(1, 1));
+  auto x1 = bboxes(fl::range(2, 2));
+  auto y1 = bboxes(fl::range(3, 3));
   auto result = (x1 - x0) * (y1 - y0);
+  std::cout << "boxArea result.dims " << result.shape() << std::endl;
   return result;
 }
 
 fl::Variable boxArea(const fl::Variable& bboxes) {
-  auto x0 = bboxes.row(0);
-  auto y0 = bboxes.row(1);
-  auto x1 = bboxes.row(2);
-  auto y1 = bboxes.row(3);
+  auto x0 = bboxes(fl::range(0, 0));
+  auto y0 = bboxes(fl::range(1, 1));
+  auto x1 = bboxes(fl::range(2, 2));
+  auto y1 = bboxes(fl::range(3, 3));
+
+  std::cout << "x0 " << x0.dims() << " y0 " << y0.dims() << " x1 " << x1.dims()
+            << " y1 " << y1.dims() << std::endl;
+
   auto result = (x1 - x0) * (y1 - y0);
+  std::cout << "boxArea result " << result.tensor() << std::endl;
   return result;
 }
 
-//using batchFuncVar_t = std::function<Variable(const Variable& lhs, const Variable& rhs)>;
-
 Variable cartesian(const Variable& x, const Variable& y, batchFuncVar_t fn) {
-  assert(y.dims(3) == 1);
-  assert(x.dims(3) == 1);
+  if (x.numdims() != 3 || y.numdims() != 3) {
+    throw std::invalid_argument(
+        "vision::cartesian - x and y inputs must have 3 dimensions");
+  }
   assert(x.dims(2) == y.dims(2));
-  af::dim4 yDims = {y.dims(0), 1, y.dims(1), y.dims(2)};
+  Shape yDims = {y.dims(0), 1, y.dims(1), y.dims(2)};
   auto yMod = moddims(y, {y.dims(0), 1, y.dims(1), y.dims(2)});
   auto xMod = moddims(x, {x.dims(0), x.dims(1), 1, x.dims(2)});
-  af::dim4 outputDims = {x.dims(0), x.dims(1), y.dims(1), x.dims(2)};
+  Shape outputDims = {x.dims(0), x.dims(1), y.dims(1), x.dims(2)};
+  std::cout << "cartesian -- x " << x.dims() << " y " << y.dims()
+            << " outputDims " << outputDims << std::endl;
   xMod = tileAs(xMod, outputDims);
   yMod = tileAs(yMod, outputDims);
-  return fn(xMod, yMod);
+
+  std::cout << "xMod " << xMod.dims() << " yMod " << yMod.dims() << std::endl;
+  auto out = fn(xMod, yMod);
+  std::cout << "cartesian output " << out.tensor() << std::endl;
+  return out;
 }
 
-af::array cartesian(const af::array& x, const af::array& y, batchFuncArr_t fn) {
-  assert(y.dims(3) == 1);
-  assert(x.dims(3) == 1);
-  assert(x.dims(2) == y.dims(2));
-  af::dim4 yDims = {y.dims(0), 1, y.dims(1), y.dims(2)};
-  auto yMod = af::moddims(y, {y.dims(0), 1, y.dims(1), y.dims(2)});
-  auto xMod = af::moddims(x, {x.dims(0), x.dims(1), 1, x.dims(2)});
-  af::dim4 outputDims = {x.dims(0), x.dims(1), y.dims(1), x.dims(2)};
+Tensor cartesian(const Tensor& x, const Tensor& y, batchFuncArr_t fn) {
+  if (x.ndim() != 3 || y.ndim() != 3) {
+    throw std::invalid_argument(
+        "vision::cartesian - x and y inputs must have 3 dimensions");
+  }
+  assert(x.dim(2) == y.dim(2));
+  Shape yDims = {y.dim(0), 1, y.dim(1), y.dim(2)};
+  auto yMod = fl::reshape(y, {y.dim(0), 1, y.dim(1), y.dim(2)});
+  auto xMod = fl::reshape(x, {x.dim(0), x.dim(1), 1, x.dim(2)});
+  Shape outputDims = {x.dim(0), x.dim(1), y.dim(1), x.dim(2)};
   xMod = detail::tileAs(xMod, outputDims);
   yMod = detail::tileAs(yMod, outputDims);
   return fn(xMod, yMod);
 }
 
-std::tuple<af::array, af::array> boxIou(
-    const af::array& bboxes1,
-    const af::array& bboxes2) {
+std::tuple<Tensor, Tensor> boxIou(
+    const Tensor& bboxes1,
+    const Tensor& bboxes2) {
+  if (bboxes1.ndim() != 3 || bboxes2.ndim() != 3) {
+    throw std::invalid_argument(
+        "vision::boxIou - bbox inputs must be of shape "
+        "[4, N, B] and [4, M, B]");
+  }
   auto area1 = boxArea(bboxes1);
   auto area2 = boxArea(bboxes2);
-  auto lt = cartesian(bboxes1.rows(0, 1), bboxes2.rows(0, 1), af::max);
-  auto rb = cartesian(bboxes1.rows(2, 3), bboxes2.rows(2, 3), af::min);
-  auto wh = max((rb - lt), 0.0);
-  auto inter = wh.row(0) * wh.row(1);
-  auto uni = cartesian(area1, area2, af::operator+) - inter;
+  auto lt = cartesian(
+      bboxes1(fl::range(0, 2)), bboxes2(fl::range(0, 2)), fl::maximum);
+  auto rb = cartesian(
+      bboxes1(fl::range(2, 4)), bboxes2(fl::range(2, 4)), fl::minimum);
+  auto wh = fl::maximum((rb - lt), 0.0);
+  auto inter = wh(0) * wh(1);
+  auto uni = cartesian(area1, area2, fl::operator+) - inter;
   auto iou = inter / uni;
+  std::cout << "iou " << iou << std::endl;
   iou = flatten(iou, 0, 1);
+  std::cout << "iou post flatten " << iou << std::endl;
   uni = flatten(uni, 0, 1);
   return std::tie(iou, uni);
 }
@@ -148,16 +178,32 @@ std::tuple<af::array, af::array> boxIou(
 std::tuple<fl::Variable, fl::Variable> boxIou(
     const fl::Variable& bboxes1,
     const fl::Variable& bboxes2) {
+  if (bboxes1.numdims() != 3 || bboxes2.numdims() != 3) {
+    throw std::invalid_argument(
+        "vision::boxIou - bbox inputs must be of shape "
+        "[4, N, B] and [4, M, B]");
+  }
   auto area1 = boxArea(bboxes1);
   auto area2 = boxArea(bboxes2);
-  auto lt = cartesian(bboxes1.rows(0, 1), bboxes2.rows(0, 1), fl::max);
-  auto rb = cartesian(bboxes1.rows(2, 3), bboxes2.rows(2, 3), min);
+  std::cout << "area1 " << area1.tensor() << " area2 " << area2.tensor()
+            << std::endl;
+  std::cout << "bboxes1(fl::range(0, 2)) " << bboxes1(fl::range(0, 2)).dims()
+            << " bboxes2(fl::range(0, 2)) " << bboxes2(fl::range(0, 2)).dims()
+            << std::endl;
+  auto lt =
+      cartesian(bboxes1(fl::range(0, 2)), bboxes2(fl::range(0, 2)), fl::max);
+  auto rb = cartesian(bboxes1(fl::range(2, 4)), bboxes2(fl::range(2, 4)), min);
+  std::cout << "rb " << rb.tensor() << " lt " << lt.tensor() << std::endl;
   auto wh = max((rb - lt), 0.0);
-  auto inter = wh.row(0) * wh.row(1);
+  std::cout << "wh dims " << wh.dims() << std::endl;
+  auto inter = wh(0) * wh(1);
   auto uni = cartesian(area1, area2, fl::operator+) - inter;
+  std::cout << "uni " << uni.tensor() << std::endl;
   auto iou = inter / uni;
-  iou = flatten(iou, 0, 1);
-  uni = flatten(uni, 0, 1);
+  std::cout << "iou " << iou.tensor() << std::endl;
+  iou = flatten(iou, 1, 2);
+  std::cout << "iou post flatten " << iou.tensor() << std::endl;
+  uni = flatten(uni, 1, 2);
   return std::tie(iou, uni);
 }
 
@@ -165,38 +211,42 @@ fl::Variable generalizedBoxIou(
     const fl::Variable& bboxes1,
     const fl::Variable& bboxes2) {
   // Make sure all boxes are properly formed
-  assert(af::count(
-             allTrue(bboxes1.array().rows(2, 3) >= bboxes1.array().rows(0, 1)))
+  assert(fl::countNonzero(fl::all(
+                              bboxes1.tensor()(fl::range(2, 4)) >=
+                              bboxes1.tensor()(fl::range(0, 2))))
              .scalar<uint32_t>());
-  assert(af::count(
-             allTrue(bboxes2.array().rows(2, 3) >= bboxes2.array().rows(0, 1)))
+  assert(fl::countNonzero(fl::all(
+                              bboxes2.tensor()(fl::range(2, 4)) >=
+                              bboxes2.tensor()(fl::range(0, 2))))
              .scalar<uint32_t>());
 
   Variable iou, uni;
   std::tie(iou, uni) = boxIou(bboxes1, bboxes2);
-  auto lt = cartesian(bboxes1.rows(0, 1), bboxes2.rows(0, 1), min);
-  auto rb = cartesian(bboxes1.rows(2, 3), bboxes2.rows(2, 3), max);
+  auto lt = cartesian(bboxes1(fl::range(0, 2)), bboxes2(fl::range(0, 2)), min);
+  auto rb = cartesian(bboxes1(fl::range(2, 4)), bboxes2(fl::range(2, 4)), max);
   auto wh = max((rb - lt), 0.0);
-  auto area = wh.row(0) * wh.row(1);
+  auto area = wh(0) * wh(1);
   area = flatten(area, 0, 1);
   return iou - (area - uni) / area;
 }
 
-af::array generalizedBoxIou(
-    const af::array& bboxes1,
-    const af::array& bboxes2) {
+Tensor generalizedBoxIou(const Tensor& bboxes1, const Tensor& bboxes2) {
   // Make sure all boxes are properly formed
-  assert(af::count(allTrue(bboxes1.rows(2, 3) >= bboxes1.rows(0, 1)))
+  assert(fl::countNonzero(
+             fl::all(bboxes1(fl::range(2, 4)) >= bboxes1(fl::range(0, 2))))
              .scalar<uint32_t>());
-  assert(af::count(allTrue(bboxes2.rows(2, 3) >= bboxes2.rows(0, 1)))
+  assert(fl::countNonzero(
+             fl::all(bboxes2(fl::range(2, 4)) >= bboxes2(fl::range(0, 2))))
              .scalar<uint32_t>());
 
-  af::array iou, uni;
+  Tensor iou, uni;
   std::tie(iou, uni) = boxIou(bboxes1, bboxes2);
-  auto lt = cartesian(bboxes1.rows(0, 1), bboxes2.rows(0, 1), af::min);
-  auto rb = cartesian(bboxes1.rows(2, 3), bboxes2.rows(2, 3), af::max);
-  auto wh = max((rb - lt), 0.0);
-  auto area = wh.row(0) * wh.row(1);
+  auto lt = cartesian(
+      bboxes1(fl::range(0, 2)), bboxes2(fl::range(0, 2)), fl::minimum);
+  auto rb = cartesian(
+      bboxes1(fl::range(2, 4)), bboxes2(fl::range(2, 4)), fl::maximum);
+  auto wh = fl::maximum((rb - lt), 0.0);
+  auto area = wh(0) * wh(1);
   area = flatten(area, 0, 1);
   return iou - (area - uni) / area;
 }
