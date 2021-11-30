@@ -1049,6 +1049,7 @@ Variable moddims(const Variable& input, const Shape& dims) {
       inferDims[i] = input.dims(i);
     }
   }
+
   // Infer any -1 dim
   int nInfer = 0;
   for (int i = 0; i < input.numdims(); i++) {
@@ -1617,8 +1618,10 @@ Variable gatedlinearunit(const Variable& input, const int dim) {
   std::vector<fl::Index> shalf(input.numdims(), fl::span);
   fhalf[dim] = fl::range(inSize / 2);
   shalf[dim] = fl::range(inSize / 2, inSize);
+
   Tensor fhalfout = input.tensor()(fhalf);
   Tensor shalfout = input.tensor()(shalf);
+
   // Temporary workaround for indexing bug present in ArrayFire 3.6.1.
   fhalfout = fl::reshape(fhalfout, fhalfout.shape());
   shalfout = fl::reshape(shalfout, shalfout.shape());
