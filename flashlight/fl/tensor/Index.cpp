@@ -9,13 +9,14 @@
 
 namespace fl {
 
-range::range(idx idx) : range(0, idx) {}
+range::range(const idx i) : range(0, i) {}
 
-range::range(idx start, idx end) : range(start, end, /* stride */ 1) {}
+range::range(const idx start, const idx end)
+    : range(start, end, /* stride */ 1) {}
 
-range::range(idx start, idx end, Dim stride)
+range::range(const idx start, const idx end, const Dim stride)
     : // fl::end decays to int
-      start_(std::visit([](Dim idx) -> Dim { return idx; }, start)),
+      start_(std::visit([](const Dim idx) -> Dim { return idx; }, start)),
       // fl::end --> -1, else idx as Dim
       end_(
           std::holds_alternative<fl::end_t>(end)

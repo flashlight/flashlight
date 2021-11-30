@@ -44,18 +44,18 @@ class range {
   /**
    * Construct a range with the indices [0, idx) (i.e. [0, idx - 1])
    */
-  explicit range(idx idx);
+  explicit range(const idx idx);
 
   /**
    * Construct a range with the indices [start, end) (i.e. [start, end - 1])
    */
-  range(idx start, idx end);
+  range(const idx start, const idx end);
 
   /**
    * Construct a range with the indices [start, end) (i.e. [start, end - 1])
    * with the given stride.
    */
-  range(idx start, idx end, Dim stride);
+  range(const idx start, const idx end, const Dim stride);
 
   Dim start() const;
   Dim end() const;
