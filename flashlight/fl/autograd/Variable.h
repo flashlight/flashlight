@@ -16,6 +16,7 @@
 
 #include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/common/Serialization.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 
@@ -78,8 +79,17 @@ class Variable {
    * @param[in] data array to be stored in the Variable
    * @param[in] calcGrad specifies whether to the gradient is required for this
    * Variable
+   * TODO{fl::Tensor}{remove} remove when complete
    */
   Variable(af::array data, bool calcGrad);
+
+  /**
+   * Creates a Variable which wraps the specified Tensor
+   * @param[in] data Tensor to be stored in the Variable
+   * @param[in] calcGrad specifies whether to the gradient is required for this
+   * Variable
+   */
+  Variable(Tensor data, bool calcGrad);
 
   /**
    * Creates a Variable which wraps the array and inputs specified
@@ -87,41 +97,60 @@ class Variable {
    * @param[in] inputs a vector specifying inputs for this Variable
    * @param[in] gradFunc function specifying how to calculate gradient of the
    * input Variables
+   * TODO{fl::Tensor}{remove} remove when complete
    */
   Variable(af::array data, std::vector<Variable> inputs, GradFunc gradFunc);
 
   /**
-   * Indexing operator on the Arrayfire Array wrapped by the Variable
-   * @param[in] s0 sequence of indices along first dimension
-   * @param[in] s1 sequence of indices along second dimension
-   * @param[in] s2 sequence of indices along third dimension
-   * @param[in] s3 sequence of indices along fourth dimension
-   * @param[in] unique boolean to specify whether all dimensions contain unique
-   * indices
+   * Creates a Variable which wraps the specified Tensor and inputs
+   * @param[in] data Tensor to the stored in the Variable
+   * @param[in] inputs a vector specifying inputs for this Variable
+   * @param[in] gradFunc function specifying how to calculate gradient of the
+   * input Variables
+   */
+  Variable(Tensor data, std::vector<Variable> inputs, GradFunc gradFunc);
+
+  Variable operator()(const std::vector<Index>& indices) const;
+
+  /**
+   * Indexing operator on a flattened Variable.
+   * @param[in] indices a variable number of indices.
    * @return Variable storing the result after indexing operation
    */
-  Variable operator()(
-      const af::index& s0,
-      const af::index& s1 = af::span,
-      const af::index& s2 = af::span,
-      const af::index& s3 = af::span,
-      bool unique = false) const;
+  template <typename... Ts>
+  Variable operator()(const Ts&... args) const {
+    std::vector<Index> indices{{args...}};
+    return this->operator()(indices);
+  }
+
+  /**
+   * Indexing operator on a flattened Variable.
+   * @param[in] index index with which to index the flattened tensor
+   * @return Variable storing the result after indexing operation
+   */
+  Variable flat(const fl::Index& index) const;
 
   /**
    * @return a reference to the underlying Arrayfire array.
+   *
+   * TODO{fl::Tensor} - remove
    */
   af::array& array() const;
 
   /**
+   * @return a reference to the underlying Flashlight Tensor.
+   */
+  Tensor& tensor() const;
+
+  /**
    * Creates a new variable based on the current variable whose type will be
-   * adjusted based on the input type. Unlike `inPlaceCast`, `as` does not
-   * change the current variable.
+   * adjusted based on the input type.
    *
    * @param[in] type target data type
    *
    * @return returns the casted variable.
    */
-  Variable as(af::dtype type) const;
+  Variable as(fl::dtype type) const;
 
   /**
    * @return a reference to the underlying gradient Variable.
@@ -141,7 +170,7 @@ class Variable {
   /**
    * Returns the dimension of the array wrapped by the Variable
    */
-  af::dim4 dims() const;
+  Shape dims() const;
 
   /**
    * Returns whether the array wrapped by the Variable is empty
@@ -161,11 +190,12 @@ class Variable {
   Variable linear() const;
 
   /**
-   * Returns the type of the array wrapped by the Variable
+   * Returns the type of the `Tensor` wrapped by the Variable
    * (e.g. f32 for float, f64 for double).
-   * Full list: http://arrayfire.org/docs/defines_8h.htm (search dtype)
+   *
+   * See `fl/tensor/Types.h`.
    */
-  af::dtype type() const;
+  fl::dtype type() const;
 
   /**
    * Returns the total number of elements stored in array wrapped by the
@@ -200,7 +230,7 @@ class Variable {
    */
   template <typename T>
   T* host() const {
-    return array().host<T>();
+    return tensor().host<T>();
   }
 
   /**
@@ -208,7 +238,7 @@ class Variable {
    */
   template <typename T>
   void host(T* ptr) const {
-    array().host(ptr);
+    tensor().host(ptr);
   }
 
   /**
@@ -358,7 +388,7 @@ class Variable {
 
   struct SharedData {
     /// Array wrapped by this Variable
-    af::array data;
+    Tensor data;
 
     FL_SAVE_LOAD(data)
   };

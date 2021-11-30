@@ -17,10 +17,10 @@ namespace fl {
 
 class TensorDescriptor {
  public:
-  explicit TensorDescriptor(const af::array& a);
+  explicit TensorDescriptor(const Tensor& a);
   explicit TensorDescriptor(const Variable& a);
 
-  TensorDescriptor(const af::dtype type, const af::dim4& af_dims);
+  TensorDescriptor(const fl::dtype type, const Shape& af_dims);
 
   cudnnTensorDescriptor_t descriptor;
   ~TensorDescriptor();
@@ -28,7 +28,7 @@ class TensorDescriptor {
 
 class TensorDescriptorArray {
  public:
-  TensorDescriptorArray(int size, const af::dtype type, const af::dim4& dims);
+  TensorDescriptorArray(int size, const fl::dtype type, const Shape& dims);
 
   cudnnTensorDescriptor_t* descriptors;
   ~TensorDescriptorArray();
@@ -40,7 +40,7 @@ class TensorDescriptorArray {
 
 class FilterDescriptor {
  public:
-  explicit FilterDescriptor(const af::array& a);
+  explicit FilterDescriptor(const Tensor& a);
   explicit FilterDescriptor(const Variable& a);
   cudnnFilterDescriptor_t descriptor;
   ~FilterDescriptor();
@@ -49,7 +49,7 @@ class FilterDescriptor {
 class ConvDescriptor {
  public:
   ConvDescriptor(
-      af::dtype type,
+      fl::dtype type,
       int px,
       int py,
       int sx,
@@ -81,13 +81,13 @@ class DropoutDescriptor {
   cudnnDropoutDescriptor_t descriptor;
   ~DropoutDescriptor();
 
-  af::array& getDropoutStates();
+  Tensor& getDropoutStates();
 };
 
 class RNNDescriptor {
  public:
   RNNDescriptor(
-      af::dtype type,
+      fl::dtype type,
       int hidden_size,
       int num_layers,
       RnnMode mode,
@@ -101,11 +101,11 @@ class RNNDescriptor {
 
 void cudnnCheckErr(cudnnStatus_t status);
 
-cudnnDataType_t cudnnMapToType(const af::dtype& t);
+cudnnDataType_t cudnnMapToType(const fl::dtype& t);
 
-const void* kOne(const af::dtype t);
+const void* kOne(const fl::dtype t);
 
-const void* kZero(const af::dtype t);
+const void* kZero(const fl::dtype t);
 
 cudnnHandle_t getCudnnHandle();
 
