@@ -39,7 +39,7 @@ namespace speech {
  *  train004 /tmp/000000000.flac 999.99  quick brown fox jumped
  *
  *
- * Calling `dataset.get(idx)` returns an af::array vector of size 4 - `input`,
+ * Calling `dataset.get(idx)` returns an Tensor vector of size 4 - `input`,
  * `target`, `word_transcription`, `sample_id` in the same order.
  *
  */
@@ -53,13 +53,13 @@ class ListFileDataset : public fl::Dataset {
 
   int64_t size() const override;
 
-  std::vector<af::array> get(const int64_t idx) const override;
+  std::vector<Tensor> get(const int64_t idx) const override;
 
   float getInputSize(const int64_t idx) const;
 
   int64_t getTargetSize(const int64_t idx) const;
 
-  virtual std::pair<std::vector<float>, af::dim4> loadAudio(
+  virtual std::pair<std::vector<float>, Shape> loadAudio(
       const std::string& handle) const;
 
  protected:
