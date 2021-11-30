@@ -6,14 +6,15 @@
  */
 #include "flashlight/pkg/vision/criterion/Hungarian.h"
 
-#include "flashlight/pkg/vision/dataset/BoxUtils.h"
 #include "flashlight/lib/set/Hungarian.h"
+#include "flashlight/pkg/vision/dataset/BoxUtils.h"
 
 #include "flashlight/fl/autograd/Functions.h"
 
 namespace {
+using namespace fl;
 
-af::array softmax(const af::array& input, const int dim) {
+Tensor softmax(const Tensor& input, const int dim) {
   auto maxvals = af::max(input, dim);
   af::dim4 tiledims(1, 1, 1, 1);
   tiledims[dim] = input.dims(dim);
@@ -23,17 +24,18 @@ af::array softmax(const af::array& input, const int dim) {
   return result;
 }
 
-std::pair<af::array, af::array> hungarian(af::array& cost) {
+std::pair<Tensor, Tensor> hungarian(Tensor& cost) {
   cost = cost.T();
-  const int M = cost.dims(0);
-  const int N = cost.dims(1);
-  std::vector<float> costHost(cost.elements());
+  const int M = cost.dim(0);
+  const int N = cost.dim(1);
+  std::vector<float> costHost(cost.size());
   std::vector<int> rowIdxs(M);
   std::vector<int> colIdxs(M);
   cost.host(costHost.data());
-  fl::lib::set::hungarian(costHost.data(), rowIdxs.data(), colIdxs.data(), M, N);
-  auto rowIdxsArray = af::array(M, rowIdxs.data());
-  auto colIdxsArray = af::array(M, colIdxs.data());
+  fl::lib::set::hungarian(
+      costHost.data(), rowIdxs.data(), colIdxs.data(), M, N);
+  auto rowIdxsArray = Tensor::fromVector(rowIdxs);
+  auto colIdxsArray = Tensor::fromVector(colIdxs);
   return {rowIdxsArray, colIdxsArray};
 }
 } // namespace
@@ -48,14 +50,14 @@ HungarianMatcher::HungarianMatcher(
     const float costGiou)
     : costClass_(costClass), costBbox_(costBbox), costGiou_(costGiou){};
 
-std::pair<af::array, af::array> HungarianMatcher::matchBatch(
-    const af::array& predBoxes,
-    const af::array& predLogits,
-    const af::array& targetBoxes,
-    const af::array& targetClasses) const {
+std::pair<Tensor, Tensor> HungarianMatcher::matchBatch(
+    const Tensor& predBoxes,
+    const Tensor& predLogits,
+    const Tensor& targetBoxes,
+    const Tensor& targetClasses) const {
   // Kind of a hack...
-  if (targetClasses.isempty()) {
-    return {af::array(0, 1), af::array(0, 1)};
+  if (targetClasses.isEmpty()) {
+    return {fl::fromScalar(0), fl::fromScalar(0)};
   }
 
   // Create an M X N cost matrix where M is the number of targets and N is the
@@ -65,13 +67,13 @@ std::pair<af::array, af::array> HungarianMatcher::matchBatch(
   auto costClass = transpose((0 - outProbs(targetClasses, af::span)));
 
   // Generalized IOU loss
-  af::array costGiou =
+  Tensor costGiou =
       0 - generalizedBoxIou(cxcywh2xyxy(predBoxes), cxcywh2xyxy(targetBoxes));
 
   // Bbox Cost
-  af::array costBbox = cartesian(
-      predBoxes, targetBoxes, [](const af::array& x, const af::array& y) {
-        return af::sum(af::abs(x - y), 0);
+  Tensor costBbox =
+      cartesian(predBoxes, targetBoxes, [](const Tensor& x, const Tensor& y) {
+        return fl::sum(fl::abs(x - y), {0});
       });
   costBbox = flatten(costBbox, 0, 1);
 
@@ -80,12 +82,12 @@ std::pair<af::array, af::array> HungarianMatcher::matchBatch(
   return ::hungarian(cost);
 }
 
-std::vector<std::pair<af::array, af::array>> HungarianMatcher::compute(
-    const af::array& predBoxes,
-    const af::array& predLogits,
-    const std::vector<af::array>& targetBoxes,
-    const std::vector<af::array>& targetClasses) const {
-  std::vector<std::pair<af::array, af::array>> results;
+std::vector<std::pair<Tensor, Tensor>> HungarianMatcher::compute(
+    const Tensor& predBoxes,
+    const Tensor& predLogits,
+    const std::vector<Tensor>& targetBoxes,
+    const std::vector<Tensor>& targetClasses) const {
+  std::vector<std::pair<Tensor, Tensor>> results;
   for (int b = 0; b < predBoxes.dims(2); b++) {
     auto result = matchBatch(
         predBoxes(af::span, af::span, b),

@@ -29,30 +29,29 @@ std::unordered_map<std::string, float> getLossWeights() {
 }
 
 TEST(SetCriterion, PytorchRepro) {
-  const int NUM_CLASSES = 80;
-  const int NUM_TARGETS = 1;
-  const int NUM_PREDS = 1;
-  const int NUM_BATCHES = 1;
+  const int numClasses = 80;
+  const int numTargets = 1;
+  const int numPreds = 1;
+  const int numBatches = 1;
   std::vector<float> predBoxesVec = {2, 2, 3, 3};
 
   std::vector<float> targetBoxesVec = {2, 2, 3, 3};
 
-  // std::vector<float> predLogitsVec((NUM_CLASSES + 1) * NUM_PREDS * NUM_PREDS,
+  // std::vector<float> predLogitsVec((numClasses + 1) * numPreds * numPreds,
   // 0.0);
 
-  auto predLogitsArray =
-      af::constant(1, {NUM_CLASSES + 1, NUM_PREDS, NUM_BATCHES});
+  auto predLogits = fl::full({numClasses + 1, numPreds, numBatches}, 1);
 
   std::vector<float> targetClassVec = {1};
   auto predBoxes = fl::Variable(
-      af::array(4, NUM_PREDS, NUM_BATCHES, predBoxesVec.data()), true);
-  auto predLogits = fl::Variable(predLogitsArray, true);
+      Tensor::fromVector({4, numPreds, numBatches}, predBoxesVec), true);
+  auto predLogits = fl::Variable(predLogits, true);
 
   std::vector<fl::Variable> targetBoxes = {fl::Variable(
-      af::array(4, NUM_TARGETS, NUM_BATCHES, targetBoxesVec.data()), false)};
+      Tensor::fromVector({4, numTargets, numBatches}, targetBoxesVec), false)};
 
   std::vector<fl::Variable> targetClasses = {fl::Variable(
-      af::array(NUM_TARGETS, NUM_BATCHES, targetClassVec.data()), false)};
+      Tensor::fromVector({numTargets, numBatches}, targetClassVec), false)};
   auto matcher = HungarianMatcher(1, 1, 1);
   auto crit = SetCriterion(80, matcher, getLossWeights(), 0.0);
   auto loss = crit.forward(predBoxes, predLogits, targetBoxes, targetClasses);
@@ -60,30 +59,30 @@ TEST(SetCriterion, PytorchRepro) {
 }
 
 TEST(SetCriterion, PytorchReproMultiplePreds) {
-  const int NUM_CLASSES = 80;
-  const int NUM_TARGETS = 1;
-  const int NUM_PREDS = 2;
-  const int NUM_BATCHES = 1;
+  // TODO: This should really be a fixture
+  const int numClasses = 80;
+  const int numTargets = 1;
+  const int numPreds = 2;
+  const int numBatches = 1;
   std::vector<float> predBoxesVec = {2, 2, 3, 3, 1, 1, 2, 2};
 
   std::vector<float> targetBoxesVec = {2, 2, 3, 3};
 
-  // std::vector<float> predLogitsVec((NUM_CLASSES + 1) * NUM_PREDS * NUM_PREDS,
+  // std::vector<float> predLogitsVec((numClasses + 1) * numPreds * numPreds,
   // 0.0);
 
-  auto predLogitsArray =
-      af::constant(1, NUM_CLASSES + 1, NUM_PREDS, NUM_BATCHES);
+  auto predLogits = fl::full({numClasses + 1, numPreds, numBatches}, 1);
 
   std::vector<float> targetClassVec = {1};
   auto predBoxes = fl::Variable(
-      af::array(4, NUM_PREDS, NUM_BATCHES, predBoxesVec.data()), true);
-  auto predLogits = fl::Variable(predLogitsArray, true);
+      Tensor::fromVector({4, numPreds, numBatches}, predBoxesVec), true);
+  auto predLogits = fl::Variable(predLogits, true);
 
   std::vector<fl::Variable> targetBoxes = {fl::Variable(
-      af::array(4, NUM_TARGETS, NUM_BATCHES, targetBoxesVec.data()), false)};
+      Tensor::fromVector({4, numTargets, numBatches}, targetBoxesVec), false)};
 
   std::vector<fl::Variable> targetClasses = {fl::Variable(
-      af::array(1, NUM_TARGETS, NUM_BATCHES, targetClassVec.data()), false)};
+      Tensor::fromVector({1, numTargets, numBatches}, targetClassVec), false)};
   auto matcher = HungarianMatcher(1, 1, 1);
   auto crit = SetCriterion(80, matcher, getLossWeights(), 0.0);
   auto loss = crit.forward(predBoxes, predLogits, targetBoxes, targetClasses);
@@ -91,10 +90,10 @@ TEST(SetCriterion, PytorchReproMultiplePreds) {
 }
 
 TEST(SetCriterion, PytorchReproMultipleTargets) {
-  const int NUM_CLASSES = 80;
-  const int NUM_TARGETS = 2;
-  const int NUM_PREDS = 2;
-  const int NUM_BATCHES = 1;
+  const int numClasses = 80;
+  const int numTargets = 2;
+  const int numPreds = 2;
+  const int numBatches = 1;
   std::vector<float> predBoxesVec = {2, 2, 3, 3, 1, 1, 2, 2};
 
   std::vector<float> targetBoxesVec = {
@@ -108,22 +107,21 @@ TEST(SetCriterion, PytorchReproMultipleTargets) {
       3,
   };
 
-  // std::vector<float> predLogitsVec((NUM_CLASSES + 1) * NUM_PREDS * NUM_PREDS,
+  // std::vector<float> predLogitsVec((numClasses + 1) * numPreds * numPreds,
   // 0.0);
 
-  auto predLogitsArray =
-      af::constant(1, {NUM_CLASSES + 1, NUM_PREDS, NUM_BATCHES});
+  auto predLogits = fl::full({numClasses + 1, numPreds, numBatches}, 1);
 
   std::vector<float> targetClassVec = {1};
-  auto predBoxes = fl::Variable(
-      af::array(4, NUM_PREDS, NUM_BATCHES, predBoxesVec.data()), true);
-  auto predLogits = fl::Variable(predLogitsArray, true);
+  auto predBoxes =
+      fl::Variable(Tensor::fromVector({4, numPreds, numBatches}), true);
+  auto predLogits = fl::Variable(predLogits, true);
 
   std::vector<fl::Variable> targetBoxes = {fl::Variable(
-      af::array(4, NUM_TARGETS, NUM_BATCHES, targetBoxesVec.data()), false)};
+      Tensor::fromVector({4, numTargets, numBatches}, targetBoxesVec), false)};
 
   std::vector<fl::Variable> targetClasses = {fl::Variable(
-      af::array(NUM_TARGETS, NUM_BATCHES, targetClassVec.data()), false)};
+      Tensor::fromVector({numTargets, numBatches}, targetClassVec), false)};
   auto matcher = HungarianMatcher(1, 1, 1);
   auto crit = SetCriterion(80, matcher, getLossWeights(), 0.0);
   auto loss = crit.forward(predBoxes, predLogits, targetBoxes, targetClasses);
@@ -131,32 +129,31 @@ TEST(SetCriterion, PytorchReproMultipleTargets) {
 }
 
 TEST(SetCriterion, PytorchReproNoPerfectMatch) {
-  const int NUM_CLASSES = 80;
-  const int NUM_TARGETS = 2;
-  const int NUM_PREDS = 2;
-  const int NUM_BATCHES = 1;
+  const int numClasses = 80;
+  const int numTargets = 2;
+  const int numPreds = 2;
+  const int numBatches = 1;
   std::vector<float> predBoxesVec = {2, 2, 3, 3, 1, 1, 2, 2};
 
   std::vector<float> targetBoxesVec = {
       0.9, 0.8, 1.9, 1.95, 1.9, 1.95, 2.9, 2.95};
 
-  // std::vector<float> predLogitsVec((NUM_CLASSES + 1) * NUM_PREDS * NUM_PREDS,
+  // std::vector<float> predLogitsVec((numClasses + 1) * numPreds * numPreds,
   // 0.0);
 
-  auto predLogitsArray =
-      af::constant(1, NUM_CLASSES + 1, NUM_PREDS, NUM_BATCHES);
+  auto predLogits = fl::full({numClasses + 1, numPreds, numBatches}, 1);
 
   std::vector<float> targetClassVec = {1, 1};
 
-  auto predBoxes = fl::Variable(
-      af::array(4, NUM_PREDS, NUM_BATCHES, predBoxesVec.data()), true);
-  auto predLogits = fl::Variable(predLogitsArray, true);
+  auto predBoxes =
+      fl::Variable(Tensor::fromVector({4, numPreds, numBatches}), true);
+  auto predLogits = fl::Variable(predLogits, true);
 
   std::vector<fl::Variable> targetBoxes = {fl::Variable(
-      af::array(4, NUM_TARGETS, NUM_BATCHES, targetBoxesVec.data()), false)};
+      Tensor::fromVector({4, numTargets, numBatches}, targetBoxesVec), false)};
 
   std::vector<fl::Variable> targetClasses = {fl::Variable(
-      af::array(NUM_TARGETS, NUM_BATCHES, targetClassVec.data()), false)};
+      Tensor::fromVector({numTargets, numBatches}, targetClassVec), false)};
   auto matcher = HungarianMatcher(1, 1, 1);
   auto crit = SetCriterion(80, matcher, getLossWeights(), 0.0);
   auto loss = crit.forward(predBoxes, predLogits, targetBoxes, targetClasses);
@@ -165,10 +162,10 @@ TEST(SetCriterion, PytorchReproNoPerfectMatch) {
 }
 
 TEST(SetCriterion, PytorchMismatch1) {
-  const int NUM_CLASSES = 80;
-  const int NUM_TARGETS = 1;
-  const int NUM_PREDS = 1;
-  const int NUM_BATCHES = 1;
+  const int numClasses = 80;
+  const int numTargets = 1;
+  const int numPreds = 1;
+  const int numBatches = 1;
   std::vector<float> predBoxesVec = {
       2,
       2,
@@ -183,26 +180,25 @@ TEST(SetCriterion, PytorchMismatch1) {
       2,
   };
 
-  // std::vector<float> predLogitsVec((NUM_CLASSES + 1) * NUM_PREDS * NUM_PREDS,
+  // std::vector<float> predLogitsVec((numClasses + 1) * numPreds * numPreds,
   // 0.0);
 
   std::vector<float> targetClassVec = {1, 1};
 
-  auto predBoxes = fl::Variable(
-      af::array(4, NUM_PREDS, NUM_BATCHES, predBoxesVec.data()), true);
-  auto predLogitsArray =
-      af::constant(1, NUM_CLASSES + 1, NUM_PREDS, NUM_BATCHES);
-  auto predLogits = fl::Variable(predLogitsArray, true);
+  auto predBoxes =
+      fl::Variable(Tensor::fromVector({4, numPreds, numBatches}), true);
+  auto predLogits = fl::full({numClasses + 1, numPreds, numBatches}, 1);
+  auto predLogits = fl::Variable(predLogits, true);
 
   std::vector<fl::Variable> targetBoxes = {
       fl::Variable(
-          af::array(4, NUM_TARGETS, NUM_PREDS, targetBoxesVec1.data()), false),
+          Tensor::fromVector({4, numTargets, numPreds}, targetBoxesVec1),
+          false),
   };
 
   std::vector<fl::Variable> targetClasses = {
       fl::Variable(
-          af::array(1, NUM_TARGETS, NUM_PREDS, 1, targetClassVec.data()),
-          false),
+          Tensor::fromVector({1, numTargets, numPreds}, targetClassVec), false),
   };
   auto matcher = HungarianMatcher(1, 1, 1);
   auto crit = SetCriterion(80, matcher, getLossWeights(), 0.0);
@@ -212,10 +208,10 @@ TEST(SetCriterion, PytorchMismatch1) {
 }
 
 TEST(SetCriterion, PytorchMismatch2) {
-  const int NUM_CLASSES = 80;
-  const int NUM_TARGETS = 1;
-  const int NUM_PREDS = 1;
-  const int NUM_BATCHES = 1;
+  const int numClasses = 80;
+  const int numTargets = 1;
+  const int numPreds = 1;
+  const int numBatches = 1;
   std::vector<float> predBoxesVec = {
       1,
       1,
@@ -230,26 +226,25 @@ TEST(SetCriterion, PytorchMismatch2) {
       3,
   };
 
-  // std::vector<float> predLogitsVec((NUM_CLASSES + 1) * NUM_PREDS * NUM_PREDS,
+  // std::vector<float> predLogitsVec((numClasses + 1) * numPreds * numPreds,
   // 0.0);
 
   std::vector<float> targetClassVec = {1, 1};
 
-  auto predBoxes = fl::Variable(
-      af::array(4, NUM_PREDS, NUM_BATCHES, predBoxesVec.data()), true);
-  auto predLogitsArray =
-      af::constant(1, NUM_CLASSES + 1, NUM_PREDS, NUM_BATCHES);
-  auto predLogits = fl::Variable(predLogitsArray, true);
+  auto predBoxes =
+      fl::Variable(Tensor::fromVector({4, numPreds, numBatches}), true);
+  auto predLogits = fl::full({numClasses + 1, numPreds, numBatches}, 1);
+  auto predLogits = fl::Variable(predLogits, true);
 
   std::vector<fl::Variable> targetBoxes = {
       fl::Variable(
-          af::array(4, NUM_TARGETS, NUM_PREDS, targetBoxesVec1.data()), false),
+          Tensor::fromVector({4, numTargets, numPreds}, targetBoxesVec1),
+          false),
   };
 
   std::vector<fl::Variable> targetClasses = {
       fl::Variable(
-          af::array(1, NUM_TARGETS, NUM_PREDS, 1, targetClassVec.data()),
-          false),
+          Tensor::fromVector({1, numTargets, numPreds}, targetClassVec), false),
   };
   auto matcher = HungarianMatcher(1, 1, 1);
   auto crit = SetCriterion(80, matcher, getLossWeights(), 0.0);
@@ -259,10 +254,10 @@ TEST(SetCriterion, PytorchMismatch2) {
 }
 
 TEST(SetCriterion, PytorchReproBatching) {
-  const int NUM_CLASSES = 80;
-  const int NUM_TARGETS = 1;
-  const int NUM_PREDS = 1;
-  const int NUM_BATCHES = 2;
+  const int numClasses = 80;
+  const int numTargets = 1;
+  const int numPreds = 1;
+  const int numBatches = 2;
   std::vector<float> predBoxesVec = {2, 2, 3, 3, 1, 1, 2, 2};
 
   std::vector<float> targetBoxesVec1 = {
@@ -279,28 +274,30 @@ TEST(SetCriterion, PytorchReproBatching) {
       3,
   };
 
-  // std::vector<float> predLogitsVec((NUM_CLASSES + 1) * NUM_PREDS * NUM_PREDS,
+  // std::vector<float> predLogitsVec((numClasses + 1) * numPreds * numPreds,
   // 0.0);
 
   std::vector<float> targetClassVec = {1, 1};
 
-  auto predBoxes = fl::Variable(
-      af::array(4, NUM_PREDS, NUM_BATCHES, predBoxesVec.data()), true);
-  auto predLogitsArray =
-      af::constant(1, {NUM_CLASSES + 1, NUM_PREDS, NUM_BATCHES});
-  auto predLogits = fl::Variable(predLogitsArray, true);
+  auto predBoxes =
+      fl::Variable(Tensor::fromVector({4, numPreds, numBatches}), true);
+  auto predLogits = fl::full({numClasses + 1, numPreds, numBatches}, 1);
+  auto predLogits = fl::Variable(predLogits, true);
 
   std::vector<fl::Variable> targetBoxes = {
       fl::Variable(
-          af::array(4, NUM_TARGETS, NUM_PREDS, targetBoxesVec1.data()), false),
+          Tensor::fromVector({4, numTargets, numPreds}, targetBoxesVec1),
+          false),
       fl::Variable(
-          af::array(4, NUM_TARGETS, NUM_PREDS, targetBoxesVec2.data()), false)};
+          Tensor::fromVector({4, numTargets, numPreds}, targetBoxesVec2),
+          false)};
 
   std::vector<fl::Variable> targetClasses = {
       fl::Variable(
-          af::array(NUM_TARGETS, NUM_PREDS, 1, targetClassVec.data()), false),
+          Tensor::fromVector({numTargets, numPreds, 1}, targetClassVec), false),
       fl::Variable(
-          af::array(NUM_TARGETS, NUM_PREDS, 1, targetClassVec.data()), false)};
+          Tensor::fromVector({numTargets, numPreds, 1}, targetClassVec),
+          false)};
   auto matcher = HungarianMatcher(1, 1, 1);
   auto crit = SetCriterion(80, matcher, getLossWeights(), 0.0);
   auto loss = crit.forward(predBoxes, predLogits, targetBoxes, targetClasses);
@@ -309,9 +306,9 @@ TEST(SetCriterion, PytorchReproBatching) {
 }
 
 TEST(SetCriterion, DifferentNumberOfLabels) {
-  const int NUM_CLASSES = 80;
-  const int NUM_PREDS = 2;
-  const int NUM_BATCHES = 2;
+  const int numClasses = 80;
+  const int numPreds = 2;
+  const int numBatches = 2;
   std::vector<float> predBoxesVec = {
       2, 2, 3, 3, 1, 1, 2, 2, 2, 2, 3, 3, 1, 1, 2, 2};
 
@@ -333,24 +330,23 @@ TEST(SetCriterion, DifferentNumberOfLabels) {
       3,
   };
 
-  // std::vector<float> predLogitsVec((NUM_CLASSES + 1) * NUM_PREDS * NUM_PREDS,
+  // std::vector<float> predLogitsVec((numClasses + 1) * numPreds * numPreds,
   // 0.0);
 
   std::vector<float> targetClassVec = {1, 1};
 
-  auto predBoxes = fl::Variable(
-      af::array(4, NUM_PREDS, NUM_BATCHES, predBoxesVec.data()), true);
-  auto predLogitsArray =
-      af::constant(1, {NUM_CLASSES + 1, NUM_PREDS, NUM_BATCHES});
-  auto predLogits = fl::Variable(predLogitsArray, true);
+  auto predBoxes =
+      fl::Variable(Tensor::fromVector({4, numPreds, numBatches}), true);
+  auto predLogits = fl::full({numClasses + 1, numPreds, numBatches}, 1);
+  auto predLogits = fl::Variable(predLogits, true);
 
   std::vector<fl::Variable> targetBoxes = {
-      fl::Variable(af::array(4, 2, 1, targetBoxesVec1.data()), false),
-      fl::Variable(af::array(4, 1, 1, targetBoxesVec2.data()), false)};
+      fl::Variable(Tensor::fromVector({4, 2, 1}, targetBoxesVec1), false),
+      fl::Variable(Tensor::fromVector({4, 1, 1}, targetBoxesVec2), false)};
 
   std::vector<fl::Variable> targetClasses = {
-      fl::Variable(af::constant(1, {2, 1, 1}), false),
-      fl::Variable(af::constant(1, {1, 1, 1}), false)};
+      fl::Variable(fl::full({2, 1, 1}, 1), false),
+      fl::Variable(fl::full({1, 1, 1}, 1), false)};
   auto matcher = HungarianMatcher(1, 1, 1);
   auto crit = SetCriterion(80, matcher, getLossWeights(), 0.0);
   auto loss = crit.forward(predBoxes, predLogits, targetBoxes, targetClasses);
@@ -359,9 +355,9 @@ TEST(SetCriterion, DifferentNumberOfLabels) {
 }
 // Test to make sure class labels are properly handles across batches
 TEST(SetCriterion, DifferentNumberOfLabelsClass) {
-  const int NUM_CLASSES = 80;
-  const int NUM_PREDS = 3;
-  const int NUM_BATCHES = 2;
+  const int numClasses = 80;
+  const int numPreds = 3;
+  const int numBatches = 2;
   std::vector<float> predBoxesVec = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
                                      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 
@@ -374,22 +370,21 @@ TEST(SetCriterion, DifferentNumberOfLabelsClass) {
       1,
   };
 
-  auto predBoxes = fl::Variable(
-      af::array(4, NUM_PREDS, NUM_BATCHES, predBoxesVec.data()), true);
-  auto predLogitsArray =
-      af::constant(1, {NUM_CLASSES + 1, NUM_PREDS, NUM_BATCHES});
-  predLogitsArray(1, 1, 0) = 10; // These should get matched
-  predLogitsArray(2, 2, 0) = 10;
-  predLogitsArray(9, 1, 1) = 10;
-  auto predLogits = fl::Variable(predLogitsArray, true);
+  auto predBoxes =
+      fl::Variable(Tensor::fromVector({4, numPreds, numBatches}), true);
+  auto predLogits = fl::full({numClasses + 1, numPreds, numBatches}, 1);
+  predLogits(1, 1, 0) = 10; // These should get matched
+  predLogits(2, 2, 0) = 10;
+  predLogits(9, 1, 1) = 10;
+  auto predLogits = fl::Variable(predLogits, true);
 
   std::vector<fl::Variable> targetBoxes = {
-      fl::Variable(af::array(4, 2, 1, targetBoxesVec1.data()), false),
-      fl::Variable(af::array(4, 1, 1, targetBoxesVec2.data()), false)};
+      fl::Variable(Tensor::fromVector({4, 2, 1}, targetBoxesVec1), false),
+      fl::Variable(Tensor::fromVector({4, 1, 1}, targetBoxesVec2), false)};
 
   std::vector<fl::Variable> targetClasses = {
-      fl::Variable(af::iota({2}), false),
-      fl::Variable(af::constant(9, {1, 1, 1}), false)};
+      fl::Variable(fl::iota({2}), false),
+      fl::Variable(fl::full({1, 1, 1}, 9), false)};
   auto matcher = HungarianMatcher(1, 1, 1);
   auto crit = SetCriterion(80, matcher, getLossWeights(), 0.0);
   auto loss = crit.forward(predBoxes, predLogits, targetBoxes, targetClasses);
