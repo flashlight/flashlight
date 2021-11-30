@@ -34,10 +34,8 @@ AdamOptimizer::AdamOptimizer(
   biasedSecond_.reserve(parameters.size());
 
   for (const auto& parameter : parameters_) {
-    biasedFirst_.emplace_back(
-        af::constant(0, parameter.dims(), parameter.type()));
-    biasedSecond_.emplace_back(
-        af::constant(0, parameter.dims(), parameter.type()));
+    biasedFirst_.emplace_back(fl::full(parameter.dims(), 0, parameter.type()));
+    biasedSecond_.emplace_back(fl::full(parameter.dims(), 0, parameter.type()));
 
     fl::eval(biasedFirst_.back());
     fl::eval(biasedSecond_.back());
@@ -55,16 +53,16 @@ void AdamOptimizer::step() {
       continue;
     }
 
-    const af::array& grad = parameters_[i].grad().array();
-    af::array& data = parameters_[i].array();
+    const Tensor& grad = parameters_[i].grad().tensor();
+    Tensor& data = parameters_[i].tensor();
 
     if (wd_ != 0) {
       // Weight decay term
       data = data - wd_ * lr_ * data;
     }
 
-    af::array& biasedFirst = biasedFirst_[i];
-    af::array& biasedSecond = biasedSecond_[i];
+    Tensor& biasedFirst = biasedFirst_[i];
+    Tensor& biasedSecond = biasedSecond_[i];
 
     biasedFirst = beta1_ * biasedFirst + (1 - beta1_) * grad;
     biasedSecond = beta2_ * biasedSecond + (1 - beta2_) * grad * grad;
@@ -72,7 +70,7 @@ void AdamOptimizer::step() {
     fl::eval(biasedFirst);
     fl::eval(biasedSecond);
 
-    data = data - (correctedLr * biasedFirst) / (af::sqrt(biasedSecond) + eps_);
+    data = data - (correctedLr * biasedFirst) / (fl::sqrt(biasedSecond) + eps_);
 
     fl::eval(data);
   }
