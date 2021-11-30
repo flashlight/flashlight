@@ -5,9 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <arrayfire.h>
-
 #include "flashlight/pkg/vision/dataset/BoxUtils.h"
+#include "flashlight/fl/tensor/Index.h"
 
 #include <gtest/gtest.h>
 
@@ -17,8 +16,8 @@ TEST(BoxUtils, IOU) {
   std::vector<float> labels = {0, 0, 10, 10, 1};
   std::vector<float> preds = {1, 1, 11, 11, 1};
   std::vector<float> costs = {0.680672268908};
-  fl::Variable labelArr = {Tensor::fromVector({5, 1}, labels), false};
-  fl::Variable predArr = {Tensor::fromVector({5, 1}, preds), false};
+  fl::Variable labelArr = {fl::Tensor::fromVector({5, 1, 1}, labels), false};
+  fl::Variable predArr = {fl::Tensor::fromVector({5, 1, 1}, preds), false};
   fl::Variable result, uni;
   std::tie(result, uni) = boxIou(predArr, labelArr);
   EXPECT_EQ(result.tensor()(0, 0).scalar<float>(), costs[0]);
@@ -28,8 +27,8 @@ TEST(BoxUtils, IOU2) {
   std::vector<float> labels = {0, 0, 10, 10, 1};
   std::vector<float> preds = {12, 12, 22, 22, 1};
   std::vector<float> costs = {0.0};
-  fl::Variable labelArr = {Tensor::fromVector({5, 1}, labels), false};
-  fl::Variable predArr = {Tensor::fromVector({5, 1}, preds), false};
+  fl::Variable labelArr = {fl::Tensor::fromVector({5, 1, 1}, labels), false};
+  fl::Variable predArr = {fl::Tensor::fromVector({5, 1, 1}, preds), false};
   fl::Variable result, uni;
   std::tie(result, uni) = boxIou(predArr, labelArr);
   EXPECT_EQ(result(0, 0).tensor().scalar<float>(), costs[0]);
@@ -40,8 +39,9 @@ TEST(BoxUtils, IOU3) {
   std::vector<float> preds = {1, 1, 3, 3, 1};
   std::vector<float> costs = {0.142857142857};
   fl::Variable labelArr =
-      fl::Variable(Tensor::fromVector({5, 1}, labels), false);
-  fl::Variable predArr = fl::Variable(Tensor::fromVector({5, 1}, preds), false);
+      fl::Variable(fl::Tensor::fromVector({5, 1, 1}, labels), false);
+  fl::Variable predArr =
+      fl::Variable(fl::Tensor::fromVector({5, 1, 1}, preds), false);
   fl::Variable result, uni;
   std::tie(result, uni) = boxIou(predArr, labelArr);
   EXPECT_EQ(result(0, 0).tensor().scalar<float>(), costs[0]);
@@ -49,10 +49,10 @@ TEST(BoxUtils, IOU3) {
 
 TEST(BoxUtils, IOU4) {
   std::vector<float> labels = {0, 0, 2, 2, 1};
-  std::vector<float> preds = {3, 0, 5, 2, 1};
+  std::vector<float> preds = {3, 0, 5, 2, 1, 1};
   std::vector<float> costs = {0.0};
-  fl::Variable labelArr = {Tensor::fromVector({5, 1}, labels), false};
-  fl::Variable predArr = {Tensor::fromVector({5, 1}, preds), false};
+  fl::Variable labelArr = {fl::Tensor::fromVector({5, 1, 1}, labels), false};
+  fl::Variable predArr = {fl::Tensor::fromVector({5, 1, 1}, preds), false};
   fl::Variable result, uni;
   std::tie(result, uni) = boxIou(predArr, labelArr);
   EXPECT_EQ(result(0, 0).tensor().scalar<float>(), costs[0]);
@@ -62,8 +62,8 @@ TEST(BoxUtils, IOU5) {
   std::vector<float> labels = {0, 0, 2, 2, 1};
   std::vector<float> preds = {1, 1, 3, 3, 1};
   std::vector<float> costs = {0.14285714285714285};
-  fl::Variable labelArr = {Tensor::fromVector({5, 1}, labels), false};
-  fl::Variable predArr = {Tensor::fromVector({5, 1}, preds), false};
+  fl::Variable labelArr = {fl::Tensor::fromVector({5, 1, 1}, labels), false};
+  fl::Variable predArr = {fl::Tensor::fromVector({5, 1, 1}, preds), false};
   fl::Variable result, uni;
   std::tie(result, uni) = boxIou(predArr, labelArr);
   EXPECT_EQ(result.tensor()(0, 0).scalar<float>(), costs[0]);
@@ -73,8 +73,8 @@ TEST(BoxUtils, IOU6) {
   std::vector<float> labels = {0, 0, 4, 4, 1};
   std::vector<float> preds = {1, 1, 3, 3, 1};
   std::vector<float> costs = {0.25};
-  fl::Variable labelArr = {Tensor::fromVector({5, 1}, labels), false};
-  fl::Variable predArr = {Tensor::fromVector({5, 1}, preds), false};
+  fl::Variable labelArr = {fl::Tensor::fromVector({5, 1, 1}, labels), false};
+  fl::Variable predArr = {fl::Tensor::fromVector({5, 1, 1}, preds), false};
   fl::Variable result, uni;
   std::tie(result, uni) = boxIou(predArr, labelArr);
   EXPECT_EQ(result(0, 0).tensor().scalar<float>(), costs[0]);
@@ -89,10 +89,11 @@ TEST(BoxUtils, IOU7) {
       0.14285714285714285,
       0.3333333333 //
   };
-  fl::Variable labelArr = {Tensor::fromVector({5, 2}, labels), false};
-  fl::Variable predArr = {Tensor::fromVector({5, 2}, preds), false};
+  fl::Variable labelArr = {fl::Tensor::fromVector({5, 2, 1}, labels), false};
+  fl::Variable predArr = {fl::Tensor::fromVector({5, 2, 1}, preds), false};
   fl::Variable result, uni;
   std::tie(result, uni) = boxIou(predArr, labelArr);
+  std::cout << "result " << result.tensor() << std::endl;
   EXPECT_EQ(result(0, 0).tensor().scalar<float>(), costs[0]);
   EXPECT_EQ(result(1, 0).tensor().scalar<float>(), costs[1]);
   EXPECT_EQ(result(0, 1).tensor().scalar<float>(), costs[2]);
@@ -111,8 +112,8 @@ TEST(BoxUtils, IOU8) {
   std::vector<float> costs = {
       0.25, 0.25, // Both boxes are contained in first box
   };
-  fl::Variable labelArr = {Tensor::fromVector({5, 2}, labels), false};
-  fl::Variable predArr = {Tensor::fromVector({5, 2}, preds), false};
+  fl::Variable labelArr = {fl::Tensor::fromVector({5, 2, 1}, labels), false};
+  fl::Variable predArr = {fl::Tensor::fromVector({5, 2, 1}, preds), false};
   fl::Variable result, uni;
   std::tie(result, uni) = boxIou(predArr, labelArr);
   EXPECT_EQ(result(0, 0).tensor().scalar<float>(), costs[0]);
@@ -136,8 +137,8 @@ TEST(BoxUtils, IOUBatched) {
   std::vector<float> costs = {
       0.25, 0.25, // Both boxes are contained in first box
   };
-  fl::Variable labelArr = {Tensor::fromVector({5, 1, 2}, labels), false};
-  fl::Variable predArr = {Tensor::fromVector({5, 1, 2}, preds), false};
+  fl::Variable labelArr = {fl::Tensor::fromVector({5, 1, 2}, labels), false};
+  fl::Variable predArr = {fl::Tensor::fromVector({5, 1, 2}, preds), false};
   fl::Variable result, uni;
   std::tie(result, uni) = boxIou(predArr, labelArr);
   EXPECT_EQ(result(0, 0, 0).tensor().scalar<float>(), costs[0]);
@@ -149,8 +150,8 @@ TEST(BoxUtils, IOUBatched) {
 TEST(BoxUtils, GIOU) {
   std::vector<float> preds = {0, 0, 1, 1, 1, 1, 1, 2, 2, 1};
   std::vector<float> labels = {2, 2, 3, 3, 1};
-  fl::Variable labelArr = {Tensor::fromVector({5, 1}, labels), false};
-  fl::Variable predArr = {Tensor::fromVector({5, 2}, preds), false};
+  fl::Variable labelArr = {fl::Tensor::fromVector({5, 1, 1}, labels), false};
+  fl::Variable predArr = {fl::Tensor::fromVector({5, 2, 1}, preds), false};
   fl::Variable result = generalizedBoxIou(predArr, labelArr);
   EXPECT_LT(
       result(0, 0).tensor().scalar<float>(), result(1, 0).scalar<float>());

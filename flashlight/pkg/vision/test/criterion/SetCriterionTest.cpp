@@ -5,11 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <unordered_map>
+
+#include "flashlight/fl/tensor/Index.h"
 #include "flashlight/pkg/vision/criterion/SetCriterion.h"
 #include "flashlight/pkg/vision/nn/Transformer.h"
 
 #include <gtest/gtest.h>
-#include <unordered_map>
 
 using namespace fl;
 using namespace fl::pkg::vision;
@@ -40,15 +42,15 @@ TEST(SetCriterion, PytorchRepro) {
   // std::vector<float> predLogitsVec((numClasses + 1) * numPreds * numPreds,
   // 0.0);
 
-  auto predLogits = fl::full({numClasses + 1, numPreds, numBatches}, 1);
-
   std::vector<float> targetClassVec = {1};
   auto predBoxes = fl::Variable(
-      Tensor::fromVector({4, numPreds, numBatches}, predBoxesVec), true);
-  auto predLogits = fl::Variable(predLogits, true);
+      Tensor::fromVector({4, numPreds, numBatches, 1}, predBoxesVec), true);
+  auto predLogits =
+      fl::Variable(fl::full({numClasses + 1, numPreds, numBatches}, 1), true);
 
   std::vector<fl::Variable> targetBoxes = {fl::Variable(
-      Tensor::fromVector({4, numTargets, numBatches}, targetBoxesVec), false)};
+      Tensor::fromVector({4, numTargets, numBatches, 1}, targetBoxesVec),
+      false)};
 
   std::vector<fl::Variable> targetClasses = {fl::Variable(
       Tensor::fromVector({numTargets, numBatches}, targetClassVec), false)};
@@ -71,15 +73,15 @@ TEST(SetCriterion, PytorchReproMultiplePreds) {
   // std::vector<float> predLogitsVec((numClasses + 1) * numPreds * numPreds,
   // 0.0);
 
-  auto predLogits = fl::full({numClasses + 1, numPreds, numBatches}, 1);
-
   std::vector<float> targetClassVec = {1};
   auto predBoxes = fl::Variable(
-      Tensor::fromVector({4, numPreds, numBatches}, predBoxesVec), true);
-  auto predLogits = fl::Variable(predLogits, true);
+      Tensor::fromVector({4, numPreds, numBatches, 1}, predBoxesVec), true);
+  auto predLogits =
+      fl::Variable(fl::full({numClasses + 1, numPreds, numBatches}, 1), true);
 
   std::vector<fl::Variable> targetBoxes = {fl::Variable(
-      Tensor::fromVector({4, numTargets, numBatches}, targetBoxesVec), false)};
+      Tensor::fromVector({4, numTargets, numBatches, 1}, targetBoxesVec),
+      false)};
 
   std::vector<fl::Variable> targetClasses = {fl::Variable(
       Tensor::fromVector({1, numTargets, numBatches}, targetClassVec), false)};
@@ -110,15 +112,15 @@ TEST(SetCriterion, PytorchReproMultipleTargets) {
   // std::vector<float> predLogitsVec((numClasses + 1) * numPreds * numPreds,
   // 0.0);
 
-  auto predLogits = fl::full({numClasses + 1, numPreds, numBatches}, 1);
-
   std::vector<float> targetClassVec = {1};
-  auto predBoxes =
-      fl::Variable(Tensor::fromVector({4, numPreds, numBatches}), true);
-  auto predLogits = fl::Variable(predLogits, true);
+  auto predBoxes = fl::Variable(
+      Tensor::fromVector({4, numPreds, numBatches, 1}, predBoxesVec), true);
+  auto predLogits =
+      fl::Variable(fl::full({numClasses + 1, numPreds, numBatches}, 1), true);
 
   std::vector<fl::Variable> targetBoxes = {fl::Variable(
-      Tensor::fromVector({4, numTargets, numBatches}, targetBoxesVec), false)};
+      Tensor::fromVector({4, numTargets, numBatches, 1}, targetBoxesVec),
+      false)};
 
   std::vector<fl::Variable> targetClasses = {fl::Variable(
       Tensor::fromVector({numTargets, numBatches}, targetClassVec), false)};
@@ -141,16 +143,16 @@ TEST(SetCriterion, PytorchReproNoPerfectMatch) {
   // std::vector<float> predLogitsVec((numClasses + 1) * numPreds * numPreds,
   // 0.0);
 
-  auto predLogits = fl::full({numClasses + 1, numPreds, numBatches}, 1);
-
   std::vector<float> targetClassVec = {1, 1};
 
-  auto predBoxes =
-      fl::Variable(Tensor::fromVector({4, numPreds, numBatches}), true);
-  auto predLogits = fl::Variable(predLogits, true);
+  auto predBoxes = fl::Variable(
+      Tensor::fromVector({4, numPreds, numBatches, 1}, predBoxesVec), true);
+  auto predLogits =
+      fl::Variable(fl::full({numClasses + 1, numPreds, numBatches}, 1), true);
 
   std::vector<fl::Variable> targetBoxes = {fl::Variable(
-      Tensor::fromVector({4, numTargets, numBatches}, targetBoxesVec), false)};
+      Tensor::fromVector({4, numTargets, numBatches, 1}, targetBoxesVec),
+      false)};
 
   std::vector<fl::Variable> targetClasses = {fl::Variable(
       Tensor::fromVector({numTargets, numBatches}, targetClassVec), false)};
@@ -185,10 +187,10 @@ TEST(SetCriterion, PytorchMismatch1) {
 
   std::vector<float> targetClassVec = {1, 1};
 
-  auto predBoxes =
-      fl::Variable(Tensor::fromVector({4, numPreds, numBatches}), true);
-  auto predLogits = fl::full({numClasses + 1, numPreds, numBatches}, 1);
-  auto predLogits = fl::Variable(predLogits, true);
+  auto predBoxes = fl::Variable(
+      Tensor::fromVector({4, numPreds, numBatches, 1}, predBoxesVec), true);
+  auto predLogits =
+      fl::Variable(fl::full({numClasses + 1, numPreds, numBatches}, 1), true);
 
   std::vector<fl::Variable> targetBoxes = {
       fl::Variable(
@@ -231,10 +233,10 @@ TEST(SetCriterion, PytorchMismatch2) {
 
   std::vector<float> targetClassVec = {1, 1};
 
-  auto predBoxes =
-      fl::Variable(Tensor::fromVector({4, numPreds, numBatches}), true);
-  auto predLogits = fl::full({numClasses + 1, numPreds, numBatches}, 1);
-  auto predLogits = fl::Variable(predLogits, true);
+  auto predBoxes = fl::Variable(
+      Tensor::fromVector({4, numPreds, numBatches, 1}, predBoxesVec), true);
+  auto predLogits =
+      fl::Variable(fl::full({numClasses + 1, numPreds, numBatches}, 1), true);
 
   std::vector<fl::Variable> targetBoxes = {
       fl::Variable(
@@ -279,10 +281,10 @@ TEST(SetCriterion, PytorchReproBatching) {
 
   std::vector<float> targetClassVec = {1, 1};
 
-  auto predBoxes =
-      fl::Variable(Tensor::fromVector({4, numPreds, numBatches}), true);
-  auto predLogits = fl::full({numClasses + 1, numPreds, numBatches}, 1);
-  auto predLogits = fl::Variable(predLogits, true);
+  auto predBoxes = fl::Variable(
+      Tensor::fromVector({4, numPreds, numBatches, 1}, predBoxesVec), true);
+  auto predLogits =
+      fl::Variable(fl::full({numClasses + 1, numPreds, numBatches}, 1), true);
 
   std::vector<fl::Variable> targetBoxes = {
       fl::Variable(
@@ -335,10 +337,10 @@ TEST(SetCriterion, DifferentNumberOfLabels) {
 
   std::vector<float> targetClassVec = {1, 1};
 
-  auto predBoxes =
-      fl::Variable(Tensor::fromVector({4, numPreds, numBatches}), true);
-  auto predLogits = fl::full({numClasses + 1, numPreds, numBatches}, 1);
-  auto predLogits = fl::Variable(predLogits, true);
+  auto predBoxes = fl::Variable(
+      Tensor::fromVector({4, numPreds, numBatches, 1}, predBoxesVec), true);
+  auto predLogits =
+      fl::Variable(fl::full({numClasses + 1, numPreds, numBatches}, 1), true);
 
   std::vector<fl::Variable> targetBoxes = {
       fl::Variable(Tensor::fromVector({4, 2, 1}, targetBoxesVec1), false),
@@ -370,13 +372,13 @@ TEST(SetCriterion, DifferentNumberOfLabelsClass) {
       1,
   };
 
-  auto predBoxes =
-      fl::Variable(Tensor::fromVector({4, numPreds, numBatches}), true);
-  auto predLogits = fl::full({numClasses + 1, numPreds, numBatches}, 1);
-  predLogits(1, 1, 0) = 10; // These should get matched
-  predLogits(2, 2, 0) = 10;
-  predLogits(9, 1, 1) = 10;
-  auto predLogits = fl::Variable(predLogits, true);
+  auto predBoxes = fl::Variable(
+      Tensor::fromVector({4, numPreds, numBatches, 1}, predBoxesVec), true);
+  auto predLogitsT = fl::full({numClasses + 1, numPreds, numBatches}, 1);
+  predLogitsT(1, 1, 0) = 10; // These should get matched
+  predLogitsT(2, 2, 0) = 10;
+  predLogitsT(9, 1, 1) = 10;
+  auto predLogits = fl::Variable(predLogitsT, true);
 
   std::vector<fl::Variable> targetBoxes = {
       fl::Variable(Tensor::fromVector({4, 2, 1}, targetBoxesVec1), false),

@@ -204,7 +204,7 @@ Tensor ArrayFireVisionExtension::translate(
 
 Tensor ArrayFireVisionExtension::shear(
     const Tensor& input,
-    const Shape& skews,
+    const std::vector<float>& skews,
     const Shape& outputDimsIn /* = {} */,
     const Tensor& fill /* = Tensor() */) {
   // If no output dims specified, AF expects 2D 0's which to discard OOB data
@@ -213,13 +213,12 @@ Tensor ArrayFireVisionExtension::shear(
     outputDims = Shape({0, 0});
   }
 
-  if (skews.ndim() != 2 || outputDims.ndim() != 2) {
+  if (skews.size() != 2 || outputDims.ndim() != 2) {
     throw std::invalid_argument(
         "ArrayFireVisionExtension::shear - "
         "only 2D skews shapes and empty or 2D output shapes are supported");
   }
 
-  af::dim4 _skews = detail::flToAfDims(skews);
   af::dim4 _outputDims = detail::flToAfDims(outputDims);
 
   return toTensor<ArrayFireTensor>(
@@ -227,8 +226,8 @@ Tensor ArrayFireVisionExtension::shear(
           toArray(input),
           toArray(fill),
           af::skew,
-          _skews[0],
-          _skews[1],
+          skews[0],
+          skews[1],
           _outputDims[0],
           _outputDims[1],
           /* inverse = */ true,
@@ -238,7 +237,7 @@ Tensor ArrayFireVisionExtension::shear(
 
 Tensor ArrayFireVisionExtension::shear(
     const Tensor& input,
-    const Shape& skews,
+    const std::vector<float>& skews,
     const Shape& outputDimsIn /* = {} */,
     const InterpolationMode mode) {
   // If no output dims specified, AF expects 2D 0's which to discard OOB data
@@ -247,7 +246,7 @@ Tensor ArrayFireVisionExtension::shear(
     outputDims = Shape({0, 0});
   }
 
-  if (skews.ndim() != 2 || outputDims.ndim() != 2) {
+  if (skews.size() != 2 || outputDims.ndim() != 2) {
     throw std::invalid_argument(
         "ArrayFireVisionExtension::shear - "
         "only 2D skews shapes and empty or 2D output shapes are supported");

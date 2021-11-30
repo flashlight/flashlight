@@ -6,6 +6,8 @@
  */
 
 #include "flashlight/pkg/vision/nn/Transformer.h"
+#include "flashlight/fl/tensor/Index.h"
+#include "flashlight/fl/tensor/Random.h"
 #include "flashlight/pkg/vision/nn/PositionalEmbeddingSine.h"
 
 #include <gtest/gtest.h>
@@ -23,9 +25,9 @@ TEST(Tranformer, BasicAttention) {
   auto keys = fl::full({E, B, S}, 0.);
   keys(0, 0, 2) = 10000;
 
-  auto query = Variable(fl::full({E, B, L}, 10000), false);
+  auto query = Variable(fl::full({E, B, L}, 10000, fl::dtype::f32), false);
   auto key = Variable(keys, false);
-  auto value = Variable(fl::iota({E, B, S}), false);
+  auto value = Variable(fl::iota({E, B, S}, {}, fl::dtype::f32), false);
 
   auto result = transformerMultiheadAttention(
       query,
@@ -49,9 +51,9 @@ TEST(Tranformer, BasicAttentionNonMasked) {
   keys(0, 0, 2) = 10000;
   keys(0, 0, 4) = 10000;
 
-  auto query = Variable(fl::full({E, B, L}, 10000), false);
+  auto query = Variable(fl::full({E, B, L}, 10000, fl::dtype::f32), false);
   auto key = Variable(keys, false);
-  auto value = Variable(fl::iota({E, B, S}), false);
+  auto value = Variable(fl::iota({E, B, S}, {}, fl::dtype::f32), false);
 
   auto result = transformerMultiheadAttention(
       query,
@@ -75,19 +77,18 @@ TEST(Tranformer, BasicAttentionMasked) {
   keys(0, 0, 2) = 10000;
   keys(0, 0, 4) = 10000;
 
-  auto query = Variable(fl::full({E, B, L}, 10000), false);
+  auto query = Variable(fl::full({E, B, L}, 10000, fl::dtype::f32), false);
   auto key = Variable(keys, false);
-  auto value = Variable(fl::iota({E, B, S}), false);
+  auto value = Variable(fl::iota({E, B, S}, {}, fl::dtype::f32), false);
   int maskLength = 3;
   auto mask = fl::full({S, B}, 0);
   mask(fl::range(0, maskLength)) = fl::full({maskLength, B}, 1);
-  auto mask = Variable(mask, false);
 
   auto result = transformerMultiheadAttention(
       query,
       key,
       value,
-      mask,
+      Variable(mask, false),
       nHeads, // num_heads
       0.0);
 
@@ -105,7 +106,7 @@ TEST(Tranformer, MultiHeadedAttention) {
   keys(0, 0, 2) = 10000; // First head --> 2
   keys(1, 0, 3) = 10000; // Second head attend to 3
 
-  auto query = Variable(fl::full({E, B, L}, 10000), false);
+  auto query = Variable(fl::full({E, B, L}, 10000, fl::dtype::f32), false);
   auto key = Variable(keys, false);
   // auto value = Variable(fl::iota({ E, B, S }), false);
   auto value = Variable(fl::iota({1, 1, S}, {E, B, 1}), false);
@@ -135,7 +136,7 @@ TEST(Tranformer, MultiHeadedAttentionBatch) {
   keys(0, 1, 1) = 10000; // First head --> 2
   keys(1, 1, 3) = 10000; // Second head attend to 3
 
-  auto query = Variable(fl::full({E, B, L}, 10000), false);
+  auto query = Variable(fl::full({E, B, L}, 10000, fl::dtype::f32), false);
   auto key = Variable(keys, false);
   auto value = Variable(fl::iota({1, 1, S}, {E, B, 1}), false);
 
@@ -239,13 +240,13 @@ TEST(Tranformer, Masked) {
 
   PositionalEmbeddingSine pos(C / 2, 10000.0f, false, 0.0f);
 
-  auto actualDims = {maskW, maskH, 1, B};
-  auto nonMask = fl::full(actualDims, 1);
+  auto nonMask = fl::full({maskW, maskH, 1, B}, 1);
 
   auto mask = fl::full({W, H, 1, B}, 0);
   mask(fl::range(0, maskW), fl::range(0, maskH)) = nonMask;
-  auto mask = fl::Variable(mask, false);
   auto nonMaskPos = pos.forward({Variable(nonMask, false)})[0];
+
+  std::cout << "--- nonMaskPos " << nonMaskPos.dims() << std::endl;
 
   std::vector<Variable> nonMaskInput = {
       Variable(fl::rand({maskW, maskH, C, B}), false), // input Projection
@@ -258,11 +259,11 @@ TEST(Tranformer, Masked) {
   nonMaskedSrc(fl::range(0, maskW), fl::range(0, maskH)) =
       nonMaskInput[0].tensor();
 
-  auto maskPos = pos.forward({mask})[0];
+  auto maskPos = pos.forward({fl::Variable(mask, false)})[0];
 
   std::vector<Variable> maskInput = {
       Variable(nonMaskedSrc, false), // input Projection
-      mask, // mask
+      Variable(mask, false), // mask
       nonMaskInput[2], // query_embed
       maskPos};
   auto maskOutput = tr(maskInput)[0];

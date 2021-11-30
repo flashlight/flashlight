@@ -6,26 +6,26 @@
  */
 #include "flashlight/pkg/vision/criterion/Hungarian.h"
 
+#include "flashlight/fl/autograd/Functions.h"
+#include "flashlight/fl/tensor/Index.h"
 #include "flashlight/lib/set/Hungarian.h"
 #include "flashlight/pkg/vision/dataset/BoxUtils.h"
-
-#include "flashlight/fl/autograd/Functions.h"
 
 namespace {
 using namespace fl;
 
 Tensor softmax(const Tensor& input, const int dim) {
-  auto maxvals = af::max(input, dim);
-  af::dim4 tiledims(1, 1, 1, 1);
-  tiledims[dim] = input.dims(dim);
+  auto maxvals = fl::amax(input, {dim});
+  Shape tiledims(std::vector<Dim>(input.ndim(), 1));
+  tiledims[dim] = input.dim(dim);
 
-  auto expInput = af::exp(input - af::tile(maxvals, tiledims));
-  auto result = expInput / af::tile(af::sum(expInput, dim), tiledims);
+  auto expInput = fl::exp(input - fl::tile(maxvals, tiledims));
+  auto result = expInput / fl::tile(fl::sum(expInput, {dim}), tiledims);
   return result;
 }
 
 std::pair<Tensor, Tensor> hungarian(Tensor& cost) {
-  cost = cost.T();
+  cost = fl::transpose(cost);
   const int M = cost.dim(0);
   const int N = cost.dim(1);
   std::vector<float> costHost(cost.size());
@@ -64,7 +64,7 @@ std::pair<Tensor, Tensor> HungarianMatcher::matchBatch(
   // number of preds
   // Class cost
   auto outProbs = ::softmax(predLogits, 0);
-  auto costClass = transpose((0 - outProbs(targetClasses, af::span)));
+  auto costClass = transpose((0 - outProbs(targetClasses)));
 
   // Generalized IOU loss
   Tensor costGiou =
@@ -88,10 +88,10 @@ std::vector<std::pair<Tensor, Tensor>> HungarianMatcher::compute(
     const std::vector<Tensor>& targetBoxes,
     const std::vector<Tensor>& targetClasses) const {
   std::vector<std::pair<Tensor, Tensor>> results;
-  for (int b = 0; b < predBoxes.dims(2); b++) {
+  for (int b = 0; b < predBoxes.dim(2); b++) {
     auto result = matchBatch(
-        predBoxes(af::span, af::span, b),
-        predLogits(af::span, af::span, b),
+        predBoxes(fl::span, fl::span, b),
+        predLogits(fl::span, fl::span, b),
         targetBoxes[b],
         targetClasses[b]);
     results.emplace_back(result);

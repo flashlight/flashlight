@@ -56,12 +56,12 @@ class VisionExtension : public TensorExtension<VisionExtension> {
 
   virtual Tensor shear(
       const Tensor& input,
-      const Shape& skews,
+      const std::vector<float>& skews,
       const Shape& outputDims,
       const Tensor& fill) = 0;
   virtual Tensor shear(
       const Tensor& input,
-      const Shape& skews,
+      const std::vector<float>& skews,
       const Shape& outputDims,
       const InterpolationMode mode) = 0;
 

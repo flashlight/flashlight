@@ -13,31 +13,39 @@
 
 #include <af/array.h>
 
-#include "flashlight/pkg/vision/dataset/BoxUtils.h"
 #include "flashlight/fl/autograd/autograd.h"
 #include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/distributed/DistributedApi.h"
+#include "flashlight/fl/tensor/Index.h"
+#include "flashlight/pkg/vision/dataset/BoxUtils.h"
 
 namespace {
 
 using namespace fl;
 
-af::array span(const af::dim4& inDims, const int index) {
-  af::dim4 dims = {1, 1, 1, 1};
+Tensor span(const Shape& inDims, const int index) {
+  Shape dims(std::vector<Dim>(inDims.ndim(), 1));
   dims[index] = inDims[index];
-  return af::iota(dims);
+  return fl::iota(dims);
 }
 
-af::dim4 calcStrides(const af::dim4& dims) {
-  af::dim4 oDims;
+Shape calcStrides(const Shape& dims) {
   return {1, dims[0], dims[0] * dims[1], dims[0] * dims[1] * dims[2]};
 };
 
-af::dim4 calcOutDims(const std::vector<af::array>& coords) {
-  af::dim4 oDims = {1, 1, 1, 1};
+Shape calcOutDims(const std::vector<Tensor>& coords) {
+  unsigned maxNdim = 0;
   for (auto coord : coords) {
-    auto iDims = coord.dims();
-    for (int i = 0; i < 4; i++) {
+    if (coord.ndim() > maxNdim) {
+      maxNdim = coord.ndim();
+    }
+  }
+
+  Shape oDims(std::vector<Dim>(maxNdim, 1));
+
+  for (auto coord : coords) {
+    auto iDims = coord.shape();
+    for (int i = 0; i < iDims.ndim(); i++) {
       if (iDims[i] > 1 && oDims[i] == 1) {
         oDims[i] = iDims[i];
       }
@@ -47,74 +55,71 @@ af::dim4 calcOutDims(const std::vector<af::array>& coords) {
   return oDims;
 }
 
-af::array applyStrides(const std::vector<af::array>& coords, af::dim4 strides) {
-  auto oDims = coords[0].dims();
+Tensor applyStrides(const std::vector<Tensor>& coords, const Shape& strides) {
+  auto oDims = coords[0].shape();
   return std::inner_product(
       coords.begin(),
       coords.end(),
-      strides.get(),
-      af::constant(0, oDims),
-      [](const af::array& x, const af::array& y) { return x + y; },
-      [](const af::array& x, int y) { return x * y; });
+      strides.get().begin(),
+      fl::full(oDims, 0),
+      [](const Tensor& x, const Tensor& y) { return x + y; },
+      [](const Tensor& x, int y) { return x * y; });
 }
 
-std::vector<af::array> spanIfEmpty(
-    const std::vector<af::array>& coords,
-    af::dim4 dims) {
-  std::vector<af::array> result(coords.size());
+std::vector<Tensor> spanIfEmpty(const std::vector<Tensor>& coords, Shape dims) {
+  std::vector<Tensor> result(coords.size());
   for (int i = 0; i < 4; i++) {
-    result[i] = (coords[i].isempty()) ? span(dims, i) : coords[i];
+    result[i] = (coords[i].isEmpty()) ? span(dims, i) : coords[i];
   }
   return result;
 }
 
 // Then, broadcast the indices
-std::vector<af::array> broadcastCoords(const std::vector<af::array>& input) {
-  std::vector<af::array> result(input.size());
+std::vector<Tensor> broadcastCoords(const std::vector<Tensor>& input) {
+  std::vector<Tensor> result(input.size());
   auto oDims = calcOutDims(input);
   std::transform(
-      input.begin(),
-      input.end(),
-      result.begin(),
-      [&oDims](const af::array& idx) { return detail::tileAs(idx, oDims); });
+      input.begin(), input.end(), result.begin(), [&oDims](const Tensor& idx) {
+        return detail::tileAs(idx, oDims);
+      });
   return result;
 }
 
-af::array ravelIndices(
-    const std::vector<af::array>& input_coords,
-    const af::dim4& in_dims) {
-  std::vector<af::array> coords;
+Tensor ravelIndices(
+    const std::vector<Tensor>& input_coords,
+    const Shape& in_dims) {
+  std::vector<Tensor> coords;
   coords = spanIfEmpty(input_coords, in_dims);
   coords = broadcastCoords(coords);
   return applyStrides(coords, calcStrides(in_dims));
 }
 
-af::array index(const af::array& in, const std::vector<af::array>& idxs) {
-  auto linearIndices = ravelIndices(idxs, in.dims());
-  af::array output = af::constant(0.0, linearIndices.dims(), in.type());
-  output(af::seq(linearIndices.elements())) = in(linearIndices);
+Tensor index(const Tensor& in, const std::vector<Tensor>& idxs) {
+  auto linearIndices = ravelIndices(idxs, in.shape());
+  Tensor output = fl::full(linearIndices.shape(), 0., in.type());
+  output(fl::range(linearIndices.size())) = in(linearIndices);
   return output;
 }
 
-fl::Variable index(const fl::Variable& in, std::vector<af::array> idxs) {
+fl::Variable index(const fl::Variable& in, std::vector<Tensor> idxs) {
   auto idims = in.dims();
-  auto result = index(in.array(), idxs);
+  auto result = index(in.tensor(), idxs);
   auto gradFunction = [idxs, idims](
                           std::vector<Variable>& inputs,
                           const Variable& grad_output) {
     if (!inputs[0].isGradAvailable()) {
-      auto grad = af::constant(0.0, idims, inputs[0].type());
+      auto grad = fl::full(idims, 0., inputs[0].type());
       inputs[0].addGrad(Variable(grad, false));
       return;
     }
-    auto grad = fl::Variable(af::constant(0, idims, inputs[0].type()), false);
+    auto grad = fl::Variable(fl::full(idims, 0, inputs[0].type()), false);
     auto linearIndices = ravelIndices(idxs, idims);
-    grad.array()(linearIndices) =
-        grad_output.array()(af::seq(linearIndices.elements()));
+    grad.tensor()(linearIndices) =
+        grad_output.tensor()(fl::range(linearIndices.size()));
     // TODO Can parallize this if needed but does not work for duplicate keys
     // for(int i = 0; i < linearIndices.elements(); i++) {
-    // af::array index = linearIndices(i);
-    // grad.array()(index) += grad_output.array()(i);
+    // Tensor index = linearIndices(i);
+    // grad.tensor()(index) += grad_output.tensor()(i);
     //}
     inputs[0].addGrad(grad);
   };
@@ -145,26 +150,27 @@ SetCriterion::LossDict SetCriterion::forward(
   LossDict losses;
 
   for (int i = 0; i < predBoxesAux.dims(3); i++) {
-    auto predBoxes = predBoxesAux(af::span, af::span, af::span, af::seq(i, i));
+    auto predBoxes =
+        predBoxesAux(fl::span, fl::span, fl::span, fl::range(i, i));
     auto predLogits =
-        predLogitsAux(af::span, af::span, af::span, af::seq(i, i));
+        predLogitsAux(fl::span, fl::span, fl::span, fl::range(i, i));
 
-    std::vector<af::array> targetBoxesArray(targetBoxes.size());
-    std::vector<af::array> targetClassesArray(targetClasses.size());
+    std::vector<Tensor> targetBoxesArray(targetBoxes.size());
+    std::vector<Tensor> targetClassesArray(targetClasses.size());
     std::transform(
         targetBoxes.begin(),
         targetBoxes.end(),
         targetBoxesArray.begin(),
-        [](const Variable& in) { return in.array(); });
+        [](const Variable& in) { return in.tensor(); });
     std::transform(
         targetClasses.begin(),
         targetClasses.end(),
         targetClassesArray.begin(),
-        [](const Variable& in) { return in.array(); });
+        [](const Variable& in) { return in.tensor(); });
 
     auto indices = matcher_.compute(
-        predBoxes.array(),
-        predLogits.array(),
+        predBoxes.tensor(),
+        predLogits.tensor(),
         targetBoxesArray,
         targetClassesArray);
 
@@ -174,7 +180,7 @@ SetCriterion::LossDict SetCriterion::forward(
         0,
         [](int curr, const Variable& label) { return curr + label.dims(1); });
 
-    af::array numBoxesArray = af::constant(numBoxes, 1, af::dtype::s32);
+    Tensor numBoxesArray = fl::fromScalar(numBoxes, fl::dtype::s32);
     if (isDistributedInit()) {
       allReduce(numBoxesArray);
     }
@@ -200,26 +206,23 @@ SetCriterion::LossDict SetCriterion::lossBoxes(
     const Variable& /*predLogits*/,
     const std::vector<Variable>& targetBoxes,
     const std::vector<Variable>& /*targetClasses*/,
-    const std::vector<std::pair<af::array, af::array>>& indices,
+    const std::vector<std::pair<Tensor, Tensor>>& indices,
     const int numBoxes) {
   auto srcIdx = this->getSrcPermutationIdx(indices);
-  if (srcIdx.first.isempty()) {
+  if (srcIdx.first.isEmpty()) {
     return {
-        {"lossGiou",
-         fl::Variable(af::constant(0, {1, 1, 1, 1}, predBoxes.type()), false)},
-        {"lossBbox",
-         fl::Variable(af::constant(0, {1, 1, 1, 1}, predBoxes.type()), false)}};
+        {"lossGiou", fl::Variable(fl::fromScalar(0, predBoxes.type()), false)},
+        {"lossBbox", fl::Variable(fl::fromScalar(0, predBoxes.type()), false)}};
   }
-  auto colIdxs = af::moddims(srcIdx.second, {1, srcIdx.second.dims(0)});
-  auto batchIdxs = af::moddims(srcIdx.first, {1, srcIdx.first.dims(0)});
-  auto srcBoxes =
-      index(predBoxes, {af::array(), colIdxs, batchIdxs, af::array()});
+  auto colIdxs = fl::reshape(srcIdx.second, {1, srcIdx.second.dim(0)});
+  auto batchIdxs = fl::reshape(srcIdx.first, {1, srcIdx.first.dim(0)});
+  auto srcBoxes = index(predBoxes, {Tensor(), colIdxs, batchIdxs, Tensor()});
 
   int i = 0;
   std::vector<Variable> permuted;
   for (auto idx : indices) {
     auto targetIdxs = idx.first;
-    auto reordered = targetBoxes[i](af::span, targetIdxs);
+    auto reordered = targetBoxes[i](fl::span, targetIdxs);
     if (!reordered.isempty()) {
       permuted.emplace_back(reordered);
     }
@@ -232,8 +235,8 @@ SetCriterion::LossDict SetCriterion::lossBoxes(
 
   // Extract diagnal
   auto dims = costGiou.dims();
-  auto rng = af::range(dims[0]);
-  costGiou = 1 - index(costGiou, {rng, rng, af::array(), af::array()});
+  auto rng = fl::arange({dims[0]});
+  costGiou = 1 - index(costGiou, {rng, rng, Tensor(), Tensor()});
   costGiou = sum(costGiou, {0}) / numBoxes;
 
   auto lossBbox = l1Loss(srcBoxes, tgtBoxes);
@@ -247,13 +250,13 @@ SetCriterion::LossDict SetCriterion::lossLabels(
     const Variable& predLogits,
     const std::vector<Variable>& /*targetBoxes*/,
     const std::vector<Variable>& targetClasses,
-    const std::vector<std::pair<af::array, af::array>>& indices,
+    const std::vector<std::pair<Tensor, Tensor>>& indices,
     const int /*numBoxes*/) {
   assert(predLogits.dims(0) == numClasses_ + 1);
 
-  auto target_classes_full = af::constant(
-      numClasses_,
+  auto target_classes_full = fl::full(
       {predLogits.dims(1), predLogits.dims(2), predLogits.dims(3)},
+      numClasses_,
       predLogits.type());
 
   int i = 0;
@@ -261,12 +264,12 @@ SetCriterion::LossDict SetCriterion::lossLabels(
     auto targetIdxs = idx.first;
     auto srcIdxs = idx.second;
     auto reordered = targetClasses[i](targetIdxs);
-    target_classes_full(srcIdxs, i) = targetClasses[i].array()(targetIdxs);
+    target_classes_full(srcIdxs, i) = targetClasses[i].tensor()(targetIdxs);
     i += 1;
   }
 
   auto softmaxed = logSoftmax(predLogits, 0);
-  auto weight = af::constant(1.0f, numClasses_ + 1);
+  auto weight = fl::full({numClasses_ + 1}, 1.0f);
   weight(numClasses_) = eosCoef_;
   auto weightVar = Variable(weight, false);
   auto lossCe = weightedCategoricalCrossEntropy(
@@ -278,31 +281,31 @@ std::unordered_map<std::string, float> SetCriterion::getWeightDict() {
   return weightDict_;
 }
 
-std::pair<af::array, af::array> SetCriterion::getTgtPermutationIdx(
-    const std::vector<std::pair<af::array, af::array>>& indices) {
+std::pair<Tensor, Tensor> SetCriterion::getTgtPermutationIdx(
+    const std::vector<std::pair<Tensor, Tensor>>& indices) {
   long batchSize = static_cast<long>(indices.size());
-  auto batchIdxs = af::constant(-1, {1, 1, 1, batchSize});
+  auto batchIdxs = fl::full({1, 1, 1, batchSize}, -1);
   auto first = indices[0].first;
-  auto dims = first.dims();
-  auto tgtIdxs = af::constant(-1, {1, dims[0], batchSize});
+  auto dims = first.shape();
+  auto tgtIdxs = fl::full({1, dims[0], batchSize}, -1);
   int idx = 0;
   for (auto pair : indices) {
-    batchIdxs(0, 0, 0, idx) = af::constant(idx, {1, 1, 1, 1});
-    tgtIdxs(af::span, af::span, idx) = pair.first;
+    batchIdxs(0, 0, 0, idx) = fl::fromScalar(idx);
+    tgtIdxs(fl::span, fl::span, idx) = pair.first;
     idx++;
   }
   return std::make_pair(batchIdxs, tgtIdxs);
 }
 
-std::pair<af::array, af::array> SetCriterion::getSrcPermutationIdx(
-    const std::vector<std::pair<af::array, af::array>>& indices) {
+std::pair<Tensor, Tensor> SetCriterion::getSrcPermutationIdx(
+    const std::vector<std::pair<Tensor, Tensor>>& indices) {
   std::vector<fl::Variable> srcIdxs;
   std::vector<fl::Variable> batchIdxs;
   for (int i = 0; i < indices.size(); i++) {
     auto index = indices[i].second;
-    if (!index.isempty()) {
+    if (!index.isEmpty()) {
       srcIdxs.emplace_back(Variable(index, false));
-      auto batchIdx = af::constant(i, index.dims(), s32);
+      auto batchIdx = fl::full(index.shape(), i, fl::dtype::s32);
       batchIdxs.emplace_back(Variable(batchIdx, false));
     }
   }
@@ -311,7 +314,7 @@ std::pair<af::array, af::array> SetCriterion::getSrcPermutationIdx(
     srcIdx = concatenate(srcIdxs, 0);
     batchIdx = concatenate(batchIdxs, 0);
   }
-  return {batchIdx.array(), srcIdx.array()};
+  return {batchIdx.tensor(), srcIdx.tensor()};
 }
 
 } // namespace vision

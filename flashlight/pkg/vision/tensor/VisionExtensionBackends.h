@@ -14,7 +14,7 @@
  * Conditionally include vision extensions
  */
 #if FL_USE_ARRAYFIRE
-#include "flashlight/pkg/vision/tensor/backend/af/VisionExtensionBackend.h"
+#include "flashlight/pkg/vision/tensor/backend/af/ArrayFireVisionExtension.h"
 #endif
 
 namespace fl {

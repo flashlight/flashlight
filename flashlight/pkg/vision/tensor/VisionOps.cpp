@@ -76,7 +76,7 @@ Tensor translate(
 
 Tensor shear(
     const Tensor& input,
-    const Shape& skews,
+    const std::vector<float>& skews,
     const Shape& outputDims /* = {} */,
     const Tensor& fill /* = Tensor() */) {
   return input.backend().getExtension<VisionExtension>().shear(
@@ -85,7 +85,7 @@ Tensor shear(
 
 Tensor shear(
     const Tensor& input,
-    const Shape& skews,
+    const std::vector<float>& skews,
     const Shape& outputDims /* = {} */,
     const InterpolationMode mode /* = InterpolationMode::Nearest */) {
   return input.backend().getExtension<VisionExtension>().shear(

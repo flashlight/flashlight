@@ -59,12 +59,12 @@ class ArrayFireVisionExtension : public VisionExtension {
 
   Tensor shear(
       const Tensor& input,
-      const Shape& skews,
+      const std::vector<float>& skews,
       const Shape& outputDims,
       const Tensor& fill) override;
   Tensor shear(
       const Tensor& input,
-      const Shape& skews,
+      const std::vector<float>& skews,
       const Shape& outputDims,
       const InterpolationMode mode) override;
 
