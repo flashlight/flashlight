@@ -26,7 +26,7 @@ TDSBlock::TDSBlock(
           "right padding exceeds the 'SAME' padding required for TDSBlock");
     }
     conv.add(Padding(
-        std::pair<int, int>{totalPadding - rightPadding, rightPadding}, 0.0));
+        {std::pair<int, int>{totalPadding - rightPadding, rightPadding}}, 0.0));
     convPadding = 0;
   }
   conv.add(Conv2D(channels, channels, kernelSize, 1, 1, 1, convPadding, 0));
@@ -38,8 +38,8 @@ TDSBlock::TDSBlock(
     innerLinearDim = linearDim;
   }
   Sequential fc;
-  fc.add(Reorder(2, 1, 0, 3));
-  fc.add(View(af::dim4(linearDim, -1, 1, 0)));
+  fc.add(Reorder({2, 1, 0, 3}));
+  fc.add(View({linearDim, -1, 1, 0}));
 
   fc.add(Linear(linearDim, innerLinearDim));
   fc.add(ReLU());
@@ -47,8 +47,8 @@ TDSBlock::TDSBlock(
     fc.add(Dropout(dropout));
   }
   fc.add(Linear(innerLinearDim, linearDim));
-  fc.add(View(af::dim4(channels, width, -1, 0)));
-  fc.add(Reorder(2, 1, 0, 3));
+  fc.add(View({channels, width, -1, 0}));
+  fc.add(Reorder({2, 1, 0, 3}));
   if (dropout > 0) {
     fc.add(Dropout(dropout));
   }
