@@ -17,8 +17,8 @@ namespace detail {
 //
 // STL style iterator class to easily iterate over a dataset
 // Example usage:
-//    af::array tensor = af::randu(1, 2, 3);
-//    TensorDataset tensords(std::vector<af::array>{tensor});
+//    Tensor tensor = fl::rand({1, 2, 3});
+//    TensorDataset tensords(std::vector<Tensor>{tensor});
 //    for (auto& sample : tensords) {
 //      // do something
 //    }

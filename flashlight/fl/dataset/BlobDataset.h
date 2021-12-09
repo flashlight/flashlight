@@ -16,7 +16,7 @@
 namespace fl {
 
 /**
- * An abstract dataset storing af::arrays in a binary archive (blob). A
+ * An abstract dataset storing Tensors in a binary archive (blob). A
  * corresponding index is built, which stores all array positions, which
  * allows efficient array access from the blob. Both array data and index
  * are stored in a single blob.
@@ -50,23 +50,25 @@ namespace fl {
   <int64: # of tensors in dataset (entries)>
   <int64*size: number of arrays per sample>
   <int64*size: start offset in entry table for each sample>
-  <int64*6*entries: entry table seen as int64s {type, dim0, .. dim3, offset}>
+  <int64*k*entries: table of int64s {type, numDims, dim0, .. dim3, offset}>
   \endcode
   *
  */
 
 struct BlobDatasetEntry {
-  af::dtype type;
-  af::dim4 dims;
+  fl::dtype type;
+  fl::Shape dims;
   int64_t offset;
 };
 
 class BlobDatasetEntryBuffer {
  private:
   std::vector<int64_t> data_;
-  const int nFieldPerEntry_ = 6;
+  const int nFieldPerEntry_ = 7;
 
  public:
+  static const int maxNDims_ = 4; // max dims supported based on index entries
+
   BlobDatasetEntryBuffer();
   void clear();
   int64_t size() const;
@@ -79,6 +81,7 @@ class BlobDatasetEntryBuffer {
 
 class BlobDataset : public Dataset {
  private:
+  const int maxNDims_ = BlobDatasetEntryBuffer::maxNDims_;
   BlobDatasetEntryBuffer entries_;
   std::vector<int64_t> sizes_;
   std::vector<int64_t> offsets_;
@@ -87,13 +90,14 @@ class BlobDataset : public Dataset {
   mutable std::mutex mutex_;
 
   std::vector<uint8_t> readRawArray(const BlobDatasetEntry& e) const;
-  af::array readArray(const BlobDatasetEntry& e, int i) const;
-  void writeArray(const BlobDatasetEntry& e, const af::array& array);
+  Tensor readArray(const BlobDatasetEntry& e, int i) const;
+  void writeArray(const BlobDatasetEntry& e, const Tensor& array);
 
  protected:
   void readIndex();
 
-  /* Write raw data in the blob.
+  /**
+   * Write raw data in the blob.
    * Implementation must be thread-safe.
    * @param[in] offset Offset in the blob in bytes.
    * @param[in] data Raw data bytes.
@@ -101,18 +105,24 @@ class BlobDataset : public Dataset {
    */
   virtual int64_t writeData(int64_t offset, const char* data, int64_t size)
       const = 0;
-  /* Read raw data in the blob.
+
+  /**
+   * Read raw data in the blob.
    * Implementation must be thread-safe.
    * @param[in] offset Offset in the blob in bytes.
    * @param[out] data Raw data bytes.
    * @param[in] size Raw data size in bytes.
    */
   virtual int64_t readData(int64_t offset, char* data, int64_t size) const = 0;
-  /* Make sure all written data is flushed in the blob.
+
+  /**
+   * Ensures all written data is flushed in the blob.
    * Implementation must be thread-safe.
    */
   virtual void flushData() = 0;
-  /* Return true iff the blob is empty.
+
+  /**
+   * Return true iff the blob is empty.
    * Implementation must be thread-safe.
    */
   virtual bool isEmptyData() const = 0;
@@ -131,7 +141,7 @@ class BlobDataset : public Dataset {
 
   int64_t size() const override;
 
-  std::vector<af::array> get(const int64_t idx) const override;
+  std::vector<Tensor> get(const int64_t idx) const override;
 
   /**
    * Return raw data stored in given sample. Dimensions and types of each array
@@ -146,7 +156,7 @@ class BlobDataset : public Dataset {
    * @param[in] sample A vector of arrays, possibly of heterogeneous types and
    * sizes.
    */
-  void add(const std::vector<af::array>& sample);
+  void add(const std::vector<Tensor>& sample);
 
   /**
    * Add an entire blob to the current blob. This efficiently concatenate
@@ -169,17 +179,18 @@ class BlobDataset : public Dataset {
 
   /**
    * Set a host transform on specified field. If a host transform is
-   * specified, it will be called to load the data from host to af::array
+   * specified, it will be called to load the data from host to Tensor
    * (on device).
    * @param[in] field The field on which to apply the transform.
    * @param[in] func The corresponding transform.
    */
   void setHostTransform(
       int field,
-      std::function<af::array(void*, af::dim4, af::dtype)> func);
+      std::function<Tensor(void*, Shape, fl::dtype)> func);
 
-  /** Return entries in the blob for a given sample index.
-   *  @param[in] idx A sample index.
+  /**
+   * Return entries in the blob for a given sample index.
+   * @param[in] idx A sample index.
    */
   std::vector<BlobDatasetEntry> getEntries(const int64_t idx) const;
 

@@ -14,23 +14,15 @@
 #include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/dataset/datasets.h"
 #include "flashlight/fl/tensor/Compute.h"
+#include "flashlight/fl/tensor/Index.h"
+#include "flashlight/fl/tensor/Random.h"
 #include "flashlight/lib/common/System.h"
 
 using namespace fl;
 
-bool allClose(
-    const af::array& a,
-    const af::array& b,
-    const double precision = 1e-5) {
-  if ((a.numdims() != b.numdims()) || (a.dims() != b.dims())) {
-    return false;
-  }
-  return (af::max<double>(af::abs(a - b)) < precision);
-}
-
 TEST(DatasetTest, TensorDataset) {
-  std::vector<af::array> tensormap = {
-      af::randu(100, 200, 300), af::randu(150, 300)};
+  std::vector<Tensor> tensormap = {
+      fl::rand({100, 200, 300}), fl::rand({150, 300})};
   TensorDataset tensords(tensormap);
 
   // Check `size` method
@@ -39,16 +31,16 @@ TEST(DatasetTest, TensorDataset) {
   // Values using `get` method
   auto ff1 = tensords.get(10);
   ASSERT_EQ(ff1.size(), 2);
-  ASSERT_TRUE(allClose(ff1[0], tensormap[0](af::span, af::span, 10)));
-  ASSERT_TRUE(allClose(ff1[1], tensormap[1](af::span, 10)));
+  ASSERT_TRUE(allClose(ff1[0], tensormap[0](fl::span, fl::span, 10)));
+  ASSERT_TRUE(allClose(ff1[1], tensormap[1](fl::span, 10)));
 }
 
 TEST(DatasetTest, TranformDataset) {
   // first create a tensor dataset
-  std::vector<af::array> tensormap = {af::randu(100, 200, 300)};
+  std::vector<Tensor> tensormap = {fl::rand({100, 200, 300})};
   auto tensords = std::make_shared<TensorDataset>(tensormap);
 
-  auto scaleAndAdd = [](const af::array& a) { return af::sin(a) + 1.0; };
+  auto scaleAndAdd = [](const Tensor& a) { return fl::sin(a) + 1.0; };
   TransformDataset transformds(tensords, {scaleAndAdd});
 
   // Check `size` method
@@ -58,12 +50,12 @@ TEST(DatasetTest, TranformDataset) {
   auto ff1 = transformds.get(10);
   ASSERT_EQ(ff1.size(), 1);
   ASSERT_TRUE(
-      allClose(ff1[0], af::sin(tensormap[0](af::span, af::span, 10)) + 1.0));
+      allClose(ff1[0], fl::sin(tensormap[0](fl::span, fl::span, 10)) + 1.0));
 }
 
 TEST(DatasetTest, BatchDataset) {
   // first create a tensor dataset
-  std::vector<af::array> tensormap = {af::randu(100, 200, 300)};
+  std::vector<Tensor> tensormap = {fl::rand({100, 200, 300})};
   auto tensords = std::make_shared<TensorDataset>(tensormap);
 
   BatchDataset batchds(tensords, 7, BatchDatasetPolicy::INCLUDE_LAST);
@@ -75,17 +67,17 @@ TEST(DatasetTest, BatchDataset) {
   auto ff1 = batchds.get(42);
   ASSERT_EQ(ff1.size(), 1);
   ASSERT_TRUE(
-      allClose(ff1[0], tensormap[0](af::span, af::span, af::seq(294, 299))));
+      allClose(ff1[0], tensormap[0](fl::span, fl::span, fl::range(294, 300))));
 
   ff1 = batchds.get(10);
   ASSERT_EQ(ff1.size(), 1);
   ASSERT_TRUE(
-      allClose(ff1[0], tensormap[0](af::span, af::span, af::seq(70, 76))));
+      allClose(ff1[0], tensormap[0](fl::span, fl::span, fl::range(70, 77))));
 }
 
 TEST(DatasetTest, DynamicBatchDataset) {
   // first create a tensor dataset
-  std::vector<af::array> tensormap = {af::randu(100, 200, 300)};
+  std::vector<Tensor> tensormap = {fl::rand({100, 200, 300})};
   auto tensords = std::make_shared<TensorDataset>(tensormap);
   std::vector<int64_t> bSzs = {20, 50, 20, 30, 10, 50, 20, 35, 15, 50};
   BatchDataset batchds(tensords, bSzs);
@@ -97,16 +89,16 @@ TEST(DatasetTest, DynamicBatchDataset) {
   auto ff1 = batchds.get(0);
   ASSERT_EQ(ff1.size(), 1);
   ASSERT_TRUE(
-      allClose(ff1[0], tensormap[0](af::span, af::span, af::seq(0, 19))));
+      allClose(ff1[0], tensormap[0](fl::span, fl::span, fl::range(0, 20))));
 
   ff1 = batchds.get(3);
   ASSERT_EQ(ff1.size(), 1);
   ASSERT_TRUE(
-      allClose(ff1[0], tensormap[0](af::span, af::span, af::seq(90, 119))));
+      allClose(ff1[0], tensormap[0](fl::span, fl::span, fl::range(90, 120))));
 }
 
 TEST(DatasetTest, ShuffleDataset) {
-  std::vector<af::array> tensormap = {af::randu(100, 200, 300)};
+  std::vector<Tensor> tensormap = {fl::rand({100, 200, 300})};
   auto tensords = std::make_shared<TensorDataset>(tensormap);
   ShuffleDataset shuffleds(tensords);
 
@@ -116,7 +108,7 @@ TEST(DatasetTest, ShuffleDataset) {
   // Values using `get` method
   auto ff1 = shuffleds.get(10);
   ASSERT_EQ(ff1.size(), 1);
-  ASSERT_FALSE(allClose(ff1[0], tensormap[0](af::span, af::span, 10)));
+  ASSERT_FALSE(allClose(ff1[0], tensormap[0](fl::span, fl::span, 10)));
 
   // Same seed produces same order and vice-versa
   ShuffleDataset shuffleds2(tensords, 2);
@@ -133,7 +125,7 @@ TEST(DatasetTest, ShuffleDataset) {
 }
 
 TEST(DatasetTest, ResampleDataset) {
-  std::vector<af::array> tensormap = {af::randu(100, 200, 300)};
+  std::vector<Tensor> tensormap = {fl::rand({100, 200, 300})};
   auto tensords = std::make_shared<TensorDataset>(tensormap);
   auto permfn = [](int64_t n) { return (n + 5) % 300; };
   ResampleDataset resampleds(tensords, permfn);
@@ -142,22 +134,22 @@ TEST(DatasetTest, ResampleDataset) {
   ASSERT_EQ(resampleds.size(), 300);
 
   auto ff1 = resampleds.get(10);
-  ASSERT_TRUE(allClose(ff1[0], tensormap[0](af::span, af::span, 15)));
-  ASSERT_FALSE(allClose(ff1[0], tensormap[0](af::span, af::span, 10)));
+  ASSERT_TRUE(allClose(ff1[0], tensormap[0](fl::span, fl::span, 15)));
+  ASSERT_FALSE(allClose(ff1[0], tensormap[0](fl::span, fl::span, 10)));
 
   resampleds.resample({3, 3, 3, 4, 5});
   ASSERT_EQ(resampleds.size(), 5);
 
   auto ff2 = resampleds.get(1);
-  ASSERT_TRUE(allClose(ff2[0], tensormap[0](af::span, af::span, 3)));
+  ASSERT_TRUE(allClose(ff2[0], tensormap[0](fl::span, fl::span, 3)));
 }
 
 TEST(DatasetTest, ConcatDataset) {
-  auto tensor1 = af::randu(100, 200, 100);
-  auto tensor2 = af::randu(100, 200, 200);
-  std::vector<af::array> tensormap1 = {tensor1};
+  auto tensor1 = fl::rand({100, 200, 100});
+  auto tensor2 = fl::rand({100, 200, 200});
+  std::vector<Tensor> tensormap1 = {tensor1};
   auto tensords1 = std::make_shared<TensorDataset>(tensormap1);
-  std::vector<af::array> tensormap2 = {tensor2};
+  std::vector<Tensor> tensormap2 = {tensor2};
   auto tensords2 = std::make_shared<TensorDataset>(tensormap2);
   ConcatDataset concatds({tensords1, tensords2});
 
@@ -166,20 +158,20 @@ TEST(DatasetTest, ConcatDataset) {
 
   auto ff1 = concatds.get(100);
   ASSERT_EQ(ff1.size(), 1);
-  ASSERT_TRUE(allClose(ff1[0], tensor2(af::span, af::span, 0)));
+  ASSERT_TRUE(allClose(ff1[0], tensor2(fl::span, fl::span, 0)));
   ff1 = concatds.get(299);
-  ASSERT_TRUE(allClose(ff1[0], tensor2(af::span, af::span, 199)));
+  ASSERT_TRUE(allClose(ff1[0], tensor2(fl::span, fl::span, 199)));
   ff1 = concatds.get(0);
-  ASSERT_TRUE(allClose(ff1[0], tensor1(af::span, af::span, 0)));
+  ASSERT_TRUE(allClose(ff1[0], tensor1(fl::span, fl::span, 0)));
   ff1 = concatds.get(10);
-  ASSERT_TRUE(allClose(ff1[0], tensor1(af::span, af::span, 10)));
+  ASSERT_TRUE(allClose(ff1[0], tensor1(fl::span, fl::span, 10)));
 }
 
 TEST(DatasetTest, DatasetIterator) {
-  std::vector<af::array> tensormap = {af::randu(100, 200, 300)};
+  std::vector<Tensor> tensormap = {fl::rand({100, 200, 300})};
   auto tensords = std::make_shared<TensorDataset>(tensormap);
 
-  auto scaleAndAdd = [](const af::array& a) { return af::sin(a) + 1.0; };
+  auto scaleAndAdd = [](const Tensor& a) { return fl::sin(a) + 1.0; };
   TransformDataset transformds(tensords, {scaleAndAdd});
 
   int idx = 0;
@@ -191,17 +183,17 @@ TEST(DatasetTest, DatasetIterator) {
 }
 
 TEST(DatasetTest, FileBlobDataset) {
-  std::vector<std::vector<af::array>> data;
+  std::vector<std::vector<Tensor>> data;
 
   auto fillup = [&data](FileBlobDataset& blob) {
     for (int64_t i = 0; i < 20; i++) {
-      std::vector<af::array> sample;
+      std::vector<Tensor> sample;
       for (int64_t j = 0; j < i % 4; j++) {
-        af::array tensor;
+        Tensor tensor;
         if (j % 2 == 0) {
-          tensor = af::randu(100, 3, 100);
+          tensor = fl::rand({100, 3, 100});
         } else {
-          tensor = af::randu(100, 200);
+          tensor = fl::rand({100, 200});
         }
         sample.push_back(tensor);
       }
@@ -219,8 +211,8 @@ TEST(DatasetTest, FileBlobDataset) {
       ASSERT_EQ(datSample.size(), blobSample.size());
       for (int64_t j = 0; j < blobSample.size(); j++) {
         ASSERT_TRUE(
-            af::norm(af::flat(datSample.at(j)) - af::flat(blobSample.at(j))) <=
-            1e-05);
+            fl::norm(datSample.at(j).flatten() - blobSample.at(j).flatten())
+                .scalar<float>() <= 1e-05);
       }
     }
   };
@@ -257,12 +249,12 @@ TEST(DatasetTest, FileBlobDataset) {
       }
     }
     blob.setHostTransform(
-        0, [](void* ptr, af::dim4 size, af::dtype /* type */) {
+        0, [](void* ptr, fl::Shape size, fl::dtype /* type */) {
           float* ptrFl = (float*)ptr;
           for (int64_t i = 0; i < size.elements(); i++) {
             ptrFl[i] += 1;
           }
-          return af::array(size, ptrFl);
+          return Tensor::fromBuffer(size, ptrFl, MemoryLocation::Host);
         });
     check(blob);
     for (auto& vec : data) {
@@ -270,6 +262,12 @@ TEST(DatasetTest, FileBlobDataset) {
         vec[0] -= 1;
       }
     }
+  }
+
+  // check tensor dim constraints
+  {
+    FileBlobDataset blob(fl::lib::getTmpPath("max_size.blob"), true, true);
+    ASSERT_THROW(blob.add({fl::rand({4, 5, 6, 7, 8})}), std::invalid_argument);
   }
 
   // check everything is correct after re-opening
@@ -280,7 +278,7 @@ TEST(DatasetTest, FileBlobDataset) {
 
   // multi-threaded read
   {
-    std::vector<std::vector<af::array>> thdata(data.size());
+    std::vector<std::vector<Tensor>> thdata(data.size());
     auto blob =
         std::make_shared<FileBlobDataset>(fl::lib::getTmpPath("data.blob"));
     std::vector<std::thread> workers;
@@ -304,11 +302,10 @@ TEST(DatasetTest, FileBlobDataset) {
       auto dataSample = data.at(i);
       ASSERT_EQ(dataSample.size(), thdataSample.size());
       for (int64_t j = 0; j < thdataSample.size(); j++) {
-        ASSERT_TRUE(thdataSample.at(j).dims() == dataSample.at(j).dims());
+        ASSERT_TRUE(thdataSample.at(j).shape() == dataSample.at(j).shape());
         ASSERT_TRUE(
-            af::norm(
-                af::flat(dataSample.at(j)) - af::flat(thdataSample.at(j))) <=
-            1e-05);
+            fl::norm(dataSample.at(j).flatten() - thdataSample.at(j).flatten())
+                .scalar<float>() <= 1e-05);
       }
     }
   }
@@ -317,7 +314,7 @@ TEST(DatasetTest, FileBlobDataset) {
   {
     // add an index
     for (int i = 0; i < data.size(); i++) {
-      data[i].push_back(af::constant(i, 1, f32));
+      data[i].push_back(fl::full({1}, i, fl::dtype::f32));
     }
     {
       auto blob = std::make_shared<FileBlobDataset>(
@@ -350,11 +347,10 @@ TEST(DatasetTest, FileBlobDataset) {
         auto dataSample = data.at(idx);
         ASSERT_EQ(dataSample.size(), blobSample.size());
         for (int64_t j = 0; j < blobSample.size(); j++) {
-          ASSERT_TRUE(dataSample.at(j).dims() == blobSample.at(j).dims());
+          ASSERT_TRUE(dataSample.at(j).shape() == blobSample.at(j).shape());
           ASSERT_TRUE(
-              af::norm(
-                  af::flat(dataSample.at(j)) - af::flat(blobSample.at(j))) <=
-              1e-05);
+              fl::norm(dataSample.at(j).flatten() - blobSample.at(j).flatten())
+                  .scalar<float>() <= 1e-05);
         }
       }
     }
@@ -362,17 +358,17 @@ TEST(DatasetTest, FileBlobDataset) {
 }
 
 TEST(DatasetTest, MemoryBlobDataset) {
-  std::vector<std::vector<af::array>> data;
+  std::vector<std::vector<Tensor>> data;
 
   auto fillup = [&data](MemoryBlobDataset& blob) {
     for (int64_t i = 0; i < 20; i++) {
-      std::vector<af::array> sample;
+      std::vector<Tensor> sample;
       for (int64_t j = 0; j < i % 4; j++) {
-        af::array tensor;
+        Tensor tensor;
         if (j % 2 == 0) {
-          tensor = af::randu(100, 3, 100);
+          tensor = fl::rand({100, 3, 100});
         } else {
-          tensor = af::randu(100, 200);
+          tensor = fl::rand({100, 200});
         }
         sample.push_back(tensor);
       }
@@ -390,8 +386,8 @@ TEST(DatasetTest, MemoryBlobDataset) {
       ASSERT_EQ(datSample.size(), blobSample.size());
       for (int64_t j = 0; j < blobSample.size(); j++) {
         ASSERT_TRUE(
-            af::norm(af::flat(datSample.at(j)) - af::flat(blobSample.at(j))) <=
-            1e-05);
+            fl::norm(datSample.at(j).flatten() - blobSample.at(j).flatten())
+                .scalar<float>() <= 1e-05);
       }
     }
   };
@@ -428,19 +424,19 @@ TEST(DatasetTest, MemoryBlobDataset) {
       }
     }
     blob.setHostTransform(
-        0, [](void* ptr, af::dim4 size, af::dtype /* type */) {
+        0, [](void* ptr, fl::Shape size, fl::dtype /* type */) {
           float* ptrFl = (float*)ptr;
           for (int64_t i = 0; i < size.elements(); i++) {
             ptrFl[i] += 1;
           }
-          return af::array(size, ptrFl);
+          return Tensor::fromBuffer(size, ptrFl, MemoryLocation::Host);
         });
     check(blob);
   }
 
   // multi-threaded read
   {
-    std::vector<std::vector<af::array>> thdata(data.size());
+    std::vector<std::vector<Tensor>> thdata(data.size());
     std::vector<std::thread> workers;
     const int nworker = 4;
     int nperworker = data.size() / nworker;
@@ -462,11 +458,10 @@ TEST(DatasetTest, MemoryBlobDataset) {
       auto dataSample = data.at(i);
       ASSERT_EQ(dataSample.size(), thdataSample.size());
       for (int64_t j = 0; j < thdataSample.size(); j++) {
-        ASSERT_TRUE(thdataSample.at(j).dims() == dataSample.at(j).dims());
+        ASSERT_TRUE(thdataSample.at(j).shape() == dataSample.at(j).shape());
         ASSERT_TRUE(
-            af::norm(
-                af::flat(dataSample.at(j)) - af::flat(thdataSample.at(j))) <=
-            1e-05);
+            fl::norm(dataSample.at(j).flatten() - thdataSample.at(j).flatten())
+                .scalar<float>() <= 1e-05);
       }
     }
   }
@@ -476,7 +471,7 @@ TEST(DatasetTest, MemoryBlobDataset) {
     MemoryBlobDataset wblob;
     // add an index
     for (int i = 0; i < data.size(); i++) {
-      data[i].push_back(af::constant(i, 1, f32));
+      data[i].push_back(fl::full({1}, i, fl::dtype::f32));
     }
     {
       std::vector<std::thread> workers;
@@ -505,11 +500,10 @@ TEST(DatasetTest, MemoryBlobDataset) {
         auto dataSample = data.at(idx);
         ASSERT_EQ(dataSample.size(), wblobSample.size());
         for (int64_t j = 0; j < wblobSample.size(); j++) {
-          ASSERT_TRUE(dataSample.at(j).dims() == wblobSample.at(j).dims());
+          ASSERT_TRUE(dataSample.at(j).shape() == wblobSample.at(j).shape());
           ASSERT_TRUE(
-              af::norm(
-                  af::flat(dataSample.at(j)) - af::flat(wblobSample.at(j))) <=
-              1e-05);
+              fl::norm(dataSample.at(j).flatten() - wblobSample.at(j).flatten())
+                  .scalar<float>() <= 1e-05);
         }
       }
     }
@@ -517,11 +511,11 @@ TEST(DatasetTest, MemoryBlobDataset) {
 }
 
 TEST(DatasetTest, PrefetchDatasetCorrectness) {
-  std::vector<af::array> tensormap = {af::randu(100, 200, 300)};
+  std::vector<Tensor> tensormap = {fl::rand({100, 200, 300})};
   auto tensords = std::make_shared<TensorDataset>(tensormap);
 
-  Dataset::TransformFunction scaleAndAdd = [](const af::array& a) {
-    return af::cos(a) + 10.0;
+  Dataset::TransformFunction scaleAndAdd = [](const Tensor& a) {
+    return fl::cos(a) + 10.0;
   };
 
   auto transformDs = std::make_shared<TransformDataset>(
@@ -540,13 +534,13 @@ TEST(DatasetTest, PrefetchDatasetCorrectness) {
 
 TEST(DatasetTest, DISABLED_PrefetchDatasetPerformance) {
   // Flaky test. Disabled for now.
-  std::vector<af::array> tensormap = {af::randu(100, 200, 300)};
+  std::vector<Tensor> tensormap = {fl::rand({100, 200, 300})};
   auto tensords = std::make_shared<TensorDataset>(tensormap);
 
-  Dataset::TransformFunction scaleAndAdd = [](const af::array& a) {
+  Dataset::TransformFunction scaleAndAdd = [](const Tensor& a) {
     /* sleep override */
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    return af::sin(a) + 1.0;
+    return fl::sin(a) + 1.0;
   };
   auto transformDs = std::make_shared<TransformDataset>(
       tensords, std::vector<Dataset::TransformFunction>{scaleAndAdd});
