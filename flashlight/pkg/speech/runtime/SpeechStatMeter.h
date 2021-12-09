@@ -29,7 +29,7 @@ struct SpeechStats {
 class SpeechStatMeter {
  public:
   SpeechStatMeter();
-  void add(const af::array& inputSizes, const af::array& targetSizes);
+  void add(const Tensor& inputSizes, const Tensor& targetSizes);
   void add(const SpeechStats& stats);
   std::vector<int64_t> value() const;
   void reset();
