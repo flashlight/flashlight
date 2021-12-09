@@ -23,7 +23,7 @@ AdagradOptimizer::AdagradOptimizer(
       wd_(weightDecay) {
   variance_.reserve(parameters.size());
   for (const auto& param : parameters_) {
-    variance_.push_back(af::constant(0, param.dims(), param.type()));
+    variance_.push_back(fl::full(param.dims(), 0, param.type()));
     fl::eval(variance_.back());
   }
 }
@@ -34,9 +34,9 @@ void AdagradOptimizer::step() {
       continue;
     }
 
-    const af::array& grad = parameters_[i].grad().array();
-    af::array& data = parameters_[i].array();
-    af::array& variance = variance_[i];
+    const Tensor& grad = parameters_[i].grad().tensor();
+    Tensor& data = parameters_[i].tensor();
+    Tensor& variance = variance_[i];
 
     if (wd_ != 0) {
       // Weight decay term
@@ -45,7 +45,7 @@ void AdagradOptimizer::step() {
 
     variance = variance + grad * grad;
     fl::eval(variance);
-    data = data - lr_ * grad / (af::sqrt(variance) + eps_);
+    data = data - lr_ * grad / (fl::sqrt(variance) + eps_);
     fl::eval(data);
   }
 }
