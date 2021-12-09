@@ -51,10 +51,10 @@ double alexnet() {
   model.add(ReLU());
   model.add(Pool2D(3, 3, 2, 2)); // 13 -> 6
 
-  auto input = Variable(af::randu(224, 224, 3, 128) * 2 - 2, false);
+  auto input = Variable(fl::rand({224, 224, 3, 128}) * 2 - 2, false);
 
   auto b = model.forward(input);
-  auto gradoutput = Variable(af::randu(b.dims()) * 2 - 2, false);
+  auto gradoutput = Variable(fl::rand(b.dims()) * 2 - 2, false);
 
   auto alexnet_fn = [&]() {
     auto output = model.forward(input);
@@ -70,8 +70,10 @@ double embedding() {
   Embedding embed(embed_dim, vocab_size);
 
   int num_elems = 400;
-  Variable input((af::randu(num_elems) * vocab_size).as(s32), false);
-  Variable grad_output(af::randn(embed_dim, num_elems, f32), false);
+  Variable input(
+      (fl::rand({num_elems}) * vocab_size).astype(fl::dtype::s32), false);
+  Variable grad_output(
+      fl::randn({embed_dim, num_elems}, fl::dtype::f32), false);
 
   auto embed_fn = [&]() {
     embed.zeroGrad();
@@ -86,8 +88,8 @@ double linear() {
   int N = 512;
   int B = 8;
   int T = 2;
-  Variable input(af::randu(N, T, B, f32), true);
-  Variable dout(af::randu(M, T, B, f32), false);
+  Variable input(fl::rand({N, T, B}, fl::dtype::f32), true);
+  Variable dout(fl::rand({M, T, B}, fl::dtype::f32), false);
   Linear lin(N, M);
 
   auto lin_fn = [&]() {
@@ -106,8 +108,8 @@ double batchNorm() {
   int C = 512;
   int H = 32;
   int W = 32;
-  Variable input(af::randu(W, H, C, N, f32), true);
-  Variable dout(af::randu(W, H, C, N, f32), true);
+  Variable input(fl::rand({W, H, C, N}, fl::dtype::f32), true);
+  Variable dout(fl::rand({W, H, C, N}, fl::dtype::f32), true);
   BatchNorm bn(2, C); // Spatial batchnorm
 
   auto bn_fn = [&]() {
@@ -126,8 +128,8 @@ double layerNorm() {
   int C = 512;
   int H = 32;
   int W = 32;
-  Variable input(af::randu(W, H, C, N, f32), true);
-  Variable dout(af::randu(W, H, C, N, f32), true);
+  Variable input(fl::rand({W, H, C, N}, fl::dtype::f32), true);
+  Variable dout(fl::rand({W, H, C, N}, fl::dtype::f32), true);
   LayerNorm ln(3);
 
   auto ln_fn = [&]() {
