@@ -9,9 +9,11 @@
 
 #include "flashlight/fl/contrib/contrib.h"
 #include "flashlight/fl/contrib/modules/modules.h"
-#include "flashlight/fl/flashlight.h"
 
 namespace fl {
+
+class Tensor;
+
 namespace pkg {
 namespace runtime {
 
@@ -35,7 +37,7 @@ std::shared_ptr<fl::Sequential> buildSequentialModule(
 fl::Variable forwardSequentialModuleWithPadMask(
     const fl::Variable& input,
     std::shared_ptr<fl::Module> ntwrk,
-    const af::array& inputSizes);
+    const Tensor& inputSizes);
 
 } // namespace runtime
 } // namespace pkg
