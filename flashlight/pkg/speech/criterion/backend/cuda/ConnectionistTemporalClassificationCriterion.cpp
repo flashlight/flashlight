@@ -13,8 +13,10 @@
 #include "flashlight/pkg/speech/criterion/ConnectionistTemporalClassificationCriterion.h"
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
-#include "flashlight/pkg/runtime/common/DistributedUtils.h"
+#include "flashlight/fl/common/DevicePtr.h"
+#include "flashlight/fl/tensor/Index.h"
 #include "flashlight/lib/sequence/criterion/cuda/CriterionUtils.cuh"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
 
 using namespace fl::pkg::runtime;
 
@@ -52,12 +54,13 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
   options.stream = stream;
   options.blank_label = N - 1;
 
-  af::array inputarr(N, B, T, input.type());
-  inputarr(af::span, af::span, af::span) = af::reorder(input.array(), 0, 2, 1);
+  Tensor inputarr({N, B, T}, input.type());
+  inputarr(fl::span, fl::span, fl::span) =
+      fl::transpose(input.tensor(), {0, 2, 1});
 
-  af::array grad;
+  Tensor grad;
   if (input.isCalcGrad()) {
-    grad = af::constant(0.0, inputarr.dims(), inputarr.type());
+    grad = fl::full(inputarr.shape(), 0.0, inputarr.type());
   }
 
   std::vector<int> inputLengths(B, T);
@@ -66,11 +69,11 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
   std::vector<int> batchTargetVec(target.elements());
   target.host(batchTargetVec.data());
 
-  af::array targetSize(B, s32);
-  af::array scale(B, f32);
+  Tensor targetSize({B}, fl::dtype::s32);
+  Tensor scale({B}, fl::dtype::f32);
 
   {
-    fl::DevicePtr targetRaw(target.array());
+    fl::DevicePtr targetRaw(target.tensor());
     fl::DevicePtr targetSizeRaw(targetSize);
     fl::DevicePtr scaleRaw(scale);
 
@@ -92,8 +95,8 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
         stream);
   }
 
-  auto batchTargetSizeVec = afToVector<int>(targetSize);
-  auto batchScaleVec = afToVector<float>(scale);
+  auto batchTargetSizeVec = targetSize.toHostVector<int>();
+  auto batchScaleVec = scale.toHostVector<float>();
 
   for (int b = 0; b < B; ++b) {
     const int* targetVec = batchTargetVec.data() + b * batchL;
@@ -109,7 +112,7 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
       labels.push_back(targetVec[l]);
     }
   }
-  af::array batchScales(B, batchScaleVec.data());
+  Tensor batchScales = Tensor::fromVector({B}, batchScaleVec);
 
   size_t workspace_size;
   throw_on_error(
@@ -122,7 +125,7 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
           &workspace_size),
       "Error: get_workspace_size");
 
-  af::array workspace(workspace_size, af::dtype::b8);
+  Tensor workspace({static_cast<long long>(workspace_size)}, fl::dtype::b8);
 
   std::vector<float> costs(B, 0.0);
   {
@@ -144,22 +147,20 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
         "Error: compute_ctc_loss");
   }
 
-  af::array result(B, costs.data());
+  Tensor result = Tensor::fromVector(costs);
 
   result = result * batchScales;
 
   auto gradFunc = [grad, batchScales](
                       std::vector<Variable>& moduleInputs,
                       const Variable& grad_output) {
-    auto gradScales = grad_output.array() * batchScales;
+    auto gradScales = grad_output.tensor() * batchScales;
     auto& in = moduleInputs[0];
-    gradScales = af::tile(
-        moddims(gradScales, 1, grad_output.dims(0), 1),
-        in.dims(0),
-        1,
-        in.dims(1));
+    gradScales = fl::tile(
+        fl::reshape(gradScales, {1, grad_output.dims(0), 1}),
+        {in.dims(0), 1, in.dims(1)});
     moduleInputs[0].addGrad(
-        Variable(af::reorder(grad * gradScales, 0, 2, 1), false));
+        Variable(fl::transpose(grad * gradScales, {0, 2, 1}), false));
   };
 
   return {Variable(result, {input, target}, gradFunc)};

@@ -21,21 +21,21 @@ class SequenceCriterion : public fl::Container {
    * Find the most likely path through input using viterbi algorithm
    * https://en.wikipedia.org/wiki/Viterbi_algorithm
    */
-  virtual af::array viterbiPath(
-      const af::array& input,
-      const af::array& inputSizes = af::array()) = 0;
+  virtual Tensor viterbiPath(
+      const Tensor& input,
+      const Tensor& inputSizes = Tensor()) = 0;
 
   /**
    * Finds the most likely path using viterbi algorithm that is constrained
    * to go through target
    */
-  virtual af::array viterbiPathWithTarget(
-      const af::array& input,
-      const af::array& target,
-      const af::array& inputSizes = af::array(),
-      const af::array& targetSizes = af::array()) {
+  virtual Tensor viterbiPathWithTarget(
+      const Tensor& input,
+      const Tensor& target,
+      const Tensor& inputSizes = Tensor(),
+      const Tensor& targetSizes = Tensor()) {
     throw std::runtime_error("Not implemented");
-    return af::array();
+    return Tensor();
   }
 
  private:

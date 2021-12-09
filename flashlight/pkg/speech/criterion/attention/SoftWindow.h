@@ -24,24 +24,24 @@ class SoftWindow : public WindowBase {
       int targetLen,
       int inputSteps,
       int batchSize,
-      const af::array& inputSizes = af::array(),
-      const af::array& targetSizes = af::array()) const override;
+      const Tensor& inputSizes = Tensor(),
+      const Tensor& targetSizes = Tensor()) const override;
 
   Variable computeVectorizedWindow(
       int targetLen,
       int inputSteps,
       int batchSize,
-      const af::array& inputSizes = af::array(),
-      const af::array& targetSizes = af::array()) const override;
+      const Tensor& inputSizes = Tensor(),
+      const Tensor& targetSizes = Tensor()) const override;
 
  private:
   Variable compute(
       int targetLen,
       int inputSteps,
       int batchSize,
-      const af::array& inputSizes,
-      const af::array& targetSizes,
-      af::array& decoderSteps) const;
+      const Tensor& inputSizes,
+      const Tensor& targetSizes,
+      Tensor& decoderSteps) const;
 
   double std_;
   double avgRate_;
