@@ -5,9 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include "flashlight/fl/meter/FrameErrorMeter.h"
+
 #include <stdexcept>
 
-#include "flashlight/fl/meter/FrameErrorMeter.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 FrameErrorMeter::FrameErrorMeter(bool accuracy /* = false */)
@@ -20,17 +22,17 @@ void FrameErrorMeter::reset() {
   sum_ = 0;
 }
 
-void FrameErrorMeter::add(const af::array& output, const af::array& target) {
-  if (output.dims() != target.dims()) {
+void FrameErrorMeter::add(const Tensor& output, const Tensor& target) {
+  if (output.shape() != target.shape()) {
     throw std::invalid_argument("dimension mismatch in FrameErrorMeter");
   }
-  if (target.numdims() != 1) {
+  if (target.ndim() != 1) {
     throw std::invalid_argument(
         "output/target must be 1-dimensional for FrameErrorMeter");
   }
 
-  sum_ += af::count<int64_t>(output != target);
-  n_ += target.dims(0);
+  sum_ += fl::countNonzero(output != target).scalar<unsigned>();
+  n_ += target.dim(0);
 }
 
 double FrameErrorMeter::value() const {
