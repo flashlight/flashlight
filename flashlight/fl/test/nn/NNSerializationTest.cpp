@@ -17,6 +17,8 @@
 #include "flashlight/fl/autograd/autograd.h"
 #include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/nn/nn.h"
+#include "flashlight/fl/tensor/Random.h"
+#include "flashlight/fl/tensor/Types.h"
 #include "flashlight/lib/common/System.h"
 
 using namespace fl;
@@ -46,7 +48,8 @@ auto filesizebytes = []() {
 auto paramsizebytes = [](const std::vector<Variable>& parameters) {
   int64_t paramsize = 0;
   for (const auto& param : parameters) {
-    paramsize += (param.elements() * af::getSizeOf(param.type()));
+    // TODO{fl::Tensor}{unimplemented}
+    paramsize += (param.elements() * fl::getTypeSize(param.type()));
   }
   return paramsize;
 };
@@ -58,7 +61,7 @@ const float kThreshold = 1.01; // within 1%
 CEREAL_REGISTER_TYPE(ContainerTestClass)
 
 TEST(NNSerializationTest, Variable) {
-  auto testimpl = [](const af::array& arr, bool calc_grad) {
+  auto testimpl = [](const Tensor& arr, bool calc_grad) {
     Variable a(arr, calc_grad);
     std::stringstream ss;
     {
@@ -73,23 +76,21 @@ TEST(NNSerializationTest, Variable) {
     ASSERT_TRUE(allClose(a, b));
   };
 
-  testimpl(af::array(), true);
-  testimpl(af::randn(3, 6, 7, 8), false);
-  testimpl(af::randu(1, 2, 3, 5, af::dtype::b8), false);
-  testimpl(af::randu(1, 2, 3, 5, af::dtype::s16), true);
-  testimpl(af::randn(5, 6, 7, 9, af::dtype::f64), false);
-  testimpl(af::randu(1, 9, 9, 2, af::dtype::s32), true);
-  testimpl(af::randu(2, 9, 1, 8, af::dtype::s64), false);
-  testimpl(af::randu(100, 150, af::dtype::u8), true);
-  testimpl(af::randu(32, 32, 3, af::dtype::u16), false);
-  testimpl(af::randn(5, 8, 2, 4, af::dtype::c32), false);
-  testimpl(af::randu(2, 3, 4, 9, af::dtype::c64), true);
+  testimpl(Tensor(), true);
+  testimpl(fl::randn({3, 6, 7, 8}), false);
+  testimpl(fl::rand({1, 2, 3, 5}, fl::dtype::b8), false);
+  testimpl(fl::rand({1, 2, 3, 5}, fl::dtype::s16), true);
+  testimpl(fl::randn({5, 6, 7, 9}, fl::dtype::f64), false);
+  testimpl(fl::rand({1, 9, 9, 2}, fl::dtype::s32), true);
+  testimpl(fl::rand({2, 9, 1, 8}, fl::dtype::s64), false);
+  testimpl(fl::rand({100, 150}, fl::dtype::u8), true);
+  testimpl(fl::rand({32, 32, 3}, fl::dtype::u16), false);
 }
 
 TEST(NNSerializationTest, Linear) {
-  auto wt = param(af::randu(4, 3));
-  auto bs = param(af::randu(4));
-  auto in = input(af::randu(3, 2));
+  auto wt = param(fl::rand({4, 3}));
+  auto bs = param(fl::rand({4}));
+  auto in = input(fl::rand({3, 2}));
   auto lin = std::make_shared<Linear>(wt, bs);
 
   const std::string path = fl::lib::getTmpPath("Linear.mdl");
@@ -104,9 +105,9 @@ TEST(NNSerializationTest, Linear) {
 }
 
 TEST(NNSerializationTest, Conv2D) {
-  auto wt = param(af::randu(5, 5, 2, 4));
-  auto bs = param(af::randu(1, 1, 4, 1));
-  auto in = input(af::randu(25, 25, 2, 5));
+  auto wt = param(fl::rand({5, 5, 2, 4}));
+  auto bs = param(fl::rand({1, 1, 4, 1}));
+  auto in = input(fl::rand({25, 25, 2, 5}));
   auto conv = std::make_shared<Conv2D>(wt, bs);
 
   const std::string path = fl::lib::getTmpPath("Conv2D.mdl");
@@ -121,7 +122,7 @@ TEST(NNSerializationTest, Conv2D) {
 }
 
 TEST(NNSerializationTest, Pool2D) {
-  auto in = input(af::randu(8, 8));
+  auto in = input(fl::rand({8, 8}));
   auto pool = std::make_shared<Pool2D>(2, 3, 1, 1, 1, 1, PoolingMode::MAX);
 
   const std::string path = fl::lib::getTmpPath("Pool2D.mdl");
@@ -136,7 +137,7 @@ TEST(NNSerializationTest, Pool2D) {
 }
 
 TEST(NNSerializationTest, BaseModule) {
-  auto in = input(af::randu(8, 8));
+  auto in = input(fl::rand({8, 8}));
   ModulePtr dout = std::make_shared<Dropout>(0.75);
 
   const std::string path = fl::lib::getTmpPath("BaseModule.mdl");
@@ -154,8 +155,8 @@ TEST(NNSerializationTest, PrecisionCast) {
     GTEST_SKIP() << "Half precision not available on this device";
   }
 
-  auto in = input(af::randu({8, 8}));
-  auto precisionCast = std::make_shared<PrecisionCast>(af::dtype::f16);
+  auto in = input(fl::rand({8, 8}));
+  auto precisionCast = std::make_shared<PrecisionCast>(fl::dtype::f16);
 
   const std::string path = fl::lib::getTmpPath("PrecisionCast.mdl");
   save(path, precisionCast);
@@ -169,7 +170,7 @@ TEST(NNSerializationTest, PrecisionCast) {
 }
 
 TEST(NNSerializationTest, WeightNormLinear) {
-  auto in = input(af::randn(2, 10, 1, 1));
+  auto in = input(fl::randn({2, 10, 1, 1}));
   auto wlin = std::make_shared<WeightNorm>(Linear(2, 3), 0);
 
   const std::string path = fl::lib::getTmpPath("WeightNormLinear.mdl");
@@ -185,7 +186,7 @@ TEST(NNSerializationTest, WeightNormLinear) {
 }
 
 TEST(NNSerializationTest, WeightNormConvSeq) {
-  auto in = input(af::randn(70, 70, 30, 2));
+  auto in = input(fl::randn({70, 70, 30, 2}));
   auto seq = std::make_shared<Sequential>();
   seq->add(std::make_shared<WeightNorm>(Conv2D(30, 80, 3, 3), 3));
   seq->add(std::make_shared<GatedLinearUnit>(2));
@@ -196,9 +197,9 @@ TEST(NNSerializationTest, WeightNormConvSeq) {
 }
 
 TEST(NNSerializationTest, AdaptiveSoftMaxLoss) {
-  auto in = input(af::randu(5, 10));
+  auto in = input(fl::rand({5, 10, /* B= */ 1}));
   std::vector<int> h_target{1, 1, 1, 2, 2, 2, 0, 0, 0, 0};
-  af::array g_target(10, h_target.data());
+  auto g_target = Tensor::fromVector({10, /* B = */ 1}, h_target);
   auto target = input(g_target);
 
   std::vector<int> cutoff{{1, 3}};
@@ -275,7 +276,7 @@ TEST(NNSerializationTest, LeNet) {
   leNet->add(ReLU());
   leNet->add(Pool2D(2, 2, 2, 2));
 
-  leNet->add(View(af::dim4(16 * 5 * 5)));
+  leNet->add(View(Shape({16 * 5 * 5})));
 
   leNet->add(Linear(16 * 5 * 5, 120));
   leNet->add(ReLU());
@@ -294,7 +295,7 @@ TEST(NNSerializationTest, LeNet) {
 
   ASSERT_TRUE(allParamsClose(*leNet2, *leNet));
 
-  auto in = input(af::randu(32, 32, 3));
+  auto in = input(fl::rand({32, 32, 3, 1}));
   ASSERT_TRUE(allClose(leNet2->forward(in), leNet->forward(in)));
 }
 
@@ -345,7 +346,7 @@ TEST(NNSerializationTest, ContainerBackward) {
   ModulePtr seq2;
   load(path, seq2);
 
-  auto in = input(af::randu(10, 10));
+  auto in = input(fl::rand({10, 10}));
   auto output = seq2->forward({in}).front();
   output.backward();
   for (auto& p : seq2->params()) {
@@ -355,12 +356,12 @@ TEST(NNSerializationTest, ContainerBackward) {
 
 TEST(NNSerializationTest, ContainerWithParams) {
   auto seq = std::make_shared<ContainerTestClass>();
-  seq->addParam(Variable(af::randu(5, 5), true));
+  seq->addParam(Variable(fl::rand({5, 5}), true));
   seq->add(WeightNorm(Linear(10, 20), 0));
-  seq->addParam(Variable(af::randu(5, 5), true));
+  seq->addParam(Variable(fl::rand({5, 5}), true));
   seq->add(ReLU());
   seq->add(Linear(20, 30));
-  seq->addParam(Variable(af::randu(5, 5), true));
+  seq->addParam(Variable(fl::rand({5, 5}), true));
 
   const std::string path = fl::lib::getTmpPath("ContainerWithParams.mdl");
   save(path, static_cast<ModulePtr>(seq));
@@ -371,7 +372,7 @@ TEST(NNSerializationTest, ContainerWithParams) {
 
   ASSERT_TRUE(allParamsClose(*seq, *seq2));
 
-  auto in = input(af::randu(10, 10));
+  auto in = input(fl::rand({10, 10}));
   ASSERT_TRUE(allClose(seq->forward(in), seq2->forward({in}).front()));
 }
 
