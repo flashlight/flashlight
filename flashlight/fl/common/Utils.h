@@ -31,6 +31,8 @@
 
 namespace fl {
 
+class Tensor;
+
 /**
  * @return if fp16 operations are supported with the current flashlight
  * configuration.
@@ -52,7 +54,7 @@ bool allClose(
 /**
  * @return if an array contains any NAN or INF.
  */
-bool isInvalidArray(const af::array& arr);
+bool isInvalidArray(const Tensor& arr);
 
 // Returns high resolution time formatted as:
 // MMDD HH MM SS UUUUUU
@@ -62,25 +64,6 @@ std::string dateTimeWithMicroSeconds();
 // Returns round-up result of integer division.
 // throws invalid_argument exception on zero denominator.
 size_t divRoundUp(size_t numerator, size_t denominator);
-
-/*
- * Converts string to arrayfire types (`af::dtype`).
- *
- * @param[in] typeName type name in string.
- *
- * @return returns an arrayfire type (`af::dtype`) according to the input
- * string.
- */
-af::dtype stringToAfType(const std::string& typeName);
-
-/*
- * Converts arrayfire types to human readable string.
- *
- * @param[in] type `af::dtype` whose name in `string` is required.
- *
- * @return returns the type name in string
- */
-std::string afTypeToString(const af::dtype& type);
 
 // Return a string formmated similar to: 1314127872(1GB+229MB+256KB)
 std::string prettyStringMemorySize(size_t size);
