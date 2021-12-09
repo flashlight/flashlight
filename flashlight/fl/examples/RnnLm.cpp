@@ -27,7 +27,13 @@
 #include <unordered_map>
 #include <vector>
 
-#include "flashlight/fl/flashlight.h"
+#include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/dataset/datasets.h"
+#include "flashlight/fl/meter/meters.h"
+#include "flashlight/fl/nn/nn.h"
+#include "flashlight/fl/optim/optim.h"
+#include "flashlight/fl/tensor/Compute.h"
+#include "flashlight/fl/tensor/Index.h"
 
 using namespace fl;
 
@@ -60,14 +66,14 @@ class LMDataset : public Dataset {
       Preprocessor& preproc);
 
   int64_t size() const override {
-    return (data.dims(1) - 1) / time_steps;
+    return (data.dim(1) - 1) / time_steps;
   }
 
-  std::vector<af::array> get(const int64_t idx) const override;
+  std::vector<Tensor> get(const int64_t idx) const override;
 
  private:
   int time_steps;
-  af::array data;
+  Tensor data;
 };
 
 class RnnLm : public Container {
@@ -131,7 +137,7 @@ class RnnLm : public Container {
 int main(int argc, char** argv) {
   fl::init();
   if (argc != 2) {
-    throw af::exception("You must pass a data directory.");
+    throw std::runtime_error("You must pass a data directory.");
   }
 
   std::string data_dir = argv[1];
@@ -228,7 +234,7 @@ const std::string Preprocessor::eos = "<eos>";
 Preprocessor::Preprocessor(std::string dataset_path) {
   std::ifstream file(dataset_path);
   if (!file.is_open()) {
-    throw af::exception("[Preprocessor::Preprocessor] Can't find file.");
+    throw std::runtime_error("[Preprocessor::Preprocessor] Can't find file.");
   }
   int v = 0;
   std::string word;
@@ -249,7 +255,7 @@ LMDataset::LMDataset(
   std::vector<int> words;
   std::ifstream file(dataset_path);
   if (!file.is_open()) {
-    throw af::exception("[LMDataset::LMDataset] Can't find file.");
+    throw std::runtime_error("[LMDataset::LMDataset] Can't find file.");
   }
 
   std::string line;
@@ -265,13 +271,14 @@ LMDataset::LMDataset(
   int words_per_batch = words.size() / batch_size;
   words.resize(batch_size * words_per_batch);
 
-  data = transpose(af::array(words_per_batch, batch_size, words.data()));
+  data = transpose(Tensor::fromBuffer(
+      {words_per_batch, batch_size}, words.data(), MemoryLocation::Host));
 }
 
-std::vector<af::array> LMDataset::get(const int64_t idx) const {
+std::vector<Tensor> LMDataset::get(const int64_t idx) const {
   int start = idx * time_steps;
-  int end = (idx + 1) * time_steps - 1;
+  int end = (idx + 1) * time_steps;
   return {
-      data(af::span, af::seq(start, end)),
-      data(af::span, af::seq(start + 1, end + 1))};
+      data(fl::span, fl::range(start, end)),
+      data(fl::span, fl::range(start, end))};
 }
