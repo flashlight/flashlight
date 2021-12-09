@@ -6,40 +6,49 @@
  */
 
 #include <stdexcept>
+#include <utility>
 
 #include "flashlight/fl/common/DevicePtr.h"
 
-#include <af/internal.h>
+// TODO{fl::Tensor}{rewrite} remove me
+#include <af/array.h>
+#include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
 
 namespace fl {
 
-DevicePtr::DevicePtr(const af::array& in) : arr_(in.get()) {
-  if (in.isempty()) {
+// This ctor will be deleted
+DevicePtr::DevicePtr(af::array in)
+    : DevicePtr(toTensor<ArrayFireTensor>(std::move(in), /* numDims = */ 4)) {}
+
+DevicePtr::DevicePtr(const Tensor& in)
+    : tensor_(std::make_unique<Tensor>(in.shallowCopy())) {
+  if (tensor_->isEmpty()) {
     ptr_ = nullptr;
   } else {
-    if (!af::isLinear(in)) {
+    if (!tensor_->isContiguous()) {
       throw std::invalid_argument(
-          "can't get device pointer of non-contiguous array");
+          "can't get device pointer of non-contiguous Tensor");
     }
-    ptr_ = in.device<void>();
+    ptr_ = tensor_->device<void>();
   }
 }
 
 DevicePtr::~DevicePtr() {
   if (ptr_ != nullptr) {
-    af_unlock_array(arr_);
+    tensor_->unlock();
   }
 }
 
-DevicePtr::DevicePtr(DevicePtr&& d) noexcept : arr_(d.arr_), ptr_(d.ptr_) {
+DevicePtr::DevicePtr(DevicePtr&& d) noexcept
+    : tensor_(std::move(d.tensor_)), ptr_(d.ptr_) {
   d.ptr_ = nullptr;
 }
 
 DevicePtr& DevicePtr::operator=(DevicePtr&& other) noexcept {
   if (ptr_ != nullptr) {
-    af_unlock_array(arr_);
+    tensor_->unlock();
   }
-  arr_ = other.arr_;
+  tensor_ = std::move(other.tensor_);
   ptr_ = other.ptr_;
   other.ptr_ = nullptr;
   return *this;
