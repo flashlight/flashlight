@@ -7,6 +7,7 @@
 
 #include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
 
+#include <cassert>
 #include <memory>
 #include <stdexcept>
 #include <utility>
@@ -245,13 +246,16 @@ Tensor ArrayFireTensor::index(const std::vector<Index>& indices) {
         "ArrayFire tensors support up to 4 dimensions.");
   }
 
-  // If indexing with a single element and it's an Array, don't use spans
   // TODO: vet and stress test this a lot more/add proper support for
   // multi-tensor
-  bool tensorIndex = indices.size() == 1 &&
-      indices.front().type() == detail::IndexType::Tensor;
+  // If indexing by a single element and it's a tensor with the same number of
+  // indices as the array being indexed, do a flat index as this is probably a
+  // filter-based index (for example: a(a < 5)).
+  bool completeTensorIndex = indices.size() == 1 &&
+      indices.front().type() == detail::IndexType::Tensor &&
+      indices.front().get<Tensor>().size() == getHandle().elements();
   std::vector<af::index> afIndices;
-  if (tensorIndex) {
+  if (completeTensorIndex) {
     afIndices = {af::index(0)};
   } else {
     afIndices = {af::span, af::span, af::span, af::span}; // implicit spans
@@ -277,9 +281,11 @@ Tensor ArrayFireTensor::index(const std::vector<Index>& indices) {
 
   getHandle(); // if this tensor was a view, run indexing and promote
 
+  assert(afIndices.size() == indexTypes.size());
   // Compute numDums for the new Tensor
   unsigned newNumDims = numDims();
-  if (tensorIndex) {
+
+  if (completeTensorIndex) {
     // TODO/FIXME: compute this based on the number of els in the indexing
     // tensor(s)
     newNumDims = 1;
