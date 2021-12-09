@@ -29,21 +29,27 @@ Variable batchnorm(
     double epsilon) {
   auto input = FL_ADJUST_INPUT_TYPE(in);
 
-  if (input.type() == af::dtype::f16 && weight.type() != af::dtype::f32) {
+  if (input.type() == fl::dtype::f16 && weight.type() != fl::dtype::f32) {
     throw std::invalid_argument(
         "fl::batchnorm: non-input tensors must be of type f32");
   }
   FL_VARIABLE_DTYPES_MATCH_CHECK(weight, bias, runningMean, runningVar);
 
-  auto output = af::array(input.dims(), input.type());
+  auto output = Tensor(input.dims(), input.type());
 
   int nfeatures = 1;
   for (auto ax : axes) {
+    if (ax > input.numdims() - 1) {
+      throw std::invalid_argument(
+          "batchnorm - passed axes (axis value " + std::to_string(ax) +
+          ") exceeds the number of dimensions of the input (" +
+          std::to_string(input.numdims()) + ")");
+    }
     nfeatures *= input.dims(ax);
   }
 
   cudnnBatchNormMode_t mode;
-  af::dim4 inDescDims, wtDescDims;
+  Shape inDescDims, wtDescDims;
 
   auto max_axis = *std::max_element(axes.begin(), axes.end());
   auto min_axis = *std::min_element(axes.begin(), axes.end());
@@ -56,8 +62,8 @@ Variable batchnorm(
 
   if (min_axis == 0) {
     mode = CUDNN_BATCHNORM_PER_ACTIVATION;
-    inDescDims = af::dim4(1, 1, nfeatures, input.elements() / nfeatures);
-    wtDescDims = af::dim4(1, 1, nfeatures);
+    inDescDims = Shape({1, 1, nfeatures, input.elements() / nfeatures});
+    wtDescDims = Shape({1, 1, nfeatures});
   } else {
     mode = CUDNN_BATCHNORM_SPATIAL;
 #if CUDNN_VERSION >= 7003
@@ -69,9 +75,9 @@ Variable batchnorm(
     for (int i = max_axis + 1; i < 4; ++i) {
       batchsz *= input.dims(i);
     }
-    inDescDims = af::dim4(
-        1, input.elements() / (nfeatures * batchsz), nfeatures, batchsz);
-    wtDescDims = af::dim4(1, 1, nfeatures);
+    inDescDims = Shape(
+        {1, input.elements() / (nfeatures * batchsz), nfeatures, batchsz});
+    wtDescDims = Shape({1, 1, nfeatures});
   }
 
   if (!weight.isempty() && weight.elements() != wtDescDims.elements()) {
@@ -82,31 +88,30 @@ Variable batchnorm(
     throw std::invalid_argument("[BatchNorm] Invalid shape for bias.");
   }
   // Weight, bias, and running mean/var arrays can't be fp16 (must be fp32)
-  af::array weightArray = weight.isempty()
-      ? af::constant(1.0, wtDescDims, af::dtype::f32)
-      : weight.array().as(af::dtype::f32);
-  af::array biasArray = bias.isempty()
-      ? af::constant(0.0, wtDescDims, af::dtype::f32)
-      : bias.array().as(af::dtype::f32);
+  Tensor weightArray = weight.isempty()
+      ? fl::full(wtDescDims, 1.0, fl::dtype::f32)
+      : weight.tensor().astype(fl::dtype::f32);
+  Tensor biasArray = bias.isempty() ? fl::full(wtDescDims, 0.0, fl::dtype::f32)
+                                    : bias.tensor().astype(fl::dtype::f32);
 
-  af::dtype scalarsType =
-      input.type() == af::dtype::f16 ? af::dtype::f32 : input.type();
+  fl::dtype scalarsType =
+      input.type() == fl::dtype::f16 ? fl::dtype::f32 : input.type();
 
   auto inDesc = TensorDescriptor(input.type(), inDescDims);
   auto wtDesc = TensorDescriptor(weightArray.type(), wtDescDims);
 
-  af::array saveMean, saveVar;
+  Tensor saveMean, saveVar;
   {
-    DevicePtr inRaw(input.array());
+    DevicePtr inRaw(input.tensor());
     DevicePtr outRaw(output);
     DevicePtr wtRaw(weightArray);
     DevicePtr bsRaw(biasArray);
-    DevicePtr runMeanRaw(runningMean.array());
-    DevicePtr runVarRaw(runningVar.array());
+    DevicePtr runMeanRaw(runningMean.tensor());
+    DevicePtr runVarRaw(runningVar.tensor());
 
     if (train) {
-      saveMean = af::array(nfeatures, scalarsType);
-      saveVar = af::array(nfeatures, scalarsType);
+      saveMean = Tensor({nfeatures}, scalarsType);
+      saveVar = Tensor({nfeatures}, scalarsType);
 
       DevicePtr saveMeanRaw(saveMean);
       DevicePtr saveVarRaw(saveVar);
@@ -155,30 +160,31 @@ Variable batchnorm(
         }
 
         auto& in = inputs[0];
-        auto inArray = detail::adjustInputType(in.array(), "batchnorm");
+        auto inTensor = detail::adjustInputType(in.tensor(), "batchnorm");
         auto gradOutputArray =
-            detail::adjustInputType(gradOutput.array(), "batchnorm");
+            detail::adjustInputType(gradOutput.tensor(), "batchnorm");
         // Weight, bias, and running mean/var arrays can't be fp16 (must be
         // fp32)
         auto wt = inputs[1].isempty()
-            ? Variable(af::constant(1.0, wtDescDims, af::dtype::f32), false)
+            ? Variable(fl::full(wtDescDims, 1.0, fl::dtype::f32), false)
             : inputs[1];
         auto& bs = inputs[2];
 
-        auto scalarsType = inArray.type() == f16 ? f32 : inArray.type();
+        auto scalarsType = inTensor.type() == fl::dtype::f16 ? fl::dtype::f32
+                                                             : inTensor.type();
         const void* one1 = kOne(scalarsType);
         const void* zero0 = kZero(scalarsType);
 
-        auto iDesc = TensorDescriptor(inArray.type(), inDescDims);
+        auto iDesc = TensorDescriptor(inTensor.type(), inDescDims);
         auto wDesc = TensorDescriptor(wt.type(), wtDescDims);
         // CuDNN doesn't support calculating only the gradients
         // required for batchnorm
-        auto gradIn = af::array(inArray.dims(), inArray.type());
-        auto gradWt = af::array(wt.dims(), wt.type());
-        auto gradBs = af::array(wt.dims(), wt.type());
+        auto gradIn = Tensor(inTensor.shape(), inTensor.type());
+        auto gradWt = Tensor(wt.dims(), wt.type());
+        auto gradBs = Tensor(wt.dims(), wt.type());
         {
-          DevicePtr iRaw(inArray);
-          DevicePtr wRaw(wt.array());
+          DevicePtr iRaw(inTensor);
+          DevicePtr wRaw(wt.tensor());
 
           DevicePtr gradInRaw(gradIn);
           DevicePtr gradWtRaw(gradWt);
@@ -210,10 +216,10 @@ Variable batchnorm(
               saveMeanRaw.get(),
               saveVarRaw.get()));
         }
-        in.addGrad(Variable(gradIn.as(in.type()), false));
-        wt.addGrad(Variable(gradWt.as(wt.type()), false));
+        in.addGrad(Variable(gradIn.astype(in.type()), false));
+        wt.addGrad(Variable(gradWt.astype(wt.type()), false));
         if (!bs.isempty()) {
-          bs.addGrad(Variable(gradBs.as(bs.type()), false));
+          bs.addGrad(Variable(gradBs.astype(bs.type()), false));
         }
       };
   return Variable(output, {in, weight, bias}, gradFunc);
