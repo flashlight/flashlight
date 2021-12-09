@@ -59,7 +59,7 @@ void ResampleDataset::resample(std::vector<int64_t> resamplevec) {
   resampleVec_ = std::move(resamplevec);
 }
 
-std::vector<af::array> ResampleDataset::get(const int64_t idx) const {
+std::vector<Tensor> ResampleDataset::get(const int64_t idx) const {
   checkIndexBounds(idx);
   return dataset_->get(resampleVec_[idx]);
 }
