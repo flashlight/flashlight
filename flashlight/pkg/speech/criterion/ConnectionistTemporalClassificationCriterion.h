@@ -24,15 +24,14 @@ class ConnectionistTemporalClassificationCriterion : public SequenceCriterion {
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;
 
-  af::array viterbiPath(
-      const af::array& input,
-      const af::array& inputSize = af::array()) override;
+  Tensor viterbiPath(const Tensor& input, const Tensor& inputSize = Tensor())
+      override;
 
-  af::array viterbiPathWithTarget(
-      const af::array& input,
-      const af::array& target,
-      const af::array& inputSizes = af::array(),
-      const af::array& targetSizes = af::array()) override;
+  Tensor viterbiPathWithTarget(
+      const Tensor& input,
+      const Tensor& target,
+      const Tensor& inputSizes = Tensor(),
+      const Tensor& targetSizes = Tensor()) override;
 
   std::string prettyString() const override;
 
@@ -49,4 +48,5 @@ typedef ConnectionistTemporalClassificationCriterion CTCLoss;
 } // namespace pkg
 } // namespace fl
 
-CEREAL_REGISTER_TYPE(fl::pkg::speech::ConnectionistTemporalClassificationCriterion)
+CEREAL_REGISTER_TYPE(
+    fl::pkg::speech::ConnectionistTemporalClassificationCriterion)
