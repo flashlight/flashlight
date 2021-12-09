@@ -18,16 +18,16 @@ namespace vision {
 
 using batchFuncVar_t = Variable (*)(const Variable &, const Variable &);
 
-using batchFuncArr_t = af::array (*)(const af::array &, const af::array &);
+using batchFuncArr_t = Tensor (*)(const Tensor &, const Tensor &);
 
 /**
  * Converts bounding box coordinates from center (x, y) coordinate, with width
  * and height, to bottom left (x1, y1) top right (x2, y2) coordinates.
- * @param bboxes an af::array with shape \f$[4, N]\f$ where N is the number of
+ * @param bboxes an Tensor with shape \f$[4, N]\f$ where N is the number of
  * boxes
- * @return a `af::array` with transformed bboxes of same shape
+ * @return a `Tensor` with transformed bboxes of same shape
  */
-af::array cxcywh2xyxy(const af::array& bboxes);
+Tensor cxcywh2xyxy(const Tensor& bboxes);
 
 /**
  * Converts bounding box coordinates from center (x, y) coordinate, with width
@@ -42,11 +42,11 @@ fl::Variable cxcywh2xyxy(const fl::Variable& bboxes);
  * Converts bounding box coordinates from  bottom left (x1, y1) top right
  * (x2, y2) coordinates * to a center (x, y) coordinate, with width * and
  * height.
- * @param bboxes an af::array with shape \f$[4, N]\f$ where N is the number of
+ * @param bboxes an Tensor with shape \f$[4, N]\f$ where N is the number of
  * boxes
- * @return a `af::array` with transformed bboxes of same shape
+ * @return a `Tensor` with transformed bboxes of same shape
  */
-af::array xyxy2cxcywh(const af::array& bboxes);
+Tensor xyxy2cxcywh(const Tensor& bboxes);
 
 /**
  * A generalized function for getting the "cartesian" product of a function
@@ -68,24 +68,24 @@ cartesian(const fl::Variable& x, const fl::Variable& y, batchFuncVar_t fn);
  * an array of [4 X N X B] and [4 X M X B] and we want to apply an arbitrary
  * function to get an array of [ N X M ], * where each entry represents to
  * pairwise value between the two input arrays. (To get IOU between all boxes)
- * @param x a af::array of shape [ X x N x K x 1 ] and
- * @param y a af::array of shape [ X x M x K x 1 ]
- * @return a af::array of shape [ X x N X M X K ]
+ * @param x a Tensor of shape [ X x N x K x 1 ] and
+ * @param y a Tensor of shape [ X x M x K x 1 ]
+ * @return a Tensor of shape [ X x N X M X K ]
  *
  */
-af::array cartesian(const af::array& x, const af::array& y, batchFuncArr_t fn);
+Tensor cartesian(const Tensor& x, const Tensor& y, batchFuncArr_t fn);
 
 /**
- * Flattens dimension between start and stop in an af::array
- * @param x an af::array of an arbitrary shape
+ * Flattens dimension between start and stop in an Tensor
+ * @param x an Tensor of an arbitrary shape
  * @param start an int, the starting dimension to flatten
  * @param stop an int, the end dimension to flatten
- * @return an af::array with collasped dimensions
+ * @return an Tensor with collasped dimensions
  */
-af::array flatten(const af::array& x, int start, int stop);
+Tensor flatten(const Tensor& x, int start, int stop);
 
 /**
- * Flattens dimension between start and stop in an af::array
+ * Flattens dimension between start and stop in an Tensor
  * @param x an fl::array of an arbitrary shape
  * @param start an int, the starting dimension to flatten
  * @param stop an int, the end dimension to flatten
@@ -98,10 +98,10 @@ Variable flatten(const fl::Variable& x, int start, int stop);
  * See: https://giou.stanford.edu/
  * @param: bboxes1 an array of shape [4, N, B]
  * @param: bboxes2 an array of shape [4, M, B]
- * @return an af::array of shape [N x M x B] where each entry represents
+ * @return an Tensor of shape [N x M x B] where each entry represents
  * the giou between two boxes
  */
-af::array generalizedBoxIou(const af::array& bboxes1, const af::array& bboxes2);
+Tensor generalizedBoxIou(const Tensor& bboxes1, const Tensor& bboxes2);
 
 /**
  * Computes the generalizedBoxIou pairwise across to fl::Variables
@@ -117,12 +117,12 @@ Variable generalizedBoxIou(const Variable& bboxes1, const Variable& bboxes2);
  * Computes the iou pairwise across two arrays of bboxes
  * @param: bboxes1 an array of shape [4, N, B]
  * @param: bboxes2 an array of shape [4, M, B]
- * @return an tuple of af::array of shape [N x M x B] where each entry
+ * @return an tuple of Tensor of shape [N x M x B] where each entry
  * represents the iou and intersection between two boxes
  */
-std::tuple<af::array, af::array> boxIou(
-    const af::array& bboxes1,
-    const af::array& bboxes2);
+std::tuple<Tensor, Tensor> boxIou(
+    const Tensor& bboxes1,
+    const Tensor& bboxes2);
 
 /**
  * Computes the iou pairwise across to Variables of bboxes
