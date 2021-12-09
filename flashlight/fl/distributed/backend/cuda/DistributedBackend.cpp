@@ -19,6 +19,7 @@
 #include "flashlight/fl/distributed/DistributedApi.h"
 #include "flashlight/fl/distributed/FileStore.h"
 #include "flashlight/fl/tensor/Compute.h"
+#include "flashlight/fl/tensor/Types.h"
 
 #define NCCLCHECK(expr) ::fl::detail::ncclCheck((expr))
 #define MPICHECK(expr) ::fl::detail::mpiCheck((expr))
@@ -75,17 +76,17 @@ bool isNonNegativeInteger(const std::string& s) {
                        }) == s.end();
 }
 
-ncclDataType_t getNcclTypeForArray(const af::array& arr) {
+ncclDataType_t getNcclTypeForArray(const Tensor& arr) {
   switch (arr.type()) {
-    case af::dtype::f16:
+    case fl::dtype::f16:
       return ncclHalf;
-    case af::dtype::f32:
+    case fl::dtype::f32:
       return ncclFloat32;
-    case af::dtype::f64:
+    case fl::dtype::f64:
       return ncclFloat64;
-    case af::dtype::s32:
+    case fl::dtype::s32:
       return ncclInt32;
-    case af::dtype::s64:
+    case fl::dtype::s64:
       return ncclInt64;
       break;
     default:
@@ -107,22 +108,22 @@ void allreduceCuda(
     bool contiguous);
 } // namespace detail
 
-void allReduce(af::array& arr, bool async /* = false */) {
+void allReduce(Tensor& arr, bool async /* = false */) {
   if (!isDistributedInit()) {
     throw std::runtime_error("distributed environment not initialized");
   }
   ncclDataType_t type = detail::getNcclTypeForArray(arr);
-  DevicePtr arrPtr(arr);
+  DevicePtr tensorPtr(arr);
   detail::allreduceCuda(
-      arrPtr.get(),
-      arr.elements(),
+      tensorPtr.get(),
+      arr.size(),
       type,
       async,
       /* contiguous = */ false);
 }
 
 void allReduceMultiple(
-    std::vector<af::array*> arrs,
+    std::vector<Tensor*> arrs,
     bool async /* = false */,
     bool contiguous /* = false */) {
   // Fast paths
@@ -151,15 +152,16 @@ void allReduceMultiple(
     }
   }
   // Size of each element in each tensor in bytes
-  size_t typeSize = af::getSizeOf(arrs[0]->type());
+  // TODO{fl::Tensor}{unimplemented}
+  size_t typeSize = fl::getTypeSize(arrs[0]->type());
 
   // Device ptrs from each array
-  std::vector<std::pair<DevicePtr, size_t>> arrPtrs;
-  arrPtrs.reserve(arrs.size());
+  std::vector<std::pair<DevicePtr, size_t>> tensorPtrs;
+  tensorPtrs.reserve(arrs.size());
   size_t totalEls{0};
   for (auto& arr : arrs) {
-    totalEls += arr->elements();
-    arrPtrs.emplace_back(std::make_pair(DevicePtr(*arr), arr->bytes()));
+    totalEls += arr->size();
+    tensorPtrs.emplace_back(DevicePtr(*arr), arr->bytes());
   }
 
   // Make sure our coalesce buffer is large enough. Since we're initializing our
@@ -173,7 +175,7 @@ void allReduceMultiple(
 
   auto& ncclContext = detail::NcclContext::getInstance();
   cudaStream_t workerStream = ncclContext.getWorkerStream();
-  // Block the copy worker stream on the ArrayFire CUDA stream
+  // Block the copy worker stream on Flashlight's active CUDA stream
   cuda::synchronizeStreams(
       workerStream, cuda::getActiveStream(), ncclContext.getEvent());
 
@@ -181,7 +183,7 @@ void allReduceMultiple(
   // only need to call allReduce
   void* coalesceBuffer = ncclContext.getCoalesceBuffer();
   auto* cur = reinterpret_cast<char*>(coalesceBuffer);
-  for (auto& entry : arrPtrs) {
+  for (auto& entry : tensorPtrs) {
     FL_CUDA_CHECK(cudaMemcpyAsync(
         cur,
         entry.first.get(),
@@ -207,7 +209,7 @@ void allReduceMultiple(
   // Enqueue operations in the stream to copy back to each respective array from
   // the coalesce buffer
   cur = reinterpret_cast<char*>(coalesceBuffer);
-  for (auto& entry : arrPtrs) {
+  for (auto& entry : tensorPtrs) {
     FL_CUDA_CHECK(cudaMemcpyAsync(
         entry.first.get(),
         cur,
@@ -325,7 +327,7 @@ void allreduceCuda(
   // pre-reduction. If we're in contiguous mode, we need the reduction stream to
   // wait for the copy in the worker stream to complete. If we're not in
   // contiguous mode, we need to wait for the JIT eval triggered by acquisition
-  // of the af::array's device pointer to complete, which will occur in the AF
+  // of the Tensor's device pointer to complete, which will occur in the AF
   // CUDA stream.
   if (contiguous) {
     // block future reduction stream ops on the copy-worker stream

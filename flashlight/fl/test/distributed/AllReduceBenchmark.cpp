@@ -13,6 +13,8 @@
 #include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/distributed/distributed.h"
 #include "flashlight/fl/tensor/Compute.h"
+#include "flashlight/fl/tensor/Random.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 using namespace fl;
 
@@ -39,19 +41,21 @@ int main() {
   while (true) {
     for (auto& size : sizes) {
       for (size_t i = 0; i < kNumIters; ++i) {
-        af::array in = af::randu(size);
+        Tensor in = fl::rand({size});
         fl::eval(in);
         fl::sync();
+        // TODO{fl::Tensor}{timer} -- unimplemented
         auto start = af::timer::start();
         allReduce(in);
         fl::sync();
         times[i] = af::timer::stop(start);
       }
-      auto timesAf = af::array(kNumIters, times.data());
+      auto timesAf = Tensor::fromVector({kNumIters}, times);
       if (wRank == 0) {
         std::cout << "Size: " << size
-                  << " ; avg: " << af::mean<double>(timesAf) * 1000
-                  << "ms ; p50: " << af::median<double>(timesAf) * 1000 << "ms"
+                  << " ; avg: " << fl::mean(timesAf).asScalar<double>() * 1000
+                  << "ms ; p50: "
+                  << fl::median(timesAf).asScalar<double>() * 1000 << "ms"
                   << std::endl;
       }
       curMaxSize = std::max(curMaxSize, size);
