@@ -19,8 +19,8 @@ namespace fl {
  * Example:
   \code{.cpp}
   // Make a dataset with 10 samples
-  auto tensor = af::randu(5, 4, 10);
-  std::vector<af::array> fields{tensor};
+  auto tensor = fl::rand({5, 4, 10});
+  std::vector<Tensor> fields{tensor};
   auto ds = std::make_shared<TensorDataset>(fields);
 
   // Resample it by reversing it
@@ -64,7 +64,7 @@ class ResampleDataset : public Dataset {
 
   int64_t size() const override;
 
-  std::vector<af::array> get(const int64_t idx) const override;
+  std::vector<Tensor> get(const int64_t idx) const override;
 
   /**
    * Changes the mapping used to resample the dataset.

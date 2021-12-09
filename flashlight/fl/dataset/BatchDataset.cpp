@@ -31,17 +31,17 @@ BatchDataset::BatchDataset(
   preBatchSize_ = dataset_->size();
   switch (batchPolicy_) {
     case BatchDatasetPolicy::INCLUDE_LAST:
-      size_ = ceil(static_cast<double>(preBatchSize_) / batchSize_);
+      size_ = std::ceil(static_cast<double>(preBatchSize_) / batchSize_);
       break;
     case BatchDatasetPolicy::SKIP_LAST:
-      size_ = floor(static_cast<double>(preBatchSize_) / batchSize_);
+      size_ = std::floor(static_cast<double>(preBatchSize_) / batchSize_);
       break;
     case BatchDatasetPolicy::DIVISIBLE_ONLY:
       if (size_ % batchSize_ != 0) {
         throw std::invalid_argument(
             "dataset is not evenly divisible into batches");
       }
-      size_ = ceil(static_cast<double>(preBatchSize_) / batchSize_);
+      size_ = std::ceil(static_cast<double>(preBatchSize_) / batchSize_);
       break;
     default:
       throw std::invalid_argument("unknown BatchDatasetPolicy");
@@ -67,7 +67,7 @@ BatchDataset::BatchDataset(
   size_ = cumSumBatchSize_.size();
 }
 
-std::vector<af::array> BatchDataset::get(const int64_t idx) const {
+std::vector<Tensor> BatchDataset::get(const int64_t idx) const {
   checkIndexBounds(idx);
   int64_t start, end;
   if (cumSumBatchSize_.empty()) {
