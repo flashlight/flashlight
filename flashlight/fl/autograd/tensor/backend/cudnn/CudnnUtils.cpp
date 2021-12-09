@@ -5,17 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/fl/autograd/backend/cuda/CudnnUtils.h"
+#include "flashlight/fl/autograd/tensor/backend/cudnn/CudnnUtils.h"
 
 #include <array>
 #include <stdexcept>
 #include <unordered_map>
 
-#include <af/internal.h>
-
 #include "flashlight/fl/common/DevicePtr.h"
 #include "flashlight/fl/common/backend/cuda/CudaUtils.h"
 #include "flashlight/fl/tensor/Compute.h"
+#include "flashlight/fl/tensor/Shape.h"
+#include "flashlight/fl/tensor/Types.h"
 
 namespace {
 
@@ -44,6 +44,7 @@ const float kFloatOne = 1.0;
 const double kDoubleZero = 0.0;
 const double kDoubleOne = 1.0;
 
+// TODO: move this to CudnnAutogradExtension if we make it a singleton
 std::unordered_map<int, Handle> handles;
 
 // See https://git.io/fp9oo for an explanation.
@@ -112,9 +113,6 @@ cudnnRNNMode_t cudnnMapToRNNMode(const RnnMode mode) {
       throw std::invalid_argument("unsupported RNN mode for cuDNN");
   }
 }
-
-TensorDescriptor::TensorDescriptor(const Variable& input)
-    : TensorDescriptor(input.tensor()) {}
 
 TensorDescriptor::TensorDescriptor(const fl::dtype type, const Shape& flDims) {
   CUDNN_CHECK_ERR(cudnnCreateTensorDescriptor(&descriptor));
@@ -211,9 +209,6 @@ PoolingDescriptor::PoolingDescriptor(
 PoolingDescriptor::~PoolingDescriptor() {
   CUDNN_CHECK_ERR(cudnnDestroyPoolingDescriptor(descriptor));
 }
-
-FilterDescriptor::FilterDescriptor(const Variable& input)
-    : FilterDescriptor(input.tensor()) {}
 
 FilterDescriptor::FilterDescriptor(const Tensor& input) {
   CUDNN_CHECK_ERR(cudnnCreateFilterDescriptor(&descriptor));
