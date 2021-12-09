@@ -8,8 +8,8 @@
 #include "flashlight/pkg/speech/criterion/ForceAlignmentCriterion.h"
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
-#include "flashlight/pkg/runtime/common/DistributedUtils.h"
 #include "flashlight/lib/sequence/criterion/cpu/ForceAlignmentCriterion.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
 
 using fl::Variable;
 using FAC = fl::lib::cpu::ForceAlignmentCriterion<float>;
@@ -35,11 +35,11 @@ static void backward(
     int N,
     int L,
     const std::shared_ptr<Context>& ctx) {
-  if (gradVar.type() != f32) {
+  if (gradVar.type() != fl::dtype::f32) {
     throw std::invalid_argument("FAC: grad must be float32");
   }
 
-  auto gradVec = fl::pkg::runtime::afToVector<float>(gradVar);
+  auto gradVec = gradVar.toHostVector<float>();
   std::vector<float> inputGradVec(B * T * N);
   std::vector<float> transGradVec(N * N);
 
@@ -55,8 +55,8 @@ static void backward(
       transGradVec.data(),
       ctx->workspaceVec.data());
 
-  af::array inputGrad(N, T, B, inputGradVec.data());
-  af::array transGrad(N, N, transGradVec.data());
+  Tensor inputGrad(N, T, B, inputGradVec.data());
+  Tensor transGrad(N, N, transGradVec.data());
 
   inputs[0].addGrad(Variable(inputGrad, false));
   inputs[1].addGrad(Variable(transGrad, false));
@@ -74,20 +74,20 @@ Variable ForceAlignmentCriterion::forward(
   if (N != transVar.dims(0)) {
     throw std::invalid_argument(
         "ForceAlignmentCriterion(cpu)::forward: input dim doesn't match N");
-  } else if (inputVar.type() != f32) {
+  } else if (inputVar.type() != fl::dtype::f32) {
     throw std::invalid_argument(
         "ForceAlignmentCriterion(cpu)::forward: input must be float32");
-  } else if (targetVar.type() != s32) {
+  } else if (targetVar.type() != fl::dtype::s32) {
     throw std::invalid_argument(
         "ForceAlignmentCriterion(cpu)::forward: target must be int32");
   }
 
   const auto& targetSize = getTargetSizeArray(targetVar.array(), T);
   auto ctx = std::make_shared<Context>();
-  auto inputVec = fl::pkg::runtime::afToVector<float>(inputVar);
-  ctx->targetVec = fl::pkg::runtime::afToVector<int>(targetVar);
-  ctx->targetSizeVec = fl::pkg::runtime::afToVector<int>(targetSize);
-  auto transVec = fl::pkg::runtime::afToVector<float>(transVar);
+  auto inputVec = inputVar.toHostVector<float>();
+  ctx->targetVec = targetVar.toHostVector<int>();
+  ctx->targetSizeVec = targetSize.toHostVector<int>();
+  auto transVec = transVar.toHostVector<float>();
   std::vector<float> lossVec(B);
   ctx->workspaceVec.assign(FAC::getWorkspaceSize(B, T, N, L), 0);
 
@@ -105,17 +105,17 @@ Variable ForceAlignmentCriterion::forward(
       ctx->workspaceVec.data());
 
   return Variable(
-      af::array(B, lossVec.data()),
+      Tensor(B, lossVec.data()),
       {inputVar.withoutData(), transVar.withoutData()},
       [=](std::vector<Variable>& inputs, const Variable& gradVar) {
         backward(inputs, gradVar, B, T, N, L, ctx);
       });
 }
 
-af::array ForceAlignmentCriterion::viterbiPath(
-    const af::array& inputVar,
-    const af::array& targetVar) {
-  const af::array& transVar = param(0).array();
+Tensor ForceAlignmentCriterion::viterbiPath(
+    const Tensor& inputVar,
+    const Tensor& targetVar) {
+  const Tensor& transVar = param(0).array();
   int N = inputVar.dims(0); // Number of output tokens
   int T = inputVar.dims(1); // Utterance length
   int B = inputVar.dims(2); // Batchsize
@@ -123,17 +123,17 @@ af::array ForceAlignmentCriterion::viterbiPath(
 
   if (N != transVar.dims(0)) {
     throw std::invalid_argument("FAC: input dim doesn't match N:");
-  } else if (inputVar.type() != f32) {
+  } else if (inputVar.type() != fl::dtype::f32) {
     throw std::invalid_argument("FAC: input must be float32");
-  } else if (targetVar.type() != s32) {
+  } else if (targetVar.type() != fl::dtype::s32) {
     throw std::invalid_argument("FAC: target must be int32");
   }
-  const af::array targetSize = getTargetSizeArray(targetVar, T);
+  const Tensor targetSize = getTargetSizeArray(targetVar, T);
   std::shared_ptr<Context> ctx = std::make_shared<Context>();
-  std::vector<float> inputVec = fl::pkg::runtime::afToVector<float>(inputVar);
-  ctx->targetVec = fl::pkg::runtime::afToVector<int>(targetVar);
-  ctx->targetSizeVec = fl::pkg::runtime::afToVector<int>(targetSize);
-  std::vector<float> transVec = fl::pkg::runtime::afToVector<float>(transVar);
+  std::vector<float> inputVec = inputVar.toHostVector<float>();
+  ctx->targetVec = targetVar.toHostVector<int>();
+  ctx->targetSizeVec = targetSize.toHostVector<int>();
+  std::vector<float> transVec = transVar.toHostVector<float>();
   std::vector<float> lossVec(B);
   ctx->workspaceVec.assign(FAC::getWorkspaceSize(B, T, N, L), 0);
   std::vector<int> bestPaths(B * T);
@@ -148,7 +148,7 @@ af::array ForceAlignmentCriterion::viterbiPath(
       transVec.data(),
       bestPaths.data(),
       ctx->workspaceVec.data());
-  return af::array(T, B, bestPaths.data());
+  return Tensor(T, B, bestPaths.data());
 }
 } // namespace speech
 } // namespace pkg
