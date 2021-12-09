@@ -20,7 +20,7 @@ target_sources(
   ${CMAKE_CURRENT_LIST_DIR}/Random.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Shape.cpp
   ${CMAKE_CURRENT_LIST_DIR}/TensorBackend.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/TensorBase.cpp  
+  ${CMAKE_CURRENT_LIST_DIR}/TensorBase.cpp
   ${CMAKE_CURRENT_LIST_DIR}/TensorAdapter.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Types.cpp
 )
