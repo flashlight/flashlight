@@ -8,6 +8,7 @@
 #pragma once
 
 #include "flashlight/fl/nn/modules/Module.h"
+#include "flashlight/fl/tensor/Shape.h"
 
 namespace fl {
 
@@ -27,7 +28,7 @@ class View : public UnaryModule {
  private:
   View() = default; // Intentionally private
 
-  af::dim4 dims_;
+  Shape dims_;
 
   FL_SAVE_LOAD_WITH_BASE(UnaryModule, dims_)
 
@@ -35,9 +36,9 @@ class View : public UnaryModule {
   /**
    * Creates a `View` with the given dimensions.
    *
-   * @param dims an `af::dim4` representing the dimensions of the `View`.
+   * @param dims an `Shape` representing the dimensions of the `View`.
    */
-  explicit View(af::dim4 dims);
+  explicit View(Shape dims);
 
   Variable forward(const Variable& input) override;
 

@@ -23,7 +23,7 @@ Embedding::Embedding(const Variable& w)
 void Embedding::initialize() {
   double stdv = std::sqrt(1.0 / (double)embeddingDim_);
   auto embeddings =
-      uniform(embeddingDim_, numEmbeddings_, -stdv, stdv, af::dtype::f32, true);
+      uniform(embeddingDim_, numEmbeddings_, -stdv, stdv, fl::dtype::f32, true);
   params_ = {embeddings};
 }
 
