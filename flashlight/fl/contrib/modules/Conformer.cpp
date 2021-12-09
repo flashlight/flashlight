@@ -4,10 +4,13 @@
  * This source code is licensed under the MIT-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
 #include "flashlight/fl/contrib/modules/Conformer.h"
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/nn/Init.h"
 #include "flashlight/fl/nn/Utils.h"
+#include "flashlight/fl/tensor/Random.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 
@@ -120,43 +123,57 @@ Variable Conformer::mhsa(const Variable& input, const Variable& inputPadMask) {
   int bsz = input.dims(2);
 
   auto normedInput = (*normMhsa_)(input);
-  auto q = transpose((*wq_)(normedInput));
-  auto k = transpose((*wk_)(normedInput));
-  auto v = transpose((*wv_)(normedInput));
+  auto q = transpose((*wq_)(normedInput), {1, 0, 2});
+  auto k = transpose((*wk_)(normedInput), {1, 0, 2});
+  auto v = transpose((*wv_)(normedInput), {1, 0, 2});
 
   Variable mask, posEmb;
   if (posEmbContextSize_ > 0) {
-    posEmb = tile(params_[0].as(input.type()), af::dim4(1, 1, nHeads_ * bsz));
+    posEmb = tile(params_[0].as(input.type()), {1, 1, nHeads_ * bsz});
   }
+
   fl::Variable padMask;
+  // TODO{fl::Tensor}{resize} - emulate the ArrayFire resize operation for
+  // transformer pad mask
   if (!inputPadMask.isempty()) {
-    auto padMaskArr = inputPadMask.array();
-    padMaskArr = af::resize(padMaskArr, input.dims(1), input.dims(2));
-    padMask = fl::Variable(af::log(padMaskArr), false);
+    auto padMaskArr = inputPadMask.tensor();
+    Shape newMaskShape = {input.dims(1), input.dims(2)};
+    if (padMaskArr.size() != newMaskShape.elements()) {
+      throw std::runtime_error(
+          "Transformer::selfAttention - pad mask requires resize. "
+          "This behavior will be fixed in a future release ");
+    }
+    padMaskArr = fl::reshape(padMaskArr, newMaskShape);
+    padMask = fl::Variable(fl::log(padMaskArr), false);
   }
+
   auto result =
       multiheadAttention(q, k, v, posEmb, mask, padMask, nHeads_, pDropout, 0);
-  result = (*wf_)(transpose(result));
+  result = (*wf_)(transpose(result, {1, 0, 2}));
   result = dropout(result, pDropout);
   return result;
 }
 
-Variable Conformer::conv(const Variable& input) {
+Variable Conformer::conv(const Variable& _input) {
+  // Make sure the input has 4 dims for depthwise conv
+  Shape s = _input.dims();
+  Variable input = moddims(_input, {s[0], s[1], s[2], 1});
+
   float pDropout = train_ ? pDropout_ : 0.0;
   // input C x T x B x 1
   // apply first pointwise conv
   auto result =
       gatedlinearunit((*conv1_)(((*normConv1_)(input)).as(input.type())), 0);
-  result = reorder(result, 1, 3, 0, 2);
+  result = reorder(result, {1, 3, 0, 2});
   // T x 1 x C x B
   // apply depthwise separable convolutions
   result = (*convDepthWise_)(result);
-  result = reorder(result, 2, 0, 3, 1);
+  result = reorder(result, {2, 0, 3, 1});
   // C x T x B x 1
   result = fl::swish(((*normConv2_)(result)).as(input.type()), 1.);
   // apply second pointwise conv
   result = dropout((*conv2_)(result), pDropout);
-  return result;
+  return moddims(result, _input.dims());
 }
 
 std::vector<Variable> Conformer::forward(const std::vector<Variable>& input) {
@@ -165,29 +182,35 @@ std::vector<Variable> Conformer::forward(const std::vector<Variable>& input) {
         "Invalid inputs for conformer block: there should be input "
         "and paddding mask (can be empty Variable)");
   }
+
+  auto x = input[0];
+
+  if (x.numdims() != 3) {
+    throw std::invalid_argument(
+        "Conformer::forward - input should be of 3 dimensions "
+        "expects an input of size C x T x B - see documentation.");
+  }
+
   float pDropout = train_ ? pDropout_ : 0.0;
   float f = 1.0;
-  if (train_ && (af::randu(1).scalar<float>() < pLayerDropout_)) {
+  if (train_ && (fl::rand({1}).scalar<float>() < pLayerDropout_)) {
     f = 0.0;
   }
-  auto x = input[0];
   // apply first feed-forward module
-  auto ffn1 =
-      dropout(
-          (*w12_)(dropout(
-              fl::swish((*w11_)(((*norm1_)(x)).as(x.type())), 1.), pDropout)),
-          pDropout);
+  auto ffn1 = dropout(
+      (*w12_)(dropout(
+          fl::swish((*w11_)(((*norm1_)(x)).as(x.type())), 1.), pDropout)),
+      pDropout);
   x = x + f * 0.5 * ffn1;
   // apply multihead attention module
   x = x + f * mhsa(x, input[1]);
   // apply conv module
   x = x + f * conv(x);
   // apply second feed-forward module
-  auto ffn2 =
-      dropout(
-          (*w22_)(dropout(
-              fl::swish((*w21_)(((*norm2_)(x)).as(x.type())), 1.), pDropout)),
-          pDropout);
+  auto ffn2 = dropout(
+      (*w22_)(dropout(
+          fl::swish((*w21_)(((*norm2_)(x)).as(x.type())), 1.), pDropout)),
+      pDropout);
   x = x + f * 0.5 * ffn2;
   x = ((*norm3_)(x)).as(x.type());
   return {x};
