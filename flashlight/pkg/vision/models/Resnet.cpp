@@ -15,14 +15,12 @@ namespace {
 
 Conv2D conv3x3(int inC, int outC, int stride, int groups) {
   const auto pad = PaddingMode::SAME;
-  return Conv2D(
-      inC, outC, 3, 3, stride, stride, pad, pad, 1, 1, false, groups);
+  return Conv2D(inC, outC, 3, 3, stride, stride, pad, pad, 1, 1, false, groups);
 }
 
 Conv2D conv1x1(int inC, int outC, int stride, int groups) {
   const auto pad = PaddingMode::SAME;
-  return Conv2D(
-      inC, outC, 1, 1, stride, stride, pad, pad, 1, 1, false, groups);
+  return Conv2D(inC, outC, 1, 1, stride, stride, pad, pad, 1, 1, false, groups);
 }
 
 } // namespace
@@ -206,7 +204,7 @@ std::shared_ptr<Sequential> resnet34() {
   // pool 7x7x512 -> 1x1x512
   model->add(Pool2D(7, 7, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
 
-  model->add(View(af::dim4(512, -1, 1, 1)));
+  model->add(View({512, -1}));
   model->add(Linear(512, 1000));
   return model;
 };
@@ -228,7 +226,7 @@ std::shared_ptr<Sequential> resnet50() {
   // pool 7x7x512 -> 1x1x512
   model->add(Pool2D(7, 7, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
 
-  model->add(View(af::dim4(512 * 4, -1, 1, 1)));
+  model->add(View({512 * 4, -1, 1, 1}));
   model->add(Linear(512 * 4, 1000));
   return model;
 }
