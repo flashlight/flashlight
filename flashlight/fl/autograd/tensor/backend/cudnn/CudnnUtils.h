@@ -7,18 +7,16 @@
 
 #pragma once
 
-#include <arrayfire.h>
 #include <cudnn.h>
 
-#include "flashlight/fl/autograd/Variable.h"
 #include "flashlight/fl/common/Defines.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 
 class TensorDescriptor {
  public:
   explicit TensorDescriptor(const Tensor& a);
-  explicit TensorDescriptor(const Variable& a);
 
   TensorDescriptor(const fl::dtype type, const Shape& af_dims);
 
@@ -41,7 +39,6 @@ class TensorDescriptorArray {
 class FilterDescriptor {
  public:
   explicit FilterDescriptor(const Tensor& a);
-  explicit FilterDescriptor(const Variable& a);
   cudnnFilterDescriptor_t descriptor;
   ~FilterDescriptor();
 };
@@ -107,6 +104,7 @@ const void* kOne(const fl::dtype t);
 
 const void* kZero(const fl::dtype t);
 
+// TODO: move this to CudnnAutogradExtension if we make it a singleton
 cudnnHandle_t getCudnnHandle();
 
 } // namespace fl
