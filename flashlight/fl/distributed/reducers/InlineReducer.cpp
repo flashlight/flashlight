@@ -14,9 +14,9 @@ InlineReducer::InlineReducer(double scale) : scale_(scale) {}
 
 void InlineReducer::add(Variable& var) {
   if (getWorldSize() > 1) {
-    allReduce(var.array());
+    allReduce(var.tensor());
   }
-  var.array() *= scale_;
+  var.tensor() *= scale_;
 }
 
 } // namespace fl
