@@ -23,7 +23,7 @@ DynamicScaler::DynamicScaler(
 
 fl::Variable DynamicScaler::scale(const fl::Variable& loss) {
   // Force casting to fp32 to avoid overflow in scaling.
-  auto scaledLoss = loss.as(af::dtype::f32);
+  auto scaledLoss = loss.as(fl::dtype::f32);
   scaledLoss = scaledLoss * scaleFactor_;
   return scaledLoss;
 }
@@ -31,7 +31,7 @@ fl::Variable DynamicScaler::scale(const fl::Variable& loss) {
 bool DynamicScaler::unscale(std::vector<fl::Variable>& params) {
   for (auto& p : params) {
     p.grad() = p.grad() / scaleFactor_;
-    if (fl::isInvalidArray(p.grad().array())) {
+    if (fl::isInvalidArray(p.grad().tensor())) {
       if (scaleFactor_ >= fl::kAmpMinimumScaleFactorValue) {
         scaleFactor_ = scaleFactor_ / 2.0f;
         FL_LOG(INFO) << "AMP: Scale factor decreased. New value:\t"
