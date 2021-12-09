@@ -8,6 +8,7 @@
 #pragma once
 
 #include "flashlight/fl/dataset/Dataset.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 
@@ -54,8 +55,8 @@ dynamicPartitionByRoundRobin(
  * @param data data to be batchified
  * @param batchFn function which is applied to make a batch
  */
-af::array makeBatch(
-    const std::vector<af::array>& data,
+Tensor makeBatch(
+    const std::vector<Tensor>& data,
     const Dataset::BatchFunction& batchFn = {});
 
 /**
@@ -66,7 +67,7 @@ af::array makeBatch(
  * @param start start index
  * @param end end index
  */
-std::vector<af::array> makeBatchFromRange(
+std::vector<Tensor> makeBatchFromRange(
     std::shared_ptr<const Dataset> dataset,
     std::vector<Dataset::BatchFunction> batchFns,
     int64_t start,
