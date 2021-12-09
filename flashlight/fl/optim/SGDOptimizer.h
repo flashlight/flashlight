@@ -9,6 +9,8 @@
 
 #include "flashlight/fl/optim/Optimizers.h"
 
+#include "flashlight/fl/tensor/TensorBase.h"
+
 namespace fl {
 
 /** A Stochastic Gradient Descent (SGD) optimizer. At its most basic this
@@ -40,7 +42,7 @@ class SGDOptimizer : public FirstOrderOptimizer {
   bool useNesterov_;
   float mu_;
   float wd_;
-  std::vector<af::array> velocities_;
+  std::vector<Tensor> velocities_;
 
  public:
   /** SGDOptimizer constructor.
