@@ -10,13 +10,14 @@
 #include <gtest/gtest.h>
 #include "flashlight/fl/flashlight.h"
 
+#include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/tensor/Index.h"
+#include "flashlight/lib/audio/feature/SpeechUtils.h"
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/data/FeatureTransforms.h"
 #include "flashlight/pkg/speech/data/ListFileDataset.h"
 #include "flashlight/pkg/speech/data/Utils.h"
 #include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
-#include "flashlight/fl/common/Init.h"
-#include "flashlight/lib/audio/feature/SpeechUtils.h"
 
 using namespace fl;
 using namespace fl::lib::audio;
@@ -63,8 +64,8 @@ LexiconMap getLexicon() {
 } // namespace
 TEST(FeaturizationTest, AfMatmulCompare) {
   int numTests = 1000;
-  auto afToVec = [](const af::array& arr) {
-    std::vector<float> vec(arr.elements());
+  auto afToVec = [](const Tensor& arr) {
+    std::vector<float> vec(arr.size());
     arr.host(vec.data());
     return vec;
   };
@@ -73,9 +74,10 @@ TEST(FeaturizationTest, AfMatmulCompare) {
     int n = (rand() % 128) + 1;
     int k = (rand() % 256) + 1;
     // Note: Arrayfire is column major
-    af::array a = af::randu(k, m);
-    af::array b = af::randu(n, k);
-    af::array c = af::matmul(a, b, AF_MAT_TRANS, AF_MAT_TRANS).T();
+    Tensor a = fl::rand({k, m});
+    Tensor b = fl::rand({n, k});
+    Tensor c = fl::transpose(
+        fl::matmul(a, b, MatrixProperty::Transpose, MatrixProperty::Transpose));
     auto aVec = afToVec(a);
     auto bVec = afToVec(b);
     auto cVec = cblasGemm(aVec, bVec, n, k);
@@ -85,60 +87,65 @@ TEST(FeaturizationTest, AfMatmulCompare) {
 
 TEST(FeaturizationTest, Normalize) {
   double threshold = 0.01;
-  auto afNormalize = [threshold](const af::array& in, int batchdim) {
-    auto elementsPerBatch = in.elements() / in.dims(batchdim);
-    auto in2d = af::moddims(in, elementsPerBatch, in.dims(batchdim));
+  auto afNormalize = [threshold](const Tensor& in, int batchdim) {
+    int64_t elementsPerBatch = in.size() / in.dim(batchdim);
+    auto in2d = fl::reshape(in, {elementsPerBatch, in.dim(batchdim)});
 
-    af::array meandiff = (in2d - af::tile(af::mean(in2d, 0), elementsPerBatch));
+    Tensor meandiff =
+        (in2d -
+         fl::tile(
+             fl::mean(in2d, {0}, /* keepDims = */ true), {elementsPerBatch}));
 
-    af::array stddev = af::stdev(in2d, 0);
-    af::replace(stddev, stddev > threshold, 1.0);
+    Tensor stddev = fl::std(in2d, {0}, /* keepDims = */ true);
+    stddev = fl::where(stddev > threshold, stddev, 1.0);
 
-    return af::moddims(
-        meandiff / af::tile(stddev, elementsPerBatch), in.dims());
+    return fl::reshape(
+        meandiff / fl::tile(stddev, {elementsPerBatch}), in.shape());
   };
-  auto arr = af::randu(13, 17, 19);
-  std::vector<float> arrVec(arr.elements());
+  auto arr = fl::rand({13, 17, 19});
+  std::vector<float> arrVec(arr.size());
   arr.host(arrVec.data());
 
   auto arrVecNrm = normalize(arrVec, 19, threshold);
-  auto arrNrm = af::array(arr.dims(), arrVecNrm.data());
-  ASSERT_TRUE(af::allTrue<bool>(af::abs(arrNrm - afNormalize(arr, 2)) < 1E-5));
+  auto arrNrm =
+      Tensor::fromBuffer(arr.shape(), arrVecNrm.data(), MemoryLocation::Host);
+  ASSERT_TRUE(
+      fl::all(fl::abs(arrNrm - afNormalize(arr, 2)) < 1E-5).asScalar<bool>());
 }
 
 TEST(FeaturizationTest, Transpose) {
-  auto arr = af::randu(13, 17, 19, 23);
-  std::vector<float> arrVec(arr.elements());
-  arr.host(arrVec.data());
+  auto arr = fl::rand({13, 17, 19, 23});
+  auto arrVec = arr.toHostVector<float>();
   auto arrVecT = transpose2d<float>(arrVec, 17, 13, 19 * 23);
-  auto arrT = af::array(17, 13, 19, 23, arrVecT.data());
-  ASSERT_TRUE(af::allTrue<bool>(arrT - arr.T() == 0.0));
+  auto arrT = Tensor::fromVector({17, 13, 19, 23}, arrVecT);
+  ASSERT_TRUE(
+      fl::all(arrT - fl::transpose(arr, {1, 0, 2, 3}) == 0.0).asScalar<bool>());
 }
 
 TEST(FeaturizationTest, localNormalize) {
-  auto afNormalize = [](const af::array& in, int64_t lw, int64_t rw) {
+  auto afNormalize = [](const Tensor& in, int64_t lw, int64_t rw) {
     auto out = in;
-    for (int64_t b = 0; b < in.dims(3); ++b) {
-      for (int64_t i = 0; i < in.dims(0); ++i) {
+    for (int64_t b = 0; b < in.dim(3); ++b) {
+      for (int64_t i = 0; i < in.dim(0); ++i) {
         int64_t b_idx = (i - lw > 0) ? (i - lw) : 0;
-        int64_t e_idx = (in.dims(0) - 1 > i + rw) ? (i + rw) : (in.dims(0) - 1);
+        int64_t e_idx = (in.dim(0) - 1 > i + rw) ? (i + rw) : (in.dim(0) - 1);
 
+        // TODO{fl::Tensor} -- probably not
         // Need to call af::flat because of some weird bug in Arrayfire
-        af::array slice = in(af::seq(b_idx, e_idx), af::span, af::span, b);
-        auto mean = af::mean<float>(af::flat(slice));
-        auto stddev = af::stdev<float>(af::flat(slice));
+        Tensor slice = in(fl::range(b_idx, e_idx + 1), fl::span, fl::span, b);
+        auto mean = fl::mean(slice).scalar<float>();
+        auto stddev = fl::std(slice).scalar<float>();
 
-        out(i, af::span, af::span, b) -= mean;
+        out(i, fl::span, fl::span, b) -= mean;
         if (stddev > 0.0) {
-          out(i, af::span, af::span, b) /= stddev;
+          out(i, fl::span, fl::span, b) /= stddev;
         }
       }
     }
     return out;
   };
-  auto arr = af::randu(47, 67, 2, 10); // FRAMES X FEAT X CHANNELS X BATCHSIZE
-  std::vector<float> arrVec(arr.elements());
-  arr.host(arrVec.data());
+  auto arr = fl::rand({47, 67, 2, 10}); // FRAMES X FEAT X CHANNELS X BATCHSIZE
+  auto arrVec = arr.toHostVector<float>();
 
   std::vector<std::pair<int, int>> ctx = {
       {0, 0}, {1, 1}, {2, 2}, {4, 4}, {1024, 1024}, {10, 0}, {2, 12}};
@@ -148,11 +155,13 @@ TEST(FeaturizationTest, localNormalize) {
         arrVec,
         c.first /* context */,
         c.second,
-        arr.dims(0) /* frames */,
-        arr.dims(3) /*batches */);
-    auto arrNrm = af::array(arr.dims(), arrVecNrm.data());
-    ASSERT_TRUE(af::allTrue<bool>(
-        af::abs(arrNrm - afNormalize(arr, c.first, c.second)) < 1E-4));
+        arr.dim(0) /* frames */,
+        arr.dim(3) /*batches */);
+    auto arrNrm =
+        Tensor::fromBuffer(arr.shape(), arrVecNrm.data(), MemoryLocation::Host);
+    ASSERT_TRUE(
+        fl::all(fl::abs(arrNrm - afNormalize(arr, c.first, c.second)) < 1E-4)
+            .asScalar<bool>());
   }
 }
 
@@ -373,19 +382,19 @@ TEST(FeaturizationTest, inputFeaturizer) {
 
     int insize = size * samplerate;
     auto inArray =
-        inputFeaturizerRaw(input.data(), {channels, insize}, af::dtype::f32);
-    ASSERT_TRUE(inArray.dims() == af::dim4(insize, 1, channels));
-    af::array ch1 = inArray(af::span, af::span, 0);
-    af::array ch2 = inArray(af::span, af::span, 1);
-    ASSERT_TRUE(af::max<double>(af::abs(ch1 - ch2)) < 1E-5);
+        inputFeaturizerRaw(input.data(), {channels, insize}, fl::dtype::f32);
+    ASSERT_EQ(inArray.shape(), Shape({insize, 1, channels}));
+    Tensor ch1 = inArray(fl::span, fl::span, 0);
+    Tensor ch2 = inArray(fl::span, fl::span, 1);
+    ASSERT_TRUE(fl::amax(fl::abs(ch1 - ch2)).scalar<float>() < 1E-5);
 
-    inArray = inputFeaturizerMfsc(
-        input.data(), af::dim4(channels, insize), af::dtype::f32);
+    inArray =
+        inputFeaturizerMfsc(input.data(), {channels, insize}, fl::dtype::f32);
     auto nFrames = 1 + (insize - 25 * 16) / (10 * 16);
-    ASSERT_TRUE(inArray.dims() == af::dim4(nFrames, 40, channels, 1));
-    ch1 = inArray(af::span, af::span, 0, af::span);
-    ch2 = inArray(af::span, af::span, 1, af::span);
-    ASSERT_TRUE(af::max<double>(af::abs(ch1 - ch2)) < 1E-5);
+    ASSERT_EQ(inArray.shape(), Shape({nFrames, 40, channels}));
+    ch1 = inArray(fl::span, fl::span, 0, fl::span);
+    ch2 = inArray(fl::span, fl::span, 1, fl::span);
+    ASSERT_TRUE(fl::amax(fl::abs(ch1 - ch2)).scalar<float>() < 1E-5);
   }
 }
 
@@ -412,10 +421,12 @@ TEST(FeaturizationTest, targetFeaturizer) {
   auto targetFeaturizer = targetFeatures(tokenDict, lexicon, targetGenConfig);
 
   auto tgtArray = targetFeaturizer(
-      targets[0].data(), af::dim4(targets[0].size()), af::dtype::b8);
+      targets[0].data(),
+      {static_cast<long long>(targets[0].size())},
+      fl::dtype::b8);
   int tgtLen = 5;
-  ASSERT_EQ(tgtArray.dims(), af::dim4(tgtLen));
-  ASSERT_EQ(tgtArray.type(), af::dtype::s32);
+  ASSERT_EQ(tgtArray.shape(), Shape({tgtLen}));
+  ASSERT_EQ(tgtArray.type(), fl::dtype::s32);
   std::vector<int> tgtArrayVec(tgtLen);
   tgtArray.host(tgtArrayVec.data());
 
@@ -437,11 +448,13 @@ TEST(FeaturizationTest, targetFeaturizer) {
       true /* fallback2LetterWordSepLeft */);
   targetFeaturizer = targetFeatures(tokenDict, lexicon, targetGenConfigEos);
   tgtArray = targetFeaturizer(
-      targets[1].data(), af::dim4(targets[0].size()), af::dtype::b8);
+      targets[1].data(),
+      {static_cast<long long>(targets[0].size())},
+      fl::dtype::b8);
   tgtLen = 5;
   int eosIdx = tokenDict.getIndex(kEosToken);
-  ASSERT_EQ(tgtArray.dims(), af::dim4(tgtLen));
-  ASSERT_EQ(tgtArray.type(), af::dtype::s32);
+  ASSERT_EQ(tgtArray.shape(), Shape({tgtLen}));
+  ASSERT_EQ(tgtArray.type(), fl::dtype::s32);
   tgtArray.host(tgtArrayVec.data());
   ASSERT_EQ(tgtArrayVec[0], 1);
   ASSERT_EQ(tgtArrayVec[1], 2);
