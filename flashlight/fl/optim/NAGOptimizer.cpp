@@ -31,8 +31,7 @@ NAGOptimizer::NAGOptimizer(
   }
   velocities_.reserve(parameters.size());
   for (const auto& parameter : parameters_) {
-    velocities_.emplace_back(
-        af::constant(0, parameter.dims(), parameter.type()));
+    velocities_.emplace_back(fl::full(parameter.dims(), 0, parameter.type()));
     fl::eval(velocities_.back());
   }
 }
@@ -45,14 +44,14 @@ void NAGOptimizer::step() {
       continue;
     }
 
-    af::array& grad = parameters_[i].grad().array();
-    af::array& data = parameters_[i].array();
+    Tensor& grad = parameters_[i].grad().tensor();
+    Tensor& data = parameters_[i].tensor();
 
     if (wd_ != 0) {
       // Weight decay term
       data = data * (1 - lr_ * wd_);
     }
-    af::array& velocity = velocities_[i];
+    Tensor& velocity = velocities_[i];
     // this velocity corresponds to fairseq velocity * -1
     velocity = mu_ * velocity * correctedLr + lr_ * grad;
     fl::eval(velocity);

@@ -9,10 +9,9 @@
 
 #include <vector>
 
-#include <arrayfire.h>
-
 #include "flashlight/fl/autograd/Variable.h"
 #include "flashlight/fl/optim/Optimizers.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 
@@ -39,9 +38,9 @@ class AMSgradOptimizer : public FirstOrderOptimizer {
   float beta2_;
   float eps_;
   float wd_;
-  std::vector<af::array> biasedFirst_;
-  std::vector<af::array> biasedSecond_;
-  std::vector<af::array> maxExpAvgSq_;
+  std::vector<Tensor> biasedFirst_;
+  std::vector<Tensor> biasedSecond_;
+  std::vector<Tensor> maxExpAvgSq_;
 
  public:
   /** Construct an AMSgrad optimizer
