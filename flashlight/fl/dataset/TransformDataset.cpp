@@ -20,7 +20,7 @@ TransformDataset::TransformDataset(
   }
 }
 
-std::vector<af::array> TransformDataset::get(const int64_t idx) const {
+std::vector<Tensor> TransformDataset::get(const int64_t idx) const {
   checkIndexBounds(idx);
 
   auto result = dataset_->get(idx);
