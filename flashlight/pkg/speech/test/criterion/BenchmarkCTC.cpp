@@ -13,6 +13,7 @@
 #include <arrayfire.h>
 #include <array>
 
+#include "flashlight/fl/tensor/Index.h"
 #include "flashlight/pkg/speech/criterion/criterion.h"
 
 using namespace fl;
@@ -27,20 +28,20 @@ int main() {
 
   int N = 30, T = 487, L = 34, B = 10;
 
-  auto input = Variable(af::log(af::randu(N, T, B)), true);
+  auto input = Variable(fl::log(fl::rand({N, T, B})), true);
 
-  auto t =
-      af::abs(af::randu(L, B, af::dtype::s32)).as(af::dtype::s32) % (N - 2);
+  auto t = fl::abs(fl::rand({L, B}, fl::dtype::s32)).astype(fl::dtype::s32) %
+      (N - 2);
 
   for (int i = 0; i < B; ++i) {
     int r = rand() % (L / 2);
-    t(af::seq(L / 2 + r, af::end), i) = -1;
+    t(fl::range(L / 2 + r, fl::end), i) = -1;
   }
 
   Variable target(t, false);
   int ntimes = 50;
   Variable b = ctc.forward({input, target}).front();
-  Variable gradoutput = Variable(af::randu(b.dims()) * 2 - 2, false);
+  Variable gradoutput = Variable(fl::rand(b.dims()) * 2 - 2, false);
   for (int i = 0; i < 5; ++i) {
     b = ctc.forward({input, target}).front();
     b.backward();

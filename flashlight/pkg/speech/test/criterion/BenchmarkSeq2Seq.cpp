@@ -31,17 +31,17 @@ void timeBeamSearch() {
       200, /* maxDecoderOutputLen */
       {std::make_shared<ContentAttention>() /* attentions */});
 
-  auto input = af::randn(H, T, 1, f32);
+  auto input = fl::randn({H, T, 1}, fl::dtype::f32);
 
   // Warmup
-  seq2seq.beamPath(input, af::array());
+  seq2seq.beamPath(input, Tensor());
 
   int iters = 10;
   std::vector<int> beamsizes = {1, 5, 10, 20};
   for (auto b : beamsizes) {
     auto s = af::timer::start();
     for (int i = 0; i < iters; ++i) {
-      seq2seq.beamPath(input, af::array(), b);
+      seq2seq.beamPath(input, Tensor(), b);
     }
     fl::sync();
     auto e = af::timer::stop(s);
@@ -61,8 +61,9 @@ void timeForwardBackward() {
       0, /* maxDecoderOutputLen */
       {std::make_shared<ContentAttention>()} /* attentions */);
 
-  auto input = Variable(af::randn(H, T, B, f32), true);
-  auto target = noGrad((af::randu(U, B, f32) * 0.99 * N).as(s32));
+  auto input = Variable(fl::randn({H, T, B}, fl::dtype::f32), true);
+  auto target = noGrad(
+      (fl::rand({U, B}, fl::dtype::f32) * 0.99 * N).astype(fl::dtype::s32));
 
   // Warmup
   for (int i = 0; i < 10; ++i) {
