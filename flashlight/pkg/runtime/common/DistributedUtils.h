@@ -10,9 +10,12 @@
 #include <string>
 #include <vector>
 
-#include "flashlight/fl/flashlight.h"
+#include "flashlight/fl/distributed/DistributedApi.h"
+#include "flashlight/fl/meter/meters.h"
 
 namespace fl {
+class Tensor;
+
 namespace pkg {
 namespace runtime {
 
@@ -25,17 +28,17 @@ void initDistributed(
     int maxDevicesPerNode,
     const std::string& rndvFilepath);
 
-af::array allreduceGet(AverageValueMeter& mtr);
-af::array allreduceGet(EditDistanceMeter& mtr);
-af::array allreduceGet(CountMeter& mtr);
-af::array allreduceGet(TimeMeter& mtr);
-af::array allreduceGet(TopKMeter& mtr);
+Tensor allreduceGet(AverageValueMeter& mtr);
+Tensor allreduceGet(EditDistanceMeter& mtr);
+Tensor allreduceGet(CountMeter& mtr);
+Tensor allreduceGet(TimeMeter& mtr);
+Tensor allreduceGet(TopKMeter& mtr);
 
-void allreduceSet(AverageValueMeter& mtr, af::array& val);
-void allreduceSet(EditDistanceMeter& mtr, af::array& val);
-void allreduceSet(CountMeter& mtr, af::array& val);
-void allreduceSet(TimeMeter& mtr, af::array& val);
-void allreduceSet(TopKMeter& mtr, af::array& val);
+void allreduceSet(AverageValueMeter& mtr, Tensor& val);
+void allreduceSet(EditDistanceMeter& mtr, Tensor& val);
+void allreduceSet(CountMeter& mtr, Tensor& val);
+void allreduceSet(TimeMeter& mtr, Tensor& val);
+void allreduceSet(TopKMeter& mtr, Tensor& val);
 
 /**
  * Synchronize meters across process.
@@ -45,7 +48,7 @@ void syncMeter(T& mtr) {
   if (!fl::isDistributedInit()) {
     return;
   }
-  af::array arr = allreduceGet(mtr);
+  Tensor arr = allreduceGet(mtr);
   fl::allReduce(arr);
   allreduceSet(mtr, arr);
 }
@@ -59,5 +62,3 @@ template void syncMeter<TopKMeter>(TopKMeter& mtr);
 } // namespace runtime
 } // namespace pkg
 } // namespace fl
-
-#include "flashlight/pkg/runtime/common/Utils-inl.h"

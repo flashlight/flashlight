@@ -9,6 +9,7 @@
 
 #include <stdexcept>
 
+#include "flashlight/fl/tensor/Types.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
 
@@ -62,13 +63,13 @@ std::shared_ptr<Sequential> buildSequentialModule(
 fl::Variable forwardSequentialModuleWithPadMask(
     const fl::Variable& input,
     std::shared_ptr<fl::Module> ntwrk,
-    const af::array& inputSizes) {
+    const Tensor& inputSizes) {
   // expected input dims T x C x 1 x B
   int T = input.dims(0), B = input.dims(3);
-  auto inputMaxSize = af::tile(af::max(inputSizes), 1, B);
-  af::array inputNotPaddedSize = af::ceil(inputSizes * T / inputMaxSize);
-  auto padMask = af::iota(af::dim4(T, 1), af::dim4(1, B)) <
-      af::tile(inputNotPaddedSize, T, 1);
+  auto inputMaxSize = fl::tile(fl::amax(inputSizes, {1}), {1, B});
+  Tensor inputNotPaddedSize = fl::ceil(inputSizes * T / inputMaxSize);
+  auto padMask =
+      fl::iota({T, 1}, {1, B}) < fl::tile(inputNotPaddedSize, {T, 1});
   auto ntwrkSeq = std::dynamic_pointer_cast<fl::Sequential>(ntwrk);
   auto output = input;
   for (auto& module : ntwrkSeq->modules()) {
@@ -107,17 +108,17 @@ std::shared_ptr<Module> parseLines(
   /* ========== TRANSFORMATIONS ========== */
 
   if ((params[0] == "RO") || (params[0] == "V")) {
-    if (params.size() != 5) {
+    if (params.size() < 2) {
       throw std::invalid_argument("Failed parsing - " + line);
     }
-    int dim1 = std::stoi(params[1]);
-    int dim2 = std::stoi(params[2]);
-    int dim3 = std::stoi(params[3]);
-    int dim4 = std::stoi(params[4]);
+    Shape shape(std::vector<Dim>(params.size() - 1));
+    for (unsigned i = 1; i < params.size(); ++i) {
+      shape[i - 1] = std::stoi(params[i]);
+    }
     if (params[0] == "RO") {
-      return std::make_shared<Reorder>(dim1, dim2, dim3, dim4);
+      return std::make_shared<Reorder>(shape);
     } else {
-      return std::make_shared<View>(af::dim4(dim1, dim2, dim3, dim4));
+      return std::make_shared<View>(shape);
     }
   }
 
@@ -127,11 +128,13 @@ std::shared_ptr<Module> parseLines(
     }
     auto val = std::stod(params[1]);
     params.resize(10, "0");
-    std::pair<int, int> pad0 = {std::stoi(params[2]), std::stoi(params[3])};
-    std::pair<int, int> pad1 = {std::stoi(params[4]), std::stoi(params[5])};
-    std::pair<int, int> pad2 = {std::stoi(params[6]), std::stoi(params[7])};
-    std::pair<int, int> pad3 = {std::stoi(params[8]), std::stoi(params[9])};
-    return std::make_shared<Padding>(pad0, pad1, pad2, pad3, val);
+    std::vector<std::pair<int, int>> paddings = {
+        {std::stoi(params[2]), std::stoi(params[3])},
+        {std::stoi(params[4]), std::stoi(params[5])},
+        {std::stoi(params[6]), std::stoi(params[7])},
+        {std::stoi(params[8]), std::stoi(params[9])}};
+    // TODO{fl::Tensor} -- rearrange arguments
+    return std::make_shared<Padding>(paddings, val);
   }
 
   /* ========== TRANSFORMERS ========== */
@@ -582,12 +585,12 @@ std::shared_ptr<Module> parseLines(
     if (params.size() != 2) {
       throw std::invalid_argument("Failed parsing - " + line);
     }
-    auto targetType = fl::stringToAfType(params[1]);
+    auto targetType = fl::stringToDtype(params[1]);
     return std::make_shared<PrecisionCast>(targetType);
   }
 
   throw std::invalid_argument("Failed parsing - " + line);
   return nullptr;
-}
+} // namespace
 
 } // namespace
