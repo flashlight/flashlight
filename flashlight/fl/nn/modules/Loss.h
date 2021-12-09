@@ -13,6 +13,9 @@
 
 namespace fl {
 
+class Shape;
+class Tensor;
+
 /**
  * Computes the [mean squared
  error](https://en.wikipedia.org/wiki/Mean_squared_error) between elements
@@ -177,10 +180,8 @@ class AdaptiveSoftMaxLoss : public BinaryModule {
   ReduceMode reduction_;
   int ignoreIndex_{-1};
 
-  Variable cast(
-      const Variable& input,
-      const af::dim4& outDims,
-      const af::array& indices);
+  Variable
+  cast(const Variable& input, const Shape& outDims, const Tensor& indices);
 
  public:
   AdaptiveSoftMaxLoss() = default;

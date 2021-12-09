@@ -14,6 +14,7 @@
 
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/nn/Init.h"
+#include "flashlight/fl/tensor/Shape.h"
 
 namespace fl {
 
@@ -30,7 +31,7 @@ LayerNorm::LayerNorm(
     bool affine /* = true */,
     int axisSize /* = kLnVariableAxisSize */)
     : epsilon_(eps), affine_(affine), axisSize_(axisSize) {
-  for (int d = 0; d < AF_MAX_DIMS; ++d) {
+  for (int d = 0; d < kLnExpectedNumDims; ++d) {
     if (std::find(axis.begin(), axis.end(), d) == axis.end()) {
       axisComplement_.push_back(d);
     }
@@ -38,13 +39,29 @@ LayerNorm::LayerNorm(
   initialize();
 }
 
-Variable LayerNorm::forward(const Variable& input) {
+Variable LayerNorm::forward(const Variable& _input) {
+  Variable input = _input;
+  // If the input isn't of kLnExpectedNumDims, reshape so it is -- do this by
+  // adding singleton dims. This is needed per computing the axis complement
+  // TODO: this is pretty ugly -- eventually fix this up if it can be avoided
+  if (input.numdims() < kLnExpectedNumDims) {
+    std::vector<Dim> s = _input.dims().get();
+    for (unsigned i = s.size(); i < kLnExpectedNumDims; ++i) {
+      s.push_back(1);
+    }
+    input = moddims(_input, Shape(s));
+  } else if (input.numdims() > kLnExpectedNumDims) {
+    throw std::invalid_argument(
+        "LayerNorm::forward - input must be " +
+        std::to_string(kLnExpectedNumDims) + " or fewer dimensions.");
+  }
+
   Variable dummyInMean, dummyInVar;
 
   Variable inputToBn = input;
   std::vector<int> inNormAxes;
   // reorder is only required if axisComplement_ is not continuous
-  std::array<int, AF_MAX_DIMS> reorderDims;
+  Shape reorderDims(std::vector<Dim>(input.numdims()));
   auto maxAxis =
       *std::max_element(axisComplement_.begin(), axisComplement_.end());
   auto minAxis =
@@ -54,7 +71,7 @@ Variable LayerNorm::forward(const Variable& input) {
     inNormAxes = axisComplement_;
   } else {
     int i = 0;
-    for (int d = 0; d < AF_MAX_DIMS; ++d) {
+    for (int d = 0; d < input.numdims(); ++d) {
       if (std::find(axisComplement_.begin(), axisComplement_.end(), d) ==
           axisComplement_.end()) {
         reorderDims[i++] = d;
@@ -64,15 +81,14 @@ Variable LayerNorm::forward(const Variable& input) {
       inNormAxes.push_back(i);
       reorderDims[i++] = n;
     }
-    inputToBn = reorder(
-        input, reorderDims[0], reorderDims[1], reorderDims[2], reorderDims[3]);
+    inputToBn = reorder(input, reorderDims);
   }
   auto paramsType =
-      (input.type() == af::dtype::f16) ? af::dtype::f32 : input.type();
+      (input.type() == fl::dtype::f16) ? fl::dtype::f32 : input.type();
   auto output = batchnorm(
       inputToBn,
-      Variable(af::array().as(paramsType), false),
-      Variable(af::array().as(paramsType), false),
+      Variable(Tensor(paramsType), false),
+      Variable(Tensor(paramsType), false),
       dummyInMean,
       dummyInVar,
       inNormAxes,
@@ -81,24 +97,23 @@ Variable LayerNorm::forward(const Variable& input) {
       epsilon_);
 
   if (!axesContinuous) {
-    std::vector<std::pair<int, int>> restoreDims = {{reorderDims[0], 0},
-                                                    {reorderDims[1], 1},
-                                                    {reorderDims[2], 2},
-                                                    {reorderDims[3], 3}};
+    std::vector<std::pair<int, int>> restoreDims;
+    for (size_t i = 0; i < reorderDims.ndim(); ++i) {
+      restoreDims.push_back(std::make_pair(reorderDims[i], i));
+    }
     std::sort(restoreDims.begin(), restoreDims.end());
-    output = reorder(
-        output,
-        restoreDims[0].second,
-        restoreDims[1].second,
-        restoreDims[2].second,
-        restoreDims[3].second);
+    Shape restoreDimsShape(std::vector<Dim>(restoreDims.size()));
+    for (size_t i = 0; i < restoreDims.size(); ++i) {
+      restoreDimsShape[i] = restoreDims[i].second;
+    }
+    output = reorder(output, restoreDimsShape);
   }
 
   if (affine_) {
     Variable weight = params_[0].as(output.type());
     Variable bias = params_[1].as(output.type());
     if (axisSize_ != kLnVariableAxisSize) {
-      af::dim4 affineDims = input.dims();
+      Shape affineDims = input.dims();
       for (int ax : axisComplement_) {
         affineDims[ax] = 1;
       }
@@ -112,14 +127,14 @@ Variable LayerNorm::forward(const Variable& input) {
     output = tileAs(weight, input) * output + tileAs(bias, input);
   }
 
-  return output;
+  return moddims(output, _input.dims());
 }
 
 void LayerNorm::initialize() {
   if (affine_) {
     auto paramDim = (axisSize_ == kLnVariableAxisSize) ? 1 : axisSize_;
-    auto wt = constant(1.0, paramDim, af::dtype::f32, true);
-    auto bs = constant(0.0, paramDim, af::dtype::f32, true);
+    auto wt = constant(1.0, {paramDim}, fl::dtype::f32, true);
+    auto bs = constant(0.0, {paramDim}, fl::dtype::f32, true);
     params_ = {wt, bs};
   }
 }
