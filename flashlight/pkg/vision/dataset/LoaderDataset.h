@@ -20,12 +20,12 @@ namespace vision {
 template <typename T>
 class LoaderDataset : public fl::Dataset {
  public:
-  using LoadFunc = std::function<std::vector<af::array>(const T&)>;
+  using LoadFunc = std::function<std::vector<Tensor>(const T&)>;
 
   LoaderDataset(const std::vector<T>& list, LoadFunc loadfn)
       : list_(list), loadfn_(loadfn) {}
 
-  std::vector<af::array> get(const int64_t idx) const override {
+  std::vector<Tensor> get(const int64_t idx) const override {
     return loadfn_(list_[idx]);
   }
 
