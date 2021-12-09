@@ -15,8 +15,8 @@
 #include <iostream>
 #include <type_traits>
 
-#include <af/array.h>
-#include <af/dim4.hpp>
+#include "flashlight/fl/tensor/TensorBase.h"
+
 #include <cereal/access.hpp>
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/base_class.hpp>
@@ -29,7 +29,7 @@ namespace fl {
  * \defgroup serialization_library Serialization Library
  *
  * Serialization support using the `cereal` library. Provides serialization
- * functions for `af::array` and `af::dim4` and convenience utilities.
+ * functions for `Tensor` and `Shape` and convenience utilities.
  *
  * Note the following guidelines for serialization:
  * - By default you should use save/load pairs and explicit versioning.
@@ -41,7 +41,7 @@ namespace fl {
  * - For simplicity, `load()` may assume that the initial state of the
  *   object is default-constructed. Conversely, one must only call `load()`
  *   on a default-constructed object.
- * - Avoid serializing `long`, `size_t`, and ArrayFire's `dim_t` since these
+ * - Avoid serializing `long`, `size_t`, and Flashlight's `Dim` since these
  *   types have platform-dependent sizes. Fixed-size types like `int64_t` are
  *   always fine. `int`, `long long` should be fine on virtually all platforms.
  *
@@ -195,19 +195,22 @@ serializeAs(T&& t, SaveConvFn saveConverter, LoadConvFn loadConverter);
 namespace cereal {
 
 template <class Archive>
-void save(Archive& ar, const fl::detail::CerealSave<af::dim4>& dims);
+void save(
+    Archive& ar,
+    const fl::detail::CerealSave<fl::Shape>& dims,
+    const uint32_t /* version */);
 
 template <class Archive>
-void load(Archive& ar, af::dim4& dims);
+void load(Archive& ar, fl::Shape& dims, const uint32_t /* version */);
 
 template <class Archive>
 void save(
     Archive& ar,
-    const fl::detail::CerealSave<af::array>& arr,
+    const fl::detail::CerealSave<fl::Tensor>& tensor,
     const uint32_t /* version */);
 
 template <class Archive>
-void load(Archive& ar, af::array& arr, const uint32_t /* version */);
+void load(Archive& ar, fl::Tensor& tensor, const uint32_t /* version */);
 
 } // namespace cereal
 
