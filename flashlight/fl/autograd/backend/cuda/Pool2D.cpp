@@ -10,6 +10,7 @@
 #include "flashlight/fl/autograd/Variable.h"
 #include "flashlight/fl/autograd/backend/cuda/CudnnUtils.h"
 #include "flashlight/fl/common/DevicePtr.h"
+#include "flashlight/fl/tensor/Random.h"
 
 namespace fl {
 
@@ -29,14 +30,19 @@ Variable pool2d(
 
   // init output descriptor
   auto ix = input.dims(0);
-  auto iy = input.dims(1);
+  auto iy = input.numdims() < 2 ? 1 : input.dims(1);
   auto ox = 1 + (ix + 2 * px - wx) / sx;
   auto oy = 1 + (iy + 2 * py - wy) / sy;
 
-  auto output = af::randu(ox, oy, input.dims(2), input.dims(3), input.type());
+  auto output = Tensor(
+      {ox,
+       oy,
+       input.numdims() < 3 ? 1 : input.dims(2),
+       input.numdims() < 4 ? 1 : input.dims(3)},
+      input.type());
   auto out_desc = TensorDescriptor(output);
   {
-    DevicePtr inputraw(input.array());
+    DevicePtr inputraw(input.tensor());
     DevicePtr resultraw(output);
 
     auto handle = getCudnnHandle();
@@ -64,17 +70,17 @@ Variable pool2d(
     auto o_desc = TensorDescriptor(output);
     auto p_desc = PoolingDescriptor(wx, wy, sx, sy, px, py, mode);
 
-    auto grad_input = Variable(af::array(in.dims(), in.type()), false);
+    auto grad_input = Variable(Tensor(in.dims(), in.type()), false);
 
     auto hndl = getCudnnHandle();
     const void* oneg = kOne(in.type());
     const void* zerog = kZero(in.type());
 
     {
-      DevicePtr inraw(in.array());
+      DevicePtr inraw(in.tensor());
       DevicePtr outraw(output);
-      DevicePtr gradresultraw(grad_output.array());
-      DevicePtr gradinputraw(grad_input.array());
+      DevicePtr gradresultraw(grad_output.tensor());
+      DevicePtr gradinputraw(grad_input.tensor());
 
       CUDNN_CHECK_ERR(cudnnPoolingBackward(
           hndl,
