@@ -7,16 +7,18 @@
 
 #include "flashlight/fl/nn/modules/View.h"
 
+#include <utility>
+
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/nn/Init.h"
 #include "flashlight/fl/nn/Utils.h"
 
 namespace fl {
 
-View::View(af::dim4 dims) : dims_(dims) {}
+View::View(Shape dims) : dims_(std::move(dims)) {}
 
 Variable View::forward(const Variable& input) {
-  af::dim4 dims = dims_;
+  Shape dims = dims_;
   return moddims(input, dims);
 }
 
