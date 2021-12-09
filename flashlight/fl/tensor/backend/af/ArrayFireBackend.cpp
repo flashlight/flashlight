@@ -17,7 +17,10 @@
 #include <af/random.h>
 
 #include <algorithm>
+#include <cstdlib>
 #include <numeric>
+#include <optional>
+#include <sstream>
 #include <stdexcept>
 
 #include "flashlight/fl/tensor/TensorBase.h"
@@ -27,7 +30,7 @@
 namespace fl {
 namespace {
 
-typedef af::array (*reduceFunc_t)(const af::array&, const int);
+using reduceFunc_t = af::array (*)(const af::array&, const int);
 
 template <typename T = reduceFunc_t>
 af::array afReduceAxes(
@@ -70,6 +73,49 @@ bool isAllAxisReduction(const Tensor& input, const std::vector<int>& axes) {
     }
   }
   return true;
+}
+
+bool canBroadcast(const Shape& lhs, const Shape& rhs) {
+  unsigned nDim = std::min(lhs.ndim(), rhs.ndim());
+
+  for (unsigned i = 0; i < nDim; ++i) {
+    if (i > lhs.ndim() - 1 || i > rhs.ndim() - 1) {
+      // One Shape has more dimensions than the other - will broadcast to the
+      // smaller tensor
+      continue;
+    }
+    if (lhs[i] != rhs[i] && lhs[i] != 1 && rhs[i] != 1) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// A binary operation on two ArrayFire arrays
+using binaryOpFunc_t =
+    af::array (*)(const af::array& lhs, const af::array& rhs);
+
+Tensor doBinaryOpOrBroadcast(
+    const Tensor& lhs,
+    const Tensor& rhs,
+    binaryOpFunc_t func) {
+  // Dims are the same - no broadcasting
+  if (lhs.shape() == rhs.shape()) {
+    return toTensor<ArrayFireTensor>(
+        func(toArray(lhs), toArray(rhs)), lhs.ndim());
+  }
+
+  if (canBroadcast(lhs.shape(), rhs.shape())) {
+    return toTensor<ArrayFireTensor>(
+        af::batchFunc(toArray(lhs), toArray(rhs), func),
+        std::max(lhs.ndim(), rhs.ndim()));
+  } else {
+    std::stringstream ss;
+    ss << "doBinaryOpOrBroadcast: cannot perform operation "
+          "or broadcasting with tensors of shapes "
+       << lhs.shape() << " and " << rhs.shape() << " - dimension mismatch.";
+    throw std::invalid_argument(ss.str());
+  }
 }
 
 } // namespace
@@ -498,19 +544,10 @@ Tensor ArrayFireBackend::argsort(
 
 // Operations on fl::Tensor call the respective operator overloads that are
 // already defined on af::arrays
-#define FL_AF_BINARY_OP_DEF(OP, FUNC)                                          \
-  Tensor ArrayFireBackend::FUNC(const Tensor& lhs, const Tensor& rhs) {        \
-    if (lhs.ndim() != rhs.ndim()) {                                            \
-      std::stringstream ss;                                                    \
-      ss << "ArrayFireTensor arguments to operator " << std::string(#OP)       \
-         << " (" << std::string(#FUNC) << ") "                                 \
-         << "have a differing number of dimensions " << lhs.shape() << " and " \
-         << rhs.shape();                                                       \
-      throw std::invalid_argument(ss.str());                                   \
-    }                                                                          \
-    return toTensor<ArrayFireTensor>(                                          \
-        toArray(lhs) OP toArray(rhs), lhs.ndim());                             \
-  }                                                                            \
+#define FL_AF_BINARY_OP_DEF(OP, FUNC)                                   \
+  Tensor ArrayFireBackend::FUNC(const Tensor& lhs, const Tensor& rhs) { \
+    return doBinaryOpOrBroadcast(lhs, rhs, af::operator OP);            \
+  }                                                                     \
   FL_AF_BINARY_OP_LITERALS_DEF(FUNC, OP);
 
 // Definitions
@@ -539,18 +576,15 @@ FL_AF_BINARY_OP_DEF(>>, rShift);
 #undef FL_AF_BINARY_OP_LITERALS_DEF
 
 Tensor ArrayFireBackend::minimum(const Tensor& lhs, const Tensor& rhs) {
-  return toTensor<ArrayFireTensor>(
-      af::min(toArray(lhs), toArray(rhs)), lhs.ndim());
+  return doBinaryOpOrBroadcast(lhs, rhs, af::min);
 }
 
 Tensor ArrayFireBackend::maximum(const Tensor& lhs, const Tensor& rhs) {
-  return toTensor<ArrayFireTensor>(
-      af::max(toArray(lhs), toArray(rhs)), lhs.ndim());
+  return doBinaryOpOrBroadcast(lhs, rhs, af::max);
 }
 
 Tensor ArrayFireBackend::power(const Tensor& lhs, const Tensor& rhs) {
-  return toTensor<ArrayFireTensor>(
-      af::pow(toArray(lhs), toArray(rhs)), lhs.ndim());
+  return doBinaryOpOrBroadcast(lhs, rhs, af::pow);
 }
 
 /************************** BLAS ***************************/
