@@ -10,12 +10,12 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "flashlight/pkg/text/data/TextDataset.h"
 #include "flashlight/fl/common/Init.h"
 #include "flashlight/lib/text/dictionary/Defines.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/tokenizer/PartialFileReader.h"
 #include "flashlight/lib/text/tokenizer/Tokenizer.h"
+#include "flashlight/pkg/text/data/TextDataset.h"
 
 using fl::lib::pathsConcat;
 using namespace fl::lib;
@@ -65,8 +65,8 @@ TEST(TextDatasetTest, NoneMode) {
   for (int i = 0; i < dataset.size(); i++) {
     auto sample = dataset.get(i);
     ASSERT_EQ(sample.size(), 1);
-    ASSERT_EQ(sample[0].dims(0), tokensPerSample);
-    ASSERT_EQ(sample[0].dims(1), batchSize);
+    ASSERT_EQ(sample[0].dim(0), tokensPerSample);
+    ASSERT_EQ(sample[0].dim(1), batchSize);
   }
 }
 
@@ -95,8 +95,8 @@ TEST(TextDatasetTest, EosMode) {
   for (int i = 0; i < dataset.size(); i++) {
     auto sample = dataset.get(i);
     ASSERT_EQ(sample.size(), 1);
-    ASSERT_EQ(sample[0].dims(0), targetLen[i]);
-    ASSERT_EQ(sample[0].dims(1), batchSize);
+    ASSERT_EQ(sample[0].dim(0), targetLen[i]);
+    ASSERT_EQ(sample[0].dim(1), batchSize);
   }
 }
 
@@ -127,8 +127,8 @@ TEST(TextDatasetTest, EosModeWithDynamicBatching) {
   for (int i = 0; i < dataset.size(); i++) {
     auto sample = dataset.get(i);
     ASSERT_EQ(sample.size(), 1);
-    ASSERT_EQ(sample[0].dims(0), targetLen[i]);
-    ASSERT_EQ(sample[0].dims(1), targetBsz[i]);
+    ASSERT_EQ(sample[0].dim(0), targetLen[i]);
+    ASSERT_EQ(sample[0].dim(1), targetBsz[i]);
   }
 }
 
