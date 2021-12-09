@@ -25,12 +25,13 @@ namespace fl {
  *
  * Forward takes {previous step[optionally], input, padMask}
  * previous step is used in for the decoder phase, previous output with size
- * CxT'xBx1 Input dimension at forward is assumed to be CxTxBx1, where C is the
- * number of features, T the sequence length and B the batch size.
- * padMask is with T''xB sizes (T'' will be af::resize to the input size)
- * padMask should be empty if "previous step" is provided (in the decoder phase)
- * padMask is expected to have "1" on the normal positions and "0" on the padded
- * positions
+ * C x T' x B. Input dimension at forward is assumed to be C x T x B, where C is
+ * the number of features, T the sequence length and B the batch size.
+ * - padMask is with T'' x B sizes (T'' will be resized to the input size)
+ * - padMask should be empty if "previous step" is provided (in the decoder
+ * phase)
+ * - padMask is expected to have "1" on the normal positions and "0" on the
+ * padded positions
  *
  * @param modelDim input embedding dimension
  * @param headDim dimension of each head

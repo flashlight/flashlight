@@ -32,8 +32,8 @@ class AdaptiveEmbedding : public UnaryModule {
   /**
    * Constructs an Embedding module.
    *
-   * @param embedding_dim the size of each embedding vector
-   * @param cutoff a sequence of integers sorted in ascending order, which
+   * @param[in] embedding_dim the size of each embedding vector
+   * @param[in] cutoff a sequence of integers sorted in ascending order, which
    * determines the relative size of each bucket, and how many partitions are
    * created. For example, given cutoffs `{5, 50, 100}`, the head bucket will
    * contain `5` targets, the
@@ -42,8 +42,8 @@ class AdaptiveEmbedding : public UnaryModule {
    * targets (subtracting the size of the first tail bucket). Cutoffs must be
    * specified to accommodate all targets: any remaining targets are not
    * assigned to an 'overflow' bucket.
-   * @param divValue is the scaling factor for tail groups dimention reduction
-   * (see paper https://arxiv.org/pdf/1809.10853.pdf for details).
+   * @param[in] divValue is the scaling factor for tail groups dimention
+   * reduction (see paper https://arxiv.org/pdf/1809.10853.pdf for details).
    */
   explicit AdaptiveEmbedding(
       int embeddingDim,
