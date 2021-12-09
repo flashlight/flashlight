@@ -7,8 +7,10 @@
 
 #include "flashlight/fl/meter/EditDistanceMeter.h"
 
-#include <array>
+#include <cstdlib> // TODO: whatever is actually needed for free?
 #include <stdexcept>
+
+#include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 EditDistanceMeter::EditDistanceMeter() {
@@ -22,24 +24,24 @@ void EditDistanceMeter::reset() {
   nsub_ = 0;
 }
 
-void EditDistanceMeter::add(const af::array& output, const af::array& target) {
-  if (target.numdims() != 1) {
+void EditDistanceMeter::add(const Tensor& output, const Tensor& target) {
+  if (target.ndim() != 1) {
     throw std::invalid_argument(
         "target must be 1-dimensional for EditDistanceMeter");
   }
-  if (output.numdims() != 1) {
+  if (output.ndim() != 1) {
     throw std::invalid_argument(
         "output must be 1-dimensional for EditDistanceMeter");
   }
-  int len1 = output.dims(0);
-  int len2 = target.dims(0);
+  int len1 = output.dim(0);
+  int len2 = target.dim(0);
 
   int* in1raw = output.host<int>();
   int* in2raw = target.host<int>();
   auto err_state = levensteinDistance(in1raw, in2raw, len1, len2);
-  af::freeHost(in1raw);
-  af::freeHost(in2raw);
-  add(err_state, target.dims(0));
+  free(in1raw);
+  free(in2raw);
+  add(err_state, target.dim(0));
 }
 
 void EditDistanceMeter::add(
