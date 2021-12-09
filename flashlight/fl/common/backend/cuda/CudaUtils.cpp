@@ -17,6 +17,7 @@
 namespace fl {
 namespace cuda {
 
+// TODO{fl::Tensor}{CUDA} find a common abstraction for CUDA-enabled things
 cudaStream_t getActiveStream() {
   auto af_id = fl::getDevice();
   return afcu::getStream(af_id);
