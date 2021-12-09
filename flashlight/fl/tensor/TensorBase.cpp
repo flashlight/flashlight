@@ -611,6 +611,10 @@ Tensor power(const Tensor& lhs, const double& rhs) {
   return lhs.backend().power(lhs, full(lhs.shape(), rhs));
 }
 
+Tensor power(const double& lhs, const Tensor& rhs) {
+  return rhs.backend().power(full(rhs.shape(), lhs), rhs);
+}
+
 /******************************* BLAS ********************************/
 Tensor matmul(
     const Tensor& lhs,
