@@ -12,11 +12,12 @@
 #include <algorithm>
 #include <map>
 
+#include "flashlight/fl/tensor/Index.h"
 #include "flashlight/pkg/vision/dataset/BoxUtils.h"
 #include "flashlight/pkg/vision/dataset/CocoTransforms.h"
-#include "flashlight/pkg/vision/dataset/Transforms.h"
 #include "flashlight/pkg/vision/dataset/DistributedDataset.h"
 #include "flashlight/pkg/vision/dataset/LoaderDataset.h"
+#include "flashlight/pkg/vision/dataset/Transforms.h"
 
 namespace {
 
@@ -26,49 +27,50 @@ using namespace fl;
 
 constexpr int kElementsPerBbox = 4;
 
-std::pair<af::array, af::array> makeImageAndMaskBatch(
-    const std::vector<af::array>& data) {
+std::pair<Tensor, Tensor> makeImageAndMaskBatch(
+    const std::vector<Tensor>& data) {
   int maxW = -1;
   int maxH = -1;
 
   for (const auto& d : data) {
-    int w = d.dims(0);
-    int h = d.dims(1);
+    int w = d.dim(0);
+    int h = d.dim(1);
     maxW = std::max(w, maxW);
     maxH = std::max(h, maxH);
   }
 
-  af::dim4 outDims = {maxW, maxH, 3, static_cast<long>(data.size())};
-  af::dim4 maskDims = {maxW, maxH, 1, static_cast<long>(data.size())};
+  Shape outDims = {maxW, maxH, 3, static_cast<long>(data.size())};
+  Shape maskDims = {maxW, maxH, 1, static_cast<long>(data.size())};
 
-  auto batcharr = af::constant(0, outDims);
-  auto maskarr = af::constant(0, maskDims);
+  auto batcharr = fl::full(outDims, 0);
+  auto maskarr = fl::full(maskDims, 0);
 
   for (size_t i = 0; i < data.size(); ++i) {
-    af::array sample = data[i];
-    af::dim4 dims = sample.dims();
+    Tensor sample = data[i];
+    Shape dims = sample.shape();
     int w = dims[0];
     int h = dims[1];
-    batcharr(af::seq(0, w - 1), af::seq(0, h - 1), af::span, af::seq(i, i)) =
+    batcharr(fl::range(0, w), fl::range(0, h), fl::span, fl::range(i, i)) =
         data[i];
-    maskarr(af::seq(0, w - 1), af::seq(0, h - 1), af::span, af::seq(i, i)) =
-        af::constant(1, {w, h});
+    maskarr(fl::range(0, w), fl::range(0, h), fl::span, fl::range(i, i)) =
+        fl::full({w, h}, 1);
   }
   return std::make_pair(batcharr, maskarr);
 }
 
 // Since the bboxes and classes are variable length, we don't actually want
 // to batch them together.
-CocoData cocoBatchFunc(const std::vector<std::vector<af::array>>& batches) {
-  af::array imageBatch, masks;
+CocoData cocoBatchFunc(const std::vector<std::vector<Tensor>>& batches) {
+  Tensor imageBatch, masks;
   std::tie(imageBatch, masks) = makeImageAndMaskBatch(batches[ImageIdx]);
-  return {imageBatch,
-          masks,
-          makeBatch(batches[TargetSizeIdx]),
-          makeBatch(batches[ImageIdIdx]),
-          makeBatch(batches[OriginalSizeIdx]),
-          batches[BboxesIdx],
-          batches[ClassesIdx]};
+  return {
+      imageBatch,
+      masks,
+      makeBatch(batches[TargetSizeIdx]),
+      makeBatch(batches[ImageIdIdx]),
+      makeBatch(batches[OriginalSizeIdx]),
+      batches[BboxesIdx],
+      batches[ClassesIdx]};
 }
 
 int64_t getImageId(const std::string& fp) {
@@ -131,28 +133,28 @@ CocoDataset::CocoDataset(
   // Now define how to load the data from CocoDataSampoles in arrayfire
   std::shared_ptr<Dataset> ds = std::make_shared<LoaderDataset<CocoDataSample>>(
       data, [](const CocoDataSample& sample) {
-        af::array image = loadJpeg(sample.filepath);
+        Tensor image = loadJpeg(sample.filepath);
 
-        long long int imageSizeArray[] = {image.dims(1), image.dims(0)};
-
-        af::array targetSize = af::array(2, imageSizeArray);
-        af::array imageId = af::constant(getImageId(sample.filepath), 1, s64);
+        std::vector<long> targetSizes = {image.dim(1), image.dim(0)};
+        Tensor targetSize = Tensor::fromVector(targetSizes);
+        Tensor imageId =
+            fl::full({getImageId(sample.filepath)}, 1, fl::dtype::s64);
 
         const int num_elements = sample.bboxes.size();
         const int num_bboxes = num_elements / kElementsPerBbox;
-        af::array bboxes, classes;
+        Tensor bboxes, classes;
         if (num_bboxes > 0) {
           bboxes =
-              af::array(kElementsPerBbox, num_bboxes, sample.bboxes.data());
-          classes = af::array(1, num_bboxes, sample.classes.data());
+              Tensor::fromVector({kElementsPerBbox, num_bboxes}, sample.bboxes);
+          classes = Tensor::fromVector({1, num_bboxes}, sample.classes);
         } else {
           // Arrayfire doesn't allow you to create 0 length dimension on
           // anything other than the first dimension so we need this switch
-          bboxes = af::array(0, 1, 1, 1);
-          classes = af::array(0, 1, 1, 1);
+          bboxes = Tensor();
+          classes = Tensor();
         }
         // image, size, imageId, original_size
-        return std::vector<af::array>{
+        return std::vector<Tensor>{
             image, targetSize, imageId, targetSize, bboxes, classes};
       });
 
@@ -163,12 +165,14 @@ CocoDataset::CocoDataset(
   } else {
     std::vector<int> scales = {
         480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800};
-    TransformAllFunction trainTransform =
-        compose({randomHorizontalFlip(0.5),
-                 randomSelect({randomResize(scales, maxSize),
-                               compose({randomResize({400, 500, 600}, -1),
-                                        randomSizeCrop(384, 600),
-                                        randomResize(scales, 1333)})})});
+    TransformAllFunction trainTransform = compose(
+        {randomHorizontalFlip(0.5),
+         randomSelect(
+             {randomResize(scales, maxSize),
+              compose(
+                  {randomResize({400, 500, 600}, -1),
+                   randomSizeCrop(384, 600),
+                   randomResize(scales, 1333)})})});
 
     ds = std::make_shared<TransformAllDataset>(ds, trainTransform);
   }

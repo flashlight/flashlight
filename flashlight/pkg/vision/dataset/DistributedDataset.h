@@ -25,7 +25,7 @@ class DistributedDataset : public Dataset {
       int64_t prefetchSize,
       BatchDatasetPolicy batchpolicy = fl::BatchDatasetPolicy::INCLUDE_LAST);
 
-  std::vector<af::array> get(const int64_t idx) const override;
+  std::vector<Tensor> get(const int64_t idx) const override;
 
   void resample(const int seed = 0);
 

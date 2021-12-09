@@ -35,7 +35,7 @@ DistributedDataset::DistributedDataset(
   ds_ = std::make_shared<BatchDataset>(ds_, batchSize, batchPolicy);
 }
 
-std::vector<af::array> DistributedDataset::get(const int64_t idx) const {
+std::vector<Tensor> DistributedDataset::get(const int64_t idx) const {
   checkIndexBounds(idx);
   return ds_->get(idx);
 }
