@@ -8,6 +8,8 @@
 #include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/nn/nn.h"
 #include "flashlight/fl/optim/optim.h"
+#include "flashlight/fl/tensor/Index.h"
+#include "flashlight/fl/tensor/Random.h"
 
 using namespace fl;
 
@@ -16,14 +18,16 @@ int main(int /* unused */, const char** /* unused */) {
   int nsamples = 100;
   int categories = 3;
   int feature_dim = 10;
-  af::array data =
-      af::randu(feature_dim, 2 * nsamples * (categories - 1)) * 5 + 1;
-  af::array label = af::constant(0.0, 2 * nsamples * (categories - 1));
+  Tensor data =
+      fl::rand({feature_dim, 2 * nsamples * (categories - 1), /* B = */ 1}) *
+          5 +
+      1;
+  Tensor label = fl::full({2 * nsamples * (categories - 1), /* B = */ 1}, 0.0);
   for (int i = 1; i < categories; i++) {
     int start = (categories - 2 + i) * nsamples;
-    int end = start + nsamples - 1;
-    data(i, af::seq(start, end)) = 0 - data(i, af::seq(start, end));
-    label.rows(start, end) = label.rows(start, end) + i;
+    int end = start + nsamples;
+    data(i, fl::range(start, end)) = 0 - data(i, fl::range(start, end));
+    label(fl::range(start, end)) = label(fl::range(start, end)) + i;
   }
 
   Sequential model;
@@ -41,8 +45,8 @@ int main(int /* unused */, const char** /* unused */) {
   model.train();
   criterion.train();
 
-  af::array in_ = data;
-  af::array out_ = label;
+  Tensor in_ = data;
+  Tensor out_ = label;
   af::timer s;
   for (int i = 0; i < nepochs; i++) {
     if (i == warmup_epochs) {
@@ -70,19 +74,21 @@ int main(int /* unused */, const char** /* unused */) {
   model.eval();
   result = model(input(in_));
   l = criterion(result, noGrad(out_));
-  auto loss = l.array();
-  af_print(loss);
+  auto loss = l.tensor();
+  std::cout << "Loss: " << loss << std::endl;
 
   // accuracy
-  auto log_prob = criterion.getActivation()->forward(result).array();
-  af::array max_value, prediction;
-  af::max(max_value, prediction, log_prob, 0);
-  auto accuracy = mean(prediction == af::transpose(label));
-  af_print(accuracy);
+  auto log_prob = criterion.getActivation()->forward(result).tensor();
+  Tensor max_value, prediction;
+  fl::max(max_value, prediction, log_prob, 0);
+  auto accuracy = mean(prediction == label(fl::span, fl::range(0, 0)), {0});
+  std::cout << "Accuracy: " << accuracy << std::endl;
 
-  auto pred = asActivation->predict(result).array();
-  accuracy = mean(pred == af::transpose(label));
-  af_print(accuracy);
+  auto pred = asActivation->predict(result).tensor();
+  accuracy = mean(
+      fl::reshape(pred, label.shape()) == label(fl::span, fl::range(0, 0)),
+      {0});
+  std::cout << "Accuracy: " << accuracy << std::endl;
 
   // time
   printf("Time/iteration: %.5f msec\n", e * 1000.0 / (nepochs - warmup_epochs));
