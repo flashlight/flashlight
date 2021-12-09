@@ -65,7 +65,8 @@ class WeightNorm : public Module {
 
     auto v = module_params[0];
     transformDims();
-    auto g = Variable(norm(v, normDim_).array(), true);
+    auto g = Variable(
+        norm(v, normDim_, /* p = */ 2, /* keepDims = */ true).tensor(), true);
     if (module_params.size() == 2) {
       auto b = module_params[1];
       params_ = {v, g, b};
