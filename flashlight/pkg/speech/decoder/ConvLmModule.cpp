@@ -9,6 +9,8 @@
 
 #include <string>
 
+#include "flashlight/fl/tensor/Index.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/pkg/runtime/common/DistributedUtils.h"
 
 namespace fl {
@@ -28,10 +30,10 @@ GetConvLmScoreFunc buildGetConvLmScoreFunction(
           "[ConvLM] Incorrect sample size (" + std::to_string(sampleSize) +
           ") or batch size (" + std::to_string(batchSize) + ").");
     }
-    af::array inputData(sampleSize, batchSize, inputs.data());
+    Tensor inputData = Tensor::fromVector({sampleSize, batchSize}, inputs);
     fl::Variable output = network->forward({fl::input(inputData)})[0];
 
-    if (af::count<int>(af::isNaN(output.array())) != 0) {
+    if (fl::countNonzero(fl::isnan(output.tensor())).asScalar<int>() != 0) {
       throw std::runtime_error("[ConvLM] Encountered NaNs in propagation");
     }
     int32_t C = output.dims(0), T = output.dims(1), B = output.dims(2);
@@ -48,18 +50,17 @@ GetConvLmScoreFunc buildGetConvLmScoreFunction(
     }
     // output (c, t, b)
     // set global indices: offset by channel
-    af::array globalIndices = af::iota(af::dim4(C, 1), af::dim4(1, B), s32);
+    Tensor globalIndices = fl::iota({C, 1}, {1, B}, fl::dtype::s32);
     // set global indices: offset by batch
     globalIndices =
-        globalIndices + af::iota(af::dim4(1, B), af::dim4(C, 1), s32) * T * C;
+        globalIndices + fl::iota({1, B}, {C, 1}, fl::dtype::s32) * T * C;
     // set global indices: offset by time which we need to take
     globalIndices = globalIndices +
-        af::tile(af::array(af::dim4(1, B), lastTokenPositions.data()), C, 1) *
-            C;
-    af::array preds =
-        af::moddims(af::flat(output.array())(af::flat(globalIndices)), C, B);
+        fl::tile(Tensor::fromVector({1, B}, lastTokenPositions), {C, 1}) * C;
+    Tensor preds =
+        fl::reshape(output.tensor().flatten()(globalIndices.flatten()), {C, B});
     // vector of B X C predictions
-    return pkg::runtime::afToVector<float>(preds);
+    return preds.toHostVector<float>();
   };
 
   return getConvLmScoreFunc;
