@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <stdexcept>
 
+#include "flashlight/fl/tensor/Index.h"
+
 namespace fl {
 
 std::vector<int64_t> partitionByRoundRobin(
@@ -121,12 +123,12 @@ dynamicPartitionByRoundRobin(
   return {outSamples, outBatchSizes};
 }
 
-std::vector<af::array> makeBatchFromRange(
+std::vector<Tensor> makeBatchFromRange(
     std::shared_ptr<const Dataset> dataset,
     std::vector<Dataset::BatchFunction> batchFns,
     int64_t start,
     int64_t end) {
-  std::vector<std::vector<af::array>> buffer;
+  std::vector<std::vector<Tensor>> buffer;
   for (int64_t batchidx = start; batchidx < end; ++batchidx) {
     auto fds = dataset->get(batchidx);
     if (buffer.size() < fds.size()) {
@@ -136,7 +138,7 @@ std::vector<af::array> makeBatchFromRange(
       buffer[i].emplace_back(fds[i]);
     }
   }
-  std::vector<af::array> result(buffer.size());
+  std::vector<Tensor> result(buffer.size());
   for (int64_t i = 0; i < buffer.size(); ++i) {
     result[i] =
         makeBatch(buffer[i], (i < batchFns.size()) ? batchFns[i] : nullptr);
@@ -144,36 +146,43 @@ std::vector<af::array> makeBatchFromRange(
   return result;
 }
 
-af::array makeBatch(
-    const std::vector<af::array>& data,
+Tensor makeBatch(
+    const std::vector<Tensor>& data,
     const Dataset::BatchFunction& batchFn) {
   if (batchFn) {
     return batchFn(data);
   }
   // Using default batching function
   if (data.empty()) {
-    return af::array();
+    return Tensor();
   }
-  auto dims = data[0].dims();
+  auto& dims = data[0].shape();
 
   for (const auto& d : data) {
-    if (d.dims() != dims) {
+    if (d.shape() != dims) {
       throw std::invalid_argument("dimension mismatch while batching dataset");
     }
   }
 
-  int ndims = (data[0].elements() > 1) ? dims.ndims() : 0;
+  int ndims = (data[0].size() > 1) ? dims.ndim() : 0;
 
+  // TODO: expand this to > 4 given fl::Tensor - should work out of the box
+  // by just removing this check? Possibly also change to ndims >= dims.ndims()
   if (ndims >= 4) {
-    throw std::invalid_argument("# of dims must be < 4 for batching");
+    throw std::invalid_argument("# of dims must be < numdims - 1 for batching");
   }
-  dims[ndims] = data.size();
-  auto batcharr = af::array(dims, data[0].type());
+  // Dimensions of the batched tensor
+  std::vector<Dim> batchDims = dims.get();
+  if (ndims > batchDims.size() - 1) {
+    batchDims.push_back(1); // placeholder dim
+  }
+  batchDims[ndims] = data.size();
+  auto batcharr = Tensor(Shape(batchDims), data[0].type());
 
   for (size_t i = 0; i < data.size(); ++i) {
-    std::array<af::seq, 4> sel{af::span, af::span, af::span, af::span};
-    sel[ndims] = af::seq(i, i);
-    batcharr(sel[0], sel[1], sel[2], sel[3]) = data[i];
+    std::vector<fl::Index> sel(batcharr.ndim(), fl::span);
+    sel[ndims] = i;
+    batcharr(sel) = data[i];
   }
   return batcharr;
 }
