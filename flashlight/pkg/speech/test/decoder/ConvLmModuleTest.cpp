@@ -10,8 +10,8 @@
 #include <arrayfire.h>
 #include "flashlight/fl/flashlight.h"
 
-#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
 #include "flashlight/lib/common/System.h"
+#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
 
 using namespace fl;
 using namespace fl::lib;
@@ -35,18 +35,18 @@ TEST(ConvLmModuleTest, GCNN14BAdaptiveSoftmax) {
   auto criterion = std::make_shared<fl::AdaptiveSoftMaxLoss>(as);
   model->eval();
   criterion->eval();
-  auto input = af::range(af::dim4(inputlength, batchsize), f32);
+  auto input = fl::arange({inputlength, batchsize});
   auto output = model->forward(noGrad(input));
   output = as->forward(output);
 
-  ASSERT_EQ(output.dims(), af::dim4(nclass, inputlength, batchsize));
+  ASSERT_EQ(output.dims(), Shape({nclass, inputlength, batchsize}));
 
   // batchsize = 1
   batchsize = 1;
-  input = af::range(af::dim4(inputlength), f32);
+  input = fl::arange({inputlength, batchsize});
   output = model->forward(noGrad(input));
   output = as->forward(output);
-  ASSERT_EQ(output.dims(), af::dim4(nclass, inputlength, batchsize));
+  ASSERT_EQ(output.dims(), Shape({nclass, inputlength, batchsize}));
 }
 
 TEST(ConvLmModuleTest, GCNN14BCrossEntropy) {
@@ -57,15 +57,15 @@ TEST(ConvLmModuleTest, GCNN14BCrossEntropy) {
 
   auto model = buildSequentialModule(archfile, 1, nclass);
   model->eval();
-  auto input = af::range(af::dim4(inputlength, batchsize), f32);
+  auto input = fl::arange({inputlength, batchsize});
   auto output = model->forward(noGrad(input));
-  ASSERT_EQ(output.dims(), af::dim4(nclass, inputlength, batchsize));
+  ASSERT_EQ(output.dims(), Shape({nclass, inputlength, batchsize}));
 
   // batchsize = 1
   batchsize = 1;
-  input = af::range(af::dim4(inputlength), f32);
+  input = fl::arange({inputlength, batchsize});
   output = model->forward(noGrad(input));
-  ASSERT_EQ(output.dims(), af::dim4(nclass, inputlength, batchsize));
+  ASSERT_EQ(output.dims(), Shape({nclass, inputlength, batchsize}));
 }
 
 TEST(ConvLmModuleTest, SerializationGCNN14BAdaptiveSoftmax) {
@@ -89,7 +89,7 @@ TEST(ConvLmModuleTest, SerializationGCNN14BAdaptiveSoftmax) {
       std::make_shared<fl::AdaptiveSoftMaxLoss>(as);
   model->eval();
   criterion->eval();
-  auto input = noGrad(af::range(af::dim4(inputlength, batchsize), f32));
+  auto input = noGrad(fl::arange({inputlength, batchsize}));
   auto output = model->forward({input})[0];
   auto output_criterion =
       std::dynamic_pointer_cast<AdaptiveSoftMaxLoss>(criterion)
@@ -106,7 +106,7 @@ TEST(ConvLmModuleTest, SerializationGCNN14BAdaptiveSoftmax) {
   auto outputl_criterion =
       std::dynamic_pointer_cast<AdaptiveSoftMaxLoss>(loaded_criterion)
           ->getActivation()
-          ->forward(output);
+          ->forward(outputl);
 
   ASSERT_TRUE(allParamsClose(*loaded_model.get(), *model));
   ASSERT_TRUE(allParamsClose(*loaded_criterion.get(), *criterion));

@@ -11,10 +11,10 @@
 #include <chrono>
 #include <thread>
 
+#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
 #include "flashlight/pkg/speech/runtime/Helpers.h"
-#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
 
 namespace {
 constexpr const char* kPlDir = "generated_pl/";
@@ -196,14 +196,14 @@ std::string PlGenerator::regeneratePl(
   auto newPlFile = pathsConcat(plDir, std::to_string(worldRank_) + ".lst");
   std::ofstream plStream(newPlFile);
   for (auto& sample : *selectedDs) {
-    auto duration = afToVector<float>(sample[kDurationIdx]).front();
+    auto duration = sample[kDurationIdx].scalar<float>();
     if (duration < minInputSize_ || duration > maxInputSize_) {
       continue;
     }
 
     std::vector<std::string> words;
     if (useExistingPl_ && seedModelWER_ < currentModelWER_) {
-      auto tokenTarget = afToVector<int>(sample[kTargetIdx]);
+      auto tokenTarget = sample[kTargetIdx].toHostVector<int>();
       words = tokenToWord_(tokenTarget, tokenDict_, false);
     } else {
       fl::Variable rawEmission;
@@ -218,7 +218,7 @@ std::string PlGenerator::regeneratePl(
             fl::input(sample[kInputIdx]), ntwrk, sample[kDurationIdx]);
       }
       auto tokenPrediction =
-          afToVector<int>(criterion->viterbiPath(rawEmission.array()));
+          criterion->viterbiPath(rawEmission.tensor()).toHostVector<int>();
       words = tokenToWord_(tokenPrediction, tokenDict_, true);
     }
     if (words.size() < minTargetSize_ || words.size() > maxTargetSize_) {
