@@ -19,9 +19,9 @@ makeTransformerLinear(int inDim, int outDim, float gain = 1.0f) {
   int fanOut = outDim;
   float std = gain * std::sqrt(2.0 / (fanIn + fanOut));
   float bound = std::sqrt(3.0) * std;
-  auto w = fl::uniform(outDim, inDim, -bound, bound, f32, true);
+  auto w = fl::uniform(outDim, inDim, -bound, bound, fl::dtype::f32, true);
   bound = std::sqrt(1.0 / fanIn);
-  auto b = fl::uniform(af::dim4(outDim), -bound, bound, af::dtype::f32, true);
+  auto b = fl::uniform({outDim}, -bound, bound, fl::dtype::f32, true);
   return std::make_shared<fl::Linear>(w, b);
 }
 
@@ -32,8 +32,8 @@ makeMultiheadedAttentionLinear(int inDim, int outDim, int fanOutMult = 1) {
   float gain = 1.0;
   float std = gain * std::sqrt(2.0 / (fanIn + fanOut));
   float bound = std::sqrt(3.0) * std;
-  auto w = fl::uniform(outDim, inDim, -bound, bound, f32, true);
-  auto b = fl::param(af::constant(0, af::dim4(outDim)));
+  auto w = fl::uniform(outDim, inDim, -bound, bound, fl::dtype::f32, true);
+  auto b = fl::param(fl::full({outDim}, 0));
   return std::make_shared<fl::Linear>(w, b);
 }
 
@@ -58,14 +58,14 @@ fl::Variable transformerMultiheadAttention(
   int32_t tgtLen = query.dims(2);
   int32_t srcLen = key.dims(2);
 
-  auto q = moddims(query, af::dim4(headDim, nHead, bsz, tgtLen));
-  auto v = moddims(value, af::dim4(headDim, nHead, bsz, srcLen));
-  auto k = moddims(key, af::dim4(headDim, nHead, bsz, srcLen));
+  auto q = moddims(query, {headDim, nHead, bsz, tgtLen});
+  auto v = moddims(value, {headDim, nHead, bsz, srcLen});
+  auto k = moddims(key, {headDim, nHead, bsz, srcLen});
   // Reorder so that the "Sequence" is along the first dimension,
   // the embedding is along the zeroth dimension
-  q = reorder(q, 0, 3, 1, 2);
-  v = reorder(v, 0, 3, 1, 2);
-  k = reorder(k, 0, 3, 1, 2);
+  q = reorder(q, {0, 3, 1, 2});
+  v = reorder(v, {0, 3, 1, 2});
+  k = reorder(k, {0, 3, 1, 2});
 
   auto scores = matmulTN(q, k);
 
@@ -76,8 +76,8 @@ fl::Variable transformerMultiheadAttention(
 
   auto attn = dropout(softmax(scores, 1), pDropout);
   auto result = matmulNT(attn.as(v.type()), v);
-  result = moddims(result, af::dim4(tgtLen, modelDim, bsz));
-  result = reorder(result, 1, 2, 0);
+  result = moddims(result, {tgtLen, modelDim, bsz});
+  result = reorder(result, {1, 2, 0});
   return result;
 }
 
@@ -125,6 +125,7 @@ std::vector<Variable> MultiheadAttention::forward(
   auto result = transformerMultiheadAttention(
       q, k, v, keyPaddingMask, numHeads_, dropout);
   result = (*wf_)(result);
+
   assert(result.dims() == queries.dims());
   std::vector<Variable> results = {result};
   return results;
@@ -184,6 +185,7 @@ Variable TransformerBaseLayer::withPosEmbed(
   if (pos.isempty()) {
     return input;
   }
+  std::cout << "input " << input.dims() << " pos " << pos.dims() << std::endl;
   return input + pos;
 }
 
@@ -211,6 +213,8 @@ std::vector<Variable> TransformerEncoderLayer::forward(
 
   float pDropout = train_ ? pDropout_ : 0.0f;
 
+  std::cout << "TransformerEncoderLayer::forward src " << src.dims() << " pos "
+            << pos.dims() << std::endl;
   auto src2 = this->selfAttention(src, pos, mask);
   src = src + dropout(src2, pDropout);
   src = (*norm1_)(src);
@@ -354,7 +358,8 @@ std::vector<Variable> TransformerDecoder::forward(
   std::vector<Variable> intermediate;
   for (int i = 0; i < mods.size() - 1; i++) {
     output = mods[i]->forward({output, memory, pos, query_pos, mask})[0];
-    intermediate.push_back(mods.back()->forward({output})[0]);
+    intermediate.push_back(
+        moddims(mods.back()->forward({output})[0], {0, 0, 0, 1}));
   }
   return {concatenate(intermediate, 3)};
 }
@@ -421,33 +426,43 @@ std::vector<Variable> Transformer::forward(
     Variable mask,
     Variable queryEmbed,
     Variable posEmbed) {
+  if (src.numdims() != 4) {
+    throw std::invalid_argument(
+        "vision::Transformer::forward - "
+        "expect src to be of shape (W, H, C, B).");
+  }
   assert(src.dims(2) == queryEmbed.dims(0));
 
   int B = src.dims(3);
   // Reshape from [ W X H X C X B ] to [ WH X C X B ]
+
   src = flatten(src, 0, 1);
-  // Flatten to C x B x WH
-  src = reorder(src, 1, 2, 0);
+  // Flatten to C x B x WH x 1
+  src = reorder(src, {1, 2, 0, 3});
+  // Squeeze to C x B x WH
+  src = moddims(src, {0, 0, 0});
 
   posEmbed = flatten(posEmbed, 0, 1);
-  posEmbed = reorder(posEmbed, 1, 2, 0);
+  posEmbed = reorder(posEmbed, {1, 2, 0, 3});
+  posEmbed = moddims(posEmbed, {0, 0, 0});
 
   mask = flatten(mask, 0, 2);
 
   // Tile object queries for each batch
-  af::dim4 unsqueeze = {queryEmbed.dims(0), 1, queryEmbed.dims(1)};
+  Shape unsqueeze = {queryEmbed.dims(0), 1, queryEmbed.dims(1)};
   queryEmbed = moddims(queryEmbed, unsqueeze);
   queryEmbed = tile(queryEmbed, {1, B, 1});
   assert(queryEmbed.dims(1) == src.dims(1));
   assert(queryEmbed.dims(0) == src.dims(0));
 
-  auto tgt =
-      fl::Variable(af::constant(0, queryEmbed.dims(), src.type()), false);
+  auto tgt = fl::Variable(fl::full(queryEmbed.dims(), 0, src.type()), false);
 
+  std::cout << "Transformer::forward src " << src.dims() << " mask "
+            << mask.dims() << " posEmbed " << posEmbed.dims() << std::endl;
   auto memory = encoder_->forward({src, mask, posEmbed});
   auto hs = decoder_->forward({tgt, memory[0], posEmbed, queryEmbed, mask})[0];
 
-  auto reordered = reorder(hs, 0, 2, 1);
+  auto reordered = reorder(hs, {0, 2, 1, 3});
   return {reordered};
 }
 
