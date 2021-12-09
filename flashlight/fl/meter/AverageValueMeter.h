@@ -10,6 +10,9 @@
 #include <arrayfire.h>
 
 namespace fl {
+
+class Tensor;
+
 /** An implementation of average value meter, which measures the mean and
  * variance of a sequence of values.
  *
@@ -43,7 +46,7 @@ class AverageValueMeter {
   void add(const double val, const double w = 1.0);
 
   /** Updates counters with all values in `vals` with equal weights. */
-  void add(const af::array& vals);
+  void add(const Tensor& vals);
 
   /** Returns a vector of four values:
    * - `unbiased mean`: \f$ \tilde{mu} \f$
