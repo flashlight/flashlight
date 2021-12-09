@@ -24,10 +24,15 @@
 #include <iostream>
 #include <stdexcept>
 
-#include <arrayfire.h>
-#include "flashlight/fl/flashlight.h"
+#include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/dataset/datasets.h"
+#include "flashlight/fl/distributed/distributed.h"
+#include "flashlight/fl/meter/meters.h"
+#include "flashlight/fl/nn/nn.h"
+#include "flashlight/fl/optim/optim.h"
+#include "flashlight/fl/tensor/Index.h"
+#include "flashlight/fl/tensor/Random.h"
 
-using namespace af;
 using namespace fl;
 
 namespace {
@@ -50,17 +55,17 @@ std::pair<double, double> eval_loop(Sequential& model, BatchDataset& dataset) {
     auto output = model(inputs);
 
     // Get the predictions in max_ids
-    array max_vals, max_ids;
-    max(max_vals, max_ids, output.array(), 0);
+    Tensor max_vals, max_ids;
+    max(max_vals, max_ids, output.tensor(), 0);
 
     auto target = noGrad(example[TARGET_IDX]);
 
     // Compute and record the prediction error.
-    error_meter.add(reorder(max_ids, 1, 0), target.array());
+    error_meter.add(transpose(max_ids, {1, 0}), target.tensor());
 
     // Compute and record the loss.
     auto loss = categoricalCrossEntropy(output, target);
-    loss_meter.add(loss.array().scalar<float>());
+    loss_meter.add(loss.tensor().scalar<float>());
   }
   // Place the model back into train mode.
   model.train();
@@ -70,7 +75,7 @@ std::pair<double, double> eval_loop(Sequential& model, BatchDataset& dataset) {
   return std::make_pair(loss, error);
 }
 
-std::pair<array, array> load_dataset(
+std::pair<Tensor, Tensor> load_dataset(
     const std::string& data_dir,
     bool test = false);
 
@@ -79,7 +84,7 @@ std::pair<array, array> load_dataset(
 int main(int argc, char** argv) {
   fl::init();
   if (argc != 2) {
-    throw af::exception("You must pass a data directory.");
+    throw std::runtime_error("You must pass a data directory.");
   }
   fl::setSeed(1);
   std::string data_dir = argv[1];
@@ -88,29 +93,29 @@ int main(int argc, char** argv) {
   int epochs = 10;
   int batch_size = 64;
 
-  array train_x;
-  array train_y;
+  Tensor train_x;
+  Tensor train_y;
   std::tie(train_x, train_y) = load_dataset(data_dir);
 
   // Hold out a dev set
-  auto val_x = train_x(span, span, 0, seq(0, VAL_SIZE - 1));
-  train_x = train_x(span, span, 0, seq(VAL_SIZE, TRAIN_SIZE - 1));
-  auto val_y = train_y(seq(0, VAL_SIZE - 1));
-  train_y = train_y(seq(VAL_SIZE, TRAIN_SIZE - 1));
+  auto val_x = train_x(span, span, 0, fl::range(0, VAL_SIZE));
+  train_x = train_x(span, span, 0, fl::range(VAL_SIZE, TRAIN_SIZE));
+  auto val_y = train_y(fl::range(0, VAL_SIZE));
+  train_y = train_y(fl::range(VAL_SIZE, TRAIN_SIZE));
 
   // Make the training batch dataset
   BatchDataset trainset(
-      std::make_shared<TensorDataset>(std::vector<af::array>{train_x, train_y}),
+      std::make_shared<TensorDataset>(std::vector<Tensor>{train_x, train_y}),
       batch_size);
 
   // Make the validation batch dataset
   BatchDataset valset(
-      std::make_shared<TensorDataset>(std::vector<af::array>{val_x, val_y}),
+      std::make_shared<TensorDataset>(std::vector<Tensor>{val_x, val_y}),
       batch_size);
 
   Sequential model;
   auto pad = PaddingMode::SAME;
-  model.add(View(af::dim4(IM_DIM, IM_DIM, 1, -1)));
+  model.add(View({IM_DIM, IM_DIM, 1, -1}));
   model.add(Conv2D(
       1 /* input channels */,
       32 /* output channels */,
@@ -129,7 +134,7 @@ int main(int argc, char** argv) {
   model.add(Conv2D(32, 64, 5, 5, 1, 1, pad, pad));
   model.add(ReLU());
   model.add(Pool2D(2, 2, 2, 2));
-  model.add(View(af::dim4(7 * 7 * 64, -1)));
+  model.add(View({7 * 7 * 64, -1}));
   model.add(Linear(7 * 7 * 64, 1024));
   model.add(ReLU());
   model.add(Dropout(0.5));
@@ -145,18 +150,18 @@ int main(int argc, char** argv) {
 
     // Get an iterator over the data
     for (auto& example : trainset) {
-      // Make a Variable from the input array.
+      // Make a Variable from the input tensor.
       auto inputs = noGrad(example[INPUT_IDX]);
 
       // Get the activations from the model.
       auto output = model(inputs);
 
-      // Make a Variable from the target array.
+      // Make a Variable from the target tensor.
       auto target = noGrad(example[TARGET_IDX]);
 
       // Compute and record the loss.
       auto loss = categoricalCrossEntropy(output, target);
-      train_loss_meter.add(loss.array().scalar<float>());
+      train_loss_meter.add(loss.tensor().scalar<float>());
 
       // Backprop, update the weights and then zero the gradients.
       loss.backward();
@@ -176,12 +181,12 @@ int main(int argc, char** argv) {
               << " Validation Error (%): " << val_error << std::endl;
   }
 
-  array test_x;
-  array test_y;
+  Tensor test_x;
+  Tensor test_y;
   std::tie(test_x, test_y) = load_dataset(data_dir, true);
 
   BatchDataset testset(
-      std::make_shared<TensorDataset>(std::vector<af::array>{test_x, test_y}),
+      std::make_shared<TensorDataset>(std::vector<Tensor>{test_x, test_y}),
       batch_size);
 
   double test_loss, test_error;
@@ -208,12 +213,12 @@ int read_int(std::ifstream& f) {
 }
 
 template <typename T>
-array load_data(
+Tensor load_data(
     const std::string& im_file,
     const std::vector<long long int>& dims) {
   std::ifstream file(im_file, std::ios::binary);
   if (!file.is_open()) {
-    throw af::exception("[mnist:load_data] Can't find MNIST file.");
+    throw std::runtime_error("[mnist:load_data] Can't find MNIST file.");
   }
   read_int(file); // unused magic
   size_t elems = 1;
@@ -221,7 +226,7 @@ array load_data(
     int read_d = read_int(file);
     elems *= read_d;
     if (read_d != d) {
-      throw af::exception("[mnist:load_data] Unexpected MNIST dimension.");
+      throw std::runtime_error("[mnist:load_data] Unexpected MNIST dimension.");
     }
   }
 
@@ -235,24 +240,23 @@ array load_data(
 
   std::vector<long long int> rdims(dims.rbegin(), dims.rend());
   // af is column-major
-  dim4 af_dims(rdims.size(), rdims.data());
-  return array(af_dims, data.data());
+  return Tensor::fromBuffer(Shape(rdims), data.data(), MemoryLocation::Host);
 }
 
-std::pair<array, array> load_dataset(
+std::pair<Tensor, Tensor> load_dataset(
     const std::string& data_dir,
     bool test /* = false */) {
   std::string f = test ? "t10k" : "train";
   int size = test ? TEST_SIZE : TRAIN_SIZE;
 
   std::string image_file = data_dir + "/" + f + "-images-idx3-ubyte";
-  array ims = load_data<float>(image_file, {size, IM_DIM, IM_DIM});
-  ims = moddims(ims, {IM_DIM, IM_DIM, 1, size});
+  Tensor ims = load_data<float>(image_file, {size, IM_DIM, IM_DIM});
+  ims = reshape(ims, {IM_DIM, IM_DIM, 1, size});
   // Rescale to [-0.5,  0.5]
   ims = (ims - PIXEL_MAX / 2) / PIXEL_MAX;
 
   std::string label_file = data_dir + "/" + f + "-labels-idx1-ubyte";
-  array labels = load_data<int>(label_file, {size});
+  Tensor labels = load_data<int>(label_file, {size});
 
   return std::make_pair(ims, labels);
 }
