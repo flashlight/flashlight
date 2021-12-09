@@ -72,13 +72,13 @@ void cudnnCheckErr(cudnnStatus_t status) {
   }
 }
 
-cudnnDataType_t cudnnMapToType(const af::dtype& t) {
+cudnnDataType_t cudnnMapToType(const fl::dtype& t) {
   switch (t) {
-    case af::dtype::f16:
+    case fl::dtype::f16:
       return CUDNN_DATA_HALF;
-    case af::dtype::f32:
+    case fl::dtype::f32:
       return CUDNN_DATA_FLOAT;
-    case af::dtype::f64:
+    case fl::dtype::f64:
       return CUDNN_DATA_DOUBLE;
     default:
       throw std::invalid_argument("unsupported data type for cuDNN");
@@ -114,16 +114,18 @@ cudnnRNNMode_t cudnnMapToRNNMode(const RnnMode mode) {
 }
 
 TensorDescriptor::TensorDescriptor(const Variable& input)
-    : TensorDescriptor(input.array()) {}
+    : TensorDescriptor(input.tensor()) {}
 
-TensorDescriptor::TensorDescriptor(
-    const af::dtype type,
-    const af::dim4& af_dims) {
+TensorDescriptor::TensorDescriptor(const fl::dtype type, const Shape& flDims) {
   CUDNN_CHECK_ERR(cudnnCreateTensorDescriptor(&descriptor));
   cudnnDataType_t cudnntype = cudnnMapToType(type);
 
-  std::array<int, 4> dims = {
-      (int)af_dims[3], (int)af_dims[2], (int)af_dims[1], (int)af_dims[0]};
+  std::array<int, 4> dims = {1, 1, 1, 1};
+  // We want, if dims exist:
+  // {flDims[3], flDims[2], flDims[1], flDims[0]};
+  for (unsigned i = 0; i < flDims.ndim(); ++i) {
+    dims[3 - i] = flDims[i];
+  }
 
   // Sets strides so array is contiguous row-major for cudnn
   std::vector<int> r_strides = {1};
@@ -136,21 +138,25 @@ TensorDescriptor::TensorDescriptor(
       descriptor, cudnntype, dims.size(), dims.data(), strides.data()));
 }
 
-TensorDescriptor::TensorDescriptor(const af::array& input) {
+TensorDescriptor::TensorDescriptor(const Tensor& input) {
   CUDNN_CHECK_ERR(cudnnCreateTensorDescriptor(&descriptor));
   cudnnDataType_t cudnntype = cudnnMapToType(input.type());
 
-  auto afstrides = af::getStrides(input);
-  auto afdims = input.dims();
+  auto flStrides = input.strides();
+  auto flDims = input.shape();
 
-  // reverse the arrays and cast to int type
-  std::array<int, 4> strides = {
-      (int)afstrides[3],
-      (int)afstrides[2],
-      (int)afstrides[1],
-      (int)afstrides[0]};
-  std::array<int, 4> dims = {
-      (int)afdims[3], (int)afdims[2], (int)afdims[1], (int)afdims[0]};
+  // reverse the dims (column -> row major) and cast to int type
+  std::array<int, 4> strides = {1, 1, 1, 1};
+  //  {flStrides[3], flStrides[2], flStrides[1], flStrides[0]};
+  for (unsigned i = 0; i < flStrides.ndim(); ++i) {
+    strides[3 - i] = flStrides[i];
+  }
+
+  std::array<int, 4> dims = {1, 1, 1, 1};
+  // {flDims[3], flDims[2], flDims[1], flDims[0]};
+  for (unsigned i = 0; i < flDims.ndim(); ++i) {
+    dims[3 - i] = flDims[i];
+  }
 
   CUDNN_CHECK_ERR(cudnnSetTensorNdDescriptor(
       descriptor /* descriptor handle */,
@@ -166,8 +172,8 @@ TensorDescriptor::~TensorDescriptor() {
 
 TensorDescriptorArray::TensorDescriptorArray(
     int size,
-    const af::dtype type,
-    const af::dim4& dims) {
+    const fl::dtype type,
+    const Shape& dims) {
   desc_vec.reserve(size);
   for (int i = 0; i < size; i++) {
     desc_vec.emplace_back(type, dims);
@@ -207,14 +213,19 @@ PoolingDescriptor::~PoolingDescriptor() {
 }
 
 FilterDescriptor::FilterDescriptor(const Variable& input)
-    : FilterDescriptor(input.array()) {}
+    : FilterDescriptor(input.tensor()) {}
 
-FilterDescriptor::FilterDescriptor(const af::array& input) {
+FilterDescriptor::FilterDescriptor(const Tensor& input) {
   CUDNN_CHECK_ERR(cudnnCreateFilterDescriptor(&descriptor));
   cudnnDataType_t cudnntype = cudnnMapToType(input.type());
-  auto afdims = input.dims();
-  std::array<int, 4> dims = {
-      (int)afdims[3], (int)afdims[2], (int)afdims[1], (int)afdims[0]};
+
+  auto flDims = input.shape();
+  std::array<int, 4> dims = {1, 1, 1, 1};
+  // We want, if dims exist:
+  // {flDims[3], flDims[2], flDims[1], flDims[0]};
+  for (unsigned i = 0; i < flDims.ndim(); ++i) {
+    dims[3 - i] = flDims[i];
+  }
 
   CUDNN_CHECK_ERR(cudnnSetFilterNdDescriptor(
       descriptor, cudnntype, CUDNN_TENSOR_NCHW, 4, dims.data()));
@@ -231,8 +242,9 @@ DropoutDescriptor::DropoutDescriptor(float drop_prob) {
   size_t state_size;
   CUDNN_CHECK_ERR(cudnnDropoutGetStatesSize(handle, &state_size));
   auto& dropout_states = getDropoutStates();
-  if (dropout_states.isempty()) {
-    dropout_states = af::array(state_size, af::dtype::b8);
+  if (dropout_states.isEmpty()) {
+    dropout_states =
+        Tensor({static_cast<long long>(state_size)}, fl::dtype::b8);
     DevicePtr statesraw(dropout_states);
     CUDNN_CHECK_ERR(cudnnSetDropoutDescriptor(
         descriptor, handle, drop_prob, statesraw.get(), state_size, seed));
@@ -255,13 +267,13 @@ DropoutDescriptor::~DropoutDescriptor() {
   CUDNN_CHECK_ERR(cudnnDestroyDropoutDescriptor(descriptor));
 }
 
-af::array& DropoutDescriptor::getDropoutStates() {
-  thread_local af::array dropout_states;
+Tensor& DropoutDescriptor::getDropoutStates() {
+  thread_local Tensor dropout_states;
   return dropout_states;
 }
 
 RNNDescriptor::RNNDescriptor(
-    af::dtype type,
+    fl::dtype type,
     int hidden_size,
     int num_layers,
     RnnMode mode,
@@ -312,7 +324,7 @@ RNNDescriptor::~RNNDescriptor() {
 }
 
 ConvDescriptor::ConvDescriptor(
-    af::dtype type,
+    fl::dtype type,
     int px,
     int py,
     int sx,
@@ -343,28 +355,28 @@ ConvDescriptor::~ConvDescriptor() {
 }
 
 cudnnHandle_t getCudnnHandle() {
-  int af_id = fl::getDevice();
-  return handles[af_id].handle;
+  int fl_id = fl::getDevice();
+  return handles[fl_id].handle;
 }
 
-const void* kOne(const af::dtype t) {
+const void* kOne(const fl::dtype t) {
   switch (t) {
-    case af::dtype::f16:
-    case af::dtype::f32:
+    case fl::dtype::f16:
+    case fl::dtype::f32:
       return &kFloatOne;
-    case af::dtype::f64:
+    case fl::dtype::f64:
       return &kDoubleOne;
     default:
       throw std::invalid_argument("unsupported data type for cuDNN");
   }
 }
 
-const void* kZero(const af::dtype t) {
+const void* kZero(const fl::dtype t) {
   switch (t) {
-    case af::dtype::f16:
-    case af::dtype::f32:
+    case fl::dtype::f16:
+    case fl::dtype::f32:
       return &kFloatZero;
-    case af::dtype::f64:
+    case fl::dtype::f64:
       return &kDoubleZero;
     default:
       throw std::invalid_argument("unsupported data type for cuDNN");
