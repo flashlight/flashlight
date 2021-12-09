@@ -12,24 +12,26 @@
 #include <arrayfire.h>
 #include <gtest/gtest.h>
 
-#include "flashlight/pkg/speech/data/ListFileDataset.h"
 #include "flashlight/fl/common/Init.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
+#include "flashlight/pkg/speech/data/ListFileDataset.h"
 
 using namespace fl::lib;
 using namespace fl::pkg::speech;
 
 namespace {
+using namespace fl;
+
 std::string loadPath = "";
-auto letterToTarget = [](void* data, af::dim4 dims, af::dtype /* unused */) {
+auto letterToTarget = [](void* data, Shape dims, fl::dtype /* unused */) {
   std::string transcript(
       static_cast<char*>(data), static_cast<char*>(data) + dims.elements());
   std::vector<int> tgt;
   for (auto c : transcript) {
     tgt.push_back(static_cast<int>(c));
   }
-  return af::array(tgt.size(), tgt.data());
+  return Tensor::fromVector(tgt);
 };
 } // namespace
 
@@ -49,15 +51,15 @@ TEST(ListFileDatasetTest, LoadData) {
   std::vector<float> expectedDuration = {1.2, 2.1, 0.6};
   for (int i = 0; i < 3; ++i) {
     ASSERT_EQ(audiods.get(i).size(), 7);
-    ASSERT_EQ(audiods.get(i)[0].dims(), af::dim4(1, 24000));
-    ASSERT_EQ(audiods.get(i)[1].elements(), expectedTgtLen[i]);
-    ASSERT_EQ(audiods.get(i)[1].elements(), audiods.getTargetSize(i));
-    ASSERT_TRUE(audiods.get(i)[2].isempty());
-    ASSERT_EQ(audiods.get(i)[3].elements(), 1);
-    ASSERT_GE(audiods.get(i)[4].elements(), 15);
-    ASSERT_EQ(audiods.get(i)[5].elements(), 1);
+    ASSERT_EQ(audiods.get(i)[0].shape(), Shape({1, 24000}));
+    ASSERT_EQ(audiods.get(i)[1].size(), expectedTgtLen[i]);
+    ASSERT_EQ(audiods.get(i)[1].size(), audiods.getTargetSize(i));
+    ASSERT_TRUE(audiods.get(i)[2].isEmpty());
+    ASSERT_EQ(audiods.get(i)[3].size(), 1);
+    ASSERT_GE(audiods.get(i)[4].size(), 15);
+    ASSERT_EQ(audiods.get(i)[5].size(), 1);
     ASSERT_EQ(audiods.get(i)[5].scalar<float>(), expectedDuration[i]);
-    ASSERT_EQ(audiods.get(i)[6].elements(), 1);
+    ASSERT_EQ(audiods.get(i)[6].size(), 1);
     ASSERT_EQ(audiods.get(i)[6].scalar<float>(), expectedTgtLen[i]);
   }
 }
