@@ -6,6 +6,9 @@
  */
 
 #include <cmath>
+#include <functional>
+#include <sstream>
+#include <vector>
 
 #include <gtest/gtest.h>
 
@@ -347,6 +350,136 @@ TEST(TensorBaseTest, maximum) {
   ASSERT_TRUE(allClose(b, c));
   ASSERT_TRUE(allClose(fl::maximum(1, b).astype(a.type()), b));
   ASSERT_TRUE(allClose(fl::maximum(b, 1).astype(a.type()), b));
+}
+
+using binaryOpFunc_t = Tensor (*)(const Tensor& lhs, const Tensor& rhs);
+
+TEST(TensorBaseTest, broadcastingShape) {
+  auto lhs = fl::full({8, 1, 6, 1}, 1);
+  auto rhs = fl::full({1, 7, 1, 5}, 2);
+
+  auto computeBroadcastShape =
+      [](const Tensor& _lhs, const Tensor& _rhs) -> std::pair<Shape, Shape> {
+    Shape lhsShape = _lhs.shape();
+    Shape rhsShape = _rhs.shape();
+    unsigned maxnDim = std::min(lhsShape.ndim(), rhsShape.ndim());
+    Shape outShape{std::vector<Dim>(maxnDim)};
+    for (unsigned i = 0; i < maxnDim; ++i) {
+      if (i > lhsShape.ndim() - 1) {
+        outShape[i] = rhsShape[i];
+      } else if (i > rhsShape.ndim() - 1) {
+        outShape[i] = lhsShape[i];
+      } else if (lhsShape[i] == 1) {
+        outShape[i] = rhsShape[i];
+      } else if (rhsShape[i] == 1) {
+        outShape[i] = lhsShape[i];
+      } else {
+        outShape[i] = lhsShape[i]; // dims have same size
+      }
+    }
+    return {outShape, outShape};
+  };
+
+  auto doBinaryOp = [](const Tensor& lhs,
+                       const Tensor& rhs,
+                       binaryOpFunc_t func) -> std::pair<Shape, Shape> {
+    return {func(lhs, rhs).shape(), func(rhs, lhs).shape()};
+  };
+
+  ASSERT_EQ(doBinaryOp(lhs, rhs, fl::minimum), computeBroadcastShape(lhs, rhs));
+  ASSERT_EQ(doBinaryOp(lhs, rhs, fl::maximum), computeBroadcastShape(lhs, rhs));
+  ASSERT_EQ(doBinaryOp(lhs, rhs, fl::power), computeBroadcastShape(lhs, rhs));
+
+  ASSERT_EQ(doBinaryOp(lhs, rhs, fl::add), computeBroadcastShape(lhs, rhs));
+  ASSERT_EQ(doBinaryOp(lhs, rhs, fl::sub), computeBroadcastShape(lhs, rhs));
+  ASSERT_EQ(doBinaryOp(lhs, rhs, fl::mul), computeBroadcastShape(lhs, rhs));
+  ASSERT_EQ(doBinaryOp(lhs, rhs, fl::div), computeBroadcastShape(lhs, rhs));
+  ASSERT_EQ(doBinaryOp(lhs, rhs, fl::eq), computeBroadcastShape(lhs, rhs));
+  ASSERT_EQ(doBinaryOp(lhs, rhs, fl::neq), computeBroadcastShape(lhs, rhs));
+  ASSERT_EQ(
+      doBinaryOp(lhs, rhs, fl::lessThan), computeBroadcastShape(lhs, rhs));
+  ASSERT_EQ(
+      doBinaryOp(lhs, rhs, fl::lessThanEqual), computeBroadcastShape(lhs, rhs));
+  ASSERT_EQ(
+      doBinaryOp(lhs, rhs, fl::greaterThan), computeBroadcastShape(lhs, rhs));
+  ASSERT_EQ(
+      doBinaryOp(lhs, rhs, fl::greaterThanEqual),
+      computeBroadcastShape(lhs, rhs));
+  ASSERT_EQ(
+      doBinaryOp(lhs, rhs, fl::logicalOr), computeBroadcastShape(lhs, rhs));
+  ASSERT_EQ(
+      doBinaryOp(lhs, rhs, fl::logicalAnd), computeBroadcastShape(lhs, rhs));
+  ASSERT_EQ(doBinaryOp(lhs, rhs, fl::mod), computeBroadcastShape(lhs, rhs));
+  ASSERT_EQ(
+      doBinaryOp(lhs, rhs, fl::bitwiseOr), computeBroadcastShape(lhs, rhs));
+  ASSERT_EQ(
+      doBinaryOp(lhs, rhs, fl::bitwiseXor), computeBroadcastShape(lhs, rhs));
+  ASSERT_EQ(doBinaryOp(lhs, rhs, fl::lShift), computeBroadcastShape(lhs, rhs));
+  ASSERT_EQ(doBinaryOp(lhs, rhs, fl::rShift), computeBroadcastShape(lhs, rhs));
+
+  // Broadcast failure
+  ASSERT_THROW(fl::minimum(fl::rand({4, 3}), fl::rand({5, 4})), std::exception);
+}
+
+TEST(TensorBaseTest, broadcastingCorrectness) {
+  // Collection of {lhs, rhs, tileShape} corresponding to broadcasting [lhs] to [rhs]
+  // by tiling by tileShape
+  struct ShapeData {
+    Shape lhs;
+    Shape rhs;
+    Shape tileShape;
+  };
+  std::vector<ShapeData> shapes = {
+      {{3, 1}, {3, 3}, {1, 3}},
+      {{3}, {3, 3}, {1, 3}},
+      {{3, 1, 4}, {3, 6, 4}, {1, 6, 1}},
+      {{3, 1, 4, 1}, {3, 6, 4, 7}, {1, 6, 1, 7}},
+      {{1, 10}, {8, 10}, {8, 1}},
+      {{2, 1, 5, 1}, {2, 6, 5, 8}, {1, 6, 1, 8}},
+  };
+
+  std::unordered_map<binaryOpFunc_t, std::string> functions = {
+      {fl::minimum, "minimum"},
+      {fl::maximum, "maximum"},
+      {fl::power, "power"},
+      {fl::add, "add"},
+      {fl::add, "add"},
+      {fl::sub, "sub"},
+      {fl::mul, "mul"},
+      {fl::div, "div"},
+      {fl::eq, "eq"},
+      {fl::neq, "neq"},
+      {fl::lessThan, "lessThan"},
+      {fl::lessThanEqual, "lessThanEqual"},
+      {fl::greaterThan, "greaterThan"},
+      {fl::greaterThanEqual, "greaterThanEqual"},
+      {fl::logicalOr, "logicalOr"},
+      {fl::logicalAnd, "logicalAnd"},
+      {fl::mod, "mod"},
+      {fl::bitwiseOr, "bitwiseOr"},
+      {fl::bitwiseXor, "bitwiseXor"},
+      {fl::lShift, "lShift"},
+      {fl::rShift, "rShift"}};
+
+  auto doBinaryOp = [](const Tensor& lhs,
+                       const Tensor& rhs,
+                       const Shape& tileShape,
+                       binaryOpFunc_t func) -> std::pair<Tensor, Tensor> {
+    return {func(lhs, rhs), func(tile(lhs, tileShape), rhs)};
+  };
+
+  for (auto funcp : functions) {
+    for (auto& shapeData : shapes) {
+      auto lhs = (fl::rand(shapeData.lhs) * 10).astype(fl::dtype::s32);
+      auto rhs = (fl::rand(shapeData.rhs) * 10).astype(fl::dtype::s32);
+
+      auto [lhsOut, rhsOut] =
+          doBinaryOp(lhs, rhs, shapeData.tileShape, funcp.first);
+      ASSERT_TRUE(allClose(lhsOut, rhsOut))
+          << "lhs: " << shapeData.lhs << " rhs: " << shapeData.rhs
+          << " function: " << funcp.second;
+    }
+  }
 }
 
 TEST(TensorBaseTest, argmin) {
