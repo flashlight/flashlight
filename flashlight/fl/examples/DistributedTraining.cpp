@@ -7,7 +7,13 @@
 
 #include <iostream>
 
-#include "flashlight/fl/flashlight.h"
+#include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/dataset/datasets.h"
+#include "flashlight/fl/distributed/distributed.h"
+#include "flashlight/fl/meter/meters.h"
+#include "flashlight/fl/nn/nn.h"
+#include "flashlight/fl/optim/optim.h"
+#include "flashlight/fl/tensor/Random.h"
 
 using namespace fl;
 
@@ -34,9 +40,9 @@ int main() {
   // Create dataset
   const int nSamples = 10000 / worldSize;
   const int nFeat = 10;
-  auto X = af::randu(nFeat, nSamples) + 1; // X elements in [1, 2]
-  auto Y = /* signal */ af::sum(af::pow(X, 3), 0).T() +
-      /* noise */ af::sin(2 * M_PI * af::randu(nSamples));
+  auto X = fl::rand({nFeat, nSamples}) + 1; // X elements in [1, 2]
+  auto Y = /* signal */ fl::transpose(fl::sum(fl::power(X, 3), {0})) +
+      /* noise */ fl::sin(2 * M_PI * fl::rand({nSamples}));
   // Create Dataset to simplify the code for iterating over samples
   TensorDataset data({X, Y});
 
@@ -94,7 +100,7 @@ int main() {
     }
 
     auto mse = meter.value();
-    auto mseArr = af::array(1, &mse[0]);
+    auto mseArr = Tensor::fromBuffer({1}, mse.data(), MemoryLocation::Host);
 
     fl::allReduce(mseArr);
     if (isMaster) {
