@@ -1090,6 +1090,7 @@ Tensor maximum(const double& lhs, const Tensor& rhs);
  */
 Tensor power(const Tensor& lhs, const Tensor& rhs);
 Tensor power(const Tensor& lhs, const double& rhs);
+Tensor power(const double& lhs, const Tensor& rhs);
 
 /******************************* BLAS ********************************/
 
