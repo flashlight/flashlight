@@ -9,26 +9,23 @@
 
 #include "flashlight/fl/optim/Optimizers.h"
 
+#include "flashlight/fl/tensor/TensorBase.h"
+
 namespace fl {
 
-/** Nesterov Accelerated Gradient with modification for the changeable lr through
- * time. Implements the version from
+/** Nesterov Accelerated Gradient with modification for the changeable lr
+ * through time. Implements the version from
  * https://github.com/pytorch/fairseq/blob/e75cff5f2c1d62f12dc911e0bf420025eb1a4e33/fairseq/optim/nag.py#L43
  */
 class NAGOptimizer : public FirstOrderOptimizer {
  private:
-  FL_SAVE_LOAD_WITH_BASE(
-      FirstOrderOptimizer,
-      mu_,
-      wd_,
-      velocities_,
-      oldLr_)
+  FL_SAVE_LOAD_WITH_BASE(FirstOrderOptimizer, mu_, wd_, velocities_, oldLr_)
 
   NAGOptimizer() = default; // Intentionally private
 
   float mu_;
   float wd_;
-  std::vector<af::array> velocities_;
+  std::vector<Tensor> velocities_;
   float oldLr_;
 
  public:
