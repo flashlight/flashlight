@@ -9,6 +9,7 @@
 
 namespace fl {
 namespace detail {
+
 bool areBackendsEqual(const Tensor& a, const Tensor& b) {
   return a.backendType() == b.backendType();
 }
