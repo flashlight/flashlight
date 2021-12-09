@@ -9,10 +9,9 @@
 
 #include <vector>
 
-#include <arrayfire.h>
-
 #include "flashlight/fl/autograd/Variable.h"
 #include "flashlight/fl/optim/Optimizers.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 
@@ -40,8 +39,8 @@ class AdamOptimizer : public FirstOrderOptimizer {
   float eps_;
   float wd_;
   int count_;
-  std::vector<af::array> biasedFirst_;
-  std::vector<af::array> biasedSecond_;
+  std::vector<Tensor> biasedFirst_;
+  std::vector<Tensor> biasedSecond_;
 
  public:
   /** Construct an Adam optimizer.
