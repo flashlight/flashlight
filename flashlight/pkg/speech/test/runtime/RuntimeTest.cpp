@@ -12,12 +12,13 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "flashlight/pkg/speech/runtime/runtime.h"
-#include "flashlight/pkg/runtime/common/Serializer.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/System.h"
+#include "flashlight/pkg/runtime/common/Serializer.h"
+#include "flashlight/pkg/speech/runtime/runtime.h"
 
 using namespace fl::pkg::speech;
+using fl::Tensor;
 
 namespace {
 const std::string kPath = fl::lib::getTmpPath("test.mdl");
@@ -26,13 +27,7 @@ bool afEqual(const fl::Variable& a, const fl::Variable& b) {
   if (a.isCalcGrad() != b.isCalcGrad()) {
     return false;
   }
-  if (a.dims() != b.dims()) {
-    return false;
-  }
-  if (a.array().isempty() && b.array().isempty()) {
-    return true;
-  }
-  return af::allTrue<bool>(af::abs(a.array() - b.array()) < 1E-7);
+  return allClose(a.tensor(), b.tensor(), 1E-7);
 }
 
 } // namespace
@@ -65,7 +60,7 @@ TEST(RuntimeTest, LoadAndSave) {
   modelload.eval();
 
   for (int i = 0; i < 10; ++i) {
-    auto in = fl::Variable(af::randu(10, 1, 4), i & 1);
+    auto in = fl::Variable(fl::rand({10, 1, 4, 1}), i & 1);
     ASSERT_TRUE(afEqual(model.forward(in), modelload.forward(in)));
   }
 }
@@ -86,8 +81,8 @@ TEST(RuntimeTest, SpeechStatMeter) {
   std::array<int, 4> inpSizes2{2, 4, 2, 8};
   std::array<int, 4> tgSizes2{3, 7, 2, 4};
   meter.add(
-      af::array(1, 2, inpSizes1.data()), af::array(1, 2, tgSizes1.data()));
-  af::array out;
+      Tensor::fromArray({1, 2}, inpSizes1),
+      Tensor::fromArray({1, 2}, tgSizes1));
   auto stats1 = meter.value();
   ASSERT_EQ(stats1[0], 9.0);
   ASSERT_EQ(stats1[1], 16.0);
@@ -96,7 +91,8 @@ TEST(RuntimeTest, SpeechStatMeter) {
   ASSERT_EQ(stats1[4], 2.0);
   ASSERT_EQ(stats1[5], 1);
   meter.add(
-      af::array(1, 4, inpSizes2.data()), af::array(1, 4, tgSizes2.data()));
+      Tensor::fromArray({1, 4}, inpSizes2),
+      Tensor::fromArray({1, 4}, tgSizes2));
   auto stats2 = meter.value();
   ASSERT_EQ(stats2[0], 25.0);
   ASSERT_EQ(stats2[1], 32.0);

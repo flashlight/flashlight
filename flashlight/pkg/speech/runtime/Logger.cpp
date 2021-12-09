@@ -9,13 +9,12 @@
 
 #include <thread>
 
-#include "flashlight/pkg/speech/common/Defines.h"
-#include "flashlight/pkg/speech/common/Flags.h"
-#include "flashlight/pkg/runtime/common/DistributedUtils.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
+#include "flashlight/pkg/speech/common/Defines.h"
+#include "flashlight/pkg/speech/common/Flags.h"
 
-using fl::pkg::runtime::afToVector;
 using fl::lib::format;
 using fl::lib::getCurrentDate;
 using fl::lib::getCurrentTime;
@@ -113,19 +112,19 @@ void appendToLog(std::ofstream& logfile, const std::string& logstr) {
   retryWithBackoff(std::chrono::seconds(1), 1.0, 6, write);
 }
 
-af::array allreduceGet(SpeechStatMeter& mtr) {
+Tensor allreduceGet(SpeechStatMeter& mtr) {
   auto mtrValRaw = mtr.value();
   std::vector<long long> mtrVal(mtrValRaw.begin(), mtrValRaw.end());
   // Caveat: maxInputSz_, maxTargetSz_ would be approximate
   mtrVal[2] *= mtrVal[4];
   mtrVal[3] *= mtrVal[4];
-  return af::array(mtrVal.size(), mtrVal.data());
+  return Tensor::fromVector(mtrVal);
 }
 
-void allreduceSet(SpeechStatMeter& mtr, af::array& val) {
+void allreduceSet(SpeechStatMeter& mtr, Tensor& val) {
   mtr.reset();
   // Caveat: maxInputSz_, maxTargetSz_ would be approximate
-  auto valVec = afToVector<int64_t>(val);
+  auto valVec = val.toHostVector<int64_t>();
   SpeechStats stats;
   auto denom = (valVec[4] == 0) ? 1 : valVec[4];
   stats.totalInputSz_ = valVec[0];
