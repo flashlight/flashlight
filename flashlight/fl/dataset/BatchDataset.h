@@ -34,23 +34,23 @@ enum class BatchDatasetPolicy {
  *
  * Example:
   \code{.cpp}
-  // Make a dataset containing 42 tensors of dims [5, 4]
-  auto tensor = af::randu(5, 4, 42);
-  std::vector<af::array> fields{{tensor}};
+  // Make a dataset containing 42 tensors of shape [5, 4]
+  auto tensor = fl::rand({5, 4, 42});
+  std::vector<Tensor> fields{{tensor}};
   auto ds = std::make_shared<TensorDataset>(fields);
 
   // Batch them with batchsize=10
   BatchDataset batchds(ds, 10, BatchDatasetPolicy::INCLUDE_LAST);
-  std::cout << batchds.get(0)[0].dims() << "\n"; // 5 4 10 1
-  std::cout << batchds.get(4)[0].dims() << "\n"; // 5 4 2 1
+  std::cout << batchds.get(0)[0].shape() << "\n"; // 5 4 10 1
+  std::cout << batchds.get(4)[0].shape() << "\n"; // 5 4 2 1
 
   // create batch sizes vector specifying the each batch size (dynamic)
   std::vector<int64_t> batchSizes = {5, 10, 5, 10, 2, 10}
 
   // Batch them with batchSizes
   DynamicBatchDataset batchdsDynamic(ds, batchSizes);
-  std::cout << batchdsDynamic.get(0)[0].dims() << "\n"; // 5 4 5 1
-  std::cout << batchdsDynamic.get(5)[0].dims() << "\n"; // 5 4 10 1
+  std::cout << batchdsDynamic.get(0)[0].shape() << "\n"; // 5 4 5 1
+  std::cout << batchdsDynamic.get(5)[0].shape() << "\n"; // 5 4 10 1
   \endcode
  */
 class BatchDataset : public Dataset {
@@ -81,7 +81,7 @@ class BatchDataset : public Dataset {
 
   int64_t size() const override;
 
-  std::vector<af::array> get(const int64_t idx) const override;
+  std::vector<Tensor> get(const int64_t idx) const override;
 
  private:
   std::shared_ptr<const Dataset> dataset_;
