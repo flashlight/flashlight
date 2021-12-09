@@ -20,7 +20,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include "flashlight/fl/flashlight.h"
+#include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/dataset/datasets.h"
+#include "flashlight/fl/meter/meters.h"
+#include "flashlight/fl/nn/nn.h"
+#include "flashlight/fl/optim/optim.h"
+#include "flashlight/fl/tensor/Index.h"
 #include "flashlight/lib/common/System.h"
 
 using namespace fl;
@@ -65,12 +70,13 @@ class ClassificationDataset : public Dataset {
   }
 
   // Turn a string into an AF array <1 x line_length> of char indices
-  static af::array lineToTensor(const std::string& line) {
+  static Tensor lineToTensor(const std::string& line) {
     std::vector<float> d;
     for (char c : line) {
       d.push_back((float)(c)); // direct cast of char to float
     }
-    return af::array(1, d.size(), d.data());
+    return Tensor::fromBuffer(
+        {1, static_cast<Dim>(d.size())}, d.data(), MemoryLocation::Host);
   }
 
   ClassificationDataset(const std::string datasetPath) {
@@ -121,13 +127,13 @@ class ClassificationDataset : public Dataset {
 
   // get a (random) example and return a vector of 2 tensors : the input and the
   // expected category index
-  std::vector<af::array> get(const int64_t) const override {
+  std::vector<Tensor> get(const int64_t) const override {
     auto p = getRandomExample();
     const std::string& n = p.first;
-    af::array input = lineToTensor(n);
+    Tensor input = lineToTensor(n);
     std::vector<float> cv;
     cv.push_back(Label2Id[p.second]);
-    af::array expected(1, cv.data());
+    auto expected = Tensor::fromBuffer({1}, cv.data(), MemoryLocation::Host);
     return {input, expected};
   }
 };
@@ -178,7 +184,7 @@ class RnnClassifier : public Container {
     co.setCalcGrad(false);
     output = linear_(output);
     output = logsoftmax_(output);
-    output = output(af::span, af::span, input.array().dims(1) - 1);
+    output = output(fl::span, fl::span, input.tensor().dim(1) - 1);
     return std::make_tuple(output, ho, co);
   }
 
@@ -189,11 +195,11 @@ class RnnClassifier : public Container {
   // Inference on the given input: returns the category index
   unsigned
   infer(const std::string& inputString, const Variable& h, const Variable& c) {
-    af::array ia = ClassificationDataset::lineToTensor(inputString);
+    Tensor ia = ClassificationDataset::lineToTensor(inputString);
     Variable output, ho, co;
     std::tie(output, ho, co) = forward(noGrad(ia), h, c);
-    af::array maxValue, prediction;
-    af::max(maxValue, prediction, output.array(), 0);
+    Tensor maxValue, prediction;
+    fl::max(maxValue, prediction, output.tensor(), 0);
     unsigned classId = prediction.scalar<unsigned>();
     return classId;
   }
@@ -268,7 +274,7 @@ int main(int argc, char** argv) {
       // The targets should be the index of the ground truth class for each
       // input example.
       auto loss = criterion(output, target);
-      trainLossMeter.add(loss.array().scalar<float>(), target.elements());
+      trainLossMeter.add(loss.tensor().scalar<float>(), target.elements());
       opt.zeroGrad();
       loss.backward();
       // Clipping is a must have to avoid exploding gradients:
@@ -282,7 +288,7 @@ int main(int argc, char** argv) {
 
     // compute the accuracy confusion matrix:
     const unsigned nCategories = ClassificationDataset::Label2Id.size();
-    af::array confusion = af::constant(0, nCategories, nCategories);
+    Tensor confusion = fl::full({nCategories, nCategories}, 0.);
     // Go through a bunch of examples and record which are correctly guessed
     float numMatch = 0, nConfusion = 1000;
     for (unsigned i = 0; i < nConfusion; ++i) {
@@ -293,8 +299,8 @@ int main(int argc, char** argv) {
         ++numMatch;
       confusion(correctPred, pred) = confusion(correctPred, pred) + 1;
     }
-    confusion =
-        confusion / af::tile(af::sum(confusion, 1), 1, nCategories); // average
+    confusion = confusion /
+        fl::tile(fl::sum(confusion, {1}), {1, nCategories}); // average
     std::cout << "Global accuracy=" << numMatch / nConfusion << "\t ";
     for (unsigned i = 0; i < nCategories; ++i)
       std::cout << ClassificationDataset::Id2Label[i] << ":" << std::fixed
