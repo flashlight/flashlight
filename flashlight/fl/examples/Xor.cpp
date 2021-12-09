@@ -8,6 +8,7 @@
 #include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/nn/nn.h"
 #include "flashlight/fl/optim/optim.h"
+#include "flashlight/fl/tensor/Index.h"
 
 #include <array>
 #include <iostream>
@@ -40,8 +41,10 @@ int main(int argc, const char** argv) {
   std::array<float, 8> hInput = {1, 1, 0, 0, 1, 0, 0, 1};
   std::array<float, 4> hOutput = {1, 0, 1, 1};
 
-  auto in = af::array(inputSize, numSamples, hInput.data());
-  auto out = af::array(outputSize, numSamples, hOutput.data());
+  auto in = Tensor::fromBuffer(
+      {inputSize, numSamples}, hInput.data(), MemoryLocation::Host);
+  auto out = Tensor::fromBuffer(
+      {outputSize, numSamples}, hOutput.data(), MemoryLocation::Host);
 
   Sequential model;
 
@@ -66,8 +69,8 @@ int main(int argc, const char** argv) {
       model.train();
       optim->zeroGrad();
 
-      af::array in_j = in(af::span, j);
-      af::array out_j = out(af::span, j);
+      Tensor in_j = in(fl::span, j);
+      Tensor out_j = out(fl::span, j);
 
       // Forward propagation
       result = model(input(in_j));
@@ -90,14 +93,13 @@ int main(int argc, const char** argv) {
 
       // Calculate loss
       // TODO: Use loss function
-      af::array diff = out - result.array();
+      Tensor diff = out - result.tensor();
       std::cout << "Average Error at iteration (" << i + 1
-                << ") : " << af::mean<float>(af::abs(diff)) << "\n";
-      std::cout << "Predicted\n";
-      af_print(result.array());
-      std::cout << "Expected\n";
-      af_print(out);
-      std::cout << "\n\n";
+                << ") : " << fl::mean(fl::abs(diff)).scalar<float>() << "\n";
+      std::cout << "Predicted\n"
+                << result.tensor() << std::endl
+                << "Expected\n"
+                << out << std::endl;
     }
   }
   return 0;
