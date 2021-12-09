@@ -1401,4 +1401,28 @@ bool allClose(
     const fl::Tensor& b,
     const double absTolerance = 1e-5);
 
+namespace detail {
+
+bool areTensorTypesEqual(const Tensor& a, const Tensor& b);
+
+template <typename... Args>
+bool areTensorTypesEqual(
+    const Tensor& a,
+    const Tensor& b,
+    const Args&... args) {
+  return areTensorTypesEqual(a, b) && areTensorTypesEqual(a, args...) &&
+      areTensorTypesEqual(b, args...);
+}
+
+} // namespace detail
+
+/**
+ * Checks if a variadic number of Tensors have the same type.
+ */
+#define FL_TENSOR_DTYPES_MATCH_CHECK(...)                                     \
+  if (!detail::areTensorTypesEqual(__VA_ARGS__)) {                            \
+    throw std::invalid_argument(                                              \
+        std::string(__func__) + ": tensors are not all of the same types. "); \
+  }
+
 } // namespace fl
