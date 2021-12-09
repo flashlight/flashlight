@@ -10,9 +10,12 @@
  * Implementation details, only to be included from Serialization.h
  */
 
+#include <fstream>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
+
+#include "flashlight/fl/tensor/TensorBase.h"
 
 #pragma once
 
@@ -150,14 +153,14 @@ void load(std::istream& istr, Args&... args) {
 
 namespace detail {
 /**
- * This workaround lets us use explicit versioning for af::array; if we'd used
- * `save(Archive& ar, const af::array& arr, const uint32_t version)` directly,
+ * This workaround lets us use explicit versioning for Tensor; if we'd used
+ * `save(Archive& ar, const Tensor& tensor, const uint32_t version)` directly,
  * cereal would complain there are 2 ways to serialize integer types,
- * because af::array has an implicit ctor from a single `long long`.
+ * because Tensor has an implicit ctor from a single `long long`.
  *
  * The trick we use here is that C++'s implicit conversion sequence permits
- * at most one user-defined conversion. Therefore `af::array` may be implicitly
- * converted to `AfArraySerializeProxy`, but `int` may not.
+ * at most one user-defined conversion. Therefore `Tensor` may be implicitly
+ * converted to `FlTensorSerializeProxy`, but `int` may not.
  *
  * For more info, see https://github.com/USCiLab/cereal/issues/132
  * and https://en.cppreference.com/w/cpp/language/implicit_conversion
@@ -174,47 +177,47 @@ namespace cereal {
 
 // no versioning; simple and unlikely to ever change
 template <class Archive>
-void save(Archive& ar, const fl::detail::CerealSave<af::dim4>& dims_) {
+void save(
+    Archive& ar,
+    const fl::detail::CerealSave<fl::Shape>& dims_,
+    const uint32_t /* version */) {
+  // TODO{fl::Tensor} -- check version, then op as dim4 (if version ==)
   const auto& dims = dims_.val;
-  int64_t x;
-  for (int i = 0; i < 4; ++i) {
-    x = dims[i];
-    ar(x);
-  }
+  const std::vector<fl::Dim>& vec = dims.get();
+  ar(vec);
 }
 
 template <class Archive>
-void load(Archive& ar, af::dim4& dims) {
-  int64_t x;
-  for (int i = 0; i < 4; ++i) {
-    ar(x);
-    dims[i] = x;
-  }
+void load(Archive& ar, fl::Shape& dims, const uint32_t /* version */) {
+  // TODO{fl::Tensor} -- check version, then read dim4 into Shape (if version ==)
+  std::vector<fl::Dim> vec;
+  ar(vec);
+  dims = fl::Shape(vec);
 }
 
 template <class Archive>
 void save(
     Archive& ar,
-    const fl::detail::CerealSave<af::array>& arr_,
+    const fl::detail::CerealSave<fl::Tensor>& tensor_,
     const uint32_t /* version */) {
-  const auto& arr = arr_.val;
-  if (arr.issparse()) {
+  const auto& tensor = tensor_.val;
+  // TODO{fl::Tensor}{sparse} figure out what to do here...
+  if (tensor.isSparse()) {
     throw cereal::Exception(
-        "Serialzation of sparse af::array is not supported yet!");
+        "Serialzation of sparse Tensor is not supported yet!");
   }
-  std::vector<uint8_t> vec(arr.bytes());
-  arr.host(vec.data());
-  ar(arr.dims(), arr.type(), vec);
+  std::vector<uint8_t> vec(tensor.bytes());
+  tensor.host(vec.data());
+  ar(tensor.shape(), tensor.type(), vec);
 }
 
 template <class Archive>
-void load(Archive& ar, af::array& arr, const uint32_t /* version */) {
-  af::dim4 dims;
-  af::dtype ty;
+void load(Archive& ar, fl::Tensor& tensor, const uint32_t /* version */) {
+  fl::Shape dims;
+  fl::dtype ty;
   std::vector<uint8_t> vec;
   ar(dims, ty, vec);
-  arr = af::array(dims, ty);
-  arr.write(vec.data(), vec.size());
+  tensor = fl::Tensor::fromVector(dims, vec, ty);
 }
 
 } // namespace cereal
