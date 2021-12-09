@@ -21,7 +21,7 @@ namespace fl {
  * For details, see [Gulati et al
  * (2020)](https://arxiv.org/pdf/2005.08100.pdf).
  *
- * Input dimension at forward is assumed to be CxTxBx1, where C is the
+ * Input dimension at forward is assumed to be C x T x B, where C is the
  * number of features, T the sequence length and B the batch size.
  * @param modelDim input embedding dimension
  * @param headDim dimension of each head
@@ -55,7 +55,8 @@ class Conformer : public Container {
   double pDropout_;
   float pLayerDropout_;
 
-  std::shared_ptr<Linear> w11_, w12_, w21_, w22_, wq_, wk_, wv_, wf_, conv1_, conv2_;
+  std::shared_ptr<Linear> w11_, w12_, w21_, w22_, wq_, wk_, wv_, wf_, conv1_,
+      conv2_;
   std::shared_ptr<LayerNorm> norm1_, norm2_, normMhsa_, normConv1_, normConv2_,
       norm3_;
   std::shared_ptr<Conv2D> convDepthWise_;
