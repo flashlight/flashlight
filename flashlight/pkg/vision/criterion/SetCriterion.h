@@ -27,7 +27,7 @@ class SetCriterion {
       const std::unordered_map<std::string, float>& weightDict,
       const float eosCoef);
 
-  std::vector<af::array> match(
+  std::vector<Tensor> match(
       const Variable& predBoxes,
       const Variable& predLogits,
       const std::vector<Variable>& targetBoxes,
@@ -38,7 +38,7 @@ class SetCriterion {
       const Variable& predLogits,
       const std::vector<Variable>& targetBoxes,
       const std::vector<Variable>& targetClasses,
-      const std::vector<std::pair<af::array, af::array>>& indices,
+      const std::vector<std::pair<Tensor, Tensor>>& indices,
       const int numBoxes);
 
   LossDict lossCardinality(
@@ -52,7 +52,7 @@ class SetCriterion {
       const Variable& predLogits,
       const std::vector<Variable>& targetBoxes,
       const std::vector<Variable>& targetClasses,
-      const std::vector<std::pair<af::array, af::array>>& indices,
+      const std::vector<std::pair<Tensor, Tensor>>& indices,
       const int numBoxes);
 
   LossDict lossMasks(
@@ -70,11 +70,11 @@ class SetCriterion {
   std::unordered_map<std::string, float> getWeightDict();
 
  private:
-  std::pair<af::array, af::array> getSrcPermutationIdx(
-      const std::vector<std::pair<af::array, af::array>>& indices);
+  std::pair<Tensor, Tensor> getSrcPermutationIdx(
+      const std::vector<std::pair<Tensor, Tensor>>& indices);
 
-  std::pair<af::array, af::array> getTgtPermutationIdx(
-      const std::vector<std::pair<af::array, af::array>>& indices);
+  std::pair<Tensor, Tensor> getTgtPermutationIdx(
+      const std::vector<std::pair<Tensor, Tensor>>& indices);
 
   const int numClasses_;
   const HungarianMatcher matcher_;
