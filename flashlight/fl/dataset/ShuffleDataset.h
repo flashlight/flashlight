@@ -19,18 +19,18 @@ namespace fl {
  * Example:
   \code{.cpp}
   // Make a dataset with 100 samples
-  auto tensor = af::randu(5, 4, 100);
-  std::vector<af::array> fields{tensor};
+  auto tensor = fl::rand({5, 4, 100});
+  std::vector<Tensor> fields{tensor};
   auto ds = std::make_shared<TensorDataset>(fields);
 
   // Shuffle it
   ShuffleDataset shuffleds(ds);
   std::cout << shuffleds.size() << "\n"; // 100
-  af::print("first try", shuffleds.get(0)["x"]);
+  std::cout << "first try" << shuffleds.get(0)["x"] << std::endl;
 
   // Reshuffle it
   shuffleds.resample();
-  af::print("second try", shuffleds.get(0)["x"]);
+  std::cout << "second try" << shuffleds.get(0)["x"] << std::endl;
   \endcode
  */
 class ShuffleDataset : public ResampleDataset {
