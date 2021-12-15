@@ -45,3 +45,17 @@ target_sources(
   ${CMAKE_CURRENT_LIST_DIR}/ArrayFireTensor.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Utils.cpp
   )
+
+if (FL_USE_CUDA)
+  target_sources(
+    flashlight
+    PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}/AdvancedIndex.cu
+  )
+else()
+  target_sources(
+    flashlight
+    PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}/AdvancedIndex.cpp
+    )
+endif()
