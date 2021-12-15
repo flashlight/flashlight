@@ -99,8 +99,8 @@ Tensor doBinaryOpOrBroadcast(
     const Tensor& lhs,
     const Tensor& rhs,
     binaryOpFunc_t func) {
-  // Dims are the same - no broadcasting
-  if (lhs.shape() == rhs.shape()) {
+  // Dims are the same or scalar <> 1-el tensor - no broadcasting
+  if (lhs.shape() == rhs.shape() || (lhs.size() == 1 && rhs.size() == 1)) {
     return toTensor<ArrayFireTensor>(
         func(toArray(lhs), toArray(rhs)), lhs.ndim());
   }
