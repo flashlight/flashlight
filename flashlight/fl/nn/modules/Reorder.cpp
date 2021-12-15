@@ -7,22 +7,29 @@
 
 #include "flashlight/fl/nn/modules/Reorder.h"
 
+#include <stdexcept>
+#include <utility>
+
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/nn/Init.h"
 
 namespace fl {
 
-Reorder::Reorder(int dim0, int dim1, int dim2, int dim3)
-    : dim0_(dim0), dim1_(dim1), dim2_(dim2), dim3_(dim3) {}
+Reorder::Reorder(Shape shape) : shape_(std::move(shape)) {}
 
 Variable Reorder::forward(const Variable& input) {
-  return reorder(input, dim0_, dim1_, dim2_, dim3_);
+  if (input.numdims() != shape_.ndim()) {
+    throw std::invalid_argument(
+        "Reorder::forward - input tensor has different "
+        "number of dimensions than reorder shape.");
+  }
+  return reorder(input, shape_);
 }
 
 std::string Reorder::prettyString() const {
   std::ostringstream ss;
   ss << "Reorder";
-  ss << " (" << dim0_ << "," << dim1_ << "," << dim2_ << "," << dim3_ << ")";
+  ss << " (" << shape_ << ")";
   return ss.str();
 }
 
