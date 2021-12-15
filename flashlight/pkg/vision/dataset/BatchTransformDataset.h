@@ -17,7 +17,7 @@ namespace vision {
 
 template <class T>
 using BatchTransformFunction =
-    std::function<T(const std::vector<std::vector<af::array>>&)>;
+    std::function<T(const std::vector<std::vector<Tensor>>&)>;
 
 /*
  * This is a slightly more generalized batching dataset than allows you to
@@ -69,7 +69,7 @@ class BatchTransformDataset {
     if (!(idx >= 0 && idx < size())) {
       throw std::out_of_range("Dataset idx out of range");
     }
-    std::vector<std::vector<af::array>> buffer;
+    std::vector<std::vector<Tensor>> buffer;
 
     int64_t start = batchSize_ * idx;
     int64_t end = std::min(start + batchSize_, preBatchSize_);
