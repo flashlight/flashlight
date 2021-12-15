@@ -7,6 +7,8 @@
 
 #include "flashlight/pkg/vision/models/Detr.h"
 
+#include "flashlight/pkg/vision/tensor/VisionOps.h"
+
 namespace {
 
 double calculateGain(double negativeSlope) {
@@ -18,9 +20,9 @@ std::shared_ptr<fl::Linear> makeLinear(int inDim, int outDim) {
   float gain = calculateGain(std::sqrt(5.0));
   float std = gain / std::sqrt(fanIn);
   float bound = std::sqrt(3.0) * std;
-  auto w = fl::uniform(outDim, inDim, -bound, bound, f32, true);
+  auto w = fl::uniform(outDim, inDim, -bound, bound, fl::dtype::f32, true);
   bound = 1.0 / std::sqrt(fanIn);
-  auto b = fl::uniform(af::dim4(outDim), -bound, bound, af::dtype::f32, true);
+  auto b = fl::uniform({outDim}, -bound, bound, fl::dtype::f32, true);
   return std::make_shared<fl::Linear>(w, b);
 }
 
@@ -29,10 +31,10 @@ std::shared_ptr<fl::Conv2D> makeConv2D(int inDim, int outDim, int wx, int wy) {
   float gain = calculateGain(std::sqrt(5.0f));
   float std = gain / std::sqrt(fanIn);
   float bound = std::sqrt(3.0f) * std;
-  auto w = fl::uniform({wx, wy, inDim, outDim}, -bound, bound, f32, true);
+  auto w =
+      fl::uniform({wx, wy, inDim, outDim}, -bound, bound, fl::dtype::f32, true);
   bound = 1.0f / std::sqrt(fanIn);
-  auto b = fl::uniform(
-      af::dim4(1, 1, outDim, 1), -bound, bound, af::dtype::f32, true);
+  auto b = fl::uniform({1, 1, outDim, 1}, -bound, bound, fl::dtype::f32, true);
   return std::make_shared<fl::Conv2D>(w, b, 1, 1);
 }
 
@@ -102,14 +104,12 @@ Variable Detr::forwardBackbone(const Variable& input) {
   return backbone_->forward({input})[1];
 }
 
-std::vector<Variable> Detr::forwardTransformer(const std::vector<Variable>& input) {
+std::vector<Variable> Detr::forwardTransformer(
+    const std::vector<Variable>& input) {
   // input: {feature, mask}
   fl::Variable mask = fl::Variable(
-      af::resize(
-          input[1].array(),
-          input[0].dims(0),
-          input[0].dims(1),
-          AF_INTERP_NEAREST),
+      fl::resize(
+          input[1].tensor(), {input[0].dims()}, InterpolationMode::Nearest),
       true);
   auto inputProjection = inputProj_->forward(input[0]);
   auto posEmbed = posEmbed_->forward({mask})[0];
