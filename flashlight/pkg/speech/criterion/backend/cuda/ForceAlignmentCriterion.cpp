@@ -9,8 +9,10 @@
 
 #include "flashlight/fl/common/backend/cuda/cuda.h"
 
-#include "flashlight/pkg/speech/criterion/CriterionUtils.h"
+#include <stdexcept>
+#include "flashlight/fl/common/DevicePtr.h"
 #include "flashlight/lib/sequence/criterion/cuda/ForceAlignmentCriterion.cuh"
+#include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
 using FAC = fl::lib::cuda::ForceAlignmentCriterion<float>;
 
@@ -25,16 +27,16 @@ static void backward(
     int T,
     int N,
     int L,
-    const af::array& target,
-    const af::array& targetSize,
-    af::array& workspace) {
-  if (gradVar.type() != f32) {
+    const Tensor& target,
+    const Tensor& targetSize,
+    Tensor& workspace) {
+  if (gradVar.type() != fl::dtype::f32) {
     throw std::invalid_argument("FAC: grad must be float32");
   }
 
-  const auto& grad = gradVar.array();
-  af::array inputGrad(N, T, B, f32);
-  af::array transGrad(N, N, f32);
+  const auto& grad = gradVar.tensor();
+  Tensor inputGrad({N, T, B}, fl::dtype::f32);
+  Tensor transGrad({N, N}, fl::dtype::f32);
 
   {
     fl::DevicePtr targetRaw(target);
@@ -72,18 +74,20 @@ Variable ForceAlignmentCriterion::forward(
 
   if (N != transVar.dims(0)) {
     throw std::invalid_argument("FAC: input dim doesn't match N");
-  } else if (inputVar.type() != f32) {
+  } else if (inputVar.type() != fl::dtype::f32) {
     throw std::invalid_argument("FAC: input must be float32");
-  } else if (targetVar.type() != s32) {
+  } else if (targetVar.type() != fl::dtype::s32) {
     throw std::invalid_argument("FAC: target must be int32");
   }
 
-  const auto& input = inputVar.array();
-  const auto& target = targetVar.array();
+  const auto& input = inputVar.tensor();
+  const auto& target = targetVar.tensor();
   const auto& targetSize = getTargetSizeArray(target, T);
-  const auto& trans = transVar.array();
-  af::array loss(B, f32);
-  af::array workspace(FAC::getWorkspaceSize(B, T, N, L), u8);
+  const auto& trans = transVar.tensor();
+  Tensor loss({B}, fl::dtype::f32);
+  Tensor workspace(
+      {static_cast<long long>(FAC::getWorkspaceSize(B, T, N, L))},
+      fl::dtype::u8);
 
   {
     fl::DevicePtr inputRaw(input);
@@ -116,29 +120,36 @@ Variable ForceAlignmentCriterion::forward(
       });
 }
 
-af::array ForceAlignmentCriterion::viterbiPath(
-    const af::array& input,
-    const af::array& target) {
-  int N = input.dims(0);
-  int T = input.dims(1);
-  int B = input.dims(2);
-  int L = target.dims(0);
+Tensor ForceAlignmentCriterion::viterbiPath(
+    const Tensor& input,
+    const Tensor& target) {
+  if (input.ndim() != 3) {
+    throw std::invalid_argument(
+        "ForceAlignmentCriterion::viterbiPath: "
+        "expects input with dimensions {N, T, B}");
+  }
+  int N = input.dim(0);
+  int T = input.dim(1);
+  int B = input.dim(2);
+  int L = target.dim(0);
 
   std::vector<std::vector<int>> bestPaths;
   const auto& transVar = param(0);
 
   if (N != transVar.dims(0)) {
     throw std::invalid_argument("FAC: input dim doesn't match N:");
-  } else if (input.type() != f32) {
+  } else if (input.type() != fl::dtype::f32) {
     throw std::invalid_argument("FAC: input must be float32");
-  } else if (target.type() != s32) {
+  } else if (target.type() != fl::dtype::s32) {
     throw std::invalid_argument("FAC: target must be int32");
   }
 
   const auto& targetSize = getTargetSizeArray(target, T);
-  const auto& trans = transVar.array();
-  af::array bestPathsVar(T, B, s32);
-  af::array workspace(FAC::getWorkspaceSize(B, T, N, L), u8);
+  const auto& trans = transVar.tensor();
+  Tensor bestPathsVar({T, B}, fl::dtype::s32);
+  Tensor workspace(
+      {static_cast<long long>(FAC::getWorkspaceSize(B, T, N, L))},
+      fl::dtype::u8);
 
   {
     fl::DevicePtr inputRaw(input);

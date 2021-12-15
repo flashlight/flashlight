@@ -29,9 +29,9 @@ class AutoSegmentationCriterion : public SequenceCriterion {
         fac_(ForceAlignmentCriterion(N, scalemode)),
         fcc_(FullConnectionCriterion(N, scalemode)) {
     if (N_ <= 0) {
-      throw af::exception("ASG: N is zero or negative.");
+      throw std::invalid_argument("ASG: N is zero or negative.");
     }
-    fl::Variable transition(transdiag * af::identity(af::dim4(N_, N_)), true);
+    fl::Variable transition(transdiag * fl::identity(N_), true);
     params_ = {transition};
     syncTransitions();
   }
@@ -41,21 +41,21 @@ class AutoSegmentationCriterion : public SequenceCriterion {
     if (inputs.size() != 2) {
       throw std::invalid_argument("Invalid inputs size");
     }
-    return {fcc_.forward(inputs[0], inputs[1]) -
-            fac_.forward(inputs[0], inputs[1])};
+    return {
+        fcc_.forward(inputs[0], inputs[1]) -
+        fac_.forward(inputs[0], inputs[1])};
   }
 
-  af::array viterbiPath(
-      const af::array& input,
-      const af::array& inputSize = af::array()) override {
-    return fl::pkg::speech::viterbiPath(input, params_[0].array());
+  Tensor viterbiPath(const Tensor& input, const Tensor& inputSize = Tensor())
+      override {
+    return fl::pkg::speech::viterbiPath(input, params_[0].tensor());
   }
 
-  af::array viterbiPathWithTarget(
-      const af::array& input,
-      const af::array& target,
-      const af::array& inputSizes = af::array(),
-      const af::array& targetSizes = af::array()) override {
+  Tensor viterbiPathWithTarget(
+      const Tensor& input,
+      const Tensor& target,
+      const Tensor& inputSizes = Tensor(),
+      const Tensor& targetSizes = Tensor()) override {
     return fac_.viterbiPath(input, target);
   }
 

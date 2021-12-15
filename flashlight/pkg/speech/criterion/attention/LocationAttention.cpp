@@ -15,7 +15,7 @@ namespace speech {
 SimpleLocationAttention::SimpleLocationAttention(int convKernel) {
   Sequential pa;
   pa.add(Conv2D(1, 1, 1, convKernel, 1, 1, -1, -1));
-  pa.add(Reorder(2, 0, 1, 3));
+  pa.add(Reorder({2, 0, 1, 3}));
   pa.add(ReLU());
   add(pa);
 }
@@ -69,7 +69,7 @@ std::string SimpleLocationAttention::prettyString() const {
 LocationAttention::LocationAttention(int encDim, int convKernel) {
   Sequential pa;
   pa.add(Conv2D(1, encDim, 1, convKernel, 1, 1, -1, -1));
-  pa.add(Reorder(2, 0, 1, 3));
+  pa.add(Reorder({2, 0, 1, 3}));
   pa.add(ReLU());
   add(pa);
 }
@@ -129,7 +129,7 @@ NeuralLocationAttention::NeuralLocationAttention(
   add(Linear(encDim, attnDim, false));
   Sequential pa;
   pa.add(Conv2D(1, convChannel, 1, convKernel, 1, 1, -1, -1));
-  pa.add(Reorder(2, 0, 1, 3));
+  pa.add(Reorder({2, 0, 1, 3}));
   pa.add(Linear(convChannel, attnDim, false));
   add(pa);
   add(Tanh());
