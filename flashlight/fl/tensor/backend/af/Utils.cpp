@@ -194,9 +194,6 @@ af::array condenseIndices(
   af::dim4 newDims(1, 1, 1, 1);
   unsigned newDimIdx = 0;
   for (unsigned i = 0; i < AF_MAX_DIMS; ++i) {
-    if (dims[i] == 1 && indexTypes && indexTypes.value().size() > i) {
-    }
-
     // If we're doing an index op (indexTypes is non-empty), then only collapse
     // the dimension if it contains an index literal
     if (dims[i] == 1 && indexTypes && indexTypes.value().size() > i &&
