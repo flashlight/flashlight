@@ -113,6 +113,11 @@ class Shape {
    */
   const std::vector<Dim>& get() const;
   std::vector<Dim>& get();
+
+  /**
+   * Returns a string representation of the Shape
+   */
+  std::string toString() const;
 };
 
 /**
