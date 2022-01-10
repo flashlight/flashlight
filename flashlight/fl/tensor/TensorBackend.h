@@ -126,6 +126,12 @@ class TensorBackend {
       const SortMode sortMode) = 0;
   virtual Tensor
   sort(const Tensor& input, const Dim axis, const SortMode sortMode) = 0;
+  virtual void sort(
+      Tensor& values,
+      Tensor& indices,
+      const Tensor& input,
+      const Dim axis,
+      const SortMode sortMode) = 0;
   virtual Tensor
   argsort(const Tensor& input, const Dim axis, const SortMode sortMode) = 0;
 
