@@ -44,6 +44,12 @@ class Shape {
   // {} is a scalar shape.
   std::vector<Dim> dims_;
 
+  /**
+   * Check if a dimension is valid (i.e. in bounds) given the current size of
+   * the shape. If not valid, throws an exception.
+   */
+  void checkDimsOrThrow(const size_t dim) const;
+
  public:
   Shape() = default;
   ~Shape() = default;
