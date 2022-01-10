@@ -240,6 +240,10 @@ void* Tensor::getContext() const {
   return impl_->getContext();
 }
 
+std::string Tensor::toString() const {
+  return impl_->toString();
+}
+
 std::ostream& Tensor::operator<<(std::ostream& ostr) const {
   return impl_->operator<<(ostr);
 }

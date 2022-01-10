@@ -71,3 +71,18 @@ TEST(ShapeTest, Indexing) {
   ASSERT_EQ(a[3], 2);
   ASSERT_THROW(a[4], std::invalid_argument);
 }
+
+TEST(ShapeTest, string) {
+  auto checkShapeStrEqual = [](const Shape& s, const std::string& str) -> void {
+    auto sStr = s.toString();
+    ASSERT_EQ(sStr, str);
+    std::stringstream ss;
+    ss << sStr;
+    ASSERT_EQ(sStr, ss.str());
+  };
+
+  checkShapeStrEqual(Shape({3, 4, 7, 9}), "(3, 4, 7, 9)");
+  checkShapeStrEqual(Shape({}), "()");
+  checkShapeStrEqual(Shape({0}), "(0)");
+  checkShapeStrEqual(Shape({7, 7, 7, 7, 7, 7, 7}), "(7, 7, 7, 7, 7, 7, 7)");
+}
