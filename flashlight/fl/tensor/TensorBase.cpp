@@ -768,4 +768,12 @@ bool allClose(
       absTolerance;
 }
 
+namespace detail {
+
+bool areTensorTypesEqual(const Tensor& a, const Tensor& b) {
+  return a.type() == b.type();
+}
+
+} // namespace detail
+
 } // namespace fl
