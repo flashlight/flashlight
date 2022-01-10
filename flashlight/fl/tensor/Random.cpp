@@ -12,7 +12,7 @@
 
 namespace fl {
 
-void setSeed(int seed) {
+void setSeed(const int seed) {
   Tensor().backend().setSeed(seed);
 }
 

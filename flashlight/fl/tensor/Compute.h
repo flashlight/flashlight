@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <cstdlib>
+
 // TODO:fl::Tensor {misc} remove me when not dependent on AF
 namespace af {
 class array;
@@ -32,7 +34,7 @@ void sync();
  * @param[in] deviceId the id of the device on which to block until computation
  * has completed.
  */
-void sync(int deviceId);
+void sync(const int deviceId);
 
 // TODO:fl::Tensor {signature}
 /**
@@ -45,6 +47,8 @@ void sync(int deviceId);
  * discretion.
  *
  * To block the calling thread until evaluation is complete, see `fl::sync`.
+ *
+ * TODO: eventually fold into Flashlight runtime
  *
  * @param[in] tensor the tensor on which to launch computation.
  */
@@ -59,6 +63,8 @@ void eval(fl::Tensor& tensor);
  *
  * If unimplemented, an implementation should return 0.
  *
+ * TODO: eventually fold into Flashlight runtime
+ *
  * @return the active device ID
  */
 int getDevice();
@@ -68,8 +74,19 @@ int getDevice();
  * ID may correspond to a CUDA-device, an OpenCL device, or other arbitrary
  * hardware. The default device is 0.
  *
+ * TODO: eventually fold into Flashlight runtime
+ *
  * @param[in] deviceId
  */
-void setDevice(int deviceId);
+void setDevice(const int deviceId);
+
+/**
+ * Gets the number of active devices.
+ *
+ * TODO: eventually fold into Flashlight runtime
+ *
+ * @returns the number of active devices usable in Flashlight.
+ */
+int getDeviceCount();
 
 } // namespace fl

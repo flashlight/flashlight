@@ -38,13 +38,14 @@ class ArrayFireBackend : public TensorBackend {
 
   /* -------------------------- Compute Functions -------------------------- */
   void sync() override;
-  void sync(int deviceId) override;
+  void sync(const int deviceId) override;
   void eval(const Tensor& tensor) override;
   int getDevice() override;
-  void setDevice(int deviceId) override;
+  void setDevice(const int deviceId) override;
+  int getDeviceCount() override;
 
   /* -------------------------- Rand Functions -------------------------- */
-  void setSeed(int seed) override;
+  void setSeed(const int seed) override;
   Tensor randn(const Shape& shape, dtype type) override;
   Tensor rand(const Shape& shape, dtype type) override;
 

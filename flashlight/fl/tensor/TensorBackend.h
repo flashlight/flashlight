@@ -38,13 +38,14 @@ class TensorBackend {
 
   /* -------------------------- Compute Functions -------------------------- */
   virtual void sync() = 0;
-  virtual void sync(int deviceId) = 0;
+  virtual void sync(const int deviceId) = 0;
   virtual void eval(const Tensor& tensor) = 0;
   virtual int getDevice() = 0;
-  virtual void setDevice(int deviceId) = 0;
+  virtual void setDevice(const int deviceId) = 0;
+  virtual int getDeviceCount() = 0;
 
   /* -------------------------- Rand Functions -------------------------- */
-  virtual void setSeed(int seed) = 0;
+  virtual void setSeed(const int seed) = 0;
   virtual Tensor randn(const Shape& shape, dtype type) = 0;
   virtual Tensor rand(const Shape& shape, dtype type) = 0;
 
