@@ -709,6 +709,14 @@ TEST(TensorBaseTest, sort) {
   ASSERT_TRUE(allClose(sorted, tiled));
 
   ASSERT_TRUE(allClose(a, fl::sort(tiled, 0, SortMode::Ascending)));
+
+  auto b = fl::rand({10});
+  Tensor values, indices;
+  fl::sort(values, indices, b, /* axis = */ 0, SortMode::Descending);
+  ASSERT_TRUE(
+      allClose(values, fl::sort(b, /* axis = */ 0, SortMode::Descending)));
+  ASSERT_TRUE(
+      allClose(fl::argsort(b, /* axis = */ 0, SortMode::Descending), indices));
 }
 
 TEST(TensorBaseTest, argsort) {
