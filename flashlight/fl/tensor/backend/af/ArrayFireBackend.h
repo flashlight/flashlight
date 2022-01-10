@@ -121,6 +121,12 @@ class ArrayFireBackend : public TensorBackend {
       const SortMode sortMode) override;
   Tensor sort(const Tensor& input, const Dim axis, const SortMode sortMode)
       override;
+  void sort(
+      Tensor& values,
+      Tensor& indices,
+      const Tensor& input,
+      const Dim axis,
+      const SortMode sortMode) override;
   Tensor argsort(const Tensor& input, const Dim axis, const SortMode sortMode)
       override;
 

@@ -289,16 +289,16 @@ TEST(ArrayFireTensorBaseTest, var) {
   ASSERT_EQ(fl::var(a).scalar<float>(), af::var<float>(toArray(a)));
   ASSERT_TRUE(allClose(
       toArray(fl::var(a, {0})),
-      detail::condenseIndices(af::var(toArray(a), AF_VARIANCE_POPULATION, 0))));
+      detail::condenseIndices(af::var(toArray(a), /* biased = */ false, 0))));
   ASSERT_TRUE(allClose(
       toArray(fl::var(a, {1})),
-      detail::condenseIndices(af::var(toArray(a), AF_VARIANCE_POPULATION, 1))));
+      detail::condenseIndices(af::var(toArray(a), /* biased = */ false, 1))));
   // Make sure multidimension matches computing for all
   ASSERT_FLOAT_EQ(
       toArray(fl::var(a)).scalar<float>(), af::var<float>(toArray(a)));
   ASSERT_FLOAT_EQ(
-      toArray(fl::var(a, {0, 1}, true)).scalar<float>(),
-      af::var<float>(toArray(a), AF_VARIANCE_SAMPLE));
+      toArray(fl::var(a, {0, 1}, /* biased = */ true)).scalar<float>(),
+      af::var<float>(toArray(a), /* biased = */ true));
 }
 
 TEST(ArrayFireTensorBaseTest, std) {
