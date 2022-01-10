@@ -411,9 +411,9 @@ class Tensor {
       case dtype::f64:
         return scalar<double>();
       case dtype::s32:
-        return scalar<long>();
+        return scalar<int>();
       case dtype::u32:
-        return scalar<unsigned long>();
+        return scalar<unsigned int>();
       case dtype::b8:
         return scalar<char>();
       case dtype::u8:
@@ -1090,6 +1090,7 @@ Tensor maximum(const double& lhs, const Tensor& rhs);
  */
 Tensor power(const Tensor& lhs, const Tensor& rhs);
 Tensor power(const Tensor& lhs, const double& rhs);
+Tensor power(const double& lhs, const Tensor& rhs);
 
 /******************************* BLAS ********************************/
 
