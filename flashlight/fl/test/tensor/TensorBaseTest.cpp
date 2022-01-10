@@ -735,6 +735,10 @@ TEST(TensorBaseTest, power) {
 TEST(TensorBaseTest, powerDouble) {
   auto a = fl::full({3, 3}, 2.);
   ASSERT_TRUE(allClose(fl::power(a, 3), a * a * a));
+
+  auto b = fl::full({3, 3}, 2.);
+  ASSERT_TRUE(
+      allClose(fl::power(3, a), fl::full(b.shape(), 3 * 3, fl::dtype::f32)));
 }
 
 TEST(TensorBaseTest, floor) {
