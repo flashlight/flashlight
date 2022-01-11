@@ -522,6 +522,15 @@ class Tensor {
   void* getContext() const;
 
   /**
+   * Returns a string representation of a Tensor. NOTE: This is
+   * backend-dependent. See Flashlight's serialization utilities for ways to
+   * serialize Tensors that are portable across Tensor backends.
+   *
+   * @return a string representation of the Tensor.
+   */
+  std::string toString() const;
+
+  /**
    * Write a string representation of a tensor to an output stream.
    */
   std::ostream& operator<<(std::ostream& ostr) const;
@@ -1391,7 +1400,7 @@ Tensor all(
 /**
  * Write a string representation of a tensor to an output stream.
  */
-std::ostream& operator<<(std::ostream& ostr, const Tensor& s);
+std::ostream& operator<<(std::ostream& ostr, const Tensor& t);
 
 /**
  * Print a string representation of a tensor to standard out.

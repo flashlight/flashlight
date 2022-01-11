@@ -336,8 +336,12 @@ void* ArrayFireTensor::getContext() {
   return nullptr; // noop
 }
 
+std::string ArrayFireTensor::toString() {
+  return std::string(af::toString("ArrayFireTensor", getHandle()));
+}
+
 std::ostream& ArrayFireTensor::operator<<(std::ostream& ostr) {
-  ostr << "ArrayFireTensor " << std::string(af::toString("", getHandle()));
+  ostr << this->toString();
   return ostr;
 }
 

@@ -73,15 +73,6 @@ bool Shape::operator!=(const std::initializer_list<Dim>& other) const {
   return !(this->operator==(other));
 }
 
-std::ostream& operator<<(std::ostream& ostr, const Shape& s) {
-  ostr << "(";
-  for (size_t i = 0; i < s.ndim(); ++i) {
-    ostr << s.dim(i) << (i == s.ndim() - 1 ? "" : ", ");
-  }
-  ostr << ")";
-  return ostr;
-}
-
 const std::vector<Dim>& Shape::get() const {
   return dims_;
 }
@@ -89,5 +80,20 @@ const std::vector<Dim>& Shape::get() const {
 std::vector<Dim>& Shape::get() {
   return dims_;
 };
+
+std::string Shape::toString() const {
+  std::stringstream ss;
+  ss << "(";
+  for (size_t i = 0; i < ndim(); ++i) {
+    ss << dim(i) << (i == ndim() - 1 ? "" : ", ");
+  }
+  ss << ")";
+  return ss.str();
+}
+
+std::ostream& operator<<(std::ostream& ostr, const Shape& s) {
+  ostr << s.toString();
+  return ostr;
+}
 
 } // namespace fl

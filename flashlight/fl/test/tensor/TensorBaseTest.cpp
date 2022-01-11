@@ -67,11 +67,13 @@ TEST(TensorBaseTest, fromScalar) {
   ASSERT_EQ(a.shape(), Shape({}));
 }
 
-TEST(TensorBaseTest, ostream) {
+TEST(TensorBaseTest, string) {
   // Different backends might print tensors differently - check for consistency
   // across two identical tensors
   auto a = fl::full({3, 4, 5}, 6.);
   auto b = fl::full({3, 4, 5}, 6.);
+  ASSERT_EQ(a.toString(), b.toString());
+
   std::stringstream ssa, ssb;
   ssa << a;
   ssb << b;
