@@ -504,6 +504,25 @@ Tensor ArrayFireBackend::sort(
   return toTensor<ArrayFireTensor>(std::move(values), input.ndim());
 }
 
+void ArrayFireBackend::sort(
+    Tensor& values,
+    Tensor& indices,
+    const Tensor& input,
+    const Dim axis,
+    const SortMode sortMode) {
+  if (sortMode != SortMode::Descending && sortMode != SortMode::Ascending) {
+    throw std::invalid_argument(
+        "Cannot sort ArrayFire tensor with given SortMode: "
+        "only Descending and Ascending supported.");
+  }
+
+  af::array _values, _indices;
+  af::sort(
+      _values, _indices, toArray(input), axis, sortMode == SortMode::Ascending);
+  values = toTensor<ArrayFireTensor>(std::move(_values), input.ndim());
+  indices = toTensor<ArrayFireTensor>(std::move(_indices), input.ndim());
+}
+
 Tensor ArrayFireBackend::argsort(
     const Tensor& input,
     const Dim axis,
@@ -808,16 +827,10 @@ Tensor ArrayFireBackend::var(
     return toTensor<ArrayFireTensor>(af::constant(out, 1), /* numDims = */ 0);
   } else if (axes.size() == 1) {
     return toTensor<ArrayFireTensor>(
-        detail::condenseIndices(
-            af::var(
-                arr,
-                bias ? AF_VARIANCE_SAMPLE : AF_VARIANCE_POPULATION,
-                axes[0]),
-            keepDims),
+        detail::condenseIndices(af::var(arr, bias, axes[0]), keepDims),
         getReducedNumDims(input.ndim(), axes.size(), keepDims));
   } else {
     auto meanArr = mean(input, axes, /* keepDims = */ true);
-    // TODO Replace when we have batchFunc for fl::Tensor
     auto x = af::batchFunc(arr, toArray(meanArr), af::operator-);
 
     x = af::pow(x, 2);

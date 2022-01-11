@@ -966,8 +966,8 @@ enum class SortMode { Descending = 0, Ascending = 1 };
 /**
  * Get the top-k values and indices from a Tensor.
  *
- * @param[in] values
- * @param[in] indices
+ * @param[out] values the sorted tensor
+ * @param[out] indices the indices corresponding to the sorted ordering
  * @param[in] input the input tensor to sort
  * @param[in] k the top number of elements to return
  * @param[in] axis the axis along which to sort.
@@ -989,6 +989,22 @@ void topk(
  * @param[in] sortMode the ordering with which to sort. Defaults to descending
  */
 Tensor sort(
+    const Tensor& input,
+    const Dim axis,
+    const SortMode sortMode = SortMode::Descending);
+
+/**
+ * Sort the values of a tensor, and return the sorted tensor and sorted indices.
+ *
+ * @param[out] values the sorted tensor
+ * @param[out] indices the indices corresponding to the sorted ordering
+ * @param[in] input the input Tensor
+ * @param[in] axis the axis along which to sort
+ * @param[in] sortMode the ordering with which to sort. Defaults to descending
+ */
+void sort(
+    Tensor& values,
+    Tensor& indices,
     const Tensor& input,
     const Dim axis,
     const SortMode sortMode = SortMode::Descending);
