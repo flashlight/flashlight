@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <limits>
 #include <numeric>
+#include <sstream>
 #include <stdexcept>
 
 namespace fl {
@@ -19,6 +20,16 @@ Shape::Shape(std::initializer_list<Dim> d) : Shape(std::vector<Dim>(d)) {}
 
 const Dim kEmptyShapeNumberOfElements = 1;
 
+void Shape::checkDimsOrThrow(const size_t dim) const {
+  if (dim > ndim() - 1) {
+    std::stringstream ss;
+    ss << "Shape index " << std::to_string(dim)
+       << " out of bounds for shape with " << std::to_string(dims_.size())
+       << " dimensions.";
+    throw std::invalid_argument(ss.str());
+  }
+}
+
 Dim Shape::elements() const {
   if (dims_.size() == 0) {
     return kEmptyShapeNumberOfElements;
@@ -26,24 +37,22 @@ Dim Shape::elements() const {
   return std::accumulate(dims_.begin(), dims_.end(), 1, std::multiplies<Dim>());
 }
 
-size_t Shape::ndim() const {
+int Shape::ndim() const {
   return dims_.size();
 }
 
 Dim Shape::dim(const size_t dim) const {
-  if (dim >= dims_.size()) {
-    throw std::invalid_argument(
-        "fl::Shape::dim - passed dimension is larger than "
-        "the number of dimensions in the shape");
-  }
+  checkDimsOrThrow(dim);
   return dims_[dim];
 }
 
 Dim& Shape::operator[](const size_t dim) {
+  checkDimsOrThrow(dim);
   return dims_[dim];
 }
 
 const Dim& Shape::operator[](const size_t dim) const {
+  checkDimsOrThrow(dim);
   return dims_[dim];
 }
 

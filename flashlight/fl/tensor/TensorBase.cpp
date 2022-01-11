@@ -85,7 +85,7 @@ Dim Tensor::dim(const size_t dim) const {
   return shape().dim(dim);
 }
 
-size_t Tensor::ndim() const {
+int Tensor::ndim() const {
   return shape().ndim();
 }
 
