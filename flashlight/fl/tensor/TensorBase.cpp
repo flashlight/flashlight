@@ -162,6 +162,14 @@ TensorBackend& Tensor::backend() const {
   }                                                                         \
                                                                             \
   template <>                                                               \
+  void Tensor::device(TYPE** ptr) const {                                   \
+    if (isEmpty()) {                                                        \
+      return;                                                               \
+    }                                                                       \
+    impl_->device(reinterpret_cast<void**>(ptr));                           \
+  }                                                                         \
+                                                                            \
+  template <>                                                               \
   TYPE* Tensor::host() const {                                              \
     if (isEmpty()) {                                                        \
       return nullptr;                                                       \
@@ -198,6 +206,14 @@ void* Tensor::device() const {
   void* out;
   impl_->device(&out);
   return out;
+}
+
+template <>
+void Tensor::device(void** ptr) const {
+  if (isEmpty()) {
+    return;
+  }
+  impl_->device(ptr);
 }
 
 template <>

@@ -159,6 +159,18 @@ int ArrayFireBackend::getDeviceCount() {
   return af::getDeviceCount();
 }
 
+bool ArrayFireBackend::supportsDataType(const fl::dtype& dtype) const {
+  switch (dtype) {
+    case fl::dtype::f16:
+      return af::isHalfAvailable(af::getDevice()) &&
+          // f16 isn't [yet] supported with the CPU backend per onednn
+          // limitations
+          !FL_BACKEND_CPU;
+    default:
+      return true;
+  }
+}
+
 /* -------------------------- Rand Functions -------------------------- */
 
 void ArrayFireBackend::setSeed(const int seed) {

@@ -43,6 +43,7 @@ class TensorBackend {
   virtual int getDevice() = 0;
   virtual void setDevice(const int deviceId) = 0;
   virtual int getDeviceCount() = 0;
+  virtual bool supportsDataType(const fl::dtype& dtype) const = 0;
 
   /* -------------------------- Rand Functions -------------------------- */
   virtual void setSeed(const int seed) = 0;
@@ -243,6 +244,16 @@ class TensorBackend {
 
   /************************** Utils ***************************/
   virtual void print(const Tensor& tensor) = 0;
+
+  /**
+   * Checks if a datatype is supported by a TensorBackend and its registered
+   * extensions.
+   *
+   * @param[in] dtype the datatype to check
+   *
+   * @return true if the data type is supported, false otherwise
+   */
+  virtual bool isDataTypeSupported(const fl::dtype& dtype) const final;
 
   /********************* Tensor Extensions **********************/
   template <typename T>
