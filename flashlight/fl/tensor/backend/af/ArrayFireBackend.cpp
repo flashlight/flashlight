@@ -353,7 +353,7 @@ Tensor ArrayFireBackend::pad(
           endPadding,
           detail::flToAfPadType(type)),
       /* numDims = */ // TODO: check
-      std::max(input.ndim(), padWidths.size()));
+      std::max(input.ndim(), static_cast<int>(padWidths.size())));
 }
 
 /************************** Unary Operators ***************************/
