@@ -6,6 +6,10 @@
  */
 
 #include <cmath>
+#include <functional>
+#include <sstream>
+#include <stdexcept>
+#include <vector>
 
 #include <gtest/gtest.h>
 
@@ -349,6 +353,116 @@ TEST(TensorBaseTest, maximum) {
   ASSERT_TRUE(allClose(fl::maximum(b, 1).astype(a.type()), b));
 }
 
+using binaryOpFunc_t = Tensor (*)(const Tensor& lhs, const Tensor& rhs);
+
+TEST(TensorBaseTest, broadcasting) {
+  // Collection of {lhs, rhs, tileShapeLhs, tileShapeRhs} corresponding to
+  // broadcasting [lhs] to [rhs] by tiling by the the respective tileShapes
+  struct ShapeData {
+    Shape lhs; // broadcast from
+    Shape rhs; // broadcast to
+    Shape tileShapeLhs;
+    Shape tileShapeRhs;
+  };
+  std::vector<ShapeData> shapes = {
+      {{3, 1}, {3, 3}, {1, 3}, {1, 1}},
+      {{3}, {3, 3}, {1, 3}, {1, 1}},
+      {{3, 1, 4}, {3, 6, 4}, {1, 6, 1}, {1, 1, 1}},
+      {{3, 1, 4, 1}, {3, 2, 4, 5}, {1, 2, 1, 5}, {1, 1, 1, 1}},
+      {{1, 10}, {8, 10}, {8, 1}, {1, 1}},
+      {{2, 1, 5, 1}, {2, 3, 5, 3}, {1, 3, 1, 3}, {1, 1, 1, 1}},
+      {{3, 1, 2, 1}, {1, 4, 1, 5}, {1, 4, 1, 5}, {3, 1, 2, 1}},
+      {{3, 2, 1}, {3, 1, 4, 1}, {1, 1, 4}, {1, 2, 1, 1}}};
+
+  std::unordered_map<binaryOpFunc_t, std::string> functions = {
+      {fl::minimum, "minimum"},
+      {fl::maximum, "maximum"},
+      {fl::power, "power"},
+      {fl::add, "add"},
+      {fl::add, "add"},
+      {fl::sub, "sub"},
+      {fl::mul, "mul"},
+      {fl::div, "div"},
+      {fl::eq, "eq"},
+      {fl::neq, "neq"},
+      {fl::lessThan, "lessThan"},
+      {fl::lessThanEqual, "lessThanEqual"},
+      {fl::greaterThan, "greaterThan"},
+      {fl::greaterThanEqual, "greaterThanEqual"},
+      {fl::logicalOr, "logicalOr"},
+      {fl::logicalAnd, "logicalAnd"},
+      {fl::mod, "mod"},
+      {fl::bitwiseOr, "bitwiseOr"},
+      {fl::bitwiseXor, "bitwiseXor"},
+      {fl::lShift, "lShift"},
+      {fl::rShift, "rShift"}};
+
+  auto doBinaryOp = [](const Tensor& lhs,
+                       const Tensor& rhs,
+                       const Shape& tileShapeLhs,
+                       const Shape& tileShapeRhs,
+                       binaryOpFunc_t func) -> std::pair<Tensor, Tensor> {
+    assert(lhs.ndim() <= rhs.ndim());
+    return {
+        func(lhs, rhs), func(tile(lhs, tileShapeLhs), tile(rhs, tileShapeRhs))};
+  };
+
+  auto computeBroadcastShape = [](const Shape& lhsShape,
+                                  const Shape& rhsShape) -> Shape {
+    unsigned maxnDim = std::max(lhsShape.ndim(), rhsShape.ndim());
+    Shape outShape{std::vector<Dim>(maxnDim)};
+    for (unsigned i = 0; i < maxnDim; ++i) {
+      if (i > lhsShape.ndim() - 1) {
+        outShape[i] = rhsShape[i];
+      } else if (i > rhsShape.ndim() - 1) {
+        outShape[i] = lhsShape[i];
+      } else if (lhsShape[i] == 1) {
+        outShape[i] = rhsShape[i];
+      } else if (rhsShape[i] == 1) {
+        outShape[i] = lhsShape[i];
+      } else if (lhsShape[i] == rhsShape[i]) {
+        outShape[i] = lhsShape[i];
+      } else if (lhsShape[i] != rhsShape[i]) {
+        throw std::runtime_error(
+            "computeBroadcastShape - cannot broadcast shape");
+      }
+    }
+    return outShape;
+  };
+
+  for (auto funcp : functions) {
+    for (auto& shapeData : shapes) {
+      auto lhs = (fl::rand(shapeData.lhs) * 10).astype(fl::dtype::s32);
+      auto rhs = (fl::rand(shapeData.rhs) * 10).astype(fl::dtype::s32);
+
+      auto [actualOut, expectedOut] = doBinaryOp(
+          lhs,
+          rhs,
+          shapeData.tileShapeLhs,
+          shapeData.tileShapeRhs,
+          funcp.first);
+
+      Shape expectedShape = computeBroadcastShape(shapeData.lhs, shapeData.rhs);
+
+      std::stringstream ss;
+      ss << "lhs: " << shapeData.lhs << " rhs: " << shapeData.rhs
+         << " function: " << funcp.second;
+      auto testData = ss.str();
+
+      ASSERT_EQ(actualOut.shape(), expectedShape) << testData;
+      ASSERT_TRUE(allClose(actualOut, expectedOut)) << testData;
+    }
+
+    // Scalar broadcasting
+    const double scalarVal = 4;
+    const Shape inShape = {2, 3, 4};
+    const auto lhs = fl::rand(inShape).astype(fl::dtype::s32);
+    const auto rhs = fl::fromScalar(scalarVal, fl::dtype::s32);
+    const auto rhsTiled = fl::full(inShape, scalarVal, fl::dtype::s32);
+    ASSERT_TRUE(allClose(funcp.first(lhs, rhs), funcp.first(lhs, rhsTiled)));
+  }
+}
+
 TEST(TensorBaseTest, argmin) {
   Tensor in = Tensor::fromVector<float>({2, 3}, {4, 8, 6, 3, 5, 9});
   auto a0 = fl::argmin(in, 0);
@@ -572,7 +686,12 @@ TEST(TensorBaseTest, topk) {
       allClose(values, Tensor::fromVector<float>({3, 2}, {9, 8, 7, 9, 8, 7})));
 
   fl::topk(
-      values, indices, a, /* k = */ 4, /* axis = */ 0, fl::SortMode::Ascending);
+      values,
+      indices,
+      a,
+      /* k = */ 4,
+      /* axis = */ 0,
+      fl::SortMode::Ascending);
   ASSERT_TRUE(allClose(
       values, Tensor::fromVector<float>({4, 2}, {0, 1, 2, 3, 0, 1, 2, 3})));
 }
