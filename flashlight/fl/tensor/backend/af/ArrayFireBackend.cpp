@@ -139,7 +139,7 @@ void ArrayFireBackend::sync() {
   af::sync();
 }
 
-void ArrayFireBackend::sync(int deviceId) {
+void ArrayFireBackend::sync(const int deviceId) {
   af::sync(deviceId);
 }
 
@@ -151,13 +151,17 @@ int ArrayFireBackend::getDevice() {
   return af::getDevice();
 }
 
-void ArrayFireBackend::setDevice(int deviceId) {
+void ArrayFireBackend::setDevice(const int deviceId) {
   af::setDevice(deviceId);
+}
+
+int ArrayFireBackend::getDeviceCount() {
+  return af::getDeviceCount();
 }
 
 /* -------------------------- Rand Functions -------------------------- */
 
-void ArrayFireBackend::setSeed(int seed) {
+void ArrayFireBackend::setSeed(const int seed) {
   af::setSeed(seed);
 }
 
