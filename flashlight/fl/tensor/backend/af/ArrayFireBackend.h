@@ -43,6 +43,7 @@ class ArrayFireBackend : public TensorBackend {
   int getDevice() override;
   void setDevice(const int deviceId) override;
   int getDeviceCount() override;
+  bool supportsDataType(const fl::dtype& dtype) const override;
 
   /* -------------------------- Rand Functions -------------------------- */
   void setSeed(const int seed) override;

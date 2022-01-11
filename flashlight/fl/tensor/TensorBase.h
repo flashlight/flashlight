@@ -445,6 +445,19 @@ class Tensor {
   T* device() const;
 
   /**
+   * Populate a pointer value with the address of a Tensor's underlying buffer
+   * on the computation device.
+   *
+   * \note The memory allocated here will not be freed until Tensor:unlock() is
+   * called.
+   *
+   * @param[in] ptr the pointer to populate with the Tensor's buffer location on
+   * device.
+   */
+  template <typename T>
+  void device(T** ptr) const;
+
+  /**
    * Returns a pointer to the tensor's underlying data, but on the host. If the
    * tensor is located on a device, makes a copy of device memory and returns a
    * buffer on the host containing the relevant memory.

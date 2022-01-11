@@ -15,4 +15,13 @@ bool areBackendsEqual(const Tensor& a, const Tensor& b) {
 }
 
 } // namespace detail
+
+bool TensorBackend::isDataTypeSupported(const fl::dtype& dtype) const {
+  bool supported = this->supportsDataType(dtype);
+  for (auto& p : extensions_) {
+    supported &= p.second->isDataTypeSupported(dtype);
+  }
+  return supported;
+}
+
 } // namespace fl
