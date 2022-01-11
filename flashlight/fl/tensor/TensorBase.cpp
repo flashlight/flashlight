@@ -501,13 +501,22 @@ void topk(
     const Tensor& input,
     const unsigned k,
     const Dim axis,
-    const SortMode sortMode) {
+    const SortMode sortMode /* = SortMode::Descending */) {
   FL_TENSOR_BACKENDS_MATCH_CHECK(values, indices, input);
   input.backend().topk(values, indices, input, k, axis, sortMode);
 }
 
 Tensor sort(const Tensor& input, const Dim axis, const SortMode sortMode) {
   return input.backend().sort(input, axis, sortMode);
+}
+
+void sort(
+    Tensor& values,
+    Tensor& indices,
+    const Tensor& input,
+    const Dim axis,
+    const SortMode sortMode /* = SortMode::Descending */) {
+  return values.backend().sort(values, indices, input, axis, sortMode);
 }
 
 Tensor argsort(const Tensor& input, const Dim axis, const SortMode sortMode) {
