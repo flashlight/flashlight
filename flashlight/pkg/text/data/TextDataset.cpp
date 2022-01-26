@@ -23,15 +23,6 @@ namespace fl {
 namespace pkg {
 namespace text {
 
-namespace {
-
-// Maximum number of tokens to keep in memory for each `TextDataset` instance.
-// Setting the default value to 10,000,000,000 which requires 40GB in memory,
-// since indices are stored as int32.
-constexpr size_t kMaxTokenInBuffer = 10000000000;
-
-} // namespace
-
 TextDataset::TextDataset(
     const std::string& dataDirectory,
     const std::string& filenames,
@@ -41,13 +32,14 @@ TextDataset::TextDataset(
     int64_t tokensPerSample /* = 1024 */,
     int64_t batchSize /* = 1 */,
     const std::string& sampleBreakMode /* = "none" */,
-    bool useDynamicBatching /* = false */)
+    const bool useDynamicBatching /* = false */,
+    const size_t reserveSpaceSize /* = kMaxTokenInBuffer */)
     : pad_(dictionary.getIndex(fl::lib::text::kPadToken)) {
   /* 1. Read data */
   // data_ will have the following layout:
   // <eos> sentence <eos> sentence <eos> ... <eos> sentence <eos>
   data_.clear();
-  data_.reserve(kMaxTokenInBuffer);
+  data_.reserve(reserveSpaceSize);
   const auto eos = dictionary.getIndex(fl::lib::text::kEosToken);
   data_.push_back(eos);
 

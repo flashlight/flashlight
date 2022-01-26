@@ -8,8 +8,8 @@ version: 2.1
 
 gpu: &gpu
   machine:
-    image: ubuntu-1604-cuda-11.1:202012-01
-  resource_class: gpu.small
+    image: ubuntu-2004-cuda-11.4:202110-01
+  resource_class: gpu.nvidia.medium
 
 commands:
   ############################### Docker Commands ###############################
@@ -35,7 +35,7 @@ commands:
       - run:
           name: "Start NVIDIA Docker and Copy Flashlight source"
           command: |
-            sudo docker run --runtime=nvidia --rm -itd --ipc=host --name flashlight flml/flashlight:cuda-base-latest
+            sudo docker run --gpus all --rm -itd --ipc=host --name flashlight flml/flashlight:cuda-base-latest
             sudo docker exec -it flashlight bash -c "mkdir /flashlight"
             sudo docker cp . flashlight:/flashlight
   # Default cmake inside docker will be tested with docker build
@@ -394,11 +394,11 @@ jobs:
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
-          fl_build_lib_set:  "ON"
-          fl_build_lib_sequence:  "ON"
-          fl_build_lib_audio:  "ON"
-          fl_build_lib_common:  "ON"
-          fl_build_lib_text:  "ON"
+          fl_build_lib_set: "ON"
+          fl_build_lib_sequence: "ON"
+          fl_build_lib_audio: "ON"
+          fl_build_lib_common: "ON"
+          fl_build_lib_text: "ON"
       - test_flashlight_inside_nvidia_docker:
           test_name: "fl_lib_common"
           fl_test_apex_dir: "flashlight/lib/common/test"
@@ -421,11 +421,11 @@ jobs:
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
           fl_build_fl_core: "ON"
-          fl_build_lib_set:  "ON"
-          fl_build_lib_sequence:  "ON"
-          fl_build_lib_audio:  "ON"
-          fl_build_lib_common:  "ON"
-          fl_build_lib_text:  "ON"
+          fl_build_lib_set: "ON"
+          fl_build_lib_sequence: "ON"
+          fl_build_lib_audio: "ON"
+          fl_build_lib_common: "ON"
+          fl_build_lib_text: "ON"
           fl_build_pkg_runtime: "ON"
           fl_build_pkg_speech: "ON"
           fl_build_pkg_vision: "ON"
@@ -538,11 +538,11 @@ jobs:
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
           fl_build_fl_core: "ON"
-          fl_build_lib_set:  "ON"
-          fl_build_lib_sequence:  "ON"
-          fl_build_lib_audio:  "ON"
-          fl_build_lib_common:  "ON"
-          fl_build_lib_text:  "ON"
+          fl_build_lib_set: "ON"
+          fl_build_lib_sequence: "ON"
+          fl_build_lib_audio: "ON"
+          fl_build_lib_common: "ON"
+          fl_build_lib_text: "ON"
           fl_build_pkg_runtime: "ON"
           fl_build_pkg_speech: "ON"
           fl_build_pkg_vision: "ON"
