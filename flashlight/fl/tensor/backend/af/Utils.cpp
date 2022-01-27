@@ -178,9 +178,9 @@ af::dim4 condenseDims(const af::dim4& dims) {
 
 af::array condenseIndices(
     const af::array& arr,
-    bool keepDims /* = false */,
-    const std::optional<std::vector<detail::IndexType>>&
-        indexTypes /* = {} */) {
+    const bool keepDims /* = false */,
+    const std::optional<std::vector<detail::IndexType>>& indexTypes /* = {} */,
+    const bool isFlat /* = false */) {
   // Fast path - return the Array as is if keepDims - don't consolidate
   if (keepDims) {
     return arr;
@@ -194,13 +194,11 @@ af::array condenseIndices(
   af::dim4 newDims(1, 1, 1, 1);
   unsigned newDimIdx = 0;
   for (unsigned i = 0; i < AF_MAX_DIMS; ++i) {
-    if (dims[i] == 1 && indexTypes && indexTypes.value().size() > i) {
-    }
-
     // If we're doing an index op (indexTypes is non-empty), then only collapse
-    // the dimension if it contains an index literal
+    // the dimension if it contains an index literal and we aren't doing flat
+    // indexing (which collapses all dims)
     if (dims[i] == 1 && indexTypes && indexTypes.value().size() > i &&
-        indexTypes.value()[i] != detail::IndexType::Literal) {
+        indexTypes.value()[i] != detail::IndexType::Literal && !isFlat) {
       newDims[newDimIdx] = 1;
       newDimIdx++;
     } else if (dims[i] != 1) {

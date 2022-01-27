@@ -17,7 +17,10 @@
 #include <af/random.h>
 
 #include <algorithm>
+#include <cstdlib>
 #include <numeric>
+#include <optional>
+#include <sstream>
 #include <stdexcept>
 
 #include "flashlight/fl/tensor/TensorBase.h"
@@ -27,7 +30,7 @@
 namespace fl {
 namespace {
 
-typedef af::array (*reduceFunc_t)(const af::array&, const int);
+using reduceFunc_t = af::array (*)(const af::array&, const int);
 
 template <typename T = reduceFunc_t>
 af::array afReduceAxes(
@@ -72,6 +75,49 @@ bool isAllAxisReduction(const Tensor& input, const std::vector<int>& axes) {
   return true;
 }
 
+bool canBroadcast(const Shape& lhs, const Shape& rhs) {
+  unsigned nDim = std::max(lhs.ndim(), rhs.ndim());
+
+  for (unsigned i = 0; i < nDim; ++i) {
+    if (i + 1 > lhs.ndim() || i + 1 > rhs.ndim()) {
+      // One Shape has more dimensions than the other - will broadcast to the
+      // smaller tensor
+      continue;
+    }
+    if (lhs[i] != rhs[i] && lhs[i] != 1 && rhs[i] != 1) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// A binary operation on two ArrayFire arrays
+using binaryOpFunc_t =
+    af::array (*)(const af::array& lhs, const af::array& rhs);
+
+Tensor doBinaryOpOrBroadcast(
+    const Tensor& lhs,
+    const Tensor& rhs,
+    binaryOpFunc_t func) {
+  // Dims are the same or scalar <> 1-el tensor - no broadcasting
+  if (lhs.shape() == rhs.shape() || (lhs.size() <= 1 && rhs.size() <= 1)) {
+    return toTensor<ArrayFireTensor>(
+        func(toArray(lhs), toArray(rhs)), lhs.ndim());
+  }
+
+  if (canBroadcast(lhs.shape(), rhs.shape())) {
+    return toTensor<ArrayFireTensor>(
+        af::batchFunc(toArray(lhs), toArray(rhs), func),
+        std::max(lhs.ndim(), rhs.ndim()));
+  } else {
+    std::stringstream ss;
+    ss << "doBinaryOpOrBroadcast: cannot perform operation "
+          "or broadcasting with tensors of shapes "
+       << lhs.shape() << " and " << rhs.shape() << " - dimension mismatch.";
+    throw std::invalid_argument(ss.str());
+  }
+}
+
 } // namespace
 
 ArrayFireBackend::ArrayFireBackend() {
@@ -83,13 +129,17 @@ ArrayFireBackend& ArrayFireBackend::getInstance() {
   return instance;
 }
 
+TensorBackendType ArrayFireBackend::backendType() const {
+  return TensorBackendType::ArrayFire;
+}
+
 /* -------------------------- Compute Functions -------------------------- */
 
 void ArrayFireBackend::sync() {
   af::sync();
 }
 
-void ArrayFireBackend::sync(int deviceId) {
+void ArrayFireBackend::sync(const int deviceId) {
   af::sync(deviceId);
 }
 
@@ -101,13 +151,29 @@ int ArrayFireBackend::getDevice() {
   return af::getDevice();
 }
 
-void ArrayFireBackend::setDevice(int deviceId) {
+void ArrayFireBackend::setDevice(const int deviceId) {
   af::setDevice(deviceId);
+}
+
+int ArrayFireBackend::getDeviceCount() {
+  return af::getDeviceCount();
+}
+
+bool ArrayFireBackend::supportsDataType(const fl::dtype& dtype) const {
+  switch (dtype) {
+    case fl::dtype::f16:
+      return af::isHalfAvailable(af::getDevice()) &&
+          // f16 isn't [yet] supported with the CPU backend per onednn
+          // limitations
+          !FL_BACKEND_CPU;
+    default:
+      return true;
+  }
 }
 
 /* -------------------------- Rand Functions -------------------------- */
 
-void ArrayFireBackend::setSeed(int seed) {
+void ArrayFireBackend::setSeed(const int seed) {
   af::setSeed(seed);
 }
 
@@ -245,32 +311,41 @@ Tensor ArrayFireBackend::tile(const Tensor& tensor, const Shape& shape) {
 
 Tensor ArrayFireBackend::concatenate(
     const std::vector<Tensor>& tensors,
-    unsigned axis) {
-  // TODO: write this in a custom way with index assignment so as to avoid this
-  // limitation
-  if (tensors.size() > 10) {
-    throw std::invalid_argument(
-        "ArrayFire concatenate doesn't support > 10 tensors");
+    const unsigned axis) {
+  af::array out;
+  switch (tensors.size()) {
+    case 0:
+      return toTensor<ArrayFireTensor>(ArrayFireTensor()); // empty tensor
+    case 1:
+      return tensors.front();
+    case 2:
+      out = af::join(axis, toArray(tensors[0]), toArray(tensors[1]));
+      break;
+    case 3:
+      out = af::join(
+          axis, toArray(tensors[0]), toArray(tensors[1]), toArray(tensors[2]));
+      break;
+    case 4:
+      out = af::join(
+          axis,
+          toArray(tensors[0]),
+          toArray(tensors[1]),
+          toArray(tensors[2]),
+          toArray(tensors[3]));
+      break;
+    default:
+      // TODO: iteratively concat to remove this limitation
+      throw std::invalid_argument(
+          "ArrayFire concatenate doesn't support > 4 tensors");
   }
-  if (tensors.size() == 0) {
-    return toTensor<ArrayFireTensor>(ArrayFireTensor()); // empty tensor
-  }
-
-  std::vector<af_array> arrs(tensors.size());
-  std::transform(
-      tensors.begin(), tensors.end(), arrs.begin(), [](const Tensor& t) {
-        return toArray(t).get();
-      });
-  af_array handle = nullptr;
-  AF_CHECK(af_join_many(&handle, axis, tensors.size(), arrs.data()));
 
   unsigned numDims = tensors[0].ndim();
   if (axis > std::max(numDims - 1, 0u)) {
     numDims = axis + 1;
   }
 
-  // All tensors have the same numdims
-  return toTensor<ArrayFireTensor>(af::array(handle), numDims);
+  // All tensors have the same numdims else AF would throw
+  return toTensor<ArrayFireTensor>(std::move(out), numDims);
 }
 
 Tensor ArrayFireBackend::nonzero(const Tensor& tensor) {
@@ -303,7 +378,7 @@ Tensor ArrayFireBackend::pad(
           endPadding,
           detail::flToAfPadType(type)),
       /* numDims = */ // TODO: check
-      std::max(input.ndim(), padWidths.size()));
+      std::max(input.ndim(), static_cast<int>(padWidths.size())));
 }
 
 /************************** Unary Operators ***************************/
@@ -454,6 +529,25 @@ Tensor ArrayFireBackend::sort(
   return toTensor<ArrayFireTensor>(std::move(values), input.ndim());
 }
 
+void ArrayFireBackend::sort(
+    Tensor& values,
+    Tensor& indices,
+    const Tensor& input,
+    const Dim axis,
+    const SortMode sortMode) {
+  if (sortMode != SortMode::Descending && sortMode != SortMode::Ascending) {
+    throw std::invalid_argument(
+        "Cannot sort ArrayFire tensor with given SortMode: "
+        "only Descending and Ascending supported.");
+  }
+
+  af::array _values, _indices;
+  af::sort(
+      _values, _indices, toArray(input), axis, sortMode == SortMode::Ascending);
+  values = toTensor<ArrayFireTensor>(std::move(_values), input.ndim());
+  indices = toTensor<ArrayFireTensor>(std::move(_indices), input.ndim());
+}
+
 Tensor ArrayFireBackend::argsort(
     const Tensor& input,
     const Dim axis,
@@ -498,19 +592,10 @@ Tensor ArrayFireBackend::argsort(
 
 // Operations on fl::Tensor call the respective operator overloads that are
 // already defined on af::arrays
-#define FL_AF_BINARY_OP_DEF(OP, FUNC)                                          \
-  Tensor ArrayFireBackend::FUNC(const Tensor& lhs, const Tensor& rhs) {        \
-    if (lhs.ndim() != rhs.ndim()) {                                            \
-      std::stringstream ss;                                                    \
-      ss << "ArrayFireTensor arguments to operator " << std::string(#OP)       \
-         << " (" << std::string(#FUNC) << ") "                                 \
-         << "have a differing number of dimensions " << lhs.shape() << " and " \
-         << rhs.shape();                                                       \
-      throw std::invalid_argument(ss.str());                                   \
-    }                                                                          \
-    return toTensor<ArrayFireTensor>(                                          \
-        toArray(lhs) OP toArray(rhs), lhs.ndim());                             \
-  }                                                                            \
+#define FL_AF_BINARY_OP_DEF(OP, FUNC)                                   \
+  Tensor ArrayFireBackend::FUNC(const Tensor& lhs, const Tensor& rhs) { \
+    return doBinaryOpOrBroadcast(lhs, rhs, af::operator OP);            \
+  }                                                                     \
   FL_AF_BINARY_OP_LITERALS_DEF(FUNC, OP);
 
 // Definitions
@@ -539,18 +624,15 @@ FL_AF_BINARY_OP_DEF(>>, rShift);
 #undef FL_AF_BINARY_OP_LITERALS_DEF
 
 Tensor ArrayFireBackend::minimum(const Tensor& lhs, const Tensor& rhs) {
-  return toTensor<ArrayFireTensor>(
-      af::min(toArray(lhs), toArray(rhs)), lhs.ndim());
+  return doBinaryOpOrBroadcast(lhs, rhs, af::min);
 }
 
 Tensor ArrayFireBackend::maximum(const Tensor& lhs, const Tensor& rhs) {
-  return toTensor<ArrayFireTensor>(
-      af::max(toArray(lhs), toArray(rhs)), lhs.ndim());
+  return doBinaryOpOrBroadcast(lhs, rhs, af::max);
 }
 
 Tensor ArrayFireBackend::power(const Tensor& lhs, const Tensor& rhs) {
-  return toTensor<ArrayFireTensor>(
-      af::pow(toArray(lhs), toArray(rhs)), lhs.ndim());
+  return doBinaryOpOrBroadcast(lhs, rhs, af::pow);
 }
 
 /************************** BLAS ***************************/
@@ -770,16 +852,10 @@ Tensor ArrayFireBackend::var(
     return toTensor<ArrayFireTensor>(af::constant(out, 1), /* numDims = */ 0);
   } else if (axes.size() == 1) {
     return toTensor<ArrayFireTensor>(
-        detail::condenseIndices(
-            af::var(
-                arr,
-                bias ? AF_VARIANCE_SAMPLE : AF_VARIANCE_POPULATION,
-                axes[0]),
-            keepDims),
+        detail::condenseIndices(af::var(arr, bias, axes[0]), keepDims),
         getReducedNumDims(input.ndim(), axes.size(), keepDims));
   } else {
     auto meanArr = mean(input, axes, /* keepDims = */ true);
-    // TODO Replace when we have batchFunc for fl::Tensor
     auto x = af::batchFunc(arr, toArray(meanArr), af::operator-);
 
     x = af::pow(x, 2);

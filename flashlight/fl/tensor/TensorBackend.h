@@ -8,10 +8,13 @@
 #pragma once
 
 #include <memory>
+#include <stdexcept>
 #include <type_traits>
+#include <unordered_map>
 #include <utility>
 
 #include "flashlight/fl/tensor/TensorBase.h"
+#include "flashlight/fl/tensor/TensorExtension.h"
 
 namespace fl {
 
@@ -31,16 +34,19 @@ class TensorBackend {
  public:
   TensorBackend() = default;
   virtual ~TensorBackend() = default;
+  virtual TensorBackendType backendType() const = 0;
 
   /* -------------------------- Compute Functions -------------------------- */
   virtual void sync() = 0;
-  virtual void sync(int deviceId) = 0;
+  virtual void sync(const int deviceId) = 0;
   virtual void eval(const Tensor& tensor) = 0;
   virtual int getDevice() = 0;
-  virtual void setDevice(int deviceId) = 0;
+  virtual void setDevice(const int deviceId) = 0;
+  virtual int getDeviceCount() = 0;
+  virtual bool supportsDataType(const fl::dtype& dtype) const = 0;
 
   /* -------------------------- Rand Functions -------------------------- */
-  virtual void setSeed(int seed) = 0;
+  virtual void setSeed(const int seed) = 0;
   virtual Tensor randn(const Shape& shape, dtype type) = 0;
   virtual Tensor rand(const Shape& shape, dtype type) = 0;
 
@@ -80,7 +86,7 @@ class TensorBackend {
   virtual Tensor tile(const Tensor& tensor, const Shape& shape) = 0;
   virtual Tensor concatenate(
       const std::vector<Tensor>& tensors,
-      unsigned axis) = 0;
+      const unsigned axis) = 0;
   virtual Tensor nonzero(const Tensor& tensor) = 0;
   virtual Tensor pad(
       const Tensor& input,
@@ -122,6 +128,12 @@ class TensorBackend {
       const SortMode sortMode) = 0;
   virtual Tensor
   sort(const Tensor& input, const Dim axis, const SortMode sortMode) = 0;
+  virtual void sort(
+      Tensor& values,
+      Tensor& indices,
+      const Tensor& input,
+      const Dim axis,
+      const SortMode sortMode) = 0;
   virtual Tensor
   argsort(const Tensor& input, const Dim axis, const SortMode sortMode) = 0;
 
@@ -232,6 +244,41 @@ class TensorBackend {
 
   /************************** Utils ***************************/
   virtual void print(const Tensor& tensor) = 0;
+
+  /**
+   * Checks if a datatype is supported by a TensorBackend and its registered
+   * extensions.
+   *
+   * @param[in] dtype the datatype to check
+   *
+   * @return true if the data type is supported, false otherwise
+   */
+  virtual bool isDataTypeSupported(const fl::dtype& dtype) const final;
+
+  /********************* Tensor Extensions **********************/
+  template <typename T>
+  T& getExtension() {
+    static_assert(
+        std::is_base_of<TensorExtensionBase, T>::value,
+        "TensorBackend::getExtension<T>() called with type T "
+        "that is not derived from TensorExtensionBase.");
+
+    TensorExtensionType e = T::getExtensionType();
+
+    // If an extension isn't present, instantiate it via its registered
+    // creation function - only do this once per extension.
+    if (extensions_.find(e) == extensions_.end()) {
+      auto& creationFunc =
+          detail::TensorExtensionRegistrar::getInstance()
+              .getTensorExtensionCreationFunc(this->backendType(), e);
+      extensions_.emplace(e, creationFunc());
+    }
+    return *(static_cast<T*>(extensions_.at(e).get()));
+  }
+
+ protected:
+  std::unordered_map<TensorExtensionType, std::unique_ptr<TensorExtensionBase>>
+      extensions_;
 };
 
 /**

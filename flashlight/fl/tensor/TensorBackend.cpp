@@ -9,9 +9,19 @@
 
 namespace fl {
 namespace detail {
+
 bool areBackendsEqual(const Tensor& a, const Tensor& b) {
   return a.backendType() == b.backendType();
 }
 
 } // namespace detail
+
+bool TensorBackend::isDataTypeSupported(const fl::dtype& dtype) const {
+  bool supported = this->supportsDataType(dtype);
+  for (auto& p : extensions_) {
+    supported &= p.second->isDataTypeSupported(dtype);
+  }
+  return supported;
+}
+
 } // namespace fl

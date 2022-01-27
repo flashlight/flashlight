@@ -20,7 +20,7 @@ namespace fl {
  *
  * @param[in] seed the seed to use
  */
-void setSeed(int seed);
+void setSeed(const int seed);
 
 /**
  * Initialize a tensor with elements sampled from the standard normal

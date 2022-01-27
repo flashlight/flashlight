@@ -85,7 +85,7 @@ Dim Tensor::dim(const size_t dim) const {
   return shape().dim(dim);
 }
 
-size_t Tensor::ndim() const {
+int Tensor::ndim() const {
   return shape().ndim();
 }
 
@@ -162,6 +162,14 @@ TensorBackend& Tensor::backend() const {
   }                                                                         \
                                                                             \
   template <>                                                               \
+  void Tensor::device(TYPE** ptr) const {                                   \
+    if (isEmpty()) {                                                        \
+      return;                                                               \
+    }                                                                       \
+    impl_->device(reinterpret_cast<void**>(ptr));                           \
+  }                                                                         \
+                                                                            \
+  template <>                                                               \
   TYPE* Tensor::host() const {                                              \
     if (isEmpty()) {                                                        \
       return nullptr;                                                       \
@@ -198,6 +206,14 @@ void* Tensor::device() const {
   void* out;
   impl_->device(&out);
   return out;
+}
+
+template <>
+void Tensor::device(void** ptr) const {
+  if (isEmpty()) {
+    return;
+  }
+  impl_->device(ptr);
 }
 
 template <>
@@ -238,6 +254,10 @@ void Tensor::setContext(void* context) {
 
 void* Tensor::getContext() const {
   return impl_->getContext();
+}
+
+std::string Tensor::toString() const {
+  return impl_->toString();
 }
 
 std::ostream& Tensor::operator<<(std::ostream& ostr) const {
@@ -344,13 +364,13 @@ Tensor tile(const Tensor& tensor, const Shape& shape) {
   return tensor.backend().tile(tensor, shape);
 }
 
-Tensor concatenate(const std::vector<Tensor>& tensors, unsigned axis) {
+Tensor concatenate(const std::vector<Tensor>& tensors, const unsigned axis) {
   if (tensors.empty()) {
     throw std::invalid_argument("concatenate: called on empty set of tensors");
   }
 
   // Check all backends match
-  TensorBackendType b = tensors.front().backendType();
+  const TensorBackendType b = tensors.front().backendType();
   const bool matches =
       std::all_of(tensors.begin(), tensors.end(), [b](const Tensor& t) {
         return t.backendType() == b;
@@ -501,13 +521,22 @@ void topk(
     const Tensor& input,
     const unsigned k,
     const Dim axis,
-    const SortMode sortMode) {
+    const SortMode sortMode /* = SortMode::Descending */) {
   FL_TENSOR_BACKENDS_MATCH_CHECK(values, indices, input);
   input.backend().topk(values, indices, input, k, axis, sortMode);
 }
 
 Tensor sort(const Tensor& input, const Dim axis, const SortMode sortMode) {
   return input.backend().sort(input, axis, sortMode);
+}
+
+void sort(
+    Tensor& values,
+    Tensor& indices,
+    const Tensor& input,
+    const Dim axis,
+    const SortMode sortMode /* = SortMode::Descending */) {
+  return values.backend().sort(values, indices, input, axis, sortMode);
 }
 
 Tensor argsort(const Tensor& input, const Dim axis, const SortMode sortMode) {
@@ -609,6 +638,10 @@ Tensor power(const Tensor& lhs, const Tensor& rhs) {
 
 Tensor power(const Tensor& lhs, const double& rhs) {
   return lhs.backend().power(lhs, full(lhs.shape(), rhs));
+}
+
+Tensor power(const double& lhs, const Tensor& rhs) {
+  return rhs.backend().power(full(rhs.shape(), lhs), rhs);
 }
 
 /******************************* BLAS ********************************/
@@ -763,5 +796,13 @@ bool allClose(
   return fl::amax(fl::abs(a - b)).astype(dtype::f64).scalar<double>() <
       absTolerance;
 }
+
+namespace detail {
+
+bool areTensorTypesEqual(const Tensor& a, const Tensor& b) {
+  return a.type() == b.type();
+}
+
+} // namespace detail
 
 } // namespace fl

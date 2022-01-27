@@ -213,6 +213,12 @@ class TensorAdapterBase {
   virtual void* getContext() = 0;
 
   /**
+   * Return a string representation of a Tensor. Not intended to be portable
+   * across backends.
+   */
+  virtual std::string toString() = 0;
+
+  /**
    * Write a string representation of a tensor to an output stream.
    */
   virtual std::ostream& operator<<(std::ostream& ostr) = 0;

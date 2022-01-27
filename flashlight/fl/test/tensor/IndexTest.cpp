@@ -201,6 +201,17 @@ TEST(IndexTest, flat) {
             .scalar<float>(),
         i + 1 - 10);
   }
+
+  // Range flat assignment
+  auto rA = fl::rand({6});
+  a.flat(fl::range(1, 7)) = rA;
+  ASSERT_TRUE(allClose(rA, a.flatten()(fl::range(1, 7))));
+
+  // With leading singleton dims
+  auto b = fl::rand({1, 1, 10});
+  ASSERT_EQ(b.flat(fl::range(3)).shape(), Shape({3}));
+  b.flat(fl::range(3)) = fl::full({3}, 6.);
+  ASSERT_TRUE(allClose(b.flatten()(fl::range(3)), fl::full({3}, 6.)));
 }
 
 TEST(IndexTest, TensorIndex) {
@@ -223,13 +234,19 @@ TEST(IndexTest, TensorIndex) {
   auto i = fl::arange({10}, 0, fl::dtype::u32);
   auto b = fl::rand({20, 20});
   auto ref = b;
-  ASSERT_TRUE(allClose(b(i), b(fl::range(10), 0)));
+  ASSERT_EQ(b(i).shape(), b(fl::range(10)).shape());
+  ASSERT_TRUE(allClose(b(i), b(fl::range(10))));
 
   b(i) += 3.;
-  ASSERT_TRUE(allClose(b(i), b(fl::range(10), 0)));
+  ASSERT_TRUE(allClose(b(i), b(fl::range(10))));
   ASSERT_TRUE(allClose(b(i), (ref + 3)(i)));
-  b(i) += fl::full({(Dim)i.size()}, 10.);
+  b(i) += fl::full({(Dim)i.size(), b.dim(1)}, 10.);
+  ASSERT_EQ(b(i).shape(), (ref + 13)(i).shape());
   ASSERT_TRUE(allClose(b(i), (ref + 13)(i)));
+
+  // Tensor index a > 1D tensor
+  auto c = fl::rand({10, 10, 10});
+  ASSERT_EQ(c(fl::arange({5})).shape(), Shape({5, 10, 10}));
 }
 
 TEST(IndexTest, ExpressionIndex) {

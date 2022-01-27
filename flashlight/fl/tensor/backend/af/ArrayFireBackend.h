@@ -27,8 +27,8 @@ class ArrayFireBackend : public TensorBackend {
 
  public:
   static ArrayFireBackend& getInstance();
-
   ~ArrayFireBackend() override = default;
+  TensorBackendType backendType() const override;
 
   // No copy or move construction or assignment
   ArrayFireBackend(ArrayFireBackend&&) = delete;
@@ -38,13 +38,15 @@ class ArrayFireBackend : public TensorBackend {
 
   /* -------------------------- Compute Functions -------------------------- */
   void sync() override;
-  void sync(int deviceId) override;
+  void sync(const int deviceId) override;
   void eval(const Tensor& tensor) override;
   int getDevice() override;
-  void setDevice(int deviceId) override;
+  void setDevice(const int deviceId) override;
+  int getDeviceCount() override;
+  bool supportsDataType(const fl::dtype& dtype) const override;
 
   /* -------------------------- Rand Functions -------------------------- */
-  void setSeed(int seed) override;
+  void setSeed(const int seed) override;
   Tensor randn(const Shape& shape, dtype type) override;
   Tensor rand(const Shape& shape, dtype type) override;
 
@@ -78,7 +80,7 @@ class ArrayFireBackend : public TensorBackend {
   Tensor reshape(const Tensor& tensor, const Shape& shape) override;
   Tensor transpose(const Tensor& tensor, const Shape& axes /* = {} */) override;
   Tensor tile(const Tensor& tensor, const Shape& shape) override;
-  Tensor concatenate(const std::vector<Tensor>& tensors, unsigned axis)
+  Tensor concatenate(const std::vector<Tensor>& tensors, const unsigned axis)
       override;
   Tensor nonzero(const Tensor& tensor) override;
   Tensor pad(
@@ -121,6 +123,12 @@ class ArrayFireBackend : public TensorBackend {
       const SortMode sortMode) override;
   Tensor sort(const Tensor& input, const Dim axis, const SortMode sortMode)
       override;
+  void sort(
+      Tensor& values,
+      Tensor& indices,
+      const Tensor& input,
+      const Dim axis,
+      const SortMode sortMode) override;
   Tensor argsort(const Tensor& input, const Dim axis, const SortMode sortMode)
       override;
 

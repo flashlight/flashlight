@@ -261,7 +261,7 @@ class Tensor {
    *
    * @return the number of dimensions
    */
-  size_t ndim() const;
+  int ndim() const;
 
   /**
    * Returns true if the tensor has zero elements, else false.
@@ -411,9 +411,9 @@ class Tensor {
       case dtype::f64:
         return scalar<double>();
       case dtype::s32:
-        return scalar<long>();
+        return scalar<int>();
       case dtype::u32:
-        return scalar<unsigned long>();
+        return scalar<unsigned int>();
       case dtype::b8:
         return scalar<char>();
       case dtype::u8:
@@ -443,6 +443,19 @@ class Tensor {
    */
   template <typename T>
   T* device() const;
+
+  /**
+   * Populate a pointer value with the address of a Tensor's underlying buffer
+   * on the computation device.
+   *
+   * \note The memory allocated here will not be freed until Tensor:unlock() is
+   * called.
+   *
+   * @param[in] ptr the pointer to populate with the Tensor's buffer location on
+   * device.
+   */
+  template <typename T>
+  void device(T** ptr) const;
 
   /**
    * Returns a pointer to the tensor's underlying data, but on the host. If the
@@ -520,6 +533,15 @@ class Tensor {
    * no-op.
    */
   void* getContext() const;
+
+  /**
+   * Returns a string representation of a Tensor. NOTE: This is
+   * backend-dependent. See Flashlight's serialization utilities for ways to
+   * serialize Tensors that are portable across Tensor backends.
+   *
+   * @return a string representation of the Tensor.
+   */
+  std::string toString() const;
 
   /**
    * Write a string representation of a tensor to an output stream.
@@ -678,7 +700,7 @@ Tensor tile(const Tensor& tensor, const Shape& shape);
  * @param[in] tensors a vector of tensors to concatenate
  * @return a concatenated tensor
  */
-Tensor concatenate(const std::vector<Tensor>& tensors, unsigned axis = 0);
+Tensor concatenate(const std::vector<Tensor>& tensors, const unsigned axis = 0);
 
 /**
  * Join or concatenate tensors together along a particular axis.
@@ -966,8 +988,8 @@ enum class SortMode { Descending = 0, Ascending = 1 };
 /**
  * Get the top-k values and indices from a Tensor.
  *
- * @param[in] values
- * @param[in] indices
+ * @param[out] values the sorted tensor
+ * @param[out] indices the indices corresponding to the sorted ordering
  * @param[in] input the input tensor to sort
  * @param[in] k the top number of elements to return
  * @param[in] axis the axis along which to sort.
@@ -989,6 +1011,22 @@ void topk(
  * @param[in] sortMode the ordering with which to sort. Defaults to descending
  */
 Tensor sort(
+    const Tensor& input,
+    const Dim axis,
+    const SortMode sortMode = SortMode::Descending);
+
+/**
+ * Sort the values of a tensor, and return the sorted tensor and sorted indices.
+ *
+ * @param[out] values the sorted tensor
+ * @param[out] indices the indices corresponding to the sorted ordering
+ * @param[in] input the input Tensor
+ * @param[in] axis the axis along which to sort
+ * @param[in] sortMode the ordering with which to sort. Defaults to descending
+ */
+void sort(
+    Tensor& values,
+    Tensor& indices,
     const Tensor& input,
     const Dim axis,
     const SortMode sortMode = SortMode::Descending);
@@ -1090,6 +1128,7 @@ Tensor maximum(const double& lhs, const Tensor& rhs);
  */
 Tensor power(const Tensor& lhs, const Tensor& rhs);
 Tensor power(const Tensor& lhs, const double& rhs);
+Tensor power(const double& lhs, const Tensor& rhs);
 
 /******************************* BLAS ********************************/
 
@@ -1374,7 +1413,7 @@ Tensor all(
 /**
  * Write a string representation of a tensor to an output stream.
  */
-std::ostream& operator<<(std::ostream& ostr, const Tensor& s);
+std::ostream& operator<<(std::ostream& ostr, const Tensor& t);
 
 /**
  * Print a string representation of a tensor to standard out.
@@ -1399,5 +1438,28 @@ bool allClose(
     const fl::Tensor& a,
     const fl::Tensor& b,
     const double absTolerance = 1e-5);
+
+namespace detail {
+
+bool areTensorTypesEqual(const Tensor& a, const Tensor& b);
+
+template <typename... Args>
+bool areTensorTypesEqual(
+    const Tensor& a,
+    const Tensor& b,
+    const Args&... args) {
+  return areTensorTypesEqual(a, b) && areTensorTypesEqual(a, args...);
+}
+
+} // namespace detail
+
+/**
+ * Checks if a variadic number of Tensors have the same type.
+ */
+#define FL_TENSOR_DTYPES_MATCH_CHECK(...)                                     \
+  if (!detail::areTensorTypesEqual(__VA_ARGS__)) {                            \
+    throw std::invalid_argument(                                              \
+        std::string(__func__) + ": tensors are not all of the same types. "); \
+  }
 
 } // namespace fl

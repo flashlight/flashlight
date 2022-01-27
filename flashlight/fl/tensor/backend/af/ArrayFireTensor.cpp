@@ -7,6 +7,7 @@
 
 #include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
 
+#include <cassert>
 #include <memory>
 #include <stdexcept>
 #include <utility>
@@ -46,11 +47,12 @@ ArrayFireTensor::ArrayFireTensor(
     std::shared_ptr<af::array> arr,
     std::vector<af::index>&& afIndices,
     std::vector<detail::IndexType>&& indexTypes,
-    unsigned numDims)
+    const unsigned numDims,
+    const bool isFlat)
     : arrayHandle_(arr),
       indices_(std::move(afIndices)),
       indexTypes_(std::move(indexTypes)),
-      handle_(IndexedArrayComponent()),
+      handle_(IndexedArrayComponent(isFlat)),
       numDims_(numDims) {}
 
 ArrayFireTensor::ArrayFireTensor(
@@ -92,6 +94,10 @@ unsigned ArrayFireTensor::numDims() const {
   return numDims_;
 }
 
+ArrayFireTensor::IndexedArrayComponent::IndexedArrayComponent(
+    const bool _isFlat /* = false */)
+    : isFlat(_isFlat) {}
+
 af::array::array_proxy ArrayFireTensor::IndexedArrayComponent::get(
     const ArrayFireTensor& inst) {
   auto& i = inst.indices_.value();
@@ -128,10 +134,12 @@ af::array& ArrayFireTensor::getHandle() {
   // af::array::array_proxy, condense the indices of the resulting array after
   // the conversion.
   if (!std::holds_alternative<ArrayComponent>(handle_)) {
+    auto& idxComp = std::get<IndexedArrayComponent>(handle_);
     arrayHandle_ = std::make_shared<af::array>(detail::condenseIndices(
-        std::get<IndexedArrayComponent>(handle_).get(*this),
+        idxComp.get(*this),
         /* keepDims = */ false,
-        indexTypes_));
+        indexTypes_,
+        /* isFlat = */ idxComp.isFlat));
     // Clear state
     handle_ = ArrayComponent(); // set to passthrough
     indices_ = {}; // remove indices
@@ -245,13 +253,16 @@ Tensor ArrayFireTensor::index(const std::vector<Index>& indices) {
         "ArrayFire tensors support up to 4 dimensions.");
   }
 
-  // If indexing with a single element and it's an Array, don't use spans
   // TODO: vet and stress test this a lot more/add proper support for
   // multi-tensor
-  bool tensorIndex = indices.size() == 1 &&
-      indices.front().type() == detail::IndexType::Tensor;
+  // If indexing by a single element and it's a tensor with the same number of
+  // indices as the array being indexed, do a flat index as this is probably a
+  // filter-based index (for example: a(a < 5)).
+  bool completeTensorIndex = indices.size() == 1 &&
+      indices.front().type() == detail::IndexType::Tensor &&
+      indices.front().get<Tensor>().size() == getHandle().elements();
   std::vector<af::index> afIndices;
-  if (tensorIndex) {
+  if (completeTensorIndex) {
     afIndices = {af::index(0)};
   } else {
     afIndices = {af::span, af::span, af::span, af::span}; // implicit spans
@@ -277,9 +288,11 @@ Tensor ArrayFireTensor::index(const std::vector<Index>& indices) {
 
   getHandle(); // if this tensor was a view, run indexing and promote
 
+  assert(afIndices.size() == indexTypes.size());
   // Compute numDums for the new Tensor
   unsigned newNumDims = numDims();
-  if (tensorIndex) {
+
+  if (completeTensorIndex) {
     // TODO/FIXME: compute this based on the number of els in the indexing
     // tensor(s)
     newNumDims = 1;
@@ -293,7 +306,11 @@ Tensor ArrayFireTensor::index(const std::vector<Index>& indices) {
   newNumDims = std::max(newNumDims, 1u); // can never index to a 0 dim tensor
 
   return fl::Tensor(std::unique_ptr<ArrayFireTensor>(new ArrayFireTensor(
-      arrayHandle_, std::move(afIndices), std::move(indexTypes), newNumDims)));
+      arrayHandle_,
+      std::move(afIndices),
+      std::move(indexTypes),
+      newNumDims,
+      /* isFlat = */ false)));
 }
 
 Tensor ArrayFireTensor::flatten() const {
@@ -309,7 +326,8 @@ Tensor ArrayFireTensor::flat(const Index& idx) const {
       arrayHandle_,
       {detail::flToAfIndex(idx)},
       {idx.type()},
-      /* numDims = */ 1)));
+      /* numDims = */ 1,
+      /* isFlat = */ true)));
 }
 
 Tensor ArrayFireTensor::asContiguousTensor() {
@@ -330,8 +348,12 @@ void* ArrayFireTensor::getContext() {
   return nullptr; // noop
 }
 
+std::string ArrayFireTensor::toString() {
+  return std::string(af::toString("ArrayFireTensor", getHandle()));
+}
+
 std::ostream& ArrayFireTensor::operator<<(std::ostream& ostr) {
-  ostr << "ArrayFireTensor " << std::string(af::toString("", getHandle()));
+  ostr << this->toString();
   return ostr;
 }
 

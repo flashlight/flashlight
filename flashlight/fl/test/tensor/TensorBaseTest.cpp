@@ -6,6 +6,10 @@
  */
 
 #include <cmath>
+#include <functional>
+#include <sstream>
+#include <stdexcept>
+#include <vector>
 
 #include <gtest/gtest.h>
 
@@ -63,11 +67,13 @@ TEST(TensorBaseTest, fromScalar) {
   ASSERT_EQ(a.shape(), Shape({}));
 }
 
-TEST(TensorBaseTest, ostream) {
+TEST(TensorBaseTest, string) {
   // Different backends might print tensors differently - check for consistency
   // across two identical tensors
   auto a = fl::full({3, 4, 5}, 6.);
   auto b = fl::full({3, 4, 5}, 6.);
+  ASSERT_EQ(a.toString(), b.toString());
+
   std::stringstream ssa, ssb;
   ssa << a;
   ssb << b;
@@ -225,6 +231,30 @@ TEST(TensorBaseTest, concatenate) {
       allClose(fl::concatenate(0, a, b, c), fl::concatenate({a, b, c})));
   auto out = fl::concatenate(0, a, b, c);
   ASSERT_EQ(out.shape(), Shape({9, 3}));
+
+  // Empty tenors
+  ASSERT_EQ(fl::concatenate(0, Tensor(), Tensor()).shape(), Shape({0}));
+  ASSERT_EQ(fl::concatenate(2, Tensor(), Tensor()).shape(), Shape({0, 1, 1}));
+  ASSERT_EQ(
+      fl::concatenate(1, fl::rand({5, 5}), Tensor()).shape(), Shape({5, 5}));
+
+  // More tensors
+  // TODO{fl::Tensor}{concat} just concat everything once we enforce
+  // arbitrarily-many tensors
+  const float val = 3.;
+  const int axis = 0;
+  auto t = fl::concatenate(
+      axis,
+      fl::full({4, 2}, val),
+      fl::full({4, 2}, val),
+      fl::full({4, 2}, val),
+      fl::concatenate(
+          axis,
+          fl::full({4, 2}, val),
+          fl::full({4, 2}, val),
+          fl::full({4, 2}, val)));
+  ASSERT_EQ(t.shape(), Shape({24, 2}));
+  ASSERT_TRUE(allClose(t, fl::full({24, 2}, val)));
 }
 
 TEST(TensorBaseTest, nonzero) {
@@ -347,6 +377,116 @@ TEST(TensorBaseTest, maximum) {
   ASSERT_TRUE(allClose(b, c));
   ASSERT_TRUE(allClose(fl::maximum(1, b).astype(a.type()), b));
   ASSERT_TRUE(allClose(fl::maximum(b, 1).astype(a.type()), b));
+}
+
+using binaryOpFunc_t = Tensor (*)(const Tensor& lhs, const Tensor& rhs);
+
+TEST(TensorBaseTest, broadcasting) {
+  // Collection of {lhs, rhs, tileShapeLhs, tileShapeRhs} corresponding to
+  // broadcasting [lhs] to [rhs] by tiling by the the respective tileShapes
+  struct ShapeData {
+    Shape lhs; // broadcast from
+    Shape rhs; // broadcast to
+    Shape tileShapeLhs;
+    Shape tileShapeRhs;
+  };
+  std::vector<ShapeData> shapes = {
+      {{3, 1}, {3, 3}, {1, 3}, {1, 1}},
+      {{3}, {3, 3}, {1, 3}, {1, 1}},
+      {{3, 1, 4}, {3, 6, 4}, {1, 6, 1}, {1, 1, 1}},
+      {{3, 1, 4, 1}, {3, 2, 4, 5}, {1, 2, 1, 5}, {1, 1, 1, 1}},
+      {{1, 10}, {8, 10}, {8, 1}, {1, 1}},
+      {{2, 1, 5, 1}, {2, 3, 5, 3}, {1, 3, 1, 3}, {1, 1, 1, 1}},
+      {{3, 1, 2, 1}, {1, 4, 1, 5}, {1, 4, 1, 5}, {3, 1, 2, 1}},
+      {{3, 2, 1}, {3, 1, 4, 1}, {1, 1, 4}, {1, 2, 1, 1}}};
+
+  std::unordered_map<binaryOpFunc_t, std::string> functions = {
+      {fl::minimum, "minimum"},
+      {fl::maximum, "maximum"},
+      {fl::power, "power"},
+      {fl::add, "add"},
+      {fl::add, "add"},
+      {fl::sub, "sub"},
+      {fl::mul, "mul"},
+      {fl::div, "div"},
+      {fl::eq, "eq"},
+      {fl::neq, "neq"},
+      {fl::lessThan, "lessThan"},
+      {fl::lessThanEqual, "lessThanEqual"},
+      {fl::greaterThan, "greaterThan"},
+      {fl::greaterThanEqual, "greaterThanEqual"},
+      {fl::logicalOr, "logicalOr"},
+      {fl::logicalAnd, "logicalAnd"},
+      {fl::mod, "mod"},
+      {fl::bitwiseOr, "bitwiseOr"},
+      {fl::bitwiseXor, "bitwiseXor"},
+      {fl::lShift, "lShift"},
+      {fl::rShift, "rShift"}};
+
+  auto doBinaryOp = [](const Tensor& lhs,
+                       const Tensor& rhs,
+                       const Shape& tileShapeLhs,
+                       const Shape& tileShapeRhs,
+                       binaryOpFunc_t func) -> std::pair<Tensor, Tensor> {
+    assert(lhs.ndim() <= rhs.ndim());
+    return {
+        func(lhs, rhs), func(tile(lhs, tileShapeLhs), tile(rhs, tileShapeRhs))};
+  };
+
+  auto computeBroadcastShape = [](const Shape& lhsShape,
+                                  const Shape& rhsShape) -> Shape {
+    unsigned maxnDim = std::max(lhsShape.ndim(), rhsShape.ndim());
+    Shape outShape{std::vector<Dim>(maxnDim)};
+    for (unsigned i = 0; i < maxnDim; ++i) {
+      if (i > lhsShape.ndim() - 1) {
+        outShape[i] = rhsShape[i];
+      } else if (i > rhsShape.ndim() - 1) {
+        outShape[i] = lhsShape[i];
+      } else if (lhsShape[i] == 1) {
+        outShape[i] = rhsShape[i];
+      } else if (rhsShape[i] == 1) {
+        outShape[i] = lhsShape[i];
+      } else if (lhsShape[i] == rhsShape[i]) {
+        outShape[i] = lhsShape[i];
+      } else if (lhsShape[i] != rhsShape[i]) {
+        throw std::runtime_error(
+            "computeBroadcastShape - cannot broadcast shape");
+      }
+    }
+    return outShape;
+  };
+
+  for (auto funcp : functions) {
+    for (auto& shapeData : shapes) {
+      auto lhs = (fl::rand(shapeData.lhs) * 10).astype(fl::dtype::s32);
+      auto rhs = (fl::rand(shapeData.rhs) * 10).astype(fl::dtype::s32);
+
+      auto [actualOut, expectedOut] = doBinaryOp(
+          lhs,
+          rhs,
+          shapeData.tileShapeLhs,
+          shapeData.tileShapeRhs,
+          funcp.first);
+
+      Shape expectedShape = computeBroadcastShape(shapeData.lhs, shapeData.rhs);
+
+      std::stringstream ss;
+      ss << "lhs: " << shapeData.lhs << " rhs: " << shapeData.rhs
+         << " function: " << funcp.second;
+      auto testData = ss.str();
+
+      ASSERT_EQ(actualOut.shape(), expectedShape) << testData;
+      ASSERT_TRUE(allClose(actualOut, expectedOut)) << testData;
+    }
+
+    // Scalar broadcasting
+    const double scalarVal = 4;
+    const Shape inShape = {2, 3, 4};
+    const auto lhs = fl::rand(inShape).astype(fl::dtype::s32);
+    const auto rhs = fl::fromScalar(scalarVal, fl::dtype::s32);
+    const auto rhsTiled = fl::full(inShape, scalarVal, fl::dtype::s32);
+    ASSERT_TRUE(allClose(funcp.first(lhs, rhs), funcp.first(lhs, rhsTiled)));
+  }
 }
 
 TEST(TensorBaseTest, argmin) {
@@ -572,7 +712,12 @@ TEST(TensorBaseTest, topk) {
       allClose(values, Tensor::fromVector<float>({3, 2}, {9, 8, 7, 9, 8, 7})));
 
   fl::topk(
-      values, indices, a, /* k = */ 4, /* axis = */ 0, fl::SortMode::Ascending);
+      values,
+      indices,
+      a,
+      /* k = */ 4,
+      /* axis = */ 0,
+      fl::SortMode::Ascending);
   ASSERT_TRUE(allClose(
       values, Tensor::fromVector<float>({4, 2}, {0, 1, 2, 3, 0, 1, 2, 3})));
 }
@@ -590,6 +735,14 @@ TEST(TensorBaseTest, sort) {
   ASSERT_TRUE(allClose(sorted, tiled));
 
   ASSERT_TRUE(allClose(a, fl::sort(tiled, 0, SortMode::Ascending)));
+
+  auto b = fl::rand({10});
+  Tensor values, indices;
+  fl::sort(values, indices, b, /* axis = */ 0, SortMode::Descending);
+  ASSERT_TRUE(
+      allClose(values, fl::sort(b, /* axis = */ 0, SortMode::Descending)));
+  ASSERT_TRUE(
+      allClose(fl::argsort(b, /* axis = */ 0, SortMode::Descending), indices));
 }
 
 TEST(TensorBaseTest, argsort) {
@@ -616,6 +769,10 @@ TEST(TensorBaseTest, power) {
 TEST(TensorBaseTest, powerDouble) {
   auto a = fl::full({3, 3}, 2.);
   ASSERT_TRUE(allClose(fl::power(a, 3), a * a * a));
+
+  auto b = fl::full({3, 3}, 2.);
+  ASSERT_TRUE(
+      allClose(fl::power(3, a), fl::full(b.shape(), 3 * 3, fl::dtype::f32)));
 }
 
 TEST(TensorBaseTest, floor) {
@@ -1144,6 +1301,12 @@ TEST(TensorBaseTest, pad) {
   auto symmetricPadded = fl::pad(t, {{1, 1}, {2, 2}}, PadType::Symmetric);
   ASSERT_TRUE(allClose(
       symmetricPadded,
+      // TODO{fl::Tensor}{concat} just concat everything once we enforce
+      // arbitrarily-many tensors
       fl::concatenate(
-          1, vTiled1, vTiled0, vTiled0, vTiled1, vTiled1, vTiled0)));
+          1,
+          vTiled1,
+          vTiled0,
+          vTiled0,
+          fl::concatenate(1, vTiled1, vTiled1, vTiled0))));
 }

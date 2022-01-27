@@ -23,7 +23,7 @@ void sync() {
   Tensor().backend().sync();
 }
 
-void sync(int deviceId) {
+void sync(const int deviceId) {
   Tensor().backend().sync(deviceId);
 }
 
@@ -40,8 +40,12 @@ int getDevice() {
   return Tensor().backend().getDevice();
 }
 
-void setDevice(int deviceId) {
+void setDevice(const int deviceId) {
   Tensor().backend().setDevice(deviceId);
+}
+
+int getDeviceCount() {
+  return Tensor().backend().getDeviceCount();
 }
 
 } // namespace fl

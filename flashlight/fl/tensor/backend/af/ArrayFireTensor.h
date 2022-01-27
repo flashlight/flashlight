@@ -53,7 +53,9 @@ class ArrayFireTensor : public TensorAdapterBase {
   // To be visited when this tensor is to be indexed. Indexes the underlying
   // af::array, and returns the proxy to be used as a temporary lvalue.
   struct IndexedArrayComponent {
+    explicit IndexedArrayComponent(const bool _isFlat = false);
     af::array::array_proxy get(const ArrayFireTensor& inst);
+    bool isFlat;
   };
   // To be visited when this tensor is holding an array without needing
   // indexing. Passthrough - returns the array directly.
@@ -79,12 +81,16 @@ class ArrayFireTensor : public TensorAdapterBase {
    *
    * @param[in] handle a pointer to the ArrayFire array
    * @param[in] indices a vector of ArrayFire indices to lazily index.
+   * @param[in] indexTypes a vector of index types to lazily index. Needed to
+   * determine singleton dimension condensation
+   * @param[in] isFlat if the indexing op is flat (condense all dims)
    */
   ArrayFireTensor(
       std::shared_ptr<af::array> handle,
       std::vector<af::index>&& afIndices,
       std::vector<detail::IndexType>&& indexTypes,
-      unsigned numDims);
+      const unsigned numDims,
+      const bool isFlat);
 
   /**
    * Construct an ArrayFireTensor from an ArrayFire array handle without copying
@@ -200,6 +206,7 @@ class ArrayFireTensor : public TensorAdapterBase {
   Tensor asContiguousTensor() override;
   void setContext(void* context) override; // noop
   void* getContext() override; // noop
+  std::string toString() override;
   std::ostream& operator<<(std::ostream& ostr) override;
 
   /******************** Assignment Operators ********************/
