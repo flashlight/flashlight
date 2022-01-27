@@ -80,7 +80,7 @@ class ArrayFireBackend : public TensorBackend {
   Tensor reshape(const Tensor& tensor, const Shape& shape) override;
   Tensor transpose(const Tensor& tensor, const Shape& axes /* = {} */) override;
   Tensor tile(const Tensor& tensor, const Shape& shape) override;
-  Tensor concatenate(const std::vector<Tensor>& tensors, unsigned axis)
+  Tensor concatenate(const std::vector<Tensor>& tensors, const unsigned axis)
       override;
   Tensor nonzero(const Tensor& tensor) override;
   Tensor pad(

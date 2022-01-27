@@ -89,8 +89,9 @@ af::dim4 condenseDims(const af::dim4& dims);
  */
 af::array condenseIndices(
     const af::array& arr,
-    bool keepDims = false,
-    const std::optional<std::vector<detail::IndexType>>& indexTypes = {});
+    const bool keepDims = false,
+    const std::optional<std::vector<detail::IndexType>>& indexTypes = {},
+    const bool isFlat = false);
 
 /**
  * Convert a Flashlight Location into an ArrayFire location (host or device).

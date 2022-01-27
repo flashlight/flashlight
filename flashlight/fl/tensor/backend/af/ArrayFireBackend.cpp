@@ -311,32 +311,41 @@ Tensor ArrayFireBackend::tile(const Tensor& tensor, const Shape& shape) {
 
 Tensor ArrayFireBackend::concatenate(
     const std::vector<Tensor>& tensors,
-    unsigned axis) {
-  // TODO: write this in a custom way with index assignment so as to avoid this
-  // limitation
-  if (tensors.size() > 10) {
-    throw std::invalid_argument(
-        "ArrayFire concatenate doesn't support > 10 tensors");
+    const unsigned axis) {
+  af::array out;
+  switch (tensors.size()) {
+    case 0:
+      return toTensor<ArrayFireTensor>(ArrayFireTensor()); // empty tensor
+    case 1:
+      return tensors.front();
+    case 2:
+      out = af::join(axis, toArray(tensors[0]), toArray(tensors[1]));
+      break;
+    case 3:
+      out = af::join(
+          axis, toArray(tensors[0]), toArray(tensors[1]), toArray(tensors[2]));
+      break;
+    case 4:
+      out = af::join(
+          axis,
+          toArray(tensors[0]),
+          toArray(tensors[1]),
+          toArray(tensors[2]),
+          toArray(tensors[3]));
+      break;
+    default:
+      // TODO: iteratively concat to remove this limitation
+      throw std::invalid_argument(
+          "ArrayFire concatenate doesn't support > 4 tensors");
   }
-  if (tensors.size() == 0) {
-    return toTensor<ArrayFireTensor>(ArrayFireTensor()); // empty tensor
-  }
-
-  std::vector<af_array> arrs(tensors.size());
-  std::transform(
-      tensors.begin(), tensors.end(), arrs.begin(), [](const Tensor& t) {
-        return toArray(t).get();
-      });
-  af_array handle = nullptr;
-  AF_CHECK(af_join_many(&handle, axis, tensors.size(), arrs.data()));
 
   unsigned numDims = tensors[0].ndim();
   if (axis > std::max(numDims - 1, 0u)) {
     numDims = axis + 1;
   }
 
-  // All tensors have the same numdims
-  return toTensor<ArrayFireTensor>(af::array(handle), numDims);
+  // All tensors have the same numdims else AF would throw
+  return toTensor<ArrayFireTensor>(std::move(out), numDims);
 }
 
 Tensor ArrayFireBackend::nonzero(const Tensor& tensor) {

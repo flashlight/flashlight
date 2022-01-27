@@ -700,7 +700,7 @@ Tensor tile(const Tensor& tensor, const Shape& shape);
  * @param[in] tensors a vector of tensors to concatenate
  * @return a concatenated tensor
  */
-Tensor concatenate(const std::vector<Tensor>& tensors, unsigned axis = 0);
+Tensor concatenate(const std::vector<Tensor>& tensors, const unsigned axis = 0);
 
 /**
  * Join or concatenate tensors together along a particular axis.

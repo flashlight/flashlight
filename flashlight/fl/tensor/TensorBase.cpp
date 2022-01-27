@@ -364,13 +364,13 @@ Tensor tile(const Tensor& tensor, const Shape& shape) {
   return tensor.backend().tile(tensor, shape);
 }
 
-Tensor concatenate(const std::vector<Tensor>& tensors, unsigned axis) {
+Tensor concatenate(const std::vector<Tensor>& tensors, const unsigned axis) {
   if (tensors.empty()) {
     throw std::invalid_argument("concatenate: called on empty set of tensors");
   }
 
   // Check all backends match
-  TensorBackendType b = tensors.front().backendType();
+  const TensorBackendType b = tensors.front().backendType();
   const bool matches =
       std::all_of(tensors.begin(), tensors.end(), [b](const Tensor& t) {
         return t.backendType() == b;
