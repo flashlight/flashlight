@@ -86,7 +86,7 @@ class TensorBackend {
   virtual Tensor tile(const Tensor& tensor, const Shape& shape) = 0;
   virtual Tensor concatenate(
       const std::vector<Tensor>& tensors,
-      unsigned axis) = 0;
+      const unsigned axis) = 0;
   virtual Tensor nonzero(const Tensor& tensor) = 0;
   virtual Tensor pad(
       const Tensor& input,

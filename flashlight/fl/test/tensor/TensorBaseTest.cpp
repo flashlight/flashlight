@@ -231,6 +231,30 @@ TEST(TensorBaseTest, concatenate) {
       allClose(fl::concatenate(0, a, b, c), fl::concatenate({a, b, c})));
   auto out = fl::concatenate(0, a, b, c);
   ASSERT_EQ(out.shape(), Shape({9, 3}));
+
+  // Empty tenors
+  ASSERT_EQ(fl::concatenate(0, Tensor(), Tensor()).shape(), Shape({0}));
+  ASSERT_EQ(fl::concatenate(2, Tensor(), Tensor()).shape(), Shape({0, 1, 1}));
+  ASSERT_EQ(
+      fl::concatenate(1, fl::rand({5, 5}), Tensor()).shape(), Shape({5, 5}));
+
+  // More tensors
+  // TODO{fl::Tensor}{concat} just concat everything once we enforce
+  // arbitrarily-many tensors
+  const float val = 3.;
+  const int axis = 0;
+  auto t = fl::concatenate(
+      axis,
+      fl::full({4, 2}, val),
+      fl::full({4, 2}, val),
+      fl::full({4, 2}, val),
+      fl::concatenate(
+          axis,
+          fl::full({4, 2}, val),
+          fl::full({4, 2}, val),
+          fl::full({4, 2}, val)));
+  ASSERT_EQ(t.shape(), Shape({24, 2}));
+  ASSERT_TRUE(allClose(t, fl::full({24, 2}, val)));
 }
 
 TEST(TensorBaseTest, nonzero) {
@@ -1277,6 +1301,12 @@ TEST(TensorBaseTest, pad) {
   auto symmetricPadded = fl::pad(t, {{1, 1}, {2, 2}}, PadType::Symmetric);
   ASSERT_TRUE(allClose(
       symmetricPadded,
+      // TODO{fl::Tensor}{concat} just concat everything once we enforce
+      // arbitrarily-many tensors
       fl::concatenate(
-          1, vTiled1, vTiled0, vTiled0, vTiled1, vTiled1, vTiled0)));
+          1,
+          vTiled1,
+          vTiled0,
+          vTiled0,
+          fl::concatenate(1, vTiled1, vTiled1, vTiled0))));
 }

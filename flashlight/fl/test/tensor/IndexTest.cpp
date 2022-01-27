@@ -206,6 +206,12 @@ TEST(IndexTest, flat) {
   auto rA = fl::rand({6});
   a.flat(fl::range(1, 7)) = rA;
   ASSERT_TRUE(allClose(rA, a.flatten()(fl::range(1, 7))));
+
+  // With leading singleton dims
+  auto b = fl::rand({1, 1, 10});
+  ASSERT_EQ(b.flat(fl::range(3)).shape(), Shape({3}));
+  b.flat(fl::range(3)) = fl::full({3}, 6.);
+  ASSERT_TRUE(allClose(b.flatten()(fl::range(3)), fl::full({3}, 6.)));
 }
 
 TEST(IndexTest, TensorIndex) {

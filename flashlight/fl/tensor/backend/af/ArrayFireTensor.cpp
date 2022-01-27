@@ -47,11 +47,12 @@ ArrayFireTensor::ArrayFireTensor(
     std::shared_ptr<af::array> arr,
     std::vector<af::index>&& afIndices,
     std::vector<detail::IndexType>&& indexTypes,
-    unsigned numDims)
+    const unsigned numDims,
+    const bool isFlat)
     : arrayHandle_(arr),
       indices_(std::move(afIndices)),
       indexTypes_(std::move(indexTypes)),
-      handle_(IndexedArrayComponent()),
+      handle_(IndexedArrayComponent(isFlat)),
       numDims_(numDims) {}
 
 ArrayFireTensor::ArrayFireTensor(
@@ -93,6 +94,10 @@ unsigned ArrayFireTensor::numDims() const {
   return numDims_;
 }
 
+ArrayFireTensor::IndexedArrayComponent::IndexedArrayComponent(
+    const bool _isFlat /* = false */)
+    : isFlat(_isFlat) {}
+
 af::array::array_proxy ArrayFireTensor::IndexedArrayComponent::get(
     const ArrayFireTensor& inst) {
   auto& i = inst.indices_.value();
@@ -129,10 +134,12 @@ af::array& ArrayFireTensor::getHandle() {
   // af::array::array_proxy, condense the indices of the resulting array after
   // the conversion.
   if (!std::holds_alternative<ArrayComponent>(handle_)) {
+    auto& idxComp = std::get<IndexedArrayComponent>(handle_);
     arrayHandle_ = std::make_shared<af::array>(detail::condenseIndices(
-        std::get<IndexedArrayComponent>(handle_).get(*this),
+        idxComp.get(*this),
         /* keepDims = */ false,
-        indexTypes_));
+        indexTypes_,
+        /* isFlat = */ idxComp.isFlat));
     // Clear state
     handle_ = ArrayComponent(); // set to passthrough
     indices_ = {}; // remove indices
@@ -299,7 +306,11 @@ Tensor ArrayFireTensor::index(const std::vector<Index>& indices) {
   newNumDims = std::max(newNumDims, 1u); // can never index to a 0 dim tensor
 
   return fl::Tensor(std::unique_ptr<ArrayFireTensor>(new ArrayFireTensor(
-      arrayHandle_, std::move(afIndices), std::move(indexTypes), newNumDims)));
+      arrayHandle_,
+      std::move(afIndices),
+      std::move(indexTypes),
+      newNumDims,
+      /* isFlat = */ false)));
 }
 
 Tensor ArrayFireTensor::flatten() const {
@@ -315,7 +326,8 @@ Tensor ArrayFireTensor::flat(const Index& idx) const {
       arrayHandle_,
       {detail::flToAfIndex(idx)},
       {idx.type()},
-      /* numDims = */ 1)));
+      /* numDims = */ 1,
+      /* isFlat = */ true)));
 }
 
 Tensor ArrayFireTensor::asContiguousTensor() {
