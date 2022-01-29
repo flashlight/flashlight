@@ -19,6 +19,15 @@ namespace fl {
 namespace pkg {
 namespace text {
 
+namespace {
+
+// Maximum number of tokens to keep in memory for each `TextDataset` instance.
+// Setting the default value to 10,000,000,000 which requires 40GB in memory,
+// since indices are stored as int32.
+constexpr size_t kMaxTokenInBuffer = 10000000000;
+
+} // namespace
+
 /**
  * TextDataset prepares text data for LM training. It returns a single tensor of
  * the indices for a given batched text. The indices are the token ID of each
@@ -59,7 +68,8 @@ class TextDataset : public fl::Dataset {
       int64_t tokensPerSample = 1024,
       int64_t batchSize = 1,
       const std::string& sampleBreakMode = "none",
-      bool useDynamicBatching = false);
+      const bool useDynamicBatching = false,
+      const size_t reserveSpaceSize = kMaxTokenInBuffer);
 
   int64_t size() const override;
 

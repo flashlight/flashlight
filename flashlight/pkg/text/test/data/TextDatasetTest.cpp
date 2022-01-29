@@ -10,12 +10,12 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "flashlight/pkg/text/data/TextDataset.h"
 #include "flashlight/fl/common/Init.h"
 #include "flashlight/lib/text/dictionary/Defines.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/tokenizer/PartialFileReader.h"
 #include "flashlight/lib/text/tokenizer/Tokenizer.h"
+#include "flashlight/pkg/text/data/TextDataset.h"
 
 using fl::lib::pathsConcat;
 using namespace fl::lib;
@@ -59,7 +59,9 @@ TEST(TextDatasetTest, NoneMode) {
       dictionary,
       tokensPerSample,
       batchSize,
-      "none");
+      "none",
+      /* useDynamicBatching = */ false,
+      /* reserveSpaceSize = */ 0);
 
   ASSERT_EQ(dataset.size(), 4);
   for (int i = 0; i < dataset.size(); i++) {
@@ -87,7 +89,9 @@ TEST(TextDatasetTest, EosMode) {
       dictionary,
       tokensPerSample,
       batchSize,
-      "eos");
+      "eos",
+      /* useDynamicBatching = */ false,
+      /* reserveSpaceSize = */ 0);
 
   ASSERT_EQ(dataset.size(), 4);
 
@@ -118,7 +122,8 @@ TEST(TextDatasetTest, EosModeWithDynamicBatching) {
       tokensPerSample,
       1,
       "eos",
-      true);
+      /* useDynamicBatching = */ true,
+      /* reserveSpaceSize = */ 0);
 
   ASSERT_EQ(dataset.size(), 4);
 
