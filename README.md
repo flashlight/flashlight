@@ -5,6 +5,7 @@
 [**Quickstart**](#quickstart)
 | [**Installation**](#building-and-installing)
 | [**Documentation**](https://fl.readthedocs.io/en/latest/)
+| [**Citing**](#citing)
 
 [![CircleCI](https://circleci.com/gh/flashlight/flashlight.svg?style=shield)](https://app.circleci.com/pipelines/github/flashlight/flashlight)
 [![Documentation Status](https://img.shields.io/readthedocs/fl.svg)](https://fl.readthedocs.io/en/latest/)
@@ -561,6 +562,17 @@ Flashlight is being very actively developed. See
 #### Acknowledgments
 Some of Flashlight's code is derived from
 [arrayfire-ml](https://github.com/arrayfire/arrayfire-ml/).
+
+## Citing
+You can cite [Flashlight](https://arxiv.org/abs/2201.12465) using:
+```
+@article{kahn2022flashlight,
+  title={Flashlight: Enabling Innovation in Tools for Machine Learning},
+  author={Kahn, Jacob and Pratap, Vineel and Likhomanenko, Tatiana and Xu, Qiantong and Hannun, Awni and Cai, Jeff and Tomasello, Paden and Lee, Ann and Grave, Edouard and Avidov, Gilad and others},
+  journal={arXiv preprint arXiv:2201.12465},
+  year={2022}
+}
+```
 
 ## License
 Flashlight is under an MIT license. See [LICENSE](LICENSE) for more information.
