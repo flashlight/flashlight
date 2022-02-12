@@ -1,6 +1,8 @@
-@article{kahn2022flashlight,
-  title={Flashlight: Enabling Innovation in Tools for Machine Learning},
-  author={Kahn, Jacob and Pratap, Vineel and Likhomanenko, Tatiana and Xu, Qiantong and Hannun, Awni and Cai, Jeff and Tomasello, Paden and Lee, Ann and Grave, Edouard and Avidov, Gilad and others},
-  journal={arXiv preprint arXiv:2201.12465},
-  year={2022}
+@misc{kahn2022flashlight,
+      title={Flashlight: Enabling Innovation in Tools for Machine Learning}, 
+      author={Jacob Kahn and Vineel Pratap and Tatiana Likhomanenko and Qiantong Xu and Awni Hannun and Jeff Cai and Paden Tomasello and Ann Lee and Edouard Grave and Gilad Avidov and Benoit Steiner and Vitaliy Liptchinsky and Gabriel Synnaeve and Ronan Collobert},
+      year={2022},
+      eprint={2201.12465},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
 }
