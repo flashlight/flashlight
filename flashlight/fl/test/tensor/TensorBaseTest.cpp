@@ -458,8 +458,8 @@ TEST(TensorBaseTest, broadcasting) {
 
   for (auto funcp : functions) {
     for (auto& shapeData : shapes) {
-      auto lhs = (fl::rand(shapeData.lhs) * 10).astype(fl::dtype::s32);
-      auto rhs = (fl::rand(shapeData.rhs) * 10).astype(fl::dtype::s32);
+      auto lhs = ((fl::rand(shapeData.lhs) + 1) * 10).astype(fl::dtype::s32);
+      auto rhs = ((fl::rand(shapeData.rhs) + 1) * 10).astype(fl::dtype::s32);
 
       auto [actualOut, expectedOut] = doBinaryOp(
           lhs,
