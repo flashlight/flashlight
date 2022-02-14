@@ -31,12 +31,12 @@ void DynamicBenchmark::audit(
 
 void DynamicBenchmark::start() {
   fl::sync();
-  currentTimer_ = af::timer::start();
+  currentTimer_ = fl::Timer::start();
 }
 
 void DynamicBenchmark::stop(bool incrementCount) {
   fl::sync();
-  auto elapsedTime = af::timer::stop(currentTimer_);
+  auto elapsedTime = fl::Timer::stop(currentTimer_);
   options_->accumulateTimeToCurrentOption(elapsedTime, incrementCount);
 }
 
