@@ -18,10 +18,11 @@
 #include <HalideRuntime.h>
 #include <HalideRuntimeCuda.h>
 
-#include <af/array.h>
-
 #include "flashlight/fl/autograd/Variable.h"
 #include "flashlight/fl/common/DevicePtr.h"
+#include "flashlight/fl/tensor/Shape.h"
+#include "flashlight/fl/tensor/TensorBase.h"
+#include "flashlight/fl/tensor/Types.h"
 
 #define FL_HALIDE_CHECK(exp)                                       \
   if (exp) {                                                       \
@@ -38,15 +39,15 @@ namespace halide {
  * Gets Halide dims from an ArrayFire array. Halide is row major, so reverse
  * all dimensions.
  */
-std::vector<int> afToHalideDims(const af::dim4& dims);
+std::vector<int> flToHalideDims(const Shape& dims);
 
 /**
  * Gets Halide dims from an ArrayFire array. Halide is column major, so reverse
  * all dimensions.
  */
-af::dim4 halideToAfDims(const Halide::Buffer<void>& buffer);
+Shape halideToFlDims(const Halide::Buffer<void>& buffer);
 
-af::dtype halideRuntimeTypeToAfType(halide_type_t type);
+fl::dtype halideRuntimeTypeToFlType(halide_type_t type);
 
 /**
  * A thin wrapper around an ArrayFire array as converted to a Halide buffer.
@@ -62,9 +63,9 @@ af::dtype halideRuntimeTypeToAfType(halide_type_t type);
 template <typename T>
 class HalideBufferWrapper {
  public:
-  HalideBufferWrapper(af::array& array) {
-    devicePtr_ = DevicePtr(array);
-    halideBuffer_ = Halide::Buffer<T>(afToHalideDims(array.dims()));
+  HalideBufferWrapper(Tensor& tensor) {
+    devicePtr_ = DevicePtr(tensor);
+    halideBuffer_ = Halide::Buffer<T>(flToHalideDims(tensor.shape()));
     // Halide::Buffer::device_detach_native(...) is implicitly called by the
     // Halide::Buffer dtor which will preserve the Array's underlying memory
     FL_HALIDE_CHECK(halideBuffer_.device_wrap_native(
@@ -91,17 +92,17 @@ namespace detail {
  * You probably want to use HalideBufferWrapper rather than calling this
  * function manually.
  *
- * USE WITH CAUTION: Convert an ArrayFire Array into a Halide Buffer. The
+ * USE WITH CAUTION: Convert a Flashlight Tensor into a Halide Buffer. The
  * resulting Halide buffer's memory will be **unmanaged** - the underlying array
- * will need to be unlocked with `af_unlock_array` else memory will leak.
+ * will need to be unlocked with `fl::Tensor::unlock()` else memory will leak.
  */
 template <typename T>
-Halide::Buffer<T> toHalideBuffer(af::array& arr) {
+Halide::Buffer<T> toHalideBuffer(Tensor& arr) {
   // Since the buffer manages the memory, give it a persistent pointer that
   // won't be unlocked or invalidated if the Array falls out of scope.
   void* deviceMem = arr.device<void>();
-  Halide::Buffer<T> buffer(afToHalideDims(arr.dims()));
-  // Target is CUDA only -- TODO: change based on location of af::array
+  Halide::Buffer<T> buffer(flToHalideDims(arr.shape()));
+  // Target is CUDA only -- TODO: change based on location of Tensor
   // and try to move away from halide_cuda_device_interface()
   // const Halide::Target target =
   //     Halide::get_target_from_environment().with_feature(
@@ -126,11 +127,11 @@ Halide::Buffer<T> toHalideBuffer(af::array& arr) {
  * is destroyed.
  *
  * @param buffer the Halide buffer with which to create the Array
- * @return an af::array that has the same underlying memory and diensions as the
- * Halide Buffer.
+ * @return a Flashlight Tensor that has the same underlying memory and
+ * dimensions as the Halide Buffer.
  */
 template <typename T>
-af::array fromHalideBuffer(Halide::Buffer<T>& buffer) {
+Tensor fromHalideBuffer(Halide::Buffer<T>& buffer) {
   T* deviceMem = reinterpret_cast<T*>(buffer.raw_buffer()->device);
   if (buffer.get()->device_ownership() ==
       Halide::Runtime::BufferDeviceOwnership::WrappedNative) {
@@ -141,10 +142,11 @@ af::array fromHalideBuffer(Halide::Buffer<T>& buffer) {
         "with fl::pkg::runtime::toHalideBuffer or buffers that have unmanaged buffer "
         "device ownership policies.");
   }
-  return af::array(halideToAfDims(buffer), deviceMem, afDevice);
+  return Tensor::fromBuffer(
+      halideToFlDims(buffer), deviceMem, MemoryLocation::Device);
 }
 
-} // detail
+} // namespace detail
 
 } // namespace halide
 } // namespace pkg
