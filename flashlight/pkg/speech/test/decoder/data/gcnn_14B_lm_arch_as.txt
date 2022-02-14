@@ -1,8 +1,9 @@
 # input in format (t, b, 1, 1)
-V -1 0 1 1
+V -1 0
 # after emb (c, t, b, 1)
 E 128 NLABEL
 DO 0.15
+V 0 0 0 1
 # after fc (c, t, b, 1)
 WN 0 L 128 512
 RO 1 3 0 2
@@ -103,3 +104,5 @@ GLU 0
 SKIPL 0 12 1 0.7071
 WN 0 L 2048 4096
 # shape (c, t, b, 1)
+V 0 0 0
+# output: shape (c, t, b)
