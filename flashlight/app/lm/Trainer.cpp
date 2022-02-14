@@ -6,7 +6,12 @@
  */
 
 #include "flashlight/app/lm/Trainer.h"
+
 #include <algorithm>
+
+#include "flashlight/fl/tensor/Compute.h"
+#include "flashlight/fl/tensor/Index.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 using namespace fl::pkg::runtime;
 using namespace fl::pkg::runtime;
@@ -241,7 +246,7 @@ Trainer::Trainer(const std::string& mode) {
   gflagsStr_ = fl::pkg::runtime::serializeGflags();
   FL_LOG_MASTER(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
-  initArrayFire();
+  this->init();
   if (FLAGS_distributed_enable) {
     reducer_ = std::make_shared<fl::CoalescingReducer>(1.0, true, true);
   }
@@ -332,7 +337,7 @@ void Trainer::trainStep() {
   fl::Variable input, target;
   sampleTimerMeter_.resume();
   std::tie(input, target) = getInputAndTarget(trainDataset_->get(batchIdx_));
-  af::array inputSizes = af::sum(input.array() != kPadIdx_, 0);
+  Tensor inputSizes = fl::sum(input.tensor() != kPadIdx_, {0});
   sampleTimerMeter_.stopAndIncUnit();
 
   while (true) {
@@ -349,8 +354,9 @@ void Trainer::trainStep() {
     // 3. Backward
     bwdTimeMeter_.resume();
     optimizer_->zeroGrad();
-    float numTokens = af::count<float>(target.array() != kPadIdx_);
-    af::array numTokensArr = af::array(1, &numTokens);
+    float numTokens =
+        fl::countNonzero(target.tensor() != kPadIdx_).asScalar<float>();
+    Tensor numTokensArr = fl::fromScalar(numTokens);
     if (FLAGS_distributed_enable) {
       fl::allReduce(numTokensArr);
     }
@@ -373,7 +379,8 @@ void Trainer::trainStep() {
     if (numTokens > 0) {
       auto weight =
           numTokens / (FLAGS_data_tokens_per_sample * FLAGS_data_batch_size);
-      trainLossMeter_.add(af::mean<float>(loss.array()) / numTokens, weight);
+      trainLossMeter_.add(
+          fl::mean(loss.tensor()).scalar<float>() / numTokens, weight);
       tokenCountMeter_.add(numTokens);
     }
     break;
@@ -394,15 +401,17 @@ void Trainer::evalStep() {
   for (const auto& sample : *validDataset_) {
     fl::Variable input, target;
     std::tie(input, target) = getInputAndTarget(sample);
-    af::array inputSizes = af::sum(input.array() != kPadIdx_, 0);
+    Tensor inputSizes = fl::sum(input.tensor() != kPadIdx_, {0});
     auto output = network_->forward({input, fl::noGrad(inputSizes)}).front();
     auto loss = criterion_->forward({output, target}).front();
-    auto numTokens = af::count<int>(target.array() != kPadIdx_);
+    auto numTokens =
+        fl::countNonzero(target.tensor() != kPadIdx_).scalar<unsigned>();
     if (numTokens > 0) {
       auto weight = numTokens /
           static_cast<double>(
                         FLAGS_data_tokens_per_sample * FLAGS_data_batch_size);
-      validLossMeter_.add(af::mean<double>(loss.array()) / numTokens, weight);
+      validLossMeter_.add(
+          fl::mean(loss.tensor()).asScalar<double>() / numTokens, weight);
     }
   }
 }
@@ -629,45 +638,45 @@ void Trainer::createOptimizer() {
 
 /* ============= Stateful training helpers ============= */
 std::pair<fl::Variable, fl::Variable> Trainer::getInputAndTarget(
-    const std::vector<af::array>& sample) const {
+    const std::vector<Tensor>& sample) const {
   // sample.size() == 1
   // sample[0] has size T x B
   fl::Variable input, target;
-  auto T = sample[0].dims(0);
+  auto T = sample[0].dim(0);
 
   if (FLAGS_train_task == "mask") {
     // TODO: need cleaning + correctness checking
 
     // do masking of input and target
-    af::array randMatrix = af::randu(sample[0].dims());
-    af::array randMatrixSorted, randMatrixSortedIndices;
+    Tensor randMatrix = fl::rand(sample[0].shape());
+    Tensor randMatrixSorted, randMatrixSortedIndices;
     // create random permutation
-    af::sort(randMatrixSorted, randMatrixSortedIndices, randMatrix, 0);
-    randMatrixSortedIndices = af::flat(randMatrixSortedIndices);
+    fl::sort(randMatrixSorted, randMatrixSortedIndices, randMatrix, 0);
+    randMatrixSortedIndices = randMatrixSortedIndices.flatten();
 
-    af::array inputMasked = af::flat(sample[0]);
+    Tensor inputMasked = sample[0].flatten();
     // set min length of the masked tokens
     int nTotalMask =
         std::max(int(FLAGS_mask_prob * T), (int)FLAGS_mask_min_length);
     // set total mask
-    af::array totalMask = randMatrixSortedIndices < nTotalMask;
-    af::array notMasked = !totalMask;
-    af::array woMaskTokenMask = randMatrixSortedIndices <
+    Tensor totalMask = randMatrixSortedIndices < nTotalMask;
+    Tensor notMasked = !totalMask;
+    Tensor woMaskTokenMask = randMatrixSortedIndices <
         (FLAGS_mask_rand_token_prob + FLAGS_mask_same_token_prob) * nTotalMask;
-    af::array randMask =
+    Tensor randMask =
         randMatrixSortedIndices < FLAGS_mask_rand_token_prob * nTotalMask;
 
     inputMasked(totalMask) = kMaskIdx_;
-    inputMasked(woMaskTokenMask) = af::flat(sample[0])(woMaskTokenMask);
-    if (af::anyTrue<bool>(randMask)) {
+    inputMasked(woMaskTokenMask) = sample[0].flatten()(woMaskTokenMask);
+    if (fl::any(randMask).asScalar<bool>()) {
       // exclude 4 special tokens from the consideration: pad, eos, unk and
       // mask
       std::vector<int> specialTokens = {
           kPadIdx_, kEosIdx_, kUnkIdx_, kMaskIdx_};
       std::sort(specialTokens.begin(), specialTokens.end());
-      auto randVals = (af::randu(af::sum(randMask).scalar<unsigned int>()) *
+      auto randVals = (fl::rand({fl::sum(randMask).asScalar<unsigned int>()}) *
                        (dictionary_.entrySize() - 1 - specialTokens.size()))
-                          .as(s32);
+                          .astype(fl::dtype::s32);
       for (auto specialVal : specialTokens) {
         auto specialMask = randVals >= specialVal;
         randVals(specialMask) = randVals(specialMask) + 1;
@@ -675,16 +684,16 @@ std::pair<fl::Variable, fl::Variable> Trainer::getInputAndTarget(
       inputMasked(randMask) = randVals;
     }
     // fix position where it was pad index to be pad
-    inputMasked(af::flat(sample[0] == kPadIdx_)) = kPadIdx_;
-    inputMasked = af::moddims(inputMasked, sample[0].dims());
+    inputMasked((sample[0] == kPadIdx_).flatten()) = kPadIdx_;
+    inputMasked = fl::reshape(inputMasked, sample[0].shape());
     input = fl::Variable(inputMasked, false);
-    auto targetMasked = af::flat(sample[0]);
+    auto targetMasked = sample[0].flatten();
     targetMasked(notMasked) = kPadIdx_;
-    targetMasked = af::moddims(targetMasked, sample[0].dims());
+    targetMasked = fl::reshape(targetMasked, sample[0].shape());
     target = fl::Variable(targetMasked, false);
   } else if (FLAGS_train_task == "autoreg") {
-    input = fl::Variable(sample[0](af::seq(0, T - 2), af::span), false);
-    target = fl::Variable(sample[0](af::seq(1, T - 1), af::span), false);
+    input = fl::Variable(sample[0](fl::range(0, T - 1), fl::span), false);
+    target = fl::Variable(sample[0](fl::range(1, T), fl::span), false);
   } else {
     throw std::invalid_argument(
         "Not supported train_task: " + FLAGS_train_task);
@@ -726,8 +735,8 @@ void Trainer::reduceGrads() {
       if (!p.isGradAvailable()) {
         p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
       }
-      auto& grad = p.grad().array();
-      p.grad().array() = grad;
+      auto& grad = p.grad().tensor();
+      p.grad().tensor() = grad;
       reducer_->add(p.grad());
     }
     reducer_->finalize();
@@ -735,7 +744,7 @@ void Trainer::reduceGrads() {
 }
 
 /* ============= Stateless training helpers ============= */
-void Trainer::initArrayFire() const {
+void Trainer::init() const {
   // Set arrayfire seed for reproducibility
   fl::setSeed(FLAGS_train_seed);
 }
@@ -847,11 +856,7 @@ void Trainer::saveCheckpoint(const std::string& path, const std::string& suffix)
 
 void Trainer::logMemoryManagerStatus() const {
   if (isMaster()) {
-    auto* curMemMgr =
-        fl::MemoryManagerInstaller::currentlyInstalledMemoryManager();
-    if (curMemMgr) {
-      curMemMgr->printInfo("Memory Manager Stats", 0 /* device id */);
-    }
+    fl::detail::getMemMgrInfo("Memory Manager Stats", /* device id = */ 0);
   }
 }
 
