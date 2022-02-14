@@ -12,6 +12,7 @@
 
 #include "flashlight/fl/autograd/autograd.h"
 #include "flashlight/fl/tensor/Init.h"
+#include "flashlight/fl/tensor/Random.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
 
@@ -34,7 +35,7 @@ TEST(SerializationTest, VisionTransformer) {
   load(path, loaded);
   loaded->eval();
 
-  auto input = Variable(af::randu(hiddenEmbSize, 197, 20, 1), false);
+  auto input = Variable(fl::rand({hiddenEmbSize, 197, 20}), false);
   auto output = model->forward({input});
   auto outputl = loaded->forward({input});
 
@@ -64,7 +65,7 @@ TEST(SerializationTest, ViT) {
   load(path, loaded);
   loaded->eval();
 
-  auto input = Variable(af::randu(224, 224, 3, 20), false);
+  auto input = Variable(fl::rand({224, 224, 3, 20}), false);
   auto output = model->forward({input});
   auto outputl = loaded->forward({input});
 
