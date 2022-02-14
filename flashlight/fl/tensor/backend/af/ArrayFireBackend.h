@@ -107,6 +107,8 @@ class ArrayFireBackend : public TensorBackend {
   Tensor flip(const Tensor& tensor, const unsigned dim) override;
   Tensor clip(const Tensor& tensor, const Tensor& low, const Tensor& high)
       override;
+  Tensor roll(const Tensor& tensor, const int shift, const unsigned axis)
+      override;
   Tensor isnan(const Tensor& tensor) override;
   Tensor isinf(const Tensor& tensor) override;
   Tensor sign(const Tensor& tensor) override;

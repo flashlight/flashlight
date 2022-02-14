@@ -598,6 +598,20 @@ TEST(TensorBaseTest, clip) {
   ASSERT_TRUE(allClose(fl::clip(fl::full({3, 3}, 4.), l, h), high));
 }
 
+TEST(TensorBaseTest, roll) {
+  auto t = fl::full({5, 5}, 4.);
+  ASSERT_TRUE(allClose(t, fl::roll(t, /* shift = */ 3, /* axis = */ 1)));
+
+  Shape dims({4, 5});
+  auto r = fl::arange(dims);
+  auto result = fl::roll(r, /* shift = */ 1, /* axis = */ 0);
+  ASSERT_EQ(r.shape(), result.shape());
+  ASSERT_TRUE(allClose(result(0), fl::full({dims[1]}, dims[0] - 1, r.type())));
+  ASSERT_TRUE(allClose(
+      result(fl::range(1, fl::end)),
+      fl::arange({dims[0] - 1, dims[1]}, /* seqDim = */ 0, r.type())));
+}
+
 TEST(TensorBaseTest, isnan) {
   Shape s = {3, 3};
   ASSERT_TRUE(allClose(
