@@ -23,7 +23,7 @@ FullConnectionCriterion::FullConnectionCriterion(
     throw std::invalid_argument(
         "FCC: Size of transition matrix is less than 0.");
   }
-  auto transition = constant(0.0, af::dim4(N_, N_));
+  auto transition = constant(0.0, {N_, N_});
   params_ = {transition};
 }
 
