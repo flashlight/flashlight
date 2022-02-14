@@ -17,7 +17,7 @@ namespace fl {
    // A layer which transposes a matrix
    auto transposeLayer = Reorder(1, 0);
 
-   auto var = Variable(af::array(1, 2, 3, 4), false);
+   auto var = Variable(Tensor({1, 2, 3, 4}), false);
 
    // Make the last dimension the first dimension
    var = Reorder(3, 0, 1, 2)(var);
@@ -29,23 +29,18 @@ class Reorder : public UnaryModule {
  private:
   Reorder() = default;
 
-  int dim0_, dim1_, dim2_, dim3_;
+  Shape shape_;
 
-  FL_SAVE_LOAD_WITH_BASE(UnaryModule, dim0_, dim1_, dim2_, dim3_)
+  FL_SAVE_LOAD_WITH_BASE(UnaryModule, shape_)
 
  public:
-  /** Construct a Reorder layer. The dimension values must not repeat and must
+  /**
+   * Construct a Reorder layer. The dimension values must not repeat and must
    * be between 0 and 3 inclusive.
-   * @param dim0 The dimension of the input which to becomes the new first
-   * dimension
-   * @param dim1 The dimension of the input which to becomes the new second
-   * dimension
-   * @param dim2 The dimension of the input which to becomes the new third
-   * dimension
-   * @param dim3 The dimension of the input which to becomes the new fourth
-   * dimension
+   *
+   * @param shape The shape to which the input will be reshaped.
    */
-  Reorder(int dim0, int dim1, int dim2 = 2, int dim3 = 3);
+  explicit Reorder(Shape shape);
 
   Variable forward(const Variable& input) override;
 

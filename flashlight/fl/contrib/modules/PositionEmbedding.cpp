@@ -10,6 +10,7 @@
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/nn/Init.h"
 #include "flashlight/fl/nn/Utils.h"
+#include "flashlight/fl/tensor/Index.h"
 
 namespace fl {
 
@@ -18,15 +19,15 @@ PositionEmbedding::PositionEmbedding(
     int32_t maxLen,
     double dropout)
     : dropout_(dropout) {
-  auto embeddings = uniform(layerDim, maxLen, -0.1, 0.1, af::dtype::f32, true);
+  auto embeddings = uniform(layerDim, maxLen, -0.1, 0.1, fl::dtype::f32, true);
   params_ = {embeddings};
 }
 
 std::vector<Variable> PositionEmbedding::forward(
     const std::vector<Variable>& input) {
   int n = input[0].dims(1);
-  Variable posEmb =
-      tileAs(params_[0].as(input[0].type()).cols(0, n - 1), input[0]);
+  Variable posEmb = tileAs(
+      params_[0].as(input[0].type())(fl::span, fl::range(0, n)), input[0]);
   if (dropout_ > 0.0 && train_) {
     return {input[0] + dropout(posEmb, dropout_)};
   } else {
