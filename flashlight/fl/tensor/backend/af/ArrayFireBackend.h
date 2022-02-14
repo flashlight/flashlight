@@ -47,6 +47,12 @@ class ArrayFireBackend : public TensorBackend {
   void setDevice(const int deviceId) override;
   int getDeviceCount() override;
   bool supportsDataType(const fl::dtype& dtype) const override;
+  // Memory management
+  void getMemMgrInfo(const char* msg, const int deviceId, std::ostream* ostream)
+      override;
+  void setMemMgrLogStream(std::ostream* stream) override;
+  void setMemMgrLoggingEnabled(const bool enabled) override;
+  void setMemMgrFlushInterval(const size_t interval) override;
 
   /* -------------------------- Rand Functions -------------------------- */
   void setSeed(const int seed) override;

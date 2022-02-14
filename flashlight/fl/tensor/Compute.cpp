@@ -38,4 +38,27 @@ int getDeviceCount() {
   return Tensor().backend().getDeviceCount();
 }
 
+namespace detail {
+
+void getMemMgrInfo(
+    const char* msg,
+    const int deviceId,
+    std::ostream* ostream /* = &std::cout */) {
+  Tensor().backend().getMemMgrInfo(msg, deviceId, ostream);
+}
+
+void setMemMgrLogStream(std::ostream* stream) {
+  Tensor().backend().setMemMgrLogStream(stream);
+}
+
+void setMemMgrLoggingEnabled(const bool enabled) {
+  Tensor().backend().setMemMgrLoggingEnabled(enabled);
+}
+
+void setMemMgrFlushInterval(const size_t interval) {
+  Tensor().backend().setMemMgrFlushInterval(interval);
+}
+
+} // namespace detail
+
 } // namespace fl
