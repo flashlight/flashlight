@@ -8,6 +8,7 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/fl/tensor/Index.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/Random.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
@@ -254,4 +255,10 @@ TEST(IndexTest, ExpressionIndex) {
   ASSERT_TRUE(allClose(a(a < 5), Tensor::fromVector<int>({0, 1, 2, 3, 4})));
   ASSERT_TRUE(
       allClose(a(a < 7), Tensor::fromVector<int>({0, 1, 2, 3, 4, 5, 6})));
+}
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
+  return RUN_ALL_TESTS();
 }

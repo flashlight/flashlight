@@ -16,7 +16,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "flashlight/fl/memory/MemoryManagerDeviceInterface.h"
+#include "flashlight/fl/tensor/backend/af/mem/MemoryManagerDeviceInterface.h"
 
 namespace fl {
 

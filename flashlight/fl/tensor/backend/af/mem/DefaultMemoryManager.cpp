@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/fl/memory/managers/DefaultMemoryManager.h"
+#include "flashlight/fl/tensor/backend/af/mem/DefaultMemoryManager.h"
 
 #include <af/defines.h>
 #include <af/exception.h>
@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 
-#include "flashlight/fl/memory/MemoryManagerDeviceInterface.h"
+#include "flashlight/fl/tensor/backend/af/mem/MemoryManagerDeviceInterface.h"
 
 #define divup(a, b) (((a) + (b)-1) / (b))
 

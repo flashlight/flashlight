@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/pkg/speech/augmentation/SoundEffect.h"
-#include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/pkg/speech/augmentation/SoundEffectUtil.h"
 
 using namespace ::fl::pkg::speech::sfx;

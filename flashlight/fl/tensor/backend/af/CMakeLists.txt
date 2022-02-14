@@ -67,13 +67,16 @@ target_compile_definitions(
 )
 
 # ----------------------------- Sources -----------------------------
+
+include(${CMAKE_CURRENT_LIST_DIR}/mem/CMakeLists.txt)
+
 target_sources(
   flashlight
   PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/ArrayFireBackend.cpp
   ${CMAKE_CURRENT_LIST_DIR}/ArrayFireTensor.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Utils.cpp
-  )
+)
 
 if (FL_USE_CUDA)
   target_sources(
@@ -86,5 +89,5 @@ else()
     flashlight
     PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/AdvancedIndex.cpp
-    )
+  )
 endif()

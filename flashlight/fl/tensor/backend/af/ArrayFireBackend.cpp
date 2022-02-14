@@ -26,6 +26,7 @@
 #include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
 #include "flashlight/fl/tensor/backend/af/Utils.h"
+#include "flashlight/fl/tensor/backend/af/mem/MemoryManagerInstaller.h"
 
 namespace fl {
 namespace {
@@ -122,6 +123,17 @@ Tensor doBinaryOpOrBroadcast(
 
 ArrayFireBackend::ArrayFireBackend() {
   AF_CHECK(af_init());
+
+  std::call_once(memoryInitFlag, []() {
+    // TODO: remove this temporary workaround for TextDatasetTest crash on CPU
+    // backend when tearing down the test environment. This is possibly due to
+    // AF race conditions when tearing down our custom memory manager.
+    // TODO: remove this temporary workaround for crashes when using custom
+    // opencl kernels.
+    if (FL_BACKEND_CUDA) {
+      MemoryManagerInstaller::installDefaultMemoryManager();
+    }
+  });
 }
 
 ArrayFireBackend& ArrayFireBackend::getInstance() {

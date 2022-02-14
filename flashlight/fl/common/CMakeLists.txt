@@ -7,7 +7,6 @@ set(
   ${CMAKE_CURRENT_LIST_DIR}/DevicePtr.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Defines.cpp
   ${CMAKE_CURRENT_LIST_DIR}/DynamicBenchmark.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/Init.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Logging.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Histogram.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Plugin.cpp

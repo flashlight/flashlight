@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "flashlight/fl/memory/MemoryManagerAdapter.h"
+#include "flashlight/fl/tensor/backend/af/mem/MemoryManagerAdapter.h"
 
 #include <functional>
 #include <memory>

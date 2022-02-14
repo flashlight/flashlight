@@ -9,7 +9,7 @@
 
 #include <gtest/gtest.h>
 
-#include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/meter/meters.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
