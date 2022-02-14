@@ -8,18 +8,19 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
+#include "flashlight/app/asr/tools/alignment/Utils.h"
+#include "flashlight/fl/flashlight.h"
+#include "flashlight/fl/tensor/Index.h"
+#include "flashlight/lib/common/System.h"
+#include "flashlight/lib/text/dictionary/Defines.h"
+#include "flashlight/lib/text/dictionary/Dictionary.h"
+#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
+#include "flashlight/pkg/runtime/common/Serializer.h"
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/criterion/criterion.h"
 #include "flashlight/pkg/speech/data/FeatureTransforms.h"
 #include "flashlight/pkg/speech/data/Utils.h"
 #include "flashlight/pkg/speech/runtime/runtime.h"
-#include "flashlight/app/asr/tools/alignment/Utils.h"
-#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
-#include "flashlight/pkg/runtime/common/Serializer.h"
-#include "flashlight/fl/flashlight.h"
-#include "flashlight/lib/common/System.h"
-#include "flashlight/lib/text/dictionary/Defines.h"
-#include "flashlight/lib/text/dictionary/Dictionary.h"
 
 using namespace fl::pkg::speech;
 using namespace fl::lib;
@@ -55,7 +56,8 @@ int main(int argc, char** argv) {
   std::unordered_map<std::string, std::string> cfg;
   std::string version;
   LOG(INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
-  fl::pkg::runtime::Serializer::load(FLAGS_am, version, cfg, network, criterion);
+  fl::pkg::runtime::Serializer::load(
+      FLAGS_am, version, cfg, network, criterion);
   network->eval();
   criterion->eval();
 
@@ -194,12 +196,13 @@ int main(int argc, char** argv) {
   for (auto& sample : *ds) {
     fwdMtr.resume();
     const auto input = fl::input(sample[kInputIdx]);
-    fl::Variable rawEmission = fl::pkg::runtime::forwardSequentialModuleWithPadMask(
-        input, network, sample[kDurationIdx]);
+    fl::Variable rawEmission =
+        fl::pkg::runtime::forwardSequentialModuleWithPadMask(
+            input, network, sample[kDurationIdx]);
     fwdMtr.stop();
     alignMtr.resume();
     auto bestPaths = criterion->viterbiPathWithTarget(
-        rawEmission.array(), sample[kTargetIdx]);
+        rawEmission.tensor(), sample[kTargetIdx]);
     alignMtr.stop();
     parseMtr.resume();
 
