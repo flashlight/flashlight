@@ -21,6 +21,7 @@
 
 #include "flashlight/fl/common/DevicePtr.h"
 #include "flashlight/fl/distributed/LRUCache.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 namespace {
 std::shared_ptr<gloo::mpi::Context> glooContext_;
@@ -37,7 +38,7 @@ std::shared_ptr<gloo::mpi::Context> glooContext_;
 const int kGlooCacheSize_ = 10;
 using CacheType = fl::detail::LRUCache<std::string, gloo::Algorithm>;
 CacheType glooCache_(kGlooCacheSize_);
-af::array cacheArr_;
+fl::Tensor cacheTensor_;
 } // namespace
 
 namespace fl {
@@ -100,7 +101,7 @@ void distributedInit(
   }
 }
 
-void allReduce(af::array& arr, bool async /* = false */) {
+void allReduce(fl::Tensor& tensor, bool async /* = false */) {
   if (!isDistributedInit()) {
     throw std::runtime_error("distributed environment not initialized");
   }
@@ -108,39 +109,40 @@ void allReduce(af::array& arr, bool async /* = false */) {
     throw std::runtime_error(
         "Asynchronous allReduce not yet supported for Gloo backend");
   }
-  size_t arrSize = arr.elements() * af::getSizeOf(arr.type());
-  if (arrSize > cacheArr_.elements()) {
-    cacheArr_ = af::array(arrSize, af::dtype::b8);
+  size_t tensorSize = tensor.size() * fl::getTypeSize(tensor.type());
+  if (tensorSize > cacheTensor_.size()) {
+    cacheTensor_ =
+        fl::Tensor({static_cast<long long>(tensorSize)}, fl::dtype::b8);
   }
-  DevicePtr arrPtr(arr);
-  DevicePtr cacheArrPtr(cacheArr_);
-  memcpy(cacheArrPtr.get(), arrPtr.get(), arrSize);
-  switch (arr.type()) {
-    case af::dtype::f32:
+  DevicePtr tensorPtr(tensor);
+  DevicePtr cacheTensorPtr(cacheTensor_);
+  memcpy(cacheTensorPtr.get(), tensorPtr.get(), tensorSize);
+  switch (tensor.type()) {
+    case fl::dtype::f32:
       detail::allreduceGloo(
-          static_cast<float*>(cacheArrPtr.get()), arr.elements());
+          static_cast<float*>(cacheTensorPtr.get()), tensor.size());
       break;
-    case af::dtype::f64:
+    case fl::dtype::f64:
       detail::allreduceGloo(
-          static_cast<double*>(cacheArrPtr.get()), arr.elements());
+          static_cast<double*>(cacheTensorPtr.get()), tensor.size());
       break;
-    case af::dtype::s32:
+    case fl::dtype::s32:
       detail::allreduceGloo(
-          static_cast<int*>(cacheArrPtr.get()), arr.elements());
+          static_cast<int*>(cacheTensorPtr.get()), tensor.size());
       break;
-    case af::dtype::s64:
+    case fl::dtype::s64:
       detail::allreduceGloo(
-          static_cast<int64_t*>(cacheArrPtr.get()), arr.elements());
+          static_cast<int64_t*>(cacheTensorPtr.get()), tensor.size());
       break;
     default:
       throw std::runtime_error("unsupported data type for allreduce with gloo");
   }
-  memcpy(arrPtr.get(), cacheArrPtr.get(), arrSize);
+  memcpy(tensorPtr.get(), cacheTensorPtr.get(), tensorSize);
 }
 
 // Not yet supported
 void allReduceMultiple(
-    std::vector<af::array*> arrs,
+    std::vector<fl::Tensor*> tensors,
     bool async /* = false */,
     bool contiguous /* = false */) {
   if (contiguous) {
@@ -148,8 +150,8 @@ void allReduceMultiple(
         "contiguous allReduceMultiple is not yet supported for Gloo backend");
   }
 
-  for (auto& arr : arrs) {
-    allReduce(*arr, async);
+  for (auto& tensor : tensors) {
+    allReduce(*tensor, async);
   }
 }
 
