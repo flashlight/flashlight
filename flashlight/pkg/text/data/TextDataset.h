@@ -73,7 +73,7 @@ class TextDataset : public fl::Dataset {
 
   int64_t size() const override;
 
-  std::vector<af::array> get(const int64_t idx) const override;
+  std::vector<Tensor> get(const int64_t idx) const override;
 
   void shuffle(uint64_t seed);
 
