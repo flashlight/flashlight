@@ -19,16 +19,18 @@
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/common/Utils.h"
 #include "flashlight/fl/tensor/Compute.h"
+#include "flashlight/fl/tensor/Index.h"
+#include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
 
 namespace fl {
 
-Variable::Variable(af::array data, bool calcGrad) {
+Variable::Variable(Tensor data, bool calcGrad) {
   sharedData_->data = std::move(data);
   sharedGrad_->calcGrad = calcGrad;
 }
 
 Variable::Variable(
-    af::array data,
+    Tensor data,
     std::vector<Variable> inputs,
     GradFunc gradFunc) {
   sharedData_->data = std::move(data);
@@ -41,88 +43,55 @@ Variable::Variable(
   }
 }
 
-Variable Variable::operator()(
-    const af::index& idx1,
-    const af::index& idx2, /* af::span */
-    const af::index& idx3, /* af::span */
-    const af::index& idx4, /* af::span */
-    bool unique /* false */) const {
-  // Get forward pass result using advanced indexing
-  // from arrayfire
-  auto result = array()(idx1, idx2, idx3, idx4);
+Variable Variable::operator()(const std::vector<Index>& indices) const {
+  auto result = tensor()(indices);
   auto inDims = dims();
   auto inType = type();
-  af::dim4 idxStart;
-  af::dim4 idxEnd;
-  std::vector<af::array> idxArr(4);
-  bool advancedIndex = false;
 
-  // Extract af::index variable information,
-  // it can either be af::span, af::seq or af::array
-  auto idxFunc = [&idxStart, &idxEnd, &idxArr, &advancedIndex, unique, inDims](
-                     const af::index& index, int pos) {
-    if (index.isspan()) {
-      idxStart[pos] = 0;
-      idxEnd[pos] = inDims[pos];
-    } else {
-      const auto& idxSeq = index.get();
-      if (idxSeq.isSeq) {
-        // arrayfire uses inclusive last dimension, we use exclusive
-        idxStart[pos] = idxSeq.idx.seq.begin;
-        idxEnd[pos] = idxSeq.idx.seq.end + 1;
-      } else {
-        af_array arr;
-        af_retain_array(&arr, idxSeq.idx.arr);
-        idxArr[pos] = af::array(arr);
-        idxStart[pos] = 0;
-        idxEnd[pos] = idxArr[pos].dims(0);
-        advancedIndex = !unique;
-      }
+  auto gradFunc = [indices, inDims, inType](
+                      std::vector<Variable>& inputs,
+                      const Variable& gradOutput) {
+    if (!inputs[0].isGradAvailable()) {
+      auto grad = fl::full(inDims, 0.0, inType);
+      inputs[0].addGrad(Variable(grad, false));
     }
+
+    auto& grad = inputs[0].grad().tensor();
+    grad(indices) += gradOutput.tensor();
   };
-  idxFunc(idx1, 0);
-  idxFunc(idx2, 1);
-  idxFunc(idx3, 2);
-  idxFunc(idx4, 3);
-
-  auto gradFunc =
-      [idx1,
-       idx2,
-       idx3,
-       idx4,
-       idxStart,
-       idxEnd,
-       idxArr,
-       advancedIndex,
-       inDims,
-       inType](std::vector<Variable>& inputs, const Variable& gradOutput) {
-        if (!inputs[0].isGradAvailable()) {
-          auto grad = af::constant(0.0, inDims, inType);
-          inputs[0].addGrad(Variable(grad, false));
-        }
-
-        if (!advancedIndex) {
-          auto& grad = inputs[0].grad().array();
-          grad(idx1, idx2, idx3, idx4) += gradOutput.array();
-        } else {
-          gradAdvancedIndex(
-              gradOutput, idxStart, idxEnd, inDims, idxArr, inputs[0].grad());
-        }
-      };
   return Variable(result, {this->withoutData()}, gradFunc);
 }
 
-af::array& Variable::array() const {
+Variable Variable::flat(const fl::Index& index) const {
+  auto result = tensor().flat(index);
+  auto inDims = dims();
+  auto inType = type();
+
+  auto gradFunc = [index, inDims, inType](
+                      std::vector<Variable>& inputs,
+                      const Variable& gradOutput) {
+    if (!inputs[0].isGradAvailable()) {
+      auto grad = fl::full(inDims, 0.0, inType);
+      inputs[0].addGrad(Variable(grad, false));
+    }
+    auto& grad = inputs[0].grad().tensor();
+    grad.flat(index) += gradOutput.tensor();
+  };
+
+  return Variable(result, {this->withoutData()}, gradFunc);
+}
+
+Tensor& Variable::tensor() const {
   return sharedData_->data;
 }
 
-Variable Variable::as(af::dtype newType) const {
-  auto output = array().as(newType);
+Variable Variable::as(fl::dtype newType) const {
+  auto output = tensor().astype(newType);
   auto gradFunc = [](std::vector<Variable>& inputs,
                      const Variable& gradOutput) {
     auto& input = inputs[0];
     // Cast the grad output to match the type of the input's grad
-    input.addGrad(Variable(gradOutput.array().as(input.type()), false));
+    input.addGrad(Variable(gradOutput.tensor().astype(input.type()), false));
   };
   return Variable(output, {this->withoutData()}, gradFunc);
 }
@@ -154,49 +123,47 @@ bool Variable::isGradAvailable() const {
   return sharedGrad_->grad != nullptr;
 }
 
-af::dim4 Variable::dims() const {
-  return array().dims();
+Shape Variable::dims() const {
+  return tensor().shape();
 }
 
 bool Variable::isempty() const {
-  return array().isempty();
+  return tensor().isEmpty();
 }
 
 bool Variable::isLinear() const {
-  return af::isLinear(array());
+  return tensor().isContiguous();
 }
 
 Variable Variable::linear() const {
   if (!isempty() && !isLinear()) {
-    auto linearArray = af::array(dims(), type());
-    af::copy(linearArray, array(), af::span);
-    array() = linearArray;
+    tensor() = tensor().asContiguousTensor();
   }
   return *this;
 }
 
-af::dtype Variable::type() const {
-  return array().type();
+fl::dtype Variable::type() const {
+  return tensor().type();
 }
 
 dim_t Variable::elements() const {
-  return array().elements();
+  return tensor().size();
 }
 
 size_t Variable::bytes() const {
-  return array().bytes();
+  return tensor().bytes();
 }
 
 unsigned Variable::numdims() const {
-  return array().numdims();
+  return tensor().ndim();
 }
 
 dim_t Variable::dims(unsigned dim) const {
-  return array().dims(dim);
+  return tensor().dim(dim);
 }
 
 void Variable::eval() const {
-  fl::eval(array());
+  fl::eval(tensor());
 }
 
 void Variable::zeroGrad() {
@@ -219,10 +186,17 @@ void Variable::addGrad(const Variable& childGrad) {
     if (childGrad.type() != this->type()) {
       std::stringstream ss;
       ss << "Variable::addGrad: attempted to add child gradient of type "
-         << afTypeToString(childGrad.type()) << " to a Variable of type "
-         << afTypeToString(this->type())
+         << childGrad.type() << " to a Variable of type " << this->type()
          << ". You might be performing an operation with "
             "two inputs of different types.";
+      throw std::invalid_argument(ss.str());
+    }
+    if (childGrad.dims() != this->dims()) {
+      std::stringstream ss;
+      ss << "Variable::addGrad: given gradient has dimensions not equal "
+            "to this Variable's dimensions: this variable has shape "
+         << this->dims() << " whereas the child gradient has dimensions "
+         << childGrad.dims() << std::endl;
       throw std::invalid_argument(ss.str());
     }
     if (sharedGrad_->grad) {
@@ -230,11 +204,11 @@ void Variable::addGrad(const Variable& childGrad) {
       // if getting a device pointer. See
       // https://git.io/fp9oM for more
       sharedGrad_->grad = std::make_unique<Variable>(
-          sharedGrad_->grad->array() + childGrad.array(), false);
+          sharedGrad_->grad->tensor() + childGrad.tensor(), false);
     } else {
       // Copy the childGrad Variable so as to share a reference
-      // to the underlying childGrad.array() rather than copying
-      // the array into a new variable
+      // to the underlying childGrad.tensor() rather than copying
+      // the tensor into a new variable
       sharedGrad_->grad = std::make_unique<Variable>(childGrad);
     }
   }
@@ -281,89 +255,90 @@ void Variable::backward(const Variable& grad, bool retainGraph) {
 }
 
 void Variable::backward(bool retainGraph) {
-  auto ones = Variable(af::constant(1, dims(), this->type()), false);
+  auto ones = Variable(fl::full(dims(), 1, this->type()), false);
   backward(ones, retainGraph);
 }
 
 Variable Variable::col(int index) const {
-  auto result = array().col(index);
+  auto result = tensor()(fl::span, index);
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [index, inDims, inType](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
-    auto grad = Variable(af::constant(0, inDims, inType), false);
-    grad.array().col(index) = gradOutput.array();
+    auto grad = Variable(fl::full(inDims, 0, inType), false);
+    grad.tensor()(fl::span, index) = gradOutput.tensor();
     inputs[0].addGrad(grad);
   };
   return Variable(result, {this->withoutData()}, gradFunc);
 }
 
 Variable Variable::cols(int first, int last) const {
-  auto result = array().cols(first, last);
+  auto result = tensor()(fl::span, fl::range(first, last + 1));
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [first, last, inDims, inType](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
-    auto grad = Variable(af::constant(0, inDims, inType), false);
-    grad.array().cols(first, last) = gradOutput.array();
+    auto grad = Variable(fl::full(inDims, 0, inType), false);
+    grad.tensor()(fl::span, fl::range(first, last + 1)) = gradOutput.tensor();
     inputs[0].addGrad(grad);
   };
   return Variable(result, {this->withoutData()}, gradFunc);
 }
 
 Variable Variable::row(int index) const {
-  auto result = array().row(index);
+  auto result = tensor()(index);
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [index, inDims, inType](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
-    auto grad = Variable(af::constant(0, inDims, inType), false);
-    grad.array().row(index) = gradOutput.array();
+    auto grad = Variable(fl::full(inDims, 0, inType), false);
+    grad.tensor()(index) = gradOutput.tensor();
     inputs[0].addGrad(grad);
   };
   return Variable(result, {this->withoutData()}, gradFunc);
 }
 
 Variable Variable::rows(int first, int last) const {
-  auto result = array().rows(first, last);
+  auto result = tensor()(fl::range(first, last + 1));
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [first, last, inDims, inType](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
-    auto grad = Variable(af::constant(0, inDims, inType), false);
-    grad.array().rows(first, last) = gradOutput.array();
+    auto grad = Variable(fl::full(inDims, 0, inType), false);
+    grad.tensor()(fl::range(first, last + 1)) = gradOutput.tensor();
     inputs[0].addGrad(grad);
   };
   return Variable(result, {this->withoutData()}, gradFunc);
 }
 
 Variable Variable::slice(int index) const {
-  auto result = array().slice(index);
+  auto result = tensor()(fl::span, fl::span, index);
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [index, inDims, inType](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
-    auto grad = Variable(af::constant(0, inDims, inType), false);
-    grad.array().slice(index) = gradOutput.array();
+    auto grad = Variable(fl::full(inDims, 0, inType), false);
+    grad.tensor()(fl::span, fl::span, index) = gradOutput.tensor();
     inputs[0].addGrad(grad);
   };
   return Variable(result, {this->withoutData()}, gradFunc);
 }
 
 Variable Variable::slices(int first, int last) const {
-  auto result = array().slices(first, last);
+  auto result = tensor()(fl::span, fl::span, fl::range(first, last + 1));
   auto inDims = dims();
   auto inType = type();
   auto gradFunc = [first, last, inDims, inType](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
-    auto grad = Variable(af::constant(0, inDims, inType), false);
-    grad.array().slices(first, last) = gradOutput.array();
+    auto grad = Variable(fl::full(inDims, 0, inType), false);
+    grad.tensor()(fl::span, fl::span, fl::range(first, last + 1)) =
+        gradOutput.tensor();
     inputs[0].addGrad(grad);
   };
   return Variable(result, {this->withoutData()}, gradFunc);
@@ -372,9 +347,9 @@ Variable Variable::slices(int first, int last) const {
 Variable Variable::withoutData() const {
   Variable other;
   other.sharedGrad_ = sharedGrad_;
-  // Ensure the type of the underlying [but empty] data is the same; since
-  // af::array is f32-initialized by default
-  other.array() = af::array().as(this->type());
+  // Ensure the type of the underlying [but empty] Tensor data is of the same
+  // type and shape
+  other.tensor() = Tensor(dims(), this->type());
   return other;
 }
 

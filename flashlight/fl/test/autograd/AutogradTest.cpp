@@ -5,15 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <math.h>
 #include <array>
 #include <functional>
 #include <stdexcept>
 
 #include <gtest/gtest.h>
 
+#include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/autograd/autograd.h"
 #include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/common/common.h"
+#include "flashlight/fl/tensor/Index.h"
+#include "flashlight/fl/tensor/Random.h"
 
 using namespace fl;
 
@@ -26,33 +30,35 @@ bool jacobianTestImpl(
     float precision = 1E-5,
     float perturbation = 1E-4) {
   auto fwdJacobian =
-      af::array(func(input).elements(), input.elements(), af::dtype::f32);
+      Tensor({func(input).elements(), input.elements()}, fl::dtype::f32);
 
   for (int i = 0; i < input.elements(); ++i) {
-    af::array orig = input.array()(i);
-    input.array()(i) = orig - perturbation;
-    auto outa = func(input).array();
+    Tensor orig = input.tensor().flatten()(i);
+    input.tensor().flat(i) = orig - perturbation;
+    auto outa = func(input).tensor();
 
-    input.array()(i) = orig + perturbation;
-    auto outb = func(input).array();
-    input.array()(i) = orig;
+    input.tensor().flat(i) = orig + perturbation;
+    auto outb = func(input).tensor();
+    input.tensor().flat(i) = orig;
 
-    fwdJacobian(af::span, i) =
-        af::moddims((outb - outa), outa.elements()) * 0.5 / perturbation;
+    fwdJacobian(fl::span, i) =
+        fl::reshape((outb - outa), {static_cast<Dim>(outa.size())}) * 0.5 /
+        perturbation;
   }
 
   auto bwdJacobian =
-      af::array(func(input).elements(), input.elements(), af::dtype::f32);
+      Tensor({func(input).elements(), input.elements()}, fl::dtype::f32);
   auto dout =
-      Variable(af::constant(0, func(input).dims(), func(input).type()), false);
+      Variable(fl::full(func(input).dims(), 0, func(input).type()), false);
+
   for (int i = 0; i < dout.elements(); ++i) {
-    dout.array()(i) = 1; // element in 1D view
+    dout.tensor().flat(i) = 1; // element in 1D view
     input.zeroGrad();
     auto out = func(input);
     out.backward(dout);
-    bwdJacobian(i, af::span) =
-        af::moddims(input.grad().array(), input.elements());
-    dout.array()(i) = 0;
+
+    bwdJacobian(i) = fl::reshape(input.grad().tensor(), {input.elements()});
+    dout.tensor().flat(i) = 0;
   }
   return allClose(fwdJacobian, bwdJacobian, precision);
 }
@@ -71,103 +77,13 @@ class AutogradTestF16 : public ::testing::Test {
 
 } // namespace
 
-TEST(AutogradTest, AfRefCountBasic) {
-  int refCount = 0;
-  // Baseline af refcount behavior
-  auto a = af::constant(1, {2, 2});
-  af_get_data_ref_count(&refCount, a.get());
-  ASSERT_EQ(refCount, 1);
-  auto b = a;
-  af_get_data_ref_count(&refCount, a.get());
-  ASSERT_EQ(refCount, 2);
-
-  // Behavior when wrapped by a variable
-  auto v = Variable(af::constant(1, {2, 2}), false);
-  auto w = v;
-  // Should still be 1
-  af_get_data_ref_count(&refCount, v.array().get());
-  ASSERT_EQ(refCount, 1);
-  af_get_data_ref_count(&refCount, w.array().get());
-  ASSERT_EQ(refCount, 1);
-}
-
-TEST(AutogradTest, AfRefCountModify) {
-  int refCount = 0;
-  // Compositional operations don't increment refcount
-  auto a = af::constant(1, {2, 2});
-  auto b = af::constant(1, {2, 2});
-  auto arrRes = a + b;
-  af_get_data_ref_count(&refCount, a.get());
-  ASSERT_EQ(refCount, 1);
-  af_get_data_ref_count(&refCount, b.get());
-  ASSERT_EQ(refCount, 1);
-  // Multiple uses of the same variable doesn't push count
-  auto c = af::constant(1, {2, 2});
-  auto d = af::constant(1, {2, 2});
-  auto arrResMult = c * c + d * d;
-  af_get_data_ref_count(&refCount, c.get());
-  ASSERT_EQ(refCount, 1);
-  af_get_data_ref_count(&refCount, d.get());
-  ASSERT_EQ(refCount, 1);
-
-  // // Same behavior with Variables
-  auto v = Variable(af::constant(1, {2, 2}), false);
-  auto w = Variable(af::constant(1, {2, 2}), false);
-  auto varRes = v + w;
-  af_get_data_ref_count(&refCount, v.array().get());
-  ASSERT_EQ(refCount, 1);
-  af_get_data_ref_count(&refCount, w.array().get());
-  ASSERT_EQ(refCount, 1);
-  // Multiuse with variables
-  auto y = Variable(af::constant(1, {2, 2}), false);
-  auto z = Variable(af::constant(1, {2, 2}), false);
-  auto varResMult = y * y + z * z;
-  af_get_data_ref_count(&refCount, y.array().get());
-  ASSERT_EQ(refCount, 1);
-  af_get_data_ref_count(&refCount, z.array().get());
-  ASSERT_EQ(refCount, 1);
-}
-
-TEST(AutogradTest, AfRefCountGradient) {
-  int refCount = 0;
-  // backward should never increase refcount of the underlying Array
-  // It only takes a variable, so the user can't accidentally copy
-  auto v = Variable(af::constant(1, {2, 2}), true);
-  auto w = Variable(af::constant(1, {2, 2}), false);
-  v.backward(w);
-  af_get_data_ref_count(&refCount, v.array().get());
-  ASSERT_EQ(refCount, 1);
-  af_get_data_ref_count(&refCount, w.array().get());
-  ASSERT_EQ(refCount, 1);
-
-  // addGrad specifically is idempotent to refcount
-  auto x = Variable(af::constant(1, {2, 2}), false);
-  auto y = Variable(af::constant(1, {2, 2}), false);
-  x.addGrad(y);
-  af_get_data_ref_count(&refCount, x.array().get());
-  ASSERT_EQ(refCount, 1);
-  af_get_data_ref_count(&refCount, y.array().get());
-  ASSERT_EQ(refCount, 1);
-}
-
-TEST(AutogradTest, AfArrBackwardNoMutate) {
-  // backward preserves the gradient of v
-  auto v = Variable(af::constant(1, {2, 2}), true);
-  auto w = Variable(af::constant(1, {2, 2}), false);
-  v.backward(w);
-  ASSERT_TRUE(allClose(v.grad().array(), v.array()));
-  // mutating doesn't change v's gradient
-  w = w + 2;
-  ASSERT_TRUE(allClose(v.grad().array(), v.array()));
-}
-
 TEST(AutogradTest, Multiply) {
-  auto x = Variable(af::randu(5), true);
+  auto x = Variable(fl::rand({5}), true);
   auto y = x * x;
-  auto dy = Variable(af::constant(1.0, 5), false);
+  auto dy = Variable(fl::full({5}, 1.0), false);
   y.backward(dy);
   auto dx = x.grad();
-  ASSERT_TRUE(allClose(dx.array(), 2 * x.array()));
+  ASSERT_TRUE(allClose(dx.tensor(), 2 * x.tensor()));
 }
 
 TEST(AutogradTest, BasicOps) {
@@ -175,8 +91,8 @@ TEST(AutogradTest, BasicOps) {
   using FuncScalarL = std::function<Variable(double, Variable&)>;
   using FuncScalarR = std::function<Variable(Variable&, double)>;
   auto test_impl = [](FuncVar fn1, FuncScalarL fn2, FuncScalarR fn3) {
-    auto input = Variable(af::randu(3, 4, 5, 6, af::dtype::f64) + 1, true);
-    auto temp = Variable(af::randu(3, 4, 5, 6, af::dtype::f64) - 2, false);
+    auto input = Variable(fl::rand({3, 4, 5, 6}, fl::dtype::f64) + 1, true);
+    auto temp = Variable(fl::rand({3, 4, 5, 6}, fl::dtype::f64) - 2, false);
     JacobianFunc fn_arr_l = [&](Variable& in) { return fn1(in, temp); };
     ASSERT_TRUE(jacobianTestImpl(fn_arr_l, input));
     JacobianFunc fn_arr_r = [&](Variable& in) { return fn1(temp, in); };
@@ -219,22 +135,22 @@ TEST(AutogradTest, BasicOps) {
 }
 
 TEST(AutogradTest, OperatorParenthesis) {
-  auto x = Variable(af::randn(1, 3, 3, f64), true);
+  auto x = Variable(fl::rand({1, 3, 3}, fl::dtype::f64), true);
   auto y = x(0, 0) + x(0, 1);
   auto func_operator_paren = [](Variable& in) { return in(0, 0) + in(0, 1); };
   ASSERT_TRUE(jacobianTestImpl(func_operator_paren, x));
 }
 
 TEST(AutogradTest, MultiplyAdd) {
-  auto x = Variable(af::randu(5), true);
-  auto y = Variable(af::randu(5), true);
+  auto x = Variable(fl::rand({5}), true);
+  auto y = Variable(fl::rand({5}), true);
   auto z = x * x + x * y + y * y;
-  auto dz = Variable(af::constant(1.0, 5), false);
+  auto dz = Variable(fl::full({5}, 1.0), false);
   z.backward(dz);
   auto dx = x.grad();
   auto dy = y.grad();
-  ASSERT_TRUE(allClose(dx.array(), 2 * x.array() + y.array()));
-  ASSERT_TRUE(allClose(dy.array(), 2 * y.array() + x.array()));
+  ASSERT_TRUE(allClose(dx.tensor(), 2 * x.tensor() + y.tensor()));
+  ASSERT_TRUE(allClose(dy.tensor(), 2 * y.tensor() + x.tensor()));
 }
 
 TEST(AutogradTest, AutogradOperatorTypeCompatibility) {
@@ -242,8 +158,8 @@ TEST(AutogradTest, AutogradOperatorTypeCompatibility) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
-  auto f16 = Variable(af::randu({2, 2}, af::dtype::f16), true);
-  auto f32 = Variable(af::randu({2, 2}, af::dtype::f32), true);
+  auto f16 = Variable(fl::rand({2, 2}, fl::dtype::f16), true);
+  auto f32 = Variable(fl::rand({2, 2}, fl::dtype::f32), true);
 
   // Binary operators
   EXPECT_THROW({ auto res = f16 + f32; }, std::invalid_argument); // +
@@ -263,18 +179,20 @@ TEST(AutogradTest, AutogradOperatorTypeCompatibility) {
   EXPECT_NO_THROW({ binaryCrossEntropy(f16, f32); });
   EXPECT_NO_THROW({
     categoricalCrossEntropy(
-        Variable(af::randu(7, 10, 4, af::dtype::f16), true),
-        Variable((af::randu(10, 4, af::dtype::u32) % 7).as(s32), false));
+        Variable(fl::rand({7, 10, 4}, fl::dtype::f16), true),
+        Variable(
+            (fl::rand({10, 4}, fl::dtype::u32) % 7).astype(fl::dtype::s32),
+            false));
   });
   EXPECT_NO_THROW({ pool2d(f16, 1, 1, 1, 1, 1, 1); });
   EXPECT_NO_THROW({ embedding(f16, f32); }); // lookup is of a different type
   // Ternary operators
-  auto f32_2 = Variable(af::randu({2, 2}, af::dtype::f32), true);
-  auto f16_2 = Variable(af::randu({2, 2}, af::dtype::f16), true);
+  auto f32_2 = Variable(fl::rand({2, 2}, fl::dtype::f32), true);
+  auto f16_2 = Variable(fl::rand({2, 2}, fl::dtype::f16), true);
   EXPECT_THROW({ linear(f16, f32, f16_2); }, std::invalid_argument); // linear
   EXPECT_THROW({ linear(f16, f32, f32_2); }, std::invalid_argument); // linear
-  auto w = Variable(af::randu(1, af::dtype::f32), true);
-  auto b = Variable(af::randu(1, af::dtype::f32), true);
+  auto w = Variable(fl::rand({1}, fl::dtype::f32), true);
+  auto b = Variable(fl::rand({1}, fl::dtype::f32), true);
   EXPECT_THROW(
       { batchnorm(f16, f32, f32_2, w, b, {1}, true, 0.01, 0.01); },
       std::invalid_argument);
@@ -284,13 +202,13 @@ TEST(AutogradTest, AutogradOperatorTypeCompatibility) {
   EXPECT_THROW(
       { conv2d(f16, f32, f16_2, 1, 1, 0, 0, 1, 1); }, std::invalid_argument);
   // Quaternary
-  auto f16_3 = Variable(af::randu(2, 2, 3, af::dtype::f16), false);
-  auto f16_4 = Variable(af::randu(50, af::dtype::f16), false);
+  auto f16_3 = Variable(fl::rand({2, 2, 3}, fl::dtype::f16), false);
+  auto f16_4 = Variable(fl::rand({50}, fl::dtype::f16), false);
   EXPECT_THROW(
       {
         rnn(f16_3,
-            Variable(af::array(af::dtype::f32), false),
-            Variable(af::array(af::dtype::f32), false),
+            Variable(Tensor(fl::dtype::f32), false),
+            Variable(Tensor(fl::dtype::f32), false),
             f16_4,
             2,
             2,
@@ -304,64 +222,42 @@ TEST(AutogradTest, AutogradOperatorTypeCompatibility) {
   EXPECT_THROW({ concatenate(concatInputs, 0); }, std::invalid_argument);
 }
 
-TEST(AutogradTest, CastingAs) {
-  if (!fl::f16Supported()) {
-    GTEST_SKIP() << "Half-precision not supported on this device";
-  }
-
-  int refCount = 0;
-  // Casting in place should reset refcounts
-  auto in = af::randu({5, 5});
-  auto var = Variable(in, true);
-  af_get_data_ref_count(&refCount, var.array().get());
-  ASSERT_EQ(refCount, 2);
-  auto varF16 = var.as(af::dtype::f16);
-  af_get_data_ref_count(&refCount, varF16.array().get());
-  ASSERT_EQ(refCount, 1);
-  varF16.backward();
-  af_get_data_ref_count(&refCount, varF16.grad().array().get());
-  ASSERT_EQ(refCount, 1);
-  ASSERT_EQ(varF16.grad().type(), af::dtype::f16);
-  ASSERT_EQ(var.grad().type(), af::dtype::f32);
-
-  ASSERT_NE(varF16.type(), in.type());
-  ASSERT_TRUE(allClose(varF16.array(), in.as(af::dtype::f16)));
-}
-
-TEST(AutogradTest, CastingAsInPlace) {
-  if (!fl::f16Supported()) {
-    GTEST_SKIP() << "Half-precision not supported on this device";
-  }
-
-  int refCount = 0;
-  auto a = Variable(af::randu({4, 4}), true);
-  af_get_data_ref_count(&refCount, a.array().get());
-  ASSERT_EQ(refCount, 1);
-  a = a.as(af::dtype::f16);
-  af_get_data_ref_count(&refCount, a.array().get());
-  ASSERT_EQ(refCount, 1);
-
-  ASSERT_EQ(a.type(), af::dtype::f16);
-  auto b = Variable(af::randu({4, 4}, af::dtype::f16), true);
-  auto c = b + a;
-  c.backward();
-  ASSERT_EQ(a.grad().type(), af::dtype::f16);
-
-  a = a.as(af::dtype::f32);
-  af_get_data_ref_count(&refCount, a.array().get());
-  ASSERT_EQ(refCount, 1);
-  ASSERT_FALSE(a.isGradAvailable());
-}
-
 TEST(AutogradTest, CastingAsDifferentGradTypes) {
   if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
-  auto f32 = Variable(af::randu({5, 5}), true);
-  auto f16 = Variable(af::randu({5, 5}, af::dtype::f16), true);
+  auto f32 = Variable(fl::rand({5, 5}), true);
+  auto f16 = Variable(fl::rand({5, 5}, fl::dtype::f16), true);
   // Computing gradients with mixed types fails when the op is applied
   ASSERT_THROW({ f32 + f16; }, std::invalid_argument);
+}
+
+TEST(AutogradTest, CastingAs) {
+  if (!fl::f16Supported()) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  auto var = Variable(fl::rand({5, 5}), true);
+  auto varF16 = var.as(fl::dtype::f16);
+  ASSERT_EQ(var.type(), fl::dtype::f32);
+  ASSERT_EQ(varF16.type(), fl::dtype::f16);
+  ASSERT_TRUE(allClose(varF16.tensor(), var.as(fl::dtype::f16).tensor()));
+}
+
+TEST(AutogradTest, CastingAsBackward) {
+  if (!fl::f16Supported()) {
+    GTEST_SKIP() << "Half-precision not supported on this device";
+  }
+
+  auto a = Variable(fl::rand({4, 4}, fl::dtype::f16), true);
+  auto b = Variable(fl::rand({4, 4}, fl::dtype::f16), false);
+  auto c = b + a;
+  c.backward();
+  ASSERT_EQ(a.grad().type(), fl::dtype::f16);
+  ASSERT_EQ(a.grad().type(), fl::dtype::f16);
+  a = a.as(fl::dtype::f32);
+  ASSERT_FALSE(a.isGradAvailable());
 }
 
 TEST(AutogradTest, CastingAsGrad) {
@@ -370,157 +266,177 @@ TEST(AutogradTest, CastingAsGrad) {
   }
 
   // compare to f32 case
-  auto x = Variable(af::constant(2.0, 5), true);
-  auto y = Variable(af::constant(3.0, 5), true);
+  auto x = Variable(fl::full({5}, 2.0), true);
+  auto y = Variable(fl::full({5}, 3.0), true);
   auto z = x * x + x * y + y * y;
-  auto dz = Variable(af::constant(1.0, 5), false);
+  auto dz = Variable(fl::full({5}, 1.0), false);
   z.backward(dz);
   auto dx = x.grad();
   auto dy = y.grad();
 
   // f16 -- cast gradients in both directions
-  auto x32 = Variable(af::constant(2.0, 5), true);
-  auto y32 = Variable(af::constant(3.0, 5), true);
-  auto xf16 = x32.as(af::dtype::f16);
-  auto yf16 = y32.as(af::dtype::f16);
+  auto x32 = Variable(fl::full({5}, 2.0), true);
+  auto y32 = Variable(fl::full({5}, 3.0), true);
+  auto xf16 = x32.as(fl::dtype::f16);
+  auto yf16 = y32.as(fl::dtype::f16);
   auto zf16 = xf16 * xf16 + xf16 * yf16 + yf16 * yf16;
-  auto zf32 = zf16.as(af::dtype::f32);
+  auto zf32 = zf16.as(fl::dtype::f32);
   zf32.backward(dz);
 
-  ASSERT_EQ(xf16.grad().type(), af::dtype::f16);
-  ASSERT_EQ(yf16.grad().type(), af::dtype::f16);
-  ASSERT_EQ(zf16.grad().type(), af::dtype::f16);
-  ASSERT_EQ(x32.grad().type(), af::dtype::f32);
-  ASSERT_EQ(y32.grad().type(), af::dtype::f32);
-  ASSERT_TRUE(allClose(dx.array(), xf16.grad().array().as(af::dtype::f32)));
-  ASSERT_TRUE(allClose(dy.array(), y32.grad().array().as(af::dtype::f32)));
-  ASSERT_TRUE(allClose(dx.array(), x32.grad().array()));
-  ASSERT_TRUE(allClose(dy.array(), y32.grad().array()));
+  ASSERT_EQ(xf16.grad().type(), fl::dtype::f16);
+  ASSERT_EQ(yf16.grad().type(), fl::dtype::f16);
+  ASSERT_EQ(zf16.grad().type(), fl::dtype::f16);
+  ASSERT_EQ(x32.grad().type(), fl::dtype::f32);
+  ASSERT_EQ(y32.grad().type(), fl::dtype::f32);
+  ASSERT_TRUE(
+      allClose(dx.tensor(), xf16.grad().tensor().astype(fl::dtype::f32)));
+  ASSERT_TRUE(
+      allClose(dy.tensor(), y32.grad().tensor().astype(fl::dtype::f32)));
+  ASSERT_TRUE(allClose(dx.tensor(), x32.grad().tensor()));
+  ASSERT_TRUE(allClose(dy.tensor(), y32.grad().tensor()));
 }
 
 TEST(AutogradTest, NoCalcGrad) {
-  auto x = Variable(af::randu(5), false);
-  auto y = Variable(af::randu(5), true);
+  auto x = Variable(fl::rand({5}), false);
+  auto y = Variable(fl::rand({5}), true);
   auto z = x * x + x * y + y * y;
-  auto dz = Variable(af::constant(1.0, 5), false);
+  auto dz = Variable(fl::full({5}, 1.0), false);
   z.backward(dz);
   auto dy = y.grad();
-  ASSERT_TRUE(allClose(dy.array(), 2 * y.array() + x.array()));
+  ASSERT_TRUE(allClose(dy.tensor(), 2 * y.tensor() + x.tensor()));
   ASSERT_THROW(x.grad(), std::logic_error);
 }
 
 TEST(AutogradTest, MultiplySub) {
-  auto x = Variable(af::randu(5), true);
-  auto y = Variable(af::randu(5), true);
+  auto x = Variable(fl::rand({5}), true);
+  auto y = Variable(fl::rand({5}), true);
   auto z = x * x - x * y;
-  auto dz = Variable(af::constant(1.0, 5), false);
+  auto dz = Variable(fl::full({5}, 1.0), false);
   z.backward(dz);
   auto dx = x.grad();
   auto dy = y.grad();
-  ASSERT_TRUE(allClose(dx.array(), (2 * x.array() - y.array())));
-  ASSERT_TRUE(allClose(dy.array(), (-x.array())));
+  ASSERT_TRUE(allClose(dx.tensor(), (2 * x.tensor() - y.tensor())));
+  ASSERT_TRUE(allClose(dy.tensor(), (-x.tensor())));
 }
 
 TEST(AutogradTest, DivideAdd) {
-  auto x = Variable(af::randu(5, af::dtype::f64), true);
-  auto y = Variable(af::randu(5, af::dtype::f64), true);
+  auto x = Variable(fl::rand({5}, fl::dtype::f64), true);
+  auto y = Variable(fl::rand({5}, fl::dtype::f64), true);
   auto z = x + x / y + y;
-  auto dz = Variable(af::constant(1.0, 5, af::dtype::f64), false);
+  auto dz = Variable(fl::full({5}, 1.0, fl::dtype::f64), false);
   z.backward(dz);
   auto dx = x.grad();
   auto dy = y.grad();
-  ASSERT_EQ(z.type(), af::dtype::f64);
-  ASSERT_TRUE(allClose(dx.array(), (1.0 + 1.0 / y.array())));
+  ASSERT_EQ(z.type(), fl::dtype::f64);
+  ASSERT_TRUE(allClose(dx.tensor(), (1.0 + 1.0 / y.tensor())));
   ASSERT_TRUE(
-      allClose(dy.array(), (1.0 - x.array() / (y.array() * y.array()))));
+      allClose(dy.tensor(), (1.0 - x.tensor() / (y.tensor() * y.tensor()))));
 }
 
 TEST(AutogradTest, MultiplyAddScalar) {
-  auto x = Variable(af::randu(5), true);
-  auto y = Variable(af::randu(5), true);
+  auto x = Variable(fl::rand({5}), true);
+  auto y = Variable(fl::rand({5}), true);
   auto z = 2 * x + x * y + y;
-  auto dz = Variable(af::constant(1.0, 5), false);
+  auto dz = Variable(fl::full({5}, 1.0), false);
   z.backward(dz);
   auto dx = x.grad();
   auto dy = y.grad();
-  ASSERT_TRUE(allClose(dx.array(), (2.0 + y.array())));
-  ASSERT_TRUE(allClose(dy.array(), (1.0 + x.array())));
+  ASSERT_TRUE(allClose(dx.tensor(), (2.0 + y.tensor())));
+  ASSERT_TRUE(allClose(dy.tensor(), (1.0 + x.tensor())));
 }
 
 TEST(AutogradTest, Exp) {
-  auto x = Variable(af::randu(5), true);
+  auto x = Variable(fl::rand({5}), true);
   auto y = exp(x);
-  auto dy = Variable(af::constant(1.0, 5), false);
+  auto dy = Variable(fl::full({5}, 1.0), false);
   y.backward(dy);
   auto dx = x.grad();
-  ASSERT_TRUE(allClose(dx.array(), (af::exp(x.array()))));
+  ASSERT_TRUE(allClose(dx.tensor(), (fl::exp(x.tensor()))));
 }
 
 TEST(AutogradTest, Pow) {
   {
-    auto x = Variable(af::randu(5), true);
+    auto x = Variable(fl::rand({5}), true);
     auto y = pow(x, 2);
-    auto dy = Variable(af::constant(2.0, 5), false);
+    auto dy = Variable(fl::full({5}, 2.0), false);
     y.backward(dy);
     auto dx = x.grad();
-    ASSERT_TRUE(allClose(dx.array(), (2 * 2 * x.array())));
+    ASSERT_TRUE(allClose(dx.tensor(), (2 * 2 * x.tensor())));
   }
   {
-    auto x = Variable(af::randu(5), true);
+    auto x = Variable(fl::rand({5}), true);
     auto y = pow(x, 3);
-    auto dy = Variable(af::constant(1.0, 5), false);
+    auto dy = Variable(fl::full({5}, 1.0), false);
     y.backward(dy);
     auto dx = x.grad();
-    ASSERT_TRUE(allClose(dx.array(), (3 * af::pow(x.array(), 2))));
+    ASSERT_TRUE(allClose(dx.tensor(), (3 * fl::power(x.tensor(), 2))));
   }
 }
 
 TEST(AutogradTest, Sigmoid) {
-  auto x = Variable(af::randu(5), true);
+  auto x = Variable(fl::rand({5}), true);
   auto y = sigmoid(x);
-  auto dy = Variable(af::constant(1.0, 5), false);
+  auto dy = Variable(fl::full({5}, 1.0), false);
   y.backward(dy);
   auto dx = x.grad();
-  ASSERT_TRUE(allClose(dx.array(), (y.array() * (1 - y.array()))));
+  ASSERT_TRUE(allClose(dx.tensor(), (y.tensor() * (1 - y.tensor()))));
   ASSERT_TRUE(allClose(
-      dx.array(), (af::sigmoid(x.array()) * (1 - af::sigmoid(x.array())))));
+      dx.tensor(), (fl::sigmoid(x.tensor()) * (1 - fl::sigmoid(x.tensor())))));
 }
 
 TEST(AutogradTest, Erf) {
-  auto x = Variable(af::randu(5), true);
+  auto x = Variable(fl::rand({5}), true);
   auto y = erf(x);
-  ASSERT_TRUE(allClose(af::erf(x.array()), y.array()));
+  ASSERT_TRUE(allClose(fl::erf(x.tensor()), y.tensor()));
 
-  auto dy = Variable(af::constant(1.0, 5), false);
+  auto dy = Variable(fl::full({5}, 1.0), false);
   y.backward(dy);
   auto targetGrads = 2 / std::sqrt(M_PI) * exp(negate(x * x));
   auto dx = x.grad();
-  ASSERT_TRUE(allClose(dx.array(), targetGrads.array()));
+  ASSERT_TRUE(allClose(dx.tensor(), targetGrads.tensor()));
 
   auto func_erf = [](Variable& in) { return erf(in); };
   ASSERT_TRUE(jacobianTestImpl(func_erf, x, 5e-4, 1e-4));
 }
 
 TEST(AutogradTest, Tanh) {
-  auto x = Variable(af::randu(5), true);
+  auto x = Variable(fl::rand({5}), true);
   auto y = tanh(x);
-  auto dy = Variable(af::constant(1.0, 5), false);
+  auto dy = Variable(fl::full({5}, 1.0), false);
   y.backward(dy);
   auto dx = x.grad();
-  ASSERT_TRUE(allClose(dx.array(), (1 - y.array() * y.array())));
+  ASSERT_TRUE(allClose(dx.tensor(), (1 - y.tensor() * y.tensor())));
   ASSERT_TRUE(allClose(
-      dx.array(), (1 + af::tanh(x.array())) * (1 - af::tanh(x.array()))));
+      dx.tensor(), (1 + fl::tanh(x.tensor())) * (1 - fl::tanh(x.tensor()))));
+}
+
+TEST(AutogradTest, Transpose) {
+  auto in = Variable(fl::rand({5, 6, 7, 8}), true);
+  auto out = transpose(in, {2, 0, 1, 3});
+  out.backward();
+  ASSERT_EQ(in.grad().dims(), Shape({5, 6, 7, 8}));
+
+  auto func_erf = [](Variable& in) { return transpose(in, {1, 3, 2, 0}); };
+  ASSERT_TRUE(jacobianTestImpl(func_erf, in, 5e-4, 1e-4));
+
+  auto in2 = Variable(fl::rand({6, 7, 8, 9}), true);
+  auto out2 = transpose(in2);
+  out2.backward();
+  ASSERT_EQ(in2.grad().dims(), Shape({6, 7, 8, 9}));
+
+  auto func_erf2 = [](Variable& in) { return transpose(in); };
+  ASSERT_TRUE(jacobianTestImpl(func_erf2, in2, 5e-4, 1e-4));
 }
 
 TEST(AutogradTest, Concatenate) {
-  auto x1 = Variable(af::randn(2, 3, 1, 2, f64), true);
-  auto x2 = Variable(af::randn(2, 3, 3, 2, f64), true);
-  auto x3 = Variable(af::randn(2, 3, 1, 2, f64), true);
-  auto x4 = Variable(af::randn(2, 3, 7, 2, f64), true);
+  auto x1 = Variable(fl::rand({2, 3, 1, 2}, fl::dtype::f64), true);
+  auto x2 = Variable(fl::rand({2, 3, 3, 2}, fl::dtype::f64), true);
+  auto x3 = Variable(fl::rand({2, 3, 1, 2}, fl::dtype::f64), true);
+  auto x4 = Variable(fl::rand({2, 3, 7, 2}, fl::dtype::f64), true);
   std::vector<Variable> inputs = {x1, x2, x3, x4};
   auto output = concatenate(inputs, 2);
 
-  ASSERT_EQ(output.dims(), af::dim4(2, 3, 12, 2));
+  ASSERT_EQ(output.dims(), Shape({2, 3, 12, 2}));
 
   auto func_concatenate_t1 = [x2, x3, x4](Variable& in) {
     return concatenate({in, x2, x3, x4}, 2);
@@ -535,41 +451,41 @@ TEST(AutogradTest, Concatenate) {
 
 TEST(AutogradTest, Split) {
   // check output
-  auto x = Variable(af::range(af::dim4(7, 2)), true);
+  auto x = Variable(fl::arange({7, 2}), true);
   auto yVec = split(x, 1, 0);
   ASSERT_EQ(yVec.size(), 7);
-  ASSERT_EQ(yVec[0].dims(), af::dim4(1, 2));
-  ASSERT_EQ(yVec[2].dims(), af::dim4(1, 2));
-  ASSERT_TRUE(af::allTrue<bool>(yVec[6].array() == 6));
+  ASSERT_EQ(yVec[0].dims(), Shape({1, 2}));
+  ASSERT_EQ(yVec[2].dims(), Shape({1, 2}));
+  ASSERT_TRUE(fl::all(yVec[6].tensor() == 6).scalar<char>());
 
-  auto a = Variable(af::range(af::dim4(5, 3), 1), true);
+  auto a = Variable(fl::arange({5, 3}, 1), true);
   auto bVec = split(a, {2, 1}, 1);
   ASSERT_EQ(bVec.size(), 2);
-  ASSERT_EQ(bVec[0].dims(), af::dim4(5, 2));
-  ASSERT_EQ(bVec[1].dims(), af::dim4(5, 1));
+  ASSERT_EQ(bVec[0].dims(), Shape({5, 2}));
+  ASSERT_EQ(bVec[1].dims(), Shape({5, 1}));
   ASSERT_TRUE(
-      af::allTrue<bool>(bVec[0].array() == af::range(af::dim4(5, 2), 1)));
-  ASSERT_TRUE(af::allTrue<bool>(bVec[1].array() == 2));
+      fl::all(bVec[0].tensor() == fl::arange({5, 2}, 1)).scalar<char>());
+  ASSERT_TRUE(fl::all(bVec[1].tensor() == 2).scalar<char>());
 
   // check exception handling
   ASSERT_THROW(split(a, {2, 2}, 0), std::invalid_argument);
 
   // check gradient
   auto gradFunc = [](Variable& in) { return split(in, 2, 1)[0]; };
-  auto input = Variable(af::randu(2, 3, af::dtype::f64), true);
+  auto input = Variable(fl::rand({2, 3}, fl::dtype::f64), true);
   ASSERT_TRUE(jacobianTestImpl(gradFunc, input));
 }
 
 TEST(AutogradTest, TileAs) {
-  auto x = Variable(af::randu(5), true);
-  auto y = Variable(af::randu(5, 2), true);
+  auto x = Variable(fl::rand({5}), true);
+  auto y = Variable(fl::rand({5, 2}), true);
   auto z = y * tileAs(x, y);
-  auto dz = Variable(af::constant(1.0, 5, 2), false);
+  auto dz = Variable(fl::full({5, 2}, 1.0), false);
   z.backward(dz);
   auto dy = y.grad();
   auto dx = x.grad();
-  ASSERT_TRUE(allClose(dy.array(), af::tile(x.array(), 1, 2)));
-  ASSERT_TRUE(allClose(dx.array(), af::sum(y.array(), 1)));
+  ASSERT_TRUE(allClose(dy.tensor(), fl::tile(x.tensor(), {1, 2})));
+  ASSERT_TRUE(allClose(dx.tensor(), fl::sum(y.tensor(), {1})));
 }
 
 TEST_F(AutogradTestF16, TileAsF16) {
@@ -577,53 +493,54 @@ TEST_F(AutogradTestF16, TileAsF16) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
-  auto x = Variable(af::randu(5, af::dtype::f16), true);
-  auto y = Variable(af::randu(5, 2, af::dtype::f16), true);
+  auto x = Variable(fl::rand({5}, fl::dtype::f16), true);
+  auto y = Variable(fl::rand({5, 2}, fl::dtype::f16), true);
   auto z = y * tileAs(x, y);
   ASSERT_EQ(x.type(), z.type());
-  auto dz = Variable(af::constant(1.0, 5, 2, af::dtype::f16), false);
+  auto dz = Variable(fl::full({5, 2}, 1.0, fl::dtype::f16), false);
   z.backward(dz);
   auto dy = y.grad();
   auto dx = x.grad();
+  ASSERT_TRUE(allClose(
+      dy.tensor(), fl::tile(x.tensor(), {1, 2}).astype(dx.type()), 1e-2));
   ASSERT_TRUE(
-      allClose(dy.array(), af::tile(x.array(), 1, 2).as(dx.type()), 1e-2));
-  ASSERT_TRUE(allClose(dx.array(), af::sum(y.array(), 1).as(dx.type()), 1e-2));
+      allClose(dx.tensor(), fl::sum(y.tensor(), {1}).astype(dx.type()), 1e-2));
 }
 
 TEST(AutogradTest, TileAs2) {
-  auto x = Variable(af::randu(10), true);
-  auto z = tileAs(x, af::dim4(10, 3));
-  auto dz = Variable(af::constant(1.0, 10, 3), false);
+  auto x = Variable(fl::rand({10}), true);
+  auto z = tileAs(x, Shape({10, 3}));
+  auto dz = Variable(fl::full({10, 3}, 1.0), false);
   z.backward(dz);
   auto dx = x.grad();
-  ASSERT_TRUE(allClose(dx.array(), af::constant(3, x.dims())));
+  ASSERT_TRUE(allClose(dx.tensor(), fl::full(x.dims(), 3.0)));
 }
 
 TEST(AutogradTest, Tile) {
-  auto x = Variable(af::randu(6), true);
-  auto y = Variable(af::randu(6, 3), true);
-  auto z = y * tile(x, af::dim4(1, 3));
-  auto dz = Variable(af::constant(1.0, 6, 3), false);
+  auto x = Variable(fl::rand({6}), true);
+  auto y = Variable(fl::rand({6, 3}), true);
+  auto z = y * tile(x, {1, 3});
+  auto dz = Variable(fl::full({6, 3}, 1.0), false);
   z.backward(dz);
   auto dy = y.grad();
   auto dx = x.grad();
-  ASSERT_TRUE(allClose(dy.array(), af::tile(x.array(), 1, 3)));
-  ASSERT_TRUE(allClose(dx.array(), af::sum(y.array(), 1)));
+  ASSERT_TRUE(allClose(dy.tensor(), fl::tile(x.tensor(), {1, 3})));
+  ASSERT_TRUE(allClose(dx.tensor(), fl::sum(y.tensor(), {1})));
 
   // Jacobian
-  auto input = Variable(af::randu(10, 1, 5), true);
+  auto input = Variable(fl::rand({10, 1, 5}), true);
   auto func_tile = [](Variable& in) { return tile(in, {1, 2}); };
   ASSERT_TRUE(jacobianTestImpl(func_tile, input, 1E-4, 1E-3));
 }
 
 TEST(AutogradTest, Clamp) {
-  auto input = Variable(af::randu(5, 6, 7, 4, af::dtype::f64) * 3, true);
+  auto input = Variable(fl::rand({5, 6, 7, 4}, fl::dtype::f64) * 3, true);
   double lo = -1.0, hi = 1.0;
   float perturb = 1E-5;
   // Need to do this as gradient is not continuous when input = lo / hi.
-  auto& inarr = input.array();
-  af::replace(inarr, af::abs(inarr - lo) > perturb, lo + 10 * perturb);
-  af::replace(inarr, af::abs(inarr - hi) > perturb, hi + 10 * perturb);
+  auto& inarr = input.tensor();
+  inarr = fl::where(fl::abs(inarr - lo) > perturb, inarr, lo + 10 * perturb);
+  inarr = fl::where(fl::abs(inarr - hi) > perturb, inarr, hi + 10 * perturb);
 
   auto func_col = [lo, hi](Variable& in) { return clamp(in, lo, hi); };
 
@@ -631,119 +548,179 @@ TEST(AutogradTest, Clamp) {
 }
 
 TEST(AutogradTest, SumAs) {
-  auto x = Variable(af::randu(5), true);
-  auto y = Variable(af::randu(5, 2), true);
+  auto x = Variable(fl::rand({5}), true);
+  auto y = Variable(fl::rand({5, 2}), true);
   auto z = x * sumAs(y, x);
-  auto dz = Variable(af::constant(1.0, 5), false);
+  auto dz = Variable(fl::full({5}, 1.0), false);
   z.backward(dz);
   auto dy = y.grad();
   auto dx = x.grad();
-  ASSERT_TRUE(allClose(dy.array(), af::tile(x.array(), 1, 2)));
-  ASSERT_TRUE(allClose(dx.array(), af::sum(y.array(), 1)));
+  ASSERT_TRUE(allClose(dy.tensor(), fl::tile(x.tensor(), {1, 2})));
+  ASSERT_TRUE(allClose(dx.tensor(), fl::sum(y.tensor(), {1})));
 }
 
 TEST(AutogradTest, SumAs2) {
-  auto y = Variable(af::randu(5, 2), true);
-  auto z = sumAs(y, af::dim4(5));
-  auto dz = Variable(af::constant(1.0, 5), false);
+  auto y = Variable(fl::rand({5, 2}), true);
+  auto z = sumAs(y, {5});
+  auto dz = Variable(fl::full({5}, 1.0), false);
   z.backward(dz);
   auto dy = y.grad();
-  ASSERT_TRUE(allClose(dy.array(), af::constant(1.0, 5, 2)));
+  ASSERT_TRUE(allClose(dy.tensor(), fl::full({5, 2}, 1.0)));
 }
 
 TEST(AutogradTest, Sum) {
-  auto x = Variable(af::randu(6), true);
-  auto y = Variable(af::randu(6, 3), true);
-  auto z = x * sum(y, {1});
-  auto dz = Variable(af::constant(1.0, 6), false);
-  z.backward(dz);
-  auto dy = y.grad();
-  auto dx = x.grad();
-  ASSERT_TRUE(allClose(dy.array(), af::tile(x.array(), 1, 3)));
-  ASSERT_TRUE(allClose(dx.array(), af::sum(y.array(), 1)));
+  for (const bool keepDims : {false, true}) {
+    Shape s = {6};
+    if (keepDims) {
+      s = {6, 1};
+    }
+
+    auto x = Variable(fl::rand(s), true);
+    auto y = Variable(fl::rand({6, 3}), true);
+
+    auto z = x * sum(y, {1}, keepDims);
+    auto dz = Variable(fl::full(s, 1.0), false);
+    z.backward(dz);
+
+    auto dy = y.grad();
+    auto dx = x.grad();
+    ASSERT_TRUE(allClose(dy.tensor(), fl::tile(x.tensor(), {1, 3})));
+    ASSERT_TRUE(allClose(dx.tensor(), fl::sum(y.tensor(), {1}, keepDims)));
+
+    // Reduce over 1-dim input
+    auto func_mean_0 = [keepDims](const Variable& in) {
+      return sum(in, {0}, keepDims);
+    };
+    auto in = Variable(fl::rand({6}), true);
+    ASSERT_TRUE(jacobianTestImpl(func_mean_0, in, 5E-3));
+    // Reduce over scalar input
+    auto inScalar = Variable(fl::fromScalar(3.14), true);
+    ASSERT_TRUE(jacobianTestImpl(func_mean_0, inScalar, 5E-3));
+  }
+
+  auto r = Variable(fl::rand({5, 6, 7, 8}), true);
+  auto rOut = sum(r, {1, 2});
+  auto rOutTensor = fl::sum(r.tensor(), {1, 2});
+  ASSERT_TRUE(allClose(rOut.tensor(), rOutTensor));
 }
 
 TEST(AutogradTest, Log1p) {
-  auto x = Variable(af::randu(5), true);
+  auto x = Variable(fl::rand({5}), true);
   auto y = log1p(x);
 
-  auto xCopy = Variable(x.array(), true);
+  auto xCopy = Variable(x.tensor(), true);
   auto yExp = log(1 + xCopy);
 
   y.backward();
   yExp.backward();
 
-  ASSERT_TRUE(allClose(y.array(), yExp.array()));
-  ASSERT_TRUE(allClose(y.grad().array(), yExp.grad().array()));
-  ASSERT_TRUE(allClose(x.grad().array(), xCopy.grad().array()));
+  ASSERT_TRUE(allClose(y.tensor(), yExp.tensor()));
+  ASSERT_TRUE(allClose(y.grad().tensor(), yExp.grad().tensor()));
+  ASSERT_TRUE(allClose(x.grad().tensor(), xCopy.grad().tensor()));
 }
 
 TEST(AutogradTest, Sqrt) {
-  auto x = Variable(af::randu(5, 3, af::dtype::f64), true);
+  auto x = Variable(fl::rand({5, 3}, fl::dtype::f64), true);
   auto func_sqrt = [](Variable& in) { return fl::sqrt(in); };
   ASSERT_TRUE(jacobianTestImpl(func_sqrt, x, 1E-3));
 }
 
 TEST(AutogradTest, Mean) {
-  auto x = Variable(af::randu(5), true);
-  auto y = Variable(af::randu(5, 3, 2), true);
-  auto z = x * mean(y, {1, 2});
-  auto dz = Variable(af::constant(1.0, 5), false);
-  z.backward(dz);
-  auto dy = y.grad();
-  auto dx = x.grad();
-  ASSERT_TRUE(allClose(dy.array(), af::tile(x.array(), 1, 3, 2) / 6));
-  ASSERT_TRUE(allClose(dx.array(), af::mean(af::mean(y.array(), 1), 2)));
+  for (const bool keepDims : {false, true}) {
+    Shape xShape = keepDims ? Shape({5, 1, 1}) : Shape({5});
+    auto x = Variable(fl::rand(xShape), true);
+    auto y = Variable(fl::rand({5, 3, 2}), true);
+    auto varOut = mean(y, {1, 2}, keepDims);
+    auto z = x * mean(y, {1, 2}, keepDims);
+    auto dz = Variable(fl::full(x.dims(), 1.0), false);
+    z.backward(dz);
+    auto dy = y.grad();
+    auto dx = x.grad();
+    ASSERT_TRUE(allClose(dy.tensor(), fl::tile(x.tensor(), {1, 3, 2}) / 6));
+    ASSERT_TRUE(allClose(dx.tensor(), fl::mean(y.tensor(), {1, 2}, keepDims)));
 
-  x = Variable(af::randu(5, 3, 2, af::dtype::f64), true);
-  auto func_mean = [](Variable& in) { return mean(in, {1, 2}); };
-  ASSERT_TRUE(jacobianTestImpl(func_mean, x, 1E-4));
+    auto a = Variable(fl::rand({5, 3, 2}, fl::dtype::f64), true);
+    auto func_mean = [keepDims](Variable& in) {
+      return mean(in, {1, 2}, keepDims);
+    };
+    ASSERT_TRUE(jacobianTestImpl(func_mean, a, 1E-4));
+
+    auto q = Variable(fl::rand({5, 6, 7, 8}), false);
+    auto qOut = mean(q, {1, 2}, keepDims);
+    auto qOutTensor = fl::mean(q.tensor(), {1, 2}, keepDims);
+    ASSERT_TRUE(allClose(qOut.tensor(), qOutTensor));
+
+    auto func_mean_0 = [keepDims](Variable& in) {
+      return mean(in, {0}, keepDims);
+    };
+    // Reduce over 1-dim input
+    auto in = Variable(fl::rand({6}), true);
+    ASSERT_TRUE(jacobianTestImpl(func_mean_0, in, 5E-3));
+    // Reduce over scalar input
+    auto inScalar = Variable(fl::fromScalar(3.14), true);
+    ASSERT_TRUE(jacobianTestImpl(func_mean_0, inScalar, 5E-3));
+  }
 }
 
 TEST(AutogradTest, Variance) {
-  auto x = Variable(af::randu(5, 6, 7, 8, af::dtype::f64), true);
   std::vector<bool> biased = {true, false};
   for (auto b : biased) {
-    // Behavior of the bias parameter in af::var was changed in
-    // https://git.io/Jv5gF and is different in ArrayFire v3.7. If isbiased is
-    // true, sample variance rather than population variance is used. The
-    // flashlight API implements the opposite behavior to be consistent with
-    // other libraries.
-    bool afVarBiasArg = !b;
+    for (const bool keepDims : {false, true}) {
+      auto x = Variable(fl::rand({5, 6, 7, 8}, fl::dtype::f64), true);
 
-    auto expected_var = af::var(x.array(), afVarBiasArg, 1);
-    auto calculated_var = var(x, {1}, b);
-    ASSERT_TRUE(allClose(calculated_var.array(), expected_var));
+      // TODO:{fl::Tensor} -- enforce AF versioning and remediate
+      // Behavior of the bias parameter in af::var was changed in
+      // https://git.io/Jv5gF and is different in ArrayFire v3.7. If isbiased is
+      // true, sample variance rather than population variance is used. The
+      // flashlight API implements the opposite behavior to be consistent with
+      // other libraries.
+      bool afVarBiasArg = !b;
 
-    auto func_var = [b](Variable& in) { return var(in, {1, 2}, b); };
-    ASSERT_TRUE(jacobianTestImpl(func_var, x, 1E-5, 1E-5));
+      auto expected_var = fl::var(x.tensor(), {1}, afVarBiasArg, keepDims);
+      auto calculated_var = var(x, {1}, b, keepDims);
+      ASSERT_TRUE(allClose(calculated_var.tensor(), expected_var));
+
+      auto func_var = [b, keepDims](Variable& in) {
+        return var(in, {1, 2}, b, keepDims);
+      };
+      ASSERT_TRUE(jacobianTestImpl(func_var, x, 1E-5, 1E-5));
+    }
   }
 }
 
 TEST(AutogradTest, Norm) {
-  auto x = Variable(af::randu(5, 3, af::dtype::f64), true);
-  auto funcNorm2 = [](Variable& in) { return norm(in, {1}); };
-  ASSERT_TRUE(jacobianTestImpl(funcNorm2, x, 1E-4));
-  auto funcNorm1 = [](Variable& in) { return norm(in, {1}, 1); };
-  ASSERT_TRUE(jacobianTestImpl(funcNorm1, x, 1E-4));
-  auto funcNorm3 = [](Variable& in) { return norm(in, {1}, 3); };
-  ASSERT_TRUE(jacobianTestImpl(funcNorm3, x, 1E-4));
+  auto x = Variable(fl::rand({5, 3}, fl::dtype::f64), true);
+  for (const bool keepDims : {false, true}) {
+    auto funcNorm2 = [keepDims](Variable& in) {
+      return norm(in, {1}, 2, keepDims);
+    };
+    ASSERT_TRUE(jacobianTestImpl(funcNorm2, x, 1E-4));
+    auto funcNorm1 = [keepDims](Variable& in) {
+      return norm(in, {1}, 1, keepDims);
+    };
+    ASSERT_TRUE(jacobianTestImpl(funcNorm1, x, 1E-4));
+    auto funcNorm3 = [keepDims](Variable& in) {
+      return norm(in, {1}, 3, keepDims);
+    };
+    ASSERT_TRUE(jacobianTestImpl(funcNorm3, x, 1E-4));
+  }
 }
 
 TEST(AutogradTest, Normalize) {
-  auto x = Variable(af::randu(5, 3, af::dtype::f64), true);
+  auto x = Variable(fl::rand({5, 3}, fl::dtype::f64), true);
   auto funcNormalize2 = [](Variable& in) { return normalize(in, {1}); };
   ASSERT_TRUE(jacobianTestImpl(funcNormalize2, x));
   auto ys = funcNormalize2(x);
   ASSERT_TRUE(allClose(
-      af::sum(ys.array() * ys.array(), 1), af::constant(1, 5, af::dtype::f64)));
+      fl::sum(ys.tensor() * ys.tensor(), {1}),
+      fl::full({5}, 1, fl::dtype::f64)));
   auto yb = normalize(x, {1}, 2, 1);
-  ASSERT_TRUE(
-      af::allTrue<bool>(af::sqrt(af::sum(yb.array() * yb.array(), 1)) <= 1));
+  ASSERT_TRUE(fl::all(fl::sqrt(fl::sum(yb.tensor() * yb.tensor(), {1})) <= 1)
+                  .scalar<char>());
 }
 
 TEST(AutogradTest, Indexing) {
-  auto x = Variable(af::randu(5, 6, 7, 4, af::dtype::f64), true);
+  auto x = Variable(fl::rand({5, 6, 7, 4}, fl::dtype::f64), true);
 
   auto func_col = [](Variable& input) { return input.col(4); };
   ASSERT_TRUE(jacobianTestImpl(func_col, x));
@@ -762,12 +739,16 @@ TEST(AutogradTest, Indexing) {
 
   auto func_slices = [](Variable& input) { return input.slices(2, 4); };
   ASSERT_TRUE(jacobianTestImpl(func_slices, x));
+  auto func_flat = [](Variable& input) {
+    return input.flat(fl::range(4, 100));
+  };
+  ASSERT_TRUE(jacobianTestImpl(func_flat, x));
 }
 
 TEST(AutogradTest, Convolve) {
-  auto in = Variable(af::randu(10, 9, 8, 7, af::dtype::f32), true);
-  auto wt = Variable(af::randu(4, 3, 8, 6, af::dtype::f32), true);
-  auto bs = Variable(af::randu(1, 1, 6, 1, af::dtype::f32), true);
+  auto in = Variable(fl::rand({10, 9, 8, 7}, fl::dtype::f32), true);
+  auto wt = Variable(fl::rand({4, 3, 8, 6}, fl::dtype::f32), true);
+  auto bs = Variable(fl::rand({1, 1, 6, 1}, fl::dtype::f32), true);
   int px = 2, py = 1;
   int sx = 1, sy = 1;
   int dx = 1, dy = 1;
@@ -825,9 +806,10 @@ TEST_F(AutogradTestF16, ConvolveF16) {
   }
 
   const float scaleFactor = 10.0; // scale the input to prevent grad underflow
-  auto in = Variable(af::randu(3, 1, 2, 1, af::dtype::f16) * scaleFactor, true);
-  auto wt = Variable(af::randu(2, 1, 2, 1, af::dtype::f16), true);
-  auto bs = Variable(af::randu(1, 1, 1, 1, af::dtype::f16), true);
+  auto in =
+      Variable(fl::rand({3, 1, 2, 1}, fl::dtype::f16) * scaleFactor, true);
+  auto wt = Variable(fl::rand({2, 1, 2, 1}, fl::dtype::f16), true);
+  auto bs = Variable(fl::rand({1, 1, 1, 1}, fl::dtype::f16), true);
   int px = 1, py = 1;
   int sx = 1, sy = 1;
   int dx = 1, dy = 1;
@@ -883,11 +865,11 @@ TEST(AutogradTest, ConvolveFilterGroups) {
   int channel = 8;
   int groups = 2;
   // w x h x c x b
-  auto in = Variable(af::randu(10, 9, channel, 7, af::dtype::f32), true);
+  auto in = Variable(fl::rand({10, 9, channel, 7}, fl::dtype::f32), true);
   // w x h x in x out
   auto wt =
-      Variable(af::randu(4, 3, channel / groups, 6, af::dtype::f32), true);
-  auto bs = Variable(af::randu(1, 1, 6, 1, af::dtype::f32), true);
+      Variable(fl::rand({4, 3, channel / groups, 6}, fl::dtype::f32), true);
+  auto bs = Variable(fl::rand({1, 1, 6, 1}, fl::dtype::f32), true);
 
   int px = 2, py = 1;
   int sx = 1, sy = 1;
@@ -907,9 +889,9 @@ TEST(AutogradTest, ConvolveFilterGroups) {
 }
 
 TEST(AutogradTest, ConvolveDilation) {
-  auto in = Variable(af::randu(10, 9, 8, 7, af::dtype::f32), true);
-  auto wt = Variable(af::randu(4, 3, 8, 6, af::dtype::f32), true);
-  auto bs = Variable(af::randu(1, 1, 6, 1, af::dtype::f32), true);
+  auto in = Variable(fl::rand({10, 9, 8, 7}, fl::dtype::f32), true);
+  auto wt = Variable(fl::rand({4, 3, 8, 6}, fl::dtype::f32), true);
+  auto bs = Variable(fl::rand({1, 1, 6, 1}, fl::dtype::f32), true);
   int px = 2, py = 1;
   int sx = 1, sy = 1;
   int dx = 2, dy = 1;
@@ -958,7 +940,7 @@ TEST(AutogradTest, ConvolveDilation) {
 }
 
 TEST(AutogradTest, Padding) {
-  auto in = Variable(af::randu(3, 3, af::dtype::f32), true);
+  auto in = Variable(fl::rand({3, 3}, fl::dtype::f32), true);
   auto func_pad = [&](Variable& input) {
     return padding(input, {{1, 2}, {0, 1}}, -1);
   };
@@ -966,7 +948,7 @@ TEST(AutogradTest, Padding) {
 }
 
 TEST(AutogradTest, Pooling) {
-  auto in = Variable(af::randu(3, 3, 1, 1, af::dtype::f32), true);
+  auto in = Variable(fl::rand({3, 3, 1, 1}, fl::dtype::f32), true);
   auto func_pool = [&](Variable& input) { return pool2d(input, 2, 2, 1, 1); };
   ASSERT_TRUE(jacobianTestImpl(func_pool, in, 1E-3));
 }
@@ -977,13 +959,13 @@ TEST_F(AutogradTestF16, PoolingF16) {
   }
 
   const float inputScale = 2.0; // scale the input to prevent grad underflow
-  auto in = Variable(inputScale * af::randu(3, 3, 1, 1, af::dtype::f16), true);
+  auto in = Variable(inputScale * fl::rand({3, 3, 1, 1}, fl::dtype::f16), true);
   auto func_pool = [&](Variable& input) { return pool2d(input, 2, 2, 1, 1); };
   ASSERT_TRUE(jacobianTestImpl(func_pool, in, 1e1, 1e-1)); // TODO: investigate
 }
 
 TEST(AutogradTest, Softmax) {
-  auto in = Variable(af::randu(3, 5, 1, af::dtype::f64), true);
+  auto in = Variable(fl::rand({3, 5, 1}, fl::dtype::f64), true);
   auto func_sm = [&](Variable& input) { return softmax(input, 0); };
 
   ASSERT_TRUE(jacobianTestImpl(func_sm, in, 1E-5));
@@ -994,14 +976,14 @@ TEST_F(AutogradTestF16, SoftmaxF16) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
-  auto in = Variable(af::randu(3, 5, 1, af::dtype::f16), true);
+  auto in = Variable(fl::rand({3, 5, 1}, fl::dtype::f16), true);
   auto func_sm = [&](Variable& input) { return softmax(input, 0); };
 
   ASSERT_TRUE(jacobianTestImpl(func_sm, in, 1E-2, 1e-1));
 }
 
 TEST(AutogradTest, LogSoftmax) {
-  auto in = Variable(af::randu(3, 5, 1, af::dtype::f64), true);
+  auto in = Variable(fl::rand({3, 5, 1}, fl::dtype::f64), true);
   auto func_lsm = [&](Variable& input) { return logSoftmax(input, 0); };
 
   ASSERT_TRUE(jacobianTestImpl(func_lsm, in, 1E-5));
@@ -1012,24 +994,25 @@ TEST_F(AutogradTestF16, LogSoftmaxF16) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
-  auto in = Variable(af::randu(3, 5, 1, af::dtype::f16), true);
+  auto in = Variable(fl::rand({3, 5, 1}, fl::dtype::f16), true);
   auto func_lsm = [&](Variable& input) { return logSoftmax(input, 0); };
 
   ASSERT_TRUE(jacobianTestImpl(func_lsm, in, 1E-2, 1e-1));
 }
 
 TEST(AutogradTest, BinaryCrossEntropy) {
-  auto x = Variable(af::randu(10), true);
-  auto y = Variable(af::randu(10), true);
+  auto x = Variable(fl::rand({10}), true);
+  auto y = Variable(fl::rand({10}), true);
   auto loss = binaryCrossEntropy(x, y);
 
   // bce loss should be positive
-  ASSERT_TRUE(af::allTrue<bool>(loss.array() > 0));
+  ASSERT_TRUE(fl::all(loss.tensor() > 0).scalar<char>());
 }
 
 TEST(AutogradTest, CrossEntropy) {
-  auto x = Variable(af::randu(7, 10, 4, af::dtype::f64), true);
-  auto y = Variable((af::randu(10, 4, af::dtype::u32) % 7).as(s32), false);
+  auto x = Variable(fl::rand({7, 10, 4}, fl::dtype::f64), true);
+  auto y = Variable(
+      (fl::rand({10, 4}, fl::dtype::u32) % 7).astype(fl::dtype::s32), false);
   auto ignoreIdx = y(0, 0).scalar<int>();
 
   std::vector<ReduceMode> modes = {
@@ -1053,17 +1036,28 @@ TEST(AutogradTest, CrossEntropy) {
       categoricalCrossEntropy(x, y, ReduceMode::SUM, ignoreIdx);
   auto lossMeanIgnore =
       categoricalCrossEntropy(x, y, ReduceMode::MEAN, ignoreIdx);
-  auto ignoreCount = af::sum<int>(y.array() == ignoreIdx);
+  auto ignoreCount = fl::sum(y.tensor() == ignoreIdx).scalar<unsigned>();
   ASSERT_NEAR(
       (lossSumIgnore / lossMeanIgnore).scalar<double>(),
       40 - ignoreCount,
       1e-5);
+
+  ASSERT_THROW(
+      categoricalCrossEntropy(
+          Variable(fl::rand({4, 5, 6}), false),
+          Variable(fl::rand({5, 8}), false)),
+      std::invalid_argument);
+
+  ASSERT_THROW(
+      categoricalCrossEntropy(
+          Variable(fl::rand({4, 5, 6}), false), Variable(fl::rand({5}), false)),
+      std::invalid_argument);
 }
 
 TEST(AutogradTest, Reorder) {
-  auto in = Variable(af::randu(3, 1, 4, 1, af::dtype::f32) * 2, true);
+  auto in = Variable(fl::rand({3, 1, 4, 1}, fl::dtype::f32) * 2, true);
   auto func_reorder = [&](Variable& input) {
-    return reorder(input, 2, 0, 3, 1);
+    return reorder(input, {2, 0, 3, 1});
   };
   ASSERT_TRUE(jacobianTestImpl(func_reorder, in, 1E-3));
 }
@@ -1074,15 +1068,15 @@ TEST(AutogradTest, matmul) {
   unsigned N = 14;
   unsigned b2 = 2;
   unsigned b3 = 4;
-  auto mk = af::dim4({M, K});
-  auto mkb2 = af::dim4({M, K, b2}); // 1 batch dim
-  auto mkb2b3 = af::dim4({M, K, b2, b3}); // 2 batch dims
-  auto kn = af::dim4({K, N});
-  auto knb2 = af::dim4({K, N, b2}); // 1 batch dim
-  auto knb2b3 = af::dim4({K, N, b2, b3}); // 2 batch dims
+  auto mk = Shape({M, K});
+  auto mkb2 = Shape({M, K, b2}); // 1 batch dim
+  auto mkb2b3 = Shape({M, K, b2, b3}); // 2 batch dims
+  auto kn = Shape({K, N});
+  auto knb2 = Shape({K, N, b2}); // 1 batch dim
+  auto knb2b3 = Shape({K, N, b2, b3}); // 2 batch dims
 
   // lhs, rhs
-  std::vector<std::pair<af::dim4, af::dim4>> inputs = {
+  std::vector<std::pair<Shape, Shape>> inputs = {
       {mk, kn},
       {mk, knb2},
       {mk, knb2b3},
@@ -1091,8 +1085,8 @@ TEST(AutogradTest, matmul) {
       {mkb2b3, kn},
       {mkb2b3, knb2b3}};
 
-  auto trFirstTwoDims = [](const af::dim4& in) -> af::dim4 {
-    af::dim4 out = in;
+  auto trFirstTwoDims = [](const Shape& in) -> Shape {
+    Shape out = in;
     auto out1 = out[1];
     out[1] = out[0];
     out[0] = out1;
@@ -1103,11 +1097,11 @@ TEST(AutogradTest, matmul) {
     auto& aShape = pair.first;
     auto& bShape = pair.second;
 
-    auto a = Variable(af::randu(aShape, af::dtype::f64) * 2 - 1, true);
-    auto b = Variable(af::randu(bShape, af::dtype::f64) * 2 - 1, true);
+    auto a = Variable(fl::rand(aShape, fl::dtype::f64) * 2 - 1, true);
+    auto b = Variable(fl::rand(bShape, fl::dtype::f64) * 2 - 1, true);
 
-    auto aT = Variable(af::randu(trFirstTwoDims(aShape), af::dtype::f64), true);
-    auto bT = Variable(af::randu(trFirstTwoDims(bShape), af::dtype::f64), true);
+    auto aT = Variable(fl::rand(trFirstTwoDims(aShape), fl::dtype::f64), true);
+    auto bT = Variable(fl::rand(trFirstTwoDims(bShape), fl::dtype::f64), true);
 
     // matmul
     auto funcMatmulLhs = [&](Variable& input) { return matmul(input, b); };
@@ -1136,7 +1130,7 @@ TEST(AutogradTest, matmul) {
 }
 
 TEST(AutogradTest, Glu) {
-  auto in = Variable(af::randu(3, 4, 5, af::dtype::f64), true);
+  auto in = Variable(fl::rand({3, 4, 5}, fl::dtype::f64), true);
   auto func_glu = [&](Variable& input) { return gatedlinearunit(input, 1); };
   ASSERT_TRUE(jacobianTestImpl(func_glu, in, 1E-5));
 }
@@ -1144,9 +1138,9 @@ TEST(AutogradTest, Glu) {
 TEST(AutogradTest, Linear) {
   std::vector<int> batchsizes = {1, 5};
   for (auto b : batchsizes) {
-    auto in = Variable(af::randu(3, 4, b, af::dtype::f64) * 2 - 1, true);
-    auto wt = Variable(af::randu(6, 3, af::dtype::f64) * 2 - 1, true);
-    auto bs = Variable(af::randu(6, af::dtype::f64) * 2 - 1, true);
+    auto in = Variable(fl::rand({3, 4, b}, fl::dtype::f64) * 2 - 1, true);
+    auto wt = Variable(fl::rand({6, 3}, fl::dtype::f64) * 2 - 1, true);
+    auto bs = Variable(fl::rand({6}, fl::dtype::f64) * 2 - 1, true);
     auto func_lin_in = [&](Variable& input) { return linear(input, wt, bs); };
     ASSERT_TRUE(jacobianTestImpl(func_lin_in, in, 1E-8));
     auto func_lin_wt = [&](Variable& weight) { return linear(in, weight, bs); };
@@ -1164,9 +1158,9 @@ TEST_F(AutogradTestF16, LinearF16) {
   std::vector<int> batchsizes = {1, 5};
   const float scale = 4.0; // scale prevent grad underflow
   for (auto b : batchsizes) {
-    auto in = Variable(af::randu(2, 2, b, af::dtype::f16) * scale, true);
-    auto wt = Variable(af::randu(2, 2, af::dtype::f16) * scale, true);
-    auto bs = Variable(af::randu(2, af::dtype::f16) * scale, true);
+    auto in = Variable(fl::rand({2, 2, b}, fl::dtype::f16) * scale, true);
+    auto wt = Variable(fl::rand({2, 2}, fl::dtype::f16) * scale, true);
+    auto bs = Variable(fl::rand({2}, fl::dtype::f16) * scale, true);
     auto func_lin_in = [&](Variable& input) { return linear(input, wt, bs); };
     ASSERT_TRUE(jacobianTestImpl(func_lin_in, in, 5E-2, 5E-1));
     auto func_lin_wt = [&](Variable& weight) { return linear(in, weight, bs); };
@@ -1177,10 +1171,10 @@ TEST_F(AutogradTestF16, LinearF16) {
 }
 
 TEST(AutogradTest, WeightNormLinear) {
-  auto v = Variable(af::randu(3, 2), true);
+  auto v = Variable(fl::rand({3, 2}), true);
   auto norm_dim = {1};
-  auto g = Variable(norm(v, norm_dim).array(), true);
-  auto in = Variable(af::randu(2, 3, 1, 1, af::dtype::f32), true);
+  auto g = Variable(norm(v, norm_dim).tensor(), true);
+  auto in = Variable(fl::rand({2, 3}, fl::dtype::f32), true);
 
   auto func_weightNorm_in = [&](Variable& input) {
     auto w = v * tileAs(g / norm(v, norm_dim), v);
@@ -1198,17 +1192,19 @@ TEST(AutogradTest, WeightNormLinear) {
     auto w = v * tileAs(input / norm(v, norm_dim), v);
     return matmul(w, in);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_weightNorm_g, g, 1E-3));
+  ASSERT_TRUE(jacobianTestImpl(func_weightNorm_g, g, 5E-3));
 }
 
 TEST(AutogradTest, WeightNormConv) {
-  auto v = Variable(af::randu(3, 3, 3, 8), true);
+  auto v = Variable(fl::rand({3, 3, 3, 8}), true);
   auto norm_dim = {0, 1, 2};
-  auto g = Variable(norm(v, norm_dim).array(), true);
-  auto in = Variable(af::randu(7, 7, 3, 8) * 2 - 2, true);
+  auto g = Variable(
+      norm(v, norm_dim, /* p = */ 2, /* keepDims = */ true).tensor(), true);
+  auto in = Variable(fl::rand({7, 7, 3, 8}) * 2 - 2, true);
 
   auto func_weightNorm_in = [&](Variable& input) {
-    auto w = v * tileAs(g / norm(v, norm_dim), v);
+    auto w = v *
+        tileAs(g / norm(v, norm_dim, /* p = */ 2, /* keepDims = */ true), v);
     return conv2d(
         input,
         w,
@@ -1223,7 +1219,9 @@ TEST(AutogradTest, WeightNormConv) {
   ASSERT_TRUE(jacobianTestImpl(func_weightNorm_in, in, 3E-1));
 
   auto func_weightNorm_v = [&](Variable& input) {
-    auto w = input * tileAs(g / norm(input, norm_dim), input);
+    auto w = input *
+        tileAs(g / norm(input, norm_dim, /* p = */ 2, /* keepDims = */ true),
+               input);
     return conv2d(
         in,
         w,
@@ -1238,7 +1236,9 @@ TEST(AutogradTest, WeightNormConv) {
   ASSERT_TRUE(jacobianTestImpl(func_weightNorm_v, v, 2E-1));
 
   auto func_weightNorm_g = [&](Variable& input) {
-    auto w = v * tileAs(input / norm(v, norm_dim), v);
+    auto w = v *
+        tileAs(input / norm(v, norm_dim, /* p = */ 2, /* keepDims = */ true),
+               v);
     return conv2d(
         in,
         w,
@@ -1253,18 +1253,18 @@ TEST(AutogradTest, WeightNormConv) {
   ASSERT_TRUE(jacobianTestImpl(func_weightNorm_g, g, 2E-1));
 }
 
-void testRnnImpl(RnnMode mode, af::dtype precision = af::dtype::f64) {
+void testRnnImpl(RnnMode mode, fl::dtype precision = fl::dtype::f64) {
   int numLayers = 2;
   int hiddenSize = 2;
   int inputSize = 2;
   int batchSize = 2;
   int seqLength = 3;
   bool bidirectional = true;
-  float expectedPrecision = precision == af::dtype::f16 ? 5E-2 : 1E-5;
-  float perturbation = precision == af::dtype::f16 ? 1E-1 : 1E-4;
+  float expectedPrecision = precision == fl::dtype::f16 ? 5E-2 : 1E-5;
+  float perturbation = precision == fl::dtype::f16 ? 1E-1 : 1E-4;
 
   auto in =
-      Variable(af::randu(inputSize, batchSize, seqLength, precision), true);
+      Variable(fl::rand({inputSize, batchSize, seqLength}, precision), true);
   size_t nParams;
 
   switch (mode) {
@@ -1281,7 +1281,8 @@ void testRnnImpl(RnnMode mode, af::dtype precision = af::dtype::f64) {
       throw std::invalid_argument("invalid RNN mode for the test");
   }
 
-  auto w = Variable(af::randu(nParams, precision), true);
+  auto w =
+      Variable(fl::rand({static_cast<long long>(nParams)}, precision), true);
 
   auto funcRnnIn = [&](Variable& input) -> Variable {
     return std::get<0>(
@@ -1313,11 +1314,9 @@ void testRnnImpl(RnnMode mode, af::dtype precision = af::dtype::f64) {
 
   // We get the correct gradient for hx
   auto hx = Variable(
-      af::randu(
-          inputSize,
-          batchSize,
-          numLayers * (1 + bidirectional),
-          af::dtype::f64),
+      fl::rand(
+          {inputSize, batchSize, numLayers * (1 + bidirectional)},
+          fl::dtype::f64),
       true);
   auto funcRnnHx = [&](Variable& hiddenState) -> Variable {
     return std::get<0>(
@@ -1352,11 +1351,9 @@ void testRnnImpl(RnnMode mode, af::dtype precision = af::dtype::f64) {
   if (mode == RnnMode::LSTM) {
     // We get the correct gradient for cx
     auto cx = Variable(
-        af::randu(
-            inputSize,
-            batchSize,
-            numLayers * (1 + bidirectional),
-            af::dtype::f64),
+        fl::rand(
+            {inputSize, batchSize, numLayers * (1 + bidirectional)},
+            fl::dtype::f64),
         true);
     auto funcRnnCx = [&](Variable& cellState) -> Variable {
       return std::get<0>(
@@ -1404,7 +1401,7 @@ TEST_F(AutogradTestF16, RnnF16) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
-  testRnnImpl(RnnMode::TANH, af::dtype::f16);
+  testRnnImpl(RnnMode::TANH, fl::dtype::f16);
 }
 
 TEST(AutogradTest, Lstm) {
@@ -1419,7 +1416,7 @@ TEST_F(AutogradTestF16, LstmF16) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
-  testRnnImpl(RnnMode::LSTM, af::dtype::f16);
+  testRnnImpl(RnnMode::LSTM, fl::dtype::f16);
 }
 
 TEST(AutogradTest, Gru) {
@@ -1434,13 +1431,14 @@ TEST_F(AutogradTestF16, GruF16) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
-  testRnnImpl(RnnMode::GRU, af::dtype::f16);
+  testRnnImpl(RnnMode::GRU, fl::dtype::f16);
 }
 
 TEST(AutogradTest, Embedding) {
   int n_words = 10;
-  auto input = Variable((af::randu(4, 2) * n_words).as(s32), false);
-  auto weights = Variable(af::randn(4, n_words, f64), true);
+  auto input =
+      Variable((fl::rand({4, 2}) * n_words).astype(fl::dtype::f32), false);
+  auto weights = Variable(fl::randn({4, n_words}, fl::dtype::f64), true);
   auto func_embed = [&](Variable& w) { return embedding(input, w); };
   ASSERT_TRUE(jacobianTestImpl(func_embed, weights, 1E-5));
 }
@@ -1449,11 +1447,11 @@ TEST(AutogradTest, BatchNormEvalModeOutputSingleAxis) {
   int feat_dims = 3;
   std::vector<int> featAxes = {2};
   // input order: HWCN, following the docs
-  auto input = Variable(af::randu(13, 13, feat_dims, 16), false);
-  auto runningMean = Variable(af::randu(feat_dims, input.type()), false);
-  auto runningVar = Variable(af::randu(feat_dims, input.type()), false);
-  auto weight = Variable(af::randu(feat_dims, input.type()), false);
-  auto bias = Variable(af::randu(feat_dims, input.type()), false);
+  auto input = Variable(fl::rand({13, 13, feat_dims, 16}), false);
+  auto runningMean = Variable(fl::rand({feat_dims}, input.type()), false);
+  auto runningVar = Variable(fl::rand({feat_dims}, input.type()), false);
+  auto weight = Variable(fl::rand({feat_dims}, input.type()), false);
+  auto bias = Variable(fl::rand({feat_dims}, input.type()), false);
 
   auto out = (batchnorm(
       input,
@@ -1466,17 +1464,17 @@ TEST(AutogradTest, BatchNormEvalModeOutputSingleAxis) {
       0.0,
       1E-5));
   for (int i = 0; i < feat_dims; ++i) {
-    std::array<af::index, 4> sel = {af::span, af::span, i, af::span};
-    auto thisInput = input.array()(sel[0], sel[1], sel[2], sel[3]);
-    auto thisMean = runningMean.array()(i).scalar<float>();
-    auto thisVar = runningVar.array()(i).scalar<float>();
-    auto thisWeight = weight.array()(i).scalar<float>();
-    auto thisBias = bias.array()(i).scalar<float>();
+    std::array<fl::Index, 4> sel = {fl::span, fl::span, i, fl::span};
+    auto thisInput = input.tensor()(sel[0], sel[1], sel[2], sel[3]);
+    auto thisMean = runningMean.tensor().flatten()(i).scalar<float>();
+    auto thisVar = runningVar.tensor().flatten()(i).scalar<float>();
+    auto thisWeight = weight.tensor().flatten()(i).scalar<float>();
+    auto thisBias = bias.tensor().flatten()(i).scalar<float>();
 
     auto expectedOut = (thisInput - thisMean) / sqrt(thisVar + 1E-5);
     expectedOut = expectedOut * thisWeight + thisBias;
     ASSERT_TRUE(allClose(
-        out.array()(sel[0], sel[1], sel[2], sel[3]), expectedOut, 1E-5));
+        out.tensor()(sel[0], sel[1], sel[2], sel[3]), expectedOut, 1E-5));
   }
 
   // test on empty weigts and bias
@@ -1491,30 +1489,30 @@ TEST(AutogradTest, BatchNormEvalModeOutputSingleAxis) {
       0.0,
       1E-5));
   for (int i = 0; i < feat_dims; ++i) {
-    std::array<af::index, 4> sel = {af::span, af::span, i, af::span};
-    auto thisInput = input.array()(sel[0], sel[1], sel[2], sel[3]);
-    auto thisMean = runningMean.array()(i).scalar<float>();
-    auto thisVar = runningVar.array()(i).scalar<float>();
+    std::array<fl::Index, 4> sel = {fl::span, fl::span, i, fl::span};
+    auto thisInput = input.tensor()(sel[0], sel[1], sel[2], sel[3]);
+    auto thisMean = runningMean.tensor().flatten()(i).scalar<float>();
+    auto thisVar = runningVar.tensor().flatten()(i).scalar<float>();
 
     auto expectedOut = (thisInput - thisMean) / sqrt(thisVar + 1E-5);
     ASSERT_TRUE(allClose(
-        out.array()(sel[0], sel[1], sel[2], sel[3]), expectedOut, 1E-5));
+        out.tensor()(sel[0], sel[1], sel[2], sel[3]), expectedOut, 1E-5));
   }
 }
 
 TEST(AutogradTest, BatchNormEvalModeOutputMultipleAxis) {
   // input order: HWCN, following the docs
   std::vector<int> featAxes = {0, 1, 2};
-  auto input = Variable(af::randu(13, 13, 4, 16), false);
+  auto input = Variable(fl::rand({13, 13, 4, 16}), false);
 
   auto nfeatures = 1;
   for (auto ax : featAxes) {
     nfeatures *= input.dims(ax);
   }
-  auto runningMean = Variable(af::randu(nfeatures, input.type()), false);
-  auto runningVar = Variable(af::randu(nfeatures, input.type()), false);
-  auto weight = Variable(af::randu(nfeatures, input.type()), false);
-  auto bias = Variable(af::randu(nfeatures, input.type()), false);
+  auto runningMean = Variable(fl::rand({nfeatures}, input.type()), false);
+  auto runningVar = Variable(fl::rand({nfeatures}, input.type()), false);
+  auto weight = Variable(fl::rand({nfeatures}, input.type()), false);
+  auto bias = Variable(fl::rand({nfeatures}, input.type()), false);
 
   auto out = (batchnorm(
       input,
@@ -1527,18 +1525,19 @@ TEST(AutogradTest, BatchNormEvalModeOutputMultipleAxis) {
       0.0,
       1E-5));
   for (int i = 0; i < nfeatures; ++i) {
-    std::array<af::index, 4> sel = {
-        i % 13, (i / 13) % 13, (i / 13) / 13, af::span};
-    auto thisInput = input.array()(sel[0], sel[1], sel[2], sel[3]);
-    auto thisMean = runningMean.array()(i).scalar<float>();
-    auto thisVar = runningVar.array()(i).scalar<float>();
-    auto thisWeight = weight.array()(i).scalar<float>();
-    auto thisBias = bias.array()(i).scalar<float>();
+    std::array<fl::Index, 4> sel = {
+        i % 13, (i / 13) % 13, (i / 13) / 13, fl::span};
+    auto thisInput = input.tensor()(sel[0], sel[1], sel[2], sel[3]);
+    auto thisMean = runningMean.tensor().flatten()(i).scalar<float>();
+    auto thisVar = runningVar.tensor().flatten()(i).scalar<float>();
+    auto thisWeight = weight.tensor().flatten()(i).scalar<float>();
+    auto thisBias = bias.tensor().flatten()(i).scalar<float>();
 
     auto expectedOut = (thisInput - thisMean) / sqrt(thisVar + 1e-5);
     expectedOut = expectedOut * thisWeight + thisBias;
+
     ASSERT_TRUE(allClose(
-        out.array()(sel[0], sel[1], sel[2], sel[3]), expectedOut, 1e-5));
+        out.tensor()(sel[0], sel[1], sel[2], sel[3]), expectedOut, 1e-4));
   }
 
   // test on empty weigts and bias
@@ -1553,15 +1552,15 @@ TEST(AutogradTest, BatchNormEvalModeOutputMultipleAxis) {
       0.0,
       1E-5));
   for (int i = 0; i < nfeatures; ++i) {
-    std::array<af::index, 4> sel = {
-        i % 13, (i / 13) % 13, (i / 13) / 13, af::span};
-    auto thisInput = input.array()(sel[0], sel[1], sel[2], sel[3]);
-    auto thisMean = runningMean.array()(i).scalar<float>();
-    auto thisVar = runningVar.array()(i).scalar<float>();
+    std::array<fl::Index, 4> sel = {
+        i % 13, (i / 13) % 13, (i / 13) / 13, fl::span};
+    auto thisInput = input.tensor()(sel[0], sel[1], sel[2], sel[3]);
+    auto thisMean = runningMean.tensor().flatten()(i).scalar<float>();
+    auto thisVar = runningVar.tensor().flatten()(i).scalar<float>();
 
     auto expectedOut = (thisInput - thisMean) / sqrt(thisVar + 1e-5);
     ASSERT_TRUE(allClose(
-        out.array()(sel[0], sel[1], sel[2], sel[3]), expectedOut, 1e-5));
+        out.tensor()(sel[0], sel[1], sel[2], sel[3]), expectedOut, 5e-5));
   }
 }
 
@@ -1569,11 +1568,11 @@ TEST(AutogradTest, BatchNormTrainModeOutputSingleAxis) {
   int numFeat = 3;
   std::vector<int> featAxes = {2};
   double epsilon = 1E-5;
-  auto input = Variable(af::randu(13, 13, numFeat, 8), true);
-  auto weight = Variable(af::randu(numFeat), true);
-  auto bias = Variable(af::randu(numFeat), true);
-  auto runningMean = Variable(af::randu(numFeat), false);
-  auto runningVar = Variable(af::randu(numFeat), false);
+  auto input = Variable(fl::rand({13, 13, numFeat, 8}), true);
+  auto weight = Variable(fl::rand({numFeat}), true);
+  auto bias = Variable(fl::rand({numFeat}), true);
+  auto runningMean = Variable(fl::rand({numFeat}), false);
+  auto runningVar = Variable(fl::rand({numFeat}), false);
 
   auto out = batchnorm(
       input,
@@ -1586,7 +1585,7 @@ TEST(AutogradTest, BatchNormTrainModeOutputSingleAxis) {
       0.0,
       epsilon);
 
-  auto todim = af::dim4(1, 1, numFeat);
+  auto todim = Shape({1, 1, numFeat});
   std::vector<int> nrm_axes = {0, 1, 3};
   auto avg = moddims(mean(input, nrm_axes), todim);
   auto variance =
@@ -1595,56 +1594,56 @@ TEST(AutogradTest, BatchNormTrainModeOutputSingleAxis) {
       fl::sqrt(tileAs(variance, input) + epsilon);
   expectedOut = expectedOut * tileAs(moddims(weight, todim), input) +
       tileAs(moddims(bias, todim), input);
-  ASSERT_TRUE(allClose(out.array(), expectedOut.array(), 1e-5));
+  ASSERT_TRUE(allClose(out.tensor(), expectedOut.tensor(), 1e-5));
 }
 
 TEST(AutogradTest, BatchNormTrainModeOutputMultipleAxis) {
   std::vector<int> featAxes = {0, 1, 2};
-  auto input = Variable(af::randu(13, 13, 4, 8), true);
+  auto input = Variable(fl::rand({13, 13, 4, 8}), true);
 
   auto nfeatures = 1;
   for (auto ax : featAxes) {
     nfeatures *= input.dims(ax);
   }
-  auto weight = Variable(af::randu(nfeatures), true);
-  auto bias = Variable(af::randu(nfeatures), true);
-  auto runningMean = Variable(af::randu(nfeatures), false);
-  auto runningVar = Variable(af::randu(nfeatures), false);
+  auto weight = Variable(fl::rand({nfeatures}), true);
+  auto bias = Variable(fl::rand({nfeatures}), true);
+  auto runningMean = Variable(fl::rand({nfeatures}), false);
+  auto runningVar = Variable(fl::rand({nfeatures}), false);
 
   auto out = batchnorm(
       input, weight, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5);
 
-  auto todim = af::dim4(nfeatures);
+  auto todim = Shape({nfeatures});
   std::vector<int> nrm_axes = {3};
   auto avg = moddims(mean(input, nrm_axes), todim);
   auto variance = moddims(var(input, nrm_axes, true), todim);
 
   for (int i = 0; i < nfeatures; ++i) {
-    std::array<af::index, 4> sel = {
-        i % 13, (i / 13) % 13, (i / 13) / 13, af::span};
-    auto thisInput = input.array()(sel[0], sel[1], sel[2], sel[3]);
-    auto thisMean = avg(i).scalar<float>();
-    auto thisVar = variance(i).scalar<float>();
-    auto thisWeight = weight.array()(i).scalar<float>();
-    auto thisBias = bias.array()(i).scalar<float>();
+    std::array<fl::Index, 4> sel = {
+        i % 13, (i / 13) % 13, (i / 13) / 13, fl::span};
+    auto thisInput = input.tensor()(sel[0], sel[1], sel[2], sel[3]);
+    auto thisMean = avg.tensor().flatten()(i).scalar<float>();
+    auto thisVar = variance.tensor().flatten()(i).scalar<float>();
+    auto thisWeight = weight.tensor().flatten()(i).scalar<float>();
+    auto thisBias = bias.tensor().flatten()(i).scalar<float>();
 
     auto expectedOut = (thisInput - thisMean) / sqrt(thisVar + 1e-5);
     expectedOut = expectedOut * thisWeight + thisBias;
     ASSERT_TRUE(allClose(
-        out.array()(sel[0], sel[1], sel[2], sel[3]), expectedOut, 1e-5));
+        out.tensor()(sel[0], sel[1], sel[2], sel[3]), expectedOut, 1e-5));
   }
 }
 
 TEST(AutogradTest, BatchNormJacobian) {
-  // Jacobian Test with  train_mode = true;
+  // Jacobian Test with train_mode = true;
 
   int numFeat = 3;
   std::vector<int> featAxes = {2};
-  auto input = Variable(af::randu(8, 8, numFeat, 16, af::dtype::f32), true);
-  auto runningMean = Variable(af::randu(numFeat, af::dtype::f32), false);
-  auto runningVar = Variable(af::randu(numFeat, af::dtype::f32), false);
-  auto weight = Variable(af::randu(numFeat, af::dtype::f32), true);
-  auto bias = Variable(af::randu(numFeat, af::dtype::f32), true);
+  auto input = Variable(fl::rand({8, 8, numFeat, 16}, fl::dtype::f32), true);
+  auto runningMean = Variable(fl::rand({numFeat}, fl::dtype::f32), false);
+  auto runningVar = Variable(fl::rand({numFeat}, fl::dtype::f32), false);
+  auto weight = Variable(fl::rand({numFeat}, fl::dtype::f32), true);
+  auto bias = Variable(fl::rand({numFeat}, fl::dtype::f32), true);
 
   auto func_bn_in = [&](Variable& in) {
     return (batchnorm(
@@ -1670,15 +1669,15 @@ TEST_F(AutogradTestF16, BatchNormJacobianF16) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
-  // Jacobian Test with  train_mode = true;
+  // Jacobian Test with train_mode = true;
 
   int numFeat = 3;
   std::vector<int> featAxes = {2};
-  auto input = Variable(af::randu(8, 8, numFeat, 16, af::dtype::f16), true);
-  auto runningMean = Variable(af::randu(numFeat, af::dtype::f32), false);
-  auto runningVar = Variable(af::randu(numFeat, af::dtype::f32), false);
-  auto weight = Variable(af::randu(numFeat, af::dtype::f32), true);
-  auto bias = Variable(af::randu(numFeat, af::dtype::f32), true);
+  auto input = Variable(fl::rand({8, 8, numFeat, 16}, fl::dtype::f16), true);
+  auto runningMean = Variable(fl::rand({numFeat}, fl::dtype::f32), false);
+  auto runningVar = Variable(fl::rand({numFeat}, fl::dtype::f32), false);
+  auto weight = Variable(fl::rand({numFeat}, fl::dtype::f32), true);
+  auto bias = Variable(fl::rand({numFeat}, fl::dtype::f32), true);
 
   // Use larger perturbations to ensure gradients don't underflow with fp16
 
@@ -1704,15 +1703,15 @@ TEST_F(AutogradTestF16, BatchNormJacobianF16) {
 TEST(AutogradTest, BatchNormJacobianMultipleAxes) {
   // Jacobian Test with  train_mode = true;
   std::vector<int> featAxes = {0, 1, 2};
-  auto input = Variable(af::randu(8, 8, 3, 16, af::dtype::f32), true);
+  auto input = Variable(fl::rand({8, 8, 3, 16}, fl::dtype::f32), true);
   auto nfeatures = 1;
   for (auto ax : featAxes) {
     nfeatures *= input.dims(ax);
   }
-  auto runningMean = Variable(af::randu(nfeatures, af::dtype::f32), false);
-  auto runningVar = Variable(af::randu(nfeatures, af::dtype::f32), false);
-  auto weight = Variable(af::randu(nfeatures, af::dtype::f32), true);
-  auto bias = Variable(af::randu(nfeatures, af::dtype::f32), true);
+  auto runningMean = Variable(fl::rand({nfeatures}, fl::dtype::f32), false);
+  auto runningVar = Variable(fl::rand({nfeatures}, fl::dtype::f32), false);
+  auto weight = Variable(fl::rand({nfeatures}, fl::dtype::f32), true);
+  auto bias = Variable(fl::rand({nfeatures}, fl::dtype::f32), true);
 
   auto func_bn_in = [&](Variable& in) {
     return (batchnorm(
@@ -1738,17 +1737,17 @@ TEST_F(AutogradTestF16, BatchNormJacobianMultipleAxesF16) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
-  // Jacobian Test with  train_mode = true;
+  // Jacobian Test with train_mode = true;
   std::vector<int> featAxes = {0, 1, 2};
-  auto input = Variable(af::randu(2, 2, 2, 1, af::dtype::f16), true);
+  auto input = Variable(fl::rand({2, 2, 2, 1}, fl::dtype::f16), true);
   auto nfeatures = 1;
   for (auto ax : featAxes) {
     nfeatures *= input.dims(ax);
   }
-  auto runningMean = Variable(af::randu(nfeatures, af::dtype::f32), false);
-  auto runningVar = Variable(af::randu(nfeatures, af::dtype::f32), false);
-  auto weight = Variable(af::randu(nfeatures, af::dtype::f32), true);
-  auto bias = Variable(af::randu(nfeatures, af::dtype::f32), true);
+  auto runningMean = Variable(fl::rand({nfeatures}, fl::dtype::f32), false);
+  auto runningVar = Variable(fl::rand({nfeatures}, fl::dtype::f32), false);
+  auto weight = Variable(fl::rand({nfeatures}, fl::dtype::f32), true);
+  auto bias = Variable(fl::rand({nfeatures}, fl::dtype::f32), true);
 
   // Use larger perturbations to ensure gradients don't underflow with fp16
 
@@ -1774,15 +1773,15 @@ TEST_F(AutogradTestF16, BatchNormJacobianMultipleAxesF16) {
 
 TEST(AutogradTest, LayerNormJacobian) {
   std::vector<int> featAxes = {0, 1, 2, 3};
-  auto input = Variable(af::randu(7, 7, 3, 10), true);
+  auto input = Variable(fl::rand({7, 7, 3, 10}), true);
   auto nfeatures = 1;
   for (auto ax : featAxes) {
     nfeatures *= input.dims(ax);
   }
-  auto runningMean = Variable(af::randu(nfeatures, af::dtype::f32), false);
-  auto runningVar = Variable(af::randu(nfeatures, af::dtype::f32), false);
-  auto weight = Variable(af::randu(nfeatures, af::dtype::f32), true);
-  auto bias = Variable(af::randu(nfeatures, af::dtype::f32), true);
+  auto runningMean = Variable(fl::rand({nfeatures}, fl::dtype::f32), false);
+  auto runningVar = Variable(fl::rand({nfeatures}, fl::dtype::f32), false);
+  auto weight = Variable(fl::rand({nfeatures}, fl::dtype::f32), true);
+  auto bias = Variable(fl::rand({nfeatures}, fl::dtype::f32), true);
 
   auto func_ln_in = [&](Variable& in) {
     return batchnorm(
@@ -1800,15 +1799,15 @@ TEST_F(AutogradTestF16, LayerNormJacobianF16) {
   std::vector<int> featAxes = {0, 1, 2, 3};
   const float inputScale = 4.0; // scale the input to prevent grad underflow
   auto input =
-      Variable(inputScale * af::randu(2, 2, 2, 4, af::dtype::f16), true);
+      Variable(inputScale * fl::rand({2, 2, 2, 4}, fl::dtype::f16), true);
   auto nfeatures = 1;
   for (auto ax : featAxes) {
     nfeatures *= input.dims(ax);
   }
-  auto runningMean = Variable(af::randu(nfeatures, af::dtype::f32), false);
-  auto runningVar = Variable(af::randu(nfeatures, af::dtype::f32), false);
-  auto weight = Variable(af::randu(nfeatures, af::dtype::f32), true);
-  auto bias = Variable(af::randu(nfeatures, af::dtype::f32), true);
+  auto runningMean = Variable(fl::rand({nfeatures}, fl::dtype::f32), false);
+  auto runningVar = Variable(fl::rand({nfeatures}, fl::dtype::f32), false);
+  auto weight = Variable(fl::rand({nfeatures}, fl::dtype::f32), true);
+  auto bias = Variable(fl::rand({nfeatures}, fl::dtype::f32), true);
 
   auto func_ln_in = [&](Variable& in) {
     return batchnorm(
@@ -1819,62 +1818,66 @@ TEST_F(AutogradTestF16, LayerNormJacobianF16) {
 }
 
 TEST(AutogradTest, GetAdvancedIndex) {
-  if (af::getActiveBackend() != AF_BACKEND_CUDA) {
+  // TODO: remove me
+  if (!FL_BACKEND_CUDA) {
     GTEST_SKIP()
         << "Advanced indexing operator unsupported for non-CUDA backends";
   }
-  std::vector<af::dtype> validIndexTypes{s32, s64, u32, u64};
+  std::vector<fl::dtype> validIndexTypes = {
+      fl::dtype::s32, fl::dtype::s64, fl::dtype::u32, fl::dtype::u64};
   for (const auto& dtype : validIndexTypes) {
-    auto x = Variable(af::randu(20, 50, 40, 30, f32), true);
-    af::array a(6, dtype);
+    auto x = Variable(fl::rand({20, 50, 40, 30}, fl::dtype::f32), true);
+    Tensor a({6}, dtype);
     a(0) = 0;
     a(1) = 15;
     a(2) = 6;
     a(3) = 1;
     a(4) = 10;
     a(5) = 6;
-    af::array b(3, dtype);
+    Tensor b({3}, dtype);
     b(0) = 5;
     b(1) = 11;
     b(2) = 19;
-    auto x2 = x(a, b, af::span, af::seq(0, 3));
-    auto y = sum(x2 * x2, {0, 1, 2, 3});
-    auto res = 2 * sum(x2, {0, 1, 2, 3}).array();
+    auto x2 = x(a, b, fl::span, fl::range(0, 4));
+    auto y = sum(x2 * x2, {0, 1, 2, 3}, /* keepDims = */ true);
+    auto res = 2 * sum(x2, {0, 1, 2, 3}, /* keepDims = */ true).tensor();
     y.backward();
-    auto grad = sum(x.grad(), {0, 1, 2, 3}).array();
+    auto grad = sum(x.grad(), {0, 1, 2, 3}, /* keepDims = */ true).tensor();
     ASSERT_TRUE(allClose(grad, res, 1e-3));
   }
 }
 
 TEST(AutogradTest, GetAdvancedIndexF16) {
-  if (af::getActiveBackend() != AF_BACKEND_CUDA) {
+  // TODO: remove me
+  if (!FL_BACKEND_CUDA) {
     GTEST_SKIP()
         << "Advanced indexing operator unsupported for non-CUDA backends";
   }
   if (!fl::f16Supported()) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
-  std::vector<af::dtype> validIndexTypes{s32, s64, u32, u64};
+  std::vector<fl::dtype> validIndexTypes = {
+      fl::dtype::s32, fl::dtype::s64, fl::dtype::u32, fl::dtype::u64};
   for (const auto& dtype : validIndexTypes) {
-    auto x = Variable(af::randu(20, 50, 40, 30, f16), true);
-    af::array a(6, dtype);
+    auto x = Variable(fl::rand({20, 50, 40, 30}, fl::dtype::f16), true);
+    Tensor a({6}, dtype);
     a(0) = 0;
     a(1) = 15;
     a(2) = 6;
     a(3) = 1;
     a(4) = 10;
     a(5) = 6;
-    af::array b(3, dtype);
+    Tensor b({3}, dtype);
     b(0) = 5;
     b(1) = 11;
     b(2) = 19;
-    auto x2 = x(a, b, af::span, af::seq(0, 3));
-    ASSERT_EQ(x2.type(), af::dtype::f16);
-    auto y = sum(x2 * x2, {0, 1, 2, 3});
-    auto res = 2 * sum(x2, {0, 1, 2, 3}).array();
+    auto x2 = x(a, b, fl::span, fl::range(0, 4));
+    ASSERT_EQ(x2.type(), fl::dtype::f16);
+    auto y = sum(x2 * x2, {0, 1, 2, 3}, /* keepDims = */ true);
+    auto res = 2 * sum(x2, {0, 1, 2, 3}, /* keepDims = */ true).tensor();
     y.backward();
-    ASSERT_EQ(x.grad().type(), af::dtype::f16);
-    auto grad = sum(x.grad(), {0, 1, 2, 3}).array();
+    ASSERT_EQ(x.grad().type(), fl::dtype::f16);
+    auto grad = sum(x.grad(), {0, 1, 2, 3}, /* keepDims = */ true).tensor();
     ASSERT_TRUE(allClose(grad, res, 1e-3));
   }
 }
