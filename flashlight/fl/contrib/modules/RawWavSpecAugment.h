@@ -87,7 +87,7 @@ class RawWavSpecAugment : public UnaryModule {
 
   void precomputeFilters();
 
-  af::array lowPassFilter(int freq, af::array wav);
+  Tensor lowPassFilter(int freq, Tensor wav);
 
   RawWavSpecAugment() = default;
 

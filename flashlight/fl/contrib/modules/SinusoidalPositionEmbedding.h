@@ -33,7 +33,9 @@ namespace fl {
  */
 class SinusoidalPositionEmbedding : public Container {
  public:
-  explicit SinusoidalPositionEmbedding(int32_t layerDim, double inputScale = 1.);
+  explicit SinusoidalPositionEmbedding(
+      int32_t layerDim,
+      double inputScale = 1.);
   /**
    * SinusoidalPositionEmbedding::forward(input) expects input[0] to be of
    * dimensions CxTxBx1 with C = layerDim.
@@ -47,12 +49,17 @@ class SinusoidalPositionEmbedding : public Container {
   std::string prettyString() const override;
 
  private:
-  FL_SAVE_LOAD_WITH_BASE(Container, layerDim_, inputScale_, scale_, fl::versioned(cosShifts_, 1))
+  FL_SAVE_LOAD_WITH_BASE(
+      Container,
+      layerDim_,
+      inputScale_,
+      scale_,
+      fl::versioned(cosShifts_, 1))
 
   int32_t layerDim_;
   double inputScale_;
-  af::array scale_;
-  af::array cosShifts_;
+  Tensor scale_;
+  Tensor cosShifts_;
 
   SinusoidalPositionEmbedding();
 };

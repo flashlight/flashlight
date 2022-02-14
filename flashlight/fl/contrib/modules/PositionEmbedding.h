@@ -29,9 +29,10 @@ class PositionEmbedding : public Container {
 
   /**
    * PositionEmbedding::forward(input) expects input[0] to be of
-   * dimensions CxTxBx1 with C = layerDim and T <= maxLen.
+   * dimensions C x T x B with C = layerDim and T <= maxLen.
+   *
    * output[0] = input[0] + pos_emb, where pos_emb is a Tensor of dimensions
-   * CxTxBx1, and pos_emb = this.param_[0][:T], so pos_emb will be randomly
+   * C x T x B, and pos_emb = this.param_[0][:T], so pos_emb will be randomly
    * initialized absolute position embeddings, that can be learned end-to-end.
    *
    */
