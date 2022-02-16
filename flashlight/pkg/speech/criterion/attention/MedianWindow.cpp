@@ -6,6 +6,10 @@
  */
 
 #include "flashlight/pkg/speech/criterion/attention/MedianWindow.h"
+
+#include <stdexcept>
+
+#include "flashlight/fl/tensor/Index.h"
 #include "flashlight/pkg/speech/criterion/attention/Defines.h"
 
 namespace fl {
@@ -21,58 +25,58 @@ Variable MedianWindow::computeWindow(
     int targetLen,
     int inputSteps,
     int batchSize,
-    const af::array& inputSizes,
-    const af::array& targetSizes) const {
+    const Tensor& inputSizes,
+    const Tensor& targetSizes) const {
   // Each row of prevAttn is the attention for an input utterance.
   // The attention vector is output from a softmax.
   // The definition of "median" is the point where cdf passes 0.5.
 
   int width = std::min(wL_ + wR_, inputSteps);
-  af::array inputNotPaddedSize =
+  Tensor inputNotPaddedSize =
       computeInputNotPaddedSize(inputSizes, inputSteps, batchSize, 0, false);
 
   if (step == 0 || width == inputSteps) {
     // [1, inputSteps]
-    auto maskArray = af::constant(0.0, af::dim4(1, inputSteps, batchSize));
-    maskArray(af::span, af::seq(0, width - 1), af::span) = 1.0;
-    auto indicesAdd = af::range(af::dim4(1, inputSteps, batchSize), 1);
-    maskArray(
-        indicesAdd >= af::tile(inputNotPaddedSize, af::dim4(1, inputSteps))) =
+    auto maskArray = fl::full({1, inputSteps, batchSize}, 0.0);
+    maskArray(fl::span, fl::range(0, width), fl::span) = 1.0;
+    auto indicesAdd = fl::arange({1, inputSteps, batchSize}, 1);
+    maskArray(indicesAdd >= fl::tile(inputNotPaddedSize, {1, inputSteps})) =
         0.0;
     // [1, inputSteps, batchSize]
-    return Variable(af::log(maskArray), false);
+    return Variable(fl::log(maskArray), false);
   }
 
   auto mIdx =
-      af::sum(af::accum(prevAttn.array(), 1) < 0.5, 1).as(af::dtype::s32);
+      fl::sum(
+          fl::cumsum(prevAttn.tensor(), 1) < 0.5, {1}, /* keepDims = */ true)
+          .astype(fl::dtype::s32);
   auto startIdx = mIdx - wL_;
 
   // check boundary conditions and adjust the window
-  auto startDiff = af::abs(af::clamp(startIdx, -wL_, 0));
+  auto startDiff = fl::abs(fl::clip(startIdx, -wL_, 0));
   startIdx = startIdx + startDiff;
-  auto endDiff = af::abs(
-      af::clamp(startIdx + wL_ + wR_ - inputNotPaddedSize, 0, wL_ + wR_));
+
+  auto endDiff = fl::abs(
+      fl::clip(startIdx + wL_ + wR_ - inputNotPaddedSize, 0, wL_ + wR_));
   startIdx = startIdx - endDiff;
 
-  auto maskArray = af::constant(0.0, 1, inputSteps, batchSize, f32);
-  auto indices = af::range(af::dim4(width, batchSize), 0) +
-      af::tile(af::moddims(startIdx, {1, batchSize}), {width, 1}) +
-      af::tile(af::moddims(
-                   af::seq(0, batchSize * inputSteps - 1, inputSteps),
+  auto maskArray = fl::full({1, inputSteps, batchSize}, 0.0, fl::dtype::f32);
+  auto indices = fl::arange({width, batchSize}, 0) +
+      fl::tile(fl::reshape(startIdx, {1, batchSize}), {width, 1}) +
+      fl::tile(fl::reshape(
+                   fl::arange(0, batchSize * inputSteps, inputSteps),
                    {1, batchSize}),
                {width, 1});
-  maskArray(af::flat(indices)) = 1.0;
-  auto indicesAdd = af::range(af::dim4(1, inputSteps, batchSize), 1);
-  maskArray(
-      indicesAdd >= af::tile(inputNotPaddedSize, af::dim4(1, inputSteps))) =
-      0.0;
+  maskArray(indices.flatten()) = 1.0;
+  auto indicesAdd = fl::arange({1, inputSteps, batchSize}, 1);
+  maskArray(indicesAdd >= fl::tile(inputNotPaddedSize, {1, inputSteps})) = 0.0;
 
-  if (!targetSizes.isempty()) {
-    af::array targetNotPaddedSize = computeTargetNotPaddedSize(
+  if (!targetSizes.isEmpty()) {
+    Tensor targetNotPaddedSize = computeTargetNotPaddedSize(
         targetSizes, inputSteps, targetLen, batchSize, 1);
     maskArray(step >= targetNotPaddedSize) = 0.0;
   }
-  maskArray = af::log(maskArray);
+  maskArray = fl::log(maskArray);
   // force all -inf values to be kAttentionMaskValue to avoid nan in softmax
   maskArray(maskArray < kAttentionMaskValue) = kAttentionMaskValue;
   // [1, inputSteps, batchSize]
@@ -83,9 +87,10 @@ Variable MedianWindow::computeVectorizedWindow(
     int /* unused */,
     int /* unused */,
     int /* unused */,
-    const af::array& /* unused */,
-    const af::array& /* unused */) const {
-  throw af::exception("MedianWindow does not support vectorized window mask");
+    const Tensor& /* unused */,
+    const Tensor& /* unused */) const {
+  throw std::invalid_argument(
+      "MedianWindow does not support vectorized window mask");
 }
 } // namespace speech
 } // namespace pkg

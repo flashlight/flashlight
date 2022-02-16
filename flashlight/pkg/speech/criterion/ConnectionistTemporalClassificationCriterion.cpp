@@ -6,13 +6,16 @@
  */
 #include "flashlight/pkg/speech/criterion/ConnectionistTemporalClassificationCriterion.h"
 
-#include "flashlight/pkg/runtime/common/DistributedUtils.h"
+#include <stdexcept>
 #include "flashlight/lib/sequence/criterion/cpu/ConnectionistTemporalClassificationCriterion.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
 
 using CTC = fl::lib::cpu::ConnectionistTemporalClassificationCriterion<float>;
 using namespace fl::pkg::runtime;
 
 namespace {
+
+using namespace fl;
 
 struct CTCContext {
   std::vector<int> targetVec;
@@ -20,18 +23,22 @@ struct CTCContext {
   std::vector<uint8_t> workspaceVec;
 };
 
-af::array logSoftmax(const af::array& input, const int dim) {
-  af::array maxvals = max((input), dim);
-  af::dim4 tiledims(1, 1, 1, 1);
+Tensor logSoftmax(const Tensor& input, const int dim) {
+  Tensor maxvals = fl::amax(input, {dim}, /* keepDims = */ true);
+  Shape tiledims(std::vector<Dim>(input.ndim(), 1));
   if (dim > 3) {
     throw std::invalid_argument("logSoftmax: Dimension must be less than 3");
   }
-  tiledims[dim] = input.dims(dim);
+  tiledims[dim] = input.dim(dim);
   // Compute log softmax.
   // Subtracting then adding maxvals is for numerical stability.
   auto result = input -
-      tile(log(sum(exp(input - tile(maxvals, tiledims)), dim)) + maxvals,
-           tiledims);
+      fl::tile(fl::log(fl::sum(
+                   fl::exp(input - fl::tile(maxvals, tiledims)),
+                   {dim},
+                   /* keepDims = */ true)) +
+                   maxvals,
+               tiledims);
   fl::eval(result);
   return result;
 };
@@ -48,31 +55,36 @@ ConnectionistTemporalClassificationCriterion::
             scalemode /* = fl::lib::seq::CriterionScaleMode::NONE */)
     : scaleMode_(scalemode) {}
 
-af::array ConnectionistTemporalClassificationCriterion::viterbiPath(
-    const af::array& input,
-    const af::array& inputSize /* = af::array() */) {
-  af::array bestpath, maxvalues;
-  af::max(maxvalues, bestpath, input, 0);
-  return af::moddims(bestpath, bestpath.dims(1), bestpath.dims(2));
+Tensor ConnectionistTemporalClassificationCriterion::viterbiPath(
+    const Tensor& input,
+    const Tensor& inputSize /* = Tensor() */) {
+  Tensor bestpath, maxvalues;
+  fl::max(maxvalues, bestpath, input, 0);
+  return bestpath;
 }
 
-af::array ConnectionistTemporalClassificationCriterion::viterbiPathWithTarget(
-    const af::array& input,
-    const af::array& target,
-    const af::array& inputSizes /* = af::array() */,
-    const af::array& targetSizes /* = af::array() */
+Tensor ConnectionistTemporalClassificationCriterion::viterbiPathWithTarget(
+    const Tensor& input,
+    const Tensor& target,
+    const Tensor& inputSizes /* = Tensor() */,
+    const Tensor& targetSizes /* = Tensor() */
 ) {
-  int N = input.dims(0);
-  int T = input.dims(1);
-  int B = input.dims(2);
-  int L = target.dims(0);
+  if (input.ndim() != 3) {
+    throw std::invalid_argument(
+        "ConnectionistTemporalClassificationCriterion::viterbiPathWithTarget: "
+        "expected input of shape {N x T x B}");
+  }
+  int N = input.dim(0);
+  int T = input.dim(1);
+  int B = input.dim(2);
+  int L = target.dim(0);
 
-  const af::array targetSize = getTargetSizeArray(target, T);
+  const Tensor targetSize = getTargetSizeArray(target, T);
   std::shared_ptr<CTCContext> ctx = std::make_shared<CTCContext>();
-  af::array softmax = ::logSoftmax(input, 0);
-  std::vector<float> inputVec = afToVector<float>(softmax);
-  ctx->targetVec = afToVector<int>(target);
-  ctx->targetSizeVec = afToVector<int>(targetSize);
+  Tensor softmax = ::logSoftmax(input, 0);
+  std::vector<float> inputVec = softmax.toHostVector<float>();
+  ctx->targetVec = target.toHostVector<int>();
+  ctx->targetSizeVec = targetSize.toHostVector<int>();
   ctx->workspaceVec.assign(CTC::getWorkspaceSize(B, T, N, L), 0);
   std::vector<int> bestPaths(B * T);
   CTC::viterbi(
@@ -85,7 +97,8 @@ af::array ConnectionistTemporalClassificationCriterion::viterbiPathWithTarget(
       ctx->targetSizeVec.data(),
       bestPaths.data(),
       ctx->workspaceVec.data());
-  af::array result(T, B, bestPaths.data());
+  Tensor result =
+      Tensor::fromBuffer({T, B}, bestPaths.data(), MemoryLocation::Host);
   return result;
 }
 
@@ -97,18 +110,18 @@ void ConnectionistTemporalClassificationCriterion::validate(
     const Variable& input,
     const Variable& target) {
   if (input.isempty()) {
-    throw(af::exception("CTC: Input cannot be empty"));
+    throw std::invalid_argument("CTC: Input cannot be empty");
   }
-  if (target.numdims() > 2) {
-    throw(af::exception(
-        "CTC: Incorrect dimensions for target. Expected dim4(L, B)"));
+  if (target.numdims() != 2) {
+    throw std::invalid_argument(
+        "CTC: Incorrect dimensions for target. Expected {L, B}");
   }
-  if (input.numdims() > 3) {
-    throw(af::exception(
-        "CTC: Incorrect dimensions for input. Expected dim4(N, T, B)"));
+  if (input.numdims() != 3) {
+    throw std::invalid_argument(
+        "CTC: Incorrect dimensions for input. Expected {N, T, B}");
   }
   if (input.dims(2) != target.dims(1)) {
-    throw(af::exception("CTC: Batchsize mismatch for input and target"));
+    throw std::invalid_argument("CTC: Batchsize mismatch for input and target");
   }
 }
 } // namespace speech
