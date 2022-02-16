@@ -14,8 +14,16 @@
 
 #include <gflags/gflags.h>
 #include <glog/logging.h>
+
 #include "flashlight/fl/flashlight.h"
 
+#include "flashlight/lib/common/System.h"
+#include "flashlight/lib/text/dictionary/Dictionary.h"
+#include "flashlight/lib/text/dictionary/Utils.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
+#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
+#include "flashlight/pkg/runtime/common/Serializer.h"
+#include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/common/Flags.h"
 #include "flashlight/pkg/speech/criterion/criterion.h"
@@ -24,18 +32,10 @@
 #include "flashlight/pkg/speech/decoder/Defines.h"
 #include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
 #include "flashlight/pkg/speech/runtime/runtime.h"
-#include "flashlight/pkg/runtime/common/DistributedUtils.h"
-#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
-#include "flashlight/pkg/runtime/common/Serializer.h"
-#include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
-#include "flashlight/lib/common/System.h"
-#include "flashlight/lib/text/dictionary/Dictionary.h"
-#include "flashlight/lib/text/dictionary/Utils.h"
 
-using fl::pkg::runtime::afToVector;
-using fl::pkg::runtime::Serializer;
 using fl::lib::join;
 using fl::lib::pathsConcat;
+using fl::pkg::runtime::Serializer;
 
 using namespace fl::pkg::speech;
 
@@ -143,8 +143,8 @@ int main(int argc, char** argv) {
     LOG(INFO) << "Number of words: " << wordDict.indexSize();
   }
 
-  fl::lib::text::DictionaryMap dicts = {{kTargetIdx, tokenDict},
-                                        {kWordIdx, wordDict}};
+  fl::lib::text::DictionaryMap dicts = {
+      {kTargetIdx, tokenDict}, {kWordIdx, wordDict}};
 
   /* ===================== Create Dataset ===================== */
   fl::lib::audio::FeatureParams featParams(
@@ -182,8 +182,9 @@ int main(int argc, char** argv) {
       /*sfxConf=*/{});
   auto targetTransform = targetFeatures(tokenDict, lexicon, targetGenConfig);
   auto wordTransform = wordFeatures(wordDict);
-  int targetpadVal =
-      isSeq2seqCrit ? tokenDict.getIndex(fl::lib::text::kPadToken) : kTargetPadValue;
+  int targetpadVal = isSeq2seqCrit
+      ? tokenDict.getIndex(fl::lib::text::kPadToken)
+      : kTargetPadValue;
   int wordpadVal = wordDict.getIndex(fl::lib::text::kUnkToken);
 
   std::vector<std::string> testSplits = fl::lib::split(",", FLAGS_test, true);
@@ -291,16 +292,17 @@ int main(int argc, char** argv) {
       fl::Variable rawEmission;
       if (usePlugin) {
         rawEmission = localNetwork
-                          ->forward({fl::input(sample[kInputIdx]),
-                                     fl::noGrad(sample[kDurationIdx])})
+                          ->forward(
+                              {fl::input(sample[kInputIdx]),
+                               fl::noGrad(sample[kDurationIdx])})
                           .front();
       } else {
         rawEmission = fl::pkg::runtime::forwardSequentialModuleWithPadMask(
             fl::input(sample[kInputIdx]), localNetwork, sample[kDurationIdx]);
       }
-      auto emission = afToVector<float>(rawEmission);
-      auto tokenTarget = afToVector<int>(sample[kTargetIdx]);
-      auto wordTarget = afToVector<int>(sample[kWordIdx]);
+      auto emission = rawEmission.tensor().toHostVector<float>();
+      auto tokenTarget = sample[kTargetIdx].toHostVector<int>();
+      auto wordTarget = sample[kWordIdx].toHostVector<int>();
       auto sampleId = readSampleIds(sample[kSampleIdx]).front();
 
       auto letterTarget = tknTarget2Ltr(
@@ -321,7 +323,7 @@ int main(int argc, char** argv) {
 
       // Tokens
       auto tokenPrediction =
-          afToVector<int>(localCriterion->viterbiPath(rawEmission.array()));
+          localCriterion->viterbiPath(rawEmission.tensor()).toHostVector<int>();
       auto letterPrediction = tknPrediction2Ltr(
           tokenPrediction,
           tokenDict,
