@@ -15,6 +15,9 @@
 #include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/contrib/modules/modules.h"
 #include "flashlight/fl/nn/nn.h"
+#include "flashlight/fl/tensor/Index.h"
+#include "flashlight/fl/tensor/Random.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/lib/common/System.h"
 
 using namespace fl;
@@ -31,7 +34,7 @@ TEST(SerializationTest, Residual) {
   std::shared_ptr<Residual> loaded;
   load(path, loaded);
 
-  auto input = Variable(af::randu(12, 10, 3, 4), false);
+  auto input = Variable(fl::rand({12, 10, 3, 4}), false);
   auto output = model->forward(input);
   auto outputl = loaded->forward(input);
 
@@ -49,7 +52,7 @@ TEST(SerializationTest, AsymmetricConv1D) {
   std::shared_ptr<AsymmetricConv1D> loaded;
   load(path, loaded);
 
-  auto input = Variable(af::randu(25, 10, c, 4), false);
+  auto input = Variable(fl::rand({25, 10, c, 4}), false);
   auto output = model->forward(input);
   auto outputl = loaded->forward(input);
 
@@ -74,7 +77,8 @@ TEST(SerializationTest, Transformer) {
   load(path, loaded);
   loaded->eval();
 
-  auto input = Variable(af::randu(c, timesteps, batchsize, 1), false);
+  // auto input = Variable(fl::rand({c, timesteps, batchsize, 1}), false);
+  auto input = Variable(fl::rand({c, timesteps, batchsize}), false);
   auto output = model->forward({input, Variable()});
   auto outputl = loaded->forward({input, Variable()});
 
@@ -99,7 +103,8 @@ TEST(SerializationTest, ConformerSerialization) {
   load(path, loaded);
   loaded->eval();
 
-  auto input = Variable(af::randu(c, timesteps, batchsize, 1), false);
+  // auto input = Variable(fl::rand({c, timesteps, batchsize, 1}), false);
+  auto input = Variable(fl::rand({c, timesteps, batchsize}), false);
   auto output = model->forward({input, Variable()});
   auto outputl = loaded->forward({input, Variable()});
 
@@ -118,7 +123,8 @@ TEST(SerializationTest, PositionEmbedding) {
   load(path, loaded);
   loaded->eval();
 
-  auto input = Variable(af::randu(128, 10, 5, 1), false);
+  // auto input = Variable(fl::rand({128, 10, 5, 1}), false);
+  auto input = Variable(fl::rand({128, 10, 5}), false);
   auto output = model->forward({input});
   auto outputl = loaded->forward({input});
 
@@ -136,7 +142,8 @@ TEST(SerializationTest, SinusoidalPositionEmbedding) {
   std::shared_ptr<SinusoidalPositionEmbedding> loaded;
   load(path, loaded);
 
-  auto input = Variable(af::randu(128, 10, 5, 1), false);
+  // auto input = Variable(fl::rand({128, 10, 5, 1}), false);
+  auto input = Variable(fl::rand({128, 10, 5}), false);
   auto output = model->forward({input});
   auto outputl = loaded->forward({input});
 
@@ -155,7 +162,8 @@ TEST(SerializationTest, AdaptiveEmbedding) {
   load(path, loaded);
 
   std::vector<int> values = {1, 4, 6, 2, 12, 7, 4, 21, 22, 18, 3, 23};
-  auto input = Variable(af::array(af::dim4(6, 2), values.data()), false);
+  auto input =
+      Variable(Tensor::fromVector({6, 2}, values, fl::dtype::f32), false);
   auto output = model->forward(input);
   auto outputl = loaded->forward(input);
 
@@ -176,19 +184,20 @@ TEST(SerializationTest, RawWavSpecAugment) {
   loaded->train();
 
   int T = 300;
-  auto time = 2 * M_PI * af::iota(af::dim4(T)) / 16000;
-  auto finalWav = af::sin(time * 500) + af::sin(time * 1000) +
-      af::sin(time * 7000) + af::sin(time * 7500);
-  auto inputWav = finalWav + af::sin(time * 3000) + af::sin(time * 4000) +
-      af::sin(time * 5000);
+  // Input is T x C x B (here, C, B = 1)
+  auto time = 2 * M_PI * fl::reshape(fl::iota({T}), {T, 1, 1}) / 16000;
+  auto finalWav = fl::sin(time * 500) + fl::sin(time * 1000) +
+      fl::sin(time * 7000) + fl::sin(time * 7500);
+  auto inputWav = finalWav + fl::sin(time * 3000) + fl::sin(time * 4000) +
+      fl::sin(time * 5000);
 
   auto filteredWav = loaded->forward(fl::Variable(inputWav, false));
   // compare middle of filtered wave to avoid edge artifacts comparison
   int halfKernelWidth = 63;
   ASSERT_TRUE(fl::allClose(
       fl::Variable(
-          finalWav.rows(halfKernelWidth, T - halfKernelWidth - 1), false),
-      filteredWav.rows(halfKernelWidth, T - halfKernelWidth - 1),
+          finalWav(fl::range(halfKernelWidth, T - halfKernelWidth)), false),
+      filteredWav(fl::range(halfKernelWidth, T - halfKernelWidth)),
       1e-3));
 }
 
