@@ -5,9 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/fl/tensor/Init.h"
+#include "flashlight/fl/common/Timer.h"
 #include "flashlight/fl/nn/nn.h"
 #include "flashlight/fl/optim/optim.h"
+#include "flashlight/fl/tensor/Index.h"
+#include "flashlight/fl/tensor/Init.h"
+#include "flashlight/fl/tensor/Random.h"
 
 using namespace fl;
 
@@ -16,13 +19,13 @@ int main(int /* unused */, const char** /* unused */) {
   int nsamples = 500;
   int categories = 3;
   int feature_dim = 10;
-  af::array data = af::randu(feature_dim, nsamples * categories) * 2;
-  af::array label = af::constant(0.0, nsamples * categories);
+  Tensor data = fl::rand({feature_dim, nsamples * categories}) * 2;
+  Tensor label = fl::full({nsamples * categories}, 0.0);
   for (int i = 1; i < categories; i++) {
-    data.cols(i * nsamples, (i + 1) * nsamples - 1) =
-        data.cols(i * nsamples, (i + 1) * nsamples - 1) + 2 * i;
-    label.rows(i * nsamples, (i + 1) * nsamples - 1) =
-        label.rows(i * nsamples, (i + 1) * nsamples - 1) + i;
+    data(fl::span, fl::range(i * nsamples, (i + 1) * nsamples)) =
+        data(fl::span, fl::range(i * nsamples, (i + 1) * nsamples)) + 2 * i;
+    label(fl::range(i * nsamples, (i + 1) * nsamples)) =
+        label(fl::range(i * nsamples, (i + 1) * nsamples)) + i;
   }
 
   Sequential model;
@@ -41,12 +44,12 @@ int main(int /* unused */, const char** /* unused */) {
   int nepochs = 1000, warmup_epochs = 10;
   model.train();
 
-  af::array in_ = data;
-  af::array out_ = label;
-  af::timer s;
+  Tensor in_ = data;
+  Tensor out_ = label;
+  fl::Timer s;
   for (int i = 0; i < nepochs; i++) {
     if (i == warmup_epochs) {
-      s = af::timer::start();
+      s = fl::Timer::start();
     }
 
     /* Forward propagation */
@@ -62,17 +65,17 @@ int main(int /* unused */, const char** /* unused */) {
     /* Update parameters */
     sgd.step();
   }
-  auto e = af::timer::stop(s);
+  auto e = fl::Timer::stop(s);
 
   /* Evaluate */
   model.eval();
   result = model(input(in_));
   l = criterion(result, noGrad(out_));
-  auto loss = l.array();
-  af_print(loss);
-  af::array max_value, prediction;
-  af::max(max_value, prediction, result.array(), 0);
-  auto accuracy = mean(prediction == af::transpose(label));
-  af_print(accuracy);
+  auto loss = l.tensor();
+  std::cout << "Loss: " << loss << std::endl;
+  Tensor max_value, prediction;
+  fl::max(max_value, prediction, result.tensor(), 0);
+  auto accuracy = mean(prediction == fl::transpose(label, {1, 0}), {0});
+  std::cout << "Accuracy: " << accuracy << std::endl;
   printf("Time/iteration: %.5f msec\n", e * 1000.0 / (nepochs - warmup_epochs));
 }
