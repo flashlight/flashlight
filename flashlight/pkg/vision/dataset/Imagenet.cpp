@@ -9,11 +9,12 @@
 
 #include <algorithm>
 
-#include "flashlight/pkg/vision/dataset/Transforms.h"
+#include "flashlight/fl/dataset/datasets.h"
+#include "flashlight/fl/tensor/TensorBase.h"
+#include "flashlight/lib/common/System.h"
 #include "flashlight/pkg/vision/dataset/Jpeg.h"
 #include "flashlight/pkg/vision/dataset/LoaderDataset.h"
-#include "flashlight/fl/dataset/datasets.h"
-#include "flashlight/lib/common/System.h"
+#include "flashlight/pkg/vision/dataset/Transforms.h"
 
 using LabelLoader = fl::pkg::vision::LoaderDataset<uint64_t>;
 
@@ -54,7 +55,8 @@ std::shared_ptr<Dataset> imagenetDataset(
   }
 
   // Create image dataset
-  std::shared_ptr<Dataset> imageDataset = fl::pkg::vision::jpegLoader(filepaths);
+  std::shared_ptr<Dataset> imageDataset =
+      fl::pkg::vision::jpegLoader(filepaths);
   imageDataset = std::make_shared<TransformDataset>(imageDataset, transformfns);
 
   // Create labels from filepaths
@@ -74,7 +76,7 @@ std::shared_ptr<Dataset> imagenetDataset(
       filepaths.begin(), filepaths.end(), labels.begin(), getLabelIdxs);
 
   auto labelDataset = std::make_shared<LabelLoader>(labels, [](uint64_t x) {
-    std::vector<af::array> result{af::constant(x, 1, 1, 1, 1, af::dtype::u64)};
+    std::vector<Tensor> result{fl::fromScalar(x, fl::dtype::u64)};
     return result;
   });
   return std::make_shared<MergeDataset>(
