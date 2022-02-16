@@ -19,21 +19,19 @@ void SpeechStatMeter::reset() {
   stats_.reset();
 }
 
-void SpeechStatMeter::add(
-    const af::array& inputSizes,
-    const af::array& targetSizes) {
-  int64_t curInputSz = af::sum<int64_t>(inputSizes);
-  int64_t curTargetSz = af::sum<int64_t>(targetSizes);
+void SpeechStatMeter::add(const Tensor& inputSizes, const Tensor& targetSizes) {
+  int64_t curInputSz = fl::sum(inputSizes).asScalar<int64_t>();
+  int64_t curTargetSz = fl::sum(targetSizes).asScalar<int64_t>();
 
   stats_.totalInputSz_ += curInputSz;
   stats_.totalTargetSz_ += curTargetSz;
 
   stats_.maxInputSz_ =
-      std::max(stats_.maxInputSz_, af::max<int64_t>(inputSizes));
+      std::max(stats_.maxInputSz_, fl::amax(inputSizes).asScalar<int64_t>());
   stats_.maxTargetSz_ =
-      std::max(stats_.maxTargetSz_, af::max<int64_t>(targetSizes));
+      std::max(stats_.maxTargetSz_, fl::amax(targetSizes).asScalar<int64_t>());
 
-  stats_.numSamples_ += inputSizes.dims(1);
+  stats_.numSamples_ += inputSizes.dim(1);
   stats_.numBatches_++;
 }
 
