@@ -183,6 +183,49 @@ bool ArrayFireBackend::supportsDataType(const fl::dtype& dtype) const {
   }
 }
 
+void ArrayFireBackend::getMemMgrInfo(
+    const char* msg,
+    const int deviceId,
+    std::ostream* ostream) {
+  if (ostream == nullptr) {
+    throw std::invalid_argument(
+        "ArrayFireBackend::getMemMgrInfo - got null ostream pointer");
+  }
+  auto* curMemMgr =
+      fl::MemoryManagerInstaller::currentlyInstalledMemoryManager();
+  if (curMemMgr) {
+    curMemMgr->printInfo(msg, deviceId, ostream);
+  }
+}
+
+void ArrayFireBackend::setMemMgrLogStream(std::ostream* stream) {
+  if (stream == nullptr) {
+    throw std::invalid_argument(
+        "ArrayFireBackend::getMemMgrInfo - got null ostream pointer");
+  }
+  auto* curMemMgr =
+      fl::MemoryManagerInstaller::currentlyInstalledMemoryManager();
+  if (curMemMgr) {
+    curMemMgr->setLogStream(stream);
+  }
+}
+
+void ArrayFireBackend::setMemMgrLoggingEnabled(const bool enabled) {
+  auto* curMemMgr =
+      fl::MemoryManagerInstaller::currentlyInstalledMemoryManager();
+  if (curMemMgr) {
+    curMemMgr->setLoggingEnabled(enabled);
+  }
+}
+
+void ArrayFireBackend::setMemMgrFlushInterval(const size_t interval) {
+  auto* curMemMgr =
+      fl::MemoryManagerInstaller::currentlyInstalledMemoryManager();
+  if (curMemMgr) {
+    curMemMgr->setLogFlushInterval(interval);
+  }
+}
+
 /* -------------------------- Rand Functions -------------------------- */
 
 void ArrayFireBackend::setSeed(const int seed) {
