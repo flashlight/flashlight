@@ -5,8 +5,8 @@ set(
   ${CMAKE_CURRENT_LIST_DIR}/MemoryManagerAdapter.cpp
   ${CMAKE_CURRENT_LIST_DIR}/MemoryManagerInstaller.cpp
   # Managers
-  ${CMAKE_CURRENT_LIST_DIR}/managers/DefaultMemoryManager.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/managers/CachingMemoryManager.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/DefaultMemoryManager.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/CachingMemoryManager.cpp
 )
 
 target_sources(

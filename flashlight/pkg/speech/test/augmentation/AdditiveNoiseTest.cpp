@@ -11,7 +11,7 @@
 #include "flashlight/pkg/speech/augmentation/AdditiveNoise.h"
 #include "flashlight/pkg/speech/augmentation/SoundEffectUtil.h"
 #include "flashlight/pkg/speech/data/Sound.h"
-#include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/lib/common/System.h"
 
 using namespace ::fl::pkg::speech::sfx;

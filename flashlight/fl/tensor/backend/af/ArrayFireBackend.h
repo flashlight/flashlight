@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <mutex>
+
 #include "flashlight/fl/tensor/TensorBackend.h"
 
 namespace fl {
@@ -20,6 +22,7 @@ namespace fl {
 class ArrayFireBackend : public TensorBackend {
   // TODO: consolidate the ArrayFire memory manager here so its global state can
   // be stored/we can reduce the number of singletons.
+  std::once_flag memoryInitFlag;
 
   // Intentionally private. Only one instance should exist/it should be accessed
   // via getInstance().

@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/fl/autograd/autograd.h"
-#include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/nn/nn.h"
 #include "flashlight/lib/common/System.h"
 
