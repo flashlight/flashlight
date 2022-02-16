@@ -456,6 +456,21 @@ Tensor ArrayFireBackend::clip(
       af::clamp(toArray(tensor), toArray(low), toArray(high)), tensor.ndim());
 }
 
+Tensor ArrayFireBackend::roll(
+    const Tensor& tensor,
+    const int shift,
+    const unsigned axis) {
+  if (axis > AF_MAX_DIMS) {
+    throw std::invalid_argument(
+        "ArrayFireBackend::roll - given axis > 3 - unsupported");
+  }
+  std::vector<Dim> shifts(AF_MAX_DIMS, 0);
+  shifts[axis] = shift;
+  return toTensor<ArrayFireTensor>(
+      af::shift(toArray(tensor), shifts[0], shifts[1], shifts[2], shifts[3]),
+      tensor.ndim());
+}
+
 Tensor ArrayFireBackend::isnan(const Tensor& tensor) {
   return toTensor<ArrayFireTensor>(af::isNaN(toArray(tensor)), tensor.ndim());
 }
