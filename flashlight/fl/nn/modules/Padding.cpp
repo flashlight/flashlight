@@ -11,26 +11,8 @@
 
 namespace fl {
 
-Padding::Padding(std::pair<int, int> pad0, double val)
-    : m_pad({pad0}), m_val(val) {}
-
-Padding::Padding(std::pair<int, int> pad0, std::pair<int, int> pad1, double val)
-    : m_pad({pad0, pad1}), m_val(val) {}
-
-Padding::Padding(
-    std::pair<int, int> pad0,
-    std::pair<int, int> pad1,
-    std::pair<int, int> pad2,
-    double val)
-    : m_pad({pad0, pad1, pad2}), m_val(val) {}
-
-Padding::Padding(
-    std::pair<int, int> pad0,
-    std::pair<int, int> pad1,
-    std::pair<int, int> pad2,
-    std::pair<int, int> pad3,
-    double val)
-    : m_pad({pad0, pad1, pad2, pad3}), m_val(val) {}
+Padding::Padding(std::vector<std::pair<int, int>> padding, double val)
+    : m_pad(std::move(padding)), m_val(val) {}
 
 Variable Padding::forward(const Variable& input) {
   return padding(input, m_pad, m_val);

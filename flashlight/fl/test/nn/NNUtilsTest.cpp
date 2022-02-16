@@ -11,47 +11,103 @@
 #include "flashlight/fl/autograd/autograd.h"
 #include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/nn/nn.h"
+#include "flashlight/fl/tensor/Index.h"
+#include "flashlight/fl/tensor/Random.h"
 
 using namespace fl;
 
 TEST(UtilsTest, Join) {
   // Empty vector
   auto empty = join({});
-  ASSERT_TRUE(empty.isempty());
+  ASSERT_TRUE(empty.isEmpty());
 
   // Single array
-  auto i = af::randu(50, 60, 70);
+  auto i = fl::rand({50, 60, 70, 1});
   auto o = join({i}, -1, 3);
-  ASSERT_TRUE(af::allTrue<bool>(o == i));
+  ASSERT_TRUE(fl::all(o == i).asScalar<bool>());
+
+  // no dim for batching
+  ASSERT_THROW(join({fl::rand({50, 60, 70})}, -1, 3), std::exception);
 
   // more than one arrays
-  auto a = af::constant(1, 25, 1, 300);
-  auto b = af::constant(2, 20, 1, 300);
-  auto c = af::constant(3, 30, 1, 300);
+  auto a = fl::full({25, 1, 300, 1}, 1);
+  auto b = fl::full({20, 1, 300, 1}, 2);
+  auto c = fl::full({30, 1, 300, 1}, 3);
 
   auto o1 = join({a, b, c});
-  ASSERT_EQ(o1.dims(), af::dim4(30, 1, 300, 3));
-  ASSERT_TRUE(af::allTrue<bool>(o1(af::seq(25), 0, af::seq(300), 0) == a));
-  ASSERT_TRUE(af::allTrue<bool>(o1(af::seq(25, 29), 0, af::seq(300), 0) == 0));
-  ASSERT_TRUE(af::allTrue<bool>(o1(af::seq(20), 0, af::seq(300), 1) == b));
-  ASSERT_TRUE(af::allTrue<bool>(o1(af::seq(20, 29), 0, af::seq(300), 1) == 0));
-  ASSERT_TRUE(af::allTrue<bool>(o1(af::seq(30), 0, af::seq(300), 2) == c));
+  ASSERT_EQ(o1.shape(), Shape({30, 1, 300, 3}));
+  ASSERT_TRUE(
+      fl::all(
+          o1(fl::range(25), fl::range(0, 0), fl::range(300), fl::range(0, 0)) ==
+          a)
+          .asScalar<bool>());
+  ASSERT_TRUE(fl::all(
+                  o1(fl::range(25, 29),
+                     fl::range(0, 0),
+                     fl::range(300),
+                     fl::range(0, 0)) == 0)
+                  .asScalar<bool>());
+  ASSERT_TRUE(
+      fl::all(
+          o1(fl::range(20), fl::range(0, 0), fl::range(300), fl::range(1, 1)) ==
+          b)
+          .asScalar<bool>());
+  ASSERT_TRUE(fl::all(
+                  o1(fl::range(20, 29),
+                     fl::range(0, 0),
+                     fl::range(300),
+                     fl::range(1, 1)) == 0)
+                  .asScalar<bool>());
+  ASSERT_TRUE(
+      fl::all(
+          o1(fl::range(30), fl::range(0, 0), fl::range(300), fl::range(2, 2)) ==
+          c)
+          .asScalar<bool>());
 
   auto o2 = join({a, b, c}, -1);
-  ASSERT_EQ(o2.dims(), af::dim4(30, 1, 300, 3));
-  ASSERT_TRUE(af::allTrue<bool>(o2(af::seq(25), 0, af::seq(300), 0) == a));
-  ASSERT_TRUE(af::allTrue<bool>(o2(af::seq(25, 29), 0, af::seq(300), 0) == -1));
-  ASSERT_TRUE(af::allTrue<bool>(o2(af::seq(20), 0, af::seq(300), 1) == b));
-  ASSERT_TRUE(af::allTrue<bool>(o2(af::seq(20, 29), 0, af::seq(300), 1) == -1));
-  ASSERT_TRUE(af::allTrue<bool>(o2(af::seq(30), 0, af::seq(300), 2) == c));
+  ASSERT_EQ(o2.shape(), Shape({30, 1, 300, 3}));
+  ASSERT_TRUE(
+      fl::all(
+          o2(fl::range(25), fl::range(0, 0), fl::range(300), fl::range(0, 0)) ==
+          a)
+          .asScalar<bool>());
+  ASSERT_TRUE(fl::all(
+                  o2(fl::range(25, 29),
+                     fl::range(0, 0),
+                     fl::range(300),
+                     fl::range(0, 0)) == -1)
+                  .asScalar<bool>());
+  ASSERT_TRUE(
+      fl::all(
+          o2(fl::range(20), fl::range(0, 0), fl::range(300), fl::range(1, 1)) ==
+          b)
+          .asScalar<bool>());
+  ASSERT_TRUE(fl::all(
+                  o2(fl::range(20, 29),
+                     fl::range(0, 0),
+                     fl::range(300),
+                     fl::range(1, 1)) == -1)
+                  .asScalar<bool>());
+  ASSERT_TRUE(
+      fl::all(
+          o2(fl::range(30), fl::range(0, 0), fl::range(300), fl::range(2, 2)) ==
+          c)
+          .asScalar<bool>());
 
   auto o3 = join({a, b, c}, -1, 1);
-  ASSERT_EQ(o3.dims(), af::dim4(30, 3, 300));
-  ASSERT_TRUE(af::allTrue<bool>(o3(af::seq(25), 0, af::seq(300)) == a));
-  ASSERT_TRUE(af::allTrue<bool>(o3(af::seq(25, 29), 0, af::seq(300)) == -1));
-  ASSERT_TRUE(af::allTrue<bool>(o3(af::seq(20), 1, af::seq(300)) == b));
-  ASSERT_TRUE(af::allTrue<bool>(o3(af::seq(20, 29), 1, af::seq(300)) == -1));
-  ASSERT_TRUE(af::allTrue<bool>(o3(af::seq(30), 2, af::seq(300)) == c));
+  ASSERT_EQ(o3.shape(), Shape({30, 3, 300, 1}));
+  ASSERT_TRUE(fl::all(o3(fl::range(25), fl::range(0, 0), fl::range(300)) == a)
+                  .asScalar<bool>());
+  ASSERT_TRUE(
+      fl::all(o3(fl::range(25, 29), fl::range(0, 0), fl::range(300)) == -1)
+          .asScalar<bool>());
+  ASSERT_TRUE(fl::all(o3(fl::range(20), fl::range(1, 1), fl::range(300)) == b)
+                  .asScalar<bool>());
+  ASSERT_TRUE(
+      fl::all(o3(fl::range(20, 29), fl::range(1, 1), fl::range(300)) == -1)
+          .asScalar<bool>());
+  ASSERT_TRUE(fl::all(o3(fl::range(30), fl::range(2, 2), fl::range(300)) == c)
+                  .asScalar<bool>());
 }
 
 int main(int argc, char** argv) {
