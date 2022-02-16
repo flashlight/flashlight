@@ -43,6 +43,12 @@ commands:
     parameters:
       fl_backend:
         type: string
+      fl_use_cudnn:
+        default: "OFF"
+        type: string
+      fl_use_onednn:
+        default: "OFF"
+        type: string
       fl_build_fl_core:
         default: "OFF"
         type: string
@@ -123,6 +129,8 @@ commands:
             export MKLROOT=/opt/intel/mkl && \
             cmake .. \
                 -DFL_BACKEND=<< parameters.fl_backend >> \
+                -DFL_USE_CUDNN=<< parameters.fl_use_cudnn >> \
+                -DFL_USE_ONEDNN=<< parameters.fl_use_onednn >> \
                 -DFL_BUILD_CORE=<< parameters.fl_build_fl_core >> \
                 -DFL_BUILD_LIB_SET=<< parameters.fl_build_lib_set >> \
                 -DFL_BUILD_LIB_SEQUENCE=<< parameters.fl_build_lib_sequence >> \
@@ -231,6 +239,7 @@ commands:
             export CUDACXX=/usr/local/cuda/bin/nvcc
             cmake .. \
               -DFL_BACKEND=CUDA \
+              -DFL_USE_CUDNN=ON \
               -DFL_BUILD_CORE=<< parameters.fl_build_fl_core >> \
               -DFL_BUILD_APP_ASR=<< parameters.fl_build_app_asr >> \
               -DFL_BUILD_APP_IMGCLASS=<< parameters.fl_build_app_imgclass >> \
@@ -254,6 +263,7 @@ commands:
             export MKLROOT=/opt/intel/mkl
             cd flashlight && mkdir -p build && cd build
             cmake .. -DFL_BACKEND=CPU \
+                     -DFL_USE_ONEDNN=ON \
                      -DDNNL_DIR=/opt/onednn/lib/cmake/dnnl \
                      -DGloo_DIR=/opt/gloo/share/cmake \
                      -DFL_BUILD_ALL_LIBS=ON \
@@ -394,6 +404,7 @@ jobs:
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
+          fl_use_cudnn: "ON"
           fl_build_lib_set: "ON"
           fl_build_lib_sequence: "ON"
           fl_build_lib_audio: "ON"
@@ -420,6 +431,7 @@ jobs:
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
+          fl_use_cudnn: "ON"
           fl_build_fl_core: "ON"
           fl_build_lib_set: "ON"
           fl_build_lib_sequence: "ON"
@@ -451,6 +463,7 @@ jobs:
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
+          fl_use_cudnn: "ON"
           fl_build_lib_common: "ON"
           fl_build_fl_core: "ON"
       - test_flashlight_inside_nvidia_docker:
@@ -467,6 +480,7 @@ jobs:
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
+          fl_use_cudnn: "ON"
           fl_build_fl_core: "ON"
           fl_build_lib_common: "ON"
           fl_build_lib_audio: "ON"
@@ -485,6 +499,7 @@ jobs:
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
+          fl_use_cudnn: "ON"
           fl_build_lib_common: "ON"
           fl_build_lib_set: "ON"
           fl_build_fl_core: "ON"
@@ -501,6 +516,7 @@ jobs:
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
+          fl_use_cudnn: "ON"
           fl_build_lib_common: "ON"
           fl_build_lib_set: "ON"
           fl_build_fl_core: "ON"
@@ -519,6 +535,7 @@ jobs:
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
+          fl_use_cudnn: "ON"
           fl_build_lib_common: "ON"
           fl_build_lib_text: "ON"
           fl_build_fl_core: "ON"
@@ -537,6 +554,7 @@ jobs:
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
+          fl_use_cudnn: "ON"
           fl_build_fl_core: "ON"
           fl_build_lib_set: "ON"
           fl_build_lib_sequence: "ON"
@@ -630,6 +648,7 @@ jobs:
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
           fl_backend: "CUDA"
+          fl_use_cudnn: "ON"
           fl_build_lib_common: "ON"
           fl_build_fl_core: "ON"
       - setup_flashlight_compile_and_link_external_project_script
