@@ -567,7 +567,7 @@ Some of Flashlight's code is derived from
 You can cite [Flashlight](https://arxiv.org/abs/2201.12465) using:
 ```
 @misc{kahn2022flashlight,
-      title={Flashlight: Enabling Innovation in Tools for Machine Learning}, 
+      title={Flashlight: Enabling Innovation in Tools for Machine Learning},
       author={Jacob Kahn and Vineel Pratap and Tatiana Likhomanenko and Qiantong Xu and Awni Hannun and Jeff Cai and Paden Tomasello and Ann Lee and Edouard Grave and Gilad Avidov and Benoit Steiner and Vitaliy Liptchinsky and Gabriel Synnaeve and Ronan Collobert},
       year={2022},
       eprint={2201.12465},
