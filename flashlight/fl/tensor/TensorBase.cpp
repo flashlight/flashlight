@@ -478,6 +478,10 @@ Tensor clip(const Tensor& tensor, const double& low, const double& high) {
   return clip(tensor, full(tensor.shape(), low), full(tensor.shape(), high));
 }
 
+Tensor roll(const Tensor& tensor, const int shift, const unsigned axis) {
+  return tensor.backend().roll(tensor, shift, axis);
+}
+
 Tensor isnan(const Tensor& tensor) {
   return tensor.backend().isnan(tensor);
 }

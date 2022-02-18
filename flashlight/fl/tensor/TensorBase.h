@@ -907,6 +907,19 @@ Tensor clip(const Tensor& tensor, const double& low, const Tensor& high);
 Tensor clip(const Tensor& tensor, const double& low, const double& high);
 
 /**
+ * Rolls (or shifts) a tensor by a certain amount along a given axis, moving
+ * elements that would be shifted out of bounds to the beginning of the axis in
+ * a circular fashion.
+ *
+ * @param[in] tensor the tensor to roll shift
+ * @param[in] shift the amount by which to shift
+ * @param[in] axis the axis along which to perform the shift
+ * @return a tensor with values shifted by the given amount in a circular
+ * fashion
+ */
+Tensor roll(const Tensor& tensor, const int shift, const unsigned axis);
+
+/**
  * Returns a boolean tensor which is true where the input tensor was NaN, and
  * false otherwise.
  *

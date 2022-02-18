@@ -112,6 +112,8 @@ class TensorBackend {
   virtual Tensor flip(const Tensor& tensor, const unsigned dim) = 0;
   virtual Tensor
   clip(const Tensor& tensor, const Tensor& low, const Tensor& high) = 0;
+  virtual Tensor
+  roll(const Tensor& tensor, const int shift, const unsigned axis) = 0;
   virtual Tensor isnan(const Tensor& tensor) = 0;
   virtual Tensor isinf(const Tensor& tensor) = 0;
   virtual Tensor sign(const Tensor& tensor) = 0;
