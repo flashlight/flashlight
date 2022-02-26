@@ -6,7 +6,7 @@
  */
 #pragma once
 
-#include <arrayfire.h>
+#include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 namespace pkg {
@@ -21,11 +21,11 @@ class HungarianMatcher {
       const float costBbox,
       const float costGiou);
 
-  std::vector<std::pair<af::array, af::array>> compute(
-      const af::array& predBoxes,
-      const af::array& predLogits,
-      const std::vector<af::array>& targetBoxes,
-      const std::vector<af::array>& targetClasses) const;
+  std::vector<std::pair<Tensor, Tensor>> compute(
+      const Tensor& predBoxes,
+      const Tensor& predLogits,
+      const std::vector<Tensor>& targetBoxes,
+      const std::vector<Tensor>& targetClasses) const;
 
  private:
   float costClass_;
@@ -33,13 +33,13 @@ class HungarianMatcher {
   float costGiou_;
 
   // First is SrcIdx, second is ColIdx
-  std::pair<af::array, af::array> matchBatch(
-      const af::array& predBoxes,
-      const af::array& predLogits,
-      const af::array& targetBoxes,
-      const af::array& targetClasses) const;
+  std::pair<Tensor, Tensor> matchBatch(
+      const Tensor& predBoxes,
+      const Tensor& predLogits,
+      const Tensor& targetBoxes,
+      const Tensor& targetClasses) const;
 
-  af::array getCostMatrix(const af::array& input, const af::array& target);
+  Tensor getCostMatrix(const Tensor& input, const Tensor& target);
 };
 
 } // namespace vision
