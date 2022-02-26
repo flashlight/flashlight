@@ -49,9 +49,6 @@ class DevicePtr {
    */
   explicit DevicePtr(const Tensor& in);
 
-  // TODO{fl::Tensor}{remove}
-  explicit DevicePtr(af::array in);
-
   /**
    *`.unlock()` is called on the underlying array in destructor
    */

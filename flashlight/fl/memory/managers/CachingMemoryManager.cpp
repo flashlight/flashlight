@@ -6,9 +6,9 @@
  */
 
 #include "flashlight/fl/memory/managers/CachingMemoryManager.h"
-#include <arrayfire.h> // Needed for af exception
 
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -17,8 +17,6 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-
-#include "flashlight/fl/common/Logging.h"
 
 namespace fl {
 
@@ -89,8 +87,9 @@ size_t getEnvAsBytesFromFloatMb(const char* name, size_t defaultVal) {
       const double mb = std::stod(env);
       return std::round(mb * kMB);
     } catch (std::exception& ex) {
-      FL_LOG(fl::ERROR) << "Invalid environment variable=" << name
-                        << " value=" << env;
+      std::cerr << "getEnvAsBytesFromFloatMb: Invalid environment "
+                << "variable value: name=" << name << " value=" << env;
+      throw ex;
     }
   }
   return defaultVal;
@@ -111,11 +110,10 @@ CachingMemoryManager::CachingMemoryManager(
       getEnvAsBytesFromFloatMb(kMemRecyclingSize, recyclingSizeLimit_);
   splitSizeLimit_ = getEnvAsBytesFromFloatMb(kMemSplitSize, splitSizeLimit_);
 
-  FL_LOG(fl::INFO) << "CachingMemoryManager recyclingSizeLimit_="
-                   << recyclingSizeLimit_ << " ("
-                   << formatMemory(recyclingSizeLimit_)
-                   << ") splitSizeLimit_=" << splitSizeLimit_ << " ("
-                   << formatMemory(splitSizeLimit_) << ')';
+  std::cerr << "CachingMemoryManager recyclingSizeLimit_="
+            << recyclingSizeLimit_ << " (" << formatMemory(recyclingSizeLimit_)
+            << ") splitSizeLimit_=" << splitSizeLimit_ << " ("
+            << formatMemory(splitSizeLimit_) << ')';
 
   for (int i = 0; i < numDevices; ++i) {
     deviceMemInfos_.emplace(
