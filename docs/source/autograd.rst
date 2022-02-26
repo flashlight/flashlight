@@ -138,7 +138,7 @@ ArrayFire uses a JIT compiler to combine many small function calls into a single
   fl::eval(D); // only 'D' is allocated, Total Memory : 8 MB
 
 
-The JIT both improves performance and reduces memory usage. For further documentation, see docs for the `ArrayFire JIT <https://arrayfire.com/performance-improvements-to-jit-in-arrayfire-v3-4/>`_.
+The JIT both improves performance and reduces memory usage. For further documentation, see docs for the `ArrayFire JIT <https://arrayfire.com/blog/performance-improvements-to-jit-in-arrayfire-v3-4/>`_.
 
 In-Place Operations and More
 ############################
