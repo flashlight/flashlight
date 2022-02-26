@@ -15,6 +15,7 @@
 
 #include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/distributed/distributed.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
 
@@ -28,12 +29,12 @@ TEST(Distributed, AllReduce) {
   auto rank = getWorldRank();
   auto size = getWorldSize();
 
-  Variable var(af::constant(rank, 10), false);
+  Variable var(fl::full({10}, rank, dtype::f32), false);
 
   allReduce(var, 2.0);
 
   float expected_val = size * (size - 1.0);
-  ASSERT_TRUE(af::allTrue<bool>(var.array() == expected_val));
+  ASSERT_TRUE(fl::all(var.tensor() == expected_val).scalar<char>());
 }
 
 TEST(Distributed, InlineReducer) {
@@ -44,16 +45,16 @@ TEST(Distributed, InlineReducer) {
   auto rank = getWorldRank();
   auto size = getWorldSize();
 
-  Variable var(af::constant(rank, 10), false);
+  Variable var(fl::full({10}, rank, dtype::f32), false);
 
   auto reducer = std::make_shared<InlineReducer>(1.0 / size);
   reducer->add(var);
 
   // The reducer scales down by a factor of 1 / size
-  auto arr = var.array() * (size * 2);
+  auto arr = var.tensor() * (size * 2);
 
   float expected_val = size * (size - 1.0);
-  ASSERT_TRUE(af::allTrue<bool>(arr == expected_val));
+  ASSERT_TRUE(fl::all(arr == expected_val).scalar<char>());
 }
 
 TEST(Distributed, AllReduceAsync) {
@@ -66,13 +67,13 @@ TEST(Distributed, AllReduceAsync) {
   // not supported for the CPU backend
   bool async = true && !FL_BACKEND_CPU;
 
-  Variable var(af::constant(rank, 10), false);
+  Variable var(fl::full({10}, rank, dtype::f32), false);
 
   allReduce(var, 2.0, async);
   syncDistributed();
 
   float expected_val = size * (size - 1.0);
-  ASSERT_TRUE(af::allTrue<bool>(var.array() == expected_val));
+  ASSERT_TRUE(fl::all(var.tensor() == expected_val).scalar<char>());
 }
 
 TEST(Distributed, AllReduceSetAsync) {
@@ -86,10 +87,10 @@ TEST(Distributed, AllReduceSetAsync) {
   bool async = true && !FL_BACKEND_CPU;
   bool contiguous = true && !FL_BACKEND_CPU;
 
-  size_t vSize = (1 << 20);
+  unsigned vSize = (1 << 20);
   std::vector<Variable> vars;
   for (size_t i = 0; i < 5; ++i) {
-    vars.push_back(Variable(af::constant(rank + 1, vSize), false));
+    vars.push_back(Variable(fl::full({vSize}, rank + 1, dtype::f32), false));
   }
 
   allReduceMultiple(vars, 2.0, async, contiguous);
@@ -97,13 +98,13 @@ TEST(Distributed, AllReduceSetAsync) {
 
   float expected_val = size * (size + 1.0);
   for (auto var : vars) {
-    ASSERT_TRUE(af::allTrue<bool>(var.array() == expected_val));
+    ASSERT_TRUE(fl::all(var.tensor() == expected_val).scalar<char>());
   }
 
   // Exceed the size of the contiguous buffer without caching, and trigger a
   // contiguous sync with a tensor that is too large
   for (size_t i = 0; i < 25; ++i) {
-    vars.push_back(Variable(af::constant(rank, vSize), false));
+    vars.push_back(Variable(fl::full({vSize}, rank, dtype::f32), false));
   }
   if (size > 1) {
     ASSERT_THROW(
@@ -156,10 +157,10 @@ TEST(Distributed, CoalescingReducer) {
       /*async=*/true && !FL_BACKEND_CPU,
       /*contiguous=*/true && !FL_BACKEND_CPU);
 
-  size_t vSize = (1 << 20);
+  unsigned vSize = (1 << 20);
   std::vector<Variable> vars;
   for (size_t i = 0; i < 1000; ++i) {
-    vars.push_back(Variable(af::constant(rank + 1, vSize), false));
+    vars.push_back(Variable(fl::full({vSize}, rank + 1, dtype::f32), false));
   }
 
   for (size_t i = 0; i < vars.size(); ++i) {
@@ -172,8 +173,8 @@ TEST(Distributed, CoalescingReducer) {
   float expected_val = size * (size + 1.0);
   for (auto var : vars) {
     // The reducer scales down by a factor of 1 / size
-    auto arr = var.array() * (size * 2);
-    ASSERT_TRUE(af::allTrue<bool>(arr == expected_val));
+    auto arr = var.tensor() * (size * 2);
+    ASSERT_TRUE(fl::all(arr == expected_val).scalar<char>());
   }
 }
 
