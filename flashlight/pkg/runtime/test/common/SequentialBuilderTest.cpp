@@ -8,7 +8,7 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/pkg/runtime/common/SequentialBuilder.h"
-#include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/lib/common/System.h"
 
 using namespace fl;

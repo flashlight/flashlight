@@ -10,7 +10,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/common/Logging.h"
 
 using namespace fl;

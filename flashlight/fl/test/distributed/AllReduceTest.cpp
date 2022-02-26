@@ -13,7 +13,7 @@
 
 #include <gtest/gtest.h>
 
-#include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/distributed/distributed.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"

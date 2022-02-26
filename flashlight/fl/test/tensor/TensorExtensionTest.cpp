@@ -11,6 +11,7 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/fl/tensor/Index.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/Random.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
 #include "flashlight/fl/tensor/TensorBase.h"
@@ -70,4 +71,10 @@ TEST(TensorExtensionTest, TestExtension) {
       TensorBackendType::ArrayFire));
 
   ASSERT_TRUE(allClose(testExtensionFunc(a), a + 1));
+}
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
+  return RUN_ALL_TESTS();
 }

@@ -9,7 +9,7 @@
 
 #include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/common/DynamicBenchmark.h"
-#include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/common/Profile.h"
 #include "flashlight/fl/common/Serialization.h"
 #include "flashlight/fl/common/Timer.h"
