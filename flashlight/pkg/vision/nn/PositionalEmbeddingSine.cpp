@@ -9,6 +9,8 @@
 
 #include <cassert>
 
+#include "flashlight/fl/tensor/Index.h"
+
 namespace fl {
 namespace pkg {
 namespace vision {
@@ -35,57 +37,51 @@ std::vector<Variable> PositionalEmbeddingSine::forward(
   auto inputDims = input.dims();
   // Input mask will be [ w x h x 1 x b ]
   // but implementation expects [ w x h x b ] in order to do interleaves easier
-  auto nonMask =
-      af::moddims(input.array(), {inputDims[0], inputDims[1], inputDims[3], 1});
+  auto nonMask = fl::reshape(
+      input.tensor(), {inputDims[0], inputDims[1], inputDims[3], 1});
 
-  auto expandDims = [](const af::array& in) {
-    auto dims = in.dims();
+  auto expandDims = [](const Tensor& in) {
+    auto dims = in.shape();
     assert(dims[3] == 1);
-    return af::moddims(in, {1, dims[0], dims[1], dims[2]});
+    return fl::reshape(in, {1, dims[0], dims[1], dims[2]});
   };
 
-  auto interleave = [](af::array x, af::array y) {
-    auto dims = x.dims();
-    x = af::flat(x);
-    y = af::flat(y);
-    x = af::moddims(x, {1, x.dims(0)});
-    y = af::moddims(y, {1, y.dims(0)});
-    auto joined = af::join(0, x, y);
+  auto interleave = [](Tensor x, Tensor y) {
+    auto dims = x.shape();
+    x = x.flatten();
+    y = y.flatten();
+    x = fl::reshape(x, {1, x.dim(0)});
+    y = fl::reshape(y, {1, y.dim(0)});
+    auto joined = fl::concatenate(0, x, y);
     dims[0] = dims[0] * 2;
-    return af::moddims(joined, dims);
+    return fl::reshape(joined, dims);
   };
 
-  af::array xEmbed = af::scan(nonMask, 0);
-  af::array yEmbed = af::scan(nonMask, 1);
+  Tensor xEmbed = fl::cumsum(nonMask, 0);
+  Tensor yEmbed = fl::cumsum(nonMask, 1);
   if (normalize_) {
     const float eps = 1e-6;
-    yEmbed = af::batchFunc(
-                 yEmbed,
-                 yEmbed(af::span, yEmbed.dims(1) - 1, af::span) + eps,
-                 af::operator/) *
-        scale_;
-    xEmbed = af::batchFunc(
-                 xEmbed,
-                 xEmbed(xEmbed.dims(0) - 1, af::span, af::span) + eps,
-                 af::operator/) *
-        scale_;
+    yEmbed =
+        (yEmbed / yEmbed(fl::span, yEmbed.dim(1) - 1, fl::span) + eps) * scale_;
+    xEmbed =
+        (xEmbed / xEmbed(xEmbed.dim(0) - 1, fl::span, fl::span) + eps) * scale_;
   }
 
-  auto dim = af::range(af::dim4(numPosFeats_), 0, f32);
-  dim = af::pow(temperature_, ((2 * af::floor(dim / 2)) / numPosFeats_));
+  auto dim = fl::arange({numPosFeats_}, 0, fl::dtype::f32);
+  dim = fl::power(temperature_, ((2 * fl::floor(dim / 2)) / numPosFeats_));
 
-  auto posX = af::batchFunc(expandDims(xEmbed), dim, af::operator/);
-  auto posY = af::batchFunc(expandDims(yEmbed), dim, af::operator/);
+  auto posX = expandDims(xEmbed) / dim;
+  auto posY = expandDims(yEmbed) / dim;
 
-  auto posXSin = af::sin(posX(af::seq(0, af::end, 2), af::span));
-  auto posXCos = af::cos(posX(af::seq(1, af::end, 2), af::span));
-  auto posYSin = af::sin(posY(af::seq(0, af::end, 2), af::span));
-  auto posYCos = af::cos(posY(af::seq(1, af::end, 2), af::span));
+  auto posXSin = fl::sin(posX(fl::range(0, fl::end, 2), fl::span));
+  auto posXCos = fl::cos(posX(fl::range(1, fl::end, 2), fl::span));
+  auto posYSin = fl::sin(posY(fl::range(0, fl::end, 2), fl::span));
+  auto posYCos = fl::cos(posY(fl::range(1, fl::end, 2), fl::span));
 
   posX = interleave(posXSin, posXCos);
   posY = interleave(posYSin, posYCos);
-  auto result = af::join(0, posY, posX);
-  result = af::reorder(result, 1, 2, 0, 3);
+  auto result = fl::concatenate(0, posY, posX);
+  result = fl::transpose(result, {1, 2, 0, 3});
   return {fl::Variable(result, false)};
 }
 
