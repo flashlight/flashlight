@@ -11,9 +11,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/criterion/criterion.h"
-#include "flashlight/lib/text/dictionary/Dictionary.h"
 
 using namespace fl::pkg::speech;
 
@@ -58,10 +58,10 @@ void remapUTFWord(std::u16string& input, int replabel) {
 }
 
 std::vector<std::vector<std::string>> mapIndexToToken(
-    af::array paths,
+    Tensor paths,
     fl::lib::text::DictionaryMap dicts) {
-  const int B = paths.dims(1);
-  const int T = paths.dims(0);
+  const int B = paths.dim(1);
+  const int T = paths.dim(0);
   std::vector<std::vector<std::string>> batchTokensPath;
   for (int b = 0; b < B; b++) {
     std::vector<std::string> tokens;
