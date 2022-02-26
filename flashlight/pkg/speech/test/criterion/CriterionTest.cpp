@@ -10,9 +10,10 @@
 #include <arrayfire.h>
 #include <array>
 
-#include "flashlight/pkg/speech/criterion/criterion.h"
+#include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/Init.h"
 #include "flashlight/lib/common/System.h"
+#include "flashlight/pkg/speech/criterion/criterion.h"
 
 using namespace fl;
 using namespace fl::pkg::speech;
@@ -21,8 +22,8 @@ namespace {
 
 constexpr float kEpsilon = 1E-5;
 
-void checkZero(const af::array& val, float precision = kEpsilon) {
-  ASSERT_LE(af::max<float>(af::abs(val)), precision);
+void checkZero(const Tensor& val, float precision = kEpsilon) {
+  ASSERT_LE(fl::amax(fl::abs(val)).scalar<float>(), precision);
 }
 
 using JacobianFunc = std::function<Variable(Variable&)>;
@@ -32,31 +33,35 @@ void jacobianTest(
     float precision = 1E-3,
     float perturbation = 1E-2) {
   auto fwdJacobian =
-      af::array(func(input).elements(), input.elements(), af::dtype::f64);
-  for (int i = 0; i < input.elements(); ++i) {
-    af::array orig = input.array()(i);
-    input.array()(i) = orig - perturbation;
-    auto outa = func(input).array();
+      Tensor({func(input).elements(), input.elements()}, fl::dtype::f32);
 
-    input.array()(i) = orig + perturbation;
-    auto outb = func(input).array();
-    input.array()(i) = orig;
-    fwdJacobian(af::span, i) =
-        af::moddims((outb - outa), outa.elements()) * 0.5 / perturbation;
+  for (int i = 0; i < input.elements(); ++i) {
+    Tensor orig = input.tensor().flatten()(i);
+    input.tensor().flat(i) = orig - perturbation;
+    auto outa = func(input).tensor();
+
+    input.tensor().flat(i) = orig + perturbation;
+    auto outb = func(input).tensor();
+    input.tensor().flat(i) = orig;
+
+    fwdJacobian(fl::span, i) =
+        fl::reshape((outb - outa), {static_cast<Dim>(outa.size())}) * 0.5 /
+        perturbation;
   }
 
   auto bwdJacobian =
-      af::array(func(input).elements(), input.elements(), af::dtype::f64);
+      Tensor({func(input).elements(), input.elements()}, fl::dtype::f32);
   auto dout =
-      Variable(af::constant(0, func(input).dims(), input.type()), false);
+      Variable(fl::full(func(input).dims(), 0, func(input).type()), false);
+
   for (int i = 0; i < dout.elements(); ++i) {
-    dout.array()(i) = 1; // element in 1D view
+    dout.tensor().flat(i) = 1; // element in 1D view
     input.zeroGrad();
     auto out = func(input);
     out.backward(dout);
-    bwdJacobian(i, af::span) =
-        af::moddims(input.grad().array(), input.elements());
-    dout.array()(i) = 0;
+
+    bwdJacobian(i) = fl::reshape(input.grad().tensor(), {input.elements()});
+    dout.tensor().flat(i) = 0;
   }
 
   checkZero(fwdJacobian - bwdJacobian, precision);
@@ -73,12 +78,12 @@ TEST(CriterionTest, CTCEmptyTarget) {
   }
 
   // Non-empty input, Empty target, batchsize > 0
-  auto input = Variable(af::array(3, 2, 5), true);
-  auto target = Variable(af::array(0, 5), false);
+  auto input = Variable(Tensor({3, 2, 5}), true);
+  auto target = Variable(Tensor({0, 5}), false);
   auto ctc = ConnectionistTemporalClassificationCriterion();
   auto loss = ctc({input, target}).front();
   loss.backward();
-  ASSERT_FALSE(af::anyTrue<bool>(af::isNaN(loss.array())));
+  ASSERT_FALSE(fl::any(fl::isnan(loss.tensor())).asScalar<bool>());
 
   auto funcConvIn = [&](Variable& inp) {
     return ctc.forward({inp, target}).front();
@@ -94,8 +99,8 @@ TEST(CriterionTest, CTCCost) {
   const int N1 = 2, L1 = 2, T1 = 3;
 
   auto ctc1 = ConnectionistTemporalClassificationCriterion();
-  auto input1af = Variable(af::array(N1, T1, input1.data()), true);
-  auto target1af = Variable(af::array(L1, target1.data()), false);
+  auto input1af = Variable(Tensor::fromArray({N1, T1, 1}, input1), true);
+  auto target1af = Variable(Tensor::fromArray({L1, 1}, target1), false);
 
   auto loss1 = ctc1({input1af, target1af}).front();
   ASSERT_NEAR(loss1.scalar<float>(), 0.0, kEpsilon);
@@ -105,8 +110,8 @@ TEST(CriterionTest, CTCCost) {
   int N2 = 4, L2 = 2, T2 = 3;
 
   auto ctc2 = ConnectionistTemporalClassificationCriterion();
-  auto input2af = Variable(af::constant(0.0, N2, T2, f32), true);
-  auto target2af = Variable(af::array(L2, target2.data()), false);
+  auto input2af = Variable(fl::full({N2, T2, 1}, 0.0, fl::dtype::f32), true);
+  auto target2af = Variable(Tensor::fromArray({L2, 1}, target2), false);
 
   auto loss2 = ctc2({input2af, target2af}).front();
   ASSERT_NEAR(loss2.scalar<float>(), -log(0.25 * 0.25 * 0.25 * 5), kEpsilon);
@@ -114,9 +119,9 @@ TEST(CriterionTest, CTCCost) {
 
 TEST(CriterionTest, CTCJacobian) {
   int N = 30, T = 80, L = 20;
-  auto in = Variable(af::log(af::randu(N, T)), true);
-  auto t = af::abs(af::randu(L, af::dtype::s32)) % (N - 2);
-  auto tgt = Variable(t.as(af::dtype::s32), false);
+  auto in = Variable(fl::log(fl::rand({N, T, 1})), true);
+  auto t = fl::abs(fl::rand({L, 1}, fl::dtype::s32)) % (N - 2);
+  auto tgt = Variable(t.astype(fl::dtype::s32), false);
   auto l = ConnectionistTemporalClassificationCriterion(
       CriterionScaleMode::INPUT_SZ_SQRT);
   auto funcConvIn = [&](Variable& inp) {
@@ -128,15 +133,15 @@ TEST(CriterionTest, CTCJacobian) {
 TEST(CriterionTest, Batching) {
   {
     int N = 10, T = 25, L = 15, B = 5;
-    auto in = Variable(af::log(af::randu(N, T, B)), true);
-    auto t = af::abs(af::randu(L, B, af::dtype::s32)) % (N - 2);
+    auto in = Variable(fl::log(fl::rand({N, T, B})), true);
+    auto t = fl::abs(fl::rand({L, B}, fl::dtype::s32)) % (N - 2);
     for (int i = 0; i < B; ++i) {
       int r = rand() % L;
       if (r > 0) {
-        t(af::seq(r, af::end), i) = -1;
+        t(fl::range(r, fl::end), i) = -1;
       }
     }
-    auto tgt = Variable(t.as(af::dtype::s32), false);
+    auto tgt = Variable(t.astype(fl::dtype::s32), false);
     auto l = ConnectionistTemporalClassificationCriterion(
         CriterionScaleMode::TARGET_SZ_SQRT);
     auto funcConvIn = [&](Variable& inp) {
@@ -146,22 +151,24 @@ TEST(CriterionTest, Batching) {
   }
   {
     int N = 80, T = 50, L = 25, B = 10;
-    auto in = Variable(af::log(af::randu(N, T, B)), true);
-    auto t = af::abs(af::randu(L, B, af::dtype::s32)) % (N - 2);
+    auto in = Variable(fl::log(fl::rand({N, T, B})), true);
+    auto t = fl::abs(fl::rand({L, B}, fl::dtype::s32)) % (N - 2);
     for (int i = 0; i < B; ++i) {
       int r = rand() % L;
       if (r > 0) {
-        t(af::seq(r, af::end), i) = -1;
+        t(fl::range(r, fl::end), i) = -1;
       }
     }
-    auto tgt = Variable(t.as(af::dtype::s32), false);
+    auto tgt = Variable(t.astype(fl::dtype::s32), false);
     auto l = ConnectionistTemporalClassificationCriterion(
         CriterionScaleMode::TARGET_SZ);
     auto output = l.forward({in, tgt}).front();
 
     for (int i = 0; i < B; ++i) {
-      auto outputCur = l.forward({in.slice(i), tgt.col(i)}).front();
-      checkZero(output.array()(i) - outputCur.array(), 1E-6);
+      auto inel = moddims(in(fl::span, fl::span, i), {N, T, 1});
+      auto tgtel = moddims(tgt(fl::span, i), {L, 1});
+      auto outputCur = l.forward({inel, tgtel}).front();
+      checkZero(output.tensor()(i) - outputCur.tensor(), 1E-6);
     }
   }
 }
@@ -193,16 +200,16 @@ TEST(CriterionTest, CTCCompareTensorflow) {
       -0.541765, 0.396634,  0.123377,  0.00648837, 0.00903441, 0.00623107};
 
   auto ctc1 = ConnectionistTemporalClassificationCriterion();
-  auto input1af = Variable(af::array(N1, T1, input1.data()), true);
-  auto target1af = Variable(af::array(L1, target1.data()), false);
+  auto input1af = Variable(Tensor::fromArray({N1, T1, 1}, input1), true);
+  auto target1af = Variable(Tensor::fromArray({L1, 1}, target1), false);
   auto gradExpected1af =
-      Variable(af::array(N1, T1, gradExpected1.data()), false);
+      Variable(Tensor::fromArray({N1, T1, 1}, gradExpected1), false);
 
   auto loss1 = ctc1({input1af, target1af}).front();
   ASSERT_NEAR(loss1.scalar<float>(), lossExpected1, kEpsilon);
 
   loss1.backward();
-  checkZero(input1af.grad().array() - gradExpected1af.array());
+  checkZero(input1af.grad().tensor() - gradExpected1af.tensor());
 
   // Test Case: 2
   const int T2 = 5, N2 = 6, L2 = 4;
@@ -228,34 +235,34 @@ TEST(CriterionTest, CTCCompareTensorflow) {
   };
 
   auto ctc2 = ConnectionistTemporalClassificationCriterion();
-  auto input2af = Variable(af::array(N2, T2, input2.data()), true);
-  auto target2af = Variable(af::array(L2, target2.data()), false);
+  auto input2af = Variable(Tensor::fromArray({N2, T2, 1}, input2), true);
+  auto target2af = Variable(Tensor::fromArray({L2, 1}, target2), false);
   auto gradExpected2af =
-      Variable(af::array(N2, T2, gradExpected2.data()), false);
+      Variable(Tensor::fromArray({N2, T2, 1}, gradExpected2), false);
 
   auto loss2 = ctc2({input2af, target2af}).front();
   ASSERT_NEAR(loss2.scalar<float>(), lossExpected2, kEpsilon);
 
   loss2.backward();
-  checkZero(input2af.grad().array() - gradExpected2af.array());
+  checkZero(input2af.grad().tensor() - gradExpected2af.tensor());
 }
 
 TEST(CriterionTest, ViterbiPath) {
   // Test case: 1
-  auto in = af::randu(4, 5); // All values < 1
+  auto in = fl::rand({4, 5, 1}); // All values < 1
   std::array<int, 5> expectedpath1 = {3, 2, 0, 2, 2};
   for (int j = 0; j < 5; ++j) {
     in(expectedpath1[j], j) = 2;
   }
   ConnectionistTemporalClassificationCriterion ctc;
   auto vpath1Arr = ctc.viterbiPath(in);
-  af::array expPath1Arr = af::array(5, expectedpath1.data());
+  Tensor expPath1Arr = Tensor::fromArray({5, 1}, expectedpath1);
   checkZero(vpath1Arr - expPath1Arr);
 
   // test batch input
-  auto intile = af::tile(in, 1, 1, 2);
+  auto intile = fl::tile(in, {1, 1, 2});
   auto vpath1bArr = ctc.viterbiPath(intile);
-  checkZero(vpath1bArr - af::tile(expPath1Arr, 1, 2));
+  checkZero(vpath1bArr - fl::tile(expPath1Arr, {1, 2}));
 
   // Test case: 2
   constexpr int T2 = 4, N2 = 3;
@@ -275,9 +282,9 @@ TEST(CriterionTest, ViterbiPath) {
   std::array<int, T2> expectedPath2Vec = {2, 1, 1, 0};
   // clang-format on
 
-  af::array input2(N2, T2, input2Vec.data());
-  af::array trans2(N2, N2, trans2Vec.data());
-  af::array expectedPath2(T2, expectedPath2Vec.data());
+  Tensor input2 = Tensor::fromArray({N2, T2, 1}, input2Vec);
+  Tensor trans2 = Tensor::fromArray({{N2, N2}}, trans2Vec);
+  Tensor expectedPath2 = Tensor::fromArray({T2, 1}, expectedPath2Vec);
 
   AutoSegmentationCriterion asg(N2);
   asg.setParams(Variable(trans2, true), 0);
@@ -285,19 +292,20 @@ TEST(CriterionTest, ViterbiPath) {
   checkZero(path2 - expectedPath2);
 
   // Test case: 2b (batching)
-  auto input2b = af::tile(input2, 1, 1, 77);
-  auto expectedPath2b = af::tile(expectedPath2, 1, 77);
+  auto input2b = fl::tile(input2, {1, 1, 77});
+  auto expectedPath2b = fl::tile(expectedPath2, {1, 77});
   auto path2b = asg.viterbiPath(input2b);
   checkZero(path2b - expectedPath2b);
 
-  // If trasition probablities are same, CTC and ASG viterbi paths should match
+  // If trasition probablities are same, CTC and ASG viterbi paths should
+  // match
   AutoSegmentationCriterion asg2(30);
-  asg.param(0).array() = af::constant(1.0, 30, 30);
+  asg.param(0).tensor() = fl::full({30, 30}, 1.0);
   for (int t = 1; t < 5; ++t) {
-    af::array randInput = af::randu(30, t * 10, t);
+    Tensor randInput = fl::rand({30, t * 10, t});
     auto asgPathArr = asg2.viterbiPath(randInput);
     auto ctcPathArr = ctc.viterbiPath(randInput);
-    ASSERT_EQ(asgPathArr.dims(), asgPathArr.dims());
+    ASSERT_EQ(asgPathArr.shape(), asgPathArr.shape());
     checkZero(asgPathArr - ctcPathArr);
   }
 }
@@ -317,22 +325,22 @@ TEST(CriterionTest, ASGAlternatingBlanks) {
       0x1.095a5p+0,   0x1.1840bcp-1,  0x1.465a4ep-1,  0x1.2c4cacp-1,
       0x1.754998p-1,  0x1.cb6698p-2,  -0x1.1cadcp+0,  0x1.757b88p-2,
       0x1.3dec32p+0,  0x1.320fp+0,    -0x1.9eb1a4p-1, -0x1.e43beap-2};
-  af::array x = af::array(af::dim4(C, T, B), xV.data());
-  af::array y = af::constant(-1, af::dim4(mL * 2 + 1, B), s32);
+  Tensor x = Tensor::fromVector(Shape({C, T, B}), xV);
+  Tensor y = fl::full({mL * 2 + 1, B}, -1, fl::dtype::s32);
   int L;
   L = 2;
-  y(af::seq(0, 2 * L, 2), 0) = 1;
-  y(af::seq(1, 2 * L - 1, 2), 0) = 0;
+  y(fl::range(0, 2 * L + 1, 2), 0) = 1;
+  y(fl::range(1, 2 * L, 2), 0) = 0;
   L = 3;
-  y(af::seq(0, 2 * L, 2), 1) = 1;
-  y(af::seq(1, 2 * L - 1, 2), 1) = 0;
-  af::array expectedPath = af::constant(1, af::dim4(T, B));
+  y(fl::range(0, 2 * L + 1, 2), 1) = 1;
+  y(fl::range(1, 2 * L, 2), 1) = 0;
+  Tensor expectedPath = fl::full({T, B}, 1);
   expectedPath(1, 0) = 0;
   expectedPath(5, 0) = 0;
   expectedPath(1, 1) = 0;
   expectedPath(3, 1) = 0;
   expectedPath(5, 1) = 0;
-  af::array path = criterion.viterbiPathWithTarget(x, y);
+  Tensor path = criterion.viterbiPathWithTarget(x, y);
   checkZero(path - expectedPath);
 }
 
@@ -346,47 +354,47 @@ TEST(CriterionTest, ViterbiPathConstrained) {
   const int T = 8;
   const int N = 5;
   const int L = 4;
-  af::array target = af::range(af::dim4(L, B), 0, s32);
-  af::array input = af::constant(0.01, N, T, B);
-  af::array expectedPath = af::constant(0, T, B, s32);
+  Tensor target = fl::arange({L, B}, 0, fl::dtype::s32);
+  Tensor input = fl::full({N, T, B}, 0.01);
+  Tensor expectedPath = fl::full({T, B}, 0, fl::dtype::s32);
   for (int i = 0; i < L; i++) {
-    input(i, i * 2 + 1, af::span) = 1.0;
-    expectedPath(i * 2, af::span) = i;
-    expectedPath(i * 2 + 1, af::span) = i;
+    input(i, i * 2 + 1, fl::span) = 1.0;
+    expectedPath(i * 2, fl::span) = i;
+    expectedPath(i * 2 + 1, fl::span) = i;
   }
 
   ConnectionistTemporalClassificationCriterion ctc;
-  af::array ctcPath = ctc.viterbiPathWithTarget(input, target);
-  af::array diff = ctcPath - expectedPath;
-  ASSERT_LE(af::max<float>(af::abs(diff)), kEpsilon);
+  Tensor ctcPath = ctc.viterbiPathWithTarget(input, target);
+  Tensor diff = ctcPath - expectedPath;
+  ASSERT_LE(fl::amax(fl::abs(diff)).scalar<float>(), kEpsilon);
 
   AutoSegmentationCriterion asg(N);
-  asg.param(0).array() = af::constant(1.0, N, N);
-  af::array asgPath = asg.viterbiPathWithTarget(input, target);
+  asg.param(0).tensor() = fl::full({N, N}, 1.0);
+  Tensor asgPath = asg.viterbiPathWithTarget(input, target);
   diff = asgPath - expectedPath;
-  ASSERT_LE(af::max<float>(af::abs(diff)), kEpsilon);
+  ASSERT_LE(fl::amax(fl::abs(diff)).scalar<float>(), kEpsilon);
 }
 
 // Test that CTC can return a path with no spaces
-TEST(CriterionTest, CTCViterbiPathNopaces) {
+TEST(CriterionTest, CTCViterbiPathNoSpaces) {
   const int B = 3; // Batchsize
   const int T = 10; // Utterance length
   const int N = 30; // Number of tokens
   const int L = 1; // Length of target
   const int targetIdx = 1; // Token Idx of target
 
-  af::array input = af::constant(0.01, N, T, B);
-  af::array target = af::constant(0, L, B, s32);
-  af::array expectedPath = af::constant(targetIdx, T, B, s32);
+  Tensor input = fl::full({N, T, B}, 0.01);
+  Tensor target = fl::full({L, B}, 0, fl::dtype::s32);
+  Tensor expectedPath = fl::full({T, B}, targetIdx, fl::dtype::s32);
 
   // targetIdx has the highest prob for all t in T
-  input(targetIdx, af::span, af::span) = 1.0;
-  target(af::span, af::span) = targetIdx;
+  input(targetIdx, fl::span, fl::span) = 1.0;
+  target(fl::span, fl::span) = targetIdx;
 
   ConnectionistTemporalClassificationCriterion ctc;
-  af::array vpathArr = ctc.viterbiPathWithTarget(input, target);
-  af::array diff = expectedPath - vpathArr;
-  ASSERT_LE(af::max<float>(af::abs(diff)), kEpsilon);
+  Tensor vpathArr = ctc.viterbiPathWithTarget(input, target);
+  Tensor diff = expectedPath - vpathArr;
+  ASSERT_LE(fl::amax(fl::abs(diff)).scalar<float>(), kEpsilon);
 }
 
 // Test that CTC can return a path that optionally ends with a space
@@ -398,20 +406,20 @@ TEST(CriterionTest, CTCViterbiPathConstrainedEndWithSpace) {
   const int L = 1; // Length of target
   const int targetIdx = 1; // Token Idx of target
 
-  af::array input = af::constant(0.01, N, T, B);
-  af::array target = af::constant(targetIdx, L, B, s32);
-  af::array expectedPath = af::constant(targetIdx, T, B, s32);
+  Tensor input = fl::full({N, T, B}, 0.01);
+  Tensor target = fl::full({L, B}, targetIdx, fl::dtype::s32);
+  Tensor expectedPath = fl::full({T, B}, targetIdx, fl::dtype::s32);
   // targetIdx has the highest prob for all t in T, except for T - 1, which is
   // a blank label
-  input(targetIdx, af::span, af::span) = 1.0;
-  input(targetIdx, T - 1, af::span) = 0.00;
-  input(blankLabel, T - 1, af::span) = 1.0;
-  expectedPath(T - 1, af::span) = blankLabel;
+  input(targetIdx, fl::span, fl::span) = 1.0;
+  input(targetIdx, T - 1, fl::span) = 0.00;
+  input(blankLabel, T - 1, fl::span) = 1.0;
+  expectedPath(T - 1, fl::span) = blankLabel;
 
   ConnectionistTemporalClassificationCriterion ctc;
-  af::array vpathArr = ctc.viterbiPathWithTarget(input, target);
-  af::array diff = expectedPath - vpathArr;
-  ASSERT_LE(af::max<float>(af::abs(diff)), kEpsilon);
+  Tensor vpathArr = ctc.viterbiPathWithTarget(input, target);
+  Tensor diff = expectedPath - vpathArr;
+  ASSERT_LE(fl::amax(fl::abs(diff)).scalar<float>(), kEpsilon);
 }
 
 // Test that CTC can return a path that optionally begins with a space
@@ -425,18 +433,18 @@ TEST(CriterionTest, CTCViterbiPathConstrainedBeginWithSpace) {
 
   // targetIdx has the highest prob for all t in T, except for 0, which is
   // a blank label
-  af::array input = af::constant(0.01, N, T, B);
-  af::array target = af::constant(targetIdx, L, B, s32);
-  af::array expectedPath = af::constant(targetIdx, T, B, s32);
-  input(targetIdx, af::span, af::span) = 1.0;
-  input(targetIdx, 0, af::span) = 0.00;
-  input(blankLabel, 0, af::span) = 1.0;
-  expectedPath(0, af::span) = blankLabel;
+  Tensor input = fl::full({N, T, B}, 0.01);
+  Tensor target = fl::full({L, B}, targetIdx, fl::dtype::s32);
+  Tensor expectedPath = fl::full({T, B}, targetIdx, fl::dtype::s32);
+  input(targetIdx, fl::span, fl::span) = 1.0;
+  input(targetIdx, 0, fl::span) = 0.00;
+  input(blankLabel, 0, fl::span) = 1.0;
+  expectedPath(0, fl::span) = blankLabel;
 
   ConnectionistTemporalClassificationCriterion ctc;
-  af::array vpathArr = ctc.viterbiPathWithTarget(input, target);
-  af::array diff = expectedPath - vpathArr;
-  ASSERT_LE(af::max<float>(af::abs(diff)), kEpsilon);
+  Tensor vpathArr = ctc.viterbiPathWithTarget(input, target);
+  Tensor diff = expectedPath - vpathArr;
+  ASSERT_LE(fl::amax(fl::abs(diff)).scalar<float>(), kEpsilon);
 }
 
 // Test that CTC can return a path that optionally begins and ends with a space
@@ -450,21 +458,21 @@ TEST(CriterionTest, CTCViterbiPathConstrainedBeginAndEndWithSpace) {
 
   // targetIdx has the highest prob for all t in T, except for 0 and T -1
   // which is // a blank label
-  af::array input = af::constant(0.01, N, T, B);
-  af::array target = af::constant(targetIdx, L, B, s32);
-  af::array expectedPath = af::constant(targetIdx, T, B, s32);
-  input(targetIdx, af::span, af::span) = 1.0;
-  input(targetIdx, 0, af::span) = 0.00;
-  input(blankLabel, 0, af::span) = 1.0;
-  expectedPath(0, af::span) = blankLabel;
+  Tensor input = fl::full({N, T, B}, 0.01);
+  Tensor target = fl::full({L, B}, targetIdx, fl::dtype::s32);
+  Tensor expectedPath = fl::full({T, B}, targetIdx, fl::dtype::s32);
+  input(targetIdx, fl::span, fl::span) = 1.0;
+  input(targetIdx, 0, fl::span) = 0.00;
+  input(blankLabel, 0, fl::span) = 1.0;
+  expectedPath(0, fl::span) = blankLabel;
 
-  input(targetIdx, T - 1, af::span) = 0.00;
-  expectedPath(T - 1, af::span) = blankLabel;
+  input(targetIdx, T - 1, fl::span) = 0.00;
+  expectedPath(T - 1, fl::span) = blankLabel;
 
   ConnectionistTemporalClassificationCriterion ctc;
-  af::array vpathArr = ctc.viterbiPathWithTarget(input, target);
-  af::array diff = expectedPath - vpathArr;
-  ASSERT_LE(af::max<float>(af::abs(diff)), kEpsilon);
+  Tensor vpathArr = ctc.viterbiPathWithTarget(input, target);
+  Tensor diff = expectedPath - vpathArr;
+  ASSERT_LE(fl::amax(fl::abs(diff)).scalar<float>(), kEpsilon);
 }
 
 TEST(CriterionTest, FCCCost) {
@@ -479,8 +487,8 @@ TEST(CriterionTest, FCCCost) {
   const int N1 = 2, L1 = 2, T1 = 3, B1 = 2;
 
   auto fcc1 = FullConnectionCriterion(N1);
-  auto input1af = Variable(af::array(N1, T1, B1, input1.data()), true);
-  auto target1af = Variable(af::array(L1, dummyTarget1.data()), false);
+  auto input1af = Variable(Tensor::fromArray({N1, T1, B1}, input1), true);
+  auto target1af = Variable(Tensor::fromArray({L1, B1}, dummyTarget1), false);
 
   auto l1 = fcc1(input1af, target1af);
   std::vector<float> loss1Host(B1);
@@ -492,27 +500,27 @@ TEST(CriterionTest, FCCCost) {
   std::array<float, 12> input2;
   std::fill_n(input2.data(), 12, log(0.25));
   std::array<int, 2> dummyTarget2 = {1, 2};
-  int N2 = 4, L2 = 2, T2 = 3;
+  int N2 = 4, L2 = 2, T2 = 3, B2 = 1;
 
   auto fcc2 = FullConnectionCriterion(N2);
-  auto input2af = Variable(af::array(N2, T2, input2.data()), true);
-  auto target2af = Variable(af::array(L2, dummyTarget2.data()), false);
+  auto input2af = Variable(Tensor::fromArray({N2, T2, B2}, input2), true);
+  auto target2af = Variable(Tensor::fromArray({L2, B2}, dummyTarget2), false);
 
   auto l2 = fcc2(input2af, target2af);
+
   std::vector<float> loss2Host(1);
   l2.host(loss2Host.data());
   ASSERT_NEAR(loss2Host[0], 0.0, kEpsilon);
 
   // Test case: 3
   int N3 = 40, T3 = 300, L3 = 50, B3 = 3;
-  auto in = logSoftmax(Variable(af::randu(N3, T3, B3), true), 0);
-  auto t = af::abs(af::randu(L3, B3, af::dtype::s32)) % (N3 - 1);
-  auto tgt = Variable(t.as(af::dtype::s32), false);
+  auto in = logSoftmax(Variable(fl::rand({N3, T3, B3}), true), 0);
+  auto t = fl::abs(fl::rand({L3, B3}, fl::dtype::s32)) % (N3 - 1);
+  auto tgt = Variable(t.astype(fl::dtype::s32), false);
   auto fcc3 = FullConnectionCriterion(N3);
 
   auto l3 = fcc3(in, tgt);
-  std::vector<float> loss3Host(B3);
-  l3.host(loss3Host.data());
+  auto loss3Host = l3.tensor().toHostVector<float>();
   ASSERT_NEAR(loss3Host[0], 0.0, kEpsilon);
   ASSERT_NEAR(loss3Host[1], 0.0, kEpsilon);
   ASSERT_NEAR(loss3Host[2], 0.0, kEpsilon);
@@ -520,9 +528,9 @@ TEST(CriterionTest, FCCCost) {
 
 TEST(CriterionTest, FCCJacobian) {
   int N = 3, T = 8, L = 1, B = 2;
-  auto in = Variable(af::log(af::randu(N, T, B)), true);
-  auto t = af::abs(af::randu(L, B, af::dtype::s32)) % (N - 1);
-  auto tgt = Variable(t.as(af::dtype::s32), false);
+  auto in = Variable(fl::log(fl::rand({N, T, B})), true);
+  auto t = fl::abs(fl::rand({L, B}, fl::dtype::s32)) % (N - 1);
+  auto tgt = Variable(t.astype(fl::dtype::s32), false);
   auto l = FullConnectionCriterion(N, CriterionScaleMode::TARGET_SZ_SQRT);
 
   // Test case for input
@@ -530,7 +538,7 @@ TEST(CriterionTest, FCCJacobian) {
   jacobianTest(funcIn, in);
 
   // Test case for transition
-  auto transition = Variable(af::randu(N, N), true);
+  auto transition = Variable(fl::rand({N, N}), true);
   auto funcTrans = [&](Variable& transitionP) {
     l.setParams(transitionP, 0);
     return l.forward(in, tgt);
@@ -546,8 +554,8 @@ TEST(CriterionTest, FACCost) {
   const int N1 = 2, L1 = 2, T1 = 3, B1 = 2;
 
   auto fac1 = ForceAlignmentCriterion(N1);
-  auto input1af = Variable(af::array(N1, T1, B1, input1.data()), true);
-  auto target1af = Variable(af::array(L1, B1, target1.data()), false);
+  auto input1af = Variable(Tensor::fromArray({N1, T1, B1}, input1), true);
+  auto target1af = Variable(Tensor::fromArray({{L1, B1}}, target1), false);
 
   auto loss1 = fac1(input1af, target1af);
   std::vector<float> loss1Host(B1);
@@ -559,11 +567,11 @@ TEST(CriterionTest, FACCost) {
   std::array<float, 12> input2;
   std::fill_n(input2.data(), 12, log(0.25));
   std::array<int, 2> target2 = {0, 1};
-  int N2 = 4, L2 = 2, T2 = 3;
+  int N2 = 4, L2 = 2, T2 = 3, B2 = 1;
 
   auto fac2 = ForceAlignmentCriterion(N2);
-  auto input2af = Variable(af::array(N2, T2, input2.data()), true);
-  auto target2af = Variable(af::array(L2, target2.data()), false);
+  auto input2af = Variable(Tensor::fromArray({N2, T2, B2}, input2), true);
+  auto target2af = Variable(Tensor::fromArray({L2, B2}, target2), false);
 
   auto loss2 = fac2(input2af, target2af);
   ASSERT_NEAR(loss2.scalar<float>(), -log(32), kEpsilon);
@@ -571,9 +579,9 @@ TEST(CriterionTest, FACCost) {
 
 TEST(CriterionTest, FACJacobian) {
   int N = 3, T = 10, B = 3, L = 3;
-  auto in = Variable(af::log(af::randu(N, T, B)), true);
+  auto in = Variable(fl::log(fl::rand({N, T, B})), true);
   std::array<int, 9> target = {0, 1, -1, 1, -1, -1, 0, 2, 1};
-  auto tgt = Variable(af::array(L, B, target.data()), false);
+  auto tgt = Variable(Tensor::fromArray({L, B}, target), false);
   auto l = ForceAlignmentCriterion(N, CriterionScaleMode::TARGET_SZ_SQRT);
 
   // Test case for input
@@ -581,7 +589,7 @@ TEST(CriterionTest, FACJacobian) {
   jacobianTest(funcIn, in);
 
   // Test case for transition
-  auto transition = Variable(af::randu(N, N), true);
+  auto transition = Variable(fl::rand({N, N}), true);
   auto funcTrans = [&](Variable& transitionP) {
     l.setParams(transitionP, 0);
     return l.forward(in, tgt);
@@ -602,9 +610,9 @@ TEST(CriterionTest, ASGCost) {
   std::array<float, (N1 * N1)> trans1 = {};
 
   auto asg1 = AutoSegmentationCriterion(N1);
-  auto input1af = Variable(af::array(N1, T1, B1, input1.data()), true);
-  auto target1af = Variable(af::array(L1, B1, target1.data()), false);
-  asg1.setParams(Variable(af::array(N1, N1, trans1.data()), true), 0);
+  auto input1af = Variable(Tensor::fromArray({N1, T1, B1}, input1), true);
+  auto target1af = Variable(Tensor::fromArray({L1, B1}, target1), false);
+  asg1.setParams(Variable(Tensor::fromArray({N1, N1}, trans1), true), 0);
 
   auto loss1 = asg1({input1af, target1af}).front();
   std::vector<float> loss1Host(B1);
@@ -613,44 +621,44 @@ TEST(CriterionTest, ASGCost) {
   ASSERT_NEAR(loss1Host[1], 0.0, kEpsilon);
 
   // Test case: 2
-  constexpr int N2 = 4, L2 = 2, T2 = 3;
+  constexpr int N2 = 4, L2 = 2, T2 = 3, B2 = 1;
   std::array<float, (N2 * T2)> input2;
   std::fill(input2.begin(), input2.end(), log(0.25));
   std::array<int, L2> target2 = {0, 1};
   std::array<float, (N2 * N2)> trans2 = {};
 
   auto asg2 = AutoSegmentationCriterion(N2);
-  auto input2af = Variable(af::array(N2, T2, input2.data()), true);
-  auto target2af = Variable(af::array(L2, target2.data()), false);
-  asg2.setParams(Variable(af::array(N2, N2, trans2.data()), true), 0);
+  auto input2af = Variable(Tensor::fromArray({N2, T2, B2}, input2), true);
+  auto target2af = Variable(Tensor::fromArray({L2, B2}, target2), false);
+  asg2.setParams(Variable(Tensor::fromArray({N2, N2}, trans2), true), 0);
 
   auto loss2 = asg2({input2af, target2af}).front();
   ASSERT_NEAR(loss2.scalar<float>(), log(32), kEpsilon);
 
   // Test case: 3
-  constexpr int N3 = 4, L3_1 = 4, L3_2 = 3, T3 = 3;
+  constexpr int N3 = 4, L3_1 = 4, L3_2 = 3, T3 = 3, B3 = 1;
   std::array<float, (N3 * T3)> input3;
   std::fill(input3.begin(), input3.end(), log(0.25));
   std::array<int, L3_1> target3 = {0, 1, 1, 1};
   std::array<float, (N3 * N3)> trans3 = {};
 
   auto asg3 = AutoSegmentationCriterion(N3);
-  auto input3af = Variable(af::array(N3, T3, input3.data()), true);
-  auto target3af1 = Variable(af::array(L3_1, target3.data()), false);
-  auto target3af2 = Variable(af::array(L3_2, target3.data()), false);
-  asg3.setParams(Variable(af::array(N3, N3, trans3.data()), true), 0);
+  auto input3af = Variable(Tensor::fromArray({N3, T3, B3}, input3), true);
+  auto target3_1 = Variable(Tensor::fromArray({L3_1, B3}, target3), false);
+  auto target3_2 = Variable(Tensor::fromArray({L3_2, B3}, target3), false);
+  asg3.setParams(Variable(Tensor::fromArray({N3, N3}, trans3), true), 0);
   // check if target is truncated
   checkZero(
-      asg3({input3af, target3af1}).front().array() -
-          asg3({input3af, target3af2}).front().array(),
+      asg3({input3af, target3_1}).front().tensor() -
+          asg3({input3af, target3_2}).front().tensor(),
       1E-5);
 }
 
 TEST(CriterionTest, ASGJacobian) {
   int N = 3, T = 10, B = 3, L = 3;
-  auto in = Variable(af::log(af::randu(N, T, B)), true);
+  auto in = Variable(fl::log(fl::rand({N, T, B})), true);
   std::array<int, 9> target = {0, 1, -1, 1, -1, -1, 0, 2, 1};
-  auto tgt = Variable(af::array(L, B, target.data()), false);
+  auto tgt = Variable(Tensor::fromArray({L, B}, target), false);
   auto l = AutoSegmentationCriterion(N, CriterionScaleMode::TARGET_SZ_SQRT);
 
   // Test case for input
@@ -658,7 +666,7 @@ TEST(CriterionTest, ASGJacobian) {
   jacobianTest(funcIn, in);
 
   // Test case for transition
-  auto transition = Variable(af::randu(N, N), true);
+  auto transition = Variable(fl::rand({N, N}), true);
   auto funcTrans = [&](Variable& transitionP) {
     l.setParams(transitionP, 0);
     return l.forward({in, tgt}).front();
@@ -668,9 +676,9 @@ TEST(CriterionTest, ASGJacobian) {
 
 TEST(CriterionTest, LinSegJacobian) {
   int N = 3, T = 10, B = 3, L = 3;
-  auto in = Variable(af::log(af::randu(N, T, B)), true);
+  auto in = Variable(fl::log(fl::rand({N, T, B})), true);
   std::array<int, 9> target = {0, 1, -1, 1, -1, -1, 0, 2, 1};
-  auto tgt = Variable(af::array(L, B, target.data()), false);
+  auto tgt = Variable(Tensor::fromArray({L, B}, target), false);
   auto l = LinearSegmentationCriterion(N, CriterionScaleMode::TARGET_SZ_SQRT);
 
   // Test case for input
@@ -678,7 +686,7 @@ TEST(CriterionTest, LinSegJacobian) {
   jacobianTest(funcIn, in);
 
   // Test case for transition
-  auto transition = Variable(af::randu(N, N), true);
+  auto transition = Variable(fl::rand({N, N}), true);
   auto funcTrans = [&](Variable& transitionP) {
     l.setParams(transitionP, 0);
     return l.forward({in, tgt}).front();
@@ -688,21 +696,24 @@ TEST(CriterionTest, LinSegJacobian) {
 
 TEST(CriterionTest, ASGBatching) {
   int N = 80, T = 50, L = 25, B = 10;
-  auto in = Variable(af::log(af::randu(N, T, B)), true);
-  auto t = af::abs(af::randu(L, B, af::dtype::s32)) % (N - 2);
+  auto in = Variable(fl::log(fl::rand({N, T, B})), true);
+  auto t = fl::abs(fl::rand({L, B}, fl::dtype::s32)) % (N - 2);
   for (int i = 0; i < B; ++i) {
     int r = std::rand() % L;
     if (r > 0) {
-      t(af::seq(r, af::end), i) = -1;
+      t(fl::range(r, fl::end), i) = -1;
     }
   }
-  auto tgt = Variable(t.as(af::dtype::s32), false);
+  auto tgt = Variable(t.astype(fl::dtype::s32), false);
   auto l = AutoSegmentationCriterion(N, CriterionScaleMode::TARGET_SZ);
   auto output = l.forward({in, tgt}).front();
 
   for (int i = 0; i < B; ++i) {
-    auto outputCur = l.forward({in.slice(i), tgt.col(i)}).front();
-    checkZero(output.array()(i) - outputCur.array(), 1E-6);
+    auto inel = moddims(in(fl::span, fl::span, i), {N, T, 1});
+    auto tgtel = moddims(tgt(fl::span, i), {L, 1});
+
+    auto outputCur = l.forward({inel, tgtel}).front();
+    checkZero(output.tensor()(i) - outputCur.tensor(), 1E-6);
   }
 }
 
@@ -771,9 +782,9 @@ TEST(CriterionTest, ASGCompareLua) {
   // clang-format on
 
   auto asg = AutoSegmentationCriterion(N);
-  auto inputAf = Variable(af::array(N, T, B, input.data()), true);
-  auto targetAf = Variable(af::array(L, B, target.data()), false);
-  asg.setParams(constant(0.0, af::dim4(N, N)), 0);
+  auto inputAf = Variable(Tensor::fromArray({N, T, B}, input), true);
+  auto targetAf = Variable(Tensor::fromArray({L, B}, target), false);
+  asg.setParams(constant(0., {N, N}), 0);
 
   auto loss = asg({inputAf, targetAf}).front();
   std::vector<float> lossHost(B);
@@ -783,10 +794,10 @@ TEST(CriterionTest, ASGCompareLua) {
   }
 
   loss.backward();
-  auto inputGrad = inputAf.grad().array();
-  checkZero(inputGrad - af::array(N, T, B, expectedInputGrad.data()), 1e-4);
-  auto transGrad = asg.param(0).grad().array();
-  checkZero(transGrad - af::array(N, N, expectedTransGrad.data()), 1e-4);
+  auto inputGrad = inputAf.grad().tensor();
+  checkZero(inputGrad - Tensor::fromArray({N, T, B}, expectedInputGrad), 1e-4);
+  auto transGrad = asg.param(0).grad().tensor();
+  checkZero(transGrad - Tensor::fromArray({N, N}, expectedTransGrad), 1e-4);
 }
 
 TEST(CriterionTest, LinSegCompareLua) {
@@ -823,9 +834,9 @@ TEST(CriterionTest, LinSegCompareLua) {
 
   auto linseg =
       LinearSegmentationCriterion(N, CriterionScaleMode::TARGET_SZ_SQRT);
-  auto inputAf = Variable(af::array(N, T, B, input.data()), true);
-  auto targetAf = Variable(af::array(L, B, target.data()), false);
-  linseg.setParams(constant(0.0, af::dim4(N, N)), 0);
+  auto inputAf = Variable(Tensor::fromArray({N, T, B}, input), true);
+  auto targetAf = Variable(Tensor::fromArray({L, B}, target), false);
+  linseg.setParams(constant(0.0, {N, N}), 0);
 
   // clang-format off
   std::vector<float> expectedLoss = {
@@ -870,10 +881,10 @@ TEST(CriterionTest, LinSegCompareLua) {
   }
 
   loss.backward();
-  auto inputGrad = inputAf.grad().array();
-  checkZero(inputGrad - af::array(N, T, B, expectedInputGrad.data()), 1e-4);
-  auto transGrad = linseg.param(0).grad().array();
-  checkZero(transGrad - af::array(N, N, expectedTransGrad.data()), 1e-4);
+  auto inputGrad = inputAf.grad().tensor();
+  checkZero(inputGrad - Tensor::fromArray({N, T, B}, expectedInputGrad), 1e-4);
+  auto transGrad = linseg.param(0).grad().tensor();
+  checkZero(transGrad - Tensor::fromArray({N, N}, expectedTransGrad), 1e-4);
 }
 
 TEST(CriterionTest, AsgSerialization) {
@@ -891,11 +902,11 @@ TEST(CriterionTest, AsgSerialization) {
   std::shared_ptr<AutoSegmentationCriterion> asg2;
   fl::load(path, asg2);
 
-  checkZero((asg->param(0) - asg2->param(0)).array(), 1e-4);
+  checkZero((asg->param(0) - asg2->param(0)).tensor(), 1e-4);
 
-  auto input = af::randu(N, 200, 2);
-  auto target = af::clamp(af::randu(100, 2, af::dtype::s32), 0, N - 1);
-  checkZero((asg->param(0) - asg2->param(0)).array(), 1e-4);
+  auto input = fl::rand({N, 200, 2});
+  auto target = fl::clip(fl::rand({100, 2}, fl::dtype::s32), 0, N - 1);
+  checkZero((asg->param(0) - asg2->param(0)).tensor(), 1e-4);
 }
 
 int main(int argc, char** argv) {
