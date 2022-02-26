@@ -7,14 +7,15 @@
 
 #include "flashlight/pkg/speech/decoder/DecodeMaster.h"
 
+#include "flashlight/fl/dataset/MemoryBlobDataset.h"
+#include "flashlight/fl/meter/EditDistanceMeter.h"
+#include "flashlight/fl/tensor/Index.h"
+#include "flashlight/lib/text/decoder/LexiconDecoder.h"
+#include "flashlight/lib/text/decoder/LexiconFreeDecoder.h"
+#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
 #include "flashlight/pkg/speech/runtime/Helpers.h"
-#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
-#include "flashlight/fl/dataset/MemoryBlobDataset.h"
-#include "flashlight/fl/meter/EditDistanceMeter.h"
-#include "flashlight/lib/text/decoder/LexiconDecoder.h"
-#include "flashlight/lib/text/decoder/LexiconFreeDecoder.h"
 
 namespace {
 
@@ -23,10 +24,12 @@ constexpr size_t kDMWordTargetIdx = 1;
 constexpr size_t kDMTokenPredIdx = 2;
 constexpr size_t kDMWordPredIdx = 3;
 
-af::array removeNegative(const af::array& arr) {
+using namespace fl;
+
+Tensor removeNegative(const fl::Tensor& arr) {
   return arr(arr >= 0);
 }
-af::array removePad(const af::array& arr, int32_t padIdx) {
+Tensor removePad(const Tensor& arr, int32_t padIdx) {
   return arr(arr != padIdx);
 }
 } // namespace
@@ -66,31 +69,30 @@ DecodeMaster::computeMetrics(const std::shared_ptr<fl::Dataset>& predDataset) {
     auto targetWrd = sample[kDMWordTargetIdx];
     auto prediction = sample[kDMTokenPredIdx];
     auto target = sample[kDMTokenTargetIdx];
-    bool isPredictingWrd = !predictionWrd.isempty();
+    bool isPredictingWrd = !predictionWrd.isEmpty();
 
-    if (prediction.numdims() > 2 || target.numdims() > 2) {
+    if (prediction.ndim() > 2 || target.ndim() > 2) {
       throw std::runtime_error(
           "computeMetrics: expecting TxB for prediction and target");
     }
-    if (isPredictingWrd &&
-        (predictionWrd.numdims() > 2 || targetWrd.numdims() > 2)) {
+    if (isPredictingWrd && (predictionWrd.ndim() > 2 || targetWrd.ndim() > 2)) {
       throw std::runtime_error(
           "computeMetrics: expecting TxB for prediction and target");
     }
 
-    if (!prediction.isempty() && !target.isempty() &&
-        (prediction.dims(1) != target.dims(1))) {
+    if (!prediction.isEmpty() && !target.isEmpty() &&
+        (prediction.dim(1) != target.dim(1))) {
       throw std::runtime_error(
           "computeMetrics: prediction and target do not match");
     }
-    if (isPredictingWrd && !predictionWrd.isempty() && !targetWrd.isempty() &&
-        (predictionWrd.dims(1) != targetWrd.dims(1))) {
+    if (isPredictingWrd && !predictionWrd.isEmpty() && !targetWrd.isEmpty() &&
+        (predictionWrd.dim(1) != targetWrd.dim(1))) {
       throw std::runtime_error(
           "computeMetrics: prediction and target do not match");
     }
     // token predictions and target
-    std::vector<int> predictionV = fl::pkg::runtime::afToVector<int>(prediction);
-    std::vector<int> targetV = fl::pkg::runtime::afToVector<int>(target);
+    std::vector<int> predictionV = prediction.toHostVector<int>();
+    std::vector<int> targetV = target.toHostVector<int>();
 
     auto predictionS = computeStringPred(predictionV);
     auto targetS = computeStringTarget(targetV);
@@ -98,9 +100,8 @@ DecodeMaster::computeMetrics(const std::shared_ptr<fl::Dataset>& predDataset) {
 
     std::vector<std::string> targetWrdS, predictionWrdS;
     if (isPredictingWrd) {
-      targetWrdS = wrdIdx2Wrd(fl::pkg::runtime::afToVector<int>(targetWrd), wordDict_);
-      predictionWrdS =
-          wrdIdx2Wrd(fl::pkg::runtime::afToVector<int>(predictionWrd), wordDict_);
+      targetWrdS = wrdIdx2Wrd(targetWrd.toHostVector<int>(), wordDict_);
+      predictionWrdS = wrdIdx2Wrd(predictionWrd.toHostVector<int>(), wordDict_);
     } else {
       targetWrdS = tkn2Wrd(targetS, trainOpt_.wordSep);
       predictionWrdS = tkn2Wrd(predictionS, trainOpt_.wordSep);
@@ -138,7 +139,7 @@ std::shared_ptr<fl::Dataset> DecodeMaster::forward(
     const std::shared_ptr<fl::Dataset>& ds) {
   auto emissionDataset = std::make_shared<fl::MemoryBlobDataset>();
   for (auto& batch : *ds) {
-    af::array output;
+    Tensor output;
     if (batch.empty()) {
       continue;
     }
@@ -146,37 +147,36 @@ std::shared_ptr<fl::Dataset> DecodeMaster::forward(
       output = net_->forward({fl::input(batch[kInputIdx]),
                               fl::noGrad(batch[kDurationIdx])})
                    .front()
-                   .array();
+                   .tensor();
     } else {
       output = fl::pkg::runtime::forwardSequentialModuleWithPadMask(
                    fl::input(batch[kInputIdx]), net_, batch[kDurationIdx])
-                   .array();
+                   .tensor();
     }
-    if (output.numdims() > 3) {
+    if (output.ndim() > 3) {
       throw std::runtime_error("output should be NxTxB");
     }
-    af::array tokenTarget =
-        (batch.size() > kTargetIdx ? batch[kTargetIdx] : af::array());
-    af::array wordTarget =
-        (batch.size() > kWordIdx ? batch[kWordIdx] : af::array());
+    Tensor tokenTarget =
+        (batch.size() > kTargetIdx ? batch[kTargetIdx] : Tensor());
+    Tensor wordTarget = (batch.size() > kWordIdx ? batch[kWordIdx] : Tensor());
 
-    int B = output.dims(2);
-    if (!tokenTarget.isempty() &&
-        (tokenTarget.numdims() > 2 || tokenTarget.dims(1) != B)) {
+    int B = output.dim(2);
+    if (!tokenTarget.isEmpty() &&
+        (tokenTarget.ndim() > 2 || tokenTarget.dim(1) != B)) {
       throw std::runtime_error("token target should be LxB");
     }
-    if (!wordTarget.isempty() &&
-        (wordTarget.numdims() > 2 || wordTarget.dims(1) != B)) {
+    if (!wordTarget.isEmpty() &&
+        (wordTarget.ndim() > 2 || wordTarget.dim(1) != B)) {
       throw std::runtime_error("word target should be LxB");
     }
     // todo s2s, if we pad only with -1 we will be good here (not pad with eos)
     for (int b = 0; b < B; b++) {
-      std::vector<af::array> res(4);
-      res[kDMTokenPredIdx] = output(af::span, af::span, b);
-      res[kDMTokenTargetIdx] = removeNegative(tokenTarget(af::span, b));
+      std::vector<Tensor> res(4);
+      res[kDMTokenPredIdx] = output(fl::span, fl::span, b);
+      res[kDMTokenTargetIdx] = removeNegative(tokenTarget(fl::span, b));
       res[kDMTokenTargetIdx] =
           removePad(res[kDMTokenTargetIdx], trainOpt_.targetPadIdx);
-      res[kDMWordTargetIdx] = removeNegative(wordTarget(af::span, b));
+      res[kDMWordTargetIdx] = removeNegative(wordTarget(fl::span, b));
       res[kDMWordTargetIdx] =
           removePad(res[kDMWordTargetIdx], trainOpt_.targetPadIdx);
       emissionDataset->add(res);
@@ -192,13 +192,13 @@ std::shared_ptr<fl::Dataset> DecodeMaster::decode(
   auto predDataset = std::make_shared<fl::MemoryBlobDataset>();
   for (auto& sample : *emissionDataset) {
     auto emission = sample[kDMTokenPredIdx];
-    if (emission.numdims() > 2) {
+    if (emission.ndim() > 2) {
       throw std::runtime_error("emission should be NxT");
     }
-    std::vector<float> emissionV(emission.elements());
-    emission.as(af::dtype::f32).host(emissionV.data());
+    std::vector<float> emissionV(emission.size());
+    emission.astype(fl::dtype::f32).host(emissionV.data());
     auto results =
-        decoder.decode(emissionV.data(), emission.dims(1), emission.dims(0));
+        decoder.decode(emissionV.data(), emission.dim(1), emission.dim(0));
 
     std::vector<int> tokensV, wordsV;
     if (results.size() > 0) {
@@ -209,12 +209,9 @@ std::shared_ptr<fl::Dataset> DecodeMaster::decode(
         std::remove(tokensV.begin(), tokensV.end(), -1), tokensV.end());
     wordsV.erase(std::remove(wordsV.begin(), wordsV.end(), -1), wordsV.end());
     sample[kDMTokenPredIdx] =
-        (tokensV.size() > 0
-             ? af::array(af::dim4(tokensV.size()), tokensV.data())
-             : af::array());
+        (tokensV.size() > 0 ? Tensor::fromVector(tokensV) : Tensor());
     sample[kDMWordPredIdx] =
-        (wordsV.size() > 0 ? af::array(af::dim4(wordsV.size()), wordsV.data())
-                           : af::array());
+        (wordsV.size() > 0 ? Tensor::fromVector(wordsV) : Tensor());
     predDataset->add(sample);
   }
   predDataset->writeIndex();
