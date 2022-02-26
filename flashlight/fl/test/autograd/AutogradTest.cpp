@@ -722,22 +722,28 @@ TEST(AutogradTest, Normalize) {
 TEST(AutogradTest, Indexing) {
   auto x = Variable(fl::rand({5, 6, 7, 4}, fl::dtype::f64), true);
 
-  auto func_col = [](Variable& input) { return input.col(4); };
+  auto func_col = [](Variable& input) { return input(fl::span, 4); };
   ASSERT_TRUE(jacobianTestImpl(func_col, x));
 
-  auto func_row = [](Variable& input) { return input.row(4); };
+  auto func_row = [](Variable& input) { return input(4); };
   ASSERT_TRUE(jacobianTestImpl(func_row, x));
 
-  auto func_slice = [](Variable& input) { return input.slice(4); };
+  auto func_slice = [](Variable& input) {
+    return input(fl::span, fl::span, 4);
+  };
   ASSERT_TRUE(jacobianTestImpl(func_slice, x));
 
-  auto func_cols = [](Variable& input) { return input.cols(2, 4); };
+  auto func_cols = [](Variable& input) {
+    return input(fl::span, fl::range(2, 5));
+  };
   ASSERT_TRUE(jacobianTestImpl(func_cols, x));
 
-  auto func_rows = [](Variable& input) { return input.rows(2, 4); };
+  auto func_rows = [](Variable& input) { return input(fl::range(2, 5)); };
   ASSERT_TRUE(jacobianTestImpl(func_rows, x));
 
-  auto func_slices = [](Variable& input) { return input.slices(2, 4); };
+  auto func_slices = [](Variable& input) {
+    return input(fl::span, fl::span, fl::range(2, 5));
+  };
   ASSERT_TRUE(jacobianTestImpl(func_slices, x));
   auto func_flat = [](Variable& input) {
     return input.flat(fl::range(4, 100));
