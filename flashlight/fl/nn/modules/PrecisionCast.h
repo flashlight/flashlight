@@ -22,7 +22,7 @@ namespace fl {
  */
 class PrecisionCast : public Module {
  private:
-  af::dtype targetType_;
+  fl::dtype targetType_;
   PrecisionCast() = default;
   FL_SAVE_LOAD_WITH_BASE(Module, targetType_)
 
@@ -33,7 +33,7 @@ class PrecisionCast : public Module {
    * @param targetType An ArrayFire type that specifies the target type of the
    * cast. Inputs to the the `forward` function will be casted to `targetType`.
    */
-  PrecisionCast(af::dtype targetType);
+  explicit PrecisionCast(fl::dtype targetType);
 
   /**
    * Casts every input variable according to the `targetType_`. The value of
