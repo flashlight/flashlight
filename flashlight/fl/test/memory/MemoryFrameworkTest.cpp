@@ -240,7 +240,7 @@ class MockTestMemoryManager : public TestMemoryManager {
   MOCK_METHOD(size_t, allocated, (void*));
   MOCK_METHOD(void, unlock, (void*, bool));
   MOCK_METHOD(void, signalMemoryCleanup, ());
-  MOCK_METHOD(void, printInfo, (const char*, const int));
+  MOCK_METHOD(void, printInfo, (const char*, const int, std::ostream*));
   MOCK_METHOD(void, userLock, (const void*));
   MOCK_METHOD(void, userUnlock, (const void*));
   MOCK_METHOD(bool, isUserLocked, (const void*));

@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <arrayfire.h>
 #include <gtest/gtest.h>
 
 #include <stdexcept>
