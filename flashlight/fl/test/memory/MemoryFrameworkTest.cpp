@@ -234,18 +234,18 @@ class MockTestMemoryManager : public TestMemoryManager {
         }));
   }
 
-  MOCK_METHOD0(initialize, void());
-  MOCK_METHOD0(shutdown, void());
-  MOCK_METHOD4(alloc, void*(bool, const unsigned, dim_t*, const unsigned));
-  MOCK_METHOD1(allocated, size_t(void*));
-  MOCK_METHOD2(unlock, void(void*, bool));
-  MOCK_METHOD0(signalMemoryCleanup, void());
-  MOCK_METHOD2(printInfo, void(const char*, const int));
-  MOCK_METHOD1(userLock, void(const void*));
-  MOCK_METHOD1(userUnlock, void(const void*));
-  MOCK_METHOD1(isUserLocked, bool(const void*));
-  MOCK_METHOD0(getMemoryPressure, float());
-  MOCK_METHOD1(jitTreeExceedsMemoryPressure, bool(size_t));
+  MOCK_METHOD(void, initialize, ());
+  MOCK_METHOD(void, shutdown, ());
+  MOCK_METHOD(void*, alloc, (bool, const unsigned, dim_t*, const unsigned));
+  MOCK_METHOD(size_t, allocated, (void*));
+  MOCK_METHOD(void, unlock, (void*, bool));
+  MOCK_METHOD(void, signalMemoryCleanup, ());
+  MOCK_METHOD(void, printInfo, (const char*, const int));
+  MOCK_METHOD(void, userLock, (const void*));
+  MOCK_METHOD(void, userUnlock, (const void*));
+  MOCK_METHOD(bool, isUserLocked, (const void*));
+  MOCK_METHOD(float, getMemoryPressure, ());
+  MOCK_METHOD(bool, jitTreeExceedsMemoryPressure, (size_t));
 
  private:
   std::shared_ptr<TestMemoryManager> real_;
