@@ -40,6 +40,8 @@ if (@FL_BUILD_STANDALONE@)
   # Core dependencies
   if (@FL_BUILD_CORE@)
     find_dependency(ArrayFire 3.7.1)
+    # remove when gcc >= 9 required
+    find_dependency(Filesystem COMPONENTS Final Experimental)
   endif()
   if (@FL_BUILD_DISTRIBUTED@)
     find_dependency(MPI)

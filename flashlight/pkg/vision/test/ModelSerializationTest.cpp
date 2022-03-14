@@ -11,6 +11,7 @@
 #include "flashlight/pkg/vision/nn/VisionTransformer.h"
 
 #include "flashlight/fl/autograd/autograd.h"
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/common/Init.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
@@ -27,7 +28,7 @@ TEST(SerializationTest, VisionTransformer) {
       hiddenEmbSize, hiddenEmbSize / nHeads, mlpSize, nHeads, 0, 0);
   model->eval();
 
-  const std::string path = fl::lib::getTmpPath("VisionTransformer.mdl");
+  const fs::path path = fs::temp_directory_path() / "VisionTransformer.mdl";
   save(path, model);
 
   std::shared_ptr<VisionTransformer> loaded;
@@ -57,7 +58,7 @@ TEST(SerializationTest, ViT) {
       1000);
   model->eval();
 
-  const std::string path = fl::lib::getTmpPath("ViT.mdl");
+  const fs::path path = fs::temp_directory_path() / "ViT.mdl";
   save(path, model);
 
   std::shared_ptr<ViT> loaded;

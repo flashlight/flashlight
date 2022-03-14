@@ -79,7 +79,7 @@ cmake_dependent_option(FL_BUILD_PROFILING
   "FL_USE_CUDA" OFF)
 
 # List of installable targets
-set(INSTALLABLE_TARGETS "")
+list(APPEND INSTALLABLE_TARGETS"")
 
 set(FL_ROOT_DIR ${PROJECT_SOURCE_DIR}/flashlight)
 set(FL_BUILD_BINARY_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/bin")
@@ -133,12 +133,7 @@ setup_install_headers(${FL_LIB_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
 
 # --------------------------- Core Options  ---------------------------
 
-fl_dependent_option(
-  FL_BUILD_CORE
-  "Build flashlight core"
-  ON
-  "FL_BUILD_LIB_COMMON"
-  OFF)
+option(FL_BUILD_CORE "Build flashlight core" ON)
 
 fl_dependent_option(
   FL_BUILD_CONTRIB
@@ -157,11 +152,6 @@ if (FL_BUILD_CORE)
     PROPERTIES
     LINKER_LANGUAGE CXX
     )
-
-  # FIXME: libraries are required to build core tests - https://git.io/JL955
-  if (FL_BUILD_LIBRARIES OR (FL_BUILD_CORE AND FL_BUILD_TESTS))
-    target_link_libraries(flashlight PUBLIC fl_lib_common)
-  endif()
 
   if (FL_CODE_COVERAGE)
     add_coverage_to_target(TARGET flashlight)
@@ -225,7 +215,7 @@ if (FL_BUILD_CORE)
   # ------------------------ flashlight Core ------------------------
   set(FL_CORE_DIR "${FL_ROOT_DIR}/fl")
   include(${FL_CORE_DIR}/CMakeLists.txt)
-  set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} flashlight)
+  list(APPEND INSTALLABLE_TARGETS flashlight)
   # flashlight core components keep their relative paths with respect to project
   setup_install_headers(${FL_CORE_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
   target_compile_definitions(flashlight

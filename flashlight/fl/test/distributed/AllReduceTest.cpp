@@ -13,10 +13,9 @@
 
 #include <gtest/gtest.h>
 
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/distributed/distributed.h"
-#include "flashlight/lib/common/String.h"
-#include "flashlight/lib/common/System.h"
 
 using namespace fl;
 
@@ -119,27 +118,32 @@ TEST(Distributed, Barrier) {
 
   // Create files
   std::this_thread::sleep_for(std::chrono::milliseconds(5000 * rank));
-  auto file = lib::getTmpPath(std::to_string(rank) + suffix);
+  auto file = fs::temp_directory_path() / (std::to_string(rank) + suffix);
   std::ofstream stream(file);
   stream << "done";
   stream.close();
 
   barrier();
   for (int i = 0; i < size; i++) {
-    auto checkingFile = lib::getTmpPath(std::to_string(i) + suffix);
-    ASSERT_TRUE(lib::fileExists(checkingFile));
+    auto checkingFile =
+        fs::temp_directory_path() / (std::to_string(i) + suffix);
+    ASSERT_TRUE(fs::exists(checkingFile));
   }
   barrier();
 
   // Delete files
-  int status = std::remove(file.data());
-  if (status != 0) {
-    throw std::runtime_error("Barrier test cannot delete file: " + file);
+  std::error_code errorCode;
+  const bool status = fs::remove(file, errorCode);
+  if (!status) {
+    throw std::runtime_error(
+        "Barrier test cannot delete file: " + std::string(file) +
+        " error: " + errorCode.message());
   }
   barrier();
   for (int i = 0; i < size; i++) {
-    auto checkingFile = lib::getTmpPath(std::to_string(i) + suffix);
-    ASSERT_TRUE(!lib::fileExists(checkingFile));
+    auto checkingFile =
+        fs::temp_directory_path() / (std::to_string(i) + suffix);
+    ASSERT_TRUE(!fs::exists(checkingFile));
   }
 }
 

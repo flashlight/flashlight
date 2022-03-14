@@ -27,6 +27,12 @@ function(setup_install_targets)
   cmake_parse_arguments(setup_install_targets "${options}" "${oneValueArgs}"
     "${multiValueArgs}" ${ARGN})
 
+  list(LENGTH setup_install_targets_INSTALL_TARGETS TARGETS_LENGTH)
+  if (${TARGETS_LENGTH} EQUAL 0)
+    message(FATAL_ERROR "Flashlight setup_install_targets called with "
+      "empty targets list.")
+  endif()
+
   # Main target
   install(
     TARGETS ${setup_install_targets_INSTALL_TARGETS}

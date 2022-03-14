@@ -11,10 +11,10 @@
 #include <arrayfire.h>
 #include <gtest/gtest.h>
 
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/dataset/datasets.h"
 #include "flashlight/fl/tensor/Compute.h"
-#include "flashlight/lib/common/System.h"
 
 using namespace fl;
 
@@ -227,7 +227,7 @@ TEST(DatasetTest, FileBlobDataset) {
 
   // check read-write capabilities
   {
-    FileBlobDataset blob(fl::lib::getTmpPath("data.blob"), true, true);
+    FileBlobDataset blob(fs::temp_directory_path() / "data.blob", true, true);
     fillup(blob);
     check(blob);
     fillup(blob);
@@ -240,7 +240,8 @@ TEST(DatasetTest, FileBlobDataset) {
     blob.writeIndex();
     check(blob);
 
-    FileBlobDataset blobcopy(fl::lib::getTmpPath("data-copy.blob"), true, true);
+    FileBlobDataset blobcopy(
+        fs::temp_directory_path() / "data-copy.blob", true, true);
     blobcopy.add(blob);
     blobcopy.add(blob, 1048576);
     auto datadup = data;
@@ -274,15 +275,15 @@ TEST(DatasetTest, FileBlobDataset) {
 
   // check everything is correct after re-opening
   {
-    FileBlobDataset blob(fl::lib::getTmpPath("data.blob"));
+    FileBlobDataset blob(fs::temp_directory_path() / "data.blob");
     check(blob);
   }
 
   // multi-threaded read
   {
     std::vector<std::vector<af::array>> thdata(data.size());
-    auto blob =
-        std::make_shared<FileBlobDataset>(fl::lib::getTmpPath("data.blob"));
+    auto blob = std::make_shared<FileBlobDataset>(
+        fs::temp_directory_path() / "data.blob");
     std::vector<std::thread> workers;
     const int nworker = 4;
     int nperworker = data.size() / nworker;
@@ -321,7 +322,7 @@ TEST(DatasetTest, FileBlobDataset) {
     }
     {
       auto blob = std::make_shared<FileBlobDataset>(
-          fl::lib::getTmpPath("data.blob"), true, true);
+          fs::temp_directory_path() / "data.blob", true, true);
       std::vector<std::thread> workers;
       const int nworker = 10;
       int nperworker = data.size() / nworker;
@@ -340,8 +341,8 @@ TEST(DatasetTest, FileBlobDataset) {
       blob->writeIndex();
     }
     {
-      auto blob =
-          std::make_shared<FileBlobDataset>(fl::lib::getTmpPath("data.blob"));
+      auto blob = std::make_shared<FileBlobDataset>(
+          fs::temp_directory_path() / "data.blob");
       ASSERT_EQ(data.size(), blob->size());
       for (int64_t i = 0; i < data.size(); i++) {
         auto blobSample = blob->get(i);

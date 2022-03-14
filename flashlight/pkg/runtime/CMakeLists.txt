@@ -42,6 +42,7 @@ target_link_libraries(
   ${GLOG_LIBRARIES}
   ${gflags_LIBRARIES}
   flashlight
+  fl_lib_common
 )
 
 target_include_directories(

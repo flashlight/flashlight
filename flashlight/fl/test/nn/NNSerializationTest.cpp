@@ -15,9 +15,9 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/fl/autograd/autograd.h"
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/nn/nn.h"
-#include "flashlight/lib/common/System.h"
 
 using namespace fl;
 
@@ -38,7 +38,8 @@ class ContainerTestClass : public Sequential {
 auto filesizebytes = []() {
   struct stat fileStat;
 
-  auto fd = open(fl::lib::getTmpPath("FileSize.txt").c_str(), O_RDONLY);
+  auto fd =
+      open((fs::temp_directory_path() / "FileSize.txt").c_str(), O_RDONLY);
   fstat(fd, &fileStat);
   return static_cast<int64_t>(fileStat.st_size);
 };
@@ -92,7 +93,7 @@ TEST(NNSerializationTest, Linear) {
   auto in = input(af::randu(3, 2));
   auto lin = std::make_shared<Linear>(wt, bs);
 
-  const std::string path = fl::lib::getTmpPath("Linear.mdl");
+  const fs::path path = fs::temp_directory_path() / "Linear.mdl";
   save(path, lin);
 
   std::shared_ptr<Linear> lin2;
@@ -109,7 +110,7 @@ TEST(NNSerializationTest, Conv2D) {
   auto in = input(af::randu(25, 25, 2, 5));
   auto conv = std::make_shared<Conv2D>(wt, bs);
 
-  const std::string path = fl::lib::getTmpPath("Conv2D.mdl");
+  const fs::path path = fs::temp_directory_path() / "Conv2D.mdl";
   save(path, conv);
 
   std::shared_ptr<Conv2D> conv2;
@@ -124,7 +125,7 @@ TEST(NNSerializationTest, Pool2D) {
   auto in = input(af::randu(8, 8));
   auto pool = std::make_shared<Pool2D>(2, 3, 1, 1, 1, 1, PoolingMode::MAX);
 
-  const std::string path = fl::lib::getTmpPath("Pool2D.mdl");
+  const fs::path path = fs::temp_directory_path() / "Pool2D.mdl";
   save(path, pool);
 
   std::shared_ptr<Pool2D> pool2;
@@ -139,7 +140,7 @@ TEST(NNSerializationTest, BaseModule) {
   auto in = input(af::randu(8, 8));
   ModulePtr dout = std::make_shared<Dropout>(0.75);
 
-  const std::string path = fl::lib::getTmpPath("BaseModule.mdl");
+  const fs::path path = fs::temp_directory_path() / "BaseModule.mdl";
   save(path, dout);
 
   ModulePtr dout2;
@@ -157,7 +158,7 @@ TEST(NNSerializationTest, PrecisionCast) {
   auto in = input(af::randu({8, 8}));
   auto precisionCast = std::make_shared<PrecisionCast>(af::dtype::f16);
 
-  const std::string path = fl::lib::getTmpPath("PrecisionCast.mdl");
+  const fs::path path = fs::temp_directory_path() / "PrecisionCast.mdl";
   save(path, precisionCast);
 
   std::shared_ptr<PrecisionCast> precisionCast2;
@@ -172,7 +173,7 @@ TEST(NNSerializationTest, WeightNormLinear) {
   auto in = input(af::randn(2, 10, 1, 1));
   auto wlin = std::make_shared<WeightNorm>(Linear(2, 3), 0);
 
-  const std::string path = fl::lib::getTmpPath("WeightNormLinear.mdl");
+  const fs::path path = fs::temp_directory_path() / "WeightNormLinear.mdl";
   save(path, wlin);
 
   std::shared_ptr<WeightNorm> wlin2;
@@ -205,7 +206,7 @@ TEST(NNSerializationTest, AdaptiveSoftMaxLoss) {
   auto activation = std::make_shared<AdaptiveSoftMax>(5, cutoff);
   auto asml = std::make_shared<AdaptiveSoftMaxLoss>(activation);
 
-  const std::string path = fl::lib::getTmpPath("AdaptiveSoftMaxLoss.mdl");
+  const fs::path path = fs::temp_directory_path() / "AdaptiveSoftMaxLoss.mdl";
   save(path, asml);
 
   std::shared_ptr<AdaptiveSoftMaxLoss> asml2;
@@ -285,7 +286,7 @@ TEST(NNSerializationTest, LeNet) {
 
   leNet->add(Linear(84, 10));
 
-  const std::string path = fl::lib::getTmpPath("LeNet.mdl");
+  const fs::path path = fs::temp_directory_path() / "LeNet.mdl";
   save(path, leNet);
 
   std::shared_ptr<Sequential> leNet2;
@@ -302,7 +303,7 @@ TEST(NNSerializationTest, LeNet) {
 TEST(NNSerializationTest, FileSize) {
   auto conv = std::make_shared<Conv2D>(300, 600, 10, 10);
 
-  const std::string path = fl::lib::getTmpPath("FileSize.txt");
+  const fs::path path = fs::temp_directory_path() / "FileSize.txt";
   save(path, conv);
   ASSERT_LT(filesizebytes(), paramsizebytes(conv->params()) * kThreshold);
 
@@ -323,7 +324,7 @@ TEST(NNSerializationTest, VariableTwice) {
   Variable v(af::array(1000, 1000), false);
   auto v2 = v; // The array for this variable shouldn't be saved again
 
-  const std::string path = fl::lib::getTmpPath("ContainerWithParams.mdl");
+  const fs::path path = fs::temp_directory_path() / "ContainerWithParams.mdl";
   save(path, v2, v);
 
   struct stat fileStat;
@@ -339,7 +340,7 @@ TEST(NNSerializationTest, ContainerBackward) {
   seq->add(ReLU());
   seq->add(Linear(20, 30));
 
-  const std::string path = fl::lib::getTmpPath("ContainerBackward.mdl");
+  const fs::path path = fs::temp_directory_path() / "ContainerBackward.mdl";
   save(path, static_cast<ModulePtr>(seq));
 
   ModulePtr seq2;
@@ -362,7 +363,7 @@ TEST(NNSerializationTest, ContainerWithParams) {
   seq->add(Linear(20, 30));
   seq->addParam(Variable(af::randu(5, 5), true));
 
-  const std::string path = fl::lib::getTmpPath("ContainerWithParams.mdl");
+  const fs::path path = fs::temp_directory_path() / "ContainerWithParams.mdl";
   save(path, static_cast<ModulePtr>(seq));
 
   ModulePtr seq2;

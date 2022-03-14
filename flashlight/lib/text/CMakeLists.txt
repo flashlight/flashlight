@@ -5,7 +5,7 @@ add_library(
   ""
   )
 
-set(INSTALLABLE_TARGETS ${INSTALLABLE_TARGETS} fl_lib_text)
+list(APPEND INSTALLABLE_TARGETS${INSTALLABLE_TARGETS} fl_lib_text)
 
 target_include_directories(
   fl_lib_text
