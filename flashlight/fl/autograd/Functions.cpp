@@ -406,7 +406,7 @@ Variable clamp(const Variable& input, const double lo, const double hi) {
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
     af::array gradMask = gradOutput.array();
-    replace(gradMask, (result > lo) && (result < hi), 0);
+    replace(gradMask, (result > lo) && (result < hi), 0LL);
     inputs[0].addGrad(Variable(gradMask, false));
   };
   return Variable(result, {input.withoutData()}, gradFunc);
