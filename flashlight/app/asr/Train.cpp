@@ -47,7 +47,6 @@ using fl::lib::fileExists;
 using fl::lib::format;
 using fl::lib::getCurrentDate;
 using fl::lib::join;
-using fl::lib::pathsConcat;
 
 using namespace fl::pkg::speech;
 

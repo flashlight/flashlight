@@ -14,7 +14,6 @@
 
 // TODO: remove me once no more `af::eval` calls
 #include <af/array.h>
-#include <af/device.h>
 #include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
 
 namespace fl {

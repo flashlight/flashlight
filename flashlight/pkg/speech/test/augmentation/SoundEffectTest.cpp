@@ -14,7 +14,6 @@
 
 using namespace ::fl::pkg::speech::sfx;
 using ::testing::AllOf;
-using ::testing::Contains;
 using ::testing::Each;
 using ::testing::Ge;
 using ::testing::Le;

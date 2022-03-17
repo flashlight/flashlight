@@ -14,13 +14,11 @@
 
 #include "flashlight/pkg/vision/dataset/BoxUtils.h"
 #include "flashlight/pkg/vision/dataset/CocoTransforms.h"
-#include "flashlight/pkg/vision/dataset/Transforms.h"
 #include "flashlight/pkg/vision/dataset/DistributedDataset.h"
 #include "flashlight/pkg/vision/dataset/LoaderDataset.h"
 
 namespace {
 
-using namespace fl::pkg::vision;
 using namespace fl::pkg::vision;
 using namespace fl;
 

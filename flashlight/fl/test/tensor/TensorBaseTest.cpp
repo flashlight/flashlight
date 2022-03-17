@@ -17,7 +17,6 @@
 #include "flashlight/fl/tensor/Random.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
-using namespace ::testing;
 using namespace fl;
 
 TEST(TensorBaseTest, DefaultBackend) {

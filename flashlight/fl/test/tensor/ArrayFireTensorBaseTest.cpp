@@ -17,7 +17,6 @@
 #include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
 #include "flashlight/fl/tensor/backend/af/Utils.h"
 
-using namespace ::testing;
 using namespace fl;
 
 namespace {
@@ -52,7 +51,6 @@ TEST(ArrayFireTensorBaseTest, ArrayFireShapeInterop) {
   ASSERT_EQ(detail::afToFlDims(af::dim4(1, 0, 2), 3), Shape({1, 0, 2}));
   ASSERT_EQ(detail::afToFlDims(af::dim4(0, 1, 1, 1), 4), Shape({0, 1, 1, 1}));
 
-  using namespace fl::detail;
   auto dimsEq = [](const af::dim4& d, const Shape& s) {
     return detail::afToFlDims(d, s.ndim()) == s;
   };

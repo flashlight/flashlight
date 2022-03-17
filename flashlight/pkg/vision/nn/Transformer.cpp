@@ -9,7 +9,6 @@
 
 #include "flashlight/fl/nn/nn.h"
 
-using namespace fl;
 
 namespace {
 

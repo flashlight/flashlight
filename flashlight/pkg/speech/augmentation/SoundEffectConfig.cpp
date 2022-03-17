@@ -15,7 +15,6 @@
 #include <cereal/types/vector.hpp>
 #include <glog/logging.h>
 
-#include "flashlight/pkg/speech/augmentation/SoundEffectUtil.h"
 #include "flashlight/lib/common/System.h"
 
 using namespace ::fl::pkg::speech::sfx;

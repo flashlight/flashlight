@@ -19,7 +19,6 @@ using ::fl::pkg::speech::saveSound;
 using ::fl::lib::dirCreateRecursive;
 using ::fl::lib::getTmpPath;
 using ::fl::lib::pathsConcat;
-using ::testing::Pointwise;
 
 const size_t sampleRate = 16000;
 

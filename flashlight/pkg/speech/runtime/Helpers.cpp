@@ -22,13 +22,8 @@
 
 using fl::pkg::runtime::afToVector;
 using fl::lib::format;
-using fl::lib::getCurrentDate;
-using fl::lib::getCurrentTime;
-using fl::lib::getEnvVar;
 using fl::lib::pathsConcat;
 using fl::lib::replaceAll;
-using fl::lib::text::DictionaryMap;
-using fl::lib::text::LexiconMap;
 
 namespace fl {
 namespace pkg {

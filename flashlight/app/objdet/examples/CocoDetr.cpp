@@ -29,7 +29,6 @@
 
 using namespace fl;
 using namespace fl::pkg::vision;
-using namespace fl::pkg::vision;
 using namespace fl::app::objdet;
 
 using fl::pkg::runtime::getRunFile;

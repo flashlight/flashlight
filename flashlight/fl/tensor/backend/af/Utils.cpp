@@ -243,7 +243,6 @@ af::array fromFlData(
     return af::array(dims, afType);
   }
 
-  using af::dtype;
   switch (afType) {
     case f32:
       return af::array(dims, reinterpret_cast<const float*>(ptr), loc);

@@ -12,7 +12,6 @@
 
 #include "flashlight/fl/tensor/Shape.h"
 
-using namespace ::testing;
 using namespace fl;
 
 TEST(ShapeTest, Basic) {

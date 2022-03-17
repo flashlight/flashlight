@@ -16,7 +16,6 @@
 #include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/fl/tensor/TensorExtension.h"
 
-using namespace ::testing;
 using namespace fl;
 
 // Extension interface

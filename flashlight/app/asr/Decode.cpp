@@ -47,7 +47,6 @@ using fl::lib::join;
 using fl::lib::pathsConcat;
 using fl::lib::text::CriterionType;
 using fl::lib::text::kUnkToken;
-using fl::lib::text::SmearingMode;
 
 using namespace fl::pkg::speech;
 

@@ -15,7 +15,6 @@
 
 #include "flashlight/pkg/vision/dataset/BoxUtils.h"
 #include "flashlight/fl/autograd/autograd.h"
-#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/distributed/DistributedApi.h"
 
 namespace {

@@ -16,7 +16,6 @@
 #include <glog/logging.h>
 #include <sox.h>
 
-#include "flashlight/pkg/speech/data/Sound.h"
 #include "flashlight/fl/common/Logging.h"
 
 namespace fl {
