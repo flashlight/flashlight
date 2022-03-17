@@ -21,7 +21,6 @@
 #include <vector>
 
 #include "flashlight/fl/flashlight.h"
-#include "flashlight/lib/common/System.h"
 
 using namespace fl;
 
@@ -41,9 +40,9 @@ class ClassificationDataset : public Dataset {
   unsigned totalExamples = 0;
 
   // read the folder/lang.txt file and register the examples in the datasets map
-  void read(const std::string folder, const std::string& lang) {
-    std::cout << "Opening " << folder << "/" << lang << ".txt ..." << std::endl;
-    auto fp = lib::pathsConcat(folder, lang + ".txt");
+  void read(const fs::path folder, const std::string& lang) {
+    auto fp = folder / (lang + ".txt");
+    std::cout << "Opening " << fp << std::endl;
     std::ifstream file(fp);
     if (!file.is_open()) {
       throw std::runtime_error("Can't open the input dataset file");
@@ -73,7 +72,7 @@ class ClassificationDataset : public Dataset {
     return af::array(1, d.size(), d.data());
   }
 
-  ClassificationDataset(const std::string datasetPath) {
+  ClassificationDataset(const fs::path datasetPath) {
     // As found in the dataset folder:
     std::vector<std::string> lang = {
         "Arabic",
@@ -233,7 +232,7 @@ int main(int argc, char** argv) {
     std::cout << "./RnnClassification data/names" << std::endl;
     return 0;
   }
-  std::string dataDir = argv[1];
+  fs::path dataDir = argv[1];
 
   // To reproduce the pytorch tutorial, the dataset is not split in
   // train/dev/test sub datasets but random samples are simply picked from the

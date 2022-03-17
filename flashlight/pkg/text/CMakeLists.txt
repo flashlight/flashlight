@@ -10,6 +10,7 @@ target_link_libraries(
   PUBLIC
   flashlight
   fl_lib_text
+  fl_lib_common
   )
 # ------------------------ Components ------------------------
 

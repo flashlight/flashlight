@@ -12,10 +12,10 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/fl/autograd/autograd.h"
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/contrib/modules/modules.h"
 #include "flashlight/fl/nn/nn.h"
-#include "flashlight/lib/common/System.h"
 
 using namespace fl;
 
@@ -25,7 +25,7 @@ TEST(SerializationTest, Residual) {
   model->add(Linear(6, 6));
   model->add(ReLU());
   model->addShortcut(1, 3);
-  const std::string path = fl::lib::getTmpPath("Residual.mdl");
+  const fs::path path = fs::temp_directory_path() / "Residual.mdl";
   save(path, model);
 
   std::shared_ptr<Residual> loaded;
@@ -43,7 +43,7 @@ TEST(SerializationTest, AsymmetricConv1D) {
   int c = 32;
   auto model = std::make_shared<AsymmetricConv1D>(c, c, 5, 1, -1, 0, 1);
 
-  const std::string path = fl::lib::getTmpPath("AsymmetricConv1D.mdl");
+  const fs::path path = fs::temp_directory_path() / "AsymmetricConv1D.mdl";
   save(path, model);
 
   std::shared_ptr<AsymmetricConv1D> loaded;
@@ -67,7 +67,7 @@ TEST(SerializationTest, Transformer) {
       c, c / nheads, c, nheads, timesteps, 0.2, 0.1, false, false);
   model->eval();
 
-  const std::string path = fl::lib::getTmpPath("Transformer.mdl");
+  const fs::path path = fs::temp_directory_path() / "Transformer.mdl";
   save(path, model);
 
   std::shared_ptr<Transformer> loaded;
@@ -92,7 +92,7 @@ TEST(SerializationTest, ConformerSerialization) {
       c, c / nheads, c, nheads, timesteps, 33, 0.2, 0.1);
   model->eval();
 
-  const std::string path = fl::lib::getTmpPath("Conformer.mdl");
+  const fs::path path = fs::temp_directory_path() / "Conformer.mdl";
   save(path, model);
 
   std::shared_ptr<Conformer> loaded;
@@ -111,7 +111,7 @@ TEST(SerializationTest, PositionEmbedding) {
   auto model = std::make_shared<PositionEmbedding>(128, 100, 0.1);
   model->eval();
 
-  const std::string path = fl::lib::getTmpPath("PositionEmbedding.mdl");
+  const fs::path path = fs::temp_directory_path() / "PositionEmbedding.mdl";
   save(path, model);
 
   std::shared_ptr<PositionEmbedding> loaded;
@@ -129,8 +129,8 @@ TEST(SerializationTest, PositionEmbedding) {
 TEST(SerializationTest, SinusoidalPositionEmbedding) {
   auto model = std::make_shared<SinusoidalPositionEmbedding>(128, 2.);
 
-  const std::string path =
-      fl::lib::getTmpPath("SinusoidalPositionEmbedding.mdl");
+  const fs::path path =
+      fs::temp_directory_path() / "SinusoidalPositionEmbedding.mdl";
   save(path, model);
 
   std::shared_ptr<SinusoidalPositionEmbedding> loaded;
@@ -148,7 +148,7 @@ TEST(SerializationTest, AdaptiveEmbedding) {
   std::vector<int> cutoff = {5, 10, 25};
   auto model = std::make_shared<AdaptiveEmbedding>(128, cutoff);
 
-  const std::string path = fl::lib::getTmpPath("AdaptiveEmbedding.mdl");
+  const fs::path path = fs::temp_directory_path() / "AdaptiveEmbedding.mdl";
   save(path, model);
 
   std::shared_ptr<AdaptiveEmbedding> loaded;
@@ -168,7 +168,7 @@ TEST(SerializationTest, RawWavSpecAugment) {
       0, 1, 1, 0, 0, 0, 1, 2000, 6000, 16000, 20000);
   model->eval();
 
-  const std::string path = fl::lib::getTmpPath("RawWavSpecAugment.mdl");
+  const fs::path path = fs::temp_directory_path() / "RawWavSpecAugment.mdl";
   save(path, model);
 
   std::shared_ptr<RawWavSpecAugment> loaded;

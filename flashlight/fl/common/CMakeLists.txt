@@ -40,6 +40,11 @@ target_link_libraries(
   ${CMAKE_DL_LIBS} # for plugin
 )
 
+# Remove this when requiring gcc >= 9
+find_package(Filesystem REQUIRED COMPONENTS Final Experimental)
+setup_install_find_module(${CMAKE_MODULE_PATH}/FindFilesystem.cmake)
+target_link_libraries(flashlight PUBLIC std::filesystem)
+
 if (FL_USE_CUDA)
   # Try to find NVTX
   find_library(CUDA_NVTX_LIBRARIES
