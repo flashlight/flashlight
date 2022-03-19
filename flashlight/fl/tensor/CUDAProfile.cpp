@@ -5,12 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/fl/common/Profile.h"
+#include "flashlight/fl/tensor/Profile.h"
 
 #include <cuda_profiler_api.h>
 #include <nvToolsExt.h>
 
-#include "flashlight/fl/common/backend/cuda/CudaUtils.h"
+#include "flashlight/fl/tensor/CUDAUtils.h"
 
 namespace fl {
 namespace detail {
