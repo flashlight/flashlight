@@ -7,9 +7,11 @@
 
 #pragma once
 
-#include <arrayfire.h>
+#include <cstdint>
 
 namespace fl {
+
+class Tensor;
 
 /** An implementation of mean square error meter, which measures the mean square
  * error between targets and predictions made by the model.
@@ -37,7 +39,7 @@ class MSEMeter {
    * `target` and updates the counters. Note that the shape of the two input
    * arrays should be identical.
    */
-  void add(const af::array& output, const af::array& target);
+  void add(const Tensor& output, const Tensor& target);
 
   /** Returns a single value of mean square error. */
   double value() const;
