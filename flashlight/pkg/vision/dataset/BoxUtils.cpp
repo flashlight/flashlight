@@ -7,7 +7,6 @@
 
 #include "flashlight/pkg/vision/dataset/BoxUtils.h"
 
-#include <arrayfire.h>
 #include <assert.h>
 #include <stdexcept>
 #include <tuple>
@@ -21,25 +20,23 @@ namespace pkg {
 namespace vision {
 
 Tensor cxcywh2xyxy(const Tensor& bboxes) {
-  auto transformed = fl::full({4, bboxes.dim(1)}, 0);
   auto xc = bboxes(fl::range(0, 0));
   auto yc = bboxes(fl::range(1, 1));
   auto w = bboxes(fl::range(2, 2));
   auto h = bboxes(fl::range(3, 3));
-  transformed = fl::concatenate(
+
+  return fl::concatenate(
       0, xc - 0.5 * w, yc - 0.5 * h, xc + 0.5 * w, yc + 0.5 * h);
-  return transformed;
 }
 
 fl::Variable cxcywh2xyxy(const Variable& bboxes) {
-  auto transformed = Variable(fl::full({4, bboxes.dims(1)}, 0), true);
   auto xc = bboxes(fl::range(0, 0));
   auto yc = bboxes(fl::range(1, 1));
   auto w = bboxes(fl::range(2, 2));
   auto h = bboxes(fl::range(3, 3));
-  transformed = fl::concatenate(
+
+  return fl::concatenate(
       {xc - 0.5 * w, yc - 0.5 * h, xc + 0.5 * w, yc + 0.5 * h}, 0);
-  return transformed;
 }
 
 Tensor xyxy2cxcywh(const Tensor& bboxes) {
@@ -164,9 +161,11 @@ std::tuple<fl::Variable, fl::Variable> boxIou(
     const fl::Variable& bboxes1,
     const fl::Variable& bboxes2) {
   if (bboxes1.numdims() != 3 || bboxes2.numdims() != 3) {
-    throw std::invalid_argument(
-        "vision::boxIou - bbox inputs must be of shape "
-        "[4, N, B] and [4, M, B]");
+    std::stringstream ss;
+    ss << "vision::boxIou - bbox inputs must be of shape "
+          "[4, N, B] and [4, M, B]. Got boxes with dimensions "
+       << bboxes1.dims() << " and " << bboxes2.dims();
+    throw std::invalid_argument(ss.str());
   }
   auto area1 = boxArea(bboxes1);
   auto area2 = boxArea(bboxes2);
@@ -190,6 +189,7 @@ fl::Variable generalizedBoxIou(
                               bboxes1.tensor()(fl::range(2, 4)) >=
                               bboxes1.tensor()(fl::range(0, 2))))
              .scalar<uint32_t>());
+
   assert(fl::countNonzero(fl::all(
                               bboxes2.tensor()(fl::range(2, 4)) >=
                               bboxes2.tensor()(fl::range(0, 2))))

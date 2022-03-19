@@ -7,6 +7,7 @@
 
 #include "flashlight/pkg/vision/dataset/BoxUtils.h"
 #include "flashlight/fl/tensor/Index.h"
+#include "flashlight/fl/tensor/Init.h"
 
 #include <gtest/gtest.h>
 
@@ -154,4 +155,10 @@ TEST(BoxUtils, GIOU) {
   fl::Variable result = generalizedBoxIou(predArr, labelArr);
   EXPECT_LT(
       result(0, 0).tensor().scalar<float>(), result(1, 0).scalar<float>());
+}
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
+  return RUN_ALL_TESTS();
 }
