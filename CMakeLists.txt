@@ -56,7 +56,7 @@ option(FL_BUILD_STANDALONE "Build standalone installation" ON)
 # Flashlight backend
 set(FL_BACKEND "CUDA" CACHE STRING "Backend with which to build flashlight")
 # Select from exactly one backend
-set_property(CACHE FL_BACKEND PROPERTY STRINGS CPU CUDA OPENCL)
+set_property(CACHE FL_BACKEND PROPERTY STRINGS CPU CUDA) # OPENCL -- TODO: restore
 # Map to flags
 set(FL_USE_CPU OFF)
 set(FL_USE_CUDA OFF)
@@ -65,8 +65,8 @@ if (FL_BACKEND STREQUAL "CPU")
   set(FL_USE_CPU ON)
 elseif (FL_BACKEND STREQUAL "CUDA")
   set(FL_USE_CUDA ON)
-elseif (FL_BACKEND STREQUAL "OPENCL")
-  set(FL_USE_OPENCL ON)
+# elseif (FL_BACKEND STREQUAL "OPENCL")
+#   set(FL_USE_OPENCL ON)
 else ()
   message(FATAL_ERROR "Invalid FL_BACKEND specified")
 endif ()
