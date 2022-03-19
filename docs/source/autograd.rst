@@ -1,17 +1,19 @@
 Introduction to Autograd
 ========================
 
-This tutorial gives a brief overview of ``Variable`` and ``Functions``, the core components flashlight's automatic differentiation system. We recommend reading ArrayFire's `Getting Started <http://arrayfire.org/docs/gettingstarted.htm>`_ section before starting this tutorial so that you are familiar with ArrayFire's syntax and API.
+This tutorial gives a brief overview of ``Variable`` and ``Functions``, the core components Flashlight's automatic differentiation system. We recommend reading numpy's `Tutorial <https://>`_ or ArrayFire's `Getting Started <http://arrayfire.org/docs/gettingstarted.htm>`_ section before starting this tutorial so that you are familiar with Flashlight's flavor of Tensor computation.
 
 Variable
 --------
 
-``Variable`` is a wrapper around an ArrayFire ``array``. flashlight's automatic differentiation system works with ``Variable`` directly.
+``Variable`` is a wrapper around an Flashlight ``Tensor``. Flashlight's automatic differentiation system works with ``Variable`` directly.
 
 ::
 
-  auto A = fl::Variable(af::range(1.0, af::dim4(2, 3)), true /* isCalcGrad */);
-  af::print("A", A.array()); // get the underlying array from a Variable
+  auto A = fl::Variable(
+    fl::arange({2, 3}, 1, fl::dtype::f32)), true /* isCalcGrad */);
+  // get the underlying tensor from a Variable
+  std::cout << "A" << A.tensor() << std::endl;
   // A
   // [2 3 1 1]
   //    0.0000     0.0000     0.0000
@@ -34,17 +36,17 @@ want to compute the gradient for a ``Variable``.
 
 
 The figure above details the high-level design of ``Variable``. ``SharedData`` and
-``SharedGrad`` are shared pointer members of ``Variable``. ``SharedData`` points to the underlying ArrayFire ``array``, while ``SharedGrad`` stores gradients with respect to other ``Variable``. The additional members facilitate a simple differentiation API which is discussed in the following sections.
+``SharedGrad`` are shared pointer members of ``Variable``. ``SharedData`` points to the underlying Flashlight ``Tensor``, while ``SharedGrad`` stores gradients with respect to other ``Variable``. The additional members facilitate a simple differentiation API which is discussed in the following sections.
 
 It should be noted that copying a ``Variable`` creates a shallow copy; both objects will still
-refer to the same underlying ArrayFire ``array``.
+refer to the same underlying Flashlight ``Tensor``.
 
 ::
 
-  auto a = fl::Variable(af::randu(10, 10), false /* isCalcGrad */);
+  auto a = fl::Variable(fl::rand({10, 10}), false /* isCalcGrad */);
   auto b = a; // shallow copy!
-  a.array() = af::constant(2.0, 3, 2);
-  af::print("b", b.array()); // The array wrapped the variable 'b' is also modified
+  a.tensor() = fl::full({3, 2}, 2.0);
+  std::cout << "b" << b.tensor() << std::endl; // The Tensor wrapped the variable 'b' is also modified
   b
   [3 2 1 1]
       2.0000     2.0000
@@ -56,22 +58,23 @@ Complete documentation for the ``Variable`` API can be found :ref:`here<variable
 Functions
 ---------
 
-Similar to ArrayFire arrays, ``Variable`` can be used to perform array operations directly.
+Similar to Flashlight Tensors, ``Variable`` can be used to perform Tensor operations directly.
 
 ::
 
-  auto var = fl::Variable(af::range(1.0, af::dim4(2, 3)), true /* isCalcGrad */);
+  auto var = fl::Variable(
+    fl::arange({2, 3}, 1, fl::dtype::f32), true /* isCalcGrad */);
   auto expVar = exp(var);
-  af::print("expVar", expVar.array());
+  std::cout << "expVar" << expVar.tensor() << std::endl;;
   // expVar
   // [2 3 1 1]
   //    1.0000     1.0000     1.0000
   //    2.7183     2.7183     2.7183
 
-  auto A = fl::Variable(af::constant(1.0, af::dim4(2, 3)), true /* isCalcGrad */);
-  auto B = fl::Variable(af::constant(2.0, af::dim4(2, 3)), false /* isCalcGrad */);
+  auto A = fl::Variable(fl::full({2, 3}, 1.0), true /* isCalcGrad */);
+  auto B = fl::Variable(fl::full({2, 3}, 2.0), false /* isCalcGrad */);
   auto AB = A * B;
-  af::print("AB", AB.array());
+  std::cout << "AB" << AB.tensor() << std::endl;
   // AB
   // [2 3 1 1]
   //    2.0000     2.0000     2.0000
@@ -90,8 +93,9 @@ To recursively compute the gradient of a ``Variable`` with respect to all of its
 ::
 
   expVar.backward();
-  af::print("expVarGrad", expVar.grad().array()); // expVar.grad() is a Variable
-  af::print("varGrad", var.grad().array());
+  // expVar.grad() and varGrad are Variables
+  std::cout << "expVarGrad" << expVar.grad().tensor() << std::endl;
+  std::cout << "varGrad" << var.grad().tensor() << std::endl;
   // expVarGrad
   // [2 3 1 1]
   //     1.0000     1.0000     1.0000
@@ -103,8 +107,8 @@ To recursively compute the gradient of a ``Variable`` with respect to all of its
   //     2.7183     2.7183     2.7183
 
   AB.backward();
-  af::print("ABGrad", AB.grad().array());
-  af::print("AGrad", A.grad().array());
+  std::cout << "ABGrad" << AB.grad().tensor() << std::endl;
+  std::cout << "AGrad" << A.grad().tensor() << std::endl;
   // ABGrad
   // [2 3 1 1]
   //     1.0000     1.0000     1.0000
@@ -123,15 +127,18 @@ To recursively compute the gradient of a ``Variable`` with respect to all of its
 Various Optimizations
 ---------------------
 
-JIT Compiler
-############
+ArrayFire's JIT Compiler
+########################
+
+.. note::
+  This section is only applicable if using Flashlight's ArrayFire backend.
 
 ArrayFire uses a JIT compiler to combine many small function calls into a single kernel call. Below is a simple example:
 
 ::
 
   auto A = fl::Variable(
-      af::randu(1000, 1000), true); // 'A' is allocated, Total Memory: 4 MB
+      fl::rand({1000, 1000}), true); // 'A' is allocated, Total Memory: 4 MB
   auto B = 2.0 * A; // 'B' is not allocated, Total Memory : 4 MB
   auto C = 1.0 + B; // 'C' is not allocated, Total Memory :  4 MB
   auto D = log(C); // 'D' is not allocated (yet), Total Memory :  4 MB
@@ -140,16 +147,19 @@ ArrayFire uses a JIT compiler to combine many small function calls into a single
 
 The JIT both improves performance and reduces memory usage. For further documentation, see docs for the `ArrayFire JIT <https://arrayfire.com/performance-improvements-to-jit-in-arrayfire-v3-4/>`_.
 
-In-Place Operations and More
-############################
+In-Place Operations and More with ArrayFire
+###########################################
+
+.. note::
+  This section is only applicable if using Flashlight's ArrayFire backend.
 
 Since the flashlight uses ``shared_ptr`` semantics for storing its internal ArrayFire array, any
 array is automatically deleted when the Variable goes out of scope.
 
 ::
 
-  auto A = fl::Variable(af::randu(1000, 1000), false); // Total Memory: 4 MB
-  auto B = fl::Variable(af::randu(1000, 1000), false); // Total Memory: 8 MB
+  auto A = fl::Variable(fl::rand({1000, 1000}), false); // Total Memory: 4 MB
+  auto B = fl::Variable(fl::rand({1000, 1000}), false); // Total Memory: 8 MB
   auto C =  fl::transpose(A); // Total Memory: 12 MB
   C = fl::matmul(C, fl::transpose(B)); // Total Memory: 12 MB. Previous 'C' goes out of scope
 
@@ -158,7 +168,7 @@ We have carefully optimized memory usage for forward and backward passes over th
 ::
 
   // Note calcGrad is set to true here. Total Memory: 4 MB
-  auto A = fl::Variable(af::randu(1000, 1000), true);
+  auto A = fl::Variable(fl::rand({1000, 1000}), true);
 
   // Intermediate arrays are not stored. Total Memory: 8 MB
   auto C =  fl::transpose(fl::transpose(A));
@@ -171,8 +181,8 @@ which is ``false`` by default. When the argument is ``false``, each `Variable` t
 
 ::
 
-  auto A = fl::Variable(af::randu(1000, 1000), true);
-  auto B = fl::Variable(af::randu(1000, 1000), true);
+  auto A = fl::Variable(fl::rand({1000, 1000}), true);
+  auto B = fl::Variable(fl::rand({1000, 1000}), true);
   auto C = fl::matmul(A, B);
   C = fl::transpose(C);
   C = 1.0 + C;

@@ -22,15 +22,16 @@
 
 
 Flashlight is a fast, flexible machine learning library written entirely in C++
-from the Facebook AI Research Speech team and the creators of Torch and
+from the Facebook AI Research and the creators of Torch, TensorFlow, Eigen and
 Deep Speech. Its core features include:
-- Just-in-time kernel compilation with modern C++ with the [ArrayFire](https://github.com/arrayfire/arrayfire)
+- **Modifiability to the core** including [internal APIs for tensor computation](flashlight/fl/tensor/README.md).
+- **A small footprint**, with the core clocking in at under 10 MB and 20k lines of C++.
+- **High-performance defaults** featuring fust-in-time kernel compilation with modern C++ via the [*ArrayFire*](https://github.com/arrayfire/arrayfire)
 tensor library.
-- CUDA and CPU backends for GPU and CPU training.
 - An emphasis on efficiency and scale.
 
-Native support in C++ and simple extensibility makes Flashlight a powerful research framework that's *hackable to its core* and enables fast iteration on new experimental setups and algorithms without sacrificing performance. In a single repository, Flashlight provides [apps](https://github.com/flashlight/flashlight/tree/master/flashlight/app) for research across multiple domains:
-- [Automatic speech recognition](https://github.com/flashlight/flashlight/tree/master/flashlight/app/asr) (the [wav2letter](https://github.com/flashlight/wav2letter/) project) — [Documentation](flashlight/app/asr) | [Tutorial](flashlight/app/asr/tutorial)
+Native support in C++ and simple extensibility makes Flashlight a powerful research framework that's *hackable to its core* and enables fast iteration on new experimental setups and algorithms with little unopinionation and without sacrificing performance. In a single repository, Flashlight provides [apps](https://github.com/flashlight/flashlight/tree/master/flashlight/app) for research across multiple domains:
+- [Automatic speech recognition](https://github.com/flashlight/flashlight/tree/master/flashlight/app/asr) (formerly [wav2letter](https://github.com/flashlight/wav2letter/) project) — [Documentation](flashlight/app/asr) | [Tutorial](flashlight/app/asr/tutorial)
 - [Image classification](flashlight/app/imgclass)
 - [Object detection](flashlight/app/objdet)
 - [Language modeling](flashlight/app/lm)
@@ -40,9 +41,9 @@ Native support in C++ and simple extensibility makes Flashlight a powerful resea
 
 Flashlight is broken down into a few parts:
 - [**`flashlight/lib`**](flashlight/lib) contains kernels and standalone utilities for sequence losses, beam search decoding, text processing, and more.
-- [**`flashlight/fl`**](flashlight/fl) is the core neural network library using the [ArrayFire](https://github.com/arrayfire/arrayfire) tensor library.
+- [**`flashlight/fl`**](flashlight/fl) is the core tensor interface and neural network library using the [ArrayFire](https://github.com/arrayfire/arrayfire) tensor library by default.
+- [**`flashlight/pkg`**](flashlight/pkg) are domain packages for speech, vision, and text built on the core.
 - [**`flashlight/app`**](flashlight/app) are applications of the core library to machine learning across domains.
-- [**`flashlight/pkg**](flashlight/pkg) are packages built on top of Flashlight and ArrayFire for specific purposes (Domain libraries for speech, vision, and text, and Halide extensions).
 
 ## Quickstart
 
@@ -57,7 +58,7 @@ First, [build and install Flashlight](#building-and-installing) and [link it to 
 
 Sequential model;
 
-model.add(View(af::dim4(IM_DIM, IM_DIM, 1, -1)));
+model.add(View(fl::Shape({IM_DIM, IM_DIM, 1, -1})));
 model.add(Conv2D(
     1 /* input channels */,
     32 /* output channels */,
@@ -73,10 +74,10 @@ model.add(Pool2D(
     2 /* kernel height */,
     2 /* stride x */,
     2 /* stride y */));
-model.add(Conv2D(32, 64, 5, 5, 1, 1, PaddingMode::SAME;, PaddingMode::SAME;));
+model.add(Conv2D(32, 64, 5, 5, 1, 1, PaddingMode::SAME, PaddingMode::SAME));
 model.add(ReLU());
 model.add(Pool2D(2, 2, 2, 2));
-model.add(View(af::dim4(7 * 7 * 64, -1)));
+model.add(View(fl::Shape({7 * 7 * 64, -1})));
 model.add(Linear(7 * 7 * 64, 1024));
 model.add(ReLU());
 model.add(Dropout(0.5));
@@ -100,7 +101,7 @@ See the [MNIST example](https://fl.readthedocs.io/en/latest/mnist.html) for a fu
 <details><summary>Autograd Example</summary>
 
 ```c++
-auto A = Variable(af::randu(1000, 1000), true /* calcGrad */);
+auto A = Variable(fl::rand({1000, 1000}), true /* calcGrad */);
 auto B = 2.0 * A;
 auto C = 1.0 + B;
 auto D = log(C);
@@ -442,14 +443,12 @@ Given a simple `project.cpp` file that includes and links to Flashlight:
 ```c++
 #include <iostream>
 
-#include <arrayfire.h>
 #include <flashlight/fl/flashlight.h>
 
 int main() {
- fl::Variable v(af::constant(1, 1), true);
+ fl::Variable v(fl::full({1}, 1.), true);
  auto result = v + 10;
- std::cout << "Hello World!" << std::endl;
- af::print("Array value is ", result.array()); // 11.000
+ std::cout << "Tensor value is " << result.tensor() << std::endl; // 11.000
  return 0;
 }
 ```
