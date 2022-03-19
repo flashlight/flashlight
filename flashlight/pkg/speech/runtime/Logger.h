@@ -61,8 +61,8 @@ std::string getLogString(
 
 void appendToLog(std::ofstream& logfile, const std::string& logstr);
 
-af::array allreduceGet(SpeechStatMeter& mtr);
-void allreduceSet(SpeechStatMeter& mtr, af::array& val);
+Tensor allreduceGet(SpeechStatMeter& mtr);
+void allreduceSet(SpeechStatMeter& mtr, Tensor& val);
 
 void syncMeter(TrainMeters& mtrs);
 } // namespace speech
