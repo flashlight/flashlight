@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <iterator>
 #include <memory>
+#include <ostream>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -118,7 +119,10 @@ class TestMemoryManager : public MemoryManagerAdapter {
     }
   }
 
-  void printInfo(const char* msg, const int device) override {}
+  void printInfo(
+      const char* /* msg */,
+      const int /* device */,
+      std::ostream* /* ostream */) override {}
 
   void userLock(const void* cPtr) override {
     void* ptr = const_cast<void*>(cPtr);
@@ -213,10 +217,11 @@ class MockTestMemoryManager : public TestMemoryManager {
     ON_CALL(*this, signalMemoryCleanup()).WillByDefault(Invoke([this]() {
       real_->signalMemoryCleanup();
     }));
-    ON_CALL(*this, printInfo(_, _))
-        .WillByDefault(Invoke([this](const char* msg, const int device) {
-          real_->printInfo(msg, device);
-        }));
+    ON_CALL(*this, printInfo(_, _, _))
+        .WillByDefault(Invoke(
+            [this](const char* msg, const int device, std::ostream* ostream) {
+              real_->printInfo(msg, device, ostream);
+            }));
     ON_CALL(*this, userLock(_)).WillByDefault(Invoke([this](const void* cPtr) {
       real_->userLock(cPtr);
     }));
@@ -241,7 +246,7 @@ class MockTestMemoryManager : public TestMemoryManager {
   MOCK_METHOD(size_t, allocated, (void*));
   MOCK_METHOD(void, unlock, (void*, bool));
   MOCK_METHOD(void, signalMemoryCleanup, ());
-  MOCK_METHOD(void, printInfo, (const char*, const int));
+  MOCK_METHOD(void, printInfo, (const char*, const int, std::ostream*));
   MOCK_METHOD(void, userLock, (const void*));
   MOCK_METHOD(void, userUnlock, (const void*));
   MOCK_METHOD(bool, isUserLocked, (const void*));
@@ -371,7 +376,11 @@ TEST(MemoryFramework, AdapterInstallerDeviceInterfaceTest) {
     const std::string printInfoMsg = "testPrintInfo";
     int printInfoDeviceId = 0;
     EXPECT_CALL(
-        *mockMemoryManager, printInfo(printInfoMsg.c_str(), printInfoDeviceId))
+        *mockMemoryManager,
+        printInfo(
+            printInfoMsg.c_str(),
+            printInfoDeviceId,
+            mockMemoryManager->getLogStream()))
         .Times(Exactly(1));
     af::printMemInfo(printInfoMsg.c_str(), printInfoDeviceId);
 

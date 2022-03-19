@@ -8,6 +8,7 @@
 #pragma once
 
 #include <memory>
+#include <ostream>
 #include <stdexcept>
 #include <type_traits>
 #include <unordered_map>
@@ -44,6 +45,12 @@ class TensorBackend {
   virtual void setDevice(const int deviceId) = 0;
   virtual int getDeviceCount() = 0;
   virtual bool supportsDataType(const fl::dtype& dtype) const = 0;
+  // Memory Management
+  virtual void
+  getMemMgrInfo(const char* msg, const int deviceId, std::ostream* ostream) = 0;
+  virtual void setMemMgrLogStream(std::ostream* stream) = 0;
+  virtual void setMemMgrLoggingEnabled(const bool enabled) = 0;
+  virtual void setMemMgrFlushInterval(const size_t interval) = 0;
 
   /* -------------------------- Rand Functions -------------------------- */
   virtual void setSeed(const int seed) = 0;
