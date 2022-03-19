@@ -5,15 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/fl/contrib/modules/Transformer.h"
+#include <cmath>
+#include <stdexcept>
+
 #include "flashlight/fl/autograd/Functions.h"
+#include "flashlight/fl/contrib/modules/Transformer.h"
 #include "flashlight/fl/nn/Init.h"
 #include "flashlight/fl/nn/Utils.h"
+#include "flashlight/fl/tensor/Random.h"
 
 namespace {
 fl::Variable transformerInitLinear(int32_t inDim, int32_t outDim) {
   float std = std::sqrt(1.0 / float(inDim));
-  return fl::uniform(outDim, inDim, -std, std, af::dtype::f32, true);
+  return fl::uniform(outDim, inDim, -std, std, fl::dtype::f32, true);
 }
 } // namespace
 
@@ -49,7 +53,7 @@ Transformer::Transformer(
       norm2_(std::make_shared<LayerNorm>(std::vector<int>({0, 3}))) {
   if (bptt > 0) {
     params_.push_back(
-        uniform(2 * bptt - 1, headDim, -0.1, 0.1, af::dtype::f32, true));
+        uniform(2 * bptt - 1, headDim, -0.1, 0.1, fl::dtype::f32, true));
   }
 
   add(w1_);
@@ -68,12 +72,12 @@ Variable Transformer::mlp(const Variable& input) {
 }
 
 Variable Transformer::getMask(int32_t n, bool cache) {
-  auto mask = af::lower(af::constant(1.0, n, n), true);
+  auto mask = fl::tril(fl::full({n, n}, 1.0)) + fl::identity(n);
   if (cache) {
-    auto maskCache = af::upper(af::constant(1.0, n, n));
-    mask = af::join(1, maskCache, mask);
+    auto maskCache = fl::triu(fl::full({n, n}, 1.0));
+    mask = fl::concatenate(1, maskCache, mask);
   }
-  return Variable(af::log(mask), false);
+  return Variable(fl::log(mask), false);
 }
 
 Variable Transformer::selfAttention(const std::vector<Variable>& input) {
@@ -83,15 +87,14 @@ Variable Transformer::selfAttention(const std::vector<Variable>& input) {
   int n = input[0].dims(1), bsz = input[0].dims(2);
   double pDrop = train_ ? pDropout_ : 0.0;
 
-  auto q = transpose((*wq_)(encoderInput));
+  auto q = transpose((*wq_)(encoderInput), {1, 0, 2});
   std::vector<fl::Variable> inputWithState(input.begin(), input.end() - 1);
-  auto k = transpose((*wk_)(concatenate(inputWithState, 1)));
-  auto v = transpose((*wv_)(concatenate(inputWithState, 1)));
+  auto k = transpose((*wk_)(concatenate(inputWithState, 1)), {1, 0, 2});
+  auto v = transpose((*wv_)(concatenate(inputWithState, 1)), {1, 0, 2});
 
   Variable mask, posEmb;
   if (bptt_ > 0) {
-    posEmb =
-        tile(params_[0].as(encoderInput.type()), af::dim4(1, 1, nHeads_ * bsz));
+    posEmb = tile(params_[0].as(encoderInput.type()), {1, 1, nHeads_ * bsz});
   }
   if (useMask_ && encoderInput.dims(1) > 1) {
     // mask future if we use the previous state (then n is previous time)
@@ -103,14 +106,21 @@ Variable Transformer::selfAttention(const std::vector<Variable>& input) {
   // time x batch
   fl::Variable padMask;
   if (!input.back().isempty()) {
-    auto padMaskArr = input.back().array();
-    padMaskArr =
-        af::resize(padMaskArr, encoderInput.dims(1), encoderInput.dims(2));
-    padMask = fl::Variable(af::log(padMaskArr), false);
+    auto padMaskArr = input.back().tensor();
+    Shape newMaskShape = {encoderInput.dims(1), encoderInput.dims(2)};
+    // TODO{fl::Tensor}{resize} - emulate the ArrayFire resize operation for
+    // transformer pad mask
+    if (padMaskArr.size() != newMaskShape.elements()) {
+      throw std::runtime_error(
+          "Transformer::selfAttention - pad mask requires resize. "
+          "This behavior will be fixed in a future release ");
+    }
+    padMaskArr = fl::reshape(padMaskArr, newMaskShape);
+    padMask = fl::Variable(fl::log(padMaskArr), false);
   }
   auto result = multiheadAttention(
       q, k, v, posEmb, mask, padMask, nHeads_, pDrop, offset);
-  result = (*wf_)(transpose(result));
+  result = (*wf_)(transpose(result, {1, 0, 2}));
 
   return result;
 }
@@ -120,18 +130,32 @@ std::vector<Variable> Transformer::forward(const std::vector<Variable>& input) {
   // padMask should be empty if previous step is provided
   // padMask is expected to have "1" on the used positions and "0" on padded
   // positions
-  if (input.size() < 2) {
+  if (input.size() != 2) {
     throw std::invalid_argument(
         "Invalid inputs for transformer block: there should be at least input and mask");
   }
   auto x = input.at(input.size() - 2);
-  if (!input.back().isempty() && x.dims(2) != input.back().dims(1)) {
+  if (x.numdims() != 3) {
     throw std::invalid_argument(
-        "Invalid inputs for transformer block: input and Mask batch sizes are different");
+        "Transformer::forward - input should be of 3 dimensions "
+        "expects an input of size C x T x B - see documentation.");
+  }
+
+  if (!input.back().isempty()) {
+    if (input.back().numdims() < 2) {
+      throw std::invalid_argument(
+          "Transformer::forward - invalid size for pad mask - "
+          "must have at least two dimensions");
+
+    } else if (x.dims(2) != input.back().dims(1)) {
+      throw std::invalid_argument(
+          "Transformer::forward - invalid inputs for transformer:"
+          " input and mask batch sizes are different");
+    }
   }
 
   float f = 1.0;
-  if (train_ && (af::randu(1).scalar<float>() < pLayerdrop_)) {
+  if (train_ && (fl::rand({1}).scalar<float>() < pLayerdrop_)) {
     f = 0.0;
   }
   if (preLN_) {
