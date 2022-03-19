@@ -87,6 +87,67 @@ TEST(ArrayFireTensorBaseTest, AfRefCountBasic) {
   ASSERT_EQ(refCount, 2);
 }
 
+TEST(ArrayFireTensorBaseTest, AfRefCountModify) {
+  int refCount = 0;
+  // Compositional operations don't increment refcount
+  auto a = af::constant(1, {2, 2});
+  auto b = af::constant(1, {2, 2});
+  auto arrRes = a + b;
+  af_get_data_ref_count(&refCount, a.get());
+  ASSERT_EQ(refCount, 1);
+  af_get_data_ref_count(&refCount, b.get());
+  ASSERT_EQ(refCount, 1);
+  // Multiple uses of the same variable doesn't push count
+  auto c = af::constant(1, {2, 2});
+  auto d = af::constant(1, {2, 2});
+  auto arrResMult = c * c + d * d;
+  af_get_data_ref_count(&refCount, c.get());
+  ASSERT_EQ(refCount, 1);
+  af_get_data_ref_count(&refCount, d.get());
+  ASSERT_EQ(refCount, 1);
+
+  // Same behavior with Tensors
+  auto v = fl::full({2, 2}, 1);
+  auto w = fl::full({2, 2}, 1);
+  auto varRes = v + w;
+  af_get_data_ref_count(&refCount, toArray(v).get());
+  ASSERT_EQ(refCount, 1);
+  af_get_data_ref_count(&refCount, toArray(w).get());
+  ASSERT_EQ(refCount, 1);
+  // Multiuse with variables
+  auto y = fl::full({2, 2}, 1);
+  auto z = fl::full({2, 2}, 1);
+  auto varResMult = y * y + z * z;
+  af_get_data_ref_count(&refCount, toArray(y).get());
+  ASSERT_EQ(refCount, 1);
+  af_get_data_ref_count(&refCount, toArray(z).get());
+  ASSERT_EQ(refCount, 1);
+}
+
+TEST(ArrayFireTensorBaseTest, astypeRefcount) {
+  int refCount = 0;
+  auto t = fl::rand({5, 5});
+  af_get_data_ref_count(&refCount, toArray(t).get());
+  ASSERT_EQ(refCount, 1);
+  auto t64 = t.astype(fl::dtype::f64);
+  af_get_data_ref_count(&refCount, toArray(t64).get());
+  ASSERT_EQ(refCount, 1);
+}
+
+TEST(ArrayFireTensorBaseTest, astypeInPlaceRefcount) {
+  int refCount = 0;
+  auto a = fl::rand({4, 4});
+  af_get_data_ref_count(&refCount, toArray(a).get());
+  ASSERT_EQ(refCount, 1);
+  a = a.astype(fl::dtype::f64);
+  af_get_data_ref_count(&refCount, toArray(a).get());
+  ASSERT_EQ(refCount, 1);
+  ASSERT_EQ(a.type(), fl::dtype::f64);
+  a = a.astype(fl::dtype::f32);
+  af_get_data_ref_count(&refCount, toArray(a).get());
+  ASSERT_EQ(refCount, 1);
+}
+
 TEST(ArrayFireTensorBaseTest, BackendInterop) {
   // TODO: test toTensorBackend here since we know we have a backend available;
   // design a test that tests with mulitple backends once available
@@ -210,7 +271,7 @@ TEST(ArrayFireTensorBaseTest, amax) {
 
 TEST(ArrayFireTensorBaseTest, sum) {
   auto a = fl::rand({3, 3});
-  ASSERT_EQ(fl::sum(a).scalar<float>(), af::sum<float>(toArray(a)));
+  ASSERT_NEAR(fl::sum(a).scalar<float>(), af::sum<float>(toArray(a)), 1e-5);
   ASSERT_TRUE(allClose(
       toArray(fl::sum(a, {0})),
       fl::detail::condenseIndices(af::sum(toArray(a), 0))));
