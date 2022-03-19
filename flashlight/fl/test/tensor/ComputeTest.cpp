@@ -10,6 +10,7 @@
 #include <stdexcept>
 
 #include "flashlight/fl/tensor/Compute.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
 TEST(TensorComputeTest, sync) {
@@ -34,4 +35,10 @@ TEST(TensorComputeTest, eval) {
   auto t2 = fl::full({10, 10}, 4.);
   auto t3 = t1 * t2;
   fl::eval(t3);
+}
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
+  return RUN_ALL_TESTS();
 }

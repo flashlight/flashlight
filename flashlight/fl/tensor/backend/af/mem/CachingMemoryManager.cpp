@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/fl/memory/managers/CachingMemoryManager.h"
+#include "flashlight/fl/tensor/backend/af/mem/CachingMemoryManager.h"
 
 #include <algorithm>
 #include <cmath>

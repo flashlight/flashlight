@@ -57,9 +57,6 @@ include(${FL_CORE_COMPONENT_SRC_DIR}/dataset/CMakeLists.txt)
 # Dataset
 include(${FL_CORE_COMPONENT_SRC_DIR}/distributed/CMakeLists.txt)
 
-# Memory
-include(${FL_CORE_COMPONENT_SRC_DIR}/memory/CMakeLists.txt)
-
 # Meter
 include(${FL_CORE_COMPONENT_SRC_DIR}/meter/CMakeLists.txt)
 
