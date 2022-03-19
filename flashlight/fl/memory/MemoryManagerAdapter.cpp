@@ -10,7 +10,7 @@
 #include <stdexcept>
 #include <utility>
 
-#include "flashlight/fl/common/Utils.h"
+#include "flashlight/fl/tensor/backend/af/Utils.h"
 
 namespace fl {
 
