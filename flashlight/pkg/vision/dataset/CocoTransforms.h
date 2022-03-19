@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include <arrayfire.h>
-
 #include "flashlight/pkg/vision/dataset/TransformAllDataset.h"
 
 namespace fl {
@@ -32,14 +30,14 @@ enum DatasetIndices {
  * @param ty is the target height
  * This function will remove bounding boxes which do not exist within the crop
  */
-std::vector<af::array>
-crop(const std::vector<af::array>& in, int x, int y, int tw, int th);
+std::vector<Tensor>
+crop(const std::vector<Tensor>& in, int x, int y, int tw, int th);
 
 /*
  * Flip the image horizontally and adjust the bounding boxes acordingly
  * @param in vector of input arrays
  */
-std::vector<af::array> hflip(const std::vector<af::array>& in);
+std::vector<Tensor> hflip(const std::vector<Tensor>& in);
 
 /*
  * "normalize" the bounding boxes
@@ -47,7 +45,7 @@ std::vector<af::array> hflip(const std::vector<af::array>& in);
  * adjust bounding boxes from bottom left and top right coordinates to center
  * x,y and width and height and then divide by total image width and height
  */
-std::vector<af::array> normalize(const std::vector<af::array>& in);
+std::vector<Tensor> normalize(const std::vector<Tensor>& in);
 
 /*
  * Randomly resize image and bounding boxes from @param inputs, where shortest
@@ -55,8 +53,8 @@ std::vector<af::array> normalize(const std::vector<af::array>& in);
  * side is shorter than @param maxsize.
  * Adjust bboxes accordingly.
  */
-std::vector<af::array>
-randomResize(std::vector<af::array> inputs, int size, int maxsize);
+std::vector<Tensor>
+randomResize(std::vector<Tensor> inputs, int size, int maxsize);
 
 /*
  * Returns a function that "Normalizes" bounding boxes so that they represent

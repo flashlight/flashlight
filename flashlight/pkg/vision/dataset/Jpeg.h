@@ -15,7 +15,7 @@ namespace fl {
 namespace pkg {
 namespace vision {
 
-af::array loadJpeg(const std::string& fp, int desiredNumberOfChannels = 3);
+Tensor loadJpeg(const std::string& fp, int desiredNumberOfChannels = 3);
 
 std::shared_ptr<Dataset> jpegLoader(std::vector<std::string> fps);
 

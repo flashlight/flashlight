@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include <arrayfire.h>
-
 #include "flashlight/fl/dataset/datasets.h"
 
 namespace fl {
@@ -16,7 +14,7 @@ namespace pkg {
 namespace vision {
 
 using TransformAllFunction =
-    std::function<std::vector<af::array>(const std::vector<af::array>&)>;
+    std::function<std::vector<Tensor>(const std::vector<Tensor>&)>;
 
 /*
  * A view into a dataset where all arrays are transformed using the same
@@ -31,9 +29,9 @@ class TransformAllDataset : public Dataset {
   TransformAllDataset(
       std::shared_ptr<const Dataset> dataset,
       TransformAllFunction fn)
-      : dataset_(dataset), fn_(fn){}
+      : dataset_(dataset), fn_(fn) {}
 
-  std::vector<af::array> get(const int64_t idx) const override {
+  std::vector<Tensor> get(const int64_t idx) const override {
     return fn_(dataset_->get(idx));
   }
 

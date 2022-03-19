@@ -9,8 +9,8 @@
 
 #include <memory>
 
-#include "flashlight/pkg/vision/dataset/LoaderDataset.h"
 #include "flashlight/fl/dataset/datasets.h"
+#include "flashlight/pkg/vision/dataset/LoaderDataset.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -23,7 +23,7 @@ namespace vision {
  * Loads a jpeg from filepath fp. Note: It will automatically convert from any
  * number of channels to create an array with 3 channels
  */
-af::array loadJpeg(const std::string& fp, int desiredNumberOfChannels) {
+Tensor loadJpeg(const std::string& fp, int desiredNumberOfChannels) {
   int w, h, c;
   // STB image will automatically return desiredNumberOfChannels.
   // NB: c will be the original number of channels
@@ -32,10 +32,11 @@ af::array loadJpeg(const std::string& fp, int desiredNumberOfChannels) {
   if (img) {
     // Load array first as C X W X H, since stb has channel along first
     // dimension
-    af::array result = af::array(desiredNumberOfChannels, w, h, img);
+    Tensor result = Tensor::fromBuffer(
+        {desiredNumberOfChannels, w, h}, img, MemoryLocation::Host);
     stbi_image_free(img);
     // Then reorder to W X H X C
-    return af::reorder(result, 1, 2, 0);
+    return fl::transpose(result, {1, 2, 0});
   } else {
     throw std::invalid_argument("Could not load from filepath" + fp);
   }
@@ -44,7 +45,7 @@ af::array loadJpeg(const std::string& fp, int desiredNumberOfChannels) {
 std::shared_ptr<Dataset> jpegLoader(std::vector<std::string> fps) {
   return std::make_shared<LoaderDataset<std::string>>(
       fps, [](const std::string& fp) {
-        std::vector<af::array> result = {loadJpeg(fp)};
+        std::vector<Tensor> result = {loadJpeg(fp)};
         return result;
       });
 }
