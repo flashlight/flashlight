@@ -3,22 +3,6 @@ cmake_minimum_required(VERSION 3.10)
 # ----------------------------- Setup -----------------------------
 set(FL_CORE_COMPONENT_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}") # module root
 
-# ----------------------------- Configuration -----------------------------
-# Distributed Training Backend
-cmake_dependent_option(FL_BUILD_DISTRIBUTED
-  "Build and link a distributed backend with flashlight" ON
-  "FL_BUILD_CORE" OFF)
-# If building with CUDA, use NCCL to on; if using CPU or OpenCL, use GLOO
-set(USE_NCCL FALSE)
-set(USE_GLOO FALSE)
-if (FL_BUILD_DISTRIBUTED AND NOT FL_DISTRIBUTED_STUB)
-  if (FL_USE_CUDA)
-    set(USE_NCCL TRUE)
-  elseif (FL_USE_CPU OR FL_USE_OPENCL)
-    set(USE_GLOO TRUE)
-  endif ()
-endif ()
-
 # -------------------------------- Components --------------------------------
 if (FL_BUILD_CONTRIB)
   message(STATUS "Will build flashlight contrib assets.")
@@ -44,6 +28,8 @@ target_include_directories(
 )
 
 # -------------------------------- Components --------------------------------
+# Tensor -- resolve backends and compute runtimes first
+include(${FL_CORE_COMPONENT_SRC_DIR}/tensor/CMakeLists.txt)
 
 # Common
 include(${FL_CORE_COMPONENT_SRC_DIR}/common/CMakeLists.txt)
@@ -54,7 +40,7 @@ include(${FL_CORE_COMPONENT_SRC_DIR}/autograd/CMakeLists.txt)
 # Dataset
 include(${FL_CORE_COMPONENT_SRC_DIR}/dataset/CMakeLists.txt)
 
-# Dataset
+# Distributed
 include(${FL_CORE_COMPONENT_SRC_DIR}/distributed/CMakeLists.txt)
 
 # Meter
@@ -65,9 +51,6 @@ include(${FL_CORE_COMPONENT_SRC_DIR}/nn/CMakeLists.txt)
 
 # Optim
 include(${FL_CORE_COMPONENT_SRC_DIR}/optim/CMakeLists.txt)
-
-# Tensor
-include(${FL_CORE_COMPONENT_SRC_DIR}/tensor/CMakeLists.txt)
 
 # --------------------------- Configure Examples/Tests ---------------------------
 
