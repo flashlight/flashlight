@@ -663,14 +663,14 @@ Tensor matmul(
 Tensor amin(
     const Tensor& input,
     const std::vector<int>& axes /* = {} */,
-    bool keepDims /* = false */) {
+    const bool keepDims /* = false */) {
   return input.backend().amin(input, axes, keepDims);
 }
 
 Tensor amax(
     const Tensor& input,
     const std::vector<int>& axes /* = {} */,
-    bool keepDims /* = false */) {
+    const bool keepDims /* = false */) {
   return input.backend().amax(input, axes, keepDims);
 }
 
@@ -679,7 +679,7 @@ void min(
     Tensor& indices,
     const Tensor& input,
     const unsigned axis,
-    bool keepDims) {
+    const bool keepDims) {
   FL_TENSOR_BACKENDS_MATCH_CHECK(values, indices, input);
   return input.backend().min(values, indices, input, axis, keepDims);
 }
@@ -689,7 +689,7 @@ void max(
     Tensor& indices,
     const Tensor& input,
     const unsigned axis,
-    bool keepDims /* = false */) {
+    const bool keepDims /* = false */) {
   FL_TENSOR_BACKENDS_MATCH_CHECK(values, indices, input);
   return input.backend().max(values, indices, input, axis, keepDims);
 }
@@ -697,7 +697,7 @@ void max(
 Tensor sum(
     const Tensor& input,
     const std::vector<int>& axes /* = {} */,
-    bool keepDims /* = false */) {
+    const bool keepDims /* = false */) {
   return input.backend().sum(input, axes, keepDims);
 }
 
@@ -706,26 +706,26 @@ Tensor cumsum(const Tensor& input, const unsigned axis) {
 }
 
 Tensor
-argmax(const Tensor& input, const unsigned axis, bool keepDims /* = false */) {
+argmax(const Tensor& input, const unsigned axis, const bool keepDims /* = false */) {
   return input.backend().argmax(input, axis, keepDims);
 }
 
 Tensor
-argmin(const Tensor& input, const unsigned axis, bool keepDims /* = false */) {
+argmin(const Tensor& input, const unsigned axis, const bool keepDims /* = false */) {
   return input.backend().argmin(input, axis, keepDims);
 }
 
 Tensor mean(
     const Tensor& input,
     const std::vector<int>& axes /* = {} */,
-    bool keepDims /* = false */) {
+    const bool keepDims /* = false */) {
   return input.backend().mean(input, axes, keepDims);
 }
 
 Tensor median(
     const Tensor& input,
     const std::vector<int>& axes /* = {} */,
-    bool keepDims /* = false */) {
+    const bool keepDims /* = false */) {
   return input.backend().median(input, axes, keepDims);
 }
 
@@ -733,14 +733,14 @@ Tensor var(
     const Tensor& input,
     const std::vector<int>& axes /* = {} */,
     const bool bias,
-    bool keepDims /* = false */) {
+    const bool keepDims /* = false */) {
   return input.backend().var(input, axes, bias, keepDims);
 }
 
 Tensor std(
     const Tensor& input,
     const std::vector<int>& axes /* = {} */,
-    bool keepDims /* = false */) {
+    const bool keepDims /* = false */) {
   return input.backend().std(input, axes, keepDims);
 }
 
@@ -748,28 +748,28 @@ Tensor norm(
     const Tensor& input,
     const std::vector<int>& axes /* = {} */,
     double p /* = 2 */,
-    bool keepDims /* = false */) {
+    const bool keepDims /* = false */) {
   return input.backend().norm(input, axes, p, keepDims);
 }
 
 Tensor countNonzero(
     const Tensor& input,
     const std::vector<int>& axes /* = {} */,
-    bool keepDims /* = false */) {
+    const bool keepDims /* = false */) {
   return input.backend().countNonzero(input, axes, keepDims);
 }
 
 Tensor any(
     const Tensor& input,
     const std::vector<int>& axes /* = {} */,
-    bool keepDims /* = false */) {
+    const bool keepDims /* = false */) {
   return input.backend().any(input, axes, keepDims);
 }
 
 Tensor all(
     const Tensor& input,
     const std::vector<int>& axes /* = {} */,
-    bool keepDims /* = false */) {
+    const bool keepDims /* = false */) {
   return input.backend().all(input, axes, keepDims);
 }
 
