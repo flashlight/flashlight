@@ -83,7 +83,8 @@ Tensor CudnnAutogradExtension::batchnorm(
     const std::vector<int>& axes,
     const bool train,
     const double momentum,
-    const double epsilon) {
+    const double epsilon,
+    std::shared_ptr<detail::AutogradPayload>) {
   if (input.type() == fl::dtype::f16 && weight.type() != fl::dtype::f32) {
     throw std::invalid_argument(
         "fl::batchnorm: non-input tensors must be of type f32");
@@ -177,7 +178,8 @@ std::tuple<Tensor, Tensor, Tensor> CudnnAutogradExtension::batchnormBackward(
     const Tensor& weight,
     const std::vector<int>& axes,
     const bool train, // TODO(jacobkahn): remove this arg
-    const float epsilon) {
+    const float epsilon,
+    std::shared_ptr<detail::AutogradPayload>) {
   if (!train) {
     throw std::logic_error(
         "can't compute batchnorm grad when train was not specified");

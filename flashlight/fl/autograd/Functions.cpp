@@ -1396,13 +1396,15 @@ Variable conv2d(
     std::shared_ptr<detail::ConvBenchmarks> benchmarks) {
   FL_VARIABLE_DTYPES_MATCH_CHECK(in, wt, bs);
 
+  auto payload = detail::createAutogradPayload(in, wt, bs);
+
   bool hasBias = !bs.isempty();
 
   auto input = FL_ADJUST_INPUT_TYPE(in);
   auto weights = FL_ADJUST_INPUT_TYPE(wt);
   auto bias = FL_ADJUST_INPUT_TYPE(bs);
 
-  Tensor output = fl::conv2d(
+  Tensor output = detail::conv2d(
       input.tensor(),
       weights.tensor(),
       bias.tensor(),
@@ -1412,87 +1414,100 @@ Variable conv2d(
       py,
       dx,
       dy,
-      groups);
+      groups,
+      payload);
 
-  auto gradFunc = [sx, sy, px, py, dx, dy, hasBias, groups, benchmarks](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
-    // Create benchmarks if needed
-    auto& autogradExtension =
-        inputs[0].tensor().backend().getExtension<AutogradExtension>();
+  auto gradFunc =
+      [sx, sy, px, py, dx, dy, hasBias, groups, benchmarks, payload](
+          std::vector<Variable>& inputs, const Variable& gradOutput) {
+        // Create benchmarks if needed
+        auto& autogradExtension =
+            inputs[0].tensor().backend().getExtension<AutogradExtension>();
 
-    std::shared_ptr<DynamicBenchmark> dataBench;
-    std::shared_ptr<DynamicBenchmark> filterBench;
-    std::shared_ptr<DynamicBenchmark> biasBench;
-    if (benchmarks && DynamicBenchmark::getBenchmarkMode()) {
-      if (!benchmarks->bwdFilterBenchmark) {
-        benchmarks->bwdFilterBenchmark =
-            autogradExtension.createBenchmarkOptions();
-        filterBench = benchmarks->bwdFilterBenchmark;
-      }
-      if (!benchmarks->bwdDataBenchmark) {
-        benchmarks->bwdDataBenchmark =
-            autogradExtension.createBenchmarkOptions();
-        dataBench = benchmarks->bwdDataBenchmark;
-      }
-      if (!benchmarks->bwdBiasBenchmark) {
-        benchmarks->bwdBiasBenchmark =
-            autogradExtension.createBenchmarkOptions();
-        biasBench = benchmarks->bwdBiasBenchmark;
-      }
-    }
+        std::shared_ptr<DynamicBenchmark> dataBench;
+        std::shared_ptr<DynamicBenchmark> filterBench;
+        std::shared_ptr<DynamicBenchmark> biasBench;
+        if (benchmarks && DynamicBenchmark::getBenchmarkMode()) {
+          if (!benchmarks->bwdFilterBenchmark) {
+            benchmarks->bwdFilterBenchmark =
+                autogradExtension.createBenchmarkOptions();
+            filterBench = benchmarks->bwdFilterBenchmark;
+          }
+          if (!benchmarks->bwdDataBenchmark) {
+            benchmarks->bwdDataBenchmark =
+                autogradExtension.createBenchmarkOptions();
+            dataBench = benchmarks->bwdDataBenchmark;
+          }
+          if (!benchmarks->bwdBiasBenchmark) {
+            benchmarks->bwdBiasBenchmark =
+                autogradExtension.createBenchmarkOptions();
+            biasBench = benchmarks->bwdBiasBenchmark;
+          }
+        }
 
-    // Bias gradients
-    if (hasBias && inputs.size() > 2 && inputs[2].isCalcGrad()) {
-      auto& bs = inputs[2].tensor();
-      auto biasGrad =
-          bs.backend().getExtension<AutogradExtension>().conv2dBackwardBias(
-              gradOutput.tensor(), bs, biasBench);
+        // Bias gradients
+        Tensor bs;
+        const bool computeBiasGrad =
+            inputs.size() > 2 && inputs[2].isCalcGrad();
+        if (hasBias && computeBiasGrad) {
+          bs = inputs[2].tensor();
+          // auto biasGrad =
+          //     bs.backend().getExtension<AutogradExtension>().conv2dBackwardBias(
+          //         gradOutput.tensor(), bs, biasBench, payload);
 
-      inputs[2].addGrad(Variable(biasGrad, false)); // bias
-    }
+          // inputs[2].addGrad(Variable(biasGrad, false)); // bias
+        }
 
-    auto& in = inputs[0].tensor();
-    auto& wt = inputs[1].tensor();
+        auto& in = inputs[0].tensor();
+        auto& wt = inputs[1].tensor();
 
-    // Data (input) gradients
-    if (inputs[0].isCalcGrad()) {
-      auto dataGrad =
-          in.backend().getExtension<AutogradExtension>().conv2dBackwardData(
-              gradOutput.tensor(),
-              in,
-              wt,
-              sx,
-              sy,
-              px,
-              py,
-              dx,
-              dy,
-              groups,
-              dataBench);
+        // Data (input) gradients
+        if (inputs[0].isCalcGrad()) {
+          auto dataGrad =
+              in.backend().getExtension<AutogradExtension>().conv2dBackwardData(
+                  gradOutput.tensor(),
+                  in,
+                  wt,
+                  sx,
+                  sy,
+                  px,
+                  py,
+                  dx,
+                  dy,
+                  groups,
+                  dataBench,
+                  payload);
 
-      inputs[0].addGrad(Variable(dataGrad, false)); // input/data
-    }
+          inputs[0].addGrad(Variable(dataGrad, false)); // input/data
+        }
 
-    // Filter (weight) gradients
-    if (inputs[1].isCalcGrad()) {
-      auto filterGrad =
-          wt.backend().getExtension<AutogradExtension>().conv2dBackwardFilter(
-              gradOutput.tensor(),
-              in,
-              wt,
-              sx,
-              sy,
-              px,
-              py,
-              dx,
-              dy,
-              groups,
-              filterBench);
-
-      inputs[1].addGrad(Variable(filterGrad, false)); // filter/weight
-    }
-  };
+        // Filter (weight) and bias gradients
+        if (inputs[1].isCalcGrad() || computeBiasGrad) {
+          auto [filterGrad, biasGrad] = wt.backend()
+                                            .getExtension<AutogradExtension>()
+                                            .conv2dBackwardFilterBias(
+                                                gradOutput.tensor(),
+                                                in,
+                                                wt,
+                                                bs,
+                                                sx,
+                                                sy,
+                                                px,
+                                                py,
+                                                dx,
+                                                dy,
+                                                groups,
+                                                filterBench,
+                                                biasBench,
+                                                payload);
+          if (inputs[1].isCalcGrad()) {
+            inputs[1].addGrad(Variable(filterGrad, false)); // filter/weight
+          }
+          if (computeBiasGrad) {
+            inputs[2].addGrad(Variable(biasGrad, false));
+          }
+        }
+      };
   if (hasBias) {
     return Variable(output, {input, weights, bias}, gradFunc);
   }
@@ -1508,9 +1523,11 @@ Variable pool2d(
     int px,
     int py,
     PoolingMode mode /* = PoolingMode::MAX */) {
-  Tensor output = fl::pool2d(input.tensor(), wx, wy, sx, sy, px, py, mode);
+  auto payload = detail::createAutogradPayload(input);
+  Tensor output =
+      fl::detail::pool2d(input.tensor(), wx, wy, sx, sy, px, py, mode, payload);
 
-  auto gradFunc = [wx, wy, sx, sy, px, py, mode, output](
+  auto gradFunc = [wx, wy, sx, sy, px, py, mode, output, payload](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
     auto& in = inputs[0];
@@ -1529,7 +1546,8 @@ Variable pool2d(
             sy,
             px,
             py,
-            mode),
+            mode,
+            payload),
         false));
   };
   return Variable(output, {input}, gradFunc);
@@ -1545,10 +1563,11 @@ Variable batchnorm(
     bool train,
     double momentum,
     double epsilon) {
+  auto payload = detail::createAutogradPayload(_input, weight, bias);
   auto input = FL_ADJUST_INPUT_TYPE(_input);
 
   Tensor saveMean, saveVar;
-  Tensor output = fl::batchnorm(
+  Tensor output = fl::detail::batchnorm(
       saveMean,
       saveVar,
       input.tensor(),
@@ -1559,14 +1578,16 @@ Variable batchnorm(
       axes,
       train,
       momentum,
-      epsilon);
+      epsilon,
+      payload);
 
   auto gradFunc =
       [saveMean = std::move(saveMean),
        saveVar = std::move(saveVar),
        train,
        axes,
-       epsilon](std::vector<Variable>& inputs, const Variable& _gradOutput) {
+       epsilon,
+       payload](std::vector<Variable>& inputs, const Variable& _gradOutput) {
         auto& in = inputs[0];
         auto& wt = inputs[1];
         auto& bs = inputs[2];
@@ -1589,7 +1610,8 @@ Variable batchnorm(
                     wt.tensor(),
                     axes,
                     train,
-                    epsilon);
+                    epsilon,
+                    payload);
 
         in.addGrad(Variable(gradIn.astype(in.type()), false));
         wt.addGrad(Variable(gradWt.astype(wt.type()), false));
@@ -1647,31 +1669,32 @@ std::tuple<Variable, Variable, Variable> rnn(
     RnnMode mode,
     bool bidirectional,
     float dropProb) {
-  Tensor output, hiddenOut, cellStateOut, reserveSpace;
-  std::tie(output, hiddenOut, cellStateOut) =
-      input.tensor().backend().getExtension<AutogradExtension>().rnn(
-          reserveSpace, // out
-          input.tensor(),
-          hiddenState.tensor(),
-          cellState.tensor(),
-          weights.tensor(),
-          hiddenSize,
-          numLayers,
-          mode,
-          bidirectional,
-          dropProb);
+  auto payload =
+      detail::createAutogradPayload(input, hiddenState, cellState, weights);
+
+  Tensor output, hiddenOut, cellStateOut;
+  std::tie(output, hiddenOut, cellStateOut) = detail::rnn(
+      input.tensor(),
+      hiddenState.tensor(),
+      cellState.tensor(),
+      weights.tensor(),
+      hiddenSize,
+      numLayers,
+      mode,
+      bidirectional,
+      dropProb,
+      payload);
 
   auto gradData = std::make_shared<detail::RNNGradData>();
 
-  auto gradFunc = [reserveSpace =
-                       std::move(reserveSpace), // shared between fwd and bwd
-                   output,
+  auto gradFunc = [output,
                    numLayers,
                    hiddenSize,
                    mode,
                    bidirectional,
                    dropProb,
-                   gradData](
+                   gradData,
+                   payload](
                       std::vector<Variable>& inputs,
                       const Variable& /* gradOutput */) {
     auto& input = inputs[0];
@@ -1691,13 +1714,13 @@ std::tuple<Variable, Variable, Variable> rnn(
             cellState.tensor(),
             weights.tensor(),
             gradData,
-            reserveSpace,
             output,
             numLayers,
             hiddenSize,
             mode,
             bidirectional,
-            dropProb);
+            dropProb,
+            payload);
 
     input.addGrad(Variable(dy.astype(input.type()), false));
     hiddenState.addGrad(Variable(dhy.astype(hiddenState.type()), false));

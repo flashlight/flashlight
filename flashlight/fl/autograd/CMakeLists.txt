@@ -20,32 +20,6 @@ include(${CMAKE_CURRENT_LIST_DIR}/tensor/CMakeLists.txt)
 # TODO: move to files in autograd/tensor/backend once AutogradExtensions for these
 # implementations are complete
 
-# CPU
-if (FL_USE_CPU)
-  find_package(DNNL 2.0 CONFIG REQUIRED)
-
-  set(
-    AUTOGRAD_CPU_SOURCES
-    ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/Conv2D.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/Pool2D.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/RNN.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/BatchNorm.cpp # generic
-    ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/DnnlUtils.cpp # generic
-    )
-
-  target_sources(
-    flashlight
-    PRIVATE
-    ${AUTOGRAD_CPU_SOURCES}
-    )
-
-  target_link_libraries(
-    flashlight
-    PRIVATE
-    DNNL::dnnl
-    )
-endif ()
-
 # OpenCL
 if (FL_USE_OPENCL)
   include(OpenCLUtils)
