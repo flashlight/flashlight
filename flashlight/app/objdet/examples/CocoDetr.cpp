@@ -11,33 +11,34 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/pkg/runtime/Runtime.h"
 #include "flashlight/app/objdet/common/Defines.h"
-#include "flashlight/pkg/vision/criterion/SetCriterion.h"
-#include "flashlight/pkg/vision/dataset/BoxUtils.h"
-#include "flashlight/pkg/vision/dataset/Coco.h"
-#include "flashlight/pkg/vision/models/Resnet50Backbone.h"
-#include "flashlight/pkg/vision/models/Detr.h"
-#include "flashlight/pkg/vision/nn/Transformer.h"
+#include "flashlight/fl/meter/meters.h"
+#include "flashlight/fl/optim/optim.h"
+#include "flashlight/fl/tensor/Index.h"
+#include "flashlight/lib/common/String.h"
+#include "flashlight/pkg/runtime/Runtime.h"
 #include "flashlight/pkg/runtime/amp/DynamicScaler.h"
 #include "flashlight/pkg/runtime/common/DistributedUtils.h"
 #include "flashlight/pkg/runtime/common/Serializer.h"
+#include "flashlight/pkg/vision/criterion/SetCriterion.h"
+#include "flashlight/pkg/vision/dataset/BoxUtils.h"
+#include "flashlight/pkg/vision/dataset/Coco.h"
 #include "flashlight/pkg/vision/dataset/Transforms.h"
-#include "flashlight/fl/meter/meters.h"
-#include "flashlight/fl/optim/optim.h"
-#include "flashlight/lib/common/String.h"
+#include "flashlight/pkg/vision/models/Detr.h"
+#include "flashlight/pkg/vision/models/Resnet50Backbone.h"
+#include "flashlight/pkg/vision/nn/Transformer.h"
 
 using namespace fl;
 using namespace fl::pkg::vision;
 using namespace fl::pkg::vision;
 using namespace fl::app::objdet;
 
-using fl::pkg::runtime::getRunFile;
-using fl::pkg::runtime::serializeGflags;
-using fl::pkg::runtime::Serializer;
 using fl::lib::fileExists;
 using fl::lib::format;
 using fl::lib::getCurrentDate;
+using fl::pkg::runtime::getRunFile;
+using fl::pkg::runtime::serializeGflags;
+using fl::pkg::runtime::Serializer;
 
 #define FL_LOG_MASTER(lvl) LOG_IF(lvl, (fl::getWorldRank() == 0))
 
@@ -142,18 +143,18 @@ void evalLoop(
     auto output = model->forward(input);
     std::stringstream ss;
     ss << FLAGS_eval_dir << fl::getWorldRank() << "/detection" << idx
-       << ".array";
+       << ".fltensor";
     auto outputFile = ss.str();
     int lastLayerIdx = output[0].dims(3) - 1;
-    auto scores = output[0].array()(
-        af::span, af::span, af::span, af::seq(lastLayerIdx, lastLayerIdx));
-    auto bboxes = output[1].array()(
-        af::span, af::span, af::span, af::seq(lastLayerIdx, lastLayerIdx));
-    af::saveArray(
-        "imageSizes", sample.originalImageSizes, outputFile.c_str(), false);
-    af::saveArray("imageIds", sample.imageIds, outputFile.c_str(), true);
-    af::saveArray("scores", scores, outputFile.c_str(), true);
-    af::saveArray("bboxes", bboxes, outputFile.c_str(), true);
+    auto scores = output[0].tensor()(
+        fl::span, fl::span, fl::span, fl::range(lastLayerIdx, lastLayerIdx));
+    auto bboxes = output[1].tensor()(
+        fl::span, fl::span, fl::span, fl::range(lastLayerIdx, lastLayerIdx));
+    // TODO{fl::Tensor} - check writing Tensors -- generic API?
+    fl::save(outputFile + "-imageSizes", sample.originalImageSizes);
+    fl::save(outputFile + "-imageIds", sample.imageIds);
+    fl::save(outputFile + "-scores", scores);
+    fl::save(outputFile + "-bboxes", bboxes);
     idx++;
   }
   if (FLAGS_distributed_enable) {
@@ -184,7 +185,6 @@ void evalLoop(
 
 int main(int argc, char** argv) {
   fl::init();
-  af::info();
 
   ///////////////////////////
   // Setup train / continue modes
@@ -437,11 +437,11 @@ int main(int argc, char** argv) {
   ////////////////
   // Training loop
   //////////////
-  auto dataType = af::dtype::f32;
+  auto dataType = fl::dtype::f32;
   if (FLAGS_fl_amp_use_mixed_precision && FLAGS_fl_optim_mode.empty()) {
     // In case AMP is activated with DEFAULT mode,
     // we manually cast input to fp16.
-    dataType = af::dtype::f16;
+    dataType = fl::dtype::f16;
   }
   for (int epoch = startEpoch; epoch < FLAGS_train_epochs; epoch++) {
     int idx = 0;
@@ -471,15 +471,15 @@ int main(int argc, char** argv) {
           sample.target_boxes.begin(),
           sample.target_boxes.end(),
           targetBoxes.begin(),
-          [&dataType](const af::array& in) {
-            return fl::Variable(in.as(dataType), false);
+          [&dataType](const Tensor& in) {
+            return fl::Variable(in.astype(dataType), false);
           });
       std::transform(
           sample.target_labels.begin(),
           sample.target_labels.end(),
           targetClasses.begin(),
-          [&dataType](const af::array& in) {
-            return fl::Variable(in.as(dataType), false);
+          [&dataType](const Tensor& in) {
+            return fl::Variable(in.astype(dataType), false);
           });
       fl::sync();
       sampleTimerMeter.stopAndIncUnit();
@@ -500,7 +500,8 @@ int main(int argc, char** argv) {
         critFwdTimeMeter.resume();
         auto loss =
             criterion.forward(output[1], output[0], targetBoxes, targetClasses);
-        auto accumLoss = fl::Variable(af::constant(0, 1, dataType), true);
+        // TODO{fl::Tensor} - explore using a scalar Tensor
+        auto accumLoss = fl::Variable(fl::full({1}, 0, dataType), true);
         for (auto losses : loss) {
           fl::Variable scaled_loss = weightDict[losses.first] * losses.second;
           accumLoss = scaled_loss + accumLoss;
@@ -513,7 +514,7 @@ int main(int argc, char** argv) {
         opt2->zeroGrad();
 
         bwdTimeMeter.resume();
-        bool scaleIsValid =fl::pkg::runtime::backwardWithScaling(
+        bool scaleIsValid = fl::pkg::runtime::backwardWithScaling(
             accumLoss, modelParams, dynamicScaler, reducer);
         fl::sync();
         bwdTimeMeter.stopAndIncUnit();
@@ -523,10 +524,10 @@ int main(int argc, char** argv) {
 
         for (auto losses : loss) {
           fl::Variable scaled_loss = weightDict[losses.first] * losses.second;
-          meters[losses.first].add(losses.second.array());
-          meters[losses.first + "_weighted"].add(scaled_loss.array());
+          meters[losses.first].add(losses.second.tensor());
+          meters[losses.first + "_weighted"].add(scaled_loss.tensor());
         }
-        meters["sum"].add(accumLoss.array());
+        meters["sum"].add(accumLoss.tensor());
         break;
       }
 
