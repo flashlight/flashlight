@@ -28,6 +28,16 @@
 #include "flashlight/fl/tensor/backend/af/Utils.h"
 #include "flashlight/fl/tensor/backend/af/mem/MemoryManagerInstaller.h"
 
+#if FL_ARRAYFIRE_USE_CUDA
+  #include <cublas_v2.h>
+  #include <cuda.h>
+  #include <cuda_runtime.h>
+
+  #include <af/cuda.h>
+
+  #include "flashlight/fl/tensor/CUDAStream.h"
+#endif
+
 namespace fl {
 namespace {
 
@@ -169,6 +179,19 @@ void ArrayFireBackend::setDevice(const int deviceId) {
 
 int ArrayFireBackend::getDeviceCount() {
   return af::getDeviceCount();
+}
+
+const Stream& ArrayFireBackend::getStream() {
+#if FL_ARRAYFIRE_USE_CUDA
+  auto cudaStream =
+      std::make_unique<CUDAStream>(afcu::getStream(af::getDevice()));
+  stream_ = std::make_unique<Stream>(std::move(cudaStream));
+  return *stream_;
+#endif
+#if FL_ARRAYFIRE_USE_CPU
+  throw std::invalid_argument(
+      "ArrayFireBackend::getStream() inoperable with AF CPU backend");
+#endif
 }
 
 bool ArrayFireBackend::supportsDataType(const fl::dtype& dtype) const {
