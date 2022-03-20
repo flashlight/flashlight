@@ -289,7 +289,7 @@ commands:
           name: Set up script to build another project that depends on flashlight
           command: |
             set +H
-            echo "printf '#include <flashlight/fl/flashlight.h>\nint main() { auto x = fl::constant(1.0, 1); auto y = x + 1; return !fl::allClose(y, x + x); }\n' > main.cpp" >> flashlight_compile_and_link_external_project.sh
+            echo "printf '#include <flashlight/fl/flashlight.h>\nint main() { auto x = fl::constant(1.0, {1}); auto y = x + 1; return !fl::allClose(y, x + x); }\n' > main.cpp" >> flashlight_compile_and_link_external_project.sh
             echo "printf 'cmake_minimum_required(VERSION 3.10)\nset(CMAKE_CXX_STANDARD 17)\nset(CMAKE_CXX_STANDARD_REQUIRED ON)\nfind_package(flashlight CONFIG REQUIRED)\nadd_executable(main main.cpp)\ntarget_link_libraries(main PRIVATE flashlight::flashlight)\n' > CMakeLists.txt" >> flashlight_compile_and_link_external_project.sh
             echo "export CC=/usr/bin/gcc-7 && export CXX=/usr/bin/g++-7 && export MKLROOT=/opt/intel/mkl" >> flashlight_compile_and_link_external_project.sh
             echo "mkdir -p build && cd build && cmake .. -DDNNL_DIR=/opt/onednn/lib/cmake/dnnl && make" >> flashlight_compile_and_link_external_project.sh

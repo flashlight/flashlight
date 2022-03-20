@@ -14,11 +14,10 @@
 
 #include <iomanip>
 
-#include <af/dim4.hpp>
-
 #include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/common/Utils.h"
 #include "flashlight/fl/nn/modules/Module.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 
@@ -66,10 +65,10 @@ int derivePadding(int inSz, int filterSz, int stride, int pad, int dilation);
 
 /// packs a list of arrays (possibly of different dimensions) to a single array
 /// by padding them to same dimensions
-af::array join(
-    const std::vector<af::array>& inputs,
+Tensor join(
+    const std::vector<Tensor>& inputs,
     double padValue = 0.0,
-    dim_t batchDim = -1);
+    int batchDim = -1);
 
 /** @} */
 
