@@ -19,9 +19,6 @@ if(FL_USE_CUDA)
     list(APPEND COMMON_SRCS ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/Profile.cpp)
   endif()
 endif()
-if(FL_USE_OPENCL)
-  set(COMMON_SRCS ${COMMON_SRCS} ${CMAKE_CURRENT_LIST_DIR}/OpenClUtils.cpp)
-endif()
 
 target_sources(
   flashlight
@@ -68,25 +65,4 @@ if (FL_USE_CUDA)
     ${CUDA_NVTX_LIBRARIES}
     )
   target_include_directories(flashlight PUBLIC ${CUDA_INCLUDE_DIRS})
-endif()
-if (FL_USE_OPENCL)
-  target_link_libraries(flashlight PUBLIC OpenCL::OpenCL)
-
-  add_executable(
-    opencl_syntax_and_header
-    ${PROJECT_SOURCE_DIR}/cmake/OpenCLSourceVerifierAndHeaderGen.cpp
-  )
-
-  target_include_directories(
-    opencl_syntax_and_header
-    PUBLIC
-    ${OpenCL_INCLUDE_DIRS}
-  )
-
-  target_link_libraries(
-    opencl_syntax_and_header
-    PUBLIC
-    ${OpenCL_LIBRARIES}
-    ArrayFire::afopencl
-  )
 endif()
