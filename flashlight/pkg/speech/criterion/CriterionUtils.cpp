@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include "flashlight/fl/tensor/Index.h"
+
 using fl::lib::seq::CriterionScaleMode;
 
 namespace fl {
@@ -71,25 +73,25 @@ Variable getLinearTarget(const Variable& targetVar, int T) {
       }
     }
   }
-  return Variable(af::array(T, B, newTarget.data()), false);
+  return Variable(Tensor::fromVector({T, B}, newTarget), false);
 }
 
 fl::Variable applySeq2SeqMask(
     const fl::Variable& input,
-    const af::array& targetClasses,
+    const Tensor& targetClasses,
     int padValue) {
-  if (input.dims() != targetClasses.dims()) {
+  if (input.dims() != targetClasses.shape()) {
     throw std::runtime_error(
         "applySeq2SeqMask: input and mask should have the same dimentions.");
   }
-  af::array output = input.array();
-  af::array mask = targetClasses == padValue;
+  Tensor output = input.tensor();
+  Tensor mask = targetClasses == padValue;
   output(mask) = 0.;
 
   auto gradFunc = [mask](
                       std::vector<fl::Variable>& inputs,
                       const fl::Variable& gradOutput) {
-    af::array gradArray = gradOutput.array();
+    Tensor gradArray = gradOutput.tensor();
     gradArray(mask) = 0.;
     inputs[0].addGrad(fl::Variable(gradArray, false));
   };

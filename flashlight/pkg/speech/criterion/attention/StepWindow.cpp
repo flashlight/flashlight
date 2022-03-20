@@ -6,6 +6,8 @@
  */
 
 #include "flashlight/pkg/speech/criterion/attention/StepWindow.h"
+
+#include "flashlight/fl/tensor/Index.h"
 #include "flashlight/pkg/speech/criterion/attention/Defines.h"
 
 namespace fl {
@@ -20,36 +22,36 @@ Variable StepWindow::compute(
     int targetLen,
     int inputSteps,
     int batchSize,
-    const af::array& inputSizes,
-    const af::array& targetSizes,
-    af::array& decoderSteps) const {
-  int decoderStepsDim = decoderSteps.dims(0);
-  af::array inputNotPaddedSize = computeInputNotPaddedSize(
+    const Tensor& inputSizes,
+    const Tensor& targetSizes,
+    Tensor& decoderSteps) const {
+  int decoderStepsDim = decoderSteps.dim(0);
+  Tensor inputNotPaddedSize = computeInputNotPaddedSize(
       inputSizes, inputSteps, batchSize, decoderStepsDim, true);
-  auto startIdx = af::max(
+  Tensor startIdx = fl::maximum(
       0,
-      af::round(
-          af::min(inputNotPaddedSize - vMax_, sMin_ + decoderSteps * vMin_))
-          .as(s32));
-  auto endIdx = af::min(
-      inputNotPaddedSize, af::round(sMax_ + decoderSteps * vMax_).as(s32));
-  af::array indices = af::iota(
-      af::dim4(1, inputSteps, 1), af::dim4(decoderStepsDim, 1, batchSize));
+      fl::rint(
+          fl::minimum(inputNotPaddedSize - vMax_, sMin_ + decoderSteps * vMin_))
+          .astype(fl::dtype::s32));
+  auto endIdx = fl::minimum(
+      inputNotPaddedSize,
+      fl::rint(sMax_ + decoderSteps * vMax_).astype(fl::dtype::s32));
+  Tensor indices =
+      fl::iota({1, inputSteps, 1}, {decoderStepsDim, 1, batchSize});
 
   // [decoderStepsDim, inputSteps, batchSize]
-  auto maskArray =
-      af::constant(1.0, af::dim4(decoderStepsDim, inputSteps, batchSize));
-  maskArray(indices < startIdx) = 0.0;
-  maskArray(indices >= endIdx) = 0.0;
-  if (!targetSizes.isempty()) {
-    af::array targetNotPaddedSize = computeTargetNotPaddedSize(
+  Tensor maskTensor = fl::full({decoderStepsDim, inputSteps, batchSize}, 1.0);
+  maskTensor(indices < startIdx) = 0.0;
+  maskTensor(indices >= endIdx) = 0.0;
+  if (!targetSizes.isEmpty()) {
+    Tensor targetNotPaddedSize = computeTargetNotPaddedSize(
         targetSizes, inputSteps, targetLen, batchSize, decoderStepsDim);
-    maskArray(decoderSteps >= targetNotPaddedSize) = 0.0;
+    maskTensor(decoderSteps >= targetNotPaddedSize) = 0.0;
   }
   // force all -inf values to be kAttentionMaskValue to avoid nan in softmax
-  maskArray = af::log(maskArray);
-  maskArray(maskArray < kAttentionMaskValue) = kAttentionMaskValue;
-  return Variable(maskArray, false);
+  maskTensor = fl::log(maskTensor);
+  maskTensor(maskTensor < kAttentionMaskValue) = kAttentionMaskValue;
+  return Variable(maskTensor, false);
 }
 
 Variable StepWindow::computeWindow(
@@ -58,9 +60,9 @@ Variable StepWindow::computeWindow(
     int targetLen,
     int inputSteps,
     int batchSize,
-    const af::array& inputSizes,
-    const af::array& targetSizes) const {
-  auto decoderSteps = af::constant(step, af::dim4(1, inputSteps, batchSize));
+    const Tensor& inputSizes,
+    const Tensor& targetSizes) const {
+  auto decoderSteps = fl::full({1, inputSteps, batchSize}, step);
   return compute(
       targetLen, inputSteps, batchSize, inputSizes, targetSizes, decoderSteps);
 }
@@ -69,10 +71,9 @@ Variable StepWindow::computeVectorizedWindow(
     int targetLen,
     int inputSteps,
     int batchSize,
-    const af::array& inputSizes,
-    const af::array& targetSizes) const {
-  auto decoderSteps =
-      iota(af::dim4(targetLen), af::dim4(1, inputSteps, batchSize));
+    const Tensor& inputSizes,
+    const Tensor& targetSizes) const {
+  auto decoderSteps = fl::iota({targetLen}, {1, inputSteps, batchSize});
   return compute(
       targetLen, inputSteps, batchSize, inputSizes, targetSizes, decoderSteps);
 }

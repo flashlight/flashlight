@@ -6,7 +6,10 @@
  */
 
 #include "flashlight/pkg/speech/criterion/attention/ContentAttention.h"
+
 #include <cmath>
+
+#include "flashlight/fl/tensor/Index.h"
 #include "flashlight/pkg/speech/criterion/attention/Utils.h"
 
 namespace fl {
@@ -24,8 +27,8 @@ std::pair<Variable, Variable> ContentAttention::forwardBase(
     throw std::invalid_argument(
         "ContentAttention: Invalid dimension for content attention");
   }
-  auto keys = keyValue_ ? xEncoded(af::seq(0, dim / 2 - 1)) : xEncoded;
-  auto values = keyValue_ ? xEncoded(af::seq(dim / 2, dim - 1)) : xEncoded;
+  auto keys = keyValue_ ? xEncoded(fl::range(0, dim / 2)) : xEncoded;
+  auto values = keyValue_ ? xEncoded(fl::range(dim / 2, dim)) : xEncoded;
   // [targetlen, seqlen, batchsize]
   auto innerProd = matmulTN(state, keys) / std::sqrt(state.dims(0));
   if (!logAttnWeight.isempty()) {
@@ -35,7 +38,7 @@ std::pair<Variable, Variable> ContentAttention::forwardBase(
     }
     innerProd = innerProd + logAttnWeight;
   }
-  af::array padMask;
+  Tensor padMask;
   if (!xEncodedSizes.isempty()) {
     innerProd = maskAttention(innerProd, xEncodedSizes);
   }
