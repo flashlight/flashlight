@@ -7,13 +7,13 @@
 
 #pragma once
 
-#include "flashlight/fl/common/CppBackports.h"
 #include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/common/DynamicBenchmark.h"
 #include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/common/Profile.h"
 #include "flashlight/fl/common/Serialization.h"
+#include "flashlight/fl/common/Timer.h"
 #include "flashlight/fl/common/Types.h"
 #include "flashlight/fl/common/Utils.h"
 #include "flashlight/fl/common/threadpool/ThreadPool.h"

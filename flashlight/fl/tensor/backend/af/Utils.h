@@ -8,6 +8,7 @@
 #pragma once
 
 #include <af/data.h>
+#include <af/exception.h>
 #include <af/index.h>
 #include <af/seq.h>
 
@@ -17,6 +18,16 @@
 #include "flashlight/fl/tensor/Shape.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/fl/tensor/Types.h"
+
+#define AF_CHECK(fn)                                                          \
+  do {                                                                        \
+    af_err __err = fn;                                                        \
+    if (__err == AF_SUCCESS) {                                                \
+      break;                                                                  \
+    }                                                                         \
+    throw af::exception(                                                      \
+        "ArrayFire error: ", __PRETTY_FUNCTION__, __FILE__, __LINE__, __err); \
+  } while (0)
 
 namespace fl {
 namespace detail {
