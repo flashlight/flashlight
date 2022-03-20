@@ -20,7 +20,6 @@
 #include "flashlight/fl/fb/EverstoreDataset.h"
 #endif
 
-using fl::pkg::runtime::afToVector;
 using fl::lib::format;
 using fl::lib::getCurrentDate;
 using fl::lib::getCurrentTime;
@@ -35,11 +34,11 @@ namespace pkg {
 namespace speech {
 
 template <class T>
-std::vector<std::string> afMatrixToStrings(const af::array& arr, T terminator) {
-  int L = arr.dims(0); // padded length of string
-  int N = arr.dims(1); // number of strings
+std::vector<std::string> afMatrixToStrings(const Tensor& tensor, T terminator) {
+  int L = tensor.dim(0); // padded length of string
+  int N = tensor.dim(1); // number of strings
   std::vector<std::string> result;
-  auto values = afToVector<T>(arr);
+  auto values = tensor.toHostVector<T>();
   for (int i = 0; i < N; ++i) {
     const T* row = &values[i * L];
     int len = 0;
@@ -96,8 +95,8 @@ getTrainEvalIds(int64_t dsSize, double pctTrainEval, int64_t seed) {
   return result;
 }
 
-std::vector<std::string> readSampleIds(const af::array& arr) {
-  return afMatrixToStrings<char>(arr, '\0');
+std::vector<std::string> readSampleIds(const Tensor& tensor) {
+  return afMatrixToStrings<char>(tensor, '\0');
 }
 
 std::shared_ptr<fl::Dataset> createDataset(
@@ -171,19 +170,19 @@ std::shared_ptr<fl::Dataset> createDataset(
   int inPad, tgtPad, wrdPad;
   std::tie(inPad, tgtPad, wrdPad) = padVal;
   auto batchFns = std::vector<fl::Dataset::BatchFunction>{
-      [inPad](const std::vector<af::array>& arr) {
-        return fl::join(arr, inPad, 3);
+      [inPad](const std::vector<Tensor>& tensor) {
+        return fl::join(tensor, inPad, 3);
       },
-      [tgtPad](const std::vector<af::array>& arr) {
-        return fl::join(arr, tgtPad, 1);
+      [tgtPad](const std::vector<Tensor>& tensor) {
+        return fl::join(tensor, tgtPad, 1);
       },
-      [wrdPad](const std::vector<af::array>& arr) {
-        return fl::join(arr, wrdPad, 1);
+      [wrdPad](const std::vector<Tensor>& tensor) {
+        return fl::join(tensor, wrdPad, 1);
       },
-      [](const std::vector<af::array>& arr) { return fl::join(arr, 0, 1); },
-      [](const std::vector<af::array>& arr) { return fl::join(arr, 0, 1); },
-      [](const std::vector<af::array>& arr) { return fl::join(arr, 0, 1); },
-      [](const std::vector<af::array>& arr) { return fl::join(arr, 0, 1); }};
+      [](const std::vector<Tensor>& tensor) { return fl::join(tensor, 0, 1); },
+      [](const std::vector<Tensor>& tensor) { return fl::join(tensor, 0, 1); },
+      [](const std::vector<Tensor>& tensor) { return fl::join(tensor, 0, 1); },
+      [](const std::vector<Tensor>& tensor) { return fl::join(tensor, 0, 1); }};
   if (batchingStrategy == kBatchStrategyDynamic ||
       batchingStrategy == kBatchStrategyRandDynamic) {
     // Partition the dataset and distribute
