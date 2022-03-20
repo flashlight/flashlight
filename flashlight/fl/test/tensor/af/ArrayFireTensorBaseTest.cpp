@@ -11,6 +11,7 @@
 #include <stdexcept>
 #include <utility>
 
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/Random.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
 #include "flashlight/fl/tensor/TensorBase.h"
@@ -417,4 +418,10 @@ TEST(ArrayFireTensorBaseTest, device) {
   ASSERT_EQ(flPtr, afPtr);
   a.unlock();
   AF_CHECK(af_unlock_array(arr.get())); // safety
+}
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
+  return RUN_ALL_TESTS();
 }

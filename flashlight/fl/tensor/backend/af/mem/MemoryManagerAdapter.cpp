@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/fl/memory/MemoryManagerAdapter.h"
+#include "flashlight/fl/tensor/backend/af/mem/MemoryManagerAdapter.h"
 
 #include <stdexcept>
 #include <utility>
