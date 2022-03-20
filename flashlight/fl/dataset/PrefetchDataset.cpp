@@ -37,7 +37,7 @@ PrefetchDataset::PrefetchDataset(
   }
 }
 
-std::vector<af::array> PrefetchDataset::get(int64_t idx) const {
+std::vector<Tensor> PrefetchDataset::get(int64_t idx) const {
   checkIndexBounds(idx);
 
   if (numThreads_ == 0) {

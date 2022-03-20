@@ -19,10 +19,10 @@ MergeDataset::MergeDataset(
   }
 }
 
-std::vector<af::array> MergeDataset::get(const int64_t idx) const {
+std::vector<Tensor> MergeDataset::get(const int64_t idx) const {
   checkIndexBounds(idx);
 
-  std::vector<af::array> result;
+  std::vector<Tensor> result;
   for (auto dataset : datasets_) {
     if (idx < dataset->size()) {
       auto f = dataset->get(idx);
