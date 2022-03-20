@@ -9,10 +9,9 @@
 
 #include <vector>
 
-#include <arrayfire.h>
-
 #include "flashlight/fl/autograd/Variable.h"
 #include "flashlight/fl/optim/Optimizers.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 
@@ -30,8 +29,7 @@ class AdagradOptimizer : public FirstOrderOptimizer {
 
   float eps_;
   float wd_;
-  std::vector<af::array>
-      variance_; // store sum_{tau=0}^{tau=t} grad_tau*grad_tau
+  std::vector<Tensor> variance_; // store sum_{tau=0}^{tau=t} grad_tau*grad_tau
 
  public:
   /** Construct an Adagrad optimizer
