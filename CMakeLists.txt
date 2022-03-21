@@ -79,7 +79,7 @@ cmake_dependent_option(FL_BUILD_PROFILING
   "FL_USE_CUDA" OFF)
 
 # List of installable targets
-list(APPEND INSTALLABLE_TARGETS"")
+set(INSTALLABLE_TARGETS)
 
 set(FL_ROOT_DIR ${PROJECT_SOURCE_DIR}/flashlight)
 set(FL_BUILD_BINARY_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/bin")

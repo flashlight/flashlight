@@ -18,7 +18,7 @@ fl_dependent_option(
 if(FL_BUILD_PKG_RUNTIME)
   set(FL_PKG_RUNTIME_DIR ${FL_PKG_DIR}/runtime)
   include(${FL_PKG_RUNTIME_DIR}/CMakeLists.txt)
-  list(APPEND INSTALLABLE_TARGETS${INSTALLABLE_TARGETS} fl_pkg_runtime)
+  list(APPEND INSTALLABLE_TARGETS fl_pkg_runtime)
   setup_install_headers(
     ${FL_PKG_RUNTIME_DIR}
     ${FL_INSTALL_INC_DIR_HEADER_LOC}/pkg)
@@ -34,7 +34,7 @@ fl_dependent_option(
 if(FL_BUILD_PKG_VISION)
   set(FL_PKG_VISION_DIR ${FL_PKG_DIR}/vision)
   include(${FL_PKG_VISION_DIR}/CMakeLists.txt)
-  list(APPEND INSTALLABLE_TARGETS${INSTALLABLE_TARGETS} fl_pkg_vision)
+  list(APPEND INSTALLABLE_TARGETS fl_pkg_vision)
   setup_install_headers(
     ${FL_PKG_VISION_DIR}
     ${FL_INSTALL_INC_DIR_HEADER_LOC}/pkg)
@@ -50,7 +50,7 @@ fl_dependent_option(
 if(FL_BUILD_PKG_TEXT)
   set(FL_PKG_TEXT_DIR ${FL_PKG_DIR}/text)
   include(${FL_PKG_TEXT_DIR}/CMakeLists.txt)
-  list(APPEND INSTALLABLE_TARGETS${INSTALLABLE_TARGETS} fl_pkg_text)
+  list(APPEND INSTALLABLE_TARGETS fl_pkg_text)
   setup_install_headers(
     ${FL_PKG_TEXT_DIR}
     ${FL_INSTALL_INC_DIR_HEADER_LOC}/pkg)
@@ -67,7 +67,7 @@ fl_dependent_option(
 if(FL_BUILD_PKG_SPEECH)
   set(FL_PKG_SPEECH_DIR ${FL_PKG_DIR}/speech)
   include(${FL_PKG_SPEECH_DIR}/CMakeLists.txt)
-  list(APPEND INSTALLABLE_TARGETS${INSTALLABLE_TARGETS} fl_pkg_speech)
+  list(APPEND INSTALLABLE_TARGETS fl_pkg_speech)
   setup_install_headers(
     ${FL_PKG_SPEECH_DIR}
     ${FL_INSTALL_INC_DIR_HEADER_LOC}/pkg)
@@ -83,7 +83,7 @@ fl_dependent_option(
 if(FL_BUILD_PKG_HALIDE)
   set(FL_PKG_HALIDE_DIR ${FL_PKG_DIR}/halide)
   include(${FL_PKG_HALIDE_DIR}/CMakeLists.txt)
-  list(APPEND INSTALLABLE_TARGETS${INSTALLABLE_TARGETS} fl_pkg_halide)
+  list(APPEND INSTALLABLE_TARGETS fl_pkg_halide)
   setup_install_headers(
     ${FL_PKG_HALIDE_DIR}
     ${FL_INSTALL_INC_DIR_HEADER_LOC}/pkg)

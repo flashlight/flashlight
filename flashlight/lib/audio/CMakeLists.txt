@@ -6,8 +6,6 @@ add_library(
   ""
 )
 
-list(APPEND INSTALLABLE_TARGETS${INSTALLABLE_TARGETS} fl_lib_audio)
-
 target_include_directories(
   fl_lib_audio
   PRIVATE

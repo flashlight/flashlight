@@ -15,6 +15,7 @@ option(
   ${FL_BUILD_ALL_LIBS})
 if(FL_BUILD_LIB_SET)
   include(${CMAKE_CURRENT_LIST_DIR}/set/CMakeLists.txt)
+  list(APPEND INSTALLABLE_TARGETS fl_lib_set)
 endif()
 
 # sequence
@@ -24,6 +25,7 @@ option(
   ${FL_BUILD_ALL_LIBS})
 if(FL_BUILD_LIB_SEQUENCE)
   include(${CMAKE_CURRENT_LIST_DIR}/sequence/CMakeLists.txt)
+  list(APPEND INSTALLABLE_TARGETS fl_lib_sequence)
 endif()
 
 # audio
@@ -33,6 +35,7 @@ option(
   ${FL_BUILD_ALL_LIBS})
 if(FL_BUILD_LIB_AUDIO)
   include(${CMAKE_CURRENT_LIST_DIR}/audio/CMakeLists.txt)
+  list(APPEND INSTALLABLE_TARGETS fl_lib_audio)
 endif()
 
 # common
@@ -42,6 +45,7 @@ option(
   ${FL_BUILD_ALL_LIBS})
 if(FL_BUILD_LIB_COMMON)
   include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
+  list(APPEND INSTALLABLE_TARGETS fl_lib_common)
 endif()
 
 # text
@@ -51,4 +55,5 @@ option(
   ${FL_BUILD_ALL_LIBS})
 if(FL_BUILD_LIB_TEXT)
   include(${CMAKE_CURRENT_LIST_DIR}/text/CMakeLists.txt)
+  list(APPEND INSTALLABLE_TARGETS fl_lib_text)
 endif()
