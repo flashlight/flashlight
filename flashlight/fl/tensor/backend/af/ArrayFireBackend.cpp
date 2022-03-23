@@ -37,7 +37,7 @@ af::array afReduceAxes(
     const af::array& input,
     const std::vector<int>& axes,
     T func,
-    bool keepDims = false) {
+    const bool keepDims = false) {
   auto arr = input;
   for (int dim : axes) {
     arr = func(arr, dim);
@@ -45,7 +45,7 @@ af::array afReduceAxes(
   return fl::detail::condenseIndices(arr, keepDims);
 }
 
-unsigned getReducedNumDims(unsigned inSize, unsigned axisSize, bool keepDims) {
+unsigned getReducedNumDims(unsigned inSize, unsigned axisSize, const bool keepDims) {
   if (keepDims) {
     return inSize;
   } else {
@@ -701,7 +701,7 @@ Tensor ArrayFireBackend::matmul(
 Tensor ArrayFireBackend::amin(
     const Tensor& input,
     const std::vector<int>& axes,
-    bool keepDims) {
+    const bool keepDims) {
   if (isAllAxisReduction(input, axes)) {
     // Reduce along all axes returning a singleton tensor
     // TODO: modify this to af::min<af::array> to take advantage of the
@@ -720,7 +720,7 @@ Tensor ArrayFireBackend::amin(
 Tensor ArrayFireBackend::amax(
     const Tensor& input,
     const std::vector<int>& axes,
-    bool keepDims) {
+    const bool keepDims) {
   if (isAllAxisReduction(input, axes)) {
     // Reduce along all axes returning a singleton tensor
     // TODO: modify this to af::max<af::array> to take advantage of the
@@ -741,7 +741,7 @@ void ArrayFireBackend::min(
     Tensor& indices,
     const Tensor& input,
     const unsigned axis,
-    bool keepDims) {
+    const bool keepDims) {
   af::min(toArray(values), toArray(indices), toArray(input), axis);
   values = toTensor<ArrayFireTensor>(
       detail::condenseIndices(toArray(values), keepDims),
@@ -756,7 +756,7 @@ void ArrayFireBackend::max(
     Tensor& indices,
     const Tensor& input,
     const unsigned axis,
-    bool keepDims) {
+    const bool keepDims) {
   af::max(toArray(values), toArray(indices), toArray(input), axis);
   values = toTensor<ArrayFireTensor>(
       detail::condenseIndices(toArray(values), keepDims),
@@ -769,7 +769,7 @@ void ArrayFireBackend::max(
 Tensor ArrayFireBackend::sum(
     const Tensor& input,
     const std::vector<int>& axes,
-    bool keepDims) {
+    const bool keepDims) {
   if (isAllAxisReduction(input, axes)) {
     // Reduce along all axes returning a singleton tensor
     // TODO: modify this to af::sum<af::array> to take advantage of the
@@ -793,7 +793,7 @@ Tensor ArrayFireBackend::cumsum(const Tensor& input, const unsigned axis) {
 Tensor ArrayFireBackend::argmax(
     const Tensor& input,
     const unsigned axis,
-    bool keepDims) {
+    const bool keepDims) {
   af::array tmpVal, indices;
   af::max(tmpVal, indices, toArray(input), axis);
   return toTensor<ArrayFireTensor>(
@@ -804,7 +804,7 @@ Tensor ArrayFireBackend::argmax(
 Tensor ArrayFireBackend::argmin(
     const Tensor& input,
     const unsigned axis,
-    bool keepDims) {
+    const bool keepDims) {
   af::array tmpVal, indices;
   af::min(tmpVal, indices, toArray(input), axis);
   return toTensor<ArrayFireTensor>(
@@ -815,7 +815,7 @@ Tensor ArrayFireBackend::argmin(
 Tensor ArrayFireBackend::mean(
     const Tensor& input,
     const std::vector<int>& axes,
-    bool keepDims) {
+    const bool keepDims) {
   if (isAllAxisReduction(input, axes)) {
     // Reduce along all axes returning a singleton tensor
     // TODO: modify this to af::mean<af::array> to take advantage of the
@@ -835,7 +835,7 @@ Tensor ArrayFireBackend::mean(
 Tensor ArrayFireBackend::median(
     const Tensor& input,
     const std::vector<int>& axes,
-    bool keepDims) {
+    const bool keepDims) {
   if (isAllAxisReduction(input, axes)) {
     // Reduce along all axes returning a singleton tensor
     // TODO: modify this to af::median<af::array> to take advantage of the
@@ -856,7 +856,7 @@ Tensor ArrayFireBackend::var(
     const Tensor& input,
     const std::vector<int>& axes,
     const bool bias,
-    bool keepDims) {
+    const bool keepDims) {
   // Use ArrayFire default for one dimension which may be optimized
   auto& arr = toArray(input);
   // Reduce along all axes returning a singleton tensor
@@ -895,7 +895,7 @@ Tensor ArrayFireBackend::var(
 Tensor ArrayFireBackend::std(
     const Tensor& input,
     const std::vector<int>& axes,
-    bool keepDims) {
+    const bool keepDims) {
   // TODO: add a bias parameter and `bias ? AF_VARIANCE_SAMPLE :
   // AF_VARIANCE_POPULATION` when requiring to a minimum ArrayFire version that
   // has updated variance and stdev functions
@@ -917,7 +917,7 @@ Tensor ArrayFireBackend::norm(
     const Tensor& input,
     const std::vector<int>& axes,
     double p /* = 2 */,
-    bool keepDims) {
+    const bool keepDims) {
   if (isAllAxisReduction(input, axes)) {
     // TODO: update to af::norm<af::array> if device-side specialization is
     // available. Either that or use the all-axis specializations with the below
@@ -941,7 +941,7 @@ Tensor ArrayFireBackend::norm(
 Tensor ArrayFireBackend::countNonzero(
     const Tensor& input,
     const std::vector<int>& axes,
-    bool keepDims) {
+    const bool keepDims) {
   auto& arr = toArray(input);
   unsigned numDims;
   af::array out;
@@ -967,7 +967,7 @@ Tensor ArrayFireBackend::countNonzero(
 Tensor ArrayFireBackend::any(
     const Tensor& input,
     const std::vector<int>& axes,
-    bool keepDims) {
+    const bool keepDims) {
   if (isAllAxisReduction(input, axes)) {
     // Reduce along all axes returning a singleton tensor
     // TODO: modify this to af::anyTrue<af::array> to take advantage of the
@@ -986,7 +986,7 @@ Tensor ArrayFireBackend::any(
 Tensor ArrayFireBackend::all(
     const Tensor& input,
     const std::vector<int>& axes,
-    bool keepDims) {
+    const bool keepDims) {
   if (isAllAxisReduction(input, axes)) {
     // Reduce along all axes returning a singleton tensor
     // TODO: modify this to af::allTrue<af::array> to take advantage of the

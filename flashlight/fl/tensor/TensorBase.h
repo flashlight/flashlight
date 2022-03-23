@@ -1176,7 +1176,7 @@ Tensor matmul(
 Tensor amin(
     const Tensor& input,
     const std::vector<int>& axes = {},
-    bool keepDims = false);
+    const bool keepDims = false);
 
 /**
  * Compute the maximum value along multiple axes. If axes is left empty,
@@ -1192,7 +1192,7 @@ Tensor amin(
 Tensor amax(
     const Tensor& input,
     const std::vector<int>& axes = {},
-    bool keepDims = false);
+    const bool keepDims = false);
 
 /**
  * Compute the maximum value along multiple axes for a tensor, returning both
@@ -1212,7 +1212,7 @@ void min(
     Tensor& indices,
     const Tensor& input,
     const unsigned axis,
-    bool keepDims = false);
+    const bool keepDims = false);
 
 /**
  * Compute the maximum value along multiple axes for a tensor, returning both
@@ -1232,7 +1232,7 @@ void max(
     Tensor& indices,
     const Tensor& input,
     const unsigned axis,
-    bool keepDims = false);
+    const bool keepDims = false);
 
 /**
  * Return the indices of the maximum values along an axis.
@@ -1243,7 +1243,7 @@ void max(
  * as singleton dimensions rather than collapsing them
  * @return a tensor containing the indices of the max values along each axis
  */
-Tensor argmax(const Tensor& input, const unsigned axis, bool keepDims = false);
+Tensor argmax(const Tensor& input, const unsigned axis, const bool keepDims = false);
 
 /**
  * Return the indices of the minimum values along an axis.
@@ -1254,7 +1254,7 @@ Tensor argmax(const Tensor& input, const unsigned axis, bool keepDims = false);
  * as singleton dimensions rather than collapsing them
  * @return a tensor containing the indices of the max values along each axis
  */
-Tensor argmin(const Tensor& input, const unsigned axis, bool keepDims = false);
+Tensor argmin(const Tensor& input, const unsigned axis, const bool keepDims = false);
 
 /**
  * Sum of tensor over given axes. If axes is left empty, computes the sum along
@@ -1270,7 +1270,7 @@ Tensor argmin(const Tensor& input, const unsigned axis, bool keepDims = false);
 Tensor sum(
     const Tensor& input,
     const std::vector<int>& axes = {},
-    bool keepDims = false);
+    const bool keepDims = false);
 
 /**
  * Compute the cumulative sum (or the prefix sum, scan, or inclusive scan) of a
@@ -1296,7 +1296,7 @@ Tensor cumsum(const Tensor& input, const unsigned axis);
 Tensor mean(
     const Tensor& input,
     const std::vector<int>& axes = {},
-    bool keepDims = false);
+    const bool keepDims = false);
 
 /**
  * Median of tensor over given axes. If axes is left empty, computes the median
@@ -1312,7 +1312,7 @@ Tensor mean(
 Tensor median(
     const Tensor& input,
     const std::vector<int>& axes = {},
-    bool keepDims = false);
+    const bool keepDims = false);
 
 /**
  * Variance of an tensor over given axes. If axes is left empty, computes the
@@ -1330,7 +1330,7 @@ Tensor var(
     const Tensor& input,
     const std::vector<int>& axes = {},
     const bool bias = false,
-    bool keepDims = false);
+    const bool keepDims = false);
 
 /**
  * Standard deviation of an tensor over given axes. If axes is left empty,
@@ -1346,7 +1346,7 @@ Tensor var(
 Tensor std(
     const Tensor& input,
     const std::vector<int>& axes = {},
-    bool keepDims = false);
+    const bool keepDims = false);
 
 /**
  * Perform Lp-norm computation, reduced over specified dimensions. If axes is
@@ -1363,7 +1363,7 @@ Tensor norm(
     const Tensor& input,
     const std::vector<int>& axes = {},
     double p = 2,
-    bool keepDims = false);
+    const bool keepDims = false);
 
 /**
  * Counts the number of nonzero elements in a tensor.
@@ -1381,7 +1381,7 @@ Tensor norm(
 Tensor countNonzero(
     const Tensor& input,
     const std::vector<int>& axes = {},
-    bool keepDims = false);
+    const bool keepDims = false);
 
 /**
  * Checks for any true values in a tensor along one or more axes; returns true
@@ -1400,7 +1400,7 @@ Tensor countNonzero(
 Tensor any(
     const Tensor& input,
     const std::vector<int>& axes = {},
-    bool keepDims = false);
+    const bool keepDims = false);
 
 /**
  * Checks if all values are true in a tensor along one or more axes; returns
@@ -1419,7 +1419,7 @@ Tensor any(
 Tensor all(
     const Tensor& input,
     const std::vector<int>& axes = {},
-    bool keepDims = false);
+    const bool keepDims = false);
 
 /************************** Utilities ***************************/
 

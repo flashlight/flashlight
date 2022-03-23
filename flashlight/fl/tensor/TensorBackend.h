@@ -197,52 +197,52 @@ class TensorBackend {
 
   /************************** Reductions ***************************/
   virtual Tensor
-  amin(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
+  amin(const Tensor& input, const std::vector<int>& axes, const bool keepDims) = 0;
   virtual Tensor
-  amax(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
+  amax(const Tensor& input, const std::vector<int>& axes, const bool keepDims) = 0;
   virtual void min(
       Tensor& values,
       Tensor& indices,
       const Tensor& input,
       const unsigned axis,
-      bool keepDims) = 0;
+      const bool keepDims) = 0;
   virtual void max(
       Tensor& values,
       Tensor& indices,
       const Tensor& input,
       const unsigned axis,
-      bool keepDims) = 0;
+      const bool keepDims) = 0;
   virtual Tensor
-  sum(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
+  sum(const Tensor& input, const std::vector<int>& axes, const bool keepDims) = 0;
   virtual Tensor cumsum(const Tensor& input, const unsigned axis) = 0;
   virtual Tensor
-  argmax(const Tensor& input, const unsigned axis, bool keepDims) = 0;
+  argmax(const Tensor& input, const unsigned axis, const bool keepDims) = 0;
   virtual Tensor
-  argmin(const Tensor& input, const unsigned axis, bool keepDims) = 0;
+  argmin(const Tensor& input, const unsigned axis, const bool keepDims) = 0;
   virtual Tensor
-  mean(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
+  mean(const Tensor& input, const std::vector<int>& axes, const bool keepDims) = 0;
   virtual Tensor
-  median(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
+  median(const Tensor& input, const std::vector<int>& axes, const bool keepDims) = 0;
   virtual Tensor var(
       const Tensor& input,
       const std::vector<int>& axes,
       bool bias,
-      bool keepDims) = 0;
+      const bool keepDims) = 0;
   virtual Tensor
-  std(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
+  std(const Tensor& input, const std::vector<int>& axes, const bool keepDims) = 0;
   virtual Tensor norm(
       const Tensor& input,
       const std::vector<int>& axes,
       double p,
-      bool keepDims) = 0;
+      const bool keepDims) = 0;
   virtual Tensor countNonzero(
       const Tensor& input,
       const std::vector<int>& axes,
-      bool keepDims) = 0;
+      const bool keepDims) = 0;
   virtual Tensor
-  any(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
+  any(const Tensor& input, const std::vector<int>& axes, const bool keepDims) = 0;
   virtual Tensor
-  all(const Tensor& input, const std::vector<int>& axes, bool keepDims) = 0;
+  all(const Tensor& input, const std::vector<int>& axes, const bool keepDims) = 0;
 
   /************************** Utils ***************************/
   virtual void print(const Tensor& tensor) = 0;

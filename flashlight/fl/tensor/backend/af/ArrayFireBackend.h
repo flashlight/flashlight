@@ -193,54 +193,54 @@ class ArrayFireBackend : public TensorBackend {
       MatrixProperty rhsProp) override;
 
   /************************** Reductions ***************************/
-  Tensor amin(const Tensor& input, const std::vector<int>& axes, bool keepDims)
+  Tensor amin(const Tensor& input, const std::vector<int>& axes, const bool keepDims)
       override;
-  Tensor amax(const Tensor& input, const std::vector<int>& axes, bool keepDims)
+  Tensor amax(const Tensor& input, const std::vector<int>& axes, const bool keepDims)
       override;
   void min(
       Tensor& values,
       Tensor& indices,
       const Tensor& input,
       const unsigned axis,
-      bool keepDims) override;
+      const bool keepDims) override;
   void max(
       Tensor& values,
       Tensor& indices,
       const Tensor& input,
       const unsigned axis,
-      bool keepDims) override;
-  Tensor sum(const Tensor& input, const std::vector<int>& axes, bool keepDims)
+      const bool keepDims) override;
+  Tensor sum(const Tensor& input, const std::vector<int>& axes, const bool keepDims)
       override;
   Tensor cumsum(const Tensor& input, const unsigned axis) override;
-  Tensor argmax(const Tensor& input, const unsigned axis, bool keepDims)
+  Tensor argmax(const Tensor& input, const unsigned axis, const bool keepDims)
       override;
-  Tensor argmin(const Tensor& input, const unsigned axis, bool keepDims)
+  Tensor argmin(const Tensor& input, const unsigned axis, const bool keepDims)
       override;
-  Tensor mean(const Tensor& input, const std::vector<int>& axes, bool keepDims)
+  Tensor mean(const Tensor& input, const std::vector<int>& axes, const bool keepDims)
       override;
   Tensor median(
       const Tensor& input,
       const std::vector<int>& axes,
-      bool keepDims) override;
+      const bool keepDims) override;
   Tensor var(
       const Tensor& input,
       const std::vector<int>& axes,
       const bool bias,
-      bool keepDims) override;
-  Tensor std(const Tensor& input, const std::vector<int>& axes, bool keepDims)
+      const bool keepDims) override;
+  Tensor std(const Tensor& input, const std::vector<int>& axes, const bool keepDims)
       override;
   Tensor norm(
       const Tensor& input,
       const std::vector<int>& axes,
       double p,
-      bool keepDims) override;
+      const bool keepDims) override;
   Tensor countNonzero(
       const Tensor& input,
       const std::vector<int>& axes,
-      bool keepDims) override;
-  Tensor any(const Tensor& input, const std::vector<int>& axes, bool keepDims)
+      const bool keepDims) override;
+  Tensor any(const Tensor& input, const std::vector<int>& axes, const bool keepDims)
       override;
-  Tensor all(const Tensor& input, const std::vector<int>& axes, bool keepDims)
+  Tensor all(const Tensor& input, const std::vector<int>& axes, const bool keepDims)
       override;
 
   /************************** Utils ***************************/
