@@ -30,6 +30,10 @@ fl::Variable DynamicScaler::scale(const fl::Variable& loss) {
 
 bool DynamicScaler::unscale(std::vector<fl::Variable>& params) {
   for (auto& p : params) {
+    if (!p.isGradAvailable()) {
+      // Add a dummy grad for params not used in the backwards pass
+      p.addGrad(Variable(af::constant(0.0, p.dims(), p.type()), false));
+    }
     p.grad() = p.grad() / scaleFactor_;
     if (fl::isInvalidArray(p.grad().array())) {
       if (scaleFactor_ >= fl::kAmpMinimumScaleFactorValue) {
