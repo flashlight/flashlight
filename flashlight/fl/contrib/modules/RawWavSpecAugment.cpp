@@ -11,6 +11,7 @@
 
 #include "flashlight/fl/common/Logging.h"
 #include "flashlight/fl/contrib/modules/RawWavSpecAugment.h"
+#include "flashlight/fl/tensor/Index.h"
 
 namespace fl {
 
@@ -96,20 +97,24 @@ void RawWavSpecAugment::precomputeFilters() {
       ignoredLowPassFilters_++;
       continue;
     }
-    af::array indexArr = af::iota(af::dim4(2 * width + 1));
-    af::array blackmanWindow = 0.42 - 0.5 * af::cos(M_PI * indexArr / width) +
-        0.08 * af::cos(2 * M_PI * indexArr / width);
-    af::array denom = indexArr - width;
+    Tensor indexArr = fl::iota({2 * width + 1});
+    Tensor blackmanWindow = 0.42 - 0.5 * fl::cos(M_PI * indexArr / width) +
+        0.08 * fl::cos(2 * M_PI * indexArr / width);
+    Tensor denom = indexArr - width;
     // compute sinc with proper process for index = width
-    af::array kernel = af::sin(2 * M_PI * cutoff_[fidx] * (indexArr - width));
+    Tensor kernel = fl::sin(2 * M_PI * cutoff_[fidx] * (indexArr - width));
     kernel(denom != 0) = kernel(denom != 0) / denom(denom != 0);
     kernel(denom == 0) = 2 * M_PI * cutoff_[fidx];
     kernel = kernel * blackmanWindow;
     // normalize kernel
-    kernel = kernel / af::tile(af::sum(kernel), 2 * width + 1);
+    kernel = kernel / fl::tile(fl::sum(kernel, {0}), {2 * width + 1});
     // create low pass filter
     auto filter = std::make_shared<Conv2D>(
-        Variable(kernel, false), 1, 1, PaddingMode::SAME, 0);
+        Variable(fl::reshape(kernel, {kernel.dim(0), 1, 1, 1}), false),
+        1,
+        1,
+        PaddingMode::SAME,
+        0);
     filter->eval();
     lowPassFilters_.push_back(filter);
   }
@@ -129,15 +134,21 @@ Variable RawWavSpecAugment::forward(const Variable& input) {
   }
 
   fl::Variable inputCast = detail::adjustInputType(input, "RawWavSpecAugment");
-  auto output = Variable(inputCast.array(), false);
+  auto output = Variable(inputCast.tensor(), false);
   if (!train_) {
     return output;
   }
 
+  if (input.numdims() != 3) {
+    throw std::invalid_argument(
+        "RawWavSpecAugment::forward - invalid input shape: "
+        "input is expected to be T x C x B");
+  }
+
   // input is expected T x C x B (mostly C=1)
-  af::dim4 timeView = af::dim4(
-      inputCast.dims(0),
-      inputCast.dims(1) * inputCast.dims(2) * inputCast.dims(3));
+  const Shape& inShape = inputCast.dims();
+  // Conv2D input must be 4 dims (W x H x C x N) (N = batch size)
+  Shape timeView = {inShape[0], inShape[1] * inShape[2], 1, 1};
   for (int i = 0; i < numFreqMask_; ++i) {
     auto low = generateRandomInt(ignoredLowPassFilters_, rawWavNMels_);
     auto high =
@@ -151,10 +162,10 @@ Variable RawWavSpecAugment::forward(const Variable& input) {
   }
 
   double replaceVal = (maskStrategy_ == MaskingStrategy::GLOBAL_MEAN)
-      ? af::mean<double>(inputCast.array())
+      ? fl::mean(inputCast.tensor()).asScalar<double>()
       : 0.0;
 
-  auto& opArr = output.array();
+  auto& opArr = output.tensor();
   auto numTimeSteps = inputCast.dims(0); // number of time steps
   // an upper bound on the time mask
   int T = std::min(timeMaskT_, static_cast<int>(numTimeSteps * timeMaskP_));
@@ -162,7 +173,8 @@ Variable RawWavSpecAugment::forward(const Variable& input) {
     for (int i = 0; i < numTimeMask_; ++i) {
       auto t = generateRandomInt(0, T);
       auto t0 = generateRandomInt(0, numTimeSteps - t);
-      opArr(af::seq(t0, t0 + t), af::span, af::span, af::span) = replaceVal;
+      // TODO{fl::Tensor}{range} - check indexing shape
+      opArr(fl::range(t0, t0 + t)) = replaceVal;
     }
   }
   return output;
