@@ -11,6 +11,7 @@
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/nn/Init.h"
 #include "flashlight/fl/nn/modules/AdaptiveSoftMax.h"
+#include "flashlight/fl/tensor/Index.h"
 
 namespace fl {
 
@@ -26,10 +27,7 @@ AdaptiveSoftMax::AdaptiveSoftMax(
   int outputSize = cutoff_[0] + cutoff_.size() - 1;
 
   auto head = kaimingUniform(
-      af::dim4(outputSize, inputSize),
-      inputSize /* fanIn */,
-      af::dtype::f32,
-      true);
+      {outputSize, inputSize}, inputSize /* fanIn */, fl::dtype::f32, true);
   params_.push_back(head);
 
   int denominator = 1;
@@ -37,14 +35,11 @@ AdaptiveSoftMax::AdaptiveSoftMax(
     denominator *= divValue_;
     int hiddenSize = inputSize / denominator;
     auto tail1 = kaimingUniform(
-        af::dim4(hiddenSize, inputSize),
-        inputSize /* fanIn */,
-        af::dtype::f32,
-        true);
+        {hiddenSize, inputSize}, inputSize /* fanIn */, fl::dtype::f32, true);
     auto tail2 = kaimingUniform(
-        af::dim4(cutoff_[i + 1] - cutoff_[i], hiddenSize),
+        {cutoff_[i + 1] - cutoff_[i], hiddenSize},
         hiddenSize /* fanIn */,
-        af::dtype::f32,
+        fl::dtype::f32,
         true);
 
     params_.push_back(tail1);
@@ -57,16 +52,17 @@ Variable AdaptiveSoftMax::getFullLogProb(
     const Variable& headOutput) const {
   auto outputSize = cutoff_[cutoff_.size() - 1];
   auto batchSize = inputs.dims(1);
-  af::array output(af::dim4(outputSize, batchSize), inputs.type());
+  Tensor output({outputSize, batchSize}, inputs.type());
 
-  output.rows(0, cutoff_[0] + cutoff_.size() - 2) = headOutput.array();
+  output(fl::range(0, cutoff_[0] + cutoff_.size() - 1)) = headOutput.tensor();
 
   for (int i = cutoff_.size() - 2; i >= 0; i--) {
     auto tailOutput = matmul(params_[1 + i * 2], inputs);
     tailOutput = matmul(params_[2 + i * 2], tailOutput);
+    auto idx = i + cutoff_[0];
     tailOutput = logSoftmax(tailOutput, 0) +
-        tileAs(headOutput.row(i + cutoff_[0]), tailOutput);
-    output.rows(cutoff_[i], cutoff_[i + 1] - 1) = tailOutput.array();
+        tileAs(headOutput(fl::range(idx, idx)), tailOutput);
+    output(fl::range(cutoff_[i], cutoff_[i + 1])) = tailOutput.tensor();
   }
 
   return Variable(output, false);
@@ -80,13 +76,14 @@ Variable AdaptiveSoftMax::forward(const Variable& inputs) {
     throw std::invalid_argument("invalid input dimension for AdaptiveSoftMax");
   }
 
-  auto inputsFlattened = moddims(inputs, af::dim4(inputSize, -1, 1, 1));
+  auto inputsFlattened = moddims(inputs, {inputSize, -1});
   auto headOutput = logSoftmax(matmul(params_[0], inputsFlattened), 0);
 
   auto ret = getFullLogProb(inputsFlattened, headOutput);
-  return moddims(
-      ret,
-      af::dim4(ret.dims(0), inputs.dims(1), inputs.dims(2), inputs.dims(3)));
+
+  Shape outDims = inputs.dims();
+  outDims[0] = ret.dims(0);
+  return moddims(ret, outDims);
 }
 
 Variable AdaptiveSoftMax::predict(const Variable& inputs) const {
@@ -98,29 +95,30 @@ Variable AdaptiveSoftMax::predict(const Variable& inputs) const {
         "invalid input dimension for AdaptiveSoftMaxLoss");
   }
 
-  auto inputsFlattened = moddims(inputs, af::dim4(inputSize, -1, 1, 1));
+  auto inputsFlattened = moddims(inputs, {inputSize, -1});
   auto headOutput = matmul(params_[0], inputsFlattened);
-  af::array maxValue, prediction;
-  af::max(maxValue, prediction, headOutput.array(), 0);
+  Tensor maxValue, prediction;
+  fl::max(maxValue, prediction, headOutput.tensor(), 0);
 
   auto notInShortlist = (prediction >= cutoff_[0]);
   Variable ret = Variable(prediction, false);
-  if (af::anyTrue<bool>(notInShortlist)) {
+  if (fl::any(notInShortlist).asScalar<bool>()) {
     headOutput = logSoftmax(headOutput, 0);
     auto logProbTailPositions = getFullLogProb(
-        inputsFlattened(af::span, notInShortlist),
-        headOutput(af::span, notInShortlist));
-    af::array maxValueTailPositions, predictionTailPositions;
-    af::max(
+        inputsFlattened(fl::span, notInShortlist),
+        headOutput(fl::span, notInShortlist));
+    Tensor maxValueTailPositions, predictionTailPositions;
+    fl::max(
         maxValueTailPositions,
         predictionTailPositions,
-        logProbTailPositions.array(),
+        logProbTailPositions.tensor(),
         0);
-    ret.array()(notInShortlist) = predictionTailPositions;
+    ret.tensor()(notInShortlist) = predictionTailPositions;
   }
-  return moddims(
-      ret,
-      af::dim4(ret.dims(0), inputs.dims(1), inputs.dims(2), inputs.dims(3)));
+
+  Shape outDims = inputs.dims();
+  outDims[0] = 1;
+  return moddims(ret, outDims);
 }
 
 std::vector<int> AdaptiveSoftMax::getCutoff() const {

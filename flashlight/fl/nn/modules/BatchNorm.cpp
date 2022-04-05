@@ -57,11 +57,11 @@ Variable BatchNorm::forward(const Variable& input) {
   }
 
   auto paramsType =
-      (input.type() == af::dtype::f16) ? af::dtype::f32 : input.type();
+      (input.type() == fl::dtype::f16) ? fl::dtype::f32 : input.type();
   return batchnorm(
       input,
-      params_.empty() ? Variable(af::array(0, paramsType), false) : params_[0],
-      params_.empty() ? Variable(af::array(0, paramsType), false) : params_[1],
+      params_.empty() ? Variable(Tensor(paramsType), false) : params_[0],
+      params_.empty() ? Variable(Tensor(paramsType), false) : params_[1],
       runningMean_,
       runningVar_,
       featAxis_,
@@ -72,13 +72,13 @@ Variable BatchNorm::forward(const Variable& input) {
 
 void BatchNorm::initialize() {
   if (trackStats_) {
-    runningMean_ = constant(0.0, featSize_, af::dtype::f32, false);
-    runningVar_ = constant(1.0, featSize_, af::dtype::f32, false);
+    runningMean_ = constant(0.0, {featSize_}, fl::dtype::f32, false);
+    runningVar_ = constant(1.0, {featSize_}, fl::dtype::f32, false);
   }
 
   if (affine_) {
-    auto wt = uniform(featSize_, 0.0, 1.0, af::dtype::f32, true);
-    auto bs = constant(0.0, featSize_, af::dtype::f32, true);
+    auto wt = uniform({featSize_}, 0.0, 1.0, fl::dtype::f32, true);
+    auto bs = constant(0.0, {featSize_}, fl::dtype::f32, true);
     params_ = {wt, bs};
   }
 }
