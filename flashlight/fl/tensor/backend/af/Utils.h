@@ -44,7 +44,7 @@ af_storage flToAfStorageType(StorageType storageType);
 /**
  * Convert a Flashlight tensor sort mode into an ArrayFire topk sort mode.
  */
-af_topk_function flToAfSortMode(SortMode sortMode);
+af_topk_function flToAfTopKSortMode(SortMode sortMode);
 
 /**
  * Convert an fl::Shape into an ArrayFire af::dim4
