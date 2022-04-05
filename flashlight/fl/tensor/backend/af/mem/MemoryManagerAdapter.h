@@ -11,6 +11,7 @@
 
 #include <fstream>
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <sstream>
 #include <stdexcept>
@@ -78,7 +79,10 @@ class MemoryManagerAdapter {
   virtual size_t allocated(void* ptr) = 0;
   virtual void unlock(void* ptr, bool userLock) = 0;
   virtual void signalMemoryCleanup() = 0;
-  virtual void printInfo(const char* msg, const int device) = 0;
+  virtual void printInfo(
+      const char* msg,
+      const int device,
+      std::ostream* ostream = &std::cout) = 0;
   virtual void userLock(const void* ptr) = 0;
   virtual void userUnlock(const void* ptr) = 0;
   virtual bool isUserLocked(const void* ptr) = 0;
@@ -110,6 +114,13 @@ class MemoryManagerAdapter {
   void setLogStream(std::ostream* logStream);
 
   /**
+   * Returns the log stream for a memory manager base.
+   *
+   * @return the manager's log stream.
+   */
+  std::ostream* getLogStream() const;
+
+  /**
    * Sets the logging mode for the memory manager base. If disabled, no logs are
    * written. If enabled, all function calls to virtual base class methods are
    * logged.
@@ -130,7 +141,7 @@ class MemoryManagerAdapter {
   /**
    * Returns the ArrayFire handle for this memory manager.
    *
-   * @returns the `af_memory_manager` handle associated with this class.
+   * @return the `af_memory_manager` handle associated with this class.
    */
   af_memory_manager getHandle() const;
 

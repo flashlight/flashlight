@@ -379,20 +379,24 @@ bool CachingMemoryManager::jitTreeExceedsMemoryPressure(size_t /* unused */) {
   return false; // TODO: check if this is optimal
 }
 
-void CachingMemoryManager::printInfo(const char* msg, const int /* unused */) {
+void CachingMemoryManager::printInfo(
+    const char* msg,
+    const int /* unused */,
+    std::ostream* _ostream) {
+  std::ostream& ostream = *_ostream;
   auto& memInfo = getDeviceMemoryInfo();
   std::lock_guard<std::recursive_mutex> lock(memInfo.mutexAll_);
 
-  std::cout << msg;
-  std::cout << "\nType: CachingMemoryManager";
-  std::cout << "\nDevice: " << memInfo.deviceId_ << ", Capacity: "
-            << formatMemory(
-                   this->deviceInterface->getMaxMemorySize(memInfo.deviceId_))
-            << ", Allocated: " << formatMemory(memInfo.stats_.allocatedBytes_)
-            << ", Cached: " << formatMemory(memInfo.stats_.cachedBytes_);
-  std::cout << "\nTotal native calls: " << memInfo.stats_.totalNativeMallocs_
-            << "(mallocs), " << memInfo.stats_.totalNativeFrees_ << "(frees)"
-            << std::endl;
+  ostream << msg << "\nType: CachingMemoryManager" << std::endl
+          << "\nDevice: " << memInfo.deviceId_ << ", Capacity: "
+          << formatMemory(
+                 this->deviceInterface->getMaxMemorySize(memInfo.deviceId_))
+          << ", Allocated: " << formatMemory(memInfo.stats_.allocatedBytes_)
+          << ", Cached: " << formatMemory(memInfo.stats_.cachedBytes_)
+          << std::endl
+          << "\nTotal native calls: " << memInfo.stats_.totalNativeMallocs_
+          << "(mallocs), " << memInfo.stats_.totalNativeFrees_ << "(frees)"
+          << std::endl;
 }
 
 void CachingMemoryManager::userLock(const void* ptr) {

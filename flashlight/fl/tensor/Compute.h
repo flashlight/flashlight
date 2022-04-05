@@ -8,6 +8,7 @@
 #pragma once
 
 #include <cstdlib>
+#include <iostream>
 
 // TODO:fl::Tensor {misc} remove me when not dependent on AF
 namespace af {
@@ -87,4 +88,51 @@ void setDevice(const int deviceId);
  */
 int getDeviceCount();
 
+namespace detail {
+
+/**
+ * Write the current state of the memory manager to a specified output stream.
+ * This function may be a noop for backends that do not implement memory
+ * managers with configurable logging.
+ */
+void getMemMgrInfo(
+    const char* msg,
+    const int deviceId,
+    std::ostream* ostream = &std::cout);
+
+/**
+ * Configures memory manager log output to write to a specified output stream.
+ * This function may be a noop for backends that do not implement memory
+ * managers with configurable logging.
+ *
+ * TODO: consolidate or improve this API
+ *
+ * @returns the number of active devices usable in Flashlight.
+ */
+void setMemMgrLogStream(std::ostream* stream);
+
+/**
+ * Sets (or unsets) logging for memory management. This function may be a noop
+ * for backends that do not implement memory managers with configurable logging
+ * capability.
+ *
+ * TODO: consolidate or improve this API
+ *
+ * @param[in] enabled true to enable logging, false to disable.
+ */
+void setMemMgrLoggingEnabled(const bool enabled);
+
+/**
+ * Configures memory manager log output to flush to the output stream after a
+ * given number of lines are written. This function may be a noop
+ * for backends that do not implement memory managers with configurable logging
+ *
+ * TODO: consolidate or improve this API
+ *
+ * @param[in] interval the number of lines after which to flush the temporary
+ * log buffer. Supplied interval must be greater than 1.
+ */
+void setMemMgrFlushInterval(const size_t interval);
+
+} // namespace detail
 } // namespace fl
