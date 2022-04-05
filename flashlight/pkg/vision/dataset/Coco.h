@@ -23,13 +23,13 @@ struct CocoDataSample {
 };
 
 struct CocoData {
-  af::array images;
-  af::array masks;
-  af::array imageSizes;
-  af::array imageIds;
-  af::array originalImageSizes;
-  std::vector<af::array> target_boxes;
-  std::vector<af::array> target_labels;
+  Tensor images;
+  Tensor masks;
+  Tensor imageSizes;
+  Tensor imageIds;
+  Tensor originalImageSizes;
+  std::vector<Tensor> target_boxes;
+  std::vector<Tensor> target_labels;
 };
 
 class CocoDataset {

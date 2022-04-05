@@ -7,8 +7,9 @@
 
 #pragma once
 
-#include <arrayfire.h>
 #include <functional>
+
+#include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 namespace pkg {
@@ -18,157 +19,148 @@ namespace vision {
  * Resizes the smallest length edge of an image to be resize while keeping
  * the aspect ratio
  */
-af::array resizeSmallest(const af::array& in, const int resize);
+Tensor resizeSmallest(const Tensor& in, const int resize);
 
 /*
  * Resize both sides of image to be length
  * @param resize`
  * will change aspect ratio
  */
-af::array resize(const af::array& in, const int resize);
+Tensor resize(const Tensor& in, const int resize);
 
 /*
  * Crop image @param in, starting from position @param x and @param y
  * with a target width and height of @param w and @param h respectively
  */
-af::array
-crop(const af::array& in, const int x, const int y, const int w, const int h);
+Tensor
+crop(const Tensor& in, const int x, const int y, const int w, const int h);
 
 /*
  * Take a center crop of image @param in,
  * where both image sides with be of length @param size
  */
-af::array centerCrop(const af::array& in, const int size);
+Tensor centerCrop(const Tensor& in, const int size);
 
 /*
  * Rotate an image
  * @param theta to which degree (in radius) a image will rotate
  * @param fillImg filling values on the empty spots
  */
-af::array
-rotate(const af::array& input, const float theta, const af::array& fillImg);
+Tensor rotate(const Tensor& input, const float theta, const Tensor& fillImg);
 
 /*
  * Skew an image on the first dimension
  * @param theta to which degree (in radius) a image will skew
  * @param fillImg filling values on the empty spots
  */
-af::array
-skewX(const af::array& input, const float theta, const af::array& fillImg);
+Tensor skewX(const Tensor& input, const float theta, const Tensor& fillImg);
 
 /*
  * Skew an image on the second dimension
  * @param theta to which degree (in radius) a image will skew
  * @param fillImg filling values on the empty spots
  */
-af::array
-skewY(const af::array& input, const float theta, const af::array& fillImg);
+Tensor skewY(const Tensor& input, const float theta, const Tensor& fillImg);
 
 /*
  * Translate an image on the first dimension
  * @param shift number of pixels a image will translate
  * @param fillImg filling values on the empty spots
  */
-af::array
-translateX(const af::array& input, const int shift, const af::array& fillImg);
+Tensor translateX(const Tensor& input, const int shift, const Tensor& fillImg);
 
 /*
  * Translate an image on the second dimension
  * @param shift number of pixels a image will translate
  * @param fillImg filling values on the empty spots
  */
-af::array
-translateY(const af::array& input, const int shift, const af::array& fillImg);
+Tensor translateY(const Tensor& input, const int shift, const Tensor& fillImg);
 
 /*
  * Enhance the color of an image
  * @param enhance to which extend the color will change.
  */
-af::array colorEnhance(const af::array& input, const float enhance);
+Tensor colorEnhance(const Tensor& input, const float enhance);
 
 /*
  * Remaps the image so that the darkest pixel becomes black (0), and the
  * lightest becomes white (255).
  */
-af::array autoContrast(const af::array& input);
+Tensor autoContrast(const Tensor& input);
 
 /*
  * Enhance the contrast of an image
  * @param enhance to which extend the contrast will change.
  */
-af::array contrastEnhance(const af::array& input, const float enhance);
+Tensor contrastEnhance(const Tensor& input, const float enhance);
 
 /*
  * Enhance the brightness of an image
  * @param enhance to which extend the brightness will change.
  */
-af::array brightnessEnhance(const af::array& input, const float enhance);
+Tensor brightnessEnhance(const Tensor& input, const float enhance);
 
 /*
  * Enhance the sharpness of an image
  * @param enhance to which extend the sharpness will change.
  */
-af::array sharpnessEnhance(const af::array& input, const float enhance);
+Tensor sharpnessEnhance(const Tensor& input, const float enhance);
 
 /*
  * Invert each pixel of the image
  */
-af::array invert(const af::array& input);
+Tensor invert(const Tensor& input);
 
 /*
  * Invert all pixel values above a threshold.
  */
-af::array solarize(const af::array& input, const float threshold);
+Tensor solarize(const Tensor& input, const float threshold);
 
 /*
  * Increase all pixel values below a threshold.
  */
-af::array solarizeAdd(
-    const af::array& input,
-    const float threshold,
-    const float addValue);
+Tensor
+solarizeAdd(const Tensor& input, const float threshold, const float addValue);
 
 /*
  * Applies a non-linear mapping to the input image, in order to create a uniform
  * distribution of grayscale values in the output image.
  */
-af::array equalize(const af::array& input);
+Tensor equalize(const Tensor& input);
 
 /*
  * Reduce the number of bits for each color channel.
  */
-af::array posterize(const af::array& input, const int bitsToKeep);
+Tensor posterize(const Tensor& input, const int bitsToKeep);
 
 /*
  * Transform a target array with label indices into a one-hot matrix
  */
-af::array oneHot(
-    const af::array& targets,
-    const int numClasses,
-    const float labelSmoothing);
+Tensor
+oneHot(const Tensor& targets, const int numClasses, const float labelSmoothing);
 
 /*
  * Apply mixup for a given batch as in https://arxiv.org/abs/1710.09412
  */
-std::pair<af::array, af::array> mixupBatch(
+std::pair<Tensor, Tensor> mixupBatch(
     const float lambda,
-    const af::array& input,
-    const af::array& target,
+    const Tensor& input,
+    const Tensor& target,
     const int numClasses,
     const float labelSmoothing);
 
 /*
  * Apply cutmix as in https://arxiv.org/abs/1905.04899
  */
-std::pair<af::array, af::array> cutmixBatch(
+std::pair<Tensor, Tensor> cutmixBatch(
     const float lambda,
-    const af::array& input,
-    const af::array& target,
+    const Tensor& input,
+    const Tensor& target,
     const int numClasses,
     const float labelSmoothing);
 
 // Same function signature as DataTransform but removes fl dep
-using ImageTransform = std::function<af::array(const af::array&)>;
+using ImageTransform = std::function<Tensor(const Tensor&)>;
 
 ImageTransform normalizeImage(
     const std::vector<float>& meanVec,
@@ -245,7 +237,7 @@ ImageTransform randomEraseTransform(
 ImageTransform randomAugmentationDeitTransform(
     const float p = 0.5,
     const int n = 2,
-    const af::array& fillImg = af::array());
+    const Tensor& fillImg = Tensor());
 
 /*
  * Utility method for composing multiple transform functions
