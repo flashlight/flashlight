@@ -34,7 +34,7 @@ NovogradOptimizer::NovogradOptimizer(
 
   for (const auto& parameter : parameters_) {
     accGradNorm_.emplace_back(0.0);
-    accGrad_.emplace_back(af::constant(0, parameter.dims(), parameter.type()));
+    accGrad_.emplace_back(fl::full(parameter.dims(), 0, parameter.type()));
 
     fl::eval(accGrad_.back());
   }
@@ -46,11 +46,11 @@ void NovogradOptimizer::step() {
       continue;
     }
 
-    const af::array& grad = parameters_[i].grad().array();
-    af::array& data = parameters_[i].array();
-    af::array& accGrad = accGrad_[i];
+    const Tensor& grad = parameters_[i].grad().tensor();
+    Tensor& data = parameters_[i].tensor();
+    Tensor& accGrad = accGrad_[i];
 
-    double gradNorm = af::sum<double>(grad * grad);
+    double gradNorm = fl::sum(grad * grad).asScalar<double>();
 
     accGradNorm_[i] = beta2_ * accGradNorm_[i] + (1 - beta2_) * gradNorm;
     accGrad = beta1_ * accGrad +

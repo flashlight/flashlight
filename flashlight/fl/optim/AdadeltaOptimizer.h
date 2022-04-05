@@ -9,10 +9,9 @@
 
 #include <vector>
 
-#include <arrayfire.h>
-
 #include "flashlight/fl/autograd/Variable.h"
 #include "flashlight/fl/optim/Optimizers.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 
@@ -36,8 +35,8 @@ class AdadeltaOptimizer : public FirstOrderOptimizer {
   float rho_;
   float eps_;
   float wd_;
-  std::vector<af::array> accGrad_;
-  std::vector<af::array> accDelta_;
+  std::vector<Tensor> accGrad_;
+  std::vector<Tensor> accDelta_;
 
  public:
   /** Construct an Adadelta optimizer.
