@@ -12,11 +12,6 @@
 #include "flashlight/fl/tensor/TensorBackend.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
-// TODO: remove me once no more `af::eval` calls
-#include <af/array.h>
-#include <af/device.h>
-#include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
-
 namespace fl {
 
 void sync() {
@@ -29,11 +24,6 @@ void sync(const int deviceId) {
 
 void eval(Tensor& tensor) {
   Tensor().backend().eval(tensor);
-}
-
-// TODO:fl::Tensor remove once no more `fl::eval` calls that take `af::array`s
-void eval(af::array& array) {
-  af::eval(array);
 }
 
 int getDevice() {
