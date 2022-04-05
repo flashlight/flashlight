@@ -40,13 +40,14 @@ class LmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm : public fl::Container {
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& input) override {
     auto out = input[0];
-    auto xSizes = input[1].array();
+    auto xSizes = input[1].tensor();
     // expected input dims T x B x 1 x 1
     int T = out.dims(0), B = out.dims(1);
-    auto inputMaxSize = af::tile(af::max(xSizes), 1, B);
-    af::array inputNotPaddedSize = af::ceil(xSizes * T / inputMaxSize);
-    auto padMask = af::iota(af::dim4(T, 1), af::dim4(1, B)) <
-        af::tile(inputNotPaddedSize, T, 1);
+    // TODO{fl::Tensor} - first non-signleton dimension check
+    auto inputMaxSize = fl::tile(fl::amax(xSizes, {0}), {1, B});
+    Tensor inputNotPaddedSize = fl::ceil(xSizes * T / inputMaxSize);
+    auto padMask =
+        fl::iota({T, 1}, {1, B}) < fl::tile(inputNotPaddedSize, {T, 1});
     out = frontend_->forward(out);
     for (int trIdx = 0; trIdx < transformers_.size(); trIdx++) {
       out = transformers_[trIdx]->forward({out, fl::noGrad(padMask)}).front();
@@ -75,8 +76,7 @@ class LmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm : public fl::Container {
 } // namespace rasrLM
 
 extern "C" fl::Module* createModule(int64_t, int64_t nLabel) {
-  auto m =
-      std::make_unique<LmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm>(nLabel);
+  auto m = std::make_unique<LmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm>(nLabel);
   return m.release();
 }
 
