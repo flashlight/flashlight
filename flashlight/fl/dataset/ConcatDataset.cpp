@@ -24,7 +24,7 @@ ConcatDataset::ConcatDataset(
   }
 }
 
-std::vector<af::array> ConcatDataset::get(const int64_t idx) const {
+std::vector<Tensor> ConcatDataset::get(const int64_t idx) const {
   checkIndexBounds(idx);
 
   // get sample from correct dataset
