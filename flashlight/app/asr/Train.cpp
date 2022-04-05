@@ -17,6 +17,21 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
+#include "flashlight/fl/contrib/contrib.h"
+#include "flashlight/fl/flashlight.h"
+#include "flashlight/fl/tensor/Compute.h"
+#include "flashlight/fl/tensor/Index.h"
+#include "flashlight/fl/tensor/TensorBase.h"
+#include "flashlight/lib/common/System.h"
+#include "flashlight/lib/text/decoder/lm/KenLM.h"
+#include "flashlight/lib/text/dictionary/Dictionary.h"
+#include "flashlight/lib/text/dictionary/Utils.h"
+#include "flashlight/pkg/runtime/Runtime.h"
+#include "flashlight/pkg/runtime/amp/DynamicScaler.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
+#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
+#include "flashlight/pkg/runtime/common/Serializer.h"
+#include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
 #include "flashlight/pkg/speech/augmentation/SoundEffectConfig.h"
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/common/Flags.h"
@@ -27,27 +42,14 @@
 #include "flashlight/pkg/speech/decoder/PlGenerator.h"
 #include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
 #include "flashlight/pkg/speech/runtime/runtime.h"
-#include "flashlight/pkg/runtime/Runtime.h"
-#include "flashlight/pkg/runtime/amp/DynamicScaler.h"
-#include "flashlight/pkg/runtime/common/DistributedUtils.h"
-#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
-#include "flashlight/pkg/runtime/common/Serializer.h"
-#include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
-#include "flashlight/fl/contrib/contrib.h"
-#include "flashlight/fl/flashlight.h"
-#include "flashlight/lib/common/System.h"
-#include "flashlight/lib/text/decoder/lm/KenLM.h"
-#include "flashlight/lib/text/dictionary/Dictionary.h"
-#include "flashlight/lib/text/dictionary/Utils.h"
 
-using fl::pkg::runtime::getRunFile;
-using fl::pkg::runtime::afToVector;
-using fl::pkg::runtime::Serializer;
 using fl::lib::fileExists;
 using fl::lib::format;
 using fl::lib::getCurrentDate;
 using fl::lib::join;
 using fl::lib::pathsConcat;
+using fl::pkg::runtime::getRunFile;
+using fl::pkg::runtime::Serializer;
 
 using namespace fl::pkg::speech;
 
@@ -199,18 +201,15 @@ int main(int argc, char** argv) {
   // log memory manager operations.
   std::ofstream memLog;
   if (FLAGS_fl_log_mem_ops_interval > 0 && isMaster) {
-    auto* curMemMgr =
-        fl::MemoryManagerInstaller::currentlyInstalledMemoryManager();
-    if (curMemMgr) {
-      memLog.open(getRunFile("mem", runIdx, runPath));
-      if (!memLog) {
-        LOG(FATAL) << "failed to open memory log file="
-                   << getRunFile("mem", runIdx, runPath) << " for writing";
-      }
-      curMemMgr->setLogStream(&memLog);
-      curMemMgr->setLoggingEnabled(true);
-      curMemMgr->setLogFlushInterval(FLAGS_fl_log_mem_ops_interval);
+    memLog.open(getRunFile("mem", runIdx, runPath));
+    if (!memLog) {
+      LOG(FATAL) << "failed to open memory log file="
+                 << getRunFile("mem", runIdx, runPath) << " for writing";
     }
+
+    fl::detail::setMemMgrLogStream(&memLog);
+    fl::detail::setMemMgrLoggingEnabled(true);
+    fl::detail::setMemMgrFlushInterval(FLAGS_fl_log_mem_ops_interval);
   }
 
   // flashlight optim mode
@@ -385,10 +384,11 @@ int main(int argc, char** argv) {
     FL_LOG_MASTER(INFO) << "Loading architecture file from " << FLAGS_arch;
     // Encoder network, works on audio
     if (fl::lib::endsWith(FLAGS_arch, ".so")) {
-      network = fl::pkg::runtime::ModulePlugin(FLAGS_arch).arch(numFeatures, numClasses);
+      network = fl::pkg::runtime::ModulePlugin(FLAGS_arch)
+                    .arch(numFeatures, numClasses);
     } else {
-      network =
-          fl::pkg::runtime::buildSequentialModule(FLAGS_arch, numFeatures, numClasses);
+      network = fl::pkg::runtime::buildSequentialModule(
+          FLAGS_arch, numFeatures, numClasses);
     }
     if (FLAGS_criterion == kCtcCriterion) {
       criterion = std::make_shared<CTCLoss>(scalemode);
@@ -726,25 +726,24 @@ int main(int argc, char** argv) {
         }
       }
       // print brief stats on memory allocation (so far)
-      auto* curMemMgr =
-          fl::MemoryManagerInstaller::currentlyInstalledMemoryManager();
-      if (curMemMgr) {
-        curMemMgr->printInfo("Memory Manager Stats", 0 /* device id */);
-      }
+      fl::detail::getMemMgrInfo("Memory Manager Stats", /* device id = */ 0);
     }
   };
 
   auto evalOutput = [&tokenDict, &criterion, &isSeq2seqCrit](
-                        const af::array& op,
-                        const af::array& target,
-                        const af::array& inputSizes,
+                        const fl::Tensor& op,
+                        const fl::Tensor& target,
+                        const fl::Tensor& inputSizes,
                         DatasetMeters& mtr) {
-    auto batchsz = op.dims(2);
+    auto batchsz = op.dim(2);
     for (int b = 0; b < batchsz; ++b) {
-      auto tgt = target(af::span, b);
-      auto viterbipath = afToVector<int>(
-          criterion->viterbiPath(op(af::span, af::span, b), inputSizes.col(b)));
-      auto tgtraw = afToVector<int>(tgt);
+      auto tgt = target(fl::span, b);
+      auto viterbipath = criterion
+                             ->viterbiPath(
+                                 op(fl::span, fl::span, b),
+                                 inputSizes(fl::span, fl::range(b, b)))
+                             .toHostVector<int>();
+      auto tgtraw = tgt.toHostVector<int>();
 
       // Remove `-1`s appended to the target for batching (if any)
       auto labellen = getTargetSize(tgtraw.data(), tgtraw.size());
@@ -845,10 +844,11 @@ int main(int argc, char** argv) {
       }
       dmErr = DBL_MAX;
       for (int i = 0; i < lmweights.size(); i++) {
-        af::array currentEditDist =
-            af::constant((long long)(wordEditDst[i][0]), af::dim4(1, 1, 1, 1));
-        af::array currentTokens =
-            af::constant((long long)(wordEditDst[i][1]), af::dim4(1, 1, 1, 1));
+        // TODO{fl::Tensor} - consider using a scalar Tensor
+        fl::Tensor currentEditDist =
+            fl::full({1}, (long long)(wordEditDst[i][0]));
+        fl::Tensor currentTokens =
+            fl::full({1}, (long long)(wordEditDst[i][1]));
         if (FLAGS_enable_distributed) {
           fl::allReduce(currentEditDist);
           fl::allReduce(currentTokens);
@@ -887,8 +887,8 @@ int main(int argc, char** argv) {
         critArgs.push_back(fl::Variable(batch[kTargetSizeIdx], false));
       }
       auto loss = crit->forward(critArgs).front();
-      mtrs.loss.add(loss.array());
-      evalOutput(output.array(), batch[kTargetIdx], batch[kDurationIdx], mtrs);
+      mtrs.loss.add(loss.tensor());
+      evalOutput(output.tensor(), batch[kTargetIdx], batch[kDurationIdx], mtrs);
     }
   };
 
@@ -1067,8 +1067,8 @@ int main(int argc, char** argv) {
         meters.timer.incUnit();
         meters.sampletimer.stopAndIncUnit();
         meters.stats.add(batch[kDurationIdx], batch[kTargetSizeIdx]);
-        if (af::anyTrue<bool>(af::isNaN(batch[kInputIdx])) ||
-            af::anyTrue<bool>(af::isNaN(batch[kTargetIdx]))) {
+        if (fl::any(fl::isnan(batch[kInputIdx])).asScalar<bool>() ||
+            fl::any(fl::isnan(batch[kTargetIdx])).asScalar<bool>()) {
           LOG(FATAL) << "Sample has NaN values - "
                      << join(",", readSampleIds(batch[kSampleIdx]));
         }
@@ -1111,8 +1111,8 @@ int main(int argc, char** argv) {
           meters.fwdtimer.stopAndIncUnit();
           meters.critfwdtimer.stopAndIncUnit();
 
-          if (af::anyTrue<bool>(af::isNaN(loss.array())) ||
-              af::anyTrue<bool>(af::isInf(loss.array()))) {
+          if (fl::any(fl::isnan(loss.tensor())).asScalar<bool>() ||
+              fl::any(fl::isinf(loss.tensor())).asScalar<bool>()) {
             LOG(FATAL) << "Loss has NaN values. Samples - "
                        << join(",", readSampleIds(batch[kSampleIdx]));
           }
@@ -1120,7 +1120,7 @@ int main(int argc, char** argv) {
           if (hasher(join(",", readSampleIds(batch[kSampleIdx]))) % 100 <=
               FLAGS_pcttraineval) {
             evalOutput(
-                output.array(),
+                output.tensor(),
                 batch[kTargetIdx],
                 batch[kDurationIdx],
                 meters.train);
@@ -1131,15 +1131,16 @@ int main(int argc, char** argv) {
           netopt->zeroGrad();
           critopt->zeroGrad();
 
-          float totalBatchSize = batch[kInputIdx].dims(3);
-          af::array totalBatchSizeArr =
-              af::constant(batch[kInputIdx].dims(3), 1, f32);
+          float totalBatchSize = batch[kInputIdx].dim(3);
+          // TODO{fl::Tensor} -- change me to use a scalar tensor?
+          fl::Tensor totalBatchSizeArr =
+              fl::full({1}, batch[kInputIdx].dim(3), fl::dtype::f32);
           if (reducer) {
             fl::allReduce(totalBatchSizeArr);
           }
           totalBatchSize = totalBatchSizeArr.scalar<float>();
           auto scaledLoss = loss / totalBatchSize;
-          bool scaleIsValid =fl::pkg::runtime::backwardWithScaling(
+          bool scaleIsValid = fl::pkg::runtime::backwardWithScaling(
               scaledLoss, params, dynamicScaler, reducer);
           fl::sync();
           meters.bwdtimer.stopAndIncUnit();
@@ -1147,7 +1148,7 @@ int main(int argc, char** argv) {
             continue;
           }
 
-          meters.train.loss.add(loss.array());
+          meters.train.loss.add(loss.tensor());
           break;
         }
 

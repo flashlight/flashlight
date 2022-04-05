@@ -11,10 +11,10 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
-#include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/String.h"
+#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
+#include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
 
 DEFINE_int32(num_iters, 50, "Number of iterations to run for benchmarking");
 DEFINE_int32(batchsize, 1, "Batchsize of the input");
@@ -28,7 +28,7 @@ namespace {
 float run(
     std::shared_ptr<fl::Module> network,
     fl::Variable input,
-    af::array duration,
+    fl::Tensor duration,
     bool useAmp,
     bool runBwd,
     int numIters,
@@ -51,8 +51,8 @@ float run(
     if (usePlugin) {
       output = network->forward({input, fl::noGrad(duration)}).front();
     } else {
-      output =
-          fl::pkg::runtime::forwardSequentialModuleWithPadMask(input, network, duration);
+      output = fl::pkg::runtime::forwardSequentialModuleWithPadMask(
+          input, network, duration);
     }
     if (runBwd) {
       output.backward();
@@ -80,8 +80,6 @@ int main(int argc, char** argv) {
 
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
-  af::info();
-
   std::cout << "Loading architecture file from " << FLAGS_arch << std::endl;
   std::shared_ptr<fl::Module> network;
   bool usePlugin = fl::lib::endsWith(FLAGS_arch, ".so");
@@ -95,8 +93,8 @@ int main(int argc, char** argv) {
   std::cout << network->prettyString() << std::endl;
   // Consider an audio input of 15 sec
   auto input = fl::Variable(
-      af::randu(1500, FLAGS_in_features, 1, FLAGS_batchsize), true);
-  auto duration = af::constant(1500, 1, FLAGS_batchsize).as(af::dtype::s64);
+      fl::rand({1500, FLAGS_in_features, 1, FLAGS_batchsize}), true);
+  auto duration = fl::full({1, FLAGS_batchsize}, 1500).astype(fl::dtype::s64);
 
   std::cout << (FLAGS_use_amp ? "U" : "Not u") << "sing AMP" << std::endl;
   std::cout << "Fwd : "

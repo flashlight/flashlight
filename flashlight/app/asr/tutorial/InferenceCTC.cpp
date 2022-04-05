@@ -11,8 +11,14 @@
 
 #include <gflags/gflags.h>
 #include <glog/logging.h>
+
 #include "flashlight/fl/flashlight.h"
 
+#include "flashlight/lib/text/decoder/LexiconDecoder.h"
+#include "flashlight/lib/text/decoder/lm/KenLM.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
+#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
+#include "flashlight/pkg/runtime/common/Serializer.h"
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/data/FeatureTransforms.h"
 #include "flashlight/pkg/speech/data/Sound.h"
@@ -20,11 +26,6 @@
 #include "flashlight/pkg/speech/decoder/DecodeUtils.h"
 #include "flashlight/pkg/speech/decoder/Defines.h"
 #include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
-#include "flashlight/pkg/runtime/common/DistributedUtils.h"
-#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
-#include "flashlight/pkg/runtime/common/Serializer.h"
-#include "flashlight/lib/text/decoder/LexiconDecoder.h"
-#include "flashlight/lib/text/decoder/lm/KenLM.h"
 
 DEFINE_string(
     am_path,
@@ -263,14 +264,15 @@ int main(int argc, char** argv) {
     }
     auto audioInfo = fl::pkg::speech::loadSoundInfo(audioPath.c_str());
     auto audio = fl::pkg::speech::loadSound<float>(audioPath.c_str());
-    af::array input = inputTransform(
+    fl::Tensor input = inputTransform(
         static_cast<void*>(audio.data()),
-        af::dim4(audioInfo.channels, audioInfo.frames),
-        af::dtype::f32);
-    auto inputLen = af::constant(input.dims(0), af::dim4(1));
+        {audioInfo.channels, audioInfo.frames},
+        fl::dtype::f32);
+    // TODO{fl::Tensor} - consider using a scalar Tensor
+    auto inputLen = fl::full({1}, input.dim(0));
     auto rawEmission = fl::pkg::runtime::forwardSequentialModuleWithPadMask(
         fl::input(input), network, inputLen);
-    auto emission = fl::pkg::runtime::afToVector<float>(rawEmission);
+    auto emission = rawEmission.tensor().toHostVector<float>();
 
     const auto& result = decoder.decode(
         emission.data(),
@@ -292,7 +294,8 @@ int main(int argc, char** argv) {
         networkFlags["wordseparator"]);
     rawWordPrediction =
         fl::pkg::speech::validateIdx(rawWordPrediction, unkWordIdx);
-    auto wordPrediction = fl::pkg::speech::wrdIdx2Wrd(rawWordPrediction, wordDict);
+    auto wordPrediction =
+        fl::pkg::speech::wrdIdx2Wrd(rawWordPrediction, wordDict);
     auto wordPredictionStr = fl::lib::join(" ", wordPrediction);
     LOG(INFO) << "[Inference tutorial for CTC]: predicted output for "
               << audioPath << "\n"
