@@ -5,26 +5,27 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include "flashlight/fl/autograd/tensor/backend/onednn/DnnlUtils.h"
+
 #include <stdexcept>
 #include <utility>
 
 #if FL_BACKEND_OPENCL
-#include <dnnl_ocl.hpp>
+  #include <dnnl_ocl.hpp>
 #endif
 
-#include "flashlight/fl/autograd/backend/cpu/DnnlUtils.h"
 #include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/tensor/Compute.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 #if FL_BACKEND_OPENCL
-#include "flashlight/fl/common/OpenClUtils.h"
+  #include "flashlight/fl/common/OpenClUtils.h"
 #endif
 
 namespace fl {
 namespace detail {
 
 DnnlStream::DnnlStream(dnnl::engine engine) {
-  af_init();
 #if FL_BACKEND_OPENCL
   stream_ = dnnl::ocl_interop::make_stream(engine, fl::ocl::getQueue());
 #else
@@ -59,31 +60,30 @@ DnnlEngine& DnnlEngine::getInstance() {
   return instance;
 }
 
-dnnl::memory::dims convertAfToDnnlDims(const std::vector<dim_t>& afDims) {
+dnnl::memory::dims convertToDnnlDims(const std::vector<Dim>& shape) {
   // DNNL uses ints in dims
-  std::vector<long int> intVec(afDims.begin(), afDims.end());
+  std::vector<long int> intVec(shape.begin(), shape.end());
   return dnnl::memory::dims(intVec);
 }
 
-dnnl::memory::dims convertAfDim4ToDnnlDims(const af::dim4& afDims) {
-  std::vector<dim_t> dimVec(afDims.get(), afDims.get() + afDims.ndims());
-  return convertAfToDnnlDims(dimVec);
+dnnl::memory::dims convertShapeToDnnlDims(const Shape& shape) {
+  return convertToDnnlDims(shape.get());
 }
 
 DnnlMemoryWrapper::DnnlMemoryWrapper(
-    const af::array& array,
+    const Tensor& tensor,
     dnnl::memory::dims dims,
     dnnl::memory::format_tag format) {
 #if FL_BACKEND_OPENCL
-  fl::ocl::DevicePtrOpenCl _devicePtr(array);
+  fl::ocl::DevicePtrOpenCl _devicePtr(tensor);
   cl_mem* buffer = _devicePtr.getAsClMem();
   devicePtr_ = std::move(_devicePtr);
 #else
-  devicePtr_ = fl::DevicePtr(array);
+  devicePtr_ = fl::DevicePtr(tensor);
   void* buffer = devicePtr_.get();
 #endif
   descriptor_ =
-      dnnl::memory::desc({dims}, detail::dnnlMapToType(array.type()), format);
+      dnnl::memory::desc({dims}, detail::dnnlMapToType(tensor.type()), format);
   memory_ = dnnl::memory(
       descriptor_, detail::DnnlEngine::getInstance().getEngine(), buffer);
 }
@@ -126,17 +126,20 @@ void executeNetwork(
     throw std::invalid_argument(
         "executeNetwork - given different size nets and netArgs");
   }
-  bool cpuBackend = af::getActiveBackend() == AF_BACKEND_CPU;
+  // TODO{fl::Tensor}{macros} -- improve this to work with other backend interop
   // If on the CPU backend, there isn't a AF computation stream that facilitates
   // enforcing that inputs to computation are ready; we're required to wait
   // until all AF operations are done
-  if (cpuBackend) {
+  if (FL_BACKEND_CPU) {
     fl::sync();
   }
+
   for (size_t i = 0; i < net.size(); ++i) {
     net.at(i).execute(DnnlStream::getInstance().getStream(), netArgs.at(i));
   }
-  if (cpuBackend) {
+
+  // TODO{fl::Tensor}{macros} -- improve this to work with other backend interop
+  if (FL_BACKEND_CPU) {
     // Block the executing thread until the work is complete
     DnnlStream::getInstance().getStream().wait();
   }
