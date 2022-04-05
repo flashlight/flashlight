@@ -11,15 +11,18 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/pkg/vision/dataset/Imagenet.h"
-#include "flashlight/pkg/vision/models/Resnet50Backbone.h"
-#include "flashlight/pkg/runtime/common/DistributedUtils.h"
-#include "flashlight/pkg/vision/dataset/Transforms.h"
-#include "flashlight/pkg/vision/dataset/DistributedDataset.h"
 #include "flashlight/fl/dataset/datasets.h"
 #include "flashlight/fl/meter/meters.h"
 #include "flashlight/fl/optim/optim.h"
+#include "flashlight/fl/tensor/Compute.h"
+#include "flashlight/fl/tensor/Init.h"
+#include "flashlight/fl/tensor/Random.h"
 #include "flashlight/lib/common/System.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
+#include "flashlight/pkg/vision/dataset/DistributedDataset.h"
+#include "flashlight/pkg/vision/dataset/Imagenet.h"
+#include "flashlight/pkg/vision/dataset/Transforms.h"
+#include "flashlight/pkg/vision/models/Resnet50Backbone.h"
 
 DEFINE_string(data_dir, "", "Directory of imagenet data");
 DEFINE_double(train_lr, 0.1f, "Learning rate");
@@ -74,9 +77,9 @@ std::tuple<double, double, double> evalLoop(
 
     // Compute and record the loss.
     auto loss = categoricalCrossEntropy(output, target);
-    lossMeter.add(loss.array().scalar<float>());
-    top5Acc.add(output.array(), target.array());
-    top1Acc.add(output.array(), target.array());
+    lossMeter.add(loss.tensor().scalar<float>());
+    top5Acc.add(output.tensor(), target.tensor());
+    top1Acc.add(output.tensor(), target.tensor());
   }
   model->train();
   fl::pkg::runtime::syncMeter(lossMeter);
@@ -100,7 +103,6 @@ int main(int argc, char** argv) {
   /////////////////////////
   // Setup distributed training
   ////////////////////////
-  af::info();
   if (FLAGS_distributed_enable) {
     fl::pkg::runtime::initDistributed(
         FLAGS_distributed_world_rank,
@@ -129,7 +131,7 @@ int main(int argc, char** argv) {
   const int randomCropSize = 224;
   const float horizontalFlipProb = 0.5f;
   // TransformDataset will apply each transform in a vector to the respective
-  // af::array. Thus, we need to `compose` all of the transforms so are each
+  // Tensor. Thus, we need to `compose` all of the transforms so are each
   // applied only to the image
   ImageTransform trainTransforms = compose(
       {// randomly resize shortest side of image between 256 to 480 for
@@ -226,21 +228,21 @@ int main(int argc, char** argv) {
     int idx = 0;
     for (auto& example : trainDataset) {
       opt.zeroGrad();
-      // Make a Variable from the input array.
+      // Make a Variable from the input Tensor.
       auto inputs = noGrad(example[kImagenetInputIdx]);
 
       // Get the activations from the model.
       auto output = model->forward({inputs})[0];
 
-      // Make a Variable from the target array.
+      // Make a Variable from the target Tensor.
       auto target = noGrad(example[kImagenetTargetIdx]);
 
       // Compute and record the loss.
       auto loss = categoricalCrossEntropy(output, target);
 
-      trainLossMeter.add(loss.array());
-      top5Acc.add(output.array(), target.array());
-      top1Acc.add(output.array(), target.array());
+      trainLossMeter.add(loss.tensor());
+      top5Acc.add(output.tensor(), target.tensor());
+      top1Acc.add(output.tensor(), target.tensor());
 
       // Backprop, update the weights and then zero the gradients.
       loss.backward();
