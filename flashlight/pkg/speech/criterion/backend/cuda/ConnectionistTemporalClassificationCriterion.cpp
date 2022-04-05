@@ -8,13 +8,14 @@
 #include <ctc.h> // warpctc
 
 #include "flashlight/fl/autograd/autograd.h"
-#include "flashlight/fl/common/backend/cuda/cuda.h"
 
 #include "flashlight/pkg/speech/criterion/ConnectionistTemporalClassificationCriterion.h"
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
 #include "flashlight/fl/common/DevicePtr.h"
+#include "flashlight/fl/tensor/CUDAStream.h"
 #include "flashlight/fl/tensor/Index.h"
+#include "flashlight/fl/tensor/TensorBackend.h"
 #include "flashlight/lib/sequence/criterion/cuda/CriterionUtils.cuh"
 #include "flashlight/pkg/runtime/common/DistributedUtils.h"
 
@@ -47,7 +48,8 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
   const int T = input.dims(1);
   const int B = input.dims(2);
   const int batchL = target.dims(0);
-  auto stream = fl::cuda::getActiveStream();
+  cudaStream_t stream =
+      input.tensor().backend().getStream().impl<CUDAStream>().handle();
 
   ctcOptions options;
   options.loc = CTC_GPU;

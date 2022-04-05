@@ -7,10 +7,11 @@
 
 #include "flashlight/pkg/speech/criterion/FullConnectionCriterion.h"
 
-#include "flashlight/fl/common/backend/cuda/cuda.h"
-
 #include <stdexcept>
+
 #include "flashlight/fl/common/DevicePtr.h"
+#include "flashlight/fl/tensor/CUDAStream.h"
+#include "flashlight/fl/tensor/TensorBackend.h"
 #include "flashlight/lib/sequence/criterion/cuda/FullConnectionCriterion.cuh"
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
@@ -55,7 +56,7 @@ static void backward(
         static_cast<float*>(inputGradRaw.get()),
         static_cast<float*>(transGradRaw.get()),
         workspaceRaw.get(),
-        fl::cuda::getActiveStream());
+        inputs[0].tensor().backend().getStream().impl<CUDAStream>().handle());
   }
 
   inputs[0].addGrad(Variable(inputGrad, false));
@@ -114,7 +115,7 @@ Variable FullConnectionCriterion::forward(
         static_cast<const float*>(transRaw.get()),
         static_cast<float*>(lossRaw.get()),
         workspaceRaw.get(),
-        fl::cuda::getActiveStream());
+        input.backend().getStream().impl<CUDAStream>().handle());
   }
 
   return Variable(
