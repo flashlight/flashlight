@@ -6,6 +6,9 @@
  */
 
 #include "flashlight/pkg/speech/criterion/attention/SoftPretrainWindow.h"
+
+#include "flashlight/fl/tensor/Index.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/pkg/speech/criterion/attention/Defines.h"
 
 namespace fl {
@@ -18,25 +21,26 @@ Variable SoftPretrainWindow::compute(
     int targetLen,
     int inputSteps,
     int batchSize,
-    const af::array& inputSizes,
-    const af::array& targetSizes,
-    af::array& decoderSteps) const {
-  int decoderStepsDim = decoderSteps.dims(0);
-  auto ts = af::range(af::dim4(decoderStepsDim, inputSteps, batchSize), 1);
-  if (inputSizes.isempty() && targetSizes.isempty()) {
+    const Tensor& inputSizes,
+    const Tensor& targetSizes,
+    Tensor& decoderSteps) const {
+  int decoderStepsDim = decoderSteps.dim(0);
+  auto ts = fl::arange({decoderStepsDim, inputSteps, batchSize}, 1);
+  if (inputSizes.isEmpty() && targetSizes.isEmpty()) {
     return Variable(
-        -af::pow(ts - inputSteps / targetLen * decoderSteps, 2) /
+        -fl::power(ts - inputSteps / targetLen * decoderSteps, 2) /
             (2 * std_ * std_),
         false);
   }
 
-  af::array inputNotPaddedSize = computeInputNotPaddedSize(
+  Tensor inputNotPaddedSize = computeInputNotPaddedSize(
       inputSizes, inputSteps, batchSize, decoderStepsDim, true);
-  af::array targetNotPaddedSize = computeTargetNotPaddedSize(
+  Tensor targetNotPaddedSize = computeTargetNotPaddedSize(
       targetSizes, inputSteps, targetLen, batchSize, decoderStepsDim);
 
   auto maskArray =
-      -af::pow(ts - inputNotPaddedSize / targetNotPaddedSize * decoderSteps, 2) /
+      -fl::power(
+          ts - inputNotPaddedSize / targetNotPaddedSize * decoderSteps, 2) /
       (2 * std_ * std_);
   maskArray(ts >= inputNotPaddedSize) = -std::numeric_limits<float>::infinity();
   maskArray(decoderSteps >= targetNotPaddedSize) =
@@ -53,10 +57,9 @@ Variable SoftPretrainWindow::computeWindow(
     int targetLen,
     int inputSteps,
     int batchSize,
-    const af::array& inputSizes,
-    const af::array& targetSizes) const {
-  af::array decoderSteps =
-      af::constant(step, af::dim4(1, inputSteps, batchSize));
+    const Tensor& inputSizes,
+    const Tensor& targetSizes) const {
+  Tensor decoderSteps = fl::full({1, inputSteps, batchSize}, step);
   return compute(
       targetLen, inputSteps, batchSize, inputSizes, targetSizes, decoderSteps);
 }
@@ -65,10 +68,9 @@ Variable SoftPretrainWindow::computeVectorizedWindow(
     int targetLen,
     int inputSteps,
     int batchSize,
-    const af::array& inputSizes,
-    const af::array& targetSizes) const {
-  af::array decoderSteps =
-      af::range(af::dim4(targetLen, inputSteps, batchSize), 0);
+    const Tensor& inputSizes,
+    const Tensor& targetSizes) const {
+  Tensor decoderSteps = fl::arange({targetLen, inputSteps, batchSize}, 0);
   return compute(
       targetLen, inputSteps, batchSize, inputSizes, targetSizes, decoderSteps);
 }
