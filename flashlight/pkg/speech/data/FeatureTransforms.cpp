@@ -13,12 +13,12 @@
 #include <stdexcept>
 #include <thread>
 
-#include "flashlight/pkg/speech/data/Utils.h"
 #include "flashlight/lib/audio/feature/Mfcc.h"
 #include "flashlight/lib/audio/feature/Mfsc.h"
 #include "flashlight/lib/audio/feature/PowerSpectrum.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
+#include "flashlight/pkg/speech/data/Utils.h"
 
 using namespace fl::lib;
 using namespace fl::lib::audio;
@@ -44,6 +44,7 @@ class StartSfxCounter {
     iters_ = iters_ > 0 ? iters_ - 1 : iters_;
     return iters_ <= 0;
   }
+
  private:
   int iters_;
   std::mutex mutex_;
@@ -62,8 +63,28 @@ fl::Dataset::DataTransformFunction inputFeatures(
     const std::vector<sfx::SoundEffectConfig>& sfxConf /* = {} */,
     const int sfxStartUpdate /* = 0 */) {
   auto sfxCounter = std::make_shared<StartSfxCounter>(sfxStartUpdate);
-  return [params, featureType, localNormCtx, sfxConf, sfxCounter](
-             void* data, af::dim4 dims, af::dtype type) {
+
+  std::shared_ptr<PowerSpectrum> spectralFeature;
+  int featSz = 1;
+
+  if (featureType == FeatureType::POW_SPECTRUM) {
+    spectralFeature = std::make_shared<PowerSpectrum>(params);
+    featSz = params.powSpecFeatSz();
+  } else if (featureType == FeatureType::MFSC) {
+    spectralFeature = std::make_shared<Mfsc>(params);
+    featSz = params.mfscFeatSz();
+  } else if (featureType == FeatureType::MFCC) {
+    spectralFeature = std::make_shared<Mfcc>(params);
+    featSz = params.mfccFeatSz();
+  }
+
+  return [params,
+          featSz,
+          spectralFeature,
+          featureType,
+          localNormCtx,
+          sfxConf,
+          sfxCounter](void* data, af::dim4 dims, af::dtype type) {
     if (type != af::dtype::f32) {
       throw std::invalid_argument("Invalid input type");
     }
@@ -87,20 +108,10 @@ fl::Dataset::DataTransformFunction inputFeatures(
           sfx::createSoundEffect(sfxConf, seed);
       sfx->apply(input);
     }
+
     std::vector<float> output;
-    int featSz = 1;
-    if (featureType == FeatureType::POW_SPECTRUM) {
-      thread_local PowerSpectrum powspec(params);
-      featSz = params.powSpecFeatSz();
-      output = powspec.batchApply(input, channels);
-    } else if (featureType == FeatureType::MFSC) {
-      thread_local Mfsc mfsc(params);
-      featSz = params.mfscFeatSz();
-      output = mfsc.batchApply(input, channels);
-    } else if (featureType == FeatureType::MFCC) {
-      thread_local Mfcc mfcc(params);
-      featSz = params.mfccFeatSz();
-      output = mfcc.batchApply(input, channels);
+    if (spectralFeature) {
+      output = spectralFeature->batchApply(input, channels);
     } else {
       // use raw audio
       output = input; // T X CHANNELS (Col Major)
