@@ -66,7 +66,7 @@ Here, we show an example of how one could use Baidu Research's `warp-ctc <https:
     options.loc = CTC_GPU;
     options.stream = fl::cuda::getActiveStream();
 
-    Tensor grad = fl::full(input.dims(), 0.0, input.type());
+    Tensor grad = fl::full(input.shape(), 0.0, input.type());
 
     int N = input.dims(0); // alphabet size
     int T = input.dims(1); // time frames

@@ -60,7 +60,7 @@ TEST(ModuleTest, EmbeddingFwd) {
   // Regular initialization
   emb = Embedding(embDim, nEmb);
   wtVar = emb.param(0);
-  ASSERT_EQ(wtVar.dims(), Shape({embDim, nEmb}));
+  ASSERT_EQ(wtVar.shape(), Shape({embDim, nEmb}));
 
   expectedOutVar = Variable(
       fl::reshape(
@@ -155,14 +155,14 @@ TEST(ModuleTest, ConvPadding) {
   auto input = Variable(fl::rand({32, 32, 30, 2}), false);
 
   auto conv1Op = conv1(input);
-  ASSERT_EQ(conv1Op.dims(), Shape({16, 28, 100, 2}));
+  ASSERT_EQ(conv1Op.shape(), Shape({16, 28, 100, 2}));
 
   auto conv2Op = conv2(input);
-  ASSERT_EQ(conv2Op.dims(), Shape({16, 32, 100, 2}));
+  ASSERT_EQ(conv2Op.shape(), Shape({16, 32, 100, 2}));
 
   // test dilation
   auto conv3Op = conv3(input);
-  ASSERT_EQ(conv3Op.dims(), Shape({32, 32, 100, 2}));
+  ASSERT_EQ(conv3Op.shape(), Shape({32, 32, 100, 2}));
 }
 
 TEST(ModuleTest, GLUFwd) {
@@ -374,7 +374,7 @@ TEST(ModuleTest, PoolingFwd) {
   auto input = fl::rand({120, 100, 30, batchsize});
   auto batchOutVar = pool(Variable(input, false));
   for (int i = 0; i < batchsize; ++i) {
-    ASSERT_EQ(input.shape(), batchOutVar.dims());
+    ASSERT_EQ(input.shape(), batchOutVar.shape());
     auto expected_outVar = pool(
         Variable(input(fl::span, fl::span, fl::span, fl::range(i, i)), false));
     ASSERT_TRUE(allClose(
@@ -395,7 +395,7 @@ TEST_F(ModuleTestF16, PoolingFwdF16) {
   auto input = fl::rand({120, 100, 30, batchsize}, fl::dtype::f16);
   auto batchOutVar = pool(Variable(input, false));
   for (int i = 0; i < batchsize; ++i) {
-    ASSERT_EQ(input.shape(), batchOutVar.dims());
+    ASSERT_EQ(input.shape(), batchOutVar.shape());
     auto expected_outVar = pool(
         Variable(input(fl::span, fl::span, fl::span, fl::range(i, i)), false));
     ASSERT_TRUE(allClose(
@@ -428,7 +428,7 @@ TEST(ModuleTest, RNNFwd) {
 
   auto out = rnn(in);
   Shape expected_dims({3, 5, 6});
-  ASSERT_EQ(out.dims(), expected_dims);
+  ASSERT_EQ(out.shape(), expected_dims);
   // Calculated from Lua Torch Cudnn implementation
 
   auto expected_outVar = Variable(
@@ -476,7 +476,7 @@ TEST(ModuleTest, LSTMFwd) {
 
   auto out = rnn(in);
   Shape expected_dims({5, 2, 2});
-  ASSERT_EQ(out.dims(), expected_dims);
+  ASSERT_EQ(out.shape(), expected_dims);
   // Calculated from Lua Torch Cudnn implementation
   auto expected_outVar = Variable(
       Tensor::fromVector<float>(
@@ -513,7 +513,7 @@ TEST(ModuleTest, GRUFwd) {
 
   auto out = rnn(in);
   Shape expected_dims({5, 2, 2});
-  ASSERT_EQ(out.dims(), expected_dims);
+  ASSERT_EQ(out.shape(), expected_dims);
   // Calculated from Lua Torch Cudnn implementation
   auto expected_outVar = Variable(
       Tensor::fromVector<float>(
@@ -552,7 +552,7 @@ TEST_F(ModuleTestF16, RNNFwdF16) {
 
   auto out = rnn(in);
   Shape expected_dims({3, 5, 6});
-  ASSERT_EQ(out.dims(), expected_dims);
+  ASSERT_EQ(out.shape(), expected_dims);
   // Calculated from Lua Torch Cudnn implementation
   auto expected_outVar = Variable(
       Tensor::fromVector<float>(
@@ -577,7 +577,7 @@ TEST_F(ModuleTestF16, RNNFwdF16) {
 TEST(ModuleTest, ViewFwd) {
   auto module = View(Shape({-1, 0, 6}));
   auto input = Variable(Tensor({1, 2, 3, 4}), true);
-  ASSERT_EQ(module(input).dims(), Shape({2, 2, 6}));
+  ASSERT_EQ(module(input).shape(), Shape({2, 2, 6}));
 }
 
 TEST(ModuleTest, DropoutFwd) {
@@ -631,7 +631,7 @@ TEST(ModuleTest, PaddingFwd) {
   auto module = Padding({{1, 2}, {3, 4}}, -1);
   auto input = Variable(fl::rand({1, 2, 3, 4}, fl::dtype::f64), true);
   auto output = module(input);
-  ASSERT_EQ(output.dims(), Shape({4, 9, 3, 4}));
+  ASSERT_EQ(output.shape(), Shape({4, 9, 3, 4}));
   ASSERT_TRUE(allClose(input, output(fl::range(1, 1), fl::range(3, 5))));
   ASSERT_NEAR(
       fl::sum(input.tensor()).scalar<double>(),
@@ -674,7 +674,7 @@ TEST(ModuleTest, LayerNormFwd) {
   auto out_eval = module2.forward(input);
 
   ASSERT_TRUE(allClose(out_train.tensor(), out_eval.tensor(), eps));
-  ASSERT_EQ(out_train.dims(), input.dims());
+  ASSERT_EQ(out_train.shape(), input.shape());
 
   // with affine transform
   auto module3 = LayerNorm(feat_axes, eps, true, F);
@@ -687,7 +687,7 @@ TEST(ModuleTest, LayerNormFwd) {
   auto input3Dim = Variable(fl::rand({4, 4, 3}), true);
   auto module4 = LayerNorm(std::vector<int>{0}, eps, false);
   out = module4.forward(input3Dim);
-  ASSERT_EQ(out.dims(), input3Dim.dims());
+  ASSERT_EQ(out.shape(), input3Dim.shape());
 }
 
 TEST_F(ModuleTestF16, LayerNormFwdF16) {
@@ -727,7 +727,7 @@ TEST_F(ModuleTestF16, LayerNormFwdF16) {
   auto out_eval = module2.forward(input);
 
   ASSERT_TRUE(allClose(out_train.tensor(), out_eval.tensor(), eps));
-  ASSERT_EQ(out_train.dims(), input.dims());
+  ASSERT_EQ(out_train.shape(), input.shape());
 
   module2.train();
 }
@@ -747,7 +747,7 @@ TEST(ModuleTest, TransformFwd) {
 
   auto l = Transform([](const Variable& in) { return fl::log(in); });
 
-  ASSERT_TRUE(allClose(l.forward(inVar).tensor(), fl::full(inVar.dims(), 0.0)));
+  ASSERT_TRUE(allClose(l.forward(inVar).tensor(), fl::full(inVar.shape(), 0.0)));
 }
 
 TEST(ModuleTest, PrecisionCastFwd) {

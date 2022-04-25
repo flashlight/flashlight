@@ -68,7 +68,7 @@ Tensor flatten(const Tensor& x, int start, int stop) {
 
 fl::Variable flatten(const fl::Variable& x, int start, int stop) {
   unsigned n = x.ndim();
-  auto dims = x.dims();
+  auto dims = x.shape();
   Shape newDims(std::vector<Dim>(n, 1));
   int flattenedDims = 1;
   for (int i = start; i <= stop; i++) {
@@ -164,7 +164,7 @@ std::tuple<fl::Variable, fl::Variable> boxIou(
     std::stringstream ss;
     ss << "vision::boxIou - bbox inputs must be of shape "
           "[4, N, B] and [4, M, B]. Got boxes with dimensions "
-       << bboxes1.dims() << " and " << bboxes2.dims();
+       << bboxes1.shape() << " and " << bboxes2.shape();
     throw std::invalid_argument(ss.str());
   }
   auto area1 = boxArea(bboxes1);

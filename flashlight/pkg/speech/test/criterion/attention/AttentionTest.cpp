@@ -43,7 +43,7 @@ bool jacobianTestImpl(
   auto bwdJacobian =
       Tensor({func(input).elements(), input.elements()}, fl::dtype::f32);
   auto dout =
-      Variable(fl::full(func(input).dims(), 0, func(input).type()), false);
+      Variable(fl::full(func(input).shape(), 0, func(input).type()), false);
 
   for (int i = 0; i < dout.elements(); ++i) {
     dout.tensor().flat(i) = 1; // element in 1D view
@@ -67,8 +67,8 @@ void sequentialTest(std::shared_ptr<AttentionBase> attention, int H) {
   for (int step = 0; step < 3; ++step) {
     std::tie(alphas, summaries) =
         attention->forward(encodedy, encodedx, alphas);
-    ASSERT_EQ(alphas.dims(), Shape({1, T, B}));
-    ASSERT_EQ(summaries.dims(), Shape({H, 1, B}));
+    ASSERT_EQ(alphas.shape(), Shape({1, T, B}));
+    ASSERT_EQ(summaries.shape(), Shape({H, 1, B}));
 
     auto alphasum = fl::sum(alphas.tensor(), {1});
     auto ones = fl::full(alphasum.shape(), 1.0, alphasum.type());
@@ -99,8 +99,8 @@ void sequentialTestWithPad(std::shared_ptr<AttentionBase> attention, int H) {
   for (int step = 0; step < 3; ++step) {
     std::tie(alphas, summaries) =
         attention->forward(encodedy, encodedx, alphas, Variable(), pad);
-    ASSERT_EQ(alphas.dims(), Shape({1, T, B}));
-    ASSERT_EQ(summaries.dims(), Shape({H, 1, B}));
+    ASSERT_EQ(alphas.shape(), Shape({1, T, B}));
+    ASSERT_EQ(summaries.shape(), Shape({H, 1, B}));
 
     auto alphasum = fl::sum(alphas.tensor(), {1});
     auto ones = fl::full(alphasum.shape(), 1.0, alphasum.type());
@@ -142,8 +142,8 @@ TEST(AttentionTest, NeuralContentAttention) {
     Variable alphas, summaries;
     std::tie(alphas, summaries) = attention.forward(
         encodedy, encodedx, Variable{}, Variable{}, currentPad);
-    ASSERT_EQ(alphas.dims(), Shape({U, T, B}));
-    ASSERT_EQ(summaries.dims(), Shape({H, U, B}));
+    ASSERT_EQ(alphas.shape(), Shape({U, T, B}));
+    ASSERT_EQ(summaries.shape(), Shape({H, U, B}));
     if (!currentPad.isempty()) {
       ASSERT_EQ(
           fl::countNonzero(
@@ -200,8 +200,8 @@ TEST(AttentionTest, MultiHeadContentAttention) {
         Variable alphas, summaries;
         std::tie(alphas, summaries) = attention.forward(
             encodedy, encodedx, Variable{}, Variable{}, currentPad);
-        ASSERT_EQ(alphas.dims(), Shape({U * NH, T, B}));
-        ASSERT_EQ(summaries.dims(), Shape({H, U, B}));
+        ASSERT_EQ(alphas.shape(), Shape({U * NH, T, B}));
+        ASSERT_EQ(summaries.shape(), Shape({H, U, B}));
         if (!currentPad.isempty()) {
           ASSERT_EQ(
               fl::countNonzero(

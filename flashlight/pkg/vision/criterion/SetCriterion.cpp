@@ -105,7 +105,7 @@ Tensor index(const Tensor& in, const std::vector<Tensor>& idxs) {
 }
 
 fl::Variable index(const fl::Variable& in, std::vector<Tensor> idxs) {
-  auto idims = in.dims();
+  auto idims = in.shape();
   auto result = index(in.tensor(), idxs);
   auto gradFunction = [idxs, idims](
                           std::vector<Variable>& inputs,
@@ -237,7 +237,7 @@ SetCriterion::LossDict SetCriterion::lossBoxes(
       generalizedBoxIou(cxcywh2xyxy(srcBoxes), cxcywh2xyxy(tgtBoxes));
 
   // Extract diagonal
-  auto dims = costGiou.dims();
+  auto dims = costGiou.shape();
   auto rng = fl::arange({dims[0]});
   costGiou = 1 - index(costGiou, {rng, rng, Tensor(), Tensor()});
 

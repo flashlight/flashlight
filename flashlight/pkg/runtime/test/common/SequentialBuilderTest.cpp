@@ -38,12 +38,12 @@ TEST(SequentialBuilderTest, SeqModule) {
 
   auto output = model->forward(noGrad(input));
 
-  ASSERT_EQ(output.dims(), Shape({nclass, inputsteps, batchsize}));
+  ASSERT_EQ(output.shape(), Shape({nclass, inputsteps, batchsize}));
 
   batchsize = 1;
   input = fl::randn({inputsteps, 1, nchannel, batchsize}, fl::dtype::f32);
   output = model->forward(noGrad(input));
-  ASSERT_EQ(output.dims(), Shape({nclass, inputsteps, batchsize}));
+  ASSERT_EQ(output.shape(), Shape({nclass, inputsteps, batchsize}));
 }
 
 TEST(SequentialBuilderTest, Serialization) {

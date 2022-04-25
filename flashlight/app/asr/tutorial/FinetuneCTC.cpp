@@ -267,10 +267,10 @@ int main(int argc, char** argv) {
         << "Mismatch in # parameters for the model specificied by archfile and forking model.";
   }
   for (int i = 0; i < forkingNetwork->params().size(); ++i) {
-    if (network->param(i).dims() != forkingNetwork->param(i).dims()) {
+    if (network->param(i).shape() != forkingNetwork->param(i).shape()) {
       LOG(FATAL) << "Mismatch in parameter dims for position " << i
-                 << ". Expected: " << network->param(i).dims()
-                 << " Got: " << forkingNetwork->param(i).dims();
+                 << ". Expected: " << network->param(i).shape()
+                 << " Got: " << forkingNetwork->param(i).shape();
     }
 
     network->setParams(forkingNetwork->param(i), i);

@@ -55,7 +55,7 @@ double alexnet() {
   auto input = Variable(fl::rand({224, 224, 3, 128}) * 2 - 2, false);
 
   auto b = model.forward(input);
-  auto gradoutput = Variable(fl::rand(b.dims()) * 2 - 2, false);
+  auto gradoutput = Variable(fl::rand(b.shape()) * 2 - 2, false);
 
   auto alexnet_fn = [&]() {
     auto output = model.forward(input);

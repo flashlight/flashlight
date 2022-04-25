@@ -18,7 +18,7 @@ Variable
   // [2 3 1 1]
   //    0.0000     0.0000     0.0000
   //    1.0000     1.0000     1.0000
-  std::cout << A.dims() // dimension of the Variable
+  std::cout << A.shape() // dimension of the Variable
   // 2 3 1 1
   std::cout << A.elements() // number of elements in the Variable
   // 6

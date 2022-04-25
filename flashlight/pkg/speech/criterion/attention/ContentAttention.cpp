@@ -32,7 +32,7 @@ std::pair<Variable, Variable> ContentAttention::forwardBase(
   // [targetlen, seqlen, batchsize]
   auto innerProd = matmulTN(state, keys) / std::sqrt(state.dims(0));
   if (!logAttnWeight.isempty()) {
-    if (logAttnWeight.dims() != innerProd.dims()) {
+    if (logAttnWeight.shape() != innerProd.shape()) {
       throw std::invalid_argument(
           "ContentAttention: logAttnWeight has wong dimentions");
     }
@@ -82,7 +82,7 @@ std::pair<Variable, Variable> NeuralContentAttention::forwardBase(
   // [targetlen, seqlen, batchsize]
   auto nnOut = moddims(module(0)->forward({hidden}).front(), {U, T, B});
   if (!logAttnWeight.isempty()) {
-    if (logAttnWeight.dims() != nnOut.dims()) {
+    if (logAttnWeight.shape() != nnOut.shape()) {
       throw std::invalid_argument(
           "ContentAttention: logAttnWeight has wong dimentions");
     }
