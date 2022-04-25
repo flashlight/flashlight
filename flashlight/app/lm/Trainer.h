@@ -12,14 +12,10 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/pkg/runtime/Runtime.h"
 #include "flashlight/app/lm/common/Defines.h"
+#include "flashlight/pkg/runtime/Runtime.h"
 #include "flashlight/pkg/text/data/TextDataset.h"
 
-#include "flashlight/pkg/runtime/amp/DynamicScaler.h"
-#include "flashlight/pkg/runtime/common/DistributedUtils.h"
-#include "flashlight/pkg/runtime/common/Serializer.h"
-#include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
 #include "flashlight/fl/contrib/contrib.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/String.h"
@@ -28,6 +24,10 @@
 #include "flashlight/lib/text/dictionary/Utils.h"
 #include "flashlight/lib/text/tokenizer/PartialFileReader.h"
 #include "flashlight/lib/text/tokenizer/Tokenizer.h"
+#include "flashlight/pkg/runtime/amp/DynamicScaler.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
+#include "flashlight/pkg/runtime/common/Serializer.h"
+#include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
 
 namespace fl {
 namespace app {
@@ -158,12 +158,12 @@ class Trainer {
 
   /* Stateful training helpers */
   std::pair<fl::Variable, fl::Variable> getInputAndTarget(
-      const std::vector<af::array>& sample) const;
+      const std::vector<Tensor>& sample) const;
   void setLr();
   void reduceGrads();
 
   /* Stateless training helpers */
-  void initArrayFire() const;
+  void init() const;
   std::vector<int> parseCutoffs(int64_t nClasses) const;
   bool isMaster() const;
   void checkArgs() const;
