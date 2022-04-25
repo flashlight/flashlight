@@ -15,7 +15,7 @@ namespace fl {
 
 void WeightNorm::transformDims() {
   normDim_.clear();
-  int vNumdims = module_->param(0).array().numdims();
+  int vNumdims = module_->param(0).numdims();
   if (dim_ < 0 || dim_ > vNumdims) {
     throw std::invalid_argument("invalid dimension for WeightNorm");
   }
@@ -33,13 +33,14 @@ void WeightNorm::computeWeight() {
   // speed of norm operation is the best while doing it across {1} dim
   // tested for convlm model training
   if (dim_ == 0) {
-    nm = moddims(v, af::dim4{0, -1, 1, 1});
-    nm = norm(nm, {1});
+    nm = moddims(v, {0, -1});
+    nm = norm(nm, {1}, /* p = */ 2, /* keepDims = */ true);
   } else if (dim_ == 3) {
-    nm = moddims(v, af::dim4{-1, 1, 1, 0});
-    nm = reorder(nm, 3, 0, 1, 2);
-    nm = norm(nm, {1});
-    nm = reorder(nm, 1, 2, 3, 0);
+    // TODO{fl::Tensor}{enforce 4D parameters from child module?}
+    nm = moddims(v, {-1, 1, 1, 0});
+    nm = reorder(nm, {3, 0, 1, 2});
+    nm = norm(nm, {1}, /* p = */ 2, /* keepDims = */ true);
+    nm = reorder(nm, {1, 2, 3, 0});
   } else {
     throw std::invalid_argument(
         "Wrong dimension for Weight Norm: " + std::to_string(dim_));
