@@ -36,7 +36,6 @@ void sync();
  */
 void sync(const int deviceId);
 
-// TODO:fl::Tensor {signature}
 /**
  * Launches computation, [usually] asynchronously, on operations needed to make
  * a particular value for a tensor available.
@@ -52,7 +51,6 @@ void sync(const int deviceId);
  *
  * @param[in] tensor the tensor on which to launch computation.
  */
-void eval(af::array& array);
 void eval(fl::Tensor& tensor);
 
 /**
