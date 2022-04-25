@@ -11,7 +11,7 @@
 
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/autograd/Utils.h"
-#include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/nn/Init.h"
 #include "flashlight/lib/common/System.h"
 

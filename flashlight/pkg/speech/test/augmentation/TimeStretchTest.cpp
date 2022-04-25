@@ -10,7 +10,7 @@
 
 #include "flashlight/pkg/speech/augmentation/SoundEffectUtil.h"
 #include "flashlight/pkg/speech/augmentation/TimeStretch.h"
-#include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/tensor/Init.h"
 
 using namespace ::fl::pkg::speech::sfx;
 

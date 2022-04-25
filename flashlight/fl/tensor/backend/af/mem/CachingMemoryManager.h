@@ -16,8 +16,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "flashlight/fl/memory/MemoryManagerAdapter.h"
-#include "flashlight/fl/memory/MemoryManagerDeviceInterface.h"
+#include "flashlight/fl/tensor/backend/af/mem/MemoryManagerAdapter.h"
+#include "flashlight/fl/tensor/backend/af/mem/MemoryManagerDeviceInterface.h"
 
 namespace fl {
 
@@ -51,7 +51,8 @@ class CachingMemoryManager : public MemoryManagerAdapter {
   bool jitTreeExceedsMemoryPressure(size_t bytes) override;
   void addMemoryManagement(int device) override;
   void removeMemoryManagement(int device) override;
-  // Set runtime options: RecyclingSizeLimit, SplitSizeLimit, ... Warning: not thread safe
+  // Set runtime options: RecyclingSizeLimit, SplitSizeLimit, ... Warning: not
+  // thread safe
   void setRecyclingSizeLimit(size_t);
   void setSplitSizeLimit(size_t);
 
@@ -124,9 +125,9 @@ class CachingMemoryManager : public MemoryManagerAdapter {
   std::unordered_map<int, std::unique_ptr<DeviceMemoryInfo>> deviceMemInfos_;
 
   CachingMemoryManager(const CachingMemoryManager& other) = delete;
-  CachingMemoryManager(const CachingMemoryManager&& other) = delete;
+  CachingMemoryManager(CachingMemoryManager&& other) = delete;
   CachingMemoryManager& operator=(const CachingMemoryManager& other) = delete;
-  CachingMemoryManager& operator=(const CachingMemoryManager&& other) = delete;
+  CachingMemoryManager& operator=(CachingMemoryManager&& other) = delete;
 
   // Returns the memory info of the caching allocator for the given device.
   // Using "-1" will return info for the current active device.
@@ -145,7 +146,7 @@ class CachingMemoryManager : public MemoryManagerAdapter {
   // manager. Prevents to recycle some buffers, to be set by the user if
   // desired:
   size_t recyclingSizeLimit_{std::numeric_limits<size_t>::max()};
-  //size_t recyclingSizeLimit;
+  // size_t recyclingSizeLimit;
   // Prevents to split big buffers, to be set by the user if desired:
   size_t splitSizeLimit_{std::numeric_limits<size_t>::max()};
 };
