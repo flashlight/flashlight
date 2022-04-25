@@ -7,6 +7,7 @@
 
 #include "flashlight/fl/nn/modules/RNN.h"
 
+#include <cmath>
 #include <stdexcept>
 
 #include "flashlight/fl/autograd/Functions.h"
@@ -36,7 +37,7 @@ void RNN::initialize() {
       inputSize_, hiddenSize_, numLayers_, mode_, bidirectional_);
 
   double stdv = std::sqrt(1.0 / (double)hiddenSize_);
-  auto w = uniform({n_params}, -stdv, stdv, f32, true);
+  auto w = uniform({n_params}, -stdv, stdv, fl::dtype::f32, true);
   params_ = {w};
 }
 
