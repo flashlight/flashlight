@@ -7,6 +7,10 @@
 
 #include "flashlight/fl/optim/Utils.h"
 
+#include <cmath>
+
+#include "flashlight/fl/tensor/TensorBase.h"
+
 namespace fl {
 
 double clipGradNorm(const std::vector<Variable>& parameters, double maxNorm) {
@@ -15,8 +19,8 @@ double clipGradNorm(const std::vector<Variable>& parameters, double maxNorm) {
     if (!p.isGradAvailable()) {
       continue;
     }
-    const auto& grad = p.grad().array();
-    gradNorm += af::sum<double>(grad * grad);
+    const auto& grad = p.grad().tensor();
+    gradNorm += fl::sum(grad * grad).asScalar<double>();
   }
   gradNorm = std::sqrt(gradNorm);
   double scale = maxNorm / (gradNorm + 1e-6);
@@ -27,7 +31,7 @@ double clipGradNorm(const std::vector<Variable>& parameters, double maxNorm) {
     if (!p.isGradAvailable()) {
       continue;
     }
-    p.grad().array() *= scale;
+    p.grad().tensor() *= scale;
   }
   return gradNorm;
 }
