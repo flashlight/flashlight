@@ -36,7 +36,8 @@ void TimeStretch::apply(std::vector<float>& signal) {
   }
   const float factor = rng_.uniform(conf_.minFactor_, conf_.maxFactor_);
   sox_effect_t* e = sox_create_effect(stretchEffect_);
-  char* args[] = {(char*)std::to_string(factor).c_str()};
+  std::string _factor = std::to_string(factor);
+  char* args[] = {_factor.data()};
   FL_SOX_CHECK(sox_effect_options(e, 1, args));
   sox_->applyAndFreeEffect(signal, e);
 }
