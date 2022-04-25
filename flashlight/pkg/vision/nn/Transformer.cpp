@@ -425,7 +425,7 @@ std::vector<Variable> Transformer::forward(
     Variable mask,
     Variable queryEmbed,
     Variable posEmbed) {
-  if (src.numdims() != 4) {
+  if (src.ndim() != 4) {
     throw std::invalid_argument(
         "vision::Transformer::forward - "
         "expect src to be of shape (W, H, C, B).");

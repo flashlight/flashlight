@@ -44,13 +44,13 @@ Variable LayerNorm::forward(const Variable& _input) {
   // If the input isn't of kLnExpectedNumDims, reshape so it is -- do this by
   // adding singleton dims. This is needed per computing the axis complement
   // TODO: this is pretty ugly -- eventually fix this up if it can be avoided
-  if (input.numdims() < kLnExpectedNumDims) {
+  if (input.ndim() < kLnExpectedNumDims) {
     std::vector<Dim> s = _input.dims().get();
     for (unsigned i = s.size(); i < kLnExpectedNumDims; ++i) {
       s.push_back(1);
     }
     input = moddims(_input, Shape(s));
-  } else if (input.numdims() > kLnExpectedNumDims) {
+  } else if (input.ndim() > kLnExpectedNumDims) {
     throw std::invalid_argument(
         "LayerNorm::forward - input must be " +
         std::to_string(kLnExpectedNumDims) + " or fewer dimensions.");
@@ -61,7 +61,7 @@ Variable LayerNorm::forward(const Variable& _input) {
   Variable inputToBn = input;
   std::vector<int> inNormAxes;
   // reorder is only required if axisComplement_ is not continuous
-  Shape reorderDims(std::vector<Dim>(input.numdims()));
+  Shape reorderDims(std::vector<Dim>(input.ndim()));
   auto maxAxis =
       *std::max_element(axisComplement_.begin(), axisComplement_.end());
   auto minAxis =
@@ -71,7 +71,7 @@ Variable LayerNorm::forward(const Variable& _input) {
     inNormAxes = axisComplement_;
   } else {
     int i = 0;
-    for (int d = 0; d < input.numdims(); ++d) {
+    for (int d = 0; d < input.ndim(); ++d) {
       if (std::find(axisComplement_.begin(), axisComplement_.end(), d) ==
           axisComplement_.end()) {
         reorderDims[i++] = d;
