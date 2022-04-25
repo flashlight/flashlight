@@ -7,25 +7,17 @@
 
 #pragma once
 
-#include <unordered_map>
-
 #include "flashlight/fl/autograd/tensor/AutogradExtension.h"
 
 namespace fl {
 
-class DynamicBenchmark;
-
-class CudnnAutogradExtension : public AutogradExtension {
-  // TODO(jacobkahn): implement getCudnnHandle
+class OneDnnAutogradExtension : public AutogradExtension {
+  // TODO(jacobkahn): implement getEngine
 
  public:
   static bool registered;
 
   bool isDataTypeSupported(const fl::dtype& dtype) const override;
-
-  enum class KernelMode { F32 = 0, F32_ALLOW_CONVERSION = 1, F16 = 2 };
-
-  std::shared_ptr<fl::DynamicBenchmark> createBenchmarkOptions() override;
 
   /**************************** Forward ****************************/
   Tensor conv2d(

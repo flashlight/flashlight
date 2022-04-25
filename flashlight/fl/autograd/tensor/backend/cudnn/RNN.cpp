@@ -50,10 +50,13 @@ void setCudnnRnnMathType(const Tensor& input, const RNNDescriptor& rnnDesc) {
   }
 }
 
+struct CudnnRnnAutogradPayload : public detail::AutogradPayloadData {
+  Tensor reserveSpace;
+};
+
 } // namespace
 
 std::tuple<Tensor, Tensor, Tensor> CudnnAutogradExtension::rnn(
-    Tensor& reserveSpace,
     const Tensor& input,
     const Tensor& hiddenStateIn,
     const Tensor& cellStateIn,
@@ -62,8 +65,15 @@ std::tuple<Tensor, Tensor, Tensor> CudnnAutogradExtension::rnn(
     const int numLayers,
     const RnnMode mode,
     const bool bidirectional,
-    const float dropProb) {
+    const float dropProb,
+    std::shared_ptr<detail::AutogradPayload> autogradPayload) {
   FL_TENSOR_DTYPES_MATCH_CHECK(input, hiddenStateIn, cellStateIn, weights);
+
+  bool train = (autogradPayload != nullptr);
+  auto payload = std::make_shared<CudnnRnnAutogradPayload>();
+  if (train) {
+    autogradPayload->data = payload;
+  }
 
   Tensor x = input.asContiguousTensor();
   Tensor hiddenState = hiddenStateIn.asContiguousTensor();
@@ -140,7 +150,8 @@ std::tuple<Tensor, Tensor, Tensor> CudnnAutogradExtension::rnn(
 
   Tensor workspace({static_cast<long long>(workspaceSize)}, fl::dtype::b8);
   // Space must be reused between forward and backward for cuDNN
-  reserveSpace = Tensor({static_cast<long long>(reserveSize)}, fl::dtype::b8);
+  payload->reserveSpace =
+      Tensor({static_cast<long long>(reserveSize)}, fl::dtype::b8);
 
   {
     DevicePtr xRaw(x.asContiguousTensor());
@@ -151,7 +162,7 @@ std::tuple<Tensor, Tensor, Tensor> CudnnAutogradExtension::rnn(
     DevicePtr hyRaw(hy);
     DevicePtr cyRaw(cy);
     DevicePtr workspaceRaw(workspace);
-    DevicePtr reserveSpaceRaw(reserveSpace);
+    DevicePtr reserveSpaceRaw(payload->reserveSpace);
 
     CUDNN_CHECK_ERR(cudnnRNNForwardTraining(
         handle,
@@ -186,13 +197,20 @@ std::tuple<Tensor, Tensor, Tensor, Tensor> CudnnAutogradExtension::rnnBackward(
     const Tensor& cellState,
     const Tensor& weights,
     const std::shared_ptr<detail::RNNGradData> gradData,
-    const Tensor& reserveSpace,
     const Tensor& output,
     const int numLayers,
     const int hiddenSize,
     const RnnMode mode,
     const bool bidirectional,
-    const float dropProb) {
+    const float dropProb,
+    std::shared_ptr<detail::AutogradPayload> autogradPayload) {
+  if (!autogradPayload) {
+    throw std::invalid_argument(
+        "CudnnAutogradExtension::rnnBackward given null detail::AutogradPayload");
+  }
+  auto payload =
+      std::static_pointer_cast<CudnnRnnAutogradPayload>(autogradPayload->data);
+
   auto handle = getCudnnHandle();
 
   auto x = input.asContiguousTensor();
@@ -242,7 +260,7 @@ std::tuple<Tensor, Tensor, Tensor, Tensor> CudnnAutogradExtension::rnnBackward(
 
   DevicePtr yRaw(output);
   DevicePtr workspaceRaw(workspace);
-  DevicePtr reserveSpaceRaw(reserveSpace);
+  DevicePtr reserveSpaceRaw(payload->reserveSpace);
 
   {
     DevicePtr dyRaw(dy); // Has to be set to 0 if empty
@@ -287,7 +305,7 @@ std::tuple<Tensor, Tensor, Tensor, Tensor> CudnnAutogradExtension::rnnBackward(
         workspaceRaw.get(),
         workspaceSize,
         reserveSpaceRaw.get(),
-        reserveSpace.bytes()));
+        payload->reserveSpace.bytes()));
   }
 
   if (input.type() == fl::dtype::f16) {
@@ -323,7 +341,7 @@ std::tuple<Tensor, Tensor, Tensor, Tensor> CudnnAutogradExtension::rnnBackward(
         dwDesc.descriptor,
         dwRaw.get(),
         reserveSpaceRaw.get(),
-        reserveSpace.bytes()));
+        payload->reserveSpace.bytes()));
   }
 
   return std::make_tuple(dx, dhx, dcx, dw);
