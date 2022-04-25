@@ -17,7 +17,7 @@
 #include "flashlight/lib/common/System.h"
 
 #ifdef FL_BUILD_FB_DEPENDENCIES
-#include "flashlight/fl/fb/EverstoreDataset.h"
+#include "deeplearning/projects/flashlight/fb/EverstoreDataset.h"
 #endif
 
 using fl::pkg::runtime::afToVector;
