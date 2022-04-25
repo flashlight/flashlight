@@ -14,7 +14,7 @@
 
 #include <gtest/gtest.h>
 
-#include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/common/Serialization.h"
 
 // ========== utility functions ==========
