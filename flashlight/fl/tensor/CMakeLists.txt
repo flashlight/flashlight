@@ -27,21 +27,29 @@ endfunction()
 
 # ]--------------- Backend Options and Selection
 option(FL_USE_ARRAYFIRE "Build ArrayFire tensor backend" ON)
+option(FL_USE_TENSOR_STUB "Build Stub tensor backend" ON)
+
 
 if (FL_USE_ARRAYFIRE)
   include(${CMAKE_CURRENT_LIST_DIR}/backend/af/CMakeLists.txt)
+endif()
+if (FL_USE_TENSOR_STUB)
+  include(${CMAKE_CURRENT_LIST_DIR}/backend/stub/CMakeLists.txt)
 endif()
 
 target_compile_definitions(
   flashlight
   PUBLIC
   FL_USE_ARRAYFIRE=$<BOOL:${FL_USE_ARRAYFIRE}>
+  FL_USE_TENSOR_STUB=$<BOOL:${FL_USE_TENSOR_STUB}>
 )
 
 # Make sure at least one tensor backend is enabled
-if (NOT
-    ${FL_USE_ARRAYFIRE}
+if (NOT (
+    ${FL_USE_ARRAYFIRE} OR
+    ${FL_USE_TENSOR_STUB}
     )
+  )
   message(FATAL_ERROR "Cannot build Flashlight with no tensor backends "
     "enabled. Flashlight must be built with  FL_USE_[backend name] ON "
     "for at least one backend.")
