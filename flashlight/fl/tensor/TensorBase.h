@@ -21,8 +21,11 @@
 namespace fl {
 
 /**
- * Enum for various tensor backends.
+ * \defgroup tensor_constants Tensor constants
+ * @{
  */
+
+/// Enum for various tensor backends.
 enum class TensorBackendType { ArrayFire };
 
 // See TensorAdapter.h
@@ -34,17 +37,15 @@ class TensorBackend;
 // See Index.h
 class Index;
 
-/**
- * Location of memory or tensors.
- */
+/// Location of memory or tensors.
 enum class Location { Host, Device };
-// Alias to make it semantically clearer when referring to buffer location
+/// Alias to make it semantically clearer when referring to buffer location
 using MemoryLocation = Location;
 
-/**
- * Tensor storage types.
- */
+/// Tensor storage types.
 enum class StorageType { Dense = 0, CSR = 1, CSC = 2, COO = 3 };
+
+/* @} */
 
 /**
  * A Tensor on which computation can be performed.
@@ -129,7 +130,7 @@ class Tensor {
    *
    * @param[in] nRows the number of rows of the tensor
    * @param[in] nCols the number of columns of the tensor
-   * @param[in] value the values associated with the tensor
+   * @param[in] values the values associated with the tensor
    * @param[in] rowIdx the row indices of the sparse array
    * @param[in] colIdx the the column indices of the sparse array
    * @param[in] storageType the storage type of the underlying tensor
@@ -148,7 +149,7 @@ class Tensor {
    * Create a tensor from a vector of values.
    *
    * @param[in] s the shape of the resulting tensor.
-   * @param[in] vec values with which to populate the tensor.
+   * @param[in] v values with which to populate the tensor.
    * @return a tensor with values and shape as given.
    */
   template <typename T>
@@ -302,7 +303,7 @@ class Tensor {
   /**
    * Returns a tensor with elements cast as a particular type
    *
-   * @param[in] the type to which to cast the tensor
+   * @param[in] type the type to which to cast the tensor
    * @return a tensor with element-wise cast to the new type
    */
   Tensor astype(const dtype type) const;
@@ -318,7 +319,7 @@ class Tensor {
   /**
    * Index into a tensor using a variable number of fl::Index.
    *
-   * @param[in] indices fl::Index instances to use
+   * @param[in] args fl::Index instances to use
    * @return an indexed tensor
    */
   template <typename... Ts>
@@ -573,6 +574,11 @@ class Tensor {
 #undef ASSIGN_OP
 };
 
+/**
+ * \defgroup tensor_functions Tensor functions
+ * @{
+ */
+
 /******************** Tensor Creation Functions ********************/
 
 /**
@@ -698,6 +704,7 @@ Tensor tile(const Tensor& tensor, const Shape& shape);
  * Join or concatenate tensors together along a particular axis.
  *
  * @param[in] tensors a vector of tensors to concatenate
+ * @param[in] axis the axis along which to concatenate tensors
  * @return a concatenated tensor
  */
 Tensor concatenate(const std::vector<Tensor>& tensors, const unsigned axis = 0);
@@ -705,6 +712,7 @@ Tensor concatenate(const std::vector<Tensor>& tensors, const unsigned axis = 0);
 /**
  * Join or concatenate tensors together along a particular axis.
  *
+ * @param[in] axis the axis along which to concatenate tensors
  * @param[in] args tensors to concatenate
  * @return a concatenated tensor
  */
@@ -723,18 +731,20 @@ Tensor concatenate(unsigned axis, const Ts&... args) {
  */
 Tensor nonzero(const Tensor& tensor);
 
-/**
- * Padding types for the pad operator.
- * - Constant: pad with a constant zero value.
- * - Edge: pad with the values at the edges of the tensor
- * - Symmetric: pad with a reflection of the tensor mirrored along each edge
- */
-enum class PadType { Constant, Edge, Symmetric };
+/// Padding types for the pad operator.
+enum class PadType {
+  /// pad with a constant zero value.
+  Constant,
+  /// pad with the values at the edges of the tensor
+  Edge,
+  /// pad with a reflection of the tensor mirrored along each edge
+  Symmetric
+};
 
 /**
  * Pad a tensor with zeros.
  *
- * @param[in] the input tensor to pad
+ * @param[in] input the input tensor to pad
  * @param[in] padWidths a vector of tuples representing padding (before, after)
  * tuples for each axis
  * @param[in] type the padding mode with which to pad the tensor - see `PadType`
@@ -993,7 +1003,7 @@ Tensor where(const Tensor& condition, const Tensor& x, const Tensor& y);
 Tensor where(const Tensor& condition, const Tensor& x, const double& y);
 Tensor where(const Tensor& condition, const double& x, const Tensor& y);
 
-/**
+/*!
  * Sorting mode for sorting-related functions.
  */
 enum class SortMode { Descending = 0, Ascending = 1 };
@@ -1147,12 +1157,21 @@ Tensor power(const double& lhs, const Tensor& rhs);
 
 /******************************* BLAS ********************************/
 
+/*!
+ * Transformations to apply to Tensors (i.e. matrices) before applying certain
+ * operations (i.e. matmul).
+ */
 enum class MatrixProperty { None = 0, Transpose = 1 };
+
 /**
  * Perform matrix multiplication between two tensors.
  *
  * @param[in] lhs the Tensor on the left hand side
  * @param[in] rhs the Tensor on the right hand side
+ * @param[in] lhsProp the `MatrixProperty` to apply to the tensor on the
+ * left-hand side
+ * @param[in] rhsProp the `MatrixProperty` to apply to the tensor on the
+ * right-hand side
  *
  * @return an output tensor containing the matrix product.
  */
@@ -1169,7 +1188,7 @@ Tensor matmul(
  * computes the minumum along all axes.
  *
  * @param[in] input the input along which to operate
- * @param[in] dim the dimension along which to reduce. If empty, computes along
+ * @param[in] axes the dimension along which to reduce. If empty, computes along
  * all axes
  * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
  * as singleton dimensions rather than collapsing them
@@ -1185,7 +1204,7 @@ Tensor amin(
  * computes the maximum along all axes.
  *
  * @param[in] input the input along which to operate
- * @param[in] dim the dimension along which to reduce. If empty, computes along
+ * @param[in] axes the dimension along which to reduce. If empty, computes along
  * all axes
  * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
  * as singleton dimensions rather than collapsing them
@@ -1376,7 +1395,7 @@ Tensor norm(
  * counts along each axis.
  *
  * @param[in] input the tensor on which to operate.
- * @param[in] dims (optional) the axis along which to give nonzeros.
+ * @param[in] axes (optional) the axis along which to give nonzeros.
  * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
  * as singleton dimensions rather than collapsing them
  * @return a tensor containing the number of nonzero elements along each axis or
@@ -1460,6 +1479,8 @@ bool allClose(
  * @return if a Tensor contains any NaN or Inf values.
  */
 bool isInvalidArray(const Tensor& tensor);
+
+/** @} */
 
 namespace detail {
 

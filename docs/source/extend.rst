@@ -45,9 +45,9 @@ flashlight provides a flexible API to describe new Modules so as to create compl
 Writing Custom Kernels
 ----------------------
 
-While ArrayFire provides fast array operations, writing custom kernels is sometimes necessary for performance reasons. flashlight uses custom kernels with neural network accelerator libraries such as `mkl-dnn <https://github.com/intel/mkl-dnn>`_, `cuDNN <https://developer.nvidia.com/cudnn/>`_; others, such as `MIOpen <https://github.com/ROCmSoftwarePlatform/MIOpen>`_, can be easily wrapped.
+While Flashlight backends such as ArrayFire provide fast Tensor operations, writing custom kernels is sometimes necessary for performance reasons. flashlight uses custom kernels with neural network accelerator libraries such as `mkl-dnn <https://github.com/intel/mkl-dnn>`_, `cuDNN <https://developer.nvidia.com/cudnn/>`_; others, such as `MIOpen <https://github.com/ROCmSoftwarePlatform/MIOpen>`_, can be easily wrapped.
 
-flashlight makes this easy with a ``DevicePtr``, which gives raw pointers for underlying ArrayFire arrays enabling them to be operated on with APIs that read of write from raw pointers.
+flashlight makes this easy with a ``DevicePtr``, which gives raw pointers for underlying Flashlight Tensors enabling them to be operated on with APIs that read of write from raw pointers.
 
 Here, we show an example of how one could use Baidu Research's `warp-ctc <https://github.com/baidu-research/warp-ctc>`_ to implement the `Connectionist Temporal Criterion <https://en.wikipedia.org/wiki/Connectionist_temporal_classification>`_  loss function.
 
@@ -66,7 +66,7 @@ Here, we show an example of how one could use Baidu Research's `warp-ctc <https:
     options.loc = CTC_GPU;
     options.stream = fl::cuda::getActiveStream();
 
-    af::array grad = af::constant(0.0, input.dims(), input.type());
+    Tensor grad = fl::full(input.dims(), 0.0, input.type());
 
     int N = input.dims(0); // alphabet size
     int T = input.dims(1); // time frames
@@ -76,11 +76,11 @@ Here, we show an example of how one could use Baidu Research's `warp-ctc <https:
     size_t workspace_size;
     get_workspace_size(&L, inputLengths.data(), N, 1, options, &workspace_size);
 
-    af::array workspace(workspace_size, af::dtype::b8);
+    Tensor workspace({workspace_size}, fl::dtype::b8);
 
     float cost;
     {
-      fl::DevicePtr inPtr(input.array());
+      fl::DevicePtr inPtr(input.tensor());
       fl::DevicePtr gradPtr(grad);
       fl::DevicePtr wsPtr(workspace);
       int* labels = target.host<int>();
@@ -95,9 +95,9 @@ Here, we show an example of how one could use Baidu Research's `warp-ctc <https:
           &cost,
           wsPtr.get(),
           options);
-      af::freeHost(labels);
+      std::free(labels); // free host memory
     }
-    af::array result(1, &cost);
+    Tensor result = Tensor::fromScalar(1, &cost);
 
     auto grad_func = [grad](
                          std::vector<fl::Variable>& inputs,

@@ -126,11 +126,11 @@ flashlight also supports defining custom serializers. For example:
 
     template <class Archive>
     void MyClass::save(Archive& ar, const uint32_t /* version */) const {
-      Variable v(af::array(50, 50), true);
+      Variable v(Tensor({50, 50}), true);
       ar(v); // `v` is saved
       v = v + 1; // Creates a new variable
       ar(v); // `v` is saved
-      v.array() += 1; // `SharedData` pointer in `v` storing the array is still the same
+      v.tensor() += 1; // `SharedData` pointer in `v` storing the Tensor is still the same
       ar(v); // `v` is NOT saved
     }
 
