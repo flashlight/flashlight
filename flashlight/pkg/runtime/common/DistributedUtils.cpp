@@ -36,46 +36,46 @@ void initDistributed(
   }
 }
 
-af::array allreduceGet(fl::AverageValueMeter& mtr) {
+Tensor allreduceGet(fl::AverageValueMeter& mtr) {
   auto mtrVal = mtr.value();
   mtrVal[0] *= mtrVal[2];
-  return af::array(mtrVal.size(), mtrVal.data());
+  return Tensor::fromVector(mtrVal);
 }
 
-af::array allreduceGet(fl::EditDistanceMeter& mtr) {
+Tensor allreduceGet(fl::EditDistanceMeter& mtr) {
   auto mtrVal0 = mtr.value();
   std::vector<long long> mtrVal(mtrVal0.begin(), mtrVal0.end());
-  return af::array(mtrVal.size(), mtrVal.data());
+  return Tensor::fromVector(mtrVal);
 }
 
-af::array allreduceGet(fl::CountMeter& mtr) {
+Tensor allreduceGet(fl::CountMeter& mtr) {
   auto mtrVal0 = mtr.value();
   std::vector<long long> mtrVal(mtrVal0.begin(), mtrVal0.end());
-  return af::array(mtrVal.size(), mtrVal.data());
+  return Tensor::fromVector(mtrVal);
 }
 
-af::array allreduceGet(fl::TimeMeter& mtr) {
-  return af::constant(mtr.value(), 1, af::dtype::f64);
+Tensor allreduceGet(fl::TimeMeter& mtr) {
+  return fl::full({1}, mtr.value(), fl::dtype::f64);
 }
 
-af::array allreduceGet(fl::TopKMeter& mtr) {
+Tensor allreduceGet(fl::TopKMeter& mtr) {
   std::pair<int32_t, int32_t> stats = mtr.getStats();
   std::vector<int32_t> vec = {stats.first, stats.second};
-  return af::array(vec.size(), vec.data());
+  return Tensor::fromVector(vec);
 }
 
-void allreduceSet(fl::AverageValueMeter& mtr, af::array& val) {
+void allreduceSet(fl::AverageValueMeter& mtr, Tensor& val) {
   mtr.reset();
-  auto valVec = afToVector<double>(val);
+  auto valVec = val.toHostVector<double>();
   if (valVec[2] != 0) {
     valVec[0] /= valVec[2];
   }
   mtr.add(valVec[0], valVec[2]);
 }
 
-void allreduceSet(fl::EditDistanceMeter& mtr, af::array& val) {
+void allreduceSet(fl::EditDistanceMeter& mtr, Tensor& val) {
   mtr.reset();
-  auto valVec = afToVector<long long>(val);
+  auto valVec = val.toHostVector<long long>();
   mtr.add(
       static_cast<int64_t>(valVec[1]),
       static_cast<int64_t>(valVec[2]),
@@ -83,23 +83,23 @@ void allreduceSet(fl::EditDistanceMeter& mtr, af::array& val) {
       static_cast<int64_t>(valVec[4]));
 }
 
-void allreduceSet(fl::CountMeter& mtr, af::array& val) {
+void allreduceSet(fl::CountMeter& mtr, Tensor& val) {
   mtr.reset();
-  auto valVec = afToVector<long long>(val);
+  auto valVec = val.toHostVector<long long>();
   for (size_t i = 0; i < valVec.size(); ++i) {
     mtr.add(i, valVec[i]);
   }
 }
 
-void allreduceSet(fl::TimeMeter& mtr, af::array& val) {
+void allreduceSet(fl::TimeMeter& mtr, Tensor& val) {
   auto worldSize = fl::getWorldSize();
-  auto valVec = afToVector<double>(val);
+  auto valVec = val.toHostVector<double>();
   mtr.set(valVec[0] / worldSize);
 }
 
-void allreduceSet(fl::TopKMeter& mtr, af::array& val) {
+void allreduceSet(fl::TopKMeter& mtr, Tensor& val) {
   mtr.reset();
-  auto valVec = afToVector<int32_t>(val);
+  auto valVec = val.toHostVector<int32_t>();
   mtr.set(valVec[0], valVec[1]);
 }
 } // namespace runtime
