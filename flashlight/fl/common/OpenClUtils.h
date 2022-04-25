@@ -24,6 +24,7 @@
 #include <af/opencl.h>
 
 #include "flashlight/fl/common/DevicePtr.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 #define FL_OPENCL_CHECK(err) \
   ::fl::ocl::detail::check(err, __FILE__, __LINE__, #err)
@@ -40,8 +41,9 @@ namespace ocl {
  */
 class DevicePtrOpenCl : public fl::DevicePtr {
  public:
-  DevicePtrOpenCl(const af::array& in) : fl::DevicePtr(in) {
-    clMemBuf_ = in.device<cl_mem>();
+  DevicePtrOpenCl(const Tensor& in) : fl::DevicePtr(in) {
+    clMemBuf_ = new cl_mem;
+    in.device<void>(reinterpret_cast<void**>(clMemBuf_));
   }
 
   ~DevicePtrOpenCl() {

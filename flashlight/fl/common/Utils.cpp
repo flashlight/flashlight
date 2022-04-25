@@ -14,35 +14,14 @@
 #include <stdexcept>
 #include <unordered_map>
 
-#include "flashlight/fl/common/CppBackports.h"
 #include "flashlight/fl/tensor/Compute.h"
+#include "flashlight/fl/tensor/TensorBackend.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 
 bool f16Supported() {
-  return af::isHalfAvailable(fl::getDevice()) &&
-      // f16 isn't [yet] supported with the CPU backend per onednn limitations
-      !FL_BACKEND_CPU;
-}
-
-bool allClose(
-    const af::array& a,
-    const af::array& b,
-    double absTolerance /* = 1e-5 */) {
-  if (a.type() != b.type()) {
-    return false;
-  }
-  if (a.dims() != b.dims()) {
-    return false;
-  }
-  if (a.isempty() && b.isempty()) {
-    return true;
-  }
-  return af::max<double>(af::abs(a - b)) < absTolerance;
-}
-
-bool isInvalidArray(const af::array& arr) {
-  return af::anyTrue<bool>(af::isNaN(arr)) || af::anyTrue<bool>(af::isInf(arr));
+  return Tensor().backend().isDataTypeSupported(fl::dtype::f16);
 }
 
 std::string dateTimeWithMicroSeconds() {
@@ -188,52 +167,6 @@ std::string prettyStringCount(size_t count) {
     ss << '(' << prettyStringCountUnits(count) << ')';
   }
   return ss.str();
-}
-
-af::dtype stringToAfType(const std::string& typeName) {
-  std::unordered_map<std::string, af::dtype> strToType = {
-      {"f32", f32},
-      {"c32", c32},
-      {"f64", f64},
-      {"c64", c64},
-      {"b8", b8},
-      {"s32", s32},
-      {"u32", u32},
-      {"u8", u8},
-      {"s64", s64},
-      {"u64", u64},
-      {"s16", s16},
-      {"u16", u16},
-      {"f16", f16},
-  };
-  if (strToType.find(typeName) != strToType.end()) {
-    return strToType[typeName];
-  }
-  throw std::invalid_argument(
-      "stringToAfType: Invalid input type: " + typeName);
-}
-
-std::string afTypeToString(const af::dtype& type) {
-  fl::cpp::fl_unordered_map<af::dtype, std::string> typeToStr = {
-      {f32, "f32"},
-      {c32, "c32"},
-      {f64, "f64"},
-      {c64, "c64"},
-      {b8, "b8"},
-      {s32, "s32"},
-      {u32, "u32"},
-      {u8, "u8"},
-      {s64, "s64"},
-      {u64, "u64"},
-      {s16, "s16"},
-      {u16, "u16"},
-      {f16, "f16"},
-  };
-  if (typeToStr.find(type) != typeToStr.end()) {
-    return typeToStr[type];
-  }
-  throw std::invalid_argument(
-      "afTypeToString: Invalid input type: " + std::to_string(type));
 }
 
 } // namespace fl

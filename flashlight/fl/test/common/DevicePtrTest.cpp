@@ -9,54 +9,53 @@
 
 #include "flashlight/fl/common/DevicePtr.h"
 #include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 using namespace fl;
 
-namespace {
-
-bool isLockedArray(const af::array& a) {
-  bool res;
-  auto err = af_is_locked_array(&res, a.get());
-  if (err != AF_SUCCESS) {
-    throw std::runtime_error(
-        "af_is_locked_array returned error: " + std::to_string(err));
-  }
-  return res;
-}
-
-} // namespace
-
 TEST(DevicePtrTest, Null) {
-  af::array x;
+  Tensor x;
   DevicePtr xp(x);
   EXPECT_EQ(xp.get(), nullptr);
 }
 
+TEST(DevicePtrTest, NoCopy) {
+  Tensor a = fl::full({3, 3}, 5.);
+
+  void* devicePtrLoc;
+  {
+    DevicePtr p(a);
+    devicePtrLoc = p.get();
+  }
+  EXPECT_EQ(devicePtrLoc, a.device<void>());
+  a.unlock();
+}
+
 TEST(DevicePtrTest, Locking) {
-  af::array x(3, 3);
-  EXPECT_FALSE(isLockedArray(x));
+  Tensor x({3, 3});
+  EXPECT_FALSE(x.isLocked());
   {
     DevicePtr xp(x);
-    EXPECT_TRUE(isLockedArray(x));
+    EXPECT_TRUE(x.isLocked());
   }
-  EXPECT_FALSE(isLockedArray(x));
+  EXPECT_FALSE(x.isLocked());
 }
 
 TEST(DevicePtrTest, Move) {
-  af::array x(3, 3);
-  af::array y(4, 4);
+  Tensor x({3, 3});
+  Tensor y({4, 4});
 
   DevicePtr yp(y);
-  EXPECT_FALSE(isLockedArray(x));
-  EXPECT_TRUE(isLockedArray(y));
+  EXPECT_FALSE(x.isLocked());
+  EXPECT_TRUE(y.isLocked());
 
   yp = DevicePtr(x);
-  EXPECT_TRUE(isLockedArray(x));
-  EXPECT_FALSE(isLockedArray(y));
+  EXPECT_TRUE(x.isLocked());
+  EXPECT_FALSE(y.isLocked());
 
   yp = DevicePtr();
-  EXPECT_FALSE(isLockedArray(x));
-  EXPECT_FALSE(isLockedArray(y));
+  EXPECT_FALSE(x.isLocked());
+  EXPECT_FALSE(y.isLocked());
 }
 
 int main(int argc, char** argv) {

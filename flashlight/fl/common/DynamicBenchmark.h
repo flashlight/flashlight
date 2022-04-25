@@ -12,12 +12,11 @@
 #include <memory>
 #include <stdexcept>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
-#include <arrayfire.h>
-
-#include "flashlight/fl/common/CppBackports.h"
+#include "flashlight/fl/common/Timer.h"
 
 namespace fl {
 
@@ -86,9 +85,7 @@ struct DynamicBenchmarkOptions : DynamicBenchmarkOptionsBase {
    * @param[in] benchCount the number of times to benchmark each option before
    * fixing on the optimal option
    */
-  DynamicBenchmarkOptions(
-      fl::cpp::fl_unordered_set<T> options,
-      size_t benchCount)
+  DynamicBenchmarkOptions(std::unordered_set<T> options, size_t benchCount)
       : DynamicBenchmarkOptions(
             std::vector<T>(options.begin(), options.end()),
             benchCount) {}
@@ -249,7 +246,7 @@ class DynamicBenchmark {
 
   std::shared_ptr<DynamicBenchmarkOptionsBase> options_;
   // Timer for current benchmark iteration
-  af::timer currentTimer_;
+  fl::Timer currentTimer_;
 
   // Global fl benchmark mode - if off, no benchmarks will run, and audited
   // functions will be run directly without timings
