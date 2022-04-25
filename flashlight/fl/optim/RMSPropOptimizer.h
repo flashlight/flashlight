@@ -9,10 +9,9 @@
 
 #include <vector>
 
-#include <arrayfire.h>
-
 #include "flashlight/fl/autograd/Variable.h"
 #include "flashlight/fl/optim/Optimizers.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 
@@ -38,8 +37,8 @@ class RMSPropOptimizer : public FirstOrderOptimizer {
   float rho_;
   float eps_;
   float wd_;
-  std::vector<af::array> first_;
-  std::vector<af::array> second_;
+  std::vector<Tensor> first_;
+  std::vector<Tensor> second_;
 
  public:
   /** Construct an RMSProp optimizer.

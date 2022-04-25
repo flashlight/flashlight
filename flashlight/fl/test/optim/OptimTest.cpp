@@ -7,17 +7,20 @@
 
 #include <gtest/gtest.h>
 
+#include <cmath>
+
 #include "flashlight/fl/common/common.h"
 #include "flashlight/fl/optim/optim.h"
+#include "flashlight/fl/tensor/Random.h"
 
 using namespace fl;
 
 TEST(OptimTest, GradNorm) {
   std::vector<Variable> parameters;
   for (int i = 0; i < 5; i++) {
-    auto v = Variable(af::array(), true);
-    v = v.as(af::dtype::f64);
-    v.addGrad(Variable(af::randn(10, 10, 10, f64), false));
+    auto v = Variable(fl::randn({10, 10, 10}), true);
+    v = v.as(fl::dtype::f64);
+    v.addGrad(Variable(fl::randn({10, 10, 10}, fl::dtype::f64), false));
     parameters.push_back(v);
   }
   double max_norm = 5.0;
@@ -25,11 +28,11 @@ TEST(OptimTest, GradNorm) {
 
   double clipped = 0.0;
   for (auto& v : parameters) {
-    auto& g = v.grad().array();
-    clipped += af::sum<double>(g * g);
+    auto& g = v.grad().tensor();
+    clipped += fl::sum(g * g).asScalar<double>();
   }
   clipped = std::sqrt(clipped);
-  ASSERT_TRUE(allClose(af::constant(max_norm, 1), af::constant(clipped, 1)));
+  ASSERT_TRUE(allClose(fl::full({1}, max_norm), fl::full({1}, clipped)));
 }
 
 TEST(OptimTest, GradNormF16) {
@@ -39,9 +42,9 @@ TEST(OptimTest, GradNormF16) {
 
   std::vector<Variable> parameters;
   for (int i = 0; i < 5; i++) {
-    auto v = Variable(af::array(), true);
-    v = v.as(af::dtype::f16);
-    v.addGrad(Variable(af::randn(10, 10, 10, af::dtype::f16), false));
+    auto v = Variable(fl::randn({10, 10, 10}), true);
+    v = v.as(fl::dtype::f16);
+    v.addGrad(Variable(fl::randn({10, 10, 10}, fl::dtype::f16), false));
     parameters.push_back(v);
   }
   double max_norm = 5.0;
@@ -49,12 +52,11 @@ TEST(OptimTest, GradNormF16) {
 
   double clipped = 0.0;
   for (auto& v : parameters) {
-    auto& g = v.grad().array();
-    clipped += af::sum<double>(g * g);
+    auto& g = v.grad().tensor();
+    clipped += fl::sum(g * g).asScalar<double>();
   }
   clipped = std::sqrt(clipped);
-  ASSERT_TRUE(
-      allClose(af::constant(max_norm, 1), af::constant(clipped, 1), 1e-2));
+  ASSERT_TRUE(allClose(fl::full({1}, max_norm), fl::full({1}, clipped), 1e-2));
 }
 
 TEST(SerializationTest, OptimizerSerialize) {
@@ -62,8 +64,8 @@ TEST(SerializationTest, OptimizerSerialize) {
 
   std::vector<Variable> parameters;
   for (int i = 0; i < 5; i++) {
-    auto v = Variable(af::randn(10, 10, 10, f64), true);
-    v.addGrad(Variable(af::randn(10, 10, 10, f64), false));
+    auto v = Variable(fl::randn({10, 10, 10}, fl::dtype::f64), true);
+    v.addGrad(Variable(fl::randn({10, 10, 10}, fl::dtype::f64), false));
     parameters.push_back(v);
   }
 
@@ -79,14 +81,14 @@ TEST(SerializationTest, OptimizerSerialize) {
   load(path, parameters2, opt2);
 
   for (int i = 0; i < 5; i++) {
-    parameters2[i].addGrad(Variable(parameters[i].grad().array(), false));
+    parameters2[i].addGrad(Variable(parameters[i].grad().tensor(), false));
   }
 
   opt->step();
   opt2->step();
 
   for (int i = 0; i < 5; i++) {
-    ASSERT_TRUE(allClose(parameters[i].array(), parameters2[i].array()));
+    ASSERT_TRUE(allClose(parameters[i].tensor(), parameters2[i].tensor()));
   }
 
   opt = std::make_shared<NovogradOptimizer>(parameters, 0.01);
@@ -97,14 +99,14 @@ TEST(SerializationTest, OptimizerSerialize) {
   load(path, parameters2, opt2);
 
   for (int i = 0; i < 5; i++) {
-    parameters2[i].addGrad(Variable(parameters[i].grad().array(), false));
+    parameters2[i].addGrad(Variable(parameters[i].grad().tensor(), false));
   }
 
   opt->step();
   opt2->step();
 
   for (int i = 0; i < 5; i++) {
-    ASSERT_TRUE(allClose(parameters[i].array(), parameters2[i].array()));
+    ASSERT_TRUE(allClose(parameters[i].tensor(), parameters2[i].tensor()));
   }
 }
 

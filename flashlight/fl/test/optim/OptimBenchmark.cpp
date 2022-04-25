@@ -12,6 +12,7 @@
 #include "flashlight/fl/common/common.h"
 #include "flashlight/fl/optim/optim.h"
 #include "flashlight/fl/tensor/Compute.h"
+#include "flashlight/fl/tensor/Random.h"
 #include "flashlight/lib/common/System.h"
 
 using namespace fl;
@@ -29,16 +30,16 @@ double timeit(std::function<void()> fn) {
 
   int num_iters = 100;
   fl::sync();
-  auto start = af::timer::start();
+  auto start = fl::Timer::start();
   for (int i = 0; i < num_iters; i++) {
     fn();
   }
   fl::sync();
-  return af::timer::stop(start) / num_iters;
+  return fl::Timer::stop(start) / num_iters;
 }
 
 double optloop(FirstOrderOptimizer& opt, const Variable& w) {
-  auto input = Variable(af::randn(10, 10), false);
+  auto input = Variable(fl::randn({10, 10}), false);
   auto fn = [&]() {
     for (int it = 0; it < 100; it++) {
       opt.zeroGrad();
@@ -51,37 +52,36 @@ double optloop(FirstOrderOptimizer& opt, const Variable& w) {
 }
 
 double sgd() {
-  auto w = Variable(af::randn(1, 10), true);
+  auto w = Variable(fl::randn({1, 10}), true);
   auto opt = SGDOptimizer({w}, 1e-3);
   return optloop(opt, w);
 }
 
 double adam() {
-  auto w = Variable(af::randn(1, 10), true);
+  auto w = Variable(fl::randn({1, 10}), true);
   auto opt = AdamOptimizer({w}, 1e-3);
   return optloop(opt, w);
 }
 
 double rmsprop() {
-  auto w = Variable(af::randn(1, 10), true);
+  auto w = Variable(fl::randn({1, 10}), true);
   auto opt = RMSPropOptimizer({w}, 1e-3);
   return optloop(opt, w);
 }
 
 double adadelta() {
-  auto w = Variable(af::randn(1, 10), true);
+  auto w = Variable(fl::randn({1, 10}), true);
   auto opt = AdadeltaOptimizer({w});
   return optloop(opt, w);
 }
 
 double nag() {
-  auto w = Variable(af::randn(1, 10), true);
+  auto w = Variable(fl::randn({1, 10}), true);
   auto opt = NAGOptimizer({w}, 1e-3);
   return optloop(opt, w);
 }
 
 int main() {
-  af::info();
   fl::init();
   TIME(sgd);
   TIME(nag);
