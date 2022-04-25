@@ -37,7 +37,7 @@ std::vector<fl::Variable> LmTransformer::forward(
 
   if (fp16_) {
     // Run all transformer forward passes in fp16
-    out = out.as(f16);
+    out = out.as(fl::dtype::f16);
   }
   for (int trIdx = 0; trIdx < transformers_.size(); trIdx++) {
     out = transformers_[trIdx]->forward({out, fl::Variable()}).front();
@@ -45,7 +45,7 @@ std::vector<fl::Variable> LmTransformer::forward(
 
   // Make sure passing fp32 tensor to criterion.
   // Avoid fp16 usage in any embedding-ralated calls.
-  return {out.as(f32)};
+  return {out.as(fl::dtype::f32)};
 }
 
 std::string LmTransformer::prettyString() const {
