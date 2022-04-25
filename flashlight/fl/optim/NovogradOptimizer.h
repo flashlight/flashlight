@@ -9,10 +9,9 @@
 
 #include <vector>
 
-#include <arrayfire.h>
-
 #include "flashlight/fl/autograd/Variable.h"
 #include "flashlight/fl/optim/Optimizers.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 
@@ -39,7 +38,7 @@ class NovogradOptimizer : public FirstOrderOptimizer {
   float eps_;
   float wd_;
   std::vector<double> accGradNorm_;
-  std::vector<af::array> accGrad_;
+  std::vector<Tensor> accGrad_;
 
  public:
   /** Construct a Novograd optimizer
