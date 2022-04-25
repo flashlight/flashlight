@@ -6,13 +6,15 @@
  */
 
 #include "flashlight/pkg/halide/HalideInterface.h"
+
+#include <unordered_map>
+
 #include "flashlight/fl/common/backend/cuda/CudaUtils.h"
 #include "flashlight/fl/tensor/Compute.h"
 
-#include <af/device.h>
-#include <af/dim4.hpp>
-
 #include <cuda.h> // Driver API needed for CUcontext
+
+std::unordered_map<void*, fl::Tensor> memory;
 
 /*
  * Replace Halide weakly-linked CUDA handles.
@@ -20,9 +22,9 @@
  * The Halide CUDA runtime API facilitates defining hard links to handles
  * defined in libHalide by code that calls AOT-generated pipelines. These
  * include:
- * - CUDA memory alloc functions (which are linked to the AF memory manager)
+ * - CUDA memory alloc functions (which are linked to the FL memory manager)
  *   - halide_cuda_device_malloc -- https://git.io/JLA8X
- * - CUDA memory free functions (which are linked to the AF memory manager)
+ * - CUDA memory free functions (which are linked to the FL memory manager)
  *   - halide_cuda_device_free -- https://git.io/JLA81
  * - Getter for the CUstream (the CUDA Driver analog of cudaStream_t)
  *   - halide_cuda_get_stream -- https://git.io/JLdYv
@@ -32,12 +34,12 @@
  *   - halide_get_gpu_device -- https://git.io/JLdYf
  *
  * Defining these hard links ensures we never have memory or synchronization
- * issues between Halide pipelines that are dropped inside of any AF operations.
+ * issues between Halide pipelines that are dropped inside of any FL operations.
  *
  * In hard links associated with the CUDA driver CUcontext, CUstream, or CUDA
  * device ID  we assume that there's always a context, stream, and device ID
- * defined in the calling thread (that ArrayFire has properly-initialized CUDA
- * such that one is active). ArrayFire functions that change global CUDA state
+ * defined in the calling thread (that Flashlight has properly-initialized CUDA
+ * such that one is active). Flashlight functions that change global CUDA state
  * should take care of these implicitly.
  *
  * An alternative way to accomplish this would be to define a UserContext struct
@@ -81,19 +83,29 @@ extern "C" {
 
 int halide_cuda_device_malloc(void* /* user_context */, halide_buffer_t* buf) {
   size_t size = buf->size_in_bytes();
-  // TODO(jacobkahn): replace me with af::allocV2 when using AF >= 3.8
-  void* ptr = af::alloc(size, af::dtype::u8);
+  auto buffer = fl::Tensor({static_cast<long long>(size)}, fl::dtype::u8);
+  void* ptr = buffer.device<void>();
+
   buf->device = (uint64_t)ptr; // eh
   buf->device_interface = halide_cuda_device_interface();
   // This doesn't work because the public device interface API returns an
   // incomplete type. Is it needed? Who knows
   // buf->device_interface->impl->use_module();
+
+  memory[ptr] = std::move(buffer);
   return 0;
 }
 
 int halide_cuda_device_free(void* /* user_context */, halide_buffer_t* buf) {
-  // TODO(jacobkahn): replace me with af::freeV2 when using AF >= 3.8
-  af::free((void*)buf->device);
+  void* ptr = (void*)buf->device;
+
+  auto iter = memory.find(ptr);
+  if (iter == memory.end()) {
+    throw std::runtime_error(
+        "halide_cuda_device_free - FL - tried to free unmanaged buffer");
+  }
+  iter->second.unlock();
+  memory.erase(iter);
 
   // See above - we never call use_module(), so don't release it I suppose...
   // buf->device_interface->impl->release_module();
@@ -108,9 +120,6 @@ int halide_cuda_acquire_context(
     bool create = true) {
   CUcontext _ctx = 0;
   CUresult res = cuCtxGetCurrent(&_ctx);
-  if (res != CUDA_SUCCESS) {
-    throw std::runtime_error("Could not get from CUDA context");
-  };
   *ctx = _ctx;
   return 0;
 }
@@ -133,73 +142,70 @@ namespace fl {
 namespace pkg {
 namespace halide {
 
-std::vector<int> afToHalideDims(const af::dim4& dims) {
-  const auto ndims = dims.ndims();
+std::vector<int> flToHalideDims(const Shape& dims) {
+  const auto ndims = dims.ndim();
   std::vector<int> halideDims(ndims);
   for (int i = 0; i < ndims; ++i) {
-    halideDims[ndims - 1 - i] = static_cast<int>(dims.dims[i]);
+    halideDims[ndims - 1 - i] = static_cast<int>(dims[i]);
   }
   return halideDims;
 }
 
-af::dim4 halideToAfDims(const Halide::Buffer<void>& buffer) {
+Shape halideToFlDims(const Halide::Buffer<void>& buffer) {
   const int nDims = buffer.dimensions();
   // Fastpaths
   if (nDims == 0) {
-    return af::dim4(0);
+    // Scalar tensor
+    return {};
   }
   for (size_t i = 0; i < nDims; ++i) {
+    // Empty tensor
     if (buffer.dim(i).extent() == 0) {
-      return af::dim4(0);
+      return {0};
     }
   }
 
-  if (nDims > 4) {
-    throw std::invalid_argument(
-        "getDims: Halide buffer has greater than 4 dimensions");
-  }
-  af::dim4 out(1, 1, 1, 1); // initialize so unfilled dims are 1, not 0
+  Shape out(std::vector<Dim>(nDims, 1));
   for (size_t i = 0; i < nDims; ++i) {
-    // Halide can have size zero along a dim --> convert to size 1 for AF
     auto size = static_cast<dim_t>(buffer.dim(i).extent());
-    out[nDims - 1 - i] = size == 0 ? 1 : size;
+    out[nDims - 1 - i] = size;
   }
   return out;
 }
 
-af::dtype halideRuntimeTypeToAfType(halide_type_t type) {
+fl::dtype halideRuntimeTypeToFlType(halide_type_t type) {
   halide_type_code_t typeCode = type.code;
   switch (typeCode) {
     case halide_type_int:
       switch (type.bytes()) {
         case 2:
-          return af::dtype::s16;
+          return fl::dtype::s16;
         case 4:
-          return af::dtype::s32;
+          return fl::dtype::s32;
         case 8:
-          return af::dtype::s64;
+          return fl::dtype::s64;
       }
     case halide_type_uint:
       switch (type.bytes()) {
         case 2:
-          return af::dtype::u16;
+          return fl::dtype::u16;
         case 4:
-          return af::dtype::u32;
+          return fl::dtype::u32;
         case 8:
-          return af::dtype::u64;
+          return fl::dtype::u64;
       }
     case halide_type_float:
       switch (type.bytes()) {
         case 2:
-          return af::dtype::f16;
+          return fl::dtype::f16;
         case 4:
-          return af::dtype::f32;
+          return fl::dtype::f32;
         case 8:
-          return af::dtype::f64;
+          return fl::dtype::f64;
       }
     default:
       throw std::invalid_argument(
-          "halideRuntimeTypeToAfType: unsupported or unknown Halide type");
+          "halideRuntimeTypeToFlType: unsupported or unknown Halide type");
   }
 }
 } // namespace halide
