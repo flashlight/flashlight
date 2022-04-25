@@ -49,7 +49,7 @@ bool jacobianTestImpl(
   auto bwdJacobian =
       Tensor({func(input).elements(), input.elements()}, fl::dtype::f32);
   auto dout =
-      Variable(fl::full(func(input).dims(), 0, func(input).type()), false);
+      Variable(fl::full(func(input).shape(), 0, func(input).type()), false);
 
   for (int i = 0; i < dout.elements(); ++i) {
     dout.tensor().flat(i) = 1; // element in 1D view
@@ -414,7 +414,7 @@ TEST(AutogradTest, Transpose) {
   auto in = Variable(fl::rand({5, 6, 7, 8}), true);
   auto out = transpose(in, {2, 0, 1, 3});
   out.backward();
-  ASSERT_EQ(in.grad().dims(), Shape({5, 6, 7, 8}));
+  ASSERT_EQ(in.grad().shape(), Shape({5, 6, 7, 8}));
 
   auto func_erf = [](Variable& in) { return transpose(in, {1, 3, 2, 0}); };
   ASSERT_TRUE(jacobianTestImpl(func_erf, in, 5e-4, 1e-4));
@@ -422,7 +422,7 @@ TEST(AutogradTest, Transpose) {
   auto in2 = Variable(fl::rand({6, 7, 8, 9}), true);
   auto out2 = transpose(in2);
   out2.backward();
-  ASSERT_EQ(in2.grad().dims(), Shape({6, 7, 8, 9}));
+  ASSERT_EQ(in2.grad().shape(), Shape({6, 7, 8, 9}));
 
   auto func_erf2 = [](Variable& in) { return transpose(in); };
   ASSERT_TRUE(jacobianTestImpl(func_erf2, in2, 5e-4, 1e-4));
@@ -436,7 +436,7 @@ TEST(AutogradTest, Concatenate) {
   std::vector<Variable> inputs = {x1, x2, x3, x4};
   auto output = concatenate(inputs, 2);
 
-  ASSERT_EQ(output.dims(), Shape({2, 3, 12, 2}));
+  ASSERT_EQ(output.shape(), Shape({2, 3, 12, 2}));
 
   auto func_concatenate_t1 = [x2, x3, x4](Variable& in) {
     return concatenate({in, x2, x3, x4}, 2);
@@ -454,15 +454,15 @@ TEST(AutogradTest, Split) {
   auto x = Variable(fl::arange({7, 2}), true);
   auto yVec = split(x, 1, 0);
   ASSERT_EQ(yVec.size(), 7);
-  ASSERT_EQ(yVec[0].dims(), Shape({1, 2}));
-  ASSERT_EQ(yVec[2].dims(), Shape({1, 2}));
+  ASSERT_EQ(yVec[0].shape(), Shape({1, 2}));
+  ASSERT_EQ(yVec[2].shape(), Shape({1, 2}));
   ASSERT_TRUE(fl::all(yVec[6].tensor() == 6).scalar<char>());
 
   auto a = Variable(fl::arange({5, 3}, 1), true);
   auto bVec = split(a, {2, 1}, 1);
   ASSERT_EQ(bVec.size(), 2);
-  ASSERT_EQ(bVec[0].dims(), Shape({5, 2}));
-  ASSERT_EQ(bVec[1].dims(), Shape({5, 1}));
+  ASSERT_EQ(bVec[0].shape(), Shape({5, 2}));
+  ASSERT_EQ(bVec[1].shape(), Shape({5, 1}));
   ASSERT_TRUE(
       fl::all(bVec[0].tensor() == fl::arange({5, 2}, 1)).scalar<char>());
   ASSERT_TRUE(fl::all(bVec[1].tensor() == 2).scalar<char>());
@@ -513,7 +513,7 @@ TEST(AutogradTest, TileAs2) {
   auto dz = Variable(fl::full({10, 3}, 1.0), false);
   z.backward(dz);
   auto dx = x.grad();
-  ASSERT_TRUE(allClose(dx.tensor(), fl::full(x.dims(), 3.0)));
+  ASSERT_TRUE(allClose(dx.tensor(), fl::full(x.shape(), 3.0)));
 }
 
 TEST(AutogradTest, Tile) {
@@ -632,7 +632,7 @@ TEST(AutogradTest, Mean) {
     auto y = Variable(fl::rand({5, 3, 2}), true);
     auto varOut = mean(y, {1, 2}, keepDims);
     auto z = x * mean(y, {1, 2}, keepDims);
-    auto dz = Variable(fl::full(x.dims(), 1.0), false);
+    auto dz = Variable(fl::full(x.shape(), 1.0), false);
     z.backward(dz);
     auto dy = y.grad();
     auto dx = x.grad();
@@ -1112,26 +1112,26 @@ TEST(AutogradTest, matmul) {
     // matmul
     auto funcMatmulLhs = [&](Variable& input) { return matmul(input, b); };
     ASSERT_TRUE(jacobianTestImpl(funcMatmulLhs, a, 1E-6))
-        << "matmul lhs gradient: lhs " << a.dims() << " rhs " << b.dims();
+        << "matmul lhs gradient: lhs " << a.shape() << " rhs " << b.shape();
     auto funcMatmulRhs = [&](Variable& input) { return matmul(a, input); };
     ASSERT_TRUE(jacobianTestImpl(funcMatmulRhs, b, 1E-6))
-        << "matmul rhs gradient: lhs " << a.dims() << " rhs " << b.dims();
+        << "matmul rhs gradient: lhs " << a.shape() << " rhs " << b.shape();
 
     // matmulTN
     auto funcMatmulTNLhs = [&](Variable& input) { return matmulTN(input, b); };
     ASSERT_TRUE(jacobianTestImpl(funcMatmulTNLhs, aT, 1E-6))
-        << "matmulTN lhs gradient: lhs " << a.dims() << " rhs " << b.dims();
+        << "matmulTN lhs gradient: lhs " << a.shape() << " rhs " << b.shape();
     auto funcMatmulTNRhs = [&](Variable& input) { return matmulTN(aT, input); };
     ASSERT_TRUE(jacobianTestImpl(funcMatmulTNRhs, b, 1E-6))
-        << "matmulTN rhs gradient: lhs " << a.dims() << " rhs " << b.dims();
+        << "matmulTN rhs gradient: lhs " << a.shape() << " rhs " << b.shape();
 
     // matmulNT
     auto funcMatmulNTLhs = [&](Variable& input) { return matmulNT(input, bT); };
     ASSERT_TRUE(jacobianTestImpl(funcMatmulNTLhs, a, 1E-6))
-        << "matmulTN lhs gradient: lhs " << a.dims() << " rhs " << b.dims();
+        << "matmulTN lhs gradient: lhs " << a.shape() << " rhs " << b.shape();
     auto funcMatmulNTRhs = [&](Variable& input) { return matmulNT(a, input); };
     ASSERT_TRUE(jacobianTestImpl(funcMatmulNTRhs, bT, 1E-6))
-        << "matmulTN rhs gradient: lhs " << a.dims() << " rhs " << b.dims();
+        << "matmulTN rhs gradient: lhs " << a.shape() << " rhs " << b.shape();
   }
 }
 

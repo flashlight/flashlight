@@ -60,9 +60,9 @@ TEST(Seq2SeqTest, Seq2Seq) {
   std::tie(output, attention) = seq2seq.vectorizedDecoder(
       noGrad(input), noGrad(target), Tensor(), Tensor());
 
-  ASSERT_EQ(output.dims(), Shape({nclass, outputsteps, batchsize}));
+  ASSERT_EQ(output.shape(), Shape({nclass, outputsteps, batchsize}));
 
-  ASSERT_EQ(attention.dims(), Shape({outputsteps, inputsteps, batchsize}));
+  ASSERT_EQ(attention.shape(), Shape({outputsteps, inputsteps, batchsize}));
 
   auto losses =
       seq2seq({fl::noGrad(input), fl::noGrad(target), fl::noGrad(Tensor())})
@@ -248,7 +248,7 @@ TEST(Seq2SeqTest, Seq2SeqAttn) {
   std::tie(output, attention) =
       seq2seq.decoder(input, target, Tensor(), Tensor());
   // check padding works
-  ASSERT_EQ(attention.dims(), Shape({U, T, B}));
+  ASSERT_EQ(attention.shape(), Shape({U, T, B}));
 }
 
 TEST(Seq2SeqTest, Seq2SeqMixedAttn) {
@@ -279,7 +279,7 @@ TEST(Seq2SeqTest, Seq2SeqMixedAttn) {
   Variable output, attention;
   std::tie(output, attention) =
       seq2seq.decoder(input, target, Tensor(), Tensor());
-  ASSERT_EQ(attention.dims(), Shape({U * nHead, T, B}));
+  ASSERT_EQ(attention.shape(), Shape({U * nHead, T, B}));
 }
 
 TEST(Seq2SeqTest, Serialization) {
@@ -453,8 +453,8 @@ TEST(Seq2SeqTest, Seq2SeqSampling) {
     Variable output, attention;
     std::tie(output, attention) =
         seq2seq.decoder(input, target, Tensor(), Tensor());
-    ASSERT_EQ(attention.dims(), Shape({U, T, B}));
-    ASSERT_EQ(output.dims(), Shape({N, U, B}));
+    ASSERT_EQ(attention.shape(), Shape({U, T, B}));
+    ASSERT_EQ(output.shape(), Shape({N, U, B}));
   }
 
   Seq2SeqCriterion seq2seq1(
@@ -475,8 +475,8 @@ TEST(Seq2SeqTest, Seq2SeqSampling) {
   Variable output, attention;
   std::tie(output, attention) =
       seq2seq1.vectorizedDecoder(input, target, Tensor(), Tensor());
-  ASSERT_EQ(attention.dims(), Shape({U, T, B}));
-  ASSERT_EQ(output.dims(), Shape({N, U, B}));
+  ASSERT_EQ(attention.shape(), Shape({U, T, B}));
+  ASSERT_EQ(output.shape(), Shape({N, U, B}));
 
   Seq2SeqCriterion seq2seq2(
       N,

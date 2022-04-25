@@ -84,7 +84,7 @@ Variable AdaptiveSoftMaxLoss::cast(
   }
   Tensor output = fl::full(outDims, 0, input.type());
   output(indices) = input.tensor().flatten();
-  auto inputDims = input.dims();
+  auto inputDims = input.shape();
 
   auto gradFunc = [indices, inputDims](
                       std::vector<Variable>& inputs,
@@ -145,7 +145,7 @@ Variable AdaptiveSoftMaxLoss::forward(
     tailOutput = matmul(params_[2 + i * 2], tailOutput);
     auto localLoss = categoricalCrossEntropy(
         logSoftmax(tailOutput, 0), tailTarget, ReduceMode::NONE, ignoreIndex_);
-    res = res + cast(localLoss, res.dims(), indicesArray);
+    res = res + cast(localLoss, res.shape(), indicesArray);
   }
 
   // Head forward
@@ -158,7 +158,7 @@ Variable AdaptiveSoftMaxLoss::forward(
 
   // Reduce
   if (reduction_ == ReduceMode::NONE) {
-    return moddims(res, targets.dims());
+    return moddims(res, targets.shape());
   }
   res = sum(res, {0});
   if (reduction_ == ReduceMode::MEAN) {

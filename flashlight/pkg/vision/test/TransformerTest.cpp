@@ -246,7 +246,7 @@ TEST(Tranformer, Masked) {
   mask(fl::range(0, maskW), fl::range(0, maskH)) = nonMask;
   auto nonMaskPos = pos.forward({Variable(nonMask, false)})[0];
 
-  std::cout << "--- nonMaskPos " << nonMaskPos.dims() << std::endl;
+  std::cout << "--- nonMaskPos " << nonMaskPos.shape() << std::endl;
 
   std::vector<Variable> nonMaskInput = {
       Variable(fl::rand({maskW, maskH, C, B}), false), // input Projection

@@ -22,7 +22,7 @@ namespace fl {
    // Make the last dimension the first dimension
    var = Reorder(3, 0, 1, 2)(var);
    // Dims will be {4, 1, 2, 3}
-   std::cout << var.dims() << std::endl;
+   std::cout << var.shape() << std::endl;
  * \endcode
  */
 class Reorder : public UnaryModule {

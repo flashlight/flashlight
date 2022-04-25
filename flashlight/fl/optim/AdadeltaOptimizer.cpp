@@ -29,8 +29,8 @@ AdadeltaOptimizer::AdadeltaOptimizer(
   accDelta_.reserve(parameters.size());
 
   for (const auto& parameter : parameters_) {
-    accGrad_.emplace_back(fl::full(parameter.dims(), 0, parameter.type()));
-    accDelta_.emplace_back(fl::full(parameter.dims(), 0, parameter.type()));
+    accGrad_.emplace_back(fl::full(parameter.shape(), 0, parameter.type()));
+    accDelta_.emplace_back(fl::full(parameter.shape(), 0, parameter.type()));
 
     fl::eval(accGrad_.back());
     fl::eval(accDelta_.back());

@@ -734,7 +734,7 @@ void Trainer::reduceGrads() {
   if (reducer_) {
     for (auto& p : parameters_) {
       if (!p.isGradAvailable()) {
-        p.addGrad(fl::constant(0.0, p.dims(), p.type(), false));
+        p.addGrad(fl::constant(0.0, p.shape(), p.type(), false));
       }
       auto& grad = p.grad().tensor();
       p.grad().tensor() = grad;

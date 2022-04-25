@@ -512,7 +512,7 @@ Variable erf(const Variable& input) {
 
 Variable transpose(const Variable& input, const Shape& dims /* = {} */) {
   auto result = fl::transpose(input.tensor(), dims);
-  auto gradFunc = [inputDims = input.dims(), ndim = input.ndim(), dims](
+  auto gradFunc = [inputDims = input.shape(), ndim = input.ndim(), dims](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
     Shape reverseShape = dims;
@@ -537,7 +537,7 @@ Variable transpose(const Variable& input, const Shape& dims /* = {} */) {
 Variable tileAs(const Variable& input, const Shape& rdims) {
   auto result = detail::tileAs(input.tensor(), rdims);
 
-  Shape inDims = input.dims();
+  Shape inDims = input.shape();
   auto gradFunc = [inDims](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
@@ -548,7 +548,7 @@ Variable tileAs(const Variable& input, const Shape& rdims) {
 }
 
 Variable tileAs(const Variable& input, const Variable& reference) {
-  return tileAs(input, reference.dims());
+  return tileAs(input, reference.shape());
 }
 
 Variable sumAs(const Variable& input, const Shape& rdims) {
@@ -562,7 +562,7 @@ Variable sumAs(const Variable& input, const Shape& rdims) {
 }
 
 Variable sumAs(const Variable& input, const Variable& reference) {
-  return sumAs(input, reference.dims());
+  return sumAs(input, reference.shape());
 }
 
 Variable concatenate(const std::vector<Variable>& concatInputs, int dim) {
@@ -593,7 +593,7 @@ Variable concatenate(const std::vector<Variable>& concatInputs, int dim) {
 
   // All Variables must have the same size when indexed along the dim not being
   // concatenated along
-  auto dims = concatInputs[0].dims();
+  auto dims = concatInputs[0].shape();
   int concatSize = dims[dim];
   for (int i = 1; i < concatInputs.size(); i++) {
     concatSize += concatInputs[i].dims(dim);
@@ -619,7 +619,7 @@ Variable concatenate(const std::vector<Variable>& concatInputs, int dim) {
 
   for (const auto& in : concatInputs) {
     inputsNoData.push_back(in.withoutData());
-    inDims.push_back(in.dims());
+    inDims.push_back(in.shape());
   }
 
   auto gradFunc = [dim, inDims, numDims](
@@ -680,7 +680,7 @@ split(const Variable& input, const std::vector<long>& splitSizes, int dim) {
 
 Variable tile(const Variable& input, const Shape& dims) {
   Tensor result = fl::tile(input.tensor(), dims);
-  Shape idims = input.dims();
+  Shape idims = input.shape();
   auto gradFunc =
       [idims](std::vector<Variable>& inputs, const Variable& gradOutput) {
         inputs[0].addGrad(Variable(
@@ -696,7 +696,7 @@ Variable sum(
   auto result = FL_ADJUST_INPUT_TYPE(input.tensor());
   result = fl::sum(result, axes, keepDims);
 
-  Shape indims = input.dims();
+  Shape indims = input.shape();
   auto gradFunc = [indims, axes, keepDims](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
@@ -716,11 +716,11 @@ Variable mean(
   auto result = FL_ADJUST_INPUT_TYPE(input.tensor());
   result = mean(result, axes, keepDims);
 
-  Shape idims = input.dims();
+  Shape idims = input.shape();
   auto gradFunc = [idims, axes, keepDims](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
-    Shape odims = gradOutput.dims();
+    Shape odims = gradOutput.shape();
     Dim count = 1;
     for (int i = 0; i < idims.ndim(); i++) {
       Dim odimSize = i + 1 > odims.ndim() ? 1 : odims[i];
@@ -764,8 +764,8 @@ Variable var(
 
   auto gradFunc =
       [val, axes](std::vector<Variable>& inputs, const Variable& gradOutput) {
-        Shape expandedDims = inputs[0].dims();
-        Shape tileDims = inputs[0].dims();
+        Shape expandedDims = inputs[0].shape();
+        Shape tileDims = inputs[0].shape();
         for (auto ax : axes) {
           tileDims[ax] = inputs[0].dims(ax);
           expandedDims[ax] = 1;
@@ -807,7 +807,7 @@ Variable norm(
          detail::tileAs(
              detail::expandFromReduction(gradOutput.tensor(), axes, keepDims) /
                  gvar.tensor(),
-             inputs[0].dims()));
+             inputs[0].shape()));
     inputs[0].addGrad(Variable(normGrad, false));
   };
   return Variable(result, {input}, gradFunc);
@@ -852,7 +852,7 @@ Variable matmul(const Variable& lhs, const Variable& rhs) {
           _rhs,
           /* lhsProp = */ MatrixProperty::None,
           /* rhsProp = */ MatrixProperty::Transpose);
-      inputs[0].addGrad(Variable(detail::sumAs(val, inputs[0].dims()), false));
+      inputs[0].addGrad(Variable(detail::sumAs(val, inputs[0].shape()), false));
     }
     if (inputs[1].isCalcGrad()) {
       Tensor _lhs = inputs[0].tensor();
@@ -871,7 +871,7 @@ Variable matmul(const Variable& lhs, const Variable& rhs) {
           _lhs,
           _rhs,
           /* lhsProp = */ MatrixProperty::Transpose);
-      inputs[1].addGrad(Variable(detail::sumAs(val, inputs[1].dims()), false));
+      inputs[1].addGrad(Variable(detail::sumAs(val, inputs[1].shape()), false));
     }
   };
   return Variable(result, {lhs, rhs}, gradFunc);
@@ -898,13 +898,13 @@ Variable matmulTN(const Variable& lhs, const Variable& rhs) {
           gradOutput.tensor(),
           /* lhsProp = */ MatrixProperty::None,
           /* rhsProp = */ MatrixProperty::Transpose);
-      inputs[0].addGrad(Variable(detail::sumAs(val, inputs[0].dims()), false));
+      inputs[0].addGrad(Variable(detail::sumAs(val, inputs[0].shape()), false));
     }
     if (inputs[1].isCalcGrad()) {
       // matmul(inputs[0], gradOutput)
       // -- matmulNT([N, M], [M, K]) -- [N, K]
       auto val = fl::matmul(inputs[0].tensor(), gradOutput.tensor());
-      inputs[1].addGrad(Variable(detail::sumAs(val, inputs[1].dims()), false));
+      inputs[1].addGrad(Variable(detail::sumAs(val, inputs[1].shape()), false));
     }
   };
   return Variable(result, {lhs, rhs}, gradFunc);
@@ -929,7 +929,7 @@ Variable matmulNT(const Variable& lhs, const Variable& rhs) {
       // matmul(gradOutput, inputs[1])
       // -- matmul([M, K], [K, N]) -- [M, N]
       auto val = fl::matmul(gradOutput.tensor(), inputs[1].tensor());
-      inputs[0].addGrad(Variable(detail::sumAs(val, inputs[0].dims()), false));
+      inputs[0].addGrad(Variable(detail::sumAs(val, inputs[0].shape()), false));
     }
     if (inputs[1].isCalcGrad()) {
       // matmulTN(gradOutput, inputs[0])
@@ -939,7 +939,7 @@ Variable matmulNT(const Variable& lhs, const Variable& rhs) {
           gradOutput.tensor(),
           inputs[0].tensor(),
           /* lhsProp = */ MatrixProperty::Transpose);
-      inputs[1].addGrad(Variable(detail::sumAs(val, inputs[1].dims()), false));
+      inputs[1].addGrad(Variable(detail::sumAs(val, inputs[1].shape()), false));
     }
   };
   return Variable(result, {lhs, rhs}, gradFunc);
@@ -958,7 +958,7 @@ Variable abs(const Variable& input) {
 
 Variable flat(const Variable& input) {
   auto result = input.tensor().flatten();
-  Shape idims = input.dims();
+  Shape idims = input.shape();
   auto gradFunc =
       [idims](std::vector<Variable>& inputs, const Variable& gradOutput) {
         inputs[0].addGrad(Variable(reshape(gradOutput.tensor(), idims), false));
@@ -1009,7 +1009,7 @@ Variable moddims(const Variable& input, const Shape& dims) {
 
   auto result = fl::reshape(input.tensor(), inferDims);
 
-  Shape inDims = input.dims();
+  Shape inDims = input.shape();
   auto gradFunc = [inDims](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
@@ -1120,7 +1120,7 @@ Variable categoricalCrossEntropy(
 
   Tensor denominator;
   if (reduction == ReduceMode::NONE) {
-    result = fl::reshape(result, targets.dims()); // [X1 X2 X3]
+    result = fl::reshape(result, targets.shape()); // [X1 X2 X3]
   } else if (reduction == ReduceMode::MEAN) {
     denominator = fl::sum((!ignoreMask).astype(fl::dtype::s32), {0});
     result = fl::sum(result, {0}) / denominator; // [1]
@@ -1131,7 +1131,7 @@ Variable categoricalCrossEntropy(
         "unknown reduction method for categorical cross entropy");
   }
 
-  auto inputDims = input.dims();
+  auto inputDims = input.shape();
   auto gradFunc = [C, X, mask, ignoreMask, denominator, reduction, inputDims](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
@@ -1203,7 +1203,7 @@ Variable weightedCategoricalCrossEntropy(
   result = ignoreMask * fl::sum(result, {0}, /* keepDims = */ true); // [1, X]
   result = fl::sum(result, {1}, /* keepDims = */ true) / denominator.tensor();
 
-  auto inputDims = input.dims();
+  auto inputDims = input.shape();
   auto gradFunc = [C, X, mask, ignoreMask, denominator, inputDims](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
@@ -1259,7 +1259,7 @@ Variable linear(const Variable& in, const Variable& wt, const Variable& bs) {
   auto bias = FL_ADJUST_INPUT_TYPE(bs);
 
   Shape to2d({input.dims(0), input.elements() / input.dims(0)});
-  auto to4d = input.dims();
+  auto to4d = input.shape();
   to4d[0] = weight.tensor().dim(0);
 
   auto output =
@@ -1290,7 +1290,7 @@ Variable linear(const Variable& in, const Variable& wt, const Variable& bs) {
     if (in.isCalcGrad()) {
       Shape to2dout({wtTensor.dim(0), nframes});
       auto inGrad =
-          moddims(matmulTN(wt, moddims(gradOutput, to2dout)), in.dims())
+          moddims(matmulTN(wt, moddims(gradOutput, to2dout)), in.shape())
               .tensor();
       in.addGrad(Variable(inGrad, false));
     }
@@ -1571,7 +1571,7 @@ Variable gatedlinearunit(const Variable& input, const int dim) {
         "number of dimensions of the input.");
   }
 
-  auto inDims = input.dims();
+  auto inDims = input.shape();
   auto inType = input.type();
   auto inSize = inDims[dim];
   if (inSize % 2 == 1) {
@@ -1711,7 +1711,7 @@ Variable embedding(const Variable& input, const Variable& embeddings) {
   }
 
   auto idxs = input.tensor().flatten();
-  auto inDims = input.dims();
+  auto inDims = input.shape();
   std::vector<Dim> rDims(input.ndim() + 1);
   rDims[0] = embeddings.dims(0);
   for (unsigned i = 1; i < input.ndim() + 1; i++) {
@@ -1758,7 +1758,7 @@ Variable padding(
         "of input dimensions");
   }
 
-  Shape opDims = input.dims();
+  Shape opDims = input.shape();
   std::vector<fl::Index> inSeq(input.ndim(), fl::span);
   for (int i = 0; i < pad.size(); ++i) {
     opDims[i] += (pad[i].first + pad[i].second);
@@ -1777,7 +1777,7 @@ Variable padding(
 Variable dropout(const Variable& input, double p) {
   if (p > 0.0) {
     auto mask = Variable(
-        (fl::rand(input.dims(), input.type()) > p).astype(input.type()), false);
+        (fl::rand(input.shape(), input.type()) > p).astype(input.type()), false);
     return 1.0 / (1.0 - p) * mask * input;
   } else {
     return input;

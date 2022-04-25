@@ -24,8 +24,8 @@ namespace fl {
   TensorDataset ds({tensor1, tensor2});
 
   std::cout << ds.size() << "\n"; // 10
-  std::cout << ds.get(0)[0].dims() << "\n"; // 5 4
-  std::cout << ds.get(0)[1].dims() << "\n"; // 7 1
+  std::cout << ds.get(0)[0].shape() << "\n"; // 5 4
+  std::cout << ds.get(0)[1].shape() << "\n"; // 7 1
   \endcode
  */
 class TensorDataset : public Dataset {

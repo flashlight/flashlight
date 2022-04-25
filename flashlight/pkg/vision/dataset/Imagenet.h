@@ -59,8 +59,8 @@ std::unordered_map<std::string, uint64_t> getImagenetLabels(
  * };
  * ds = imagenetDataset(imagenetBase + "train", labels, transforms);
  * auto sample = ds.get(0)
- * std::cout << sample[0].dims() << std::endl; // {224, 224, 3, 1}
- * std::cout << sample[1].dims() << std::endl; // {1, 1, 1, 1}
+ * std::cout << sample[0].shape() << std::endl; // {224, 224, 3, 1}
+ * std::cout << sample[1].shape() << std::endl; // {1, 1, 1, 1}
  *
  */
 std::shared_ptr<Dataset> imagenetDataset(

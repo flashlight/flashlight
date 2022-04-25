@@ -38,13 +38,13 @@ TEST(WindowTest, MedianWindow) {
   auto trueSumMask0 = fl::full({1, inputsteps, batchsize}, 0.0, fl::dtype::f32);
   trueSumMask0(fl::span, fl::range(0, wl + wr), fl::span) = 1.0;
 
-  ASSERT_EQ(mask0.dims(), Shape({1, inputsteps, batchsize}));
+  ASSERT_EQ(mask0.shape(), Shape({1, inputsteps, batchsize}));
   ASSERT_TRUE(allClose(fl::exp(mask0.tensor()), trueSumMask0));
 
   // check next step
   auto mask1 =
       window.computeWindow(inputAttn, 1, inputsteps, inputsteps, batchsize);
-  ASSERT_EQ(mask1.dims(), Shape({1, inputsteps, batchsize}));
+  ASSERT_EQ(mask1.shape(), Shape({1, inputsteps, batchsize}));
 
   // make sure large window size is handled
   MedianWindow largeWindow(100, 100);
@@ -82,13 +82,13 @@ TEST(WindowTest, MedianWindowWithPad) {
   trueSumMask0(fl::span, fl::range(0, wl + wr), fl::span) = 1.0;
   trueSumMask0(fl::span, fl::range(inputsteps / 2, inputsteps), 0) = 0.0;
 
-  ASSERT_EQ(mask0.dims(), Shape({1, inputsteps, batchsize}));
+  ASSERT_EQ(mask0.shape(), Shape({1, inputsteps, batchsize}));
   ASSERT_TRUE(allClose(fl::exp(mask0.tensor()), trueSumMask0));
 
   // check next step
   auto mask2 =
       window.computeWindow(inputAttn, 2, 2, inputsteps, batchsize, inpSz, tgSz);
-  ASSERT_EQ(mask2.dims(), Shape({1, inputsteps, batchsize}));
+  ASSERT_EQ(mask2.shape(), Shape({1, inputsteps, batchsize}));
   ASSERT_TRUE(
       fl::countNonzero(
           fl::exp(mask2.tensor())(
@@ -123,7 +123,7 @@ TEST(WindowTest, StepWindow) {
       fl::span, fl::range(windowBoundaries[0], windowBoundaries[1]), fl::span) =
       1.0;
 
-  ASSERT_EQ(mask0.dims(), Shape({1, inputsteps, batchsize}));
+  ASSERT_EQ(mask0.shape(), Shape({1, inputsteps, batchsize}));
   ASSERT_TRUE(allClose(fl::exp(mask0.tensor()), trueSumMask0));
 
   auto mask1 =
@@ -136,7 +136,7 @@ TEST(WindowTest, StepWindow) {
       fl::span, fl::range(windowBoundaries[0], windowBoundaries[1]), fl::span) =
       1.0;
 
-  ASSERT_EQ(mask1.dims(), Shape({1, inputsteps, batchsize}));
+  ASSERT_EQ(mask1.shape(), Shape({1, inputsteps, batchsize}));
   ASSERT_TRUE(allClose(fl::exp(mask1.tensor()), trueSumMask1));
 
   auto maskLarge =
@@ -150,11 +150,11 @@ TEST(WindowTest, StepWindow) {
       fl::span, fl::range(windowBoundaries[0], windowBoundaries[1]), fl::span) =
       1.0;
 
-  ASSERT_EQ(maskLarge.dims(), Shape({1, inputsteps, batchsize}));
+  ASSERT_EQ(maskLarge.shape(), Shape({1, inputsteps, batchsize}));
   ASSERT_TRUE(allClose(fl::exp(maskLarge.tensor()), trueSumMaskLarge));
 
   auto maskV = window.computeVectorizedWindow(targetlen, inputsteps, batchsize);
-  ASSERT_EQ(maskV.dims(), Shape({targetlen, inputsteps, batchsize}));
+  ASSERT_EQ(maskV.shape(), Shape({targetlen, inputsteps, batchsize}));
 
   std::vector<int> inpSzRaw = {1, 2, 2, 2};
   Tensor inpSz = Tensor::fromVector({1, batchsize}, inpSzRaw);
@@ -198,13 +198,13 @@ TEST(WindowTest, SoftWindow) {
   max(maxv, maxidx, mask0.tensor(), 1, /* keepDims = */ true);
   std::vector<int> trueMaxidx(batchsize, offset);
 
-  ASSERT_EQ(mask0.dims(), Shape({1, inputsteps, batchsize}));
+  ASSERT_EQ(mask0.shape(), Shape({1, inputsteps, batchsize}));
   ASSERT_TRUE(allClose(
       maxidx.astype(fl::dtype::s32),
       Tensor::fromVector({1, 1, batchsize}, trueMaxidx, fl::dtype::s32)));
 
   auto maskV = window.computeVectorizedWindow(targetlen, inputsteps, batchsize);
-  ASSERT_EQ(maskV.dims(), Shape({targetlen, inputsteps, batchsize}));
+  ASSERT_EQ(maskV.shape(), Shape({targetlen, inputsteps, batchsize}));
 
   std::vector<int> inpSzRaw = {1, 2, 2, 2};
   Tensor inpSz = Tensor::fromVector({1, batchsize}, inpSzRaw);
@@ -252,14 +252,14 @@ TEST(WindowTest, SoftPretrainWindow) {
   Tensor maxv, maxidx;
   max(maxv, maxidx, maskS.tensor()(fl::span, fl::span, 0), 1);
 
-  ASSERT_EQ(maskS.dims(), Shape({targetlen, inputsteps, batchsize}));
+  ASSERT_EQ(maskS.shape(), Shape({targetlen, inputsteps, batchsize}));
   ASSERT_TRUE(allClose(maxidx, Tensor::fromVector({8}, peaks)));
 
   // vectorized
   auto maskV = window.computeVectorizedWindow(targetlen, inputsteps, batchsize);
   max(maxv, maxidx, maskV.tensor()(fl::span, fl::span, 0), 1);
 
-  ASSERT_EQ(maskV.dims(), Shape({targetlen, inputsteps, batchsize}));
+  ASSERT_EQ(maskV.shape(), Shape({targetlen, inputsteps, batchsize}));
   ASSERT_TRUE(allClose(maxidx, Tensor::fromVector({8}, peaks)));
   ASSERT_TRUE(allClose(maskS, maskV));
 

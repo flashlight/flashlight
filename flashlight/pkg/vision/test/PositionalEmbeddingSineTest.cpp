@@ -26,7 +26,7 @@ TEST(PositionalEmbeddingSine, PytorchComparision) {
   PositionalEmbeddingSine pos(hiddenDim / 2, 10000.0f, false, 0.0f);
 
   auto result = pos.forward({input})[0];
-  ASSERT_EQ(result.dims(), Shape({6, 6, 8, 1}));
+  ASSERT_EQ(result.shape(), Shape({6, 6, 8, 1}));
   ASSERT_LE(result(0, 5, 3, 0).tensor().scalar<float>() - 0.9992f, 1e-5);
   ASSERT_LE(result(0, 0, 0, 0).tensor().scalar<float>() - 0.841471f, 1e-5);
 }

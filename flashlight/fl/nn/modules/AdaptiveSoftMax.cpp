@@ -83,7 +83,7 @@ Variable AdaptiveSoftMax::forward(const Variable& inputs) {
 
   auto ret = getFullLogProb(inputsFlattened, headOutput);
 
-  Shape outDims = inputs.dims();
+  Shape outDims = inputs.shape();
   outDims[0] = ret.dims(0);
   return moddims(ret, outDims);
 }
@@ -118,7 +118,7 @@ Variable AdaptiveSoftMax::predict(const Variable& inputs) const {
     ret.tensor()(notInShortlist) = predictionTailPositions;
   }
 
-  Shape outDims = inputs.dims();
+  Shape outDims = inputs.shape();
   outDims[0] = 1;
   return moddims(ret, outDims);
 }
