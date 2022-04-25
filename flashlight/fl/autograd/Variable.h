@@ -379,8 +379,8 @@ class Variable {
     FL_SAVE_LOAD(calcGrad);
   };
 
-  std::shared_ptr<SharedData> sharedData_{std::make_shared<SharedData>()};
-  std::shared_ptr<SharedGrad> sharedGrad_{std::make_shared<SharedGrad>()};
+  std::shared_ptr<SharedData> sharedData_ = std::make_shared<SharedData>();
+  std::shared_ptr<SharedGrad> sharedGrad_ = std::make_shared<SharedGrad>();
 
   // NB: array only; we don't try to serialize the autograd graph
   // Saving the sharedData ptr helps to avoid saving variables which share the
