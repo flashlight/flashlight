@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include <arrayfire.h>
-
 #include <chrono>
 
 namespace fl {
