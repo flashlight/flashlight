@@ -9,16 +9,9 @@
 #include <utility>
 
 #include "flashlight/fl/common/DevicePtr.h"
-
-// TODO{fl::Tensor}{rewrite} remove me
-#include <af/array.h>
-#include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
-
-// This ctor will be deleted
-DevicePtr::DevicePtr(af::array in)
-    : DevicePtr(toTensor<ArrayFireTensor>(std::move(in), /* numDims = */ 4)) {}
 
 DevicePtr::DevicePtr(const Tensor& in)
     : tensor_(std::make_unique<Tensor>(in.shallowCopy())) {
