@@ -27,8 +27,8 @@ namespace audio {
 //  3. Vocal Tract Length Normalisation
 // Example usage:
 //   FeatureParams params;
-//   Mfcc mfcc(params); af::array input = af::randu(123456, 987);
-//   af::array mfccfeatures = mfcc->apply(input);
+//   Mfcc mfcc(params); Tensor input = fl::rand({123456, 987});
+//   Tensor mfccfeatures = mfcc->apply(input);
 //
 // References
 //  [1] Young, S., Evermann, G., Gales, M., Hain, T., Kershaw, D.,
