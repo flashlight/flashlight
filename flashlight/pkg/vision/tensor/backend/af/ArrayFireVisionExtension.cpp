@@ -62,7 +62,7 @@ af::array addFillTensor(
   }
 
   // Call the transform
-  res = transformFunc(input, std::forward<Args>(args)...);
+  res = transformFunc(res, std::forward<Args>(args)...);
 
   if (!fillImg.isempty()) {
     auto mask = af::sum(res, 2) == 0;
