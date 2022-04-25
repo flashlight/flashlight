@@ -6,8 +6,8 @@
  */
 
 #include "flashlight/fl/autograd/Utils.h"
-
 #include "flashlight/fl/common/Utils.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 
@@ -15,7 +15,7 @@ bool allClose(
     const Variable& a,
     const Variable& b,
     double absTolerance /* = 1e-5 */) {
-  return allClose(a.array(), b.array(), absTolerance);
+  return allClose(a.tensor(), b.tensor(), absTolerance);
 }
 
 } // namespace fl

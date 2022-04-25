@@ -11,17 +11,17 @@
 #include <vector>
 
 namespace fl {
+namespace detail {
 
-class Variable;
-
-void gradAdvancedIndex(
-    const Variable& inp,
+void advancedIndex(
+    const af::array& inp,
     const af::dim4& idxStart,
     const af::dim4& idxEnd,
     const af::dim4& outDims,
     const std::vector<af::array>& idxArr,
-    Variable& out) {
+    af::array& out) {
   throw std::runtime_error("gradAdvancedIndex not implemented for cpu");
 }
 
+} // namespace detail
 } // namespace fl
