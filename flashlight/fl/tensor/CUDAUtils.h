@@ -11,8 +11,6 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include <af/cuda.h>
-
 /// usage: `FL_CUDA_CHECK(cudaError_t err[, const char* prefix])`
 #define FL_CUDA_CHECK(...) \
   ::fl::cuda::detail::check(__VA_ARGS__, __FILE__, __LINE__)

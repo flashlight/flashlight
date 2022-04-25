@@ -9,6 +9,7 @@
 
 #include <mutex>
 
+#include "flashlight/fl/tensor/Stream.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
 
 namespace fl {
@@ -25,6 +26,14 @@ class ArrayFireBackend : public TensorBackend {
   // TODO: consolidate the ArrayFire memory manager here so its global state can
   // be stored/we can reduce the number of singletons.
   std::once_flag memoryInitFlag;
+
+  // This is a revolving door stream - each time ArrayFireBackend::getStream()
+  // is called, a new Stream is created with the stream from
+  // afcu::getStream() (or afcl::getStream() when added back), which corresponds
+  // correctly to the stream from the currently-active device.
+  //
+  // This will eventually be modified to use a stream stored per device.
+  std::unique_ptr<Stream> stream_;
 
   // Intentionally private. Only one instance should exist/it should be accessed
   // via getInstance().
@@ -48,6 +57,7 @@ class ArrayFireBackend : public TensorBackend {
   int getDevice() override;
   void setDevice(const int deviceId) override;
   int getDeviceCount() override;
+  const Stream& getStream() override;
   bool supportsDataType(const fl::dtype& dtype) const override;
   // Memory management
   void getMemMgrInfo(const char* msg, const int deviceId, std::ostream* ostream)
