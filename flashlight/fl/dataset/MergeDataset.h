@@ -20,14 +20,14 @@ namespace fl {
  * The size of the `MergeDataset` is the max of the sizes of the input datasets.
  *
  * We have `MergeDataset({ds1, ds2}).get(i) == merge(ds1.get(i), ds2.get(i))`
- * where `merge` concatenates the `std::vector<af::array>` from each dataset.
+ * where `merge` concatenates the `std::vector<Tensor>` from each dataset.
  *
  * Example:
   \code{.cpp}
   // Make two datasets
   auto makeDataset = []() {
-    auto tensor = af::randu(5, 4, 10);
-    std::vector<af::array> fields{tensor};
+    auto tensor = fl::rand({5, 4, 10});
+    std::vector<Tensor> fields{tensor};
     return std::make_shared<TensorDataset>(fields);
   };
   auto ds1 = makeDataset();
@@ -51,7 +51,7 @@ class MergeDataset : public Dataset {
 
   int64_t size() const override;
 
-  std::vector<af::array> get(const int64_t idx) const override;
+  std::vector<Tensor> get(const int64_t idx) const override;
 
  private:
   std::vector<std::shared_ptr<const Dataset>> datasets_;
