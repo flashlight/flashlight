@@ -19,6 +19,8 @@
 
 namespace fl {
 
+class Stream;
+
 /**
  * A Tensor backend that can be used to store global state associated with a
  * particular tensor implementation.
@@ -44,6 +46,7 @@ class TensorBackend {
   virtual int getDevice() = 0;
   virtual void setDevice(const int deviceId) = 0;
   virtual int getDeviceCount() = 0;
+  virtual const Stream& getStream() = 0;
   virtual bool supportsDataType(const fl::dtype& dtype) const = 0;
   // Memory Management
   virtual void

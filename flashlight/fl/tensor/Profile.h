@@ -34,7 +34,7 @@ class ScopedProfiler {
  */
 class ProfileTracer {
  public:
-  ProfileTracer(const std::string& name);
+  explicit ProfileTracer(const std::string& name);
   ~ProfileTracer();
 };
 
