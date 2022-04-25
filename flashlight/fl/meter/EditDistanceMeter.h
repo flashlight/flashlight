@@ -7,11 +7,13 @@
 
 #pragma once
 
-#include <arrayfire.h>
 #include <algorithm>
 #include <numeric>
+#include <vector>
 
 namespace fl {
+
+class Tensor;
 
 /** An implementation of edit distance meter, which measures the edit distance
  * between targets and predictions made by the model.
@@ -54,7 +56,7 @@ class EditDistanceMeter {
   /** Computes edit distance between two arrayfire arrays `output` and `target`
    * and updates the counters.
    */
-  void add(const af::array& output, const af::array& target);
+  void add(const Tensor& output, const Tensor& target);
 
   /** Updates all the counters with inputs sharing the same meaning. */
   void add(

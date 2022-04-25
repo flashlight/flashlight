@@ -162,7 +162,7 @@ af::array makeBatch(
     }
   }
 
-  int ndims = (data[0].elements() > 1) ? dims.ndims() : 0;
+  int ndims = (data[0].elements() > 1) ? dims.ndim() : 0;
 
   if (ndims >= 4) {
     throw std::invalid_argument("# of dims must be < 4 for batching");

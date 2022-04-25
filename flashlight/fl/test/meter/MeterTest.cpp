@@ -5,43 +5,52 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <array>
+#include <cmath>
+#include <vector>
 
 #include <gtest/gtest.h>
 
 #include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/meter/meters.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 using namespace fl;
 
 TEST(MeterTest, EditDistanceMeter) {
   EditDistanceMeter meter;
-  std::array<int, 5> a{1, 2, 3, 4, 5};
-  std::array<int, 6> b{1, 1, 3, 3, 5, 6};
-  meter.add(af::array(5, a.data()), af::array(6, b.data()));
+  std::vector<int> a = {1, 2, 3, 4, 5};
+  std::vector<int> b = {1, 1, 3, 3, 5, 6};
+  meter.add(Tensor::fromVector(a), Tensor::fromVector(b));
   ASSERT_EQ(meter.errorRate()[0], 50.0); // 3 / 6
   ASSERT_EQ(meter.value()[0], 3); // 3 / 6
-  ASSERT_LT(fabs(16.6666667 - meter.errorRate()[2]), 1e-5); // deletion = 1 / 6
+  ASSERT_LT(
+      std::fabs(16.6666667 - meter.errorRate()[2]), 1e-5); // deletion = 1 / 6
   ASSERT_EQ(meter.value()[2], 1);
   ASSERT_EQ(meter.errorRate()[3], 0.0); // insertion error
   ASSERT_EQ(meter.value()[3], 0);
   ASSERT_LT(
-      fabs(33.3333333 - meter.errorRate()[4]),
+      std::fabs(33.3333333 - meter.errorRate()[4]),
       1e-5); // substitution error = 2 / 6
   ASSERT_EQ(meter.value()[4], 2);
-  meter.add(af::array(3, a.data() + 1), af::array(3, b.data()));
-  ASSERT_LT(fabs(66.666666 - meter.errorRate()[0]), 1e-5); // 3 + 3 / 6 + 3
+  // TODO{fl::Tensor}{check}
+  meter.add(
+      Tensor::fromBuffer({3}, a.data() + 1, MemoryLocation::Host),
+      Tensor::fromVector({3}, b));
+  ASSERT_LT(std::fabs(66.666666 - meter.errorRate()[0]), 1e-5); // 3 + 3 / 6 + 3
   ASSERT_EQ(meter.value()[0], 6);
 }
 
 TEST(MeterTest, FrameErrorMeter) {
   FrameErrorMeter meter;
-  std::array<int, 5> a{1, 2, 3, 4, 5};
-  std::array<int, 6> b{1, 1, 3, 3, 5, 6};
-  meter.add(af::array(5, a.data()), af::array(5, b.data()));
+  std::vector<int> a = {1, 2, 3, 4, 5};
+  std::vector<int> b = {1, 1, 3, 3, 5, 6};
+  meter.add(Tensor::fromVector(a), Tensor::fromVector({5}, b));
   ASSERT_EQ(meter.value(), 40.0); // 2 / 5
-  meter.add(af::array(4, a.data() + 1), af::array(4, b.data() + 2));
-  ASSERT_LT(fabs(55.5555555 - meter.value()), 1e-5); // 2 + 3 / 5 + 4
+  // TODO{fl::Tensor}{check}
+  meter.add(
+      Tensor::fromBuffer({4}, a.data() + 1, MemoryLocation::Host),
+      Tensor::fromBuffer({4}, b.data() + 2, MemoryLocation::Host));
+  ASSERT_LT(std::fabs(55.5555555 - meter.value()), 1e-5); // 2 + 3 / 5 + 4
 }
 
 TEST(MeterTest, AverageValueMeter) {
@@ -55,8 +64,8 @@ TEST(MeterTest, AverageValueMeter) {
   ASSERT_NEAR(val[1], 1.0, 1e-10);
   ASSERT_EQ(val[2], 3.0);
 
-  std::array<float, 3> a{2.0, 3.0, 4.0};
-  meter.add(af::array(3, a.data()));
+  std::vector<float> a = {2.0, 3.0, 4.0};
+  meter.add(Tensor::fromVector(a));
   val = meter.value();
   ASSERT_EQ(val[0], 3.0);
   ASSERT_NEAR(val[1], 0.8, 1e-10);
@@ -65,9 +74,10 @@ TEST(MeterTest, AverageValueMeter) {
 
 TEST(MeterTest, MSEMeter) {
   MSEMeter meter;
-  std::array<int, 5> a{1, 2, 3, 4, 5};
-  std::array<int, 5> b{4, 5, 6, 7, 8};
-  meter.add(af::array(5, a.data()), af::array(5, b.data()));
+  std::vector<int> b = {4, 5, 6, 7, 8};
+  meter.add(
+      Tensor::fromVector<int>({1, 2, 3, 4, 5}),
+      Tensor::fromVector<int>({4, 5, 6, 7, 8}));
   auto val = meter.value();
   ASSERT_EQ(val, 45.0);
 }
