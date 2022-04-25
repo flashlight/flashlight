@@ -109,7 +109,7 @@ std::string ConnectionistTemporalClassificationCriterion::prettyString() const {
 void ConnectionistTemporalClassificationCriterion::validate(
     const Variable& input,
     const Variable& target) {
-  if (input.isempty()) {
+  if (input.isEmpty()) {
     throw std::invalid_argument("CTC: Input cannot be empty");
   }
   if (target.ndim() < 2) {

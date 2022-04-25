@@ -138,7 +138,7 @@ Variable Conformer::mhsa(const Variable& input, const Variable& inputPadMask) {
   fl::Variable padMask;
   // TODO{fl::Tensor}{resize} - emulate the ArrayFire resize operation for
   // transformer pad mask
-  if (!inputPadMask.isempty()) {
+  if (!inputPadMask.isEmpty()) {
     auto padMaskArr = inputPadMask.tensor();
     Shape newMaskShape = {input.dims(1), input.dims(2)};
     if (padMaskArr.elements() != newMaskShape.elements()) {

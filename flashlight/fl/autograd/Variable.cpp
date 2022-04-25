@@ -126,7 +126,7 @@ Shape Variable::shape() const {
   return tensor().shape();
 }
 
-bool Variable::isempty() const {
+bool Variable::isEmpty() const {
   return tensor().isEmpty();
 }
 
@@ -135,7 +135,7 @@ bool Variable::isContiguous() const {
 }
 
 Variable Variable::asContiguous() const {
-  if (!isempty() && !isContiguous()) {
+  if (!isEmpty() && !isContiguous()) {
     tensor() = tensor().asContiguousTensor();
   }
   return *this;

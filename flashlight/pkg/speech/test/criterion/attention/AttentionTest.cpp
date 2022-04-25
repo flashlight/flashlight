@@ -144,7 +144,7 @@ TEST(AttentionTest, NeuralContentAttention) {
         encodedy, encodedx, Variable{}, Variable{}, currentPad);
     ASSERT_EQ(alphas.shape(), Shape({U, T, B}));
     ASSERT_EQ(summaries.shape(), Shape({H, U, B}));
-    if (!currentPad.isempty()) {
+    if (!currentPad.isEmpty()) {
       ASSERT_EQ(
           fl::countNonzero(
               alphas.tensor()(fl::span, fl::range(T - T / 2, T), 0) == 0)
@@ -202,7 +202,7 @@ TEST(AttentionTest, MultiHeadContentAttention) {
             encodedy, encodedx, Variable{}, Variable{}, currentPad);
         ASSERT_EQ(alphas.shape(), Shape({U * NH, T, B}));
         ASSERT_EQ(summaries.shape(), Shape({H, U, B}));
-        if (!currentPad.isempty()) {
+        if (!currentPad.isEmpty()) {
           ASSERT_EQ(
               fl::countNonzero(
                   alphas.tensor()(fl::span, fl::range(T - T / 2, T), 0) == 0)
