@@ -12,19 +12,20 @@
 #include <glog/logging.h>
 
 #include "flashlight/app/imgclass/examples/Defines.h"
-#include "flashlight/pkg/runtime/amp/DynamicScaler.h"
-#include "flashlight/pkg/runtime/common/DistributedUtils.h"
-#include "flashlight/pkg/vision/dataset/Transforms.h"
-#include "flashlight/pkg/vision/dataset/DistributedDataset.h"
-#include "flashlight/pkg/vision/models/ViT.h"
 #include "flashlight/fl/dataset/datasets.h"
 #include "flashlight/fl/meter/meters.h"
 #include "flashlight/fl/optim/optim.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/lib/common/BetaDistribution.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
 #include "flashlight/pkg/runtime/Runtime.h"
+#include "flashlight/pkg/runtime/amp/DynamicScaler.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
+#include "flashlight/pkg/vision/dataset/DistributedDataset.h"
 #include "flashlight/pkg/vision/dataset/Imagenet.h"
+#include "flashlight/pkg/vision/dataset/Transforms.h"
+#include "flashlight/pkg/vision/models/ViT.h"
 
 DEFINE_string(data_dir, "", "Directory of imagenet data");
 DEFINE_uint64(data_batch_size, 64, "Batch size per gpus");
@@ -151,9 +152,9 @@ std::tuple<double, double, double> evalLoop(
 
     // Compute and record the loss.
     auto loss = categoricalCrossEntropy(output, target);
-    lossMeter.add(loss.array().scalar<float>());
-    top5Acc.add(output.array(), target.array());
-    top1Acc.add(output.array(), target.array());
+    lossMeter.add(loss.tensor().asScalar<float>());
+    top5Acc.add(output.tensor(), target.tensor());
+    top1Acc.add(output.tensor(), target.tensor());
   }
   model->train();
   fl::pkg::runtime::syncMeter(lossMeter);
@@ -187,7 +188,7 @@ int main(int argc, char** argv) {
     reducer = std::make_shared<fl::CoalescingReducer>(
         1.0 / fl::getWorldSize(), true, true);
   }
-  af::info();
+
   FL_LOG_MASTER(INFO) << "Gflags after parsing \n"
                       << fl::pkg::runtime::serializeGflags("; ");
 
@@ -204,10 +205,9 @@ int main(int argc, char** argv) {
   const int imageSize = 224;
   // Conventional image resize parameter used for evaluation
   const int randomResizeMin = imageSize / .875;
-  auto fillImg = af::tile(
-      af::array(1, 1, 3, 1, fl::app::image::kImageNetMean.data()),
-      imageSize,
-      imageSize);
+  auto fillImg = fl::tile(
+      Tensor::fromVector({1, 1, 3, 1}, fl::app::image::kImageNetMean),
+      {imageSize, imageSize});
 
   ImageTransform trainTransforms = compose(
       {fl::pkg::vision::randomResizeCropTransform(
@@ -218,7 +218,7 @@ int main(int argc, char** argv) {
            4. / 3. // ratioHigh
            ),
        fl::pkg::vision::randomHorizontalFlipTransform(0.5 // flipping probablity
-                                                     ),
+                                                      ),
        fl::pkg::vision::randomAugmentationDeitTransform(
            FLAGS_train_aug_p_randomeaug, FLAGS_train_aug_n_randomeaug, fillImg),
        fl::pkg::vision::normalizeImage(
@@ -430,7 +430,7 @@ int main(int argc, char** argv) {
       if (FLAGS_fl_amp_use_mixed_precision && FLAGS_fl_optim_mode.empty()) {
         // In case AMP is activated with DEFAULT mode,
         // we manually cast input to fp16.
-        input = input.as(f16);
+        input = input.as(fl::dtype::f16);
       }
 
       fl::sync();
@@ -444,7 +444,7 @@ int main(int argc, char** argv) {
 
         critFwdTimeMeter.resume();
         auto y = target.as(output.type());
-        auto loss = fl::mean(fl::sum(fl::negate(y * output), {0}), {1});
+        auto loss = fl::mean(fl::sum(fl::negate(y * output), {0}), {0});
         fl::sync();
         fwdTimeMeter.stopAndIncUnit();
         critFwdTimeMeter.stopAndIncUnit();
@@ -453,14 +453,14 @@ int main(int argc, char** argv) {
         bwdTimeMeter.resume();
         optWithWeightDecay.zeroGrad();
         optNoWeightDecay.zeroGrad();
-        bool scaleIsValid =fl::pkg::runtime::backwardWithScaling(
+        bool scaleIsValid = fl::pkg::runtime::backwardWithScaling(
             loss, modelParams, dynamicScaler, reducer);
         fl::sync();
         bwdTimeMeter.stopAndIncUnit();
         if (!scaleIsValid) {
           continue;
         }
-        trainLossMeter.add(loss.array());
+        trainLossMeter.add(loss.tensor());
         break;
       }
 
