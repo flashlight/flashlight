@@ -149,7 +149,7 @@ int64_t TextDataset::size() const {
   return batches_.size();
 }
 
-std::vector<af::array> TextDataset::get(const int64_t idx) const {
+std::vector<Tensor> TextDataset::get(const int64_t idx) const {
   const auto& batch = batches_[idx % size()];
   int64_t maxLength = 0;
   for (const auto& pos : batch) {
@@ -163,7 +163,8 @@ std::vector<af::array> TextDataset::get(const int64_t idx) const {
         data_.data() + pos.first,
         sizeof(int) * (pos.last - pos.first + 1));
   }
-  return {af::array(maxLength, batch.size(), buffer.data())};
+  return {Tensor::fromVector(
+      {maxLength, static_cast<long long>(batch.size())}, buffer)};
 }
 
 void TextDataset::shuffle(uint64_t seed) {
