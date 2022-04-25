@@ -43,17 +43,26 @@ class range {
 
   /**
    * Construct a range with the indices [0, idx) (i.e. [0, idx - 1])
+   *
+   * @param[in] idx the end index of the range, which will start from 0
    */
   explicit range(const idx& idx);
 
   /**
    * Construct a range with the indices [start, end) (i.e. [start, end - 1])
+   *
+   * @param[in] start the starting index of the range
+   * @param[in] end the end index of the range, which will start from 0
    */
   range(const idx& start, const idx& end);
 
   /**
    * Construct a range with the indices [start, end) (i.e. [start, end - 1])
    * with the given stride.
+   *
+   * @param[in] start the starting index of the range
+   * @param[in] end the end index of the range, which will start from 0
+   * @param[in] stride the interval over which successive range elements appear
    */
   range(const idx& start, const idx& end, const Dim stride);
 
