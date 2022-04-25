@@ -19,6 +19,7 @@ A C++ library for machine learning.
    :caption: API REFERENCE
    :maxdepth: 2
 
+   tensor
    variable
    functions
    modules
