@@ -269,63 +269,6 @@ class Variable {
   void backward(bool retainGraph = false);
 
   /**
-   * Return a column from an array based on `index`. This can
-   * also be seen as the result of doing
-   * `input(af::span, index, af::span, af::span)`
-   * @param[in] index index of the row
-   * @return Variable storing the result
-   */
-  Variable col(int index) const;
-
-  /**
-   * Returns a sequence of columns from an array based on `first` and `last`
-   * indices. This can also be seen as the result of doing
-   * `input(af::span, af::seq(first, last), af::span, af::span)`
-   * @param[in] first start index of the rows
-   * @param[in] last end index of the rows
-   * @return Variable storing the result
-   */
-  Variable cols(int first, int last) const;
-
-  /**
-   * Returns a row from an array based on `index`. This can
-   * also be seen as the result of doing
-   * `input(index, af::span, af::span, af::span)`
-   * @param[in] index index of the slice
-   * @return Variable storing the result
-   */
-  Variable row(int index) const;
-
-  /**
-   * Returns a sequence of rows from an array based on `first` and `last`
-   * indices. This can also be seen as the result of doing
-   * `input(af::seq(first, last), af::span, af::span, af::span)`
-   * @param[in] first start index of the rows
-   * @param[in] last end index of the rows
-   * @return Variable storing the result
-   */
-  Variable rows(int first, int last) const;
-
-  /**
-   * Return slice in volume from an array based on `index`. This can
-   * also be seen as the result of doing
-   * `input(af::span, af::span, index, af::span)`
-   * @param[in] index index of the slice
-   * @return Variable storing the result
-   */
-  Variable slice(int index) const;
-
-  /**
-   * Return slices in volume from an array based on `first` and `last` indices.
-   * This can also be seen as the result of doing `input(af::span, af::span,
-   * af::seq(first, last), af::span)`
-   * @param[in] first start index of the slices
-   * @param[in] last end index of the slices
-   * @return Variable storing the result
-   */
-  Variable slices(int first, int last) const;
-
-  /**
    * Returns a copy of this variable after removing its underlying array.
    * The new Variable is used to store the inputs for a Variable
    * which doesn't need the output.
