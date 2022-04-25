@@ -9,8 +9,10 @@
 
 #include "flashlight/fl/common/backend/cuda/cuda.h"
 
-#include "flashlight/pkg/speech/criterion/CriterionUtils.h"
+#include <stdexcept>
+#include "flashlight/fl/common/DevicePtr.h"
 #include "flashlight/lib/sequence/criterion/cuda/FullConnectionCriterion.cuh"
+#include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
 using FCC = fl::lib::cuda::FullConnectionCriterion<float>;
 
@@ -24,15 +26,19 @@ static void backward(
     int B,
     int T,
     int N,
-    const af::array& trans,
-    af::array& workspace) {
-  if (gradVar.type() != f32) {
+    const Tensor& trans,
+    Tensor& workspace) {
+  if (gradVar.type() != fl::dtype::f32) {
     throw std::invalid_argument("FCC: grad must be float32");
   }
+  if (inputs.size() != 2) {
+    throw std::invalid_argument(
+        "FullConnectionCriterion backward expects two input args");
+  }
 
-  const auto& grad = gradVar.array();
-  af::array inputGrad(N, T, B, f32);
-  af::array transGrad(N, N, f32);
+  const auto& grad = gradVar.tensor();
+  Tensor inputGrad({N, T, B}, fl::dtype::f32);
+  Tensor transGrad({N, N}, fl::dtype::f32);
 
   {
     fl::DevicePtr transRaw(trans);
@@ -59,6 +65,17 @@ static void backward(
 Variable FullConnectionCriterion::forward(
     const Variable& inputVar,
     const Variable& targetVar) {
+  if (inputVar.numdims() != 3) {
+    throw std::invalid_argument(
+        "FullConnectionCriterion::forward: "
+        "expects input with dimensions {N, T, B}");
+  }
+  if (targetVar.numdims() != 2) {
+    throw std::invalid_argument(
+        "FullConnectionCriterion::forward: "
+        "expects target with dimensions {B, L}");
+  }
+
   const auto& transVar = param(0);
   int B = inputVar.dims(2);
   int T = inputVar.dims(1);
@@ -66,18 +83,19 @@ Variable FullConnectionCriterion::forward(
 
   if (N != transVar.dims(0)) {
     throw std::invalid_argument("FCC: input dim doesn't match N");
-  } else if (inputVar.type() != f32) {
+  } else if (inputVar.type() != fl::dtype::f32) {
     throw std::invalid_argument("FCC: input must be float32");
-  } else if (targetVar.type() != s32) {
+  } else if (targetVar.type() != fl::dtype::s32) {
     throw std::invalid_argument("FCC: target must be int32");
   }
 
-  const auto& input = inputVar.array();
-  const auto& target = targetVar.array();
+  const auto& input = inputVar.tensor();
+  const auto& target = targetVar.tensor();
   const auto& targetSize = getTargetSizeArray(target, T);
-  const auto& trans = transVar.array();
-  af::array loss(B, f32);
-  af::array workspace(FCC::getWorkspaceSize(B, T, N), u8);
+  const auto& trans = transVar.tensor();
+  Tensor loss({B}, fl::dtype::f32);
+  Tensor workspace(
+      {static_cast<long long>(FCC::getWorkspaceSize(B, T, N))}, fl::dtype::u8);
 
   {
     fl::DevicePtr inputRaw(input);

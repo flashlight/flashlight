@@ -17,12 +17,14 @@
 #include <random>
 
 #include "flashlight/fl/flashlight.h"
-
+#include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/pkg/speech/criterion/AutoSegmentationCriterion.h"
 
 using namespace fl::pkg::speech;
 
 namespace {
+
+using namespace fl;
 
 constexpr int B = 100;
 constexpr int N = 30;
@@ -41,13 +43,13 @@ void usage(const char* argv0) {
 }
 
 struct CriterionOutput {
-  af::array loss;
-  af::array inputGrad;
-  af::array transGrad;
+  Tensor loss;
+  Tensor inputGrad;
+  Tensor transGrad;
 };
 
 CriterionOutput
-run(const af::array& input, const af::array& target, const af::array& trans) {
+run(const Tensor& input, const Tensor& target, const Tensor& trans) {
   fl::Variable inputVar(input, true);
   fl::Variable targetVar(target, false);
   fl::Variable transVar(trans, true);
@@ -58,35 +60,35 @@ run(const af::array& input, const af::array& target, const af::array& trans) {
   loss.backward();
 
   CriterionOutput result;
-  result.loss = loss.array();
-  result.inputGrad = inputVar.grad().array();
-  result.transGrad = transVar.grad().array();
+  result.loss = loss.tensor();
+  result.inputGrad = inputVar.grad().tensor();
+  result.transGrad = transVar.grad().tensor();
   return result;
 }
 
 // Discrepancy value of 1 corresponds to `allclose(a, b, rtol=1e-5, atol=1e-7)`
 // just barely returning true.
-double discrepancy(const af::array& a, const af::array& b) {
-  const auto& ad = a.as(f64);
-  const auto& bd = b.as(f64);
-  return af::max<double>(af::abs(ad - bd) / (1e-7 + 1e-5 * af::abs(bd)));
+double discrepancy(const Tensor& a, const Tensor& b) {
+  const auto& ad = a.astype(fl::dtype::f64);
+  const auto& bd = b.astype(fl::dtype::f64);
+  return fl::amax(fl::abs(ad - bd) / (1e-7 + 1e-5 * fl::abs(bd)))
+      .scalar<double>();
 }
 
 void printDiscrepancies(
     const std::string& prefix,
-    const af::array& compare,
-    const af::array& baseline) {
+    const Tensor& compare,
+    const Tensor& baseline) {
   std::cerr << prefix << "discrepancy=" << std::setprecision(17)
             << discrepancy(compare, baseline);
-  // Since discrepancy() uses af::max<T> which passes over NaNs,
-  // we check for NaN discrepancies manually.
-  auto compareNaN = af::isNaN(compare);
-  auto baselineNaN = af::isNaN(baseline);
-  if (af::anyTrue<bool>(compareNaN && !baselineNaN)) {
+  // Check for NaN discrepancies manually.
+  auto compareNaN = fl::isnan(compare);
+  auto baselineNaN = fl::isnan(baseline);
+  if (fl::any(compareNaN && !baselineNaN).asScalar<bool>()) {
     std::cerr << " (warning: compare has NaNs where baseline does not)";
-  } else if (af::anyTrue<bool>(compareNaN && baselineNaN)) {
+  } else if (fl::any(compareNaN && baselineNaN).asScalar<bool>()) {
     std::cerr << " (warning: both baseline and compare have NaNs)";
-  } else if (af::anyTrue<bool>(baselineNaN)) {
+  } else if (fl::any(baselineNaN).asScalar<bool>()) {
     std::cerr << " (warning: baseline has NaNs where compare does not)";
   }
   std::cerr << std::endl;
@@ -135,9 +137,9 @@ int main(int argc, char** argv) {
     afSeed ^= rng();
     fl::setSeed(afSeed);
 
-    auto input = af::randn(N, T, B);
-    auto target = af::array(L, B, targetHost.data());
-    auto trans = af::randn(N, N);
+    auto input = fl::randn({N, T, B});
+    auto target = Tensor::fromVector({L, B}, targetHost);
+    auto trans = fl::randn({N, N});
     fl::save(argv[2], input, target, trans);
     std::cerr << "input generated" << std::endl;
   } else if (command == "baseline") {
@@ -145,7 +147,7 @@ int main(int argc, char** argv) {
       usage(argv[0]);
     }
 
-    af::array input, target, trans;
+    Tensor input, target, trans;
     fl::load(argv[2], input, target, trans);
     auto out = run(input, target, trans);
     fl::save(argv[3], out.loss, out.inputGrad, out.transGrad);
@@ -155,7 +157,7 @@ int main(int argc, char** argv) {
       usage(argv[0]);
     }
 
-    af::array input, target, trans;
+    Tensor input, target, trans;
     fl::load(argv[2], input, target, trans);
     CriterionOutput out0;
     fl::load(argv[3], out0.loss, out0.inputGrad, out0.transGrad);

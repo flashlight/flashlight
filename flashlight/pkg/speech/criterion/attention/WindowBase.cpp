@@ -11,59 +11,54 @@ namespace fl {
 namespace pkg {
 namespace speech {
 
-af::array WindowBase::computeInputNotPaddedSize(
-    const af::array& inputSizes,
+Tensor WindowBase::computeInputNotPaddedSize(
+    const Tensor& inputSizes,
     int inputSteps,
     int batchSize,
     int decoderStepsDim,
     bool doTile) const {
-  if (inputSizes.isempty()) {
+  if (inputSizes.isEmpty()) {
     if (doTile) {
-      return af::constant(
-          static_cast<float>(inputSteps),
-          af::dim4(decoderStepsDim, inputSteps, batchSize));
+      return fl::full(
+          {decoderStepsDim, inputSteps, batchSize}, inputSteps, fl::dtype::f32);
     } else {
-      return af::constant(
-          static_cast<float>(inputSteps), af::dim4(1, 1, batchSize));
+      return fl::full({1, 1, batchSize}, inputSteps, fl::dtype::f32);
     }
   }
   if (inputSizes.elements() != batchSize) {
     throw std::runtime_error(
         "Attention Window: wrong size of the input sizes vector, doesn't match with batchsize");
   }
-  af::array inputNotPaddedSize =
-      af::ceil(inputSizes / af::max<float>(inputSizes) * inputSteps);
-  inputNotPaddedSize =
-      af::moddims(inputNotPaddedSize, af::dim4(1, 1, batchSize));
+  Tensor inputNotPaddedSize = fl::ceil(
+      inputSizes / fl::amax(inputSizes).asScalar<float>() * inputSteps);
+  inputNotPaddedSize = fl::reshape(inputNotPaddedSize, {1, 1, batchSize});
   if (doTile) {
     inputNotPaddedSize =
-        af::tile(inputNotPaddedSize, decoderStepsDim, inputSteps, 1);
+        fl::tile(inputNotPaddedSize, {decoderStepsDim, inputSteps, 1});
   }
   return inputNotPaddedSize;
 }
 
-af::array WindowBase::computeTargetNotPaddedSize(
-    const af::array& targetSizes,
+Tensor WindowBase::computeTargetNotPaddedSize(
+    const Tensor& targetSizes,
     int inputSteps,
     int targetLen,
     int batchSize,
     int decoderStepsDim) const {
-  if (targetSizes.isempty()) {
-    return af::constant(
-        static_cast<float>(targetLen),
-        af::dim4(decoderStepsDim, inputSteps, batchSize));
+  if (targetSizes.isEmpty()) {
+    return fl::full(
+        {decoderStepsDim, inputSteps, batchSize}, targetLen, fl::dtype::f32);
   }
   if (targetSizes.elements() != batchSize) {
     throw std::runtime_error(
         "Window Attention: wrong size of the target sizes vector, doesn't match with batchsize");
   }
-  af::array targetNotPaddedSize = af::moddims(
-      af::ceil(targetSizes / af::max<float>(targetSizes) * targetLen),
-      1,
-      1,
-      batchSize);
+  Tensor targetNotPaddedSize = fl::reshape(
+      fl::ceil(
+          targetSizes / fl::amax(targetSizes).asScalar<float>() * targetLen),
+      {1, 1, batchSize});
   targetNotPaddedSize =
-      af::tile(targetNotPaddedSize, af::dim4(decoderStepsDim, inputSteps, 1));
+      fl::tile(targetNotPaddedSize, {decoderStepsDim, inputSteps, 1});
   return targetNotPaddedSize;
 }
 

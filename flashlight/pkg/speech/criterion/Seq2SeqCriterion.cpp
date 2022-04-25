@@ -10,7 +10,9 @@
 #include <algorithm>
 #include <numeric>
 #include <queue>
+#include <stdexcept>
 
+#include "flashlight/fl/tensor/Index.h"
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
@@ -47,6 +49,7 @@ Seq2SeqState concatState(std::vector<Seq2SeqState>& stateVec) {
     }
     summaryVec.push_back(state.summary);
   }
+
   newState.alpha = concatenate(alphaVec, 2);
   for (int i = 0; i < nAttnRound; i++) {
     newState.hidden[i] = concatenate(hiddenVec[i], 1);
@@ -61,10 +64,13 @@ Seq2SeqState selectState(Seq2SeqState& state, int batchIdx) {
   newState.step = state.step;
   newState.peakAttnPos = state.peakAttnPos;
   newState.isValid = state.isValid;
-  newState.alpha = state.alpha(af::span, af::span, batchIdx);
-  newState.summary = state.summary(af::span, af::span, batchIdx);
+  newState.alpha =
+      state.alpha(fl::span, fl::span, fl::range(batchIdx, batchIdx));
+  newState.summary =
+      state.summary(fl::span, fl::span, fl::range(batchIdx, batchIdx));
   for (int i = 0; i < nAttnRound; i++) {
-    newState.hidden[i] = state.hidden[i](af::span, batchIdx);
+    newState.hidden[i] =
+        state.hidden[i](fl::span, fl::range(batchIdx, batchIdx));
   }
   return newState;
 }
@@ -119,7 +125,7 @@ Seq2SeqCriterion::Seq2SeqCriterion(
   }
 
   // 5. Initial hidden state
-  params_.push_back(fl::uniform(af::dim4{hiddenDim}, -1e-1, 1e-1));
+  params_.push_back(fl::uniform(Shape{hiddenDim}, -1e-1, 1e-1));
   setUseSequentialDecoder();
 }
 
@@ -141,9 +147,9 @@ std::vector<Variable> Seq2SeqCriterion::forward(
   const auto& input = inputs[0];
   const auto& target = inputs[1];
   const auto& inputSizes =
-      inputs.size() == 2 ? af::array() : inputs[2].array(); // 1 x B
+      inputs.size() == 2 ? Tensor() : inputs[2].tensor(); // 1 x B
   const auto& targetSizes =
-      inputs.size() == 3 ? af::array() : inputs[3].array(); // 1 x B
+      inputs.size() == 3 ? Tensor() : inputs[3].tensor(); // 1 x B
 
   Variable out, alpha;
   if (useSequentialDecoder_) {
@@ -157,15 +163,14 @@ std::vector<Variable> Seq2SeqCriterion::forward(
 
   auto losses = moddims(
       sum(categoricalCrossEntropy(out, target, ReduceMode::NONE, pad_), {0}),
-      -1);
+      {-1});
   if (train_ && labelSmooth_ > 0) {
     size_t nClass = out.dims(0);
-    auto targetTiled = af::tile(
-        af::moddims(
-            target.array(), af::dim4(1, target.dims(0), target.dims(1))),
-        nClass);
+    auto targetTiled = fl::tile(
+        fl::reshape(target.tensor(), {1, target.dims(0), target.dims(1)}),
+        {static_cast<long long>(nClass)});
     out = applySeq2SeqMask(out, targetTiled, pad_);
-    auto smoothLoss = moddims(sum(out, {0, 1}), -1);
+    auto smoothLoss = moddims(sum(out, {0, 1}), {-1});
     losses = (1 - labelSmooth_) * losses - (labelSmooth_ / nClass) * smoothLoss;
   }
 
@@ -175,8 +180,13 @@ std::vector<Variable> Seq2SeqCriterion::forward(
 std::pair<Variable, Variable> Seq2SeqCriterion::vectorizedDecoder(
     const Variable& input,
     const Variable& target,
-    const af::array& inputSizes,
-    const af::array& targetSizes) {
+    const Tensor& inputSizes,
+    const Tensor& targetSizes) {
+  if (target.numdims() != 2) {
+    throw std::invalid_argument(
+        "Seq2SeqCriterion::vectorizedDecoder: "
+        "target expects to be shape {U, B}");
+  }
   int U = target.dims(0);
   int B = target.dims(1);
   int T = input.dims(1);
@@ -185,17 +195,17 @@ std::pair<Variable, Variable> Seq2SeqCriterion::vectorizedDecoder(
 
   if (U > 1) {
     // Slice off eos
-    auto y = target(af::seq(0, U - 2), af::span);
+    auto y = target(fl::range(0, U - 1), fl::span);
     if (train_) {
       if (samplingStrategy_ == fl::pkg::speech::kModelSampling) {
         throw std::logic_error(
             "vectorizedDecoder does not support model sampling");
       } else if (samplingStrategy_ == fl::pkg::speech::kRandSampling) {
         auto mask = Variable(
-            (af::randu(y.dims()) * 100 <= pctTeacherForcing_).as(y.type()),
+            (fl::rand(y.dims()) * 100 <= pctTeacherForcing_).astype(y.type()),
             false);
-        auto samples =
-            Variable((af::randu(y.dims()) * (nClass_ - 1)).as(y.type()), false);
+        auto samples = Variable(
+            (fl::rand(y.dims()) * (nClass_ - 1)).astype(y.type()), false);
 
         y = mask * y + (1 - mask) * samples;
       }
@@ -207,9 +217,9 @@ std::pair<Variable, Variable> Seq2SeqCriterion::vectorizedDecoder(
 
   Variable alpha, summaries;
   for (int i = 0; i < nAttnRound_; i++) {
-    hy = reorder(hy, 0, 2, 1); // H x U x B -> H x B x U
+    hy = fl::transpose(hy, {0, 2, 1}); // H x U x B -> H x B x U
     hy = decodeRNN(i)->forward(hy);
-    hy = reorder(hy, 0, 2, 1); // H x B x U ->  H x U x B
+    hy = fl::transpose(hy, {0, 2, 1}); // H x B x U ->  H x U x B
 
     Variable windowWeight;
     if (window_ && (!train_ || trainWithWindow_)) {
@@ -233,8 +243,8 @@ std::pair<Variable, Variable> Seq2SeqCriterion::vectorizedDecoder(
 std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
     const Variable& input,
     const Variable& target,
-    const af::array& inputSizes,
-    const af::array& targetSizes) {
+    const Tensor& inputSizes,
+    const Tensor& targetSizes) {
   int U = target.dims(0);
 
   std::vector<Variable> outvec;
@@ -247,22 +257,23 @@ std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
         decodeStep(input, y, state, inputSizes, targetSizes, U);
 
     if (!train_) {
-      y = target(u, af::span);
+      y = target(fl::range(u, u), fl::span);
     } else if (samplingStrategy_ == fl::pkg::speech::kGumbelSampling) {
       double eps = 1e-7;
-      auto gb = -log(-log((1 - 2 * eps) * af::randu(ox.dims()) + eps));
+      auto gb = -log(-log((1 - 2 * eps) * fl::rand(ox.dims()) + eps));
       ox = logSoftmax((ox + Variable(gb, false)) / gumbelTemperature_, 0);
-      y = Variable(exp(ox).array(), false);
-    } else if (af::allTrue<bool>(
-                   af::randu(1) * 100 <= af::constant(pctTeacherForcing_, 1))) {
-      y = target(u, af::span);
+      y = Variable(exp(ox).tensor(), false);
+    } else if (fl::all(fl::rand({1}) * 100 <= fl::full({1}, pctTeacherForcing_))
+                   .asScalar<bool>()) {
+      y = target(fl::range(u, u), fl::span);
     } else if (samplingStrategy_ == fl::pkg::speech::kModelSampling) {
-      af::array maxIdx, maxValues;
-      max(maxValues, maxIdx, ox.array());
+      Tensor maxIdx, maxValues;
+      fl::max(maxValues, maxIdx, ox.tensor(), 0);
       y = Variable(maxIdx, false);
     } else if (samplingStrategy_ == fl::pkg::speech::kRandSampling) {
       y = Variable(
-          (af::randu(af::dim4{1, target.dims(1)}) * (nClass_ - 1)).as(s32),
+          (fl::rand({1, target.dims(1)}) * (nClass_ - 1))
+              .astype(fl::dtype::s32),
           false);
     } else {
       throw std::invalid_argument("Invalid sampling strategy");
@@ -278,15 +289,15 @@ std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
   return std::make_pair(out, alpha);
 }
 
-af::array Seq2SeqCriterion::viterbiPath(
-    const af::array& input,
-    const af::array& inputSizes /* = af::array() */) {
+Tensor Seq2SeqCriterion::viterbiPath(
+    const Tensor& input,
+    const Tensor& inputSizes /* = Tensor() */) {
   return viterbiPathBase(input, inputSizes, false).first;
 }
 
-std::pair<af::array, Variable> Seq2SeqCriterion::viterbiPathBase(
-    const af::array& input,
-    const af::array& inputSizes,
+std::pair<Tensor, Variable> Seq2SeqCriterion::viterbiPathBase(
+    const Tensor& input,
+    const Tensor& inputSizes,
     bool saveAttn) {
   // NB: xEncoded has to be with batchsize 1
   bool wasTrain = train_;
@@ -296,18 +307,13 @@ std::pair<af::array, Variable> Seq2SeqCriterion::viterbiPathBase(
   Variable alpha;
   Seq2SeqState state(nAttnRound_);
   Variable y, ox;
-  af::array maxIdx, maxValues;
+  Tensor maxIdx, maxValues;
   int pred;
   for (int u = 0; u < maxDecoderOutputLen_; u++) {
     std::tie(ox, state) = decodeStep(
-        Variable(input, false),
-        y,
-        state,
-        inputSizes,
-        af::array(),
-        input.dims(1));
-    max(maxValues, maxIdx, ox.array());
-    maxIdx.host(&pred);
+        Variable(input, false), y, state, inputSizes, Tensor(), input.dim(1));
+    fl::max(maxValues, maxIdx, ox.tensor(), 0);
+    pred = maxIdx.asScalar<int>();
     if (saveAttn) {
       alphaVec.push_back(state.alpha);
     }
@@ -315,7 +321,7 @@ std::pair<af::array, Variable> Seq2SeqCriterion::viterbiPathBase(
     if (pred == eos_) {
       break;
     }
-    y = constant(pred, 1, s32, false);
+    y = constant(pred, {1}, fl::dtype::s32, false);
     maxPath.push_back(pred);
   }
   if (saveAttn) {
@@ -325,14 +331,13 @@ std::pair<af::array, Variable> Seq2SeqCriterion::viterbiPathBase(
   if (wasTrain) {
     train();
   }
-  af::array vPath =
-      maxPath.empty() ? af::array() : af::array(maxPath.size(), maxPath.data());
+  Tensor vPath = maxPath.empty() ? Tensor() : Tensor::fromVector(maxPath);
   return std::make_pair(vPath, alpha);
 }
 
 std::vector<int> Seq2SeqCriterion::beamPath(
-    const af::array& input,
-    const af::array& inputSizes,
+    const Tensor& input,
+    const Tensor& inputSizes,
     int beamSize /* = 10 */) {
   std::vector<Seq2SeqCriterion::CandidateHypo> beam;
   beam.emplace_back(CandidateHypo{});
@@ -343,8 +348,8 @@ std::vector<int> Seq2SeqCriterion::beamPath(
 
 // beam are candidates that need to be extended
 std::vector<Seq2SeqCriterion::CandidateHypo> Seq2SeqCriterion::beamSearch(
-    const af::array& input, // H x T x 1
-    const af::array& inputSizes, // 1 x B
+    const Tensor& input, // H x T x 1
+    const Tensor& inputSizes, // 1 x B
     std::vector<Seq2SeqCriterion::CandidateHypo> beam,
     int beamSize = 10,
     int maxLen = 200) {
@@ -367,7 +372,7 @@ std::vector<Seq2SeqCriterion::CandidateHypo> Seq2SeqCriterion::beamSearch(
     for (auto& hypo : beam) {
       Variable y;
       if (!hypo.path.empty()) {
-        y = constant(hypo.path.back(), 1, s32, false);
+        y = constant(hypo.path.back(), {1}, fl::dtype::s32, false);
       }
       prevYVec.push_back(y);
       prevStateVec.push_back(hypo.state);
@@ -375,29 +380,32 @@ std::vector<Seq2SeqCriterion::CandidateHypo> Seq2SeqCriterion::beamSearch(
     }
     auto prevY = concatenate(prevYVec, 1); // 1 x B
     auto prevState = detail::concatState(prevStateVec);
+    int B = prevY.numdims() < 2 ? 1 : prevY.dims(1);
 
     Variable ox;
     Seq2SeqState state;
     // do proper cast of input size to batch size
     // because we have beam now for the input
-    auto tiledInputSizes = af::tile(inputSizes, 1, prevY.dims(1));
+    auto tiledInputSizes = fl::tile(inputSizes, {1, B});
     std::tie(ox, state) = decodeStep(
         Variable(input, false),
         prevY,
         prevState,
         tiledInputSizes,
-        af::array(),
-        input.dims(1));
+        Tensor(),
+        input.dim(1));
     ox = logSoftmax(ox, 0); // C x 1 x B
-    ox = fl::reorder(ox, 0, 2, 1);
+    ox = fl::reorder(ox, {0, 2, 1});
 
-    auto scoreArr =
-        af::array(1, static_cast<int>(beam.size()), prevScoreVec.data());
-    scoreArr = af::tile(scoreArr, ox.dims()[0]);
+    auto scoreArr = Tensor::fromBuffer(
+        {1, static_cast<long long>(beam.size()), 1},
+        prevScoreVec.data(),
+        MemoryLocation::Host);
+    scoreArr = fl::tile(scoreArr, {ox.dims(0)});
 
-    scoreArr = scoreArr + ox.array(); // C x B
-    scoreArr = af::flat(scoreArr); // column-first
-    auto scoreVec = afToVector<float>(scoreArr);
+    scoreArr = scoreArr + ox.tensor(); // C x B
+    scoreArr = scoreArr.flatten(); // column-first
+    auto scoreVec = scoreArr.toHostVector<float>();
 
     std::vector<size_t> indices(scoreVec.size());
     std::iota(indices.begin(), indices.end(), 0);
@@ -410,7 +418,7 @@ std::vector<Seq2SeqCriterion::CandidateHypo> Seq2SeqCriterion::beamSearch(
           return scoreVec[i1] > scoreVec[i2];
         });
 
-    int nClass = ox.dims()[0];
+    int nClass = ox.dims(0);
     for (int j = 0; j < indices.size(); j++) {
       int hypIdx = indices[j] / nClass;
       int clsIdx = indices[j] % nClass;
@@ -456,9 +464,15 @@ std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
     const Variable& xEncoded,
     const Variable& y,
     const Seq2SeqState& inState,
-    const af::array& inputSizes,
-    const af::array& targetSizes,
+    const Tensor& inputSizes,
+    const Tensor& targetSizes,
     const int maxDecoderSteps) const {
+  if (xEncoded.numdims() != 3) {
+    throw std::invalid_argument(
+        "Seq2SeqCriterion::decodeStep: "
+        "expected xEncoded to have at least three dimensions");
+  }
+
   Variable hy;
   if (y.isempty()) {
     hy = tile(startEmbedding(), {1, 1, static_cast<int>(xEncoded.dims(2))});
@@ -487,10 +501,11 @@ std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
     // because of the beam search batchsize can be
     // different for xEncoded and y (xEncoded batch = 1 and y batch = beam
     // size)
-    int batchsize = y.isempty() ? xEncoded.dims(2) : y.dims(1);
+    int batchsize =
+        y.isempty() ? xEncoded.dims(2) : (y.numdims() < 2 ? 1 : y.dims(1));
     if (window_ && (!train_ || trainWithWindow_)) {
       // TODO fix for softpretrain where target size is used
-      // for now force to xEncoded.dims(1)
+      // for now force to xEncoded.dim(1)
       windowWeight = window_->computeWindow(
           inState.alpha,
           inState.step,
@@ -557,7 +572,7 @@ Seq2SeqCriterion::decodeBatchStep(
     }
 
     for (int i = 0; i < batchSize; i++) {
-      outstates[i]->hidden[n] = outStateBatched.col(i);
+      outstates[i]->hidden[n] = outStateBatched(fl::span, fl::range(i, i));
     }
 
     /* (2) Attention forward */
@@ -572,20 +587,20 @@ Seq2SeqCriterion::decodeBatchStep(
     // - Only ContentAttention is supported
     std::tie(alphaBatched, summaries) =
         attention(n)->forward(yBatched, xEncoded, Variable(), Variable());
-    alphaBatched = reorder(alphaBatched, 1, 0); // B x T -> T x B
+    alphaBatched = fl::transpose(alphaBatched, {1, 0, 2}); // B x T -> T x B
     yBatched = yBatched + summaries; // H x B
 
-    af::array bestpath, maxvalues;
-    af::max(maxvalues, bestpath, alphaBatched.array(), 0);
-    std::vector<int> maxIdx = afToVector<int>(bestpath);
+    Tensor bestpath, maxvalues;
+    fl::max(maxvalues, bestpath, alphaBatched.tensor(), 0);
+    std::vector<int> maxIdx = bestpath.toHostVector<int>();
     for (int i = 0; i < batchSize; i++) {
       outstates[i]->peakAttnPos = maxIdx[i];
       // TODO: std::abs maybe unnecessary
       outstates[i]->isValid =
           std::abs(outstates[i]->peakAttnPos - inStates[i]->peakAttnPos) <=
           attentionThreshold;
-      outstates[i]->alpha = alphaBatched.col(i);
-      outstates[i]->summary = yBatched.col(i);
+      outstates[i]->alpha = alphaBatched(fl::span, fl::range(i, i));
+      outstates[i]->summary = yBatched(fl::span, fl::range(i, i));
     }
   }
 
@@ -594,7 +609,8 @@ Seq2SeqCriterion::decodeBatchStep(
   outBatched = logSoftmax(outBatched / smoothingTemperature, 0);
   std::vector<std::vector<float>> out(batchSize);
   for (int i = 0; i < batchSize; i++) {
-    out[i] = afToVector<float>(outBatched.col(i));
+    out[i] =
+        outBatched(fl::span, fl::range(i, i)).tensor().toHostVector<float>();
   }
 
   return std::make_pair(out, outstates);
@@ -641,7 +657,8 @@ AMUpdateFunc buildSeq2SeqRnnAmUpdateFunction(
                           const std::vector<AMStatePtr>& rawPrevStates,
                           int& t) {
     if (t == 0) {
-      buf->input = fl::Variable(af::array(N, T, emissions), false);
+      buf->input = fl::Variable(
+          Tensor::fromBuffer({N, T}, emissions, MemoryLocation::Host), false);
     }
     int batchSize = rawY.size();
     buf->prevStates.resize(0);
@@ -653,7 +670,7 @@ AMUpdateFunc buildSeq2SeqRnnAmUpdateFunction(
           static_cast<Seq2SeqState*>(rawPrevStates[i].get());
       fl::Variable y;
       if (t > 0) {
-        y = fl::constant(rawY[i], 1, s32, false);
+        y = fl::constant(rawY[i], {1}, fl::dtype::s32, false);
       } else {
         prevState = &buf->dummyState;
       }
