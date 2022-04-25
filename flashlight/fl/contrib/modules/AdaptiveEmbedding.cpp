@@ -7,8 +7,12 @@
 
 #include "flashlight/fl/contrib/modules/AdaptiveEmbedding.h"
 
+#include <cmath>
+#include <stdexcept>
+
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/nn/Init.h"
+#include "flashlight/fl/tensor/Index.h"
 
 namespace fl {
 
@@ -26,7 +30,7 @@ AdaptiveEmbedding::AdaptiveEmbedding(
   auto headEmbedding = fl::normal(cutoff_[0], embeddingDim_, stdv, 0);
   params_.push_back(headEmbedding);
   auto head = fl::glorotUniform(
-      af::dim4(embeddingDim_, embeddingDim_), embeddingDim_, embeddingDim_);
+      {embeddingDim_, embeddingDim_}, embeddingDim_, embeddingDim_);
   params_.push_back(head);
 
   int denominator = 1;
@@ -40,36 +44,40 @@ AdaptiveEmbedding::AdaptiveEmbedding(
         cutoff_[tailIdx] - cutoff_[tailIdx - 1], tailEmbeddingDim, stdvTail, 0);
     params_.push_back(tailEmbedding);
     auto tail = fl::glorotUniform(
-        af::dim4(embeddingDim_, tailEmbeddingDim),
-        tailEmbeddingDim,
-        embeddingDim_);
+        {embeddingDim_, tailEmbeddingDim}, tailEmbeddingDim, embeddingDim_);
     params_.push_back(tail);
   }
 }
 
 Variable AdaptiveEmbedding::forward(const Variable& input) {
+  if (input.numdims() != 2) {
+    throw std::invalid_argument(
+        "AdaptiveEmbedding::forward - input must "
+        "have 2 dimensions - expect T x B");
+  }
+
   auto flatInput = flat(input);
   std::vector<Variable> indices;
   std::vector<Variable> embeddings;
 
-  af::array headMask = flatInput.array() < cutoff_[0];
-  if (af::sum(headMask).scalar<unsigned int>() > 0) {
+  Tensor headMask = flatInput.tensor() < cutoff_[0];
+  if (fl::sum(headMask).scalar<unsigned>() > 0) {
     auto headEmbedding =
-        embedding(flatInput(headMask), reorder(params_[0], 1, 0));
+        embedding(flatInput(headMask), reorder(params_[0], {1, 0}));
     headEmbedding = matmul(params_[1], headEmbedding);
-    indices.push_back(Variable(af::where(headMask), false));
+    indices.push_back(Variable(fl::nonzero(headMask), false));
     embeddings.push_back(headEmbedding);
   }
 
   for (int tailIdx = 1; tailIdx < cutoff_.size(); tailIdx++) {
-    af::array tailMask = flatInput.array() < cutoff_[tailIdx] &&
-        flatInput.array() >= cutoff_[tailIdx - 1];
-    if (af::anyTrue<bool>(tailMask)) {
+    Tensor tailMask = flatInput.tensor() < cutoff_[tailIdx] &&
+        flatInput.tensor() >= cutoff_[tailIdx - 1];
+    if (fl::any(tailMask).asScalar<bool>()) {
       auto tailEmbedding = embedding(
           flatInput(tailMask) - cutoff_[tailIdx - 1],
-          reorder(params_[tailIdx * 2], 1, 0));
+          reorder(params_[tailIdx * 2], {1, 0}));
       tailEmbedding = matmul(params_[tailIdx * 2 + 1], tailEmbedding);
-      indices.push_back(Variable(af::where(tailMask), false));
+      indices.push_back(Variable(fl::nonzero(tailMask), false));
       embeddings.push_back(tailEmbedding);
     }
   }
@@ -77,13 +85,12 @@ Variable AdaptiveEmbedding::forward(const Variable& input) {
     throw std::invalid_argument(
         "Invalid input, no positions in the AdaptiveEmbedding layer");
   }
+
+  Shape outShape({embeddingDim_, input.dims(0), input.dims(1)});
   auto result = fl::concatenate(embeddings, 1);
   auto resultIndices = fl::concatenate(indices, 0);
-  af::array tmpValues, tmpIndices;
-  af::sort(tmpValues, tmpIndices, resultIndices.array(), 0);
-  return moddims(
-      result(af::span, tmpIndices),
-      af::dim4(embeddingDim_, input.dims(0), input.dims(1), input.dims(2)));
+  Tensor tmpIndices = fl::argsort(resultIndices.tensor(), 0);
+  return moddims(result(fl::span, tmpIndices), outShape);
 }
 
 std::string AdaptiveEmbedding::prettyString() const {

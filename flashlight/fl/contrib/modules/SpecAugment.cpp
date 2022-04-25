@@ -10,6 +10,8 @@
 
 #include "flashlight/fl/contrib/modules/SpecAugment.h"
 
+#include "flashlight/fl/tensor/Index.h"
+
 namespace fl {
 
 SpecAugment::SpecAugment(
@@ -44,15 +46,15 @@ Variable SpecAugment::forward(const Variable& input) {
         "input gradient calculation is not supported for SpecAugment.");
   }
 
-  auto output = Variable(input.array(), false);
+  auto output = Variable(input.tensor(), false);
   if (!train_) {
     return output;
   }
 
-  auto& opArr = output.array();
+  auto& opArr = output.tensor();
 
   double replaceVal = (maskStrategy_ == MaskingStrategy::GLOBAL_MEAN)
-      ? af::mean<double>(input.array())
+      ? fl::mean(input.tensor()).asScalar<double>()
       : 0.0;
 
   auto numFreqChans = input.dims(1); // number of frequency channels
@@ -62,7 +64,7 @@ Variable SpecAugment::forward(const Variable& input) {
   for (int i = 0; i < numFreqMask_; ++i) {
     auto f = generateRandomInt(0, freqMaskF_);
     auto f0 = generateRandomInt(0, numFreqChans - f);
-    opArr(af::span, af::seq(f0, f0 + f), af::span, af::span) = replaceVal;
+    opArr(fl::span, fl::range(f0, f0 + f + 1)) = replaceVal;
   }
 
   auto numTimeSteps = input.dims(0); // number of time steps
@@ -72,7 +74,7 @@ Variable SpecAugment::forward(const Variable& input) {
     for (int i = 0; i < numTimeMask_; ++i) {
       auto t = generateRandomInt(0, T);
       auto t0 = generateRandomInt(0, numTimeSteps - t);
-      opArr(af::seq(t0, t0 + t), af::span, af::span, af::span) = replaceVal;
+      opArr(fl::range(t0, t0 + t + 1)) = replaceVal;
     }
   }
 
