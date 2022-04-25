@@ -1006,7 +1006,9 @@ enum class SortMode { Descending = 0, Ascending = 1 };
  * @param[in] input the input tensor to sort
  * @param[in] k the top number of elements to return
  * @param[in] axis the axis along which to sort.
- * @param[in] sortMode the ordering with which to sort. Defaults to descending.
+ * @param[in] sortMode the ordering with which to sort. In descending mode, the
+ * topk highest values are returned; else the topk lowest values are
+ * returned. Defaults to descending.
  */
 void topk(
     Tensor& values,
@@ -1021,12 +1023,12 @@ void topk(
  *
  * @param[in] input the input Tensor
  * @param[in] axis the axis along which to sort
- * @param[in] sortMode the ordering with which to sort. Defaults to descending
+ * @param[in] sortMode the ordering with which to sort. Defaults to ascending
  */
 Tensor sort(
     const Tensor& input,
     const Dim axis,
-    const SortMode sortMode = SortMode::Descending);
+    const SortMode sortMode = SortMode::Ascending);
 
 /**
  * Sort the values of a tensor, and return the sorted tensor and sorted indices.
@@ -1035,26 +1037,26 @@ Tensor sort(
  * @param[out] indices the indices corresponding to the sorted ordering
  * @param[in] input the input Tensor
  * @param[in] axis the axis along which to sort
- * @param[in] sortMode the ordering with which to sort. Defaults to descending
+ * @param[in] sortMode the ordering with which to sort. Defaults to ascending
  */
 void sort(
     Tensor& values,
     Tensor& indices,
     const Tensor& input,
     const Dim axis,
-    const SortMode sortMode = SortMode::Descending);
+    const SortMode sortMode = SortMode::Ascending);
 
 /**
  * Sort the values of a tensor and return the sorted indices.
  *
  * @param[in] input the input Tensor
  * @param[in] axis the axis along which to sort
- * @param[in] sortMode the ordering with which to sort. Defaults to descending
+ * @param[in] sortMode the ordering with which to sort. Defaults to ascending
  */
 Tensor argsort(
     const Tensor& input,
     const Dim axis,
-    const SortMode sortMode = SortMode::Descending);
+    const SortMode sortMode = SortMode::Ascending);
 
 /************************** Binary Operators ***************************/
 #define FL_BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, TYPE) \
@@ -1243,7 +1245,8 @@ void max(
  * as singleton dimensions rather than collapsing them
  * @return a tensor containing the indices of the max values along each axis
  */
-Tensor argmax(const Tensor& input, const unsigned axis, const bool keepDims = false);
+Tensor
+argmax(const Tensor& input, const unsigned axis, const bool keepDims = false);
 
 /**
  * Return the indices of the minimum values along an axis.
@@ -1254,7 +1257,8 @@ Tensor argmax(const Tensor& input, const unsigned axis, const bool keepDims = fa
  * as singleton dimensions rather than collapsing them
  * @return a tensor containing the indices of the max values along each axis
  */
-Tensor argmin(const Tensor& input, const unsigned axis, const bool keepDims = false);
+Tensor
+argmin(const Tensor& input, const unsigned axis, const bool keepDims = false);
 
 /**
  * Sum of tensor over given axes. If axes is left empty, computes the sum along
