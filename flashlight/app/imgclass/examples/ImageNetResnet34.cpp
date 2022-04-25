@@ -12,18 +12,19 @@
 #include <glog/logging.h>
 
 #include "flashlight/app/imgclass/examples/Defines.h"
-#include "flashlight/pkg/runtime/amp/DynamicScaler.h"
-#include "flashlight/pkg/runtime/common/DistributedUtils.h"
-#include "flashlight/pkg/vision/dataset/Transforms.h"
-#include "flashlight/pkg/vision/dataset/DistributedDataset.h"
-#include "flashlight/pkg/vision/models/Resnet.h"
 #include "flashlight/fl/dataset/datasets.h"
 #include "flashlight/fl/meter/meters.h"
 #include "flashlight/fl/optim/optim.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
 #include "flashlight/pkg/runtime/Runtime.h"
+#include "flashlight/pkg/runtime/amp/DynamicScaler.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
+#include "flashlight/pkg/vision/dataset/DistributedDataset.h"
 #include "flashlight/pkg/vision/dataset/Imagenet.h"
+#include "flashlight/pkg/vision/dataset/Transforms.h"
+#include "flashlight/pkg/vision/models/Resnet.h"
 
 DEFINE_string(data_dir, "", "Directory of imagenet data");
 DEFINE_double(train_lr, 0.1f, "Learning rate");
@@ -108,9 +109,9 @@ std::tuple<double, double, double> evalLoop(
 
     // Compute and record the loss.
     auto loss = criterion(output, target);
-    lossMeter.add(loss.array().scalar<float>());
-    top5Acc.add(output.array(), target.array());
-    top1Acc.add(output.array(), target.array());
+    lossMeter.add(loss.tensor().scalar<float>());
+    top5Acc.add(output.tensor(), target.tensor());
+    top1Acc.add(output.tensor(), target.tensor());
   }
   model->train();
   fl::pkg::runtime::syncMeter(lossMeter);
@@ -144,7 +145,7 @@ int main(int argc, char** argv) {
     reducer = std::make_shared<fl::CoalescingReducer>(
         1.0 / fl::getWorldSize(), true, true);
   }
-  af::info();
+
   const int worldRank = fl::getWorldRank();
   const int worldSize = fl::getWorldSize();
   const bool isMaster = (worldRank == 0);
@@ -177,7 +178,7 @@ int main(int argc, char** argv) {
   const int randomCropSize = 224;
   const float horizontalFlipProb = 0.5f;
   // TransformDataset will apply each transform in a vector to the respective
-  // af::array. Thus, we need to `compose` all of the transforms so are each
+  // Tensor. Thus, we need to `compose` all of the transforms so are each
   // applied only to the image
   ImageTransform trainTransforms = compose(
       {// randomly resize shortest side of image between 256 to 480 for
@@ -287,13 +288,13 @@ int main(int argc, char** argv) {
       timeMeter.resume();
       opt.zeroGrad();
 
-      // Make Variables from the input arrays.
+      // Make Variables from the input Tensors.
       sampleTimerMeter.resume();
       auto inputs = noGrad(example[kImagenetInputIdx]);
       if (FLAGS_fl_amp_use_mixed_precision && FLAGS_fl_optim_mode.empty()) {
         // In case AMP is activated with DEFAULT mode,
         // we manually cast input to fp16.
-        inputs = inputs.as(f16);
+        inputs = inputs.as(fl::dtype::f16);
       }
       auto target = noGrad(example[kImagenetTargetIdx]);
       fl::sync();
@@ -314,7 +315,7 @@ int main(int argc, char** argv) {
         // Backward
         bwdTimeMeter.resume();
         opt.zeroGrad();
-        bool scaleIsValid =fl::pkg::runtime::backwardWithScaling(
+        bool scaleIsValid = fl::pkg::runtime::backwardWithScaling(
             loss, modelParams, dynamicScaler, reducer);
         fl::sync();
         bwdTimeMeter.stopAndIncUnit();
@@ -322,9 +323,9 @@ int main(int argc, char** argv) {
           continue;
         }
 
-        trainLossMeter.add(loss.array());
-        top5Acc.add(output.array(), target.array());
-        top1Acc.add(output.array(), target.array());
+        trainLossMeter.add(loss.tensor());
+        top5Acc.add(output.tensor(), target.tensor());
+        top1Acc.add(output.tensor(), target.tensor());
         break;
       }
 
