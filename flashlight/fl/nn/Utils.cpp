@@ -5,12 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <algorithm>
 #include <array>
 
 #include "flashlight/fl/nn/Utils.h"
 
 #include "flashlight/fl/autograd/Utils.h"
 #include "flashlight/fl/common/Utils.h"
+#include "flashlight/fl/tensor/Index.h"
 
 namespace fl {
 
@@ -97,50 +99,60 @@ int derivePadding(int inSz, int filterSz, int stride, int pad, int dilation) {
   return pad;
 }
 
-af::array join(
-    const std::vector<af::array>& inputs,
+Tensor join(
+    const std::vector<Tensor>& inputs,
     double padValue /* = 0.0 */,
-    dim_t batchDim /* = -1 */) {
+    int batchDim /* = -1 */) {
   if (inputs.empty()) {
-    return af::array();
+    return Tensor();
   }
-  af::dim4 maxDims;
-  af::dtype type = inputs[0].type();
+
+  Dim maxNumDims = 0;
+  for (const auto& in : inputs) {
+    if (in.ndim() > maxNumDims) {
+      maxNumDims = in.ndim();
+    }
+  }
+
+  // If the batch dim > the max number of dims, make those dims singleton
+  int outNdims = std::max(batchDim + 1, static_cast<int>(maxNumDims));
+
+  Shape maxDims(std::vector<Dim>(outNdims, 1));
+
+  fl::dtype type = inputs[0].type();
   bool isEmpty = true;
   for (const auto& in : inputs) {
-    isEmpty = isEmpty && in.isempty();
-    for (int d = 0; d < AF_MAX_DIMS; ++d) {
-      maxDims[d] = std::max(maxDims[d], in.dims(d));
+    isEmpty = isEmpty && in.isEmpty();
+    for (int d = 0; d < in.ndim(); ++d) {
+      maxDims[d] = std::max(maxDims[d], in.dim(d));
       if (in.type() != type) {
-        throw std::invalid_argument("all arrays should of same type for join");
+        throw std::invalid_argument(
+            "join: all arrays should of same type for join");
       }
     }
   }
 
   if (batchDim < 0) {
-    batchDim = maxDims.ndims();
+    batchDim = maxDims.ndim() - 1;
   }
-  if (maxDims[batchDim] > 1) {
-    throw std::invalid_argument("no singleton dim available for batching");
+  if (batchDim < maxDims.ndim() && maxDims[batchDim] > 1) {
+    throw std::invalid_argument(
+        "join: no singleton dim available for batching");
   }
   maxDims[batchDim] = inputs.size();
   if (isEmpty) {
-    // if empty arrays are provided (some element in maxDims is zero)
-    // then af::constant will create array with sizes 0 and 1 on non-zeros dims,
-    // e.g. maxDims = (0, 3, 4, 5) the af::constant(pad, maxDims)
-    // will have size = (0, 1, 1, 1), not (0, 3, 4, 5)
-    // To avoid this we directly create empty array here with correct sizes
-    return af::array(maxDims, type);
+    return Tensor(maxDims, type);
   }
-  auto padSeq = af::constant(padValue, maxDims, type);
-  std::array<af::seq, AF_MAX_DIMS> sel;
+  auto padSeq = fl::full(maxDims, padValue, type);
+  std::vector<fl::Index> sel(
+      std::max(maxNumDims, static_cast<long long>(batchDim + 1)), fl::span);
   for (int i = 0; i < inputs.size(); ++i) {
-    for (int d = 0; d < AF_MAX_DIMS; ++d) {
-      sel[d] = af::seq(inputs[i].dims(d));
+    for (int d = 0; d < maxNumDims; ++d) {
+      sel[d] = fl::range(inputs[i].dim(d));
     }
-    sel[batchDim] = af::seq(i, i);
-    if (!inputs[i].isempty()) {
-      padSeq(sel[0], sel[1], sel[2], sel[3]) = inputs[i];
+    sel[batchDim] = fl::range(i, i);
+    if (!inputs[i].isEmpty()) {
+      padSeq(sel) = inputs[i];
     }
   }
   return padSeq;
