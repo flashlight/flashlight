@@ -12,15 +12,14 @@
 #include <memory>
 #include <vector>
 
-#include <arrayfire.h>
-
 #include "flashlight/fl/dataset/DatasetIterator.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 
 /**
  * Abstract class representing a dataset: a mapping index -> sample,
- * where a sample is a vector of `af::array`s
+ * where a sample is a vector of `Tensor`s
  *
  * Can be extended to concat, split, batch, resample, etc. datasets.
  *
@@ -37,23 +36,23 @@ class Dataset {
   /**
    * A function to transform an array.
    */
-  using TransformFunction = std::function<af::array(const af::array&)>;
+  using TransformFunction = std::function<Tensor(const Tensor&)>;
 
   /**
    * A function to load data from a file into an array.
    */
-  using LoadFunction = std::function<af::array(const std::string&)>;
+  using LoadFunction = std::function<Tensor(const std::string&)>;
 
   /**
    * A function to pack arrays into a batched array.
    */
-  using BatchFunction = std::function<af::array(const std::vector<af::array>&)>;
+  using BatchFunction = std::function<Tensor(const std::vector<Tensor>&)>;
 
   /**
    * A function to transform data from host to array.
    */
   using DataTransformFunction =
-      std::function<af::array(void*, af::dim4, af::dtype)>;
+      std::function<Tensor(void*, fl::Shape, fl::dtype)>;
 
   /**
    * @return The size of the dataset.
@@ -62,14 +61,14 @@ class Dataset {
 
   /**
    * @param[in] idx Index of the sample in the dataset. Must be in [0, size()).
-   * @return The sample fields (a `std::vector<af::array>`).
+   * @return The sample fields (a `std::vector<Tensor>`).
    */
-  virtual std::vector<af::array> get(const int64_t idx) const = 0;
+  virtual std::vector<Tensor> get(const int64_t idx) const = 0;
 
   virtual ~Dataset() = default;
 
   // Setup iterators
-  using iterator = detail::DatasetIterator<Dataset, std::vector<af::array>>;
+  using iterator = detail::DatasetIterator<Dataset, std::vector<Tensor>>;
 
   iterator begin() {
     return iterator(this);

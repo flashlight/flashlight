@@ -6,9 +6,11 @@
  */
 
 #include <array>
+#include <stdexcept>
 #include <thread>
 
 #include "flashlight/fl/dataset/BlobDataset.h"
+#include "flashlight/fl/tensor/Types.h"
 
 namespace fl {
 
@@ -30,18 +32,26 @@ void BlobDatasetEntryBuffer::resize(int64_t size) {
 
 BlobDatasetEntry BlobDatasetEntryBuffer::get(const int64_t idx) const {
   BlobDatasetEntry e;
-  e.type = static_cast<af::dtype>(data_[idx * nFieldPerEntry_]);
-  for (int i = 0; i < 4; i++) {
-    e.dims[i] = data_[idx * nFieldPerEntry_ + i + 1];
+  auto dataIdx = idx * nFieldPerEntry_;
+  e.type = static_cast<fl::dtype>(data_[dataIdx++]);
+  unsigned numDims = data_[dataIdx++];
+  e.dims = Shape(std::vector<Dim>(numDims));
+  for (int i = 0; i < numDims; i++) {
+    e.dims[i] = data_[dataIdx + i];
   }
-  e.offset = data_[idx * nFieldPerEntry_ + 5];
+  e.offset = data_[dataIdx + maxNDims_];
   return e;
 }
 
 void BlobDatasetEntryBuffer::add(const BlobDatasetEntry& e) {
   data_.push_back(static_cast<int64_t>(e.type));
-  for (int i = 0; i < 4; i++) {
+  data_.push_back(static_cast<int64_t>(e.dims.ndim()));
+  int i = 0;
+  for (; i < e.dims.ndim(); i++) {
     data_.push_back(e.dims[i]);
+  }
+  for (; i < maxNDims_; ++i) {
+    data_.push_back(1); // placeholder dim
   }
   data_.push_back(e.offset);
 }
@@ -60,8 +70,8 @@ int64_t BlobDataset::size() const {
   return offsets_.size();
 }
 
-std::vector<af::array> BlobDataset::get(const int64_t idx) const {
-  std::vector<af::array> sample;
+std::vector<Tensor> BlobDataset::get(const int64_t idx) const {
+  std::vector<Tensor> sample;
   for (int64_t i = 0; i < sizes_.at(idx); i++) {
     auto entry = entries_.get(offsets_.at(idx) + i);
     sample.push_back(readArray(entry, i));
@@ -78,19 +88,24 @@ std::vector<std::vector<uint8_t>> BlobDataset::rawGet(const int64_t idx) const {
   return sample;
 };
 
-void BlobDataset::add(const std::vector<af::array>& sample) {
+void BlobDataset::add(const std::vector<Tensor>& sample) {
   int64_t entryOffset;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     entryOffset = entries_.size();
     offsets_.push_back(entries_.size());
     sizes_.push_back(sample.size());
-    for (const auto& array : sample) {
+    for (const auto& tensor : sample) {
+      if (tensor.ndim() > maxNDims_) {
+        throw std::invalid_argument(
+            "BlobDataset::add - no support for serialization of "
+            "tensors with > 4 dimensions");
+      }
       BlobDatasetEntry e;
-      e.type = array.type();
-      e.dims = array.dims();
+      e.type = tensor.type();
+      e.dims = tensor.shape();
       e.offset = indexOffset_;
-      indexOffset_ += array.bytes();
+      indexOffset_ += tensor.bytes();
       entries_.add(e);
     }
   }
@@ -141,39 +156,31 @@ std::vector<uint8_t> BlobDataset::readRawArray(
     const BlobDatasetEntry& e) const {
   std::vector<uint8_t> buffer;
   if (e.dims.elements() > 0) {
-    buffer.resize(af::getSizeOf(e.type) * e.dims.elements());
+    buffer.resize(fl::getTypeSize(e.type) * e.dims.elements());
     readData(
         e.offset,
         (char*)buffer.data(),
-        af::getSizeOf(e.type) * e.dims.elements());
+        fl::getTypeSize(e.type) * e.dims.elements());
   }
   return buffer;
 }
 
-af::array BlobDataset::readArray(const BlobDatasetEntry& e, int i) const {
+Tensor BlobDataset::readArray(const BlobDatasetEntry& e, int i) const {
   if (e.dims.elements() > 0) {
     auto buffer = readRawArray(e);
     auto keyval = hostTransforms_.find(i);
     if (keyval == hostTransforms_.end()) {
-      af_array c_array;
-      af_err status = af_create_array(
-          &c_array, buffer.data(), e.dims.ndims(), e.dims.get(), e.type);
-      if (status != AF_SUCCESS) {
-        throw af::exception(
-            "unable to create array", __FILE__, __LINE__, status);
-      }
-      return af::array(c_array);
+      return Tensor::fromBuffer(
+          e.dims, e.type, buffer.data(), MemoryLocation::Host);
     } else {
       return keyval->second(buffer.data(), e.dims, e.type);
     }
   } else {
-    return af::array();
+    return Tensor();
   }
 }
 
-void BlobDataset::writeArray(
-    const BlobDatasetEntry& e,
-    const af::array& array) {
+void BlobDataset::writeArray(const BlobDatasetEntry& e, const Tensor& array) {
   std::vector<uint8_t> buffer(array.bytes());
   array.host(buffer.data());
   writeData(e.offset, (char*)buffer.data(), buffer.size());
@@ -211,8 +218,7 @@ void BlobDataset::readIndex() {
   int64_t magicNumberCheck = 0;
   int64_t offset = readData(0, (char*)&magicNumberCheck, sizeof(int64_t));
   if (magicNumber != magicNumberCheck) {
-    throw af::exception(
-        "Not a fl::BlobDataset", __FILE__, __LINE__, AF_ERR_RUNTIME);
+    throw std::runtime_error("BlobDataset::readIndex - not a fl::BlobDataset");
   }
   readData(offset, (char*)&indexOffset_, sizeof(int64_t));
   offset = indexOffset_;
@@ -236,7 +242,7 @@ void BlobDataset::flush() {
 
 void BlobDataset::setHostTransform(
     int field,
-    std::function<af::array(void*, af::dim4, af::dtype)> func) {
+    std::function<Tensor(void*, fl::Shape, fl::dtype)> func) {
   hostTransforms_[field] = func;
 }
 
