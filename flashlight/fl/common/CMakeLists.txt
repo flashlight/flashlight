@@ -13,13 +13,6 @@ set(
   ${CMAKE_CURRENT_LIST_DIR}/Timer.cpp
 )
 
-if(FL_USE_CUDA)
-  list(APPEND COMMON_SRCS ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/CudaUtils.cpp)
-  if (FL_BUILD_PROFILING)
-    list(APPEND COMMON_SRCS ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/Profile.cpp)
-  endif()
-endif()
-
 target_sources(
   flashlight
   PRIVATE
