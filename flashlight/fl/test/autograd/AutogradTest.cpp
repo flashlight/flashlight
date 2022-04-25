@@ -14,9 +14,9 @@
 
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/autograd/autograd.h"
-#include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/common/common.h"
 #include "flashlight/fl/tensor/Index.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/Random.h"
 
 using namespace fl;
