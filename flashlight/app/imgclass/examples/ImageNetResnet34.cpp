@@ -294,7 +294,7 @@ int main(int argc, char** argv) {
       if (FLAGS_fl_amp_use_mixed_precision && FLAGS_fl_optim_mode.empty()) {
         // In case AMP is activated with DEFAULT mode,
         // we manually cast input to fp16.
-        inputs = inputs.as(fl::dtype::f16);
+        inputs = inputs.astype(fl::dtype::f16);
       }
       auto target = noGrad(example[kImagenetTargetIdx]);
       fl::sync();

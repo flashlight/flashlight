@@ -35,7 +35,7 @@ std::vector<Variable> PositionEmbedding::forward(
 
   int n = input[0].dims(1);
   Variable posEmb = tileAs(
-      params_[0].as(input[0].type())(fl::span, fl::range(0, n)), input[0]);
+      params_[0].astype(input[0].type())(fl::span, fl::range(0, n)), input[0]);
   if (dropout_ > 0.0 && train_) {
     return {input[0] + dropout(posEmb, dropout_)};
   } else {

@@ -53,9 +53,9 @@ std::vector<Variable> RNN::forward(const std::vector<Variable>& inputs) {
   float dropProb = train_ ? dropProb_ : 0.0;
   auto rnnRes =
       rnn(input,
-          hiddenState.as(input.type()),
-          cellState.as(input.type()),
-          params_[0].as(input.type()),
+          hiddenState.astype(input.type()),
+          cellState.astype(input.type()),
+          params_[0].astype(input.type()),
           hiddenSize_,
           numLayers_,
           mode_,

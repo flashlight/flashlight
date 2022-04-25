@@ -315,7 +315,7 @@ void sinusoidalPositionEmbeddingFwd(bool isfp16) {
   ASSERT_EQ(output[0].dims(2), batchsize);
   auto castOutput = output[0].tensor();
   if (isfp16) {
-    castOutput = output[0].as(fl::dtype::f32).tensor();
+    castOutput = output[0].astype(fl::dtype::f32).tensor();
   }
   ASSERT_TRUE((fl::amax(castOutput, {0})).scalar<float>() <= 2);
   ASSERT_TRUE((fl::amin(castOutput, {0})).scalar<float>() >= -2);

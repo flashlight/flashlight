@@ -110,8 +110,8 @@ Variable LayerNorm::forward(const Variable& _input) {
   }
 
   if (affine_) {
-    Variable weight = params_[0].as(output.type());
-    Variable bias = params_[1].as(output.type());
+    Variable weight = params_[0].astype(output.type());
+    Variable bias = params_[1].astype(output.type());
     if (axisSize_ != kLnVariableAxisSize) {
       Shape affineDims = input.dims();
       for (int ax : axisComplement_) {
@@ -121,8 +121,8 @@ Variable LayerNorm::forward(const Variable& _input) {
         throw std::invalid_argument(
             "[LayerNorm] Input size along the norm axis doesn't with axisSize.");
       }
-      weight = moddims(params_[0].as(output.type()), affineDims);
-      bias = moddims(params_[1].as(output.type()), affineDims);
+      weight = moddims(params_[0].astype(output.type()), affineDims);
+      bias = moddims(params_[1].astype(output.type()), affineDims);
     }
     output = tileAs(weight, input) * output + tileAs(bias, input);
   }
