@@ -1,8 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
 
-# CPU
-find_package(DNNL 2.0 CONFIG REQUIRED)
-
 target_sources(
   flashlight
   PRIVATE
