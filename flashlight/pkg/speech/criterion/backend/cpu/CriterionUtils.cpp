@@ -7,9 +7,9 @@
 
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
-#include "flashlight/pkg/runtime/common/DistributedUtils.h"
 #include "flashlight/lib/sequence/criterion/cpu/CriterionUtils.h"
 #include "flashlight/lib/sequence/criterion/cpu/ViterbiPath.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
 
 using CriterionUtils = fl::lib::cpu::CriterionUtils<float>;
 using ViterbiPath = fl::lib::cpu::ViterbiPath<float>;
@@ -18,21 +18,21 @@ namespace fl {
 namespace pkg {
 namespace speech {
 
-af::array viterbiPath(const af::array& input, const af::array& trans) {
-  auto B = input.dims(2);
-  auto T = input.dims(1);
-  auto N = input.dims(0);
+Tensor viterbiPath(const Tensor& input, const Tensor& trans) {
+  auto B = input.dim(2);
+  auto T = input.dim(1);
+  auto N = input.dim(0);
 
-  if (N != trans.dims(0) || N != trans.dims(1)) {
+  if (N != trans.dim(0) || N != trans.dim(1)) {
     throw std::invalid_argument("viterbiPath: mismatched dims");
-  } else if (input.type() != f32) {
+  } else if (input.type() != fl::dtype::f32) {
     throw std::invalid_argument("viterbiPath: input must be float32");
-  } else if (trans.type() != f32) {
+  } else if (trans.type() != fl::dtype::f32) {
     throw std::invalid_argument("viterbiPath: trans must be float32");
   }
 
-  auto inputVec = fl::pkg::runtime::afToVector<float>(input);
-  auto transVec = fl::pkg::runtime::afToVector<float>(trans);
+  auto inputVec = input.toHostVector<float>();
+  auto transVec = trans.toHostVector<float>();
   std::vector<int> pathVec(B * T);
   std::vector<uint8_t> workspaceVec(ViterbiPath::getWorkspaceSize(B, T, N));
 
@@ -45,20 +45,20 @@ af::array viterbiPath(const af::array& input, const af::array& trans) {
       pathVec.data(),
       workspaceVec.data());
 
-  return af::array(T, B, pathVec.data());
+  return Tensor::fromVector({T, B}, pathVec);
 }
 
-af::array getTargetSizeArray(const af::array& target, int maxSize) {
-  int B = target.dims(1);
-  int L = target.dims(0);
+Tensor getTargetSizeArray(const Tensor& target, int maxSize) {
+  int B = target.dim(1);
+  int L = target.dim(0);
 
-  auto targetVec = fl::pkg::runtime::afToVector<int>(target);
+  auto targetVec = target.toHostVector<int>();
   std::vector<int> targetSizeVec(B);
 
   CriterionUtils::batchTargetSize(
       B, L, maxSize, targetVec.data(), targetSizeVec.data());
 
-  return af::array(B, targetSizeVec.data());
+  return Tensor::fromVector(targetSizeVec);
 }
 } // namespace speech
 } // namespace pkg
