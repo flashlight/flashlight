@@ -260,7 +260,7 @@ Tensor ArrayFireTensor::index(const std::vector<Index>& indices) {
   // filter-based index (for example: a(a < 5)).
   bool completeTensorIndex = indices.size() == 1 &&
       indices.front().type() == detail::IndexType::Tensor &&
-      indices.front().get<Tensor>().size() == getHandle().elements();
+      indices.front().get<Tensor>().elements() == getHandle().elements();
   std::vector<af::index> afIndices;
   if (completeTensorIndex) {
     afIndices = {af::index(0)};
