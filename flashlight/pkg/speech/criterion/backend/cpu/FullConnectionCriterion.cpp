@@ -8,8 +8,8 @@
 #include "flashlight/pkg/speech/criterion/FullConnectionCriterion.h"
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
-#include "flashlight/pkg/runtime/common/DistributedUtils.h"
 #include "flashlight/lib/sequence/criterion/cpu/FullConnectionCriterion.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
 
 using fl::Variable;
 using FCC = fl::lib::cpu::FullConnectionCriterion<float>;
@@ -33,11 +33,11 @@ static void backward(
     int T,
     int N,
     const std::shared_ptr<Context>& ctx) {
-  if (gradVar.type() != f32) {
+  if (gradVar.type() != fl::dtype::f32) {
     throw std::invalid_argument("FCC: grad must be float32");
   }
 
-  auto gradVec = fl::pkg::runtime::afToVector<float>(gradVar);
+  auto gradVec = gradVar.tensor().toHostVector<float>();
   std::vector<float> inputGradVec(B * T * N);
   std::vector<float> transGradVec(N * N);
 
@@ -51,8 +51,8 @@ static void backward(
       transGradVec.data(),
       ctx->workspaceVec.data());
 
-  af::array inputGrad(N, T, B, inputGradVec.data());
-  af::array transGrad(N, N, transGradVec.data());
+  Tensor inputGrad = Tensor::fromVector({N, T, B}, inputGradVec);
+  Tensor transGrad = Tensor::fromVector({N, N}, transGradVec);
 
   inputs[0].addGrad(Variable(inputGrad, false));
   inputs[1].addGrad(Variable(transGrad, false));
@@ -68,18 +68,18 @@ Variable FullConnectionCriterion::forward(
 
   if (N != transVar.dims(0)) {
     throw std::invalid_argument("FCC: input dim doesn't match N");
-  } else if (inputVar.type() != f32) {
+  } else if (inputVar.type() != fl::dtype::f32) {
     throw std::invalid_argument("FCC: input must be float32");
-  } else if (targetVar.type() != s32) {
+  } else if (targetVar.type() != fl::dtype::s32) {
     throw std::invalid_argument("FCC: target must be int32");
   }
 
-  const auto& targetSize = getTargetSizeArray(targetVar.array(), T);
+  const auto& targetSize = getTargetSizeArray(targetVar.tensor(), T);
   auto ctx = std::make_shared<Context>();
-  auto inputVec = fl::pkg::runtime::afToVector<float>(inputVar);
-  auto targetVec = fl::pkg::runtime::afToVector<int>(targetVar);
-  auto targetSizeVec = fl::pkg::runtime::afToVector<int>(targetSize);
-  ctx->transVec = fl::pkg::runtime::afToVector<float>(transVar);
+  auto inputVec = inputVar.tensor().toHostVector<float>();
+  auto targetVec = targetVar.tensor().toHostVector<int>();
+  auto targetSizeVec = targetSize.toHostVector<int>();
+  ctx->transVec = transVar.tensor().toHostVector<float>();
   std::vector<float> lossVec(B);
   ctx->workspaceVec.assign(FCC::getWorkspaceSize(B, T, N), 0);
 
@@ -95,7 +95,7 @@ Variable FullConnectionCriterion::forward(
       ctx->workspaceVec.data());
 
   return Variable(
-      af::array(B, lossVec.data()),
+      Tensor::fromVector(lossVec),
       {inputVar.withoutData(), transVar.withoutData()},
       [=](std::vector<Variable>& inputs, const Variable& gradVar) mutable {
         backward(inputs, gradVar, B, T, N, ctx);

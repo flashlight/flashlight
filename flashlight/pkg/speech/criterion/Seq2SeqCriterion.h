@@ -76,35 +76,30 @@ class Seq2SeqCriterion : public SequenceCriterion {
   std::pair<fl::Variable, fl::Variable> decoder(
       const fl::Variable& input,
       const fl::Variable& target,
-      const af::array& inputSizes,
-      const af::array& targetSizes);
+      const Tensor& inputSizes,
+      const Tensor& targetSizes);
 
   std::pair<fl::Variable, fl::Variable> vectorizedDecoder(
       const fl::Variable& input,
       const fl::Variable& target,
-      const af::array& inputSizes,
-      const af::array& targetSizes);
+      const Tensor& inputSizes,
+      const Tensor& targetSizes);
 
-  af::array viterbiPath(
-      const af::array& input,
-      const af::array& inputSizes = af::array()) override;
+  Tensor viterbiPath(const Tensor& input, const Tensor& inputSizes = Tensor())
+      override;
 
-  std::pair<af::array, fl::Variable> viterbiPathBase(
-      const af::array& input,
-      const af::array& inputSizes,
-      bool saveAttn);
+  std::pair<Tensor, fl::Variable>
+  viterbiPathBase(const Tensor& input, const Tensor& inputSizes, bool saveAttn);
 
   std::vector<CandidateHypo> beamSearch(
-      const af::array& input,
-      const af::array& inputSizes,
+      const Tensor& input,
+      const Tensor& inputSizes,
       std::vector<Seq2SeqCriterion::CandidateHypo> beam,
       int beamSize,
       int maxLen);
 
-  std::vector<int> beamPath(
-      const af::array& input,
-      const af::array& inputSizes,
-      int beamSize = 10);
+  std::vector<int>
+  beamPath(const Tensor& input, const Tensor& inputSizes, int beamSize = 10);
 
   std::string prettyString() const override;
 
@@ -140,8 +135,8 @@ class Seq2SeqCriterion : public SequenceCriterion {
       const fl::Variable& xEncoded,
       const fl::Variable& y,
       const Seq2SeqState& instate,
-      const af::array& inputSizes,
-      const af::array& targetSizes,
+      const Tensor& inputSizes,
+      const Tensor& targetSizes,
       int targetLen) const;
 
   void clearWindow() {
