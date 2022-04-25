@@ -7,7 +7,9 @@
 
 #include "flashlight/pkg/vision/models/ViT.h"
 
-#include <fstream>
+#include <sstream>
+
+#include "flashlight/fl/tensor/Index.h"
 
 namespace fl {
 namespace pkg {
@@ -30,11 +32,10 @@ ViT::ViT(
       patchEmbedding_(
           std::make_shared<Conv2D>(3, hiddenEmbSize_, 16, 16, 16, 16)) {
   // Class token
-  params_.emplace_back(fl::truncNormal(af::dim4(hiddenEmbSize_, 1), 0.02));
+  params_.emplace_back(fl::truncNormal({hiddenEmbSize_, 1}, 0.02));
 
   // Positional embedding
-  params_.emplace_back(
-      fl::truncNormal(af::dim4(hiddenEmbSize_, 14 * 14 + 1), 0.02));
+  params_.emplace_back(fl::truncNormal({hiddenEmbSize_, 14 * 14 + 1}, 0.02));
 
   // Modules
   add(patchEmbedding_);
@@ -51,8 +52,8 @@ ViT::ViT(
   }
 
   linearOut_ = std::make_shared<Linear>(
-      fl::truncNormal(af::dim4(nClasses, hiddenEmbSize_), 0.02),
-      fl::constant(0., nClasses, 1, af::dtype::f32));
+      fl::truncNormal({nClasses, hiddenEmbSize_}, 0.02),
+      fl::constant(0., nClasses, 1, fl::dtype::f32));
   add(linearOut_);
 
   ln_ = std::make_shared<LayerNorm>(
@@ -64,17 +65,17 @@ std::vector<fl::Variable> ViT::forward(
     const std::vector<fl::Variable>& inputs) {
   // Patching
   auto output = patchEmbedding_->forward(inputs[0]); // H x W x C x B
-  output = moddims(output, af::dim4(-1, 1, 0, 0)); // T x 1 x C x B
-  output = reorder(output, 2, 0, 3, 1); // C x T x B
+  output = moddims(output, {-1, 1, 0, 0}); // T x 1 x C x B
+  output = reorder(output, {2, 0, 3, 1}); // C x T x B x 1
+  output = moddims(output, {0, 0, 0}); // C x T x B
   auto B = output.dims(2);
 
   // Prepending the class token
-  auto clsToken =
-      tile(params_[0], af::dim4(1, 1, B)).as(output.type()); // C x 1 x B
+  auto clsToken = tile(params_[0], {1, 1, B}).as(output.type()); // C x 1 x B
   output = concatenate({clsToken, output}, 1);
 
   // Positional embedding
-  auto posEmb = tile(params_[1], af::dim4(1, 1, B)).as(output.type());
+  auto posEmb = tile(params_[1], {1, 1, B}).as(output.type());
   output = output + posEmb;
   if (train_) {
     output = dropout(output, pDropout_);
@@ -87,7 +88,7 @@ std::vector<fl::Variable> ViT::forward(
 
   // Linear
   output = ln_->forward(output); // C x T x B
-  output = reorder(output, 0, 2, 1, 3).slice(0); // C x B x 1
+  output = reorder(output, {0, 2, 1})(fl::span, fl::span, 0); // C x B x 1
   output = linearOut_->forward(output);
 
   return {output};
