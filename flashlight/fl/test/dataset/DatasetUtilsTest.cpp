@@ -8,11 +8,10 @@
 #include <chrono>
 #include <thread>
 
-#include <arrayfire.h>
 #include <gtest/gtest.h>
 
-#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/dataset/datasets.h"
+#include "flashlight/fl/tensor/Init.h"
 
 using namespace fl;
 
