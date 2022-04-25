@@ -7,6 +7,8 @@
 
 #include "flashlight/fl/contrib/modules/PositionEmbedding.h"
 
+#include <stdexcept>
+
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/nn/Init.h"
 #include "flashlight/fl/nn/Utils.h"
@@ -25,6 +27,12 @@ PositionEmbedding::PositionEmbedding(
 
 std::vector<Variable> PositionEmbedding::forward(
     const std::vector<Variable>& input) {
+  if (input[0].numdims() != 3) {
+    throw std::invalid_argument(
+        "PositionEmbedding::forward - expect a tensor with "
+        "3 dimensions - C x T x B");
+  }
+
   int n = input[0].dims(1);
   Variable posEmb = tileAs(
       params_[0].as(input[0].type())(fl::span, fl::range(0, n)), input[0]);
