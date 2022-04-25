@@ -77,7 +77,7 @@ Location Tensor::location() const {
   return impl_->location();
 }
 
-size_t Tensor::size() const {
+size_t Tensor::elements() const {
   return impl_->shape().elements();
 }
 
@@ -90,11 +90,11 @@ int Tensor::ndim() const {
 }
 
 bool Tensor::isEmpty() const {
-  return size() == 0;
+  return elements() == 0;
 }
 
 size_t Tensor::bytes() const {
-  return size() * getTypeSize(type());
+  return elements() * getTypeSize(type());
 }
 
 dtype Tensor::type() const {
@@ -705,13 +705,17 @@ Tensor cumsum(const Tensor& input, const unsigned axis) {
   return input.backend().cumsum(input, axis);
 }
 
-Tensor
-argmax(const Tensor& input, const unsigned axis, const bool keepDims /* = false */) {
+Tensor argmax(
+    const Tensor& input,
+    const unsigned axis,
+    const bool keepDims /* = false */) {
   return input.backend().argmax(input, axis, keepDims);
 }
 
-Tensor
-argmin(const Tensor& input, const unsigned axis, const bool keepDims /* = false */) {
+Tensor argmin(
+    const Tensor& input,
+    const unsigned axis,
+    const bool keepDims /* = false */) {
   return input.backend().argmin(input, axis, keepDims);
 }
 
@@ -794,7 +798,7 @@ bool allClose(
   if (a.shape() != b.shape()) {
     return false;
   }
-  if (a.size() == 0 && b.size() == 0) {
+  if (a.elements() == 0 && b.elements() == 0) {
     return true;
   }
   return fl::amax(fl::abs(a - b)).astype(dtype::f64).scalar<double>() <
