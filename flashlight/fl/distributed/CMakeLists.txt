@@ -1,5 +1,20 @@
 cmake_minimum_required(VERSION 3.10)
 
+# Distributed Training Backend
+cmake_dependent_option(FL_BUILD_DISTRIBUTED
+  "Build and link a distributed backend with flashlight" ON
+  "FL_BUILD_CORE" OFF)
+# If building with CUDA, use NCCL to on; if using CPU or OpenCL, use GLOO
+set(USE_NCCL FALSE)
+set(USE_GLOO FALSE)
+if (FL_BUILD_DISTRIBUTED AND NOT FL_DISTRIBUTED_STUB)
+  if (FL_USE_CUDA)
+    set(USE_NCCL TRUE)
+  elseif (FL_USE_CPU OR FL_USE_OPENCL)
+    set(USE_GLOO TRUE)
+  endif ()
+endif ()
+
 set(
   DISTRIBUTED_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/DistributedApi.cpp

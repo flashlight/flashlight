@@ -41,7 +41,11 @@ commands:
   # Default cmake inside docker will be tested with docker build
   build_flashlight_inside_nvidia_docker:
     parameters:
-      fl_backend:
+      fl_arrayfire_use_cuda:
+        default: "OFF"
+        type: string
+      fl_arrayfire_use_cpu:
+        default: "OFF"
         type: string
       fl_use_cudnn:
         default: "OFF"
@@ -128,7 +132,8 @@ commands:
             cd /flashlight && pwd && ls && mkdir -p build && cd build && \
             export MKLROOT=/opt/intel/mkl && \
             cmake .. \
-                -DFL_BACKEND=<< parameters.fl_backend >> \
+                -DFL_ARRAYFIRE_USE_CUDA=<< parameters.fl_arrayfire_use_cuda >> \
+                -DFL_ARRAYFIRE_USE_CPU=<< parameters.fl_arrayfire_use_cpu >> \
                 -DFL_USE_CUDNN=<< parameters.fl_use_cudnn >> \
                 -DFL_USE_ONEDNN=<< parameters.fl_use_onednn >> \
                 -DFL_BUILD_CORE=<< parameters.fl_build_fl_core >> \
@@ -238,7 +243,8 @@ commands:
             export MKLROOT=/opt/intel/mkl
             export CUDACXX=/usr/local/cuda/bin/nvcc
             cmake .. \
-              -DFL_BACKEND=CUDA \
+              -DFL_ARRAYFIRE_USE_CUDA=ON \
+              -DFL_ARRAYFIRE_USE_CPU=OFF \
               -DFL_USE_CUDNN=ON \
               -DFL_BUILD_CORE=<< parameters.fl_build_fl_core >> \
               -DFL_BUILD_APP_ASR=<< parameters.fl_build_app_asr >> \
@@ -262,7 +268,8 @@ commands:
             update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-7 7
             export MKLROOT=/opt/intel/mkl
             cd flashlight && mkdir -p build && cd build
-            cmake .. -DFL_BACKEND=CPU \
+            cmake .. -DFL_ARRAYFIRE_USE_CPU=ON \
+                     -DFL_ARRAYFIRE_USE_CUDA=OFF \
                      -DFL_USE_ONEDNN=ON \
                      -DDNNL_DIR=/opt/onednn/lib/cmake/dnnl \
                      -DGloo_DIR=/opt/gloo/share/cmake \
@@ -403,7 +410,7 @@ jobs:
       - checkout
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
-          fl_backend: "CUDA"
+          fl_arrayfire_use_cuda: "ON"
           fl_use_cudnn: "ON"
           fl_build_lib_set: "ON"
           fl_build_lib_sequence: "ON"
@@ -430,7 +437,7 @@ jobs:
       - checkout
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
-          fl_backend: "CUDA"
+          fl_arrayfire_use_cuda: "ON"
           fl_use_cudnn: "ON"
           fl_build_fl_core: "ON"
           fl_build_lib_set: "ON"
@@ -462,7 +469,7 @@ jobs:
       - checkout
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
-          fl_backend: "CUDA"
+          fl_arrayfire_use_cuda: "ON"
           fl_use_cudnn: "ON"
           fl_build_lib_common: "ON"
           fl_build_fl_core: "ON"
@@ -479,7 +486,7 @@ jobs:
       - checkout
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
-          fl_backend: "CUDA"
+          fl_arrayfire_use_cuda: "ON"
           fl_use_cudnn: "ON"
           fl_build_fl_core: "ON"
           fl_build_lib_common: "ON"
@@ -498,7 +505,7 @@ jobs:
       - checkout
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
-          fl_backend: "CUDA"
+          fl_arrayfire_use_cuda: "ON"
           fl_use_cudnn: "ON"
           fl_build_lib_common: "ON"
           fl_build_lib_set: "ON"
@@ -515,7 +522,7 @@ jobs:
       - checkout
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
-          fl_backend: "CUDA"
+          fl_arrayfire_use_cuda: "ON"
           fl_use_cudnn: "ON"
           fl_build_lib_common: "ON"
           fl_build_lib_set: "ON"
@@ -534,7 +541,7 @@ jobs:
       - checkout
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
-          fl_backend: "CUDA"
+          fl_arrayfire_use_cuda: "ON"
           fl_use_cudnn: "ON"
           fl_build_lib_common: "ON"
           fl_build_lib_text: "ON"
@@ -553,7 +560,7 @@ jobs:
       - checkout
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
-          fl_backend: "CUDA"
+          fl_arrayfire_use_cuda: "ON"
           fl_use_cudnn: "ON"
           fl_build_fl_core: "ON"
           fl_build_lib_set: "ON"
@@ -647,7 +654,7 @@ jobs:
       - checkout
       - start_nvidia_docker_and_copy_flashlight_source
       - build_flashlight_inside_nvidia_docker:
-          fl_backend: "CUDA"
+          fl_arrayfire_use_cuda: "ON"
           fl_use_cudnn: "ON"
           fl_build_lib_common: "ON"
           fl_build_fl_core: "ON"
