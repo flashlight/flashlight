@@ -7,6 +7,8 @@
 
 #include "flashlight/fl/distributed/DistributedApi.h"
 
+#include "flashlight/fl/tensor/TensorBase.h"
+
 namespace fl {
 
 bool isDistributedInit() {
@@ -22,9 +24,9 @@ void allReduce(
     double scale /* = 1.0 */,
     bool async /* = false */) {
   if (getWorldSize() > 1) {
-    allReduce(var.array(), async);
+    allReduce(var.tensor(), async);
   }
-  var.array() *= scale;
+  var.tensor() *= scale;
 }
 
 void allReduceMultiple(
@@ -33,25 +35,25 @@ void allReduceMultiple(
     bool async /* = false */,
     bool contiguous /* = false */) {
   // return a vector of pointers to avoid copying
-  std::vector<af::array*> arrs;
+  std::vector<Tensor*> arrs;
   for (auto& var : vars) {
-    arrs.push_back(&var.array());
+    arrs.push_back(&var.tensor());
   }
   if (getWorldSize() > 1) {
     allReduceMultiple(arrs, async, contiguous);
   }
   for (auto& var : vars) {
-    var.array() *= scale;
+    var.tensor() *= scale;
   }
 }
 
 void barrier() {
-  auto arr = af::constant(0, 1);
-  allReduce(arr, false);
+  auto tensor = Tensor::fromVector<int>({0});
+  allReduce(tensor, false);
 
-  // This hack is to make sure `arr` will not be optimized away from arrayfire
+  // This hack is to make sure `tensor` will not be optimized away by a
   // JIT during allreduce().
-  af::sum<float>(arr);
+  fl::sum(tensor).asScalar<float>();
 }
 
 namespace detail {
