@@ -287,14 +287,17 @@ bool DefaultMemoryManager::jitTreeExceedsMemoryPressure(size_t bytes) {
   return 2 * bytes > current.lockBytes;
 }
 
-void DefaultMemoryManager::printInfo(const char* msg, const int device) {
+void DefaultMemoryManager::printInfo(
+    const char* msg,
+    const int /* device */,
+    std::ostream* _ostream) {
+  std::ostream& ostream = *_ostream;
   const MemoryInfo& current = this->getCurrentMemoryInfo();
 
-  printf("%s\n", msg);
-  printf(
-      "---------------------------------------------------------\n"
-      "|     POINTER      |    SIZE    |  AF LOCK  | USER LOCK |\n"
-      "---------------------------------------------------------\n");
+  ostream << msg << std::endl
+          << "---------------------------------------------------------\n"
+          << "|     POINTER      |    SIZE    |  AF LOCK  | USER LOCK |\n"
+          << "---------------------------------------------------------\n";
 
   std::lock_guard<std::mutex> lock(this->memoryMutex);
   for (auto& kv : current.lockedMap) {
@@ -312,13 +315,8 @@ void DefaultMemoryManager::printInfo(const char* msg, const int device) {
       unit = "MB";
     }
 
-    printf(
-        "|  %14p  |  %6.f %s | %9s | %9s |\n",
-        kv.first,
-        size,
-        unit,
-        statusMngr,
-        statusUser);
+    ostream << "|  " << kv.first << "  |  " << size << " " << unit << " | "
+            << statusMngr << " | " << statusUser << " |\n";
   }
 
   for (auto& kv : current.freeMap) {
@@ -333,17 +331,12 @@ void DefaultMemoryManager::printInfo(const char* msg, const int device) {
     }
 
     for (auto& ptr : kv.second) {
-      printf(
-          "|  %14p  |  %6.f %s | %9s | %9s |\n",
-          ptr,
-          size,
-          unit,
-          statusMngr,
-          statusUser);
+      ostream << "|  " << ptr << "  |  " << size << " " << unit << " | "
+              << statusMngr << " | " << statusUser << " |\n";
     }
   }
 
-  printf("---------------------------------------------------------\n");
+  ostream << "---------------------------------------------------------\n";
 }
 
 void DefaultMemoryManager::userLock(const void* ptr) {
