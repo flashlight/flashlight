@@ -29,8 +29,8 @@ AdadeltaOptimizer::AdadeltaOptimizer(
   accDelta_.reserve(parameters.size());
 
   for (const auto& parameter : parameters_) {
-    accGrad_.emplace_back(af::constant(0, parameter.dims(), parameter.type()));
-    accDelta_.emplace_back(af::constant(0, parameter.dims(), parameter.type()));
+    accGrad_.emplace_back(fl::full(parameter.dims(), 0, parameter.type()));
+    accDelta_.emplace_back(fl::full(parameter.dims(), 0, parameter.type()));
 
     fl::eval(accGrad_.back());
     fl::eval(accDelta_.back());
@@ -43,21 +43,21 @@ void AdadeltaOptimizer::step() {
       continue;
     }
 
-    const af::array& grad = parameters_[i].grad().array();
-    af::array& data = parameters_[i].array();
+    const Tensor& grad = parameters_[i].grad().tensor();
+    Tensor& data = parameters_[i].tensor();
 
     if (wd_ != 0) {
       // Weight decay term
       data = data - wd_ * data;
     }
 
-    af::array& accGrad = accGrad_[i];
-    af::array& accDelta = accDelta_[i];
+    Tensor& accGrad = accGrad_[i];
+    Tensor& accDelta = accDelta_[i];
 
     accGrad = rho_ * accGrad + (1 - rho_) * grad * grad;
     fl::eval(accGrad);
 
-    auto delta = af::sqrt(accDelta + eps_) / af::sqrt(accGrad + eps_) * grad;
+    auto delta = fl::sqrt(accDelta + eps_) / fl::sqrt(accGrad + eps_) * grad;
 
     data = data - lr_ * delta;
     fl::eval(data);
