@@ -9,13 +9,17 @@
 
 #include <array>
 
-#include <arrayfire.h>
 #include <dnnl.hpp>
 
 #include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/common/DevicePtr.h"
+#include "flashlight/fl/tensor/Shape.h"
+#include "flashlight/fl/tensor/Types.h"
 
 namespace fl {
+
+class Tensor;
+
 namespace detail {
 
 /**
@@ -57,11 +61,11 @@ class DnnlEngine {
 };
 
 /**
- * Helper for converting an ArrayFire af::dim4 into an DNNL-compatible input
+ * Helper for converting a Flashlight Shape into an DNNL-compatible input
  * for dnnl::memory::dims.
  */
-dnnl::memory::dims convertAfToDnnlDims(const std::vector<dim_t>& dims);
-dnnl::memory::dims convertAfDim4ToDnnlDims(const af::dim4& afDims);
+dnnl::memory::dims convertToDnnlDims(const std::vector<Dim>& dims);
+dnnl::memory::dims convertShapeToDnnlDims(const Shape& shape);
 
 /**
  * A light wrapper around dnnl::memory that manages underlying memory lifetime
@@ -70,7 +74,7 @@ dnnl::memory::dims convertAfDim4ToDnnlDims(const af::dim4& afDims);
 class DnnlMemoryWrapper {
  public:
   DnnlMemoryWrapper(
-      const af::array& array,
+      const Tensor& tensor,
       dnnl::memory::dims dims,
       dnnl::memory::format_tag format);
   DnnlMemoryWrapper() = default;
@@ -127,12 +131,12 @@ dnnl::algorithm dnnlMapToPoolingMode(const PoolingMode mode);
  *
  * Needs to be explicitly inlined due to a bug with DNNL.
  */
-inline dnnl::memory::data_type dnnlMapToType(const af::dtype t) {
-  if (t == af::dtype::f16) {
+inline dnnl::memory::data_type dnnlMapToType(const fl::dtype t) {
+  if (t == fl::dtype::f16) {
     return dnnl::memory::data_type::f16;
-  } else if (t == af::dtype::f32) {
+  } else if (t == fl::dtype::f32) {
     return dnnl::memory::data_type::f32;
-  } else if (t == af::dtype::f64) {
+  } else if (t == fl::dtype::f64) {
     throw std::invalid_argument("float64 is not supported by DNNL");
   } else {
     throw std::invalid_argument("data type not supported with DNNL");

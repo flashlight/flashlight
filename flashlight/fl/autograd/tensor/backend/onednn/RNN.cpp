@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include "flashlight/fl/autograd/tensor/backend/onednn/OneDnnAutogradExtension.h"
+
 #include <stdexcept>
 #include <tuple>
 #include <unordered_map>
@@ -14,44 +16,47 @@
 
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/autograd/Variable.h"
-#include "flashlight/fl/autograd/backend/cpu/DnnlUtils.h"
+#include "flashlight/fl/autograd/tensor/backend/onednn/DnnlUtils.h"
+#include "flashlight/fl/tensor/Index.h"
 
 namespace fl {
 namespace {
 
 struct ParsedWeightsAndBias {
   // First layer - will be empty if inSize == hiddenSize
-  af::array weightsInput1L;
-  af::array weightsHidden1L;
-  af::array bias1L;
+  Tensor weightsInput1L;
+  Tensor weightsHidden1L;
+  Tensor bias1L;
   // All other layers
-  af::array weightsInput;
-  af::array weightsHidden;
-  af::array bias;
+  Tensor weightsInput;
+  Tensor weightsHidden;
+  Tensor bias;
 };
 
 // Each gate's weights have dimensions d1 x d2
-af::array reorderLbrGruWeights(int d1, int d2, const af::array weights) {
+Tensor reorderLbrGruWeights(int d1, int d2, const Tensor& weights) {
   // LBR GRU requires switch the given the r, u, o gate order from cuDNN to u,
   // r, o as required by oneDNN (this from empirical verification)
   int weightsSize = d1 * d2;
   if (weights.elements() != weightsSize * 3) {
     throw std::invalid_argument(
-        "RNN reorderLbrGruWeights given invalid weights tensor or dims");
+        "RNN reorderLbrGruWeights given invalid weights tensor or dims - "
+        "weights of size " +
+        std::to_string(weights.elements()) + " which should be exactly " +
+        std::to_string(weightsSize * 3));
   }
-  auto weightsFlat = af::flat(weights);
-  return af::join(
+  return fl::concatenate(
       0,
-      weightsFlat(af::seq(weightsSize, 2 * weightsSize - 1)),
-      weightsFlat(af::seq(weightsSize)),
-      weightsFlat(af::seq(2 * weightsSize, af::end)));
+      weights.flat(fl::range(weightsSize, 2 * weightsSize)),
+      weights.flat(fl::range(0, weightsSize)),
+      weights.flat(fl::range(2 * weightsSize, fl::end)));
 }
 
 /**
- * Converts flat cuDNN weights into the corresponding oneDNN DNNL RNN weights.
+ * Converts flat cuDNN weights into the corresponding oneDNN onednn RNN weights.
  */
 ParsedWeightsAndBias parseWeights(
-    const af::array& weights,
+    const Tensor& weights,
     RnnMode mode,
     int numLayers,
     int directionMult,
@@ -79,9 +84,9 @@ ParsedWeightsAndBias parseWeights(
   // weights and parse the remaining layers. Parsing all bias layers is still
   // fine since biases for each layer have the same size
   if (firstLayerDifferent) {
-    out.weightsInput1L = weights(af::seq(weightsInputSize1L));
-    out.weightsHidden1L = weights(af::seq(
-        weightsInputSize1L, weightsInputSize1L + weightsHiddenSize - 1));
+    out.weightsInput1L = weights.flat(fl::range(weightsInputSize1L));
+    out.weightsHidden1L = weights.flat(
+        fl::range(weightsInputSize1L, weightsInputSize1L + weightsHiddenSize));
 
     if (mode == RnnMode::GRU) {
       out.weightsInput1L =
@@ -91,22 +96,23 @@ ParsedWeightsAndBias parseWeights(
     }
   }
 
-  auto weightsFlat = af::flat(weights).as(weights.type());
+  auto weightsFlat = weights.flatten().astype(weights.type());
   // cuDNN RNN weights, for each layer, are arranged with a chunk of
   // input-hidden weights for each layer followed by a chunk of hidden-hidden
   // weights for each layer:
-  // {[layers x [hiddenSize, inputSize]], [layers x  [hiddenSize, hiddenSize]]}
+  // {[layers x [hiddenSize, inputSize]], [layers x  [hiddenSize, hiddenSize]] }
   // Rearrange this to what oneDNN expects (or will reorder if not optimal),
   // which is numLayers chunks of two chunks containing input-hidden and
   // hidden-hidden:
   // {[layers x [[hiddenSize x inSize], [hiddenSize x hiddenSize]]]}
-  // Note that the loop is over the total number of layers in case we're doing a
+  // Note that the loop is over the total number of layers in case we'r doing a
   // single-layer operation where input size and hidden size are different but
   // we'll call another primitive with the output of that first layer as the
   // input to the next layers
-  auto weightsInput = af::array(0, weights.type());
-  auto weightsHidden = af::array(0, weights.type());
-  af::array weightsFlatOffset = weightsFlat(af::seq(weightsOffset, af::end));
+  auto weightsInput = Tensor({0}, weights.type());
+  auto weightsHidden = Tensor({0}, weights.type());
+  Tensor weightsFlatOffset =
+      weightsFlat.flat(fl::range(weightsOffset, fl::end));
   // Specifically ignore the first layer's weights, so inSize == hiddenSize
   for (size_t i = 0; i < numWeightsLayers; ++i) {
     // number of input/hidden weights
@@ -116,12 +122,12 @@ ParsedWeightsAndBias parseWeights(
     int layerChunkSize = chunkSize + chunkSize;
 
     // Grab input-hidden weights and chunk them together
-    auto inputWeightsChunk = weightsFlatOffset(
-        af::seq(layerChunkSize * i, layerChunkSize * i + chunkSize - 1));
+    auto inputWeightsChunk = weightsFlatOffset.flat(
+        fl::range(layerChunkSize * i, layerChunkSize * i + chunkSize));
     // Grab hidden-hidden weights and chunk them together
-    auto inputHiddenChunk = weightsFlatOffset(af::seq(
+    auto inputHiddenChunk = weightsFlatOffset.flat(fl::range(
         layerChunkSize * i + chunkSize,
-        layerChunkSize * i + chunkSize + chunkSize - 1));
+        layerChunkSize * i + chunkSize + chunkSize));
 
     if (mode == RnnMode::GRU) {
       inputWeightsChunk =
@@ -129,8 +135,9 @@ ParsedWeightsAndBias parseWeights(
       inputHiddenChunk =
           reorderLbrGruWeights(hiddenSize, hiddenSize, inputHiddenChunk);
     }
-    weightsInput = af::join(2, weightsInput, inputWeightsChunk);
-    weightsHidden = af::join(2, weightsHidden, inputHiddenChunk);
+
+    weightsInput = fl::concatenate(2, weightsInput, inputWeightsChunk);
+    weightsHidden = fl::concatenate(2, weightsHidden, inputHiddenChunk);
   }
   out.weightsInput = weightsInput;
   out.weightsHidden = weightsHidden;
@@ -138,19 +145,19 @@ ParsedWeightsAndBias parseWeights(
   // Reduce the weights to form biases. cuDNN uses two separate bias terms:
   // https://docs.nvidia.com/deeplearning/cudnn/api/index.html#cudnnRNNMode_t -
   // oneDNN expects only one bias term. Sum together the coefficients for both
-  // bias terms to get a single bias term for oneDNN. The gradients for each
-  // term can be computed as one since the gradients with respect to the bias
-  // subarrays will simply be half of the computed gradient with oneDNN
-  af::array bias(0, weights.type());
+  // bias terms to get a single bias term for oneDNN. The gradients for
+  // each term can be computed as one since the gradients with respect to
+  // the bias subarrays will simply be half of the computed gradient with
+  // oneDNN
+  Tensor bias(weights.type());
   size_t biasStartOffset = numLayers * weightsHiddenSize +
       (numLayers - 1) * weightsInputSize + weightsInputSize1L;
   // In vanilla RNN modes, the biases can be simply added:
   // two biases for each bias in fl cuDNN with CUDNN_RNN_DOUBLE_BIAS (default)
   int numBiases = 2;
   // First, grab a subarray which contains only both bias terms; then add them
-  af::array biasFlat = weightsFlat(af::seq(biasStartOffset, af::end));
-  // Layout is:
-  // {numLayers x [numBiases x [bias shape]]}
+  Tensor biasFlat = weightsFlat.flat(fl::range(biasStartOffset, fl::end));
+  // Layout is: {numLayers x [numBiases x [bias shape]]}
   for (size_t i = 0; i < numLayers; ++i) {
     if (mode == RnnMode::GRU) {
       int lbrGruChunkSize = hiddenSize * 6;
@@ -161,45 +168,50 @@ ParsedWeightsAndBias parseWeights(
       int base = i * lbrGruChunkSize;
       // The sum of the following tensors yields the correct bias
       // u1, r1, o, u'
-      auto biases1 = af::join(
+      auto biases1 = fl::concatenate(
           0,
           // u1 -- [1, 2]
-          biasFlat(af::seq(base + hiddenSize * 1, base + hiddenSize * 2 - 1)),
+          biasFlat.flat(
+              fl::range(base + hiddenSize * 1, base + hiddenSize * 2)),
           // r1 -- [0, 1]
-          biasFlat(af::seq(base + hiddenSize * 0, base + hiddenSize * 1 - 1)),
+          biasFlat.flat(
+              fl::range(base + hiddenSize * 0, base + hiddenSize * 1)),
           // o -- [2, 3]
-          biasFlat(af::seq(base + hiddenSize * 2, base + hiddenSize * 3 - 1)),
+          biasFlat.flat(
+              fl::range(base + hiddenSize * 2, base + hiddenSize * 3)),
           // 'u -- [5, 6]
-          biasFlat(af::seq(base + hiddenSize * 5, base + hiddenSize * 6 - 1)));
+          biasFlat.flat(
+              fl::range(base + hiddenSize * 5, base + hiddenSize * 6)));
       // u2, r2, 0, 0
-      auto biases2 = af::join(
+      auto biases2 = fl::concatenate(
           0,
           // u2 -- [4, 5]
-          biasFlat(af::seq(base + hiddenSize * 4, base + hiddenSize * 5 - 1)),
+          biasFlat.flat(
+              fl::range(base + hiddenSize * 4, base + hiddenSize * 5)),
           // r2 -- [3, 4]
-          biasFlat(af::seq(base + hiddenSize * 3, base + hiddenSize * 4 - 1)),
+          biasFlat.flat(
+              fl::range(base + hiddenSize * 3, base + hiddenSize * 4)),
           // zeroes to add to o and u'
-          af::constant(0.0, hiddenSize * 2, biasFlat.type()));
+          fl::full({hiddenSize * 2}, 0., biasFlat.type()));
       auto layerBiasCombined = biases1 + biases2;
-      bias = af::join(0, bias, layerBiasCombined);
+      bias = fl::concatenate(0, bias, layerBiasCombined);
     } else {
       // The number of bias terms in the tensor per-layer
       int layerStride = biasSize / numLayers * numBiases;
-      auto biases1 = biasFlat(af::seq(
-          layerStride * i, layerStride * i + layerStride / numBiases - 1));
-      auto biases2 = biasFlat(af::seq(
-          layerStride * i + layerStride / numBiases,
-          layerStride * (i + 1) - 1));
+      auto biases1 = biasFlat(fl::range(
+          layerStride * i, layerStride * i + layerStride / numBiases));
+      auto biases2 = biasFlat(fl::range(
+          layerStride * i + layerStride / numBiases, layerStride * (i + 1)));
       auto layerBiasCombined = biases1 + biases2;
-      bias = af::join(0, bias, layerBiasCombined);
+      bias = fl::concatenate(0, bias, layerBiasCombined);
     }
   }
 
   if (firstLayerDifferent) {
-    out.bias1L = bias(af::seq(biasSize / numLayers));
+    out.bias1L = bias.flat(fl::range(biasSize / numLayers));
     if (numLayers > 1) {
       // bias for the second --> last layer
-      bias = bias(af::seq(biasSize / numLayers, af::end));
+      bias = bias.flat(fl::range(biasSize / numLayers, fl::end));
     }
   }
   out.bias = bias;
@@ -216,21 +228,21 @@ ParsedWeightsAndBias parseWeights(
 
 struct RnnResult {
   dnnl::memory workspace;
-  af::array y; // output
-  af::array hy; // hidden output
-  af::array cy; // cell output
+  Tensor y; // output
+  Tensor hy; // hidden output
+  Tensor cy; // cell output
 };
 
 /*
- * Does forward for a single dnnl RNN primitive
+ * Does forward for a single onednn RNN primitive
  */
 RnnResult rnnImpl(
-    const af::array& input,
-    const af::array& hiddenState,
-    const af::array& cellState,
-    const af::array& weightsInput,
-    const af::array& weightsHidden,
-    const af::array& bias,
+    const Tensor& input,
+    const Tensor& hiddenState,
+    const Tensor& cellState,
+    const Tensor& weightsInput,
+    const Tensor& weightsHidden,
+    const Tensor& bias,
     int hiddenSize,
     int numLayers,
     RnnMode mode,
@@ -244,9 +256,9 @@ RnnResult rnnImpl(
   auto dnnlEngine = detail::DnnlEngine::getInstance().getEngine();
 
   // Dimensions
-  int inSize = input.dims(0);
-  int batchSize = input.dims(1);
-  int seqLength = input.dims(2);
+  int inSize = input.dim(0);
+  int batchSize = input.ndim() < 2 ? 1 : input.dim(1);
+  int seqLength = input.ndim() < 3 ? 1 : input.dim(2);
   dnnl::memory::dims inputDims = {seqLength, batchSize, inSize};
   dnnl::memory::dims outputDims = {
       seqLength, batchSize, hiddenSize * directionMult};
@@ -267,11 +279,11 @@ RnnResult rnnImpl(
       numLayers, directionMult, hiddenSize, numGates, hiddenSize};
 
   // Out tensors: output (y), hidden state output (hy), cell state output (cy)
-  auto y = af::array(outSize, batchSize, seqLength, input.type());
-  auto hy = af::array(hiddenSize, batchSize, totalLayers, input.type());
-  af::array cy;
+  auto y = Tensor({outSize, batchSize, seqLength}, input.type());
+  auto hy = Tensor({hiddenSize, batchSize, totalLayers}, input.type());
+  Tensor cy;
   if (mode == RnnMode::LSTM) {
-    cy = af::array(hy.dims(), input.type());
+    cy = Tensor(hy.shape(), input.type());
   }
 
   // Memory for forward
@@ -279,18 +291,21 @@ RnnResult rnnImpl(
   auto ldnc = dnnl::memory::format_tag::ldnc;
   auto ldgoi = dnnl::memory::format_tag::ldgoi;
   auto ldgo = dnnl::memory::format_tag::ldgo;
-  const detail::DnnlMemoryWrapper inputMemInit(input, {inputDims}, tnc);
+  const detail::DnnlMemoryWrapper inputMemInit(
+      input.asContiguousTensor(), {inputDims}, tnc);
   const detail::DnnlMemoryWrapper outputMemInit(y, {outputDims}, tnc);
   detail::DnnlMemoryWrapper hiddenInMemInit;
-  if (!hiddenState.isempty()) {
-    hiddenInMemInit = detail::DnnlMemoryWrapper(hiddenState, {hDims}, ldnc);
+  if (!hiddenState.isEmpty()) {
+    hiddenInMemInit = detail::DnnlMemoryWrapper(
+        hiddenState.asContiguousTensor(), {hDims}, ldnc);
   }
   const detail::DnnlMemoryWrapper hiddenOutMemInit(hy, {hDims}, ldnc);
   const detail::DnnlMemoryWrapper weightsInputMemRawInit(
-      weightsInput, {weightsInputDims}, ldgoi);
+      weightsInput.asContiguousTensor(), {weightsInputDims}, ldgoi);
   const detail::DnnlMemoryWrapper weightsHiddenMemRawInit(
-      weightsHidden, {weightsHiddenDims}, ldgoi);
-  const detail::DnnlMemoryWrapper biasMemInit(bias, {biasDims}, ldgo);
+      weightsHidden.asContiguousTensor(), {weightsHiddenDims}, ldgoi);
+  const detail::DnnlMemoryWrapper biasMemInit(
+      bias.asContiguousTensor(), {biasDims}, ldgo);
 
   // TODO(jacobkahn): don't force a format tag - use any and do a reorder based
   // on the format of the primitive - what it says - like you're supposed to
@@ -357,8 +372,9 @@ RnnResult rnnImpl(
     // which determines whether or not it's ok to return empty
     // descriptors if the array is empty
     detail::DnnlMemoryWrapper cellInMemInit;
-    if (!cellState.isempty()) {
-      cellInMemInit = detail::DnnlMemoryWrapper(cellState, {cDims}, ldnc);
+    if (!cellState.isEmpty()) {
+      cellInMemInit = detail::DnnlMemoryWrapper(
+          cellState.asContiguousTensor(), {cDims}, ldnc);
     }
     // output cell state
     detail::DnnlMemoryWrapper cellOutMemInit(cy, cDims, ldnc);
@@ -411,31 +427,33 @@ RnnResult rnnImpl(
 
 } // namespace
 
-std::tuple<Variable, Variable, Variable> rnn(
-    const Variable& inputV,
-    const Variable& hiddenStateV,
-    const Variable& cellStateV,
-    const Variable& weightsV,
-    int hiddenSize,
-    int numLayers,
-    RnnMode mode,
-    bool bidirectional,
-    float dropout) {
+std::tuple<Tensor, Tensor, Tensor> OneDnnAutogradExtension::rnn(
+    const Tensor& input,
+    const Tensor& hiddenState,
+    const Tensor& cellState,
+    const Tensor& weights,
+    const int hiddenSize,
+    const int numLayers,
+    const RnnMode mode,
+    const bool bidirectional,
+    const float dropout,
+    std::shared_ptr<detail::AutogradPayload> autogradPayload) {
   if (dropout > 0.0) {
-    throw std::invalid_argument("dnnl rnn: dropout > 0.0 unsupported");
+    throw std::invalid_argument("onednn RNN: dropout > 0.0 unsupported");
   }
   if (bidirectional) {
-    throw std::invalid_argument("dnnl rnn: bidirectional not yet supported");
+    throw std::invalid_argument("onednn RNN: bidirectional not yet supported");
   }
+
+  const bool train = (autogradPayload != nullptr);
 
   // Constants
   auto direction = bidirectional
       ? dnnl::rnn_direction::bidirectional_concat
       : dnnl::rnn_direction::unidirectional_left2right;
   int directionMult = bidirectional ? 2 : 1;
-  auto kind = (inputV.isCalcGrad() || weightsV.isCalcGrad())
-      ? dnnl::prop_kind::forward_training
-      : dnnl::prop_kind::forward_inference;
+  auto kind = train ? dnnl::prop_kind::forward_training
+                    : dnnl::prop_kind::forward_inference;
   int numGates = 1;
   auto activation = dnnl::algorithm::undef;
   switch (mode) {
@@ -454,13 +472,9 @@ std::tuple<Variable, Variable, Variable> rnn(
       break;
   }
 
-  auto& input = inputV.array();
-  auto& hiddenState = hiddenStateV.array();
-  auto& cellState = cellStateV.array();
-  auto& weights = weightsV.array();
-  int inSize = input.dims(0);
+  int inSize = input.dim(0);
 
-  // In flashlight, all RNN weights are stored as one contiguous tensor, so we
+  // In Flashlight, all RNN weights are stored as one contiguous tensor, so we
   // have to parse out the input weights, input biases, hidden weights, and
   // hidden biases from one tensor. Order doesn't matter since the arrangement
   // is a black box
@@ -476,7 +490,7 @@ std::tuple<Variable, Variable, Variable> rnn(
   // that output as the input for layers [2, L]. Since the input size dim 0
   // is now the hidden size, the primitive can fuse computation for
   // arbitrarily-many layers.
-  if (inputV.dims(0) == hiddenSize || numLayers == 1) {
+  if (input.dim(0) == hiddenSize || numLayers == 1) {
     // Input and hidden size are the same, or we only have one layer, which
     // means we can call the impl as is and parse weights "normally"
     result = rnnImpl(
@@ -497,12 +511,12 @@ std::tuple<Variable, Variable, Variable> rnn(
         dropout);
   } else {
     // We require more than one layer with different input and hidden states -
-    // see the above.
-    // Seek to the first layer's hidden/cell state, weights, and bias
+    // see the above. Seek to the first layer's hidden/cell state, weights, and
+    // bias
     RnnResult resultL1 = rnnImpl(
         input,
-        hiddenState(af::span, af::span, 0),
-        cellState(af::span, af::span, 0),
+        hiddenState(fl::span, fl::span, 0),
+        cellState(fl::span, fl::span, 0),
         parsedWeights.weightsInput1L,
         parsedWeights.weightsHidden1L,
         parsedWeights.bias1L,
@@ -520,8 +534,8 @@ std::tuple<Variable, Variable, Variable> rnn(
     // Seek  past the first layer's hidden/cell state, weights, and bias
     RnnResult resultL2N = rnnImpl(
         resultL1.y, // fixme
-        hiddenState(af::span, af::span, af::seq(1, af::end)),
-        cellState(af::span, af::span, af::seq(1, af::end)),
+        hiddenState(fl::span, fl::span, fl::range(1, fl::end)),
+        cellState(fl::span, fl::span, fl::range(1, fl::end)),
         parsedWeights.weightsInput,
         parsedWeights.weightsHidden,
         parsedWeights.bias,
@@ -536,19 +550,28 @@ std::tuple<Variable, Variable, Variable> rnn(
         dropout);
 
     result.y = resultL2N.y;
-    result.hy = af::join(2, resultL1.hy, resultL2N.hy);
-    result.cy = af::join(2, resultL1.cy, resultL2N.cy);
+    result.hy = fl::concatenate(2, resultL1.hy, resultL2N.hy);
+    result.cy = fl::concatenate(2, resultL1.cy, resultL2N.cy);
   }
 
-  auto gradFuncUnsupported = [](std::vector<Variable>&, const Variable&) {
-    throw std::runtime_error(
-        "dnnl rnn: Gradient computation not yet supported");
-  };
+  return {result.y, result.hy, result.cy};
+}
 
-  return std::make_tuple(
-      Variable(result.y, {}, gradFuncUnsupported),
-      Variable(result.hy, {}, gradFuncUnsupported),
-      Variable(result.cy, {}, gradFuncUnsupported));
+std::tuple<Tensor, Tensor, Tensor, Tensor> OneDnnAutogradExtension::rnnBackward(
+    const Tensor& input,
+    const Tensor& hiddenState,
+    const Tensor& cellState,
+    const Tensor& weights,
+    const std::shared_ptr<detail::RNNGradData> gradData,
+    const Tensor& output,
+    const int numLayers,
+    const int hiddenSize,
+    const RnnMode mode,
+    const bool bidirectional,
+    const float dropProb,
+    const std::shared_ptr<detail::AutogradPayload> payload) {
+  throw std::runtime_error(
+      "onednn RNN: Gradient computation not yet supported");
 }
 
 } // namespace fl

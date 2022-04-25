@@ -21,7 +21,8 @@ Tensor CudnnAutogradExtension::pool2d(
     const int sy,
     const int px,
     const int py,
-    const PoolingMode mode /* = PoolingMode::MAX */) {
+    const PoolingMode mode,
+    std::shared_ptr<detail::AutogradPayload>) {
   auto inDesc = TensorDescriptor(input);
 
   // init pooling descriptor
@@ -72,7 +73,8 @@ Tensor CudnnAutogradExtension::pool2dBackward(
     const int sy,
     const int px,
     const int py,
-    const PoolingMode mode) {
+    const PoolingMode mode,
+    std::shared_ptr<detail::AutogradPayload>) {
   auto i_desc = TensorDescriptor(input);
   auto o_desc = TensorDescriptor(poolOutput);
   auto p_desc = PoolingDescriptor(wx, wy, sx, sy, px, py, mode);

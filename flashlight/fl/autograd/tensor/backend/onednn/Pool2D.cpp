@@ -5,18 +5,23 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include "flashlight/fl/autograd/tensor/backend/onednn/OneDnnAutogradExtension.h"
+
 #include <unordered_map>
 #include <vector>
 
-#include <arrayfire.h>
 #include <dnnl.h>
 
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/autograd/Utils.h"
 #include "flashlight/fl/autograd/Variable.h"
-#include "flashlight/fl/autograd/backend/cpu/DnnlUtils.h"
+#include "flashlight/fl/autograd/tensor/backend/onednn/DnnlUtils.h"
+#include "flashlight/fl/tensor/Shape.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 using namespace dnnl;
+
+namespace fl {
 
 namespace {
 
@@ -25,59 +30,98 @@ constexpr size_t kHIdx = 1;
 constexpr size_t kChannelSizeIdx = 2;
 constexpr size_t kBatchSizeIdx = 3;
 
+// Use memory::format_tag::any for memory formatting even if pool
+// inputs are shaped in a particular way.
+constexpr auto formatAny = memory::format_tag::any;
+constexpr auto formatNCHW = memory::format_tag::nchw;
+
+struct DimsData {
+  memory::dims inputDims;
+  memory::dims outputDims;
+  memory::dims windowDims;
+  memory::dims strideDims;
+  std::vector<int64_t> paddingDims;
+};
+
+DimsData getDimsData(
+    const Shape& input,
+    const Shape& output,
+    const int wx,
+    const int wy,
+    const int sx,
+    const int sy,
+    const int px,
+    const int py) {
+  DimsData d;
+  d.inputDims = detail::convertToDnnlDims(
+      {input.dim(kBatchSizeIdx),
+       input.dim(kChannelSizeIdx),
+       input.dim(kHIdx),
+       input.dim(kWIdx)});
+  d.outputDims = detail::convertToDnnlDims(
+      {input.dim(kBatchSizeIdx),
+       input.dim(kChannelSizeIdx),
+       output.dim(kHIdx),
+       output.dim(kWIdx)});
+  d.windowDims = {wy, wx};
+  d.strideDims = {sy, sx};
+  d.paddingDims = {py, px};
+  return d;
+}
+
 } // namespace
 
-namespace fl {
+struct OneDnnPool2DPayload : detail::AutogradPayloadData {
+  memory workspace;
+  memory outputMemory;
+  DimsData dimsData;
+  pooling_forward::primitive_desc poolingFwdPrimDesc;
+};
 
-Variable pool2d(
-    const Variable& input,
-    int wx,
-    int wy,
-    int sx,
-    int sy,
-    int px,
-    int py,
-    PoolingMode mode) {
-  auto inputDimsRaw = input.dims();
-  auto output = af::array(
-      1 + (input.dims(kWIdx) + 2 * px - wx) / sx,
-      1 + (input.dims(kHIdx) + 2 * py - wy) / sy,
-      input.dims(kChannelSizeIdx),
-      input.dims(kBatchSizeIdx));
+Tensor OneDnnAutogradExtension::pool2d(
+    const Tensor& input,
+    const int wx,
+    const int wy,
+    const int sx,
+    const int sy,
+    const int px,
+    const int py,
+    const PoolingMode mode,
+    std::shared_ptr<detail::AutogradPayload> autogradPayload) {
+  const bool train = (autogradPayload != nullptr);
+  auto payload = std::make_shared<OneDnnPool2DPayload>();
+  if (train) {
+    autogradPayload->data = payload;
+  }
 
-  // Dims
-  memory::dims inputDims = detail::convertAfToDnnlDims(
-      {input.dims(kBatchSizeIdx),
-       input.dims(kChannelSizeIdx),
-       input.dims(kHIdx),
-       input.dims(kWIdx)});
-  memory::dims outputDims = detail::convertAfToDnnlDims(
-      {input.dims(kBatchSizeIdx),
-       input.dims(kChannelSizeIdx),
-       output.dims(kHIdx),
-       output.dims(kWIdx)});
-  memory::dims windowDims = {wy, wx};
-  memory::dims strideDims = {sy, sx};
-  std::vector<int64_t> paddingDims = {py, px};
+  // inputX x inputY x channels x batch
+  auto ix = input.dim(kWIdx);
+  auto iy = input.ndim() > kHIdx ? input.dim(kHIdx) : 1;
+  auto c = input.ndim() > kChannelSizeIdx ? input.dim(kChannelSizeIdx) : 1;
+  auto b = input.ndim() > kBatchSizeIdx ? input.dim(kBatchSizeIdx) : 1;
 
+  auto output = Tensor(
+      {1 + (ix + 2 * px - wx) / sx, 1 + (iy + 2 * py - wy) / sy, c, b},
+      input.type());
+
+  payload->dimsData =
+      getDimsData({ix, iy, c, b}, output.shape(), wx, wy, sx, sy, px, py);
+  auto& d = payload->dimsData;
   auto dataType = detail::dnnlMapToType(input.type());
-  auto formatNCHW = memory::format_tag::nchw;
-  auto formatAny = memory::format_tag::any;
 
   // Memory desc
-  auto inputMD = memory::desc({inputDims}, dataType, formatNCHW);
-  auto outputMD = memory::desc({outputDims}, dataType, formatAny);
+  auto inputMD = memory::desc({d.inputDims}, dataType, formatNCHW);
+  auto outputMD = memory::desc({d.outputDims}, dataType, formatAny);
 
   // Memory
   auto& dnnlEngine = detail::DnnlEngine::getInstance().getEngine();
   const detail::DnnlMemoryWrapper inputMemInit(
-      input.array(), {inputDims}, formatNCHW);
+      input, {d.inputDims}, formatNCHW);
   const detail::DnnlMemoryWrapper outputMemInit(
-      output, {outputDims}, formatNCHW);
+      output, {d.outputDims}, formatNCHW);
 
   // Choose a mode based on whether gradients are needed
-  auto forwardMode =
-      input.isCalcGrad() ? prop_kind::forward : prop_kind::forward_inference;
+  auto forwardMode = train ? prop_kind::forward : prop_kind::forward_inference;
 
   // Descriptors
   auto poolingMode = detail::dnnlMapToPoolingMode(mode);
@@ -86,11 +130,13 @@ Variable pool2d(
       poolingMode,
       inputMD,
       outputMD,
-      strideDims,
-      windowDims,
-      paddingDims,
-      paddingDims);
-  auto primDesc = pooling_forward::primitive_desc(desc, dnnlEngine);
+      d.strideDims,
+      d.windowDims,
+      d.paddingDims,
+      d.paddingDims);
+  payload->poolingFwdPrimDesc =
+      pooling_forward::primitive_desc(desc, dnnlEngine);
+  auto& primDesc = payload->poolingFwdPrimDesc;
 
   // Network
   std::vector<primitive> network;
@@ -100,21 +146,19 @@ Variable pool2d(
   auto outputDesc = primDesc.dst_desc();
   auto inputMemory = detail::dnnlAlignOrdering(
       network, fwdArgs, inputMemInit.getMemory(), inputDesc);
-  auto outputMemory = outputMemInit.getMemory();
+  payload->outputMemory = outputMemInit.getMemory();
   if (outputMemInit.getMemory().get_desc() != outputDesc) {
-    outputMemory = memory(outputDesc, dnnlEngine);
+    payload->outputMemory = memory(outputDesc, dnnlEngine);
   }
   // Workspace and layer (only training mode requires a workspace)
-  std::shared_ptr<memory> workspaceMemory; // no default ctors
   std::shared_ptr<pooling_forward> pooling;
   std::unordered_map<int, dnnl::memory> fwdPoolingArgs;
   fwdPoolingArgs[DNNL_ARG_SRC] = inputMemory;
-  fwdPoolingArgs[DNNL_ARG_DST] = outputMemory;
-  if (input.isCalcGrad()) {
-    workspaceMemory =
-        std::make_shared<memory>(primDesc.workspace_desc(), dnnlEngine);
+  fwdPoolingArgs[DNNL_ARG_DST] = payload->outputMemory;
+  if (train) {
+    payload->workspace = memory(primDesc.workspace_desc(), dnnlEngine);
     pooling = std::make_shared<pooling_forward>(primDesc);
-    fwdPoolingArgs[DNNL_ARG_WORKSPACE] = *workspaceMemory;
+    fwdPoolingArgs[DNNL_ARG_WORKSPACE] = payload->workspace;
   } else {
     pooling = std::make_shared<pooling_forward>(primDesc);
   }
@@ -122,88 +166,87 @@ Variable pool2d(
   fwdArgs.push_back(fwdPoolingArgs);
 
   // Add output reordering if needed
-  if (outputMemory != outputMemInit.getMemory()) {
-    network.push_back(dnnl::reorder(outputMemory, outputMemInit.getMemory()));
+  if (payload->outputMemory != outputMemInit.getMemory()) {
+    network.push_back(
+        dnnl::reorder(payload->outputMemory, outputMemInit.getMemory()));
     fwdArgs.push_back(
-        {{DNNL_ARG_FROM, outputMemory},
+        {{DNNL_ARG_FROM, payload->outputMemory},
          {DNNL_ARG_TO, outputMemInit.getMemory()}});
   }
 
   detail::executeNetwork(network, fwdArgs);
+  return output;
+}
 
-  auto gradFunc =
-      [dataType,
-       formatNCHW,
-       inputDimsRaw, // need to pass if inputs are empty
-       primDescFwd = std::move(primDesc), // forward desc
-       poolingMode,
-       // needed for backwards pass. null in inference mode
-       workspaceMemory,
-       // dims
-       inputDims,
-       outputDims,
-       windowDims,
-       strideDims,
-       paddingDims,
-       // capture the output memory primitive desc for reordering, since it
-       // can't be retrieved from the pooling primitive descriptor
-       outputMemory](
-          std::vector<Variable>& inputs, const Variable& grad_output) {
-        auto& in = inputs[0];
-        if (!in.isCalcGrad()) {
-          return;
-        }
+Tensor OneDnnAutogradExtension::pool2dBackward(
+    const Tensor& gradOutput,
+    const Tensor& input,
+    const Tensor& poolOutput,
+    const int wx,
+    const int wy,
+    const int sx,
+    const int sy,
+    const int px,
+    const int py,
+    const PoolingMode mode,
+    std::shared_ptr<detail::AutogradPayload> autogradPayload) {
+  if (!autogradPayload) {
+    throw std::invalid_argument(
+        "OneDnnAutogradExtension::pool2dBackward given null detail::AutogradPayload");
+  }
+  auto payload =
+      std::static_pointer_cast<OneDnnPool2DPayload>(autogradPayload->data);
 
-        auto gradInput =
-            Variable(af::array(inputDimsRaw, af::dtype::f32), false);
-        auto& dnnlEngineBwd = detail::DnnlEngine::getInstance().getEngine();
+  auto gradInput = Tensor(input.shape(), fl::dtype::f32);
+  auto& dnnlEngineBwd = detail::DnnlEngine::getInstance().getEngine();
 
-        // Memory
-        const detail::DnnlMemoryWrapper gradInputMemInit(
-            gradInput.array(), {inputDims}, formatNCHW);
-        const detail::DnnlMemoryWrapper gradOutputMemInit(
-            grad_output.array(), {outputDims}, formatNCHW);
+  DimsData& d = payload->dimsData;
+  auto poolingMode = detail::dnnlMapToPoolingMode(mode);
+  auto dataType = detail::dnnlMapToType(input.type());
 
-        // Descriptors
-        // Memory descriptors from initialized memory must be used since
-        // pooling_backward descriptors require an ordering
-        auto gradInputMD = gradInputMemInit.getMemory().get_desc();
-        auto gradOutputMD = gradOutputMemInit.getMemory().get_desc();
-        auto bwdDesc = pooling_backward::desc(
-            poolingMode,
-            gradInputMD,
-            gradOutputMD,
-            strideDims,
-            windowDims,
-            paddingDims,
-            paddingDims);
-        // Pass forward descriptor as a hint
-        auto bwdPrimDesc = pooling_backward::primitive_desc(
-            bwdDesc, dnnlEngineBwd, primDescFwd);
+  // Memory
+  const detail::DnnlMemoryWrapper gradInputMemInit(
+      gradInput, {d.inputDims}, formatNCHW);
+  const detail::DnnlMemoryWrapper gradOutputMemInit(
+      gradOutput, {d.outputDims}, formatNCHW);
 
-        std::vector<primitive> networkBackward;
-        std::vector<std::unordered_map<int, dnnl::memory>> bwdArgs;
-        // Reorder output memory if required
-        auto gradOutputMemory = detail::dnnlAlignOrdering(
-            networkBackward,
-            bwdArgs,
-            gradOutputMemInit.getMemory(),
-            outputMemory.get_desc());
+  // Descriptors
+  // Memory descriptors from initialized memory must be used since
+  // pooling_backward descriptors require an ordering
+  auto gradInputMD = gradInputMemInit.getMemory().get_desc();
+  auto gradOutputMD = gradOutputMemInit.getMemory().get_desc();
+  auto bwdDesc = pooling_backward::desc(
+      poolingMode,
+      gradInputMD,
+      gradOutputMD,
+      d.strideDims,
+      d.windowDims,
+      d.paddingDims,
+      d.paddingDims);
+  // Pass forward descriptor as a hint
+  auto bwdPrimDesc = pooling_backward::primitive_desc(
+      bwdDesc, dnnlEngineBwd, payload->poolingFwdPrimDesc);
 
-        auto poolBwd = pooling_backward(bwdPrimDesc);
-        std::unordered_map<int, dnnl::memory> bwdPoolingArgs = {
-            {DNNL_ARG_DIFF_SRC, gradInputMemInit.getMemory()},
-            {DNNL_ARG_DIFF_DST, gradOutputMemory},
-            {DNNL_ARG_WORKSPACE, *workspaceMemory}};
-        bwdArgs.push_back(bwdPoolingArgs);
-        networkBackward.push_back(poolBwd);
+  std::vector<primitive> networkBackward;
+  std::vector<std::unordered_map<int, dnnl::memory>> bwdArgs;
+  // Reorder output memory if required
+  auto gradOutputMemory = detail::dnnlAlignOrdering(
+      networkBackward,
+      bwdArgs,
+      gradOutputMemInit.getMemory(),
+      payload->outputMemory.get_desc());
 
-        detail::executeNetwork(networkBackward, bwdArgs);
+  auto poolBwd = pooling_backward(bwdPrimDesc);
+  std::unordered_map<int, dnnl::memory> bwdPoolingArgs = {
+      {DNNL_ARG_DIFF_SRC, gradInputMemInit.getMemory()},
+      {DNNL_ARG_DIFF_DST, gradOutputMemory},
+      {DNNL_ARG_WORKSPACE, payload->workspace}};
+  bwdArgs.push_back(bwdPoolingArgs);
+  networkBackward.push_back(poolBwd);
 
-        in.addGrad(gradInput);
-      };
+  detail::executeNetwork(networkBackward, bwdArgs);
 
-  return Variable(output, {input.withoutData()}, gradFunc);
+  return gradInput;
 }
 
 } // namespace fl
