@@ -12,7 +12,7 @@
 
 #include "flashlight/fl/autograd/autograd.h"
 #include "flashlight/fl/common/Filesystem.h"
-#include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
 

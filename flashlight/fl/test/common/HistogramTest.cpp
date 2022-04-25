@@ -10,7 +10,7 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/fl/common/Histogram.h"
-#include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/tensor/Init.h"
 
 using namespace fl;
 

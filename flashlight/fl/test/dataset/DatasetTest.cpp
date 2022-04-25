@@ -12,9 +12,9 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/fl/common/Filesystem.h"
-#include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/dataset/datasets.h"
 #include "flashlight/fl/tensor/Compute.h"
+#include "flashlight/fl/tensor/Init.h"
 
 using namespace fl;
 

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/fl/memory/MemoryManagerInstaller.h"
+#include "flashlight/fl/tensor/backend/af/mem/MemoryManagerInstaller.h"
 
 #include <cstdint>
 #include <cstdlib>
@@ -13,8 +13,8 @@
 
 #include <af/device.h>
 
-#include "flashlight/fl/memory/managers/CachingMemoryManager.h"
 #include "flashlight/fl/tensor/backend/af/Utils.h"
+#include "flashlight/fl/tensor/backend/af/mem/CachingMemoryManager.h"
 
 namespace fl {
 

@@ -8,7 +8,7 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/fl/common/DevicePtr.h"
-#include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
 using namespace fl;
