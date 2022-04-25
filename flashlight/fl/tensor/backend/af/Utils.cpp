@@ -79,7 +79,7 @@ af_storage flToAfStorageType(StorageType storageType) {
   }
 }
 
-af_topk_function flToAfSortMode(SortMode sortMode) {
+af_topk_function flToAfTopKSortMode(SortMode sortMode) {
   switch (sortMode) {
     case SortMode::Descending:
       return AF_TOPK_MAX;
@@ -87,7 +87,7 @@ af_topk_function flToAfSortMode(SortMode sortMode) {
       return AF_TOPK_MIN;
     default:
       throw std::invalid_argument(
-          "flToAfSortMode: sort mode with no ArrayFire analog specified");
+          "flToAfTopKSortMode: sort mode with no ArrayFire analog specified");
   }
 }
 
