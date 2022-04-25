@@ -135,14 +135,14 @@ std::vector<Variable> Transformer::forward(const std::vector<Variable>& input) {
         "Invalid inputs for transformer block: there should be at least input and mask");
   }
   auto x = input.at(input.size() - 2);
-  if (x.numdims() != 3) {
+  if (x.ndim() != 3) {
     throw std::invalid_argument(
         "Transformer::forward - input should be of 3 dimensions "
         "expects an input of size C x T x B - see documentation.");
   }
 
   if (!input.back().isempty()) {
-    if (input.back().numdims() < 2) {
+    if (input.back().ndim() < 2) {
       throw std::invalid_argument(
           "Transformer::forward - invalid size for pad mask - "
           "must have at least two dimensions");

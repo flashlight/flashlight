@@ -153,7 +153,7 @@ size_t Variable::bytes() const {
   return tensor().bytes();
 }
 
-unsigned Variable::numdims() const {
+unsigned Variable::ndim() const {
   return tensor().ndim();
 }
 

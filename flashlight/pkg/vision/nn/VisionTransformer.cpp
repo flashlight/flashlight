@@ -124,11 +124,11 @@ std::vector<Variable> VisionTransformer::forward(
 
   auto x = inputs.front();
 
-  if (x.numdims() != 3) {
+  if (x.ndim() != 3) {
     throw std::invalid_argument(
         "VisionTransformer::forward - "
         "expected input with 3 dimensions - got input with " +
-        std::to_string(x.numdims()));
+        std::to_string(x.ndim()));
   }
 
   x = x + dropPath(selfAttention((*norm1_)(x)));

@@ -85,7 +85,7 @@ Tensor ArrayFireVisionExtension::histogram(
     const unsigned numBins,
     const double minVal,
     const double maxVal) {
-  // TODO: add numdims to this
+  // TODO: add ndim to this
   return toTensor<ArrayFireTensor>(
       af::histogram(toArray(tensor), numBins, minVal, maxVal),
       /* numDims = */ 1);
@@ -94,7 +94,7 @@ Tensor ArrayFireVisionExtension::histogram(
 Tensor ArrayFireVisionExtension::histogram(
     const Tensor& tensor,
     const unsigned numBins) {
-  // TODO: add numdims to this
+  // TODO: add ndim to this
   return toTensor<ArrayFireTensor>(
       af::histogram(toArray(tensor), numBins), /* numDims = */ 1);
 }
