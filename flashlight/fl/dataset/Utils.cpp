@@ -169,7 +169,7 @@ Tensor makeBatch(
   // TODO: expand this to > 4 given fl::Tensor - should work out of the box
   // by just removing this check? Possibly also change to ndims >= dims.ndims()
   if (ndims >= 4) {
-    throw std::invalid_argument("# of dims must be < numdims - 1 for batching");
+    throw std::invalid_argument("# of dims must be < ndim - 1 for batching");
   }
   // Dimensions of the batched tensor
   std::vector<Dim> batchDims = dims.get();

@@ -570,7 +570,7 @@ Variable erf(const Variable& input) {
 
 Variable transpose(const Variable& input, const Shape& dims /* = {} */) {
   auto result = fl::transpose(input.tensor(), dims);
-  auto gradFunc = [inputDims = input.dims(), ndim = input.numdims(), dims](
+  auto gradFunc = [inputDims = input.dims(), ndim = input.ndim(), dims](
                       std::vector<Variable>& inputs,
                       const Variable& gradOutput) {
     Shape reverseShape = dims;
@@ -640,9 +640,9 @@ Variable concatenate(const std::vector<Variable>& concatInputs, int dim) {
     }
   }
   // All Variables must have the same number of dims
-  unsigned numDims = concatInputs[0].numdims();
+  unsigned numDims = concatInputs[0].ndim();
   for (auto& var : concatInputs) {
-    if (numDims != var.numdims()) {
+    if (numDims != var.ndim()) {
       throw std::invalid_argument(
           "concatenate: all input Variables must "
           "have the same number of dimensions");
@@ -710,7 +710,7 @@ std::vector<Variable> split(const Variable& input, long splitSize, int dim) {
 
 std::vector<Variable>
 split(const Variable& input, const std::vector<long>& splitSizes, int dim) {
-  if (dim >= input.numdims()) {
+  if (dim >= input.ndim()) {
     throw std::invalid_argument(
         "split: passed dim is larger than the number of dimensions "
         "of the input.");
@@ -719,7 +719,7 @@ split(const Variable& input, const std::vector<long>& splitSizes, int dim) {
   auto N = splitSizes.size();
 
   std::vector<Variable> outputs(N);
-  std::vector<fl::Index> sel(input.numdims(), fl::span);
+  std::vector<fl::Index> sel(input.ndim(), fl::span);
   int start = 0;
   for (int i = 0; i < N; ++i) {
     if (splitSizes[i] <= 0) {
@@ -1025,16 +1025,16 @@ Variable flat(const Variable& input) {
 }
 
 Variable moddims(const Variable& input, const Shape& dims) {
-  if (input.numdims() == 0) {
+  if (input.ndim() == 0) {
     return input;
   }
   Shape inferDims = dims;
   unsigned maxNDims =
-      std::max(input.numdims(), static_cast<unsigned>(dims.ndim()));
+      std::max(input.ndim(), static_cast<unsigned>(dims.ndim()));
 
   // Check for inferred dims that are beyond the input's number of dims
   for (int i = 0; i < maxNDims; ++i) {
-    if (i >= input.numdims() && inferDims[i] == 0) {
+    if (i >= input.ndim() && inferDims[i] == 0) {
       throw std::invalid_argument(
           "moddims: tried to infer dimension " + std::to_string(i) +
           " which exceeds the number of dimensions of the input.");
@@ -1079,7 +1079,7 @@ Variable moddims(const Variable& input, const Shape& dims) {
 Variable softmax(const Variable& input, const int dim) {
   Tensor inputArr = FL_ADJUST_INPUT_TYPE(input.tensor());
   auto maxvals = amax(inputArr, {dim}, /* keepDims = */ true);
-  Shape tiledims(std::vector<Dim>(input.numdims(), 1));
+  Shape tiledims(std::vector<Dim>(input.ndim(), 1));
   tiledims[dim] = input.dims(dim);
 
   auto expInput = fl::exp(inputArr - fl::tile(maxvals, tiledims));
@@ -1103,7 +1103,7 @@ Variable logSoftmax(const Variable& input, const int dim) {
   Tensor inputArr = FL_ADJUST_INPUT_TYPE(input.tensor());
   auto maxvals = amax(inputArr, {dim}, /* keepDims = */ true);
   // TODO{fl::Tensor}{rewrite}
-  Shape tiledims(std::vector<Dim>(input.numdims(), 1));
+  Shape tiledims(std::vector<Dim>(input.ndim(), 1));
   tiledims[dim] = input.dims(dim);
   auto result = inputArr -
       fl::tile(fl::log(fl::sum(
@@ -1141,12 +1141,12 @@ Variable categoricalCrossEntropy(
   auto input = FL_ADJUST_INPUT_TYPE(in);
   // input -- [C, X1, X2, X3]
   // target -- [X1, X2, X3, 1]
-  if (input.numdims() != targets.numdims() + 1) {
+  if (input.ndim() != targets.ndim() + 1) {
     throw std::invalid_argument(
         "dimension mismatch in categorical cross entropy: "
         "target must have one fewer dimension than input");
   }
-  for (int i = 1; i < input.numdims(); i++) {
+  for (int i = 1; i < input.ndim(); i++) {
     if (input.dims(i) != targets.dims(i - 1)) {
       throw std::invalid_argument(
           "dimension mismatch in categorical cross entropy");
@@ -1218,13 +1218,13 @@ Variable weightedCategoricalCrossEntropy(
     int ignoreIndex /* = -1 */) {
   // input -- [C, X1, X2, X3]
   // target -- [X1, X2, X3]
-  if (input.numdims() < targets.numdims() - 1) {
+  if (input.ndim() < targets.ndim() - 1) {
     throw std::invalid_argument(
         "weightedCategoricalCrossEntropy: input must have one more than the "
         "number of target dimensions minus 1");
   }
 
-  for (int i = 1; i < targets.numdims() - 2; i++) {
+  for (int i = 1; i < targets.ndim() - 2; i++) {
     if (input.dims(i) != targets.dims(i - 1)) {
       throw std::invalid_argument(
           "weightedCategoricalCrossEntropy: dimension mismatch in categorical cross entropy");
@@ -1624,7 +1624,7 @@ Variable batchnorm(
 }
 
 Variable gatedlinearunit(const Variable& input, const int dim) {
-  if (dim >= input.numdims()) {
+  if (dim >= input.ndim()) {
     throw std::invalid_argument(
         "gatedlinearunit - passed dim is great than the "
         "number of dimensions of the input.");
@@ -1637,8 +1637,8 @@ Variable gatedlinearunit(const Variable& input, const int dim) {
     throw std::invalid_argument("halving dimension must be even for GLU");
   }
 
-  std::vector<fl::Index> fhalf(input.numdims(), fl::span);
-  std::vector<fl::Index> shalf(input.numdims(), fl::span);
+  std::vector<fl::Index> fhalf(input.ndim(), fl::span);
+  std::vector<fl::Index> shalf(input.ndim(), fl::span);
   fhalf[dim] = fl::range(inSize / 2);
   shalf[dim] = fl::range(inSize / 2, inSize);
 
@@ -1765,15 +1765,15 @@ std::tuple<Variable, Variable, Variable> rnn(
 
 Variable embedding(const Variable& input, const Variable& embeddings) {
   // TODO{fl::Tensor}{4-dims} - relax this
-  if (input.numdims() >= 4) {
+  if (input.ndim() >= 4) {
     throw std::invalid_argument("embedding input must have 3 or fewer dims");
   }
 
   auto idxs = input.tensor().flatten();
   auto inDims = input.dims();
-  std::vector<Dim> rDims(input.numdims() + 1);
+  std::vector<Dim> rDims(input.ndim() + 1);
   rDims[0] = embeddings.dims(0);
-  for (unsigned i = 1; i < input.numdims() + 1; i++) {
+  for (unsigned i = 1; i < input.ndim() + 1; i++) {
     rDims[i] = inDims[i - 1];
   }
   Shape resultDims(rDims);
@@ -1811,14 +1811,14 @@ Variable padding(
     const Variable& input,
     std::vector<std::pair<int, int>> pad,
     double val) {
-  if (pad.size() > input.numdims()) {
+  if (pad.size() > input.ndim()) {
     throw std::invalid_argument(
         "padding: number of padding dimensions exceeds number "
         "of input dimensions");
   }
 
   Shape opDims = input.dims();
-  std::vector<fl::Index> inSeq(input.numdims(), fl::span);
+  std::vector<fl::Index> inSeq(input.ndim(), fl::span);
   for (int i = 0; i < pad.size(); ++i) {
     opDims[i] += (pad[i].first + pad[i].second);
     inSeq[i] = fl::range(pad[i].first, opDims[i] - pad[i].second);
@@ -1855,7 +1855,7 @@ Variable gelu(const Variable& in) {
 }
 
 fl::Variable relativePositionEmbeddingRotate(const fl::Variable& input) {
-  if (input.numdims() != 3) {
+  if (input.ndim() != 3) {
     throw std::invalid_argument(
         "relativePositionEmbeddingRotate - "
         "input tensor must have 3 dimensions");
@@ -1894,17 +1894,17 @@ fl::Variable multiheadAttention(
     const int32_t nHeads,
     const double pDropout,
     const int32_t offset /* = 0 */) {
-  if (query.numdims() != 3) {
+  if (query.ndim() != 3) {
     throw std::invalid_argument(
         "multiheadAttention - query input tensor should be 3 dimensions: "
         "Time x (nHeads * headDim) x B");
   }
-  if (key.numdims() != 3) {
+  if (key.ndim() != 3) {
     throw std::invalid_argument(
         "multiheadAttention - key input tensor should be 3 dimensions: "
         "Time x (nHeads * headDim) x B");
   }
-  if (value.numdims() != 3) {
+  if (value.ndim() != 3) {
     throw std::invalid_argument(
         "multiheadAttention - value input tensor should be 3 dimensions: "
         "Time x (nHeads * headDim) x B");

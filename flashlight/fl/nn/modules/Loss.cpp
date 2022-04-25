@@ -101,12 +101,12 @@ Variable AdaptiveSoftMaxLoss::forward(
     const Variable& targets) {
   // inputs: N x T x B
   // targets: T x B
-  if (inputs.numdims() != 3) {
+  if (inputs.ndim() != 3) {
     throw std::invalid_argument(
         "AdaptiveSoftMaxLoss::forward expects input tensor with "
         "3 dimensions in N x T x B ordering.");
   }
-  if (targets.numdims() != 2) {
+  if (targets.ndim() != 2) {
     throw std::invalid_argument(
         "AdaptiveSoftMaxLoss::forward expects target tensor with "
         "2 dimensions in T x B ordering.");
