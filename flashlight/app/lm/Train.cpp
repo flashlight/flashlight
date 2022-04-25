@@ -6,6 +6,7 @@
  */
 
 #include "flashlight/app/lm/Trainer.h"
+#include "flashlight/fl/tensor/Init.h"
 
 using namespace fl::pkg::runtime;
 using namespace fl::lib;
