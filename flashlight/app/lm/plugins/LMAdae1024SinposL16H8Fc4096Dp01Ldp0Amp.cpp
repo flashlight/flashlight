@@ -43,14 +43,14 @@ class LmModel : public fl::Container {
     out = frontend_->forward(out);
 
     // Run all transformer forward passes in fp16
-    out = out.as(f16);
+    out = out.astype(f16);
     for (int trIdx = 0; trIdx < transformers_.size(); trIdx++) {
       out = transformers_[trIdx]->forward({out, fl::Variable()}).front();
     }
 
     // Make sure passing fp32 tensor to criterion.
     // Avoid fp16 usage in any embedding-ralated calls.
-    return {out.as(f32)};
+    return {out.astype(f32)};
   }
 
   std::string prettyString() const override {

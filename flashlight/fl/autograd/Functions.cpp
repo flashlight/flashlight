@@ -109,64 +109,6 @@ bool areVariableTypesEqual(const Variable& a, const Variable& b) {
   return a.type() == b.type();
 }
 
-// TODO{fl::Tensor}{rewrite} remove specializations after renaming Variable::as
-// to Variable::astype
-template <>
-Variable adjustInputType(const Variable& in, const char* funcname) {
-  OptimLevel optimLevel = OptimMode::get().getOptimLevel();
-  // Fastpath - DEFAULT mode never casts tensors
-  if (optimLevel == OptimLevel::DEFAULT) {
-    return in;
-  }
-
-  Variable res;
-  auto& funcs = kOptimLevelTypeExclusionMappings.find(optimLevel)->second;
-  // TODO: tiny, but this lookup incurs an extra alloc from char* to string
-  if (funcs.find(std::string(funcname)) == funcs.end() &&
-      optimLevel != OptimLevel::DEFAULT) {
-    // Not in the excluded list - cast to f16
-    res = in.as(fl::dtype::f16);
-  } else {
-    // Upcast to f32 only if we have an f16 input - otherwise, leave as is
-    if (in.type() == fl::dtype::f16) {
-      res = in.as(fl::dtype::f32);
-    } else {
-      res = in;
-    }
-  }
-
-  return res;
-}
-
-// TODO{fl::Tensor}{rewrite} remove specializations after renaming Variable::as
-// to Variable::astype
-template <>
-Tensor adjustInputType(const Tensor& in, const char* funcname) {
-  OptimLevel optimLevel = OptimMode::get().getOptimLevel();
-  // Fastpath - DEFAULT mode never casts tensors
-  if (optimLevel == OptimLevel::DEFAULT) {
-    return in;
-  }
-
-  Tensor res;
-  auto& funcs = kOptimLevelTypeExclusionMappings.find(optimLevel)->second;
-  // TODO: tiny, but this lookup incurs an extra alloc from char* to string
-  if (funcs.find(std::string(funcname)) == funcs.end() &&
-      optimLevel != OptimLevel::DEFAULT) {
-    // Not in the excluded list - cast to f16
-    res = in.astype(fl::dtype::f16);
-  } else {
-    // Upcast to f32 only if we have an f16 input - otherwise, leave as is
-    if (in.type() == fl::dtype::f16) {
-      res = in.astype(fl::dtype::f32);
-    } else {
-      res = in;
-    }
-  }
-
-  return res;
-}
-
 } // namespace detail
 
 Variable operator+(const Variable& lhs, const Variable& rhs) {
@@ -1128,7 +1070,7 @@ Variable logSoftmax(const Variable& input, const int dim) {
 }
 
 Variable binaryCrossEntropy(const Variable& inputs, const Variable& targets) {
-  auto targetsTyped = targets.as(inputs.type());
+  auto targetsTyped = targets.astype(inputs.type());
   return negate(
       targetsTyped * log(inputs) + (1 - targetsTyped) * log(1 - inputs));
 }
@@ -1252,7 +1194,6 @@ Variable weightedCategoricalCrossEntropy(
   auto mask = -(A == B); // [C X]
 
   auto weightSum = (-mask) * fl::tile(weight.tensor(), {1, X});
-  // TODO{fl::Tensor}{rewrite} - use {0, 1} dim args
   Variable denominator = {fl::sum(weightSum, {0, 1}), false};
 
   auto result = mask * x;
@@ -1923,12 +1864,12 @@ fl::Variable multiheadAttention(
   if (!posEmb.isempty()) {
     int n = posEmb.dims(0) / 2 - offset;
     auto pscores =
-        relativePositionEmbeddingRotate(matmulNT(posEmb.as(q.type()), q));
+        relativePositionEmbeddingRotate(matmulNT(posEmb.astype(q.type()), q));
     scores =
         scores + transpose(pscores(fl::range(n, n + k.dims(0))), {1, 0, 2});
   }
   if (!mask.isempty()) {
-    scores = scores + tileAs(mask.as(scores.type()), scores);
+    scores = scores + tileAs(mask.astype(scores.type()), scores);
   }
   if (!padMask.isempty()) {
     if (padMask.dims(0) != query.dims(0)) {
@@ -1939,12 +1880,12 @@ fl::Variable multiheadAttention(
     padMaskTile =
         tileAs(padMaskTile, {padMask.dims(0), padMask.dims(0), nHeads, bsz});
     scores = scores +
-        moddims(padMaskTile.as(scores.type()),
+        moddims(padMaskTile.astype(scores.type()),
                 {padMask.dims(0), padMask.dims(0), nHeads * bsz});
   }
 
   auto attn = dropout(softmax(scores, 1), pDropout);
-  auto result = matmul(attn.as(v.type()), v);
+  auto result = matmul(attn.astype(v.type()), v);
   result = moddims(result, {-1, headDim * nHeads, bsz});
   return result;
 }

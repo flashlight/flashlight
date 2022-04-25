@@ -52,8 +52,8 @@ void runViTBase(bool fp16 = false) {
   auto input = fl::input(fl::rand({imgSize, imgSize, 3, batchsize}));
   auto target = fl::noGrad(fl::rand({1000, batchsize}));
   if (fp16) {
-    input = input.as(fl::dtype::f16);
-    target = target.as(fl::dtype::f16);
+    input = input.astype(fl::dtype::f16);
+    target = target.astype(fl::dtype::f16);
   }
 
   // Model
@@ -69,7 +69,7 @@ void runViTBase(bool fp16 = false) {
 
   auto criterion =
       [&target](const std::vector<fl::Variable>& input) -> fl::Variable {
-    auto output = logSoftmax(input.front(), 0).as(target.type());
+    auto output = logSoftmax(input.front(), 0).astype(target.type());
     auto loss = fl::mean(fl::sum(fl::negate(target * output), {0}), {1});
     return loss;
   };
@@ -91,9 +91,9 @@ void runResNet34(bool fp16 = false) {
   // Data
   const int batchsize = 192, imgSize = 224;
   auto input = fl::input(fl::rand({imgSize, imgSize, 3, batchsize}));
-  auto target = fl::noGrad(fl::rand({batchsize}) * 1000).as(fl::dtype::s32);
+  auto target = fl::noGrad(fl::rand({batchsize}) * 1000).astype(fl::dtype::s32);
   if (fp16) {
-    input = input.as(fl::dtype::f16);
+    input = input.astype(fl::dtype::f16);
   }
 
   // Model
@@ -121,9 +121,9 @@ void runResNet50(bool fp16 = false) {
   // Data
   const int batchsize = 192, imgSize = 224;
   auto input = fl::input(fl::rand({imgSize, imgSize, 3, batchsize}));
-  auto target = fl::noGrad(fl::rand({batchsize}) * 1000).as(fl::dtype::s32);
+  auto target = fl::noGrad(fl::rand({batchsize}) * 1000).astype(fl::dtype::s32);
   if (fp16) {
-    input = input.as(fl::dtype::f16);
+    input = input.astype(fl::dtype::f16);
   }
 
   // Model
@@ -286,7 +286,7 @@ void runAsrTransformer(bool fp16 = false) {
   auto input = fl::input(fl::rand({numFrames, 1, numFeatures, batchsize}));
   auto lengths = fl::input(fl::full({1, batchsize}, numFrames));
   auto target = fl::noGrad(fl::rand({targetLength, batchsize}) * numTarget)
-                    .as(fl::dtype::s32);
+                    .astype(fl::dtype::s32);
 
   // Model
   std::shared_ptr<fl::Module> model =

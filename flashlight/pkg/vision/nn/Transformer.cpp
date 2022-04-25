@@ -77,7 +77,7 @@ fl::Variable transformerMultiheadAttention(
   }
 
   auto attn = dropout(softmax(scores, 1), pDropout);
-  auto result = matmulNT(attn.as(v.type()), v);
+  auto result = matmulNT(attn.astype(v.type()), v);
   result = moddims(result, {tgtLen, modelDim, bsz});
   result = reorder(result, {1, 2, 0});
   return result;

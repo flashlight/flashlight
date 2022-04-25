@@ -117,9 +117,9 @@ std::vector<Variable> Detr::forwardTransformer(
   auto posEmbed = posEmbed_->forward({mask})[0];
   auto hs = transformer_->forward(
       inputProjection,
-      mask.as(inputProjection.type()),
-      queryEmbed_->param(0).as(inputProjection.type()),
-      posEmbed.as(inputProjection.type()));
+      mask.astype(inputProjection.type()),
+      queryEmbed_->param(0).astype(inputProjection.type()),
+      posEmbed.astype(inputProjection.type()));
 
   auto outputClasses = classEmbed_->forward(hs[0]);
   auto outputCoord = sigmoid(bboxEmbed_->forward(hs)[0]);

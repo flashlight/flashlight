@@ -53,7 +53,7 @@ std::vector<fl::Variable> AsrTransformer::forward(
     out = transformers_[trIdx]->forward({out, fl::noGrad(padMask)}).front();
   }
   out = linear_->forward(out);
-  return {out.as(input[0].type())};
+  return {out.astype(input[0].type())};
 }
 
 std::string AsrTransformer::prettyString() const {
