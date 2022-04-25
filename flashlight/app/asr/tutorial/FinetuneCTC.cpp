@@ -17,6 +17,17 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
+#include "flashlight/fl/contrib/contrib.h"
+#include "flashlight/fl/flashlight.h"
+#include "flashlight/fl/tensor/Index.h"
+#include "flashlight/lib/common/System.h"
+#include "flashlight/lib/text/dictionary/Dictionary.h"
+#include "flashlight/lib/text/dictionary/Utils.h"
+#include "flashlight/pkg/runtime/Runtime.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
+#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
+#include "flashlight/pkg/runtime/common/Serializer.h"
+#include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
 #include "flashlight/pkg/speech/augmentation/SoundEffectConfig.h"
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/criterion/criterion.h"
@@ -24,25 +35,14 @@
 #include "flashlight/pkg/speech/data/Utils.h"
 #include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
 #include "flashlight/pkg/speech/runtime/runtime.h"
-#include "flashlight/pkg/runtime/common/DistributedUtils.h"
-#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
-#include "flashlight/pkg/runtime/common/Serializer.h"
-#include "flashlight/pkg/runtime/Runtime.h"
-#include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
-#include "flashlight/fl/contrib/contrib.h"
-#include "flashlight/fl/flashlight.h"
-#include "flashlight/lib/common/System.h"
-#include "flashlight/lib/text/dictionary/Dictionary.h"
-#include "flashlight/lib/text/dictionary/Utils.h"
 
-using fl::pkg::runtime::Serializer;
-using fl::pkg::runtime::afToVector;
-using fl::pkg::runtime::getRunFile;
 using fl::lib::fileExists;
 using fl::lib::format;
 using fl::lib::getCurrentDate;
 using fl::lib::join;
 using fl::lib::pathsConcat;
+using fl::pkg::runtime::getRunFile;
+using fl::pkg::runtime::Serializer;
 
 using namespace fl::pkg::speech;
 
@@ -248,9 +248,11 @@ int main(int argc, char** argv) {
   FL_LOG_MASTER(INFO) << "Loading architecture file from " << archfile;
   // Encoder network, works on audio
   if (fl::lib::endsWith(archfile, ".so")) {
-    network = fl::pkg::runtime::ModulePlugin(archfile).arch(numFeatures, numClasses);
+    network =
+        fl::pkg::runtime::ModulePlugin(archfile).arch(numFeatures, numClasses);
   } else {
-    network = fl::pkg::runtime::buildSequentialModule(archfile, numFeatures, numClasses);
+    network = fl::pkg::runtime::buildSequentialModule(
+        archfile, numFeatures, numClasses);
   }
 
   std::shared_ptr<fl::Module> forkingNetwork;
@@ -360,25 +362,21 @@ int main(int argc, char** argv) {
       }
 
       // print brief stats on memory allocation (so far)
-      auto* curMemMgr =
-          fl::MemoryManagerInstaller::currentlyInstalledMemoryManager();
-      if (curMemMgr) {
-        curMemMgr->printInfo("Memory Manager Stats", 0 /* device id */);
-      }
+      fl::detail::getMemMgrInfo("Memory Manager Stats", /* device id = */ 0);
     }
   };
 
   /* ===================== Hooks ===================== */
   auto evalOutput = [&tokenDict, &criterion](
-                        const af::array& op,
-                        const af::array& target,
+                        const fl::Tensor& op,
+                        const fl::Tensor& target,
                         DatasetMeters& mtr) {
-    auto batchsz = op.dims(2);
+    auto batchsz = op.dim(2);
     for (int b = 0; b < batchsz; ++b) {
-      auto tgt = target(af::span, b);
+      auto tgt = target(fl::span, b);
       auto viterbipath =
-          afToVector<int>(criterion->viterbiPath(op(af::span, af::span, b)));
-      auto tgtraw = afToVector<int>(tgt);
+          criterion->viterbiPath(op(fl::span, fl::span, b)).toHostVector<int>();
+      auto tgtraw = tgt.toHostVector<int>();
 
       // Remove `-1`s appended to the target for batching (if any)
       auto labellen = getTargetSize(tgtraw.data(), tgtraw.size());
@@ -432,8 +430,8 @@ int main(int argc, char** argv) {
       auto loss =
           crit->forward({output, fl::Variable(batch[kTargetIdx], false)})
               .front();
-      mtrs.loss.add(loss.array());
-      evalOutput(output.array(), batch[kTargetIdx], mtrs);
+      mtrs.loss.add(loss.tensor());
+      evalOutput(output.tensor(), batch[kTargetIdx], mtrs);
     }
   };
 
@@ -563,8 +561,8 @@ int main(int argc, char** argv) {
         meters.timer.incUnit();
         meters.sampletimer.stopAndIncUnit();
         meters.stats.add(batch[kDurationIdx], batch[kTargetSizeIdx]);
-        if (af::anyTrue<bool>(af::isNaN(batch[kInputIdx])) ||
-            af::anyTrue<bool>(af::isNaN(batch[kTargetIdx]))) {
+        if (fl::any(fl::isnan(batch[kInputIdx])).asScalar<bool>() ||
+            fl::any(fl::isnan(batch[kTargetIdx])).asScalar<bool>()) {
           LOG(FATAL) << "Sample has NaN values - "
                      << join(",", readSampleIds(batch[kSampleIdx]));
         }
@@ -601,8 +599,8 @@ int main(int argc, char** argv) {
             loss = loss * scaleFactor;
           }
 
-          if (af::anyTrue<bool>(af::isNaN(loss.array())) ||
-              af::anyTrue<bool>(af::isInf(loss.array()))) {
+          if (fl::any(fl::isnan(loss.tensor())).asScalar<bool>() ||
+              fl::any(fl::isinf(loss.tensor())).asScalar<bool>()) {
             if (FLAGS_fl_amp_use_mixed_precision &&
                 scaleFactor >= fl::kAmpMinimumScaleFactorValue) {
               scaleFactor = scaleFactor / 2.0f;
@@ -619,7 +617,7 @@ int main(int argc, char** argv) {
 
           if (hasher(join(",", readSampleIds(batch[kSampleIdx]))) % 100 <=
               FLAGS_pcttraineval) {
-            evalOutput(output.array(), batch[kTargetIdx], meters.train);
+            evalOutput(output.tensor(), batch[kTargetIdx], meters.train);
           }
 
           // backward
@@ -642,8 +640,8 @@ int main(int argc, char** argv) {
             }
             p.grad() = p.grad() / (FLAGS_batchsize * scaleFactor);
             if (FLAGS_fl_amp_use_mixed_precision) {
-              if (af::anyTrue<bool>(af::isNaN(p.grad().array())) ||
-                  af::anyTrue<bool>(af::isInf(p.grad().array()))) {
+              if (fl::any(fl::isnan(p.grad().tensor())).asScalar<bool>() ||
+                  fl::any(fl::isinf(p.grad().tensor())).asScalar<bool>()) {
                 if (scaleFactor >= fl::kAmpMinimumScaleFactorValue) {
                   scaleFactor = scaleFactor / 2.0f;
                   FL_VLOG(2) << "AMP: Scale factor decreased. New value:\t"
@@ -660,7 +658,7 @@ int main(int argc, char** argv) {
             continue;
           }
 
-          meters.train.loss.add((loss / scaleFactor).array());
+          meters.train.loss.add((loss / scaleFactor).tensor());
 
         } while (retrySample);
 
