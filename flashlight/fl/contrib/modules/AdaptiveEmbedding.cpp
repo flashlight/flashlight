@@ -50,7 +50,7 @@ AdaptiveEmbedding::AdaptiveEmbedding(
 }
 
 Variable AdaptiveEmbedding::forward(const Variable& input) {
-  if (input.numdims() != 2) {
+  if (input.ndim() != 2) {
     throw std::invalid_argument(
         "AdaptiveEmbedding::forward - input must "
         "have 2 dimensions - expect T x B");

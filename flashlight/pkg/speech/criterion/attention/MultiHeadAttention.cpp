@@ -41,7 +41,7 @@ std::pair<Variable, Variable> MultiHeadContentAttention::forwardBase(
     const Variable& /* unused */,
     const Variable& logAttnWeight,
     const Variable& xEncodedSizes) {
-  if (state.numdims() != 3) {
+  if (state.ndim() != 3) {
     throw std::invalid_argument(
         "MultiHeadContentAttention::forwardBase: "
         "state input must be of shape {H, U, B}");

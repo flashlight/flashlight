@@ -112,12 +112,12 @@ void ConnectionistTemporalClassificationCriterion::validate(
   if (input.isempty()) {
     throw std::invalid_argument("CTC: Input cannot be empty");
   }
-  if (target.numdims() < 2) {
+  if (target.ndim() < 2) {
     throw std::invalid_argument(
         "CTC: Incorrect dimensions for target. Expected {L, B}, got " +
         target.dims().toString());
   }
-  if (input.numdims() < 3) {
+  if (input.ndim() < 3) {
     throw std::invalid_argument(
         "CTC: Incorrect dimensions for input. Expected {N, T, B}, got " +
         input.dims().toString());

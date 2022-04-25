@@ -184,7 +184,7 @@ class Variable {
   /**
    * Returns the number of dimension of array wrapped by the Variable
    */
-  unsigned numdims() const;
+  unsigned ndim() const;
 
   /**
    * Returns the dimension of array wrapped by the Variable

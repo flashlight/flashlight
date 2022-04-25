@@ -25,7 +25,7 @@ TEST(PreEmphasisTest, matlabCompareTest) {
                            0.242914,
                            0.327526,
                            0.410389};
-  // numdims = 1
+  // ndim = 1
   std::vector<float> matlaboutput1d{0.004929,
                                     0.622218,
                                     0.070489,
@@ -38,7 +38,7 @@ TEST(PreEmphasisTest, matlabCompareTest) {
   // Implementation should match with matlab.
   ASSERT_TRUE(compareVec<float>(output1d, matlaboutput1d));
 
-  // numdims = 2
+  // ndim = 2
   PreEmphasis preemphasis2d(0.95, N / 2);
   std::vector<float> matlaboutput2d{0.004929,
                                     0.622218,
