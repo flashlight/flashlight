@@ -14,11 +14,16 @@ target_include_directories(
   )
 
 # Only build the library if the FL CUDA backend is enabled.
-if (NOT FL_USE_CUDA)
+if (NOT (CUDA_FOUND OR FL_USE_CUDA))
   message(
     STATUS
-    "FL_BACKEND is not CUDA - forcing FL_LIBRARIES_USE_CUDA to OFF")
+    "CUDA not found or not build - forcing FL_LIBRARIES_USE_CUDA to OFF")
   set(FL_LIBRARIES_USE_CUDA OFF)
+elseif(CUDA_FOUND)
+  message(
+    STATUS
+    "CUDA found or not build - forcing FL_LIBRARIES_USE_CUDA to ON")
+  set(FL_LIBRARIES_USE_CUDA ON)
 endif()
 
 # criterion-library
