@@ -14,7 +14,12 @@ target_sources(
   ${AUTOGRAD_SOURCES}
   )
 
+include(${CMAKE_CURRENT_LIST_DIR}/tensor/CMakeLists.txt)
+
 # ----------------------------- Autograd Backends -----------------------------
+# TODO: move to files in autograd/tensor/backend once AutogradExtensions for these
+# implementations are complete
+
 # CPU
 if (FL_USE_CPU)
   find_package(DNNL 2.0 CONFIG REQUIRED)
@@ -40,56 +45,6 @@ if (FL_USE_CPU)
     DNNL::dnnl
     )
 endif ()
-
-
-# CUDA
-if (FL_USE_CUDA)
-  find_package(CUDNN 7.1) # CUDNN 7.1 works with CUDA 9.2
-  if (CUDNN_FOUND)
-    message(STATUS "CUDNN found (library: ${CUDNN_LIBRARIES} include: ${CUDNN_INCLUDE_DIRS})")
-    setup_install_find_module(${CMAKE_MODULE_PATH}/FindCUDNN.cmake)
-  else()
-    message(STATUS "CUDNN not found")
-    message(FATAL_ERROR "CUDNN required to build CUDA backend")
-  endif()
-
-  set(
-    AUTOGRAD_CUDA_SOURCES
-    ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/BatchNorm.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/Conv2D.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/CudnnUtils.h
-    ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/CudnnUtils.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/Pool2D.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/backend/cuda/RNN.cpp
-    )
-
-  target_sources(
-    flashlight
-    PRIVATE
-    ${AUTOGRAD_CUDA_SOURCES}
-    )
-
-  target_link_libraries(
-    flashlight
-    PUBLIC
-    ${CUDA_LIBRARIES}
-    ${CUDNN_LIBRARIES}
-    )
-
-  target_include_directories(
-    flashlight
-    PUBLIC
-    ${CUDA_INCLUDE_DIRS}
-    ${CUDNN_INCLUDE_DIRS}
-    )
-
-  target_compile_definitions(
-    flashlight
-    PUBLIC
-    "-DNO_CUDNN_DESTROY_HANDLE"
-    )
-endif ()
-
 
 # OpenCL
 if (FL_USE_OPENCL)
