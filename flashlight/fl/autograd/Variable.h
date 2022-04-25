@@ -153,13 +153,13 @@ class Variable {
    * Returns whether the array wrapped by the Variable is contiguous in memory
    * in C order.
    */
-  bool isLinear() const;
+  bool isContiguous() const;
 
   /**
    * Returns a Variable with contiguous array containing the same data as self
    * array.
    */
-  Variable linear() const;
+  Variable asContiguous() const;
 
   /**
    * Returns the type of the `Tensor` wrapped by the Variable

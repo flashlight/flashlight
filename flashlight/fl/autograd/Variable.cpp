@@ -130,12 +130,12 @@ bool Variable::isempty() const {
   return tensor().isEmpty();
 }
 
-bool Variable::isLinear() const {
+bool Variable::isContiguous() const {
   return tensor().isContiguous();
 }
 
-Variable Variable::linear() const {
-  if (!isempty() && !isLinear()) {
+Variable Variable::asContiguous() const {
+  if (!isempty() && !isContiguous()) {
     tensor() = tensor().asContiguousTensor();
   }
   return *this;
