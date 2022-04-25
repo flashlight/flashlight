@@ -1,16 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
 
-# CUDA
-find_package(CUDNN 7.1) # CUDNN 7.1 works with CUDA 9.2
-if (CUDNN_FOUND)
-  message(STATUS "CUDNN found (library: ${CUDNN_LIBRARIES} include: ${CUDNN_INCLUDE_DIRS})")
-  setup_install_find_module(${CMAKE_MODULE_PATH}/FindCUDNN.cmake)
-else()
-  # TODO: just don't build the backend
-  message(STATUS "CUDNN not found")
-  message(FATAL_ERROR "CUDNN required to build CUDNN backend")
-endif()
-
 target_sources(
   flashlight
   PRIVATE
