@@ -18,7 +18,7 @@ std::vector<Variable> PrecisionCast::forward(
     const std::vector<Variable>& inputs) {
   std::vector<Variable> outputs;
   for (auto input : inputs) {
-    auto output = input.as(targetType_);
+    auto output = input.astype(targetType_);
     outputs.push_back(output);
   }
   return outputs;

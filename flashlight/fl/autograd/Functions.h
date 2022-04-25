@@ -53,12 +53,33 @@ bool areVariableTypesEqual(
  * Performs type conversion based on the optim level. Operations that lack
  * sufficient precision are automatically upcast to f32 before computation.
  * These are typically operations that require accumulations or reductions.
- *
- * TODO{fl::Tensor}{rewrite} remove specializations after renaming
- * Variable::as to Variable::astype?
  */
 template <typename T>
-T adjustInputType(const T& in, const char* funcname);
+T adjustInputType(const T& in, const char* funcname) {
+  OptimLevel optimLevel = OptimMode::get().getOptimLevel();
+  // Fastpath - DEFAULT mode never casts tensors
+  if (optimLevel == OptimLevel::DEFAULT) {
+    return in;
+  }
+
+  T res;
+  auto& funcs = kOptimLevelTypeExclusionMappings.find(optimLevel)->second;
+  // TODO: tiny, but this lookup incurs an extra alloc from char* to string
+  if (funcs.find(std::string(funcname)) == funcs.end() &&
+      optimLevel != OptimLevel::DEFAULT) {
+    // Not in the excluded list - cast to f16
+    res = in.astype(fl::dtype::f16);
+  } else {
+    // Upcast to f32 only if we have an f16 input - otherwise, leave as is
+    if (in.type() == fl::dtype::f16) {
+      res = in.astype(fl::dtype::f32);
+    } else {
+      res = in;
+    }
+  }
+
+  return res;
+}
 
 template <typename H, typename... T>
 std::shared_ptr<AutogradPayload> createAutogradPayload(H head, T... tail) {

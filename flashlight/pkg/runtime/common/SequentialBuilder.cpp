@@ -81,7 +81,7 @@ fl::Variable forwardSequentialModuleWithPadMask(
       output = module->forward({output}).front();
     }
   }
-  return output.as(input.type());
+  return output.astype(input.type());
 }
 } // namespace runtime
 } // namespace pkg

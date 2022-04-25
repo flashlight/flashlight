@@ -143,7 +143,7 @@ TEST_F(ModuleTestF16, LinearFwdF16) {
   ASSERT_TRUE(allClose(resultBias, expected_outVar, 1E-3));
 
   // OptimLevel::O3 is active with this fixture
-  ASSERT_EQ(linBias.forward(inVar.as(fl::dtype::f32)).type(), fl::dtype::f16);
+  ASSERT_EQ(linBias.forward(inVar.astype(fl::dtype::f32)).type(), fl::dtype::f16);
 }
 
 TEST(ModuleTest, ConvPadding) {
@@ -571,7 +571,7 @@ TEST_F(ModuleTestF16, RNNFwdF16) {
            16.5233, 14.0291, 15.3277, 16.6263, 14.1149, 15.4221, 16.7292,
            14.2008, 15.5165, 16.8322, 14.2866, 15.6109, 16.9351}),
       true);
-  ASSERT_TRUE(allClose(out, expected_outVar.as(in.type()), 5E-2));
+  ASSERT_TRUE(allClose(out, expected_outVar.astype(in.type()), 5E-2));
 }
 
 TEST(ModuleTest, ViewFwd) {
@@ -701,8 +701,8 @@ TEST_F(ModuleTestF16, LayerNormFwdF16) {
 
   auto sample_mean = mean(input, {3});
   auto sample_var = var(input, {3}, true);
-  auto true_out = (input - tileAs(sample_mean, input).as(input.type())) /
-      tileAs(fl::sqrt(sample_var + eps), input).as(input.type());
+  auto true_out = (input - tileAs(sample_mean, input).astype(input.type())) /
+      tileAs(fl::sqrt(sample_var + eps), input).astype(input.type());
 
   // no affine transform
   auto module1 = LayerNorm(feat_axes, eps, false);
@@ -710,7 +710,7 @@ TEST_F(ModuleTestF16, LayerNormFwdF16) {
   module1.train();
   auto out = module1.forward(input);
 
-  ASSERT_TRUE(allClose(out, true_out.as(out.type()), eps));
+  ASSERT_TRUE(allClose(out, true_out.astype(out.type()), eps));
 
   module1.eval();
   out = module1.forward(input);
@@ -760,7 +760,7 @@ TEST(ModuleTest, PrecisionCastFwd) {
   auto out = precisionCast.forward(in);
 
   ASSERT_EQ(out.type(), fl::dtype::f16);
-  ASSERT_TRUE(allClose(in.tensor(), out.as(fl::dtype::f32).tensor()));
+  ASSERT_TRUE(allClose(in.tensor(), out.astype(fl::dtype::f32).tensor()));
 }
 
 TEST(ModuleTest, ContainerReplaceParam) {

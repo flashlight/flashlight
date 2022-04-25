@@ -65,7 +65,7 @@ Variable VisionTransformer::gelu(const Variable& input) {
 Variable VisionTransformer::mlp(const Variable& input) {
   float pDropout = train_ ? pDropout_ : 0.0;
   auto output = (*w1_)(input);
-  output = gelu(output.as(fl::dtype::f32)).as(input.type());
+  output = gelu(output.astype(fl::dtype::f32)).astype(input.type());
   output = dropout(output, pDropout);
   output = (*w2_)(output);
   output = dropout(output, pDropout);

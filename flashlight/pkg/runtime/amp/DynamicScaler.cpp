@@ -23,7 +23,7 @@ DynamicScaler::DynamicScaler(
 
 fl::Variable DynamicScaler::scale(const fl::Variable& loss) {
   // Force casting to fp32 to avoid overflow in scaling.
-  auto scaledLoss = loss.as(fl::dtype::f32);
+  auto scaledLoss = loss.astype(fl::dtype::f32);
   scaledLoss = scaledLoss * scaleFactor_;
   return scaledLoss;
 }
