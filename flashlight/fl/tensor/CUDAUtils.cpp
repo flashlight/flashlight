@@ -5,22 +5,24 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/fl/common/backend/cuda/CudaUtils.h"
+#include "flashlight/fl/tensor/CUDAUtils.h"
+#include "flashlight/fl/tensor/CUDAStream.h"
 
 #include <sstream>
 #include <stdexcept>
 
-#include <af/device.h>
-
 #include "flashlight/fl/tensor/Compute.h"
+
+// TODO: remove me after removing the dependency on Tensor
+#include "flashlight/fl/tensor/TensorBackend.h"
 
 namespace fl {
 namespace cuda {
 
-// TODO{fl::Tensor}{CUDA} find a common abstraction for CUDA-enabled things
+// TODO{fl::Tensor}{CUDA} remove the dependency on Tensor so this can be
+// moved to a runtime abstraction
 cudaStream_t getActiveStream() {
-  auto af_id = fl::getDevice();
-  return afcu::getStream(af_id);
+  return Tensor().backend().getStream().impl<CUDAStream>().handle();
 }
 
 void synchronizeStreams(
