@@ -19,17 +19,24 @@ namespace fl {
 namespace lib {
 namespace audio {
 
+std::mutex PowerSpectrum::fftPlanMutex_;
+
 PowerSpectrum::PowerSpectrum(const FeatureParams& params)
     : featParams_(params),
       dither_(params.ditherVal),
       preEmphasis_(params.preemCoef, params.numFrameSizeSamples()),
       windowing_(params.numFrameSizeSamples(), params.windowType) {
+  // Need to lock plan creation, which only happens once per instance
+  // https://www.fftw.org/fftw3_doc/Thread-safety.html -- multiple threads can
+  // use the same plans with fftw_execute
+  std::lock_guard<std::mutex> lock(fftPlanMutex_);
+
   validatePowSpecParams();
   auto nFFt = featParams_.nFft();
   inFftBuf_.resize(nFFt, 0.0);
   outFftBuf_.resize(2 * nFFt);
-  fftPlan_ = std::make_unique<fftw_plan>(fftw_plan_dft_r2c_1d(
-      nFFt, inFftBuf_.data(), (fftw_complex*)outFftBuf_.data(), FFTW_MEASURE));
+  fftPlan_ = std::make_unique<fftw_plan>(std::move(fftw_plan_dft_r2c_1d(
+      nFFt, inFftBuf_.data(), (fftw_complex*)outFftBuf_.data(), FFTW_MEASURE)));
 }
 
 std::vector<float> PowerSpectrum::apply(const std::vector<float>& input) {

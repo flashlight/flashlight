@@ -61,6 +61,7 @@ class PowerSpectrum {
   std::unique_ptr<fftw_plan> fftPlan_; // fftw_plan is an opque pointer type
   std::vector<double> inFftBuf_, outFftBuf_;
   std::mutex fftMutex_;
+  static std::mutex fftPlanMutex_;
 };
 } // namespace audio
 } // namespace lib
