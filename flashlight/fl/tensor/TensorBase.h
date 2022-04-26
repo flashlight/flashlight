@@ -245,7 +245,7 @@ class Tensor {
    *
    * @return the size of the tensor in elements.
    */
-  size_t size() const;
+  size_t elements() const;
 
   /**
    * Get the size of a given dimension of a tensor in the number of arguments.
@@ -490,7 +490,7 @@ class Tensor {
     if (isEmpty()) {
       return std::vector<T>();
     }
-    std::vector<T> vec(this->size());
+    std::vector<T> vec(this->elements());
     host(vec.data());
     return vec;
   }
