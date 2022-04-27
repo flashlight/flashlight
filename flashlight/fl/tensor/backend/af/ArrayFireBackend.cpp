@@ -45,7 +45,8 @@ af::array afReduceAxes(
   return fl::detail::condenseIndices(arr, keepDims);
 }
 
-unsigned getReducedNumDims(unsigned inSize, unsigned axisSize, const bool keepDims) {
+unsigned
+getReducedNumDims(unsigned inSize, unsigned axisSize, const bool keepDims) {
   if (keepDims) {
     return inSize;
   } else {
@@ -522,7 +523,7 @@ void ArrayFireBackend::topk(
       toArray(input),
       k,
       axis,
-      detail::flToAfSortMode(sortMode));
+      detail::flToAfTopKSortMode(sortMode));
 
   values = toTensor<ArrayFireTensor>(std::move(valuesArr), input.ndim());
   indices = toTensor<ArrayFireTensor>(std::move(indicesArr), input.ndim());
