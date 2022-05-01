@@ -55,10 +55,12 @@ class Conformer : public Container {
   double pDropout_;
   float pLayerDropout_;
 
-  std::shared_ptr<Linear> w11_, w12_, w21_, w22_, wq_, wk_, wv_, wf_, conv1_, conv2_;
+  std::shared_ptr<Linear> w11_, w12_, w21_, w22_, wq_, wk_, wv_, wf_, conv1_,
+      conv2_;
   std::shared_ptr<LayerNorm> norm1_, norm2_, normMhsa_, normConv1_, normConv2_,
       norm3_;
   std::shared_ptr<Conv2D> convDepthWise_;
+  int forwardVersion_{0};
 
   static Variable conformerInitLinear(int32_t inDim, int32_t outDim);
   Variable mhsa(const Variable& input, const Variable& inputPadMask);
@@ -89,9 +91,11 @@ class Conformer : public Container {
       pDropout_,
       pLayerDropout_,
       posEmbContextSize_,
-      convKernelSize_)
+      convKernelSize_,
+      fl::versioned(forwardVersion_))
 };
 
 } // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::Conformer);
+CEREAL_CLASS_VERSION(fl::Conformer, 1);

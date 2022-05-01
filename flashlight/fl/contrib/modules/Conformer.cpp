@@ -82,7 +82,8 @@ Conformer::Conformer(
           1,
           1,
           true,
-          modelDim)) {
+          modelDim)),
+      forwardVersion_(1) {
   if (posEmbContextSize_ > 0) {
     params_.push_back(uniform(2 * posEmbContextSize_ - 1, headDim, -0.1, 0.1));
   }
@@ -137,7 +138,11 @@ Variable Conformer::mhsa(const Variable& input, const Variable& inputPadMask) {
   auto result =
       multiheadAttention(q, k, v, posEmb, mask, padMask, nHeads_, pDropout, 0);
   result = (*wf_)(transpose(result));
-  result = dropout(result, pDropout);
+  if (forwardVersion_ == 0) {
+    result = input + dropout(result, pDropout);
+  } else {
+    result = dropout(result, pDropout);
+  }
   return result;
 }
 
@@ -147,7 +152,11 @@ Variable Conformer::conv(const Variable& input) {
   // apply first pointwise conv
   auto result =
       gatedlinearunit((*conv1_)(((*normConv1_)(input)).as(input.type())), 0);
-  result = reorder(result, 1, 3, 0, 2);
+  if (forwardVersion_ == 0) {
+    result = reorder(input, 1, 3, 0, 2);
+  } else {
+    result = reorder(result, 1, 3, 0, 2);
+  }
   // T x 1 x C x B
   // apply depthwise separable convolutions
   result = (*convDepthWise_)(result);
@@ -156,6 +165,9 @@ Variable Conformer::conv(const Variable& input) {
   result = fl::swish(((*normConv2_)(result)).as(input.type()), 1.);
   // apply second pointwise conv
   result = dropout((*conv2_)(result), pDropout);
+  if (forwardVersion_ == 0) {
+    return result + input;
+  }
   return result;
 }
 
@@ -172,22 +184,26 @@ std::vector<Variable> Conformer::forward(const std::vector<Variable>& input) {
   }
   auto x = input[0];
   // apply first feed-forward module
-  auto ffn1 =
-      dropout(
-          (*w12_)(dropout(
-              fl::swish((*w11_)(((*norm1_)(x)).as(x.type())), 1.), pDropout)),
-          pDropout);
+  auto ffn1 = dropout(
+      (*w12_)(dropout(
+          fl::swish((*w11_)(((*norm1_)(x)).as(x.type())), 1.), pDropout)),
+      pDropout);
+  if (forwardVersion_ == 0) {
+    ffn1 = ffn1 + x;
+  }
   x = x + f * 0.5 * ffn1;
   // apply multihead attention module
   x = x + f * mhsa(x, input[1]);
   // apply conv module
   x = x + f * conv(x);
   // apply second feed-forward module
-  auto ffn2 =
-      dropout(
-          (*w22_)(dropout(
-              fl::swish((*w21_)(((*norm2_)(x)).as(x.type())), 1.), pDropout)),
-          pDropout);
+  auto ffn2 = dropout(
+      (*w22_)(dropout(
+          fl::swish((*w21_)(((*norm2_)(x)).as(x.type())), 1.), pDropout)),
+      pDropout);
+  if (forwardVersion_ == 0) {
+    ffn2 = ffn2 + x;
+  }
   x = x + f * 0.5 * ffn2;
   x = ((*norm3_)(x)).as(x.type());
   return {x};
