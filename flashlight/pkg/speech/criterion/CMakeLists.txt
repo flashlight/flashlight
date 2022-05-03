@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
 # ---------------------------- Backend-specific -----------------------------
-if (FL_BACKEND STREQUAL "CUDA")
-  set(FL_USE_CUDA ON)
-endif ()
-
 if (FL_USE_CUDA)
   # Build WarpCTC
   set(WARPCTC_DIR ${FL_PKG_SPEECH_DIR}/third_party/warpctc)
@@ -52,7 +48,7 @@ elseif (FL_USE_CPU OR FL_USE_OPENCL)
 else ()
   message(
     FATAL_ERROR
-    "wav2letter criterions not implemented for ${FL_BACKEND} backend"
+    "Invalid backend for building wav2letter criterions"
     )
 endif ()
 
