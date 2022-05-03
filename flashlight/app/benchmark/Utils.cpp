@@ -14,7 +14,6 @@ namespace app {
 namespace benchmark {
 
 void init() {
-  af::deviceGC();
   fl::DynamicBenchmark::setBenchmarkMode(true);
   fl::OptimMode::get().setOptimLevel(fl::OptimLevel::DEFAULT);
 }
@@ -51,11 +50,7 @@ void printInfo(
                      "%.2f", benchmarker.getOptimizationTime() * 1000);
     std::cout << std::endl;
 
-    auto* curMemMgr =
-        fl::MemoryManagerInstaller::currentlyInstalledMemoryManager();
-    if (curMemMgr) {
-      curMemMgr->printInfo("Memory Manager Stats", 0 /* device id */);
-    }
+    fl::detail::getMemMgrInfo("Memory Manager Stats", /* device id = */ 0);
   }
 }
 
