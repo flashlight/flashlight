@@ -34,8 +34,8 @@ AdamOptimizer::AdamOptimizer(
   biasedSecond_.reserve(parameters.size());
 
   for (const auto& parameter : parameters_) {
-    biasedFirst_.emplace_back(fl::full(parameter.dims(), 0, parameter.type()));
-    biasedSecond_.emplace_back(fl::full(parameter.dims(), 0, parameter.type()));
+    biasedFirst_.emplace_back(fl::full(parameter.shape(), 0, parameter.type()));
+    biasedSecond_.emplace_back(fl::full(parameter.shape(), 0, parameter.type()));
 
     fl::eval(biasedFirst_.back());
     fl::eval(biasedSecond_.back());

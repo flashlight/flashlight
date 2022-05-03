@@ -111,7 +111,7 @@ std::vector<Variable> Detr::forwardTransformer(
   // input: {feature, mask}
   fl::Variable mask = fl::Variable(
       fl::resize(
-          input[1].tensor(), {input[0].dims()}, InterpolationMode::Nearest),
+          input[1].tensor(), {input[0].shape()}, InterpolationMode::Nearest),
       true);
   auto inputProjection = inputProj_->forward(input[0]);
   auto posEmbed = posEmbed_->forward({mask})[0];

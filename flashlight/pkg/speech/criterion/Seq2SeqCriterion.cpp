@@ -202,10 +202,10 @@ std::pair<Variable, Variable> Seq2SeqCriterion::vectorizedDecoder(
             "vectorizedDecoder does not support model sampling");
       } else if (samplingStrategy_ == fl::pkg::speech::kRandSampling) {
         auto mask = Variable(
-            (fl::rand(y.dims()) * 100 <= pctTeacherForcing_).astype(y.type()),
+            (fl::rand(y.shape()) * 100 <= pctTeacherForcing_).astype(y.type()),
             false);
         auto samples = Variable(
-            (fl::rand(y.dims()) * (nClass_ - 1)).astype(y.type()), false);
+            (fl::rand(y.shape()) * (nClass_ - 1)).astype(y.type()), false);
 
         y = mask * y + (1 - mask) * samples;
       }
@@ -260,7 +260,7 @@ std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
       y = target(fl::range(u, u), fl::span);
     } else if (samplingStrategy_ == fl::pkg::speech::kGumbelSampling) {
       double eps = 1e-7;
-      auto gb = -log(-log((1 - 2 * eps) * fl::rand(ox.dims()) + eps));
+      auto gb = -log(-log((1 - 2 * eps) * fl::rand(ox.shape()) + eps));
       ox = logSoftmax((ox + Variable(gb, false)) / gumbelTemperature_, 0);
       y = Variable(exp(ox).tensor(), false);
     } else if (fl::all(fl::rand({1}) * 100 <= fl::full({1}, pctTeacherForcing_))
@@ -483,7 +483,7 @@ std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
   }
 
   if (inputFeeding_ && !y.isempty()) {
-    hy = hy + moddims(inState.summary, hy.dims());
+    hy = hy + moddims(inState.summary, hy.shape());
   }
   hy = moddims(hy, {hy.dims(0), -1}); // H x B
 
@@ -543,7 +543,7 @@ Seq2SeqCriterion::decodeBatchStep(
     } else {
       ys[i] = embedding()->forward(ys[i]);
       if (inputFeeding_) {
-        ys[i] = ys[i] + moddims(inStates[i]->summary, ys[i].dims());
+        ys[i] = ys[i] + moddims(inStates[i]->summary, ys[i].shape());
       }
     }
     ys[i] = moddims(ys[i], {ys[i].dims(0), -1});

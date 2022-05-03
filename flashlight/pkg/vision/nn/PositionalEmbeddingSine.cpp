@@ -34,7 +34,7 @@ std::vector<Variable> PositionalEmbeddingSine::forward(
   assert(inputs.size() == 1);
   auto input = inputs[0];
 
-  auto inputDims = input.dims();
+  auto inputDims = input.shape();
   // Input mask will be [ w x h x 1 x b ]
   // but implementation expects [ w x h x b ] in order to do interleaves easier
   auto nonMask = fl::reshape(

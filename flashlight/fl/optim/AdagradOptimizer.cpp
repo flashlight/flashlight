@@ -23,7 +23,7 @@ AdagradOptimizer::AdagradOptimizer(
       wd_(weightDecay) {
   variance_.reserve(parameters.size());
   for (const auto& param : parameters_) {
-    variance_.push_back(fl::full(param.dims(), 0, param.type()));
+    variance_.push_back(fl::full(param.shape(), 0, param.type()));
     fl::eval(variance_.back());
   }
 }

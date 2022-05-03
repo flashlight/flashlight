@@ -34,7 +34,7 @@ NovogradOptimizer::NovogradOptimizer(
 
   for (const auto& parameter : parameters_) {
     accGradNorm_.emplace_back(0.0);
-    accGrad_.emplace_back(fl::full(parameter.dims(), 0, parameter.type()));
+    accGrad_.emplace_back(fl::full(parameter.shape(), 0, parameter.type()));
 
     fl::eval(accGrad_.back());
   }
