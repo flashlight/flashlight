@@ -7,7 +7,7 @@
 
 #include "flashlight/fl/meter/AverageValueMeter.h"
 
-#include <array>
+#include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 
@@ -35,7 +35,7 @@ void AverageValueMeter::add(const double val, const double w /* = 1.0 */) {
       curMeanSquaredSum_ + w * (val * val - curMeanSquaredSum_) / curWeightSum_;
 }
 
-void AverageValueMeter::add(const af::array& vals) {
+void AverageValueMeter::add(const Tensor& vals) {
   double w = vals.elements();
   curWeightSum_ += w;
   curWeightSquaredSum_ += w;
@@ -44,9 +44,11 @@ void AverageValueMeter::add(const af::array& vals) {
     return;
   }
 
-  curMean_ = curMean_ + (af::sum<double>(vals) - w * curMean_) / curWeightSum_;
+  curMean_ = curMean_ +
+      (fl::sum(vals).asScalar<double>() - w * curMean_) / curWeightSum_;
   curMeanSquaredSum_ = curMeanSquaredSum_ +
-      (af::sum<double>(vals * vals) - w * curMeanSquaredSum_) / curWeightSum_;
+      (fl::sum(vals * vals).asScalar<double>() - w * curMeanSquaredSum_) /
+          curWeightSum_;
 }
 
 std::vector<double> AverageValueMeter::value() const {

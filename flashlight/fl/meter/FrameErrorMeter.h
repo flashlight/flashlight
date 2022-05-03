@@ -7,9 +7,11 @@
 
 #pragma once
 
-#include <arrayfire.h>
+#include <cstdint>
 
 namespace fl {
+
+class Tensor;
 
 /** An implementation of frame error meter, which measures the frame-level or
  * element-level mismatch between targets and predictions made by the model.
@@ -38,7 +40,7 @@ class FrameErrorMeter {
    * `target` and updates the counters. Note that the shape of the two input
    * arrays should be identical.
    */
-  void add(const af::array& output, const af::array& target);
+  void add(const Tensor& output, const Tensor& target);
 
   /** Returns a single value in percentage. If `accuracy` is `True`, the value
    * returned is accuracy, error otherwise.
@@ -49,8 +51,8 @@ class FrameErrorMeter {
   void reset();
 
  private:
-  int64_t n_;
-  int64_t sum_;
+  std::int64_t n_;
+  std::int64_t sum_;
   bool accuracy_;
 };
 } // namespace fl
