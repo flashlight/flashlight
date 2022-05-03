@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <arrayfire.h>
-
 #include "flashlight/lib/set/Hungarian.h"
 
 #include <gtest/gtest.h>
@@ -154,20 +152,6 @@ TEST(HungarianTest, 6x6Example2) {
   }
 }
 
-// af::array cxcywh_to_xyxy(af::array bbox) {
-// af::array transformed = af::constant(0, bbox.dims());
-// for(int i = 0; i < bbox.dims(1); i++) {
-// float x_c = bbox(i, 0);
-// float y_c = bbox(i, 1);
-// float w = bbox(i, 2);
-// float h = bbox(i, 3);
-// transformed(0, i) = x_c - 0.5 * w;
-// transformed(1, i) = y_c - 0.5 * h;
-// transformed(2, i) = x_c + 0.5 * w;
-// transformed(3, i) = y_c + 0.5 * h;
-//}
-
-//}
 TEST(HungarianTest, NonSquare2) {
   int M = 1; // Rows
   int N = 2; // Columns
