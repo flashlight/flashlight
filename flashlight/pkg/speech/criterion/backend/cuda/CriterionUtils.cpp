@@ -7,10 +7,11 @@
 
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
-#include "flashlight/fl/common/backend/cuda/cuda.h"
-
 #include <stdexcept>
+
 #include "flashlight/fl/common/DevicePtr.h"
+#include "flashlight/fl/tensor/CUDAStream.h"
+#include "flashlight/fl/tensor/TensorBackend.h"
 #include "flashlight/lib/sequence/criterion/cuda/CriterionUtils.cuh"
 #include "flashlight/lib/sequence/criterion/cuda/ViterbiPath.cuh"
 
@@ -62,7 +63,7 @@ Tensor viterbiPath(const Tensor& input, const Tensor& trans) {
         static_cast<const float*>(transRaw.get()),
         static_cast<int*>(pathRaw.get()),
         workspaceRaw.get(),
-        fl::cuda::getActiveStream());
+        input.backend().getStream().impl<CUDAStream>().handle());
   }
 
   return path;
@@ -84,7 +85,7 @@ Tensor getTargetSizeArray(const Tensor& target, int maxSize) {
         maxSize,
         static_cast<const int*>(targetRaw.get()),
         static_cast<int*>(targetSizeRaw.get()),
-        fl::cuda::getActiveStream());
+        target.backend().getStream().impl<CUDAStream>().handle());
   }
 
   return targetSize;
