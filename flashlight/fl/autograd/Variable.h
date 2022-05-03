@@ -122,7 +122,7 @@ class Variable {
    *
    * @return returns the casted variable.
    */
-  Variable as(fl::dtype type) const;
+  Variable astype(fl::dtype type) const;
 
   /**
    * @return a reference to the underlying gradient Variable.

@@ -286,7 +286,7 @@ SetCriterion::LossDict SetCriterion::lossLabels(
       fl::Variable(target_classes_full.astype(fl::dtype::f32), false),
       weightVar,
       -1);
-  return {{"lossCe", lossCe.as(predLogits.type())}};
+  return {{"lossCe", lossCe.astype(predLogits.type())}};
 }
 
 std::unordered_map<std::string, float> SetCriterion::getWeightDict() {

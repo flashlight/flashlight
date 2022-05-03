@@ -239,10 +239,10 @@ TEST(AutogradTest, CastingAs) {
   }
 
   auto var = Variable(fl::rand({5, 5}), true);
-  auto varF16 = var.as(fl::dtype::f16);
+  auto varF16 = var.astype(fl::dtype::f16);
   ASSERT_EQ(var.type(), fl::dtype::f32);
   ASSERT_EQ(varF16.type(), fl::dtype::f16);
-  ASSERT_TRUE(allClose(varF16.tensor(), var.as(fl::dtype::f16).tensor()));
+  ASSERT_TRUE(allClose(varF16.tensor(), var.astype(fl::dtype::f16).tensor()));
 }
 
 TEST(AutogradTest, CastingAsBackward) {
@@ -256,7 +256,7 @@ TEST(AutogradTest, CastingAsBackward) {
   c.backward();
   ASSERT_EQ(a.grad().type(), fl::dtype::f16);
   ASSERT_EQ(a.grad().type(), fl::dtype::f16);
-  a = a.as(fl::dtype::f32);
+  a = a.astype(fl::dtype::f32);
   ASSERT_FALSE(a.isGradAvailable());
 }
 
@@ -277,10 +277,10 @@ TEST(AutogradTest, CastingAsGrad) {
   // f16 -- cast gradients in both directions
   auto x32 = Variable(fl::full({5}, 2.0), true);
   auto y32 = Variable(fl::full({5}, 3.0), true);
-  auto xf16 = x32.as(fl::dtype::f16);
-  auto yf16 = y32.as(fl::dtype::f16);
+  auto xf16 = x32.astype(fl::dtype::f16);
+  auto yf16 = y32.astype(fl::dtype::f16);
   auto zf16 = xf16 * xf16 + xf16 * yf16 + yf16 * yf16;
-  auto zf32 = zf16.as(fl::dtype::f32);
+  auto zf32 = zf16.astype(fl::dtype::f32);
   zf32.backward(dz);
 
   ASSERT_EQ(xf16.grad().type(), fl::dtype::f16);
@@ -1293,8 +1293,8 @@ void testRnnImpl(RnnMode mode, fl::dtype precision = fl::dtype::f64) {
   auto funcRnnIn = [&](Variable& input) -> Variable {
     return std::get<0>(
         rnn(input,
-            Variable().as(precision),
-            Variable().as(precision),
+            Variable().astype(precision),
+            Variable().astype(precision),
             w,
             hiddenSize,
             numLayers,
@@ -1307,8 +1307,8 @@ void testRnnImpl(RnnMode mode, fl::dtype precision = fl::dtype::f64) {
   auto funcRnnW = [&](Variable& weights) -> Variable {
     return std::get<0>(
         rnn(in,
-            Variable().as(precision),
-            Variable().as(precision),
+            Variable().astype(precision),
+            Variable().astype(precision),
             weights,
             hiddenSize,
             numLayers,
@@ -1327,8 +1327,8 @@ void testRnnImpl(RnnMode mode, fl::dtype precision = fl::dtype::f64) {
   auto funcRnnHx = [&](Variable& hiddenState) -> Variable {
     return std::get<0>(
         rnn(in,
-            hiddenState.as(precision),
-            Variable().as(precision),
+            hiddenState.astype(precision),
+            Variable().astype(precision),
             w,
             hiddenSize,
             numLayers,
@@ -1342,8 +1342,8 @@ void testRnnImpl(RnnMode mode, fl::dtype precision = fl::dtype::f64) {
   auto funcRnnInDhy = [&](Variable& input) -> Variable {
     return std::get<1>(
         rnn(input,
-            Variable().as(precision),
-            Variable().as(precision),
+            Variable().astype(precision),
+            Variable().astype(precision),
             w,
             hiddenSize,
             numLayers,
@@ -1364,8 +1364,8 @@ void testRnnImpl(RnnMode mode, fl::dtype precision = fl::dtype::f64) {
     auto funcRnnCx = [&](Variable& cellState) -> Variable {
       return std::get<0>(
           rnn(in,
-              Variable().as(precision),
-              cellState.as(precision),
+              Variable().astype(precision),
+              cellState.astype(precision),
               w,
               hiddenSize,
               numLayers,
@@ -1380,8 +1380,8 @@ void testRnnImpl(RnnMode mode, fl::dtype precision = fl::dtype::f64) {
     auto funcRnnInDcy = [&](Variable& input) -> Variable {
       return std::get<2>(
           rnn(input,
-              Variable().as(precision),
-              Variable().as(precision),
+              Variable().astype(precision),
+              Variable().astype(precision),
               w,
               hiddenSize,
               numLayers,

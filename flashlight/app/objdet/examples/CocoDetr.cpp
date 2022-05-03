@@ -465,7 +465,7 @@ int main(int argc, char** argv) {
       sampleTimerMeter.resume();
       auto input = fl::Variable(sample.images, false);
       auto mask = fl::Variable(sample.masks, false);
-      input = input.as(dataType);
+      input = input.astype(dataType);
       std::vector<Variable> targetBoxes(sample.target_boxes.size());
       std::vector<Variable> targetClasses(sample.target_labels.size());
       std::transform(

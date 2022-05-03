@@ -138,7 +138,7 @@ Variable AdaptiveSoftMaxLoss::forward(
     }
 
     auto indicesArray = fl::nonzero(mask.tensor());
-    headTarget = headTarget + (mask * (cutoff[0] + i)).as(headTarget.type());
+    headTarget = headTarget + (mask * (cutoff[0] + i)).astype(headTarget.type());
     auto tailTarget = target(indicesArray) - cutoff[i];
     auto selectedInput = embedding(Variable(indicesArray, false), input);
     auto tailOutput = matmul(params_[1 + i * 2], selectedInput);
