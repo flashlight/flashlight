@@ -113,7 +113,8 @@ MemoryManagerInstaller::MemoryManagerInstaller(
       itf, signalMemoryCleanupFn));
   auto printInfoFn = [](af_memory_manager manager, char* msg, int device) {
     // no log
-    MemoryManagerInstaller::getImpl(manager)->printInfo(msg, device);
+    auto* adapter = MemoryManagerInstaller::getImpl(manager);
+    adapter->printInfo(msg, device, adapter->getLogStream());
     return AF_SUCCESS;
   };
   AF_CHECK(af_memory_manager_set_print_info_fn(itf, printInfoFn));

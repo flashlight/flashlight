@@ -48,6 +48,10 @@ void MemoryManagerAdapter::setLogStream(std::ostream* logStream) {
   logStream_ = logStream;
 }
 
+std::ostream* MemoryManagerAdapter::getLogStream() const {
+  return logStream_;
+}
+
 void MemoryManagerAdapter::setLoggingEnabled(bool log) {
   loggingEnabled_ = log;
 }
