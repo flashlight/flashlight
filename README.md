@@ -197,8 +197,8 @@ mkdir -p build && cd build
 Then, build from source using `vcpkg`'s [CMake toolchain](https://github.com/microsoft/vcpkg/blob/master/docs/users/integration.md#cmake-toolchain-file-recommended-for-open-source-cmake-projects):
 ```shell
 cmake .. \
-    -DCMAKE_BUILD_TYPE=Release
-    -DFL_BACKEND=CUDA
+    -DCMAKE_BUILD_TYPE=Release \
+    -DFL_BUILD_ARRAYFIRE=ON \
     -DCMAKE_TOOLCHAIN_FILE=[path to your vcpkg clone]/scripts/buildsystems/vcpkg.cmake
 make -j$(nproc)
 make install -j$(nproc) # only if you want to install Flashlight for external use
@@ -217,7 +217,7 @@ mkdir -p build && cd build
 ```
 Then build all Flashlight components with:
 ```
-cmake .. -DCMAKE_BUILD_TYPE=Release -DFL_BACKEND=[backend] [...build options]
+cmake .. -DCMAKE_BUILD_TYPE=Release -DFL_BUILD_ARRAYFIRE=ON [...build options]
 make -j$(nproc)
 make install
 ```
@@ -304,186 +304,125 @@ Dependencies marked with `†` are installable via `vcpkg`. See the [instruction
 #### Build Options
 The Flashlight CMake build accepts the following build options (prefixed with `-D` when running CMake from the command line):
 
-<div class="tg-wrap"><table>
+<style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg .tg-cly1{text-align:left;vertical-align:middle}
+.tg .tg-g7sd{border-color:inherit;font-weight:bold;text-align:left;vertical-align:middle}
+.tg .tg-yla0{font-weight:bold;text-align:left;vertical-align:middle}
+.tg .tg-0lax{text-align:left;vertical-align:top}
+</style>
+<table class="tg">
 <thead>
   <tr>
-    <th>Name</th>
-    <th>Options</th>
-    <th>Default Value</th>
-    <th>Description</th>
+    <th class="tg-g7sd"><span style="font-weight:bold">Name</span></th>
+    <th class="tg-yla0"><span style="font-weight:bold">Options</span></th>
+    <th class="tg-yla0"><span style="font-weight:bold">Default Value</span></th>
+    <th class="tg-yla0"><span style="font-weight:bold">Description</span></th>
   </tr>
 </thead>
 <tbody>
   <tr>
-    <td>FL_BACKEND</td>
-    <td>CUDA, CPU, OPENCL</td>
-    <td>CUDA</td>
-    <td>Backend with which to build all components.</td>
+    <td class="tg-0lax">FL_BUILD_ARRAYFIRE</td>
+    <td class="tg-0lax">ON, OFF</td>
+    <td class="tg-0lax">ON</td>
+    <td class="tg-cly1">Build Flashlight with the ArrayFire backend.</td>
   </tr>
   <tr>
-    <td>FL_BUILD_STANDALONE</td>
-    <td>ON, OFF</td>
-    <td>ON</td>
-    <td>Downloads/builds some dependencies if not found.</td>
+    <td class="tg-0lax">FL_BUILD_STANDALONE</td>
+    <td class="tg-0lax">ON, OFF</td>
+    <td class="tg-0lax">ON</td>
+    <td class="tg-cly1">Downloads/builds some dependencies if not found.</td>
   </tr>
   <tr>
-    <td>FL_BUILD_ALL_LIBS</td>
-    <td>ON, OFF</td>
-    <td>OFF</td>
-    <td>Build all the Flashlight libraries.</td>
+    <td class="tg-0lax">FL_BUILD_LIBRARIES</td>
+    <td class="tg-0lax">ON, OFF</td>
+    <td class="tg-0lax">ON</td>
+    <td class="tg-cly1">Build the Flashlight libraries.</td>
   </tr>
   <tr>
-    <td>FL_BUILD_LIB_SET</td>
-    <td>ON, OFF</td>
-    <td>OFF</td>
-    <td>Build the Flashlight set library.</td>
+    <td class="tg-0lax">FL_BUILD_CORE</td>
+    <td class="tg-0lax">ON, OFF</td>
+    <td class="tg-0lax">ON</td>
+    <td class="tg-cly1">Build the Flashlight neural net library.</td>
   </tr>
   <tr>
-    <td>FL_BUILD_LIB_SEQUENCE</td>
-    <td>ON, OFF</td>
-    <td>OFF</td>
-    <td>Build the Flashlight sequence library.</td>
+    <td class="tg-0lax">FL_BUILD_DISTRIBUTED</td>
+    <td class="tg-0lax">ON, OFF</td>
+    <td class="tg-0lax">ON</td>
+    <td class="tg-cly1">Build with distributed training; required for apps.</td>
   </tr>
   <tr>
-    <td>FL_BUILD_LIB_AUDIO</td>
-    <td>ON, OFF</td>
-    <td>OFF</td>
-    <td>Build the Flashlight audio library.</td>
+    <td class="tg-0lax">FL_BUILD_CONTRIB</td>
+    <td class="tg-0lax">ON, OFF</td>
+    <td class="tg-0lax">ON</td>
+    <td class="tg-cly1">Build contrib APIs subject to breaking changes.</td>
   </tr>
   <tr>
-    <td>FL_BUILD_LIB_COMMON</td>
-    <td>ON, OFF</td>
-    <td>OFF</td>
-    <td>Build the Flashlight common library.</td>
+    <td class="tg-0lax">FL_BUILD_APPS</td>
+    <td class="tg-0lax">ON, OFF</td>
+    <td class="tg-0lax">ON</td>
+    <td class="tg-cly1">Build applications (see below).</td>
   </tr>
   <tr>
-    <td>FL_BUILD_LIB_TEXT</td>
-    <td>ON, OFF</td>
-    <td>OFF</td>
-    <td>Build the Flashlight text library.</td>
+    <td class="tg-0lax">FL_BUILD_APP_ASR</td>
+    <td class="tg-0lax">ON, OFF</td>
+    <td class="tg-0lax">ON</td>
+    <td class="tg-cly1">Build the automatic speech recognition application.</td>
   </tr>
   <tr>
-    <td>FL_BUILD_CORE</td>
-    <td>ON, OFF</td>
-    <td>ON</td>
-    <td>Build the Flashlight neural net library.</td>
+    <td class="tg-0lax">FL_BUILD_APP_IMGCLASS</td>
+    <td class="tg-0lax">ON, OFF</td>
+    <td class="tg-0lax">ON</td>
+    <td class="tg-cly1">Build the image classification application.</td>
   </tr>
   <tr>
-    <td>FL_BUILD_DISTRIBUTED</td>
-    <td>ON, OFF</td>
-    <td>ON</td>
-    <td>Build with distributed training; required for apps.</td>
+    <td class="tg-0lax">FL_BUILD_APP_LM</td>
+    <td class="tg-0lax">ON, OFF</td>
+    <td class="tg-0lax">ON</td>
+    <td class="tg-cly1">Build the language modeling application.</td>
   </tr>
   <tr>
-    <td>FL_BUILD_CONTRIB</td>
-    <td>ON, OFF</td>
-    <td>ON</td>
-    <td>Build contrib APIs subject to breaking changes.</td>
+    <td class="tg-0lax">FL_BUILD_APP_ASR_TOOLS</td>
+    <td class="tg-0lax">ON, OFF</td>
+    <td class="tg-0lax">ON</td>
+    <td class="tg-cly1">Build automatic speech recognition app tools.</td>
   </tr>
   <tr>
-    <td>FL_BUILD_ALL_PKGS</td>
-    <td>ON, OFF</td>
-    <td>OFF</td>
-    <td>Defines default value for every pkg (see below).</td>
+    <td class="tg-0lax">FL_BUILD_TESTS</td>
+    <td class="tg-0lax">ON, OFF</td>
+    <td class="tg-0lax">ON</td>
+    <td class="tg-cly1">Build tests.</td>
   </tr>
   <tr>
-    <td>FL_BUILD_PKG_RUNTIME</td>
-    <td>ON, OFF</td>
-    <td> FL_BUILD_ALL_PKGS </td>
-    <td> Build the runtime package </td>
+    <td class="tg-0lax">FL_BUILD_EXAMPLES</td>
+    <td class="tg-0lax">ON, OFF</td>
+    <td class="tg-0lax">ON</td>
+    <td class="tg-cly1">Build examples.</td>
   </tr>
   <tr>
-    <td>FL_BUILD_PKG_VISION</td>
-    <td>ON, OFF</td>
-    <td> FL_BUILD_ALL_PKGS </td>
-    <td> Build the flashlight vision package </td>
+    <td class="tg-0lax">FL_BUILD_EXPERIMENTAL</td>
+    <td class="tg-0lax">ON, OFF</td>
+    <td class="tg-0lax">OFF</td>
+    <td class="tg-cly1">Build experimental components.</td>
   </tr>
   <tr>
-    <td>FL_BUILD_PKG_TEXT</td>
-    <td>ON, OFF</td>
-    <td> FL_BUILD_ALL_PKGS </td>
-    <td> Build the flashlight text package </td>
+    <td class="tg-0lax">CMAKE_BUILD_TYPE</td>
+    <td class="tg-0lax">See <a href="https://cmake.org/cmake/help/v3.10/variable/CMAKE_BUILD_TYPE.html">docs</a>.</td>
+    <td class="tg-0lax">Debug</td>
+    <td class="tg-cly1">See the <a href="https://cmake.org/cmake/help/v3.10/variable/CMAKE_BUILD_TYPE.html">CMake documentation</a>.</td>
   </tr>
   <tr>
-    <td>FL_BUILD_PKG_SPEECH</td>
-    <td>ON, OFF</td>
-    <td> FL_BUILD_ALL_PKGS </td>
-    <td> Build the flashlight speech package </td>
-  </tr>
-  <tr>
-    <td>FL_BUILD_PKG_HALIDE</td>
-    <td>ON, OFF</td>
-    <td> FL_BUILD_ALL_PKGS </td>
-    <td> Build the flashlight halide package </td>
-  </tr>
-  <tr>
-    <td>FL_BUILD_ALL_APPS</td>
-    <td>ON, OFF</td>
-    <td>OFF</td>
-    <td>Defines default value for every app (see below).</td>
-  </tr>
-  <tr>
-    <td>FL_BUILD_APP_ASR</td>
-    <td>ON, OFF</td>
-    <td>FL_BUILD_ALL_APPS</td>
-    <td>Build the automatic speech recognition app.</td>
-  </tr>
-  <tr>
-    <td>FL_BUILD_APP_IMGCLASS</td>
-    <td>ON, OFF</td>
-    <td>FL_BUILD_ALL_APPS</td>
-    <td>Build the image classification app.</td>
-  </tr>
-    <tr>
-    <td>FL_BUILD_APP_OBJDET</td>
-    <td>ON, OFF</td>
-    <td>FL_BUILD_ALL_APPS</td>
-    <td>Build automatic speech recognition app tools.</td>
-  </tr>
-  <tr>
-    <td>FL_BUILD_APP_LM</td>
-    <td>ON, OFF</td>
-    <td>FL_BUILD_ALL_APPS</td>
-    <td>Build the language modeling app.</td>
-  </tr>
-  <tr>
-    <td>FL_BUILD_APP_ASR_TOOLS</td>
-    <td>ON, OFF</td>
-    <td>FL_BUILD_APP_ASR</td>
-    <td>Build automatic speech recognition app tools.</td>
-  </tr>
-  <tr>
-    <td>FL_BUILD_TESTS</td>
-    <td>ON, OFF</td>
-    <td>ON</td>
-    <td>Build tests.</td>
-  </tr>
-  <tr>
-    <td>FL_BUILD_EXAMPLES</td>
-    <td>ON, OFF</td>
-    <td>ON</td>
-    <td>Build examples.</td>
-  </tr>
-  <tr>
-    <td>FL_BUILD_EXPERIMENTAL</td>
-    <td>ON, OFF</td>
-    <td>OFF</td>
-    <td>Build experimental components.</td>
-  </tr>
-  <tr>
-    <td>CMAKE_BUILD_TYPE</td>
-    <td>See <a href="https://cmake.org/cmake/help/v3.10/variable/CMAKE_BUILD_TYPE.html">docs</a>.</td>
-    <td>Debug</td>
-    <td>See the <a href="https://cmake.org/cmake/help/v3.10/variable/CMAKE_BUILD_TYPE.html">CMake documentation</a>.</td>
-  </tr>
-  <tr>
-    <td>CMAKE_INSTALL_PREFIX</td>
-    <td>[Directory]</td>
-    <td>See <a href="https://cmake.org/cmake/help/v3.10/variable/CMAKE_INSTALL_PREFIX.html">docs</a>.</td>
-    <td>See the <a href="https://cmake.org/cmake/help/v3.10/variable/CMAKE_INSTALL_PREFIX.html">CMake documentation</a>.</td>
+    <td class="tg-cly1">CMAKE_INSTALL_PREFIX</td>
+    <td class="tg-cly1">[Directory]</td>
+    <td class="tg-cly1">See <a href="https://cmake.org/cmake/help/v3.10/variable/CMAKE_INSTALL_PREFIX.html">docs</a>.</td>
+    <td class="tg-cly1">See the <a href="https://cmake.org/cmake/help/v3.10/variable/CMAKE_INSTALL_PREFIX.html">CMake documentation</a>.</td>
   </tr>
 </tbody>
-</table></div>
+</table>
 
 ### Building Your Own Project with Flashlight
 Flashlight is most-easily linked to using CMake. Flashlight exports the following CMake targets when installed:

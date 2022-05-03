@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 # ----------------------------- ArrayFire -----------------------------
 find_package(ArrayFire REQUIRED)
 if (ArrayFire_FOUND AND ArrayFire_VERSION VERSION_LESS 3.7.1)
-  message(FATAL_ERROR "ArrayFire versions < 3.7.1 are no longer supported "
+  message(FATAL_ERROR "ArrayFire versions < 3.8.1 are no longer supported "
     "with flashlight. To build flashlight with a version of ArrayFire "
     "< 3.7.1, use commit <= 5518d91b7f4fd5b400cbc802cfbecc0df57836bd.")
 endif()
@@ -14,61 +14,78 @@ else()
   message(FATAL_ERROR "ArrayFire not found")
 endif()
 
-# TODO{fl::Tensor} -- dynamically select which FL_ARRAYFIRE_USE options are
-# correct based on ArrayFire backends which are located since the FL_BACKEND
-# flag will go away soon. Implement this when implementing a
-# backend registry CMake abstraction, i.e.
-#
-# fl_register_backend(
-#   NAME ArrayFire
-#   PLATFORM CUDA
-#   TARGET ArrayFire::afcuda
-# )
-#
-# fl_register_backend(
-#   NAME ArrayFire
-#   PLATFORM CPU
-#   TARGET ArrayFire::afcpu
-# )
+# Backend-specific options for ArrayFire. Automatically set if only one ArrayFire backend
+# target is found; if multiple are found, these must be manually specified.
+option(FL_ARRAYFIRE_USE_CUDA "Use the ArrayFire CUDA backend" OFF)
+option(FL_ARRAYFIRE_USE_CPU "Use the ArrayFire CPU backend" OFF)
+option(FL_ARRAYFIRE_USE_OPENCL "Use the ArrayFire OpenCL backend" OFF)
 
-# Check the proper ArrayFire backend is present
-if (FL_USE_CPU AND NOT ArrayFire_CPU_FOUND)
-  message(FATAL_ERROR "ArrayFire CPU not found: cannot build CPU backend")
-elseif (FL_USE_CUDA AND NOT ArrayFire_CUDA_FOUND)
-  message(FATAL_ERROR "ArrayFire CUDA not found: cannot build CUDA backend")
-elseif (FL_USE_OPENCL AND NOT ArrayFire_OpenCL_FOUND)
-  message(FATAL_ERROR "ArrayFire OpenCL not found: cannot build OpenCL backend")
+macro(fl_check_af_backend_option OPTION TARGET)
+  if (${OPTION} AND NOT TARGET ${TARGET})
+    message(FATAL_ERROR "${OPTION} was set to ON but the ${TARGET} target was not found")
+  endif()
+endmacro()
+
+fl_check_af_backend_option(FL_ARRAYFIRE_USE_CUDA ArrayFire::afcuda)
+fl_check_af_backend_option(FL_ARRAYFIRE_USE_OPENCL ArrayFire::afopencl)
+fl_check_af_backend_option(FL_ARRAYFIRE_USE_CPU ArrayFire::afcpu)
+
+set(_AF_CUDA   ${FL_ARRAYFIRE_USE_CUDA})
+set(_AF_CPU    ${FL_ARRAYFIRE_USE_CPU})
+set(_AF_OPENCL ${FL_ARRAYFIRE_USE_OPENCL})
+if (
+    (${_AF_CUDA} AND ${_AF_CPU}) OR
+    (${_AF_CPU}  AND ${_AF_OPENCL}) OR
+    (${_AF_CUDA} AND ${_AF_OPENCL})
+    )
+  message(FATAL_ERROR "Multiple FL_ARRAYFIRE_USE_{CUDA,CPU,OPENCL} were "
+    "specified as ON. Only one ArrayFire backend can be linked at once.")
 endif()
 
-# Set up variables to link the right ArrayFire backend
-# TODO{fl::Tensor} enforce that we can only link AF if exactly one backend is
-# found to avoid ambiguity (since we can only link one at a time)
-if (FL_USE_CPU)
-  set(FL_AF_BACKEND "afcpu")
-elseif (FL_USE_CUDA)
-  set(FL_AF_BACKEND "afcuda")
-elseif (FL_USE_OPENCL)
-  set(FL_AF_BACKEND "afopencl")
-else()
-  message(FATAL_ERROR "flashlight backend ill-specified")
+# If all options are off swap options to ON for ArrayFire backend targets
+# that were found. Raise an error if multiple targets are found but no options
+# were specified as ON
+if (NOT (${_AF_CUDA} OR ${_AF_CPU} OR ${_AF_OPENCL}))
+  if (
+      ((TARGET ArrayFire::afcuda) AND (TARGET ArrayFire::afcpu)) OR
+      ((TARGET ArrayFire::afcpu)  AND (TARGET ArrayFire::afopencl)) OR
+      ((TARGET ArrayFire::afcuda) AND (TARGET ArrayFire::afopencl))
+      )
+    message(FATAL_ERROR "Multiple ArrayFire targets were found but no "
+      "ArrayFire backend was selected. Exactly one of "
+      "FL_ARRAYFIRE_USE_{CUDA,CPU,OPENCL} must be ON.")
+  endif()
+
+  # Exactly one ArrayFire target is found, but no options are specified.
+  # Set the option based on the found target.
+  set(${FL_ARRAYFIRE_USE_CUDA}   TARGET ArrayFire::afcuda)
+  set(${FL_ARRAYFIRE_USE_CPU}    TARGET ArrayFire::afcpu)
+  set(${FL_ARRAYFIRE_USE_OPENCL} TARGET ArrayFire::afopencl)
 endif()
 
-# Link ArrayFire to flashlight
-target_link_libraries(flashlight PUBLIC ArrayFire::${FL_AF_BACKEND})
+if (${FL_ARRAYFIRE_USE_CUDA})
+  target_link_libraries(flashlight PUBLIC ArrayFire::afcuda)
+  fl_set_backend_state(ENABLE CUDA)
+elseif(${FL_ARRAYFIRE_USE_CPU})
+  target_link_libraries(flashlight PUBLIC ArrayFire::afcpu)
+  fl_set_backend_state(ENABLE CPU)
+elseif(${FL_ARRAYFIRE_USE_OPENCL})
+  target_link_libraries(flashlight PUBLIC ArrayFire::afopencl)
+  fl_set_backend_state(ENABLE OPENCL)
+endif()
 
 target_compile_definitions(
   flashlight
   PUBLIC
   # AF backends are guaranteed to be found as specified
-  # TODO{fl::Tensor} swap this to be dynamic based on whatever targets are found
-  FL_ARRAYFIRE_USE_CPU=$<BOOL:${FL_USE_CPU}>
-  FL_ARRAYFIRE_USE_CUDA=$<BOOL:${FL_USE_CUDA}>
-  FL_ARRAYFIRE_USE_OPENCL=$<BOOL:${FL_USE_OPENCL}>
+  FL_ARRAYFIRE_USE_CPU=$<BOOL:${FL_ARRAYFIRE_USE_CPU}>
+  FL_ARRAYFIRE_USE_CUDA=$<BOOL:${FL_ARRAYFIRE_USE_CUDA}>
+  FL_ARRAYFIRE_USE_OPENCL=$<BOOL:${FL_ARRAYFIRE_USE_OPENCL}>
 )
 
 # ----------------------------- Sources -----------------------------
 
-include(${CMAKE_CURRENT_LIST_DIR}/mem/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/mem/CMakeLists.txt) # memory
 
 target_sources(
   flashlight
@@ -78,7 +95,7 @@ target_sources(
   ${CMAKE_CURRENT_LIST_DIR}/Utils.cpp
 )
 
-if (FL_USE_CUDA)
+if (${FL_ARRAYFIRE_USE_CUDA})
   target_sources(
     flashlight
     PRIVATE
