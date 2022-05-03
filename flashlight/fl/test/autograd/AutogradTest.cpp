@@ -763,7 +763,7 @@ TEST(AutogradTest, Convolve) {
     return conv2d(
         input,
         wt,
-        bs,
+        // bs,
         sx,
         sy,
         px,
@@ -778,7 +778,7 @@ TEST(AutogradTest, Convolve) {
     return conv2d(
         in,
         weight,
-        bs,
+        // bs,
         sx,
         sy,
         px,
