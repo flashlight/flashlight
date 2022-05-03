@@ -19,13 +19,13 @@ namespace fl {
  *
  * Example:
   \code{.cpp}
-  af::array tensor1 = af::randu(5, 4, 10);
-  af::array tensor2 = af::randu(7, 10);
+  Tensor tensor1 = fl::rand({5, 4, 10});
+  Tensor tensor2 = fl::rand({7, 10});
   TensorDataset ds({tensor1, tensor2});
 
   std::cout << ds.size() << "\n"; // 10
-  std::cout << ds.get(0)[0].dims() << "\n"; // 5 4 1 1
-  std::cout << ds.get(0)[1].dims() << "\n"; // 7 1 1 1
+  std::cout << ds.get(0)[0].dims() << "\n"; // 5 4
+  std::cout << ds.get(0)[1].dims() << "\n"; // 7 1
   \endcode
  */
 class TensorDataset : public Dataset {
@@ -35,14 +35,14 @@ class TensorDataset : public Dataset {
    * @param[in] datatensors A vector of tensors, which will be
    * unpacked along their last non-singleton dimensions.
    */
-  explicit TensorDataset(const std::vector<af::array>& datatensors);
+  explicit TensorDataset(const std::vector<Tensor>& datatensors);
 
   int64_t size() const override;
 
-  std::vector<af::array> get(const int64_t idx) const override;
+  std::vector<Tensor> get(const int64_t idx) const override;
 
  private:
-  std::vector<af::array> dataTensors_;
-  int64_t size_;
+  std::vector<Tensor> dataTensors_;
+  int64_t size_{0};
 };
 } // namespace fl
