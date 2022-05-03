@@ -36,11 +36,11 @@ RMSPropOptimizer::RMSPropOptimizer(
 
   for (const auto& parameter : parameters_) {
     if (useFirst_) {
-      first_.emplace_back(af::constant(0, parameter.dims(), parameter.type()));
+      first_.emplace_back(fl::full(parameter.dims(), 0, parameter.type()));
       fl::eval(first_.back());
     }
 
-    second_.emplace_back(af::constant(0, parameter.dims(), parameter.type()));
+    second_.emplace_back(fl::full(parameter.dims(), 0, parameter.type()));
     fl::eval(second_.back());
   }
 }
@@ -51,29 +51,29 @@ void RMSPropOptimizer::step() {
       continue;
     }
 
-    const af::array& grad = parameters_[i].grad().array();
-    af::array& data = parameters_[i].array();
+    const Tensor& grad = parameters_[i].grad().tensor();
+    Tensor& data = parameters_[i].tensor();
 
     if (wd_ != 0) {
       // Weight decay term
       data = data - wd_ * data;
     }
 
-    af::array& second = second_[i];
+    Tensor& second = second_[i];
     second = rho_ * second + (1 - rho_) * grad * grad;
     fl::eval(second);
 
     // Create shallow copy of second so that we don't update
     // "second" below
-    af::array moments = second;
+    Tensor moments = second;
     if (useFirst_) {
-      af::array& first = first_[i];
+      Tensor& first = first_[i];
       first = rho_ * first + (1 - rho_) * grad;
       moments = moments - first * first;
       fl::eval(first);
     }
 
-    data = data - (lr_ * grad) / (af::sqrt(moments) + eps_);
+    data = data - (lr_ * grad) / (fl::sqrt(moments) + eps_);
 
     fl::eval(data);
   }
