@@ -78,7 +78,7 @@ std::pair<Variable, Variable> MultiHeadContentAttention::forwardBase(
   auto innerProd =
       matmulNT(query, key) / std::sqrt(static_cast<float>(hiddenDim));
 
-  if (!logAttnWeight.isempty()) {
+  if (!logAttnWeight.isEmpty()) {
     auto tiledLogAttnWeight = tile(logAttnWeight, {1, 1, numHeads_});
     if (tiledLogAttnWeight.shape() != innerProd.shape()) {
       throw std::invalid_argument(
@@ -87,7 +87,7 @@ std::pair<Variable, Variable> MultiHeadContentAttention::forwardBase(
     innerProd = innerProd + tiledLogAttnWeight;
   }
 
-  if (!xEncodedSizes.isempty()) {
+  if (!xEncodedSizes.isEmpty()) {
     innerProd = maskAttention(
         innerProd,
         moddims(tile(xEncodedSizes, {numHeads_, 1}), {1, B * numHeads_}));

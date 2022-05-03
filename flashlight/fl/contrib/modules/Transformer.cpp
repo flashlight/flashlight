@@ -105,7 +105,7 @@ Variable Transformer::selfAttention(const std::vector<Variable>& input) {
 
   // time x batch
   fl::Variable padMask;
-  if (!input.back().isempty()) {
+  if (!input.back().isEmpty()) {
     auto padMaskArr = input.back().tensor();
     Shape newMaskShape = {encoderInput.dims(1), encoderInput.dims(2)};
     // TODO{fl::Tensor}{resize} - emulate the ArrayFire resize operation for
@@ -141,7 +141,7 @@ std::vector<Variable> Transformer::forward(const std::vector<Variable>& input) {
         "expects an input of size C x T x B - see documentation.");
   }
 
-  if (!input.back().isempty()) {
+  if (!input.back().isEmpty()) {
     if (input.back().ndim() < 2) {
       throw std::invalid_argument(
           "Transformer::forward - invalid size for pad mask - "

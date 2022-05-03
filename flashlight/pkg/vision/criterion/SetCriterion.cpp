@@ -226,7 +226,7 @@ SetCriterion::LossDict SetCriterion::lossBoxes(
   for (auto idx : indices) {
     auto targetIdxs = idx.first;
     auto reordered = targetBoxes[i](fl::span, targetIdxs);
-    if (!reordered.isempty()) {
+    if (!reordered.isEmpty()) {
       permuted.emplace_back(reordered);
     }
     i += 1;
