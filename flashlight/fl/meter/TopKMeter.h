@@ -6,11 +6,12 @@
  */
 #pragma once
 
-#include <arrayfire.h>
-
+#include <cstdint>
 #include <utility>
 
 namespace fl {
+
+class Tensor;
 
 /** TopKMeter computes the accuracy of the model outputs predicting the target
  * label in the top k predictions.
@@ -37,7 +38,7 @@ class TopKMeter {
    */
   explicit TopKMeter(const int k);
 
-  void add(const af::array& output, const af::array& target);
+  void add(const Tensor& output, const Tensor& target);
 
   void reset();
 
