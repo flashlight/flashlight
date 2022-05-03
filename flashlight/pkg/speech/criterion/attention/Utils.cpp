@@ -9,6 +9,7 @@
 #include "flashlight/pkg/speech/criterion/attention/Defines.h"
 
 #include "flashlight/fl/flashlight.h"
+#include "flashlight/fl/tensor/Index.h"
 
 namespace fl {
 namespace pkg {
@@ -18,25 +19,24 @@ Variable maskAttention(const Variable& input, const Variable& sizes) {
   int B = input.dims(2);
   int T = input.dims(1);
   // xEncodedSizes is (1, B) size
-  af::array inputNotPaddedSize =
-      af::ceil(sizes.array() / af::max<float>(sizes.array()) * T);
-  auto padMask = af::iota(af::dim4(T, 1), af::dim4(1, B)) >=
-      af::tile(inputNotPaddedSize, T, 1);
-  padMask =
-      af::tile(af::moddims(padMask, af::dim4(1, T, B)), input.dims(0), 1, 1);
+  Tensor inputNotPaddedSize =
+      fl::ceil(sizes.tensor() / fl::amax(sizes.tensor()).asScalar<float>() * T);
+  Tensor padMask =
+      fl::iota({T, 1}, {1, B}) >= fl::tile(inputNotPaddedSize, {T, 1});
+  padMask = fl::tile(fl::reshape(padMask, {1, T, B}), {input.dims(0), 1, 1});
 
-  af::array output = input.array();
+  Tensor output = input.tensor();
   output(padMask) = kAttentionMaskValue;
 
-  auto gradFunc = [padMask](
-                      std::vector<Variable>& inputs,
-                      const Variable& gradOutput) {
-    af::array gradArray = gradOutput.array();
-    gradArray(padMask) = 0.;
-    inputs[0].addGrad(Variable(gradArray, false));
-  };
+  auto gradFunc =
+      [padMask](std::vector<Variable>& inputs, const Variable& gradOutput) {
+        Tensor gradArray = gradOutput.tensor();
+        gradArray(padMask) = 0.;
+        inputs[0].addGrad(Variable(gradArray, false));
+      };
   return Variable(output, {input.withoutData()}, gradFunc);
 }
+
 } // namespace speech
 } // namespace pkg
 } // namespace fl
