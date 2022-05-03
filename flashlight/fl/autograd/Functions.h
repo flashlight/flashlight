@@ -24,6 +24,8 @@ namespace detail {
 
 class ConvBenchmarks;
 
+struct AutogradPayload;
+
 Tensor tileAs(const Tensor& input, const Shape& rdims);
 
 Tensor sumAs(const Tensor& input, const Shape& rdims);
@@ -58,8 +60,12 @@ bool areVariableTypesEqual(
 template <typename T>
 T adjustInputType(const T& in, const char* funcname);
 
-// TODO{fl::Tensor}{rewrite} move me - too specific to put in TensorBase?
-Tensor sigmoid(const Tensor& input);
+template <typename H, typename... T>
+std::shared_ptr<AutogradPayload> createAutogradPayload(H head, T... tail) {
+  return (head.isCalcGrad() || ... || tail.isCalcGrad())
+      ? std::make_shared<AutogradPayload>()
+      : nullptr;
+}
 
 } // namespace detail
 

@@ -248,7 +248,8 @@ Tensor CudnnAutogradExtension::conv2d(
     const int py,
     const int dx,
     const int dy,
-    const int groups) {
+    const int groups,
+    std::shared_ptr<detail::AutogradPayload>) {
   if (input.ndim() != 4) {
     throw std::invalid_argument(
         "conv2d: expects input tensor to be 4 dimensions: "
@@ -360,7 +361,8 @@ Tensor CudnnAutogradExtension::conv2dBackwardData(
     const int dx,
     const int dy,
     const int groups,
-    std::shared_ptr<DynamicBenchmark> dataGradBenchmark) {
+    std::shared_ptr<DynamicBenchmark> dataGradBenchmark,
+    std::shared_ptr<detail::AutogradPayload>) {
   auto hndl = getCudnnHandle();
 
   auto scalarsType =
@@ -525,10 +527,11 @@ Tensor CudnnAutogradExtension::conv2dBackwardData(
   return dataGradOut;
 }
 
-Tensor CudnnAutogradExtension::conv2dBackwardFilter(
+std::pair<Tensor, Tensor> CudnnAutogradExtension::conv2dBackwardFilterBias(
     const Tensor& gradOutput,
     const Tensor& input,
     const Tensor& weight,
+    const Tensor& bias,
     const int sx,
     const int sy,
     const int px,
@@ -536,7 +539,9 @@ Tensor CudnnAutogradExtension::conv2dBackwardFilter(
     const int dx,
     const int dy,
     const int groups,
-    std::shared_ptr<DynamicBenchmark> filterGradBenchmark) {
+    std::shared_ptr<DynamicBenchmark> filterGradBenchmark,
+    std::shared_ptr<DynamicBenchmark> biasGradBenchmark,
+    std::shared_ptr<detail::AutogradPayload>) {
   auto hndl = getCudnnHandle();
 
   auto scalarsType =
@@ -697,22 +702,6 @@ Tensor CudnnAutogradExtension::conv2dBackwardFilter(
         input, weight, gradOutput, iDesc, wDesc, cDesc, oDesc);
   }
 
-  return filterGradOut;
-}
-
-Tensor CudnnAutogradExtension::conv2dBackwardBias(
-    const Tensor& gradOutput,
-    const Tensor& bias,
-    std::shared_ptr<DynamicBenchmark> biasGradBenchmark) {
-  auto hndl = getCudnnHandle();
-
-  auto scalarsType =
-      bias.type() == fl::dtype::f16 ? fl::dtype::f32 : bias.type();
-  const void* oneg = kOne(scalarsType);
-  const void* zerog = kZero(scalarsType);
-
-  auto oDesc = TensorDescriptor(gradOutput);
-
   auto convolutionBackwardBias = [&hndl, oneg, zerog](
                                      const Tensor& bsTensor,
                                      const Tensor& gradOutput,
@@ -737,52 +726,56 @@ Tensor CudnnAutogradExtension::conv2dBackwardBias(
 
   Tensor biasGradOut;
 
-  if (biasGradBenchmark && DynamicBenchmark::getBenchmarkMode()) {
-    KernelMode biasBwdOption =
-        biasGradBenchmark->getOptions<DynamicBenchmarkOptions<KernelMode>>()
-            ->currentOption();
+  if (!bias.isEmpty()) {
+    if (biasGradBenchmark && DynamicBenchmark::getBenchmarkMode()) {
+      KernelMode biasBwdOption =
+          biasGradBenchmark->getOptions<DynamicBenchmarkOptions<KernelMode>>()
+              ->currentOption();
 
-    if (bias.type() == fl::dtype::f16 &&
-        biasBwdOption == CudnnAutogradExtension::KernelMode::F32 &&
-        biasBwdOption ==
-            CudnnAutogradExtension::KernelMode::F32_ALLOW_CONVERSION) {
-      // The input type of fp16, but the result of the dynamic benchmark is
-      // that using fp32 kernels is faster for computing bwd with fp16
-      // kernels, including the cast
-      Tensor biasF32;
-      Tensor gradOutputF32;
-      // Time cast bias and grad output if benchmarking
-      biasGradBenchmark->audit(
-          [&bias, &gradOutput, &biasF32, &gradOutputF32]() {
-            biasF32 = bias.astype(fl::dtype::f32);
-            gradOutputF32 = gradOutput.astype(fl::dtype::f32);
-          },
-          /* incrementCount = */ false);
-      auto oDescF32 = TensorDescriptor(gradOutputF32);
-      // Perform bias gradient computation
-      biasGradBenchmark->audit([&biasGradOut,
-                                &convolutionBackwardBias,
-                                &biasF32,
-                                &gradOutputF32,
-                                &oDescF32]() {
-        biasGradOut = convolutionBackwardBias(biasF32, gradOutputF32, oDescF32);
-      });
+      if (bias.type() == fl::dtype::f16 &&
+          biasBwdOption == CudnnAutogradExtension::KernelMode::F32 &&
+          biasBwdOption ==
+              CudnnAutogradExtension::KernelMode::F32_ALLOW_CONVERSION) {
+        // The input type of fp16, but the result of the dynamic benchmark is
+        // that using fp32 kernels is faster for computing bwd with fp16
+        // kernels, including the cast
+        Tensor biasF32;
+        Tensor gradOutputF32;
+        // Time cast bias and grad output if benchmarking
+        biasGradBenchmark->audit(
+            [&bias, &gradOutput, &biasF32, &gradOutputF32]() {
+              biasF32 = bias.astype(fl::dtype::f32);
+              gradOutputF32 = gradOutput.astype(fl::dtype::f32);
+            },
+            /* incrementCount = */ false);
+        auto oDescF32 = TensorDescriptor(gradOutputF32);
+        // Perform bias gradient computation
+        biasGradBenchmark->audit([&biasGradOut,
+                                  &convolutionBackwardBias,
+                                  &biasF32,
+                                  &gradOutputF32,
+                                  &oDescF32]() {
+          biasGradOut =
+              convolutionBackwardBias(biasF32, gradOutputF32, oDescF32);
+        });
+      } else {
+        // Grad output and bias types are already the same, so perform the
+        // computation using whatever input type is given
+        biasGradBenchmark->audit([&biasGradOut,
+                                  &convolutionBackwardBias,
+                                  &bias,
+                                  &gradOutput,
+                                  &oDesc]() {
+          biasGradOut = convolutionBackwardBias(bias, gradOutput, oDesc);
+        });
+      }
     } else {
-      // Grad output and bias types are already the same, so perform the
-      // computation using whatever input type is given
-      biasGradBenchmark->audit([&biasGradOut,
-                                &convolutionBackwardBias,
-                                &bias,
-                                &gradOutput,
-                                &oDesc]() {
-        biasGradOut = convolutionBackwardBias(bias, gradOutput, oDesc);
-      });
+      // No benchmark; proceed normally
+      biasGradOut = convolutionBackwardBias(bias, gradOutput, oDesc);
     }
-  } else {
-    // No benchmark; proceed normally
-    biasGradOut = convolutionBackwardBias(bias, gradOutput, oDesc);
   }
-  return biasGradOut;
+
+  return {filterGradOut, biasGradOut};
 }
 
 } // namespace fl
