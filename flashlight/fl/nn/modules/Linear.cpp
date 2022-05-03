@@ -35,9 +35,9 @@ Linear::Linear(const Variable& w, const Variable& b)
 Variable Linear::forward(const Variable& input) {
   if (bias_) {
     return linear(
-        input, params_[0].as(input.type()), params_[1].as(input.type()));
+        input, params_[0].astype(input.type()), params_[1].astype(input.type()));
   }
-  return linear(input, params_[0].as(input.type()));
+  return linear(input, params_[0].astype(input.type()));
 }
 
 void Linear::initialize() {

@@ -132,7 +132,7 @@ Variable Conformer::mhsa(const Variable& input, const Variable& inputPadMask) {
 
   Variable mask, posEmb;
   if (posEmbContextSize_ > 0) {
-    posEmb = tile(params_[0].as(input.type()), {1, 1, nHeads_ * bsz});
+    posEmb = tile(params_[0].astype(input.type()), {1, 1, nHeads_ * bsz});
   }
 
   fl::Variable padMask;
@@ -166,14 +166,14 @@ Variable Conformer::conv(const Variable& _input) {
   // input C x T x B x 1
   // apply first pointwise conv
   auto result =
-      gatedlinearunit((*conv1_)(((*normConv1_)(input)).as(input.type())), 0);
+      gatedlinearunit((*conv1_)(((*normConv1_)(input)).astype(input.type())), 0);
   result = reorder(result, {1, 3, 0, 2});
   // T x 1 x C x B
   // apply depthwise separable convolutions
   result = (*convDepthWise_)(result);
   result = reorder(result, {2, 0, 3, 1});
   // C x T x B x 1
-  result = fl::swish(((*normConv2_)(result)).as(input.type()), 1.);
+  result = fl::swish(((*normConv2_)(result)).astype(input.type()), 1.);
   // apply second pointwise conv
   result = dropout((*conv2_)(result), pDropout);
   return moddims(result, _input.dims());
@@ -202,7 +202,7 @@ std::vector<Variable> Conformer::forward(const std::vector<Variable>& input) {
   // apply first feed-forward module
   auto ffn1 = dropout(
       (*w12_)(dropout(
-          fl::swish((*w11_)(((*norm1_)(x)).as(x.type())), 1.), pDropout)),
+          fl::swish((*w11_)(((*norm1_)(x)).astype(x.type())), 1.), pDropout)),
       pDropout);
   x = x + f * 0.5 * ffn1;
   // apply multihead attention module
@@ -212,10 +212,10 @@ std::vector<Variable> Conformer::forward(const std::vector<Variable>& input) {
   // apply second feed-forward module
   auto ffn2 = dropout(
       (*w22_)(dropout(
-          fl::swish((*w21_)(((*norm2_)(x)).as(x.type())), 1.), pDropout)),
+          fl::swish((*w21_)(((*norm2_)(x)).astype(x.type())), 1.), pDropout)),
       pDropout);
   x = x + f * 0.5 * ffn2;
-  x = ((*norm3_)(x)).as(x.type());
+  x = ((*norm3_)(x)).astype(x.type());
   return {x};
 }
 

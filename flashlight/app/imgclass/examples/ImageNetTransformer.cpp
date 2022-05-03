@@ -146,7 +146,7 @@ std::tuple<double, double, double> evalLoop(
   for (auto& example : dataset) {
     auto inputs = noGrad(example[kImagenetInputIdx]);
     auto output = model->forward({inputs}).front();
-    output = logSoftmax(output, 0).as(output.type());
+    output = logSoftmax(output, 0).astype(output.type());
 
     auto target = noGrad(example[kImagenetTargetIdx]);
 
@@ -430,7 +430,7 @@ int main(int argc, char** argv) {
       if (FLAGS_fl_amp_use_mixed_precision && FLAGS_fl_optim_mode.empty()) {
         // In case AMP is activated with DEFAULT mode,
         // we manually cast input to fp16.
-        input = input.as(fl::dtype::f16);
+        input = input.astype(fl::dtype::f16);
       }
 
       fl::sync();
@@ -440,10 +440,10 @@ int main(int argc, char** argv) {
         // 2. Forward
         fwdTimeMeter.resume();
         auto output = model->forward({input}).front();
-        output = logSoftmax(output, 0).as(output.type());
+        output = logSoftmax(output, 0).astype(output.type());
 
         critFwdTimeMeter.resume();
-        auto y = target.as(output.type());
+        auto y = target.astype(output.type());
         auto loss = fl::mean(fl::sum(fl::negate(y * output), {0}), {0});
         fl::sync();
         fwdTimeMeter.stopAndIncUnit();
