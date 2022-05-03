@@ -11,7 +11,9 @@
 
 namespace fl {
 
+constexpr const int kLnExpectedNumDims = 4;
 constexpr const int kLnVariableAxisSize = -1;
+
 /**
  * Applies Layer Normalization on a given input as described in the paper
  * [Layer Normalization](https://arxiv.org/pdf/1607.06450.pdf).

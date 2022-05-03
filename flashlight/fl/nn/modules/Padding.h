@@ -34,74 +34,11 @@ class Padding : public UnaryModule {
    * [\f$dim_0\f$, \f$dim_1\f$, \f$dim_2\f$, \f$dim_3\f$],
    * the output will be of shape [\f$paddingBefore+dim_0+paddingAfter\f$,
    * \f$dim_1\f$, \f$dim_2\f$, \f$dim_3\f$]
-   * @param pad0 the size of the padding
-   *  (\f$paddingBefore\f$, \f$paddingAfter\f$)
+   * @param[in] padding a vector of tuples representing padding (before,
+   * after) tuples for each axis
    * @param val the value to be padded
    */
-  Padding(std::pair<int, int> pad0, double val);
-
-  /**
-   * Constructs a Padding module that pads the first and second dimensions
-   * of the input. If the input is of shape
-   * [\f$dim_0\f$, \f$dim_1\f$, \f$dim_2\f$,
-   * \f$dim_3\f$], the output will be of shape
-   * [\f$paddingBefore_0+dim_0+paddingAfter_0\f$,
-   * \f$paddingBefore_1+dim_1+paddingAfter_1\f$, \f$dim_2\f$, \f$dim_3\f$]
-   * @param pad0 the size of the padding for the first dimension
-   *  (\f$paddingBefore_0\f$, \f$paddingAfter_0\f$)
-   * @param pad1 the size of the padding for the second dimension
-   *  (\f$paddingBefore_1\f$, \f$paddingAfter_1\f$)
-   * @param val the value to be padded
-   */
-  Padding(std::pair<int, int> pad0, std::pair<int, int> pad1, double val);
-
-  /**
-   * Constructs a Padding module that pads the first three dimensions
-   * of the input. If the input is of shape
-   * [\f$dim_0\f$, \f$dim_1\f$, \f$dim_2\f$,
-   * \f$dim_3\f$], the output will be of shape
-   * [\f$paddingBefore_0+dim_0+paddingAfter_0\f$,
-   * \f$paddingBefore_1+dim_1+paddingAfter_1\f$,
-   * \f$paddingBefore_2+dim_2+paddingAfter_2\f$, \f$dim_3\f$]
-   * @param pad0 the size of the padding for the first dimension
-   *  (\f$paddingBefore_0\f$, \f$paddingAfter_0\f$)
-   * @param pad1 the size of the padding for the second dimension
-   *  (\f$paddingBefore_1\f$, \f$paddingAfter_1\f$)
-   * @param pad2 the size of the padding for the third dimension
-   *  (\f$paddingBefore_2\f$, \f$paddingAfter_2\f$)
-   * @param val the value to be padded
-   */
-  Padding(
-      std::pair<int, int> pad0,
-      std::pair<int, int> pad1,
-      std::pair<int, int> pad2,
-      double val);
-
-  /**
-   * Constructs a Padding module that pads all four dimensions
-   * of the input. If the input is of shape
-   * [\f$dim_0\f$, \f$dim_1\f$, \f$dim_2\f$,
-   * \f$dim_3\f$], the output will be of shape
-   * [\f$paddingBefore_0+dim_0+paddingAfter_0\f$,
-   * \f$paddingBefore_1+dim_1+paddingAfter_1\f$,
-   * \f$paddingBefore_2+dim_2+paddingAfter_2\f$,
-   * \f$paddingBefore_3+dim_3+paddingAfter_3\f$]
-   * @param pad0 the size of the padding for the first dimension
-   *  (\f$paddingBefore_0\f$, \f$paddingAfter_0\f$)
-   * @param pad1 the size of the padding for the second dimension
-   *  (\f$paddingBefore_1\f$, \f$paddingAfter_1\f$)
-   * @param pad2 the size of the padding for the third dimension
-   *  (\f$paddingBefore_2\f$, \f$paddingAfter_2\f$)
-   * @param pad3 the size of the padding for the third dimension
-   *  (\f$paddingBefore_3\f$, \f$paddingAfter_3\f$)
-   * @param val the value to be padded
-   */
-  Padding(
-      std::pair<int, int> pad0,
-      std::pair<int, int> pad1,
-      std::pair<int, int> pad2,
-      std::pair<int, int> pad3,
-      double val);
+  Padding(std::vector<std::pair<int, int>> padding, double val);
 
   Variable forward(const Variable& input) override;
 

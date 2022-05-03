@@ -12,7 +12,7 @@
 
 namespace fl {
 
-PrecisionCast::PrecisionCast(af::dtype targetType) : targetType_(targetType) {}
+PrecisionCast::PrecisionCast(fl::dtype targetType) : targetType_(targetType) {}
 
 std::vector<Variable> PrecisionCast::forward(
     const std::vector<Variable>& inputs) {
@@ -35,7 +35,7 @@ Variable PrecisionCast::operator()(const Variable& input) {
 std::string PrecisionCast::prettyString() const {
   std::ostringstream ss;
   ss << "PrecisionCast";
-  ss << " * -> " << afTypeToString(targetType_);
+  ss << " * -> " << targetType_;
   return ss.str();
 }
 
