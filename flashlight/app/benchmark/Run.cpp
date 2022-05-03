@@ -7,19 +7,20 @@
 
 #include <gflags/gflags.h>
 
-#include "flashlight/pkg/speech/criterion/criterion.h"
 #include "flashlight/app/benchmark/ModelBenchmarker.h"
 #include "flashlight/app/benchmark/Utils.h"
 #include "flashlight/app/benchmark/models/AsrTransformer.h"
 #include "flashlight/app/benchmark/models/LmTransformer.h"
-#include "flashlight/pkg/vision/criterion/SetCriterion.h"
-#include "flashlight/pkg/vision/models/Resnet50Backbone.h"
-#include "flashlight/pkg/vision/models/Detr.h"
-#include "flashlight/pkg/runtime/common/DistributedUtils.h"
-#include "flashlight/pkg/vision/models/Resnet.h"
-#include "flashlight/pkg/vision/models/ViT.h"
+#include "flashlight/fl/tensor/Index.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/common/System.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
+#include "flashlight/pkg/speech/criterion/criterion.h"
+#include "flashlight/pkg/vision/criterion/SetCriterion.h"
+#include "flashlight/pkg/vision/models/Detr.h"
+#include "flashlight/pkg/vision/models/Resnet.h"
+#include "flashlight/pkg/vision/models/Resnet50Backbone.h"
+#include "flashlight/pkg/vision/models/ViT.h"
 
 DEFINE_bool(log_verbose, false, "Log out detailed running time benchmark");
 
@@ -48,11 +49,11 @@ void runViTBase(bool fp16 = false) {
 
   // Data
   const int batchsize = 64, imgSize = 224;
-  auto input = fl::input(af::randu(imgSize, imgSize, 3, batchsize));
-  auto target = fl::noGrad(af::randu(1000, batchsize));
+  auto input = fl::input(fl::rand({imgSize, imgSize, 3, batchsize}));
+  auto target = fl::noGrad(fl::rand({1000, batchsize}));
   if (fp16) {
-    input = input.as(af::dtype::f16);
-    target = target.as(af::dtype::f16);
+    input = input.as(fl::dtype::f16);
+    target = target.as(fl::dtype::f16);
   }
 
   // Model
@@ -89,10 +90,10 @@ void runResNet34(bool fp16 = false) {
 
   // Data
   const int batchsize = 192, imgSize = 224;
-  auto input = fl::input(af::randu(imgSize, imgSize, 3, batchsize));
-  auto target = fl::noGrad(af::randu(batchsize) * 1000).as(s32);
+  auto input = fl::input(fl::rand({imgSize, imgSize, 3, batchsize}));
+  auto target = fl::noGrad(fl::rand({batchsize}) * 1000).as(fl::dtype::s32);
   if (fp16) {
-    input = input.as(af::dtype::f16);
+    input = input.as(fl::dtype::f16);
   }
 
   // Model
@@ -119,10 +120,10 @@ void runResNet50(bool fp16 = false) {
 
   // Data
   const int batchsize = 192, imgSize = 224;
-  auto input = fl::input(af::randu(imgSize, imgSize, 3, batchsize));
-  auto target = fl::noGrad(af::randu(batchsize) * 1000).as(s32);
+  auto input = fl::input(fl::rand({imgSize, imgSize, 3, batchsize}));
+  auto target = fl::noGrad(fl::rand({batchsize}) * 1000).as(fl::dtype::s32);
   if (fp16) {
-    input = input.as(af::dtype::f16);
+    input = input.as(fl::dtype::f16);
   }
 
   // Model
@@ -148,19 +149,19 @@ void runDetr(bool fp16 = false) {
   fl::app::benchmark::init();
 
   // Data
-  const auto dataType = fp16 ? af::dtype::f16 : af::dtype::f32;
+  const auto dataType = fp16 ? fl::dtype::f16 : fl::dtype::f32;
   const int batchsize = 12, numObjs = 4;
   const int imgSize = 800;
-  auto input = fl::input(af::randu(imgSize, imgSize, 3, batchsize, dataType));
-  auto mask = fl::input(af::randu(imgSize, imgSize, 1, batchsize));
+  auto input = fl::input(fl::rand({imgSize, imgSize, 3, batchsize}, dataType));
+  auto mask = fl::input(fl::rand({imgSize, imgSize, 1, batchsize}));
 
   std::vector<fl::Variable> targetBoxes(batchsize);
   std::vector<fl::Variable> targetClasses(batchsize);
   for (int i = 0; i < batchsize; i++) {
-    auto boxes = af::randu(4, numObjs, dataType) * (imgSize - 20);
-    boxes(af::span, af::seq(2, 3)) = boxes(af::span, af::seq(0, 1)) + 15;
+    auto boxes = fl::rand({4, numObjs}, dataType) * (imgSize - 20);
+    boxes(fl::span, fl::range(2, 4)) = boxes(fl::span, fl::range(0, 2)) + 15;
     targetBoxes.push_back(fl::noGrad(boxes));
-    targetClasses.push_back(fl::noGrad(af::randu(1, numObjs, dataType) * 91));
+    targetClasses.push_back(fl::noGrad(fl::rand({1, numObjs}, dataType) * 91));
   }
 
   // Model
@@ -210,7 +211,8 @@ void runDetr(bool fp16 = false) {
           const std::vector<fl::Variable>& input) -> fl::Variable {
     auto loss =
         setCriterion.forward(input[1], input[0], targetBoxes, targetClasses);
-    auto accumLoss = fl::Variable(af::constant(0, 1, dataType), true);
+    // TODO{fl::Tensor} - explore using a scalar Tensor
+    auto accumLoss = fl::Variable(fl::full({1}, 0, dataType), true);
     for (auto losses : loss) {
       fl::Variable scaled_loss = weightDict[losses.first] * losses.second;
       accumLoss = scaled_loss + accumLoss;
@@ -235,12 +237,12 @@ void runLmTransformer(bool fp16 = false) {
   // Data
   const int batchsize = 2048, numTokens = 150000;
   const std::vector<int> cutoff{10000, 50000, numTokens};
-  auto rawInput = af::randu(batchsize) * cutoff[0];
-  auto mask1 = af::randu(batchsize) < 0.2;
-  auto mask2 = af::randu(batchsize) < 0.05;
+  auto rawInput = fl::rand({batchsize}) * cutoff[0];
+  auto mask1 = fl::rand({batchsize}) < 0.2;
+  auto mask2 = fl::rand({batchsize}) < 0.05;
   rawInput = rawInput + mask1 * cutoff[0] + mask2 * cutoff[1];
-  auto input = fl::input(rawInput.as(s32));
-  auto target = fl::noGrad(rawInput.as(s32));
+  auto input = fl::input(rawInput.astype(fl::dtype::s32));
+  auto target = fl::noGrad(rawInput.astype(fl::dtype::s32));
 
   // Model
   std::shared_ptr<fl::Module> model =
@@ -281,10 +283,10 @@ void runAsrTransformer(bool fp16 = false) {
   const int batchsize = 8, numFrames = 1500, numFeatures = 80;
   const int numTarget = 30, targetLength = 100;
 
-  auto input = fl::input(af::randu(numFrames, 1, numFeatures, batchsize));
-  auto lengths = fl::input(af::constant(numFrames, 1, batchsize));
-  auto target =
-      fl::noGrad(af::randu(targetLength, batchsize) * numTarget).as(s32);
+  auto input = fl::input(fl::rand({numFrames, 1, numFeatures, batchsize}));
+  auto lengths = fl::input(fl::full({1, batchsize}, numFrames));
+  auto target = fl::noGrad(fl::rand({targetLength, batchsize}) * numTarget)
+                    .as(fl::dtype::s32);
 
   // Model
   std::shared_ptr<fl::Module> model =
