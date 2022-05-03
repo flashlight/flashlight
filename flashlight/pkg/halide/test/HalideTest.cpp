@@ -10,9 +10,11 @@
 #include <cmath>
 #include <vector>
 
-#include "flashlight/pkg/halide/HalideInterface.h"
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/autograd/Variable.h"
+#include "flashlight/fl/tensor/Index.h"
+#include "flashlight/fl/tensor/Random.h"
+#include "flashlight/pkg/halide/HalideInterface.h"
 
 // Generated at build time -- see the accompanying CMakeList
 #include "HalideTestPipeline.h"
@@ -21,63 +23,68 @@ using namespace fl;
 
 TEST(HalideTest, TypeMapping) {
   Halide::Buffer<Halide::float16_t> halfBuf({1});
-  EXPECT_EQ(pkg::halide::halideRuntimeTypeToAfType(halfBuf.type()), af::dtype::f16);
+  EXPECT_EQ(
+      pkg::halide::halideRuntimeTypeToFlType(halfBuf.type()), fl::dtype::f16);
 
   Halide::Buffer<float> floatBuf({1});
-  EXPECT_EQ(pkg::halide::halideRuntimeTypeToAfType(floatBuf.type()), af::dtype::f32);
+  EXPECT_EQ(
+      pkg::halide::halideRuntimeTypeToFlType(floatBuf.type()), fl::dtype::f32);
 
   Halide::Buffer<double> doubleBuf({1});
-  EXPECT_EQ(pkg::halide::halideRuntimeTypeToAfType(doubleBuf.type()), af::dtype::f64);
+  EXPECT_EQ(
+      pkg::halide::halideRuntimeTypeToFlType(doubleBuf.type()), fl::dtype::f64);
 
   Halide::Buffer<uint16_t> uint16Buf({1});
-  EXPECT_EQ(pkg::halide::halideRuntimeTypeToAfType(uint16Buf.type()), af::dtype::u16);
+  EXPECT_EQ(
+      pkg::halide::halideRuntimeTypeToFlType(uint16Buf.type()), fl::dtype::u16);
 
   Halide::Buffer<uint32_t> uint32Buf({1});
-  EXPECT_EQ(pkg::halide::halideRuntimeTypeToAfType(uint32Buf.type()), af::dtype::u32);
+  EXPECT_EQ(
+      pkg::halide::halideRuntimeTypeToFlType(uint32Buf.type()), fl::dtype::u32);
 
   Halide::Buffer<uint64_t> uint64Buf({1});
-  EXPECT_EQ(pkg::halide::halideRuntimeTypeToAfType(uint64Buf.type()), af::dtype::u64);
+  EXPECT_EQ(
+      pkg::halide::halideRuntimeTypeToFlType(uint64Buf.type()), fl::dtype::u64);
 
   Halide::Buffer<short> shortBuf({1});
-  EXPECT_EQ(pkg::halide::halideRuntimeTypeToAfType(shortBuf.type()), af::dtype::s16);
+  EXPECT_EQ(
+      pkg::halide::halideRuntimeTypeToFlType(shortBuf.type()), fl::dtype::s16);
 
   Halide::Buffer<int> intBuf({1});
-  EXPECT_EQ(pkg::halide::halideRuntimeTypeToAfType(intBuf.type()), af::dtype::s32);
+  EXPECT_EQ(
+      pkg::halide::halideRuntimeTypeToFlType(intBuf.type()), fl::dtype::s32);
 
   Halide::Buffer<long> longBuf({1});
-  EXPECT_EQ(pkg::halide::halideRuntimeTypeToAfType(longBuf.type()), af::dtype::s64);
+  EXPECT_EQ(
+      pkg::halide::halideRuntimeTypeToFlType(longBuf.type()), fl::dtype::s64);
 }
 
 TEST(HalideTest, ConvertDims) {
-  af::dim4 emptyAfDims;
-  EXPECT_EQ(pkg::halide::afToHalideDims(emptyAfDims).size(), 0);
+  Shape emptyFlDims;
+  EXPECT_EQ(pkg::halide::flToHalideDims(emptyFlDims).size(), 0);
 
-  af::dim4 singleDims(3);
-  EXPECT_THAT(pkg::halide::afToHalideDims(singleDims), testing::ElementsAre(3));
+  Shape singleDims({3});
+  EXPECT_THAT(pkg::halide::flToHalideDims(singleDims), testing::ElementsAre(3));
 
-  af::dim4 dims(1, 5, 3, 6);
-  EXPECT_THAT(pkg::halide::afToHalideDims(dims), testing::ElementsAre(6, 3, 5, 1));
+  Shape dims({1, 5, 3, 6});
+  EXPECT_THAT(
+      pkg::halide::flToHalideDims(dims), testing::ElementsAre(6, 3, 5, 1));
 
-  Halide::Buffer<float> buffer(pkg::halide::afToHalideDims(dims));
-  EXPECT_EQ(pkg::halide::halideToAfDims(buffer), dims);
-
-  // AF doesn't support > 4 dimensions
-  std::vector<int> wideDims = {1, 2, 3, 4, 5};
-  Halide::Buffer<float> wideBuffer(wideDims);
-  EXPECT_THROW(pkg::halide::halideToAfDims(wideBuffer), std::invalid_argument);
+  Halide::Buffer<float> buffer(pkg::halide::flToHalideDims(dims));
+  EXPECT_EQ(pkg::halide::halideToFlDims(buffer), dims);
 
   // Zero dim
   std::vector<int> dimWithZero = {1, 2, 0, 3};
   Halide::Buffer<float> bufferWithZeroDim(dimWithZero);
-  EXPECT_EQ(pkg::halide::halideToAfDims(bufferWithZeroDim), af::dim4(0));
+  EXPECT_EQ(pkg::halide::halideToFlDims(bufferWithZeroDim), Shape({0}));
 
   std::vector<int> emptyDims = {};
   Halide::Buffer<float> bufferWithEmptyDim(emptyDims);
-  EXPECT_EQ(pkg::halide::halideToAfDims(bufferWithEmptyDim), af::dim4(0));
+  EXPECT_EQ(pkg::halide::halideToFlDims(bufferWithEmptyDim), Shape());
 }
 
 TEST(HalideTest, ConvertArray) {
-  auto arr = af::randu({5, 4, 3, 2});
+  auto arr = fl::rand({5, 4, 3, 2});
   auto arrCopy = arr.copy();
   {
     pkg::halide::HalideBufferWrapper<float> halideBufWrapper(arr);
@@ -93,20 +100,20 @@ TEST(HalideTest, ConvertArray) {
 }
 
 TEST(HalideTest, ConvertArrayManual) {
-  auto arr = af::randu({5, 4, 3});
+  auto arr = fl::rand({5, 4, 3});
   auto halideBuffer = pkg::halide::detail::toHalideBuffer<float>(arr);
 
-  const float* afHostPtr = arr.host<float>();
+  const float* flHostPtr = arr.host<float>();
 
   halideBuffer.copy_to_host();
   const float* halideHostPtr = halideBuffer.data();
   for (size_t i = 0; i < arr.elements(); ++i) {
-    EXPECT_FLOAT_EQ(halideHostPtr[i], afHostPtr[i]);
+    EXPECT_FLOAT_EQ(halideHostPtr[i], flHostPtr[i]);
   }
 }
 
 TEST(HalideTest, RoundTripConvertArrayManual) {
-  auto arr = af::randu({10, 14, 3});
+  auto arr = fl::rand({10, 14, 3});
   auto halideBuffer2 = pkg::halide::detail::toHalideBuffer<float>(arr);
   auto out = pkg::halide::detail::fromHalideBuffer(halideBuffer2);
   EXPECT_TRUE(fl::allClose(arr, out));
@@ -116,13 +123,13 @@ TEST(HalideTest, SimpleAOTCompiledHalidePipeline) {
   int yDim = 240, xDim = 240;
   int offset = 5;
 
-  auto input = af::randu({yDim, xDim}) * 100;
-  auto expected = af::array(input.dims(), af::dtype::f32);
-  auto output = af::array({yDim, xDim}, af::dtype::f32);
+  auto input = fl::rand({yDim, xDim}) * 100;
+  auto expected = Tensor(input.shape(), fl::dtype::f32);
+  auto output = Tensor({yDim, xDim}, fl::dtype::f32);
 
   // Reference implementation
-  for (int i = 0; i < input.dims(0); ++i) {
-    for (int j = 0; j < input.dims(1); ++j) {
+  for (int i = 0; i < input.dim(0); ++i) {
+    for (int j = 0; j < input.dim(1); ++j) {
       expected(i, j) = input(i, j) + std::sin(i * j) + offset;
     }
   }
@@ -149,7 +156,7 @@ TEST(HalideTest, SimpleJITHalidePipeline) {
   Halide::Var x("x"), y("y");
   sum(x, y) = x + y;
 
-  Halide::Buffer<int> out = sum.realize(xDim, yDim);
+  Halide::Buffer<int> out = sum.realize({xDim, yDim});
 }
 
 int main(int argc, char** argv) {
