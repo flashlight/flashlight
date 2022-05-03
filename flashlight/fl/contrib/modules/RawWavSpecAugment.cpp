@@ -139,7 +139,7 @@ Variable RawWavSpecAugment::forward(const Variable& input) {
     return output;
   }
 
-  if (input.numdims() != 3) {
+  if (input.ndim() != 3) {
     throw std::invalid_argument(
         "RawWavSpecAugment::forward - invalid input shape: "
         "input is expected to be T x C x B");

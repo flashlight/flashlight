@@ -188,7 +188,7 @@ std::vector<Variable> Conformer::forward(const std::vector<Variable>& input) {
 
   auto x = input[0];
 
-  if (x.numdims() != 3) {
+  if (x.ndim() != 3) {
     throw std::invalid_argument(
         "Conformer::forward - input should be of 3 dimensions "
         "expects an input of size C x T x B - see documentation.");

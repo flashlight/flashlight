@@ -182,7 +182,7 @@ std::pair<Variable, Variable> Seq2SeqCriterion::vectorizedDecoder(
     const Variable& target,
     const Tensor& inputSizes,
     const Tensor& targetSizes) {
-  if (target.numdims() != 2) {
+  if (target.ndim() != 2) {
     throw std::invalid_argument(
         "Seq2SeqCriterion::vectorizedDecoder: "
         "target expects to be shape {U, B}");
@@ -380,7 +380,7 @@ std::vector<Seq2SeqCriterion::CandidateHypo> Seq2SeqCriterion::beamSearch(
     }
     auto prevY = concatenate(prevYVec, 1); // 1 x B
     auto prevState = detail::concatState(prevStateVec);
-    int B = prevY.numdims() < 2 ? 1 : prevY.dims(1);
+    int B = prevY.ndim() < 2 ? 1 : prevY.dims(1);
 
     Variable ox;
     Seq2SeqState state;
@@ -467,7 +467,7 @@ std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
     const Tensor& inputSizes,
     const Tensor& targetSizes,
     const int maxDecoderSteps) const {
-  if (xEncoded.numdims() != 3) {
+  if (xEncoded.ndim() != 3) {
     throw std::invalid_argument(
         "Seq2SeqCriterion::decodeStep: "
         "expected xEncoded to have at least three dimensions");
@@ -502,7 +502,7 @@ std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
     // different for xEncoded and y (xEncoded batch = 1 and y batch = beam
     // size)
     int batchsize =
-        y.isempty() ? xEncoded.dims(2) : (y.numdims() < 2 ? 1 : y.dims(1));
+        y.isempty() ? xEncoded.dims(2) : (y.ndim() < 2 ? 1 : y.dims(1));
     if (window_ && (!train_ || trainWithWindow_)) {
       // TODO fix for softpretrain where target size is used
       // for now force to xEncoded.dim(1)
