@@ -34,7 +34,7 @@ int main() {
 
   int ntimes = 50;
   Variable b = asg.forward({input, target}).front();
-  Variable gradoutput = Variable(fl::rand(b.dims()) * 2 - 2, false);
+  Variable gradoutput = Variable(fl::rand(b.shape()) * 2 - 2, false);
   for (int i = 0; i < 5; ++i) {
     b = asg.forward({input, target}).front();
     b.backward();

@@ -159,7 +159,7 @@ Variable Conformer::mhsa(const Variable& input, const Variable& inputPadMask) {
 
 Variable Conformer::conv(const Variable& _input) {
   // Make sure the input has 4 dims for depthwise conv
-  Shape s = _input.dims();
+  Shape s = _input.shape();
   Variable input = moddims(_input, {s[0], s[1], s[2], 1});
 
   float pDropout = train_ ? pDropout_ : 0.0;
@@ -176,7 +176,7 @@ Variable Conformer::conv(const Variable& _input) {
   result = fl::swish(((*normConv2_)(result)).astype(input.type()), 1.);
   // apply second pointwise conv
   result = dropout((*conv2_)(result), pDropout);
-  return moddims(result, _input.dims());
+  return moddims(result, _input.shape());
 }
 
 std::vector<Variable> Conformer::forward(const std::vector<Variable>& input) {

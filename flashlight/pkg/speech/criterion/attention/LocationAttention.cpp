@@ -46,7 +46,7 @@ std::pair<Variable, Variable> SimpleLocationAttention::forwardBase(
   }
 
   if (!logAttnWeight.isempty()) {
-    if (logAttnWeight.dims() != innerProd.dims()) {
+    if (logAttnWeight.shape() != innerProd.shape()) {
       throw std::invalid_argument(
           "SimpleLocationAttention: logAttnWeight has wong dimentions");
     }
@@ -100,7 +100,7 @@ std::pair<Variable, Variable> LocationAttention::forwardBase(
   }
 
   if (!logAttnWeight.isempty()) {
-    if (logAttnWeight.dims() != innerProd.dims()) {
+    if (logAttnWeight.shape() != innerProd.shape()) {
       throw std::invalid_argument(
           "LocationAttention: logAttnWeight has wong dimentions");
     }
@@ -166,7 +166,7 @@ std::pair<Variable, Variable> NeuralLocationAttention::forwardBase(
   auto nnOut = module(4)->forward({hidden}).front();
 
   if (!logAttnWeight.isempty()) {
-    if (logAttnWeight.dims() != nnOut.dims()) {
+    if (logAttnWeight.shape() != nnOut.shape()) {
       throw std::invalid_argument(
           "NeuralLocationAttention: logAttnWeight has wong dimentions");
     }

@@ -146,7 +146,7 @@ Variable RawWavSpecAugment::forward(const Variable& input) {
   }
 
   // input is expected T x C x B (mostly C=1)
-  const Shape& inShape = inputCast.dims();
+  const Shape& inShape = inputCast.shape();
   // Conv2D input must be 4 dims (W x H x C x N) (N = batch size)
   Shape timeView = {inShape[0], inShape[1] * inShape[2], 1, 1};
   for (int i = 0; i < numFreqMask_; ++i) {
@@ -157,7 +157,7 @@ Variable RawWavSpecAugment::forward(const Variable& input) {
       auto inputForFilter = fl::moddims(output, timeView);
       auto midLowWav = lowPassFilters_[high]->forward(inputForFilter);
       auto lowWav = lowPassFilters_[low]->forward(inputForFilter);
-      output = output - fl::moddims(midLowWav - lowWav, inputCast.dims());
+      output = output - fl::moddims(midLowWav - lowWav, inputCast.shape());
     }
   }
 

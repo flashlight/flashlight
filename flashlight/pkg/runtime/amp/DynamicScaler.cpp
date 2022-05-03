@@ -32,7 +32,7 @@ bool DynamicScaler::unscale(std::vector<fl::Variable>& params) {
   for (auto& p : params) {
     if (!p.isGradAvailable()) {
       // Add a dummy grad for params not used in the backwards pass
-      p.addGrad(Variable(fl::full(p.dims(), 0., p.type()), false));
+      p.addGrad(Variable(fl::full(p.shape(), 0., p.type()), false));
     }
     p.grad() = p.grad() / scaleFactor_;
     if (fl::isInvalidArray(p.grad().tensor())) {

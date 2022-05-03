@@ -80,7 +80,7 @@ fl::Variable applySeq2SeqMask(
     const fl::Variable& input,
     const Tensor& targetClasses,
     int padValue) {
-  if (input.dims() != targetClasses.shape()) {
+  if (input.shape() != targetClasses.shape()) {
     throw std::runtime_error(
         "applySeq2SeqMask: input and mask should have the same dimentions.");
   }

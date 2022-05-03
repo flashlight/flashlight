@@ -51,7 +51,7 @@ void jacobianTest(
   auto bwdJacobian =
       Tensor({func(input).elements(), input.elements()}, fl::dtype::f32);
   auto dout =
-      Variable(fl::full(func(input).dims(), 0, func(input).type()), false);
+      Variable(fl::full(func(input).shape(), 0, func(input).type()), false);
 
   for (int i = 0; i < dout.elements(); ++i) {
     dout.tensor().flat(i) = 1; // element in 1D view

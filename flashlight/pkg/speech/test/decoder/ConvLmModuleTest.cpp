@@ -38,14 +38,14 @@ TEST(ConvLmModuleTest, GCNN14BAdaptiveSoftmax) {
   auto output = model->forward(noGrad(input));
   output = as->forward(output);
 
-  ASSERT_EQ(output.dims(), Shape({nclass, inputlength, batchsize}));
+  ASSERT_EQ(output.shape(), Shape({nclass, inputlength, batchsize}));
 
   // batchsize = 1
   batchsize = 1;
   input = fl::arange({inputlength, batchsize});
   output = model->forward(noGrad(input));
   output = as->forward(output);
-  ASSERT_EQ(output.dims(), Shape({nclass, inputlength, batchsize}));
+  ASSERT_EQ(output.shape(), Shape({nclass, inputlength, batchsize}));
 }
 
 TEST(ConvLmModuleTest, GCNN14BCrossEntropy) {
@@ -58,13 +58,13 @@ TEST(ConvLmModuleTest, GCNN14BCrossEntropy) {
   model->eval();
   auto input = fl::arange({inputlength, batchsize});
   auto output = model->forward(noGrad(input));
-  ASSERT_EQ(output.dims(), Shape({nclass, inputlength, batchsize}));
+  ASSERT_EQ(output.shape(), Shape({nclass, inputlength, batchsize}));
 
   // batchsize = 1
   batchsize = 1;
   input = fl::arange({inputlength, batchsize});
   output = model->forward(noGrad(input));
-  ASSERT_EQ(output.dims(), Shape({nclass, inputlength, batchsize}));
+  ASSERT_EQ(output.shape(), Shape({nclass, inputlength, batchsize}));
 }
 
 TEST(ConvLmModuleTest, SerializationGCNN14BAdaptiveSoftmax) {

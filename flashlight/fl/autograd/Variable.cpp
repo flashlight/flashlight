@@ -44,7 +44,7 @@ Variable::Variable(
 
 Variable Variable::operator()(const std::vector<Index>& indices) const {
   auto result = tensor()(indices);
-  auto inDims = dims();
+  auto inDims = shape();
   auto inType = type();
 
   auto gradFunc = [indices, inDims, inType](
@@ -63,7 +63,7 @@ Variable Variable::operator()(const std::vector<Index>& indices) const {
 
 Variable Variable::flat(const fl::Index& index) const {
   auto result = tensor().flat(index);
-  auto inDims = dims();
+  auto inDims = shape();
   auto inType = type();
 
   auto gradFunc = [index, inDims, inType](
@@ -122,7 +122,7 @@ bool Variable::isGradAvailable() const {
   return sharedGrad_->grad != nullptr;
 }
 
-Shape Variable::dims() const {
+Shape Variable::shape() const {
   return tensor().shape();
 }
 
@@ -190,12 +190,12 @@ void Variable::addGrad(const Variable& childGrad) {
             "two inputs of different types.";
       throw std::invalid_argument(ss.str());
     }
-    if (childGrad.dims() != this->dims()) {
+    if (childGrad.shape() != this->shape()) {
       std::stringstream ss;
       ss << "Variable::addGrad: given gradient has dimensions not equal "
             "to this Variable's dimensions: this variable has shape "
-         << this->dims() << " whereas the child gradient has dimensions "
-         << childGrad.dims() << std::endl;
+         << this->shape() << " whereas the child gradient has dimensions "
+         << childGrad.shape() << std::endl;
       throw std::invalid_argument(ss.str());
     }
     if (sharedGrad_->grad) {
@@ -254,7 +254,7 @@ void Variable::backward(const Variable& grad, bool retainGraph) {
 }
 
 void Variable::backward(bool retainGraph) {
-  auto ones = Variable(fl::full(dims(), 1, this->type()), false);
+  auto ones = Variable(fl::full(shape(), 1, this->type()), false);
   backward(ones, retainGraph);
 }
 
@@ -263,7 +263,7 @@ Variable Variable::withoutData() const {
   other.sharedGrad_ = sharedGrad_;
   // Ensure the type of the underlying [but empty] Tensor data is of the same
   // type and shape
-  other.tensor() = Tensor(dims(), this->type());
+  other.tensor() = Tensor(shape(), this->type());
   return other;
 }
 

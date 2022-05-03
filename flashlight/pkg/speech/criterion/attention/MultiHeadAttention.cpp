@@ -80,7 +80,7 @@ std::pair<Variable, Variable> MultiHeadContentAttention::forwardBase(
 
   if (!logAttnWeight.isempty()) {
     auto tiledLogAttnWeight = tile(logAttnWeight, {1, 1, numHeads_});
-    if (tiledLogAttnWeight.dims() != innerProd.dims()) {
+    if (tiledLogAttnWeight.shape() != innerProd.shape()) {
       throw std::invalid_argument(
           "MultiHeadContentAttention: logAttnWeight has wong dimentions");
     }

@@ -128,7 +128,7 @@ std::vector<Variable> MultiheadAttention::forward(
       q, k, v, keyPaddingMask, numHeads_, dropout);
   result = (*wf_)(result);
 
-  assert(result.dims() == queries.dims());
+  assert(result.shape() == queries.shape());
   std::vector<Variable> results = {result};
   return results;
 };
@@ -454,7 +454,7 @@ std::vector<Variable> Transformer::forward(
   assert(queryEmbed.dims(1) == src.dims(1));
   assert(queryEmbed.dims(0) == src.dims(0));
 
-  auto tgt = fl::Variable(fl::full(queryEmbed.dims(), 0, src.type()), false);
+  auto tgt = fl::Variable(fl::full(queryEmbed.shape(), 0, src.type()), false);
 
   auto memory = encoder_->forward({src, mask, posEmbed});
   auto hs = decoder_->forward({tgt, memory[0], posEmbed, queryEmbed, mask})[0];

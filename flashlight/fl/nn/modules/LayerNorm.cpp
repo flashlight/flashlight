@@ -45,7 +45,7 @@ Variable LayerNorm::forward(const Variable& _input) {
   // adding singleton dims. This is needed per computing the axis complement
   // TODO: this is pretty ugly -- eventually fix this up if it can be avoided
   if (input.ndim() < kLnExpectedNumDims) {
-    std::vector<Dim> s = _input.dims().get();
+    std::vector<Dim> s = _input.shape().get();
     for (unsigned i = s.size(); i < kLnExpectedNumDims; ++i) {
       s.push_back(1);
     }
@@ -113,7 +113,7 @@ Variable LayerNorm::forward(const Variable& _input) {
     Variable weight = params_[0].astype(output.type());
     Variable bias = params_[1].astype(output.type());
     if (axisSize_ != kLnVariableAxisSize) {
-      Shape affineDims = input.dims();
+      Shape affineDims = input.shape();
       for (int ax : axisComplement_) {
         affineDims[ax] = 1;
       }
@@ -127,7 +127,7 @@ Variable LayerNorm::forward(const Variable& _input) {
     output = tileAs(weight, input) * output + tileAs(bias, input);
   }
 
-  return moddims(output, _input.dims());
+  return moddims(output, _input.shape());
 }
 
 void LayerNorm::initialize() {

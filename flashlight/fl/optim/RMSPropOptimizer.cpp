@@ -36,11 +36,11 @@ RMSPropOptimizer::RMSPropOptimizer(
 
   for (const auto& parameter : parameters_) {
     if (useFirst_) {
-      first_.emplace_back(fl::full(parameter.dims(), 0, parameter.type()));
+      first_.emplace_back(fl::full(parameter.shape(), 0, parameter.type()));
       fl::eval(first_.back());
     }
 
-    second_.emplace_back(fl::full(parameter.dims(), 0, parameter.type()));
+    second_.emplace_back(fl::full(parameter.shape(), 0, parameter.type()));
     fl::eval(second_.back());
   }
 }

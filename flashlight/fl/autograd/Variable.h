@@ -142,7 +142,7 @@ class Variable {
   /**
    * Returns the dimension of the array wrapped by the Variable
    */
-  Shape dims() const;
+  Shape shape() const;
 
   /**
    * Returns whether the array wrapped by the Variable is empty
