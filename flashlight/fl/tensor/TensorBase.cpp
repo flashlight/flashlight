@@ -805,6 +805,11 @@ bool allClose(
       absTolerance;
 }
 
+bool isInvalidArray(const Tensor& tensor) {
+  return fl::any(fl::isnan(tensor)).asScalar<bool>() ||
+      fl::any(fl::isinf(tensor)).asScalar<bool>();
+}
+
 namespace detail {
 
 bool areTensorTypesEqual(const Tensor& a, const Tensor& b) {

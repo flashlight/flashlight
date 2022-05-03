@@ -1456,6 +1456,11 @@ bool allClose(
     const fl::Tensor& b,
     const double absTolerance = 1e-5);
 
+/**
+ * @return if a Tensor contains any NaN or Inf values.
+ */
+bool isInvalidArray(const Tensor& tensor);
+
 namespace detail {
 
 bool areTensorTypesEqual(const Tensor& a, const Tensor& b);
