@@ -12,7 +12,7 @@
 #include <unordered_map>
 
 #include "flashlight/fl/common/DevicePtr.h"
-#include "flashlight/fl/common/backend/cuda/CudaUtils.h"
+#include "flashlight/fl/tensor/CUDAUtils.h"
 #include "flashlight/fl/tensor/Compute.h"
 #include "flashlight/fl/tensor/Shape.h"
 #include "flashlight/fl/tensor/Types.h"

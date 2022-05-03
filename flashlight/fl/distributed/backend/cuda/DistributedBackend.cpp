@@ -15,9 +15,9 @@
 
 #include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/common/DevicePtr.h"
-#include "flashlight/fl/common/backend/cuda/CudaUtils.h"
 #include "flashlight/fl/distributed/DistributedApi.h"
 #include "flashlight/fl/distributed/FileStore.h"
+#include "flashlight/fl/tensor/CUDAUtils.h"
 #include "flashlight/fl/tensor/Compute.h"
 #include "flashlight/fl/tensor/Types.h"
 
