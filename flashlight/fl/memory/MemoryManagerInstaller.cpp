@@ -11,8 +11,10 @@
 #include <cstdlib>
 #include <stdexcept>
 
-#include "flashlight/fl/common/Utils.h"
+#include <af/device.h>
+
 #include "flashlight/fl/memory/managers/CachingMemoryManager.h"
+#include "flashlight/fl/tensor/backend/af/Utils.h"
 
 namespace fl {
 
