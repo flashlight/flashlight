@@ -6,13 +6,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <arrayfire.h>
 #include <gtest/gtest.h>
 
-#include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
 #include "flashlight/fl/contrib/modules/modules.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/System.h"
+#include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
 
 using namespace fl;
 
@@ -40,9 +39,9 @@ TEST(ModulePluginTest, ModulePlugin) {
   // way in this test (plugin destroyed after model).
   fl::pkg::runtime::ModulePlugin plugin(libfile);
   auto model = plugin.arch(ninput, noutput);
-  auto input = af::randn(ninput, batchsize, f32);
+  auto input = fl::randn({ninput, batchsize}, fl::dtype::f32);
   auto output = model->forward({noGrad(input)}).front();
-  ASSERT_EQ(output.dims(), af::dim4(noutput, batchsize));
+  ASSERT_EQ(output.dims(), Shape({noutput, batchsize}));
 }
 
 int main(int argc, char** argv) {
