@@ -11,17 +11,18 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "flashlight/pkg/vision/dataset/Imagenet.h"
 #include "flashlight/app/imgclass/examples/Defines.h"
-#include "flashlight/pkg/runtime/common/DistributedUtils.h"
-#include "flashlight/pkg/vision/dataset/Transforms.h"
-#include "flashlight/pkg/vision/dataset/DistributedDataset.h"
-#include "flashlight/pkg/vision/models/Resnet.h"
-#include "flashlight/pkg/vision/models/ViT.h"
 #include "flashlight/fl/dataset/datasets.h"
 #include "flashlight/fl/meter/meters.h"
 #include "flashlight/fl/optim/optim.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/lib/common/System.h"
+#include "flashlight/pkg/runtime/common/DistributedUtils.h"
+#include "flashlight/pkg/vision/dataset/DistributedDataset.h"
+#include "flashlight/pkg/vision/dataset/Imagenet.h"
+#include "flashlight/pkg/vision/dataset/Transforms.h"
+#include "flashlight/pkg/vision/models/Resnet.h"
+#include "flashlight/pkg/vision/models/ViT.h"
 
 #include "flashlight/fl/common/threadpool/ThreadPool.h"
 
@@ -68,7 +69,7 @@ int main(int argc, char** argv) {
         FLAGS_distributed_max_devices_per_node,
         FLAGS_distributed_rndv_filepath);
   }
-  af::info();
+
   const int worldRank = fl::getWorldRank();
   const int worldSize = fl::getWorldSize();
 
@@ -112,8 +113,8 @@ int main(int argc, char** argv) {
     auto output = model->forward({inputs}).front();
     auto target = noGrad(example[kImagenetTargetIdx]);
 
-    top5Acc.add(output.array(), target.array());
-    top1Acc.add(output.array(), target.array());
+    top5Acc.add(output.tensor(), target.tensor());
+    top1Acc.add(output.tensor(), target.tensor());
   }
   fl::pkg::runtime::syncMeter(top5Acc);
   fl::pkg::runtime::syncMeter(top1Acc);
