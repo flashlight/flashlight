@@ -10,6 +10,7 @@
 #include <cmath>
 
 #include "flashlight/fl/autograd/Functions.h"
+#include "flashlight/fl/tensor/Random.h"
 
 namespace fl {
 namespace pkg {
@@ -64,7 +65,7 @@ Variable VisionTransformer::gelu(const Variable& input) {
 Variable VisionTransformer::mlp(const Variable& input) {
   float pDropout = train_ ? pDropout_ : 0.0;
   auto output = (*w1_)(input);
-  output = gelu(output.as(f32)).as(input.type());
+  output = gelu(output.as(fl::dtype::f32)).as(input.type());
   output = dropout(output, pDropout);
   output = (*w2_)(output);
   output = dropout(output, pDropout);
@@ -76,9 +77,9 @@ Variable VisionTransformer::selfAttention(const Variable& x) {
   // x - C x T x B
   double pDrop = train_ ? pDropout_ : 0.0;
 
-  auto q = transpose((*wq_)(x));
-  auto k = transpose((*wk_)(x));
-  auto v = transpose((*wv_)(x));
+  auto q = transpose((*wq_)(x), {1, 0, 2});
+  auto k = transpose((*wk_)(x), {1, 0, 2});
+  auto v = transpose((*wv_)(x), {1, 0, 2});
 
   auto result = multiheadAttention(
       q,
@@ -91,7 +92,7 @@ Variable VisionTransformer::selfAttention(const Variable& x) {
       pDrop,
       0 // offset
   );
-  result = (*wf_)(transpose(result));
+  result = (*wf_)(transpose(result, {1, 0, 2}));
   result = dropout(result, pDrop);
 
   return result;
@@ -106,21 +107,30 @@ Variable VisionTransformer::dropPath(const Variable& x) {
   int C = x.dims(0);
   int T = x.dims(1);
   int B = x.dims(2);
-  auto keepMask = (af::randu(1, 1, B) > pLayerdrop_).as(x.type());
-  auto keepRatio = af::mean(keepMask, 2).as(f32).scalar<float>();
+  auto keepMask = (fl::rand({1, 1, B}) > pLayerdrop_).astype(x.type());
+  auto keepRatio =
+      fl::mean(keepMask, {2}).astype(fl::dtype::f32).scalar<float>();
   // Note: this `keepRatio` is computed for real here, while in the PT
   // implementatino above, `keepRatio` = 1 - pLayerdrop_.
   keepMask = keepMask / keepRatio;
-  return x * Variable(af::tile(keepMask, af::dim4(C, T)).as(x.type()), false);
+  return x * Variable(fl::tile(keepMask, {C, T}).astype(x.type()), false);
 }
 
 std::vector<Variable> VisionTransformer::forward(
     const std::vector<Variable>& inputs) {
   if (inputs.size() != 1) {
-    throw std::runtime_error("VisionTransformer forward, !1 input Variable");
+    throw std::runtime_error("VisionTransformer forward, !1 input Variables");
   }
 
   auto x = inputs.front();
+
+  if (x.numdims() != 3) {
+    throw std::invalid_argument(
+        "VisionTransformer::forward - "
+        "expected input with 3 dimensions - got input with " +
+        std::to_string(x.numdims()));
+  }
+
   x = x + dropPath(selfAttention((*norm1_)(x)));
   x = x + dropPath(mlp((*norm2_)(x)));
   return {x};
@@ -140,8 +150,8 @@ std::shared_ptr<fl::Linear> VisionTransformer::initLinear(
     int inDim,
     int outDim) {
   return std::make_shared<Linear>(
-      fl::truncNormal(af::dim4(outDim, inDim), 0.02),
-      fl::constant(0., outDim, 1, af::dtype::f32));
+      fl::truncNormal({outDim, inDim}, 0.02),
+      fl::constant(0., outDim, 1, fl::dtype::f32));
 }
 } // namespace vision
 } // namespace pkg
