@@ -25,8 +25,8 @@ namespace fl {
  * Example:
   \code{.cpp}
   // Make a dataset with 100 samples
-  auto tensor = af::randu(5, 4, 100);
-  std::vector<af::array> fields{tensor};
+  auto tensor = fl::rand({5, 4, 100});
+  std::vector<Tensor> fields{tensor};
   auto ds = std::make_shared<TensorDataset>(fields);
 
   // Iterate over the dataset using 4 background threads prefetching 2 samples
@@ -51,7 +51,7 @@ class PrefetchDataset : public Dataset {
 
   int64_t size() const override;
 
-  std::vector<af::array> get(const int64_t idx) const override;
+  std::vector<Tensor> get(const int64_t idx) const override;
 
  protected:
   std::shared_ptr<const Dataset> dataset_;
@@ -60,7 +60,7 @@ class PrefetchDataset : public Dataset {
  private:
   std::unique_ptr<ThreadPool> threadPool_;
   // state variables
-  mutable std::queue<std::future<std::vector<af::array>>> prefetchCache_;
+  mutable std::queue<std::future<std::vector<Tensor>>> prefetchCache_;
   mutable int64_t curIdx_;
 };
 

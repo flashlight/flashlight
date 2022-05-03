@@ -21,8 +21,8 @@ namespace fl {
   \code{.cpp}
   // Make two datasets with sizes 10 and 20
   auto makeDataset = [](int size) {
-    auto tensor = af::randu(5, 4, size);
-    std::vector<af::array> fields{tensor};
+    auto tensor = fl::rand({5, 4, size});
+    std::vector<Tensor> fields{tensor};
     return std::make_shared<TensorDataset>(fields);
   };
   auto ds1 = makeDataset(10);
@@ -45,7 +45,7 @@ class ConcatDataset : public Dataset {
 
   int64_t size() const override;
 
-  std::vector<af::array> get(const int64_t idx) const override;
+  std::vector<Tensor> get(const int64_t idx) const override;
 
  private:
   std::vector<std::shared_ptr<const Dataset>> datasets_;
