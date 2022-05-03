@@ -17,6 +17,7 @@ target_sources(
   PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/Compute.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Index.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/Init.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Random.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Shape.cpp
   ${CMAKE_CURRENT_LIST_DIR}/TensorBackend.cpp

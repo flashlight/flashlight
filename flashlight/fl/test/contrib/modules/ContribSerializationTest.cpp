@@ -13,9 +13,9 @@
 
 #include "flashlight/fl/autograd/autograd.h"
 #include "flashlight/fl/common/Filesystem.h"
-#include "flashlight/fl/common/Init.h"
 #include "flashlight/fl/contrib/modules/modules.h"
 #include "flashlight/fl/nn/nn.h"
+#include "flashlight/fl/tensor/Init.h"
 
 using namespace fl;
 

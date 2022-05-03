@@ -11,7 +11,7 @@
 #include <array>
 
 #include "flashlight/pkg/speech/criterion/criterion.h"
-#include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/lib/common/System.h"
 
 using namespace fl;

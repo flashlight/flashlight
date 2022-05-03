@@ -9,6 +9,7 @@
 
 #include <stdexcept>
 
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/Shape.h"
 
 using namespace ::testing;
@@ -84,4 +85,10 @@ TEST(ShapeTest, string) {
   checkShapeStrEqual(Shape({}), "()");
   checkShapeStrEqual(Shape({0}), "(0)");
   checkShapeStrEqual(Shape({7, 7, 7, 7, 7, 7, 7}), "(7, 7, 7, 7, 7, 7, 7)");
+}
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
+  return RUN_ALL_TESTS();
 }

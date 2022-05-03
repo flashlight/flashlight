@@ -15,7 +15,7 @@
 #include "flashlight/pkg/speech/data/ListFileDataset.h"
 #include "flashlight/pkg/speech/data/Utils.h"
 #include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
-#include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/lib/audio/feature/SpeechUtils.h"
 
 using namespace fl;
