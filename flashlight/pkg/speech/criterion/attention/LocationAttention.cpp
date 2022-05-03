@@ -38,21 +38,21 @@ std::pair<Variable, Variable> SimpleLocationAttention::forwardBase(
   // [1, seqlen, batchsize]
   auto innerProd = matmulTN(state, xEncoded);
 
-  if (!prevAttn.isempty()) {
+  if (!prevAttn.isEmpty()) {
     auto addAttn = moddims(
         module(0)->forward({moddims(prevAttn, {1, T, 1, B})}).front(),
         {1, T, B});
     innerProd = innerProd + addAttn;
   }
 
-  if (!logAttnWeight.isempty()) {
+  if (!logAttnWeight.isEmpty()) {
     if (logAttnWeight.shape() != innerProd.shape()) {
       throw std::invalid_argument(
           "SimpleLocationAttention: logAttnWeight has wong dimentions");
     }
     innerProd = innerProd + logAttnWeight;
   }
-  if (!xEncodedSizes.isempty()) {
+  if (!xEncodedSizes.isEmpty()) {
     innerProd = maskAttention(innerProd, xEncodedSizes);
   }
   // [1, seqlen, batchsize]
@@ -92,21 +92,21 @@ std::pair<Variable, Variable> LocationAttention::forwardBase(
 
   auto innerProd = matmulTN(state, xEncoded);
 
-  if (!prevAttn.isempty()) {
+  if (!prevAttn.isEmpty()) {
     auto addAttn = moddims(
         module(0)->forward({moddims(prevAttn, {1, T, 1, B})}).front(),
         {H, T, B});
     innerProd = innerProd + matmulTN(state, addAttn);
   }
 
-  if (!logAttnWeight.isempty()) {
+  if (!logAttnWeight.isEmpty()) {
     if (logAttnWeight.shape() != innerProd.shape()) {
       throw std::invalid_argument(
           "LocationAttention: logAttnWeight has wong dimentions");
     }
     innerProd = innerProd + logAttnWeight;
   }
-  if (!xEncodedSizes.isempty()) {
+  if (!xEncodedSizes.isEmpty()) {
     innerProd = maskAttention(innerProd, xEncodedSizes);
   }
   // [1, seqlen, batchsize]
@@ -156,7 +156,7 @@ std::pair<Variable, Variable> NeuralLocationAttention::forwardBase(
 
   // [1, seqlen, batchsize]
   auto hidden = Hx + tileHy;
-  if (!prevAttn.isempty()) {
+  if (!prevAttn.isEmpty()) {
     auto addAttn = moddims(
         module(2)->forward({moddims(prevAttn, {1, T, 1, B})}).front(),
         {-1, T, B});
@@ -165,7 +165,7 @@ std::pair<Variable, Variable> NeuralLocationAttention::forwardBase(
   hidden = module(3)->forward({hidden}).front();
   auto nnOut = module(4)->forward({hidden}).front();
 
-  if (!logAttnWeight.isempty()) {
+  if (!logAttnWeight.isEmpty()) {
     if (logAttnWeight.shape() != nnOut.shape()) {
       throw std::invalid_argument(
           "NeuralLocationAttention: logAttnWeight has wong dimentions");
@@ -173,7 +173,7 @@ std::pair<Variable, Variable> NeuralLocationAttention::forwardBase(
     nnOut = nnOut + logAttnWeight;
   }
 
-  if (!xEncodedSizes.isempty()) {
+  if (!xEncodedSizes.isEmpty()) {
     nnOut = maskAttention(nnOut, xEncodedSizes);
   }
   // [1, seqlen, batchsize]

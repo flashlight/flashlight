@@ -474,7 +474,7 @@ std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
   }
 
   Variable hy;
-  if (y.isempty()) {
+  if (y.isEmpty()) {
     hy = tile(startEmbedding(), {1, 1, static_cast<int>(xEncoded.dims(2))});
   } else if (train_ && samplingStrategy_ == fl::pkg::speech::kGumbelSampling) {
     hy = linear(y, embedding()->param(0));
@@ -482,7 +482,7 @@ std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
     hy = embedding()->forward(y);
   }
 
-  if (inputFeeding_ && !y.isempty()) {
+  if (inputFeeding_ && !y.isEmpty()) {
     hy = hy + moddims(inState.summary, hy.shape());
   }
   hy = moddims(hy, {hy.dims(0), -1}); // H x B
@@ -502,7 +502,7 @@ std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
     // different for xEncoded and y (xEncoded batch = 1 and y batch = beam
     // size)
     int batchsize =
-        y.isempty() ? xEncoded.dims(2) : (y.ndim() < 2 ? 1 : y.dims(1));
+        y.isEmpty() ? xEncoded.dims(2) : (y.ndim() < 2 ? 1 : y.dims(1));
     if (window_ && (!train_ || trainWithWindow_)) {
       // TODO fix for softpretrain where target size is used
       // for now force to xEncoded.dim(1)
@@ -538,7 +538,7 @@ Seq2SeqCriterion::decodeBatchStep(
 
   // Batch Ys
   for (int i = 0; i < batchSize; i++) {
-    if (ys[i].isempty()) {
+    if (ys[i].isEmpty()) {
       ys[i] = startEmbedding();
     } else {
       ys[i] = embedding()->forward(ys[i]);
@@ -559,7 +559,7 @@ Seq2SeqCriterion::decodeBatchStep(
 
   for (int n = 0; n < nAttnRound_; n++) {
     /* (1) RNN forward */
-    if (inStates[0]->hidden[n].isempty()) {
+    if (inStates[0]->hidden[n].isEmpty()) {
       std::tie(yBatched, outStateBatched) =
           decodeRNN(n)->forward(yBatched, Variable());
     } else {

@@ -1340,7 +1340,7 @@ Variable conv2d(
 
   auto payload = detail::createAutogradPayload(in, wt, bs);
 
-  bool hasBias = !bs.isempty();
+  bool hasBias = !bs.isEmpty();
 
   auto input = FL_ADJUST_INPUT_TYPE(in);
   auto weights = FL_ADJUST_INPUT_TYPE(wt);
@@ -1557,7 +1557,7 @@ Variable batchnorm(
 
         in.addGrad(Variable(gradIn.astype(in.type()), false));
         wt.addGrad(Variable(gradWt.astype(wt.type()), false));
-        if (!bs.isempty()) {
+        if (!bs.isEmpty()) {
           bs.addGrad(Variable(gradBs.astype(bs.type()), false));
         }
       };
@@ -1861,17 +1861,17 @@ fl::Variable multiheadAttention(
 
   q = q / std::sqrt(float(headDim));
   auto scores = matmulNT(q, k);
-  if (!posEmb.isempty()) {
+  if (!posEmb.isEmpty()) {
     int n = posEmb.dims(0) / 2 - offset;
     auto pscores =
         relativePositionEmbeddingRotate(matmulNT(posEmb.astype(q.type()), q));
     scores =
         scores + transpose(pscores(fl::range(n, n + k.dims(0))), {1, 0, 2});
   }
-  if (!mask.isempty()) {
+  if (!mask.isEmpty()) {
     scores = scores + tileAs(mask.astype(scores.type()), scores);
   }
-  if (!padMask.isempty()) {
+  if (!padMask.isEmpty()) {
     if (padMask.dims(0) != query.dims(0)) {
       throw std::invalid_argument(
           "multiheadAttention: invalid padding mask size");

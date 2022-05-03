@@ -71,7 +71,7 @@ fl::Variable transformerMultiheadAttention(
 
   auto scores = matmulTN(q, k);
 
-  if (!keyPaddingMask.isempty()) {
+  if (!keyPaddingMask.isEmpty()) {
     scores = scores +
         tileAs(moddims(log(keyPaddingMask), {1, srcLen, 1, bsz}), scores);
   }
@@ -113,7 +113,7 @@ std::vector<Variable> MultiheadAttention::forward(
   int32_t modelDim = queries.dims(0);
   int32_t headDim = modelDim / numHeads_;
 
-  if (!keyPaddingMask.isempty()) {
+  if (!keyPaddingMask.isEmpty()) {
     assert(keyPaddingMask.dims(0) == keys.dims(2));
     assert(keyPaddingMask.dims(1) == keys.dims(1));
   }
@@ -184,7 +184,7 @@ Variable TransformerBaseLayer::mlp(const Variable& in) {
 Variable TransformerBaseLayer::withPosEmbed(
     const Variable& input,
     const Variable& pos) {
-  if (pos.isempty()) {
+  if (pos.isEmpty()) {
     return input;
   }
   return input + pos;
@@ -281,7 +281,7 @@ Variable TransformerDecoderLayer::mlp(const Variable& in) {
 Variable TransformerDecoderLayer::withPosEmbed(
     const Variable& input,
     const Variable& pos) {
-  if (pos.isempty()) {
+  if (pos.isEmpty()) {
     return input;
   }
   return input + pos;

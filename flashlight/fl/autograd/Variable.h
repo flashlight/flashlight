@@ -147,7 +147,7 @@ class Variable {
   /**
    * Returns whether the array wrapped by the Variable is empty
    */
-  bool isempty() const;
+  bool isEmpty() const;
 
   /**
    * Returns whether the array wrapped by the Variable is contiguous in memory

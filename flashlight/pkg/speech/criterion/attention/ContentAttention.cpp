@@ -31,7 +31,7 @@ std::pair<Variable, Variable> ContentAttention::forwardBase(
   auto values = keyValue_ ? xEncoded(fl::range(dim / 2, dim)) : xEncoded;
   // [targetlen, seqlen, batchsize]
   auto innerProd = matmulTN(state, keys) / std::sqrt(state.dims(0));
-  if (!logAttnWeight.isempty()) {
+  if (!logAttnWeight.isEmpty()) {
     if (logAttnWeight.shape() != innerProd.shape()) {
       throw std::invalid_argument(
           "ContentAttention: logAttnWeight has wong dimentions");
@@ -39,7 +39,7 @@ std::pair<Variable, Variable> ContentAttention::forwardBase(
     innerProd = innerProd + logAttnWeight;
   }
   Tensor padMask;
-  if (!xEncodedSizes.isempty()) {
+  if (!xEncodedSizes.isEmpty()) {
     innerProd = maskAttention(innerProd, xEncodedSizes);
   }
   // [targetlen, seqlen, batchsize]
@@ -81,7 +81,7 @@ std::pair<Variable, Variable> NeuralContentAttention::forwardBase(
   auto hidden = tileHx + tileHy;
   // [targetlen, seqlen, batchsize]
   auto nnOut = moddims(module(0)->forward({hidden}).front(), {U, T, B});
-  if (!logAttnWeight.isempty()) {
+  if (!logAttnWeight.isEmpty()) {
     if (logAttnWeight.shape() != nnOut.shape()) {
       throw std::invalid_argument(
           "ContentAttention: logAttnWeight has wong dimentions");
@@ -89,7 +89,7 @@ std::pair<Variable, Variable> NeuralContentAttention::forwardBase(
     nnOut = nnOut + logAttnWeight;
   }
 
-  if (!xEncodedSizes.isempty()) {
+  if (!xEncodedSizes.isEmpty()) {
     nnOut = maskAttention(nnOut, xEncodedSizes);
   }
   // [targetlen, seqlen, batchsize]

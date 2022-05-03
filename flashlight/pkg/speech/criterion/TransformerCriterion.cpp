@@ -105,7 +105,7 @@ std::pair<Variable, Variable> TransformerCriterion::vectorizedDecoder(
     const Tensor& targetSizes) {
   int U = target.dims(0);
   int B = target.dims(1);
-  int T = input.isempty() ? 0 : input.dims(1);
+  int T = input.isEmpty() ? 0 : input.dims(1);
 
   auto hy = tile(startEmbedding(), {1, 1, B});
 
@@ -133,7 +133,7 @@ std::pair<Variable, Variable> TransformerCriterion::vectorizedDecoder(
     hy = layer(i)->forward(std::vector<Variable>({hy, padMask})).front();
   }
 
-  if (!input.isempty()) {
+  if (!input.isEmpty()) {
     Variable windowWeight;
     if (window_ && (!train_ || trainWithWindow_)) {
       windowWeight =
@@ -200,7 +200,7 @@ std::pair<Variable, TS2SState> TransformerCriterion::decodeStep(
     const TS2SState& inState,
     const Tensor& inputSizes) const {
   Variable hy;
-  if (y.isempty()) {
+  if (y.isEmpty()) {
     hy = tile(startEmbedding(), {1, 1, xEncoded.dims(2)});
   } else {
     hy = embedding()->forward(y);
@@ -260,7 +260,7 @@ TransformerCriterion::decodeBatchStep(
   int B = ys.size();
 
   for (int i = 0; i < B; i++) {
-    if (ys[i].isempty()) {
+    if (ys[i].isEmpty()) {
       ys[i] = startEmbedding();
     } else {
       ys[i] = embedding()->forward(ys[i]);
