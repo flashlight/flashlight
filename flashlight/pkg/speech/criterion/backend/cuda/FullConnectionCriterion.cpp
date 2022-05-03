@@ -66,12 +66,12 @@ static void backward(
 Variable FullConnectionCriterion::forward(
     const Variable& inputVar,
     const Variable& targetVar) {
-  if (inputVar.numdims() != 3) {
+  if (inputVar.ndim() != 3) {
     throw std::invalid_argument(
         "FullConnectionCriterion::forward: "
         "expects input with dimensions {N, T, B}");
   }
-  if (targetVar.numdims() != 2) {
+  if (targetVar.ndim() != 2) {
     throw std::invalid_argument(
         "FullConnectionCriterion::forward: "
         "expects target with dimensions {B, L}");

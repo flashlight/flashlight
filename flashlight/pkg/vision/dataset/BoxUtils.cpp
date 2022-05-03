@@ -67,7 +67,7 @@ Tensor flatten(const Tensor& x, int start, int stop) {
 };
 
 fl::Variable flatten(const fl::Variable& x, int start, int stop) {
-  unsigned n = x.numdims();
+  unsigned n = x.ndim();
   auto dims = x.dims();
   Shape newDims(std::vector<Dim>(n, 1));
   int flattenedDims = 1;
@@ -103,7 +103,7 @@ fl::Variable boxArea(const fl::Variable& bboxes) {
 }
 
 Variable cartesian(const Variable& x, const Variable& y, batchFuncVar_t fn) {
-  if (x.numdims() != 3 || y.numdims() != 3) {
+  if (x.ndim() != 3 || y.ndim() != 3) {
     throw std::invalid_argument(
         "vision::cartesian - x and y inputs must have 3 dimensions");
   }
@@ -160,7 +160,7 @@ std::tuple<Tensor, Tensor> boxIou(
 std::tuple<fl::Variable, fl::Variable> boxIou(
     const fl::Variable& bboxes1,
     const fl::Variable& bboxes2) {
-  if (bboxes1.numdims() != 3 || bboxes2.numdims() != 3) {
+  if (bboxes1.ndim() != 3 || bboxes2.ndim() != 3) {
     std::stringstream ss;
     ss << "vision::boxIou - bbox inputs must be of shape "
           "[4, N, B] and [4, M, B]. Got boxes with dimensions "
