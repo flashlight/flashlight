@@ -52,13 +52,13 @@ When using the CUDA backend, ``fl::DistributedConstants::kMaxDevicePerNode`` mus
 Synchronizing Parameters
 ########################
 
-Now, we demonstrate the implementation of a `data parallel <https://en.wikipedia.org/wiki/Data_parallelism>`_ model; during training, data is equally distributed amongst all devices, and each device completes full forward and backward passes independently, before synchronizing state via an ``allReduce`` operation. Below, we call ``allReduce`` on an ArrayFire array:
+Now, we demonstrate the implementation of a `data parallel <https://en.wikipedia.org/wiki/Data_parallelism>`_ model; during training, data is equally distributed amongst all devices, and each device completes full forward and backward passes independently, before synchronizing state via an ``allReduce`` operation. Below, we call ``allReduce`` on a Flashlight ``Tensor``:
 
 ::
 
-  auto a = af::constant(rank, 3, 3);
+  auto a = fl::full({3, 3}, rank);
   fl::allReduce(a);
-  af::print("a", a);
+  std::cout << "a" << a << std::endl;
   // a
   // [3 3 1 1]
   //    6.0000     6.0000     6.0000
@@ -98,7 +98,7 @@ First things first - initialize the distributed environment:
   auto worldSize = fl::getWorldSize();
   auto worldRank = fl::getWorldRank();
   bool isMaster = (worldRank == 0);
-  af::setSeed(worldRank);
+  fl::setSeed(worldRank);
 
 Create the dataset. Samples are divided equally among all processes.
 ::
@@ -106,9 +106,9 @@ Create the dataset. Samples are divided equally among all processes.
   // Create dataset
   const int nSamples = 10000 / worldSize;
   const int nFeat = 10;
-  auto X = af::randu(nFeat, nSamples) + 1; // X elements in [1, 2]
-  auto Y = af::sum(af::pow(X, 3), 0).T() + // signal
-           af::sin(2 * M_PI * af::randu(nSamples)); // noise
+  auto X = fl::rand({nFeat, nSamples}) + 1; // X elements in [1, 2]
+  auto Y = fl::sum(fl::power(X, 3), {0}).T() + // signal
+           fl::sin(2 * M_PI * fl::rand({nSamples})); // noise
   // Create Dataset to simplify the code for iterating over samples
   TensorDataset data({X, Y});
   const int inputIdx = 0, targetIdx = 1;
@@ -168,7 +168,7 @@ Create an ``Optimizer`` and ``Meter`` and start training:
     }
 
     auto mse = meter.value();
-    auto mseArr = af::array(1, &mse[0]);
+    auto mseArr = fl::Tensor(1, &mse[0]);
 
     fl::allReduce(mseArr);
     if (isMaster) {

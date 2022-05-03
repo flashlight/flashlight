@@ -12,8 +12,8 @@ First, we load the data using ``TensorDataset`` and ``BatchDataset``:
 
 ::
 
-  array train_x;
-  array train_y;
+  Tensor train_x;
+  Tensor train_y;
   std::tie(train_x, train_y) = load_dataset(data_dir);
 
   // Hold out a dev set
@@ -24,12 +24,12 @@ First, we load the data using ``TensorDataset`` and ``BatchDataset``:
 
   // Make the training batch dataset
   BatchDataset trainset(
-      std::make_shared<TensorDataset>(std::vector<af::array>{train_x, train_y}),
+      std::make_shared<TensorDataset>(std::vector<Tensor>{train_x, train_y}),
       batch_size);
 
   // Make the validation batch dataset
   BatchDataset valset(
-      std::make_shared<TensorDataset>(std::vector<af::array>{val_x, val_y}),
+      std::make_shared<TensorDataset>(std::vector<Tensor>{val_x, val_y}),
       batch_size);
 
 
@@ -42,7 +42,7 @@ Now, we construct the model:
 
   Sequential model;
   auto pad = PaddingMode::SAME;
-  model.add(View(af::dim4(IM_DIM, IM_DIM, 1, -1)));
+  model.add(View(Shape({IM_DIM, IM_DIM, 1, -1})));
   model.add(Conv2D(
       1 /* input channels */,
       32 /* output channels */,
@@ -93,7 +93,7 @@ First, create an optimizer and run a training loop for a specified number of ite
 
       // Compute and record the loss.
       auto loss = categoricalCrossEntropy(output, target);
-      train_loss_meter.add(loss.array().scalar<float>());
+      train_loss_meter.add(loss.tensor().scalar<float>());
 
       // Backprop, update the weights and then zero the gradients.
       loss.backward();
@@ -131,17 +131,17 @@ The evaluation loop is similar to the training loop except that it omits updates
       auto output = model(inputs);
 
       // Get the predictions in max_ids
-      array max_vals, max_ids;
-      max(max_vals, max_ids, output.array(), 0);
+      Tensor max_vals, max_ids;
+      max(max_vals, max_ids, output.tensor(), 0);
 
       auto target = noGrad(example[TARGET_IDX]);
 
       // Compute and record the prediction error.
-      error_meter.add(reorder(max_ids, 1, 0), target.array());
+      error_meter.add(reorder(max_ids, 1, 0), target.tensor());
 
       // Compute and record the loss.
       auto loss = categoricalCrossEntropy(output, target);
-      loss_meter.add(loss.array().scalar<float>());
+      loss_meter.add(loss.tensor().scalar<float>());
     }
     // Place the model back into train mode.
     model.train();
@@ -155,13 +155,13 @@ Compute and report the test error:
 
 ::
 
-  array test_x;
-  array test_y;
+  Tensor test_x;
+  Tensor test_y;
   std::tie(test_x, test_y) = load_dataset(data_dir, true);
 
   td = {{"input", test_x}, {"target", test_y}};
   BatchDataset testset(
-    std::make_shared<TensorDataset>(std::vector<af::array>{test_x, test_y}),
+    std::make_shared<TensorDataset>(std::vector<Tensor>{test_x, test_y}),
     batch_size);
 
   double test_loss, test_error;
