@@ -7,22 +7,28 @@
 
 #pragma once
 
-#include <arrayfire.h>
+#include <memory>
+
+namespace af {
+class array;
+}
 
 namespace fl {
 
+class Tensor;
+
 /**
- * DevicePtr provides an RAII wrapper for accessing the device pointer of an
- * ArrayFire array. After calling `device()` on arrayfire array to get
- * device pointer, the memory is not free until `unlock()` is called -
- * 'http://arrayfire.org/docs/group__device__func__device.htm'.
+ * DevicePtr provides an RAII wrapper for accessing the device pointer of a
+ * Flashlight Tensor array. After calling `device()` on a Flashlight tensor to
+ * get a device pointer, its underlying memory is not free until `unlock()` is
+ * called - see `fl::Tensor::unlock()`.
  * DevicePtr provides a `std::unique_lock` style API which calls the `unlock()`
  * function in its destructor after getting device pointer. A DevicePtr is
  * movable, but not copyable.
  *
  * Example Usage :
  * \code{.cpp}
- * auto A = af::array(10, 10);
+ * auto A = Tensor({10, 10});
  * {
  *     DevicePtr devPtr(A); // calls `.device<>()` on array.
  *     void* ptr = devPtr.get();
@@ -41,7 +47,10 @@ class DevicePtr {
   /**
    * @param in input array to get device pointer
    */
-  explicit DevicePtr(const af::array& in);
+  explicit DevicePtr(const Tensor& in);
+
+  // TODO{fl::Tensor}{remove}
+  explicit DevicePtr(af::array in);
 
   /**
    *`.unlock()` is called on the underlying array in destructor
@@ -68,7 +77,7 @@ class DevicePtr {
   }
 
  protected:
-  af_array arr_;
+  std::unique_ptr<Tensor> tensor_;
 
  private:
   void* ptr_;
