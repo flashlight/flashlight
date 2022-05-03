@@ -41,7 +41,7 @@ std::vector<fl::Variable> AsrTransformer::forward(
   auto out = input[0];
   auto xSizes = input[1].tensor();
   // expected input dims T x C x 1 x B
-  int T = out.dims(0), B = out.dims(3);
+  int T = out.dim(0), B = out.dim(3);
   // TODO{fl::Tensor} - check first non-singleton dimension
   auto inputMaxSize = fl::tile(fl::amax(xSizes, {0}), {1, B});
   Tensor inputNotPaddedSize = fl::ceil(xSizes * T / inputMaxSize);

@@ -86,7 +86,7 @@ Variable AdaptiveEmbedding::forward(const Variable& input) {
         "Invalid input, no positions in the AdaptiveEmbedding layer");
   }
 
-  Shape outShape({embeddingDim_, input.dims(0), input.dims(1)});
+  Shape outShape({embeddingDim_, input.dim(0), input.dim(1)});
   auto result = fl::concatenate(embeddings, 1);
   auto resultIndices = fl::concatenate(indices, 0);
   Tensor tmpIndices = fl::argsort(resultIndices.tensor(), 0);

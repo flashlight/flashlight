@@ -107,11 +107,11 @@ Variable cartesian(const Variable& x, const Variable& y, batchFuncVar_t fn) {
     throw std::invalid_argument(
         "vision::cartesian - x and y inputs must have 3 dimensions");
   }
-  assert(x.dims(2) == y.dims(2));
-  Shape yDims = {y.dims(0), 1, y.dims(1), y.dims(2)};
-  auto yMod = moddims(y, {y.dims(0), 1, y.dims(1), y.dims(2)});
-  auto xMod = moddims(x, {x.dims(0), x.dims(1), 1, x.dims(2)});
-  Shape outputDims = {x.dims(0), x.dims(1), y.dims(1), x.dims(2)};
+  assert(x.dim(2) == y.dim(2));
+  Shape yDims = {y.dim(0), 1, y.dim(1), y.dim(2)};
+  auto yMod = moddims(y, {y.dim(0), 1, y.dim(1), y.dim(2)});
+  auto xMod = moddims(x, {x.dim(0), x.dim(1), 1, x.dim(2)});
+  Shape outputDims = {x.dim(0), x.dim(1), y.dim(1), x.dim(2)};
   xMod = tileAs(xMod, outputDims);
   yMod = tileAs(yMod, outputDims);
 

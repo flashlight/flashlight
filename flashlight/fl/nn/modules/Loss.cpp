@@ -111,15 +111,15 @@ Variable AdaptiveSoftMaxLoss::forward(
         "AdaptiveSoftMaxLoss::forward expects target tensor with "
         "2 dimensions in T x B ordering.");
   }
-  if (inputs.dims(1) != targets.dims(0)) {
+  if (inputs.dim(1) != targets.dim(0)) {
     throw std::invalid_argument("AdaptiveSoftMaxLoss: length mismatch");
-  } else if (inputs.dims(2) != targets.dims(1)) {
+  } else if (inputs.dim(2) != targets.dim(1)) {
     throw std::invalid_argument("AdaptiveSoftMaxLoss: batch size mismatch");
   }
 
-  auto N = inputs.dims(0);
-  auto T = inputs.dims(1);
-  auto B = inputs.dims(2);
+  auto N = inputs.dim(0);
+  auto T = inputs.dim(1);
+  auto B = inputs.dim(2);
   auto cutoff = activation_->getCutoff();
 
   auto input = moddims(inputs, {N, T * B});

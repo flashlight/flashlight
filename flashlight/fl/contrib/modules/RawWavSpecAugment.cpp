@@ -166,7 +166,7 @@ Variable RawWavSpecAugment::forward(const Variable& input) {
       : 0.0;
 
   auto& opArr = output.tensor();
-  auto numTimeSteps = inputCast.dims(0); // number of time steps
+  auto numTimeSteps = inputCast.dim(0); // number of time steps
   // an upper bound on the time mask
   int T = std::min(timeMaskT_, static_cast<int>(numTimeSteps * timeMaskP_));
   if (T > 0) {

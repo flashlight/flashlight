@@ -26,14 +26,14 @@ std::pair<Variable, Variable> SimpleLocationAttention::forwardBase(
     const Variable& prevAttn,
     const Variable& logAttnWeight,
     const Variable& xEncodedSizes) {
-  int U = state.dims(1);
+  int U = state.dim(1);
   if (U > 1) {
     throw std::invalid_argument(
         prettyString() + " only works on single step forward");
   }
 
-  int T = xEncoded.dims(1);
-  int B = xEncoded.dims(2);
+  int T = xEncoded.dim(1);
+  int B = xEncoded.dim(2);
 
   // [1, seqlen, batchsize]
   auto innerProd = matmulTN(state, xEncoded);
@@ -80,15 +80,15 @@ std::pair<Variable, Variable> LocationAttention::forwardBase(
     const Variable& prevAttn,
     const Variable& logAttnWeight,
     const Variable& xEncodedSizes) {
-  int U = state.dims(1);
+  int U = state.dim(1);
   if (U > 1) {
     throw std::invalid_argument(
         prettyString() + " only works on single step forward");
   }
 
-  int H = xEncoded.dims(0);
-  int T = xEncoded.dims(1);
-  int B = xEncoded.dims(2);
+  int H = xEncoded.dim(0);
+  int T = xEncoded.dim(1);
+  int B = xEncoded.dim(2);
 
   auto innerProd = matmulTN(state, xEncoded);
 
@@ -142,14 +142,14 @@ std::pair<Variable, Variable> NeuralLocationAttention::forwardBase(
     const Variable& prevAttn,
     const Variable& logAttnWeight,
     const Variable& xEncodedSizes) {
-  int U = state.dims(1);
+  int U = state.dim(1);
   if (U > 1) {
     throw std::invalid_argument(
         prettyString() + " only works on single step forward");
   }
 
-  int T = xEncoded.dims(1);
-  int B = xEncoded.dims(2);
+  int T = xEncoded.dim(1);
+  int B = xEncoded.dim(2);
 
   auto Hx = module(0)->forward({xEncoded}).front();
   auto tileHy = tile(module(1)->forward({state}).front(), {1, T, 1});

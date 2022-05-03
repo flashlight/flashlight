@@ -68,7 +68,7 @@ std::vector<fl::Variable> ViT::forward(
   output = moddims(output, {-1, 1, 0, 0}); // T x 1 x C x B
   output = reorder(output, {2, 0, 3, 1}); // C x T x B x 1
   output = moddims(output, {0, 0, 0}); // C x T x B
-  auto B = output.dims(2);
+  auto B = output.dim(2);
 
   // Prepending the class token
   auto clsToken = tile(params_[0], {1, 1, B}).astype(output.type()); // C x 1 x B

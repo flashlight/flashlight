@@ -22,15 +22,15 @@ std::pair<Variable, Variable> ContentAttention::forwardBase(
     const Variable& /* unused */,
     const Variable& logAttnWeight,
     const Variable& xEncodedSizes) {
-  int dim = xEncoded.dims(0);
-  if (dim != (1 + ((keyValue_) ? 1 : 0)) * state.dims(0)) {
+  int dim = xEncoded.dim(0);
+  if (dim != (1 + ((keyValue_) ? 1 : 0)) * state.dim(0)) {
     throw std::invalid_argument(
         "ContentAttention: Invalid dimension for content attention");
   }
   auto keys = keyValue_ ? xEncoded(fl::range(0, dim / 2)) : xEncoded;
   auto values = keyValue_ ? xEncoded(fl::range(dim / 2, dim)) : xEncoded;
   // [targetlen, seqlen, batchsize]
-  auto innerProd = matmulTN(state, keys) / std::sqrt(state.dims(0));
+  auto innerProd = matmulTN(state, keys) / std::sqrt(state.dim(0));
   if (!logAttnWeight.isEmpty()) {
     if (logAttnWeight.shape() != innerProd.shape()) {
       throw std::invalid_argument(
@@ -70,10 +70,10 @@ std::pair<Variable, Variable> NeuralContentAttention::forwardBase(
     const Variable& /* unused */,
     const Variable& logAttnWeight,
     const Variable& xEncodedSizes) {
-  int U = state.dims(1);
-  int H = xEncoded.dims(0);
-  int T = xEncoded.dims(1);
-  int B = xEncoded.dims(2);
+  int U = state.dim(1);
+  int H = xEncoded.dim(0);
+  int T = xEncoded.dim(1);
+  int B = xEncoded.dim(2);
 
   auto tileHx = tile(moddims(xEncoded, {H, 1, T, B}), {1, U, 1, 1});
   auto tileHy = tile(moddims(state, {H, U, 1, B}), {1, 1, T, 1});

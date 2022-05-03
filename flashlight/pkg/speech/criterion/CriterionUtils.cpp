@@ -52,8 +52,8 @@ CriterionScaleMode getCriterionScaleMode(
 }
 
 Variable getLinearTarget(const Variable& targetVar, int T) {
-  int L = targetVar.dims(0);
-  int B = targetVar.dims(1);
+  int L = targetVar.dim(0);
+  int B = targetVar.dim(1);
 
   std::vector<int> target(B * L);
   std::vector<int> newTarget(B * T);

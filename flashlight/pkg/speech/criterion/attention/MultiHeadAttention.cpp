@@ -46,11 +46,11 @@ std::pair<Variable, Variable> MultiHeadContentAttention::forwardBase(
         "MultiHeadContentAttention::forwardBase: "
         "state input must be of shape {H, U, B}");
   }
-  int hEncode = xEncoded.dims(0);
-  int T = xEncoded.dims(1);
-  int hState = state.dims(0);
-  int U = state.dims(1);
-  int B = state.dims(2);
+  int hEncode = xEncoded.dim(0);
+  int T = xEncoded.dim(1);
+  int hState = state.dim(0);
+  int U = state.dim(1);
+  int B = state.dim(2);
   auto hiddenDim = hState / numHeads_;
   if (hEncode != (1 + keyValue_) * hState) {
     throw std::invalid_argument("Invalid input encoder dimension");

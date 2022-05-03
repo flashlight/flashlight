@@ -68,9 +68,9 @@ Here, we show an example of how one could use Baidu Research's `warp-ctc <https:
 
     Tensor grad = fl::full(input.shape(), 0.0, input.type());
 
-    int N = input.dims(0); // alphabet size
-    int T = input.dims(1); // time frames
-    int L = target.dims(0); // target length
+    int N = input.dim(0); // alphabet size
+    int T = input.dim(1); // time frames
+    int L = target.dim(0); // target length
 
     std::vector<int> inputLengths(T);
     size_t workspace_size;

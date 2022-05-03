@@ -596,9 +596,9 @@ Variable concatenate(const std::vector<Variable>& concatInputs, int dim) {
   auto dims = concatInputs[0].shape();
   int concatSize = dims[dim];
   for (int i = 1; i < concatInputs.size(); i++) {
-    concatSize += concatInputs[i].dims(dim);
+    concatSize += concatInputs[i].dim(dim);
     for (int d = 0; d < numDims; d++) {
-      if (dim != d && concatInputs[i].dims(d) != dims[d]) {
+      if (dim != d && concatInputs[i].dim(d) != dims[d]) {
         throw std::invalid_argument(
             "mismatch in dimension not being concatenated");
       }
@@ -609,9 +609,9 @@ Variable concatenate(const std::vector<Variable>& concatInputs, int dim) {
   std::vector<fl::Index> slice(numDims, fl::span);
   int start = 0;
   for (const auto& input : concatInputs) {
-    slice[dim] = fl::range({start, start + input.dims(dim)});
+    slice[dim] = fl::range({start, start + input.dim(dim)});
     result(slice) = input.tensor();
-    start += input.dims(dim);
+    start += input.dim(dim);
   }
 
   std::vector<Variable> inputsNoData;
@@ -641,7 +641,7 @@ std::vector<Variable> split(const Variable& input, long splitSize, int dim) {
   if (splitSize <= 0) {
     throw std::invalid_argument("split size must be a positive integer");
   }
-  auto dimSize = input.dims(dim);
+  auto dimSize = input.dim(dim);
   std::vector<long> splitSizes(dimSize / splitSize, splitSize);
 
   if (dimSize % splitSize > 0) {
@@ -657,7 +657,7 @@ split(const Variable& input, const std::vector<long>& splitSizes, int dim) {
         "split: passed dim is larger than the number of dimensions "
         "of the input.");
   }
-  auto dimSize = input.dims(dim);
+  auto dimSize = input.dim(dim);
   auto N = splitSizes.size();
 
   std::vector<Variable> outputs(N);
@@ -767,7 +767,7 @@ Variable var(
         Shape expandedDims = inputs[0].shape();
         Shape tileDims = inputs[0].shape();
         for (auto ax : axes) {
-          tileDims[ax] = inputs[0].dims(ax);
+          tileDims[ax] = inputs[0].dim(ax);
           expandedDims[ax] = 1;
         }
 
@@ -986,7 +986,7 @@ Variable moddims(const Variable& input, const Shape& dims) {
   // Infer any 0 dim
   for (int i = 0; i < maxNDims; ++i) {
     if (i < inferDims.ndim() && inferDims[i] == 0) {
-      inferDims[i] = input.dims(i);
+      inferDims[i] = input.dim(i);
     }
   }
 
@@ -1022,7 +1022,7 @@ Variable softmax(const Variable& input, const int dim) {
   Tensor inputArr = FL_ADJUST_INPUT_TYPE(input.tensor());
   auto maxvals = amax(inputArr, {dim}, /* keepDims = */ true);
   Shape tiledims(std::vector<Dim>(input.ndim(), 1));
-  tiledims[dim] = input.dims(dim);
+  tiledims[dim] = input.dim(dim);
 
   auto expInput = fl::exp(inputArr - fl::tile(maxvals, tiledims));
   auto result = expInput /
@@ -1046,7 +1046,7 @@ Variable logSoftmax(const Variable& input, const int dim) {
   auto maxvals = amax(inputArr, {dim}, /* keepDims = */ true);
   // TODO{fl::Tensor}{rewrite}
   Shape tiledims(std::vector<Dim>(input.ndim(), 1));
-  tiledims[dim] = input.dims(dim);
+  tiledims[dim] = input.dim(dim);
   auto result = inputArr -
       fl::tile(fl::log(fl::sum(
                    fl::exp(inputArr - fl::tile(maxvals, tiledims)),
@@ -1089,13 +1089,13 @@ Variable categoricalCrossEntropy(
         "target must have one fewer dimension than input");
   }
   for (int i = 1; i < input.ndim(); i++) {
-    if (input.dims(i) != targets.dims(i - 1)) {
+    if (input.dim(i) != targets.dim(i - 1)) {
       throw std::invalid_argument(
           "dimension mismatch in categorical cross entropy");
     }
   }
 
-  int C = input.dims(0);
+  int C = input.dim(0);
   int X = targets.elements();
   if (fl::any(
           ((targets.tensor() < 0) || (targets.tensor() >= C)) &&
@@ -1167,17 +1167,17 @@ Variable weightedCategoricalCrossEntropy(
   }
 
   for (int i = 1; i < targets.ndim() - 2; i++) {
-    if (input.dims(i) != targets.dims(i - 1)) {
+    if (input.dim(i) != targets.dim(i - 1)) {
       throw std::invalid_argument(
           "weightedCategoricalCrossEntropy: dimension mismatch in categorical cross entropy");
     }
   }
-  if (weight.dims(0) != input.dims(0)) {
+  if (weight.dim(0) != input.dim(0)) {
     throw std::invalid_argument(
         "weightedCategoricalCrossEntropy: dimension mismatch in categorical cross entropy");
   }
 
-  int C = input.dims(0);
+  int C = input.dim(0);
   int X = targets.elements();
   if (fl::any((targets.tensor() < 0) || (targets.tensor() >= C))
           .scalar<char>()) {
@@ -1258,7 +1258,7 @@ Variable linear(const Variable& in, const Variable& wt, const Variable& bs) {
   auto weight = FL_ADJUST_INPUT_TYPE(wt);
   auto bias = FL_ADJUST_INPUT_TYPE(bs);
 
-  Shape to2d({input.dims(0), input.elements() / input.dims(0)});
+  Shape to2d({input.dim(0), input.elements() / input.dim(0)});
   auto to4d = input.shape();
   to4d[0] = weight.tensor().dim(0);
 
@@ -1280,7 +1280,7 @@ Variable linear(const Variable& in, const Variable& wt, const Variable& bs) {
     Tensor wtTensor = wt.tensor();
     Tensor gradOutputTensor = gradOutput.tensor();
 
-    auto nframes = in.elements() / in.dims(0);
+    auto nframes = in.elements() / in.dim(0);
 
     if (hasBias && inputs[2].isCalcGrad()) {
       auto& bs = inputs[2];
@@ -1713,7 +1713,7 @@ Variable embedding(const Variable& input, const Variable& embeddings) {
   auto idxs = input.tensor().flatten();
   auto inDims = input.shape();
   std::vector<Dim> rDims(input.ndim() + 1);
-  rDims[0] = embeddings.dims(0);
+  rDims[0] = embeddings.dim(0);
   for (unsigned i = 1; i < input.ndim() + 1; i++) {
     rDims[i] = inDims[i - 1];
   }
@@ -1729,12 +1729,12 @@ Variable embedding(const Variable& input, const Variable& embeddings) {
 
     auto ip = inputs[0].tensor().flatten();
     unsigned size = ip.elements();
-    auto deltas = fl::reshape(gradOutput.tensor(), {w.dims(0), size});
+    auto deltas = fl::reshape(gradOutput.tensor(), {w.dim(0), size});
 
     // Sparse Tensor
     auto sp = Tensor(
         ip.elements(),
-        w.dims(1),
+        w.dim(1),
         fl::full({size}, 1, deltas.type()),
         fl::arange({size + 1}, 0, fl::dtype::s32),
         ip.astype(fl::dtype::s32),
@@ -1851,8 +1851,8 @@ fl::Variable multiheadAttention(
         "Time x (nHeads * headDim) x B");
   }
 
-  int32_t bsz = query.dims(2);
-  int32_t modelDim = query.dims(1);
+  int32_t bsz = query.dim(2);
+  int32_t modelDim = query.dim(1);
   int32_t headDim = modelDim / nHeads;
 
   auto q = moddims(query, {-1, headDim, nHeads * bsz});
@@ -1862,26 +1862,26 @@ fl::Variable multiheadAttention(
   q = q / std::sqrt(float(headDim));
   auto scores = matmulNT(q, k);
   if (!posEmb.isEmpty()) {
-    int n = posEmb.dims(0) / 2 - offset;
+    int n = posEmb.dim(0) / 2 - offset;
     auto pscores =
         relativePositionEmbeddingRotate(matmulNT(posEmb.astype(q.type()), q));
     scores =
-        scores + transpose(pscores(fl::range(n, n + k.dims(0))), {1, 0, 2});
+        scores + transpose(pscores(fl::range(n, n + k.dim(0))), {1, 0, 2});
   }
   if (!mask.isEmpty()) {
     scores = scores + tileAs(mask.astype(scores.type()), scores);
   }
   if (!padMask.isEmpty()) {
-    if (padMask.dims(0) != query.dims(0)) {
+    if (padMask.dim(0) != query.dim(0)) {
       throw std::invalid_argument(
           "multiheadAttention: invalid padding mask size");
     }
-    auto padMaskTile = moddims(padMask, {1, padMask.dims(0), 1, bsz});
+    auto padMaskTile = moddims(padMask, {1, padMask.dim(0), 1, bsz});
     padMaskTile =
-        tileAs(padMaskTile, {padMask.dims(0), padMask.dims(0), nHeads, bsz});
+        tileAs(padMaskTile, {padMask.dim(0), padMask.dim(0), nHeads, bsz});
     scores = scores +
         moddims(padMaskTile.astype(scores.type()),
-                {padMask.dims(0), padMask.dims(0), nHeads * bsz});
+                {padMask.dim(0), padMask.dim(0), nHeads * bsz});
   }
 
   auto attn = dropout(softmax(scores, 1), pDropout);

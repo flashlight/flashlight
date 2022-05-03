@@ -152,7 +152,7 @@ SetCriterion::LossDict SetCriterion::forward(
     const std::vector<Variable>& targetClasses) {
   LossDict losses;
 
-  for (int i = 0; i < predBoxesAux.dims(3); i++) {
+  for (int i = 0; i < predBoxesAux.dim(3); i++) {
     auto predBoxes = predBoxesAux(fl::span, fl::span, fl::span, i);
     auto predLogits =
         predLogitsAux(fl::span, fl::span, fl::span, fl::range(i, i));
@@ -180,7 +180,7 @@ SetCriterion::LossDict SetCriterion::forward(
         targetBoxes.begin(),
         targetBoxes.end(),
         0,
-        [](int curr, const Variable& label) { return curr + label.dims(1); });
+        [](int curr, const Variable& label) { return curr + label.dim(1); });
 
     Tensor numBoxesArray = fl::fromScalar(numBoxes, fl::dtype::s32);
     if (isDistributedInit()) {
@@ -256,11 +256,11 @@ SetCriterion::LossDict SetCriterion::lossLabels(
     const std::vector<Variable>& targetClasses,
     const std::vector<std::pair<Tensor, Tensor>>& indices,
     const int /*numBoxes*/) {
-  assert(predLogits.dims(0) == numClasses_ + 1);
+  assert(predLogits.dim(0) == numClasses_ + 1);
 
   auto target_classes_full = fl::full(
       // TODO: this thing requires predLogits to have > 2 dimensions
-      {predLogits.dims(1), predLogits.dims(2), 1},
+      {predLogits.dim(1), predLogits.dim(2), 1},
       numClasses_,
       predLogits.type());
 

@@ -189,7 +189,7 @@ class Variable {
   /**
    * Returns the dimension of array wrapped by the Variable
    */
-  Dim dims(unsigned dim) const;
+  Dim dim(unsigned dim) const;
 
   /**
    * Evaluates any expressions in the array wrapped by the Variable

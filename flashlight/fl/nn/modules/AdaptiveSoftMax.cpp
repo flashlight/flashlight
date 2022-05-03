@@ -51,7 +51,7 @@ Variable AdaptiveSoftMax::getFullLogProb(
     const Variable& inputs,
     const Variable& headOutput) const {
   auto outputSize = cutoff_[cutoff_.size() - 1];
-  auto batchSize = inputs.dims(1);
+  auto batchSize = inputs.dim(1);
   Tensor output({outputSize, batchSize}, inputs.type());
 
   output(
@@ -73,8 +73,8 @@ Variable AdaptiveSoftMax::getFullLogProb(
 Variable AdaptiveSoftMax::forward(const Variable& inputs) {
   // input -- [C_in, .. , N]
   // return -- [C_out, .. , N]
-  auto inputSize = inputs.dims(0);
-  if (inputSize != params_[0].dims(1)) {
+  auto inputSize = inputs.dim(0);
+  if (inputSize != params_[0].dim(1)) {
     throw std::invalid_argument("invalid input dimension for AdaptiveSoftMax");
   }
 
@@ -84,15 +84,15 @@ Variable AdaptiveSoftMax::forward(const Variable& inputs) {
   auto ret = getFullLogProb(inputsFlattened, headOutput);
 
   Shape outDims = inputs.shape();
-  outDims[0] = ret.dims(0);
+  outDims[0] = ret.dim(0);
   return moddims(ret, outDims);
 }
 
 Variable AdaptiveSoftMax::predict(const Variable& inputs) const {
   // input -- [C, .. , N]
   // return -- [1, .. , N]
-  auto inputSize = inputs.dims(0);
-  if (inputSize != params_[0].dims(1)) {
+  auto inputSize = inputs.dim(0);
+  if (inputSize != params_[0].dim(1)) {
     throw std::invalid_argument(
         "invalid input dimension for AdaptiveSoftMaxLoss");
   }

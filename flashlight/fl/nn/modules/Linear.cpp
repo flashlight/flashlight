@@ -22,11 +22,11 @@ Linear::Linear(int input_size, int output_size, bool bias)
 }
 
 Linear::Linear(const Variable& w)
-    : UnaryModule({w}), nIn_(w.dims(1)), nOut_(w.dims(0)), bias_(false) {}
+    : UnaryModule({w}), nIn_(w.dim(1)), nOut_(w.dim(0)), bias_(false) {}
 
 Linear::Linear(const Variable& w, const Variable& b)
-    : UnaryModule({w, b}), nIn_(w.dims(1)), nOut_(w.dims(0)), bias_(true) {
-  if (b.dims(0) != w.dims(0)) {
+    : UnaryModule({w, b}), nIn_(w.dim(1)), nOut_(w.dim(0)), bias_(true) {
+  if (b.dim(0) != w.dim(0)) {
     throw std::invalid_argument(
         "dimension mismatch between Linear weight and bias");
   }

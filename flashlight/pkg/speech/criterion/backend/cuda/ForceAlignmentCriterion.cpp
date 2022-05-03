@@ -72,12 +72,12 @@ Variable ForceAlignmentCriterion::forward(
     const Variable& inputVar,
     const Variable& targetVar) {
   const auto& transVar = param(0);
-  int B = inputVar.dims(2);
-  int T = inputVar.dims(1);
-  int N = inputVar.dims(0);
-  int L = targetVar.dims(0);
+  int B = inputVar.dim(2);
+  int T = inputVar.dim(1);
+  int N = inputVar.dim(0);
+  int L = targetVar.dim(0);
 
-  if (N != transVar.dims(0)) {
+  if (N != transVar.dim(0)) {
     throw std::invalid_argument("FAC: input dim doesn't match N");
   } else if (inputVar.type() != fl::dtype::f32) {
     throw std::invalid_argument("FAC: input must be float32");
@@ -141,7 +141,7 @@ Tensor ForceAlignmentCriterion::viterbiPath(
   std::vector<std::vector<int>> bestPaths;
   const auto& transVar = param(0);
 
-  if (N != transVar.dims(0)) {
+  if (N != transVar.dim(0)) {
     throw std::invalid_argument("FAC: input dim doesn't match N:");
   } else if (input.type() != fl::dtype::f32) {
     throw std::invalid_argument("FAC: input must be float32");

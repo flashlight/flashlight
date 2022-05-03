@@ -207,7 +207,7 @@ int main(int argc, char** argv) {
     parseMtr.resume();
 
     const double timeScale =
-        static_cast<double>(input.dims(0)) / rawEmission.dims(1);
+        static_cast<double>(input.dim(0)) / rawEmission.dim(1);
 
     const std::vector<std::vector<std::string>> tokenPaths =
         mapIndexToToken(bestPaths, dicts);

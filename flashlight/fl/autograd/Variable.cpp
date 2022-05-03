@@ -157,7 +157,7 @@ unsigned Variable::ndim() const {
   return tensor().ndim();
 }
 
-Dim Variable::dims(unsigned dim) const {
+Dim Variable::dim(unsigned dim) const {
   return tensor().dim(dim);
 }
 

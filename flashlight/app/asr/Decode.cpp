@@ -433,8 +433,8 @@ int main(int argc, char** argv) {
         emissionUnit = EmissionUnit(
             rawEmission.tensor().toHostVector<float>(),
             sampleId,
-            rawEmission.dims(1),
-            rawEmission.dims(0));
+            rawEmission.dim(1),
+            rawEmission.dim(0));
       } else {
         auto cleanTestPath = cleanFilepath(FLAGS_test);
         std::string emissionDir =

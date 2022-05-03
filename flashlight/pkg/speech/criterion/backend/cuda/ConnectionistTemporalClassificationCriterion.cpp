@@ -45,10 +45,10 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
       fl::moddims(inputs[0], {0, 0, 0}); // remove trailing singleton dims
   const auto& target = inputs[1];
   validate(input, target);
-  const int N = input.dims(0);
-  const int T = input.dims(1);
-  const int B = input.dims(2);
-  const int batchL = target.dims(0);
+  const int N = input.dim(0);
+  const int T = input.dim(1);
+  const int B = input.dim(2);
+  const int batchL = target.dim(0);
   cudaStream_t stream =
       input.tensor().backend().getStream().impl<CUDAStream>().handle();
 
@@ -160,8 +160,8 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
     auto gradScales = grad_output.tensor() * batchScales;
     auto& in = moduleInputs[0];
     gradScales = fl::tile(
-        fl::reshape(gradScales, {1, grad_output.dims(0), 1}),
-        {in.dims(0), 1, in.dims(1)});
+        fl::reshape(gradScales, {1, grad_output.dim(0), 1}),
+        {in.dim(0), 1, in.dim(1)});
     moduleInputs[0].addGrad(
         Variable(fl::transpose(grad * gradScales, {0, 2, 1}), false));
   };

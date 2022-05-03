@@ -104,9 +104,9 @@ Variable VisionTransformer::dropPath(const Variable& x) {
   }
 
   // https://git.io/JYOkq
-  int C = x.dims(0);
-  int T = x.dims(1);
-  int B = x.dims(2);
+  int C = x.dim(0);
+  int T = x.dim(1);
+  int B = x.dim(2);
   auto keepMask = (fl::rand({1, 1, B}) > pLayerdrop_).astype(x.type());
   auto keepRatio =
       fl::mean(keepMask, {2}).astype(fl::dtype::f32).scalar<float>();

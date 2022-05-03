@@ -214,11 +214,11 @@ TEST(Tranformer, Size) {
       Variable(fl::rand({W, H, C, B}), false) // query_embed
   };
   auto output = tr(inputs)[0];
-  ASSERT_EQ(output.dims(0), C)
+  ASSERT_EQ(output.dim(0), C)
       << "Transformer should return model dim as first dimension";
-  ASSERT_EQ(output.dims(1), bbox_queries)
+  ASSERT_EQ(output.dim(1), bbox_queries)
       << "Transformer did not return the correct number of labels";
-  ASSERT_EQ(output.dims(2), B)
+  ASSERT_EQ(output.dim(2), B)
       << "Transformer did not return the correct number of batches";
 }
 

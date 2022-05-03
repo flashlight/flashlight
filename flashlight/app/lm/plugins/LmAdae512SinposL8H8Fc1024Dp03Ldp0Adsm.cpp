@@ -42,7 +42,7 @@ class LmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm : public fl::Container {
     auto out = input[0];
     auto xSizes = input[1].tensor();
     // expected input dims T x B x 1 x 1
-    int T = out.dims(0), B = out.dims(1);
+    int T = out.dim(0), B = out.dim(1);
     // TODO{fl::Tensor} - first non-signleton dimension check
     auto inputMaxSize = fl::tile(fl::amax(xSizes, {0}), {1, B});
     Tensor inputNotPaddedSize = fl::ceil(xSizes * T / inputMaxSize);

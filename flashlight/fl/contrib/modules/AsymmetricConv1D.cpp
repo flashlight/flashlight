@@ -64,7 +64,7 @@ AsymmetricConv1D::AsymmetricConv1D(
 
 Variable AsymmetricConv1D::forward(const Variable& input) {
   auto px =
-      fl::derivePadding(input.dims(0), xFilter_, xStride_, xPad_, xDilation_);
+      fl::derivePadding(input.dim(0), xFilter_, xStride_, xPad_, xDilation_);
   if (!(px >= 0)) {
     throw std::invalid_argument("invalid padding for AsymmetricConv1D");
   }
@@ -96,9 +96,9 @@ Variable AsymmetricConv1D::forward(const Variable& input) {
         groups_);
   }
   if (futurePart_ < 0.5) {
-    output = output(fl::range(0, output.dims(0) - 2 * cutPx));
+    output = output(fl::range(0, output.dim(0) - 2 * cutPx));
   } else if (futurePart_ > 0.5) {
-    output = output(fl::range(2 * cutPx, output.dims(0)));
+    output = output(fl::range(2 * cutPx, output.dim(0)));
   }
   return output;
 }

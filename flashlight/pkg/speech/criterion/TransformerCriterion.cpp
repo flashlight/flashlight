@@ -84,9 +84,9 @@ std::vector<Variable> TransformerCriterion::forward(
       sum(categoricalCrossEntropy(out, target, ReduceMode::NONE, pad_), {0}),
       {-1});
   if (train_ && labelSmooth_ > 0) {
-    long long nClass = out.dims(0);
+    long long nClass = out.dim(0);
     auto targetTiled = fl::tile(
-        fl::reshape(target.tensor(), {1, target.dims(0), target.dims(1)}),
+        fl::reshape(target.tensor(), {1, target.dim(0), target.dim(1)}),
         {nClass});
     out = applySeq2SeqMask(out, targetTiled, pad_);
     auto smoothLoss = fl::moddims(sum(out, {0, 1}), {-1});
@@ -103,9 +103,9 @@ std::pair<Variable, Variable> TransformerCriterion::vectorizedDecoder(
     const Variable& target,
     const Tensor& inputSizes,
     const Tensor& targetSizes) {
-  int U = target.dims(0);
-  int B = target.dims(1);
-  int T = input.isEmpty() ? 0 : input.dims(1);
+  int U = target.dim(0);
+  int B = target.dim(1);
+  int T = input.isEmpty() ? 0 : input.dim(1);
 
   auto hy = tile(startEmbedding(), {1, 1, B});
 
@@ -201,7 +201,7 @@ std::pair<Variable, TS2SState> TransformerCriterion::decodeStep(
     const Tensor& inputSizes) const {
   Variable hy;
   if (y.isEmpty()) {
-    hy = tile(startEmbedding(), {1, 1, xEncoded.dims(2)});
+    hy = tile(startEmbedding(), {1, 1, xEncoded.dim(2)});
   } else {
     hy = embedding()->forward(y);
   }
@@ -229,13 +229,13 @@ std::pair<Variable, TS2SState> TransformerCriterion::decodeStep(
   Variable windowWeight, alpha, summary;
   if (window_ && (!train_ || trainWithWindow_)) {
     // TODO fix for softpretrain where target size is used
-    // for now force to xEncoded.dims(1)
+    // for now force to xEncoded.dim(1)
     windowWeight = window_->computeWindow(
         Variable(),
         inState.step,
-        xEncoded.dims(1),
-        xEncoded.dims(1),
-        xEncoded.dims(2),
+        xEncoded.dim(1),
+        xEncoded.dim(1),
+        xEncoded.dim(2),
         inputSizes,
         Tensor());
   }
@@ -265,7 +265,7 @@ TransformerCriterion::decodeBatchStep(
     } else {
       ys[i] = embedding()->forward(ys[i]);
     } // TODO: input feeding
-    ys[i] = moddims(ys[i], {ys[i].dims(0), 1, -1});
+    ys[i] = moddims(ys[i], {ys[i].dim(0), 1, -1});
   }
   Variable yBatched = concatenate(ys, 2); // D x 1 x B
 
@@ -298,7 +298,7 @@ TransformerCriterion::decodeBatchStep(
   }
 
   Variable alpha, summary;
-  yBatched = moddims(yBatched, {yBatched.dims(0), -1});
+  yBatched = moddims(yBatched, {yBatched.dim(0), -1});
   std::tie(alpha, summary) =
       attention()->forward(yBatched, xEncoded, Variable(), Variable());
   alpha = fl::transpose(alpha, {1, 0});

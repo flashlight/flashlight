@@ -48,7 +48,6 @@ auto filesizebytes = []() {
 auto paramsizebytes = [](const std::vector<Variable>& parameters) {
   int64_t paramsize = 0;
   for (const auto& param : parameters) {
-    // TODO{fl::Tensor}{unimplemented}
     paramsize += (param.elements() * fl::getTypeSize(param.type()));
   }
   return paramsize;

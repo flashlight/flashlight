@@ -170,7 +170,7 @@ class RnnClassifier : public Container {
 
   std::tuple<Variable, Variable, Variable>
   forward(const Variable& input, const Variable& h, const Variable& c) {
-    const unsigned numChars = input.dims(1);
+    const unsigned numChars = input.dim(1);
     Variable ho, co; // hidden and carry output
     // output should be hs x bs x ts : [ 𝑋𝑖𝑛, 𝑁, 𝑇 ]
     Variable output = embed_(input);

@@ -57,7 +57,7 @@ Variable SpecAugment::forward(const Variable& input) {
       ? fl::mean(input.tensor()).asScalar<double>()
       : 0.0;
 
-  auto numFreqChans = input.dims(1); // number of frequency channels
+  auto numFreqChans = input.dim(1); // number of frequency channels
   if (numFreqChans < freqMaskF_) {
     throw std::runtime_error("Invalid input frequency channels");
   }
@@ -67,7 +67,7 @@ Variable SpecAugment::forward(const Variable& input) {
     opArr(fl::span, fl::range(f0, f0 + f + 1)) = replaceVal;
   }
 
-  auto numTimeSteps = input.dims(0); // number of time steps
+  auto numTimeSteps = input.dim(0); // number of time steps
   // an upper bound on the time mask
   int T = std::min(timeMaskT_, static_cast<int>(numTimeSteps * timeMaskP_));
   if (T > 0) {

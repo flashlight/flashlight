@@ -1513,7 +1513,7 @@ TEST(AutogradTest, BatchNormEvalModeOutputMultipleAxis) {
 
   auto nfeatures = 1;
   for (auto ax : featAxes) {
-    nfeatures *= input.dims(ax);
+    nfeatures *= input.dim(ax);
   }
   auto runningMean = Variable(fl::rand({nfeatures}, input.type()), false);
   auto runningVar = Variable(fl::rand({nfeatures}, input.type()), false);
@@ -1609,7 +1609,7 @@ TEST(AutogradTest, BatchNormTrainModeOutputMultipleAxis) {
 
   auto nfeatures = 1;
   for (auto ax : featAxes) {
-    nfeatures *= input.dims(ax);
+    nfeatures *= input.dim(ax);
   }
   auto weight = Variable(fl::rand({nfeatures}), true);
   auto bias = Variable(fl::rand({nfeatures}), true);
@@ -1712,7 +1712,7 @@ TEST(AutogradTest, BatchNormJacobianMultipleAxes) {
   auto input = Variable(fl::rand({8, 8, 3, 16}, fl::dtype::f32), true);
   auto nfeatures = 1;
   for (auto ax : featAxes) {
-    nfeatures *= input.dims(ax);
+    nfeatures *= input.dim(ax);
   }
   auto runningMean = Variable(fl::rand({nfeatures}, fl::dtype::f32), false);
   auto runningVar = Variable(fl::rand({nfeatures}, fl::dtype::f32), false);
@@ -1748,7 +1748,7 @@ TEST_F(AutogradTestF16, BatchNormJacobianMultipleAxesF16) {
   auto input = Variable(fl::rand({2, 2, 2, 1}, fl::dtype::f16), true);
   auto nfeatures = 1;
   for (auto ax : featAxes) {
-    nfeatures *= input.dims(ax);
+    nfeatures *= input.dim(ax);
   }
   auto runningMean = Variable(fl::rand({nfeatures}, fl::dtype::f32), false);
   auto runningVar = Variable(fl::rand({nfeatures}, fl::dtype::f32), false);
@@ -1782,7 +1782,7 @@ TEST(AutogradTest, LayerNormJacobian) {
   auto input = Variable(fl::rand({7, 7, 3, 10}), true);
   auto nfeatures = 1;
   for (auto ax : featAxes) {
-    nfeatures *= input.dims(ax);
+    nfeatures *= input.dim(ax);
   }
   auto runningMean = Variable(fl::rand({nfeatures}, fl::dtype::f32), false);
   auto runningVar = Variable(fl::rand({nfeatures}, fl::dtype::f32), false);
@@ -1808,7 +1808,7 @@ TEST_F(AutogradTestF16, LayerNormJacobianF16) {
       Variable(inputScale * fl::rand({2, 2, 2, 4}, fl::dtype::f16), true);
   auto nfeatures = 1;
   for (auto ax : featAxes) {
-    nfeatures *= input.dims(ax);
+    nfeatures *= input.dim(ax);
   }
   auto runningMean = Variable(fl::rand({nfeatures}, fl::dtype::f32), false);
   auto runningVar = Variable(fl::rand({nfeatures}, fl::dtype::f32), false);

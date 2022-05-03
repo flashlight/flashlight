@@ -122,7 +122,7 @@ void ConnectionistTemporalClassificationCriterion::validate(
         "CTC: Incorrect dimensions for input. Expected {N, T, B}, got " +
         input.shape().toString());
   }
-  if (input.dims(2) != target.dims(1)) {
+  if (input.dim(2) != target.dim(1)) {
     throw std::invalid_argument(
         "CTC: Batchsize mismatch for input and target with dims " +
         input.shape().toString() + " and " + target.shape().toString() +

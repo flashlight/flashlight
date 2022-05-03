@@ -31,7 +31,7 @@ class LinearSegmentationCriterion : public AutoSegmentationCriterion {
     const auto& input = inputs[0];
     const auto& target = inputs[1];
     return AutoSegmentationCriterion::forward(
-        {input, getLinearTarget(target, input.dims(1))});
+        {input, getLinearTarget(target, input.dim(1))});
   }
 
   std::string prettyString() const override {
