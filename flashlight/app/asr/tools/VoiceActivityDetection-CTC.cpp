@@ -33,17 +33,17 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
+#include "flashlight/lib/common/System.h"
+#include "flashlight/lib/text/decoder/lm/KenLM.h"
+#include "flashlight/lib/text/dictionary/Dictionary.h"
+#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
+#include "flashlight/pkg/runtime/common/Serializer.h"
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/criterion/criterion.h"
 #include "flashlight/pkg/speech/data/FeatureTransforms.h"
 #include "flashlight/pkg/speech/data/Utils.h"
 #include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
 #include "flashlight/pkg/speech/runtime/runtime.h"
-#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
-#include "flashlight/pkg/runtime/common/Serializer.h"
-#include "flashlight/lib/common/System.h"
-#include "flashlight/lib/text/decoder/lm/KenLM.h"
-#include "flashlight/lib/text/dictionary/Dictionary.h"
 
 namespace {
 
@@ -95,7 +95,8 @@ int main(int argc, char** argv) {
   std::unordered_map<std::string, std::string> cfg;
   std::string version;
   LOG(INFO) << "[Network] Reading acoustic model from " << FLAGS_am;
-  fl::pkg::runtime::Serializer::load(FLAGS_am, version, cfg, network, criterion);
+  fl::pkg::runtime::Serializer::load(
+      FLAGS_am, version, cfg, network, criterion);
   if (version != FL_APP_ASR_VERSION) {
     LOG(WARNING) << "[Network] Model version " << version
                  << " and code version " << FL_APP_ASR_VERSION;
@@ -224,7 +225,7 @@ int main(int argc, char** argv) {
 
     // Hypothesis
     auto tokenPrediction =
-        afToVector<int>(criterion->viterbiPath(rawEmission.array()));
+        criterion->viterbiPath(rawEmission.tensor()).toHostVector<int>();
     auto letterPrediction = tknPrediction2Ltr(
         tokenPrediction,
         tokenDict,
@@ -268,7 +269,7 @@ int main(int argc, char** argv) {
     int N = rawEmission.dims(0);
     int T = rawEmission.dims(1);
     float vadFrameCnt = 0;
-    auto emissions = afToVector<float>(softmax(rawEmission, 0).array());
+    auto emissions = softmax(rawEmission, 0).tensor().toHostVector<float>();
     for (int i = 0; i < T; i++) {
       if (emissions[i * N + blank] < FLAGS_vad_threshold) {
         vadFrameCnt += 1;

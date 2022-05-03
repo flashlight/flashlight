@@ -17,8 +17,20 @@
 
 #include <gflags/gflags.h>
 #include <glog/logging.h>
+
 #include "flashlight/fl/flashlight.h"
 
+#include "flashlight/lib/common/ProducerConsumerQueue.h"
+#include "flashlight/lib/text/decoder/LexiconDecoder.h"
+#include "flashlight/lib/text/decoder/LexiconFreeDecoder.h"
+#include "flashlight/lib/text/decoder/LexiconFreeSeq2SeqDecoder.h"
+#include "flashlight/lib/text/decoder/LexiconSeq2SeqDecoder.h"
+#include "flashlight/lib/text/decoder/lm/ConvLM.h"
+#include "flashlight/lib/text/decoder/lm/KenLM.h"
+#include "flashlight/lib/text/decoder/lm/ZeroLM.h"
+#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
+#include "flashlight/pkg/runtime/common/Serializer.h"
+#include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/common/Flags.h"
 #include "flashlight/pkg/speech/criterion/criterion.h"
@@ -29,25 +41,13 @@
 #include "flashlight/pkg/speech/decoder/Defines.h"
 #include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
 #include "flashlight/pkg/speech/runtime/runtime.h"
-#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
-#include "flashlight/pkg/runtime/common/Serializer.h"
-#include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
-#include "flashlight/lib/common/ProducerConsumerQueue.h"
-#include "flashlight/lib/text/decoder/LexiconDecoder.h"
-#include "flashlight/lib/text/decoder/LexiconFreeDecoder.h"
-#include "flashlight/lib/text/decoder/LexiconFreeSeq2SeqDecoder.h"
-#include "flashlight/lib/text/decoder/LexiconSeq2SeqDecoder.h"
-#include "flashlight/lib/text/decoder/lm/ConvLM.h"
-#include "flashlight/lib/text/decoder/lm/KenLM.h"
-#include "flashlight/lib/text/decoder/lm/ZeroLM.h"
 
-using fl::pkg::runtime::afToVector;
-using fl::pkg::runtime::Serializer;
 using fl::lib::join;
 using fl::lib::pathsConcat;
 using fl::lib::text::CriterionType;
 using fl::lib::text::kUnkToken;
 using fl::lib::text::SmearingMode;
+using fl::pkg::runtime::Serializer;
 
 using namespace fl::pkg::speech;
 
@@ -195,7 +195,7 @@ int main(int argc, char** argv) {
 
   std::vector<float> transition;
   if (FLAGS_criterion == kAsgCriterion) {
-    transition = afToVector<float>(criterion->param(0).array());
+    transition = criterion->param(0).tensor().toHostVector<float>();
   }
 
   // Prepare log writer
@@ -330,8 +330,9 @@ int main(int argc, char** argv) {
       /*sfxConf=*/{});
   auto targetTransform = targetFeatures(tokenDict, lexicon, targetGenConfig);
   auto wordTransform = wordFeatures(wordDict);
-  int targetpadVal =
-      isSeq2seqCrit ? tokenDict.getIndex(fl::lib::text::kPadToken) : kTargetPadValue;
+  int targetpadVal = isSeq2seqCrit
+      ? tokenDict.getIndex(fl::lib::text::kPadToken)
+      : kTargetPadValue;
   int wordpadVal = wordDict.getIndex(kUnkToken);
 
   std::vector<std::string> testSplits = fl::lib::split(",", FLAGS_test, true);
@@ -392,8 +393,8 @@ int main(int argc, char** argv) {
 
       /* 2. Load Targets */
       TargetUnit targetUnit;
-      auto tokenTarget = afToVector<int>(sample[kTargetIdx]);
-      auto wordTarget = afToVector<int>(sample[kWordIdx]);
+      auto tokenTarget = sample[kTargetIdx].toHostVector<int>();
+      auto wordTarget = sample[kWordIdx].toHostVector<int>();
       // TODO: we will reform the dataset so that the loaded word
       // targets are strings already
       std::vector<std::string> wordTargetStr;
@@ -421,15 +422,16 @@ int main(int argc, char** argv) {
         fl::Variable rawEmission;
         if (usePlugin) {
           rawEmission = localNetwork
-                            ->forward({fl::input(sample[kInputIdx]),
-                                       fl::noGrad(sample[kDurationIdx])})
+                            ->forward(
+                                {fl::input(sample[kInputIdx]),
+                                 fl::noGrad(sample[kDurationIdx])})
                             .front();
         } else {
           rawEmission = fl::pkg::runtime::forwardSequentialModuleWithPadMask(
               fl::input(sample[kInputIdx]), localNetwork, sample[kDurationIdx]);
         }
         emissionUnit = EmissionUnit(
-            afToVector<float>(rawEmission),
+            rawEmission.tensor().toHostVector<float>(),
             sampleId,
             rawEmission.dims(1),
             rawEmission.dims(0));
@@ -448,8 +450,6 @@ int main(int argc, char** argv) {
     localNetwork.reset(); // AM is only used in running forward pass. So we will
     // free the space of it on GPU or memory.
     // localNetwork.use_count() will be 0 after this call.
-
-    af::deviceGC(); // Explicitly call the Garbage collector.
   };
 
   /* ===================== Decode ===================== */
@@ -484,7 +484,7 @@ int main(int argc, char** argv) {
     std::shared_ptr<SequenceCriterion> localCriterion = criterion;
     std::shared_ptr<fl::lib::text::LM> localLm = lm;
     if (FLAGS_lmtype == "convlm" || criterionType == CriterionType::S2S) {
-      if (tid >= af::getDeviceCount()) {
+      if (tid >= fl::getDeviceCount()) {
         LOG(FATAL)
             << "FLAGS_nthread_decoder exceeds the number of visible GPUs";
       }
