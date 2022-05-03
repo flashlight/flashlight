@@ -11,7 +11,7 @@
 #include <arrayfire.h>
 #include <gtest/gtest.h>
 
-#include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/dataset/datasets.h"
 
 using namespace fl;

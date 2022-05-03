@@ -14,8 +14,10 @@
 #include <arrayfire.h>
 #include <gtest/gtest.h>
 
-#include "flashlight/fl/common/Init.h"
-#include "flashlight/fl/memory/memory.h"
+#include "flashlight/fl/tensor/Init.h"
+#include "flashlight/fl/tensor/backend/af/mem/CachingMemoryManager.h"
+#include "flashlight/fl/tensor/backend/af/mem/MemoryManagerAdapter.h"
+#include "flashlight/fl/tensor/backend/af/mem/MemoryManagerInstaller.h"
 
 class CachingMemoryManagerTest : public ::testing::Test {
  protected:

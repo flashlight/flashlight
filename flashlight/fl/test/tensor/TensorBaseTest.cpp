@@ -14,6 +14,7 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/fl/tensor/Index.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/Random.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
@@ -1323,4 +1324,10 @@ TEST(TensorBaseTest, pad) {
           vTiled0,
           vTiled0,
           fl::concatenate(1, vTiled1, vTiled1, vTiled0))));
+}
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  fl::init();
+  return RUN_ALL_TESTS();
 }

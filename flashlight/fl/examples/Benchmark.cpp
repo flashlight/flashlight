@@ -8,7 +8,7 @@
 #include <iomanip>
 #include <iostream>
 
-#include "flashlight/fl/common/Init.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/nn/nn.h"
 #include "flashlight/fl/tensor/tensor.h"
 
