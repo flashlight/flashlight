@@ -22,7 +22,7 @@ TEST(DynamicScalerTest, Scaling) {
       100 // updateInterval
   );
 
-  auto loss = fl::uniform(af::dim4(5, 5, 5, 5));
+  auto loss = fl::uniform({5, 5, 5, 5});
 
   auto scaledLoss = dynamicScaler.scale(loss);
   ASSERT_TRUE(allClose(loss * 32, scaledLoss));

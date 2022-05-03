@@ -7,9 +7,10 @@
 
 #include <gtest/gtest.h>
 
-#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
 #include "flashlight/fl/tensor/Init.h"
+#include "flashlight/fl/tensor/Random.h"
 #include "flashlight/lib/common/System.h"
+#include "flashlight/pkg/runtime/common/SequentialBuilder.h"
 
 using namespace fl;
 using namespace fl::pkg::runtime;
@@ -33,16 +34,16 @@ TEST(SequentialBuilderTest, SeqModule) {
 
   auto model = buildSequentialModule(archfile, nchannel, nclass);
 
-  auto input = af::randn(inputsteps, 1, nchannel, batchsize, f32);
+  auto input = fl::randn({inputsteps, 1, nchannel, batchsize}, fl::dtype::f32);
 
   auto output = model->forward(noGrad(input));
 
-  ASSERT_EQ(output.dims(), af::dim4(nclass, inputsteps, batchsize));
+  ASSERT_EQ(output.dims(), Shape({nclass, inputsteps, batchsize}));
 
   batchsize = 1;
-  input = af::randn(inputsteps, 1, nchannel, batchsize, f32);
+  input = fl::randn({inputsteps, 1, nchannel, batchsize}, fl::dtype::f32);
   output = model->forward(noGrad(input));
-  ASSERT_EQ(output.dims(), af::dim4(nclass, inputsteps, batchsize));
+  ASSERT_EQ(output.dims(), Shape({nclass, inputsteps, batchsize}));
 }
 
 TEST(SequentialBuilderTest, Serialization) {
@@ -60,7 +61,7 @@ TEST(SequentialBuilderTest, Serialization) {
   int C = 1, N = 5, B = 1, T = 10;
   auto model = buildSequentialModule(archfile, C, N);
 
-  auto input = noGrad(af::randn(T, 1, C, B, f32));
+  auto input = noGrad(fl::randn({T, 1, C, B}, fl::dtype::f32));
   auto output = model->forward(input);
 
   save(path, model);
@@ -71,7 +72,7 @@ TEST(SequentialBuilderTest, Serialization) {
   auto outputl = loaded->forward(input);
 
   ASSERT_TRUE(allParamsClose(*loaded.get(), *model));
-  ASSERT_TRUE(allClose(outputl, output));
+  ASSERT_TRUE(allClose(outputl.tensor(), output.tensor()));
 }
 
 int main(int argc, char** argv) {
