@@ -36,7 +36,7 @@ if (FL_USE_CUDA)
     ${CUDA_INCLUDE_DIRS}
     ${WARPCTC_INCLUDE_DIR} # I hope to remove me one day
     )
-elseif (FL_USE_CPU OR FL_USE_OPENCL)
+else ()
   target_sources(
     fl_pkg_speech
     PRIVATE
@@ -44,11 +44,6 @@ elseif (FL_USE_CPU OR FL_USE_OPENCL)
     ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/CriterionUtils.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/ForceAlignmentCriterion.cpp
     ${CMAKE_CURRENT_LIST_DIR}/backend/cpu/FullConnectionCriterion.cpp
-    )
-else ()
-  message(
-    FATAL_ERROR
-    "Invalid backend for building wav2letter criterions"
     )
 endif ()
 
