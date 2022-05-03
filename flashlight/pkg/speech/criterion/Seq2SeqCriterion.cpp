@@ -566,7 +566,7 @@ Seq2SeqCriterion::decodeBatchStep(
       for (int i = 0; i < batchSize; i++) {
         statesVector[i] = inStates[i]->hidden[n];
       }
-      Variable inStateHiddenBatched = concatenate(statesVector, 1).linear();
+      Variable inStateHiddenBatched = concatenate(statesVector, 1).asContiguous();
       std::tie(yBatched, outStateBatched) =
           decodeRNN(n)->forward(yBatched, inStateHiddenBatched);
     }
