@@ -266,8 +266,8 @@ int main(int argc, char** argv) {
     tknOutStream.close();
 
     int blank = tokenDict.getIndex(kBlankToken);
-    int N = rawEmission.dims(0);
-    int T = rawEmission.dims(1);
+    int N = rawEmission.dim(0);
+    int T = rawEmission.dim(1);
     float vadFrameCnt = 0;
     auto emissions = softmax(rawEmission, 0).tensor().toHostVector<float>();
     for (int i = 0; i < T; i++) {

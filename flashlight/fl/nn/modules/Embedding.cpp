@@ -20,7 +20,7 @@ Embedding::Embedding(int embeddingDim, int numEmbeddings)
 }
 
 Embedding::Embedding(const Variable& w)
-    : UnaryModule({w}), embeddingDim_(w.dims(0)), numEmbeddings_(w.dims(1)) {}
+    : UnaryModule({w}), embeddingDim_(w.dim(0)), numEmbeddings_(w.dim(1)) {}
 
 void Embedding::initialize() {
   double stdv = std::sqrt(1.0 / (double)embeddingDim_);

@@ -276,8 +276,8 @@ int main(int argc, char** argv) {
 
     const auto& result = decoder.decode(
         emission.data(),
-        rawEmission.dims(1) /* time */,
-        rawEmission.dims(0) /* ntokens */);
+        rawEmission.dim(1) /* time */,
+        rawEmission.dim(0) /* ntokens */);
 
     // Take top hypothesis and cleanup predictions
     auto rawWordPrediction = result[0].words;

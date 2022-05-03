@@ -33,7 +33,7 @@ std::vector<Variable> PositionEmbedding::forward(
         "3 dimensions - C x T x B");
   }
 
-  int n = input[0].dims(1);
+  int n = input[0].dim(1);
   Variable posEmb = tileAs(
       params_[0].astype(input[0].type())(fl::span, fl::range(0, n)), input[0]);
   if (dropout_ > 0.0 && train_) {

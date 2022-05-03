@@ -79,11 +79,11 @@ std::string TDSBlock::prettyString() const {
   std::ostringstream ss;
   auto convW = param(0);
   auto linW = param(4);
-  int kw = convW.dims(0);
-  int c = convW.dims(2);
-  int w = linW.dims(0) / c;
-  int l = linW.dims(1);
-  int l2 = linW.dims(0);
+  int kw = convW.dim(0);
+  int c = convW.dim(2);
+  int w = linW.dim(0) / c;
+  int l = linW.dim(1);
+  int l2 = linW.dim(0);
   ss << "Time-Depth Separable Block (";
   ss << kw << ", " << w << ", " << c << ") [" << l << " -> " << l2 << " -> "
      << l << "]";

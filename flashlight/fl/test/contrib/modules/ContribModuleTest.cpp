@@ -119,15 +119,15 @@ TEST(ContribModuleTest, AsymmetricConv1DFwd) {
 
   auto output = conv.forward(input);
 
-  ASSERT_EQ(output.dims(0), timesteps);
-  ASSERT_EQ(output.dims(1), 1);
-  ASSERT_EQ(output.dims(2), c);
+  ASSERT_EQ(output.dim(0), timesteps);
+  ASSERT_EQ(output.dim(1), 1);
+  ASSERT_EQ(output.dim(2), c);
 
   auto convFuture = AsymmetricConv1D(c, c, 5, 1, -1, 1, 1); // use only future
   auto outputFuture = convFuture.forward(input);
-  ASSERT_EQ(outputFuture.dims(0), timesteps);
-  ASSERT_EQ(outputFuture.dims(1), 1);
-  ASSERT_EQ(outputFuture.dims(2), c);
+  ASSERT_EQ(outputFuture.dim(0), timesteps);
+  ASSERT_EQ(outputFuture.dim(1), 1);
+  ASSERT_EQ(outputFuture.dim(2), c);
 
   ASSERT_FALSE(allClose(output, outputFuture));
 }
@@ -151,9 +151,9 @@ void transformerPadMaskFwd(bool isfp16) {
   auto output = tr.forward({input, Variable(padMask, false)}).front();
   auto outputNoPad = tr.forward({input, Variable(noPadMask, false)}).front();
 
-  ASSERT_EQ(output.dims(0), c);
-  ASSERT_EQ(output.dims(1), timesteps);
-  ASSERT_EQ(output.dims(2), 2);
+  ASSERT_EQ(output.dim(0), c);
+  ASSERT_EQ(output.dim(1), timesteps);
+  ASSERT_EQ(output.dim(2), 2);
 
   if (OptimMode::get().getOptimLevel() == OptimLevel::O3) {
     ASSERT_EQ(outputNoPad.type(), input.type());
@@ -214,9 +214,9 @@ void transformerFwd(bool isfp16) {
     ASSERT_EQ(output[0].type(), fl::dtype::f32); // result is upcast
   }
 
-  ASSERT_EQ(output[0].dims(0), c);
-  ASSERT_EQ(output[0].dims(1), timesteps);
-  ASSERT_EQ(output[0].dims(2), batchsize);
+  ASSERT_EQ(output[0].dim(0), c);
+  ASSERT_EQ(output[0].dim(1), timesteps);
+  ASSERT_EQ(output[0].dim(2), batchsize);
 
   tr.setDropout(0);
   tr.setLayerDropout(0);
@@ -253,9 +253,9 @@ void conformerFwd(bool isfp16) {
     ASSERT_EQ(output[0].type(), fl::dtype::f32); // result is upcast
   }
 
-  ASSERT_EQ(output[0].dims(0), c);
-  ASSERT_EQ(output[0].dims(1), timesteps);
-  ASSERT_EQ(output[0].dims(2), batchsize);
+  ASSERT_EQ(output[0].dim(0), c);
+  ASSERT_EQ(output[0].dim(1), timesteps);
+  ASSERT_EQ(output[0].dim(2), batchsize);
 }
 
 TEST(ContribModuleTest, ConformerFwd) {
@@ -280,9 +280,9 @@ void positionEmbeddingFwd(bool isfp16) {
 
   auto output = posemb.forward({input});
 
-  ASSERT_EQ(output[0].dims(0), csz);
-  ASSERT_EQ(output[0].dims(1), timesteps);
-  ASSERT_EQ(output[0].dims(2), batchsize);
+  ASSERT_EQ(output[0].dim(0), csz);
+  ASSERT_EQ(output[0].dim(1), timesteps);
+  ASSERT_EQ(output[0].dim(2), batchsize);
 
   ASSERT_FALSE(allClose(output[0], input));
 }
@@ -310,9 +310,9 @@ void sinusoidalPositionEmbeddingFwd(bool isfp16) {
 
   auto output = posemb.forward({input});
 
-  ASSERT_EQ(output[0].dims(0), csz);
-  ASSERT_EQ(output[0].dims(1), timesteps);
-  ASSERT_EQ(output[0].dims(2), batchsize);
+  ASSERT_EQ(output[0].dim(0), csz);
+  ASSERT_EQ(output[0].dim(1), timesteps);
+  ASSERT_EQ(output[0].dim(2), batchsize);
   auto castOutput = output[0].tensor();
   if (isfp16) {
     castOutput = output[0].astype(fl::dtype::f32).tensor();
@@ -340,9 +340,9 @@ TEST(ContribModuleTest, AdaptiveEmbedding) {
   auto emb = AdaptiveEmbedding(dim, cutoff);
   auto output = emb.forward(input);
 
-  ASSERT_EQ(output.dims(0), dim);
-  ASSERT_EQ(output.dims(1), T);
-  ASSERT_EQ(output.dims(2), B);
+  ASSERT_EQ(output.dim(0), dim);
+  ASSERT_EQ(output.dim(1), T);
+  ASSERT_EQ(output.dim(2), B);
 }
 
 void tdsFwd(bool isfp16) {
@@ -357,9 +357,9 @@ void tdsFwd(bool isfp16) {
 
   auto output = tds.forward({input})[0];
 
-  ASSERT_EQ(output.dims(0), timesteps);
-  ASSERT_EQ(output.dims(1), w);
-  ASSERT_EQ(output.dims(2), c);
+  ASSERT_EQ(output.dim(0), timesteps);
+  ASSERT_EQ(output.dim(1), w);
+  ASSERT_EQ(output.dim(2), c);
   ASSERT_EQ(output.type(), input.type());
 }
 
@@ -389,9 +389,9 @@ void streamingTDSFwd(bool isfp16) {
 
   auto output = stds.forward({input})[0];
 
-  ASSERT_EQ(output.dims(0), timesteps);
-  ASSERT_EQ(output.dims(1), w);
-  ASSERT_EQ(output.dims(2), c);
+  ASSERT_EQ(output.dim(0), timesteps);
+  ASSERT_EQ(output.dim(1), w);
+  ASSERT_EQ(output.dim(2), c);
   ASSERT_EQ(output.type(), input.type());
 }
 

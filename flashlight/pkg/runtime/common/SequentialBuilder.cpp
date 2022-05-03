@@ -65,7 +65,7 @@ fl::Variable forwardSequentialModuleWithPadMask(
     std::shared_ptr<fl::Module> ntwrk,
     const Tensor& inputSizes) {
   // expected input dims T x C x 1 x B
-  int T = input.dims(0), B = input.dims(3);
+  int T = input.dim(0), B = input.dim(3);
   auto inputMaxSize = fl::tile(fl::amax(inputSizes, {1}), {1, B});
   Tensor inputNotPaddedSize = fl::ceil(inputSizes * T / inputMaxSize);
   auto padMask =

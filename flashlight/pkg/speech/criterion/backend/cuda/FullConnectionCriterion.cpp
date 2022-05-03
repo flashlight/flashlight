@@ -78,11 +78,11 @@ Variable FullConnectionCriterion::forward(
   }
 
   const auto& transVar = param(0);
-  int B = inputVar.dims(2);
-  int T = inputVar.dims(1);
-  int N = inputVar.dims(0);
+  int B = inputVar.dim(2);
+  int T = inputVar.dim(1);
+  int N = inputVar.dim(0);
 
-  if (N != transVar.dims(0)) {
+  if (N != transVar.dim(0)) {
     throw std::invalid_argument("FCC: input dim doesn't match N");
   } else if (inputVar.type() != fl::dtype::f32) {
     throw std::invalid_argument("FCC: input must be float32");

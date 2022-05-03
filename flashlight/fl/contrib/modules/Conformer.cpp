@@ -123,7 +123,7 @@ Variable Conformer::conformerInitLinear(int32_t inDim, int32_t outDim) {
 
 Variable Conformer::mhsa(const Variable& input, const Variable& inputPadMask) {
   float pDropout = train_ ? pDropout_ : 0.0;
-  int bsz = input.dims(2);
+  int bsz = input.dim(2);
 
   auto normedInput = (*normMhsa_)(input);
   auto q = transpose((*wq_)(normedInput), {1, 0, 2});
@@ -140,7 +140,7 @@ Variable Conformer::mhsa(const Variable& input, const Variable& inputPadMask) {
   // transformer pad mask
   if (!inputPadMask.isEmpty()) {
     auto padMaskArr = inputPadMask.tensor();
-    Shape newMaskShape = {input.dims(1), input.dims(2)};
+    Shape newMaskShape = {input.dim(1), input.dim(2)};
     if (padMaskArr.elements() != newMaskShape.elements()) {
       throw std::runtime_error(
           "Transformer::selfAttention - pad mask requires resize. "
@@ -222,8 +222,8 @@ std::vector<Variable> Conformer::forward(const std::vector<Variable>& input) {
 std::string Conformer::prettyString() const {
   std::ostringstream ss;
   ss << "Conformer "
-     << "(modelDim: " << params_[1].dims(1) << "), "
-     << "(mlpDim: " << params_[1].dims(0) << "), "
+     << "(modelDim: " << params_[1].dim(1) << "), "
+     << "(mlpDim: " << params_[1].dim(0) << "), "
      << "(nHeads: " << nHeads_ << "), "
      << "(pDropout: " << pDropout_ << "), "
      << "(pLayerDropout: " << pLayerDropout_ << "), "

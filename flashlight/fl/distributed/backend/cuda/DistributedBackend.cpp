@@ -152,7 +152,6 @@ void allReduceMultiple(
     }
   }
   // Size of each element in each tensor in bytes
-  // TODO{fl::Tensor}{unimplemented}
   size_t typeSize = fl::getTypeSize(arrs[0]->type());
 
   // Device ptrs from each array

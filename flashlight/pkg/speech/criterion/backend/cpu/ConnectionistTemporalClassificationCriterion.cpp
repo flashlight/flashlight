@@ -32,10 +32,10 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
   std::vector<float> batchScales;
   std::vector<int> batchTargetSizes;
   {
-    const int64_t N = logprobs.dims(0);
-    const int64_t T = logprobs.dims(1);
-    const int64_t B = logprobs.dims(2);
-    const int64_t batchL = target.dims(0);
+    const int64_t N = logprobs.dim(0);
+    const int64_t T = logprobs.dim(1);
+    const int64_t B = logprobs.dim(2);
+    const int64_t batchL = target.dim(0);
 
     batchAlphas.resize(B);
     batchLoss.resize(B);
@@ -125,10 +125,10 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
   auto gradFunc = [batchAlphas, batchScales, batchTargetSizes](
                       std::vector<Variable>& moduleInputs,
                       const Variable& gradOutput) {
-    const int64_t N = moduleInputs[0].dims(0);
-    const int64_t T = moduleInputs[0].dims(1);
-    const int64_t B = moduleInputs[0].dims(2);
-    const int64_t batchL = moduleInputs[1].dims(0);
+    const int64_t N = moduleInputs[0].dim(0);
+    const int64_t T = moduleInputs[0].dim(1);
+    const int64_t B = moduleInputs[0].dim(2);
+    const int64_t batchL = moduleInputs[1].dim(0);
 
     std::vector<float> batchInGrad(moduleInputs[0].elements(), 0.0);
 

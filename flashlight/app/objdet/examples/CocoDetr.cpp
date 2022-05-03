@@ -146,7 +146,7 @@ void evalLoop(
     ss << FLAGS_eval_dir << fl::getWorldRank() << "/detection" << idx
        << ".fltensor";
     auto outputFile = ss.str();
-    int lastLayerIdx = output[0].dims(3) - 1;
+    int lastLayerIdx = output[0].dim(3) - 1;
     auto scores = output[0].tensor()(
         fl::span, fl::span, fl::span, fl::range(lastLayerIdx, lastLayerIdx));
     auto bboxes = output[1].tensor()(

@@ -54,11 +54,11 @@ fl::Variable transformerMultiheadAttention(
     const fl::Variable& keyPaddingMask,
     const int32_t nHead,
     const double pDropout) {
-  int32_t bsz = query.dims(1);
-  int32_t modelDim = query.dims(0);
+  int32_t bsz = query.dim(1);
+  int32_t modelDim = query.dim(0);
   int32_t headDim = modelDim / nHead;
-  int32_t tgtLen = query.dims(2);
-  int32_t srcLen = key.dims(2);
+  int32_t tgtLen = query.dim(2);
+  int32_t srcLen = key.dim(2);
 
   auto q = moddims(query, {headDim, nHead, bsz, tgtLen});
   auto v = moddims(value, {headDim, nHead, bsz, srcLen});
@@ -104,18 +104,18 @@ std::vector<Variable> MultiheadAttention::forward(
     const Variable& keys,
     const Variable& values,
     const Variable& keyPaddingMask) {
-  assert(queries.dims(0) == keys.dims(0));
-  assert(queries.dims(0) == values.dims(0));
-  assert(queries.dims(1) == keys.dims(1));
-  assert(queries.dims(1) == values.dims(1));
-  assert(values.dims(2) == keys.dims(2));
+  assert(queries.dim(0) == keys.dim(0));
+  assert(queries.dim(0) == values.dim(0));
+  assert(queries.dim(1) == keys.dim(1));
+  assert(queries.dim(1) == values.dim(1));
+  assert(values.dim(2) == keys.dim(2));
 
-  int32_t modelDim = queries.dims(0);
+  int32_t modelDim = queries.dim(0);
   int32_t headDim = modelDim / numHeads_;
 
   if (!keyPaddingMask.isEmpty()) {
-    assert(keyPaddingMask.dims(0) == keys.dims(2));
-    assert(keyPaddingMask.dims(1) == keys.dims(1));
+    assert(keyPaddingMask.dim(0) == keys.dim(2));
+    assert(keyPaddingMask.dim(1) == keys.dim(1));
   }
 
   auto q = wq_->forward(queries);
@@ -430,9 +430,9 @@ std::vector<Variable> Transformer::forward(
         "vision::Transformer::forward - "
         "expect src to be of shape (W, H, C, B).");
   }
-  assert(src.dims(2) == queryEmbed.dims(0));
+  assert(src.dim(2) == queryEmbed.dim(0));
 
-  int B = src.dims(3);
+  int B = src.dim(3);
   // Reshape from [ W X H X C X B ] to [ WH X C X B ]
 
   src = flatten(src, 0, 1);
@@ -448,11 +448,11 @@ std::vector<Variable> Transformer::forward(
   mask = flatten(mask, 0, 2);
 
   // Tile object queries for each batch
-  Shape unsqueeze = {queryEmbed.dims(0), 1, queryEmbed.dims(1)};
+  Shape unsqueeze = {queryEmbed.dim(0), 1, queryEmbed.dim(1)};
   queryEmbed = moddims(queryEmbed, unsqueeze);
   queryEmbed = tile(queryEmbed, {1, B, 1});
-  assert(queryEmbed.dims(1) == src.dims(1));
-  assert(queryEmbed.dims(0) == src.dims(0));
+  assert(queryEmbed.dim(1) == src.dim(1));
+  assert(queryEmbed.dim(0) == src.dim(0));
 
   auto tgt = fl::Variable(fl::full(queryEmbed.shape(), 0, src.type()), false);
 

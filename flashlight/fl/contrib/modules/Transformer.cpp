@@ -84,7 +84,7 @@ Variable Transformer::selfAttention(const std::vector<Variable>& input) {
   // previous step[optionally], input, padMask
   auto encoderInput = input.at(input.size() - 2);
   // in case of previous state input[0] has size CxT_prevxB
-  int n = input[0].dims(1), bsz = input[0].dims(2);
+  int n = input[0].dim(1), bsz = input[0].dim(2);
   double pDrop = train_ ? pDropout_ : 0.0;
 
   auto q = transpose((*wq_)(encoderInput), {1, 0, 2});
@@ -96,7 +96,7 @@ Variable Transformer::selfAttention(const std::vector<Variable>& input) {
   if (bptt_ > 0) {
     posEmb = tile(params_[0].astype(encoderInput.type()), {1, 1, nHeads_ * bsz});
   }
-  if (useMask_ && encoderInput.dims(1) > 1) {
+  if (useMask_ && encoderInput.dim(1) > 1) {
     // mask future if we use the previous state (then n is previous time)
     mask = getMask(n, input.size() == 3);
   }
@@ -107,7 +107,7 @@ Variable Transformer::selfAttention(const std::vector<Variable>& input) {
   fl::Variable padMask;
   if (!input.back().isEmpty()) {
     auto padMaskArr = input.back().tensor();
-    Shape newMaskShape = {encoderInput.dims(1), encoderInput.dims(2)};
+    Shape newMaskShape = {encoderInput.dim(1), encoderInput.dim(2)};
     // TODO{fl::Tensor}{resize} - emulate the ArrayFire resize operation for
     // transformer pad mask
     if (padMaskArr.elements() != newMaskShape.elements()) {
@@ -147,7 +147,7 @@ std::vector<Variable> Transformer::forward(const std::vector<Variable>& input) {
           "Transformer::forward - invalid size for pad mask - "
           "must have at least two dimensions");
 
-    } else if (x.dims(2) != input.back().dims(1)) {
+    } else if (x.dim(2) != input.back().dim(1)) {
       throw std::invalid_argument(
           "Transformer::forward - invalid inputs for transformer:"
           " input and mask batch sizes are different");

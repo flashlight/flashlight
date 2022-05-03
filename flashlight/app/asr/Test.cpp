@@ -365,8 +365,8 @@ int main(int argc, char** argv) {
       }
 
       /* Save emission and targets */
-      int nTokens = rawEmission.dims(0);
-      int nFrames = rawEmission.dims(1);
+      int nTokens = rawEmission.dim(0);
+      int nFrames = rawEmission.dim(1);
       EmissionUnit emissionUnit(emission, sampleId, nFrames, nTokens);
 
       // Update counters

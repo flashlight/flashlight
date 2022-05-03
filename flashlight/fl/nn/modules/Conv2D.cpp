@@ -58,10 +58,10 @@ Conv2D::Conv2D(
     int dy,
     int groups)
     : UnaryModule({w}),
-      nIn_(w.dims(2)),
-      nOut_(w.dims(3)),
-      xFilter_(w.dims(0)),
-      yFilter_(w.dims(1)),
+      nIn_(w.dim(2)),
+      nOut_(w.dim(3)),
+      xFilter_(w.dim(0)),
+      yFilter_(w.dim(1)),
       xStride_(sx),
       yStride_(sy),
       xPad_(px.padVal),
@@ -82,10 +82,10 @@ Conv2D::Conv2D(
     int dy,
     int groups)
     : UnaryModule({w, b}),
-      nIn_(w.dims(2)),
-      nOut_(w.dims(3)),
-      xFilter_(w.dims(0)),
-      yFilter_(w.dims(1)),
+      nIn_(w.dim(2)),
+      nOut_(w.dim(3)),
+      xFilter_(w.dim(0)),
+      yFilter_(w.dim(1)),
       xStride_(sx),
       yStride_(sy),
       xPad_(px.padVal),
@@ -94,19 +94,19 @@ Conv2D::Conv2D(
       yDilation_(dy),
       bias_(true),
       groups_(groups) {
-  if (b.dims(2) != w.dims(3)) {
+  if (b.dim(2) != w.dim(3)) {
     throw std::invalid_argument(
         "output channel dimension mismatch between Conv2D weight and bias");
   }
-  if (b.elements() != b.dims(2)) {
+  if (b.elements() != b.dim(2)) {
     throw std::invalid_argument(
         "only 3rd dimension of Conv2D bias may be non-singleton");
   }
 }
 
 Variable Conv2D::forward(const Variable& input) {
-  auto px = derivePadding(input.dims(0), xFilter_, xStride_, xPad_, xDilation_);
-  auto py = derivePadding(input.dims(1), yFilter_, yStride_, yPad_, yDilation_);
+  auto px = derivePadding(input.dim(0), xFilter_, xStride_, xPad_, xDilation_);
+  auto py = derivePadding(input.dim(1), yFilter_, yStride_, yPad_, yDilation_);
   if (!(px >= 0 && py >= 0)) {
     throw std::invalid_argument("invalid padding for Conv2D");
   }

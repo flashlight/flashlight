@@ -165,9 +165,9 @@ std::vector<Variable> Seq2SeqCriterion::forward(
       sum(categoricalCrossEntropy(out, target, ReduceMode::NONE, pad_), {0}),
       {-1});
   if (train_ && labelSmooth_ > 0) {
-    size_t nClass = out.dims(0);
+    size_t nClass = out.dim(0);
     auto targetTiled = fl::tile(
-        fl::reshape(target.tensor(), {1, target.dims(0), target.dims(1)}),
+        fl::reshape(target.tensor(), {1, target.dim(0), target.dim(1)}),
         {static_cast<long long>(nClass)});
     out = applySeq2SeqMask(out, targetTiled, pad_);
     auto smoothLoss = moddims(sum(out, {0, 1}), {-1});
@@ -187,9 +187,9 @@ std::pair<Variable, Variable> Seq2SeqCriterion::vectorizedDecoder(
         "Seq2SeqCriterion::vectorizedDecoder: "
         "target expects to be shape {U, B}");
   }
-  int U = target.dims(0);
-  int B = target.dims(1);
-  int T = input.dims(1);
+  int U = target.dim(0);
+  int B = target.dim(1);
+  int T = input.dim(1);
 
   auto hy = tile(startEmbedding(), {1, 1, B}); // H x 1 x B
 
@@ -245,7 +245,7 @@ std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
     const Variable& target,
     const Tensor& inputSizes,
     const Tensor& targetSizes) {
-  int U = target.dims(0);
+  int U = target.dim(0);
 
   std::vector<Variable> outvec;
   std::vector<Variable> alphaVec;
@@ -272,7 +272,7 @@ std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
       y = Variable(maxIdx, false);
     } else if (samplingStrategy_ == fl::pkg::speech::kRandSampling) {
       y = Variable(
-          (fl::rand({1, target.dims(1)}) * (nClass_ - 1))
+          (fl::rand({1, target.dim(1)}) * (nClass_ - 1))
               .astype(fl::dtype::s32),
           false);
     } else {
@@ -380,7 +380,7 @@ std::vector<Seq2SeqCriterion::CandidateHypo> Seq2SeqCriterion::beamSearch(
     }
     auto prevY = concatenate(prevYVec, 1); // 1 x B
     auto prevState = detail::concatState(prevStateVec);
-    int B = prevY.ndim() < 2 ? 1 : prevY.dims(1);
+    int B = prevY.ndim() < 2 ? 1 : prevY.dim(1);
 
     Variable ox;
     Seq2SeqState state;
@@ -401,7 +401,7 @@ std::vector<Seq2SeqCriterion::CandidateHypo> Seq2SeqCriterion::beamSearch(
         {1, static_cast<long long>(beam.size()), 1},
         prevScoreVec.data(),
         MemoryLocation::Host);
-    scoreArr = fl::tile(scoreArr, {ox.dims(0)});
+    scoreArr = fl::tile(scoreArr, {ox.dim(0)});
 
     scoreArr = scoreArr + ox.tensor(); // C x B
     scoreArr = scoreArr.flatten(); // column-first
@@ -418,7 +418,7 @@ std::vector<Seq2SeqCriterion::CandidateHypo> Seq2SeqCriterion::beamSearch(
           return scoreVec[i1] > scoreVec[i2];
         });
 
-    int nClass = ox.dims(0);
+    int nClass = ox.dim(0);
     for (int j = 0; j < indices.size(); j++) {
       int hypIdx = indices[j] / nClass;
       int clsIdx = indices[j] % nClass;
@@ -475,7 +475,7 @@ std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
 
   Variable hy;
   if (y.isEmpty()) {
-    hy = tile(startEmbedding(), {1, 1, static_cast<int>(xEncoded.dims(2))});
+    hy = tile(startEmbedding(), {1, 1, static_cast<int>(xEncoded.dim(2))});
   } else if (train_ && samplingStrategy_ == fl::pkg::speech::kGumbelSampling) {
     hy = linear(y, embedding()->param(0));
   } else {
@@ -485,24 +485,24 @@ std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
   if (inputFeeding_ && !y.isEmpty()) {
     hy = hy + moddims(inState.summary, hy.shape());
   }
-  hy = moddims(hy, {hy.dims(0), -1}); // H x B
+  hy = moddims(hy, {hy.dim(0), -1}); // H x B
 
   Seq2SeqState outState(nAttnRound_);
   outState.step = inState.step + 1;
 
   Variable summaries;
   for (int i = 0; i < nAttnRound_; i++) {
-    hy = moddims(hy, {hy.dims(0), -1}); // H x 1 x B -> H x B
+    hy = moddims(hy, {hy.dim(0), -1}); // H x 1 x B -> H x B
     std::tie(hy, outState.hidden[i]) =
         decodeRNN(i)->forward(hy, inState.hidden[i]);
-    hy = moddims(hy, {hy.dims(0), 1, hy.dims(1)}); // H x B -> H x 1 x B
+    hy = moddims(hy, {hy.dim(0), 1, hy.dim(1)}); // H x B -> H x 1 x B
 
     Variable windowWeight;
     // because of the beam search batchsize can be
     // different for xEncoded and y (xEncoded batch = 1 and y batch = beam
     // size)
     int batchsize =
-        y.isEmpty() ? xEncoded.dims(2) : (y.ndim() < 2 ? 1 : y.dims(1));
+        y.isEmpty() ? xEncoded.dim(2) : (y.ndim() < 2 ? 1 : y.dim(1));
     if (window_ && (!train_ || trainWithWindow_)) {
       // TODO fix for softpretrain where target size is used
       // for now force to xEncoded.dim(1)
@@ -510,7 +510,7 @@ std::pair<Variable, Seq2SeqState> Seq2SeqCriterion::decodeStep(
           inState.alpha,
           inState.step,
           maxDecoderSteps,
-          xEncoded.dims(1),
+          xEncoded.dim(1),
           batchsize,
           inputSizes,
           targetSizes);
@@ -546,7 +546,7 @@ Seq2SeqCriterion::decodeBatchStep(
         ys[i] = ys[i] + moddims(inStates[i]->summary, ys[i].shape());
       }
     }
-    ys[i] = moddims(ys[i], {ys[i].dims(0), -1});
+    ys[i] = moddims(ys[i], {ys[i].dim(0), -1});
   }
   Variable yBatched = concatenate(ys, 1); // H x B
 

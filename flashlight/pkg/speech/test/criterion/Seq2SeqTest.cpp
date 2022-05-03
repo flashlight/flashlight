@@ -67,7 +67,7 @@ TEST(Seq2SeqTest, Seq2Seq) {
   auto losses =
       seq2seq({fl::noGrad(input), fl::noGrad(target), fl::noGrad(Tensor())})
           .front();
-  ASSERT_EQ(losses.dims(0), batchsize);
+  ASSERT_EQ(losses.dim(0), batchsize);
 
   // Backward runs.
   losses.backward();
@@ -407,7 +407,7 @@ TEST(Seq2SeqTest, BatchedDecoderStep) {
       Seq2SeqState outstate(nAttnRound);
       Variable ox;
       std::tie(ox, outstate) = seq2seq.decodeStep(
-          input, y, inStates[i], Tensor(), Tensor(), input.dims(1));
+          input, y, inStates[i], Tensor(), Tensor(), input.dim(1));
       ox = logSoftmax(ox, 0);
       single_scores[i] = ox.tensor().toHostVector<float>();
     }

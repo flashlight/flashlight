@@ -36,7 +36,7 @@ GetConvLmScoreFunc buildGetConvLmScoreFunction(
     if (fl::countNonzero(fl::isnan(output.tensor())).asScalar<int>() != 0) {
       throw std::runtime_error("[ConvLM] Encountered NaNs in propagation");
     }
-    int32_t C = output.dims(0), T = output.dims(1), B = output.dims(2);
+    int32_t C = output.dim(0), T = output.dim(1), B = output.dim(2);
     if (B != batchSize) {
       throw std::logic_error(
           "[ConvLM]: incorrect predictions: batch should be " +

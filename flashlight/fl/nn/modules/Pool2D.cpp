@@ -35,13 +35,13 @@ Pool2D::Pool2D(
 
 Variable Pool2D::forward(const Variable& input) {
   auto px = derivePadding(
-      input.dims(0),
+      input.dim(0),
       xFilter_,
       xStride_,
       xPad_,
       /* dilation= */ 1);
   auto py = derivePadding(
-      input.dims(1),
+      input.dim(1),
       yFilter_,
       yStride_,
       yPad_,
