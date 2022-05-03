@@ -11,8 +11,6 @@
 
 #include "flashlight/fl/distributed/reducers/Reducer.h"
 
-#include <arrayfire.h>
-
 namespace fl {
 
 class Variable;
