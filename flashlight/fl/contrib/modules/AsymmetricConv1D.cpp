@@ -9,6 +9,8 @@
 
 #include "flashlight/fl/contrib/modules/AsymmetricConv1D.h"
 
+#include "flashlight/fl/tensor/Index.h"
+
 namespace fl {
 
 void AsymmetricConv1D::checkParams() {
@@ -94,9 +96,9 @@ Variable AsymmetricConv1D::forward(const Variable& input) {
         groups_);
   }
   if (futurePart_ < 0.5) {
-    output = output.rows(0, output.dims(0) - 1 - 2 * cutPx);
+    output = output(fl::range(0, output.dims(0) - 2 * cutPx));
   } else if (futurePart_ > 0.5) {
-    output = output.rows(2 * cutPx, output.dims(0) - 1);
+    output = output(fl::range(2 * cutPx, output.dims(0)));
   }
   return output;
 }
