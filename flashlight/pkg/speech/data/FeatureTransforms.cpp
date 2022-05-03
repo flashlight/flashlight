@@ -79,11 +79,11 @@ fl::Dataset::DataTransformFunction inputFeatures(
   }
 
   return [featSz, spectralFeature, localNormCtx, sfxConf, sfxCounter](
-             void* data, af::dim4 dims, af::dtype type) {
-    if (type != af::dtype::f32) {
+             void* data, Shape dims, fl::dtype type) {
+    if (type != fl::dtype::f32) {
       throw std::invalid_argument("Invalid input type");
     }
-    if (dims[2] * dims[3] != 1) {
+    if (dims.ndim() != 2) {
       throw std::invalid_argument(
           "'inputFeatures': Invalid input dims . Expected 2d array - Channels x T");
     }
@@ -122,7 +122,10 @@ fl::Dataset::DataTransformFunction inputFeatures(
     } else {
       output = normalize(output);
     }
-    return af::array(T, featSz, channels, output.data());
+    return Tensor::fromBuffer(
+        {static_cast<long long>(T), featSz, channels},
+        output.data(),
+        MemoryLocation::Host);
   };
 }
 
@@ -132,7 +135,7 @@ fl::Dataset::DataTransformFunction targetFeatures(
     const LexiconMap& lexicon,
     const TargetGenerationConfig& config) {
   return [tokenDict, lexicon, config](
-             void* data, af::dim4 dims, af::dtype /* unused */) {
+             void* data, Shape dims, fl::dtype /* unused */) {
     std::string transcript(
         static_cast<char*>(data), static_cast<char*>(data) + dims.elements());
     auto words = splitOnWhitespace(transcript, true);
@@ -169,23 +172,23 @@ fl::Dataset::DataTransformFunction targetFeatures(
     }
     if (tgtVec.empty()) {
       // support empty target
-      return af::array().as(s32);
+      return Tensor(fl::dtype::s32);
     }
-    return af::array(tgtVec.size(), tgtVec.data());
+    return Tensor::fromVector(tgtVec);
   };
 }
 
 fl::Dataset::DataTransformFunction wordFeatures(const Dictionary& wrdDict) {
-  return [wrdDict](void* data, af::dim4 dims, af::dtype /* unused */) {
+  return [wrdDict](void* data, Shape dims, fl::dtype /* unused */) {
     std::string transcript(
         static_cast<char*>(data), static_cast<char*>(data) + dims.elements());
     auto words = splitOnWhitespace(transcript, true);
     auto wrdVec = wrdDict.mapEntriesToIndices(words);
     if (wrdVec.empty()) {
       // support empty target
-      return af::array().as(s32);
+      return Tensor(fl::dtype::s32);
     }
-    return af::array(wrdVec.size(), wrdVec.data());
+    return Tensor::fromVector(wrdVec);
   };
 }
 } // namespace speech
