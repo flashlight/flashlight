@@ -17,12 +17,12 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/contrib/contrib.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/fl/tensor/Compute.h"
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/TensorBase.h"
-#include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/decoder/lm/KenLM.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
@@ -43,11 +43,10 @@
 #include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
 #include "flashlight/pkg/speech/runtime/runtime.h"
 
-using fl::lib::fileExists;
 using fl::lib::format;
 using fl::lib::join;
-using fl::lib::pathsConcat;
 using fl::pkg::runtime::getCurrentDate;
+using fl::pkg::runtime::getCurrentTime;
 using fl::pkg::runtime::getRunFile;
 using fl::pkg::runtime::Serializer;
 
@@ -127,7 +126,7 @@ int main(int argc, char** argv) {
     runPath = FLAGS_rundir;
   } else if (runStatus == kContinueMode) {
     runPath = argv[2];
-    while (fileExists(getRunFile("model_last.bin", runIdx, runPath))) {
+    while (fs::exists(getRunFile("model_last.bin", runIdx, runPath))) {
       ++runIdx;
     }
     reloadPath = getRunFile("model_last.bin", runIdx - 1, runPath);
@@ -240,7 +239,7 @@ int main(int argc, char** argv) {
       // extra goodies
       {kUserName, fl::getEnvVar("USER")},
       {kHostName, fl::getEnvVar("HOSTNAME")},
-      {kTimestamp, getCurrentDate() + ", " + getCurrentDate()},
+      {kTimestamp, getCurrentDate() + ", " + getCurrentTime()},
       {kRunIdx, std::to_string(runIdx)},
       {kRunPath, runPath}};
 
@@ -248,12 +247,12 @@ int main(int argc, char** argv) {
       parseValidSets(FLAGS_valid);
 
   /* ===================== Create Dictionary & Lexicon ===================== */
-  auto dictPath = FLAGS_tokens;
-  if (dictPath.empty() || !fileExists(dictPath)) {
+  fs::path dictPath(FLAGS_tokens);
+  if (dictPath.empty() || !fs::exists(dictPath)) {
     throw std::runtime_error(
         "Invalid dictionary filepath specified with "
         " --tokens: \"" +
-        dictPath + "\"");
+        dictPath.string() + "\"");
   }
   fl::lib::text::Dictionary tokenDict(dictPath);
   // Setup-specific modifications
@@ -563,7 +562,7 @@ int main(int argc, char** argv) {
   /* ===================== Logging ===================== */
   std::ofstream logFile;
   if (isMaster) {
-    fl::lib::dirCreate(runPath);
+    fs::create_directory(runPath);
     logFile.open(getRunFile("log", runIdx, runPath));
     if (!logFile) {
       LOG(FATAL) << "failed to open log file for writing";
