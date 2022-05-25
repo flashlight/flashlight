@@ -5,11 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <stdexcept>
 #include <string>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/tensor/Init.h"
 #include "flashlight/lib/text/dictionary/Defines.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
@@ -17,16 +19,19 @@
 #include "flashlight/lib/text/tokenizer/Tokenizer.h"
 #include "flashlight/pkg/text/data/TextDataset.h"
 
-using fl::lib::pathsConcat;
 using namespace fl::lib;
 using namespace fl::lib::text;
 using namespace fl::pkg::text;
 
-std::string dataDir = "";
+fs::path dataDir = "";
 
 Dictionary createDictionary(const std::string& path) {
   Dictionary dictionary;
-  auto stream = createInputStream(path);
+  std::ifstream stream(path);
+  if (!stream) {
+    throw std::runtime_error("createDictionary - invalid path");
+  }
+
   std::string line;
   while (std::getline(stream, line)) {
     if (line.empty()) {
@@ -45,8 +50,7 @@ Dictionary createDictionary(const std::string& path) {
 TEST(TextDatasetTest, NoneMode) {
   fl::lib::text::Tokenizer tokenizer;
   fl::lib::text::PartialFileReader partialFileReader(0, 1);
-  Dictionary dictionary =
-      createDictionary(pathsConcat(dataDir, "dictionary.txt"));
+  Dictionary dictionary = createDictionary(dataDir / "dictionary.txt");
 
   int tokensPerSample = 5;
   int batchSize = 2;
@@ -75,8 +79,7 @@ TEST(TextDatasetTest, NoneMode) {
 TEST(TextDatasetTest, EosMode) {
   fl::lib::text::Tokenizer tokenizer;
   fl::lib::text::PartialFileReader partialFileReader(0, 1);
-  Dictionary dictionary =
-      createDictionary(pathsConcat(dataDir, "dictionary.txt"));
+  Dictionary dictionary = createDictionary(dataDir / "dictionary.txt");
 
   int tokensPerSample = 5;
   int batchSize = 2;
@@ -108,8 +111,7 @@ TEST(TextDatasetTest, EosModeWithDynamicBatching) {
   fl::lib::text::Tokenizer tokenizer;
   fl::lib::text::PartialFileReader partialFileReader(
       fl::getWorldRank(), fl::getWorldSize());
-  Dictionary dictionary =
-      createDictionary(pathsConcat(dataDir, "dictionary.txt"));
+  Dictionary dictionary = createDictionary(dataDir / "dictionary.txt");
 
   int tokensPerSample = 15;
 
@@ -142,7 +144,7 @@ int main(int argc, char** argv) {
   fl::init();
 
 #ifdef TEXTDATASET_TEST_DATADIR
-  dataDir = TEXTDATASET_TEST_DATADIR;
+  dataDir = fs::path(TEXTDATASET_TEST_DATADIR);
 #endif
 
   return RUN_ALL_TESTS();
