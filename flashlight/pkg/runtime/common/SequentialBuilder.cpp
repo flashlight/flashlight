@@ -11,7 +11,6 @@
 
 #include "flashlight/fl/tensor/Types.h"
 #include "flashlight/lib/common/String.h"
-#include "flashlight/lib/common/System.h"
 
 using namespace fl;
 
@@ -31,11 +30,23 @@ namespace pkg {
 namespace runtime {
 
 std::shared_ptr<Sequential> buildSequentialModule(
-    const std::string& archfile,
+    const fs::path& archfile,
     int64_t nFeatures,
     int64_t nClasses) {
   auto net = std::make_shared<Sequential>();
-  auto layers = fl::lib::getFileContent(archfile);
+
+  std::vector<std::string> layers;
+  {
+    std::ifstream in(archfile);
+    if (!in) {
+      throw std::runtime_error(
+          "fl::pkg::runtime::buildSequentialModule given invalid arch filepath");
+    }
+    for (std::string str; std::getline(in, str);) {
+      layers.emplace_back(str);
+    }
+  }
+
   int numLinesParsed = 0;
 
   // preprocess

@@ -6,23 +6,24 @@
  */
 
 #include <gflags/gflags.h>
+
+#include <iomanip>
 #include <sstream>
 
 #include "flashlight/pkg/runtime/Runtime.h"
-#include "flashlight/lib/common/String.h"
-#include "flashlight/lib/common/System.h"
 
 namespace fl {
 namespace pkg {
 namespace runtime {
 
-using fl::lib::format;
-using fl::lib::pathsConcat;
+constexpr size_t kRunFileNameIntWidth = 3;
 
 std::string
-getRunFile(const std::string& name, int runidx, const std::string& runpath) {
-  auto fname = format("%03d_%s", runidx, name.c_str());
-  return pathsConcat(runpath, fname);
+getRunFile(const std::string& name, const int runidx, const fs::path& runpath) {
+  std::stringstream ss;
+  ss << std::setw(kRunFileNameIntWidth) << std::setfill('0') << runidx << "_"
+     << name;
+  return runpath / ss.str();
 };
 
 std::string serializeGflags(const std::string& separator) {
