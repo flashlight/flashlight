@@ -31,11 +31,11 @@ namespace speech {
 
 PlGenerator::PlGenerator(
     const Dictionary& tokenDict,
-    const std::string& runPath,
+    const fs::path& runPath,
     int worldRank,
     int worldSize,
     int batchSize,
-    const std::string& trainUnsupDir,
+    const fs::path& trainUnsupDir,
     const std::string& trainUnsupLists,
     const std::string& plEpoch,
     const std::string& plRatio,
@@ -55,7 +55,7 @@ PlGenerator::PlGenerator(
       worldSize_(worldSize),
       batchSize_(batchSize),
       tokenDict_(tokenDict),
-      plDir_(pathsConcat(runPath, kPlDir)),
+      plDir_(runPath / kPlDir),
       useExistingPl_(useExistingPl),
       seedModelWER_(seedModelWER),
       minInputSize_(minInputSize),
@@ -99,7 +99,7 @@ PlGenerator::PlGenerator(
   auto paths = lib::split(',', trainUnsupLists, true);
   for (auto& path : paths) {
     auto curListDs = std::make_shared<ListFileDataset>(
-        pathsConcat(trainUnsupDir, path),
+        trainUnsupDir / path,
         inputTransform_,
         targetTransform_,
         wordTransform_);
@@ -108,7 +108,7 @@ PlGenerator::PlGenerator(
   }
   if (!allListDs.empty()) {
     if (isMaster_) {
-      dirCreate(plDir_);
+      fs::create_directory(plDir_);
     }
     fullUnsupDs_ = std::make_shared<fl::ConcatDataset>(allListDs);
   }
@@ -120,22 +120,21 @@ std::string PlGenerator::reloadPl(int curEpoch) const {
     return "";
   }
 
-  std::string plDir =
-      pathsConcat(plDir_, kPlSubdirPrefix + std::to_string(lastPlEpoch));
+  fs::path plDir = plDir_ / (kPlSubdirPrefix + std::to_string(lastPlEpoch));
 
   bool isPLReady = true;
   for (int i = 0; i < worldSize_; i++) {
-    auto listFinishPath = pathsConcat(plDir, std::to_string(i) + ".fns");
-    if (!fileExists(listFinishPath)) {
+    auto listFinishPath = plDir / (std::to_string(i) + ".fns");
+    if (!fs::exists(listFinishPath)) {
       isPLReady = false;
       break;
     }
   }
   if (isPLReady) {
-    logMaster("[PlGenerator] Loading existing PL from " + plDir);
+    logMaster("[PlGenerator] Loading existing PL from " + plDir.string());
     return plDir;
   } else {
-    logMaster("[PlGenerator] Failed to load PL from " + plDir);
+    logMaster("[PlGenerator] Failed to load PL from " + plDir.string());
     return "";
   }
 }
@@ -154,18 +153,18 @@ std::string PlGenerator::regeneratePl(
 
   logMaster(
       "[PlGenerator] Regenerating PL at epoch " + std::to_string(curEpoch));
-  std::string plDir =
-      pathsConcat(plDir_, kPlSubdirPrefix + std::to_string(curEpoch));
+  fs::path plDir = plDir_ / (kPlSubdirPrefix + std::to_string(curEpoch));
 
   /* 0. Create logging folder */
   try {
-    dirCreate(plDir);
+    fs::create_directory(plDir);
   } catch (...) {
     // Pass. Allowing attempts from all processes to create the folder.
   }
 
-  if (!dirExists(plDir)) {
-    throw std::runtime_error("[PlGenerator] Failed to create " + plDir);
+  if (!fs::is_directory(plDir)) {
+    throw std::runtime_error(
+        "[PlGenerator] Failed to create " + plDir.string());
   }
 
   /* 1. select data */
@@ -193,7 +192,7 @@ std::string PlGenerator::regeneratePl(
 
   /* 2. pseudo label generation */
   ntwrk->eval();
-  auto newPlFile = pathsConcat(plDir, std::to_string(worldRank_) + ".lst");
+  auto newPlFile = plDir / (std::to_string(worldRank_) + ".lst");
   std::ofstream plStream(newPlFile);
   for (auto& sample : *selectedDs) {
     auto duration = sample[kDurationIdx].scalar<float>();
@@ -233,7 +232,7 @@ std::string PlGenerator::regeneratePl(
   }
   plStream.close();
 
-  auto finishPlFile = pathsConcat(plDir, std::to_string(worldRank_) + ".fns");
+  fs::path finishPlFile = plDir / (std::to_string(worldRank_) + ".fns");
   std::ofstream fnsStream(finishPlFile);
   fnsStream << "done";
   fnsStream.close();
@@ -244,17 +243,17 @@ std::string PlGenerator::regeneratePl(
 }
 
 std::shared_ptr<fl::Dataset> PlGenerator::createTrainSet(
-    const std::string& trainDir,
-    const std::string& trainLists,
-    const std::string& trainUnsupDir,
+    const fs::path& trainDir,
+    const fs::path& trainLists,
+    const fs::path& trainUnsupDir,
     const std::string& batchingStrategy /* = kBatchStrategyNone */,
     int maxDurationPerBatch /* = 0 */) const {
-  std::vector<std::string> files;
+  std::vector<fs::path> files;
   for (const auto& file : lib::split(",", trainLists, true)) {
-    files.emplace_back(pathsConcat(trainDir, file));
+    files.emplace_back(trainDir / file);
   }
   for (int i = 0; i < worldSize_; i++) {
-    files.emplace_back(pathsConcat(trainUnsupDir, std::to_string(i) + ".lst"));
+    files.emplace_back(trainUnsupDir / (std::to_string(i) + ".lst"));
   }
 
   return createDataset(

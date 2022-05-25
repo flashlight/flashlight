@@ -13,28 +13,27 @@
 
 #include <glog/logging.h>
 
+#include "flashlight/lib/common/String.h"
 #include "flashlight/pkg/runtime/common/DistributedUtils.h"
-#include "flashlight/lib/common/System.h"
 
 #ifdef FL_BUILD_FB_DEPENDENCIES
-#include "deeplearning/projects/flashlight/fb/EverstoreDataset.h"
+  #include "deeplearning/projects/flashlight/fb/EverstoreDataset.h"
 #endif
 
 using fl::lib::format;
-using fl::lib::getCurrentDate;
-using fl::lib::getCurrentTime;
-using fl::lib::getEnvVar;
-using fl::lib::pathsConcat;
 using fl::lib::replaceAll;
 using fl::lib::text::DictionaryMap;
 using fl::lib::text::LexiconMap;
 
 namespace fl {
+
 namespace pkg {
 namespace speech {
 
 template <class T>
-std::vector<std::string> afMatrixToStrings(const Tensor& tensor, T terminator) {
+std::vector<std::string> tensorMatrixToStrings(
+    const Tensor& tensor,
+    T terminator) {
   int L = tensor.dim(0); // padded length of string
   int N = tensor.dim(1); // number of strings
   std::vector<std::string> result;
@@ -51,17 +50,14 @@ std::vector<std::string> afMatrixToStrings(const Tensor& tensor, T terminator) {
 }
 
 std::string
-getRunFile(const std::string& name, int runidx, const std::string& runpath) {
+getRunFile(const std::string& name, int runidx, const fs::path& runpath) {
   auto fname = format("%03d_%s", runidx, name.c_str());
-  return pathsConcat(runpath, fname);
+  return runpath / fname;
 };
 
-std::string cleanFilepath(const std::string& in) {
+std::string cleanFilepath(const fs::path& in) {
   std::string replace = in;
-  std::string sep = "/";
-#ifdef _WIN32
-  sep = "\\";
-#endif
+  std::string sep(1, fs::path::preferred_separator);
   replaceAll(replace, sep, "#");
   return replace;
 }
@@ -96,12 +92,12 @@ getTrainEvalIds(int64_t dsSize, double pctTrainEval, int64_t seed) {
 }
 
 std::vector<std::string> readSampleIds(const Tensor& tensor) {
-  return afMatrixToStrings<char>(tensor, '\0');
+  return tensorMatrixToStrings<char>(tensor, '\0');
 }
 
 std::shared_ptr<fl::Dataset> createDataset(
-    const std::vector<std::string>& paths,
-    const std::string& rootDir /* = "" */,
+    const std::vector<fs::path>& paths,
+    const fs::path& rootDir /* = "" */,
     int batchSize /* = 1 */,
     const fl::Dataset::DataTransformFunction& inputTransform /* = nullptr */,
     const fl::Dataset::DataTransformFunction& targetTransform /* = nullptr */,
@@ -119,7 +115,7 @@ std::shared_ptr<fl::Dataset> createDataset(
     if (FLAGS_everstoredb) {
 #ifdef FL_BUILD_FB_DEPENDENCIES
       curListDs = std::make_shared<fl::pkg::speech::EverstoreDataset>(
-          pathsConcat(rootDir, path),
+          rootDir / path,
           inputTransform,
           targetTransform,
           wordTransform,
@@ -130,10 +126,7 @@ std::shared_ptr<fl::Dataset> createDataset(
 #endif
     } else {
       curListDs = std::make_shared<ListFileDataset>(
-          pathsConcat(rootDir, path),
-          inputTransform,
-          targetTransform,
-          wordTransform);
+          rootDir / path, inputTransform, targetTransform, wordTransform);
     }
 
     allListDs.emplace_back(curListDs);
