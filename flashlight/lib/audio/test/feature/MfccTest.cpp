@@ -14,15 +14,13 @@
 
 #include "flashlight/lib/audio/feature/FeatureParams.h"
 #include "flashlight/lib/audio/feature/Mfcc.h"
-#include "flashlight/lib/common/System.h"
-
+#include "flashlight/lib/audio/test/Filesystem.h"
 #include "flashlight/lib/audio/test/feature/TestUtils.h"
 
 using namespace fl::lib::audio;
-using fl::lib::pathsConcat;
 
 namespace {
-std::string loadPath = "";
+fs::path loadPath = "";
 
 auto loadData = [](const std::string& filepath) {
   std::vector<float> data;
@@ -40,11 +38,11 @@ auto loadData = [](const std::string& filepath) {
 // Reference : https://labrosa.ee.columbia.edu/matlab/rastamat/mfccs.html
 TEST(MfccTest, htkCompareTest) {
   // read wav data
-  auto wavinput = loadData(pathsConcat(loadPath, "sa1.dat"));
+  auto wavinput = loadData(loadPath / "sa1.dat");
   ASSERT_TRUE(wavinput.size() > 0 && "sa1 frames not loaded properly!");
 
   // read expected output data computed from HTK
-  auto htkfeat = loadData(pathsConcat(loadPath, "sa1-mfcc.htk"));
+  auto htkfeat = loadData(loadPath / "sa1-mfcc.htk");
   // HTK features not read properly!
   ASSERT_TRUE(htkfeat.size() > 0);
   FeatureParams params;
@@ -206,7 +204,7 @@ int main(int argc, char** argv) {
 
 // Resolve directory for data
 #ifdef FEATURE_TEST_DATADIR
-  loadPath = FEATURE_TEST_DATADIR;
+  loadPath = fs::path(FEATURE_TEST_DATADIR);
 #endif
 
   return RUN_ALL_TESTS();

@@ -26,6 +26,11 @@ endif()
 find_package(OpenMP REQUIRED)
 find_package(Threads REQUIRED)
 
+# Remove this when requiring gcc >= 9
+find_package(Filesystem REQUIRED COMPONENTS Final Experimental)
+setup_install_find_module(${CMAKE_MODULE_PATH}/FindFilesystem.cmake)
+target_link_libraries(fl_lib_audio PUBLIC std::filesystem)
+
 # Threads/OpenMP pollutes other compilers (e.g. nvcc) with flags
 target_compile_options(
   fl_lib_audio
