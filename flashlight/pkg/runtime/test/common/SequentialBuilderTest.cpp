@@ -7,18 +7,17 @@
 
 #include <gtest/gtest.h>
 
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/Random.h"
-#include "flashlight/lib/common/System.h"
 #include "flashlight/pkg/runtime/common/SequentialBuilder.h"
 
 using namespace fl;
 using namespace fl::pkg::runtime;
-using namespace fl::lib;
 
 namespace {
 
-std::string archDir = "";
+fs::path archDir = "";
 
 } // namespace
 
@@ -26,7 +25,7 @@ TEST(SequentialBuilderTest, SeqModule) {
   if (FL_BACKEND_CPU) {
     GTEST_SKIP() << "Bidirectional RNN not supported";
   }
-  const std::string archfile = pathsConcat(archDir, "arch.txt");
+  const fs::path archfile = archDir / "arch.txt";
   int nchannel = 4;
   int nclass = 40;
   int batchsize = 2;
@@ -55,8 +54,8 @@ TEST(SequentialBuilderTest, Serialization) {
   if (user != nullptr) {
     userstr = std::string(user);
   }
-  const std::string path = fl::lib::getTmpPath("test.mdl");
-  const std::string archfile = pathsConcat(archDir, "arch.txt");
+  const fs::path path = fs::temp_directory_path() / "test.mdl";
+  const fs::path archfile = archDir / "arch.txt";
 
   int C = 1, N = 5, B = 1, T = 10;
   auto model = buildSequentialModule(archfile, C, N);
