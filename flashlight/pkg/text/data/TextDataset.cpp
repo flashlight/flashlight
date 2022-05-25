@@ -12,7 +12,6 @@
 #include <utility>
 
 #include "flashlight/lib/common/String.h"
-#include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/dictionary/Defines.h"
 
 using fl::lib::text::Dictionary;
@@ -24,7 +23,7 @@ namespace pkg {
 namespace text {
 
 TextDataset::TextDataset(
-    const std::string& dataDirectory,
+    const fs::path& dataDirectory,
     const std::string& filenames,
     PartialFileReader& reader,
     const Tokenizer& tokenizer,
@@ -48,7 +47,7 @@ TextDataset::TextDataset(
   std::vector<std::pair<int64_t, int64_t>> sentenceRanges;
   auto files = lib::split(',', filenames);
   for (const auto& file : files) {
-    const auto path = fl::lib::pathsConcat(dataDirectory, file);
+    const fs::path path = dataDirectory / file;
     reader.loadFile(path);
 
     while (reader.hasNextLine()) {
