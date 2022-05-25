@@ -129,18 +129,6 @@ std::vector<std::string> tknPrediction2Ltr(
   return tknIdx2Ltr(tokens, tokenDict, useWordPiece, wordSep);
 }
 
-std::vector<int> tkn2Idx(
-    const std::vector<std::string>& spelling,
-    const Dictionary& tokenDict,
-    int maxReps) {
-  std::vector<int> ret;
-  ret.reserve(spelling.size());
-  for (const auto& token : spelling) {
-    ret.push_back(tokenDict.getIndex(token));
-  }
-  return packReplabels(ret, tokenDict, maxReps);
-}
-
 std::vector<int> validateIdx(std::vector<int> input, int unkIdx) {
   int newSize = 0;
   for (int i = 0; i < input.size(); i++) {

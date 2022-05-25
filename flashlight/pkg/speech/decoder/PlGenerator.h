@@ -7,14 +7,14 @@
 
 #pragma once
 
-#include "flashlight/pkg/speech/common/Defines.h"
-#include "flashlight/pkg/speech/criterion/criterion.h"
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/contrib/contrib.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/String.h"
-#include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
+#include "flashlight/pkg/speech/common/Defines.h"
+#include "flashlight/pkg/speech/criterion/criterion.h"
 
 namespace fl {
 namespace pkg {
@@ -60,11 +60,11 @@ class PlGenerator {
  public:
   PlGenerator(
       const lib::text::Dictionary& tokenDict,
-      const std::string& runPath,
+      const fs::path& runPath,
       int worldRank,
       int worldSize,
       int batchSize,
-      const std::string& trainUnsupDir,
+      const fs::path& trainUnsupDir,
       const std::string& trainUnsupLists,
       const std::string& plEpoch,
       const std::string& plRatio,
@@ -102,9 +102,9 @@ class PlGenerator {
    * with pseudo labels.
    */
   std::shared_ptr<fl::Dataset> createTrainSet(
-      const std::string& trainDir,
-      const std::string& trainLists,
-      const std::string& trainUnsupDir,
+      const fs::path& trainDir,
+      const fs::path& trainLists,
+      const fs::path& trainUnsupDir,
       const std::string& batchingStrategy = kBatchStrategyNone,
       int maxDurationPerBatch = 0) const;
 
@@ -118,7 +118,7 @@ class PlGenerator {
   int batchSize_;
 
   lib::text::Dictionary tokenDict_;
-  std::string plDir_;
+  fs::path plDir_;
 
   bool useExistingPl_;
   double seedModelWER_;
