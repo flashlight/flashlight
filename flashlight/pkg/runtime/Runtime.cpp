@@ -63,6 +63,28 @@ bool backwardWithScaling(
   return true;
 }
 
+std::string getCurrentDate() {
+  time_t now = time(nullptr);
+  struct tm tmbuf;
+  struct tm* tstruct;
+  tstruct = localtime_r(&now, &tmbuf);
+
+  std::array<char, 80> buf;
+  strftime(buf.data(), buf.size(), "%Y-%m-%d", tstruct);
+  return std::string(buf.data());
+}
+
+std::string getCurrentTime() {
+  time_t now = time(nullptr);
+  struct tm tmbuf;
+  struct tm* tstruct;
+  tstruct = localtime_r(&now, &tmbuf);
+
+  std::array<char, 80> buf;
+  strftime(buf.data(), buf.size(), "%X", tstruct);
+  return std::string(buf.data());
+}
+
 } // end namespace runtime
 } // end namespace pkg
 } // end namespace fl

@@ -9,9 +9,9 @@
 
 #include <array>
 
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/Init.h"
-#include "flashlight/lib/common/System.h"
 #include "flashlight/pkg/speech/criterion/criterion.h"
 
 using namespace fl;
@@ -892,7 +892,7 @@ TEST(CriterionTest, AsgSerialization) {
   if (user != nullptr) {
     userstr = std::string(user);
   }
-  const std::string path = fl::lib::getTmpPath("test.mdl");
+  const fs::path path = fs::temp_directory_path() / "test.mdl";
   int N = 500;
 
   auto asg = std::make_shared<AutoSegmentationCriterion>(N);

@@ -37,7 +37,8 @@ using namespace fl::app::objdet;
 
 using fl::lib::fileExists;
 using fl::lib::format;
-using fl::lib::getCurrentDate;
+using fl::pkg::runtime::getCurrentDate;
+using fl::pkg::runtime::getCurrentTime;
 using fl::pkg::runtime::getRunFile;
 using fl::pkg::runtime::serializeGflags;
 using fl::pkg::runtime::Serializer;
@@ -252,7 +253,7 @@ int main(int argc, char** argv) {
       // extra goodies
       {kUserName, fl::lib::getEnvVar("USER")},
       {kHostName, fl::lib::getEnvVar("HOSTNAME")},
-      {kTimestamp, getCurrentDate() + ", " + getCurrentDate()},
+      {kTimestamp, getCurrentDate() + ", " + getCurrentTime()},
       {kRunIdx, std::to_string(runIdx)},
       {kRunPath, runPath}};
 

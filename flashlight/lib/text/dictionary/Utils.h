@@ -47,6 +47,12 @@ std::vector<int> unpackReplabels(
     const std::vector<int>& tokens,
     const Dictionary& dict,
     int maxReps);
+
+std::vector<int> tkn2Idx(
+    const std::vector<std::string>& spelling,
+    const fl::lib::text::Dictionary& tokenDict,
+    int maxReps);
+
 } // namespace text
 } // namespace lib
 } // namespace fl

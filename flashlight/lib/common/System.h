@@ -17,10 +17,6 @@
 namespace fl {
 namespace lib {
 
-size_t getProcessId();
-
-size_t getThreadId();
-
 std::string pathsConcat(const std::string& p1, const std::string& p2);
 
 std::string pathSeperator();
@@ -38,10 +34,6 @@ void dirCreateRecursive(const std::string& path);
 bool fileExists(const std::string& path);
 
 std::string getEnvVar(const std::string& key, const std::string& dflt = "");
-
-std::string getCurrentDate();
-
-std::string getCurrentTime();
 
 std::string getTmpPath(const std::string& filename);
 
