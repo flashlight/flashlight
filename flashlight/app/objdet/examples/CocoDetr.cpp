@@ -17,6 +17,7 @@
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/Init.h"
 #include "flashlight/lib/common/String.h"
+#include "flashlight/lib/common/System.h"
 #include "flashlight/pkg/runtime/Runtime.h"
 #include "flashlight/pkg/runtime/amp/DynamicScaler.h"
 #include "flashlight/pkg/runtime/common/DistributedUtils.h"
