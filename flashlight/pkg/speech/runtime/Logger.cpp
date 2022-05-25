@@ -15,10 +15,10 @@
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/common/Flags.h"
 
+using fl::retryWithBackoff;
 using fl::lib::format;
 using fl::lib::getCurrentDate;
 using fl::lib::getCurrentTime;
-using fl::lib::retryWithBackoff;
 
 namespace fl {
 namespace pkg {
