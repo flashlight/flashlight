@@ -47,3 +47,6 @@ wheels/
 *.la
 *.a
 *.lib
+
+# Dev environment
+.vscode
