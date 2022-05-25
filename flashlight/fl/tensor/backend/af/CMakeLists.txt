@@ -91,7 +91,12 @@ target_sources(
   flashlight
   PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/ArrayFireBackend.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/ArrayFireBinaryOps.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/ArrayFireBLAS.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/ArrayFireReductions.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/ArrayFireShapeAndIndex.cpp
   ${CMAKE_CURRENT_LIST_DIR}/ArrayFireTensor.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/ArrayFireUnaryOps.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Utils.cpp
 )
 
