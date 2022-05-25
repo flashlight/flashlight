@@ -9,7 +9,6 @@
 
 #include "flashlight/app/benchmark/ModelBenchmarker.h"
 #include "flashlight/lib/common/String.h"
-#include "flashlight/lib/common/System.h"
 
 namespace fl {
 namespace app {

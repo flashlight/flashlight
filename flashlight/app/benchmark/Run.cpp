@@ -13,7 +13,6 @@
 #include "flashlight/app/benchmark/models/LmTransformer.h"
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/lib/common/String.h"
-#include "flashlight/lib/common/System.h"
 #include "flashlight/pkg/runtime/common/DistributedUtils.h"
 #include "flashlight/pkg/speech/criterion/criterion.h"
 #include "flashlight/pkg/vision/criterion/SetCriterion.h"
