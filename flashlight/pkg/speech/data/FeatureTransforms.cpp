@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <functional>
 #include <mutex>
 #include <stdexcept>
 #include <thread>
@@ -17,7 +18,6 @@
 #include "flashlight/lib/audio/feature/Mfsc.h"
 #include "flashlight/lib/audio/feature/PowerSpectrum.h"
 #include "flashlight/lib/common/String.h"
-#include "flashlight/lib/common/System.h"
 #include "flashlight/pkg/speech/data/Utils.h"
 
 using namespace fl::lib;
@@ -29,11 +29,8 @@ using fl::lib::text::packReplabels;
 namespace {
 
 size_t getSfxSeed() {
-  auto a = fl::lib::getProcessId();
-  auto b = fl::lib::getThreadId();
-  // Create an unique hash from thread, process id
-  // using Cantor pairing function
-  return 0.5 * (a + b) * (a + b + 1) + b;
+  // A naive seed based on thread ID
+  return std::hash<std::thread::id>()(std::this_thread::get_id());
 }
 
 class StartSfxCounter {

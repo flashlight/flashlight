@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/pkg/speech/augmentation/AdditiveNoise.h"
 #include "flashlight/pkg/speech/augmentation/Reverberation.h"
 #include "flashlight/pkg/speech/augmentation/SoundEffect.h"
@@ -47,12 +48,12 @@ std::shared_ptr<SoundEffect> createSoundEffect(
 
 // Write configuration vector into json file
 void writeSoundEffectConfigFile(
-    const std::string& filename,
+    const fs::path& filename,
     const std::vector<SoundEffectConfig>& config);
 
 // Read configuration vector from json file
 std::vector<SoundEffectConfig> readSoundEffectConfigFile(
-    const std::string& filename);
+    const fs::path& filename);
 
 } // namespace sfx
 } // namespace speech

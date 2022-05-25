@@ -12,8 +12,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/flashlight.h"
-#include "flashlight/lib/common/System.h"
 #include "flashlight/pkg/runtime/common/Serializer.h"
 #include "flashlight/pkg/speech/runtime/runtime.h"
 
@@ -21,7 +21,7 @@ using namespace fl::pkg::speech;
 using fl::Tensor;
 
 namespace {
-const std::string kPath = fl::lib::getTmpPath("test.mdl");
+const fs::path kPath = fs::temp_directory_path() / "test.mdl";
 
 bool afEqual(const fl::Variable& a, const fl::Variable& b) {
   if (a.isCalcGrad() != b.isCalcGrad()) {
@@ -67,11 +67,14 @@ TEST(RuntimeTest, LoadAndSave) {
 
 TEST(RuntimeTest, TestCleanFilepath) {
   auto s = cleanFilepath("timit/train.\\mymodel");
-#ifdef _WIN32
-  ASSERT_EQ(s, "timit/train.#mymodel");
-#else
-  ASSERT_EQ(s, "timit#train.\\mymodel");
-#endif
+  std::string sep(1, fs::path::preferred_separator);
+  if (sep == "/") {
+    ASSERT_EQ(s, "timit#train.\\mymodel");
+  } else if (sep == "\\") {
+    ASSERT_EQ(s, "timit/train.#mymodel");
+  } else {
+    GTEST_SKIP() << "System uses a different separator";
+  }
 }
 
 TEST(RuntimeTest, SpeechStatMeter) {
