@@ -238,8 +238,8 @@ int main(int argc, char** argv) {
       {kCommandLine, join(" ", argvs)},
       {kGflags, serializeGflags()},
       // extra goodies
-      {kUserName, fl::lib::getEnvVar("USER")},
-      {kHostName, fl::lib::getEnvVar("HOSTNAME")},
+      {kUserName, fl::getEnvVar("USER")},
+      {kHostName, fl::getEnvVar("HOSTNAME")},
       {kTimestamp, getCurrentDate() + ", " + getCurrentDate()},
       {kRunIdx, std::to_string(runIdx)},
       {kRunPath, runPath}};

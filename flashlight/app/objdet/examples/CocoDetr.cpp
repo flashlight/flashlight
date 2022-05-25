@@ -12,12 +12,12 @@
 #include <glog/logging.h>
 
 #include "flashlight/app/objdet/common/Defines.h"
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/meter/meters.h"
 #include "flashlight/fl/optim/optim.h"
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/Init.h"
 #include "flashlight/lib/common/String.h"
-#include "flashlight/lib/common/System.h"
 #include "flashlight/pkg/runtime/Runtime.h"
 #include "flashlight/pkg/runtime/amp/DynamicScaler.h"
 #include "flashlight/pkg/runtime/common/DistributedUtils.h"
@@ -35,7 +35,6 @@ using namespace fl::pkg::vision;
 using namespace fl::pkg::vision;
 using namespace fl::app::objdet;
 
-using fl::lib::fileExists;
 using fl::lib::format;
 using fl::pkg::runtime::getCurrentDate;
 using fl::pkg::runtime::getCurrentTime;
@@ -215,7 +214,7 @@ int main(int argc, char** argv) {
     runPath = FLAGS_exp_rundir;
   } else if (runStatus == kContinueMode) {
     runPath = argv[2];
-    while (fileExists(getRunFile("model_last.bin", runIdx, runPath))) {
+    while (fs::exists(getRunFile("model_last.bin", runIdx, runPath))) {
       ++runIdx;
     }
     reloadPath = getRunFile("model_last.bin", runIdx - 1, runPath);
@@ -251,8 +250,8 @@ int main(int argc, char** argv) {
       {kCommandLine, cmdLine},
       {kGflags, serializeGflags()},
       // extra goodies
-      {kUserName, fl::lib::getEnvVar("USER")},
-      {kHostName, fl::lib::getEnvVar("HOSTNAME")},
+      {kUserName, fl::getEnvVar("USER")},
+      {kHostName, fl::getEnvVar("HOSTNAME")},
       {kTimestamp, getCurrentDate() + ", " + getCurrentTime()},
       {kRunIdx, std::to_string(runIdx)},
       {kRunPath, runPath}};
