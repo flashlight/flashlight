@@ -11,27 +11,16 @@
 #include <unistd.h>
 #include <fstream>
 #include <stdexcept>
+#include <string>
 #include <thread>
 
 namespace {
+
 static std::string encodeName(const std::string& name) {
   static std::hash<std::string> hashFn;
   return std::to_string(hashFn(name));
 }
 
-std::string pathsConcat(const std::string& p1, const std::string& p2) {
-  char sep = '/';
-
-#ifdef _WIN32
-  sep = '\\';
-#endif
-
-  if (!p1.empty() && p1[p1.length() - 1] != sep) {
-    return p1 + sep + p2; // Need to add a path separator
-  } else {
-    return p1 + p2;
-  }
-}
 } // namespace
 
 namespace fl {
@@ -41,51 +30,51 @@ namespace detail {
 constexpr std::chrono::milliseconds FileStore::kDefaultTimeout;
 
 void FileStore::set(const std::string& key, const std::vector<char>& data) {
-  auto tmp = tmpPath(key);
-  auto path = objectPath(key);
+  fs::path tmp = tmpPath(key);
+  fs::path path = objectPath(key);
 
   {
     // Fail if the key already exists. This implementation is not race free.
     // A race free solution would need to atomically create the file 'path'
     // using an API that fails if the file exists (not provided by STL). If
     // created successfully, rename the temp file as below.
-    std::ifstream ifs(path.c_str());
+    std::ifstream ifs(path);
     if (ifs.is_open()) {
-      throw std::runtime_error("FileStore set: file already exists: " + path);
+      throw std::runtime_error(
+          "FileStore set: file already exists: " + path.string());
     }
   }
 
   {
-    std::ofstream ofs(tmp.c_str(), std::ios::out | std::ios::trunc);
+    std::ofstream ofs(tmp, std::ios::out | std::ios::trunc);
     if (!ofs.is_open()) {
-      throw std::runtime_error("FileStore set: file create failed: " + tmp);
+      throw std::runtime_error(
+          "FileStore set: file create failed: " + tmp.string());
     }
     ofs.write(data.data(), data.size());
   }
 
   // Atomically move result to final location
-  auto rv = rename(tmp.c_str(), path.c_str());
-  if (rv != 0) {
-    throw std::runtime_error("FileStore set: rename failed");
-  }
+  fs::rename(tmp, path);
 }
 
 std::vector<char> FileStore::get(const std::string& key) {
-  auto path = objectPath(key);
+  fs::path path = objectPath(key);
   std::vector<char> result;
 
   // Block until key is set
   wait(key);
 
-  std::ifstream ifs(path.c_str(), std::ios::in);
+  std::ifstream ifs(path, std::ios::in);
   if (!ifs) {
-    throw std::runtime_error("FileStore get: file open failed: " + path);
+    throw std::runtime_error(
+        "FileStore get: file open failed: " + path.string());
   }
 
   ifs.seekg(0, std::ios::end);
   size_t n = ifs.tellg();
   if (n == 0) {
-    throw std::runtime_error("FileStore get: file is empty: " + path);
+    throw std::runtime_error("FileStore get: file is empty: " + path.string());
   }
   result.resize(n);
   ifs.seekg(0);
@@ -94,19 +83,20 @@ std::vector<char> FileStore::get(const std::string& key) {
 }
 
 void FileStore::clear(const std::string& key) {
-  auto path = objectPath(key);
-  remove(path.c_str());
+  fs::path path = objectPath(key);
+  fs::remove(path);
 }
 
 bool FileStore::check(const std::string& key) {
-  auto path = objectPath(key);
+  fs::path path = objectPath(key);
 
-  int fd = open(path.c_str(), O_RDONLY);
+  int fd = open(path.string().c_str(), O_RDONLY);
   if (fd == -1) {
     // Only deal with files that don't exist.
     // Anything else is a problem.
     if (errno != ENOENT) {
-      throw std::runtime_error("FileStore check: file open failed: " + path);
+      throw std::runtime_error(
+          "FileStore check: file open failed: " + path.string());
     }
 
     // path doesn't exist; return early
@@ -131,12 +121,12 @@ void FileStore::wait(const std::string& key) {
   }
 }
 
-std::string FileStore::tmpPath(const std::string& name) {
-  return pathsConcat(basePath_, "." + encodeName(name));
+fs::path FileStore::tmpPath(const std::string& name) {
+  return basePath_ / fs::path("." + encodeName(name));
 }
 
-std::string FileStore::objectPath(const std::string& name) {
-  return pathsConcat(basePath_, encodeName(name));
+fs::path FileStore::objectPath(const std::string& name) {
+  return basePath_ / fs::path(encodeName(name));
 }
 
 } // namespace detail
