@@ -47,8 +47,6 @@ std::string getTmpPath(const std::string& filename);
 
 std::vector<std::string> getFileContent(const std::string& file);
 
-std::vector<std::string> fileGlob(const std::string& pat);
-
 std::ifstream createInputStream(const std::string& filename);
 
 std::ofstream createOutputStream(
