@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/contrib/contrib.h"
 #include "flashlight/fl/contrib/modules/modules.h"
 
@@ -22,7 +23,7 @@ namespace runtime {
  * defines the model architecture.
  */
 std::shared_ptr<fl::Sequential> buildSequentialModule(
-    const std::string& archfile,
+    const fs::path& archfile,
     int64_t nFeatures,
     int64_t nClasses);
 
