@@ -10,23 +10,21 @@
 #include <string>
 #include <vector>
 
-#include <glog/logging.h>
 #include <gtest/gtest.h>
 
-#include "flashlight/pkg/speech/criterion/criterion.h"
-#include "flashlight/pkg/speech/decoder/Defines.h"
-#include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
-#include "flashlight/pkg/speech/runtime/runtime.h"
-#include "flashlight/fl/tensor/Init.h"
-#include "flashlight/lib/common/System.h"
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/lib/text/decoder/LexiconDecoder.h"
 #include "flashlight/lib/text/decoder/Trie.h"
 #include "flashlight/lib/text/decoder/lm/KenLM.h"
+#include "flashlight/lib/text/dictionary/Defines.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
+#include "flashlight/lib/text/dictionary/Utils.h"
 
 using namespace fl::lib;
 using namespace fl::lib::text;
-using namespace fl::pkg::speech;
+
+// The token dictionary for this test defines this separator token
+constexpr const char* kSepToken = "|";
 
 /**
  * In this test, we check the output from LM, trie and decoder.
@@ -50,17 +48,23 @@ std::vector<int> tokens2Tensor(
   return ret;
 }
 
+struct Emissions {
+  std::vector<float> emission; // A column-major tensor with shape T x N.
+  int nFrames{0};
+  int nTokens{0};
+};
+
 TEST(DecoderTest, run) {
-  std::string dataDir = "";
+  fs::path dataDir;
 #ifdef DECODER_TEST_DATADIR
   dataDir = DECODER_TEST_DATADIR;
 #endif
 
   /* ===================== Create Dataset ===================== */
-  EmissionUnit emissionUnit;
+  Emissions emissionUnit;
 
   // T, N
-  std::string tnPath = pathsConcat(dataDir, "TN.bin");
+  fs::path tnPath = dataDir / "TN.bin";
   std::ifstream tnStream(tnPath, std::ios::binary | std::ios::in);
   std::vector<int> tnArray(2);
   tnStream.read((char*)tnArray.data(), 2 * sizeof(int));
@@ -71,32 +75,34 @@ TEST(DecoderTest, run) {
 
   // Emission
   emissionUnit.emission.resize(T * N);
-  std::string emissionPath = pathsConcat(dataDir, "emission.bin");
+  fs::path emissionPath = dataDir / "emission.bin";
   std::ifstream em_stream(emissionPath, std::ios::binary | std::ios::in);
   em_stream.read((char*)emissionUnit.emission.data(), T * N * sizeof(float));
   em_stream.close();
 
   // Transitions
   std::vector<float> transitions(N * N);
-  std::string transitionsPath = pathsConcat(dataDir, "transition.bin");
+  fs::path transitionsPath = dataDir / "transition.bin";
   std::ifstream tr_stream(transitionsPath, std::ios::binary | std::ios::in);
   tr_stream.read((char*)transitions.data(), N * N * sizeof(float));
   tr_stream.close();
 
-  LOG(INFO) << "[Serialization] Loaded emissions [" << T << " x " << N << ']';
+  std::cout << "[Serialization] Loaded emissions [" << T << " x " << N << ']'
+            << std::endl;
 
   /* ===================== Create Dictionary ===================== */
-  auto lexicon = loadWords(pathsConcat(dataDir, "words.lst"));
-  Dictionary tokenDict(pathsConcat(dataDir, "letters.lst"));
+  auto lexicon = loadWords(dataDir / "words.lst");
+  Dictionary tokenDict(dataDir / "letters.lst");
   tokenDict.addEntry("<1>"); // replabel emulation
   auto wordDict = createWordDict(lexicon);
 
-  LOG(INFO) << "[Dictionary] Number of words: " << wordDict.indexSize();
+  std::cout << "[Dictionary] Number of words: " << wordDict.indexSize()
+            << std::endl;
 
   /* ===================== Decode ===================== */
   /* -------- Build Language Model --------*/
-  auto lm = std::make_shared<KenLM>(pathsConcat(dataDir, "lm.arpa"), wordDict);
-  LOG(INFO) << "[Decoder] LM constructed.\n";
+  auto lm = std::make_shared<KenLM>(dataDir / "lm.arpa", wordDict);
+  std::cout << "[Decoder] LM constructed." << std::endl;
 
   std::vector<std::string> sentence{"the", "cat", "sat", "on", "the", "mat"};
   auto inState = lm->start(0);
@@ -114,7 +120,7 @@ TEST(DecoderTest, run) {
   ASSERT_NEAR(totalScore, -19.5123, 1e-5);
 
   /* -------- Build Trie --------*/
-  int silIdx = tokenDict.getIndex(kSilToken);
+  int silIdx = tokenDict.getIndex(kSepToken);
   int blankIdx = -1;
   int unkIdx = wordDict.getIndex(kUnkToken);
   auto trie = std::make_shared<Trie>(tokenDict.indexSize(), silIdx);
@@ -133,11 +139,11 @@ TEST(DecoderTest, run) {
       trie->insert(tokensTensor, usrIdx, score);
     }
   }
-  LOG(INFO) << "[Decoder] Trie planted.\n";
+  std::cout << "[Decoder] Trie planted." << std::endl;
 
   // Smearing
   trie->smear(SmearingMode::MAX);
-  LOG(INFO) << "[Decoder] Trie smeared.\n";
+  std::cout << "[Decoder] Trie smeared." << std::endl;
 
   std::vector<float> trieScoreTarget{
       -1.05971, -2.87742, -2.64553, -3.05081, -1.05971, -3.08968};
@@ -162,7 +168,7 @@ TEST(DecoderTest, run) {
 
   LexiconDecoder decoder(
       decoderOpt, trie, lm, silIdx, blankIdx, unkIdx, transitions, false);
-  LOG(INFO) << "[Decoder] Decoder constructed.\n";
+  std::cout << "[Decoder] Decoder constructed." << std::endl;
 
   /* -------- Run --------*/
   auto emission = emissionUnit.emission;
@@ -171,17 +177,14 @@ TEST(DecoderTest, run) {
   std::vector<std::vector<int>> wordPredictions;
   std::vector<std::vector<int>> letterPredictions;
 
-  auto timer = fl::TimeMeter();
-  timer.resume();
   auto results = decoder.decode(emission.data(), T, N);
-  timer.stop();
 
   int n_hyp = results.size();
 
   ASSERT_EQ(n_hyp, 16); // only one with nice ending
 
   for (int i = 0; i < std::min(n_hyp, 5); i++) {
-    LOG(INFO) << results[i].score;
+    std::cout << results[i].score << std::endl;
   }
 
   std::vector<float> hypScoreTarget{
@@ -192,9 +195,6 @@ TEST(DecoderTest, run) {
 }
 
 int main(int argc, char** argv) {
-  fl::init();
-  google::InitGoogleLogging(argv[0]);
-  google::InstallFailureSignalHandler();
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

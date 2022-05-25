@@ -15,10 +15,10 @@
 #include <string>
 #include <vector>
 
-#include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
+#include "flashlight/pkg/speech/common/Defines.h"
 
 namespace fl {
 namespace pkg {
@@ -59,11 +59,6 @@ std::vector<std::string> tknPrediction2Ltr(
     const int replabel,
     const bool useWordPiece,
     const std::string& wordSep);
-
-std::vector<int> tkn2Idx(
-    const std::vector<std::string>& spelling,
-    const fl::lib::text::Dictionary& tokenDict,
-    int maxReps);
 
 std::vector<int> validateIdx(std::vector<int> input, int unkIdx);
 

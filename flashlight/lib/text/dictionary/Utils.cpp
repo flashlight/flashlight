@@ -142,6 +142,19 @@ std::vector<int> unpackReplabels(
   }
   return result;
 }
+
+std::vector<int> tkn2Idx(
+    const std::vector<std::string>& spelling,
+    const Dictionary& tokenDict,
+    int maxReps) {
+  std::vector<int> ret;
+  ret.reserve(spelling.size());
+  for (const auto& token : spelling) {
+    ret.push_back(tokenDict.getIndex(token));
+  }
+  return packReplabels(ret, tokenDict, maxReps);
+}
+
 } // namespace text
 } // namespace lib
 } // namespace fl
