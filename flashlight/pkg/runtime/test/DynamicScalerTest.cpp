@@ -11,9 +11,9 @@
 
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/autograd/Utils.h"
-#include "flashlight/fl/tensor/Init.h"
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/nn/Init.h"
-#include "flashlight/lib/common/System.h"
+#include "flashlight/fl/tensor/Init.h"
 
 TEST(DynamicScalerTest, Scaling) {
   auto dynamicScaler = fl::pkg::runtime::DynamicScaler(
@@ -41,7 +41,7 @@ TEST(DynamicScalerTest, Serialization) {
       100 // updateInterval
   );
 
-  const std::string path = fl::lib::getTmpPath("DynamicScaler.bin");
+  const fs::path path = fs::temp_directory_path() / "DynamicScaler.bin";
   fl::save(path, dynamicScaler);
 
   std::shared_ptr<fl::pkg::runtime::DynamicScaler> dynamicScaler1;
