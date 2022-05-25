@@ -33,10 +33,6 @@ void dirCreateRecursive(const std::string& path);
 
 bool fileExists(const std::string& path);
 
-std::string getEnvVar(const std::string& key, const std::string& dflt = "");
-
-std::string getTmpPath(const std::string& filename);
-
 std::vector<std::string> getFileContent(const std::string& file);
 
 std::ifstream createInputStream(const std::string& filename);
