@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
   Trainer trainer("eval");
   FL_LOG_MASTER(INFO) << "Running evaluation with model: "
                       << FLAGS_exp_init_model_path << ", on dataset: "
-                      << fl::lib::pathsConcat(FLAGS_data_dir, FLAGS_data_valid);
+                      << fs::path(FLAGS_data_dir) / FLAGS_data_valid;
 
   auto loss = trainer.runEvaluation();
   FL_LOG_MASTER(INFO) << "Valid Loss: " << format("%.2f", loss)
