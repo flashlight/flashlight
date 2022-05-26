@@ -10,7 +10,9 @@
 #include <string>
 #include <unordered_map>
 
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/dataset/datasets.h"
+
 /**
  * Utilities for creating an ImageDataset with imagenet data
  * The jpegs must be placed in subdirectories representing their class in a
@@ -43,7 +45,7 @@ namespace vision {
  * create a map with a unique id for each label that can be used for training
  */
 std::unordered_map<std::string, uint64_t> getImagenetLabels(
-    const std::string& labelFile);
+    const fs::path& labelFile);
 
 /*
  * Creates an `ImageDataset` by globbing for images in
@@ -64,7 +66,7 @@ std::unordered_map<std::string, uint64_t> getImagenetLabels(
  *
  */
 std::shared_ptr<Dataset> imagenetDataset(
-    const std::string& fp,
+    const fs::path& imgDir,
     const std::unordered_map<std::string, uint64_t>& labelMap,
     std::vector<Dataset::TransformFunction> transformfns);
 
