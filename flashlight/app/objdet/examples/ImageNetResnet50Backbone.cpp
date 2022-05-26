@@ -11,13 +11,13 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/dataset/datasets.h"
 #include "flashlight/fl/meter/meters.h"
 #include "flashlight/fl/optim/optim.h"
 #include "flashlight/fl/tensor/Compute.h"
 #include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/Random.h"
-#include "flashlight/lib/common/System.h"
 #include "flashlight/pkg/runtime/common/DistributedUtils.h"
 #include "flashlight/pkg/vision/dataset/DistributedDataset.h"
 #include "flashlight/pkg/vision/dataset/Imagenet.h"
@@ -96,9 +96,9 @@ int main(int argc, char** argv) {
   google::InstallFailureSignalHandler();
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-  const std::string labelPath = lib::pathsConcat(FLAGS_data_dir, "labels.txt");
-  const std::string trainList = lib::pathsConcat(FLAGS_data_dir, "train");
-  const std::string valList = lib::pathsConcat(FLAGS_data_dir, "val");
+  const std::string labelPath = fs::path(FLAGS_data_dir) / "labels.txt";
+  const std::string trainList = fs::path(FLAGS_data_dir) / "train";
+  const std::string valList = fs::path(FLAGS_data_dir) / "val";
 
   /////////////////////////
   // Setup distributed training

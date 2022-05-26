@@ -147,27 +147,6 @@ bool fileExists(const std::string& path) {
   return fs.good();
 }
 
-std::string getEnvVar(
-    const std::string& key,
-    const std::string& dflt /*= "" */) {
-  char* val = getenv(key.c_str());
-  return val ? std::string(val) : dflt;
-}
-
-std::string getTmpPath(const std::string& filename) {
-  std::string tmpDir = "/tmp";
-  auto getTmpDir = [&tmpDir](const std::string& env) {
-    char* dir = std::getenv(env.c_str());
-    if (dir != nullptr) {
-      tmpDir = std::string(dir);
-    }
-  };
-  getTmpDir("TMPDIR");
-  getTmpDir("TEMP");
-  getTmpDir("TMP");
-  return tmpDir + "/fl_tmp_" + getEnvVar("USER", "unknown") + "_" + filename;
-}
-
 std::vector<std::string> getFileContent(const std::string& file) {
   std::vector<std::string> data;
   std::ifstream in = createInputStream(file);

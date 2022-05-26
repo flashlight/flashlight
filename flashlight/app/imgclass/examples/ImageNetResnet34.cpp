@@ -12,12 +12,12 @@
 #include <glog/logging.h>
 
 #include "flashlight/app/imgclass/examples/Defines.h"
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/dataset/datasets.h"
 #include "flashlight/fl/meter/meters.h"
 #include "flashlight/fl/optim/optim.h"
 #include "flashlight/fl/tensor/Init.h"
 #include "flashlight/lib/common/String.h"
-#include "flashlight/lib/common/System.h"
 #include "flashlight/pkg/runtime/Runtime.h"
 #include "flashlight/pkg/runtime/amp/DynamicScaler.h"
 #include "flashlight/pkg/runtime/common/DistributedUtils.h"
@@ -128,9 +128,9 @@ int main(int argc, char** argv) {
   google::InstallFailureSignalHandler();
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-  const std::string labelPath = lib::pathsConcat(FLAGS_data_dir, "labels.txt");
-  const std::string trainList = lib::pathsConcat(FLAGS_data_dir, "train");
-  const std::string valList = lib::pathsConcat(FLAGS_data_dir, "val");
+  const fs::path labelPath = fs::path(FLAGS_data_dir) / "labels.txt";
+  const fs::path trainList = fs::path(FLAGS_data_dir) / "train";
+  const fs::path valList = fs::path(FLAGS_data_dir) / "val";
 
   /////////////////////////
   // Setup distributed training
@@ -250,14 +250,14 @@ int main(int argc, char** argv) {
   // Small utility functions to load and save models
   auto saveModel = [&model, &isMaster](int epoch) {
     if (isMaster) {
-      std::string modelPath = FLAGS_exp_checkpoint_path + std::to_string(epoch);
+      fs::path modelPath = FLAGS_exp_checkpoint_path + std::to_string(epoch);
       LOG(INFO) << "Saving model to file: " << modelPath;
       fl::save(modelPath, model);
     }
   };
 
   auto loadModel = [&model](int epoch) {
-    std::string modelPath = FLAGS_exp_checkpoint_path + std::to_string(epoch);
+    fs::path modelPath = FLAGS_exp_checkpoint_path + std::to_string(epoch);
     LOG(INFO) << "Loading model from file: " << modelPath;
     fl::load(modelPath, model);
   };
