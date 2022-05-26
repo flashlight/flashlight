@@ -21,6 +21,7 @@
 #include "flashlight/fl/flashlight.h"
 
 #include "flashlight/lib/common/ProducerConsumerQueue.h"
+#include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/decoder/LexiconDecoder.h"
 #include "flashlight/lib/text/decoder/LexiconFreeDecoder.h"
 #include "flashlight/lib/text/decoder/LexiconFreeSeq2SeqDecoder.h"

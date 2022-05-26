@@ -8,22 +8,17 @@
 
 #include <gtest/gtest.h>
 
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/contrib/modules/modules.h"
 #include "flashlight/fl/flashlight.h"
-#include "flashlight/lib/common/System.h"
 #include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
 
 using namespace fl;
 
-namespace {
-
-std::string pluginDir = "";
-
-} // namespace
+fs::path pluginDir;
 
 TEST(ModulePluginTest, ModulePlugin) {
-  const std::string libfile =
-      fl::lib::pathsConcat(pluginDir, "test_module_plugin.so");
+  const fs::path libfile = pluginDir / "test_module_plugin.so";
 
   const int ninput = 80;
   const int noutput = 10;
