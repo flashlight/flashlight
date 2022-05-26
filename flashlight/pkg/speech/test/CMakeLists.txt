@@ -9,6 +9,8 @@ build_test(SRC ${DIR}/criterion/CriterionTest.cpp LIBS ${LIBS})
 build_test(SRC ${DIR}/criterion/Seq2SeqTest.cpp LIBS ${LIBS})
 build_test(SRC ${DIR}/criterion/attention/AttentionTest.cpp LIBS ${LIBS})
 build_test(SRC ${DIR}/criterion/attention/WindowTest.cpp LIBS ${LIBS})
+# Common
+build_test(SRC ${DIR}/common/ProducerConsumerQueueTest.cpp LIBS ${LIBS})
 # Data
 build_test(SRC ${DIR}/data/FeaturizationTest.cpp LIBS ${LIBS})
 build_test(
