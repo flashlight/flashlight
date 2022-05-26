@@ -12,9 +12,9 @@
 
 #include <gtest/gtest.h>
 
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/tensor/Init.h"
 #include "flashlight/lib/common/String.h"
-#include "flashlight/lib/common/System.h"
 #include "flashlight/pkg/speech/data/ListFileDataset.h"
 
 using namespace fl::lib;
@@ -23,7 +23,8 @@ using namespace fl::pkg::speech;
 namespace {
 using namespace fl;
 
-std::string loadPath = "";
+fs::path loadPath = "";
+
 auto letterToTarget = [](void* data, Shape dims, fl::dtype /* unused */) {
   std::string transcript(
       static_cast<char*>(data), static_cast<char*>(data) + dims.elements());
@@ -36,8 +37,20 @@ auto letterToTarget = [](void* data, Shape dims, fl::dtype /* unused */) {
 } // namespace
 
 TEST(ListFileDatasetTest, LoadData) {
-  auto data = getFileContent(pathsConcat(loadPath, "data.lst"));
-  const std::string rootPath = fl::lib::getTmpPath("data.lst");
+  const fs::path dataPath = loadPath / "data.lst";
+  if (!fs::exists(dataPath)) {
+    throw std::runtime_error(
+        "ListFileDatasetTest, LoadData - can't open test data.lst");
+  }
+  std::vector<std::string> data;
+  {
+    std::ifstream in(dataPath);
+    for (std::string s; std::getline(in, s);) {
+      data.emplace_back(s);
+    }
+  }
+
+  const fs::path rootPath = fs::temp_directory_path() / "data.lst";
   std::ofstream out(rootPath);
   for (auto& d : data) {
     replaceAll(d, "<TESTDIR>", loadPath);
@@ -70,7 +83,7 @@ int main(int argc, char** argv) {
 
 // Resolve directory for data
 #ifdef DATA_TEST_DATADIR
-  loadPath = DATA_TEST_DATADIR;
+  loadPath = fs::path(DATA_TEST_DATADIR);
 #endif
 
   return RUN_ALL_TESTS();

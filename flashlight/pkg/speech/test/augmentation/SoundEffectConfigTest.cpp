@@ -11,10 +11,10 @@
 
 #include <fstream>
 
+#include "flashlight/fl/common/Filesystem.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/pkg/speech/augmentation/SoundEffect.h"
 #include "flashlight/pkg/speech/augmentation/SoundEffectConfig.h"
-#include "flashlight/fl/tensor/Init.h"
-#include "flashlight/lib/common/System.h"
 
 using namespace ::fl::pkg::speech::sfx;
 
@@ -24,7 +24,7 @@ using namespace ::fl::pkg::speech::sfx;
  * configured sound effect chain.
  */
 TEST(SoundEffectConfigFile, ReadWriteJson) {
-  const std::string configPath = fl::lib::getTmpPath("sfxConfig.json");
+  const fs::path configPath = fs::temp_directory_path() / "sfxConfig.json";
   // This log line alllows the user to inspect the config file or copy/paste
   // configuration.
   LOG(INFO) << "output config file= " << configPath;
@@ -32,7 +32,7 @@ TEST(SoundEffectConfigFile, ReadWriteJson) {
   std::vector<SoundEffectConfig> sfxConf1(6);
 
   // Create mock noise list file.
-  const std::string noiseListPath = fl::lib::getTmpPath("noise.lst");
+  const fs::path noiseListPath = fs::temp_directory_path() / "noise.lst";
   {
     std::ofstream noiseListFile(noiseListPath);
     noiseListFile << "/fake/path.flac";
