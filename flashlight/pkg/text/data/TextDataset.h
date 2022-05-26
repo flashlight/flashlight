@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/tokenizer/PartialFileReader.h"
@@ -60,7 +61,7 @@ constexpr size_t kMaxTokenInBuffer = 10000000000;
 class TextDataset : public fl::Dataset {
  public:
   TextDataset(
-      const std::string& dataDirectory,
+      const fs::path& dataDirectory,
       const std::string& filenames,
       fl::lib::text::PartialFileReader& reader,
       const fl::lib::text::Tokenizer& tokenizer,
