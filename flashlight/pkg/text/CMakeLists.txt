@@ -5,12 +5,25 @@ add_library(
   ""
   )
 
+# flashlight-text is required
+if (NOT TARGET flashlight::flashlight-text)
+  find_package(flashlight-text CONFIG)
+  if (NOT TARGET flashlight::flashlight-text AND FL_BUILD_STANDALONE)
+    message(STATUS "Flashlight Text not found - downloading and building from source")
+    include(${CMAKE_MODULE_PATH}/BuildFlashlightText.cmake)
+  elseif(TARGET flashlight::flashlight-text)
+    message(STATUS "Found flashlight-text")
+  else()
+    message(FATAL_ERROR "Could not find requirement flashlight-text.")
+  endif()
+endif()
+
 target_link_libraries(
   fl_pkg_text
   PUBLIC
   flashlight
-  fl_lib_text
   fl_lib_common
+  flashlight::flashlight-text
   )
 # ------------------------ Components ------------------------
 

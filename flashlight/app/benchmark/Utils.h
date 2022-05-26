@@ -7,8 +7,9 @@
 
 #pragma once
 
+#include <string>
+
 #include "flashlight/app/benchmark/ModelBenchmarker.h"
-#include "flashlight/lib/common/String.h"
 
 namespace fl {
 namespace app {

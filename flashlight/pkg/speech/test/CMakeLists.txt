@@ -27,11 +27,6 @@ build_test(
   LIBS ${LIBS}
   PREPROC "DECODER_TEST_DATADIR=\"${DIR}/decoder/data\""
   )
-build_test(
-  SRC ${DIR}/decoder/DecoderTest.cpp
-  LIBS ${LIBS}
-  PREPROC "DECODER_TEST_DATADIR=\"${DIR}/decoder/data\""
-  )
 # Runtime
 build_test(SRC ${DIR}/runtime/RuntimeTest.cpp LIBS ${LIBS})
 # Augmentation

@@ -6,6 +6,7 @@
  */
 
 #include "flashlight/pkg/speech/decoder/DecodeUtils.h"
+
 using fl::lib::text::SmearingMode;
 
 namespace fl {

@@ -14,7 +14,7 @@
 #include "flashlight/app/lm/common/Defines.h"
 #include "flashlight/fl/common/Logging.h"
 #include "flashlight/fl/tensor/Init.h"
-#include "flashlight/lib/common/String.h"
+#include "flashlight/lib/text/String.h"
 #include "flashlight/lib/text/tokenizer/Tokenizer.h"
 #include "flashlight/pkg/runtime/Runtime.h"
 

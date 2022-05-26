@@ -28,7 +28,6 @@ if (@FL_BUILD_STANDALONE@)
   if (@FL_BUILD_LIB_AUDIO@)
     # Lib dependencies
     find_dependency(OpenMP)
-    find_dependency(kenlm)
     find_dependency(Threads)
     find_dependency(FFTW3)
     if (@FL_LIBRARIES_USE_MKL@)
@@ -115,9 +114,6 @@ if (@FL_BUILD_LIB_SEQUENCE@)
 endif()
 if (@FL_BUILD_LIB_AUDIO@)
   set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::fl_lib_audio)
-endif()
-if (@FL_BUILD_LIB_TEXT@)
-  set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::fl_lib_text)
 endif()
 
 # core

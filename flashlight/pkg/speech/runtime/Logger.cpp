@@ -9,7 +9,7 @@
 
 #include <thread>
 
-#include "flashlight/lib/common/String.h"
+#include "flashlight/lib/text/String.h"
 #include "flashlight/pkg/runtime/Runtime.h"
 #include "flashlight/pkg/runtime/common/DistributedUtils.h"
 #include "flashlight/pkg/speech/common/Defines.h"

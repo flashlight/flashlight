@@ -10,6 +10,7 @@
 #include <iomanip>
 
 #include "flashlight/fl/flashlight.h"
+#include "flashlight/lib/text/String.h"
 
 namespace fl {
 namespace app {
