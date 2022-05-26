@@ -336,7 +336,13 @@ int main(int argc, char** argv) {
       : kTargetPadValue;
   int wordpadVal = wordDict.getIndex(kUnkToken);
 
-  std::vector<std::string> testSplits = fl::lib::split(",", FLAGS_test, true);
+  auto _testSplits = fl::lib::split(",", FLAGS_test, true);
+  std::vector<fs::path> testSplits;
+  std::transform(
+      _testSplits.begin(),
+      _testSplits.end(),
+      std::back_inserter(testSplits),
+      [](const std::string& path) -> fs::path { return fs::path(path); });
   auto ds = createDataset(
       testSplits,
       FLAGS_datadir,

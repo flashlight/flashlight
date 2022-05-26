@@ -45,9 +45,9 @@
 
 using fl::lib::fileExists;
 using fl::lib::format;
-using fl::lib::getCurrentDate;
 using fl::lib::join;
 using fl::lib::pathsConcat;
+using fl::pkg::runtime::getCurrentDate;
 using fl::pkg::runtime::getRunFile;
 using fl::pkg::runtime::Serializer;
 
@@ -331,7 +331,13 @@ int main(int argc, char** argv) {
   int wordpadVal = kTargetPadValue;
   auto padVal = std::make_tuple(0, targetpadVal, wordpadVal);
 
-  std::vector<std::string> trainSplits = fl::lib::split(",", FLAGS_train, true);
+  auto _trainSplits = fl::lib::split(",", FLAGS_train, true);
+  std::vector<fs::path> trainSplits;
+  std::transform(
+      _trainSplits.begin(),
+      _trainSplits.end(),
+      std::back_inserter(trainSplits),
+      [](const std::string& path) -> fs::path { return fs::path(path); });
   auto trainds = createDataset(
       trainSplits,
       FLAGS_datadir,

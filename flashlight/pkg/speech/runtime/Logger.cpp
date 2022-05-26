@@ -10,15 +10,15 @@
 #include <thread>
 
 #include "flashlight/lib/common/String.h"
-#include "flashlight/lib/common/System.h"
+#include "flashlight/pkg/runtime/Runtime.h"
 #include "flashlight/pkg/runtime/common/DistributedUtils.h"
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/common/Flags.h"
 
 using fl::retryWithBackoff;
 using fl::lib::format;
-using fl::lib::getCurrentDate;
-using fl::lib::getCurrentTime;
+using fl::pkg::runtime::getCurrentDate;
+using fl::pkg::runtime::getCurrentTime;
 
 namespace fl {
 namespace pkg {

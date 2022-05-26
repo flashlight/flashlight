@@ -9,21 +9,20 @@
 
 #include "flashlight/fl/flashlight.h"
 
-#include "flashlight/lib/common/System.h"
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/pkg/runtime/common/SequentialBuilder.h"
 
 using namespace fl;
-using namespace fl::lib;
 using namespace fl::pkg::runtime;
 
 namespace {
 
-std::string archDir = "";
+fs::path archDir = "";
 
 } // namespace
 
 TEST(ConvLmModuleTest, GCNN14BAdaptiveSoftmax) {
-  const std::string archfile = pathsConcat(archDir, "gcnn_14B_lm_arch_as.txt");
+  const fs::path archfile = archDir / "gcnn_14B_lm_arch_as.txt";
   int nclass = 221452;
   int batchsize = 2;
   int inputlength = 100;
@@ -49,7 +48,7 @@ TEST(ConvLmModuleTest, GCNN14BAdaptiveSoftmax) {
 }
 
 TEST(ConvLmModuleTest, GCNN14BCrossEntropy) {
-  const std::string archfile = pathsConcat(archDir, "gcnn_14B_lm_arch_ce.txt");
+  const fs::path archfile = archDir / "gcnn_14B_lm_arch_ce.txt";
   int nclass = 30;
   int batchsize = 2;
   int inputlength = 100;
@@ -73,8 +72,8 @@ TEST(ConvLmModuleTest, SerializationGCNN14BAdaptiveSoftmax) {
   if (user != nullptr) {
     userstr = std::string(user);
   }
-  const std::string path = getTmpPath("test.mdl");
-  const std::string archfile = pathsConcat(archDir, "gcnn_14B_lm_arch_as.txt");
+  const fs::path path = fs::temp_directory_path() / "test.mdl";
+  const fs::path archfile = archDir / "gcnn_14B_lm_arch_as.txt";
 
   int nclass = 221452;
   int batchsize = 2;
@@ -119,7 +118,7 @@ int main(int argc, char** argv) {
 
 // Resolve directory for arch
 #ifdef DECODER_TEST_DATADIR
-  archDir = DECODER_TEST_DATADIR;
+  archDir = fs::path(DECODER_TEST_DATADIR);
 #endif
 
   return RUN_ALL_TESTS();
