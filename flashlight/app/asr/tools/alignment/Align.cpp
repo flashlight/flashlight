@@ -11,7 +11,6 @@
 #include "flashlight/app/asr/tools/alignment/Utils.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/fl/tensor/Index.h"
-#include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/dictionary/Defines.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/pkg/runtime/common/SequentialBuilder.h"
@@ -23,7 +22,6 @@
 #include "flashlight/pkg/speech/runtime/runtime.h"
 
 using namespace fl::pkg::speech;
-using namespace fl::lib;
 using namespace fl::app::asr::alignment;
 
 int main(int argc, char** argv) {
@@ -80,7 +78,7 @@ int main(int argc, char** argv) {
   LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */
-  text::Dictionary tokenDict(FLAGS_tokens);
+  fl::lib::text::Dictionary tokenDict(FLAGS_tokens);
   // Setup-specific modifications
   for (int64_t r = 1; r <= FLAGS_replabel; ++r) {
     tokenDict.addEntry("<" + std::to_string(r) + ">");
@@ -99,7 +97,7 @@ int main(int argc, char** argv) {
   int numClasses = tokenDict.indexSize();
   LOG(INFO) << "Number of classes (network): " << numClasses;
 
-  text::DictionaryMap dicts;
+  fl::lib::text::DictionaryMap dicts;
   dicts.insert({kTargetIdx, tokenDict});
 
   std::mutex write_mutex;
@@ -112,12 +110,12 @@ int main(int argc, char** argv) {
   }
 
   fl::lib::text::Dictionary wordDict;
-  text::LexiconMap lexicon;
+  fl::lib::text::LexiconMap lexicon;
   if (!FLAGS_lexicon.empty()) {
-    lexicon = text::loadWords(FLAGS_lexicon, FLAGS_maxword);
-    wordDict = text::createWordDict(lexicon);
+    lexicon = fl::lib::text::loadWords(FLAGS_lexicon, FLAGS_maxword);
+    wordDict = fl::lib::text::createWordDict(lexicon);
     LOG(INFO) << "Number of words: " << wordDict.indexSize();
-    wordDict.setDefaultIndex(wordDict.getIndex(text::kUnkToken));
+    wordDict.setDefaultIndex(wordDict.getIndex(fl::lib::text::kUnkToken));
   }
 
   LOG(INFO) << "Loaded lexicon";
