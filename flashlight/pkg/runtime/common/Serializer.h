@@ -8,10 +8,12 @@
 
 #pragma once
 
+#include <chrono>
+#include <string>
 #include <unordered_map>
 
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/flashlight.h"
-#include "flashlight/lib/common/System.h"
 
 namespace fl {
 namespace pkg {
@@ -21,10 +23,10 @@ struct Serializer {
  public:
   template <class... Args>
   static void save(
-      const std::string& filepath,
+      const fs::path& filepath,
       const std::string& version,
       const Args&... args) {
-    lib::retryWithBackoff(
+    fl::retryWithBackoff(
         std::chrono::seconds(1),
         2.0,
         6,
@@ -35,8 +37,8 @@ struct Serializer {
   }
 
   template <typename... Args>
-  static void load(const std::string& filepath, Args&... args) {
-    lib::retryWithBackoff(
+  static void load(const fs::path& filepath, Args&... args) {
+    fl::retryWithBackoff(
         std::chrono::seconds(1),
         2.0,
         6,
@@ -48,14 +50,14 @@ struct Serializer {
  private:
   template <typename... Args>
   static void saveImpl(
-      const std::string& filepath,
+      const fs::path& filepath,
       const std::string& version,
       const Args&... args) {
     try {
       std::ofstream file(filepath, std::ios::binary);
       if (!file.is_open()) {
         throw std::runtime_error(
-            "failed to open file for writing: " + filepath);
+            "failed to open file for writing: " + filepath.string());
       }
       cereal::BinaryOutputArchive ar(file);
       ar(version);
@@ -68,12 +70,12 @@ struct Serializer {
   }
 
   template <typename... Args>
-  static void loadImpl(const std::string& filepath, Args&... args) {
+  static void loadImpl(const fs::path& filepath, Args&... args) {
     try {
       std::ifstream file(filepath, std::ios::binary);
       if (!file.is_open()) {
         throw std::runtime_error(
-            "failed to open file for reading: " + filepath);
+            "failed to open file for reading: " + filepath.string());
       }
       cereal::BinaryInputArchive ar(file);
       ar(args...);
