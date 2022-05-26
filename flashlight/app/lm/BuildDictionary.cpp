@@ -7,15 +7,16 @@
 
 #include <gflags/gflags.h>
 #include <glog/logging.h>
+
+#include <fstream>
 #include <sstream>
 
 #include "flashlight/app/lm/common/Defines.h"
-#include "flashlight/pkg/runtime/Runtime.h"
-#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/common/Logging.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/lib/common/String.h"
-#include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/tokenizer/Tokenizer.h"
+#include "flashlight/pkg/runtime/Runtime.h"
 
 /**
  * Build dictioinary for LM training
@@ -77,7 +78,8 @@ int main(int argc, char** argv) {
       " \n Compulsory: [--data_train] [--dictionary]");
   LOG(INFO) << "Parsing command line flags";
   gflags::ParseCommandLineFlags(&argc, &argv, false);
-  LOG(INFO) << "Gflags after parsing \n" << fl::pkg::runtime::serializeGflags("; ");
+  LOG(INFO) << "Gflags after parsing \n"
+            << fl::pkg::runtime::serializeGflags("; ");
 
   if (argc <= 1 || FLAGS_data_train.empty() || FLAGS_dictionary.empty()) {
     throw std::invalid_argument(gflags::ProgramUsage());
@@ -89,14 +91,17 @@ int main(int argc, char** argv) {
   for (const auto& file : files) {
     LOG(INFO) << "Parsing " << file;
     tokenizer.countTokens(
-        fl::lib::pathsConcat(FLAGS_data_dir, file),
-        FLAGS_n_workers,
-        FLAGS_write_meta);
+        fs::path(FLAGS_data_dir) / file, FLAGS_n_workers, FLAGS_write_meta);
 
     if (FLAGS_write_meta) {
       auto metaPath = file + ".desc";
 
-      auto stream = fl::lib::createOutputStream(metaPath);
+      std::ofstream stream(metaPath);
+      if (!stream) {
+        throw std::runtime_error(
+            "BuildDictionary - data_train contains invalid path");
+      }
+
       auto fileMetaData = tokenizer.getTextFileMetaData();
       for (int i = 0; i < fileMetaData.size(); ++i) {
         stream << fileMetaData[i].first << " " << fileMetaData[i].second
@@ -113,7 +118,11 @@ int main(int argc, char** argv) {
   tokenizer.pruneTokens(
       FLAGS_dictionary_max_size, FLAGS_dictionary_min_appearence);
   auto tokenCountPairs = tokenizer.getDictionary();
-  auto stream = fl::lib::createOutputStream(FLAGS_dictionary);
+  std::ofstream stream(FLAGS_dictionary);
+  if (!stream) {
+    throw std::runtime_error("BuildDictionary - invalid dictionary filepath");
+  }
+
   stream << fl::lib::text::kEosToken << " 0\n";
   stream << fl::lib::text::kUnkToken << " 0\n";
   stream << fl::lib::text::kPadToken << " 0\n";
