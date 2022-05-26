@@ -80,6 +80,11 @@ typename std::result_of<Fn(Args...)>::type retryWithBackoff(
   throw std::logic_error("retryWithBackoff: hit unreachable");
 }
 
+/**
+ * Get the value of an environment variable with a default value if not found.
+ */
+std::string getEnvVar(const std::string& key, const std::string& dflt = "");
+
 /** @} */
 
 } // namespace fl
