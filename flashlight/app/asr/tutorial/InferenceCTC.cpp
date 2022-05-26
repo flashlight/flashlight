@@ -15,7 +15,6 @@
 #include "flashlight/fl/flashlight.h"
 
 #include "flashlight/lib/text/decoder/LexiconDecoder.h"
-#include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/decoder/lm/KenLM.h"
 #include "flashlight/pkg/runtime/common/DistributedUtils.h"
 #include "flashlight/pkg/runtime/common/SequentialBuilder.h"
@@ -73,7 +72,7 @@ void serializeAndCheckFlags() {
       {"lexicon_path", FLAGS_lexicon_path},
       {"lm_path", FLAGS_lm_path}};
   for (auto& path : flgs) {
-    if (path.second.empty() || !fl::lib::fileExists(path.second)) {
+    if (path.second.empty() || !fs::exists(path.second)) {
       throw std::runtime_error(
           "[Inference tutorial for CTC] Invalid file path specified for the flag --" +
           path.first + " with value '" + path.second +
@@ -258,7 +257,7 @@ int main(int argc, char** argv) {
           << "[Inference tutorial for CTC]: Please provide non-empty input";
       continue;
     }
-    if (!fl::lib::fileExists(audioPath)) {
+    if (!fs::exists(audioPath)) {
       LOG(INFO) << "[Inference tutorial for CTC]: File '" << audioPath
                 << "' doesn't exist, please provide valid audio path";
       continue;
