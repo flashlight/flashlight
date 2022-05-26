@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <fstream>
 #include <sstream>
 
 #include <cereal/archives/json.hpp>
@@ -16,11 +17,8 @@
 #include <glog/logging.h>
 
 #include "flashlight/pkg/speech/augmentation/SoundEffectUtil.h"
-#include "flashlight/lib/common/System.h"
 
 using namespace ::fl::pkg::speech::sfx;
-using ::fl::lib::dirCreateRecursive;
-using ::fl::lib::dirname;
 
 namespace cereal {
 
@@ -88,11 +86,11 @@ namespace speech {
 namespace sfx {
 
 void writeSoundEffectConfigFile(
-    const std::string& filename,
+    const fs::path& filename,
     const std::vector<SoundEffectConfig>& sfxConfigs) {
   try {
-    const std::string path = dirname(filename);
-    dirCreateRecursive(path);
+    const fs::path path = filename.parent_path();
+    fs::create_directory(path);
     std::ofstream file(filename);
     cereal::JSONOutputArchive archive(file);
     archive(cereal::make_nvp("soundEffectChain", sfxConfigs));
@@ -105,7 +103,7 @@ void writeSoundEffectConfigFile(
 }
 
 std::vector<SoundEffectConfig> readSoundEffectConfigFile(
-    const std::string& filename) {
+    const fs::path& filename) {
   try {
     std::ifstream file(filename);
     cereal::JSONInputArchive archive(file);

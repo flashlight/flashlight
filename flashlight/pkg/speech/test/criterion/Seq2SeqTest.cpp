@@ -9,8 +9,8 @@
 
 #include "flashlight/fl/flashlight.h"
 
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/tensor/Index.h"
-#include "flashlight/lib/common/System.h"
 #include "flashlight/pkg/speech/criterion/attention/attention.h"
 #include "flashlight/pkg/speech/criterion/criterion.h"
 
@@ -288,7 +288,7 @@ TEST(Seq2SeqTest, Serialization) {
   if (user != nullptr) {
     userstr = std::string(user);
   }
-  const std::string path = fl::lib::getTmpPath("test.mdl");
+  const fs::path path = fs::temp_directory_path() / "test.mdl";
 
   int N = 5, H = 8, B = 1, T = 10, U = 5, maxoutputlen = 100, nAttnRound = 2;
 

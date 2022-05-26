@@ -8,17 +8,16 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <fstream>
+
+#include "flashlight/fl/common/Filesystem.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/pkg/speech/augmentation/AdditiveNoise.h"
 #include "flashlight/pkg/speech/augmentation/SoundEffectUtil.h"
 #include "flashlight/pkg/speech/data/Sound.h"
-#include "flashlight/fl/tensor/Init.h"
-#include "flashlight/lib/common/System.h"
 
 using namespace ::fl::pkg::speech::sfx;
 using ::fl::pkg::speech::saveSound;
-using ::fl::lib::dirCreateRecursive;
-using ::fl::lib::getTmpPath;
-using ::fl::lib::pathsConcat;
 using ::testing::Pointwise;
 
 const size_t sampleRate = 16000;
@@ -39,10 +38,10 @@ MATCHER_P(FloatNearPointwise, tol, "Out of range") {
  * considering the SNR value.
  */
 TEST(AdditiveNoise, Snr) {
-  const std::string tmpDir = getTmpPath("AdditiveNoise");
-  dirCreateRecursive(tmpDir);
-  const std::string listFilePath = pathsConcat(tmpDir, "noise.lst");
-  const std::string noiseFilePath = pathsConcat(tmpDir, "noise.flac");
+  const fs::path tmpDir = fs::temp_directory_path() / "AdditiveNoise";
+  fs::create_directory(tmpDir);
+  const fs::path listFilePath = tmpDir / "noise.lst";
+  const fs::path noiseFilePath = tmpDir / "noise.flac";
 
   const float signalAmplitude = -1.0;
   const int signalLen = 10;
@@ -62,7 +61,7 @@ TEST(AdditiveNoise, Snr) {
   // Create test list file
   {
     std::ofstream listFile(listFilePath);
-    listFile << noiseFilePath;
+    listFile << noiseFilePath.string();
   }
 
   float threshold = 0.02; // allow 2% difference from expected value
