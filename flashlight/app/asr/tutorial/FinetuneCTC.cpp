@@ -38,9 +38,10 @@
 
 using fl::lib::fileExists;
 using fl::lib::format;
-using fl::lib::getCurrentDate;
 using fl::lib::join;
 using fl::lib::pathsConcat;
+using fl::pkg::runtime::getCurrentDate;
+using fl::pkg::runtime::getCurrentTime;
 using fl::pkg::runtime::getRunFile;
 using fl::pkg::runtime::Serializer;
 
@@ -134,7 +135,7 @@ int main(int argc, char** argv) {
       // extra goodies
       {kUserName, fl::lib::getEnvVar("USER")},
       {kHostName, fl::lib::getEnvVar("HOSTNAME")},
-      {kTimestamp, getCurrentDate() + ", " + getCurrentDate()},
+      {kTimestamp, getCurrentDate() + ", " + getCurrentTime()},
       {kRunIdx, std::to_string(runIdx)},
       {kRunPath, runPath}};
 
@@ -210,7 +211,13 @@ int main(int argc, char** argv) {
   int targetpadVal = kTargetPadValue;
   int wordpadVal = kTargetPadValue;
 
-  std::vector<std::string> trainSplits = fl::lib::split(",", FLAGS_train, true);
+  auto _trainSplits = fl::lib::split(",", FLAGS_train, true);
+  std::vector<fs::path> trainSplits;
+  std::transform(
+      _trainSplits.begin(),
+      _trainSplits.end(),
+      std::back_inserter(trainSplits),
+      [](const std::string& path) -> fs::path { return fs::path(path); });
   auto trainds = createDataset(
       trainSplits,
       FLAGS_datadir,

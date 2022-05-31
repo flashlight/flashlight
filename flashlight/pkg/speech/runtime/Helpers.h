@@ -25,6 +25,7 @@
 #include "flashlight/pkg/speech/criterion/criterion.h"
 #include "flashlight/pkg/speech/data/ListFileDataset.h"
 
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/lib/common/String.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
 
@@ -36,7 +37,7 @@ namespace speech {
  * Given a filename, remove any filepath delimiters - returns a contiguous
  * string that won't be subdivided into a filepath.
  */
-std::string cleanFilepath(const std::string& inputFileName);
+std::string cleanFilepath(const fs::path& inputFileName);
 
 /**
  * Serialize gflags into a buffer.
@@ -69,8 +70,8 @@ std::vector<std::string> readSampleIds(const Tensor& arr);
  * total duration in a batch
  */
 std::shared_ptr<fl::Dataset> createDataset(
-    const std::vector<std::string>& paths,
-    const std::string& rootDir = "",
+    const std::vector<fs::path>& paths,
+    const fs::path& rootDir = "",
     int batchSize = 1,
     const fl::Dataset::DataTransformFunction& inputTransform = nullptr,
     const fl::Dataset::DataTransformFunction& targetTransform = nullptr,

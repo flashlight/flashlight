@@ -41,6 +41,16 @@ bool backwardWithScaling(
     std::shared_ptr<fl::pkg::runtime::DynamicScaler> dynamicScaler,
     std::shared_ptr<fl::Reducer> reducer);
 
+/**
+ * Returns the current date as a string
+ */
+std::string getCurrentDate();
+
+/**
+ * Returns the current time as a string
+ */
+std::string getCurrentTime();
+
 } // namespace runtime
 } // namespace pkg
 } // namespace fl
