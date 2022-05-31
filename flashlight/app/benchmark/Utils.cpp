@@ -7,6 +7,8 @@
 
 #include "flashlight/app/benchmark/Utils.h"
 
+#include <iomanip>
+
 #include "flashlight/fl/flashlight.h"
 
 namespace fl {
@@ -28,26 +30,23 @@ void printInfo(
     return;
   }
   name += fp16 ? " + AMP" : "";
+  std::cout << std::fixed << std::setprecision(2);
   std::cout << "\n----- " + name + " -----" << std::endl;
 
   std::cout << "Throughput: "
-            << fl::lib::format(
-                   "%.2f",
-                   numUnits * fl::getWorldSize() / benchmarker.getBatchTime());
+            << (numUnits * fl::getWorldSize() / benchmarker.getBatchTime());
   std::cout << std::endl;
 
   if (verbose) {
-    std::cout << "\nBatch Time(ms): "
-              << fl::lib::format("%.2f", benchmarker.getBatchTime() * 1000);
+    std::cout << "\nBatch Time(ms): " << benchmarker.getBatchTime() * 1000;
     std::cout << "\nModel Forward Time(ms): "
-              << fl::lib::format("%.2f", benchmarker.getForwardTime() * 1000);
+              << benchmarker.getForwardTime() * 1000;
     std::cout << "\nCriterion Forward Time(ms): "
-              << fl::lib::format("%.2f", benchmarker.getCriterionTime() * 1000);
+              << benchmarker.getCriterionTime() * 1000;
     std::cout << "\nBackward Time(ms): "
-              << fl::lib::format("%.2f", benchmarker.getBackwardTime() * 1000);
+              << benchmarker.getBackwardTime() * 1000;
     std::cout << "\nOptimization Time(ms): "
-              << fl::lib::format(
-                     "%.2f", benchmarker.getOptimizationTime() * 1000);
+              << benchmarker.getOptimizationTime() * 1000;
     std::cout << std::endl;
 
     fl::detail::getMemMgrInfo("Memory Manager Stats", /* device id = */ 0);

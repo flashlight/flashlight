@@ -8,6 +8,7 @@
 #include "flashlight/app/lm/Trainer.h"
 
 #include <algorithm>
+#include <fstream>
 
 #include "flashlight/fl/tensor/Compute.h"
 #include "flashlight/fl/tensor/Index.h"
@@ -271,10 +272,14 @@ Trainer::Trainer(const std::string& mode) {
 
 void Trainer::runTraining() {
   if (isMaster()) {
-    dirCreate(FLAGS_exp_rundir);
-    logWriter_ = createOutputStream(
-        pathsConcat(FLAGS_exp_rundir, FLAGS_exp_model_name + ".log"),
-        std::ios_base::app);
+    fs::create_directory(FLAGS_exp_rundir);
+    fs::path outPath =
+        fs::path(FLAGS_exp_rundir) / (FLAGS_exp_model_name + ".log");
+    std::ofstream logWriter_(outPath, std::ios_base::app);
+    if (!logWriter_) {
+      throw std::invalid_argument(
+          "Trainer::runTraining - cannot open path to log writing");
+    }
   }
 
   FL_LOG_MASTER(INFO) << "training started (epoch=" << epoch_
@@ -283,7 +288,8 @@ void Trainer::runTraining() {
     fl::allReduceParameters(network_);
     fl::allReduceParameters(criterion_);
   }
-  auto modelPath = pathsConcat(FLAGS_exp_rundir, FLAGS_exp_model_name + ".bin");
+  fs::path modelPath =
+      fs::path(FLAGS_exp_rundir) / (FLAGS_exp_model_name + ".bin");
 
   while (batchIdx_ < FLAGS_train_total_updates) {
     // Advance epoch
@@ -445,11 +451,12 @@ void Trainer::initTrain() {
 }
 
 void Trainer::initContinue() {
-  auto checkPoint =
-      pathsConcat(FLAGS_exp_rundir, FLAGS_exp_model_name + ".bin");
-  if (!fileExists(checkPoint)) {
+  fs::path checkPoint =
+      fs::path(FLAGS_exp_rundir) / (FLAGS_exp_model_name + ".bin");
+  if (!fs::exists(checkPoint)) {
     throw std::invalid_argument(
-        "Checkpoint doesn't exist to continue training: " + checkPoint);
+        "Checkpoint doesn't exist to continue training: " +
+        checkPoint.string());
   }
   FL_LOG_MASTER(INFO) << "Continue training from file: " << checkPoint;
   fl::pkg::runtime::Serializer::load(
@@ -473,7 +480,7 @@ void Trainer::initContinue() {
 }
 
 void Trainer::initFork() {
-  if (!fileExists(FLAGS_exp_init_model_path)) {
+  if (!fs::exists(FLAGS_exp_init_model_path)) {
     throw std::invalid_argument(
         "Checkpoint doesn't exist for finetuning: " +
         FLAGS_exp_init_model_path);
@@ -500,7 +507,7 @@ void Trainer::initFork() {
 }
 
 void Trainer::initEval() {
-  if (!fileExists(FLAGS_exp_init_model_path)) {
+  if (!fs::exists(FLAGS_exp_init_model_path)) {
     throw std::invalid_argument(
         "Checkpoint doesn't exist for evaluation: " +
         FLAGS_exp_init_model_path);
@@ -516,7 +523,11 @@ void Trainer::initEval() {
 }
 
 void Trainer::createDictionary() {
-  auto stream = createInputStream(FLAGS_dictionary);
+  std::ifstream stream(FLAGS_dictionary);
+  if (!stream) {
+    throw std::runtime_error(
+        "Trainer::createDictionary - invalid dictionary filepath");
+  }
   std::string line;
   while (std::getline(stream, line)) {
     if (line.empty()) {
@@ -822,7 +833,7 @@ void Trainer::stopTimers() {
 }
 
 /* ============= Logging helpers ============= */
-void Trainer::saveCheckpoint(const std::string& path, const std::string& suffix)
+void Trainer::saveCheckpoint(const fs::path& path, const std::string& suffix)
     const {
   if (!isMaster()) {
     return;
@@ -843,7 +854,7 @@ void Trainer::saveCheckpoint(const std::string& path, const std::string& suffix)
 
   if (!suffix.empty()) {
     Serializer::save(
-        path + suffix,
+        path / suffix,
         FL_APP_LM_VERSION,
         network_,
         criterion_,
