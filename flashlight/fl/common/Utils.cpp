@@ -169,4 +169,11 @@ std::string prettyStringCount(size_t count) {
   return ss.str();
 }
 
+std::string getEnvVar(
+    const std::string& key,
+    const std::string& dflt /*= "" */) {
+  char* val = getenv(key.c_str());
+  return val ? std::string(val) : dflt;
+}
+
 } // namespace fl
