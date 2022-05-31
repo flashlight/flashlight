@@ -20,14 +20,13 @@
 
 #include "flashlight/fl/flashlight.h"
 
+#include "flashlight/fl/common/Filesystem.h"
+#include "flashlight/lib/text/String.h"
+#include "flashlight/lib/text/dictionary/Utils.h"
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/common/Flags.h"
 #include "flashlight/pkg/speech/criterion/criterion.h"
 #include "flashlight/pkg/speech/data/ListFileDataset.h"
-
-#include "flashlight/fl/common/Filesystem.h"
-#include "flashlight/lib/common/String.h"
-#include "flashlight/lib/text/dictionary/Utils.h"
 
 namespace fl {
 namespace pkg {

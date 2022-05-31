@@ -21,7 +21,7 @@
   #include <unistd.h>
 #endif
 
-#include "flashlight/lib/common/String.h"
+#include "flashlight/lib/text/String.h"
 
 namespace fl {
 namespace lib {

@@ -14,7 +14,7 @@
 
 #include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/tensor/Init.h"
-#include "flashlight/lib/common/String.h"
+#include "flashlight/lib/text/String.h"
 #include "flashlight/pkg/speech/data/ListFileDataset.h"
 
 using namespace fl::lib;

@@ -1,12 +1,3 @@
-![Flashlight: Fast, Flexible Machine Learning in C++](./logo.svg)
-
-<hr/>
-
-[**Quickstart**](#quickstart)
-| [**Installation**](#building-and-installing)
-| [**Documentation**](https://fl.readthedocs.io/en/latest/)
-| [**Citing**](#citing)
-
 [![CircleCI](https://circleci.com/gh/flashlight/flashlight.svg?style=shield)](https://app.circleci.com/pipelines/github/flashlight/flashlight)
 [![Documentation Status](https://img.shields.io/readthedocs/fl.svg)](https://fl.readthedocs.io/en/latest/)
 [![Docker Image Build Status](https://img.shields.io/github/workflow/status/flashlight/flashlight/Publish%20Docker%20images?label=docker%20image%20build)](https://hub.docker.com/r/flml/flashlight/tags)
@@ -24,23 +15,23 @@
 Flashlight is a fast, flexible machine learning library written entirely in C++
 from the Facebook AI Research and the creators of Torch, TensorFlow, Eigen and
 Deep Speech. Its core features include:
-- **Modifiability to the core** including [internal APIs for tensor computation](flashlight/fl/tensor/README.md).
+- **Total internal modifiability** including [internal APIs for tensor computation](flashlight/fl/tensor/README.md).
 - **A small footprint**, with the core clocking in at under 10 MB and 20k lines of C++.
-- **High-performance defaults** featuring fust-in-time kernel compilation with modern C++ via the [*ArrayFire*](https://github.com/arrayfire/arrayfire)
+- **High-performance defaults** featuring just-in-time kernel compilation with modern C++ via the [*ArrayFire*](https://github.com/arrayfire/arrayfire)
 tensor library.
 - An emphasis on efficiency and scale.
 
-Native support in C++ and simple extensibility makes Flashlight a powerful research framework that's *hackable to its core* and enables fast iteration on new experimental setups and algorithms with little unopinionation and without sacrificing performance. In a single repository, Flashlight provides [apps](https://github.com/flashlight/flashlight/tree/master/flashlight/app) for research across multiple domains:
-- [Automatic speech recognition](https://github.com/flashlight/flashlight/tree/master/flashlight/app/asr) (formerly [wav2letter](https://github.com/flashlight/wav2letter/) project) — [Documentation](flashlight/app/asr) | [Tutorial](flashlight/app/asr/tutorial)
+Native support in C++ and simple extensibility makes Flashlight a powerful research framework that enables fast iteration on new experimental setups and algorithms with little unopinionation and without sacrificing performance. In a single repository, Flashlight provides [apps](https://github.com/flashlight/flashlight/tree/master/flashlight/app) for research ac\
+ross multiple domains:
+- [Automatic speech recognition](https://github.com/flashlight/flashlight/tree/master/flashlight/app/asr) (formerly [wav2letter](https://github.com/flashlight/wav2letter/) project) — [Documentation](flashlight/app/asr) | [Tutorial](flashlight/app/asr/tutorial)
 - [Image classification](flashlight/app/imgclass)
 - [Object detection](flashlight/app/objdet)
 - [Language modeling](flashlight/app/lm)
 
-
 ### Project Layout
 
 Flashlight is broken down into a few parts:
-- [**`flashlight/lib`**](flashlight/lib) contains kernels and standalone utilities for sequence losses, beam search decoding, text processing, and more.
+- [**`flashlight/lib`**](flashlight/lib) contains kernels and standalone utilities for sequence losses, audio processing, and more.
 - [**`flashlight/fl`**](flashlight/fl) is the core tensor interface and neural network library using the [ArrayFire](https://github.com/arrayfire/arrayfire) tensor library by default.
 - [**`flashlight/pkg`**](flashlight/pkg) are domain packages for speech, vision, and text built on the core.
 - [**`flashlight/app`**](flashlight/app) are applications of the core library to machine learning across domains.
@@ -238,7 +229,7 @@ Dependencies marked with `^` are required if building with distributed training 
 
 Dependencies marked with `†` are installable via `vcpkg`. See the [instructions for installing those dependencies](#from-source-build-with-vcpkg) above for doing a Flashlight from-source build.
 
-<div class="tg-wrap"><table>
+<table>
 <thead>
   <tr>
     <th>Component</th>
@@ -248,7 +239,7 @@ Dependencies marked with `†` are installable via `vcpkg`. See the [instruction
 </thead>
 <tbody>
   <tr>
-    <td rowspan="2"> Audio library (fl_lib_audio) </td>
+    <td rowspan="2">libraries</td>
     <td>CUDA</td>
     <td><a href="https://developer.nvidia.com/cuda-downloads">CUDA</a> &gt;= 9.2, <a href="https://github.com/nvidia/cub">CUB</a>*† (if CUDA &lt; 11)</td>
   </tr>
@@ -270,14 +261,14 @@ Dependencies marked with `†` are installable via `vcpkg`. See the [instruction
     <td><a href="https://github.com/oneapi-src/oneDNN">oneDNN</a>† &gt;= 2.0, <a href="https://github.com/facebookincubator/gloo">gloo</a> (<a href="https://github.com/facebookincubator/gloo/blob/01e2c2660cd43963ce1fe3e21220ac01f07d9a4b/docs/rendezvous.md#using-mpi">with MPI</a>)*^†</td>
   </tr>
   <tr>
-    <td> Runtime package (fl_pkg_runtime)  </td>
+    <td>app: all </td>
     <td>Any</td>
     <td><a href="https://github.com/google/glog">Google Glog</a>†, <a href="https://github.com/gflags/gflags">Gflags</a>†</td>
   </tr>
   <tr>
-    <td> Speech package (fl_pkg_speech) </td>
+    <td>app: asr</td>
     <td>Any</td>
-    <td><a href="https://github.com/libsndfile/libsndfile">libsndfile</a>*† &gt;= 10.0.28, a BLAS library (<a href="https://software.intel.com/content/www/us/en/develop/tools/oneapi/base-toolkit/download.html">Intel MKL</a> &gt;= 2018, OpenBLAS†, etc)</td>
+    <td><a href="https://github.com/libsndfile/libsndfile">libsndfile</a>*† &gt;= 10.0.28, a BLAS library (<a href="https://software.intel.com/content/www/us/en/develop/tools/oneapi/base-toolkit/download.html">Intel MKL</a> &gt;= 2018, OpenBLAS†, etc), <a href="https://github.com/flashlight/text">flashlight/text</a>*</td>
   </tr>
   <tr>
     <td>app: imgclass</td>
@@ -285,14 +276,14 @@ Dependencies marked with `†` are installable via `vcpkg`. See the [instruction
     <td>-</td>
   </tr>
   <tr>
-    <td>app: objdet</td>
+    <td>app: imgclass</td>
     <td>Any</td>
     <td>-</td>
   </tr>
   <tr>
     <td>app: lm</td>
     <td>Any</td>
-    <td>-</td>
+    <td><a href="https://github.com/flashlight/text">flashlight/text</a>*</td>
   </tr>
   <tr>
     <td>tests</td>
@@ -300,127 +291,113 @@ Dependencies marked with `†` are installable via `vcpkg`. See the [instruction
     <td><a href="https://github.com/google/googletest">Google Test (gtest, with gmock)</a>*† &gt;= 1.10.0</td>
   </tr>
 </tbody>
-</table></div>
+</table>
 
 #### Build Options
 The Flashlight CMake build accepts the following build options (prefixed with `-D` when running CMake from the command line):
 
-<style type="text/css">
-.tg  {border-collapse:collapse;border-spacing:0;}
-.tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
-  overflow:hidden;padding:10px 5px;word-break:normal;}
-.tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
-  font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
-.tg .tg-cly1{text-align:left;vertical-align:middle}
-.tg .tg-g7sd{border-color:inherit;font-weight:bold;text-align:left;vertical-align:middle}
-.tg .tg-yla0{font-weight:bold;text-align:left;vertical-align:middle}
-.tg .tg-0lax{text-align:left;vertical-align:top}
-</style>
-<table class="tg">
+<table>
 <thead>
   <tr>
-    <th class="tg-g7sd"><span style="font-weight:bold">Name</span></th>
-    <th class="tg-yla0"><span style="font-weight:bold">Options</span></th>
-    <th class="tg-yla0"><span style="font-weight:bold">Default Value</span></th>
-    <th class="tg-yla0"><span style="font-weight:bold">Description</span></th>
+    <th>Name</th>
+    <th>Options</th>
+    <th>Default Value</th>
+    <th>Description</th>
   </tr>
 </thead>
 <tbody>
   <tr>
-    <td class="tg-0lax">FL_BUILD_ARRAYFIRE</td>
-    <td class="tg-0lax">ON, OFF</td>
-    <td class="tg-0lax">ON</td>
-    <td class="tg-cly1">Build Flashlight with the ArrayFire backend.</td>
+    <td rowspan="2">FL_BUILD_ARRAYFIRE</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Build Flashlight with the ArrayFire backend.</td>
   </tr>
   <tr>
-    <td class="tg-0lax">FL_BUILD_STANDALONE</td>
-    <td class="tg-0lax">ON, OFF</td>
-    <td class="tg-0lax">ON</td>
-    <td class="tg-cly1">Downloads/builds some dependencies if not found.</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Downloads/builds some dependencies if not found.</td>
   </tr>
   <tr>
-    <td class="tg-0lax">FL_BUILD_LIBRARIES</td>
-    <td class="tg-0lax">ON, OFF</td>
-    <td class="tg-0lax">ON</td>
-    <td class="tg-cly1">Build the Flashlight libraries.</td>
+    <td rowspan="3">FL_BUILD_LIBRARIES</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Build the Flashlight libraries.</td>
   </tr>
   <tr>
-    <td class="tg-0lax">FL_BUILD_CORE</td>
-    <td class="tg-0lax">ON, OFF</td>
-    <td class="tg-0lax">ON</td>
-    <td class="tg-cly1">Build the Flashlight neural net library.</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Build the Flashlight neural net library.</td>
   </tr>
   <tr>
-    <td class="tg-0lax">FL_BUILD_DISTRIBUTED</td>
-    <td class="tg-0lax">ON, OFF</td>
-    <td class="tg-0lax">ON</td>
-    <td class="tg-cly1">Build with distributed training; required for apps.</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Build with distributed training; required for apps.</td>
   </tr>
   <tr>
-    <td class="tg-0lax">FL_BUILD_CONTRIB</td>
-    <td class="tg-0lax">ON, OFF</td>
-    <td class="tg-0lax">ON</td>
-    <td class="tg-cly1">Build contrib APIs subject to breaking changes.</td>
+    <td>FL_BUILD_CONTRIB</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Build contrib APIs subject to breaking changes.</td>
   </tr>
   <tr>
-    <td class="tg-0lax">FL_BUILD_APPS</td>
-    <td class="tg-0lax">ON, OFF</td>
-    <td class="tg-0lax">ON</td>
-    <td class="tg-cly1">Build applications (see below).</td>
+    <td>FL_BUILD_APPS</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Build applications (see below).</td>
   </tr>
   <tr>
-    <td class="tg-0lax">FL_BUILD_APP_ASR</td>
-    <td class="tg-0lax">ON, OFF</td>
-    <td class="tg-0lax">ON</td>
-    <td class="tg-cly1">Build the automatic speech recognition application.</td>
+    <td>FL_BUILD_APP_ASR</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Build the automatic speech recognition application.</td>
   </tr>
   <tr>
-    <td class="tg-0lax">FL_BUILD_APP_IMGCLASS</td>
-    <td class="tg-0lax">ON, OFF</td>
-    <td class="tg-0lax">ON</td>
-    <td class="tg-cly1">Build the image classification application.</td>
+    <td>FL_BUILD_APP_IMGCLASS</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Build the image classification application.</td>
   </tr>
   <tr>
-    <td class="tg-0lax">FL_BUILD_APP_LM</td>
-    <td class="tg-0lax">ON, OFF</td>
-    <td class="tg-0lax">ON</td>
-    <td class="tg-cly1">Build the language modeling application.</td>
+    <td>FL_BUILD_APP_LM</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Build the language modeling application.</td>
   </tr>
   <tr>
-    <td class="tg-0lax">FL_BUILD_APP_ASR_TOOLS</td>
-    <td class="tg-0lax">ON, OFF</td>
-    <td class="tg-0lax">ON</td>
-    <td class="tg-cly1">Build automatic speech recognition app tools.</td>
+    <td>FL_BUILD_APP_ASR_TOOLS</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Build automatic speech recognition app tools.</td>
   </tr>
   <tr>
-    <td class="tg-0lax">FL_BUILD_TESTS</td>
-    <td class="tg-0lax">ON, OFF</td>
-    <td class="tg-0lax">ON</td>
-    <td class="tg-cly1">Build tests.</td>
+    <td>FL_BUILD_TESTS</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Build tests.</td>
   </tr>
   <tr>
-    <td class="tg-0lax">FL_BUILD_EXAMPLES</td>
-    <td class="tg-0lax">ON, OFF</td>
-    <td class="tg-0lax">ON</td>
-    <td class="tg-cly1">Build examples.</td>
+    <td>FL_BUILD_EXAMPLES</td>
+    <td>ON, OFF</td>
+    <td>ON</td>
+    <td>Build examples.</td>
   </tr>
   <tr>
-    <td class="tg-0lax">FL_BUILD_EXPERIMENTAL</td>
-    <td class="tg-0lax">ON, OFF</td>
-    <td class="tg-0lax">OFF</td>
-    <td class="tg-cly1">Build experimental components.</td>
+    <td>FL_BUILD_EXPERIMENTAL</td>
+    <td>ON, OFF</td>
+    <td>OFF</td>
+    <td>Build experimental components.</td>
   </tr>
   <tr>
-    <td class="tg-0lax">CMAKE_BUILD_TYPE</td>
-    <td class="tg-0lax">See <a href="https://cmake.org/cmake/help/v3.10/variable/CMAKE_BUILD_TYPE.html">docs</a>.</td>
-    <td class="tg-0lax">Debug</td>
-    <td class="tg-cly1">See the <a href="https://cmake.org/cmake/help/v3.10/variable/CMAKE_BUILD_TYPE.html">CMake documentation</a>.</td>
+    <td>CMAKE_BUILD_TYPE</td>
+    <td>See <a href="https://cmake.org/cmake/help/v3.10/variable/CMAKE_BUILD_TYPE.html">docs</a>.</td>
+    <td>Debug</td>
+    <td>See the <a href="https://cmake.org/cmake/help/v3.10/variable/CMAKE_BUILD_TYPE.html">CMake documentation</a>.</td>
   </tr>
   <tr>
-    <td class="tg-cly1">CMAKE_INSTALL_PREFIX</td>
-    <td class="tg-cly1">[Directory]</td>
-    <td class="tg-cly1">See <a href="https://cmake.org/cmake/help/v3.10/variable/CMAKE_INSTALL_PREFIX.html">docs</a>.</td>
-    <td class="tg-cly1">See the <a href="https://cmake.org/cmake/help/v3.10/variable/CMAKE_INSTALL_PREFIX.html">CMake documentation</a>.</td>
+    <td>CMAKE_INSTALL_PREFIX</td>
+    <td>[Directory]</td>
+    <td>See <a href="https://cmake.org/cmake/help/v3.10/variable/CMAKE_INSTALL_PREFIX.html">docs</a>.</td>
+    <td>See the <a href="https://cmake.org/cmake/help/v3.10/variable/CMAKE_INSTALL_PREFIX.html">CMake documentation</a>.</td>
   </tr>
 </tbody>
 </table>
@@ -431,7 +408,6 @@ Flashlight is most-easily linked to using CMake. Flashlight exports the followin
 - `flashlight::fl_lib_set` — contains flashlight libraries for headers and symbols pertaining to sets.
 - `flashlight::fl_lib_sequence` — contains flashlight libraries for headers and symbols pertaining to sequences.
 - `flashlight::fl_lib_audio` — contains flashlight libraries for headers and symbols pertaining to audio.
-- `flashlight::fl_lib_text` — contains flashlight libraries for headers and symbols pertaining to text.
 - `flashlight::flashlight` — contains flashlight libraries as well as the flashlight core autograd and neural network library.
 - `flashlight::fl_pkg_runtime` — contains flashlight core as well as common utilities for training (logging / flags / distributed utils).
 - `flashlight::fl_pkg_vision` — contains flashlight core as well as common utilities for vision pipelines.

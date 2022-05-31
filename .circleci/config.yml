@@ -69,9 +69,6 @@ commands:
       fl_build_lib_common:
         default: "OFF"
         type: string
-      fl_build_lib_text:
-        default: "OFF"
-        type: string
       # pkgs
       fl_build_pkg_vision:
         default: "OFF"
@@ -114,6 +111,7 @@ commands:
         default: "1"
         type: string
     steps:
+      - install_flashlight_text_cuda
       - run:
           name: "Build and Install Flashlight inside of NVIDIA Docker"
           command: |
@@ -141,7 +139,6 @@ commands:
                 -DFL_BUILD_LIB_SEQUENCE=<< parameters.fl_build_lib_sequence >> \
                 -DFL_BUILD_LIB_AUDIO=<< parameters.fl_build_lib_audio >> \
                 -DFL_BUILD_LIB_COMMON=<< parameters.fl_build_lib_common >> \
-                -DFL_BUILD_LIB_TEXT=<< parameters.fl_build_lib_text >> \
                 -DFL_BUILD_PKG_RUNTIME=<< parameters.fl_build_pkg_runtime >> \
                 -DFL_BUILD_PKG_VISION=<< parameters.fl_build_pkg_vision >> \
                 -DFL_BUILD_PKG_TEXT=<< parameters.fl_build_pkg_text >> \
@@ -256,6 +253,7 @@ commands:
             make -j$(nproc)
   flashlight_build_and_install_cpu_backend_from_source:
     steps:
+      - install_flashlight_text
       - run:
           name: Build flashlight with CPU backend
           command: |
@@ -290,6 +288,33 @@ commands:
           command: |
             cd $HOME/project/build/<< parameters.fl_test_apex_dir >>
             ctest
+  install_flashlight_text_cuda:
+    parameters:
+      use_kenlm:
+        type: string
+        default: "ON"
+    steps:
+      - run:
+          name: "Clone and Install Flashlight Text"
+          command: |
+            sudo docker exec -it flashlight bash -c "\
+            git clone https://github.com/flashlight/text && cd text && \
+            mkdir build && cd build && \
+            cmake .. -DFL_TEXT_USE_KENLM=<< parameters.use_kenlm >> -DFL_TEXT_BUILD_TESTS=OFF -DBUILD_SHARED_LIBS=ON && \
+            make install -j$(nproc)"
+  install_flashlight_text:
+    parameters:
+      use_kenlm:
+        type: string
+        default: "ON"
+    steps:
+      - run:
+          name: "Clone and Install Flashlight Text"
+          command: |
+            git clone https://github.com/flashlight/text && cd text && \
+            mkdir build && cd build && \
+            cmake .. -DFL_TEXT_USE_KENLM=<< parameters.use_kenlm >> -DFL_TEXT_BUILD_TESTS=OFF -DBUILD_SHARED_LIBS=ON && \
+            make install -j$(nproc)
   setup_flashlight_compile_and_link_external_project_script:
     steps:
       - run:
@@ -356,8 +381,6 @@ commands:
         type: string
       use_cuda:
         type: string
-      use_kenlm:
-        type: string
     steps:
       - run:
           name: "Install Flashlight library Python bindings"
@@ -366,7 +389,6 @@ commands:
             cd bindings/python
             export USE_MKL=<< parameters.use_mkl >>
             export USE_CUDA=<< parameters.use_cuda >>
-            export USE_KENLM=<< parameters.use_kenlm >>
             python3 setup.py install
             # MKL doesn't work in current docker with CUDA
             export LD_PRELOAD=/opt/intel/mkl/lib/intel64/libmkl_def.so:/opt/intel/mkl/lib/intel64/libmkl_avx2.so:/opt/intel/mkl/lib/intel64/libmkl_core.so:/opt/intel/mkl/lib/intel64/libmkl_intel_lp64.so:/opt/intel/mkl/lib/intel64/libmkl_intel_thread.so:/opt/intel/lib/intel64_lin/libiomp5.so
@@ -399,9 +421,6 @@ jobs:
       - flashlight_source_test_with_vcpkg:
           test_name: "fl_lib_audio"
           fl_test_apex_dir: "flashlight/lib/audio/test"
-      - flashlight_source_test_with_vcpkg:
-          test_name: "fl_lib_text"
-          fl_test_apex_dir: "flashlight/lib/text/test"
   ubuntu2004_cuda11_1_docker_flashlight_libs:
     <<: *gpu
     steps:
@@ -409,6 +428,7 @@ jobs:
       - install_nvidia_docker
       - checkout
       - start_nvidia_docker_and_copy_flashlight_source
+      - install_flashlight_text
       - build_flashlight_inside_nvidia_docker:
           fl_arrayfire_use_cuda: "ON"
           fl_use_cudnn: "ON"
@@ -416,16 +436,12 @@ jobs:
           fl_build_lib_sequence: "ON"
           fl_build_lib_audio: "ON"
           fl_build_lib_common: "ON"
-          fl_build_lib_text: "ON"
       - test_flashlight_inside_nvidia_docker:
           test_name: "fl_lib_common"
           fl_test_apex_dir: "flashlight/lib/common/test"
       - test_flashlight_inside_nvidia_docker:
           test_name: "fl_lib_audio"
           fl_test_apex_dir: "flashlight/lib/audio/test"
-      - test_flashlight_inside_nvidia_docker:
-          test_name: "fl_lib_text"
-          fl_test_apex_dir: "flashlight/lib/text/test"
       - run_codecov_inside_nvidia_docker:
           coverage_flag: "libs"
 
@@ -436,6 +452,7 @@ jobs:
       - install_nvidia_docker
       - checkout
       - start_nvidia_docker_and_copy_flashlight_source
+      - install_flashlight_text
       - build_flashlight_inside_nvidia_docker:
           fl_arrayfire_use_cuda: "ON"
           fl_use_cudnn: "ON"
@@ -444,7 +461,6 @@ jobs:
           fl_build_lib_sequence: "ON"
           fl_build_lib_audio: "ON"
           fl_build_lib_common: "ON"
-          fl_build_lib_text: "ON"
           fl_build_pkg_runtime: "ON"
           fl_build_pkg_speech: "ON"
           fl_build_pkg_vision: "ON"
@@ -491,7 +507,6 @@ jobs:
           fl_build_fl_core: "ON"
           fl_build_lib_common: "ON"
           fl_build_lib_audio: "ON"
-          fl_build_lib_text: "ON"
           fl_build_lib_sequence: "ON"
           fl_build_pkg_speech: "ON"
           fl_build_pkg_runtime: "ON"
@@ -544,7 +559,6 @@ jobs:
           fl_arrayfire_use_cuda: "ON"
           fl_use_cudnn: "ON"
           fl_build_lib_common: "ON"
-          fl_build_lib_text: "ON"
           fl_build_fl_core: "ON"
           fl_build_pkg_text: "ON"
           fl_build_pkg_runtime: "ON"
@@ -567,7 +581,6 @@ jobs:
           fl_build_lib_sequence: "ON"
           fl_build_lib_audio: "ON"
           fl_build_lib_common: "ON"
-          fl_build_lib_text: "ON"
           fl_build_pkg_runtime: "ON"
           fl_build_pkg_speech: "ON"
           fl_build_pkg_vision: "ON"
@@ -614,7 +627,6 @@ jobs:
       - ubuntu_install_python_bindings:
           use_cuda: "OFF"
           use_mkl: "OFF"
-          use_kenlm: "OFF"
 
   # Aren't running code, so don't need the NVIDIA runtime
   ubuntu2004_cuda_python_bindings:
@@ -628,7 +640,6 @@ jobs:
       - ubuntu_install_python_bindings:
           use_cuda: "ON"
           use_mkl: "ON"
-          use_kenlm: "ON"
 
   ubuntu2004_cpu_docker_flashlight_build_external:
     docker:

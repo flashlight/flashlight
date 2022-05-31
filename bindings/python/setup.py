@@ -11,11 +11,11 @@ import platform
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 from packaging import version
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
-from pathlib import Path
 
 # Environment variables:
 # - `USE_CUDA=0` disables building CUDA components
@@ -62,9 +62,7 @@ class CMakeBuild(build_ext):
         ext_dir = str(ext_dir.parent)
         source_dir = str(Path(__file__).absolute().parent.parent.parent)
         use_cuda = "OFF" if check_negative_env_flag("USE_CUDA") else "ON"
-        use_kenlm = "OFF" if check_negative_env_flag("USE_KENLM") else "ON"
         use_mkl = "OFF" if check_negative_env_flag("USE_MKL") else "ON"
-        backend = "CPU" if check_negative_env_flag("USE_CUDA") else "CUDA"
         cmake_args = [
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + ext_dir,
             "-DPYTHON_EXECUTABLE=" + sys.executable,
@@ -75,7 +73,6 @@ class CMakeBuild(build_ext):
             "-DFL_BUILD_EXAMPLES=OFF",
             "-DFL_LIBRARIES_BUILD_FOR_PYTHON=ON",
             "-DFL_LIBRARIES_USE_CUDA=" + use_cuda,
-            "-DFL_LIBRARIES_USE_KENLM=" + use_kenlm,
             "-DFL_LIBRARIES_USE_MKL=" + use_mkl,
         ]
         cfg = "Debug" if self.debug else "Release"
@@ -106,6 +103,8 @@ class CMakeBuild(build_ext):
         subprocess.check_call(
             ["cmake", "--build", "."] + build_args, cwd=self.build_temp
         )
+
+
 setup(
     name="flashlight",
     version="1.0.0",
@@ -118,13 +117,10 @@ setup(
         "flashlight.lib",
         "flashlight.lib.audio",
         "flashlight.lib.sequence",
-        "flashlight.lib.text"
-        ],
+    ],
     ext_modules=[
         CMakeExtension("flashlight.lib.audio.feature"),
         CMakeExtension("flashlight.lib.sequence.criterion"),
-        CMakeExtension("flashlight.lib.text.decoder"),
-        CMakeExtension("flashlight.lib.text.dictionary"),
     ],
     cmdclass={"build_ext": CMakeBuild},
     zip_safe=False,

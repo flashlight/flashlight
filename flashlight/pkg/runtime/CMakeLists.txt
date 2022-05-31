@@ -36,6 +36,19 @@ include(${CMAKE_CURRENT_LIST_DIR}/amp/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/plugin/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
 
+# flashlight-text is required
+if (NOT TARGET flashlight::flashlight-text)
+  find_package(flashlight-text CONFIG)
+  if (NOT TARGET flashlight::flashlight-text AND FL_BUILD_STANDALONE)
+    message(STATUS "Flashlight Text not found - downloading and building from source")
+    include(${CMAKE_MODULE_PATH}/BuildFlashlightText.cmake)
+  elseif(TARGET flashlight::flashlight-text)
+    message(STATUS "Found flashlight-text")
+  else()
+    message(FATAL_ERROR "Could not find requirement flashlight-text.")
+  endif()
+endif()
+
 target_link_libraries(
   fl_pkg_runtime
   PUBLIC
@@ -43,6 +56,7 @@ target_link_libraries(
   ${gflags_LIBRARIES}
   flashlight
   fl_lib_common
+  flashlight::flashlight-text
 )
 
 target_include_directories(

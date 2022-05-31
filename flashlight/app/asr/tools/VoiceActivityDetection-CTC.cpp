@@ -34,7 +34,7 @@
 #include <glog/logging.h>
 
 #include "flashlight/fl/common/Filesystem.h"
-#include "flashlight/lib/common/String.h"
+#include "flashlight/lib/text/String.h"
 #include "flashlight/lib/text/decoder/lm/KenLM.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/pkg/runtime/common/SequentialBuilder.h"

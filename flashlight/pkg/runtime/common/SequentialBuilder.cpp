@@ -10,7 +10,7 @@
 #include <stdexcept>
 
 #include "flashlight/fl/tensor/Types.h"
-#include "flashlight/lib/common/String.h"
+#include "flashlight/lib/text/String.h"
 
 using namespace fl;
 

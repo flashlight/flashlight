@@ -7,7 +7,7 @@
 
 #include "flashlight/pkg/speech/decoder/TranscriptionUtils.h"
 
-#include "flashlight/lib/common/String.h"
+#include "flashlight/lib/text/String.h"
 
 using fl::lib::dedup;
 using fl::lib::text::Dictionary;

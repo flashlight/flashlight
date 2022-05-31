@@ -12,7 +12,7 @@
 #include <glog/logging.h>
 
 #include "flashlight/fl/flashlight.h"
-#include "flashlight/lib/common/String.h"
+#include "flashlight/lib/text/String.h"
 #include "flashlight/pkg/runtime/common/SequentialBuilder.h"
 #include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
 
