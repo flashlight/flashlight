@@ -21,7 +21,6 @@
 #include "flashlight/fl/flashlight.h"
 
 #include "flashlight/fl/common/Filesystem.h"
-#include "flashlight/lib/common/ProducerConsumerQueue.h"
 #include "flashlight/lib/text/decoder/LexiconDecoder.h"
 #include "flashlight/lib/text/decoder/LexiconFreeDecoder.h"
 #include "flashlight/lib/text/decoder/LexiconFreeSeq2SeqDecoder.h"
@@ -34,6 +33,7 @@
 #include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/common/Flags.h"
+#include "flashlight/pkg/speech/common/ProducerConsumerQueue.h"
 #include "flashlight/pkg/speech/criterion/criterion.h"
 #include "flashlight/pkg/speech/data/FeatureTransforms.h"
 #include "flashlight/pkg/speech/data/Utils.h"

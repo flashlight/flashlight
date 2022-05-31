@@ -8,12 +8,13 @@
 #include <future>
 #include <mutex>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "flashlight/lib/common/ProducerConsumerQueue.h"
+#include "flashlight/pkg/speech/common/ProducerConsumerQueue.h"
 
 using namespace fl::lib;
 
@@ -46,7 +47,7 @@ TEST(ProducerConsumerQueueTest, MultiThreads) {
   ProducerConsumerQueue<int> queue(nElements);
 
   // Define producer and consumers
-  auto produce = [nElements, nProducer, &queue](int tid) {
+  auto produce = [nProducer, &queue](int tid) {
     for (int i = tid; i < nElements; i += nProducer) {
       queue.add(i);
     }
