@@ -17,7 +17,7 @@
 
 #include "flashlight/fl/flashlight.h"
 
-#include "flashlight/lib/common/System.h"
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
 #include "flashlight/pkg/runtime/common/DistributedUtils.h"
@@ -34,7 +34,6 @@
 #include "flashlight/pkg/speech/runtime/runtime.h"
 
 using fl::lib::join;
-using fl::lib::pathsConcat;
 using fl::pkg::runtime::Serializer;
 
 using namespace fl::pkg::speech;
@@ -111,8 +110,8 @@ int main(int argc, char** argv) {
   LOG(INFO) << "Gflags after parsing \n" << serializeGflags("; ");
 
   /* ===================== Create Dictionary ===================== */
-  auto dictPath = FLAGS_tokens;
-  if (dictPath.empty() || !fl::lib::fileExists(dictPath)) {
+  fs::path dictPath(FLAGS_tokens);
+  if (dictPath.empty() || !fs::exists(dictPath)) {
     throw std::runtime_error("Invalid dictionary filepath specified.");
   }
   fl::lib::text::Dictionary tokenDict(dictPath);
@@ -220,17 +219,17 @@ int main(int argc, char** argv) {
   std::vector<double> sliceTime(FLAGS_nthread_decoder_am_forward, 0);
 
   auto cleanTestPath = cleanFilepath(FLAGS_test);
-  std::string emissionDir;
+  fs::path emissionDir;
   if (!FLAGS_emission_dir.empty()) {
-    emissionDir = pathsConcat(FLAGS_emission_dir, cleanTestPath);
-    fl::lib::dirCreate(emissionDir);
+    emissionDir = fs::path(FLAGS_emission_dir) / cleanTestPath;
+    fs::create_directory(emissionDir);
   }
 
   // Prepare sclite log writer
   std::ofstream hypStream, refStream;
   if (!FLAGS_sclite.empty()) {
-    auto hypPath = pathsConcat(FLAGS_sclite, cleanTestPath + ".hyp");
-    auto refPath = pathsConcat(FLAGS_sclite, cleanTestPath + ".viterbi.ref");
+    auto hypPath = fs::path(FLAGS_sclite) / (cleanTestPath + ".hyp");
+    auto refPath = fs::path(FLAGS_sclite) / (cleanTestPath + ".viterbi.ref");
     hypStream.open(hypPath);
     refStream.open(refPath);
     if (!hypStream.is_open() || !hypStream.good()) {
@@ -381,7 +380,7 @@ int main(int argc, char** argv) {
       sliceNumSamples[tid]++;
 
       if (!emissionDir.empty()) {
-        std::string savePath = pathsConcat(emissionDir, sampleId + ".bin");
+        fs::path savePath = fs::path(emissionDir) / (sampleId + ".bin");
         Serializer::save(savePath, FL_APP_ASR_VERSION, emissionUnit);
       }
     }
