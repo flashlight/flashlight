@@ -7,9 +7,8 @@
 
 #include "flashlight/pkg/speech/data/ListFileDataset.h"
 
+#include "flashlight/lib/text/String.h"
 #include "flashlight/pkg/speech/data/Sound.h"
-
-#include "flashlight/lib/common/String.h"
 
 using namespace fl::lib;
 

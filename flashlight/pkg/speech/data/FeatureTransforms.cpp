@@ -17,7 +17,7 @@
 #include "flashlight/lib/audio/feature/Mfcc.h"
 #include "flashlight/lib/audio/feature/Mfsc.h"
 #include "flashlight/lib/audio/feature/PowerSpectrum.h"
-#include "flashlight/lib/common/String.h"
+#include "flashlight/lib/text/String.h"
 #include "flashlight/pkg/speech/data/Utils.h"
 
 using namespace fl::lib;

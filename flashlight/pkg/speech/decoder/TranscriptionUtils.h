@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-#include "flashlight/lib/common/String.h"
+#include "flashlight/lib/text/String.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
 #include "flashlight/pkg/speech/common/Defines.h"

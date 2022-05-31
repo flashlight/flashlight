@@ -54,9 +54,11 @@ option(FL_BUILD_RECIPES "Build recipes" ON)
 option(FL_BUILD_STANDALONE "Build standalone installation" ON)
 
 option(FL_LIBRARIES_USE_CUDA "Use CUDA in flashlight libraries build" ON)
-option(FL_LIBRARIES_USE_KENLM "Use KenLM in flashlight libraries build" ON)
 option(FL_LIBRARIES_USE_MKL "Use MKL in flashlight libraries build" ON)
 option(FL_LIBRARIES_BUILD_FOR_PYTHON "Build Python bindings" OFF)
+
+# External project configuration
+option(FL_TEXT_REQUIRE_KENLM "Require KenLM in the Flashlight text build" OFF)
 
 # List of installable targets
 set(INSTALLABLE_TARGETS)
@@ -112,7 +114,6 @@ endif ()
 set(FL_COMPILE_DEFINITIONS
   $<$<BOOL:${FL_LIBRARIES_USE_CUDA}>:FL_LIBRARIES_USE_CUDA>
   $<$<BOOL:${FL_LIBRARIES_USE_MKL}>:FL_LIBRARIES_USE_MKL>
-  $<$<BOOL:${FL_LIBRARIES_USE_KENLM}>:FL_LIBRARIES_USE_KENLM>
   )
 
 set(FL_LIB_DIR "${FL_ROOT_DIR}/lib")
