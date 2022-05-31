@@ -23,7 +23,6 @@ function (add_pybind11_extension ext_name)
     PUBLIC
     fl_lib_audio
     fl_lib_sequence
-    fl_lib_common
     )
 
   add_dependencies(${ext_name} pybind11)

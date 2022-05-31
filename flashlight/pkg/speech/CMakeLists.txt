@@ -36,7 +36,6 @@ target_link_libraries(
   fl_pkg_runtime
   fl_lib_audio
   fl_lib_sequence
-  fl_lib_common
   flashlight::flashlight-text
   )
 
