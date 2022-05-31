@@ -26,22 +26,6 @@
 namespace fl {
 namespace lib {
 
-size_t getProcessId() {
-#ifdef _WIN32
-  return GetCurrentProcessId();
-#else
-  return ::getpid();
-#endif
-}
-
-size_t getThreadId() {
-#ifdef _WIN32
-  return GetCurrentThreadId();
-#else
-  return std::hash<std::thread::id>()(std::this_thread::get_id());
-#endif
-}
-
 std::string pathSeperator() {
 #ifdef _WIN32
   return "\\";
@@ -168,28 +152,6 @@ std::string getEnvVar(
     const std::string& dflt /*= "" */) {
   char* val = getenv(key.c_str());
   return val ? std::string(val) : dflt;
-}
-
-std::string getCurrentDate() {
-  time_t now = time(nullptr);
-  struct tm tmbuf;
-  struct tm* tstruct;
-  tstruct = localtime_r(&now, &tmbuf);
-
-  std::array<char, 80> buf;
-  strftime(buf.data(), buf.size(), "%Y-%m-%d", tstruct);
-  return std::string(buf.data());
-}
-
-std::string getCurrentTime() {
-  time_t now = time(nullptr);
-  struct tm tmbuf;
-  struct tm* tstruct;
-  tstruct = localtime_r(&now, &tmbuf);
-
-  std::array<char, 80> buf;
-  strftime(buf.data(), buf.size(), "%X", tstruct);
-  return std::string(buf.data());
 }
 
 std::string getTmpPath(const std::string& filename) {

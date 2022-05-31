@@ -11,15 +11,14 @@
 #include <functional>
 #include <sstream>
 
-#include "flashlight/pkg/speech/data/Sound.h"
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/tensor/Init.h"
-#include "flashlight/lib/common/System.h"
+#include "flashlight/pkg/speech/data/Sound.h"
 
-using namespace fl::lib;
 using namespace fl::pkg::speech;
 
 namespace {
-std::string loadPath = "";
+fs::path loadPath = "";
 
 auto loadData = [](const std::string& filepath) {
   std::vector<double> data;
@@ -32,9 +31,8 @@ auto loadData = [](const std::string& filepath) {
 } // namespace
 
 TEST(SoundTest, Mono) {
-  auto audiopath =
-      pathsConcat(loadPath, "test_mono.wav"); // 16-bit Signed Integer PCM
-  auto datapath = pathsConcat(loadPath, "test_mono.dat");
+  auto audiopath = loadPath / "test_mono.wav"; // 16-bit Signed Integer PCM
+  auto datapath = loadPath / "test_mono.dat";
 
   auto info = loadSoundInfo(audiopath);
   ASSERT_EQ(info.samplerate, 48000);
@@ -86,9 +84,8 @@ TEST(SoundTest, Mono) {
 }
 
 TEST(SoundTest, Stereo) {
-  auto audiopath =
-      pathsConcat(loadPath, "test_stereo.wav"); // 16-bit Signed Integer PCM
-  auto datapath = pathsConcat(loadPath, "test_stereo.dat");
+  auto audiopath = loadPath / "test_stereo.wav"; // 16-bit Signed Integer PCM
+  auto datapath = loadPath / "test_stereo.dat";
   auto info = loadSoundInfo(audiopath);
 
   ASSERT_EQ(info.samplerate, 48000);
@@ -107,9 +104,9 @@ TEST(SoundTest, Stereo) {
 }
 
 TEST(SoundTest, OggReadWrite) {
-  auto audiopath = pathsConcat(loadPath, "test_stereo.wav");
-  const std::string outaudiopath = getTmpPath("test.ogg");
-  auto oggaudiopath = pathsConcat(loadPath, "test_stereo.ogg");
+  auto audiopath = loadPath / "test_stereo.wav";
+  const fs::path outaudiopath = fs::temp_directory_path() / "test.ogg";
+  auto oggaudiopath = loadPath / "test_stereo.ogg";
   auto info = loadSoundInfo(audiopath);
   auto vecShort = loadSound<short>(audiopath);
 
@@ -131,7 +128,7 @@ TEST(SoundTest, OggReadWrite) {
 }
 
 TEST(SoundTest, StreamReadWrite) {
-  auto audiopath = pathsConcat(loadPath, "test_stereo.wav");
+  auto audiopath = loadPath / "test_stereo.wav";
   auto info = loadSoundInfo(audiopath);
   auto vecShort = loadSound<short>(audiopath);
 
@@ -167,7 +164,7 @@ int main(int argc, char** argv) {
 
 // Resolve directory for data
 #ifdef DATA_TEST_DATADIR
-  loadPath = DATA_TEST_DATADIR;
+  loadPath = fs::path(DATA_TEST_DATADIR);
 #endif
 
   return RUN_ALL_TESTS();
