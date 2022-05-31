@@ -7,8 +7,9 @@
 
 #pragma once
 
-#include "flashlight/pkg/runtime/amp/DynamicScaler.h"
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/flashlight.h"
+#include "flashlight/pkg/runtime/amp/DynamicScaler.h"
 
 namespace fl {
 namespace pkg {
@@ -17,7 +18,7 @@ namespace runtime {
  * Get a certain checkpoint by `runidx`.
  */
 std::string
-getRunFile(const std::string& name, int runidx, const std::string& runpath);
+getRunFile(const std::string& name, int runidx, const fs::path& runpath);
 
 /**
  * Serialize gflags into a buffer.

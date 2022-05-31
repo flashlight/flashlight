@@ -15,6 +15,7 @@
 #include "flashlight/fl/flashlight.h"
 
 #include "flashlight/lib/text/decoder/LexiconDecoder.h"
+#include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/decoder/lm/KenLM.h"
 #include "flashlight/pkg/runtime/common/DistributedUtils.h"
 #include "flashlight/pkg/runtime/common/SequentialBuilder.h"
