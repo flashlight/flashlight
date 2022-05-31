@@ -16,10 +16,10 @@
 #include "flashlight/pkg/runtime/Runtime.h"
 #include "flashlight/pkg/text/data/TextDataset.h"
 
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/contrib/contrib.h"
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/lib/common/String.h"
-#include "flashlight/lib/common/System.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
 #include "flashlight/lib/text/tokenizer/PartialFileReader.h"
@@ -174,7 +174,7 @@ class Trainer {
   void stopTimers();
 
   /* Logging helpers */
-  void saveCheckpoint(const std::string& path, const std::string& suffix = "")
+  void saveCheckpoint(const fs::path& path, const std::string& suffix = "")
       const;
   void logMemoryManagerStatus() const;
   std::string getProgress() const;

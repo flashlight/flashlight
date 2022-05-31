@@ -6,6 +6,7 @@
  */
 
 #include "flashlight/app/lm/Trainer.h"
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/tensor/Init.h"
 
 using namespace fl::pkg::runtime;
@@ -27,8 +28,8 @@ int main(int argc, char** argv) {
 
   /* Select mode */
   std::string mode;
-  if (fileExists(
-          pathsConcat(FLAGS_exp_rundir, FLAGS_exp_model_name + ".bin"))) {
+  if (fs::exists(
+          fs::path(FLAGS_exp_rundir) / (FLAGS_exp_model_name + ".bin"))) {
     mode = "continue";
   } else if (!FLAGS_exp_init_model_path.empty()) {
     mode = "fork";
