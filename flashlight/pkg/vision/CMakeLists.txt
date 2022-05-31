@@ -7,7 +7,6 @@ target_link_libraries(
   PUBLIC
   flashlight
   fl_lib_set
-  fl_lib_common
   )
 
 include(${CMAKE_CURRENT_LIST_DIR}/tensor/CMakeLists.txt)

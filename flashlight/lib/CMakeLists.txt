@@ -37,13 +37,3 @@ if(FL_BUILD_LIB_AUDIO)
   include(${CMAKE_CURRENT_LIST_DIR}/audio/CMakeLists.txt)
   list(APPEND INSTALLABLE_TARGETS fl_lib_audio)
 endif()
-
-# common
-option(
-  FL_BUILD_LIB_COMMON
-  "Build flashlight common library"
-  ${FL_BUILD_ALL_LIBS})
-if(FL_BUILD_LIB_COMMON)
-  include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
-  list(APPEND INSTALLABLE_TARGETS fl_lib_common)
-endif()
