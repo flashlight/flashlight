@@ -192,6 +192,7 @@ class ArrayFireBackend : public TensorBackend {
   FL_AF_BINARY_OP_DECL(logicalOr);
   FL_AF_BINARY_OP_DECL(logicalAnd);
   FL_AF_BINARY_OP_DECL(mod);
+  FL_AF_BINARY_OP_DECL(bitwiseAnd);
   FL_AF_BINARY_OP_DECL(bitwiseOr);
   FL_AF_BINARY_OP_DECL(bitwiseXor);
   FL_AF_BINARY_OP_DECL(lShift);

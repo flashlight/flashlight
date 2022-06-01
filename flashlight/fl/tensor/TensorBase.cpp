@@ -600,6 +600,7 @@ FL_BINARY_OP_DEF(>=, greaterThanEqual);
 FL_BINARY_OP_DEF(||, logicalOr);
 FL_BINARY_OP_DEF(&&, logicalAnd);
 FL_BINARY_OP_DEF(%, mod);
+FL_BINARY_OP_DEF(&, bitwiseAnd);
 FL_BINARY_OP_DEF(|, bitwiseOr);
 FL_BINARY_OP_DEF(^, bitwiseXor);
 FL_BINARY_OP_DEF(<<, lShift);
