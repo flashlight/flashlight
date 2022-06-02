@@ -374,16 +374,68 @@ TEST(TensorBaseTest, argsort) {
   ASSERT_TRUE(allClose(tiled, fl::argsort(tiled, 0, SortMode::Ascending)));
 }
 
+template <typename ScalarArgType>
+void assertScalarBehavior(fl::dtype type) {
+  ScalarArgType scalar = 42; // small enough for any scalar type
+  auto one = fl::full({1}, scalar, type);
+
+  if (dtype_traits<ScalarArgType>::fl_type != type) {
+    ASSERT_THROW(one.template scalar<ScalarArgType>(), std::invalid_argument)
+    << "dtype: " << type
+    << ", ScalarArgType: " << dtype_traits<ScalarArgType>::getName();
+    return;
+  }
+
+  if ((type == fl::dtype::f16) ||
+      (type == fl::dtype::f32) ||
+      (type == fl::dtype::f64)) {
+    ASSERT_FLOAT_EQ(one.template scalar<ScalarArgType>(), scalar)
+    << "dtype: " << type
+    << ", ScalarArgType: " << dtype_traits<ScalarArgType>::getName();
+  } else {
+    ASSERT_EQ(one.template scalar<ScalarArgType>(), scalar)
+    << "dtype: " << type
+    << ", ScalarArgType: " << dtype_traits<ScalarArgType>::getName();
+  }
+
+  auto a = fl::rand({5, 6}, type);
+  ASSERT_TRUE(allClose(fl::full({1}, a.scalar<ScalarArgType>(), type), a(0, 0)))
+    << "dtype: " << type
+    << ", ScalarArgType: " << dtype_traits<ScalarArgType>::getName();
+}
+
 TEST(TensorBaseTest, scalar) {
-  // TODO: exhaustively test all types + fixture
-  float val = 8.47;
-  auto one = fl::full({1}, val);
-  ASSERT_FLOAT_EQ(one.scalar<float>(), val);
-
-  auto a = fl::rand({5, 6});
-  ASSERT_TRUE(allClose(fl::full({1}, a.scalar<float>()), a(0, 0)));
-
-  ASSERT_THROW(a.scalar<int>(), std::invalid_argument);
+  auto types = {
+    fl::dtype::b8,
+    fl::dtype::u8,
+    fl::dtype::s16,
+    fl::dtype::u16,
+    fl::dtype::s32,
+    fl::dtype::u32,
+    fl::dtype::s64,
+    fl::dtype::u64,
+    fl::dtype::f16,
+    fl::dtype::f32,
+    fl::dtype::f64
+  };
+  for (auto type : types) {
+    assertScalarBehavior<char>(type);
+    assertScalarBehavior<unsigned char>(type);
+    assertScalarBehavior<short>(type);
+    assertScalarBehavior<unsigned short>(type);
+    assertScalarBehavior<int>(type);
+    assertScalarBehavior<unsigned int>(type);
+    if (type != fl::dtype::s32) { // TODO to be fixed
+      assertScalarBehavior<long>(type);
+    }
+    if (type != fl::dtype::u32) { // TODO to be fixed
+      assertScalarBehavior<unsigned long>(type);
+    }
+    assertScalarBehavior<long long>(type);
+    assertScalarBehavior<unsigned long long>(type);
+    assertScalarBehavior<float>(type);
+    assertScalarBehavior<double>(type);
+  }
 }
 
 TEST(TensorBaseTest, isContiguous) {
@@ -400,7 +452,7 @@ TEST(TensorBaseTest, strides) {
 TEST(TensorBaseTest, asContiguousTensor) {
   auto t = fl::rand({5, 6, 7, 8});
   auto indexed =
-      t(fl::range(1, 4, 2),
+    t(fl::range(1, 4, 2),
         fl::range(0, 6, 2),
         fl::range(0, 6, 3),
         fl::range(0, 5, 3));
