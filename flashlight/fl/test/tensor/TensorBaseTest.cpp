@@ -425,12 +425,8 @@ TEST(TensorBaseTest, scalar) {
     assertScalarBehavior<unsigned short>(type);
     assertScalarBehavior<int>(type);
     assertScalarBehavior<unsigned int>(type);
-    if (type != fl::dtype::s32) { // TODO to be fixed
-      assertScalarBehavior<long>(type);
-    }
-    if (type != fl::dtype::u32) { // TODO to be fixed
-      assertScalarBehavior<unsigned long>(type);
-    }
+    assertScalarBehavior<long>(type);
+    assertScalarBehavior<unsigned long>(type);
     assertScalarBehavior<long long>(type);
     assertScalarBehavior<unsigned long long>(type);
     assertScalarBehavior<float>(type);
