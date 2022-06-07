@@ -385,6 +385,7 @@ FL_AF_BINARY_OP_DEF(>=, greaterThanEqual);
 FL_AF_BINARY_OP_DEF(||, logicalOr);
 FL_AF_BINARY_OP_DEF(&&, logicalAnd);
 FL_AF_BINARY_OP_DEF(%, mod);
+FL_AF_BINARY_OP_DEF(&, bitwiseAnd);
 FL_AF_BINARY_OP_DEF(|, bitwiseOr);
 FL_AF_BINARY_OP_DEF(^, bitwiseXor);
 FL_AF_BINARY_OP_DEF(<<, lShift);

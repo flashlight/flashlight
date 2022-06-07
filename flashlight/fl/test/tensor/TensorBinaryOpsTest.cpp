@@ -252,6 +252,13 @@ TEST(TensorBinaryOpsTest, BitBinaryOperators) {
     auto h = Tensor::fromVector<float>({2, 1}, { 0b1000, 0b1000 }).astype(type);
     auto z = Tensor::fromVector<float>({2, 1}, { 0b0000, 0b0000 }).astype(type);
 
+    ASSERT_TRUE(allClose((z & z), z)) << "dtype: " << type;
+    assertCommutativeBinop(a, b, std::bit_and<>(), z);
+    assertCommutativeBinop(z, b, std::bit_and<>(), z);
+    assertCommutativeBinop(d, b, std::bit_and<>(), b);
+    assertScalarTensorCommutativeBinop(0b0000, b, std::bit_and<>(), z);
+    assertScalarTensorCommutativeBinop(0b0110, b, std::bit_and<>(), b);
+
     ASSERT_TRUE(allClose((z | z), z)) << "dtype: " << type;
     assertCommutativeBinop(a, z, std::bit_or<>(), a);
     assertCommutativeBinop(z, b, std::bit_or<>(), b);

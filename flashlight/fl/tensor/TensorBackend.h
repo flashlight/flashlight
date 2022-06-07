@@ -186,6 +186,7 @@ class TensorBackend {
   FL_BINARY_OP_DECL(logicalOr);
   FL_BINARY_OP_DECL(logicalAnd);
   FL_BINARY_OP_DECL(mod);
+  FL_BINARY_OP_DECL(bitwiseAnd);
   FL_BINARY_OP_DECL(bitwiseOr);
   FL_BINARY_OP_DECL(bitwiseXor);
   FL_BINARY_OP_DECL(lShift);
