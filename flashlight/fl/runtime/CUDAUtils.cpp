@@ -7,6 +7,7 @@
 
 #include <stdexcept>
 
+#include "flashlight/fl/runtime/CUDADevice.h"
 #include "flashlight/fl/runtime/CUDAUtils.h"
 // TODO fold this into current file when integrating runtime into Flashlight
 #include "flashlight/fl/tensor/CUDAUtils.h"
@@ -27,7 +28,7 @@ std::unordered_map<int, const std::unique_ptr<Device>> createCUDADevices() {
   int numCudaDevices = 0;
   FL_CUDA_CHECK(cudaGetDeviceCount(&numCudaDevices));
   for (auto id = 0; id < numCudaDevices; id++) {
-    idToDevice.emplace(id, std::make_unique<Device>(DeviceType::CUDA));
+    idToDevice.emplace(id, std::make_unique<CUDADevice>(id));
   }
   return idToDevice;
 }

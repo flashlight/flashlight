@@ -17,7 +17,19 @@ TEST(DeviceTest, type) {
   for (auto type : fl::getDeviceTypes()) {
     if (manager.isDeviceTypeAvailable(type)) {
       for (auto* device : manager.getDevicesOfType(type)) {
-        ASSERT_EQ(device->type, type);
+        ASSERT_EQ(device->type(), type);
+      }
+    }
+  }
+}
+
+TEST(DeviceTest, setActive) {
+  auto& manager = DeviceManager::getInstance();
+  for (auto type : fl::getDeviceTypes()) {
+    if (manager.isDeviceTypeAvailable(type)) {
+      for (auto* device : manager.getDevicesOfType(type)) {
+        device->setActive();
+        ASSERT_EQ(&manager.getActiveDevice(type), device);
       }
     }
   }

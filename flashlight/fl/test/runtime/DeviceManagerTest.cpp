@@ -9,7 +9,6 @@
 #include <stdexcept>
 #include <unordered_map>
 
-#include "flashlight/fl/runtime/Device.h"
 #include "flashlight/fl/runtime/DeviceManager.h"
 #include "flashlight/fl/tensor/Init.h"
 
@@ -51,7 +50,7 @@ TEST(DeviceManagerTest, getDevicesOfType) {
   for (auto type : fl::getDeviceTypes()) {
     if (manager.isDeviceTypeAvailable(DeviceType::CUDA)) {
       for (auto device : manager.getDevicesOfType(type)) {
-        ASSERT_EQ(device->type, type);
+        ASSERT_EQ(device->type(), type);
       }
     } else {
       ASSERT_THROW(manager.getDeviceCount(DeviceType::CUDA),
@@ -64,14 +63,14 @@ TEST(DeviceManagerTest, getDevice) {
   auto& manager = DeviceManager::getInstance();
   auto& x64Device =
     manager.getDevice(DeviceType::x64, fl::kX64DeviceId);
-  ASSERT_EQ(x64Device.type, DeviceType::x64);
+  ASSERT_EQ(x64Device.type(), DeviceType::x64);
 }
 
 TEST(DeviceManagerTest, getActiveDevice) {
   auto& manager = DeviceManager::getInstance();
   for (auto type : fl::getDeviceTypes()) {
     if (manager.isDeviceTypeAvailable(type)) {
-      ASSERT_EQ(manager.getActiveDevice(type).type, type);
+      ASSERT_EQ(manager.getActiveDevice(type).type(), type);
     } else {
       ASSERT_THROW(manager.getActiveDevice(type), std::invalid_argument);
     }
