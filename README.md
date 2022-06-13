@@ -21,8 +21,7 @@ Deep Speech. Its core features include:
 tensor library.
 - An emphasis on efficiency and scale.
 
-Native support in C++ and simple extensibility makes Flashlight a powerful research framework that enables fast iteration on new experimental setups and algorithms with little unopinionation and without sacrificing performance. In a single repository, Flashlight provides [apps](https://github.com/flashlight/flashlight/tree/master/flashlight/app) for research ac\
-ross multiple domains:
+Native support in C++ and simple extensibility makes Flashlight a powerful research framework that enables fast iteration on new experimental setups and algorithms with little unopinionation and without sacrificing performance. In a single repository, Flashlight provides [apps](https://github.com/flashlight/flashlight/tree/master/flashlight/app) for research across multiple domains:
 - [Automatic speech recognition](https://github.com/flashlight/flashlight/tree/master/flashlight/app/asr) (formerly [wav2letter](https://github.com/flashlight/wav2letter/) project) — [Documentation](flashlight/app/asr) | [Tutorial](flashlight/app/asr/tutorial)
 - [Image classification](flashlight/app/imgclass)
 - [Object detection](flashlight/app/objdet)
@@ -87,7 +86,7 @@ loss.backward();
 
 See the [MNIST example](https://fl.readthedocs.io/en/latest/mnist.html) for a full tutorial including a training loop and dataset abstractions.
 
-[`Variable`](https://fl.readthedocs.io/en/latest/variable.html) is the base Flashlight tensor that operates on [ArrayFire `array`s](http://arrayfire.org/docs/classaf_1_1array.htm). Tape-based [Automatic differentiation in Flashlight](https://fl.readthedocs.io/en/latest/autograd.html) is simple and works as you'd expect.
+[`Variable`](https://fl.readthedocs.io/en/latest/variable.html) is a tape-based abstraction that wraps [Flashlight tensors](https://github.com/flashlight/flashlight/blob/main/flashlight/fl/tensor/TensorBase.h). Tape-based [Automatic differentiation in Flashlight](https://fl.readthedocs.io/en/latest/autograd.html) is simple and works as you'd expect.
 
 <details><summary>Autograd Example</summary>
 
