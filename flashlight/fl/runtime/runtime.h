@@ -8,3 +8,4 @@
 #pragma once
 
 #include "flashlight/fl/runtime/Device.h"
+#include "flashlight/fl/runtime/DeviceManager.h"
