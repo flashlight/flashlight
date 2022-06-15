@@ -15,4 +15,5 @@
 #include "flashlight/fl/meter/meters.h"
 #include "flashlight/fl/nn/nn.h"
 #include "flashlight/fl/optim/optim.h"
+#include "flashlight/fl/runtime/runtime.h"
 #include "flashlight/fl/tensor/tensor.h"
