@@ -52,6 +52,9 @@ include(${FL_CORE_COMPONENT_SRC_DIR}/nn/CMakeLists.txt)
 # Optim
 include(${FL_CORE_COMPONENT_SRC_DIR}/optim/CMakeLists.txt)
 
+# Runtime
+include(${FL_CORE_COMPONENT_SRC_DIR}/runtime/CMakeLists.txt)
+
 # --------------------------- Configure Examples/Tests ---------------------------
 
 # Build tests
