@@ -8,6 +8,7 @@
 #pragma once
 
 #include <mutex>
+#include <unordered_map>
 
 #include "flashlight/fl/tensor/Stream.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
@@ -35,6 +36,10 @@ class ArrayFireBackend : public TensorBackend {
   // This will eventually be modified to use a stream stored per device.
   std::unique_ptr<Stream> stream_;
 
+  // This helps ensure we are using native device id in public methods.
+  std::unordered_map<int, int> nativeIdToId_;
+  std::unordered_map<int, int> idToNativeId_;
+
   // Intentionally private. Only one instance should exist/it should be accessed
   // via getInstance().
   ArrayFireBackend();
@@ -52,15 +57,15 @@ class ArrayFireBackend : public TensorBackend {
 
   /* -------------------------- Compute Functions -------------------------- */
   void sync() override;
-  void sync(const int deviceId) override;
+  void sync(const int nativeDeviceId) override;
   void eval(const Tensor& tensor) override;
   int getDevice() override;
-  void setDevice(const int deviceId) override;
+  void setDevice(const int nativeDeviceId) override;
   int getDeviceCount() override;
   const Stream& getStream() override;
   bool supportsDataType(const fl::dtype& dtype) const override;
   // Memory management
-  void getMemMgrInfo(const char* msg, const int deviceId, std::ostream* ostream)
+  void getMemMgrInfo(const char* msg, const int nativeDeviceId, std::ostream* ostream)
       override;
   void setMemMgrLogStream(std::ostream* stream) override;
   void setMemMgrLoggingEnabled(const bool enabled) override;

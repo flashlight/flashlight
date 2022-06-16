@@ -41,6 +41,15 @@ ArrayFireBackend::ArrayFireBackend() {
       MemoryManagerInstaller::installDefaultMemoryManager();
     }
   });
+
+  for (int id = 0; id < af::getDeviceCount(); id++) {
+    int nativeId = id; // TODO investigate how OpenCL fits into this.
+#if FL_ARRAYFIRE_USE_CUDA
+    nativeId = afcu::getNativeId(id);
+#endif
+    nativeIdToId_[nativeId] = id;
+    idToNativeId_[id] = nativeId;
+  }
 }
 
 ArrayFireBackend& ArrayFireBackend::getInstance() {
@@ -58,7 +67,8 @@ void ArrayFireBackend::sync() {
   af::sync();
 }
 
-void ArrayFireBackend::sync(const int deviceId) {
+void ArrayFireBackend::sync(const int nativeDeviceId) {
+  int deviceId = nativeIdToId_.at(nativeDeviceId);
   af::sync(deviceId);
 }
 
@@ -67,10 +77,12 @@ void ArrayFireBackend::eval(const Tensor& tensor) {
 }
 
 int ArrayFireBackend::getDevice() {
-  return af::getDevice();
+  int deviceId = af::getDevice();
+  return idToNativeId_.at(deviceId);
 }
 
-void ArrayFireBackend::setDevice(const int deviceId) {
+void ArrayFireBackend::setDevice(const int nativeDeviceId) {
+  int deviceId = nativeIdToId_.at(nativeDeviceId);
   af::setDevice(deviceId);
 }
 
@@ -105,8 +117,9 @@ bool ArrayFireBackend::supportsDataType(const fl::dtype& dtype) const {
 
 void ArrayFireBackend::getMemMgrInfo(
     const char* msg,
-    const int deviceId,
+    const int nativeDeviceId,
     std::ostream* ostream) {
+  int deviceId = nativeIdToId_.at(nativeDeviceId);
   if (ostream == nullptr) {
     throw std::invalid_argument(
         "ArrayFireBackend::getMemMgrInfo - got null ostream pointer");
