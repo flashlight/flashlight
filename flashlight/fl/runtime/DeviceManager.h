@@ -83,7 +83,7 @@ class DeviceManager {
    *
    * @return a reference to the device of given type and native device id.
    */
-  const Device& getDevice(const DeviceType type, int id) const;
+  Device& getDevice(const DeviceType type, int id) const;
 
   /**
    * Gets the active device of given type.
@@ -92,7 +92,7 @@ class DeviceManager {
    *
    * @return a reference to the active device of given type.
    */
-  const Device& getActiveDevice(const DeviceType type) const;
+  Device& getActiveDevice(const DeviceType type) const;
 };
 
 } // namespace fl

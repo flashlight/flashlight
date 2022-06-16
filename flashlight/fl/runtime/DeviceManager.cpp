@@ -76,7 +76,7 @@ std::vector<Device const*> DeviceManager::getDevicesOfType(
   return devices;
 }
 
-const Device& DeviceManager::getDevice(const DeviceType type, int id) const {
+Device& DeviceManager::getDevice(const DeviceType type, int id) const {
   enforceDeviceTypeAvailable("[DeviceManager::getActiveDevice]", type);
   auto& idToDevice = deviceTypeToInfo_.at(type);
   if (idToDevice.count(id) == 0) {
@@ -86,7 +86,7 @@ const Device& DeviceManager::getDevice(const DeviceType type, int id) const {
   return *idToDevice.at(id);
 }
 
-const Device& DeviceManager::getActiveDevice(const DeviceType type) const {
+Device& DeviceManager::getActiveDevice(const DeviceType type) const {
   enforceDeviceTypeAvailable("[DeviceManager::getActiveDevice]", type);
   int activeDeviceId = getActiveDeviceId(type);
   return *deviceTypeToInfo_.at(type).at(activeDeviceId);

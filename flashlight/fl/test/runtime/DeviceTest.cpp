@@ -35,6 +35,30 @@ TEST(DeviceTest, setActive) {
   }
 }
 
+TEST(DeviceTest, sync) {
+  const auto& manager = DeviceManager::getInstance();
+  for (const auto type : fl::getDeviceTypes()) {
+    if (manager.isDeviceTypeAvailable(type)) {
+      for (const auto* device : manager.getDevicesOfType(type)) {
+        ASSERT_NO_THROW(device->sync());
+      }
+    }
+  }
+}
+
+TEST(DeviceTest, getStream) {
+  auto& manager = DeviceManager::getInstance();
+  for (const auto type : fl::getDeviceTypes()) {
+    if (manager.isDeviceTypeAvailable(type)) {
+      for (const auto* device : manager.getDevicesOfType(type)) {
+        for (const auto& stream : device->getStreams()) {
+          ASSERT_EQ(&stream->device(), device);
+        }
+      }
+    }
+  }
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   fl::init();

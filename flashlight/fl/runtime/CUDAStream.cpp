@@ -12,7 +12,7 @@
 namespace fl {
 namespace runtime {
 
-CUDAStream::CUDAStream(const CUDADevice& device, cudaStream_t stream, bool managed) :
+CUDAStream::CUDAStream(CUDADevice& device, cudaStream_t stream, bool managed) :
   device_(device),
   nativeStream_(stream),
   managed_(managed) {
@@ -20,13 +20,20 @@ CUDAStream::CUDAStream(const CUDADevice& device, cudaStream_t stream, bool manag
   FL_CUDA_CHECK(cudaEventCreate(&event_, cudaEventDefault | cudaEventDisableTiming));
 }
 
+std::shared_ptr<CUDAStream> CUDAStream::makeSharedAndRegister(
+    CUDADevice& device, cudaStream_t stream, bool managed) {
+  auto rawStreamPtr = new CUDAStream(device, stream, managed);
+  auto streamPtr = std::shared_ptr<CUDAStream>(rawStreamPtr);
+  device.addStream(streamPtr);
+  return streamPtr;
+}
+
 std::shared_ptr<CUDAStream> CUDAStream::create(int flag, bool managed) {
   cudaStream_t nativeStream;
   FL_CUDA_CHECK(cudaStreamCreateWithFlags(&nativeStream, flag));
   auto& manager = DeviceManager::getInstance();
   auto& device = manager.getActiveDevice(DeviceType::CUDA).impl<CUDADevice>();
-  auto rawStreamPtr = new CUDAStream(device, nativeStream, managed);
-  return std::shared_ptr<CUDAStream>(rawStreamPtr);
+  return makeSharedAndRegister(device, nativeStream, managed);
 }
 
 std::shared_ptr<CUDAStream> CUDAStream::createManaged(int flag) {
@@ -42,8 +49,7 @@ std::shared_ptr<CUDAStream> CUDAStream::wrapUnmanaged(
   auto& manager = DeviceManager::getInstance();
   auto& device =
     manager.getDevice(DeviceType::CUDA, deviceId).impl<CUDADevice>();
-  auto rawStreamPtr = new CUDAStream(device, stream, /* managed */ false);
-  return std::shared_ptr<CUDAStream>(rawStreamPtr);
+  return makeSharedAndRegister(device, stream, /* managed */ false);
 }
 
 CUDAStream::~CUDAStream() {
@@ -53,6 +59,10 @@ CUDAStream::~CUDAStream() {
 }
 
 const CUDADevice& CUDAStream::device() const {
+  return device_;
+}
+
+CUDADevice& CUDAStream::device() {
   return device_;
 }
 

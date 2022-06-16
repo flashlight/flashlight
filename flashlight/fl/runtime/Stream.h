@@ -66,6 +66,13 @@ class Stream {
    *
    * @return a reference to the owner device of this stream.
    */
+  virtual Device& device() = 0;
+
+  /**
+   * Return the owner device of this stream.
+   *
+   * @return an immutable reference to the owner device of this stream.
+   */
   virtual const Device& device() const = 0;
 
   /**
