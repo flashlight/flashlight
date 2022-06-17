@@ -7,16 +7,20 @@
 
 #include <gtest/gtest.h>
 
-#include "flashlight/fl/runtime/Device.h"
+#include "flashlight/fl/runtime/DeviceManager.h"
 #include "flashlight/fl/tensor/Init.h"
 
-using fl::DeviceType;
+using fl::DeviceManager;
 
-TEST(DeviceTest, getAllDeviceTypes) {
-  auto allDevices = fl::getDeviceTypes();
-  ASSERT_TRUE(allDevices.count(DeviceType::x64) == 1);
-  ASSERT_TRUE(allDevices.count(DeviceType::CUDA) == 1);
-  ASSERT_EQ(allDevices.size(), 2);
+TEST(DeviceTest, type) {
+  auto& manager = DeviceManager::getInstance();
+  for (auto type : fl::getDeviceTypes()) {
+    if (manager.isDeviceTypeAvailable(type)) {
+      for (auto* device : manager.getDevicesOfType(type)) {
+        ASSERT_EQ(device->type, type);
+      }
+    }
+  }
 }
 
 int main(int argc, char** argv) {

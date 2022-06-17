@@ -5,10 +5,20 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/fl/runtime/Device.h"
-#include <unordered_set>
+#include "flashlight/fl/runtime/DeviceType.h"
 
 namespace fl {
+
+std::string deviceTypeToString(const DeviceType type) {
+  switch (type) {
+    case DeviceType::x64: return "x64";
+    case DeviceType::CUDA: return "CUDA";
+  }
+}
+
+std::ostream& operator<<(std::ostream& os, const DeviceType& type) {
+  return os << deviceTypeToString(type);
+}
 
 const std::unordered_set<DeviceType>& getDeviceTypes() {
   static std::unordered_set<DeviceType> types = {
