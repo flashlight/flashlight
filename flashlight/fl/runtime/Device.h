@@ -7,25 +7,9 @@
 
 #pragma once
 
-#include <unordered_set>
+#include "flashlight/fl/runtime/DeviceType.h"
 
 namespace fl {
-
-/**
- * A runtime type for various device types.
- * NOTE update `fl::getAllDeviceTypes` after changing enum values.
- */
-enum class DeviceType {
-  x64,
-  CUDA,
-};
-
-/**
- * Returns all device types.
- *
- * @return an immutable reference to a set of all device types.
- */
-const std::unordered_set<DeviceType>& getDeviceTypes();
 
 /**
  * A Device abstraction.
