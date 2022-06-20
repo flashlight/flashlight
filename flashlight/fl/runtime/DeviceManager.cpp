@@ -35,7 +35,7 @@ namespace fl {
 DeviceManager::DeviceManager() {
   // initialize for x64
   DeviceTypeInfo x64Info;
-  x64Info.emplace(kX64DeviceId, std::make_unique<Device>(DeviceType::x64));
+  x64Info.emplace(kX64DeviceId, std::make_unique<X64Device>());
   deviceTypeToInfo_.emplace(DeviceType::x64, std::move(x64Info));
 
   // initialize for CUDA
