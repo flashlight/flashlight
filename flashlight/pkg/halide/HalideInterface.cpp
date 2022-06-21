@@ -9,9 +9,9 @@
 
 #include <unordered_map>
 
-#include "flashlight/fl/common/backend/cuda/CudaUtils.h"
 #include "flashlight/fl/tensor/Compute.h"
 
+#include <cublas_v2.h> // this must proceed `af/cuda.h` for some reason
 #include <af/cuda.h>
 #include <af/device.h>
 #include <cuda.h> // Driver API needed for CUcontext
