@@ -9,3 +9,4 @@
 
 #include "flashlight/fl/runtime/Device.h"
 #include "flashlight/fl/runtime/DeviceManager.h"
+#include "flashlight/fl/runtime/Stream.h"
