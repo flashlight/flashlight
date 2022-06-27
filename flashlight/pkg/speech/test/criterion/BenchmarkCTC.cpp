@@ -19,7 +19,7 @@ using namespace fl;
 using namespace fl::pkg::speech;
 
 int main() {
-  fl::setDevice(1);
+  fl::setDevice(0);
   fl::init();
 
   auto ctc = ConnectionistTemporalClassificationCriterion();

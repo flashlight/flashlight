@@ -18,7 +18,7 @@ using namespace fl;
 using namespace fl::pkg::speech;
 
 int main() {
-  fl::setDevice(1);
+  fl::setDevice(0);
   fl::init();
 
   int N = 30, T = 487, L = 34, B = 20;

@@ -10,9 +10,6 @@
 #include <stdexcept>
 #include <vector>
 
-#include <cuda.h>
-#include <cuda_runtime.h>
-
 #include <Halide.h>
 #include <HalideBuffer.h>
 #include <HalideRuntime.h>
@@ -64,6 +61,10 @@ template <typename T>
 class HalideBufferWrapper {
  public:
   HalideBufferWrapper(Tensor& tensor) {
+    if (tensor.backendType() != TensorBackendType::ArrayFire) {
+      throw std::runtime_error(
+          "[HalideBufferWrapper] Only support Tensor with ArrayFireBackend");
+    }
     devicePtr_ = DevicePtr(tensor);
     halideBuffer_ = Halide::Buffer<T>(flToHalideDims(tensor.shape()));
     // Halide::Buffer::device_detach_native(...) is implicitly called by the
@@ -98,6 +99,10 @@ namespace detail {
  */
 template <typename T>
 Halide::Buffer<T> toHalideBuffer(Tensor& arr) {
+  if (arr.backendType() != TensorBackendType::ArrayFire) {
+    throw std::runtime_error(
+        "[HalideBufferWrapper] Only support Tensor with ArrayFireBackend");
+  }
   // Since the buffer manages the memory, give it a persistent pointer that
   // won't be unlocked or invalidated if the Array falls out of scope.
   void* deviceMem = arr.device<void>();

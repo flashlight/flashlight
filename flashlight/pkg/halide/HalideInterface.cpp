@@ -9,9 +9,11 @@
 
 #include <unordered_map>
 
-#include "flashlight/fl/common/backend/cuda/CudaUtils.h"
 #include "flashlight/fl/tensor/Compute.h"
 
+#include <cublas_v2.h> // this must proceed `af/cuda.h` for some reason
+#include <af/cuda.h>
+#include <af/device.h>
 #include <cuda.h> // Driver API needed for CUcontext
 
 std::unordered_map<void*, fl::Tensor> memory;
@@ -68,7 +70,8 @@ std::unordered_map<void*, fl::Tensor> memory;
    CUcontext ctx = 0;
    CUresult res = cuCtxGetCurrent(&ctx);
    if (res != CUDA_SUCCESS) throw std::runtime_error("cuCtxGetCurrent failed");
-   cudaStream_t stream = fl::cuda::getActiveStream();
+   // NOTE All ops are required to run on the default ArrayFire CUDA stream
+   cudaStream_t stream = afcu::getStream(af::getDevice());
    fl::pkg::runtime::detail::UserContext userCtx(deviceId, &ctx, &stream);
    // This symbol is searched for by LLVM on the stack before
    // JMPing to a function pointer
@@ -128,7 +131,8 @@ int halide_cuda_get_stream(
     void* /* user_context */,
     CUcontext /* ctx */,
     CUstream* stream) {
-  *stream = (CUstream)fl::cuda::getActiveStream();
+  // NOTE All ops are required to run on the default ArrayFire CUDA stream
+  *stream = (CUstream)afcu::getStream(af::getDevice());
   return 0;
 }
 
