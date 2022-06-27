@@ -66,10 +66,20 @@ unsigned DeviceManager::getDeviceCount(const DeviceType type) const {
   return deviceTypeToInfo_.at(type).size();
 }
 
-std::vector<Device const*> DeviceManager::getDevicesOfType(
+std::vector<Device*> DeviceManager::getDevicesOfType(
+  DeviceType type) {
+  enforceDeviceTypeAvailable("[DeviceManager::getDevicesOfType]", type);
+  std::vector<Device*> devices;
+  for (auto &[_, device] : deviceTypeToInfo_.at(type)) {
+    devices.push_back(device.get());
+  }
+  return devices;
+}
+
+std::vector<const Device*> DeviceManager::getDevicesOfType(
   DeviceType type) const {
   enforceDeviceTypeAvailable("[DeviceManager::getDevicesOfType]", type);
-  std::vector<Device const*> devices;
+  std::vector<const Device*> devices;
   for (auto &[_, device] : deviceTypeToInfo_.at(type)) {
     devices.push_back(device.get());
   }
