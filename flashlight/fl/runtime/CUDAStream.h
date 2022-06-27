@@ -20,7 +20,7 @@ namespace runtime {
  */
 class CUDAStream : public StreamTrait<CUDAStream> {
   // the device upon which the underlying native stream was created
-  const CUDADevice& device_;
+  CUDADevice& device_;
   // the underlying native stream
   cudaStream_t nativeStream_;
   // whether the native stream's lifetime is managed by this object
@@ -29,7 +29,11 @@ class CUDAStream : public StreamTrait<CUDAStream> {
   cudaEvent_t event_;
 
   // A barebone constructor which just initializes the fields.
-  CUDAStream(const CUDADevice& device, cudaStream_t stream, bool managed = false);
+  CUDAStream(CUDADevice& device, cudaStream_t stream, bool managed);
+
+  // allocate a new CUDAStream as a shared_ptr and register it on given device.
+  static std::shared_ptr<CUDAStream> makeSharedAndRegister(
+      CUDADevice& device, cudaStream_t nativeStream, bool managed);
 
   // A fully configurable create, hidden for internal use.
   static std::shared_ptr<CUDAStream> create(int flag, bool managed);
@@ -41,7 +45,8 @@ class CUDAStream : public StreamTrait<CUDAStream> {
   static constexpr StreamType type = StreamType::CUDA;
 
   /**
-   * Creates an unmanaged wrapper around an existing native CUDA stream.
+   * Creates an unmanaged wrapper around an existing native CUDA stream and
+   * automatically register it on the device with given id in DeviceManager.
    *
    * @param[in] deviceId the native device ID upon which `stream` was created.
    * @param[in] stream the underlying CUDA stream.
@@ -56,7 +61,8 @@ class CUDAStream : public StreamTrait<CUDAStream> {
 
     /**
      * Create a managed CUDAStream around an internally created native CUDA
-     * stream.
+     * stream and automatically register it on the active CUDA device in
+     * DeviceManager.
      *
      * @param[in] flag the flag used for creating native CUDA stream.
      *
@@ -67,7 +73,8 @@ class CUDAStream : public StreamTrait<CUDAStream> {
 
     /**
      * Create an unmanaged CUDAStream around an internally created native CUDA
-     * stream.
+     * stream and automatically register it on the active CUDA device in
+     * DeviceManager.
      *
      * @param[in] flag the flag used for creating native CUDA stream.
      *
@@ -81,6 +88,7 @@ class CUDAStream : public StreamTrait<CUDAStream> {
    */
   ~CUDAStream() override;
 
+  CUDADevice& device() override;
   const CUDADevice& device() const override;
   std::future<void> sync() const override;
   void relativeSync(const CUDAStream& waitOn) const override;

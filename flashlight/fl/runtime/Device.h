@@ -8,17 +8,25 @@
 #pragma once
 
 #include <memory>
+#include <sstream>
 #include <stdexcept>
+#include <unordered_set>
 
 #include "flashlight/fl/runtime/DeviceType.h"
+#include "flashlight/fl/runtime/Stream.h"
 
 namespace fl {
+
+// throw invalid_argument with descriptive message if given types don't match
+void deviceImplTypeCheck(DeviceType expect, DeviceType actual);
 
 /**
  * An abstraction that represents framework-level (as opposed to hardware-level)
  * computing device.
  */
 class Device {
+  std::unordered_set<std::shared_ptr<runtime::Stream>> streams_;
+
  public:
   Device() = default;
   virtual ~Device() = default;
@@ -28,6 +36,30 @@ class Device {
   Device(Device&&) = delete;
   Device& operator=(const Device&) = delete;
   Device& operator=(Device&&) = delete;
+
+  /**
+   * Return all streams managed by this device.
+   *
+   * @return an immutable vector reference containing all streams managed by
+   * this device.
+   */
+  virtual const std::unordered_set<std::shared_ptr<runtime::Stream>>&
+    getStreams() const;
+
+  /**
+   * Let this device manage given stream. Do nothing if it was already added.
+   *
+   * Throws runtime_error if stream is owned by a different device than this
+   * one.
+   */
+  virtual void addStream(std::shared_ptr<runtime::Stream> stream);
+
+  /**
+   * Synchronize w.r.t. all streams on this device.
+   *
+   * @return a future representing the completion of all streams on this device.
+   */
+  virtual std::future<void> sync() const;
 
   /**
    * Returns the type of this device.
@@ -51,17 +83,25 @@ class Device {
    */
   template <typename T>
   const T& impl() const {
-    if (T::type != type()) {
-      throw std::invalid_argument(
-          "[fl::Device::impl] "
-          "specified device type doesn't match actual device type.");
-    }
+    deviceImplTypeCheck(T::type, type());
     return *(static_cast<const T*>(this));
   }
 
+  /**
+   * Get the underlying implementation of this device.
+   *
+   * Throws invalid_argument if the specified type does not match the actual
+   * derived device type.
+   *
+   * @return a reference to the specified device type.
+   */
+  template <typename T>
+  T& impl() {
+    deviceImplTypeCheck(T::type, type());
+    return *(static_cast<T*>(this));
+  }
+
   // TODO metadata, e.g., device name
-  // TODO manage streams on this device
-  // TODO sync() which delegates to Stream::sync()
 };
 
 /**
