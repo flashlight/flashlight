@@ -17,7 +17,7 @@ class Device;
 namespace runtime {
 
 enum class StreamType {
-  CUDA,
+  CUDA, Synchronous,
 };
 
 /**
