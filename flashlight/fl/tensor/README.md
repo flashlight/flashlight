@@ -130,11 +130,12 @@ Below is a more formal definition of the implementation requirements for a tenso
 In addition to deriving from the `TensorAdapterBase` and `TensorBackend` interfaces, implementers are required to:
 - **Provide memory interoperability** as defined in interfaces. This includes constructors to create tensors from arbitrary buffers either on the host or accelerator devices. These include:
   - `void fl::TensorAdapter::host(void** out)`, which provides a host-side host for an underlying tensor.
-  - `void fl::TensorAdapter::device(void** out)`, which provides a device-side buffer pointing to an underlying tensor.
+  - `void fl::TensorAdapter::device(void** out)`, which provides a device-side buffer pointing to an underlying tensor. This buffer may not be up-to-date; non-blocking relative synchronization should be used as needed, i.e. through `Tensor::stream()::relativeSync(Stream&)`.
     - To avoid needing to copy device-side buffers, the API also provides `void unlock()`, which signals that a pointer to device memory can be freed if its corresponding tensor(s) are destroyed.
-  - *Memory from these buffers must be available and up-to-date whewn returned.*  As such, these functions can and should implicitly synchronize where needed.
+    - Only memory from buffers returned via `Tensor::host` is guaranteed to be up-to-date. Memory returned from `Tensor::device` may still require computation to be up-to-date; relative synchronization should be used in these cases.
+
 - **Implement compute synchronization primitives** as defined by interfaces. These include:
-  - `void fl::TensorBackend::sync()`: blocks the calling thread until all tensor computation for that backend is complete.
+  - `void fl::TensorBackend::sync()`: blocks the calling thread until all computation on all streams associated with active devices is complete.
   - `void fl::TensorBackend::eval(Tensor&)`: launches any kernels that need to be executed to make the tensor's updated value available.
   - *These can be no-ops if the backend computation model so dictates.*
 - **Pass all tests** as provided in `flashlight/fl/test/tensor` for implemented operators.
