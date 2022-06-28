@@ -5,12 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <stdexcept>
-
 #include "flashlight/fl/runtime/CUDADevice.h"
-#include "flashlight/fl/tensor/CUDAUtils.h"
-
-#include <cuda_runtime.h>
+#include "flashlight/fl/runtime/CUDAUtils.h"
 
 namespace fl {
 
@@ -21,7 +17,7 @@ int CUDADevice::nativeId() const {
 }
 
 void CUDADevice::setActiveImpl() const {
-  FL_CUDA_CHECK(cudaSetDevice(nativeId_));
+  FL_RUNTIME_CUDA_CHECK(cudaSetDevice(nativeId_));
 }
 
 } // namespace fl
