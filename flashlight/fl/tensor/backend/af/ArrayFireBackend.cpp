@@ -12,9 +12,14 @@
 #include <af/device.h>
 #include <af/random.h>
 
+#include "flashlight/fl/runtime/DeviceManager.h"
 #include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
 #include "flashlight/fl/tensor/backend/af/Utils.h"
 #include "flashlight/fl/tensor/backend/af/mem/MemoryManagerInstaller.h"
+
+#if FL_ARRAYFIRE_USE_CPU
+  #include "flashlight/fl/tensor/backend/af/ArrayFireCPUStream.h"
+#endif
 
 #if FL_ARRAYFIRE_USE_CUDA
   #include <cublas_v2.h>
@@ -23,6 +28,7 @@
 
   #include <af/cuda.h>
 
+  #include "flashlight/fl/runtime/CUDAStream.h"
   #include "flashlight/fl/tensor/CUDAStream.h"
 #endif
 
@@ -47,9 +53,34 @@ ArrayFireBackend::ArrayFireBackend() {
 #if FL_ARRAYFIRE_USE_CUDA
     nativeId = afcu::getNativeId(id);
 #endif
+    // TODO make these maps `const`
     nativeIdToId_[nativeId] = id;
     idToNativeId_[id] = nativeId;
   }
+
+  const auto& manager = DeviceManager::getInstance();
+  // This callback ensures consistency of AF internal state on active device.
+  // Capturing by value to avoid destructor race hazard for static objects.
+  const auto setActiveCallback = [nativeIdToId = nativeIdToId_](int nativeId){
+    af::setDevice(nativeIdToId.at(nativeId));
+  };
+#if FL_ARRAYFIRE_USE_CPU
+  auto& device = manager.getActiveDevice(DeviceType::x64);
+  device.addSetActiveCallback(setActiveCallback);
+  // NOTE result will be stored and used in next diff
+  ArrayFireCPUStream::create();
+#elif FL_ARRAYFIRE_USE_CUDA
+  const auto deviceCount = manager.getDeviceCount(DeviceType::CUDA);
+  for (unsigned nativeId = 0; nativeId < deviceCount; nativeId++) {
+    auto& device = manager.getDevice(DeviceType::CUDA, nativeId);
+    device.addSetActiveCallback(setActiveCallback);
+
+    const auto afId = nativeIdToId_.at(nativeId);
+    const auto cudaNativeStream = afcu::getStream(afId);
+    // NOTE result will be stored and used in next diff
+    runtime::CUDAStream::wrapUnmanaged(nativeId, cudaNativeStream);
+  }
+#endif
 }
 
 ArrayFireBackend& ArrayFireBackend::getInstance() {

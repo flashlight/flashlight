@@ -7,12 +7,12 @@
 
 #include <af/array.h>
 #include <af/cuda.h>
+#include <af/device.h>
 #include <af/dim4.hpp>
 
 #include <stdexcept>
 #include <unordered_set>
 
-#include "flashlight/fl/tensor/Compute.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/fl/tensor/Types.h"
 
@@ -147,7 +147,7 @@ void advancedIndex(
   void* arrOutDimsDev = arrOutDims.device<void>();
   void* arrIdxPtrDev = arrIdxPtr.device<void>();
 
-  cudaStream_t stream = afcu::getStream(fl::getDevice());
+  cudaStream_t stream = afcu::getStream(af::getDevice());
   if (idxTypes.size() == 0 || idxTypes[0] == af::dtype::s32) {
     advancedIndexKernel<float, int32_t><<<GRID_SIZE, BLOCK_SIZE, 0, stream>>>(
         static_cast<const float*>(inpRawPtr),

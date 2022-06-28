@@ -66,17 +66,27 @@ unsigned DeviceManager::getDeviceCount(const DeviceType type) const {
   return deviceTypeToInfo_.at(type).size();
 }
 
-std::vector<Device const*> DeviceManager::getDevicesOfType(
-  DeviceType type) const {
+std::vector<Device*> DeviceManager::getDevicesOfType(
+  DeviceType type) {
   enforceDeviceTypeAvailable("[DeviceManager::getDevicesOfType]", type);
-  std::vector<Device const*> devices;
+  std::vector<Device*> devices;
   for (auto &[_, device] : deviceTypeToInfo_.at(type)) {
     devices.push_back(device.get());
   }
   return devices;
 }
 
-const Device& DeviceManager::getDevice(const DeviceType type, int id) const {
+std::vector<const Device*> DeviceManager::getDevicesOfType(
+  DeviceType type) const {
+  enforceDeviceTypeAvailable("[DeviceManager::getDevicesOfType]", type);
+  std::vector<const Device*> devices;
+  for (auto &[_, device] : deviceTypeToInfo_.at(type)) {
+    devices.push_back(device.get());
+  }
+  return devices;
+}
+
+Device& DeviceManager::getDevice(const DeviceType type, int id) const {
   enforceDeviceTypeAvailable("[DeviceManager::getActiveDevice]", type);
   auto& idToDevice = deviceTypeToInfo_.at(type);
   if (idToDevice.count(id) == 0) {
@@ -86,7 +96,7 @@ const Device& DeviceManager::getDevice(const DeviceType type, int id) const {
   return *idToDevice.at(id);
 }
 
-const Device& DeviceManager::getActiveDevice(const DeviceType type) const {
+Device& DeviceManager::getActiveDevice(const DeviceType type) const {
   enforceDeviceTypeAvailable("[DeviceManager::getActiveDevice]", type);
   int activeDeviceId = getActiveDeviceId(type);
   return *deviceTypeToInfo_.at(type).at(activeDeviceId);

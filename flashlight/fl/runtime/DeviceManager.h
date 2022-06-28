@@ -73,7 +73,16 @@ class DeviceManager {
    *
    * @return a vector of pointers to all devices of given type.
    */
-  std::vector<Device const*> getDevicesOfType(const DeviceType type) const;
+  std::vector<Device*> getDevicesOfType(const DeviceType type);
+
+  /**
+   * Gets all devices of given type.
+   *
+   * Throws a runtime_error if given device `type` is unavailable.
+   *
+   * @return a vector of immutable pointers to all devices of given type.
+   */
+  std::vector<const Device*> getDevicesOfType(const DeviceType type) const;
 
   /**
    * Gets the device of given type and native device id.
@@ -83,7 +92,7 @@ class DeviceManager {
    *
    * @return a reference to the device of given type and native device id.
    */
-  const Device& getDevice(const DeviceType type, int id) const;
+  Device& getDevice(const DeviceType type, int id) const;
 
   /**
    * Gets the active device of given type.
@@ -92,7 +101,7 @@ class DeviceManager {
    *
    * @return a reference to the active device of given type.
    */
-  const Device& getActiveDevice(const DeviceType type) const;
+  Device& getActiveDevice(const DeviceType type) const;
 };
 
 } // namespace fl

@@ -7,26 +7,33 @@
 
 #include "flashlight/fl/runtime/CUDAStream.h"
 #include "flashlight/fl/runtime/DeviceManager.h"
-#include "flashlight/fl/tensor/CUDAUtils.h"
+#include "flashlight/fl/runtime/CUDAUtils.h"
 
 namespace fl {
 namespace runtime {
 
-CUDAStream::CUDAStream(const CUDADevice& device, cudaStream_t stream, bool managed) :
+CUDAStream::CUDAStream(CUDADevice& device, cudaStream_t stream, bool managed) :
   device_(device),
   nativeStream_(stream),
   managed_(managed) {
   // `event_` is used by relativeSync only -- disable timing to reduce overhead
-  FL_CUDA_CHECK(cudaEventCreate(&event_, cudaEventDefault | cudaEventDisableTiming));
+  FL_RUNTIME_CUDA_CHECK(cudaEventCreate(&event_, cudaEventDefault | cudaEventDisableTiming));
+}
+
+std::shared_ptr<CUDAStream> CUDAStream::makeSharedAndRegister(
+    CUDADevice& device, cudaStream_t stream, bool managed) {
+  auto rawStreamPtr = new CUDAStream(device, stream, managed);
+  auto streamPtr = std::shared_ptr<CUDAStream>(rawStreamPtr);
+  device.addStream(streamPtr);
+  return streamPtr;
 }
 
 std::shared_ptr<CUDAStream> CUDAStream::create(int flag, bool managed) {
   cudaStream_t nativeStream;
-  FL_CUDA_CHECK(cudaStreamCreateWithFlags(&nativeStream, flag));
+  FL_RUNTIME_CUDA_CHECK(cudaStreamCreateWithFlags(&nativeStream, flag));
   auto& manager = DeviceManager::getInstance();
   auto& device = manager.getActiveDevice(DeviceType::CUDA).impl<CUDADevice>();
-  auto rawStreamPtr = new CUDAStream(device, nativeStream, managed);
-  return std::shared_ptr<CUDAStream>(rawStreamPtr);
+  return makeSharedAndRegister(device, nativeStream, managed);
 }
 
 std::shared_ptr<CUDAStream> CUDAStream::createManaged(int flag) {
@@ -42,13 +49,12 @@ std::shared_ptr<CUDAStream> CUDAStream::wrapUnmanaged(
   auto& manager = DeviceManager::getInstance();
   auto& device =
     manager.getDevice(DeviceType::CUDA, deviceId).impl<CUDADevice>();
-  auto rawStreamPtr = new CUDAStream(device, stream, /* managed */ false);
-  return std::shared_ptr<CUDAStream>(rawStreamPtr);
+  return makeSharedAndRegister(device, stream, /* managed */ false);
 }
 
 CUDAStream::~CUDAStream() {
   if (managed_) {
-    FL_CUDA_CHECK(cudaStreamDestroy(nativeStream_));
+    FL_RUNTIME_CUDA_CHECK(cudaStreamDestroy(nativeStream_));
   }
 }
 
@@ -56,9 +62,13 @@ const CUDADevice& CUDAStream::device() const {
   return device_;
 }
 
+CUDADevice& CUDAStream::device() {
+  return device_;
+}
+
 std::future<void> CUDAStream::sync() const {
   return std::async(std::launch::async, [this] {
-    FL_CUDA_CHECK(cudaStreamSynchronize(this->nativeStream_));
+    FL_RUNTIME_CUDA_CHECK(cudaStreamSynchronize(this->nativeStream_));
   });
 }
 
@@ -69,8 +79,8 @@ void CUDAStream::relativeSync(const CUDAStream& waitOn) const {
   if (needDeviceSwitch) {
     device_.setActive();
   }
-  FL_CUDA_CHECK(cudaEventRecord(event_, waitOn.nativeStream_));
-  FL_CUDA_CHECK(cudaStreamWaitEvent(this->nativeStream_, event_, 0));
+  FL_RUNTIME_CUDA_CHECK(cudaEventRecord(event_, waitOn.nativeStream_));
+  FL_RUNTIME_CUDA_CHECK(cudaStreamWaitEvent(this->nativeStream_, event_, 0));
   if (needDeviceSwitch) {
     oldActiveCUDADevice->setActive();
   }

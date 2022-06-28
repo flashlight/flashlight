@@ -11,6 +11,7 @@
 #include "flashlight/fl/tensor/Init.h"
 
 using fl::DeviceManager;
+using fl::DeviceType;
 
 TEST(DeviceTest, type) {
   auto& manager = DeviceManager::getInstance();
@@ -23,6 +24,13 @@ TEST(DeviceTest, type) {
   }
 }
 
+TEST(DeviceTest, nativeId) {
+  const auto& manager = DeviceManager::getInstance();
+  for (const auto* device : manager.getDevicesOfType(DeviceType::x64)) {
+    ASSERT_EQ(device->nativeId(), fl::kX64DeviceId);
+  }
+}
+
 TEST(DeviceTest, setActive) {
   auto& manager = DeviceManager::getInstance();
   for (auto type : fl::getDeviceTypes()) {
@@ -30,6 +38,45 @@ TEST(DeviceTest, setActive) {
       for (auto* device : manager.getDevicesOfType(type)) {
         device->setActive();
         ASSERT_EQ(&manager.getActiveDevice(type), device);
+      }
+    }
+  }
+}
+
+TEST(DeviceTest, addSetActiveCallback) {
+  auto& manager = DeviceManager::getInstance();
+  for (const auto type : fl::getDeviceTypes()) {
+    if (manager.isDeviceTypeAvailable(type)) {
+      for (auto* device : manager.getDevicesOfType(type)) {
+        int count = 0;
+        auto incCount = [&count](int){ count++; };
+        device->addSetActiveCallback(incCount);
+        device->setActive();
+        ASSERT_EQ(count, 1);
+      }
+    }
+  }
+}
+
+TEST(DeviceTest, sync) {
+  const auto& manager = DeviceManager::getInstance();
+  for (const auto type : fl::getDeviceTypes()) {
+    if (manager.isDeviceTypeAvailable(type)) {
+      for (const auto* device : manager.getDevicesOfType(type)) {
+        ASSERT_NO_THROW(device->sync());
+      }
+    }
+  }
+}
+
+TEST(DeviceTest, getStream) {
+  auto& manager = DeviceManager::getInstance();
+  for (const auto type : fl::getDeviceTypes()) {
+    if (manager.isDeviceTypeAvailable(type)) {
+      for (const auto* device : manager.getDevicesOfType(type)) {
+        for (const auto& stream : device->getStreams()) {
+          ASSERT_EQ(&stream->device(), device);
+        }
       }
     }
   }
