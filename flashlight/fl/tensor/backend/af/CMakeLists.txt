@@ -100,6 +100,14 @@ target_sources(
   ${CMAKE_CURRENT_LIST_DIR}/Utils.cpp
 )
 
+if (${FL_ARRAYFIRE_USE_CPU})
+  target_sources(
+    flashlight
+    PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}/ArrayFireCPUStream.cpp
+  )
+endif()
+
 if (${FL_ARRAYFIRE_USE_CUDA})
   target_sources(
     flashlight
