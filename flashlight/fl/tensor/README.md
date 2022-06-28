@@ -135,7 +135,7 @@ In addition to deriving from the `TensorAdapterBase` and `TensorBackend` interfa
     - Only memory from buffers returned via `Tensor::host` is guaranteed to be up-to-date. Memory returned from `Tensor::device` may still require computation to be up-to-date; relative synchronization should be used in these cases.
 
 - **Implement compute synchronization primitives** as defined by interfaces. These include:
-  - `void fl::TensorBackend::sync()`: blocks the calling thread until all computation on all streams associated with a device is complete.
+  - `void fl::TensorBackend::sync()`: blocks the calling thread until all computation on all streams associated with active devices is complete.
   - `void fl::TensorBackend::eval(Tensor&)`: launches any kernels that need to be executed to make the tensor's updated value available.
   - *These can be no-ops if the backend computation model so dictates.*
 - **Pass all tests** as provided in `flashlight/fl/test/tensor` for implemented operators.
