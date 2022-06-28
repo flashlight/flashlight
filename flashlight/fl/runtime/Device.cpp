@@ -8,6 +8,7 @@
 #include <algorithm>
 
 #include "flashlight/fl/runtime/Device.h"
+#include "flashlight/fl/runtime/DeviceManager.h"
 
 namespace fl {
 
@@ -42,7 +43,22 @@ std::future<void> Device::sync() const {
   });
 }
 
-void X64Device::setActive() const {
+void Device::addSetActiveCallback(std::function<void(int)>&& callback) {
+  setActiveCallbacks_.push_back((callback));
+}
+
+void Device::setActive() const {
+  setActiveImpl();
+  for (auto& callback : setActiveCallbacks_) {
+    callback(nativeId());
+  }
+}
+
+int X64Device::nativeId() const {
+  return fl::kX64DeviceId;
+}
+
+void X64Device::setActiveImpl() const {
   // no op, CPU device is always active
 }
 

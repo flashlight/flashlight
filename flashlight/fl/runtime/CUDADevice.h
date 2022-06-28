@@ -35,13 +35,12 @@ class CUDADevice : public DeviceTrait<CUDADevice> {
    *
    * @return an integer representing the native CUDA device ID.
    */
-  int getNativeId() const;
+  int nativeId() const override;
 
   /**
-   * Set the underlying CUDA device as active and ensure device context
-   * consistency in applicable backends.
+   * Set the underlying CUDA device as active.
    */
-  void setActive() const override;
+  void setActiveImpl() const override;
 };
 
 } // namespace fl

@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <sstream>
 #include <stdexcept>
@@ -26,6 +27,15 @@ void deviceImplTypeCheck(DeviceType expect, DeviceType actual);
  */
 class Device {
   std::unordered_set<std::shared_ptr<runtime::Stream>> streams_;
+  // Used to update internal backend state for active device, thereby
+  // eliminating the `setActive --> AnyTensorBackendImpl` dependency(s).
+  std::vector<std::function<void(int)>> setActiveCallbacks_;
+
+ protected:
+  /**
+   * Set this device as the active device, without worrying about the callbacks.
+   */
+  virtual void setActiveImpl() const = 0;
 
  public:
   Device() = default;
@@ -62,6 +72,13 @@ class Device {
   virtual std::future<void> sync() const;
 
   /**
+   * Get the native ID of this device (semantics are implementation-dependent).
+   *
+   * @return the native ID of this device.
+   */
+  virtual int nativeId() const = 0;
+
+  /**
    * Returns the type of this device.
    *
    * @return a enum denoting device type.
@@ -69,9 +86,18 @@ class Device {
   virtual DeviceType type() const = 0;
 
   /**
-   * Set this device as the active device.
+   * Set this device as the active device and invokes any callbacks added.
    */
-  virtual void setActive() const = 0;
+  void setActive() const;
+
+  /**
+   * Lets this device keep track of the given callback (along with previously
+   * added ones), which will be invoked with the device's native ID after
+   * setting the device active.
+   *
+   * @param[in] callback the callback to be invoked with this device's native ID
+   */
+  void addSetActiveCallback(std::function<void(int)>&& callback);
 
   /**
    * Get the underlying implementation of this device.
@@ -126,7 +152,8 @@ class X64Device : public DeviceTrait<X64Device> {
   static constexpr DeviceType type = DeviceType::x64;
 
   X64Device() = default;
-  void setActive() const override;
+  int nativeId() const override;
+  void setActiveImpl() const override;
 };
 
 } // namespace fl

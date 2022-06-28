@@ -17,7 +17,7 @@ using fl::CUDADevice;
 using fl::DeviceManager;
 using fl::DeviceType;
 
-TEST(DeviceTest, impl) {
+TEST(CUDADeviceTest, impl) {
   auto& manager = DeviceManager::getInstance();
 
   auto& cudaDevice = manager.getActiveDevice(DeviceType::CUDA);
@@ -29,7 +29,7 @@ TEST(DeviceTest, impl) {
   ASSERT_THROW(x64Device.impl<fl::CUDADevice>(), std::invalid_argument);
 }
 
-TEST(DeviceTest, getNativeId) {
+TEST(CUDADeviceTest, nativeId) {
   auto& manager = DeviceManager::getInstance();
   int numCudaDevices = 0;
   cudaGetDeviceCount(&numCudaDevices);
@@ -37,7 +37,7 @@ TEST(DeviceTest, getNativeId) {
   for (auto id = 0; id < numCudaDevices; id++) {
     auto& cudaDevice =
       manager.getDevice(DeviceType::CUDA, id).impl<CUDADevice>();
-    ASSERT_EQ(cudaDevice.getNativeId(), id);
+    ASSERT_EQ(cudaDevice.nativeId(), id);
   }
 }
 
