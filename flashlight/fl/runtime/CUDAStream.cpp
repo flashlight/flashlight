@@ -7,7 +7,7 @@
 
 #include "flashlight/fl/runtime/CUDAStream.h"
 #include "flashlight/fl/runtime/DeviceManager.h"
-#include "flashlight/fl/tensor/CUDAUtils.h"
+#include "flashlight/fl/runtime/CUDAUtils.h"
 
 namespace fl {
 namespace runtime {
@@ -17,7 +17,7 @@ CUDAStream::CUDAStream(CUDADevice& device, cudaStream_t stream, bool managed) :
   nativeStream_(stream),
   managed_(managed) {
   // `event_` is used by relativeSync only -- disable timing to reduce overhead
-  FL_CUDA_CHECK(cudaEventCreate(&event_, cudaEventDefault | cudaEventDisableTiming));
+  FL_RUNTIME_CUDA_CHECK(cudaEventCreate(&event_, cudaEventDefault | cudaEventDisableTiming));
 }
 
 std::shared_ptr<CUDAStream> CUDAStream::makeSharedAndRegister(
@@ -30,7 +30,7 @@ std::shared_ptr<CUDAStream> CUDAStream::makeSharedAndRegister(
 
 std::shared_ptr<CUDAStream> CUDAStream::create(int flag, bool managed) {
   cudaStream_t nativeStream;
-  FL_CUDA_CHECK(cudaStreamCreateWithFlags(&nativeStream, flag));
+  FL_RUNTIME_CUDA_CHECK(cudaStreamCreateWithFlags(&nativeStream, flag));
   auto& manager = DeviceManager::getInstance();
   auto& device = manager.getActiveDevice(DeviceType::CUDA).impl<CUDADevice>();
   return makeSharedAndRegister(device, nativeStream, managed);
@@ -54,7 +54,7 @@ std::shared_ptr<CUDAStream> CUDAStream::wrapUnmanaged(
 
 CUDAStream::~CUDAStream() {
   if (managed_) {
-    FL_CUDA_CHECK(cudaStreamDestroy(nativeStream_));
+    FL_RUNTIME_CUDA_CHECK(cudaStreamDestroy(nativeStream_));
   }
 }
 
@@ -68,7 +68,7 @@ CUDADevice& CUDAStream::device() {
 
 std::future<void> CUDAStream::sync() const {
   return std::async(std::launch::async, [this] {
-    FL_CUDA_CHECK(cudaStreamSynchronize(this->nativeStream_));
+    FL_RUNTIME_CUDA_CHECK(cudaStreamSynchronize(this->nativeStream_));
   });
 }
 
@@ -79,8 +79,8 @@ void CUDAStream::relativeSync(const CUDAStream& waitOn) const {
   if (needDeviceSwitch) {
     device_.setActive();
   }
-  FL_CUDA_CHECK(cudaEventRecord(event_, waitOn.nativeStream_));
-  FL_CUDA_CHECK(cudaStreamWaitEvent(this->nativeStream_, event_, 0));
+  FL_RUNTIME_CUDA_CHECK(cudaEventRecord(event_, waitOn.nativeStream_));
+  FL_RUNTIME_CUDA_CHECK(cudaStreamWaitEvent(this->nativeStream_, event_, 0));
   if (needDeviceSwitch) {
     oldActiveCUDADevice->setActive();
   }
