@@ -6,15 +6,13 @@
  */
 
 #include "flashlight/fl/tensor/CUDAUtils.h"
-#include "flashlight/fl/tensor/CUDAStream.h"
 
 #include <sstream>
 #include <stdexcept>
 
-#include "flashlight/fl/tensor/Compute.h"
-
+#include "flashlight/fl/runtime/CUDAStream.h"
 // TODO: remove me after removing the dependency on Tensor
-#include "flashlight/fl/tensor/TensorBackend.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 namespace cuda {
@@ -22,7 +20,7 @@ namespace cuda {
 // TODO{fl::Tensor}{CUDA} remove the dependency on Tensor so this can be
 // moved to a runtime abstraction
 cudaStream_t getActiveStream() {
-  return Tensor().backend().getStream().impl<CUDAStream>().handle();
+  return Tensor().stream().impl<runtime::CUDAStream>().handle();
 }
 
 void synchronizeStreams(

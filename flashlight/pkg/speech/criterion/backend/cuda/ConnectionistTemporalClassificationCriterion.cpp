@@ -13,7 +13,7 @@
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
 #include "flashlight/fl/common/DevicePtr.h"
-#include "flashlight/fl/tensor/CUDAStream.h"
+#include "flashlight/fl/runtime/CUDAStream.h"
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
 #include "flashlight/lib/sequence/criterion/cuda/CriterionUtils.cuh"
@@ -50,7 +50,7 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
   const int B = input.dim(2);
   const int batchL = target.dim(0);
   cudaStream_t stream =
-      input.tensor().backend().getStream().impl<CUDAStream>().handle();
+      input.tensor().stream().impl<fl::runtime::CUDAStream>().handle();
 
   ctcOptions options;
   options.loc = CTC_GPU;
