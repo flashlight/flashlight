@@ -420,6 +420,11 @@ TEST(ArrayFireTensorBaseTest, device) {
   AF_CHECK(af_unlock_array(arr.get())); // safety
 }
 
+TEST(ArrayFireTensorBaseTest, defaultConstructor) {
+  auto t = ArrayFireTensor();
+  ASSERT_TRUE(t.getHandle().isempty());
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   fl::init();
