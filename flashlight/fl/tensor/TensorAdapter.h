@@ -165,6 +165,17 @@ class TensorAdapterBase {
   virtual Shape strides() = 0;
 
   /**
+   * Get the stream which contains(ed) the computation required to realize an
+   * up-to-date value for this tensor. For instance, `device()` may not yield a
+   * pointer to the up-to-date value -- to use this pointer, `Stream::sync` or
+   * `Stream::relativeSync` is required.
+   *
+   * @return an immutable reference to the stream that contains(ed) the
+   * computations which create this tensor.
+   */
+  virtual const runtime::Stream& stream() const = 0;
+
+  /**
    * Returns a tensor with elements cast as a particular type
    *
    * @param[in] the type to which to cast the tensor

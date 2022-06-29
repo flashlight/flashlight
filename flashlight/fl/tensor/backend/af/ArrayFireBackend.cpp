@@ -8,6 +8,7 @@
 #include "flashlight/fl/tensor/backend/af/ArrayFireBackend.h"
 
 #include <af/algorithm.h>
+#include <af/backend.h>
 #include <af/data.h>
 #include <af/device.h>
 #include <af/random.h>
@@ -67,8 +68,7 @@ ArrayFireBackend::ArrayFireBackend() {
 #if FL_ARRAYFIRE_USE_CPU
   auto& device = manager.getActiveDevice(DeviceType::x64);
   device.addSetActiveCallback(setActiveCallback);
-  // NOTE result will be stored and used in next diff
-  ArrayFireCPUStream::create();
+  afIdToStream_.emplace(af::getDevice(), ArrayFireCPUStream::create());
 #elif FL_ARRAYFIRE_USE_CUDA
   const auto deviceCount = manager.getDeviceCount(DeviceType::CUDA);
   for (unsigned nativeId = 0; nativeId < deviceCount; nativeId++) {
@@ -77,8 +77,10 @@ ArrayFireBackend::ArrayFireBackend() {
 
     const auto afId = nativeIdToId_.at(nativeId);
     const auto cudaNativeStream = afcu::getStream(afId);
-    // NOTE result will be stored and used in next diff
-    runtime::CUDAStream::wrapUnmanaged(nativeId, cudaNativeStream);
+    auto cudaStream =
+        runtime::CUDAStream::wrapUnmanaged(nativeId, cudaNativeStream);
+    device.addStream(cudaStream);
+    afIdToStream_.emplace(afId, cudaStream);
   }
 #endif
 }
@@ -131,6 +133,27 @@ const Stream& ArrayFireBackend::getStream() {
 #if FL_ARRAYFIRE_USE_CPU
   throw std::invalid_argument(
       "ArrayFireBackend::getStream() inoperable with AF CPU backend");
+#endif
+}
+
+const runtime::Stream& ArrayFireBackend::getActiveStream() const {
+#if FL_ARRAYFIRE_USE_CPU || FL_ARRAYFIRE_USE_CUDA
+  auto id = af::getDevice();
+  return *afIdToStream_.at(id);
+#else
+  throw std::runtime_error(
+      "ArrayFireBackend was not compiled with support for CPU or GPU");
+#endif
+}
+
+const runtime::Stream& ArrayFireBackend::getStreamOfArray(
+  const af::array& arr) const {
+#if FL_ARRAYFIRE_USE_CPU || FL_ARRAYFIRE_USE_CUDA
+  auto id = af::getDeviceId(arr);
+  return *afIdToStream_.at(id);
+#else
+  throw std::runtime_error(
+      "ArrayFireBackend was not compiled with support for CPU or GPU");
 #endif
 }
 
