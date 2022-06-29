@@ -51,3 +51,11 @@ if (NOT TARGET flashlight::flashlight-text)
   set_property(TARGET flashlight::flashlight-text PROPERTY IMPORTED_LOCATION ${FLASHLIGHT_TEXT_LIB_PATH})
   add_dependencies(flashlight::flashlight-text flashlight-text)
 endif()
+
+if (${FL_BUILD_APP_ASR})
+  # Bundle KenLM libraries into the flashlight-text imported target if usin the Flashlight ASR lib
+  # which requires KenLM
+  find_package(kenlm REQUIRED)
+  set_property(TARGET flashlight::flashlight-text PROPERTY
+    IMPORTED_LINK_INTERFACE_LIBRARIES kenlm::kenlm kenlm::kenlm_util)
+endif()
