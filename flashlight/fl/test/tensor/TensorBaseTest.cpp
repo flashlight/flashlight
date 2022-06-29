@@ -445,6 +445,14 @@ TEST(TensorBaseTest, strides) {
   ASSERT_EQ(t.strides(), Shape({1, 10}));
 }
 
+TEST(TensorBaseTest, stream) {
+  auto t1 = fl::rand({10, 10});
+  auto t2 = -t1;
+  auto t3 = t1 + t2;
+  ASSERT_EQ(&t1.stream(), &t2.stream());
+  ASSERT_EQ(&t1.stream(), &t3.stream());
+}
+
 TEST(TensorBaseTest, asContiguousTensor) {
   auto t = fl::rand({5, 6, 7, 8});
   auto indexed =

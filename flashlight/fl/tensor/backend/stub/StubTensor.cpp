@@ -93,6 +93,10 @@ Shape StubTensor::strides() {
   FL_STUB_TENSOR_UNIMPLEMENTED;
 }
 
+const runtime::Stream& StubTensor::stream() const {
+  FL_STUB_TENSOR_UNIMPLEMENTED;
+}
+
 Tensor StubTensor::astype(const dtype /* type */) {
   FL_STUB_TENSOR_UNIMPLEMENTED;
 }
