@@ -10,7 +10,7 @@
 #include <stdexcept>
 
 #include "flashlight/fl/common/DevicePtr.h"
-#include "flashlight/fl/tensor/CUDAStream.h"
+#include "flashlight/fl/runtime/CUDAStream.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
 #include "flashlight/lib/sequence/criterion/cuda/ForceAlignmentCriterion.cuh"
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
@@ -61,7 +61,7 @@ static void backward(
         static_cast<float*>(inputGradRaw.get()),
         static_cast<float*>(transGradRaw.get()),
         workspaceRaw.get(),
-        inputs[0].tensor().backend().getStream().impl<CUDAStream>().handle());
+        inputs[0].tensor().stream().impl<runtime::CUDAStream>().handle());
   }
 
   inputs[0].addGrad(Variable(inputGrad, false));
@@ -114,7 +114,7 @@ Variable ForceAlignmentCriterion::forward(
         static_cast<const float*>(transRaw.get()),
         static_cast<float*>(lossRaw.get()),
         workspaceRaw.get(),
-        input.backend().getStream().impl<CUDAStream>().handle());
+        input.stream().impl<runtime::CUDAStream>().handle());
   }
 
   return Variable(
@@ -176,7 +176,7 @@ Tensor ForceAlignmentCriterion::viterbiPath(
         static_cast<const float*>(transRaw.get()),
         static_cast<int*>(bestPathsRaw.get()),
         workspaceRaw.get(),
-        input.backend().getStream().impl<CUDAStream>().handle());
+        input.stream().impl<runtime::CUDAStream>().handle());
   }
   return bestPathsVar;
 }
