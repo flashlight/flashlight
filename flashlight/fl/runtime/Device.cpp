@@ -43,8 +43,8 @@ std::future<void> Device::sync() const {
   });
 }
 
-void Device::addSetActiveCallback(std::function<void(int)>&& callback) {
-  setActiveCallbacks_.push_back((callback));
+void Device::addSetActiveCallback(std::function<void(int)> callback) {
+  setActiveCallbacks_.push_back(std::move(callback));
 }
 
 void Device::setActive() const {

@@ -43,7 +43,12 @@ class ArrayFireBackend : public TensorBackend {
   std::unordered_map<int, int> idToNativeId_;
 
   // keep track of the individual active stream on each ArrayFire device
-  std::unordered_map<int, std::shared_ptr<const runtime::Stream>> afIdToStream_;
+  // NOTE using a `shared_ptr` to allow its capture in setActive callback;
+  // see constructor for details.
+  std::shared_ptr<
+      std::unordered_map<int, std::shared_ptr<const runtime::Stream>>>
+      afIdToStream_{std::make_shared<
+          std::unordered_map<int, std::shared_ptr<const runtime::Stream>>>()};
 
   // Intentionally private. Only one instance should exist/it should be accessed
   // via getInstance().
@@ -70,18 +75,11 @@ class ArrayFireBackend : public TensorBackend {
   const Stream& getStream() override;
 
   /**
-   * Return the currently active stream in ArrayFire.
-   *
-   * @return an immutable reference to the currently active stream in ArrayFire.
-   */
-  const runtime::Stream& getActiveStream() const;
-
-  /**
    * Return the stream from which the given array was created.
    *
    * @return an immutable reference to the stream from which `arr` was created.
    */
-  const runtime::Stream& getStreamOfArray(const af::array& arr) const;
+  const runtime::Stream& getStreamOfArray(const af::array& arr);
   bool supportsDataType(const fl::dtype& dtype) const override;
   // Memory management
   void getMemMgrInfo(const char* msg, const int nativeDeviceId, std::ostream* ostream)
