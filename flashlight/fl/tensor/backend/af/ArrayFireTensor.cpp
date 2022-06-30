@@ -61,7 +61,8 @@ ArrayFireTensor::ArrayFireTensor(
     unsigned numDims)
     : arrayHandle_(arr), numDims_(numDims) {}
 
-ArrayFireTensor::ArrayFireTensor() : handle_(ArrayComponent()) {}
+ArrayFireTensor::ArrayFireTensor()
+    : arrayHandle_(std::make_shared<af::array>()), handle_(ArrayComponent()) {}
 
 ArrayFireTensor::ArrayFireTensor(
     const Shape& shape,
