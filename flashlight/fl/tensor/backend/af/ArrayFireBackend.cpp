@@ -35,6 +35,35 @@
 
 namespace fl {
 
+namespace {
+
+// Get the stream associated with given device in the given map; if it's not in
+// the map, initialize it (by wrapping or creating) and put it into the map.
+const runtime::Stream& getOrWrapAfDeviceStream(
+    const int afId,
+    const int nativeId,
+    std::unordered_map<int, std::shared_ptr<const runtime::Stream>>& afIdToStream) {
+  auto iter = afIdToStream.find(afId);
+  if (iter != afIdToStream.end()) {
+    return *iter->second;
+  }
+
+#if FL_ARRAYFIRE_USE_CPU
+  auto resIter = afIdToStream.emplace(afId, ArrayFireCPUStream::create());
+  return *resIter.first->second;
+#elif FL_ARRAYFIRE_USE_CUDA
+  const cudaStream_t cudaNativeStream = afcu::getStream(afId);
+  auto resIter = afIdToStream.emplace(
+      afId, runtime::CUDAStream::wrapUnmanaged(nativeId, cudaNativeStream));
+  return *resIter.first->second;
+#else
+  throw std::runtime_error(
+      "ArrayFireBackend was not compiled with support for CPU or GPU");
+#endif
+}
+
+} // namespace
+
 ArrayFireBackend::ArrayFireBackend() {
   AF_CHECK(af_init());
 
@@ -62,27 +91,28 @@ ArrayFireBackend::ArrayFireBackend() {
   const auto& manager = DeviceManager::getInstance();
   // This callback ensures consistency of AF internal state on active device.
   // Capturing by value to avoid destructor race hazard for static objects.
-  const auto setActiveCallback = [nativeIdToId = nativeIdToId_](int nativeId){
-    af::setDevice(nativeIdToId.at(nativeId));
+  const auto setActiveCallback = [nativeIdToId = nativeIdToId_,
+                                  afIdToStream = afIdToStream_](int nativeId) {
+    auto afId = nativeIdToId.at(nativeId);
+    af::setDevice(afId);
+    // this is the latest point we can lazily wrap the AF stream, which may get
+    // lazily intialized anytime in AF internally, e.g., via tensor computation.
+    getOrWrapAfDeviceStream(afId, nativeId, *afIdToStream);
   };
 #if FL_ARRAYFIRE_USE_CPU
   auto& device = manager.getActiveDevice(DeviceType::x64);
   device.addSetActiveCallback(setActiveCallback);
-  afIdToStream_.emplace(af::getDevice(), ArrayFireCPUStream::create());
 #elif FL_ARRAYFIRE_USE_CUDA
   const auto deviceCount = manager.getDeviceCount(DeviceType::CUDA);
   for (unsigned nativeId = 0; nativeId < deviceCount; nativeId++) {
     auto& device = manager.getDevice(DeviceType::CUDA, nativeId);
     device.addSetActiveCallback(setActiveCallback);
-
-    const auto afId = nativeIdToId_.at(nativeId);
-    const auto cudaNativeStream = afcu::getStream(afId);
-    auto cudaStream =
-        runtime::CUDAStream::wrapUnmanaged(nativeId, cudaNativeStream);
-    device.addStream(cudaStream);
-    afIdToStream_.emplace(afId, cudaStream);
   }
 #endif
+  // Active device is never set explicitly, so we must wrap its stream eagerly.
+  auto activeAfId = af::getDevice();
+  getOrWrapAfDeviceStream(
+      activeAfId, idToNativeId_.at(activeAfId), *afIdToStream_);
 }
 
 ArrayFireBackend& ArrayFireBackend::getInstance() {
@@ -136,25 +166,16 @@ const Stream& ArrayFireBackend::getStream() {
 #endif
 }
 
-const runtime::Stream& ArrayFireBackend::getActiveStream() const {
-#if FL_ARRAYFIRE_USE_CPU || FL_ARRAYFIRE_USE_CUDA
-  auto id = af::getDevice();
-  return *afIdToStream_.at(id);
-#else
-  throw std::runtime_error(
-      "ArrayFireBackend was not compiled with support for CPU or GPU");
-#endif
-}
-
 const runtime::Stream& ArrayFireBackend::getStreamOfArray(
-  const af::array& arr) const {
-#if FL_ARRAYFIRE_USE_CPU || FL_ARRAYFIRE_USE_CUDA
-  auto id = af::getDeviceId(arr);
-  return *afIdToStream_.at(id);
-#else
-  throw std::runtime_error(
-      "ArrayFireBackend was not compiled with support for CPU or GPU");
-#endif
+  const af::array& arr) {
+  // TODO once we enforce integrate Device::setDevice into fl::setDevice, each
+  // array's stream should always be wrapped already (via setDevice callback).
+  // auto iter = afIdToStream_->find(af::getDeviceId(arr));
+  // assert(iter != afIdToStream_->end() && "Stream should have been wrapped");
+  // return *iter->second;
+  auto afId = af::getDeviceId(arr);
+  auto nativeId = idToNativeId_.at(afId);
+  return getOrWrapAfDeviceStream(afId, nativeId, *afIdToStream_);
 }
 
 bool ArrayFireBackend::supportsDataType(const fl::dtype& dtype) const {

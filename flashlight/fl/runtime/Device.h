@@ -97,7 +97,7 @@ class Device {
    *
    * @param[in] callback the callback to be invoked with this device's native ID
    */
-  void addSetActiveCallback(std::function<void(int)>&& callback);
+  void addSetActiveCallback(std::function<void(int)> callback);
 
   /**
    * Get the underlying implementation of this device.
