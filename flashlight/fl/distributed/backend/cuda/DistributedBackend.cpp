@@ -100,12 +100,13 @@ void ncclCheck(ncclResult_t r);
 
 void mpiCheck(int ec);
 
-void allreduceCuda(
+void allReduceCuda(
+    cudaStream_t bufferStream,
     void* ptr,
-    size_t count,
-    ncclDataType_t ncclType,
-    bool async,
-    bool contiguous);
+    const size_t count,
+    const ncclDataType_t ncclType,
+    const bool async,
+    const bool contiguous);
 } // namespace detail
 
 void allReduce(Tensor& arr, bool async /* = false */) {
@@ -114,7 +115,8 @@ void allReduce(Tensor& arr, bool async /* = false */) {
   }
   ncclDataType_t type = detail::getNcclTypeForArray(arr);
   DevicePtr tensorPtr(arr);
-  detail::allreduceCuda(
+  detail::allReduceCuda(
+      fl::cuda::getActiveStream(),
       tensorPtr.get(),
       arr.elements(),
       type,
@@ -193,7 +195,13 @@ void allReduceMultiple(
   }
 
   // Now, call allReduce once on the entire copy buffer
-  detail::allreduceCuda(coalesceBuffer, totalEls, ncclType, async, contiguous);
+  detail::allReduceCuda(
+      cuda::getActiveStream(),
+      coalesceBuffer,
+      totalEls,
+      ncclType,
+      async,
+      contiguous);
 
   // Block the worker stream's copy operations on allReduce operations that are
   // currently enqueued in the reduction stream
@@ -220,12 +228,26 @@ void allReduceMultiple(
 }
 
 /**
- * Block future operations in the AF Stream on operations currently running in
- * the NCCL CUDA stream.
+ * Block future operations in all other CUDA streams on this device on
+ * operations currently running in the NCCL [and worker] CUDA stream.
  */
 void syncDistributed() {
-  // If the worker or reduction streams have nothing enqueued, the AF CUDA
-  // stream will proceed without waiting for anything
+  // TODO{ryanguo99}: while we won't have at tensor from which to get a Stream
+  // here, the correct behavior is to, for the current CUDA device, call the
+  // below in a loop for each of that device's CUDA streams. Concretely, this
+  // will be with pseudocode:
+
+  // for (auto& stream : TheCurrentCUDADevice'sStreams) {
+  //   // Synchronize any non-distributed worker or reduction streams on all
+  //   other CUDA streams associated with this device
+  //   if (stream !=
+  //   ncclContext.getWorkerStream() && stream !=
+  //   ncclContext.getReductionStream()) {
+  //     cudaStream_t s = stream.getImplBlah.getHandle();
+
+  // If the worker or reduction streams have nothing enqueued, other CUDA
+  // streams on the current device stream will proceed doing work without
+  // waiting for anything
   auto& ncclContext = detail::NcclContext::getInstance();
   cuda::synchronizeStreams(
       cuda::getActiveStream(),
@@ -235,6 +257,9 @@ void syncDistributed() {
       cuda::getActiveStream(),
       ncclContext.getReductionStream(),
       ncclContext.getEvent());
+
+  // } endif
+  // } end loop above
 }
 
 int getWorldRank() {
@@ -307,19 +332,20 @@ void mpiCheck(int ec) {
   }
 }
 
-void allreduceCuda(
+void allReduceCuda(
+    cudaStream_t bufferStream,
     void* ptr,
-    size_t count,
-    ncclDataType_t ncclType,
-    bool async,
-    bool contiguous) {
+    const size_t count,
+    const ncclDataType_t ncclType,
+    const bool async,
+    const bool contiguous) {
   cudaStream_t syncStream;
   auto& ncclContext = detail::NcclContext::getInstance();
   if (async) {
     syncStream = ncclContext.getReductionStream();
   } else {
     // AF CUDA stream
-    syncStream = cuda::getActiveStream(); // assumes current device id
+    syncStream = bufferStream; // assumes current device id
   }
 
   // Synchronize with whatever CUDA stream is performing operations needed
@@ -336,7 +362,7 @@ void allreduceCuda(
     // block future reduction stream ops on the AF CUDA stream
     if (async) {
       cuda::synchronizeStreams(
-          syncStream, cuda::getActiveStream(), ncclContext.getEvent());
+          syncStream, bufferStream, ncclContext.getEvent());
     }
     // don't synchronize streams if not async and not contiguous - the AF CUDA
     // stream does everything

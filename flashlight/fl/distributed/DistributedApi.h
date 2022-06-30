@@ -76,8 +76,9 @@ void allReduce(Variable& var, double scale = 1.0, bool async = false);
  * @param arr an array which will be synchronized
  * @param[in] async perform the allReduce operation asynchronously in a separate
  * compute stream to the Flashlight compute stream. NB: if used,
- * ``syncDistributed`` *must* be called in order to ensure the Flashlight CUDA
- * stream waits until ``allReduce`` is complete and uses updated values.
+ * ``syncDistributed`` *must* be called in order to ensure asynchrnous reduction
+ * and worker streams wait until ``allReduce`` is complete and uses
+ * updated values.
  */
 void allReduce(Tensor& arr, bool async = false);
 
@@ -88,8 +89,9 @@ void allReduce(Tensor& arr, bool async = false);
  * @param[in] scale scale the Variable after allreduce by this factor
  * @param[in] async perform the allReduce operation asynchronously in a separate
  * compute stream to the Flashlight compute stream. NB: if used,
- * ``syncDistributed`` *must* be called in order to ensure the Flashlight CUDA
- * stream waits until ``allReduce`` is complete and uses updated values.
+ * ``syncDistributed`` *must* be called in order to ensure asynchrnous reduction
+ * and worker streams wait until ``allReduce`` is complete and uses
+ * updated values.
  * @param[in] contiguous copy data for each Variable into a contiguous buffer
  * before performing the allReduce operation
  */
@@ -105,8 +107,9 @@ void allReduceMultiple(
  * @param[in] arrs a vector of pointers to arrays which will be synchronized
  * @param[in] async perform the allReduce operation asynchronously in a separate
  * compute stream to the Flashlight compute stream. NB: if used,
- * ``syncDistributed`` *must* be called in order to ensure the Flashlight CUDA
- * stream waits until ``allReduce`` is complete and uses updated values.
+ * ``syncDistributed`` *must* be called in order to ensure asynchrnous reduction
+ * and worker streams wait until ``allReduce`` is complete and uses
+ * updated values.
  * @param[in] contiguous copy data for each Variable into a contiguous buffer
  * before performing the allReduce operation
  */
