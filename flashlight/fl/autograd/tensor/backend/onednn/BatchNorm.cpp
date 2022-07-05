@@ -13,8 +13,6 @@
 
 #include <dnnl.hpp>
 
-#include "flashlight/fl/autograd/Functions.h"
-#include "flashlight/fl/autograd/Variable.h"
 #include "flashlight/fl/autograd/tensor/backend/onednn/DnnlUtils.h"
 #include "flashlight/fl/tensor/Index.h"
 
