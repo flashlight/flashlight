@@ -14,8 +14,6 @@
 
 #include <dnnl.hpp>
 
-#include "flashlight/fl/autograd/Functions.h"
-#include "flashlight/fl/autograd/Variable.h"
 #include "flashlight/fl/autograd/tensor/backend/onednn/DnnlUtils.h"
 #include "flashlight/fl/tensor/Index.h"
 
@@ -68,11 +66,11 @@ ParsedWeightsAndBias parseWeights(
   // Per-layer sizes for weightsInput and weightsHidden.
   // If inSize == hiddenSize, then weightsInputSize == weightsHiddenSize for all
   // layers, else all but the first layer
-  size_t weightsInputSize1L = directionMult * inSize * numGates * hiddenSize;
-  size_t weightsHiddenSize = directionMult * hiddenSize * numGates * hiddenSize;
-  size_t weightsInputSize = weightsHiddenSize;
+  int weightsInputSize1L = directionMult * inSize * numGates * hiddenSize;
+  int weightsHiddenSize = directionMult * hiddenSize * numGates * hiddenSize;
+  int weightsInputSize = weightsHiddenSize;
   int lbrGruBias = mode == RnnMode::GRU ? 1 : 0;
-  size_t biasSize =
+  int biasSize =
       numLayers * directionMult * (numGates + lbrGruBias) * hiddenSize;
 
   bool firstLayerDifferent = inSize != hiddenSize;
@@ -114,7 +112,7 @@ ParsedWeightsAndBias parseWeights(
   Tensor weightsFlatOffset =
       weightsFlat.flat(fl::range(weightsOffset, fl::end));
   // Specifically ignore the first layer's weights, so inSize == hiddenSize
-  for (size_t i = 0; i < numWeightsLayers; ++i) {
+  for (int i = 0; i < numWeightsLayers; ++i) {
     // number of input/hidden weights
     // TODO: Will change for bidirectional
     int chunkSize = hiddenSize * hiddenSize * numGates;
@@ -150,7 +148,7 @@ ParsedWeightsAndBias parseWeights(
   // the bias subarrays will simply be half of the computed gradient with
   // oneDNN
   Tensor bias(weights.type());
-  size_t biasStartOffset = numLayers * weightsHiddenSize +
+  int biasStartOffset = numLayers * weightsHiddenSize +
       (numLayers - 1) * weightsInputSize + weightsInputSize1L;
   // In vanilla RNN modes, the biases can be simply added:
   // two biases for each bias in fl cuDNN with CUDNN_RNN_DOUBLE_BIAS (default)
@@ -158,7 +156,7 @@ ParsedWeightsAndBias parseWeights(
   // First, grab a subarray which contains only both bias terms; then add them
   Tensor biasFlat = weightsFlat.flat(fl::range(biasStartOffset, fl::end));
   // Layout is: {numLayers x [numBiases x [bias shape]]}
-  for (size_t i = 0; i < numLayers; ++i) {
+  for (int i = 0; i < numLayers; ++i) {
     if (mode == RnnMode::GRU) {
       int lbrGruChunkSize = hiddenSize * 6;
       // In the case of the LBR GRU, there's an extra bias term which shouldn't

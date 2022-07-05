@@ -12,9 +12,6 @@
 
 #include <dnnl.h>
 
-#include "flashlight/fl/autograd/Functions.h"
-#include "flashlight/fl/autograd/Utils.h"
-#include "flashlight/fl/autograd/Variable.h"
 #include "flashlight/fl/autograd/tensor/backend/onednn/DnnlUtils.h"
 #include "flashlight/fl/tensor/Shape.h"
 #include "flashlight/fl/tensor/TensorBase.h"
