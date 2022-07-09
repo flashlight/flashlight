@@ -22,6 +22,16 @@ void sync(const int deviceId) {
   Tensor().backend().sync(deviceId);
 }
 
+void relativeSync(
+    const runtime::Stream& wait,
+    const std::vector<const Tensor*>& waitOns) {
+  std::unordered_set<const runtime::Stream*> uniqueStreams;
+  for (const auto& waitOn : waitOns) {
+    uniqueStreams.insert(&waitOn->stream());
+  }
+  wait.relativeSync(uniqueStreams);
+}
+
 void eval(Tensor& tensor) {
   Tensor().backend().eval(tensor);
 }

@@ -9,6 +9,10 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <memory>
+#include <vector>
+
+#include "flashlight/fl/runtime/Stream.h"
 
 // TODO:fl::Tensor {misc} remove me when not dependent on AF
 namespace af {
@@ -36,6 +40,20 @@ void sync();
  * has completed.
  */
 void sync(const int deviceId);
+
+/**
+ * Synchronize future tasks on given stream w.r.t. current tasks on all unique
+ * streams of given tensors, i.e., the former can only start after the
+ * completion of the latter.
+ * NOTE this function may or may not block the calling thread.
+ *
+ * @param[in] wait the stream perform relative synchronization for.
+ * @param[in] waitOns the tensors whose streams to perform relative
+ * synchronization against.
+ */
+void relativeSync(
+    const runtime::Stream& wait,
+    const std::vector<const Tensor*>& waitOns);
 
 /**
  * Launches computation, [usually] asynchronously, on operations needed to make

@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <memory>
 #include <mutex>
 #include <stdexcept>
 
@@ -17,6 +18,8 @@
 #include "flashlight/fl/common/DevicePtr.h"
 #include "flashlight/fl/distributed/DistributedApi.h"
 #include "flashlight/fl/distributed/FileStore.h"
+#include "flashlight/fl/runtime/CUDAStream.h"
+#include "flashlight/fl/runtime/DeviceManager.h"
 #include "flashlight/fl/tensor/CUDAUtils.h"
 #include "flashlight/fl/tensor/Compute.h"
 #include "flashlight/fl/tensor/Types.h"
@@ -49,9 +52,8 @@ class NcclContext {
   ncclComm_t& getComm();
   int getWorldSize() const;
   int getWorldRank() const;
-  cudaStream_t getReductionStream() const;
-  cudaStream_t getWorkerStream() const;
-  cudaEvent_t getEvent() const;
+  const runtime::CUDAStream& getReductionStream() const;
+  const runtime::CUDAStream& getWorkerStream() const;
   void* getCoalesceBuffer();
 
  private:
@@ -60,14 +62,12 @@ class NcclContext {
   ncclComm_t comm_;
   int worldSize_, worldRank_;
   // CUDA stream in which NCCL calls run if in async mode
-  cudaStream_t reductionStream_;
+  std::shared_ptr<runtime::CUDAStream> reductionStream_;
   // CUDA stream in which cudaMemcpyAsync calls run if in contiguous mode
-  cudaStream_t workerStream_;
+  std::shared_ptr<runtime::CUDAStream> workerStream_;
   // Buffer for storing copied gradients contiguously; exists on device memory
   void* coalesceBuffer_{nullptr};
   std::once_flag allocBuffer_;
-  // CUDA event to reuse for stream synchronization
-  cudaEvent_t event_;
 };
 
 bool isNonNegativeInteger(const std::string& s) {
@@ -101,7 +101,7 @@ void ncclCheck(ncclResult_t r);
 void mpiCheck(int ec);
 
 void allReduceCuda(
-    cudaStream_t bufferStream,
+    const runtime::CUDAStream* bufferStream,
     void* ptr,
     const size_t count,
     const ncclDataType_t ncclType,
@@ -116,7 +116,7 @@ void allReduce(Tensor& arr, bool async /* = false */) {
   ncclDataType_t type = detail::getNcclTypeForArray(arr);
   DevicePtr tensorPtr(arr);
   detail::allReduceCuda(
-      fl::cuda::getActiveStream(),
+      &arr.stream().impl<runtime::CUDAStream>(),
       tensorPtr.get(),
       arr.elements(),
       type,
@@ -175,10 +175,11 @@ void allReduceMultiple(
   }
 
   auto& ncclContext = detail::NcclContext::getInstance();
-  cudaStream_t workerStream = ncclContext.getWorkerStream();
+  const auto& workerStream = ncclContext.getWorkerStream();
+
+  const auto constTensors = std::vector<const Tensor*>(arrs.begin(), arrs.end());
   // Block the copy worker stream on Flashlight's active CUDA stream
-  cuda::synchronizeStreams(
-      workerStream, cuda::getActiveStream(), ncclContext.getEvent());
+  relativeSync(workerStream, constTensors);
 
   // In the worker stream, coalesce gradients into one large buffer so we
   // only need to call allReduce
@@ -190,13 +191,13 @@ void allReduceMultiple(
         entry.first.get(),
         entry.second,
         cudaMemcpyDeviceToDevice,
-        workerStream));
+        workerStream.handle()));
     cur += entry.second;
   }
 
   // Now, call allReduce once on the entire copy buffer
   detail::allReduceCuda(
-      cuda::getActiveStream(),
+      &workerStream,
       coalesceBuffer,
       totalEls,
       ncclType,
@@ -205,13 +206,11 @@ void allReduceMultiple(
 
   // Block the worker stream's copy operations on allReduce operations that are
   // currently enqueued in the reduction stream
-  cudaStream_t syncStream;
   if (async) {
-    syncStream = ncclContext.getReductionStream();
+    workerStream.relativeSync(ncclContext.getReductionStream());
   } else {
-    syncStream = cuda::getActiveStream();
+    relativeSync(workerStream, constTensors);
   }
-  cuda::synchronizeStreams(workerStream, syncStream, ncclContext.getEvent());
 
   // Enqueue operations in the stream to copy back to each respective array from
   // the coalesce buffer
@@ -222,7 +221,7 @@ void allReduceMultiple(
         cur,
         entry.second,
         cudaMemcpyDeviceToDevice,
-        workerStream));
+        workerStream.handle()));
     cur += entry.second;
   }
 }
@@ -232,34 +231,17 @@ void allReduceMultiple(
  * operations currently running in the NCCL [and worker] CUDA stream.
  */
 void syncDistributed() {
-  // TODO{ryanguo99}: while we won't have at tensor from which to get a Stream
-  // here, the correct behavior is to, for the current CUDA device, call the
-  // below in a loop for each of that device's CUDA streams. Concretely, this
-  // will be with pseudocode:
-
-  // for (auto& stream : TheCurrentCUDADevice'sStreams) {
-  //   // Synchronize any non-distributed worker or reduction streams on all
-  //   other CUDA streams associated with this device
-  //   if (stream !=
-  //   ncclContext.getWorkerStream() && stream !=
-  //   ncclContext.getReductionStream()) {
-  //     cudaStream_t s = stream.getImplBlah.getHandle();
-
-  // If the worker or reduction streams have nothing enqueued, other CUDA
-  // streams on the current device stream will proceed doing work without
-  // waiting for anything
-  auto& ncclContext = detail::NcclContext::getInstance();
-  cuda::synchronizeStreams(
-      cuda::getActiveStream(),
-      ncclContext.getWorkerStream(),
-      ncclContext.getEvent());
-  cuda::synchronizeStreams(
-      cuda::getActiveStream(),
-      ncclContext.getReductionStream(),
-      ncclContext.getEvent());
-
-  // } endif
-  // } end loop above
+  const auto& ncclContext = detail::NcclContext::getInstance();
+  const auto& manager = DeviceManager::getInstance();
+  const auto& activeCudaDevice = manager.getActiveDevice(DeviceType::CUDA);
+  const auto& workerStream = ncclContext.getWorkerStream();
+  const auto& reductionStream = ncclContext.getReductionStream();
+  for (const auto& stream : activeCudaDevice.getStreams()) {
+    if (stream.get() != &workerStream && stream.get() != &reductionStream) {
+      stream->relativeSync(workerStream);
+      stream->relativeSync(reductionStream);
+    }
+  }
 }
 
 int getWorldRank() {
@@ -333,43 +315,41 @@ void mpiCheck(int ec) {
 }
 
 void allReduceCuda(
-    cudaStream_t bufferStream,
+    const runtime::CUDAStream* bufferStream,
     void* ptr,
     const size_t count,
     const ncclDataType_t ncclType,
     const bool async,
     const bool contiguous) {
-  cudaStream_t syncStream;
+  const runtime::CUDAStream* syncStream;
   auto& ncclContext = detail::NcclContext::getInstance();
   if (async) {
-    syncStream = ncclContext.getReductionStream();
+    syncStream = &ncclContext.getReductionStream();
   } else {
-    // AF CUDA stream
-    syncStream = bufferStream; // assumes current device id
+    syncStream = bufferStream;
   }
 
   // Synchronize with whatever CUDA stream is performing operations needed
   // pre-reduction. If we're in contiguous mode, we need the reduction stream to
   // wait for the copy in the worker stream to complete. If we're not in
-  // contiguous mode, we need to wait for the JIT eval triggered by acquisition
-  // of the Tensor's device pointer to complete, which will occur in the AF
   // CUDA stream.
   if (contiguous) {
     // block future reduction stream ops on the copy-worker stream
-    cuda::synchronizeStreams(
-        syncStream, ncclContext.getWorkerStream(), ncclContext.getEvent());
-  } else {
-    // block future reduction stream ops on the AF CUDA stream
-    if (async) {
-      cuda::synchronizeStreams(
-          syncStream, bufferStream, ncclContext.getEvent());
-    }
-    // don't synchronize streams if not async and not contiguous - the AF CUDA
-    // stream does everything
+    syncStream->relativeSync(ncclContext.getWorkerStream());
+  } else if (async) {
+    syncStream->relativeSync(*bufferStream);
   }
+  // don't synchronize streams if not async and not contiguous - the AF CUDA
+  // stream does everything
 
   NCCLCHECK(ncclAllReduce(
-      ptr, ptr, count, ncclType, ncclSum, ncclContext.getComm(), syncStream));
+      ptr,
+      ptr,
+      count,
+      ncclType,
+      ncclSum,
+      ncclContext.getComm(),
+      syncStream->handle()));
 }
 namespace {
 
@@ -385,16 +365,12 @@ int NcclContext::getWorldRank() const {
   return worldRank_;
 }
 
-cudaStream_t NcclContext::getReductionStream() const {
-  return reductionStream_;
+const runtime::CUDAStream& NcclContext::getReductionStream() const {
+  return *reductionStream_;
 }
 
-cudaStream_t NcclContext::getWorkerStream() const {
-  return workerStream_;
-}
-
-cudaEvent_t NcclContext::getEvent() const {
-  return event_;
+const runtime::CUDAStream& NcclContext::getWorkerStream() const {
+  return *workerStream_;
 }
 
 void* NcclContext::getCoalesceBuffer() {
@@ -411,15 +387,29 @@ void* NcclContext::getCoalesceBuffer() {
 }
 
 void NcclContext::createCudaResources() {
-  // initialize dedicated NCCL CUDA stream to support async allReduce
-  FL_CUDA_CHECK(cudaStreamCreateWithFlags(
-      &reductionStream_, detail::kDefaultStreamFlags));
-  // initialize a third dedicated stream to asynchronously copy gradients
-  // into a coalesced form if using a contiguous allReduce
-  FL_CUDA_CHECK(
-      cudaStreamCreateWithFlags(&workerStream_, detail::kDefaultStreamFlags));
+  // initialize
+  // - dedicated NCCL CUDA stream to support async allReduce
+  // - a third dedicated stream to asynchronously copy gradients
+  //   into a coalesced form if using a contiguous allReduce
 
-  FL_CUDA_CHECK(cudaEventCreate(&event_, cuda::detail::kCudaEventDefaultFlags));
+// Destroying the dedicated NCCL CUDA stream is a bit odd since the stream
+// lives in a global NcclContext singleton. The CUDA driver shuts down when
+// exit(0) is called, but the context may not be destroyed until
+// afterwards, and destroying streams when the driver has already shut down is
+// ungraceful. Manually destroying streams races against the driver, but in
+// all cases, streams are destroyed when the driver shuts down, so don't
+// destroy the stream by default.
+#ifdef CUDA_STREAM_POOL_DESTROY_ON_SHUTDOWN
+  reductionStream_ =
+    runtime::CUDAStream::createManaged(detail::kDefaultStreamFlags);
+  workerStream_ =
+    runtime::CUDAStream::createManaged(detail::kDefaultStreamFlags);
+#else
+  reductionStream_ =
+    runtime::CUDAStream::createUnmanaged(detail::kDefaultStreamFlags);
+  workerStream_ =
+    runtime::CUDAStream::createUnmanaged(detail::kDefaultStreamFlags);
+#endif
 }
 
 void NcclContext::initWithMPI(
@@ -509,22 +499,6 @@ NcclContext::~NcclContext() {
 #else
   // finalizing NCCL
   NCCLCHECK(ncclCommDestroy(comm_));
-#endif
-#ifdef CUDA_NCCL_EVENT_DESTROY_ON_SHUTDOWN
-  // destroy stream sync event
-  FL_CUDA_CHECK(cudaEventDestroy(event_));
-#endif
-
-// Destroying the dedicated NCCL CUDA stream is a bit odd since the stream
-// lives in a global NcclContext singleton. The CUDA driver shuts down when
-// exit(0) is called, but the context may not be destroyed until
-// afterwards, and destroying streams when the driver has already shut down is
-// ungraceful. Manually destroying streams races against the driver, but in
-// all cases, streams are destroyed when the driver shuts down, so don't
-// destroy the stream by default.
-#ifdef CUDA_STREAM_POOL_DESTROY_ON_SHUTDOWN
-  FL_CUDA_CHECK(cudaStreamDestroy(reductionStream_));
-  FL_CUDA_CHECK(cudaStreamDestroy(workerStream_));
 #endif
 
 // The CUDA driver has already shut down before we can free, so don't free by

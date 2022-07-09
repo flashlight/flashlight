@@ -21,6 +21,8 @@ namespace cuda {
 /**
  * Gets the Arrayfire CUDA stream. Gets the stream
  * for the device it's called on (with that device id)
+ *
+ * TODO get rid of this after runtime integration
  */
 cudaStream_t getActiveStream();
 
@@ -36,6 +38,8 @@ cudaStream_t getActiveStream();
  * on to complete before the blockee starts execution of its enqueued events
  * @param[in] event an existing CUDA event to use to record events on blockOn
  * CUDA stream
+ *
+ * TODO get rid of this after runtime integration
  */
 void synchronizeStreams(
     cudaStream_t blockee,
