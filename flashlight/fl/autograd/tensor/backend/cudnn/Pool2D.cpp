@@ -10,6 +10,7 @@
 #include "flashlight/fl/autograd/tensor/backend/cudnn/CudnnUtils.h"
 #include "flashlight/fl/common/DevicePtr.h"
 #include "flashlight/fl/tensor/Random.h"
+#include "flashlight/fl/tensor/Compute.h"
 
 namespace fl {
 
@@ -44,6 +45,9 @@ Tensor CudnnAutogradExtension::pool2d(
   {
     DevicePtr inputraw(input);
     DevicePtr resultraw(output);
+    const auto& cudnnStream = getCudnnStream();
+    // ensure cudnn compute stream waits on streams of input/output tensors
+    relativeSync(cudnnStream, {input, output});
 
     auto handle = getCudnnHandle();
     const void* one = kOne(input.type());
@@ -58,6 +62,9 @@ Tensor CudnnAutogradExtension::pool2d(
         zero,
         outDesc.descriptor,
         resultraw.get()));
+
+    // ensure output tensor stream waits on cudnn compute stream
+    relativeSync({output}, cudnnStream);
   }
 
   return output;
@@ -82,6 +89,7 @@ Tensor CudnnAutogradExtension::pool2dBackward(
   auto gradInput = Tensor(input.shape(), input.type());
 
   auto hndl = getCudnnHandle();
+  const auto& cudnnStream = getCudnnStream();
   const void* oneg = kOne(input.type());
   const void* zerog = kZero(input.type());
 
@@ -90,6 +98,8 @@ Tensor CudnnAutogradExtension::pool2dBackward(
     DevicePtr outraw(poolOutput);
     DevicePtr gradresultraw(gradOutput);
     DevicePtr gradinputraw(gradInput);
+    // ensure cudnn compute stream waits on input/output tensor streams
+    relativeSync(cudnnStream, {input, poolOutput, gradOutput, gradInput});
 
     CUDNN_CHECK_ERR(cudnnPoolingBackward(
         hndl,
@@ -104,6 +114,8 @@ Tensor CudnnAutogradExtension::pool2dBackward(
         zerog,
         i_desc.descriptor,
         gradinputraw.get()));
+    // ensure gradient input tensor stream waits on cudnn compute stream
+    relativeSync({gradInput}, cudnnStream);
   }
 
   return gradInput;

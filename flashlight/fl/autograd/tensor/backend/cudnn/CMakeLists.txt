@@ -28,4 +28,5 @@ target_compile_definitions(
   flashlight
   PUBLIC
   "-DNO_CUDNN_DESTROY_HANDLE"
+  "-DNO_CUDNN_DESTROY_STREAM"
   )

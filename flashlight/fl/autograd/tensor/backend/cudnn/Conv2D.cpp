@@ -17,6 +17,7 @@
 #include "flashlight/fl/autograd/tensor/backend/cudnn/CudnnUtils.h"
 #include "flashlight/fl/common/DevicePtr.h"
 #include "flashlight/fl/common/DynamicBenchmark.h"
+#include "flashlight/fl/tensor/Compute.h"
 
 namespace fl {
 
@@ -281,6 +282,7 @@ Tensor CudnnAutogradExtension::conv2d(
   auto outDesc = TensorDescriptor(output);
 
   auto handle = getCudnnHandle();
+  const auto& cudnnStream = getCudnnStream();
 
   auto fwdAlgoBestPerf = getFwdAlgo(
       inDesc.descriptor,
@@ -312,12 +314,13 @@ Tensor CudnnAutogradExtension::conv2d(
     DevicePtr wtPtr(weights);
     DevicePtr outPtr(output);
     DevicePtr wspacePtr(wspace);
+    // ensure cudnn compute stream waits on streams of input/output tensors
+    relativeSync(cudnnStream, {input, weights, wspace, output});
 
     auto scalarsType =
         input.type() == fl::dtype::f16 ? fl::dtype::f32 : input.type();
     const void* one = kOne(scalarsType);
     const void* zero = kZero(scalarsType);
-
     CUDNN_CHECK_ERR(cudnnConvolutionForward(
         handle,
         one,
@@ -336,7 +339,8 @@ Tensor CudnnAutogradExtension::conv2d(
     if (hasBias) {
       auto bsDesc = TensorDescriptor(bias);
       DevicePtr bsPtr(bias);
-
+      // ensure cudnn compute stream waits on stream of bias tensor
+      relativeSync(cudnnStream, {bias});
       CUDNN_CHECK_ERR(cudnnAddTensor(
           handle,
           one,
@@ -346,6 +350,8 @@ Tensor CudnnAutogradExtension::conv2d(
           outDesc.descriptor,
           outPtr.get()));
     }
+    // ensure output stream waits on cudnn compute stream
+    relativeSync({output}, cudnnStream);
   }
   return output;
 }
@@ -364,6 +370,7 @@ Tensor CudnnAutogradExtension::conv2dBackwardData(
     std::shared_ptr<DynamicBenchmark> dataGradBenchmark,
     std::shared_ptr<detail::AutogradPayload>) {
   auto hndl = getCudnnHandle();
+  const auto& cudnnStream = getCudnnStream();
 
   auto scalarsType =
       input.type() == fl::dtype::f16 ? fl::dtype::f32 : input.type();
@@ -383,7 +390,7 @@ Tensor CudnnAutogradExtension::conv2dBackwardData(
 
   // Gradients with respect to the input
   auto convolutionBackwardData =
-      [&hndl, &dataGradBenchmark, oneg, zerog, dx, dy](
+      [&hndl, &cudnnStream, &dataGradBenchmark, oneg, zerog, dx, dy](
           const Tensor& inTensor,
           const Tensor& wtTensor,
           const Tensor& gradOutputTensor,
@@ -398,6 +405,8 @@ Tensor CudnnAutogradExtension::conv2dBackwardData(
     }
 
     DevicePtr wPtr(wtTensor);
+    // ensure cudnn compute stream waits on stream of weight tensor
+    relativeSync(cudnnStream, {wtTensor});
     bool isStrided = (dx * dy) > 1;
     auto bwdDataAlgoBestPerf = getBwdDataAlgo(
         iDesc.descriptor,
@@ -430,6 +439,8 @@ Tensor CudnnAutogradExtension::conv2dBackwardData(
       DevicePtr gradInputPtr(gradInput);
       DevicePtr gradResultPtr(gradOutputTensor);
       DevicePtr wsPtr(ws);
+      // ensure cudnn compute stream waits on streams of input/output tensors
+      relativeSync(cudnnStream, {gradOutputTensor, ws, gradInput});
       CUDNN_CHECK_ERR(cudnnConvolutionBackwardData(
           hndl,
           oneg,
@@ -445,6 +456,8 @@ Tensor CudnnAutogradExtension::conv2dBackwardData(
           iDesc.descriptor,
           gradInputPtr.get()));
     }
+    // ensure stream of gradient waits on the cudnn compute stream
+    relativeSync({gradInput}, cudnnStream);
     return gradInput;
   };
 
@@ -543,6 +556,7 @@ std::pair<Tensor, Tensor> CudnnAutogradExtension::conv2dBackwardFilterBias(
     std::shared_ptr<DynamicBenchmark> biasGradBenchmark,
     std::shared_ptr<detail::AutogradPayload>) {
   auto hndl = getCudnnHandle();
+  const auto& cudnnStream = getCudnnStream();
 
   auto scalarsType =
       input.type() == fl::dtype::f16 ? fl::dtype::f32 : input.type();
@@ -561,14 +575,15 @@ std::pair<Tensor, Tensor> CudnnAutogradExtension::conv2dBackwardFilterBias(
   setDefaultMathType(cDesc, input);
 
   // Gradients with respect to the filter
-  auto convolutionBackwardFilter = [&hndl, &filterGradBenchmark, oneg, zerog](
-                                       const Tensor& inTensor,
-                                       const Tensor& wtTensor,
-                                       const Tensor& gradOutputTensor,
-                                       TensorDescriptor& iDesc,
-                                       FilterDescriptor& wDesc,
-                                       ConvDescriptor& cDesc,
-                                       TensorDescriptor& oDesc) -> Tensor {
+  auto convolutionBackwardFilter =
+      [&hndl, &cudnnStream, &filterGradBenchmark, oneg, zerog](
+          const Tensor& inTensor,
+          const Tensor& wtTensor,
+          const Tensor& gradOutputTensor,
+          TensorDescriptor& iDesc,
+          FilterDescriptor& wDesc,
+          ConvDescriptor& cDesc,
+          TensorDescriptor& oDesc) -> Tensor {
     if (filterGradBenchmark && DynamicBenchmark::getBenchmarkMode()) {
       setCudnnConvMathType(
           cDesc,
@@ -577,6 +592,8 @@ std::pair<Tensor, Tensor> CudnnAutogradExtension::conv2dBackwardFilterBias(
     }
 
     DevicePtr iPtr(inTensor);
+    // ensure cudnn compute stream waits on stream of input tensor
+    relativeSync(cudnnStream, {inTensor});
     auto bwdFilterAlgoBestPerf = getBwdFilterAlgo(
         iDesc.descriptor,
         wDesc.descriptor,
@@ -609,6 +626,8 @@ std::pair<Tensor, Tensor> CudnnAutogradExtension::conv2dBackwardFilterBias(
       DevicePtr gradWeightPtr(gradWeight);
       DevicePtr gradResultPtr(gradOutputTensor);
       DevicePtr wsPtr(ws);
+      // ensure cudnn compute stream waits on streams of input/output tensors
+      relativeSync(cudnnStream, {gradOutputTensor, ws, gradWeight});
       CUDNN_CHECK_ERR(cudnnConvolutionBackwardFilter(
           hndl,
           oneg,
@@ -624,6 +643,8 @@ std::pair<Tensor, Tensor> CudnnAutogradExtension::conv2dBackwardFilterBias(
           wDesc.descriptor,
           gradWeightPtr.get()));
     }
+    // ensure gradient tensor stream waits on cudnn compute stream
+    relativeSync({gradWeight}, cudnnStream);
     return gradWeight;
   };
 
@@ -702,15 +723,16 @@ std::pair<Tensor, Tensor> CudnnAutogradExtension::conv2dBackwardFilterBias(
         input, weight, gradOutput, iDesc, wDesc, cDesc, oDesc);
   }
 
-  auto convolutionBackwardBias = [&hndl, oneg, zerog](
+  auto convolutionBackwardBias = [&hndl, &cudnnStream, oneg, zerog](
                                      const Tensor& bsTensor,
                                      const Tensor& gradOutput,
                                      const TensorDescriptor& oDesc) -> Tensor {
-    DevicePtr gradResultPtr(gradOutput);
-
     auto gradBias = Tensor(bsTensor.shape(), bsTensor.type());
     {
       DevicePtr gradBiasPtr(gradBias);
+      DevicePtr gradResultPtr(gradOutput);
+      // ensure cudnn compute stream waits on gradient tensor streams
+      relativeSync(cudnnStream, {gradOutput, gradBias});
       auto bDesc = TensorDescriptor(bsTensor);
       CUDNN_CHECK_ERR(cudnnConvolutionBackwardBias(
           hndl,
@@ -721,6 +743,8 @@ std::pair<Tensor, Tensor> CudnnAutogradExtension::conv2dBackwardFilterBias(
           bDesc.descriptor,
           gradBiasPtr.get()));
     }
+    // ensure gradient bias tensor stream waits on cudnn compute stream
+    relativeSync({gradBias}, cudnnStream);
     return gradBias;
   };
 
