@@ -12,6 +12,7 @@
 #include <unordered_map>
 
 #include "flashlight/fl/common/DevicePtr.h"
+#include "flashlight/fl/runtime/DeviceManager.h"
 #include "flashlight/fl/tensor/CUDAUtils.h"
 #include "flashlight/fl/tensor/Compute.h"
 #include "flashlight/fl/tensor/Shape.h"
@@ -19,20 +20,24 @@
 
 namespace {
 
-struct Handle {
-  cudnnHandle_t handle;
-  Handle() : handle(nullptr) {
-    CUDNN_CHECK_ERR(cudnnCreate(&handle));
-    CUDNN_CHECK_ERR(cudnnSetStream(handle, fl::cuda::getActiveStream()));
+struct DeviceHandle {
+  cudnnHandle_t cudnnHandle;
+  std::shared_ptr<fl::runtime::CUDAStream> stream;
+
+  explicit DeviceHandle(std::shared_ptr<fl::runtime::CUDAStream> _stream)
+    : cudnnHandle(nullptr), stream(_stream) {
+    CUDNN_CHECK_ERR(cudnnCreate(&cudnnHandle));
+    CUDNN_CHECK_ERR(cudnnSetStream(cudnnHandle, stream->handle()));
   }
-  ~Handle() {
-    if (handle) {
+
+  ~DeviceHandle() {
+    if (cudnnHandle) {
 // See https://git.io/fNQnM - sometimes, at exit, the CUDA context
 // (or something) is already destroyed by the time a handle gets destroyed
 // because of an issue with the destruction order.
 #ifdef NO_CUDNN_DESTROY_HANDLE
 #else
-      CUDNN_CHECK_ERR(cudnnDestroy(handle));
+      CUDNN_CHECK_ERR(cudnnDestroy(cudnnHandle));
 #endif
     }
   }
@@ -45,7 +50,27 @@ const double kDoubleZero = 0.0;
 const double kDoubleOne = 1.0;
 
 // TODO: move this to CudnnAutogradExtension if we make it a singleton
-std::unordered_map<int, Handle> handles;
+std::unordered_map<int, DeviceHandle> handles;
+
+const DeviceHandle& getActiveDeviceHandle() {
+  auto& manager = fl::DeviceManager::getInstance();
+  auto& cudaDevice =
+    manager.getActiveDevice(fl::DeviceType::CUDA).impl<fl::CUDADevice>();
+  int id = cudaDevice.nativeId();
+  // lazily initialize cuda stream for cudnn
+  if (handles.count(id) == 0) {
+#ifdef NO_CUDNN_DESTROY_HANDLE
+    // NOTE unmanaged so to avoid CUDA driver shut down prior to stream
+    // destruction. This is safe because this object is always part of a global
+    // map -- the resource won't be relased until program shutdown anyway.
+    auto stream = fl::runtime::CUDAStream::createUnmanaged();
+#else
+    auto stream = fl::runtime::CUDAStream::createManaged();
+#endif
+    handles.emplace(id, DeviceHandle(stream));
+  }
+  return handles.at(id);
+}
 
 // See https://git.io/fp9oo for an explanation.
 #if CUDNN_VERSION < 7000
@@ -232,23 +257,23 @@ FilterDescriptor::~FilterDescriptor() {
 
 DropoutDescriptor::DropoutDescriptor(float drop_prob) {
   CUDNN_CHECK_ERR(cudnnCreateDropoutDescriptor(&descriptor));
-  auto handle = getCudnnHandle();
+  auto cudnnHandle = getCudnnHandle();
   unsigned long long seed = 0;
   size_t state_size;
-  CUDNN_CHECK_ERR(cudnnDropoutGetStatesSize(handle, &state_size));
+  CUDNN_CHECK_ERR(cudnnDropoutGetStatesSize(cudnnHandle, &state_size));
   auto& dropout_states = getDropoutStates();
   if (dropout_states.isEmpty()) {
     dropout_states =
         Tensor({static_cast<long long>(state_size)}, fl::dtype::b8);
     DevicePtr statesraw(dropout_states);
     CUDNN_CHECK_ERR(cudnnSetDropoutDescriptor(
-        descriptor, handle, drop_prob, statesraw.get(), state_size, seed));
+        descriptor, cudnnHandle, drop_prob, statesraw.get(), state_size, seed));
   } else {
     DevicePtr statesraw(dropout_states);
 // See https://git.io/fp9oo for an explanation.
 #if CUDNN_VERSION >= 7000
     CUDNN_CHECK_ERR(cudnnRestoreDropoutDescriptor(
-        descriptor, handle, drop_prob, statesraw.get(), state_size, seed));
+        descriptor, cudnnHandle, drop_prob, statesraw.get(), state_size, seed));
 #else
     auto dropout_struct = reinterpret_cast<CudnnDropoutStruct*>(descriptor);
     dropout_struct->dropout = drop_prob;
@@ -276,7 +301,7 @@ RNNDescriptor::RNNDescriptor(
     DropoutDescriptor& dropout) {
   CUDNN_CHECK_ERR(cudnnCreateRNNDescriptor(&descriptor));
 
-  auto handle = getCudnnHandle();
+  auto cudnnHandle = getCudnnHandle();
 
   cudnnRNNInputMode_t in_mode = CUDNN_LINEAR_INPUT;
 
@@ -289,7 +314,7 @@ RNNDescriptor::RNNDescriptor(
 
 #if CUDNN_VERSION >= 7000 && CUDNN_VERSION < 8000
   CUDNN_CHECK_ERR(cudnnSetRNNDescriptor(
-      handle,
+      cudnnHandle,
       descriptor,
       hidden_size,
       num_layers,
@@ -301,7 +326,7 @@ RNNDescriptor::RNNDescriptor(
       cudnntype));
 #else
   CUDNN_CHECK_ERR(cudnnSetRNNDescriptor_v6(
-      handle,
+      cudnnHandle,
       descriptor,
       hidden_size,
       num_layers,
@@ -350,8 +375,11 @@ ConvDescriptor::~ConvDescriptor() {
 }
 
 cudnnHandle_t getCudnnHandle() {
-  int fl_id = fl::getDevice();
-  return handles[fl_id].handle;
+  return getActiveDeviceHandle().cudnnHandle;
+}
+
+const runtime::CUDAStream& getCudnnStream() {
+  return *getActiveDeviceHandle().stream;
 }
 
 const void* kOne(const fl::dtype t) {

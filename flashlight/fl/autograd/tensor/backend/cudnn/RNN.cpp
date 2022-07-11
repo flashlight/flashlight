@@ -11,6 +11,7 @@
 
 #include "flashlight/fl/autograd/tensor/backend/cudnn/CudnnUtils.h"
 #include "flashlight/fl/common/DevicePtr.h"
+#include "flashlight/fl/tensor/Compute.h"
 
 namespace fl {
 namespace {
@@ -118,6 +119,7 @@ std::tuple<Tensor, Tensor, Tensor> CudnnAutogradExtension::rnn(
   TensorDescriptor cxDesc(x.type(), hDims);
 
   auto handle = getCudnnHandle();
+  const auto& cudnnStream = getCudnnStream();
 
   size_t paramSize;
   CUDNN_CHECK_ERR(cudnnGetRNNParamsSize(
@@ -145,8 +147,10 @@ std::tuple<Tensor, Tensor, Tensor> CudnnAutogradExtension::rnn(
 
   TensorDescriptor cyDesc(x.type(), hDims);
 
-  size_t workspaceSize = getWorkspaceSize(handle, rnnDesc, seqLength, xDescs);
-  size_t reserveSize = getReserveSize(handle, rnnDesc, seqLength, xDescs);
+  size_t workspaceSize =
+    getWorkspaceSize(handle, rnnDesc, seqLength, xDescs);
+  size_t reserveSize =
+    getReserveSize(handle, rnnDesc, seqLength, xDescs);
 
   Tensor workspace({static_cast<long long>(workspaceSize)}, fl::dtype::b8);
   // Space must be reused between forward and backward for cuDNN
@@ -154,15 +158,22 @@ std::tuple<Tensor, Tensor, Tensor> CudnnAutogradExtension::rnn(
       Tensor({static_cast<long long>(reserveSize)}, fl::dtype::b8);
 
   {
-    DevicePtr xRaw(x.asContiguousTensor());
+    auto contiguousX = x.asContiguousTensor();
+    auto contiguousWeights = weights.asContiguousTensor();
+    DevicePtr xRaw(contiguousX);
     DevicePtr hxRaw(hiddenState);
     DevicePtr cxRaw(cellState);
-    DevicePtr wRaw(weights.asContiguousTensor());
+    DevicePtr wRaw(contiguousWeights);
     DevicePtr yRaw(y);
     DevicePtr hyRaw(hy);
     DevicePtr cyRaw(cy);
     DevicePtr workspaceRaw(workspace);
     DevicePtr reserveSpaceRaw(payload->reserveSpace);
+    // ensure cudnn compute stream waits on input/output tensor streams
+    relativeSync(cudnnStream, {
+      contiguousX, hiddenState, cellState, contiguousWeights, y, hy, cy,
+      workspace, payload->reserveSpace,
+    });
 
     CUDNN_CHECK_ERR(cudnnRNNForwardTraining(
         handle,
@@ -188,6 +199,8 @@ std::tuple<Tensor, Tensor, Tensor> CudnnAutogradExtension::rnn(
         reserveSize));
   }
 
+  // ensure output tensor streams wait on cudnn compute stream
+  relativeSync({y, hy, cy}, cudnnStream);
   return std::make_tuple(y, hy, cy);
 }
 
@@ -212,6 +225,7 @@ std::tuple<Tensor, Tensor, Tensor, Tensor> CudnnAutogradExtension::rnnBackward(
       std::static_pointer_cast<CudnnRnnAutogradPayload>(autogradPayload->data);
 
   auto handle = getCudnnHandle();
+  const auto& cudnnStream = getCudnnStream();
 
   auto x = input.asContiguousTensor();
   auto& y = output;
@@ -248,7 +262,8 @@ std::tuple<Tensor, Tensor, Tensor, Tensor> CudnnAutogradExtension::rnnBackward(
   TensorDescriptorArray dxDescs(
       seqLength, dx.type(), {1, 1, inputSize, batchSize});
 
-  size_t workspaceSize = getWorkspaceSize(handle, rnnDesc, seqLength, dxDescs);
+  size_t workspaceSize =
+    getWorkspaceSize(handle, rnnDesc, seqLength, dxDescs);
   Tensor workspace({static_cast<long long>(workspaceSize)}, fl::dtype::b8);
 
   auto& dy = gradData->dy;
@@ -261,6 +276,8 @@ std::tuple<Tensor, Tensor, Tensor, Tensor> CudnnAutogradExtension::rnnBackward(
   DevicePtr yRaw(output);
   DevicePtr workspaceRaw(workspace);
   DevicePtr reserveSpaceRaw(payload->reserveSpace);
+  // ensure cudnn compute stream waits on input/output tensor streams
+  relativeSync(cudnnStream, {output, workspace, payload->reserveSpace});
 
   {
     DevicePtr dyRaw(dy); // Has to be set to 0 if empty
@@ -275,6 +292,10 @@ std::tuple<Tensor, Tensor, Tensor, Tensor> CudnnAutogradExtension::rnnBackward(
     DevicePtr dxRaw(dx);
     DevicePtr dhxRaw(dhx);
     DevicePtr dcxRaw(dcx);
+    // ensure cudnn compute stream waits on input/output tensor streams
+    relativeSync(
+        cudnnStream,
+        {dy, dhy, dcy, weights, hiddenState, cellState, dx, dhx, dcx});
 
     /* We need to update reserveSpace even if we just want the
      * weight gradients. */
@@ -325,6 +346,8 @@ std::tuple<Tensor, Tensor, Tensor, Tensor> CudnnAutogradExtension::rnnBackward(
     DevicePtr xRaw(x);
     DevicePtr dwRaw(dw);
     DevicePtr hxRaw(hiddenState);
+    // ensure cudnn compute stream waits on input/output tensor streams
+    relativeSync(cudnnStream, {x, dw, hiddenState});
 
     CUDNN_CHECK_ERR(cudnnRNNBackwardWeights(
         handle,
@@ -344,6 +367,8 @@ std::tuple<Tensor, Tensor, Tensor, Tensor> CudnnAutogradExtension::rnnBackward(
         payload->reserveSpace.bytes()));
   }
 
+  // ensure output tensor streams wait on cudnn compute stream
+  relativeSync({dx, dhx, dcx, dw}, cudnnStream);
   return std::make_tuple(dx, dhx, dcx, dw);
 }
 

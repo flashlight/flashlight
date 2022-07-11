@@ -14,6 +14,28 @@
 
 namespace fl {
 
+namespace {
+
+std::unordered_set<const runtime::Stream*> tensorsToUniqueStreams(
+    const std::vector<Tensor>& tensors) {
+  std::unordered_set<const runtime::Stream*> uniqueStreams;
+  for (const auto& tensor : tensors) {
+    uniqueStreams.insert(&tensor.stream());
+  }
+  return uniqueStreams;
+}
+
+std::unordered_set<const runtime::Stream*> tensorsToUniqueStreams(
+    const std::vector<const Tensor*>& tensors) {
+  std::unordered_set<const runtime::Stream*> uniqueStreams;
+  for (const auto& tensor : tensors) {
+    uniqueStreams.insert(&tensor->stream());
+  }
+  return uniqueStreams;
+}
+
+} // namespace
+
 void sync() {
   Tensor().backend().sync();
 }
@@ -25,11 +47,29 @@ void sync(const int deviceId) {
 void relativeSync(
     const runtime::Stream& wait,
     const std::vector<const Tensor*>& waitOns) {
-  std::unordered_set<const runtime::Stream*> uniqueStreams;
-  for (const auto& waitOn : waitOns) {
-    uniqueStreams.insert(&waitOn->stream());
+  // ensure computations are launched
+  for (const auto* tensor : waitOns) {
+    tensor->backend().eval(*tensor);
   }
-  wait.relativeSync(uniqueStreams);
+  wait.relativeSync(tensorsToUniqueStreams(waitOns));
+}
+
+void relativeSync(
+    const runtime::Stream& wait,
+    const std::vector<Tensor>& waitOns) {
+  // ensure computations are launched
+  for (const auto& tensor : waitOns) {
+    tensor.backend().eval(tensor);
+  }
+  wait.relativeSync(tensorsToUniqueStreams(waitOns));
+}
+
+void relativeSync(
+  const std::vector<Tensor>& waits,
+  const runtime::Stream& waitOn) {
+  for (const auto& stream : tensorsToUniqueStreams(waits)) {
+    stream->relativeSync(waitOn);
+  }
 }
 
 void eval(Tensor& tensor) {

@@ -10,6 +10,7 @@
 #include <cudnn.h>
 
 #include "flashlight/fl/common/Defines.h"
+#include "flashlight/fl/runtime/CUDAStream.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
@@ -106,5 +107,6 @@ const void* kZero(const fl::dtype t);
 
 // TODO: move this to CudnnAutogradExtension if we make it a singleton
 cudnnHandle_t getCudnnHandle();
+const runtime::CUDAStream& getCudnnStream();
 
 } // namespace fl

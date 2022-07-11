@@ -14,6 +14,7 @@
 
 #include "flashlight/fl/autograd/tensor/backend/cudnn/CudnnUtils.h"
 #include "flashlight/fl/common/DevicePtr.h"
+#include "flashlight/fl/tensor/Compute.h"
 
 namespace fl {
 namespace {
@@ -127,6 +128,11 @@ Tensor CudnnAutogradExtension::batchnorm(
     DevicePtr bsRaw(biasArray);
     DevicePtr runMeanRaw(runningMean);
     DevicePtr runVarRaw(runningVar);
+    const auto& cudnnStream = getCudnnStream();
+    // ensure cudnn compute stream waits on streams of input/output tensors
+    relativeSync(
+        cudnnStream,
+        {input, output, weightArray, biasArray, runningMean, runningVar});
 
     if (train) {
       saveMean = Tensor({wtDescDims[2]}, scalarsType);
@@ -134,6 +140,8 @@ Tensor CudnnAutogradExtension::batchnorm(
 
       DevicePtr saveMeanRaw(saveMean);
       DevicePtr saveVarRaw(saveVar);
+      // ensure cudnn compute stream waits on streams of saveMean/Var tensors
+      relativeSync(cudnnStream, {saveMean, saveVar});
       CUDNN_CHECK_ERR(cudnnBatchNormalizationForwardTraining(
           getCudnnHandle(),
           mode,
@@ -169,6 +177,8 @@ Tensor CudnnAutogradExtension::batchnorm(
           runVarRaw.get(),
           epsilon));
     }
+    // ensure output stream waits on cudnn compute stream
+    relativeSync({output}, cudnnStream);
   }
   return output;
 }
@@ -221,6 +231,11 @@ std::tuple<Tensor, Tensor, Tensor> CudnnAutogradExtension::batchnormBackward(
 
     DevicePtr saveMeanRaw(saveMean);
     DevicePtr saveVarRaw(saveVar);
+    const auto& cudnnStream = getCudnnStream();
+    // ensure cudnn compute stream waits on streams of input/output tensors
+    relativeSync(
+        cudnnStream,
+        {input, gradOutput, gradIn, wt, gradWt, gradBs, saveMean, saveVar});
 
     CUDNN_CHECK_ERR(cudnnBatchNormalizationBackward(
         getCudnnHandle(),
@@ -242,6 +257,8 @@ std::tuple<Tensor, Tensor, Tensor> CudnnAutogradExtension::batchnormBackward(
         epsilon,
         saveMeanRaw.get(),
         saveVarRaw.get()));
+    // ensure streams of gradients wait on the cudnn compute stream
+    relativeSync({gradIn, gradWt, gradBs}, cudnnStream);
   }
 
   return std::make_tuple(gradIn, gradWt, gradBs);

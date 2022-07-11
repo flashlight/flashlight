@@ -56,6 +56,33 @@ void relativeSync(
     const std::vector<const Tensor*>& waitOns);
 
 /**
+ * Synchronize future tasks on given stream w.r.t. current tasks on all unique
+ * streams of given tensors, i.e., the former can only start after the
+ * completion of the latter.
+ * NOTE this function may or may not block the calling thread.
+ *
+ * @param[in] wait the stream perform relative synchronization for.
+ * @param[in] waitOns the tensors whose streams to perform relative
+ * synchronization against.
+ */
+void relativeSync(
+    const runtime::Stream& wait,
+    const std::vector<Tensor>& waitOns);
+
+/**
+ * Synchronize future tasks on the streams of `waits` w.r.t. current task on given
+ * stream, i.e., the former can only start after the completion of the latter.
+ * NOTE this function may or may not block the calling thread.
+ *
+ * @param[in] waits the tensors whose streams to perform relative
+ * synchronization for.
+ * @param[in] waitOn the stream to perform relative synchronization against.
+ */
+void relativeSync(
+  const std::vector<Tensor>& waits,
+  const runtime::Stream& waitOn);
+
+/**
  * Launches computation, [usually] asynchronously, on operations needed to make
  * a particular value for a tensor available.
  *
