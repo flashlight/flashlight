@@ -85,7 +85,7 @@ TEST(CUDAStreamTest, relativeSync) {
 
 TEST(CUDAStreamTest, sync) {
   auto cs1 = CUDAStream::createManaged();
-  ASSERT_NO_THROW(cs1->sync().wait());
+  ASSERT_NO_THROW(cs1->sync());
 }
 
 int main(int argc, char** argv) {

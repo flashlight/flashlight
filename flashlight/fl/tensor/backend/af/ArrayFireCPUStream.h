@@ -34,7 +34,7 @@ class ArrayFireCPUStream : public runtime::StreamTrait<ArrayFireCPUStream> {
 
   X64Device& device() override;
   const X64Device& device() const override;
-  std::future<void> sync() const override;
+  void sync() const override;
   void relativeSync(const ArrayFireCPUStream& waitOn) const override;
 };
 

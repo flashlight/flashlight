@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <future>
+#include <stdexcept>
 #include <unordered_set>
 
 namespace fl {
@@ -76,11 +76,9 @@ class Stream {
   virtual const Device& device() const = 0;
 
   /**
-   * Synchronize w.r.t. all tasks on this stream.
-   *
-   * @return a future representing the completion of all tasks on this stream.
+   * Block calling thread and synchronize w.r.t. all tasks on this stream.
    */
-  virtual std::future<void> sync() const = 0;
+  virtual void sync() const = 0;
 
   /**
    * Synchronize future tasks on this stream w.r.t. current tasks on given

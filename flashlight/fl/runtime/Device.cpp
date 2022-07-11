@@ -35,12 +35,10 @@ void Device::addStream(std::shared_ptr<runtime::Stream> stream) {
   streams_.insert(stream);
 }
 
-std::future<void> Device::sync() const {
-  return std::async(std::launch::async, [this]{
-    for (auto stream : streams_) {
-      stream->sync().wait();
-    }
-  });
+void Device::sync() const {
+  for (auto stream : streams_) {
+    stream->sync();
+  }
 }
 
 void Device::addSetActiveCallback(std::function<void(int)> callback) {
