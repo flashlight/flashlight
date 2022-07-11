@@ -90,7 +90,7 @@ class CUDAStream : public StreamTrait<CUDAStream> {
 
   CUDADevice& device() override;
   const CUDADevice& device() const override;
-  std::future<void> sync() const override;
+  void sync() const override;
   void relativeSync(const CUDAStream& waitOn) const override;
 
   /**

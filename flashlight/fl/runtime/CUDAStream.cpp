@@ -66,10 +66,8 @@ CUDADevice& CUDAStream::device() {
   return device_;
 }
 
-std::future<void> CUDAStream::sync() const {
-  return std::async(std::launch::async, [this] {
-    FL_RUNTIME_CUDA_CHECK(cudaStreamSynchronize(this->nativeStream_));
-  });
+void CUDAStream::sync() const {
+  FL_RUNTIME_CUDA_CHECK(cudaStreamSynchronize(this->nativeStream_));
 }
 
 void CUDAStream::relativeSync(const CUDAStream& waitOn) const {

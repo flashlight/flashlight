@@ -46,7 +46,7 @@ TEST(ArrayFireCPUStreamTest, relativeSync) {
 
 TEST(ArrayFireCPUStreamTest, sync) {
   const auto as1 = ArrayFireCPUStream::create();
-  ASSERT_NO_THROW(as1->sync().wait());
+  ASSERT_NO_THROW(as1->sync());
 }
 
 int main(int argc, char** argv) {

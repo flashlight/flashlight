@@ -65,11 +65,9 @@ class Device {
   virtual void addStream(std::shared_ptr<runtime::Stream> stream);
 
   /**
-   * Synchronize w.r.t. all streams on this device.
-   *
-   * @return a future representing the completion of all streams on this device.
+   * Block calling thread and synchronize w.r.t. all streams on this device.
    */
-  virtual std::future<void> sync() const;
+  virtual void sync() const;
 
   /**
    * Get the native ID of this device (semantics are implementation-dependent).

@@ -31,16 +31,12 @@ std::shared_ptr<ArrayFireCPUStream> ArrayFireCPUStream::create() {
   return stream;
 }
 
-std::future<void> ArrayFireCPUStream::sync() const {
-  // TODO change into blocking
-  auto deviceId = af::getDevice();
-  return std::async(std::launch::async, [deviceId]{
-    af::sync(deviceId);
-  });
+void ArrayFireCPUStream::sync() const {
+  af::sync(af::getDevice());
 }
 
 void ArrayFireCPUStream::relativeSync(const ArrayFireCPUStream& waitOn) const {
-  waitOn.sync().wait();
+  waitOn.sync();
 }
 
 } // namespace fl
