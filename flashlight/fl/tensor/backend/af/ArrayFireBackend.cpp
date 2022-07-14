@@ -30,7 +30,6 @@
   #include <af/cuda.h>
 
   #include "flashlight/fl/runtime/CUDAStream.h"
-  #include "flashlight/fl/tensor/CUDAStream.h"
 #endif
 
 namespace fl {
@@ -39,10 +38,10 @@ namespace {
 
 // Get the stream associated with given device in the given map; if it's not in
 // the map, initialize it (by wrapping or creating) and put it into the map.
-const runtime::Stream& getOrWrapAfDeviceStream(
+const Stream& getOrWrapAfDeviceStream(
     const int afId,
     const int nativeId,
-    std::unordered_map<int, std::shared_ptr<const runtime::Stream>>& afIdToStream) {
+    std::unordered_map<int, std::shared_ptr<const Stream>>& afIdToStream) {
   auto iter = afIdToStream.find(afId);
   if (iter != afIdToStream.end()) {
     return *iter->second;
@@ -54,7 +53,7 @@ const runtime::Stream& getOrWrapAfDeviceStream(
 #elif FL_ARRAYFIRE_USE_CUDA
   const cudaStream_t cudaNativeStream = afcu::getStream(afId);
   auto resIter = afIdToStream.emplace(
-      afId, runtime::CUDAStream::wrapUnmanaged(nativeId, cudaNativeStream));
+      afId, CUDAStream::wrapUnmanaged(nativeId, cudaNativeStream));
   return *resIter.first->second;
 #else
   throw std::runtime_error(
@@ -126,47 +125,11 @@ TensorBackendType ArrayFireBackend::backendType() const {
 
 /* -------------------------- Compute Functions -------------------------- */
 
-void ArrayFireBackend::sync() {
-  af::sync();
-}
-
-void ArrayFireBackend::sync(const int nativeDeviceId) {
-  int deviceId = nativeIdToId_.at(nativeDeviceId);
-  af::sync(deviceId);
-}
-
 void ArrayFireBackend::eval(const Tensor& tensor) {
   af::eval(toArray(tensor));
 }
 
-int ArrayFireBackend::getDevice() {
-  int deviceId = af::getDevice();
-  return idToNativeId_.at(deviceId);
-}
-
-void ArrayFireBackend::setDevice(const int nativeDeviceId) {
-  int deviceId = nativeIdToId_.at(nativeDeviceId);
-  af::setDevice(deviceId);
-}
-
-int ArrayFireBackend::getDeviceCount() {
-  return af::getDeviceCount();
-}
-
-const Stream& ArrayFireBackend::getStream() {
-#if FL_ARRAYFIRE_USE_CUDA
-  auto cudaStream =
-      std::make_unique<CUDAStream>(afcu::getStream(af::getDevice()));
-  stream_ = std::make_unique<Stream>(std::move(cudaStream));
-  return *stream_;
-#endif
-#if FL_ARRAYFIRE_USE_CPU
-  throw std::invalid_argument(
-      "ArrayFireBackend::getStream() inoperable with AF CPU backend");
-#endif
-}
-
-const runtime::Stream& ArrayFireBackend::getStreamOfArray(
+const Stream& ArrayFireBackend::getStreamOfArray(
   const af::array& arr) {
   // TODO once we enforce integrate Device::setDevice into fl::setDevice, each
   // array's stream should always be wrapped already (via setDevice callback).

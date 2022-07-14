@@ -243,7 +243,7 @@ Shape ArrayFireTensor::strides() {
   return detail::afToFlDims(af::getStrides(getHandle()), numDims());
 }
 
-const runtime::Stream& ArrayFireTensor::stream() const {
+const Stream& ArrayFireTensor::stream() const {
   // TODO indexing is unlikely to change the stream associated with a tensor.
   // But if it can, we need to call `getHandle()` here.
   return ArrayFireBackend::getInstance().getStreamOfArray(*arrayHandle_);

@@ -71,7 +71,7 @@ void sync(const std::unordered_set<const Device*>& devices);
  * synchronization against.
  */
 void relativeSync(
-    const runtime::Stream& wait,
+    const Stream& wait,
     const std::vector<const Tensor*>& waitOns);
 
 /**
@@ -85,7 +85,7 @@ void relativeSync(
  * synchronization against.
  */
 void relativeSync(
-    const runtime::Stream& wait,
+    const Stream& wait,
     const std::vector<Tensor>& waitOns);
 
 /**
@@ -99,7 +99,7 @@ void relativeSync(
  */
 void relativeSync(
   const std::vector<Tensor>& waits,
-  const runtime::Stream& waitOn);
+  const Stream& waitOn);
 
 /**
  * Launches computation, [usually] asynchronously, on operations needed to make

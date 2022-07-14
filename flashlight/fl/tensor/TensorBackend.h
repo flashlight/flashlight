@@ -40,13 +40,7 @@ class TensorBackend {
   virtual TensorBackendType backendType() const = 0;
 
   /* -------------------------- Compute Functions -------------------------- */
-  virtual void sync() = 0;
-  virtual void sync(const int deviceId) = 0;
   virtual void eval(const Tensor& tensor) = 0;
-  virtual int getDevice() = 0;
-  virtual void setDevice(const int deviceId) = 0;
-  virtual int getDeviceCount() = 0;
-  virtual const Stream& getStream() = 0;
   virtual bool supportsDataType(const fl::dtype& dtype) const = 0;
   // Memory Management
   virtual void

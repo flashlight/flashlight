@@ -56,7 +56,7 @@ static void backward(
         static_cast<float*>(inputGradRaw.get()),
         static_cast<float*>(transGradRaw.get()),
         workspaceRaw.get(),
-        inputs[0].tensor().stream().impl<runtime::CUDAStream>().handle());
+        inputs[0].tensor().stream().impl<CUDAStream>().handle());
   }
 
   inputs[0].addGrad(Variable(inputGrad, false));
@@ -115,7 +115,7 @@ Variable FullConnectionCriterion::forward(
         static_cast<const float*>(transRaw.get()),
         static_cast<float*>(lossRaw.get()),
         workspaceRaw.get(),
-        input.stream().impl<runtime::CUDAStream>().handle());
+        input.stream().impl<CUDAStream>().handle());
   }
 
   return Variable(

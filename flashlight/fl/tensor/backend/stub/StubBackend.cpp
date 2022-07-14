@@ -34,38 +34,9 @@ TensorBackendType StubBackend::backendType() const {
 
 /* -------------------------- Compute Functions -------------------------- */
 
-void StubBackend::sync() {
-  // Block host thread until all of the backend's computation are complete. Can
-  // be a noop for non-async runtimes.
-  FL_STUB_BACKEND_UNIMPLEMENTED;
-}
-
-void StubBackend::sync(const int /* deviceId */) {
-  // Block host thread until all of the backend's computation on a particular
-  // device are complete. Can be a noop for non-async
-  // runtimes.
-  FL_STUB_BACKEND_UNIMPLEMENTED;
-}
-
 void StubBackend::eval(const Tensor& /* tensor */) {
   // Launch computation for a given tensor. Can be a noop for non-async
   // runtimes.
-  FL_STUB_BACKEND_UNIMPLEMENTED;
-}
-
-int StubBackend::getDevice() {
-  FL_STUB_BACKEND_UNIMPLEMENTED;
-}
-
-void StubBackend::setDevice(const int /* deviceId */) {
-  FL_STUB_BACKEND_UNIMPLEMENTED;
-}
-
-int StubBackend::getDeviceCount() {
-  FL_STUB_BACKEND_UNIMPLEMENTED;
-}
-
-const Stream& StubBackend::getStream() {
   FL_STUB_BACKEND_UNIMPLEMENTED;
 }
 

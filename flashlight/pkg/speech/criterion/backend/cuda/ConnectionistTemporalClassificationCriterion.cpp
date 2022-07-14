@@ -50,7 +50,7 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
   const int B = input.dim(2);
   const int batchL = target.dim(0);
   cudaStream_t stream =
-      input.tensor().stream().impl<fl::runtime::CUDAStream>().handle();
+      input.tensor().stream().impl<CUDAStream>().handle();
 
   ctcOptions options;
   options.loc = CTC_GPU;

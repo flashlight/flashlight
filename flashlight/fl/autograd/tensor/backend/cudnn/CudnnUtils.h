@@ -107,6 +107,6 @@ const void* kZero(const fl::dtype t);
 
 // TODO: move this to CudnnAutogradExtension if we make it a singleton
 cudnnHandle_t getCudnnHandle();
-const runtime::CUDAStream& getCudnnStream();
+const CUDAStream& getCudnnStream();
 
 } // namespace fl

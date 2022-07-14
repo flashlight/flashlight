@@ -52,8 +52,8 @@ class NcclContext {
   ncclComm_t& getComm();
   int getWorldSize() const;
   int getWorldRank() const;
-  const runtime::CUDAStream& getReductionStream() const;
-  const runtime::CUDAStream& getWorkerStream() const;
+  const CUDAStream& getReductionStream() const;
+  const CUDAStream& getWorkerStream() const;
   void* getCoalesceBuffer();
 
  private:
@@ -62,9 +62,9 @@ class NcclContext {
   ncclComm_t comm_;
   int worldSize_, worldRank_;
   // CUDA stream in which NCCL calls run if in async mode
-  std::shared_ptr<runtime::CUDAStream> reductionStream_;
+  std::shared_ptr<CUDAStream> reductionStream_;
   // CUDA stream in which cudaMemcpyAsync calls run if in contiguous mode
-  std::shared_ptr<runtime::CUDAStream> workerStream_;
+  std::shared_ptr<CUDAStream> workerStream_;
   // Buffer for storing copied gradients contiguously; exists on device memory
   void* coalesceBuffer_{nullptr};
   std::once_flag allocBuffer_;
@@ -101,7 +101,7 @@ void ncclCheck(ncclResult_t r);
 void mpiCheck(int ec);
 
 void allReduceCuda(
-    const runtime::CUDAStream* bufferStream,
+    const CUDAStream* bufferStream,
     void* ptr,
     const size_t count,
     const ncclDataType_t ncclType,
@@ -116,7 +116,7 @@ void allReduce(Tensor& arr, bool async /* = false */) {
   ncclDataType_t type = detail::getNcclTypeForArray(arr);
   DevicePtr tensorPtr(arr);
   detail::allReduceCuda(
-      &arr.stream().impl<runtime::CUDAStream>(),
+      &arr.stream().impl<CUDAStream>(),
       tensorPtr.get(),
       arr.elements(),
       type,
@@ -315,13 +315,13 @@ void mpiCheck(int ec) {
 }
 
 void allReduceCuda(
-    const runtime::CUDAStream* bufferStream,
+    const CUDAStream* bufferStream,
     void* ptr,
     const size_t count,
     const ncclDataType_t ncclType,
     const bool async,
     const bool contiguous) {
-  const runtime::CUDAStream* syncStream;
+  const CUDAStream* syncStream;
   auto& ncclContext = detail::NcclContext::getInstance();
   if (async) {
     syncStream = &ncclContext.getReductionStream();
@@ -365,11 +365,11 @@ int NcclContext::getWorldRank() const {
   return worldRank_;
 }
 
-const runtime::CUDAStream& NcclContext::getReductionStream() const {
+const CUDAStream& NcclContext::getReductionStream() const {
   return *reductionStream_;
 }
 
-const runtime::CUDAStream& NcclContext::getWorkerStream() const {
+const CUDAStream& NcclContext::getWorkerStream() const {
   return *workerStream_;
 }
 
@@ -400,15 +400,11 @@ void NcclContext::createCudaResources() {
 // all cases, streams are destroyed when the driver shuts down, so don't
 // destroy the stream by default.
 #ifdef CUDA_STREAM_POOL_DESTROY_ON_SHUTDOWN
-  reductionStream_ =
-    runtime::CUDAStream::createManaged(detail::kDefaultStreamFlags);
-  workerStream_ =
-    runtime::CUDAStream::createManaged(detail::kDefaultStreamFlags);
+  reductionStream_ = CUDAStream::createManaged(detail::kDefaultStreamFlags);
+  workerStream_ = CUDAStream::createManaged(detail::kDefaultStreamFlags);
 #else
-  reductionStream_ =
-    runtime::CUDAStream::createUnmanaged(detail::kDefaultStreamFlags);
-  workerStream_ =
-    runtime::CUDAStream::createUnmanaged(detail::kDefaultStreamFlags);
+  reductionStream_ = CUDAStream::createUnmanaged(detail::kDefaultStreamFlags);
+  workerStream_ = CUDAStream::createUnmanaged(detail::kDefaultStreamFlags);
 #endif
 }
 

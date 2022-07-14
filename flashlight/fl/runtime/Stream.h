@@ -14,8 +14,6 @@ namespace fl {
 
 class Device;
 
-namespace runtime {
-
 enum class StreamType {
   CUDA, Synchronous,
 };
@@ -129,5 +127,4 @@ class StreamTrait : public Stream {
   }
 };
 
-} // namespace runtime
 } // namespace fl

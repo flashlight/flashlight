@@ -13,7 +13,6 @@
 #include <cuda_runtime.h>
 
 namespace fl {
-namespace runtime {
 
 /**
  * An abstraction for CUDA stream with controlled creation methods.
@@ -101,5 +100,4 @@ class CUDAStream : public StreamTrait<CUDAStream> {
   cudaStream_t handle() const;
 };
 
-} // namespace runtime
 } // namespace fl

@@ -32,13 +32,7 @@ class StubBackend : public TensorBackend {
   StubBackend& operator=(const StubBackend&) = delete;
 
   /* -------------------------- Compute Functions -------------------------- */
-  void sync() override;
-  void sync(const int deviceId) override;
   void eval(const Tensor& tensor) override;
-  int getDevice() override;
-  void setDevice(const int deviceId) override;
-  int getDeviceCount() override;
-  const Stream& getStream() override;
   bool supportsDataType(const fl::dtype& dtype) const override;
   // Memory management
   void getMemMgrInfo(const char* msg, const int deviceId, std::ostream* ostream)

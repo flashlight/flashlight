@@ -15,14 +15,14 @@ namespace fl {
 /**
  * An abstraction for ArrayFire's CPU Stream with controlled creation methods.
  */
-class ArrayFireCPUStream : public runtime::StreamTrait<ArrayFireCPUStream> {
+class ArrayFireCPUStream : public StreamTrait<ArrayFireCPUStream> {
   X64Device& device_{DeviceManager::getInstance().getActiveDevice(DeviceType::x64).impl<X64Device>()};
 
  public:
   // prevent name hiding
   using StreamTrait<ArrayFireCPUStream>::relativeSync;
 
-  static constexpr runtime::StreamType type = runtime::StreamType::Synchronous;
+  static constexpr StreamType type = StreamType::Synchronous;
 
   /**
    * Creates an ArrayFireCPUStream and automatically register it with

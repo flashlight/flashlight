@@ -8,7 +8,6 @@
 #include "flashlight/fl/runtime/Stream.h"
 
 namespace fl {
-namespace runtime {
 
 void Stream::relativeSync(
   const std::unordered_set<const Stream*>& waitOns) const {
@@ -17,5 +16,4 @@ void Stream::relativeSync(
   }
 }
 
-} // namespace runtime
 } // namespace fl

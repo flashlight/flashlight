@@ -26,7 +26,7 @@ void deviceImplTypeCheck(DeviceType expect, DeviceType actual);
  * computing device.
  */
 class Device {
-  std::unordered_set<std::shared_ptr<runtime::Stream>> streams_;
+  std::unordered_set<std::shared_ptr<Stream>> streams_;
   // Used to update internal backend state for active device, thereby
   // eliminating the `setActive --> AnyTensorBackendImpl` dependency(s).
   std::vector<std::function<void(int)>> setActiveCallbacks_;
@@ -53,7 +53,7 @@ class Device {
    * @return an immutable vector reference containing all streams managed by
    * this device.
    */
-  virtual const std::unordered_set<std::shared_ptr<runtime::Stream>>&
+  virtual const std::unordered_set<std::shared_ptr<Stream>>&
     getStreams() const;
 
   /**
@@ -62,7 +62,7 @@ class Device {
    * Throws runtime_error if stream is owned by a different device than this
    * one.
    */
-  virtual void addStream(std::shared_ptr<runtime::Stream> stream);
+  virtual void addStream(std::shared_ptr<Stream> stream);
 
   /**
    * Block calling thread and synchronize w.r.t. all streams on this device.
