@@ -13,7 +13,7 @@
 
 #include "flashlight/fl/common/DevicePtr.h"
 #include "flashlight/fl/runtime/DeviceManager.h"
-#include "flashlight/fl/tensor/CUDAUtils.h"
+#include "flashlight/fl/runtime/CUDAUtils.h"
 #include "flashlight/fl/tensor/Compute.h"
 #include "flashlight/fl/tensor/Shape.h"
 #include "flashlight/fl/tensor/Types.h"

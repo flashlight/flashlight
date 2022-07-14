@@ -78,12 +78,6 @@ if (FL_USE_CUDA)
   target_link_libraries(flashlight PUBLIC ${CUDA_LIBRARIES})
   target_include_directories(flashlight PUBLIC ${CUDA_INCLUDE_DIRS})
 
-  target_sources(
-    flashlight
-    PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}/CUDAUtils.cpp
-    )
-
   if (FL_BUILD_PROFILING)
     # Try to find NVTX
     find_library(CUDA_NVTX_LIBRARIES REQUIRED

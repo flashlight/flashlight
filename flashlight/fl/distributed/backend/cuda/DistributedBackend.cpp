@@ -19,8 +19,8 @@
 #include "flashlight/fl/distributed/DistributedApi.h"
 #include "flashlight/fl/distributed/FileStore.h"
 #include "flashlight/fl/runtime/CUDAStream.h"
+#include "flashlight/fl/runtime/CUDAUtils.h"
 #include "flashlight/fl/runtime/DeviceManager.h"
-#include "flashlight/fl/tensor/CUDAUtils.h"
 #include "flashlight/fl/tensor/Compute.h"
 #include "flashlight/fl/tensor/Types.h"
 
