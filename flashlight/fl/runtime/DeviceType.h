@@ -21,6 +21,12 @@ enum class DeviceType {
   CUDA,
 };
 
+#if FL_BACKEND_CUDA
+constexpr DeviceType kDefaultDeviceType = DeviceType::CUDA;
+#else
+constexpr DeviceType kDefaultDeviceType = DeviceType::x64;
+#endif
+
 /**
  * Return a readable string representation of the given device type.
  *

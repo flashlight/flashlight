@@ -9,6 +9,8 @@
 
 #include <utility>
 
+#include "flashlight/fl/runtime/DeviceManager.h"
+#include "flashlight/fl/runtime/DeviceType.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
@@ -37,11 +39,28 @@ std::unordered_set<const runtime::Stream*> tensorsToUniqueStreams(
 } // namespace
 
 void sync() {
-  Tensor().backend().sync();
+  DeviceManager::getInstance().getActiveDevice(fl::kDefaultDeviceType).sync();
 }
 
 void sync(const int deviceId) {
-  Tensor().backend().sync(deviceId);
+  DeviceManager::getInstance()
+      .getDevice(fl::kDefaultDeviceType, deviceId)
+      .sync();
+}
+
+void sync(const std::unordered_set<DeviceType>& types) {
+  const auto& manager = DeviceManager::getInstance();
+  // TODO consider launching these `Device::sync` calls non-blockingly
+  for (const auto type : types) {
+    manager.getActiveDevice(type).sync();
+  }
+}
+
+void sync(const std::unordered_set<const Device*>& devices) {
+  // TODO consider launching these `Device::sync` calls non-blockingly
+  for (const auto* device : devices) {
+    device->sync();
+  }
 }
 
 void relativeSync(
@@ -77,15 +96,19 @@ void eval(Tensor& tensor) {
 }
 
 int getDevice() {
-  return Tensor().backend().getDevice();
+  return DeviceManager::getInstance()
+      .getActiveDevice(fl::kDefaultDeviceType)
+      .nativeId();
 }
 
 void setDevice(const int deviceId) {
-  Tensor().backend().setDevice(deviceId);
+  DeviceManager::getInstance()
+      .getDevice(fl::kDefaultDeviceType, deviceId)
+      .setActive();
 }
 
 int getDeviceCount() {
-  return Tensor().backend().getDeviceCount();
+  return DeviceManager::getInstance().getDeviceCount(fl::kDefaultDeviceType);
 }
 
 namespace detail {
