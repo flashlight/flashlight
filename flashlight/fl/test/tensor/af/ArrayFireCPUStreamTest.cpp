@@ -13,8 +13,8 @@
 
 using fl::DeviceManager;
 using fl::DeviceType;
-using fl::runtime::Stream;
-using fl::runtime::StreamType;
+using fl::Stream;
+using fl::StreamType;
 using fl::ArrayFireCPUStream;
 
 TEST(ArrayFireCPUStreamTest, create) {

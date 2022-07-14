@@ -248,7 +248,7 @@ Shape Tensor::strides() const {
   return impl_->strides();
 }
 
-const runtime::Stream& Tensor::stream() const {
+const Stream& Tensor::stream() const {
   return impl_->stream();
 }
 

@@ -20,12 +20,6 @@
 
 namespace fl {
 
-namespace runtime {
-
-class Stream; // See runtime/Stream.h
-
-};
-
 /**
  * \defgroup tensor_constants Tensor constants
  * @{
@@ -42,6 +36,9 @@ class TensorBackend;
 
 // See Index.h
 class Index;
+
+// See runtime/Stream.h
+class Stream;
 
 /// Location of memory or tensors.
 enum class Location { Host, Device };
@@ -315,7 +312,7 @@ class Tensor {
    * @return an immutable reference to the stream that contains(ed) the
    * computations which create this tensor.
    */
-  virtual const runtime::Stream& stream() const;
+  virtual const Stream& stream() const;
 
   /**
    * Returns a tensor with elements cast as a particular type

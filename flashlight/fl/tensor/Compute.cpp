@@ -18,18 +18,18 @@ namespace fl {
 
 namespace {
 
-std::unordered_set<const runtime::Stream*> tensorsToUniqueStreams(
+std::unordered_set<const Stream*> tensorsToUniqueStreams(
     const std::vector<Tensor>& tensors) {
-  std::unordered_set<const runtime::Stream*> uniqueStreams;
+  std::unordered_set<const Stream*> uniqueStreams;
   for (const auto& tensor : tensors) {
     uniqueStreams.insert(&tensor.stream());
   }
   return uniqueStreams;
 }
 
-std::unordered_set<const runtime::Stream*> tensorsToUniqueStreams(
+std::unordered_set<const Stream*> tensorsToUniqueStreams(
     const std::vector<const Tensor*>& tensors) {
-  std::unordered_set<const runtime::Stream*> uniqueStreams;
+  std::unordered_set<const Stream*> uniqueStreams;
   for (const auto& tensor : tensors) {
     uniqueStreams.insert(&tensor->stream());
   }
@@ -64,7 +64,7 @@ void sync(const std::unordered_set<const Device*>& devices) {
 }
 
 void relativeSync(
-    const runtime::Stream& wait,
+    const Stream& wait,
     const std::vector<const Tensor*>& waitOns) {
   // ensure computations are launched
   for (const auto* tensor : waitOns) {
@@ -74,7 +74,7 @@ void relativeSync(
 }
 
 void relativeSync(
-    const runtime::Stream& wait,
+    const Stream& wait,
     const std::vector<Tensor>& waitOns) {
   // ensure computations are launched
   for (const auto& tensor : waitOns) {
@@ -85,7 +85,7 @@ void relativeSync(
 
 void relativeSync(
   const std::vector<Tensor>& waits,
-  const runtime::Stream& waitOn) {
+  const Stream& waitOn) {
   for (const auto& stream : tensorsToUniqueStreams(waits)) {
     stream->relativeSync(waitOn);
   }

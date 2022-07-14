@@ -16,9 +16,9 @@
 
 using fl::DeviceManager;
 using fl::DeviceType;
-using fl::runtime::CUDAStream;
-using fl::runtime::Stream;
-using fl::runtime::StreamType;
+using fl::CUDAStream;
+using fl::Stream;
+using fl::StreamType;
 
 TEST(CUDAStreamTest, createManaged) {
   auto& manager = DeviceManager::getInstance();

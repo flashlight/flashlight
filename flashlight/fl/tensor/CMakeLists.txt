@@ -63,7 +63,6 @@ target_sources(
   ${CMAKE_CURRENT_LIST_DIR}/Init.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Random.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Shape.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/Stream.cpp
   ${CMAKE_CURRENT_LIST_DIR}/TensorBackend.cpp
   ${CMAKE_CURRENT_LIST_DIR}/TensorBase.cpp
   ${CMAKE_CURRENT_LIST_DIR}/TensorAdapter.cpp
@@ -82,7 +81,6 @@ if (FL_USE_CUDA)
   target_sources(
     flashlight
     PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}/CUDAStream.cpp
     ${CMAKE_CURRENT_LIST_DIR}/CUDAUtils.cpp
     )
 

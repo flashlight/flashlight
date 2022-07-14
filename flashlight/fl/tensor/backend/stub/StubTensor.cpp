@@ -93,7 +93,7 @@ Shape StubTensor::strides() {
   FL_STUB_TENSOR_UNIMPLEMENTED;
 }
 
-const runtime::Stream& StubTensor::stream() const {
+const Stream& StubTensor::stream() const {
   FL_STUB_TENSOR_UNIMPLEMENTED;
 }
 

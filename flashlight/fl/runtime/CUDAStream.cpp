@@ -10,7 +10,6 @@
 #include "flashlight/fl/runtime/CUDAUtils.h"
 
 namespace fl {
-namespace runtime {
 
 CUDAStream::CUDAStream(CUDADevice& device, cudaStream_t stream, bool managed) :
   device_(device),
@@ -88,5 +87,4 @@ cudaStream_t CUDAStream::handle() const {
   return nativeStream_;
 }
 
-} // namespace runtime
 } // namespace fl

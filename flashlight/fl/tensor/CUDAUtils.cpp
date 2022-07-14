@@ -20,7 +20,7 @@ namespace cuda {
 // TODO{fl::Tensor}{CUDA} remove the dependency on Tensor so this can be
 // moved to a runtime abstraction
 cudaStream_t getActiveStream() {
-  return Tensor().stream().impl<runtime::CUDAStream>().handle();
+  return Tensor().stream().impl<CUDAStream>().handle();
 }
 
 void synchronizeStreams(

@@ -22,9 +22,9 @@ namespace {
 
 struct DeviceHandle {
   cudnnHandle_t cudnnHandle;
-  std::shared_ptr<fl::runtime::CUDAStream> stream;
+  std::shared_ptr<fl::CUDAStream> stream;
 
-  explicit DeviceHandle(std::shared_ptr<fl::runtime::CUDAStream> _stream)
+  explicit DeviceHandle(std::shared_ptr<fl::CUDAStream> _stream)
     : cudnnHandle(nullptr), stream(_stream) {
     CUDNN_CHECK_ERR(cudnnCreate(&cudnnHandle));
     CUDNN_CHECK_ERR(cudnnSetStream(cudnnHandle, stream->handle()));
@@ -63,9 +63,9 @@ const DeviceHandle& getActiveDeviceHandle() {
     // NOTE unmanaged so to avoid CUDA driver shut down prior to stream
     // destruction. This is safe because this object is always part of a global
     // map -- the resource won't be relased until program shutdown anyway.
-    auto stream = fl::runtime::CUDAStream::createUnmanaged();
+    auto stream = fl::CUDAStream::createUnmanaged();
 #else
-    auto stream = fl::runtime::CUDAStream::createManaged();
+    auto stream = fl::CUDAStream::createManaged();
 #endif
     handles.emplace(id, DeviceHandle(stream));
   }
@@ -378,7 +378,7 @@ cudnnHandle_t getCudnnHandle() {
   return getActiveDeviceHandle().cudnnHandle;
 }
 
-const runtime::CUDAStream& getCudnnStream() {
+const CUDAStream& getCudnnStream() {
   return *getActiveDeviceHandle().stream;
 }
 

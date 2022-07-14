@@ -22,12 +22,11 @@ void deviceImplTypeCheck(DeviceType expect, DeviceType actual) {
   }
 }
 
-const std::unordered_set<std::shared_ptr<runtime::Stream>>& Device::getStreams()
-  const {
+const std::unordered_set<std::shared_ptr<Stream>>& Device::getStreams() const {
   return streams_;
 }
 
-void Device::addStream(std::shared_ptr<runtime::Stream> stream) {
+void Device::addStream(std::shared_ptr<Stream> stream) {
   if (&stream->device() != this) {
     throw std::runtime_error(
       "[Device::addStream] Must add stream to owner device");

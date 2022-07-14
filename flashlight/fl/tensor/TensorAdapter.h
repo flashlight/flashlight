@@ -173,7 +173,7 @@ class TensorAdapterBase {
    * @return an immutable reference to the stream that contains(ed) the
    * computations which create this tensor.
    */
-  virtual const runtime::Stream& stream() const = 0;
+  virtual const Stream& stream() const = 0;
 
   /**
    * Returns a tensor with elements cast as a particular type

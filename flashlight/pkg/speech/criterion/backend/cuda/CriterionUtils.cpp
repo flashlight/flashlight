@@ -63,7 +63,7 @@ Tensor viterbiPath(const Tensor& input, const Tensor& trans) {
         static_cast<const float*>(transRaw.get()),
         static_cast<int*>(pathRaw.get()),
         workspaceRaw.get(),
-        input.stream().impl<runtime::CUDAStream>().handle());
+        input.stream().impl<CUDAStream>().handle());
   }
 
   return path;
@@ -85,7 +85,7 @@ Tensor getTargetSizeArray(const Tensor& target, int maxSize) {
         maxSize,
         static_cast<const int*>(targetRaw.get()),
         static_cast<int*>(targetSizeRaw.get()),
-        target.stream().impl<runtime::CUDAStream>().handle());
+        target.stream().impl<CUDAStream>().handle());
   }
 
   return targetSize;
