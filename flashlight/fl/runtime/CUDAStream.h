@@ -24,13 +24,34 @@ class CUDAStream : public StreamTrait<CUDAStream> {
   cudaStream_t nativeStream_;
   // whether the native stream's lifetime is managed by this object
   const bool managed_;
-  // re-used for relative synchronization to reduce overhead
+  // re-used for relative synchronization to reduce overhead. Guaranteed to
+  // associate with the same device as `nativeStream_`, i.e., `device_`
   cudaEvent_t event_;
 
-  // A barebone constructor which just initializes the fields.
+  /**
+   * A barebones constructor which just initializes the fields.
+   *
+   * @param[in] device the device on which `stream` was created.
+   * @param[in] stream the underlying native CUDA stream.
+   * @param[in] managed whether this object will manage `stream`'s lifetime.
+   *
+   * ASSUME
+   * 1. `stream` was created on `device`.
+   * 2. `device` is the currently active cuda device.
+   */
   CUDAStream(CUDADevice& device, cudaStream_t stream, bool managed);
 
-  // allocate a new CUDAStream as a shared_ptr and register it on given device.
+  /**
+   * Allocate a new CUDAStream as a shared_ptr and register it on given device.
+   *
+   * @param[in] device the device on which `stream` was created.
+   * @param[in] nativeStream the underlying native CUDA stream.
+   * @param[in] managed whether this object will manage `stream`'s lifetime.
+   *
+   * ASSUME
+   * 1. `nativeStream` was created on `device`.
+   * 2. `device` is the currently active cuda device.
+   */
   static std::shared_ptr<CUDAStream> makeSharedAndRegister(
       CUDADevice& device, cudaStream_t nativeStream, bool managed);
 

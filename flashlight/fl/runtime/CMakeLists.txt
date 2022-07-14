@@ -18,3 +18,9 @@ if (FL_USE_CUDA)
     ${CMAKE_CURRENT_LIST_DIR}/CUDAUtils.cpp
     )
 endif()
+
+target_compile_definitions(
+  flashlight
+  PUBLIC
+  "-DNO_CUDA_STREAM_DESTROY_EVENT"
+  )
