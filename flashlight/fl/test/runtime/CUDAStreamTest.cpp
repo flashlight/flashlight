@@ -9,8 +9,7 @@
 
 #include "flashlight/fl/runtime/CUDAStream.h"
 #include "flashlight/fl/runtime/DeviceManager.h"
-#include "flashlight/fl/runtime/DeviceType.h"
-#include "flashlight/fl/tensor/CUDAUtils.h"
+#include "flashlight/fl/runtime/CUDAUtils.h"
 #include "flashlight/fl/tensor/Init.h"
 
 #include <cuda_runtime.h>

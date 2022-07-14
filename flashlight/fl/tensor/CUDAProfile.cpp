@@ -10,7 +10,7 @@
 #include <cuda_profiler_api.h>
 #include <nvToolsExt.h>
 
-#include "flashlight/fl/tensor/CUDAUtils.h"
+#include "flashlight/fl/runtime/CUDAUtils.h"
 
 namespace fl {
 namespace detail {

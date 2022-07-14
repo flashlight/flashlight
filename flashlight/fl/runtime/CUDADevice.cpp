@@ -17,7 +17,7 @@ int CUDADevice::nativeId() const {
 }
 
 void CUDADevice::setActiveImpl() const {
-  FL_RUNTIME_CUDA_CHECK(cudaSetDevice(nativeId_));
+  FL_CUDA_CHECK(cudaSetDevice(nativeId_));
 }
 
 } // namespace fl

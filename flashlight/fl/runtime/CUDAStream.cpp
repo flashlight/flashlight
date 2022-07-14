@@ -21,7 +21,7 @@ CUDAStream::CUDAStream(CUDADevice& device, cudaStream_t stream, bool managed) :
   // Ensure `event_` and `nativeStream_` are associated with the same device
   assert(&DeviceManager::getInstance().getActiveDevice(DeviceType::CUDA) == &device);
   // `event_` is used by relativeSync only -- disable timing to reduce overhead
-  FL_RUNTIME_CUDA_CHECK(cudaEventCreate(&event_, cudaEventDefault | cudaEventDisableTiming));
+  FL_CUDA_CHECK(cudaEventCreate(&event_, cudaEventDefault | cudaEventDisableTiming));
 }
 
 std::shared_ptr<CUDAStream> CUDAStream::makeSharedAndRegister(
@@ -34,7 +34,7 @@ std::shared_ptr<CUDAStream> CUDAStream::makeSharedAndRegister(
 
 std::shared_ptr<CUDAStream> CUDAStream::create(int flag, bool managed) {
   cudaStream_t nativeStream;
-  FL_RUNTIME_CUDA_CHECK(cudaStreamCreateWithFlags(&nativeStream, flag));
+  FL_CUDA_CHECK(cudaStreamCreateWithFlags(&nativeStream, flag));
   auto& manager = DeviceManager::getInstance();
   auto& device = manager.getActiveDevice(DeviceType::CUDA).impl<CUDADevice>();
   return makeSharedAndRegister(device, nativeStream, managed);
@@ -68,12 +68,12 @@ std::shared_ptr<CUDAStream> CUDAStream::wrapUnmanaged(
 
 CUDAStream::~CUDAStream() {
   if (managed_) {
-    FL_RUNTIME_CUDA_CHECK(cudaStreamDestroy(nativeStream_));
+    FL_CUDA_CHECK(cudaStreamDestroy(nativeStream_));
     // Ideally we should unconditionally destroy the event we created, but there
     // is a race hazard between CUDAStream destructor in global context and CUDA
     // shutdown (sometimes the latter may precede the former). So we destroy the
     // event only when it's safe to do so
-    FL_RUNTIME_CUDA_CHECK(cudaEventDestroy(event_));
+    FL_CUDA_CHECK(cudaEventDestroy(event_));
   } else {
 #ifdef NO_CUDA_STREAM_DESTROY_EVENT
     // Note that this case only results in cuda event "resource leak" if someone
@@ -81,7 +81,7 @@ CUDAStream::~CUDAStream() {
     // in a global context and released at program shutdown (e.g., for cudnn).
     // So chances of real resource leak is very low.
 #else
-    FL_RUNTIME_CUDA_CHECK(cudaEventDestroy(event_));
+    FL_CUDA_CHECK(cudaEventDestroy(event_));
 #endif
   }
 }
@@ -95,7 +95,7 @@ CUDADevice& CUDAStream::device() {
 }
 
 void CUDAStream::sync() const {
-  FL_RUNTIME_CUDA_CHECK(cudaStreamSynchronize(this->nativeStream_));
+  FL_CUDA_CHECK(cudaStreamSynchronize(this->nativeStream_));
 }
 
 void CUDAStream::relativeSync(const CUDAStream& waitOn) const {
@@ -107,8 +107,8 @@ void CUDAStream::relativeSync(const CUDAStream& waitOn) const {
   }
   // event and stream from same instance are guaranteed to have been created
   // from the same device
-  FL_RUNTIME_CUDA_CHECK(cudaEventRecord(waitOn.event_, waitOn.nativeStream_));
-  FL_RUNTIME_CUDA_CHECK(cudaStreamWaitEvent(
+  FL_CUDA_CHECK(cudaEventRecord(waitOn.event_, waitOn.nativeStream_));
+  FL_CUDA_CHECK(cudaStreamWaitEvent(
       this->nativeStream_, waitOn.event_, cudaEventWaitDefault));
   if (needDeviceSwitch) {
     oldActiveCUDADevice->setActive();
