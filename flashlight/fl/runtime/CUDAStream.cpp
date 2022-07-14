@@ -6,6 +6,9 @@
  */
 
 #include "flashlight/fl/runtime/CUDAStream.h"
+
+#include <cassert>
+
 #include "flashlight/fl/runtime/DeviceManager.h"
 #include "flashlight/fl/runtime/CUDAUtils.h"
 
@@ -15,6 +18,8 @@ CUDAStream::CUDAStream(CUDADevice& device, cudaStream_t stream, bool managed) :
   device_(device),
   nativeStream_(stream),
   managed_(managed) {
+  // Ensure `event_` and `nativeStream_` are associated with the same device
+  assert(&DeviceManager::getInstance().getActiveDevice(DeviceType::CUDA) == &device);
   // `event_` is used by relativeSync only -- disable timing to reduce overhead
   FL_RUNTIME_CUDA_CHECK(cudaEventCreate(&event_, cudaEventDefault | cudaEventDisableTiming));
 }
@@ -46,14 +51,38 @@ std::shared_ptr<CUDAStream> CUDAStream::createUnmanaged(int flag) {
 std::shared_ptr<CUDAStream> CUDAStream::wrapUnmanaged(
     int deviceId, cudaStream_t stream) {
   auto& manager = DeviceManager::getInstance();
+  const auto& oldActiveDevice = manager.getActiveDevice(DeviceType::CUDA);
   auto& device =
     manager.getDevice(DeviceType::CUDA, deviceId).impl<CUDADevice>();
-  return makeSharedAndRegister(device, stream, /* managed */ false);
+  // satisfies assumptions of makeSharedAndRegister
+  bool needDeviceSwitch = &oldActiveDevice != &device;
+  if (needDeviceSwitch) {
+    device.setActive();
+  }
+  auto streamPtr = makeSharedAndRegister(device, stream, /* managed */ false);
+  if (needDeviceSwitch) {
+    oldActiveDevice.setActive();
+  }
+  return streamPtr;
 }
 
 CUDAStream::~CUDAStream() {
   if (managed_) {
     FL_RUNTIME_CUDA_CHECK(cudaStreamDestroy(nativeStream_));
+    // Ideally we should unconditionally destroy the event we created, but there
+    // is a race hazard between CUDAStream destructor in global context and CUDA
+    // shutdown (sometimes the latter may precede the former). So we destroy the
+    // event only when it's safe to do so
+    FL_RUNTIME_CUDA_CHECK(cudaEventDestroy(event_));
+  } else {
+#ifdef NO_CUDA_STREAM_DESTROY_EVENT
+    // Note that this case only results in cuda event "resource leak" if someone
+    // creates an unmanaged cuda stream. But managed cuda streams are often used
+    // in a global context and released at program shutdown (e.g., for cudnn).
+    // So chances of real resource leak is very low.
+#else
+    FL_RUNTIME_CUDA_CHECK(cudaEventDestroy(event_));
+#endif
   }
 }
 
@@ -76,8 +105,11 @@ void CUDAStream::relativeSync(const CUDAStream& waitOn) const {
   if (needDeviceSwitch) {
     device_.setActive();
   }
-  FL_RUNTIME_CUDA_CHECK(cudaEventRecord(event_, waitOn.nativeStream_));
-  FL_RUNTIME_CUDA_CHECK(cudaStreamWaitEvent(this->nativeStream_, event_, 0));
+  // event and stream from same instance are guaranteed to have been created
+  // from the same device
+  FL_RUNTIME_CUDA_CHECK(cudaEventRecord(waitOn.event_, waitOn.nativeStream_));
+  FL_RUNTIME_CUDA_CHECK(cudaStreamWaitEvent(
+      this->nativeStream_, waitOn.event_, cudaEventWaitDefault));
   if (needDeviceSwitch) {
     oldActiveCUDADevice->setActive();
   }

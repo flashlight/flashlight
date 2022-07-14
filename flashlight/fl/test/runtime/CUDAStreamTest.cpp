@@ -9,6 +9,7 @@
 
 #include "flashlight/fl/runtime/CUDAStream.h"
 #include "flashlight/fl/runtime/DeviceManager.h"
+#include "flashlight/fl/runtime/DeviceType.h"
 #include "flashlight/fl/tensor/CUDAUtils.h"
 #include "flashlight/fl/tensor/Init.h"
 
@@ -65,6 +66,30 @@ TEST(CUDAStreamTest, unmanagedWrapper) {
     ASSERT_EQ(&cudaStream->impl<CUDAStream>(), cudaStream.get());
     // safe to destroy since wrapper won't manage underlying stream by default.
     FL_CUDA_CHECK(cudaStreamDestroy(nativeStream));
+  }
+}
+
+TEST(CUDAStreamTest, unmanagedWrapperDeviceSwitch) {
+  auto& manager = DeviceManager::getInstance();
+  if (manager.getDeviceCount(DeviceType::CUDA) > 1) {
+    const auto& device0 = manager.getDevice(DeviceType::CUDA, 0);
+    const auto& device1 = manager.getDevice(DeviceType::CUDA, 1);
+
+    device0.setActive();
+    cudaStream_t nativeStream;
+    FL_CUDA_CHECK(cudaStreamCreate(&nativeStream));
+    device1.setActive();
+    // wrapper will switch to device0, create, and then switch back.
+    auto cudaStreamWrapped = CUDAStream::wrapUnmanaged(device0.nativeId(), nativeStream);
+    auto cudaStreamCreated = CUDAStream::createManaged();
+
+    // nothing blows up -- event was created and used correctly
+    ASSERT_NO_THROW(cudaStreamWrapped->relativeSync(*cudaStreamCreated));
+    ASSERT_NO_THROW(cudaStreamCreated->relativeSync(*cudaStreamWrapped));
+
+    ASSERT_EQ(&cudaStreamWrapped->device(), &device0);
+    ASSERT_EQ(&cudaStreamCreated->device(), &device1);
+    ASSERT_EQ(&manager.getActiveDevice(DeviceType::CUDA), &device1);
   }
 }
 
