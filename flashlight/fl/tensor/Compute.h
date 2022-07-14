@@ -10,8 +10,11 @@
 #include <cstdlib>
 #include <iostream>
 #include <memory>
+#include <unordered_set>
 #include <vector>
 
+#include "flashlight/fl/runtime/Device.h"
+#include "flashlight/fl/runtime/DeviceType.h"
 #include "flashlight/fl/runtime/Stream.h"
 
 // TODO:fl::Tensor {misc} remove me when not dependent on AF
@@ -24,8 +27,8 @@ namespace fl {
 class Tensor;
 
 /**
- * Block the calling host thread until all outstanding computation has
- * completed on all devices.
+ * Block the calling host thread until all outstanding computation has completed
+ * on the active device with default type.
  *
  * The implementation of this function should synchronize any outstanding
  * computation abstractions, blocking accordingly.
@@ -34,12 +37,28 @@ void sync();
 
 /**
  * Block the calling host thread until all outstanding computation on the device
- * with the given ID has completed.
+ * with the given ID and default type has completed.
  *
- * @param[in] deviceId the id of the device on which to block until computation
- * has completed.
+ * @param[in] deviceId the id of the device with default type on which to block
+ * until computation has completed.
  */
 void sync(const int deviceId);
+
+/**
+ * Block the calling host thread until all outstanding computation has completed
+ * on all active devices for given types.
+ *
+ * @param[in] types the types of active devices to synchronize.
+ */
+void sync(const std::unordered_set<DeviceType>& types);
+
+/**
+ * Block the calling host thread until all outstanding computation has completed
+ * on all given devices.
+ *
+ * @param[in] devices the devices to synchronize.
+ */
+void sync(const std::unordered_set<const Device*>& devices);
 
 /**
  * Synchronize future tasks on given stream w.r.t. current tasks on all unique
@@ -100,10 +119,10 @@ void relativeSync(
 void eval(fl::Tensor& tensor);
 
 /**
- * Returns the device ID of the active device in the current thread. This is
- * backend agnostic - the ID may correspond to a CUDA-device, an OpenCL device,
- * or other arbitrary hardware. The default device (in the case where operations
- * are occuring on the CPU) should give 0.
+ * Returns the device ID of the active device of default type in the current
+ * thread. This is backend agnostic - the ID may correspond to a CUDA-device, an
+ * OpenCL device, or other arbitrary hardware. The default device (in the case
+ * where operations are occuring on the CPU) should give 0.
  *
  * If unimplemented, an implementation should return 0.
  *
@@ -114,9 +133,9 @@ void eval(fl::Tensor& tensor);
 int getDevice();
 
 /**
- * Sets the active device in the current thread. This is backend agnostic - the
- * ID may correspond to a CUDA-device, an OpenCL device, or other arbitrary
- * hardware. The default device is 0.
+ * Sets the active device of default type in the current thread. This is backend
+ * agnostic - the ID may correspond to a CUDA-device, an OpenCL device, or other
+ * arbitrary hardware. The default device is 0.
  *
  * TODO: eventually fold into Flashlight runtime
  *
