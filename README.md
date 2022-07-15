@@ -257,7 +257,7 @@ Dependencies marked with `†` are installable via `vcpkg`. See the [instruction
   </tr>
   <tr>
     <td>CPU</td>
-    <td><a href="https://github.com/oneapi-src/oneDNN">oneDNN</a>† &gt;= 2.0, <a href="https://github.com/facebookincubator/gloo">gloo</a> (<a href="https://github.com/facebookincubator/gloo/blob/01e2c2660cd43963ce1fe3e21220ac01f07d9a4b/docs/rendezvous.md#using-mpi">with MPI</a>)*^†</td>
+    <td><a href="https://github.com/oneapi-src/oneDNN">oneDNN</a>† &gt;= 2.5.2, <a href="https://github.com/facebookincubator/gloo">gloo</a> (<a href="https://github.com/facebookincubator/gloo/blob/01e2c2660cd43963ce1fe3e21220ac01f07d9a4b/docs/rendezvous.md#using-mpi">with MPI</a>)*^†</td>
   </tr>
   <tr>
     <td>app: all </td>

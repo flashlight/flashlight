@@ -7,7 +7,7 @@
 # MKL              2020.4-912   (apt)
 # arrayfire        3.7.3        (git, CPU backend)
 # libsndfile       latest       (apt)
-# oneDNN           v2.0         (git)
+# oneDNN           v2.5.2       (git)
 # Gloo             1da2117      (git)
 # FFTW             latest       (apt)
 # KenLM            0c4dd4e      (git)
@@ -82,7 +82,7 @@ FROM cpu_base_builder as cpu_onednn
 # ==================================================================
 # oneDNN https://github.com/oneapi-src/oneDNN
 # ------------------------------------------------------------------
-RUN cd /tmp && git clone --branch v2.0 --depth 1 https://github.com/oneapi-src/onednn.git && \
+RUN cd /tmp && git clone --branch v2.5.2 --depth 1 https://github.com/oneapi-src/onednn.git && \
     mkdir -p onednn/build && cd onednn/build && \
     cmake .. -DCMAKE_BUILD_TYPE=Release \
              -DCMAKE_INSTALL_PREFIX=/opt/onednn \
