@@ -10,9 +10,3 @@ target_sources(
   ${CMAKE_CURRENT_LIST_DIR}/BatchNorm.cpp
   ${CMAKE_CURRENT_LIST_DIR}/DnnlUtils.cpp
 )
-
-target_link_libraries(
-  flashlight
-  PRIVATE
-  DNNL::dnnl
-)
