@@ -19,6 +19,7 @@ target_sources(
   ${CMAKE_CURRENT_LIST_DIR}/OneDnnBackend.cpp
   ${CMAKE_CURRENT_LIST_DIR}/OneDnnCPUStream.cpp
   ${CMAKE_CURRENT_LIST_DIR}/OneDnnTensor.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/Utils.cpp
 )
 
 target_link_libraries(
