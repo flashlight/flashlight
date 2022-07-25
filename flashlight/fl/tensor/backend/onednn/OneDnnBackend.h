@@ -20,7 +20,7 @@ namespace fl {
  */
 class OneDnnBackend : public TensorBackend {
   dnnl::engine engine_{dnnl::engine(dnnl::engine::kind::cpu, 0)};
-  std::shared_ptr<Stream> stream_{OneDnnCPUStream::create(engine_)};
+  std::shared_ptr<OneDnnCPUStream> stream_{OneDnnCPUStream::create(engine_)};
 
  public:
   OneDnnBackend() = default;
@@ -41,6 +41,13 @@ class OneDnnBackend : public TensorBackend {
    * @return the active OneDNN stream.
    */
   const Stream& stream() const;
+
+  /**
+   * Gets the active native OneDNN stream.
+   *
+   * @return the active native OneDNN stream.
+   */
+  const dnnl::stream& nativeStream() const;
 
   /**
    * Gets the active OneDNN engine.
