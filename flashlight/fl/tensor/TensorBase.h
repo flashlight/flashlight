@@ -26,7 +26,7 @@ namespace fl {
  */
 
 /// Enum for various tensor backends.
-enum class TensorBackendType { Stub, ArrayFire };
+enum class TensorBackendType { Stub, ArrayFire, OneDnn };
 
 // See TensorAdapter.h
 class TensorAdapterBase;

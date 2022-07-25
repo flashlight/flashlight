@@ -7,9 +7,11 @@
 
 #include "flashlight/fl/tensor/backend/onednn/OneDnnBackend.h"
 
+#include <iostream>
 #include <stdexcept>
 
 #include "flashlight/fl/tensor/TensorBase.h"
+#include "flashlight/fl/tensor/backend/onednn/OneDnnTensor.h"
 
 #define FL_ONEDNN_BACKEND_UNIMPLEMENTED \
   throw std::invalid_argument(          \
@@ -27,15 +29,13 @@ OneDnnBackend& OneDnnBackend::getInstance() {
 }
 
 TensorBackendType OneDnnBackend::backendType() const {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+  return TensorBackendType::OneDnn;
 }
 
 /* -------------------------- Compute Functions -------------------------- */
 
 void OneDnnBackend::eval(const Tensor& /* tensor */) {
-  // Launch computation for a given tensor. Can be a noop for non-async
-  // runtimes.
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+  // no-op since OneDNN computations are launched eagerly
 }
 
 bool OneDnnBackend::supportsDataType(const fl::dtype& /* dtype */) const {
@@ -46,23 +46,23 @@ void OneDnnBackend::getMemMgrInfo(
     const char* /* msg */,
     const int /* deviceId */,
     std::ostream* /* ostream */) {
-  // Can be a noop if no memory manager is implemented.
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+  throw std::runtime_error(
+      "[OneDnnBackend] Currently no memory manager support");
 }
 
 void OneDnnBackend::setMemMgrLogStream(std::ostream* /* stream */) {
-  // Can be a noop if no memory manager is implemented.
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+  throw std::runtime_error(
+      "[OneDnnBackend] Currently no memory manager support");
 }
 
 void OneDnnBackend::setMemMgrLoggingEnabled(const bool /* enabled */) {
-  // Can be a noop if no memory manager is implemented.
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+  throw std::runtime_error(
+      "[OneDnnBackend] Currently no memory manager support");
 }
 
 void OneDnnBackend::setMemMgrFlushInterval(const size_t /* interval */) {
-  // Can be a noop if no memory manager is implemented.
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+  throw std::runtime_error(
+      "[OneDnnBackend] Currently no memory manager support");
 }
 
 /* -------------------------- Rand Functions -------------------------- */
@@ -514,8 +514,9 @@ Tensor OneDnnBackend::all(
   FL_ONEDNN_BACKEND_UNIMPLEMENTED;
 }
 
-void OneDnnBackend::print(const Tensor& /* tensor */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+void OneDnnBackend::print(const Tensor& tensor) {
+  std::cout << "OneDnnTensor" << std::endl
+            << tensor.getAdapter<OneDnnTensor>().toString() << std::endl;
 }
 
 } // namespace fl

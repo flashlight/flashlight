@@ -7,6 +7,10 @@
 
 #include "flashlight/fl/tensor/backend/onednn/OneDnnTensor.h"
 
+#include <stdexcept>
+
+#include "flashlight/fl/tensor/backend/onednn/OneDnnBackend.h"
+
 #define FL_ONEDNN_TENSOR_UNIMPLEMENTED \
   throw std::invalid_argument(         \
       "OneDnnTensor::" + std::string(__func__) + " - unimplemented.");
@@ -27,7 +31,10 @@ OneDnnTensor::OneDnnTensor(
     const Tensor& /* values */,
     const Tensor& /* rowIdx */,
     const Tensor& /* colIdx */,
-    StorageType /* storageType */) {}
+    StorageType /* storageType */) {
+  throw std::runtime_error(
+      "OneDnnTensor currently doesn't support sparse tensor");
+}
 
 std::unique_ptr<TensorAdapterBase> OneDnnTensor::clone() const {
   FL_ONEDNN_TENSOR_UNIMPLEMENTED;
@@ -42,11 +49,11 @@ Tensor OneDnnTensor::shallowCopy() {
 }
 
 TensorBackendType OneDnnTensor::backendType() const {
-  FL_ONEDNN_TENSOR_UNIMPLEMENTED;
+  return backend().backendType();
 }
 
 TensorBackend& OneDnnTensor::backend() const {
-  FL_ONEDNN_TENSOR_UNIMPLEMENTED;
+  return OneDnnBackend::getInstance();
 }
 
 const Shape& OneDnnTensor::shape() {
@@ -58,7 +65,7 @@ fl::dtype OneDnnTensor::type() {
 }
 
 bool OneDnnTensor::isSparse() {
-  FL_ONEDNN_TENSOR_UNIMPLEMENTED;
+  return false;
 }
 
 Location OneDnnTensor::location() {
@@ -118,21 +125,19 @@ Tensor OneDnnTensor::asContiguousTensor() {
 }
 
 void OneDnnTensor::setContext(void* /* context */) {
-  // Used to store arbitrary data on a Tensor - can be a noop.
-  FL_ONEDNN_TENSOR_UNIMPLEMENTED;
+  // no-op
 }
 
 void* OneDnnTensor::getContext() {
-  // Used to store arbitrary data on a Tensor - can be a noop.
-  FL_ONEDNN_TENSOR_UNIMPLEMENTED;
+  return nullptr;
 }
 
 std::string OneDnnTensor::toString() {
   FL_ONEDNN_TENSOR_UNIMPLEMENTED;
 }
 
-std::ostream& OneDnnTensor::operator<<(std::ostream& /* ostr */) {
-  FL_ONEDNN_TENSOR_UNIMPLEMENTED;
+std::ostream& OneDnnTensor::operator<<(std::ostream& ostr) {
+  return ostr << toString();
 }
 
 /******************** Assignment Operators ********************/
