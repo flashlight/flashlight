@@ -71,6 +71,7 @@ class CMakeBuild(build_ext):
             "-DFL_BUILD_CORE=OFF",
             "-DFL_BUILD_ALL_LIBS=ON",
             "-DFL_BUILD_EXAMPLES=OFF",
+            "-DFL_BUILD_TESTS=OFF",
             "-DFL_LIBRARIES_BUILD_FOR_PYTHON=ON",
             "-DFL_LIBRARIES_USE_CUDA=" + use_cuda,
             "-DFL_LIBRARIES_USE_MKL=" + use_mkl,
