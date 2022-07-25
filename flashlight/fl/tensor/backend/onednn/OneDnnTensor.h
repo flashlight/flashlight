@@ -17,6 +17,9 @@ namespace fl {
  */
 class OneDnnTensor : public TensorAdapterBase {
  public:
+  /**
+   * Construct an empty OneDNNTensor.
+   */
   OneDnnTensor();
 
   /**
@@ -33,7 +36,7 @@ class OneDnnTensor : public TensorAdapterBase {
       const void* ptr,
       Location memoryLocation);
 
-  // Constructor for a sparse OneDNNTensor. Can throw if unimplemented.
+  // Constructor for a sparse OneDNNTensor; currently not supported.
   OneDnnTensor(
       const Dim nRows,
       const Dim nCols,
