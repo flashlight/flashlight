@@ -17,11 +17,12 @@ target_sources(
   flashlight
   PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/OneDnnBackend.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/OneDnnCPUStream.cpp
   ${CMAKE_CURRENT_LIST_DIR}/OneDnnTensor.cpp
 )
 
 target_link_libraries(
   flashlight
-  PRIVATE
-  DNNL::dnnl
+  PUBLIC
+    DNNL::dnnl
 )

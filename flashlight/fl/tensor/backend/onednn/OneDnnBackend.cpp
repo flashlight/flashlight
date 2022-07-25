@@ -19,10 +19,6 @@
 
 namespace fl {
 
-OneDnnBackend::OneDnnBackend() {
-  // Set up state
-}
-
 OneDnnBackend& OneDnnBackend::getInstance() {
   static OneDnnBackend instance;
   return instance;
@@ -30,6 +26,14 @@ OneDnnBackend& OneDnnBackend::getInstance() {
 
 TensorBackendType OneDnnBackend::backendType() const {
   return TensorBackendType::OneDnn;
+}
+
+const Stream& OneDnnBackend::stream() const {
+  return *stream_;
+}
+
+const dnnl::engine& OneDnnBackend::engine() const {
+  return engine_;
 }
 
 /* -------------------------- Compute Functions -------------------------- */
