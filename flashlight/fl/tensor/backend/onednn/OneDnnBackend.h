@@ -9,14 +9,21 @@
 
 #include "flashlight/fl/tensor/TensorBackend.h"
 
+#include <memory>
+
+#include "flashlight/fl/tensor/backend/onednn/OneDnnCPUStream.h"
+
 namespace fl {
 
 /**
  * A tensor backend implementation using the OneDNN library.
  */
 class OneDnnBackend : public TensorBackend {
+  dnnl::engine engine_{dnnl::engine(dnnl::engine::kind::cpu, 0)};
+  std::shared_ptr<Stream> stream_{OneDnnCPUStream::create(engine_)};
+
  public:
-  OneDnnBackend();
+  OneDnnBackend() = default;
 
   static OneDnnBackend& getInstance();
   ~OneDnnBackend() override = default;
@@ -27,6 +34,20 @@ class OneDnnBackend : public TensorBackend {
   OneDnnBackend(const OneDnnBackend&) = delete;
   OneDnnBackend& operator=(OneDnnBackend&&) = delete;
   OneDnnBackend& operator=(const OneDnnBackend&) = delete;
+
+  /**
+   * Gets the active OneDNN stream.
+   *
+   * @return the active OneDNN stream.
+   */
+  const Stream& stream() const;
+
+  /**
+   * Gets the active OneDNN engine.
+   *
+   * @return the active OneDNN engine.
+   */
+  const dnnl::engine& engine() const;
 
   /* -------------------------- Compute Functions -------------------------- */
   void eval(const Tensor& tensor) override;
