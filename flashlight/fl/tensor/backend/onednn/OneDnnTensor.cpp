@@ -26,12 +26,40 @@ namespace fl {
 
 namespace {
 
+constexpr float kfloatEqualTolerance = 1e-5;
+
 template <typename T>
 void copyScalar(void* out, const void* data) {
   *(static_cast<T*>(out)) = *(static_cast<const T*>(data));
 }
 
+bool floatsEqual(
+    const void* lhs,
+    const void* rhs,
+    unsigned numFloats) {
+  auto lhsFloats = static_cast<const float*>(lhs);
+  auto rhsFloats = static_cast<const float*>(rhs);
+  // TODO consider adding loop parallelism
+  for (auto i = 0; i < numFloats; i++) {
+    if (std::abs(lhsFloats[i] - rhsFloats[i]) >= kfloatEqualTolerance) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool bytesEqual(const void* lhs, const void* rhs, unsigned numBytes) {
+  return std::memcmp(lhs, rhs, numBytes) == 0;
+}
+
 } // namespace
+
+const void* OneDnnTensor::getContiguousData() {
+  return isContiguous() ? memory_.get_data_handle()
+                        : asContiguousTensor()
+                              .getAdapter<OneDnnTensor>()
+                              .memory_.get_data_handle();
+}
 
 OneDnnTensor::OneDnnTensor(const Shape& shape, dnnl::memory&& memory)
     : memory_(std::move(memory)), shape_(shape) {}
@@ -346,10 +374,7 @@ std::string dataToString(const void* data, const Shape& shape) {
 }
 
 std::string OneDnnTensor::toString() {
-  const void* data = isContiguous() ? memory_.get_data_handle()
-                                    : asContiguousTensor()
-                                          .getAdapter<OneDnnTensor>()
-                                          .memory_.get_data_handle();
+  const void* data = getContiguousData();
   switch (type()) {
     case fl::dtype::f16:
       throw std::runtime_error("OneDnnTensor::toString doesn't support f16");
@@ -411,5 +436,22 @@ FL_ONEDNN_TENSOR_ASSIGN_OP(inPlaceMultiply); // *=
 FL_ONEDNN_TENSOR_ASSIGN_OP(inPlaceDivide); // /=
 #undef FL_ONEDNN_TENSOR_ASSIGN_OP_TYPE
 #undef FL_ONEDNN_TENSOR_ASSIGN_OP
+
+bool OneDnnTensor::equals(OneDnnTensor&& other) {
+  if (this->shape_ != other.shape_) {
+    return false;
+  }
+  const auto type = this->memory_.get_desc().data_type();
+  if (type != other.memory_.get_desc().data_type()) {
+    return false;
+  }
+  // TODO investigate ways to speed up this on non-CPU platform.
+  const void* lhsData = this->getContiguousData();
+  const void* rhsData = other.getContiguousData();
+  // TODO update once f64 is available (after bumping OneDNN to newer version)
+  return type == dnnl::memory::data_type::f32
+      ? floatsEqual(lhsData, rhsData, this->shape_.elements())
+      : bytesEqual(lhsData, rhsData, this->memory_.get_desc().get_size());
+}
 
 } // namespace fl

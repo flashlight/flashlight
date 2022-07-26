@@ -47,6 +47,10 @@ class OneDnnTensor : public TensorAdapterBase {
   dnnl::memory memory_;
   Shape shape_;
 
+  // Trigger computation to convert to contiguous tensor if needed, block until
+  // data is fully ready.
+  const void* getContiguousData();
+
  public:
   /**
    * Construct an OneDNNTensor with given shape and memory.
@@ -138,6 +142,13 @@ class OneDnnTensor : public TensorAdapterBase {
   ASSIGN_OP(inPlaceDivide); // /=
 #undef ASSIGN_OP_TYPE
 #undef ASSIGN_OP
+
+/**
+ * Deep comparison over shape, type, and data (with some tolerance for float).
+ *
+ * @return true if this OneDnn tensor equals the given one.
+ */
+bool equals(OneDnnTensor&& other);
 };
 
 } // namespace fl

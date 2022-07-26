@@ -142,6 +142,41 @@ TEST(OneDnnTensorTest, toString) {
       "  [7, 9, 11]]]\n");
 }
 
+TEST(OneDnnTensorTest, equals) {
+  const fl::Shape shape{2, 3, 4};
+  const fl::Location location = fl::Location::Host;
+
+  {
+    std::vector<int> data(shape.elements());
+    const fl::dtype type = fl::dtype::s32;
+    std::generate(data.begin(), data.end(), std::rand);
+    OneDnnTensor t1 = OneDnnTensor(shape, type, data.data(), location);
+    ASSERT_TRUE(t1.equals(OneDnnTensor(shape, type, data.data(), location)));
+    data[0]++;
+    ASSERT_FALSE(t1.equals(OneDnnTensor(shape, type, data.data(), location)));
+  }
+
+  {
+    std::vector<float> data(shape.elements());
+    const fl::dtype type = fl::dtype::f32;
+    std::generate(data.begin(), data.end(), std::rand);
+    OneDnnTensor t1 = OneDnnTensor(shape, type, data.data(), location);
+    ASSERT_TRUE(t1.equals(OneDnnTensor(shape, type, data.data(), location)));
+    data[0] = (data[0] + 1) * (data[0] + 1); // make sure it's different enough
+    ASSERT_FALSE(t1.equals(OneDnnTensor(shape, type, data.data(), location)));
+  }
+
+  {
+    std::vector<char> data(shape.elements());
+    const fl::dtype type = fl::dtype::u8;
+    std::generate(data.begin(), data.end(), std::rand);
+    OneDnnTensor t1 = OneDnnTensor(shape, type, data.data(), location);
+    ASSERT_TRUE(t1.equals(OneDnnTensor(shape, type, data.data(), location)));
+    data[0]++;
+    ASSERT_FALSE(t1.equals(OneDnnTensor(shape, type, data.data(), location)));
+  }
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   fl::init();
