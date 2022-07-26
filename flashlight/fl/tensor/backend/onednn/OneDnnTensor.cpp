@@ -8,11 +8,14 @@
 #include "flashlight/fl/tensor/backend/onednn/OneDnnTensor.h"
 
 #include <cstring>
+#include <numeric>
 #include <stdexcept>
 
 #include "flashlight/fl/tensor/Shape.h"
 #include "flashlight/fl/tensor/backend/onednn/OneDnnBackend.h"
 #include "flashlight/fl/tensor/backend/onednn/Utils.h"
+
+#include <dnnl_debug.h>
 
 #define FL_ONEDNN_TENSOR_UNIMPLEMENTED \
   throw std::invalid_argument(         \
@@ -66,6 +69,7 @@ std::unique_ptr<TensorAdapterBase> OneDnnTensor::clone() const {
 }
 
 Tensor OneDnnTensor::copy() {
+  // TODO copy on write
   FL_ONEDNN_TENSOR_UNIMPLEMENTED;
 }
 
@@ -121,11 +125,28 @@ bool OneDnnTensor::isLocked() {
 }
 
 bool OneDnnTensor::isContiguous() {
-  FL_ONEDNN_TENSOR_UNIMPLEMENTED;
+  if (shape_.ndim() == 0) { // scalar
+    return true;
+  }
+  const auto& dims = shape_.get();
+  const auto leadingStride =
+      std::accumulate(dims.begin(), dims.end() - 1, 1, std::multiplies<Dim>());
+  return this->strides().get().back() == leadingStride;
 }
 
 Shape OneDnnTensor::strides() {
-  FL_ONEDNN_TENSOR_UNIMPLEMENTED;
+  const auto& memoryDesc = memory_.get_desc().data;
+  if (memoryDesc.format_kind != dnnl_format_kind_t::dnnl_blocked) {
+    throw std::invalid_argument(
+        "[OneDnnTensor::strides] Unexpected memory format kind: " +
+        std::string(dnnl_fmt_kind2str(memoryDesc.format_kind)));
+  }
+  const auto& blockingDesc = memoryDesc.format_desc.blocking;
+  std::vector<Dim> strides; // reverse internal strides to get col-major strides
+  for (int i = memoryDesc.ndims - 1; i >= 0; i--) {
+    strides.push_back(blockingDesc.strides[i]);
+  }
+  return Shape(strides);
 }
 
 const Stream& OneDnnTensor::stream() const {
@@ -149,7 +170,13 @@ Tensor OneDnnTensor::flat(const Index& /* idx */) const {
 }
 
 Tensor OneDnnTensor::asContiguousTensor() {
-  FL_ONEDNN_TENSOR_UNIMPLEMENTED;
+  // TODO
+  // WE won't have strided tensors for now; update this after adding indexing
+  if (!isContiguous()) {
+    throw std::runtime_error(
+        "[OneDnnTensor::asContiguousTensor] Strided tensor currently unsupported");
+  }
+  return this->copy();
 }
 
 void OneDnnTensor::setContext(void* /* context */) {
