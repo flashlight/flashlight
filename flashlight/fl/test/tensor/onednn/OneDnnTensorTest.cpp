@@ -35,6 +35,13 @@ void assertRawDataConstructor(
   ASSERT_EQ(scalarVar, scalar);
 }
 
+template <typename T>
+static OneDnnTensor fromVector(const fl::Shape& s, const std::vector<T>& v) {
+  assert(s.elements() == v.size());
+  return OneDnnTensor(
+      s, fl::dtype_traits<T>::fl_type, v.data(), fl::Location::Host);
+}
+
 } // namespace
 
 TEST(OneDnnTensorTest, emptyConstructor) {
@@ -48,6 +55,7 @@ TEST(OneDnnTensorTest, emptyConstructor) {
   ASSERT_EQ(tensor.strides(), fl::Shape({1}));
   int scalar = 0;
   ASSERT_THROW(tensor.scalar(&scalar), std::invalid_argument);
+  ASSERT_EQ(tensor.toString(), "[]\n");
 }
 
 TEST(OneDnnTensorTest, rawDataConstructor0D) {
@@ -98,6 +106,40 @@ TEST(OneDnnTensorTest, rawDataConstructor4D) {
   const fl::Shape strides{1, 2, 6, 24};
   OneDnnTensor tensor(shape, type, data.data(), location);
   assertRawDataConstructor(tensor, shape, type, location, strides, data[0]);
+}
+
+TEST(OneDnnTensorTest, toString) {
+  // NOTE using `char` to make sure we don't print out bytes as ascii chars
+  // empty
+  ASSERT_EQ(fromVector<char>({0}, {}).toString(), "[]\n");
+  ASSERT_EQ(fromVector<char>({0, 0}, {}).toString(), "[]\n");
+
+  // 1D
+  ASSERT_EQ(fromVector<char>({}, {0}).toString(), "[0]\n");
+
+  // 2D
+  ASSERT_EQ(
+      fromVector<char>({4}, {0, 1, 2, 3}).toString(),
+      "[0,\n"
+      " 1,\n"
+      " 2,\n"
+      " 3]\n");
+
+  // 2D
+  ASSERT_EQ(
+      fromVector<char>({3, 2}, {0, 1, 2, 3, 4, 5}).toString(),
+      "[[0, 3],\n"
+      " [1, 4],\n"
+      " [2, 5]]\n");
+
+  // 3D
+  ASSERT_EQ(
+      fromVector<char>({2, 3, 2}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11})
+          .toString(),
+      "[[[0, 2, 4],\n"
+      "  [1, 3, 5]],\n"
+      " [[6, 8, 10],\n"
+      "  [7, 9, 11]]]\n");
 }
 
 int main(int argc, char** argv) {
