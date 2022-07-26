@@ -9,6 +9,8 @@
 
 #include "flashlight/fl/tensor/TensorAdapter.h"
 
+#include <memory>
+
 #include <dnnl.hpp>
 
 namespace fl {
@@ -18,40 +20,57 @@ namespace fl {
  * expressed in Flashlight Tensors to OneDNN.
  */
 class OneDnnTensor : public TensorAdapterBase {
-  /**
-   * We store the memory as (a). row-major with (b). dimensions reversed because
-   * 1. dnnl::memory::desc::reshape only works on row-major layout.
-   * 2. Flashlight requires column-major layout.
-   *
-   * NOTE (b) allows the index conversion to be a simple reversal, because the
-   * logical and internal representations are isomorphic via reversing all the
-   * axes, i.e., transpose({N-1, ..., 0}).
-   *
-   * Example:
-   *   For shape (3, 2) and data [1, ..., 6], the logical Flashlight Tensor is
-   *       [[1, 4],
-   *        [2, 5],
-   *        [3, 6]]
-   *
-   *   whereas the underlying OneDnnTensor representation is:
-   *     fl::Shape   = (3, 2)      # same as logical representation
-   *     dnnl::memory
-   *         dims    = (2, 3)      # reversed
-   *         data    = [1, ..., 6] # same as logical representation
-   *         strides = (3, 1)      # reversed
-   *
-   *   Visually, the dnnl::memory internally represents such a tensor:
-   *       [[1, 2, 3],
-   *        [4, 5, 6]]
-   */
-  dnnl::memory memory_;
-  Shape shape_;
+  struct SharedData {
+    /**
+     * We store the memory as (a). row-major with (b). dimensions reversed
+     * because
+     * 1. dnnl::memory::desc::reshape only works on row-major layout.
+     * 2. Flashlight requires column-major layout.
+     *
+     * NOTE (b) allows the index conversion to be a simple reversal, because the
+     * logical and internal representations are isomorphic via reversing all the
+     * axes, i.e., transpose({N-1, ..., 0}).
+     *
+     * Example:
+     *   For shape (3, 2) and data [1, ..., 6], the logical Flashlight Tensor is
+     *       [[1, 4],
+     *        [2, 5],
+     *        [3, 6]]
+     *
+     *   whereas the underlying OneDnnTensor representation is:
+     *     fl::Shape   = (3, 2)      # same as logical representation
+     *     dnnl::memory
+     *         dims    = (2, 3)      # reversed
+     *         data    = [1, ..., 6] # same as logical representation
+     *         strides = (3, 1)      # reversed
+     *
+     *   Visually, the dnnl::memory internally represents such a tensor:
+     *       [[1, 2, 3],
+     *        [4, 5, 6]]
+     */
+    dnnl::memory memory;
+    Shape shape;
+    // Whether the data in `memory` is ready (its computation finished).
+    bool isDataReady{false};
+  };
+
+  // shared among tensors that are shallow copied
+  std::shared_ptr<SharedData> sharedData_;
+
+  // Return the underlying data handle in `memory`.
+  // If `isDataReady` is false, sync and set it to true.
+  void* getOrEvalDataHandle();
 
   // Trigger computation to convert to contiguous tensor if needed, block until
   // data is fully ready.
   const void* getContiguousData();
 
  public:
+  /**
+   * Helper constructor for shallow-copying. For internal use only.
+   */
+  explicit OneDnnTensor(std::shared_ptr<SharedData> sharedData);
+
   /**
    * Construct an OneDNNTensor with given shape and memory.
    *

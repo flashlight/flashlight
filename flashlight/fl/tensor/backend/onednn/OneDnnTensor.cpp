@@ -8,6 +8,7 @@
 #include "flashlight/fl/tensor/backend/onednn/OneDnnTensor.h"
 
 #include <cstring>
+#include <memory>
 #include <numeric>
 #include <stdexcept>
 #include <sstream>
@@ -54,15 +55,28 @@ bool bytesEqual(const void* lhs, const void* rhs, unsigned numBytes) {
 
 } // namespace
 
+OneDnnTensor::OneDnnTensor(std::shared_ptr<SharedData> sharedData)
+    : sharedData_(std::move(sharedData)) {}
+
 const void* OneDnnTensor::getContiguousData() {
-  return isContiguous() ? memory_.get_data_handle()
-                        : asContiguousTensor()
-                              .getAdapter<OneDnnTensor>()
-                              .memory_.get_data_handle();
+  return isContiguous()
+      ? getOrEvalDataHandle()
+      : asContiguousTensor().getAdapter<OneDnnTensor>().getOrEvalDataHandle();
 }
 
-OneDnnTensor::OneDnnTensor(const Shape& shape, dnnl::memory&& memory)
-    : memory_(std::move(memory)), shape_(shape) {}
+void* OneDnnTensor::getOrEvalDataHandle() {
+  if (!sharedData_->isDataReady) {
+    stream().sync();
+    sharedData_->isDataReady = true;
+  }
+  return sharedData_->memory.get_data_handle();
+}
+
+OneDnnTensor::OneDnnTensor(const Shape& shape, dnnl::memory&& memory) {
+  sharedData_ = std::make_shared<SharedData>();
+  sharedData_->shape = shape;
+  sharedData_->memory = std::move(memory);
+}
 
 OneDnnTensor::OneDnnTensor()
     : OneDnnTensor({0}, fl::dtype::f32, nullptr, Location::Host) {}
@@ -71,22 +85,24 @@ OneDnnTensor::OneDnnTensor(
     const Shape& shape,
     fl::dtype type,
     const void* ptr,
-    Location memoryLocation) : shape_(shape) {
+    Location memoryLocation) {
   // TODO handle Location::Device once we add CL support
   if (memoryLocation != Location::Host) {
     throw std::invalid_argument(
         "[OneDnnTensor] initialization data must be on host.");
   }
   const auto memDesc = dnnl::memory::desc(
-      detail::shapeToOneDnnDims(shape_),
+      detail::shapeToOneDnnDims(shape),
       detail::flToOneDnnType(type),
-      detail::shapeToOneDnnStrides(shape_),
+      detail::shapeToOneDnnStrides(shape),
       /* allowEmpty */ true);
-  memory_ = dnnl::memory(memDesc, OneDnnBackend::getInstance().engine());
-  const auto numDataBytes = shape_.elements() * fl::getTypeSize(type);
+  sharedData_ = std::make_shared<SharedData>();
+  sharedData_->shape = shape;
+  sharedData_->memory = dnnl::memory(memDesc, OneDnnBackend::getInstance().engine());
+  const auto numDataBytes = shape.elements() * fl::getTypeSize(type);
   // NOTE, once we support CL, we can take ownership directly for device ptr.
   if (ptr != nullptr) {
-    std::memcpy(memory_.get_data_handle(), ptr, numDataBytes);
+    std::memcpy(sharedData_->memory.get_data_handle(), ptr, numDataBytes);
   }
 }
 
@@ -103,7 +119,7 @@ OneDnnTensor::OneDnnTensor(
 
 std::unique_ptr<TensorAdapterBase> OneDnnTensor::clone() const {
   // shallow copy the underlying memory
-  return std::make_unique<OneDnnTensor>(shape_, dnnl::memory(memory_));
+  return std::make_unique<OneDnnTensor>(sharedData_);
 }
 
 Tensor OneDnnTensor::copy() {
@@ -113,7 +129,7 @@ Tensor OneDnnTensor::copy() {
 
 Tensor OneDnnTensor::shallowCopy() {
   // shallow copy the underlying memory
-  return fl::toTensor<OneDnnTensor>(shape_, dnnl::memory(memory_));
+  return Tensor(std::make_unique<OneDnnTensor>(sharedData_));
 }
 
 TensorBackendType OneDnnTensor::backendType() const {
@@ -125,11 +141,11 @@ TensorBackend& OneDnnTensor::backend() const {
 }
 
 const Shape& OneDnnTensor::shape() {
-  return shape_;
+  return sharedData_->shape;
 }
 
 fl::dtype OneDnnTensor::type() {
-  return detail::oneDnnToFlType(memory_.get_desc().data_type());
+  return detail::oneDnnToFlType(sharedData_->memory.get_desc().data_type());
 }
 
 bool OneDnnTensor::isSparse() {
@@ -137,17 +153,17 @@ bool OneDnnTensor::isSparse() {
 }
 
 Location OneDnnTensor::location() {
-  return memory_.get_engine().get_kind() == dnnl::engine::kind::cpu
+  return sharedData_->memory.get_engine().get_kind() == dnnl::engine::kind::cpu
       ? Location::Host
       : Location::Device;
 }
 
 void OneDnnTensor::scalar(void* out) {
-  if (shape_.elements() == 0) {
+  if (sharedData_->shape.elements() == 0) {
     throw std::invalid_argument("Cannot call scalar on empty OneDnnTensor");
   }
-  const void* data = memory_.get_data_handle();
-  const auto type = memory_.get_desc().data_type();
+  const void* data = getOrEvalDataHandle();
+  const auto type = sharedData_->memory.get_desc().data_type();
   switch(type) {
     case dnnl::memory::data_type::f32: return copyScalar<float>(out, data);
     case dnnl::memory::data_type::s32: return copyScalar<int>(out, data);
@@ -179,17 +195,18 @@ bool OneDnnTensor::isLocked() {
 }
 
 bool OneDnnTensor::isContiguous() {
-  if (shape_.ndim() == 0) { // scalar
+  const auto& shape = sharedData_->shape;
+  if (shape.ndim() == 0) { // scalar
     return true;
   }
-  const auto& dims = shape_.get();
+  const auto& dims = shape.get();
   const auto leadingStride =
       std::accumulate(dims.begin(), dims.end() - 1, 1, std::multiplies<Dim>());
   return this->strides().get().back() == leadingStride;
 }
 
 Shape OneDnnTensor::strides() {
-  const auto& memoryDesc = memory_.get_desc().data;
+  const auto& memoryDesc = sharedData_->memory.get_desc().data;
   if (memoryDesc.format_kind != dnnl_format_kind_t::dnnl_blocked) {
     throw std::invalid_argument(
         "[OneDnnTensor::strides] Unexpected memory format kind: " +
@@ -375,29 +392,30 @@ std::string dataToString(const void* data, const Shape& shape) {
 
 std::string OneDnnTensor::toString() {
   const void* data = getContiguousData();
+  const auto& shape = sharedData_->shape;
   switch (type()) {
     case fl::dtype::f16:
       throw std::runtime_error("OneDnnTensor::toString doesn't support f16");
     case fl::dtype::f32:
-      return dataToString<float>(data, shape_);
+      return dataToString<float>(data, shape);
     case fl::dtype::f64:
-      return dataToString<double>(data, shape_);
+      return dataToString<double>(data, shape);
     case fl::dtype::b8:
-      return dataToString<char>(data, shape_);
+      return dataToString<char>(data, shape);
     case fl::dtype::s16:
-      return dataToString<short>(data, shape_);
+      return dataToString<short>(data, shape);
     case fl::dtype::s32:
-      return dataToString<int>(data, shape_);
+      return dataToString<int>(data, shape);
     case fl::dtype::s64:
-      return dataToString<long long>(data, shape_);
+      return dataToString<long long>(data, shape);
     case fl::dtype::u8:
-      return dataToString<unsigned char>(data, shape_);
+      return dataToString<unsigned char>(data, shape);
     case fl::dtype::u16:
-      return dataToString<unsigned short>(data, shape_);
+      return dataToString<unsigned short>(data, shape);
     case fl::dtype::u32:
-      return dataToString<unsigned int>(data, shape_);
+      return dataToString<unsigned int>(data, shape);
     case fl::dtype::u64:
-      return dataToString<unsigned long long>(data, shape_);
+      return dataToString<unsigned long long>(data, shape);
   }
 }
 
@@ -438,11 +456,15 @@ FL_ONEDNN_TENSOR_ASSIGN_OP(inPlaceDivide); // /=
 #undef FL_ONEDNN_TENSOR_ASSIGN_OP
 
 bool OneDnnTensor::equals(OneDnnTensor&& other) {
-  if (this->shape_ != other.shape_) {
+  if (this->sharedData_ == other.sharedData_) {
+    return true;
+  }
+  if (this->sharedData_->shape != other.sharedData_->shape) {
     return false;
   }
-  const auto type = this->memory_.get_desc().data_type();
-  if (type != other.memory_.get_desc().data_type()) {
+  const auto& thisMemDesc = this->sharedData_->memory.get_desc();
+  const auto type = thisMemDesc.data_type();
+  if (type != other.sharedData_->memory.get_desc().data_type()) {
     return false;
   }
   // TODO investigate ways to speed up this on non-CPU platform.
@@ -450,8 +472,8 @@ bool OneDnnTensor::equals(OneDnnTensor&& other) {
   const void* rhsData = other.getContiguousData();
   // TODO update once f64 is available (after bumping OneDNN to newer version)
   return type == dnnl::memory::data_type::f32
-      ? floatsEqual(lhsData, rhsData, this->shape_.elements())
-      : bytesEqual(lhsData, rhsData, this->memory_.get_desc().get_size());
+      ? floatsEqual(lhsData, rhsData, this->sharedData_->shape.elements())
+      : bytesEqual(lhsData, rhsData, thisMemDesc.get_size());
 }
 
 } // namespace fl
