@@ -476,4 +476,8 @@ bool OneDnnTensor::equals(OneDnnTensor&& other) {
       : bytesEqual(lhsData, rhsData, thisMemDesc.get_size());
 }
 
+dnnl::memory& OneDnnTensor::memory() {
+  return sharedData_->memory;
+}
+
 } // namespace fl

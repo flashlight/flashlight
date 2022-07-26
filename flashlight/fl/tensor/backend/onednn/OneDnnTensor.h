@@ -8,6 +8,7 @@
 #pragma once
 
 #include "flashlight/fl/tensor/TensorAdapter.h"
+#include "flashlight/fl/tensor/backend/onednn/OneDnnBackend.h"
 
 #include <memory>
 
@@ -168,6 +169,14 @@ class OneDnnTensor : public TensorAdapterBase {
  * @return true if this OneDnn tensor equals the given one.
  */
 bool equals(OneDnnTensor&& other);
+
+/**
+ * Get the underlying OneDNN memory handle.
+ * NOTE not const-correct to conform with OneDNN primitive execution API.
+ *
+ * @return an immutable reference to the underlying OneDNN memory handle.
+ */
+dnnl::memory& memory();
 };
 
 } // namespace fl
