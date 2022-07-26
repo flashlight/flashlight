@@ -12,6 +12,7 @@
 
 #include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/fl/tensor/backend/onednn/OneDnnTensor.h"
+#include "flashlight/fl/tensor/backend/onednn/Utils.h"
 
 #define FL_ONEDNN_BACKEND_UNIMPLEMENTED \
   throw std::invalid_argument(          \
@@ -32,6 +33,10 @@ const Stream& OneDnnBackend::stream() const {
   return *stream_;
 }
 
+const dnnl::stream& OneDnnBackend::nativeStream() const {
+  return stream_->handle();
+}
+
 const dnnl::engine& OneDnnBackend::engine() const {
   return engine_;
 }
@@ -42,8 +47,8 @@ void OneDnnBackend::eval(const Tensor& /* tensor */) {
   // no-op since OneDNN computations are launched eagerly
 }
 
-bool OneDnnBackend::supportsDataType(const fl::dtype& /* dtype */) const {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+bool OneDnnBackend::supportsDataType(const fl::dtype& type) const {
+  return detail::isTypeSupportedByOneDnn(type);
 }
 
 void OneDnnBackend::getMemMgrInfo(

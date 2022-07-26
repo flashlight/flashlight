@@ -7,9 +7,12 @@
 
 #include "flashlight/fl/tensor/backend/onednn/OneDnnTensor.h"
 
+#include <cstring>
 #include <stdexcept>
 
+#include "flashlight/fl/tensor/Shape.h"
 #include "flashlight/fl/tensor/backend/onednn/OneDnnBackend.h"
+#include "flashlight/fl/tensor/backend/onednn/Utils.h"
 
 #define FL_ONEDNN_TENSOR_UNIMPLEMENTED \
   throw std::invalid_argument(         \
@@ -17,13 +20,34 @@
 
 namespace fl {
 
-OneDnnTensor::OneDnnTensor() {}
+OneDnnTensor::OneDnnTensor(const Shape& shape, dnnl::memory&& memory)
+    : memory_(std::move(memory)), shape_(shape) {}
+
+OneDnnTensor::OneDnnTensor()
+    : OneDnnTensor({0}, fl::dtype::f32, nullptr, Location::Host) {}
 
 OneDnnTensor::OneDnnTensor(
-    const Shape& /* shape */,
-    fl::dtype /* type */,
-    const void* /* ptr */,
-    Location /* memoryLocation */) {}
+    const Shape& shape,
+    fl::dtype type,
+    const void* ptr,
+    Location memoryLocation) : shape_(shape) {
+  // TODO handle Location::Device once we add CL support
+  if (memoryLocation != Location::Host) {
+    throw std::invalid_argument(
+        "[OneDnnTensor] initialization data must be on host.");
+  }
+  const auto memDesc = dnnl::memory::desc(
+      detail::shapeToOneDnnDims(shape_),
+      detail::flToOneDnnType(type),
+      detail::shapeToOneDnnStrides(shape_),
+      /* allowEmpty */ true);
+  memory_ = dnnl::memory(memDesc, OneDnnBackend::getInstance().engine());
+  const auto numDataBytes = shape_.elements() * fl::getTypeSize(type);
+  // NOTE, once we support CL, we can take ownership directly for device ptr.
+  if (ptr != nullptr) {
+    std::memcpy(memory_.get_data_handle(), ptr, numDataBytes);
+  }
+}
 
 OneDnnTensor::OneDnnTensor(
     const Dim /* nRows */,
@@ -37,7 +61,8 @@ OneDnnTensor::OneDnnTensor(
 }
 
 std::unique_ptr<TensorAdapterBase> OneDnnTensor::clone() const {
-  FL_ONEDNN_TENSOR_UNIMPLEMENTED;
+  // shallow copy the underlying memory
+  return std::make_unique<OneDnnTensor>(shape_, dnnl::memory(memory_));
 }
 
 Tensor OneDnnTensor::copy() {
@@ -45,7 +70,8 @@ Tensor OneDnnTensor::copy() {
 }
 
 Tensor OneDnnTensor::shallowCopy() {
-  FL_ONEDNN_TENSOR_UNIMPLEMENTED;
+  // shallow copy the underlying memory
+  return fl::toTensor<OneDnnTensor>(shape_, dnnl::memory(memory_));
 }
 
 TensorBackendType OneDnnTensor::backendType() const {
@@ -57,11 +83,11 @@ TensorBackend& OneDnnTensor::backend() const {
 }
 
 const Shape& OneDnnTensor::shape() {
-  FL_ONEDNN_TENSOR_UNIMPLEMENTED;
+  return shape_;
 }
 
 fl::dtype OneDnnTensor::type() {
-  FL_ONEDNN_TENSOR_UNIMPLEMENTED;
+  return detail::oneDnnToFlType(memory_.get_desc().data_type());
 }
 
 bool OneDnnTensor::isSparse() {
@@ -69,7 +95,9 @@ bool OneDnnTensor::isSparse() {
 }
 
 Location OneDnnTensor::location() {
-  FL_ONEDNN_TENSOR_UNIMPLEMENTED;
+  return memory_.get_engine().get_kind() == dnnl::engine::kind::cpu
+      ? Location::Host
+      : Location::Device;
 }
 
 void OneDnnTensor::scalar(void* /* out */) {
@@ -101,7 +129,7 @@ Shape OneDnnTensor::strides() {
 }
 
 const Stream& OneDnnTensor::stream() const {
-  FL_ONEDNN_TENSOR_UNIMPLEMENTED;
+  return OneDnnBackend::getInstance().stream();
 }
 
 Tensor OneDnnTensor::astype(const dtype /* type */) {
