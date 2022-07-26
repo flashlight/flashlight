@@ -384,14 +384,17 @@ commands:
       - run:
           name: "Install Flashlight library Python bindings"
           command: |
-            pip3 install packaging nose
+            pip3 install virtualenv
+            virtualenv venv -p $(which python3)
+            source ./venv/bin/activate
+            pip install packaging nose
             cd bindings/python
             export USE_MKL=<< parameters.use_mkl >>
             export USE_CUDA=<< parameters.use_cuda >>
-            python3 setup.py install
+            pip install -e .
             # MKL doesn't work in current docker with CUDA
             export LD_PRELOAD=/opt/intel/mkl/lib/intel64/libmkl_def.so:/opt/intel/mkl/lib/intel64/libmkl_avx2.so:/opt/intel/mkl/lib/intel64/libmkl_core.so:/opt/intel/mkl/lib/intel64/libmkl_intel_lp64.so:/opt/intel/mkl/lib/intel64/libmkl_intel_thread.so:/opt/intel/lib/intel64_lin/libiomp5.so
-            cd .. && python3 -m nose python/tests -vds
+            cd .. && python -m nose python/tests -vds
 ############################ Jobs ############################
 jobs:
   ubuntu1604_gcc7_cuda_11_1_vcpkg_flashlight_libs:
