@@ -21,7 +21,8 @@ void assertRawDataConstructor(
     const fl::Shape& shape,
     const fl::dtype type,
     const fl::Location location,
-    const fl::Shape& strides) {
+    const fl::Shape& strides,
+    const int scalar) {
   ASSERT_EQ(tensor.shape(), shape);
   ASSERT_EQ(tensor.backendType(), fl::TensorBackendType::OneDnn);
   ASSERT_EQ(tensor.type(), type);
@@ -29,6 +30,9 @@ void assertRawDataConstructor(
   ASSERT_FALSE(tensor.isSparse());
   ASSERT_TRUE(tensor.isContiguous());
   ASSERT_EQ(tensor.strides(), strides);
+  int scalarVar = 0;
+  ASSERT_NO_THROW(tensor.scalar(&scalarVar));
+  ASSERT_EQ(scalarVar, scalar);
 }
 
 } // namespace
@@ -42,6 +46,8 @@ TEST(OneDnnTensorTest, emptyConstructor) {
   ASSERT_FALSE(tensor.isSparse());
   ASSERT_TRUE(tensor.isContiguous());
   ASSERT_EQ(tensor.strides(), fl::Shape({1}));
+  int scalar = 0;
+  ASSERT_THROW(tensor.scalar(&scalar), std::invalid_argument);
 }
 
 TEST(OneDnnTensorTest, rawDataConstructor0D) {
@@ -51,7 +57,7 @@ TEST(OneDnnTensorTest, rawDataConstructor0D) {
   const fl::Location location = fl::Location::Host;
   const fl::Shape strides{1};
   OneDnnTensor tensor(shape, type, data.data(), location);
-  assertRawDataConstructor(tensor, shape, type, location, strides);
+  assertRawDataConstructor(tensor, shape, type, location, strides, data[0]);
 }
 
 TEST(OneDnnTensorTest, rawDataConstructor1D) {
@@ -61,7 +67,7 @@ TEST(OneDnnTensorTest, rawDataConstructor1D) {
   const fl::Location location = fl::Location::Host;
   const fl::Shape strides{1};
   OneDnnTensor tensor(shape, type, data.data(), location);
-  assertRawDataConstructor(tensor, shape, type, location, strides);
+  assertRawDataConstructor(tensor, shape, type, location, strides, data[0]);
 }
 
 TEST(OneDnnTensorTest, rawDataConstructor2D) {
@@ -71,7 +77,7 @@ TEST(OneDnnTensorTest, rawDataConstructor2D) {
   const fl::Location location = fl::Location::Host;
   const fl::Shape strides{1, 2};
   OneDnnTensor tensor(shape, type, data.data(), location);
-  assertRawDataConstructor(tensor, shape, type, location, strides);
+  assertRawDataConstructor(tensor, shape, type, location, strides, data[0]);
 }
 
 TEST(OneDnnTensorTest, rawDataConstructor3D) {
@@ -81,7 +87,7 @@ TEST(OneDnnTensorTest, rawDataConstructor3D) {
   const fl::Location location = fl::Location::Host;
   const fl::Shape strides{1, 2, 6};
   OneDnnTensor tensor(shape, type, data.data(), location);
-  assertRawDataConstructor(tensor, shape, type, location, strides);
+  assertRawDataConstructor(tensor, shape, type, location, strides, data[0]);
 }
 
 TEST(OneDnnTensorTest, rawDataConstructor4D) {
@@ -91,7 +97,7 @@ TEST(OneDnnTensorTest, rawDataConstructor4D) {
   const fl::Location location = fl::Location::Host;
   const fl::Shape strides{1, 2, 6, 24};
   OneDnnTensor tensor(shape, type, data.data(), location);
-  assertRawDataConstructor(tensor, shape, type, location, strides);
+  assertRawDataConstructor(tensor, shape, type, location, strides, data[0]);
 }
 
 int main(int argc, char** argv) {

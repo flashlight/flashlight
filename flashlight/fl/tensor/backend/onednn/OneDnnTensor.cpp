@@ -23,6 +23,15 @@
 
 namespace fl {
 
+namespace {
+
+template <typename T>
+void copyScalar(void* out, const void* data) {
+  *(static_cast<T*>(out)) = *(static_cast<const T*>(data));
+}
+
+} // namespace
+
 OneDnnTensor::OneDnnTensor(const Shape& shape, dnnl::memory&& memory)
     : memory_(std::move(memory)), shape_(shape) {}
 
@@ -104,8 +113,24 @@ Location OneDnnTensor::location() {
       : Location::Device;
 }
 
-void OneDnnTensor::scalar(void* /* out */) {
-  FL_ONEDNN_TENSOR_UNIMPLEMENTED;
+void OneDnnTensor::scalar(void* out) {
+  if (shape_.elements() == 0) {
+    throw std::invalid_argument("Cannot call scalar on empty OneDnnTensor");
+  }
+  const void* data = memory_.get_data_handle();
+  const auto type = memory_.get_desc().data_type();
+  switch(type) {
+    case dnnl::memory::data_type::f32: return copyScalar<float>(out, data);
+    case dnnl::memory::data_type::s32: return copyScalar<int>(out, data);
+    case dnnl::memory::data_type::s8: return copyScalar<char>(out, data);
+    case dnnl::memory::data_type::u8: return copyScalar<unsigned char>(out, data);
+    case dnnl::memory::data_type::undef:
+    case dnnl::memory::data_type::f16:
+    case dnnl::memory::data_type::bf16:
+      throw std::runtime_error(
+          "Currently do not support scalarization of type: " +
+          detail::oneDnnDataTypeToStr(type));
+  }
 }
 
 void OneDnnTensor::device(void** /* out */) {
