@@ -10,6 +10,7 @@
 #include <cstring>
 #include <numeric>
 #include <stdexcept>
+#include <sstream>
 
 #include "flashlight/fl/tensor/Shape.h"
 #include "flashlight/fl/tensor/backend/onednn/OneDnnBackend.h"
@@ -212,8 +213,167 @@ void* OneDnnTensor::getContext() {
   return nullptr;
 }
 
+template <typename T>
+void printData(std::ostringstream& oss, const T& element) {
+  oss << element;
+}
+
+// specialization to print out element as number instead of ascii character
+template <>
+void printData(std::ostringstream& oss, const unsigned char& element) {
+  printData<unsigned>(oss, element); // safe cast w/o precision loss
+}
+
+// specialization to print out element as number instead of ascii character
+template <>
+void printData(std::ostringstream& oss, const char& element) {
+  printData<int>(oss, element); // safe cast w/o precision loss
+}
+
+// Treat `elements` as a column vector and print it to oss in the following
+// format:
+// ```
+// [$(elements[0]),
+//  ...,
+//  $(elements[rows - 1])]
+// ```
+// NOTE no newline at the end
+// RETURN pointer to the element after the last element to be printed.
+template <typename T>
+const T* printData1D(
+    std::ostringstream& oss,
+    const T* elements,
+    const fl::Dim rows) {
+  oss << '[';
+  for (auto row = 0; row < rows; row++) {
+    if (row != 0){ // not first/topmost row
+      oss << ' ';
+    }
+    printData(oss, elements[row]);
+    if (row != rows - 1) { // not last/bottommost row
+      oss << ',' << std::endl;
+    }
+  }
+  oss << ']';
+  return elements + rows;
+}
+
+// Treat `elements` as a column-major 2D matrix and print it to oss in the
+// following format:
+// ```
+// [[$(elements[0][0]), ..., $(elements[cols-1][0])]
+//   ...,
+//  [$(elements[0][rows-1]), ..., $(elements[cols-1][rows-1])]]
+// ```
+// NOTE no newline at the end
+// RETURN pointer to the element after the last element to be printed.
+template <typename T>
+const T* printData2D(
+    std::ostringstream& oss,
+    const T* elements,
+    const fl::Dim rows,
+    const fl::Dim cols,
+    const unsigned prefixSpaces = 0) {
+  oss << '[';
+  for (auto row = 0; row < rows; row++) {
+    if (row != 0) { // not first/topmost row
+      oss << std::string(prefixSpaces + 1, ' ');
+    }
+    oss << '[';
+    for (auto col = 0; col < cols; col++) {
+      printData(oss, elements[col * rows + row]);
+      if (col != cols - 1) { // not last/rightmost column
+        oss << ", ";
+      }
+    }
+    oss << ']';
+    if (row != rows - 1) { // not last/bottommost row
+      oss << ',' << std::endl;
+    }
+  }
+  oss << ']';
+  return elements + (cols * rows);
+}
+
+// Treat `elements` as a column-major tensor with dimensions dims[0:dimEndIdx],
+// and print it to oss as "slices" of tensors starting from the last dimension.
+// e.g., let N = dims[dimEndIdx-1], then we print:
+// ```
+// [slice0
+//   ...,
+//  sliceN]
+// ```
+// with spaces in front of each line, if `dimEndIdx != dims.size()`.
+// NOTE no newline at the end
+// RETURN pointer to the element after the last element to be printed.
+template <typename T>
+const T* printDataMultiDims(
+    std::ostringstream& oss,
+    const T* elements,
+    const std::vector<fl::Dim>& dims,
+    const unsigned dimEndIdx) { // exclusive index
+  if (dimEndIdx == 0) { // scalar
+    return printData1D(oss, elements, 1);
+  } else if (dimEndIdx == 1) {
+    return printData1D(oss, elements, dims[0]);
+  } else if (dimEndIdx == 2) {
+    const auto prefixSpaces = dims.size() - dimEndIdx;
+    return printData2D(oss, elements, dims[0], dims[1], prefixSpaces);
+  }
+  const auto dimTensors = dims[dimEndIdx - 1];
+  const T* nextStart = elements;
+  oss << '[';
+  for (auto i = 0; i < dimTensors; i++) {
+    if (i != 0) {
+      const auto prefixSpaces = dims.size() - dimEndIdx + 1;
+      oss << std::string(prefixSpaces, ' ');
+    }
+    nextStart = printDataMultiDims(oss, nextStart, dims, dimEndIdx - 1);
+    if (i != dimTensors - 1) { // not last tensor
+      oss << ',' << std::endl;
+    }
+  }
+  oss << ']';
+  return nextStart;
+}
+
+template <typename T>
+std::string dataToString(const void* data, const Shape& shape) {
+  std::ostringstream oss;
+  printDataMultiDims(oss, static_cast<const T*>(data), shape.get(), shape.ndim());
+  oss << std::endl; // make it easier to read
+  return oss.str();
+}
+
 std::string OneDnnTensor::toString() {
-  FL_ONEDNN_TENSOR_UNIMPLEMENTED;
+  const void* data = isContiguous() ? memory_.get_data_handle()
+                                    : asContiguousTensor()
+                                          .getAdapter<OneDnnTensor>()
+                                          .memory_.get_data_handle();
+  switch (type()) {
+    case fl::dtype::f16:
+      throw std::runtime_error("OneDnnTensor::toString doesn't support f16");
+    case fl::dtype::f32:
+      return dataToString<float>(data, shape_);
+    case fl::dtype::f64:
+      return dataToString<double>(data, shape_);
+    case fl::dtype::b8:
+      return dataToString<char>(data, shape_);
+    case fl::dtype::s16:
+      return dataToString<short>(data, shape_);
+    case fl::dtype::s32:
+      return dataToString<int>(data, shape_);
+    case fl::dtype::s64:
+      return dataToString<long long>(data, shape_);
+    case fl::dtype::u8:
+      return dataToString<unsigned char>(data, shape_);
+    case fl::dtype::u16:
+      return dataToString<unsigned short>(data, shape_);
+    case fl::dtype::u32:
+      return dataToString<unsigned int>(data, shape_);
+    case fl::dtype::u64:
+      return dataToString<unsigned long long>(data, shape_);
+  }
 }
 
 std::ostream& OneDnnTensor::operator<<(std::ostream& ostr) {
