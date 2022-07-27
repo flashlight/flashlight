@@ -10,6 +10,7 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/fl/tensor/Init.h"
+#include "flashlight/fl/tensor/backend/onednn/OneDnnBackend.h"
 #include "flashlight/fl/tensor/backend/onednn/OneDnnTensor.h"
 
 using fl::OneDnnTensor;
@@ -229,6 +230,31 @@ TEST(OneDnnTensorTest, astype) {
   auto tFloat = fl::full({2, 2, 2}, 40.0f, fl::dtype::f32);
   assertOneDnnTensorEq(tInt, tFloat.astype(fl::dtype::s32));
   assertOneDnnTensorEq(tFloat, tInt.astype(fl::dtype::f32));
+}
+
+TEST(OneDnnTensorTest, host) {
+  const std::vector<int> data{0, 1, 2, 3};
+  std::vector<int> temp(4, 0);
+  auto t = fromVector({2, 2}, data);
+
+  // check temp.data() is propagated with tensor data
+  ASSERT_NE(data, temp);
+  t.host(temp.data());
+  ASSERT_EQ(data, temp);
+
+  // check temp.data() isn't "mirrored" to tensor data
+  temp.data()[0] = 42;
+  ASSERT_TRUE(t.equals(fromVector({2, 2}, data)));
+}
+
+TEST(OneDnnTensorTest, device) {
+  auto t = fromVector<int>({2, 2}, {0, 1, 2, 3});
+  void* devicePtr = nullptr;
+
+  t.device(&devicePtr);
+  ASSERT_NE(devicePtr, nullptr);
+  ASSERT_TRUE(t.isLocked());
+  t.unlock();
 }
 
 int main(int argc, char** argv) {

@@ -7,6 +7,7 @@
 
 #include "flashlight/fl/tensor/backend/onednn/OneDnnTensor.h"
 
+#include <cassert>
 #include <cstring>
 #include <memory>
 #include <numeric>
@@ -62,6 +63,11 @@ dnnl::memory::desc copyMemDescWithNewType(
 }
 
 } // namespace
+
+OneDnnTensor::SharedData::~SharedData() {
+  assert(!isDevicePtrLocked
+   && "Must unlock device pointer before OneDnnTensor destruction.");
+}
 
 OneDnnTensor::OneDnnTensor(std::shared_ptr<SharedData> sharedData)
     : sharedData_(std::move(sharedData)) {}
@@ -186,20 +192,22 @@ void OneDnnTensor::scalar(void* out) {
   }
 }
 
-void OneDnnTensor::device(void** /* out */) {
-  FL_ONEDNN_TENSOR_UNIMPLEMENTED;
+void OneDnnTensor::device(void** out) {
+  *out = sharedData_->memory.get_data_handle();
+  sharedData_->isDevicePtrLocked = true;
 }
 
-void OneDnnTensor::host(void* /* out */) {
-  FL_ONEDNN_TENSOR_UNIMPLEMENTED;
+void OneDnnTensor::host(void* out) {
+  const void* data = getContiguousData();
+  std::memcpy(out, data, sharedData_->memory.get_desc().get_size());
 }
 
 void OneDnnTensor::unlock() {
-  FL_ONEDNN_TENSOR_UNIMPLEMENTED;
+  sharedData_->isDevicePtrLocked = false;
 }
 
 bool OneDnnTensor::isLocked() {
-  FL_ONEDNN_TENSOR_UNIMPLEMENTED;
+  return sharedData_->isDevicePtrLocked;
 }
 
 bool OneDnnTensor::isContiguous() {

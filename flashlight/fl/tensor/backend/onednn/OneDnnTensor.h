@@ -53,6 +53,9 @@ class OneDnnTensor : public TensorAdapterBase {
     Shape shape;
     // Whether the data in `memory` is ready (its computation finished).
     bool isDataReady{false};
+    bool isDevicePtrLocked{false};
+
+    ~SharedData();
   };
 
   // shared among tensors that are shallow copied
