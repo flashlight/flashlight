@@ -48,6 +48,24 @@ dnnl::memory::dims getStridesAfterPermuteAxes(
   return dnnl::memory::dims(strides);
 }
 
+template <typename T, typename V>
+Tensor fullWithTypeCpu(const Shape& shape, V value, const dtype type) {
+  std::vector<T> data(shape.elements());
+  std::fill(data.begin(), data.end(), static_cast<T>(value));
+  return toTensor<OneDnnTensor>(shape, type, data.data(), Location::Host);
+}
+
+template <typename T, typename V>
+Tensor fullWithType(const Shape& shape, V value, const dtype type) {
+  const auto engineKind = OneDnnBackend::getInstance().engine().get_kind();
+  if (engineKind == dnnl::engine::kind::cpu) {
+    return fullWithTypeCpu<T, V>(shape, value, type);
+  } else {
+  throw std::runtime_error(
+      "[OneDnnBackend::fullWithType] unimplemented for non-CPU engine");
+  }
+}
+
 } // namespace
 
 OneDnnBackend& OneDnnBackend::getInstance() {
@@ -128,10 +146,32 @@ Tensor OneDnnBackend::rand(const Shape& /* shape */, dtype /* type */) {
         std::string(#TYPE));                                                   \
   }                                                                            \
   Tensor OneDnnBackend::full(                                                  \
-      const Shape& /* shape */, TYPE /* value */, const dtype /* type */) {    \
-    throw std::invalid_argument(                                               \
-        "OneDnnBackend::full - not implemented for type " +                    \
-        std::string(#TYPE));                                                   \
+      const Shape& shape, TYPE value, const dtype type) {                      \
+    switch (type) {                                                            \
+      case dtype::f16:                                                         \
+        return fullWithType<float>(shape, value, dtype::f32)                   \
+            .astype(dtype::f16);                                               \
+      case dtype::f32:                                                         \
+        return fullWithType<float>(shape, value, type);                        \
+      case dtype::f64:                                                         \
+        return fullWithType<double>(shape, value, type);                       \
+      case dtype::b8:                                                          \
+        return fullWithType<char>(shape, value, type);                         \
+      case dtype::s16:                                                         \
+        return fullWithType<short>(shape, value, type);                        \
+      case dtype::s32:                                                         \
+        return fullWithType<int>(shape, value, type);                          \
+      case dtype::s64:                                                         \
+        return fullWithType<long long>(shape, value, type);                    \
+      case dtype::u8:                                                          \
+        return fullWithType<unsigned char>(shape, value, type);                \
+      case dtype::u16:                                                         \
+        return fullWithType<unsigned short>(shape, value, type);               \
+      case dtype::u32:                                                         \
+        return fullWithType<unsigned int>(shape, value, type);                 \
+      case dtype::u64:                                                         \
+        return fullWithType<unsigned long long>(shape, value, type);           \
+    }                                                                          \
   }
 FL_ONEDNN_BACKEND_CREATE_FUN_LITERAL_DEF(const double&);
 FL_ONEDNN_BACKEND_CREATE_FUN_LITERAL_DEF(const float&);
@@ -146,6 +186,7 @@ FL_ONEDNN_BACKEND_CREATE_FUN_LITERAL_DEF(const unsigned long long&);
 FL_ONEDNN_BACKEND_CREATE_FUN_LITERAL_DEF(const bool&);
 FL_ONEDNN_BACKEND_CREATE_FUN_LITERAL_DEF(const short&);
 FL_ONEDNN_BACKEND_CREATE_FUN_LITERAL_DEF(const unsigned short&);
+#undef FL_ONEDNN_BACKEND_CREATE_FUN_LITERAL_DEF
 
 Tensor OneDnnBackend::identity(const Dim /* dim */, const dtype /* type */) {
   FL_ONEDNN_BACKEND_UNIMPLEMENTED;

@@ -215,6 +215,14 @@ TEST(OneDnnTensorTest, transpose) {
   assertOneDnnTensorEq(t3, fl::transpose(t1, {2, 0, 1}));
 }
 
+TEST(OneDnnTensorTest, full) {
+  const fl::Shape shape{2, 2, 2};
+  auto tFloat = fl::Tensor::fromVector(shape, std::vector<float>(shape.elements(), 40.7));
+  auto tInt = fl::Tensor::fromVector(shape, std::vector<int>(shape.elements(), 42));
+  assertOneDnnTensorEq(tFloat, fl::full(shape, 40.7, fl::dtype::f32));
+  assertOneDnnTensorEq(tInt, fl::full(shape, 42, fl::dtype::s32));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   fl::init();
