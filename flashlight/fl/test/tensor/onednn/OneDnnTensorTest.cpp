@@ -42,6 +42,15 @@ static OneDnnTensor fromVector(const fl::Shape& s, const std::vector<T>& v) {
       s, fl::dtype_traits<T>::fl_type, v.data(), fl::Location::Host);
 }
 
+void assertOneDnnTensorEq(fl::Tensor& lhs, fl::Tensor&& rhs) {
+  auto& oneDnnLhs = lhs.getAdapter<OneDnnTensor>();
+  auto& oneDnnRhs = rhs.getAdapter<OneDnnTensor>();
+  auto rhsStr = oneDnnRhs.toString();
+  ASSERT_TRUE(oneDnnLhs.equals(std::move(oneDnnRhs)))
+   << "lhs:\n" << oneDnnLhs.toString()
+   << "rhs:\n" << rhsStr;
+}
+
 } // namespace
 
 TEST(OneDnnTensorTest, emptyConstructor) {
@@ -177,8 +186,38 @@ TEST(OneDnnTensorTest, equals) {
   }
 }
 
+TEST(OneDnnTensorTest, transpose) {
+  // [[[0, 2, 4],
+  //   [1, 3, 5]],
+  //  [[6, 8, 10],
+  //   [7, 9, 11]]]
+  auto t1 = fl::Tensor::fromVector<int>(
+      {2, 3, 2}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11});
+  assertOneDnnTensorEq(t1, fl::transpose(fl::transpose(t1)));
+
+  // [[[0, 2, 4],
+  //   [6, 8, 10]],
+  //  [[1, 3, 5],
+  //   [7, 9, 11]]]
+  auto t2 = fl::Tensor::fromVector<int>(
+      {2, 3, 2}, {0, 6, 2, 8, 4, 10, 1, 7, 3, 9, 5, 11});
+  assertOneDnnTensorEq(t2, fl::transpose(t1));
+
+  // [[[0, 1],
+  //   [6, 7]],
+  //  [[2, 3],
+  //   [8, 9]],
+  //  [[4, 5],
+  //   [10, 11]]]
+  auto t3 = fl::Tensor::fromVector<int>(
+      {2, 2, 3}, {0, 6, 1, 7, 2, 8, 3, 9, 4, 10, 5, 11});
+  ASSERT_EQ(fl::Shape({2, 2, 3}), fl::transpose(t1, {2, 0, 1}).shape());
+  assertOneDnnTensorEq(t3, fl::transpose(t1, {2, 0, 1}));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   fl::init();
+  fl::setDefaultTensorType<OneDnnTensor>();
   return RUN_ALL_TESTS();
 }

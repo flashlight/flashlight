@@ -7,7 +7,9 @@
 
 #include "flashlight/fl/tensor/backend/onednn/OneDnnBackend.h"
 
+#include <cassert>
 #include <iostream>
+#include <numeric>
 #include <stdexcept>
 
 #include "flashlight/fl/tensor/TensorBase.h"
@@ -19,6 +21,34 @@
       "OneDnnBackend::" + std::string(__func__) + " - unimplemented.");
 
 namespace fl {
+
+namespace {
+
+/**
+ * ASSUME row-major layout. Compute the strides if we keep the dimensions but
+ * permute the axes.
+ */
+dnnl::memory::dims getStridesAfterPermuteAxes(
+    const dnnl::memory::dims& oldDims,
+    const std::vector<Dim>& oldToNewAxes) {
+  assert(oldDims.size() == oldToNewAxes.size());
+  const auto ndim = oldDims.size();
+  std::vector<Dim> newToOldAxes(ndim, 0);
+  for (int oldAxis = 0; oldAxis < ndim; oldAxis++) {
+    const auto newAxis = oldToNewAxes[oldAxis];
+    newToOldAxes[newAxis] = oldAxis;
+  }
+  std::vector<dnnl::memory::dim> strides(ndim, 1);
+  // calculate row major stride with new axes
+  for (int newAxis = ndim - 2; newAxis >= 0; newAxis--) {
+    const auto oldAxis = newToOldAxes[newAxis];
+    const auto prevOldAxis = newToOldAxes[newAxis + 1];
+    strides[oldAxis] = strides[prevOldAxis] * oldDims[prevOldAxis];
+  }
+  return dnnl::memory::dims(strides);
+}
+
+} // namespace
 
 OneDnnBackend& OneDnnBackend::getInstance() {
   static OneDnnBackend instance;
@@ -142,10 +172,76 @@ Tensor OneDnnBackend::reshape(
   FL_ONEDNN_BACKEND_UNIMPLEMENTED;
 }
 
+// 1. OneDNN doesn't have native support for tensor transpose.
+// 2. `reorder` is the best primitive to move data in this case.
+// 3. `reorder` requires same dims for input & output.
+// 4. Our final output memory needs to have dims transposed.
+//
+// Due to the limitations above, this is what we'll do:
+//   0. create output memory with dims transposed.
+//   1. reorder memory based on a new output memory descriptor (similar to a
+//   view) where we use input dims and the transposed layout (specified as
+//   strides due to API limitation)
+//
+// Logically, the relationship among dnnl::memory transformations is as follows:
+//         [[1 2 3],
+//          [4 5 6]]
+//             |     \
+// (transpose) |      \
+//             v       \
+//          [[1 4],     |
+//           [2 5],     | (reorder)
+//           [3 6]]     |
+//             ^        |
+//   (reshape) |        /
+//             v      /
+//         [[1 4 2], <
+//          [5 3 6]]
+//
+// In other words, we are simulating transpose via reorder & reshape.
 Tensor OneDnnBackend::transpose(
-    const Tensor& /* tensor */,
-    const Shape& /* axes */ /* = {} */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+    const Tensor& tensor,
+    const Shape& axes /* = {} */) {
+  if (tensor.ndim() <= 1) {
+    return tensor.copy();
+  }
+  Shape newShape = tensor.shape();
+  std::vector<Dim> oldToNewAxes = axes.get();
+  if (axes.ndim() == 0) { // default, reverse all axes
+    oldToNewAxes.resize(tensor.ndim());
+    std::reverse(newShape.get().begin(), newShape.get().end());
+    std::iota(oldToNewAxes.begin(), oldToNewAxes.end(), 0);
+    std::reverse(oldToNewAxes.begin(), oldToNewAxes.end());
+  } else if (axes.ndim() == tensor.ndim()) {
+    for (int axis = 0; axis < axes.ndim(); axis++) {
+      newShape[axis] = tensor.dim(oldToNewAxes[axis]);
+    }
+  } else {
+    std::invalid_argument(
+        "[OneDnnBackend::transpose] Invalid axes: " + axes.toString() +
+        " for shape: " + tensor.shape().toString());
+  }
+
+  // prepare memories
+  auto& srcMem = tensor.getAdapter<OneDnnTensor>().memory();
+  const auto& srcMemDesc = srcMem.get_desc();
+  const auto srcMemDims = srcMemDesc.dims();
+  const auto dstMemDesc =
+      srcMemDesc.reshape(detail::shapeToOneDnnDims(newShape));
+  auto dstMem = dnnl::memory(dstMemDesc, engine_);
+
+  // prepare primitive
+  const auto reorderDstStrides =
+      getStridesAfterPermuteAxes(srcMemDims, oldToNewAxes);
+  const auto reorderDstMemDesc =
+      dnnl::memory::desc(srcMemDims, srcMemDesc.data_type(), reorderDstStrides);
+  const auto reorderPrimitiveDesc = dnnl::reorder::primitive_desc(
+      engine_, srcMemDesc, engine_, reorderDstMemDesc);
+  const auto reorderPrimitive = dnnl::reorder(reorderPrimitiveDesc);
+
+  // execute primitive
+  reorderPrimitive.execute(stream_->handle(), srcMem, dstMem);
+  return toTensor<OneDnnTensor>(newShape, std::move(dstMem));
 }
 
 Tensor OneDnnBackend::tile(
