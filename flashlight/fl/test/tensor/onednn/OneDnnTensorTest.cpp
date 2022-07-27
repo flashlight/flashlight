@@ -223,6 +223,14 @@ TEST(OneDnnTensorTest, full) {
   assertOneDnnTensorEq(tInt, fl::full(shape, 42, fl::dtype::s32));
 }
 
+TEST(OneDnnTensorTest, astype) {
+  // some casts like u8 -> f16, aren't supported in OneDNN on certain platforms.
+  auto tInt = fl::full({2, 2, 2}, 40, fl::dtype::s32);
+  auto tFloat = fl::full({2, 2, 2}, 40.0f, fl::dtype::f32);
+  assertOneDnnTensorEq(tInt, tFloat.astype(fl::dtype::s32));
+  assertOneDnnTensorEq(tFloat, tInt.astype(fl::dtype::f32));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   fl::init();
