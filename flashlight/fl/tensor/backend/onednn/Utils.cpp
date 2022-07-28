@@ -98,5 +98,32 @@ dnnl::memory::dims shapeToOneDnnDims(const Shape& shape) {
   return dnnl::memory::dims(shape.get().rbegin(), shape.get().rend());
 }
 
+bool isFpType(dnnl::memory::data_type type) {
+  switch (type) {
+    case dnnl::memory::data_type::f32:
+    case dnnl::memory::data_type::f16:
+    case dnnl::memory::data_type::bf16:
+      return true;
+    default:
+      return false;
+  }
+}
+
+bool isIntType(dnnl::memory::data_type type) {
+  return !isFpType(type);
+}
+
+dnnl::memory::data_type getTypeWithLargerRange(
+    dnnl::memory::data_type t1,
+    dnnl::memory::data_type t2) {
+  if ((isFpType(t1) && isFpType(t2)) ||
+      (isIntType(t1) && isIntType(t2))) {
+    auto t1Size = dnnl::memory::data_type_size(t1);
+    auto t2Size = dnnl::memory::data_type_size(t2);
+    return t1Size >= t2Size ? t1 : t2;
+  }
+  return isFpType(t1) ? t1 : t2;
+}
+
 } // namespace detail
 } // namespace fl

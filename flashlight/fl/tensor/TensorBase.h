@@ -10,6 +10,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <ostream>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -1494,6 +1495,23 @@ bool allClose(
  * @return if a Tensor contains any NaN or Inf values.
  */
 bool isInvalidArray(const Tensor& tensor);
+
+/**
+ * Get a string representation of a tensor backend type.
+ *
+ * @param[in] type the tensor backend type.
+ * @return a string representing the given tensor backend type.
+ */
+std::string tensorBackendTypeToString(const TensorBackendType type);
+
+/**
+ * Write a string representation of a tensor backend type to an output stream.
+ *
+ * @param[out] os the output stream.
+ * @param[in] type the tensor backend type.
+ * @return the output stream.
+ */
+std::ostream& operator<<(std::ostream& os, const TensorBackendType type);
 
 /** @} */
 

@@ -10,6 +10,7 @@
 #include "flashlight/fl/tensor/TensorBackend.h"
 
 #include <memory>
+#include <optional>
 
 #include "flashlight/fl/tensor/backend/onednn/OneDnnCPUStream.h"
 
@@ -21,6 +22,13 @@ namespace fl {
 class OneDnnBackend : public TensorBackend {
   dnnl::engine engine_{dnnl::engine(dnnl::engine::kind::cpu, 0)};
   std::shared_ptr<OneDnnCPUStream> stream_{OneDnnCPUStream::create(engine_)};
+
+  // Apply the given OneDNN binary operation to the tensors
+  Tensor applyBinop(
+      const Tensor& lhs,
+      const Tensor& rhs,
+      dnnl::algorithm alg,
+      std::optional<dnnl::memory::data_type> dstType = std::nullopt);
 
  public:
   OneDnnBackend() = default;
@@ -279,6 +287,6 @@ class OneDnnBackend : public TensorBackend {
 
   /************************** Utils ***************************/
   void print(const Tensor& tensor) override;
-};
+  };
 
 } // namespace fl
