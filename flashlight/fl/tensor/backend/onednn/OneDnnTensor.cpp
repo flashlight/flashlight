@@ -130,7 +130,21 @@ std::unique_ptr<TensorAdapterBase> OneDnnTensor::clone() const {
 
 Tensor OneDnnTensor::copy() {
   // TODO copy on write
-  FL_ONEDNN_TENSOR_UNIMPLEMENTED;
+  auto& srcMem = sharedData_->memory;
+  const auto memDesc = sharedData_->memory.get_desc();
+  const auto engine = sharedData_->memory.get_engine();
+  auto newMem = dnnl::memory(memDesc, engine);
+
+  // prepare primitive
+  // (using reorder in a passthrough sense to generate a new buffer)
+  const auto reorderPrimitiveDesc =
+      dnnl::reorder::primitive_desc(engine, memDesc, engine, memDesc);
+  const auto reorderPrimitive = dnnl::reorder(reorderPrimitiveDesc);
+
+  // execute primitive
+  reorderPrimitive.execute(
+      OneDnnBackend::getInstance().nativeStream(), srcMem, newMem);
+  return toTensor<OneDnnTensor>(sharedData_->shape, std::move(newMem));
 }
 
 Tensor OneDnnTensor::shallowCopy() {
@@ -455,8 +469,7 @@ std::ostream& OneDnnTensor::operator<<(std::ostream& ostr) {
         std::string(#TYPE));                                 \
   }
 
-#define FL_ONEDNN_TENSOR_ASSIGN_OP(OP)                 \
-  FL_ONEDNN_TENSOR_ASSIGN_OP_TYPE(OP, Tensor);         \
+#define FL_ONEDNN_TENSOR_ASSIGN_OP_LITERALS(OP)        \
   FL_ONEDNN_TENSOR_ASSIGN_OP_TYPE(OP, double);         \
   FL_ONEDNN_TENSOR_ASSIGN_OP_TYPE(OP, float);          \
   FL_ONEDNN_TENSOR_ASSIGN_OP_TYPE(OP, int);            \
@@ -471,13 +484,44 @@ std::ostream& OneDnnTensor::operator<<(std::ostream& ostr) {
   FL_ONEDNN_TENSOR_ASSIGN_OP_TYPE(OP, long long);      \
   FL_ONEDNN_TENSOR_ASSIGN_OP_TYPE(OP, unsigned long long);
 
-FL_ONEDNN_TENSOR_ASSIGN_OP(assign); // =
+#define FL_ONEDNN_TENSOR_ASSIGN_OP(OP)         \
+  FL_ONEDNN_TENSOR_ASSIGN_OP_TYPE(OP, Tensor); \
+  FL_ONEDNN_TENSOR_ASSIGN_OP_LITERALS(OP)
+
+FL_ONEDNN_TENSOR_ASSIGN_OP_LITERALS(assign); // =
 FL_ONEDNN_TENSOR_ASSIGN_OP(inPlaceAdd); // +=
 FL_ONEDNN_TENSOR_ASSIGN_OP(inPlaceSubtract); // -=
 FL_ONEDNN_TENSOR_ASSIGN_OP(inPlaceMultiply); // *=
 FL_ONEDNN_TENSOR_ASSIGN_OP(inPlaceDivide); // /=
 #undef FL_ONEDNN_TENSOR_ASSIGN_OP_TYPE
 #undef FL_ONEDNN_TENSOR_ASSIGN_OP
+
+void OneDnnTensor::assign(const Tensor& tensor) {
+  auto& other = toOneDnnTensor(tensor);
+  if (this->sharedData_ == other.sharedData_) {
+    return;
+  }
+
+  if (this->sharedData_->shape != other.sharedData_->shape) {
+    throw std::runtime_error(
+        "Cannot update OneDNN tensor to different shape");
+  }
+
+  // prepare primitive
+  auto thisMem = this->memory();
+  auto otherMem = other.memory();
+  const auto reorderPrimitiveDesc = dnnl::reorder::primitive_desc(
+      otherMem.get_engine(),
+      otherMem.get_desc(),
+      thisMem.get_engine(),
+      thisMem.get_desc());
+  const auto reorderPrimitive = dnnl::reorder(reorderPrimitiveDesc);
+
+  // execute primitive
+  reorderPrimitive.execute(
+      OneDnnBackend::getInstance().nativeStream(), otherMem, thisMem);
+  this->sharedData_->isDataReady = false;
+}
 
 bool OneDnnTensor::equals(OneDnnTensor&& other) {
   if (this->sharedData_ == other.sharedData_) {
