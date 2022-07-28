@@ -54,14 +54,6 @@ bool bytesEqual(const void* lhs, const void* rhs, unsigned numBytes) {
   return std::memcmp(lhs, rhs, numBytes) == 0;
 }
 
-dnnl::memory::desc copyMemDescWithNewType(
-    const dnnl::memory::desc& memDesc,
-    const dnnl::memory::data_type newType) {
-  dnnl::memory::desc memDescCopy = memDesc;
-  memDescCopy.data.data_type = dnnl::memory::convert_to_c(newType);
-  return memDescCopy;
-}
-
 } // namespace
 
 OneDnnTensor::SharedData::~SharedData() {
@@ -246,7 +238,7 @@ Tensor OneDnnTensor::astype(const dtype type) {
   const auto engine = srcMem.get_engine();
   const auto& srcMemDesc = srcMem.get_desc();
   const auto dstMemDesc =
-      copyMemDescWithNewType(srcMemDesc, detail::flToOneDnnType(type));
+      detail::copyMemDescWithNewType(srcMemDesc, detail::flToOneDnnType(type));
   auto dstMem = dnnl::memory(dstMemDesc, engine);
 
   // prepare primitive

@@ -66,6 +66,82 @@ Tensor fullWithType(const Shape& shape, V value, const dtype type) {
   }
 }
 
+dnnl::memory::desc getMemDescWithLargerDataRange(
+  const dnnl::memory::desc& memDesc1,
+  const dnnl::memory::desc& memDesc2) {
+  const auto dataType = detail::getTypeWithLargerRange(
+      memDesc1.data_type(), memDesc2.data_type());
+  return dataType == memDesc1.data_type() ? memDesc1 : memDesc2;
+}
+
+struct BinaryOpOutputDesc {
+  dnnl::memory::desc dstMemDesc;
+  const Shape dstShape;
+};
+
+/**
+ * Throw if not broadcastable(1) else select the right memory descriptor and
+shape
+ * for output.
+ *
+ * (1). Broadcast requires the following shapes
+ *        LHS: (r1, ..., rn)
+ *        RHS: (l1, ..., ln)
+ *      where ri == li, or 1 ∈ (ri, li)
+ *      output shape: (max(r1, l1), ..., max(rn, ln)
+ *
+ * TODO support broadcast with different # of dimensions. OneDNN's broadcast
+ * requires inputs to have the same _number_ of dimensions, so we must either
+ * "pad" the memory descriptor dimensions here or change our OneDnnTensor
+ * representation to always pad to max dimension.
+ */
+BinaryOpOutputDesc getBinaryOpOutputDesc(
+    const Shape& lhsShape,
+    const dnnl::memory::desc& lhsMemDesc,
+    const Shape& rhsShape,
+    const dnnl::memory::desc& rhsMemDesc,
+    std::optional<dnnl::memory::data_type> dstType) {
+  // some common fast paths
+  if (lhsShape == rhsShape) {
+    return {
+        .dstMemDesc = dstType.has_value()
+            ? detail::copyMemDescWithNewType(lhsMemDesc, dstType.value())
+            : getMemDescWithLargerDataRange(lhsMemDesc, rhsMemDesc),
+        .dstShape = lhsShape};
+  }
+  // only support same # of dimensions for now
+  if (lhsShape.ndim() != rhsShape.ndim()) {
+    std::stringstream ss;
+    ss << "[OneDnnBackend] Cannot perform broadcast for tensors of shapes:"
+       << lhsShape << " and " << rhsShape;
+    throw std::runtime_error(ss.str());
+  }
+  // check and accumulate output dimensions
+  auto ndim = lhsShape.ndim();
+  std::vector<Dim> dstDims;
+  for (auto i = 0; i < ndim; ++i) {
+    auto lhsDim = lhsShape.get()[i];
+    auto rhsDim = rhsShape.get()[i];
+    if (lhsDim != rhsDim && lhsDim != 1 && rhsDim != 1) {
+      std::stringstream ss;
+      ss << "[OneDnnBackend] Cannot perform broadcast for tensors of shapes:"
+         << lhsShape << " and " << rhsShape;
+      throw std::runtime_error(ss.str());
+    }
+    dstDims.push_back(std::max(lhsDim, rhsDim));
+  }
+  // allow implicit casting
+  const auto dataType = dstType.value_or(detail::getTypeWithLargerRange(
+      lhsMemDesc.data_type(), rhsMemDesc.data_type()));
+  Shape dstShape(dstDims);
+  return {
+      .dstMemDesc = dnnl::memory::desc(
+          detail::shapeToOneDnnDims(dstShape),
+          dataType,
+          detail::shapeToOneDnnStrides(dstShape)),
+      .dstShape = dstShape};
+}
+
 } // namespace
 
 OneDnnBackend& OneDnnBackend::getInstance() {
@@ -490,17 +566,6 @@ Tensor OneDnnBackend::argsort(
   }                                                       \
   FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(FUNC, OP);
 
-FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(add, +);
-FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(sub, -);
-FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(mul, *);
-FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(div, /);
-FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(eq, ==);
-FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(neq, !=);
-FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(lessThan, <);
-FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(lessThanEqual, <=);
-FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(greaterThan, >);
-FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(greaterThanEqual, >=);
-
 FL_ONEDNN_BINARY_OP_UNSUPPORTED_DEF(||, logicalOr);
 FL_ONEDNN_BINARY_OP_UNSUPPORTED_DEF(&&, logicalAnd);
 FL_ONEDNN_BINARY_OP_UNSUPPORTED_DEF(%, mod);
@@ -513,15 +578,51 @@ FL_ONEDNN_BINARY_OP_UNSUPPORTED_DEF(>>, rShift);
 #undef FL_ONEDNN_BINARY_OP_TYPE_UNSUPPORTED_DEF
 #undef FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF
 
+#define FL_ONEDNN_BINARY_OP_LITERALS_DEF(FUNC, TYPE, CAST_TYPE)         \
+  Tensor OneDnnBackend::FUNC(const Tensor& a, TYPE rhs) {               \
+    CAST_TYPE val = static_cast<CAST_TYPE>(rhs);                        \
+    Shape literalShape(std::vector<Dim>(a.ndim(), 1));                  \
+    auto type = dtype_traits<CAST_TYPE>::fl_type;                       \
+    auto rhsTensor =                                                    \
+        toTensor<OneDnnTensor>(literalShape, type, &val, a.location()); \
+    return FUNC(a, rhsTensor);                                          \
+  }                                                                     \
+  Tensor OneDnnBackend::FUNC(TYPE lhs, const Tensor& a) {               \
+    CAST_TYPE val = static_cast<CAST_TYPE>(lhs);                        \
+    Shape literalShape(std::vector<Dim>(a.ndim(), 1));                  \
+    auto type = dtype_traits<CAST_TYPE>::fl_type;                       \
+    auto lhsTensor =                                                    \
+        toTensor<OneDnnTensor>(literalShape, type, &val, a.location()); \
+    return FUNC(lhsTensor, a);                                          \
+  }
+
+// NOTE cast needed because OneDNN only supports a subset of the FL types.
+#define FL_BINARY_OP_LITERALS_DEF(FUNC)                                     \
+  FL_ONEDNN_BINARY_OP_LITERALS_DEF(FUNC, const bool&, float);               \
+  FL_ONEDNN_BINARY_OP_LITERALS_DEF(FUNC, const int&, int);                  \
+  FL_ONEDNN_BINARY_OP_LITERALS_DEF(FUNC, const unsigned&, unsigned);        \
+  FL_ONEDNN_BINARY_OP_LITERALS_DEF(FUNC, const char&, float);               \
+  FL_ONEDNN_BINARY_OP_LITERALS_DEF(FUNC, const unsigned char&, float);      \
+  FL_ONEDNN_BINARY_OP_LITERALS_DEF(FUNC, const long&, int);                 \
+  FL_ONEDNN_BINARY_OP_LITERALS_DEF(FUNC, const unsigned long&, unsigned);   \
+  FL_ONEDNN_BINARY_OP_LITERALS_DEF(FUNC, const long long&, float);          \
+  FL_ONEDNN_BINARY_OP_LITERALS_DEF(FUNC, const unsigned long long&, float); \
+  FL_ONEDNN_BINARY_OP_LITERALS_DEF(FUNC, const double&, float);             \
+  FL_ONEDNN_BINARY_OP_LITERALS_DEF(FUNC, const float&, float);              \
+  FL_ONEDNN_BINARY_OP_LITERALS_DEF(FUNC, const short&, float);              \
+  FL_ONEDNN_BINARY_OP_LITERALS_DEF(FUNC, const unsigned short&, float);
+
 #define FL_ONEDNN_BINARY_OP_DEF(FUNC, ALG)                           \
   Tensor OneDnnBackend::FUNC(const Tensor& lhs, const Tensor& rhs) { \
     return applyBinop(lhs, rhs, ALG);                                \
-  }
+  }                                                                  \
+  FL_BINARY_OP_LITERALS_DEF(FUNC);
 
 #define FL_ONEDNN_BINARY_LOGICAL_OP_DEF(FUNC, ALG)                   \
   Tensor OneDnnBackend::FUNC(const Tensor& lhs, const Tensor& rhs) { \
     return applyBinop(lhs, rhs, ALG, dnnl::memory::data_type::s8);   \
-  }
+  }                                                                  \
+  FL_BINARY_OP_LITERALS_DEF(FUNC);
 
 FL_ONEDNN_BINARY_OP_DEF(add, dnnl::algorithm::binary_add);
 FL_ONEDNN_BINARY_OP_DEF(sub, dnnl::algorithm::binary_sub);
@@ -542,31 +643,23 @@ Tensor OneDnnBackend::minimum(const Tensor& lhs, const Tensor& rhs) {
 Tensor OneDnnBackend::maximum(const Tensor& lhs, const Tensor& rhs) {
   return applyBinop(lhs, rhs, dnnl::algorithm::binary_max);
 }
-
 Tensor OneDnnBackend::applyBinop(
     const Tensor& lhs,
     const Tensor& rhs,
     dnnl::algorithm alg,
     std::optional<dnnl::memory::data_type> dstType /* = std::nullopt */) {
-  if (lhs.shape() != rhs.shape()) {
-    throw std::runtime_error("[OneDnnBackend] Broadcasting not supported.");
-  }
-
   // prepare memories
   auto& lhsMem = toOneDnnTensor(lhs).memory();
   auto& rhsMem = toOneDnnTensor(rhs).memory();
   const auto lhsMemDesc = lhsMem.get_desc();
   const auto rhsMemDesc = rhsMem.get_desc();
-  // allow implicit casting
-  const auto dataType = dstType.value_or(detail::getTypeWithLargerRange(
-      lhsMemDesc.data_type(), rhsMemDesc.data_type()));
-  const auto dstMemDesc = dnnl::memory::desc(
-      lhsMemDesc.dims(), dataType, detail::shapeToOneDnnStrides(lhs.shape()));
-  auto dstMem = dnnl::memory(dstMemDesc, engine_);
+  const auto outputDesc = getBinaryOpOutputDesc(
+      lhs.shape(), lhsMemDesc, rhs.shape(), rhsMemDesc, dstType);
+  auto dstMem = dnnl::memory(outputDesc.dstMemDesc, engine_);
 
   // prepare primitive
-  const auto binaryDesc =
-      dnnl::binary::desc(alg, lhsMemDesc, rhsMemDesc, dstMemDesc);
+  const auto binaryDesc = dnnl::binary::desc(
+      alg, lhsMemDesc, rhsMemDesc, outputDesc.dstMemDesc);
   const auto binaryPrimtiveDesc =
       dnnl::binary::primitive_desc(binaryDesc, engine_);
   const auto binaryPrimitive = dnnl::binary(binaryPrimtiveDesc);
@@ -580,7 +673,7 @@ Tensor OneDnnBackend::applyBinop(
 
   // execute primitive
   binaryPrimitive.execute(stream_->handle(), args);
-  return toTensor<OneDnnTensor>(lhs.shape(), std::move(dstMem));
+  return toTensor<OneDnnTensor>(outputDesc.dstShape, std::move(dstMem));
 }
 
 Tensor OneDnnBackend::power(const Tensor& /* lhs */, const Tensor& /* rhs */) {

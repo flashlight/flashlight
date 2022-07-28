@@ -270,8 +270,17 @@ TEST(OneDnnTensorTest, arithmetics) {
   auto t2 = fl::Tensor::fromVector<int>({2, 2}, {1, 2, 3, 4});
   auto t3 = fl::Tensor::fromVector<int>({2, 2}, {3, 5, 7, 9});
 
-  assertOneDnnTensorEq(
+  assertOneDnnTensorEq( // implicit casting
       t1 + t2, fl::Tensor::fromVector<float>({2, 2}, {1, 3, 5, 7}));
+
+  // literal with casting
+  auto t = fl::Tensor::fromVector<float>({2, 2}, {1, 2, 3, 4});
+  double oneDouble = 1.0f;
+  double oneInt = 1;
+  assertOneDnnTensorEq(t, t1 + oneDouble);
+  assertOneDnnTensorEq(t, oneDouble + t1);
+  assertOneDnnTensorEq(t, t1 + oneInt);
+  assertOneDnnTensorEq(t, oneInt + t1);
 
   assertOneDnnTensorEq(
       t3 - t2, fl::Tensor::fromVector<int>({2, 2}, {2, 3, 4, 5}));
@@ -289,6 +298,15 @@ TEST(OneDnnTensorTest, comparison) {
 
   assertOneDnnTensorEq(
       t1 == t2, fl::Tensor::fromVector<char>({2, 2}, {1, 0, 1, 0}));
+
+  // literals with casting
+  auto t = fl::Tensor::fromVector<char>({2, 2}, {0, 1, 1, 0});
+  double twoDouble = 2.0f;
+  double twoInt = 2;
+  assertOneDnnTensorEq(t, t2 == twoDouble);
+  assertOneDnnTensorEq(t, twoDouble == t2);
+  assertOneDnnTensorEq(t, t2 == twoInt);
+  assertOneDnnTensorEq(t, twoInt == t2);
 
   assertOneDnnTensorEq(
       t1 != t2, fl::Tensor::fromVector<char>({2, 2}, {0, 1, 0, 1}));
