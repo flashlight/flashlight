@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <cmath>
 #include <stdexcept>
 
 #include <gtest/gtest.h>
@@ -56,6 +57,16 @@ void assertOneDnnTensorEq(fl::Tensor&& lhs, fl::Tensor&& rhs) {
   // we know it's safe, because the reference parameter won't be stored anywhere
   fl::Tensor& lhsRef = lhs;
   assertOneDnnTensorEq(lhsRef, std::move(rhs));
+}
+
+// usually we just need to specify output type, like mapFunc<float>(...);
+template <typename Out, typename In>
+std::vector<Out> mapFunc(const std::vector<In>& inputs, Out (*func)(In)) {
+  std::vector<Out> outputs;
+  for (const auto& input : inputs) {
+    outputs.emplace_back(func(input));
+  }
+  return outputs;
 }
 
 } // namespace
@@ -354,6 +365,43 @@ TEST(OneDnnTensorTest, rand) {
   auto t1 = fl::OneDnnBackend::getInstance().randn(shape, type);
   ASSERT_EQ(t1.shape(), shape);
   ASSERT_EQ(t1.type(), type);
+}
+
+TEST(OneDnnTensorTest, eltwise) {
+  auto& backend = fl::OneDnnBackend::getInstance();
+  std::vector<float> t1Data = {1, 2, 3, 4};
+  std::vector<float> t2Data = {0, 2, 2, 0};
+  auto t1 = fl::Tensor::fromVector({2, 2}, t1Data);
+  auto t2 = fl::Tensor::fromVector({2, 2}, t2Data);
+
+  assertOneDnnTensorEq(
+      backend.exp(t1),
+      fl::Tensor::fromVector({2, 2}, mapFunc<float>(t1Data, std::exp)));
+
+  assertOneDnnTensorEq(
+      backend.log(t1),
+      fl::Tensor::fromVector({2, 2}, mapFunc<float>(t1Data, std::log)));
+
+  assertOneDnnTensorEq(
+      backend.sqrt(t1),
+      fl::Tensor::fromVector({2, 2}, mapFunc<float>(t1Data, std::sqrt)));
+
+  assertOneDnnTensorEq(
+      backend.tanh(t1),
+      fl::Tensor::fromVector({2, 2}, mapFunc<float>(t1Data, std::tanh)));
+
+  assertOneDnnTensorEq(
+      backend.rint(fl::Tensor::fromVector<float>({2, 2}, {0.1, 1.4, 2.5, 3.9})),
+      fl::Tensor::fromVector<float>({2, 2}, {0, 1, 2, 4}));
+
+  assertOneDnnTensorEq(
+      backend.absolute(
+          fl::Tensor::fromVector<float>({2, 2}, {-2, -2.8, 3.4, 0})),
+      fl::Tensor::fromVector<float>({2, 2}, {2, 2.8, 3.4, 0}));
+
+  assertOneDnnTensorEq(
+      backend.logicalNot(t2),
+      fl::Tensor::fromVector<char>({2, 2}, {1, 0, 0, 1}));
 }
 
 int main(int argc, char** argv) {
