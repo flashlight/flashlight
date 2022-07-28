@@ -451,7 +451,7 @@ Tensor OneDnnBackend::argsort(
 }
 
 /************************** Binary Operators ***************************/
-#define FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, TYPE)                              \
+#define FL_ONEDNN_BINARY_OP_TYPE_UNSUPPORTED_DEF(FUNC, OP, TYPE)              \
   Tensor OneDnnBackend::FUNC(const Tensor& /* a */, TYPE /* rhs */) {         \
     throw std::runtime_error(                                                 \
         "OneDnnBackend::" + std::string(#FUNC) + " unimplemented for type " + \
@@ -463,68 +463,124 @@ Tensor OneDnnBackend::argsort(
         std::string(#TYPE));                                                  \
   }
 
-#define FL_AF_BINARY_OP_LITERALS_DEF(FUNC, OP)                   \
-  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const bool&);               \
-  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const int&);                \
-  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const unsigned&);           \
-  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const char&);               \
-  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const unsigned char&);      \
-  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const long&);               \
-  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const unsigned long&);      \
-  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const long long&);          \
-  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const unsigned long long&); \
-  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const double&);             \
-  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const float&);              \
-  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const short&);              \
-  FL_AF_BINARY_OP_TYPE_DEF(FUNC, OP, const unsigned short&);
+#define FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(FUNC, OP)              \
+  FL_ONEDNN_BINARY_OP_TYPE_UNSUPPORTED_DEF(FUNC, OP, const bool&);          \
+  FL_ONEDNN_BINARY_OP_TYPE_UNSUPPORTED_DEF(FUNC, OP, const int&);           \
+  FL_ONEDNN_BINARY_OP_TYPE_UNSUPPORTED_DEF(FUNC, OP, const unsigned&);      \
+  FL_ONEDNN_BINARY_OP_TYPE_UNSUPPORTED_DEF(FUNC, OP, const char&);          \
+  FL_ONEDNN_BINARY_OP_TYPE_UNSUPPORTED_DEF(FUNC, OP, const unsigned char&); \
+  FL_ONEDNN_BINARY_OP_TYPE_UNSUPPORTED_DEF(FUNC, OP, const long&);          \
+  FL_ONEDNN_BINARY_OP_TYPE_UNSUPPORTED_DEF(FUNC, OP, const unsigned long&); \
+  FL_ONEDNN_BINARY_OP_TYPE_UNSUPPORTED_DEF(FUNC, OP, const long long&);     \
+  FL_ONEDNN_BINARY_OP_TYPE_UNSUPPORTED_DEF(                                 \
+      FUNC, OP, const unsigned long long&);                                 \
+  FL_ONEDNN_BINARY_OP_TYPE_UNSUPPORTED_DEF(FUNC, OP, const double&);        \
+  FL_ONEDNN_BINARY_OP_TYPE_UNSUPPORTED_DEF(FUNC, OP, const float&);         \
+  FL_ONEDNN_BINARY_OP_TYPE_UNSUPPORTED_DEF(FUNC, OP, const short&);         \
+  FL_ONEDNN_BINARY_OP_TYPE_UNSUPPORTED_DEF(FUNC, OP, const unsigned short&);
 
 // Operations on fl::Tensor call the respective operator overloads that are
 // already defined on af::arrays
-#define FL_AF_BINARY_OP_DEF(OP, FUNC)                     \
+#define FL_ONEDNN_BINARY_OP_UNSUPPORTED_DEF(OP, FUNC)     \
   Tensor OneDnnBackend::FUNC(                             \
       const Tensor& /* lhs */, const Tensor& /* rhs */) { \
     throw std::runtime_error(                             \
         "OneDnnBackend::" + std::string(#FUNC) +          \
         " unimplemented for two-Tensor inputs.");         \
   }                                                       \
-  FL_AF_BINARY_OP_LITERALS_DEF(FUNC, OP);
+  FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(FUNC, OP);
 
-// Definitions
-// Since ArrayFire implements operator overloads, map both fl::Tensor
-// functions and fl::Tensor operator overloads back to the af::array
-// overloads.
-FL_AF_BINARY_OP_DEF(+, add);
-FL_AF_BINARY_OP_DEF(-, sub);
-FL_AF_BINARY_OP_DEF(*, mul);
-FL_AF_BINARY_OP_DEF(/, div);
-FL_AF_BINARY_OP_DEF(==, eq);
-FL_AF_BINARY_OP_DEF(!=, neq);
-FL_AF_BINARY_OP_DEF(<, lessThan);
-FL_AF_BINARY_OP_DEF(<=, lessThanEqual);
-FL_AF_BINARY_OP_DEF(>, greaterThan);
-FL_AF_BINARY_OP_DEF(>=, greaterThanEqual);
-FL_AF_BINARY_OP_DEF(||, logicalOr);
-FL_AF_BINARY_OP_DEF(&&, logicalAnd);
-FL_AF_BINARY_OP_DEF(%, mod);
-FL_AF_BINARY_OP_DEF(&, bitwiseAnd);
-FL_AF_BINARY_OP_DEF(|, bitwiseOr);
-FL_AF_BINARY_OP_DEF(^, bitwiseXor);
-FL_AF_BINARY_OP_DEF(<<, lShift);
-FL_AF_BINARY_OP_DEF(>>, rShift);
-#undef FL_AF_BINARY_OP_DEF
-#undef FL_AF_BINARY_OP_TYPE_DEF
-#undef FL_AF_BINARY_OP_LITERALS_DEF
+FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(add, +);
+FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(sub, -);
+FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(mul, *);
+FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(div, /);
+FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(eq, ==);
+FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(neq, !=);
+FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(lessThan, <);
+FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(lessThanEqual, <=);
+FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(greaterThan, >);
+FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(greaterThanEqual, >=);
 
-Tensor OneDnnBackend::minimum(
-    const Tensor& /* lhs */,
-    const Tensor& /* rhs */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+FL_ONEDNN_BINARY_OP_UNSUPPORTED_DEF(||, logicalOr);
+FL_ONEDNN_BINARY_OP_UNSUPPORTED_DEF(&&, logicalAnd);
+FL_ONEDNN_BINARY_OP_UNSUPPORTED_DEF(%, mod);
+FL_ONEDNN_BINARY_OP_UNSUPPORTED_DEF(&, bitwiseAnd);
+FL_ONEDNN_BINARY_OP_UNSUPPORTED_DEF(|, bitwiseOr);
+FL_ONEDNN_BINARY_OP_UNSUPPORTED_DEF(^, bitwiseXor);
+FL_ONEDNN_BINARY_OP_UNSUPPORTED_DEF(<<, lShift);
+FL_ONEDNN_BINARY_OP_UNSUPPORTED_DEF(>>, rShift);
+#undef FL_ONEDNN_BINARY_OP_UNSUPPORTED_DEF
+#undef FL_ONEDNN_BINARY_OP_TYPE_UNSUPPORTED_DEF
+#undef FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF
+
+#define FL_ONEDNN_BINARY_OP_DEF(FUNC, ALG)                           \
+  Tensor OneDnnBackend::FUNC(const Tensor& lhs, const Tensor& rhs) { \
+    return applyBinop(lhs, rhs, ALG);                                \
+  }
+
+#define FL_ONEDNN_BINARY_LOGICAL_OP_DEF(FUNC, ALG)                   \
+  Tensor OneDnnBackend::FUNC(const Tensor& lhs, const Tensor& rhs) { \
+    return applyBinop(lhs, rhs, ALG, dnnl::memory::data_type::s8);   \
+  }
+
+FL_ONEDNN_BINARY_OP_DEF(add, dnnl::algorithm::binary_add);
+FL_ONEDNN_BINARY_OP_DEF(sub, dnnl::algorithm::binary_sub);
+FL_ONEDNN_BINARY_OP_DEF(mul, dnnl::algorithm::binary_mul);
+FL_ONEDNN_BINARY_OP_DEF(div, dnnl::algorithm::binary_div);
+FL_ONEDNN_BINARY_LOGICAL_OP_DEF(eq, dnnl::algorithm::binary_eq);
+FL_ONEDNN_BINARY_LOGICAL_OP_DEF(neq, dnnl::algorithm::binary_ne);
+FL_ONEDNN_BINARY_LOGICAL_OP_DEF(lessThan, dnnl::algorithm::binary_lt);
+FL_ONEDNN_BINARY_LOGICAL_OP_DEF(lessThanEqual, dnnl::algorithm::binary_le);
+FL_ONEDNN_BINARY_LOGICAL_OP_DEF(greaterThan, dnnl::algorithm::binary_gt);
+FL_ONEDNN_BINARY_LOGICAL_OP_DEF(greaterThanEqual, dnnl::algorithm::binary_ge);
+#undef FL_ONEDNN_BINARY_OP_DEF
+
+Tensor OneDnnBackend::minimum(const Tensor& lhs, const Tensor& rhs) {
+  return applyBinop(lhs, rhs, dnnl::algorithm::binary_min);
 }
 
-Tensor OneDnnBackend::maximum(
-    const Tensor& /* lhs */,
-    const Tensor& /* rhs */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+Tensor OneDnnBackend::maximum(const Tensor& lhs, const Tensor& rhs) {
+  return applyBinop(lhs, rhs, dnnl::algorithm::binary_max);
+}
+
+Tensor OneDnnBackend::applyBinop(
+    const Tensor& lhs,
+    const Tensor& rhs,
+    dnnl::algorithm alg,
+    std::optional<dnnl::memory::data_type> dstType /* = std::nullopt */) {
+  if (lhs.shape() != rhs.shape()) {
+    throw std::runtime_error("[OneDnnBackend] Broadcasting not supported.");
+  }
+
+  // prepare memories
+  auto& lhsMem = toOneDnnTensor(lhs).memory();
+  auto& rhsMem = toOneDnnTensor(rhs).memory();
+  const auto lhsMemDesc = lhsMem.get_desc();
+  const auto rhsMemDesc = rhsMem.get_desc();
+  // allow implicit casting
+  const auto dataType = dstType.value_or(detail::getTypeWithLargerRange(
+      lhsMemDesc.data_type(), rhsMemDesc.data_type()));
+  const auto dstMemDesc = dnnl::memory::desc(
+      lhsMemDesc.dims(), dataType, detail::shapeToOneDnnStrides(lhs.shape()));
+  auto dstMem = dnnl::memory(dstMemDesc, engine_);
+
+  // prepare primitive
+  const auto binaryDesc =
+      dnnl::binary::desc(alg, lhsMemDesc, rhsMemDesc, dstMemDesc);
+  const auto binaryPrimtiveDesc =
+      dnnl::binary::primitive_desc(binaryDesc, engine_);
+  const auto binaryPrimitive = dnnl::binary(binaryPrimtiveDesc);
+
+  // prepare arguments
+  const std::unordered_map<int, dnnl::memory> args = {
+      {DNNL_ARG_SRC_0, lhsMem},
+      {DNNL_ARG_SRC_1, rhsMem},
+      {DNNL_ARG_DST, dstMem},
+  };
+
+  // execute primitive
+  binaryPrimitive.execute(stream_->handle(), args);
+  return toTensor<OneDnnTensor>(lhs.shape(), std::move(dstMem));
 }
 
 Tensor OneDnnBackend::power(const Tensor& /* lhs */, const Tensor& /* rhs */) {

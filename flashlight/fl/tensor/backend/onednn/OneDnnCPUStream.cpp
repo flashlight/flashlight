@@ -48,6 +48,10 @@ dnnl::engine OneDnnCPUStream::engine() const {
   return stream_->get_engine();
 }
 
+dnnl::stream& OneDnnCPUStream::handle() {
+  return *stream_;
+}
+
 const dnnl::stream& OneDnnCPUStream::handle() const {
   return *stream_;
 }

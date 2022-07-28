@@ -63,5 +63,16 @@ dnnl::memory::dims shapeToOneDnnDims(const Shape& shape);
  */
 dnnl::memory::dims shapeToOneDnnStrides(const Shape& shape);
 
+/**
+ * Return the input type that can represent a larger range of data.
+ *
+ * @param[in] t1 the first input type.
+ * @param[in] t2 the second input type.
+ * @return the input type that can represent a larger range of data.
+ */
+dnnl::memory::data_type getTypeWithLargerRange(
+    dnnl::memory::data_type t1,
+    dnnl::memory::data_type t2);
+
 } // namespace detail
 } // namespace fl

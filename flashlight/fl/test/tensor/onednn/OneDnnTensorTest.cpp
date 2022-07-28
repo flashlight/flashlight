@@ -46,10 +46,16 @@ static OneDnnTensor fromVector(const fl::Shape& s, const std::vector<T>& v) {
 void assertOneDnnTensorEq(fl::Tensor& lhs, fl::Tensor&& rhs) {
   auto& oneDnnLhs = lhs.getAdapter<OneDnnTensor>();
   auto& oneDnnRhs = rhs.getAdapter<OneDnnTensor>();
-  auto rhsStr = oneDnnRhs.toString();
   ASSERT_TRUE(oneDnnLhs.equals(std::move(oneDnnRhs)))
-   << "lhs:\n" << oneDnnLhs.toString()
-   << "rhs:\n" << rhsStr;
+      << "lhs:\n"
+      << oneDnnLhs.toString() << "rhs:\n"
+      << oneDnnRhs.toString();
+}
+
+void assertOneDnnTensorEq(fl::Tensor&& lhs, fl::Tensor&& rhs) {
+  // we know it's safe, because the reference parameter won't be stored anywhere
+  fl::Tensor& lhsRef = lhs;
+  assertOneDnnTensorEq(lhsRef, std::move(rhs));
 }
 
 } // namespace
@@ -218,10 +224,12 @@ TEST(OneDnnTensorTest, transpose) {
 
 TEST(OneDnnTensorTest, full) {
   const fl::Shape shape{2, 2, 2};
-  auto tFloat = fl::Tensor::fromVector(shape, std::vector<float>(shape.elements(), 40.7));
-  auto tInt = fl::Tensor::fromVector(shape, std::vector<int>(shape.elements(), 42));
-  assertOneDnnTensorEq(tFloat, fl::full(shape, 40.7, fl::dtype::f32));
-  assertOneDnnTensorEq(tInt, fl::full(shape, 42, fl::dtype::s32));
+  assertOneDnnTensorEq(
+      fl::Tensor::fromVector(shape, std::vector<float>(shape.elements(), 40.7)),
+      fl::full(shape, 40.7, fl::dtype::f32));
+  assertOneDnnTensorEq(
+      fl::Tensor::fromVector(shape, std::vector<int>(shape.elements(), 42)),
+      fl::full(shape, 42, fl::dtype::s32));
 }
 
 TEST(OneDnnTensorTest, astype) {
@@ -255,6 +263,47 @@ TEST(OneDnnTensorTest, device) {
   ASSERT_NE(devicePtr, nullptr);
   ASSERT_TRUE(t.isLocked());
   t.unlock();
+}
+
+TEST(OneDnnTensorTest, arithmetics) {
+  auto t1 = fl::Tensor::fromVector<float>({2, 2}, {0, 1, 2, 3});
+  auto t2 = fl::Tensor::fromVector<int>({2, 2}, {1, 2, 3, 4});
+  auto t3 = fl::Tensor::fromVector<int>({2, 2}, {3, 5, 7, 9});
+
+  assertOneDnnTensorEq(
+      t1 + t2, fl::Tensor::fromVector<float>({2, 2}, {1, 3, 5, 7}));
+
+  assertOneDnnTensorEq(
+      t3 - t2, fl::Tensor::fromVector<int>({2, 2}, {2, 3, 4, 5}));
+
+  assertOneDnnTensorEq(
+      t1 * t2, fl::Tensor::fromVector<float>({2, 2}, {0, 2, 6, 12}));
+
+  assertOneDnnTensorEq(
+      t3 / t2, fl::Tensor::fromVector<int>({2, 2}, {3, 2, 2, 2}));
+}
+
+TEST(OneDnnTensorTest, comparison) {
+  auto t1 = fl::Tensor::fromVector<float>({2, 2}, {0, 1, 2, 3});
+  auto t2 = fl::Tensor::fromVector<float>({2, 2}, {0, 2, 2, 4});
+
+  assertOneDnnTensorEq(
+      t1 == t2, fl::Tensor::fromVector<char>({2, 2}, {1, 0, 1, 0}));
+
+  assertOneDnnTensorEq(
+      t1 != t2, fl::Tensor::fromVector<char>({2, 2}, {0, 1, 0, 1}));
+
+  assertOneDnnTensorEq(
+      t1 < t2, fl::Tensor::fromVector<char>({2, 2}, {0, 1, 0, 1}));
+
+  assertOneDnnTensorEq(
+      t1 <= t2, fl::Tensor::fromVector<char>({2, 2}, {1, 1, 1, 1}));
+
+  assertOneDnnTensorEq(
+      t1 > t2, fl::Tensor::fromVector<char>({2, 2}, {0, 0, 0, 0}));
+
+  assertOneDnnTensorEq(
+      t1 >= t2, fl::Tensor::fromVector<char>({2, 2}, {1, 0, 1, 0}));
 }
 
 int main(int argc, char** argv) {

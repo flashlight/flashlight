@@ -62,6 +62,12 @@ class OneDnnCPUStream : public StreamTrait<OneDnnCPUStream> {
    * @return the underlying OneDNN stream.
    */
   const dnnl::stream& handle() const;
-};
 
+  /**
+   * Gets the underlying OneDNN stream.
+   *
+   * @return the underlying OneDNN stream.
+   */
+  dnnl::stream& handle();
+};
 } // namespace fl

@@ -512,4 +512,18 @@ dnnl::memory& OneDnnTensor::memory() {
   return sharedData_->memory;
 }
 
+OneDnnTensor& toOneDnnTensor(const Tensor& tensor) {
+  auto type = tensor.backendType();
+  if (type != TensorBackendType::OneDnn) {
+    std::ostringstream oss;
+    oss << "[toOneDnnTensor] expected oneDNN-backed tensor, got " << type;
+    throw std::invalid_argument(oss.str());
+  }
+  return tensor.getAdapter<OneDnnTensor>();
+}
+
+OneDnnTensor& toOneDnnTensor(Tensor& tensor) {
+  return toOneDnnTensor(static_cast<const Tensor&>(tensor));
+}
+
 } // namespace fl

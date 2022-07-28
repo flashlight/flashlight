@@ -81,7 +81,10 @@ class OneDnnTensor : public TensorAdapterBase {
    * @param[in] shape the shape of the new tensor
    * @param[in] memory the memory handle containing underlying tensor data
    */
-  OneDnnTensor(const Shape& shape, dnnl::memory&& memory);
+  OneDnnTensor(
+      const Shape& shape,
+      dnnl::memory&& memory);
+
 
   /**
    * Construct an empty OneDNNTensor.
@@ -181,5 +184,9 @@ bool equals(OneDnnTensor&& other);
  */
 dnnl::memory& memory();
 };
+
+// Safe to drop `const`, as these are just checked version of `Tensor::impl`
+OneDnnTensor& toOneDnnTensor(const Tensor& tensor);
+OneDnnTensor& toOneDnnTensor(Tensor& tensor);
 
 } // namespace fl

@@ -815,6 +815,20 @@ bool isInvalidArray(const Tensor& tensor) {
       fl::any(fl::isinf(tensor)).asScalar<bool>();
 }
 
+std::string tensorBackendTypeToString(const TensorBackendType type) {
+  switch (type) {
+    case TensorBackendType::Stub: return "Stub";
+    case TensorBackendType::ArrayFire: return "ArrayFire";
+    case TensorBackendType::OneDnn: return "OneDnn";
+  }
+  throw std::runtime_error("Unreachable -- unrecognized tensor backend type");
+}
+
+std::ostream& operator<<(std::ostream& os, const TensorBackendType type) {
+  os << tensorBackendTypeToString(type);
+  return os;
+}
+
 namespace detail {
 
 bool areTensorTypesEqual(const Tensor& a, const Tensor& b) {
