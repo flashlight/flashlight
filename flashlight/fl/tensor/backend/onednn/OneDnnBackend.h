@@ -33,6 +33,13 @@ class OneDnnBackend : public TensorBackend {
       dnnl::algorithm alg,
       std::optional<dnnl::memory::data_type> dstType = std::nullopt);
 
+  // Apply the given OneDNN element-wise operation to the tensor
+  Tensor applyEltwiseOp(
+      const Tensor& tensor,
+      const dnnl::algorithm alg,
+      float alpha = 0,
+      float beta = 0);
+
   Tensor randnCpu(const Shape& shape, dtype type);
   Tensor randCpu(const Shape& shape, dtype type);
 

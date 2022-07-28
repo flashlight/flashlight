@@ -419,20 +419,20 @@ Tensor OneDnnBackend::pad(
 
 /************************** Unary Operators ***************************/
 
-Tensor OneDnnBackend::exp(const Tensor& /* tensor */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+Tensor OneDnnBackend::exp(const Tensor& tensor) {
+  return applyEltwiseOp(tensor, dnnl::algorithm::eltwise_exp);
 }
 
-Tensor OneDnnBackend::log(const Tensor& /* tensor */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+Tensor OneDnnBackend::log(const Tensor& tensor) {
+  return applyEltwiseOp(tensor, dnnl::algorithm::eltwise_log);
 }
 
-Tensor OneDnnBackend::negative(const Tensor& /* tensor */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+Tensor OneDnnBackend::negative(const Tensor& tensor) {
+  return applyEltwiseOp(tensor, dnnl::algorithm::eltwise_linear, -1);
 }
 
-Tensor OneDnnBackend::logicalNot(const Tensor& /* tensor */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+Tensor OneDnnBackend::logicalNot(const Tensor& tensor) {
+  return tensor == 0;
 }
 
 Tensor OneDnnBackend::log1p(const Tensor& /* tensor */) {
@@ -447,12 +447,12 @@ Tensor OneDnnBackend::cos(const Tensor& /* tensor */) {
   FL_ONEDNN_BACKEND_UNIMPLEMENTED;
 }
 
-Tensor OneDnnBackend::sqrt(const Tensor& /* tensor */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+Tensor OneDnnBackend::sqrt(const Tensor& tensor) {
+  return applyEltwiseOp(tensor, dnnl::algorithm::eltwise_sqrt);
 }
 
-Tensor OneDnnBackend::tanh(const Tensor& /* tensor */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+Tensor OneDnnBackend::tanh(const Tensor& tensor) {
+  return applyEltwiseOp(tensor, dnnl::algorithm::eltwise_tanh);
 }
 
 Tensor OneDnnBackend::floor(const Tensor& /* tensor */) {
@@ -463,12 +463,12 @@ Tensor OneDnnBackend::ceil(const Tensor& /* tensor */) {
   FL_ONEDNN_BACKEND_UNIMPLEMENTED;
 }
 
-Tensor OneDnnBackend::rint(const Tensor& /* tensor */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+Tensor OneDnnBackend::rint(const Tensor& tensor) {
+  return applyEltwiseOp(tensor, dnnl::algorithm::eltwise_round);
 }
 
-Tensor OneDnnBackend::absolute(const Tensor& /* tensor */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+Tensor OneDnnBackend::absolute(const Tensor& tensor) {
+  return applyEltwiseOp(tensor, dnnl::algorithm::eltwise_abs);
 }
 
 Tensor OneDnnBackend::sigmoid(const Tensor& /* tensor */) {
@@ -557,6 +557,35 @@ Tensor OneDnnBackend::argsort(
     const Dim /* axis */,
     const SortMode /* sortMode */) {
   FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+}
+
+Tensor OneDnnBackend::applyEltwiseOp(
+    const Tensor& tensor,
+    const dnnl::algorithm alg,
+    float alpha /* 0 */,
+    float beta /* 0 */) {
+  // prepare memories
+  const auto& mem = toOneDnnTensor(tensor).memory();
+  const auto& memDesc = mem.get_desc();
+  const auto& dstMemDesc = memDesc;
+  auto dstMem = dnnl::memory(dstMemDesc, engine_);
+
+  // prepare unary primitive
+  const auto unaryDesc = dnnl::eltwise_forward::desc(
+      dnnl::prop_kind::forward_inference, alg, memDesc, alpha, beta);
+  const auto unaryPrimtiveDesc =
+      dnnl::eltwise_forward::primitive_desc(unaryDesc, engine_);
+  const auto unaryPrimitive = dnnl::eltwise_forward(unaryPrimtiveDesc);
+
+  // prepare arguments.
+  const std::unordered_map<int, dnnl::memory> args = {
+      {DNNL_ARG_SRC, mem},
+      {DNNL_ARG_DST, dstMem},
+  };
+
+  // execute primitive
+  unaryPrimitive.execute(stream_->handle(), args);
+  return toTensor<OneDnnTensor>(tensor.shape(), std::move(dstMem));
 }
 
 /************************** Binary Operators ***************************/
