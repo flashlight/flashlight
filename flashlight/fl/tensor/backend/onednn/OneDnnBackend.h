@@ -14,14 +14,17 @@
 
 #include "flashlight/fl/tensor/backend/onednn/OneDnnCPUStream.h"
 
+#include <mkl_vsl.h>
+
 namespace fl {
 
 /**
  * A tensor backend implementation using the OneDNN library.
  */
 class OneDnnBackend : public TensorBackend {
-  dnnl::engine engine_{dnnl::engine(dnnl::engine::kind::cpu, 0)};
-  std::shared_ptr<OneDnnCPUStream> stream_{OneDnnCPUStream::create(engine_)};
+  dnnl::engine engine_;
+  std::shared_ptr<OneDnnCPUStream> stream_;
+  VSLStreamStatePtr randStream_;
 
   // Apply the given OneDNN binary operation to the tensors
   Tensor applyBinop(
@@ -30,8 +33,11 @@ class OneDnnBackend : public TensorBackend {
       dnnl::algorithm alg,
       std::optional<dnnl::memory::data_type> dstType = std::nullopt);
 
+  Tensor randnCpu(const Shape& shape, dtype type);
+  Tensor randCpu(const Shape& shape, dtype type);
+
  public:
-  OneDnnBackend() = default;
+  OneDnnBackend();
 
   static OneDnnBackend& getInstance();
   ~OneDnnBackend() override = default;

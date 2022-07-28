@@ -348,6 +348,14 @@ TEST(OneDnnTensorTest, copy) {
   assertOneDnnTensorEq(t2, fl::full({2, 2, 2}, 40.7, type));
 }
 
+TEST(OneDnnTensorTest, rand) {
+  fl::Shape shape{2, 2, 2};
+  auto type = fl::dtype::f32;
+  auto t1 = fl::OneDnnBackend::getInstance().randn(shape, type);
+  ASSERT_EQ(t1.shape(), shape);
+  ASSERT_EQ(t1.type(), type);
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   fl::init();
