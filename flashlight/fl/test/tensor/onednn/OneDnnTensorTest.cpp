@@ -324,6 +324,30 @@ TEST(OneDnnTensorTest, comparison) {
       t1 >= t2, fl::Tensor::fromVector<char>({2, 2}, {1, 0, 1, 0}));
 }
 
+TEST(OneDnnTensorTest, assign) {
+  const auto type = fl::dtype::f32;
+  auto t1 = fl::full({2, 2, 2}, 40.7, type);
+  auto t2 = fl::full({2, 2, 2}, 23, type);
+
+  // ensure it's not a shallow copy
+  t2 = t1;
+  t1 = fl::full({2, 2, 2}, 0); // t2 won't be affected
+  assertOneDnnTensorEq(t1, fl::full({2, 2, 2}, 0, type));
+  assertOneDnnTensorEq(t2, fl::full({2, 2, 2}, 40.7, type));
+}
+
+TEST(OneDnnTensorTest, copy) {
+  const auto type = fl::dtype::f32;
+  auto t1 = fl::full({2, 2, 2}, 40.7, type);
+  assertOneDnnTensorEq(t1, t1.copy());
+
+  // ensure it's not a shallow copy
+  auto t2 = t1.copy();
+  t1 = fl::full({2, 2, 2}, 0, type); // t2 won't be affected
+  assertOneDnnTensorEq(t1, fl::full({2, 2, 2}, 0, type));
+  assertOneDnnTensorEq(t2, fl::full({2, 2, 2}, 40.7, type));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   fl::init();
