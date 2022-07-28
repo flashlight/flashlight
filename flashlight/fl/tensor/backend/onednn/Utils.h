@@ -74,5 +74,14 @@ dnnl::memory::data_type getTypeWithLargerRange(
     dnnl::memory::data_type t1,
     dnnl::memory::data_type t2);
 
+/**
+ * Copy the given memory descriptor with a new given type.
+ *
+ * @return a copy of the given memory descriptor with a new given type.
+ */
+dnnl::memory::desc copyMemDescWithNewType(
+    const dnnl::memory::desc& memDesc,
+    const dnnl::memory::data_type newType);
+
 } // namespace detail
 } // namespace fl
