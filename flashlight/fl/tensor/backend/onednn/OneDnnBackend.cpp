@@ -144,6 +144,12 @@ BinaryOpOutputDesc getBinaryOpOutputDesc(
 
 } // namespace
 
+OneDnnBackend::OneDnnBackend() {
+  vslNewStream(&randStream_, VSL_BRNG_MCG31, std::rand());
+  engine_ = dnnl::engine(dnnl::engine::kind::cpu, 0);
+  stream_ = OneDnnCPUStream::create(engine_);
+}
+
 OneDnnBackend& OneDnnBackend::getInstance() {
   static OneDnnBackend instance;
   return instance;
@@ -200,16 +206,43 @@ void OneDnnBackend::setMemMgrFlushInterval(const size_t /* interval */) {
 
 /* -------------------------- Rand Functions -------------------------- */
 
-void OneDnnBackend::setSeed(const int /* seed */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+void OneDnnBackend::setSeed(const int seed) {
+  vslDeleteStream(&randStream_);
+  vslNewStream(&randStream_, VSL_BRNG_MCG31, seed);
 }
 
-Tensor OneDnnBackend::randn(const Shape& /* shape */, dtype /* type */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+Tensor OneDnnBackend::randnCpu(const Shape& shape, const dtype type) {
+  std::vector<float> data(shape.elements());
+  const auto alg = VSL_RNG_METHOD_GAUSSIAN_BOXMULLER2;
+  vsRngGaussian(alg, randStream_, data.size(), data.data(), 0, 1);
+  return toTensor<OneDnnTensor>(shape, dtype::f32, data.data(), Location::Host)
+      .astype(type);
 }
 
-Tensor OneDnnBackend::rand(const Shape& /* shape */, dtype /* type */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+Tensor OneDnnBackend::randCpu(const Shape& shape, const dtype type) {
+  std::vector<float> data(shape.elements());
+  const auto alg = VSL_RNG_METHOD_UNIFORM_STD;
+  vsRngUniform(alg, randStream_, data.size(), data.data(), 0, 1);
+  return toTensor<OneDnnTensor>(shape, dtype::f32, data.data(), Location::Host)
+      .astype(type);
+}
+
+Tensor OneDnnBackend::randn(const Shape& shape, dtype type) {
+  if (engine_.get_kind() == dnnl::engine::kind::cpu) {
+    return randnCpu(shape, type);
+  } else {
+    throw std::runtime_error(
+        "[OneDnnBackend::randn] unimplemented for non-CPU engine");
+  }
+}
+
+Tensor OneDnnBackend::rand(const Shape& shape, dtype type) {
+  if (engine_.get_kind() == dnnl::engine::kind::cpu) {
+    return randCpu(shape, type);
+  } else {
+    throw std::runtime_error(
+        "[OneDnnBackend::rand] unimplemented for non-CPU engine");
+  }
 }
 
 /* --------------------------- Tensor Operators --------------------------- */
