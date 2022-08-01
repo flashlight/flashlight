@@ -470,16 +470,16 @@ Tensor clip(const Tensor& tensor, const Tensor& low, const Tensor& high) {
 
 Tensor clip(const Tensor& tensor, const Tensor& low, const double& high) {
   FL_TENSOR_BACKENDS_MATCH_CHECK(tensor, low);
-  return clip(tensor, low, full(tensor.shape(), high));
+  return tensor.backend().clip(tensor, low, high);
 }
 
 Tensor clip(const Tensor& tensor, const double& low, const Tensor& high) {
   FL_TENSOR_BACKENDS_MATCH_CHECK(tensor, high);
-  return clip(tensor, full(tensor.shape(), low), high);
+  return tensor.backend().clip(tensor, low, high);
 }
 
 Tensor clip(const Tensor& tensor, const double& low, const double& high) {
-  return clip(tensor, full(tensor.shape(), low), full(tensor.shape(), high));
+  return tensor.backend().clip(tensor, low, high);
 }
 
 Tensor roll(const Tensor& tensor, const int shift, const unsigned axis) {
@@ -513,14 +513,12 @@ Tensor where(const Tensor& condition, const Tensor& x, const Tensor& y) {
 
 Tensor where(const Tensor& condition, const Tensor& x, const double& y) {
   FL_TENSOR_BACKENDS_MATCH_CHECK(condition, x);
-  return condition.backend().where(
-      condition, x, fl::full(condition.shape(), y, x.type()));
+  return condition.backend().where(condition, x, y);
 }
 
 Tensor where(const Tensor& condition, const double& x, const Tensor& y) {
   FL_TENSOR_BACKENDS_MATCH_CHECK(condition, y);
-  return condition.backend().where(
-      condition, fl::full(condition.shape(), x, y.type()), y);
+  return condition.backend().where(condition, x, y);
 }
 
 void topk(
@@ -625,19 +623,19 @@ Tensor maximum(const Tensor& lhs, const Tensor& rhs) {
 }
 
 Tensor minimum(const Tensor& lhs, const double& rhs) {
-  return minimum(lhs, full(lhs.shape(), rhs));
+  return lhs.backend().minimum(lhs, rhs);
 }
 
 Tensor minimum(const double& lhs, const Tensor& rhs) {
-  return minimum(full(rhs.shape(), lhs), rhs);
+  return rhs.backend().minimum(lhs, rhs);
 }
 
 Tensor maximum(const Tensor& lhs, const double& rhs) {
-  return maximum(lhs, full(lhs.shape(), rhs));
+  return lhs.backend().maximum(lhs, rhs);
 }
 
 Tensor maximum(const double& lhs, const Tensor& rhs) {
-  return maximum(full(rhs.shape(), lhs), rhs);
+  return rhs.backend().maximum(lhs, rhs);
 }
 
 Tensor power(const Tensor& lhs, const Tensor& rhs) {
@@ -646,11 +644,11 @@ Tensor power(const Tensor& lhs, const Tensor& rhs) {
 }
 
 Tensor power(const Tensor& lhs, const double& rhs) {
-  return lhs.backend().power(lhs, full(lhs.shape(), rhs));
+  return lhs.backend().power(lhs, rhs);
 }
 
 Tensor power(const double& lhs, const Tensor& rhs) {
-  return rhs.backend().power(full(rhs.shape(), lhs), rhs);
+  return rhs.backend().power(lhs, rhs);
 }
 
 /******************************* BLAS ********************************/
