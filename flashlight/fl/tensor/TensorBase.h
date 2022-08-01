@@ -565,8 +565,9 @@ class Tensor {
   std::ostream& operator<<(std::ostream& ostr) const;
 
   /******************** Assignment Operators ********************/
-#define ASSIGN_OP(OP)                    \
-  Tensor& OP(const Tensor& val);         \
+#define ASSIGN_TENSOR_OP(OP)             \
+  Tensor& OP(const Tensor& val);
+#define ASSIGN_SCALAR_OP(OP)             \
   Tensor& OP(const double& val);         \
   Tensor& OP(const float& val);          \
   Tensor& OP(const int& val);            \
@@ -580,13 +581,29 @@ class Tensor {
   Tensor& OP(const unsigned long& val);  \
   Tensor& OP(const long long& val);      \
   Tensor& OP(const unsigned long long& val);
+#define ASSIGN_OP(OP)                    \
+  ASSIGN_TENSOR_OP(OP);                  \
+  ASSIGN_SCALAR_OP(OP);
 
-  ASSIGN_OP(operator=);
+  ASSIGN_SCALAR_OP(operator=);
   ASSIGN_OP(operator+=);
   ASSIGN_OP(operator-=);
   ASSIGN_OP(operator*=);
   ASSIGN_OP(operator/=);
+#undef ASSIGN_TENSOR_OP
+#undef ASSIGN_SCALAR_OP
 #undef ASSIGN_OP
+
+  /* The following assignment operator differentiation via member method
+   * ref-qualifier ensures that
+   * 1. For `x = ...;`, the behavior is the same as the copy/move constructor.
+   * 2. For `... = ...`, a copy is made from the rhs tensor data to the lhs one.
+   *    This allows tensor mutation via indexing, e.g., `t(0, 0) = 42`.
+   */
+  Tensor& operator=(Tensor&& other) &;
+  Tensor& operator=(Tensor&& other) &&;
+  Tensor& operator=(const Tensor& other) &;
+  Tensor& operator=(const Tensor& other) &&;
 };
 
 /**

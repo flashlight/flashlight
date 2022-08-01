@@ -187,13 +187,17 @@ TEST(ArrayFireTensorBaseTest, ArrayFireAssignmentOperators) {
   af_get_data_ref_count(&refCount, aArr.get());
   ASSERT_EQ(refCount, 2);
 
-  af::array& bArr = toArray(b);
-  b = fl::full({4, 4}, 2.);
+  // copy, else it'll get released below when we reassign a new tensor to b
+  af::array bArr = toArray(b);
   af_get_data_ref_count(&refCount, bArr.get());
-  ASSERT_EQ(refCount, 1);
+  ASSERT_EQ(refCount, 3); // aArr, bArr, b.arrayHandle_
+
+  b = fl::full({4, 4}, 2.); // b points to a new array now
+  af_get_data_ref_count(&refCount, bArr.get());
+  ASSERT_EQ(refCount, 2); // aArr, bArr
 
   af_get_data_ref_count(&refCount, aArr.get());
-  ASSERT_EQ(refCount, 1);
+  ASSERT_EQ(refCount, 2); // aArr, bArr
 }
 
 TEST(ArrayFireTensorBaseTest, BinaryOperators) {

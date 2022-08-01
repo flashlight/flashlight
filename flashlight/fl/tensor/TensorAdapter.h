@@ -65,8 +65,8 @@ class TensorAdapterBase {
       StorageType storageType);
 
   /**
-   * Copies the tensor adapter. The implementation defines whether or not tensor
-   * data itself is copied - this is not an implementation requirement.
+   * Copies the tensor adapter. The copy is not required to be eager -- the
+   * implementation can use copy-on-write.
    */
   virtual std::unique_ptr<TensorAdapterBase> clone() const = 0;
 
