@@ -172,6 +172,34 @@ TEST(TensorUnaryOpsTest, flip) {
   ASSERT_TRUE(allClose(fl::flip(c, 0), c));
 }
 
+TEST(TensorUnaryOpsTest, where) {
+  // 1 0
+  // 0 1
+  auto cond = fl::Tensor::fromVector<char>({2, 2}, {1, 0, 0, 1});
+  // 0 2
+  // 1 3
+  auto x = fl::Tensor::fromVector<int>({2, 2}, {0, 1, 2, 3});
+  // 4 6
+  // 5 7
+  auto y = fl::Tensor::fromVector<int>({2, 2}, {4, 5, 6, 7});
+
+  // 0 6
+  // 5 3
+  ASSERT_TRUE(allClose(
+        fl::where(cond, x, y),
+        fl::Tensor::fromVector<int>({2, 2}, {0, 5, 6, 3})));
+  // 0 1
+  // 1 3
+  ASSERT_TRUE(allClose(
+        fl::where(cond, x, 1.0),
+        fl::Tensor::fromVector<int>({2, 2}, {0, 1, 1, 3})));
+  // 2 6
+  // 5 2
+  ASSERT_TRUE(allClose(
+        fl::where(cond, 2.0, y),
+        fl::Tensor::fromVector<int>({2, 2}, {2, 5, 6, 2})));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   fl::init();
