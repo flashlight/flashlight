@@ -274,8 +274,9 @@ std::ostream& Tensor::operator<<(std::ostream& ostr) const {
     impl_->FUN(val);                     \
     return *this;                        \
   }
-#define FL_ASSIGN_OP(OP, FUN)                        \
-  FL_ASSIGN_OP_TYPE(OP, FUN, const Tensor&);         \
+#define FL_ASSIGN_TENSOR_OP(OP, FUN)                 \
+  FL_ASSIGN_OP_TYPE(OP, FUN, const Tensor&);
+#define FL_ASSIGN_SCALAR_OP(OP, FUN)                 \
   FL_ASSIGN_OP_TYPE(OP, FUN, const double&);         \
   FL_ASSIGN_OP_TYPE(OP, FUN, const float&);          \
   FL_ASSIGN_OP_TYPE(OP, FUN, const int&);            \
@@ -290,14 +291,48 @@ std::ostream& Tensor::operator<<(std::ostream& ostr) const {
   FL_ASSIGN_OP_TYPE(OP, FUN, const long long&);      \
   FL_ASSIGN_OP_TYPE(OP, FUN, const unsigned long long&);
 
+#define FL_ASSIGN_OP(OP, FUN)                        \
+  FL_ASSIGN_TENSOR_OP(OP, FUN);                      \
+  FL_ASSIGN_SCALAR_OP(OP, FUN);
+
 // (operator, function name on impl)
-FL_ASSIGN_OP(operator=, assign);
+FL_ASSIGN_SCALAR_OP(operator=, assign);
 FL_ASSIGN_OP(operator+=, inPlaceAdd);
 FL_ASSIGN_OP(operator-=, inPlaceSubtract);
 FL_ASSIGN_OP(operator*=, inPlaceMultiply);
 FL_ASSIGN_OP(operator/=, inPlaceDivide);
 #undef FL_ASSIGN_OP_TYPE
+#undef FL_ASSIGN_TENSOR_OP
+#undef FL_ASSIGN_SCALAR_OP
 #undef FL_ASSIGN_OP
+
+// Move assignment operator when `this` is a lvalue, e.g., `x = std::move(y)`.
+// In such cases, we let `this` take over the tensor data of `other`.
+Tensor& Tensor::operator=(Tensor&& other) & {
+  this->impl_ = std::move(other.impl_);
+  return *this;
+}
+
+// Move assignment operator when `this` is a rvalue, e.g., `x(0) = std::move(y)`.
+// In such cases, we copy the data from `other` to `this`.
+Tensor& Tensor::operator=(Tensor&& other) && {
+  this->impl_->assign(other);
+  return *this;
+}
+
+// Copy assignment operator when `this` is a lvalue, e.g., `x = y`.
+// In such cases, we let `this` take over the _cloned_ data from `other`.
+Tensor& Tensor::operator=(const Tensor& other) & {
+  this->impl_ = other.impl_->clone();
+  return *this;
+}
+
+// Copy assignment operator when `this` is a lvalue, e.g., `x(0) = y`.
+// In such cases, we copy the data from `other` to `this`.
+Tensor& Tensor::operator=(const Tensor& other) && {
+  this->impl_->assign(other);
+  return *this;
+}
 
 /* --------------------------- Tensor Operators --------------------------- */
 

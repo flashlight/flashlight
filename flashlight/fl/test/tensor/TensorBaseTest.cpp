@@ -12,6 +12,7 @@
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/Random.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 using namespace ::testing;
 using namespace fl;
@@ -39,6 +40,86 @@ TEST(TensorBaseTest, DefaultConstruction) {
   Tensor v({4, 5, 6}, fl::dtype::u64);
   ASSERT_EQ(v.shape(), Shape({4, 5, 6}));
   ASSERT_EQ(v.type(), fl::dtype::u64);
+}
+
+TEST(TensorBaseTest, CopyConstruction) {
+  Shape shape{2, 2};
+  auto x = fl::full(shape, 0);
+  auto y = x; // actual copy (implementation may be CoW)
+
+  ASSERT_TRUE(allClose(x, fl::full(shape, 0)));
+  ASSERT_TRUE(allClose(y, fl::full(shape, 0)));
+  x += 23; // affects both tensors
+  ASSERT_TRUE(allClose(x, fl::full(shape, 23)));
+  ASSERT_TRUE(allClose(y, fl::full(shape, 0)));
+}
+
+TEST(TensorBaseTest, MoveConstruction) {
+  Shape shape{2, 2};
+  auto x = fl::full(shape, 0);
+  auto y = x(span, span); // view of x
+
+  auto z = std::move(x); // `z` takes over `x`'s data
+  // TODO the following line (or any read to `y`, as it seems) promotes view to
+  // copy; to avoid this, we must update impl of `assign`
+  //ASSERT_TRUE(allClose(y, fl::full(shape, 0)));
+  ASSERT_TRUE(allClose(z, fl::full(shape, 0)));
+
+  z += 42; // `y` is now a view of `z`, so it's affected
+  ASSERT_TRUE(allClose(y, fl::full(shape, 42)));
+  ASSERT_TRUE(allClose(z, fl::full(shape, 42)));
+}
+
+TEST(TensorBaseTest, AssignmentOperatorLvalueWithRvalue) {
+  Shape shape{2, 2};
+  auto x = fl::full({2, 2}, 0);
+  auto y = x(span, span);
+
+  // view as a lvalue cannot be used to update original tensor
+  y = fl::full({2, 2}, 42); // `x` isn't affected
+  y += 1;                   // `x` isn't affected
+  ASSERT_TRUE(allClose(x, fl::full(shape, 0)));
+  ASSERT_TRUE(allClose(y, fl::full(shape, 43)));
+}
+
+TEST(TensorBaseTest, AssignmentOperatorLvalueWithLvalue) {
+  Shape shape{2, 2};
+  auto x = fl::full({2, 2}, 0);
+  auto y = x(span, span);
+  auto z = fl::full({2, 2}, 1);
+
+  y = z;  // `x` is a copy of `z` now (impl may be CoW)
+  y += 1; // `z` isn't affected
+  ASSERT_TRUE(allClose(x, fl::full(shape, 0)));
+  ASSERT_TRUE(allClose(y, fl::full(shape, 2)));
+  ASSERT_TRUE(allClose(z, fl::full(shape, 1)));
+}
+
+TEST(TensorBaseTest, AssignmentOperatorRvalueWithRvalue) {
+  Shape shape{2, 2};
+  auto type = dtype::f32;
+  auto x = fl::full({2, 2}, 0, type);
+  auto y = x(span, span);
+
+  x(0, span) = fl::full({2}, 1); // `x` is updated by copying from rhs data
+  auto res = fl::Tensor::fromVector<float>(shape, {1, 0, 1, 0}, type);
+  ASSERT_TRUE(allClose(x, res));
+  ASSERT_TRUE(allClose(y, res));
+}
+
+TEST(TensorBaseTest, AssignmentOperatorRvalueWithLvalue) {
+  Shape shape{2, 2};
+  auto type = dtype::f32;
+  auto x = fl::full(shape, 0, type);
+  auto y = x(span, span); // view of `x`
+  auto z = fl::full({2}, 1, type);
+
+  x(span, 1) = z; // `x` is updated by copying from `z`'s data
+  x += 1;         // `z` isn't affected
+  auto res = fl::Tensor::fromVector<float>(shape, {1, 1, 2, 2}, type);
+  ASSERT_TRUE(allClose(x, res));
+  ASSERT_TRUE(allClose(y, res));
+  ASSERT_TRUE(allClose(z, fl::full({2}, 1, type)));
 }
 
 TEST(TensorBaseTest, Metadata) {
