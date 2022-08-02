@@ -342,7 +342,7 @@ TEST(OneDnnTensorTest, assign) {
 
   // ensure it's not a shallow copy
   t2 = t1;
-  t1 = fl::full({2, 2, 2}, 0); // t2 won't be affected
+  t1 = fl::full({2, 2, 2}, 0, type); // t2 won't be affected
   assertOneDnnTensorEq(t1, fl::full({2, 2, 2}, 0, type));
   assertOneDnnTensorEq(t2, fl::full({2, 2, 2}, 40.7, type));
 }
