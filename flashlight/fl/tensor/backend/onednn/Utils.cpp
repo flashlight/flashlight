@@ -125,12 +125,14 @@ dnnl::memory::data_type getTypeWithLargerRange(
   return isFpType(t1) ? t1 : t2;
 }
 
-dnnl::memory::desc copyMemDescWithNewType(
-    const dnnl::memory::desc& memDesc,
-    const dnnl::memory::data_type newType) {
-  dnnl::memory::desc memDescCopy = memDesc;
-  memDescCopy.data.data_type = dnnl::memory::convert_to_c(newType);
-  return memDescCopy;
+dnnl::memory::desc oneDnnContiguousMemDescFromShape(
+    const Shape& shape,
+    const dnnl::memory::data_type type) {
+  return dnnl::memory::desc(
+      detail::shapeToOneDnnDims(shape),
+      type,
+      detail::shapeToOneDnnStrides(shape),
+      /* allowEmpty */ true);
 }
 
 } // namespace detail

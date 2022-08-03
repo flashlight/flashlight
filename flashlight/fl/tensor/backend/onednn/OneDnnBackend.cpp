@@ -66,14 +66,6 @@ Tensor fullWithType(const Shape& shape, V value, const dtype type) {
   }
 }
 
-dnnl::memory::desc getMemDescWithLargerDataRange(
-  const dnnl::memory::desc& memDesc1,
-  const dnnl::memory::desc& memDesc2) {
-  const auto dataType = detail::getTypeWithLargerRange(
-      memDesc1.data_type(), memDesc2.data_type());
-  return dataType == memDesc1.data_type() ? memDesc1 : memDesc2;
-}
-
 struct BinaryOpOutputDesc {
   dnnl::memory::desc dstMemDesc;
   const Shape dstShape;
@@ -100,13 +92,15 @@ BinaryOpOutputDesc getBinaryOpOutputDesc(
     const dnnl::memory::desc& lhsMemDesc,
     const Shape& rhsShape,
     const dnnl::memory::desc& rhsMemDesc,
-    std::optional<dnnl::memory::data_type> dstType) {
+    std::optional<dnnl::memory::data_type> optDstType) {
+  // allow implicit casting
+  const auto dstType = optDstType.value_or(detail::getTypeWithLargerRange(
+      lhsMemDesc.data_type(), rhsMemDesc.data_type()));
   // some common fast paths
   if (lhsShape == rhsShape) {
     return {
-        .dstMemDesc = dstType.has_value()
-            ? detail::copyMemDescWithNewType(lhsMemDesc, dstType.value())
-            : getMemDescWithLargerDataRange(lhsMemDesc, rhsMemDesc),
+        .dstMemDesc =
+            detail::oneDnnContiguousMemDescFromShape(lhsShape, dstType),
         .dstShape = lhsShape};
   }
   // only support same # of dimensions for now
@@ -130,15 +124,9 @@ BinaryOpOutputDesc getBinaryOpOutputDesc(
     }
     dstDims.push_back(std::max(lhsDim, rhsDim));
   }
-  // allow implicit casting
-  const auto dataType = dstType.value_or(detail::getTypeWithLargerRange(
-      lhsMemDesc.data_type(), rhsMemDesc.data_type()));
   Shape dstShape(dstDims);
   return {
-      .dstMemDesc = dnnl::memory::desc(
-          detail::shapeToOneDnnDims(dstShape),
-          dataType,
-          detail::shapeToOneDnnStrides(dstShape)),
+      .dstMemDesc = detail::oneDnnContiguousMemDescFromShape(dstShape, dstType),
       .dstShape = dstShape};
 }
 
@@ -163,11 +151,15 @@ const Stream& OneDnnBackend::stream() const {
   return *stream_;
 }
 
-const dnnl::stream& OneDnnBackend::nativeStream() const {
+dnnl::stream& OneDnnBackend::nativeStream() const {
   return stream_->handle();
 }
 
 const dnnl::engine& OneDnnBackend::engine() const {
+  return engine_;
+}
+
+const dnnl::engine& OneDnnBackend::cpuEngine() const {
   return engine_;
 }
 
@@ -374,17 +366,18 @@ Tensor OneDnnBackend::transpose(
 
   // prepare memories
   auto& srcMem = tensor.getAdapter<OneDnnTensor>().memory();
-  const auto& srcMemDesc = srcMem.get_desc();
+  const auto srcMemDesc = srcMem.get_desc();
+  const auto type = srcMemDesc.data_type();
   const auto srcMemDims = srcMemDesc.dims();
   const auto dstMemDesc =
-      srcMemDesc.reshape(detail::shapeToOneDnnDims(newShape));
+      detail::oneDnnContiguousMemDescFromShape(newShape, type);
   auto dstMem = dnnl::memory(dstMemDesc, engine_);
 
   // prepare primitive
   const auto reorderDstStrides =
       getStridesAfterPermuteAxes(srcMemDims, oldToNewAxes);
   const auto reorderDstMemDesc =
-      dnnl::memory::desc(srcMemDims, srcMemDesc.data_type(), reorderDstStrides);
+      dnnl::memory::desc(srcMemDims, type, reorderDstStrides);
   const auto reorderPrimitiveDesc = dnnl::reorder::primitive_desc(
       engine_, srcMemDesc, engine_, reorderDstMemDesc);
   const auto reorderPrimitive = dnnl::reorder(reorderPrimitiveDesc);
@@ -566,8 +559,9 @@ Tensor OneDnnBackend::applyEltwiseOp(
     float beta /* 0 */) {
   // prepare memories
   const auto& mem = toOneDnnTensor(tensor).memory();
-  const auto& memDesc = mem.get_desc();
-  const auto& dstMemDesc = memDesc;
+  const auto memDesc = mem.get_desc();
+  const auto dstMemDesc = detail::oneDnnContiguousMemDescFromShape(
+      tensor.shape(), memDesc.data_type());
   auto dstMem = dnnl::memory(dstMemDesc, engine_);
 
   // prepare unary primitive
