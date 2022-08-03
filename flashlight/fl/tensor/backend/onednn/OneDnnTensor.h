@@ -69,6 +69,9 @@ class OneDnnTensor : public TensorAdapterBase {
   // data is fully ready.
   const void* getContiguousData();
 
+  // return the # of bytes for the data represented by this tensor.
+  unsigned getSizeInBytes() const;
+
  public:
   /**
    * Helper constructor for shallow-copying. For internal use only.
@@ -117,7 +120,7 @@ class OneDnnTensor : public TensorAdapterBase {
   ~OneDnnTensor() override = default;
   std::unique_ptr<TensorAdapterBase> clone() const override;
   TensorBackendType backendType() const override;
-  TensorBackend& backend() const override;
+  OneDnnBackend& backend() const override;
   Tensor copy() override;
   Tensor shallowCopy() override;
   const Shape& shape() override;

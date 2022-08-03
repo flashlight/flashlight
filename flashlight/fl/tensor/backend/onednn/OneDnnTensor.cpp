@@ -64,18 +64,22 @@ OneDnnTensor::SharedData::~SharedData() {
 OneDnnTensor::OneDnnTensor(std::shared_ptr<SharedData> sharedData)
     : sharedData_(std::move(sharedData)) {}
 
-const void* OneDnnTensor::getContiguousData() {
-  return isContiguous()
-      ? getOrEvalDataHandle()
-      : asContiguousTensor().getAdapter<OneDnnTensor>().getOrEvalDataHandle();
-}
-
 void* OneDnnTensor::getOrEvalDataHandle() {
   if (!sharedData_->isDataReady) {
     stream().sync();
     sharedData_->isDataReady = true;
   }
   return sharedData_->memory.get_data_handle();
+}
+
+unsigned OneDnnTensor::getSizeInBytes() const {
+  // NOTE ideally we should use `dnnl::memory::desc::get_size()`, but for some
+  // reason it returns 0 for submemory with non-zero offset, e.g., `tensor(1:4)`.
+  // See https://github.com/oneapi-src/oneDNN/issues/1429
+  auto type = sharedData_->memory.get_desc().data_type();
+  auto typeSize = dnnl::memory::data_type_size(type);
+  auto numElems = sharedData_->shape.elements();
+  return numElems * typeSize;
 }
 
 OneDnnTensor::OneDnnTensor(const Shape& shape, dnnl::memory&& memory) {
@@ -97,14 +101,11 @@ OneDnnTensor::OneDnnTensor(
     throw std::invalid_argument(
         "[OneDnnTensor] initialization data must be on host.");
   }
-  const auto memDesc = dnnl::memory::desc(
-      detail::shapeToOneDnnDims(shape),
-      detail::flToOneDnnType(type),
-      detail::shapeToOneDnnStrides(shape),
-      /* allowEmpty */ true);
+  const auto memDesc = detail::oneDnnContiguousMemDescFromShape(
+      shape, detail::flToOneDnnType(type));
   sharedData_ = std::make_shared<SharedData>();
   sharedData_->shape = shape;
-  sharedData_->memory = dnnl::memory(memDesc, OneDnnBackend::getInstance().engine());
+  sharedData_->memory = dnnl::memory(memDesc, backend().engine());
   const auto numDataBytes = shape.elements() * fl::getTypeSize(type);
   // NOTE, once we support CL, we can take ownership directly for device ptr.
   if (ptr != nullptr) {
@@ -131,20 +132,22 @@ std::unique_ptr<TensorAdapterBase> OneDnnTensor::clone() const {
 Tensor OneDnnTensor::copy() {
   // TODO copy on write
   auto& srcMem = sharedData_->memory;
-  const auto memDesc = sharedData_->memory.get_desc();
+  const auto type = srcMem.get_desc().data_type();
+  const auto srcMemDesc = srcMem.get_desc();
+  const auto dstMemDesc =
+      detail::oneDnnContiguousMemDescFromShape(sharedData_->shape, type);
   const auto engine = sharedData_->memory.get_engine();
-  auto newMem = dnnl::memory(memDesc, engine);
+  auto dstMem = dnnl::memory(dstMemDesc, engine);
 
   // prepare primitive
   // (using reorder in a passthrough sense to generate a new buffer)
   const auto reorderPrimitiveDesc =
-      dnnl::reorder::primitive_desc(engine, memDesc, engine, memDesc);
+      dnnl::reorder::primitive_desc(engine, srcMemDesc, engine, dstMemDesc);
   const auto reorderPrimitive = dnnl::reorder(reorderPrimitiveDesc);
 
   // execute primitive
-  reorderPrimitive.execute(
-      OneDnnBackend::getInstance().nativeStream(), srcMem, newMem);
-  return toTensor<OneDnnTensor>(sharedData_->shape, std::move(newMem));
+  reorderPrimitive.execute(backend().nativeStream(), srcMem, dstMem);
+  return toTensor<OneDnnTensor>(sharedData_->shape, std::move(dstMem));;
 }
 
 Tensor OneDnnTensor::shallowCopy() {
@@ -156,7 +159,7 @@ TensorBackendType OneDnnTensor::backendType() const {
   return backend().backendType();
 }
 
-TensorBackend& OneDnnTensor::backend() const {
+OneDnnBackend& OneDnnTensor::backend() const {
   return OneDnnBackend::getInstance();
 }
 
@@ -182,20 +185,29 @@ void OneDnnTensor::scalar(void* out) {
   if (sharedData_->shape.elements() == 0) {
     throw std::invalid_argument("Cannot call scalar on empty OneDnnTensor");
   }
-  const void* data = getOrEvalDataHandle();
-  const auto type = sharedData_->memory.get_desc().data_type();
-  switch(type) {
-    case dnnl::memory::data_type::f32: return copyScalar<float>(out, data);
-    case dnnl::memory::data_type::s32: return copyScalar<int>(out, data);
-    case dnnl::memory::data_type::s8: return copyScalar<char>(out, data);
-    case dnnl::memory::data_type::u8: return copyScalar<unsigned char>(out, data);
-    case dnnl::memory::data_type::undef:
-    case dnnl::memory::data_type::f16:
-    case dnnl::memory::data_type::bf16:
-      throw std::runtime_error(
-          "Currently do not support scalarization of type: " +
-          detail::oneDnnDataTypeToStr(type));
-  }
+  const auto& cpuEngine = backend().cpuEngine();
+
+  // prepare memories
+  auto& srcMem = memory();
+  const auto srcMemDesc = srcMem.get_desc();
+  const auto type = srcMemDesc.data_type();
+  // dims are strides are the same for scalar (1s),
+  // but reorder requires them to have the same # of dimensions
+  dnnl::memory::dims scalarDims(srcMemDesc.dims().size(), 1);
+  dnnl::memory::dims zeroOffsets(srcMemDesc.dims().size(), 0);
+  const auto srcScalarMemDesc = srcMemDesc.submemory_desc(scalarDims, zeroOffsets);
+  const dnnl::memory::desc dstMemDesc(scalarDims, type, scalarDims);
+  auto dstMem = dnnl::memory(dstMemDesc, cpuEngine, out);
+
+  // prepare primitive
+  const auto reorderPrimitiveDesc = dnnl::reorder::primitive_desc(
+      srcMem.get_engine(), srcScalarMemDesc, cpuEngine, dstMemDesc);
+  const auto reorderPrimitive = dnnl::reorder(reorderPrimitiveDesc);
+
+  // execute primitive
+  auto& stream = backend().nativeStream();
+  reorderPrimitive.execute(stream, srcMem, dstMem);
+  stream.wait();
 }
 
 void OneDnnTensor::device(void** out) {
@@ -204,8 +216,18 @@ void OneDnnTensor::device(void** out) {
 }
 
 void OneDnnTensor::host(void* out) {
-  const void* data = getContiguousData();
-  std::memcpy(out, data, sharedData_->memory.get_desc().get_size());
+  // TODO once we support arbitrary memory layout, we can simply do a reorder to
+  // `out` here, where the target memory desc will be column-major & contiguous.
+  if (!isContiguous()) {
+    asContiguousTensor().host(out);
+  } else {
+    // despite the "tranposed" internal representation, the physical data are
+    // the same
+    const auto& mem = memory();
+    void* mappedData = mem.map_data();
+    std::memcpy(out, mappedData, getSizeInBytes());
+    mem.unmap_data(mappedData);
+  }
 }
 
 void OneDnnTensor::unlock() {
@@ -228,7 +250,7 @@ bool OneDnnTensor::isContiguous() {
 }
 
 Shape OneDnnTensor::strides() {
-  const auto& memoryDesc = sharedData_->memory.get_desc().data;
+  const auto memoryDesc = sharedData_->memory.get_desc().data;
   if (memoryDesc.format_kind != dnnl_format_kind_t::dnnl_blocked) {
     throw std::invalid_argument(
         "[OneDnnTensor::strides] Unexpected memory format kind: " +
@@ -243,16 +265,16 @@ Shape OneDnnTensor::strides() {
 }
 
 const Stream& OneDnnTensor::stream() const {
-  return OneDnnBackend::getInstance().stream();
+  return backend().stream();
 }
 
 Tensor OneDnnTensor::astype(const dtype type) {
   // prepare memories
   auto& srcMem = sharedData_->memory;
   const auto engine = srcMem.get_engine();
-  const auto& srcMemDesc = srcMem.get_desc();
-  const auto dstMemDesc =
-      detail::copyMemDescWithNewType(srcMemDesc, detail::flToOneDnnType(type));
+  const auto srcMemDesc = srcMem.get_desc();
+  const auto dstMemDesc = detail::oneDnnContiguousMemDescFromShape(
+      shape(), detail::flToOneDnnType(type));
   auto dstMem = dnnl::memory(dstMemDesc, engine);
 
   // prepare primitive
@@ -261,8 +283,7 @@ Tensor OneDnnTensor::astype(const dtype type) {
   const auto reorderPrimitive = dnnl::reorder(reorderPrimitiveDesc);
 
   // execute primitive
-  reorderPrimitive.execute(
-      OneDnnBackend::getInstance().nativeStream(), srcMem, dstMem);
+  reorderPrimitive.execute(backend().nativeStream(), srcMem, dstMem);
   return toTensor<OneDnnTensor>(sharedData_->shape, std::move(dstMem));
 }
 
@@ -429,7 +450,10 @@ std::string dataToString(const void* data, const Shape& shape) {
 }
 
 std::string OneDnnTensor::toString() {
-  const void* data = getContiguousData();
+  // TODO lift this up into a util method: Tensor -> std::string
+  std::vector<char> vec(getSizeInBytes());
+  void* data = vec.data();
+  this->host(data);
   const auto& shape = sharedData_->shape;
   switch (type()) {
     case fl::dtype::f16:
@@ -518,30 +542,34 @@ void OneDnnTensor::assign(const Tensor& tensor) {
   const auto reorderPrimitive = dnnl::reorder(reorderPrimitiveDesc);
 
   // execute primitive
-  reorderPrimitive.execute(
-      OneDnnBackend::getInstance().nativeStream(), otherMem, thisMem);
+  reorderPrimitive.execute(backend().nativeStream(), otherMem, thisMem);
   this->sharedData_->isDataReady = false;
 }
 
 bool OneDnnTensor::equals(OneDnnTensor&& other) {
+  // TODO lift this up into a util method: (Tensor, Tensor) -> std::string
   if (this->sharedData_ == other.sharedData_) {
     return true;
   }
   if (this->sharedData_->shape != other.sharedData_->shape) {
     return false;
   }
-  const auto& thisMemDesc = this->sharedData_->memory.get_desc();
+  const auto thisMemDesc = this->sharedData_->memory.get_desc();
   const auto type = thisMemDesc.data_type();
   if (type != other.sharedData_->memory.get_desc().data_type()) {
     return false;
   }
   // TODO investigate ways to speed up this on non-CPU platform.
-  const void* lhsData = this->getContiguousData();
-  const void* rhsData = other.getContiguousData();
+  std::vector<char> lhsVec(this->getSizeInBytes());
+  std::vector<char> rhsVec(other.getSizeInBytes());
+  void* lhsData = lhsVec.data();
+  void* rhsData = rhsVec.data();
+  this->host(lhsData);
+  other.host(rhsData);
   // TODO update once f64 is available (after bumping OneDNN to newer version)
   return type == dnnl::memory::data_type::f32
       ? floatsEqual(lhsData, rhsData, this->sharedData_->shape.elements())
-      : bytesEqual(lhsData, rhsData, thisMemDesc.get_size());
+      : bytesEqual(lhsData, rhsData, getSizeInBytes());
 }
 
 dnnl::memory& OneDnnTensor::memory() {

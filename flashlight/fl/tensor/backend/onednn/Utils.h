@@ -57,13 +57,6 @@ std::string oneDnnDataTypeToStr(const dnnl::memory::data_type type);
 dnnl::memory::dims shapeToOneDnnDims(const Shape& shape);
 
 /**
- * Convert a Flashlight Shape to OneDNN strides, assuming row-major order.
- *
- * @return the corresponding OneDNN strides for given shape.
- */
-dnnl::memory::dims shapeToOneDnnStrides(const Shape& shape);
-
-/**
  * Return the input type that can represent a larger range of data.
  *
  * @param[in] t1 the first input type.
@@ -75,13 +68,16 @@ dnnl::memory::data_type getTypeWithLargerRange(
     dnnl::memory::data_type t2);
 
 /**
- * Copy the given memory descriptor with a new given type.
+ * Create a contiguous row-major OneDNN memory descriptor based on given
+ * Flashlight Shape and OneDNN type.
  *
- * @return a copy of the given memory descriptor with a new given type.
+ * @param[in] shape the Flashlight Shape.
+ * @param[in] type the OneDNN data type.
+ * @return the memory descriptor created.
  */
-dnnl::memory::desc copyMemDescWithNewType(
-    const dnnl::memory::desc& memDesc,
-    const dnnl::memory::data_type newType);
+dnnl::memory::desc oneDnnContiguousMemDescFromShape(
+    const Shape& shape,
+    const dnnl::memory::data_type type);
 
 } // namespace detail
 } // namespace fl

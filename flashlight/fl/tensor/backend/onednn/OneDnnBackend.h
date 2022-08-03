@@ -68,7 +68,7 @@ class OneDnnBackend : public TensorBackend {
    *
    * @return the active native OneDNN stream.
    */
-  const dnnl::stream& nativeStream() const;
+  dnnl::stream& nativeStream() const;
 
   /**
    * Gets the active OneDNN engine.
@@ -76,6 +76,13 @@ class OneDnnBackend : public TensorBackend {
    * @return the active OneDNN engine.
    */
   const dnnl::engine& engine() const;
+
+  /**
+   * Gets the OneDNN CPU engine.
+   *
+   * @return the OneDNN CPU engine.
+   */
+  const dnnl::engine& cpuEngine() const;
 
   /* -------------------------- Compute Functions -------------------------- */
   void eval(const Tensor& tensor) override;
