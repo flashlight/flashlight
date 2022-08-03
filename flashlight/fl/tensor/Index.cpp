@@ -69,4 +69,8 @@ bool Index::isSpan() const {
   return type_ == detail::IndexType::Span;
 }
 
+Index::IndexVariant Index::getVariant() const {
+  return index_;
+}
+
 } // namespace fl
