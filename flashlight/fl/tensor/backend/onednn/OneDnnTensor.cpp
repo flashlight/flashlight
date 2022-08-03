@@ -125,11 +125,6 @@ OneDnnTensor::OneDnnTensor(
 }
 
 std::unique_ptr<TensorAdapterBase> OneDnnTensor::clone() const {
-  // shallow copy the underlying memory
-  return std::make_unique<OneDnnTensor>(sharedData_);
-}
-
-Tensor OneDnnTensor::copy() {
   // TODO copy on write
   auto& srcMem = sharedData_->memory;
   const auto type = srcMem.get_desc().data_type();
@@ -147,7 +142,11 @@ Tensor OneDnnTensor::copy() {
 
   // execute primitive
   reorderPrimitive.execute(backend().nativeStream(), srcMem, dstMem);
-  return toTensor<OneDnnTensor>(sharedData_->shape, std::move(dstMem));;
+  return std::make_unique<OneDnnTensor>(sharedData_->shape, std::move(dstMem));
+}
+
+Tensor OneDnnTensor::copy() {
+  return Tensor(clone());
 }
 
 Tensor OneDnnTensor::shallowCopy() {

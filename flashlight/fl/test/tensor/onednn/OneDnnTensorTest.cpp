@@ -353,6 +353,7 @@ TEST(OneDnnTensorTest, copy) {
   assertOneDnnTensorEq(t1, t1.copy());
 
   // ensure it's not a shallow copy
+  // TODO properly test against effects once we support indexing
   auto t2 = t1.copy();
   t1 = fl::full({2, 2, 2}, 0, type); // t2 won't be affected
   assertOneDnnTensorEq(t1, fl::full({2, 2, 2}, 0, type));
