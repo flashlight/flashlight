@@ -9,20 +9,10 @@
 
 #include <stdexcept>
 
-#include "flashlight/fl/runtime/DeviceManager.h"
-
 namespace fl {
 
 OneDnnCPUStream::OneDnnCPUStream(const dnnl::engine& engine) {
   stream_ = std::make_unique<dnnl::stream>(engine);
-}
-
-X64Device& OneDnnCPUStream::device() {
-  return device_;
-}
-
-const X64Device& OneDnnCPUStream::device() const {
-  return device_;
 }
 
 std::shared_ptr<OneDnnCPUStream> OneDnnCPUStream::create(
@@ -38,14 +28,6 @@ std::shared_ptr<OneDnnCPUStream> OneDnnCPUStream::create(
 
 void OneDnnCPUStream::sync() const {
   stream_->wait();
-}
-
-void OneDnnCPUStream::relativeSync(const OneDnnCPUStream& waitOn) const {
-  waitOn.sync();
-}
-
-dnnl::engine OneDnnCPUStream::engine() const {
-  return stream_->get_engine();
 }
 
 dnnl::stream& OneDnnCPUStream::handle() {

@@ -7,23 +7,15 @@
 
 #pragma once
 
-#include "flashlight/fl/runtime/DeviceManager.h"
-#include "flashlight/fl/runtime/Stream.h"
+#include "flashlight/fl/runtime/SynchronousStream.h"
 
 namespace fl {
 
 /**
  * An abstraction for ArrayFire's CPU Stream with controlled creation methods.
  */
-class ArrayFireCPUStream : public StreamTrait<ArrayFireCPUStream> {
-  X64Device& device_{DeviceManager::getInstance().getActiveDevice(DeviceType::x64).impl<X64Device>()};
-
+class ArrayFireCPUStream : public SynchronousStream {
  public:
-  // prevent name hiding
-  using StreamTrait<ArrayFireCPUStream>::relativeSync;
-
-  static constexpr StreamType type = StreamType::Synchronous;
-
   /**
    * Creates an ArrayFireCPUStream and automatically register it with
    * the active x64 device from DeviceManager.
@@ -32,10 +24,7 @@ class ArrayFireCPUStream : public StreamTrait<ArrayFireCPUStream> {
    */
   static std::shared_ptr<ArrayFireCPUStream> create();
 
-  X64Device& device() override;
-  const X64Device& device() const override;
   void sync() const override;
-  void relativeSync(const ArrayFireCPUStream& waitOn) const override;
 };
 
 } // namespace fl

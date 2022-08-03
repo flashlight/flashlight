@@ -7,6 +7,7 @@ target_sources(
   ${CMAKE_CURRENT_LIST_DIR}/DeviceManager.cpp
   ${CMAKE_CURRENT_LIST_DIR}/DeviceType.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Stream.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/SynchronousStream.cpp
   )
 
 if (FL_USE_CUDA)

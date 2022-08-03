@@ -55,17 +55,6 @@ Tensor fullWithTypeCpu(const Shape& shape, V value, const dtype type) {
   return toTensor<OneDnnTensor>(shape, type, data.data(), Location::Host);
 }
 
-template <typename T, typename V>
-Tensor fullWithType(const Shape& shape, V value, const dtype type) {
-  const auto engineKind = OneDnnBackend::getInstance().engine().get_kind();
-  if (engineKind == dnnl::engine::kind::cpu) {
-    return fullWithTypeCpu<T, V>(shape, value, type);
-  } else {
-  throw std::runtime_error(
-      "[OneDnnBackend::fullWithType] unimplemented for non-CPU engine");
-  }
-}
-
 struct BinaryOpOutputDesc {
   dnnl::memory::desc dstMemDesc;
   const Shape dstShape;
@@ -288,6 +277,16 @@ FL_ONEDNN_BACKEND_CREATE_FUN_LITERAL_DEF(const bool&);
 FL_ONEDNN_BACKEND_CREATE_FUN_LITERAL_DEF(const short&);
 FL_ONEDNN_BACKEND_CREATE_FUN_LITERAL_DEF(const unsigned short&);
 #undef FL_ONEDNN_BACKEND_CREATE_FUN_LITERAL_DEF
+
+template <typename T, typename V>
+Tensor OneDnnBackend::fullWithType(const Shape& shape, V value, const dtype type) {
+  if (engine_.get_kind() == dnnl::engine::kind::cpu) {
+    return fullWithTypeCpu<T, V>(shape, value, type);
+  } else {
+  throw std::runtime_error(
+      "[OneDnnBackend::fullWithType] unimplemented for non-CPU engine");
+  }
+}
 
 Tensor OneDnnBackend::identity(const Dim /* dim */, const dtype /* type */) {
   FL_ONEDNN_BACKEND_UNIMPLEMENTED;
