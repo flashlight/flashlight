@@ -14,6 +14,7 @@
 #include "flashlight/fl/tensor/Shape.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/fl/tensor/Types.h"
+#include "flashlight/fl/tensor/backend/jit/Utils.h"
 #include "flashlight/fl/tensor/backend/jit/ir/BinaryNode.h"
 #include "flashlight/fl/tensor/backend/jit/ir/CustomNode.h"
 #include "flashlight/fl/tensor/backend/jit/ir/Node.h"
@@ -21,35 +22,6 @@
 #include "flashlight/fl/tensor/backend/jit/ir/ValueNode.h"
 
 using namespace fl;
-
-// things to help write tests
-namespace {
-
-struct UseVal {
-  const Node* user;
-  const unsigned inputIdx;
-};
-
-using NodeList = std::vector<Node*>;
-using UseValList = std::vector<UseVal>;
-
-bool operator==(UseList actual, UseValList expect) {
-  if (actual.size() != expect.size()) {
-    return false;
-  }
-  unsigned i = 0;
-  for (const auto& actualUse : actual) {
-    const auto& expectUse = expect[i];
-    if (actualUse->user() != expectUse.user ||
-        actualUse->inputIdx() != expectUse.inputIdx) {
-      return false;
-    }
-    i++;
-  }
-  return true;
-}
-
-} // namespace
 
 TEST(JitNodeTest, ScalarNodeMetaData) {
   const Shape shape({2, 2});
@@ -129,6 +101,8 @@ TEST(JitNodeTest, getSetResult) {
   ASSERT_TRUE(node->getResult().has_value());
   ASSERT_TRUE(allClose(node->getResult().value(), tensor));
   ASSERT_THROW(node->setResult(tensor.copy()), std::invalid_argument);
+  // "free" node
+  delete node;
 }
 
 TEST(JitNodeTest, refCountUpdate) {

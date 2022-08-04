@@ -862,6 +862,8 @@ std::string tensorBackendTypeToString(const TensorBackendType type) {
       return "ArrayFire";
     case TensorBackendType::OneDnn:
       return "OneDnn";
+    case TensorBackendType::Jit:
+      return "Jit";
   }
   throw std::runtime_error("Unreachable -- unrecognized tensor backend type");
 }
