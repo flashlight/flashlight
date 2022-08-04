@@ -96,11 +96,15 @@ enum class IndexType : int { Tensor = 0, Range = 1, Literal = 2, Span = 3 };
  * - An index literal, which refers to a single subtensor of the tensor being
  *   indexed.
  */
-class Index {
+struct Index {
+  using IndexVariant = std::variant<Dim, range, Tensor>;
+
+ private:
   // The type of indexing operator.
   detail::IndexType type_;
+
   // Underlying data referred to by the index
-  std::variant<Dim, range, Tensor> index_;
+  IndexVariant index_;
 
   // Intentionally private
   Index() = default;
@@ -146,6 +150,10 @@ class Index {
   template <typename T>
   T& get() {
     return std::get<T>(index_);
+  }
+
+  IndexVariant getVariant() const {
+    return index_;
   }
 };
 
