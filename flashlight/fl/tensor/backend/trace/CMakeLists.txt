@@ -4,5 +4,6 @@ target_sources(
   flashlight
   PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/DefaultTracer.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/TensorTracer.cpp
   ${CMAKE_CURRENT_LIST_DIR}/TracerBase.cpp
 )

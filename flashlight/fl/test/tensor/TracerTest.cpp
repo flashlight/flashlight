@@ -9,6 +9,7 @@
 
 #include <iomanip>
 #include <memory>
+#include <regex>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -18,6 +19,7 @@
 #include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/Random.h"
 #include "flashlight/fl/tensor/backend/trace/DefaultTracer.h"
+#include "flashlight/fl/tensor/backend/trace/TensorTracer.h"
 
 using namespace fl;
 
@@ -114,8 +116,37 @@ TEST(TracerTest, ArgStructure) {
           TracerBase::ArgumentList{},
           TracerBase::ArgumentList{{"arg3", Shape({1, 2, 3})}}),
       R"({"testFunc": {"args": {"arg1": {"tensor": {"shape": [3, 3], )"
-      R"("type": "f32"}}, "arg2": 2}, "inputs": {}, "outputs": {"arg3": [1, 2, 3]}}})"
+      R"("type": "f32"}}, "arg2": 2}, "inputs": {}, )"
+      R"("outputs": {"arg3": [1, 2, 3]}}})"
       "\n");
+}
+
+const std::string hexRegex("0[xX][0-9a-fA-F]+");
+
+TEST(TracerTest, TensorTracer) {
+  TensorTracer tracer(std::make_unique<std::stringstream>());
+
+  auto tensor = fl::full({4, 8}, 7., fl::dtype::f64);
+
+  std::string matchStr =
+      R"#(\{"tensor": \{"shape": \[4, 8\], "type": "f64", "device": [0-9], )#"
+      R"#("backend": "([^\s]+)", "memlocation": ")#" +
+      hexRegex + R"("\}\})";
+  std::string traceOutput = tracer.toTraceString(tensor);
+
+  std::smatch m; // regex matches
+  ASSERT_TRUE(std::regex_match(traceOutput, m, std::regex(matchStr)));
+  ASSERT_EQ(m.size(), 2); // exactly one match
+  ASSERT_EQ(m.str(), traceOutput); // should match the whole string
+
+  // mem address should be the same as the tensor's address
+  std::stringstream ss;
+  ASSERT_TRUE(std::regex_search(traceOutput, m, std::regex(hexRegex)));
+  ss << std::hex << m.str();
+  unsigned long addr;
+  ss >> addr;
+  ss.clear();
+  ASSERT_EQ(addr, reinterpret_cast<unsigned long>(tensor.device<void>()));
 }
 
 int main(int argc, char** argv) {
