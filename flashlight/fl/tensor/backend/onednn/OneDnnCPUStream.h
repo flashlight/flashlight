@@ -9,8 +9,7 @@
 
 #include <memory>
 
-#include "flashlight/fl/runtime/DeviceManager.h"
-#include "flashlight/fl/runtime/Stream.h"
+#include "flashlight/fl/runtime/SynchronousStream.h"
 
 #include <dnnl.hpp>
 
@@ -19,21 +18,13 @@ namespace fl {
 /**
  * An abstraction for OneDNN's CPU Stream with controlled creation methods.
  */
-class OneDnnCPUStream : public StreamTrait<OneDnnCPUStream> {
-  X64Device& device_{DeviceManager::getInstance()
-                         .getActiveDevice(DeviceType::x64)
-                         .impl<X64Device>()};
+class OneDnnCPUStream : public SynchronousStream {
   std::unique_ptr<dnnl::stream> stream_; // stored as a pointer to satisfy `sync() const`
 
   // internal constructor used to create the native OneDNN stream.
   explicit OneDnnCPUStream(const dnnl::engine& engine);
 
  public:
-  // prevent name hiding
-  using StreamTrait<OneDnnCPUStream>::relativeSync;
-
-  static constexpr StreamType type = StreamType::Synchronous;
-
   /**
    * Creates an OneDnnCPUStream on given engine and automatically register it
    * with the active x64 device from DeviceManager.
@@ -44,17 +35,7 @@ class OneDnnCPUStream : public StreamTrait<OneDnnCPUStream> {
    */
   static std::shared_ptr<OneDnnCPUStream> create(const dnnl::engine& engine);
 
-  X64Device& device() override;
-  const X64Device& device() const override;
   void sync() const override;
-  void relativeSync(const OneDnnCPUStream& waitOn) const override;
-
-  /**
-   * Gets the OneDNN engine that owns the underlying stream.
-   *
-   * @return the OneDNN engine that owns the underlying stream.
-   */
-  dnnl::engine engine() const;
 
   /**
    * Gets the underlying OneDNN stream.

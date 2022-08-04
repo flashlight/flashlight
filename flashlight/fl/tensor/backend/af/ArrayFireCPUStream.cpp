@@ -9,17 +9,7 @@
 
 #include <af/device.h>
 
-#include "flashlight/fl/runtime/DeviceManager.h"
-
 namespace fl {
-
-X64Device& ArrayFireCPUStream::device() {
-  return device_;
-}
-
-const X64Device& ArrayFireCPUStream::device() const {
-  return device_;
-}
 
 std::shared_ptr<ArrayFireCPUStream> ArrayFireCPUStream::create() {
   // TODO `std::make_shared` requires a public constructor, which could be
@@ -33,10 +23,6 @@ std::shared_ptr<ArrayFireCPUStream> ArrayFireCPUStream::create() {
 
 void ArrayFireCPUStream::sync() const {
   af::sync(af::getDevice());
-}
-
-void ArrayFireCPUStream::relativeSync(const ArrayFireCPUStream& waitOn) const {
-  waitOn.sync();
 }
 
 } // namespace fl

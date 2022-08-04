@@ -43,6 +43,9 @@ class OneDnnBackend : public TensorBackend {
   Tensor randnCpu(const Shape& shape, dtype type);
   Tensor randCpu(const Shape& shape, dtype type);
 
+  template <typename T, typename V>
+  Tensor fullWithType(const Shape& shape, V value, const dtype type);
+
  public:
   OneDnnBackend();
 
