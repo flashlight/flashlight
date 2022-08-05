@@ -11,6 +11,7 @@
 
 #include "flashlight/fl/tensor/TensorBackend.h"
 #include "flashlight/fl/tensor/backend/jit/opt/JitOptimizerExtension.h"
+#include "flashlight/fl/tensor/backend/jit/opt/JitOptimizerExtensionBackends.h"
 #include "flashlight/fl/tensor/backend/jit/opt/passes/ScalarFolding.h"
 
 namespace fl {
