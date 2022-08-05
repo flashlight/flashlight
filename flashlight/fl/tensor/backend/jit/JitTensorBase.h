@@ -9,6 +9,7 @@
 
 #include "flashlight/fl/tensor/TensorAdapter.h"
 #include "flashlight/fl/tensor/backend/jit/JitBackend.h"
+#include "flashlight/fl/tensor/backend/jit/eval/Evaluator.h"
 #include "flashlight/fl/tensor/backend/jit/ir/Node.h"
 
 namespace fl {
@@ -20,12 +21,18 @@ namespace fl {
 class JitTensorBase : public TensorAdapterBase {
   Node* node_;
 
+  // return the wrapped tensor, not a JitTensorBase
+  const Tensor& getTensorOrEvalNode() const;
+
  protected:
   // this allows us to create an instance of derived class
   virtual Tensor fromNode(Node* node) const = 0;
 
   // let derived class manage the wrapped backend
   virtual TensorBackend& wrappedBackend() const = 0;
+
+  // allow JitTensor<T> to potentially inject things into Evaluator
+  virtual Evaluator& evaluator() const = 0;
 
   // JitTensorBase manages the backend-agnostic JIT node.
   JitTensorBase(Node* node);
@@ -62,6 +69,12 @@ class JitTensorBase : public TensorAdapterBase {
    * Return the node this JIT tensor represents.
    */
   Node* node() const;
+
+  /**
+   * Force evaluation of this tensor's JIT node.
+   * `const` w.r.t. the underlying Tensor this represents.
+   */
+  void eval() const;
 
   /******************** Assignment Operators ********************/
 #define ASSIGN_OP_TYPE_STUB(OP, TYPE) void OP(const TYPE& val) override;

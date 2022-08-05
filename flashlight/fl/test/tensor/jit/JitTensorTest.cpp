@@ -9,13 +9,13 @@
 
 #include <gtest/gtest.h>
 
+#include "flashlight/fl/tensor/Compute.h"
+#include "flashlight/fl/tensor/DefaultTensorType.h"
 #include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/Random.h"
 #include "flashlight/fl/tensor/Shape.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/fl/tensor/Types.h"
-#include "flashlight/fl/tensor/backend/af/ArrayFireBackend.h"
-#include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
 #include "flashlight/fl/tensor/backend/jit/JitTensor.h"
 #include "flashlight/fl/tensor/backend/jit/JitTensorBase.h"
 #include "flashlight/fl/tensor/backend/jit/Utils.h"
@@ -29,8 +29,9 @@ namespace {
 class JitTensorTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    fl::setDefaultTensorType<JitTensor<ArrayFireTensor>>();
+    fl::setDefaultTensorType<JitTensor<DefaultTensorType_t>>();
   }
+  TensorBackend& defaultBackend_ = DefaultTensorBackend_t::getInstance();
 };
 
 template <typename Op>
@@ -59,8 +60,7 @@ void testBinaryOp(Op func, BinaryOp op) {
 } // namespace
 
 TEST_F(JitTensorTest, constructor) {
-  const auto data =
-      ArrayFireBackend::getInstance().rand(Shape({2, 2}), dtype::f32);
+  const auto data = defaultBackend_.rand(Shape({2, 2}), dtype::f32);
   const Tensor tensor =
       Tensor::fromBuffer(data.shape(), data.host<float>(), Location::Host);
   const auto& jitTensor = toJitTensorBase(tensor);
@@ -100,6 +100,32 @@ TEST_F(JitTensorTest, mul) {
 
 TEST_F(JitTensorTest, div) {
   testBinaryOp(std::divides<>(), BinaryOp::Div);
+}
+
+TEST_F(JitTensorTest, explicitEval) {
+  Shape shape(Shape({2, 2}));
+  auto dtype = dtype::s32;
+  const auto t0 = full(shape, 11, dtype);
+  const auto t1 = full(shape, 22, dtype);
+  auto sum = t0 + t1;
+  ASSERT_FALSE(toJitTensorBase(sum).node()->getResult().has_value());
+  fl::eval(sum); // explicit eval call
+  ASSERT_TRUE(allClose(
+      toJitTensorBase(sum).node()->getResult().value(),
+      defaultBackend_.full(shape, 33, dtype)));
+}
+
+TEST_F(JitTensorTest, forcedEval) {
+  Shape shape(Shape({2, 2}));
+  auto dtype = dtype::s32;
+  const auto t0 = full(shape, 11, dtype);
+  const auto t1 = full(shape, 22, dtype);
+  auto sum = t0 + t1;
+  ASSERT_FALSE(toJitTensorBase(sum).node()->getResult().has_value());
+  sum.toString(); // forces eval
+  ASSERT_TRUE(allClose(
+      toJitTensorBase(sum).node()->getResult().value(),
+      defaultBackend_.full(shape, 33, dtype)));
 }
 
 int main(int argc, char** argv) {
