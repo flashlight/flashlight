@@ -119,6 +119,153 @@ BinaryOpOutputDesc getBinaryOpOutputDesc(
       .dstShape = dstShape};
 }
 
+template <typename L, typename R, typename T, typename OP>
+void applyBinopCpu(
+    const void* lhs,
+    const void* rhs,
+    T* dst,
+    unsigned count,
+    OP op) {
+  const L* lhsData = static_cast<const L*>(lhs);
+  const R* rhsData = static_cast<const R*>(rhs);
+  for (unsigned i = 0; i < count; i++) {
+    dst[i] = op(lhsData[i], rhsData[i]);
+  }
+}
+
+template <typename L, typename T, typename OP>
+void applyBinopCpu(
+    const void* lhs,
+    const void* rhs,
+    const dtype rhsType,
+    T* dst,
+    unsigned count,
+    OP op) {
+  switch (rhsType) {
+    case fl::dtype::f16:
+      throw std::runtime_error(
+          "Fallback implementation currently doesn't support f16");
+    case fl::dtype::f32:
+      applyBinopCpu<L, float>(lhs, rhs, dst, count, op);
+      break;
+    case fl::dtype::f64:
+      applyBinopCpu<L, double>(lhs, rhs, dst, count, op);
+      break;
+    case fl::dtype::b8:
+      applyBinopCpu<L, char>(lhs, rhs, dst, count, op);
+      break;
+    case fl::dtype::s16:
+      applyBinopCpu<L, short>(lhs, rhs, dst, count, op);
+      break;
+    case fl::dtype::s32:
+      applyBinopCpu<L, int>(lhs, rhs, dst, count, op);
+      break;
+    case fl::dtype::s64:
+      applyBinopCpu<L, long long>(lhs, rhs, dst, count, op);
+      break;
+    case fl::dtype::u8:
+      applyBinopCpu<L, unsigned char>(lhs, rhs, dst, count, op);
+      break;
+    case fl::dtype::u16:
+      applyBinopCpu<L, unsigned short>(lhs, rhs, dst, count, op);
+      break;
+    case fl::dtype::u32:
+      applyBinopCpu<L, unsigned int>(lhs, rhs, dst, count, op);
+      break;
+    case fl::dtype::u64:
+      applyBinopCpu<L, unsigned long long>(lhs, rhs, dst, count, op);
+      break;
+  }
+}
+
+template <typename T, typename OP>
+void applyBinopCpu(
+    const void* lhs,
+    const dtype lhsType,
+    const void* rhs,
+    const dtype rhsType,
+    T* dst,
+    unsigned count,
+    OP op) {
+  switch (lhsType) {
+    case fl::dtype::f16:
+      throw std::runtime_error(
+          "Fallback implementation currently doesn't support f16");
+    case fl::dtype::f32:
+      applyBinopCpu<float>(lhs, rhs, rhsType, dst, count, op);
+      break;
+    case fl::dtype::f64:
+      applyBinopCpu<double>(lhs, rhs, rhsType, dst, count, op);
+      break;
+    case fl::dtype::b8:
+      applyBinopCpu<char>(lhs, rhs, rhsType, dst, count, op);
+      break;
+    case fl::dtype::s16:
+      applyBinopCpu<short>(lhs, rhs, rhsType, dst, count, op);
+      break;
+    case fl::dtype::s32:
+      applyBinopCpu<int>(lhs, rhs, rhsType, dst, count, op);
+      break;
+    case fl::dtype::s64:
+      applyBinopCpu<long long>(lhs, rhs, rhsType, dst, count, op);
+      break;
+    case fl::dtype::u8:
+      applyBinopCpu<unsigned char>(lhs, rhs, rhsType, dst, count, op);
+      break;
+    case fl::dtype::u16:
+      applyBinopCpu<unsigned short>(lhs, rhs, rhsType, dst, count, op);
+      break;
+    case fl::dtype::u32:
+      applyBinopCpu<unsigned int>(lhs, rhs, rhsType, dst, count, op);
+      break;
+    case fl::dtype::u64:
+      applyBinopCpu<unsigned long long>(lhs, rhs, rhsType, dst, count, op);
+      break;
+  }
+}
+
+template <typename T, typename OP>
+Tensor sameShapeBinopCpu(const Tensor& lhs, const Tensor& rhs, OP op) {
+  if (!lhs.isContiguous()) {
+    return sameShapeBinopCpu<T>(lhs.asContiguousTensor(), rhs, op);
+  }
+  if (!rhs.isContiguous()) {
+    return sameShapeBinopCpu<T>(lhs, rhs.asContiguousTensor(), op);
+  }
+  if (lhs.shape() != rhs.shape()) {
+    throw std::invalid_argument(
+        "[OneDnnBackend] Generic Binop impl requires input tensors of the same shape");
+  }
+  lhs.stream().sync();
+  rhs.stream().sync();
+  void* lhsData;
+  void* rhsData;
+  // On CPU, device pointer is host pointer.
+  lhs.device(&lhsData);
+  rhs.device(&rhsData);
+  std::vector<T> dst(lhs.elements());
+  T* dstData = dst.data();
+  applyBinopCpu(
+      lhsData, lhs.type(), rhsData, rhs.type(), dstData, lhs.elements(), op);
+  lhs.unlock();
+  rhs.unlock();
+  auto dstType = dtype_traits<T>::fl_type;
+  return toTensor<OneDnnTensor>(lhs.shape(), dstType, dstData, Location::Host);
+}
+
+template <typename T, typename OP>
+Tensor sameShapeBinop(const Tensor& lhs, const Tensor& rhs, OP op) {
+  auto& lhsTensor = toOneDnnTensor(lhs);
+  auto& rhsTensor = toOneDnnTensor(rhs);
+  if (lhsTensor.memory().get_engine().get_kind() == dnnl::engine::kind::cpu &&
+      rhsTensor.memory().get_engine().get_kind() == dnnl::engine::kind::cpu) {
+    return sameShapeBinopCpu<T>(lhs, rhs, op);
+  } else {
+    throw std::runtime_error(
+        "[OneDnnBackend::sameShapeBinop] unimplemented for non-CPU engine");
+  }
+}
+
 } // namespace
 
 OneDnnBackend::OneDnnBackend() {
@@ -621,8 +768,8 @@ Tensor OneDnnBackend::applyEltwiseOp(
   }                                                       \
   FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(FUNC, OP);
 
-FL_ONEDNN_BINARY_OP_UNSUPPORTED_DEF(||, logicalOr);
-FL_ONEDNN_BINARY_OP_UNSUPPORTED_DEF(&&, logicalAnd);
+FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(logicalOr, ||);
+FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF(logicalAnd, &&);
 FL_ONEDNN_BINARY_OP_UNSUPPORTED_DEF(%, mod);
 FL_ONEDNN_BINARY_OP_UNSUPPORTED_DEF(&, bitwiseAnd);
 FL_ONEDNN_BINARY_OP_UNSUPPORTED_DEF(|, bitwiseOr);
@@ -691,6 +838,14 @@ FL_ONEDNN_BINARY_LOGICAL_OP_DEF(greaterThan, dnnl::algorithm::binary_gt);
 FL_ONEDNN_BINARY_LOGICAL_OP_DEF(greaterThanEqual, dnnl::algorithm::binary_ge);
 #undef FL_ONEDNN_BINARY_OP_DEF
 
+Tensor OneDnnBackend::logicalAnd(const Tensor& lhs, const Tensor& rhs) {
+  return sameShapeBinop<char>(lhs, rhs, std::logical_and<>());
+}
+
+Tensor OneDnnBackend::logicalOr(const Tensor& lhs, const Tensor& rhs) {
+  return sameShapeBinop<char>(lhs, rhs, std::logical_or<>());
+}
+
 Tensor OneDnnBackend::minimum(const Tensor& lhs, const Tensor& rhs) {
   return applyBinop(lhs, rhs, dnnl::algorithm::binary_min);
 }
@@ -698,6 +853,7 @@ Tensor OneDnnBackend::minimum(const Tensor& lhs, const Tensor& rhs) {
 Tensor OneDnnBackend::maximum(const Tensor& lhs, const Tensor& rhs) {
   return applyBinop(lhs, rhs, dnnl::algorithm::binary_max);
 }
+
 Tensor OneDnnBackend::applyBinop(
     const Tensor& lhs,
     const Tensor& rhs,
@@ -714,7 +870,7 @@ Tensor OneDnnBackend::applyBinop(
 
   // prepare primitive
   const auto binaryDesc = dnnl::binary::desc(
-      alg, lhsMemDesc, rhsMemDesc, outputDesc.dstMemDesc);
+    alg, lhsMemDesc, rhsMemDesc, outputDesc.dstMemDesc);
   const auto binaryPrimtiveDesc =
       dnnl::binary::primitive_desc(binaryDesc, engine_);
   const auto binaryPrimitive = dnnl::binary(binaryPrimtiveDesc);
@@ -754,119 +910,119 @@ Tensor OneDnnBackend::amin(
   FL_ONEDNN_BACKEND_UNIMPLEMENTED;
 }
 
-Tensor OneDnnBackend::amax(
-    const Tensor& /* input */,
-    const std::vector<int>& /* axes */,
-    const bool /* keepDims */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-}
+  Tensor OneDnnBackend::amax(
+      const Tensor& /* input */,
+      const std::vector<int>& /* axes */,
+      const bool /* keepDims */) {
+    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+  }
 
-void OneDnnBackend::min(
-    Tensor& /* values */,
-    Tensor& /* indices */,
-    const Tensor& /* input */,
-    const unsigned /* axis */,
-    const bool /* keepDims */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-}
+  void OneDnnBackend::min(
+      Tensor& /* values */,
+      Tensor& /* indices */,
+      const Tensor& /* input */,
+      const unsigned /* axis */,
+      const bool /* keepDims */) {
+    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+  }
 
-void OneDnnBackend::max(
-    Tensor& /* values */,
-    Tensor& /* indices */,
-    const Tensor& /* input */,
-    const unsigned /* axis */,
-    const bool /* keepDims */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-}
+  void OneDnnBackend::max(
+      Tensor& /* values */,
+      Tensor& /* indices */,
+      const Tensor& /* input */,
+      const unsigned /* axis */,
+      const bool /* keepDims */) {
+    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+  }
 
-Tensor OneDnnBackend::sum(
-    const Tensor& /* input */,
-    const std::vector<int>& /* axes */,
-    const bool /* keepDims */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-}
+  Tensor OneDnnBackend::sum(
+      const Tensor& /* input */,
+      const std::vector<int>& /* axes */,
+      const bool /* keepDims */) {
+    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+  }
 
-Tensor OneDnnBackend::cumsum(
-    const Tensor& /* input */,
-    const unsigned /* axis */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-}
+  Tensor OneDnnBackend::cumsum(
+      const Tensor& /* input */,
+      const unsigned /* axis */) {
+    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+  }
 
-Tensor OneDnnBackend::argmax(
-    const Tensor& /* input */,
-    const unsigned /* axis */,
-    const bool /* keepDims */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-}
+  Tensor OneDnnBackend::argmax(
+      const Tensor& /* input */,
+      const unsigned /* axis */,
+      const bool /* keepDims */) {
+    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+  }
 
-Tensor OneDnnBackend::argmin(
-    const Tensor& /* input */,
-    const unsigned /* axis */,
-    const bool /* keepDims */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-}
+  Tensor OneDnnBackend::argmin(
+      const Tensor& /* input */,
+      const unsigned /* axis */,
+      const bool /* keepDims */) {
+    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+  }
 
-Tensor OneDnnBackend::mean(
-    const Tensor& /* input */,
-    const std::vector<int>& /* axes */,
-    const bool /* keepDims */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-}
+  Tensor OneDnnBackend::mean(
+      const Tensor& /* input */,
+      const std::vector<int>& /* axes */,
+      const bool /* keepDims */) {
+    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+  }
 
-Tensor OneDnnBackend::median(
-    const Tensor& /* input */,
-    const std::vector<int>& /* axes */,
-    const bool /* keepDims */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-}
+  Tensor OneDnnBackend::median(
+      const Tensor& /* input */,
+      const std::vector<int>& /* axes */,
+      const bool /* keepDims */) {
+    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+  }
 
-Tensor OneDnnBackend::var(
-    const Tensor& /* input */,
-    const std::vector<int>& /* axes */,
-    const bool /* bias */,
-    const bool /* keepDims */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-}
+  Tensor OneDnnBackend::var(
+      const Tensor& /* input */,
+      const std::vector<int>& /* axes */,
+      const bool /* bias */,
+      const bool /* keepDims */) {
+    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+  }
 
-Tensor OneDnnBackend::std(
-    const Tensor& /* input */,
-    const std::vector<int>& /* axes */,
-    const bool /* keepDims */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-}
+  Tensor OneDnnBackend::std(
+      const Tensor& /* input */,
+      const std::vector<int>& /* axes */,
+      const bool /* keepDims */) {
+    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+  }
 
-Tensor OneDnnBackend::norm(
-    const Tensor& /* input */,
-    const std::vector<int>& /* axes */,
-    double /* p */ /* = 2 */,
-    const bool /* keepDims */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-}
+  Tensor OneDnnBackend::norm(
+      const Tensor& /* input */,
+      const std::vector<int>& /* axes */,
+      double /* p */ /* = 2 */,
+      const bool /* keepDims */) {
+    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+  }
 
-Tensor OneDnnBackend::countNonzero(
-    const Tensor& /* input */,
-    const std::vector<int>& /* axes */,
-    const bool /* keepDims */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-}
+  Tensor OneDnnBackend::countNonzero(
+      const Tensor& /* input */,
+      const std::vector<int>& /* axes */,
+      const bool /* keepDims */) {
+    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+  }
 
-Tensor OneDnnBackend::any(
-    const Tensor& /* input */,
-    const std::vector<int>& /* axes */,
-    const bool /* keepDims */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-}
+  Tensor OneDnnBackend::any(
+      const Tensor& /* input */,
+      const std::vector<int>& /* axes */,
+      const bool /* keepDims */) {
+    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+  }
 
-Tensor OneDnnBackend::all(
-    const Tensor& /* input */,
-    const std::vector<int>& /* axes */,
-    const bool /* keepDims */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-}
+  Tensor OneDnnBackend::all(
+      const Tensor& /* input */,
+      const std::vector<int>& /* axes */,
+      const bool /* keepDims */) {
+    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+  }
 
-void OneDnnBackend::print(const Tensor& tensor) {
-  std::cout << "OneDnnTensor" << std::endl
-            << tensor.getAdapter<OneDnnTensor>().toString() << std::endl;
-}
+  void OneDnnBackend::print(const Tensor& tensor) {
+    std::cout << "OneDnnTensor" << std::endl
+              << tensor.getAdapter<OneDnnTensor>().toString() << std::endl;
+  }
 
 } // namespace fl
