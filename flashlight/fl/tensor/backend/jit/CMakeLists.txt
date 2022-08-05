@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.16)
 
 include(${CMAKE_CURRENT_LIST_DIR}/eval/CMakeLists.txt) # eval
 include(${CMAKE_CURRENT_LIST_DIR}/ir/CMakeLists.txt)   # ir
+include(${CMAKE_CURRENT_LIST_DIR}/opt/CMakeLists.txt)  # opt
 
 target_sources(
   flashlight
