@@ -6,6 +6,7 @@
  */
 
 #include <cmath>
+#include <exception>
 #include <stdexcept>
 
 #include <gtest/gtest.h>
@@ -333,6 +334,20 @@ TEST(OneDnnTensorTest, comparison) {
 
   assertOneDnnTensorEq(
       t1 >= t2, fl::Tensor::fromVector<char>({2, 2}, {1, 0, 1, 0}));
+}
+
+TEST(OneDnnTensorTest, logicalBinops) {
+  auto t1 = fl::Tensor::fromVector<char>({2, 2}, {0, -3, 0, 5});
+  auto t2 = fl::Tensor::fromVector<int>({2, 2}, {0, 2, -1, 0});
+  auto t3 = fl::Tensor::fromVector<int>({2}, {0, 2, -1, 0});
+  auto t4 = fl::Tensor::fromVector<int>({2, 1}, {0, 2, -1, 0});
+
+  assertOneDnnTensorEq(
+      t1 && t2, fl::Tensor::fromVector<char>({2, 2}, {0, 1, 0, 0}));
+  assertOneDnnTensorEq(
+      t1 || t2, fl::Tensor::fromVector<char>({2, 2}, {0, 1, 1, 1}));
+  ASSERT_THROW(t1 && t3, std::invalid_argument);
+  ASSERT_THROW(t4 || t1, std::invalid_argument);
 }
 
 TEST(OneDnnTensorTest, assign) {
