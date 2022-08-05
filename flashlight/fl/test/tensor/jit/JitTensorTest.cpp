@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <functional>
+
 #include <gtest/gtest.h>
 
 #include "flashlight/fl/tensor/Init.h"
@@ -17,6 +19,7 @@
 #include "flashlight/fl/tensor/backend/jit/JitTensor.h"
 #include "flashlight/fl/tensor/backend/jit/JitTensorBase.h"
 #include "flashlight/fl/tensor/backend/jit/Utils.h"
+#include "flashlight/fl/tensor/backend/jit/ir/BinaryNode.h"
 #include "flashlight/fl/tensor/backend/jit/ir/ScalarNode.h"
 
 using namespace fl;
@@ -29,6 +32,30 @@ class JitTensorTest : public ::testing::Test {
     fl::setDefaultTensorType<JitTensor<ArrayFireTensor>>();
   }
 };
+
+template <typename Op>
+void testBinaryOp(Op func, BinaryOp op) {
+  fl::setDefaultTensorType<JitTensor<ArrayFireTensor>>();
+  // c0  c1
+  //  \  /
+  //  node
+  Shape shape(Shape({2, 2}));
+  auto dtype = dtype::s32;
+  const auto t0 = full(shape, 0, dtype);
+  const auto t1 = full(shape, 1, dtype);
+  const auto c0 = toJitTensorBase(t0).node();
+  const auto c1 = toJitTensorBase(t1).node();
+  const auto tensor = func(t0, t1);
+  const auto& jitTensor = toJitTensorBase(tensor);
+  const auto node = &jitTensor.node()->template impl<BinaryNode>();
+  ASSERT_EQ(node->inputs(), NodeList({c0, c1}));
+  ASSERT_EQ(node->uses(), UseValList({}));
+  ASSERT_EQ(node->lhs(), c0);
+  ASSERT_EQ(node->rhs(), c1);
+  ASSERT_EQ(node->op(), op);
+  ASSERT_EQ(c0->uses(), UseValList({{node, 0}}));
+  ASSERT_EQ(c1->uses(), UseValList({{node, 1}}));
+}
 
 } // namespace
 
@@ -58,6 +85,22 @@ TEST_F(JitTensorTest, full) {
   ASSERT_EQ(node.shape(), shape);
   ASSERT_EQ(node.dataType(), dtype);
   ASSERT_EQ(node.scalar<int>(), val);
+}
+
+TEST_F(JitTensorTest, add) {
+  testBinaryOp(std::plus<>(), BinaryOp::Add);
+}
+
+TEST_F(JitTensorTest, sub) {
+  testBinaryOp(std::minus<>(), BinaryOp::Sub);
+}
+
+TEST_F(JitTensorTest, mul) {
+  testBinaryOp(std::multiplies<>(), BinaryOp::Mul);
+}
+
+TEST_F(JitTensorTest, div) {
+  testBinaryOp(std::divides<>(), BinaryOp::Div);
 }
 
 int main(int argc, char** argv) {
