@@ -116,6 +116,14 @@ void Node::setResult(Tensor&& tensor) {
   }
 }
 
+void Node::unsetResult() {
+  if (result_.has_value()) {
+    result_ = std::nullopt;
+  } else {
+    throw std::invalid_argument("[Node::unsetResult] Result not set");
+  }
+}
+
 bool Node::isBinary() const {
   return type() == NodeType::Binary;
 }

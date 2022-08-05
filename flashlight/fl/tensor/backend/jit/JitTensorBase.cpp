@@ -23,6 +23,10 @@ JitTensorBase::~JitTensorBase() {
   node_->decRefCount();
 }
 
+const Tensor& JitTensorBase::getTensorOrEvalNode() {
+  return node_->getResult().value();
+}
+
 Tensor JitTensorBase::copy() {
   FL_JIT_TENSOR_UNIMPLEMENTED;
 }
@@ -114,7 +118,7 @@ void* JitTensorBase::getContext() {
 }
 
 std::string JitTensorBase::toString() {
-  FL_JIT_TENSOR_UNIMPLEMENTED;
+  return getTensorOrEvalNode().toString();
 }
 
 std::ostream& JitTensorBase::operator<<(std::ostream& /* ostr */) {
@@ -155,6 +159,10 @@ FL_JIT_TENSOR_ASSIGN_OP_STUB(inPlaceDivide); // /=
 
 Node* JitTensorBase::node() const {
   return node_;
+}
+
+void JitTensorBase::eval() const {
+  evaluator().eval(node_);
 }
 
 const JitTensorBase& toJitTensorBase(const Tensor& tensor) {
