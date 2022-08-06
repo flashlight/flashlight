@@ -91,11 +91,15 @@ dnnl::memory::dims shapeToOneDnnStrides(const Shape& shape) {
   return strides;
 }
 
-dnnl::memory::dims shapeToOneDnnDims(const Shape& shape) {
-  if (shape.ndim() == 0) {
+dnnl::memory::dims flDimsToOneDnnDims(const std::vector<Dim>& flDims) {
+  if (flDims.size() == 0) {
     return {1}; // scalar, OneDNN memory returns null handle with {} as dims
   }
-  return dnnl::memory::dims(shape.get().rbegin(), shape.get().rend());
+  return dnnl::memory::dims(flDims.rbegin(), flDims.rend());
+}
+
+dnnl::memory::dims shapeToOneDnnDims(const Shape& shape) {
+  return flDimsToOneDnnDims(shape.get());
 }
 
 bool isFpType(dnnl::memory::data_type type) {

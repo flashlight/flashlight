@@ -50,6 +50,13 @@ bool isTypeSupportedByOneDnn(const fl::dtype type);
 std::string oneDnnDataTypeToStr(const dnnl::memory::data_type type);
 
 /**
+ * Convert Flashlight dimentions to OneDNN dimensions.
+ *
+ * @return the corresponding OneDNN dims for given shape.
+ */
+dnnl::memory::dims flDimsToOneDnnDims(const std::vector<Dim>& flDims);
+
+/**
  * Convert a Flashlight Shape to OneDNN dimensions.
  *
  * @return the corresponding OneDNN dims for given shape.
