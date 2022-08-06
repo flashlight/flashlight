@@ -63,6 +63,11 @@ void assertOneDnnTensorEq(fl::Tensor&& lhs, fl::Tensor&& rhs) {
 // usually we just need to specify output type, like mapFunc<float>(...);
 template <typename Out, typename In>
 std::vector<Out> mapFunc(const std::vector<In>& inputs, Out (*func)(In)) {
+  return mapFunc<Out>(inputs, [func](In x){ return func(x); });
+}
+
+template <typename Out, typename In, typename Func>
+std::vector<Out> mapFunc(const std::vector<In>& inputs, Func func) {
   std::vector<Out> outputs;
   for (const auto& input : inputs) {
     outputs.emplace_back(func(input));
@@ -336,6 +341,23 @@ TEST(OneDnnTensorTest, comparison) {
       t1 >= t2, fl::Tensor::fromVector<char>({2, 2}, {1, 0, 1, 0}));
 }
 
+TEST(OneDnnTensorTest, minimumMaximum) {
+  auto t1 = fl::Tensor::fromVector<float>({2, 2}, {0, 1, 2, 3});
+  auto t2 = fl::Tensor::fromVector<float>({2, 2}, {0, 2, 2, 4});
+
+  assertOneDnnTensorEq(t2, fl::maximum(t1, t2));
+  assertOneDnnTensorEq(
+      fl::maximum(t1, 2), fl::Tensor::fromVector<float>({2, 2}, {2, 2, 2, 3}));
+  assertOneDnnTensorEq(
+      fl::maximum(2, t1), fl::Tensor::fromVector<float>({2, 2}, {2, 2, 2, 3}));
+
+  assertOneDnnTensorEq(t1, fl::minimum(t1, t2));
+  assertOneDnnTensorEq(
+      fl::minimum(t1, 1), fl::Tensor::fromVector<float>({2, 2}, {0, 1, 1, 1}));
+  assertOneDnnTensorEq(
+      fl::minimum(1, t1), fl::Tensor::fromVector<float>({2, 2}, {0, 1, 1, 1}));
+}
+
 TEST(OneDnnTensorTest, logicalBinops) {
   auto t1 = fl::Tensor::fromVector<char>({2, 2}, {0, -3, 0, 5});
   auto t2 = fl::Tensor::fromVector<int>({2, 2}, {0, 2, -1, 0});
@@ -383,41 +405,76 @@ TEST(OneDnnTensorTest, rand) {
   ASSERT_EQ(t1.type(), type);
 }
 
-TEST(OneDnnTensorTest, eltwise) {
-  auto& backend = fl::OneDnnBackend::getInstance();
+TEST(OneDnnTensorTest, eltwiseCompute) {
   std::vector<float> t1Data = {1, 2, 3, 4};
   std::vector<float> t2Data = {0, 2, 2, 0};
   auto t1 = fl::Tensor::fromVector({2, 2}, t1Data);
   auto t2 = fl::Tensor::fromVector({2, 2}, t2Data);
 
   assertOneDnnTensorEq(
-      backend.exp(t1),
+      fl::exp(t1),
       fl::Tensor::fromVector({2, 2}, mapFunc<float>(t1Data, std::exp)));
 
   assertOneDnnTensorEq(
-      backend.log(t1),
+      fl::log(t1),
       fl::Tensor::fromVector({2, 2}, mapFunc<float>(t1Data, std::log)));
 
   assertOneDnnTensorEq(
-      backend.sqrt(t1),
+      fl::sqrt(t1),
       fl::Tensor::fromVector({2, 2}, mapFunc<float>(t1Data, std::sqrt)));
 
   assertOneDnnTensorEq(
-      backend.tanh(t1),
+      fl::tanh(t1),
       fl::Tensor::fromVector({2, 2}, mapFunc<float>(t1Data, std::tanh)));
 
   assertOneDnnTensorEq(
-      backend.rint(fl::Tensor::fromVector<float>({2, 2}, {0.1, 1.4, 2.5, 3.9})),
+      fl::rint(fl::Tensor::fromVector<float>({2, 2}, {0.1, 1.4, 2.5, 3.9})),
       fl::Tensor::fromVector<float>({2, 2}, {0, 1, 2, 4}));
 
   assertOneDnnTensorEq(
-      backend.absolute(
-          fl::Tensor::fromVector<float>({2, 2}, {-2, -2.8, 3.4, 0})),
+      fl::absolute(fl::Tensor::fromVector<float>({2, 2}, {-2, -2.8, 3.4, 0})),
       fl::Tensor::fromVector<float>({2, 2}, {2, 2.8, 3.4, 0}));
 
   assertOneDnnTensorEq(
-      backend.logicalNot(t2),
-      fl::Tensor::fromVector<char>({2, 2}, {1, 0, 0, 1}));
+      fl::logicalNot(t2), fl::Tensor::fromVector<char>({2, 2}, {1, 0, 0, 1}));
+
+  assertOneDnnTensorEq(
+      fl::clip(
+          fl::Tensor::fromVector<float>({4}, {1.4, 0.1, 2.5, 3.9}), 1.2, 2.7),
+      fl::Tensor::fromVector<float>({4}, {1.4, 1.2, 2.5, 2.7}));
+
+  auto powThree = [](auto x) { return std::pow(x, 3); };
+  assertOneDnnTensorEq(
+      fl::power(t1, 3),
+      fl::Tensor::fromVector(t1.shape(), mapFunc<float>(t1Data, powThree)));
+
+  assertOneDnnTensorEq(
+      fl::erf(t1),
+      fl::Tensor::fromVector({2, 2}, mapFunc<float>(t1Data, std::erf)));
+}
+
+TEST(OneDnnTensorTest, eltwiseLogical) {
+  std::vector<float> t1Data = {1.0f / 0, 2, 0.2f, -2.0f / 0, -2, 0};
+  auto t1 = fl::Tensor::fromVector({2, 3}, t1Data);
+
+  assertOneDnnTensorEq(
+      fl::isinf(t1),
+      fl::Tensor::fromVector(t1.shape(), mapFunc<char>(t1Data, [](auto x) {
+                               return std::isinf(x);
+                             })));
+
+  auto sign = [](auto x) {
+    if (x > 0) {
+      return 1;
+    } else if (x == 0) {
+      return 0;
+    } else {
+      return -1;
+    }
+  };
+  assertOneDnnTensorEq(
+      fl::sign(t1),
+      fl::Tensor::fromVector(t1.shape(), mapFunc<char>(t1Data, sign)));
 }
 
 TEST(OneDnnTensorTest, reduction) {

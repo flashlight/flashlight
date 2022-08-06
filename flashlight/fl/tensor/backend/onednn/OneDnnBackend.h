@@ -166,6 +166,8 @@ class OneDnnBackend : public TensorBackend {
   Tensor flip(const Tensor& tensor, const unsigned dim) override;
   Tensor clip(const Tensor& tensor, const Tensor& low, const Tensor& high)
       override;
+  Tensor clip(const Tensor& tensor, const double& low, const double& high)
+      override;
   Tensor roll(const Tensor& tensor, const int shift, const unsigned axis)
       override;
   Tensor isnan(const Tensor& tensor) override;
@@ -240,8 +242,13 @@ class OneDnnBackend : public TensorBackend {
 #undef FL_ONEDNN_BACKEND_BINARY_OP_LITERALS_DECL
 
   Tensor minimum(const Tensor& lhs, const Tensor& rhs) override;
+  Tensor minimum(const double& lhs, const Tensor& rhs) override;
+  Tensor minimum(const Tensor& lhs, const double& rhs) override;
   Tensor maximum(const Tensor& lhs, const Tensor& rhs) override;
+  Tensor maximum(const Tensor& lhs, const double& rhs) override;
+  Tensor maximum(const double& lhs, const Tensor& rhs) override;
   Tensor power(const Tensor& lhs, const Tensor& rhs) override;
+  Tensor power(const Tensor& lhs, const double& rhs) override;
 
   /******************************* BLAS ********************************/
   Tensor matmul(

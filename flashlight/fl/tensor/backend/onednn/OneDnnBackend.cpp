@@ -8,7 +8,9 @@
 #include "flashlight/fl/tensor/backend/onednn/OneDnnBackend.h"
 
 #include <cassert>
+#include <cmath>
 #include <iostream>
+#include <limits>
 #include <numeric>
 #include <sstream>
 #include <stdexcept>
@@ -279,6 +281,15 @@ Shape filterAxes(const Shape& shape, std::vector<int> axesToFilter) {
     }
   }
   return Shape(dimsKept);
+}
+
+template <typename INPUT_TYPE, typename CAST_TYPE>
+Tensor createScalarTensorForBinop(const Tensor& tensor, INPUT_TYPE val) {
+  CAST_TYPE castedVal = static_cast<CAST_TYPE>(val);
+  Shape literalShape(std::vector<Dim>(tensor.ndim(), 1));
+  auto type = dtype_traits<CAST_TYPE>::fl_type;
+  return toTensor<OneDnnTensor>(
+      literalShape, type, &castedVal, tensor.location());
 }
 
 } // namespace
@@ -629,8 +640,14 @@ Tensor OneDnnBackend::sigmoid(const Tensor& /* tensor */) {
   FL_ONEDNN_BACKEND_UNIMPLEMENTED;
 }
 
-Tensor OneDnnBackend::erf(const Tensor& /* tensor */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+Tensor OneDnnBackend::erf(const Tensor& tensor) {
+  // gelu_erf is the only OneDNN primitive that contains erf, basically
+  // gelu_erf(a) = 0.5a(1 + erf(a/sqrt(2)))
+  auto sqrt2 = std::sqrt(2);
+  auto tensorSqrt2 = tensor * sqrt2;
+  auto res = applyEltwiseOp(tensorSqrt2, dnnl::algorithm::eltwise_gelu_erf);
+  return res / (tensorSqrt2 * 0.5) - 1;
+  // TODO investigate performance using post-ops -- just launch 1 primitive here
 }
 
 Tensor OneDnnBackend::flip(
@@ -646,6 +663,13 @@ Tensor OneDnnBackend::clip(
   FL_ONEDNN_BACKEND_UNIMPLEMENTED;
 }
 
+Tensor OneDnnBackend::clip(
+    const Tensor& tensor,
+    const double& low,
+    const double& high) {
+  return applyEltwiseOp(tensor, dnnl::algorithm::eltwise_clip, low, high);
+}
+
 Tensor OneDnnBackend::roll(
     const Tensor& /* tensor */,
     const int /* shift */,
@@ -657,12 +681,13 @@ Tensor OneDnnBackend::isnan(const Tensor& /* tensor */) {
   FL_ONEDNN_BACKEND_UNIMPLEMENTED;
 }
 
-Tensor OneDnnBackend::isinf(const Tensor& /* tensor */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+Tensor OneDnnBackend::isinf(const Tensor& tensor) {
+  return tensor == std::numeric_limits<float>::infinity() ||
+      tensor == (-1 * std::numeric_limits<float>::infinity());
 }
 
-Tensor OneDnnBackend::sign(const Tensor& /* tensor */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+Tensor OneDnnBackend::sign(const Tensor& tensor) {
+  return (0 < tensor) - (tensor < 0);
 }
 
 Tensor OneDnnBackend::tril(const Tensor& /* tensor */) {
@@ -795,22 +820,12 @@ FL_ONEDNN_BINARY_OP_UNSUPPORTED_DEF(>>, rShift);
 #undef FL_ONEDNN_BINARY_OP_TYPE_UNSUPPORTED_DEF
 #undef FL_ONEDNN_BINARY_OP_LITERALS_UNSUPPORTED_DEF
 
-#define FL_ONEDNN_BINARY_OP_LITERALS_DEF(FUNC, TYPE, CAST_TYPE)         \
-  Tensor OneDnnBackend::FUNC(const Tensor& a, TYPE rhs) {               \
-    CAST_TYPE val = static_cast<CAST_TYPE>(rhs);                        \
-    Shape literalShape(std::vector<Dim>(a.ndim(), 1));                  \
-    auto type = dtype_traits<CAST_TYPE>::fl_type;                       \
-    auto rhsTensor =                                                    \
-        toTensor<OneDnnTensor>(literalShape, type, &val, a.location()); \
-    return FUNC(a, rhsTensor);                                          \
-  }                                                                     \
-  Tensor OneDnnBackend::FUNC(TYPE lhs, const Tensor& a) {               \
-    CAST_TYPE val = static_cast<CAST_TYPE>(lhs);                        \
-    Shape literalShape(std::vector<Dim>(a.ndim(), 1));                  \
-    auto type = dtype_traits<CAST_TYPE>::fl_type;                       \
-    auto lhsTensor =                                                    \
-        toTensor<OneDnnTensor>(literalShape, type, &val, a.location()); \
-    return FUNC(lhsTensor, a);                                          \
+#define FL_ONEDNN_BINARY_OP_LITERALS_DEF(FUNC, TYPE, CAST_TYPE)          \
+  Tensor OneDnnBackend::FUNC(const Tensor& a, TYPE rhs) {                \
+    return FUNC(a, createScalarTensorForBinop<TYPE, CAST_TYPE>(a, rhs)); \
+  }                                                                      \
+  Tensor OneDnnBackend::FUNC(TYPE lhs, const Tensor& a) {                \
+    return FUNC(createScalarTensorForBinop<TYPE, CAST_TYPE>(a, lhs), a); \
   }
 
 // NOTE cast needed because OneDNN only supports a subset of the FL types.
@@ -865,8 +880,24 @@ Tensor OneDnnBackend::minimum(const Tensor& lhs, const Tensor& rhs) {
   return applyBinop(lhs, rhs, dnnl::algorithm::binary_min);
 }
 
+Tensor OneDnnBackend::minimum(const Tensor& lhs, const double& rhs) {
+  return minimum(lhs, createScalarTensorForBinop<double, float>(lhs, rhs));
+}
+
+Tensor OneDnnBackend::minimum(const double& lhs, const Tensor& rhs) {
+  return minimum(rhs, lhs); // commutative
+}
+
 Tensor OneDnnBackend::maximum(const Tensor& lhs, const Tensor& rhs) {
   return applyBinop(lhs, rhs, dnnl::algorithm::binary_max);
+}
+
+Tensor OneDnnBackend::maximum(const Tensor& lhs, const double& rhs) {
+  return maximum(lhs, createScalarTensorForBinop<double, float>(lhs, rhs));
+}
+
+Tensor OneDnnBackend::maximum(const double& lhs, const Tensor& rhs) {
+  return maximum(rhs, lhs); // commutative
 }
 
 Tensor OneDnnBackend::applyBinop(
@@ -904,6 +935,11 @@ Tensor OneDnnBackend::applyBinop(
 
 Tensor OneDnnBackend::power(const Tensor& /* lhs */, const Tensor& /* rhs */) {
   FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+}
+
+Tensor OneDnnBackend::power(const Tensor& lhs, const double& rhs) {
+  // alpha * element^beta
+  return applyEltwiseOp(lhs, dnnl::algorithm::eltwise_pow, 1, rhs);
 }
 
 /************************** BLAS ***************************/
