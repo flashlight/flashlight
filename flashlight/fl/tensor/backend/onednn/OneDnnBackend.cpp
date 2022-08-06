@@ -10,7 +10,10 @@
 #include <cassert>
 #include <iostream>
 #include <numeric>
+#include <sstream>
 #include <stdexcept>
+#include <string>
+#include <unordered_set>
 
 #include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/fl/tensor/backend/onednn/OneDnnTensor.h"
@@ -264,6 +267,18 @@ Tensor sameShapeBinop(const Tensor& lhs, const Tensor& rhs, OP op) {
     throw std::runtime_error(
         "[OneDnnBackend::sameShapeBinop] unimplemented for non-CPU engine");
   }
+}
+
+Shape filterAxes(const Shape& shape, std::vector<int> axesToFilter) {
+  std::vector<Dim> dimsKept;
+  std::unordered_set<int> axesToFilterSet(
+      axesToFilter.begin(), axesToFilter.end());
+  for (int i = 0; i < shape.ndim(); i++) {
+    if (axesToFilterSet.count(i) == 0) {
+      dimsKept.push_back(shape[i]);
+    }
+  }
+  return Shape(dimsKept);
 }
 
 } // namespace
@@ -904,125 +919,195 @@ Tensor OneDnnBackend::matmul(
 /************************** Reductions ***************************/
 
 Tensor OneDnnBackend::amin(
+    const Tensor& input,
+    const std::vector<int>& axes,
+    const bool keepDims) {
+  return applyReductionOp(
+      input, dnnl::algorithm::reduction_min, axes, keepDims);
+}
+
+Tensor OneDnnBackend::amax(
+    const Tensor& input,
+    const std::vector<int>& axes,
+    const bool keepDims) {
+  return applyReductionOp(
+      input, dnnl::algorithm::reduction_max, axes, keepDims);
+}
+
+void OneDnnBackend::min(
+    Tensor& /* values */,
+    Tensor& /* indices */,
+    const Tensor& /* input */,
+    const unsigned /* axis */,
+    const bool /* keepDims */) {
+  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+}
+
+void OneDnnBackend::max(
+    Tensor& /* values */,
+    Tensor& /* indices */,
+    const Tensor& /* input */,
+    const unsigned /* axis */,
+    const bool /* keepDims */) {
+  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+}
+
+Tensor OneDnnBackend::sum(
+    const Tensor& input,
+    const std::vector<int>& axes,
+    const bool keepDims) {
+  return applyReductionOp(
+      input, dnnl::algorithm::reduction_sum, axes, keepDims);
+}
+
+Tensor OneDnnBackend::cumsum(
+    const Tensor& /* input */,
+    const unsigned /* axis */) {
+  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+}
+
+Tensor OneDnnBackend::argmax(
+    const Tensor& /* input */,
+    const unsigned /* axis */,
+    const bool /* keepDims */) {
+  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+}
+
+Tensor OneDnnBackend::argmin(
+    const Tensor& /* input */,
+    const unsigned /* axis */,
+    const bool /* keepDims */) {
+  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+}
+
+Tensor OneDnnBackend::mean(
+    const Tensor& input,
+    const std::vector<int>& axes,
+    const bool keepDims) {
+  return applyReductionOp(
+      input, dnnl::algorithm::reduction_mean, axes, keepDims);
+}
+
+Tensor OneDnnBackend::median(
     const Tensor& /* input */,
     const std::vector<int>& /* axes */,
     const bool /* keepDims */) {
   FL_ONEDNN_BACKEND_UNIMPLEMENTED;
 }
 
-  Tensor OneDnnBackend::amax(
-      const Tensor& /* input */,
-      const std::vector<int>& /* axes */,
-      const bool /* keepDims */) {
-    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-  }
+Tensor OneDnnBackend::var(
+    const Tensor& /* input */,
+    const std::vector<int>& /* axes */,
+    const bool /* bias */,
+    const bool /* keepDims */) {
+  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+}
 
-  void OneDnnBackend::min(
-      Tensor& /* values */,
-      Tensor& /* indices */,
-      const Tensor& /* input */,
-      const unsigned /* axis */,
-      const bool /* keepDims */) {
-    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-  }
+Tensor OneDnnBackend::std(
+    const Tensor& /* input */,
+    const std::vector<int>& /* axes */,
+    const bool /* keepDims */) {
+  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+}
 
-  void OneDnnBackend::max(
-      Tensor& /* values */,
-      Tensor& /* indices */,
-      const Tensor& /* input */,
-      const unsigned /* axis */,
-      const bool /* keepDims */) {
-    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-  }
+Tensor OneDnnBackend::norm(
+    const Tensor& /* input */,
+    const std::vector<int>& /* axes */,
+    double /* p */ /* = 2 */,
+    const bool /* keepDims */) {
+  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+}
 
-  Tensor OneDnnBackend::sum(
-      const Tensor& /* input */,
-      const std::vector<int>& /* axes */,
-      const bool /* keepDims */) {
-    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-  }
+Tensor OneDnnBackend::countNonzero(
+    const Tensor& input,
+    const std::vector<int>& axes,
+    const bool keepDims) {
+  std::vector<Dim> dims(input.ndim(), 1);
+  auto zero = this->full(Shape(dims), 0, input.type());
+  // can't use s32 for sum in OneDNN
+  auto res = applyBinop(
+      input, zero, dnnl::algorithm::binary_ne, dnnl::memory::data_type::f32);
+  return sum(res, axes, keepDims).astype(fl::dtype::s32);
+}
 
-  Tensor OneDnnBackend::cumsum(
-      const Tensor& /* input */,
-      const unsigned /* axis */) {
-    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-  }
+Tensor OneDnnBackend::any(
+    const Tensor& input,
+    const std::vector<int>& axes,
+    const bool keepDims) {
+  return countNonzero(input, axes, keepDims) != 0;
+}
 
-  Tensor OneDnnBackend::argmax(
-      const Tensor& /* input */,
-      const unsigned /* axis */,
-      const bool /* keepDims */) {
-    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-  }
+Tensor OneDnnBackend::all(
+    const Tensor& /* input */,
+    const std::vector<int>& /* axes */,
+    const bool /* keepDims */) {
+  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+}
 
-  Tensor OneDnnBackend::argmin(
-      const Tensor& /* input */,
-      const unsigned /* axis */,
-      const bool /* keepDims */) {
-    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+Tensor OneDnnBackend::applyReductionOp(
+    const Tensor& input,
+    const dnnl::algorithm alg,
+    const std::vector<int>& axes,
+    const bool keepDims) {
+  // compute final shape
+  std::vector<int> axesToReduce;
+  if (axes.empty()) {
+    axesToReduce.resize(input.ndim());
+    std::iota(axesToReduce.begin(), axesToReduce.end(), 0);
+  } else {
+    axesToReduce = axes;
   }
+  std::vector<Dim> dstDims = input.shape().get();
+  for (int axis : axesToReduce) {
+    if (axis < 0 || axis >= input.ndim()) {
+      std::ostringstream oss;
+      oss << "[OneDnnBacked] Invalid axis for reduction: " << axis
+          << " for tensor of shape: " << input.shape();
+      throw std::invalid_argument(oss.str());
+    }
+    dstDims[axis] = 1;
+  }
+  Shape dstShape(dstDims);
 
-  Tensor OneDnnBackend::mean(
-      const Tensor& /* input */,
-      const std::vector<int>& /* axes */,
-      const bool /* keepDims */) {
-    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-  }
+  // prepare part of memories
+  const auto& srcMem = toOneDnnTensor(input).memory();
+  const auto srcMemDesc = srcMem.get_desc();
+  // OneDNN reduction primitive doesn't allow dim reduction, so we use a memDesc
+  // w/o dim reduction for primitive arg, althought the final memory's dims
+  // might get reduced
+  auto dstArgMemDesc = detail::oneDnnContiguousMemDescFromShape(
+      dstShape, srcMemDesc.data_type());
 
-  Tensor OneDnnBackend::median(
-      const Tensor& /* input */,
-      const std::vector<int>& /* axes */,
-      const bool /* keepDims */) {
-    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-  }
+  // prepare reduction primitive
+  const auto reductionDesc =
+      dnnl::reduction::desc(alg, srcMemDesc, dstArgMemDesc, 0, 0);
+  const auto reductionPrimtiveDesc =
+      dnnl::reduction::primitive_desc(reductionDesc, engine_);
+  const auto reductionPrimitive = dnnl::reduction(reductionPrimtiveDesc);
 
-  Tensor OneDnnBackend::var(
-      const Tensor& /* input */,
-      const std::vector<int>& /* axes */,
-      const bool /* bias */,
-      const bool /* keepDims */) {
-    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+  // prepare dst memories
+  auto dstMemDesc = dstArgMemDesc;
+  if (!keepDims) {
+    dstShape = filterAxes(dstShape, axesToReduce);
+    dstMemDesc = detail::oneDnnContiguousMemDescFromShape(
+        dstShape, srcMemDesc.data_type());
   }
+  auto dstMem = dnnl::memory(dstMemDesc, engine_);
 
-  Tensor OneDnnBackend::std(
-      const Tensor& /* input */,
-      const std::vector<int>& /* axes */,
-      const bool /* keepDims */) {
-    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-  }
+  // prepare arguments.
+  const std::unordered_map<int, dnnl::memory> args = {
+      {DNNL_ARG_SRC, srcMem},
+      {DNNL_ARG_DST, dstMem},
+  };
 
-  Tensor OneDnnBackend::norm(
-      const Tensor& /* input */,
-      const std::vector<int>& /* axes */,
-      double /* p */ /* = 2 */,
-      const bool /* keepDims */) {
-    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-  }
+  // execute primitive
+  reductionPrimitive.execute(stream_->handle(), args);
+  return toTensor<OneDnnTensor>(dstShape, std::move(dstMem));
+}
 
-  Tensor OneDnnBackend::countNonzero(
-      const Tensor& /* input */,
-      const std::vector<int>& /* axes */,
-      const bool /* keepDims */) {
-    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-  }
-
-  Tensor OneDnnBackend::any(
-      const Tensor& /* input */,
-      const std::vector<int>& /* axes */,
-      const bool /* keepDims */) {
-    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-  }
-
-  Tensor OneDnnBackend::all(
-      const Tensor& /* input */,
-      const std::vector<int>& /* axes */,
-      const bool /* keepDims */) {
-    FL_ONEDNN_BACKEND_UNIMPLEMENTED;
-  }
-
-  void OneDnnBackend::print(const Tensor& tensor) {
-    std::cout << "OneDnnTensor" << std::endl
-              << tensor.getAdapter<OneDnnTensor>().toString() << std::endl;
-  }
+void OneDnnBackend::print(const Tensor& tensor) {
+  std::cout << "OneDnnTensor" << std::endl
+            << tensor.getAdapter<OneDnnTensor>().toString() << std::endl;
+}
 
 } // namespace fl
