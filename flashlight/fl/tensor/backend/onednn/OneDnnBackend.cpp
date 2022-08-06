@@ -292,6 +292,23 @@ Tensor createScalarTensorForBinop(const Tensor& tensor, INPUT_TYPE val) {
       literalShape, type, &castedVal, tensor.location());
 }
 
+dnnl::memory::desc transposeInnerMatrix(const dnnl::memory::desc& memDesc) {
+  const auto ndims = memDesc.data.ndims;
+  if (ndims < 2) {
+    std::ostringstream oss;
+    oss << "[transposeInnerMatrix] expected ndims to be >= 2, got: " << ndims;
+    throw std::runtime_error(oss.str());
+  }
+  // recall that internal dims are reversed from the logical col-major dims
+  std::vector<int> transposeAxesPermutation;
+  for (int i = 0; i < ndims; i++) {
+    transposeAxesPermutation.push_back(i);
+  }
+  std::swap(
+      transposeAxesPermutation[ndims - 2], transposeAxesPermutation[ndims - 1]);
+  return memDesc.permute_axes(transposeAxesPermutation);
+}
+
 } // namespace
 
 OneDnnBackend::OneDnnBackend() {
@@ -945,11 +962,94 @@ Tensor OneDnnBackend::power(const Tensor& lhs, const double& rhs) {
 /************************** BLAS ***************************/
 
 Tensor OneDnnBackend::matmul(
-    const Tensor& /* lhs */,
-    const Tensor& /* rhs */,
-    MatrixProperty /* lhsProp */,
-    MatrixProperty /* rhsProp */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+    const Tensor& lhs,
+    const Tensor& rhs,
+    MatrixProperty lhsProp,
+    MatrixProperty rhsProp) {
+  std::vector<Dim> lhsDims = lhs.shape().get();
+  std::vector<Dim> rhsDims = rhs.shape().get();
+  const bool isLhsScalarOrVector = lhsDims.size() <= 1;
+  const bool isRhsScalarOrVector = rhsDims.size() <= 1;
+  auto& lhsMem = toOneDnnTensor(lhs).memory();
+  auto& rhsMem = toOneDnnTensor(rhs).memory();
+  auto lhsMemDesc = lhsMem.get_desc();
+  auto rhsMemDesc = rhsMem.get_desc();
+  if (isLhsScalarOrVector) { // pad to (1 x 1/K)
+    lhsDims.insert(lhsDims.end(), 2 - lhsDims.size(), 1);
+    std::reverse(lhsDims.begin(), lhsDims.end());
+    lhsMemDesc = lhsMemDesc.reshape(detail::flDimsToOneDnnDims(lhsDims));
+  } else if (lhsProp == MatrixProperty::Transpose) {
+    std::swap(lhsDims[0], lhsDims[1]);
+    lhsMemDesc = transposeInnerMatrix(lhsMemDesc);
+  }
+  if (isRhsScalarOrVector) { // pad to (1/K x 1)
+    rhsDims.insert(rhsDims.end(), 2 - rhsDims.size(), 1);
+    rhsMemDesc = rhsMemDesc.reshape(detail::flDimsToOneDnnDims(rhsDims));
+  } else if (rhsProp == MatrixProperty::Transpose) {
+    std::swap(rhsDims[0], rhsDims[1]);
+    rhsMemDesc = transposeInnerMatrix(rhsMemDesc);
+  }
+
+  // shape check (TODO support broadcasting)
+  if (!(lhsDims.at(1) == rhsDims.at(0) &&
+        std::equal(
+          lhsDims.begin() + 2,
+          lhsDims.end(),
+          rhsDims.begin() + 2,
+          rhsDims.end()))) {
+    std::ostringstream oss;
+    oss << "Cannot perform matmul for tensors of shapes: " << lhs.shape()
+      << " and " << rhs.shape();
+    throw std::invalid_argument(oss.str());
+  }
+  std::vector<Dim> dstDims = lhsDims;
+  dstDims[1] = rhsDims[1];
+  Shape dstShape(dstDims);
+
+  // prepare memories
+  const auto dstType = detail::getTypeWithLargerRange(
+      lhsMemDesc.data_type(), rhsMemDesc.data_type());
+  const auto dstMemArgDesc =
+      detail::oneDnnContiguousMemDescFromShape(dstShape, dstType);
+  auto dstMemDesc = dstMemArgDesc;
+  // For such cases, keep output as a vector instead of 2d matrix,
+  // but the matmul primitive requries the 2d dims, thus dstMemArgDesc.
+  if (isLhsScalarOrVector || isRhsScalarOrVector) {
+    const auto elems = dstShape.elements();
+    dstMemDesc = dstMemArgDesc.reshape({elems});
+    dstShape = {elems};
+  }
+  auto dstMem = dnnl::memory(dstMemDesc, engine_);
+
+  // NOTE since our physical representation is a transpose of the logical
+  // representation, we must switch lhs/rhs during matmul. i.e.,
+  //  logical      physical
+  //     A            AT
+  //     B            BT
+  //   A x B        (A x B)T = BT x AT
+  // TODO once we support arbitrary internal layout, we can get rid of this.
+  const auto& srcMemDesc = rhsMemDesc;
+  auto& srcMem = rhsMem;
+  const auto& weightsMemDesc = lhsMemDesc;
+  auto& weightsMem = lhsMem;
+
+  // prepare primitive
+  const auto matmulDesc =
+    dnnl::matmul::desc(srcMemDesc, weightsMemDesc, dstMemArgDesc);
+  const auto matmulPrimitiveDesc =
+    dnnl::matmul::primitive_desc(matmulDesc, engine_);
+  const auto matmulPrimitive = dnnl::matmul(matmulPrimitiveDesc);
+
+  // prepare arguments.
+  const std::unordered_map<int, dnnl::memory> args = {
+      {DNNL_ARG_SRC, srcMem},
+      {DNNL_ARG_WEIGHTS, weightsMem},
+      {DNNL_ARG_DST, dstMem},
+  };
+
+  // execute primitive
+  matmulPrimitive.execute(stream_->handle(), args);
+  return toTensor<OneDnnTensor>(dstShape, std::move(dstMem));
 }
 
 /************************** Reductions ***************************/

@@ -494,6 +494,73 @@ TEST(OneDnnTensorTest, reduction) {
       fl::full({1, 1, 1}, 42 * 2 * 3 * 4, fl::dtype::f32));
 }
 
+TEST(OneDnnTensorTest, matmul) {
+  using MP = fl::MatrixProperty;
+  auto& backend = fl::OneDnnBackend::getInstance();
+  // 1 2 3  X  2 5  =  20 38
+  // 4 5 6     3 6     47 92
+  //           4 7
+  auto t1 = fl::Tensor::fromVector<float>({2, 3}, {1, 4, 2, 5, 3, 6});
+  auto t2 = fl::Tensor::fromVector<float>({3, 2}, {2, 3, 4, 5, 6, 7});
+  auto res1 = backend.matmul(t1, t2, MP::None, MP::None);
+  assertOneDnnTensorEq(res1,
+      fl::Tensor::fromVector<float>({2, 2}, {20, 47, 38, 92}));
+
+  // 1 4  X  2 3 4  = 22 27 32
+  // 2 5     5 6 7    29 36 43
+  // 3 6              36 45 54
+  auto res2 = backend.matmul(t1, t2, MP::Transpose, MP::Transpose);
+  assertOneDnnTensorEq(res2,
+      fl::Tensor::fromVector<float>({3, 3},
+        {22, 29, 36, 27, 36, 45, 32, 43, 54}));
+}
+
+TEST(OneDnnTensorTest, matmulShapes) {
+  using MP = fl::MatrixProperty;
+  auto& backend = fl::OneDnnBackend::getInstance();
+  struct Input {
+    fl::Shape lhsShape;
+    fl::Shape rhsShape;
+    fl::MatrixProperty lhsMP;
+    fl::MatrixProperty rhsMP;
+    std::optional<fl::Shape> dstShape;
+  };
+  const std::vector<Input> inputs = {
+    // scalar/vector
+    {{}, {}, MP::None, MP::None, {{1}}},
+    {{2}, {}, MP::None, MP::None, std::nullopt},
+    {{}, {3}, MP::None, MP::None, std::nullopt},
+    {{4}, {4}, MP::None, MP::None, {{1}}},
+    {{2}, {3}, MP::None, MP::None, std::nullopt},
+    {{2}, {2, 3}, MP::None, MP::None, {{3}}},
+    {{2, 3}, {3}, MP::None, MP::None, {{2}}},
+    // matrix
+    {{3, 2}, {2, 3}, MP::None, MP::None, {{3, 3}}},
+    {{3, 2}, {2, 3}, MP::Transpose, MP::Transpose, {{2, 2}}},
+    {{2, 3}, {2, 3}, MP::Transpose, MP::None, {{3, 3}}},
+    {{2, 3}, {2, 3}, MP::None, MP::Transpose, {{2, 2}}},
+    {{2, 3}, {2, 3}, MP::None, MP::Transpose, {{2, 2}}},
+    // batch matrix
+    {{2, 3, 42}, {2, 3, 42}, MP::None, MP::Transpose, {{2, 2, 42}}},
+    {{2, 3, 41}, {2, 3, 42}, MP::None, MP::Transpose, std::nullopt},
+    // TODO support broadcast
+    {{2, 3, 1}, {2, 3, 42}, MP::None, MP::Transpose, std::nullopt},
+    {{2, 3}, {2, 3, 42}, MP::None, MP::Transpose, std::nullopt},
+  };
+  for (auto& input : inputs) {
+    const auto lhs = backend.rand(input.lhsShape, fl::dtype::f32);
+    const auto rhs = backend.rand(input.rhsShape, fl::dtype::f32);
+    if (input.dstShape.has_value()) {
+      const auto res = backend.matmul(lhs, rhs, input.lhsMP, input.rhsMP);
+      ASSERT_EQ(res.shape(), input.dstShape.value())
+        << input.lhsShape << " X " << input.rhsShape;
+    } else {
+      ASSERT_THROW(backend.matmul(lhs, rhs, input.lhsMP, input.rhsMP),
+          std::invalid_argument);
+    }
+  }
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   fl::init();
