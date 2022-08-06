@@ -40,6 +40,13 @@ class OneDnnBackend : public TensorBackend {
       float alpha = 0,
       float beta = 0);
 
+  // Apply the given OneDNN reduction operation to the tensor
+  Tensor applyReductionOp(
+      const Tensor& tensor,
+      const dnnl::algorithm alg,
+      const std::vector<int>& axes,
+      const bool keepDims);
+
   Tensor randnCpu(const Shape& shape, dtype type);
   Tensor randCpu(const Shape& shape, dtype type);
 

@@ -420,6 +420,23 @@ TEST(OneDnnTensorTest, eltwise) {
       fl::Tensor::fromVector<char>({2, 2}, {1, 0, 0, 1}));
 }
 
+TEST(OneDnnTensorTest, reduction) {
+  std::vector<float> data = {-1, 0, 33, 0};
+  auto t0 = fl::Tensor::fromVector({2, 2}, data);
+  auto t1 = fl::full({2, 3, 4}, 42, fl::dtype::f32);
+
+  assertOneDnnTensorEq(fl::sum(t1, {1}), fl::full({2, 4}, 126, fl::dtype::f32));
+  assertOneDnnTensorEq(
+      fl::amax(t0, {1}), fl::Tensor::fromVector<float>({2}, {33, 0}));
+  assertOneDnnTensorEq(
+      fl::amin(t0), fl::Tensor::fromVector<float>({}, {-1}));
+  assertOneDnnTensorEq(
+      fl::countNonzero(t0), fl::Tensor::fromVector<int>({}, {2}));
+  assertOneDnnTensorEq(
+      fl::sum(t1, {}, true),
+      fl::full({1, 1, 1}, 42 * 2 * 3 * 4, fl::dtype::f32));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   fl::init();
