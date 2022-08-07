@@ -9,6 +9,8 @@
 
 #include <cassert>
 #include <cmath>
+#include <functional>
+#include <initializer_list>
 #include <iostream>
 #include <limits>
 #include <numeric>
@@ -16,6 +18,7 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
+#include <vector>
 
 #include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/fl/tensor/backend/onednn/OneDnnTensor.h"
@@ -28,6 +31,39 @@
 namespace fl {
 
 namespace {
+
+dnnl::engine::kind getEngineKind(const Tensor& tensor) {
+  return toOneDnnTensor(tensor).memory().get_engine().get_kind();
+}
+
+bool hasCpuEngine(const Tensor& tensor) {
+  return getEngineKind(tensor) == dnnl::engine::kind::cpu;
+}
+
+bool haveSameEngines(const std::vector<const Tensor*>& tensorPtrs) {
+  if (tensorPtrs.empty()) {
+    return true;
+  }
+  const auto engineKind = getEngineKind(*tensorPtrs.front());
+  for (unsigned i = 1; i < tensorPtrs.size(); i++) {
+    if (getEngineKind(*tensorPtrs[i]) != engineKind) {
+      return false;
+    }
+  }
+  return true;
+}
+
+template <typename... T>
+bool allHaveCpuEngines(const T&... tensor) {
+  const std::vector<const Tensor*> tensorPtrs = {&tensor...};
+  return tensorPtrs.empty() ||
+      (hasCpuEngine(*tensorPtrs.front()) && haveSameEngines(tensorPtrs));
+}
+
+template <>
+bool allHaveCpuEngines() {
+  return true;
+}
 
 /**
  * ASSUME row-major layout. Compute the strides if we keep the dimensions but
@@ -260,10 +296,7 @@ Tensor sameShapeBinopCpu(const Tensor& lhs, const Tensor& rhs, OP op) {
 
 template <typename T, typename OP>
 Tensor sameShapeBinop(const Tensor& lhs, const Tensor& rhs, OP op) {
-  auto& lhsTensor = toOneDnnTensor(lhs);
-  auto& rhsTensor = toOneDnnTensor(rhs);
-  if (lhsTensor.memory().get_engine().get_kind() == dnnl::engine::kind::cpu &&
-      rhsTensor.memory().get_engine().get_kind() == dnnl::engine::kind::cpu) {
+  if (hasCpuEngine(lhs) && hasCpuEngine(rhs)) {
     return sameShapeBinopCpu<T>(lhs, rhs, op);
   } else {
     throw std::runtime_error(
@@ -1070,22 +1103,164 @@ Tensor OneDnnBackend::amax(
       input, dnnl::algorithm::reduction_max, axes, keepDims);
 }
 
-void OneDnnBackend::min(
-    Tensor& /* values */,
-    Tensor& /* indices */,
-    const Tensor& /* input */,
-    const unsigned /* axis */,
-    const bool /* keepDims */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+template <typename T, typename LessThan>
+void maxWithIndexCpu(
+    Tensor& values,
+    Tensor& indices,
+    const Shape& inputShape,
+    const std::vector<T>& inputData,
+    const unsigned axis,
+    const bool keepDims,
+    LessThan lt) {
+  const auto inputElemCount = inputShape.elements();
+  const auto axisSize = inputShape.dim(axis);
+  const unsigned axisStride = std::accumulate(
+      inputShape.get().begin(),
+      inputShape.get().begin() + axis,
+      1,
+      std::multiplies<>());
+  const auto resultElemCount = inputElemCount / axisSize;
+  std::vector<T> valuesData;
+  std::vector<int> indicesData;
+  valuesData.reserve(resultElemCount);
+  indicesData.reserve(resultElemCount);
+  // default to falses:
+  auto visited = std::make_unique<bool[]>(inputElemCount);
+  for (unsigned idx = 0; idx < inputElemCount; idx++) {
+    if (!visited[idx]) {
+      visited[idx] = true;
+      T maxVal = inputData[idx];
+      int maxAxisIdx = 0;
+      // search for max element & index along this unvisted axis
+      for (unsigned axisIdx = 1; axisIdx < axisSize; axisIdx++) {
+        int elemIdx = idx + axisIdx * axisStride;
+        assert(!visited[elemIdx]);
+        visited[elemIdx] = true;
+        T elemVal = inputData[elemIdx];
+        if (lt(maxVal, elemVal)) {
+          maxVal = elemVal;
+          maxAxisIdx = axisIdx;
+        }
+      }
+      valuesData.push_back(maxVal);
+      indicesData.push_back(maxAxisIdx);
+    }
+  }
+  // write data to output tensors
+  std::vector<Dim> outputDims = inputShape.get();
+  if (keepDims) {
+    outputDims[axis] = 1;
+  } else {
+    outputDims.erase(outputDims.begin() + axis);
+  }
+  auto valType = dtype_traits<T>::fl_type;
+  values = toTensor<OneDnnTensor>(
+      Shape(outputDims), valType, valuesData.data(), Location::Host);
+  indices = toTensor<OneDnnTensor>(
+      Shape(outputDims), dtype::s32, indicesData.data(), Location::Host);
 }
 
+template <typename LessThan>
+void maxWithIndexCpu(
+    Tensor& values,
+    Tensor& indices,
+    const Tensor& input,
+    const unsigned axis,
+    const bool keepDims,
+    LessThan lt) {
+  if (axis >= input.ndim()) {
+    std::ostringstream oss;
+    oss << "[OneDnnBackend::min] Axis too large: " << axis
+        << " for tensor of shape: " << input.shape();
+    throw std::invalid_argument(oss.str());
+  }
+  const Shape& inputShape = input.shape();
+  switch (input.type()) {
+    case dtype::f16:
+      throw std::runtime_error("[OneDnnTensor::min] doesn't support f16");
+    case dtype::f32: {
+      auto dataVec = input.toHostVector<float>();
+      maxWithIndexCpu(values, indices, inputShape, dataVec, axis, keepDims, lt);
+      return;
+    }
+    case dtype::f64: {
+      auto dataVec = input.toHostVector<double>();
+      maxWithIndexCpu(values, indices, inputShape, dataVec, axis, keepDims, lt);
+      return;
+    }
+    case dtype::b8: {
+      auto dataVec = input.toHostVector<char>();
+      maxWithIndexCpu(values, indices, inputShape, dataVec, axis, keepDims, lt);
+      return;
+    }
+    case dtype::s16: {
+      auto dataVec = input.toHostVector<short>();
+      maxWithIndexCpu(values, indices, inputShape, dataVec, axis, keepDims, lt);
+      return;
+    }
+    case dtype::s32: {
+      auto dataVec = input.toHostVector<int>();
+      maxWithIndexCpu(values, indices, inputShape, dataVec, axis, keepDims, lt);
+      return;
+    }
+    case dtype::s64: {
+      auto dataVec = input.toHostVector<long long>();
+      maxWithIndexCpu(values, indices, inputShape, dataVec, axis, keepDims, lt);
+      return;
+    }
+    case dtype::u8: {
+      auto dataVec = input.toHostVector<unsigned char>();
+      maxWithIndexCpu(values, indices, inputShape, dataVec, axis, keepDims, lt);
+      return;
+    }
+    case dtype::u16: {
+      auto dataVec = input.toHostVector<unsigned short>();
+      maxWithIndexCpu(values, indices, inputShape, dataVec, axis, keepDims, lt);
+      return;
+    }
+    case dtype::u32: {
+      auto dataVec = input.toHostVector<unsigned int>();
+      maxWithIndexCpu(values, indices, inputShape, dataVec, axis, keepDims, lt);
+      return;
+    }
+    case dtype::u64: {
+      auto dataVec = input.toHostVector<unsigned long long>();
+      maxWithIndexCpu(values, indices, inputShape, dataVec, axis, keepDims, lt);
+      return;
+    }
+  }
+}
+
+// TODO move this into a generic CPU backend
+void OneDnnBackend::min(
+    Tensor& values,
+    Tensor& indices,
+    const Tensor& input,
+    const unsigned axis,
+    const bool keepDims) {
+  if (allHaveCpuEngines(values, indices, input)) {
+    return maxWithIndexCpu(
+        values, indices, input, axis, keepDims, std::greater<>());
+  } else {
+    throw std::runtime_error(
+        "[OneDnnBackend::min] unimplemented for non-CPU engine");
+  }
+}
+
+// TODO move this into a generic CPU backend
 void OneDnnBackend::max(
-    Tensor& /* values */,
-    Tensor& /* indices */,
-    const Tensor& /* input */,
-    const unsigned /* axis */,
-    const bool /* keepDims */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+    Tensor& values,
+    Tensor& indices,
+    const Tensor& input,
+    const unsigned axis,
+    const bool keepDims) {
+  if (allHaveCpuEngines(values, indices, input)) {
+    return maxWithIndexCpu(
+        values, indices, input, axis, keepDims, std::less<>());
+  } else {
+    throw std::runtime_error(
+        "[OneDnnBackend::min] unimplemented for non-CPU engine");
+  }
 }
 
 Tensor OneDnnBackend::sum(
