@@ -561,6 +561,56 @@ TEST(OneDnnTensorTest, matmulShapes) {
   }
 }
 
+TEST(OneDnnTensorTest, max) {
+  using fl::Tensor;
+  using fl::Shape;
+  // 1 4 5
+  // 2 3 6
+  Tensor in = Tensor::fromVector<float>({2, 3}, {1, 2, 4, 3, 5, 6});
+  Tensor values, indices;
+
+  fl::max(values, indices, in, 0);
+  assertOneDnnTensorEq(indices, Tensor::fromVector<int>({3}, {1, 0, 1}));
+  assertOneDnnTensorEq(values, Tensor::fromVector<float>({3}, {2, 4, 6}));
+
+  fl::max(values, indices, in, 1);
+  assertOneDnnTensorEq(indices, Tensor::fromVector<int>({2}, {2, 2}));
+  assertOneDnnTensorEq(values, Tensor::fromVector<float>({2}, {5, 6}));
+
+  fl::max(values, indices, in, 0, /* keepDims = */ true);
+  assertOneDnnTensorEq(indices, Tensor::fromVector<int>({1, 3}, {1, 0, 1}));
+  assertOneDnnTensorEq(values, Tensor::fromVector<float>({1, 3}, {2, 4, 6}));
+
+  fl::max(values, indices, in, 1, /* keepDims = */ true);
+  assertOneDnnTensorEq(indices, Tensor::fromVector<int>({2, 1}, {2, 2}));
+  assertOneDnnTensorEq(values, Tensor::fromVector<float>({2, 1}, {5, 6}));
+}
+
+TEST(OneDnnTensorTest, min) {
+  using fl::Tensor;
+  using fl::Shape;
+  // 1 4 5
+  // 2 3 6
+  Tensor in = Tensor::fromVector<float>({2, 3}, {1, 2, 4, 3, 5, 6});
+  Tensor values, indices;
+
+  fl::min(values, indices, in, 0);
+  assertOneDnnTensorEq(indices, Tensor::fromVector<int>({3}, {0, 1, 0}));
+  assertOneDnnTensorEq(values, Tensor::fromVector<float>({3}, {1, 3, 5}));
+
+  fl::min(values, indices, in, 1);
+  assertOneDnnTensorEq(indices, Tensor::fromVector<int>({2}, {0, 0}));
+  assertOneDnnTensorEq(values, Tensor::fromVector<float>({2}, {1, 2}));
+
+  fl::min(values, indices, in, 0, /* keepDims = */ true);
+  assertOneDnnTensorEq(indices, Tensor::fromVector<int>({1, 3}, {0, 1, 0}));
+  assertOneDnnTensorEq(values, Tensor::fromVector<float>({1, 3}, {1, 3, 5}));
+
+  fl::min(values, indices, in, 1, /* keepDims = */ true);
+  assertOneDnnTensorEq(indices, Tensor::fromVector<int>({2, 1}, {0, 0}));
+  assertOneDnnTensorEq(values, Tensor::fromVector<float>({2, 1}, {1, 2}));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   fl::init();
