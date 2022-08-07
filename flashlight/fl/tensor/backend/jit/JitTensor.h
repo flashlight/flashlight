@@ -20,8 +20,8 @@ namespace fl {
 template <typename T>
 class JitTensor : public JitTensorBase {
  protected:
-  Tensor fromNode(Node* node) const override {
-    return toTensor<JitTensor>(node);
+  Tensor fromSharedNode(std::shared_ptr<SharedData> sharedNode) const override {
+    return toTensor<JitTensor>(std::move(sharedNode));
   }
 
   TensorBackend& wrappedBackend() const override {
@@ -50,6 +50,8 @@ class JitTensor : public JitTensorBase {
   }
 
   explicit JitTensor(Node* node) : JitTensorBase(node) {}
+  explicit JitTensor(std::shared_ptr<SharedData> sharedNode)
+      : JitTensorBase(std::move(sharedNode)) {}
 
   // TODO SPoC for these defaults (also in OneDNN backend)
   JitTensor() : JitTensor({0}, fl::dtype::f32, nullptr, Location::Host) {}
@@ -82,8 +84,8 @@ class JitTensor : public JitTensorBase {
             toTensor<T>(nRows, nCols, values, rowIdx, colIdx, storageType))) {}
 
   std::unique_ptr<TensorAdapterBase> clone() const override {
-    // TODO copy node
-    throw std::runtime_error("[JitTensor] clone not supported");
+    // NOTE IR-captured computation semantics is immutable
+    return std::make_unique<JitTensor>(node());
   }
 };
 

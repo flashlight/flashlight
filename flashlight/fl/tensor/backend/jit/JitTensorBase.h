@@ -20,7 +20,13 @@ namespace fl {
  * computation graph and delegates to the wrapped backend for execution.
  */
 class JitTensorBase : public TensorAdapterBase {
-  Node* node_;
+ public:
+  // declaration made private to enable `std::make_shared`
+  struct SharedData;
+
+ private:
+  // shared among shallow copies
+  std::shared_ptr<SharedData> sharedNode_;
 
   // take care of refcount for old & new nodes
   // `const` w.r.t. the underlying Tensor this represents.
@@ -31,7 +37,8 @@ class JitTensorBase : public TensorAdapterBase {
 
  protected:
   // this allows us to create an instance of derived class
-  virtual Tensor fromNode(Node* node) const = 0;
+  virtual Tensor fromSharedNode(
+      std::shared_ptr<SharedData> sharedNode) const = 0;
 
   // let derived class manage the wrapped backend
   virtual TensorBackend& wrappedBackend() const = 0;
@@ -42,6 +49,7 @@ class JitTensorBase : public TensorAdapterBase {
 
   // JitTensorBase manages the backend-agnostic JIT node.
   JitTensorBase(Node* node);
+  JitTensorBase(std::shared_ptr<SharedData> sharedNode);
 
  public:
   virtual ~JitTensorBase() override;
