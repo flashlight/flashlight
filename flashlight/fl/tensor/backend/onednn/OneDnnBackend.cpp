@@ -531,9 +531,31 @@ Tensor OneDnnBackend::iota(
 
 /************************ Shaping and Indexing *************************/
 Tensor OneDnnBackend::reshape(
-    const Tensor& /* tensor */,
-    const Shape& /* shape */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+    const Tensor& tensor,
+    const Shape& shape) {
+  if (tensor.shape().elements() != shape.elements()) {
+    std::ostringstream oss;
+    oss << "[OneDnnBackend::reshape] Cannot reshape tensor from "
+        << tensor.shape() << " to " << shape;
+    throw std::invalid_argument(oss.str());
+  }
+
+  // TODO copy on write.
+  // prepare memories
+  auto& mem = toOneDnnTensor(tensor).memory();
+  const auto memDesc = mem.get_desc();
+  const auto reshapedMemDesc =
+      detail::oneDnnContiguousMemDescFromShape(shape, memDesc.data_type());
+  auto reshapedMem = dnnl::memory(reshapedMemDesc, engine_);
+
+  // prepare primitive (use reorder to do a copy)
+  const auto reorderPrimitiveDesc = dnnl::reorder::primitive_desc(
+      engine_, memDesc, engine_, memDesc);
+  const auto reorderPrimitive = dnnl::reorder(reorderPrimitiveDesc);
+
+  // execute primitive
+  reorderPrimitive.execute(stream_->handle(), mem, reshapedMem);
+  return toTensor<OneDnnTensor>(shape, std::move(reshapedMem));
 }
 
 // 1. OneDNN doesn't have native support for tensor transpose.
