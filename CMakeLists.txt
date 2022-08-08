@@ -162,7 +162,7 @@ if (FL_BUILD_CORE)
     include(${CMAKE_MODULE_PATH}/BuildCereal.cmake)
     add_dependencies(flashlight cereal)
     # Move cereal headers at install time
-    install(DIRECTORY ${CEREAL_SOURCE_DIR}/include/cereal
+    install(DIRECTORY ${CEREAL_SOURCE_DIR}/include/cereal/
       DESTINATION ${CEREAL_INSTALL_PATH}
       COMPONENT cereal
       FILES_MATCHING
