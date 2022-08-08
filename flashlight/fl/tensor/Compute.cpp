@@ -92,7 +92,7 @@ void relativeSync(
 }
 
 void eval(Tensor& tensor) {
-  Tensor().backend().eval(tensor);
+  tensor.backend().eval(tensor);
 }
 
 int getDevice() {
