@@ -181,7 +181,7 @@ TEST_F(JitScalarFoldingTest, nonFoldableRoot) {
   const auto c3 = ScalarNode::create(shape, dtype, 3);
   const auto div = BinaryNode::create(c6, c3, BinaryOp::Div);
   const auto custom = CustomNode::create(
-      "identity", {div}, [](const std::vector<const Tensor*>& inputs) {
+      "identity", {div}, shape, [](const std::vector<const Tensor*>& inputs) {
       return *inputs[0];
       });
   // c6  c3

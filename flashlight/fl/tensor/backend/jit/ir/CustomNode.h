@@ -32,6 +32,7 @@ class CustomNode : public NodeTrait<CustomNode> {
   CustomNode(
       std::string&& name,
       std::vector<Node*>&& inputs,
+      const Shape& shape,
       EvalFunc&& evalFunc);
 
  public:
@@ -40,6 +41,7 @@ class CustomNode : public NodeTrait<CustomNode> {
   static CustomNode* create(
       std::string&& debugName,
       std::vector<Node*>&& inputs,
+      const Shape& shape,
       EvalFunc&& evalFunc);
 
   const std::string& name() const;

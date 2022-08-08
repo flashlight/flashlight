@@ -14,17 +14,19 @@ namespace fl {
 CustomNode::CustomNode(
     std::string&& name,
     std::vector<Node*>&& inputs,
+    const Shape& shape,
     EvalFunc&& evalFunc)
-    : NodeTrait(std::move(inputs)),
+    : NodeTrait(std::move(inputs), shape),
       name_(name),
       evalFunc_(std::move(evalFunc)) {}
 
 CustomNode* CustomNode::create(
     std::string&& name,
     std::vector<Node*>&& inputs,
+    const Shape& shape,
     EvalFunc&& evalFunc) {
   return new CustomNode(
-      std::move(name), std::move(inputs), std::move(evalFunc));
+      std::move(name), std::move(inputs), shape, std::move(evalFunc));
 }
 
 const std::string& CustomNode::name() const {

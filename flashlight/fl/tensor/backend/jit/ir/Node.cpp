@@ -45,7 +45,8 @@ void Node::resetInput(unsigned inputIdx) {
   oldInput->decRefCount();
 }
 
-Node::Node(std::vector<Node*>&& inputs) {
+Node::Node(std::vector<Node*>&& inputs, const Shape& shape)
+  : inputs_(inputs), shape_(shape) {
   inputs_.resize(inputs.size());
   inputUseIters_.resize(inputs.size());
   for (unsigned inputIdx = 0; inputIdx < inputs.size(); inputIdx++) {
@@ -70,6 +71,10 @@ const std::vector<Node*>& Node::inputs() const {
 void Node::setInput(unsigned inputIdx, Node* newInput) {
   resetInput(inputIdx);
   setInputImpl(inputIdx, newInput);
+}
+
+const Shape& Node::shape() const {
+  return shape_;
 }
 
 const UseList& Node::uses() const {

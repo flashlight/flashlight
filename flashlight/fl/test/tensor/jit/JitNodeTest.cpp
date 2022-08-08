@@ -47,6 +47,7 @@ TEST(JitNodeTest, ValueNodeMetaData) {
   ASSERT_EQ(node->getRefCount(), 0);
   ASSERT_EQ(node->uses(), UseList({}));
   ASSERT_EQ(node->isValue(), true);
+  ASSERT_EQ(node->shape(), tensor.shape());
   ASSERT_TRUE(node->getResult().has_value());
   ASSERT_TRUE(allClose(node->getResult().value(), tensor));
   // node is owned locally (didn't transition to shared ownership)
@@ -54,8 +55,8 @@ TEST(JitNodeTest, ValueNodeMetaData) {
 }
 
 TEST(JitNodeTest, BinaryNodeMetaData) {
-  const auto c1 = ScalarNode::create(Shape({2, 2}), dtype::f32, 42);
-  const auto c2 = ScalarNode::create(Shape({2, 2}), dtype::f32, 42);
+  const auto c1 = ScalarNode::create(Shape({1, 4}), dtype::f32, 42);
+  const auto c2 = ScalarNode::create(Shape({2, 1}), dtype::f32, 42);
   const auto op = BinaryOp::Add;
   const auto node = BinaryNode::create(c1, c2, op);
   ASSERT_EQ(node->inputs(), NodeList({c1, c2}));
@@ -66,6 +67,7 @@ TEST(JitNodeTest, BinaryNodeMetaData) {
   ASSERT_EQ(node->lhs(), c1);
   ASSERT_EQ(node->rhs(), c2);
   ASSERT_EQ(node->op(), op);
+  ASSERT_EQ(node->shape(), Shape({2, 4})); // broadcasted shape
   // node is owned locally (didn't transition to shared ownership)
   delete node;
 }
@@ -79,7 +81,10 @@ TEST(JitNodeTest, CustomNodeMetaData) {
   const auto t2 = full(shape, 23, type);
   const auto name = "foobar";
   const auto node = CustomNode::create(
-      name, {c1, c2}, [](const std::vector<const Tensor*>& inputs) -> Tensor {
+      name,
+      {c1, c2},
+      shape,
+      [](const std::vector<const Tensor*>& inputs) -> Tensor {
         return inputs.at(0)->copy();
       });
   ASSERT_EQ(node->inputs(), NodeList({c1, c2}));
@@ -88,6 +93,7 @@ TEST(JitNodeTest, CustomNodeMetaData) {
   ASSERT_EQ(node->isCustom(), true);
   ASSERT_EQ(node->getResult(), std::nullopt);
   ASSERT_EQ(node->name(), name);
+  ASSERT_EQ(node->shape(), shape);
   ASSERT_TRUE(allClose(node->evalFunc()({&t1, &t2}), t1));
   // node is owned locally (didn't transition to shared ownership)
   delete node;

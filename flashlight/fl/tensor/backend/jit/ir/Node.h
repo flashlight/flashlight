@@ -41,6 +41,7 @@ class Node {
   std::vector<Node*> inputs_;
   std::vector<UseList::iterator> inputUseIters_;
   UseList uses_;
+  const Shape shape_;
   unsigned refCount_{0};
 
   // present if this node has been evaluated
@@ -57,7 +58,7 @@ class Node {
 
  protected:
   // A constructor that sets up all the metadata
-  Node(std::vector<Node*>&& inputs);
+  Node(std::vector<Node*>&& inputs, const Shape& shape);
 
   // Help enforce internal consistency.
   Node* getInput(unsigned inputIdx) const;
@@ -68,6 +69,9 @@ class Node {
   // Inputs
   const std::vector<Node*>& inputs() const;
   void setInput(unsigned inputIdx, Node* newInput);
+
+  // Shape
+  const Shape& shape() const;
 
   // Uses
   const UseList& uses() const;
@@ -115,7 +119,8 @@ class Node {
 template <typename Derived>
 class NodeTrait : public Node {
  public:
-  NodeTrait(std::vector<Node*>&& inputs) : Node(std::move(inputs)) {}
+  NodeTrait(std::vector<Node*>&& inputs, const Shape& shape)
+    : Node(std::move(inputs), std::move(shape)) {}
 
   NodeType type() const override {
     return Derived::nodeType;

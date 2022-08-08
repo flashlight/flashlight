@@ -341,10 +341,6 @@ Tensor JitBackend::argsort(
   }                                                                           \
   FL_JIT_BINARY_OP_LITERALS_DEF_STUB(FUNC, OP);
 
-FL_JIT_BINARY_OP_LITERALS_DEF_STUB(add, +);
-FL_JIT_BINARY_OP_LITERALS_DEF_STUB(sub, -);
-FL_JIT_BINARY_OP_LITERALS_DEF_STUB(mul, *);
-FL_JIT_BINARY_OP_LITERALS_DEF_STUB(div, /);
 FL_JIT_BINARY_OP_DEF_STUB(==, eq);
 FL_JIT_BINARY_OP_DEF_STUB(!=, neq);
 FL_JIT_BINARY_OP_DEF_STUB(<, lessThan);
@@ -363,17 +359,45 @@ FL_JIT_BINARY_OP_DEF_STUB(>>, rShift);
 #undef FL_JIT_BINARY_OP_TYPE_DEF
 #undef FL_JIT_BINARY_OP_LITERALS_DEF
 
+#define FL_JIT_BINARY_OP_TYPE_DEF(FUNC, TYPE)                   \
+  Tensor JitBackend::FUNC(const Tensor& a, TYPE rhs) {          \
+    const auto dtype = dtype_traits<std::decay_t<TYPE>>::ctype; \
+    return FUNC(a, this->full(a.shape(), rhs, dtype));          \
+  }                                                             \
+  Tensor JitBackend::FUNC(TYPE lhs, const Tensor& a) {          \
+    const auto dtype = dtype_traits<std::decay_t<TYPE>>::ctype; \
+    return FUNC(this->full(a.shape(), lhs, dtype), a);          \
+  }                                                             \
+
+#define FL_JIT_BINARY_OP_LITERALS_DEF(FUNC)                   \
+  FL_JIT_BINARY_OP_TYPE_DEF(FUNC, const bool&);               \
+  FL_JIT_BINARY_OP_TYPE_DEF(FUNC, const int&);                \
+  FL_JIT_BINARY_OP_TYPE_DEF(FUNC, const unsigned&);           \
+  FL_JIT_BINARY_OP_TYPE_DEF(FUNC, const char&);               \
+  FL_JIT_BINARY_OP_TYPE_DEF(FUNC, const unsigned char&);      \
+  FL_JIT_BINARY_OP_TYPE_DEF(FUNC, const long&);               \
+  FL_JIT_BINARY_OP_TYPE_DEF(FUNC, const unsigned long&);      \
+  FL_JIT_BINARY_OP_TYPE_DEF(FUNC, const long long&);          \
+  FL_JIT_BINARY_OP_TYPE_DEF(FUNC, const unsigned long long&); \
+  FL_JIT_BINARY_OP_TYPE_DEF(FUNC, const double&);             \
+  FL_JIT_BINARY_OP_TYPE_DEF(FUNC, const float&);              \
+  FL_JIT_BINARY_OP_TYPE_DEF(FUNC, const short&);              \
+  FL_JIT_BINARY_OP_TYPE_DEF(FUNC, const unsigned short&);
+
 #define FL_JIT_BINARY_OP_TENSOR_DEF(FUNC, BINOP)                           \
   Tensor JitBackend::FUNC(const Tensor& lhs, const Tensor& rhs) {          \
     const auto lhsNode = toJitTensorBase(lhs).node();                      \
     const auto rhsNode = toJitTensorBase(rhs).node();                      \
     return jitTensorCreator_(BinaryNode::create(lhsNode, rhsNode, BINOP)); \
-  }
+  }                                                                        \
+  FL_JIT_BINARY_OP_LITERALS_DEF(FUNC);
 
 FL_JIT_BINARY_OP_TENSOR_DEF(add, BinaryOp::Add);
 FL_JIT_BINARY_OP_TENSOR_DEF(sub, BinaryOp::Sub);
 FL_JIT_BINARY_OP_TENSOR_DEF(mul, BinaryOp::Mul);
 FL_JIT_BINARY_OP_TENSOR_DEF(div, BinaryOp::Div);
+#undef FL_JIT_BINARY_OP_TYPE_DEF
+#undef FL_JIT_BINARY_OP_LITERALS_DEF
 #undef FL_JIT_BINARY_OP_TENSOR_DEF
 
 Tensor JitBackend::minimum(const Tensor& /* lhs */, const Tensor& /* rhs */) {

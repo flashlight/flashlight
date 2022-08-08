@@ -27,7 +27,7 @@ class BinaryNode : public NodeTrait<BinaryNode> {
   static constexpr unsigned kRhsIdx = 1;
 
   // intentionally kept private to control allocation
-  BinaryNode(Node* lhs, Node* rhs, BinaryOp op);
+  BinaryNode(Node* lhs, Node* rhs, BinaryOp op, const Shape& shape);
 
  public:
   static constexpr NodeType nodeType = NodeType::Binary;

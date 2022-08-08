@@ -52,19 +52,6 @@ dnnl::memory::data_type getOneDnnTypeWithLargestRange(
   return largestType;
 }
 
-bool allHaveSameShapes(const std::vector<const Tensor*>& tensors) {
-  if (tensors.empty()) {
-    return true;
-  }
-  const auto& shape = tensors.front()->shape();
-  for (unsigned i = 1; i < tensors.size(); i++) {
-    if (shape != tensors[i]->shape()) {
-      return false;
-    }
-  }
-  return true;
-}
-
 dnnl::algorithm binopToOneDnnAlg(const BinaryOp op) {
   switch (op) {
     case BinaryOp::Add:
@@ -168,17 +155,11 @@ Node* OneDnnOpFusion::fuseNodes(Node* node, SearchState& state) {
   }
 
   // TODO refactor with common logic in OneDnnBackend
-  auto evalFunc = [algs = std::move(algs)](
+  auto evalFunc = [algs = std::move(algs),
+                   dstShape = state.searchRoot->shape()](
                       const std::vector<const Tensor*>& inputs) {
     const Tensor* lhs = inputs[0];
     const Tensor* rhs = inputs[1];
-    // TODO
-    // - once we have shape inference, we know shapes will be compatible here
-    // - also support broadcast (see OneDNNBackend binop impl)
-    if (!allHaveSameShapes(inputs)) {
-      throw std::runtime_error("[BinaryOpFuser] inputs must have same shapes");
-    }
-    const auto& dstShape = lhs->shape();
     // NOTE this simulates OneDNNBackend's "typing rule". Once we support type
     // inference in JIT we can get rid of this.
     const auto dstType = getOneDnnTypeWithLargestRange(inputs);
@@ -230,7 +211,10 @@ Node* OneDnnOpFusion::fuseNodes(Node* node, SearchState& state) {
   };
 
   return CustomNode::create(
-      "OneDnnFusedBinaryOp", std::move(inputNodes), std::move(evalFunc));
+      "OneDnnFusedBinaryOp",
+      std::move(inputNodes),
+      node->shape(),
+      std::move(evalFunc));
 }
 
 Node* OneDnnOpFusion::apply(Node* root) {

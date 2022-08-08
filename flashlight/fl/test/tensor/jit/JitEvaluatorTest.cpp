@@ -72,7 +72,7 @@ TEST_F(JitEvaluatorTest, evalCustomNode) {
   const auto c2 = ScalarNode::create(shape, dtype, 2);
   const auto c3 = ScalarNode::create(shape, dtype, 3);
   const auto custom = CustomNode::create(
-      "addThenMul", {c1, c2, c3}, [](const std::vector<const Tensor*> inputs) {
+      "addThenMul", {c1, c2, c3}, shape, [](const std::vector<const Tensor*> inputs) {
         return (*inputs[0] + *inputs[1]) * *inputs[2];
       });
   evaluator_.eval(custom);
