@@ -46,7 +46,7 @@ void Node::resetInput(unsigned inputIdx) {
 }
 
 Node::Node(std::vector<Node*>&& inputs, const Shape& shape)
-  : inputs_(inputs), shape_(shape) {
+    : inputs_(inputs), shape_(shape) {
   inputs_.resize(inputs.size());
   inputUseIters_.resize(inputs.size());
   for (unsigned inputIdx = 0; inputIdx < inputs.size(); inputIdx++) {
@@ -139,6 +139,10 @@ bool Node::isCustom() const {
 
 bool Node::isIndex() const {
   return type() == NodeType::Index;
+}
+
+bool Node::isIndexedUpdate() const {
+  return type() == NodeType::IndexedUpdate;
 }
 
 bool Node::isScalar() const {

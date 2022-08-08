@@ -122,6 +122,57 @@ TEST_F(JitEvaluatorTest, evalIndexNodeWithTensorIdx) {
   delete indexNode;
 }
 
+TEST_F(JitEvaluatorTest, evalIndexedUpdateNodeWithoutTensorIdx) {
+  // TODO
+  // test multiple indexing update, like x(a)(b) = y (AF doesn't support this
+  // atm, and OneDNN can't use `allClose` because it requires f64)
+  const auto dtype = dtype::s32;
+  const std::vector<Index> indices{1, range(0, 3, 2)};
+  const auto indexedValue = iota({4, 5, 6}, {1}, dtype);
+  const auto updateValue = iota({2, 6}, {1}, dtype);
+  const auto indexedValueNode = ValueNode::create(indexedValue.copy());
+  const auto updateValueNode = ValueNode::create(updateValue.copy());
+  const auto indexedUpdateNode =
+      IndexedUpdateNode::create(indexedValueNode, {indices}, updateValueNode);
+  evaluator_.eval(indexedUpdateNode);
+  // udpate expected result
+  const auto resultValue = indexedValue.copy();
+  resultValue(indices) = updateValue;
+  ASSERT_TRUE(allClose(indexedUpdateNode->getResult().value(), resultValue));
+  ASSERT_TRUE(allClose(indexedValueNode->getResult().value(), indexedValue));
+  ASSERT_TRUE(allClose(updateValueNode->getResult().value(), updateValue));
+  // root node is owned locally (didn't transition to shared ownership)
+  delete indexedUpdateNode;
+}
+
+TEST_F(JitEvaluatorTest, evalIndexedUpdateNodeWithTensorIdx) {
+  const auto dtype = dtype::s32;
+  const auto tensor = iota(Shape({2, 3}), {1}, dtype);
+  const auto jitTensor =
+      toTensor<JitTensor<DefaultTensorType_t>>(CustomNode::create(
+          "createIota",
+          {},
+          tensor.shape(),
+          [tensor](const std::vector<const Tensor*> /* inputs */) {
+            return tensor;
+          }));
+  const auto indexedValue = iota({4, 5, 6}, {1}, dtype);
+  const auto updateValue = iota({6, 5, 6}, {1}, dtype);
+  const auto indexedValueNode = ValueNode::create(indexedValue.copy());
+  const auto updateValueNode = ValueNode::create(updateValue.copy());
+  const auto indexedUpdateNode = IndexedUpdateNode::create(
+      indexedValueNode, {{jitTensor}}, updateValueNode);
+  evaluator_.eval(indexedUpdateNode);
+  // udpate expected result
+  const auto resultValue = indexedValue.copy();
+  resultValue({tensor}) = updateValue;
+  ASSERT_TRUE(allClose(indexedUpdateNode->getResult().value(), resultValue));
+  ASSERT_TRUE(allClose(indexedValueNode->getResult().value(), indexedValue));
+  ASSERT_TRUE(allClose(updateValueNode->getResult().value(), updateValue));
+  // root node is owned locally (didn't transition to shared ownership)
+  delete indexedUpdateNode;
+}
+
 TEST_F(JitEvaluatorTest, evalSharedInput) {
   //   c1
   //  /  \
