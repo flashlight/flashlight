@@ -611,6 +611,22 @@ TEST(OneDnnTensorTest, min) {
   assertOneDnnTensorEq(values, Tensor::fromVector<float>({2, 1}, {1, 2}));
 }
 
+TEST(OneDnnTensorTest, reshape) {
+  auto a = fl::full({4, 4}, 3.);
+  auto b = fl::reshape(a, fl::Shape({8, 2}));
+  assertOneDnnTensorEq(b, fl::full({8, 2}, 3.));
+  assertOneDnnTensorEq(a, fl::reshape(b, {4, 4}));
+  assertOneDnnTensorEq(fl::reshape(a, fl::Shape({16})), fl::full({16}, 3.));
+
+  ASSERT_THROW(fl::reshape(a, {}), std::invalid_argument);
+  ASSERT_THROW(fl::reshape(a, {4}), std::invalid_argument);
+  ASSERT_THROW(fl::reshape(a, {4, 5}), std::invalid_argument);
+  ASSERT_NO_THROW(fl::reshape(a, {4, 4, 1}));
+  ASSERT_NO_THROW(fl::reshape(a, {1, 4, 4}));
+  ASSERT_NO_THROW(fl::reshape(a, {4, 1, 4}));
+  ASSERT_NO_THROW(fl::reshape(a, {1, 4, 4, 1}));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   fl::init();
