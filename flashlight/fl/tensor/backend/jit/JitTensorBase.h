@@ -7,9 +7,11 @@
 
 #pragma once
 
+#include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/TensorAdapter.h"
 #include "flashlight/fl/tensor/backend/jit/JitBackend.h"
 #include "flashlight/fl/tensor/backend/jit/eval/Evaluator.h"
+#include "flashlight/fl/tensor/backend/jit/ir/IndexNode.h"
 #include "flashlight/fl/tensor/backend/jit/ir/Node.h"
 #include "flashlight/fl/tensor/backend/jit/opt/Optimizer.h"
 
@@ -22,23 +24,19 @@ namespace fl {
 class JitTensorBase : public TensorAdapterBase {
  public:
   // declaration made private to enable `std::make_shared`
-  struct SharedData;
+  class SharedData;
 
  private:
   // shared among shallow copies
-  std::shared_ptr<SharedData> sharedNode_;
-
-  // take care of refcount for old & new nodes
-  // `const` w.r.t. the underlying Tensor this represents.
-  void replaceNode(Node* newNode) const;
+  std::shared_ptr<SharedData> sharedData_;
 
   // return the wrapped tensor, not a JitTensorBase
   const Tensor& getTensorOrEvalNode() const;
 
  protected:
   // this allows us to create an instance of derived class
-  virtual Tensor fromSharedNode(
-      std::shared_ptr<SharedData> sharedNode) const = 0;
+  virtual Tensor fromSharedData(
+      std::shared_ptr<SharedData> sharedData) const = 0;
 
   // let derived class manage the wrapped backend
   virtual TensorBackend& wrappedBackend() const = 0;
@@ -49,7 +47,7 @@ class JitTensorBase : public TensorAdapterBase {
 
   // JitTensorBase manages the backend-agnostic JIT node.
   JitTensorBase(Node* node);
-  JitTensorBase(std::shared_ptr<SharedData> sharedNode);
+  JitTensorBase(std::shared_ptr<SharedData> sharedData);
 
  public:
   virtual ~JitTensorBase() override;
@@ -81,12 +79,13 @@ class JitTensorBase : public TensorAdapterBase {
 
   /**
    * Return the node this JIT tensor represents.
+   * NOTE `const` w.r.t. the underlying Tensor this represents.
    */
   Node* node() const;
 
   /**
    * Force evaluation of this tensor's JIT node.
-   * `const` w.r.t. the underlying Tensor this represents.
+   * NOTE `const` w.r.t. the underlying Tensor this represents.
    */
   void eval() const;
 

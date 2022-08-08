@@ -367,7 +367,7 @@ FL_JIT_BINARY_OP_DEF_STUB(>>, rShift);
   Tensor JitBackend::FUNC(TYPE lhs, const Tensor& a) {          \
     const auto dtype = dtype_traits<std::decay_t<TYPE>>::ctype; \
     return FUNC(this->full(a.shape(), lhs, dtype), a);          \
-  }                                                             \
+  }
 
 #define FL_JIT_BINARY_OP_LITERALS_DEF(FUNC)                   \
   FL_JIT_BINARY_OP_TYPE_DEF(FUNC, const bool&);               \

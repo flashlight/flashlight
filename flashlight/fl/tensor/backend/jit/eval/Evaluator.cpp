@@ -38,8 +38,6 @@ std::unordered_map<Node*, unsigned> getNodeToRefCountInTree(Node* root) {
 Evaluator::Evaluator(TensorBackend& backend) : backend_(backend) {}
 
 void Evaluator::evalBinaryNode(BinaryNode& node) {
-  evalNode(node.lhs());
-  evalNode(node.rhs());
   const auto& lhs = node.lhs()->getResult().value();
   const auto& rhs = node.rhs()->getResult().value();
   node.setResult(evalBinaryOp(node.op(), lhs, rhs));
@@ -48,10 +46,22 @@ void Evaluator::evalBinaryNode(BinaryNode& node) {
 void Evaluator::evalCustomNode(CustomNode& node) {
   std::vector<const Tensor*> inputTensors;
   for (auto& inputNode : node.inputs()) {
-    evalNode(inputNode);
     inputTensors.push_back(&inputNode->getResult().value());
   }
   node.setResult(node.evalFunc()(inputTensors));
+}
+
+void Evaluator::evalIndexNode(IndexNode& node) {
+  std::vector<Index> indices;
+  for (const auto& index : node.indices()) {
+    if (index.type() == detail::IndexType::Tensor) {
+      const auto tensorIndexNode = toJitTensorBase(index.get<Tensor>()).node();
+      indices.push_back(tensorIndexNode->getResult().value());
+    } else {
+      indices.push_back(index);
+    }
+  }
+  node.setResult(node.indexedNode()->getResult().value()(indices));
 }
 
 void Evaluator::evalScalarNode(ScalarNode& node) {
@@ -102,6 +112,8 @@ void Evaluator::evalNodeDispatch(Node* node) {
       return evalBinaryNode(node->impl<BinaryNode>());
     case NodeType::Custom:
       return evalCustomNode(node->impl<CustomNode>());
+    case NodeType::Index:
+      return evalIndexNode(node->impl<IndexNode>());
     case NodeType::Scalar:
       return evalScalarNode(node->impl<ScalarNode>());
     case NodeType::Value:
@@ -112,11 +124,14 @@ void Evaluator::evalNodeDispatch(Node* node) {
 
 void Evaluator::evalNode(Node* node) {
   if (!node->getResult().has_value()) {
+    for (const auto& input : node->inputs()) {
+      evalNode(input);
+    }
     evalNodeDispatch(node);
     for (const auto& input : node->inputs()) {
       auto& count = nodeToResultUseCount_.at(input);
       count--;
-      if (count == 0) {
+      if (count == 0 && !input->isValue()) {
         // This helps reduce memory footprint during evaluation, allowing the
         // result tensor memory to be reused. This has a non-trivial performance
         // impact on graph with high intermediate tensor memory usage.

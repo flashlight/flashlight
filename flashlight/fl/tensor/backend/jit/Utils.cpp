@@ -13,6 +13,15 @@
 
 namespace fl {
 
+namespace detail {
+
+std::ostream& operator<<(std::ostream& os, const UseVal& useVal) {
+  os << "(" << useVal.user << ", " << useVal.inputIdx << ")";
+  return os;
+}
+
+} // namespace detail
+
 bool operator==(UseList actual, UseValList expect) {
   if (actual.size() != expect.size()) {
     return false;
@@ -27,6 +36,11 @@ bool operator==(UseList actual, UseValList expect) {
     i++;
   }
   return true;
+}
+
+std::ostream& operator<<(std::ostream& os, const Use* use) {
+  os << "(" << use->user() << ", " << use->inputIdx() << ")";
+  return os;
 }
 
 } // namespace fl

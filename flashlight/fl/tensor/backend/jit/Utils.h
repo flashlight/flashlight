@@ -21,6 +21,8 @@ struct UseVal {
   const unsigned inputIdx;
 };
 
+std::ostream& operator<<(std::ostream& os, const UseVal& useVal);
+
 } // namespace detail
 
 using NodeList = std::vector<Node*>;
@@ -32,5 +34,7 @@ using UseValList = std::vector<detail::UseVal>;
  *   node->uses() == UseValList({{n1, 0}, ...})
  */
 bool operator==(UseList actual, UseValList expect);
+
+std::ostream& operator<<(std::ostream& os, const Use* useVal);
 
 } // namespace fl
