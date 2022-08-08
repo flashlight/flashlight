@@ -17,6 +17,13 @@ namespace fl {
 Variable MeanSquaredError::forward(
     const Variable& inputs,
     const Variable& targets) {
+  if (inputs.shape() != targets.shape()) {
+    throw std::invalid_argument(
+        "MeanSquaredError::forward - inputs and targets are of different sizes: {inputs: " +
+        inputs.shape().toString() + ", targets: " + targets.shape().toString() +
+        "}");
+  }
+
   auto df = inputs - targets;
   auto res = mean(flat(df * df), {0});
   return res;
@@ -29,6 +36,13 @@ std::string MeanSquaredError::prettyString() const {
 Variable MeanAbsoluteError::forward(
     const Variable& inputs,
     const Variable& targets) {
+  if (inputs.shape() != targets.shape()) {
+    throw std::invalid_argument(
+        "MeanAbsoluteError::forward - inputs and targets are of different sizes: {inputs: " +
+        inputs.shape().toString() + ", targets: " + targets.shape().toString() +
+        "}");
+  }
+
   auto df = inputs - targets;
   return mean(flat(fl::abs(df)), {0});
 }
@@ -138,7 +152,8 @@ Variable AdaptiveSoftMaxLoss::forward(
     }
 
     auto indicesArray = fl::nonzero(mask.tensor());
-    headTarget = headTarget + (mask * (cutoff[0] + i)).astype(headTarget.type());
+    headTarget =
+        headTarget + (mask * (cutoff[0] + i)).astype(headTarget.type());
     auto tailTarget = target(indicesArray) - cutoff[i];
     auto selectedInput = embedding(Variable(indicesArray, false), input);
     auto tailOutput = matmul(params_[1 + i * 2], selectedInput);
