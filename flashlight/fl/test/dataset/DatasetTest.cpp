@@ -143,6 +143,29 @@ TEST(DatasetTest, ResampleDataset) {
   ASSERT_TRUE(allClose(ff2[0], tensormap[0](fl::span, fl::span, 3)));
 }
 
+TEST(DatasetTest, SpanDataset) {
+  std::vector<Tensor> tensormap = {
+      fl::rand({100, 200, 300}), fl::rand({150, 300})};
+  auto tensords = std::make_shared<TensorDataset>(tensormap);
+
+  SpanDataset frontspands(tensords, 0, 13);
+  SpanDataset backspands(tensords, 13);
+
+  // Check `size` method
+  ASSERT_EQ(frontspands.size(), 13);
+  ASSERT_EQ(backspands.size(), 287);
+
+  // Values using `get` method
+  auto ff1 = frontspands.get(10);
+  ASSERT_EQ(ff1.size(), 2);
+  ASSERT_TRUE(allClose(ff1[0], tensormap[0](fl::span, fl::span, 10)));
+  ASSERT_TRUE(allClose(ff1[1], tensormap[1](fl::span, 10)));
+  auto ff2 = backspands.get(10);
+  ASSERT_EQ(ff2.size(), 2);
+  ASSERT_TRUE(allClose(ff2[0], tensormap[0](fl::span, fl::span, 13 + 10)));
+  ASSERT_TRUE(allClose(ff2[1], tensormap[1](fl::span, 13 + 10)));
+}
+
 TEST(DatasetTest, ConcatDataset) {
   auto tensor1 = fl::rand({100, 200, 100});
   auto tensor2 = fl::rand({100, 200, 200});

@@ -12,6 +12,7 @@ set(
   ${CMAKE_CURRENT_LIST_DIR}/MergeDataset.cpp
   ${CMAKE_CURRENT_LIST_DIR}/PrefetchDataset.cpp
   ${CMAKE_CURRENT_LIST_DIR}/ResampleDataset.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/SpanDataset.cpp
   ${CMAKE_CURRENT_LIST_DIR}/ShuffleDataset.cpp
   ${CMAKE_CURRENT_LIST_DIR}/TensorDataset.cpp
   ${CMAKE_CURRENT_LIST_DIR}/TransformDataset.cpp
