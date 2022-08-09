@@ -58,6 +58,36 @@ void testBinaryOp(Op func, BinaryOp op) {
   ASSERT_EQ(c1->uses(), UseValList({{node, 1}}));
 }
 
+struct ShiftLeftFunctor {
+  auto operator()(const Tensor& lhs, const Tensor& rhs) {
+    return lhs << rhs;
+  }
+};
+
+struct ShiftRightFunctor {
+  auto operator()(const Tensor& lhs, const Tensor& rhs) {
+    return lhs >> rhs;
+  }
+};
+
+struct PowerFunctor {
+  auto operator()(const Tensor& lhs, const Tensor& rhs) {
+    return fl::power(lhs, rhs);
+  }
+};
+
+struct MaxFunctor {
+  auto operator()(const Tensor& lhs, const Tensor& rhs) {
+    return fl::maximum(lhs, rhs);
+  }
+};
+
+struct MinFunctor {
+  auto operator()(const Tensor& lhs, const Tensor& rhs) {
+    return fl::minimum(lhs, rhs);
+  }
+};
+
 } // namespace
 
 TEST_F(JitTensorTest, constructor) {
@@ -103,6 +133,70 @@ TEST_F(JitTensorTest, mul) {
 
 TEST_F(JitTensorTest, div) {
   testBinaryOp(std::divides<>(), BinaryOp::Div);
+}
+
+TEST_F(JitTensorTest, eq) {
+  testBinaryOp(std::equal_to<>(), BinaryOp::Eq);
+}
+
+TEST_F(JitTensorTest, neq) {
+  testBinaryOp(std::not_equal_to<>(), BinaryOp::Neq);
+}
+
+TEST_F(JitTensorTest, gt) {
+  testBinaryOp(std::greater<>(), BinaryOp::Gt);
+}
+
+TEST_F(JitTensorTest, gte) {
+  testBinaryOp(std::greater_equal<>(), BinaryOp::Gte);
+}
+
+TEST_F(JitTensorTest, lt) {
+  testBinaryOp(std::less<>(), BinaryOp::Lt);
+}
+
+TEST_F(JitTensorTest, mod) {
+  testBinaryOp(std::modulus<>(), BinaryOp::Mod);
+}
+
+TEST_F(JitTensorTest, and) {
+  testBinaryOp(std::logical_and<>(), BinaryOp::And);
+}
+
+TEST_F(JitTensorTest, or) {
+  testBinaryOp(std::logical_and<>(), BinaryOp::And);
+}
+
+TEST_F(JitTensorTest, bitwiseAnd) {
+  testBinaryOp(std::bit_and<>(), BinaryOp::BitAnd);
+}
+
+TEST_F(JitTensorTest, bitwiseOr) {
+  testBinaryOp(std::bit_or<>(), BinaryOp::BitOr);
+}
+
+TEST_F(JitTensorTest, bitwiseXor) {
+  testBinaryOp(std::bit_xor<>(), BinaryOp::BitXor);
+}
+
+TEST_F(JitTensorTest, shiftLeft) {
+  testBinaryOp(ShiftLeftFunctor(), BinaryOp::Shl);
+}
+
+TEST_F(JitTensorTest, shiftRight) {
+  testBinaryOp(ShiftRightFunctor(), BinaryOp::Shr);
+}
+
+TEST_F(JitTensorTest, max) {
+  testBinaryOp(MaxFunctor(), BinaryOp::Max);
+}
+
+TEST_F(JitTensorTest, min) {
+  testBinaryOp(MinFunctor(), BinaryOp::Min);
+}
+
+TEST_F(JitTensorTest, pow) {
+  testBinaryOp(PowerFunctor(), BinaryOp::Pow);
 }
 
 TEST_F(JitTensorTest, explicitEval) {
