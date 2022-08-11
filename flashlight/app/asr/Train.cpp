@@ -746,7 +746,7 @@ int main(int argc, char** argv) {
       auto viterbipath = criterion
                              ->viterbiPath(
                                  op(fl::span, fl::span, b),
-                                 inputSizes(fl::span, fl::range(b, b)))
+                                 inputSizes(fl::span, fl::range(b, b + 1)))
                              .toHostVector<int>();
       auto tgtraw = tgt.toHostVector<int>();
 

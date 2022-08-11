@@ -82,12 +82,12 @@ int main(int /* unused */, const char** /* unused */) {
   auto log_prob = criterion.getActivation()->forward(result).tensor();
   Tensor max_value, prediction;
   fl::max(max_value, prediction, log_prob, 0);
-  auto accuracy = mean(prediction == label(fl::span, fl::range(0, 0)), {0});
+  auto accuracy = mean(prediction == label(fl::span, fl::range(0, 1)), {0});
   std::cout << "Accuracy: " << accuracy << std::endl;
 
   auto pred = asActivation->predict(result).tensor();
   accuracy = mean(
-      fl::reshape(pred, label.shape()) == label(fl::span, fl::range(0, 0)),
+      fl::reshape(pred, label.shape()) == label(fl::span, fl::range(0, 1)),
       {0});
   std::cout << "Accuracy: " << accuracy << std::endl;
 

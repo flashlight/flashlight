@@ -65,12 +65,12 @@ Seq2SeqState selectState(Seq2SeqState& state, int batchIdx) {
   newState.peakAttnPos = state.peakAttnPos;
   newState.isValid = state.isValid;
   newState.alpha =
-      state.alpha(fl::span, fl::span, fl::range(batchIdx, batchIdx));
+      state.alpha(fl::span, fl::span, fl::range(batchIdx, batchIdx + 1));
   newState.summary =
-      state.summary(fl::span, fl::span, fl::range(batchIdx, batchIdx));
+      state.summary(fl::span, fl::span, fl::range(batchIdx, batchIdx + 1));
   for (int i = 0; i < nAttnRound; i++) {
     newState.hidden[i] =
-        state.hidden[i](fl::span, fl::range(batchIdx, batchIdx));
+        state.hidden[i](fl::span, fl::range(batchIdx, batchIdx + 1));
   }
   return newState;
 }
@@ -257,7 +257,7 @@ std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
         decodeStep(input, y, state, inputSizes, targetSizes, U);
 
     if (!train_) {
-      y = target(fl::range(u, u), fl::span);
+      y = target(fl::range(u, u + 1), fl::span);
     } else if (samplingStrategy_ == fl::pkg::speech::kGumbelSampling) {
       double eps = 1e-7;
       auto gb = -log(-log((1 - 2 * eps) * fl::rand(ox.shape()) + eps));
@@ -265,7 +265,7 @@ std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
       y = Variable(exp(ox).tensor(), false);
     } else if (fl::all(fl::rand({1}) * 100 <= fl::full({1}, pctTeacherForcing_))
                    .asScalar<bool>()) {
-      y = target(fl::range(u, u), fl::span);
+      y = target(fl::range(u, u + 1), fl::span);
     } else if (samplingStrategy_ == fl::pkg::speech::kModelSampling) {
       Tensor maxIdx, maxValues;
       fl::max(maxValues, maxIdx, ox.tensor(), 0);
@@ -572,7 +572,7 @@ Seq2SeqCriterion::decodeBatchStep(
     }
 
     for (int i = 0; i < batchSize; i++) {
-      outstates[i]->hidden[n] = outStateBatched(fl::span, fl::range(i, i));
+      outstates[i]->hidden[n] = outStateBatched(fl::span, fl::range(i, i + 1));
     }
 
     /* (2) Attention forward */
@@ -599,8 +599,8 @@ Seq2SeqCriterion::decodeBatchStep(
       outstates[i]->isValid =
           std::abs(outstates[i]->peakAttnPos - inStates[i]->peakAttnPos) <=
           attentionThreshold;
-      outstates[i]->alpha = alphaBatched(fl::span, fl::range(i, i));
-      outstates[i]->summary = yBatched(fl::span, fl::range(i, i));
+      outstates[i]->alpha = alphaBatched(fl::span, fl::range(i, i + 1));
+      outstates[i]->summary = yBatched(fl::span, fl::range(i, i + 1));
     }
   }
 
@@ -610,7 +610,7 @@ Seq2SeqCriterion::decodeBatchStep(
   std::vector<std::vector<float>> out(batchSize);
   for (int i = 0; i < batchSize; i++) {
     out[i] =
-        outBatched(fl::span, fl::range(i, i)).tensor().toHostVector<float>();
+        outBatched(fl::span, fl::range(i, i + 1)).tensor().toHostVector<float>();
   }
 
   return std::make_pair(out, outstates);

@@ -18,16 +18,21 @@ using namespace fl;
 TEST(IndexTest, range) {
   auto s1 = fl::range(3);
   ASSERT_EQ(s1.start(), 0);
-  ASSERT_EQ(s1.end(), 2);
+  ASSERT_EQ(s1.endVal(), 3);
   ASSERT_EQ(s1.stride(), 1);
 
   auto s2 = fl::range(4, 5);
   ASSERT_EQ(s2.start(), 4);
-  ASSERT_EQ(s2.end(), 4);
+  ASSERT_EQ(s2.endVal(), 5);
   ASSERT_EQ(s2.stride(), 1);
 
   auto s3 = fl::range(7, 8, 9);
   ASSERT_EQ(s3.stride(), 9);
+
+  auto s4 = fl::range(1, fl::end, 2);
+  ASSERT_EQ(s4.start(), 1);
+  ASSERT_EQ(s4.end(), std::nullopt);
+  ASSERT_EQ(s4.stride(), 2);
 }
 
 TEST(IndexTest, rangeEq) {
@@ -60,9 +65,11 @@ TEST(IndexTest, Shape) {
   ASSERT_EQ(t(2, fl::span).shape(), Shape({4}));
   ASSERT_EQ(t(2).shape(), Shape({4}));
   ASSERT_EQ(t(fl::range(3)).shape(), Shape({3, 4}));
-  ASSERT_EQ(t(fl::range(1, 1)).shape(), Shape({1, 4}));
+  // TODO {0, 4} once empty ranges are supported across all backends
+  // ASSERT_EQ(t(fl::range(1, 1)).shape(), Shape({1, 4}));
   ASSERT_EQ(t(fl::range(1, 2)).shape(), Shape({1, 4}));
-  ASSERT_EQ(t(fl::span, fl::range(1, 1)).shape(), Shape({4, 1}));
+  // TODO ditto
+  // ASSERT_EQ(t(fl::span, fl::range(1, 1)).shape(), Shape({4, 1}));
   ASSERT_EQ(t(fl::range(1, 2), fl::range(1, 2)).shape(), Shape({1, 1}));
   ASSERT_EQ(t(fl::range(0, fl::end)).shape(), Shape({4, 4}));
   ASSERT_EQ(t(fl::range(0, fl::end, 2)).shape(), Shape({2, 4}));

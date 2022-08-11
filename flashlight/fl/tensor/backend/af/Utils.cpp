@@ -138,8 +138,17 @@ Shape afToFlDims(const af::dim4& d, const unsigned numDims) {
 }
 
 af::seq flRangeToAfSeq(const fl::range& range) {
-  const int end = range.end();
-  return af::seq(range.start(), end == fl::end ? -1 : end, range.stride());
+  const int start = range.start();
+  const auto& optEnd = range.end();
+  const int end = optEnd.has_value() ? optEnd.value() - 1 : af::end;
+  // There could be have other empty sequence representations, e.g., (0, -1)
+  // for axis with 1 element. In those cases, AF will throw internally --
+  // we can't throw here because these cases  axis-size dependent.
+  if (optEnd.has_value() && optEnd.value() == start) {
+    throw std::runtime_error(
+        "flRangeToAfSeq: AF seq can't represent empty sequence");
+  }
+  return af::seq(start, end, range.stride());
 }
 
 af::index flToAfIndex(const fl::Index& idx) {
