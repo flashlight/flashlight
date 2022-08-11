@@ -28,23 +28,28 @@ class Evaluator {
   TensorBackend& backend_;
   // track (conservatively) how many more times the a node's result will be used
   std::unordered_map<NodePtr, unsigned> nodeToResultUseCount_{};
+  // track time spent on executing a node alone (not its inputs)
+  std::unordered_map<NodePtr, float> nodeToTotTimeMs_{};
+  bool profilerEnabled_{false};
 
   void evalNode(NodePtr node);
   void evalNodeDispatch(NodePtr node);
+  // profile execution time of `func` and associate it with `nodePtr`
+  void profile(std::function<void()> func, NodePtr nodePtr);
 
   // evaluate and set result without checking for existing result
   // ASSUME inputs have been evaluated
-  void evalBinaryNode(BinaryNode& node);
-  void evalCustomNode(CustomNode& node);
-  void evalIndexNode(IndexNode& node);
-  void evalIndexedUpdateNode(IndexedUpdateNode& node);
+  void evalBinaryNode(BinaryNodePtr node);
+  void evalCustomNode(CustomNodePtr node);
+  void evalIndexNode(IndexNodePtr node);
+  void evalIndexedUpdateNode(IndexedUpdateNodePtr node);
   // JitTensor in indices becomes the backing tensor
   std::vector<Index> unwrapTensorInIndices(const std::vector<Index>& indices);
-  void evalScalarNode(ScalarNode& node);
+  void evalScalarNode(ScalarNodePtr node);
 
   // helpers that evaluates without setting results
   Tensor evalBinaryOp(BinaryOp op, const Tensor& lhs, const Tensor& rhs);
-  Tensor evalScalar(ScalarNode& node);
+  Tensor evalScalar(ScalarNodePtr node);
 
  public:
   /**
@@ -64,6 +69,13 @@ class Evaluator {
    * 2. set result for intermediate nodes if they have external uses
    */
   void eval(NodePtr node);
+
+  /**
+   * TODO document
+   */
+  void setProfilerState(bool active);
+  const std::unordered_map<NodePtr, float>& getProfilerStats();
+  void clearProfilerStats();
 };
 
 } // namespace fl

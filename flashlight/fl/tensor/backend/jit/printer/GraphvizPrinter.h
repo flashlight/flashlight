@@ -60,21 +60,33 @@ class GraphvizPrinter {
   detail::NameGenerator subgraphNameGenerator_;
   detail::NodeNamer nodeNamer_;
   std::unordered_set<NodePtr> edgesPrinted_;
+  // temporary state use when printing a single subgraph
+  const std::unordered_map<NodePtr, float>* nodeToTotTimeMs_{};
+  float medianTotTime_ = 0;
+  float maxTotTime_ = 0;
+
   Color edgeColor_ = Color::Black;
   Color nodeColor_ = Color::Black;
 
   std::ostream& os();
-  void printBinaryNode(const BinaryNode& node);
-  void printCustomNode(const CustomNode& node);
-  void printIndexNode(const IndexNode& node);
-  void printIndexedUpdateNode(const IndexedUpdateNode& node);
+  void printBinaryNodeLabels(const BinaryNode& node);
+  void printCustomNodeLabels(const CustomNode& node);
+  void printIndexNodeLabels(const IndexNode& node);
+  void printIndexedUpdateNodeLabels(const IndexedUpdateNode& node);
   std::ostream& printIndices(const std::vector<Index>& indices);
   void printRangeIndex(const range& rangeIdx);
-  void printScalarNode(const ScalarNode& node);
+  void printScalarNodeLabels(const ScalarNode& node);
   std::ostream& printScalarValue(const ScalarNode& node);
-  void printValueNode(const ValueNode& node);
+  void printValueNodeLabels(const ValueNode& node);
   std::ostream& printNodes(NodePtr node);
+  std::ostream& printNodeLabels(NodePtr node);
+  std::ostream& printNodeColor(float tottime);
+  std::ostream& printRelativeColor(float tottime);
   std::ostream& printEdges(NodePtr node);
+
+  GraphvizPrinter& printSubgraphImpl(
+      NodePtr node,
+      const std::string& namePrefix);
 
  public:
   // no copy/move
@@ -106,6 +118,12 @@ class GraphvizPrinter {
    * TODO
    */
   GraphvizPrinter& printSubgraph(NodePtr node, const std::string& namePrefix);
+
+  // color node with execution statistics
+  GraphvizPrinter& printSubgraph(
+      NodePtr node,
+      const std::string& namePrefix,
+      const std::unordered_map<NodePtr, float>& nodeToTotTimeMs_);
 };
 
 std::ostream& operator<<(std::ostream& os, const GraphvizPrinter::Color& color);
