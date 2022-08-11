@@ -39,29 +39,29 @@ TEST(UtilsTest, Join) {
   ASSERT_EQ(o1.shape(), Shape({30, 1, 300, 3}));
   ASSERT_TRUE(
       fl::all(
-          o1(fl::range(25), fl::range(0, 0), fl::range(300), fl::range(0, 0)) ==
+          o1(fl::range(25), fl::range(0, 1), fl::range(300), fl::range(0, 1)) ==
           a)
           .asScalar<bool>());
   ASSERT_TRUE(fl::all(
                   o1(fl::range(25, 29),
-                     fl::range(0, 0),
+                     fl::range(0, 1),
                      fl::range(300),
-                     fl::range(0, 0)) == 0)
+                     fl::range(0, 1)) == 0)
                   .asScalar<bool>());
   ASSERT_TRUE(
       fl::all(
-          o1(fl::range(20), fl::range(0, 0), fl::range(300), fl::range(1, 1)) ==
+          o1(fl::range(20), fl::range(0, 1), fl::range(300), fl::range(1, 2)) ==
           b)
           .asScalar<bool>());
   ASSERT_TRUE(fl::all(
                   o1(fl::range(20, 29),
-                     fl::range(0, 0),
+                     fl::range(0, 1),
                      fl::range(300),
-                     fl::range(1, 1)) == 0)
+                     fl::range(1, 2)) == 0)
                   .asScalar<bool>());
   ASSERT_TRUE(
       fl::all(
-          o1(fl::range(30), fl::range(0, 0), fl::range(300), fl::range(2, 2)) ==
+          o1(fl::range(30), fl::range(0, 1), fl::range(300), fl::range(2, 3)) ==
           c)
           .asScalar<bool>());
 
@@ -69,45 +69,45 @@ TEST(UtilsTest, Join) {
   ASSERT_EQ(o2.shape(), Shape({30, 1, 300, 3}));
   ASSERT_TRUE(
       fl::all(
-          o2(fl::range(25), fl::range(0, 0), fl::range(300), fl::range(0, 0)) ==
+          o2(fl::range(25), fl::range(0, 1), fl::range(300), fl::range(0, 1)) ==
           a)
           .asScalar<bool>());
   ASSERT_TRUE(fl::all(
                   o2(fl::range(25, 29),
-                     fl::range(0, 0),
+                     fl::range(0, 1),
                      fl::range(300),
-                     fl::range(0, 0)) == -1)
+                     fl::range(0, 1)) == -1)
                   .asScalar<bool>());
   ASSERT_TRUE(
       fl::all(
-          o2(fl::range(20), fl::range(0, 0), fl::range(300), fl::range(1, 1)) ==
+          o2(fl::range(20), fl::range(0, 1), fl::range(300), fl::range(1, 2)) ==
           b)
           .asScalar<bool>());
   ASSERT_TRUE(fl::all(
                   o2(fl::range(20, 29),
-                     fl::range(0, 0),
+                     fl::range(0, 1),
                      fl::range(300),
-                     fl::range(1, 1)) == -1)
+                     fl::range(1, 2)) == -1)
                   .asScalar<bool>());
   ASSERT_TRUE(
       fl::all(
-          o2(fl::range(30), fl::range(0, 0), fl::range(300), fl::range(2, 2)) ==
+          o2(fl::range(30), fl::range(0, 1), fl::range(300), fl::range(2, 3)) ==
           c)
           .asScalar<bool>());
 
   auto o3 = join({a, b, c}, -1, 1);
   ASSERT_EQ(o3.shape(), Shape({30, 3, 300, 1}));
-  ASSERT_TRUE(fl::all(o3(fl::range(25), fl::range(0, 0), fl::range(300)) == a)
+  ASSERT_TRUE(fl::all(o3(fl::range(25), fl::range(0, 1), fl::range(300)) == a)
                   .asScalar<bool>());
   ASSERT_TRUE(
-      fl::all(o3(fl::range(25, 29), fl::range(0, 0), fl::range(300)) == -1)
+      fl::all(o3(fl::range(25, 29), fl::range(0, 1), fl::range(300)) == -1)
           .asScalar<bool>());
-  ASSERT_TRUE(fl::all(o3(fl::range(20), fl::range(1, 1), fl::range(300)) == b)
+  ASSERT_TRUE(fl::all(o3(fl::range(20), fl::range(1, 2), fl::range(300)) == b)
                   .asScalar<bool>());
   ASSERT_TRUE(
-      fl::all(o3(fl::range(20, 29), fl::range(1, 1), fl::range(300)) == -1)
+      fl::all(o3(fl::range(20, 29), fl::range(1, 2), fl::range(300)) == -1)
           .asScalar<bool>());
-  ASSERT_TRUE(fl::all(o3(fl::range(30), fl::range(2, 2), fl::range(300)) == c)
+  ASSERT_TRUE(fl::all(o3(fl::range(30), fl::range(2, 3), fl::range(300)) == c)
                   .asScalar<bool>());
 }
 

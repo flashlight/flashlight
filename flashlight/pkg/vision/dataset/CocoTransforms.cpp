@@ -49,8 +49,8 @@ crop(const std::vector<Tensor>& in, int x, int y, int tw, int th) {
     croppedBoxes = fl::minimum(croppedBoxes, maxSizeArray);
     croppedBoxes = fl::maximum(croppedBoxes, 0.0);
     Tensor keep = fl::all(
-        croppedBoxes(fl::span, fl::range(1, 1), fl::span) >
-            croppedBoxes(fl::span, fl::range(0, 0), fl::span),
+        croppedBoxes(fl::span, fl::range(1, 2), fl::span) >
+            croppedBoxes(fl::span, fl::range(0, 1), fl::span),
         {0});
     croppedBoxes = fl::reshape(croppedBoxes, {4, boxes.dim(1)});
     croppedBoxes = croppedBoxes(fl::span, keep);

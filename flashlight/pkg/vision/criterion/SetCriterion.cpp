@@ -155,7 +155,7 @@ SetCriterion::LossDict SetCriterion::forward(
   for (int i = 0; i < predBoxesAux.dim(3); i++) {
     auto predBoxes = predBoxesAux(fl::span, fl::span, fl::span, i);
     auto predLogits =
-        predLogitsAux(fl::span, fl::span, fl::span, fl::range(i, i));
+        predLogitsAux(fl::span, fl::span, fl::span, fl::range(i, i + 1));
 
     std::vector<Tensor> targetBoxesArray(targetBoxes.size());
     std::vector<Tensor> targetClassesArray(targetClasses.size());

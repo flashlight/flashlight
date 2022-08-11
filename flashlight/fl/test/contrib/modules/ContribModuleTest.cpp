@@ -164,23 +164,23 @@ void transformerPadMaskFwd(bool isfp16) {
   auto output1 = tr.forward({input1NoPad,
                              Variable(
                                  padMask(fl::range(0, timesteps / 2))(
-                                     fl::span, fl::range(0, 0)),
+                                     fl::span, fl::range(0, 1)),
                                  false)})
                      .front();
   auto output2 =
-      tr.forward({input2, Variable(padMask(fl::span, fl::range(1, 1)), false)})
+      tr.forward({input2, Variable(padMask(fl::span, fl::range(1, 2)), false)})
           .front();
   ASSERT_TRUE(allClose(
-      output.tensor()(fl::span, fl::span, fl::range(1, 1)), output2.tensor()));
+      output.tensor()(fl::span, fl::span, fl::range(1, 2)), output2.tensor()));
   ASSERT_TRUE(allClose(
-      outputNoPad.tensor()(fl::span, fl::span, fl::range(1, 1)),
+      outputNoPad.tensor()(fl::span, fl::span, fl::range(1, 2)),
       output2.tensor()));
   ASSERT_TRUE(allClose(
-      output.tensor()(fl::span, fl::iota({timesteps / 2}), fl::range(0, 0)),
+      output.tensor()(fl::span, fl::iota({timesteps / 2}), fl::range(0, 1)),
       output1.tensor()));
   ASSERT_FALSE(allClose(
       outputNoPad.tensor()(
-          fl::span, fl::iota({timesteps / 2}), fl::range(0, 0)),
+          fl::span, fl::iota({timesteps / 2}), fl::range(0, 1)),
       output1.tensor()));
 }
 

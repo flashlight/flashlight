@@ -8,9 +8,11 @@
 #include <arrayfire.h>
 #include <gtest/gtest.h>
 
+#include <exception>
 #include <stdexcept>
 #include <utility>
 
+#include "af/util.h"
 #include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/Random.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
@@ -427,6 +429,18 @@ TEST(ArrayFireTensorBaseTest, device) {
 TEST(ArrayFireTensorBaseTest, defaultConstructor) {
   auto t = ArrayFireTensor();
   ASSERT_TRUE(t.getHandle().isempty());
+}
+
+TEST(ArrayFireTensorBaseTest, emptyRangeIndexing) {
+  // TODO the following should all return empty tensor, but AF currently doesn't
+  // have a way to represent empty range, and we are just throwing internally.
+  auto t = fl::rand({5});
+  ASSERT_THROW(t(fl::range(5, fl::end)).shape(), std::exception);
+  ASSERT_THROW(t(fl::range(4, -1)).shape(), std::exception);
+  ASSERT_THROW(t(fl::range(0, 0)).shape(), std::exception);
+  ASSERT_THROW(t(fl::range(1, 1)).shape(), std::exception);
+  ASSERT_THROW(t(fl::range(4, 4)).shape(), std::exception);
+  ASSERT_THROW(t(fl::range(0, -5)).shape(), std::exception);
 }
 
 int main(int argc, char** argv) {

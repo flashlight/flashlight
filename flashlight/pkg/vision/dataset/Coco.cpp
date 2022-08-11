@@ -49,9 +49,9 @@ std::pair<Tensor, Tensor> makeImageAndMaskBatch(
     Shape dims = sample.shape();
     int w = dims[0];
     int h = dims[1];
-    batcharr(fl::range(0, w), fl::range(0, h), fl::span, fl::range(i, i)) =
+    batcharr(fl::range(0, w), fl::range(0, h), fl::span, fl::range(i, i + 1)) =
         data[i];
-    maskarr(fl::range(0, w), fl::range(0, h), fl::span, fl::range(i, i)) =
+    maskarr(fl::range(0, w), fl::range(0, h), fl::span, fl::range(i, i + 1)) =
         fl::full({w, h}, 1);
   }
   return std::make_pair(batcharr, maskarr);
