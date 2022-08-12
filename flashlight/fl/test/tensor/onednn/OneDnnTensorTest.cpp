@@ -654,6 +654,24 @@ TEST(OneDnnTensorTest, tile) {
       fl::Tensor::fromVector<float>({4}, {3, 4, 3, 4}));
 }
 
+TEST(OneDnnTensorTest, arange) {
+  // Range/step overload
+  assertOneDnnTensorEq(
+      fl::arange(2, 10, 2),
+      fl::Tensor::fromVector<int>({2, 4, 6, 8}));
+  assertOneDnnTensorEq(
+      fl::arange(0, 6),
+      fl::Tensor::fromVector<int>({0, 1, 2, 3, 4, 5}));
+
+  // Shape overload
+  assertOneDnnTensorEq(
+      fl::arange({4}),
+      fl::Tensor::fromVector<float>({0, 1, 2, 3}));
+  assertOneDnnTensorEq(
+      fl::arange({2, 2}, 1),
+      fl::Tensor::fromVector<float>({2, 2}, {0, 0, 1, 1}));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   fl::init();
