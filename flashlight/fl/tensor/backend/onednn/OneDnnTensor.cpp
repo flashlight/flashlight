@@ -7,6 +7,7 @@
 
 #include "flashlight/fl/tensor/backend/onednn/OneDnnTensor.h"
 
+#include <atomic>
 #include <cassert>
 #include <cstring>
 #include <memory>
@@ -14,6 +15,7 @@
 #include <stdexcept>
 #include <sstream>
 
+#include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/Shape.h"
 #include "flashlight/fl/tensor/backend/onednn/OneDnnBackend.h"
 #include "flashlight/fl/tensor/backend/onednn/Utils.h"
@@ -54,6 +56,62 @@ bool bytesEqual(const void* lhs, const void* rhs, unsigned numBytes) {
   return std::memcmp(lhs, rhs, numBytes) == 0;
 }
 
+// Canonicalize all integers or fl::end in the index (except for Tensor) into
+// non-negative integers, e.g., range(0, -1) --> range(0, axisDim - 1).
+// TODO consider moving this to a general util when we have other backends that
+// reuse this logic.
+Index canonicalizeIndex(const Index& idx, const Dim axisDim) {
+  auto canonicalizeDim = [axisDim](const std::optional<Dim>& optDim) {
+    if (!optDim.has_value()) {
+      return axisDim;
+    }
+    const auto dim = optDim.value();
+    if (dim < -axisDim || axisDim < dim) { // end is exclusive
+      std::ostringstream oss;
+      oss << "[canonicalizeIndexByShape] dim out of range: dim = " << dim
+          << ", axisDim = " << axisDim;
+      throw std::invalid_argument(oss.str());
+    }
+    return dim < 0 ? axisDim + dim : dim;
+  };
+  switch (idx.type()) {
+    case detail::IndexType::Range: {
+      const auto& rangeIdx = idx.get<range>();
+      auto start = canonicalizeDim(rangeIdx.start());
+      auto stride = rangeIdx.stride();
+      auto end = canonicalizeDim(rangeIdx.end());
+      if (stride != 1) {
+        throw std::invalid_argument(
+            "[canonicalizeIndexByShape] Current doesn't support index with stride > 1");
+      } else if (start >= end) {
+        std::ostringstream oss;
+        oss << "[canonicalizeIndexByShape] end must be larger than start: end = "
+            << end << ", start: " << start;
+        throw std::invalid_argument(oss.str());
+      }
+      return range(canonicalizeDim(start), canonicalizeDim(end), stride);
+    }
+    case detail::IndexType::Literal: {
+      auto literal = canonicalizeDim(idx.get<Dim>());
+      if (literal > axisDim) {
+      std::ostringstream oss;
+      oss << "[canonicalizeIndexByShape] literal index too large: literal = "
+          << literal << ", axisDim = " << axisDim;
+        throw std::invalid_argument(oss.str());
+      }
+      return literal;
+    }
+    case detail::IndexType::Span: {
+      return idx;
+    }
+    case detail::IndexType::Tensor: {
+      throw std::invalid_argument(
+          "[canonicalizeIndex] Currently does not support Tensor as index");
+    }
+  }
+  throw std::runtime_error("Unexpected IndexType");
+}
+
 } // namespace
 
 OneDnnTensor::SharedData::~SharedData() {
@@ -61,8 +119,11 @@ OneDnnTensor::SharedData::~SharedData() {
    && "Must unlock device pointer before OneDnnTensor destruction.");
 }
 
-OneDnnTensor::OneDnnTensor(std::shared_ptr<SharedData> sharedData)
-    : sharedData_(std::move(sharedData)) {}
+OneDnnTensor::OneDnnTensor(
+    std::shared_ptr<SharedData> sharedData,
+    const Shape& shape,
+    const dnnl::memory::desc& memDesc)
+    : sharedData_(std::move(sharedData)), shape_(shape), memDesc_(memDesc) {}
 
 void* OneDnnTensor::getOrEvalDataHandle() {
   if (!sharedData_->isDataReady) {
@@ -76,15 +137,16 @@ unsigned OneDnnTensor::getSizeInBytes() const {
   // NOTE ideally we should use `dnnl::memory::desc::get_size()`, but for some
   // reason it returns 0 for submemory with non-zero offset, e.g., `tensor(1:4)`.
   // See https://github.com/oneapi-src/oneDNN/issues/1429
-  auto type = sharedData_->memory.get_desc().data_type();
+  auto type = memoryDesc().data_type();
   auto typeSize = dnnl::memory::data_type_size(type);
-  auto numElems = sharedData_->shape.elements();
+  auto numElems = shape_.elements();
   return numElems * typeSize;
 }
 
 OneDnnTensor::OneDnnTensor(const Shape& shape, dnnl::memory&& memory) {
   sharedData_ = std::make_shared<SharedData>();
-  sharedData_->shape = shape;
+  shape_ = shape;
+  memDesc_ = memory.get_desc();
   sharedData_->memory = std::move(memory);
 }
 
@@ -95,17 +157,16 @@ OneDnnTensor::OneDnnTensor(
     const Shape& shape,
     fl::dtype type,
     const void* ptr,
-    Location memoryLocation) {
+    Location memoryLocation) : shape_(shape) {
   // TODO handle Location::Device once we add CL support
   if (memoryLocation != Location::Host) {
     throw std::invalid_argument(
         "[OneDnnTensor] initialization data must be on host.");
   }
-  const auto memDesc = detail::oneDnnContiguousMemDescFromShape(
+  memDesc_ = detail::oneDnnContiguousMemDescFromShape(
       shape, detail::flToOneDnnType(type));
   sharedData_ = std::make_shared<SharedData>();
-  sharedData_->shape = shape;
-  sharedData_->memory = dnnl::memory(memDesc, backend().engine());
+  sharedData_->memory = dnnl::memory(memDesc_, backend().engine());
   const auto numDataBytes = shape.elements() * fl::getTypeSize(type);
   // NOTE, once we support CL, we can take ownership directly for device ptr.
   if (ptr != nullptr) {
@@ -125,12 +186,12 @@ OneDnnTensor::OneDnnTensor(
 }
 
 std::unique_ptr<TensorAdapterBase> OneDnnTensor::clone() const {
-  // TODO copy on write
+  // TODO copy on write if this is not a view
   auto& srcMem = sharedData_->memory;
-  const auto type = srcMem.get_desc().data_type();
-  const auto srcMemDesc = srcMem.get_desc();
+  const auto& srcMemDesc = memoryDesc();
+  const auto type = srcMemDesc.data_type();
   const auto dstMemDesc =
-      detail::oneDnnContiguousMemDescFromShape(sharedData_->shape, type);
+      detail::oneDnnContiguousMemDescFromShape(shape_, type);
   const auto engine = sharedData_->memory.get_engine();
   auto dstMem = dnnl::memory(dstMemDesc, engine);
 
@@ -142,7 +203,7 @@ std::unique_ptr<TensorAdapterBase> OneDnnTensor::clone() const {
 
   // execute primitive
   reorderPrimitive.execute(backend().nativeStream(), srcMem, dstMem);
-  return std::make_unique<OneDnnTensor>(sharedData_->shape, std::move(dstMem));
+  return std::make_unique<OneDnnTensor>(shape_, std::move(dstMem));
 }
 
 Tensor OneDnnTensor::copy() {
@@ -151,7 +212,7 @@ Tensor OneDnnTensor::copy() {
 
 Tensor OneDnnTensor::shallowCopy() {
   // shallow copy the underlying memory
-  return Tensor(std::make_unique<OneDnnTensor>(sharedData_));
+  return Tensor(std::make_unique<OneDnnTensor>(sharedData_, shape_, memDesc_));
 }
 
 TensorBackendType OneDnnTensor::backendType() const {
@@ -163,11 +224,11 @@ OneDnnBackend& OneDnnTensor::backend() const {
 }
 
 const Shape& OneDnnTensor::shape() {
-  return sharedData_->shape;
+  return shape_;
 }
 
 fl::dtype OneDnnTensor::type() {
-  return detail::oneDnnToFlType(sharedData_->memory.get_desc().data_type());
+  return detail::oneDnnToFlType(memoryDesc().data_type());
 }
 
 bool OneDnnTensor::isSparse() {
@@ -181,14 +242,14 @@ Location OneDnnTensor::location() {
 }
 
 void OneDnnTensor::scalar(void* out) {
-  if (sharedData_->shape.elements() == 0) {
+  if (shape().elements() == 0) {
     throw std::invalid_argument("Cannot call scalar on empty OneDnnTensor");
   }
   const auto& cpuEngine = backend().cpuEngine();
 
   // prepare memories
   auto& srcMem = memory();
-  const auto srcMemDesc = srcMem.get_desc();
+  const auto& srcMemDesc = memoryDesc();
   const auto type = srcMemDesc.data_type();
   // dims are strides are the same for scalar (1s),
   // but reorder requires them to have the same # of dimensions
@@ -238,7 +299,7 @@ bool OneDnnTensor::isLocked() {
 }
 
 bool OneDnnTensor::isContiguous() {
-  const auto& shape = sharedData_->shape;
+  const auto& shape = this->shape();
   if (shape.ndim() == 0) { // scalar
     return true;
   }
@@ -249,7 +310,7 @@ bool OneDnnTensor::isContiguous() {
 }
 
 Shape OneDnnTensor::strides() {
-  const auto memoryDesc = sharedData_->memory.get_desc().data;
+  const auto& memoryDesc = this->memoryDesc().data;
   if (memoryDesc.format_kind != dnnl_format_kind_t::dnnl_blocked) {
     throw std::invalid_argument(
         "[OneDnnTensor::strides] Unexpected memory format kind: " +
@@ -271,7 +332,7 @@ Tensor OneDnnTensor::astype(const dtype type) {
   // prepare memories
   auto& srcMem = sharedData_->memory;
   const auto engine = srcMem.get_engine();
-  const auto srcMemDesc = srcMem.get_desc();
+  const auto& srcMemDesc = memoryDesc();
   const auto dstMemDesc = detail::oneDnnContiguousMemDescFromShape(
       shape(), detail::flToOneDnnType(type));
   auto dstMem = dnnl::memory(dstMemDesc, engine);
@@ -283,11 +344,60 @@ Tensor OneDnnTensor::astype(const dtype type) {
 
   // execute primitive
   reorderPrimitive.execute(backend().nativeStream(), srcMem, dstMem);
-  return toTensor<OneDnnTensor>(sharedData_->shape, std::move(dstMem));
+  return toTensor<OneDnnTensor>(shape(), std::move(dstMem));
 }
 
-Tensor OneDnnTensor::index(const std::vector<Index>& /* indices */) {
-  FL_ONEDNN_TENSOR_UNIMPLEMENTED;
+Tensor OneDnnTensor::index(const std::vector<Index>& indices) {
+  const auto& shape = this->shape();
+  // allow indexing scalar with empty indices
+  if (indices.size() > shape.ndim() ||
+      (indices.size() == 0 && shape.ndim() > 0)) {
+    std::ostringstream oss;
+    oss << "[OneDnnTensor::index] Invalid number of indices: " << indices.size()
+        << " for tensor of ndim = " << shape.ndim();
+    throw std::invalid_argument(oss.str());
+  }
+  // by default, assume all indices are spans
+  // recall that shape and dims are in reversed order
+  dnnl::memory::dims dims(shape.get().rbegin(), shape.get().rend());
+  dnnl::memory::dims offsets(shape.ndim(), 0);
+  std::vector<int> dimsAxesWithLiteralIndex;
+  for (int shapeAxis = 0; shapeAxis < indices.size(); shapeAxis++) {
+    int dimsAxis = shape.ndim() - 1 - shapeAxis;
+    const auto idx = canonicalizeIndex(indices[shapeAxis], shape[shapeAxis]);
+    switch (idx.type()) {
+      case detail::IndexType::Range: {
+        const auto& rangeIdx = idx.get<range>();
+        offsets[dimsAxis] = rangeIdx.start();
+        dims[dimsAxis] = rangeIdx.endVal() - rangeIdx.start();
+        continue;
+      }
+      case detail::IndexType::Span: {
+        continue;
+      }
+      case detail::IndexType::Literal: {
+        offsets[dimsAxis] = idx.get<Dim>();
+        dims[dimsAxis] = 1;
+        dimsAxesWithLiteralIndex.push_back(dimsAxis);
+        continue;
+      }
+      case detail::IndexType::Tensor: {
+        throw std::invalid_argument(
+            "[OneDnnTensor::index] Currently does not support Tensor as index");
+      }
+    }
+    throw std::runtime_error("Unexpected IndexType");
+  }
+  const auto condensedDims =
+    detail::removeIndices(dims, dimsAxesWithLiteralIndex);
+  // recall that scalar has fl::Shape {}, but OneDNN requires at least 1 dim
+  const auto subMemDesc = memoryDesc().submemory_desc(dims, offsets);
+  const auto resultIsScalar = condensedDims.empty();
+  // N.B. these reshapes don't require row-major layout
+  const auto indexedMemDesc =
+    resultIsScalar ? subMemDesc.reshape({1}) : subMemDesc.reshape(condensedDims);
+  const auto indexedShape = detail::oneDnnDimsToShape(condensedDims);
+  return toTensor<OneDnnTensor>(sharedData_, indexedShape, indexedMemDesc);
 }
 
 Tensor OneDnnTensor::flatten() const {
@@ -299,12 +409,6 @@ Tensor OneDnnTensor::flat(const Index& /* idx */) const {
 }
 
 Tensor OneDnnTensor::asContiguousTensor() {
-  // TODO
-  // WE won't have strided tensors for now; update this after adding indexing
-  if (!isContiguous()) {
-    throw std::runtime_error(
-        "[OneDnnTensor::asContiguousTensor] Strided tensor currently unsupported");
-  }
   return this->copy();
 }
 
@@ -453,7 +557,7 @@ std::string OneDnnTensor::toString() {
   std::vector<char> vec(getSizeInBytes());
   void* data = vec.data();
   this->host(data);
-  const auto& shape = sharedData_->shape;
+  const auto& shape = this->shape();
   switch (type()) {
     case fl::dtype::f16:
       throw std::runtime_error("OneDnnTensor::toString doesn't support f16");
@@ -525,7 +629,7 @@ void OneDnnTensor::assign(const Tensor& tensor) {
     return;
   }
 
-  if (this->sharedData_->shape != other.sharedData_->shape) {
+  if (this->shape() != other.shape()) {
     throw std::runtime_error(
         "Cannot update OneDNN tensor to different shape");
   }
@@ -535,9 +639,9 @@ void OneDnnTensor::assign(const Tensor& tensor) {
   auto otherMem = other.memory();
   const auto reorderPrimitiveDesc = dnnl::reorder::primitive_desc(
       otherMem.get_engine(),
-      otherMem.get_desc(),
+      other.memoryDesc(),
       thisMem.get_engine(),
-      thisMem.get_desc());
+      this->memoryDesc());
   const auto reorderPrimitive = dnnl::reorder(reorderPrimitiveDesc);
 
   // execute primitive
@@ -550,12 +654,12 @@ bool OneDnnTensor::equals(OneDnnTensor&& other) {
   if (this->sharedData_ == other.sharedData_) {
     return true;
   }
-  if (this->sharedData_->shape != other.sharedData_->shape) {
+  if (this->shape() != other.shape()) {
     return false;
   }
-  const auto thisMemDesc = this->sharedData_->memory.get_desc();
+  const auto& thisMemDesc = this->memoryDesc();
   const auto type = thisMemDesc.data_type();
-  if (type != other.sharedData_->memory.get_desc().data_type()) {
+  if (type != other.memoryDesc().data_type()) {
     return false;
   }
   // TODO investigate ways to speed up this on non-CPU platform.
@@ -567,12 +671,16 @@ bool OneDnnTensor::equals(OneDnnTensor&& other) {
   other.host(rhsData);
   // TODO update once f64 is available (after bumping OneDNN to newer version)
   return type == dnnl::memory::data_type::f32
-      ? floatsEqual(lhsData, rhsData, this->sharedData_->shape.elements())
+      ? floatsEqual(lhsData, rhsData, this->shape().elements())
       : bytesEqual(lhsData, rhsData, getSizeInBytes());
 }
 
 dnnl::memory& OneDnnTensor::memory() {
   return sharedData_->memory;
+}
+
+const dnnl::memory::desc& OneDnnTensor::memoryDesc() const {
+  return memDesc_;
 }
 
 OneDnnTensor& toOneDnnTensor(const Tensor& tensor) {

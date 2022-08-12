@@ -102,6 +102,10 @@ dnnl::memory::dims shapeToOneDnnDims(const Shape& shape) {
   return flDimsToOneDnnDims(shape.get());
 }
 
+Shape oneDnnDimsToShape(const dnnl::memory::dims& dims) {
+  return Shape(std::vector<Dim>(dims.rbegin(), dims.rend()));
+}
+
 bool isFpType(dnnl::memory::data_type type) {
   switch (type) {
     case dnnl::memory::data_type::f32:

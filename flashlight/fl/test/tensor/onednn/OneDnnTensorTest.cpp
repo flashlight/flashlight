@@ -11,6 +11,7 @@
 
 #include <gtest/gtest.h>
 
+#include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/backend/onednn/OneDnnBackend.h"
 #include "flashlight/fl/tensor/backend/onednn/OneDnnTensor.h"
@@ -374,27 +375,28 @@ TEST(OneDnnTensorTest, logicalBinops) {
 
 TEST(OneDnnTensorTest, assign) {
   const auto type = fl::dtype::f32;
-  auto t1 = fl::full({2, 2, 2}, 40.7, type);
-  auto t2 = fl::full({2, 2, 2}, 23, type);
+  auto t1 = fl::full({2, 2}, 40.7, type);
+  auto t2 = fl::full({2, 2}, 23, type);
 
   // ensure it's not a shallow copy
   t2 = t1;
-  t1 = fl::full({2, 2, 2}, 0, type); // t2 won't be affected
-  assertOneDnnTensorEq(t1, fl::full({2, 2, 2}, 0, type));
-  assertOneDnnTensorEq(t2, fl::full({2, 2, 2}, 40.7, type));
+  t1(0) = fl::full({2}, 0, type);
+  assertOneDnnTensorEq(
+      t1, fl::Tensor::fromVector<float>({2, 2}, {0, 40.7, 0, 40.7}, type));
+  assertOneDnnTensorEq(t2, fl::full({2, 2}, 40.7, type));
 }
 
 TEST(OneDnnTensorTest, copy) {
   const auto type = fl::dtype::f32;
-  auto t1 = fl::full({2, 2, 2}, 40.7, type);
+  auto t1 = fl::full({2, 2}, 40.7, type);
   assertOneDnnTensorEq(t1, t1.copy());
 
   // ensure it's not a shallow copy
-  // TODO properly test against effects once we support indexing
   auto t2 = t1.copy();
-  t1 = fl::full({2, 2, 2}, 0, type); // t2 won't be affected
-  assertOneDnnTensorEq(t1, fl::full({2, 2, 2}, 0, type));
-  assertOneDnnTensorEq(t2, fl::full({2, 2, 2}, 40.7, type));
+  t1(0) = fl::full({2}, 0, type);
+  assertOneDnnTensorEq(
+      t1, fl::Tensor::fromVector<float>({2, 2}, {0, 40.7, 0, 40.7}, type));
+  assertOneDnnTensorEq(t2, fl::full({2, 2}, 40.7, type));
 }
 
 TEST(OneDnnTensorTest, rand) {
@@ -625,6 +627,21 @@ TEST(OneDnnTensorTest, reshape) {
   ASSERT_NO_THROW(fl::reshape(a, {1, 4, 4}));
   ASSERT_NO_THROW(fl::reshape(a, {4, 1, 4}));
   ASSERT_NO_THROW(fl::reshape(a, {1, 4, 4, 1}));
+}
+
+TEST(OneDnnTensorTest, index) {
+  auto a = fl::Tensor::fromVector<float>({2, 2}, {1, 2, 3, 4});
+  // indexing for read
+  assertOneDnnTensorEq(a(0), fl::Tensor::fromVector<float>({2}, {1, 3}));
+  assertOneDnnTensorEq(a(0) + a(1), fl::Tensor::fromVector<float>({2}, {3, 7}));
+
+  // indexing for write
+  a(0) = fl::Tensor::fromVector<float>({2}, {0, 1});
+  assertOneDnnTensorEq(a, fl::Tensor::fromVector<float>({2, 2}, {0, 2, 1, 4}));
+
+  // indexing composability
+  a(0)(1) = fl::Tensor::fromVector<float>({}, {42});
+  assertOneDnnTensorEq(a, fl::Tensor::fromVector<float>({2, 2}, {0, 2, 42, 4}));
 }
 
 int main(int argc, char** argv) {
