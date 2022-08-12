@@ -342,6 +342,23 @@ dnnl::memory::desc transposeInnerMatrix(const dnnl::memory::desc& memDesc) {
   return memDesc.permute_axes(transposeAxesPermutation);
 }
 
+std::tuple<Shape, Shape> padShorterDimsWithOnesOnTheRight(
+    const Shape& tensorShape,
+    const Shape& tileDims) {
+  std::vector<Dim> paddedTensorDims = tensorShape.get();
+  std::vector<Dim> paddedTileDims = tileDims.get();
+  const auto tensorShapeNDims = tensorShape.ndim();
+  const auto tileDimsNDims = tileDims.ndim();
+  if (tensorShapeNDims > tileDimsNDims) {
+    const auto diff = tensorShapeNDims - tileDimsNDims;
+    paddedTileDims.insert(paddedTileDims.end(), diff, 1);
+  } else {
+    const auto diff = tileDimsNDims - tensorShapeNDims;
+    paddedTensorDims.insert(paddedTensorDims.end(), diff, 1);
+  }
+  return {Shape(paddedTensorDims), Shape(paddedTileDims)};
+}
+
 } // namespace
 
 OneDnnBackend::OneDnnBackend() {
@@ -634,9 +651,45 @@ Tensor OneDnnBackend::transpose(
 }
 
 Tensor OneDnnBackend::tile(
-    const Tensor& /* tensor */,
-    const Shape& /* shape */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+    const Tensor& tensor,
+    const Shape& tileDims) {
+  const auto [paddedTensorShape, paddedTileDims] =
+    padShorterDimsWithOnesOnTheRight(tensor.shape(), tileDims);
+
+  auto& srcTensor = toOneDnnTensor(tensor);
+  auto currTiledMem = srcTensor.memory();
+  auto currTiledMemDesc =
+    srcTensor.memoryDesc().reshape(detail::shapeToOneDnnDims(paddedTensorShape));
+  std::vector<Dim> finalDims;
+  // TODO use uniform axes once we remove the 'transposed' representation
+  for (int shapeAxis = 0; shapeAxis < paddedTileDims.ndim(); shapeAxis++) {
+    const auto dimsAxis = paddedTensorShape.ndim() - 1 - shapeAxis;
+    const auto numTiles = paddedTileDims[shapeAxis];
+    finalDims.push_back(numTiles * paddedTensorShape[shapeAxis]);
+    if (numTiles > 1) {
+      // prepare memories
+      std::vector<dnnl::memory::desc> tileMemDescs(numTiles, currTiledMemDesc);
+
+      // prepare concat primitive
+      const dnnl::concat::primitive_desc concatPrimitiveDesc(
+          dimsAxis, tileMemDescs, engine_);
+      const dnnl::concat concatPrimitive(concatPrimitiveDesc);
+      const auto newTileMemDesc = concatPrimitiveDesc.dst_desc();
+      auto newTiledMem = dnnl::memory(newTileMemDesc, engine_);
+
+      // prepare arguments.
+      std::unordered_map<int, dnnl::memory> args{{DNNL_ARG_DST, newTiledMem}};
+      for (int tileIdx = 0; tileIdx < numTiles; ++tileIdx) {
+        args.insert({DNNL_ARG_MULTIPLE_SRC + tileIdx, currTiledMem});
+      }
+
+      // execute primitive
+      concatPrimitive.execute(stream_->handle(), args);
+      currTiledMemDesc = newTileMemDesc;
+      currTiledMem = newTiledMem;
+    }
+  }
+  return toTensor<OneDnnTensor>(Shape(finalDims), std::move(currTiledMem));
 }
 
 Tensor OneDnnBackend::concatenate(

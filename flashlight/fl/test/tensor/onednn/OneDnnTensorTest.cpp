@@ -644,6 +644,16 @@ TEST(OneDnnTensorTest, index) {
   assertOneDnnTensorEq(a, fl::Tensor::fromVector<float>({2, 2}, {0, 2, 42, 4}));
 }
 
+TEST(OneDnnTensorTest, tile) {
+  auto a = fl::Tensor::fromVector<float>({2, 2}, {1, 2, 3, 4});
+  assertOneDnnTensorEq(
+      fl::tile(a, {2}),
+      fl::Tensor::fromVector<float>({4, 2}, {1, 2, 1, 2, 3, 4, 3, 4}));
+  assertOneDnnTensorEq(
+      fl::tile(a(fl::span, 1), {2}),
+      fl::Tensor::fromVector<float>({4}, {3, 4, 3, 4}));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   fl::init();
