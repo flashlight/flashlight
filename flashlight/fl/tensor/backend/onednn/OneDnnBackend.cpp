@@ -542,8 +542,9 @@ Tensor OneDnnBackend::reshape(
 
   // TODO copy on write.
   // prepare memories
-  auto& mem = toOneDnnTensor(tensor).memory();
-  const auto memDesc = mem.get_desc();
+  auto& srcTensor = toOneDnnTensor(tensor);
+  auto& mem = srcTensor.memory();
+  const auto& memDesc = srcTensor.memoryDesc();
   const auto reshapedMemDesc =
       detail::oneDnnContiguousMemDescFromShape(shape, memDesc.data_type());
   auto reshapedMem = dnnl::memory(reshapedMemDesc, engine_);
@@ -609,8 +610,9 @@ Tensor OneDnnBackend::transpose(
   }
 
   // prepare memories
-  auto& srcMem = tensor.getAdapter<OneDnnTensor>().memory();
-  const auto srcMemDesc = srcMem.get_desc();
+  auto& srcTensor = toOneDnnTensor(tensor);
+  auto& srcMem = srcTensor.memory();
+  const auto& srcMemDesc = srcTensor.memoryDesc();
   const auto type = srcMemDesc.data_type();
   const auto srcMemDims = srcMemDesc.dims();
   const auto dstMemDesc =
@@ -816,8 +818,9 @@ Tensor OneDnnBackend::applyEltwiseOp(
     float alpha /* 0 */,
     float beta /* 0 */) {
   // prepare memories
-  const auto& mem = toOneDnnTensor(tensor).memory();
-  const auto memDesc = mem.get_desc();
+  auto& srcTensor = toOneDnnTensor(tensor);
+  const auto mem = srcTensor.memory();
+  const auto& memDesc = srcTensor.memoryDesc();
   const auto dstMemDesc = detail::oneDnnContiguousMemDescFromShape(
       tensor.shape(), memDesc.data_type());
   auto dstMem = dnnl::memory(dstMemDesc, engine_);
@@ -978,10 +981,12 @@ Tensor OneDnnBackend::applyBinop(
     dnnl::algorithm alg,
     std::optional<dnnl::memory::data_type> dstType /* = std::nullopt */) {
   // prepare memories
-  auto& lhsMem = toOneDnnTensor(lhs).memory();
-  auto& rhsMem = toOneDnnTensor(rhs).memory();
-  const auto lhsMemDesc = lhsMem.get_desc();
-  const auto rhsMemDesc = rhsMem.get_desc();
+  auto& lhsTensor = toOneDnnTensor(lhs);
+  auto& rhsTensor = toOneDnnTensor(rhs);
+  auto lhsMem = lhsTensor.memory();
+  auto rhsMem = rhsTensor.memory();
+  const auto& lhsMemDesc = lhsTensor.memoryDesc();
+  const auto& rhsMemDesc = rhsTensor.memoryDesc();
   const auto outputDesc = getBinaryOpOutputDesc(
       lhs.shape(), lhsMemDesc, rhs.shape(), rhsMemDesc, dstType);
   auto dstMem = dnnl::memory(outputDesc.dstMemDesc, engine_);
@@ -1025,10 +1030,12 @@ Tensor OneDnnBackend::matmul(
   std::vector<Dim> rhsDims = rhs.shape().get();
   const bool isLhsScalarOrVector = lhsDims.size() <= 1;
   const bool isRhsScalarOrVector = rhsDims.size() <= 1;
-  auto& lhsMem = toOneDnnTensor(lhs).memory();
-  auto& rhsMem = toOneDnnTensor(rhs).memory();
-  auto lhsMemDesc = lhsMem.get_desc();
-  auto rhsMemDesc = rhsMem.get_desc();
+  auto& lhsTensor = toOneDnnTensor(lhs);
+  auto& rhsTensor = toOneDnnTensor(rhs);
+  auto lhsMem = lhsTensor.memory();
+  auto rhsMem = rhsTensor.memory();
+  auto lhsMemDesc = lhsTensor.memoryDesc();
+  auto rhsMemDesc = rhsTensor.memoryDesc();
   if (isLhsScalarOrVector) { // pad to (1 x 1/K)
     lhsDims.insert(lhsDims.end(), 2 - lhsDims.size(), 1);
     std::reverse(lhsDims.begin(), lhsDims.end());
@@ -1403,8 +1410,9 @@ Tensor OneDnnBackend::applyReductionOp(
   Shape dstShape(dstDims);
 
   // prepare part of memories
-  const auto& srcMem = toOneDnnTensor(input).memory();
-  const auto srcMemDesc = srcMem.get_desc();
+  auto& srcTensor = toOneDnnTensor(input);
+  const auto srcMem = srcTensor.memory();
+  const auto& srcMemDesc = srcTensor.memoryDesc();
   // OneDNN reduction primitive doesn't allow dim reduction, so we use a memDesc
   // w/o dim reduction for primitive arg, althought the final memory's dims
   // might get reduced
@@ -1421,7 +1429,7 @@ Tensor OneDnnBackend::applyReductionOp(
   // prepare dst memories
   auto dstMemDesc = dstArgMemDesc;
   if (!keepDims) {
-    dstShape = filterAxes(dstShape, axesToReduce);
+    dstShape = Shape(detail::removeIndices(dstShape.get(), axesToReduce));
     dstMemDesc = detail::oneDnnContiguousMemDescFromShape(
         dstShape, srcMemDesc.data_type());
   }
