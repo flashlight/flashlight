@@ -13,6 +13,7 @@
 #include <sstream>
 #include <string>
 #include <utility>
+#include <array>
 
 /**
  * \defgroup logging Logging Library
