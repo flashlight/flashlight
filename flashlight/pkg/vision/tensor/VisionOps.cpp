@@ -7,6 +7,7 @@
 
 #include "flashlight/pkg/vision/tensor/VisionOps.h"
 
+#include "flashlight/fl/tensor/DefaultTensorType.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
 #include "flashlight/pkg/vision/tensor/VisionExtension.h"
 #include "flashlight/pkg/vision/tensor/VisionExtensionBackends.h"
@@ -94,7 +95,7 @@ Tensor shear(
 
 Tensor gaussianFilter(const Shape& shape) {
   // TODO{fl::Tensor} - empty tensor instantiation for default backend
-  return Tensor().backend().getExtension<VisionExtension>().gaussianFilter(
+  return defaultTensorBackend().getExtension<VisionExtension>().gaussianFilter(
       shape);
 }
 

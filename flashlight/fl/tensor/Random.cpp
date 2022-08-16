@@ -7,21 +7,22 @@
 
 #include "flashlight/fl/tensor/Random.h"
 
+#include "flashlight/fl/tensor/DefaultTensorType.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 
 void setSeed(const int seed) {
-  Tensor().backend().setSeed(seed);
+  defaultTensorBackend().setSeed(seed);
 }
 
 Tensor randn(const Shape& shape, dtype type) {
-  return Tensor().backend().randn(shape, type);
+  return defaultTensorBackend().randn(shape, type);
 }
 
 Tensor rand(const Shape& shape, dtype type) {
-  return Tensor().backend().rand(shape, type);
+  return defaultTensorBackend().rand(shape, type);
 }
 
 } // namespace fl

@@ -10,6 +10,7 @@
 #include <iostream>
 #include <string>
 
+#include "flashlight/fl/tensor/DefaultTensorType.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
 
 namespace fl {
@@ -25,7 +26,7 @@ std::once_flag flInitFlag;
  * Can only be called once per process. Subsequent calls will be noops.
  */
 void init() {
-  std::call_once(flInitFlag, []() { Tensor().backend(); });
+  std::call_once(flInitFlag, []() { defaultTensorBackend(); });
 }
 
 } // namespace fl

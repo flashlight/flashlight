@@ -65,6 +65,7 @@ target_sources(
   flashlight
   PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/Compute.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/DefaultTensorType.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Index.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Init.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Random.cpp
