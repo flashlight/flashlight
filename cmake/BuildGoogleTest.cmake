@@ -5,7 +5,7 @@ include(ExternalProject)
 set(gtest_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/googletest/src/googletest/googletest/include)
 set(gtest_URL https://github.com/google/googletest.git)
 set(gtest_BUILD ${CMAKE_CURRENT_BINARY_DIR}/googletest/)
-set(gtest_TAG 703bd9caab50b139428cea1aaff9974ebee5742e) # release 1.10.0
+set(gtest_TAG release-1.12.1)
 
 if (NOT TARGET gtest)
   # Download googletest
