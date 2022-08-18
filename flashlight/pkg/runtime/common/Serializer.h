@@ -63,8 +63,8 @@ struct Serializer {
       ar(version);
       ar(args...);
     } catch (const std::exception& ex) {
-      FL_LOG(fl::ERROR) << "Error while saving \"" << filepath
-                        << "\": " << ex.what() << "\n";
+      FL_LOG(fl::LogLevel::ERROR)
+          << "Error while saving \"" << filepath << "\": " << ex.what() << "\n";
       throw;
     }
   }
@@ -80,8 +80,8 @@ struct Serializer {
       cereal::BinaryInputArchive ar(file);
       ar(args...);
     } catch (const std::exception& ex) {
-      FL_LOG(fl::ERROR) << "Error while loading \"" << filepath
-                        << "\": " << ex.what() << "\n";
+      FL_LOG(fl::LogLevel::ERROR) << "Error while loading \"" << filepath
+                                  << "\": " << ex.what() << "\n";
       throw;
     }
   }

@@ -72,7 +72,7 @@
 namespace fl {
 
 /// \ingroup logging
-enum LogLevel {
+enum class LogLevel {
   DISABLED, // use only for when calling setMaxLoggingLevel() or
   // setting DEFAULT_MAX_FL_LOGGING_LEVEL.
   FATAL,

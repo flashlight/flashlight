@@ -12,6 +12,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <unordered_set>
+#include <vector>
 
 #include "flashlight/fl/runtime/DeviceType.h"
 #include "flashlight/fl/runtime/Stream.h"
@@ -53,8 +54,7 @@ class Device {
    * @return an immutable vector reference containing all streams managed by
    * this device.
    */
-  virtual const std::unordered_set<std::shared_ptr<Stream>>&
-    getStreams() const;
+  virtual const std::unordered_set<std::shared_ptr<Stream>>& getStreams() const;
 
   /**
    * Let this device manage given stream. Do nothing if it was already added.
@@ -137,9 +137,9 @@ class Device {
 template <typename Derived>
 class DeviceTrait : public Device {
  public:
-   DeviceType type() const override {
-     return Derived::type;
-   }
+  DeviceType type() const override {
+    return Derived::type;
+  }
 };
 
 /**

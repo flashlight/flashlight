@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <array>
 #include <stdexcept>
 #include <thread>
 #include <utility>
@@ -231,16 +232,14 @@ VerboseLogging&& operator<<(VerboseLogging&& log, bool b) {
   return std::move(log.print(b));
 }
 
-constexpr std::array<LogLevel, 5> flLogLevelValues = {fl::INFO,
-                                                      fl::WARNING,
-                                                      fl::ERROR,
-                                                      fl::FATAL,
-                                                      fl::DISABLED};
-constexpr std::array<const char* const, 5> flLogLevelNames = {"INFO",
-                                                              "WARNING",
-                                                              "ERROR",
-                                                              "FATAL",
-                                                              "DISABLED"};
+constexpr std::array<fl::LogLevel, 5> flLogLevelValues = {
+    fl::LogLevel::INFO,
+    fl::LogLevel::WARNING,
+    fl::LogLevel::ERROR,
+    fl::LogLevel::FATAL,
+    fl::LogLevel::DISABLED};
+constexpr std::array<const char* const, 5> flLogLevelNames =
+    {"INFO", "WARNING", "ERROR", "FATAL", "DISABLED"};
 
 std::string logLevelName(LogLevel level) {
   for (int i = 0; i < flLogLevelValues.size(); ++i) {
