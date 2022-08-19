@@ -26,9 +26,9 @@ bool f16Supported() {
 }
 
 std::string dateTimeWithMicroSeconds() {
-  auto highResTime = std::chrono::system_clock::now();
+  auto systemTime = std::chrono::system_clock::now();
   const time_t secondsSinceEpoc =
-      std::chrono::system_clock::to_time_t(highResTime);
+      std::chrono::system_clock::to_time_t(systemTime);
   const struct tm* timeinfo = localtime(&secondsSinceEpoc);
 
   // Formate date and time to the seconds as:
@@ -44,7 +44,7 @@ std::string dateTimeWithMicroSeconds() {
   const std::chrono::system_clock::time_point timeInSecondsResolution =
       std::chrono::system_clock::from_time_t(secondsSinceEpoc);
   const auto usec = std::chrono::duration_cast<std::chrono::microseconds>(
-      highResTime - timeInSecondsResolution);
+      systemTime - timeInSecondsResolution);
 
   // Add msec and usec.
   std::snprintf(

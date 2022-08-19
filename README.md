@@ -220,6 +220,22 @@ To install Flashlight in a custom directory, use CMake's [`CMAKE_INSTALL_PREFIX`
 
 Flashlight uses modern CMake and `IMPORTED` targets for most dependencies. If a dependency isn't found, passing `-D<package>_DIR` to your `cmake` command or exporting `<package>_DIR` as an environment variable equal to the path to `<package>Config.cmake` can help locate dependencies on your system. See [the documentation](https://cmake.org/cmake/help/v3.10/command/find_package.html) for more details. If CMake is failing to locate a package, check to see if a corresponding [issue](https://github.com/flashlight/flashlight/issues) has already been created before creating your own.
 
+#### Minimal setup on macOS
+
+On MacOS, ArrayFire can be installed with homebrew and the Flashlight core can be built as follows:
+
+```
+brew install arrayfire
+cmake .. \
+      -DFL_ARRAYFIRE_USE_OPENCL=ON \
+      -DFL_USE_ONEDNN=OFF \
+      -DFL_BUILD_TESTS=OFF \
+      -DFL_BUILD_EXAMPLES=OFF \
+      -DFL_BUILD_SCRIPTS=OFF \
+      -DFL_BUILD_DISTRIBUTED=OFF
+make -j$(nproc)
+```
+
 #### Dependencies
 
 Dependencies marked with `*` are automatically downloaded and built from source if not found on the system. Setting `FL_BUILD_STANDALONE` to `OFF` disables this behavior.
