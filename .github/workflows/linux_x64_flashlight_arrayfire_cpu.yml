@@ -1,0 +1,48 @@
+name: linux_x64_flashlight_arrayfire_cpu
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+jobs:
+  linux_x64_flashlight_arrayfire_cpu:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: "Install ArrayFire CPU backend"
+        run: |
+          sudo apt install -y gnupg2 ca-certificates
+          sudo apt-key adv --fetch-key https://repo.arrayfire.com/GPG-PUB-KEY-ARRAYFIRE-2020.PUB
+          echo "deb [arch=amd64] https://repo.arrayfire.com/debian all main" | sudo tee /etc/apt/sources.list.d/arrayfire.list
+          sudo apt update
+          sudo apt install arrayfire-cpu3-dev
+      - name: "Install CMake and Ninja"
+        run: sudo apt install cmake ninja-build
+      - name: "Checkout Flashlight source"
+        uses: actions/checkout@v3
+      - name: "Build and install Flashlight with the Arrayfire CPU Backend"
+        run: |
+          cmake . \
+            -G Ninja \
+            -DBUILD_SHARED_LIBS=ON \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=$HOME/usr \
+            -DFL_USE_ARRAYFIRE=ON \
+            -DFL_ARRAYFIRE_USE_CPU=ON \
+            -DFL_USE_ONEDNN=OFF \
+            -DFL_BUILD_DISTRIBUTED=OFF \
+            -DFL_BUILD_TESTS=OFF \
+            -DFL_BUILD_EXAMPLES=OFF
+          ninja
+          ninja install
+      - name: "Upload libflashlight artifact"
+        uses: actions/upload-artifact@v3
+        with:
+          name: libflashlight.so
+          path: libflashlight.so
+      - name: "Compress installed Flashlight artifacts"
+        run: tar -cvf flashlight.tar --directory=$HOME usr
+      - name: "Upload Flashlight install dir artifact"
+        uses: actions/upload-artifact@v3
+        with:
+          name: flashlight.tar
+          path: flashlight.tar

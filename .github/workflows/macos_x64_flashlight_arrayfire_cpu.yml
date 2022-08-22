@@ -1,0 +1,43 @@
+name: macos_x64_flashlight_arrayfire_cpu
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+jobs:
+  macos_x64_flashlight_arrayfire_cpu:
+    runs-on: macos-11
+    steps:
+      - name: "Install ArrayFire CPU backend"
+        run: brew install arrayfire
+      - name: "Install CMake and Ninja"
+        run: brew install cmake ninja
+      - name: "Checkout Flashlight source"
+        uses: actions/checkout@v3
+      - name: "Build and install Flashlight with the Arrayfire CPU Backend"
+        run: |
+          cmake . \
+            -G Ninja \
+            -DBUILD_SHARED_LIBS=ON \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=$HOME/usr \
+            -DFL_USE_ARRAYFIRE=ON \
+            -DFL_ARRAYFIRE_USE_CPU=ON \
+            -DFL_USE_ONEDNN=OFF \
+            -DFL_BUILD_DISTRIBUTED=OFF \
+            -DFL_BUILD_TESTS=OFF \
+            -DFL_BUILD_EXAMPLES=OFF
+          ninja
+          ninja install
+      - name: "Upload libflashlight artifact"
+        uses: actions/upload-artifact@v3
+        with:
+          name: libflashlight.dylib
+          path: libflashlight.dylib
+      - name: "Compress installed Flashlight artifacts"
+        run: tar -cvf flashlight.tar --directory=$HOME usr
+      - name: "Upload Flashlight install dir artifact"
+        uses: actions/upload-artifact@v3
+        with:
+          name: flashlight.tar
+          path: flashlight.tar
