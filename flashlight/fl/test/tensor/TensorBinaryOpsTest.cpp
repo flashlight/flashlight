@@ -6,6 +6,8 @@
  */
 
 #include <functional>
+#include <unordered_map>
+#include <string>
 
 #include <gtest/gtest.h>
 

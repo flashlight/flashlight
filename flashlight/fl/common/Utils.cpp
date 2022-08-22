@@ -7,6 +7,7 @@
 
 #include "flashlight/fl/common/Utils.h"
 
+#include <inttypes.h>
 #include <chrono>
 #include <cstdio>
 #include <ctime>
@@ -25,8 +26,7 @@ bool f16Supported() {
 }
 
 std::string dateTimeWithMicroSeconds() {
-  std::chrono::system_clock::time_point highResTime =
-      std::chrono::high_resolution_clock::now();
+  auto highResTime = std::chrono::system_clock::now();
   const time_t secondsSinceEpoc =
       std::chrono::system_clock::to_time_t(highResTime);
   const struct tm* timeinfo = localtime(&secondsSinceEpoc);
@@ -50,8 +50,8 @@ std::string dateTimeWithMicroSeconds() {
   std::snprintf(
       buffer + nWrittenBytes,
       bufferSize - nWrittenBytes,
-      ".%06ld",
-      usec.count());
+      ".%06" PRId64,
+      static_cast<int64_t>(usec.count()));
 
   return buffer;
 }

@@ -10,8 +10,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/common/Logging.h"
+#include "flashlight/fl/tensor/Init.h"
 
 using namespace fl;
 
@@ -66,7 +66,7 @@ TEST(Logging, vlogOnOff) {
 }
 
 // FL_LOG(l) should print to stdout when Logging::setMaxLoggingLevel(i) i>=l and
-// l is fl::INFO or WARNING.
+// l is fl::LogLevel::INFO or fl::LogLevel::WARNING.
 // FL_LOG(l) should print to stderr when Logging::setMaxLoggingLevel(i) i>=l and
 // l is ERROR.
 TEST(Logging, logOnOff) {
@@ -80,24 +80,28 @@ TEST(Logging, logOnOff) {
   std::cerr.rdbuf(stderrBuffer.rdbuf());
 
   const std::vector<LogLevel> logLevels = {
-      fl::DISABLED, fl::FATAL, fl::ERROR, fl::WARNING, fl::INFO};
+      fl::LogLevel::DISABLED,
+      fl::LogLevel::FATAL,
+      fl::LogLevel::ERROR,
+      fl::LogLevel::WARNING,
+      fl::LogLevel::INFO};
   for (LogLevel l : logLevels) {
     stdoutBuffer.clear();
     stderrBuffer.clear();
 
     Logging::setMaxLoggingLevel(l);
-    FL_LOG(fl::INFO) << "log-info";
-    FL_LOG(WARNING) << "log-warning";
-    FL_LOG(ERROR) << "log-error";
+    FL_LOG(fl::LogLevel::INFO) << "log-info";
+    FL_LOG(fl::LogLevel::WARNING) << "log-warning";
+    FL_LOG(fl::LogLevel::ERROR) << "log-error";
 
     // Prints to stderr
-    if (l >= fl::INFO) {
+    if (l >= fl::LogLevel::INFO) {
       EXPECT_THAT(stderrBuffer.str(), HasSubstr("log-info"));
     } else {
       EXPECT_THAT(stderrBuffer.str(), Not(HasSubstr("log-info")));
     }
 
-    if (l >= WARNING) {
+    if (l >= fl::LogLevel::WARNING) {
       EXPECT_THAT(stderrBuffer.str(), HasSubstr("log-warning"));
     } else {
       EXPECT_THAT(stderrBuffer.str(), Not(HasSubstr("log-warning")));
@@ -107,7 +111,7 @@ TEST(Logging, logOnOff) {
     EXPECT_THAT(stdoutBuffer.str(), Not(HasSubstr("log-info")));
     EXPECT_THAT(stdoutBuffer.str(), Not(HasSubstr("log-warning")));
 
-    if (l >= ERROR) {
+    if (l >= fl::LogLevel::ERROR) {
       EXPECT_THAT(stderrBuffer.str(), HasSubstr("log-error"));
     } else {
       EXPECT_THAT(stderrBuffer.str(), Not(HasSubstr("log-error")));
@@ -123,15 +127,15 @@ TEST(LoggingDeathTest, FatalOnOff) {
   std::streambuf* origStderrBuffer = std::cerr.rdbuf();
   std::cerr.rdbuf(stderrBuffer.rdbuf());
 
-  Logging::setMaxLoggingLevel(DISABLED);
-  FL_LOG(fl::FATAL) << "log-fatal";
+  Logging::setMaxLoggingLevel(fl::LogLevel::DISABLED);
+  FL_LOG(fl::LogLevel::FATAL) << "log-fatal";
   EXPECT_THAT(stderrBuffer.str(), Not(HasSubstr("log-fatal")));
   EXPECT_THAT(stderrBuffer.str(), Not(HasSubstr("log-fatal")));
 
   std::cerr.rdbuf(origStderrBuffer);
 
-  Logging::setMaxLoggingLevel(fl::FATAL);
-  EXPECT_DEATH({ FL_LOG(fl::FATAL) << "log-fatal"; }, "");
+  Logging::setMaxLoggingLevel(fl::LogLevel::FATAL);
+  EXPECT_DEATH({ FL_LOG(fl::LogLevel::FATAL) << "log-fatal"; }, "");
 }
 
 } // namespace
