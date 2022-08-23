@@ -96,6 +96,58 @@ Tensor fullWithTypeCpu(const Shape& shape, V value, const dtype type) {
   return toTensor<OneDnnTensor>(shape, type, data.data(), Location::Host);
 }
 
+template <typename T, typename V>
+Tensor fullWithType(const Shape& shape, V value, const dtype type) {
+  const auto engineKind = OneDnnBackend::getInstance().engine().get_kind();
+  if (engineKind == dnnl::engine::kind::cpu) {
+    return fullWithTypeCpu<T, V>(shape, value, type);
+  } else {
+  throw std::runtime_error(
+      "[OneDnnBackend::fullWithType] unimplemented for non-CPU engine");
+  }
+}
+
+template <typename T>
+Tensor iotaWithTypeCpu(const Shape& shape, const dtype type) {
+  std::vector<T> data(shape.elements());
+  std::iota(data.begin(), data.end(), 0);
+  return toTensor<OneDnnTensor>(shape, type, data.data(), Location::Host);
+}
+
+Tensor iotaSingleAxisCpu(
+    const unsigned ndims,
+    const unsigned axis,
+    const unsigned axisDim,
+    const dtype type) {
+  std::vector<Dim> dims(ndims, 1);
+  dims[axis] = axisDim;
+  const Shape shape(dims);
+  switch (type) {
+    case dtype::f16:
+      return iotaWithTypeCpu<float>(shape, dtype::f32).astype(dtype::f16);
+    case dtype::f32:
+      return iotaWithTypeCpu<float>(shape, type);
+    case dtype::f64:
+      return iotaWithTypeCpu<double>(shape, type);
+    case dtype::b8:
+      return iotaWithTypeCpu<char>(shape, type);
+    case dtype::s16:
+      return iotaWithTypeCpu<short>(shape, type);
+    case dtype::s32:
+      return iotaWithTypeCpu<int>(shape, type);
+    case dtype::s64:
+      return iotaWithTypeCpu<long long>(shape, type);
+    case dtype::u8:
+      return iotaWithTypeCpu<unsigned char>(shape, type);
+    case dtype::u16:
+      return iotaWithTypeCpu<unsigned short>(shape, type);
+    case dtype::u32:
+      return iotaWithTypeCpu<unsigned int>(shape, type);
+    case dtype::u64:
+      return iotaWithTypeCpu<unsigned long long>(shape, type);
+  }
+}
+
 struct BinaryOpOutputDesc {
   dnnl::memory::desc dstMemDesc;
   const Shape dstShape;
@@ -533,10 +585,25 @@ Tensor OneDnnBackend::identity(const Dim /* dim */, const dtype /* type */) {
 }
 
 Tensor OneDnnBackend::arange(
-    const Shape& /* shape */,
-    const Dim /* seqDim */,
-    const dtype /* type */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+    const Shape& shape,
+    const Dim seqDim,
+    const dtype type) {
+  if (seqDim < 0 || seqDim >= shape.ndim()) {
+    std::ostringstream oss;
+    oss << "[OneDnnBackend::arange] Invalid seqDim: " << seqDim
+        << ", for shape: " << shape;
+    throw std::invalid_argument(oss.str());
+  }
+  if (engine_.get_kind() == dnnl::engine::kind::cpu) {
+    std::vector<Dim> tileDims = shape.get();
+    tileDims[seqDim] = 1;
+    return tile(
+        iotaSingleAxisCpu(shape.ndim(), seqDim, shape[seqDim], type),
+        Shape(tileDims));
+  } else {
+    throw std::runtime_error(
+        "[OneDnnBackend::arange] unimplemented for non-CPU engine");
+  }
 }
 
 Tensor OneDnnBackend::iota(
