@@ -11,6 +11,7 @@
 
 #include "flashlight/fl/runtime/DeviceManager.h"
 #include "flashlight/fl/runtime/DeviceType.h"
+#include "flashlight/fl/tensor/DefaultTensorType.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
@@ -73,9 +74,7 @@ void relativeSync(
   wait.relativeSync(tensorsToUniqueStreams(waitOns));
 }
 
-void relativeSync(
-    const Stream& wait,
-    const std::vector<Tensor>& waitOns) {
+void relativeSync(const Stream& wait, const std::vector<Tensor>& waitOns) {
   // ensure computations are launched
   for (const auto& tensor : waitOns) {
     tensor.backend().eval(tensor);
@@ -83,9 +82,7 @@ void relativeSync(
   wait.relativeSync(tensorsToUniqueStreams(waitOns));
 }
 
-void relativeSync(
-  const std::vector<Tensor>& waits,
-  const Stream& waitOn) {
+void relativeSync(const std::vector<Tensor>& waits, const Stream& waitOn) {
   for (const auto& stream : tensorsToUniqueStreams(waits)) {
     stream->relativeSync(waitOn);
   }
@@ -117,19 +114,19 @@ void getMemMgrInfo(
     const char* msg,
     const int deviceId,
     std::ostream* ostream /* = &std::cout */) {
-  Tensor().backend().getMemMgrInfo(msg, deviceId, ostream);
+  defaultTensorBackend().getMemMgrInfo(msg, deviceId, ostream);
 }
 
 void setMemMgrLogStream(std::ostream* stream) {
-  Tensor().backend().setMemMgrLogStream(stream);
+  defaultTensorBackend().setMemMgrLogStream(stream);
 }
 
 void setMemMgrLoggingEnabled(const bool enabled) {
-  Tensor().backend().setMemMgrLoggingEnabled(enabled);
+  defaultTensorBackend().setMemMgrLoggingEnabled(enabled);
 }
 
 void setMemMgrFlushInterval(const size_t interval) {
-  Tensor().backend().setMemMgrFlushInterval(interval);
+  defaultTensorBackend().setMemMgrFlushInterval(interval);
 }
 
 } // namespace detail

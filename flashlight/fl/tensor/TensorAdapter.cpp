@@ -11,26 +11,9 @@
 #include <stdexcept>
 #include <utility>
 
+#include "flashlight/fl/tensor/DefaultTensorType.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
 #include "flashlight/fl/tensor/TensorBase.h"
-
-#if FL_USE_ARRAYFIRE
-  #include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
-#endif
-#if FL_USE_TENSOR_STUB
-  #include "flashlight/fl/tensor/backend/stub/StubTensor.h"
-#endif
-
-#if FL_USE_ARRAYFIRE
-/**
- * The default tensor type in Flashlight. Currently ArrayFire.
- */
-using DefaultTensorType_t = fl::ArrayFireTensor;
-#else
-  #if FL_USE_TENSOR_STUB
-using DefaultTensorType_t = fl::StubTensor;
-  #endif
-#endif
 
 /**
  * The compile time value which will be true if the default backend is

@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <utility>
 
+#include "flashlight/fl/tensor/DefaultTensorType.h"
 #include "flashlight/fl/tensor/TensorAdapter.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
 
@@ -274,8 +275,7 @@ std::ostream& Tensor::operator<<(std::ostream& ostr) const {
     impl_->FUN(val);                     \
     return *this;                        \
   }
-#define FL_ASSIGN_TENSOR_OP(OP, FUN)                 \
-  FL_ASSIGN_OP_TYPE(OP, FUN, const Tensor&);
+#define FL_ASSIGN_TENSOR_OP(OP, FUN) FL_ASSIGN_OP_TYPE(OP, FUN, const Tensor&);
 #define FL_ASSIGN_SCALAR_OP(OP, FUN)                 \
   FL_ASSIGN_OP_TYPE(OP, FUN, const double&);         \
   FL_ASSIGN_OP_TYPE(OP, FUN, const float&);          \
@@ -291,8 +291,8 @@ std::ostream& Tensor::operator<<(std::ostream& ostr) const {
   FL_ASSIGN_OP_TYPE(OP, FUN, const long long&);      \
   FL_ASSIGN_OP_TYPE(OP, FUN, const unsigned long long&);
 
-#define FL_ASSIGN_OP(OP, FUN)                        \
-  FL_ASSIGN_TENSOR_OP(OP, FUN);                      \
+#define FL_ASSIGN_OP(OP, FUN)   \
+  FL_ASSIGN_TENSOR_OP(OP, FUN); \
   FL_ASSIGN_SCALAR_OP(OP, FUN);
 
 // (operator, function name on impl)
@@ -313,8 +313,8 @@ Tensor& Tensor::operator=(Tensor&& other) & {
   return *this;
 }
 
-// Move assignment operator when `this` is a rvalue, e.g., `x(0) = std::move(y)`.
-// In such cases, we copy the data from `other` to `this`.
+// Move assignment operator when `this` is a rvalue, e.g., `x(0) =
+// std::move(y)`. In such cases, we copy the data from `other` to `this`.
 Tensor& Tensor::operator=(Tensor&& other) && {
   this->impl_->assign(other);
   return *this;
@@ -340,11 +340,11 @@ Tensor& Tensor::operator=(const Tensor& other) && {
 #define FL_CREATE_FUN_LITERAL_TYPE(TYPE)                         \
   template <>                                                    \
   Tensor fromScalar(TYPE value, const dtype type) {              \
-    return Tensor().backend().fromScalar(value, type);           \
+    return defaultTensorBackend().fromScalar(value, type);       \
   }                                                              \
   template <>                                                    \
   Tensor full(const Shape& dims, TYPE value, const dtype type) { \
-    return Tensor().backend().full(dims, value, type);           \
+    return defaultTensorBackend().full(dims, value, type);       \
   }
 FL_CREATE_FUN_LITERAL_TYPE(const double&);
 FL_CREATE_FUN_LITERAL_TYPE(const float&);
@@ -362,7 +362,7 @@ FL_CREATE_FUN_LITERAL_TYPE(const unsigned short&);
 #undef FL_CREATE_FUN_LITERAL_TYPE
 
 Tensor identity(const Dim dim, const dtype type) {
-  return Tensor().backend().identity(dim, type);
+  return defaultTensorBackend().identity(dim, type);
 }
 
 #define FL_ARANGE_FUN_DEF(TYPE)                                             \
@@ -382,11 +382,11 @@ FL_ARANGE_FUN_DEF(const long long&);
 FL_ARANGE_FUN_DEF(const unsigned long long&);
 
 Tensor arange(const Shape& shape, const Dim seqDim, const dtype type) {
-  return Tensor().backend().arange(shape, seqDim, type);
+  return defaultTensorBackend().arange(shape, seqDim, type);
 }
 
 Tensor iota(const Shape& dims, const Shape& tileDims, const dtype type) {
-  return Tensor().backend().iota(dims, tileDims, type);
+  return defaultTensorBackend().iota(dims, tileDims, type);
 }
 
 /************************ Shaping and Indexing *************************/
@@ -850,9 +850,12 @@ bool isInvalidArray(const Tensor& tensor) {
 
 std::string tensorBackendTypeToString(const TensorBackendType type) {
   switch (type) {
-    case TensorBackendType::Stub: return "Stub";
-    case TensorBackendType::ArrayFire: return "ArrayFire";
-    case TensorBackendType::OneDnn: return "OneDnn";
+    case TensorBackendType::Stub:
+      return "Stub";
+    case TensorBackendType::ArrayFire:
+      return "ArrayFire";
+    case TensorBackendType::OneDnn:
+      return "OneDnn";
   }
   throw std::runtime_error("Unreachable -- unrecognized tensor backend type");
 }

@@ -16,13 +16,14 @@
 #include <unordered_map>
 
 #include "flashlight/fl/tensor/Compute.h"
+#include "flashlight/fl/tensor/DefaultTensorType.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 
 bool f16Supported() {
-  return Tensor().backend().isDataTypeSupported(fl::dtype::f16);
+  return defaultTensorBackend().isDataTypeSupported(fl::dtype::f16);
 }
 
 std::string dateTimeWithMicroSeconds() {
