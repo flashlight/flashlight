@@ -61,9 +61,7 @@ DnnlEngine& DnnlEngine::getInstance() {
 }
 
 dnnl::memory::dims convertToDnnlDims(const std::vector<Dim>& shape) {
-  // DNNL uses ints in dims
-  std::vector<long int> intVec(shape.begin(), shape.end());
-  return dnnl::memory::dims(intVec);
+  return dnnl::memory::dims(shape.begin(), shape.end());
 }
 
 dnnl::memory::dims convertShapeToDnnlDims(const Shape& shape) {
