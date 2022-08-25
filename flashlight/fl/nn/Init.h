@@ -32,7 +32,7 @@ namespace detail {
  * distribution with parameters \f$\mathcal{U}(min, max)\f$. See [Uniform
  * Distribution](https://en.wikipedia.org/wiki/Uniform_distribution_(continuous)).
  *
- * @param dims an ArrayFire tensor shape
+ * @param shape a Tensor shape
  * @param min the lower bound parameter for the uniform distribution
  * @param max the upper bound parameter for the uniform distribution
  * @param type the datatype for which to create the tensor
@@ -43,7 +43,7 @@ namespace detail {
  * \ingroup nn_init_utils
  */
 Tensor uniform(
-    const Shape& dims,
+    const Shape& shape,
     double min = 0,
     double max = 1,
     fl::dtype type = fl::dtype::f32);
@@ -54,7 +54,7 @@ Tensor uniform(
  * distribution with parameters \f$\mathcal{N}(\mu, \sigma^2)\f$. See [Normal
  * Distribution](https://en.wikipedia.org/wiki/Normal_distribution).
  *
- * @param dims an ArrayFire tensor shape
+ * @param shape a Tensor shape
  * @param stdv the standard deviation by which to parameterize the distribution
  * @param mean the mean by which to parameterize the distribution
  * @param type the datatype for which to create the tensor
@@ -65,7 +65,7 @@ Tensor uniform(
  * \ingroup nn_init_utils
  */
 Tensor normal(
-    const Shape& dims,
+    const Shape& shape,
     double stdv = 1,
     double mean = 0,
     fl::dtype type = fl::dtype::f32);
@@ -257,7 +257,7 @@ Variable constant(
  * dimensions where all elements are a constant
  *
  * @param val the value of the constant in the tensor
- * @param dims an ArrayFire tensor shape
+ * @param shape a Tensor shape
  * @param type the datatype for which to create the tensor
  * @param calcGrad flag denoting whether gradient calculation on the resulting
  * `Variable` should be enabled
@@ -268,7 +268,7 @@ Variable constant(
  */
 Variable constant(
     double val,
-    const Shape& dims,
+    const Shape& shape,
     fl::dtype type = fl::dtype::f32,
     bool calcGrad = true);
 
@@ -314,7 +314,7 @@ Variable identity(
  * Creates a `Variable` representing an identity tensor of up to rank 4 with
  * arbitrary dimensions.
  *
- * @param dims an ArrayFire tensor shape
+ * @param shape a Tensor shape
  * @param type the datatype for which to create the tensor
  * @param calcGrad flag denoting whether gradient calculation on the resulting
  * `Variable` should be enabled
@@ -324,7 +324,7 @@ Variable identity(
  * \ingroup nn_init_utils
  */
 Variable identity(
-    const Shape& dims,
+    const Shape& shape,
     fl::dtype type = fl::dtype::f32,
     bool calcGrad = true);
 
@@ -361,7 +361,7 @@ Variable uniform(
  * distribution with parameters \f$\mathcal{U}(min, max)\f$. See [Uniform
  * Distribution](https://en.wikipedia.org/wiki/Uniform_distribution_(continuous)).
  *
- * @param dims an ArrayFire tensor shape
+ * @param shape a Tensor shape
  * @param min the lower bound parameter for the uniform distribution
  * @param max the upper bound parameter for the uniform distribution
  * @param type the datatype for which to create the tensor
@@ -374,7 +374,7 @@ Variable uniform(
  * \ingroup nn_init_utils
  */
 Variable uniform(
-    const Shape& dims,
+    const Shape& shape,
     double min = 0,
     double max = 1,
     fl::dtype type = fl::dtype::f32,
@@ -413,7 +413,7 @@ Variable normal(
  * distribution with parameters \f$\mathcal{N}(\mu, \sigma^2)\f$. See [Normal
  * Distribution](https://en.wikipedia.org/wiki/Normal_distribution).
  *
- * @param dims an ArrayFire tensor shape
+ * @param shape a Tensor shape
  * @param stdv the standard deviation by which to parameterize the distribution
  * @param mean the mean by which to parameterize the distribution
  * @param type the datatype for which to create the tensor
@@ -426,7 +426,7 @@ Variable normal(
  * \ingroup nn_init_utils
  */
 Variable normal(
-    const Shape& dims,
+    const Shape& shape,
     double stdv = 1,
     double mean = 0,
     fl::dtype type = fl::dtype::f32,
@@ -512,7 +512,7 @@ Variable glorotUniform(
  * _Understanding the difficulty of training deep feedforward neural
  * networks._
  *
- * @param const shape& the const shape& of output Variable
+ * @param shape the const shape& of output Variable
  * @param fanIn number of input units in the Variable
  * @param fanOut number of output units in the Variable
  * @param type the datatype for which to create the tensor
@@ -536,7 +536,7 @@ Variable glorotNormal(
  * elements are distributed according to the a truncated normal distribution as
  * in [here](https://en.wikipedia.org/wiki/Truncated_normal_distribution).
  *
- * @param dims an ArrayFire tensor shape
+ * @param shape an ArrayFire tensor shape
  * @param stdv the standard deviation by which to parameterize the distribution
  * @param mean the mean by which to parameterize the distribution
  * @param minCufOff the minimum value of the distribution
