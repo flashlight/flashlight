@@ -124,8 +124,6 @@ if (FL_LIBRARIES_BUILD_FOR_PYTHON)
   include(${FL_BINDING_PYTHON}/CMakeLists.txt)
 endif ()
 
-setup_install_headers(${FL_LIB_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
-
 # --------------------------- Core Options  ---------------------------
 
 option(FL_BUILD_CORE "Build flashlight core" ON)
