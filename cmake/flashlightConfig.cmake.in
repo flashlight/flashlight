@@ -38,6 +38,7 @@ if (@FL_BUILD_STANDALONE@)
   endif()
   # Core dependencies
   if (@FL_BUILD_CORE@)
+    find_dependency(Threads)
     if (@FL_USE_ARRAYFIRE@)
       find_dependency(ArrayFire 3.7.1)
     endif()
