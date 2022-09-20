@@ -26,6 +26,10 @@ namespace fl {
 Tensor::Tensor(std::unique_ptr<TensorAdapterBase> adapter)
     : impl_(std::move(adapter)) {}
 
+std::unique_ptr<TensorAdapterBase> Tensor::releaseAdapter() {
+  return std::move(impl_);
+}
+
 Tensor::~Tensor() {}
 
 Tensor::Tensor(const Tensor& tensor) : impl_(tensor.impl_->clone()) {}
@@ -866,6 +870,10 @@ std::ostream& operator<<(std::ostream& os, const TensorBackendType type) {
 }
 
 namespace detail {
+
+std::unique_ptr<TensorAdapterBase> releaseAdapter(Tensor&& t) {
+  return t.releaseAdapter();
+}
 
 bool areTensorTypesEqual(const Tensor& a, const Tensor& b) {
   return a.type() == b.type();

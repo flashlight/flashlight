@@ -21,6 +21,8 @@
 
 namespace fl {
 
+class Tensor;
+
 /**
  * \defgroup tensor_constants Tensor constants
  * @{
@@ -50,6 +52,12 @@ using MemoryLocation = Location;
 enum class StorageType { Dense = 0, CSR = 1, CSC = 2, COO = 3 };
 
 /* @} */
+
+namespace detail {
+
+std::unique_ptr<TensorAdapterBase> releaseAdapter(Tensor&& t);
+
+} // namespace detail
 
 /**
  * A Tensor on which computation can be performed.
@@ -91,6 +99,18 @@ class Tensor {
   // shallowCopy() above is used in DevicePtr given that it doesn't mutate
   // tensors in place with tensor operations, and only pulls out memory.
   friend class DevicePtr;
+
+  /**
+   * Release and transfer ownership of the tensor's underlying
+   * TensorAdapterBase.
+   *
+   * NB: After unlocking the adapter, the resulting Tensor should
+   * *probably* be destroyed, as it has no adapter and thus can't perform any
+   * operations.
+   */
+
+  std::unique_ptr<TensorAdapterBase> releaseAdapter();
+  friend std::unique_ptr<TensorAdapterBase> detail::releaseAdapter(Tensor&& t);
 
  public:
   explicit Tensor(std::unique_ptr<TensorAdapterBase> adapter);
@@ -565,8 +585,7 @@ class Tensor {
   std::ostream& operator<<(std::ostream& ostr) const;
 
   /******************** Assignment Operators ********************/
-#define ASSIGN_TENSOR_OP(OP)             \
-  Tensor& OP(const Tensor& val);
+#define ASSIGN_TENSOR_OP(OP) Tensor& OP(const Tensor& val);
 #define ASSIGN_SCALAR_OP(OP)             \
   Tensor& OP(const double& val);         \
   Tensor& OP(const float& val);          \
@@ -581,8 +600,8 @@ class Tensor {
   Tensor& OP(const unsigned long& val);  \
   Tensor& OP(const long long& val);      \
   Tensor& OP(const unsigned long long& val);
-#define ASSIGN_OP(OP)                    \
-  ASSIGN_TENSOR_OP(OP);                  \
+#define ASSIGN_OP(OP)   \
+  ASSIGN_TENSOR_OP(OP); \
   ASSIGN_SCALAR_OP(OP);
 
   ASSIGN_SCALAR_OP(operator=);
@@ -1529,6 +1548,33 @@ std::string tensorBackendTypeToString(const TensorBackendType type);
  * @return the output stream.
  */
 std::ostream& operator<<(std::ostream& os, const TensorBackendType type);
+
+/**
+ * Convert a tensor from one type to another. Requires moving the input Tensor
+ * - destroys the resulting tensor and creates another tensor of the desired
+ * tensor type.
+ *
+ * @param[in] t the tensor to convert
+ * @returns a tensor backed by the specified compile time type
+ */
+template <typename T>
+Tensor to(Tensor&& t) {
+  // Fast path -- types are the same
+  if (T::tensorBackendType == t.backendType()) {
+    return std::move(t);
+  }
+
+  if (t.isSparse()) {
+    throw std::invalid_argument(
+        "Tensor type conversion between sparse "
+        "tensors not yet supported.");
+  } else {
+    // TODO: dynamically fix the memory location based on the type of
+    // backend/where base memory is
+    return Tensor(std::make_unique<T>(
+        t.shape(), t.type(), t.device<void>(), MemoryLocation::Device));
+  }
+}
 
 /** @} */
 
