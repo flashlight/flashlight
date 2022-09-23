@@ -30,7 +30,8 @@ class DefaultTracer : public TracerBase {
   DefaultTracer(std::unique_ptr<std::ostream> stream);
   virtual ~DefaultTracer() = default;
 
-  std::string traceArgumentList(ArgumentList args);
+  std::string traceArgumentList(ArgumentList args) override;
+  void trace(TraceData data) override;
   void trace(
       const std::string& funcName,
       ArgumentList args,
@@ -41,20 +42,35 @@ class DefaultTracer : public TracerBase {
   virtual std::string toTraceString(const Shape& shape);
   virtual std::string toTraceString(const dtype& type);
   virtual std::string toTraceString(const Tensor& tensor);
+  virtual std::string toTraceString(
+      std::reference_wrapper<const Tensor> tensor);
   virtual std::string toTraceString(const range& range);
   virtual std::string toTraceString(const Dim& range);
   virtual std::string toTraceString(const Index& index);
-  virtual std::string toTraceString(const std::vector<Index>& indices);
+  std::string toTraceString(const std::vector<Index>& indices);
+  virtual std::string toTraceString(
+      std::reference_wrapper<const std::vector<Index>> indices);
   virtual std::string toTraceString(const std::vector<int>& vec);
   virtual std::string toTraceString(
       const std::vector<std::pair<int, int>>& vec);
   virtual std::string toTraceString(const std::vector<Tensor>& tensors);
+  virtual std::string toTraceString(
+      std::reference_wrapper<const std::vector<Tensor>> tensors);
   // TODO(jacobkahn): move to enum toString methods and call those directly
   virtual std::string toTraceString(const SortMode& sortMode);
   virtual std::string toTraceString(const PadType& padType);
   virtual std::string toTraceString(const MatrixProperty& matrixProperty);
   virtual std::string toTraceString(const Location& location);
   virtual std::string toTraceString(const StorageType& storageType);
+
+  // FIXME: this is completely unnecessary. Someone is decaying somewhere, I
+  // can't figure out who it is, and they are evil. Whatever.
+  template <typename T>
+  std::string toTraceString(std::reference_wrapper<const T> type) {
+    std::stringstream ss;
+    ss << toTraceString(type.get());
+    return ss.str();
+  }
 
   template <typename T>
   std::string toTraceString(const T& type) {

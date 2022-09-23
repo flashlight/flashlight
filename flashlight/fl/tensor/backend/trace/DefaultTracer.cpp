@@ -36,7 +36,6 @@ std::string DefaultTracer::toTraceString(bool b) {
 
 std::string DefaultTracer::toTraceString(const Shape& shape) {
   std::stringstream ss;
-  // ss << "{" << std::quoted("shape") << ": [";
   ss << "[";
   for (size_t i = 0; i < shape.ndim(); ++i) {
     ss << shape[i] << (i < shape.ndim() - 1 ? ", " : "");
@@ -46,6 +45,12 @@ std::string DefaultTracer::toTraceString(const Shape& shape) {
 }
 
 std::string DefaultTracer::toTraceString(const Tensor& tensor) {
+  return toTraceString(std::reference_wrapper<const Tensor>(tensor));
+}
+
+std::string DefaultTracer::toTraceString(
+    std::reference_wrapper<const Tensor> _tensor) {
+  const Tensor& tensor = _tensor;
   std::stringstream ss;
   ss << "{" << std::quoted("tensor") << ": {" << std::quoted("shape") << ": "
      << toTraceString(tensor.shape()) + ", " << std::quoted("type") << ": "
@@ -76,16 +81,24 @@ std::string DefaultTracer::toTraceString(const Dim& dim) {
 
 std::string DefaultTracer::toTraceString(const Index& index) {
   std::stringstream ss;
-  const Index::IndexVariant& _index = index.getVariant();
-  std::visit([&ss, this](auto&& idx) { ss << toTraceString(idx); }, _index);
+  const Index::IndexVariant& indexVar = index.getVariant();
+  std::visit([&ss, this](auto&& idx) { ss << toTraceString(idx); }, indexVar);
   return ss.str();
 }
 
 std::string DefaultTracer::toTraceString(const std::vector<Index>& indices) {
+  return toTraceString(
+      std::reference_wrapper<const std::vector<Index>>(indices));
+}
+
+std::string DefaultTracer::toTraceString(
+    std::reference_wrapper<const std::vector<Index>> _indices) {
+  const std::vector<Index>& indices = _indices;
   std::stringstream ss;
   ss << "[";
   for (size_t i = 0; i < indices.size(); ++i) {
-    ss << toTraceString(indices[i]) << (i < indices.size() - 1 ? ", " : "");
+    const Index& index = indices[i];
+    ss << toTraceString(index) << (i < indices.size() - 1 ? ", " : "");
   }
   ss << "]";
   return ss.str();
@@ -114,6 +127,13 @@ std::string DefaultTracer::toTraceString(
 }
 
 std::string DefaultTracer::toTraceString(const std::vector<Tensor>& tensors) {
+  return toTraceString(
+      std::reference_wrapper<const std::vector<Tensor>>(tensors));
+}
+
+std::string DefaultTracer::toTraceString(
+    std::reference_wrapper<const std::vector<Tensor>> _tensors) {
+  const std::vector<Tensor>& tensors = _tensors;
   std::stringstream ss;
   ss << "[";
   for (size_t i = 0; i < tensors.size(); ++i) {
@@ -181,6 +201,14 @@ std::string DefaultTracer::traceArgumentList(ArgumentList args) {
   }
   ss << "}";
   return ss.str();
+}
+
+void DefaultTracer::trace(TraceData data) {
+  getStream() << "{" << std::quoted(data.opName) << ": {" << std::quoted("args")
+              << ": " << data.args << ", " << std::quoted("inputs") << ": "
+              << data.inputs << ", " << std::quoted("outputs") << ": "
+              << data.outputs << "}"
+              << "}" << std::endl;
 }
 
 void DefaultTracer::trace(

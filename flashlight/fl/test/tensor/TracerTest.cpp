@@ -56,7 +56,8 @@ TEST(TracerTest, DefaultTracerTypes) {
   ASSERT_EQ(tracer.toTraceString(l), _l);
 
   ss << "[" << _i << ", " << _j << ", " << _k << ", " << _l << "]";
-  ASSERT_EQ(tracer.toTraceString({i, j, k, l}), ss.str());
+  std::vector<Index> _indices = {i, j, k, l};
+  ASSERT_EQ(tracer.toTraceString(_indices), ss.str());
 
   ASSERT_EQ(tracer.toTraceString(std::vector<int>({3, 4, 5})), "[3, 4, 5]");
 
@@ -106,11 +107,12 @@ TEST(TracerTest, ArgStructure) {
           TracerBase::ArgumentList{}),
       R"({"testFunc": {"args": {}, "inputs": {}, "outputs": {}}})"
       "\n");
+  auto t = fl::rand({3, 3});
   ASSERT_EQ(
       traceToString(
           tracer,
           "testFunc",
-          TracerBase::ArgumentList{{"arg1", fl::rand({3, 3})}, {"arg2", 2}},
+          TracerBase::ArgumentList{{"arg1", t}, {"arg2", 2}},
           TracerBase::ArgumentList{},
           TracerBase::ArgumentList{{"arg3", Shape({1, 2, 3})}}),
       R"({"testFunc": {"args": {"arg1": {"tensor": {"shape": [3, 3], )"

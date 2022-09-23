@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <ostream>
@@ -15,6 +16,7 @@
 #include <vector>
 
 #include "flashlight/fl/tensor/Index.h"
+#include "flashlight/fl/tensor/TensorAdapter.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
@@ -55,12 +57,12 @@ class TracerBase {
 
   // A possible argument type to trace.
   using ArgumentTypes = std::variant<
-      Tensor,
-      Index,
-      std::vector<Index>, // indices
+      std::reference_wrapper<const Tensor>,
+      std::reference_wrapper<const Index>,
+      std::reference_wrapper<const std::vector<Index>>, // indices
       std::vector<int>, // axes
       std::vector<std::pair<int, int>>, // padWidths
-      std::vector<Tensor>,
+      std::reference_wrapper<const std::vector<Tensor>>,
       double,
       int,
       bool,
@@ -75,11 +77,55 @@ class TracerBase {
       PadType,
       MatrixProperty, // matmul
       Location, // i.e. memory
-      StorageType // sparse
+      StorageType, // sparse
+      std::string // labels
       >;
   using ArgumentList = std::map<
       std::string, // argument name
       ArgumentTypes>;
+
+  class TraceDataFactory;
+
+  struct TraceData {
+    std::string opName;
+    std::string args{"{}"};
+    std::string inputs{"{}"};
+    std::string outputs{"{}"};
+
+    static std::unique_ptr<TraceDataFactory> build(
+        TracerBase& tracer,
+        std::string opName) {
+      return std::make_unique<TraceDataFactory>(tracer, opName);
+    }
+  };
+
+  class TraceDataFactory {
+    TracerBase& tracer_;
+    TraceData data_;
+
+   public:
+    TraceDataFactory(TracerBase& tracer, std::string opName)
+        : tracer_(tracer), data_({opName}) {}
+
+    TraceDataFactory* setArgs(ArgumentList args) {
+      data_.args = tracer_.traceArgumentList(args);
+      return this;
+    }
+
+    TraceDataFactory* setInputs(ArgumentList inputs) {
+      data_.inputs = tracer_.traceArgumentList(inputs);
+      return this;
+    }
+
+    TraceDataFactory* setOutputs(ArgumentList outputs) {
+      data_.outputs = tracer_.traceArgumentList(outputs);
+      return this;
+    }
+
+    TraceData build() {
+      return std::move(data_);
+    }
+  };
 
   void enableTracer(bool val);
 
@@ -105,6 +151,15 @@ class TracerBase {
    * @param[in] stream a pointer to the new ostream to use.
    */
   void setStream(std::unique_ptr<std::ostream> stream);
+
+  /**
+   * Convert an ArgumentList into its string representation.
+   */
+  virtual std::string traceArgumentList(ArgumentList args) {
+    return "";
+  }
+
+  virtual void trace(TraceData data) {}
 
   /**
    * Trace operations with a given name.
