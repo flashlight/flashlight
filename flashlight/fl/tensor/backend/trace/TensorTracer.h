@@ -23,7 +23,10 @@ class TensorTracer : public DefaultTracer {
   explicit TensorTracer(std::unique_ptr<std::ostream> stream);
 
   // List richer tensor metadata in the generated trace
-  std::string toTraceString(const Tensor& tensor) override;
+  std::string toTraceString(
+      const Tensor& tensor) override;
+  std::string toTraceString(
+      std::reference_wrapper<const Tensor> tensor) override;
 };
 
 } // namespace fl

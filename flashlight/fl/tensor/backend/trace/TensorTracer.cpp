@@ -21,6 +21,12 @@ TensorTracer::TensorTracer(std::unique_ptr<std::ostream> stream)
     : DefaultTracer(std::move(stream)) {}
 
 std::string TensorTracer::toTraceString(const Tensor& tensor) {
+  return toTraceString(std::reference_wrapper<const Tensor>(tensor));
+}
+
+std::string TensorTracer::toTraceString(
+    std::reference_wrapper<const Tensor> _tensor) {
+  const Tensor& tensor = _tensor;
   std::stringstream ss;
   ss << "{" << std::quoted("tensor") << ": {" << std::quoted("shape") << ": "
      << DefaultTracer::toTraceString(tensor.shape()) << ", "
