@@ -7,9 +7,23 @@
 
 #include "flashlight/fl/tensor/backend/trace/TracerBackendBase.h"
 
+#include <iostream>
+
 #include "flashlight/fl/tensor/TensorBase.h"
+#include "flashlight/fl/tensor/backend/trace/TracerTensorBase.h"
 
 namespace fl {
+namespace {
+
+Tensor& getTracedTensor(const Tensor& t) {
+  if (t.backendType() != TensorBackendType::Tracer) {
+    throw std::invalid_argument(
+        "getTracedTensor: Tensor is not TracerTensor backed");
+  }
+  return t.getAdapter<TracerTensorBase>().tensor();
+}
+
+} // namespace
 
 TensorBackendType TracerBackendBase::backendType() const {
   return TensorBackendType::Tracer;
@@ -18,8 +32,9 @@ TensorBackendType TracerBackendBase::backendType() const {
 /* -------------------------- Compute Functions -------------------------- */
 
 void TracerBackendBase::eval(const Tensor& tensor) {
-  trace(__func__, {{"tensor", tensor}});
-  backend().eval(tensor);
+  Tensor& traced = getTracedTensor(tensor);
+  trace(__func__, {{"tensor", traced}});
+  backend().eval(traced);
 }
 
 bool TracerBackendBase::supportsDataType(const fl::dtype& dtype) const {
@@ -55,13 +70,13 @@ void TracerBackendBase::setSeed(const int seed) {
 Tensor TracerBackendBase::randn(const Shape& shape, dtype type) {
   Tensor result = backend().randn(shape, type);
   trace("randn", {}, {}, {{"result", result}});
-  return result;
+  return toTracedTensor(std::move(result));
 }
 
 Tensor TracerBackendBase::rand(const Shape& shape, dtype type) {
   Tensor result = backend().rand(shape, type);
   trace("rand", {}, {}, {{"result", result}});
-  return result;
+  return toTracedTensor(std::move(result));
 }
 
 /* --------------------------- Tensor Operators --------------------------- */
@@ -75,7 +90,7 @@ Tensor TracerBackendBase::rand(const Shape& shape, dtype type) {
         {{"value", value}, {"type", type}},                            \
         {},                                                            \
         {{"result", result}});                                         \
-    return result;                                                     \
+    return toTracedTensor(std::move(result));                          \
   }                                                                    \
   Tensor TracerBackendBase::full(                                      \
       const Shape& dims, TYPE value, const dtype type) {               \
@@ -85,7 +100,7 @@ Tensor TracerBackendBase::rand(const Shape& shape, dtype type) {
         {{"dims", dims}, {"value", value}, {"type", type}},            \
         {},                                                            \
         {{"result", result}});                                         \
-    return result;                                                     \
+    return toTracedTensor(std::move(result));                          \
   }
 FL_STUB_BACKEND_CREATE_FUN_LITERAL_DEF(const double&);
 FL_STUB_BACKEND_CREATE_FUN_LITERAL_DEF(const float&);
@@ -104,7 +119,7 @@ FL_STUB_BACKEND_CREATE_FUN_LITERAL_DEF(const unsigned short&);
 Tensor TracerBackendBase::identity(const Dim dim, const dtype type) {
   Tensor result = backend().identity(dim, type);
   trace("identity", {{"dim", dim}, {"type", type}}, {}, {{"result", result}});
-  return result;
+  return toTracedTensor(std::move(result));
 }
 
 Tensor TracerBackendBase::arange(
@@ -117,7 +132,7 @@ Tensor TracerBackendBase::arange(
       {{"shape", shape}, {"seqDim", seqDim}, {"type", type}},
       {},
       {{"result", result}});
-  return result;
+  return toTracedTensor(std::move(result));
 }
 
 Tensor TracerBackendBase::iota(
@@ -130,315 +145,433 @@ Tensor TracerBackendBase::iota(
       {{"dims", dims}, {"tileDims", tileDims}, {"type", type}},
       {},
       {{"result", result}});
-  return result;
+  return toTracedTensor(std::move(result));
 }
 
 /************************ Shaping and Indexing *************************/
-Tensor TracerBackendBase::reshape(const Tensor& tensor, const Shape& shape) {
-  Tensor result = tensor.backend().reshape(tensor, shape);
-  trace(
-      "reshape",
-      {{"shape", shape}},
-      {{"tensor", tensor}},
-      {{"result", result}});
-  return result;
+Tensor TracerBackendBase::reshape(const Tensor& _tensor, const Shape& shape) {
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"shape", shape}})->setInputs({{"tensor", tensor}});
+  Tensor result = backend().reshape(tensor, shape);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
 Tensor TracerBackendBase::transpose(
-    const Tensor& tensor,
+    const Tensor& _tensor,
     const Shape& axes /* = {} */) {
-  Tensor result = tensor.backend().transpose(tensor, axes);
-  trace(
-      "transpose",
-      {{"axes", axes}},
-      {{"tensor", tensor}},
-      {{"result", result}});
-  return result;
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"axes", axes}})->setInputs({{"tensor", tensor}});
+  Tensor result = backend().transpose(tensor, axes);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::tile(const Tensor& tensor, const Shape& shape) {
-  Tensor result = tensor.backend().tile(tensor, shape);
-  trace("tile", {{"shape", shape}}, {{"tensor", tensor}}, {{"result", result}});
-  return result;
+Tensor TracerBackendBase::tile(const Tensor& _tensor, const Shape& shape) {
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"shape", shape}})->setInputs({{"tensor", tensor}});
+  Tensor result = backend().tile(tensor, shape);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
 Tensor TracerBackendBase::concatenate(
     const std::vector<Tensor>& tensors,
     const unsigned axis) {
-  Tensor result = tensors.front().backend().concatenate(tensors, axis);
-  trace(
-      "concatenate",
-      {{"axis", axis}},
-      {{"tensors", tensors}},
-      {{"result", result}});
-  return result;
+  std::vector<Tensor> tracedTensors;
+  for (const auto& tensor : tensors) {
+    tracedTensors.push_back(getTracedTensor(tensor));
+  }
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"axis", axis}})->setInputs({{"tensors", tracedTensors}});
+  Tensor result = backend().concatenate(tracedTensors, axis);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::nonzero(const Tensor& tensor) {
-  Tensor result = tensor.backend().nonzero(tensor);
-  trace("nonzero", {}, {{"tensor", tensor}}, {{"result", result}});
-  return result;
+Tensor TracerBackendBase::nonzero(const Tensor& _tensor) {
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"tensor", tensor}});
+  Tensor result = backend().nonzero(tensor);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
 Tensor TracerBackendBase::pad(
-    const Tensor& input,
+    const Tensor& _input,
     const std::vector<std::pair<int, int>>& padWidths,
     const PadType type) {
-  Tensor result = input.backend().pad(input, padWidths, type);
-  trace(
-      "pad",
-      {{"padWidths", padWidths}, {"type", type}},
-      {{"input", input}},
-      {{"result", result}});
-  return result;
+  Tensor& input = getTracedTensor(_input);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"padWidths", padWidths}, {"type", type}})
+      ->setInputs({{"input", input}});
+  Tensor result = backend().pad(input, padWidths, type);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
 /************************** Unary Operators ***************************/
 
-Tensor TracerBackendBase::exp(const Tensor& tensor) {
-  Tensor result = tensor.backend().exp(tensor);
-  trace("exp", {}, {{"tensor", tensor}}, {{"result", result}});
-  return result;
+Tensor TracerBackendBase::exp(const Tensor& _tensor) {
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"tensor", tensor}});
+  Tensor result = backend().exp(tensor);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::log(const Tensor& tensor) {
-  Tensor result = tensor.backend().log(tensor);
-  trace("log", {}, {{"tensor", tensor}}, {{"result", result}});
-  return result;
+Tensor TracerBackendBase::log(const Tensor& _tensor) {
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"tensor", tensor}});
+  Tensor result = backend().log(tensor);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::negative(const Tensor& tensor) {
-  Tensor result = tensor.backend().negative(tensor);
-  trace("negative", {}, {{"tensor", tensor}}, {{"result", result}});
-  return result;
+Tensor TracerBackendBase::negative(const Tensor& _tensor) {
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"tensor", tensor}});
+  Tensor result = backend().negative(tensor);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::logicalNot(const Tensor& tensor) {
-  Tensor result = tensor.backend().logicalNot(tensor);
-  trace("logicalNot", {}, {{"tensor", tensor}}, {{"result", result}});
-  return result;
+Tensor TracerBackendBase::logicalNot(const Tensor& _tensor) {
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"tensor", tensor}});
+  Tensor result = backend().logicalNot(tensor);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::log1p(const Tensor& tensor) {
-  Tensor result = tensor.backend().log1p(tensor);
-  trace("log1p", {}, {{"tensor", tensor}}, {{"result", result}});
-  return result;
+Tensor TracerBackendBase::log1p(const Tensor& _tensor) {
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"tensor", tensor}});
+  Tensor result = backend().log1p(tensor);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::sin(const Tensor& tensor) {
-  Tensor result = tensor.backend().sin(tensor);
-  trace("sin", {}, {{"tensor", tensor}}, {{"result", result}});
-  return result;
+Tensor TracerBackendBase::sin(const Tensor& _tensor) {
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"tensor", tensor}});
+  Tensor result = backend().sin(tensor);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::cos(const Tensor& tensor) {
-  Tensor result = tensor.backend().cos(tensor);
-  trace("cos", {}, {{"tensor", tensor}}, {{"result", result}});
-  return result;
+Tensor TracerBackendBase::cos(const Tensor& _tensor) {
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"tensor", tensor}});
+  Tensor result = backend().cos(tensor);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::sqrt(const Tensor& tensor) {
-  Tensor result = tensor.backend().sqrt(tensor);
-  trace("sqrt", {}, {{"tensor", tensor}}, {{"result", result}});
-  return result;
+Tensor TracerBackendBase::sqrt(const Tensor& _tensor) {
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"tensor", tensor}});
+  Tensor result = backend().sqrt(tensor);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::tanh(const Tensor& tensor) {
-  Tensor result = tensor.backend().tanh(tensor);
-  trace("tanh", {}, {{"tensor", tensor}}, {{"result", result}});
-  return result;
+Tensor TracerBackendBase::tanh(const Tensor& _tensor) {
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"tensor", tensor}});
+  Tensor result = backend().tanh(tensor);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::floor(const Tensor& tensor) {
-  Tensor result = tensor.backend().floor(tensor);
-  trace("floor", {}, {{"tensor", tensor}}, {{"result", result}});
-  return result;
+Tensor TracerBackendBase::floor(const Tensor& _tensor) {
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"tensor", tensor}});
+  Tensor result = backend().floor(tensor);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::ceil(const Tensor& tensor) {
-  Tensor result = tensor.backend().ceil(tensor);
-  trace("ceil", {}, {{"tensor", tensor}}, {{"result", result}});
-  return result;
+Tensor TracerBackendBase::ceil(const Tensor& _tensor) {
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"tensor", tensor}});
+  Tensor result = backend().ceil(tensor);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::rint(const Tensor& tensor) {
-  Tensor result = tensor.backend().rint(tensor);
-  trace("rint", {}, {{"tensor", tensor}}, {{"result", result}});
-  return result;
+Tensor TracerBackendBase::rint(const Tensor& _tensor) {
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"tensor", tensor}});
+  Tensor result = backend().rint(tensor);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::absolute(const Tensor& tensor) {
-  Tensor result = tensor.backend().absolute(tensor);
-  trace("absolute", {}, {{"tensor", tensor}}, {{"result", result}});
-  return result;
+Tensor TracerBackendBase::absolute(const Tensor& _tensor) {
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"tensor", tensor}});
+  Tensor result = backend().absolute(tensor);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::sigmoid(const Tensor& tensor) {
-  Tensor result = tensor.backend().sigmoid(tensor);
-  trace("sigmoid", {}, {{"tensor", tensor}}, {{"result", result}});
-  return result;
+Tensor TracerBackendBase::sigmoid(const Tensor& _tensor) {
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"tensor", tensor}});
+  Tensor result = backend().sigmoid(tensor);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::erf(const Tensor& tensor) {
-  Tensor result = tensor.backend().erf(tensor);
-  trace("erf", {}, {{"tensor", tensor}}, {{"result", result}});
-  return result;
+Tensor TracerBackendBase::erf(const Tensor& _tensor) {
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"tensor", tensor}});
+  Tensor result = backend().erf(tensor);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::flip(const Tensor& tensor, const unsigned dim) {
-  Tensor result = tensor.backend().flip(tensor, dim);
-  trace("flip", {}, {{"tensor", tensor}}, {{"result", result}});
-  return result;
+Tensor TracerBackendBase::flip(const Tensor& _tensor, const unsigned dim) {
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"tensor", tensor}});
+  Tensor result = backend().flip(tensor, dim);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
 Tensor TracerBackendBase::clip(
-    const Tensor& tensor,
+    const Tensor& _tensor,
     const Tensor& low,
     const Tensor& high) {
-  Tensor result = tensor.backend().clip(tensor, low, high);
-  trace(
-      "clip",
-      {{"low", low}, {"high", high}},
-      {{"tensor", tensor}},
-      {{"result", result}});
-  return result;
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"low", low}, {"high", high}})
+      ->setInputs({{"tensor", tensor}});
+  Tensor result = backend().clip(tensor, low, high);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
 Tensor TracerBackendBase::clip(
-    const Tensor& tensor,
+    const Tensor& _tensor,
     const double& low,
     const double& high) {
-  Tensor result = tensor.backend().clip(tensor, low, high);
-  trace(
-      "clip",
-      {{"low", low}, {"high", high}},
-      {{"tensor", tensor}},
-      {{"result", result}});
-  return result;
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"low", low}, {"high", high}})
+      ->setInputs({{"tensor", tensor}});
+  Tensor result = backend().clip(tensor, low, high);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
 Tensor TracerBackendBase::roll(
-    const Tensor& tensor,
+    const Tensor& _tensor,
     const int shift,
     const unsigned axis) {
-  Tensor result = tensor.backend().roll(tensor, shift, axis);
-  trace(
-      "roll",
-      {{"shift", shift}, {"axis", axis}},
-      {{"tensor", tensor}},
-      {{"result", result}});
-  return result;
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"shift", shift}, {"axis", axis}})
+      ->setInputs({{"tensor", tensor}});
+  Tensor result = backend().roll(tensor, shift, axis);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::isnan(const Tensor& tensor) {
-  Tensor result = tensor.backend().isnan(tensor);
-  trace("isnan", {}, {{"tensor", tensor}}, {{"result", result}});
-  return result;
+Tensor TracerBackendBase::isnan(const Tensor& _tensor) {
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"tensor", tensor}});
+  Tensor result = backend().isnan(tensor);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::isinf(const Tensor& tensor) {
-  Tensor result = tensor.backend().isinf(tensor);
-  trace("isinf", {}, {{"tensor", tensor}}, {{"result", result}});
-  return result;
+Tensor TracerBackendBase::isinf(const Tensor& _tensor) {
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"tensor", tensor}});
+  Tensor result = backend().isinf(tensor);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::sign(const Tensor& tensor) {
-  Tensor result = tensor.backend().sign(tensor);
-  trace("sign", {}, {{"tensor", tensor}}, {{"result", result}});
-  return result;
+Tensor TracerBackendBase::sign(const Tensor& _tensor) {
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"tensor", tensor}});
+  Tensor result = backend().sign(getTracedTensor(tensor));
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::tril(const Tensor& tensor) {
-  Tensor result = tensor.backend().tril(tensor);
-  trace("tril", {}, {{"tensor", tensor}}, {{"result", result}});
-  return result;
+Tensor TracerBackendBase::tril(const Tensor& _tensor) {
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"tensor", tensor}});
+  Tensor result = backend().tril(tensor);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::triu(const Tensor& tensor) {
-  Tensor result = tensor.backend().triu(tensor);
-  trace("triu", {}, {{"tensor", tensor}}, {{"result", result}});
-  return result;
+Tensor TracerBackendBase::triu(const Tensor& _tensor) {
+  Tensor& tensor = getTracedTensor(_tensor);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"tensor", tensor}});
+  Tensor result = backend().triu(tensor);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
 Tensor TracerBackendBase::where(
-    const Tensor& condition,
+    const Tensor& _condition,
     const Tensor& x,
     const Tensor& y) {
-  Tensor result = condition.backend().where(condition, x, y);
-  trace(
-      "where",
-      {},
-      {{"condition", condition}, {"x", x}, {"y", y}},
-      {{"result", result}});
-  return result;
+  Tensor& condition = getTracedTensor(_condition);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"condition", condition}, {"x", x}, {"y", y}});
+  Tensor result = backend().where(condition, x, y);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
 void TracerBackendBase::topk(
-    Tensor& values,
-    Tensor& indices,
-    const Tensor& input,
+    Tensor& _values,
+    Tensor& _indices,
+    const Tensor& _input,
     const unsigned k,
     const Dim axis,
     const SortMode sortMode /* = SortMode::Descending */) {
-  trace(
-      "topk",
-      {{"input", input}, {"k", k}, {"axis", axis}, {"sortMode", sortMode}},
-      {{"values", values}, {"indices", indices}},
-      {});
-  input.backend().topk(values, indices, input, k, axis, sortMode);
+  Tensor& values = getTracedTensor(_values);
+  Tensor& indices = getTracedTensor(_indices);
+  Tensor& input = getTracedTensor(_input);
+
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs(
+      {{"input", input}, {"k", k}, {"axis", axis}, {"sortMode", sortMode}});
+  builder->setInputs({{"input", input}});
+  backend().topk(values, indices, input, k, axis, sortMode);
+  builder->setOutputs({{"values", values}, {"indices", indices}});
+  trace(builder->build());
 }
 
 Tensor TracerBackendBase::sort(
-    const Tensor& input,
+    const Tensor& _input,
     const Dim axis,
     const SortMode sortMode) {
-  Tensor result = input.backend().sort(input, axis, sortMode);
-  trace(
-      "sort",
-      {{"axis", axis}, {"sortMode", sortMode}},
-      {{"input", input}},
-      {{"result", result}});
-  return result;
+  Tensor& input = getTracedTensor(_input);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"axis", axis}, {"sortMode", sortMode}})
+      ->setInputs({{"input", input}});
+  Tensor result = backend().sort(input, axis, sortMode);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
 void TracerBackendBase::sort(
-    Tensor& values,
-    Tensor& indices,
-    const Tensor& input,
+    Tensor& _values,
+    Tensor& _indices,
+    const Tensor& _input,
     const Dim axis,
     const SortMode sortMode /* = SortMode::Descending */) {
-  trace(
-      "sort",
-      {{"input", input}, {"axis", axis}, {"sortMode", sortMode}},
-      {{"values", values}, {"indices", indices}},
-      {});
-  values.backend().sort(values, indices, input, axis, sortMode);
+  Tensor& values = getTracedTensor(_values);
+  Tensor& indices = getTracedTensor(_indices);
+  Tensor& input = getTracedTensor(_input);
+
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"axis", axis}, {"sortMode", sortMode}})
+      ->setInputs({{"input", input}});
+  backend().sort(values, indices, input, axis, sortMode);
+  builder->setOutputs({{"values", values}, {"indices", indices}});
+  trace(builder->build());
 }
 
 Tensor TracerBackendBase::argsort(
-    const Tensor& input,
+    const Tensor& _input,
     const Dim axis,
     const SortMode sortMode) {
-  Tensor result = input.backend().argsort(input, axis, sortMode);
-  trace(
-      "argsort",
-      {{"axis", axis}, {"sortMode", sortMode}},
-      {{"input", input}},
-      {{"result", result}});
-  return result;
+  Tensor& input = getTracedTensor(_input);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"axis", axis}, {"sortMode", sortMode}})
+      ->setInputs({{"input", input}});
+  Tensor result = backend().argsort(input, axis, sortMode);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
 /************************** Binary Operators ***************************/
-#define FL_TRACER_BINARY_OP_TYPE_DEF(FUNC, OP, TYPE)                      \
-  Tensor TracerBackendBase::FUNC(const Tensor& lhs, TYPE rhs) {           \
-    Tensor result = lhs OP rhs;                                           \
-    trace(#FUNC, {}, {{"lhs", lhs}, {"rhs", rhs}}, {{"result", result}}); \
-    return result;                                                        \
-  }                                                                       \
-  Tensor TracerBackendBase::FUNC(TYPE lhs, const Tensor& rhs) {           \
-    Tensor result = lhs OP rhs;                                           \
-    trace(#FUNC, {}, {{"lhs", lhs}, {"rhs", rhs}}, {{"result", result}}); \
-    return result;                                                        \
+#define FL_TRACER_BINARY_OP_TYPE_DEF(FUNC, OP, TYPE)               \
+  Tensor TracerBackendBase::FUNC(const Tensor& _lhs, TYPE rhs) {   \
+    auto builder = TracerBase::TraceData::build(*tracer(), #FUNC); \
+    Tensor& lhs = getTracedTensor(_lhs);                           \
+    builder->setInputs({{"lhs", lhs}, {"rhs", rhs}});              \
+    Tensor result = lhs OP rhs;                                    \
+    builder->setOutputs({{"result", result}});                     \
+    trace(builder->build());                                       \
+    return toTracedTensor(std::move(result));                      \
+  }                                                                \
+  Tensor TracerBackendBase::FUNC(TYPE lhs, const Tensor& _rhs) {   \
+    auto builder = TracerBase::TraceData::build(*tracer(), #FUNC); \
+    Tensor& rhs = getTracedTensor(_rhs);                           \
+    builder->setInputs({{"lhs", lhs}, {"rhs", rhs}});              \
+    Tensor result = lhs OP rhs;                                    \
+    builder->setOutputs({{"result", result}});                     \
+    trace(builder->build());                                       \
+    return toTracedTensor(std::move(result));                      \
   }
 
 #define FL_TRACER_BINARY_OP_LITERALS_DEF(FUNC, OP)                   \
@@ -458,12 +591,17 @@ Tensor TracerBackendBase::argsort(
 
 // Operations on fl::Tensor call the respective operator overloads that are
 // already defined on af::arrays
-#define FL_TRACER_BINARY_OP_DEF(OP, FUNC)                                 \
-  Tensor TracerBackendBase::FUNC(const Tensor& lhs, const Tensor& rhs) {  \
-    Tensor result = lhs OP rhs;                                           \
-    trace(#FUNC, {}, {{"lhs", lhs}, {"rhs", rhs}}, {{"result", result}}); \
-    return result;                                                        \
-  }                                                                       \
+#define FL_TRACER_BINARY_OP_DEF(OP, FUNC)                                  \
+  Tensor TracerBackendBase::FUNC(const Tensor& _lhs, const Tensor& _rhs) { \
+    Tensor& lhs = getTracedTensor(_lhs);                                   \
+    Tensor& rhs = getTracedTensor(_rhs);                                   \
+    auto builder = TracerBase::TraceData::build(*tracer(), #FUNC);         \
+    builder->setInputs({{"lhs", lhs}, {"rhs", rhs}});                      \
+    Tensor result = lhs OP rhs;                                            \
+    builder->setOutputs({{"result", result}});                             \
+    trace(builder->build());                                               \
+    return toTracedTensor(std::move(result));                              \
+  }                                                                        \
   FL_TRACER_BINARY_OP_LITERALS_DEF(FUNC, OP);
 
 // Definitions
@@ -492,247 +630,291 @@ FL_TRACER_BINARY_OP_DEF(>>, rShift);
 #undef FL_TRACER_BINARY_OP_TYPE_DEF
 #undef FL_TRACER_BINARY_OP_LITERALS_DEF
 
-Tensor TracerBackendBase::minimum(const Tensor& lhs, const Tensor& rhs) {
-  Tensor result = lhs.backend().minimum(lhs, rhs);
-  trace("minumum", {}, {{"lhs", lhs}, {"rhs", rhs}}, {{"result", result}});
-  return result;
+Tensor TracerBackendBase::minimum(const Tensor& _lhs, const Tensor& _rhs) {
+  Tensor& lhs = getTracedTensor(_lhs);
+  Tensor& rhs = getTracedTensor(_rhs);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"lhs", lhs}, {"rhs", rhs}});
+  Tensor result = backend().minimum(lhs, rhs);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::maximum(const Tensor& lhs, const Tensor& rhs) {
+Tensor TracerBackendBase::maximum(const Tensor& _lhs, const Tensor& _rhs) {
+  Tensor& lhs = getTracedTensor(_lhs);
+  Tensor& rhs = getTracedTensor(_rhs);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"lhs", lhs}, {"rhs", rhs}});
   Tensor result = lhs.backend().maximum(lhs, rhs);
-  trace("maximum", {}, {{"lhs", lhs}, {"rhs", rhs}}, {{"result", result}});
-  return result;
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::power(const Tensor& lhs, const Tensor& rhs) {
+Tensor TracerBackendBase::power(const Tensor& _lhs, const Tensor& _rhs) {
+  Tensor& lhs = getTracedTensor(_lhs);
+  Tensor& rhs = getTracedTensor(_rhs);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setInputs({{"lhs", lhs}, {"rhs", rhs}});
   Tensor result = lhs.backend().power(lhs, rhs);
-  trace("power", {}, {{"lhs", lhs}, {"rhs", rhs}}, {{"result", result}});
-  return result;
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
 /************************** BLAS ***************************/
 
 Tensor TracerBackendBase::matmul(
-    const Tensor& lhs,
-    const Tensor& rhs,
+    const Tensor& _lhs,
+    const Tensor& _rhs,
     MatrixProperty lhsProp,
     MatrixProperty rhsProp) {
-  Tensor result = lhs.backend().matmul(lhs, rhs, lhsProp, rhsProp);
-  trace(
-      "matmul",
-      {{"lhsProp", lhsProp}, {"rhsProp", rhsProp}},
-      {{"lhs", lhs}, {"rhs", rhs}},
-      {{"result", result}});
-  return result;
+  Tensor lhs = getTracedTensor(_lhs);
+  Tensor rhs = getTracedTensor(_rhs);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"lhsProp", lhsProp}, {"rhsProp", rhsProp}})
+      ->setInputs({{"lhs", lhs}, {"rhs", rhs}});
+  Tensor result = backend().matmul(lhs, rhs, lhsProp, rhsProp);
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 /************************** Reductions ***************************/
 
 Tensor TracerBackendBase::amin(
-    const Tensor& input,
+    const Tensor& _input,
     const std::vector<int>& axes /* = {} */,
     const bool keepDims /* = false */) {
+  Tensor& input = getTracedTensor(_input);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"axes", axes}, {"keepDims", keepDims}})
+      ->setInputs({{"input", input}});
   Tensor result = input.backend().amin(input, axes, keepDims);
-  trace(
-      "amin",
-      {{"axes", axes}, {"keepDims", keepDims}},
-      {{"input", input}},
-      {{"result", result}});
-  return result;
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
 Tensor TracerBackendBase::amax(
-    const Tensor& input,
+    const Tensor& _input,
     const std::vector<int>& axes /* = {} */,
     const bool keepDims /* = false */) {
+  Tensor& input = getTracedTensor(_input);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"axes", axes}, {"keepDims", keepDims}})
+      ->setInputs({{"input", input}});
   Tensor result = input.backend().amax(input, axes, keepDims);
-  trace(
-      "amax",
-      {{"axes", axes}, {"keepDims", keepDims}},
-      {{"input", input}},
-      {{"result", result}});
-  return result;
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
 void TracerBackendBase::min(
-    Tensor& values,
-    Tensor& indices,
-    const Tensor& input,
+    Tensor& _values,
+    Tensor& _indices,
+    const Tensor& _input,
     const unsigned axis,
     const bool keepDims) {
-  trace(
-      "min",
-      {{"axis", axis}, {"keepDims", keepDims}},
-      {{"values", values}, {"indices", indices}, {"input", input}},
-      {});
+  Tensor& values = getTracedTensor(_values);
+  Tensor& indices = getTracedTensor(_indices);
+  Tensor& input = getTracedTensor(_input);
+
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"input", input}, {"axis", axis}, {"keepDims", keepDims}});
+  builder->setInputs({{"input", input}});
   input.backend().min(values, indices, input, axis, keepDims);
+  builder->setOutputs({{"values", values}, {"indices", indices}});
+  trace(builder->build());
 }
 
 void TracerBackendBase::max(
-    Tensor& values,
-    Tensor& indices,
-    const Tensor& input,
+    Tensor& _values,
+    Tensor& _indices,
+    const Tensor& _input,
     const unsigned axis,
     const bool keepDims /* = false */) {
-  trace(
-      "max",
-      {{"axis", axis}, {"keepDims", keepDims}},
-      {{"values", values}, {"indices", indices}, {"input", input}},
-      {});
+  Tensor& values = getTracedTensor(_values);
+  Tensor& indices = getTracedTensor(_indices);
+  Tensor& input = getTracedTensor(_input);
+
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"input", input}, {"axis", axis}, {"keepDims", keepDims}});
+  builder->setInputs({{"input", input}});
+  input.backend().max(values, indices, input, axis, keepDims);
+  builder->setOutputs({{"values", values}, {"indices", indices}});
+  trace(builder->build());
   input.backend().max(values, indices, input, axis, keepDims);
 }
 
 Tensor TracerBackendBase::sum(
-    const Tensor& input,
+    const Tensor& _input,
     const std::vector<int>& axes /* = {} */,
     const bool keepDims /* = false */) {
+  Tensor& input = getTracedTensor(_input);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"axes", axes}, {"keepDims", keepDims}})
+      ->setInputs({{"input", input}});
   Tensor result = input.backend().sum(input, axes, keepDims);
-  trace(
-      "sum",
-      {{"axes", axes}, {"keepDims", keepDims}},
-      {{"input", input}},
-      {{"result", result}});
-  return result;
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-Tensor TracerBackendBase::cumsum(const Tensor& input, const unsigned axis) {
+Tensor TracerBackendBase::cumsum(const Tensor& _input, const unsigned axis) {
+  Tensor& input = getTracedTensor(_input);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"axis", axis}})->setInputs({{"input", input}});
   Tensor result = input.backend().cumsum(input, axis);
-  trace("cumsum", {{"axis", axis}}, {{"input", input}}, {{"result", result}});
-  return result;
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
 Tensor TracerBackendBase::argmax(
-    const Tensor& input,
+    const Tensor& _input,
     const unsigned axis,
     const bool keepDims /* = false */) {
+  Tensor& input = getTracedTensor(_input);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"axis", axis}, {"keepDims", keepDims}})
+      ->setInputs({{"input", input}});
   Tensor result = input.backend().argmax(input, axis, keepDims);
-  trace(
-      "argmax",
-      {{"axis", axis}, {"keepDims", keepDims}},
-      {{"input", input}},
-      {{"result", result}});
-  return result;
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
 Tensor TracerBackendBase::argmin(
-    const Tensor& input,
+    const Tensor& _input,
     const unsigned axis,
     const bool keepDims /* = false */) {
+  Tensor& input = getTracedTensor(_input);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"axis", axis}, {"keepDims", keepDims}})
+      ->setInputs({{"input", input}});
   Tensor result = input.backend().argmin(input, axis, keepDims);
-  trace(
-      "argmin",
-      {{"axis", axis}, {"keepDims", keepDims}},
-      {{"input", input}},
-      {{"result", result}});
-  return result;
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
 Tensor TracerBackendBase::mean(
-    const Tensor& input,
+    const Tensor& _input,
     const std::vector<int>& axes /* = {} */,
     const bool keepDims /* = false */) {
+  Tensor& input = getTracedTensor(_input);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"axes", axes}, {"keepDims", keepDims}})
+      ->setInputs({{"input", input}});
   Tensor result = input.backend().mean(input, axes, keepDims);
-  trace(
-      "mean",
-      {{"axes", axes}, {"keepDims", keepDims}},
-      {{"input", input}},
-      {{"result", result}});
-  return result;
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
 Tensor TracerBackendBase::median(
-    const Tensor& input,
+    const Tensor& _input,
     const std::vector<int>& axes /* = {} */,
     const bool keepDims /* = false */) {
+  Tensor& input = getTracedTensor(_input);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"axes", axes}, {"keepDims", keepDims}})
+      ->setInputs({{"input", input}});
   Tensor result = input.backend().median(input, axes, keepDims);
-  trace(
-      "median",
-      {{"axes", axes}, {"keepDims", keepDims}},
-      {{"input", input}},
-      {{"result", result}});
-  return result;
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
 Tensor TracerBackendBase::var(
-    const Tensor& input,
+    const Tensor& _input,
     const std::vector<int>& axes /* = {} */,
     const bool bias,
     const bool keepDims /* = false */) {
+  Tensor& input = getTracedTensor(_input);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"axes", axes}, {"bias", bias}, {"keepDims", keepDims}})
+      ->setInputs({{"input", input}});
   Tensor result = input.backend().var(input, axes, bias, keepDims);
-  trace(
-      "var",
-      {{"axes", axes}, {"bias", bias}, {"keepDims", keepDims}},
-      {{"input", input}},
-      {{"result", result}});
-  return result;
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
 Tensor TracerBackendBase::std(
-    const Tensor& input,
+    const Tensor& _input,
     const std::vector<int>& axes /* = {} */,
     const bool keepDims /* = false */) {
+  Tensor& input = getTracedTensor(_input);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"axes", axes}, {"keepDims", keepDims}})
+      ->setInputs({{"input", input}});
   Tensor result = input.backend().std(input, axes, keepDims);
-  trace(
-      "std",
-      {{"axes", axes}, {"keepDims", keepDims}},
-      {{"input", input}},
-      {{"result", result}});
-  return result;
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
 Tensor TracerBackendBase::norm(
-    const Tensor& input,
+    const Tensor& _input,
     const std::vector<int>& axes /* = {} */,
     double p /* = 2 */,
     const bool keepDims /* = false */) {
+  Tensor& input = getTracedTensor(_input);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"axes", axes}, {"p", p}, {"keepDims", keepDims}})
+      ->setInputs({{"input", input}});
   Tensor result = input.backend().norm(input, axes, p, keepDims);
-  trace(
-      "norm",
-      {{"axes", axes}, {"p", p}, {"keepDims", keepDims}},
-      {{"input", input}},
-      {{"result", result}});
-  return result;
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
 Tensor TracerBackendBase::countNonzero(
-    const Tensor& input,
+    const Tensor& _input,
     const std::vector<int>& axes /* = {} */,
     const bool keepDims /* = false */) {
+  Tensor& input = getTracedTensor(_input);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"axes", axes}, {"keepDims", keepDims}})
+      ->setInputs({{"input", input}});
   Tensor result = input.backend().countNonzero(input, axes, keepDims);
-  trace(
-      "countNonzero",
-      {{"axes", axes}, {"keepDims", keepDims}},
-      {{"input", input}},
-      {{"result", result}});
-  return result;
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
 Tensor TracerBackendBase::any(
-    const Tensor& input,
+    const Tensor& _input,
     const std::vector<int>& axes /* = {} */,
     const bool keepDims /* = false */) {
+  Tensor& input = getTracedTensor(_input);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"axes", axes}, {"keepDims", keepDims}})
+      ->setInputs({{"input", input}});
   Tensor result = input.backend().any(input, axes, keepDims);
-  trace(
-      "any",
-      {{"axes", axes}, {"keepDims", keepDims}},
-      {{"input", input}},
-      {{"result", result}});
-  return result;
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
 Tensor TracerBackendBase::all(
-    const Tensor& input,
+    const Tensor& _input,
     const std::vector<int>& axes /* = {} */,
     const bool keepDims /* = false */) {
+  Tensor& input = getTracedTensor(_input);
+  auto builder = TracerBase::TraceData::build(*tracer(), __func__);
+  builder->setArgs({{"axes", axes}, {"keepDims", keepDims}})
+      ->setInputs({{"input", input}});
   Tensor result = input.backend().all(input, axes, keepDims);
-  trace(
-      "all",
-      {{"axes", axes}, {"keepDims", keepDims}},
-      {{"input", input}},
-      {{"result", result}});
-  return result;
+  builder->setOutputs({{"result", result}});
+  trace(builder->build());
+  return toTracedTensor(std::move(result));
 }
 
-void TracerBackendBase::print(const Tensor& tensor) {
+void TracerBackendBase::print(const Tensor& _tensor) {
+  Tensor& tensor = getTracedTensor(_tensor);
   tensor.backend().print(tensor);
 }
 

@@ -7,6 +7,9 @@
 
 #pragma once
 
+// TODO: delete me
+#include <iostream>
+
 #include "flashlight/fl/tensor/TensorBackend.h"
 #include "flashlight/fl/tensor/backend/trace/TracerBase.h"
 
@@ -25,9 +28,35 @@ class TracerBackendBase : public TensorBackend {
   // amongst multiple TensorBackends.
   std::shared_ptr<TracerBase> tracer_;
 
+ protected:
+  // Store instance in the base class
+  static inline std::unique_ptr<TracerBackendBase> instance_;
+
+  static inline TracerBackendBase& getInstance() {
+    return *instance_;
+  }
+
  public:
+  using TensorCreatorFunc = std::function<Tensor(Tensor)>;
+
+ protected:
+  TensorCreatorFunc tensorCreator_;
+
+ public:
+  void setTensorCreator(TensorCreatorFunc&& func) {
+    std::cout << "setTensorCreator" << std::endl;
+    tensorCreator_ = std::move(func);
+  }
+
+  TensorCreatorFunc getTensorCreator() const {
+    return tensorCreator_;
+  }
+
+  Tensor toTracedTensor(Tensor&& t) {
+    return tensorCreator_(std::move(t));
+  }
+
   TracerBackendBase() = default;
-  explicit TracerBackendBase(std::shared_ptr<TracerBase> tracer);
   ~TracerBackendBase() override = default;
 
   /********************* Tracing **********************/
@@ -68,6 +97,14 @@ class TracerBackendBase : public TensorBackend {
       return;
     } else {
       tracer_->trace(name, args, inputs, outputs);
+    }
+  }
+
+  void trace(TracerBase::TraceData traceData) {
+    if (!tracingEnabled()) {
+      return;
+    } else {
+      tracer_->trace(traceData);
     }
   }
 
