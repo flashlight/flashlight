@@ -19,6 +19,9 @@ namespace fl {
  */
 class StubTensor : public TensorAdapterBase {
  public:
+  constexpr static TensorBackendType tensorBackendType =
+      TensorBackendType::Stub;
+
   StubTensor();
 
   /**

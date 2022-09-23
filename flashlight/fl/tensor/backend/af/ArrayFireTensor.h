@@ -108,6 +108,8 @@ class ArrayFireTensor : public TensorAdapterBase {
   unsigned numDims_{1};
 
  public:
+ constexpr static TensorBackendType tensorBackendType = TensorBackendType::ArrayFire;
+
   /**
    * Constructs an ArrayFireTensor.
    *
