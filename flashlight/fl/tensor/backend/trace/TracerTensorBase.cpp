@@ -6,47 +6,40 @@
  */
 
 #include "flashlight/fl/tensor/backend/trace/TracerTensorBase.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
-#define FL_STUB_TENSOR_UNIMPLEMENTED \
-  throw std::invalid_argument(       \
+#define FL_TRACER_TENSOR_UNIMPLEMENTED \
+  throw std::invalid_argument(         \
       "TracerTensorBase::" + std::string(__func__) + " - unimplemented.");
 
 namespace fl {
 
-// void TensorBackendBase::trace(){backend().trace()}
-
-TracerTensorBase::TracerTensorBase() {}
-
-TracerTensorBase::TracerTensorBase(
-    const Shape& /* shape */,
-    fl::dtype /* type */,
-    const void* /* ptr */,
-    Location /* memoryLocation */) {}
-
-TracerTensorBase::TracerTensorBase(
-    const Dim /* nRows */,
-    const Dim /* nCols */,
-    const Tensor& /* values */,
-    const Tensor& /* rowIdx */,
-    const Tensor& /* colIdx */,
-    StorageType /* storageType */) {}
-
 std::unique_ptr<TensorAdapterBase> TracerTensorBase::clone() const {
-  FL_STUB_TENSOR_UNIMPLEMENTED;
+  auto builder = TracerBase::TraceData::build(*backend().tracer(), __func__);
+  builder->setInputs({{"input", tracedTensor_}});
+  Tensor t = tracedTensor_; // impl-defined copy
+  Tensor clonedTracedTensor = backend().toTracedTensor(std::move(t));
+  builder->setOutputs({{"result", clonedTracedTensor}});
+  backend().trace(builder->build());
+  return detail::releaseAdapter(std::move(clonedTracedTensor));
 }
 
 Tensor TracerTensorBase::copy() {
-  Tensor result = tracedTensor_->copy();
-  backend().trace(
-      "copy", {}, {{"input", *tracedTensor_}}, {{"result", result}});
-  return result;
+  auto builder = TracerBase::TraceData::build(*backend().tracer(), __func__);
+  builder->setInputs({{"input", tracedTensor_}});
+  Tensor result = tracedTensor_.copy();
+  builder->setOutputs({{"result", result}});
+  backend().trace(builder->build());
+  return backend().toTracedTensor(std::move(result));
 }
 
 Tensor TracerTensorBase::shallowCopy() {
-  Tensor result = tracedTensor_->shallowCopy();
+  Tensor result = tracedTensor_.shallowCopy();
+
   backend().trace(
-      "shallowCopy", {}, {{"input", *tracedTensor_}}, {{"result", result}});
-  return result;
+      "shallowCopy", {}, {{"input", tracedTensor_}}, {{"result", result}});
+
+  return backend().toTracedTensor(std::move(result));
 }
 
 TensorBackendType TracerTensorBase::backendType() const {
@@ -54,158 +47,160 @@ TensorBackendType TracerTensorBase::backendType() const {
 }
 
 const Shape& TracerTensorBase::shape() {
-  return tracedTensor_->shape();
+  return tracedTensor_.shape();
 }
 
 fl::dtype TracerTensorBase::type() {
-  return tracedTensor_->type();
+  return tracedTensor_.type();
 }
 
 bool TracerTensorBase::isSparse() {
-  return tracedTensor_->isSparse();
+  return tracedTensor_.isSparse();
 }
 
 Location TracerTensorBase::location() {
-  return tracedTensor_->location();
+  return tracedTensor_.location();
 }
 
 void TracerTensorBase::scalar(void* out) {
-  const auto& tensor = *tracedTensor_;
   switch (type()) {
     case dtype::f16:
       throw std::runtime_error("[TracerTensorBase::scalar] f16 unsupported");
     case dtype::f32:
-      *((float*)out) = tensor.scalar<float>();
-      return;
+      *((float*)out) = tracedTensor_.scalar<float>();
+      break;
     case dtype::f64:
-      *((double*)out) = tensor.scalar<double>();
-      return;
+      *((double*)out) = tracedTensor_.scalar<double>();
+      break;
     case dtype::b8:
-      *((char*)out) = tensor.scalar<char>();
-      return;
+      *((char*)out) = tracedTensor_.scalar<char>();
+      break;
     case dtype::s16:
-      *((short*)out) = tensor.scalar<short>();
-      return;
+      *((short*)out) = tracedTensor_.scalar<short>();
+      break;
     case dtype::s32:
-      *((int*)out) = tensor.scalar<int>();
-      return;
+      *((int*)out) = tracedTensor_.scalar<int>();
+      break;
     case dtype::s64:
-      *((long long*)out) = tensor.scalar<long long>();
-      return;
+      *((long long*)out) = tracedTensor_.scalar<long long>();
+      break;
     case dtype::u8:
-      *((unsigned char*)out) = tensor.scalar<unsigned char>();
-      return;
+      *((unsigned char*)out) = tracedTensor_.scalar<unsigned char>();
+      break;
     case dtype::u16:
-      *((unsigned short*)out) = tensor.scalar<unsigned short>();
-      return;
+      *((unsigned short*)out) = tracedTensor_.scalar<unsigned short>();
+      break;
     case dtype::u32:
-      *((unsigned int*)out) = tensor.scalar<unsigned int>();
-      return;
+      *((unsigned int*)out) = tracedTensor_.scalar<unsigned int>();
+      break;
     case dtype::u64:
-      *((unsigned long long*)out) = tensor.scalar<unsigned long long>();
-      return;
+      *((unsigned long long*)out) = tracedTensor_.scalar<unsigned long long>();
+      break;
+    default:
+      throw std::runtime_error("Type not supported");
   }
-  throw std::runtime_error("[TracerTensorBase::scalar] Unknown data type");
+
+  return;
 }
 
 void TracerTensorBase::device(void** out) {
-  tracedTensor_->device(out);
+  tracedTensor_.device(out);
 }
 
 void TracerTensorBase::host(void* out) {
-  tracedTensor_->host(out);
+  tracedTensor_.host(out);
 }
 
 void TracerTensorBase::unlock() {
-  tracedTensor_->unlock();
+  tracedTensor_.unlock();
 }
 
 bool TracerTensorBase::isLocked() {
-  return tracedTensor_->isLocked();
+  return tracedTensor_.isLocked();
 }
 
 bool TracerTensorBase::isContiguous() {
-  return tracedTensor_->isContiguous();
+  return tracedTensor_.isContiguous();
 }
 
 Shape TracerTensorBase::strides() {
-  return tracedTensor_->strides();
+  return tracedTensor_.strides();
 }
 
 const Stream& TracerTensorBase::stream() const {
-  return tracedTensor_->stream();
+  return tracedTensor_.stream();
 }
 
 Tensor TracerTensorBase::astype(const dtype type) {
-  Tensor result = tracedTensor_->astype(type);
-  backend().trace(
-      "astype",
-      {{"type", type}},
-      {{"input", *tracedTensor_}},
-      {{"result", result}});
-  return result;
+  auto builder = TracerBase::TraceData::build(*backend().tracer(), __func__);
+  builder->setArgs({{"type", type}})->setInputs({{"input", tracedTensor_}});
+  Tensor result = tracedTensor_.astype(type);
+  builder->setOutputs({{"result", result}});
+  backend().trace(builder->build());
+  return backend().toTracedTensor(std::move(result));
+  ;
 }
 
 Tensor TracerTensorBase::index(const std::vector<Index>& indices) {
-  Tensor result = (*tracedTensor_)(indices);
-  backend().trace(
-      "index",
-      {{"indices", indices}},
-      {{"input", *tracedTensor_}},
-      {{"result", result}});
-  return result;
+  auto builder = TracerBase::TraceData::build(*backend().tracer(), __func__);
+  builder->setArgs({{"indices", indices}})
+      ->setInputs({{"input", tracedTensor_}});
+  Tensor result = tracedTensor_(indices);
+  builder->setOutputs({{"result", result}});
+  backend().trace(builder->build());
+  return backend().toTracedTensor(std::move(result));
 }
 
 Tensor TracerTensorBase::flatten() const {
-  Tensor result = tracedTensor_->flatten();
-  backend().trace(
-      "flatten", {}, {{"input", *tracedTensor_}}, {{"result", result}});
-  return result;
+  auto builder = TracerBase::TraceData::build(*backend().tracer(), __func__);
+  builder->setInputs({{"input", tracedTensor_}});
+  Tensor result = tracedTensor_.flatten();
+  builder->setOutputs({{"result", result}});
+  backend().trace(builder->build());
+  return backend().toTracedTensor(std::move(result));
 }
 
 Tensor TracerTensorBase::flat(const Index& idx) const {
-  Tensor result = tracedTensor_->flat(idx);
-  backend().trace(
-      "flat",
-      {},
-      {{"input", *tracedTensor_}, {"index", idx}},
-      {{"result", result}});
-  return result;
+  auto builder = TracerBase::TraceData::build(*backend().tracer(), __func__);
+  builder->setInputs({{"input", tracedTensor_}});
+  Tensor result = tracedTensor_.flat(idx);
+  builder->setOutputs({{"result", result}});
+  backend().trace(builder->build());
+  return backend().toTracedTensor(std::move(result));
 }
 
 Tensor TracerTensorBase::asContiguousTensor() {
-  Tensor result = tracedTensor_->asContiguousTensor();
-  backend().trace(
-      "asContiguousTensor",
-      {},
-      {{"input", *tracedTensor_}},
-      {{"result", result}});
-  return result;
+  auto builder = TracerBase::TraceData::build(*backend().tracer(), __func__);
+  builder->setInputs({{"input", tracedTensor_}});
+  Tensor result = tracedTensor_.asContiguousTensor();
+  builder->setOutputs({{"result", result}});
+  backend().trace(builder->build());
+  return backend().toTracedTensor(std::move(result));
 }
 
 void TracerTensorBase::setContext(void* context) {
-  tracedTensor_->setContext(context);
+  tracedTensor_.setContext(context);
 }
 
 void* TracerTensorBase::getContext() {
-  return tracedTensor_->getContext();
+  return tracedTensor_.getContext();
 }
 
 std::string TracerTensorBase::toString() {
-  backend().trace("toString", {}, {{"input", *tracedTensor_}}, {});
-  return tracedTensor_->toString();
+  backend().trace("toString", {}, {{"input", tracedTensor_}}, {});
+  return tracedTensor_.toString();
 }
 
 std::ostream& TracerTensorBase::operator<<(std::ostream& ostr) {
-  backend().trace("operator<<", {}, {{"input", *tracedTensor_}}, {});
-  return tracedTensor_->operator<<(ostr);
+  backend().trace("operator<<", {}, {{"input", tracedTensor_}}, {});
+  return tracedTensor_.operator<<(ostr);
 }
 
 /******************** Assignment Operators ********************/
-#define FL_TRACER_TENSOR_ASSIGN_OP_TYPE(OP, FUN, TYPE)                   \
-  void TracerTensorBase::OP(const TYPE& val) {                           \
-    backend().trace(#OP, {}, {{"lhs", *tracedTensor_}}, {{"lhs", val}}); \
-    tracedTensor_->FUN(val);                                             \
+#define FL_TRACER_TENSOR_ASSIGN_OP_TYPE(OP, FUN, TYPE)                  \
+  void TracerTensorBase::OP(const TYPE& val) {                          \
+    backend().trace(#OP, {}, {{"lhs", tracedTensor_}}, {{"lhs", val}}); \
+    tracedTensor_.FUN(val);                                             \
   }
 
 #define FL_TRACER_TENSOR_ASSIGN_OP_LITERALS(OP, FUN)        \

@@ -8,10 +8,9 @@
 #pragma once
 
 #include <memory>
-#include <ostream>
+#include <mutex>
 #include <stdexcept>
 
-// #include "flashlight/fl/tensor/TensorBackendTraits.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/fl/tensor/backend/trace/DefaultTracer.h"
 #include "flashlight/fl/tensor/backend/trace/TracerBackend.h"
@@ -22,55 +21,55 @@ namespace fl {
 
 /**
  * A backend that wraps another backend and provides tracing info on top of it.
- *
- * TODO: parameterize this only in terms of one generic!
  */
 template <typename T, typename U>
 class TracerTensor : public TracerTensorBase {
-  std::unique_ptr<Tensor> tensor_;
+  static inline std::once_flag initTensorCreator_;
+
+  TracerBackendBase::TensorCreatorFunc getTensorCreator() {
+    return [](Tensor&& t) -> Tensor {
+      return Tensor(std::make_unique<TracerTensor<T, U>>(std::move(t)));
+    };
+  }
 
  public:
-  /**
-   * Construct a TracerTensor using some data.
-   *
-   * @param[in] shape the shape of the new tensor
-   * @param[in] ptr the buffer containing underlying tensor data
-   * @param[in] type the type of the new tensor
-   * @param[in] memoryLocation the location of the buffer
-   */
+  TracerTensor() : TracerTensorBase(std::make_unique<T>()) {
+    backend().setTensorCreator(getTensorCreator());
+  }
+
+  TracerTensor(Tensor&& t) : TracerTensorBase(std::move(t)) {
+    backend().setTensorCreator(getTensorCreator());
+  }
+
   TracerTensor(
       const Shape& shape,
       fl::dtype type,
       const void* ptr,
-      Location memoryLocation) {
-    tensor_ = std::make_unique<Tensor>(
-        std::make_unique<T>(shape, type, ptr, memoryLocation));
+      Location memoryLocation)
+      : TracerTensorBase(
+            Tensor(std::make_unique<T>(shape, type, ptr, memoryLocation))) {
+    backend().setTensorCreator(getTensorCreator());
   }
 
-  // Constructor for a sparse TracerTensor. Can throw if unimplemented.
   TracerTensor(
       const Dim nRows,
       const Dim nCols,
       const Tensor& values,
       const Tensor& rowIdx,
       const Tensor& colIdx,
-      StorageType storageType) {
-    tensor_ = std::make_unique<Tensor>(
-        std::make_unique<T>(nRows, nCols, values, rowIdx, colIdx, storageType));
-  }
-
-  Tensor& tensor() {
-    return *tensor_;
+      StorageType storageType)
+      : TracerTensorBase(
+            Tensor(std::make_unique<
+                   T>(nRows, nCols, values, rowIdx, colIdx, storageType))) {
+    backend().setTensorCreator(getTensorCreator());
   }
 
   TensorBackend& tracedBackend() const override {
-    // TODO: add a static_assert here that this method exists via sfinae
     return toTensor<T>().backend();
   }
 
   virtual TracerBackendBase& backend() const override {
-    return U::getInstance();
-    // return TracerBackend<fl::tensor_traits<T>::backend_type>::getInstance();
+    return TracerBackend<T, U>::getInstance();
   }
 };
 

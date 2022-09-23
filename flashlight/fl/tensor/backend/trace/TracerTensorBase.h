@@ -8,20 +8,17 @@
 #pragma once
 
 #include "flashlight/fl/tensor/TensorAdapter.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/fl/tensor/backend/trace/TracerBackendBase.h"
 
 namespace fl {
 
+class TracerTensorBase;
+
 /**
- * A stub Tensor implementation to make it easy to get started with the
- * Flashlight Tensor API.
- *
- * This stub can be copied, renamed, and implemented as needed.
+ * Base implementation for tracer tensors.
  */
 class TracerTensorBase : public TensorAdapterBase {
-  // The tensor that this TracerTensor wraps.
-  std::unique_ptr<Tensor> tracedTensor_;
-
   /*
    * Return the TensorBackend implementation whose op calls are being traced.
    */
@@ -32,24 +29,25 @@ class TracerTensorBase : public TensorAdapterBase {
    */
   virtual TracerBackendBase& backend() const = 0;
 
- public:
-  TracerTensorBase();
+ protected:
+  // The tensor that this TracerTensor wraps.
+  Tensor tracedTensor_;
 
-  /**
-   * Construct a TracerTensorBase using some data.
-   *
-   * @param[in] shape the shape of the new tensor
-   * @param[in] ptr the buffer containing underlying tensor data
-   * @param[in] type the type of the new tensor
-   * @param[in] memoryLocation the location of the buffer
-   */
+ public:
+  TracerTensorBase(Tensor tensor) : tracedTensor_(std::move(tensor)) {}
+
+  Tensor& tensor() {
+    return tracedTensor_;
+  }
+
+  // Private -- throws.
   TracerTensorBase(
       const Shape& shape,
       fl::dtype type,
       const void* ptr,
       Location memoryLocation);
 
-  // Constructor for a sparse TracerTensorBase. Can throw if unimplemented.
+  // Private -- throws.
   TracerTensorBase(
       const Dim nRows,
       const Dim nCols,
