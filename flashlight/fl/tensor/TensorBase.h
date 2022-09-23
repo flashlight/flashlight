@@ -29,7 +29,7 @@ class Tensor;
  */
 
 /// Enum for various tensor backends.
-enum class TensorBackendType { Stub, ArrayFire, OneDnn };
+enum class TensorBackendType { Stub, Tracer, ArrayFire, OneDnn };
 
 // See TensorAdapter.h
 class TensorAdapterBase;
@@ -94,11 +94,16 @@ class Tensor {
    *
    * For internal use only. Tensor implementations should define when and where
    * deep copies happen based on their dataflow graph abstractions.
+   *
+   * TODO(jacobkahn) -- remove me! Rely on copy-on-write and fix bad refcount
+   * bumping.
    */
   Tensor shallowCopy() const;
   // shallowCopy() above is used in DevicePtr given that it doesn't mutate
   // tensors in place with tensor operations, and only pulls out memory.
   friend class DevicePtr;
+  // also used in tensor abstractions that wrap and call tensor ops:
+  friend class TracerTensorBase;
 
   /**
    * Release and transfer ownership of the tensor's underlying

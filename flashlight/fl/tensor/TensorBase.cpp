@@ -856,6 +856,8 @@ std::string tensorBackendTypeToString(const TensorBackendType type) {
   switch (type) {
     case TensorBackendType::Stub:
       return "Stub";
+    case TensorBackendType::Tracer:
+      return "Tracer";
     case TensorBackendType::ArrayFire:
       return "ArrayFire";
     case TensorBackendType::OneDnn:
