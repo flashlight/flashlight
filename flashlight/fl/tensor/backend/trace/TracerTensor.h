@@ -34,11 +34,17 @@ class TracerTensor : public TracerTensorBase {
 
  public:
   TracerTensor() : TracerTensorBase(std::make_unique<T>()) {
-    backend().setTensorCreator(getTensorCreator());
+    setup();
   }
 
   TracerTensor(Tensor&& t) : TracerTensorBase(std::move(t)) {
-    backend().setTensorCreator(getTensorCreator());
+    setup();
+  }
+
+  void setup() {
+    std::call_once(initTensorCreator_, [this]() {
+      backend().setTensorCreator(getTensorCreator());
+    });
   }
 
   TracerTensor(
@@ -48,7 +54,7 @@ class TracerTensor : public TracerTensorBase {
       Location memoryLocation)
       : TracerTensorBase(
             Tensor(std::make_unique<T>(shape, type, ptr, memoryLocation))) {
-    backend().setTensorCreator(getTensorCreator());
+    setup();
   }
 
   TracerTensor(
@@ -61,7 +67,7 @@ class TracerTensor : public TracerTensorBase {
       : TracerTensorBase(
             Tensor(std::make_unique<
                    T>(nRows, nCols, values, rowIdx, colIdx, storageType))) {
-    backend().setTensorCreator(getTensorCreator());
+    setup();
   }
 
   TensorBackend& tracedBackend() const override {

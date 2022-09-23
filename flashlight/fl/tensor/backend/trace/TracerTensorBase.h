@@ -29,17 +29,6 @@ class TracerTensorBase : public TensorAdapterBase {
    */
   virtual TracerBackendBase& backend() const = 0;
 
- protected:
-  // The tensor that this TracerTensor wraps.
-  Tensor tracedTensor_;
-
- public:
-  TracerTensorBase(Tensor tensor) : tracedTensor_(std::move(tensor)) {}
-
-  Tensor& tensor() {
-    return tracedTensor_;
-  }
-
   // Private -- throws.
   TracerTensorBase(
       const Shape& shape,
@@ -55,6 +44,17 @@ class TracerTensorBase : public TensorAdapterBase {
       const Tensor& rowIdx,
       const Tensor& colIdx,
       StorageType storageType);
+
+ protected:
+  // The tensor that this TracerTensor wraps.
+  Tensor tracedTensor_;
+
+ public:
+  TracerTensorBase(Tensor tensor) : tracedTensor_(std::move(tensor)) {}
+
+  Tensor& tensor() {
+    return tracedTensor_;
+  }
 
   ~TracerTensorBase() override = default;
   std::unique_ptr<TensorAdapterBase> clone() const override;

@@ -7,8 +7,9 @@
 
 #pragma once
 
-// TODO: delete me
-#include <iostream>
+#include <functional>
+#include <memory>
+#include <utility>
 
 #include "flashlight/fl/tensor/TensorBackend.h"
 #include "flashlight/fl/tensor/backend/trace/TracerBase.h"
@@ -44,7 +45,6 @@ class TracerBackendBase : public TensorBackend {
 
  public:
   void setTensorCreator(TensorCreatorFunc&& func) {
-    std::cout << "setTensorCreator" << std::endl;
     tensorCreator_ = std::move(func);
   }
 
