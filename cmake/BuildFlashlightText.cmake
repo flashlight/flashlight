@@ -5,7 +5,7 @@ include(ExternalProject)
 set(flashlight-text_TEMP_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/extern/flashlight-text)
 set(flashlight-text_URL https://github.com/flashlight/text.git)
 set(flashlight-text_BUILD ${CMAKE_CURRENT_BINARY_DIR}/third-party/flashlight-text)
-set(flashlight-text_TAG v0.1)
+set(flashlight-text_TAG 46f62b29ec2db8389efcdb731ebff05fb400a95e) # 20220928
 set(flashlight-text_BINARY_DIR ${flashlight-text_BUILD}/src/flashlight-text-build)
 
 if (BUILD_SHARED_LIBS)
