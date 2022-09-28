@@ -314,7 +314,7 @@ TransformerCriterion::decodeBatchStep(
   return std::make_pair(out, outstates);
 }
 
-AMUpdateFunc buildSeq2SeqTransformerAmUpdateFunction(
+EmittingModelUpdateFunc buildSeq2SeqTransformerUpdateFunction(
     std::shared_ptr<SequenceCriterion>& criterion,
     int beamSize,
     float attThr,
@@ -325,19 +325,20 @@ AMUpdateFunc buildSeq2SeqTransformerAmUpdateFunction(
   const TransformerCriterion* criterionCast =
       static_cast<TransformerCriterion*>(criterion.get());
 
-  auto amUpdateFunc = [buf, criterionCast](
-                          const float* emissions,
-                          const int N,
-                          const int T,
-                          const std::vector<int>& rawY,
-                          const std::vector<AMStatePtr>& rawPrevStates,
-                          int& t) {
+  auto emittingModelUpdateFunc = [buf, criterionCast](
+                                     const float* emissions,
+                                     const int N,
+                                     const int T,
+                                     const std::vector<int>& rawY,
+                                     const std::vector<EmittingModelStatePtr>&
+                                         rawPrevStates,
+                                     int& t) {
     if (t == 0) {
       buf->input = fl::Variable(
           Tensor::fromBuffer({N, T}, emissions, MemoryLocation::Host), false);
     }
     int B = rawY.size();
-    std::vector<AMStatePtr> out;
+    std::vector<EmittingModelStatePtr> out;
     std::vector<std::vector<float>> amScoresAll;
 
     // Store the latest index of the hidden state when we can clear it
@@ -396,7 +397,7 @@ AMUpdateFunc buildSeq2SeqTransformerAmUpdateFunction(
     return std::make_pair(amScoresAll, out);
   };
 
-  return amUpdateFunc;
+  return emittingModelUpdateFunc;
 }
 
 std::string TransformerCriterion::prettyString() const {

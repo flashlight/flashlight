@@ -216,7 +216,7 @@ struct Seq2SeqDecoderBuffer {
   }
 };
 
-AMUpdateFunc buildSeq2SeqRnnAmUpdateFunction(
+EmittingModelUpdateFunc buildSeq2SeqRnnUpdateFunction(
     std::shared_ptr<SequenceCriterion>& criterion,
     int attRound,
     int beamSize,
