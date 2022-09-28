@@ -529,14 +529,14 @@ int main(int argc, char** argv) {
     }
 
     if (criterionType == CriterionType::S2S) {
-      auto amUpdateFunc = FLAGS_criterion == kSeq2SeqRNNCriterion
-          ? buildSeq2SeqRnnAmUpdateFunction(
+      auto emittingModelUpdateFunc = FLAGS_criterion == kSeq2SeqRNNCriterion
+          ? buildSeq2SeqRnnUpdateFunction(
                 localCriterion,
                 FLAGS_decoderattnround,
                 FLAGS_beamsize,
                 FLAGS_attentionthreshold,
                 FLAGS_smoothingtemperature)
-          : buildSeq2SeqTransformerAmUpdateFunction(
+          : buildSeq2SeqTransformerUpdateFunction(
                 localCriterion,
                 FLAGS_beamsize,
                 FLAGS_attentionthreshold,
@@ -557,7 +557,7 @@ int main(int argc, char** argv) {
             trie,
             localLm,
             eosIdx,
-            amUpdateFunc,
+            emittingModelUpdateFunc,
             FLAGS_maxdecoderoutputlen,
             FLAGS_decodertype == "tkn"));
         LOG(INFO) << "[Decoder] LexiconSeq2Seq decoder with "
@@ -574,7 +574,7 @@ int main(int argc, char** argv) {
             },
             localLm,
             eosIdx,
-            amUpdateFunc,
+            emittingModelUpdateFunc,
             FLAGS_maxdecoderoutputlen));
         LOG(INFO)
             << "[Decoder] LexiconFreeSeq2Seq decoder with token-LM loaded in thread: "
@@ -728,7 +728,7 @@ int main(int argc, char** argv) {
           }
 
           auto score = results[i].score;
-          auto amScore = results[i].amScore;
+          auto amScore = results[i].emittingModelScore;
           auto lmScore = results[i].lmScore;
           auto outString = sampleId + " | " + std::to_string(score) + " | " +
               std::to_string(amScore) + " | " + std::to_string(lmScore) +
