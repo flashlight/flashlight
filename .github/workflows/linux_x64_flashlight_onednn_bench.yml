@@ -14,10 +14,10 @@ jobs:
         run: |
           cd /tmp
           git clone https://github.com/oneapi-src/oneDNN.git
-          cd oneDNN && mkdir -p build && cd build
-          cmake -S . -B build
-          cmake --build build --parallel
-          cmake --install build
+          cd oneDNN
+          cmake -S . -B . -G Ninja
+          ninja
+          ninja install
       - name: "Checkout Flashlight source"
         uses: actions/checkout@v3
       - name: "Build and install Flashlight with the oneDNN Backend"
