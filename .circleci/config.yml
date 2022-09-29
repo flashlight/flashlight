@@ -216,14 +216,18 @@ commands:
   install_onednn:
     steps:
       - run:
+          name: "Install Ninja"
+          command: |
+            sudo apt install ninja-build
+      - run:
           name: "Clone, build, and install oneDNN"
           command: |
             cd /tmp
             git clone https://github.com/oneapi-src/oneDNN.git --branch v2.7
             cd oneDNN
-            cmake . -DCMAKE_BUILD_TYPE=Release
-            make -j$(nproc)
-            make install
+            cmake . -G Ninja -DCMAKE_BUILD_TYPE=Release
+            ninja
+            sudo ninja install
   flashlight_source_build_with_vcpkg:
     parameters:
       fl_build_fl_core:
