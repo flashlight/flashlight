@@ -1,0 +1,38 @@
+name: linux_x64_flashlight_arrayfire_cpu
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+jobs:
+  linux_x64_flashlight_arrayfire_cpu:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: "Install CMake and Ninja"
+        run: sudo apt install cmake ninja-build
+      - name: "Install oneDNN"
+        run: |
+          cd /tmp
+          git clone https://github.com/oneapi-src/oneDNN.git
+          cd oneDNN && mkdir -p build && cd build
+          cmake -S . -B build
+          cmake --build build --parallel
+          cmake --install build
+      - name: "Checkout Flashlight source"
+        uses: actions/checkout@v3
+      - name: "Build and install Flashlight with the oneDNN Backend"
+        run: |
+          cmake . \
+            -G Ninja \
+            -DBUILD_SHARED_LIBS=ON \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=$HOME/usr \
+            -DFL_USE_ARRAYFIRE=OFF \
+            -DFL_USE_ONEDNN=ON \
+            -DFL_BUILD_DISTRIBUTED=OFF \
+            -DFL_BUILD_TESTS=OFF \
+            -DFL_BUILD_EXAMPLES=OFF
+          ninja
+      - name: "Run Flashlight benchmarks"
+        run: |
+          ls
