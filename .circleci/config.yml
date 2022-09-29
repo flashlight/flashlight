@@ -729,3 +729,6 @@ workflows:
     jobs:
       - ubuntu2004_cpu_python_bindings_simple
       - ubuntu2004_cuda_python_bindings
+  run_benchmarks:
+    jobs:
+      - run_onednn_cpu_benchmarks
