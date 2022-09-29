@@ -233,7 +233,7 @@ commands:
             sudo ninja install
       - run:
           name: "Install MKL"
-          command: sudo apt install -y intel-mkl
+          command: DEBIAN_FRONTEND=noninteractive sudo apt install -y intel-mkl
   flashlight_source_build_with_vcpkg:
     parameters:
       fl_build_fl_core:
