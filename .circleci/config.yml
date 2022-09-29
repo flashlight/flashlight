@@ -225,7 +225,10 @@ commands:
             cd /tmp
             git clone https://github.com/oneapi-src/oneDNN.git --branch v2.7
             cd oneDNN
-            cmake . -G Ninja -DCMAKE_BUILD_TYPE=Release
+            cmake . -G Ninja \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DDNNL_BUILD_TESTS=OFF \
+              -DDNNL_BUILD_EXAMPLES=OFF
             ninja
             sudo ninja install
   flashlight_source_build_with_vcpkg:
