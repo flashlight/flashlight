@@ -218,7 +218,7 @@ commands:
       - run:
           name: "Install Ninja"
           command: |
-            sudo apt install ninja-build
+            sudo apt install -y ninja-build
       - run:
           name: "Clone, build, and install oneDNN"
           command: |
@@ -233,7 +233,7 @@ commands:
             sudo ninja install
       - run:
           name: "Install MKL"
-          command: sudo apt install intel-mkl
+          command: sudo apt install -y intel-mkl
   flashlight_source_build_with_vcpkg:
     parameters:
       fl_build_fl_core:
