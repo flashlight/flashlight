@@ -213,6 +213,15 @@ commands:
           name: "Install vcpkg dependencies"
           command: |
             MKLROOT=/opt/intel/mkl ./vcpkg/vcpkg install << parameters.vcpkg_deps >>
+  install_onednn:
+    steps:
+      - run:
+          name: "Clone, build, and install oneDNN"
+          command: |
+            git clone https://github.com/oneapi-src/oneDNN.git --branch v2.7
+            cmake . -DCMAKE_BUILD_TYPE=Release
+            cmake --build . --parallel
+            camke --install .
   flashlight_source_build_with_vcpkg:
     parameters:
       fl_build_fl_core:
@@ -663,6 +672,34 @@ jobs:
       - run:
           name: "Build another project that depends on flashlight"
           command: sudo docker exec -i flashlight bash < flashlight_compile_and_link_external_project.sh
+
+  run_onednn_cpu_benchmarks:
+    machine:
+      image: ubuntu-2004:current
+    resource_class: large
+    steps:
+      - install_onednn
+      - checkout
+      - run:
+          name: "Build Flashlight CPU backend with oneDNN"
+          command: |
+            mkdir -p build && cd build
+            cmake -S . -B build \
+              -DBUILD_SHARED_LIBS=ON \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX=$HOME/usr \
+              -DFL_USE_ARRAYFIRE=OFF \
+              -DFL_USE_ONEDNN=ON \
+              -DFL_BUILD_DISTRIBUTED=OFF \
+              -DFL_BUILD_TESTS=OFF \
+              -DFL_BUILD_EXAMPLES=ON
+      - run:
+          name: "Run stuff"
+          command: |
+            ls
+            ls flashlight
+            ls flashlight/fl
+            ./flashlight/fl/benchmark
 
 workflows:
   version: 2
