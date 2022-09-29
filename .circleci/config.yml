@@ -213,7 +213,7 @@ commands:
           name: "Install vcpkg dependencies"
           command: |
             MKLROOT=/opt/intel/mkl ./vcpkg/vcpkg install << parameters.vcpkg_deps >>
-  install_onednn:
+  install_onednn_and_mkl:
     steps:
       - run:
           name: "Install Ninja"
@@ -231,6 +231,9 @@ commands:
               -DDNNL_BUILD_EXAMPLES=OFF
             ninja
             sudo ninja install
+      - run:
+          name: "Install MKL"
+          command: sudo apt install intel-mkl
   flashlight_source_build_with_vcpkg:
     parameters:
       fl_build_fl_core:
@@ -687,7 +690,7 @@ jobs:
       image: ubuntu-2004:current
     resource_class: 2xlarge
     steps:
-      - install_onednn
+      - install_onednn_and_mkl
       - checkout
       - run:
           name: "Build Flashlight CPU backend with oneDNN"
