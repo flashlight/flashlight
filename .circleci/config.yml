@@ -218,7 +218,9 @@ commands:
       - run:
           name: "Clone, build, and install oneDNN"
           command: |
+            cd /tmp
             git clone https://github.com/oneapi-src/oneDNN.git --branch v2.7
+            cd oneDNN
             cmake . -DCMAKE_BUILD_TYPE=Release
             cmake --build . --parallel
             camke --install .
@@ -683,7 +685,7 @@ jobs:
       - run:
           name: "Build Flashlight CPU backend with oneDNN"
           command: |
-            mkdir -p build && cd build
+            mkdir -p build
             cmake -S . -B build \
               -DBUILD_SHARED_LIBS=ON \
               -DCMAKE_BUILD_TYPE=Release \
@@ -696,6 +698,7 @@ jobs:
       - run:
           name: "Run stuff"
           command: |
+            cd build
             ls
             ls flashlight
             ls flashlight/fl
