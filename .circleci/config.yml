@@ -222,8 +222,8 @@ commands:
             git clone https://github.com/oneapi-src/oneDNN.git --branch v2.7
             cd oneDNN
             cmake . -DCMAKE_BUILD_TYPE=Release
-            cmake --build . --parallel
-            camke --install .
+            make -j$(nproc)
+            make install
   flashlight_source_build_with_vcpkg:
     parameters:
       fl_build_fl_core:
