@@ -678,7 +678,7 @@ jobs:
   run_onednn_cpu_benchmarks:
     machine:
       image: ubuntu-2004:current
-    resource_class: large
+    resource_class: 2xlarge
     steps:
       - install_onednn
       - checkout
