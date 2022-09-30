@@ -29,15 +29,20 @@ namespace fl {
   #if FL_USE_ARRAYFIRE && FL_ARRAYFIRE_USE_CUDA
 FL_REGISTER_TENSOR_EXTENSION(
     CudnnAutogradExtension,
-    TensorBackendType::ArrayFire);
+    ArrayFire);
   #endif // FL_USE_ARRAYFIRE && FL_ARRAYFIRE_USE_CUDA
 #endif // FL_USE_CUDNN
 
 #if FL_USE_ONEDNN
+// OneDNN backend can transparently use its autograd extension
+FL_REGISTER_TENSOR_EXTENSION(
+    OneDnnAutogradExtension,
+    OneDnn);
+
   #if FL_USE_ARRAYFIRE && (FL_ARRAYFIRE_USE_CPU || FL_ARRAYFIRE_USE_OPENCL)
 FL_REGISTER_TENSOR_EXTENSION(
     OneDnnAutogradExtension,
-    TensorBackendType::ArrayFire);
+    ArrayFire);
   #endif // FL_USE_ARRAYFIRE && (FL_ARRAYFIRE_USE_CPU ||
          // FL_ARRAYFIRE_USE_OPENCL)
 #endif // FL_USE_ONEDNN

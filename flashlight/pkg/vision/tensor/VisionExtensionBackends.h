@@ -22,9 +22,7 @@ namespace fl {
 /****************** Vision Extension Registration ******************/
 
 #if FL_USE_ARRAYFIRE
-FL_REGISTER_TENSOR_EXTENSION(
-    ArrayFireVisionExtension,
-    TensorBackendType::ArrayFire);
+FL_REGISTER_TENSOR_EXTENSION(ArrayFireVisionExtension, ArrayFire);
 #endif // FL_USE_ARRAYFIRE
 
 } // namespace fl

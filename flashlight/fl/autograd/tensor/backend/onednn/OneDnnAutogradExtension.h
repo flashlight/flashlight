@@ -15,8 +15,6 @@ class OneDnnAutogradExtension : public AutogradExtension {
   // TODO(jacobkahn): implement getEngine
 
  public:
-  static bool registered;
-
   bool isDataTypeSupported(const fl::dtype& dtype) const override;
 
   /**************************** Forward ****************************/
