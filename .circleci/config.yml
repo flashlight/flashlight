@@ -714,7 +714,7 @@ jobs:
             ls
             ls flashlight
             ls flashlight/fl
-            ls ./flashlight/fl/Benchmark
+            ls ./flashlight/fl/examples/Benchmark
 
 workflows:
   version: 2
