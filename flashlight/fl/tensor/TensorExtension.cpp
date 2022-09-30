@@ -43,7 +43,7 @@ TensorExtensionRegistrar::getTensorExtensionCreationFunc(
   if (_extensions.find(extensionType) == _extensions.end()) {
     throw std::invalid_argument(
         "TensorExtensionRegistrar::getTensorExtensionCreationFunc: "
-        "given extension type is not registered for this backend.");
+        "no tensor extensions registered for backend " + tensorBackendTypeToString(backend));
   }
   return _extensions[extensionType];
 }

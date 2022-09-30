@@ -27,22 +27,16 @@ namespace fl {
 // TODO{fl::Tensor} -- improve macros based on compute envs
 #if FL_USE_CUDNN
   #if FL_USE_ARRAYFIRE && FL_ARRAYFIRE_USE_CUDA
-FL_REGISTER_TENSOR_EXTENSION(
-    CudnnAutogradExtension,
-    ArrayFire);
+FL_REGISTER_TENSOR_EXTENSION(CudnnAutogradExtension, ArrayFire);
   #endif // FL_USE_ARRAYFIRE && FL_ARRAYFIRE_USE_CUDA
 #endif // FL_USE_CUDNN
 
 #if FL_USE_ONEDNN
 // OneDNN backend can transparently use its autograd extension
-FL_REGISTER_TENSOR_EXTENSION(
-    OneDnnAutogradExtension,
-    OneDnn);
+FL_REGISTER_TENSOR_EXTENSION(OneDnnAutogradExtension, OneDnn);
 
   #if FL_USE_ARRAYFIRE && (FL_ARRAYFIRE_USE_CPU || FL_ARRAYFIRE_USE_OPENCL)
-FL_REGISTER_TENSOR_EXTENSION(
-    OneDnnAutogradExtension,
-    ArrayFire);
+FL_REGISTER_TENSOR_EXTENSION(OneDnnAutogradExtension, ArrayFire);
   #endif // FL_USE_ARRAYFIRE && (FL_ARRAYFIRE_USE_CPU ||
          // FL_ARRAYFIRE_USE_OPENCL)
 #endif // FL_USE_ONEDNN
