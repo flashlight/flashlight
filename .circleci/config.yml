@@ -709,11 +709,12 @@ jobs:
       - run:
           name: "Run stuff"
           command: |
+            # TODO(StrongerXi): modify this or above build options to run desired benches
             cd build
             ls
             ls flashlight
             ls flashlight/fl
-            ./flashlight/fl/Benchmark
+            ls ./flashlight/fl/Benchmark
 
 workflows:
   version: 2
