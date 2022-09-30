@@ -705,6 +705,7 @@ jobs:
               -DFL_BUILD_DISTRIBUTED=OFF \
               -DFL_BUILD_TESTS=OFF \
               -DFL_BUILD_EXAMPLES=ON
+            cmake --build build --parallel
       - run:
           name: "Run stuff"
           command: |
@@ -712,7 +713,7 @@ jobs:
             ls
             ls flashlight
             ls flashlight/fl
-            ./flashlight/fl/benchmark
+            ./flashlight/fl/Benchmark
 
 workflows:
   version: 2
