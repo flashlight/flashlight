@@ -35,8 +35,6 @@ class TestTensorExtension : public TensorExtension<TestTensorExtension> {
 // Specific extension implementation
 class TestArrayFireTensorExtension : public TestTensorExtension {
  public:
-  static bool registered;
-
   Tensor testExtensionFunc(const Tensor& tensor) override {
     return tensor + 1;
   }
@@ -52,13 +50,10 @@ Tensor testExtensionFunc(const Tensor& tensor) {
       tensor);
 }
 
-FL_REGISTER_TENSOR_EXTENSION(
-    TestArrayFireTensorExtension,
-    TensorBackendType::ArrayFire);
+FL_REGISTER_TENSOR_EXTENSION(TestArrayFireTensorExtension, ArrayFire);
 
 TEST(TensorExtensionTest, TestExtension) {
   auto a = fl::rand({4, 5, 6});
-  ASSERT_TRUE(TestArrayFireTensorExtension::registered);
 
   // TODO: this test only works with the ArrayFire backend - gate accordingly
   if (Tensor().backendType() != TensorBackendType::ArrayFire) {
@@ -66,7 +61,6 @@ TEST(TensorExtensionTest, TestExtension) {
   }
 
   // TODO: add a fixture to check with available backends
-  // Already registered - returns true
   ASSERT_TRUE(::fl::registerTensorExtension<TestArrayFireTensorExtension>(
       TensorBackendType::ArrayFire));
 
