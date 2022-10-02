@@ -213,6 +213,27 @@ commands:
           name: "Install vcpkg dependencies"
           command: |
             MKLROOT=/opt/intel/mkl ./vcpkg/vcpkg install << parameters.vcpkg_deps >>
+  install_onednn_and_mkl:
+    steps:
+      - run:
+          name: "Install Ninja"
+          command: |
+            sudo apt install -y ninja-build
+      - run:
+          name: "Clone, build, and install oneDNN"
+          command: |
+            cd /tmp
+            git clone https://github.com/oneapi-src/oneDNN.git --branch v2.7
+            cd oneDNN
+            cmake . -G Ninja \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DDNNL_BUILD_TESTS=OFF \
+              -DDNNL_BUILD_EXAMPLES=OFF
+            ninja
+            sudo ninja install
+      - run:
+          name: "Install MKL"
+          command: DEBIAN_FRONTEND=noninteractive sudo apt install -y intel-mkl-full
   flashlight_source_build_with_vcpkg:
     parameters:
       fl_build_fl_core:
@@ -664,6 +685,37 @@ jobs:
           name: "Build another project that depends on flashlight"
           command: sudo docker exec -i flashlight bash < flashlight_compile_and_link_external_project.sh
 
+  run_onednn_cpu_benchmarks:
+    machine:
+      image: ubuntu-2004:current
+    resource_class: 2xlarge
+    steps:
+      - install_onednn_and_mkl
+      - checkout
+      - run:
+          name: "Build Flashlight CPU backend with oneDNN"
+          command: |
+            mkdir -p build
+            cmake -S . -B build \
+              -DBUILD_SHARED_LIBS=ON \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX=$HOME/usr \
+              -DFL_USE_ARRAYFIRE=OFF \
+              -DFL_USE_ONEDNN=ON \
+              -DFL_BUILD_DISTRIBUTED=OFF \
+              -DFL_BUILD_TESTS=OFF \
+              -DFL_BUILD_EXAMPLES=ON
+            cmake --build build --parallel
+      - run:
+          name: "Run stuff"
+          command: |
+            # TODO(StrongerXi): modify this or above build options to run desired benches
+            cd build
+            ls
+            ls flashlight
+            ls flashlight/fl
+            ls ./flashlight/fl/examples/Benchmark
+
 workflows:
   version: 2
   # TODO: bring back vcpkg jobs once https://github.com/microsoft/vcpkg/issues/19022 is resolved
@@ -692,3 +744,6 @@ workflows:
     jobs:
       - ubuntu2004_cpu_python_bindings_simple
       - ubuntu2004_cuda_python_bindings
+  run_benchmarks:
+    jobs:
+      - run_onednn_cpu_benchmarks
