@@ -27,12 +27,16 @@ endfunction()
 
 # ]--------------- Backend Options and Selection
 option(FL_USE_ARRAYFIRE "Build ArrayFire tensor backend" ON)
+option(FL_USE_JIT "Build JIT tensor backend" ON)
 option(FL_USE_TENSOR_STUB "Build Stub tensor backend" ON)
 option(FL_USE_ONEDNN "Build OneDNN tensor backend" ON)
 
 
 if (FL_USE_ARRAYFIRE)
   include(${CMAKE_CURRENT_LIST_DIR}/backend/af/CMakeLists.txt)
+endif()
+if (FL_USE_JIT)
+  include(${CMAKE_CURRENT_LIST_DIR}/backend/jit/CMakeLists.txt)
 endif()
 if (FL_USE_TENSOR_STUB)
   include(${CMAKE_CURRENT_LIST_DIR}/backend/stub/CMakeLists.txt)
@@ -45,6 +49,7 @@ target_compile_definitions(
   flashlight
   PUBLIC
   FL_USE_ARRAYFIRE=$<BOOL:${FL_USE_ARRAYFIRE}>
+  FL_USE_JIT=$<BOOL:${FL_USE_JIT}>
   FL_USE_TENSOR_STUB=$<BOOL:${FL_USE_TENSOR_STUB}>
   FL_USE_ONEDNN=$<BOOL:${FL_USE_ONEDNN}>
 )
