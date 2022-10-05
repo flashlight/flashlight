@@ -29,7 +29,7 @@ class Tensor;
  */
 
 /// Enum for various tensor backends.
-enum class TensorBackendType { Stub, Tracer, ArrayFire, OneDnn };
+enum class TensorBackendType { Stub, Tracer, ArrayFire, OneDnn, Jit };
 
 // See TensorAdapter.h
 class TensorAdapterBase;
