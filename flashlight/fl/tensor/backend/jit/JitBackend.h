@@ -21,6 +21,9 @@ class JitBackend : public TensorBackend {
   TensorBackend& wrappedBackend_;
   std::function<Tensor(Node*)> jitTensorCreator_;
 
+  template<typename T>
+  Tensor fullWithType(const Shape& shape, T value, dtype type);
+
  public:
   JitBackend(
       TensorBackend& wrappedBackend,
