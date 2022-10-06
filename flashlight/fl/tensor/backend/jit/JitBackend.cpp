@@ -10,6 +10,8 @@
 #include <stdexcept>
 
 #include "flashlight/fl/tensor/TensorBase.h"
+#include "flashlight/fl/tensor/backend/jit/JitTensorBase.h"
+#include "flashlight/fl/tensor/backend/jit/ir/BinaryNode.h"
 #include "flashlight/fl/tensor/backend/jit/ir/ScalarNode.h"
 
 #define FL_JIT_BACKEND_UNIMPLEMENTED \
@@ -337,14 +339,10 @@ Tensor JitBackend::argsort(
   }                                                                           \
   FL_JIT_BINARY_OP_LITERALS_DEF_STUB(FUNC, OP);
 
-// Definitions
-// Since ArrayFire implements operator overloads, map both fl::Tensor
-// functions and fl::Tensor operator overloads back to the af::array
-// overloads.
-FL_JIT_BINARY_OP_DEF_STUB(+, add);
-FL_JIT_BINARY_OP_DEF_STUB(-, sub);
-FL_JIT_BINARY_OP_DEF_STUB(*, mul);
-FL_JIT_BINARY_OP_DEF_STUB(/, div);
+FL_JIT_BINARY_OP_LITERALS_DEF_STUB(add, +);
+FL_JIT_BINARY_OP_LITERALS_DEF_STUB(sub, -);
+FL_JIT_BINARY_OP_LITERALS_DEF_STUB(mul, *);
+FL_JIT_BINARY_OP_LITERALS_DEF_STUB(div, /);
 FL_JIT_BINARY_OP_DEF_STUB(==, eq);
 FL_JIT_BINARY_OP_DEF_STUB(!=, neq);
 FL_JIT_BINARY_OP_DEF_STUB(<, lessThan);
@@ -362,6 +360,19 @@ FL_JIT_BINARY_OP_DEF_STUB(>>, rShift);
 #undef FL_JIT_BINARY_OP_DEF
 #undef FL_JIT_BINARY_OP_TYPE_DEF
 #undef FL_JIT_BINARY_OP_LITERALS_DEF
+
+#define FL_JIT_BINARY_OP_TENSOR_DEF(FUNC, BINOP)                           \
+  Tensor JitBackend::FUNC(const Tensor& lhs, const Tensor& rhs) {          \
+    const auto lhsNode = toJitTensorBase(lhs).node();                      \
+    const auto rhsNode = toJitTensorBase(rhs).node();                      \
+    return jitTensorCreator_(BinaryNode::create(lhsNode, rhsNode, BINOP)); \
+  }
+
+FL_JIT_BINARY_OP_TENSOR_DEF(add, BinaryOp::Add);
+FL_JIT_BINARY_OP_TENSOR_DEF(sub, BinaryOp::Sub);
+FL_JIT_BINARY_OP_TENSOR_DEF(mul, BinaryOp::Mul);
+FL_JIT_BINARY_OP_TENSOR_DEF(div, BinaryOp::Div);
+#undef FL_JIT_BINARY_OP_TENSOR_DEF
 
 Tensor JitBackend::minimum(const Tensor& /* lhs */, const Tensor& /* rhs */) {
   FL_JIT_BACKEND_UNIMPLEMENTED;
