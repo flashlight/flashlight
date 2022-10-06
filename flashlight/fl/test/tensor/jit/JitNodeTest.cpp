@@ -36,7 +36,7 @@ TEST(JitNodeTest, ScalarNodeMetaData) {
   ASSERT_EQ(node->shape(), shape);
   ASSERT_EQ(node->dataType(), type);
   ASSERT_EQ(node->scalar<int>(), value);
-  // "free" node
+  // node is owned locally (didn't transition to shared ownership)
   delete node;
 }
 
@@ -49,7 +49,7 @@ TEST(JitNodeTest, ValueNodeMetaData) {
   ASSERT_EQ(node->isValue(), true);
   ASSERT_TRUE(node->getResult().has_value());
   ASSERT_TRUE(allClose(node->getResult().value(), tensor));
-  // "free" node
+  // node is owned locally (didn't transition to shared ownership)
   delete node;
 }
 
@@ -66,7 +66,7 @@ TEST(JitNodeTest, BinaryNodeMetaData) {
   ASSERT_EQ(node->lhs(), c1);
   ASSERT_EQ(node->rhs(), c2);
   ASSERT_EQ(node->op(), op);
-  // "free" node
+  // node is owned locally (didn't transition to shared ownership)
   delete node;
 }
 
@@ -89,7 +89,7 @@ TEST(JitNodeTest, CustomNodeMetaData) {
   ASSERT_EQ(node->getResult(), std::nullopt);
   ASSERT_EQ(node->name(), name);
   ASSERT_TRUE(allClose(node->evalFunc()({&t1, &t2}), t1));
-  // "free" node
+  // node is owned locally (didn't transition to shared ownership)
   delete node;
 }
 
@@ -101,7 +101,7 @@ TEST(JitNodeTest, getSetResult) {
   ASSERT_TRUE(node->getResult().has_value());
   ASSERT_TRUE(allClose(node->getResult().value(), tensor));
   ASSERT_THROW(node->setResult(tensor.copy()), std::invalid_argument);
-  // "free" node
+  // node is owned locally (didn't transition to shared ownership)
   delete node;
 }
 
@@ -116,7 +116,7 @@ TEST(JitNodeTest, refCountUpdate) {
   node->decRefCount();
   ASSERT_EQ(node->getRefCount(), 1);
 
-  // "free" nodes
+  // node is owned locally (didn't transition to shared ownership)
   node->decRefCount();
 }
 
