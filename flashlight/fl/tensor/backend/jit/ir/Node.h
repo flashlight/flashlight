@@ -81,8 +81,8 @@ class Node {
 
   // Useful for lazy eval
   const std::optional<Tensor>& getResult() const;
-  // Can only set once
   void setResult(Tensor&& tensor);
+  void unsetResult();
 
   // Convenient type checks
   bool isBinary() const;

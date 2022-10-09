@@ -7,6 +7,7 @@
 
 #include "flashlight/fl/tensor/backend/jit/JitBackend.h"
 
+#include <cassert>
 #include <stdexcept>
 
 #include "flashlight/fl/tensor/TensorBase.h"
@@ -31,10 +32,11 @@ TensorBackendType JitBackend::backendType() const {
 
 /* -------------------------- Compute Functions -------------------------- */
 
-void JitBackend::eval(const Tensor& /* tensor */) {
-  // Launch computation for a given tensor. Can be a noop for non-async
-  // runtimes.
-  FL_JIT_BACKEND_UNIMPLEMENTED;
+void JitBackend::eval(const Tensor& tensor) {
+  auto& jitTensor = toJitTensorBase(tensor);
+  assert(&jitTensor.backend() == this);
+  jitTensor.eval();
+  wrappedBackend_.eval(jitTensor.node()->getResult().value()); // "deep" eval
 }
 
 bool JitBackend::supportsDataType(const fl::dtype& /* dtype */) const {
