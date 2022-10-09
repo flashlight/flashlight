@@ -195,7 +195,31 @@ TEST(JitNodeTest, inputsAndUses) {
   mul->decRefCount();
 }
 
-TEST(JitNodeTest, replaceAllUsesWith) {
+TEST(JitNodeTest, replaceAllUsesWithRootNodes) {
+  // c1  c2
+  Shape shape({2, 2, 2});
+  auto type = dtype::s32;
+  auto c1 = ScalarNode::create(shape, type, 1);
+  auto c2 = ScalarNode::create(shape, type, 2);
+
+  // c1  c2
+  // --->
+  // c1  c2
+  c1->replaceAllUsesWith(c2);
+  // nothing changed
+  ASSERT_EQ(c1->getRefCount(), 0);
+  ASSERT_EQ(c2->getRefCount(), 0);
+  ASSERT_EQ(c1->inputs(), NodeList({}));
+  ASSERT_EQ(c2->inputs(), NodeList({}));
+  ASSERT_EQ(c1->uses(), UseValList({}));
+  ASSERT_EQ(c2->uses(), UseValList({}));
+
+  // nodes are owned locally (didn't transition to shared ownership)
+  delete c1;
+  delete c2;
+}
+
+TEST(JitNodeTest, replaceAllUsesWithSharedNodes) {
   // c1   c2   c3  c4
   //   \  /     \  /
   //   add1     add2
@@ -211,7 +235,8 @@ TEST(JitNodeTest, replaceAllUsesWith) {
   auto add1 = BinaryNode::create(c1, c2, BinaryOp::Add);
   auto add2 = BinaryNode::create(c3, c4, BinaryOp::Add);
   auto mul = BinaryNode::create(add1, add1, BinaryOp::Mul);
-  // locally share ownership only for (existing and upcoming) root nodes
+  // promote (existing and upcoming) root nodes into shared ownership
+  // so we can check on the state of nodes after replacement rewiring
   mul->incRefCount();
   c1->incRefCount();
   add1->incRefCount();
@@ -279,7 +304,7 @@ TEST(JitNodeTest, replaceAllUsesWith) {
   ASSERT_EQ(add2->uses(), UseValList({{mul, 0}, {mul, 1}}));
   ASSERT_EQ(mul->uses(), UseValList({{add1, 0}}));
 
-  // "free" locally shared node
+  // "free" shared nodes
   mul->decRefCount();
   c1->decRefCount();
   add1->decRefCount();
