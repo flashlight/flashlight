@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
 cmake_dependent_option(
   FL_BUILD_APP_ASR_SFX_SOX

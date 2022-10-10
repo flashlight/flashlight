@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
 set(DIR ${FL_CORE_DIR}/test)
 set(LIBS flashlight ${CMAKE_DL_LIBS})
