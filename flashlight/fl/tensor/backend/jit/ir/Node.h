@@ -28,6 +28,14 @@ using UseList = std::list<Use*>;
  * Ownership model:
  * 1. Node has shared ownership via manual refcount update.
  * 2. Use is owned by user node.
+ *
+ * Possible stages of lifetime
+ * 1. After the initial node creation (subclass must enforce heap allocation),
+ *    the creator is the owner (responsible for manually deleting the node).
+ * 2. The first `incRefCount` call promotes the node into managed lifetime, and
+ *    caller becomes the first owner in the new shared ownership.
+ * 3. Ensuing `(inc/dec)RefCount` calls takes/releases the shared ownership
+ * 4. The last `decRefCount` call will delete the node.
  */
 class Node {
   std::vector<Node*> inputs_;
@@ -68,14 +76,6 @@ class Node {
   // Mainly for debugging/testing
   unsigned getRefCount() const;
   // Use carefully -- this manually simulates shared ownership of a node
-  //
-  // Possible stages of lifetime
-  // 1. After the initial node creation (guarded to be heap allocation), the
-  //    creator is the owner (responsible for manually deleting the node)
-  // 2. The first `incRefCount` caller claims the ownership (becomes the first
-  //    owner in the shared ownership)
-  // 3. Ensuing `(inc/dec)RefCount` calls takes/releases the shared ownership
-  // 4. The last `decRefCount` call will delete the node.
   void incRefCount();
   void decRefCount();
 

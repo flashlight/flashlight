@@ -77,13 +77,11 @@ const UseList& Node::uses() const {
 }
 
 void Node::replaceAllUsesWith(Node* newInput) {
-  refCount_++; // a trick to avoid freeing this node in last iteration
-  while (!uses_.empty()) { // each iteration updates uses
+  // each iteration updates links an existing user to newInput
+  while (!uses_.empty()) {
     const auto* nextUse = *uses_.begin();
     nextUse->user()->setInput(nextUse->inputIdx(), newInput);
   }
-  newInput->uses_.splice(newInput->uses_.end(), std::move(uses_));
-  decRefCount(); // neutralize the refCount increment
 }
 
 unsigned Node::getRefCount() const {

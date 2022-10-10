@@ -60,16 +60,17 @@ void testBinaryOp(Op func, BinaryOp op) {
 } // namespace
 
 TEST_F(JitTensorTest, constructor) {
-  const auto data = defaultBackend_.rand(Shape({2, 2}), dtype::f32);
+  const auto dataTensor = defaultBackend_.rand(Shape({2, 2}), dtype::f32);
+  const auto data = dataTensor.toHostVector<float>();
   const Tensor tensor =
-      Tensor::fromBuffer(data.shape(), data.host<float>(), Location::Host);
+      Tensor::fromBuffer(dataTensor.shape(), data.data(), Location::Host);
   const auto& jitTensor = toJitTensorBase(tensor);
   const auto node = jitTensor.node();
   ASSERT_EQ(node->inputs(), NodeList({}));
   ASSERT_EQ(node->getRefCount(), 1);
   ASSERT_EQ(node->uses(), UseValList({}));
   ASSERT_TRUE(node->isValue());
-  ASSERT_TRUE(allClose(data, node->getResult().value()));
+  ASSERT_TRUE(allClose(dataTensor, node->getResult().value()));
 }
 
 TEST_F(JitTensorTest, full) {
