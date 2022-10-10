@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
 # Distributed Training Backend
 cmake_dependent_option(FL_BUILD_DISTRIBUTED

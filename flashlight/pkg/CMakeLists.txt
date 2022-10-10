@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
 fl_dependent_option(
   FL_BUILD_ALL_PKGS

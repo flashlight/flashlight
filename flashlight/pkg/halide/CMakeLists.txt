@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
 if (NOT (FL_USE_ARRAYFIRE AND FL_ARRAYFIRE_USE_CUDA))
   message(FATAL_ERROR "Flashlight Halide integration "

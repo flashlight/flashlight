@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
 option(FL_USE_CUDNN "Build ArrayFire tensor backend" OFF)
 

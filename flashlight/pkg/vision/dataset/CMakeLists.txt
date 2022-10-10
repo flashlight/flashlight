@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
 set(stb_INSTALL_PATH ${FL_INSTALL_INC_DIR}/stb)
 find_package(stb)
