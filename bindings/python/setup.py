@@ -19,7 +19,6 @@ from setuptools.command.build_ext import build_ext
 
 # Environment variables:
 # - `USE_CUDA=0` disables building CUDA components
-# - `USE_KENLM=0` disables building KenLM
 # - `USE_MKL=1` enables MKL (may cause errors)
 # By default build with USE_CUDA=1, USE_KENLM=1, USE_MKL=0
 
@@ -113,12 +112,8 @@ setup(
     author_email="oncall+fair_speech@xmail.facebook.com",
     description="Flashlight bindings for python",
     long_description="",
-    packages=[
-        "flashlight",
-        "flashlight.lib",
-        "flashlight.lib.audio",
-        "flashlight.lib.sequence",
-    ],
+    namespace_packages=["flashlight", "flashlight.lib"],
+    packages=["flashlight.lib.audio", "flashlight.lib.sequence"],
     ext_modules=[
         CMakeExtension("flashlight.lib.audio.feature"),
         CMakeExtension("flashlight.lib.sequence.criterion"),
