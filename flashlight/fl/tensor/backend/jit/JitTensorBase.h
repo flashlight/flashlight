@@ -11,6 +11,7 @@
 #include "flashlight/fl/tensor/backend/jit/JitBackend.h"
 #include "flashlight/fl/tensor/backend/jit/eval/Evaluator.h"
 #include "flashlight/fl/tensor/backend/jit/ir/Node.h"
+#include "flashlight/fl/tensor/backend/jit/opt/Optimizer.h"
 
 namespace fl {
 
@@ -20,6 +21,10 @@ namespace fl {
  */
 class JitTensorBase : public TensorAdapterBase {
   Node* node_;
+
+  // take care of refcount for old & new nodes
+  // `const` w.r.t. the underlying Tensor this represents.
+  void replaceNode(Node* newNode) const;
 
   // return the wrapped tensor, not a JitTensorBase
   const Tensor& getTensorOrEvalNode() const;
@@ -31,7 +36,8 @@ class JitTensorBase : public TensorAdapterBase {
   // let derived class manage the wrapped backend
   virtual TensorBackend& wrappedBackend() const = 0;
 
-  // allow JitTensor<T> to potentially inject things into Evaluator
+  // allow JitTensor<T> to potentially inject things into Optimizer/Evaluator
+  virtual Optimizer& optimizer() const = 0;
   virtual Evaluator& evaluator() const = 0;
 
   // JitTensorBase manages the backend-agnostic JIT node.

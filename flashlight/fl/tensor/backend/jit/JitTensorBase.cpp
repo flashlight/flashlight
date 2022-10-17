@@ -23,6 +23,15 @@ JitTensorBase::~JitTensorBase() {
   node_->decRefCount();
 }
 
+// take care of refcount for old & new nodes
+void JitTensorBase::replaceNode(Node* newNode) const {
+  if (node_ != newNode) {
+    node_->decRefCount();
+    newNode->incRefCount();
+    const_cast<JitTensorBase*>(this)->node_ = newNode;
+  }
+}
+
 const Tensor& JitTensorBase::getTensorOrEvalNode() const {
   if (!node_->getResult().has_value()) {
     eval();
@@ -165,7 +174,10 @@ Node* JitTensorBase::node() const {
 }
 
 void JitTensorBase::eval() const {
-  evaluator().eval(node_);
+  if (!node_->getResult().has_value()) {
+    replaceNode(optimizer().optimize(node_));
+    evaluator().eval(node_);
+  }
 }
 
 const JitTensorBase& toJitTensorBase(const Tensor& tensor) {
