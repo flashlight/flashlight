@@ -75,6 +75,10 @@ class TensorExtensionRegistrar {
         });
   }
 
+  bool isTensorExtensionRegistered(
+      TensorBackendType backend,
+      TensorExtensionType extensionType);
+
   TensorExtensionCallback& getTensorExtensionCreationFunc(
       TensorBackendType backend,
       TensorExtensionType extensionType);

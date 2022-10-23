@@ -30,6 +30,13 @@ bool TensorExtensionRegistrar::registerTensorExtension(
   return true;
 }
 
+bool TensorExtensionRegistrar::isTensorExtensionRegistered(
+      TensorBackendType backend,
+      TensorExtensionType extensionType) {
+  return extensions_.count(backend) &&
+    extensions_[backend].count(extensionType);
+}
+
 TensorExtensionCallback&
 TensorExtensionRegistrar::getTensorExtensionCreationFunc(
     TensorBackendType backend,
