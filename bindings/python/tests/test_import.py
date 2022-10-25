@@ -10,7 +10,3 @@ import os
 
 def test_import_lib_audio():
     from flashlight.lib.audio import feature as fl_feat
-
-
-def test_import_lib_sequence():
-    from flashlight.lib.sequence import criterion as fl_crit

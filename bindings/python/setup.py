@@ -72,7 +72,6 @@ class CMakeBuild(build_ext):
             "-DFL_BUILD_EXAMPLES=OFF",
             "-DFL_BUILD_TESTS=OFF",
             "-DFL_LIBRARIES_BUILD_FOR_PYTHON=ON",
-            "-DFL_LIBRARIES_USE_CUDA=" + use_cuda,
             "-DFL_LIBRARIES_USE_MKL=" + use_mkl,
         ]
         cfg = "Debug" if self.debug else "Release"
@@ -113,10 +112,9 @@ setup(
     description="Flashlight bindings for python",
     long_description="",
     namespace_packages=["flashlight", "flashlight.lib"],
-    packages=["flashlight.lib.audio", "flashlight.lib.sequence"],
+    packages=["flashlight.lib.audio"],
     ext_modules=[
         CMakeExtension("flashlight.lib.audio.feature"),
-        CMakeExtension("flashlight.lib.sequence.criterion"),
     ],
     cmdclass={"build_ext": CMakeBuild},
     zip_safe=False,

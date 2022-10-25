@@ -12,8 +12,9 @@
 #include "flashlight/fl/common/DevicePtr.h"
 #include "flashlight/fl/runtime/CUDAStream.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
-#include "flashlight/lib/sequence/criterion/cuda/CriterionUtils.cuh"
-#include "flashlight/lib/sequence/criterion/cuda/ViterbiPath.cuh"
+
+#include <flashlight/lib/sequence/criterion/cuda/CriterionUtils.cuh>
+#include <flashlight/lib/sequence/criterion/cuda/ViterbiPath.cuh>
 
 using CriterionUtils = fl::lib::cuda::CriterionUtils<float>;
 using ViterbiPath = fl::lib::cuda::ViterbiPath<float>;
