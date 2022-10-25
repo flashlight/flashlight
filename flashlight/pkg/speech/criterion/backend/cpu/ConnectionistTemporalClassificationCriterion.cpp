@@ -6,8 +6,10 @@
  */
 
 #include "flashlight/pkg/speech/criterion/ConnectionistTemporalClassificationCriterion.h"
-#include "flashlight/lib/sequence/criterion/cpu/CriterionUtils.h"
+
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
+
+#include <flashlight/lib/sequence/criterion/cpu/CriterionUtils.h>
 
 using namespace fl;
 
@@ -218,9 +220,8 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
         }
       }
     }
-    moduleInputs[0].addGrad(Variable(
-        Tensor::fromVector({N, T, B}, batchInGrad),
-        false));
+    moduleInputs[0].addGrad(
+        Variable(Tensor::fromVector({N, T, B}, batchInGrad), false));
   };
   return {Variable(result, {logprobs, target}, gradFunc)};
 }

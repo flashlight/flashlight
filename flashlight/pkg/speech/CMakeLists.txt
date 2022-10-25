@@ -29,14 +29,32 @@ if (NOT TARGET flashlight::flashlight-text)
   endif()
 endif()
 
+# flashlight-sequence is required
+if (NOT TARGET flashlight::flashlight-sequence)
+  find_package(flashlight-sequence CONFIG)
+  if (NOT TARGET flashlight::flashlight-sequence AND FL_BUILD_STANDALONE)
+    message(STATUS "Flashlight Text not found - downloading and building from source")
+    include(BuildFlashlightSequence)
+  elseif(TARGET flashlight::flashlight-sequence)
+    if (FL_USE_CUDA AND FL_SEQUENCE_USE_CUDA)
+      message(STATUS "Found flashlight-sequence")
+    else()
+      message(FATAL_ERROR "Installed flashlight-sequence not built with required CUDA support")
+    endif()
+  else()
+    message(FATAL_ERROR "Could not find requirement flashlight-sequence.")
+  endif()
+endif()
+
+
 target_link_libraries(
   fl_pkg_speech
   PUBLIC
   flashlight
   fl_pkg_runtime
   fl_lib_audio
-  fl_lib_sequence
   flashlight::flashlight-text
+  flashlight::flashlight-sequence
   )
 
 # ------------------------ Components ------------------------

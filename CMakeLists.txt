@@ -53,7 +53,6 @@ option(FL_BUILD_SCRIPTS "Build internal scripts for wav2letter++" OFF)
 option(FL_BUILD_RECIPES "Build recipes" ON)
 option(FL_BUILD_STANDALONE "Build standalone installation" ON)
 
-option(FL_LIBRARIES_USE_CUDA "Use CUDA in flashlight libraries build" ON)
 option(FL_LIBRARIES_USE_MKL "Use MKL in flashlight libraries build" ON)
 option(FL_LIBRARIES_BUILD_FOR_PYTHON "Build Python bindings" OFF)
 
@@ -112,7 +111,6 @@ endif ()
 # ------------------------ flashlight Libraries ------------------------
 
 set(FL_COMPILE_DEFINITIONS
-  $<$<BOOL:${FL_LIBRARIES_USE_CUDA}>:FL_LIBRARIES_USE_CUDA>
   $<$<BOOL:${FL_LIBRARIES_USE_MKL}>:FL_LIBRARIES_USE_MKL>
   )
 

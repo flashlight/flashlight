@@ -2,7 +2,6 @@
 `Flashlight` Python binding supports for now part of the `lib`:
 
 - featurization of raw audio (MFCC, MFSC, etc.)
-- ASG loss (CUDA and CPU backends)
 - Beam-search decoder (lexicon and lexicon free for CTC/ASG models with zerolm/kenlm language models)
 
 **Content**
@@ -13,7 +12,6 @@
   * [Build inside docker container](#build-inside-docker-container)
 - [Python API](#python-api)
   * [Featurization](#featurization)
-  * [ASG Loss](#asg-loss)
   * [Beam-search decoder](#beam-search-decoder)
   * [Define your own language model for beam-search decoding](#define-your-own-language-model-for-beam-search-decoding)
 - [Examples](#examples)
@@ -75,10 +73,8 @@ Note that if you encounter errors, you'll probably have to ``rm -rf build dist``
 ### Advanced Options
 The following environment variables can be used to control various options:
 
-- ``USE_CUDA=0`` removes the CUDA dependency, but you won't be able to use ASG criterion with CUDA tensors.
 - ``USE_KENLM=0`` removes the KenLM dependency, but you won't be able to use the decoder unless you write C++ pybind11 bindings for your own LM.
 - ``USE_MKL=1`` will use Intel MKL for featurization but this may cause dynamic loading conflicts.
-- If you do not have ``torch``, you'll only have a raw pointer interface to ASG criterion instead of ``class ASGLoss(torch.nn.Module)``.
 
 ### Build inside docker container
 - For CUDA backend inside docker container run commands
@@ -125,26 +121,6 @@ All of them have the method ``apply`` which can be used to transform the input d
   # define transformation and apply to the wave
   mfcc = Mfcc(params)
   features = mfcc.apply(wavinput)
-```
-
-### ASG Loss
-
-ASG loss is a pytorch module (``nn.Module``) which supports CPU and CUDA backends.
-It can be defined as
-
-```python
-    from flashlight.lib.sequence.criterion import ASGLoss
-    asg_loss = ASGLoss(ntokens, scale_mode).to(device)
-```
-
-where ``ntokens`` is the number of tokens predicted for each frame (number of classes), ``scale_mode`` is a scaling factor which can be:
-
-```python
-    NONE = 0, # no scaling
-    INPUT_SZ = 1, # scale to the input size
-    INPUT_SZ_SQRT = 2, # scale to the sqrt of the input size
-    TARGET_SZ = 3, # scale to the target size
-    TARGET_SZ_SQRT = 4, # scale to the sqrt of the target size
 ```
 
 ### Beam-search decoder
@@ -339,17 +315,6 @@ and for decoder:
 ```
 
 ## Examples
-
-After flashlight python package is installed, please, have a look at the examples how to use classes and methods of flashlight from python.
-
-- ASG criterion
-```bash
-    cd [flashlight]
-    # with cpu backend
-    python3 bindings/python/example/criterion_example.py --cpu
-    # with gpu backend
-    python3 bindings/python/example/criterion_example.py
-```
 
 - lexicon beam-search decoder with KenLM word-level language model
 ```bash

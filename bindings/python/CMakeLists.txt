@@ -22,7 +22,12 @@ function (add_pybind11_extension ext_name)
     ${ext_name}
     PUBLIC
     fl_lib_audio
-    fl_lib_sequence
+    )
+
+  target_include_directories(
+    ${ext_name}
+    PRIVATE
+    ${PROJECT_SOURCE_DIR}
     )
 
   add_dependencies(${ext_name} pybind11)
@@ -32,4 +37,3 @@ function (add_pybind11_extension ext_name)
 endfunction ()
 
 add_pybind11_extension(flashlight_lib_audio_feature)
-add_pybind11_extension(flashlight_lib_sequence_criterion)

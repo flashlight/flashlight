@@ -11,7 +11,6 @@ target_link_libraries(
   fl_asr_train
   fl_pkg_speech
   fl_pkg_runtime
-  fl_lib_sequence
   ${CMAKE_DL_LIBS}
   )
 target_link_libraries(

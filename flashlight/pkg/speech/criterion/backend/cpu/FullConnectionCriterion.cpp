@@ -6,10 +6,11 @@
  */
 
 #include "flashlight/pkg/speech/criterion/FullConnectionCriterion.h"
-#include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
-#include "flashlight/lib/sequence/criterion/cpu/FullConnectionCriterion.h"
+#include <flashlight/lib/sequence/criterion/cpu/FullConnectionCriterion.h>
+
 #include "flashlight/pkg/runtime/common/DistributedUtils.h"
+#include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
 using fl::Variable;
 using FCC = fl::lib::cpu::FullConnectionCriterion<float>;

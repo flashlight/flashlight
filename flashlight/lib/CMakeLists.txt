@@ -20,18 +20,6 @@ if(FL_BUILD_LIB_SET)
   setup_install_headers(${FL_SET_LIB_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
 endif()
 
-# sequence
-option(
-  FL_BUILD_LIB_SEQUENCE
-  "Build flashlight sequence library"
-  ${FL_BUILD_ALL_LIBS})
-if(FL_BUILD_LIB_SEQUENCE)
-  set(FL_SEQUENCE_LIB_DIR ${CMAKE_CURRENT_LIST_DIR}/sequence)
-  include(${FL_SEQUENCE_LIB_DIR}/CMakeLists.txt)
-  list(APPEND INSTALLABLE_TARGETS fl_lib_sequence)
-  setup_install_headers(${FL_SEQUENCE_LIB_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
-endif()
-
 # audio
 option(
   FL_BUILD_LIB_AUDIO
