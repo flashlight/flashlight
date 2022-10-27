@@ -22,7 +22,8 @@ namespace fl {
 enum class TensorExtensionType {
   Generic, // placeholder
   Autograd,
-  Vision
+  Vision,
+  JitOptimizer,
 };
 
 // Common base type

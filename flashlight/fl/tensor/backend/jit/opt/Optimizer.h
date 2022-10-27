@@ -19,9 +19,11 @@ namespace fl {
  */
 class Optimizer {
   std::vector<std::unique_ptr<Pass>> passes_;
+  // backend used for optional JIT optimizer extension
+  TensorBackend& backend_;
 
  public:
-  Optimizer();
+  explicit Optimizer(TensorBackend& backend);
 
   /**
    * Apply in-place optimization to nodes within the tree.

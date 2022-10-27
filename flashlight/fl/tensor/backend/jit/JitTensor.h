@@ -30,7 +30,7 @@ class JitTensor : public JitTensorBase {
   }
 
   Optimizer& optimizer() const override {
-    static Optimizer optimizer;
+    static Optimizer optimizer(wrappedBackend());
     return optimizer;
   }
 
