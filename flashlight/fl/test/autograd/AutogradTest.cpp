@@ -90,55 +90,55 @@ TEST(AutogradTest, BasicOps) {
   using FuncVar = std::function<Variable(Variable&, Variable&)>;
   using FuncScalarL = std::function<Variable(double, Variable&)>;
   using FuncScalarR = std::function<Variable(Variable&, double)>;
-  auto test_impl = [](FuncVar fn1, FuncScalarL fn2, FuncScalarR fn3) {
+  auto testImpl = [](FuncVar fn1, FuncScalarL fn2, FuncScalarR fn3) {
     auto input = Variable(fl::rand({3, 4, 5, 6}, fl::dtype::f64) + 1, true);
     auto temp = Variable(fl::rand({3, 4, 5, 6}, fl::dtype::f64) - 2, false);
-    JacobianFunc fn_arr_l = [&](Variable& in) { return fn1(in, temp); };
-    ASSERT_TRUE(jacobianTestImpl(fn_arr_l, input));
-    JacobianFunc fn_arr_r = [&](Variable& in) { return fn1(temp, in); };
-    ASSERT_TRUE(jacobianTestImpl(fn_arr_r, input));
-    JacobianFunc fn_scalar_l = [&](Variable& in) { return fn2(1.414, in); };
-    ASSERT_TRUE(jacobianTestImpl(fn_scalar_l, input, 1E-5, 1E-7));
-    JacobianFunc fn_scalar_r = [&](Variable& in) { return fn3(in, 1.732); };
-    ASSERT_TRUE(jacobianTestImpl(fn_scalar_r, input, 1E-5, 1E-7));
+    JacobianFunc fnArrL = [&](Variable& in) { return fn1(in, temp); };
+    ASSERT_TRUE(jacobianTestImpl(fnArrL, input));
+    JacobianFunc fnArrR = [&](Variable& in) { return fn1(temp, in); };
+    ASSERT_TRUE(jacobianTestImpl(fnArrR, input));
+    JacobianFunc fnScalarL = [&](Variable& in) { return fn2(1.414, in); };
+    ASSERT_TRUE(jacobianTestImpl(fnScalarL, input, 1E-5, 1E-7));
+    JacobianFunc fnScalarR = [&](Variable& in) { return fn3(in, 1.732); };
+    ASSERT_TRUE(jacobianTestImpl(fnScalarR, input, 1E-5, 1E-7));
   };
 
-  FuncVar func_add1 = [](Variable& a, Variable& b) { return a + b; };
-  FuncScalarL func_add2 = [](double a, Variable& b) { return a + b; };
-  FuncScalarR func_add3 = [](Variable& a, double b) { return a + b; };
-  test_impl(func_add1, func_add2, func_add3);
+  FuncVar funcAdd1 = [](Variable& a, Variable& b) { return a + b; };
+  FuncScalarL funcAdd2 = [](double a, Variable& b) { return a + b; };
+  FuncScalarR funcAdd3 = [](Variable& a, double b) { return a + b; };
+  testImpl(funcAdd1, funcAdd2, funcAdd3);
 
-  FuncVar func_sub1 = [](Variable& a, Variable& b) { return a - b; };
-  FuncScalarL func_sub2 = [](double a, Variable& b) { return a - b; };
-  FuncScalarR func_sub3 = [](Variable& a, double b) { return a - b; };
-  test_impl(func_sub1, func_sub2, func_sub3);
+  FuncVar funcSub1 = [](Variable& a, Variable& b) { return a - b; };
+  FuncScalarL funcSub2 = [](double a, Variable& b) { return a - b; };
+  FuncScalarR funcSub3 = [](Variable& a, double b) { return a - b; };
+  testImpl(funcSub1, funcSub2, funcSub3);
 
-  FuncVar func_div1 = [](Variable& a, Variable& b) { return a / b; };
-  FuncScalarL func_div2 = [](double a, Variable& b) { return a / b; };
-  FuncScalarR func_div3 = [](Variable& a, double b) { return a / b; };
-  test_impl(func_div1, func_div2, func_div3);
+  FuncVar funcDiv1 = [](Variable& a, Variable& b) { return a / b; };
+  FuncScalarL funcDiv2 = [](double a, Variable& b) { return a / b; };
+  FuncScalarR funcDiv3 = [](Variable& a, double b) { return a / b; };
+  testImpl(funcDiv1, funcDiv2, funcDiv3);
 
-  FuncVar func_mul1 = [](Variable& a, Variable& b) { return a * b; };
-  FuncScalarL func_mul2 = [](double a, Variable& b) { return a * b; };
-  FuncScalarR func_mul3 = [](Variable& a, double b) { return a * b; };
-  test_impl(func_mul1, func_mul2, func_mul3);
+  FuncVar funcMul1 = [](Variable& a, Variable& b) { return a * b; };
+  FuncScalarL funcMul2 = [](double a, Variable& b) { return a * b; };
+  FuncScalarR funcMul3 = [](Variable& a, double b) { return a * b; };
+  testImpl(funcMul1, funcMul2, funcMul3);
 
-  FuncVar func_min1 = [](Variable& a, Variable& b) { return min(a, b); };
-  FuncScalarL func_min2 = [](double a, Variable& b) { return min(a, b); };
-  FuncScalarR func_min3 = [](Variable& a, double b) { return min(a, b); };
-  test_impl(func_min1, func_min2, func_min3);
+  FuncVar funcMin1 = [](Variable& a, Variable& b) { return min(a, b); };
+  FuncScalarL funcMin2 = [](double a, Variable& b) { return min(a, b); };
+  FuncScalarR funcMin3 = [](Variable& a, double b) { return min(a, b); };
+  testImpl(funcMin1, funcMin2, funcMin3);
 
-  FuncVar func_max1 = [](Variable& a, Variable& b) { return max(a, b); };
-  FuncScalarL func_max2 = [](double a, Variable& b) { return max(a, b); };
-  FuncScalarR func_max3 = [](Variable& a, double b) { return max(a, b); };
-  test_impl(func_max1, func_max2, func_max3);
+  FuncVar funcMax1 = [](Variable& a, Variable& b) { return max(a, b); };
+  FuncScalarL funcMax2 = [](double a, Variable& b) { return max(a, b); };
+  FuncScalarR funcMax3 = [](Variable& a, double b) { return max(a, b); };
+  testImpl(funcMax1, funcMax2, funcMax3);
 }
 
 TEST(AutogradTest, OperatorParenthesis) {
   auto x = Variable(fl::rand({1, 3, 3}, fl::dtype::f64), true);
   auto y = x(0, 0) + x(0, 1);
-  auto func_operator_paren = [](Variable& in) { return in(0, 0) + in(0, 1); };
-  ASSERT_TRUE(jacobianTestImpl(func_operator_paren, x));
+  auto funcOperatorParen = [](Variable& in) { return in(0, 0) + in(0, 1); };
+  ASSERT_TRUE(jacobianTestImpl(funcOperatorParen, x));
 }
 
 TEST(AutogradTest, MultiplyAdd) {
@@ -395,8 +395,8 @@ TEST(AutogradTest, Erf) {
   auto dx = x.grad();
   ASSERT_TRUE(allClose(dx.tensor(), targetGrads.tensor()));
 
-  auto func_erf = [](Variable& in) { return erf(in); };
-  ASSERT_TRUE(jacobianTestImpl(func_erf, x, 5e-4, 1e-4));
+  auto funcErf = [](Variable& in) { return erf(in); };
+  ASSERT_TRUE(jacobianTestImpl(funcErf, x, 5e-4, 1e-4));
 }
 
 TEST(AutogradTest, Tanh) {
@@ -416,16 +416,16 @@ TEST(AutogradTest, Transpose) {
   out.backward();
   ASSERT_EQ(in.grad().shape(), Shape({5, 6, 7, 8}));
 
-  auto func_erf = [](Variable& in) { return transpose(in, {1, 3, 2, 0}); };
-  ASSERT_TRUE(jacobianTestImpl(func_erf, in, 5e-4, 1e-4));
+  auto funcErf = [](Variable& in) { return transpose(in, {1, 3, 2, 0}); };
+  ASSERT_TRUE(jacobianTestImpl(funcErf, in, 5e-4, 1e-4));
 
   auto in2 = Variable(fl::rand({6, 7, 8, 9}), true);
   auto out2 = transpose(in2);
   out2.backward();
   ASSERT_EQ(in2.grad().shape(), Shape({6, 7, 8, 9}));
 
-  auto func_erf2 = [](Variable& in) { return transpose(in); };
-  ASSERT_TRUE(jacobianTestImpl(func_erf2, in2, 5e-4, 1e-4));
+  auto funcErf2 = [](Variable& in) { return transpose(in); };
+  ASSERT_TRUE(jacobianTestImpl(funcErf2, in2, 5e-4, 1e-4));
 }
 
 TEST(AutogradTest, Concatenate) {
@@ -438,15 +438,15 @@ TEST(AutogradTest, Concatenate) {
 
   ASSERT_EQ(output.shape(), Shape({2, 3, 12, 2}));
 
-  auto func_concatenate_t1 = [x2, x3, x4](Variable& in) {
+  auto funcConcatenateT1 = [x2, x3, x4](Variable& in) {
     return concatenate({in, x2, x3, x4}, 2);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_concatenate_t1, x1));
+  ASSERT_TRUE(jacobianTestImpl(funcConcatenateT1, x1));
 
-  auto func_concatenate_t2 = [x1, x2, x4](Variable& in) {
+  auto funcConcatenateT2 = [x1, x2, x4](Variable& in) {
     return concatenate({x1, x2, in, x4}, 2);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_concatenate_t2, x3));
+  ASSERT_TRUE(jacobianTestImpl(funcConcatenateT2, x3));
 }
 
 TEST(AutogradTest, Split) {
@@ -529,8 +529,8 @@ TEST(AutogradTest, Tile) {
 
   // Jacobian
   auto input = Variable(fl::rand({10, 1, 5}), true);
-  auto func_tile = [](Variable& in) { return tile(in, {1, 2}); };
-  ASSERT_TRUE(jacobianTestImpl(func_tile, input, 1E-4, 1E-3));
+  auto funcTile = [](Variable& in) { return tile(in, {1, 2}); };
+  ASSERT_TRUE(jacobianTestImpl(funcTile, input, 1E-4, 1E-3));
 }
 
 TEST(AutogradTest, Clamp) {
@@ -542,9 +542,9 @@ TEST(AutogradTest, Clamp) {
   inarr = fl::where(fl::abs(inarr - lo) > perturb, inarr, lo + 10 * perturb);
   inarr = fl::where(fl::abs(inarr - hi) > perturb, inarr, hi + 10 * perturb);
 
-  auto func_col = [lo, hi](Variable& in) { return clamp(in, lo, hi); };
+  auto funcCol = [lo, hi](Variable& in) { return clamp(in, lo, hi); };
 
-  ASSERT_TRUE(jacobianTestImpl(func_col, input, 1E-10, perturb));
+  ASSERT_TRUE(jacobianTestImpl(funcCol, input, 1E-10, perturb));
 }
 
 TEST(AutogradTest, SumAs) {
@@ -588,14 +588,14 @@ TEST(AutogradTest, Sum) {
     ASSERT_TRUE(allClose(dx.tensor(), fl::sum(y.tensor(), {1}, keepDims)));
 
     // Reduce over 1-dim input
-    auto func_mean_0 = [keepDims](const Variable& in) {
+    auto funcMean_0 = [keepDims](const Variable& in) {
       return sum(in, {0}, keepDims);
     };
     auto in = Variable(fl::rand({6}), true);
-    ASSERT_TRUE(jacobianTestImpl(func_mean_0, in, 5E-3));
+    ASSERT_TRUE(jacobianTestImpl(funcMean_0, in, 5E-3));
     // Reduce over scalar input
     auto inScalar = Variable(fl::fromScalar(3.14), true);
-    ASSERT_TRUE(jacobianTestImpl(func_mean_0, inScalar, 5E-3));
+    ASSERT_TRUE(jacobianTestImpl(funcMean_0, inScalar, 5E-3));
   }
 
   auto r = Variable(fl::rand({5, 6, 7, 8}), true);
@@ -621,8 +621,8 @@ TEST(AutogradTest, Log1p) {
 
 TEST(AutogradTest, Sqrt) {
   auto x = Variable(fl::rand({5, 3}, fl::dtype::f64), true);
-  auto func_sqrt = [](Variable& in) { return fl::sqrt(in); };
-  ASSERT_TRUE(jacobianTestImpl(func_sqrt, x, 1E-3));
+  auto funcSqrt = [](Variable& in) { return fl::sqrt(in); };
+  ASSERT_TRUE(jacobianTestImpl(funcSqrt, x, 1E-3));
 }
 
 TEST(AutogradTest, Mean) {
@@ -640,25 +640,25 @@ TEST(AutogradTest, Mean) {
     ASSERT_TRUE(allClose(dx.tensor(), fl::mean(y.tensor(), {1, 2}, keepDims)));
 
     auto a = Variable(fl::rand({5, 3, 2}, fl::dtype::f64), true);
-    auto func_mean = [keepDims](Variable& in) {
+    auto funcMean = [keepDims](Variable& in) {
       return mean(in, {1, 2}, keepDims);
     };
-    ASSERT_TRUE(jacobianTestImpl(func_mean, a, 1E-4));
+    ASSERT_TRUE(jacobianTestImpl(funcMean, a, 1E-4));
 
     auto q = Variable(fl::rand({5, 6, 7, 8}), false);
     auto qOut = mean(q, {1, 2}, keepDims);
     auto qOutTensor = fl::mean(q.tensor(), {1, 2}, keepDims);
     ASSERT_TRUE(allClose(qOut.tensor(), qOutTensor));
 
-    auto func_mean_0 = [keepDims](Variable& in) {
+    auto funcMean_0 = [keepDims](Variable& in) {
       return mean(in, {0}, keepDims);
     };
     // Reduce over 1-dim input
     auto in = Variable(fl::rand({6}), true);
-    ASSERT_TRUE(jacobianTestImpl(func_mean_0, in, 5E-3));
+    ASSERT_TRUE(jacobianTestImpl(funcMean_0, in, 5E-3));
     // Reduce over scalar input
     auto inScalar = Variable(fl::fromScalar(3.14), true);
-    ASSERT_TRUE(jacobianTestImpl(func_mean_0, inScalar, 5E-3));
+    ASSERT_TRUE(jacobianTestImpl(funcMean_0, inScalar, 5E-3));
   }
 }
 
@@ -676,14 +676,14 @@ TEST(AutogradTest, Variance) {
       // other libraries.
       bool afVarBiasArg = !b;
 
-      auto expected_var = fl::var(x.tensor(), {1}, afVarBiasArg, keepDims);
-      auto calculated_var = var(x, {1}, b, keepDims);
-      ASSERT_TRUE(allClose(calculated_var.tensor(), expected_var));
+      auto expectedVar = fl::var(x.tensor(), {1}, afVarBiasArg, keepDims);
+      auto calculatedVar = var(x, {1}, b, keepDims);
+      ASSERT_TRUE(allClose(calculatedVar.tensor(), expectedVar));
 
-      auto func_var = [b, keepDims](Variable& in) {
+      auto funcVar = [b, keepDims](Variable& in) {
         return var(in, {1, 2}, b, keepDims);
       };
-      ASSERT_TRUE(jacobianTestImpl(func_var, x, 1E-5, 1E-5));
+      ASSERT_TRUE(jacobianTestImpl(funcVar, x, 1E-5, 1E-5));
     }
   }
 }
@@ -722,33 +722,33 @@ TEST(AutogradTest, Normalize) {
 TEST(AutogradTest, Indexing) {
   auto x = Variable(fl::rand({5, 6, 7, 4}, fl::dtype::f64), true);
 
-  auto func_col = [](Variable& input) { return input(fl::span, 4); };
-  ASSERT_TRUE(jacobianTestImpl(func_col, x));
+  auto funcCol = [](Variable& input) { return input(fl::span, 4); };
+  ASSERT_TRUE(jacobianTestImpl(funcCol, x));
 
-  auto func_row = [](Variable& input) { return input(4); };
-  ASSERT_TRUE(jacobianTestImpl(func_row, x));
+  auto funcRow = [](Variable& input) { return input(4); };
+  ASSERT_TRUE(jacobianTestImpl(funcRow, x));
 
-  auto func_slice = [](Variable& input) {
+  auto funcSlice = [](Variable& input) {
     return input(fl::span, fl::span, 4);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_slice, x));
+  ASSERT_TRUE(jacobianTestImpl(funcSlice, x));
 
-  auto func_cols = [](Variable& input) {
+  auto funcCols = [](Variable& input) {
     return input(fl::span, fl::range(2, 5));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_cols, x));
+  ASSERT_TRUE(jacobianTestImpl(funcCols, x));
 
-  auto func_rows = [](Variable& input) { return input(fl::range(2, 5)); };
-  ASSERT_TRUE(jacobianTestImpl(func_rows, x));
+  auto funcRows = [](Variable& input) { return input(fl::range(2, 5)); };
+  ASSERT_TRUE(jacobianTestImpl(funcRows, x));
 
-  auto func_slices = [](Variable& input) {
+  auto funcSlices = [](Variable& input) {
     return input(fl::span, fl::span, fl::range(2, 5));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_slices, x));
-  auto func_flat = [](Variable& input) {
+  ASSERT_TRUE(jacobianTestImpl(funcSlices, x));
+  auto funcFlat = [](Variable& input) {
     return input.flat(fl::range(4, 100));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_flat, x));
+  ASSERT_TRUE(jacobianTestImpl(funcFlat, x));
 }
 
 TEST(AutogradTest, Convolve) {
@@ -759,7 +759,7 @@ TEST(AutogradTest, Convolve) {
   int sx = 1, sy = 1;
   int dx = 1, dy = 1;
   auto benchmarks = std::make_shared<detail::ConvBenchmarks>();
-  auto func_conv_in = [&](Variable& input) {
+  auto funcConvIn = [&](Variable& input) {
     return conv2d(
         input,
         wt,
@@ -773,8 +773,8 @@ TEST(AutogradTest, Convolve) {
         /* groups */ 1,
         benchmarks);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_conv_in, in, 0.06));
-  auto func_conv_wt = [&](Variable& weight) {
+  ASSERT_TRUE(jacobianTestImpl(funcConvIn, in, 0.06));
+  auto funcConvWt = [&](Variable& weight) {
     return conv2d(
         in,
         weight,
@@ -788,8 +788,8 @@ TEST(AutogradTest, Convolve) {
         /* groups */ 1,
         benchmarks);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_conv_wt, wt, 0.06));
-  auto func_conv_bs = [&](Variable& bias) {
+  ASSERT_TRUE(jacobianTestImpl(funcConvWt, wt, 0.06));
+  auto funcConvBs = [&](Variable& bias) {
     return conv2d(
         in,
         wt,
@@ -803,7 +803,7 @@ TEST(AutogradTest, Convolve) {
         /* groups */ 1,
         benchmarks);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_conv_bs, bs, 0.03));
+  ASSERT_TRUE(jacobianTestImpl(funcConvBs, bs, 0.03));
 }
 
 TEST_F(AutogradTestF16, ConvolveF16) {
@@ -820,7 +820,7 @@ TEST_F(AutogradTestF16, ConvolveF16) {
   int sx = 1, sy = 1;
   int dx = 1, dy = 1;
   auto benchmarks = std::make_shared<detail::ConvBenchmarks>();
-  auto func_conv_in = [&](Variable& input) {
+  auto funcConvIn = [&](Variable& input) {
     return conv2d(
         input,
         wt,
@@ -834,8 +834,8 @@ TEST_F(AutogradTestF16, ConvolveF16) {
         /* groups */ 1,
         benchmarks);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_conv_in, in, 5e-1, 0.1));
-  auto func_conv_wt = [&](Variable& weight) {
+  ASSERT_TRUE(jacobianTestImpl(funcConvIn, in, 5e-1, 0.1));
+  auto funcConvWt = [&](Variable& weight) {
     return conv2d(
         in,
         weight,
@@ -849,8 +849,8 @@ TEST_F(AutogradTestF16, ConvolveF16) {
         /* groups */ 1,
         benchmarks);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_conv_wt, wt, 5e-2, 0.1));
-  auto func_conv_bs = [&](Variable& bias) {
+  ASSERT_TRUE(jacobianTestImpl(funcConvWt, wt, 5e-2, 0.1));
+  auto funcConvBs = [&](Variable& bias) {
     return conv2d(
         in,
         wt,
@@ -864,7 +864,7 @@ TEST_F(AutogradTestF16, ConvolveF16) {
         /* groups */ 1,
         benchmarks);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_conv_bs, bs, 3e-2, 0.1));
+  ASSERT_TRUE(jacobianTestImpl(funcConvBs, bs, 3e-2, 0.1));
 }
 
 TEST(AutogradTest, ConvolveFilterGroups) {
@@ -880,18 +880,18 @@ TEST(AutogradTest, ConvolveFilterGroups) {
   int px = 2, py = 1;
   int sx = 1, sy = 1;
   int dx = 1, dy = 1;
-  auto func_conv_in = [&](Variable& input) {
+  auto funcConvIn = [&](Variable& input) {
     return conv2d(input, wt, bs, sx, sy, px, py, dx, dy, groups);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_conv_in, in, 0.06));
-  auto func_conv_wt = [&](Variable& weight) {
+  ASSERT_TRUE(jacobianTestImpl(funcConvIn, in, 0.06));
+  auto funcConvWt = [&](Variable& weight) {
     return conv2d(in, weight, bs, sx, sy, px, py, dx, dy, groups);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_conv_wt, wt, 0.05));
-  auto func_conv_bs = [&](Variable& bias) {
+  ASSERT_TRUE(jacobianTestImpl(funcConvWt, wt, 0.05));
+  auto funcConvBs = [&](Variable& bias) {
     return conv2d(in, wt, bias, sx, sy, px, py, dx, dy, groups);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_conv_bs, bs, 0.02));
+  ASSERT_TRUE(jacobianTestImpl(funcConvBs, bs, 0.02));
 }
 
 TEST(AutogradTest, ConvolveDilation) {
@@ -901,7 +901,7 @@ TEST(AutogradTest, ConvolveDilation) {
   int px = 2, py = 1;
   int sx = 1, sy = 1;
   int dx = 2, dy = 1;
-  auto func_conv_in = [&](Variable& input) {
+  auto funcConvIn = [&](Variable& input) {
     return conv2d(
         input,
         wt,
@@ -914,8 +914,8 @@ TEST(AutogradTest, ConvolveDilation) {
         dy,
         /* groups */ 1);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_conv_in, in, 0.06));
-  auto func_conv_wt = [&](Variable& weight) {
+  ASSERT_TRUE(jacobianTestImpl(funcConvIn, in, 0.06));
+  auto funcConvWt = [&](Variable& weight) {
     return conv2d(
         in,
         weight,
@@ -928,8 +928,8 @@ TEST(AutogradTest, ConvolveDilation) {
         dy,
         /* groups */ 1);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_conv_wt, wt, 0.05));
-  auto func_conv_bs = [&](Variable& bias) {
+  ASSERT_TRUE(jacobianTestImpl(funcConvWt, wt, 0.05));
+  auto funcConvBs = [&](Variable& bias) {
     return conv2d(
         in,
         wt,
@@ -942,21 +942,21 @@ TEST(AutogradTest, ConvolveDilation) {
         dy,
         /* groups */ 1);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_conv_bs, bs, 0.02));
+  ASSERT_TRUE(jacobianTestImpl(funcConvBs, bs, 0.02));
 }
 
 TEST(AutogradTest, Padding) {
   auto in = Variable(fl::rand({3, 3}, fl::dtype::f32), true);
-  auto func_pad = [&](Variable& input) {
+  auto funcPad = [&](Variable& input) {
     return padding(input, {{1, 2}, {0, 1}}, -1);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_pad, in, 1E-3));
+  ASSERT_TRUE(jacobianTestImpl(funcPad, in, 1E-3));
 }
 
 TEST(AutogradTest, Pooling) {
   auto in = Variable(fl::rand({3, 3, 1, 1}, fl::dtype::f32), true);
-  auto func_pool = [&](Variable& input) { return pool2d(input, 2, 2, 1, 1); };
-  ASSERT_TRUE(jacobianTestImpl(func_pool, in, 1E-3));
+  auto funcPool = [&](Variable& input) { return pool2d(input, 2, 2, 1, 1); };
+  ASSERT_TRUE(jacobianTestImpl(funcPool, in, 1E-3));
 }
 
 TEST_F(AutogradTestF16, PoolingF16) {
@@ -966,15 +966,15 @@ TEST_F(AutogradTestF16, PoolingF16) {
 
   const float inputScale = 2.0; // scale the input to prevent grad underflow
   auto in = Variable(inputScale * fl::rand({3, 3, 1, 1}, fl::dtype::f16), true);
-  auto func_pool = [&](Variable& input) { return pool2d(input, 2, 2, 1, 1); };
-  ASSERT_TRUE(jacobianTestImpl(func_pool, in, 1e1, 1e-1)); // TODO: investigate
+  auto funcPool = [&](Variable& input) { return pool2d(input, 2, 2, 1, 1); };
+  ASSERT_TRUE(jacobianTestImpl(funcPool, in, 1e1, 1e-1)); // TODO: investigate
 }
 
 TEST(AutogradTest, Softmax) {
   auto in = Variable(fl::rand({3, 5, 1}, fl::dtype::f64), true);
-  auto func_sm = [&](Variable& input) { return softmax(input, 0); };
+  auto funcSm = [&](Variable& input) { return softmax(input, 0); };
 
-  ASSERT_TRUE(jacobianTestImpl(func_sm, in, 1E-5));
+  ASSERT_TRUE(jacobianTestImpl(funcSm, in, 1E-5));
 }
 
 TEST_F(AutogradTestF16, SoftmaxF16) {
@@ -983,16 +983,16 @@ TEST_F(AutogradTestF16, SoftmaxF16) {
   }
 
   auto in = Variable(fl::rand({3, 5, 1}, fl::dtype::f16), true);
-  auto func_sm = [&](Variable& input) { return softmax(input, 0); };
+  auto funcSm = [&](Variable& input) { return softmax(input, 0); };
 
-  ASSERT_TRUE(jacobianTestImpl(func_sm, in, 1E-2, 1e-1));
+  ASSERT_TRUE(jacobianTestImpl(funcSm, in, 1E-2, 1e-1));
 }
 
 TEST(AutogradTest, LogSoftmax) {
   auto in = Variable(fl::rand({3, 5, 1}, fl::dtype::f64), true);
-  auto func_lsm = [&](Variable& input) { return logSoftmax(input, 0); };
+  auto funcLsm = [&](Variable& input) { return logSoftmax(input, 0); };
 
-  ASSERT_TRUE(jacobianTestImpl(func_lsm, in, 1E-5));
+  ASSERT_TRUE(jacobianTestImpl(funcLsm, in, 1E-5));
 }
 
 TEST_F(AutogradTestF16, LogSoftmaxF16) {
@@ -1001,9 +1001,9 @@ TEST_F(AutogradTestF16, LogSoftmaxF16) {
   }
 
   auto in = Variable(fl::rand({3, 5, 1}, fl::dtype::f16), true);
-  auto func_lsm = [&](Variable& input) { return logSoftmax(input, 0); };
+  auto funcLsm = [&](Variable& input) { return logSoftmax(input, 0); };
 
-  ASSERT_TRUE(jacobianTestImpl(func_lsm, in, 1E-2, 1e-1));
+  ASSERT_TRUE(jacobianTestImpl(funcLsm, in, 1E-2, 1e-1));
 }
 
 TEST(AutogradTest, BinaryCrossEntropy) {
@@ -1062,10 +1062,10 @@ TEST(AutogradTest, CrossEntropy) {
 
 TEST(AutogradTest, Reorder) {
   auto in = Variable(fl::rand({3, 1, 4, 1}, fl::dtype::f32) * 2, true);
-  auto func_reorder = [&](Variable& input) {
+  auto funcReorder = [&](Variable& input) {
     return reorder(input, {2, 0, 3, 1});
   };
-  ASSERT_TRUE(jacobianTestImpl(func_reorder, in, 1E-3));
+  ASSERT_TRUE(jacobianTestImpl(funcReorder, in, 1E-3));
 }
 
 TEST(AutogradTest, matmul) {
@@ -1137,8 +1137,8 @@ TEST(AutogradTest, matmul) {
 
 TEST(AutogradTest, Glu) {
   auto in = Variable(fl::rand({3, 4, 5}, fl::dtype::f64), true);
-  auto func_glu = [&](Variable& input) { return gatedlinearunit(input, 1); };
-  ASSERT_TRUE(jacobianTestImpl(func_glu, in, 1E-5));
+  auto funcGlu = [&](Variable& input) { return gatedlinearunit(input, 1); };
+  ASSERT_TRUE(jacobianTestImpl(funcGlu, in, 1E-5));
 }
 
 TEST(AutogradTest, Linear) {
@@ -1147,12 +1147,12 @@ TEST(AutogradTest, Linear) {
     auto in = Variable(fl::rand({3, 4, b}, fl::dtype::f64) * 2 - 1, true);
     auto wt = Variable(fl::rand({6, 3}, fl::dtype::f64) * 2 - 1, true);
     auto bs = Variable(fl::rand({6}, fl::dtype::f64) * 2 - 1, true);
-    auto func_lin_in = [&](Variable& input) { return linear(input, wt, bs); };
-    ASSERT_TRUE(jacobianTestImpl(func_lin_in, in, 1E-8));
-    auto func_lin_wt = [&](Variable& weight) { return linear(in, weight, bs); };
-    ASSERT_TRUE(jacobianTestImpl(func_lin_wt, wt, 1E-8));
-    auto func_lin_bs = [&](Variable& bias) { return linear(in, wt, bias); };
-    ASSERT_TRUE(jacobianTestImpl(func_lin_bs, bs, 1E-8));
+    auto funcLinIn = [&](Variable& input) { return linear(input, wt, bs); };
+    ASSERT_TRUE(jacobianTestImpl(funcLinIn, in, 1E-8));
+    auto funcLinWt = [&](Variable& weight) { return linear(in, weight, bs); };
+    ASSERT_TRUE(jacobianTestImpl(funcLinWt, wt, 1E-8));
+    auto funcLinBs = [&](Variable& bias) { return linear(in, wt, bias); };
+    ASSERT_TRUE(jacobianTestImpl(funcLinBs, bs, 1E-8));
   }
 }
 
@@ -1167,50 +1167,50 @@ TEST_F(AutogradTestF16, LinearF16) {
     auto in = Variable(fl::rand({2, 2, b}, fl::dtype::f16) * scale, true);
     auto wt = Variable(fl::rand({2, 2}, fl::dtype::f16) * scale, true);
     auto bs = Variable(fl::rand({2}, fl::dtype::f16) * scale, true);
-    auto func_lin_in = [&](Variable& input) { return linear(input, wt, bs); };
-    ASSERT_TRUE(jacobianTestImpl(func_lin_in, in, 5E-2, 5E-1));
-    auto func_lin_wt = [&](Variable& weight) { return linear(in, weight, bs); };
-    ASSERT_TRUE(jacobianTestImpl(func_lin_wt, wt, 5E-2, 5E-1));
-    auto func_lin_bs = [&](Variable& bias) { return linear(in, wt, bias); };
-    ASSERT_TRUE(jacobianTestImpl(func_lin_bs, bs, 5E-2, 5E-1));
+    auto funcLinIn = [&](Variable& input) { return linear(input, wt, bs); };
+    ASSERT_TRUE(jacobianTestImpl(funcLinIn, in, 5E-2, 5E-1));
+    auto funcLinWt = [&](Variable& weight) { return linear(in, weight, bs); };
+    ASSERT_TRUE(jacobianTestImpl(funcLinWt, wt, 5E-2, 5E-1));
+    auto funcLinBs = [&](Variable& bias) { return linear(in, wt, bias); };
+    ASSERT_TRUE(jacobianTestImpl(funcLinBs, bs, 5E-2, 5E-1));
   }
 }
 
 TEST(AutogradTest, WeightNormLinear) {
   auto v = Variable(fl::rand({3, 2}), true);
-  auto norm_dim = {1};
-  auto g = Variable(norm(v, norm_dim).tensor(), true);
+  auto normDim = {1};
+  auto g = Variable(norm(v, normDim).tensor(), true);
   auto in = Variable(fl::rand({2, 3}, fl::dtype::f32), true);
 
-  auto func_weightNorm_in = [&](Variable& input) {
-    auto w = v * tileAs(g / norm(v, norm_dim), v);
+  auto funcWeightNormIn = [&](Variable& input) {
+    auto w = v * tileAs(g / norm(v, normDim), v);
     return matmul(w, input);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_weightNorm_in, in, 1E-3));
+  ASSERT_TRUE(jacobianTestImpl(funcWeightNormIn, in, 1E-3));
 
-  auto func_weightNorm_v = [&](Variable& input) {
-    auto w = input * tileAs(g / norm(input, norm_dim), input);
+  auto funcWeightNormV = [&](Variable& input) {
+    auto w = input * tileAs(g / norm(input, normDim), input);
     return matmul(w, in);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_weightNorm_v, v, 1E-2));
+  ASSERT_TRUE(jacobianTestImpl(funcWeightNormV, v, 1E-2));
 
-  auto func_weightNorm_g = [&](Variable& input) {
-    auto w = v * tileAs(input / norm(v, norm_dim), v);
+  auto funcWeightNormG = [&](Variable& input) {
+    auto w = v * tileAs(input / norm(v, normDim), v);
     return matmul(w, in);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_weightNorm_g, g, 5E-3));
+  ASSERT_TRUE(jacobianTestImpl(funcWeightNormG, g, 5E-3));
 }
 
 TEST(AutogradTest, WeightNormConv) {
   auto v = Variable(fl::rand({3, 3, 3, 8}), true);
-  auto norm_dim = {0, 1, 2};
+  auto normDim = {0, 1, 2};
   auto g = Variable(
-      norm(v, norm_dim, /* p = */ 2, /* keepDims = */ true).tensor(), true);
+      norm(v, normDim, /* p = */ 2, /* keepDims = */ true).tensor(), true);
   auto in = Variable(fl::rand({7, 7, 3, 8}) * 2 - 2, true);
 
-  auto func_weightNorm_in = [&](Variable& input) {
+  auto funcWeightNormIn = [&](Variable& input) {
     auto w = v *
-        tileAs(g / norm(v, norm_dim, /* p = */ 2, /* keepDims = */ true), v);
+        tileAs(g / norm(v, normDim, /* p = */ 2, /* keepDims = */ true), v);
     return conv2d(
         input,
         w,
@@ -1222,11 +1222,11 @@ TEST(AutogradTest, WeightNormConv) {
         /* dy */ 1,
         /* groups */ 1);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_weightNorm_in, in, 3E-1));
+  ASSERT_TRUE(jacobianTestImpl(funcWeightNormIn, in, 3E-1));
 
-  auto func_weightNorm_v = [&](Variable& input) {
+  auto funcWeightNormV = [&](Variable& input) {
     auto w = input *
-        tileAs(g / norm(input, norm_dim, /* p = */ 2, /* keepDims = */ true),
+        tileAs(g / norm(input, normDim, /* p = */ 2, /* keepDims = */ true),
                input);
     return conv2d(
         in,
@@ -1239,11 +1239,11 @@ TEST(AutogradTest, WeightNormConv) {
         /* dy */ 1,
         /* groups */ 1);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_weightNorm_v, v, 2E-1));
+  ASSERT_TRUE(jacobianTestImpl(funcWeightNormV, v, 2E-1));
 
-  auto func_weightNorm_g = [&](Variable& input) {
+  auto funcWeightNormG = [&](Variable& input) {
     auto w = v *
-        tileAs(input / norm(v, norm_dim, /* p = */ 2, /* keepDims = */ true),
+        tileAs(input / norm(v, normDim, /* p = */ 2, /* keepDims = */ true),
                v);
     return conv2d(
         in,
@@ -1256,7 +1256,7 @@ TEST(AutogradTest, WeightNormConv) {
         /* dy */ 1,
         /* groups */ 1);
   };
-  ASSERT_TRUE(jacobianTestImpl(func_weightNorm_g, g, 2E-1));
+  ASSERT_TRUE(jacobianTestImpl(funcWeightNormG, g, 2E-1));
 }
 
 void testRnnImpl(RnnMode mode, fl::dtype precision = fl::dtype::f64) {
@@ -1441,23 +1441,23 @@ TEST_F(AutogradTestF16, GruF16) {
 }
 
 TEST(AutogradTest, Embedding) {
-  int n_words = 10;
+  int nWords = 10;
   auto input =
-      Variable((fl::rand({4, 2}) * n_words).astype(fl::dtype::f32), false);
-  auto weights = Variable(fl::randn({4, n_words}, fl::dtype::f64), true);
-  auto func_embed = [&](Variable& w) { return embedding(input, w); };
-  ASSERT_TRUE(jacobianTestImpl(func_embed, weights, 1E-5));
+      Variable((fl::rand({4, 2}) * nWords).astype(fl::dtype::f32), false);
+  auto weights = Variable(fl::randn({4, nWords}, fl::dtype::f64), true);
+  auto funcEmbed = [&](Variable& w) { return embedding(input, w); };
+  ASSERT_TRUE(jacobianTestImpl(funcEmbed, weights, 1E-5));
 }
 
 TEST(AutogradTest, BatchNormEvalModeOutputSingleAxis) {
-  int feat_dims = 3;
+  int featDims = 3;
   std::vector<int> featAxes = {2};
   // input order: HWCN, following the docs
-  auto input = Variable(fl::rand({13, 13, feat_dims, 16}), false);
-  auto runningMean = Variable(fl::rand({feat_dims}, input.type()), false);
-  auto runningVar = Variable(fl::rand({feat_dims}, input.type()), false);
-  auto weight = Variable(fl::rand({feat_dims}, input.type()), false);
-  auto bias = Variable(fl::rand({feat_dims}, input.type()), false);
+  auto input = Variable(fl::rand({13, 13, featDims, 16}), false);
+  auto runningMean = Variable(fl::rand({featDims}, input.type()), false);
+  auto runningVar = Variable(fl::rand({featDims}, input.type()), false);
+  auto weight = Variable(fl::rand({featDims}, input.type()), false);
+  auto bias = Variable(fl::rand({featDims}, input.type()), false);
 
   auto out = (batchnorm(
       input,
@@ -1469,7 +1469,7 @@ TEST(AutogradTest, BatchNormEvalModeOutputSingleAxis) {
       false,
       0.0,
       1E-5));
-  for (int i = 0; i < feat_dims; ++i) {
+  for (int i = 0; i < featDims; ++i) {
     std::array<fl::Index, 4> sel = {fl::span, fl::span, i, fl::span};
     auto thisInput = input.tensor()(sel[0], sel[1], sel[2], sel[3]);
     auto thisMean = runningMean.tensor().flatten()(i).scalar<float>();
@@ -1494,7 +1494,7 @@ TEST(AutogradTest, BatchNormEvalModeOutputSingleAxis) {
       false,
       0.0,
       1E-5));
-  for (int i = 0; i < feat_dims; ++i) {
+  for (int i = 0; i < featDims; ++i) {
     std::array<fl::Index, 4> sel = {fl::span, fl::span, i, fl::span};
     auto thisInput = input.tensor()(sel[0], sel[1], sel[2], sel[3]);
     auto thisMean = runningMean.tensor().flatten()(i).scalar<float>();
@@ -1592,10 +1592,10 @@ TEST(AutogradTest, BatchNormTrainModeOutputSingleAxis) {
       epsilon);
 
   auto todim = Shape({1, 1, numFeat});
-  std::vector<int> nrm_axes = {0, 1, 3};
-  auto avg = moddims(mean(input, nrm_axes), todim);
+  std::vector<int> nrmAxes = {0, 1, 3};
+  auto avg = moddims(mean(input, nrmAxes), todim);
   auto variance =
-      moddims(var(input, nrm_axes, true /* population var */), todim);
+      moddims(var(input, nrmAxes, true /* population var */), todim);
   auto expectedOut = (input - tileAs(avg, input)) /
       fl::sqrt(tileAs(variance, input) + epsilon);
   expectedOut = expectedOut * tileAs(moddims(weight, todim), input) +
@@ -1620,9 +1620,9 @@ TEST(AutogradTest, BatchNormTrainModeOutputMultipleAxis) {
       input, weight, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5);
 
   auto todim = Shape({nfeatures});
-  std::vector<int> nrm_axes = {3};
-  auto avg = moddims(mean(input, nrm_axes), todim);
-  auto variance = moddims(var(input, nrm_axes, true), todim);
+  std::vector<int> nrmAxes = {3};
+  auto avg = moddims(mean(input, nrmAxes), todim);
+  auto variance = moddims(var(input, nrmAxes, true), todim);
 
   for (int i = 0; i < nfeatures; ++i) {
     std::array<fl::Index, 4> sel = {
@@ -1641,7 +1641,7 @@ TEST(AutogradTest, BatchNormTrainModeOutputMultipleAxis) {
 }
 
 TEST(AutogradTest, BatchNormJacobian) {
-  // Jacobian Test with train_mode = true;
+  // Jacobian Test with trainMode = true;
 
   int numFeat = 3;
   std::vector<int> featAxes = {2};
@@ -1651,23 +1651,23 @@ TEST(AutogradTest, BatchNormJacobian) {
   auto weight = Variable(fl::rand({numFeat}, fl::dtype::f32), true);
   auto bias = Variable(fl::rand({numFeat}, fl::dtype::f32), true);
 
-  auto func_bn_in = [&](Variable& in) {
+  auto funcBnIn = [&](Variable& in) {
     return (batchnorm(
         in, weight, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_bn_in, input, 1e-2, 1e-4));
+  ASSERT_TRUE(jacobianTestImpl(funcBnIn, input, 1e-2, 1e-4));
 
-  auto func_bn_wt = [&](Variable& wt) {
+  auto funcBnWt = [&](Variable& wt) {
     return (batchnorm(
         input, wt, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_bn_wt, weight, 1e-2, 1e-4));
+  ASSERT_TRUE(jacobianTestImpl(funcBnWt, weight, 1e-2, 1e-4));
 
-  auto func_bn_bs = [&](Variable& bs) {
+  auto funcBnBs = [&](Variable& bs) {
     return (batchnorm(
         input, weight, bs, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_bn_bs, bias, 1e-2, 1e-4));
+  ASSERT_TRUE(jacobianTestImpl(funcBnBs, bias, 1e-2, 1e-4));
 }
 
 TEST_F(AutogradTestF16, BatchNormJacobianF16) {
@@ -1675,7 +1675,7 @@ TEST_F(AutogradTestF16, BatchNormJacobianF16) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
-  // Jacobian Test with train_mode = true;
+  // Jacobian Test with trainMode = true;
 
   int numFeat = 3;
   std::vector<int> featAxes = {2};
@@ -1687,27 +1687,27 @@ TEST_F(AutogradTestF16, BatchNormJacobianF16) {
 
   // Use larger perturbations to ensure gradients don't underflow with fp16
 
-  auto func_bn_in = [&](Variable& in) {
+  auto funcBnIn = [&](Variable& in) {
     return (batchnorm(
         in, weight, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_bn_in, input, 5e-2, 1e-1));
+  ASSERT_TRUE(jacobianTestImpl(funcBnIn, input, 5e-2, 1e-1));
 
-  auto func_bn_wt = [&](Variable& wt) {
+  auto funcBnWt = [&](Variable& wt) {
     return (batchnorm(
         input, wt, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_bn_wt, weight, 5e-2, 1e-1));
+  ASSERT_TRUE(jacobianTestImpl(funcBnWt, weight, 5e-2, 1e-1));
 
-  auto func_bn_bs = [&](Variable& bs) {
+  auto funcBnBs = [&](Variable& bs) {
     return (batchnorm(
         input, weight, bs, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_bn_bs, bias, 5e-2, 1e-1));
+  ASSERT_TRUE(jacobianTestImpl(funcBnBs, bias, 5e-2, 1e-1));
 }
 
 TEST(AutogradTest, BatchNormJacobianMultipleAxes) {
-  // Jacobian Test with  train_mode = true;
+  // Jacobian Test with  trainMode = true;
   std::vector<int> featAxes = {0, 1, 2};
   auto input = Variable(fl::rand({8, 8, 3, 16}, fl::dtype::f32), true);
   auto nfeatures = 1;
@@ -1719,23 +1719,23 @@ TEST(AutogradTest, BatchNormJacobianMultipleAxes) {
   auto weight = Variable(fl::rand({nfeatures}, fl::dtype::f32), true);
   auto bias = Variable(fl::rand({nfeatures}, fl::dtype::f32), true);
 
-  auto func_bn_in = [&](Variable& in) {
+  auto funcBnIn = [&](Variable& in) {
     return (batchnorm(
         in, weight, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_bn_in, input, 1e-2, 1e-3));
+  ASSERT_TRUE(jacobianTestImpl(funcBnIn, input, 1e-2, 1e-3));
 
-  auto func_bn_wt = [&](Variable& wt) {
+  auto funcBnWt = [&](Variable& wt) {
     return (batchnorm(
         input, wt, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_bn_wt, weight, 1e-2, 1e-3));
+  ASSERT_TRUE(jacobianTestImpl(funcBnWt, weight, 1e-2, 1e-3));
 
-  auto func_bn_bs = [&](Variable& bs) {
+  auto funcBnBs = [&](Variable& bs) {
     return (batchnorm(
         input, weight, bs, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_bn_bs, bias, 1e-2, 1e-3));
+  ASSERT_TRUE(jacobianTestImpl(funcBnBs, bias, 1e-2, 1e-3));
 }
 
 TEST_F(AutogradTestF16, BatchNormJacobianMultipleAxesF16) {
@@ -1743,7 +1743,7 @@ TEST_F(AutogradTestF16, BatchNormJacobianMultipleAxesF16) {
     GTEST_SKIP() << "Half-precision not supported on this device";
   }
 
-  // Jacobian Test with train_mode = true;
+  // Jacobian Test with trainMode = true;
   std::vector<int> featAxes = {0, 1, 2};
   auto input = Variable(fl::rand({2, 2, 2, 1}, fl::dtype::f16), true);
   auto nfeatures = 1;
@@ -1757,24 +1757,24 @@ TEST_F(AutogradTestF16, BatchNormJacobianMultipleAxesF16) {
 
   // Use larger perturbations to ensure gradients don't underflow with fp16
 
-  auto func_bn_in = [&](Variable& in) {
+  auto funcBnIn = [&](Variable& in) {
     return (batchnorm(
         in, weight, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
   };
   ASSERT_TRUE(
-      jacobianTestImpl(func_bn_in, input, 5e-2, 1e-1)); // TODO: investigate
+      jacobianTestImpl(funcBnIn, input, 5e-2, 1e-1)); // TODO: investigate
 
-  auto func_bn_wt = [&](Variable& wt) {
+  auto funcBnWt = [&](Variable& wt) {
     return (batchnorm(
         input, wt, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_bn_wt, weight, 5e-2, 1e-1));
+  ASSERT_TRUE(jacobianTestImpl(funcBnWt, weight, 5e-2, 1e-1));
 
-  auto func_bn_bs = [&](Variable& bs) {
+  auto funcBnBs = [&](Variable& bs) {
     return (batchnorm(
         input, weight, bs, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
   };
-  ASSERT_TRUE(jacobianTestImpl(func_bn_bs, bias, 5e-2, 1e-1));
+  ASSERT_TRUE(jacobianTestImpl(funcBnBs, bias, 5e-2, 1e-1));
 }
 
 TEST(AutogradTest, LayerNormJacobian) {
@@ -1789,12 +1789,12 @@ TEST(AutogradTest, LayerNormJacobian) {
   auto weight = Variable(fl::rand({nfeatures}, fl::dtype::f32), true);
   auto bias = Variable(fl::rand({nfeatures}, fl::dtype::f32), true);
 
-  auto func_ln_in = [&](Variable& in) {
+  auto funcLnIn = [&](Variable& in) {
     return batchnorm(
         in, weight, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5);
   };
 
-  ASSERT_TRUE(jacobianTestImpl(func_ln_in, input, 1e-2, 1e-4));
+  ASSERT_TRUE(jacobianTestImpl(funcLnIn, input, 1e-2, 1e-4));
 }
 
 TEST_F(AutogradTestF16, LayerNormJacobianF16) {
@@ -1815,12 +1815,12 @@ TEST_F(AutogradTestF16, LayerNormJacobianF16) {
   auto weight = Variable(fl::rand({nfeatures}, fl::dtype::f32), true);
   auto bias = Variable(fl::rand({nfeatures}, fl::dtype::f32), true);
 
-  auto func_ln_in = [&](Variable& in) {
+  auto funcLnIn = [&](Variable& in) {
     return batchnorm(
         in, weight, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5);
   };
 
-  ASSERT_TRUE(jacobianTestImpl(func_ln_in, input, 1e-4, 1e-2));
+  ASSERT_TRUE(jacobianTestImpl(funcLnIn, input, 1e-4, 1e-2));
 }
 
 TEST(AutogradTest, GetAdvancedIndex) {
