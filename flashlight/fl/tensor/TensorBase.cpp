@@ -879,6 +879,10 @@ std::unique_ptr<TensorAdapterBase> releaseAdapter(Tensor&& t) {
   return t.releaseAdapter();
 }
 
+std::unique_ptr<TensorAdapterBase> releaseAdapter(Tensor t) {
+  return t.releaseAdapter();
+}
+
 bool areTensorTypesEqual(const Tensor& a, const Tensor& b) {
   return a.type() == b.type();
 }

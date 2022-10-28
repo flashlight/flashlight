@@ -56,6 +56,7 @@ enum class StorageType { Dense = 0, CSR = 1, CSC = 2, COO = 3 };
 namespace detail {
 
 std::unique_ptr<TensorAdapterBase> releaseAdapter(Tensor&& t);
+std::unique_ptr<TensorAdapterBase> releaseAdapter(Tensor t);
 
 } // namespace detail
 
@@ -116,6 +117,7 @@ class Tensor {
 
   std::unique_ptr<TensorAdapterBase> releaseAdapter();
   friend std::unique_ptr<TensorAdapterBase> detail::releaseAdapter(Tensor&& t);
+  friend std::unique_ptr<TensorAdapterBase> detail::releaseAdapter(Tensor t);
 
  public:
   explicit Tensor(std::unique_ptr<TensorAdapterBase> adapter);
