@@ -879,7 +879,7 @@ std::unique_ptr<TensorAdapterBase> releaseAdapter(Tensor&& t) {
   return t.releaseAdapter();
 }
 
-std::unique_ptr<TensorAdapterBase> releaseAdapterUnsafe(Tensor t) {
+std::unique_ptr<TensorAdapterBase> releaseAdapterUnsafe(Tensor& t) {
   return t.releaseAdapter();
 }
 
