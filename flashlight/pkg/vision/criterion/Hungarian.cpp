@@ -8,7 +8,7 @@
 
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/tensor/Index.h"
-#include "flashlight/lib/set/Hungarian.h"
+#include "flashlight/pkg/vision/criterion/HungarianImpl.h"
 #include "flashlight/pkg/vision/dataset/BoxUtils.h"
 
 namespace {

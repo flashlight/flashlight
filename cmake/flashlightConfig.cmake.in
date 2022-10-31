@@ -107,9 +107,6 @@ endif()
 set(flashlight_LIBRARIES "")
 
 # "libs"
-if (@FL_BUILD_LIB_SET@)
-  set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::fl_lib_set)
-endif()
 if (@FL_BUILD_LIB_AUDIO@)
   set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::fl_lib_audio)
 endif()

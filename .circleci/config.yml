@@ -57,9 +57,6 @@ commands:
         default: "OFF"
         type: string
       # libs
-      fl_build_lib_set:
-        default: "OFF"
-        type: string
       fl_build_lib_audio:
         default: "OFF"
         type: string
@@ -128,7 +125,6 @@ commands:
                 -DFL_USE_CUDNN=<< parameters.fl_use_cudnn >> \
                 -DFL_USE_ONEDNN=<< parameters.fl_use_onednn >> \
                 -DFL_BUILD_CORE=<< parameters.fl_build_fl_core >> \
-                -DFL_BUILD_LIB_SET=<< parameters.fl_build_lib_set >> \
                 -DFL_BUILD_LIB_AUDIO=<< parameters.fl_build_lib_audio >> \
                 -DFL_BUILD_PKG_RUNTIME=<< parameters.fl_build_pkg_runtime >> \
                 -DFL_BUILD_PKG_VISION=<< parameters.fl_build_pkg_vision >> \
@@ -446,7 +442,6 @@ jobs:
       - build_flashlight_inside_nvidia_docker:
           fl_arrayfire_use_cuda: "ON"
           fl_use_cudnn: "ON"
-          fl_build_lib_set: "ON"
           fl_build_lib_audio: "ON"
       - test_flashlight_inside_nvidia_docker:
           test_name: "fl_lib_audio"
@@ -466,7 +461,6 @@ jobs:
           fl_arrayfire_use_cuda: "ON"
           fl_use_cudnn: "ON"
           fl_build_fl_core: "ON"
-          fl_build_lib_set: "ON"
           fl_build_lib_audio: "ON"
           fl_build_pkg_runtime: "ON"
           fl_build_pkg_speech: "ON"
@@ -528,7 +522,6 @@ jobs:
       - build_flashlight_inside_nvidia_docker:
           fl_arrayfire_use_cuda: "ON"
           fl_use_cudnn: "ON"
-          fl_build_lib_set: "ON"
           fl_build_fl_core: "ON"
           fl_build_pkg_vision: "ON"
           fl_build_pkg_runtime: "ON"
@@ -545,7 +538,6 @@ jobs:
       - build_flashlight_inside_nvidia_docker:
           fl_arrayfire_use_cuda: "ON"
           fl_use_cudnn: "ON"
-          fl_build_lib_set: "ON"
           fl_build_fl_core: "ON"
           fl_build_pkg_vision: "ON"
           fl_build_pkg_runtime: "ON"
@@ -583,7 +575,6 @@ jobs:
           fl_arrayfire_use_cuda: "ON"
           fl_use_cudnn: "ON"
           fl_build_fl_core: "ON"
-          fl_build_lib_set: "ON"
           fl_build_lib_audio: "ON"
           fl_build_pkg_runtime: "ON"
           fl_build_pkg_speech: "ON"

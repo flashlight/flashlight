@@ -29,7 +29,7 @@ fl_dependent_option(
   FL_BUILD_PKG_VISION
   "Build vision package for Flashlight"
   "${FL_BUILD_ALL_PKGS}"
-  "FL_BUILD_CORE;FL_BUILD_CONTRIB;FL_BUILD_LIB_SET"
+  "FL_BUILD_CORE;FL_BUILD_CONTRIB"
   OFF)
 if(FL_BUILD_PKG_VISION)
   set(FL_PKG_VISION_DIR ${FL_PKG_DIR}/vision)
