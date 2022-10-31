@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/lib/set/Hungarian.h"
+#include "flashlight/pkg/vision/criterion/HungarianImpl.h"
 
 #include <gtest/gtest.h>
 

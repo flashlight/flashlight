@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/lib/set/Hungarian.h"
+#include "flashlight/pkg/vision/criterion/HungarianImpl.h"
 
 #include <assert.h>
 #include <limits>
@@ -103,7 +103,12 @@ int stepTwo(
 }
 
 // Count the number of lines needed to cover all "Stars"
-int stepThree(int* marks, int* colCover, int* /*rowCover*/, int nrows, int ncols) {
+int stepThree(
+    int* marks,
+    int* colCover,
+    int* /*rowCover*/,
+    int nrows,
+    int ncols) {
   for (int r = 0; r < nrows; r++) {
     for (int c = 0; c < ncols; c++) {
       const int mark = marks[c * nrows + r];
@@ -178,7 +183,12 @@ int findPrimeInRow(int* masks, int row, int nrows, int ncols) {
   return -1;
 }
 
-void augmentPaths(int* paths, int pathCount, int* marks, int nrows, int /*ncols*/) {
+void augmentPaths(
+    int* paths,
+    int pathCount,
+    int* marks,
+    int nrows,
+    int /*ncols*/) {
   for (int p = 0; p < pathCount; p++) {
     int row = paths[p * 2];
     int col = paths[p * 2 + 1];
