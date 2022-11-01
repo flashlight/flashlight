@@ -304,6 +304,13 @@ class Tensor {
   bool isEmpty() const;
 
   /**
+   * Returns true if the tensor has an associated underlying adapter.
+   *
+   * @return true if the tensor has a valid adapter
+   */
+  bool hasAdapter() const;
+
+  /**
    * Get the tensor size in bytes.
    *
    * @return the size of the tensor in bytes.

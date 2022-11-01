@@ -149,6 +149,13 @@ TEST(TensorBaseTest, Metadata) {
   ASSERT_FALSE(e.isLocked());
 }
 
+TEST(TensorBaseTest, hasAdapter) {
+  Tensor a = fromScalar(3.14, fl::dtype::f32);
+  ASSERT_TRUE(a.hasAdapter());
+  detail::releaseAdapterUnsafe(a);
+  ASSERT_FALSE(a.hasAdapter());
+}
+
 TEST(TensorBaseTest, fromScalar) {
   Tensor a = fromScalar(3.14, fl::dtype::f32);
   ASSERT_EQ(a.elements(), 1);

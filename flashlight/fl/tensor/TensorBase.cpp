@@ -98,6 +98,10 @@ bool Tensor::isEmpty() const {
   return elements() == 0;
 }
 
+bool Tensor::hasAdapter() const {
+  return impl_.get() != nullptr;
+}
+
 size_t Tensor::bytes() const {
   return elements() * getTypeSize(type());
 }
