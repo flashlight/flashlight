@@ -7,12 +7,15 @@
 
 #include "flashlight/fl/tensor/backend/jit/opt/backends/onednn/OneDnnJitOptimizerExtension.h"
 
+#include "flashlight/fl/tensor/backend/jit/opt/backends/onednn/OneDnnOpFusion.h"
 #include "flashlight/fl/tensor/backend/onednn/OneDnnBackend.h"
 
 namespace fl {
 
 std::vector<std::unique_ptr<Pass>> OneDnnJitOptimizerExtension::passes() {
-  return {};
+  std::vector<std::unique_ptr<Pass>> passes;
+  passes.emplace_back(std::make_unique<OneDnnOpFusion>());
+  return passes;
 }
 
 bool OneDnnJitOptimizerExtension::isDataTypeSupported(

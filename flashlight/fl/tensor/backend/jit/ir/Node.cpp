@@ -77,10 +77,12 @@ const UseList& Node::uses() const {
 }
 
 void Node::replaceAllUsesWith(Node* newInput) {
-  // each iteration updates links an existing user to newInput
-  while (!uses_.empty()) {
-    const auto* nextUse = *uses_.begin();
-    nextUse->user()->setInput(nextUse->inputIdx(), newInput);
+  if (newInput != this) {
+    // each iteration updates links an existing user to newInput
+    while (!uses_.empty()) {
+      const auto* nextUse = *uses_.begin();
+      nextUse->user()->setInput(nextUse->inputIdx(), newInput);
+    }
   }
 }
 
