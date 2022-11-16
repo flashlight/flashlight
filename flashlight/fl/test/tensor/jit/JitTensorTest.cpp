@@ -129,6 +129,130 @@ TEST_F(JitTensorTest, forcedEval) {
       defaultBackend_.full(shape, 33, dtype)));
 }
 
+TEST_F(JitTensorTest, assignment) {
+  // we don't test the computation result (that's Evaluator's job) -- we only
+  // test the graph we are building.
+
+  //     Expression         The node lhs represents
+  //
+  // t0 = full(..., 0)      c0
+  // t1 = full(..., 1)      c1
+  // t2 = full(..., 2)      c2
+  //
+  //                        c0  c1
+  //                         \  /
+  // sum1 = t0 + t1          add1
+  //
+  //                        c0  c2
+  //                         \  /
+  // t0 += t2                add2
+  //
+  //                        c0  c2
+  //                         \  /
+  //                         add2  c1
+  //                           \   /
+  // sum3 = t0 + t1            add3
+  Shape shape(Shape({2, 2}));
+  auto dtype = dtype::s32;
+  auto t0 = full(shape, 0, dtype);
+  auto t1 = full(shape, 1, dtype);
+  auto t2 = full(shape, 2, dtype);
+  auto sum1 = t0 + t1;
+  auto c0 = toJitTensorBase(t0).node();
+  auto c1 = toJitTensorBase(t1).node();
+  auto c2 = toJitTensorBase(t2).node();
+  auto add1 = toJitTensorBase(sum1).node();
+  t0 += t2;
+  auto sum3 = t0 + t1;
+  auto add2 = toJitTensorBase(t0).node();
+  auto add3 = toJitTensorBase(sum3).node();
+
+  // assignment won't affect other tensors
+  ASSERT_EQ(toJitTensorBase(t1).node(), c1);
+  ASSERT_EQ(toJitTensorBase(sum1).node(), add1);
+
+  // assignment won't affect other tensor's graphs
+  ASSERT_EQ(c0->inputs(), NodeList({}));
+  ASSERT_EQ(c0->getRefCount(), 2); // 2 because t0 doesn't refer to it anymore
+  ASSERT_EQ(c0->uses(), UseValList({{add1, 0}, {add2, 0}}));
+  ASSERT_TRUE(c0->isScalar());
+  ASSERT_EQ(c1->inputs(), NodeList({}));
+  ASSERT_EQ(c1->getRefCount(), 3);
+  ASSERT_EQ(c1->uses(), UseValList({{add1, 1}, {add3, 1}}));
+  ASSERT_TRUE(c1->isScalar());
+  ASSERT_EQ(add1->inputs(), NodeList({c0, c1}));
+  ASSERT_EQ(add1->getRefCount(), 1);
+  ASSERT_EQ(add1->uses(), UseValList({}));
+  ASSERT_TRUE(add1->isBinary());
+
+  // in-place add assignment creates new graph (like SSA)
+  ASSERT_EQ(c2->inputs(), NodeList({}));
+  ASSERT_EQ(c2->getRefCount(), 2);
+  ASSERT_EQ(c2->uses(), UseValList({{add2, 1}}));
+  ASSERT_TRUE(c2->isScalar());
+  ASSERT_EQ(add2->inputs(), NodeList({c0, c2}));
+  ASSERT_EQ(add2->getRefCount(), 2);
+  ASSERT_EQ(add2->uses(), UseValList({{add3, 0}}));
+  ASSERT_TRUE(add2->isBinary());
+
+  // future use of assigned tensor uses its new graph
+  ASSERT_EQ(add3->inputs(), NodeList({add2, c1}));
+  ASSERT_EQ(add3->getRefCount(), 1);
+  ASSERT_EQ(add3->uses(), UseValList({}));
+  ASSERT_TRUE(add3->isBinary());
+}
+
+TEST_F(JitTensorTest, assignmentWithShallowCopyAndCopy) {
+  // we don't test the computation result (that's Evaluator's job) -- we only
+  // test the graph we are building.
+
+  //     Expression         The node lhs represents
+  //
+  // t0 = full(..., 0)        c0
+  // t1 = full(..., 1)        c1
+  //
+  // t0c = t0.copy()          c0
+  // t0sc = t0.shallowCopy()  c0
+  //
+  //                        c0  c1
+  //                         \  /
+  // t0 += t1                add
+  //
+  // t0c                      c0
+  //
+  //                        c0  c1
+  //                         \  /
+  // t0sc                    add
+  Shape shape(Shape({2, 2}));
+  auto dtype = dtype::s32;
+  auto t0 = full(shape, 0, dtype);
+  auto t1 = full(shape, 1, dtype);
+  auto c0 = toJitTensorBase(t0).node();
+  auto c1 = toJitTensorBase(t1).node();
+  auto t0c = t0.copy();
+  auto t0sc = toJitTensorBase(t0).shallowCopy();
+  t0 += t1;
+  auto add = toJitTensorBase(t0).node();
+
+  // assignment won't affect copy
+  ASSERT_EQ(toJitTensorBase(t0c).node(), c0);
+  ASSERT_EQ(c0->inputs(), NodeList({}));
+  ASSERT_EQ(c0->getRefCount(), 2);
+  ASSERT_EQ(c0->uses(), UseValList({{add, 0}}));
+  ASSERT_TRUE(c0->isScalar());
+
+  // assignment affects shallow copy
+  ASSERT_EQ(toJitTensorBase(t0sc).node(), add);
+  ASSERT_EQ(c1->inputs(), NodeList({}));
+  ASSERT_EQ(c1->getRefCount(), 2);
+  ASSERT_EQ(c1->uses(), UseValList({{add, 1}}));
+  ASSERT_TRUE(c1->isScalar());
+  ASSERT_EQ(add->inputs(), NodeList({c0, c1}));
+  ASSERT_EQ(add->getRefCount(), 1); // shallow copy won't bump node's ref-count
+  ASSERT_EQ(add->uses(), UseValList({}));
+  ASSERT_TRUE(add->isBinary());
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   init();
