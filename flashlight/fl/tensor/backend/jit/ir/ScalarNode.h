@@ -22,7 +22,6 @@ class ScalarNode : public NodeTrait<ScalarNode> {
   // these types can hold all types scalars FL support, w/o loss of precision
   using ScalarType = std::variant<long long, double, unsigned long long>;
 
-  const Shape shape_;
   const dtype dtype_;
   const ScalarType scalar_; // value used for initialization
 
@@ -55,7 +54,7 @@ class ScalarNode : public NodeTrait<ScalarNode> {
     throw std::runtime_error("[ScalarNode::create] Unknown dtype");
   }
 
-  const Shape& shape() const;
+  // metadata
   dtype dataType() const;
 
   // cast to T

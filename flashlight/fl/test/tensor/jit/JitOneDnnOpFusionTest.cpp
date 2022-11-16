@@ -117,7 +117,7 @@ TEST_F(JitOneDnnOpFusionTest, nonFusableRoot) {
   const auto mul = BinaryNode::create(c1, c2, BinaryOp::Mul);
   const auto add = BinaryNode::create(mul, c3, BinaryOp::Add);
   const auto custom = CustomNode::create(
-      "identity", {add}, [](const std::vector<const Tensor*>& inputs) {
+      "identity", {add}, shape, [](const std::vector<const Tensor*>& inputs) {
         return *inputs[0];
       });
   // c1  c2
@@ -209,10 +209,12 @@ TEST_F(JitOneDnnOpFusionTest, nestedFusableChains) {
   ASSERT_EQ(fusedCustomNode->inputs(), NodeList({c2, c3, c4}));
   ASSERT_EQ(fusedCustomNode->uses(), UseValList({{fusedCustomRoot, 1}}));
   ASSERT_EQ(fusedCustomNode->getRefCount(), 1);
+  ASSERT_EQ(fusedCustomNode->shape(), shape);
   ASSERT_TRUE(fusedCustomNode->isCustom());
   ASSERT_EQ(fusedCustomRoot->inputs(), NodeList({c1, fusedCustomNode, c5}));
   ASSERT_EQ(fusedCustomRoot->uses(), UseValList({}));
   ASSERT_EQ(fusedCustomRoot->getRefCount(), 0);
+  ASSERT_EQ(fusedCustomRoot->shape(), shape);
   ASSERT_TRUE(fusedCustomRoot->isCustom());
   // root node is owned locally (didn't transition to shared ownership)
   delete fusedCustomRoot;

@@ -39,7 +39,7 @@ void testBinaryOp(Op func, BinaryOp op) {
   // c0  c1
   //  \  /
   //  node
-  Shape shape(Shape({2, 2}));
+  Shape shape({2, 2});
   auto dtype = dtype::s32;
   const auto t0 = full(shape, 0, dtype);
   const auto t1 = full(shape, 1, dtype);
@@ -53,6 +53,7 @@ void testBinaryOp(Op func, BinaryOp op) {
   ASSERT_EQ(node->lhs(), c0);
   ASSERT_EQ(node->rhs(), c1);
   ASSERT_EQ(node->op(), op);
+  ASSERT_EQ(node->shape(), shape);
   ASSERT_EQ(c0->uses(), UseValList({{node, 0}}));
   ASSERT_EQ(c1->uses(), UseValList({{node, 1}}));
 }
@@ -69,6 +70,7 @@ TEST_F(JitTensorTest, constructor) {
   ASSERT_EQ(node->inputs(), NodeList({}));
   ASSERT_EQ(node->getRefCount(), 1);
   ASSERT_EQ(node->uses(), UseValList({}));
+  ASSERT_EQ(node->shape(), dataTensor.shape());
   ASSERT_TRUE(node->isValue());
   ASSERT_TRUE(allClose(dataTensor, node->getResult().value()));
 }

@@ -13,11 +13,7 @@ ScalarNode::ScalarNode(
     const Shape& shape,
     const fl::dtype type,
     const ScalarType scalar)
-    : NodeTrait({}), shape_(shape), dtype_(type), scalar_(scalar) {}
-
-const Shape& ScalarNode::shape() const {
-  return shape_;
-}
+    : NodeTrait({}, shape), dtype_(type), scalar_(scalar) {}
 
 dtype ScalarNode::dataType() const {
   return dtype_;

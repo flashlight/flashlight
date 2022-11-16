@@ -9,7 +9,7 @@
 
 namespace fl {
 
-ValueNode::ValueNode(Tensor&& value) : NodeTrait({}) {
+ValueNode::ValueNode(Tensor&& value) : NodeTrait({}, value.shape()) {
   setResult(std::move(value));
 }
 
