@@ -52,12 +52,14 @@ target_link_libraries(
   PUBLIC
   flashlight
   fl_pkg_runtime
-  fl_lib_audio
   flashlight::flashlight-text
   flashlight::flashlight-sequence
   )
 
 # ------------------------ Components ------------------------
+
+# Audio
+include(${CMAKE_CURRENT_LIST_DIR}/audio/CMakeLists.txt)
 
 # Common
 include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)

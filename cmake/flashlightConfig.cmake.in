@@ -25,17 +25,7 @@
 if (@FL_BUILD_STANDALONE@)
   list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
   include(CMakeFindDependencyMacro)
-  if (@FL_BUILD_LIB_AUDIO@)
-    # Lib dependencies
-    find_dependency(OpenMP)
-    find_dependency(Threads)
-    find_dependency(FFTW3)
-    if (@FL_LIBRARIES_USE_MKL@)
-      find_dependency(MKL)
-    else()
-      find_dependency(CBLAS)
-    endif()
-  endif()
+
   # Core dependencies
   if (@FL_BUILD_CORE@)
     find_dependency(Threads)
@@ -76,6 +66,15 @@ if (@FL_BUILD_STANDALONE@)
   # Additional app-specific dependencies
   if (@FL_BUILD_PKG_SPEECH@)
     find_dependency(SndFile)
+    # Audio feature components
+    find_dependency(OpenMP)
+    find_dependency(Threads)
+    find_dependency(FFTW3)
+    if (@FL_USE_MKL@)
+      find_dependency(MKL)
+    else()
+      find_dependency(CBLAS)
+    endif()
   endif()
   # Remove this dir from module path
   list(REMOVE_AT CMAKE_MODULE_PATH -1)
@@ -85,9 +84,7 @@ endif() # FL_BUILD_STANDALONE
 
 @PACKAGE_INIT@
 
-# Library will be installed with any [minimum] flashlight installation -
-# use it as a proxy to see if requisite targets exist
-if(NOT TARGET flashlight::fl-libraries)
+if(NOT TARGET flashlight::flashlight)
   if(EXISTS @PACKAGE_CMAKE_DIR@/flashlightTargets.cmake)
     include(@PACKAGE_CMAKE_DIR@/flashlightTargets.cmake)
   endif()
@@ -105,11 +102,6 @@ endif()
 # For legacy configurations
 # Libraries
 set(flashlight_LIBRARIES "")
-
-# "libs"
-if (@FL_BUILD_LIB_AUDIO@)
-  set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::fl_lib_audio)
-endif()
 
 # core
 if (@FL_BUILD_CORE@)

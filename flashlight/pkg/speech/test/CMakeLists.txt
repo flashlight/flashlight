@@ -4,6 +4,20 @@ set(DIR ${CMAKE_CURRENT_LIST_DIR})
 # TODO remove dependency on runtime components for these tests
 set(LIBS fl_pkg_speech fl_pkg_runtime)
 
+# Audio
+build_test(SRC ${DIR}/audio/CeplifterTest.cpp LIBS ${LIBS})
+build_test(SRC ${DIR}/audio/DctTest.cpp LIBS ${LIBS})
+build_test(SRC ${DIR}/audio/DerivativesTest.cpp LIBS ${LIBS})
+build_test(SRC ${DIR}/audio/DitherTest.cpp LIBS ${LIBS})
+build_test(
+  SRC ${DIR}/audio/MfccTest.cpp
+  LIBS ${LIBS}
+  PREPROC "FEATURE_TEST_DATADIR=\"${DIR}/audio/data\""
+  )
+build_test(SRC ${DIR}/audio/PreEmphasisTest.cpp LIBS ${LIBS})
+build_test(SRC ${DIR}/audio/SpeechUtilsTest.cpp LIBS ${LIBS})
+build_test(SRC ${DIR}/audio/TriFilterbankTest.cpp LIBS ${LIBS})
+build_test(SRC ${DIR}/audio/WindowingTest.cpp LIBS ${LIBS})
 # Criterion
 build_test(SRC ${DIR}/criterion/CriterionTest.cpp LIBS ${LIBS})
 build_test(SRC ${DIR}/criterion/Seq2SeqTest.cpp LIBS ${LIBS})

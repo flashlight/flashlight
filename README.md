@@ -419,8 +419,6 @@ The Flashlight CMake build accepts the following build options (prefixed with `-
 
 ### Building Your Own Project with Flashlight
 Flashlight is most-easily linked to using CMake. Flashlight exports the following CMake targets when installed:
-- `flashlight::fl_lib_set` — contains flashlight libraries for headers and symbols pertaining to sets.
-- `flashlight::fl_lib_audio` — contains flashlight libraries for headers and symbols pertaining to audio.
 - `flashlight::flashlight` — contains flashlight libraries as well as the flashlight core autograd and neural network library.
 - `flashlight::fl_pkg_runtime` — contains flashlight core as well as common utilities for training (logging / flags / distributed utils).
 - `flashlight::fl_pkg_vision` — contains flashlight core as well as common utilities for vision pipelines.
