@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 set(DIR ${FL_CORE_DIR}/test)
 set(LIBS flashlight ${CMAKE_DL_LIBS})
+
 build_test(SRC ${DIR}/autograd/AutogradTest.cpp LIBS ${LIBS})
 build_test(SRC ${DIR}/autograd/AutogradReductionTest.cpp LIBS ${LIBS})
 build_test(SRC ${DIR}/autograd/AutogradBinaryOpsTest.cpp LIBS ${LIBS})

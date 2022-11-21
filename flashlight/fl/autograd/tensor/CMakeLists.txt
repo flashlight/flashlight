@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-option(FL_USE_CUDNN "Build ArrayFire tensor backend" OFF)
+option(FL_USE_CUDNN "Build with cuDNN support" OFF)
 
 # Try to find cuDNN
 find_package(CUDNN 7.1) # CUDNN 7.1 works with CUDA 9.2

@@ -1,9 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 
-# ----------------------------- Optim -----------------------------
-
-set(
-  OPTIM_SOURCES
+target_sources(
+  flashlight
+  PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/Optimizers.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Utils.cpp
   ${CMAKE_CURRENT_LIST_DIR}/AdamOptimizer.cpp
@@ -14,10 +13,4 @@ set(
   ${CMAKE_CURRENT_LIST_DIR}/NovogradOptimizer.cpp
   ${CMAKE_CURRENT_LIST_DIR}/RMSPropOptimizer.cpp
   ${CMAKE_CURRENT_LIST_DIR}/SGDOptimizer.cpp
-  )
-
-target_sources(
-  flashlight
-  PRIVATE
-  ${OPTIM_SOURCES}
   )
