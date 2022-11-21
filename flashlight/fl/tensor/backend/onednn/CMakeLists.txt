@@ -11,8 +11,13 @@ else()
   message(STATUS "oneDNN found")
 endif()
 
-# ----------------------------- Sources -----------------------------
+# TODO: remove this once the MKL dependency has been removed
+# oneDNN backend requires MKL
 find_package(MKL REQUIRED)
+setup_install_find_module(${CMAKE_MODULE_PATH}/FindMKL.cmake)
+set(FL_USE_MKL ON)
+
+# ----------------------------- Sources -----------------------------
 
 target_sources(
   flashlight

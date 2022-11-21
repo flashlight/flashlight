@@ -53,9 +53,6 @@ option(FL_BUILD_SCRIPTS "Build internal scripts for wav2letter++" OFF)
 option(FL_BUILD_RECIPES "Build recipes" ON)
 option(FL_BUILD_STANDALONE "Build standalone installation" ON)
 
-option(FL_LIBRARIES_USE_MKL "Use MKL in flashlight libraries build" ON)
-option(FL_LIBRARIES_BUILD_FOR_PYTHON "Build Python bindings" OFF)
-
 # External project configuration
 option(FL_TEXT_REQUIRE_KENLM "Require KenLM in the Flashlight text build" OFF)
 
@@ -70,6 +67,7 @@ set(FL_BUILD_BINARY_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/bin")
 option(FL_USE_CUDA   "Build CUDA support for Flashlight backends" OFF)
 option(FL_USE_CPU    "Build CPU support for Flashlight backends"  OFF)
 option(FL_USE_OPENCL "Build OpenCL support for Flashlight backends" OFF)
+option(FL_USE_MKL    "Build MKL support for Flashlight backends" OFF)
 
 # -------------------- Locate Backend-specific Dependencies --------------------
 find_package(CUDA 9.2 QUIET) # CUDA 9.2 is required for >= ArrayFire 3.6.1
@@ -96,7 +94,7 @@ if (CUDA_FOUND)
 
   # remove me when upgrading CMake versions
   # (i.e. add -fPIC to nvcc flags if needed)
-  if (FL_LIBRARIES_BUILD_FOR_PYTHON OR CMAKE_POSITION_INDEPENDENT_CODE)
+  if (CMAKE_POSITION_INDEPENDENT_CODE)
     cuda_enable_position_independent_code()
   endif ()
 endif()
@@ -106,20 +104,6 @@ endif()
 if (FL_BUILD_TESTS)
   enable_testing()
   include(TestUtils)
-endif ()
-
-# ------------------------ flashlight Libraries ------------------------
-
-set(FL_COMPILE_DEFINITIONS
-  $<$<BOOL:${FL_LIBRARIES_USE_MKL}>:FL_LIBRARIES_USE_MKL>
-  )
-
-set(FL_LIB_DIR "${FL_ROOT_DIR}/lib")
-include(${FL_LIB_DIR}/CMakeLists.txt)
-
-if (FL_LIBRARIES_BUILD_FOR_PYTHON)
-  set(FL_BINDING_PYTHON "${PROJECT_SOURCE_DIR}/bindings/python")
-  include(${FL_BINDING_PYTHON}/CMakeLists.txt)
 endif ()
 
 # --------------------------- Core Options  ---------------------------

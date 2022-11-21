@@ -12,7 +12,7 @@
 
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/Init.h"
-#include "flashlight/lib/audio/feature/SpeechUtils.h"
+#include "flashlight/pkg/speech/audio/feature/SpeechUtils.h"
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/data/FeatureTransforms.h"
 #include "flashlight/pkg/speech/data/ListFileDataset.h"

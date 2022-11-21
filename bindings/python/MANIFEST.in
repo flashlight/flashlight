@@ -1,3 +1,0 @@
-include ../../CMakeLists.txt ../../cmake/* CMakeLists.txt
-recursive-include ../../flashlight/lib *.h *.cpp CMakeLists.txt
-recursive-include flashlight *.cpp

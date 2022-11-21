@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "flashlight/pkg/speech/data/FeatureTransforms.h"
-#include "flashlight/lib/audio/feature/FeatureParams.h"
+#include "flashlight/pkg/speech/audio/feature/FeatureParams.h"
 #include "flashlight/lib/text/dictionary/Dictionary.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
 

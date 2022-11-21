@@ -56,10 +56,6 @@ commands:
       fl_build_fl_core:
         default: "OFF"
         type: string
-      # libs
-      fl_build_lib_audio:
-        default: "OFF"
-        type: string
       # pkgs
       fl_build_pkg_vision:
         default: "OFF"
@@ -125,7 +121,6 @@ commands:
                 -DFL_USE_CUDNN=<< parameters.fl_use_cudnn >> \
                 -DFL_USE_ONEDNN=<< parameters.fl_use_onednn >> \
                 -DFL_BUILD_CORE=<< parameters.fl_build_fl_core >> \
-                -DFL_BUILD_LIB_AUDIO=<< parameters.fl_build_lib_audio >> \
                 -DFL_BUILD_PKG_RUNTIME=<< parameters.fl_build_pkg_runtime >> \
                 -DFL_BUILD_PKG_VISION=<< parameters.fl_build_pkg_vision >> \
                 -DFL_BUILD_PKG_TEXT=<< parameters.fl_build_pkg_text >> \
@@ -238,8 +233,6 @@ commands:
         type: string
       fl_build_app_lm:
         type: string
-      fl_build_all_libs:
-        type: string
     steps:
       - run:
           name: "Build Flashlight CUDA from source with vcpkg dependencies"
@@ -256,7 +249,6 @@ commands:
               -DFL_BUILD_APP_IMGCLASS=<< parameters.fl_build_app_imgclass >> \
               -DFL_BUILD_APP_OBJDET=<< parameters.fl_build_app_objdet >> \
               -DFL_BUILD_APP_LM=<< parameters.fl_build_app_lm >> \
-              -DFL_BUILD_ALL_LIBS=<< parameters.fl_build_all_libs >> \
               -DCMAKE_TOOLCHAIN_FILE=$HOME/project/vcpkg/scripts/buildsystems/vcpkg.cmake
             make -j$(nproc)
   flashlight_build_and_install_cpu_backend_from_source:
@@ -279,7 +271,6 @@ commands:
                      -DFL_USE_ONEDNN=ON \
                      -DDNNL_DIR=/opt/onednn/lib/cmake/dnnl \
                      -DGloo_DIR=/opt/gloo/share/cmake \
-                     -DFL_BUILD_ALL_LIBS=ON \
                      -DFL_BUILD_CORE=ON \
                      -DFL_BUILD_ALL_PKGS=ON \
                      -DFL_BUILD_ALL_APPS=ON
@@ -387,68 +378,8 @@ commands:
             sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
             sudo sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list'
             sudo apt-get update && DEBIAN_FRONTEND=noninteractive sudo apt install << parameters.mkl_version >>
-  ubuntu_install_python_bindings:
-    parameters:
-      use_mkl:
-        type: string
-      use_cuda:
-        type: string
-    steps:
-      - run:
-          name: "Install Flashlight library Python bindings"
-          command: |
-            pip3 install virtualenv
-            virtualenv venv -p $(which python3)
-            source ./venv/bin/activate
-            pip install packaging nose
-            cd bindings/python
-            export USE_MKL=<< parameters.use_mkl >>
-            export USE_CUDA=<< parameters.use_cuda >>
-            pip install -e .
-            # MKL doesn't work in current docker with CUDA
-            export LD_PRELOAD=/opt/intel/mkl/lib/intel64/libmkl_def.so:/opt/intel/mkl/lib/intel64/libmkl_avx2.so:/opt/intel/mkl/lib/intel64/libmkl_core.so:/opt/intel/mkl/lib/intel64/libmkl_intel_lp64.so:/opt/intel/mkl/lib/intel64/libmkl_intel_thread.so:/opt/intel/lib/intel64_lin/libiomp5.so
-            cd .. && python -m nose python/tests -vds
 ############################ Jobs ############################
 jobs:
-  ubuntu1604_gcc7_cuda_11_1_vcpkg_flashlight_libs:
-    <<: *gpu
-    steps:
-      - checkout
-      - ubuntu_install_mkl
-      - install_vcpkg_prereqs
-      - build_vcpkg
-      - install_vcpkg_deps:
-          vcpkg_deps: "intel-mkl fftw3 cub kenlm"
-      - ubuntu_install_and_setup_cmake:
-          version: "3.15"
-          version_build: "2"
-      - flashlight_source_build_with_vcpkg:
-          fl_build_fl_core: "OFF"
-          fl_build_all_libs: "ON"
-          fl_build_app_objdet: "OFF"
-          fl_build_app_imgclass: "OFF"
-          fl_build_app_lm: "OFF"
-          fl_build_app_asr: "OFF"
-      - flashlight_source_test_with_vcpkg:
-          test_name: "fl_lib_audio"
-          fl_test_apex_dir: "flashlight/lib/audio/test"
-  ubuntu2004_cuda11_1_docker_flashlight_libs:
-    <<: *gpu
-    steps:
-      - authenticate_docker
-      - install_nvidia_docker
-      - checkout
-      - start_nvidia_docker_and_copy_flashlight_source
-      - build_flashlight_inside_nvidia_docker:
-          fl_arrayfire_use_cuda: "ON"
-          fl_use_cudnn: "ON"
-          fl_build_lib_audio: "ON"
-      - test_flashlight_inside_nvidia_docker:
-          test_name: "fl_lib_audio"
-          fl_test_apex_dir: "flashlight/lib/audio/test"
-      - run_codecov_inside_nvidia_docker:
-          coverage_flag: "libs"
-
   ubuntu2004_cuda11_1_docker_flashlight_pkgs:
     <<: *gpu
     steps:
@@ -461,7 +392,6 @@ jobs:
           fl_arrayfire_use_cuda: "ON"
           fl_use_cudnn: "ON"
           fl_build_fl_core: "ON"
-          fl_build_lib_audio: "ON"
           fl_build_pkg_runtime: "ON"
           fl_build_pkg_speech: "ON"
           fl_build_pkg_vision: "ON"
@@ -506,7 +436,6 @@ jobs:
           fl_arrayfire_use_cuda: "ON"
           fl_use_cudnn: "ON"
           fl_build_fl_core: "ON"
-          fl_build_lib_audio: "ON"
           fl_build_pkg_speech: "ON"
           fl_build_pkg_runtime: "ON"
           fl_build_app_asr: "ON"
@@ -575,7 +504,6 @@ jobs:
           fl_arrayfire_use_cuda: "ON"
           fl_use_cudnn: "ON"
           fl_build_fl_core: "ON"
-          fl_build_lib_audio: "ON"
           fl_build_pkg_runtime: "ON"
           fl_build_pkg_speech: "ON"
           fl_build_pkg_vision: "ON"
@@ -610,31 +538,6 @@ jobs:
           path: flashlight
       - ubuntu_install_and_setup_cmake_in_docker
       - flashlight_build_and_install_cpu_backend_from_source
-
-  ubuntu2004_cpu_python_bindings_simple:
-    docker:
-      - image: flml/flashlight:cpu-base-latest
-        auth:
-          username: $DOCKER_USERNAME
-          password: $DOCKER_PASSWORD
-    steps:
-      - checkout
-      - ubuntu_install_python_bindings:
-          use_cuda: "OFF"
-          use_mkl: "OFF"
-
-  # Aren't running code, so don't need the NVIDIA runtime
-  ubuntu2004_cuda_python_bindings:
-    docker:
-      - image: flml/flashlight:cuda-base-latest
-        auth:
-          username: $DOCKER_USERNAME
-          password: $DOCKER_PASSWORD
-    steps:
-      - checkout
-      - ubuntu_install_python_bindings:
-          use_cuda: "ON"
-          use_mkl: "ON"
 
   ubuntu2004_cpu_docker_flashlight_build_external:
     docker:
@@ -701,13 +604,8 @@ jobs:
 
 workflows:
   version: 2
-  # TODO: bring back vcpkg jobs once https://github.com/microsoft/vcpkg/issues/19022 is resolved
-  # vcpkg_cuda_test_source_build_and_test:
-  #   jobs:
-  #     - ubuntu1604_gcc7_cuda_11_1_vcpkg_flashlight_lib
   docker_cuda_build_test_and_install:
     jobs:
-      - ubuntu2004_cuda11_1_docker_flashlight_libs
       - ubuntu2004_cuda11_1_docker_flashlight_pkgs
       - ubuntu2004_cuda11_1_docker_flashlight_fl_core
       - ubuntu2004_cuda11_1_docker_flashlight_app_asr
@@ -723,10 +621,6 @@ workflows:
     jobs:
       - ubuntu2004_cpu_docker_flashlight_build_external
       - ubuntu2004_cuda11_1_docker_flashlight_build_external
-  test_python_bindings:
-    jobs:
-      - ubuntu2004_cpu_python_bindings_simple
-      - ubuntu2004_cuda_python_bindings
   run_benchmarks:
     jobs:
       - run_onednn_cpu_benchmarks
