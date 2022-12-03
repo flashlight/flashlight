@@ -10,13 +10,17 @@
 #include <stdexcept>
 #include <vector>
 
+#include "flashlight/fl/tensor/DefaultTensorType.h"
 #include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/Shape.h"
+#include "flashlight/fl/tensor/TensorAdapter.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/fl/tensor/Types.h"
+#include "flashlight/fl/tensor/backend/jit/JitTensor.h"
 #include "flashlight/fl/tensor/backend/jit/Utils.h"
 #include "flashlight/fl/tensor/backend/jit/ir/BinaryNode.h"
 #include "flashlight/fl/tensor/backend/jit/ir/CustomNode.h"
+#include "flashlight/fl/tensor/backend/jit/ir/IndexNode.h"
 #include "flashlight/fl/tensor/backend/jit/ir/Node.h"
 #include "flashlight/fl/tensor/backend/jit/ir/ScalarNode.h"
 #include "flashlight/fl/tensor/backend/jit/ir/ValueNode.h"
@@ -95,6 +99,59 @@ TEST(JitNodeTest, CustomNodeMetaData) {
   ASSERT_EQ(node->name(), name);
   ASSERT_EQ(node->shape(), shape);
   ASSERT_TRUE(allClose(node->evalFunc()({&t1, &t2}), t1));
+  // node is owned locally (didn't transition to shared ownership)
+  delete node;
+}
+
+TEST(JitNodeTest, IndexNodeMetaData) {
+  const auto c0 = ScalarNode::create({5, 6, 7}, dtype::f32, 0);
+  std::vector<Index> indices{1, range(0, 3, 2)};
+  const auto node = IndexNode::create(c0, indices);
+  ASSERT_EQ(node->inputs(), NodeList({c0}));
+  ASSERT_EQ(node->getRefCount(), 0);
+  ASSERT_EQ(node->uses(), UseList({}));
+  ASSERT_EQ(node->isIndex(), true);
+  ASSERT_EQ(node->getResult(), std::nullopt);
+  ASSERT_EQ(node->indexedNode(), c0);
+  ASSERT_EQ(node->indices().size(), 2); // can't check equality easily...
+  // - 1 reduces first dimension -- {6, 7}
+  // - [0:3:2] takes 2 elements  -- {2, 7}
+  ASSERT_EQ(node->shape(), Shape({2, 7}));
+  // node is owned locally (didn't transition to shared ownership)
+  delete node;
+}
+
+// TODO bring this back after supporting `JitTensor::type()`
+//TEST(JitNodeTest, IndexNodeSameShapeTensorIndices) {
+//  const Shape shape({5, 6, 7});
+//  const auto c0 = ScalarNode::create(shape, dtype::f32, 0);
+//  const auto t1 =
+//      JitTensor<DefaultTensorType_t>().backend().full(shape, 1, dtype::f32);
+//  const auto c1 = toJitTensorBase(t1).node();
+//  std::vector<Index> indices{t1};
+//  const auto node = IndexNode::create(c0, indices);
+//  ASSERT_EQ(node->inputs(), NodeList({c0, c1})); // includes tensor index
+//  ASSERT_EQ(node->indexedNode(), c0);
+//  ASSERT_EQ(node->indices().size(), 1); // can't check equality easily...
+//  // if tensor index has same shape as indexed tensor, output shape is simply
+//  // the flattened tensor shape
+//  ASSERT_EQ(node->shape(), Shape({210}));
+//  // node is owned locally (didn't transition to shared ownership)
+//  delete node;
+//}
+
+TEST(JitNodeTest, IndexNodeDifferentShapeTensorIndices) {
+  const auto c0 = ScalarNode::create({5, 6, 7}, dtype::f32, 0);
+  const auto t1 =
+      JitTensor<DefaultTensorType_t>().backend().full({2, 3}, 1, dtype::f32);
+  const auto c1 = toJitTensorBase(t1).node();
+  std::vector<Index> indices{t1};
+  const auto node = IndexNode::create(c0, indices);
+  ASSERT_EQ(node->inputs(), NodeList({c0, c1})); // includes tensor index
+  ASSERT_EQ(node->indexedNode(), c0);
+  ASSERT_EQ(node->indices().size(), 1); // can't check equality easily...
+  // tensor index shape flattened as base, then reduce 1 dimension
+  ASSERT_EQ(node->shape(), Shape({6, 6, 7}));
   // node is owned locally (didn't transition to shared ownership)
   delete node;
 }
