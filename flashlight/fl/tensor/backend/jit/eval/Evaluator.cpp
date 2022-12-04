@@ -17,14 +17,16 @@ namespace fl {
 namespace {
 
 // Build a map from each node in the tree to its current refcount.
-std::unordered_map<Node*, unsigned> getNodeToRefCountInTree(Node* root) {
-  std::unordered_map<Node*, unsigned> nodeToRefCount;
-  std::queue<Node*> worklist({root}); // nodes to be visited
+std::unordered_map<NodePtr, unsigned> getNodeToRefCountInTree(NodePtr root) {
+  std::unordered_map<NodePtr, unsigned> nodeToRefCount;
+  std::queue<NodePtr> worklist({root}); // nodes to be visited
   while (!worklist.empty()) {
-    Node* node = worklist.front();
+    NodePtr node = worklist.front();
     worklist.pop();
     if (nodeToRefCount.find(node) == nodeToRefCount.end()) {
-      nodeToRefCount.emplace(node, node->getRefCount());
+      // TODO a terribly conservative estimate, will fix in another PR (by
+      // leveraging ExternalUse)
+      nodeToRefCount.emplace(node, node.use_count());
       for (const auto& input : node->inputs()) {
         worklist.push(input);
       }
@@ -169,7 +171,7 @@ Tensor Evaluator::evalScalar(ScalarNode& node) {
   throw std::runtime_error("Unknown dtype");
 }
 
-void Evaluator::evalNodeDispatch(Node* node) {
+void Evaluator::evalNodeDispatch(NodePtr node) {
   switch (node->type()) {
     case NodeType::Binary:
       return evalBinaryNode(node->impl<BinaryNode>());
@@ -187,7 +189,7 @@ void Evaluator::evalNodeDispatch(Node* node) {
   throw std::runtime_error("[Evaluator::evalNodeDispatch] Unknown node type");
 }
 
-void Evaluator::evalNode(Node* node) {
+void Evaluator::evalNode(NodePtr node) {
   if (!node->getResult().has_value()) {
     for (const auto& input : node->inputs()) {
       evalNode(input);
@@ -206,7 +208,7 @@ void Evaluator::evalNode(Node* node) {
   }
 }
 
-void Evaluator::eval(Node* node) {
+void Evaluator::eval(NodePtr node) {
   nodeToResultUseCount_ = getNodeToRefCountInTree(node);
   evalNode(node);
   nodeToResultUseCount_.clear();

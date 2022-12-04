@@ -47,12 +47,13 @@ void testBinaryOp(Op func, BinaryOp op) {
   const auto c1 = toJitTensorBase(t1).node();
   const auto tensor = func(t0, t1);
   const auto& jitTensor = toJitTensorBase(tensor);
-  const auto node = &jitTensor.node()->template impl<BinaryNode>();
+  const auto node = jitTensor.node();
+  const auto& binaryNode = node->template impl<BinaryNode>();
   ASSERT_EQ(node->inputs(), NodeList({c0, c1}));
   ASSERT_EQ(node->uses(), UseValList({}));
-  ASSERT_EQ(node->lhs(), c0);
-  ASSERT_EQ(node->rhs(), c1);
-  ASSERT_EQ(node->op(), op);
+  ASSERT_EQ(binaryNode.lhs(), c0);
+  ASSERT_EQ(binaryNode.rhs(), c1);
+  ASSERT_EQ(binaryNode.op(), op);
   ASSERT_EQ(node->shape(), shape);
   ASSERT_EQ(c0->uses(), UseValList({{node, 0}}));
   ASSERT_EQ(c1->uses(), UseValList({{node, 1}}));
@@ -98,7 +99,6 @@ TEST_F(JitTensorTest, constructor) {
   const auto& jitTensor = toJitTensorBase(tensor);
   const auto node = jitTensor.node();
   ASSERT_EQ(node->inputs(), NodeList({}));
-  ASSERT_EQ(node->getRefCount(), 1);
   ASSERT_EQ(node->uses(), UseValList({}));
   ASSERT_EQ(node->shape(), dataTensor.shape());
   ASSERT_TRUE(node->isValue());
@@ -111,7 +111,7 @@ TEST_F(JitTensorTest, full) {
   int val = 42;
   const auto tensor = full(shape, val, dtype);
   const auto& jitTensor = toJitTensorBase(tensor);
-  const auto node = jitTensor.node()->impl<ScalarNode>();
+  const auto& node = jitTensor.node()->impl<ScalarNode>();
   ASSERT_EQ(node.inputs(), NodeList({}));
   ASSERT_EQ(node.uses(), UseValList({}));
   ASSERT_EQ(node.shape(), shape);
@@ -269,31 +269,25 @@ TEST_F(JitTensorTest, assignment) {
 
   // assignment won't affect other tensor's graphs
   ASSERT_EQ(c0->inputs(), NodeList({}));
-  ASSERT_EQ(c0->getRefCount(), 2); // 2 because t0 doesn't refer to it anymore
   ASSERT_EQ(c0->uses(), UseValList({{add1, 0}, {add2, 0}}));
   ASSERT_TRUE(c0->isScalar());
   ASSERT_EQ(c1->inputs(), NodeList({}));
-  ASSERT_EQ(c1->getRefCount(), 3);
   ASSERT_EQ(c1->uses(), UseValList({{add1, 1}, {add3, 1}}));
   ASSERT_TRUE(c1->isScalar());
   ASSERT_EQ(add1->inputs(), NodeList({c0, c1}));
-  ASSERT_EQ(add1->getRefCount(), 1);
   ASSERT_EQ(add1->uses(), UseValList({}));
   ASSERT_TRUE(add1->isBinary());
 
   // in-place add assignment creates new graph (like SSA)
   ASSERT_EQ(c2->inputs(), NodeList({}));
-  ASSERT_EQ(c2->getRefCount(), 2);
   ASSERT_EQ(c2->uses(), UseValList({{add2, 1}}));
   ASSERT_TRUE(c2->isScalar());
   ASSERT_EQ(add2->inputs(), NodeList({c0, c2}));
-  ASSERT_EQ(add2->getRefCount(), 2);
   ASSERT_EQ(add2->uses(), UseValList({{add3, 0}}));
   ASSERT_TRUE(add2->isBinary());
 
   // future use of assigned tensor uses its new graph
   ASSERT_EQ(add3->inputs(), NodeList({add2, c1}));
-  ASSERT_EQ(add3->getRefCount(), 1);
   ASSERT_EQ(add3->uses(), UseValList({}));
   ASSERT_TRUE(add3->isBinary());
 }
@@ -333,18 +327,15 @@ TEST_F(JitTensorTest, assignmentWithShallowCopyAndCopy) {
   // assignment won't affect copy
   ASSERT_EQ(toJitTensorBase(t0c).node(), c0);
   ASSERT_EQ(c0->inputs(), NodeList({}));
-  ASSERT_EQ(c0->getRefCount(), 2);
   ASSERT_EQ(c0->uses(), UseValList({{add, 0}}));
   ASSERT_TRUE(c0->isScalar());
 
   // assignment affects shallow copy
   ASSERT_EQ(toJitTensorBase(t0sc).node(), add);
   ASSERT_EQ(c1->inputs(), NodeList({}));
-  ASSERT_EQ(c1->getRefCount(), 2);
   ASSERT_EQ(c1->uses(), UseValList({{add, 1}}));
   ASSERT_TRUE(c1->isScalar());
   ASSERT_EQ(add->inputs(), NodeList({c0, c1}));
-  ASSERT_EQ(add->getRefCount(), 1); // shallow copy won't bump node's ref-count
   ASSERT_EQ(add->uses(), UseValList({}));
   ASSERT_TRUE(add->isBinary());
 }
@@ -363,11 +354,9 @@ TEST_F(JitTensorTest, indexedRead) {
 
   // graph is properly constructed, i.e., i0 --> c0
   ASSERT_EQ(c0->inputs(), NodeList({}));
-  ASSERT_EQ(c0->getRefCount(), 2);
   ASSERT_EQ(c0->uses(), UseValList({{i0, 0}}));
   ASSERT_TRUE(c0->isScalar());
   ASSERT_EQ(i0->inputs(), NodeList({c0}));
-  ASSERT_EQ(i0->getRefCount(), 2); // copy bumps node's ref-count
   ASSERT_EQ(i0->uses(), UseValList({}));
   ASSERT_EQ(i0->shape(), Shape({2, 7}));
   ASSERT_TRUE(i0->isIndex());
@@ -410,33 +399,27 @@ TEST_F(JitTensorTest, indexingWithOriginalDataUpdated) {
   //    |
   //  i0/i2
   ASSERT_EQ(c0->inputs(), NodeList({}));
-  ASSERT_EQ(c0->getRefCount(), 3); // copy bumps node's ref-count
   ASSERT_EQ(c0->uses(), UseValList({{i1, 0}, {add, 0}}));
   ASSERT_TRUE(c0->isScalar());
   ASSERT_EQ(c1->inputs(), NodeList({}));
-  ASSERT_EQ(c1->getRefCount(), 2);
   ASSERT_EQ(c1->uses(), UseValList({{add, 1}}));
   ASSERT_TRUE(c1->isScalar());
   ASSERT_EQ(add->inputs(), NodeList({c0, c1}));
-  ASSERT_EQ(add->getRefCount(), 3);
   ASSERT_EQ(add->uses(), UseValList({{i0, 0}, {i2, 0}}));
   ASSERT_TRUE(add->isBinary());
   ASSERT_EQ(i0->inputs(), NodeList({add}));
-  ASSERT_EQ(i0->getRefCount(), 1);
   ASSERT_EQ(i0->uses(), UseValList({}));
   ASSERT_EQ(i0->shape(), Shape({2, 7}));
   ASSERT_TRUE(i0->isIndex());
   ASSERT_EQ(i0->impl<IndexNode>().indices().size(), 2);
   ASSERT_EQ(i0->impl<IndexNode>().indexedNode(), add);
   ASSERT_EQ(i1->inputs(), NodeList({c0}));
-  ASSERT_EQ(i1->getRefCount(), 1);
   ASSERT_EQ(i1->uses(), UseValList({}));
   ASSERT_EQ(i1->shape(), Shape({2, 7}));
   ASSERT_TRUE(i1->isIndex());
   ASSERT_EQ(i1->impl<IndexNode>().indices().size(), 2);
   ASSERT_EQ(i1->impl<IndexNode>().indexedNode(), c0);
   ASSERT_EQ(i2->inputs(), NodeList({add}));
-  ASSERT_EQ(i2->getRefCount(), 1);
   ASSERT_EQ(i2->uses(), UseValList({}));
   ASSERT_EQ(i2->shape(), Shape({2, 7}));
   ASSERT_TRUE(i2->isIndex());
@@ -477,36 +460,30 @@ TEST_F(JitTensorTest, indexingWithIndexedDataUpdated) {
   //    |
   //  i0/i2
   ASSERT_EQ(c0->inputs(), NodeList({}));
-  ASSERT_EQ(c0->getRefCount(), 3); // copy bumps node's ref-count
   ASSERT_EQ(c0->uses(), UseValList({{i1, 0}, {update, 0}}));
   ASSERT_TRUE(c0->isScalar());
   ASSERT_EQ(c1->inputs(), NodeList({}));
-  ASSERT_EQ(c1->getRefCount(), 2);
   ASSERT_EQ(c1->uses(), UseValList({{update, 1}}));
   ASSERT_TRUE(c1->isScalar());
   ASSERT_EQ(update->inputs(), NodeList({c0, c1}));
-  ASSERT_EQ(update->getRefCount(), 3);
   ASSERT_EQ(update->uses(), UseValList({{i0, 0}, {i2, 0}}));
   ASSERT_TRUE(update->isIndexedUpdate());
   ASSERT_EQ(update->impl<IndexedUpdateNode>().indexedNode(), c0);
   ASSERT_EQ(update->impl<IndexedUpdateNode>().updateDataNode(), c1);
   ASSERT_EQ(update->impl<IndexedUpdateNode>().indexings().size(), 1);
   ASSERT_EQ(i0->inputs(), NodeList({update}));
-  ASSERT_EQ(i0->getRefCount(), 1);
   ASSERT_EQ(i0->uses(), UseValList({}));
   ASSERT_EQ(i0->shape(), Shape({2, 7}));
   ASSERT_TRUE(i0->isIndex());
   ASSERT_EQ(i0->impl<IndexNode>().indices().size(), 2);
   ASSERT_EQ(i0->impl<IndexNode>().indexedNode(), update);
   ASSERT_EQ(i1->inputs(), NodeList({c0}));
-  ASSERT_EQ(i1->getRefCount(), 1);
   ASSERT_EQ(i1->uses(), UseValList({}));
   ASSERT_EQ(i1->shape(), Shape({2, 7}));
   ASSERT_TRUE(i1->isIndex());
   ASSERT_EQ(i1->impl<IndexNode>().indices().size(), 2);
   ASSERT_EQ(i1->impl<IndexNode>().indexedNode(), c0);
   ASSERT_EQ(i2->inputs(), NodeList({update}));
-  ASSERT_EQ(i2->getRefCount(), 1);
   ASSERT_EQ(i2->uses(), UseValList({}));
   ASSERT_EQ(i2->shape(), Shape({2, 7}));
   ASSERT_TRUE(i2->isIndex());

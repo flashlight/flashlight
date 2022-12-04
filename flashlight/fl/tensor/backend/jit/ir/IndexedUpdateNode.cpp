@@ -15,11 +15,11 @@ namespace fl {
 
 namespace {
 
-std::vector<Node*> computeInputs(
-    Node* indexedNode,
-    Node* updateDataNode,
+std::vector<NodePtr> computeInputs(
+    NodePtr indexedNode,
+    NodePtr updateDataNode,
     const std::vector<std::vector<Index>>& indexings) {
-  std::vector<Node*> inputs{indexedNode, updateDataNode};
+  std::vector<NodePtr> inputs{indexedNode, updateDataNode};
   for (const auto& indexing : indexings) {
     for (const auto& idx : indexing) {
       switch (idx.type()) {
@@ -39,22 +39,23 @@ std::vector<Node*> computeInputs(
 } // namespace
 
 IndexedUpdateNode::IndexedUpdateNode(
-    Node* indexedNode,
+    NodePtr indexedNode,
     const std::vector<std::vector<Index>>& indexings,
-    Node* updateDataNode)
+    NodePtr updateDataNode,
+    PrivateHelper)
     : NodeTrait(
           computeInputs(indexedNode, updateDataNode, indexings),
           Shape(indexedNode->shape())),
       indexings_(indexings) {}
 
-IndexedUpdateNode* IndexedUpdateNode::create(
-    Node* indexedNode,
+IndexedUpdateNodePtr IndexedUpdateNode::create(
+    NodePtr indexedNode,
     const std::vector<std::vector<Index>>& indexings,
-    Node* updateDataNode) {
-  return new IndexedUpdateNode(indexedNode, indexings, updateDataNode);
+    NodePtr updateDataNode) {
+  return std::make_shared<IndexedUpdateNode>(indexedNode, indexings, updateDataNode, PrivateHelper{});
 }
 
-Node* IndexedUpdateNode::indexedNode() const {
+NodePtr IndexedUpdateNode::indexedNode() const {
   return getInput(indexedNodeIdx);
 }
 
@@ -62,7 +63,7 @@ const std::vector<std::vector<Index>>& IndexedUpdateNode::indexings() const {
   return indexings_;
 }
 
-Node* IndexedUpdateNode::updateDataNode() const {
+NodePtr IndexedUpdateNode::updateDataNode() const {
   return getInput(updateDataNodeIdx);
 }
 

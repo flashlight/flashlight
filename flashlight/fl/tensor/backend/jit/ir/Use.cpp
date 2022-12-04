@@ -9,17 +9,13 @@
 
 namespace fl {
 
-Use::Use(Node* user, unsigned inputIdx) : user_(user), inputIdx_(inputIdx) {}
-
-Use* Use::create(Node* user, unsigned inputIdx) {
-  return new Use(user, inputIdx);
-}
+Use::Use(Node& user, unsigned inputIdx) : user_(user), inputIdx_(inputIdx) {}
 
 unsigned Use::inputIdx() const {
   return inputIdx_;
 }
 
-Node* Use::user() const {
+Node& Use::user() const {
   return user_;
 }
 

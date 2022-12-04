@@ -62,7 +62,7 @@ std::optional<T> foldScalars(const T lhs, const T rhs, const BinaryOp op) {
 }
 
 template <typename T>
-std::optional<ScalarNode*> foldScalarNodes(
+std::optional<ScalarNodePtr> foldScalarNodes(
     const ScalarNode& lhs,
     const ScalarNode& rhs,
     const BinaryOp op,
@@ -76,7 +76,7 @@ std::optional<ScalarNode*> foldScalarNodes(
   return std::nullopt;
 }
 
-std::optional<ScalarNode*> foldScalarNodes(
+std::optional<ScalarNodePtr> foldScalarNodes(
     const ScalarNode& lhs,
     const ScalarNode& rhs,
     const BinaryOp op) {
@@ -112,10 +112,11 @@ std::optional<ScalarNode*> foldScalarNodes(
   throw std::runtime_error("[foldScalarNodes] Unknown data type");
 }
 
-Node* foldScalarsInBinaryNode(BinaryNode* node) {
-  const auto binop = node->op();
-  const auto lhs = node->lhs();
-  const auto rhs = node->rhs();
+NodePtr foldScalarsInBinaryNode(NodePtr node) {
+  BinaryNode& binaryNode = node->impl<BinaryNode>();
+  const auto binop = binaryNode.op();
+  const auto lhs = binaryNode.lhs();
+  const auto rhs = binaryNode.rhs();
   if (lhs->isScalar() && rhs->isScalar()) {
     const auto& lhsScalar = lhs->impl<ScalarNode>();
     const auto& rhsScalar = rhs->impl<ScalarNode>();
@@ -130,13 +131,12 @@ Node* foldScalarsInBinaryNode(BinaryNode* node) {
   return node;
 }
 
-Node* foldScalars(Node* node) {
+NodePtr foldScalars(NodePtr node) {
   for (const auto& input : node->inputs()) {
     foldScalars(input);
   }
   switch (node->type()) {
-    case NodeType::Binary:
-      return foldScalarsInBinaryNode(&node->impl<BinaryNode>());
+    case NodeType::Binary: return foldScalarsInBinaryNode(node);
     case NodeType::Custom:
     case NodeType::Index:
     case NodeType::IndexedUpdate:
@@ -149,7 +149,7 @@ Node* foldScalars(Node* node) {
 
 } // namespace
 
-Node* ScalarFolding::apply(Node* node) {
+NodePtr ScalarFolding::apply(NodePtr node) {
   return foldScalars(node);
 }
 

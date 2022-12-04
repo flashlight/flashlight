@@ -50,23 +50,23 @@ class OneDnnOpFusion : public Pass {
   struct SearchState;
 
   // Avoid re-visit, since fuser only need to apply once to each node.
-  std::unordered_set<Node*> visited_{};
+  std::unordered_set<NodePtr> visited_{};
 
   // 1. Fuse _along_ some path from `node`.
   // 2. recursively optimize other inputs along the fused path.
-  Node* rewriteFrom(Node* node);
+  NodePtr rewriteFrom(NodePtr node);
 
   // keep searching for nodes to fuse starting from `node`
-  Node* searchAndFuse(Node* node, SearchState& state);
+  NodePtr searchAndFuse(NodePtr node, SearchState& state);
 
   // Actual fusion of an op-chain, `node` is a leaf input.
-  Node* fuseNodes(Node* node, SearchState& state);
+  NodePtr fuseNodes(NodePtr node, SearchState& state);
 
  public:
   OneDnnOpFusion() = default;
   ~OneDnnOpFusion() = default;
 
-  Node* apply(Node* root) override;
+  NodePtr apply(NodePtr root) override;
 };
 
 } // namespace fl

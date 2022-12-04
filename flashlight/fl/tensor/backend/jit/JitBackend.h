@@ -20,7 +20,7 @@ namespace fl {
  */
 class JitBackend : public TensorBackend {
   TensorBackend& wrappedBackend_;
-  std::function<Tensor(Node*)> jitTensorCreator_;
+  std::function<Tensor(NodePtr)> jitTensorCreator_;
 
   template <typename T>
   Tensor fullWithType(const Shape& shape, T value, dtype type);
@@ -33,7 +33,7 @@ class JitBackend : public TensorBackend {
  public:
   JitBackend(
       TensorBackend& wrappedBackend,
-      std::function<Tensor(Node*)> jitTensorCreator);
+      std::function<Tensor(NodePtr)> jitTensorCreator);
   ~JitBackend() override = default;
   TensorBackendType backendType() const override;
 

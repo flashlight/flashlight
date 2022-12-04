@@ -7,10 +7,15 @@
 
 #pragma once
 
+#include <memory>
+
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/backend/jit/ir/Node.h"
 
 namespace fl {
+
+class IndexedUpdateNode;
+using IndexedUpdateNodePtr = std::shared_ptr<IndexedUpdateNode>;
 
 /**
  * A node that represents an indexed update in SSA form.
@@ -32,23 +37,25 @@ class IndexedUpdateNode : public NodeTrait<IndexedUpdateNode> {
   static constexpr unsigned indexedNodeIdx = 0;
   static constexpr unsigned updateDataNodeIdx = 1;
 
-  // intentionally kept private to control allocation
-  IndexedUpdateNode(
-      Node* indexedNode,
-      const std::vector<std::vector<Index>>& indexings,
-      Node* updateDataNode);
+  // help control allocation while allowing `std::make_shared`
+  struct PrivateHelper{};
 
  public:
   static constexpr NodeType nodeType = NodeType::IndexedUpdate;
-
-  static IndexedUpdateNode* create(
-      Node* indexedNode,
+  IndexedUpdateNode(
+      NodePtr indexedNode,
       const std::vector<std::vector<Index>>& indexings,
-      Node* updateDataNode);
+      NodePtr updateDataNode,
+      PrivateHelper);
 
-  Node* indexedNode() const;
+  static IndexedUpdateNodePtr create(
+      NodePtr indexedNode,
+      const std::vector<std::vector<Index>>& indexings,
+      NodePtr updateDataNode);
+
+  NodePtr indexedNode() const;
   const std::vector<std::vector<Index>>& indexings() const;
-  Node* updateDataNode() const;
+  NodePtr updateDataNode() const;
 };
 
 } // namespace fl

@@ -11,9 +11,13 @@
 #include "flashlight/fl/tensor/Types.h"
 #include "flashlight/fl/tensor/backend/jit/ir/Node.h"
 
+#include <memory>
 #include <variant>
 
 namespace fl {
+
+class ScalarNode;
+using ScalarNodePtr = std::shared_ptr<ScalarNode>;
 
 /**
  * A node that represents scalar of specific shape & type.
@@ -25,14 +29,15 @@ class ScalarNode : public NodeTrait<ScalarNode> {
   const dtype dtype_;
   const ScalarType scalar_; // value used for initialization
 
-  // intentionally kept private to control allocation
-  ScalarNode(const Shape& shape, const dtype type, const ScalarType scalar);
+  // help control allocation while allowing `std::make_shared`
+  struct PrivateHelper{};
 
  public:
   static constexpr NodeType nodeType = NodeType::Scalar;
+  ScalarNode(const Shape& shape, const dtype type, const ScalarType scalar, PrivateHelper);
 
   template <typename T>
-  static ScalarNode*
+  static ScalarNodePtr
   create(const Shape& shape, const dtype type, const T scalar) {
     switch (type) {
       case dtype::b8:
@@ -42,14 +47,14 @@ class ScalarNode : public NodeTrait<ScalarNode> {
       case dtype::u8:
       case dtype::u16:
       case dtype::u32:
-        return new ScalarNode(shape, type, static_cast<long long>(scalar));
+        return std::make_shared<ScalarNode>(shape, type, static_cast<long long>(scalar), PrivateHelper{});
       case dtype::u64:
-        return new ScalarNode(
-            shape, type, static_cast<unsigned long long>(scalar));
+        return std::make_shared<ScalarNode>(
+            shape, type, static_cast<unsigned long long>(scalar), PrivateHelper{});
       case dtype::f16:
       case dtype::f32:
       case dtype::f64:
-        return new ScalarNode(shape, type, static_cast<double>(scalar));
+        return std::make_shared< ScalarNode>(shape, type, static_cast<double>(scalar), PrivateHelper{});
     }
     throw std::runtime_error("[ScalarNode::create] Unknown dtype");
   }

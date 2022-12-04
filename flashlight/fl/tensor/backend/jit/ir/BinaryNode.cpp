@@ -42,10 +42,10 @@ std::optional<Shape> getBinopOutputShape(const Shape& lhs, const Shape& rhs) {
 
 } // namespace
 
-BinaryNode::BinaryNode(Node* lhs, Node* rhs, BinaryOp op, const Shape& shape)
+BinaryNode::BinaryNode(NodePtr lhs, NodePtr rhs, BinaryOp op, const Shape& shape, PrivateHelper)
     : NodeTrait({lhs, rhs}, shape), op_(op) {}
 
-BinaryNode* BinaryNode::create(Node* lhs, Node* rhs, BinaryOp op) {
+BinaryNodePtr BinaryNode::create(NodePtr lhs, NodePtr rhs, BinaryOp op) {
   const auto outputShapeOpt = getBinopOutputShape(lhs->shape(), rhs->shape());
   if (!outputShapeOpt.has_value()) {
     std::ostringstream oss;
@@ -53,18 +53,18 @@ BinaryNode* BinaryNode::create(Node* lhs, Node* rhs, BinaryOp op) {
         << rhs->shape();
     throw std::invalid_argument(oss.str());
   }
-  return new BinaryNode(lhs, rhs, op, outputShapeOpt.value());
+  return std::make_shared<BinaryNode>(lhs, rhs, op, outputShapeOpt.value(), PrivateHelper{});
 }
 
 BinaryOp BinaryNode::op() const {
   return op_;
 }
 
-Node* BinaryNode::lhs() const {
+NodePtr BinaryNode::lhs() const {
   return getInput(kLhsIdx);
 }
 
-Node* BinaryNode::rhs() const {
+NodePtr BinaryNode::rhs() const {
   return getInput(kRhsIdx);
 }
 

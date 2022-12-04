@@ -9,12 +9,12 @@
 
 namespace fl {
 
-ValueNode::ValueNode(Tensor&& value) : NodeTrait({}, value.shape()) {
+ValueNode::ValueNode(Tensor&& value, PrivateHelper) : NodeTrait({}, value.shape()) {
   setResult(std::move(value));
 }
 
-ValueNode* ValueNode::create(Tensor&& value) {
-  return new ValueNode(std::move(value));
+ValueNodePtr ValueNode::create(Tensor&& value) {
+  return std::make_shared<ValueNode>(std::move(value), PrivateHelper{});
 }
 
 const Tensor& ValueNode::value() const {

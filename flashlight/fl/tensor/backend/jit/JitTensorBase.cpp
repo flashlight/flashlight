@@ -22,19 +22,11 @@ namespace fl {
 
 // represents the data referred to by indexinges
 struct DataStorage {
-  Node* node;
+  NodePtr node;
 
-  DataStorage(Node* node) : node(node) {
-    node->incRefCount(); // shallow copies counts as 1 use
-  }
+  DataStorage(NodePtr node) : node(node) {}
 
-  ~DataStorage() {
-    node->decRefCount();
-  }
-
-  void replaceNode(Node* newNode) {
-    newNode->incRefCount();
-    node->decRefCount();
+  void replaceNode(NodePtr newNode) {
     node = newNode;
   }
 };
@@ -65,28 +57,24 @@ class JitTensorBase::SharedData {
   // 3. index merging, e.g., (1, 3)(1, 2) --> (2, 3). Maybe as an optimization
   //    pass, need to think more.
   std::vector<std::vector<Index>> indexings_{};
-  std::optional<Node*> oldDataNode_{std::nullopt}; // None iff no indexings
-  std::optional<Node*> viewNode_{std::nullopt}; // None iff no indexings
+  std::optional<NodePtr> oldDataNode_{std::nullopt}; // None iff no indexings
+  std::optional<NodePtr> viewNode_{std::nullopt}; // None iff no indexings
 
   void updateViewNodeIfNeeded() {
     if (indexings_.empty() || dataStorage_->node == oldDataNode_) {
       return;
-    }
-    if (viewNode_.has_value()) {
-      viewNode_.value()->decRefCount();
     }
     // apply index one by one
     auto toBeIndexedNode = dataStorage_->node;
     for (const auto& indices : indexings_) {
       toBeIndexedNode = IndexNode::create(toBeIndexedNode, indices);
     }
-    toBeIndexedNode->incRefCount();
     viewNode_ = toBeIndexedNode;
     oldDataNode_ = dataStorage_->node;
   }
 
  public:
-  SharedData(Node* dataNode)
+  SharedData(NodePtr dataNode)
       : SharedData(std::make_shared<DataStorage>(dataNode), {}) {}
 
   SharedData(
@@ -96,13 +84,7 @@ class JitTensorBase::SharedData {
     updateViewNodeIfNeeded();
   }
 
-  ~SharedData() {
-    if (viewNode_.has_value()) {
-      viewNode_.value()->decRefCount();
-    }
-  }
-
-  void updateDataNode(Node* newNode) {
+  void updateDataNode(NodePtr newNode) {
     if (!indexings_.empty()) {
       newNode =
           IndexedUpdateNode::create(dataStorage_->node, indexings_, newNode);
@@ -111,10 +93,8 @@ class JitTensorBase::SharedData {
   }
 
   // NOTE intended for optimizer
-  void replaceNode(Node* newNode) {
+  void replaceNode(NodePtr newNode) {
     if (viewNode_.has_value()) {
-      newNode->incRefCount();
-      viewNode_.value()->decRefCount();
       viewNode_ = newNode;
     } else {
       // graph optimization applies to all shallow copies
@@ -122,7 +102,7 @@ class JitTensorBase::SharedData {
     }
   }
 
-  Node* getNode() {
+  NodePtr getNode() {
     updateViewNodeIfNeeded();
     return viewNode_.value_or(dataStorage_->node);
   }
@@ -134,7 +114,7 @@ class JitTensorBase::SharedData {
   }
 };
 
-JitTensorBase::JitTensorBase(Node* node)
+JitTensorBase::JitTensorBase(NodePtr node)
     : JitTensorBase(std::make_shared<SharedData>(node)) {}
 
 JitTensorBase::JitTensorBase(std::shared_ptr<SharedData> sharedData)
@@ -149,7 +129,7 @@ const Tensor& JitTensorBase::getTensorOrEvalNode() const {
   return node()->getResult().value();
 }
 
-Tensor JitTensorBase::fromDataNode(Node* node) const {
+Tensor JitTensorBase::fromDataNode(NodePtr node) const {
   return fromSharedData(std::make_shared<SharedData>(node));
 }
 
@@ -390,7 +370,7 @@ FL_JIT_TENSOR_ASSIGN_BINOP(inPlaceDivide, /); // /=
 #undef FL_JIT_TENSOR_ASSIGN_OP
 #undef FL_JIT_TENSOR_ASSIGN_BINOP
 
-Node* JitTensorBase::node() const {
+NodePtr JitTensorBase::node() const {
   return sharedData_->getNode();
 }
 

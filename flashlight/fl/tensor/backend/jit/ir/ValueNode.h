@@ -7,23 +7,29 @@
 
 #pragma once
 
+#include <memory>
+
 #include "flashlight/fl/tensor/Shape.h"
 #include "flashlight/fl/tensor/Types.h"
 #include "flashlight/fl/tensor/backend/jit/ir/Node.h"
 
 namespace fl {
 
+class ValueNode;
+using ValueNodePtr = std::shared_ptr<ValueNode>;
+
 /**
  * A node that represents an evaluated tensor
  */
 class ValueNode : public NodeTrait<ValueNode> {
-  // intentionally kept private to control allocation
-  ValueNode(Tensor&& value);
+  // help control allocation while allowing `std::make_shared`
+  struct PrivateHelper{};
 
  public:
   static constexpr NodeType nodeType = NodeType::Value;
+  ValueNode(Tensor&& value, PrivateHelper);
 
-  static ValueNode* create(Tensor&& value);
+  static ValueNodePtr create(Tensor&& value);
   const Tensor& value() const;
 };
 

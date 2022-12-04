@@ -22,14 +22,14 @@ std::ostream& operator<<(std::ostream& os, const UseVal& useVal) {
 
 } // namespace detail
 
-bool operator==(UseList actual, UseValList expect) {
+bool operator==(const UseList& actual, const UseValList& expect) {
   if (actual.size() != expect.size()) {
     return false;
   }
   unsigned i = 0;
   for (const auto& actualUse : actual) {
     const auto& expectUse = expect[i];
-    if (actualUse->user() != expectUse.user ||
+    if (&actualUse->user() != expectUse.user.get() ||
         actualUse->inputIdx() != expectUse.inputIdx) {
       return false;
     }
@@ -39,7 +39,7 @@ bool operator==(UseList actual, UseValList expect) {
 }
 
 std::ostream& operator<<(std::ostream& os, const Use* use) {
-  os << "(" << use->user() << ", " << use->inputIdx() << ")";
+  os << "(" << &use->user() << ", " << use->inputIdx() << ")";
   return os;
 }
 

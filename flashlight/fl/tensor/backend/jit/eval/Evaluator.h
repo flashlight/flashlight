@@ -27,10 +27,10 @@ class Evaluator {
   // backend used for dispatching Tensor ops.
   TensorBackend& backend_;
   // track (conservatively) how many more times the a node's result will be used
-  std::unordered_map<Node*, unsigned> nodeToResultUseCount_{};
+  std::unordered_map<NodePtr, unsigned> nodeToResultUseCount_{};
 
-  void evalNode(Node* node);
-  void evalNodeDispatch(Node* node);
+  void evalNode(NodePtr node);
+  void evalNodeDispatch(NodePtr node);
 
   // evaluate and set result without checking for existing result
   // ASSUME inputs have been evaluated
@@ -63,7 +63,7 @@ class Evaluator {
    * 1. no op if result already set
    * 2. set result for all intermediate/final tensors evaluated
    */
-  void eval(Node* node);
+  void eval(NodePtr node);
 };
 
 } // namespace fl

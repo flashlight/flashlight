@@ -13,26 +13,25 @@
 
 namespace fl {
 
-void Node::nodeImplTypeCheck(NodeType expect, NodeType actual) const {
+void Node::nodeImplTypeCheck(NodeType expect, NodeType actual) {
   if (expect != actual) {
     std::ostringstream oss;
-    oss << "[fl::Node::impl] "
+    oss << "[fl::Node::nodeImplTypeCheck] "
         << "specified node type: [" << actual << "] "
         << "doesn't match actual node type: [" << expect << "]";
     throw std::invalid_argument(oss.str());
   }
 }
 
-void Node::setInputImpl(unsigned inputIdx, Node* input) {
+void Node::linkInput(unsigned inputIdx, NodePtr input) {
   inputs_.at(inputIdx) = input;
   // update metadata
-  auto inputUse = Use::create(this, inputIdx);
-  auto inputUseIter = input->uses_.insert(input->uses_.end(), inputUse);
+  auto inputUseIter = input->uses_.emplace(
+      input->uses_.end(), std::make_unique<Use>(*this, inputIdx));
   inputUseIters_[inputIdx] = inputUseIter;
-  input->incRefCount();
 }
 
-void Node::resetInput(unsigned inputIdx) {
+void Node::unlinkInput(unsigned inputIdx) {
   const auto oldInput = inputs_.at(inputIdx);
   const auto oldInputUseIter = inputUseIters_[inputIdx];
   assert(oldInput && "No input at given index");
@@ -40,37 +39,35 @@ void Node::resetInput(unsigned inputIdx) {
   inputUseIters_[inputIdx] = oldInput->uses_.end();
   inputs_[inputIdx] = nullptr;
   // clean up metadata
-  delete *oldInputUseIter;
   oldInput->uses_.erase(oldInputUseIter);
-  oldInput->decRefCount();
 }
 
-Node::Node(std::vector<Node*>&& inputs, const Shape& shape)
+Node::Node(std::vector<NodePtr>&& inputs, const Shape& shape)
     : inputs_(inputs), shape_(shape) {
   inputs_.resize(inputs.size());
   inputUseIters_.resize(inputs.size());
   for (unsigned inputIdx = 0; inputIdx < inputs.size(); inputIdx++) {
-    setInputImpl(inputIdx, inputs[inputIdx]);
+    linkInput(inputIdx, inputs[inputIdx]);
   }
 }
 
 Node::~Node() {
   for (unsigned inputIdx = 0; inputIdx < inputs_.size(); inputIdx++) {
-    resetInput(inputIdx);
+    unlinkInput(inputIdx);
   }
 }
 
-Node* Node::getInput(unsigned inputIdx) const {
+NodePtr Node::getInput(unsigned inputIdx) const {
   return inputs_.at(inputIdx);
 }
 
-const std::vector<Node*>& Node::inputs() const {
+const std::vector<NodePtr>& Node::inputs() const {
   return inputs_;
 }
 
-void Node::setInput(unsigned inputIdx, Node* newInput) {
-  resetInput(inputIdx);
-  setInputImpl(inputIdx, newInput);
+void Node::setInput(unsigned inputIdx, NodePtr newInput) {
+  unlinkInput(inputIdx);
+  linkInput(inputIdx, newInput);
 }
 
 const Shape& Node::shape() const {
@@ -81,31 +78,13 @@ const UseList& Node::uses() const {
   return uses_;
 }
 
-void Node::replaceAllUsesWith(Node* newInput) {
-  if (newInput != this) {
-    // each iteration updates links an existing user to newInput
-    while (!uses_.empty()) {
-      const auto* nextUse = *uses_.begin();
-      nextUse->user()->setInput(nextUse->inputIdx(), newInput);
+void Node::replaceAllUsesWith(NodePtr newNode) {
+  if (newNode.get() != this) {
+    for (const auto& use : uses_) {
+      auto& userNode = use->user();
+      userNode.inputs_[use->inputIdx()] = newNode;
     }
-  }
-}
-
-unsigned Node::getRefCount() const {
-  return refCount_;
-}
-
-void Node::incRefCount() {
-  refCount_++;
-}
-
-void Node::decRefCount() {
-  if (refCount_ == 0) {
-    throw std::runtime_error("[Node::decRefCount] Refcount already 0");
-  }
-  refCount_--;
-  if (refCount_ == 0) {
-    delete this;
+    newNode->uses_.splice(newNode->uses_.begin(), this->uses_);
   }
 }
 
