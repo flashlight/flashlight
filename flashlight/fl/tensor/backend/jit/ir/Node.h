@@ -19,6 +19,8 @@
 
 namespace fl {
 
+class ExternalUse;
+using ExternalUseList = std::list<ExternalUse*>;
 using UseList = std::list<std::unique_ptr<Use>>;
 using NodePtr = std::shared_ptr<Node>;
 
@@ -32,6 +34,7 @@ class Node {
   std::vector<NodePtr> inputs_;
   std::vector<UseList::iterator> inputUseIters_;
   UseList uses_;
+  ExternalUseList externalUses_;
   const Shape shape_;
 
   // present if this node has been evaluated
@@ -63,6 +66,8 @@ class Node {
 
   // Uses
   const UseList& uses() const;
+  const ExternalUseList& externalUses() const;
+  // replaces both internal and external uses
   void replaceAllUsesWith(NodePtr newInput);
 
   // Useful for lazy eval
@@ -92,6 +97,8 @@ class Node {
     nodeImplTypeCheck(T::nodeType, this->type());
     return *static_cast<const T*>(this);
   }
+
+  friend class ExternalUse;
 };
 
 /**

@@ -11,6 +11,7 @@
 #include <sstream>
 #include <stdexcept>
 
+#include "flashlight/fl/tensor/backend/jit/ir/ExternalUse.h"
 #include "flashlight/fl/tensor/backend/jit/ir/IndexedUpdateNode.h"
 #include "flashlight/fl/tensor/backend/jit/ir/ValueNode.h"
 
@@ -21,13 +22,18 @@
 namespace fl {
 
 // represents the data referred to by indexinges
-struct DataStorage {
-  NodePtr node;
+class DataStorage {
+  ExternalUse externalUse_;
 
-  DataStorage(NodePtr node) : node(node) {}
+ public:
+  DataStorage(NodePtr node) : externalUse_(node) {}
 
   void replaceNode(NodePtr newNode) {
-    node = newNode;
+    externalUse_.setUsee(newNode);
+  }
+
+  NodePtr node() {
+    return externalUse_.usee();
   }
 };
 
@@ -61,16 +67,16 @@ class JitTensorBase::SharedData {
   std::optional<NodePtr> viewNode_{std::nullopt}; // None iff no indexings
 
   void updateViewNodeIfNeeded() {
-    if (indexings_.empty() || dataStorage_->node == oldDataNode_) {
+    if (indexings_.empty() || dataStorage_->node() == oldDataNode_) {
       return;
     }
     // apply index one by one
-    auto toBeIndexedNode = dataStorage_->node;
+    auto toBeIndexedNode = dataStorage_->node();
     for (const auto& indices : indexings_) {
       toBeIndexedNode = IndexNode::create(toBeIndexedNode, indices);
     }
     viewNode_ = toBeIndexedNode;
-    oldDataNode_ = dataStorage_->node;
+    oldDataNode_ = dataStorage_->node();
   }
 
  public:
@@ -87,7 +93,7 @@ class JitTensorBase::SharedData {
   void updateDataNode(NodePtr newNode) {
     if (!indexings_.empty()) {
       newNode =
-          IndexedUpdateNode::create(dataStorage_->node, indexings_, newNode);
+          IndexedUpdateNode::create(dataStorage_->node(), indexings_, newNode);
     }
     dataStorage_->replaceNode(newNode);
   }
@@ -104,7 +110,7 @@ class JitTensorBase::SharedData {
 
   NodePtr getNode() {
     updateViewNodeIfNeeded();
-    return viewNode_.value_or(dataStorage_->node);
+    return viewNode_.value_or(dataStorage_->node());
   }
 
   std::shared_ptr<SharedData> applyIndices(std::vector<Index> indices) {
@@ -157,7 +163,7 @@ fl::dtype JitTensorBase::type() {
   //    underlying backend (like OneDnnBackend) because in eager mode, we must
   //    make a copy even if type cast is redundant.
   // 2. avoid unnecessary materialization here, which enables more
-  //    optimizations, e.g., fusion. 
+  //    optimizations, e.g., fusion.
   return getTensorOrEvalNode().type();
 }
 
@@ -270,7 +276,8 @@ Tensor JitTensorBase::flat(const Index& idx) const {
     const auto& tensorIdx = idx.get<Tensor>();
     const auto& tensorIdxResult =
         toJitTensorBase(tensorIdx).getTensorOrEvalNode();
-    return fromDataNode(ValueNode::create(thisTensorResult.flat(tensorIdxResult)));
+    return fromDataNode(
+        ValueNode::create(thisTensorResult.flat(tensorIdxResult)));
   }
   return fromDataNode(ValueNode::create(thisTensorResult.flat(idx)));
 }

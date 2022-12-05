@@ -61,7 +61,7 @@ class Evaluator {
   /**
    * Execute the entire computation tree rooted at `node`.
    * 1. no op if result already set
-   * 2. set result for all intermediate/final tensors evaluated
+   * 2. set result for intermediate nodes if they have external uses
    */
   void eval(NodePtr node);
 };

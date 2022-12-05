@@ -7,7 +7,10 @@
 
 #include "flashlight/fl/tensor/backend/jit/ir/Node.h"
 
+#include "flashlight/fl/tensor/backend/jit/ir/ExternalUse.h"
+
 #include <cassert>
+#include <memory>
 #include <sstream>
 #include <stdexcept>
 
@@ -78,6 +81,10 @@ const UseList& Node::uses() const {
   return uses_;
 }
 
+const ExternalUseList& Node::externalUses() const {
+  return externalUses_;
+}
+
 void Node::replaceAllUsesWith(NodePtr newNode) {
   if (newNode.get() != this) {
     for (const auto& use : uses_) {
@@ -85,6 +92,11 @@ void Node::replaceAllUsesWith(NodePtr newNode) {
       userNode.inputs_[use->inputIdx()] = newNode;
     }
     newNode->uses_.splice(newNode->uses_.begin(), this->uses_);
+    for (const auto& externalUse : externalUses_) {
+      externalUse->usee_ = newNode;
+    }
+    newNode->externalUses_.splice(
+        newNode->externalUses_.begin(), this->externalUses_);
   }
 }
 

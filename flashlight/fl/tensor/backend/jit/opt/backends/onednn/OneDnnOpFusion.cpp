@@ -114,10 +114,9 @@ bool isNodeFusable(const NodePtr node) {
 
 bool isFusionProfitable(const NodePtr node) {
   // TODO
-  // 1. consider external use that wants to retain result (e.g., JitTensor)
-  // 2. Even if we have > 1 use, it might be possible & profitable to fuse,
+  // Even if we have multiple uses, it might be possible & profitable to fuse,
   // i.e., recomputation might be okay, think Halide.
-  return node->uses().size() <= 1;
+  return node->uses().size() + node->externalUses().size() <= 1;
 }
 
 bool shouldNodeBeFused(const NodePtr node) {

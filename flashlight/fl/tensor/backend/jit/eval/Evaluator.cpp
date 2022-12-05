@@ -16,23 +16,26 @@ namespace fl {
 
 namespace {
 
-// Build a map from each node in the tree to its current refcount.
-std::unordered_map<NodePtr, unsigned> getNodeToRefCountInTree(NodePtr root) {
-  std::unordered_map<NodePtr, unsigned> nodeToRefCount;
+// Build a map from each node in the tree to the # of its current uses
+// (including external use).
+std::unordered_map<NodePtr, unsigned> getNodeToUseCountInTree(NodePtr root) {
+  auto getUseCount = [](NodePtr node) {
+    return node->uses().size() + node->externalUses().size();
+  };
+  std::unordered_map<NodePtr, unsigned> nodeToUseCount{
+      {root, getUseCount(root)}};
   std::queue<NodePtr> worklist({root}); // nodes to be visited
   while (!worklist.empty()) {
     NodePtr node = worklist.front();
     worklist.pop();
-    if (nodeToRefCount.find(node) == nodeToRefCount.end()) {
-      // TODO a terribly conservative estimate, will fix in another PR (by
-      // leveraging ExternalUse)
-      nodeToRefCount.emplace(node, node.use_count());
-      for (const auto& input : node->inputs()) {
+    for (const auto& input : node->inputs()) {
+      if (nodeToUseCount.find(input) == nodeToUseCount.end()) {
         worklist.push(input);
+        nodeToUseCount.emplace(input, getUseCount(input));
       }
     }
   }
-  return nodeToRefCount;
+  return nodeToUseCount;
 }
 
 } // namespace
@@ -209,7 +212,7 @@ void Evaluator::evalNode(NodePtr node) {
 }
 
 void Evaluator::eval(NodePtr node) {
-  nodeToResultUseCount_ = getNodeToRefCountInTree(node);
+  nodeToResultUseCount_ = getNodeToUseCountInTree(node);
   evalNode(node);
   nodeToResultUseCount_.clear();
 }

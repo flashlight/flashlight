@@ -15,6 +15,7 @@
 #include "flashlight/fl/tensor/Shape.h"
 #include "flashlight/fl/tensor/backend/jit/JitTensor.h"
 #include "flashlight/fl/tensor/backend/jit/eval/Evaluator.h"
+#include "flashlight/fl/tensor/backend/jit/ir/ExternalUse.h"
 #include "flashlight/fl/tensor/backend/jit/ir/ValueNode.h"
 
 using namespace fl;
@@ -180,10 +181,10 @@ TEST_F(JitEvaluatorTest, evalRetainResults) {
   const auto c1 = ScalarNode::create(shape, dtype, 1);
   const auto c2 = ScalarNode::create(shape, dtype, 2);
   const auto add = BinaryNode::create(c1, c2, BinaryOp::Add);
+  ExternalUse u1(c1); // this forces evaluator to keep c1's result
   evaluator_.eval(add);
-  // TODO fix after adding ExternalUse
   ASSERT_TRUE(allClose(c1->getResult().value(), full(shape, 1, dtype)));
-  //ASSERT_FALSE(c2->getResult().has_value());
+  ASSERT_FALSE(c2->getResult().has_value()); // result not retained
   ASSERT_TRUE(allClose(add->getResult().value(), full(shape, 3, dtype)));
 }
 
