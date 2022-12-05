@@ -112,11 +112,10 @@ std::optional<ScalarNodePtr> foldScalarNodes(
   throw std::runtime_error("[foldScalarNodes] Unknown data type");
 }
 
-NodePtr foldScalarsInBinaryNode(NodePtr node) {
-  BinaryNode& binaryNode = node->impl<BinaryNode>();
-  const auto binop = binaryNode.op();
-  const auto lhs = binaryNode.lhs();
-  const auto rhs = binaryNode.rhs();
+NodePtr foldScalarsInBinaryNode(BinaryNodePtr node) {
+  const auto binop = node->op();
+  const auto lhs = node->lhs();
+  const auto rhs = node->rhs();
   if (lhs->isScalar() && rhs->isScalar()) {
     const auto& lhsScalar = lhs->impl<ScalarNode>();
     const auto& rhsScalar = rhs->impl<ScalarNode>();
@@ -136,7 +135,8 @@ NodePtr foldScalars(NodePtr node) {
     foldScalars(input);
   }
   switch (node->type()) {
-    case NodeType::Binary: return foldScalarsInBinaryNode(node);
+    case NodeType::Binary:
+      return foldScalarsInBinaryNode(Node::cast<BinaryNodePtr>(node));
     case NodeType::Custom:
     case NodeType::Index:
     case NodeType::IndexedUpdate:

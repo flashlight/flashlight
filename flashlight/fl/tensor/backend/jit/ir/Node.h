@@ -98,6 +98,23 @@ class Node {
     return *static_cast<const T*>(this);
   }
 
+  /**
+   * Cast NodePtr to its actual derived type, useful if caller wishes to obtain
+   * a derived NodePtr back.
+   *
+   * @param node the node to cast from
+   * @return node the result of the cast.
+   *
+   * Example:
+   *   NodePtr node = ...;
+   *   BinaryNodePtr binaryNode = Node::cast<BinaryNode>(node);
+   */
+  template <typename T, typename E = typename T::element_type>
+  static T cast(NodePtr node) {
+    nodeImplTypeCheck(E::nodeType, node->type());
+    return std::static_pointer_cast<E>(node);
+  }
+
   friend class ExternalUse;
 };
 
