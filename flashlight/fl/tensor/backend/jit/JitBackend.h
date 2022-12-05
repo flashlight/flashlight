@@ -9,8 +9,10 @@
 
 #include "flashlight/fl/tensor/TensorAdapter.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
+#include "flashlight/fl/tensor/backend/jit/eval/Evaluator.h"
 #include "flashlight/fl/tensor/backend/jit/ir/BinaryNode.h"
 #include "flashlight/fl/tensor/backend/jit/ir/Node.h"
+#include "flashlight/fl/tensor/backend/jit/opt/Optimizer.h"
 
 namespace fl {
 
@@ -21,6 +23,8 @@ namespace fl {
 class JitBackend : public TensorBackend {
   TensorBackend& wrappedBackend_;
   std::function<Tensor(NodePtr)> jitTensorCreator_;
+  Evaluator evaluator_;
+  Optimizer optimizer_;
 
   template <typename T>
   Tensor fullWithType(const Shape& shape, T value, dtype type);
@@ -42,6 +46,10 @@ class JitBackend : public TensorBackend {
   JitBackend(const JitBackend&) = delete;
   JitBackend& operator=(JitBackend&&) = delete;
   JitBackend& operator=(const JitBackend&) = delete;
+
+  Evaluator& evaluator();
+  Optimizer& optimizer();
+  TensorBackend& wrappedBackend();
 
   /* -------------------------- Compute Functions -------------------------- */
   void eval(const Tensor& tensor) override;

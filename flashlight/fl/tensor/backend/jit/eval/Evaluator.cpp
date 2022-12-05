@@ -243,6 +243,9 @@ void Evaluator::evalNode(NodePtr node) {
 void Evaluator::eval(NodePtr node) {
   nodeToResultUseCount_ = getNodeToUseCountInTree(node);
   evalNode(node);
+  for (const auto& callback : postEvalCallbacks_) {
+    callback(node, nodeToTotTimeMs_);
+  }
   nodeToTotTimeMs_.clear();
   nodeToResultUseCount_.clear();
 }
@@ -251,12 +254,25 @@ void Evaluator::setProfilerState(bool active) {
   this->profilerEnabled_ = active;
 }
 
+bool Evaluator::getProfilerState() {
+  return this->profilerEnabled_;
+}
+
 const std::unordered_map<NodePtr, float>& Evaluator::getProfilerStats() {
   return nodeToTotTimeMs_;
 }
 
 void Evaluator::clearProfilerStats() {
   nodeToTotTimeMs_.clear();
+}
+
+Evaluator::PostEvalCallbackHandle Evaluator::addPostEvalCallback(
+    PostEvalCallback callback) {
+  return postEvalCallbacks_.insert(postEvalCallbacks_.end(), callback);
+}
+
+void Evaluator::removePostEvalCallback(PostEvalCallbackHandle handle) {
+  postEvalCallbacks_.erase(handle);
 }
 
 } // namespace fl

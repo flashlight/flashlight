@@ -24,28 +24,13 @@ class JitTensor : public JitTensorBase {
     return toTensor<JitTensor>(sharedData);
   }
 
-  TensorBackend& wrappedBackend() const override {
-    static TensorBackend& wrappedBackend = toTensor<T>().backend();
-    return wrappedBackend;
-  }
-
-  Optimizer& optimizer() const override {
-    static Optimizer optimizer(wrappedBackend());
-    return optimizer;
-  }
-
-  Evaluator& evaluator() const override {
-    static Evaluator evaluator(wrappedBackend());
-    return evaluator;
-  }
-
  public:
   // 1 static instance per jitted T.
   // NOTE that it's safe even for multiple translation units:
   // https://stackoverflow.com/questions/19366615/static-member-variable-in-class-template
   JitBackend& backend() const override {
     auto creator = [](NodePtr node) { return toTensor<JitTensor>(node); };
-    static JitBackend backend(wrappedBackend(), creator);
+    static JitBackend backend(T().backend(), creator);
     return backend;
   }
 

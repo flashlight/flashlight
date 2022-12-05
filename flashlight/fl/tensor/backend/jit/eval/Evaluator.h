@@ -24,6 +24,15 @@ namespace fl {
  * out the computation represented by the JIT tree.
  */
 class Evaluator {
+ public:
+  // takes in the evaluated node and execution stats (empty if profiling is
+  // disabled)
+  using PostEvalCallback =
+      std::function<void(NodePtr, std::unordered_map<NodePtr, float>)>;
+  using PostEvalCallbackList = std::list<PostEvalCallback>;
+  using PostEvalCallbackHandle = PostEvalCallbackList::iterator;
+
+ private:
   // backend used for dispatching Tensor ops.
   TensorBackend& backend_;
   // track (conservatively) how many more times the a node's result will be used
@@ -31,6 +40,7 @@ class Evaluator {
   // track time spent on executing a node alone (not its inputs)
   std::unordered_map<NodePtr, float> nodeToTotTimeMs_{};
   bool profilerEnabled_{false};
+  PostEvalCallbackList postEvalCallbacks_;
 
   void evalNode(NodePtr node);
   void evalNodeDispatch(NodePtr node);
@@ -74,8 +84,12 @@ class Evaluator {
    * TODO document
    */
   void setProfilerState(bool active);
+  bool getProfilerState();
   const std::unordered_map<NodePtr, float>& getProfilerStats();
   void clearProfilerStats();
+
+  PostEvalCallbackHandle addPostEvalCallback(PostEvalCallback callback);
+  void removePostEvalCallback(PostEvalCallbackHandle handle);
 };
 
 } // namespace fl

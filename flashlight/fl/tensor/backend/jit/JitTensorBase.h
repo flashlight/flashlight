@@ -41,12 +41,9 @@ class JitTensorBase : public TensorAdapterBase {
   virtual Tensor fromSharedData(
       std::shared_ptr<SharedData> sharedData) const = 0;
 
-  // let derived class manage the wrapped backend
-  virtual TensorBackend& wrappedBackend() const = 0;
-
-  // allow JitTensor<T> to potentially inject things into Optimizer/Evaluator
-  virtual Optimizer& optimizer() const = 0;
-  virtual Evaluator& evaluator() const = 0;
+  TensorBackend& wrappedBackend() const;
+  Optimizer& optimizer() const;
+  Evaluator& evaluator() const;
 
   // JitTensorBase manages the backend-agnostic JIT node.
   JitTensorBase(NodePtr node);

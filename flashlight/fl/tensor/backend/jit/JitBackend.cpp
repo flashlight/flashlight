@@ -57,10 +57,25 @@ const Tensor& materialize(Tensor tensor) {
 JitBackend::JitBackend(
     TensorBackend& wrappedBackend,
     std::function<Tensor(NodePtr)> jitTensorCreator)
-    : wrappedBackend_(wrappedBackend), jitTensorCreator_(jitTensorCreator) {}
+    : wrappedBackend_(wrappedBackend),
+      jitTensorCreator_(jitTensorCreator),
+      evaluator_(wrappedBackend),
+      optimizer_(wrappedBackend) {}
 
 TensorBackendType JitBackend::backendType() const {
   return TensorBackendType::Jit;
+}
+
+Evaluator& JitBackend::evaluator() {
+  return evaluator_;
+}
+
+Optimizer& JitBackend::optimizer() {
+  return optimizer_;
+}
+
+TensorBackend& JitBackend::wrappedBackend() {
+  return wrappedBackend_;
 }
 
 /* -------------------------- Compute Functions -------------------------- */

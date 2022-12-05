@@ -120,6 +120,18 @@ class JitTensorBase::SharedData {
   }
 };
 
+TensorBackend& JitTensorBase::wrappedBackend() const {
+  return backend().wrappedBackend();
+}
+
+Optimizer& JitTensorBase::optimizer() const {
+  return backend().optimizer();
+}
+
+Evaluator& JitTensorBase::evaluator() const {
+  return backend().evaluator();
+}
+
 JitTensorBase::JitTensorBase(NodePtr node)
     : JitTensorBase(std::make_shared<SharedData>(node)) {}
 
