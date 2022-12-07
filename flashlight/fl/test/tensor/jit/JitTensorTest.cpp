@@ -255,6 +255,101 @@ TEST_F(JitTensorTest, assignmentWithShallowCopyAndCopy) {
   ASSERT_TRUE(add->isBinary());
 }
 
+TEST_F(JitTensorTest, indexedRead) {
+  const Shape shape({5, 6, 7});
+  const auto dtype = dtype::s32;
+  const auto t0 = full(shape, 0, dtype);
+  const std::vector<Index> indices{2, range(1, 4, 2)};
+  auto indexResult = t0(indices);
+  const auto indexResultCopy = indexResult.copy();
+  const auto indexResultShallowCopy =
+      toJitTensorBase(indexResult).shallowCopy();
+  const auto c0 = toJitTensorBase(t0).node();
+  const auto i0 = toJitTensorBase(indexResult).node();
+
+  // graph is properly constructed, i.e., i0 --> c0
+  ASSERT_EQ(c0->inputs(), NodeList({}));
+  ASSERT_EQ(c0->getRefCount(), 2);
+  ASSERT_EQ(c0->uses(), UseValList({{i0, 0}}));
+  ASSERT_TRUE(c0->isScalar());
+  ASSERT_EQ(i0->inputs(), NodeList({c0}));
+  ASSERT_EQ(i0->getRefCount(), 2); // copy bumps node's ref-count
+  ASSERT_EQ(i0->uses(), UseValList({}));
+  ASSERT_EQ(i0->shape(), Shape({2, 7}));
+  ASSERT_TRUE(i0->isIndex());
+  ASSERT_EQ(i0->impl<IndexNode>().indices().size(), 2);
+  ASSERT_EQ(i0->impl<IndexNode>().indexedNode(), c0);
+
+  // copy/shallow-copy all yield the same node
+  ASSERT_EQ(toJitTensorBase(indexResultCopy).node(), i0);
+  ASSERT_EQ(toJitTensorBase(indexResultShallowCopy).node(), i0);
+}
+
+TEST_F(JitTensorTest, indexingWithOriginalDataUpdated) {
+  const Shape shape(Shape({5, 6, 7}));
+  const auto dtype = dtype::s32;
+  auto t0 = full(shape, 0, dtype);
+  const auto t1 = full(shape, 1, dtype);
+  const std::vector<Index> indices{2, range(1, 4, 2)};
+  const auto t0Copy = t0.copy();
+  const auto t0ShallowCopy = toJitTensorBase(t0).shallowCopy();
+  const auto t0Indexed = t0(indices);
+  const auto t0CopyIndexed = t0Copy(indices);
+  const auto t0ShallowCopyIndexed = t0ShallowCopy(indices);
+  const auto c0 = toJitTensorBase(t0).node();
+  t0 += t1; // affects t0, t0ShallowCopy and their indexed nodes
+  const auto add = toJitTensorBase(t0).node();
+  const auto c1 = toJitTensorBase(t1).node();
+  const auto i0 = toJitTensorBase(t0Indexed).node();
+  const auto i1 = toJitTensorBase(t0CopyIndexed).node();
+  const auto i2 = toJitTensorBase(t0ShallowCopyIndexed).node();
+
+  // shallow copy and copy have the right nodes
+  ASSERT_EQ(toJitTensorBase(t0Copy).node(), c0);
+  ASSERT_EQ(toJitTensorBase(t0ShallowCopy).node(), add);
+
+  // graph is properly constructed
+  //
+  // c0   c1  c0
+  //   \ /     |
+  //   add    i1
+  //    |
+  //  i0/i2
+  ASSERT_EQ(c0->inputs(), NodeList({}));
+  ASSERT_EQ(c0->getRefCount(), 3); // copy bumps node's ref-count
+  ASSERT_EQ(c0->uses(), UseValList({{i1, 0}, {add, 0}}));
+  ASSERT_TRUE(c0->isScalar());
+  ASSERT_EQ(c1->inputs(), NodeList({}));
+  ASSERT_EQ(c1->getRefCount(), 2);
+  ASSERT_EQ(c1->uses(), UseValList({{add, 1}}));
+  ASSERT_TRUE(c1->isScalar());
+  ASSERT_EQ(add->inputs(), NodeList({c0, c1}));
+  ASSERT_EQ(add->getRefCount(), 3);
+  ASSERT_EQ(add->uses(), UseValList({{i0, 0}, {i2, 0}}));
+  ASSERT_TRUE(add->isBinary());
+  ASSERT_EQ(i0->inputs(), NodeList({add}));
+  ASSERT_EQ(i0->getRefCount(), 1);
+  ASSERT_EQ(i0->uses(), UseValList({}));
+  ASSERT_EQ(i0->shape(), Shape({2, 7}));
+  ASSERT_TRUE(i0->isIndex());
+  ASSERT_EQ(i0->impl<IndexNode>().indices().size(), 2);
+  ASSERT_EQ(i0->impl<IndexNode>().indexedNode(), add);
+  ASSERT_EQ(i1->inputs(), NodeList({c0}));
+  ASSERT_EQ(i1->getRefCount(), 1);
+  ASSERT_EQ(i1->uses(), UseValList({}));
+  ASSERT_EQ(i1->shape(), Shape({2, 7}));
+  ASSERT_TRUE(i1->isIndex());
+  ASSERT_EQ(i1->impl<IndexNode>().indices().size(), 2);
+  ASSERT_EQ(i1->impl<IndexNode>().indexedNode(), c0);
+  ASSERT_EQ(i2->inputs(), NodeList({add}));
+  ASSERT_EQ(i2->getRefCount(), 1);
+  ASSERT_EQ(i2->uses(), UseValList({}));
+  ASSERT_EQ(i2->shape(), Shape({2, 7}));
+  ASSERT_TRUE(i2->isIndex());
+  ASSERT_EQ(i2->impl<IndexNode>().indices().size(), 2);
+  ASSERT_EQ(i2->impl<IndexNode>().indexedNode(), add);
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   init();

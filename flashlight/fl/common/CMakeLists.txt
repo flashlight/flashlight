@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 
-# ----------------------------- Common -----------------------------
-set(
-  COMMON_SRCS
+target_sources(
+  flashlight
+  PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/Utils.cpp
   ${CMAKE_CURRENT_LIST_DIR}/DevicePtr.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Defines.cpp
@@ -13,24 +13,14 @@ set(
   ${CMAKE_CURRENT_LIST_DIR}/Timer.cpp
 )
 
-target_sources(
-  flashlight
-  PRIVATE
-  ${COMMON_SRCS}
-)
-
-# A native threading library is needed for ThreadPool
-# (see flashlight/common/threadpool/ThreadPool.h)
+# A native threading library
 find_package(Threads REQUIRED)
+target_link_libraries(flashlight PUBLIC Threads::Threads)
 
-target_link_libraries(
-  flashlight
-  PUBLIC
-  ${CMAKE_THREAD_LIBS_INIT} # threading library
-  ${CMAKE_DL_LIBS} # for plugin
-)
+# Dynamic lib loading needed for Plugins
+target_link_libraries(flashlight PUBLIC ${CMAKE_DL_LIBS})
 
-# Remove this when requiring gcc >= 9
+# std::filesystem -- remove this when requiring gcc >= 9
 find_package(Filesystem REQUIRED COMPONENTS Final Experimental)
 setup_install_find_module(${CMAKE_MODULE_PATH}/FindFilesystem.cmake)
 target_link_libraries(flashlight PUBLIC std::filesystem)

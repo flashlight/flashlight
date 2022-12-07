@@ -21,6 +21,8 @@ std::string nodeTypeToString(const NodeType type) {
       return "Scalar";
     case NodeType::Value:
       return "Value";
+    case NodeType::Index:
+      return "Index";
   }
   throw std::runtime_error("Unknown node type");
 }

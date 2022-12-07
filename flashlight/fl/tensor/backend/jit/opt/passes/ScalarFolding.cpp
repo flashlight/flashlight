@@ -100,6 +100,7 @@ Node* foldScalars(Node* node) {
     case NodeType::Binary:
       return foldScalarsInBinaryNode(&node->impl<BinaryNode>());
     case NodeType::Custom:
+    case NodeType::Index:
     case NodeType::Scalar:
     case NodeType::Value:
       return node;

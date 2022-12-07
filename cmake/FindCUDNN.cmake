@@ -73,7 +73,6 @@ else()
   # shared lib:
   SET(CUDNN_LIBNAME libcudnn.so${__cudnn_ver_suffix} libcudnn${__cudnn_ver_suffix}.dylib ${__cudnn_lib_win_name})
 endif()
-MESSAGE(STATUS "CUDNN libname: ${CUDNN_LIBNAME}")
 
 find_library(CUDNN_LIBRARY
   NAMES ${CUDNN_LIBNAME}

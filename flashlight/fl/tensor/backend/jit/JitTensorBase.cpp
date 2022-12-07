@@ -7,7 +7,9 @@
 
 #include "flashlight/fl/tensor/backend/jit/JitTensorBase.h"
 
+#include <memory>
 #include <sstream>
+#include <stdexcept>
 
 #define FL_JIT_TENSOR_UNIMPLEMENTED \
   throw std::invalid_argument(      \
@@ -15,32 +17,127 @@
 
 namespace fl {
 
-struct JitTensorBase::SharedData {
+// represents the data referred to by indexinges
+struct DataStorage {
   Node* node;
-  SharedData(Node* node) : node(node) {
-    node->incRefCount();
+
+  DataStorage(Node* node) : node(node) {
+    node->incRefCount(); // shallow copies counts as 1 use
   }
-  ~SharedData() {
+
+  ~DataStorage() {
     node->decRefCount();
+  }
+
+  void replaceNode(Node* newNode) {
+    newNode->incRefCount();
+    node->decRefCount();
+    node = newNode;
+  }
+};
+
+// data shared among shallow copies and views of a tensor.
+class JitTensorBase::SharedData {
+  // 1. Why `shared_ptr<DataStorage> dataStorage_`?
+  //   Indexing essentially creates a shallow-copy that views the indexed region
+  //   of the original tensor. So any update to the original tensor should
+  //   reflect as an update to dataNode for all shallow copies.
+  // 2. Why `indexings_`?
+  //   Underlying data node update requires creating a __new__ viewNode_ based
+  //   on the __old__ indexings and __new__ data node (recall SSA semantics).
+  // 3. Why `oldDataNode_`?
+  //   When underlying data node changes, not all SharedData objects are
+  //   informed directly, so we lazily perform (2), and use `oldDataNode_` to
+  //   guide us.
+  std::shared_ptr<DataStorage> dataStorage_;
+  // TODO consider
+  // 1. using an immutable linked-list here to speed things up
+  // 2. making `std::vector<Index>` into an immutable class and use it as
+  //    shared_ptr (to avoid copying when passing to ViewNodoe), since it's all
+  //    readonly -- JitTensor gives us free immutability for Tensor index. To
+  //    push it further, we can use custom shared data structure that has a more
+  //    efficient copy constructor/uses std::atomic with
+  //    std::memory_order::memory_order_relaxed on a refcount to reduce
+  //    contention overhead.
+  // 3. index merging, e.g., (1, 3)(1, 2) --> (2, 3). Maybe as an optimization
+  //    pass, need to think more.
+  std::vector<std::vector<Index>> indexings_{};
+  std::optional<Node*> oldDataNode_{std::nullopt}; // None iff no indexings
+  std::optional<Node*> viewNode_{std::nullopt}; // None iff no indexings
+
+  void updateViewNodeIfNeeded() {
+    if (indexings_.empty() || dataStorage_->node == oldDataNode_) {
+      return;
+    }
+    if (viewNode_.has_value()) {
+      viewNode_.value()->decRefCount();
+    }
+    // apply index one by one
+    auto toBeIndexedNode = dataStorage_->node;
+    for (const auto& indices : indexings_) {
+      toBeIndexedNode = IndexNode::create(toBeIndexedNode, indices);
+    }
+    toBeIndexedNode->incRefCount();
+    viewNode_ = toBeIndexedNode;
+    oldDataNode_ = dataStorage_->node;
+  }
+
+ public:
+  SharedData(Node* dataNode)
+      : SharedData(std::make_shared<DataStorage>(dataNode), {}) {}
+
+  SharedData(
+      std::shared_ptr<DataStorage> dataStorage,
+      std::vector<std::vector<Index>> indexings)
+      : dataStorage_(dataStorage), indexings_(std::move(indexings)) {
+    updateViewNodeIfNeeded();
+  }
+
+  ~SharedData() {
+    if (viewNode_.has_value()) {
+      viewNode_.value()->decRefCount();
+    }
+  }
+
+  void updateDataNode(Node* newNode) {
+    if (viewNode_.has_value()) {
+      throw std::runtime_error(
+          "[SharedData::updateDataNode] Currently no support for indexed update");
+    }
+    dataStorage_->replaceNode(newNode);
+  }
+
+  // NOTE intended for optimizer
+  void replaceNode(Node* newNode) {
+    if (viewNode_.has_value()) {
+      newNode->incRefCount();
+      viewNode_.value()->decRefCount();
+      viewNode_ = newNode;
+    } else {
+      // graph optimization applies to all shallow copies
+      dataStorage_->replaceNode(newNode);
+    }
+  }
+
+  Node* getNode() {
+    updateViewNodeIfNeeded();
+    return viewNode_.value_or(dataStorage_->node);
+  }
+
+  std::shared_ptr<SharedData> applyIndices(std::vector<Index> indices) {
+    std::vector<std::vector<Index>> newIndexings = this->indexings_;
+    newIndexings.push_back(std::move(indices));
+    return std::make_shared<SharedData>(dataStorage_, newIndexings);
   }
 };
 
 JitTensorBase::JitTensorBase(Node* node)
     : JitTensorBase(std::make_shared<SharedData>(node)) {}
 
-JitTensorBase::JitTensorBase(std::shared_ptr<SharedData> sharedNode)
-    : sharedNode_(sharedNode) {}
+JitTensorBase::JitTensorBase(std::shared_ptr<SharedData> sharedData)
+    : sharedData_(sharedData) {}
 
 JitTensorBase::~JitTensorBase() {}
-
-void JitTensorBase::replaceNode(Node* newNode) const {
-  auto oldNode = node();
-  if (newNode != oldNode) {
-    newNode->incRefCount();
-    oldNode->decRefCount();
-    sharedNode_->node = newNode;
-  }
-}
 
 const Tensor& JitTensorBase::getTensorOrEvalNode() const {
   if (!node()->getResult().has_value()) {
@@ -56,7 +153,7 @@ Tensor JitTensorBase::copy() {
 
 Tensor JitTensorBase::shallowCopy() {
   // NOTE IR-captured computation semantics is immutable
-  return fromSharedNode(sharedNode_);
+  return fromSharedData(sharedData_);
 }
 
 TensorBackendType JitTensorBase::backendType() const {
@@ -115,8 +212,8 @@ Tensor JitTensorBase::astype(const dtype /* type */) {
   FL_JIT_TENSOR_UNIMPLEMENTED;
 }
 
-Tensor JitTensorBase::index(const std::vector<Index>& /* indices */) {
-  FL_JIT_TENSOR_UNIMPLEMENTED;
+Tensor JitTensorBase::index(const std::vector<Index>& indices) {
+  return fromSharedData(sharedData_->applyIndices(indices));
 }
 
 Tensor JitTensorBase::flatten() const {
@@ -157,7 +254,7 @@ std::ostream& JitTensorBase::operator<<(std::ostream& /* ostr */) {
 // x' = x + 42
 // ...... (uses of x becomes x')
 void JitTensorBase::assign(const Tensor& other) {
-  replaceNode(toJitTensorBase(other).node());
+  sharedData_->updateDataNode(toJitTensorBase(other).node());
 }
 
 #define FL_JIT_TENSOR_ASSIGN_OP_SCALAR(OP, TYPE)                \
@@ -219,12 +316,12 @@ FL_JIT_TENSOR_ASSIGN_BINOP(inPlaceDivide, /); // /=
 #undef FL_JIT_TENSOR_ASSIGN_BINOP
 
 Node* JitTensorBase::node() const {
-  return sharedNode_->node;
+  return sharedData_->getNode();
 }
 
 void JitTensorBase::eval() const {
   if (!node()->getResult().has_value()) {
-    replaceNode(optimizer().optimize(node()));
+    sharedData_->replaceNode(optimizer().optimize(node()));
     evaluator().eval(node());
   }
 }

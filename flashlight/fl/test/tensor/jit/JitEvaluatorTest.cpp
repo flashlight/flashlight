@@ -13,6 +13,7 @@
 #include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/Random.h"
 #include "flashlight/fl/tensor/Shape.h"
+#include "flashlight/fl/tensor/backend/jit/JitTensor.h"
 #include "flashlight/fl/tensor/backend/jit/eval/Evaluator.h"
 #include "flashlight/fl/tensor/backend/jit/ir/ValueNode.h"
 
@@ -72,13 +73,53 @@ TEST_F(JitEvaluatorTest, evalCustomNode) {
   const auto c2 = ScalarNode::create(shape, dtype, 2);
   const auto c3 = ScalarNode::create(shape, dtype, 3);
   const auto custom = CustomNode::create(
-      "addThenMul", {c1, c2, c3}, shape, [](const std::vector<const Tensor*> inputs) {
+      "addThenMul",
+      {c1, c2, c3},
+      shape,
+      [](const std::vector<const Tensor*> inputs) {
         return (*inputs[0] + *inputs[1]) * *inputs[2];
       });
   evaluator_.eval(custom);
   ASSERT_TRUE(allClose(custom->getResult().value(), full(shape, 9, dtype)));
   // root node is owned locally (didn't transition to shared ownership)
   delete custom;
+}
+
+TEST_F(JitEvaluatorTest, evalIndexNodeWithoutTensorIdx) {
+  const auto value = iota({4, 5, 6}, {1}, dtype::s32);
+  const auto valueNode = ValueNode::create(value.copy());
+  const std::vector<Index> indices{1, range(0, 3, 2), range(3)};
+  const auto indexNode = IndexNode::create(valueNode, indices);
+  evaluator_.eval(indexNode);
+  ASSERT_TRUE(allClose(indexNode->getResult().value(), value(indices)));
+  ASSERT_TRUE(allClose(valueNode->getResult().value(), value));
+  // root node is owned locally (didn't transition to shared ownership)
+  delete indexNode;
+}
+
+TEST_F(JitEvaluatorTest, evalIndexNodeWithTensorIdx) {
+  const auto dtype = dtype::s32;
+  const auto value = iota({10, 10}, {1}, dtype);
+  const auto tensorIdx = iota({2, 3}, {1}, dtype);
+  const auto jitTensorIdx =
+      toTensor<JitTensor<DefaultTensorType_t>>(CustomNode::create(
+          "createIota",
+          {},
+          tensorIdx.shape(),
+          [tensorIdx](const std::vector<const Tensor*> /* inputs */) {
+            return tensorIdx;
+          }));
+  const auto valueNode = ValueNode::create(value.copy());
+  const auto indexNode = IndexNode::create(valueNode, {jitTensorIdx});
+  evaluator_.eval(indexNode);
+  const Tensor& resultTensor = indexNode->getResult().value();
+  ASSERT_EQ(resultTensor.shape(), indexNode->shape());
+  ASSERT_TRUE(allClose(resultTensor, value(tensorIdx)));
+  ASSERT_TRUE(allClose(valueNode->getResult().value(), value));
+  ASSERT_TRUE(allClose(
+      toJitTensorBase(jitTensorIdx).node()->getResult().value(), tensorIdx));
+  // root node is owned locally (didn't transition to shared ownership)
+  delete indexNode;
 }
 
 TEST_F(JitEvaluatorTest, evalSharedInput) {

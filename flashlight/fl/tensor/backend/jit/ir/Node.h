@@ -91,6 +91,7 @@ class Node {
   // Convenient type checks
   bool isBinary() const;
   bool isCustom() const;
+  bool isIndex() const;
   bool isScalar() const;
   bool isValue() const;
 
