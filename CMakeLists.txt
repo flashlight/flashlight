@@ -11,11 +11,9 @@ if(CCACHE_PROGRAM)
   set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
 endif()
 
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-option(FL_CODE_COVERAGE "Enable coverage reporting" OFF)
 
 # Default directories for installation
 set(FL_INSTALL_INC_DIR "include" CACHE PATH "Install path for headers")
@@ -47,11 +45,17 @@ include(InternalUtils)
 # ----------------------------- Configuration -----------------------------
 
 option(FL_BUILD_TESTS "Build tests" ON)
+option(FL_CODE_COVERAGE "Enable coverage reporting" OFF)
 option(FL_BUILD_EXAMPLES "Build examples" ON)
 option(FL_BUILD_EXPERIMENTAL "Build internal experimental components" OFF)
 option(FL_BUILD_SCRIPTS "Build internal scripts for wav2letter++" OFF)
 option(FL_BUILD_RECIPES "Build recipes" ON)
 option(FL_BUILD_STANDALONE "Build standalone installation" ON)
+
+if (FL_BUILD_TESTS)
+  enable_testing()
+  include(TestUtils)
+endif()
 
 # External project configuration
 option(FL_TEXT_REQUIRE_KENLM "Require KenLM in the Flashlight text build" OFF)
@@ -69,131 +73,58 @@ option(FL_USE_CPU    "Build CPU support for Flashlight backends"  OFF)
 option(FL_USE_OPENCL "Build OpenCL support for Flashlight backends" OFF)
 option(FL_USE_MKL    "Build MKL support for Flashlight backends" OFF)
 
-# -------------------- Locate Backend-specific Dependencies --------------------
-find_package(CUDA 9.2 QUIET) # CUDA 9.2 is required for >= ArrayFire 3.6.1
-if (CUDA_FOUND)
-  message(STATUS "CUDA found (library: ${CUDA_LIBRARIES} include: ${CUDA_INCLUDE_DIRS})")
-endif()
+# The CUDA standard is still C++14 to enable interopability with
+# slightly older and still well-supported versions of CUDA/nvcc
+# (e.g. CUDA < 11). This will be bumped to 17 once CUDA 11 is
+# required.
+set(CMAKE_CUDA_STANDARD 14)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
-find_package(OpenCL)
-if (OpenCL_FOUND)
-  message(STATUS "OpenCL found (library: ${OpenCL_LIBRARIES} include: ${OpenCL_INCLUDE_DIRS})")
-endif()
+# --------------------------- Core ---------------------------
+add_library(flashlight)
 
-# CUDA/nvcc setup
-if (CUDA_FOUND)
+# Internal includes are implicitly defined as <flashlight...>
+target_include_directories(
+  flashlight
+  PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+)
+
+set(FL_CORE_DIR "${FL_ROOT_DIR}/fl")
+include(${FL_CORE_DIR}/CMakeLists.txt)
+list(APPEND INSTALLABLE_TARGETS flashlight)
+# flashlight core components keep their relative paths with respect to project
+setup_install_headers(${FL_CORE_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
+# FL_USE_* variables are set in flashlight/fl/tensor/CMakeLists.txt based on
+# backend registration
+target_compile_definitions(flashlight
+  PUBLIC
+  FL_BACKEND_CPU=$<BOOL:${FL_USE_CPU}>
+  FL_BACKEND_CUDA=$<BOOL:${FL_USE_CUDA}>
+  FL_BUILD_PROFILING=$<BOOL:${FL_BUILD_PROFILING}>
+  )
+
+if (FL_USE_CUDA)
   enable_language(CUDA)
-  # The CUDA standard is still C++14 to enable interopability with
-  # slightly older and still well-supported versions of CUDA/nvcc
-  # (e.g. CUDA < 11). This will be bumped to 17 once CUDA 11 is
-  # required.
-  set(CMAKE_CUDA_STANDARD 14)
-  set(CMAKE_CUDA_STANDARD_REQUIRED ON)
-  include(${CMAKE_MODULE_PATH}/CUDAUtils.cmake)
-  set_cuda_arch_nvcc_flags()
-
-  # remove me when upgrading CMake versions
-  # (i.e. add -fPIC to nvcc flags if needed)
-  if (CMAKE_POSITION_INDEPENDENT_CODE)
-    cuda_enable_position_independent_code()
-  endif ()
+  # TODO: switch to CMAKE_CUDA_RUNTIME_LIBRARY when requiring CMake >= 3.17
+  find_library(CUDART_LIBRARY cudart ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
+  target_include_directories(
+    flashlight
+    PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}>
+    )
+  target_link_libraries(flashlight PUBLIC ${CUDART_LIBRARY})
 endif()
 
-# ------------------------ Tests ------------------------
+if (FL_CODE_COVERAGE)
+  add_coverage_to_target(TARGET flashlight)
+endif()
 
-if (FL_BUILD_TESTS)
-  enable_testing()
-  include(TestUtils)
-endif ()
-
-# --------------------------- Core Options  ---------------------------
-
-option(FL_BUILD_CORE "Build flashlight core" ON)
-
-fl_dependent_option(
-  FL_BUILD_CONTRIB
-  "Build and link additional flashlight contrib assets."
-  ON "FL_BUILD_CORE" OFF)
-
-# --------------------------- flashlight ---------------------------
-if (FL_BUILD_CORE)
-  message(STATUS "Will build flashlight core and extensions.")
-
-  # Primary lib target. All non-library code is linked here, including app
-  add_library(flashlight "")
-
-  set_target_properties(
-    flashlight
-    PROPERTIES
-    LINKER_LANGUAGE CXX
-    )
-
-  if (FL_CODE_COVERAGE)
-    add_coverage_to_target(TARGET flashlight)
-  endif()
-
-  # ------------------------ Global External Dependencies ------------------------
-  # If cereal is found in a user-defined location, use it rather than
-  # downloading from source
-  find_package(cereal)
-  if (NOT TARGET cereal AND NOT cereal_FOUND AND FL_BUILD_STANDALONE)
-    message(STATUS "cereal NOT found. Will download from source")
-    set(CEREAL_INSTALL_PATH ${FL_INSTALL_INC_DIR}/cereal)
-    include(${CMAKE_MODULE_PATH}/BuildCereal.cmake)
-    add_dependencies(flashlight cereal)
-    # Move cereal headers at install time
-    install(DIRECTORY ${CEREAL_SOURCE_DIR}/include/cereal/
-      DESTINATION ${CEREAL_INSTALL_PATH}
-      COMPONENT cereal
-      FILES_MATCHING
-      PATTERN "*.hpp"
-      PATTERN "*.h"
-      PATTERN ".git" EXCLUDE
-      )
-    install(FILES ${CEREAL_SOURCE_DIR}/LICENSE ${CEREAL_SOURCE_DIR}/README.md
-      DESTINATION ${CEREAL_INSTALL_PATH}
-      )
-    target_include_directories(flashlight PUBLIC ${cereal_INCLUDE_DIRS})
-  else()
-    message(STATUS "Found cereal")
-    target_link_libraries(flashlight PRIVATE cereal)
-  endif()
-  setup_install_find_module(${CMAKE_MODULE_PATH}/Findcereal.cmake)
-
-  # ------------------------ flashlight Core ------------------------
-  set(FL_CORE_DIR "${FL_ROOT_DIR}/fl")
-  include(${FL_CORE_DIR}/CMakeLists.txt)
-  list(APPEND INSTALLABLE_TARGETS flashlight)
-  # flashlight core components keep their relative paths with respect to project
-  setup_install_headers(${FL_CORE_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
-  # FL_USE_* variables are set in flashlight/fl/tensor/CMakeLists.txt based on
-  # backend registration
-  target_compile_definitions(flashlight
-    PUBLIC
-    FL_BACKEND_CPU=$<BOOL:${FL_USE_CPU}>
-    FL_BACKEND_CUDA=$<BOOL:${FL_USE_CUDA}>
-    FL_BACKEND_OPENCL=$<BOOL:${FL_USE_OPENCL}>
-    FL_BUILD_PROFILING=$<BOOL:${FL_BUILD_PROFILING}>
-    )
-
-  # Check external dependencies match used backend state. If we're required
-  # to link to a backend and it wasn't found, fatal.
-  if (FL_USE_CUDA AND NOT CUDA_FOUND)
-    message(FATAL_ERROR
-      "One or more tensor backends require CUDA to build. CUDA was not found.")
-  endif()
-  if (FL_USE_OPENCL AND NOT OpenCL_FOUND)
-    message(FATAL_ERROR
-      "One or more tensor backends require OpenCL to build. OpenCL was not found.")
-  endif()
-
-endif() # if FL_BUILD_CORE
-
-# --------------------------- Pkgs  ---------------------------
+# --------------------------- Pkgs ---------------------------
 set(FL_PKG_DIR "${FL_ROOT_DIR}/pkg")
 include(${FL_PKG_DIR}/CMakeLists.txt)
 
-# --------------------------- Apps Options  ---------------------------
+# --------------------------- Apps ---------------------------
 set(FL_APPS_DIR "${FL_ROOT_DIR}/app")
 include(${FL_APPS_DIR}/CMakeLists.txt)
 
