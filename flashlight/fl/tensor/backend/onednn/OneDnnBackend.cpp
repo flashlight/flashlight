@@ -414,7 +414,11 @@ std::tuple<Shape, Shape> padShorterDimsWithOnesOnTheRight(
 } // namespace
 
 OneDnnBackend::OneDnnBackend() {
+#if FL_USE_MKL_RNG
   vslNewStream(&randStream_, VSL_BRNG_MCG31, std::rand());
+#else
+  randEngine_ = RandEngineType{static_cast<uint_fast32_t>(std::rand())};
+#endif // FL_USE_MKL_RNG
   engine_ = dnnl::engine(dnnl::engine::kind::cpu, 0);
   stream_ = OneDnnCPUStream::create(engine_);
 }
@@ -480,22 +484,42 @@ void OneDnnBackend::setMemMgrFlushInterval(const size_t /* interval */) {
 /* -------------------------- Rand Functions -------------------------- */
 
 void OneDnnBackend::setSeed(const int seed) {
+#if FL_USE_MKL_RNG
   vslDeleteStream(&randStream_);
   vslNewStream(&randStream_, VSL_BRNG_MCG31, seed);
+#else
+  randEngine_.seed(seed);
+#endif // FL_USE_MKL_RNG
 }
 
 Tensor OneDnnBackend::randnCpu(const Shape& shape, const dtype type) {
   std::vector<float> data(shape.elements());
+#if FL_USE_MKL_RNG
   const auto alg = VSL_RNG_METHOD_GAUSSIAN_BOXMULLER2;
   vsRngGaussian(alg, randStream_, data.size(), data.data(), 0, 1);
+#else
+  std::normal_distribution<float> normal_dist(0, 1);
+  auto* data_ptr = data.data();
+  for (decltype(data.size()) i = 0; i < data.size(); ++i) {
+    data_ptr[i] = normal_dist(randEngine_);
+  }
+#endif // FL_USE_MKL_RNG
   return toTensor<OneDnnTensor>(shape, dtype::f32, data.data(), Location::Host)
       .astype(type);
 }
 
 Tensor OneDnnBackend::randCpu(const Shape& shape, const dtype type) {
   std::vector<float> data(shape.elements());
+#if FL_USE_MKL_RNG
   const auto alg = VSL_RNG_METHOD_UNIFORM_STD;
   vsRngUniform(alg, randStream_, data.size(), data.data(), 0, 1);
+#else
+  std::uniform_real_distribution<float> uniform_dist{};
+  auto* data_ptr = data.data();
+  for (decltype(data.size()) i = 0; i < data.size(); ++i) {
+    data_ptr[i] = uniform_dist(randEngine_);
+  }
+#endif // FL_USE_MKL_RNG
   return toTensor<OneDnnTensor>(shape, dtype::f32, data.data(), Location::Host)
       .astype(type);
 }
