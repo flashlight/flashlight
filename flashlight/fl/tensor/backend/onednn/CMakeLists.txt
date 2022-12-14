@@ -11,13 +11,21 @@ else()
   message(STATUS "oneDNN found")
 endif()
 
-# TODO: remove this once the MKL dependency has been removed
-# oneDNN backend requires MKL
-find_package(MKL REQUIRED)
-setup_install_find_module(${CMAKE_MODULE_PATH}/FindMKL.cmake)
-set(FL_USE_MKL ON)
-
 # ----------------------------- Sources -----------------------------
+find_package(MKL)
+if (NOT MKL_FOUND)
+  message(STATUS "Using std random generator")
+  set(${FL_USE_MKL_RNG}    FALSE)
+else()
+  set(${FL_USE_MKL_RNG}    TRUE)
+  message(STATUS "MKL found")
+endif()
+
+target_compile_definitions(
+  flashlight
+  PRIVATE
+  FL_USE_MKL_RNG=$<BOOL:${FL_USE_MKL_RNG}>
+)
 
 target_sources(
   flashlight

@@ -1,75 +1,81 @@
 cmake_minimum_required(VERSION 3.16)
 
-# ----------------------------- Setup -----------------------------
-set(FL_CORE_COMPONENT_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}") # module root
+option(FL_BUILD_CONTRIB "Build and link additional non-stabl contrib components" ON)
 
-# -------------------------------- Components --------------------------------
+# Builds optional non-stable components of the FL API
 if (FL_BUILD_CONTRIB)
-  message(STATUS "Will build flashlight contrib assets.")
-  include(${FL_CORE_COMPONENT_SRC_DIR}/contrib/CMakeLists.txt)
+  message(STATUS "Building Flashlight with contrib components.")
+  include(${CMAKE_CURRENT_LIST_DIR}/contrib/CMakeLists.txt)
 endif()
 
-# Build and link resources from `flashlight/experimental`.
-cmake_dependent_option(FL_BUILD_EXPERIMENTAL
-  "Build and link additional internal flashlight experimental resources." ON
-  "FL_BUILD_CORE" OFF)
-if (FL_BUILD_EXPERIMENTAL)
-  message(STATUS "Will build flashlight experimental assets.")
-  set(FL_EXPERIMENTAL_ROOT_PATH
-    ${FL_CORE_COMPONENT_SRC_DIR}/experimental)
-  include(${FL_EXPERIMENTAL_ROOT_PATH}/CMakeLists.txt)
+# ------------------------ Global External Dependencies ------------------------
+# If cereal is found in a user-defined location, use it rather than
+# downloading from source
+find_package(cereal)
+if (NOT TARGET cereal AND NOT cereal_FOUND AND FL_BUILD_STANDALONE)
+  message(STATUS "cereal NOT found. Will download from source")
+  set(CEREAL_INSTALL_PATH ${FL_INSTALL_INC_DIR}/cereal)
+  include(${CMAKE_MODULE_PATH}/BuildCereal.cmake)
+  add_dependencies(flashlight cereal)
+  # Move cereal headers at install time
+  install(DIRECTORY ${CEREAL_SOURCE_DIR}/include/cereal/
+    DESTINATION ${CEREAL_INSTALL_PATH}
+    COMPONENT cereal
+    FILES_MATCHING
+    PATTERN "*.hpp"
+    PATTERN "*.h"
+    PATTERN ".git" EXCLUDE
+    )
+  install(FILES ${CEREAL_SOURCE_DIR}/LICENSE ${CEREAL_SOURCE_DIR}/README.md
+    DESTINATION ${CEREAL_INSTALL_PATH}
+    )
+  target_include_directories(flashlight PUBLIC ${cereal_INCLUDE_DIRS})
+else()
+  message(STATUS "Found cereal")
+  target_link_libraries(flashlight PRIVATE cereal)
 endif()
-
-# Internal includes are implicitly defined as <flashlight...>
-target_include_directories(
-  flashlight
-  PUBLIC
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
-)
+setup_install_find_module(${CMAKE_MODULE_PATH}/Findcereal.cmake)
 
 # -------------------------------- Components --------------------------------
 # Tensor -- resolve backends and compute runtimes first
-include(${FL_CORE_COMPONENT_SRC_DIR}/tensor/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/tensor/CMakeLists.txt)
 
 # Common
-include(${FL_CORE_COMPONENT_SRC_DIR}/common/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
 
 # Autograd
-include(${FL_CORE_COMPONENT_SRC_DIR}/autograd/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/autograd/CMakeLists.txt)
 
 # Dataset
-include(${FL_CORE_COMPONENT_SRC_DIR}/dataset/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/dataset/CMakeLists.txt)
 
 # Distributed
-include(${FL_CORE_COMPONENT_SRC_DIR}/distributed/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/distributed/CMakeLists.txt)
 
 # Meter
-include(${FL_CORE_COMPONENT_SRC_DIR}/meter/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/meter/CMakeLists.txt)
 
 # NN
-include(${FL_CORE_COMPONENT_SRC_DIR}/nn/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/nn/CMakeLists.txt)
 
 # Optim
-include(${FL_CORE_COMPONENT_SRC_DIR}/optim/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/optim/CMakeLists.txt)
 
 # Runtime
-include(${FL_CORE_COMPONENT_SRC_DIR}/runtime/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/runtime/CMakeLists.txt)
 
-# --------------------------- Configure Examples/Tests ---------------------------
+# ----------------------- Examples and Tests ------------------------
 
-# Build tests
 if (FL_BUILD_TESTS)
-  add_subdirectory(${FL_CORE_COMPONENT_SRC_DIR}/test)
+  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test)
 endif ()
 
-# Build examples
 if (FL_BUILD_EXAMPLES)
-  set(FL_EXAMPLES_DIR ${FL_CORE_COMPONENT_SRC_DIR}/examples)
+  set(FL_EXAMPLES_DIR ${CMAKE_CURRENT_LIST_DIR}/examples)
   add_subdirectory(${FL_EXAMPLES_DIR})
-  # Installation properties
   install(
     DIRECTORY ${FL_EXAMPLES_DIR}
     DESTINATION ${FL_INSTALL_EXAMPLES_DIR}
     COMPONENT examples
-    )
-endif ()
+  )
+endif()

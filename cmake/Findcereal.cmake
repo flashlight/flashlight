@@ -33,7 +33,9 @@ if (NOT TARGET cereal)
     REQUIRED_VARS cereal_INCLUDE_DIRS
     )
 
-  message(STATUS "Found cereal (include: ${cereal_INCLUDE_DIRS})")
+  if (cereal_INCLUDE_DIRS)
+    message(STATUS "Found cereal (include: ${cereal_INCLUDE_DIRS})")
+  endif()
   mark_as_advanced(cereal_FOUND)
   if (cereal_FOUND)
     add_library(cereal INTERFACE IMPORTED)
