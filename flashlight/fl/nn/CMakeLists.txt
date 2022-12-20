@@ -1,11 +1,10 @@
 cmake_minimum_required(VERSION 3.16)
 
-# ----------------------------- NN Modules -----------------------------
-
-set(
-  NN_SOURCES
+target_sources(
+  flashlight
+  PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/Init.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/Utils.cpp # utils
+  ${CMAKE_CURRENT_LIST_DIR}/Utils.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/Activations.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/AdaptiveSoftMax.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/BatchNorm.cpp
@@ -30,15 +29,9 @@ set(
   )
 
 if (FL_BUILD_DISTRIBUTED)
-  set(
-    NN_SOURCES
+  target_sources(
+    flashlight
+    PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/DistributedUtils.cpp
-    ${NN_SOURCES}
-  )
-endif ()
-
-target_sources(
-  flashlight
-  PRIVATE
-  ${NN_SOURCES}
-  )
+    )
+endif()

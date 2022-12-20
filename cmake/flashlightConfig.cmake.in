@@ -19,25 +19,28 @@
 # ``target_include_directories`` is required.
 #
 
+# Configuration variables
+# These variables are visible to downstream projects to express
+# information about the configuration with which Flashlight was built
+set(FL_BUILD_DISTRIBUTED "@FL_BUILD_DISTRIBUTED@")
+
 # Dependencies
-# If not building standalone, don't try to find upstream deps,
-# as many of these find modules won't exist
+# If not building standalone, don't try to find upstream deps;
+# many of these CMake modules aren't standard
 if (@FL_BUILD_STANDALONE@)
   list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
   include(CMakeFindDependencyMacro)
 
   # Core dependencies
-  if (@FL_BUILD_CORE@)
-    find_dependency(Threads)
-    if (@FL_USE_ARRAYFIRE@)
-      find_dependency(ArrayFire 3.7.1)
-    endif()
-    if (@FL_USE_ONEDNN@)
-      find_dependency(DNNL)
-    endif()
-    # remove when gcc >= 9 required
-    find_dependency(Filesystem COMPONENTS Final Experimental)
+  find_dependency(Threads)
+  if (@FL_USE_ARRAYFIRE@)
+    find_dependency(ArrayFire 3.7.1)
   endif()
+  if (@FL_USE_ONEDNN@)
+    find_dependency(DNNL)
+  endif()
+  # remove when gcc >= 9 required
+  find_dependency(Filesystem COMPONENTS Final Experimental)
   if (@FL_BUILD_DISTRIBUTED@)
     find_dependency(MPI)
   endif()
@@ -93,7 +96,6 @@ endif()
 # Flashlight backend variables for downstream config use
 set(FL_USE_CPU @FL_USE_CPU@)
 set(FL_USE_CUDA @FL_USE_CUDA@)
-set(FL_USE_OPENCL @FL_USE_OPENCL@)
 
 if (@FL_USE_CUDA@)
   enable_language(CUDA)
@@ -104,9 +106,7 @@ endif()
 set(flashlight_LIBRARIES "")
 
 # core
-if (@FL_BUILD_CORE@)
-  set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::flashlight)
-endif()
+set(flashlight_LIBRARIES ${flashlight_LIBRARIES} flashlight::flashlight)
 
 # pkgs
 if (@FL_BUILD_PKG_RUNTIME@)

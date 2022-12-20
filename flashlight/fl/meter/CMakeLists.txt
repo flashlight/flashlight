@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(
-  METER_SOURCES
+target_sources(
+  flashlight
+  PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/AverageValueMeter.cpp
   ${CMAKE_CURRENT_LIST_DIR}/CountMeter.cpp
   ${CMAKE_CURRENT_LIST_DIR}/EditDistanceMeter.cpp
@@ -9,10 +10,4 @@ set(
   ${CMAKE_CURRENT_LIST_DIR}/MSEMeter.cpp
   ${CMAKE_CURRENT_LIST_DIR}/TimeMeter.cpp
   ${CMAKE_CURRENT_LIST_DIR}/TopKMeter.cpp
-  )
-
-target_sources(
-  flashlight
-  PRIVATE
-  ${METER_SOURCES}
   )
