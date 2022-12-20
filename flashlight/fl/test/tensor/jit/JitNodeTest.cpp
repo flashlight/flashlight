@@ -21,6 +21,7 @@
 #include "flashlight/fl/tensor/backend/jit/ir/BinaryNode.h"
 #include "flashlight/fl/tensor/backend/jit/ir/CustomNode.h"
 #include "flashlight/fl/tensor/backend/jit/ir/IndexNode.h"
+#include "flashlight/fl/tensor/backend/jit/ir/IndexedUpdateNode.h"
 #include "flashlight/fl/tensor/backend/jit/ir/Node.h"
 #include "flashlight/fl/tensor/backend/jit/ir/ScalarNode.h"
 #include "flashlight/fl/tensor/backend/jit/ir/ValueNode.h"
@@ -152,6 +153,26 @@ TEST(JitNodeTest, IndexNodeDifferentShapeTensorIndices) {
   ASSERT_EQ(node->indices().size(), 1); // can't check equality easily...
   // tensor index shape flattened as base, then reduce 1 dimension
   ASSERT_EQ(node->shape(), Shape({6, 6, 7}));
+  // node is owned locally (didn't transition to shared ownership)
+  delete node;
+}
+
+TEST(JitNodeTest, IndexedUpdateNodeMetaData) {
+  const auto c0 = ScalarNode::create(Shape({5, 6, 7}), dtype::f32, 0);
+  const auto c1 = ScalarNode::create(Shape({2, 3, 6, 7}), dtype::f32, 0);
+  const auto t2 = JitTensor<DefaultTensorType_t>().backend().full(
+      Shape({2, 3}), 1, dtype::f32);
+  const auto c2 = toJitTensorBase(t2).node();
+  std::vector<Index> indices{t2};
+  const auto node = IndexedUpdateNode::create(c0, {indices}, c1);
+  ASSERT_EQ(node->inputs(), NodeList({c0, c1, c2})); // includes tensor index
+  ASSERT_EQ(node->getRefCount(), 0);
+  ASSERT_EQ(node->uses(), UseList({}));
+  ASSERT_EQ(node->isIndexedUpdate(), true);
+  ASSERT_EQ(node->getResult(), std::nullopt);
+  ASSERT_EQ(node->indexedNode(), c0);
+  ASSERT_EQ(node->indexings().size(), 1); // can't check equality easily...
+  ASSERT_EQ(node->shape(), c0->shape());
   // node is owned locally (didn't transition to shared ownership)
   delete node;
 }

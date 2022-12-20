@@ -23,6 +23,8 @@ std::string nodeTypeToString(const NodeType type) {
       return "Value";
     case NodeType::Index:
       return "Index";
+    case NodeType::IndexedUpdate:
+      return "IndexedUpdate";
   }
   throw std::runtime_error("Unknown node type");
 }

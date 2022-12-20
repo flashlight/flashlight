@@ -350,6 +350,76 @@ TEST_F(JitTensorTest, indexingWithOriginalDataUpdated) {
   ASSERT_EQ(i2->impl<IndexNode>().indexedNode(), add);
 }
 
+TEST_F(JitTensorTest, indexingWithIndexedDataUpdated) {
+  const auto dtype = dtype::s32;
+  auto t0 = full({5, 6, 7}, 0, dtype);
+  const auto t1 = full({6, 7}, 1, dtype);
+  const std::vector<Index> indices1{2};
+  const std::vector<Index> indices2{2, range(1, 4, 2)};
+  const auto t0Copy = t0.copy();
+  const auto t0ShallowCopy = toJitTensorBase(t0).shallowCopy();
+  const auto t0Indexed = t0(indices2);
+  const auto t0CopyIndexed = t0Copy(indices2);
+  const auto t0ShallowCopyIndexed = t0ShallowCopy(indices2);
+  const auto c0 = toJitTensorBase(t0).node();
+  t0(indices1) = t1; // affects t0, t0ShallowCopy and their indexed nodes
+  const auto update = toJitTensorBase(t0).node();
+  const auto c1 = toJitTensorBase(t1).node();
+  const auto i0 = toJitTensorBase(t0Indexed).node();
+  const auto i1 = toJitTensorBase(t0CopyIndexed).node();
+  const auto i2 = toJitTensorBase(t0ShallowCopyIndexed).node();
+
+  // shallow copy and copy have the right nodes
+  ASSERT_EQ(toJitTensorBase(t0Copy).node(), c0);
+  ASSERT_EQ(toJitTensorBase(t0ShallowCopy).node(), update);
+
+  // graph is properly constructed
+  //
+  // indices1
+  //    |
+  // c0 | c1  c0
+  //   \|/     |
+  //  update  i1
+  //    |
+  //  i0/i2
+  ASSERT_EQ(c0->inputs(), NodeList({}));
+  ASSERT_EQ(c0->getRefCount(), 3); // copy bumps node's ref-count
+  ASSERT_EQ(c0->uses(), UseValList({{i1, 0}, {update, 0}}));
+  ASSERT_TRUE(c0->isScalar());
+  ASSERT_EQ(c1->inputs(), NodeList({}));
+  ASSERT_EQ(c1->getRefCount(), 2);
+  ASSERT_EQ(c1->uses(), UseValList({{update, 1}}));
+  ASSERT_TRUE(c1->isScalar());
+  ASSERT_EQ(update->inputs(), NodeList({c0, c1}));
+  ASSERT_EQ(update->getRefCount(), 3);
+  ASSERT_EQ(update->uses(), UseValList({{i0, 0}, {i2, 0}}));
+  ASSERT_TRUE(update->isIndexedUpdate());
+  ASSERT_EQ(update->impl<IndexedUpdateNode>().indexedNode(), c0);
+  ASSERT_EQ(update->impl<IndexedUpdateNode>().updateDataNode(), c1);
+  ASSERT_EQ(update->impl<IndexedUpdateNode>().indexings().size(), 1);
+  ASSERT_EQ(i0->inputs(), NodeList({update}));
+  ASSERT_EQ(i0->getRefCount(), 1);
+  ASSERT_EQ(i0->uses(), UseValList({}));
+  ASSERT_EQ(i0->shape(), Shape({2, 7}));
+  ASSERT_TRUE(i0->isIndex());
+  ASSERT_EQ(i0->impl<IndexNode>().indices().size(), 2);
+  ASSERT_EQ(i0->impl<IndexNode>().indexedNode(), update);
+  ASSERT_EQ(i1->inputs(), NodeList({c0}));
+  ASSERT_EQ(i1->getRefCount(), 1);
+  ASSERT_EQ(i1->uses(), UseValList({}));
+  ASSERT_EQ(i1->shape(), Shape({2, 7}));
+  ASSERT_TRUE(i1->isIndex());
+  ASSERT_EQ(i1->impl<IndexNode>().indices().size(), 2);
+  ASSERT_EQ(i1->impl<IndexNode>().indexedNode(), c0);
+  ASSERT_EQ(i2->inputs(), NodeList({update}));
+  ASSERT_EQ(i2->getRefCount(), 1);
+  ASSERT_EQ(i2->uses(), UseValList({}));
+  ASSERT_EQ(i2->shape(), Shape({2, 7}));
+  ASSERT_TRUE(i2->isIndex());
+  ASSERT_EQ(i2->impl<IndexNode>().indices().size(), 2);
+  ASSERT_EQ(i2->impl<IndexNode>().indexedNode(), update);
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   init();

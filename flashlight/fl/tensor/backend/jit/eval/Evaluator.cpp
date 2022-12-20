@@ -52,16 +52,45 @@ void Evaluator::evalCustomNode(CustomNode& node) {
 }
 
 void Evaluator::evalIndexNode(IndexNode& node) {
-  std::vector<Index> indices;
-  for (const auto& index : node.indices()) {
+  const auto& indexedTensor = node.indexedNode()->getResult().value();
+  node.setResult(indexedTensor(unwrapTensorInIndices(node.indices())));
+}
+
+void Evaluator::evalIndexedUpdateNode(IndexedUpdateNode& node) {
+  // TODO no need to copy if indexedNode has only 1 user here
+  auto indexedTensor = node.indexedNode()->getResult().value().copy();
+  const auto firstUnwrappedIndices =
+      unwrapTensorInIndices(node.indexings().front());
+  const auto& updateDataTensor = node.updateDataNode()->getResult().value();
+  // if we do X = Y, it's a copy instead of update, thus the special case here
+  if (node.indexings().size() == 1) {
+    indexedTensor(firstUnwrappedIndices) = updateDataTensor;
+  } else {
+    auto currIndexResult = indexedTensor(firstUnwrappedIndices);
+    for (unsigned i = 1; i < node.indexings().size() - 1; i++) {
+      const auto unwrappedIndices =
+          unwrapTensorInIndices(node.indexings().at(i));
+      currIndexResult = currIndexResult(unwrappedIndices);
+    }
+    const auto lastUnwrappedIndices =
+        unwrapTensorInIndices(node.indexings().back());
+    currIndexResult(lastUnwrappedIndices) = updateDataTensor;
+  }
+  node.setResult(std::move(indexedTensor));
+}
+
+std::vector<Index> Evaluator::unwrapTensorInIndices(
+    const std::vector<Index>& indices) {
+  std::vector<Index> unwrappedIndices;
+  for (const auto& index : indices) {
     if (index.type() == detail::IndexType::Tensor) {
       const auto tensorIndexNode = toJitTensorBase(index.get<Tensor>()).node();
-      indices.push_back(tensorIndexNode->getResult().value());
+      unwrappedIndices.push_back(tensorIndexNode->getResult().value());
     } else {
-      indices.push_back(index);
+      unwrappedIndices.push_back(index);
     }
   }
-  node.setResult(node.indexedNode()->getResult().value()(indices));
+  return unwrappedIndices;
 }
 
 void Evaluator::evalScalarNode(ScalarNode& node) {
@@ -114,6 +143,8 @@ void Evaluator::evalNodeDispatch(Node* node) {
       return evalCustomNode(node->impl<CustomNode>());
     case NodeType::Index:
       return evalIndexNode(node->impl<IndexNode>());
+    case NodeType::IndexedUpdate:
+      return evalIndexedUpdateNode(node->impl<IndexedUpdateNode>());
     case NodeType::Scalar:
       return evalScalarNode(node->impl<ScalarNode>());
     case NodeType::Value:
