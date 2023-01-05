@@ -15,7 +15,7 @@ jobs:
     - name: Docker login
       env:
           USER: ${{ secrets.DOCKER_USERNAME }}
-          PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          PASSWORD: ${{ secrets.DOCKER_TOKEN }}
       run: docker login -u=$USER -p=$PASSWORD
     - name: Push image with the latest tag
       run: docker push flml/flashlight:cuda-latest
@@ -36,7 +36,7 @@ jobs:
     - name: Docker login
       env:
           USER: ${{ secrets.DOCKER_USERNAME }}
-          PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          PASSWORD: ${{ secrets.DOCKER_TOKEN }}
       run: docker login -u=$USER -p=$PASSWORD
     - name: Push image with the latest tag
       run: docker push flml/flashlight:cpu-latest
