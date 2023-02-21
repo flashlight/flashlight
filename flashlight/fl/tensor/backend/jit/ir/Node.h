@@ -94,6 +94,7 @@ class Node {
   bool isIndex() const;
   bool isScalar() const;
   bool isValue() const;
+  bool isIndexedUpdate() const;
 
   // Fast & safe casts
   virtual NodeType type() const = 0;
@@ -121,7 +122,7 @@ template <typename Derived>
 class NodeTrait : public Node {
  public:
   NodeTrait(std::vector<Node*>&& inputs, const Shape& shape)
-    : Node(std::move(inputs), std::move(shape)) {}
+      : Node(std::move(inputs), std::move(shape)) {}
 
   NodeType type() const override {
     return Derived::nodeType;

@@ -11,6 +11,8 @@
 #include <sstream>
 #include <stdexcept>
 
+#include "flashlight/fl/tensor/backend/jit/ir/IndexedUpdateNode.h"
+
 #define FL_JIT_TENSOR_UNIMPLEMENTED \
   throw std::invalid_argument(      \
       "JitTensorBase::" + std::string(__func__) + " - unimplemented.");
@@ -100,9 +102,9 @@ class JitTensorBase::SharedData {
   }
 
   void updateDataNode(Node* newNode) {
-    if (viewNode_.has_value()) {
-      throw std::runtime_error(
-          "[SharedData::updateDataNode] Currently no support for indexed update");
+    if (!indexings_.empty()) {
+      newNode =
+          IndexedUpdateNode::create(dataStorage_->node, indexings_, newNode);
     }
     dataStorage_->replaceNode(newNode);
   }

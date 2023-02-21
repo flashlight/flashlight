@@ -21,7 +21,7 @@ commands:
           command: |
             if [ ! -z "$DOCKER_USERNAME" ]
             then
-                sudo docker login -u=$DOCKER_USERNAME -p=$DOCKER_PASSWORD
+                sudo docker login -u=$DOCKER_USERNAME -p=$DOCKER_TOKEN
             fi
   install_nvidia_docker:
     steps:
@@ -519,7 +519,7 @@ jobs:
       - image: flml/flashlight:cpu-base-latest
         auth:
           username: $DOCKER_USERNAME
-          password: $DOCKER_PASSWORD
+          password: $DOCKER_TOKEN
     resource_class: 2xlarge+
     steps:
       - checkout:
@@ -531,7 +531,7 @@ jobs:
       - image: flml/flashlight:cpu-base-latest
         auth:
           username: $DOCKER_USERNAME
-          password: $DOCKER_PASSWORD
+          password: $DOCKER_TOKEN
     resource_class: 2xlarge+
     steps:
       - checkout:
@@ -544,7 +544,7 @@ jobs:
       - image: flml/flashlight:cpu-base-latest
         auth:
           username: $DOCKER_USERNAME
-          password: $DOCKER_PASSWORD
+          password: $DOCKER_TOKEN
     resource_class: 2xlarge+
     steps:
       - checkout:
