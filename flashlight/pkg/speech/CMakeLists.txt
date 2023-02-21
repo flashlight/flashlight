@@ -5,10 +5,10 @@ add_library(
   ""
   )
 
-# flashlight-text is required
+# flashlight-text with flashlight-text-kenlm is required
 if (NOT TARGET flashlight::flashlight-text)
-  find_package(flashlight-text CONFIG)
-  if (NOT TARGET flashlight::flashlight-text AND FL_BUILD_STANDALONE)
+  find_package(flashlight-text CONFIG 0.0.2)
+  if (NOT (TARGET flashlight::flashlight-text AND TARGET flashlight::flashlight-text-kenlm) AND FL_BUILD_STANDALONE)
     message(STATUS "Flashlight Text not found - downloading and building from source")
     include(${CMAKE_MODULE_PATH}/BuildFlashlightText.cmake)
   elseif(TARGET flashlight::flashlight-text)
@@ -41,6 +41,7 @@ target_link_libraries(
   flashlight
   fl_pkg_runtime
   flashlight::flashlight-text
+  flashlight::flashlight-text-kenlm
   flashlight::flashlight-sequence
   )
 

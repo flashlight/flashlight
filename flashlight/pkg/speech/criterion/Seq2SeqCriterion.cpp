@@ -656,6 +656,7 @@ EmittingModelUpdateFunc buildSeq2SeqRnnUpdateFunction(
           const int N,
           const int T,
           const std::vector<int>& rawY,
+          const std::vector<int>& /* prevHypBeamIdxs */,
           const std::vector<EmittingModelStatePtr>& rawPrevStates,
           int& t) {
         if (t == 0) {
