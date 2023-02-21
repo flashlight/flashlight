@@ -1,30 +1,24 @@
-include(ExternalProject)
+cmake_minimum_required(VERSION 3.16)
 
-set(cereal_URL https://github.com/USCiLab/cereal.git)
-set(cereal_BUILD ${CMAKE_CURRENT_BINARY_DIR}/cereal)
-set(cereal_TAG v1.3.2)
+include(FetchContent)
 
-# Download Cereal
-ExternalProject_Add(
+FetchContent_Declare(
   cereal
-  PREFIX cereal
-  GIT_REPOSITORY ${cereal_URL}
-  GIT_TAG ${cereal_TAG}
-  BUILD_IN_SOURCE 1
-  BUILD_COMMAND ${CMAKE_COMMAND} --build . --config Release
-  INSTALL_COMMAND ""
-  CMAKE_CACHE_ARGS
-    -DCMAKE_BUILD_TYPE:STRING=Release
-    -DJUST_INSTALL_CEREAL:BOOL=ON
-    
-)
-ExternalProject_Get_Property(cereal source_dir)
-set(CEREAL_SOURCE_DIR ${source_dir})
-ExternalProject_Get_Property(cereal binary_dir)
-set(CEREAL_BINARY_DIR ${binary_dir})
-
-# Include dir. dependent on build or install
-set(cereal_INCLUDE_DIRS
-  $<BUILD_INTERFACE:${CEREAL_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:${CEREAL_INSTALL_PATH}> # see root CMakeLists.txt
+  GIT_REPOSITORY https://github.com/USCiLab/cereal.git
+  GIT_TAG        v1.3.2
   )
+
+# Save
+set(_BUILD_SANDBOX ${BUILD_SANDBOX})
+set(_BUILD_DOC ${BUILD_DOC})
+
+set(BUILD_SANDBOX OFF CACHE INTERNAL "Disable building cereal sandbox")
+set(BUILD_DOC OFF CACHE INTERNAL "Disable building cereal docs")
+set(SKIP_PERFORMANCE_COMPARISON ON CACHE INTERNAL "Skip perf comparison in cereal")
+set(CEREAL_INSTALL ON CACHE INTERNAL "Force cereal install step if needed")
+
+FetchContent_MakeAvailable(cereal)
+
+# Restore
+set(BUILD_SANDBOX ${_BUILD_SANDBOX})
+set(BUILD_DOC ${_BUILD_DOC})

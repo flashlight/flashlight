@@ -11,30 +11,15 @@ endif()
 # ------------------------ Global External Dependencies ------------------------
 # If cereal is found in a user-defined location, use it rather than
 # downloading from source
-find_package(cereal)
-if (NOT TARGET cereal AND NOT cereal_FOUND AND FL_BUILD_STANDALONE)
-  message(STATUS "cereal NOT found. Will download from source")
-  set(CEREAL_INSTALL_PATH ${FL_INSTALL_INC_DIR}/cereal)
-  include(${CMAKE_MODULE_PATH}/BuildCereal.cmake)
-  add_dependencies(flashlight cereal)
-  # Move cereal headers at install time
-  install(DIRECTORY ${CEREAL_SOURCE_DIR}/include/cereal/
-    DESTINATION ${CEREAL_INSTALL_PATH}
-    COMPONENT cereal
-    FILES_MATCHING
-    PATTERN "*.hpp"
-    PATTERN "*.h"
-    PATTERN ".git" EXCLUDE
-    )
-  install(FILES ${CEREAL_SOURCE_DIR}/LICENSE ${CEREAL_SOURCE_DIR}/README.md
-    DESTINATION ${CEREAL_INSTALL_PATH}
-    )
-  target_include_directories(flashlight PUBLIC ${cereal_INCLUDE_DIRS})
-else()
-  message(STATUS "Found cereal")
-  target_link_libraries(flashlight PRIVATE cereal)
+find_package(cereal CONFIG)
+if (NOT TARGET cereal::cereal)
+  if (NOT FL_BUILD_STANDALONE)
+    message(FATAL_ERROR "Required dependency cereal not found")
+  endif()
+  message(STATUS "Could not find cereal. Will download from source.")
+  include(${PROJECT_SOURCE_DIR}/cmake/BuildCereal.cmake)
 endif()
-setup_install_find_module(${CMAKE_MODULE_PATH}/Findcereal.cmake)
+target_link_libraries(flashlight PUBLIC $<BUILD_INTERFACE:cereal::cereal>)
 
 # -------------------------------- Components --------------------------------
 # Tensor -- resolve backends and compute runtimes first

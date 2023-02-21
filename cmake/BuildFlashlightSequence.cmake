@@ -2,16 +2,13 @@ cmake_minimum_required(VERSION 3.16)
 
 include(FetchContent)
 
-set(flashlight_sequence_URL https://github.com/flashlight/sequence.git)
-set(flashlight_sequence_TAG 7ef5ab16cc609c9b7139f7961f2fdf37c637d2b6)
-
 FetchContent_Declare(
   flashlight-sequence
-  GIT_REPOSITORY ${flashlight_sequence_URL}
-  GIT_TAG        ${flashlight_sequence_TAG}
+  GIT_REPOSITORY https://github.com/flashlight/sequence.git
+  GIT_TAG        5d288cd682542bd6b43f40af8019644af58bd1e6
 )
 
-set(FL_SEQUENCE_USE_CUDA ${FL_USE_CUDA})
-set(FL_SEQUENCE_BUILD_TESTS OFF)
+set(FL_SEQUENCE_USE_CUDA ${FL_USE_CUDA} CACHE INTERNAL "Enable CUDA support in Flashlight Sequence")
+set(FL_SEQUENCE_BUILD_TESTS OFF CACHE INTERNAL "Disable tests in Flashlight Sequence")
+set(FL_SEQUENCE_BUILD_STANDALONE ${FL_BUILD_STANDALONE} CACHE INTERNAL "Set standalone build in Flashlight Sequence")
 FetchContent_MakeAvailable(flashlight-sequence)
-add_library(flashlight::flashlight-sequence ALIAS flashlight-sequence)
