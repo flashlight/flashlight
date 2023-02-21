@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 # ----------------------------- Dependencies -----------------------------
-find_package(SndFile)
+find_package(SndFile MODULE)
 if (TARGET SndFile::sndfile)
   message(STATUS "libsndfile found.")
 else ()
@@ -9,8 +9,7 @@ else ()
     message(
       STATUS
       "libsndfile not found - will download and build from source.")
-    include(${CMAKE_MODULE_PATH}/BuildSndFile.cmake)
-    add_dependencies(fl_pkg_speech SndFile) # ExternalProject target
+    include(${PROJECT_SOURCE_DIR}/cmake/BuildSndFile.cmake)
   else()
     message(FATAL_ERROR "Required dependency libsndfile not found")
   endif()

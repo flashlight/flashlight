@@ -1,16 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
 
-cmake_dependent_option(
-  FL_BUILD_APP_ASR_SFX_SOX
-  "Build libsox-based sound effects augmentation" OFF
-  "FL_BUILD_APP_ASR" OFF
-  )
-cmake_dependent_option(
-  FL_USE_SOX_STATIC
-  "Statically link libsox with sound effects" OFF
-  "NOT BUILD_SHARED_LIBS" OFF
-  )
-
 add_library(
   fl_pkg_speech
   ""
@@ -33,7 +22,7 @@ endif()
 if (NOT TARGET flashlight::flashlight-sequence)
   find_package(flashlight-sequence CONFIG)
   if (NOT TARGET flashlight::flashlight-sequence AND FL_BUILD_STANDALONE)
-    message(STATUS "Flashlight Text not found - downloading and building from source")
+    message(STATUS "Flashlight Sequence not found - downloading and building from source")
     include(BuildFlashlightSequence)
   elseif(TARGET flashlight::flashlight-sequence)
     if (FL_USE_CUDA AND FL_SEQUENCE_USE_CUDA)
@@ -45,7 +34,6 @@ if (NOT TARGET flashlight::flashlight-sequence)
     message(FATAL_ERROR "Could not find requirement flashlight-sequence.")
   endif()
 endif()
-
 
 target_link_libraries(
   fl_pkg_speech
