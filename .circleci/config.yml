@@ -299,7 +299,7 @@ commands:
             sudo docker exec -it flashlight bash -c "\
             apt install -y libboost-program-options-dev libboost-system-dev \
             libboost-thread-dev libboost-test-dev && \
-            git clone https://github.com/flashlight/text --branch v0.0.1 && cd text && \
+            git clone https://github.com/flashlight/text && cd text && \
             mkdir build && cd build && \
             cmake .. -DFL_TEXT_USE_KENLM=<< parameters.use_kenlm >> -DFL_TEXT_BUILD_TESTS=OFF -DBUILD_SHARED_LIBS=ON && \
             make install -j$(nproc)"
@@ -314,7 +314,7 @@ commands:
           command: |
             apt install -y libboost-program-options-dev libboost-system-dev \
             libboost-thread-dev libboost-test-dev && \
-            git clone https://github.com/flashlight/text --branch v0.0.1 && cd text && \
+            git clone https://github.com/flashlight/text && cd text && \
             mkdir build && cd build && \
             cmake .. -DFL_TEXT_USE_KENLM=<< parameters.use_kenlm >> -DFL_TEXT_BUILD_TESTS=OFF -DBUILD_SHARED_LIBS=ON && \
             make install -j$(nproc)
