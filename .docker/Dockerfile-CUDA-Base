@@ -7,16 +7,16 @@
 # CuDNN            8-dev
 # cmake            3.16.3       (apt)
 # MKL              2020.4-912   (apt)
-# arrayfire        3.7.3        (git, CUDA backend)
+# arrayfire        3.8.3        (git, CUDA backend)
 # libsndfile       latest       (apt)
 # FFTW             latest       (apt)
-# KenLM            0c4dd4e      (git)
+# KenLM            9af679c      (git)
 # GLOG             latest       (apt)
 # gflags           latest       (apt)
 # python3          latest       (apt)
 # ==================================================================
 
-FROM nvidia/cuda:11.1-cudnn8-devel-ubuntu20.04 as cuda_base_builder
+FROM nvidia/cuda:11.1.1-cudnn8-devel-ubuntu20.04 as cuda_base_builder
 
 # If the driver is not found (during docker build) the cuda driver api need to be linked against the
 # libcuda.so stub located in the lib[64]/stubs directory
@@ -65,7 +65,7 @@ FROM cuda_base_builder as cuda_arrayfire
 # arrayfire with CUDA backend https://github.com/arrayfire/arrayfire/wiki/Build-Instructions-for-Linux#cuda-backend-dependencies
 # ------------------------------------------------------------------
 RUN cd /tmp && \
-    git clone --branch v3.7.3 --depth 1 --recursive --shallow-submodules https://github.com/arrayfire/arrayfire.git && \
+    git clone --branch v3.8.3 --depth 1 --recursive --shallow-submodules https://github.com/arrayfire/arrayfire.git && \
     mkdir -p arrayfire/build && cd arrayfire/build && \
     CXXFLAGS=-DOS_LNX cmake .. -DCMAKE_BUILD_TYPE=Release \
                                -DCMAKE_INSTALL_PREFIX=/opt/arrayfire \
@@ -84,7 +84,7 @@ FROM cuda_base_builder as cuda_kenlm
 # KenLM https://github.com/kpu/kenlm
 # ------------------------------------------------------------------
 RUN cd /tmp && git clone https://github.com/kpu/kenlm.git && \
-    cd kenlm && git checkout 0c4dd4e && \
+    cd kenlm && git checkout 9af679c38477b564c26917a5dcf52d2c86177fb9 && \
     mkdir build && cd build && \
     cmake .. -DCMAKE_BUILD_TYPE=Release \
              -DCMAKE_INSTALL_PREFIX=/opt/kenlm \
