@@ -1,5 +1,16 @@
 cmake_minimum_required(VERSION 3.16)
 
+cmake_dependent_option(
+  FL_BUILD_APP_ASR_SFX_SOX
+  "Build libsox-based sound effects augmentation" OFF
+  "FL_BUILD_APP_ASR" OFF
+  )
+cmake_dependent_option(
+  FL_USE_SOX_STATIC
+  "Statically link libsox with sound effects" OFF
+  "NOT BUILD_SHARED_LIBS" OFF
+  )
+
 # ------------------------ libsox ------------------------
 # Add the include dir and the libraries that are required for
 # building libsox based sounds effects.
