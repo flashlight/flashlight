@@ -5,7 +5,7 @@ include(FetchContent)
 FetchContent_Declare(
   flashlight-text
   GIT_REPOSITORY https://github.com/flashlight/text.git
-  GIT_TAG        v0.0.1
+  GIT_TAG        ebab3336632ff10d0639690b4f4b5dabaad443d6 # > v0.0.2
 )
 
 # KenLM support is required for Flashlight's speech package
