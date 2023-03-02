@@ -455,6 +455,7 @@ jobs:
     steps:
       - install_arrayfire
       - install_cudnn
+      - checkout
       - build_flashlight:
           fl_use_arrayfire: "ON"
           fl_arrayfire_use_cuda: "ON"
