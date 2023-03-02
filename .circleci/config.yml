@@ -23,7 +23,7 @@ commands:
             sudo apt-key adv --fetch-key https://repo.arrayfire.com/GPG-PUB-KEY-ARRAYFIRE-2020.PUB
             echo "deb [arch=amd64] https://repo.arrayfire.com/debian all main" | sudo tee /etc/apt/sources.list.d/arrayfire.list
             sudo apt update
-            sudo apt install arrayfire-cuda3-cuda-11-4=3.8.1-2 arrayfire-cmake=3.8.1 arrayfire-headers=3.8.1-2 arrayfire-cuda3-dev=3.8.1-2
+            sudo apt install arrayfire-cuda3-cuda-11-4=3.8.1-2 arrayfire-cmake=3.8.1-2 arrayfire-headers=3.8.1-2 arrayfire-cuda3-dev=3.8.1-2
 
   install_cudnn:
     steps:
@@ -369,7 +369,7 @@ commands:
             sudo docker exec -it flashlight bash -c "\
             apt install -y libboost-program-options-dev libboost-system-dev \
             libboost-thread-dev libboost-test-dev && \
-            git clone https://github.com/flashlight/text --branch v0.0.1 && cd text && \
+            git clone https://github.com/flashlight/text && cd text && \
             mkdir build && cd build && \
             cmake .. -DFL_TEXT_USE_KENLM=<< parameters.use_kenlm >> -DFL_TEXT_BUILD_TESTS=OFF -DBUILD_SHARED_LIBS=ON && \
             make install -j$(nproc)"
@@ -384,7 +384,7 @@ commands:
           command: |
             apt install -y libboost-program-options-dev libboost-system-dev \
             libboost-thread-dev libboost-test-dev && \
-            git clone https://github.com/flashlight/text --branch v0.0.1 && cd text && \
+            git clone https://github.com/flashlight/text && cd text && \
             mkdir build && cd build && \
             cmake .. -DFL_TEXT_USE_KENLM=<< parameters.use_kenlm >> -DFL_TEXT_BUILD_TESTS=OFF -DBUILD_SHARED_LIBS=ON && \
             make install -j$(nproc)
