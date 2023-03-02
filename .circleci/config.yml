@@ -30,6 +30,7 @@ commands:
       - run:
           name: "Install cuDNN 8.5.0.96 for CUDA 11.7"
           command: |
+            cd /tmp
             wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/libcudnn8_8.5.0.96-1+cuda11.7_amd64.deb
             wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/libcudnn8-dev_8.5.0.96-1+cuda11.7_amd64.deb
             sudo dpkg -i libcudnn8_8.5.0.96-1+cuda11.7_amd64.deb libcudnn8-dev_8.5.0.96-1+cuda11.7_amd64.deb
@@ -453,9 +454,9 @@ jobs:
   ubuntu2004_cuda_11_4_build_and_test_new:
     <<: *gpu
     steps:
+      - checkout
       - install_arrayfire
       - install_cudnn
-      - checkout
       - build_flashlight:
           fl_use_arrayfire: "ON"
           fl_arrayfire_use_cuda: "ON"
