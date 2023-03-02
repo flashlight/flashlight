@@ -58,7 +58,7 @@ commands:
       - run:
           name: "Build Flashlight"
           command: |
-            cmake .. -S . -B build \
+            cmake -S . -B build \
               -DFL_USE_ARRAYFIRE=<< parameters.fl_use_arrayfire >> \
               -DFL_ARRAYFIRE_USE_CUDA=<< parameters.fl_arrayfire_use_cuda >> \
               -DFL_ARRAYFIRE_USE_CPU=<< parameters.fl_arrayfire_use_cpu >> \
