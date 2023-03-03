@@ -400,7 +400,7 @@ workflows:
   build-and-test-new:
     jobs:
       - build-and-test-main:
-          name: "Build and Test"
+          name: "Build and Test << matrix.platform >> with << matrix.backend >>"
           matrix:
             parameters:
               platform: [linux, linux-gpu, macos, windows, windows-gpu]
