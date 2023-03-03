@@ -41,7 +41,7 @@ executors:
     resource_class: windows.gpu.nvidia.medium
 
 commands:
-  setup_cuda:
+  setup-cuda:
     parameters:
       platform:
         type: string
@@ -122,7 +122,7 @@ commands:
                       name: "Install Intel MKL"
                       command: sudo apt install intel-onednn-dev
 
-  install_arrayfire:
+  install-arrayfire:
     parameters:
       platform:
         type: string
@@ -167,7 +167,7 @@ commands:
                 name: "Install ArrayFire 3.8.1"
                 command: brew install arrayfire
 
-  install_cudnn:
+  install-cudnn:
     parameters:
       platform:
         type: string
@@ -368,25 +368,25 @@ jobs:
       - when:
           condition:
             or:
-              - equal: ["linux_gpu", << parameters.platform >>]
-              - equal: ["windows_gpu", << parameters.platform >>]
+              - equal: ["linux-gpu", << parameters.platform >>]
+              - equal: ["windows-gpu", << parameters.platform >>]
           steps:
             # - run: echo "Hello"
-            - setup_cuda:
+            - setup-cuda:
                 platform: << parameters.platform >>
       - when:
           condition:
             equal: ["arrayfire", << parameters.backend >>]
           steps:
-            - install_arrayfire:
+            - install-arrayfire:
                 platform: << parameters.platform >>
       - when:
           condition:
             or:
-              - equal: ["linux_gpu", << parameters.platform >>]
-              - equal: ["windows_gpu", << parameters.platform >>]
+              - equal: ["linux-gpu", << parameters.platform >>]
+              - equal: ["windows-gpu", << parameters.platform >>]
           steps:
-            - install_cudnn:
+            - install-cudnn:
                 platform: << parameters.platform >>
       - build_flashlight:
           fl_use_arrayfire: "ON"
