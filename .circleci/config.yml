@@ -18,7 +18,7 @@ executors:
   linux:
     machine:
       image: ubuntu:2004
-    resource_class: 2xlarge+
+    resource_class: 2xlarge
   linux-gpu:
     machine:
       image: ubuntu-2004-cuda-11.4:202110-01
@@ -33,7 +33,7 @@ executors:
     machine:
       image: win/default
     shell: bash.exe
-    resource_class: 2xlarge+
+    resource_class: 2xlarge
   windows-gpu:
     machine:
       image: win/server-2019-cuda
@@ -148,7 +148,7 @@ commands:
             equal: ["linux-gpu", << parameters.platform >>]
           steps:
             - run:
-                name: "Install ArrayFire 3.8.1"
+                name: "Install ArrayFire 3.8.1 with CUDA 11.4"
                 command: |
                   sudo apt install arrayfire-cuda3-cuda-11-4=3.8.1-2 arrayfire-cuda3-dev=3.8.1-2
       - when:
@@ -400,8 +400,13 @@ workflows:
   build-and-test-new:
     jobs:
       - build-and-test-main:
-          # name: "Ubuntu 20.04 + CUDA 11.4 Build and Test"
+          name: "Build and Test"
           matrix:
             parameters:
               platform: [linux, linux-gpu, macos, windows, windows-gpu]
               backend: [arrayfire, onednn]
+            exclude:
+              - platform: linux-gpu
+                backend: onednn
+              - platform: windows-gpu
+                backend: onednn
