@@ -204,35 +204,28 @@ commands:
 
   build_flashlight:
     parameters:
-      fl_use_arrayfire:
-        default: "OFF"
+      platform:
         type: string
-      fl_arrayfire_use_cuda:
-        default: "OFF"
-        type: string
-      fl_arrayfire_use_cpu:
-        default: "OFF"
-        type: string
-      fl_use_cudnn:
-        default: "OFF"
-        type: string
-      fl_use_onednn:
-        default: "OFF"
-        type: string
-      fl_build_distributed:
-        default: "OFF"
+      backend:
         type: string
     steps:
       - run:
           name: "Build Flashlight"
           command: |
+            export FL_USE_ARRAYFIRE=$(if [[ ${backend} -eq "arrayfire" ]]; then echo "ON"; else echo "OFF"; fi)
+            export FL_USE_ONEDNN=$(if [[ ${backend} -eq "onednn" ]]; then echo "ON"; else echo "OFF"; fi)
+            export FL_ARRAYFIRE_USE_CUDA=$(if [[ ${platform} == *"-gpu" ]]; then echo "ON"; else echo "OFF"; fi)
+            export FL_ARRAYFIRE_USE_CPU=$(if [[ ${platform} != *"-gpu" ]]; then echo "ON"; else echo "OFF"; fi)
+            export FL_USE_CUDNN=$(if [[ ${platform} == *"-gpu" ]]; then echo "ON"; else echo "OFF"; fi)
+            export FL_BUILD_DISTRIBUTED="OFF"
+
             cmake -S . -B build \
-              -DFL_USE_ARRAYFIRE=<< parameters.fl_use_arrayfire >> \
-              -DFL_ARRAYFIRE_USE_CUDA=<< parameters.fl_arrayfire_use_cuda >> \
-              -DFL_ARRAYFIRE_USE_CPU=<< parameters.fl_arrayfire_use_cpu >> \
-              -DFL_USE_CUDNN=<< parameters.fl_arrayfire_use_cpu >> \
-              -DFL_USE_ONEDNN=<< parameters.fl_use_onednn >> \
-              -DFL_BUILD_DISTRIBUTED=<< parameters.fl_build_distributed >>
+              -DFL_USE_ARRAYFIRE=${FL_USE_ARRAYFIRE} \
+              -DFL_ARRAYFIRE_USE_CUDA=${FL_ARRAYFIRE_USE_CUDA} \
+              -DFL_ARRAYFIRE_USE_CPU=${FL_ARRAYFIRE_USE_CPU} \
+              -DFL_USE_CUDNN=${FL_USE_CUDNN} \
+              -DFL_USE_ONEDNN=${FL_USE_ONEDNN} \
+              -DFL_BUILD_DISTRIBUTED=${FL_BUILD_DISTRIBUTED}
             cmake --build build --parallel
 
   test_flashlight:
@@ -248,101 +241,6 @@ commands:
             ctest --verbose --parallel 4
 
   ############################### Old Commands ###############################
-
-  # Default cmake inside docker will be tested with docker build
-  build_flashlight_inside_nvidia_docker:
-    parameters:
-      fl_arrayfire_use_cuda:
-        default: "OFF"
-        type: string
-      fl_arrayfire_use_cpu:
-        default: "OFF"
-        type: string
-      fl_use_cudnn:
-        default: "OFF"
-        type: string
-      fl_use_onednn:
-        default: "OFF"
-        type: string
-      fl_build_fl_core:
-        default: "OFF"
-        type: string
-      # pkgs
-      fl_build_pkg_vision:
-        default: "OFF"
-        type: string
-      fl_build_pkg_common:
-        default: "OFF"
-        type: string
-      fl_build_pkg_speech:
-        default: "OFF"
-        type: string
-      fl_build_pkg_text:
-        default: "OFF"
-        type: string
-      fl_build_pkg_runtime:
-        default: "OFF"
-        type: string
-      # Apps
-      fl_build_app_asr:
-        default: "OFF"
-        type: string
-      fl_build_app_imgclass:
-        default: "OFF"
-        type: string
-      fl_build_app_objdet:
-        default: "OFF"
-        type: string
-      fl_build_app_lm:
-        default: "OFF"
-        type: string
-      build_shared_libs:
-        default: "OFF"
-        type: string
-      fl_code_coverage:
-        default: "ON"
-        type: string
-      version:
-        default: "3.16"
-        type: string
-      version_build:
-        default: "1"
-        type: string
-    steps:
-      - run:
-          name: "Build and Install Flashlight inside of NVIDIA Docker"
-          command: |
-            sudo docker exec -it flashlight bash -c "\
-            echo 'deb http://archive.ubuntu.com/ubuntu xenial main' | tee /etc/apt/sources.list.d/xenial.list && \
-            apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends software-properties-common && \
-            apt-add-repository -r universe && apt-add-repository 'deb http://dk.archive.ubuntu.com/ubuntu/ bionic main' && apt-add-repository 'deb http://dk.archive.ubuntu.com/ubuntu/ bionic universe' && apt-get update && \
-            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-7 g++-7 && \
-            update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 7 &&\
-            update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 7 && \
-            update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-7 7 && \
-            wget https://cmake.org/files/v<< parameters.version >>/cmake-<< parameters.version >>.<< parameters.version_build >>-Linux-x86_64.sh && \
-            mkdir /opt/cmake && \
-            sh cmake-<< parameters.version >>.<< parameters.version_build >>-Linux-x86_64.sh --prefix=/opt/cmake --skip-license && \
-            ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake && \
-            cd /flashlight && pwd && ls && mkdir -p build && cd build && \
-            export MKLROOT=/opt/intel/mkl && \
-            cmake .. \
-                -DFL_ARRAYFIRE_USE_CUDA=<< parameters.fl_arrayfire_use_cuda >> \
-                -DFL_ARRAYFIRE_USE_CPU=<< parameters.fl_arrayfire_use_cpu >> \
-                -DFL_USE_CUDNN=<< parameters.fl_use_cudnn >> \
-                -DFL_USE_ONEDNN=<< parameters.fl_use_onednn >> \
-                -DFL_BUILD_CORE=<< parameters.fl_build_fl_core >> \
-                -DFL_BUILD_PKG_RUNTIME=<< parameters.fl_build_pkg_runtime >> \
-                -DFL_BUILD_PKG_VISION=<< parameters.fl_build_pkg_vision >> \
-                -DFL_BUILD_PKG_TEXT=<< parameters.fl_build_pkg_text >> \
-                -DFL_BUILD_PKG_SPEECH=<< parameters.fl_build_pkg_speech >> \
-                -DFL_BUILD_APP_ASR=<< parameters.fl_build_app_asr >> \
-                -DFL_BUILD_APP_IMGCLASS=<< parameters.fl_build_app_imgclass >> \
-                -DFL_BUILD_APP_OBJDET=<< parameters.fl_build_app_objdet >> \
-                -DFL_BUILD_APP_LM=<< parameters.fl_build_app_lm >> \
-                -DBUILD_SHARED_LIBS=<< parameters.build_shared_libs >> \
-                -DFL_CODE_COVERAGE=<< parameters.fl_code_coverage >> && \
-            make -j$(nproc) && make install"
   run_codecov_inside_nvidia_docker:
     parameters:
       coverage_flag:
@@ -403,9 +301,8 @@ jobs:
           platform: << parameters.platform >>
           backend: << parameters.backend >>
       - build_flashlight:
-          fl_use_arrayfire: "ON"
-          fl_arrayfire_use_cuda: "ON"
-          fl_use_cudnn: "ON"
+          platform: << parameters.platform >>
+          backend: << parameters.backend >>
       - test_flashlight:
           path: build/flashlight/fl/test
 
@@ -426,3 +323,6 @@ workflows:
                 backend: onednn
               - platform: windows-gpu
                 backend: onednn
+                # TODO: remove me
+              - platform: windows
+              - platform: windows-gpu
