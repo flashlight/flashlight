@@ -1,0 +1,56 @@
+name: Build Flashlight"
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: "Build on ${{ matrix.os }} with ${{ matrix.backend }}"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, windows-2022, macOS-12]
+        backend: [ArrayFire, oneDNN]
+    steps:
+      - uses: actions/checkout@v3
+
+      # Build dependencies
+      - name: "Install build dependencies"
+        run: |
+          sudo apt update
+          sudo apt install cmake
+        if: runner.os == 'Linux'
+      - name: "Install build dependencies"
+        run: brew install cmake
+        if: runner.os == 'macOS'
+      - name: "Install build dependencies"
+        run: choco install cmake
+        if: runner.os == 'Windows'
+
+      # ]--- Backend dependencies
+
+      # ArrayFire
+      - name: "Install ${{ matrix.backend }} on ${{ runner.os }}"
+        run: |
+          sudo apt update
+          sudo apt install -y gnupg2 ca-certificates apt-utils software-properties-common
+          sudo apt-key adv --fetch-key https://repo.arrayfire.com/GPG-PUB-KEY-ARRAYFIRE-2020.PUB
+          echo "deb [arch=amd64] https://repo.arrayfire.com/debian all main" | sudo tee /etc/apt/sources.list.d/arrayfire.list
+          sudo apt update
+          sudo apt install arrayfire-cmake=3.8.1-2 arrayfire-headers=3.8.1-2 arrayfire-cpu3-mkl=3.8.1-2 arrayfire-cpu3-dev=3.8.1-2
+        if: runner.os == 'Linux' && matrix.backend == 'ArrayFire'
+      - name: "Install ${{ matrix.backend }} on ${{ runner.os }}"
+        run: brew install arrayfire
+        if: runner.os == 'macOS' && matrix.backend == 'ArrayFire'
+
+      # oneDNN
+      - name: "Install ${{ matrix.backend }} on ${{ runner.os }}"
+        run: |
+          wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
+          sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
+          sudo sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list'
+          sudo apt update
+          sudo apt install intel-mkl-full intel-onednn-dev
+        if: runner.os == 'Linux' && matrix.backend == 'ArrayFire'
+      - name: "Install ${{ matrix.backend }} on ${{ runner.os }}"
+        run: brew install onednn
+        if: runner.os == 'macOS' && matrix.backend == 'oneDNN'
