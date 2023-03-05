@@ -18,7 +18,7 @@ namespace detail {
 
 namespace {
 
-template<typename K, typename V>
+template <typename K, typename V>
 std::unordered_map<V, K> invertMap(const std::unordered_map<K, V>& map) {
   std::unordered_map<V, K> invertedMap;
   for (const auto& [key, val] : map) {
@@ -34,6 +34,7 @@ getFlashlightTypeToOnednnTypeMap() {
       kFlashlightTypeToOneDnnType = {
           {fl::dtype::f16, dnnl::memory::data_type::f16},
           {fl::dtype::f32, dnnl::memory::data_type::f32},
+          {fl::dtype::f64, dnnl::memory::data_type::f64},
           {fl::dtype::b8, dnnl::memory::data_type::s8},
           {fl::dtype::u8, dnnl::memory::data_type::u8},
           {fl::dtype::s32, dnnl::memory::data_type::s32},
@@ -83,7 +84,7 @@ dnnl::memory::dims shapeToOneDnnStrides(const Shape& shape) {
         std::to_string(shape.ndim()));
   }
   // Recall that dims are reversed, see docs in OneDnnTensor.
-  dnnl::memory::dims strides {1};
+  dnnl::memory::dims strides{1};
   for (int idx = 0; idx < shape.ndim() - 1; idx++) {
     strides.push_back(strides.back() * shape.dim(idx));
   }
@@ -124,8 +125,7 @@ bool isIntType(dnnl::memory::data_type type) {
 dnnl::memory::data_type getTypeWithLargerRange(
     dnnl::memory::data_type t1,
     dnnl::memory::data_type t2) {
-  if ((isFpType(t1) && isFpType(t2)) ||
-      (isIntType(t1) && isIntType(t2))) {
+  if ((isFpType(t1) && isFpType(t2)) || (isIntType(t1) && isIntType(t2))) {
     auto t1Size = dnnl::memory::data_type_size(t1);
     auto t2Size = dnnl::memory::data_type_size(t2);
     return t1Size >= t2Size ? t1 : t2;

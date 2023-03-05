@@ -76,12 +76,15 @@ dnnl::memory::dims getInputOutputDims(
 
 struct OneDnnBatchNormPayload : detail::AutogradPayloadData {
   dnnl::batch_normalization_forward::primitive_desc fwdPrimDesc;
-  Tensor weightsDnnl; // combined weight and bias
-  dnnl::memory::dims weightsDnnlDims;
+  Tensor weights; // combined weight and bias
+  Tensor bias;
+  dnnl::memory::dims weightsDims;
+  dnnl::memory::dims biasDims;
   dnnl::memory::desc outputMemoryDescriptor;
   dnnl::memory meanMemory;
   dnnl::memory varMemory;
   dnnl::memory weightsMemory;
+  dnnl::memory biasMemory;
 };
 
 } // namespace
@@ -142,13 +145,11 @@ Tensor OneDnnAutogradExtension::batchnorm(
 
   // DNNL only accepts weight and bias as a combined input.
   // https://git.io/JLn9X
-  payload->weightsDnnl = fl::concatenate(0, weightNonempty, biasNonempty);
-
+  payload->weights = weightNonempty;
+  payload->bias = biasNonempty;
+  payload->weightsDims = detail::convertToDnnlDims({nfeatures});
+  payload->biasDims = detail::convertToDnnlDims({nfeatures});
   auto inputOutputDims = getInputOutputDims(minAxis, maxAxis, input, nfeatures);
-
-  auto inputOutputMemDesc =
-      dnnl::memory::desc({inputOutputDims}, dType, formatNCHW);
-  payload->weightsDnnlDims = detail::convertToDnnlDims({2, nfeatures});
 
   // Memory for forward
   const detail::DnnlMemoryWrapper inputMemory(
@@ -161,10 +162,13 @@ Tensor OneDnnAutogradExtension::batchnorm(
       runningVar, {runningVar.dim(0)}, formatX);
   // combined scale and shift (weight and bias)
   const detail::DnnlMemoryWrapper weightsMemory(
-      payload->weightsDnnl, payload->weightsDnnlDims, format2d);
+      payload->weights, payload->weightsDims, formatX);
+  const detail::DnnlMemoryWrapper biasMemory(
+      payload->bias, payload->biasDims, formatX);
   payload->meanMemory = meanMemory.getMemory();
   payload->varMemory = varMemory.getMemory();
   payload->weightsMemory = weightsMemory.getMemory();
+  payload->biasMemory = biasMemory.getMemory();
   // Primitives and descriptors
   auto kind = train ? dnnl::prop_kind::forward_training
                     : dnnl::prop_kind::forward_inference;
@@ -172,11 +176,15 @@ Tensor OneDnnAutogradExtension::batchnorm(
   dnnl::normalization_flags flag = train
       ? dnnl::normalization_flags::none
       : dnnl::normalization_flags::use_global_stats;
-  flag = flag | dnnl::normalization_flags::use_scale_shift;
-  auto fwdDesc = dnnl::batch_normalization_forward::desc(
-      kind, inputOutputMemDesc, epsilon, flag);
-  payload->fwdPrimDesc =
-      dnnl::batch_normalization_forward::primitive_desc(fwdDesc, dnnlEngine);
+  flag = flag | dnnl::normalization_flags::use_scale |
+      dnnl::normalization_flags::use_shift;
+  payload->fwdPrimDesc = dnnl::batch_normalization_forward::primitive_desc(
+      dnnlEngine,
+      kind,
+      inputMemory.getDescriptor(),
+      outputMemory.getDescriptor(),
+      epsilon,
+      flag);
   payload->outputMemoryDescriptor = outputMemory.getDescriptor();
   auto bn = dnnl::batch_normalization_forward(payload->fwdPrimDesc);
   std::unordered_map<int, dnnl::memory> bnFwdArgs = {
@@ -184,7 +192,8 @@ Tensor OneDnnAutogradExtension::batchnorm(
       {DNNL_ARG_MEAN, meanMemory.getMemory()},
       {DNNL_ARG_VARIANCE, varMemory.getMemory()},
       {DNNL_ARG_DST, outputMemory.getMemory()},
-      {DNNL_ARG_SCALE_SHIFT, weightsMemory.getMemory()}};
+      {DNNL_ARG_SCALE, weightsMemory.getMemory()},
+      {DNNL_ARG_SHIFT, biasMemory.getMemory()}};
 
   // Execute
   std::vector<dnnl::primitive> network;
@@ -217,17 +226,17 @@ std::tuple<Tensor, Tensor, Tensor> OneDnnAutogradExtension::batchnormBackward(
 
   auto maxAxis = *std::max_element(axes.begin(), axes.end());
   auto minAxis = *std::min_element(axes.begin(), axes.end());
-  bool axesContinuous = (axes.size() == (maxAxis - minAxis + 1));
+  const bool axesContinuous = (axes.size() == (maxAxis - minAxis + 1));
   if (!axesContinuous) {
     throw std::invalid_argument("axis array should be continuous");
   }
 
-  int nfeatures = getNfeatures(input.shape(), axes);
+  const int nfeatures = getNfeatures(input.shape(), axes);
   auto inputOutputDims = getInputOutputDims(minAxis, maxAxis, input, nfeatures);
 
   auto gradInput = Tensor(input.shape(), input.type());
-  auto gradWeightsDNNL =
-      Tensor(payload->weightsDnnl.shape(), payload->weightsDnnl.type());
+  auto gradWeights = Tensor(payload->weights.shape(), payload->weights.type());
+  auto gradBias = Tensor(payload->bias.shape(), payload->bias.type());
 
   const detail::DnnlMemoryWrapper inputMemory(
       input, inputOutputDims, formatNCHW);
@@ -238,19 +247,24 @@ std::tuple<Tensor, Tensor, Tensor> OneDnnAutogradExtension::batchnormBackward(
   const detail::DnnlMemoryWrapper gradInputMem(
       gradInput, inputOutputDims, formatNCHW);
   const detail::DnnlMemoryWrapper gradWeightsMem(
-      gradWeightsDNNL, payload->weightsDnnlDims, format2d);
+      gradWeights, payload->weightsDims, formatX);
+  const detail::DnnlMemoryWrapper gradBiasMem(
+      gradBias, payload->biasDims, formatX);
 
   // Primitives and descriptors
-  auto bwdDesc = dnnl::batch_normalization_backward::desc(
+  auto bwdPrimitiveDesc = dnnl::batch_normalization_backward::primitive_desc(
+      dnnlEngine,
       dnnl::prop_kind::backward,
       gradOutputMem.getDescriptor(),
       payload->outputMemoryDescriptor,
+      gradOutputMem.getDescriptor(),
       epsilon,
-      dnnl::normalization_flags::use_scale_shift);
-  auto bwdPrimDesc = dnnl::batch_normalization_backward::primitive_desc(
-      bwdDesc, dnnlEngine, payload->fwdPrimDesc);
+      dnnl::normalization_flags::use_scale |
+          dnnl::normalization_flags::use_shift,
+      payload->fwdPrimDesc // hint
+  );
   auto bwdPrim =
-      std::make_shared<dnnl::batch_normalization_backward>(bwdPrimDesc);
+      std::make_shared<dnnl::batch_normalization_backward>(bwdPrimitiveDesc);
 
   // Execute
   std::vector<dnnl::primitive> networkBackwards;
@@ -258,17 +272,19 @@ std::tuple<Tensor, Tensor, Tensor> OneDnnAutogradExtension::batchnormBackward(
       {{DNNL_ARG_SRC, inputMemory.getMemory()},
        {DNNL_ARG_MEAN, payload->meanMemory},
        {DNNL_ARG_VARIANCE, payload->varMemory},
-       {DNNL_ARG_SCALE_SHIFT, payload->weightsMemory},
+       {DNNL_ARG_SCALE, payload->weightsMemory},
+       {DNNL_ARG_SHIFT, payload->biasMemory},
        {DNNL_ARG_DIFF_SRC, gradInputMem.getMemory()},
        {DNNL_ARG_DIFF_DST, gradOutputMem.getMemory()},
-       {DNNL_ARG_DIFF_SCALE_SHIFT, gradWeightsMem.getMemory()}}};
+       {DNNL_ARG_DIFF_SCALE, gradWeightsMem.getMemory()},
+       {DNNL_ARG_DIFF_SHIFT, gradBiasMem.getMemory()}}};
   networkBackwards.push_back(*bwdPrim);
   detail::executeNetwork(networkBackwards, bwdArgs);
 
   return {
-      gradInput,
-      gradWeightsDNNL(fl::range(0, nfeatures)), // weights grad
-      gradWeightsDNNL(fl::range(nfeatures, 2 * nfeatures)) // bias grad
+      gradInput, gradWeights, gradBias
+      // gradWeightsDNNL(fl::range(0, nfeatures)), // weights grad
+      // gradWeightsDNNL(fl::range(nfeatures, 2 * nfeatures)) // bias grad
   };
 };
 

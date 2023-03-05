@@ -346,7 +346,8 @@ RnnResult rnnImpl(
 
   // Initialize descriptors
   if (mode == RnnMode::RELU || mode == RnnMode::TANH) {
-    auto vanilla = dnnl::vanilla_rnn_forward::desc(
+    auto vanillaPd = dnnl::vanilla_rnn_forward::primitive_desc(
+        dnnlEngine,
         kind,
         activation,
         direction,
@@ -357,8 +358,6 @@ RnnResult rnnImpl(
         biasMemInit.getDescriptor(),
         outputMemInit.getDescriptor(),
         hiddenOutMemInit.getDescriptor());
-    auto vanillaPd =
-        dnnl::vanilla_rnn_forward::primitive_desc(vanilla, dnnlEngine);
     network.push_back(dnnl::vanilla_rnn_forward(vanillaPd));
     workspace = dnnl::memory(vanillaPd.workspace_desc(), dnnlEngine);
 
@@ -377,7 +376,8 @@ RnnResult rnnImpl(
     // output cell state
     detail::DnnlMemoryWrapper cellOutMemInit(cy, cDims, ldnc);
 
-    auto lstm = dnnl::lstm_forward::desc(
+    auto lstmPd = dnnl::lstm_forward::primitive_desc(
+        dnnlEngine,
         kind,
         direction,
         inputMemInit.getDescriptor(),
@@ -389,7 +389,6 @@ RnnResult rnnImpl(
         outputMemInit.getDescriptor(),
         hiddenOutMemInit.getDescriptor(),
         cellOutMemInit.getDescriptor());
-    auto lstmPd = dnnl::lstm_forward::primitive_desc(lstm, dnnlEngine);
     network.push_back(dnnl::lstm_forward(lstmPd));
     workspace = dnnl::memory(lstmPd.workspace_desc(), dnnlEngine);
     rnnFwdArgs.insert({DNNL_ARG_SRC_ITER_C, cellInMemInit.getMemory()});
@@ -397,7 +396,8 @@ RnnResult rnnImpl(
 
   } else if (mode == RnnMode::GRU) {
     // Use a linear-before-reset GRU so we can have parity with cuDNN
-    auto gru = dnnl::lbr_gru_forward::desc(
+    auto gruPd = dnnl::lbr_gru_forward::primitive_desc(
+        dnnlEngine,
         kind,
         direction,
         inputMemInit.getDescriptor(),
@@ -407,7 +407,6 @@ RnnResult rnnImpl(
         biasMemInit.getDescriptor(),
         outputMemInit.getDescriptor(),
         hiddenOutMemInit.getDescriptor());
-    auto gruPd = dnnl::lbr_gru_forward::primitive_desc(gru, dnnlEngine);
     network.push_back(dnnl::lbr_gru_forward(gruPd));
     workspace = dnnl::memory(gruPd.workspace_desc(), dnnlEngine);
   }
