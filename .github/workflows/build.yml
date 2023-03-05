@@ -46,7 +46,8 @@ jobs:
           echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
           sudo apt update
           sudo apt install intel-oneapi-dnnl-devel intel-oneapi-dnnl
-          echo ". /opt/intel/oneapi/setvars.sh" >> $GITHUB_ENV
+          source /opt/intel/oneapi/setvars.sh
+          printenv >> $GITHUB_ENV
         if: runner.os == 'Linux' && matrix.backend == 'oneDNN'
       - name: "Install oneDNN on macOS"
         run: brew install onednn
