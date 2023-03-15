@@ -25,13 +25,11 @@ Printing Info
   ``std::cout << "myTensor" << myTensor << std::endl;``) or printed to
   standard out by using ``fl::print()``.
 
-By including ArrayFire headers `<arrayfire/arrayfire.h>` directly, one has
+By including ArrayFire headers ``<arrayfire/arrayfire.h>`` directly, one has
 access to useful debugging functions:
-- ``af::info()`` and ``af::deviceInfo()`` can provide info about ArrayFire
-  version, GPU devices, compute capabilities, etc.
+- ``af::info()`` and ``af::deviceInfo()`` can provide info about ArrayFire version, GPU devices, compute capabilities, etc.
 - ``af::printMemInfo()`` can be useful in debugging OOMs.
-- ``af::print()`` can be used to inspect arrays. Note: the 1st argument should
-  be a message/name, and the 2nd argument shoudld be an array, not Variable:
+- ``af::print()`` can be used to inspect arrays. Note: the 1st argument should be a message/name, and the 2nd argument shoudld be an array, not Variable:
 
 ::
 

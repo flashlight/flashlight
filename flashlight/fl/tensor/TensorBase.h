@@ -70,8 +70,9 @@ std::unique_ptr<TensorAdapterBase> releaseAdapterUnsafe(Tensor& t);
  * changes.`TensorAdapterBase` implementations may differ across tensor
  * libraries, hardware-specific libraries or compilers and DSLs.
  *
- * TODO:fl::Tensor {doc} more documentation. NOTE: this API will break
- * frequently and is not yet stable.
+ * \todo: Improve documentation throughout.
+ *
+ * \warning This API may break and is not yet stable.
  */
 class Tensor {
   // The tensor adapter for the tensor
@@ -96,8 +97,8 @@ class Tensor {
    * For internal use only. Tensor implementations should define when and where
    * deep copies happen based on their dataflow graph abstractions.
    *
-   * TODO(jacobkahn) -- remove me! Rely on copy-on-write and fix bad refcount
-   * bumping.
+   * \todo slated for removal. Rely on copy-on-write and fix bad refcount
+   * issues.
    */
   Tensor shallowCopy() const;
   // shallowCopy() above is used in DevicePtr given that it doesn't mutate
@@ -167,7 +168,7 @@ class Tensor {
    * @param[in] colIdx the the column indices of the sparse array
    * @param[in] storageType the storage type of the underlying tensor
    *
-   * TODO(jacobkahn): expand this API with getters, isSparse() as needed, etc.
+   * \todo Expand this API with getters as needed.
    */
   Tensor(
       const Dim nRows,
@@ -586,9 +587,10 @@ class Tensor {
   void* getContext() const;
 
   /**
-   * Returns a string representation of a Tensor. NOTE: This is
-   * backend-dependent. See Flashlight's serialization utilities for ways to
-   * serialize Tensors that are portable across Tensor backends.
+   * Returns a string representation of a Tensor.
+   *
+   * \note This is backend-dependent. See Flashlight's serialization utilities
+   * for ways to serialize Tensors that are portable across Tensor backends.
    *
    * @return a string representation of the Tensor.
    */
@@ -719,7 +721,9 @@ arange(const Shape& shape, const Dim seqDim = 0, const dtype type = dtype::f32);
  * Creates a sequence with the range `[0, dims.elements())` sequentially in the
  * shape given by dims, then tiles the result along the specified tile
  * dimensions.
- * TODO: this is an AF-specific function.
+ *
+ * \todo an optimized version of this function is implemented only with the
+ * ArrayFire backend.
  *
  * @param[in] dims the dimensions of the range
  * @param[in] tileDims the dimensions along which to tile
@@ -932,6 +936,8 @@ Tensor rint(const Tensor& tensor);
  * @return the resulting tensor
  */
 Tensor absolute(const Tensor& tensor);
+
+// \copydoc absolute
 inline Tensor abs(const Tensor& tensor) {
   return absolute(tensor);
 }
@@ -968,18 +974,61 @@ Tensor flip(const Tensor& tensor, const unsigned dim);
  * Clip (limit) the values of a tensor. Given some interval of values, set
  * values outside of that interval to be the boundaries of the interval. All
  * values larger than the max become the max, and all values smaller than the
- * min become the min.
+ * min become the min. Minimum and maximum values are determined element-wise in
+ * the input `low` and `high` input tensors.
  *
- * TODO: consider requiring broadcasting behavior/enforcing in a test
+ * \todo Require, enforce, and document broadcasting behavior in testing.
  *
  * @param[in] tensor the tensor to clip
- * @param[in] low a tensor containing
- * @param[in] high
+ * @param[in] low a tensor containing minimum values used element-wise in
+ * clipping
+ * @param[in] high a tensor containing maximum values used element-wise in
+ * clipping
  * @return a tensor with all values clipped between high and low
  */
 Tensor clip(const Tensor& tensor, const Tensor& low, const Tensor& high);
+
+/**
+ * Clip (limit) the values of a tensor. Given some interval of values, set
+ * values outside of that interval to be the boundaries of the interval. All
+ * values larger than the max become the max, and all values smaller than the
+ * min become the min. Minimum values are determined element-wise in
+ * the `low` input tensor and the upper bound scalar.
+ *
+ * @param[in] tensor the tensor to clip
+ * @param[in] low a tensor containing minimum values used element-wise in
+ * clipping
+ * @param[in] high a scalar to use as the maximum value in clipping
+ * @return a tensor with all values clipped between high and low
+ */
 Tensor clip(const Tensor& tensor, const Tensor& low, const double& high);
+
+/**
+ * Clip (limit) the values of a tensor. Given some interval of values, set
+ * values outside of that interval to be the boundaries of the interval. All
+ * values larger than the max become the max, and all values smaller than the
+ * min become the min. Minimum values are given by the lower bound scalar and
+ * element-wise in the `high` input tensor.
+ *
+ * @param[in] tensor the tensor to clip
+ * @param[in] low a scalar to use as the minimum value in clipping
+ * @param[in] high a tensor containing maximum values used element-wise in
+ * clipping
+ * @return a tensor with all values clipped between high and low
+ */
 Tensor clip(const Tensor& tensor, const double& low, const Tensor& high);
+
+/**
+ * Clip (limit) the values of a tensor. Given some interval of values, set
+ * values outside of that interval to be the boundaries of the interval. All
+ * values larger than the max become the max, and all values smaller than the
+ * min become the min. Minimum values are determined by the passed scalars.
+ *
+ * @param[in] tensor the tensor to clip
+ * @param[in] low a scalar to use as the minimum value in clipping
+ * @param[in] high a scalar to use as the maximum value in clipping
+ * @return a tensor with all values clipped between high and low
+ */
 Tensor clip(const Tensor& tensor, const double& low, const double& high);
 
 /**
@@ -1066,7 +1115,37 @@ Tensor triu(const Tensor& tensor);
  * true and elements of y where condition is false.
  */
 Tensor where(const Tensor& condition, const Tensor& x, const Tensor& y);
+
+/**
+ * Conditionally return elements from a tensor or passed scalar based on a
+ * condition.
+ *
+ * @param[in] condition a tensor that, where true, uses the scalar value x,
+ * else positional values from y. This tensor must be of type dtype::b8 else
+ * an exception is thrown.
+ * @param[in] x the tensor from which values are chosen for true values in the
+ * condition
+ * @param[in] y the scalar returned for false values in the condition
+ *
+ * @return the resulting tensor that contains elements of x where condition is
+ * true and the scalar value y where the condition is false.
+ */
 Tensor where(const Tensor& condition, const Tensor& x, const double& y);
+
+/**
+ * Conditionally return elements from a scalar or passed tensor based on a
+ * condition.
+ *
+ * @param[in] condition a tensor that, where true, uses values from x
+ * positionally, else the scalar value y. This tensor must be of type dtype::b8
+ * else an exception is thrown.
+ * @param[in] x the scalar returned for true values in the condition
+ * @param[in] y the tensor from which values are chosen for false values in the
+ * condition
+ *
+ * @return the resulting tensor that contains elements of x where condition is
+ * true and the scalar value y where the condition is false.
+ */
 Tensor where(const Tensor& condition, const double& x, const Tensor& y);
 
 /*!
@@ -1135,6 +1214,7 @@ Tensor argsort(
     const SortMode sortMode = SortMode::Ascending);
 
 /************************** Binary Operators ***************************/
+// \cond DOXYGEN_DO_NOT_DOCUMENT
 #define FL_BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, TYPE) \
   Tensor FUNC(TYPE lhs, const Tensor& rhs);            \
   Tensor FUNC(const Tensor& lhs, TYPE rhs);            \
@@ -1183,31 +1263,68 @@ FL_BINARY_OP_DECL(>>, rShift);
 #undef FL_BINARY_OP_DECL
 #undef FL_BINARY_OP_LITERALS_DECL
 #undef FL_BINARY_OP_LITERAL_TYPE_DECL
+// \endcond
 
 /**
  * Returns the element-wise minimum of tensor elements.
  *
- * TODO: consider requiring broadcasting behavior/enforcing in a test
+ * \todo Require, enforce, and document broadcasting behavior in testing.
  *
  * @param[in] lhs left hand side tensor for the minimum
  * @param[in] rhs right hand side tensor for the minimum
  * @return a tensor containing the minimum values in each tensor
  */
 Tensor minimum(const Tensor& lhs, const Tensor& rhs);
+
+/**
+ * Returns the element-wise minimum of tensor elements with some scalar.
+ *
+ * @param[in] lhs the tensor
+ * @param[in] rhs a scalar value
+ * @return a tensor containing the minimum values element-wise with the tensor
+ * and a scalar.
+ */
 Tensor minimum(const Tensor& lhs, const double& rhs);
+
+/**
+ * Returns the element-wise minimum of tensor elements with some scalar.
+ *
+ * @param[in] lhs a scalar value
+ * @param[in] rhs the tensor
+ * @return a tensor containing the minimum values element-wise with the tensor
+ * and a scalar.
+ */
 Tensor minimum(const double& lhs, const Tensor& rhs);
 
 /**
  * Returns the element-wise maximum of tensor elements.
  *
- * TODO: consider requiring broadcasting behavior/enforcing in a test
+ * \todo Require, enforce, and document broadcasting behavior in testing.
  *
  * @param[in] lhs left hand side tensor for the minimum
  * @param[in] rhs right hand side tensor for the minimum
  * @return a tensor containing the maximum values in each tensor
  */
 Tensor maximum(const Tensor& lhs, const Tensor& rhs);
+
+/**
+ * Returns the element-wise maximum of tensor elements with some scalar.
+ *
+ * @param[in] lhs the tensor
+ * @param[in] rhs a scalar value
+ * @return a tensor containing the maximum values element-wise with the tensor
+ * and a scalar.
+ */
 Tensor maximum(const Tensor& lhs, const double& rhs);
+
+/**
+ * Returns the element-wise maximum of tensor elements with some scalar.
+ *
+ * @param[in] lhs a scalar value
+ * @param[in] rhs the tensor
+ * @return a tensor containing the maximum values element-wise with the tensor
+ * and a scalar.
+ */
 Tensor maximum(const double& lhs, const Tensor& rhs);
 
 /**
@@ -1219,7 +1336,25 @@ Tensor maximum(const double& lhs, const Tensor& rhs);
  * @return a tensor containing the exponentiated values
  */
 Tensor power(const Tensor& lhs, const Tensor& rhs);
+
+/**
+ * Returns the element-wise exponentiation of tensors raised to some scalar
+ * power.
+ *
+ * @param[in] lhs the base tensor
+ * @param[in] rhs a scalar exponent
+ * @return a tensor containing the exponentiated values
+ */
 Tensor power(const Tensor& lhs, const double& rhs);
+
+/**
+ * Returns the element-wise exponentiation of a scalar raised element-wise to
+ * values from a tensor.
+ *
+ * @param[in] lhs a scalar base
+ * @param[in] rhs the tensor containing exponent values
+ * @return a tensor containing the exponentiated values
+ */
 Tensor power(const double& lhs, const Tensor& rhs);
 
 /******************************* BLAS ********************************/
