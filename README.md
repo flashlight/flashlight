@@ -475,7 +475,7 @@ make -j$(nproc)
 If Flashlight is installed in a custom location using a `CMAKE_INSTALL_PREFIX`, passing `-Dflashlight_DIR=[install prefix]/share/flashlight/cmake` as an argument to your `cmake` command can help CMake find Flashlight.
 
 ### Building and Running Flashlight with Docker
-Flashlight and its dependencies can also be built with the provided Dockerfiles — see the accompanying [Docker documentation](.docker) for more information.
+Flashlight and its dependencies can also be built with the provided Dockerfiles; see the accompanying [Docker documentation](.docker) for more information.
 
 ### Contributing and Contact
 Contact: vineelkpratap@fb.com, awni@fb.com, jacobkahn@fb.com, qiantong@fb.com, antares@fb.com, padentomasello@fb.com,

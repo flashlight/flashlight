@@ -4,32 +4,31 @@
 
 To build the documentation, follow the steps below.
 
-### Setup (do once)
+### Setup
 
-Install [Doxygen](http://www.doxygen.nl/manual/install.html).
+First, install [Doxygen](http://www.doxygen.nl/manual/install.html).
 
-Install sphinx, breathe and the theme using the `requirements.txt` file in `docs/`:
-
-```
+Install Sphinx, Breathe and the theme using the `requirements.txt` file in `docs`:
+```bash
+cd docs
 pip install -r requirements.txt
 ```
 
-### Build
+### Building
 
-From `docs/`:
-
-```
-doxygen && make html
-```
-
-If you run into issues rebuilding the docs, run `make clean` before building again.
-
-### View the Docs
-
-Run a server in `docs/build/html`:
-
-```
-python -m http.server <port>
+From `docs`, run:
+```bash
+doxygen
+make html
 ```
 
-Point browser to `http://localhost:<port>`.
+If you run into issues rebuilding docs, run `make clean` before building again.
+
+### Viewing
+
+After buildling, from the `docs` directory, run a local server to view artifacts:
+```bash
+python -m http.server <port> --directory build/html
+```
+
+Point your browser to `http://localhost:<port>` to view.
