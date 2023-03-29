@@ -52,7 +52,10 @@ void DefaultMemoryManager::cleanDeviceMemoryManager(int device) {
       size_t numPtrs = kv.second.size();
       // Free memory by pushing the last element into the freePtrs
       // vector which will be freed once outside of the lock
-      std::move(begin(kv.second), end(kv.second), std::back_inserter(freePtrs));
+      std::move(
+          std::begin(kv.second),
+          std::end(kv.second),
+          std::back_inserter(freePtrs));
       current.totalBytes -= numPtrs * kv.first;
       bytesFreed += numPtrs * kv.first;
       current.totalBuffers -= numPtrs;
