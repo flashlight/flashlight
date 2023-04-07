@@ -30,13 +30,17 @@ jobs:
       - name: "Install build dependencies (macOS)"
         run: brew install cmake micromamba
         if: runner.os == 'macOS'
+      
+      - name: "Add micromamba initialization"
+        run: micromamba shell init --shell=bash --prefix=~/micromamba | \
+              awk '/# >>> mamba initialize >>>/{f=1;next} /# <<< mamba initialize <<</{f=0} f' >> $GITHUB_ENV
 
       - name: "Set up dependency environment"
         run: |
           # eval "$(micromamba shell hook --shell=bash)"
           # echo 'eval "$(micromamba shell hook --shell=bash)"' >> $GITHUB_ENV
-          micromamba shell init --shell=bash --prefix=~/micromamba | \
-            awk '/# >>> mamba initialize >>>/{f=1;next} /# <<< mamba initialize <<</{f=0} f' >> $GITHUB_ENV
+          # micromamba shell init --shell=bash --prefix=~/micromamba | \
+          #   awk '/# >>> mamba initialize >>>/{f=1;next} /# <<< mamba initialize <<</{f=0} f' >> $GITHUB_ENV
           micromamba create -n flashlight
           micromamba activate flashlight
           # printenv >> $GITHUB_ENV
