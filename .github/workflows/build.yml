@@ -10,6 +10,7 @@ jobs:
       matrix:
         os: [ubuntu-20.04, windows-2022, macOS-12]
         backend: [ArrayFire, oneDNN]
+        autograd_backend: [oneDNN, cuDNN]
     steps:
       - uses: actions/checkout@v3
 
@@ -23,6 +24,9 @@ jobs:
       - name: "Install build dependencies"
         run: choco install cmake
         if: runner.os == 'Windows'
+      - name: "Install build dependencies"
+        run: brew install cmake
+        if: runner.os == 'macOS'
 
       # ]--- Backend dependencies
 
@@ -42,13 +46,16 @@ jobs:
       # oneDNN
       - name: "Install oneDNN on Linux"
         run: |
-          wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \ | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+          wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
           echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
           sudo apt update
-          sudo apt install intel-oneapi-dnnl-devel intel-oneapi-dnnl
+          sudo apt install intel-oneapi-dnnl=2022.2.1-16994 intel-oneapi-dnnl-devel=2022.2.1-16994 # 2.6.0
           source /opt/intel/oneapi/setvars.sh
           printenv >> $GITHUB_ENV
         if: runner.os == 'Linux' && matrix.backend == 'oneDNN'
       - name: "Install oneDNN on macOS"
-        run: brew install onednn
+        run: |
+          brew tap-new $USER/local-onednn
+          brew extract --version=2.7.2 onednn $USER/local-onednn
+          brew install onednn@2.7.2
         if: runner.os == 'macOS' && matrix.backend == 'oneDNN'
