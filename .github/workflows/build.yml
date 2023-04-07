@@ -33,7 +33,7 @@ jobs:
 
       - name: "Add micromamba initialization"
         run: micromamba shell init --shell=bash --prefix=~/micromamba
-        
+
         # echo 'eval "$(micromamba shell hook --shell=bash)"' >> $GITHUB_ENV
 
         # micromamba shell init --shell=bash --prefix=~/micromamba | \
@@ -49,8 +49,7 @@ jobs:
           micromamba create -n flashlight
           micromamba activate flashlight
           printenv >> $GITHUB_ENV
-        shell: bash -l {0} 
-
+        shell: bash -l {0}
 
       # ]--- Backend dependencies
 
@@ -71,3 +70,4 @@ jobs:
       - name: "Install oneDNN"
         run: micromamba install onednn@2.7.2 -c conda-forge
         if: matrix.backend == 'oneDNN' || matrix.autograd_backend == 'oneDNN'
+        shell: bash -l {0}
