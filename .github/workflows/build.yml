@@ -18,7 +18,7 @@ jobs:
       - name: "Install build dependencies (Linux)"
         run: |
           sudo apt update
-          sudo apt install -y cmake build-essential
+          sudo apt install -y cmake build-essential gawk
           sudo apt install -y gnupg2 ca-certificates apt-utils software-properties-common
           curl micro.mamba.pm/install.sh | bash
         if: runner.os == 'Linux'
