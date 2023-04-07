@@ -21,8 +21,6 @@ jobs:
           sudo apt install -y cmake
           sudo apt install -y gnupg2 ca-certificates apt-utils software-properties-common
           curl micro.mamba.pm/install.sh | bash
-          micromamba shell init --shell=bash --prefix=~/micromamba
-          printenv >> $GITHUB_ENV
         if: runner.os == 'Linux'
       - name: "Install build dependencies (Windows)"
         run: |
@@ -35,6 +33,8 @@ jobs:
 
       - name: "Set up dependency environment"
         run: |
+          micromamba shell init --shell=bash --prefix=~/micromamba | \
+            awk '/# >>> mamba initialize >>>/{f=1;next} /# <<< mamba initialize <<</{f=0} f' >> $GITHUB_ENV
           micromamba create -n flashlight
           micromamba activate flashlight
           printenv >> $GITHUB_ENV
