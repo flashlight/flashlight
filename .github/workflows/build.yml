@@ -15,21 +15,21 @@ jobs:
       - uses: actions/checkout@v3
 
       # Build dependencies
-      - name: "Install build dependencies"
+      - name: "Install build dependencies (Linux)"
         run: |
           sudo apt update
           sudo apt install -y cmake
           sudo apt install -y gnupg2 ca-certificates apt-utils software-properties-common
           curl micro.mamba.pm/install.sh | bash
-          eval "$(micromamba shell hook --shell=bash)"
+          micromamba shell init --shell=bash --prefix=~/micromamba
           printenv >> $GITHUB_ENV
         if: runner.os == 'Linux'
-      - name: "Install build dependencies"
+      - name: "Install build dependencies (Windows)"
         run: |
           choco install cmake
           curl micro.mamba.pm/install.sh | bash
         if: runner.os == 'Windows'
-      - name: "Install build dependencies"
+      - name: "Install build dependencies (macOS)"
         run: brew install cmake micromamba
         if: runner.os == 'macOS'
 
