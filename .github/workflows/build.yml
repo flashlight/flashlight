@@ -20,25 +20,18 @@ jobs:
           sudo apt update
           sudo apt install -y cmake build-essential gawk
           sudo apt install -y gnupg2 ca-certificates apt-utils software-properties-common
-          curl micro.mamba.pm/install.sh | bash
         if: runner.os == 'Linux'
       - name: "Install build dependencies (Windows)"
-        run: |
-          choco install cmake gawk
-          curl micro.mamba.pm/install.sh | bash
+        run: choco install cmake
         if: runner.os == 'Windows'
       - name: "Install build dependencies (macOS)"
-        run: brew install cmake micromamba awk
+        run: brew install cmake
         if: runner.os == 'macOS'
 
-      - name: "Add micromamba initialization"
-        run: micromamba shell init --shell=bash --prefix=~/micromamba
-      - name: "Set up dependency environment"
-        run: |
-          micromamba create -n flashlight
-          micromamba activate flashlight
-          echo PATH=$PATH >> $GITHUB_ENV
-        shell: bash -l {0}
+      - name: Install Conda environment from environment.yml
+        uses: mamba-org/provision-with-micromamba@main
+        with:
+          environment-name: flashlight
 
       # ]--- Backend dependencies
 
