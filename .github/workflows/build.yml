@@ -31,8 +31,7 @@ jobs:
         run: brew install cmake
         if: runner.os == 'macOS'
 
-      # ]--- Backend dependencies
-
+      # ]----- Backend dependencies
       # ArrayFire
       - name: "Install ArrayFire on Linux"
         run: |
@@ -45,7 +44,6 @@ jobs:
       - name: "Install ArrayFire on macOS"
         run: brew install arrayfire
         if: runner.os == 'macOS' && matrix.backend == 'ArrayFire'
-
       # oneDNN
       - name: Install oneDNN 2.7.2 with microconda
         uses: mamba-org/provision-with-micromamba@main
@@ -55,3 +53,12 @@ jobs:
           channels: conda-forge
           extra-specs: onednn=2.7.2
         if: matrix.backend == 'oneDNN' || matrix.autograd_backend == 'oneDNN'
+
+      # Build Flashlight
+      - name: "Build Flashlight"
+        run: |
+          cmake -S . -B build \
+            -DFL_USE_ARRAYFIRE=${{ matrix.backend == 'ArrayFire' && 'ON' || 'OFF'  }} \
+            -DFL_ARRAYFIRE_USE_CPU=${{ matrix.backend == 'ArrayFire' && 'ON' || 'OFF'  }} \
+            -DFL_USE_ONEDNN=${{ (matrix.backend == 'oneDNN' || matrix.autograd_backend == 'oneDNN') && 'ON' || 'OFF'  }} \
+            -DFL_BUILD_DISTRIBUTED=OFF
