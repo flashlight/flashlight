@@ -11,6 +11,9 @@ jobs:
         os: [ubuntu-20.04, windows-2022, macOS-12]
         backend: [ArrayFire, oneDNN]
         autograd_backend: [oneDNN]
+    defaults:
+      run:
+        shell: bash -l {0}
     steps:
       - uses: actions/checkout@v3
 
@@ -28,11 +31,6 @@ jobs:
         run: brew install cmake
         if: runner.os == 'macOS'
 
-      - name: Install Conda environment from environment.yml
-        uses: mamba-org/provision-with-micromamba@main
-        with:
-          environment-name: flashlight
-
       # ]--- Backend dependencies
 
       # ArrayFire
@@ -49,7 +47,11 @@ jobs:
         if: runner.os == 'macOS' && matrix.backend == 'ArrayFire'
 
       # oneDNN
-      - name: "Install oneDNN"
-        run: micromamba install onednn@2.7.2 -c conda-forge
+      - name: Install oneDNN 2.7.2 with microconda
+        uses: mamba-org/provision-with-micromamba@main
+        with:
+          environment-file: false
+          environment-name: flashlight
+          channels: conda-forge
+          extra-specs: onednn@2.7.2
         if: matrix.backend == 'oneDNN' || matrix.autograd_backend == 'oneDNN'
-        shell: bash -l {0}
