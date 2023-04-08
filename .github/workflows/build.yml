@@ -53,5 +53,5 @@ jobs:
           environment-file: false
           environment-name: flashlight
           channels: conda-forge
-          extra-specs: onednn@2.7.2
+          extra-specs: onednn=2.7.2
         if: matrix.backend == 'oneDNN' || matrix.autograd_backend == 'oneDNN'
