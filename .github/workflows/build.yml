@@ -21,14 +21,14 @@ jobs:
       - name: "Install build dependencies (Linux)"
         run: |
           sudo apt update
-          sudo apt install -y cmake build-essential gawk
+          sudo apt install -y cmake build-essential ninja-build
           sudo apt install -y gnupg2 ca-certificates apt-utils software-properties-common
         if: runner.os == 'Linux'
       - name: "Install build dependencies (Windows)"
-        run: choco install cmake
+        run: choco install cmake ninja
         if: runner.os == 'Windows'
       - name: "Install build dependencies (macOS)"
-        run: brew install cmake
+        run: brew install cmake ninja
         if: runner.os == 'macOS'
 
       # ]----- Backend dependencies
@@ -55,10 +55,13 @@ jobs:
         if: matrix.backend == 'oneDNN' || matrix.autograd_backend == 'oneDNN'
 
       # Build Flashlight
-      - name: "Build Flashlight"
+      - name: "Configure Flashlight"
         run: |
-          cmake -S . -B build \
+          cmake -S . -B build -G Ninja \
             -DFL_USE_ARRAYFIRE=${{ matrix.backend == 'ArrayFire' && 'ON' || 'OFF'  }} \
             -DFL_ARRAYFIRE_USE_CPU=${{ matrix.backend == 'ArrayFire' && 'ON' || 'OFF'  }} \
             -DFL_USE_ONEDNN=${{ (matrix.backend == 'oneDNN' || matrix.autograd_backend == 'oneDNN') && 'ON' || 'OFF'  }} \
             -DFL_BUILD_DISTRIBUTED=OFF
+      - name: "Build Flashlight"
+        run: |
+          ninja
