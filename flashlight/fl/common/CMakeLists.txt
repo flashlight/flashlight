@@ -21,6 +21,6 @@ target_link_libraries(flashlight PUBLIC Threads::Threads)
 target_link_libraries(flashlight PUBLIC ${CMAKE_DL_LIBS})
 
 # std::filesystem -- remove this when requiring gcc >= 9
-find_package(Filesystem REQUIRED COMPONENTS Final Experimental)
-setup_install_find_module(${CMAKE_MODULE_PATH}/FindFilesystem.cmake)
-target_link_libraries(flashlight PUBLIC std::filesystem)
+# find_package(Filesystem REQUIRED COMPONENTS Final Experimental)
+# setup_install_find_module(${CMAKE_MODULE_PATH}/FindFilesystem.cmake)
+# target_link_libraries(flashlight PUBLIC std::filesystem)
