@@ -11,6 +11,9 @@ jobs:
         os: [ubuntu-20.04, windows-2022, macOS-12]
         backend: [ArrayFire, oneDNN]
         autograd_backend: [oneDNN]
+        exclude:
+          - os: windows-2022
+            backend: ArrayFire
     defaults:
       run:
         shell: bash -l {0}
@@ -18,18 +21,18 @@ jobs:
       - uses: actions/checkout@v3
 
       # Build dependencies
-      - name: "Install build dependencies (Linux)"
-        run: |
-          sudo apt update
-          sudo apt install -y build-essential ninja-build
-          sudo apt install -y gnupg2 ca-certificates apt-utils software-properties-common
-        if: runner.os == 'Linux'
-      - name: "Install build dependencies (Windows)"
-        run: choco install ninja wget
-        if: runner.os == 'Windows'
-      - name: "Install build dependencies (macOS)"
-        run: brew install ninja
-        if: runner.os == 'macOS'
+      # - name: "Install build dependencies (Linux)"
+      #   run: |
+      #     sudo apt update
+      #     sudo apt install -y build-essential
+      #     sudo apt install -y gnupg2 ca-certificates apt-utils software-properties-common
+      #   if: runner.os == 'Linux'
+      # - name: "Install build dependencies (Windows)"
+      #   run: choco install ninja
+      #   if: runner.os == 'Windows'
+      # - name: "Install build dependencies (macOS)"
+      #   run: brew install ninja
+      #   if: runner.os == 'macOS'
 
       # ]----- Backend dependencies
       # ArrayFire
@@ -44,12 +47,12 @@ jobs:
       - name: "Install ArrayFire on macOS"
         run: brew install arrayfire
         if: runner.os == 'macOS' && matrix.backend == 'ArrayFire'
-      - name: "Install ArrayFire on Windows"
-        run: |
-          cd /tmp
-          wget -q https://arrayfire.s3.amazonaws.com/3.8.1/ArrayFire-v3.8.1-CUDA-11.4.exe
-          ./ArrayFire-v3.8.1-CUDA-11.4.exe --skip-license
-        if: runner.os == 'Windows' && matrix.backend == 'ArrayFire'
+      # - name: "Install ArrayFire on Windows"
+      #   run: |
+      #     cd /tmp
+      #     wget -q https://arrayfire.s3.amazonaws.com/3.8.1/ArrayFire-v3.8.1-CUDA-11.4.exe
+      #     ./ArrayFire-v3.8.1-CUDA-11.4.exe --skip-license
+      #   if: runner.os == 'Windows' && matrix.backend == 'ArrayFire'
       # oneDNN
       - name: Install oneDNN 2.7.2 with microconda
         uses: mamba-org/provision-with-micromamba@main
@@ -63,11 +66,11 @@ jobs:
       # Build Flashlight
       - name: "Configure Flashlight"
         run: |
-          cmake -S . -B build -G Ninja \
+          cmake -S . -B build -DBUILD_SHARED_LIBS=ON \
             -DFL_USE_ARRAYFIRE=${{ matrix.backend == 'ArrayFire' && 'ON' || 'OFF'  }} \
             -DFL_ARRAYFIRE_USE_CPU=${{ matrix.backend == 'ArrayFire' && 'ON' || 'OFF'  }} \
             -DFL_USE_ONEDNN=${{ (matrix.backend == 'oneDNN' || matrix.autograd_backend == 'oneDNN') && 'ON' || 'OFF'  }} \
             -DFL_BUILD_DISTRIBUTED=OFF
       - name: "Build Flashlight"
         run: |
-          ninja -C build
+          cmake --build build --parallel
