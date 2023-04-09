@@ -17,23 +17,9 @@ orbs:
 executors:
   linux:
     machine:
-      image: ubuntu:2004
-    resource_class: 2xlarge
-  linux-gpu:
-    machine:
       image: ubuntu-2004-cuda-11.4:202110-01
     resource_class: gpu.nvidia.medium
-  macos:
-    macos:
-      xcode: "13.4.1"
-    resource_class: large
-    environment:
-      HOMEBREW_NO_AUTO_UPDATE: "1"
   windows:
-    machine:
-      image: win/default
-    shell: bash.exe
-  windows-gpu:
     machine:
       image: win/server-2019-cuda
     shell: bash.exe
