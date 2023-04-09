@@ -21,14 +21,14 @@ jobs:
       - name: "Install build dependencies (Linux)"
         run: |
           sudo apt update
-          sudo apt install -y cmake build-essential ninja-build
+          sudo apt install -y build-essential ninja-build
           sudo apt install -y gnupg2 ca-certificates apt-utils software-properties-common
         if: runner.os == 'Linux'
       - name: "Install build dependencies (Windows)"
-        run: choco install cmake ninja wget
+        run: choco install ninja wget
         if: runner.os == 'Windows'
       - name: "Install build dependencies (macOS)"
-        run: brew install cmake ninja
+        run: brew install ninja
         if: runner.os == 'macOS'
 
       # ]----- Backend dependencies
@@ -48,7 +48,7 @@ jobs:
         run: |
           cd /tmp
           wget -q https://arrayfire.s3.amazonaws.com/3.8.1/ArrayFire-v3.8.1-CUDA-11.4.exe
-          ArrayFire-v3.8.1-CUDA-11.4.exe --skip-license
+          ./ArrayFire-v3.8.1-CUDA-11.4.exe --skip-license
         if: runner.os == 'Windows' && matrix.backend == 'ArrayFire'
       # oneDNN
       - name: Install oneDNN 2.7.2 with microconda
