@@ -25,7 +25,7 @@ jobs:
           sudo apt install -y gnupg2 ca-certificates apt-utils software-properties-common
         if: runner.os == 'Linux'
       - name: "Install build dependencies (Windows)"
-        run: choco install cmake ninja
+        run: choco install cmake ninja wget
         if: runner.os == 'Windows'
       - name: "Install build dependencies (macOS)"
         run: brew install cmake ninja
