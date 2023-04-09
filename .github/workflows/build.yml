@@ -64,4 +64,4 @@ jobs:
             -DFL_BUILD_DISTRIBUTED=OFF
       - name: "Build Flashlight"
         run: |
-          ninja
+          ninja -C build
