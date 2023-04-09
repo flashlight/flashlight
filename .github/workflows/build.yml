@@ -44,6 +44,11 @@ jobs:
       - name: "Install ArrayFire on macOS"
         run: brew install arrayfire
         if: runner.os == 'macOS' && matrix.backend == 'ArrayFire'
+      - name: "Install ArrayFire on Windows"
+        run: |
+          wget https://arrayfire.s3.amazonaws.com/3.8.1/ArrayFire-v3.8.1_Linux_x86_64_CUDA-11.4.sh
+          bash ArrayFire-v3.8.1_Linux_x86_64_CUDA-11.4.sh --skip-license
+        if: runner.os == 'Windows' && matrix.backend == 'ArrayFire'
       # oneDNN
       - name: Install oneDNN 2.7.2 with microconda
         uses: mamba-org/provision-with-micromamba@main
