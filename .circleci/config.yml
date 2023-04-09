@@ -21,7 +21,7 @@ executors:
     resource_class: gpu.nvidia.medium
   windows:
     machine:
-      image: win/server-2019-cuda
+      image: windows-server-2019-nvidia:stable
     shell: bash.exe
 
 commands:
