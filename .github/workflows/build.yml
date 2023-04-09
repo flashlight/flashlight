@@ -47,8 +47,8 @@ jobs:
       - name: "Install ArrayFire on Windows"
         run: |
           cd /tmp
-          wget -q https://arrayfire.s3.amazonaws.com/3.8.1/ArrayFire-v3.8.1_Linux_x86_64_CUDA-11.4.sh -O ArrayFire-v3.8.1_Linux_x86_64_CUDA-11.4.sh
-          bash ArrayFire-v3.8.1_Linux_x86_64_CUDA-11.4.sh --skip-license
+          wget -q https://arrayfire.s3.amazonaws.com/3.8.1/ArrayFire-v3.8.1-CUDA-11.4.exe
+          ArrayFire-v3.8.1-CUDA-11.4.exe --skip-license
         if: runner.os == 'Windows' && matrix.backend == 'ArrayFire'
       # oneDNN
       - name: Install oneDNN 2.7.2 with microconda
