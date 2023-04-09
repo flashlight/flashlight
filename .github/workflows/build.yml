@@ -13,30 +13,15 @@ jobs:
         autograd_backend: [oneDNN]
         exclude:
           - os: windows-2022
-            backend: ArrayFire
     defaults:
       run:
         shell: bash -l {0}
     steps:
       - uses: actions/checkout@v3
 
-      # Build dependencies
-      # - name: "Install build dependencies (Linux)"
-      #   run: |
-      #     sudo apt update
-      #     sudo apt install -y build-essential
-      #     sudo apt install -y gnupg2 ca-certificates apt-utils software-properties-common
-      #   if: runner.os == 'Linux'
-      # - name: "Install build dependencies (Windows)"
-      #   run: choco install ninja
-      #   if: runner.os == 'Windows'
-      # - name: "Install build dependencies (macOS)"
-      #   run: brew install ninja
-      #   if: runner.os == 'macOS'
-
       # ]----- Backend dependencies
       # ArrayFire
-      - name: "Install ArrayFire on Linux"
+      - name: "Install ArrayFire (Linux)"
         run: |
           sudo apt update
           sudo apt-key adv --fetch-key https://repo.arrayfire.com/GPG-PUB-KEY-ARRAYFIRE-2020.PUB
@@ -44,7 +29,7 @@ jobs:
           sudo apt update
           sudo apt install arrayfire-cmake=3.8.1-2 arrayfire-headers=3.8.1-2 arrayfire-cpu3-mkl=3.8.1-2 arrayfire-cpu3-dev=3.8.1-2
         if: runner.os == 'Linux' && matrix.backend == 'ArrayFire'
-      - name: "Install ArrayFire on macOS"
+      - name: "Install ArrayFire (macOS)"
         run: brew install arrayfire
         if: runner.os == 'macOS' && matrix.backend == 'ArrayFire'
       # - name: "Install ArrayFire on Windows"
@@ -63,7 +48,7 @@ jobs:
           extra-specs: onednn=2.7.2
         if: matrix.backend == 'oneDNN' || matrix.autograd_backend == 'oneDNN'
 
-      # Build Flashlight
+      # Build
       - name: "Configure Flashlight"
         run: |
           cmake -S . -B build -DBUILD_SHARED_LIBS=ON \
@@ -74,3 +59,10 @@ jobs:
       - name: "Build Flashlight"
         run: |
           cmake --build build --parallel
+
+      # Test
+      - name: "Run Flashlight tests"
+        run: |
+          cd build
+          ctest --output-on-failure -j 4
+        if: matrix.backend == 'ArrayFire' && matrix.autograd_backend == 'oneDNN'
