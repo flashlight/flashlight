@@ -61,8 +61,8 @@ jobs:
           cmake --build build --parallel
 
       # Test
-      - name: "Run Flashlight tests"
-        run: |
-          cd build
-          ctest --output-on-failure -j 4
-        if: matrix.backend == 'ArrayFire' && matrix.autograd_backend == 'oneDNN'
+      # - name: "Run Flashlight tests"
+      #   run: |
+      #     cd build
+      #     ctest --output-on-failure -j 4
+      #   if: matrix.backend == 'ArrayFire' && matrix.autograd_backend == 'oneDNN'

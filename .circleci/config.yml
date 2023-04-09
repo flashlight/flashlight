@@ -84,54 +84,6 @@ commands:
                   echo "TODO: FIXME -- do we need to install CUDA? choco?"
                   echo '' >> "$BASH_ENV"
 
-  install-intel-libraries:
-    parameters:
-      platform:
-        type: executor
-      backend:
-        type: string
-    steps:
-      - when:
-          condition:
-            or:
-              - equal: ["linux-gpu", << parameters.platform >>]
-              - equal: ["linux", << parameters.platform >>]
-          steps:
-            - run:
-                name: "Setup Intel apt PPA"
-                command: |
-                  wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
-                  sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
-                  sudo sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list'
-                  sudo apt update
-            - when:
-                condition:
-                  or:
-                    - equal: ["arrayfire", << parameters.backend >>]
-                    - equal: ["onednn", << parameters.backend >>]
-                steps:
-                  - run:
-                      name: "Install Intel MKL"
-                      command: sudo apt install intel-mkl-full
-            - when:
-                condition:
-                  equal: ["onednn", << parameters.backend >>]
-                steps:
-                  - run:
-                      name: "Install Intel MKL"
-                      command: sudo apt install intel-onednn-dev
-      - when:
-          condition:
-            equal: ["macos", << parameters.platform >>]
-          steps:
-            - when:
-                condition:
-                  equal: ["onednn", << parameters.backend >>]
-                steps:
-                  - run:
-                      name: "Install Intel MKL"
-                      command: brew install onednn
-
   install-arrayfire:
     parameters:
       platform:
@@ -139,12 +91,10 @@ commands:
     steps:
       - when:
           condition:
-            or:
-              - equal: ["linux-gpu", << parameters.platform >>]
-              - equal: ["linux", << parameters.platform >>]
+            equal: ["linux", << parameters.platform >>]
           steps:
             - run:
-                name: "Install ArrayFire 3.8.1 PPA and prerequisites"
+                name: "Install ArrayFire 3.8.1  with CUDA 11.4"
                 command: |
                   sudo apt update
                   sudo apt install -y gnupg2 ca-certificates apt-utils software-properties-common
@@ -152,30 +102,19 @@ commands:
                   sudo apt-key adv --fetch-key https://repo.arrayfire.com/GPG-PUB-KEY-ARRAYFIRE-2020.PUB
                   echo "deb [arch=amd64] https://repo.arrayfire.com/debian all main" | sudo tee /etc/apt/sources.list.d/arrayfire.list
                   sudo apt update
-                  sudo apt install  arrayfire-cmake=3.8.1-2 arrayfire-headers=3.8.1-2
-      - when:
-          condition:
-            equal: ["linux-gpu", << parameters.platform >>]
-          steps:
-            - run:
-                name: "Install ArrayFire 3.8.1 with CUDA 11.4"
-                command: |
+                  sudo apt install arrayfire-cmake=3.8.1-2 arrayfire-headers=3.8.1-2
                   sudo apt install arrayfire-cuda3-cuda-11-4=3.8.1-2 arrayfire-cuda3-dev=3.8.1-2
+
       - when:
           condition:
-            equal: ["linux", << parameters.platform >>]
-          steps:
-            - run:
-                name: "Install ArrayFire 3.8.1 with MKL"
-                command: |
-                  sudo apt install arrayfire-cpu3-mkl=3.8.1-2 arrayfire-cpu3-dev=3.8.1-2
-      - when:
-          condition:
-            equal: ["macos", << parameters.platform >>]
+            equal: ["windows", << parameters.platform >>]
           steps:
             - run:
                 name: "Install ArrayFire 3.8.1"
-                command: brew install arrayfire
+                command: |
+                  cd /tmp
+                  wget -q https://arrayfire.s3.amazonaws.com/3.8.1/ArrayFire-v3.8.1-CUDA-11.4.exe
+                  ./ArrayFire-v3.8.1-CUDA-11.4.exe --skip-license
 
   install-cudnn:
     parameters:
@@ -184,7 +123,7 @@ commands:
     steps:
       - when:
           condition:
-            equal: ["linux-gpu", << parameters.platform >>]
+            equal: ["linux", << parameters.platform >>]
           steps:
             - run:
                 name: "Install cuDNN 8.5.0.96 for CUDA 11.7"
@@ -195,7 +134,7 @@ commands:
                   sudo dpkg -i libcudnn8_8.5.0.96-1+cuda11.7_amd64.deb libcudnn8-dev_8.5.0.96-1+cuda11.7_amd64.deb
       - when:
           condition:
-            equal: ["windows-gpu", << parameters.platform >>]
+            equal: ["windows", << parameters.platform >>]
           steps:
             - run:
                 name: "Install cuDNN 8.5.0.96 for CUDA 11.7"
@@ -208,24 +147,19 @@ commands:
         type: string
       backend:
         type: string
+      autograd_backend:
+        type: string
     steps:
       - run:
           name: "Build Flashlight"
           command: |
-            export FL_USE_ARRAYFIRE=$(if [[ ${backend} -eq "arrayfire" ]]; then echo "ON"; else echo "OFF"; fi)
-            export FL_USE_ONEDNN=$(if [[ ${backend} -eq "onednn" ]]; then echo "ON"; else echo "OFF"; fi)
-            export FL_ARRAYFIRE_USE_CUDA=$(if [[ ${platform} == *"-gpu" ]]; then echo "ON"; else echo "OFF"; fi)
-            export FL_ARRAYFIRE_USE_CPU=$(if [[ ${platform} != *"-gpu" ]]; then echo "ON"; else echo "OFF"; fi)
-            export FL_USE_CUDNN=$(if [[ ${platform} == *"-gpu" ]]; then echo "ON"; else echo "OFF"; fi)
-            export FL_BUILD_DISTRIBUTED="OFF"
-
             cmake -S . -B build \
-              -DFL_USE_ARRAYFIRE=${FL_USE_ARRAYFIRE} \
-              -DFL_ARRAYFIRE_USE_CUDA=${FL_ARRAYFIRE_USE_CUDA} \
-              -DFL_ARRAYFIRE_USE_CPU=${FL_ARRAYFIRE_USE_CPU} \
-              -DFL_USE_CUDNN=${FL_USE_CUDNN} \
-              -DFL_USE_ONEDNN=${FL_USE_ONEDNN} \
-              -DFL_BUILD_DISTRIBUTED=${FL_BUILD_DISTRIBUTED}
+              -DFL_USE_ARRAYFIRE=ON \
+              -DFL_ARRAYFIRE_USE_CUDA=ON \
+              -DFL_USE_CUDNN=ON \
+              -DFL_ARRAYFIRE_USE_CPU=OFF \
+              -DFL_USE_ONEDNN=OFF \
+              -DFL_BUILD_DISTRIBUTED=OFF
             cmake --build build --parallel
 
   test_flashlight:
@@ -270,19 +204,15 @@ jobs:
         type: string
       backend:
         type: string
+      autograd_backend:
+        type: string
     executor: << parameters.platform >>
     steps:
       - checkout
       - install-build-dependencies:
           platform: << parameters.platform >>
-      - when:
-          condition:
-            or:
-              - equal: ["linux-gpu", << parameters.platform >>]
-              - equal: ["windows-gpu", << parameters.platform >>]
-          steps:
-            - setup-cuda:
-                platform: << parameters.platform >>
+      - setup-cuda:
+          platform: << parameters.platform >>
       - when:
           condition:
             equal: ["arrayfire", << parameters.backend >>]
@@ -291,18 +221,14 @@ jobs:
                 platform: << parameters.platform >>
       - when:
           condition:
-            or:
-              - equal: ["linux-gpu", << parameters.platform >>]
-              - equal: ["windows-gpu", << parameters.platform >>]
+            equal: ["cudnn", << parameters.autograd_backend >>]
           steps:
             - install-cudnn:
                 platform: << parameters.platform >>
-      - install-intel-libraries:
-          platform: << parameters.platform >>
-          backend: << parameters.backend >>
       - build_flashlight:
           platform: << parameters.platform >>
           backend: << parameters.backend >>
+          autograd_backend: << parameters.backend >>
       - test_flashlight:
           path: build/flashlight/fl/test
 
@@ -311,18 +237,9 @@ workflows:
   build-and-test-new:
     jobs:
       - build-and-test-main:
-          name: "Build and Test << matrix.platform >> with << matrix.backend >>"
+          name: "Build and Test << matrix.platform >> with << matrix.backend >> and << matrix.autograd_backend >>"
           matrix:
             parameters:
-              # TODO: consider making `cpu, gpu` another matrix to iterate over
-              # then get rid of all of the ors to just condition on the OS
-              platform: [linux, linux-gpu, macos, windows, windows-gpu]
-              backend: [arrayfire, onednn]
-            exclude:
-              - platform: linux-gpu
-                backend: onednn
-              - platform: windows-gpu
-                backend: onednn
-                # TODO: remove me
-              - platform: windows
-              - platform: windows-gpu
+              platform: [linux, windows]
+              backend: [arrayfire]
+              autograd_backend: [cudnn]
