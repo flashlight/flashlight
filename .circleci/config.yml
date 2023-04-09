@@ -39,9 +39,7 @@ commands:
                 command: brew install cmake
       - when:
           condition:
-            or:
-              - equal: ["windows", << parameters.platform >>]
-              - equal: ["windows-gpu", << parameters.platform >>]
+            equal: ["windows", << parameters.platform >>]
           steps:
             - run:
                 name: "Install CMake from Choco"
@@ -54,7 +52,7 @@ commands:
     steps:
       - when:
           condition:
-            equal: ["linux-gpu", << parameters.platform >>]
+            equal: ["linux", << parameters.platform >>]
           steps:
             - run:
                 name: "Add CUDA 11.4 bin directory to PATH"
@@ -62,7 +60,7 @@ commands:
                   echo 'export PATH="${PATH}:/usr/local/cuda-11.4/bin"' >> "$BASH_ENV"
       - when:
           condition:
-            equal: ["windows-gpu", << parameters.platform >>]
+            equal: ["windows", << parameters.platform >>]
           steps:
             - run:
                 name: "Add CUDA 11.4 bin directory to PATH"

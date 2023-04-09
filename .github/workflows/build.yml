@@ -58,7 +58,7 @@ jobs:
             -DFL_BUILD_DISTRIBUTED=OFF
       - name: "Build Flashlight"
         run: |
-          cmake --build build --parallel
+          cmake --build build --parallel 4
 
       # Test
       # - name: "Run Flashlight tests"
