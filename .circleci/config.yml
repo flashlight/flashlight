@@ -100,7 +100,7 @@ commands:
                   cd $HOME
                   $installerName = "ArrayFire-v3.8.1-CUDA-11.4.exe"
                   Invoke-WebRequest -Uri https://arrayfire.s3.amazonaws.com/3.8.1/$installerName -OutFile $installerName
-                  Start-Process -FilePath $installerName -ArgumentList "/S" -Wait
+                  Start-Process -FilePath $installerName -ArgumentList "/S" -Wait -WindowStyle Hidden
                 shell: powershell.exe
 
   install-cudnn:
