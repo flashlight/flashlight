@@ -44,7 +44,7 @@ commands:
           steps:
             - run:
                 name: "Install CMake from Choco"
-                command: choco install cmake
+                command: choco install cmake wget
 
   setup-cuda:
     parameters:
@@ -99,7 +99,7 @@ commands:
                 command: |
                   cd /tmp
                   wget -q https://arrayfire.s3.amazonaws.com/3.8.1/ArrayFire-v3.8.1-CUDA-11.4.exe
-                  ./ArrayFire-v3.8.1-CUDA-11.4.exe --skip-license
+                  Start-Process .\ArrayFire-v3.8.1-CUDA-11.4.exe /S -NoNewWindow -Wait -PassThru
 
   install-cudnn:
     parameters:
