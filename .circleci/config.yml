@@ -97,9 +97,15 @@ commands:
             - run:
                 name: "Install ArrayFire 3.8.1"
                 command: |
-                  cd /tmp
+                  cd $HOME
                   wget -q https://arrayfire.s3.amazonaws.com/3.8.1/ArrayFire-v3.8.1-CUDA-11.4.exe
+                shell: bash.exe
+            - run:
+                name: "Install ArrayFire 3.8.1"
+                command: |
+                  cd $HOME
                   Start-Process .\ArrayFire-v3.8.1-CUDA-11.4.exe /S -NoNewWindow -Wait -PassThru
+                shell: powershell.exe
 
   install-cudnn:
     parameters:
