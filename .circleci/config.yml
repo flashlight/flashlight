@@ -22,6 +22,7 @@ executors:
   windows:
     machine:
       image: windows-server-2019-nvidia:stable
+    resource_class: windows.gpu.nvidia.medium
     shell: bash.exe
 
 commands:
@@ -123,7 +124,10 @@ commands:
             - run:
                 name: "Install cuDNN 8.5.0.96 for CUDA 11.7"
                 command: |
-                  echo "TODO: FIXME - install cuDNN, maybe use choco CUDA"
+                  curl -L -nv -o cudnn.zip https://developer.download.nvidia.com/compute/redist/cudnn/v8.1.1/cudnn-11.2-windows-x64-v8.1.1.33.zip
+                  unzip cudnn.zip && rm cudnn.zip
+                  cp -r cuda/* "$CUDA_ROOT"
+                  rm -r cuda/
 
   build_flashlight:
     parameters:
