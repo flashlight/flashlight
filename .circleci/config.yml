@@ -44,7 +44,7 @@ commands:
           steps:
             - run:
                 name: "Install CMake from Choco"
-                command: choco install cmake wget
+                command: choco install cmake
 
   setup-cuda:
     parameters:
@@ -95,16 +95,12 @@ commands:
             equal: ["windows", << parameters.platform >>]
           steps:
             - run:
-                name: "Install ArrayFire 3.8.1"
+                name: "Download and Install ArrayFire 3.8.1"
                 command: |
                   cd $HOME
-                  wget -q https://arrayfire.s3.amazonaws.com/3.8.1/ArrayFire-v3.8.1-CUDA-11.4.exe
-                shell: bash.exe
-            - run:
-                name: "Install ArrayFire 3.8.1"
-                command: |
-                  cd $HOME
-                  Start-Process .\ArrayFire-v3.8.1-CUDA-11.4.exe /S -NoNewWindow -Wait -PassThru
+                  $installerName = "ArrayFire-v3.8.1-CUDA-11.4.exe"
+                  Invoke-WebRequest -Uri https://arrayfire.s3.amazonaws.com/3.8.1/$installerName -OutFile $installerName
+                  Start-Process -FilePath $installerName -ArgumentList "/S" -Wait
                 shell: powershell.exe
 
   install-cudnn:
