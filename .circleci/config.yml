@@ -122,9 +122,9 @@ commands:
             equal: ["windows", << parameters.platform >>]
           steps:
             - run:
-                name: "Install axel"
+                name: "Install wget"
                 command: |
-                  choco install axel
+                  choco install wget
             - run:
                 name: "Install CUDA 11.4"
                 command: |
