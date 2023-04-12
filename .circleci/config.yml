@@ -95,12 +95,16 @@ commands:
             equal: ["windows", << parameters.platform >>]
           steps:
             - run:
+                name: "Install 7zip"
+                command: |
+                  choco install 7zip
+            - run:
                 name: "Download and Install ArrayFire 3.8.1"
                 command: |
                   cd $HOME
                   $installerName = "ArrayFire-v3.8.1-CUDA-11.4.exe"
                   Invoke-WebRequest -Uri https://arrayfire.s3.amazonaws.com/3.8.1/$installerName -OutFile $installerName
-                  msiexec.exe /i $installerName /quiet /qn /norestart /log $HOME/arrayfire-install.log
+                  7z.exe x $installerName -o C:\Program Files\ArrayFire
                 shell: powershell.exe
 
   install-cudnn:
