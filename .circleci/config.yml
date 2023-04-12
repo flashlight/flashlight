@@ -110,6 +110,22 @@ commands:
                   7z.exe x $INSTALLER_NAME -o"C:\Program Files\ArrayFire" -y
                 shell: bash.exe
 
+  install-cuda:
+    parameters:
+      platform:
+        type: string
+    steps:
+      - when:
+          condition:
+            equal: ["windows", << parameters.platform >>]
+          steps:
+            - run:
+                name: "Install CUDA 11.4"
+                command: |
+                  curl -L -nv -o cuda.exe https://developer.download.nvidia.com/compute/cuda/11.4.2/local_installers/cuda_11.4.2_470.42.01_win10.exe
+                  cuda.exe /s /noeula /log=cuda_install.log
+                shell: bash.exe
+
   install-cudnn:
     parameters:
       platform:
@@ -131,7 +147,7 @@ commands:
             equal: ["windows", << parameters.platform >>]
           steps:
             - run:
-                name: "Install cuDNN 8.5.0.96 for CUDA 11.7"
+                name: "Install cuDNN 8.5.0.96 for CUDA 11.2"
                 command: |
                   curl -L -nv -o cudnn.zip https://developer.download.nvidia.com/compute/redist/cudnn/v8.1.1/cudnn-11.2-windows-x64-v8.1.1.33.zip
                   unzip cudnn.zip && rm cudnn.zip
@@ -220,6 +236,8 @@ jobs:
           condition:
             equal: ["cudnn", << parameters.autograd_backend >>]
           steps:
+            - install-cuda:
+                platform: << parameters.platform >>
             - install-cudnn:
                 platform: << parameters.platform >>
       - build_flashlight:
