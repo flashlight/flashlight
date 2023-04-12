@@ -109,6 +109,7 @@ commands:
                   INSTALLER_NAME="ArrayFire-v3.8.1-CUDA-11.4.exe"
                   axel -n 16 https://arrayfire.s3.amazonaws.com/3.8.1/$INSTALLER_NAME
                   7z.exe x $INSTALLER_NAME -o"C:\Program Files\ArrayFire" -y
+                  rm $INSTALLER_NAME
                 shell: bash.exe
 
   install-cuda:
@@ -128,10 +129,12 @@ commands:
                 name: "Install CUDA 11.4"
                 command: |
                   cd $HOME
-                  axel -n 16 -o cuda.exe https://developer.download.nvidia.com/compute/cuda/11.5.2/local_installers/cuda_11.5.2_496.13_windows.exe
-                  ./cuda.exe /s /noeula /log=cuda_install.log -s nvcc_11.5 cudart_11.5 cublas_dev_11.5 curand_dev_11.5
+                  export INSTALLER_NAME="cuda_11.5.2_496.13_windows.exe"
+                  axel -n 16 -o cuda.exe https://developer.download.nvidia.com/compute/cuda/11.5.2/local_installers/$INSTALLER_NAME
+                  ./$INSTALLER_NAME /s /noeula /log=cuda_install.log -s nvcc_11.5 cudart_11.5 cublas_dev_11.5 curand_dev_11.5
                   rm cuda.exe
                   echo 'CUDA_ROOT="/c/Program\ Files/NVIDIA\ GPU\ Computing\ Toolkit/CUDA/v11.5/"' >> $BASH_ENV
+                  rm $INSTALLER_NAME
                 shell: bash.exe
 
   install-cudnn:
