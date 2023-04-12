@@ -104,7 +104,7 @@ commands:
                   cd $HOME
                   $installerName = "ArrayFire-v3.8.1-CUDA-11.4.exe"
                   Invoke-WebRequest -Uri https://arrayfire.s3.amazonaws.com/3.8.1/$installerName -OutFile $installerName
-                  7z.exe x $installerName -o C:\Program Files\ArrayFire
+                  7z.exe x $installerName -oC:\Program Files\ArrayFire
                 shell: powershell.exe
 
   install-cudnn:
