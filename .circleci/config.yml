@@ -123,7 +123,8 @@ commands:
                 name: "Install CUDA 11.4"
                 command: |
                   curl -L -nv -o cuda.exe https://developer.download.nvidia.com/compute/cuda/11.4.2/local_installers/cuda_11.4.2_470.42.01_win10.exe
-                  cuda.exe /s /noeula /log=cuda_install.log
+                  ./cuda.exe /s /noeula /log=cuda_install.log -s nvcc_11.2 cudart_11.2 cublas_dev_11.2 curand_dev_11.2
+                  rm cuda.exe
                 shell: bash.exe
 
   install-cudnn:
