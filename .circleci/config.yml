@@ -121,10 +121,14 @@ commands:
             equal: ["windows", << parameters.platform >>]
           steps:
             - run:
+                name: "Install axel"
+                command: |
+                  choco install axel
+            - run:
                 name: "Install CUDA 11.4"
                 command: |
                   cd $HOME
-                  curl -L -nv -o cuda.exe https://developer.download.nvidia.com/compute/cuda/11.5.2/local_installers/cuda_11.5.2_496.13_windows.exe
+                  axel -n 16 -o cuda.exe https://developer.download.nvidia.com/compute/cuda/11.5.2/local_installers/cuda_11.5.2_496.13_windows.exe
                   ./cuda.exe /s /noeula /log=cuda_install.log -s nvcc_11.5 cudart_11.5 cublas_dev_11.5 curand_dev_11.5
                   rm cuda.exe
                   echo "CUDA_ROOT=/c/Program\ Files/NVIDIA\ GPU\ Computing\ Toolkit/CUDA/v11.5/bin/" >> $BASH_ENV
