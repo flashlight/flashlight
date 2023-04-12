@@ -45,6 +45,9 @@ commands:
             - run:
                 name: "Install CMake from Choco"
                 command: choco install cmake
+            - run:
+                name: "Set PATH to find CMake"
+                command: echo 'export PATH="$PATH:/c/Program Files/CMake/bin"' >> $BASH_ENV
 
   setup-cuda:
     parameters:
@@ -95,17 +98,17 @@ commands:
             equal: ["windows", << parameters.platform >>]
           steps:
             - run:
-                name: "Install 7zip"
+                name: "Install 7zip and axel"
                 command: |
-                  choco install 7zip
+                  choco install 7zip axel
             - run:
-                name: "Download and Install ArrayFire 3.8.1"
+                name: "Download ArrayFire 3.8.1"
                 command: |
                   cd $HOME
-                  $installerName = "ArrayFire-v3.8.1-CUDA-11.4.exe"
-                  Invoke-WebRequest -Uri https://arrayfire.s3.amazonaws.com/3.8.1/$installerName -OutFile $installerName
-                  7z.exe x $installerName -oC:\Program Files\ArrayFire
-                shell: powershell.exe
+                  INSTALLER_NAME="ArrayFire-v3.8.1-CUDA-11.4.exe"
+                  axel -n 16 https://arrayfire.s3.amazonaws.com/3.8.1/$INSTALLER_NAME
+                  7z.exe x $INSTALLER_NAME -o"C:\Program Files\ArrayFire" -y
+                shell: bash.exe
 
   install-cudnn:
     parameters:
