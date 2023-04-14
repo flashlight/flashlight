@@ -35,9 +35,11 @@ if(${COMPILER_SUPPORTS_RDYNAMIC})
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -rdynamic")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
 else()
-  message(WARNING
-    "This compiler doesn't support dynamic symbol exports. "
-    "Plugin functionality likely won't work.")
+  if (NOT WIN32) # Windows operates with explicit dll exports
+    message(WARNING
+      "This compiler doesn't support dynamic symbol exports. "
+      "Plugin functionality likely won't work.")
+  endif()
 endif()
 
 include(InternalUtils)
