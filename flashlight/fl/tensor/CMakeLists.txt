@@ -86,9 +86,15 @@ target_sources(
 cmake_dependent_option(FL_BUILD_PROFILING
   "Enable profiling with Flashlight" OFF
   "FL_USE_CUDA" OFF)
+
 if (FL_USE_CUDA)
-  target_link_libraries(flashlight PUBLIC ${CUDA_LIBRARIES})
-  target_include_directories(flashlight PUBLIC ${CUDA_INCLUDE_DIRS})
+  include(CheckLanguage)
+  check_language(CUDA)
+  if (CMAKE_CUDA_COMPILER)
+    enable_language(CUDA)
+  else()
+    message(FATAL_ERROR "CUDA is enabled but no CUDA compiler found")
+  endif()
 
   if (FL_BUILD_PROFILING)
     # Try to find NVTX

@@ -1,140 +1,79 @@
-# Distributed under the OSI-approved BSD 3-Clause License.  See accompanying
-# file Copyright.txt or https://cmake.org/licensing for details.
-#.rst:
-# FindCUDNN
-# -------
+# Find the CUDNN libraries
 #
-# Find CUDNN library
+# The following variables are optionally searched for defaults
+#  CUDNN_ROOT: Base directory where CUDNN is found
+#  CUDNN_INCLUDE_DIR: Directory where CUDNN header is searched for
+#  CUDNN_LIBRARY: Directory where CUDNN library is searched for
+#  CUDNN_STATIC: Are we looking for a static library? (default: no)
 #
-# Valiables that affect result:
-# <VERSION>, <REQUIRED>, <QUIETLY>: as usual
+# The following are set after configuration is done:
+#  CUDNN_FOUND
+#  CUDNN_INCLUDE_PATH
+#  CUDNN_LIBRARY_PATH
 #
-# <EXACT> : as usual, plus we do find '5.1' version if you wanted '5'
-#           (not if you wanted '5.0', as usual)
-#
-# Result variables
-# ^^^^^^^^^^^^^^^^
-#
-# This module will set the following variables in your project:
-#
-# ``CUDNN_INCLUDE``
-#   where to find cudnn.h.
-# ``CUDNN_LIBRARY``
-#   the libraries to link against to use CUDNN.
-# ``CUDNN_FOUND``
-#   If false, do not try to use CUDNN.
-# ``CUDNN_VERSION``
-#   Version of the CUDNN library we looked for
+# Inspired by pytorch://FindCUDNN.cmake
 
-find_package(PkgConfig)
-pkg_check_modules(PC_CUDNN QUIET CUDNN)
+include(FindPackageHandleStandardArgs)
 
-get_filename_component(__libpath_cudart "${CUDA_CUDART_LIBRARY}" PATH)
+set(CUDNN_ROOT $ENV{CUDNN_ROOT_DIR} CACHE PATH "Folder containing NVIDIA cuDNN")
+if (DEFINED $ENV{CUDNN_ROOT_DIR})
+  message(WARNING "CUDNN_ROOT_DIR is deprecated. Please set CUDNN_ROOT instead.")
+endif()
+list(APPEND CUDNN_ROOT $ENV{CUDNN_ROOT_DIR} ${CUDA_TOOLKIT_ROOT_DIR})
 
-# We use major only in library search as major/minor is not entirely consistent among platforms.
-# Also, looking for exact minor version of .so is in general not a good idea.
-# More strict enforcement of minor/patch version is done if/when the header file is examined.
-if(CUDNN_FIND_VERSION_EXACT)
-  SET(__cudnn_ver_suffix ".${CUDNN_FIND_VERSION_MAJOR}")
-  SET(__cudnn_lib_win_name cudnn64_${CUDNN_FIND_VERSION_MAJOR})
+# Compatible layer for CMake <3.12. CUDNN_ROOT will be accounted in for searching paths and libraries for CMake >=3.12.
+list(APPEND CMAKE_PREFIX_PATH ${CUDNN_ROOT})
+
+set(CUDNN_INCLUDE_DIR $ENV{CUDNN_INCLUDE_DIR} CACHE PATH "Folder containing NVIDIA cuDNN header files")
+
+find_path(CUDNN_INCLUDE_PATH cudnn.h
+  HINTS ${CUDNN_INCLUDE_DIR}
+  PATH_SUFFIXES cuda/include cuda include)
+
+option(CUDNN_STATIC "Look for static CUDNN" OFF)
+if (CUDNN_STATIC)
+  set(CUDNN_LIBNAME "libcudnn_static.a")
 else()
-  SET(__cudnn_lib_win_name cudnn64)
+  set(CUDNN_LIBNAME "cudnn")
 endif()
 
-if(DEFINED ENV{CUDNN_ROOT_DIR})
-  set(CUDNN_ROOT_DIR $ENV{CUDNN_ROOT_DIR} CACHE PATH "Folder contains NVIDIA cuDNN")
-else()
-  set(CUDNN_ROOT_DIR "" CACHE PATH "Folder contains NVIDIA cuDNN")
+set(CUDNN_LIBRARY $ENV{CUDNN_LIBRARY} CACHE PATH "Path to the cudnn library file (e.g., libcudnn.so)")
+if (CUDNN_LIBRARY MATCHES ".*cudnn_static.a" AND NOT CUDNN_STATIC)
+  message(WARNING "CUDNN_LIBRARY points to a static library (${CUDNN_LIBRARY}) but CUDNN_STATIC is OFF.")
 endif()
 
-option(USE_STATIC_CUDNN "Use statically-linked cuDNN library" OFF)
+find_library(CUDNN_LIBRARY_PATH ${CUDNN_LIBNAME}
+  PATHS ${CUDNN_LIBRARY} ${CUDAToolkit_LIBRARY_DIR} ${CUDA_LIBRARIES}
+  PATH_SUFFIXES lib lib64 cuda/lib cuda/lib64 lib/x64)
 
-if (USE_STATIC_CUDNN)
-  # Windows not yet supported by FL and it is unknown if static cudnn works correctly on MacOS: supporting only Linux at the moment.
-  # CMAKE_SYSTEM_NAME is supposed to resolve to "Linux", "Windows", or "Darwin"
-  if (NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
-    MESSAGE(FATAL_ERROR "USE_STATIC_CUDNN only supported on Linux")
-  endif()
-  MESSAGE(STATUS "USE_STATIC_CUDNN detected. Linking against static CUDNN library")
-  SET(CUDNN_LIBNAME "libcudnn_static.a" "cudnn_static")
-  # culibos is needed to statically link with cudnn and usually installed in the regular cuda lib folders. On Linux:
-  # /usr/local/cuda/lib64/libculibos.a
-  # /usr/local/cuda/targets/x86_64-linux/lib/libculibos.a
-  # https://cmake.org/cmake/help/latest/module/FindCUDAToolkit.html#culibos
-  find_library(CULIBOS_LIBRARY
-    NAMES culibos
-    PATHS ${CUDA_TOOLKIT_ROOT_DIR}
-    PATH_SUFFIXES lib lib64
-    DOC "culibos library")
-  if ("${CULIBOS_LIBRARY}" STREQUAL "CULIBOS_LIBRARY-NOTFOUND")
-    MESSAGE(FATAL_ERROR "CULIBOS not found")
-  endif()
-else()
-  # shared lib:
-  SET(CUDNN_LIBNAME libcudnn.so${__cudnn_ver_suffix} libcudnn${__cudnn_ver_suffix}.dylib ${__cudnn_lib_win_name})
-endif()
-
-find_library(CUDNN_LIBRARY
-  NAMES ${CUDNN_LIBNAME}
-  PATHS $ENV{LD_LIBRARY_PATH} ${__libpath_cudart} ${CUDNN_ROOT_DIR} ${PC_CUDNN_LIBRARY_DIRS} ${CMAKE_INSTALL_PREFIX}
-  PATH_SUFFIXES lib lib64 bin
-  DOC "CUDNN library." )
-
-if(CUDNN_LIBRARY)
-  SET(CUDNN_MAJOR_VERSION ${CUDNN_FIND_VERSION_MAJOR})
-  set(CUDNN_VERSION ${CUDNN_MAJOR_VERSION})
-  get_filename_component(__found_cudnn_root ${CUDNN_LIBRARY} PATH)
-  find_path(CUDNN_INCLUDE_DIR
-    NAMES cudnn.h
-    HINTS ${PC_CUDNN_INCLUDE_DIRS} ${CUDNN_ROOT_DIR} ${CUDA_TOOLKIT_INCLUDE} ${__found_cudnn_root}
-    PATH_SUFFIXES include
-    DOC "Path to CUDNN include directory." )
-endif()
-
-if(CUDNN_LIBRARY AND CUDNN_INCLUDE_DIR)
-  file(READ ${CUDNN_INCLUDE_DIR}/cudnn.h CUDNN_VERSION_FILE_CONTENTS)
-  string(REGEX MATCH "define CUDNN_MAJOR * +([0-9]+)"
-    CUDNN_MAJOR_VERSION "${CUDNN_VERSION_FILE_CONTENTS}")
-  string(REGEX REPLACE "define CUDNN_MAJOR * +([0-9]+)" "\\1"
-    CUDNN_MAJOR_VERSION "${CUDNN_MAJOR_VERSION}")
-  string(REGEX MATCH "define CUDNN_MINOR * +([0-9]+)"
-    CUDNN_MINOR_VERSION "${CUDNN_VERSION_FILE_CONTENTS}")
-  string(REGEX REPLACE "define CUDNN_MINOR * +([0-9]+)" "\\1"
-    CUDNN_MINOR_VERSION "${CUDNN_MINOR_VERSION}")
-  string(REGEX MATCH "define CUDNN_PATCHLEVEL * +([0-9]+)"
-    CUDNN_PATCH_VERSION "${CUDNN_VERSION_FILE_CONTENTS}")
-  string(REGEX REPLACE "define CUDNN_PATCHLEVEL * +([0-9]+)" "\\1"
-    CUDNN_PATCH_VERSION "${CUDNN_PATCH_VERSION}")
-  set(CUDNN_VERSION ${CUDNN_MAJOR_VERSION}.${CUDNN_MINOR_VERSION})
-endif()
-
-if(CUDNN_MAJOR_VERSION)
-  ## Fixing the case where 5.1 does not fit 'exact' 5.
-  if(CUDNN_FIND_VERSION_EXACT AND NOT CUDNN_FIND_VERSION_MINOR)
-    if("${CUDNN_MAJOR_VERSION}" STREQUAL "${CUDNN_FIND_VERSION_MAJOR}")
-      set(CUDNN_VERSION ${CUDNN_FIND_VERSION})
-    endif()
-  endif()
-else()
-  # Try to set CUDNN version from config file
-  set(CUDNN_VERSION ${PC_CUDNN_CFLAGS_OTHER})
-endif()
-
-find_package_handle_standard_args(
-  CUDNN
-  FOUND_VAR CUDNN_FOUND
-  REQUIRED_VARS CUDNN_LIBRARY
-  VERSION_VAR   CUDNN_VERSION
-  )
+find_package_handle_standard_args(CUDNN DEFAULT_MSG CUDNN_LIBRARY_PATH CUDNN_INCLUDE_PATH)
 
 if(CUDNN_FOUND)
-  if(USE_STATIC_CUDNN)
-    set(CUDNN_LIBRARIES ${CUDNN_LIBRARY} ${CULIBOS_LIBRARY})
+  # Get cuDNN version
+  if(EXISTS ${CUDNN_INCLUDE_PATH}/cudnn_version.h)
+    file(READ ${CUDNN_INCLUDE_PATH}/cudnn_version.h CUDNN_HEADER_CONTENTS)
   else()
-    set(CUDNN_LIBRARIES ${CUDNN_LIBRARY})
+    file(READ ${CUDNN_INCLUDE_PATH}/cudnn.h CUDNN_HEADER_CONTENTS)
   endif()
-  set(CUDNN_INCLUDE_DIRS ${CUDNN_INCLUDE_DIR})
-  set(CUDNN_DEFINITIONS ${PC_CUDNN_CFLAGS_OTHER})
-  message(STATUS "Found CUDNN: (lib: ${CUDNN_LIBRARIES} include: ${CUDNN_INCLUDE_DIRS})")
+  string(REGEX MATCH "define CUDNN_MAJOR * +([0-9]+)"
+               CUDNN_VERSION_MAJOR "${CUDNN_HEADER_CONTENTS}")
+  string(REGEX REPLACE "define CUDNN_MAJOR * +([0-9]+)" "\\1"
+               CUDNN_VERSION_MAJOR "${CUDNN_VERSION_MAJOR}")
+  string(REGEX MATCH "define CUDNN_MINOR * +([0-9]+)"
+               CUDNN_VERSION_MINOR "${CUDNN_HEADER_CONTENTS}")
+  string(REGEX REPLACE "define CUDNN_MINOR * +([0-9]+)" "\\1"
+               CUDNN_VERSION_MINOR "${CUDNN_VERSION_MINOR}")
+  string(REGEX MATCH "define CUDNN_PATCHLEVEL * +([0-9]+)"
+               CUDNN_VERSION_PATCH "${CUDNN_HEADER_CONTENTS}")
+  string(REGEX REPLACE "define CUDNN_PATCHLEVEL * +([0-9]+)" "\\1"
+               CUDNN_VERSION_PATCH "${CUDNN_VERSION_PATCH}")
+  # Assemble cuDNN version
+  if(NOT CUDNN_VERSION_MAJOR)
+    set(CUDNN_VERSION "?")
+  else()
+    set(CUDNN_VERSION
+        "${CUDNN_VERSION_MAJOR}.${CUDNN_VERSION_MINOR}.${CUDNN_VERSION_PATCH}")
+  endif()
 endif()
 
+mark_as_advanced(CUDNN_ROOT CUDNN_INCLUDE_DIR CUDNN_LIBRARY CUDNN_VERSION)
