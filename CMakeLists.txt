@@ -42,6 +42,14 @@ else()
   endif()
 endif()
 
+# ]------ The library target for the Flashlight core
+add_library(flashlight)
+
+# We haven't [yet] polluted Flashlight with explicit dllexport annotations
+if (MSVC)
+  target_compile_options(flashlight PRIVATE "/bigobj")
+endif()
+
 include(InternalUtils)
 
 # ----------------------------- Configuration -----------------------------
@@ -83,8 +91,6 @@ set(CMAKE_CUDA_STANDARD 14)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 # --------------------------- Core ---------------------------
-add_library(flashlight)
-
 # Internal includes are implicitly defined as <flashlight...>
 target_include_directories(
   flashlight

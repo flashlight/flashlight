@@ -93,7 +93,17 @@ if (FL_USE_CUDA)
   if (CMAKE_CUDA_COMPILER)
     enable_language(CUDA)
   else()
-    message(FATAL_ERROR "CUDA is enabled but no CUDA compiler found")
+    message(FATAL_ERROR "CUDA is enabled but no CUDA compiler was found")
+  endif()
+
+  # Link CUDA components
+  if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.17)
+    find_package(CUDAToolkit REQUIRED cublas)
+    target_link_libraries(flashlight PRIVATE CUDA::cublas)
+  else()
+    # Remove old branch when requiring CMake >= 3.17
+    target_link_libraries(flashlight PRIVATE ${CUDA_LIBRARIES})
+    target_include_directories(flashlight PRIVATE ${CUDA_INCLUDE_DIRS})
   endif()
 
   if (FL_BUILD_PROFILING)

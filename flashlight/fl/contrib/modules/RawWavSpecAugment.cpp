@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <math.h>
+#define _USE_MATH_DEFINES
+#include <cmath>
 #include <sstream>
 #include <stdexcept>
 
