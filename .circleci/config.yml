@@ -71,7 +71,7 @@ commands:
             - run:
                 name: "Add CUDA bin directory to PATH"
                 command: |
-                  echo "export PATH=${PATH}:/c/Program\ Files/NVIDIA\ GPU\ Computing\ Toolkit/CUDA/v11.5/bin/" >> "$BASH_ENV"
+                  echo 'export PATH="${PATH}:/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.5/bin/"' >> "$BASH_ENV"
 
   install-arrayfire:
     parameters:
