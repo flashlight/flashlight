@@ -7,9 +7,6 @@
 
 #include <mutex>
 
-#include <iostream>
-#include <string>
-
 #include "flashlight/fl/tensor/DefaultTensorType.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
 

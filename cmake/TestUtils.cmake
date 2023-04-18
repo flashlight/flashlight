@@ -49,7 +49,7 @@ function(build_test)
     PUBLIC
     ${GTEST_IMPORTED_TARGETS}
     ${build_test_LIBS}
-     ${CMAKE_THREAD_LIBS_INIT}
+    ${CMAKE_THREAD_LIBS_INIT}
     )
   target_include_directories(
     ${target}

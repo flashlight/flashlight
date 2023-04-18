@@ -13,7 +13,7 @@ target_sources(
 if (FL_USE_CUDA)
   # Find cudart library
   if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.17)
-    target_link_libraries(flashlight PUBLIC $<BUILD_INTERFACE:${CMAKE_CUDA_RUNTIME_LIBRARY}>)
+    target_link_libraries(flashlight PUBLIC $<BUILD_INTERFACE:CUDA::cudart>)
   else()
     # TODO: switch to CMAKE_CUDA_RUNTIME_LIBRARY when requiring CMake >= 3.17
     find_library(CUDART_LIBRARY cudart PATHS ${CUDA_LIBRARIES} ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
