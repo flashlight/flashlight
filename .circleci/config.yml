@@ -184,7 +184,8 @@ commands:
               -DFL_USE_CUDNN=ON \
               -DFL_ARRAYFIRE_USE_CPU=OFF \
               -DFL_USE_ONEDNN=OFF \
-              -DFL_BUILD_DISTRIBUTED=OFF
+              -DFL_BUILD_DISTRIBUTED=OFF \
+              -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON
             cmake --build build --parallel
 
   test_flashlight:
