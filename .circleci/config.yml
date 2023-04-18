@@ -47,7 +47,7 @@ commands:
                 command: choco install cmake
             - run:
                 name: "Set PATH to find CMake"
-                command: echo 'export PATH="$PATH:/c/Program Files/CMake/bin"' >> $BASH_ENV
+                command: echo 'export PATH="/c/Program Files/CMake/bin:${PATH}"' >> $BASH_ENV
 
   setup-cuda:
     parameters:
@@ -61,7 +61,7 @@ commands:
             - run:
                 name: "Add CUDA 11.4 bin directory to PATH"
                 command: |
-                  echo 'export PATH="${PATH}:/usr/local/cuda-11.4/bin"' >> "$BASH_ENV"
+                  echo 'export PATH="/usr/local/cuda-11.4/bin:${PATH}"' >> "$BASH_ENV"
       - when:
           condition:
             equal: ["windows", << parameters.platform >>]
@@ -71,7 +71,7 @@ commands:
             - run:
                 name: "Add CUDA bin directory to PATH"
                 command: |
-                  echo 'export PATH="${PATH}:/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.5/bin/"' >> "$BASH_ENV"
+                  echo 'export PATH="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.5/bin/:${PATH}"' >> "$BASH_ENV"
 
   install-arrayfire:
     parameters:
