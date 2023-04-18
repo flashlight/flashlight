@@ -32,12 +32,14 @@ jobs:
       - name: "Install ArrayFire (macOS)"
         run: brew install arrayfire
         if: runner.os == 'macOS' && matrix.backend == 'ArrayFire'
-      # - name: "Install ArrayFire on Windows"
-      #   run: |
-      #     cd /tmp
-      #     wget -q https://arrayfire.s3.amazonaws.com/3.8.1/ArrayFire-v3.8.1-CUDA-11.4.exe
-      #     ./ArrayFire-v3.8.1-CUDA-11.4.exe --skip-license
-      #   if: runner.os == 'Windows' && matrix.backend == 'ArrayFire'
+      - name: "Install ArrayFire on Windows"
+        run: |
+          cd $HOME
+          INSTALLER_NAME="ArrayFire-v3.8.1-CUDA-11.4.exe"
+          wget https://arrayfire.s3.amazonaws.com/3.8.1/$INSTALLER_NAME
+          7z.exe x $INSTALLER_NAME -o"C:\Program Files\ArrayFire" -y
+          rm $INSTALLER_NAME
+        if: runner.os == 'Windows' && matrix.backend == 'ArrayFire'
       # oneDNN
       - name: Install oneDNN 2.7.2 with microconda
         uses: mamba-org/provision-with-micromamba@main
@@ -55,7 +57,8 @@ jobs:
             -DFL_USE_ARRAYFIRE=${{ matrix.backend == 'ArrayFire' && 'ON' || 'OFF'  }} \
             -DFL_ARRAYFIRE_USE_CPU=${{ matrix.backend == 'ArrayFire' && 'ON' || 'OFF'  }} \
             -DFL_USE_ONEDNN=${{ (matrix.backend == 'oneDNN' || matrix.autograd_backend == 'oneDNN') && 'ON' || 'OFF'  }} \
-            -DFL_BUILD_DISTRIBUTED=OFF
+            -DFL_BUILD_DISTRIBUTED=OFF \
+            -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON
       - name: "Build Flashlight"
         run: |
           cmake --build build --parallel 4
