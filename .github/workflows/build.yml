@@ -11,8 +11,6 @@ jobs:
         os: [ubuntu-20.04, windows-2022, macOS-12]
         backend: [ArrayFire, oneDNN]
         autograd_backend: [oneDNN]
-        exclude:
-          - os: windows-2022
     defaults:
       run:
         shell: bash -l {0}
@@ -32,7 +30,7 @@ jobs:
       - name: "Install ArrayFire (macOS)"
         run: brew install arrayfire
         if: runner.os == 'macOS' && matrix.backend == 'ArrayFire'
-      - name: "Install ArrayFire on Windows"
+      - name: "Install ArrayFire (Windows)"
         run: |
           cd $HOME
           INSTALLER_NAME="ArrayFire-v3.8.1-CUDA-11.4.exe"
