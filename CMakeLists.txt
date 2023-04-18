@@ -41,13 +41,17 @@ else()
       "Plugin functionality likely won't work.")
   endif()
 endif()
+set(FL_BUILD_PLUGIN ${COMPILER_SUPPORTS_RDYNAMIC})
 
 # ]------ The library target for the Flashlight core
 add_library(flashlight)
 
 # We haven't [yet] polluted Flashlight with explicit dllexport annotations
 if (MSVC)
-  target_compile_options(flashlight PRIVATE "/bigobj")
+  target_compile_options(flashlight PUBLIC $<$<NOT:$<COMPILE_LANGUAGE:CUDA>>:/bigobj>)
+endif()
+if (WIN32)
+  target_compile_definitions(flashlight PUBLIC _USE_MATH_DEFINES NOMINMAX)
 endif()
 
 include(InternalUtils)

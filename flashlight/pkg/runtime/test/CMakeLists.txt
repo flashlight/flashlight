@@ -23,9 +23,11 @@ set_target_properties(test_module_plugin PROPERTIES
   PREFIX "")
 add_dependencies(test_module_plugin flashlight)
 
-build_test(
-  SRC ${DIR}/plugin/ModulePluginTest.cpp
-  LIBS ${LIBS}
-  PREPROC "PLUGINDIR=\"${CMAKE_CURRENT_BINARY_DIR}\""
-  )
-add_dependencies(ModulePluginTest test_module_plugin)
+if (${FL_BUILD_PLUGIN})
+  build_test(
+    SRC ${DIR}/plugin/ModulePluginTest.cpp
+    LIBS ${LIBS}
+    PREPROC "PLUGINDIR=\"${CMAKE_CURRENT_BINARY_DIR}\""
+    )
+  add_dependencies(ModulePluginTest test_module_plugin)
+endif()
