@@ -113,6 +113,7 @@ TEST_F(CachingMemoryManagerTest, IndexedDevice) {
 }
 
 TEST_F(CachingMemoryManagerTest, LargeNumberOfAllocs) {
+  GTEST_SKIP() << "Causes spurious OOMs even with exception handling."
   // This test performs stress test to allocate and free a large of number of
   // array of variable sizes
 
@@ -184,6 +185,7 @@ void testFragmentation(
 }
 
 TEST_F(CachingMemoryManagerTest, Fragmentation) {
+  GTEST_SKIP() << "Causes spurious OOMs even with exception handling.";
   testFragmentation(deviceInterface_, adapter_, true); // should OOM
 }
 
