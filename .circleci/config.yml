@@ -71,14 +71,14 @@ commands:
             - run:
                 name: "Remove CUDA 10.1 and copy new MSVC Build Customizations"
                 command: |
-                  export _MSVC_BUILDCUST_PATH="/c/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Microsoft/VC/v160/BuildCustomizations/"
+                  export _MSVC_BUILDCUST_PATH="/c/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Microsoft/VC/v160/BuildCustomizations"
                   export _EXTENSIONS_PATH="visual_studio_integration/CUDAVisualStudioIntegration/extras/visual_studio_integration/MSBuildExtensions"
                   export _TEMP_CUDA_EXTENSIONS_PATH="/tmp/extensions"
                   rm -rf /c/Program\ Files/NVIDIA\ GPU\ Computing\ Toolkit/CUDA/v10.1
-                  rm "${_MSVC_BUILDCUST_PATH}/CUDA\ 10.1.*"
-                  # mkdir ${_TEMP_CUDA_EXTENSIONS_PATH}
-                  # 7z.exe x -y $INSTALLER_NAME "${_EXTENSIONS_PATH}/*.*" -o"${_TEMP_CUDA_EXTENSIONS_PATH}"
-                  # mv "${_TEMP_CUDA_EXTENSIONS_PATH}/${_EXTENSIONS_PATH}"/* "${_MSVC_BUILDCUST_PATH}"
+                  for ext in props targets xml; do rm "${_MSVC_BUILDCUST_PATH}/CUDA 10.1.${ext}"; done
+                  mkdir ${_TEMP_CUDA_EXTENSIONS_PATH}
+                  7z.exe x -y $INSTALLER_NAME "${_EXTENSIONS_PATH}/*.*" -o"${_TEMP_CUDA_EXTENSIONS_PATH}"
+                  mv "${_TEMP_CUDA_EXTENSIONS_PATH}/${_EXTENSIONS_PATH}"/* "${_MSVC_BUILDCUST_PATH}"
             - run:
                 name: "Add CUDA bin directory to PATH and set env vars"
                 command: |
