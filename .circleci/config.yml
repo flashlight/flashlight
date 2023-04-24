@@ -72,13 +72,9 @@ commands:
                 name: "Remove CUDA 10.1 and copy new MSVC Build Customizations"
                 command: |
                   export _MSVC_BUILDCUST_PATH="/c/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Microsoft/VC/v160/BuildCustomizations"
-                  export _EXTENSIONS_PATH="visual_studio_integration/CUDAVisualStudioIntegration/extras/visual_studio_integration/MSBuildExtensions"
-                  export _TEMP_CUDA_EXTENSIONS_PATH="/tmp/extensions"
                   rm -rf /c/Program\ Files/NVIDIA\ GPU\ Computing\ Toolkit/CUDA/v10.1
                   for ext in props targets xml; do rm "${_MSVC_BUILDCUST_PATH}/CUDA 10.1.${ext}"; done
-                  mkdir ${_TEMP_CUDA_EXTENSIONS_PATH}
-                  7z.exe x -y $INSTALLER_NAME "${_EXTENSIONS_PATH}/*.*" -o"${_TEMP_CUDA_EXTENSIONS_PATH}"
-                  mv "${_TEMP_CUDA_EXTENSIONS_PATH}/${_EXTENSIONS_PATH}"/* "${_MSVC_BUILDCUST_PATH}"
+                  cp /c/Program\ Files/NVIDIA\ GPU\ Computing\ Toolkit/CUDA/v11.5/extras/visual_studio_integration/MSBuildExtensions/* "${_MSVC_BUILDCUST_PATH}"
             - run:
                 name: "Add CUDA bin directory to PATH and set env vars"
                 command: |
@@ -118,10 +114,10 @@ commands:
                 name: "Download and Install ArrayFire 3.8.1"
                 command: |
                   cd $HOME
-                  INSTALLER_NAME="ArrayFire-v3.8.1-CUDA-11.4.exe"
-                  axel -n 16 https://arrayfire.s3.amazonaws.com/3.8.1/$INSTALLER_NAME
-                  7z.exe x $INSTALLER_NAME -o"C:\Program Files\ArrayFire" -y
-                  rm $INSTALLER_NAME
+                  export AF_INSTALLER_NAME="ArrayFire-v3.8.1-CUDA-11.4.exe"
+                  axel -n 16 https://arrayfire.s3.amazonaws.com/3.8.1/$AF_INSTALLER_NAME
+                  7z.exe x $AF_INSTALLER_NAME -o"C:\Program Files\ArrayFire" -y
+                  rm $AF_INSTALLER_NAME
                 shell: bash.exe
 
   install-cuda:
@@ -141,11 +137,15 @@ commands:
                 name: "Install CUDA 11.5"
                 command: |
                   cd $HOME
-                  export INSTALLER_NAME="cuda_11.5.2_496.13_windows.exe"
-                  wget https://developer.download.nvidia.com/compute/cuda/11.5.2/local_installers/$INSTALLER_NAME
-                  ./$INSTALLER_NAME -s nvcc_11.5 cudart_11.5 cublas_dev_11.5 curand_dev_11.5
-                  rm $INSTALLER_NAME
+                  # See  https://docs.nvidia.com/cuda/pdf/CUDA_Installation_Guide_Windows.pdf
+                  export CUDA_INSTALLER_NAME="cuda_11.5.2_496.13_windows.exe"
+                  export CudaToolkitDir="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.5"
+                  wget https://developer.download.nvidia.com/compute/cuda/11.5.2/local_installers/$CUDA_INSTALLER_NAME
+                  # List of CUDA install options is at ttps://docs.nvidia.com/cuda/cuda-installation-guide-microsoft-windows/index.html
+                  ./$CUDA_INSTALLER_NAME -s nvcc_11.5 cudart_11.5 cublas_dev_11.5 curand_dev_11.5 visual_studio_integration_11.5
+                  rm $CUDA_INSTALLER_NAME
                   echo 'export CUDA_ROOT="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.5/"' >> $BASH_ENV
+                  echo 'export CUDA_TOOLKIT_DIR=${CudaToolkitDir}' >> $BASH_ENV
                 shell: bash.exe
 
   install-cudnn:
@@ -172,11 +172,11 @@ commands:
                 name: "Install cuDNN 8.5.0.96 for CUDA 11.2"
                 command: |
                   cd $HOME
-                  CUDNN_ZIP=cudnn-11.2-windows-x64-v8.1.1.33.zip
+                  export CUDNN_ZIP=cudnn-11.2-windows-x64-v8.1.1.33.zip
                   wget https://developer.download.nvidia.com/compute/redist/cudnn/v8.1.1/$CUDNN_ZIP
                   unzip $CUDNN_ZIP && rm $CUDNN_ZIP
                   cp -r cuda/* "$CUDA_ROOT"
-                  rm -r cuda/
+                  rm -rf cuda/
 
   build_flashlight:
     parameters:
