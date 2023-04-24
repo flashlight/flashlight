@@ -32,6 +32,7 @@ jobs:
         if: runner.os == 'macOS' && matrix.backend == 'ArrayFire'
       - name: "Install ArrayFire (Windows)"
         run: |
+          choco install wget -y
           cd $HOME
           INSTALLER_NAME="ArrayFire-v3.8.1-CUDA-11.4.exe"
           wget https://arrayfire.s3.amazonaws.com/3.8.1/$INSTALLER_NAME
