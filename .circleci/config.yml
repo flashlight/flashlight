@@ -23,6 +23,7 @@ executors:
     machine:
       image: windows-server-2019-nvidia:stable
     resource_class: windows.gpu.nvidia.medium
+    shell: bash.exe
 
 commands:
   install-build-dependencies:
@@ -43,7 +44,10 @@ commands:
           steps:
             - run:
                 name: "Install CMake from Choco"
-                command: choco install cmake --installargs '"ADD_CMAKE_TO_PATH=System"' -y
+                command: choco install cmake
+            - run:
+                name: "Set PATH to find CMake"
+                command: echo 'export PATH="/c/Program Files/CMake/bin:${PATH}"' >> $BASH_ENV
 
   setup-cuda:
     parameters:
@@ -71,15 +75,11 @@ commands:
                   rm -rf /c/Program\ Files/NVIDIA\ GPU\ Computing\ Toolkit/CUDA/v10.1
                   for ext in props targets xml; do rm "${_MSVC_BUILDCUST_PATH}/CUDA 10.1.${ext}"; done
                   cp /c/Program\ Files/NVIDIA\ GPU\ Computing\ Toolkit/CUDA/v11.5/extras/visual_studio_integration/MSBuildExtensions/* "${_MSVC_BUILDCUST_PATH}"
-                shell: bash.exe
             - run:
-                name: "Set environment variables for CUDA"
+                name: "Add CUDA bin directory to PATH and set env vars"
                 command: |
-                  echo 'export CUDA_ROOT="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.5/"' >> $BASH_ENV
-                  echo 'export CudaToolkitDir="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.5"' >> $BASH_ENV
                   echo 'export PATH="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.5/bin/:${PATH}"' >> "$BASH_ENV"
                   echo 'export CUDA_PATH="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.5"' >> "$BASH_ENV"
-                shell: bash.exe
 
   install-arrayfire:
     parameters:
@@ -109,7 +109,7 @@ commands:
             - run:
                 name: "Install 7zip and axel from choco"
                 command: |
-                  choco install 7zip axel -y
+                  choco install 7zip axel
             - run:
                 name: "Download and Install ArrayFire 3.8.1"
                 command: |
@@ -132,7 +132,7 @@ commands:
             - run:
                 name: "Install wget from choco"
                 command: |
-                  choco install wget -y
+                  choco install wget
             - run:
                 name: "Install CUDA 11.5"
                 command: |
@@ -143,6 +143,8 @@ commands:
                   # List of CUDA install options is https://docs.nvidia.com/cuda/cuda-installation-guide-microsoft-windows/index.html
                   ./$CUDA_INSTALLER_NAME -s nvcc_11.5 cudart_11.5 cublas_dev_11.5 curand_dev_11.5 visual_studio_integration_11.5
                   rm $CUDA_INSTALLER_NAME
+                  echo 'export CUDA_ROOT="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.5/"' >> $BASH_ENV
+                  echo 'export CudaToolkitDir="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.5"' >> $BASH_ENV
                 shell: bash.exe
 
   install-cudnn:
@@ -186,7 +188,6 @@ commands:
     steps:
       - run:
           name: "Build Flashlight"
-          # Only run ArrayFire CUDA baselines in CI
           command: |
             cmake -S . -B build \
               -DFL_USE_ARRAYFIRE=ON \
