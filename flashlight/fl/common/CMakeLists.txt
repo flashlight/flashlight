@@ -34,7 +34,9 @@ if (MSVC)
   endif()
 endif()
 
-# std::filesystem -- remove this when requiring gcc >= 9
-# find_package(Filesystem REQUIRED COMPONENTS Final Experimental)
-# setup_install_find_module(${CMAKE_MODULE_PATH}/FindFilesystem.cmake)
-# target_link_libraries(flashlight PUBLIC std::filesystem)
+# std::filesystem linking -- remove this when requiring gcc >= 9
+if (NOT MSVC)
+  find_package(Filesystem REQUIRED COMPONENTS Final Experimental)
+  setup_install_find_module(${CMAKE_MODULE_PATH}/FindFilesystem.cmake)
+  target_link_libraries(flashlight PUBLIC std::filesystem)
+endif()
