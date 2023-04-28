@@ -14,5 +14,6 @@ FetchContent_Declare(
 # For Windows
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 set(GTEST_LINKED_AS_SHARED_LIBRARY ${BUILD_SHARED_LIBS} CACHE BOOL "" FORCE)
+set(GMOCK_LINKED_AS_SHARED_LIBRARY ${BUILD_SHARED_LIBS} CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(googletest)
