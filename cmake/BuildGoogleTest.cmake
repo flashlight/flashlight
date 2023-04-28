@@ -11,5 +11,8 @@ FetchContent_Declare(
   GIT_TAG        ${gtest_TAG}
 )
 
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE) # for Windows
+# For Windows
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+set(GTEST_LINKED_AS_SHARED_LIBRARY ${BUILD_SHARED_LIBS} CACHE BOOL "" FORCE)
+
 FetchContent_MakeAvailable(googletest)
