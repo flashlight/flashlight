@@ -42,12 +42,14 @@ commands:
           condition:
             equal: ["windows", << parameters.platform >>]
           steps:
+            # - run:
+            #     name: "Install CMake from Choco"
+            #     command: |
+            #       choco install --no-progress cmake --installargs '"ADD_CMAKE_TO_PATH=System"' -y
             - run:
-                name: "Install CMake from Choco"
-                command: choco install cmake
-            - run:
-                name: "Set PATH to find CMake"
-                command: echo 'export PATH="/c/Program Files/CMake/bin:${PATH}"' >> $BASH_ENV
+                name: "Add MSVC CMake binary to PATH"
+                command: |
+                  echo 'export PATH="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\:${PATH}:"' >> $BASH_ENV
 
   setup-cuda:
     parameters:
@@ -75,11 +77,15 @@ commands:
                   rm -rf /c/Program\ Files/NVIDIA\ GPU\ Computing\ Toolkit/CUDA/v10.1
                   for ext in props targets xml; do rm "${_MSVC_BUILDCUST_PATH}/CUDA 10.1.${ext}"; done
                   cp /c/Program\ Files/NVIDIA\ GPU\ Computing\ Toolkit/CUDA/v11.5/extras/visual_studio_integration/MSBuildExtensions/* "${_MSVC_BUILDCUST_PATH}"
+                shell: bash.exe
             - run:
-                name: "Add CUDA bin directory to PATH and set env vars"
+                name: "Set environment variables for CUDA"
                 command: |
+                  echo 'export CUDA_ROOT="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.5/"' >> $BASH_ENV
+                  echo 'export CudaToolkitDir="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.5"' >> $BASH_ENV
                   echo 'export PATH="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.5/bin/:${PATH}"' >> "$BASH_ENV"
                   echo 'export CUDA_PATH="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.5"' >> "$BASH_ENV"
+                shell: bash.exe
 
   install-arrayfire:
     parameters:
@@ -109,7 +115,7 @@ commands:
             - run:
                 name: "Install 7zip and axel from choco"
                 command: |
-                  choco install 7zip axel
+                  choco install --no-progress 7zip axel -y
             - run:
                 name: "Download and Install ArrayFire 3.8.1"
                 command: |
@@ -132,19 +138,17 @@ commands:
             - run:
                 name: "Install wget from choco"
                 command: |
-                  choco install wget
+                  choco install --no-progress wget -y
             - run:
                 name: "Install CUDA 11.5"
                 command: |
                   cd $HOME
                   # See  https://docs.nvidia.com/cuda/pdf/CUDA_Installation_Guide_Windows.pdf
                   export CUDA_INSTALLER_NAME="cuda_11.5.2_496.13_windows.exe"
-                  wget https://developer.download.nvidia.com/compute/cuda/11.5.2/local_installers/$CUDA_INSTALLER_NAME
+                  wget --quiet https://developer.download.nvidia.com/compute/cuda/11.5.2/local_installers/$CUDA_INSTALLER_NAME
                   # List of CUDA install options is https://docs.nvidia.com/cuda/cuda-installation-guide-microsoft-windows/index.html
                   ./$CUDA_INSTALLER_NAME -s nvcc_11.5 cudart_11.5 cublas_dev_11.5 curand_dev_11.5 visual_studio_integration_11.5
                   rm $CUDA_INSTALLER_NAME
-                  echo 'export CUDA_ROOT="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.5/"' >> $BASH_ENV
-                  echo 'export CudaToolkitDir="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.5"' >> $BASH_ENV
                 shell: bash.exe
 
   install-cudnn:
@@ -160,8 +164,8 @@ commands:
                 name: "Install cuDNN 8.5.0.96 for CUDA 11.7"
                 command: |
                   cd /tmp
-                  wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/libcudnn8_8.5.0.96-1+cuda11.7_amd64.deb
-                  wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/libcudnn8-dev_8.5.0.96-1+cuda11.7_amd64.deb
+                  wget --quiet https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/libcudnn8_8.5.0.96-1+cuda11.7_amd64.deb
+                  wget --quiet https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/libcudnn8-dev_8.5.0.96-1+cuda11.7_amd64.deb
                   sudo dpkg -i libcudnn8_8.5.0.96-1+cuda11.7_amd64.deb libcudnn8-dev_8.5.0.96-1+cuda11.7_amd64.deb
       - when:
           condition:
@@ -172,7 +176,7 @@ commands:
                 command: |
                   cd $HOME
                   export CUDNN_ZIP=cudnn-11.2-windows-x64-v8.1.1.33.zip
-                  wget https://developer.download.nvidia.com/compute/redist/cudnn/v8.1.1/$CUDNN_ZIP
+                  wget --quiet https://developer.download.nvidia.com/compute/redist/cudnn/v8.1.1/$CUDNN_ZIP
                   unzip $CUDNN_ZIP && rm $CUDNN_ZIP
                   cp -r cuda/* "$CUDA_ROOT"
                   rm -rf cuda/
@@ -188,15 +192,23 @@ commands:
     steps:
       - run:
           name: "Build Flashlight"
+          # Only run ArrayFire CUDA baselines in CI
           command: |
             cmake -S . -B build \
-              -DFL_USE_ARRAYFIRE=ON \
-              -DFL_ARRAYFIRE_USE_CUDA=ON \
-              -DFL_USE_CUDNN=ON \
-              -DFL_ARRAYFIRE_USE_CPU=OFF \
+              -DFL_USE_ARRAYFIRE=OFF \
+              -DFL_USE_CUDNN=OFF \
               -DFL_USE_ONEDNN=OFF \
+              -DFL_USE_TENSOR_STUB=ON \
               -DFL_BUILD_DISTRIBUTED=OFF \
               -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON
+            # cmake -S . -B build \
+            #   -DFL_USE_ARRAYFIRE=ON \
+            #   -DFL_ARRAYFIRE_USE_CUDA=ON \
+            #   -DFL_USE_CUDNN=ON \
+            #   -DFL_ARRAYFIRE_USE_CPU=OFF \
+            #   -DFL_USE_ONEDNN=OFF \
+            #   -DFL_BUILD_DISTRIBUTED=OFF \
+            #   -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON
             cmake --build build --parallel
 
   test_flashlight:
