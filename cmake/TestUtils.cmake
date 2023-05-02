@@ -65,8 +65,8 @@ function(build_test)
     target_compile_definitions(
       ${target}
       PUBLIC
-      GTEST_LINKED_AS_SHARED_LIBRARY=$<BOOL:${BUILD_SHARED_LIBS}>
-      GMOCK_LINKED_AS_SHARED_LIBRARY=$<BOOL:${BUILD_SHARED_LIBS}>
+      GTEST_LINKED_AS_SHARED_LIBRARY=1
+      GMOCK_LINKED_AS_SHARED_LIBRARY=1
     )
   endif()
   gtest_add_tests(TARGET ${target})
