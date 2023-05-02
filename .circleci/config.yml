@@ -194,15 +194,8 @@ commands:
     steps:
       - run:
           name: "Build Flashlight"
-          # Only run ArrayFire CUDA baselines in CI
+          # Only run ArrayFire CUDA baselines in CI (only supported CUDA backend)
           command: |
-            # cmake -S . -B build \
-            #   -DFL_USE_ARRAYFIRE=OFF \
-            #   -DFL_USE_CUDNN=OFF \
-            #   -DFL_USE_ONEDNN=OFF \
-            #   -DFL_USE_TENSOR_STUB=ON \
-            #   -DFL_BUILD_DISTRIBUTED=OFF \
-            #   -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON
             cmake -S . -B build \
               -DFL_USE_ARRAYFIRE=ON \
               -DFL_ARRAYFIRE_USE_CUDA=ON \
@@ -211,7 +204,7 @@ commands:
               -DFL_USE_ONEDNN=OFF \
               -DFL_BUILD_DISTRIBUTED=OFF \
               -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON
-            cmake --build build --parallel 4
+            cmake --build build --parallel
 
   test_flashlight:
     parameters:
@@ -280,8 +273,13 @@ jobs:
           platform: << parameters.platform >>
           backend: << parameters.backend >>
           autograd_backend: << parameters.backend >>
-      - test_flashlight:
-          path: build/flashlight/fl/test
+      # TODO: enable tests on Windows adding "ctest -C Release ..."
+      - when:
+          condition:
+            equal: ["linux", << parameters.platform >>]
+          steps:
+            - test_flashlight:
+                path: build/flashlight/fl/test
 
 workflows:
   version: 2
