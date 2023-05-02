@@ -61,12 +61,12 @@ function(build_test)
     PUBLIC
     ${build_test_PREPROC}
     )
-  if if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_compile_definitions(
       ${target}
       PUBLIC
-      GTEST_LINKED_AS_SHARED_LIBRARY=1
-      GMOCK_LINKED_AS_SHARED_LIBRARY=1
+      GTEST_LINKED_AS_SHARED_LIBRARY=$<BOOL:${BUILD_SHARED_LIBS}>
+      GMOCK_LINKED_AS_SHARED_LIBRARY=$<BOOL:${BUILD_SHARED_LIBS}>
     )
   endif()
   gtest_add_tests(TARGET ${target})
