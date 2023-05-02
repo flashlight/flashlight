@@ -42,14 +42,16 @@ commands:
           condition:
             equal: ["windows", << parameters.platform >>]
           steps:
-            # - run:
-            #     name: "Install CMake from Choco"
-            #     command: |
-            #       choco install --no-progress cmake --installargs '"ADD_CMAKE_TO_PATH=System"' -y
             - run:
                 name: "Add MSVC CMake binary to PATH"
                 command: |
-                  echo 'export PATH="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\:${PATH}:"' >> $BASH_ENV
+                  echo 'export PATH="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\:${PATH}"' >> $BASH_ENV
+            - run:
+                name: "Remove old Windows SDK headers"
+                # These old headers cause issues with /Zc:preprocessor - only use the latest version of the SDK headers
+                command: |
+                  export WINDOWS_SDK_HEADER_PATH="C:\Program Files (x86)\Windows Kits\10\Include"
+                  ls "${WINDOWS_SDK_HEADER_PATH}" | head -n -1 | xargs -I{} rm -rf "${WINDOWS_SDK_HEADER_PATH}/{}"
 
   setup-cuda:
     parameters:
@@ -121,7 +123,7 @@ commands:
                 command: |
                   cd $HOME
                   export AF_INSTALLER_NAME="ArrayFire-v3.8.1-CUDA-11.4.exe"
-                  axel -n 16 https://arrayfire.s3.amazonaws.com/3.8.1/$AF_INSTALLER_NAME
+                  axel --quiet -n 16 https://arrayfire.s3.amazonaws.com/3.8.1/$AF_INSTALLER_NAME
                   7z.exe x $AF_INSTALLER_NAME -o"C:\Program Files\ArrayFire" -y
                   rm $AF_INSTALLER_NAME
                 shell: bash.exe
