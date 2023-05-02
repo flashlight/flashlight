@@ -209,7 +209,7 @@ commands:
             #   -DFL_USE_ONEDNN=OFF \
             #   -DFL_BUILD_DISTRIBUTED=OFF \
             #   -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON
-            cmake --build build --parallel
+            cmake --build build --parallel 4
 
   test_flashlight:
     parameters:
