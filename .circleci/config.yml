@@ -260,20 +260,20 @@ jobs:
       - checkout
       - install-build-dependencies:
           platform: << parameters.platform >>
-      - setup-cuda:
-          platform: << parameters.platform >>
-      - when:
-          condition:
-            equal: ["arrayfire", << parameters.backend >>]
-          steps:
-            - install-arrayfire:
-                platform: << parameters.platform >>
-      - when:
-          condition:
-            equal: ["cudnn", << parameters.autograd_backend >>]
-          steps:
-            - install-cudnn:
-                platform: << parameters.platform >>
+      # - setup-cuda:
+      #     platform: << parameters.platform >>
+      # - when:
+      #     condition:
+      #       equal: ["arrayfire", << parameters.backend >>]
+      #     steps:
+      #       - install-arrayfire:
+      #           platform: << parameters.platform >>
+      # - when:
+      #     condition:
+      #       equal: ["cudnn", << parameters.autograd_backend >>]
+      #     steps:
+      #       - install-cudnn:
+      #           platform: << parameters.platform >>
       - build_flashlight:
           platform: << parameters.platform >>
           backend: << parameters.backend >>
