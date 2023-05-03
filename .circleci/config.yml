@@ -43,7 +43,9 @@ commands:
     steps:
       - when:
           condition:
-            equal: ["macos", << parameters.platform >>]
+            or:
+              - equal: ["macos", << parameters.platform >>]
+              - equal: ["macos-arm", << parameters.platform >>]
           steps:
             - run:
                 name: "Install CMake from Homebrew"
@@ -108,7 +110,6 @@ commands:
           condition:
             or:
               - equal: ["linux", << parameters.platform >>]
-              - equal: ["linux-arm", << parameters.platform >>]
           steps:
             - run:
                 name: "Install ArrayFire 3.8.1 with CUDA 11.4"
@@ -366,3 +367,7 @@ workflows:
               platform: [macos-arm, linux-arm]
               backend: [arrayfire, onednn]
               autograd_backend: [onednn]
+            exclude:
+              - platform: linux-arm
+                backend: arrayfire
+                autograd_backend: onednn
