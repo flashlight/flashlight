@@ -8,6 +8,7 @@
 #pragma once
 
 #include <variant>
+#include <optional>
 
 #include "flashlight/fl/tensor/TensorBase.h"
 

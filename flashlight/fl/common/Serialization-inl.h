@@ -15,6 +15,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
 #pragma once
@@ -128,7 +129,7 @@ serializeAs(T&& t, SaveConvFn saveConverter, LoadConvFn loadConverter) {
 }
 
 template <typename... Args>
-void save(const std::string& filepath, const Args&... args) {
+void save(const fs::path& filepath, const Args&... args) {
   std::ofstream ofs(filepath, std::ios::binary);
   save(ofs, args...);
 }
@@ -140,7 +141,7 @@ void save(std::ostream& ostr, const Args&... args) {
 }
 
 template <typename... Args>
-void load(const std::string& filepath, Args&... args) {
+void load(const fs::path& filepath, Args&... args) {
   std::ifstream ifs(filepath, std::ios::binary);
   load(ifs, args...);
 }
@@ -189,7 +190,8 @@ void save(
 
 template <class Archive>
 void load(Archive& ar, fl::Shape& dims, const uint32_t /* version */) {
-  // TODO{fl::Tensor} -- check version, then read dim4 into Shape (if version ==)
+  // TODO{fl::Tensor} -- check version, then read dim4 into Shape (if version
+  // ==)
   std::vector<fl::Dim> vec;
   ar(vec);
   dims = fl::Shape(vec);
