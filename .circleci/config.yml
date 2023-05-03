@@ -24,6 +24,16 @@ executors:
       image: windows-server-2019-nvidia:stable
     resource_class: windows.gpu.nvidia.medium
     shell: bash.exe
+  macos-arm:
+    macos:
+      xcode: 14.2.0
+    environment:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+    resource_class: macos.m1.large.gen1
+  linux-arm:
+    machine:
+      image: ubuntu-2004:202201-02
+    resource_class: arm.2xlarge
 
 commands:
   install-build-dependencies:
@@ -183,6 +193,53 @@ commands:
                   cp -r cuda/* "$CUDA_ROOT"
                   rm -rf cuda/
 
+  install-onednn:
+    parameters:
+      platform:
+        type: string
+    steps:
+      - when:
+          condition:
+            equal: ["macos-arm", << parameters.platform >>]
+          steps:
+            - run:
+                name: "Install Micromamba"
+                command: |
+                  brew install micromamba
+      - when:
+          condition:
+            equal: ["linux-arm", << parameters.platform >>]
+          steps:
+            - run:
+                name: "Install Micromamba"
+                command: |
+                  curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
+      - run:
+          name: "Create micromamba env for oneDNN"
+          command: |
+            micromamba create -n onednn -y
+            echo "micromamba activate onednn" >> $BASH_ENV
+
+            # mkdir -p ~/.local/bin
+            # curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj -C ~/.local/bin/ --strip-components=1 bin/micromamba
+
+            # echo 'export MAMBA_EXE="~/.local/bin/micromamba"' >> $BASH_ENV
+            # echo 'export MAMBA_ROOT_PREFIX="~/micromamba"' >> $BASH_ENV
+            # echo '__mamba_setup="$(~/.local/bin/micromamba shell hook --shell bash --prefix ~/micromamba 2> /dev/null)"' >> $BASH_ENV
+            # echo 'eval "$__mamba_setup"' >> $BASH_ENV
+      #  - run:
+      #     name: Install environment
+      #     command: /home/circleci/bin/micromamba install --name base --file ./dev/ci-environment.yml
+      # - run:
+      #     name: Initialize Micromamba
+      #     command: echo 'eval "$(/home/circleci/bin/micromamba shell hook --shell=bash)"' >> "$BASH_ENV"
+      # - run:
+      #     name: Initialize Conda and activate base environment
+      #     command: echo 'micromamba activate base' >> "$BASH_ENV"
+      - run:
+          name: "Install oneDNN"
+          command: micromamba install -y -c conda-forge onednn=2.7.2
+
   build_flashlight:
     parameters:
       platform:
@@ -269,6 +326,14 @@ jobs:
           steps:
             - install-cudnn:
                 platform: << parameters.platform >>
+      - when:
+          condition:
+            or:
+              - equal: ["onednn", << parameters.backend >>]
+              - equal: ["onednn", << parameters.autograd_backend >>]
+          steps:
+            - install-onednn:
+                platform: << parameters.platform >>
       - build_flashlight:
           platform: << parameters.platform >>
           backend: << parameters.backend >>
@@ -286,9 +351,16 @@ workflows:
   build-and-test-new:
     jobs:
       - build-and-test-main:
-          name: "Build and Test << matrix.platform >> with << matrix.backend >> and << matrix.autograd_backend >>"
+          name: "Build and Test << matrix.platform >> CUDA with << matrix.backend >> and << matrix.autograd_backend >>"
           matrix:
             parameters:
               platform: [linux, windows]
               backend: [arrayfire]
               autograd_backend: [cudnn]
+      - build-and-test-main:
+          name: "Build and Test << matrix.platform >> CPU with << matrix.backend >> and << matrix.autograd_backend >>"
+          matrix:
+            parameters:
+              platform: [macos-arm, linux-arm]
+              backend: [arrayfire, onednn]
+              autograd_backend: [onednn]
