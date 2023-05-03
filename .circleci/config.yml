@@ -228,7 +228,8 @@ commands:
             - run:
                 name: "Install Micromamba"
                 command: |
-                  sudo apt install openssl -y # required for curl
+                  sudo apt update
+                  sudo apt upgrade # needed for curl not to break
                   curl micro.mamba.pm/install.sh | bash
                   echo 'export MAMBA_EXE="$HOME/.local/bin/micromamba"' >> $BASH_ENV
                   echo 'export MAMBA_ROOT_PREFIX="$HOME/micromamba"' >> $BASH_ENV

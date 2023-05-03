@@ -1,4 +1,4 @@
-name: Build Flashlight"
+name: Build Flashlight
 
 on: [push, pull_request]
 
