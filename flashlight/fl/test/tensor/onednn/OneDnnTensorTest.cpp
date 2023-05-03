@@ -362,7 +362,7 @@ TEST(OneDnnTensorTest, minimumMaximum) {
 }
 
 TEST(OneDnnTensorTest, logicalBinops) {
-  auto t1 = fl::Tensor::fromVector<char>({2, 2}, {0, -3, 0, 5});
+  auto t1 = fl::Tensor::fromVector<char>({2, 2}, {0, 3, 0, 5});
   auto t2 = fl::Tensor::fromVector<int>({2, 2}, {0, 2, -1, 0});
   auto t3 = fl::Tensor::fromVector<int>({2}, {0, 2, -1, 0});
   auto t4 = fl::Tensor::fromVector<int>({2, 1}, {0, 2, -1, 0});
