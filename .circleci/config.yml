@@ -106,10 +106,12 @@ commands:
     steps:
       - when:
           condition:
-            equal: ["linux", << parameters.platform >>]
+            or:
+              - equal: ["linux", << parameters.platform >>]
+              - equal: ["linux-arm", << parameters.platform >>]
           steps:
             - run:
-                name: "Install ArrayFire 3.8.1  with CUDA 11.4"
+                name: "Install ArrayFire 3.8.1 with CUDA 11.4"
                 command: |
                   sudo apt update
                   sudo apt install -y gnupg2 ca-certificates apt-utils software-properties-common
@@ -137,6 +139,14 @@ commands:
                   7z.exe x $AF_INSTALLER_NAME -o"C:\Program Files\ArrayFire" -y
                   rm $AF_INSTALLER_NAME
                 shell: bash.exe
+
+      - when:
+          condition:
+            equal: ["macos-arm", << parameters.platform >>]
+          steps:
+            - run:
+                name: "Install ArrayFire from Homebrew"
+                command: brew install arrayfire
 
   install-cuda:
     parameters:
@@ -206,6 +216,10 @@ commands:
                 name: "Install Micromamba"
                 command: |
                   brew install micromamba
+                  echo 'export MAMBA_EXE="/opt/homebrew/bin/micromamba"' >> $BASH_ENV
+                  echo 'export MAMBA_ROOT_PREFIX="$HOME/micromamba"' >> $BASH_ENV
+                  echo '__mamba_setup="$(/opt/homebrew/bin/micromamba shell hook --shell bash --prefix ~/micromamba 2> /dev/null)"' >> $BASH_ENV
+                  echo 'eval "$__mamba_setup"' >> $BASH_ENV
       - when:
           condition:
             equal: ["linux-arm", << parameters.platform >>]
@@ -213,34 +227,22 @@ commands:
             - run:
                 name: "Install Micromamba"
                 command: |
-                  curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
+                  sudo apt install openssl -y # required for curl
+                  curl micro.mamba.pm/install.sh | bash
+                  echo 'export MAMBA_EXE="$HOME/.local/bin/micromamba"' >> $BASH_ENV
+                  echo 'export MAMBA_ROOT_PREFIX="$HOME/micromamba"' >> $BASH_ENV
+                  echo '__mamba_setup="$($HOME/.local/bin/micromamba shell hook --shell bash --prefix ~/micromamba 2> /dev/null)"' >> $BASH_ENV
+                  echo 'eval "$__mamba_setup"' >> $BASH_ENV
       - run:
-          name: "Create micromamba env for oneDNN"
+          name: "Create micromamba environment for oneDNN"
           command: |
             micromamba create -n onednn -y
             echo "micromamba activate onednn" >> $BASH_ENV
-
-            # mkdir -p ~/.local/bin
-            # curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj -C ~/.local/bin/ --strip-components=1 bin/micromamba
-
-            # echo 'export MAMBA_EXE="~/.local/bin/micromamba"' >> $BASH_ENV
-            # echo 'export MAMBA_ROOT_PREFIX="~/micromamba"' >> $BASH_ENV
-            # echo '__mamba_setup="$(~/.local/bin/micromamba shell hook --shell bash --prefix ~/micromamba 2> /dev/null)"' >> $BASH_ENV
-            # echo 'eval "$__mamba_setup"' >> $BASH_ENV
-      #  - run:
-      #     name: Install environment
-      #     command: /home/circleci/bin/micromamba install --name base --file ./dev/ci-environment.yml
-      # - run:
-      #     name: Initialize Micromamba
-      #     command: echo 'eval "$(/home/circleci/bin/micromamba shell hook --shell=bash)"' >> "$BASH_ENV"
-      # - run:
-      #     name: Initialize Conda and activate base environment
-      #     command: echo 'micromamba activate base' >> "$BASH_ENV"
       - run:
           name: "Install oneDNN"
           command: micromamba install -y -c conda-forge onednn=2.7.2
 
-  build_flashlight:
+  build-flashlight:
     parameters:
       platform:
         type: string
@@ -254,11 +256,11 @@ commands:
           # Only run ArrayFire CUDA baselines in CI (only supported CUDA backend)
           command: |
             cmake -S . -B build \
-              -DFL_USE_ARRAYFIRE=ON \
-              -DFL_ARRAYFIRE_USE_CUDA=ON \
-              -DFL_USE_CUDNN=ON \
-              -DFL_ARRAYFIRE_USE_CPU=OFF \
-              -DFL_USE_ONEDNN=OFF \
+              -DFL_USE_ARRAYFIRE=$([ "<< parameters.backend >>" == "arrayfire" ] && echo "ON" || echo "OFF") \
+              -DFL_ARRAYFIRE_USE_CUDA=$([ "<< parameters.platform >>" == "windows" ] || [ "<< parameters.platform >>" == "linux" ] && echo "ON" || echo "OFF") \
+              -DFL_ARRAYFIRE_USE_CPU=$([ "<< parameters.platform >>" == "macos-arm" ] || [ "<< parameters.platform >>" == "linux-arm" ] && echo "ON" || echo "OFF") \
+              -DFL_USE_CUDNN=$([ "<< parameters.autograd_backend >>" == "cudnn" ] && echo "ON" || echo "OFF") \
+              -DFL_USE_ONEDNN=$([ "<< parameters.backend >>" == "onednn" ] || [ "<< parameters.autograd_backend >>" == "onednn" ] && echo "ON" || echo "OFF") \
               -DFL_BUILD_DISTRIBUTED=OFF \
               -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON
             cmake --build build --parallel
@@ -334,7 +336,7 @@ jobs:
           steps:
             - install-onednn:
                 platform: << parameters.platform >>
-      - build_flashlight:
+      - build-flashlight:
           platform: << parameters.platform >>
           backend: << parameters.backend >>
           autograd_backend: << parameters.backend >>
