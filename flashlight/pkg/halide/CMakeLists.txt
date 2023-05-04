@@ -12,7 +12,7 @@ add_library(
 
 find_package(Halide CONFIG REQUIRED)
 
-include(${CMAKE_MODULE_PATH}/HalideUtils.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/HalideUtils.cmake)
 
 # TODO: relax the requirement to link with libHalide if
 # possible. This may not be given that we're hard-linking

@@ -76,7 +76,7 @@ if (FL_USE_NCCL)
   find_package(NCCL REQUIRED)
   if (NCCL_FOUND)
     message(STATUS "NCCL found: (include: ${NCCL_INCLUDE_DIRS} lib: ${NCCL_LIBRARIES}")
-    setup_install_find_module(${CMAKE_MODULE_PATH}/FindNCCL.cmake)
+    setup_install_find_module(${PROJECT_SOURCE_DIR}/cmake/FindNCCL.cmake)
   endif()
 
   target_sources(

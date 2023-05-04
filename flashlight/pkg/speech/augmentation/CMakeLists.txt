@@ -49,7 +49,7 @@ if (FL_BUILD_APP_ASR_SFX_SOX)
 
   # Download and build static sox library.
   if (NOT SOX_FOUND AND FL_BUILD_STANDALONE)
-      include(${CMAKE_MODULE_PATH}/Buildsox.cmake)
+      include(${PROJECT_SOURCE_DIR}/cmake/Buildsox.cmake)
       add_dependencies(fl_pkg_speech sox)
   endif()
 

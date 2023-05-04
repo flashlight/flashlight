@@ -12,7 +12,7 @@ if (CUDNN_FOUND AND FL_USE_CUDA)
   message(STATUS
     "CUDNN found (library: ${CUDNN_LIBRARIES} include: ${CUDNN_INCLUDE_DIRS})")
   set(FL_USE_CUDNN ON)
-  setup_install_find_module(${CMAKE_MODULE_PATH}/FindCUDNN.cmake)
+  setup_install_find_module(${PROJECT_SOURCE_DIR}/cmake/FindCUDNN.cmake)
 endif()
 
 if (FL_USE_CUDNN)
