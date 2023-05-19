@@ -381,7 +381,7 @@ At its simplest, training a model can be invoked with
 ```
 The flags to the train binary can be passed in a flags file or as flags on the command line. Example of flags file:
 ```
---dadadir=/tmp
+--datadir=/tmp
 --train=train.lst
 ...
 ```
