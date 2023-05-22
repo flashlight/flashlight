@@ -2,8 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 option(FL_USE_CUDNN "Build with cuDNN support" OFF)
 
-# Try to find cuDNN
-find_package(CUDNN 7.1) # CUDNN 7.1 works with CUDA 9.2
+find_package(CUDNN)
 if (NOT CUDNN_FOUND AND FL_USE_CUDNN)
   message(FATAL_ERROR
     "cuDNN required to build cuDNN backend: cuDNN was not found")
@@ -27,6 +26,7 @@ target_compile_definitions(
   flashlight
   PUBLIC
   FL_USE_CUDNN=$<BOOL:${FL_USE_CUDNN}>
+  FL_USE_ONEDNN=$<BOOL:${FL_USE_ONEDNN}>
 )
 
 target_sources(
