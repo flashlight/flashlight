@@ -15,6 +15,13 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# The CUDA standard is still C++14 to enable interopability with
+# slightly older and still well-supported versions of CUDA/nvcc
+# (e.g. CUDA < 11). This will be bumped to 17 once CUDA 11 is
+# required.
+set(CMAKE_CUDA_STANDARD 14)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+
 # Default directories for installation
 set(FL_INSTALL_INC_DIR "include" CACHE PATH "Install path for headers")
 set(FL_INSTALL_INC_DIR_HEADER_LOC ${FL_INSTALL_INC_DIR}/flashlight)
@@ -35,9 +42,23 @@ if(${COMPILER_SUPPORTS_RDYNAMIC})
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -rdynamic")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
 else()
-  message(WARNING
-    "This compiler doesn't support dynamic symbol exports. "
-    "Plugin functionality likely won't work.")
+  if (NOT WIN32) # Windows operates with explicit dll exports
+    message(WARNING
+      "This compiler doesn't support dynamic symbol exports. "
+      "Plugin functionality likely won't work.")
+  endif()
+endif()
+set(FL_BUILD_PLUGIN ${COMPILER_SUPPORTS_RDYNAMIC})
+
+# ]------ The library target for the Flashlight core
+add_library(flashlight)
+
+# We haven't [yet] polluted Flashlight with explicit dllexport annotations
+if (MSVC)
+  target_compile_options(flashlight PUBLIC $<$<NOT:$<COMPILE_LANGUAGE:CUDA>>:/bigobj>)
+endif()
+if (WIN32)
+  target_compile_definitions(flashlight PUBLIC _USE_MATH_DEFINES NOMINMAX)
 endif()
 
 include(InternalUtils)
@@ -73,16 +94,7 @@ option(FL_USE_CPU    "Build CPU support for Flashlight backends"  OFF)
 option(FL_USE_OPENCL "Build OpenCL support for Flashlight backends" OFF)
 option(FL_USE_MKL    "Build MKL support for Flashlight backends" OFF)
 
-# The CUDA standard is still C++14 to enable interopability with
-# slightly older and still well-supported versions of CUDA/nvcc
-# (e.g. CUDA < 11). This will be bumped to 17 once CUDA 11 is
-# required.
-set(CMAKE_CUDA_STANDARD 14)
-set(CMAKE_CUDA_STANDARD_REQUIRED ON)
-
 # --------------------------- Core ---------------------------
-add_library(flashlight)
-
 # Internal includes are implicitly defined as <flashlight...>
 target_include_directories(
   flashlight

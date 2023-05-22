@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <math.h>
+#include <cmath>
 #include <sstream>
 #include <stdexcept>
+#include <numeric>
 
 #include "flashlight/fl/common/Logging.h"
 #include "flashlight/fl/contrib/modules/RawWavSpecAugment.h"

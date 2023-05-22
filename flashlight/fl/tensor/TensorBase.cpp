@@ -9,6 +9,7 @@
 
 #include <stdexcept>
 #include <utility>
+#include <algorithm>
 
 #include "flashlight/fl/tensor/DefaultTensorType.h"
 #include "flashlight/fl/tensor/TensorAdapter.h"

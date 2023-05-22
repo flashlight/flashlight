@@ -51,3 +51,5 @@ wheels/
 
 # Dev environment
 .vscode
+.vs
+CMakeSettings.json

@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/dataset/BlobDataset.h"
 
 #include <fstream>
@@ -33,7 +34,7 @@ class FileBlobDataset : public BlobDataset {
    * already exists.
    */
   explicit FileBlobDataset(
-      const std::string& name,
+      const fs::path& name,
       bool rw = false,
       bool truncate = false);
 
@@ -47,7 +48,7 @@ class FileBlobDataset : public BlobDataset {
   bool isEmptyData() const override;
 
  private:
-  std::string name_;
+  fs::path name_;
   std::ios_base::openmode mode_;
   std::shared_ptr<std::fstream> getStream() const;
 
