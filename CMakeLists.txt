@@ -116,18 +116,6 @@ target_compile_definitions(flashlight
   FL_BUILD_PROFILING=$<BOOL:${FL_BUILD_PROFILING}>
   )
 
-if (FL_USE_CUDA)
-  enable_language(CUDA)
-  # TODO: switch to CMAKE_CUDA_RUNTIME_LIBRARY when requiring CMake >= 3.17
-  find_library(CUDART_LIBRARY cudart ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
-  target_include_directories(
-    flashlight
-    PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}>
-    )
-  target_link_libraries(flashlight PUBLIC ${CUDART_LIBRARY})
-endif()
-
 if (FL_CODE_COVERAGE)
   add_coverage_to_target(TARGET flashlight)
 endif()

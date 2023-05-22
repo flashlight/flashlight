@@ -59,7 +59,7 @@ function(setup_install_targets)
   set(INCLUDE_DIRS include)
   set(CMAKE_DIR ${FL_INSTALL_CMAKE_DIR})
   configure_package_config_file(
-    ${CMAKE_MODULE_PATH}/flashlightConfig.cmake.in
+    ${PROJECT_SOURCE_DIR}/cmake/flashlightConfig.cmake.in
     cmake/install/${FL_CONFIG_CMAKE_BUILD_DIR}/flashlightConfig.cmake
     INSTALL_DESTINATION
     ${FL_INSTALL_CMAKE_DIR}
