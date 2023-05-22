@@ -6,6 +6,7 @@
  */
 
 #include <math.h>
+#include <array>
 
 #include <gtest/gtest.h>
 
@@ -345,8 +346,8 @@ TEST_F(AutogradTestF16, BatchNormJacobianMultipleAxesF16) {
     return (batchnorm(
         in, weight, bias, runningMean, runningVar, featAxes, true, 0.0, 1E-5));
   };
-  ASSERT_TRUE(
-      fl::detail::jacobianTestImpl(funcBnIn, input, 5e-2, 1e-1)); // TODO: investigate
+  ASSERT_TRUE(fl::detail::jacobianTestImpl(
+      funcBnIn, input, 5e-2, 1e-1)); // TODO: investigate
 
   auto funcBnWt = [&](Variable& wt) {
     return (batchnorm(
