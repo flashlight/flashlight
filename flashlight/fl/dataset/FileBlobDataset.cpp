@@ -5,12 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <stdexcept>
+
 #include "flashlight/fl/dataset/FileBlobDataset.h"
 
 namespace fl {
 
 FileBlobDataset::FileBlobDataset(
-    const std::string& name,
+    const fs::path& name,
     bool rw,
     bool truncate)
     : name_(name) {
@@ -18,7 +20,7 @@ FileBlobDataset::FileBlobDataset(
   {
     std::ofstream fs(name_, (truncate ? mode_ | std::ios_base::trunc : mode_));
     if (!fs.is_open()) {
-      throw std::runtime_error("could not open file " + name);
+      throw std::runtime_error("could not open file " + name.string());
     }
   }
   readIndex();
