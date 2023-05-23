@@ -40,6 +40,19 @@ class Container : public Module {
 
   Container();
 
+  /**
+   * Removes all modules from the container.
+   */
+  virtual void clear();
+
+  /**
+   * Find orphaned params (i.e. params not in modules contained in the modules_
+   * list).
+   * @return A multimap of orphaned params and the module index they appear
+   * after
+   */
+  std::unordered_multimap<int, int> getOrphanedParamsIdxMap() const;
+
  public:
   /**
    * Adds a module to a `Container` by making a copy of the underlying module.
@@ -118,6 +131,55 @@ class Container : public Module {
 };
 
 /**
+ * An extension of `Container` which enables cloning of the derrived container,
+ * performing a deep copy of the modules (and parameters) of the container.
+ * **Note** If Derived implements members which use shallow copy semantics like
+ * shared_ptr (even if they are added to `Container::modules_`), Derived must
+ * implement its own copy function to handle those members and/or parameters.
+ * @tparam Derived The class which is inheriting from `CloneableContainer`
+ */
+template <typename Derived>
+class CloneableContainer : public Container {
+ public:
+  /**
+   * Copies the container via copy constructor and performs a deep copy of the
+   * modules of this container to the new container.
+   * @return A copy of this object
+   */
+  Derived copy() const {
+    Derived deepCopy(static_cast<const Derived&>(*this));
+    deepCopy.clear();
+    deepCopy.params_.reserve(Module::params_.size());
+    deepCopy.modules_.reserve(Container::modules_.size());
+
+    auto orphanParamIdxMap = getOrphanedParamsIdxMap();
+    for (int i = -1; i < static_cast<int>(Container::modules_.size()); ++i) {
+      if (i >= 0) {
+        const auto& mod = Container::modules_[i];
+        deepCopy.add(mod->clone());
+      }
+      auto [paramIter, pEnd] = orphanParamIdxMap.equal_range(i);
+      for (; paramIter != pEnd; ++paramIter) {
+        const auto& param = Module::params_[paramIter->second];
+        deepCopy.params_.emplace_back(
+            param.tensor().copy(), param.isCalcGrad());
+      }
+    }
+
+    return deepCopy;
+  }
+
+  /**
+   * Clones the `Container`, performing a deep copy. See `copy()` for more
+   * details.
+   * @return A shared pointer to the base class of the cloned module.
+   */
+  std::shared_ptr<Module> clone() const override {
+    return std::make_shared<Derived>(copy());
+  }
+};
+
+/**
  * A `Container` representing an ordered sequence of modules, which is capable
  * of forward computation through each of its modules, in order.
  *
@@ -138,7 +200,7 @@ class Container : public Module {
        mySequential.params().size()); // true
    \endcode
  */
-class Sequential : public Container {
+class Sequential : public CloneableContainer<Sequential> {
  public:
   Sequential();
 

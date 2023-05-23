@@ -25,7 +25,7 @@ namespace fl {
    std::cout << var.shape() << std::endl;
  * \endcode
  */
-class Reorder : public UnaryModule {
+class Reorder : public CloneableUnaryModule<Reorder> {
  private:
   Reorder() = default;
 

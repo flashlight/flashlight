@@ -23,7 +23,7 @@ namespace fl {
  * B is the batch size.
  *
  */
-class PositionEmbedding : public Container {
+class PositionEmbedding : public CloneableContainer<PositionEmbedding> {
  public:
   PositionEmbedding(int32_t layerDim, int32_t maxLen, double dropout = 0);
 

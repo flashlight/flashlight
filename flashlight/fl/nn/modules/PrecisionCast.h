@@ -20,7 +20,7 @@ namespace fl {
  * target precision. Precision cast only alters the underlying array and leaves
  * other attributes of the input variable unchanged.
  */
-class PrecisionCast : public Module {
+class PrecisionCast : public CloneableModule<PrecisionCast> {
  private:
   fl::dtype targetType_;
   PrecisionCast() = default;

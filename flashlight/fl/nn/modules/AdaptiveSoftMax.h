@@ -25,7 +25,7 @@ namespace fl {
  * low-frequency inputs are approximated with lower rank matrices so as to speed
  * up computation.
  */
-class AdaptiveSoftMax : public UnaryModule {
+class AdaptiveSoftMax : public CloneableUnaryModule<AdaptiveSoftMax> {
  private:
   FL_SAVE_LOAD_WITH_BASE(UnaryModule, cutoff_, divValue_)
   std::vector<int> cutoff_;

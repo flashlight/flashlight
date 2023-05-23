@@ -19,7 +19,8 @@ namespace fl {
  * final shape
  * [`embedding_dim`, \f$B_1\f$, \f$B_2\f$ (optional), \f$B_3\f$ (optional)].
  */
-class AdaptiveEmbedding : public UnaryModule {
+class AdaptiveEmbedding
+    : public CloneableUnaryModule<AdaptiveEmbedding> {
  private:
   AdaptiveEmbedding() = default; // Intentionally private
   int embeddingDim_;

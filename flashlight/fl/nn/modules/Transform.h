@@ -23,7 +23,7 @@ namespace fl {
     \endcode
  * Note this module cannot be serialized.
  */
-class Transform : public UnaryModule {
+class Transform : public CloneableUnaryModule<Transform> {
  private:
   Transform() = default; // Intentionally private
 

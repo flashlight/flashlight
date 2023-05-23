@@ -57,7 +57,7 @@ Conv2D::Conv2D(
     int dx,
     int dy,
     int groups)
-    : UnaryModule({w}),
+    : CloneableUnaryModule<Conv2D>({w}),
       nIn_(w.dim(2)),
       nOut_(w.dim(3)),
       xFilter_(w.dim(0)),
@@ -81,7 +81,7 @@ Conv2D::Conv2D(
     int dx,
     int dy,
     int groups)
-    : UnaryModule({w, b}),
+    : CloneableUnaryModule<Conv2D>({w, b}),
       nIn_(w.dim(2)),
       nOut_(w.dim(3)),
       xFilter_(w.dim(0)),

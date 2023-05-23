@@ -16,7 +16,7 @@ namespace fl {
  * function](https://en.wikipedia.org/wiki/Sigmoid_function) element-wise to a
  * `Variable`: \f[\text{sigmoid}(x) = \frac{1}{1 + e^{-x}}\f]
  */
-class Sigmoid : public UnaryModule {
+class Sigmoid : public CloneableUnaryModule<Sigmoid> {
  public:
   Sigmoid();
 
@@ -32,7 +32,7 @@ class Sigmoid : public UnaryModule {
  * Applies the [natural logarithm](https://en.wikipedia.org/wiki/Logarithm)
  * element-wise to a `Variable`.
  */
-class Log : public UnaryModule {
+class Log : public CloneableUnaryModule<Log> {
  public:
   Log();
 
@@ -50,7 +50,7 @@ class Log : public UnaryModule {
  * element-wise to a `Variable`:
  *\f[\text{tanh}(x) = \frac{e^x - e^{-x}}{e^x +  e^{-x}}\f]
  */
-class Tanh : public UnaryModule {
+class Tanh : public CloneableUnaryModule<Tanh> {
  public:
   Tanh();
 
@@ -72,7 +72,7 @@ class Tanh : public UnaryModule {
     \end{cases}
     \f]
  */
-class HardTanh : public UnaryModule {
+class HardTanh : public CloneableUnaryModule<HardTanh> {
  public:
   HardTanh();
 
@@ -90,7 +90,7 @@ class HardTanh : public UnaryModule {
  * element-wise to a `Variable`:
  * \f[ ReLU(x) = \max(0, x) \f]
  */
-class ReLU : public UnaryModule {
+class ReLU : public CloneableUnaryModule<ReLU> {
  public:
   ReLU();
 
@@ -108,7 +108,7 @@ class ReLU : public UnaryModule {
  * 6](http://www.cs.utoronto.ca/~kriz/conv-cifar10-aug2010.pdf(neural_networks))
  * function element-wise to a `Variable`: \f[ ReLU6(x) = \min(\max(0, x), 6) \f]
  */
-class ReLU6 : public UnaryModule {
+class ReLU6 : public CloneableUnaryModule<ReLU6> {
  public:
   ReLU6();
 
@@ -137,7 +137,7 @@ class ReLU6 : public UnaryModule {
  * where \f$\text{slope}\f$ is a constant by which the input will
  * be multiplied if less than zero.
  */
-class LeakyReLU : public UnaryModule {
+class LeakyReLU : public CloneableUnaryModule<LeakyReLU> {
  private:
   double mSlope_;
 
@@ -174,7 +174,7 @@ class LeakyReLU : public UnaryModule {
  * where \f$\text{value}\f$ is a learned parameter whose initialization can be
  * tuned.
  */
-class PReLU : public UnaryModule {
+class PReLU : public CloneableUnaryModule<PReLU> {
  private:
   PReLU() = default; // Intentionally private
 
@@ -221,7 +221,7 @@ class PReLU : public UnaryModule {
    \f]
  * where \f$\alpha\f$ is a tunable parameter.
  */
-class ELU : public UnaryModule {
+class ELU : public CloneableUnaryModule<ELU> {
  private:
   double mAlpha_;
 
@@ -248,7 +248,7 @@ class ELU : public UnaryModule {
    \f]
  * where \f$\text{threshold}\f$ is a tunable parameter.
  */
-class ThresholdReLU : public UnaryModule {
+class ThresholdReLU : public CloneableUnaryModule<ThresholdReLU> {
  private:
   double mThreshold_;
 
@@ -276,7 +276,7 @@ class ThresholdReLU : public UnaryModule {
  * first half of the input, \f$x_j\f$ is the second half, and
  * \f$\sigma(x)\f$ is the sigmoid function.
  */
-class GatedLinearUnit : public UnaryModule {
+class GatedLinearUnit : public CloneableUnaryModule<GatedLinearUnit> {
  private:
   int dim_;
 
@@ -303,7 +303,7 @@ class GatedLinearUnit : public UnaryModule {
    \log{\left (\frac{e^{x_i} }{ \sum_j e^{x_j}} \right)}
    \f]
  */
-class LogSoftmax : public UnaryModule {
+class LogSoftmax : public CloneableUnaryModule<LogSoftmax> {
  private:
   int dim_;
 
@@ -329,7 +329,7 @@ class LogSoftmax : public UnaryModule {
  * \f[ Swish(x) = x \cdot sigmoid(\beta x) \f]
  * where \f$\beta\f$ is a constant, often is 1.
  */
-class Swish : public UnaryModule {
+class Swish : public CloneableUnaryModule<Swish> {
  public:
   /**
    * Creates a `Swish` with the specified beta

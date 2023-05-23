@@ -17,15 +17,24 @@
 namespace fl {
 
 Linear::Linear(int input_size, int output_size, bool bias)
-    : UnaryModule(), nIn_(input_size), nOut_(output_size), bias_(bias) {
+    : CloneableUnaryModule<Linear>(),
+      nIn_(input_size),
+      nOut_(output_size),
+      bias_(bias) {
   initialize();
 }
 
 Linear::Linear(const Variable& w)
-    : UnaryModule({w}), nIn_(w.dim(1)), nOut_(w.dim(0)), bias_(false) {}
+    : CloneableUnaryModule<Linear>({w}),
+      nIn_(w.dim(1)),
+      nOut_(w.dim(0)),
+      bias_(false) {}
 
 Linear::Linear(const Variable& w, const Variable& b)
-    : UnaryModule({w, b}), nIn_(w.dim(1)), nOut_(w.dim(0)), bias_(true) {
+    : CloneableUnaryModule<Linear>({w, b}),
+      nIn_(w.dim(1)),
+      nOut_(w.dim(0)),
+      bias_(true) {
   if (b.dim(0) != w.dim(0)) {
     throw std::invalid_argument(
         "dimension mismatch between Linear weight and bias");
@@ -35,7 +44,9 @@ Linear::Linear(const Variable& w, const Variable& b)
 Variable Linear::forward(const Variable& input) {
   if (bias_) {
     return linear(
-        input, params_[0].astype(input.type()), params_[1].astype(input.type()));
+        input,
+        params_[0].astype(input.type()),
+        params_[1].astype(input.type()));
   }
   return linear(input, params_[0].astype(input.type()));
 }

@@ -37,7 +37,7 @@ class ConvBenchmarks;
  * \f[X_{out} = \lceil{\frac{X_{in}}{X_{stride}}}\rceil,
  *  Y_{out} = \lceil{\frac{Y_{in}}{Y_{stride}}}\rceil\f]
  */
-class Conv2D : public UnaryModule {
+class Conv2D : public CloneableUnaryModule<Conv2D> {
  private:
   FL_SAVE_LOAD_WITH_BASE(
       UnaryModule,

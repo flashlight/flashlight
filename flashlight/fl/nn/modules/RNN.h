@@ -40,7 +40,7 @@ namespace fl {
  * as input and output. When these are input as the empty Variable they are
  * assumed to be zero.
  */
-class RNN : public Module {
+class RNN : public CloneableModule<RNN> {
  private:
   RNN() = default; // Intentionally private
 

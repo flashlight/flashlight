@@ -19,7 +19,7 @@ namespace fl {
  * over the first and second dimensions of the input. Thus the output will be
  * of shape [\f$X_{out}\f$, \f$Y_{out}\f$, \f$C\f$, \f$N\f$].
  */
-class Pool2D : public UnaryModule {
+class Pool2D : public CloneableUnaryModule<Pool2D> {
  private:
   Pool2D() = default; // Intentionally private
 

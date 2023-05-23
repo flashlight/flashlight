@@ -83,7 +83,7 @@ std::string LeakyReLU::prettyString() const {
   return "LeakyReLU (" + std::to_string(mSlope_) + ")";
 }
 
-PReLU::PReLU(const Variable& w) : UnaryModule({w}) {}
+PReLU::PReLU(const Variable& w) : CloneableUnaryModule<PReLU>({w}) {}
 
 PReLU::PReLU(int size, double value) {
   auto w = constant(value, size, 1);

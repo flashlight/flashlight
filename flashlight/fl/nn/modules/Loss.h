@@ -26,7 +26,7 @@ class Tensor;
  * for input tensor \f$x\f$ and target tensor \f$y\f$ each of which contain
  \f$n\f$ elements.
  */
-class MeanSquaredError : public BinaryModule {
+class MeanSquaredError : public CloneableBinaryModule<MeanSquaredError> {
  public:
   MeanSquaredError() = default;
 
@@ -48,7 +48,7 @@ class MeanSquaredError : public BinaryModule {
  * for input tensor \f$x\f$ and target tensor \f$y\f$ each of which contain
  \f$n\f$ elements.
  */
-class MeanAbsoluteError : public BinaryModule {
+class MeanAbsoluteError : public CloneableBinaryModule<MeanAbsoluteError> {
  public:
   MeanAbsoluteError() = default;
 
@@ -70,7 +70,7 @@ class MeanAbsoluteError : public BinaryModule {
  *
  * Both the inputs and the targets are expected to be between 0 and 1.
  */
-class BinaryCrossEntropy : public BinaryModule {
+class BinaryCrossEntropy : public CloneableBinaryModule<BinaryCrossEntropy> {
  public:
   BinaryCrossEntropy() = default;
 
@@ -116,7 +116,8 @@ class BinaryCrossEntropy : public BinaryModule {
  * reshaped to the target dimensions, giving a loss for each example. See
  * `ReduceMode`.
  */
-class CategoricalCrossEntropy : public BinaryModule {
+class CategoricalCrossEntropy
+    : public CloneableBinaryModule<CategoricalCrossEntropy> {
  private:
   ReduceMode reduction_;
   int ignoreIndex_{-1};
@@ -169,7 +170,7 @@ class CategoricalCrossEntropy : public BinaryModule {
  * low-frequency inputs are approximated with lower rank matrices so as to speed
  * up computation.
  */
-class AdaptiveSoftMaxLoss : public BinaryModule {
+class AdaptiveSoftMaxLoss : public CloneableBinaryModule<AdaptiveSoftMaxLoss> {
  private:
   FL_SAVE_LOAD_WITH_BASE(
       BinaryModule,

@@ -77,6 +77,10 @@ class WeightNorm : public Module {
     }
   }
 
+  virtual WeightNorm copy() const;
+
+  std::shared_ptr<Module> clone() const override;
+
   /**
    * Returns a pointer to the inner `Module` normalized by this `WeightNorm`.
    *

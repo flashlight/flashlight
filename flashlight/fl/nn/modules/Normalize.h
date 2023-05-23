@@ -11,7 +11,7 @@
 
 namespace fl {
 
-class Normalize : public UnaryModule {
+class Normalize : public CloneableUnaryModule<Normalize> {
  public:
   /**
    * Constructs a Normalize module.

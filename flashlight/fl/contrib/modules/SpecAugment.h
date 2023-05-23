@@ -26,7 +26,7 @@ namespace fl {
  * Switchboard mild (SM)     40        15        2      70       0.2       2
  * Switchboard strong (SS)   40        27        2      70       0.2       2
  **/
-class SpecAugment : public UnaryModule {
+class SpecAugment : public CloneableUnaryModule<SpecAugment> {
  public:
   enum class MaskingStrategy {
     ZERO = 0,

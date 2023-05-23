@@ -24,7 +24,7 @@ namespace fl {
  * shape `(10, 20, 30, 40)` and a `View` with shape `(-1, 0, 100)`, the output
  * tensor will have shape `(120, 20, 100)`.
  */
-class View : public UnaryModule {
+class View : public CloneableUnaryModule<View> {
  private:
   View() = default; // Intentionally private
 

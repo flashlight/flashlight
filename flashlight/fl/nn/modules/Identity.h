@@ -14,7 +14,7 @@ namespace fl {
 /**
  * Identity returns the inputs at forward.
  */
-class Identity : public Module {
+class Identity : public CloneableModule<Identity> {
  public:
   Identity() = default;
   virtual std::vector<Variable> forward(

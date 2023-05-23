@@ -68,6 +68,11 @@ TEST(ModuleTest, EmbeddingFwd) {
           {embDim, nQuery, batchSize}),
       true);
   ASSERT_TRUE(allClose(emb.forward(inVar), expectedOutVar, 1E-7));
+
+  // Deep copy
+  auto embCopy = emb.copy();
+  wtVar.tensor() += 1.0F;
+  ASSERT_TRUE(allClose(embCopy.forward(inVar), expectedOutVar, 1E-7));
 }
 
 TEST(ModuleTest, LinearFwd) {
@@ -98,6 +103,11 @@ TEST(ModuleTest, LinearFwd) {
 
   auto linBias = Linear(wtVar, bsVar);
   ASSERT_TRUE(allClose(linBias.forward(inVar), expected_outVar, 1E-7));
+
+  auto linCopy = linBias.copy();
+  wtVar.tensor() += 1.0F;
+  ASSERT_TRUE(allClose(linCopy.forward(inVar), expected_outVar, 1E-7));
+  ASSERT_FALSE(allClose(linBias.forward(inVar), expected_outVar, 1E-7));
 }
 
 TEST_F(ModuleTestF16, LinearFwdF16) {
@@ -449,6 +459,11 @@ TEST(ModuleTest, RNNFwd) {
            14.2008, 15.5165, 16.8322, 14.2866, 15.6109, 16.9351}),
       true);
   ASSERT_TRUE(allClose(out, expected_outVar, 1E-4));
+
+  auto rnnCopy = rnn.copy();
+  rnn.param(0).tensor() += 1.0F;
+  out = rnnCopy(in);
+  ASSERT_TRUE(allClose(out, expected_outVar, 1E-4));
 }
 
 TEST(ModuleTest, LSTMFwd) {
@@ -771,28 +786,37 @@ TEST(ModuleTest, ContainerReplaceParam) {
   seq.add(ReLU());
   seq.add(Linear(20, 30));
   seq.addParam(Variable(fl::rand({5, 5}), true));
+  auto seqCopy = seq.copy();
 
   // Change the first parameter
   auto new_param = Variable(fl::rand({5, 5}), true);
   seq.setParams(new_param, 0);
   ASSERT_TRUE(allClose(seq.params()[0], new_param));
+  ASSERT_FALSE(allClose(seqCopy.params()[0], seq.params()[0]));
 
   // Change the first linear layer's first parameter
   new_param = Variable(fl::rand({10, 20}), true);
   seq.setParams(new_param, 1);
   ASSERT_TRUE(allClose(seq.params()[1], new_param));
   ASSERT_TRUE(allClose(seq.module(0)->param(0), new_param));
+  ASSERT_FALSE(allClose(seqCopy.params()[1], seq.params()[1]));
+  ASSERT_FALSE(allClose(seqCopy.module(0)->param(0), seq.module(0)->param(0)));
 
   // Change the second linear layer's first parameter
   new_param = Variable(fl::rand({20, 30}), true);
   seq.setParams(new_param, 4);
   ASSERT_TRUE(allClose(seq.params()[4], new_param));
   ASSERT_TRUE(allClose(seq.module(2)->param(0), new_param));
+  ASSERT_FALSE(allClose(seqCopy.params()[4], seq.params()[4]));
+  ASSERT_FALSE(allClose(seqCopy.module(2)->param(0), seq.module(2)->param(0)));
 
   // Change the last parameter
   new_param = Variable(fl::rand({5, 5}), true);
   seq.setParams(new_param, 6);
   ASSERT_TRUE(allClose(seq.param(6), new_param));
+  ASSERT_FALSE(allClose(seqCopy.param(6), seq.param(6)));
+  seqCopy.setParams(new_param, 6);
+  ASSERT_TRUE(allClose(seqCopy.param(6), seq.param(6)));
 }
 
 TEST(ModuleTest, AdaptiveSoftMaxPredict) {

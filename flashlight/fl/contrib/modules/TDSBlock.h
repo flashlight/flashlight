@@ -18,7 +18,7 @@ namespace fl {
  * This [link](https://imgur.com/a/LAdlwZK) shows the diagram of TDSBlock.
  */
 
-class TDSBlock : public Container {
+class TDSBlock : public CloneableContainer<TDSBlock> {
  private:
   TDSBlock() = default;
   FL_SAVE_LOAD_WITH_BASE(Container)

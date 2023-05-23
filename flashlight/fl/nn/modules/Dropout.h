@@ -21,7 +21,7 @@ namespace fl {
  * \f$\frac{1}{1 - p}\f$. Thus, with the same network, at test time,
  * evaluating the module gives the identity.
  */
-class Dropout : public UnaryModule {
+class Dropout : public CloneableUnaryModule<Dropout> {
  private:
   double ratio_;
 

@@ -84,7 +84,7 @@ AdaptiveSoftMaxLoss::AdaptiveSoftMaxLoss(
     std::shared_ptr<AdaptiveSoftMax> activation,
     ReduceMode reduction,
     int ignoreIndex)
-    : BinaryModule(),
+    : CloneableBinaryModule<AdaptiveSoftMaxLoss>(),
       activation_(activation),
       reduction_(reduction),
       ignoreIndex_(ignoreIndex) {

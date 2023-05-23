@@ -44,6 +44,15 @@ BatchNorm::BatchNorm(
   initialize();
 }
 
+BatchNorm BatchNorm::copy() const {
+  auto copy = CloneableUnaryModule<BatchNorm>::copy();
+  copy.runningMean_ =
+      Variable(runningMean_.tensor().copy(), runningMean_.isCalcGrad());
+  copy.runningVar_ =
+      Variable(runningVar_.tensor().copy(), runningVar_.isCalcGrad());
+  return copy;
+}
+
 Variable BatchNorm::forward(const Variable& input) {
   double avgFactor = 0.0;
 

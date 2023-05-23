@@ -13,6 +13,28 @@
 
 namespace fl {
 
+WeightNorm WeightNorm::copy() const {
+  WeightNorm deepCopy;
+  deepCopy.normDim_ = normDim_;
+  deepCopy.dim_ = dim_;
+  deepCopy.module_ = module_->clone();
+  auto module_params = module_->params();
+
+  auto& v = module_params[0];
+  Variable g(norm(v, normDim_, 2, true).tensor(), true);
+  if (module_params.size() == 2) {
+    auto& b = module_params[1];
+    deepCopy.params_ = {v, g, b};
+  } else if (module_params.size() == 1) {
+    deepCopy.params_ = {v, g};
+  }
+  return deepCopy;
+}
+
+std::shared_ptr<Module> WeightNorm::clone() const {
+  return std::make_shared<WeightNorm>(copy());
+}
+
 void WeightNorm::transformDims() {
   normDim_.clear();
   int vNumdims = module_->param(0).ndim();
