@@ -47,9 +47,9 @@ endif()
 # were specified as ON
 if (NOT (${_AF_CUDA} OR ${_AF_CPU} OR ${_AF_OPENCL}))
   if (
-      ((TARGET ArrayFire::afcuda) AND (TARGET ArrayFire::afcpu)) OR
-      ((TARGET ArrayFire::afcpu)  AND (TARGET ArrayFire::afopencl)) OR
-      ((TARGET ArrayFire::afcuda) AND (TARGET ArrayFire::afopencl))
+      (($<TARGET_EXISTS:ArrayFire::afcuda>) AND ($<TARGET_EXISTS::ArrayFire::afcpu>)) OR
+      (($<TARGET_EXISTS::ArrayFire::afcpu>)  AND ($<TARGET_EXISTS::ArrayFire::afopencl>)) OR
+      (($<TARGET_EXISTS:ArrayFire::afcuda>) AND ($<TARGET_EXISTS::ArrayFire::afopencl>))
       )
     message(FATAL_ERROR "Multiple ArrayFire targets were found but no "
       "ArrayFire backend was selected. Exactly one of "
