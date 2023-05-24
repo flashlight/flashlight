@@ -58,9 +58,15 @@ if (NOT (${_AF_CUDA} OR ${_AF_CPU} OR ${_AF_OPENCL}))
 
   # Exactly one ArrayFire target is found, but no options are specified.
   # Set the option based on the found target.
-  set(${FL_ARRAYFIRE_USE_CUDA}   TARGET ArrayFire::afcuda)
-  set(${FL_ARRAYFIRE_USE_CPU}    TARGET ArrayFire::afcpu)
-  set(${FL_ARRAYFIRE_USE_OPENCL} TARGET ArrayFire::afopencl)
+  if (TARGET ArrayFire::afcuda)
+    set(FL_ARRAYFIRE_USE_CUDA ON)
+  endif()
+  if (TARGET ArrayFire::afcpu)
+    set(FL_ARRAYFIRE_USE_CPU ON)
+  endif()
+  if (TARGET ArrayFire::afopencl)
+    set(FL_ARRAYFIRE_USE_OPENCL ON)
+  endif()
 endif()
 
 if (${FL_ARRAYFIRE_USE_CUDA})
