@@ -7,8 +7,11 @@
 
 #include "flashlight/fl/contrib/modules/SinusoidalPositionEmbedding.h"
 
-#include <math.h>
+#include <cmath>
 #include <stdexcept>
+#include <algorithm>
+#include <numeric>
+
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/nn/Init.h"
 #include "flashlight/fl/nn/Utils.h"

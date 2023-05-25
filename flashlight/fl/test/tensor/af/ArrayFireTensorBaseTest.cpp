@@ -5,14 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <arrayfire.h>
-#include <gtest/gtest.h>
-
 #include <exception>
 #include <stdexcept>
 #include <utility>
 
-#include "af/util.h"
+#include <af/util.h>
+#include <arrayfire.h>
+#include <gtest/gtest.h>
+
 #include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/Random.h"
 #include "flashlight/fl/tensor/TensorBackend.h"

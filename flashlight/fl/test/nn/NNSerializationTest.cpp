@@ -5,9 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <fcntl.h>
-#include <sys/stat.h>
 #include <algorithm>
+#include <cstdint>
 #include <memory>
 #include <string>
 
@@ -36,13 +35,8 @@ class ContainerTestClass : public Sequential {
   FL_SAVE_LOAD_WITH_BASE(Sequential)
 };
 
-auto filesizebytes = []() {
-  struct stat fileStat;
-
-  auto fd =
-      open((fs::temp_directory_path() / "FileSize.txt").c_str(), O_RDONLY);
-  fstat(fd, &fileStat);
-  return static_cast<int64_t>(fileStat.st_size);
+auto filesizebytes = []() -> std::uintmax_t {
+  return fs::file_size(fs::temp_directory_path() / "FileSize.txt");
 };
 
 auto paramsizebytes = [](const std::vector<Variable>& parameters) {
@@ -326,11 +320,9 @@ TEST(NNSerializationTest, VariableTwice) {
   const fs::path path = fs::temp_directory_path() / "ContainerWithParams.mdl";
   save(path, v2, v);
 
-  struct stat fileStat;
-  auto fd = open(path.c_str(), O_RDONLY);
-  fstat(fd, &fileStat);
   ASSERT_LT(
-      static_cast<int64_t>(fileStat.st_size), paramsizebytes({v}) * kThreshold);
+      static_cast<int64_t>(fs::file_size(path)),
+      paramsizebytes({v}) * kThreshold);
 }
 
 TEST(NNSerializationTest, ContainerBackward) {

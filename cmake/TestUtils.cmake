@@ -49,7 +49,7 @@ function(build_test)
     PUBLIC
     ${GTEST_IMPORTED_TARGETS}
     ${build_test_LIBS}
-     ${CMAKE_THREAD_LIBS_INIT}
+    ${CMAKE_THREAD_LIBS_INIT}
     )
   target_include_directories(
     ${target}
@@ -61,5 +61,13 @@ function(build_test)
     PUBLIC
     ${build_test_PREPROC}
     )
+  if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    target_compile_definitions(
+      ${target}
+      PUBLIC
+      GTEST_LINKED_AS_SHARED_LIBRARY=$<BOOL:${BUILD_SHARED_LIBS}>
+      GMOCK_LINKED_AS_SHARED_LIBRARY=$<BOOL:${BUILD_SHARED_LIBS}>
+    )
+  endif()
   gtest_add_tests(TARGET ${target})
 endfunction(build_test)

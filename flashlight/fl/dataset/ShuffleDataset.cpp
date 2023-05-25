@@ -8,6 +8,7 @@
 #include "flashlight/fl/dataset/ShuffleDataset.h"
 
 #include <algorithm>
+#include <numeric>
 
 namespace fl {
 
