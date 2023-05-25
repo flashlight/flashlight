@@ -60,6 +60,11 @@ TransformerCriterion::TransformerCriterion(
   params_.push_back(fl::uniform(Shape{hiddenDim}, -1e-1, 1e-1));
 }
 
+std::shared_ptr<Module> TransformerCriterion::clone() const {
+  throw std::runtime_error(
+      "Cloning is unimplemented in Module 'TransformerCriterion'");
+}
+
 std::vector<Variable> TransformerCriterion::forward(
     const std::vector<Variable>& inputs) {
   if (inputs.size() < 2 || inputs.size() > 4) {

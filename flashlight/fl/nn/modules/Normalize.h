@@ -11,7 +11,7 @@
 
 namespace fl {
 
-class Normalize : public CloneableUnaryModule<Normalize> {
+class Normalize : public UnaryModule {
  public:
   /**
    * Constructs a Normalize module.
@@ -29,6 +29,8 @@ class Normalize : public CloneableUnaryModule<Normalize> {
       double value = 1);
 
   Variable forward(const Variable& input) override;
+
+  std::shared_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 

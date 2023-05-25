@@ -40,7 +40,7 @@ namespace fl {
  * as input and output. When these are input as the empty Variable they are
  * assumed to be zero.
  */
-class RNN : public CloneableModule<RNN> {
+class RNN : public Module {
  private:
   RNN() = default; // Intentionally private
 
@@ -83,6 +83,16 @@ class RNN : public CloneableModule<RNN> {
       RnnMode mode,
       bool bidirectional = false,
       float drop_prob = 0.0);
+
+  /**
+   * Constructs an RNN module from another, performing a deep copy of the
+   * parameters.
+   *
+   * @param other The RNN module to copy from.
+   */
+  RNN(const RNN& other);
+
+  RNN& operator=(const RNN& other);
 
   std::vector<Variable> forward(const std::vector<Variable>& inputs) override;
 
@@ -138,6 +148,8 @@ class RNN : public CloneableModule<RNN> {
       const Variable& input,
       const Variable& hidden_state,
       const Variable& cell_state);
+
+  std::shared_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 };

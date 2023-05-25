@@ -44,13 +44,34 @@ BatchNorm::BatchNorm(
   initialize();
 }
 
-BatchNorm BatchNorm::copy() const {
-  auto copy = CloneableUnaryModule<BatchNorm>::copy();
-  copy.runningMean_ =
-      Variable(runningMean_.tensor().copy(), runningMean_.isCalcGrad());
-  copy.runningVar_ =
-      Variable(runningVar_.tensor().copy(), runningVar_.isCalcGrad());
-  return copy;
+BatchNorm::BatchNorm(const BatchNorm& other)
+    : featAxis_(other.featAxis_),
+      featSize_(other.featSize_),
+      numBatchesTracked_(other.numBatchesTracked_),
+      runningMean_(
+          other.runningMean_.tensor().copy(),
+          other.runningMean_.isCalcGrad()),
+      runningVar_(
+          other.runningVar_.tensor().copy(),
+          other.runningVar_.isCalcGrad()),
+      momentum_(other.momentum_),
+      epsilon_(other.epsilon_),
+      affine_(other.affine_),
+      trackStats_(other.trackStats_) {}
+
+BatchNorm& BatchNorm::operator=(const BatchNorm& other) {
+  featAxis_ = other.featAxis_;
+  featSize_ = other.featSize_;
+  numBatchesTracked_ = other.numBatchesTracked_;
+  runningMean_ = Variable(
+      other.runningMean_.tensor().copy(), other.runningMean_.isCalcGrad());
+  runningVar_ = Variable(
+      other.runningVar_.tensor().copy(), other.runningVar_.isCalcGrad());
+  momentum_ = other.momentum_;
+  epsilon_ = other.epsilon_;
+  affine_ = other.affine_;
+  trackStats_ = other.trackStats_;
+  return *this;
 }
 
 Variable BatchNorm::forward(const Variable& input) {
@@ -90,6 +111,10 @@ void BatchNorm::initialize() {
     auto bs = constant(0.0, {featSize_}, fl::dtype::f32, true);
     params_ = {wt, bs};
   }
+}
+
+std::shared_ptr<Module> BatchNorm::clone() const {
+  return std::make_shared<BatchNorm>(*this);
 }
 
 std::string BatchNorm::prettyString() const {

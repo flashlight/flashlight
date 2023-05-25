@@ -25,7 +25,7 @@ constexpr const int kLnVariableAxisSize = -1;
  * added to the variance to avoid divide-by-zero, and \f$\gamma\f$ and
  * \f$\beta\f$ are learnable parameters for affine transformation.
  */
-class LayerNorm : public CloneableUnaryModule<LayerNorm> {
+class LayerNorm : public UnaryModule {
  public:
   /**
    * Constructs a LayerNorm module.
@@ -70,6 +70,8 @@ class LayerNorm : public CloneableUnaryModule<LayerNorm> {
       int axisSize = kLnVariableAxisSize);
 
   Variable forward(const Variable& input) override;
+
+  std::shared_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 

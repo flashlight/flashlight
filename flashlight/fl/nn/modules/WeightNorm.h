@@ -43,6 +43,8 @@ class WeightNorm : public Module {
 
   void computeWeight();
 
+  void initParams();
+
   FL_SAVE_LOAD_DECLARE()
 
  public:
@@ -61,25 +63,19 @@ class WeightNorm : public Module {
    */
   template <class T>
   WeightNorm(std::shared_ptr<T> module, int dim) : module_(module), dim_(dim) {
-    auto module_params = module_->params();
-
-    auto v = module_params[0];
     transformDims();
-    auto g = Variable(
-        norm(v, normDim_, /* p = */ 2, /* keepDims = */ true).tensor(), true);
-    if (module_params.size() == 2) {
-      auto b = module_params[1];
-      params_ = {v, g, b};
-    } else if (module_params.size() == 1) {
-      params_ = {v, g};
-    } else {
-      throw std::invalid_argument("WeightNorm only supports Linear and Conv2D");
-    }
+    initParams();
   }
 
-  virtual WeightNorm copy() const;
+  /**
+   * Construct a WeightNorm module from another, performing a deep copy for the
+   * wrapped module.
+   *
+   * @param other The WeightNorm module to copy from.
+   */
+  WeightNorm(const WeightNorm& other);
 
-  std::shared_ptr<Module> clone() const override;
+  WeightNorm& operator=(const WeightNorm& other);
 
   /**
    * Returns a pointer to the inner `Module` normalized by this `WeightNorm`.
@@ -95,6 +91,8 @@ class WeightNorm : public Module {
   void setParams(const Variable& var, int position) override;
 
   std::vector<Variable> forward(const std::vector<Variable>& inputs) override;
+
+  std::shared_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 };

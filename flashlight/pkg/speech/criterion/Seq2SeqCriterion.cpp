@@ -129,6 +129,11 @@ Seq2SeqCriterion::Seq2SeqCriterion(
   setUseSequentialDecoder();
 }
 
+std::shared_ptr<Module> Seq2SeqCriterion::clone() const {
+  throw std::runtime_error(
+      "Cloning is unimplemented in Module 'Seq2SeqCriterion'");
+}
+
 /**
  * Symbols describing tensor shapes used in this file:
  * - B: batch size

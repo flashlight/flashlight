@@ -30,6 +30,10 @@ Variable MeanSquaredError::forward(
   return res;
 }
 
+std::shared_ptr<Module> MeanSquaredError::clone() const {
+  return std::make_shared<MeanSquaredError>(*this);
+}
+
 std::string MeanSquaredError::prettyString() const {
   return "MeanSquaredError";
 }
@@ -49,6 +53,10 @@ Variable MeanAbsoluteError::forward(
   return mean(flat(fl::abs(df)), {0});
 }
 
+std::shared_ptr<Module> MeanAbsoluteError::clone() const {
+  return std::make_shared<MeanAbsoluteError>(*this);
+}
+
 std::string MeanAbsoluteError::prettyString() const {
   return "MeanAbsoluteError";
 }
@@ -66,6 +74,10 @@ Variable BinaryCrossEntropy::forward(
   return mean(flat(weights * binaryCrossEntropy(inputs, targets)), {0});
 }
 
+std::shared_ptr<Module> BinaryCrossEntropy::clone() const {
+  return std::make_shared<BinaryCrossEntropy>(*this);
+}
+
 std::string BinaryCrossEntropy::prettyString() const {
   return "BinaryCrossEntropy";
 }
@@ -76,6 +88,10 @@ Variable CategoricalCrossEntropy::forward(
   return categoricalCrossEntropy(inputs, targets, reduction_, ignoreIndex_);
 }
 
+std::shared_ptr<Module> CategoricalCrossEntropy::clone() const {
+  return std::make_shared<CategoricalCrossEntropy>(*this);
+}
+
 std::string CategoricalCrossEntropy::prettyString() const {
   return "CategoricalCrossEntropy";
 }
@@ -84,7 +100,7 @@ AdaptiveSoftMaxLoss::AdaptiveSoftMaxLoss(
     std::shared_ptr<AdaptiveSoftMax> activation,
     ReduceMode reduction,
     int ignoreIndex)
-    : CloneableBinaryModule<AdaptiveSoftMaxLoss>(),
+    : BinaryModule(),
       activation_(activation),
       reduction_(reduction),
       ignoreIndex_(ignoreIndex) {
@@ -193,6 +209,10 @@ std::shared_ptr<AdaptiveSoftMax> AdaptiveSoftMaxLoss::getActivation() const {
 void AdaptiveSoftMaxLoss::setParams(const Variable& var, int position) {
   Module::setParams(var, position);
   activation_->setParams(var, position);
+}
+
+std::shared_ptr<Module> AdaptiveSoftMaxLoss::clone() const {
+  return std::make_shared<AdaptiveSoftMaxLoss>(*this);
 }
 
 std::string AdaptiveSoftMaxLoss::prettyString() const {

@@ -22,6 +22,22 @@ namespace {
 
 class ContainerTestClass : public Sequential {
  public:
+  ContainerTestClass() = default;
+  ContainerTestClass(const ContainerTestClass& other){
+    auto orphanParamIdxMap = other.getOrphanedParamsIdxMap();
+    for (int i = -1; i < static_cast<int>(other.modules_.size()); ++i) {
+      if (i >= 0) {
+        add(other.modules_[i]->clone());
+      }
+      auto [paramIter, pEnd] = orphanParamIdxMap.equal_range(i);
+      for (; paramIter != pEnd; ++paramIter) {
+        const auto& param = other.params_[paramIter->second];
+        params_.emplace_back(
+            param.tensor().copy(), param.isCalcGrad());
+      }
+    }
+  }
+
   void addParam(const Variable& param) {
     params_.push_back(param);
   }
@@ -70,7 +86,7 @@ TEST(ModuleTest, EmbeddingFwd) {
   ASSERT_TRUE(allClose(emb.forward(inVar), expectedOutVar, 1E-7));
 
   // Deep copy
-  auto embCopy = emb.copy();
+  auto embCopy = emb;
   wtVar.tensor() += 1.0F;
   ASSERT_TRUE(allClose(embCopy.forward(inVar), expectedOutVar, 1E-7));
 }
@@ -104,7 +120,7 @@ TEST(ModuleTest, LinearFwd) {
   auto linBias = Linear(wtVar, bsVar);
   ASSERT_TRUE(allClose(linBias.forward(inVar), expected_outVar, 1E-7));
 
-  auto linCopy = linBias.copy();
+  auto linCopy = linBias;
   wtVar.tensor() += 1.0F;
   ASSERT_TRUE(allClose(linCopy.forward(inVar), expected_outVar, 1E-7));
   ASSERT_FALSE(allClose(linBias.forward(inVar), expected_outVar, 1E-7));
@@ -460,7 +476,7 @@ TEST(ModuleTest, RNNFwd) {
       true);
   ASSERT_TRUE(allClose(out, expected_outVar, 1E-4));
 
-  auto rnnCopy = rnn.copy();
+  auto rnnCopy = rnn;
   rnn.param(0).tensor() += 1.0F;
   out = rnnCopy(in);
   ASSERT_TRUE(allClose(out, expected_outVar, 1E-4));
@@ -786,7 +802,7 @@ TEST(ModuleTest, ContainerReplaceParam) {
   seq.add(ReLU());
   seq.add(Linear(20, 30));
   seq.addParam(Variable(fl::rand({5, 5}), true));
-  auto seqCopy = seq.copy();
+  auto seqCopy = seq;
 
   // Change the first parameter
   auto new_param = Variable(fl::rand({5, 5}), true);

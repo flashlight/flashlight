@@ -164,6 +164,11 @@ class RnnClassifier : public Container {
     add(logsoftmax_);
   }
 
+  std::shared_ptr<Module> clone() const {
+    throw std::runtime_error(
+        "Cloning is unimplemented in Module 'RnnClassifier'");
+  }
+
   std::vector<Variable> forward(const std::vector<Variable>& inputs) override {
     throw std::runtime_error("Not implemented");
   }

@@ -57,7 +57,7 @@ Conv2D::Conv2D(
     int dx,
     int dy,
     int groups)
-    : CloneableUnaryModule<Conv2D>({w}),
+    : UnaryModule({w}),
       nIn_(w.dim(2)),
       nOut_(w.dim(3)),
       xFilter_(w.dim(0)),
@@ -81,7 +81,7 @@ Conv2D::Conv2D(
     int dx,
     int dy,
     int groups)
-    : CloneableUnaryModule<Conv2D>({w, b}),
+    : UnaryModule({w, b}),
       nIn_(w.dim(2)),
       nOut_(w.dim(3)),
       xFilter_(w.dim(0)),
@@ -102,6 +102,38 @@ Conv2D::Conv2D(
     throw std::invalid_argument(
         "only 3rd dimension of Conv2D bias may be non-singleton");
   }
+}
+
+Conv2D::Conv2D(const Conv2D& other)
+    : UnaryModule(other.copyParams()),
+      nIn_(other.nIn_),
+      nOut_(other.nOut_),
+      xFilter_(other.xFilter_),
+      yFilter_(other.yFilter_),
+      xStride_(other.xStride_),
+      yStride_(other.yStride_),
+      xPad_(other.xPad_),
+      yPad_(other.yPad_),
+      xDilation_(other.xDilation_),
+      yDilation_(other.yDilation_),
+      bias_(other.bias_),
+      groups_(other.groups_) {}
+
+Conv2D& Conv2D::operator=(const Conv2D& other) {
+  params_ = other.copyParams();
+  nIn_ = other.nIn_;
+  nOut_ = other.nOut_;
+  xFilter_ = other.xFilter_;
+  yFilter_ = other.yFilter_;
+  xStride_ = other.xStride_;
+  yStride_ = other.yStride_;
+  xPad_ = other.xPad_;
+  yPad_ = other.yPad_;
+  xDilation_ = other.xDilation_;
+  yDilation_ = other.yDilation_;
+  bias_ = other.bias_;
+  groups_ = other.groups_;
+  return *this;
 }
 
 Variable Conv2D::forward(const Variable& input) {
@@ -156,6 +188,10 @@ void Conv2D::initialize() {
   }
 
   benchmarks_ = std::make_shared<detail::ConvBenchmarks>();
+}
+
+std::shared_ptr<Module> Conv2D::clone() const {
+  return std::make_shared<Conv2D>(*this);
 }
 
 std::string Conv2D::prettyString() const {

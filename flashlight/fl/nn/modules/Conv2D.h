@@ -37,7 +37,7 @@ class ConvBenchmarks;
  * \f[X_{out} = \lceil{\frac{X_{in}}{X_{stride}}}\rceil,
  *  Y_{out} = \lceil{\frac{Y_{in}}{Y_{stride}}}\rceil\f]
  */
-class Conv2D : public CloneableUnaryModule<Conv2D> {
+class Conv2D : public UnaryModule {
  private:
   FL_SAVE_LOAD_WITH_BASE(
       UnaryModule,
@@ -176,7 +176,19 @@ class Conv2D : public CloneableUnaryModule<Conv2D> {
       int dy = 1,
       int groups = 1);
 
+  /**
+   * Constructs an Conv2D module from another, performing a deep copy of the
+   * parameters.
+   *
+   * @param other The Conv2D module to copy from.
+   */
+  Conv2D(const Conv2D& other);
+
+  Conv2D& operator=(const Conv2D& other);
+
   Variable forward(const Variable& input) override;
+
+  std::shared_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 

@@ -31,11 +31,14 @@ namespace fl {
  * sinusoidal embedding to it
  *
  */
-class SinusoidalPositionEmbedding : public Container {
+class SinusoidalPositionEmbedding : public Module {
  public:
   explicit SinusoidalPositionEmbedding(
       int32_t layerDim,
       double inputScale = 1.);
+  SinusoidalPositionEmbedding(const SinusoidalPositionEmbedding& other);
+  SinusoidalPositionEmbedding& operator=(
+      const SinusoidalPositionEmbedding& other);
   /**
    * SinusoidalPositionEmbedding::forward(input) expects input[0] to be of
    * dimensions CxTxBx1 with C = layerDim.
@@ -46,11 +49,13 @@ class SinusoidalPositionEmbedding : public Container {
 
   std::vector<Variable> operator()(const std::vector<Variable>& input);
 
+  std::shared_ptr<Module> clone() const override;
+
   std::string prettyString() const override;
 
  private:
   FL_SAVE_LOAD_WITH_BASE(
-      Container,
+      Module,
       layerDim_,
       inputScale_,
       scale_,

@@ -54,6 +54,10 @@ Variable Pool2D::forward(const Variable& input) {
   return pool2d(input, xFilter_, yFilter_, xStride_, yStride_, px, py, mode_);
 }
 
+std::shared_ptr<Module> Pool2D::clone() const {
+  return std::make_shared<Pool2D>(*this);
+}
+
 std::string Pool2D::prettyString() const {
   std::ostringstream ss;
   ss << "Pool2D";

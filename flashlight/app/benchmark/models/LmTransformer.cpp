@@ -29,6 +29,33 @@ LmTransformer::LmTransformer(int64_t nLabel, bool fp16) : fp16_(fp16) {
   }
 }
 
+LmTransformer::LmTransformer(const LmTransformer& other) {
+  frontend_ = std::make_shared<fl::Sequential>(*other.frontend_);
+  // nFeature x Time x Batch x 1
+  add(frontend_);
+  for (const auto& transformer : transformers_) {
+    auto layer = std::make_shared<fl::Transformer>(*transformer);
+    transformers_.push_back(layer);
+    add(std::move(layer));
+  }
+}
+
+LmTransformer& LmTransformer::operator=(const LmTransformer& other) {
+  frontend_ = std::make_shared<fl::Sequential>(*other.frontend_);
+  // nFeature x Time x Batch x 1
+  add(frontend_);
+  for (const auto& transformer : transformers_) {
+    auto layer = std::make_shared<fl::Transformer>(*transformer);
+    transformers_.push_back(layer);
+    add(std::move(layer));
+  }
+  return *this;
+}
+
+std::shared_ptr<Module> LmTransformer::clone() const {
+  return std::make_shared<LmTransformer>(*this);
+}
+
 std::vector<fl::Variable> LmTransformer::forward(
     const std::vector<fl::Variable>& input) {
   auto out = input[0];

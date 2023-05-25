@@ -99,6 +99,11 @@ MultiheadAttention::MultiheadAttention(
   add(wf_);
 }
 
+std::shared_ptr<Module> MultiheadAttention::clone() const {
+  throw std::runtime_error(
+      "Cloning is unimplemented in Module 'MultiheadAttention'");
+}
+
 std::vector<Variable> MultiheadAttention::forward(
     const Variable& queries,
     const Variable& keys,
@@ -176,6 +181,11 @@ TransformerBaseLayer::TransformerBaseLayer(
   add(norm2_);
 };
 
+std::shared_ptr<Module> TransformerBaseLayer::clone() const {
+  throw std::runtime_error(
+      "Cloning is unimplemented in Module 'TransformerBaseLayer'");
+}
+
 Variable TransformerBaseLayer::mlp(const Variable& in) {
   float pDropout = train_ ? pDropout_ : 0.0;
   return (*w2_)(dropout(relu((*w1_)(in)), pDropout));
@@ -205,6 +215,11 @@ TransformerEncoderLayer::TransformerEncoderLayer(
     int32_t nHeads,
     float pDropout)
     : TransformerBaseLayer(modelDim, mlpDim, nHeads, pDropout){};
+
+std::shared_ptr<Module> TransformerEncoderLayer::clone() const {
+  throw std::runtime_error(
+      "Cloning is unimplemented in Module 'TransformerEncoderLayer'");
+}
 
 std::vector<Variable> TransformerEncoderLayer::forward(
     const std::vector<Variable>& input) {
@@ -271,6 +286,11 @@ TransformerDecoderLayer::TransformerDecoderLayer(
   add(norm1_);
   add(norm2_);
   add(norm3_);
+}
+
+std::shared_ptr<Module> TransformerDecoderLayer::clone() const {
+  throw std::runtime_error(
+      "Cloning is unimplemented in Module 'TransformerDecoderLayer'");
 }
 
 Variable TransformerDecoderLayer::mlp(const Variable& in) {
@@ -343,6 +363,11 @@ TransformerDecoder::TransformerDecoder(
   add(LayerNorm(std::vector<int>{0}, 1e-5, true, modelDim));
 }
 
+std::shared_ptr<Module> TransformerDecoder::clone() const {
+  throw std::runtime_error(
+      "Cloning is unimplemented in Module 'TransformerDecoder'");
+}
+
 std::vector<Variable> TransformerDecoder::forward(
     const std::vector<Variable>& input) {
   auto tgt = input[0];
@@ -378,6 +403,11 @@ TransformerEncoder::TransformerEncoder(
   for (int i = 0; i < layers; i++) {
     add(TransformerEncoderLayer(modelDim, mlpDim, nHeads, pDropout));
   }
+}
+
+std::shared_ptr<Module> TransformerEncoder::clone() const {
+  throw std::runtime_error(
+      "Cloning is unimplemented in Module 'TransformerEncoder'");
 }
 
 std::vector<Variable> TransformerEncoder::forward(
@@ -419,6 +449,10 @@ Transformer::Transformer(
   add(encoder_);
   add(decoder_);
 };
+
+std::shared_ptr<Module> Transformer::clone() const {
+  throw std::runtime_error("Cloning is unimplemented in Module 'Transformer'");
+}
 
 std::vector<Variable> Transformer::forward(
     Variable src,

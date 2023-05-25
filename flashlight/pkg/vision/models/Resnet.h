@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "flashlight/pkg/vision/nn/FrozenBatchNorm.h"
 #include "flashlight/fl/nn/nn.h"
+#include "flashlight/pkg/vision/nn/FrozenBatchNorm.h"
 
 namespace fl {
 namespace pkg {
@@ -46,6 +46,8 @@ class ResNetBlock : public fl::Container {
       const std::vector<fl::Variable>& inputs) override;
 
   std::string prettyString() const override;
+
+  FL_BASIC_CONTAINER_CLONING(ResNetBlock)
 };
 
 class ResNetBottleneckBlock : public fl::Container {
@@ -63,6 +65,8 @@ class ResNetBottleneckBlock : public fl::Container {
       const std::vector<fl::Variable>& inputs) override;
 
   std::string prettyString() const override;
+
+  FL_BASIC_CONTAINER_CLONING(ResNetBottleneckBlock)
 };
 
 class ResNetBottleneckStage : public fl::Sequential {

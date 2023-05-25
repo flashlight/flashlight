@@ -26,7 +26,7 @@ namespace fl {
  * Switchboard mild (SM)     40        15        2      70       0.2       2
  * Switchboard strong (SS)   40        27        2      70       0.2       2
  **/
-class SpecAugment : public CloneableUnaryModule<SpecAugment> {
+class SpecAugment : public UnaryModule {
  public:
   enum class MaskingStrategy {
     ZERO = 0,
@@ -54,6 +54,8 @@ class SpecAugment : public CloneableUnaryModule<SpecAugment> {
       timeMaskP_,
       numTimeMask_,
       maskStrategy_)
+
+  std::shared_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 

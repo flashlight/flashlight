@@ -17,28 +17,33 @@
 namespace fl {
 
 Linear::Linear(int input_size, int output_size, bool bias)
-    : CloneableUnaryModule<Linear>(),
-      nIn_(input_size),
-      nOut_(output_size),
-      bias_(bias) {
+    : UnaryModule(), nIn_(input_size), nOut_(output_size), bias_(bias) {
   initialize();
 }
 
 Linear::Linear(const Variable& w)
-    : CloneableUnaryModule<Linear>({w}),
-      nIn_(w.dim(1)),
-      nOut_(w.dim(0)),
-      bias_(false) {}
+    : UnaryModule({w}), nIn_(w.dim(1)), nOut_(w.dim(0)), bias_(false) {}
 
 Linear::Linear(const Variable& w, const Variable& b)
-    : CloneableUnaryModule<Linear>({w, b}),
-      nIn_(w.dim(1)),
-      nOut_(w.dim(0)),
-      bias_(true) {
+    : UnaryModule({w, b}), nIn_(w.dim(1)), nOut_(w.dim(0)), bias_(true) {
   if (b.dim(0) != w.dim(0)) {
     throw std::invalid_argument(
         "dimension mismatch between Linear weight and bias");
   }
+}
+
+Linear::Linear(const Linear& other)
+    : UnaryModule(other.copyParams()),
+      nIn_(other.nIn_),
+      nOut_(other.nOut_),
+      bias_(other.bias_) {}
+
+Linear& Linear::operator=(const Linear& other) {
+  params_ = other.copyParams();
+  nIn_ = other.nIn_;
+  nOut_ = other.nOut_;
+  bias_ = other.bias_;
+  return *this;
 }
 
 Variable Linear::forward(const Variable& input) {
@@ -63,6 +68,10 @@ void Linear::initialize() {
   } else {
     params_ = {w};
   }
+}
+
+std::shared_ptr<Module> Linear::clone() const {
+  return std::make_shared<Linear>(*this);
 }
 
 std::string Linear::prettyString() const {

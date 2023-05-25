@@ -27,6 +27,11 @@ FullConnectionCriterion::FullConnectionCriterion(
   params_ = {transition};
 }
 
+std::shared_ptr<Module> FullConnectionCriterion::clone() const {
+  throw std::runtime_error(
+      "Cloning is unimplemented in Module 'FullConnectionCriterion'");
+}
+
 std::string FullConnectionCriterion::prettyString() const {
   return "FullConnectionCriterion";
 }

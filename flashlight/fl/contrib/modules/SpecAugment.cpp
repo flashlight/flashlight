@@ -86,6 +86,10 @@ int SpecAugment::generateRandomInt(int low, int high) {
   return uniformDist(eng_);
 }
 
+std::shared_ptr<Module> SpecAugment::clone() const {
+  return std::make_shared<SpecAugment>(*this);
+}
+
 std::string SpecAugment::prettyString() const {
   std::ostringstream ss;
   ss << "SpecAugment ( ";

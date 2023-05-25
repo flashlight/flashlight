@@ -26,11 +26,13 @@ class Tensor;
  * for input tensor \f$x\f$ and target tensor \f$y\f$ each of which contain
  \f$n\f$ elements.
  */
-class MeanSquaredError : public CloneableBinaryModule<MeanSquaredError> {
+class MeanSquaredError : public BinaryModule {
  public:
   MeanSquaredError() = default;
 
   Variable forward(const Variable& inputs, const Variable& targets) override;
+
+  std::shared_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 
@@ -48,11 +50,13 @@ class MeanSquaredError : public CloneableBinaryModule<MeanSquaredError> {
  * for input tensor \f$x\f$ and target tensor \f$y\f$ each of which contain
  \f$n\f$ elements.
  */
-class MeanAbsoluteError : public CloneableBinaryModule<MeanAbsoluteError> {
+class MeanAbsoluteError : public BinaryModule {
  public:
   MeanAbsoluteError() = default;
 
   Variable forward(const Variable& inputs, const Variable& targets) override;
+
+  std::shared_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 
@@ -70,7 +74,7 @@ class MeanAbsoluteError : public CloneableBinaryModule<MeanAbsoluteError> {
  *
  * Both the inputs and the targets are expected to be between 0 and 1.
  */
-class BinaryCrossEntropy : public CloneableBinaryModule<BinaryCrossEntropy> {
+class BinaryCrossEntropy : public BinaryModule {
  public:
   BinaryCrossEntropy() = default;
 
@@ -89,6 +93,8 @@ class BinaryCrossEntropy : public CloneableBinaryModule<BinaryCrossEntropy> {
       const Variable& inputs,
       const Variable& targets,
       const Variable& weights);
+
+  std::shared_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 
@@ -116,8 +122,7 @@ class BinaryCrossEntropy : public CloneableBinaryModule<BinaryCrossEntropy> {
  * reshaped to the target dimensions, giving a loss for each example. See
  * `ReduceMode`.
  */
-class CategoricalCrossEntropy
-    : public CloneableBinaryModule<CategoricalCrossEntropy> {
+class CategoricalCrossEntropy : public BinaryModule {
  private:
   ReduceMode reduction_;
   int ignoreIndex_{-1};
@@ -153,6 +158,8 @@ class CategoricalCrossEntropy
    */
   Variable forward(const Variable& inputs, const Variable& targets) override;
 
+  std::shared_ptr<Module> clone() const override;
+
   std::string prettyString() const override;
 };
 
@@ -170,7 +177,7 @@ class CategoricalCrossEntropy
  * low-frequency inputs are approximated with lower rank matrices so as to speed
  * up computation.
  */
-class AdaptiveSoftMaxLoss : public CloneableBinaryModule<AdaptiveSoftMaxLoss> {
+class AdaptiveSoftMaxLoss : public BinaryModule {
  private:
   FL_SAVE_LOAD_WITH_BASE(
       BinaryModule,
@@ -214,6 +221,8 @@ class AdaptiveSoftMaxLoss : public CloneableBinaryModule<AdaptiveSoftMaxLoss> {
   Variable forward(const Variable& inputs, const Variable& targets) override;
 
   void setParams(const Variable& var, int position) override;
+
+  std::shared_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 };

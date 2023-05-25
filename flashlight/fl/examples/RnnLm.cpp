@@ -126,6 +126,10 @@ class RnnLm : public Container {
     return "RnnLm";
   }
 
+  std::shared_ptr<Module> clone() const {
+    throw std::runtime_error("Cloning is unimplemented in Module 'RnnLm'");
+  }
+
  private:
   Embedding embed;
   RNN rnn;
@@ -168,17 +172,18 @@ int main(int argc, char** argv) {
 
   SGDOptimizer opt(model.params(), learning_rate);
 
-  auto eval_loop = [&model, &criterion, kInputIdx, kTargetIdx](LMDataset& dataset) {
-    AverageValueMeter avg_loss_meter;
-    Variable output, h, c;
-    for (auto& example : dataset) {
-      std::tie(output, h, c) = model(noGrad(example[kInputIdx]), h, c);
-      auto target = noGrad(example[kTargetIdx]);
-      auto loss = criterion(output, target);
-      avg_loss_meter.add(loss.tensor().scalar<float>(), target.elements());
-    }
-    return avg_loss_meter.value()[0];
-  };
+  auto eval_loop =
+      [&model, &criterion, kInputIdx, kTargetIdx](LMDataset& dataset) {
+        AverageValueMeter avg_loss_meter;
+        Variable output, h, c;
+        for (auto& example : dataset) {
+          std::tie(output, h, c) = model(noGrad(example[kInputIdx]), h, c);
+          auto target = noGrad(example[kTargetIdx]);
+          auto loss = criterion(output, target);
+          avg_loss_meter.add(loss.tensor().scalar<float>(), target.elements());
+        }
+        return avg_loss_meter.value()[0];
+      };
 
   for (int e = 0; e < epochs; e++) {
     AverageValueMeter train_loss_meter;

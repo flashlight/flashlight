@@ -36,6 +36,41 @@ AsrTransformer::AsrTransformer(int64_t nFeature, int64_t nLabel) {
   add(linear_);
 }
 
+AsrTransformer::AsrTransformer(const AsrTransformer& other) {
+  convFrontend_ = std::make_shared<fl::Sequential>(*other.convFrontend_);
+  // nFeature x Time x Batch x 1
+  add(convFrontend_);
+  sinpos_ = std::make_shared<fl::SinusoidalPositionEmbedding>(*other.sinpos_);
+  add(sinpos_);
+  for (const auto& transformer : transformers_) {
+    auto layer = std::make_shared<fl::Transformer>(*transformer);
+    transformers_.push_back(layer);
+    add(std::move(layer));
+  }
+  linear_ = std::make_shared<fl::Linear>(*other.linear_);
+  add(linear_);
+}
+
+AsrTransformer& AsrTransformer::operator=(const AsrTransformer& other) {
+  convFrontend_ = std::make_shared<fl::Sequential>(*other.convFrontend_);
+  // nFeature x Time x Batch x 1
+  add(convFrontend_);
+  sinpos_ = std::make_shared<fl::SinusoidalPositionEmbedding>(*other.sinpos_);
+  add(sinpos_);
+  for (const auto& transformer : transformers_) {
+    auto layer = std::make_shared<fl::Transformer>(*transformer);
+    transformers_.push_back(layer);
+    add(std::move(layer));
+  }
+  linear_ = std::make_shared<fl::Linear>(*other.linear_);
+  add(linear_);
+  return *this;
+}
+
+std::shared_ptr<Module> AsrTransformer::clone() const {
+  return std::make_shared<AsrTransformer>(*this);
+}
+
 std::vector<fl::Variable> AsrTransformer::forward(
     const std::vector<fl::Variable>& input) {
   auto out = input[0];

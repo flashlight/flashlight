@@ -23,7 +23,7 @@ namespace fl {
  * added to the variance to avoid divide-by-zero, and \f$\gamma\f$ and
  * \f$\beta\f$ are learnable parameters for affine transformation.
  */
-class BatchNorm : public CloneableUnaryModule<BatchNorm> {
+class BatchNorm : public UnaryModule {
  protected:
   BatchNorm() = default; // intentionally protected
   std::vector<int> featAxis_;
@@ -113,9 +113,19 @@ class BatchNorm : public CloneableUnaryModule<BatchNorm> {
       bool affine = true,
       bool trackStats = true);
 
-  BatchNorm copy() const override;
+  /**
+   * Constructs a BatchNorm module from another, performing a deep copy of the
+   * stats parameters.
+   *
+   * @param other The BatchNorm module to copy from.
+   */
+  BatchNorm(const BatchNorm& other);
+
+  BatchNorm& operator=(const BatchNorm& other);
 
   Variable forward(const Variable& input) override;
+
+  std::shared_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 };

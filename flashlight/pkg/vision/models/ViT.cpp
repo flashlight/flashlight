@@ -46,19 +46,59 @@ ViT::ViT(
         hiddenEmbSize_ / nHeads_,
         mlpSize_,
         nHeads_,
-        pDropout,
+        pDropout_,
         pLayerDrop * i / (nLayers_ - 1)));
     add(transformers_.back());
   }
 
   linearOut_ = std::make_shared<Linear>(
-      fl::truncNormal({nClasses, hiddenEmbSize_}, 0.02),
-      fl::constant(0., nClasses, 1, fl::dtype::f32));
+      fl::truncNormal({nClasses_, hiddenEmbSize_}, 0.02),
+      fl::constant(0., nClasses_, 1, fl::dtype::f32));
   add(linearOut_);
 
   ln_ = std::make_shared<LayerNorm>(
       std::vector<int>({0}), 1e-6, true, hiddenEmbSize_);
   add(ln_);
+}
+
+void ViT::copy(const ViT& other) {
+  clear();
+
+  // Class token
+  auto clsTkn = other.param(0);
+  params_.emplace_back(clsTkn.tensor().copy(), clsTkn.isCalcGrad());
+
+  // Positional embedding
+  auto posEmb = other.param(1);
+  params_.emplace_back(posEmb.tensor().copy(), posEmb.isCalcGrad());
+
+  // Modules
+  patchEmbedding_ = std::make_shared<Conv2D>(*other.patchEmbedding_);
+  add(patchEmbedding_);
+
+  for (const auto& vit : other.transformers_) {
+    transformers_.emplace_back(std::make_shared<VisionTransformer>(*vit));
+    add(transformers_.back());
+  }
+
+  linearOut_ = std::make_shared<Linear>(*other.linearOut_);
+  add(linearOut_);
+
+  ln_ = std::make_shared<LayerNorm>(*other.ln_);
+  add(ln_);
+}
+
+ViT::ViT(const ViT& other) {
+  copy(other);
+}
+
+ViT& ViT::operator=(const ViT& other) {
+  copy(other);
+  return *this;
+}
+
+std::shared_ptr<Module> ViT::clone() const {
+  return std::make_shared<ViT>(*this);
 }
 
 std::vector<fl::Variable> ViT::forward(
@@ -71,7 +111,8 @@ std::vector<fl::Variable> ViT::forward(
   auto B = output.dim(2);
 
   // Prepending the class token
-  auto clsToken = tile(params_[0], {1, 1, B}).astype(output.type()); // C x 1 x B
+  auto clsToken =
+      tile(params_[0], {1, 1, B}).astype(output.type()); // C x 1 x B
   output = concatenate({clsToken, output}, 1);
 
   // Positional embedding

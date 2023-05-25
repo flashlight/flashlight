@@ -6,9 +6,9 @@
  */
 
 #include <cmath>
+#include <numeric>
 #include <sstream>
 #include <stdexcept>
-#include <numeric>
 
 #include "flashlight/fl/common/Logging.h"
 #include "flashlight/fl/contrib/modules/RawWavSpecAugment.h"
@@ -183,6 +183,10 @@ Variable RawWavSpecAugment::forward(const Variable& input) {
 int RawWavSpecAugment::generateRandomInt(int low, int high) {
   std::uniform_int_distribution<int> uniformDist(low, high - 1);
   return uniformDist(eng_);
+}
+
+std::shared_ptr<Module> RawWavSpecAugment::clone() const {
+  return std::make_shared<RawWavSpecAugment>(*this);
 }
 
 std::string RawWavSpecAugment::prettyString() const {

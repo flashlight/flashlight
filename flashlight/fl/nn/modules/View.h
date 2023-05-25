@@ -24,7 +24,7 @@ namespace fl {
  * shape `(10, 20, 30, 40)` and a `View` with shape `(-1, 0, 100)`, the output
  * tensor will have shape `(120, 20, 100)`.
  */
-class View : public CloneableUnaryModule<View> {
+class View : public UnaryModule {
  private:
   View() = default; // Intentionally private
 
@@ -41,6 +41,8 @@ class View : public CloneableUnaryModule<View> {
   explicit View(Shape dims);
 
   Variable forward(const Variable& input) override;
+
+  std::shared_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 

@@ -7,9 +7,9 @@
 
 #pragma once
 
+#include "flashlight/fl/flashlight.h"
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 #include "flashlight/pkg/speech/criterion/Defines.h"
-#include "flashlight/fl/flashlight.h"
 
 namespace fl {
 namespace pkg {
@@ -21,6 +21,8 @@ class FullConnectionCriterion : public fl::BinaryModule {
       int N,
       fl::lib::seq::CriterionScaleMode scalemode =
           fl::lib::seq::CriterionScaleMode::NONE);
+
+  std::shared_ptr<Module> clone() const override;
 
   fl::Variable forward(const fl::Variable& input, const fl::Variable& target)
       override;

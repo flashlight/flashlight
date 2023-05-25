@@ -20,6 +20,11 @@ SimpleLocationAttention::SimpleLocationAttention(int convKernel) {
   add(pa);
 }
 
+std::shared_ptr<Module> SimpleLocationAttention::clone() const {
+  throw std::runtime_error(
+      "Cloning is unimplemented in Module 'SimpleLocationAttention'");
+}
+
 std::pair<Variable, Variable> SimpleLocationAttention::forwardBase(
     const Variable& state,
     const Variable& xEncoded,
@@ -72,6 +77,11 @@ LocationAttention::LocationAttention(int encDim, int convKernel) {
   pa.add(Reorder({2, 0, 1, 3}));
   pa.add(ReLU());
   add(pa);
+}
+
+std::shared_ptr<Module> LocationAttention::clone() const {
+  throw std::runtime_error(
+      "Cloning is unimplemented in Module 'LocationAttention'");
 }
 
 std::pair<Variable, Variable> LocationAttention::forwardBase(
@@ -134,6 +144,11 @@ NeuralLocationAttention::NeuralLocationAttention(
   add(pa);
   add(Tanh());
   add(Linear(attnDim, 1, false));
+}
+
+std::shared_ptr<Module> NeuralLocationAttention::clone() const {
+  throw std::runtime_error(
+      "Cloning is unimplemented in Module 'NeuralLocationAttention'");
 }
 
 std::pair<Variable, Variable> NeuralLocationAttention::forwardBase(

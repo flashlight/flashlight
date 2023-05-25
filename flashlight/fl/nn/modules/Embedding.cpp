@@ -20,9 +20,19 @@ Embedding::Embedding(int embeddingDim, int numEmbeddings)
 }
 
 Embedding::Embedding(const Variable& w)
-    : CloneableUnaryModule<Embedding>({w}),
-      embeddingDim_(w.dim(0)),
-      numEmbeddings_(w.dim(1)) {}
+    : UnaryModule({w}), embeddingDim_(w.dim(0)), numEmbeddings_(w.dim(1)) {}
+
+Embedding::Embedding(const Embedding& other)
+    : UnaryModule(other.copyParams()),
+      embeddingDim_(other.embeddingDim_),
+      numEmbeddings_(other.numEmbeddings_) {}
+
+Embedding& Embedding::operator=(const Embedding& other) {
+  params_ = other.copyParams();
+  embeddingDim_ = other.embeddingDim_;
+  numEmbeddings_ = other.numEmbeddings_;
+  return *this;
+}
 
 void Embedding::initialize() {
   double stdv = std::sqrt(1.0 / (double)embeddingDim_);
@@ -33,6 +43,10 @@ void Embedding::initialize() {
 
 Variable Embedding::forward(const Variable& input) {
   return embedding(input, params_[0]);
+}
+
+std::shared_ptr<Module> Embedding::clone() const {
+  return std::make_shared<Embedding>(*this);
 }
 
 std::string Embedding::prettyString() const {

@@ -58,10 +58,13 @@ class Transformer : public Container {
       float pLayerdrop,
       bool useMask = false,
       bool preLN = false);
+  Transformer(const Transformer& other);
+  Transformer& operator=(const Transformer& other);
 
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
   void setDropout(float value);
   void setLayerDropout(float value);
+  std::shared_ptr<Module> clone() const override;
   std::string prettyString() const override;
 
  private:
@@ -74,6 +77,8 @@ class Transformer : public Container {
   std::shared_ptr<Linear> w1_, w2_, wq_, wk_, wv_, wf_;
   std::shared_ptr<LayerNorm> norm1_, norm2_;
 
+  void copy(const Transformer& other);
+  void createLayers();
   Variable mlp(const Variable& input);
   Variable getMask(int32_t n, bool cache = false);
   Variable selfAttention(const std::vector<Variable>& input);

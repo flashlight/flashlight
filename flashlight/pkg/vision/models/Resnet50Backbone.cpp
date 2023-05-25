@@ -35,6 +35,24 @@ Resnet50Backbone::Resnet50Backbone()
   add(tail_);
 }
 
+Resnet50Backbone::Resnet50Backbone(const Resnet50Backbone& other) {
+  for (auto& mod : other.modules_) {
+    add(mod->clone());
+  }
+}
+
+Resnet50Backbone& Resnet50Backbone::operator=(const Resnet50Backbone& other) {
+  clear();
+  for (auto& mod : other.modules_) {
+    add(mod->clone());
+  }
+  return *this;
+}
+
+std::shared_ptr<Module> Resnet50Backbone::clone() const {
+  return std::make_shared<Resnet50Backbone>(*this);
+}
+
 std::vector<Variable> Resnet50Backbone::forward(
     const std::vector<Variable>& input) {
   const auto& features = module(0)->forward(input);

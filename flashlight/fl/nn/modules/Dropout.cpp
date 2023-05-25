@@ -22,6 +22,10 @@ Variable Dropout::forward(const Variable& input) {
   }
 }
 
+std::shared_ptr<Module> Dropout::clone() const {
+  return std::make_shared<Dropout>(*this);
+}
+
 std::string Dropout::prettyString() const {
   return ("Dropout (" + std::to_string(ratio_) + ")");
 }

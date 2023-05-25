@@ -19,6 +19,10 @@ Variable Sigmoid::forward(const Variable& input) {
   return sigmoid(input);
 }
 
+std::shared_ptr<Module> Sigmoid::clone() const {
+  return std::make_shared<Sigmoid>(*this);
+}
+
 std::string Sigmoid::prettyString() const {
   return "Sigmoid";
 }
@@ -27,6 +31,10 @@ Log::Log() = default;
 
 Variable Log::forward(const Variable& input) {
   return log(input);
+}
+
+std::shared_ptr<Module> Log::clone() const {
+  return std::make_shared<Log>(*this);
 }
 
 std::string Log::prettyString() const {
@@ -39,6 +47,10 @@ Variable Tanh::forward(const Variable& input) {
   return tanh(input);
 }
 
+std::shared_ptr<Module> Tanh::clone() const {
+  return std::make_shared<Tanh>(*this);
+}
+
 std::string Tanh::prettyString() const {
   return "Tanh";
 }
@@ -47,6 +59,10 @@ HardTanh::HardTanh() = default;
 
 Variable HardTanh::forward(const Variable& input) {
   return clamp(input, -1.0, 1.0);
+}
+
+std::shared_ptr<Module> HardTanh::clone() const {
+  return std::make_shared<HardTanh>(*this);
 }
 
 std::string HardTanh::prettyString() const {
@@ -59,6 +75,10 @@ Variable ReLU::forward(const Variable& input) {
   return max(input, 0.0);
 }
 
+std::shared_ptr<Module> ReLU::clone() const {
+  return std::make_shared<ReLU>(*this);
+}
+
 std::string ReLU::prettyString() const {
   return "ReLU";
 }
@@ -67,6 +87,10 @@ ReLU6::ReLU6() = default;
 
 Variable ReLU6::forward(const Variable& input) {
   return clamp(input, 0.0, 6.0);
+}
+
+std::shared_ptr<Module> ReLU6::clone() const {
+  return std::make_shared<ReLU6>(*this);
 }
 
 std::string ReLU6::prettyString() const {
@@ -79,11 +103,15 @@ Variable LeakyReLU::forward(const Variable& input) {
   return max(input, mSlope_ * input);
 }
 
+std::shared_ptr<Module> LeakyReLU::clone() const {
+  return std::make_shared<LeakyReLU>(*this);
+}
+
 std::string LeakyReLU::prettyString() const {
   return "LeakyReLU (" + std::to_string(mSlope_) + ")";
 }
 
-PReLU::PReLU(const Variable& w) : CloneableUnaryModule<PReLU>({w}) {}
+PReLU::PReLU(const Variable& w) : UnaryModule({w}) {}
 
 PReLU::PReLU(int size, double value) {
   auto w = constant(value, size, 1);
@@ -93,6 +121,10 @@ PReLU::PReLU(int size, double value) {
 Variable PReLU::forward(const Variable& input) {
   auto mask = input >= 0.0;
   return (input * mask) + (input * !mask * tileAs(params_[0], input));
+}
+
+std::shared_ptr<Module> PReLU::clone() const {
+  return std::make_shared<PReLU>(*this);
 }
 
 std::string PReLU::prettyString() const {
@@ -106,6 +138,10 @@ Variable ELU::forward(const Variable& input) {
   return (mask * input) + (!mask * mAlpha_ * (exp(input) - 1));
 }
 
+std::shared_ptr<Module> ELU::clone() const {
+  return std::make_shared<ELU>(*this);
+}
+
 std::string ELU::prettyString() const {
   return "ELU (" + std::to_string(mAlpha_) + ")";
 }
@@ -115,6 +151,10 @@ ThresholdReLU::ThresholdReLU(double threshold) : mThreshold_(threshold) {}
 Variable ThresholdReLU::forward(const Variable& input) {
   auto mask = input >= mThreshold_;
   return input * mask;
+}
+
+std::shared_ptr<Module> ThresholdReLU::clone() const {
+  return std::make_shared<ThresholdReLU>(*this);
 }
 
 std::string ThresholdReLU::prettyString() const {
@@ -127,6 +167,10 @@ Variable GatedLinearUnit::forward(const Variable& input) {
   return gatedlinearunit(input, dim_);
 }
 
+std::shared_ptr<Module> GatedLinearUnit::clone() const {
+  return std::make_shared<GatedLinearUnit>(*this);
+}
+
 std::string GatedLinearUnit::prettyString() const {
   return "GatedLinearUnit (" + std::to_string(dim_) + ")";
 }
@@ -137,6 +181,10 @@ Variable LogSoftmax::forward(const Variable& input) {
   return logSoftmax(input, dim_);
 }
 
+std::shared_ptr<Module> LogSoftmax::clone() const {
+  return std::make_shared<LogSoftmax>(*this);
+}
+
 std::string LogSoftmax::prettyString() const {
   return "LogSoftmax (" + std::to_string(dim_) + ")";
 }
@@ -145,6 +193,10 @@ Swish::Swish(double beta /* = 1.0 */) : beta_(beta) {}
 
 Variable Swish::forward(const Variable& input) {
   return swish(input, beta_);
+}
+
+std::shared_ptr<Module> Swish::clone() const {
+  return std::make_shared<Swish>(*this);
 }
 
 std::string Swish::prettyString() const {

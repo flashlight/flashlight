@@ -55,6 +55,11 @@ VisionTransformer::VisionTransformer(
   add(norm2_);
 }
 
+std::shared_ptr<Module> VisionTransformer::clone() const {
+  throw std::runtime_error(
+      "Cloning is unimplemented in Module 'VisionTransformer'");
+}
+
 Variable VisionTransformer::gelu(const Variable& input) {
   // https://arxiv.org/pdf/1606.08415.pdf
   auto geluConst = 1 / std::sqrt(2);

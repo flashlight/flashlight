@@ -34,16 +34,17 @@ class ContribModuleTestF16 : public ::testing::Test {
 
 TEST(ContribModuleTest, ResidualFwd) {
   auto conv = Conv2D(30, 50, 9, 7, 2, 3, 3, 2);
-  auto bn = BatchNorm(2, 50, 0.0);
+  // bn is shared between both residual networks
+  auto bn = std::make_shared<BatchNorm>(2, 50, 0.0);
   auto relu = ReLU();
 
   int batchsize = 10;
   auto input = Variable(fl::rand({120, 100, 30, batchsize}), false);
 
   auto outputConv = conv.forward(input);
-  auto outputBn = bn.forward(outputConv);
+  auto outputBn = bn->forward(outputConv);
 
-  auto resModule1 = Residual();
+  Residual resModule1;
   resModule1.add(conv);
   resModule1.add(bn);
   resModule1.add(relu);
@@ -53,7 +54,7 @@ TEST(ContribModuleTest, ResidualFwd) {
   auto output1True = relu.forward(outputBn + outputConv);
   ASSERT_TRUE(allClose(output1, output1True));
 
-  auto resModule2 = Residual();
+  Residual resModule2;
   resModule2.add(conv);
   resModule2.add(bn);
   resModule2.add(relu);

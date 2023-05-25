@@ -18,7 +18,7 @@ namespace fl {
  * output from lookup of shape
  * [`embeddingDim`, \f$B_1\f$, \f$B_2\f$ (optional), \f$B_3\f$ (optional)].
  */
-class Embedding : public CloneableUnaryModule<Embedding> {
+class Embedding : public UnaryModule {
  private:
   Embedding() = default; // Intentionally private
 
@@ -46,7 +46,19 @@ class Embedding : public CloneableUnaryModule<Embedding> {
    */
   explicit Embedding(const Variable& w);
 
+  /**
+   * Constructs an Embedding module from another, performing a deep copy of the
+   * parameters.
+   *
+   * @param other The Embedding module to copy from.
+   */
+  Embedding(const Embedding& other);
+
+  Embedding& operator=(const Embedding& other);
+
   Variable forward(const Variable& input) override;
+
+  std::shared_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 };

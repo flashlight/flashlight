@@ -21,32 +21,11 @@ Module
    :members:
    :undoc-members:
 
-.. doxygenclass:: fl::Cloneable
-   :members:
-   :undoc-members:
-
-.. warning::
-
-  If a class which inherits ``Cloneable`` has members with shallow copy semantics like ``std::shared_ptr<Module>`` or ``Variable``, the class must implement its own ``copy()`` function to handle deep copying members using shallow copy semantics.
-
-  ::
-
-
 Container
 ^^^^^^^^^
 .. doxygenclass:: fl::Container
    :members:
    :undoc-members:
-
-.. doxygenclass:: fl::CloneableContainer
-   :members:
-   :undoc-members:
-
-.. warning::
-
-  If a class which inherits ``CloneableContainer`` has members with shallow copy semantics like ``std::shared_ptr<Module>`` or ``Variable``, the class must implement its own ``copy()`` function to handle deep copying members using shallow copy semantics.
-
-  ::
 
 Sequential
 ^^^^^^^^^^

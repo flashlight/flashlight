@@ -35,6 +35,11 @@ MultiHeadContentAttention::MultiHeadContentAttention(
   add(Linear(dim, dim));
 }
 
+std::shared_ptr<Module> MultiHeadContentAttention::clone() const {
+  throw std::runtime_error(
+      "Cloning is unimplemented in Module 'MultiHeadContentAttention'");
+}
+
 std::pair<Variable, Variable> MultiHeadContentAttention::forwardBase(
     const Variable& state,
     const Variable& xEncoded,

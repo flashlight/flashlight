@@ -16,6 +16,11 @@ namespace fl {
 namespace pkg {
 namespace speech {
 
+std::shared_ptr<Module> ContentAttention::clone() const {
+  throw std::runtime_error(
+      "Cloning is unimplemented in Module 'ContentAttention'");
+}
+
 std::pair<Variable, Variable> ContentAttention::forwardBase(
     const Variable& state,
     const Variable& xEncoded,
@@ -62,6 +67,11 @@ NeuralContentAttention::NeuralContentAttention(int dim, int layers /* = 1 */) {
   }
   net.add(Linear(dim, 1));
   add(net);
+}
+
+std::shared_ptr<Module> NeuralContentAttention::clone() const {
+  throw std::runtime_error(
+      "Cloning is unimplemented in Module 'NeuralContentAttention'");
 }
 
 std::pair<Variable, Variable> NeuralContentAttention::forwardBase(

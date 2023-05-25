@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include "flashlight/pkg/vision/nn/FrozenBatchNorm.h"
-#include "flashlight/pkg/vision/models/ResnetFrozenBatchNorm.h"
 #include "flashlight/fl/nn/modules/Container.h"
+#include "flashlight/pkg/vision/models/ResnetFrozenBatchNorm.h"
+#include "flashlight/pkg/vision/nn/FrozenBatchNorm.h"
 
 namespace fl {
 namespace pkg {
@@ -20,9 +20,12 @@ using namespace fl::pkg::vision;
 class Resnet50Backbone : public Container {
  public:
   Resnet50Backbone();
+  Resnet50Backbone(const Resnet50Backbone& other);
+  Resnet50Backbone& operator=(const Resnet50Backbone& other);
 
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
 
+  std::shared_ptr<Module> clone() const override;
   std::string prettyString() const override;
 
  private:

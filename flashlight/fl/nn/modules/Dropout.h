@@ -21,7 +21,7 @@ namespace fl {
  * \f$\frac{1}{1 - p}\f$. Thus, with the same network, at test time,
  * evaluating the module gives the identity.
  */
-class Dropout : public CloneableUnaryModule<Dropout> {
+class Dropout : public UnaryModule {
  private:
   double ratio_;
 
@@ -36,6 +36,8 @@ class Dropout : public CloneableUnaryModule<Dropout> {
   Dropout(double drop_ratio = 0.5);
 
   Variable forward(const Variable& input) override;
+
+  std::shared_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 };

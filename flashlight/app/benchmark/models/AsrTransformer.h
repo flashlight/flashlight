@@ -21,6 +21,9 @@ namespace benchmark {
 class AsrTransformer : public fl::Container {
  public:
   AsrTransformer(int64_t nFeature, int64_t nLabel);
+  AsrTransformer(const AsrTransformer& other);
+  AsrTransformer& operator=(const AsrTransformer& other);
+  std::shared_ptr<Module> clone() const override;
 
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& input) override;

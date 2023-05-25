@@ -18,7 +18,7 @@ namespace fl {
  * This [link](https://imgur.com/a/LAdlwZK) shows the diagram of TDSBlock.
  */
 
-class TDSBlock : public CloneableContainer<TDSBlock> {
+class TDSBlock : public Container {
  private:
   TDSBlock() = default;
   FL_SAVE_LOAD_WITH_BASE(Container)
@@ -57,6 +57,8 @@ class TDSBlock : public CloneableContainer<TDSBlock> {
 
   std::vector<Variable> forward(const std::vector<Variable>& inputs) override;
   std::string prettyString() const override;
+
+  FL_BASIC_CONTAINER_CLONING(TDSBlock)
 };
 
 } // namespace fl

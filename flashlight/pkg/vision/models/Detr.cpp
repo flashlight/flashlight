@@ -127,6 +127,10 @@ std::vector<Variable> Detr::forwardTransformer(
   return {outputClasses, outputCoord};
 }
 
+std::shared_ptr<Module> Detr::clone() const {
+  throw std::runtime_error("Cloning is unimplemented in Module 'Detr'");
+}
+
 std::string Detr::prettyString() const {
   std::ostringstream ss;
   ss << "Detection Transformer";

@@ -19,9 +19,7 @@ AdaptiveSoftMax::AdaptiveSoftMax(
     int inputSize,
     const std::vector<int>& cutoff,
     float divValue)
-    : CloneableUnaryModule<AdaptiveSoftMax>(),
-      cutoff_(cutoff),
-      divValue_(divValue) {
+    : UnaryModule(), cutoff_(cutoff), divValue_(divValue) {
   if (cutoff_.empty()) {
     throw std::invalid_argument("invalid cutoff for AdaptiveSoftMaxLoss");
   }
@@ -127,6 +125,10 @@ Variable AdaptiveSoftMax::predict(const Variable& inputs) const {
 
 std::vector<int> AdaptiveSoftMax::getCutoff() const {
   return cutoff_;
+}
+
+std::shared_ptr<Module> AdaptiveSoftMax::clone() const {
+  return std::make_shared<AdaptiveSoftMax>(*this);
 }
 
 std::string AdaptiveSoftMax::prettyString() const {

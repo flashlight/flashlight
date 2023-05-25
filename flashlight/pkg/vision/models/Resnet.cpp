@@ -50,17 +50,17 @@ ConvBnAct::ConvBnAct(
 ResNetBlock::ResNetBlock() = default;
 
 ResNetBlock::ResNetBlock(const int inC, const int outC, const int stride) {
-  add(Conv2D(conv3x3(inC, outC, stride, 1)));
-  add(BatchNorm(BatchNorm(2, outC)));
+  add(conv3x3(inC, outC, stride, 1));
+  add(BatchNorm(2, outC));
   add(ReLU());
-  add(Conv2D(conv3x3(outC, outC, 1, 1)));
-  add(BatchNorm(BatchNorm(2, outC)));
+  add(conv3x3(outC, outC, 1, 1));
+  add(BatchNorm(2, outC));
   add(ReLU());
   if (inC != outC || stride > 1) {
     Sequential downsample;
     downsample.add(conv1x1(inC, outC, stride, 1));
     downsample.add(BatchNorm(2, outC));
-    add(downsample);
+    add(std::move(downsample));
   }
 }
 
@@ -71,11 +71,11 @@ ResNetBottleneckBlock::ResNetBottleneckBlock(
     const int planes,
     const int stride) {
   const int expansionFactor = 4;
-  add(Conv2D(conv1x1(inC, planes, 1, 1)));
-  add(BatchNorm(BatchNorm(2, planes)));
+  add(conv1x1(inC, planes, 1, 1));
+  add(BatchNorm(2, planes));
   add(ReLU());
-  add(Conv2D(conv3x3(planes, planes, stride, 1)));
-  add(BatchNorm(BatchNorm(2, planes)));
+  add(conv3x3(planes, planes, stride, 1));
+  add(BatchNorm(2, planes));
   add(ReLU());
   add(conv1x1(planes, planes * expansionFactor, 1, 1));
   add(BatchNorm(2, planes * expansionFactor));
@@ -84,7 +84,7 @@ ResNetBottleneckBlock::ResNetBottleneckBlock(
     Sequential downsample;
     downsample.add(conv1x1(inC, planes * expansionFactor, stride, 1));
     downsample.add(BatchNorm(2, planes * expansionFactor));
-    add(downsample);
+    add(std::move(downsample));
   }
 }
 

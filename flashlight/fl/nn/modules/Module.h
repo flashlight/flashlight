@@ -64,6 +64,13 @@ class Module {
   std::vector<Variable> params() const;
 
   /**
+   * Gets the nunber of parameters of the module.
+   *
+   * @return the number of parameters
+   */
+  int numParams() const;
+
+  /**
    * Switches the module to training mode. Changes all parameters so that
    * gradient calculation will be enabled for any calls to `forward`.
    */
@@ -97,6 +104,13 @@ class Module {
   virtual void setParams(const Variable& var, int position);
 
   /**
+   * Deep copies the modules parameters
+   *
+   * @return a deep copy of the modules parameters as a vector of `Variable`
+   */
+  virtual std::vector<Variable> copyParams() const;
+
+  /**
    * Clears references to gradient Variables for all parameters in the module.
    */
   void zeroGrad();
@@ -123,15 +137,11 @@ class Module {
   std::vector<Variable> operator()(const std::vector<Variable>& inputs);
 
   /**
-   * Clone the module via deep copy of its parameters and members. See the
-   * `Cloneable` class for more details on automatically adding cloning
-   * functionality to modules.
+   * Clone the module via deep copy of its parameters and members.
    *
    * @return A shared pointer of the cloned module.
    */
-  virtual std::shared_ptr<Module> clone() const {
-    return nullptr;
-  }
+  virtual std::shared_ptr<Module> clone() const = 0;
 
   /**
    * Generates a stringified representation of the module.
@@ -188,55 +198,6 @@ class BinaryModule : public Module {
  private:
   FL_SAVE_LOAD_WITH_BASE(Module)
 };
-
-/**
- * A utility class which enables cloning of subclassed modules, performing a
- * deep copy of the parameters of the module. **note** If Derived has members
- * using shallow copy semantics like shared_ptr, Derived must implement its own
- * copy function to handle deep copying those members.
- * @tparam BaseModule The base module to inherit from. **Note** BaseModule must
- * be a base class of Derived.
- * @tparam Derived The class which is inheriting from `Cloneable`
- */
-template <typename BaseModule, typename Derived>
-class Cloneable : public BaseModule {
- public:
-  Cloneable() = default;
-  explicit Cloneable(const std::vector<Variable>& params)
-      : BaseModule(params) {}
-  /**
-   * Copies the module via copy constructor and also performs a deep copy of the
-   * parameters of the module.
-   * @return A copy of this object
-   */
-  virtual Derived copy() const {
-    Derived deepCopy(static_cast<const Derived&>(*this));
-    deepCopy.params_.clear();
-    deepCopy.params_.reserve(Module::params_.size());
-    for (const auto& param : Module::params_) {
-      deepCopy.params_.emplace_back(param.tensor().copy(), param.isCalcGrad());
-    }
-    return deepCopy;
-  }
-
-  /**
-   * Clones the `Module`, performing a deep copy. See `copy()` for more details.
-   * @return A shared pointer to the base class of the cloned module.
-   */
-  std::shared_ptr<Module> clone() const override {
-    return std::make_shared<Derived>(copy());
-  }
-};
-
-template <typename Derived>
-using CloneableModule = Cloneable<Module, Derived>;
-
-template <typename Derived>
-using CloneableUnaryModule = Cloneable<UnaryModule, Derived>;
-
-template <typename Derived>
-using CloneableBinaryModule = Cloneable<BinaryModule, Derived>;
-
 } // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::UnaryModule)

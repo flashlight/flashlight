@@ -26,8 +26,7 @@ namespace fl {
 class FrozenBatchNorm : public BatchNorm {
  private:
   FrozenBatchNorm() = default; // intentionally private
-  FL_SAVE_LOAD_WITH_BASE(
-      BatchNorm)
+  FL_SAVE_LOAD_WITH_BASE(BatchNorm)
 
  public:
   /**
@@ -88,6 +87,8 @@ class FrozenBatchNorm : public BatchNorm {
       double eps = 1e-5,
       bool affine = true,
       bool trackStats = true);
+
+  std::shared_ptr<Module> clone() const override;
 
   Variable forward(const Variable& input) override;
 

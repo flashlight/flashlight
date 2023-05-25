@@ -9,8 +9,8 @@
 
 #include <cassert>
 
-#include "flashlight/pkg/vision/dataset/BoxUtils.h"
 #include "flashlight/fl/nn/nn.h"
+#include "flashlight/pkg/vision/dataset/BoxUtils.h"
 
 namespace fl {
 namespace pkg {
@@ -31,6 +31,8 @@ class MultiheadAttention : public Container {
       int32_t headDim,
       int32_t numHeads,
       float pDropout = 0.f);
+
+  std::shared_ptr<Module> clone() const override;
 
   // queries [ E, N, L ], where L is target length, N is batch size.
   // keys / values  [ E, N, S ], where S is src length, N is batch size.
@@ -73,6 +75,8 @@ class TransformerBaseLayer : public Container {
       int32_t nHeads,
       float pDropout);
 
+  std::shared_ptr<Module> clone() const override;
+
  protected:
   TransformerBaseLayer() = default;
   std::shared_ptr<MultiheadAttention> self_attn_;
@@ -108,6 +112,8 @@ class TransformerEncoderLayer : public TransformerBaseLayer {
       int32_t nHeads,
       float pDropout);
 
+  std::shared_ptr<Module> clone() const override;
+
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
 
   std::string prettyString() const override;
@@ -124,6 +130,8 @@ class TransformerDecoderLayer : public Container {
       int32_t mlpDim,
       int32_t nHeads,
       float pDropout);
+
+  std::shared_ptr<Module> clone() const override;
 
  protected:
   Variable mlp(const Variable& in);
@@ -165,6 +173,8 @@ class TransformerDecoder : public Container {
       int32_t layers,
       float pDropout);
 
+  std::shared_ptr<Module> clone() const override;
+
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
 
   std::string prettyString() const override;
@@ -182,6 +192,8 @@ class TransformerEncoder : public Container {
       int32_t nHeads,
       int32_t layers,
       float pDropout);
+
+  std::shared_ptr<Module> clone() const override;
 
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
 
@@ -201,6 +213,8 @@ class Transformer : public Container {
       int32_t numDecoderLayers,
       int32_t mlpDim,
       float pDropout);
+
+  std::shared_ptr<Module> clone() const override;
 
   /*
    * We expect src to be [ W X H X C X B ]

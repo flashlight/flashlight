@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "flashlight/pkg/vision/nn/VisionTransformer.h"
 #include "flashlight/fl/nn/nn.h"
+#include "flashlight/pkg/vision/nn/VisionTransformer.h"
 
 namespace fl {
 namespace pkg {
@@ -48,6 +48,7 @@ class ViT : public fl::Container {
   std::shared_ptr<LayerNorm> ln_;
 
   ViT() = default;
+  void copy(const ViT& other);
 
  public:
   ViT(const int nLayers,
@@ -58,9 +59,13 @@ class ViT : public fl::Container {
       const float pLayerDrop,
       const int nClasses);
 
+  ViT(const ViT& other);
+  ViT& operator=(const ViT& other);
+
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;
 
+  std::shared_ptr<Module> clone() const override;
   std::string prettyString() const override;
 };
 

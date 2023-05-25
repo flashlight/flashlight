@@ -29,6 +29,34 @@ PositionalEmbeddingSine::PositionalEmbeddingSine(
       normalize_(normalize),
       scale_(scale){};
 
+PositionalEmbeddingSine::PositionalEmbeddingSine(
+    const PositionalEmbeddingSine& other)
+    : numPosFeats_(other.numPosFeats_),
+      temperature_(other.temperature_),
+      normalize_(other.normalize_),
+      scale_(other.scale_) {
+  for (auto& mod : other.modules_) {
+    add(mod->clone());
+  }
+}
+
+PositionalEmbeddingSine& PositionalEmbeddingSine::operator=(
+    const PositionalEmbeddingSine& other) {
+  numPosFeats_ = other.numPosFeats_;
+  temperature_ = other.temperature_;
+  normalize_ = other.normalize_;
+  scale_ = other.scale_;
+  clear();
+  for (auto& mod : other.modules_) {
+    add(mod->clone());
+  }
+  return *this;
+}
+
+std::shared_ptr<Module> PositionalEmbeddingSine::clone() const {
+  return std::make_shared<PositionalEmbeddingSine>(*this);
+}
+
 std::vector<Variable> PositionalEmbeddingSine::forward(
     const std::vector<Variable>& inputs) {
   assert(inputs.size() == 1);

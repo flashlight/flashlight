@@ -13,26 +13,19 @@
 
 namespace fl {
 
-WeightNorm WeightNorm::copy() const {
-  WeightNorm deepCopy;
-  deepCopy.normDim_ = normDim_;
-  deepCopy.dim_ = dim_;
-  deepCopy.module_ = module_->clone();
-  auto module_params = module_->params();
-
-  auto& v = module_params[0];
-  Variable g(norm(v, normDim_, 2, true).tensor(), true);
-  if (module_params.size() == 2) {
-    auto& b = module_params[1];
-    deepCopy.params_ = {v, g, b};
-  } else if (module_params.size() == 1) {
-    deepCopy.params_ = {v, g};
-  }
-  return deepCopy;
+WeightNorm::WeightNorm(const WeightNorm& other)
+    : module_(other.module_->clone()),
+      dim_(other.dim_),
+      normDim_(other.normDim_) {
+  initParams();
 }
 
-std::shared_ptr<Module> WeightNorm::clone() const {
-  return std::make_shared<WeightNorm>(copy());
+WeightNorm& WeightNorm::operator=(const WeightNorm& other) {
+  module_ = other.clone();
+  dim_ = other.dim_;
+  normDim_ = other.normDim_;
+  initParams();
+  return *this;
 }
 
 void WeightNorm::transformDims() {
@@ -71,6 +64,21 @@ void WeightNorm::computeWeight() {
   module_->setParams(wt, 0);
 }
 
+void WeightNorm::initParams() {
+  auto module_params = module_->params();
+  auto& v = module_params[0];
+  auto g = Variable(
+      norm(v, normDim_, /* p = */ 2, /* keepDims = */ true).tensor(), true);
+  if (module_params.size() == 2) {
+    auto& b = module_params[1];
+    params_ = {v, g, b};
+  } else if (module_params.size() == 1) {
+    params_ = {v, g};
+  } else {
+    throw std::invalid_argument("WeightNorm only supports Linear and Conv2D");
+  }
+}
+
 void WeightNorm::setParams(const Variable& var, int position) {
   Module::setParams(var, position);
   // it is necessary to copy all params to the parent module
@@ -102,6 +110,10 @@ void WeightNorm::eval() {
   Module::eval();
   module_->eval();
   computeWeight();
+}
+
+std::shared_ptr<Module> WeightNorm::clone() const {
+  return std::make_shared<WeightNorm>(*this);
 }
 
 std::string WeightNorm::prettyString() const {

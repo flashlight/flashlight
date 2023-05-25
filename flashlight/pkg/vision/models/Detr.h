@@ -41,6 +41,8 @@ class Detr : public Container {
   Variable forwardBackbone(const Variable& input);
   std::vector<Variable> forwardTransformer(const std::vector<Variable>& input);
 
+  std::shared_ptr<Module> clone() const override;
+
   std::string prettyString() const override;
 
   std::vector<fl::Variable> paramsWithoutBackbone();

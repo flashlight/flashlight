@@ -22,6 +22,9 @@ namespace benchmark {
 class LmTransformer : public fl::Container {
  public:
   explicit LmTransformer(int64_t nLabel, bool fp16 = false);
+  LmTransformer(const LmTransformer& other);
+  LmTransformer& operator=(const LmTransformer& other);
+  std::shared_ptr<Module> clone() const override;
 
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& input) override;
