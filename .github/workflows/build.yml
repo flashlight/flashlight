@@ -1,0 +1,72 @@
+name: Build Flashlight
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: "Build on ${{ matrix.os }} | tensor: ${{ matrix.backend }} | autograd: ${{ matrix.autograd_backend }}"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, windows-2022, macOS-12]
+        backend: [ArrayFire, oneDNN, Stub]
+        autograd_backend: [oneDNN]
+    defaults:
+      run:
+        shell: bash -l {0}
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v3
+
+      # ]----- Backend dependencies
+      # ArrayFire
+      - name: "Install ArrayFire (Linux)"
+        run: |
+          sudo apt update
+          sudo apt-key adv --fetch-key https://repo.arrayfire.com/GPG-PUB-KEY-ARRAYFIRE-2020.PUB
+          echo "deb [arch=amd64] https://repo.arrayfire.com/debian all main" | sudo tee /etc/apt/sources.list.d/arrayfire.list
+          sudo apt update
+          sudo apt install arrayfire-cmake=3.8.1-2 arrayfire-headers=3.8.1-2 arrayfire-cpu3-mkl=3.8.1-2 arrayfire-cpu3-dev=3.8.1-2
+        if: runner.os == 'Linux' && matrix.backend == 'ArrayFire'
+      - name: "Install ArrayFire (macOS)"
+        run: brew install arrayfire
+        if: runner.os == 'macOS' && matrix.backend == 'ArrayFire'
+      - name: "Install ArrayFire (Windows)"
+        run: |
+          choco install --no-progress wget -y
+          cd $HOME
+          INSTALLER_NAME="ArrayFire-v3.8.1-CUDA-11.4.exe"
+          wget --quiet https://arrayfire.s3.amazonaws.com/3.8.1/$INSTALLER_NAME
+          7z.exe x $INSTALLER_NAME -o"C:\Program Files\ArrayFire" -y
+          rm $INSTALLER_NAME
+        if: runner.os == 'Windows' && matrix.backend == 'ArrayFire'
+      # oneDNN
+      - name: Install oneDNN 2.7.2 with microconda
+        uses: mamba-org/provision-with-micromamba@main
+        with:
+          environment-file: false
+          environment-name: flashlight
+          channels: conda-forge
+          extra-specs: onednn=2.7.2
+        if: matrix.backend == 'oneDNN' || matrix.autograd_backend == 'oneDNN'
+
+      # Build
+      - name: "Configure Flashlight"
+        run: |
+          cmake -S . -B build -DBUILD_SHARED_LIBS=ON \
+            -DFL_USE_ARRAYFIRE=${{ matrix.backend == 'ArrayFire' && 'ON' || 'OFF'  }} \
+            -DFL_ARRAYFIRE_USE_CPU=${{ matrix.backend == 'ArrayFire' && 'ON' || 'OFF'  }} \
+            -DFL_USE_ONEDNN=${{ (matrix.backend == 'oneDNN' || matrix.autograd_backend == 'oneDNN') && 'ON' || 'OFF'  }} \
+            -DFL_USE_TENSOR_STUB=${{ matrix.backend == 'Stub' && 'ON' || 'OFF'  }} \
+            -DFL_BUILD_DISTRIBUTED=OFF \
+            -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON
+      - name: "Build Flashlight"
+        run: |
+          cmake --build build --parallel 2
+
+      # Test
+      # - name: "Run Flashlight tests"
+      #   run: |
+      #     cd build
+      #     ctest --output-on-failure -j 4
+      #   if: matrix.backend == 'ArrayFire' && matrix.autograd_backend == 'oneDNN'
