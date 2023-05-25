@@ -95,6 +95,7 @@ jobs:
             -DFL_USE_TENSOR_STUB=ON \
             -DFL_USE_ARRAYFIRE=OFF \
             -DFL_USE_ONEDNN=OFF \
+            -DFL_USE_CUDNN=OFF \
             -DFL_BUILD_DISTRIBUTED=OFF \
             -DFL_BUILD_EXAMPLES=ON
         
