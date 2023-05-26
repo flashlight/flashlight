@@ -303,7 +303,7 @@ commands:
 
 ############################ Jobs ############################
 jobs:
-  build-and-test-main:
+  build-core:
     parameters:
       platform:
         type: string
@@ -342,6 +342,23 @@ jobs:
           platform: << parameters.platform >>
           backend: << parameters.backend >>
           autograd_backend: << parameters.backend >>
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
+  test-core:
+    parameters:
+      platform:
+        type: string
+      backend:
+        type: string
+      autograd_backend:
+        type: string
+    executor: << parameters.platform >>
+    steps:
+      - attach_workspace:
+          at: .
       # TODO: enable tests on Windows adding "ctest -C Release ..."
       - when:
           condition:
@@ -352,17 +369,29 @@ jobs:
 
 workflows:
   version: 2
-  build-and-test-new:
+  build:
     jobs:
-      - build-and-test-main:
-          name: "Build and Test << matrix.platform >> CUDA with << matrix.backend >> and << matrix.autograd_backend >>"
+      - build-core:
+          name: build-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
           matrix:
             parameters:
               platform: [linux, windows]
               backend: [arrayfire]
               autograd_backend: [cudnn]
-      - build-and-test-main:
-          name: "Build and Test << matrix.platform >> CPU with << matrix.backend >> and << matrix.autograd_backend >>"
+
+      - test-core:
+          name: test-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+          matrix:
+            # Not running all tests with all configurations yet
+            parameters:
+              platform: [linux]
+              backend: [arrayfire]
+              autograd_backend: [cudnn]
+          requires:
+            - build-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+
+      - build-core:
+          name: build-core-<< matrix.platform >>-CPU-<< matrix.backend >>+<< matrix.autograd_backend >>
           matrix:
             parameters:
               platform: [macos-arm, linux-arm]
