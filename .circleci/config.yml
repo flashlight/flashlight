@@ -244,6 +244,42 @@ commands:
           name: "Install oneDNN"
           command: micromamba install -y -c conda-forge onednn=2.7.2
 
+  # Primary job for installing all dependencies based on platform,
+  # backend, and autograd backend impl
+  install-all-dependencies:
+    parameters:
+      platform:
+        type: string
+      backend:
+        type: string
+      autograd_backend:
+        type: string
+    steps:
+      - install-build-dependencies:
+          platform: << parameters.platform >>
+      - setup-cuda:
+          platform: << parameters.platform >>
+      - when:
+          condition:
+            equal: ["arrayfire", << parameters.backend >>]
+          steps:
+            - install-arrayfire:
+                platform: << parameters.platform >>
+      - when:
+          condition:
+            equal: ["cudnn", << parameters.autograd_backend >>]
+          steps:
+            - install-cudnn:
+                platform: << parameters.platform >>
+      - when:
+          condition:
+            or:
+              - equal: ["onednn", << parameters.backend >>]
+              - equal: ["onednn", << parameters.autograd_backend >>]
+          steps:
+            - install-onednn:
+                platform: << parameters.platform >>
+
   build-flashlight:
     parameters:
       platform:
@@ -314,30 +350,10 @@ jobs:
     executor: << parameters.platform >>
     steps:
       - checkout
-      - install-build-dependencies:
+      - install-all-dependencies:
           platform: << parameters.platform >>
-      - setup-cuda:
-          platform: << parameters.platform >>
-      - when:
-          condition:
-            equal: ["arrayfire", << parameters.backend >>]
-          steps:
-            - install-arrayfire:
-                platform: << parameters.platform >>
-      - when:
-          condition:
-            equal: ["cudnn", << parameters.autograd_backend >>]
-          steps:
-            - install-cudnn:
-                platform: << parameters.platform >>
-      - when:
-          condition:
-            or:
-              - equal: ["onednn", << parameters.backend >>]
-              - equal: ["onednn", << parameters.autograd_backend >>]
-          steps:
-            - install-onednn:
-                platform: << parameters.platform >>
+          backend: << parameters.backend >>
+          autograd_backend: << parameters.autograd_backend >>
       - build-flashlight:
           platform: << parameters.platform >>
           backend: << parameters.backend >>
@@ -357,15 +373,16 @@ jobs:
         type: string
     executor: << parameters.platform >>
     steps:
+      - install-all-dependencies:
+          platform: << parameters.platform >>
+          backend: << parameters.backend >>
+          autograd_backend: << parameters.autograd_backend >>
+      # attach the project root and build directory
       - attach_workspace:
           at: .
       # TODO: enable tests on Windows adding "ctest -C Release ..."
-      - when:
-          condition:
-            equal: ["linux", << parameters.platform >>]
-          steps:
-            - test_flashlight:
-                path: build/flashlight/fl/test
+      - test_flashlight:
+          path: build/flashlight/fl/test
 
 workflows:
   version: 2
