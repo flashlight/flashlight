@@ -80,14 +80,14 @@ jobs:
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: "Download and setup Emscripten"
         run: |
           git clone https://github.com/emscripten-core/emsdk.git
           cd emsdk
           ./emsdk install latest
           ./emsdk activate latest
-      
+
       - name: "Build the Flashlight stub backend with Emscripten C compilers"
         # TODO: build and run tests with wasm once we have a runnable backend
         run: |
@@ -98,4 +98,4 @@ jobs:
             -DFL_USE_ONEDNN=OFF \
             -DFL_USE_CUDNN=OFF \
             -DFL_BUILD_DISTRIBUTED=OFF \
-            -DFL_BUILD_EXAMPLES=ON        
+            -DFL_BUILD_EXAMPLES=ON
