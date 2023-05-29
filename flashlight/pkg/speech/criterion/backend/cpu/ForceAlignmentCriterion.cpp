@@ -6,8 +6,6 @@
  */
 
 #include "flashlight/pkg/speech/criterion/ForceAlignmentCriterion.h"
-
-#include "flashlight/pkg/runtime/common/DistributedUtils.h"
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
 #include <flashlight/lib/sequence/criterion/cpu/ForceAlignmentCriterion.h>

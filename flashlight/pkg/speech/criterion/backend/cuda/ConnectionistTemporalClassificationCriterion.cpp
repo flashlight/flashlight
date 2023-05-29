@@ -7,18 +7,17 @@
 
 #include <ctc.h> // warpctc
 
-#include "flashlight/fl/autograd/autograd.h"
-
 #include "flashlight/pkg/speech/criterion/ConnectionistTemporalClassificationCriterion.h"
+
+#include <flashlight/lib/sequence/criterion/cuda/CriterionUtils.cuh>
+
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
+#include "flashlight/fl/autograd/autograd.h"
 #include "flashlight/fl/common/DevicePtr.h"
 #include "flashlight/fl/runtime/CUDAStream.h"
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
-#include "flashlight/pkg/runtime/common/DistributedUtils.h"
-
-#include <flashlight/lib/sequence/criterion/cuda/CriterionUtils.cuh>
 
 using namespace fl::pkg::runtime;
 

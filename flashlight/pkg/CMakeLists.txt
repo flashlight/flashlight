@@ -8,10 +8,6 @@ fl_dependent_option(
   OFF
 )
 
-if (NOT FL_BUILD_DISTRIBUTED)
-  message(FATAL_ERROR "Distributed build required.")
-endif()
-
 # --------------------------- Runtime  ---------------------------
 fl_dependent_option(
   FL_BUILD_PKG_RUNTIME
