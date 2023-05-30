@@ -10,6 +10,7 @@ target_sources(
   ${CMAKE_CURRENT_LIST_DIR}/modules/BatchNorm.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/Container.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/Conv2D.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/DistributedUtils.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/Dropout.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/Embedding.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/Identity.cpp
@@ -27,11 +28,3 @@ target_sources(
   ${CMAKE_CURRENT_LIST_DIR}/modules/View.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/WeightNorm.cpp
   )
-
-if (FL_BUILD_DISTRIBUTED)
-  target_sources(
-    flashlight
-    PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}/DistributedUtils.cpp
-    )
-endif()
