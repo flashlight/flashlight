@@ -287,6 +287,20 @@ commands:
       platform:
         type: string
     steps:
+      - when:
+          condition:
+            equal: ["runtime", << parameters.pkg >>]
+          steps:
+            - when:
+                condition:
+                  equal: ["linux", << parameters.platform >>]
+                steps:
+                  - run:
+                      name: "Install gflags"
+                      command: sudo apt-get install libgflags-dev
+                  - run:
+                      name: "Install glog"
+                      command: sudo apt-get install libgoogle-glog-dev
       # Only the speech package explicitly requires external deps.
       # The text package installs flashlight-text automatically (as does speech)
       # and the vision package installs stb automatically.
@@ -440,9 +454,10 @@ jobs:
           name: "Build Flashlight"
           command: |
             cmake -S . -B build \
+              -DFL_BUILD_PKG_RUNTIME=ON \
               -DFL_BUILD_PKG_SPEECH=$([ "<< parameters.pkg >>" == "speech" ] && echo "ON" || echo "OFF") \
               -DFL_BUILD_PKG_VISION=$([ "<< parameters.pkg >>" == "vision" ] && echo "ON" || echo "OFF") \
-              -DFL_BUILD_PKG_TEXT=$([ "<< parameters.pkg >>" == "text" ] && echo "ON" || echo "OFF") \
+              -DFL_BUILD_PKG_TEXT=$([ "<< parameters.pkg >>" == "text" ] && echo "ON" || echo "OFF")
             cmake --build build --parallel
       - test-flashlight:
           path: build/flashlight/pkg/<<parameters.pkg>>/test
@@ -486,7 +501,7 @@ workflows:
           name: build-flashlight-pkg-<< matrix.pkg>>-<< matrix.platform >>-CPU-<< matrix.backend >>+<< matrix.autograd_backend >>
           matrix:
             parameters:
-              pkg: [speech, vision, text]
+              pkg: [runtime, speech, vision, text]
               platform: [linux]
               backend: [arrayfire]
               autograd_backend: [cudnn]
