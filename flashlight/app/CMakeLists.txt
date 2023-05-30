@@ -31,4 +31,11 @@ register_app(NAME asr       DEPENDENT_OPTS ${_common_deps} FL_BUILD_PKG_SPEECH)
 register_app(NAME imgclass  DEPENDENT_OPTS ${_common_deps} FL_BUILD_PKG_VISION)
 register_app(NAME objdet    DEPENDENT_OPTS ${_common_deps} FL_BUILD_PKG_VISION)
 register_app(NAME lm        DEPENDENT_OPTS ${_common_deps} FL_BUILD_PKG_TEXT)
-register_app(NAME benchmark DEPENDENT_OPTS ${_common_deps})
+register_app(
+  NAME benchmark
+  DEPENDENT_OPTS
+  ${_common_deps}
+  FL_BUILD_PKG_SPEECH
+  FL_BUILD_PKG_VISION
+  FL_BUILD_PKG_TEXT
+)
