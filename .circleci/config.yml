@@ -287,20 +287,12 @@ commands:
       platform:
         type: string
     steps:
-      - when:
-          condition:
-            equal: ["runtime", << parameters.pkg >>]
-          steps:
-            - when:
-                condition:
-                  equal: ["linux", << parameters.platform >>]
-                steps:
-                  - run:
-                      name: "Install gflags"
-                      command: sudo apt-get install libgflags-dev
-                  - run:
-                      name: "Install glog"
-                      command: sudo apt-get install libgoogle-glog-dev
+      - run:
+          name: "Install gflags"
+          command: sudo apt-get install -y libgflags-dev
+      - run:
+          name: "Install glog"
+          command: sudo apt-get install -y libgoogle-glog-dev
       # Only the speech package explicitly requires external deps.
       # The text package installs flashlight-text automatically (as does speech)
       # and the vision package installs stb automatically.
@@ -354,7 +346,7 @@ commands:
         type: string
     steps:
       - run:
-          name: "Test Flashlight"
+          name: "Test Flashlight at << parameters.path >>"
           command: |
             cd << parameters.path >>
             ctest --verbose --parallel 4
@@ -451,7 +443,7 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: "Build Flashlight"
+          name: "Build Flashlight with << parameters.pkg >> package"
           command: |
             cmake -S . -B build \
               -DFL_BUILD_PKG_RUNTIME=ON \
