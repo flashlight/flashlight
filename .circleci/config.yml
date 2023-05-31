@@ -18,7 +18,7 @@ executors:
   linux:
     machine:
       image: ubuntu-2004-cuda-11.4:202110-01
-    resource_class: gpu.nvidia.medium
+    resource_class: gpu.nvidia.large
   windows:
     machine:
       image: windows-server-2019-nvidia:stable
@@ -244,7 +244,79 @@ commands:
           name: "Install oneDNN"
           command: micromamba install -y -c conda-forge onednn=2.7.2
 
-  build-flashlight:
+  # Primary job for installing all dependencies based on platform,
+  # backend, and autograd backend impl
+  install-all-dependencies:
+    parameters:
+      platform:
+        type: string
+      backend:
+        type: string
+      autograd_backend:
+        type: string
+    steps:
+      - install-build-dependencies:
+          platform: << parameters.platform >>
+      - setup-cuda:
+          platform: << parameters.platform >>
+      - when:
+          condition:
+            equal: ["arrayfire", << parameters.backend >>]
+          steps:
+            - install-arrayfire:
+                platform: << parameters.platform >>
+      - when:
+          condition:
+            equal: ["cudnn", << parameters.autograd_backend >>]
+          steps:
+            - install-cudnn:
+                platform: << parameters.platform >>
+      - when:
+          condition:
+            or:
+              - equal: ["onednn", << parameters.backend >>]
+              - equal: ["onednn", << parameters.autograd_backend >>]
+          steps:
+            - install-onednn:
+                platform: << parameters.platform >>
+
+  install-pkg-dependencies:
+    parameters:
+      pkg:
+        type: string
+      platform:
+        type: string
+    steps:
+      - run:
+          name: "Install gflags"
+          command: sudo apt-get install -y libgflags-dev
+      - run:
+          name: "Install glog"
+          command: sudo apt-get install -y libgoogle-glog-dev
+      # Only the speech package explicitly requires external deps.
+      # The text package installs flashlight-text automatically (as does speech)
+      # and the vision package installs stb automatically.
+      - when:
+          condition:
+            equal: ["speech", << parameters.pkg >>]
+          steps:
+            - when:
+                condition:
+                  equal: ["linux", << parameters.platform >>]
+                steps:
+                  - run:
+                      name: "Install FFTW3"
+                      command: sudo apt-get install libfftw3-dev
+                  - run:
+                      name: "Install libsndfile"
+                      command: sudo apt-get install libsndfile1-dev
+                  - run:
+                      name: "Install BLAS library"
+                      # TODO: add baselines with a few other BLAS libs pending
+                      # conversion to use fl::matmul on CPU
+                      command: sudo apt-get install libopenblas-dev
+
+  build-flashlight-core:
     parameters:
       platform:
         type: string
@@ -267,14 +339,14 @@ commands:
               -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON
             cmake --build build --parallel
 
-  test_flashlight:
+  test-flashlight:
     parameters:
       path:
         default: "OFF"
         type: string
     steps:
       - run:
-          name: "Test Flashlight"
+          name: "Test Flashlight at << parameters.path >>"
           command: |
             cd << parameters.path >>
             ctest --verbose --parallel 4
@@ -303,7 +375,7 @@ commands:
 
 ############################ Jobs ############################
 jobs:
-  build-and-test-main:
+  build-flashlight-core:
     parameters:
       platform:
         type: string
@@ -314,55 +386,164 @@ jobs:
     executor: << parameters.platform >>
     steps:
       - checkout
-      - install-build-dependencies:
+      - install-all-dependencies:
           platform: << parameters.platform >>
-      - setup-cuda:
-          platform: << parameters.platform >>
-      - when:
-          condition:
-            equal: ["arrayfire", << parameters.backend >>]
-          steps:
-            - install-arrayfire:
-                platform: << parameters.platform >>
-      - when:
-          condition:
-            equal: ["cudnn", << parameters.autograd_backend >>]
-          steps:
-            - install-cudnn:
-                platform: << parameters.platform >>
-      - when:
-          condition:
-            or:
-              - equal: ["onednn", << parameters.backend >>]
-              - equal: ["onednn", << parameters.autograd_backend >>]
-          steps:
-            - install-onednn:
-                platform: << parameters.platform >>
-      - build-flashlight:
+          backend: << parameters.backend >>
+          autograd_backend: << parameters.autograd_backend >>
+      - build-flashlight-core:
           platform: << parameters.platform >>
           backend: << parameters.backend >>
           autograd_backend: << parameters.backend >>
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
+  test-flashlight-core:
+    parameters:
+      platform:
+        type: string
+      backend:
+        type: string
+      autograd_backend:
+        type: string
+    executor: << parameters.platform >>
+    steps:
+      - install-all-dependencies:
+          platform: << parameters.platform >>
+          backend: << parameters.backend >>
+          autograd_backend: << parameters.autograd_backend >>
+      # attach the project root and build directory
+      - attach_workspace:
+          at: .
       # TODO: enable tests on Windows adding "ctest -C Release ..."
-      - when:
-          condition:
-            equal: ["linux", << parameters.platform >>]
-          steps:
-            - test_flashlight:
-                path: build/flashlight/fl/test
+      - test-flashlight:
+          path: build/flashlight/fl/test
+
+  build-flashlight-pkg:
+    parameters:
+      pkg:
+        type: string
+      platform:
+        type: string
+      backend:
+        type: string
+      autograd_backend:
+        type: string
+      build_parallelism:
+        type: string
+        default: ""
+    executor: << parameters.platform >>
+    steps:
+      - install-all-dependencies:
+          platform: << parameters.platform >>
+          backend: << parameters.backend >>
+          autograd_backend: << parameters.autograd_backend >>
+      - install-pkg-dependencies:
+          pkg: << parameters.pkg >>
+          platform: << parameters.platform >>
+      # attach the project root and build directory
+      - attach_workspace:
+          at: .
+      - run:
+          name: "Build Flashlight with << parameters.pkg >> package"
+          command: |
+            cmake -S . -B build \
+              -DFL_BUILD_PKG_RUNTIME=ON \
+              -DFL_BUILD_PKG_SPEECH=$([ "<< parameters.pkg >>" == "speech" ] && echo "ON" || echo "OFF") \
+              -DFL_BUILD_PKG_VISION=$([ "<< parameters.pkg >>" == "vision" ] && echo "ON" || echo "OFF") \
+              -DFL_BUILD_PKG_TEXT=$([ "<< parameters.pkg >>" == "text" ] && echo "ON" || echo "OFF")
+            cmake --build build --parallel << parameters.build_parallelism >>
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
+  test-flashlight-pkg:
+    parameters:
+      pkg:
+        type: string
+      platform:
+        type: string
+      backend:
+        type: string
+      autograd_backend:
+        type: string
+    executor: << parameters.platform >>
+    steps:
+      - install-all-dependencies:
+          platform: << parameters.platform >>
+          backend: << parameters.backend >>
+          autograd_backend: << parameters.autograd_backend >>
+      - install-pkg-dependencies:
+          pkg: << parameters.pkg >>
+          platform: << parameters.platform >>
+      # attach the project root and build directory
+      - attach_workspace:
+          at: .
+      - test-flashlight:
+          path: build/flashlight/pkg/<<parameters.pkg>>/test
+
+  build-flashlight-apps-for-pkg:
+    parameters:
+      pkg:
+        type: string
+      platform:
+        type: string
+        default: linux
+      backend:
+        type: string
+        default: arrayfire
+      autograd_backend:
+        type: string
+        default: cudnn
+    executor: << parameters.platform >>
+    steps:
+      - install-all-dependencies:
+          platform: << parameters.platform >>
+          backend: << parameters.backend >>
+          autograd_backend: << parameters.autograd_backend >>
+      - install-pkg-dependencies:
+          pkg: << parameters.pkg >>
+          platform: << parameters.platform >>
+      # attach the project root and build directory
+      - attach_workspace:
+          at: .
+      - run:
+          name: "Build Flashlight apps for << parameters.pkg >> package"
+          command: |
+            cmake -S . -B build \
+              -DFL_BUILD_APP_ASR=$([ "<< parameters.pkg >>" == "speech" ] && echo "ON" || echo "OFF") \
+              -DFL_BUILD_APP_IMGCLASS=$([ "<< parameters.pkg >>" == "vision" ] && echo "ON" || echo "OFF") \
+              -DFL_BUILD_APP_OBJDET=$([ "<< parameters.pkg >>" == "vision" ] && echo "ON" || echo "OFF") \
+              -DFL_BUILD_APP_LM=$([ "<< parameters.pkg >>" == "text" ] && echo "ON" || echo "OFF")
+            cmake --build build --parallel
 
 workflows:
   version: 2
-  build-and-test-new:
+  build-and-test:
     jobs:
-      - build-and-test-main:
-          name: "Build and Test << matrix.platform >> CUDA with << matrix.backend >> and << matrix.autograd_backend >>"
+      - build-flashlight-core:
+          name: build-flashlight-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
           matrix:
             parameters:
               platform: [linux, windows]
               backend: [arrayfire]
               autograd_backend: [cudnn]
-      - build-and-test-main:
-          name: "Build and Test << matrix.platform >> CPU with << matrix.backend >> and << matrix.autograd_backend >>"
+
+      - test-flashlight-core:
+          name: test-flashlight-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+          matrix:
+            # Not running all tests with all configurations yet
+            parameters:
+              platform: [linux]
+              backend: [arrayfire]
+              autograd_backend: [cudnn]
+          requires:
+            - build-flashlight-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+
+      - build-flashlight-core:
+          name: build-flashlight-core-<< matrix.platform >>-CPU-<< matrix.backend >>+<< matrix.autograd_backend >>
           matrix:
             parameters:
               platform: [macos-arm, linux-arm]
@@ -372,3 +553,39 @@ workflows:
               - platform: linux-arm
                 backend: arrayfire
                 autograd_backend: onednn
+
+      - build-flashlight-pkg:
+          name: build-flashlight-pkg-<< matrix.pkg>>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+          matrix:
+            parameters:
+              pkg: [runtime, speech, vision, text]
+              platform: [linux]
+              backend: [arrayfire]
+              autograd_backend: [cudnn]
+              build_parallelism: ["8"]
+          requires:
+            - build-flashlight-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+
+      # only run pkg builds and tests for best-supported platforms for now
+      - test-flashlight-pkg:
+          name: test-flashlight-pkg-<< matrix.pkg>>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+          matrix:
+            parameters:
+              pkg: [runtime, speech, vision, text]
+              platform: [linux]
+              backend: [arrayfire]
+              autograd_backend: [cudnn]
+          requires:
+            - build-flashlight-pkg-<< matrix.pkg >>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+
+      # only run app builds for best-supported platforms for now
+      - build-flashlight-apps-for-pkg:
+          name: build-flashlight-apps-for-pkg-<< matrix.pkg>>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+          matrix:
+            parameters:
+              pkg: [runtime, speech, vision, text]
+              platform: [linux]
+              backend: [arrayfire]
+              autograd_backend: [cudnn]
+          requires:
+            - build-flashlight-pkg-<< matrix.pkg >>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
