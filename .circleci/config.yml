@@ -18,7 +18,7 @@ executors:
   linux:
     machine:
       image: ubuntu-2004-cuda-11.4:202110-01
-    resource_class: gpu.nvidia.medium
+    resource_class: gpu.nvidia.large
   windows:
     machine:
       image: windows-server-2019-nvidia:stable
