@@ -45,4 +45,3 @@ runs:
         channels: conda-forge
         extra-specs: onednn=2.7.2
       if: inputs.backend == 'oneDNN' || inputs.autograd_backend == 'oneDNN'
-      shell: bash -l {0}
