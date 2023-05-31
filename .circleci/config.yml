@@ -446,6 +446,7 @@ jobs:
       # attach the project root and build directory
       - attach_workspace:
           at: .
+      - run: pwd && ls .
       - run:
           name: "Build Flashlight with << parameters.pkg >> package"
           command: |
