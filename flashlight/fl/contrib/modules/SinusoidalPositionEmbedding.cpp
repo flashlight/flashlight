@@ -89,8 +89,8 @@ std::vector<Variable> SinusoidalPositionEmbedding::operator()(
   return forward(input);
 }
 
-std::shared_ptr<Module> SinusoidalPositionEmbedding::clone() const {
-  return std::make_shared<SinusoidalPositionEmbedding>(*this);
+std::unique_ptr<Module> SinusoidalPositionEmbedding::clone() const {
+  return std::make_unique<SinusoidalPositionEmbedding>(*this);
 }
 
 std::string SinusoidalPositionEmbedding::prettyString() const {

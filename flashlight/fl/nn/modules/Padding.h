@@ -42,7 +42,7 @@ class Padding : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 };

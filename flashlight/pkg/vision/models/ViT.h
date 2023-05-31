@@ -65,7 +65,7 @@ class ViT : public fl::Container {
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 };
 

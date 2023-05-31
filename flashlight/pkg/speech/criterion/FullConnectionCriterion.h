@@ -22,7 +22,7 @@ class FullConnectionCriterion : public fl::BinaryModule {
       fl::lib::seq::CriterionScaleMode scalemode =
           fl::lib::seq::CriterionScaleMode::NONE);
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
 
   fl::Variable forward(const fl::Variable& input, const fl::Variable& target)
       override;

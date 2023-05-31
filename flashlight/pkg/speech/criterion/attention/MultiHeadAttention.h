@@ -21,7 +21,7 @@ class MultiHeadContentAttention : public AttentionBase {
       int num_heads = 8,
       bool keyValue = false,
       bool splitInput = false);
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
 
   std::pair<Variable, Variable> forwardBase(
       const Variable& state,

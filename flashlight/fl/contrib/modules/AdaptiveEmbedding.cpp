@@ -93,8 +93,8 @@ Variable AdaptiveEmbedding::forward(const Variable& input) {
   return moddims(result(fl::span, tmpIndices), outShape);
 }
 
-std::shared_ptr<Module> AdaptiveEmbedding::clone() const {
-  return std::make_shared<AdaptiveEmbedding>(*this);
+std::unique_ptr<Module> AdaptiveEmbedding::clone() const {
+  return std::make_unique<AdaptiveEmbedding>(*this);
 }
 
 std::string AdaptiveEmbedding::prettyString() const {

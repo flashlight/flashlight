@@ -52,8 +52,8 @@ LmTransformer& LmTransformer::operator=(const LmTransformer& other) {
   return *this;
 }
 
-std::shared_ptr<Module> LmTransformer::clone() const {
-  return std::make_shared<LmTransformer>(*this);
+std::unique_ptr<Module> LmTransformer::clone() const {
+  return std::make_unique<LmTransformer>(*this);
 }
 
 std::vector<fl::Variable> LmTransformer::forward(

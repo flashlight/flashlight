@@ -26,8 +26,8 @@ Variable Reorder::forward(const Variable& input) {
   return reorder(input, shape_);
 }
 
-std::shared_ptr<Module> Reorder::clone() const {
-  return std::make_shared<Reorder>(*this);
+std::unique_ptr<Module> Reorder::clone() const {
+  return std::make_unique<Reorder>(*this);
 }
 
 std::string Reorder::prettyString() const {

@@ -67,8 +67,8 @@ AsrTransformer& AsrTransformer::operator=(const AsrTransformer& other) {
   return *this;
 }
 
-std::shared_ptr<Module> AsrTransformer::clone() const {
-  return std::make_shared<AsrTransformer>(*this);
+std::unique_ptr<Module> AsrTransformer::clone() const {
+  return std::make_unique<AsrTransformer>(*this);
 }
 
 std::vector<fl::Variable> AsrTransformer::forward(

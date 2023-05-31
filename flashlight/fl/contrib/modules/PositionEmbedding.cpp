@@ -58,8 +58,8 @@ std::vector<Variable> PositionEmbedding::operator()(
   return forward(input);
 }
 
-std::shared_ptr<Module> PositionEmbedding::clone() const {
-  return std::make_shared<PositionEmbedding>(*this);
+std::unique_ptr<Module> PositionEmbedding::clone() const {
+  return std::make_unique<PositionEmbedding>(*this);
 }
 
 std::string PositionEmbedding::prettyString() const {

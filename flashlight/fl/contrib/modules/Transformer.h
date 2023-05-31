@@ -64,7 +64,7 @@ class Transformer : public Container {
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
   void setDropout(float value);
   void setLayerDropout(float value);
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 
  private:

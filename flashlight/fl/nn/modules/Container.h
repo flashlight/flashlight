@@ -62,7 +62,17 @@ class Container : public Module {
    */
   template <typename T>
   void add(T&& module) {
-    add(std::make_shared<std::remove_reference_t<T>>(std::forward<T>(module)));
+    add(std::make_shared<std::decay_t<T>>(std::forward<T>(module)));
+  }
+
+  /**
+   * Adds a module to a `Container` by moving it and taking ownership.
+   *
+   * @param module the module to add.
+   */
+  template <typename T>
+  void add(std::unique_ptr<T>&& module) {
+    add(std::shared_ptr<T>(std::move(module)));
   }
 
   /**
@@ -148,8 +158,8 @@ class Container : public Module {
     }                                                      \
     return *this;                                          \
   }                                                        \
-  std::shared_ptr<Module> clone() const override {         \
-    return std::make_shared<ContainerClass>(*this);        \
+  std::unique_ptr<Module> clone() const override {         \
+    return std::make_unique<ContainerClass>(*this);        \
   }
 
 /**

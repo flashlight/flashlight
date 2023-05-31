@@ -22,8 +22,8 @@ Variable View::forward(const Variable& input) {
   return moddims(input, dims);
 }
 
-std::shared_ptr<Module> View::clone() const {
-  return std::make_shared<View>(*this);
+std::unique_ptr<Module> View::clone() const {
+  return std::make_unique<View>(*this);
 }
 
 std::string View::prettyString() const {

@@ -88,7 +88,7 @@ class FrozenBatchNorm : public BatchNorm {
       bool affine = true,
       bool trackStats = true);
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
 
   Variable forward(const Variable& input) override;
 

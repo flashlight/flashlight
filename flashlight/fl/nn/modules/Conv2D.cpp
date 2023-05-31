@@ -190,8 +190,8 @@ void Conv2D::initialize() {
   benchmarks_ = std::make_shared<detail::ConvBenchmarks>();
 }
 
-std::shared_ptr<Module> Conv2D::clone() const {
-  return std::make_shared<Conv2D>(*this);
+std::unique_ptr<Module> Conv2D::clone() const {
+  return std::make_unique<Conv2D>(*this);
 }
 
 std::string Conv2D::prettyString() const {

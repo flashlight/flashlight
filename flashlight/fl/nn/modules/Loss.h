@@ -32,7 +32,7 @@ class MeanSquaredError : public BinaryModule {
 
   Variable forward(const Variable& inputs, const Variable& targets) override;
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 
@@ -56,7 +56,7 @@ class MeanAbsoluteError : public BinaryModule {
 
   Variable forward(const Variable& inputs, const Variable& targets) override;
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 
@@ -94,7 +94,7 @@ class BinaryCrossEntropy : public BinaryModule {
       const Variable& targets,
       const Variable& weights);
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 
@@ -158,7 +158,7 @@ class CategoricalCrossEntropy : public BinaryModule {
    */
   Variable forward(const Variable& inputs, const Variable& targets) override;
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 };
@@ -222,7 +222,7 @@ class AdaptiveSoftMaxLoss : public BinaryModule {
 
   void setParams(const Variable& var, int position) override;
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 };

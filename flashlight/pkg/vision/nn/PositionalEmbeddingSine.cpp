@@ -53,8 +53,8 @@ PositionalEmbeddingSine& PositionalEmbeddingSine::operator=(
   return *this;
 }
 
-std::shared_ptr<Module> PositionalEmbeddingSine::clone() const {
-  return std::make_shared<PositionalEmbeddingSine>(*this);
+std::unique_ptr<Module> PositionalEmbeddingSine::clone() const {
+  return std::make_unique<PositionalEmbeddingSine>(*this);
 }
 
 std::vector<Variable> PositionalEmbeddingSine::forward(

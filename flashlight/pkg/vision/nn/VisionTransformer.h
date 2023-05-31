@@ -29,7 +29,7 @@ class VisionTransformer : public Container {
       int32_t nHeads,
       float pDropout,
       float pLayerdrop);
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
 
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
   std::string prettyString() const override;

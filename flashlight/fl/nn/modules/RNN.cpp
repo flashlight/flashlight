@@ -128,8 +128,8 @@ std::tuple<Variable, Variable, Variable> RNN::operator()(
   return forward(input, hidden_state, cell_state);
 }
 
-std::shared_ptr<Module> RNN::clone() const {
-  return std::make_shared<RNN>(*this);
+std::unique_ptr<Module> RNN::clone() const {
+  return std::make_unique<RNN>(*this);
 }
 
 std::string RNN::prettyString() const {

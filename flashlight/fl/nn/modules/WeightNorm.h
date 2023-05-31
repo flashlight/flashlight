@@ -92,7 +92,7 @@ class WeightNorm : public Module {
 
   std::vector<Variable> forward(const std::vector<Variable>& inputs) override;
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 };

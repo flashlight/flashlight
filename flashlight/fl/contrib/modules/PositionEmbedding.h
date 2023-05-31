@@ -44,7 +44,7 @@ class PositionEmbedding : public Module {
 
   std::vector<Variable> operator()(const std::vector<Variable>& input);
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 

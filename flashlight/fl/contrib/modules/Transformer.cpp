@@ -213,8 +213,8 @@ void Transformer::setLayerDropout(float value) {
   pLayerdrop_ = value;
 }
 
-std::shared_ptr<Module> Transformer::clone() const {
-  return std::make_shared<Transformer>(*this);
+std::unique_ptr<Module> Transformer::clone() const {
+  return std::make_unique<Transformer>(*this);
 }
 
 std::string Transformer::prettyString() const {

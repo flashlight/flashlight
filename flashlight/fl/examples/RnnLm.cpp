@@ -126,7 +126,7 @@ class RnnLm : public Container {
     return "RnnLm";
   }
 
-  std::shared_ptr<Module> clone() const {
+  std::unique_ptr<Module> clone() const {
     throw std::runtime_error("Cloning is unimplemented in Module 'RnnLm'");
   }
 

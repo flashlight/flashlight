@@ -127,7 +127,7 @@ std::vector<Variable> Detr::forwardTransformer(
   return {outputClasses, outputCoord};
 }
 
-std::shared_ptr<Module> Detr::clone() const {
+std::unique_ptr<Module> Detr::clone() const {
   throw std::runtime_error("Cloning is unimplemented in Module 'Detr'");
 }
 

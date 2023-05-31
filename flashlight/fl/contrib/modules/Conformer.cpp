@@ -264,8 +264,8 @@ std::vector<Variable> Conformer::forward(const std::vector<Variable>& input) {
   return {x};
 }
 
-std::shared_ptr<Module> Conformer::clone() const {
-  return std::make_shared<Conformer>(*this);
+std::unique_ptr<Module> Conformer::clone() const {
+  return std::make_unique<Conformer>(*this);
 }
 
 std::string Conformer::prettyString() const {

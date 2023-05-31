@@ -99,7 +99,7 @@ MultiheadAttention::MultiheadAttention(
   add(wf_);
 }
 
-std::shared_ptr<Module> MultiheadAttention::clone() const {
+std::unique_ptr<Module> MultiheadAttention::clone() const {
   throw std::runtime_error(
       "Cloning is unimplemented in Module 'MultiheadAttention'");
 }
@@ -181,7 +181,7 @@ TransformerBaseLayer::TransformerBaseLayer(
   add(norm2_);
 };
 
-std::shared_ptr<Module> TransformerBaseLayer::clone() const {
+std::unique_ptr<Module> TransformerBaseLayer::clone() const {
   throw std::runtime_error(
       "Cloning is unimplemented in Module 'TransformerBaseLayer'");
 }
@@ -216,7 +216,7 @@ TransformerEncoderLayer::TransformerEncoderLayer(
     float pDropout)
     : TransformerBaseLayer(modelDim, mlpDim, nHeads, pDropout){};
 
-std::shared_ptr<Module> TransformerEncoderLayer::clone() const {
+std::unique_ptr<Module> TransformerEncoderLayer::clone() const {
   throw std::runtime_error(
       "Cloning is unimplemented in Module 'TransformerEncoderLayer'");
 }
@@ -288,7 +288,7 @@ TransformerDecoderLayer::TransformerDecoderLayer(
   add(norm3_);
 }
 
-std::shared_ptr<Module> TransformerDecoderLayer::clone() const {
+std::unique_ptr<Module> TransformerDecoderLayer::clone() const {
   throw std::runtime_error(
       "Cloning is unimplemented in Module 'TransformerDecoderLayer'");
 }
@@ -363,7 +363,7 @@ TransformerDecoder::TransformerDecoder(
   add(LayerNorm(std::vector<int>{0}, 1e-5, true, modelDim));
 }
 
-std::shared_ptr<Module> TransformerDecoder::clone() const {
+std::unique_ptr<Module> TransformerDecoder::clone() const {
   throw std::runtime_error(
       "Cloning is unimplemented in Module 'TransformerDecoder'");
 }
@@ -405,7 +405,7 @@ TransformerEncoder::TransformerEncoder(
   }
 }
 
-std::shared_ptr<Module> TransformerEncoder::clone() const {
+std::unique_ptr<Module> TransformerEncoder::clone() const {
   throw std::runtime_error(
       "Cloning is unimplemented in Module 'TransformerEncoder'");
 }
@@ -450,7 +450,7 @@ Transformer::Transformer(
   add(decoder_);
 };
 
-std::shared_ptr<Module> Transformer::clone() const {
+std::unique_ptr<Module> Transformer::clone() const {
   throw std::runtime_error("Cloning is unimplemented in Module 'Transformer'");
 }
 

@@ -23,7 +23,7 @@ class LinearSegmentationCriterion : public AutoSegmentationCriterion {
       CriterionScaleMode scaleMode = CriterionScaleMode::NONE)
       : AutoSegmentationCriterion(N, scaleMode) {}
 
-  std::shared_ptr<Module> clone() const override {
+  std::unique_ptr<Module> clone() const override {
     throw std::runtime_error(
         "Cloning is unimplemented in Module 'LinearSegmentationCriterion'");
   }

@@ -127,8 +127,8 @@ std::vector<int> AdaptiveSoftMax::getCutoff() const {
   return cutoff_;
 }
 
-std::shared_ptr<Module> AdaptiveSoftMax::clone() const {
-  return std::make_shared<AdaptiveSoftMax>(*this);
+std::unique_ptr<Module> AdaptiveSoftMax::clone() const {
+  return std::make_unique<AdaptiveSoftMax>(*this);
 }
 
 std::string AdaptiveSoftMax::prettyString() const {

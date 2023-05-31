@@ -49,8 +49,8 @@ Resnet50Backbone& Resnet50Backbone::operator=(const Resnet50Backbone& other) {
   return *this;
 }
 
-std::shared_ptr<Module> Resnet50Backbone::clone() const {
-  return std::make_shared<Resnet50Backbone>(*this);
+std::unique_ptr<Module> Resnet50Backbone::clone() const {
+  return std::make_unique<Resnet50Backbone>(*this);
 }
 
 std::vector<Variable> Resnet50Backbone::forward(

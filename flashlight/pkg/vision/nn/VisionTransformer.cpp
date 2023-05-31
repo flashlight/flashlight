@@ -55,7 +55,7 @@ VisionTransformer::VisionTransformer(
   add(norm2_);
 }
 
-std::shared_ptr<Module> VisionTransformer::clone() const {
+std::unique_ptr<Module> VisionTransformer::clone() const {
   throw std::runtime_error(
       "Cloning is unimplemented in Module 'VisionTransformer'");
 }

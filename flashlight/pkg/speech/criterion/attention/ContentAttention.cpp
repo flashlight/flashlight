@@ -16,7 +16,7 @@ namespace fl {
 namespace pkg {
 namespace speech {
 
-std::shared_ptr<Module> ContentAttention::clone() const {
+std::unique_ptr<Module> ContentAttention::clone() const {
   throw std::runtime_error(
       "Cloning is unimplemented in Module 'ContentAttention'");
 }
@@ -69,7 +69,7 @@ NeuralContentAttention::NeuralContentAttention(int dim, int layers /* = 1 */) {
   add(net);
 }
 
-std::shared_ptr<Module> NeuralContentAttention::clone() const {
+std::unique_ptr<Module> NeuralContentAttention::clone() const {
   throw std::runtime_error(
       "Cloning is unimplemented in Module 'NeuralContentAttention'");
 }

@@ -22,7 +22,7 @@ class Sigmoid : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 
  private:
@@ -39,7 +39,7 @@ class Log : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 
  private:
@@ -58,7 +58,7 @@ class Tanh : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 
  private:
@@ -81,7 +81,7 @@ class HardTanh : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 
  private:
@@ -100,7 +100,7 @@ class ReLU : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 
  private:
@@ -119,7 +119,7 @@ class ReLU6 : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 
  private:
@@ -160,7 +160,7 @@ class LeakyReLU : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 };
 
@@ -210,7 +210,7 @@ class PReLU : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 };
 
@@ -240,7 +240,7 @@ class ELU : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 };
 
@@ -273,7 +273,7 @@ class ThresholdReLU : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 };
 
@@ -303,7 +303,7 @@ class GatedLinearUnit : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 };
 
@@ -330,7 +330,7 @@ class LogSoftmax : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 };
 
@@ -353,7 +353,7 @@ class Swish : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 
  private:

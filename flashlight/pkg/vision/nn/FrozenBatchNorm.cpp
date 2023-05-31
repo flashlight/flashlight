@@ -38,8 +38,8 @@ FrozenBatchNorm::FrozenBatchNorm(
   BatchNorm::initialize();
 }
 
-std::shared_ptr<Module> FrozenBatchNorm::clone() const {
-  return std::make_shared<FrozenBatchNorm>(*this);
+std::unique_ptr<Module> FrozenBatchNorm::clone() const {
+  return std::make_unique<FrozenBatchNorm>(*this);
 }
 
 Variable FrozenBatchNorm::forward(const Variable& input) {

@@ -139,8 +139,8 @@ void LayerNorm::initialize() {
   }
 }
 
-std::shared_ptr<Module> LayerNorm::clone() const {
-  return std::make_shared<LayerNorm>(*this);
+std::unique_ptr<Module> LayerNorm::clone() const {
+  return std::make_unique<LayerNorm>(*this);
 }
 
 std::string LayerNorm::prettyString() const {

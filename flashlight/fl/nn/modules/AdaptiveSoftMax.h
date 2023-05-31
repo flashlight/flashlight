@@ -94,7 +94,7 @@ class AdaptiveSoftMax : public UnaryModule {
   Variable predict(const Variable& inputs) const;
   std::vector<int> getCutoff() const;
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 };
 

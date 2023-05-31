@@ -19,8 +19,8 @@ Variable Sigmoid::forward(const Variable& input) {
   return sigmoid(input);
 }
 
-std::shared_ptr<Module> Sigmoid::clone() const {
-  return std::make_shared<Sigmoid>(*this);
+std::unique_ptr<Module> Sigmoid::clone() const {
+  return std::make_unique<Sigmoid>(*this);
 }
 
 std::string Sigmoid::prettyString() const {
@@ -33,8 +33,8 @@ Variable Log::forward(const Variable& input) {
   return log(input);
 }
 
-std::shared_ptr<Module> Log::clone() const {
-  return std::make_shared<Log>(*this);
+std::unique_ptr<Module> Log::clone() const {
+  return std::make_unique<Log>(*this);
 }
 
 std::string Log::prettyString() const {
@@ -47,8 +47,8 @@ Variable Tanh::forward(const Variable& input) {
   return tanh(input);
 }
 
-std::shared_ptr<Module> Tanh::clone() const {
-  return std::make_shared<Tanh>(*this);
+std::unique_ptr<Module> Tanh::clone() const {
+  return std::make_unique<Tanh>(*this);
 }
 
 std::string Tanh::prettyString() const {
@@ -61,8 +61,8 @@ Variable HardTanh::forward(const Variable& input) {
   return clamp(input, -1.0, 1.0);
 }
 
-std::shared_ptr<Module> HardTanh::clone() const {
-  return std::make_shared<HardTanh>(*this);
+std::unique_ptr<Module> HardTanh::clone() const {
+  return std::make_unique<HardTanh>(*this);
 }
 
 std::string HardTanh::prettyString() const {
@@ -75,8 +75,8 @@ Variable ReLU::forward(const Variable& input) {
   return max(input, 0.0);
 }
 
-std::shared_ptr<Module> ReLU::clone() const {
-  return std::make_shared<ReLU>(*this);
+std::unique_ptr<Module> ReLU::clone() const {
+  return std::make_unique<ReLU>(*this);
 }
 
 std::string ReLU::prettyString() const {
@@ -89,8 +89,8 @@ Variable ReLU6::forward(const Variable& input) {
   return clamp(input, 0.0, 6.0);
 }
 
-std::shared_ptr<Module> ReLU6::clone() const {
-  return std::make_shared<ReLU6>(*this);
+std::unique_ptr<Module> ReLU6::clone() const {
+  return std::make_unique<ReLU6>(*this);
 }
 
 std::string ReLU6::prettyString() const {
@@ -103,8 +103,8 @@ Variable LeakyReLU::forward(const Variable& input) {
   return max(input, mSlope_ * input);
 }
 
-std::shared_ptr<Module> LeakyReLU::clone() const {
-  return std::make_shared<LeakyReLU>(*this);
+std::unique_ptr<Module> LeakyReLU::clone() const {
+  return std::make_unique<LeakyReLU>(*this);
 }
 
 std::string LeakyReLU::prettyString() const {
@@ -123,8 +123,8 @@ Variable PReLU::forward(const Variable& input) {
   return (input * mask) + (input * !mask * tileAs(params_[0], input));
 }
 
-std::shared_ptr<Module> PReLU::clone() const {
-  return std::make_shared<PReLU>(*this);
+std::unique_ptr<Module> PReLU::clone() const {
+  return std::make_unique<PReLU>(*this);
 }
 
 std::string PReLU::prettyString() const {
@@ -138,8 +138,8 @@ Variable ELU::forward(const Variable& input) {
   return (mask * input) + (!mask * mAlpha_ * (exp(input) - 1));
 }
 
-std::shared_ptr<Module> ELU::clone() const {
-  return std::make_shared<ELU>(*this);
+std::unique_ptr<Module> ELU::clone() const {
+  return std::make_unique<ELU>(*this);
 }
 
 std::string ELU::prettyString() const {
@@ -153,8 +153,8 @@ Variable ThresholdReLU::forward(const Variable& input) {
   return input * mask;
 }
 
-std::shared_ptr<Module> ThresholdReLU::clone() const {
-  return std::make_shared<ThresholdReLU>(*this);
+std::unique_ptr<Module> ThresholdReLU::clone() const {
+  return std::make_unique<ThresholdReLU>(*this);
 }
 
 std::string ThresholdReLU::prettyString() const {
@@ -167,8 +167,8 @@ Variable GatedLinearUnit::forward(const Variable& input) {
   return gatedlinearunit(input, dim_);
 }
 
-std::shared_ptr<Module> GatedLinearUnit::clone() const {
-  return std::make_shared<GatedLinearUnit>(*this);
+std::unique_ptr<Module> GatedLinearUnit::clone() const {
+  return std::make_unique<GatedLinearUnit>(*this);
 }
 
 std::string GatedLinearUnit::prettyString() const {
@@ -181,8 +181,8 @@ Variable LogSoftmax::forward(const Variable& input) {
   return logSoftmax(input, dim_);
 }
 
-std::shared_ptr<Module> LogSoftmax::clone() const {
-  return std::make_shared<LogSoftmax>(*this);
+std::unique_ptr<Module> LogSoftmax::clone() const {
+  return std::make_unique<LogSoftmax>(*this);
 }
 
 std::string LogSoftmax::prettyString() const {
@@ -195,8 +195,8 @@ Variable Swish::forward(const Variable& input) {
   return swish(input, beta_);
 }
 
-std::shared_ptr<Module> Swish::clone() const {
-  return std::make_shared<Swish>(*this);
+std::unique_ptr<Module> Swish::clone() const {
+  return std::make_unique<Swish>(*this);
 }
 
 std::string Swish::prettyString() const {

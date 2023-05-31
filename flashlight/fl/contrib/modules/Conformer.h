@@ -49,7 +49,7 @@ class Conformer : public Container {
   Conformer& operator=(const Conformer& other);
 
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 
  private:

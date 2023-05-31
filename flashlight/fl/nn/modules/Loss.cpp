@@ -30,8 +30,8 @@ Variable MeanSquaredError::forward(
   return res;
 }
 
-std::shared_ptr<Module> MeanSquaredError::clone() const {
-  return std::make_shared<MeanSquaredError>(*this);
+std::unique_ptr<Module> MeanSquaredError::clone() const {
+  return std::make_unique<MeanSquaredError>(*this);
 }
 
 std::string MeanSquaredError::prettyString() const {
@@ -53,8 +53,8 @@ Variable MeanAbsoluteError::forward(
   return mean(flat(fl::abs(df)), {0});
 }
 
-std::shared_ptr<Module> MeanAbsoluteError::clone() const {
-  return std::make_shared<MeanAbsoluteError>(*this);
+std::unique_ptr<Module> MeanAbsoluteError::clone() const {
+  return std::make_unique<MeanAbsoluteError>(*this);
 }
 
 std::string MeanAbsoluteError::prettyString() const {
@@ -74,8 +74,8 @@ Variable BinaryCrossEntropy::forward(
   return mean(flat(weights * binaryCrossEntropy(inputs, targets)), {0});
 }
 
-std::shared_ptr<Module> BinaryCrossEntropy::clone() const {
-  return std::make_shared<BinaryCrossEntropy>(*this);
+std::unique_ptr<Module> BinaryCrossEntropy::clone() const {
+  return std::make_unique<BinaryCrossEntropy>(*this);
 }
 
 std::string BinaryCrossEntropy::prettyString() const {
@@ -88,8 +88,8 @@ Variable CategoricalCrossEntropy::forward(
   return categoricalCrossEntropy(inputs, targets, reduction_, ignoreIndex_);
 }
 
-std::shared_ptr<Module> CategoricalCrossEntropy::clone() const {
-  return std::make_shared<CategoricalCrossEntropy>(*this);
+std::unique_ptr<Module> CategoricalCrossEntropy::clone() const {
+  return std::make_unique<CategoricalCrossEntropy>(*this);
 }
 
 std::string CategoricalCrossEntropy::prettyString() const {
@@ -211,8 +211,8 @@ void AdaptiveSoftMaxLoss::setParams(const Variable& var, int position) {
   activation_->setParams(var, position);
 }
 
-std::shared_ptr<Module> AdaptiveSoftMaxLoss::clone() const {
-  return std::make_shared<AdaptiveSoftMaxLoss>(*this);
+std::unique_ptr<Module> AdaptiveSoftMaxLoss::clone() const {
+  return std::make_unique<AdaptiveSoftMaxLoss>(*this);
 }
 
 std::string AdaptiveSoftMaxLoss::prettyString() const {

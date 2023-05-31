@@ -185,8 +185,8 @@ int RawWavSpecAugment::generateRandomInt(int low, int high) {
   return uniformDist(eng_);
 }
 
-std::shared_ptr<Module> RawWavSpecAugment::clone() const {
-  return std::make_shared<RawWavSpecAugment>(*this);
+std::unique_ptr<Module> RawWavSpecAugment::clone() const {
+  return std::make_unique<RawWavSpecAugment>(*this);
 }
 
 std::string RawWavSpecAugment::prettyString() const {

@@ -97,8 +97,8 @@ ViT& ViT::operator=(const ViT& other) {
   return *this;
 }
 
-std::shared_ptr<Module> ViT::clone() const {
-  return std::make_shared<ViT>(*this);
+std::unique_ptr<Module> ViT::clone() const {
+  return std::make_unique<ViT>(*this);
 }
 
 std::vector<fl::Variable> ViT::forward(

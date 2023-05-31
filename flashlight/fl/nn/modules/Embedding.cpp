@@ -45,8 +45,8 @@ Variable Embedding::forward(const Variable& input) {
   return embedding(input, params_[0]);
 }
 
-std::shared_ptr<Module> Embedding::clone() const {
-  return std::make_shared<Embedding>(*this);
+std::unique_ptr<Module> Embedding::clone() const {
+  return std::make_unique<Embedding>(*this);
 }
 
 std::string Embedding::prettyString() const {

@@ -20,8 +20,8 @@ Variable Transform::forward(const Variable& input) {
   return func_(input);
 }
 
-std::shared_ptr<Module> Transform::clone() const {
-  return std::make_shared<Transform>(*this);
+std::unique_ptr<Module> Transform::clone() const {
+  return std::make_unique<Transform>(*this);
 }
 
 std::string Transform::prettyString() const {

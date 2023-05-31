@@ -20,7 +20,7 @@ SimpleLocationAttention::SimpleLocationAttention(int convKernel) {
   add(pa);
 }
 
-std::shared_ptr<Module> SimpleLocationAttention::clone() const {
+std::unique_ptr<Module> SimpleLocationAttention::clone() const {
   throw std::runtime_error(
       "Cloning is unimplemented in Module 'SimpleLocationAttention'");
 }
@@ -79,7 +79,7 @@ LocationAttention::LocationAttention(int encDim, int convKernel) {
   add(pa);
 }
 
-std::shared_ptr<Module> LocationAttention::clone() const {
+std::unique_ptr<Module> LocationAttention::clone() const {
   throw std::runtime_error(
       "Cloning is unimplemented in Module 'LocationAttention'");
 }
@@ -146,7 +146,7 @@ NeuralLocationAttention::NeuralLocationAttention(
   add(Linear(attnDim, 1, false));
 }
 
-std::shared_ptr<Module> NeuralLocationAttention::clone() const {
+std::unique_ptr<Module> NeuralLocationAttention::clone() const {
   throw std::runtime_error(
       "Cloning is unimplemented in Module 'NeuralLocationAttention'");
 }

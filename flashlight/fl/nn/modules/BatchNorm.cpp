@@ -113,8 +113,8 @@ void BatchNorm::initialize() {
   }
 }
 
-std::shared_ptr<Module> BatchNorm::clone() const {
-  return std::make_shared<BatchNorm>(*this);
+std::unique_ptr<Module> BatchNorm::clone() const {
+  return std::make_unique<BatchNorm>(*this);
 }
 
 std::string BatchNorm::prettyString() const {

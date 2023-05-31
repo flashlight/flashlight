@@ -32,8 +32,8 @@ Variable PrecisionCast::operator()(const Variable& input) {
   return this->forward(input);
 }
 
-std::shared_ptr<Module> PrecisionCast::clone() const {
-  return std::make_shared<PrecisionCast>(*this);
+std::unique_ptr<Module> PrecisionCast::clone() const {
+  return std::make_unique<PrecisionCast>(*this);
 }
 
 std::string PrecisionCast::prettyString() const {

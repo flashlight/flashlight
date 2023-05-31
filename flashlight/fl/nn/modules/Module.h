@@ -139,9 +139,9 @@ class Module {
   /**
    * Clone the module via deep copy of its parameters and members.
    *
-   * @return A shared pointer of the cloned module.
+   * @return A unique pointer of the cloned module.
    */
-  virtual std::shared_ptr<Module> clone() const = 0;
+  virtual std::unique_ptr<Module> clone() const = 0;
 
   /**
    * Generates a stringified representation of the module.

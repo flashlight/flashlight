@@ -36,7 +36,7 @@ class AutoSegmentationCriterion : public SequenceCriterion {
     syncTransitions();
   }
 
-  std::shared_ptr<Module> clone() const override {
+  std::unique_ptr<Module> clone() const override {
     throw std::runtime_error(
         "Cloning is unimplemented in Module 'AutoSegmentationCriterion'");
   }

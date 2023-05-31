@@ -70,8 +70,8 @@ void Linear::initialize() {
   }
 }
 
-std::shared_ptr<Module> Linear::clone() const {
-  return std::make_shared<Linear>(*this);
+std::unique_ptr<Module> Linear::clone() const {
+  return std::make_unique<Linear>(*this);
 }
 
 std::string Linear::prettyString() const {

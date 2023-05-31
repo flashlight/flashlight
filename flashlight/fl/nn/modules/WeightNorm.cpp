@@ -112,8 +112,8 @@ void WeightNorm::eval() {
   computeWeight();
 }
 
-std::shared_ptr<Module> WeightNorm::clone() const {
-  return std::make_shared<WeightNorm>(*this);
+std::unique_ptr<Module> WeightNorm::clone() const {
+  return std::make_unique<WeightNorm>(*this);
 }
 
 std::string WeightNorm::prettyString() const {

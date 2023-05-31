@@ -149,7 +149,7 @@ class RNN : public Module {
       const Variable& hidden_state,
       const Variable& cell_state);
 
-  std::shared_ptr<Module> clone() const override;
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 };
