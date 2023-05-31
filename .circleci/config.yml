@@ -593,3 +593,5 @@ workflows:
               build_parallelism: ["8"]
           requires:
             - build-flashlight-pkg-<< matrix.pkg >>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+
+      # TODO: eventually add macOS and Linux arm64 baselines for pkg/app

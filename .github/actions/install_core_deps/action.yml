@@ -1,5 +1,5 @@
-name: "Install Dependencies"
-description: "Install backend and autograd backend dependencies for Flashlight"
+name: "Install Flashlight Core Dependencies"
+description: "Install backend and autograd backend dependencies for the Flashlight Core"
 inputs:
   backend:
     required: true
