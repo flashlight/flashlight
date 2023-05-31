@@ -384,6 +384,7 @@ jobs:
       autograd_backend:
         type: string
     executor: << parameters.platform >>
+    working_directory: ~/project/core-<< parameters.platform >>-<< parameters.backend >>-<< parameters.autograd_backend >>
     steps:
       - checkout
       - install-all-dependencies:
@@ -395,9 +396,9 @@ jobs:
           backend: << parameters.backend >>
           autograd_backend: << parameters.backend >>
       - persist_to_workspace:
-          root: .
+          root: ~/project
           paths:
-            - .
+            - core-<< parameters.platform >>-<< parameters.backend >>-<< parameters.autograd_backend >>
 
   test-flashlight-core:
     parameters:
@@ -415,7 +416,8 @@ jobs:
           autograd_backend: << parameters.autograd_backend >>
       # attach the project root and build directory
       - attach_workspace:
-          at: .
+          at: ~/project
+      - run: ls ~/project
       # TODO: enable tests on Windows adding "ctest -C Release ..."
       - test-flashlight:
           path: build/flashlight/fl/test
