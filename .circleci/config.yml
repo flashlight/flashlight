@@ -434,6 +434,7 @@ jobs:
         type: string
         default: ""
     executor: << parameters.platform >>
+    working_directory: ~/project/pkg
     steps:
       - install-all-dependencies:
           platform: << parameters.platform >>
@@ -481,6 +482,7 @@ jobs:
       # attach the project root and build directory
       - attach_workspace:
           at: .
+      - run: pwd && ls .
       - test-flashlight:
           path: build/flashlight/pkg/<<parameters.pkg>>/test
 
@@ -512,6 +514,7 @@ jobs:
       # attach the project root and build directory
       - attach_workspace:
           at: .
+      - run: pwd && ls .
       - run:
           name: "Build Flashlight apps for << parameters.pkg >> package"
           command: |
