@@ -562,17 +562,6 @@ workflows:
           requires:
             - build-flashlight-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
 
-      - test-flashlight-pkg:
-          name: test-flashlight-pkg-<< matrix.pkg>>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
-          matrix:
-            parameters:
-              pkg: [runtime, speech, vision, text]
-              platform: [linux]
-              backend: [arrayfire]
-              autograd_backend: [cudnn]
-          requires:
-            - build-flashlight-pkg-<< matrix.pkg >>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
-
       # only run pkg builds and tests for best-supported platforms for now
       - test-flashlight-pkg:
           name: test-flashlight-pkg-<< matrix.pkg>>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
@@ -587,7 +576,7 @@ workflows:
 
       # only run app builds for best-supported platforms for now
       - build-flashlight-apps-for-pkg:
-          name: test-flashlight-pkg-<< matrix.pkg>>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+          name: build-flashlight-apps-for-pkg-<< matrix.pkg>>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
           matrix:
             parameters:
               pkg: [runtime, speech, vision, text]
