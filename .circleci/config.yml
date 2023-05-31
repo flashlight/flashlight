@@ -399,7 +399,7 @@ jobs:
           paths:
             - .
 
-  test-core:
+  test-flashlight-core:
     parameters:
       platform:
         type: string
@@ -420,7 +420,7 @@ jobs:
       - test-flashlight:
           path: build/flashlight/fl/test
 
-  build-and-test-flashlight-pkg:
+  build-flashlight-pkg:
     parameters:
       pkg:
         type: string
@@ -451,8 +451,70 @@ jobs:
               -DFL_BUILD_PKG_VISION=$([ "<< parameters.pkg >>" == "vision" ] && echo "ON" || echo "OFF") \
               -DFL_BUILD_PKG_TEXT=$([ "<< parameters.pkg >>" == "text" ] && echo "ON" || echo "OFF")
             cmake --build build --parallel
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
+  test-flashlight-pkg:
+    parameters:
+      pkg:
+        type: string
+      platform:
+        type: string
+      backend:
+        type: string
+      autograd_backend:
+        type: string
+    executor: << parameters.platform >>
+    steps:
+      - install-all-dependencies:
+          platform: << parameters.platform >>
+          backend: << parameters.backend >>
+          autograd_backend: << parameters.autograd_backend >>
+      - install-pkg-dependencies:
+          pkg: << parameters.pkg >>
+          platform: << parameters.platform >>
+      # attach the project root and build directory
+      - attach_workspace:
+          at: .
       - test-flashlight:
           path: build/flashlight/pkg/<<parameters.pkg>>/test
+
+  build-flashlight-apps-for-pkg:
+    parameters:
+      pkg:
+        type: string
+      platform:
+        type: string
+        default: linux
+      backend:
+        type: string
+        default: arrayfire
+      autograd_backend:
+        type: string
+        default: cudnn
+    executor: << parameters.platform >>
+    steps:
+      - install-all-dependencies:
+          platform: << parameters.platform >>
+          backend: << parameters.backend >>
+          autograd_backend: << parameters.autograd_backend >>
+      - install-pkg-dependencies:
+          pkg: << parameters.pkg >>
+          platform: << parameters.platform >>
+      # attach the project root and build directory
+      - attach_workspace:
+          at: .
+      - run:
+          name: "Build Flashlight apps for << parameters.pkg >> package"
+          command: |
+            cmake -S . -B build \
+              -DFL_BUILD_APP_ASR=$([ "<< parameters.pkg >>" == "speech" ] && echo "ON" || echo "OFF") \
+              -DFL_BUILD_APP_IMGCLASS=$([ "<< parameters.pkg >>" == "vision" ] && echo "ON" || echo "OFF") \
+              -DFL_BUILD_APP_OBJDET=$([ "<< parameters.pkg >>" == "vision" ] && echo "ON" || echo "OFF") \
+              -DFL_BUILD_APP_LM=$([ "<< parameters.pkg >>" == "text" ] && echo "ON" || echo "OFF")
+            cmake --build build --parallel
 
 workflows:
   version: 2
@@ -466,8 +528,8 @@ workflows:
               backend: [arrayfire]
               autograd_backend: [cudnn]
 
-      - test-core:
-          name: test-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+      - test-flashlight-core:
+          name: test-flashlight-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
           matrix:
             # Not running all tests with all configurations yet
             parameters:
@@ -489,8 +551,8 @@ workflows:
                 backend: arrayfire
                 autograd_backend: onednn
 
-      - build-and-test-flashlight-pkg:
-          name: build-flashlight-pkg-<< matrix.pkg>>-<< matrix.platform >>-CPU-<< matrix.backend >>+<< matrix.autograd_backend >>
+      - build-flashlight-pkg:
+          name: build-flashlight-pkg-<< matrix.pkg>>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
           matrix:
             parameters:
               pkg: [runtime, speech, vision, text]
@@ -499,3 +561,38 @@ workflows:
               autograd_backend: [cudnn]
           requires:
             - build-flashlight-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+
+      - test-flashlight-pkg:
+          name: test-flashlight-pkg-<< matrix.pkg>>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+          matrix:
+            parameters:
+              pkg: [runtime, speech, vision, text]
+              platform: [linux]
+              backend: [arrayfire]
+              autograd_backend: [cudnn]
+          requires:
+            - build-flashlight-pkg-<< matrix.pkg >>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+
+      # only run pkg builds and tests for best-supported platforms for now
+      - test-flashlight-pkg:
+          name: test-flashlight-pkg-<< matrix.pkg>>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+          matrix:
+            parameters:
+              pkg: [runtime, speech, vision, text]
+              platform: [linux]
+              backend: [arrayfire]
+              autograd_backend: [cudnn]
+          requires:
+            - build-flashlight-pkg-<< matrix.pkg >>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+
+      # only run app builds for best-supported platforms for now
+      - build-flashlight-apps-for-pkg:
+          name: test-flashlight-pkg-<< matrix.pkg>>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+          matrix:
+            parameters:
+              pkg: [runtime, speech, vision, text]
+              platform: [linux]
+              backend: [arrayfire]
+              autograd_backend: [cudnn]
+          requires:
+            - build-flashlight-pkg-<< matrix.pkg >>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
