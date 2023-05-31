@@ -10,8 +10,9 @@ function(register_app)
 
   set(_app_name ${register_app_NAME})
   string(TOLOWER ${_app_name} _app_name_lower)
+  string(TOUPPER ${_app_name} _app_name_upper)
 
-  set(_option_name ${FL_BUILD_APP_${_app_name})
+  set(_option_name "FL_BUILD_APP_${_app_name_upper}")
   fl_dependent_option(
     ${_option_name}
     "Build ${_app_name_lower} app for Flashlight"
@@ -22,7 +23,7 @@ function(register_app)
 
   if(${_option_name})
     message(STATUS "Building Flashlight ${_app_name_lower} package.")
-    include(${FL_APPS_DIR}/${_app_name_lower})
+    include(${FL_APPS_DIR}/${_app_name_lower}/CMakeLists.txt)
   endif()
 endfunction()
 

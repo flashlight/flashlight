@@ -126,7 +126,7 @@ endfunction()
 
 # Small utility function which wraps cmake_dependent options and throws an error if the user
 # is trying to build something without the proper dependencies.
-macro(FL_DEPENDENT_OPTION OPTION TEXT VAL DEPS FRCE)
+macro(fl_dependent_option OPTION TEXT VAL DEPS FRCE)
   foreach(DEP IN ITEMS ${DEPS})
     if(NOT ${${DEP}} AND ${OPTION} AND "${${OPTION}}")
       message(FATAL_ERROR "${DEP} Required to build ${OPTION}")

@@ -125,7 +125,7 @@ set(FL_PKG_DIR "${FL_ROOT_DIR}/pkg")
 include(${FL_PKG_DIR}/CMakeLists.txt)
 
 # --------------------------- Apps ---------------------------
-include(${FL_ROOT_DIR}/apps/CMakeLists.txt)
+include(${FL_ROOT_DIR}/app/CMakeLists.txt)
 
 # --------------------------- Cleanup ---------------------------
 setup_install_targets(INSTALL_TARGETS ${INSTALLABLE_TARGETS})

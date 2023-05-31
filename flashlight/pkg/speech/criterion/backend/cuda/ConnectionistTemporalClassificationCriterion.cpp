@@ -19,8 +19,6 @@
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
 
-using namespace fl::pkg::runtime;
-
 using CriterionUtils = fl::lib::cuda::CriterionUtils<float>;
 
 namespace fl {
