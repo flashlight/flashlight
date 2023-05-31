@@ -7,8 +7,6 @@
 
 #include "flashlight/fl/distributed/FileStore.h"
 
-#include <fcntl.h>
-#include <unistd.h>
 #include <fstream>
 #include <stdexcept>
 #include <string>
@@ -89,21 +87,7 @@ void FileStore::clear(const std::string& key) {
 
 bool FileStore::check(const std::string& key) {
   fs::path path = objectPath(key);
-
-  int fd = open(path.string().c_str(), O_RDONLY);
-  if (fd == -1) {
-    // Only deal with files that don't exist.
-    // Anything else is a problem.
-    if (errno != ENOENT) {
-      throw std::runtime_error(
-          "FileStore check: file open failed: " + path.string());
-    }
-
-    // path doesn't exist; return early
-    return false;
-  }
-  close(fd);
-  return true;
+  return fs::exists(path);
 }
 
 void FileStore::wait(const std::string& key) {
