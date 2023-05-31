@@ -430,6 +430,9 @@ jobs:
         type: string
       autograd_backend:
         type: string
+      build_parallelism:
+        type: string
+        default: ""
     executor: << parameters.platform >>
     steps:
       - install-all-dependencies:
@@ -450,7 +453,7 @@ jobs:
               -DFL_BUILD_PKG_SPEECH=$([ "<< parameters.pkg >>" == "speech" ] && echo "ON" || echo "OFF") \
               -DFL_BUILD_PKG_VISION=$([ "<< parameters.pkg >>" == "vision" ] && echo "ON" || echo "OFF") \
               -DFL_BUILD_PKG_TEXT=$([ "<< parameters.pkg >>" == "text" ] && echo "ON" || echo "OFF")
-            cmake --build build --parallel
+            cmake --build build --parallel << parameters.build_parallelism >>
       - persist_to_workspace:
           root: .
           paths:
@@ -559,6 +562,7 @@ workflows:
               platform: [linux]
               backend: [arrayfire]
               autograd_backend: [cudnn]
+              build_parallelism: ["8"]
           requires:
             - build-flashlight-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
 
