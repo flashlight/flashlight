@@ -43,12 +43,13 @@ void allReduceMultiple(
     std::vector<Tensor*> arrs,
     bool async /* = false */,
     bool contiguous /* = false */) {
-  throw std::runtime_error("allReduceMultiple not supported for stub backend");
+  throw std::runtime_error(
+      "allReduceMultiple not supported for distributed stub backend");
 }
 
 void syncDistributed() {
   throw std::runtime_error(
-      "Asynchronous allReduce not supported for stub backend");
+      "Asynchronous allReduce not supported for distributed stub backend");
 }
 
 int getWorldRank() {
