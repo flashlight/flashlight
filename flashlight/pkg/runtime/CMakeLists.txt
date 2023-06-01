@@ -21,10 +21,13 @@ else()
   message(FATAL_ERROR "gflags not found")
 endif()
 
-add_library(
-  fl_pkg_runtime
-  ""
-)
+add_library(fl_pkg_runtime)
+
+# Install lib and headers
+list(APPEND INSTALLABLE_TARGETS fl_pkg_runtime)
+setup_install_headers(
+  ${CMAKE_CURRENT_LIST_DIR}
+  ${FL_INSTALL_INC_DIR_HEADER_LOC}/pkg)
 
 target_sources(
   fl_pkg_runtime

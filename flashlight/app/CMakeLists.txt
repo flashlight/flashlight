@@ -1,69 +1,42 @@
 cmake_minimum_required(VERSION 3.16)
 
-fl_dependent_option(
-  FL_BUILD_ALL_APPS
-  "Set all Flashlight apps ON by default"
-  OFF
-  "FL_BUILD_CONTRIB;"
-  OFF)
+set(FL_APPS_DIR ${CMAKE_CURRENT_LIST_DIR})
 
-# --------------------------- ASR  ---------------------------
-fl_dependent_option(
-  FL_BUILD_APP_ASR
-  "Build asr task for Flashlight"
-  ${FL_BUILD_ALL_APPS}
-  "FL_BUILD_CONTRIB;FL_BUILD_PKG_SPEECH;FL_BUILD_PKG_RUNTIME"
-  OFF)
-if (FL_BUILD_APP_ASR)
-  message(STATUS "Building flashlight ASR app")
-  set(FL_APP_ASR_ROOT_DIR ${FL_APPS_DIR}/asr)
-  include(${FL_APP_ASR_ROOT_DIR}/CMakeLists.txt)
-endif ()
+function(register_app)
+  set(oneValueArgs NAME)
+  set(multiValueArgs DEPENDENT_OPTS)
+  cmake_parse_arguments(register_app "${options}" "${oneValueArgs}"
+    "${multiValueArgs}" ${ARGN})
 
-# --------------------------- Image Classificiation  ---------------------------
-fl_dependent_option(
-  FL_BUILD_APP_IMGCLASS
-  "Build image classification app"
-  "${FL_BUILD_ALL_APPS}"
-  "FL_BUILD_CONTRIB;FL_BUILD_PKG_VISION;FL_BUILD_PKG_RUNTIME"
-  OFF)
-if (FL_BUILD_APP_IMGCLASS) # imgclass is required to build objdet
-  message(STATUS "Building flashlight Image Classification app")
-  set(FL_APP_IMGCLASS_ROOT_DIR ${FL_APPS_DIR}/imgclass)
-  include(${FL_APP_IMGCLASS_ROOT_DIR}/CMakeLists.txt)
-endif ()
+  set(_app_name ${register_app_NAME})
+  string(TOLOWER ${_app_name} _app_name_lower)
+  string(TOUPPER ${_app_name} _app_name_upper)
 
-# --------------------------- LM  ---------------------------
-fl_dependent_option(
-  FL_BUILD_APP_LM
-  "Build image classification app"
-  "${FL_BUILD_ALL_APPS}"
-  "FL_BUILD_CONTRIB;FL_BUILD_PKG_TEXT;FL_BUILD_PKG_RUNTIME"
-  OFF)
-if (FL_BUILD_APP_LM)
-  message(STATUS "Building flashlight LM app")
-  set(FL_APP_LM_ROOT_DIR ${FL_APPS_DIR}/lm)
-  include(${FL_APP_LM_ROOT_DIR}/CMakeLists.txt)
-endif ()
+  set(_option_name "FL_BUILD_APP_${_app_name_upper}")
+  fl_dependent_option(
+    OPTION ${_option_name}
+    TEXT "Build ${_app_name_lower} app for Flashlight"
+    VAL OFF
+    DEPS "${register_app_DEPENDENT_OPTS}"
+    FRCE OFF
+  )
 
-# --------------------------- Objdet Detection  ---------------------------
-fl_dependent_option(
-  FL_BUILD_APP_OBJDET
-  "Build image classification app"
-  "${FL_BUILD_ALL_APPS}"
-  "FL_BUILD_CONTRIB;FL_BUILD_PKG_VISION;FL_BUILD_PKG_RUNTIME"
-  OFF)
-if (FL_BUILD_APP_OBJDET)
-  message(STATUS "Building flashlight Object Detection app")
-  set(FL_APP_OBJDET_ROOT_DIR ${FL_APPS_DIR}/objdet)
-  include(${FL_APP_OBJDET_ROOT_DIR}/CMakeLists.txt)
-endif ()
+  if(${_option_name})
+    message(STATUS "Building Flashlight ${_app_name_lower} package.")
+    include(${FL_APPS_DIR}/${_app_name_lower}/CMakeLists.txt)
+  endif()
+endfunction()
 
-# Build benchmark additionally
-if (FL_BUILD_ALL_APPS)
-  message(STATUS "Building flashlight app benchmark")
-  set(FL_APP_BENCHMARK_ROOT_DIR ${FL_APPS_DIR}/benchmark)
-  include(${FL_APP_BENCHMARK_ROOT_DIR}/CMakeLists.txt)
-  list(APPEND INSTALLABLE_TARGETS flashlight-app-benchmark)
-  setup_install_headers(${FL_APP_BENCHMARK_ROOT_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC}/app)
-endif()
+set(_common_deps FL_BUILD_CONTRIB FL_BUILD_PKG_RUNTIME) # for all apps
+register_app(NAME asr       DEPENDENT_OPTS ${_common_deps} FL_BUILD_PKG_SPEECH)
+register_app(NAME imgclass  DEPENDENT_OPTS ${_common_deps} FL_BUILD_PKG_VISION)
+register_app(NAME objdet    DEPENDENT_OPTS ${_common_deps} FL_BUILD_PKG_VISION)
+register_app(NAME lm        DEPENDENT_OPTS ${_common_deps} FL_BUILD_PKG_TEXT)
+register_app(
+  NAME benchmark
+  DEPENDENT_OPTS
+  ${_common_deps}
+  FL_BUILD_PKG_SPEECH
+  FL_BUILD_PKG_VISION
+  FL_BUILD_PKG_TEXT
+)

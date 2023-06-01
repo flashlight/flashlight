@@ -5,10 +5,13 @@ if (NOT (FL_USE_ARRAYFIRE AND FL_ARRAYFIRE_USE_CUDA))
     "only available with the ArrayFire backend with CUDA for now")
 endif()
 
-add_library(
-  fl_pkg_halide
-  ""
-)
+add_library(fl_pkg_halide)
+
+# Install lib and headers
+list(APPEND INSTALLABLE_TARGETS fl_pkg_halide)
+setup_install_headers(
+  ${CMAKE_CURRENT_LIST_DIR}
+  ${FL_INSTALL_INC_DIR_HEADER_LOC}/pkg)
 
 find_package(Halide CONFIG REQUIRED)
 

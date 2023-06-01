@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 3.16)
 
-add_library(
-  fl_pkg_speech
-  ""
-  )
+add_library(fl_pkg_speech)
+
+# Install lib and headers
+list(APPEND INSTALLABLE_TARGETS fl_pkg_speech)
+setup_install_headers(
+  ${CMAKE_CURRENT_LIST_DIR}
+  ${FL_INSTALL_INC_DIR_HEADER_LOC}/pkg)
 
 # flashlight-text with flashlight-text-kenlm is required
 if (NOT TARGET flashlight::flashlight-text)
@@ -70,7 +73,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/augmentation/CMakeLists.txt)
 
 ## --------------------------- Tests ---------------------------
 
-## Build tests
+# Build tests
 if (FL_BUILD_TESTS)
   add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test)
 endif()
