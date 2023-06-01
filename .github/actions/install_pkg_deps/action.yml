@@ -1,0 +1,28 @@
+name: "Install Package Dependencies"
+description: "Install dependencies for Flashlight packages"
+inputs:
+  pkg:
+    required: true
+    description: "Package being installed"
+
+runs:
+  using: "composite"
+  steps:
+    # Runtime package is required for speech
+    - name: "Install Runtime Package Dependencies (Linux)"
+      run: sudo apt install -y libgflags-dev libgoogle-glog-dev
+      if: runner.os == 'Linux'
+      shell: bash -l {0}
+    - name: "Install Runtime Package Dependencies (macOS)"
+      run: brew install gflags glog
+      if: runner.os == 'macOS'
+      shell: bash -l {0}
+
+    - name: "Install Speech Package Dependencies (Linux)"
+      run: sudo apt install -y libsndfile1-dev libfftw3-dev libopenblas-dev
+      if: runner.os == 'Linux' && inputs.pkg == 'speech'
+      shell: bash -l {0}
+    - name: "Install Speech Package Dependencies (macOS)"
+      run: brew install libsndfile fftw openblas
+      if: runner.os == 'macOS' && inputs.pkg == 'speech'
+      shell: bash -l {0}
