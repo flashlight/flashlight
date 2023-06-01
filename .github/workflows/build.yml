@@ -3,7 +3,7 @@ name: Build Flashlight
 on: [push, pull_request]
 
 jobs:
-  build:
+  build_core:
     name: "Build on ${{ matrix.os }} | tensor: ${{ matrix.backend }} | autograd: ${{ matrix.autograd_backend }}"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -18,39 +18,13 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # ]----- Backend dependencies
-      # ArrayFire
-      - name: "Install ArrayFire (Linux)"
-        run: |
-          sudo apt update
-          sudo apt-key adv --fetch-key https://repo.arrayfire.com/GPG-PUB-KEY-ARRAYFIRE-2020.PUB
-          echo "deb [arch=amd64] https://repo.arrayfire.com/debian all main" | sudo tee /etc/apt/sources.list.d/arrayfire.list
-          sudo apt update
-          sudo apt install arrayfire-cmake=3.8.1-2 arrayfire-headers=3.8.1-2 arrayfire-cpu3-mkl=3.8.1-2 arrayfire-cpu3-dev=3.8.1-2
-        if: runner.os == 'Linux' && matrix.backend == 'ArrayFire'
-      - name: "Install ArrayFire (macOS)"
-        run: brew install arrayfire
-        if: runner.os == 'macOS' && matrix.backend == 'ArrayFire'
-      - name: "Install ArrayFire (Windows)"
-        run: |
-          choco install --no-progress wget -y
-          cd $HOME
-          INSTALLER_NAME="ArrayFire-v3.8.1-CUDA-11.4.exe"
-          wget --quiet https://arrayfire.s3.amazonaws.com/3.8.1/$INSTALLER_NAME
-          7z.exe x $INSTALLER_NAME -o"C:\Program Files\ArrayFire" -y
-          rm $INSTALLER_NAME
-        if: runner.os == 'Windows' && matrix.backend == 'ArrayFire'
-      # oneDNN
-      - name: Install oneDNN 2.7.2 with microconda
-        uses: mamba-org/provision-with-micromamba@main
+      - uses: ./.github/actions/install_core_deps
         with:
-          environment-file: false
-          environment-name: flashlight
-          channels: conda-forge
-          extra-specs: onednn=2.7.2
-        if: matrix.backend == 'oneDNN' || matrix.autograd_backend == 'oneDNN'
+          runner: ${{ matrix.os }}
+          os: ${{ runner.os }}
+          backend: ${{ matrix.backend }}
+          autograd_backend: ${{ matrix.autograd_backend }}
 
-      # Build
       - name: "Configure Flashlight"
         run: |
           cmake -S . -B build -DBUILD_SHARED_LIBS=ON \
@@ -64,6 +38,13 @@ jobs:
         run: |
           cmake --build build --parallel 2
 
+      - name: "Upload checkout artifact"
+        uses: actions/upload-artifact@v3
+        with:
+          name: core-checkout-${{ matrix.os }}-${{ matrix.backend }}-${{ matrix.autograd_backend }}
+          path: .
+          retention-days: 3
+
       # Test
       # - name: "Run Flashlight tests"
       #   run: |
@@ -71,7 +52,49 @@ jobs:
       #     ctest --output-on-failure -j 4
       #   if: matrix.backend == 'ArrayFire' && matrix.autograd_backend == 'oneDNN'
 
-  build_wasm:
+  # build_pkg:
+  #   name: "Build Flashlight ${{ matrix.pkg }} Package on ${{ matrix.os }} | tensor: ${{ matrix.backend }} | autograd: ${{ matrix.autograd_backend }}"
+  #   runs-on: ${{ matrix.os }}
+  #   needs: build_core # TODO: this won't work until Github Actions enables specific matrix dependencies
+  #   strategy:
+  #     matrix:
+  #       os: [ubuntu-20.04, macOS-12]
+  #       backend: [ArrayFire]
+  #       autograd_backend: [oneDNN]
+  #       pkg: [runtime, speech, vision, text]
+  #   defaults:
+  #     run:
+  #       shell: bash -l {0}
+  #   if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'pull_request'
+  #   steps:
+  #     # get persisted checkout from core build
+
+  #     - uses: ./.github/actions/install_core_deps
+  #       with:
+  #         backend: ${{ matrix.backend }}
+  #         autograd_backend: ${{ matrix.autograd_backend }}
+
+  #     - uses: ./.github/actions/install_pkg_deps
+  #       with:
+  #         pkg: ${{ matrix.pkg }}
+
+  #     - name: "Download checkout artifact"
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: core-checkout-${{ matrix.os }}-${{ matrix.backend }}-${{ matrix.autograd_backend }}
+
+  #     - name: "Configure Flashlight"
+  #       run: |
+  #         cmake -S . -B build -DBUILD_SHARED_LIBS=ON \
+  #           -DFL_BUILD_PKG_RUNTIME=ON \
+  #           -DFL_BUILD_PKG_SPEECH=${{ matrix.pkg == 'speech' && 'ON' || 'OFF'  }} \
+  #           -DFL_BUILD_PKG_VISION=${{ matrix.pkg == 'vision' && 'ON' || 'OFF'  }} \
+  #           -DFL_BUILD_PKG_TEXT=${{ matrix.pkg == 'text' && 'ON' || 'OFF'  }}
+  #     - name: "Build Flashlight"
+  #       run: |
+  #         cmake --build build --parallel 2
+
+  build_core_wasm:
     name: "Build WebAssembly libraries with Emscripten compilers + Flashlight core + stub backend"
     runs-on: ubuntu-20.04
     defaults:
@@ -98,4 +121,5 @@ jobs:
             -DFL_USE_ONEDNN=OFF \
             -DFL_USE_CUDNN=OFF \
             -DFL_BUILD_DISTRIBUTED=OFF \
-            -DFL_BUILD_EXAMPLES=ON
+            -DFL_BUILD_EXAMPLES=ON \
+            -DFL_BUILD_BACKWARD_CPP=OFF

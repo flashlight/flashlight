@@ -120,13 +120,9 @@ if (FL_CODE_COVERAGE)
   add_coverage_to_target(TARGET flashlight)
 endif()
 
-# --------------------------- Pkgs ---------------------------
-set(FL_PKG_DIR "${FL_ROOT_DIR}/pkg")
-include(${FL_PKG_DIR}/CMakeLists.txt)
-
-# --------------------------- Apps ---------------------------
-set(FL_APPS_DIR "${FL_ROOT_DIR}/app")
-include(${FL_APPS_DIR}/CMakeLists.txt)
+# --------------------------- pkg/app ---------------------------
+include(${FL_ROOT_DIR}/pkg/CMakeLists.txt)
+include(${FL_ROOT_DIR}/app/CMakeLists.txt)
 
 # --------------------------- Cleanup ---------------------------
 setup_install_targets(INSTALL_TARGETS ${INSTALLABLE_TARGETS})

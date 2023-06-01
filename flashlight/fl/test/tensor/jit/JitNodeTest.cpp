@@ -60,8 +60,11 @@ TEST(JitNodeTest, ValueNodeMetaData) {
 }
 
 TEST(JitNodeTest, BinaryNodeMetaData) {
-  const auto c1 = ScalarNode::create(Shape({1, 4}), dtype::f32, 42);
-  const auto c2 = ScalarNode::create(Shape({2, 1}), dtype::f32, 42);
+  Shape lhsShape({1, 4});
+  Shape rhsShape({3, 1, 5});
+  Shape outShape({3, 4, 5}); // test broadcast
+  const auto c1 = ScalarNode::create(lhsShape, dtype::f32, 42);
+  const auto c2 = ScalarNode::create(rhsShape, dtype::f32, 42);
   const auto op = BinaryOp::Add;
   const auto node = BinaryNode::create(c1, c2, op);
   ASSERT_EQ(node->inputs(), NodeList({c1, c2}));
@@ -72,7 +75,7 @@ TEST(JitNodeTest, BinaryNodeMetaData) {
   ASSERT_EQ(node->lhs(), c1);
   ASSERT_EQ(node->rhs(), c2);
   ASSERT_EQ(node->op(), op);
-  ASSERT_EQ(node->shape(), Shape({2, 4})); // broadcasted shape
+  ASSERT_EQ(node->shape(), outShape);
   // node is owned locally (didn't transition to shared ownership)
   delete node;
 }

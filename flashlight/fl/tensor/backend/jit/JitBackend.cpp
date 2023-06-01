@@ -12,7 +12,6 @@
 
 #include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/fl/tensor/backend/jit/JitTensorBase.h"
-#include "flashlight/fl/tensor/backend/jit/ir/BinaryNode.h"
 #include "flashlight/fl/tensor/backend/jit/ir/ScalarNode.h"
 
 #define FL_JIT_BACKEND_UNIMPLEMENTED \
@@ -304,60 +303,14 @@ Tensor JitBackend::argsort(
 }
 
 /************************** Binary Operators ***************************/
-#define FL_JIT_BINARY_OP_TYPE_DEF_STUB(FUNC, OP, TYPE)                     \
-  Tensor JitBackend::FUNC(const Tensor& /* a */, TYPE /* rhs */) {         \
-    throw std::runtime_error(                                              \
-        "JitBackend::" + std::string(#FUNC) + " unimplemented for type " + \
-        std::string(#TYPE));                                               \
-  }                                                                        \
-  Tensor JitBackend::FUNC(TYPE /* lhs */, const Tensor& /* a */) {         \
-    throw std::runtime_error(                                              \
-        "JitBackend::" + std::string(#FUNC) + " unimplemented for type " + \
-        std::string(#TYPE));                                               \
-  }
-
-#define FL_JIT_BINARY_OP_LITERALS_DEF_STUB(FUNC, OP)                   \
-  FL_JIT_BINARY_OP_TYPE_DEF_STUB(FUNC, OP, const bool&);               \
-  FL_JIT_BINARY_OP_TYPE_DEF_STUB(FUNC, OP, const int&);                \
-  FL_JIT_BINARY_OP_TYPE_DEF_STUB(FUNC, OP, const unsigned&);           \
-  FL_JIT_BINARY_OP_TYPE_DEF_STUB(FUNC, OP, const char&);               \
-  FL_JIT_BINARY_OP_TYPE_DEF_STUB(FUNC, OP, const unsigned char&);      \
-  FL_JIT_BINARY_OP_TYPE_DEF_STUB(FUNC, OP, const long&);               \
-  FL_JIT_BINARY_OP_TYPE_DEF_STUB(FUNC, OP, const unsigned long&);      \
-  FL_JIT_BINARY_OP_TYPE_DEF_STUB(FUNC, OP, const long long&);          \
-  FL_JIT_BINARY_OP_TYPE_DEF_STUB(FUNC, OP, const unsigned long long&); \
-  FL_JIT_BINARY_OP_TYPE_DEF_STUB(FUNC, OP, const double&);             \
-  FL_JIT_BINARY_OP_TYPE_DEF_STUB(FUNC, OP, const float&);              \
-  FL_JIT_BINARY_OP_TYPE_DEF_STUB(FUNC, OP, const short&);              \
-  FL_JIT_BINARY_OP_TYPE_DEF_STUB(FUNC, OP, const unsigned short&);
-
-// Operations on fl::Tensor call the respective operator overloads that are
-// already defined on af::arrays
-#define FL_JIT_BINARY_OP_DEF_STUB(OP, FUNC)                                   \
-  Tensor JitBackend::FUNC(const Tensor& /* lhs */, const Tensor& /* rhs */) { \
-    throw std::runtime_error(                                                 \
-        "JitBackend::" + std::string(#FUNC) +                                 \
-        " unimplemented for two-Tensor inputs.");                             \
-  }                                                                           \
-  FL_JIT_BINARY_OP_LITERALS_DEF_STUB(FUNC, OP);
-
-FL_JIT_BINARY_OP_DEF_STUB(==, eq);
-FL_JIT_BINARY_OP_DEF_STUB(!=, neq);
-FL_JIT_BINARY_OP_DEF_STUB(<, lessThan);
-FL_JIT_BINARY_OP_DEF_STUB(<=, lessThanEqual);
-FL_JIT_BINARY_OP_DEF_STUB(>, greaterThan);
-FL_JIT_BINARY_OP_DEF_STUB(>=, greaterThanEqual);
-FL_JIT_BINARY_OP_DEF_STUB(||, logicalOr);
-FL_JIT_BINARY_OP_DEF_STUB(&&, logicalAnd);
-FL_JIT_BINARY_OP_DEF_STUB(%, mod);
-FL_JIT_BINARY_OP_DEF_STUB(&, bitwiseAnd);
-FL_JIT_BINARY_OP_DEF_STUB(|, bitwiseOr);
-FL_JIT_BINARY_OP_DEF_STUB(^, bitwiseXor);
-FL_JIT_BINARY_OP_DEF_STUB(<<, lShift);
-FL_JIT_BINARY_OP_DEF_STUB(>>, rShift);
-#undef FL_JIT_BINARY_OP_DEF
-#undef FL_JIT_BINARY_OP_TYPE_DEF
-#undef FL_JIT_BINARY_OP_LITERALS_DEF
+Tensor JitBackend::createBinopJitTensor(
+    const Tensor& lhs,
+    const Tensor& rhs,
+    BinaryOp op) {
+  const auto lhsNode = toJitTensorBase(lhs).node();
+  const auto rhsNode = toJitTensorBase(rhs).node();
+  return jitTensorCreator_(BinaryNode::create(lhsNode, rhsNode, op));
+}
 
 #define FL_JIT_BINARY_OP_TYPE_DEF(FUNC, TYPE)                   \
   Tensor JitBackend::FUNC(const Tensor& a, TYPE rhs) {          \
@@ -384,32 +337,44 @@ FL_JIT_BINARY_OP_DEF_STUB(>>, rShift);
   FL_JIT_BINARY_OP_TYPE_DEF(FUNC, const short&);              \
   FL_JIT_BINARY_OP_TYPE_DEF(FUNC, const unsigned short&);
 
-#define FL_JIT_BINARY_OP_TENSOR_DEF(FUNC, BINOP)                           \
-  Tensor JitBackend::FUNC(const Tensor& lhs, const Tensor& rhs) {          \
-    const auto lhsNode = toJitTensorBase(lhs).node();                      \
-    const auto rhsNode = toJitTensorBase(rhs).node();                      \
-    return jitTensorCreator_(BinaryNode::create(lhsNode, rhsNode, BINOP)); \
-  }                                                                        \
+#define FL_JIT_BINARY_OP_TENSOR_DEF(FUNC, BINOP)                  \
+  Tensor JitBackend::FUNC(const Tensor& lhs, const Tensor& rhs) { \
+    return createBinopJitTensor(lhs, rhs, BINOP);                 \
+  }                                                               \
   FL_JIT_BINARY_OP_LITERALS_DEF(FUNC);
 
 FL_JIT_BINARY_OP_TENSOR_DEF(add, BinaryOp::Add);
 FL_JIT_BINARY_OP_TENSOR_DEF(sub, BinaryOp::Sub);
 FL_JIT_BINARY_OP_TENSOR_DEF(mul, BinaryOp::Mul);
 FL_JIT_BINARY_OP_TENSOR_DEF(div, BinaryOp::Div);
+FL_JIT_BINARY_OP_TENSOR_DEF(eq, BinaryOp::Eq);
+FL_JIT_BINARY_OP_TENSOR_DEF(neq, BinaryOp::Neq);
+FL_JIT_BINARY_OP_TENSOR_DEF(lessThan, BinaryOp::Lt);
+FL_JIT_BINARY_OP_TENSOR_DEF(lessThanEqual, BinaryOp::Lte);
+FL_JIT_BINARY_OP_TENSOR_DEF(greaterThan, BinaryOp::Gt);
+FL_JIT_BINARY_OP_TENSOR_DEF(greaterThanEqual, BinaryOp::Gte);
+FL_JIT_BINARY_OP_TENSOR_DEF(logicalOr, BinaryOp::Or);
+FL_JIT_BINARY_OP_TENSOR_DEF(logicalAnd, BinaryOp::And);
+FL_JIT_BINARY_OP_TENSOR_DEF(mod, BinaryOp::Mod);
+FL_JIT_BINARY_OP_TENSOR_DEF(bitwiseAnd, BinaryOp::BitAnd);
+FL_JIT_BINARY_OP_TENSOR_DEF(bitwiseOr, BinaryOp::BitOr);
+FL_JIT_BINARY_OP_TENSOR_DEF(bitwiseXor, BinaryOp::BitXor);
+FL_JIT_BINARY_OP_TENSOR_DEF(lShift, BinaryOp::Shl);
+FL_JIT_BINARY_OP_TENSOR_DEF(rShift, BinaryOp::Shr);
 #undef FL_JIT_BINARY_OP_TYPE_DEF
 #undef FL_JIT_BINARY_OP_LITERALS_DEF
 #undef FL_JIT_BINARY_OP_TENSOR_DEF
 
-Tensor JitBackend::minimum(const Tensor& /* lhs */, const Tensor& /* rhs */) {
-  FL_JIT_BACKEND_UNIMPLEMENTED;
+Tensor JitBackend::minimum(const Tensor& lhs, const Tensor& rhs) {
+  return createBinopJitTensor(lhs, rhs, BinaryOp::Min);
 }
 
-Tensor JitBackend::maximum(const Tensor& /* lhs */, const Tensor& /* rhs */) {
-  FL_JIT_BACKEND_UNIMPLEMENTED;
+Tensor JitBackend::maximum(const Tensor& lhs, const Tensor& rhs) {
+  return createBinopJitTensor(lhs, rhs, BinaryOp::Max);
 }
 
-Tensor JitBackend::power(const Tensor& /* lhs */, const Tensor& /* rhs */) {
-  FL_JIT_BACKEND_UNIMPLEMENTED;
+Tensor JitBackend::power(const Tensor& lhs, const Tensor& rhs) {
+  return createBinopJitTensor(lhs, rhs, BinaryOp::Pow);
 }
 
 /************************** BLAS ***************************/
