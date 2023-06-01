@@ -7,11 +7,11 @@
 
 #include "flashlight/pkg/speech/decoder/ConvLmModule.h"
 
+#include <stdexcept>
 #include <string>
 
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/TensorBase.h"
-#include "flashlight/pkg/runtime/common/DistributedUtils.h"
 
 namespace fl {
 namespace pkg {

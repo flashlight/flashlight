@@ -7,6 +7,8 @@
 
 #include "flashlight/fl/tensor/backend/af/ArrayFireBackend.h"
 
+#include <algorithm>
+
 #include <af/arith.h>
 #include <af/gfor.h>
 

@@ -168,7 +168,7 @@ int main(int argc, char** argv) {
 
   SGDOptimizer opt(model.params(), learning_rate);
 
-  auto eval_loop = [&model, &criterion](LMDataset& dataset) {
+  auto eval_loop = [&model, &criterion, kInputIdx, kTargetIdx](LMDataset& dataset) {
     AverageValueMeter avg_loss_meter;
     Variable output, h, c;
     for (auto& example : dataset) {

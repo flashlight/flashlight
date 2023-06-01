@@ -17,16 +17,16 @@ if (FL_BUILD_DISTRIBUTED)
     set(FL_USE_NCCL ON)
   elseif (FL_USE_CPU)
     set(FL_USE_GLOO ON)
-  else()
-    # A stub impl that throws/executes noops for most distributed ops
-    set(FL_DISTRIBUTED_STUB ON)
   endif()
+else()
+  # A stub impl that throws/executes noops for most distributed ops
+  set(FL_DISTRIBUTED_STUB ON)
 endif ()
 
 # Build sources only in distributed mode. Distributed headers will be included
 # regardless but usage of the APIs will fail to link if not enabled.
 # TODO: conditionally install headers?
-if (FL_BUILD_DISTRIBUTED)
+if (FL_BUILD_DISTRIBUTED OR FL_DISTRIBUTED_STUB)
   target_sources(
     flashlight
     PRIVATE
@@ -76,7 +76,7 @@ if (FL_USE_NCCL)
   find_package(NCCL REQUIRED)
   if (NCCL_FOUND)
     message(STATUS "NCCL found: (include: ${NCCL_INCLUDE_DIRS} lib: ${NCCL_LIBRARIES}")
-    setup_install_find_module(${CMAKE_MODULE_PATH}/FindNCCL.cmake)
+    setup_install_find_module(${PROJECT_SOURCE_DIR}/cmake/FindNCCL.cmake)
   endif()
 
   target_sources(

@@ -14,8 +14,6 @@
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
-using namespace fl::pkg::runtime;
-
 namespace fl {
 namespace pkg {
 namespace speech {

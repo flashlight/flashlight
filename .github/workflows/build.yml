@@ -1,0 +1,124 @@
+name: Build Flashlight
+
+on: [push, pull_request]
+
+jobs:
+  build_core:
+    name: "Build on ${{ matrix.os }} | tensor: ${{ matrix.backend }} | autograd: ${{ matrix.autograd_backend }}"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, windows-2022, macOS-12]
+        backend: [ArrayFire, oneDNN, Stub]
+        autograd_backend: [oneDNN]
+    defaults:
+      run:
+        shell: bash -l {0}
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/install_core_deps
+        with:
+          runner: ${{ matrix.os }}
+          os: ${{ runner.os }}
+          backend: ${{ matrix.backend }}
+          autograd_backend: ${{ matrix.autograd_backend }}
+
+      - name: "Configure Flashlight"
+        run: |
+          cmake -S . -B build -DBUILD_SHARED_LIBS=ON \
+            -DFL_USE_ARRAYFIRE=${{ matrix.backend == 'ArrayFire' && 'ON' || 'OFF'  }} \
+            -DFL_ARRAYFIRE_USE_CPU=${{ matrix.backend == 'ArrayFire' && 'ON' || 'OFF'  }} \
+            -DFL_USE_ONEDNN=${{ (matrix.backend == 'oneDNN' || matrix.autograd_backend == 'oneDNN') && 'ON' || 'OFF'  }} \
+            -DFL_USE_TENSOR_STUB=${{ matrix.backend == 'Stub' && 'ON' || 'OFF'  }} \
+            -DFL_BUILD_DISTRIBUTED=OFF \
+            -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON
+      - name: "Build Flashlight"
+        run: |
+          cmake --build build --parallel 2
+
+      - name: "Upload checkout artifact"
+        uses: actions/upload-artifact@v3
+        with:
+          name: core-checkout-${{ matrix.os }}-${{ matrix.backend }}-${{ matrix.autograd_backend }}
+          path: .
+          retention-days: 3
+
+      # Test
+      # - name: "Run Flashlight tests"
+      #   run: |
+      #     cd build
+      #     ctest --output-on-failure -j 4
+      #   if: matrix.backend == 'ArrayFire' && matrix.autograd_backend == 'oneDNN'
+
+  # build_pkg:
+  #   name: "Build Flashlight ${{ matrix.pkg }} Package on ${{ matrix.os }} | tensor: ${{ matrix.backend }} | autograd: ${{ matrix.autograd_backend }}"
+  #   runs-on: ${{ matrix.os }}
+  #   needs: build_core # TODO: this won't work until Github Actions enables specific matrix dependencies
+  #   strategy:
+  #     matrix:
+  #       os: [ubuntu-20.04, macOS-12]
+  #       backend: [ArrayFire]
+  #       autograd_backend: [oneDNN]
+  #       pkg: [runtime, speech, vision, text]
+  #   defaults:
+  #     run:
+  #       shell: bash -l {0}
+  #   if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'pull_request'
+  #   steps:
+  #     # get persisted checkout from core build
+
+  #     - uses: ./.github/actions/install_core_deps
+  #       with:
+  #         backend: ${{ matrix.backend }}
+  #         autograd_backend: ${{ matrix.autograd_backend }}
+
+  #     - uses: ./.github/actions/install_pkg_deps
+  #       with:
+  #         pkg: ${{ matrix.pkg }}
+
+  #     - name: "Download checkout artifact"
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: core-checkout-${{ matrix.os }}-${{ matrix.backend }}-${{ matrix.autograd_backend }}
+
+  #     - name: "Configure Flashlight"
+  #       run: |
+  #         cmake -S . -B build -DBUILD_SHARED_LIBS=ON \
+  #           -DFL_BUILD_PKG_RUNTIME=ON \
+  #           -DFL_BUILD_PKG_SPEECH=${{ matrix.pkg == 'speech' && 'ON' || 'OFF'  }} \
+  #           -DFL_BUILD_PKG_VISION=${{ matrix.pkg == 'vision' && 'ON' || 'OFF'  }} \
+  #           -DFL_BUILD_PKG_TEXT=${{ matrix.pkg == 'text' && 'ON' || 'OFF'  }}
+  #     - name: "Build Flashlight"
+  #       run: |
+  #         cmake --build build --parallel 2
+
+  build_core_wasm:
+    name: "Build WebAssembly libraries with Emscripten compilers + Flashlight core + stub backend"
+    runs-on: ubuntu-20.04
+    defaults:
+      run:
+        shell: bash -l {0}
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: "Download and setup Emscripten"
+        run: |
+          git clone https://github.com/emscripten-core/emsdk.git
+          cd emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+
+      - name: "Build the Flashlight stub backend with Emscripten C compilers"
+        # TODO: build and run tests with wasm once we have a runnable backend
+        run: |
+          source ./emsdk/emsdk_env.sh # TODO: move me to setup step
+          emcmake cmake -S . -B build \
+            -DFL_USE_TENSOR_STUB=ON \
+            -DFL_USE_ARRAYFIRE=OFF \
+            -DFL_USE_ONEDNN=OFF \
+            -DFL_USE_CUDNN=OFF \
+            -DFL_BUILD_DISTRIBUTED=OFF \
+            -DFL_BUILD_EXAMPLES=ON

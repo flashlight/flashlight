@@ -15,6 +15,7 @@
 #include <iostream>
 #include <type_traits>
 
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
 #include <cereal/access.hpp>
@@ -54,7 +55,7 @@ namespace fl {
  * @param args the objects to save (e.g. shared_ptr to Module)
  */
 template <typename... Args>
-void save(const std::string& filepath, const Args&... args);
+void save(const fs::path& filepath, const Args&... args);
 
 /**
  * Save (serialize) the specified args to a binary file (via Cereal).
@@ -70,7 +71,7 @@ void save(std::ostream& ostr, const Args&... args);
  * @param args the objects to load (expects default-constructed)
  */
 template <typename... Args>
-void load(const std::string& filepath, Args&... args);
+void load(const fs::path& filepath, Args&... args);
 
 /**
  * Load (deserialize) the specified args from a binary file (via Cereal).

@@ -22,8 +22,11 @@ endif()
 target_link_libraries(flashlight PUBLIC $<BUILD_INTERFACE:cereal::cereal>)
 
 # -------------------------------- Components --------------------------------
-# Tensor -- resolve backends and compute runtimes first
+# Tensor -- resolve backends first
 include(${CMAKE_CURRENT_LIST_DIR}/tensor/CMakeLists.txt)
+
+# Runtime
+include(${CMAKE_CURRENT_LIST_DIR}/runtime/CMakeLists.txt)
 
 # Common
 include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
@@ -45,9 +48,6 @@ include(${CMAKE_CURRENT_LIST_DIR}/nn/CMakeLists.txt)
 
 # Optim
 include(${CMAKE_CURRENT_LIST_DIR}/optim/CMakeLists.txt)
-
-# Runtime
-include(${CMAKE_CURRENT_LIST_DIR}/runtime/CMakeLists.txt)
 
 # ----------------------- Examples and Tests ------------------------
 
