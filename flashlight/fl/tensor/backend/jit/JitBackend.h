@@ -27,6 +27,9 @@ class JitBackend : public TensorBackend {
   Tensor
   createBinopJitTensor(const Tensor& lhs, const Tensor& rhs, BinaryOp op);
 
+  template <typename T>
+  Tensor createScalarTensor(unsigned ndim, T val);
+
  public:
   JitBackend(
       TensorBackend& wrappedBackend,
