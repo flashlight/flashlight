@@ -24,6 +24,8 @@ struct BinopInfo {
 };
 
 struct OneDnnOpFusion::SearchState {
+  SearchState(Node* root, std::vector<BinopInfo> binopInfos)
+      : searchRoot(root), accumulatedBinopInfos(binopInfos) {}
   Node* searchRoot;
   // Assume `searchRoot == binop2`
   //
@@ -123,7 +125,7 @@ bool shouldNodeBeFused(const Node* node) {
 } // namespace
 
 Node* OneDnnOpFusion::rewriteFrom(Node* node) {
-  SearchState state{.searchRoot = node, .accumulatedBinopInfos = {}};
+  SearchState state(node, /* accumulatedBinopInfos = */ {});
   auto fusedNode = searchAndFuse(node, state);
   node->replaceAllUsesWith(fusedNode);
   return fusedNode;

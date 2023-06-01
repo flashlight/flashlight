@@ -14,8 +14,6 @@
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
-using namespace fl::pkg::runtime;
-
 namespace fl {
 namespace pkg {
 namespace speech {
@@ -325,77 +323,82 @@ EmittingModelUpdateFunc buildSeq2SeqTransformerUpdateFunction(
   const TransformerCriterion* criterionCast =
       static_cast<TransformerCriterion*>(criterion.get());
 
-  auto emittingModelUpdateFunc = [buf, criterionCast](
-                                     const float* emissions,
-                                     const int N,
-                                     const int T,
-                                     const std::vector<int>& rawY,
-                                     const std::vector<EmittingModelStatePtr>&
-                                         rawPrevStates,
-                                     int& t) {
-    if (t == 0) {
-      buf->input = fl::Variable(
-          Tensor::fromBuffer({N, T}, emissions, MemoryLocation::Host), false);
-    }
-    int B = rawY.size();
-    std::vector<EmittingModelStatePtr> out;
-    std::vector<std::vector<float>> amScoresAll;
-
-    // Store the latest index of the hidden state when we can clear it
-    std::map<TS2SState*, int> lastIndexOfStatePtr;
-    for (int index = 0; index < rawPrevStates.size(); index++) {
-      TS2SState* ptr = static_cast<TS2SState*>(rawPrevStates[index].get());
-      lastIndexOfStatePtr[ptr] = index;
-    }
-
-    int start = 0, step = std::min(10, 1000 / (t + 1));
-    while (start < B) {
-      buf->prevStates.resize(0);
-      buf->ys.resize(0);
-
-      int end = start + step;
-      if (end > B) {
-        end = B;
-      }
-      for (int i = start; i < end; i++) {
-        TS2SState* prevState = static_cast<TS2SState*>(rawPrevStates[i].get());
-        fl::Variable y;
-        if (t > 0) {
-          y = fl::constant(rawY[i], {1}, fl::dtype::s32, false);
-        } else {
-          prevState = &buf->dummyState;
+  auto emittingModelUpdateFunc =
+      [buf, criterionCast](
+          const float* emissions,
+          const int N,
+          const int T,
+          const std::vector<int>& rawY,
+          const std::vector<int>& /* prevHypBeamIdxs */,
+          const std::vector<EmittingModelStatePtr>& rawPrevStates,
+          int& t) {
+        if (t == 0) {
+          buf->input = fl::Variable(
+              Tensor::fromBuffer({N, T}, emissions, MemoryLocation::Host),
+              false);
         }
-        buf->ys.push_back(y);
-        buf->prevStates.push_back(prevState);
-      }
-      std::vector<std::vector<float>> amScores;
-      std::vector<TS2SStatePtr> outStates;
-      std::tie(amScores, outStates) = criterionCast->decodeBatchStep(
-          buf->input,
-          buf->ys,
-          buf->prevStates,
-          buf->attentionThreshold,
-          buf->smoothingTemperature);
-      for (auto& os : outStates) {
-        out.push_back(os);
-      }
-      for (auto& s : amScores) {
-        amScoresAll.push_back(s);
-      }
-      // clean the previous state which is not needed anymore
-      // to prevent from OOM
-      for (int i = start; i < end; i++) {
-        TS2SState* prevState = static_cast<TS2SState*>(rawPrevStates[i].get());
-        if (prevState &&
-            (lastIndexOfStatePtr.find(prevState) == lastIndexOfStatePtr.end() ||
-             lastIndexOfStatePtr.find(prevState)->second == i)) {
-          prevState->hidden.clear();
+        int B = rawY.size();
+        std::vector<EmittingModelStatePtr> out;
+        std::vector<std::vector<float>> amScoresAll;
+
+        // Store the latest index of the hidden state when we can clear it
+        std::map<TS2SState*, int> lastIndexOfStatePtr;
+        for (int index = 0; index < rawPrevStates.size(); index++) {
+          TS2SState* ptr = static_cast<TS2SState*>(rawPrevStates[index].get());
+          lastIndexOfStatePtr[ptr] = index;
         }
-      }
-      start += step;
-    }
-    return std::make_pair(amScoresAll, out);
-  };
+
+        int start = 0, step = std::min(10, 1000 / (t + 1));
+        while (start < B) {
+          buf->prevStates.resize(0);
+          buf->ys.resize(0);
+
+          int end = start + step;
+          if (end > B) {
+            end = B;
+          }
+          for (int i = start; i < end; i++) {
+            TS2SState* prevState =
+                static_cast<TS2SState*>(rawPrevStates[i].get());
+            fl::Variable y;
+            if (t > 0) {
+              y = fl::constant(rawY[i], {1}, fl::dtype::s32, false);
+            } else {
+              prevState = &buf->dummyState;
+            }
+            buf->ys.push_back(y);
+            buf->prevStates.push_back(prevState);
+          }
+          std::vector<std::vector<float>> amScores;
+          std::vector<TS2SStatePtr> outStates;
+          std::tie(amScores, outStates) = criterionCast->decodeBatchStep(
+              buf->input,
+              buf->ys,
+              buf->prevStates,
+              buf->attentionThreshold,
+              buf->smoothingTemperature);
+          for (auto& os : outStates) {
+            out.push_back(os);
+          }
+          for (auto& s : amScores) {
+            amScoresAll.push_back(s);
+          }
+          // clean the previous state which is not needed anymore
+          // to prevent from OOM
+          for (int i = start; i < end; i++) {
+            TS2SState* prevState =
+                static_cast<TS2SState*>(rawPrevStates[i].get());
+            if (prevState &&
+                (lastIndexOfStatePtr.find(prevState) ==
+                     lastIndexOfStatePtr.end() ||
+                 lastIndexOfStatePtr.find(prevState)->second == i)) {
+              prevState->hidden.clear();
+            }
+          }
+          start += step;
+        }
+        return std::make_pair(amScoresAll, out);
+      };
 
   return emittingModelUpdateFunc;
 }

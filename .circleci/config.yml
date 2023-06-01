@@ -9,142 +9,349 @@ version: 2.1
 gpu: &gpu
   machine:
     image: ubuntu-2004-cuda-11.4:202110-01
-  resource_class: gpu.nvidia.medium
+  resource_class: gpu.nvidia.large
+
+orbs:
+  win: circleci/windows@5.0.0
+
+executors:
+  linux:
+    machine:
+      image: ubuntu-2004-cuda-11.4:202110-01
+    resource_class: gpu.nvidia.large
+  windows:
+    machine:
+      image: windows-server-2019-nvidia:stable
+    resource_class: windows.gpu.nvidia.medium
+    shell: bash.exe
+  macos-arm:
+    macos:
+      xcode: 14.2.0
+    environment:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+    resource_class: macos.m1.large.gen1
+  linux-arm:
+    machine:
+      image: ubuntu-2004:202201-02
+    resource_class: arm.2xlarge
 
 commands:
-  ############################### Docker Commands ###############################
-  # Docker commands
-  authenticate_docker:
-    steps:
-      - run:
-          name: "Authenticate Docker"
-          command: |
-            if [ ! -z "$DOCKER_USERNAME" ]
-            then
-                sudo docker login -u=$DOCKER_USERNAME -p=$DOCKER_PASSWORD
-            fi
-  install_nvidia_docker:
-    steps:
-      - run:
-          name: "Install NVIDIA Docker"
-          command: |
-            sudo apt-get install -y --no-install-recommends nvidia-docker2
-            sudo pkill -SIGHUP dockerd
-  start_nvidia_docker_and_copy_flashlight_source:
-    steps:
-      - run:
-          name: "Start NVIDIA Docker and Copy Flashlight source"
-          command: |
-            sudo docker run --gpus all --rm -itd --ipc=host --name flashlight flml/flashlight:cuda-base-latest
-            sudo docker exec -it flashlight bash -c "mkdir /flashlight"
-            sudo docker cp . flashlight:/flashlight
-  # Default cmake inside docker will be tested with docker build
-  build_flashlight_inside_nvidia_docker:
+  install-build-dependencies:
     parameters:
-      fl_arrayfire_use_cuda:
-        default: "OFF"
-        type: string
-      fl_arrayfire_use_cpu:
-        default: "OFF"
-        type: string
-      fl_use_cudnn:
-        default: "OFF"
-        type: string
-      fl_use_onednn:
-        default: "OFF"
-        type: string
-      fl_build_fl_core:
-        default: "OFF"
-        type: string
-      # pkgs
-      fl_build_pkg_vision:
-        default: "OFF"
-        type: string
-      fl_build_pkg_common:
-        default: "OFF"
-        type: string
-      fl_build_pkg_speech:
-        default: "OFF"
-        type: string
-      fl_build_pkg_text:
-        default: "OFF"
-        type: string
-      fl_build_pkg_runtime:
-        default: "OFF"
-        type: string
-      # Apps
-      fl_build_app_asr:
-        default: "OFF"
-        type: string
-      fl_build_app_imgclass:
-        default: "OFF"
-        type: string
-      fl_build_app_objdet:
-        default: "OFF"
-        type: string
-      fl_build_app_lm:
-        default: "OFF"
-        type: string
-      build_shared_libs:
-        default: "OFF"
-        type: string
-      fl_code_coverage:
-        default: "ON"
-        type: string
-      version:
-        default: "3.16"
-        type: string
-      version_build:
-        default: "1"
+      platform:
         type: string
     steps:
-      - run:
-          name: "Build and Install Flashlight inside of NVIDIA Docker"
-          command: |
-            sudo docker exec -it flashlight bash -c "\
-            echo 'deb http://archive.ubuntu.com/ubuntu xenial main' | tee /etc/apt/sources.list.d/xenial.list && \
-            apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends software-properties-common && \
-            apt-add-repository -r universe && apt-add-repository 'deb http://dk.archive.ubuntu.com/ubuntu/ bionic main' && apt-add-repository 'deb http://dk.archive.ubuntu.com/ubuntu/ bionic universe' && apt-get update && \
-            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-7 g++-7 && \
-            update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 7 &&\
-            update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 7 && \
-            update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-7 7 && \
-            wget https://cmake.org/files/v<< parameters.version >>/cmake-<< parameters.version >>.<< parameters.version_build >>-Linux-x86_64.sh && \
-            mkdir /opt/cmake && \
-            sh cmake-<< parameters.version >>.<< parameters.version_build >>-Linux-x86_64.sh --prefix=/opt/cmake --skip-license && \
-            ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake && \
-            cd /flashlight && pwd && ls && mkdir -p build && cd build && \
-            export MKLROOT=/opt/intel/mkl && \
-            cmake .. \
-                -DFL_ARRAYFIRE_USE_CUDA=<< parameters.fl_arrayfire_use_cuda >> \
-                -DFL_ARRAYFIRE_USE_CPU=<< parameters.fl_arrayfire_use_cpu >> \
-                -DFL_USE_CUDNN=<< parameters.fl_use_cudnn >> \
-                -DFL_USE_ONEDNN=<< parameters.fl_use_onednn >> \
-                -DFL_BUILD_CORE=<< parameters.fl_build_fl_core >> \
-                -DFL_BUILD_PKG_RUNTIME=<< parameters.fl_build_pkg_runtime >> \
-                -DFL_BUILD_PKG_VISION=<< parameters.fl_build_pkg_vision >> \
-                -DFL_BUILD_PKG_TEXT=<< parameters.fl_build_pkg_text >> \
-                -DFL_BUILD_PKG_SPEECH=<< parameters.fl_build_pkg_speech >> \
-                -DFL_BUILD_APP_ASR=<< parameters.fl_build_app_asr >> \
-                -DFL_BUILD_APP_IMGCLASS=<< parameters.fl_build_app_imgclass >> \
-                -DFL_BUILD_APP_OBJDET=<< parameters.fl_build_app_objdet >> \
-                -DFL_BUILD_APP_LM=<< parameters.fl_build_app_lm >> \
-                -DBUILD_SHARED_LIBS=<< parameters.build_shared_libs >> \
-                -DFL_CODE_COVERAGE=<< parameters.fl_code_coverage >> && \
-            make -j$(nproc) && make install"
-  test_flashlight_inside_nvidia_docker:
+      - when:
+          condition:
+            or:
+              - equal: ["macos", << parameters.platform >>]
+              - equal: ["macos-arm", << parameters.platform >>]
+          steps:
+            - run:
+                name: "Install CMake from Homebrew"
+                command: brew install cmake
+      - when:
+          condition:
+            equal: ["windows", << parameters.platform >>]
+          steps:
+            - run:
+                name: "Add MSVC CMake binary to PATH"
+                command: |
+                  echo 'export PATH="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\:${PATH}"' >> $BASH_ENV
+            - run:
+                name: "Remove old Windows SDK headers"
+                # These old headers cause issues with /Zc:preprocessor - only use the latest version of the SDK headers
+                command: |
+                  export WINDOWS_SDK_HEADER_PATH="C:\Program Files (x86)\Windows Kits\10\Include"
+                  ls "${WINDOWS_SDK_HEADER_PATH}" | head -n -1 | xargs -I{} rm -rf "${WINDOWS_SDK_HEADER_PATH}/{}"
+
+  setup-cuda:
     parameters:
-      test_name:
+      platform:
         type: string
-        default: ""
-      fl_test_apex_dir:
+    steps:
+      - when:
+          condition:
+            equal: ["linux", << parameters.platform >>]
+          steps:
+            - run:
+                name: "Add CUDA 11.4 bin directory to PATH"
+                command: |
+                  echo 'export PATH="/usr/local/cuda-11.4/bin:${PATH}"' >> "$BASH_ENV"
+      - when:
+          condition:
+            equal: ["windows", << parameters.platform >>]
+          steps:
+            - install-cuda:
+                platform: << parameters.platform >>
+            - run:
+                name: "Remove CUDA 10.1 and copy new MSVC Build Customizations"
+                command: |
+                  export _MSVC_BUILDCUST_PATH="/c/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Microsoft/VC/v160/BuildCustomizations"
+                  rm -rf /c/Program\ Files/NVIDIA\ GPU\ Computing\ Toolkit/CUDA/v10.1
+                  for ext in props targets xml; do rm "${_MSVC_BUILDCUST_PATH}/CUDA 10.1.${ext}"; done
+                  cp /c/Program\ Files/NVIDIA\ GPU\ Computing\ Toolkit/CUDA/v11.5/extras/visual_studio_integration/MSBuildExtensions/* "${_MSVC_BUILDCUST_PATH}"
+                shell: bash.exe
+            - run:
+                name: "Set environment variables for CUDA"
+                command: |
+                  echo 'export CUDA_ROOT="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.5/"' >> $BASH_ENV
+                  echo 'export CudaToolkitDir="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.5"' >> $BASH_ENV
+                  echo 'export PATH="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.5/bin/:${PATH}"' >> "$BASH_ENV"
+                  echo 'export CUDA_PATH="/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.5"' >> "$BASH_ENV"
+                shell: bash.exe
+
+  install-arrayfire:
+    parameters:
+      platform:
+        type: string
+    steps:
+      - when:
+          condition:
+            or:
+              - equal: ["linux", << parameters.platform >>]
+          steps:
+            - run:
+                name: "Install ArrayFire 3.8.1 with CUDA 11.4"
+                command: |
+                  sudo apt update
+                  sudo apt install -y gnupg2 ca-certificates apt-utils software-properties-common
+                  sudo apt update
+                  sudo apt-key adv --fetch-key https://repo.arrayfire.com/GPG-PUB-KEY-ARRAYFIRE-2020.PUB
+                  echo "deb [arch=amd64] https://repo.arrayfire.com/debian all main" | sudo tee /etc/apt/sources.list.d/arrayfire.list
+                  sudo apt update
+                  sudo apt install arrayfire-cmake=3.8.1-2 arrayfire-headers=3.8.1-2
+                  sudo apt install arrayfire-cuda3-cuda-11-4=3.8.1-2 arrayfire-cuda3-dev=3.8.1-2
+
+      - when:
+          condition:
+            equal: ["windows", << parameters.platform >>]
+          steps:
+            - run:
+                name: "Install 7zip and axel from choco"
+                command: |
+                  choco install --no-progress 7zip axel -y
+            - run:
+                name: "Download and Install ArrayFire 3.8.1"
+                command: |
+                  cd $HOME
+                  export AF_INSTALLER_NAME="ArrayFire-v3.8.1-CUDA-11.4.exe"
+                  axel --quiet -n 16 https://arrayfire.s3.amazonaws.com/3.8.1/$AF_INSTALLER_NAME
+                  7z.exe x $AF_INSTALLER_NAME -o"C:\Program Files\ArrayFire" -y
+                  rm $AF_INSTALLER_NAME
+                shell: bash.exe
+
+      - when:
+          condition:
+            equal: ["macos-arm", << parameters.platform >>]
+          steps:
+            - run:
+                name: "Install ArrayFire from Homebrew"
+                command: brew install arrayfire
+
+  install-cuda:
+    parameters:
+      platform:
+        type: string
+    steps:
+      - when:
+          condition:
+            equal: ["windows", << parameters.platform >>]
+          steps:
+            - run:
+                name: "Install wget from choco"
+                command: |
+                  choco install --no-progress wget -y
+            - run:
+                name: "Install CUDA 11.5"
+                command: |
+                  cd $HOME
+                  # See  https://docs.nvidia.com/cuda/pdf/CUDA_Installation_Guide_Windows.pdf
+                  export CUDA_INSTALLER_NAME="cuda_11.5.2_496.13_windows.exe"
+                  wget --quiet https://developer.download.nvidia.com/compute/cuda/11.5.2/local_installers/$CUDA_INSTALLER_NAME
+                  # List of CUDA install options is https://docs.nvidia.com/cuda/cuda-installation-guide-microsoft-windows/index.html
+                  ./$CUDA_INSTALLER_NAME -s nvcc_11.5 cudart_11.5 cublas_dev_11.5 curand_dev_11.5 visual_studio_integration_11.5
+                  rm $CUDA_INSTALLER_NAME
+                shell: bash.exe
+
+  install-cudnn:
+    parameters:
+      platform:
+        type: string
+    steps:
+      - when:
+          condition:
+            equal: ["linux", << parameters.platform >>]
+          steps:
+            - run:
+                name: "Install cuDNN 8.5.0.96 for CUDA 11.7"
+                command: |
+                  cd /tmp
+                  wget --quiet https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/libcudnn8_8.5.0.96-1+cuda11.7_amd64.deb
+                  wget --quiet https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/libcudnn8-dev_8.5.0.96-1+cuda11.7_amd64.deb
+                  sudo dpkg -i libcudnn8_8.5.0.96-1+cuda11.7_amd64.deb libcudnn8-dev_8.5.0.96-1+cuda11.7_amd64.deb
+      - when:
+          condition:
+            equal: ["windows", << parameters.platform >>]
+          steps:
+            - run:
+                name: "Install cuDNN 8.5.0.96 for CUDA 11.2"
+                command: |
+                  cd $HOME
+                  export CUDNN_ZIP=cudnn-11.2-windows-x64-v8.1.1.33.zip
+                  wget --quiet https://developer.download.nvidia.com/compute/redist/cudnn/v8.1.1/$CUDNN_ZIP
+                  unzip $CUDNN_ZIP && rm $CUDNN_ZIP
+                  cp -r cuda/* "$CUDA_ROOT"
+                  rm -rf cuda/
+
+  install-onednn:
+    parameters:
+      platform:
+        type: string
+    steps:
+      - when:
+          condition:
+            equal: ["macos-arm", << parameters.platform >>]
+          steps:
+            - run:
+                name: "Install Micromamba"
+                command: |
+                  brew install micromamba
+                  echo 'export MAMBA_EXE="/opt/homebrew/bin/micromamba"' >> $BASH_ENV
+                  echo 'export MAMBA_ROOT_PREFIX="$HOME/micromamba"' >> $BASH_ENV
+                  echo '__mamba_setup="$(/opt/homebrew/bin/micromamba shell hook --shell bash --prefix ~/micromamba 2> /dev/null)"' >> $BASH_ENV
+                  echo 'eval "$__mamba_setup"' >> $BASH_ENV
+      - when:
+          condition:
+            equal: ["linux-arm", << parameters.platform >>]
+          steps:
+            - run:
+                name: "Install Micromamba"
+                command: |
+                  sudo apt update
+                  DEBIAN_FRONTEND=noninteractive sudo apt upgrade # needed for curl not to break
+                  curl micro.mamba.pm/install.sh | bash
+                  echo 'export MAMBA_EXE="$HOME/.local/bin/micromamba"' >> $BASH_ENV
+                  echo 'export MAMBA_ROOT_PREFIX="$HOME/micromamba"' >> $BASH_ENV
+                  echo '__mamba_setup="$($HOME/.local/bin/micromamba shell hook --shell bash --prefix ~/micromamba 2> /dev/null)"' >> $BASH_ENV
+                  echo 'eval "$__mamba_setup"' >> $BASH_ENV
+      - run:
+          name: "Create micromamba environment for oneDNN"
+          command: |
+            micromamba create -n onednn -y
+            echo "micromamba activate onednn" >> $BASH_ENV
+      - run:
+          name: "Install oneDNN"
+          command: micromamba install -y -c conda-forge onednn=2.7.2
+
+  # Primary job for installing all dependencies based on platform,
+  # backend, and autograd backend impl
+  install-all-dependencies:
+    parameters:
+      platform:
+        type: string
+      backend:
+        type: string
+      autograd_backend:
+        type: string
+    steps:
+      - install-build-dependencies:
+          platform: << parameters.platform >>
+      - setup-cuda:
+          platform: << parameters.platform >>
+      - when:
+          condition:
+            equal: ["arrayfire", << parameters.backend >>]
+          steps:
+            - install-arrayfire:
+                platform: << parameters.platform >>
+      - when:
+          condition:
+            equal: ["cudnn", << parameters.autograd_backend >>]
+          steps:
+            - install-cudnn:
+                platform: << parameters.platform >>
+      - when:
+          condition:
+            or:
+              - equal: ["onednn", << parameters.backend >>]
+              - equal: ["onednn", << parameters.autograd_backend >>]
+          steps:
+            - install-onednn:
+                platform: << parameters.platform >>
+
+  install-pkg-dependencies:
+    parameters:
+      pkg:
+        type: string
+      platform:
         type: string
     steps:
       - run:
-          name: "Test Flashlight inside of NVIDIA Docker:  << parameters.test_name >>"
+          name: "Install gflags"
+          command: sudo apt-get install -y libgflags-dev
+      - run:
+          name: "Install glog"
+          command: sudo apt-get install -y libgoogle-glog-dev
+      # Only the speech package explicitly requires external deps.
+      # The text package installs flashlight-text automatically (as does speech)
+      # and the vision package installs stb automatically.
+      - when:
+          condition:
+            equal: ["speech", << parameters.pkg >>]
+          steps:
+            - when:
+                condition:
+                  equal: ["linux", << parameters.platform >>]
+                steps:
+                  - run:
+                      name: "Install FFTW3"
+                      command: sudo apt-get install libfftw3-dev
+                  - run:
+                      name: "Install libsndfile"
+                      command: sudo apt-get install libsndfile1-dev
+                  - run:
+                      name: "Install BLAS library"
+                      # TODO: add baselines with a few other BLAS libs pending
+                      # conversion to use fl::matmul on CPU
+                      command: sudo apt-get install libopenblas-dev
+
+  build-flashlight-core:
+    parameters:
+      platform:
+        type: string
+      backend:
+        type: string
+      autograd_backend:
+        type: string
+    steps:
+      - run:
+          name: "Build Flashlight"
+          # Only run ArrayFire CUDA baselines in CI (only supported CUDA backend)
           command: |
-            sudo docker exec -it flashlight bash -c "\
-                cd /flashlight/build/<< parameters.fl_test_apex_dir >> && ctest"
+            cmake -S . -B build \
+              -DFL_USE_ARRAYFIRE=$([ "<< parameters.backend >>" == "arrayfire" ] && echo "ON" || echo "OFF") \
+              -DFL_ARRAYFIRE_USE_CUDA=$([ "<< parameters.platform >>" == "windows" ] || [ "<< parameters.platform >>" == "linux" ] && echo "ON" || echo "OFF") \
+              -DFL_ARRAYFIRE_USE_CPU=$([ "<< parameters.platform >>" == "macos-arm" ] || [ "<< parameters.platform >>" == "linux-arm" ] && echo "ON" || echo "OFF") \
+              -DFL_USE_CUDNN=$([ "<< parameters.autograd_backend >>" == "cudnn" ] && echo "ON" || echo "OFF") \
+              -DFL_USE_ONEDNN=$([ "<< parameters.backend >>" == "onednn" ] || [ "<< parameters.autograd_backend >>" == "onednn" ] && echo "ON" || echo "OFF") \
+              -DFL_BUILD_DISTRIBUTED=OFF \
+              -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON
+            cmake --build build --parallel
+
+  test-flashlight:
+    parameters:
+      path:
+        default: "OFF"
+        type: string
+    steps:
+      - run:
+          name: "Test Flashlight at << parameters.path >>"
+          command: |
+            cd << parameters.path >>
+            ctest --verbose --parallel 4
+
+  ############################### Old Commands ###############################
   run_codecov_inside_nvidia_docker:
     parameters:
       coverage_flag:
@@ -165,462 +372,226 @@ commands:
                 -F << parameters.coverage_flag >> \
                 -t $CODECOV_TOKEN \
                 || echo 'Codecov did not collect coverage reports'"
-  ############################### vcpkg Commands ###############################
-  install_gcc_7:
-    steps:
-      - run:
-          name: "Install and setup gcc 7"
-          command: |
-            sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-            sudo apt update || true
-            sudo apt install gcc-7 g++-7 -y --no-install-recommends
-            sudo rm /usr/bin/gcc /usr/bin/g++
-            sudo ln -s /usr/bin/gcc-7 /usr/bin/gcc
-            sudo ln -s /usr/bin/g++-7 /usr/bin/g++
-  build_vcpkg:
-    steps:
-      - run:
-          name: "Clone and Build vcpkg"
-          command: |
-            git clone https://github.com/microsoft/vcpkg
-            ./vcpkg/bootstrap-vcpkg.sh
-  install_vcpkg_prereqs:
-    steps:
-      - install_gcc_7
-      - run:
-          name: "Install vcpkg prerequisites"
-          command: |
-            DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends gperf automake
-  install_vcpkg_deps:
-    parameters:
-      vcpkg_deps:
-        type: string
-    steps:
-      - run:
-          name: "Install vcpkg dependencies"
-          command: |
-            MKLROOT=/opt/intel/mkl ./vcpkg/vcpkg install << parameters.vcpkg_deps >>
-  install_onednn_and_mkl:
-    steps:
-      - run:
-          name: "Install Ninja"
-          command: |
-            sudo apt install -y ninja-build
-      - run:
-          name: "Clone, build, and install oneDNN"
-          command: |
-            cd /tmp
-            git clone https://github.com/oneapi-src/oneDNN.git --branch v2.7
-            cd oneDNN
-            cmake . -G Ninja \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DDNNL_BUILD_TESTS=OFF \
-              -DDNNL_BUILD_EXAMPLES=OFF
-            ninja
-            sudo ninja install
-      - run:
-          name: "Install MKL"
-          command: DEBIAN_FRONTEND=noninteractive sudo apt install -y intel-mkl-full
-  flashlight_source_build_with_vcpkg:
-    parameters:
-      fl_build_fl_core:
-        type: string
-      fl_build_app_asr:
-        type: string
-      fl_build_app_imgclass:
-        type: string
-      fl_build_app_objdet:
-        type: string
-      fl_build_app_lm:
-        type: string
-    steps:
-      - run:
-          name: "Build Flashlight CUDA from source with vcpkg dependencies"
-          command: |
-            cd $HOME/project && mkdir -p build && cd build
-            export MKLROOT=/opt/intel/mkl
-            export CUDACXX=/usr/local/cuda/bin/nvcc
-            cmake .. \
-              -DFL_ARRAYFIRE_USE_CUDA=ON \
-              -DFL_ARRAYFIRE_USE_CPU=OFF \
-              -DFL_USE_CUDNN=ON \
-              -DFL_BUILD_CORE=<< parameters.fl_build_fl_core >> \
-              -DFL_BUILD_APP_ASR=<< parameters.fl_build_app_asr >> \
-              -DFL_BUILD_APP_IMGCLASS=<< parameters.fl_build_app_imgclass >> \
-              -DFL_BUILD_APP_OBJDET=<< parameters.fl_build_app_objdet >> \
-              -DFL_BUILD_APP_LM=<< parameters.fl_build_app_lm >> \
-              -DCMAKE_TOOLCHAIN_FILE=$HOME/project/vcpkg/scripts/buildsystems/vcpkg.cmake
-            make -j$(nproc)
-  flashlight_build_and_install_cpu_backend_from_source:
-    steps:
-      - install_flashlight_text
-      - run:
-          name: Build flashlight with CPU backend
-          command: |
-            echo "deb http://archive.ubuntu.com/ubuntu xenial main" | tee /etc/apt/sources.list.d/xenial.list
-            apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends software-properties-common
-            apt-add-repository -r universe && apt-add-repository "deb http://dk.archive.ubuntu.com/ubuntu/ bionic main" && apt-add-repository "deb http://dk.archive.ubuntu.com/ubuntu/ bionic universe" && apt-get update
-            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc-7 g++-7
-            update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 7
-            update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 7
-            update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-7 7
-            export MKLROOT=/opt/intel/mkl
-            cd flashlight && mkdir -p build && cd build
-            cmake .. -DFL_ARRAYFIRE_USE_CPU=ON \
-                     -DFL_ARRAYFIRE_USE_CUDA=OFF \
-                     -DFL_USE_ONEDNN=ON \
-                     -DDNNL_DIR=/opt/onednn/lib/cmake/dnnl \
-                     -DGloo_DIR=/opt/gloo/share/cmake \
-                     -DFL_BUILD_CORE=ON \
-                     -DFL_BUILD_ALL_PKGS=ON \
-                     -DFL_BUILD_ALL_APPS=ON
-            make -j 24 && make install
-  flashlight_source_test_with_vcpkg:
-    parameters:
-      fl_test_apex_dir:
-        type: string
-      test_name:
-        type: string
-    steps:
-      - run:
-          name: "Run Flashlight CUDA tests for in-source build with vcpkg dependencies << parameters.test_name >>"
-          command: |
-            cd $HOME/project/build/<< parameters.fl_test_apex_dir >>
-            ctest
-  install_flashlight_text_cuda:
-    parameters:
-      use_kenlm:
-        type: string
-        default: "ON"
-    steps:
-      - run:
-          name: "Clone and Install Flashlight Text"
-          command: |
-            sudo docker exec -it flashlight bash -c "\
-            apt install -y libboost-program-options-dev libboost-system-dev \
-            libboost-thread-dev libboost-test-dev && \
-            git clone https://github.com/flashlight/text && cd text && \
-            mkdir build && cd build && \
-            cmake .. -DFL_TEXT_USE_KENLM=<< parameters.use_kenlm >> -DFL_TEXT_BUILD_TESTS=OFF -DBUILD_SHARED_LIBS=ON && \
-            make install -j$(nproc)"
-  install_flashlight_text:
-    parameters:
-      use_kenlm:
-        type: string
-        default: "ON"
-    steps:
-      - run:
-          name: "Clone and Install Flashlight Text"
-          command: |
-            apt install -y libboost-program-options-dev libboost-system-dev \
-            libboost-thread-dev libboost-test-dev && \
-            git clone https://github.com/flashlight/text && cd text && \
-            mkdir build && cd build && \
-            cmake .. -DFL_TEXT_USE_KENLM=<< parameters.use_kenlm >> -DFL_TEXT_BUILD_TESTS=OFF -DBUILD_SHARED_LIBS=ON && \
-            make install -j$(nproc)
-  setup_flashlight_compile_and_link_external_project_script:
-    steps:
-      - run:
-          name: Set up script to build another project that depends on flashlight
-          command: |
-            set +H
-            echo "printf '#include <flashlight/fl/flashlight.h>\nint main() { auto x = fl::constant(1.0, {1}); auto y = x + 1; return !fl::allClose(y, x + x); }\n' > main.cpp" >> flashlight_compile_and_link_external_project.sh
-            echo "printf 'cmake_minimum_required(VERSION 3.16)\nset(CMAKE_CXX_STANDARD 17)\nset(CMAKE_CXX_STANDARD_REQUIRED ON)\nfind_package(flashlight CONFIG REQUIRED)\nadd_executable(main main.cpp)\ntarget_link_libraries(main PRIVATE flashlight::flashlight)\n' > CMakeLists.txt" >> flashlight_compile_and_link_external_project.sh
-            echo "export CC=/usr/bin/gcc-7 && export CXX=/usr/bin/g++-7 && export MKLROOT=/opt/intel/mkl" >> flashlight_compile_and_link_external_project.sh
-            echo "mkdir -p build && cd build && cmake .. -DDNNL_DIR=/opt/onednn/lib/cmake/dnnl && make" >> flashlight_compile_and_link_external_project.sh
-            echo "./main" >> flashlight_compile_and_link_external_project.sh
-  ############################ Dependency Commands ############################
-  ubuntu_install_and_setup_cmake:
-    parameters:
-      version:
-        default: "3.16"
-        type: string
-      version_build:
-        default: "1"
-        type: string
-    steps:
-      - run:
-          name: "Install and Setup CMake"
-          command: |
-            cd /tmp
-            wget https://cmake.org/files/v<< parameters.version >>/cmake-<< parameters.version >>.<< parameters.version_build >>-Linux-x86_64.sh
-            sudo mkdir /opt/cmake
-            sudo sh cmake-<< parameters.version >>.<< parameters.version_build >>-Linux-x86_64.sh --prefix=/opt/cmake --skip-license
-            sudo ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
-  ubuntu_install_and_setup_cmake_in_docker:
-    parameters:
-      version:
-        default: "3.16"
-        type: string
-      version_build:
-        default: "1"
-        type: string
-    steps:
-      - run:
-          name: "Install and Setup CMake"
-          command: |
-            cd /tmp
-            wget https://cmake.org/files/v<< parameters.version >>/cmake-<< parameters.version >>.<< parameters.version_build >>-Linux-x86_64.sh
-            mkdir /opt/cmake
-            sh cmake-<< parameters.version >>.<< parameters.version_build >>-Linux-x86_64.sh --prefix=/opt/cmake --skip-license
-            ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
-  ubuntu_install_mkl:
-    parameters:
-      mkl_version:
-        default: "intel-mkl-64bit-2020.0-088"
-        type: string
-    steps:
-      - run:
-          name: "Install MKL"
-          command: |
-            cd /tmp
-            wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
-            sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
-            sudo sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list'
-            sudo apt-get update && DEBIAN_FRONTEND=noninteractive sudo apt install << parameters.mkl_version >>
+
 ############################ Jobs ############################
 jobs:
-  ubuntu2004_cuda11_1_docker_flashlight_pkgs:
-    <<: *gpu
+  build-flashlight-core:
+    parameters:
+      platform:
+        type: string
+      backend:
+        type: string
+      autograd_backend:
+        type: string
+    executor: << parameters.platform >>
     steps:
-      - authenticate_docker
-      - install_nvidia_docker
       - checkout
-      - start_nvidia_docker_and_copy_flashlight_source
-      - install_flashlight_text_cuda
-      - build_flashlight_inside_nvidia_docker:
-          fl_arrayfire_use_cuda: "ON"
-          fl_use_cudnn: "ON"
-          fl_build_fl_core: "ON"
-          fl_build_pkg_runtime: "ON"
-          fl_build_pkg_speech: "ON"
-          fl_build_pkg_vision: "ON"
-          fl_build_pkg_text: "ON"
-      - test_flashlight_inside_nvidia_docker:
-          test_name: "fl_pkg_speech"
-          fl_test_apex_dir: "flashlight/pkg/speech/test"
-      - test_flashlight_inside_nvidia_docker:
-          test_name: "fl_pkg_vision"
-          fl_test_apex_dir: "flashlight/pkg/vision/test"
-      - test_flashlight_inside_nvidia_docker:
-          test_name: "fl_pkg_text"
-          fl_test_apex_dir: "flashlight/pkg/text/test"
-      - run_codecov_inside_nvidia_docker:
-          coverage_flag: "pkgs"
+      - install-all-dependencies:
+          platform: << parameters.platform >>
+          backend: << parameters.backend >>
+          autograd_backend: << parameters.autograd_backend >>
+      - build-flashlight-core:
+          platform: << parameters.platform >>
+          backend: << parameters.backend >>
+          autograd_backend: << parameters.backend >>
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
 
-  ubuntu2004_cuda11_1_docker_flashlight_fl_core:
-    <<: *gpu
+  test-flashlight-core:
+    parameters:
+      platform:
+        type: string
+      backend:
+        type: string
+      autograd_backend:
+        type: string
+    executor: << parameters.platform >>
     steps:
-      - authenticate_docker
-      - install_nvidia_docker
-      - checkout
-      - start_nvidia_docker_and_copy_flashlight_source
-      - build_flashlight_inside_nvidia_docker:
-          fl_arrayfire_use_cuda: "ON"
-          fl_use_cudnn: "ON"
-          fl_build_fl_core: "ON"
-      - test_flashlight_inside_nvidia_docker:
-          fl_test_apex_dir: "flashlight/fl/test"
-      - run_codecov_inside_nvidia_docker:
-          coverage_flag: "core"
+      - install-all-dependencies:
+          platform: << parameters.platform >>
+          backend: << parameters.backend >>
+          autograd_backend: << parameters.autograd_backend >>
+      # attach the project root and build directory
+      - attach_workspace:
+          at: .
+      # TODO: enable tests on Windows adding "ctest -C Release ..."
+      - test-flashlight:
+          path: build/flashlight/fl/test
 
-  ubuntu2004_cuda11_1_docker_flashlight_app_asr:
-    <<: *gpu
+  build-flashlight-pkg:
+    parameters:
+      pkg:
+        type: string
+      platform:
+        type: string
+      backend:
+        type: string
+      autograd_backend:
+        type: string
+      build_parallelism:
+        type: string
+        default: ""
+    executor: << parameters.platform >>
     steps:
-      - authenticate_docker
-      - install_nvidia_docker
-      - checkout
-      - start_nvidia_docker_and_copy_flashlight_source
-      - install_flashlight_text_cuda
-      - build_flashlight_inside_nvidia_docker:
-          fl_arrayfire_use_cuda: "ON"
-          fl_use_cudnn: "ON"
-          fl_build_fl_core: "ON"
-          fl_build_pkg_speech: "ON"
-          fl_build_pkg_runtime: "ON"
-          fl_build_app_asr: "ON"
-
-  ubuntu2004_cuda11_1_docker_flashlight_app_imgclass:
-    <<: *gpu
-    steps:
-      - authenticate_docker
-      - install_nvidia_docker
-      - checkout
-      - start_nvidia_docker_and_copy_flashlight_source
-      - install_flashlight_text_cuda
-      - build_flashlight_inside_nvidia_docker:
-          fl_arrayfire_use_cuda: "ON"
-          fl_use_cudnn: "ON"
-          fl_build_fl_core: "ON"
-          fl_build_pkg_vision: "ON"
-          fl_build_pkg_runtime: "ON"
-          fl_build_app_imgclass: "ON"
-
-  ubuntu2004_cuda11_1_docker_flashlight_app_objdet:
-    <<: *gpu
-    steps:
-      - authenticate_docker
-      - install_nvidia_docker
-      - checkout
-      - start_nvidia_docker_and_copy_flashlight_source
-      - install_flashlight_text_cuda
-      - build_flashlight_inside_nvidia_docker:
-          fl_arrayfire_use_cuda: "ON"
-          fl_use_cudnn: "ON"
-          fl_build_fl_core: "ON"
-          fl_build_pkg_vision: "ON"
-          fl_build_pkg_runtime: "ON"
-          fl_build_app_objdet: "ON"
-      - run_codecov_inside_nvidia_docker:
-          coverage_flag: "objdet"
-
-  ubuntu2004_cuda11_1_docker_flashlight_app_lm:
-    <<: *gpu
-    steps:
-      - authenticate_docker
-      - install_nvidia_docker
-      - checkout
-      - start_nvidia_docker_and_copy_flashlight_source
-      - install_flashlight_text_cuda
-      - build_flashlight_inside_nvidia_docker:
-          fl_arrayfire_use_cuda: "ON"
-          fl_use_cudnn: "ON"
-          fl_build_fl_core: "ON"
-          fl_build_pkg_text: "ON"
-          fl_build_pkg_runtime: "ON"
-          fl_build_app_lm: "ON"
-      - run_codecov_inside_nvidia_docker:
-          coverage_flag: "lm"
-
-  ubuntu2004_cuda11_1_docker_flashlight_all_shared_build:
-    <<: *gpu
-    steps:
-      - authenticate_docker
-      - install_nvidia_docker
-      - checkout
-      - start_nvidia_docker_and_copy_flashlight_source
-      - install_flashlight_text_cuda
-      - build_flashlight_inside_nvidia_docker:
-          fl_arrayfire_use_cuda: "ON"
-          fl_use_cudnn: "ON"
-          fl_build_fl_core: "ON"
-          fl_build_pkg_runtime: "ON"
-          fl_build_pkg_speech: "ON"
-          fl_build_pkg_vision: "ON"
-          fl_build_pkg_text: "ON"
-          fl_build_app_asr: "ON"
-          fl_build_app_imgclass: "ON"
-          fl_build_app_objdet: "ON"
-          fl_build_app_lm: "ON"
-          build_shared_libs: "ON"
-
-  ubuntu2004_cpu_docker_flashlight_all:
-    docker:
-      - image: flml/flashlight:cpu-base-latest
-        auth:
-          username: $DOCKER_USERNAME
-          password: $DOCKER_PASSWORD
-    resource_class: 2xlarge+
-    steps:
-      - checkout:
-          path: flashlight
-      - flashlight_build_and_install_cpu_backend_from_source
-
-  ubuntu2004_cmake10_cpu_docker_flashlight_all:
-    docker:
-      - image: flml/flashlight:cpu-base-latest
-        auth:
-          username: $DOCKER_USERNAME
-          password: $DOCKER_PASSWORD
-    resource_class: 2xlarge+
-    steps:
-      - checkout:
-          path: flashlight
-      - ubuntu_install_and_setup_cmake_in_docker
-      - flashlight_build_and_install_cpu_backend_from_source
-
-  ubuntu2004_cpu_docker_flashlight_build_external:
-    docker:
-      - image: flml/flashlight:cpu-base-latest
-        auth:
-          username: $DOCKER_USERNAME
-          password: $DOCKER_PASSWORD
-    resource_class: 2xlarge+
-    steps:
-      - checkout:
-          path: flashlight
-      - flashlight_build_and_install_cpu_backend_from_source
-      - setup_flashlight_compile_and_link_external_project_script
+      - install-all-dependencies:
+          platform: << parameters.platform >>
+          backend: << parameters.backend >>
+          autograd_backend: << parameters.autograd_backend >>
+      - install-pkg-dependencies:
+          pkg: << parameters.pkg >>
+          platform: << parameters.platform >>
+      # attach the project root and build directory
+      - attach_workspace:
+          at: .
       - run:
-          name: "Build another project that depends on flashlight"
-          command: bash flashlight_compile_and_link_external_project.sh
-
-  ubuntu2004_cuda11_1_docker_flashlight_build_external:
-    <<: *gpu
-    steps:
-      - authenticate_docker
-      - install_nvidia_docker
-      - checkout
-      - start_nvidia_docker_and_copy_flashlight_source
-      - build_flashlight_inside_nvidia_docker:
-          fl_arrayfire_use_cuda: "ON"
-          fl_use_cudnn: "ON"
-          fl_build_fl_core: "ON"
-      - setup_flashlight_compile_and_link_external_project_script
-      - run:
-          name: "Build another project that depends on flashlight"
-          command: sudo docker exec -i flashlight bash < flashlight_compile_and_link_external_project.sh
-
-  run_onednn_cpu_benchmarks:
-    machine:
-      image: ubuntu-2004:current
-    resource_class: 2xlarge
-    steps:
-      - install_onednn_and_mkl
-      - checkout
-      - run:
-          name: "Build Flashlight CPU backend with oneDNN"
+          name: "Build Flashlight with << parameters.pkg >> package"
           command: |
-            mkdir -p build
             cmake -S . -B build \
-              -DBUILD_SHARED_LIBS=ON \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DCMAKE_INSTALL_PREFIX=$HOME/usr \
-              -DFL_USE_ARRAYFIRE=OFF \
-              -DFL_USE_ONEDNN=ON \
-              -DFL_BUILD_DISTRIBUTED=OFF \
-              -DFL_BUILD_TESTS=OFF \
-              -DFL_BUILD_EXAMPLES=ON
-            cmake --build build --parallel
+              -DFL_BUILD_PKG_RUNTIME=ON \
+              -DFL_BUILD_PKG_SPEECH=$([ "<< parameters.pkg >>" == "speech" ] && echo "ON" || echo "OFF") \
+              -DFL_BUILD_PKG_VISION=$([ "<< parameters.pkg >>" == "vision" ] && echo "ON" || echo "OFF") \
+              -DFL_BUILD_PKG_TEXT=$([ "<< parameters.pkg >>" == "text" ] && echo "ON" || echo "OFF")
+            cmake --build build --parallel << parameters.build_parallelism >>
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
+  test-flashlight-pkg:
+    parameters:
+      pkg:
+        type: string
+      platform:
+        type: string
+      backend:
+        type: string
+      autograd_backend:
+        type: string
+    executor: << parameters.platform >>
+    steps:
+      - install-all-dependencies:
+          platform: << parameters.platform >>
+          backend: << parameters.backend >>
+          autograd_backend: << parameters.autograd_backend >>
+      - install-pkg-dependencies:
+          pkg: << parameters.pkg >>
+          platform: << parameters.platform >>
+      # attach the project root and build directory
+      - attach_workspace:
+          at: .
+      - test-flashlight:
+          path: build/flashlight/pkg/<<parameters.pkg>>/test
+
+  build-flashlight-apps-for-pkg:
+    parameters:
+      pkg:
+        type: string
+      platform:
+        type: string
+        default: linux
+      backend:
+        type: string
+        default: arrayfire
+      autograd_backend:
+        type: string
+        default: cudnn
+      build_parallelism:
+        type: string
+        default: ""
+    executor: << parameters.platform >>
+    steps:
+      - install-all-dependencies:
+          platform: << parameters.platform >>
+          backend: << parameters.backend >>
+          autograd_backend: << parameters.autograd_backend >>
+      - install-pkg-dependencies:
+          pkg: << parameters.pkg >>
+          platform: << parameters.platform >>
+      # attach the project root and build directory
+      - attach_workspace:
+          at: .
       - run:
-          name: "Run stuff"
+          name: "Build Flashlight apps for << parameters.pkg >> package"
           command: |
-            # TODO(StrongerXi): modify this or above build options to run desired benches
-            cd build
-            ls
-            ls flashlight
-            ls flashlight/fl
-            ls ./flashlight/fl/examples/Benchmark
+            cmake -S . -B build \
+              -DFL_BUILD_APP_ASR=$([ "<< parameters.pkg >>" == "speech" ] && echo "ON" || echo "OFF") \
+              -DFL_BUILD_APP_IMGCLASS=$([ "<< parameters.pkg >>" == "vision" ] && echo "ON" || echo "OFF") \
+              -DFL_BUILD_APP_OBJDET=$([ "<< parameters.pkg >>" == "vision" ] && echo "ON" || echo "OFF") \
+              -DFL_BUILD_APP_LM=$([ "<< parameters.pkg >>" == "text" ] && echo "ON" || echo "OFF")
+            cmake --build build --parallel << parameters.build_parallelism >>
 
 workflows:
   version: 2
-  docker_cuda_build_test_and_install:
+  build-and-test:
     jobs:
-      - ubuntu2004_cuda11_1_docker_flashlight_pkgs
-      - ubuntu2004_cuda11_1_docker_flashlight_fl_core
-      - ubuntu2004_cuda11_1_docker_flashlight_app_asr
-      - ubuntu2004_cuda11_1_docker_flashlight_app_imgclass
-      - ubuntu2004_cuda11_1_docker_flashlight_app_objdet
-      - ubuntu2004_cuda11_1_docker_flashlight_app_lm
-      - ubuntu2004_cuda11_1_docker_flashlight_all_shared_build
-  docker_cpu_build_and_install:
-    jobs:
-      - ubuntu2004_cpu_docker_flashlight_all
-      - ubuntu2004_cmake10_cpu_docker_flashlight_all
-  build_external_project_with_flashlight_dependency:
-    jobs:
-      - ubuntu2004_cpu_docker_flashlight_build_external
-      - ubuntu2004_cuda11_1_docker_flashlight_build_external
-  run_benchmarks:
-    jobs:
-      - run_onednn_cpu_benchmarks
+      - build-flashlight-core:
+          name: build-flashlight-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+          matrix:
+            parameters:
+              platform: [linux, windows]
+              backend: [arrayfire]
+              autograd_backend: [cudnn]
+
+      - test-flashlight-core:
+          name: test-flashlight-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+          matrix:
+            # Not running all tests with all configurations yet
+            parameters:
+              platform: [linux]
+              backend: [arrayfire]
+              autograd_backend: [cudnn]
+          requires:
+            - build-flashlight-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+
+      - build-flashlight-core:
+          name: build-flashlight-core-<< matrix.platform >>-CPU-<< matrix.backend >>+<< matrix.autograd_backend >>
+          matrix:
+            parameters:
+              platform: [macos-arm, linux-arm]
+              backend: [arrayfire, onednn]
+              autograd_backend: [onednn]
+            exclude:
+              - platform: linux-arm
+                backend: arrayfire
+                autograd_backend: onednn
+
+      - build-flashlight-pkg:
+          name: build-flashlight-pkg-<< matrix.pkg>>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+          matrix:
+            parameters:
+              pkg: [runtime, speech, vision, text]
+              platform: [linux]
+              backend: [arrayfire]
+              autograd_backend: [cudnn]
+              build_parallelism: ["8"]
+          requires:
+            - build-flashlight-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+
+      # only run pkg builds and tests for best-supported platforms for now
+      - test-flashlight-pkg:
+          name: test-flashlight-pkg-<< matrix.pkg>>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+          matrix:
+            parameters:
+              pkg: [runtime, speech, vision, text]
+              platform: [linux]
+              backend: [arrayfire]
+              autograd_backend: [cudnn]
+          requires:
+            - build-flashlight-pkg-<< matrix.pkg >>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+
+      # only run app builds for best-supported platforms for now
+      - build-flashlight-apps-for-pkg:
+          name: build-flashlight-apps-for-pkg-<< matrix.pkg>>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+          matrix:
+            parameters:
+              pkg: [runtime, speech, vision, text]
+              platform: [linux]
+              backend: [arrayfire]
+              autograd_backend: [cudnn]
+              build_parallelism: ["8"]
+          requires:
+            - build-flashlight-pkg-<< matrix.pkg >>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+
+      # TODO: eventually add macOS and Linux arm64 baselines for pkg/app

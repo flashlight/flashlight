@@ -1,0 +1,47 @@
+name: "Install Flashlight Core Dependencies"
+description: "Install backend and autograd backend dependencies for the Flashlight Core"
+inputs:
+  backend:
+    required: true
+    description: "Tensor backend to install"
+  autograd_backend:
+    required: true
+    description: "Autograd backend backend to install"
+
+runs:
+  using: "composite"
+  steps:
+    # ]----- Backend dependencies
+    # ArrayFire
+    - name: "Install ArrayFire (Linux)"
+      run: |
+        sudo apt update
+        sudo apt-key adv --fetch-key https://repo.arrayfire.com/GPG-PUB-KEY-ARRAYFIRE-2020.PUB
+        echo "deb [arch=amd64] https://repo.arrayfire.com/debian all main" | sudo tee /etc/apt/sources.list.d/arrayfire.list
+        sudo apt update
+        sudo apt install arrayfire-cmake=3.8.1-2 arrayfire-headers=3.8.1-2 arrayfire-cpu3-mkl=3.8.1-2 arrayfire-cpu3-dev=3.8.1-2
+      if: runner.os == 'Linux' && inputs.backend == 'ArrayFire'
+      shell: bash -l {0}
+    - name: "Install ArrayFire (macOS)"
+      run: brew install arrayfire
+      if: runner.os == 'macOS' && inputs.backend == 'ArrayFire'
+      shell: bash -l {0}
+    - name: "Install ArrayFire (Windows)"
+      run: |
+        choco install --no-progress wget -y
+        cd $HOME
+        INSTALLER_NAME="ArrayFire-v3.8.1-CUDA-11.4.exe"
+        wget --quiet https://arrayfire.s3.amazonaws.com/3.8.1/$INSTALLER_NAME
+        7z.exe x $INSTALLER_NAME -o"C:\Program Files\ArrayFire" -y
+        rm $INSTALLER_NAME
+      if: runner.os == 'Windows' && inputs.backend == 'ArrayFire'
+      shell: bash -l {0}
+    # oneDNN
+    - name: Install oneDNN 2.7.2 with microconda
+      uses: mamba-org/provision-with-micromamba@main
+      with:
+        environment-file: false
+        environment-name: flashlight
+        channels: conda-forge
+        extra-specs: onednn=2.7.2
+      if: inputs.backend == 'oneDNN' || inputs.autograd_backend == 'oneDNN'

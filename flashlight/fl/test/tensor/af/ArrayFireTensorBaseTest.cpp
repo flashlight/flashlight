@@ -5,14 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <arrayfire.h>
-#include <gtest/gtest.h>
-
 #include <exception>
 #include <stdexcept>
 #include <utility>
 
-#include "af/util.h"
+#include <af/util.h>
+#include <arrayfire.h>
+#include <gtest/gtest.h>
+
 #include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/Random.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
@@ -72,83 +72,81 @@ TEST(ArrayFireTensorBaseTest, ArrayFireShapeInterop) {
 
 } // namespace fl
 
+namespace {
+
+int getRefCount(const af::array& arr, bool sync = true) {
+  if (sync) {
+    arr.eval();
+    af::sync();
+  }
+  int refCount = 0;
+  AF_CHECK(af_get_data_ref_count(&refCount, arr.get()));
+  return refCount;
+}
+
+} // namespace
+
 TEST(ArrayFireTensorBaseTest, AfRefCountBasic) {
   // Sanity check that af::arrays moved into fl::Tensors don't have their
   // refcount inrcremented/show proper usage of refs in tensor ops
-  int refCount = 0;
+  auto q = af::constant(1, {2, 2});
+  // without eval/sync, no refcount
+  ASSERT_EQ(getRefCount(q, /* sync = */ false), 0);
+
   auto a = af::constant(1, {2, 2});
-  af_get_data_ref_count(&refCount, a.get());
-  ASSERT_EQ(refCount, 1);
+  ASSERT_EQ(getRefCount(a), 1);
 
   auto tensor = toTensor<ArrayFireTensor>(std::move(a), /* numDims = */ 2);
   auto& aRef = toArray(tensor);
-  af_get_data_ref_count(&refCount, aRef.get());
-  ASSERT_EQ(refCount, 1);
+  ASSERT_EQ(getRefCount(aRef), 1);
   // Sanity check copying bumps things
   auto aNoRef = toArray(tensor);
-  af_get_data_ref_count(&refCount, aNoRef.get());
-  ASSERT_EQ(refCount, 2);
+  ASSERT_EQ(getRefCount(aNoRef), 2);
 }
 
 TEST(ArrayFireTensorBaseTest, AfRefCountModify) {
-  int refCount = 0;
   // Compositional operations don't increment refcount
   auto a = af::constant(1, {2, 2});
   auto b = af::constant(1, {2, 2});
   auto arrRes = a + b;
-  af_get_data_ref_count(&refCount, a.get());
-  ASSERT_EQ(refCount, 1);
-  af_get_data_ref_count(&refCount, b.get());
-  ASSERT_EQ(refCount, 1);
+  ASSERT_EQ(getRefCount(a), 1);
+  ASSERT_EQ(getRefCount(b), 1);
   // Multiple uses of the same variable doesn't push count
   auto c = af::constant(1, {2, 2});
   auto d = af::constant(1, {2, 2});
   auto arrResMult = c * c + d * d;
-  af_get_data_ref_count(&refCount, c.get());
-  ASSERT_EQ(refCount, 1);
-  af_get_data_ref_count(&refCount, d.get());
-  ASSERT_EQ(refCount, 1);
+  ASSERT_EQ(getRefCount(c), 1);
+  ASSERT_EQ(getRefCount(d), 1);
 
   // Same behavior with Tensors
   auto v = fl::full({2, 2}, 1);
   auto w = fl::full({2, 2}, 1);
   auto varRes = v + w;
-  af_get_data_ref_count(&refCount, toArray(v).get());
-  ASSERT_EQ(refCount, 1);
-  af_get_data_ref_count(&refCount, toArray(w).get());
-  ASSERT_EQ(refCount, 1);
+  ASSERT_EQ(getRefCount(toArray(v)), 1);
+  ASSERT_EQ(getRefCount(toArray(w)), 1);
   // Multiuse with variables
   auto y = fl::full({2, 2}, 1);
   auto z = fl::full({2, 2}, 1);
   auto varResMult = y * y + z * z;
-  af_get_data_ref_count(&refCount, toArray(y).get());
-  ASSERT_EQ(refCount, 1);
-  af_get_data_ref_count(&refCount, toArray(z).get());
-  ASSERT_EQ(refCount, 1);
+  ASSERT_EQ(getRefCount(toArray(y)), 1);
+  ASSERT_EQ(getRefCount(toArray(z)), 1);
 }
 
 TEST(ArrayFireTensorBaseTest, astypeRefcount) {
-  int refCount = 0;
   auto t = fl::rand({5, 5});
-  af_get_data_ref_count(&refCount, toArray(t).get());
-  ASSERT_EQ(refCount, 1);
+  ASSERT_EQ(getRefCount(toArray(t)), 1);
   auto t64 = t.astype(fl::dtype::f64);
-  af_get_data_ref_count(&refCount, toArray(t64).get());
-  ASSERT_EQ(refCount, 1);
+  ASSERT_EQ(getRefCount(toArray(t64)), 1);
 }
 
 TEST(ArrayFireTensorBaseTest, astypeInPlaceRefcount) {
-  int refCount = 0;
   auto a = fl::rand({4, 4});
-  af_get_data_ref_count(&refCount, toArray(a).get());
-  ASSERT_EQ(refCount, 1);
+  ASSERT_EQ(getRefCount(toArray(a)), 1);
   a = a.astype(fl::dtype::f64);
-  af_get_data_ref_count(&refCount, toArray(a).get());
-  ASSERT_EQ(refCount, 1);
+  ASSERT_EQ(getRefCount(toArray(a)), 1);
   ASSERT_EQ(a.type(), fl::dtype::f64);
   a = a.astype(fl::dtype::f32);
-  af_get_data_ref_count(&refCount, toArray(a).get());
-  ASSERT_EQ(refCount, 1);
+  ASSERT_EQ(getRefCount(toArray(a)), 1);
 }
 
 TEST(ArrayFireTensorBaseTest, BackendInterop) {
@@ -174,32 +172,24 @@ TEST(ArrayFireTensorBaseTest, withTensorType) {
 }
 
 TEST(ArrayFireTensorBaseTest, ArrayFireAssignmentOperators) {
-  int refCount = 0;
-
   fl::Tensor a = fl::full({3, 3}, 1.);
   af::array& aArr = toArray(a);
-  af_get_data_ref_count(&refCount, aArr.get());
-  ASSERT_EQ(refCount, 1);
+  ASSERT_EQ(getRefCount(aArr), 1);
 
   auto b = a; // share the same underlying array but bump refcount
-  af_get_data_ref_count(&refCount, aArr.get());
-  ASSERT_EQ(refCount, 2);
+  ASSERT_EQ(getRefCount(aArr), 2);
 
   auto c = a.copy(); // defers deep copy to AF
-  af_get_data_ref_count(&refCount, aArr.get());
-  ASSERT_EQ(refCount, 2);
+  ASSERT_EQ(getRefCount(aArr), 2);
 
   // copy, else it'll get released below when we reassign a new tensor to b
   af::array bArr = toArray(b);
-  af_get_data_ref_count(&refCount, bArr.get());
-  ASSERT_EQ(refCount, 3); // aArr, bArr, b.arrayHandle_
+  ASSERT_EQ(getRefCount(bArr), 3); // aArr, bArr, b.arrayHandle_
 
   b = fl::full({4, 4}, 2.); // b points to a new array now
-  af_get_data_ref_count(&refCount, bArr.get());
-  ASSERT_EQ(refCount, 2); // aArr, bArr
+  ASSERT_EQ(getRefCount(bArr), 2); // aArr, bArr
 
-  af_get_data_ref_count(&refCount, aArr.get());
-  ASSERT_EQ(refCount, 2); // aArr, bArr
+  ASSERT_EQ(getRefCount(aArr), 2); // aArr, bArr
 }
 
 TEST(ArrayFireTensorBaseTest, BinaryOperators) {

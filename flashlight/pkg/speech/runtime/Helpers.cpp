@@ -14,7 +14,6 @@
 #include <glog/logging.h>
 
 #include "flashlight/lib/text/String.h"
-#include "flashlight/pkg/runtime/common/DistributedUtils.h"
 
 #ifdef FL_BUILD_FB_DEPENDENCIES
   #include "deeplearning/projects/flashlight/fb/EverstoreDataset.h"

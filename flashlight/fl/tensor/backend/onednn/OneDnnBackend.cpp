@@ -102,8 +102,8 @@ Tensor fullWithType(const Shape& shape, V value, const dtype type) {
   if (engineKind == dnnl::engine::kind::cpu) {
     return fullWithTypeCpu<T, V>(shape, value, type);
   } else {
-  throw std::runtime_error(
-      "[OneDnnBackend::fullWithType] unimplemented for non-CPU engine");
+    throw std::runtime_error(
+        "[OneDnnBackend::fullWithType] unimplemented for non-CPU engine");
   }
 }
 
@@ -149,6 +149,8 @@ Tensor iotaSingleAxisCpu(
 }
 
 struct BinaryOpOutputDesc {
+  BinaryOpOutputDesc(dnnl::memory::desc desc, Shape shape)
+      : dstMemDesc(std::move(desc)), dstShape(std::move(shape)) {}
   dnnl::memory::desc dstMemDesc;
   const Shape dstShape;
 };
@@ -180,10 +182,10 @@ BinaryOpOutputDesc getBinaryOpOutputDesc(
       lhsMemDesc.data_type(), rhsMemDesc.data_type()));
   // some common fast paths
   if (lhsShape == rhsShape) {
-    return {
-        .dstMemDesc =
-            detail::oneDnnContiguousMemDescFromShape(lhsShape, dstType),
-        .dstShape = lhsShape};
+    BinaryOpOutputDesc(
+        /* desc = */
+        detail::oneDnnContiguousMemDescFromShape(lhsShape, dstType),
+        /* shape = */ lhsShape);
   }
   // only support same # of dimensions for now
   if (lhsShape.ndim() != rhsShape.ndim()) {
@@ -207,9 +209,10 @@ BinaryOpOutputDesc getBinaryOpOutputDesc(
     dstDims.push_back(std::max(lhsDim, rhsDim));
   }
   Shape dstShape(dstDims);
-  return {
-      .dstMemDesc = detail::oneDnnContiguousMemDescFromShape(dstShape, dstType),
-      .dstShape = dstShape};
+  return BinaryOpOutputDesc(
+      /* dstMemDesc = */ detail::oneDnnContiguousMemDescFromShape(
+          dstShape, dstType),
+      /* dstShape = */ dstShape);
 }
 
 template <typename L, typename R, typename T, typename OP>
@@ -595,12 +598,13 @@ FL_ONEDNN_BACKEND_CREATE_FUN_LITERAL_DEF(const unsigned short&);
 #undef FL_ONEDNN_BACKEND_CREATE_FUN_LITERAL_DEF
 
 template <typename T, typename V>
-Tensor OneDnnBackend::fullWithType(const Shape& shape, V value, const dtype type) {
+Tensor
+OneDnnBackend::fullWithType(const Shape& shape, V value, const dtype type) {
   if (engine_.get_kind() == dnnl::engine::kind::cpu) {
     return fullWithTypeCpu<T, V>(shape, value, type);
   } else {
-  throw std::runtime_error(
-      "[OneDnnBackend::fullWithType] unimplemented for non-CPU engine");
+    throw std::runtime_error(
+        "[OneDnnBackend::fullWithType] unimplemented for non-CPU engine");
   }
 }
 
@@ -608,10 +612,8 @@ Tensor OneDnnBackend::identity(const Dim /* dim */, const dtype /* type */) {
   FL_ONEDNN_BACKEND_UNIMPLEMENTED;
 }
 
-Tensor OneDnnBackend::arange(
-    const Shape& shape,
-    const Dim seqDim,
-    const dtype type) {
+Tensor
+OneDnnBackend::arange(const Shape& shape, const Dim seqDim, const dtype type) {
   if (seqDim < 0 || seqDim >= shape.ndim()) {
     std::ostringstream oss;
     oss << "[OneDnnBackend::arange] Invalid seqDim: " << seqDim
@@ -638,9 +640,7 @@ Tensor OneDnnBackend::iota(
 }
 
 /************************ Shaping and Indexing *************************/
-Tensor OneDnnBackend::reshape(
-    const Tensor& tensor,
-    const Shape& shape) {
+Tensor OneDnnBackend::reshape(const Tensor& tensor, const Shape& shape) {
   if (tensor.shape().elements() != shape.elements()) {
     std::ostringstream oss;
     oss << "[OneDnnBackend::reshape] Cannot reshape tensor from "
@@ -658,8 +658,8 @@ Tensor OneDnnBackend::reshape(
   auto reshapedMem = dnnl::memory(reshapedMemDesc, engine_);
 
   // prepare primitive (use reorder to do a copy)
-  const auto reorderPrimitiveDesc = dnnl::reorder::primitive_desc(
-      engine_, memDesc, engine_, memDesc);
+  const auto reorderPrimitiveDesc =
+      dnnl::reorder::primitive_desc(engine_, memDesc, engine_, memDesc);
   const auto reorderPrimitive = dnnl::reorder(reorderPrimitiveDesc);
 
   // execute primitive
@@ -741,16 +741,14 @@ Tensor OneDnnBackend::transpose(
   return toTensor<OneDnnTensor>(newShape, std::move(dstMem));
 }
 
-Tensor OneDnnBackend::tile(
-    const Tensor& tensor,
-    const Shape& tileDims) {
+Tensor OneDnnBackend::tile(const Tensor& tensor, const Shape& tileDims) {
   const auto [paddedTensorShape, paddedTileDims] =
-    padShorterDimsWithOnesOnTheRight(tensor.shape(), tileDims);
+      padShorterDimsWithOnesOnTheRight(tensor.shape(), tileDims);
 
   auto& srcTensor = toOneDnnTensor(tensor);
   auto currTiledMem = srcTensor.memory();
-  auto currTiledMemDesc =
-    srcTensor.memoryDesc().reshape(detail::shapeToOneDnnDims(paddedTensorShape));
+  auto currTiledMemDesc = srcTensor.memoryDesc().reshape(
+      detail::shapeToOneDnnDims(paddedTensorShape));
   std::vector<Dim> finalDims;
   // TODO use uniform axes once we remove the 'transposed' representation
   for (int shapeAxis = 0; shapeAxis < paddedTileDims.ndim(); shapeAxis++) {
@@ -1136,8 +1134,8 @@ Tensor OneDnnBackend::applyBinop(
   auto dstMem = dnnl::memory(outputDesc.dstMemDesc, engine_);
 
   // prepare primitive
-  const auto binaryDesc = dnnl::binary::desc(
-    alg, lhsMemDesc, rhsMemDesc, outputDesc.dstMemDesc);
+  const auto binaryDesc =
+      dnnl::binary::desc(alg, lhsMemDesc, rhsMemDesc, outputDesc.dstMemDesc);
   const auto binaryPrimtiveDesc =
       dnnl::binary::primitive_desc(binaryDesc, engine_);
   const auto binaryPrimitive = dnnl::binary(binaryPrimtiveDesc);
@@ -1199,13 +1197,13 @@ Tensor OneDnnBackend::matmul(
   // shape check (TODO support broadcasting)
   if (!(lhsDims.at(1) == rhsDims.at(0) &&
         std::equal(
-          lhsDims.begin() + 2,
-          lhsDims.end(),
-          rhsDims.begin() + 2,
-          rhsDims.end()))) {
+            lhsDims.begin() + 2,
+            lhsDims.end(),
+            rhsDims.begin() + 2,
+            rhsDims.end()))) {
     std::ostringstream oss;
     oss << "Cannot perform matmul for tensors of shapes: " << lhs.shape()
-      << " and " << rhs.shape();
+        << " and " << rhs.shape();
     throw std::invalid_argument(oss.str());
   }
   std::vector<Dim> dstDims = lhsDims;
@@ -1241,9 +1239,9 @@ Tensor OneDnnBackend::matmul(
 
   // prepare primitive
   const auto matmulDesc =
-    dnnl::matmul::desc(srcMemDesc, weightsMemDesc, dstMemArgDesc);
+      dnnl::matmul::desc(srcMemDesc, weightsMemDesc, dstMemArgDesc);
   const auto matmulPrimitiveDesc =
-    dnnl::matmul::primitive_desc(matmulDesc, engine_);
+      dnnl::matmul::primitive_desc(matmulDesc, engine_);
   const auto matmulPrimitive = dnnl::matmul(matmulPrimitiveDesc);
 
   // prepare arguments.

@@ -44,7 +44,7 @@ static std::function<int(void)> makeSucceedsAfterMs(double ms) {
 }
 
 template <class Fn>
-std::future<typename std::result_of_t<Fn()>> retryAsync(
+std::future<typename std::invoke_result<Fn>::type> retryAsync(
     std::chrono::duration<double> initial,
     double factor,
     int64_t iters,

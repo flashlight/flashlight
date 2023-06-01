@@ -5,12 +5,12 @@
 # OpenMPI          latest       (apt)
 # cmake            3.16.3       (apt)
 # MKL              2020.4-912   (apt)
-# arrayfire        3.7.3        (git, CPU backend)
+# arrayfire        3.8.3        (git, CPU backend)
 # libsndfile       latest       (apt)
 # oneDNN           v2.5.2       (git)
-# Gloo             1da2117      (git)
+# Gloo             56b221c      (git)
 # FFTW             latest       (apt)
-# KenLM            0c4dd4e      (git)
+# KenLM            9af679c      (git)
 # GLOG             latest       (apt)
 # gflags           latest       (apt)
 # python3          latest       (apt)
@@ -65,7 +65,7 @@ FROM cpu_base_builder as cpu_arrayfire
 # ==================================================================
 # arrayfire with CPU backend https://github.com/arrayfire/arrayfire/wiki/
 # ------------------------------------------------------------------
-RUN cd /tmp && git clone --branch v3.7.3 --depth 1 --recursive --shallow-submodules https://github.com/arrayfire/arrayfire.git && \
+RUN cd /tmp && git clone --branch v3.8.3 --depth 1 --recursive --shallow-submodules https://github.com/arrayfire/arrayfire.git && \
     mkdir -p arrayfire/build && cd arrayfire/build && \
     cmake .. -DCMAKE_BUILD_TYPE=Release \
              -DCMAKE_INSTALL_PREFIX=/opt/arrayfire \
@@ -94,7 +94,7 @@ FROM cpu_base_builder as cpu_gloo
 # Gloo https://github.com/facebookincubator/gloo.git
 # ------------------------------------------------------------------
 RUN cd /tmp && git clone https://github.com/facebookincubator/gloo.git && \
-    cd gloo && git checkout 1da2117 && mkdir build && cd build && \
+    cd gloo && git checkout 56b221c0a811491d2dc2a3254b468ad687bbdaab && mkdir build && cd build && \
     cmake .. -DCMAKE_BUILD_TYPE=Release \
              -DCMAKE_INSTALL_PREFIX=/opt/gloo \
              -DUSE_MPI=ON && \
@@ -105,7 +105,7 @@ FROM cpu_base_builder as cpu_kenlm
 # KenLM https://github.com/kpu/kenlm
 # ------------------------------------------------------------------
 RUN cd /tmp && git clone https://github.com/kpu/kenlm.git && \
-    cd kenlm && git checkout 0c4dd4e && \
+    cd kenlm && git checkout 9af679c38477b564c26917a5dcf52d2c86177fb9 && \
     mkdir build && cd build && \
     cmake .. -DCMAKE_BUILD_TYPE=Release \
              -DCMAKE_INSTALL_PREFIX=/opt/kenlm \

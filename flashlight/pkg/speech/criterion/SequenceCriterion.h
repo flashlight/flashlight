@@ -50,6 +50,7 @@ using EmittingModelUpdateFunc = std::function<std::pair<
     const int,
     const int,
     const std::vector<int>&,
+    const std::vector<int>&,
     const std::vector<EmittingModelStatePtr>&,
     int&)>;
 

@@ -4,7 +4,7 @@ find_package(GLOG REQUIRED)
 if (GLOG_FOUND)
   message(STATUS "GLOG found")
   if (FL_BUILD_STANDALONE)
-    setup_install_find_module(${CMAKE_MODULE_PATH}/FindGLOG.cmake)
+    setup_install_find_module(${PROJECT_SOURCE_DIR}/cmake/FindGLOG.cmake)
   endif()
 else()
   message(FATAL_ERROR "GLOG not found")
@@ -15,16 +15,19 @@ find_package(gflags REQUIRED)
 if (gflags_FOUND)
   message(STATUS "gflags found")
   if (FL_BUILD_STANDALONE)
-    setup_install_find_module(${CMAKE_MODULE_PATH}/Findgflags.cmake)
+    setup_install_find_module(${PROJECT_SOURCE_DIR}/cmake/Findgflags.cmake)
   endif()
 else()
   message(FATAL_ERROR "gflags not found")
 endif()
 
-add_library(
-  fl_pkg_runtime
-  ""
-)
+add_library(fl_pkg_runtime)
+
+# Install lib and headers
+list(APPEND INSTALLABLE_TARGETS fl_pkg_runtime)
+setup_install_headers(
+  ${CMAKE_CURRENT_LIST_DIR}
+  ${FL_INSTALL_INC_DIR_HEADER_LOC}/pkg)
 
 target_sources(
   fl_pkg_runtime
@@ -38,10 +41,10 @@ include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
 
 # flashlight-text is required
 if (NOT TARGET flashlight::flashlight-text)
-  find_package(flashlight-text CONFIG)
+  find_package(flashlight-text CONFIG 0.0.2)
   if (NOT TARGET flashlight::flashlight-text AND FL_BUILD_STANDALONE)
     message(STATUS "Flashlight Text not found - downloading and building from source")
-    include(${CMAKE_MODULE_PATH}/BuildFlashlightText.cmake)
+    include(${PROJECT_SOURCE_DIR}/cmake/BuildFlashlightText.cmake)
   elseif(TARGET flashlight::flashlight-text)
     message(STATUS "Found flashlight-text")
   else()

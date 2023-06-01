@@ -7,6 +7,8 @@
 
 #include "flashlight/fl/nn/DistributedUtils.h"
 
+#include "flashlight/fl/distributed/DistributedApi.h"
+
 #include <stdexcept>
 
 namespace fl {

@@ -16,8 +16,6 @@
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
-using namespace fl::pkg::runtime;
-
 namespace fl {
 namespace pkg {
 namespace speech {
@@ -656,6 +654,7 @@ EmittingModelUpdateFunc buildSeq2SeqRnnUpdateFunction(
           const int N,
           const int T,
           const std::vector<int>& rawY,
+          const std::vector<int>& /* prevHypBeamIdxs */,
           const std::vector<EmittingModelStatePtr>& rawPrevStates,
           int& t) {
         if (t == 0) {

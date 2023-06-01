@@ -10,8 +10,6 @@
 #include <flashlight/lib/sequence/criterion/cpu/CriterionUtils.h>
 #include <flashlight/lib/sequence/criterion/cpu/ViterbiPath.h>
 
-#include "flashlight/pkg/runtime/common/DistributedUtils.h"
-
 using CriterionUtils = fl::lib::cpu::CriterionUtils<float>;
 using ViterbiPath = fl::lib::cpu::ViterbiPath<float>;
 

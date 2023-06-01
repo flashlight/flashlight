@@ -1,27 +1,19 @@
 cmake_minimum_required(VERSION 3.16)
 
-cmake_dependent_option(
-  FL_BUILD_APP_ASR_SFX_SOX
-  "Build libsox-based sound effects augmentation" OFF
-  "FL_BUILD_APP_ASR" OFF
-  )
-cmake_dependent_option(
-  FL_USE_SOX_STATIC
-  "Statically link libsox with sound effects" OFF
-  "NOT BUILD_SHARED_LIBS" OFF
-  )
+add_library(fl_pkg_speech)
 
-add_library(
-  fl_pkg_speech
-  ""
-  )
+# Install lib and headers
+list(APPEND INSTALLABLE_TARGETS fl_pkg_speech)
+setup_install_headers(
+  ${CMAKE_CURRENT_LIST_DIR}
+  ${FL_INSTALL_INC_DIR_HEADER_LOC}/pkg)
 
-# flashlight-text is required
+# flashlight-text with flashlight-text-kenlm is required
 if (NOT TARGET flashlight::flashlight-text)
-  find_package(flashlight-text CONFIG)
-  if (NOT TARGET flashlight::flashlight-text AND FL_BUILD_STANDALONE)
+  find_package(flashlight-text CONFIG 0.0.2)
+  if (NOT (TARGET flashlight::flashlight-text AND TARGET flashlight::flashlight-text-kenlm) AND FL_BUILD_STANDALONE)
     message(STATUS "Flashlight Text not found - downloading and building from source")
-    include(${CMAKE_MODULE_PATH}/BuildFlashlightText.cmake)
+    include(${PROJECT_SOURCE_DIR}/cmake/BuildFlashlightText.cmake)
   elseif(TARGET flashlight::flashlight-text)
     message(STATUS "Found flashlight-text")
   else()
@@ -33,7 +25,7 @@ endif()
 if (NOT TARGET flashlight::flashlight-sequence)
   find_package(flashlight-sequence CONFIG)
   if (NOT TARGET flashlight::flashlight-sequence AND FL_BUILD_STANDALONE)
-    message(STATUS "Flashlight Text not found - downloading and building from source")
+    message(STATUS "Flashlight Sequence not found - downloading and building from source")
     include(BuildFlashlightSequence)
   elseif(TARGET flashlight::flashlight-sequence)
     if (FL_USE_CUDA AND FL_SEQUENCE_USE_CUDA)
@@ -46,13 +38,13 @@ if (NOT TARGET flashlight::flashlight-sequence)
   endif()
 endif()
 
-
 target_link_libraries(
   fl_pkg_speech
   PUBLIC
   flashlight
   fl_pkg_runtime
   flashlight::flashlight-text
+  flashlight::flashlight-text-kenlm
   flashlight::flashlight-sequence
   )
 
@@ -81,7 +73,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/augmentation/CMakeLists.txt)
 
 ## --------------------------- Tests ---------------------------
 
-## Build tests
+# Build tests
 if (FL_BUILD_TESTS)
   add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test)
 endif()
