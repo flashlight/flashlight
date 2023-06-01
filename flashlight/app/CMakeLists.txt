@@ -14,11 +14,11 @@ function(register_app)
 
   set(_option_name "FL_BUILD_APP_${_app_name_upper}")
   fl_dependent_option(
-    ${_option_name}
-    "Build ${_app_name_lower} app for Flashlight"
-    OFF
-    "${register_app_DEPENDENT_OPTS}"
-    OFF
+    OPTION ${_option_name}
+    TEXT "Build ${_app_name_lower} app for Flashlight"
+    VAL OFF
+    DEPS "${register_app_DEPENDENT_OPTS}"
+    FRCE OFF
   )
 
   if(${_option_name})
