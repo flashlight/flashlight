@@ -42,12 +42,10 @@ jobs:
         if: runner.os == 'Windows' && matrix.backend == 'ArrayFire'
       # oneDNN
       - name: Install oneDNN 2.7.2 with microconda
-        uses: mamba-org/provision-with-micromamba@main
+        uses: mamba-org/setup-micromamba@v1
         with:
-          environment-file: false
           environment-name: flashlight
-          channels: conda-forge
-          extra-specs: onednn=2.7.2
+          create-args: onednn=2.7.2
         if: matrix.backend == 'oneDNN' || matrix.autograd_backend == 'oneDNN'
 
       # Build
