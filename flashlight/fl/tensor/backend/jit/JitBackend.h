@@ -9,6 +9,7 @@
 
 #include "flashlight/fl/tensor/TensorAdapter.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
+#include "flashlight/fl/tensor/backend/jit/ir/BinaryNode.h"
 #include "flashlight/fl/tensor/backend/jit/ir/Node.h"
 
 namespace fl {
@@ -21,8 +22,10 @@ class JitBackend : public TensorBackend {
   TensorBackend& wrappedBackend_;
   std::function<Tensor(Node*)> jitTensorCreator_;
 
-  template<typename T>
+  template <typename T>
   Tensor fullWithType(const Shape& shape, T value, dtype type);
+  Tensor
+  createBinopJitTensor(const Tensor& lhs, const Tensor& rhs, BinaryOp op);
 
  public:
   JitBackend(

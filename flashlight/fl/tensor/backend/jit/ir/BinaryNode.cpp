@@ -16,21 +16,22 @@ namespace {
 /**
  * Rule:
  *    LHS: (r1, ..., rn)
- *    RHS: (l1, ..., ln)
- *  where ri == li, or 1 ∈ (ri, li)
- *  output shape: (max(r1, l1), ..., max(rn, ln))
- * TODO allow different # of dimensions.
+ *    RHS: (l1, ..., lm)
+ *  where
+ *    n < m (WLoG)
+ *    ∀ i <= n, ri == li or 1 ∈ (ri, li)
+ *  output shape: (max(r1, l1), ..., max(rn, ln), ..., lm)
  */
 std::optional<Shape> getBinopOutputShape(const Shape& lhs, const Shape& rhs) {
-  if (lhs.ndim() != rhs.ndim()) {
-    return std::nullopt;
-  }
   // check and accumulate output dimensions
-  auto ndim = lhs.ndim();
+  const auto lhsRank = lhs.ndim();
+  const auto rhsRank = rhs.ndim();
+  const auto maxRank = std::max(lhsRank, rhsRank);
   std::vector<Dim> dstDims;
-  for (auto i = 0; i < ndim; ++i) {
-    auto lhsDim = lhs.dim(i);
-    auto rhsDim = rhs.dim(i);
+  for (auto i = 0; i < maxRank; ++i) {
+    // if one side ran out, fill it with 1, so it'll broadcast to the other side
+    const auto lhsDim = i < lhsRank ? lhs.dim(i) : 1;
+    const auto rhsDim = i < rhsRank ? rhs.dim(i) : 1;
     if (lhsDim != rhsDim && lhsDim != 1 && rhsDim != 1) {
       return std::nullopt;
     }
@@ -50,7 +51,7 @@ BinaryNode* BinaryNode::create(Node* lhs, Node* rhs, BinaryOp op) {
     std::ostringstream oss;
     oss << "[BinaryNode::create] Invalid shapes: " << lhs->shape() << " and "
         << rhs->shape();
-    throw std::runtime_error(oss.str());
+    throw std::invalid_argument(oss.str());
   }
   return new BinaryNode(lhs, rhs, op, outputShapeOpt.value());
 }
