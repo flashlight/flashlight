@@ -497,6 +497,9 @@ jobs:
       autograd_backend:
         type: string
         default: cudnn
+      build_parallelism:
+        type: string
+        default: ""
     executor: << parameters.platform >>
     steps:
       - install-all-dependencies:
@@ -517,7 +520,7 @@ jobs:
               -DFL_BUILD_APP_IMGCLASS=$([ "<< parameters.pkg >>" == "vision" ] && echo "ON" || echo "OFF") \
               -DFL_BUILD_APP_OBJDET=$([ "<< parameters.pkg >>" == "vision" ] && echo "ON" || echo "OFF") \
               -DFL_BUILD_APP_LM=$([ "<< parameters.pkg >>" == "text" ] && echo "ON" || echo "OFF")
-            cmake --build build --parallel
+            cmake --build build --parallel << parameters.build_parallelism >>
 
 workflows:
   version: 2
@@ -587,5 +590,8 @@ workflows:
               platform: [linux]
               backend: [arrayfire]
               autograd_backend: [cudnn]
+              build_parallelism: ["8"]
           requires:
             - build-flashlight-pkg-<< matrix.pkg >>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+
+      # TODO: eventually add macOS and Linux arm64 baselines for pkg/app
