@@ -40,3 +40,16 @@ if (NOT MSVC)
   setup_install_find_module(${PROJECT_SOURCE_DIR}/cmake/FindFilesystem.cmake)
   target_link_libraries(flashlight PUBLIC std::filesystem)
 endif()
+
+# backward-cpp
+option(FL_BUILD_BACKWARD_CPP "Build with backward-cpp support" ON)
+if (FL_BUILD_BACKWARD_CPP)
+  find_package(Backward CONFIG)
+  if (NOT Backward_FOUND)
+    message(STATUS "backward-cpp not found - will download and build from source")
+    include(${PROJECT_SOURCE_DIR}/cmake/BuildBackwardCpp.cmake)
+  endif()
+  target_sources(flashlight PRIVATE ${CMAKE_CURRENT_LIST_DIR}/backward/Backward.cpp)
+  # only use include dirs/compiler defs
+  target_link_libraries(flashlight PUBLIC $<BUILD_INTERFACE:Backward::Backward>)
+endif()

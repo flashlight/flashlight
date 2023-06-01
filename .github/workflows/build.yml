@@ -121,4 +121,5 @@ jobs:
             -DFL_USE_ONEDNN=OFF \
             -DFL_USE_CUDNN=OFF \
             -DFL_BUILD_DISTRIBUTED=OFF \
-            -DFL_BUILD_EXAMPLES=ON
+            -DFL_BUILD_EXAMPLES=ON \
+            -DFL_BUILD_BACKWARD_CPP=OFF
