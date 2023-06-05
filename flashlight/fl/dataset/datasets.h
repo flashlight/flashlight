@@ -17,6 +17,7 @@
 #include "flashlight/fl/dataset/MergeDataset.h"
 #include "flashlight/fl/dataset/PrefetchDataset.h"
 #include "flashlight/fl/dataset/ResampleDataset.h"
+#include "flashlight/fl/dataset/SpanDataset.h"
 #include "flashlight/fl/dataset/ShuffleDataset.h"
 #include "flashlight/fl/dataset/TensorDataset.h"
 #include "flashlight/fl/dataset/TransformDataset.h"

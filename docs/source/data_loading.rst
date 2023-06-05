@@ -46,6 +46,12 @@ ShuffleDataset
    :members:
    :undoc-members:
 
+SpanDataset
+^^^^^^^^^^^^^^
+.. doxygenclass:: fl::SpanDataset
+   :members:
+   :undoc-members:
+
 TensorDataset
 ^^^^^^^^^^^^^
 .. doxygenclass:: fl::TensorDataset
