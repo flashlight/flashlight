@@ -7,6 +7,7 @@
 
 #include "flashlight/fl/tensor/backend/jit/printer/GraphvizPrinter.h"
 
+#include <algorithm>
 #include <cmath>
 #include <iomanip>
 #include <string>
