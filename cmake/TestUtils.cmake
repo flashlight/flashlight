@@ -8,7 +8,7 @@ if (NOT GTEST_FOUND)
   if (NOT TARGET gtest)
     message(STATUS "googletest not found - will download and build from source")
     # Download and build googletest
-    include(${CMAKE_MODULE_PATH}/BuildGoogleTest.cmake) # internally sets GTEST_LIBRARIES
+    include(${PROJECT_SOURCE_DIR}/cmake/BuildGoogleTest.cmake)
     list(APPEND GTEST_IMPORTED_TARGETS GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
   endif()
 else()
@@ -49,7 +49,7 @@ function(build_test)
     PUBLIC
     ${GTEST_IMPORTED_TARGETS}
     ${build_test_LIBS}
-     ${CMAKE_THREAD_LIBS_INIT}
+    ${CMAKE_THREAD_LIBS_INIT}
     )
   target_include_directories(
     ${target}
@@ -61,5 +61,13 @@ function(build_test)
     PUBLIC
     ${build_test_PREPROC}
     )
+  if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    target_compile_definitions(
+      ${target}
+      PUBLIC
+      GTEST_LINKED_AS_SHARED_LIBRARY=$<BOOL:${BUILD_SHARED_LIBS}>
+      GMOCK_LINKED_AS_SHARED_LIBRARY=$<BOOL:${BUILD_SHARED_LIBS}>
+    )
+  endif()
   gtest_add_tests(TARGET ${target})
 endfunction(build_test)

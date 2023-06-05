@@ -150,7 +150,7 @@ Tensor join(
     for (int d = 0; d < maxNumDims; ++d) {
       sel[d] = fl::range(inputs[i].dim(d));
     }
-    sel[batchDim] = fl::range(i, i);
+    sel[batchDim] = fl::range(i, i + 1);
     if (!inputs[i].isEmpty()) {
       padSeq(sel) = inputs[i];
     }

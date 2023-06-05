@@ -1,11 +1,11 @@
-cmake_minimum_required(VERSION 3.10)
-project(flashlight-examples LANGUAGES CXX C VERSION 0.3.2)
+cmake_minimum_required(VERSION 3.16)
+project(flashlight-examples LANGUAGES CXX C VERSION 0.4.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# If building in source, we already have these targets.
+# If building in source, we already have the flashlight target
 if (NOT TARGET flashlight)
-  find_package(flashlight)
+  find_package(flashlight CONFIG REQUIRED)
 endif ()
 
 function(build_example SRCFILE)
@@ -29,6 +29,6 @@ build_example(Classification.cpp)
 build_example(Xor.cpp)
 build_example(AdaptiveClassification.cpp)
 
-if (FL_BUILD_DISTRIBUTED OR TARGET flashlight::Distributed)
+if (FL_BUILD_DISTRIBUTED)
   build_example(DistributedTraining.cpp)
 endif ()

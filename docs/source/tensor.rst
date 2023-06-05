@@ -19,7 +19,7 @@ Flashlight Tensors can be indexed by index literal values, ranges, spans (``fl::
 .. doxygenclass:: fl::range
    :members:
 
-.. doxygenclass:: fl::Index
+.. doxygenstruct:: fl::Index
    :members:
 
 Functions on Tensors

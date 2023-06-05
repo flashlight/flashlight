@@ -7,10 +7,12 @@
 
 #include <cmath>
 #include <exception>
+#include <limits>
 #include <stdexcept>
 
 #include <gtest/gtest.h>
 
+#include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/backend/onednn/OneDnnBackend.h"
 #include "flashlight/fl/tensor/backend/onednn/OneDnnTensor.h"
@@ -63,7 +65,7 @@ void assertOneDnnTensorEq(fl::Tensor&& lhs, fl::Tensor&& rhs) {
 // usually we just need to specify output type, like mapFunc<float>(...);
 template <typename Out, typename In>
 std::vector<Out> mapFunc(const std::vector<In>& inputs, Out (*func)(In)) {
-  return mapFunc<Out>(inputs, [func](In x){ return func(x); });
+  return mapFunc<Out>(inputs, [func](In x) { return func(x); });
 }
 
 template <typename Out, typename In, typename Func>
@@ -288,7 +290,8 @@ TEST(OneDnnTensorTest, arithmetics) {
   auto t3 = fl::Tensor::fromVector<int>({2, 2}, {3, 5, 7, 9});
 
   assertOneDnnTensorEq( // implicit casting
-      t1 + t2, fl::Tensor::fromVector<float>({2, 2}, {1, 3, 5, 7}));
+      t1 + t2,
+      fl::Tensor::fromVector<float>({2, 2}, {1, 3, 5, 7}));
 
   // literal with casting
   auto t = fl::Tensor::fromVector<float>({2, 2}, {1, 2, 3, 4});
@@ -359,7 +362,7 @@ TEST(OneDnnTensorTest, minimumMaximum) {
 }
 
 TEST(OneDnnTensorTest, logicalBinops) {
-  auto t1 = fl::Tensor::fromVector<char>({2, 2}, {0, -3, 0, 5});
+  auto t1 = fl::Tensor::fromVector<char>({2, 2}, {0, 3, 0, 5});
   auto t2 = fl::Tensor::fromVector<int>({2, 2}, {0, 2, -1, 0});
   auto t3 = fl::Tensor::fromVector<int>({2}, {0, 2, -1, 0});
   auto t4 = fl::Tensor::fromVector<int>({2, 1}, {0, 2, -1, 0});
@@ -374,27 +377,28 @@ TEST(OneDnnTensorTest, logicalBinops) {
 
 TEST(OneDnnTensorTest, assign) {
   const auto type = fl::dtype::f32;
-  auto t1 = fl::full({2, 2, 2}, 40.7, type);
-  auto t2 = fl::full({2, 2, 2}, 23, type);
+  auto t1 = fl::full({2, 2}, 40.7, type);
+  auto t2 = fl::full({2, 2}, 23, type);
 
   // ensure it's not a shallow copy
   t2 = t1;
-  t1 = fl::full({2, 2, 2}, 0, type); // t2 won't be affected
-  assertOneDnnTensorEq(t1, fl::full({2, 2, 2}, 0, type));
-  assertOneDnnTensorEq(t2, fl::full({2, 2, 2}, 40.7, type));
+  t1(0) = fl::full({2}, 0, type);
+  assertOneDnnTensorEq(
+      t1, fl::Tensor::fromVector<float>({2, 2}, {0, 40.7, 0, 40.7}, type));
+  assertOneDnnTensorEq(t2, fl::full({2, 2}, 40.7, type));
 }
 
 TEST(OneDnnTensorTest, copy) {
   const auto type = fl::dtype::f32;
-  auto t1 = fl::full({2, 2, 2}, 40.7, type);
+  auto t1 = fl::full({2, 2}, 40.7, type);
   assertOneDnnTensorEq(t1, t1.copy());
 
   // ensure it's not a shallow copy
-  // TODO properly test against effects once we support indexing
   auto t2 = t1.copy();
-  t1 = fl::full({2, 2, 2}, 0, type); // t2 won't be affected
-  assertOneDnnTensorEq(t1, fl::full({2, 2, 2}, 0, type));
-  assertOneDnnTensorEq(t2, fl::full({2, 2, 2}, 40.7, type));
+  t1(0) = fl::full({2}, 0, type);
+  assertOneDnnTensorEq(
+      t1, fl::Tensor::fromVector<float>({2, 2}, {0, 40.7, 0, 40.7}, type));
+  assertOneDnnTensorEq(t2, fl::full({2, 2}, 40.7, type));
 }
 
 TEST(OneDnnTensorTest, rand) {
@@ -454,7 +458,13 @@ TEST(OneDnnTensorTest, eltwiseCompute) {
 }
 
 TEST(OneDnnTensorTest, eltwiseLogical) {
-  std::vector<float> t1Data = {1.0f / 0, 2, 0.2f, -2.0f / 0, -2, 0};
+  std::vector<float> t1Data = {
+      std::numeric_limits<float>::infinity(),
+      2,
+      0.2f,
+      -std::numeric_limits<float>::infinity(),
+      -2,
+      0};
   auto t1 = fl::Tensor::fromVector({2, 3}, t1Data);
 
   assertOneDnnTensorEq(
@@ -485,8 +495,7 @@ TEST(OneDnnTensorTest, reduction) {
   assertOneDnnTensorEq(fl::sum(t1, {1}), fl::full({2, 4}, 126, fl::dtype::f32));
   assertOneDnnTensorEq(
       fl::amax(t0, {1}), fl::Tensor::fromVector<float>({2}, {33, 0}));
-  assertOneDnnTensorEq(
-      fl::amin(t0), fl::Tensor::fromVector<float>({}, {-1}));
+  assertOneDnnTensorEq(fl::amin(t0), fl::Tensor::fromVector<float>({}, {-1}));
   assertOneDnnTensorEq(
       fl::countNonzero(t0), fl::Tensor::fromVector<int>({}, {2}));
   assertOneDnnTensorEq(
@@ -503,16 +512,17 @@ TEST(OneDnnTensorTest, matmul) {
   auto t1 = fl::Tensor::fromVector<float>({2, 3}, {1, 4, 2, 5, 3, 6});
   auto t2 = fl::Tensor::fromVector<float>({3, 2}, {2, 3, 4, 5, 6, 7});
   auto res1 = backend.matmul(t1, t2, MP::None, MP::None);
-  assertOneDnnTensorEq(res1,
-      fl::Tensor::fromVector<float>({2, 2}, {20, 47, 38, 92}));
+  assertOneDnnTensorEq(
+      res1, fl::Tensor::fromVector<float>({2, 2}, {20, 47, 38, 92}));
 
   // 1 4  X  2 3 4  = 22 27 32
   // 2 5     5 6 7    29 36 43
   // 3 6              36 45 54
   auto res2 = backend.matmul(t1, t2, MP::Transpose, MP::Transpose);
-  assertOneDnnTensorEq(res2,
-      fl::Tensor::fromVector<float>({3, 3},
-        {22, 29, 36, 27, 36, 45, 32, 43, 54}));
+  assertOneDnnTensorEq(
+      res2,
+      fl::Tensor::fromVector<float>(
+          {3, 3}, {22, 29, 36, 27, 36, 45, 32, 43, 54}));
 }
 
 TEST(OneDnnTensorTest, matmulShapes) {
@@ -526,26 +536,26 @@ TEST(OneDnnTensorTest, matmulShapes) {
     std::optional<fl::Shape> dstShape;
   };
   const std::vector<Input> inputs = {
-    // scalar/vector
-    {{}, {}, MP::None, MP::None, {{1}}},
-    {{2}, {}, MP::None, MP::None, std::nullopt},
-    {{}, {3}, MP::None, MP::None, std::nullopt},
-    {{4}, {4}, MP::None, MP::None, {{1}}},
-    {{2}, {3}, MP::None, MP::None, std::nullopt},
-    {{2}, {2, 3}, MP::None, MP::None, {{3}}},
-    {{2, 3}, {3}, MP::None, MP::None, {{2}}},
-    // matrix
-    {{3, 2}, {2, 3}, MP::None, MP::None, {{3, 3}}},
-    {{3, 2}, {2, 3}, MP::Transpose, MP::Transpose, {{2, 2}}},
-    {{2, 3}, {2, 3}, MP::Transpose, MP::None, {{3, 3}}},
-    {{2, 3}, {2, 3}, MP::None, MP::Transpose, {{2, 2}}},
-    {{2, 3}, {2, 3}, MP::None, MP::Transpose, {{2, 2}}},
-    // batch matrix
-    {{2, 3, 42}, {2, 3, 42}, MP::None, MP::Transpose, {{2, 2, 42}}},
-    {{2, 3, 41}, {2, 3, 42}, MP::None, MP::Transpose, std::nullopt},
-    // TODO support broadcast
-    {{2, 3, 1}, {2, 3, 42}, MP::None, MP::Transpose, std::nullopt},
-    {{2, 3}, {2, 3, 42}, MP::None, MP::Transpose, std::nullopt},
+      // scalar/vector
+      {{}, {}, MP::None, MP::None, {{1}}},
+      {{2}, {}, MP::None, MP::None, std::nullopt},
+      {{}, {3}, MP::None, MP::None, std::nullopt},
+      {{4}, {4}, MP::None, MP::None, {{1}}},
+      {{2}, {3}, MP::None, MP::None, std::nullopt},
+      {{2}, {2, 3}, MP::None, MP::None, {{3}}},
+      {{2, 3}, {3}, MP::None, MP::None, {{2}}},
+      // matrix
+      {{3, 2}, {2, 3}, MP::None, MP::None, {{3, 3}}},
+      {{3, 2}, {2, 3}, MP::Transpose, MP::Transpose, {{2, 2}}},
+      {{2, 3}, {2, 3}, MP::Transpose, MP::None, {{3, 3}}},
+      {{2, 3}, {2, 3}, MP::None, MP::Transpose, {{2, 2}}},
+      {{2, 3}, {2, 3}, MP::None, MP::Transpose, {{2, 2}}},
+      // batch matrix
+      {{2, 3, 42}, {2, 3, 42}, MP::None, MP::Transpose, {{2, 2, 42}}},
+      {{2, 3, 41}, {2, 3, 42}, MP::None, MP::Transpose, std::nullopt},
+      // TODO support broadcast
+      {{2, 3, 1}, {2, 3, 42}, MP::None, MP::Transpose, std::nullopt},
+      {{2, 3}, {2, 3, 42}, MP::None, MP::Transpose, std::nullopt},
   };
   for (auto& input : inputs) {
     const auto lhs = backend.rand(input.lhsShape, fl::dtype::f32);
@@ -553,17 +563,18 @@ TEST(OneDnnTensorTest, matmulShapes) {
     if (input.dstShape.has_value()) {
       const auto res = backend.matmul(lhs, rhs, input.lhsMP, input.rhsMP);
       ASSERT_EQ(res.shape(), input.dstShape.value())
-        << input.lhsShape << " X " << input.rhsShape;
+          << input.lhsShape << " X " << input.rhsShape;
     } else {
-      ASSERT_THROW(backend.matmul(lhs, rhs, input.lhsMP, input.rhsMP),
+      ASSERT_THROW(
+          backend.matmul(lhs, rhs, input.lhsMP, input.rhsMP),
           std::invalid_argument);
     }
   }
 }
 
 TEST(OneDnnTensorTest, max) {
-  using fl::Tensor;
   using fl::Shape;
+  using fl::Tensor;
   // 1 4 5
   // 2 3 6
   Tensor in = Tensor::fromVector<float>({2, 3}, {1, 2, 4, 3, 5, 6});
@@ -587,8 +598,8 @@ TEST(OneDnnTensorTest, max) {
 }
 
 TEST(OneDnnTensorTest, min) {
-  using fl::Tensor;
   using fl::Shape;
+  using fl::Tensor;
   // 1 4 5
   // 2 3 6
   Tensor in = Tensor::fromVector<float>({2, 3}, {1, 2, 4, 3, 5, 6});
@@ -625,6 +636,46 @@ TEST(OneDnnTensorTest, reshape) {
   ASSERT_NO_THROW(fl::reshape(a, {1, 4, 4}));
   ASSERT_NO_THROW(fl::reshape(a, {4, 1, 4}));
   ASSERT_NO_THROW(fl::reshape(a, {1, 4, 4, 1}));
+}
+
+TEST(OneDnnTensorTest, index) {
+  auto a = fl::Tensor::fromVector<float>({2, 2}, {1, 2, 3, 4});
+  // indexing for read
+  assertOneDnnTensorEq(a(0), fl::Tensor::fromVector<float>({2}, {1, 3}));
+  assertOneDnnTensorEq(a(0) + a(1), fl::Tensor::fromVector<float>({2}, {3, 7}));
+
+  // indexing for write
+  a(0) = fl::Tensor::fromVector<float>({2}, {0, 1});
+  assertOneDnnTensorEq(a, fl::Tensor::fromVector<float>({2, 2}, {0, 2, 1, 4}));
+
+  // indexing composability
+  a(0)(1) = fl::Tensor::fromVector<float>({}, {42});
+  assertOneDnnTensorEq(a, fl::Tensor::fromVector<float>({2, 2}, {0, 2, 42, 4}));
+}
+
+TEST(OneDnnTensorTest, tile) {
+  auto a = fl::Tensor::fromVector<float>({2, 2}, {1, 2, 3, 4});
+  assertOneDnnTensorEq(
+      fl::tile(a, {2}),
+      fl::Tensor::fromVector<float>({4, 2}, {1, 2, 1, 2, 3, 4, 3, 4}));
+  assertOneDnnTensorEq(
+      fl::tile(a(fl::span, 1), {2}),
+      fl::Tensor::fromVector<float>({4}, {3, 4, 3, 4}));
+}
+
+TEST(OneDnnTensorTest, arange) {
+  // Range/step overload
+  assertOneDnnTensorEq(
+      fl::arange(2, 10, 2), fl::Tensor::fromVector<int>({2, 4, 6, 8}));
+  assertOneDnnTensorEq(
+      fl::arange(0, 6), fl::Tensor::fromVector<int>({0, 1, 2, 3, 4, 5}));
+
+  // Shape overload
+  assertOneDnnTensorEq(
+      fl::arange({4}), fl::Tensor::fromVector<float>({0, 1, 2, 3}));
+  assertOneDnnTensorEq(
+      fl::arange({2, 2}, 1),
+      fl::Tensor::fromVector<float>({2, 2}, {0, 0, 1, 1}));
 }
 
 int main(int argc, char** argv) {

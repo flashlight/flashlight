@@ -5,10 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <array>
 #include <vector>
+#include <utility>
 
 #include <gtest/gtest.h>
 
+#include "flashlight/fl/tensor/DefaultTensorType.h"
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/Random.h"
@@ -19,7 +22,7 @@ using namespace fl;
 
 TEST(TensorBaseTest, DefaultBackend) {
   Tensor t;
-  ASSERT_EQ(t.backendType(), TensorBackendType::ArrayFire);
+  ASSERT_EQ(t.backendType(), DefaultTensorType_t::tensorBackendType);
 }
 
 TEST(TensorBaseTest, DefaultConstruction) {
@@ -62,12 +65,22 @@ TEST(TensorBaseTest, MoveConstruction) {
   auto z = std::move(x); // `z` takes over `x`'s data
   // TODO the following line (or any read to `y`, as it seems) promotes view to
   // copy; to avoid this, we must update impl of `assign`
-  //ASSERT_TRUE(allClose(y, fl::full(shape, 0)));
+  // ASSERT_TRUE(allClose(y, fl::full(shape, 0)));
   ASSERT_TRUE(allClose(z, fl::full(shape, 0)));
 
   z += 42; // `y` is now a view of `z`, so it's affected
   ASSERT_TRUE(allClose(y, fl::full(shape, 42)));
   ASSERT_TRUE(allClose(z, fl::full(shape, 42)));
+}
+
+TEST(TensorBaseTest, ImplTypeConversion) {
+  // Converting to the same type is a noop
+  auto a = fl::rand({6, 8});
+  auto c = a.copy();
+  TensorBackendType aBackend = a.backendType();
+  auto b =  to<DefaultTensorType_t>(std::move(a));
+  ASSERT_EQ(aBackend, b.backendType());
+  ASSERT_TRUE(allClose(b, c));
 }
 
 TEST(TensorBaseTest, AssignmentOperatorLvalueWithRvalue) {
@@ -77,7 +90,7 @@ TEST(TensorBaseTest, AssignmentOperatorLvalueWithRvalue) {
 
   // view as a lvalue cannot be used to update original tensor
   y = fl::full({2, 2}, 42); // `x` isn't affected
-  y += 1;                   // `x` isn't affected
+  y += 1; // `x` isn't affected
   ASSERT_TRUE(allClose(x, fl::full(shape, 0)));
   ASSERT_TRUE(allClose(y, fl::full(shape, 43)));
 }
@@ -88,7 +101,7 @@ TEST(TensorBaseTest, AssignmentOperatorLvalueWithLvalue) {
   auto y = x(span, span);
   auto z = fl::full({2, 2}, 1);
 
-  y = z;  // `x` is a copy of `z` now (impl may be CoW)
+  y = z; // `x` is a copy of `z` now (impl may be CoW)
   y += 1; // `z` isn't affected
   ASSERT_TRUE(allClose(x, fl::full(shape, 0)));
   ASSERT_TRUE(allClose(y, fl::full(shape, 2)));
@@ -115,7 +128,7 @@ TEST(TensorBaseTest, AssignmentOperatorRvalueWithLvalue) {
   auto z = fl::full({2}, 1, type);
 
   x(span, 1) = z; // `x` is updated by copying from `z`'s data
-  x += 1;         // `z` isn't affected
+  x += 1; // `z` isn't affected
   auto res = fl::Tensor::fromVector<float>(shape, {1, 1, 2, 2}, type);
   ASSERT_TRUE(allClose(x, res));
   ASSERT_TRUE(allClose(y, res));
@@ -134,6 +147,13 @@ TEST(TensorBaseTest, Metadata) {
   ASSERT_TRUE(e.isEmpty());
   ASSERT_FALSE(e.isSparse());
   ASSERT_FALSE(e.isLocked());
+}
+
+TEST(TensorBaseTest, hasAdapter) {
+  Tensor a = fromScalar(3.14, fl::dtype::f32);
+  ASSERT_TRUE(a.hasAdapter());
+  detail::releaseAdapterUnsafe(a);
+  ASSERT_FALSE(a.hasAdapter());
 }
 
 TEST(TensorBaseTest, fromScalar) {
@@ -462,43 +482,41 @@ void assertScalarBehavior(fl::dtype type) {
 
   if (dtype_traits<ScalarArgType>::fl_type != type) {
     ASSERT_THROW(one.template scalar<ScalarArgType>(), std::invalid_argument)
-    << "dtype: " << type
-    << ", ScalarArgType: " << dtype_traits<ScalarArgType>::getName();
+        << "dtype: " << type
+        << ", ScalarArgType: " << dtype_traits<ScalarArgType>::getName();
     return;
   }
 
-  if ((type == fl::dtype::f16) ||
-      (type == fl::dtype::f32) ||
+  if ((type == fl::dtype::f16) || (type == fl::dtype::f32) ||
       (type == fl::dtype::f64)) {
     ASSERT_FLOAT_EQ(one.template scalar<ScalarArgType>(), scalar)
-    << "dtype: " << type
-    << ", ScalarArgType: " << dtype_traits<ScalarArgType>::getName();
+        << "dtype: " << type
+        << ", ScalarArgType: " << dtype_traits<ScalarArgType>::getName();
   } else {
     ASSERT_EQ(one.template scalar<ScalarArgType>(), scalar)
-    << "dtype: " << type
-    << ", ScalarArgType: " << dtype_traits<ScalarArgType>::getName();
+        << "dtype: " << type
+        << ", ScalarArgType: " << dtype_traits<ScalarArgType>::getName();
   }
 
   auto a = fl::rand({5, 6}, type);
   ASSERT_TRUE(allClose(fl::full({1}, a.scalar<ScalarArgType>(), type), a(0, 0)))
-    << "dtype: " << type
-    << ", ScalarArgType: " << dtype_traits<ScalarArgType>::getName();
+      << "dtype: " << type
+      << ", ScalarArgType: " << dtype_traits<ScalarArgType>::getName();
 }
 
 TEST(TensorBaseTest, scalar) {
   auto types = {
-    fl::dtype::b8,
-    fl::dtype::u8,
-    fl::dtype::s16,
-    fl::dtype::u16,
-    fl::dtype::s32,
-    fl::dtype::u32,
-    fl::dtype::s64,
-    fl::dtype::u64,
-    fl::dtype::f16,
-    fl::dtype::f32,
-    fl::dtype::f64
-  };
+      fl::dtype::b8,
+      fl::dtype::u8,
+      fl::dtype::s16,
+      fl::dtype::u16,
+      fl::dtype::s32,
+      fl::dtype::u32,
+      fl::dtype::s64,
+      fl::dtype::u64,
+      fl::dtype::f16,
+      fl::dtype::f32,
+      fl::dtype::f64};
   for (auto type : types) {
     assertScalarBehavior<char>(type);
     assertScalarBehavior<unsigned char>(type);
@@ -537,7 +555,7 @@ TEST(TensorBaseTest, stream) {
 TEST(TensorBaseTest, asContiguousTensor) {
   auto t = fl::rand({5, 6, 7, 8});
   auto indexed =
-    t(fl::range(1, 4, 2),
+      t(fl::range(1, 4, 2),
         fl::range(0, 6, 2),
         fl::range(0, 6, 3),
         fl::range(0, 5, 3));

@@ -22,7 +22,8 @@ namespace fl {
 enum class TensorExtensionType {
   Generic, // placeholder
   Autograd,
-  Vision
+  Vision,
+  JitOptimizer,
 };
 
 // Common base type
@@ -75,6 +76,10 @@ class TensorExtensionRegistrar {
         });
   }
 
+  bool isTensorExtensionRegistered(
+      TensorBackendType backend,
+      TensorExtensionType extensionType);
+
   TensorExtensionCallback& getTensorExtensionCreationFunc(
       TensorBackendType backend,
       TensorExtensionType extensionType);
@@ -86,7 +91,7 @@ class TensorExtensionRegistrar {
  * Register a tensor extension. Template type T is the type of the tensor
  * extension
  *
- * @param[in] backendType the type of ht ebackend to register the extension to.
+ * @param[in] backendType the type of the backend to register the extension to.
  * See TensorBackendType.
  */
 template <typename T>
@@ -103,18 +108,21 @@ class TensorExtension : public TensorExtensionBase {
   }
 };
 
+template <typename T>
+struct TensorExtensionRegisterer {
+  TensorExtensionRegisterer(TensorBackendType t) {
+    ::fl::registerTensorExtension<T>(t);
+  }
+};
+
 /**
  * Register a tensor extension.
  *
  * @param[in] T the class type of the tensor extension
- * @param[in] backendType the type of ht ebackend to register the extension to.
+ * @param[in] backendType the type of the backend to register the extension to.
  * See TensorBackendType.
  */
-#define FL_REGISTER_TENSOR_EXTENSION(T, BACKEND_TYPE)                \
-  static_assert(                                                     \
-      std::is_same<decltype(T::registered), bool>::value,            \
-      "Registered Tensor extension does not have static bool field " \
-      "called \"registered\"");                                      \
-  bool T::registered = ::fl::registerTensorExtension<T>(BACKEND_TYPE);
+#define FL_REGISTER_TENSOR_EXTENSION(T, BACKEND_TYPE) \
+  TensorExtensionRegisterer<T> T##BACKEND_TYPE(TensorBackendType::BACKEND_TYPE)
 
 } // namespace fl

@@ -20,6 +20,8 @@
 
 namespace fl {
 
+class ArrayFireBackend;
+
 /**
  * Tensor adapter for the ArrayFire tensor library. Maps operations expressed in
  * Flashlight Tensors to ArrayFire.
@@ -108,6 +110,8 @@ class ArrayFireTensor : public TensorAdapterBase {
   unsigned numDims_{1};
 
  public:
+ constexpr static TensorBackendType tensorBackendType = TensorBackendType::ArrayFire;
+
   /**
    * Constructs an ArrayFireTensor.
    *

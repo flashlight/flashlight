@@ -14,7 +14,6 @@
 #include "flashlight/pkg/speech/criterion/attention/attention.h"
 #include "flashlight/pkg/speech/criterion/attention/window.h"
 
-#include "flashlight/pkg/runtime/common/DistributedUtils.h"
 #include "flashlight/fl/contrib/modules/Transformer.h"
 
 namespace fl {
@@ -52,14 +51,11 @@ class TransformerCriterion : public SequenceCriterion {
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;
 
-  Tensor viterbiPath(
-      const Tensor& input,
-      const Tensor& inputSizes = Tensor()) override;
+  Tensor viterbiPath(const Tensor& input, const Tensor& inputSizes = Tensor())
+      override;
 
-  std::pair<Tensor, fl::Variable> viterbiPathBase(
-      const Tensor& input,
-      const Tensor& inputSizes,
-      bool saveAttn);
+  std::pair<Tensor, fl::Variable>
+  viterbiPathBase(const Tensor& input, const Tensor& inputSizes, bool saveAttn);
 
   std::pair<fl::Variable, fl::Variable> vectorizedDecoder(
       const fl::Variable& input,
@@ -149,7 +145,7 @@ struct TS2SDecoderBuffer {
   }
 };
 
-AMUpdateFunc buildSeq2SeqTransformerAmUpdateFunction(
+EmittingModelUpdateFunc buildSeq2SeqTransformerUpdateFunction(
     std::shared_ptr<SequenceCriterion>& criterion,
     int beamSize,
     float attThr,

@@ -7,11 +7,10 @@
 #include "flashlight/pkg/speech/criterion/ConnectionistTemporalClassificationCriterion.h"
 
 #include <stdexcept>
-#include "flashlight/lib/sequence/criterion/cpu/ConnectionistTemporalClassificationCriterion.h"
-#include "flashlight/pkg/runtime/common/DistributedUtils.h"
+
+#include <flashlight/lib/sequence/criterion/cpu/ConnectionistTemporalClassificationCriterion.h>
 
 using CTC = fl::lib::cpu::ConnectionistTemporalClassificationCriterion<float>;
-using namespace fl::pkg::runtime;
 
 namespace {
 

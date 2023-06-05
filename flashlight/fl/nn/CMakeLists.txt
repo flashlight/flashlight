@@ -1,16 +1,16 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
-# ----------------------------- NN Modules -----------------------------
-
-set(
-  NN_SOURCES
+target_sources(
+  flashlight
+  PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/Init.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/Utils.cpp # utils
+  ${CMAKE_CURRENT_LIST_DIR}/Utils.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/Activations.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/AdaptiveSoftMax.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/BatchNorm.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/Container.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/Conv2D.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/DistributedUtils.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/Dropout.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/Embedding.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/Identity.cpp
@@ -27,18 +27,4 @@ set(
   ${CMAKE_CURRENT_LIST_DIR}/modules/Transform.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/View.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/WeightNorm.cpp
-  )
-
-if (FL_BUILD_DISTRIBUTED)
-  set(
-    NN_SOURCES
-    ${CMAKE_CURRENT_LIST_DIR}/DistributedUtils.cpp
-    ${NN_SOURCES}
-  )
-endif ()
-
-target_sources(
-  flashlight
-  PRIVATE
-  ${NN_SOURCES}
   )

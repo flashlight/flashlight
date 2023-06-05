@@ -42,16 +42,18 @@ class SequenceCriterion : public fl::Container {
   FL_SAVE_LOAD_WITH_BASE(fl::Container)
 };
 
-typedef std::shared_ptr<void> AMStatePtr;
-typedef std::function<
-    std::pair<std::vector<std::vector<float>>, std::vector<AMStatePtr>>(
-        const float*,
-        const int,
-        const int,
-        const std::vector<int>&,
-        const std::vector<AMStatePtr>&,
-        int&)>
-    AMUpdateFunc;
+using EmittingModelStatePtr = std::shared_ptr<void>;
+using EmittingModelUpdateFunc = std::function<std::pair<
+    std::vector<std::vector<float>>,
+    std::vector<EmittingModelStatePtr>>(
+    const float*,
+    const int,
+    const int,
+    const std::vector<int>&,
+    const std::vector<int>&,
+    const std::vector<EmittingModelStatePtr>&,
+    int&)>;
+
 } // namespace speech
 } // namespace pkg
 } // namespace fl

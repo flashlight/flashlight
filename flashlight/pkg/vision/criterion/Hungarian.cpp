@@ -8,7 +8,7 @@
 
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/tensor/Index.h"
-#include "flashlight/lib/set/Hungarian.h"
+#include "flashlight/pkg/vision/criterion/HungarianImpl.h"
 #include "flashlight/pkg/vision/dataset/BoxUtils.h"
 
 namespace {
@@ -91,8 +91,8 @@ std::vector<std::pair<Tensor, Tensor>> HungarianMatcher::compute(
   std::vector<std::pair<Tensor, Tensor>> results;
   for (int b = 0; b < predBoxes.dim(2); b++) {
     auto result = matchBatch(
-        predBoxes(fl::span, fl::span, fl::range(b, b)),
-        predLogits(fl::span, fl::span, fl::range(b, b)),
+        predBoxes(fl::span, fl::span, fl::range(b, b + 1)),
+        predLogits(fl::span, fl::span, fl::range(b, b + 1)),
         targetBoxes[b],
         targetClasses[b]);
     results.emplace_back(result);

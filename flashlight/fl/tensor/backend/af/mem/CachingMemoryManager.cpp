@@ -110,11 +110,6 @@ CachingMemoryManager::CachingMemoryManager(
       getEnvAsBytesFromFloatMb(kMemRecyclingSize, recyclingSizeLimit_);
   splitSizeLimit_ = getEnvAsBytesFromFloatMb(kMemSplitSize, splitSizeLimit_);
 
-  std::cerr << "CachingMemoryManager recyclingSizeLimit_="
-            << recyclingSizeLimit_ << " (" << formatMemory(recyclingSizeLimit_)
-            << ") splitSizeLimit_=" << splitSizeLimit_ << " ("
-            << formatMemory(splitSizeLimit_) << ')';
-
   for (int i = 0; i < numDevices; ++i) {
     deviceMemInfos_.emplace(
         i, std::make_unique<CachingMemoryManager::DeviceMemoryInfo>(i));

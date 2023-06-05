@@ -357,7 +357,11 @@ void* ArrayFireTensor::getContext() {
 }
 
 std::string ArrayFireTensor::toString() {
-  return std::string(af::toString("ArrayFireTensor", getHandle()));
+  const char* afStr = af::toString("ArrayFireTensor", getHandle());
+  // std::string copies `afStr` content into its own buffer
+  const std::string str(afStr);
+  af::freeHost(afStr);
+  return str;
 }
 
 std::ostream& ArrayFireTensor::operator<<(std::ostream& ostr) {

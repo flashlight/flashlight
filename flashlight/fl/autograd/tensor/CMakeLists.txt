@@ -1,9 +1,8 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
-option(FL_USE_CUDNN "Build ArrayFire tensor backend" OFF)
+option(FL_USE_CUDNN "Build with cuDNN support" OFF)
 
-# Try to find cuDNN
-find_package(CUDNN 7.1) # CUDNN 7.1 works with CUDA 9.2
+find_package(CUDNN)
 if (NOT CUDNN_FOUND AND FL_USE_CUDNN)
   message(FATAL_ERROR
     "cuDNN required to build cuDNN backend: cuDNN was not found")
@@ -12,7 +11,7 @@ if (CUDNN_FOUND AND FL_USE_CUDA)
   message(STATUS
     "CUDNN found (library: ${CUDNN_LIBRARIES} include: ${CUDNN_INCLUDE_DIRS})")
   set(FL_USE_CUDNN ON)
-  setup_install_find_module(${CMAKE_MODULE_PATH}/FindCUDNN.cmake)
+  setup_install_find_module(${PROJECT_SOURCE_DIR}/cmake/FindCUDNN.cmake)
 endif()
 
 if (FL_USE_CUDNN)
@@ -27,6 +26,7 @@ target_compile_definitions(
   flashlight
   PUBLIC
   FL_USE_CUDNN=$<BOOL:${FL_USE_CUDNN}>
+  FL_USE_ONEDNN=$<BOOL:${FL_USE_ONEDNN}>
 )
 
 target_sources(

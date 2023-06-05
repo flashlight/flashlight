@@ -96,7 +96,61 @@ Tensor fullWithTypeCpu(const Shape& shape, V value, const dtype type) {
   return toTensor<OneDnnTensor>(shape, type, data.data(), Location::Host);
 }
 
+template <typename T, typename V>
+Tensor fullWithType(const Shape& shape, V value, const dtype type) {
+  const auto engineKind = OneDnnBackend::getInstance().engine().get_kind();
+  if (engineKind == dnnl::engine::kind::cpu) {
+    return fullWithTypeCpu<T, V>(shape, value, type);
+  } else {
+    throw std::runtime_error(
+        "[OneDnnBackend::fullWithType] unimplemented for non-CPU engine");
+  }
+}
+
+template <typename T>
+Tensor iotaWithTypeCpu(const Shape& shape, const dtype type) {
+  std::vector<T> data(shape.elements());
+  std::iota(data.begin(), data.end(), 0);
+  return toTensor<OneDnnTensor>(shape, type, data.data(), Location::Host);
+}
+
+Tensor iotaSingleAxisCpu(
+    const unsigned ndims,
+    const unsigned axis,
+    const unsigned axisDim,
+    const dtype type) {
+  std::vector<Dim> dims(ndims, 1);
+  dims[axis] = axisDim;
+  const Shape shape(dims);
+  switch (type) {
+    case dtype::f16:
+      return iotaWithTypeCpu<float>(shape, dtype::f32).astype(dtype::f16);
+    case dtype::f32:
+      return iotaWithTypeCpu<float>(shape, type);
+    case dtype::f64:
+      return iotaWithTypeCpu<double>(shape, type);
+    case dtype::b8:
+      return iotaWithTypeCpu<char>(shape, type);
+    case dtype::s16:
+      return iotaWithTypeCpu<short>(shape, type);
+    case dtype::s32:
+      return iotaWithTypeCpu<int>(shape, type);
+    case dtype::s64:
+      return iotaWithTypeCpu<long long>(shape, type);
+    case dtype::u8:
+      return iotaWithTypeCpu<unsigned char>(shape, type);
+    case dtype::u16:
+      return iotaWithTypeCpu<unsigned short>(shape, type);
+    case dtype::u32:
+      return iotaWithTypeCpu<unsigned int>(shape, type);
+    case dtype::u64:
+      return iotaWithTypeCpu<unsigned long long>(shape, type);
+  }
+}
+
 struct BinaryOpOutputDesc {
+  BinaryOpOutputDesc(dnnl::memory::desc desc, Shape shape)
+      : dstMemDesc(std::move(desc)), dstShape(std::move(shape)) {}
   dnnl::memory::desc dstMemDesc;
   const Shape dstShape;
 };
@@ -128,10 +182,10 @@ BinaryOpOutputDesc getBinaryOpOutputDesc(
       lhsMemDesc.data_type(), rhsMemDesc.data_type()));
   // some common fast paths
   if (lhsShape == rhsShape) {
-    return {
-        .dstMemDesc =
-            detail::oneDnnContiguousMemDescFromShape(lhsShape, dstType),
-        .dstShape = lhsShape};
+    BinaryOpOutputDesc(
+        /* desc = */
+        detail::oneDnnContiguousMemDescFromShape(lhsShape, dstType),
+        /* shape = */ lhsShape);
   }
   // only support same # of dimensions for now
   if (lhsShape.ndim() != rhsShape.ndim()) {
@@ -155,9 +209,10 @@ BinaryOpOutputDesc getBinaryOpOutputDesc(
     dstDims.push_back(std::max(lhsDim, rhsDim));
   }
   Shape dstShape(dstDims);
-  return {
-      .dstMemDesc = detail::oneDnnContiguousMemDescFromShape(dstShape, dstType),
-      .dstShape = dstShape};
+  return BinaryOpOutputDesc(
+      /* dstMemDesc = */ detail::oneDnnContiguousMemDescFromShape(
+          dstShape, dstType),
+      /* dstShape = */ dstShape);
 }
 
 template <typename L, typename R, typename T, typename OP>
@@ -342,10 +397,31 @@ dnnl::memory::desc transposeInnerMatrix(const dnnl::memory::desc& memDesc) {
   return memDesc.permute_axes(transposeAxesPermutation);
 }
 
+std::tuple<Shape, Shape> padShorterDimsWithOnesOnTheRight(
+    const Shape& tensorShape,
+    const Shape& tileDims) {
+  std::vector<Dim> paddedTensorDims = tensorShape.get();
+  std::vector<Dim> paddedTileDims = tileDims.get();
+  const auto tensorShapeNDims = tensorShape.ndim();
+  const auto tileDimsNDims = tileDims.ndim();
+  if (tensorShapeNDims > tileDimsNDims) {
+    const auto diff = tensorShapeNDims - tileDimsNDims;
+    paddedTileDims.insert(paddedTileDims.end(), diff, 1);
+  } else {
+    const auto diff = tileDimsNDims - tensorShapeNDims;
+    paddedTensorDims.insert(paddedTensorDims.end(), diff, 1);
+  }
+  return {Shape(paddedTensorDims), Shape(paddedTileDims)};
+}
+
 } // namespace
 
 OneDnnBackend::OneDnnBackend() {
+#if FL_USE_MKL_RNG
   vslNewStream(&randStream_, VSL_BRNG_MCG31, std::rand());
+#else
+  randEngine_ = RandEngineType{static_cast<uint_fast32_t>(std::rand())};
+#endif // FL_USE_MKL_RNG
   engine_ = dnnl::engine(dnnl::engine::kind::cpu, 0);
   stream_ = OneDnnCPUStream::create(engine_);
 }
@@ -411,22 +487,42 @@ void OneDnnBackend::setMemMgrFlushInterval(const size_t /* interval */) {
 /* -------------------------- Rand Functions -------------------------- */
 
 void OneDnnBackend::setSeed(const int seed) {
+#if FL_USE_MKL_RNG
   vslDeleteStream(&randStream_);
   vslNewStream(&randStream_, VSL_BRNG_MCG31, seed);
+#else
+  randEngine_.seed(seed);
+#endif // FL_USE_MKL_RNG
 }
 
 Tensor OneDnnBackend::randnCpu(const Shape& shape, const dtype type) {
   std::vector<float> data(shape.elements());
+#if FL_USE_MKL_RNG
   const auto alg = VSL_RNG_METHOD_GAUSSIAN_BOXMULLER2;
   vsRngGaussian(alg, randStream_, data.size(), data.data(), 0, 1);
+#else
+  std::normal_distribution<float> normal_dist(0, 1);
+  auto* data_ptr = data.data();
+  for (decltype(data.size()) i = 0; i < data.size(); ++i) {
+    data_ptr[i] = normal_dist(randEngine_);
+  }
+#endif // FL_USE_MKL_RNG
   return toTensor<OneDnnTensor>(shape, dtype::f32, data.data(), Location::Host)
       .astype(type);
 }
 
 Tensor OneDnnBackend::randCpu(const Shape& shape, const dtype type) {
   std::vector<float> data(shape.elements());
+#if FL_USE_MKL_RNG
   const auto alg = VSL_RNG_METHOD_UNIFORM_STD;
   vsRngUniform(alg, randStream_, data.size(), data.data(), 0, 1);
+#else
+  std::uniform_real_distribution<float> uniform_dist{};
+  auto* data_ptr = data.data();
+  for (decltype(data.size()) i = 0; i < data.size(); ++i) {
+    data_ptr[i] = uniform_dist(randEngine_);
+  }
+#endif // FL_USE_MKL_RNG
   return toTensor<OneDnnTensor>(shape, dtype::f32, data.data(), Location::Host)
       .astype(type);
 }
@@ -502,12 +598,13 @@ FL_ONEDNN_BACKEND_CREATE_FUN_LITERAL_DEF(const unsigned short&);
 #undef FL_ONEDNN_BACKEND_CREATE_FUN_LITERAL_DEF
 
 template <typename T, typename V>
-Tensor OneDnnBackend::fullWithType(const Shape& shape, V value, const dtype type) {
+Tensor
+OneDnnBackend::fullWithType(const Shape& shape, V value, const dtype type) {
   if (engine_.get_kind() == dnnl::engine::kind::cpu) {
     return fullWithTypeCpu<T, V>(shape, value, type);
   } else {
-  throw std::runtime_error(
-      "[OneDnnBackend::fullWithType] unimplemented for non-CPU engine");
+    throw std::runtime_error(
+        "[OneDnnBackend::fullWithType] unimplemented for non-CPU engine");
   }
 }
 
@@ -515,11 +612,24 @@ Tensor OneDnnBackend::identity(const Dim /* dim */, const dtype /* type */) {
   FL_ONEDNN_BACKEND_UNIMPLEMENTED;
 }
 
-Tensor OneDnnBackend::arange(
-    const Shape& /* shape */,
-    const Dim /* seqDim */,
-    const dtype /* type */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+Tensor
+OneDnnBackend::arange(const Shape& shape, const Dim seqDim, const dtype type) {
+  if (seqDim < 0 || seqDim >= shape.ndim()) {
+    std::ostringstream oss;
+    oss << "[OneDnnBackend::arange] Invalid seqDim: " << seqDim
+        << ", for shape: " << shape;
+    throw std::invalid_argument(oss.str());
+  }
+  if (engine_.get_kind() == dnnl::engine::kind::cpu) {
+    std::vector<Dim> tileDims = shape.get();
+    tileDims[seqDim] = 1;
+    return tile(
+        iotaSingleAxisCpu(shape.ndim(), seqDim, shape[seqDim], type),
+        Shape(tileDims));
+  } else {
+    throw std::runtime_error(
+        "[OneDnnBackend::arange] unimplemented for non-CPU engine");
+  }
 }
 
 Tensor OneDnnBackend::iota(
@@ -530,9 +640,7 @@ Tensor OneDnnBackend::iota(
 }
 
 /************************ Shaping and Indexing *************************/
-Tensor OneDnnBackend::reshape(
-    const Tensor& tensor,
-    const Shape& shape) {
+Tensor OneDnnBackend::reshape(const Tensor& tensor, const Shape& shape) {
   if (tensor.shape().elements() != shape.elements()) {
     std::ostringstream oss;
     oss << "[OneDnnBackend::reshape] Cannot reshape tensor from "
@@ -542,15 +650,16 @@ Tensor OneDnnBackend::reshape(
 
   // TODO copy on write.
   // prepare memories
-  auto& mem = toOneDnnTensor(tensor).memory();
-  const auto memDesc = mem.get_desc();
+  auto& srcTensor = toOneDnnTensor(tensor);
+  auto& mem = srcTensor.memory();
+  const auto& memDesc = srcTensor.memoryDesc();
   const auto reshapedMemDesc =
       detail::oneDnnContiguousMemDescFromShape(shape, memDesc.data_type());
   auto reshapedMem = dnnl::memory(reshapedMemDesc, engine_);
 
   // prepare primitive (use reorder to do a copy)
-  const auto reorderPrimitiveDesc = dnnl::reorder::primitive_desc(
-      engine_, memDesc, engine_, memDesc);
+  const auto reorderPrimitiveDesc =
+      dnnl::reorder::primitive_desc(engine_, memDesc, engine_, memDesc);
   const auto reorderPrimitive = dnnl::reorder(reorderPrimitiveDesc);
 
   // execute primitive
@@ -609,8 +718,9 @@ Tensor OneDnnBackend::transpose(
   }
 
   // prepare memories
-  auto& srcMem = tensor.getAdapter<OneDnnTensor>().memory();
-  const auto srcMemDesc = srcMem.get_desc();
+  auto& srcTensor = toOneDnnTensor(tensor);
+  auto& srcMem = srcTensor.memory();
+  const auto& srcMemDesc = srcTensor.memoryDesc();
   const auto type = srcMemDesc.data_type();
   const auto srcMemDims = srcMemDesc.dims();
   const auto dstMemDesc =
@@ -631,10 +741,44 @@ Tensor OneDnnBackend::transpose(
   return toTensor<OneDnnTensor>(newShape, std::move(dstMem));
 }
 
-Tensor OneDnnBackend::tile(
-    const Tensor& /* tensor */,
-    const Shape& /* shape */) {
-  FL_ONEDNN_BACKEND_UNIMPLEMENTED;
+Tensor OneDnnBackend::tile(const Tensor& tensor, const Shape& tileDims) {
+  const auto [paddedTensorShape, paddedTileDims] =
+      padShorterDimsWithOnesOnTheRight(tensor.shape(), tileDims);
+
+  auto& srcTensor = toOneDnnTensor(tensor);
+  auto currTiledMem = srcTensor.memory();
+  auto currTiledMemDesc = srcTensor.memoryDesc().reshape(
+      detail::shapeToOneDnnDims(paddedTensorShape));
+  std::vector<Dim> finalDims;
+  // TODO use uniform axes once we remove the 'transposed' representation
+  for (int shapeAxis = 0; shapeAxis < paddedTileDims.ndim(); shapeAxis++) {
+    const auto dimsAxis = paddedTensorShape.ndim() - 1 - shapeAxis;
+    const auto numTiles = paddedTileDims[shapeAxis];
+    finalDims.push_back(numTiles * paddedTensorShape[shapeAxis]);
+    if (numTiles > 1) {
+      // prepare memories
+      std::vector<dnnl::memory::desc> tileMemDescs(numTiles, currTiledMemDesc);
+
+      // prepare concat primitive
+      const dnnl::concat::primitive_desc concatPrimitiveDesc(
+          dimsAxis, tileMemDescs, engine_);
+      const dnnl::concat concatPrimitive(concatPrimitiveDesc);
+      const auto newTileMemDesc = concatPrimitiveDesc.dst_desc();
+      auto newTiledMem = dnnl::memory(newTileMemDesc, engine_);
+
+      // prepare arguments.
+      std::unordered_map<int, dnnl::memory> args{{DNNL_ARG_DST, newTiledMem}};
+      for (int tileIdx = 0; tileIdx < numTiles; ++tileIdx) {
+        args.insert({DNNL_ARG_MULTIPLE_SRC + tileIdx, currTiledMem});
+      }
+
+      // execute primitive
+      concatPrimitive.execute(stream_->handle(), args);
+      currTiledMemDesc = newTileMemDesc;
+      currTiledMem = newTiledMem;
+    }
+  }
+  return toTensor<OneDnnTensor>(Shape(finalDims), std::move(currTiledMem));
 }
 
 Tensor OneDnnBackend::concatenate(
@@ -816,8 +960,9 @@ Tensor OneDnnBackend::applyEltwiseOp(
     float alpha /* 0 */,
     float beta /* 0 */) {
   // prepare memories
-  const auto& mem = toOneDnnTensor(tensor).memory();
-  const auto memDesc = mem.get_desc();
+  auto& srcTensor = toOneDnnTensor(tensor);
+  const auto mem = srcTensor.memory();
+  const auto& memDesc = srcTensor.memoryDesc();
   const auto dstMemDesc = detail::oneDnnContiguousMemDescFromShape(
       tensor.shape(), memDesc.data_type());
   auto dstMem = dnnl::memory(dstMemDesc, engine_);
@@ -978,17 +1123,19 @@ Tensor OneDnnBackend::applyBinop(
     dnnl::algorithm alg,
     std::optional<dnnl::memory::data_type> dstType /* = std::nullopt */) {
   // prepare memories
-  auto& lhsMem = toOneDnnTensor(lhs).memory();
-  auto& rhsMem = toOneDnnTensor(rhs).memory();
-  const auto lhsMemDesc = lhsMem.get_desc();
-  const auto rhsMemDesc = rhsMem.get_desc();
+  auto& lhsTensor = toOneDnnTensor(lhs);
+  auto& rhsTensor = toOneDnnTensor(rhs);
+  auto lhsMem = lhsTensor.memory();
+  auto rhsMem = rhsTensor.memory();
+  const auto& lhsMemDesc = lhsTensor.memoryDesc();
+  const auto& rhsMemDesc = rhsTensor.memoryDesc();
   const auto outputDesc = getBinaryOpOutputDesc(
       lhs.shape(), lhsMemDesc, rhs.shape(), rhsMemDesc, dstType);
   auto dstMem = dnnl::memory(outputDesc.dstMemDesc, engine_);
 
   // prepare primitive
-  const auto binaryDesc = dnnl::binary::desc(
-    alg, lhsMemDesc, rhsMemDesc, outputDesc.dstMemDesc);
+  const auto binaryDesc =
+      dnnl::binary::desc(alg, lhsMemDesc, rhsMemDesc, outputDesc.dstMemDesc);
   const auto binaryPrimtiveDesc =
       dnnl::binary::primitive_desc(binaryDesc, engine_);
   const auto binaryPrimitive = dnnl::binary(binaryPrimtiveDesc);
@@ -1025,10 +1172,12 @@ Tensor OneDnnBackend::matmul(
   std::vector<Dim> rhsDims = rhs.shape().get();
   const bool isLhsScalarOrVector = lhsDims.size() <= 1;
   const bool isRhsScalarOrVector = rhsDims.size() <= 1;
-  auto& lhsMem = toOneDnnTensor(lhs).memory();
-  auto& rhsMem = toOneDnnTensor(rhs).memory();
-  auto lhsMemDesc = lhsMem.get_desc();
-  auto rhsMemDesc = rhsMem.get_desc();
+  auto& lhsTensor = toOneDnnTensor(lhs);
+  auto& rhsTensor = toOneDnnTensor(rhs);
+  auto lhsMem = lhsTensor.memory();
+  auto rhsMem = rhsTensor.memory();
+  auto lhsMemDesc = lhsTensor.memoryDesc();
+  auto rhsMemDesc = rhsTensor.memoryDesc();
   if (isLhsScalarOrVector) { // pad to (1 x 1/K)
     lhsDims.insert(lhsDims.end(), 2 - lhsDims.size(), 1);
     std::reverse(lhsDims.begin(), lhsDims.end());
@@ -1048,13 +1197,13 @@ Tensor OneDnnBackend::matmul(
   // shape check (TODO support broadcasting)
   if (!(lhsDims.at(1) == rhsDims.at(0) &&
         std::equal(
-          lhsDims.begin() + 2,
-          lhsDims.end(),
-          rhsDims.begin() + 2,
-          rhsDims.end()))) {
+            lhsDims.begin() + 2,
+            lhsDims.end(),
+            rhsDims.begin() + 2,
+            rhsDims.end()))) {
     std::ostringstream oss;
     oss << "Cannot perform matmul for tensors of shapes: " << lhs.shape()
-      << " and " << rhs.shape();
+        << " and " << rhs.shape();
     throw std::invalid_argument(oss.str());
   }
   std::vector<Dim> dstDims = lhsDims;
@@ -1090,9 +1239,9 @@ Tensor OneDnnBackend::matmul(
 
   // prepare primitive
   const auto matmulDesc =
-    dnnl::matmul::desc(srcMemDesc, weightsMemDesc, dstMemArgDesc);
+      dnnl::matmul::desc(srcMemDesc, weightsMemDesc, dstMemArgDesc);
   const auto matmulPrimitiveDesc =
-    dnnl::matmul::primitive_desc(matmulDesc, engine_);
+      dnnl::matmul::primitive_desc(matmulDesc, engine_);
   const auto matmulPrimitive = dnnl::matmul(matmulPrimitiveDesc);
 
   // prepare arguments.
@@ -1403,8 +1552,9 @@ Tensor OneDnnBackend::applyReductionOp(
   Shape dstShape(dstDims);
 
   // prepare part of memories
-  const auto& srcMem = toOneDnnTensor(input).memory();
-  const auto srcMemDesc = srcMem.get_desc();
+  auto& srcTensor = toOneDnnTensor(input);
+  const auto srcMem = srcTensor.memory();
+  const auto& srcMemDesc = srcTensor.memoryDesc();
   // OneDNN reduction primitive doesn't allow dim reduction, so we use a memDesc
   // w/o dim reduction for primitive arg, althought the final memory's dims
   // might get reduced
@@ -1421,7 +1571,7 @@ Tensor OneDnnBackend::applyReductionOp(
   // prepare dst memories
   auto dstMemDesc = dstArgMemDesc;
   if (!keepDims) {
-    dstShape = filterAxes(dstShape, axesToReduce);
+    dstShape = Shape(detail::removeIndices(dstShape.get(), axesToReduce));
     dstMemDesc = detail::oneDnnContiguousMemDescFromShape(
         dstShape, srcMemDesc.data_type());
   }

@@ -1,12 +1,17 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
-add_library(fl_pkg_vision "")
+add_library(fl_pkg_vision)
+
+# Install lib and headers
+list(APPEND INSTALLABLE_TARGETS fl_pkg_vision)
+setup_install_headers(
+  ${CMAKE_CURRENT_LIST_DIR}
+  ${FL_INSTALL_INC_DIR_HEADER_LOC}/pkg)
 
 target_link_libraries(
   fl_pkg_vision
   PUBLIC
   flashlight
-  fl_lib_set
   )
 
 include(${CMAKE_CURRENT_LIST_DIR}/tensor/CMakeLists.txt)

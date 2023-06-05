@@ -63,7 +63,7 @@ Variable AdaptiveSoftMax::getFullLogProb(
     tailOutput = matmul(params_[2 + i * 2], tailOutput);
     auto idx = i + cutoff_[0];
     tailOutput = logSoftmax(tailOutput, 0) +
-        tileAs(headOutput(fl::range(idx, idx)), tailOutput);
+        tileAs(headOutput(fl::range(idx, idx + 1)), tailOutput);
     output(fl::range(cutoff_[i], cutoff_[i + 1])) = tailOutput.tensor();
   }
 

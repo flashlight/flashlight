@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <math.h>
+#include <cmath>
 #include <sstream>
 #include <stdexcept>
+#include <numeric>
 
 #include "flashlight/fl/common/Logging.h"
 #include "flashlight/fl/contrib/modules/RawWavSpecAugment.h"
@@ -90,9 +91,9 @@ void RawWavSpecAugment::precomputeFilters() {
   for (int fidx = 0; fidx < cutoff_.size(); fidx++) {
     int width = 2. / (1e-6 + transBandKhz[fidx]);
     if (width * 2 + 1 > maxKernelSize_) {
-      FL_LOG(fl::INFO) << "RawWavSpecAugment raw wave: frequency "
-                       << cutoff_[fidx]
-                       << " will be skipped for eval, too large kernel";
+      FL_LOG(fl::LogLevel::INFO)
+          << "RawWavSpecAugment raw wave: frequency " << cutoff_[fidx]
+          << " will be skipped for eval, too large kernel";
       lowPassFilters_.push_back(nullptr);
       ignoredLowPassFilters_++;
       continue;

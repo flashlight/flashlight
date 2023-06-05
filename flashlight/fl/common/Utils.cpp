@@ -7,6 +7,7 @@
 
 #include "flashlight/fl/common/Utils.h"
 
+#include <inttypes.h>
 #include <chrono>
 #include <cstdio>
 #include <ctime>
@@ -15,20 +16,20 @@
 #include <unordered_map>
 
 #include "flashlight/fl/tensor/Compute.h"
+#include "flashlight/fl/tensor/DefaultTensorType.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 
 bool f16Supported() {
-  return Tensor().backend().isDataTypeSupported(fl::dtype::f16);
+  return defaultTensorBackend().isDataTypeSupported(fl::dtype::f16);
 }
 
 std::string dateTimeWithMicroSeconds() {
-  std::chrono::system_clock::time_point highResTime =
-      std::chrono::high_resolution_clock::now();
+  auto systemTime = std::chrono::system_clock::now();
   const time_t secondsSinceEpoc =
-      std::chrono::system_clock::to_time_t(highResTime);
+      std::chrono::system_clock::to_time_t(systemTime);
   const struct tm* timeinfo = localtime(&secondsSinceEpoc);
 
   // Formate date and time to the seconds as:
@@ -44,14 +45,14 @@ std::string dateTimeWithMicroSeconds() {
   const std::chrono::system_clock::time_point timeInSecondsResolution =
       std::chrono::system_clock::from_time_t(secondsSinceEpoc);
   const auto usec = std::chrono::duration_cast<std::chrono::microseconds>(
-      highResTime - timeInSecondsResolution);
+      systemTime - timeInSecondsResolution);
 
   // Add msec and usec.
   std::snprintf(
       buffer + nWrittenBytes,
       bufferSize - nWrittenBytes,
-      ".%06ld",
-      usec.count());
+      ".%06" PRId64,
+      static_cast<int64_t>(usec.count()));
 
   return buffer;
 }

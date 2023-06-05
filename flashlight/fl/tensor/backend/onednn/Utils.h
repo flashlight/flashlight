@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <unordered_set>
+
 #include "flashlight/fl/tensor/Shape.h"
 #include "flashlight/fl/tensor/Types.h"
 
@@ -64,6 +66,13 @@ dnnl::memory::dims flDimsToOneDnnDims(const std::vector<Dim>& flDims);
 dnnl::memory::dims shapeToOneDnnDims(const Shape& shape);
 
 /**
+ * Convert OneDNN dimensions to a Flashlight Shape.
+ *
+ * @return the corresponding shape for given OneDNN dims.
+ */
+Shape oneDnnDimsToShape(const dnnl::memory::dims& dims);
+
+/**
  * Return the input type that can represent a larger range of data.
  *
  * @param[in] t1 the first input type.
@@ -85,6 +94,28 @@ dnnl::memory::data_type getTypeWithLargerRange(
 dnnl::memory::desc oneDnnContiguousMemDescFromShape(
     const Shape& shape,
     const dnnl::memory::data_type type);
+
+/**
+ * Return a copy of the given vector with items at given indices removed.
+ *
+ * @param[in] items vector to copy and filter.
+ * @param[in] indicesToFilter indices of items to be filtered.
+ * @return the filtered copy of given vector.
+ */
+template <typename T>
+std::vector<T> removeIndices(
+    const std::vector<T>& items,
+    const std::vector<int>& indicesToFilter) {
+  std::vector<T> itemsKept;
+  std::unordered_set<int> axesToFilterSet(
+      indicesToFilter.begin(), indicesToFilter.end());
+  for (int idx = 0; idx < items.size(); idx++) {
+    if (axesToFilterSet.count(idx) == 0) {
+      itemsKept.push_back(items[idx]);
+    }
+  }
+  return itemsKept;
+}
 
 } // namespace detail
 } // namespace fl

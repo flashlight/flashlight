@@ -1,9 +1,9 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
 # ---------------------------- Backend-specific -----------------------------
 if (FL_USE_CUDA)
   # Build WarpCTC
-  set(WARPCTC_DIR ${FL_PKG_SPEECH_DIR}/third_party/warpctc)
+  set(WARPCTC_DIR ${FL_PKG_DIR}/speech/third_party/warpctc)
   message(STATUS "Adding warpctc from dir: ${WARPCTC_DIR}")
 
   add_subdirectory(${WARPCTC_DIR} ${PROJECT_BINARY_DIR}/third_party/warpctc)

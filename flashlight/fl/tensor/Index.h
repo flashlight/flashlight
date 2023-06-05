@@ -8,32 +8,41 @@
 #pragma once
 
 #include <variant>
+#include <optional>
 
 #include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 
 /**
- * Represents the last index along an axis of a tensor.
+ * Represents the imaginary index _after_ the last index along an axis of a
+ * tensor. We have this special case because the `range::end` is exclusive.
  */
-struct end_t {
-  operator Dim() const {
-    return -1;
-  }
-};
+struct end_t{};
 
-// A static alias for end that can properly decay to an index type
+// A static instance of end_t for convenience, e.g., one can use it in
+// `range(0, end)` to index all elements along certain axis.
 static const end_t end = end_t();
 
 /**
  * An entity representing a contiguous or strided sequence of indices.
+ *
+ * Assuming an axis has N elements, this is the mapping from negative to
+ * positive indices:
+ *  -------------------------
+ *  | -N | -N+1 | ... |  -1 |
+ *  -------------------------
+ *  |  0 |    1 | ... | N-1 |
+ *  -------------------------
  */
 class range {
   using idx = std::variant<end_t, Dim>;
+  static constexpr Dim kDefaultStride = 1;
 
   Dim start_{0};
-  Dim end_{fl::end};
-  Dim stride_{1};
+  // end is exclusive; std::nullopt means including the last element
+  std::optional<Dim> end_{std::nullopt};
+  Dim stride_{kDefaultStride};
 
  public:
   /**
@@ -46,7 +55,7 @@ class range {
    *
    * @param[in] idx the end index of the range, which will start from 0
    */
-  explicit range(const idx& idx);
+  explicit range(const Dim& idx);
 
   /**
    * Construct a range with the indices [start, end) (i.e. [start, end - 1])
@@ -54,7 +63,7 @@ class range {
    * @param[in] start the starting index of the range
    * @param[in] end the end index of the range, which will start from 0
    */
-  range(const idx& start, const idx& end);
+  range(const Dim& start, const idx& end);
 
   /**
    * Construct a range with the indices [start, end) (i.e. [start, end - 1])
@@ -64,10 +73,13 @@ class range {
    * @param[in] end the end index of the range, which will start from 0
    * @param[in] stride the interval over which successive range elements appear
    */
-  range(const idx& start, const idx& end, const Dim stride);
+  range(const Dim& start, const idx& end, const Dim stride);
 
   Dim start() const;
-  Dim end() const;
+  // std::nullopt represents `end_t`
+  const std::optional<Dim>& end() const;
+  // throw if end is `end_t`
+  Dim endVal() const;
   Dim stride() const;
   bool operator==(const range& other) const;
   bool operator!=(const range& other) const;

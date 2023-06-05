@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
 cmake_dependent_option(FL_BUILD_APP_ASR_TOOLS "Build ASR App tools" ON "FL_BUILD_APP_ASR" OFF)
 
@@ -11,7 +11,6 @@ target_link_libraries(
   fl_asr_train
   fl_pkg_speech
   fl_pkg_runtime
-  fl_lib_sequence
   ${CMAKE_DL_LIBS}
   )
 target_link_libraries(

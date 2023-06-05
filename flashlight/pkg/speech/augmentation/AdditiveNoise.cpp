@@ -12,9 +12,9 @@
 #include <fstream>
 #include <sstream>
 
+#include "flashlight/fl/common/Logging.h"
 #include "flashlight/pkg/speech/augmentation/SoundEffectUtil.h"
 #include "flashlight/pkg/speech/data/Sound.h"
-#include "flashlight/fl/common/Logging.h"
 
 namespace fl {
 namespace pkg {
@@ -31,7 +31,7 @@ std::string AdditiveNoise::Config::prettyString() const {
 
 std::string AdditiveNoise::prettyString() const {
   std::stringstream ss;
-  ss << "AdditiveNoise{config={"  << conf_.prettyString() << '}';
+  ss << "AdditiveNoise{config={" << conf_.prettyString() << '}';
   return ss.str();
 };
 
@@ -92,8 +92,8 @@ void AdditiveNoise::apply(std::vector<float>& signal) {
       signal[i] += mixedNoise[i] * noiseMult;
     }
   } else {
-    FL_LOG(fl::WARNING) << "AdditiveNoise::apply() invalid noiseRms="
-                        << noiseRms;
+    FL_LOG(fl::LogLevel::WARNING)
+        << "AdditiveNoise::apply() invalid noiseRms=" << noiseRms;
   }
 }
 

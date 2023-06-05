@@ -183,9 +183,9 @@ TEST(ModuleTest, GLUFwd) {
   auto batchOutVar = glu(inVar);
 
   for (int i = 0; i < batchsize; ++i) {
-    expected_outVar = glu.forward(inVar(fl::span, fl::span, fl::range(i, i)));
+    expected_outVar = glu.forward(inVar(fl::span, fl::span, fl::range(i, i + 1)));
     ASSERT_TRUE(allClose(
-        batchOutVar.tensor()(fl::span, fl::span, fl::range(i, i)),
+        batchOutVar.tensor()(fl::span, fl::span, fl::range(i, i + 1)),
         expected_outVar.tensor(),
         1E-7));
   }
@@ -219,10 +219,10 @@ TEST_F(ModuleTestF16, GLUFwdF16) {
   auto batchOutVar = glu(inVar);
 
   for (int i = 0; i < batchsize; ++i) {
-    expected_outVar = glu.forward(inVar(fl::span, fl::span, fl::range(i, i)));
+    expected_outVar = glu.forward(inVar(fl::span, fl::span, fl::range(i, i + 1)));
     ASSERT_EQ(batchOutVar.type(), expected_outVar.type());
     ASSERT_TRUE(allClose(
-        batchOutVar.tensor()(fl::span, fl::span, fl::range(i, i)),
+        batchOutVar.tensor()(fl::span, fl::span, fl::range(i, i + 1)),
         expected_outVar.tensor(),
         1E-3));
   }
@@ -256,9 +256,9 @@ TEST(ModuleTest, LogSoftmaxFwd) {
 
   for (int i = 0; i < batchsize; ++i) {
     auto expected_outVar =
-        lsm.forward(inVar(fl::span, fl::span, fl::range(i, i)));
+        lsm.forward(inVar(fl::span, fl::span, fl::range(i, i + 1)));
     ASSERT_TRUE(allClose(
-        batchOutVar.tensor()(fl::span, fl::span, fl::range(i, i)),
+        batchOutVar.tensor()(fl::span, fl::span, fl::range(i, i + 1)),
         expected_outVar.tensor(),
         1E-7));
   }
@@ -299,9 +299,9 @@ TEST_F(ModuleTestF16, LogSoftmaxFwdF16) {
 
   for (int i = 0; i < batchsize; ++i) {
     auto expected_outVar =
-        lsm.forward(inVar(fl::span, fl::span, fl::range(i, i)));
+        lsm.forward(inVar(fl::span, fl::span, fl::range(i, i + 1)));
     ASSERT_TRUE(allClose(
-        batchOutVar.tensor()(fl::span, fl::span, fl::range(i, i)),
+        batchOutVar.tensor()(fl::span, fl::span, fl::range(i, i + 1)),
         expected_outVar.tensor(),
         1E-7));
   }
@@ -316,9 +316,9 @@ TEST(ModuleTest, ConvolutionFwd) {
 
   for (int i = 0; i < batchsize; ++i) {
     auto expected_outVar = conv(
-        Variable(input(fl::span, fl::span, fl::span, fl::range(i, i)), false));
+        Variable(input(fl::span, fl::span, fl::span, fl::range(i, i + 1)), false));
     ASSERT_TRUE(allClose(
-        batchOutVar.tensor()(fl::span, fl::span, fl::span, fl::range(i, i)),
+        batchOutVar.tensor()(fl::span, fl::span, fl::span, fl::range(i, i + 1)),
         expected_outVar.tensor(),
         1E-5));
   }
@@ -338,9 +338,9 @@ TEST_F(ModuleTestF16, ConvolutionFwdF16) {
 
   for (int i = 0; i < batchsize; ++i) {
     auto expected_outVar = conv(
-        Variable(input(fl::span, fl::span, fl::span, fl::range(i, i)), false));
+        Variable(input(fl::span, fl::span, fl::span, fl::range(i, i + 1)), false));
     ASSERT_TRUE(allClose(
-        batchOutVar.tensor()(fl::span, fl::span, fl::span, fl::range(i, i)),
+        batchOutVar.tensor()(fl::span, fl::span, fl::span, fl::range(i, i + 1)),
         expected_outVar.tensor(),
         1E-7));
   }
@@ -359,9 +359,9 @@ TEST(ModuleTest, ConvolutionWithGroupFwd) {
   auto batchOutVar = conv(Variable(input, false));
   for (int i = 0; i < batchsize; ++i) {
     auto expected_outVar = conv(
-        Variable(input(fl::span, fl::span, fl::span, fl::range(i, i)), false));
+        Variable(input(fl::span, fl::span, fl::span, fl::range(i, i + 1)), false));
     ASSERT_TRUE(allClose(
-        batchOutVar.tensor()(fl::span, fl::span, fl::span, fl::range(i, i)),
+        batchOutVar.tensor()(fl::span, fl::span, fl::span, fl::range(i, i + 1)),
         expected_outVar.tensor(),
         1E-5));
   }
@@ -376,9 +376,9 @@ TEST(ModuleTest, PoolingFwd) {
   for (int i = 0; i < batchsize; ++i) {
     ASSERT_EQ(input.shape(), batchOutVar.shape());
     auto expected_outVar = pool(
-        Variable(input(fl::span, fl::span, fl::span, fl::range(i, i)), false));
+        Variable(input(fl::span, fl::span, fl::span, fl::range(i, i + 1)), false));
     ASSERT_TRUE(allClose(
-        batchOutVar.tensor()(fl::span, fl::span, fl::span, fl::range(i, i)),
+        batchOutVar.tensor()(fl::span, fl::span, fl::span, fl::range(i, i + 1)),
         expected_outVar.tensor(),
         1E-7));
   }
@@ -397,9 +397,9 @@ TEST_F(ModuleTestF16, PoolingFwdF16) {
   for (int i = 0; i < batchsize; ++i) {
     ASSERT_EQ(input.shape(), batchOutVar.shape());
     auto expected_outVar = pool(
-        Variable(input(fl::span, fl::span, fl::span, fl::range(i, i)), false));
+        Variable(input(fl::span, fl::span, fl::span, fl::range(i, i + 1)), false));
     ASSERT_TRUE(allClose(
-        batchOutVar.tensor()(fl::span, fl::span, fl::span, fl::range(i, i)),
+        batchOutVar.tensor()(fl::span, fl::span, fl::span, fl::range(i, i + 1)),
         expected_outVar.tensor(),
         1E-7));
   }
@@ -632,7 +632,7 @@ TEST(ModuleTest, PaddingFwd) {
   auto input = Variable(fl::rand({1, 2, 3, 4}, fl::dtype::f64), true);
   auto output = module(input);
   ASSERT_EQ(output.shape(), Shape({4, 9, 3, 4}));
-  ASSERT_TRUE(allClose(input, output(fl::range(1, 1), fl::range(3, 5))));
+  ASSERT_TRUE(allClose(input, output(fl::range(1, 2), fl::range(3, 5))));
   ASSERT_NEAR(
       fl::sum(input.tensor()).scalar<double>(),
       fl::sum(output.tensor()).scalar<double>() + 408,
@@ -836,7 +836,7 @@ TEST(ModuleTest, AdaptiveSoftMaxLossBatchFwd) {
   auto singleOut = fl::full({T, B}, 0, fl::dtype::f32);
   for (int i = 0; i < B; ++i) {
     auto singleOutVar = asml->forward(
-        x(fl::span, fl::span, fl::range(i, i)), y(fl::span, fl::range(i, i)));
+        x(fl::span, fl::span, fl::range(i, i + 1)), y(fl::span, fl::range(i, i + 1)));
     singleOut(fl::span, i) = singleOutVar.tensor();
   }
 

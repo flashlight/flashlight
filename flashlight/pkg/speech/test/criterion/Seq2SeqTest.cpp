@@ -15,7 +15,6 @@
 #include "flashlight/pkg/speech/criterion/criterion.h"
 
 using namespace fl;
-using namespace fl::pkg::runtime;
 using namespace fl::pkg::speech;
 
 TEST(Seq2SeqTest, Seq2Seq) {
@@ -82,7 +81,7 @@ TEST(Seq2SeqTest, Seq2Seq) {
   ASSERT_TRUE(allClose(attention, attentionSeq, 1e-6));
 
   // Check size 1 Target works
-  target = target(fl::range(0, 0), fl::span);
+  target = target(fl::range(0, 1), fl::span);
   auto loss =
       seq2seq({noGrad(input), noGrad(target), fl::noGrad(Tensor())}).front();
 

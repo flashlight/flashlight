@@ -48,7 +48,7 @@ std::string prettyStringCount(size_t count);
  * multiplying by `factor` each retry. At most `maxIters` calls are made.
  */
 template <class Fn, class... Args>
-typename std::result_of<Fn(Args...)>::type retryWithBackoff(
+typename std::invoke_result<Fn, Args...>::type retryWithBackoff(
     std::chrono::duration<double> initial,
     double factor,
     int64_t maxIters,

@@ -30,7 +30,7 @@ Native support in C++ and simple extensibility makes Flashlight a powerful resea
 ### Project Layout
 
 Flashlight is broken down into a few parts:
-- [**`flashlight/lib`**](flashlight/lib) contains kernels and standalone utilities for sequence losses, audio processing, and more.
+- [**`flashlight/lib`**](flashlight/lib) contains kernels and standalone utilities for audio processing and more.
 - [**`flashlight/fl`**](flashlight/fl) is the core tensor interface and neural network library using the [ArrayFire](https://github.com/arrayfire/arrayfire) tensor library by default.
 - [**`flashlight/pkg`**](flashlight/pkg) are domain packages for speech, vision, and text built on the core.
 - [**`flashlight/app`**](flashlight/app) are applications of the core library to machine learning across domains.
@@ -220,6 +220,22 @@ To install Flashlight in a custom directory, use CMake's [`CMAKE_INSTALL_PREFIX`
 
 Flashlight uses modern CMake and `IMPORTED` targets for most dependencies. If a dependency isn't found, passing `-D<package>_DIR` to your `cmake` command or exporting `<package>_DIR` as an environment variable equal to the path to `<package>Config.cmake` can help locate dependencies on your system. See [the documentation](https://cmake.org/cmake/help/v3.10/command/find_package.html) for more details. If CMake is failing to locate a package, check to see if a corresponding [issue](https://github.com/flashlight/flashlight/issues) has already been created before creating your own.
 
+#### Minimal setup on macOS
+
+On MacOS, ArrayFire can be installed with homebrew and the Flashlight core can be built as follows:
+
+```
+brew install arrayfire
+cmake .. \
+      -DFL_ARRAYFIRE_USE_OPENCL=ON \
+      -DFL_USE_ONEDNN=OFF \
+      -DFL_BUILD_TESTS=OFF \
+      -DFL_BUILD_EXAMPLES=OFF \
+      -DFL_BUILD_SCRIPTS=OFF \
+      -DFL_BUILD_DISTRIBUTED=OFF
+make -j$(nproc)
+```
+
 #### Dependencies
 
 Dependencies marked with `*` are automatically downloaded and built from source if not found on the system. Setting `FL_BUILD_STANDALONE` to `OFF` disables this behavior.
@@ -403,9 +419,6 @@ The Flashlight CMake build accepts the following build options (prefixed with `-
 
 ### Building Your Own Project with Flashlight
 Flashlight is most-easily linked to using CMake. Flashlight exports the following CMake targets when installed:
-- `flashlight::fl_lib_set` — contains flashlight libraries for headers and symbols pertaining to sets.
-- `flashlight::fl_lib_sequence` — contains flashlight libraries for headers and symbols pertaining to sequences.
-- `flashlight::fl_lib_audio` — contains flashlight libraries for headers and symbols pertaining to audio.
 - `flashlight::flashlight` — contains flashlight libraries as well as the flashlight core autograd and neural network library.
 - `flashlight::fl_pkg_runtime` — contains flashlight core as well as common utilities for training (logging / flags / distributed utils).
 - `flashlight::fl_pkg_vision` — contains flashlight core as well as common utilities for vision pipelines.
@@ -462,7 +475,7 @@ make -j$(nproc)
 If Flashlight is installed in a custom location using a `CMAKE_INSTALL_PREFIX`, passing `-Dflashlight_DIR=[install prefix]/share/flashlight/cmake` as an argument to your `cmake` command can help CMake find Flashlight.
 
 ### Building and Running Flashlight with Docker
-Flashlight and its dependencies can also be built with the provided Dockerfiles — see the accompanying [Docker documentation](.docker) for more information.
+Flashlight and its dependencies can also be built with the provided Dockerfiles; see the accompanying [Docker documentation](.docker) for more information.
 
 ### Contributing and Contact
 Contact: vineelkpratap@fb.com, awni@fb.com, jacobkahn@fb.com, qiantong@fb.com, antares@fb.com, padentomasello@fb.com,

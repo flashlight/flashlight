@@ -20,30 +20,30 @@ namespace pkg {
 namespace vision {
 
 Tensor cxcywh2xyxy(const Tensor& bboxes) {
-  auto xc = bboxes(fl::range(0, 0));
-  auto yc = bboxes(fl::range(1, 1));
-  auto w = bboxes(fl::range(2, 2));
-  auto h = bboxes(fl::range(3, 3));
+  auto xc = bboxes(fl::range(0, 1));
+  auto yc = bboxes(fl::range(1, 2));
+  auto w = bboxes(fl::range(2, 3));
+  auto h = bboxes(fl::range(3, 4));
 
   return fl::concatenate(
       0, xc - 0.5 * w, yc - 0.5 * h, xc + 0.5 * w, yc + 0.5 * h);
 }
 
 fl::Variable cxcywh2xyxy(const Variable& bboxes) {
-  auto xc = bboxes(fl::range(0, 0));
-  auto yc = bboxes(fl::range(1, 1));
-  auto w = bboxes(fl::range(2, 2));
-  auto h = bboxes(fl::range(3, 3));
+  auto xc = bboxes(fl::range(0, 1));
+  auto yc = bboxes(fl::range(1, 2));
+  auto w = bboxes(fl::range(2, 3));
+  auto h = bboxes(fl::range(3, 4));
 
   return fl::concatenate(
       {xc - 0.5 * w, yc - 0.5 * h, xc + 0.5 * w, yc + 0.5 * h}, 0);
 }
 
 Tensor xyxy2cxcywh(const Tensor& bboxes) {
-  auto x0 = bboxes(fl::range(0, 0));
-  auto y0 = bboxes(fl::range(1, 1));
-  auto x1 = bboxes(fl::range(2, 2));
-  auto y1 = bboxes(fl::range(3, 3));
+  auto x0 = bboxes(fl::range(0, 1));
+  auto y0 = bboxes(fl::range(1, 2));
+  auto x1 = bboxes(fl::range(2, 3));
+  auto y1 = bboxes(fl::range(3, 4));
   Tensor result =
       fl::concatenate(0, (x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0), (y1 - y0));
   return result;
@@ -85,19 +85,19 @@ fl::Variable flatten(const fl::Variable& x, int start, int stop) {
 };
 
 Tensor boxArea(const Tensor& bboxes) {
-  auto x0 = bboxes(fl::range(0, 0));
-  auto y0 = bboxes(fl::range(1, 1));
-  auto x1 = bboxes(fl::range(2, 2));
-  auto y1 = bboxes(fl::range(3, 3));
+  auto x0 = bboxes(fl::range(0, 1));
+  auto y0 = bboxes(fl::range(1, 2));
+  auto x1 = bboxes(fl::range(2, 3));
+  auto y1 = bboxes(fl::range(3, 4));
   auto result = (x1 - x0) * (y1 - y0);
   return result;
 }
 
 fl::Variable boxArea(const fl::Variable& bboxes) {
-  auto x0 = bboxes(fl::range(0, 0));
-  auto y0 = bboxes(fl::range(1, 1));
-  auto x1 = bboxes(fl::range(2, 2));
-  auto y1 = bboxes(fl::range(3, 3));
+  auto x0 = bboxes(fl::range(0, 1));
+  auto y0 = bboxes(fl::range(1, 2));
+  auto x1 = bboxes(fl::range(2, 3));
+  auto y1 = bboxes(fl::range(3, 4));
   auto result = (x1 - x0) * (y1 - y0);
   return result;
 }
@@ -149,7 +149,7 @@ std::tuple<Tensor, Tensor> boxIou(
   auto rb = cartesian(
       bboxes1(fl::range(2, 4)), bboxes2(fl::range(2, 4)), fl::minimum);
   auto wh = fl::maximum((rb - lt), 0.0);
-  auto inter = wh(fl::range(0, 0)) * wh(fl::range(1, 1));
+  auto inter = wh(fl::range(0, 1)) * wh(fl::range(1, 2));
   auto uni = cartesian(area1, area2, fl::operator+) - inter;
   auto iou = inter / uni;
   iou = flatten(iou, 0, 1);
@@ -173,7 +173,7 @@ std::tuple<fl::Variable, fl::Variable> boxIou(
       cartesian(bboxes1(fl::range(0, 2)), bboxes2(fl::range(0, 2)), fl::max);
   auto rb = cartesian(bboxes1(fl::range(2, 4)), bboxes2(fl::range(2, 4)), min);
   auto wh = max((rb - lt), 0.0);
-  auto inter = wh(fl::range(0, 0)) * wh(fl::range(1, 1));
+  auto inter = wh(fl::range(0, 1)) * wh(fl::range(1, 2));
   auto uni = cartesian(area1, area2, fl::operator+) - inter;
   auto iou = inter / uni;
   iou = flatten(iou, 0, 1);
@@ -200,7 +200,7 @@ fl::Variable generalizedBoxIou(
   auto lt = cartesian(bboxes1(fl::range(0, 2)), bboxes2(fl::range(0, 2)), min);
   auto rb = cartesian(bboxes1(fl::range(2, 4)), bboxes2(fl::range(2, 4)), max);
   auto wh = max((rb - lt), 0.0);
-  auto area = wh(fl::range(0, 0)) * wh(fl::range(1, 1));
+  auto area = wh(fl::range(0, 1)) * wh(fl::range(1, 2));
   area = flatten(area, 0, 1);
   return iou - (area - uni) / area;
 }
@@ -221,7 +221,7 @@ Tensor generalizedBoxIou(const Tensor& bboxes1, const Tensor& bboxes2) {
   auto rb = cartesian(
       bboxes1(fl::range(2, 4)), bboxes2(fl::range(2, 4)), fl::maximum);
   auto wh = fl::maximum((rb - lt), 0.0);
-  auto area = wh(fl::range(0, 0)) * wh(fl::range(1, 1));
+  auto area = wh(fl::range(0, 1)) * wh(fl::range(1, 2));
   area = flatten(area, 0, 1);
   return iou - (area - uni) / area;
 }
