@@ -14,9 +14,9 @@
 #include <stdexcept>
 #include <thread>
 
-#include "flashlight/lib/audio/feature/Mfcc.h"
-#include "flashlight/lib/audio/feature/Mfsc.h"
-#include "flashlight/lib/audio/feature/PowerSpectrum.h"
+#include "flashlight/pkg/speech/audio/feature/Mfcc.h"
+#include "flashlight/pkg/speech/audio/feature/Mfsc.h"
+#include "flashlight/pkg/speech/audio/feature/PowerSpectrum.h"
 #include "flashlight/lib/text/String.h"
 #include "flashlight/pkg/speech/data/Utils.h"
 

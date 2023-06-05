@@ -16,8 +16,6 @@
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
-using namespace fl::pkg::runtime;
-
 namespace fl {
 namespace pkg {
 namespace speech {
@@ -272,8 +270,7 @@ std::pair<Variable, Variable> Seq2SeqCriterion::decoder(
       y = Variable(maxIdx, false);
     } else if (samplingStrategy_ == fl::pkg::speech::kRandSampling) {
       y = Variable(
-          (fl::rand({1, target.dim(1)}) * (nClass_ - 1))
-              .astype(fl::dtype::s32),
+          (fl::rand({1, target.dim(1)}) * (nClass_ - 1)).astype(fl::dtype::s32),
           false);
     } else {
       throw std::invalid_argument("Invalid sampling strategy");
@@ -566,7 +563,8 @@ Seq2SeqCriterion::decodeBatchStep(
       for (int i = 0; i < batchSize; i++) {
         statesVector[i] = inStates[i]->hidden[n];
       }
-      Variable inStateHiddenBatched = concatenate(statesVector, 1).asContiguous();
+      Variable inStateHiddenBatched =
+          concatenate(statesVector, 1).asContiguous();
       std::tie(yBatched, outStateBatched) =
           decodeRNN(n)->forward(yBatched, inStateHiddenBatched);
     }
@@ -609,8 +607,9 @@ Seq2SeqCriterion::decodeBatchStep(
   outBatched = logSoftmax(outBatched / smoothingTemperature, 0);
   std::vector<std::vector<float>> out(batchSize);
   for (int i = 0; i < batchSize; i++) {
-    out[i] =
-        outBatched(fl::span, fl::range(i, i + 1)).tensor().toHostVector<float>();
+    out[i] = outBatched(fl::span, fl::range(i, i + 1))
+                 .tensor()
+                 .toHostVector<float>();
   }
 
   return std::make_pair(out, outstates);
@@ -638,7 +637,7 @@ std::string Seq2SeqCriterion::prettyString() const {
   return "Seq2SeqCriterion";
 }
 
-AMUpdateFunc buildSeq2SeqRnnAmUpdateFunction(
+EmittingModelUpdateFunc buildSeq2SeqRnnUpdateFunction(
     std::shared_ptr<SequenceCriterion>& criterion,
     int attRound,
     int beamSize,
@@ -649,60 +648,64 @@ AMUpdateFunc buildSeq2SeqRnnAmUpdateFunction(
 
   const Seq2SeqCriterion* s2sCriterion =
       static_cast<Seq2SeqCriterion*>(criterion.get());
-  auto amUpdateFunc = [buf, s2sCriterion](
-                          const float* emissions,
-                          const int N,
-                          const int T,
-                          const std::vector<int>& rawY,
-                          const std::vector<AMStatePtr>& rawPrevStates,
-                          int& t) {
-    if (t == 0) {
-      buf->input = fl::Variable(
-          Tensor::fromBuffer({N, T}, emissions, MemoryLocation::Host), false);
-    }
-    int batchSize = rawY.size();
-    buf->prevStates.resize(0);
-    buf->ys.resize(0);
+  auto emittingModelUpdateFunc =
+      [buf, s2sCriterion](
+          const float* emissions,
+          const int N,
+          const int T,
+          const std::vector<int>& rawY,
+          const std::vector<int>& /* prevHypBeamIdxs */,
+          const std::vector<EmittingModelStatePtr>& rawPrevStates,
+          int& t) {
+        if (t == 0) {
+          buf->input = fl::Variable(
+              Tensor::fromBuffer({N, T}, emissions, MemoryLocation::Host),
+              false);
+        }
+        int batchSize = rawY.size();
+        buf->prevStates.resize(0);
+        buf->ys.resize(0);
 
-    // Cast to seq2seq states
-    for (int i = 0; i < batchSize; i++) {
-      Seq2SeqState* prevState =
-          static_cast<Seq2SeqState*>(rawPrevStates[i].get());
-      fl::Variable y;
-      if (t > 0) {
-        y = fl::constant(rawY[i], {1}, fl::dtype::s32, false);
-      } else {
-        prevState = &buf->dummyState;
-      }
-      buf->ys.push_back(y);
-      buf->prevStates.push_back(prevState);
-    }
+        // Cast to seq2seq states
+        for (int i = 0; i < batchSize; i++) {
+          Seq2SeqState* prevState =
+              static_cast<Seq2SeqState*>(rawPrevStates[i].get());
+          fl::Variable y;
+          if (t > 0) {
+            y = fl::constant(rawY[i], {1}, fl::dtype::s32, false);
+          } else {
+            prevState = &buf->dummyState;
+          }
+          buf->ys.push_back(y);
+          buf->prevStates.push_back(prevState);
+        }
 
-    // Run forward in batch
-    std::vector<std::vector<float>> amScores;
-    std::vector<Seq2SeqStatePtr> outStates;
+        // Run forward in batch
+        std::vector<std::vector<float>> amScores;
+        std::vector<Seq2SeqStatePtr> outStates;
 
-    std::tie(amScores, outStates) = s2sCriterion->decodeBatchStep(
-        buf->input,
-        buf->ys,
-        buf->prevStates,
-        buf->attentionThreshold,
-        buf->smoothingTemperature);
+        std::tie(amScores, outStates) = s2sCriterion->decodeBatchStep(
+            buf->input,
+            buf->ys,
+            buf->prevStates,
+            buf->attentionThreshold,
+            buf->smoothingTemperature);
 
-    // Cast back to void*
-    std::vector<AMStatePtr> out;
-    for (auto& os : outStates) {
-      if (os->isValid) {
-        out.push_back(os);
-      } else {
-        out.push_back(nullptr);
-      }
-    }
-    return std::make_pair(amScores, out);
-  };
+        // Cast back to void*
+        std::vector<EmittingModelStatePtr> out;
+        for (auto& os : outStates) {
+          if (os->isValid) {
+            out.push_back(os);
+          } else {
+            out.push_back(nullptr);
+          }
+        }
+        return std::make_pair(amScores, out);
+      };
 
-  return amUpdateFunc;
+  return emittingModelUpdateFunc;
 }
+
 } // namespace speech
 } // namespace pkg
 } // namespace fl

@@ -1,75 +1,66 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
-# ----------------------------- Setup -----------------------------
-set(FL_CORE_COMPONENT_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}") # module root
+option(FL_BUILD_CONTRIB "Build and link additional non-stabl contrib components" ON)
 
-# -------------------------------- Components --------------------------------
+# Builds optional non-stable components of the FL API
 if (FL_BUILD_CONTRIB)
-  message(STATUS "Will build flashlight contrib assets.")
-  include(${FL_CORE_COMPONENT_SRC_DIR}/contrib/CMakeLists.txt)
+  message(STATUS "Building Flashlight with contrib components.")
+  include(${CMAKE_CURRENT_LIST_DIR}/contrib/CMakeLists.txt)
 endif()
 
-# Build and link resources from `flashlight/experimental`.
-cmake_dependent_option(FL_BUILD_EXPERIMENTAL
-  "Build and link additional internal flashlight experimental resources." ON
-  "FL_BUILD_CORE" OFF)
-if (FL_BUILD_EXPERIMENTAL)
-  message(STATUS "Will build flashlight experimental assets.")
-  set(FL_EXPERIMENTAL_ROOT_PATH
-    ${FL_CORE_COMPONENT_SRC_DIR}/experimental)
-  include(${FL_EXPERIMENTAL_ROOT_PATH}/CMakeLists.txt)
+# ------------------------ Global External Dependencies ------------------------
+# If cereal is found in a user-defined location, use it rather than
+# downloading from source
+find_package(cereal CONFIG)
+if (NOT TARGET cereal::cereal)
+  if (NOT FL_BUILD_STANDALONE)
+    message(FATAL_ERROR "Required dependency cereal not found")
+  endif()
+  message(STATUS "Could not find cereal. Will download from source.")
+  include(${PROJECT_SOURCE_DIR}/cmake/BuildCereal.cmake)
 endif()
-
-# Internal includes are implicitly defined as <flashlight...>
-target_include_directories(
-  flashlight
-  PUBLIC
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
-)
+target_link_libraries(flashlight PUBLIC $<BUILD_INTERFACE:cereal::cereal>)
 
 # -------------------------------- Components --------------------------------
-# Tensor -- resolve backends and compute runtimes first
-include(${FL_CORE_COMPONENT_SRC_DIR}/tensor/CMakeLists.txt)
-
-# Common
-include(${FL_CORE_COMPONENT_SRC_DIR}/common/CMakeLists.txt)
-
-# Autograd
-include(${FL_CORE_COMPONENT_SRC_DIR}/autograd/CMakeLists.txt)
-
-# Dataset
-include(${FL_CORE_COMPONENT_SRC_DIR}/dataset/CMakeLists.txt)
-
-# Distributed
-include(${FL_CORE_COMPONENT_SRC_DIR}/distributed/CMakeLists.txt)
-
-# Meter
-include(${FL_CORE_COMPONENT_SRC_DIR}/meter/CMakeLists.txt)
-
-# NN
-include(${FL_CORE_COMPONENT_SRC_DIR}/nn/CMakeLists.txt)
-
-# Optim
-include(${FL_CORE_COMPONENT_SRC_DIR}/optim/CMakeLists.txt)
+# Tensor -- resolve backends first
+include(${CMAKE_CURRENT_LIST_DIR}/tensor/CMakeLists.txt)
 
 # Runtime
-include(${FL_CORE_COMPONENT_SRC_DIR}/runtime/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/runtime/CMakeLists.txt)
 
-# --------------------------- Configure Examples/Tests ---------------------------
+# Common
+include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
 
-# Build tests
+# Autograd
+include(${CMAKE_CURRENT_LIST_DIR}/autograd/CMakeLists.txt)
+
+# Dataset
+include(${CMAKE_CURRENT_LIST_DIR}/dataset/CMakeLists.txt)
+
+# Distributed
+include(${CMAKE_CURRENT_LIST_DIR}/distributed/CMakeLists.txt)
+
+# Meter
+include(${CMAKE_CURRENT_LIST_DIR}/meter/CMakeLists.txt)
+
+# NN
+include(${CMAKE_CURRENT_LIST_DIR}/nn/CMakeLists.txt)
+
+# Optim
+include(${CMAKE_CURRENT_LIST_DIR}/optim/CMakeLists.txt)
+
+# ----------------------- Examples and Tests ------------------------
+
 if (FL_BUILD_TESTS)
-  add_subdirectory(${FL_CORE_COMPONENT_SRC_DIR}/test)
+  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/test)
 endif ()
 
-# Build examples
 if (FL_BUILD_EXAMPLES)
-  set(FL_EXAMPLES_DIR ${FL_CORE_COMPONENT_SRC_DIR}/examples)
+  set(FL_EXAMPLES_DIR ${CMAKE_CURRENT_LIST_DIR}/examples)
   add_subdirectory(${FL_EXAMPLES_DIR})
-  # Installation properties
   install(
     DIRECTORY ${FL_EXAMPLES_DIR}
     DESTINATION ${FL_INSTALL_EXAMPLES_DIR}
     COMPONENT examples
-    )
-endif ()
+  )
+endif()

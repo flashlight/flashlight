@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
 # ----------------------------- NN Modules -----------------------------
 target_sources(
@@ -6,10 +6,5 @@ target_sources(
   PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/SetCriterion.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Hungarian.cpp
-)
-
-target_link_libraries(
-  fl_pkg_vision
-  PRIVATE
-  fl_lib_set
+  ${CMAKE_CURRENT_LIST_DIR}/HungarianImpl.cpp
 )

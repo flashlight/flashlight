@@ -9,6 +9,7 @@
 
 #include <stdexcept>
 #include <utility>
+#include <algorithm>
 
 #include "flashlight/fl/tensor/DefaultTensorType.h"
 #include "flashlight/fl/tensor/TensorAdapter.h"
@@ -25,6 +26,10 @@ namespace fl {
 
 Tensor::Tensor(std::unique_ptr<TensorAdapterBase> adapter)
     : impl_(std::move(adapter)) {}
+
+std::unique_ptr<TensorAdapterBase> Tensor::releaseAdapter() {
+  return std::move(impl_);
+}
 
 Tensor::~Tensor() {}
 
@@ -92,6 +97,10 @@ int Tensor::ndim() const {
 
 bool Tensor::isEmpty() const {
   return elements() == 0;
+}
+
+bool Tensor::hasAdapter() const {
+  return impl_.get() != nullptr;
 }
 
 size_t Tensor::bytes() const {
@@ -852,10 +861,14 @@ std::string tensorBackendTypeToString(const TensorBackendType type) {
   switch (type) {
     case TensorBackendType::Stub:
       return "Stub";
+    case TensorBackendType::Tracer:
+      return "Tracer";
     case TensorBackendType::ArrayFire:
       return "ArrayFire";
     case TensorBackendType::OneDnn:
       return "OneDnn";
+    case TensorBackendType::Jit:
+      return "Jit";
   }
   throw std::runtime_error("Unreachable -- unrecognized tensor backend type");
 }
@@ -866,6 +879,14 @@ std::ostream& operator<<(std::ostream& os, const TensorBackendType type) {
 }
 
 namespace detail {
+
+std::unique_ptr<TensorAdapterBase> releaseAdapter(Tensor&& t) {
+  return t.releaseAdapter();
+}
+
+std::unique_ptr<TensorAdapterBase> releaseAdapterUnsafe(Tensor& t) {
+  return t.releaseAdapter();
+}
 
 bool areTensorTypesEqual(const Tensor& a, const Tensor& b) {
   return a.type() == b.type();

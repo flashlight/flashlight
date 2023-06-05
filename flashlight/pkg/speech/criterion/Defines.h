@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "flashlight/lib/sequence/criterion/Defines.h"
+#include <flashlight/lib/sequence/criterion/Defines.h>
 
 namespace fl {
 namespace pkg {

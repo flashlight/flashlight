@@ -74,12 +74,17 @@ class OneDnnTensor : public TensorAdapterBase {
   unsigned getSizeInBytes() const;
 
  public:
+  constexpr static TensorBackendType tensorBackendType =
+      TensorBackendType::OneDnn;
+
   /**
    * Helper constructor for shallow-copying. For internal use only.
    *
-   * @param[in] sharedData shared data among shallow copies or view from indexing
+   * @param[in] sharedData shared data among shallow copies or view from
+   * indexing
    * @param[in] shape_ Flashlight shape of the this Tensor (which may be a view)
-   * @param[in] memDesc OneDNN memory descriptor for this Tensor (which may be a view)
+   * @param[in] memDesc OneDNN memory descriptor for this Tensor (which may be a
+   * view)
    */
   OneDnnTensor(
       std::shared_ptr<SharedData> sharedData,
@@ -92,10 +97,7 @@ class OneDnnTensor : public TensorAdapterBase {
    * @param[in] shape the shape of the new tensor
    * @param[in] memory the memory handle containing underlying tensor data
    */
-  OneDnnTensor(
-      const Shape& shape,
-      dnnl::memory&& memory);
-
+  OneDnnTensor(const Shape& shape, dnnl::memory&& memory);
 
   /**
    * Construct an empty OneDNNTensor.
@@ -180,29 +182,28 @@ class OneDnnTensor : public TensorAdapterBase {
 #undef ASSIGN_OP_TYPE
 #undef ASSIGN_OP
 
-/**
- * Deep comparison over shape, type, and data (with some tolerance for float).
- *
- * @return true if this OneDnn tensor equals the given one.
- */
-bool equals(OneDnnTensor&& other);
+  /**
+   * Deep comparison over shape, type, and data (with some tolerance for float).
+   *
+   * @return true if this OneDnn tensor equals the given one.
+   */
+  bool equals(OneDnnTensor&& other);
 
-/**
- * Get the underlying OneDNN memory handle.
- * NOTE not const-correct to conform with OneDNN primitive execution API.
- *
- * @return a reference to the underlying OneDNN memory handle.
- */
-dnnl::memory& memory();
+  /**
+   * Get the underlying OneDNN memory handle.
+   * NOTE not const-correct to conform with OneDNN primitive execution API.
+   *
+   * @return a reference to the underlying OneDNN memory handle.
+   */
+  dnnl::memory& memory();
 
-/**
- * Get the current OneDNN memory descriptor (which may be a view) for this tensor.
- * Guaranteed to have same data type as original memory desc.
- *
- * @return an immutable reference to the underlying OneDNN memory descriptro.
- */
-const dnnl::memory::desc& memoryDesc() const;
-
+  /**
+   * Get the current OneDNN memory descriptor (which may be a view) for this
+   * tensor. Guaranteed to have same data type as original memory desc.
+   *
+   * @return an immutable reference to the underlying OneDNN memory descriptro.
+   */
+  const dnnl::memory::desc& memoryDesc() const;
 };
 
 // Safe to drop `const`, as these are just checked version of `Tensor::impl`

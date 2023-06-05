@@ -23,8 +23,6 @@ constexpr af_interp_type flToAfInterpType(InterpolationMode mode);
 
 class ArrayFireVisionExtension : public VisionExtension {
  public:
-  static bool registered;
-
   bool isDataTypeSupported(const fl::dtype& dtype) const override;
 
   Tensor histogram(

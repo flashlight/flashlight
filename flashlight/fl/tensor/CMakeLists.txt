@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
 # Enable or disable compute backends. Example:
 #
@@ -27,12 +27,16 @@ endfunction()
 
 # ]--------------- Backend Options and Selection
 option(FL_USE_ARRAYFIRE "Build ArrayFire tensor backend" ON)
+option(FL_USE_JIT "Build JIT tensor backend" ON)
 option(FL_USE_TENSOR_STUB "Build Stub tensor backend" ON)
 option(FL_USE_ONEDNN "Build OneDNN tensor backend" ON)
 
 
 if (FL_USE_ARRAYFIRE)
   include(${CMAKE_CURRENT_LIST_DIR}/backend/af/CMakeLists.txt)
+endif()
+if (FL_USE_JIT)
+  include(${CMAKE_CURRENT_LIST_DIR}/backend/jit/CMakeLists.txt)
 endif()
 if (FL_USE_TENSOR_STUB)
   include(${CMAKE_CURRENT_LIST_DIR}/backend/stub/CMakeLists.txt)
@@ -45,6 +49,7 @@ target_compile_definitions(
   flashlight
   PUBLIC
   FL_USE_ARRAYFIRE=$<BOOL:${FL_USE_ARRAYFIRE}>
+  FL_USE_JIT=$<BOOL:${FL_USE_JIT}>
   FL_USE_TENSOR_STUB=$<BOOL:${FL_USE_TENSOR_STUB}>
   FL_USE_ONEDNN=$<BOOL:${FL_USE_ONEDNN}>
 )
@@ -81,9 +86,25 @@ target_sources(
 cmake_dependent_option(FL_BUILD_PROFILING
   "Enable profiling with Flashlight" OFF
   "FL_USE_CUDA" OFF)
+
 if (FL_USE_CUDA)
-  target_link_libraries(flashlight PUBLIC ${CUDA_LIBRARIES})
-  target_include_directories(flashlight PUBLIC ${CUDA_INCLUDE_DIRS})
+  include(CheckLanguage)
+  check_language(CUDA)
+  if (CMAKE_CUDA_COMPILER)
+    enable_language(CUDA)
+  else()
+    message(FATAL_ERROR "CUDA is enabled but no CUDA compiler was found")
+  endif()
+
+  # Link CUDA components
+  if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.17)
+    find_package(CUDAToolkit REQUIRED cublas)
+    target_link_libraries(flashlight PRIVATE CUDA::cublas)
+  else()
+    # Remove old branch when requiring CMake >= 3.17
+    target_link_libraries(flashlight PRIVATE ${CUDA_LIBRARIES})
+    target_include_directories(flashlight PRIVATE ${CUDA_INCLUDE_DIRS})
+  endif()
 
   if (FL_BUILD_PROFILING)
     # Try to find NVTX

@@ -1,4 +1,15 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
+
+cmake_dependent_option(
+  FL_BUILD_APP_ASR_SFX_SOX
+  "Build libsox-based sound effects augmentation" OFF
+  "FL_BUILD_APP_ASR" OFF
+  )
+cmake_dependent_option(
+  FL_USE_SOX_STATIC
+  "Statically link libsox with sound effects" OFF
+  "NOT BUILD_SHARED_LIBS" OFF
+  )
 
 # ------------------------ libsox ------------------------
 # Add the include dir and the libraries that are required for
@@ -38,7 +49,7 @@ if (FL_BUILD_APP_ASR_SFX_SOX)
 
   # Download and build static sox library.
   if (NOT SOX_FOUND AND FL_BUILD_STANDALONE)
-      include(${CMAKE_MODULE_PATH}/Buildsox.cmake)
+      include(${PROJECT_SOURCE_DIR}/cmake/Buildsox.cmake)
       add_dependencies(fl_pkg_speech sox)
   endif()
 

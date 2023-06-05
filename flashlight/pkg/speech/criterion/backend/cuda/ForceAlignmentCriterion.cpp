@@ -12,8 +12,9 @@
 #include "flashlight/fl/common/DevicePtr.h"
 #include "flashlight/fl/runtime/CUDAStream.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
-#include "flashlight/lib/sequence/criterion/cuda/ForceAlignmentCriterion.cuh"
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
+
+#include <flashlight/lib/sequence/criterion/cuda/ForceAlignmentCriterion.cuh>
 
 using FAC = fl::lib::cuda::ForceAlignmentCriterion<float>;
 

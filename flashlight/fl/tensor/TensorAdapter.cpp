@@ -15,11 +15,6 @@
 #include "flashlight/fl/tensor/TensorBackend.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
-/**
- * The compile time value which will be true if the default backend is
- * available.
- */
-#define FL_DEFAULT_BACKEND_COMPILE_FLAG FL_USE_ARRAYFIRE
 
 namespace fl {
 namespace detail {
@@ -31,6 +26,7 @@ DefaultTensorType& DefaultTensorType::getInstance() {
 
 DefaultTensorType::DefaultTensorType() {
   // Resolve the default backend in order of preference/availability
+  // See DefaultTensorType.h
 #if FL_DEFAULT_BACKEND_COMPILE_FLAG
   creationFunc_ = std::make_unique<TensorCreatorImpl<DefaultTensorType_t>>();
 #else

@@ -41,6 +41,7 @@ wheels/
 *.lo
 *.o
 *.obj
+*.dylib
 
 # Compiled Static libraries
 *.lai
@@ -50,3 +51,5 @@ wheels/
 
 # Dev environment
 .vscode
+.vs
+CMakeSettings.json

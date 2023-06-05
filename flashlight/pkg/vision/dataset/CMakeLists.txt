@@ -1,19 +1,20 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
-set(stb_INSTALL_PATH ${FL_INSTALL_INC_DIR}/stb)
-find_package(stb)
-if(NOT stb_FOUND)
-  message(STATUS "Could not find stb_image.h. Will download stb from github")
-  include(${CMAKE_MODULE_PATH}/BuildStb.cmake)
-  add_dependencies(fl_pkg_vision stb)
-
-  # Move stb headers at install time only if they weren't already found
-  setup_install_headers(${stb_SOURCE_DIR} ${stb_INSTALL_PATH})
-  setup_install_find_module(${CMAKE_MODULE_PATH}/Findstb.cmake)
-else()
-  message(STATUS "stb_image.h found: (include: ${stb_INCLUDE_DIRS})")
+# stb_image.h
+find_path(stb_INCLUDE_DIRS
+  NAMES stb_image.h
+  PATH_SUFFIXES include
+  PATHS ${stb_BASE_DIR}
+  ENV stb_BASE_DIR
+  )
+if (NOT stb_INCLUDE_DIRS)
+  if (NOT FL_BUILD_STANDALONE)
+    message(FATAL_ERROR "Required dependency stb not found - try setting stb_BASE_DIR")
+  endif()
+  message(STATUS "stb_image.h not found - will download from source")
+  include(${PROJECT_SOURCE_DIR}/cmake/BuildStb.cmake)
 endif()
-
+message(STATUS "stb_image.h found: (include: ${stb_INCLUDE_DIRS})")
 target_include_directories(fl_pkg_vision PRIVATE ${stb_INCLUDE_DIRS})
 
 target_sources(

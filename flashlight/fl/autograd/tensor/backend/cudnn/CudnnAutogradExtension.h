@@ -19,8 +19,6 @@ class CudnnAutogradExtension : public AutogradExtension {
   // TODO(jacobkahn): implement getCudnnHandle
 
  public:
-  static bool registered;
-
   bool isDataTypeSupported(const fl::dtype& dtype) const override;
 
   enum class KernelMode { F32 = 0, F32_ALLOW_CONVERSION = 1, F16 = 2 };

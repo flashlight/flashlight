@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
 target_sources(
   flashlight
@@ -15,13 +15,13 @@ target_sources(
 target_link_libraries(
   flashlight
   PUBLIC
-  ${CUDNN_LIBRARIES}
+  ${CUDNN_LIBRARY_PATH}
   )
 
 target_include_directories(
   flashlight
   PUBLIC
-  ${CUDNN_INCLUDE_DIRS}
+  ${CUDNN_INCLUDE_PATH}
   )
 
 target_compile_definitions(

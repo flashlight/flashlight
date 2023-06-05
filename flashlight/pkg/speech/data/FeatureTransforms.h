@@ -11,7 +11,7 @@
 #include "flashlight/pkg/speech/augmentation/SoundEffectConfig.h"
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/fl/flashlight.h"
-#include "flashlight/lib/audio/feature/FeatureParams.h"
+#include "flashlight/pkg/speech/audio/feature/FeatureParams.h"
 #include "flashlight/lib/text/String.h"
 #include "flashlight/lib/text/dictionary/Utils.h"
 
