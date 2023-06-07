@@ -564,6 +564,7 @@ workflows:
               - platform: linux-arm
                 backend: arrayfire
                 autograd_backend: onednn
+                build_parallelism: ["8"]
 
       - build-flashlight-pkg:
           name: build-flashlight-pkg-<< matrix.pkg>>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
