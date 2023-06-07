@@ -9,7 +9,7 @@ FetchContent_Declare(
 )
 
 # KenLM support is required for Flashlight's speech package
-set(FL_TEXT_USE_KENLM ON CACHE INTERNAL "Enable KenLM support in Flashlight Text")
+set(FL_TEXT_USE_KENLM ${FL_BUILD_PKG_SPEECH} CACHE INTERNAL "Enable KenLM support in Flashlight Text")
 set(FL_TEXT_BUILD_TESTS OFF CACHE INTERNAL "Disable tests in Flashlight Text")
 set(FL_TEXT_BUILD_STANDALONE ${FL_BUILD_STANDALONE} CACHE INTERNAL "Set standalone build in Flashlight Text")
 
