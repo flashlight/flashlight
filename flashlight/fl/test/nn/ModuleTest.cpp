@@ -32,8 +32,7 @@ class ContainerTestClass : public Sequential {
       auto [paramIter, pEnd] = orphanParamIdxMap.equal_range(i);
       for (; paramIter != pEnd; ++paramIter) {
         const auto& param = other.params_[paramIter->second];
-        params_.emplace_back(
-            param.tensor().copy(), param.isCalcGrad());
+        params_.emplace_back(param.copy());
       }
     }
   }

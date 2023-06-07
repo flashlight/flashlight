@@ -48,12 +48,8 @@ BatchNorm::BatchNorm(const BatchNorm& other)
     : featAxis_(other.featAxis_),
       featSize_(other.featSize_),
       numBatchesTracked_(other.numBatchesTracked_),
-      runningMean_(
-          other.runningMean_.tensor().copy(),
-          other.runningMean_.isCalcGrad()),
-      runningVar_(
-          other.runningVar_.tensor().copy(),
-          other.runningVar_.isCalcGrad()),
+      runningMean_(other.runningMean_.copy()),
+      runningVar_(other.runningVar_.copy()),
       momentum_(other.momentum_),
       epsilon_(other.epsilon_),
       affine_(other.affine_),
@@ -63,10 +59,8 @@ BatchNorm& BatchNorm::operator=(const BatchNorm& other) {
   featAxis_ = other.featAxis_;
   featSize_ = other.featSize_;
   numBatchesTracked_ = other.numBatchesTracked_;
-  runningMean_ = Variable(
-      other.runningMean_.tensor().copy(), other.runningMean_.isCalcGrad());
-  runningVar_ = Variable(
-      other.runningVar_.tensor().copy(), other.runningVar_.isCalcGrad());
+  runningMean_ = other.runningMean_.copy();
+  runningVar_ = other.runningVar_.copy();
   momentum_ = other.momentum_;
   epsilon_ = other.epsilon_;
   affine_ = other.affine_;

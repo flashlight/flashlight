@@ -33,11 +33,11 @@ void Module::setParams(const Variable& var, int position) {
   params_[position] = var;
 }
 
-std::vector<Variable> Module::copyParams() const {
+std::vector<Variable> Module::copyParams(bool forceDeepCopy) const {
   std::vector<Variable> params;
   params.reserve(params_.size());
   for (const auto& param : params_) {
-    params.emplace_back(param.tensor().copy(), param.isCalcGrad());
+    params.emplace_back(param.copy(forceDeepCopy));
   }
   return params;
 }

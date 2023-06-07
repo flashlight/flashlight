@@ -132,7 +132,7 @@ void Conformer::copy(const Conformer& other) {
   convDepthWise_ = std::make_shared<Conv2D>(*other.convDepthWise_);
   if (posEmbContextSize_ > 0) {
     const auto& p = other.param(0);
-    params_.emplace_back(p.tensor().copy(), p.isCalcGrad());
+    params_.emplace_back(p.copy());
   }
 }
 

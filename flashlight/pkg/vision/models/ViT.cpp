@@ -66,11 +66,11 @@ void ViT::copy(const ViT& other) {
 
   // Class token
   auto clsTkn = other.param(0);
-  params_.emplace_back(clsTkn.tensor().copy(), clsTkn.isCalcGrad());
+  params_.emplace_back(clsTkn.copy());
 
   // Positional embedding
   auto posEmb = other.param(1);
-  params_.emplace_back(posEmb.tensor().copy(), posEmb.isCalcGrad());
+  params_.emplace_back(posEmb.copy());
 
   // Modules
   patchEmbedding_ = std::make_shared<Conv2D>(*other.patchEmbedding_);
