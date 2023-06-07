@@ -125,24 +125,23 @@ TEST(JitNodeTest, IndexNodeMetaData) {
   delete node;
 }
 
-// TODO bring this back after supporting `JitTensor::type()`
-//TEST(JitNodeTest, IndexNodeSameShapeTensorIndices) {
-//  const Shape shape({5, 6, 7});
-//  const auto c0 = ScalarNode::create(shape, dtype::f32, 0);
-//  const auto t1 =
-//      JitTensor<DefaultTensorType_t>().backend().full(shape, 1, dtype::f32);
-//  const auto c1 = toJitTensorBase(t1).node();
-//  std::vector<Index> indices{t1};
-//  const auto node = IndexNode::create(c0, indices);
-//  ASSERT_EQ(node->inputs(), NodeList({c0, c1})); // includes tensor index
-//  ASSERT_EQ(node->indexedNode(), c0);
-//  ASSERT_EQ(node->indices().size(), 1); // can't check equality easily...
-//  // if tensor index has same shape as indexed tensor, output shape is simply
-//  // the flattened tensor shape
-//  ASSERT_EQ(node->shape(), Shape({210}));
-//  // node is owned locally (didn't transition to shared ownership)
-//  delete node;
-//}
+TEST(JitNodeTest, IndexNodeSameShapeTensorIndices) {
+  const Shape shape({5, 6, 7});
+  const auto c0 = ScalarNode::create(shape, dtype::f32, 0);
+  const auto t1 =
+      JitTensor<DefaultTensorType_t>().backend().full(shape, 1, dtype::f32);
+  const auto c1 = toJitTensorBase(t1).node();
+  std::vector<Index> indices{t1};
+  const auto node = IndexNode::create(c0, indices);
+  ASSERT_EQ(node->inputs(), NodeList({c0, c1})); // includes tensor index
+  ASSERT_EQ(node->indexedNode(), c0);
+  ASSERT_EQ(node->indices().size(), 1); // can't check equality easily...
+  // if tensor index has same shape as indexed tensor, output shape is simply
+  // the flattened tensor shape
+  ASSERT_EQ(node->shape(), Shape({210}));
+  // node is owned locally (didn't transition to shared ownership)
+  delete node;
+}
 
 TEST(JitNodeTest, IndexNodeDifferentShapeTensorIndices) {
   const auto c0 = ScalarNode::create({5, 6, 7}, dtype::f32, 0);

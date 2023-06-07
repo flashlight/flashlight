@@ -12,6 +12,7 @@
 #include <stdexcept>
 
 #include "flashlight/fl/tensor/backend/jit/ir/IndexedUpdateNode.h"
+#include "flashlight/fl/tensor/backend/jit/ir/ValueNode.h"
 
 #define FL_JIT_TENSOR_UNIMPLEMENTED \
   throw std::invalid_argument(      \
@@ -148,6 +149,10 @@ const Tensor& JitTensorBase::getTensorOrEvalNode() const {
   return node()->getResult().value();
 }
 
+Tensor JitTensorBase::fromDataNode(Node* node) const {
+  return fromSharedData(std::make_shared<SharedData>(node));
+}
+
 Tensor JitTensorBase::copy() {
   // Since a node's computation result is immutable, copy is free.
   return Tensor(clone());
@@ -167,51 +172,102 @@ const Shape& JitTensorBase::shape() {
 }
 
 fl::dtype JitTensorBase::type() {
-  FL_JIT_TENSOR_UNIMPLEMENTED;
+  // TODO add type inference, which will
+  // 1. Enable redundant cast removal -- this isn't easy to implement in the
+  //    underlying backend (like OneDnnBackend) because in eager mode, we must
+  //    make a copy even if type cast is redundant.
+  // 2. avoid unnecessary materialization here, which enables more
+  //    optimizations, e.g., fusion. 
+  return getTensorOrEvalNode().type();
 }
 
 bool JitTensorBase::isSparse() {
-  FL_JIT_TENSOR_UNIMPLEMENTED;
+  return getTensorOrEvalNode().isSparse();
 }
 
 Location JitTensorBase::location() {
-  FL_JIT_TENSOR_UNIMPLEMENTED;
+  // TODO keep track of location to avoid materialization
+  return getTensorOrEvalNode().location();
 }
 
-void JitTensorBase::scalar(void* /* out */) {
-  FL_JIT_TENSOR_UNIMPLEMENTED;
+void JitTensorBase::scalar(void* out) {
+  // TODO support tensor.getAdapterBase() so we can use its `scalar` directly
+  const auto& tensor = getTensorOrEvalNode();
+  switch (type()) {
+    case dtype::f16:
+      throw std::runtime_error("[JitTensorBase::scalar] f16 unsupported");
+    case dtype::f32:
+      *((float*)out) = tensor.scalar<float>();
+      return;
+    case dtype::f64:
+      *((double*)out) = tensor.scalar<double>();
+      return;
+    case dtype::b8:
+      *((char*)out) = tensor.scalar<char>();
+      return;
+    case dtype::s16:
+      *((short*)out) = tensor.scalar<short>();
+      return;
+    case dtype::s32:
+      *((int*)out) = tensor.scalar<int>();
+      return;
+    case dtype::s64:
+      *((long long*)out) = tensor.scalar<long long>();
+      return;
+    case dtype::u8:
+      *((unsigned char*)out) = tensor.scalar<unsigned char>();
+      return;
+    case dtype::u16:
+      *((unsigned short*)out) = tensor.scalar<unsigned short>();
+      return;
+    case dtype::u32:
+      *((unsigned int*)out) = tensor.scalar<unsigned int>();
+      return;
+    case dtype::u64:
+      *((unsigned long long*)out) = tensor.scalar<unsigned long long>();
+      return;
+  }
+  throw std::runtime_error("[JitTensorBase::scalar] Unknown data type");
 }
 
-void JitTensorBase::device(void** /* out */) {
-  FL_JIT_TENSOR_UNIMPLEMENTED;
+void JitTensorBase::device(void** out) {
+  getTensorOrEvalNode().device(out);
 }
 
-void JitTensorBase::host(void* /* out */) {
-  FL_JIT_TENSOR_UNIMPLEMENTED;
+void JitTensorBase::host(void* out) {
+  getTensorOrEvalNode().host(out);
 }
 
 void JitTensorBase::unlock() {
-  FL_JIT_TENSOR_UNIMPLEMENTED;
+  getTensorOrEvalNode().unlock();
 }
 
 bool JitTensorBase::isLocked() {
-  FL_JIT_TENSOR_UNIMPLEMENTED;
+  return getTensorOrEvalNode().isLocked();
 }
 
 bool JitTensorBase::isContiguous() {
-  FL_JIT_TENSOR_UNIMPLEMENTED;
+  // TODO infer contiguity? This is vaguely relevant to another idea -- annotate
+  // nodes with strides and layout to enable more optimizations.
+  return getTensorOrEvalNode().isContiguous();
 }
 
 Shape JitTensorBase::strides() {
-  FL_JIT_TENSOR_UNIMPLEMENTED;
+  return getTensorOrEvalNode().strides();
 }
 
 const Stream& JitTensorBase::stream() const {
-  FL_JIT_TENSOR_UNIMPLEMENTED;
+  // TODO can we infer this from leaf nodes?
+  return getTensorOrEvalNode().stream();
 }
 
-Tensor JitTensorBase::astype(const dtype /* type */) {
-  FL_JIT_TENSOR_UNIMPLEMENTED;
+Tensor JitTensorBase::astype(const dtype type) {
+  // TODO cast node after we support type inference, so we can eliminate
+  // redundant cast.
+  return fromDataNode(CustomNode::create(
+      "astype", {this->node()}, Shape(this->shape()), [=](auto inputs) {
+        return inputs.at(0)->astype(type);
+      }));
 }
 
 Tensor JitTensorBase::index(const std::vector<Index>& indices) {
@@ -219,33 +275,50 @@ Tensor JitTensorBase::index(const std::vector<Index>& indices) {
 }
 
 Tensor JitTensorBase::flatten() const {
-  FL_JIT_TENSOR_UNIMPLEMENTED;
+  return fromDataNode(CustomNode::create(
+      "flatten",
+      {this->node()},
+      Shape({node()->shape().elements()}),
+      [=](auto inputs) { return inputs.at(0)->flatten(); }));
 }
 
-Tensor JitTensorBase::flat(const Index& /* idx */) const {
-  FL_JIT_TENSOR_UNIMPLEMENTED;
+Tensor JitTensorBase::flat(const Index& idx) const {
+  // TODO shape inference for custom node
+  const auto& thisTensorResult =
+      const_cast<JitTensorBase*>(this)->getTensorOrEvalNode();
+  if (idx.type() == detail::IndexType::Tensor) {
+    const auto& tensorIdx = idx.get<Tensor>();
+    const auto& tensorIdxResult =
+        toJitTensorBase(tensorIdx).getTensorOrEvalNode();
+    return fromDataNode(ValueNode::create(thisTensorResult.flat(tensorIdxResult)));
+  }
+  return fromDataNode(ValueNode::create(thisTensorResult.flat(idx)));
 }
 
 Tensor JitTensorBase::asContiguousTensor() {
-  FL_JIT_TENSOR_UNIMPLEMENTED;
+  // TODO add a node for this if we support contiguity or stride inference, so
+  // we can eliminate redundant asContiguousTensor call.
+  return fromDataNode(CustomNode::create(
+      "asContiguousTensor", {this->node()}, Shape(shape()), [=](auto inputs) {
+        return inputs.at(0)->asContiguousTensor();
+      }));
 }
 
 void JitTensorBase::setContext(void* /* context */) {
-  // Used to store arbitrary data on a Tensor - can be a noop.
-  FL_JIT_TENSOR_UNIMPLEMENTED;
+  // no-op
 }
 
 void* JitTensorBase::getContext() {
-  // Used to store arbitrary data on a Tensor - can be a noop.
-  FL_JIT_TENSOR_UNIMPLEMENTED;
+  return nullptr;
 }
 
 std::string JitTensorBase::toString() {
   return getTensorOrEvalNode().toString();
 }
 
-std::ostream& JitTensorBase::operator<<(std::ostream& /* ostr */) {
-  FL_JIT_TENSOR_UNIMPLEMENTED;
+std::ostream& JitTensorBase::operator<<(std::ostream& ostr) {
+  ostr << toString();
+  return ostr;
 }
 
 /******************** Assignment Operators ********************/
