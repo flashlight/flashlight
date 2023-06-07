@@ -324,6 +324,9 @@ commands:
         type: string
       autograd_backend:
         type: string
+      build_parallelism:
+        type: string
+        default: ""
     steps:
       - run:
           name: "Build Flashlight"
@@ -337,7 +340,7 @@ commands:
               -DFL_USE_ONEDNN=$([ "<< parameters.backend >>" == "onednn" ] || [ "<< parameters.autograd_backend >>" == "onednn" ] && echo "ON" || echo "OFF") \
               -DFL_BUILD_DISTRIBUTED=OFF \
               -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON
-            cmake --build build --parallel
+            cmake --build build --parallel << parameters.build_parallelism >>
 
   test-flashlight:
     parameters:
@@ -383,6 +386,9 @@ jobs:
         type: string
       autograd_backend:
         type: string
+      build_parallelism:
+        type: string
+        default: ""
     executor: << parameters.platform >>
     steps:
       - checkout
@@ -394,6 +400,7 @@ jobs:
           platform: << parameters.platform >>
           backend: << parameters.backend >>
           autograd_backend: << parameters.backend >>
+          build_parallelism: << parameters.build_parallelism >>
       - persist_to_workspace:
           root: .
           paths:
@@ -552,10 +559,12 @@ workflows:
               platform: [macos-arm, linux-arm]
               backend: [arrayfire, onednn]
               autograd_backend: [onednn]
+              build_parallelism: ["8"]
             exclude:
               - platform: linux-arm
                 backend: arrayfire
                 autograd_backend: onednn
+                build_parallelism: "8"
 
       - build-flashlight-pkg:
           name: build-flashlight-pkg-<< matrix.pkg>>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
