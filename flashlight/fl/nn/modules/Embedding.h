@@ -56,6 +56,10 @@ class Embedding : public UnaryModule {
 
   Embedding& operator=(const Embedding& other);
 
+  Embedding(Embedding&& other) = default;
+
+  Embedding& operator=(Embedding&& other) = default;
+
   Variable forward(const Variable& input) override;
 
   std::unique_ptr<Module> clone() const override;

@@ -77,6 +77,10 @@ class WeightNorm : public Module {
 
   WeightNorm& operator=(const WeightNorm& other);
 
+  WeightNorm(WeightNorm&& other) = default;
+
+  WeightNorm& operator=(WeightNorm&& other) = default;
+
   /**
    * Returns a pointer to the inner `Module` normalized by this `WeightNorm`.
    *

@@ -31,6 +31,10 @@ class PositionEmbedding : public Module {
 
   PositionEmbedding& operator=(const PositionEmbedding& other);
 
+  PositionEmbedding(PositionEmbedding&& other) = default;
+
+  PositionEmbedding& operator=(PositionEmbedding&& other) = default;
+
   /**
    * PositionEmbedding::forward(input) expects input[0] to be of
    * dimensions C x T x B with C = layerDim and T <= maxLen.

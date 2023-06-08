@@ -94,6 +94,10 @@ class RNN : public Module {
 
   RNN& operator=(const RNN& other);
 
+  RNN(RNN&& other) = default;
+
+  RNN& operator=(RNN&& other) = default;
+
   std::vector<Variable> forward(const std::vector<Variable>& inputs) override;
 
   using Module::operator();

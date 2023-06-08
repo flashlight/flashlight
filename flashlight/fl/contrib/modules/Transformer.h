@@ -60,6 +60,8 @@ class Transformer : public Container {
       bool preLN = false);
   Transformer(const Transformer& other);
   Transformer& operator=(const Transformer& other);
+  Transformer(Transformer&& other) = default;
+  Transformer& operator=(Transformer&& other) = default;
 
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
   void setDropout(float value);

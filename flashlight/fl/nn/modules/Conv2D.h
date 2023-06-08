@@ -186,6 +186,10 @@ class Conv2D : public UnaryModule {
 
   Conv2D& operator=(const Conv2D& other);
 
+  Conv2D(Conv2D&& other) = default;
+
+  Conv2D& operator=(Conv2D&& other) = default;
+
   Variable forward(const Variable& input) override;
 
   std::unique_ptr<Module> clone() const override;

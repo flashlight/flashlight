@@ -45,8 +45,10 @@ class Conformer : public Container {
       float pDropout,
       float pLayerDropout = 0.);
   Conformer(const Conformer& other);
+  Conformer(Conformer&& other) = default;
 
   Conformer& operator=(const Conformer& other);
+  Conformer& operator=(Conformer&& other) = default;
 
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
   std::unique_ptr<Module> clone() const override;

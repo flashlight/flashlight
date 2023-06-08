@@ -141,25 +141,29 @@ class Container : public Module {
 };
 
 /**
- * Adds a copy constructor, copy assignment operator and clone method to the
- * class. This should only be used if the class basically acts as a wrapper
- * around a container such that no custom module ownership is used.
+ * Adds a copy constructor, copy assignment operator, move constructor, move
+ * assignment operator and clone method to the class. This should only be used
+ * if the class basically acts as a wrapper around a container such that no
+ * custom module ownership is used. Users should implement these methods
+ * themselves if any custom ownership is utilised.
  */
-#define FL_BASIC_CONTAINER_CLONING(ContainerClass)         \
-  ContainerClass(const ContainerClass& other) {            \
-    for (auto& mod : other.modules_) {                     \
-      add(mod->clone());                                   \
-    }                                                      \
-  }                                                        \
-  ContainerClass& operator=(const ContainerClass& other) { \
-    clear();                                               \
-    for (auto& mod : other.modules_) {                     \
-      add(mod->clone());                                   \
-    }                                                      \
-    return *this;                                          \
-  }                                                        \
-  std::unique_ptr<Module> clone() const override {         \
-    return std::make_unique<ContainerClass>(*this);        \
+#define FL_BASIC_CONTAINER_CLONING(ContainerClass)             \
+  ContainerClass(const ContainerClass& other) {                \
+    for (auto& mod : other.modules_) {                         \
+      add(mod->clone());                                       \
+    }                                                          \
+  }                                                            \
+  ContainerClass& operator=(const ContainerClass& other) {     \
+    clear();                                                   \
+    for (auto& mod : other.modules_) {                         \
+      add(mod->clone());                                       \
+    }                                                          \
+    return *this;                                              \
+  }                                                            \
+  ContainerClass(ContainerClass&& other) = default;            \
+  ContainerClass& operator=(ContainerClass&& other) = default; \
+  std::unique_ptr<Module> clone() const override {             \
+    return std::make_unique<ContainerClass>(*this);            \
   }
 
 /**

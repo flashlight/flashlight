@@ -68,6 +68,10 @@ class Linear : public UnaryModule {
 
   Linear& operator=(const Linear& other);
 
+  Linear(Linear&& other) = default;
+
+  Linear& operator=(Linear&& other) = default;
+
   Variable forward(const Variable& input) override;
 
   std::unique_ptr<Module> clone() const override;

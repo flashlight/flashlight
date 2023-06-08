@@ -61,6 +61,8 @@ class ViT : public fl::Container {
 
   ViT(const ViT& other);
   ViT& operator=(const ViT& other);
+  ViT(ViT&& other) = default;
+  ViT& operator=(ViT&& other) = default;
 
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;

@@ -123,6 +123,10 @@ class BatchNorm : public UnaryModule {
 
   BatchNorm& operator=(const BatchNorm& other);
 
+  BatchNorm(BatchNorm&& other) = default;
+
+  BatchNorm& operator=(BatchNorm&& other) = default;
+
   Variable forward(const Variable& input) override;
 
   std::unique_ptr<Module> clone() const override;
