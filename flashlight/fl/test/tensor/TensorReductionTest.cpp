@@ -23,8 +23,8 @@ TEST(TensorReductionTest, countNonzero) {
     a(idx / 10, idx % 10) = 0;
   }
 
-  ASSERT_TRUE(
-      allClose(fl::fromScalar(a.elements() - idxs.size()), fl::countNonzero(a)));
+  ASSERT_TRUE(allClose(
+      fl::fromScalar(a.elements() - idxs.size()), fl::countNonzero(a)));
 
   std::vector<unsigned> sizes(a.shape().dim(0));
   for (unsigned i = 0; i < a.shape().dim(0); ++i) {
@@ -43,8 +43,8 @@ TEST(TensorReductionTest, countNonzero) {
   ASSERT_TRUE(allClose(
       fl::Tensor::fromVector<unsigned>({2}, {4, 1}),
       fl::countNonzero(b, {0, 1})));
-  ASSERT_TRUE(
-      allClose(fl::fromScalar(b.elements() - 3), fl::countNonzero(b, {0, 1, 2})));
+  ASSERT_TRUE(allClose(
+      fl::fromScalar(b.elements() - 3), fl::countNonzero(b, {0, 1, 2})));
 }
 
 TEST(TensorReductionTest, amin) {
@@ -125,6 +125,52 @@ TEST(TensorReductionTest, argmax) {
       fl::argmax(in, 0, /* keepDims = */ true).shape(), Shape({1, in.dim(1)}));
   ASSERT_EQ(
       fl::argmax(in, 1, /* keepDims = */ true).shape(), Shape({in.dim(0), 1}));
+
+  // Scalar
+  auto t1d = fl::fromScalar<unsigned>(10);
+  auto res = fl::argmax(t1d, 0);
+  ASSERT_TRUE(allClose(res, fl::fromScalar<unsigned>(0)));
+
+  // 1D Tensor
+  t1d = Tensor::fromVector<unsigned>({1, 0, 3, 2});
+  res = fl::argmax(t1d, 0);
+  ASSERT_EQ(res.shape(), Shape());
+  ASSERT_EQ(res.elements(), 1);
+  ASSERT_TRUE(allClose(res, fl::fromScalar<unsigned>(2)));
+
+  std::vector<unsigned> vec;
+  vec.reserve(100);
+  for (unsigned i = 0; i < 100; ++i) {
+    vec.emplace_back(i);
+  }
+  t1d = Tensor::fromVector<unsigned>(vec);
+  res = fl::argmax(t1d, 0);
+  ASSERT_TRUE(allClose(res, fl::fromScalar<unsigned>(99)));
+
+  // 2D Tensor
+  auto t2d = Tensor::fromVector<float>({3, 2}, {3, -1, 0, 100, -7, 2});
+  res = fl::argmax(t2d, 1);
+  ASSERT_EQ(res.shape(), Shape({3}));
+  ASSERT_TRUE(allClose(res, Tensor::fromVector<unsigned>({1, 0, 1})));
+
+  t2d = Tensor::fromVector<float>({3, 2}, {3, 2, 5, 100, -7, 2});
+  res = fl::argmax(t2d, 0);
+  ASSERT_TRUE(allClose(res, Tensor::fromVector<unsigned>({2, 0})));
+
+  // 3D Tensor
+  std::vector<float> vec3d;
+  vec3d.reserve(60);
+  for (float i = 0; i < 60; ++i) {
+    vec3d.emplace_back(i);
+  }
+  auto t3d = Tensor::fromVector<float>({60, 1, 1}, vec3d);
+  res = fl::argmax(t3d, 0);
+  ASSERT_TRUE(allClose(res, Tensor::fromVector<unsigned>({1, 1}, {59})));
+
+  // ignores NAN
+  auto t_nan = Tensor::fromVector<float>({0, 3, 5, NAN, 3});
+  res = fl::argmax(t_nan, 0);
+  ASSERT_TRUE(allClose(res, fl::fromScalar<unsigned>(2)));
 }
 
 TEST(TensorReductionTest, min) {
@@ -344,6 +390,69 @@ TEST(TensorReductionTest, any) {
   ASSERT_EQ(r.shape(), Shape());
   ASSERT_TRUE(r.scalar<char>());
   ASSERT_EQ(fl::any(fl::fromScalar(v), {0}).shape(), Shape());
+
+  // 1D Tensor
+  auto t1d = Tensor::fromVector<unsigned>({0, 0, 0});
+  auto res = fl::any(t1d);
+  ASSERT_EQ(res.shape(), Shape());
+  ASSERT_EQ(res.elements(), 1);
+  ASSERT_TRUE(allClose(res, fl::fromScalar(false, dtype::b8)));
+
+  t1d = Tensor::fromVector<unsigned>({1, 0, 1});
+  res = fl::any(t1d);
+  ASSERT_EQ(res.shape(), Shape());
+  ASSERT_EQ(res.elements(), 1);
+  ASSERT_TRUE(allClose(res, fl::fromScalar(true, dtype::b8)));
+
+  t1d = Tensor::fromVector<unsigned>({1, 1, 1});
+  res = fl::any(t1d);
+  ASSERT_EQ(res.shape(), Shape());
+  ASSERT_EQ(res.elements(), 1);
+  ASSERT_TRUE(allClose(res, fl::fromScalar(true, dtype::b8)));
+
+  // TODO: 2D Tensor
+  auto t2d_a = Tensor::fromVector<unsigned>({2, 2}, {1, 1, 0, 0});
+  res = fl::any(t2d_a);
+  ASSERT_EQ(res.shape(), Shape());
+  ASSERT_EQ(res.elements(), 1);
+  ASSERT_TRUE(allClose(res, fl::fromScalar(true, dtype::b8)));
+
+  auto t2d_b = Tensor::fromVector<unsigned>({3, 2}, {1, 1, 0, 0, 1, 0});
+  res = fl::any(t2d_b, {0, 1});
+  ASSERT_EQ(res.shape(), Shape());
+  ASSERT_EQ(res.elements(), 1);
+  ASSERT_TRUE(allClose(res, fl::fromScalar(true, dtype::b8)));
+
+  res = fl::any(t2d_a, {1});
+  ASSERT_EQ(res.shape(), Shape({2}));
+  ASSERT_EQ(res.elements(), 2);
+  ASSERT_TRUE(
+      allClose(res, Tensor::fromVector<unsigned>({1, 1}).astype(dtype::b8)));
+
+  res = fl::any(t2d_a, {0});
+  ASSERT_EQ(res.shape(), Shape({2}));
+  ASSERT_EQ(res.elements(), 2);
+  ASSERT_TRUE(
+      allClose(res, Tensor::fromVector<unsigned>({1, 0}).astype(dtype::b8)));
+
+  res = fl::any(t2d_b, {1}, true);
+  ASSERT_EQ(res.shape(), Shape({3, 1}));
+  ASSERT_EQ(res.elements(), 3);
+  ASSERT_TRUE(allClose(
+      res, Tensor::fromVector<unsigned>({3, 1}, {1, 1, 0}).astype(dtype::b8)));
+
+  res = fl::any(t2d_b, {0});
+  ASSERT_EQ(res.shape(), Shape({2}));
+  ASSERT_EQ(res.elements(), 2);
+  ASSERT_TRUE(
+      allClose(res, Tensor::fromVector<unsigned>({1, 1}).astype(dtype::b8)));
+
+  // ignores NAN
+  auto t_nan = Tensor::fromVector<float>({1, NAN, 1});
+  auto t_nan_all = fl::any(t_nan);
+  ASSERT_EQ(t_nan_all.shape(), Shape());
+  ASSERT_EQ(t_nan_all.elements(), 1);
+  ASSERT_TRUE(allClose(t_nan_all, fl::fromScalar(true, dtype::b8)));
 }
 
 TEST(TensorReductionTest, all) {
@@ -373,6 +482,69 @@ TEST(TensorReductionTest, all) {
   ASSERT_EQ(a.shape(), Shape());
   ASSERT_TRUE(a.scalar<char>());
   ASSERT_EQ(fl::all(fl::fromScalar(v), {0}).shape(), Shape());
+
+  // 1D Tensor
+  auto t1d = Tensor::fromVector<unsigned>({0, 0, 0});
+  auto res = fl::all(t1d);
+  ASSERT_EQ(res.shape(), Shape());
+  ASSERT_EQ(res.elements(), 1);
+  ASSERT_TRUE(allClose(res, fl::fromScalar(false, dtype::b8)));
+
+  t1d = Tensor::fromVector<unsigned>({1, 0, 1});
+  res = fl::all(t1d);
+  ASSERT_EQ(res.shape(), Shape());
+  ASSERT_EQ(res.elements(), 1);
+  ASSERT_TRUE(allClose(res, fl::fromScalar(false, dtype::b8)));
+
+  t1d = Tensor::fromVector<unsigned>({1, 1, 1});
+  res = fl::all(t1d);
+  ASSERT_EQ(res.shape(), Shape());
+  ASSERT_EQ(res.elements(), 1);
+  ASSERT_TRUE(allClose(res, fl::fromScalar(true, dtype::b8)));
+
+  // 2D Tensor
+  auto t2d_a = Tensor::fromVector<unsigned>({2, 2}, {1, 1, 0, 0});
+  res = fl::all(t2d_a);
+  ASSERT_EQ(res.shape(), Shape());
+  ASSERT_EQ(res.elements(), 1);
+  ASSERT_TRUE(allClose(res, fl::fromScalar(false, dtype::b8)));
+
+  auto t2d_b = Tensor::fromVector<unsigned>({3, 2}, {1, 1, 0, 0, 1, 0});
+  res = fl::all(t2d_b, {0, 1});
+  ASSERT_EQ(res.shape(), Shape());
+  ASSERT_EQ(res.elements(), 1);
+  ASSERT_TRUE(allClose(res, fl::fromScalar(false, dtype::b8)));
+
+  res = fl::all(t2d_a, {1});
+  ASSERT_EQ(res.shape(), Shape({2}));
+  ASSERT_EQ(res.elements(), 2);
+  ASSERT_TRUE(
+      allClose(res, Tensor::fromVector<unsigned>({0, 0}).astype(dtype::b8)));
+
+  res = fl::all(t2d_a, {0});
+  ASSERT_EQ(res.shape(), Shape({2}));
+  ASSERT_EQ(res.elements(), 2);
+  ASSERT_TRUE(
+      allClose(res, Tensor::fromVector<unsigned>({1, 0}).astype(dtype::b8)));
+
+  res = fl::all(t2d_b, {1}, true);
+  ASSERT_EQ(res.shape(), Shape({3, 1}));
+  ASSERT_EQ(res.elements(), 3);
+  ASSERT_TRUE(allClose(
+      res, Tensor::fromVector<unsigned>({3, 1}, {0, 1, 0}).astype(dtype::b8)));
+
+  res = fl::all(t2d_b, {0});
+  ASSERT_EQ(res.elements(), 2);
+  ASSERT_EQ(res.shape(), Shape({2}));
+  ASSERT_TRUE(
+      allClose(res, Tensor::fromVector<unsigned>({0, 0}).astype(dtype::b8)));
+
+  // ignores NAN
+  auto t_nan = Tensor::fromVector<float>({1, NAN, 1});
+  auto t_nan_all = fl::all(t_nan);
+  ASSERT_EQ(t_nan_all.shape(), Shape());
+  ASSERT_EQ(t_nan_all.elements(), 1);
+  ASSERT_TRUE(allClose(t_nan_all, fl::fromScalar(true, dtype::b8)));
 }
 
 int main(int argc, char** argv) {
