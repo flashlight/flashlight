@@ -33,7 +33,7 @@ RNN::RNN(
 }
 
 RNN::RNN(const RNN& other)
-    : Module(other.copyParams()),
+    : Module(other.copyParams(), other.train_),
       inputSize_(other.inputSize_),
       hiddenSize_(other.hiddenSize_),
       numLayers_(other.numLayers_),
@@ -43,6 +43,7 @@ RNN::RNN(const RNN& other)
 
 RNN& RNN::operator=(const RNN& other) {
   params_ = other.copyParams();
+  train_ = other.train_;
   inputSize_ = other.inputSize_;
   hiddenSize_ = other.hiddenSize_;
   numLayers_ = other.numLayers_;

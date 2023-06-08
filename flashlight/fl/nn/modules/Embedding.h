@@ -47,13 +47,19 @@ class Embedding : public UnaryModule {
   explicit Embedding(const Variable& w);
 
   /**
-   * Constructs an Embedding module from another, performing a deep copy of the
+   * Constructs an Embedding module from another, performing a copy of the
    * parameters.
    *
    * @param other The Embedding module to copy from.
    */
   Embedding(const Embedding& other);
 
+  /**
+   * Constructs an Embedding module from another, performing a copy of the
+   * parameters.
+   *
+   * @param other The Embedding module to copy from.
+   */
   Embedding& operator=(const Embedding& other);
 
   Embedding(Embedding&& other) = default;

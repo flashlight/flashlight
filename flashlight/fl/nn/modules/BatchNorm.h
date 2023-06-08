@@ -114,7 +114,7 @@ class BatchNorm : public UnaryModule {
       bool trackStats = true);
 
   /**
-   * Constructs a BatchNorm module from another, performing a deep copy of the
+   * Constructs a BatchNorm module from another, performing a copy of the
    * stats parameters.
    *
    * @param other The BatchNorm module to copy from.

@@ -75,6 +75,12 @@ class WeightNorm : public Module {
    */
   WeightNorm(const WeightNorm& other);
 
+  /**
+   * Construct a WeightNorm module from another, performing a deep copy for the
+   * wrapped module.
+   *
+   * @param other The WeightNorm module to copy from.
+   */
   WeightNorm& operator=(const WeightNorm& other);
 
   WeightNorm(WeightNorm&& other) = default;

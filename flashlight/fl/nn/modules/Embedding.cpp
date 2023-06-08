@@ -23,12 +23,13 @@ Embedding::Embedding(const Variable& w)
     : UnaryModule({w}), embeddingDim_(w.dim(0)), numEmbeddings_(w.dim(1)) {}
 
 Embedding::Embedding(const Embedding& other)
-    : UnaryModule(other.copyParams()),
+    : UnaryModule(other.copyParams(), other.train_),
       embeddingDim_(other.embeddingDim_),
       numEmbeddings_(other.numEmbeddings_) {}
 
 Embedding& Embedding::operator=(const Embedding& other) {
   params_ = other.copyParams();
+  train_ = other.train_;
   embeddingDim_ = other.embeddingDim_;
   numEmbeddings_ = other.numEmbeddings_;
   return *this;

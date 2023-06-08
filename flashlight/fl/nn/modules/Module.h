@@ -52,8 +52,11 @@ class Module {
    * Constructs a module given its parameters.
    *
    * @param params a vector of `Variable` which will replace `params_`
+   * @param train Sets the module to training mode if true, eval mode if false.
+   * This changes all parameters so that gradient calculation will be
+   * enabled/disabled for any calls to `forward`.
    */
-  explicit Module(const std::vector<Variable>& params);
+  explicit Module(const std::vector<Variable>& params, bool train = true);
 
  public:
   /**
@@ -164,7 +167,7 @@ class UnaryModule : public Module {
  public:
   UnaryModule();
 
-  explicit UnaryModule(const std::vector<Variable>& params);
+  explicit UnaryModule(const std::vector<Variable>& params, bool train = true);
 
   std::vector<Variable> forward(const std::vector<Variable>& inputs) override;
 
@@ -187,7 +190,7 @@ class BinaryModule : public Module {
  public:
   BinaryModule();
 
-  explicit BinaryModule(const std::vector<Variable>& params);
+  explicit BinaryModule(const std::vector<Variable>& params, bool train = true);
 
   std::vector<Variable> forward(const std::vector<Variable>& inputs) override;
 

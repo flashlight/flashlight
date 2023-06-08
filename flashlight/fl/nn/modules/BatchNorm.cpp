@@ -53,9 +53,12 @@ BatchNorm::BatchNorm(const BatchNorm& other)
       momentum_(other.momentum_),
       epsilon_(other.epsilon_),
       affine_(other.affine_),
-      trackStats_(other.trackStats_) {}
+      trackStats_(other.trackStats_) {
+  train_ = other.train_;
+}
 
 BatchNorm& BatchNorm::operator=(const BatchNorm& other) {
+  train_ = other.train_;
   featAxis_ = other.featAxis_;
   featSize_ = other.featSize_;
   numBatchesTracked_ = other.numBatchesTracked_;

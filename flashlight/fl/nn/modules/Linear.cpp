@@ -33,13 +33,14 @@ Linear::Linear(const Variable& w, const Variable& b)
 }
 
 Linear::Linear(const Linear& other)
-    : UnaryModule(other.copyParams()),
+    : UnaryModule(other.copyParams(), other.train_),
       nIn_(other.nIn_),
       nOut_(other.nOut_),
       bias_(other.bias_) {}
 
 Linear& Linear::operator=(const Linear& other) {
   params_ = other.copyParams();
+  train_ = other.train_;
   nIn_ = other.nIn_;
   nOut_ = other.nOut_;
   bias_ = other.bias_;
