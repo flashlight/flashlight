@@ -20,17 +20,14 @@ using namespace fl::pkg::vision;
 class Resnet50Backbone : public Container {
  public:
   Resnet50Backbone();
-  Resnet50Backbone(const Resnet50Backbone& other);
-  Resnet50Backbone& operator=(const Resnet50Backbone& other);
 
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
 
-  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 
+  FL_BASIC_CONTAINER_CLONING(Resnet50Backbone)
+
  private:
-  std::shared_ptr<Sequential> backbone_;
-  std::shared_ptr<Sequential> tail_;
   FL_SAVE_LOAD_WITH_BASE(fl::Container)
 };
 

@@ -41,7 +41,7 @@ class Container : public Module {
   Container();
 
   /**
-   * Removes all modules from the container.
+   * Removes all modules and parameters from the container.
    */
   virtual void clear();
 
