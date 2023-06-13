@@ -34,10 +34,19 @@
 // - g++/clang++ -lunwind
 // #define BACKWARD_HAS_LIBUNWIND 1
 
+#include "flashlight/fl/common/backward/Backward.h"
+
+#if FL_USE_BACKWARD_CPP
 #include "backward.hpp"
+#endif
 
-namespace backward {
+namespace fl::detail {
 
-backward::SignalHandling sh;
+void initBackward() {
+  // If not built with backward, this function is a noop
+#if FL_USE_BACKWARD_CPP
+  static ::backward::SignalHandling sh;
+#endif
+}
 
-} // namespace backward
+} // namespace fl::detail
