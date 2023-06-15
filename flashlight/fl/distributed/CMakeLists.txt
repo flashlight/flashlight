@@ -3,12 +3,32 @@ cmake_minimum_required(VERSION 3.16)
 option(FL_BUILD_DISTRIBUTED
   "Build distributed computation capabilities with Flashlight" ON)
 
-option(FL_USE_NCCL "Build with NCCL for distributed computation" OFF)
-option(FL_USE_GLOO "Build with Gloo for distributed computation" OFF)
+# Determine default build options
+if (APPLE)
+  # nccl has no macOS support (no CUDA)
+  set(_build_nccl_default FALSE)
+  # no gloo on macOS (https://github.com/facebookincubator/gloo/issues/262)
+  set(_build_gloo_default FALSE)
+else()
+  # Default building distributed backends to ON if using corresponding compute
+  # environment is enabled
+  set(_build_nccl_default ${FL_USE_CUDA})
+  set(_build_gloo_default ${FL_USE_CPU})
+endif()
+
+option(FL_USE_NCCL "Build with NCCL for distributed computation" ${_build_nccl_default})
+option(FL_USE_GLOO "Build with Gloo for distributed computation" ${_build_gloo_default})
 
 # TODO: relax this
 if (FL_USE_NCCL AND FL_USE_GLOO)
   message(STATUS "Cannot build multiple distributed backends simultaneously")
+endif()
+
+# If no distributed backend is enabled, don't build distributed (build stub)
+if (FL_BUILD_DISTRIBUTED AND NOT (FL_USE_NCCL OR FL_USE_GLOO))
+  message(WARNING "FL_BUILD_DISTRIBUTED is enabled but no distributed"
+    " backend was selected. Setting FL_BUILD_DISTRIBUTED to OFF.")
+  set(FL_BUILD_DISTRIBUTED OFF)
 endif()
 
 # Build option behavior is as follows:
@@ -23,23 +43,6 @@ endif()
 if (NOT FL_BUILD_DISTRIBUTED)
   # A stub impl that throws/executes noops for most distributed ops
   set(FL_DISTRIBUTED_STUB ON)
-else()
-  # If using CUDA, enable NCCL, else build with Gloo
-  if (FL_USE_CUDA)
-    message(STATUS
-      "CUDA support in Flashlight is enabled. Will build with NCCL support.")
-    set(FL_USE_NCCL ON)
-  elseif (FL_USE_CPU)
-    message(STATUS
-      "CPU support in Flashlight is enabled. Will build with Gloo support.")
-    set(FL_USE_GLOO ON)
-  elseif(FL_USE_TENSOR_STUB)
-    message(WARNING "Building detected using ONLY the tensor stub backend. "
-      "Disabling distributed support and building ONLY the "
-      "distributed stub backend.")
-    set(FL_BUILD_DISTRIBUTED OFF)
-    set(FL_DISTRIBUTED_STUB ON)
-  endif()
 endif()
 
 # Always build distributed API sources, even if building the stub backend.
