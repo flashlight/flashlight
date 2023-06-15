@@ -11,39 +11,57 @@ if (FL_USE_NCCL AND FL_USE_GLOO)
   message(STATUS "Cannot build multiple distributed backends simultaneously")
 endif()
 
-if (FL_BUILD_DISTRIBUTED)
-  # If using CUDA, enable NCCL, else build with Gloo
-  if (FL_USE_CUDA)
-    set(FL_USE_NCCL ON)
-  elseif (FL_USE_CPU)
-    set(FL_USE_GLOO ON)
-  endif()
-else()
+# Build option behavior is as follows:
+# - if FL_BUILD_DISTRIBUTED is OFF, do nothing and build the distributed
+#   stub backend. Build the distributed stub backend if building the
+#   tensor stub backend.
+# - if FL_BUILD_DISTRIBUTED is ON, defer to other build options to
+#   find and build other distributed training implementations:
+# - first, try to build the distributed backend(s) that correspond to the
+#   base runtime/compute environment (e.g. CUDA). Do so for all backends
+#   that are not explicitly disabled (e.g. FL_USE_X=OFF)
+if (NOT FL_BUILD_DISTRIBUTED)
   # A stub impl that throws/executes noops for most distributed ops
   set(FL_DISTRIBUTED_STUB ON)
-endif ()
-
-# Build sources only in distributed mode. Distributed headers will be included
-# regardless but usage of the APIs will fail to link if not enabled.
-# TODO: conditionally install headers?
-if (FL_BUILD_DISTRIBUTED OR FL_DISTRIBUTED_STUB)
-  target_sources(
-    flashlight
-    PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}/DistributedApi.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/FileStore.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/reducers/InlineReducer.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/reducers/CoalescingReducer.cpp
-    )
+else()
+  # If using CUDA, enable NCCL, else build with Gloo
+  if (FL_USE_CUDA)
+    message(STATUS
+      "CUDA support in Flashlight is enabled. Will build with NCCL support.")
+    set(FL_USE_NCCL ON)
+  elseif (FL_USE_CPU)
+    message(STATUS
+      "CPU support in Flashlight is enabled. Will build with Gloo support.")
+    set(FL_USE_GLOO ON)
+  elseif(FL_USE_TENSOR_STUB)
+    message(WARNING "Building detected using ONLY the tensor stub backend. "
+      "Disabling distributed support and building ONLY the "
+      "distributed stub backend.")
+    set(FL_BUILD_DISTRIBUTED OFF)
+    set(FL_DISTRIBUTED_STUB ON)
+  endif()
 endif()
 
+# Always build distributed API sources, even if building the stub backend.
+target_sources(
+  flashlight
+  PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/DistributedApi.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/FileStore.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/reducers/InlineReducer.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/reducers/CoalescingReducer.cpp
+  )
+
+# Builds the dependency-free version of the distributed backend
 if (FL_DISTRIBUTED_STUB)
+  # Forces dispatch only to the stub backend
+  # TODO: relax this when tensor-based dispatch is available
   target_sources(
     flashlight
     PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/backend/stub/DistributedBackend.cpp
     )
-endif ()
+endif()
 
 # ----------------------------- Dependencies -----------------------------
 # MPI is required for any distributed support
