@@ -10,10 +10,8 @@
 namespace fl::detail {
 
 /**
- * Initialize stack tracing with backward-cpp. No-op if Flashlight is not build
+ * Initialize stack tracing with backward-cpp. No-op if Flashlight is not built
  * with backward-cpp.
- *
- * See https://github.com/bombela/backward-cpp.
  */
 void initBackward();
 

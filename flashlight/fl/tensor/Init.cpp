@@ -7,10 +7,9 @@
 
 #include <mutex>
 
+#include "flashlight/fl/common/Logging.h"
 #include "flashlight/fl/tensor/DefaultTensorType.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
-
-#include "flashlight/fl/common/backward/Backward.h"
 
 namespace fl {
 namespace {
@@ -28,7 +27,7 @@ std::once_flag flInitFlag;
 void init() {
   std::call_once(flInitFlag, []() {
     defaultTensorBackend();
-    detail::initBackward(); // noop if not built with a backtrace/stacktrace lib
+    initLogging();
   });
 }
 

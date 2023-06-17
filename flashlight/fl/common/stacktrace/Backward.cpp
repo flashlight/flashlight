@@ -34,9 +34,10 @@
 // - g++/clang++ -lunwind
 // #define BACKWARD_HAS_LIBUNWIND 1
 
-#include "flashlight/fl/common/backward/Backward.h"
+#include "flashlight/fl/common/stacktrace/Backward.h"
 
 #if FL_USE_BACKWARD_CPP
+// See https://github.com/bombela/backward-cpp
 #include "backward.hpp"
 #endif
 
