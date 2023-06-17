@@ -3,8 +3,10 @@ cmake_minimum_required(VERSION 3.16)
 option(FL_BUILD_DISTRIBUTED
   "Build distributed computation capabilities with Flashlight" ON)
 
-# Determine default build options
-if (APPLE)
+# Determine build option defaults
+if (APPLE OR NOT FL_BUILD_DISTRIBUTED)
+  # If FL_BUILD_DISTRIBUTED is OFF (i.e. it was explicitly disabled since
+  # it defaults to ON), don't build appropriate distributed backends
   # nccl has no macOS support (no CUDA)
   set(_build_nccl_default FALSE)
   # no gloo on macOS (https://github.com/facebookincubator/gloo/issues/262)
