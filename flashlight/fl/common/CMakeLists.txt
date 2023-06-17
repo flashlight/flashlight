@@ -42,4 +42,4 @@ if (NOT MSVC)
 endif()
 
 # backward
-include(${CMAKE_CURRENT_LIST_DIR}/backward/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/stacktrace/CMakeLists.txt)
