@@ -33,6 +33,7 @@ jobs:
             -DFL_USE_ONEDNN=${{ (matrix.backend == 'oneDNN' || matrix.autograd_backend == 'oneDNN') && 'ON' || 'OFF'  }} \
             -DFL_USE_TENSOR_STUB=${{ matrix.backend == 'Stub' && 'ON' || 'OFF'  }} \
             -DFL_BUILD_DISTRIBUTED=OFF \
+            -DFL_USE_BACKWARD_CPP=ON \
             -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON
       - name: "Build Flashlight"
         run: |
