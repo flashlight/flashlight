@@ -126,7 +126,7 @@ TEST_F(DynamicBenchmark, DynamicBenchmarkDisjointLambdas) {
 TEST_F(DynamicBenchmark, DynamicBenchmarkMatmul) {
   size_t maxCount = 5;
   // n x n arrays of different sizes
-  std::vector<int> arraySizes = {256, 8, 1024};
+  std::vector<int> arraySizes = {256, 8, 2048};
 
   auto options =
       std::make_shared<fl::DynamicBenchmarkOptions<int>>(arraySizes, maxCount);
