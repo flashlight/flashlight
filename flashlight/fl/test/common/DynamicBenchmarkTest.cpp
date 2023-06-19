@@ -13,8 +13,8 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/fl/common/DynamicBenchmark.h"
-#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/Compute.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/Random.h"
 
 namespace {
@@ -126,7 +126,7 @@ TEST_F(DynamicBenchmark, DynamicBenchmarkDisjointLambdas) {
 TEST_F(DynamicBenchmark, DynamicBenchmarkMatmul) {
   size_t maxCount = 5;
   // n x n arrays of different sizes
-  std::vector<int> arraySizes = {12, 4, 300};
+  std::vector<int> arraySizes = {256, 8, 1024};
 
   auto options =
       std::make_shared<fl::DynamicBenchmarkOptions<int>>(arraySizes, maxCount);
@@ -144,7 +144,9 @@ TEST_F(DynamicBenchmark, DynamicBenchmarkMatmul) {
   }
   auto ops = dynamicBench->getOptions<fl::DynamicBenchmarkOptions<int>>();
   ASSERT_TRUE(ops->timingsComplete());
-  ASSERT_EQ(ops->currentOption(), 4);
+  ASSERT_EQ(
+      ops->currentOption(),
+      *std::min_element(arraySizes.begin(), arraySizes.end()));
 }
 
 int main(int argc, char** argv) {
