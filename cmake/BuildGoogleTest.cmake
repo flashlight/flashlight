@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 include(FetchContent)
 
 set(gtest_URL https://github.com/google/googletest.git)
-set(gtest_TAG release-1.12.1)
+set(gtest_TAG v1.13.0)
 
 FetchContent_Declare(
   googletest
