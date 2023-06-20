@@ -52,7 +52,7 @@ IncludeCategories:
   - Regex:           '.*'
     Priority:        3
 IndentCaseLabels: true
-IndentPPDirectives: BeforeHash
+IndentPPDirectives: None
 IndentWidth:     2
 IndentWrappedFunctionNames: false
 KeepEmptyLinesAtTheStartOfBlocks: false

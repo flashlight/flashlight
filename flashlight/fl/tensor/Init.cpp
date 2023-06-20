@@ -7,6 +7,7 @@
 
 #include <mutex>
 
+#include "flashlight/fl/common/Logging.h"
 #include "flashlight/fl/tensor/DefaultTensorType.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
 
@@ -17,13 +18,17 @@ std::once_flag flInitFlag;
 
 /**
  * Initialize Flashlight. Performs setup, including:
- * - Ensures ArrayFire globals are initialized
- * - Sets the default memory manager (CachingMemoryManager)
+ * - Ensures default tensor backend globals are initialized, including memory
+ *   management, tensor backend state, computation stremas, etc.
+ * - Sets signal handlers helpful for debugging, if enabled.
  *
- * Can only be called once per process. Subsequent calls will be noops.
+ * Body is only run once per process. Subsequent calls will be noops.
  */
 void init() {
-  std::call_once(flInitFlag, []() { defaultTensorBackend(); });
+  std::call_once(flInitFlag, []() {
+    defaultTensorBackend();
+    initLogging();
+  });
 }
 
 } // namespace fl

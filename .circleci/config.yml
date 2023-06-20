@@ -339,6 +339,7 @@ commands:
               -DFL_USE_CUDNN=$([ "<< parameters.autograd_backend >>" == "cudnn" ] && echo "ON" || echo "OFF") \
               -DFL_USE_ONEDNN=$([ "<< parameters.backend >>" == "onednn" ] || [ "<< parameters.autograd_backend >>" == "onednn" ] && echo "ON" || echo "OFF") \
               -DFL_BUILD_DISTRIBUTED=OFF \
+              -DFL_USE_BACKWARD_CPP=ON \
               -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON
             cmake --build build --parallel << parameters.build_parallelism >>
 

@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include <signal.h>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -68,8 +67,12 @@
  * Note that `VLOG(level)` only prints when level is less than or equal to the
  * value set to `VerboseLogging`
  */
-
 namespace fl {
+
+/**
+ * Initialize all logging components including stacktraces and signal handling.
+ */
+void initLogging();
 
 /// \ingroup logging
 enum class LogLevel {
