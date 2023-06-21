@@ -108,6 +108,40 @@ Evaluator::evalBinaryOp(BinaryOp op, const Tensor& lhs, const Tensor& rhs) {
       return backend_.mul(lhs, rhs);
     case BinaryOp::Div:
       return backend_.div(lhs, rhs);
+    case BinaryOp::Eq:
+      return backend_.eq(lhs, rhs);
+    case BinaryOp::Neq:
+      return backend_.neq(lhs, rhs);
+    case BinaryOp::Gt:
+      return backend_.greaterThan(lhs, rhs);
+    case BinaryOp::Gte:
+      return backend_.greaterThanEqual(lhs, rhs);
+    case BinaryOp::Lt:
+      return backend_.lessThan(lhs, rhs);
+    case BinaryOp::Lte:
+      return backend_.lessThanEqual(lhs, rhs);
+    case BinaryOp::Min:
+      return backend_.minimum(lhs, rhs);
+    case BinaryOp::Max:
+      return backend_.maximum(lhs, rhs);
+    case BinaryOp::Pow:
+      return backend_.power(lhs, rhs);
+    case BinaryOp::Mod:
+      return backend_.mod(lhs, rhs);
+    case BinaryOp::And:
+      return backend_.logicalAnd(lhs, rhs);
+    case BinaryOp::Or:
+      return backend_.logicalOr(lhs, rhs);
+    case BinaryOp::Shl:
+      return backend_.lShift(lhs, rhs);
+    case BinaryOp::Shr:
+      return backend_.rShift(lhs, rhs);
+    case BinaryOp::BitAnd:
+      return backend_.bitwiseAnd(lhs, rhs);
+    case BinaryOp::BitOr:
+      return backend_.bitwiseOr(lhs, rhs);
+    case BinaryOp::BitXor:
+      return backend_.bitwiseXor(lhs, rhs);
   }
   throw std::runtime_error(
       "[Evaluator::evalBinaryOp] Unknown binary operation type");

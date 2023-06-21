@@ -10,12 +10,15 @@
 #include "flashlight/fl/tensor/backend/jit/ir/BinaryNode.h"
 #include "flashlight/fl/tensor/backend/jit/ir/ScalarNode.h"
 
+#include <cmath>
+#include <optional>
+
 namespace fl {
 
 namespace {
 
 template <typename T>
-T foldScalars(const T lhs, const T rhs, const BinaryOp op) {
+std::optional<T> foldScalars(const T lhs, const T rhs, const BinaryOp op) {
   switch (op) {
     case BinaryOp::Add:
       return lhs + rhs;
@@ -25,30 +28,66 @@ T foldScalars(const T lhs, const T rhs, const BinaryOp op) {
       return lhs * rhs;
     case BinaryOp::Div:
       return lhs / rhs;
+    case BinaryOp::Eq:
+      return lhs == rhs;
+    case BinaryOp::Neq:
+      return lhs != rhs;
+    case BinaryOp::Gt:
+      return lhs >= rhs;
+    case BinaryOp::Gte:
+      return lhs >= rhs;
+    case BinaryOp::Lt:
+      return lhs < rhs;
+    case BinaryOp::Lte:
+      return lhs <= rhs;
+    case BinaryOp::Min:
+      return std::min(lhs, rhs);
+    case BinaryOp::Max:
+      return std::max(lhs, rhs);
+    case BinaryOp::Pow:
+      return std::pow(lhs, rhs);
+    // TODO the following support integral scalars, specialize template to
+    // support them if it becomes profitable.
+    case BinaryOp::And:
+    case BinaryOp::Or:
+    case BinaryOp::Mod:
+    case BinaryOp::Shl:
+    case BinaryOp::Shr:
+    case BinaryOp::BitAnd:
+    case BinaryOp::BitOr:
+    case BinaryOp::BitXor:
+      return std::nullopt;
   }
   throw std::runtime_error("[foldScalars] Unknown binary operation type");
 }
 
 template <typename T>
-ScalarNode* foldScalarNodes(
+std::optional<ScalarNode*> foldScalarNodes(
     const ScalarNode& lhs,
     const ScalarNode& rhs,
     const BinaryOp op,
     const dtype type) {
   T lhsVal = lhs.scalar<T>();
   T rhsVal = rhs.scalar<T>();
-  T resVal = foldScalars(lhsVal, rhsVal, op);
-  return ScalarNode::create(Shape(lhs.shape()), type, resVal);
+  std::optional<T> resVal = foldScalars(lhsVal, rhsVal, op);
+  if (resVal.has_value()) {
+    return ScalarNode::create(Shape(lhs.shape()), type, resVal.value());
+  }
+  return std::nullopt;
 }
 
-ScalarNode* foldScalarNodes(
+std::optional<ScalarNode*> foldScalarNodes(
     const ScalarNode& lhs,
     const ScalarNode& rhs,
-    const BinaryOp op,
-    const dtype type) {
+    const BinaryOp op) {
+  // TODO shape doesn't matter for scalars, support broadcast and add test
+  if (lhs.shape() != rhs.shape() || lhs.dataType() != rhs.dataType()) {
+    return std::nullopt;
+  }
+  const auto type = lhs.dataType();
   switch (type) {
     case dtype::f16:
-      throw std::runtime_error("[foldScalarNodes] unexpected f16");
+      return std::nullopt;
     case dtype::f32:
       return foldScalarNodes<float>(lhs, rhs, op, type);
     case dtype::f64:
@@ -80,13 +119,12 @@ Node* foldScalarsInBinaryNode(BinaryNode* node) {
   if (lhs->isScalar() && rhs->isScalar()) {
     const auto& lhsScalar = lhs->impl<ScalarNode>();
     const auto& rhsScalar = rhs->impl<ScalarNode>();
-    const auto& shape = lhsScalar.shape();
-    const auto dtype = lhsScalar.dataType();
-    if (shape == rhsScalar.shape() && dtype == rhsScalar.dataType() &&
-        dtype != dtype::f16) {
-      auto foldedScalar = foldScalarNodes(lhsScalar, rhsScalar, binop, dtype);
-      node->replaceAllUsesWith(foldedScalar);
-      return foldedScalar;
+    const auto optFoldedScalarNode =
+        foldScalarNodes(lhsScalar, rhsScalar, binop);
+    if (optFoldedScalarNode.has_value()) {
+      const auto foldedScalarNode = optFoldedScalarNode.value();
+      node->replaceAllUsesWith(foldedScalarNode);
+      return foldedScalarNode;
     }
   }
   return node;

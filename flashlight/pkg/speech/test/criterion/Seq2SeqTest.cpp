@@ -15,7 +15,6 @@
 #include "flashlight/pkg/speech/criterion/criterion.h"
 
 using namespace fl;
-using namespace fl::pkg::runtime;
 using namespace fl::pkg::speech;
 
 TEST(Seq2SeqTest, Seq2Seq) {

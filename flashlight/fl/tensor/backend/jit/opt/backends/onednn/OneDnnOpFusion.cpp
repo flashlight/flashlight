@@ -6,6 +6,7 @@
  */
 
 #include "flashlight/fl/tensor/backend/jit/opt/backends/onednn/OneDnnOpFusion.h"
+#include <optional>
 
 #include "flashlight/fl/tensor/backend/jit/ir/BinaryNode.h"
 #include "flashlight/fl/tensor/backend/jit/ir/CustomNode.h"
@@ -23,6 +24,8 @@ struct BinopInfo {
 };
 
 struct OneDnnOpFusion::SearchState {
+  SearchState(Node* root, std::vector<BinopInfo> binopInfos)
+      : searchRoot(root), accumulatedBinopInfos(binopInfos) {}
   Node* searchRoot;
   // Assume `searchRoot == binop2`
   //
@@ -52,7 +55,7 @@ dnnl::memory::data_type getOneDnnTypeWithLargestRange(
   return largestType;
 }
 
-dnnl::algorithm binopToOneDnnAlg(const BinaryOp op) {
+std::optional<dnnl::algorithm> tryBinopToOneDnnAlg(const BinaryOp op) {
   switch (op) {
     case BinaryOp::Add:
       return dnnl::algorithm::binary_add;
@@ -62,19 +65,47 @@ dnnl::algorithm binopToOneDnnAlg(const BinaryOp op) {
       return dnnl::algorithm::binary_mul;
     case BinaryOp::Div:
       return dnnl::algorithm::binary_div;
+    case BinaryOp::Eq:
+      return dnnl::algorithm::binary_eq;
+    case BinaryOp::Neq:
+      return dnnl::algorithm::binary_ne;
+    case BinaryOp::Gt:
+      return dnnl::algorithm::binary_gt;
+    case BinaryOp::Gte:
+      return dnnl::algorithm::binary_ge;
+    case BinaryOp::Lt:
+      return dnnl::algorithm::binary_lt;
+    case BinaryOp::Lte:
+      return dnnl::algorithm::binary_le;
+    case BinaryOp::Min:
+      return dnnl::algorithm::binary_min;
+    case BinaryOp::Max:
+      return dnnl::algorithm::binary_max;
+    case BinaryOp::Pow:
+    case BinaryOp::Mod:
+    case BinaryOp::And:
+    case BinaryOp::Or:
+    case BinaryOp::Shl:
+    case BinaryOp::Shr:
+    case BinaryOp::BitAnd:
+    case BinaryOp::BitOr:
+    case BinaryOp::BitXor:
+      return std::nullopt;
   }
-  throw std::runtime_error("Unsupported binary operation type");
+  throw std::runtime_error(
+      "[tryBinopToOneDnnAlg] Unexpected binary operation type");
+}
+
+dnnl::algorithm binopToOneDnnAlg(const BinaryOp op) {
+  const auto alg = tryBinopToOneDnnAlg(op);
+  if (!alg.has_value()) {
+    throw std::runtime_error("[binopToOneDnnAlg] unsupported binop for OneDNN");
+  }
+  return alg.value();
 }
 
 bool isOpFusable(const BinaryOp op) {
-  switch (op) {
-    case BinaryOp::Add:
-    case BinaryOp::Mul:
-    case BinaryOp::Sub:
-    case BinaryOp::Div:
-      return true;
-  }
-  throw std::runtime_error("Unsupported binary operation type");
+  return tryBinopToOneDnnAlg(op).has_value();
 }
 
 bool isNodeFusable(const Node* node) {
@@ -94,7 +125,7 @@ bool shouldNodeBeFused(const Node* node) {
 } // namespace
 
 Node* OneDnnOpFusion::rewriteFrom(Node* node) {
-  SearchState state{.searchRoot = node, .accumulatedBinopInfos = {}};
+  SearchState state(node, /* accumulatedBinopInfos = */ {});
   auto fusedNode = searchAndFuse(node, state);
   node->replaceAllUsesWith(fusedNode);
   return fusedNode;

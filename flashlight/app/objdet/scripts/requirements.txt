@@ -9,5 +9,5 @@ pycocotools==2.0.2
 pyparsing==2.4.7
 python-dateutil==2.8.1
 six==1.15.0
-torch==1.8.1
+torch==1.13.1
 typing-extensions==3.7.4.3

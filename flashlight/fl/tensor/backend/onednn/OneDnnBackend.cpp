@@ -149,6 +149,8 @@ Tensor iotaSingleAxisCpu(
 }
 
 struct BinaryOpOutputDesc {
+  BinaryOpOutputDesc(dnnl::memory::desc desc, Shape shape)
+      : dstMemDesc(std::move(desc)), dstShape(std::move(shape)) {}
   dnnl::memory::desc dstMemDesc;
   const Shape dstShape;
 };
@@ -180,10 +182,10 @@ BinaryOpOutputDesc getBinaryOpOutputDesc(
       lhsMemDesc.get_data_type(), rhsMemDesc.get_data_type()));
   // some common fast paths
   if (lhsShape == rhsShape) {
-    return {
-        .dstMemDesc =
-            detail::oneDnnContiguousMemDescFromShape(lhsShape, dstType),
-        .dstShape = lhsShape};
+    BinaryOpOutputDesc(
+        /* desc = */
+        detail::oneDnnContiguousMemDescFromShape(lhsShape, dstType),
+        /* shape = */ lhsShape);
   }
   // only support same # of dimensions for now
   if (lhsShape.ndim() != rhsShape.ndim()) {
@@ -207,9 +209,10 @@ BinaryOpOutputDesc getBinaryOpOutputDesc(
     dstDims.push_back(std::max(lhsDim, rhsDim));
   }
   Shape dstShape(dstDims);
-  return {
-      .dstMemDesc = detail::oneDnnContiguousMemDescFromShape(dstShape, dstType),
-      .dstShape = dstShape};
+  return BinaryOpOutputDesc(
+      /* dstMemDesc = */ detail::oneDnnContiguousMemDescFromShape(
+          dstShape, dstType),
+      /* dstShape = */ dstShape);
 }
 
 template <typename L, typename R, typename T, typename OP>

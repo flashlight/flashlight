@@ -11,14 +11,18 @@ else()
   message(STATUS "oneDNN found")
 endif()
 
+# TODO: conditionally set this to use OPENCL is the detected
+# DNNL is built with OpenCL support
+fl_set_backend_state(ENABLE CPU) # enables FL_USE_CPU
+
 # ----------------------------- Sources -----------------------------
 find_package(MKL)
 if (NOT MKL_FOUND)
-  message(STATUS "Using std random generator")
-  set(${FL_USE_MKL_RNG}    FALSE)
+  message(STATUS "Using stdlib random number generation")
+  set(${FL_USE_MKL_RNG} FALSE)
 else()
-  set(${FL_USE_MKL_RNG}    TRUE)
-  message(STATUS "MKL found")
+  message(STATUS "MKL found - will use for random number generation")
+  set(${FL_USE_MKL_RNG} TRUE)
 endif()
 
 target_compile_definitions(
