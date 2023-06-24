@@ -291,7 +291,7 @@ commands:
             echo "micromamba activate onednn" >> $BASH_ENV
       - run:
           name: "Install oneDNN"
-          command: micromamba install -y -c conda-forge onednn=2.7.2
+          command: micromamba install -y -c conda-forge onednn=3.1.1
 
   # Primary job for installing all dependencies based on platform,
   # backend, and autograd backend impl
