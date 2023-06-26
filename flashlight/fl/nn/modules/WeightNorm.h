@@ -49,12 +49,13 @@ class WeightNorm : public Module {
 
  public:
   /** Construct a WeightNorm layer.
-   * @param module A module to wrap (must be one of Linear or Conv2D)
+   * @param module A module to wrap (must be one of Linear or Conv2D). Takes
+   * ownership of the module.
    * @param dim The dimension to normalize.
    */
   template <class T>
-  WeightNorm(const T& module, int dim)
-      : WeightNorm(std::make_shared<T>(module), dim) {}
+  WeightNorm(T&& module, int dim)
+      : WeightNorm(std::make_shared<std::decay_t<T>>(std::move(module)), dim) {}
 
   /** Construct a WeightNorm layer.
    * @param module Shared pointer to a module to wrap (the module must be one

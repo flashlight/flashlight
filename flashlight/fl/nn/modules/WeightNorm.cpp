@@ -65,14 +65,14 @@ void WeightNorm::computeWeight() {
 }
 
 void WeightNorm::initParams() {
-  auto module_params = module_->params();
-  auto& v = module_params[0];
-  auto g = Variable(
+  auto moduleParams = module_->params();
+  auto& v = moduleParams.at(0);
+  Variable g(
       norm(v, normDim_, /* p = */ 2, /* keepDims = */ true).tensor(), true);
-  if (module_params.size() == 2) {
-    auto& b = module_params[1];
+  if (moduleParams.size() == 2) {
+    auto& b = moduleParams[1];
     params_ = {v, g, b};
-  } else if (module_params.size() == 1) {
+  } else if (moduleParams.size() == 1) {
     params_ = {v, g};
   } else {
     throw std::invalid_argument("WeightNorm only supports Linear and Conv2D");
