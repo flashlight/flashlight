@@ -23,7 +23,16 @@ namespace {
 class ContainerTestClass : public Sequential {
  public:
   ContainerTestClass() = default;
-  ContainerTestClass(const ContainerTestClass& other){
+  ContainerTestClass(const ContainerTestClass& other) {
+    copy(other);
+  }
+  ContainerTestClass& operator=(const ContainerTestClass& other) {
+    copy(other);
+    return *this;
+  }
+  ContainerTestClass(ContainerTestClass&& other) = default;
+  ContainerTestClass& operator=(ContainerTestClass&& other) = default;
+  void copy(const ContainerTestClass& other) {
     auto orphanParamIdxMap = other.getOrphanedParamsIdxMap();
     for (int i = -1; i < static_cast<int>(other.modules_.size()); ++i) {
       if (i >= 0) {
@@ -35,6 +44,10 @@ class ContainerTestClass : public Sequential {
         params_.emplace_back(param.copy());
       }
     }
+  }
+
+  std::unique_ptr<Module> clone() const override {
+    return std::make_unique<ContainerTestClass>(*this);
   }
 
   void addParam(const Variable& param) {
@@ -83,11 +96,6 @@ TEST(ModuleTest, EmbeddingFwd) {
           {embDim, nQuery, batchSize}),
       true);
   ASSERT_TRUE(allClose(emb.forward(inVar), expectedOutVar, 1E-7));
-
-  // Deep copy
-  auto embCopy = emb;
-  wtVar.tensor() += 1.0F;
-  ASSERT_TRUE(allClose(embCopy.forward(inVar), expectedOutVar, 1E-7));
 }
 
 TEST(ModuleTest, LinearFwd) {
@@ -118,11 +126,6 @@ TEST(ModuleTest, LinearFwd) {
 
   auto linBias = Linear(wtVar, bsVar);
   ASSERT_TRUE(allClose(linBias.forward(inVar), expected_outVar, 1E-7));
-
-  auto linCopy = linBias;
-  wtVar.tensor() += 1.0F;
-  ASSERT_TRUE(allClose(linCopy.forward(inVar), expected_outVar, 1E-7));
-  ASSERT_FALSE(allClose(linBias.forward(inVar), expected_outVar, 1E-7));
 }
 
 TEST_F(ModuleTestF16, LinearFwdF16) {
@@ -474,11 +477,6 @@ TEST(ModuleTest, RNNFwd) {
            14.2008, 15.5165, 16.8322, 14.2866, 15.6109, 16.9351}),
       true);
   ASSERT_TRUE(allClose(out, expected_outVar, 1E-4));
-
-  auto rnnCopy = rnn;
-  rnn.param(0).tensor() += 1.0F;
-  out = rnnCopy(in);
-  ASSERT_TRUE(allClose(out, expected_outVar, 1E-4));
 }
 
 TEST(ModuleTest, LSTMFwd) {
@@ -801,37 +799,28 @@ TEST(ModuleTest, ContainerReplaceParam) {
   seq.add(ReLU());
   seq.add(Linear(20, 30));
   seq.addParam(Variable(fl::rand({5, 5}), true));
-  auto seqCopy = seq;
 
   // Change the first parameter
   auto new_param = Variable(fl::rand({5, 5}), true);
   seq.setParams(new_param, 0);
   ASSERT_TRUE(allClose(seq.params()[0], new_param));
-  ASSERT_FALSE(allClose(seqCopy.params()[0], seq.params()[0]));
 
   // Change the first linear layer's first parameter
   new_param = Variable(fl::rand({10, 20}), true);
   seq.setParams(new_param, 1);
   ASSERT_TRUE(allClose(seq.params()[1], new_param));
   ASSERT_TRUE(allClose(seq.module(0)->param(0), new_param));
-  ASSERT_FALSE(allClose(seqCopy.params()[1], seq.params()[1]));
-  ASSERT_FALSE(allClose(seqCopy.module(0)->param(0), seq.module(0)->param(0)));
 
   // Change the second linear layer's first parameter
   new_param = Variable(fl::rand({20, 30}), true);
   seq.setParams(new_param, 4);
   ASSERT_TRUE(allClose(seq.params()[4], new_param));
   ASSERT_TRUE(allClose(seq.module(2)->param(0), new_param));
-  ASSERT_FALSE(allClose(seqCopy.params()[4], seq.params()[4]));
-  ASSERT_FALSE(allClose(seqCopy.module(2)->param(0), seq.module(2)->param(0)));
 
   // Change the last parameter
   new_param = Variable(fl::rand({5, 5}), true);
   seq.setParams(new_param, 6);
   ASSERT_TRUE(allClose(seq.param(6), new_param));
-  ASSERT_FALSE(allClose(seqCopy.param(6), seq.param(6)));
-  seqCopy.setParams(new_param, 6);
-  ASSERT_TRUE(allClose(seqCopy.param(6), seq.param(6)));
 }
 
 TEST(ModuleTest, AdaptiveSoftMaxPredict) {
@@ -929,6 +918,74 @@ TEST(ModuleTest, IdentityFwd) {
   ASSERT_EQ(out.size(), 2);
   ASSERT_TRUE(allClose(out.at(0), in.at(0), 1e-20));
   ASSERT_TRUE(allClose(out.at(1), in.at(1), 1e-20));
+}
+
+TEST(ModuleTest, ModuleCloneCopy) {
+  int n_in = 1, n_out = 2;
+  auto wtVar = param(Tensor::fromVector<float>({n_out, n_in}, {2, 4}));
+  auto inVar = input(Tensor::fromVector<float>({n_in}, {3}));
+  Variable expected_outVar(Tensor::fromVector<float>({n_out}, {6, 12}), true);
+
+  Linear lin(wtVar);
+  ASSERT_TRUE(allClose(lin(inVar), expected_outVar, 1E-7));
+
+  // Intentionally cast to base Module ptr and clone/copy via the various
+  // options
+  std::unique_ptr<Module> modulePtr = std::make_unique<Linear>(std::move(lin));
+  std::unique_ptr<Module> clonedModulePtr = modulePtr->clone();
+  Linear cloned = cloneModuleAs<Linear>(modulePtr);
+  std::unique_ptr<Linear> clonedPtr = cloneModulePtr<Linear>(modulePtr);
+
+  // Change the original module param and check the cloned modules have not
+  // changed
+  modulePtr->param(0).tensor() += 1.0F;
+  ASSERT_FALSE(
+      allClose(modulePtr->forward({inVar}).front(), expected_outVar, 1E-7));
+
+  ASSERT_TRUE(allClose(
+      clonedModulePtr->forward({inVar}).front(), expected_outVar, 1E-7));
+  ASSERT_TRUE(allClose(cloned(inVar), expected_outVar, 1E-7));
+  ASSERT_TRUE(allClose(clonedPtr->forward(inVar), expected_outVar, 1E-7));
+}
+
+TEST(ModuleTest, ContainerCloneCopy) {
+  ContainerTestClass seq;
+  seq.addParam(Variable(fl::rand({5, 5}), true));
+  seq.add(Linear(10, 20));
+  // Create copy/clone vis copy constructor
+  auto seqCopy = seq;
+
+  // Make sure they are the same
+  ASSERT_TRUE(allClose(seq.params()[0], seqCopy.params()[0]));
+  ASSERT_TRUE(allClose(seq.params()[1], seqCopy.params()[1]));
+
+  // Change the first parameter and check the copy has not changed
+  Variable new_param(fl::rand({5, 5}), true);
+  seq.setParams(new_param, 0);
+  ASSERT_TRUE(allClose(seq.params()[0], new_param));
+  ASSERT_FALSE(allClose(seqCopy.params()[0], seq.params()[0]));
+
+  // Change the linear layer's first parameter and check the copy has not
+  // changed
+  new_param = Variable(fl::rand({10, 20}), true);
+  seq.setParams(new_param, 1);
+  ASSERT_TRUE(allClose(seq.params()[1], new_param));
+  ASSERT_TRUE(allClose(seq.module(0)->param(0), new_param));
+  ASSERT_FALSE(allClose(seqCopy.params()[1], seq.params()[1]));
+  ASSERT_FALSE(allClose(seqCopy.module(0)->param(0), seq.module(0)->param(0)));
+
+  // Intentionally cast to base Module ptr and clone/copy via the various
+  // options
+  std::unique_ptr<Module> modulePtr =
+      std::make_unique<ContainerTestClass>(std::move(seq));
+  std::unique_ptr<Module> clonedModulePtr = modulePtr->clone();
+  ContainerTestClass cloned = cloneModuleAs<ContainerTestClass>(modulePtr);
+  std::unique_ptr<ContainerTestClass> clonedPtr =
+      cloneModulePtr<ContainerTestClass>(modulePtr);
+
+  ASSERT_TRUE(allClose(clonedModulePtr->params()[0], modulePtr->params()[0]));
+  ASSERT_TRUE(allClose(cloned.params()[0], modulePtr->params()[0]));
+  ASSERT_TRUE(allClose(clonedPtr->params()[0], modulePtr->params()[0]));
 }
 
 int main(int argc, char** argv) {
