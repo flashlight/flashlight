@@ -116,12 +116,9 @@ class Variable {
 
   /**
    * Creates a copy of this variable, but detached from the computation graph.
-   * @param forceDeepCopy Forces a deep copy of the underlying tensor,
-   * circumventing any copy on write behaviour. If false, uses the underlying
-   * tensor's copy constructor behaviour, which is backend dependent.
    * @return returns the cloned and detached variable.
    */
-  Variable copy(bool forceDeepCopy = false) const;
+  Variable copy() const;
 
   /**
    * Creates a new variable based on the current variable whose type will be

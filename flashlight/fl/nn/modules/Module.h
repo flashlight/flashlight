@@ -109,11 +109,9 @@ class Module {
   /**
    * Copies the modules parameters, detaching from the computation graph.
    *
-   * @param forceDeepCopy Forces a deep copy of the `Variable`s. See
-   * `Variable::copy` for more details about behaviour.
    * @return a copy of the modules parameters as a vector of `Variable`
    */
-  virtual std::vector<Variable> copyParams(bool forceDeepCopy = false) const;
+  virtual std::vector<Variable> copyParams() const;
 
   /**
    * Clears references to gradient Variables for all parameters in the module.
