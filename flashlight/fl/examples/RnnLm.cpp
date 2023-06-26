@@ -79,18 +79,43 @@ class LMDataset : public Dataset {
 class RnnLm : public Container {
  public:
   explicit RnnLm(int vocab_size, int hidden_size = 200)
-      : embed(Embedding(hidden_size, vocab_size)),
-        rnn(
-            RNN(hidden_size,
-                hidden_size,
-                2, /* Num layers. */
-                RnnMode::LSTM,
-                0 /* Dropout */)),
-        linear(Linear(hidden_size, vocab_size)) {
+      : embed(std::make_shared<Embedding>(hidden_size, vocab_size)),
+        rnn(std::make_shared<RNN>(
+            hidden_size,
+            hidden_size,
+            2, /* Num layers. */
+            RnnMode::LSTM,
+            0 /* Dropout */)),
+        linear(std::make_shared<Linear>(hidden_size, vocab_size)),
+        logsoftmax_(0) // max on the main dimension
+  {
+    createLayers();
+  }
+
+  RnnLm(const RnnLm& other) {
+    copy(other);
+    createLayers();
+  }
+
+  RnnLm(RnnLm&& other) = default;
+
+  RnnLm& operator=(const RnnLm& other) {
+    clear();
+    copy(other);
+    createLayers();
+  }
+  RnnLm& operator=(RnnLm&& other) = default;
+
+  void copy(const RnnLm& other) {
+    embed = std::make_shared<Embedding>(*other.embed);
+    rnn = std::make_shared<RNN>(*other.rnn);
+    linear = std::make_shared<Linear>(*other.linear);
+  }
+
+  void createLayers() {
     add(embed);
     add(rnn);
     add(linear);
-    add(LogSoftmax());
   }
 
   std::vector<Variable> forward(const std::vector<Variable>& inputs) override {
@@ -98,22 +123,21 @@ class RnnLm : public Container {
     if (inSz < 1 || inSz > 3) {
       throw std::invalid_argument("Invalid inputs size");
     }
-    return rnn(inputs);
+    return rnn->forward(inputs);
   }
 
   std::tuple<Variable, Variable, Variable>
   forward(const Variable& input, const Variable& h, const Variable& c) {
-    auto output = embed(input);
+    auto output = embed->forward(input);
     Variable ho, co;
-    std::tie(output, ho, co) = rnn(output, h, c);
+    std::tie(output, ho, co) = rnn->forward(output, h, c);
 
     // Truncate BPTT
     ho.setCalcGrad(false);
     co.setCalcGrad(false);
 
-    output = linear(output);
-    LogSoftmax lsm(0); // max on the main dimension
-    output = lsm(output);
+    output = linear->forward(output);
+    output = logsoftmax_(output);
     return std::make_tuple(output, ho, co);
   }
 
@@ -126,14 +150,15 @@ class RnnLm : public Container {
     return "RnnLm";
   }
 
-  std::unique_ptr<Module> clone() const {
-    throw std::runtime_error("Cloning is unimplemented in Module 'RnnLm'");
+  std::unique_ptr<Module> clone() const override {
+    return std::make_unique<RnnLm>(*this);
   }
 
  private:
-  Embedding embed;
-  RNN rnn;
-  Linear linear;
+  std::shared_ptr<Embedding> embed;
+  std::shared_ptr<RNN> rnn;
+  std::shared_ptr<Linear> linear;
+  LogSoftmax logsoftmax_;
 };
 
 } // namespace

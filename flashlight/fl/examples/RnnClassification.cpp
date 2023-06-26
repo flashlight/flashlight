@@ -147,26 +147,49 @@ class RnnClassifier : public Container {
       unsigned vocabSize,
       int hiddenSize = 256,
       unsigned numLayers = 2)
-      : embed_(Embedding(hiddenSize, vocabSize)),
-        rnn_(
-            RNN(hiddenSize,
-                hiddenSize,
-                numLayers,
-                RnnMode::GRU,
-                0 /* Dropout */)),
-        linear_(Linear(hiddenSize, numClasses)),
+      : embed_(std::make_shared<Embedding>(hiddenSize, vocabSize)),
+        rnn_(std::make_shared<RNN>(
+            hiddenSize,
+            hiddenSize,
+            numLayers,
+            RnnMode::GRU,
+            0 /* Dropout */)),
+        linear_(std::make_shared<Linear>(hiddenSize, numClasses)),
         logsoftmax_(0) {
     std::cout << "Creating a RNN Classifier with vocab size: " << vocabSize
               << " and num classes: " << numClasses << std::endl;
+    createLayers();
+  }
+
+  RnnClassifier(const RnnClassifier& other) {
+    copy(other);
+    createLayers();
+  }
+
+  RnnClassifier(RnnClassifier&& other) = default;
+
+  RnnClassifier& operator=(const RnnClassifier& other) {
+    clear();
+    copy(other);
+    createLayers();
+  }
+  RnnClassifier& operator=(RnnClassifier&& other) = default;
+
+  void copy(const RnnClassifier& other) {
+    embed_ = std::make_shared<Embedding>(*other.embed_);
+    rnn_ = std::make_shared<RNN>(*other.rnn_);
+    linear_ = std::make_shared<Linear>(*other.linear_);
+    logsoftmax_ = other.logsoftmax_;
+  }
+
+  void createLayers() {
     add(embed_);
     add(rnn_);
     add(linear_);
-    add(logsoftmax_);
   }
 
-  std::unique_ptr<Module> clone() const {
-    throw std::runtime_error(
-        "Cloning is unimplemented in Module 'RnnClassifier'");
+  std::unique_ptr<Module> clone() const override {
+    throw std::make_unique<RnnClassifier>(*this);
   }
 
   std::vector<Variable> forward(const std::vector<Variable>& inputs) override {
@@ -178,16 +201,16 @@ class RnnClassifier : public Container {
     const unsigned numChars = input.dim(1);
     Variable ho, co; // hidden and carry output
     // output should be hs x bs x ts : [ 𝑋𝑖𝑛, 𝑁, 𝑇 ]
-    Variable output = embed_(input);
+    Variable output = embed_->forward(input);
     // The input to the RNN is expected to be of shape [ 𝑋𝑖𝑛, 𝑁, 𝑇 ] where 𝑋𝑖𝑛
     // is the hidden size, 𝑁 is the batch size and 𝑇 is the sequence length.
-    std::tie(output, ho, co) = rnn_(output, h, c);
+    std::tie(output, ho, co) = rnn_->forward(output, h, c);
     // The output of the RNN should be of shape [ 𝑋𝑜𝑢𝑡, 𝑁, 𝑇], with 𝑋𝑜𝑢𝑡 to be
     // the hidden_size (unidirectional RNN)
     // Truncate BPTT
     ho.setCalcGrad(false);
     co.setCalcGrad(false);
-    output = linear_(output);
+    output = linear_->forward(output);
     output = logsoftmax_(output);
     output = output(fl::span, fl::span, input.tensor().dim(1) - 1);
     return std::make_tuple(output, ho, co);
@@ -223,9 +246,9 @@ class RnnClassifier : public Container {
   }
 
  private:
-  Embedding embed_;
-  RNN rnn_;
-  Linear linear_;
+  std::shared_ptr<Embedding> embed_;
+  std::shared_ptr<RNN> rnn_;
+  std::shared_ptr<Linear> linear_;
   LogSoftmax logsoftmax_;
 };
 
