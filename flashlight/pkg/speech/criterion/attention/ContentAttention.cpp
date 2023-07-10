@@ -66,7 +66,7 @@ NeuralContentAttention::NeuralContentAttention(int dim, int layers /* = 1 */) {
     net.add(ReLU());
   }
   net.add(Linear(dim, 1));
-  add(net);
+  add(std::move(net));
 }
 
 std::unique_ptr<Module> NeuralContentAttention::clone() const {

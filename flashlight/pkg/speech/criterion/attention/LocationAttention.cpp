@@ -17,7 +17,7 @@ SimpleLocationAttention::SimpleLocationAttention(int convKernel) {
   pa.add(Conv2D(1, 1, 1, convKernel, 1, 1, -1, -1));
   pa.add(Reorder({2, 0, 1, 3}));
   pa.add(ReLU());
-  add(pa);
+  add(std::move(pa));
 }
 
 std::unique_ptr<Module> SimpleLocationAttention::clone() const {
@@ -76,7 +76,7 @@ LocationAttention::LocationAttention(int encDim, int convKernel) {
   pa.add(Conv2D(1, encDim, 1, convKernel, 1, 1, -1, -1));
   pa.add(Reorder({2, 0, 1, 3}));
   pa.add(ReLU());
-  add(pa);
+  add(std::move(pa));
 }
 
 std::unique_ptr<Module> LocationAttention::clone() const {
@@ -141,7 +141,7 @@ NeuralLocationAttention::NeuralLocationAttention(
   pa.add(Conv2D(1, convChannel, 1, convKernel, 1, 1, -1, -1));
   pa.add(Reorder({2, 0, 1, 3}));
   pa.add(Linear(convChannel, attnDim, false));
-  add(pa);
+  add(std::move(pa));
   add(Tanh());
   add(Linear(attnDim, 1, false));
 }

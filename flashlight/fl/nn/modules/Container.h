@@ -62,7 +62,10 @@ class Container : public Module {
    */
   template <typename T>
   void add(T&& module) {
-    add(std::make_shared<std::decay_t<T>>(std::forward<T>(module)));
+    static_assert(
+        !std::is_lvalue_reference_v<T>,
+        "add() can only accept rvalues. Use std::move().");
+    add(std::make_shared<std::decay_t<T>>(std::move(module)));
   }
 
   /**
@@ -72,6 +75,9 @@ class Container : public Module {
    */
   template <typename T>
   void add(std::unique_ptr<T>&& module) {
+    static_assert(
+        !std::is_lvalue_reference_v<T>,
+        "add() can only accept rvalues. Use std::move().");
     add(std::shared_ptr<T>(std::move(module)));
   }
 
