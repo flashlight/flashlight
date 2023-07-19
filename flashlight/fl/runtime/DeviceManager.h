@@ -9,9 +9,10 @@
 
 #include <memory>
 #include <string_view>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
+#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/runtime/Device.h"
 
 namespace fl {
@@ -24,8 +25,7 @@ constexpr int kX64DeviceId = 0;
 /**
  * A singleton to manage all supported types of devices.
  */
-class DeviceManager {
-
+class FL_API DeviceManager {
   using DeviceTypeInfo = std::unordered_map<int, const std::unique_ptr<Device>>;
 
   std::unordered_map<DeviceType, DeviceTypeInfo> deviceTypeToInfo_;
@@ -39,10 +39,10 @@ class DeviceManager {
 
   // throws runtime_error if `type` is unavailable
   void enforceDeviceTypeAvailable(
-    std::string_view errorPrefix, const DeviceType type) const;
+      std::string_view errorPrefix,
+      const DeviceType type) const;
 
  public:
-
   /**
    * Gets the singleton DeviceManager.
    *

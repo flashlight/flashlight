@@ -61,7 +61,7 @@ struct BlobDatasetEntry {
   int64_t offset;
 };
 
-class BlobDatasetEntryBuffer {
+class FL_API BlobDatasetEntryBuffer {
  private:
   std::vector<int64_t> data_;
   const int nFieldPerEntry_ = 7;

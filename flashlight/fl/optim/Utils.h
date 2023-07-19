@@ -10,8 +10,12 @@
 #include <vector>
 
 #include "flashlight/fl/autograd/Variable.h"
+#include "flashlight/fl/common/Defines.h"
 
 namespace fl {
 
-double clipGradNorm(const std::vector<Variable>& parameters, double max_norm);
+FL_API double clipGradNorm(
+    const std::vector<Variable>& parameters,
+    double max_norm);
+
 }

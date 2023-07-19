@@ -7,11 +7,12 @@
 
 #pragma once
 
+#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/nn/modules/Module.h"
 
 namespace fl {
 
-class Normalize : public UnaryModule {
+class FL_API Normalize : public UnaryModule {
  public:
   /**
    * Constructs a Normalize module.

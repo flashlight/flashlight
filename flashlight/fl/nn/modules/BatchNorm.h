@@ -23,9 +23,8 @@ namespace fl {
  * added to the variance to avoid divide-by-zero, and \f$\gamma\f$ and
  * \f$\beta\f$ are learnable parameters for affine transformation.
  */
-class BatchNorm : public UnaryModule {
-
-protected:
+class FL_API BatchNorm : public UnaryModule {
+ protected:
   BatchNorm() = default; // intentionally protected
   std::vector<int> featAxis_;
   int featSize_;

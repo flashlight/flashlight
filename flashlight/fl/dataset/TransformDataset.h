@@ -32,7 +32,7 @@ namespace fl {
   std::cout << allClose(transformds.get(5)[0], -ds->get(5)[0]) << "\n"; // 1
   \endcode
  */
-class TransformDataset : public Dataset {
+class FL_API TransformDataset : public Dataset {
  public:
   /**
    * Creates a `TransformDataset`.

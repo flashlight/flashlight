@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/distributed/reducers/Reducer.h"
 
 namespace fl {
@@ -17,7 +18,7 @@ class Variable;
  * A Reducer which calls allReduce directly on gradients to process. All
  * synchronized gradients are scaled by a pre-specified factor.
  */
-class InlineReducer : public Reducer {
+class FL_API InlineReducer : public Reducer {
   /// A scale by which to scale reduced gradients
   double scale_;
 

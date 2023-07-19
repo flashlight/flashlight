@@ -18,7 +18,7 @@ namespace fl {
  * output from lookup of shape
  * [`embeddingDim`, \f$B_1\f$, \f$B_2\f$ (optional), \f$B_3\f$ (optional)].
  */
-class Embedding : public UnaryModule {
+class FL_API Embedding : public UnaryModule {
  private:
   Embedding() = default; // Intentionally private
 

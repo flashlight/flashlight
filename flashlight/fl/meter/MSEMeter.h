@@ -9,11 +9,14 @@
 
 #include <cstdint>
 
+#include "flashlight/fl/common/Defines.h"
+
 namespace fl {
 
 class Tensor;
 
-/** An implementation of mean square error meter, which measures the mean square
+/**
+ * An implementation of mean square error meter, which measures the mean square
  * error between targets and predictions made by the model.
  * Example usage:
  *
@@ -26,7 +29,7 @@ class Tensor;
  * double mse = meter.value();
  * \endcode
  */
-class MSEMeter {
+class FL_API MSEMeter {
  public:
   /** Constructor of `MSEMeter`. An instance will maintain two
    * counters initialized to 0:

@@ -7,11 +7,9 @@
 
 #pragma once
 
-#include <memory>
+#include "flashlight/fl/common/Defines.h"
 
-namespace af {
-class array;
-}
+#include <memory>
 
 namespace fl {
 
@@ -37,7 +35,7 @@ class Tensor;
  * \endcode
  *
  */
-class DevicePtr {
+class FL_API DevicePtr {
  public:
   /**
    * Creates a null DevicePtr.

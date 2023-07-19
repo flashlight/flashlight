@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "flashlight/fl/autograd/Variable.h"
+#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/optim/Optimizers.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
@@ -20,7 +21,7 @@ namespace fl {
  * [Stochastic Gradient Methods with Layer-wise Adaptive Moments for Training of
  * Deep Networks](https://arxiv.org/abs/1905.11286).
  */
-class NovogradOptimizer : public FirstOrderOptimizer {
+class FL_API NovogradOptimizer : public FirstOrderOptimizer {
  private:
   FL_SAVE_LOAD_WITH_BASE(
       FirstOrderOptimizer,

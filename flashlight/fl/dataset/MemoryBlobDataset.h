@@ -21,7 +21,7 @@ namespace fl {
  * efficient.
  *
  */
-class MemoryBlobDataset : public BlobDataset {
+class FL_API MemoryBlobDataset : public BlobDataset {
  public:
   /**
    * Creates a `MemoryBlobDataset`, specifying a blob file name.

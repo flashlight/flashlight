@@ -28,7 +28,7 @@ namespace fl {
   std::cout << ds.get(0)[1].shape() << "\n"; // 7 1
   \endcode
  */
-class TensorDataset : public Dataset {
+class FL_API TensorDataset : public Dataset {
  public:
   /**
    * Creates a `TensorDataset` by unpacking the input tensors.

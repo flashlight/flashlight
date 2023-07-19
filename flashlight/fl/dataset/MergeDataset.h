@@ -40,7 +40,7 @@ namespace fl {
   std::cout << allClose(mergeds.get(5)[1], ds2->get(5)[0]) << "\n"; // 1
   \endcode
  */
-class MergeDataset : public Dataset {
+class FL_API MergeDataset : public Dataset {
  public:
   /**
    * Creates a MergeDataset.

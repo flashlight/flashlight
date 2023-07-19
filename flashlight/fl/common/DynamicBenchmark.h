@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/common/Timer.h"
 
 namespace fl {
@@ -27,7 +28,7 @@ namespace fl {
  *
  * This type shouldn't be directly constructed.
  */
-struct DynamicBenchmarkOptionsBase {
+struct FL_API DynamicBenchmarkOptionsBase {
   virtual ~DynamicBenchmarkOptionsBase() = default;
 
   virtual void accumulateTimeToCurrentOption(double, bool = true) {
@@ -193,7 +194,7 @@ struct DynamicBenchmarkOptions : DynamicBenchmarkOptionsBase {
  * benchmarking various configurations at runtime rather than pre-determining
  * configurations based on detected hardware.
  */
-class DynamicBenchmark {
+class FL_API DynamicBenchmark {
  public:
   explicit DynamicBenchmark(
       std::shared_ptr<DynamicBenchmarkOptionsBase> options)

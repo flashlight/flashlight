@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include "flashlight/fl/dataset/ResampleDataset.h"
-
 #include <random>
+
+#include "flashlight/fl/dataset/ResampleDataset.h"
 
 namespace fl {
 
@@ -33,7 +33,7 @@ namespace fl {
   std::cout << "second try" << shuffleds.get(0)["x"] << std::endl;
   \endcode
  */
-class ShuffleDataset : public ResampleDataset {
+class FL_API ShuffleDataset : public ResampleDataset {
  public:
   /**
    * Creates a `ShuffleDataset`.

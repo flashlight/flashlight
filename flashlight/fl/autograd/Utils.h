@@ -8,6 +8,7 @@
 #pragma once
 
 #include "flashlight/fl/autograd/Variable.h"
+#include "flashlight/fl/common/Defines.h"
 
 namespace fl {
 
@@ -24,7 +25,8 @@ namespace fl {
  * @param absTolerance absolute tolerance allowed
  *
  */
-bool allClose(const Variable& a, const Variable& b, double absTolerance = 1e-5);
+FL_API bool
+allClose(const Variable& a, const Variable& b, double absTolerance = 1e-5);
 
 /** @} */
 

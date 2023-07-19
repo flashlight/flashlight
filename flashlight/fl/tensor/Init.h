@@ -7,11 +7,13 @@
 
 #pragma once
 
+#include "flashlight/fl/common/Defines.h"
+
 namespace fl {
 
 /**
  * Initialize Flashlight.
  */
-void init();
+FL_API void init();
 
 } // namespace fl

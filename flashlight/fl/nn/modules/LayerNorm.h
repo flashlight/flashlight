@@ -25,7 +25,7 @@ constexpr const int kLnVariableAxisSize = -1;
  * added to the variance to avoid divide-by-zero, and \f$\gamma\f$ and
  * \f$\beta\f$ are learnable parameters for affine transformation.
  */
-class LayerNorm : public UnaryModule {
+class FL_API LayerNorm : public UnaryModule {
  public:
   /**
    * Constructs a LayerNorm module.

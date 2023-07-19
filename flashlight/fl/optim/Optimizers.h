@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "flashlight/fl/autograd/Variable.h"
+#include "flashlight/fl/common/Defines.h"
 
 namespace fl {
 
@@ -25,7 +26,7 @@ namespace fl {
  * optimizer.zeroGrad();
  * \endcode
  */
-class FirstOrderOptimizer {
+class FL_API FirstOrderOptimizer {
  private:
   /**
    * Serialize the module's parameters.

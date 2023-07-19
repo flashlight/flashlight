@@ -34,7 +34,7 @@ namespace fl {
   std::cout << allClose(concatds.get(15)[0], ds2->get(5)[0]) << "\n"; // 1
   \endcode
  */
-class ConcatDataset : public Dataset {
+class FL_API ConcatDataset : public Dataset {
  public:
   /**
    * Creates a `ConcatDataset`.

@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "flashlight/fl/autograd/Variable.h"
+#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/optim/Optimizers.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
@@ -20,7 +21,7 @@ namespace fl {
  * [Adadelta: An Adaptive Learning Rate Method](
  *    https://arxiv.org/pdf/1212.5701.pdf).
  */
-class AdadeltaOptimizer : public FirstOrderOptimizer {
+class FL_API AdadeltaOptimizer : public FirstOrderOptimizer {
  private:
   FL_SAVE_LOAD_WITH_BASE(
       FirstOrderOptimizer,

@@ -27,7 +27,7 @@ namespace fl {
  * @param[in] module The module over which to compute params
  * @return the number of parameters in the module
  */
-int64_t numTotalParams(std::shared_ptr<fl::Module> module);
+FL_API int64_t numTotalParams(std::shared_ptr<fl::Module> module);
 
 /**
  * Returns true if the parameters of two modules are of same type and are
@@ -37,14 +37,12 @@ int64_t numTotalParams(std::shared_ptr<fl::Module> module);
  * @param absTolerance absolute tolerance allowed
  *
  */
-bool allParamsClose(
-    const Module& a,
-    const Module& b,
-    double absTolerance = 1e-5);
+FL_API bool
+allParamsClose(const Module& a, const Module& b, double absTolerance = 1e-5);
 
 namespace detail {
 
-int64_t getNumRnnParams(
+FL_API int64_t getNumRnnParams(
     int input_size,
     int hidden_size,
     int num_layers,
@@ -61,11 +59,12 @@ struct IntOrPadMode {
 
 } // namespace detail
 
-int derivePadding(int inSz, int filterSz, int stride, int pad, int dilation);
+FL_API int
+derivePadding(int inSz, int filterSz, int stride, int pad, int dilation);
 
 /// packs a list of arrays (possibly of different dimensions) to a single array
 /// by padding them to same dimensions
-Tensor join(
+FL_API Tensor join(
     const std::vector<Tensor>& inputs,
     double padValue = 0.0,
     int batchDim = -1);

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <memory>
+
 #include "flashlight/fl/dataset/Dataset.h"
 
 namespace fl {
@@ -30,7 +31,7 @@ namespace fl {
   std::cout << allClose(resampleds.get(9)[0], ds->get(0)[0]) << "\n"; // 1
   \endcode
  */
-class ResampleDataset : public Dataset {
+class FL_API ResampleDataset : public Dataset {
  public:
   /**
    * Constructs a ResampleDataset with the identity mapping:

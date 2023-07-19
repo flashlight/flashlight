@@ -11,6 +11,7 @@
 #include <memory>
 #include <utility>
 
+#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
@@ -267,7 +268,7 @@ namespace detail {
  * An interface with which to construct a tensor. Templated based on used tensor
  * adapters.
  */
-struct TensorCreator {
+struct FL_API TensorCreator {
   virtual ~TensorCreator() = default;
 
   // General tensor ctor
@@ -317,7 +318,7 @@ struct TensorCreatorImpl : public TensorCreator {
  * internal use only - use setDefaultTensorType<T>() to set the type with which
  * to create a default tensor.
  */
-class DefaultTensorType {
+class FL_API DefaultTensorType {
   // The function to use to create a tensor of default type.
   std::unique_ptr<TensorCreator> creationFunc_;
 

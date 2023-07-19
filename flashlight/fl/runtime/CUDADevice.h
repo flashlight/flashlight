@@ -15,7 +15,7 @@ namespace fl {
 /**
  * Represents a CUDA device.
  */
-class CUDADevice : public DeviceTrait<CUDADevice> {
+class FL_API CUDADevice : public DeviceTrait<CUDADevice> {
   // native ID of the underlying CUDA device
   const int nativeId_;
   // TODO metadata, e.g., memory/compute capacity

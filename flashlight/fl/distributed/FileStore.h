@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/common/Filesystem.h"
 
 namespace fl {
@@ -19,7 +20,7 @@ namespace detail {
 
 // Inspired from
 // https://github.com/facebookincubator/gloo/blob/master/gloo/rendezvous/file_store.h
-class FileStore {
+class FL_API FileStore {
  public:
   static constexpr std::chrono::milliseconds kDefaultTimeout =
       std::chrono::seconds(60 * 2);

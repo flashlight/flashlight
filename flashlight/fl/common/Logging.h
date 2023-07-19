@@ -13,6 +13,8 @@
 #include <string>
 #include <utility>
 
+#include "flashlight/fl/common/Defines.h"
+
 /**
  * \defgroup logging Logging Library
  *
@@ -72,7 +74,7 @@ namespace fl {
 /**
  * Initialize all logging components including stacktraces and signal handling.
  */
-void initLogging();
+FL_API void initLogging();
 
 /// \ingroup logging
 enum class LogLevel {
@@ -89,14 +91,14 @@ enum class LogLevel {
  *
  * \ingroup logging
  */
-LogLevel logLevelValue(const std::string& level);
+FL_API LogLevel logLevelValue(const std::string& level);
 
 /**
  * Gets string representation of a given `LogLevel`.
  *
  * \ingroup logging
  */
-std::string logLevelName(LogLevel level);
+FL_API std::string logLevelName(LogLevel level);
 
 /**
  *  Used to globally limit `FL_LOG(level)`.

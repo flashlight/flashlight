@@ -11,6 +11,22 @@
 #include <string>
 #include <unordered_map>
 
+// Machinery for symbol visibility
+#if defined(_WIN32) || defined(_MSC_VER)
+
+#ifdef FL_DLL
+#define FL_API __declspec(dllexport)
+#else // FL_DLL
+#define FL_API __declspec(dllimport)
+#endif // FL_DLL
+
+#else // defined(_WIN32) || defined(_MSC_VER)
+
+#define FL_API __attribute__((visibility("default")))
+#define FL_DEPRECATED(msg) __attribute__((deprecated(msg)))
+
+#endif // defined(_WIN32) || defined(_MSC_VER)
+
 namespace fl {
 
 /**
@@ -111,7 +127,7 @@ enum class OptimLevel {
  * Singleton storing the current optimization level (`OptimLevel`) for
  * flashlight.
  */
-class OptimMode {
+class FL_API OptimMode {
  public:
   /**
    * @return the OptimMode singleton

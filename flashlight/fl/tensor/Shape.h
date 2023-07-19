@@ -13,6 +13,8 @@
 #include <utility>
 #include <vector>
 
+#include "flashlight/fl/common/Defines.h"
+
 namespace fl {
 
 // The type of a dimension.
@@ -39,7 +41,7 @@ using Dim = long long;
  * Shape is an interface and can be derived from or implemented given specific
  * backing storage or handles.
  */
-class Shape {
+class FL_API Shape {
   // Storage for the dimension values. Defaults to an empty Shape {0}, whereas
   // {} is a scalar shape.
   std::vector<Dim> dims_;
@@ -123,6 +125,6 @@ class Shape {
 /**
  * Write a shape representation to an output stream.
  */
-std::ostream& operator<<(std::ostream& ostr, const Shape& s);
+FL_API std::ostream& operator<<(std::ostream& ostr, const Shape& s);
 
 } // namespace fl

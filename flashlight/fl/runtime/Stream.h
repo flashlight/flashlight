@@ -10,12 +10,15 @@
 #include <stdexcept>
 #include <unordered_set>
 
+#include "flashlight/fl/common/Defines.h"
+
 namespace fl {
 
 class Device;
 
 enum class StreamType {
-  CUDA, Synchronous,
+  CUDA,
+  Synchronous,
 };
 
 /**
@@ -23,7 +26,7 @@ enum class StreamType {
  * synchronously on a specific device. It focuses on synchronization of the
  * computations, while being agnostic to the computations themselves.
  */
-class Stream {
+class FL_API Stream {
  public:
   Stream() = default;
   virtual ~Stream() = default;
@@ -95,7 +98,7 @@ class Stream {
    * @param[in] waitOns the streams to perform relative synchronization against.
    */
   virtual void relativeSync(
-    const std::unordered_set<const Stream*>& waitOns) const;
+      const std::unordered_set<const Stream*>& waitOns) const;
 };
 
 /**
@@ -119,10 +122,12 @@ class StreamTrait : public Stream {
 
   virtual void relativeSync(const Stream& waitOn) const override {
     switch (waitOn.type()) {
-      case Derived::type: relativeSync(waitOn.impl<Derived>()); break;
+      case Derived::type:
+        relativeSync(waitOn.impl<Derived>());
+        break;
       default:
         throw std::runtime_error(
-          "[Stream::relativeSync] Unsupported for different types of streams");
+            "[Stream::relativeSync] Unsupported for different types of streams");
     }
   }
 };

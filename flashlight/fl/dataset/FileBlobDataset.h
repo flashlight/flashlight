@@ -22,7 +22,7 @@ namespace fl {
  * efficient.
  *
  */
-class FileBlobDataset : public BlobDataset {
+class FL_API FileBlobDataset : public BlobDataset {
  public:
   /**
    * Creates a `FileBlobDataset`, specifying a blob file name.

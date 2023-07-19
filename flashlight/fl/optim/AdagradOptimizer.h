@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "flashlight/fl/autograd/Variable.h"
+#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/optim/Optimizers.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
@@ -21,7 +22,7 @@ namespace fl {
  * Optimization](
  *    http://www.jmlr.org/papers/volume12/duchi11a/duchi11a.pdf).
  */
-class AdagradOptimizer : public FirstOrderOptimizer {
+class FL_API AdagradOptimizer : public FirstOrderOptimizer {
  private:
   FL_SAVE_LOAD_WITH_BASE(FirstOrderOptimizer, eps_, wd_, variance_)
 
