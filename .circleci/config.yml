@@ -9,7 +9,7 @@ version: 2.1
 gpu: &gpu
   machine:
     image: ubuntu-2004-cuda-11.4:202110-01
-  resource_class: gpu.nvidia.large
+  resource_class: gpu.nvidia.medium
 
 orbs:
   win: circleci/windows@5.0.0
@@ -18,7 +18,7 @@ executors:
   linux:
     machine:
       image: ubuntu-2004-cuda-11.4:202110-01
-    resource_class: gpu.nvidia.large
+    resource_class: gpu.nvidia.medium
   windows:
     machine:
       image: windows-server-2019-nvidia:stable
