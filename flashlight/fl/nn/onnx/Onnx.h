@@ -9,10 +9,11 @@
 
 #include <memory>
 
+#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/nn/modules/Module.h"
 
 namespace fl {
 
-std::shared_ptr<Module> loadOnnxModule();
+std::shared_ptr<Module> loadOnnxModuleFromPath(fs::path path);
 
 } // namespace fl

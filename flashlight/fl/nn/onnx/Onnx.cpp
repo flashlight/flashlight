@@ -7,8 +7,12 @@
 
 #include "flashlight/fl/nn/onnx/Onnx.h"
 
+#include <fstream>
 #include <iostream> // delete me
+#include <iterator>
 #include <memory>
+#include <stdexcept>
+#include <string>
 
 #include <onnx/onnx_pb.h>
 #include <onnx/proto_utils.h>
@@ -17,12 +21,21 @@
 
 namespace fl {
 
-std::shared_ptr<Module> loadOnnxModule() {
-  // TODO: test compilation
-  char* bytes = 0;
-  int nbytes = 0;
-  std::unique_ptr<onnx::ModelProto> model(new onnx::ModelProto());
-  onnx::ParseProtoFromBytes(model.get(), bytes, nbytes);
+std::shared_ptr<Module> loadOnnxModuleFromPath(fs::path path) {
+  std::fstream protoStream(path, std::ios::in | std::ios::binary);
+  if (!protoStream) {
+    throw std::invalid_argument(
+        "loadOnnxModuleFromPath - file not found: " + path.string());
+  }
+
+  std::string data{
+      std::istreambuf_iterator<char>{protoStream},
+      std::istreambuf_iterator<char>{}};
+  auto model = std::make_unique<onnx::ModelProto>();
+  if (!onnx::ParseProtoFromBytes(model.get(), data.c_str(), data.size())) {
+    throw std::runtime_error(
+        "loadOnnxModuleFromPath - cannot parse ONNX proto: " + path.string());
+  }
 
   std::cout << model->graph().input().size() << std::endl;
 
