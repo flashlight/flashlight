@@ -107,6 +107,7 @@ class RnnLm : public Container {
   RnnLm& operator=(RnnLm&& other) = default;
 
   void copy(const RnnLm& other) {
+    train_ = other.train_;
     embed = std::make_shared<Embedding>(*other.embed);
     rnn = std::make_shared<RNN>(*other.rnn);
     linear = std::make_shared<Linear>(*other.linear);

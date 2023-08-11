@@ -35,6 +35,7 @@ PositionalEmbeddingSine::PositionalEmbeddingSine(
       temperature_(other.temperature_),
       normalize_(other.normalize_),
       scale_(other.scale_) {
+  train_ = other.train_;
   for (auto& mod : other.modules_) {
     add(mod->clone());
   }
@@ -42,6 +43,7 @@ PositionalEmbeddingSine::PositionalEmbeddingSine(
 
 PositionalEmbeddingSine& PositionalEmbeddingSine::operator=(
     const PositionalEmbeddingSine& other) {
+  train_ = other.train_;
   numPosFeats_ = other.numPosFeats_;
   temperature_ = other.temperature_;
   normalize_ = other.normalize_;

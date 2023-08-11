@@ -155,11 +155,13 @@ class Container : public Module {
  */
 #define FL_BASIC_CONTAINER_CLONING(ContainerClass)             \
   ContainerClass(const ContainerClass& other) {                \
+    train_ = other.train_;                                     \
     for (auto& mod : other.modules_) {                         \
       add(mod->clone());                                       \
     }                                                          \
   }                                                            \
   ContainerClass& operator=(const ContainerClass& other) {     \
+    train_ = other.train_;                                     \
     clear();                                                   \
     for (auto& mod : other.modules_) {                         \
       add(mod->clone());                                       \

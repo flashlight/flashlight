@@ -26,7 +26,9 @@ PositionEmbedding::PositionEmbedding(
 }
 
 PositionEmbedding::PositionEmbedding(const PositionEmbedding& other)
-    : Module(other.copyParams(), other.train_), dropout_(other.dropout_) {}
+    : Module(other.copyParams()), dropout_(other.dropout_) {
+  train_ = other.train_;
+}
 
 PositionEmbedding& PositionEmbedding::operator=(
     const PositionEmbedding& other) {

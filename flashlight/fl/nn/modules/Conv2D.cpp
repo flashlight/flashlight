@@ -105,7 +105,7 @@ Conv2D::Conv2D(
 }
 
 Conv2D::Conv2D(const Conv2D& other)
-    : UnaryModule(other.copyParams(), other.train_),
+    : UnaryModule(other.copyParams()),
       nIn_(other.nIn_),
       nOut_(other.nOut_),
       xFilter_(other.xFilter_),
@@ -117,7 +117,9 @@ Conv2D::Conv2D(const Conv2D& other)
       xDilation_(other.xDilation_),
       yDilation_(other.yDilation_),
       bias_(other.bias_),
-      groups_(other.groups_) {}
+      groups_(other.groups_) {
+  train_ = other.train_;
+}
 
 Conv2D& Conv2D::operator=(const Conv2D& other) {
   params_ = other.copyParams();

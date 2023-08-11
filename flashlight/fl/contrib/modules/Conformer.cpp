@@ -108,6 +108,7 @@ Conformer& Conformer::operator=(const Conformer& other) {
 }
 
 void Conformer::copy(const Conformer& other) {
+  train_ = other.train_;
   nHeads_ = other.nHeads_;
   posEmbContextSize_ = other.posEmbContextSize_;
   convKernelSize_ = other.convKernelSize_;

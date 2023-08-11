@@ -72,6 +72,7 @@ Transformer& Transformer::operator=(const Transformer& other) {
 }
 
 void Transformer::copy(const Transformer& other) {
+  train_ = other.train_;
   nHeads_ = other.nHeads_;
   bptt_ = other.bptt_;
   pDropout_ = other.pDropout_;

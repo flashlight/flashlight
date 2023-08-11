@@ -16,14 +16,8 @@ namespace fl {
 
 Module::Module() = default;
 
-Module::Module(const std::vector<Variable>& params, bool train)
-    : params_(params.begin(), params.end()) {
-  if (train) {
-    this->train();
-  } else {
-    this->eval();
-  }
-}
+Module::Module(const std::vector<Variable>& params)
+    : params_(params.begin(), params.end()) {}
 
 Variable Module::param(int position) const {
   if (!(position >= 0 && position < params_.size())) {
@@ -82,8 +76,8 @@ std::vector<Variable> Module::operator()(const std::vector<Variable>& input) {
 
 UnaryModule::UnaryModule() = default;
 
-UnaryModule::UnaryModule(const std::vector<Variable>& params, bool train)
-    : Module(params, train) {}
+UnaryModule::UnaryModule(const std::vector<Variable>& params)
+    : Module(params) {}
 
 std::vector<Variable> UnaryModule::forward(
     const std::vector<Variable>& inputs) {
@@ -99,8 +93,8 @@ Variable UnaryModule::operator()(const Variable& input) {
 
 BinaryModule::BinaryModule() = default;
 
-BinaryModule::BinaryModule(const std::vector<Variable>& params, bool train)
-    : Module(params, train) {}
+BinaryModule::BinaryModule(const std::vector<Variable>& params)
+    : Module(params) {}
 
 std::vector<Variable> BinaryModule::forward(
     const std::vector<Variable>& inputs) {

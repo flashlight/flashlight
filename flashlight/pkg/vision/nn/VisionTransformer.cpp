@@ -60,6 +60,7 @@ VisionTransformer& VisionTransformer::operator=(
 }
 
 void VisionTransformer::copy(const VisionTransformer& other) {
+  train_ = other.train_;
   modelDim_ = other.modelDim_;
   headDim_ = other.headDim_;
   mlpDim_ = other.mlpDim_;

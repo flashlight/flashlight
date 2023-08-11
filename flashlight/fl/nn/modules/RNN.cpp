@@ -33,13 +33,15 @@ RNN::RNN(
 }
 
 RNN::RNN(const RNN& other)
-    : Module(other.copyParams(), other.train_),
+    : Module(other.copyParams()),
       inputSize_(other.inputSize_),
       hiddenSize_(other.hiddenSize_),
       numLayers_(other.numLayers_),
       mode_(other.mode_),
       bidirectional_(other.bidirectional_),
-      dropProb_(other.dropProb_) {}
+      dropProb_(other.dropProb_) {
+  train_ = other.train_;
+}
 
 RNN& RNN::operator=(const RNN& other) {
   params_ = other.copyParams();
