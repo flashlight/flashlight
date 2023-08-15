@@ -14,14 +14,61 @@
 #include <stdexcept>
 #include <string>
 
+#include <onnx/common/ir.h>
+#include <onnx/common/ir_pb_converter.h>
 #include <onnx/onnx_pb.h>
 #include <onnx/proto_utils.h>
 
+// Delete
+#include <onnx/defs/printer.h>
+
 #include "flashlight/fl/nn/modules/Transform.h"
+#include "flashlight/fl/nn/modules/modules.h"
 
 namespace fl {
+namespace detail {
 
-std::shared_ptr<Module> loadOnnxModuleFromPath(fs::path path) {
+std::unique_ptr<Module> parseOnnxGraph(const onnx::Graph& graph) {
+  auto seq = std::make_unique<Sequential>();
+
+  auto iter = graph.begin();
+
+  iter++; // the first operator is always the `input` op
+  while (iter != graph.end()) {
+    auto kind = iter->kind();
+    std::cout << iter->kind().toString() << std::endl;
+    std::cout << iter->name() << std::endl;
+    if (kind == onnx::Symbol("Conv")) {
+      // seq->add(fl::Conv2D());
+    } else if (kind == onnx::Symbol("Relu")) {
+      seq->add(ReLU());
+    } else if (kind == onnx::Symbol("MaxPool")) {
+      // seq->add(Pool2D());
+    } else if (kind == onnx::Symbol("Gemm")) {
+      // seq->add(Linear());
+    } else if (kind == onnx::Symbol("Dropout")) {
+      const auto inputs = iter->inputs();
+      // std::cout << "Dropout -- inputs of size " << inputs.size() << " and
+      // type "
+      //           << inputs[0]->name() << std::endl;
+      // seq->add(Dropout());
+    } else if (kind == onnx::Symbol("Softmax")) {
+      // seq->add(Dropout());
+    } else {
+      // Unimplemented: LRN
+
+      // throw std::runtime_error(
+      //     "parseOnnxGraph - no support for operator " +
+      //     std::string(kind.toString()));
+    }
+    iter++;
+  }
+  return std::make_unique<Transform>([](const Variable& var) { return var; });
+}
+
+} // namespace detail
+
+std::unique_ptr<Module> loadOnnxModuleFromPath(fs::path path) {
   std::fstream protoStream(path, std::ios::in | std::ios::binary);
   if (!protoStream) {
     throw std::invalid_argument(
@@ -37,9 +84,12 @@ std::shared_ptr<Module> loadOnnxModuleFromPath(fs::path path) {
         "loadOnnxModuleFromPath - cannot parse ONNX proto: " + path.string());
   }
 
-  std::cout << model->graph().input().size() << std::endl;
+  // std::cout << model->graph().input().size() << std::endl;
+  // std::cout << model->graph().node() << std::endl;
 
-  return std::make_shared<Transform>([](const Variable& var) { return var; });
+  std::unique_ptr<onnx::Graph> graph = onnx::ImportModelProto(*model);
+
+  return detail::parseOnnxGraph(*graph);
 }
 
 } // namespace fl
