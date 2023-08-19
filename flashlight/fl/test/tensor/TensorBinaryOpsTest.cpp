@@ -307,39 +307,39 @@ TEST(TensorBinaryOpsTest, BinaryOperatorIncompatibleShapes) {
   auto testTensorIncompatibleShapes = [](dtype type,
                                          const Tensor& lhs,
                                          const Tensor& rhs) {
-    ASSERT_THROW((void)(lhs + rhs), std::invalid_argument) << "dtype: " << type;
-    ASSERT_THROW((void)(lhs - rhs), std::invalid_argument) << "dtype: " << type;
-    ASSERT_THROW((void)(lhs * rhs), std::invalid_argument) << "dtype: " << type;
-    ASSERT_THROW((void)(lhs / rhs), std::invalid_argument) << "dtype: " << type;
-    ASSERT_THROW((void)(lhs == rhs), std::invalid_argument)
+    ASSERT_THROW(Values(lhs + rhs), std::invalid_argument) << "dtype: " << type;
+    ASSERT_THROW(Values(lhs - rhs), std::invalid_argument) << "dtype: " << type;
+    ASSERT_THROW(Values(lhs * rhs), std::invalid_argument) << "dtype: " << type;
+    ASSERT_THROW(Values(lhs / rhs), std::invalid_argument) << "dtype: " << type;
+    ASSERT_THROW(Values(lhs == rhs), std::invalid_argument)
         << "dtype: " << type;
-    ASSERT_THROW((void)(lhs != rhs), std::invalid_argument)
+    ASSERT_THROW(Values(lhs != rhs), std::invalid_argument)
         << "dtype: " << type;
-    ASSERT_THROW((void)(lhs < rhs), std::invalid_argument) << "dtype: " << type;
-    ASSERT_THROW((void)(lhs <= rhs), std::invalid_argument)
+    ASSERT_THROW(Values(lhs < rhs), std::invalid_argument) << "dtype: " << type;
+    ASSERT_THROW(Values(lhs <= rhs), std::invalid_argument)
         << "dtype: " << type;
-    ASSERT_THROW((void)(lhs > rhs), std::invalid_argument) << "dtype: " << type;
-    ASSERT_THROW((void)(lhs >= rhs), std::invalid_argument)
+    ASSERT_THROW(Values(lhs > rhs), std::invalid_argument) << "dtype: " << type;
+    ASSERT_THROW(Values(lhs >= rhs), std::invalid_argument)
         << "dtype: " << type;
-    ASSERT_THROW((void)(lhs || rhs), std::invalid_argument)
+    ASSERT_THROW(Values(lhs || rhs), std::invalid_argument)
         << "dtype: " << type;
-    ASSERT_THROW((void)(lhs && rhs), std::invalid_argument)
+    ASSERT_THROW(Values(lhs && rhs), std::invalid_argument)
         << "dtype: " << type;
     // TODO ArrayFire needs software impl for fp16 modulo on CUDA backend;
     // bring this test back when supported.
     if (type != dtype::f16) {
-      ASSERT_THROW((void)(lhs % rhs), std::invalid_argument)
+      ASSERT_THROW(Values(lhs % rhs), std::invalid_argument)
           << "dtype: " << type;
     }
     // these operators are generally not well-defined for fps
     if (type != dtype::f16 && type != dtype::f32 && type != dtype::f64) {
-      ASSERT_THROW((void)(lhs | rhs), std::invalid_argument)
+      ASSERT_THROW(Values(lhs | rhs), std::invalid_argument)
           << "dtype: " << type;
-      ASSERT_THROW((void)(lhs ^ rhs), std::invalid_argument)
+      ASSERT_THROW(Values(lhs ^ rhs), std::invalid_argument)
           << "dtype: " << type;
-      ASSERT_THROW((void)(lhs << rhs), std::invalid_argument)
+      ASSERT_THROW(Values(lhs << rhs), std::invalid_argument)
           << "dtype: " << type;
-      ASSERT_THROW((void)(lhs >> rhs), std::invalid_argument)
+      ASSERT_THROW(Values(lhs >> rhs), std::invalid_argument)
           << "dtype: " << type;
     }
   };
@@ -503,7 +503,7 @@ TEST(TensorBinaryOpsTest, powerDouble) {
 }
 
 int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
+  InitGoogleTest(&argc, argv);
   fl::init();
   return RUN_ALL_TESTS();
 }
