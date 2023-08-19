@@ -333,10 +333,14 @@ TEST(TensorBinaryOpsTest, BinaryOperatorIncompatibleShapes) {
     }
     // these operators are generally not well-defined for fps
     if (type != dtype::f16 && type != dtype::f32 && type != dtype::f64) {
-      ASSERT_THROW(lhs | rhs, std::invalid_argument) << "dtype: " << type;
-      ASSERT_THROW(lhs ^ rhs, std::invalid_argument) << "dtype: " << type;
-      ASSERT_THROW(lhs << rhs, std::invalid_argument) << "dtype: " << type;
-      ASSERT_THROW(lhs >> rhs, std::invalid_argument) << "dtype: " << type;
+      ASSERT_THROW(Values(lhs | rhs), std::invalid_argument)
+          << "dtype: " << type;
+      ASSERT_THROW(Values(lhs ^ rhs), std::invalid_argument)
+          << "dtype: " << type;
+      ASSERT_THROW(Values(lhs << rhs), std::invalid_argument)
+          << "dtype: " << type;
+      ASSERT_THROW(Values(lhs >> rhs), std::invalid_argument)
+          << "dtype: " << type;
     }
   };
 
