@@ -6,8 +6,8 @@
  */
 
 #include <functional>
-#include <unordered_map>
 #include <string>
+#include <unordered_map>
 
 #include <gtest/gtest.h>
 
@@ -18,70 +18,78 @@ using namespace ::testing;
 using namespace fl;
 
 namespace {
-  // Always cast towards potentially signed type because otherwise ArrayFire may
-  // clip values, e.g., negative casting to unsigned becomse 0.
-  template <typename ScalarType, typename Op>
-  void assertTensorScalarBinop(
-    const Tensor& in, ScalarType scalar, Op op, const Tensor& expectOut
-  ) {
-    auto result = op(in, scalar);
-    auto expect = expectOut.astype(result.type());
-    ASSERT_TRUE(allClose(result, expect))
+// Always cast towards potentially signed type because otherwise ArrayFire may
+// clip values, e.g., negative casting to unsigned becomse 0.
+template <typename ScalarType, typename Op>
+void assertTensorScalarBinop(
+    const Tensor& in,
+    ScalarType scalar,
+    Op op,
+    const Tensor& expectOut) {
+  auto result = op(in, scalar);
+  auto expect = expectOut.astype(result.type());
+  ASSERT_TRUE(allClose(result, expect))
       << "in.type(): " << in.type()
       << ", ScalarType: " << dtype_traits<ScalarType>::getName();
-  }
+}
 
-  template <typename ScalarType, typename Op>
-  void assertScalarTensorBinop(
-    ScalarType scalar, const Tensor& in, Op op, const Tensor& expectOut
-  ) {
-    auto result = op(scalar, in);
-    auto expect = expectOut.astype(result.type());
-    ASSERT_TRUE(allClose(result, expect))
+template <typename ScalarType, typename Op>
+void assertScalarTensorBinop(
+    ScalarType scalar,
+    const Tensor& in,
+    Op op,
+    const Tensor& expectOut) {
+  auto result = op(scalar, in);
+  auto expect = expectOut.astype(result.type());
+  ASSERT_TRUE(allClose(result, expect))
       << "ScalarType: " << dtype_traits<ScalarType>::getName()
       << ", in.type(): " << in.type();
-  }
+}
 
-  template <typename Op>
-  void assertScalarTensorCommutativeBinop(
-    char scalar, const Tensor& in, Op op, const Tensor& out
-  ) {
-    assertScalarTensorBinop(scalar, in, op, out);
-    assertTensorScalarBinop(in, scalar, op, out);
-  }
+template <typename Op>
+void assertScalarTensorCommutativeBinop(
+    char scalar,
+    const Tensor& in,
+    Op op,
+    const Tensor& out) {
+  assertScalarTensorBinop(scalar, in, op, out);
+  assertTensorScalarBinop(in, scalar, op, out);
+}
 
-  template <typename Op>
-  void assertCommutativeBinop(
-    const Tensor& in1, const Tensor& in2, Op op, const Tensor& out
-  ) {
-    ASSERT_TRUE(allClose(op(in1, in2), out))
+template <typename Op>
+void assertCommutativeBinop(
+    const Tensor& in1,
+    const Tensor& in2,
+    Op op,
+    const Tensor& out) {
+  ASSERT_TRUE(allClose(op(in1, in2), out))
       << "in1.type(): " << in1.type() << ", in2.type(): " << in2.type();
-    ASSERT_TRUE(allClose(op(in2, in1), out))
+  ASSERT_TRUE(allClose(op(in2, in1), out))
       << "in1.type(): " << in1.type() << ", in2.type(): " << in2.type();
-  }
+}
 
-  void applyToAllFpDtypes(std::function<void(fl::dtype)> func) {
-    func(dtype::f16);
-    func(dtype::f32);
-    func(dtype::f64);
-  }
+void applyToAllFpDtypes(std::function<void(fl::dtype)> func) {
+  func(dtype::f16);
+  func(dtype::f32);
+  func(dtype::f64);
+}
 
-  void applyToAllIntegralDtypes(std::function<void(fl::dtype)> func) {
-    // TODO casting to `b8` clips values to 0 and 1, which breaks the fixtures
-    //func(dtype::b8);
-    func(dtype::u8);
-    func(dtype::s16);
-    func(dtype::u16);
-    func(dtype::s32);
-    func(dtype::u32);
-    func(dtype::s64);
-    func(dtype::u64);
-  }
+void applyToAllIntegralDtypes(std::function<void(fl::dtype)> func) {
+  // TODO casting to `b8` clips values to 0 and 1, which breaks the fixtures
+  // func(dtype::b8);
+  func(dtype::u8);
+  func(dtype::s16);
+  func(dtype::u16);
+  func(dtype::s32);
+  func(dtype::u32);
+  func(dtype::s64);
+  func(dtype::u64);
+}
 
-  void applyToAllDtypes(std::function<void(fl::dtype)> func) {
-    applyToAllFpDtypes(func);
-    applyToAllIntegralDtypes(func);
-  }
+void applyToAllDtypes(std::function<void(fl::dtype)> func) {
+  applyToAllFpDtypes(func);
+  applyToAllIntegralDtypes(func);
+}
 } // namespace
 
 TEST(TensorBinaryOpsTest, ArithmeticBinaryOperators) {
@@ -127,8 +135,10 @@ TEST(TensorBinaryOpsTest, ArithmeticBinaryOperators) {
 TEST(TensorBinaryOpsTest, ComparisonBinaryOperators) {
   auto falses = fl::full({2, 2}, 0, dtype::b8);
   auto trues = fl::full({2, 2}, 1, dtype::b8);
-  auto falseTrues = Tensor::fromVector<float>({2, 2}, {0, 1, 0, 1}).astype(fl::dtype::b8);
-  auto trueFalses = Tensor::fromVector<float>({2, 2}, {1, 0, 1, 0}).astype(fl::dtype::b8);
+  auto falseTrues =
+      Tensor::fromVector<float>({2, 2}, {0, 1, 0, 1}).astype(fl::dtype::b8);
+  auto trueFalses =
+      Tensor::fromVector<float>({2, 2}, {1, 0, 1, 0}).astype(fl::dtype::b8);
 
   auto testComparisonBinops = [&](dtype type) {
     auto a = Tensor::fromVector<float>({2, 2}, {0, 1, 2, 3}).astype(type);
@@ -192,7 +202,8 @@ TEST(TensorBinaryOpsTest, ComparisonBinaryOperators) {
 TEST(TensorBinaryOpsTest, LogicalBinaryOperators) {
   auto falses = fl::full({2, 2}, 0, dtype::b8);
   auto trues = fl::full({2, 2}, 1, dtype::b8);
-  auto falseTrues = Tensor::fromVector<float>({2, 2}, {0, 1, 0, 1}).astype(fl::dtype::b8);
+  auto falseTrues =
+      Tensor::fromVector<float>({2, 2}, {0, 1, 0, 1}).astype(fl::dtype::b8);
 
   auto testLogicalBinops = [&](dtype type) {
     auto a = Tensor::fromVector<float>({2, 2}, {0, 1, 0, 3}).astype(type);
@@ -238,21 +249,21 @@ TEST(TensorBinaryOpsTest, ModuloBinaryOperators) {
   applyToAllIntegralDtypes(testModuloBinop);
   // TODO ArrayFire needs software impl for fp16 modulo on CUDA backend;
   // bring this test back when supported.
-  //testModuloBinop(dtype::f16);
+  // testModuloBinop(dtype::f16);
   testModuloBinop(dtype::f32);
   testModuloBinop(dtype::f64);
 }
 
 TEST(TensorBinaryOpsTest, BitBinaryOperators) {
   auto testBitBinops = [](dtype type) {
-    auto a = Tensor::fromVector<float>({2, 1}, { 0b0001, 0b1000 }).astype(type);
-    auto b = Tensor::fromVector<float>({2, 1}, { 0b0010, 0b0100 }).astype(type);
-    auto c = Tensor::fromVector<float>({2, 1}, { 0b0011, 0b1100 }).astype(type);
-    auto d = Tensor::fromVector<float>({2, 1}, { 0b0110, 0b0110 }).astype(type);
-    auto e = Tensor::fromVector<float>({2, 1}, { 0b1000, 0b0001 }).astype(type);
-    auto g = Tensor::fromVector<float>({2, 1}, { 2, 1 }).astype(type);
-    auto h = Tensor::fromVector<float>({2, 1}, { 0b1000, 0b1000 }).astype(type);
-    auto z = Tensor::fromVector<float>({2, 1}, { 0b0000, 0b0000 }).astype(type);
+    auto a = Tensor::fromVector<float>({2, 1}, {0b0001, 0b1000}).astype(type);
+    auto b = Tensor::fromVector<float>({2, 1}, {0b0010, 0b0100}).astype(type);
+    auto c = Tensor::fromVector<float>({2, 1}, {0b0011, 0b1100}).astype(type);
+    auto d = Tensor::fromVector<float>({2, 1}, {0b0110, 0b0110}).astype(type);
+    auto e = Tensor::fromVector<float>({2, 1}, {0b1000, 0b0001}).astype(type);
+    auto g = Tensor::fromVector<float>({2, 1}, {2, 1}).astype(type);
+    auto h = Tensor::fromVector<float>({2, 1}, {0b1000, 0b1000}).astype(type);
+    auto z = Tensor::fromVector<float>({2, 1}, {0b0000, 0b0000}).astype(type);
 
     ASSERT_TRUE(allClose((z & z), z)) << "dtype: " << type;
     assertCommutativeBinop(a, b, std::bit_and<>(), z);
@@ -293,33 +304,45 @@ TEST(TensorBinaryOpsTest, BitBinaryOperators) {
 }
 
 TEST(TensorBinaryOpsTest, BinaryOperatorIncompatibleShapes) {
-  auto testTensorIncompatibleShapes =
-    [](dtype type, const Tensor& lhs, const Tensor& rhs) {
-      ASSERT_THROW(lhs + rhs, std::invalid_argument) << "dtype: " << type;
-      ASSERT_THROW(lhs - rhs, std::invalid_argument) << "dtype: " << type;
-      ASSERT_THROW(lhs * rhs, std::invalid_argument) << "dtype: " << type;
-      ASSERT_THROW(lhs / rhs, std::invalid_argument) << "dtype: " << type;
-      ASSERT_THROW(lhs == rhs, std::invalid_argument) << "dtype: " << type;
-      ASSERT_THROW(lhs != rhs, std::invalid_argument) << "dtype: " << type;
-      ASSERT_THROW(lhs < rhs, std::invalid_argument) << "dtype: " << type;
-      ASSERT_THROW(lhs <= rhs, std::invalid_argument) << "dtype: " << type;
-      ASSERT_THROW(lhs > rhs, std::invalid_argument) << "dtype: " << type;
-      ASSERT_THROW(lhs >= rhs, std::invalid_argument) << "dtype: " << type;
-      ASSERT_THROW(lhs || rhs, std::invalid_argument) << "dtype: " << type;
-      ASSERT_THROW(lhs && rhs, std::invalid_argument) << "dtype: " << type;
-      // TODO ArrayFire needs software impl for fp16 modulo on CUDA backend;
-      // bring this test back when supported.
-      if (type != dtype::f16) {
-        ASSERT_THROW(lhs % rhs, std::invalid_argument) << "dtype: " << type;
-      }
-      // these operators are generally not well-defined for fps
-      if (type != dtype::f16 && type != dtype::f32 && type != dtype::f64) {
-        ASSERT_THROW(lhs | rhs, std::invalid_argument) << "dtype: " << type;
-        ASSERT_THROW(lhs ^ rhs, std::invalid_argument) << "dtype: " << type;
-        ASSERT_THROW(lhs << rhs, std::invalid_argument) << "dtype: " << type;
-        ASSERT_THROW(lhs >> rhs, std::invalid_argument) << "dtype: " << type;
-      }
-    };
+  auto testTensorIncompatibleShapes = [](dtype type,
+                                         const Tensor& lhs,
+                                         const Tensor& rhs) {
+    ASSERT_THROW(Values(lhs + rhs), std::invalid_argument) << "dtype: " << type;
+    ASSERT_THROW(Values(lhs - rhs), std::invalid_argument) << "dtype: " << type;
+    ASSERT_THROW(Values(lhs * rhs), std::invalid_argument) << "dtype: " << type;
+    ASSERT_THROW(Values(lhs / rhs), std::invalid_argument) << "dtype: " << type;
+    ASSERT_THROW(Values(lhs == rhs), std::invalid_argument)
+        << "dtype: " << type;
+    ASSERT_THROW(Values(lhs != rhs), std::invalid_argument)
+        << "dtype: " << type;
+    ASSERT_THROW(Values(lhs < rhs), std::invalid_argument) << "dtype: " << type;
+    ASSERT_THROW(Values(lhs <= rhs), std::invalid_argument)
+        << "dtype: " << type;
+    ASSERT_THROW(Values(lhs > rhs), std::invalid_argument) << "dtype: " << type;
+    ASSERT_THROW(Values(lhs >= rhs), std::invalid_argument)
+        << "dtype: " << type;
+    ASSERT_THROW(Values(lhs || rhs), std::invalid_argument)
+        << "dtype: " << type;
+    ASSERT_THROW(Values(lhs && rhs), std::invalid_argument)
+        << "dtype: " << type;
+    // TODO ArrayFire needs software impl for fp16 modulo on CUDA backend;
+    // bring this test back when supported.
+    if (type != dtype::f16) {
+      ASSERT_THROW(Values(lhs % rhs), std::invalid_argument)
+          << "dtype: " << type;
+    }
+    // these operators are generally not well-defined for fps
+    if (type != dtype::f16 && type != dtype::f32 && type != dtype::f64) {
+      ASSERT_THROW(Values(lhs | rhs), std::invalid_argument)
+          << "dtype: " << type;
+      ASSERT_THROW(Values(lhs ^ rhs), std::invalid_argument)
+          << "dtype: " << type;
+      ASSERT_THROW(Values(lhs << rhs), std::invalid_argument)
+          << "dtype: " << type;
+      ASSERT_THROW(Values(lhs >> rhs), std::invalid_argument)
+          << "dtype: " << type;
+    }
+  };
 
   auto testTensorIncompatibleShapesForType = [&](dtype type) {
     auto a = fl::rand({2, 2}, type);
@@ -480,7 +503,7 @@ TEST(TensorBinaryOpsTest, powerDouble) {
 }
 
 int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
+  InitGoogleTest(&argc, argv);
   fl::init();
   return RUN_ALL_TESTS();
 }

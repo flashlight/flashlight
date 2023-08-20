@@ -12,8 +12,16 @@
 
 #include "flashlight/fl/common/Logging.h"
 #include "flashlight/fl/common/Utils.h"
+#include "flashlight/fl/common/stacktrace/Backward.h"
 
 namespace fl {
+
+void initLogging() {
+  // initialize backward stacktracing. noop if not built with a
+  // backtrace/stacktrace lib
+  detail::initBackward();
+}
+
 LogLevel Logging::maxLoggingLevel_ = DEFAULT_MAX_FL_LOGGING_LEVEL;
 int VerboseLogging::maxLoggingLevel_ = DEFAULT_MAX_VERBOSE_FL_LOGGING_LEVEL;
 

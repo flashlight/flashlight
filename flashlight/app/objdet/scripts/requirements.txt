@@ -1,4 +1,4 @@
-certifi==2022.12.7
+certifi==2023.7.22
 cycler==0.10.0
 Cython==0.29.22
 kiwisolver==1.3.1

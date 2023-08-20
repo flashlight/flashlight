@@ -5,8 +5,11 @@ inputs:
     required: true
     description: "Tensor backend to install"
   autograd_backend:
-    required: true
+    required: false
     description: "Autograd backend backend to install"
+  distributed_backend:
+    required: false
+    description: "Distributed backend dependencies to install."
 
 runs:
   using: "composite"
@@ -45,3 +48,10 @@ runs:
         channels: conda-forge
         extra-specs: onednn=2.7.2
       if: inputs.backend == 'oneDNN' || inputs.autograd_backend == 'oneDNN'
+    # MPI
+    - name: "Install OpenMPI (Linux)"
+      run: |
+        sudo apt update
+        sudo apt install -y openmpi-bin libopenmpi-dev
+      if: runner.os == 'Linux' && inputs.distributed_backend != '' && inputs.distributed_backend != 'Stub'
+      shell: bash -l {0}

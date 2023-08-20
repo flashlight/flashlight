@@ -4,13 +4,29 @@ on: [push, pull_request]
 
 jobs:
   build_core:
-    name: "Build on ${{ matrix.os }} | tensor: ${{ matrix.backend }} | autograd: ${{ matrix.autograd_backend }}"
+    name: "Build on ${{ matrix.os }} | tensor: ${{ matrix.backend }} | autograd: ${{ matrix.autograd_backend }} | distributed: ${{ matrix.distributed_backend }}"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-20.04, windows-2022, macOS-12]
         backend: [ArrayFire, oneDNN, Stub]
         autograd_backend: [oneDNN]
+        distributed_backend: [Stub]
+        exclude:
+          # no Gloo support on macOS and Windows
+          - os: macOS-12
+            distributed_backend: Gloo
+          - os: windows-2022
+            distributed_backend: Gloo
+        include:
+          - os: ubuntu-20.04
+            backend: oneDNN
+            autograd_backend: oneDNN
+            distributed_backend: Gloo
+          # Configuration using only stubs and no autograd backend
+          - os: ubuntu-20.04
+            backend: Stub
+            distributed_backend: Stub
     defaults:
       run:
         shell: bash -l {0}
@@ -20,10 +36,9 @@ jobs:
 
       - uses: ./.github/actions/install_core_deps
         with:
-          runner: ${{ matrix.os }}
-          os: ${{ runner.os }}
           backend: ${{ matrix.backend }}
           autograd_backend: ${{ matrix.autograd_backend }}
+          distributed_backend: ${{ matrix.distributed_backend }}
 
       - name: "Configure Flashlight"
         run: |
@@ -32,7 +47,9 @@ jobs:
             -DFL_ARRAYFIRE_USE_CPU=${{ matrix.backend == 'ArrayFire' && 'ON' || 'OFF'  }} \
             -DFL_USE_ONEDNN=${{ (matrix.backend == 'oneDNN' || matrix.autograd_backend == 'oneDNN') && 'ON' || 'OFF'  }} \
             -DFL_USE_TENSOR_STUB=${{ matrix.backend == 'Stub' && 'ON' || 'OFF'  }} \
-            -DFL_BUILD_DISTRIBUTED=OFF \
+            -DFL_USE_NCCL=OFF \
+            -DFL_USE_GLOO=${{ matrix.distributed_backend == 'Gloo' && 'ON' || 'OFF'  }} \
+            -DFL_USE_BACKWARD_CPP=ON \
             -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON
       - name: "Build Flashlight"
         run: |
@@ -121,5 +138,4 @@ jobs:
             -DFL_USE_ONEDNN=OFF \
             -DFL_USE_CUDNN=OFF \
             -DFL_BUILD_DISTRIBUTED=OFF \
-            -DFL_BUILD_EXAMPLES=ON \
-            -DFL_BUILD_BACKWARD_CPP=OFF
+            -DFL_BUILD_EXAMPLES=ON

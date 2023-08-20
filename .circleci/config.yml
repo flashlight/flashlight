@@ -6,19 +6,14 @@
 
 version: 2.1
 
-gpu: &gpu
-  machine:
-    image: ubuntu-2004-cuda-11.4:202110-01
-  resource_class: gpu.nvidia.large
-
 orbs:
   win: circleci/windows@5.0.0
 
 executors:
   linux:
     machine:
-      image: ubuntu-2004-cuda-11.4:202110-01
-    resource_class: gpu.nvidia.large
+      image: linux-cuda-11:2023.02.1
+    resource_class: gpu.nvidia.medium
   windows:
     machine:
       image: windows-server-2019-nvidia:stable
@@ -75,9 +70,9 @@ commands:
             equal: ["linux", << parameters.platform >>]
           steps:
             - run:
-                name: "Add CUDA 11.4 bin directory to PATH"
+                name: "Use CUDA 11.4"
                 command: |
-                  echo 'export PATH="/usr/local/cuda-11.4/bin:${PATH}"' >> "$BASH_ENV"
+                  sudo update-alternatives --set cuda /usr/local/cuda-11.4
       - when:
           condition:
             equal: ["windows", << parameters.platform >>]
@@ -195,7 +190,7 @@ commands:
             equal: ["windows", << parameters.platform >>]
           steps:
             - run:
-                name: "Install cuDNN 8.5.0.96 for CUDA 11.2"
+                name: "Install cuDNN 8.1.1.33 for CUDA 11.2"
                 command: |
                   cd $HOME
                   export CUDNN_ZIP=cudnn-11.2-windows-x64-v8.1.1.33.zip
@@ -203,6 +198,55 @@ commands:
                   unzip $CUDNN_ZIP && rm $CUDNN_ZIP
                   cp -r cuda/* "$CUDA_ROOT"
                   rm -rf cuda/
+
+  install-mpi:
+    parameters:
+      platform:
+        type: string
+    steps:
+      - when:
+          condition:
+            equal: ["linux", << parameters.platform >>]
+          steps:
+            - run:
+                name: "Install OpenMPI"
+                command: |
+                  sudo apt update
+                  sudo apt install -y openmpi-bin libopenmpi-dev
+      - when:
+          condition:
+            equal: ["windows", << parameters.platform >>]
+          steps:
+            - run:
+                name: "Install Microsoft MPI"
+                command: |
+                  cd $HOME
+                  export MS_MPI_SETUP=msmpisetup.exe
+                  export MS_MPI_SDK=msmpisdk.msi
+                  wget --quiet https://github.com/microsoft/Microsoft-MPI/releases/download/v10.1.1/$MS_MPI_SETUP
+                  wget --quiet https://github.com/microsoft/Microsoft-MPI/releases/download/v10.1.1/$MS_MPI_SDK
+                  ./msmpisetup.exe -unattend
+                  sleep 7 # wait for the installer to finish
+                  msiexec //quiet //i msmpisdk.msi
+
+  install-nccl:
+    parameters:
+      platform:
+        type: string
+    steps:
+      - when:
+          condition:
+            equal: ["linux", << parameters.platform >>]
+          steps:
+            - run:
+                name: "Install NCCL 2.7.8 for CUDA 11.1"
+                command: |
+                  cd /tmp
+                  export NCCL2_DEB=libnccl2_2.7.8-1+cuda11.1_amd64.deb
+                  export LIBNCCL_DEV_DEB=libnccl-dev_2.7.8-1+cuda11.1_amd64.deb
+                  wget --quiet https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/x86_64/$NCCL2_DEB
+                  wget --quiet https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/x86_64/$LIBNCCL_DEV_DEB
+                  sudo dpkg -i $NCCL2_DEB $LIBNCCL_DEV_DEB
 
   install-onednn:
     parameters:
@@ -230,7 +274,7 @@ commands:
                 command: |
                   sudo apt update
                   DEBIAN_FRONTEND=noninteractive sudo apt upgrade # needed for curl not to break
-                  curl micro.mamba.pm/install.sh | bash
+                  curl -L micro.mamba.pm/install.sh | bash
                   echo 'export MAMBA_EXE="$HOME/.local/bin/micromamba"' >> $BASH_ENV
                   echo 'export MAMBA_ROOT_PREFIX="$HOME/micromamba"' >> $BASH_ENV
                   echo '__mamba_setup="$($HOME/.local/bin/micromamba shell hook --shell bash --prefix ~/micromamba 2> /dev/null)"' >> $BASH_ENV
@@ -254,6 +298,8 @@ commands:
         type: string
       autograd_backend:
         type: string
+      distributed_backend:
+        type: string
     steps:
       - install-build-dependencies:
           platform: << parameters.platform >>
@@ -270,6 +316,21 @@ commands:
             equal: ["cudnn", << parameters.autograd_backend >>]
           steps:
             - install-cudnn:
+                platform: << parameters.platform >>
+      - when:
+          condition:
+            not:
+              or:
+                - equal: ["", << parameters.distributed_backend >>]
+                - equal: ["Stub", << parameters.distributed_backend >>]
+          steps:
+            - install-mpi:
+                platform: << parameters.platform >>
+      - when:
+          condition:
+            equal: ["nccl", << parameters.distributed_backend >>]
+          steps:
+            - install-nccl:
                 platform: << parameters.platform >>
       - when:
           condition:
@@ -324,6 +385,8 @@ commands:
         type: string
       autograd_backend:
         type: string
+      distributed_backend:
+        type: string
       build_parallelism:
         type: string
         default: ""
@@ -338,7 +401,9 @@ commands:
               -DFL_ARRAYFIRE_USE_CPU=$([ "<< parameters.platform >>" == "macos-arm" ] || [ "<< parameters.platform >>" == "linux-arm" ] && echo "ON" || echo "OFF") \
               -DFL_USE_CUDNN=$([ "<< parameters.autograd_backend >>" == "cudnn" ] && echo "ON" || echo "OFF") \
               -DFL_USE_ONEDNN=$([ "<< parameters.backend >>" == "onednn" ] || [ "<< parameters.autograd_backend >>" == "onednn" ] && echo "ON" || echo "OFF") \
-              -DFL_BUILD_DISTRIBUTED=OFF \
+              -DFL_USE_NCCL=$(([ "<< parameters.platform >>" == "linux" ] || [ "<< parameters.platform >>" == "windows" ]) && [ "<< parameters.distributed_backend >>" == "nccl" ] && echo "ON" || echo "OFF") \
+              -DFL_USE_GLOO=OFF \
+              -DFL_USE_BACKWARD_CPP=ON \
               -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON
             cmake --build build --parallel << parameters.build_parallelism >>
 
@@ -386,6 +451,9 @@ jobs:
         type: string
       autograd_backend:
         type: string
+      distributed_backend:
+        type: string
+        default: ""
       build_parallelism:
         type: string
         default: ""
@@ -396,10 +464,12 @@ jobs:
           platform: << parameters.platform >>
           backend: << parameters.backend >>
           autograd_backend: << parameters.autograd_backend >>
+          distributed_backend: << parameters.distributed_backend >>
       - build-flashlight-core:
           platform: << parameters.platform >>
           backend: << parameters.backend >>
           autograd_backend: << parameters.backend >>
+          distributed_backend: << parameters.distributed_backend >>
           build_parallelism: << parameters.build_parallelism >>
       - persist_to_workspace:
           root: .
@@ -414,12 +484,15 @@ jobs:
         type: string
       autograd_backend:
         type: string
+      distributed_backend:
+        type: string
     executor: << parameters.platform >>
     steps:
       - install-all-dependencies:
           platform: << parameters.platform >>
           backend: << parameters.backend >>
           autograd_backend: << parameters.autograd_backend >>
+          distributed_backend: << parameters.distributed_backend >>
       # attach the project root and build directory
       - attach_workspace:
           at: .
@@ -437,6 +510,8 @@ jobs:
         type: string
       autograd_backend:
         type: string
+      distributed_backend:
+        type: string
       build_parallelism:
         type: string
         default: ""
@@ -446,6 +521,7 @@ jobs:
           platform: << parameters.platform >>
           backend: << parameters.backend >>
           autograd_backend: << parameters.autograd_backend >>
+          distributed_backend: << parameters.distributed_backend >>
       - install-pkg-dependencies:
           pkg: << parameters.pkg >>
           platform: << parameters.platform >>
@@ -476,12 +552,15 @@ jobs:
         type: string
       autograd_backend:
         type: string
+      distributed_backend:
+        type: string
     executor: << parameters.platform >>
     steps:
       - install-all-dependencies:
           platform: << parameters.platform >>
           backend: << parameters.backend >>
           autograd_backend: << parameters.autograd_backend >>
+          distributed_backend: << parameters.distributed_backend >>
       - install-pkg-dependencies:
           pkg: << parameters.pkg >>
           platform: << parameters.platform >>
@@ -504,6 +583,9 @@ jobs:
       autograd_backend:
         type: string
         default: cudnn
+      distributed_backend:
+        type: string
+        default: nccl
       build_parallelism:
         type: string
         default: ""
@@ -513,6 +595,7 @@ jobs:
           platform: << parameters.platform >>
           backend: << parameters.backend >>
           autograd_backend: << parameters.autograd_backend >>
+          distributed_backend: << parameters.distributed_backend >>
       - install-pkg-dependencies:
           pkg: << parameters.pkg >>
           platform: << parameters.platform >>
@@ -534,23 +617,31 @@ workflows:
   build-and-test:
     jobs:
       - build-flashlight-core:
-          name: build-flashlight-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+          name: build-flashlight-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>+<< matrix.distributed_backend >>
           matrix:
             parameters:
               platform: [linux, windows]
               backend: [arrayfire]
               autograd_backend: [cudnn]
+              distributed_backend: ["", nccl]
+            exclude:
+              # No NCCL support on Windows
+              - platform: windows
+                backend: arrayfire
+                autograd_backend: cudnn
+                distributed_backend: nccl
 
       - test-flashlight-core:
-          name: test-flashlight-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+          name: test-flashlight-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>+<< matrix.distributed_backend >>
           matrix:
             # Not running all tests with all configurations yet
             parameters:
               platform: [linux]
               backend: [arrayfire]
               autograd_backend: [cudnn]
+              distributed_backend: [nccl]
           requires:
-            - build-flashlight-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+            - build-flashlight-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>+<< matrix.distributed_backend >>
 
       - build-flashlight-core:
           name: build-flashlight-core-<< matrix.platform >>-CPU-<< matrix.backend >>+<< matrix.autograd_backend >>
@@ -567,40 +658,43 @@ workflows:
                 build_parallelism: "8"
 
       - build-flashlight-pkg:
-          name: build-flashlight-pkg-<< matrix.pkg>>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+          name: build-flashlight-pkg-<< matrix.pkg>>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>+<< matrix.distributed_backend >>
           matrix:
             parameters:
               pkg: [runtime, speech, vision, text]
               platform: [linux]
               backend: [arrayfire]
               autograd_backend: [cudnn]
+              distributed_backend: [nccl]
               build_parallelism: ["8"]
           requires:
-            - build-flashlight-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+            - build-flashlight-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>+<< matrix.distributed_backend >>
 
       # only run pkg builds and tests for best-supported platforms for now
       - test-flashlight-pkg:
-          name: test-flashlight-pkg-<< matrix.pkg>>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+          name: test-flashlight-pkg-<< matrix.pkg>>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>+<< matrix.distributed_backend >>
           matrix:
             parameters:
               pkg: [runtime, speech, vision, text]
               platform: [linux]
               backend: [arrayfire]
               autograd_backend: [cudnn]
+              distributed_backend: [nccl]
           requires:
-            - build-flashlight-pkg-<< matrix.pkg >>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+            - build-flashlight-pkg-<< matrix.pkg >>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>+<< matrix.distributed_backend >>
 
       # only run app builds for best-supported platforms for now
       - build-flashlight-apps-for-pkg:
-          name: build-flashlight-apps-for-pkg-<< matrix.pkg>>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+          name: build-flashlight-apps-for-pkg-<< matrix.pkg>>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>+<< matrix.distributed_backend >>
           matrix:
             parameters:
               pkg: [runtime, speech, vision, text]
               platform: [linux]
               backend: [arrayfire]
               autograd_backend: [cudnn]
+              distributed_backend: [nccl]
               build_parallelism: ["8"]
           requires:
-            - build-flashlight-pkg-<< matrix.pkg >>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>
+            - build-flashlight-pkg-<< matrix.pkg >>-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>+<< matrix.distributed_backend >>
 
       # TODO: eventually add macOS and Linux arm64 baselines for pkg/app
