@@ -7,7 +7,7 @@
 
 #include "flashlight/pkg/speech/audio/feature/Dither.h"
 
-#include <time.h>
+#include <ctime>
 
 namespace fl {
 namespace lib {

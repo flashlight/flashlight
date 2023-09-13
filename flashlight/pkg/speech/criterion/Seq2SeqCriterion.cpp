@@ -337,7 +337,7 @@ std::vector<int> Seq2SeqCriterion::beamPath(
     const Tensor& inputSizes,
     int beamSize /* = 10 */) {
   std::vector<Seq2SeqCriterion::CandidateHypo> beam;
-  beam.emplace_back(CandidateHypo{});
+  beam.emplace_back();
   auto beamPaths =
       beamSearch(input, inputSizes, beam, beamSize, maxDecoderOutputLen_);
   return beamPaths[0].path;

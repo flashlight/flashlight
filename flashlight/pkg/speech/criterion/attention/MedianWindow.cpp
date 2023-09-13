@@ -16,7 +16,7 @@ namespace fl {
 namespace pkg {
 namespace speech {
 
-MedianWindow::MedianWindow() {}
+MedianWindow::MedianWindow() = default;
 MedianWindow::MedianWindow(int wL, int wR) : wL_(wL), wR_(wR) {}
 
 Variable MedianWindow::computeWindow(

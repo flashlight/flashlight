@@ -162,7 +162,7 @@ std::shared_ptr<Module> parseLines(
     float pDropout = std::stof(params[5]);
     float pLayerdrop = (params.size() >= 7) ? std::stof(params[6]) : 0.0;
     int preLN = (params.size() >= 8) ? std::stoi(params[7]) : 0;
-    bool useFutureMask = (params.size() >= 9) ? std::stoi(params[8]) : 0;
+    bool useFutureMask = (params.size() >= 9) ? std::stoi(params[8]) : false;
     return std::make_shared<Transformer>(
         modelDim,
         modelDim / nHead,

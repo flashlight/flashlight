@@ -13,7 +13,7 @@
 
 namespace fl {
 
-StubTensor::StubTensor() {}
+StubTensor::StubTensor() = default;
 
 StubTensor::StubTensor(
     const Shape& /* shape */,

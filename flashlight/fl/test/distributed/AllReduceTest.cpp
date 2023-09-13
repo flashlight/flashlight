@@ -89,7 +89,7 @@ TEST(Distributed, AllReduceSetAsync) {
   unsigned vSize = (1 << 20);
   std::vector<Variable> vars;
   for (size_t i = 0; i < 5; ++i) {
-    vars.push_back(Variable(fl::full({vSize}, rank + 1, dtype::f32), false));
+    vars.emplace_back(fl::full({vSize}, rank + 1, dtype::f32), false);
   }
 
   allReduceMultiple(vars, 2.0, async, contiguous);
@@ -103,7 +103,7 @@ TEST(Distributed, AllReduceSetAsync) {
   // Exceed the size of the contiguous buffer without caching, and trigger a
   // contiguous sync with a tensor that is too large
   for (size_t i = 0; i < 25; ++i) {
-    vars.push_back(Variable(fl::full({vSize}, rank, dtype::f32), false));
+    vars.emplace_back(fl::full({vSize}, rank, dtype::f32), false);
   }
   if (size > 1) {
     ASSERT_THROW(
@@ -164,7 +164,7 @@ TEST(Distributed, CoalescingReducer) {
   unsigned vSize = (1 << 20);
   std::vector<Variable> vars;
   for (size_t i = 0; i < 1000; ++i) {
-    vars.push_back(Variable(fl::full({vSize}, rank + 1, dtype::f32), false));
+    vars.emplace_back(fl::full({vSize}, rank + 1, dtype::f32), false);
   }
 
   for (size_t i = 0; i < vars.size(); ++i) {

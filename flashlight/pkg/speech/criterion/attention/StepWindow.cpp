@@ -14,7 +14,7 @@ namespace fl {
 namespace pkg {
 namespace speech {
 
-StepWindow::StepWindow() {}
+StepWindow::StepWindow() = default;
 StepWindow::StepWindow(int sMin, int sMax, double vMin, double vMax)
     : sMin_(sMin), sMax_(sMax), vMin_(vMin), vMax_(vMax) {}
 

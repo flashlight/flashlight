@@ -14,7 +14,7 @@ namespace fl {
 namespace pkg {
 namespace speech {
 
-SoftWindow::SoftWindow() {}
+SoftWindow::SoftWindow() = default;
 SoftWindow::SoftWindow(double std, double avgRate, int offset)
     : std_(std), avgRate_(avgRate), offset_(offset) {}
 

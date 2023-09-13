@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <math.h>
 #include <array>
+#include <cmath>
 
 #include <gtest/gtest.h>
 

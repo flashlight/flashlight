@@ -25,7 +25,7 @@ namespace {
 
 class ContainerTestClass : public Sequential {
  public:
-  ContainerTestClass() {}
+  ContainerTestClass() = default;
 
   void addParam(const Variable& param) {
     params_.push_back(param);
