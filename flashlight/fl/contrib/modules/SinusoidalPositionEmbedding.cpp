@@ -80,6 +80,6 @@ std::string SinusoidalPositionEmbedding::prettyString() const {
   return ss.str();
 }
 
-SinusoidalPositionEmbedding::SinusoidalPositionEmbedding() {}
+SinusoidalPositionEmbedding::SinusoidalPositionEmbedding() = default;
 
 } // namespace fl

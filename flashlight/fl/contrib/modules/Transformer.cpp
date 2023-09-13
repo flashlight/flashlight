@@ -186,6 +186,6 @@ std::string Transformer::prettyString() const {
   return ss.str();
 }
 
-Transformer::Transformer() {}
+Transformer::Transformer() = default;
 
 } // namespace fl

@@ -153,7 +153,7 @@ class RnnClassifier : public Container {
                 hiddenSize,
                 numLayers,
                 RnnMode::GRU,
-                0 /* Dropout */)),
+                false /* Dropout */)),
         linear_(Linear(hiddenSize, numClasses)),
         logsoftmax_(0) {
     std::cout << "Creating a RNN Classifier with vocab size: " << vocabSize

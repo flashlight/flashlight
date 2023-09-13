@@ -85,7 +85,7 @@ class RnnLm : public Container {
                 hidden_size,
                 2, /* Num layers. */
                 RnnMode::LSTM,
-                0 /* Dropout */)),
+                false /* Dropout */)),
         linear(Linear(hidden_size, vocab_size)) {
     add(embed);
     add(rnn);

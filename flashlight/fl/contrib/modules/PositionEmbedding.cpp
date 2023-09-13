@@ -52,6 +52,6 @@ std::string PositionEmbedding::prettyString() const {
   return "Position Embedding Layer";
 }
 
-PositionEmbedding::PositionEmbedding() {}
+PositionEmbedding::PositionEmbedding() = default;
 
 } // namespace fl

@@ -16,7 +16,7 @@ namespace fl {
 
 const int64_t magicNumber = 0x31626f6c423a6c66;
 
-BlobDatasetEntryBuffer::BlobDatasetEntryBuffer() {}
+BlobDatasetEntryBuffer::BlobDatasetEntryBuffer() = default;
 
 void BlobDatasetEntryBuffer::clear() {
   data_.clear();
@@ -64,7 +64,7 @@ int64_t BlobDatasetEntryBuffer::bytes() const {
   return data_.size() * sizeof(int64_t);
 };
 
-BlobDataset::BlobDataset() {}
+BlobDataset::BlobDataset() = default;
 
 int64_t BlobDataset::size() const {
   return offsets_.size();
@@ -254,6 +254,6 @@ std::vector<BlobDatasetEntry> BlobDataset::getEntries(const int64_t idx) const {
   return entries;
 }
 
-BlobDataset::~BlobDataset() {}
+BlobDataset::~BlobDataset() = default;
 
 } // namespace fl

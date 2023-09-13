@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <math.h>
+#include <cmath>
 #include <iostream>
 
 #include "flashlight/fl/tensor/Init.h"

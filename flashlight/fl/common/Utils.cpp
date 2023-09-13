@@ -7,8 +7,8 @@
 
 #include "flashlight/fl/common/Utils.h"
 
-#include <inttypes.h>
 #include <chrono>
+#include <cinttypes>
 #include <cstdio>
 #include <ctime>
 #include <sstream>

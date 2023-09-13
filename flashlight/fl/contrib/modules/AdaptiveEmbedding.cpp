@@ -65,7 +65,7 @@ Variable AdaptiveEmbedding::forward(const Variable& input) {
     auto headEmbedding =
         embedding(flatInput(headMask), reorder(params_[0], {1, 0}));
     headEmbedding = matmul(params_[1], headEmbedding);
-    indices.push_back(Variable(fl::nonzero(headMask), false));
+    indices.emplace_back(fl::nonzero(headMask), false);
     embeddings.push_back(headEmbedding);
   }
 
@@ -77,7 +77,7 @@ Variable AdaptiveEmbedding::forward(const Variable& input) {
           flatInput(tailMask) - cutoff_[tailIdx - 1],
           reorder(params_[tailIdx * 2], {1, 0}));
       tailEmbedding = matmul(params_[tailIdx * 2 + 1], tailEmbedding);
-      indices.push_back(Variable(fl::nonzero(tailMask), false));
+      indices.emplace_back(fl::nonzero(tailMask), false);
       embeddings.push_back(tailEmbedding);
     }
   }

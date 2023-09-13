@@ -7,8 +7,8 @@
 
 #include "flashlight/fl/dataset/BatchDataset.h"
 
-#include <math.h>
 #include <array>
+#include <cmath>
 #include <numeric>
 #include <stdexcept>
 
