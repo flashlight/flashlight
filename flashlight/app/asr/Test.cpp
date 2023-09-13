@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <fstream>
 #include <iomanip>
 #include <mutex>

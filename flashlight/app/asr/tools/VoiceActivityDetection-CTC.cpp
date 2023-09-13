@@ -23,8 +23,8 @@
  *   chunk, (output in .fwt file for each sample).
  */
 
-#include <stdlib.h>
 #include <cmath>
+#include <cstdlib>
 #include <fstream>
 #include <iomanip>
 #include <string>
@@ -241,7 +241,7 @@ int main(int argc, char** argv) {
     float lmScore = 0;
     if (!FLAGS_lm.empty()) {
       // LM score
-      auto inState = lm->start(0);
+      auto inState = lm->start(false);
       for (const auto& word : wordPrediction) {
         auto lmReturn = lm->score(inState, wordDict.getIndex(word));
         inState = lmReturn.first;

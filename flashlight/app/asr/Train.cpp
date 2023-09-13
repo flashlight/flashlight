@@ -819,7 +819,7 @@ int main(int argc, char** argv) {
       std::vector<std::vector<int64_t>> wordEditDst(lmweights.size());
       std::vector<std::thread> threads;
       for (int i = 0; i < lmweights.size(); i++) {
-        threads.push_back(std::thread(
+        threads.emplace_back(
             [&lmweights, &wordEditDst, dm, eds, &lexicon, i, worldRank]() {
               double lmweight = lmweights[i];
               fl::setDevice(worldRank % 8);
@@ -842,7 +842,7 @@ int main(int argc, char** argv) {
               auto pds = dm->decode(eds, lexicon, opt);
               // return token distance and word distance stats
               wordEditDst[i] = dm->computeMetrics(pds).second;
-            }));
+            });
       }
       for (auto& thread : threads) {
         thread.join();
@@ -888,8 +888,8 @@ int main(int argc, char** argv) {
       std::vector<fl::Variable> critArgs = {
           output, fl::Variable(batch[kTargetIdx], false)};
       if (isSeq2seqCrit) {
-        critArgs.push_back(fl::Variable(batch[kDurationIdx], false));
-        critArgs.push_back(fl::Variable(batch[kTargetSizeIdx], false));
+        critArgs.emplace_back(batch[kDurationIdx], false);
+        critArgs.emplace_back(batch[kTargetSizeIdx], false);
       }
       auto loss = crit->forward(critArgs).front();
       mtrs.loss.add(loss.tensor());
@@ -1108,8 +1108,8 @@ int main(int argc, char** argv) {
           std::vector<fl::Variable> critArgs = {
               output, fl::Variable(batch[kTargetIdx], false)};
           if (isSeq2seqCrit) {
-            critArgs.push_back(fl::Variable(batch[kDurationIdx], false));
-            critArgs.push_back(fl::Variable(batch[kTargetSizeIdx], false));
+            critArgs.emplace_back(batch[kDurationIdx], false);
+            critArgs.emplace_back(batch[kTargetSizeIdx], false);
           }
           auto loss = crit->forward(critArgs).front();
           fl::sync();
