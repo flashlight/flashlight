@@ -31,7 +31,7 @@ std::unique_ptr<TensorAdapterBase> Tensor::releaseAdapter() {
   return std::move(impl_);
 }
 
-Tensor::~Tensor() {}
+Tensor::~Tensor() = default;
 
 Tensor::Tensor(const Tensor& tensor) : impl_(tensor.impl_->clone()) {}
 

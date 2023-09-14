@@ -152,8 +152,8 @@ af::array& ArrayFireTensor::getHandle() {
 
 std::unique_ptr<TensorAdapterBase> ArrayFireTensor::clone() const {
   af::array arr = getHandle(); // increment internal AF refcount
-  return std::unique_ptr<ArrayFireTensor>(
-      new ArrayFireTensor(std::move(arr), numDims()));
+  return std::make_unique<ArrayFireTensor>(
+      std::move(arr), numDims());
 }
 
 Tensor ArrayFireTensor::copy() {
