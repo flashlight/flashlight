@@ -32,8 +32,9 @@ using namespace fl;
 
 // return a random int between [mini, maxi]
 int randi(int mini, int maxi) {
-  if (maxi < mini)
+  if (maxi < mini) {
     std::swap(maxi, mini);
+}
   return rand() % (maxi - mini + 1) + mini;
 }
 
@@ -59,8 +60,9 @@ class ClassificationDataset : public Dataset {
     names v;
     std::string line;
     while (std::getline(file, line)) {
-      if (line.empty())
+      if (line.empty()) {
         continue;
+}
       v.push_back(line);
     }
     totalExamples += v.size();
@@ -99,10 +101,12 @@ class ClassificationDataset : public Dataset {
         "Polish",
         "Italian",
         "Irish"};
-    for (auto& l : lang)
+    for (auto& l : lang) {
       read(datasetPath, l);
-    for (auto& it : Id2Label)
+}
+    for (auto& it : Id2Label) {
       std::cout << it.first << ":" << it.second << ", ";
+}
     std::cout << std::endl;
   }
 
@@ -295,17 +299,19 @@ int main(int argc, char** argv) {
       auto p = trainSet.getRandomExample();
       unsigned pred = model.infer(p.first, h, c);
       unsigned correctPred = ClassificationDataset::Label2Id[p.second];
-      if (pred == correctPred)
+      if (pred == correctPred) {
         ++numMatch;
+}
       confusion(correctPred, pred) = confusion(correctPred, pred) + 1;
     }
     confusion = confusion /
         fl::tile(fl::sum(confusion, {1}), {1, nCategories}); // average
     std::cout << "Global accuracy=" << numMatch / nConfusion << "\t ";
-    for (unsigned i = 0; i < nCategories; ++i)
+    for (unsigned i = 0; i < nCategories; ++i) {
       std::cout << ClassificationDataset::Id2Label[i] << ":" << std::fixed
                 << std::setprecision(2) << confusion(i, i).scalar<float>()
                 << " ";
+}
     std::cout << std::endl;
   }
   // List of names not in the training dataset

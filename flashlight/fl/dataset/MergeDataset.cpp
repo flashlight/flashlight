@@ -14,7 +14,7 @@ MergeDataset::MergeDataset(
     const std::vector<std::shared_ptr<const Dataset>>& datasets)
     : datasets_(datasets) {
   size_ = 0;
-  for (auto dataset : datasets_) {
+  for (const auto& dataset : datasets_) {
     size_ = std::max(dataset->size(), size_);
   }
 }
@@ -23,7 +23,7 @@ std::vector<Tensor> MergeDataset::get(const int64_t idx) const {
   checkIndexBounds(idx);
 
   std::vector<Tensor> result;
-  for (auto dataset : datasets_) {
+  for (const auto& dataset : datasets_) {
     if (idx < dataset->size()) {
       auto f = dataset->get(idx);
       result.insert(

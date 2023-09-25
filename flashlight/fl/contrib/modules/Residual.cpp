@@ -154,7 +154,7 @@ std::string Residual::prettyString() const {
     }
 
     if (reverseShortcut.find(layerIndex) != reverseShortcut.end() &&
-        reverseShortcut[layerIndex].size() > 0) {
+        !reverseShortcut[layerIndex].empty()) {
       ss << "; skip connection to ";
       for (auto shortcut : reverseShortcut[layerIndex]) {
         if (shortcut.first < nLayers) {

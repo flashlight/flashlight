@@ -82,7 +82,7 @@ Variable Transformer::getMask(int32_t n, bool cache) {
 
 Variable Transformer::selfAttention(const std::vector<Variable>& input) {
   // previous step[optionally], input, padMask
-  auto encoderInput = input.at(input.size() - 2);
+  const auto& encoderInput = input.at(input.size() - 2);
   // in case of previous state input[0] has size CxT_prevxB
   int n = input[0].dim(1), bsz = input[0].dim(2);
   double pDrop = train_ ? pDropout_ : 0.0;
@@ -134,7 +134,7 @@ std::vector<Variable> Transformer::forward(const std::vector<Variable>& input) {
     throw std::invalid_argument(
         "Invalid inputs for transformer block: there should be at least input and mask");
   }
-  auto x = input.at(input.size() - 2);
+  const auto& x = input.at(input.size() - 2);
   if (x.ndim() != 3) {
     throw std::invalid_argument(
         "Transformer::forward - input should be of 3 dimensions "

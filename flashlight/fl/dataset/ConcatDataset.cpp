@@ -18,7 +18,7 @@ ConcatDataset::ConcatDataset(
     throw std::invalid_argument("cannot concat 0 datasets");
   }
   cumulativedatasetsizes_.emplace_back(0);
-  for (auto dataset : datasets_) {
+  for (const auto& dataset : datasets_) {
     size_ += dataset->size();
     cumulativedatasetsizes_.emplace_back(size_);
   }

@@ -22,8 +22,7 @@
   #include "flashlight/fl/common/OpenClUtils.h"
 #endif
 
-namespace fl {
-namespace detail {
+namespace fl::detail {
 
 DnnlStream::DnnlStream(dnnl::engine engine) {
 #if FL_BACKEND_OPENCL
@@ -156,5 +155,4 @@ dnnl::algorithm dnnlMapToPoolingMode(const PoolingMode mode) {
   }
 }
 
-} // namespace detail
 } // namespace fl

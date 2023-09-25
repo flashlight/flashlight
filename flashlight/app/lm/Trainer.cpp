@@ -19,9 +19,7 @@ using namespace fl::pkg::runtime;
 using namespace fl::pkg::text;
 using namespace fl::lib;
 
-namespace fl {
-namespace app {
-namespace lm {
+namespace fl::app::lm {
 
 /* ================================ FLAGS ================================ */
 
@@ -913,6 +911,4 @@ std::string Trainer::getProgress() const {
   return oss.str();
 }
 
-} // namespace lm
-} // namespace app
 } // namespace fl

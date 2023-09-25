@@ -7,12 +7,8 @@
 
 #include "flashlight/app/lm/common/Defines.h"
 
-namespace fl {
-namespace app {
-namespace lm {
 
-/* Place holder */
 
-} // namespace lm
-} // namespace app
-} // namespace fl
+
+
+

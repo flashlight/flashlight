@@ -129,7 +129,7 @@ void allReduceMultiple(
     bool async /* = false */,
     bool contiguous /* = false */) {
   // Fast paths
-  if (arrs.size() == 0) {
+  if (arrs.empty()) {
     return;
   }
 
