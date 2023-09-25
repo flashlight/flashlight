@@ -16,8 +16,7 @@
 #include "flashlight/fl/tensor/TensorBase.h"
 
 
-namespace fl {
-namespace detail {
+namespace fl::detail {
 
 DefaultTensorType& DefaultTensorType::getInstance() {
   static DefaultTensorType instance;
@@ -48,5 +47,4 @@ const TensorCreator& DefaultTensorType::getTensorCreator() const {
   return *creationFunc_;
 }
 
-} // namespace detail
 } // namespace fl

@@ -17,7 +17,7 @@ PrecisionCast::PrecisionCast(fl::dtype targetType) : targetType_(targetType) {}
 std::vector<Variable> PrecisionCast::forward(
     const std::vector<Variable>& inputs) {
   std::vector<Variable> outputs;
-  for (auto input : inputs) {
+  for (const auto& input : inputs) {
     auto output = input.astype(targetType_);
     outputs.push_back(output);
   }

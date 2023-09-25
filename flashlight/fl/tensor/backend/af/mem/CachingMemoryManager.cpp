@@ -71,7 +71,7 @@ std::string formatMemory(size_t bytes) {
       bytes == 0 ? 0 : std::floor(std::log(bytes) / std::log(1024.0));
   unitId = std::min(unitId, units.size() - 1);
   std::string bytesStr = std::to_string(bytes / std::pow(1024.0, unitId));
-  bytesStr = bytesStr.substr(0, bytesStr.find(".") + 3);
+  bytesStr = bytesStr.substr(0, bytesStr.find('.') + 3);
   return bytesStr + " " + units[unitId];
 }
 

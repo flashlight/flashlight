@@ -409,7 +409,7 @@ af::array ArrayFireTensor::adjustInPlaceOperandDims(const Tensor& operand) {
           "ArrayFireTensor::adjustInPlaceOperandDims "
           "index size was 1 but tensor has greater than 1 dimension.");
     }
-  } else if (indices_ && indices_.value().size() > 0) {
+  } else if (indices_ && !indices_.value().empty()) {
     // All other indexing operations
     const auto& indices = indices_.value();
     const auto& indexTypes = indexTypes_.value();

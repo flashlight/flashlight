@@ -12,8 +12,7 @@
 
 #include <cuda_runtime.h>
 
-namespace fl {
-namespace cuda {
+namespace fl::cuda {
 
 int getActiveDeviceId() {
   int cudaActiveDeviceId = 0;
@@ -48,5 +47,4 @@ void check(cudaError_t err, const char* prefix, const char* file, int line) {
 
 } // namespace detail
 
-} // namespace cuda
 } // namespace fl

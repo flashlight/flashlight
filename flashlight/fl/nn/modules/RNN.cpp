@@ -42,7 +42,7 @@ void RNN::initialize() {
 }
 
 std::vector<Variable> RNN::forward(const std::vector<Variable>& inputs) {
-  if (inputs.size() < 1 || inputs.size() > 3) {
+  if (inputs.empty() || inputs.size() > 3) {
     throw std::invalid_argument("Invalid inputs size");
   }
 

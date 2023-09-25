@@ -12,8 +12,7 @@
 
 #include "flashlight/fl/runtime/CUDAUtils.h"
 
-namespace fl {
-namespace detail {
+namespace fl::detail {
 
 ScopedProfiler::ScopedProfiler() {
   FL_CUDA_CHECK(cudaProfilerStart());
@@ -31,5 +30,4 @@ ProfileTracer::~ProfileTracer() {
   nvtxRangePop();
 }
 
-} // namespace detail
 } // namespace fl

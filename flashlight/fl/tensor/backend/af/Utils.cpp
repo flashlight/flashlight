@@ -13,8 +13,7 @@
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
 
-namespace fl {
-namespace detail {
+namespace fl::detail {
 
 af::dtype flToAfType(fl::dtype type) {
   static const std::unordered_map<fl::dtype, af::dtype>
@@ -296,5 +295,4 @@ af_border_type flToAfPadType(PadType type) {
   }
 }
 
-} // namespace detail
 } // namespace fl
