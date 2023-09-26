@@ -215,7 +215,7 @@ TEST(NNSerializationTest, AdaptiveSoftMaxLoss) {
   auto activation3 = std::make_shared<AdaptiveSoftMax>(5, cutoff);
   auto asml3 = std::make_shared<AdaptiveSoftMaxLoss>(activation3);
   int index = 0;
-  for (auto param : asml->params()) {
+  for (const auto& param : asml->params()) {
     asml3->setParams(param, index);
     index++;
   }
@@ -315,7 +315,7 @@ TEST(NNSerializationTest, FileSize) {
 
 TEST(NNSerializationTest, VariableTwice) {
   Variable v(Tensor({1000, 1000}), false);
-  auto v2 = v; // The array for this variable shouldn't be saved again
+  const auto& v2 = v; // The array for this variable shouldn't be saved again
 
   const fs::path path = fs::temp_directory_path() / "ContainerWithParams.mdl";
   save(path, v2, v);

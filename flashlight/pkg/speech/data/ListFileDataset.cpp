@@ -21,9 +21,7 @@ constexpr const size_t kNumCols = 4;
 
 } // namespace
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 ListFileDataset::ListFileDataset(
     const std::string& filename,
     const DataTransformFunction& inFeatFunc /* = nullptr */,
@@ -148,6 +146,4 @@ int64_t ListFileDataset::getTargetSize(const int64_t idx) const {
   return tgtSize;
 }
 
-} // namespace speech
-} // namespace pkg
 } // namespace fl

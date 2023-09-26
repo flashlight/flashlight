@@ -16,13 +16,11 @@
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 namespace detail {
 Seq2SeqState concatState(std::vector<Seq2SeqState>& stateVec) {
-  if (stateVec.size() < 1) {
+  if (stateVec.empty()) {
     throw std::runtime_error("Empty stateVec");
   }
 
@@ -706,6 +704,4 @@ EmittingModelUpdateFunc buildSeq2SeqRnnUpdateFunction(
   return emittingModelUpdateFunc;
 }
 
-} // namespace speech
-} // namespace pkg
 } // namespace fl

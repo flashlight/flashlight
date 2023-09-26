@@ -21,9 +21,7 @@
 
 using CriterionUtils = fl::lib::cuda::CriterionUtils<float>;
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 namespace {
 inline void throw_on_error(ctcStatus_t status, const char* message) {
@@ -165,6 +163,4 @@ std::vector<Variable> ConnectionistTemporalClassificationCriterion::forward(
 
   return {Variable(result, {input, target}, gradFunc)};
 }
-} // namespace speech
-} // namespace pkg
 } // namespace fl

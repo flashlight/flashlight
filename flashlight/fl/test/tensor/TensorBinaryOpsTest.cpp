@@ -454,7 +454,7 @@ TEST(TensorBinaryOpsTest, broadcasting) {
     return outShape;
   };
 
-  for (auto funcp : functions) {
+  for (const auto& funcp : functions) {
     for (auto& shapeData : shapes) {
       auto lhs = ((fl::rand(shapeData.lhs) + 1) * 10).astype(fl::dtype::s32);
       auto rhs = ((fl::rand(shapeData.rhs) + 1) * 10).astype(fl::dtype::s32);

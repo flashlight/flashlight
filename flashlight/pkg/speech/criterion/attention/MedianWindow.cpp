@@ -12,9 +12,7 @@
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/pkg/speech/criterion/attention/Defines.h"
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 MedianWindow::MedianWindow() = default;
 MedianWindow::MedianWindow(int wL, int wR) : wL_(wL), wR_(wR) {}
@@ -92,6 +90,4 @@ Variable MedianWindow::computeVectorizedWindow(
   throw std::invalid_argument(
       "MedianWindow does not support vectorized window mask");
 }
-} // namespace speech
-} // namespace pkg
 } // namespace fl

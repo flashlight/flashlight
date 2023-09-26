@@ -7,9 +7,7 @@
 
 #include "flashlight/pkg/speech/criterion/ForceAlignmentCriterion.h"
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 ForceAlignmentCriterion::ForceAlignmentCriterion(
     int N,
@@ -26,6 +24,4 @@ ForceAlignmentCriterion::ForceAlignmentCriterion(
 std::string ForceAlignmentCriterion::prettyString() const {
   return "ForceAlignmentCriterion";
 }
-} // namespace speech
-} // namespace pkg
 } // namespace fl

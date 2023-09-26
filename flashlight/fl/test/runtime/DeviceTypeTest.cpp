@@ -12,7 +12,7 @@
 using fl::DeviceType;
 
 TEST(DeviceTypeTest, getAllDeviceTypes) {
-  auto allDevices = fl::getDeviceTypes();
+  const auto& allDevices = fl::getDeviceTypes();
   ASSERT_TRUE(allDevices.count(DeviceType::x64) == 1);
   ASSERT_TRUE(allDevices.count(DeviceType::CUDA) == 1);
   ASSERT_EQ(allDevices.size(), 2);

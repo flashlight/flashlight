@@ -13,8 +13,7 @@
 
 #include <dnnl_debug.h>
 
-namespace fl {
-namespace detail {
+namespace fl::detail {
 
 namespace {
 
@@ -92,7 +91,7 @@ dnnl::memory::dims shapeToOneDnnStrides(const Shape& shape) {
 }
 
 dnnl::memory::dims flDimsToOneDnnDims(const std::vector<Dim>& flDims) {
-  if (flDims.size() == 0) {
+  if (flDims.empty()) {
     return {1}; // scalar, OneDNN memory returns null handle with {} as dims
   }
   return dnnl::memory::dims(flDims.rbegin(), flDims.rend());
@@ -143,5 +142,4 @@ dnnl::memory::desc oneDnnContiguousMemDescFromShape(
       /* allowEmpty */ true);
 }
 
-} // namespace detail
 } // namespace fl

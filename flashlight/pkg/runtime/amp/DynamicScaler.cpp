@@ -9,9 +9,7 @@
 
 #include "flashlight/fl/flashlight.h"
 
-namespace fl {
-namespace pkg {
-namespace runtime {
+namespace fl::pkg::runtime {
 
 DynamicScaler::DynamicScaler(
     double initFactor,
@@ -76,6 +74,4 @@ double DynamicScaler::getScaleFactor() const {
   return scaleFactor_;
 }
 
-} // namespace runtime
-} // namespace pkg
 } // namespace fl

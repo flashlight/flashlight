@@ -10,9 +10,7 @@
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/pkg/speech/criterion/attention/Defines.h"
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 StepWindow::StepWindow() = default;
 StepWindow::StepWindow(int sMin, int sMax, double vMin, double vMax)
@@ -77,6 +75,4 @@ Variable StepWindow::computeVectorizedWindow(
   return compute(
       targetLen, inputSteps, batchSize, inputSizes, targetSizes, decoderSteps);
 }
-} // namespace speech
-} // namespace pkg
 } // namespace fl

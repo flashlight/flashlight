@@ -13,9 +13,7 @@
 #include <cmath>
 #include <stdexcept>
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 MultiHeadContentAttention::MultiHeadContentAttention(
     int dim,
@@ -112,6 +110,4 @@ std::pair<Variable, Variable> MultiHeadContentAttention::forwardBase(
 std::string MultiHeadContentAttention::prettyString() const {
   return "MultiHeadContentAttention";
 }
-} // namespace speech
-} // namespace pkg
 } // namespace fl

@@ -13,9 +13,7 @@ using fl::lib::text::Dictionary;
 using fl::lib::text::LexiconMap;
 using fl::lib::text::splitWrd;
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 std::vector<std::string> wrd2Target(
     const std::string& word,
@@ -76,7 +74,7 @@ std::vector<std::string> wrd2Target(
     bool fallback2LtrWordSepRight /* = false */,
     bool skipUnk /* = false */) {
   std::vector<std::string> res;
-  for (auto w : words) {
+  for (const auto& w : words) {
     auto w2tokens = wrd2Target(
         w,
         lexicon,
@@ -87,7 +85,7 @@ std::vector<std::string> wrd2Target(
         fallback2LtrWordSepRight,
         skipUnk);
 
-    if (w2tokens.size() == 0) {
+    if (w2tokens.empty()) {
       continue;
     }
     res.insert(res.end(), w2tokens.begin(), w2tokens.end());
@@ -115,6 +113,4 @@ std::pair<int, FeatureType> getFeatureType(
   }
 }
 
-} // namespace speech
-} // namespace pkg
 } // namespace fl

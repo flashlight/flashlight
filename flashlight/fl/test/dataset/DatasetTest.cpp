@@ -267,7 +267,7 @@ TEST(DatasetTest, FileBlobDataset) {
 
     // check hostTransform
     for (auto& vec : data) {
-      if (vec.size() > 0) {
+      if (!vec.empty()) {
         vec[0] += 1;
       }
     }
@@ -281,7 +281,7 @@ TEST(DatasetTest, FileBlobDataset) {
         });
     check(blob);
     for (auto& vec : data) {
-      if (vec.size() > 0) {
+      if (!vec.empty()) {
         vec[0] -= 1;
       }
     }
@@ -443,7 +443,7 @@ TEST(DatasetTest, MemoryBlobDataset) {
 
     // check hostTransform
     for (auto& vec : data) {
-      if (vec.size() > 0) {
+      if (!vec.empty()) {
         vec[0] += 1;
       }
     }

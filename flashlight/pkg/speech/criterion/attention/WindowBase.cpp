@@ -7,9 +7,7 @@
 
 #include "flashlight/pkg/speech/criterion/attention/WindowBase.h"
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 Tensor WindowBase::computeInputNotPaddedSize(
     const Tensor& inputSizes,
@@ -62,6 +60,4 @@ Tensor WindowBase::computeTargetNotPaddedSize(
   return targetNotPaddedSize;
 }
 
-} // namespace speech
-} // namespace pkg
 } // namespace fl

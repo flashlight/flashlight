@@ -10,9 +10,7 @@
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/pkg/speech/criterion/attention/Defines.h"
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 SoftWindow::SoftWindow() = default;
 SoftWindow::SoftWindow(double std, double avgRate, int offset)
@@ -67,6 +65,4 @@ Variable SoftWindow::computeVectorizedWindow(
   return compute(
       targetLen, inputSteps, batchSize, inputSizes, targetSizes, decoderSteps);
 }
-} // namespace speech
-} // namespace pkg
 } // namespace fl

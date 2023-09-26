@@ -426,7 +426,7 @@ TEST(MemoryFramework, AdapterInstallerDeviceInterfaceTest) {
       "shutdown"};
   size_t idx = 0;
   for (std::string line; std::getline(logStream, line);) {
-    EXPECT_EQ(line.substr(0, line.find(" ")), expectedLinePrefixes[idx]);
+    EXPECT_EQ(line.substr(0, line.find(' ')), expectedLinePrefixes[idx]);
     idx++;
   }
 

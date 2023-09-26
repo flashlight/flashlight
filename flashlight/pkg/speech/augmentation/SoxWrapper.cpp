@@ -19,10 +19,7 @@
 #include "flashlight/pkg/speech/data/Sound.h"
 #include "flashlight/fl/common/Logging.h"
 
-namespace fl {
-namespace pkg {
-namespace speech {
-namespace sfx {
+namespace fl::pkg::speech::sfx {
 
 namespace {
 
@@ -220,7 +217,4 @@ void check(const void* ptr, const char* msg, const char* file, int line) {
 
 } // namespace detail
 
-} // namespace sfx
-} // namespace speech
-} // namespace pkg
 } // namespace fl

@@ -11,9 +11,7 @@
 
 #include "flashlight/pkg/speech/audio/feature/SpeechUtils.h"
 
-namespace fl {
-namespace lib {
-namespace audio {
+namespace fl::lib::audio {
 
 Mfcc::Mfcc(const FeatureParams& params)
     : Mfsc(params),
@@ -72,6 +70,4 @@ void Mfcc::validateMfccParams() const {
     throw std::invalid_argument("Mfcc: lifterparam must be nonnegative");
   }
 }
-} // namespace audio
-} // namespace lib
 } // namespace fl

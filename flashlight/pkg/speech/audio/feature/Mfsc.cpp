@@ -13,9 +13,7 @@
 
 #include "flashlight/pkg/speech/audio/feature/SpeechUtils.h"
 
-namespace fl {
-namespace lib {
-namespace audio {
+namespace fl::lib::audio {
 
 Mfsc::Mfsc(const FeatureParams& params)
     : PowerSpectrum(params),
@@ -105,6 +103,4 @@ void Mfsc::validateMfscParams() const {
     throw std::invalid_argument("Mfsc: melfloor must be positive");
   }
 }
-} // namespace audio
-} // namespace lib
 } // namespace fl
