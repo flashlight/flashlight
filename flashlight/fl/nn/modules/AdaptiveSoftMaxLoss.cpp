@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "flashlight/fl/nn/modules/Loss.h"
+#include "flashlight/fl/nn/modules/AdaptiveSoftMaxLoss.h"
+
 #include <stdexcept>
 #include <vector>
 
@@ -13,72 +14,6 @@
 #include "flashlight/fl/tensor/Index.h"
 
 namespace fl {
-
-Variable MeanSquaredError::forward(
-    const Variable& inputs,
-    const Variable& targets) {
-  if (inputs.shape() != targets.shape()) {
-    throw std::invalid_argument(
-        "MeanSquaredError::forward - inputs and targets are of different"
-        " sizes: {inputs: " +
-        inputs.shape().toString() + ", targets: " + targets.shape().toString() +
-        "}");
-  }
-
-  auto df = inputs - targets;
-  auto res = mean(flat(df * df), {0});
-  return res;
-}
-
-std::string MeanSquaredError::prettyString() const {
-  return "MeanSquaredError";
-}
-
-Variable MeanAbsoluteError::forward(
-    const Variable& inputs,
-    const Variable& targets) {
-  if (inputs.shape() != targets.shape()) {
-    throw std::invalid_argument(
-        "MeanAbsoluteError::forward - inputs and targets are of different"
-        " sizes: {inputs: " +
-        inputs.shape().toString() + ", targets: " + targets.shape().toString() +
-        "}");
-  }
-
-  auto df = inputs - targets;
-  return mean(flat(fl::abs(df)), {0});
-}
-
-std::string MeanAbsoluteError::prettyString() const {
-  return "MeanAbsoluteError";
-}
-
-Variable BinaryCrossEntropy::forward(
-    const Variable& inputs,
-    const Variable& targets) {
-  return mean(flat(binaryCrossEntropy(inputs, targets)), {0});
-}
-
-Variable BinaryCrossEntropy::forward(
-    const Variable& inputs,
-    const Variable& targets,
-    const Variable& weights) {
-  return mean(flat(weights * binaryCrossEntropy(inputs, targets)), {0});
-}
-
-std::string BinaryCrossEntropy::prettyString() const {
-  return "BinaryCrossEntropy";
-}
-
-Variable CategoricalCrossEntropy::forward(
-    const Variable& inputs,
-    const Variable& targets) {
-  return categoricalCrossEntropy(inputs, targets, reduction_, ignoreIndex_);
-}
-
-std::string CategoricalCrossEntropy::prettyString() const {
-  return "CategoricalCrossEntropy";
-}
 
 AdaptiveSoftMaxLoss::AdaptiveSoftMaxLoss(
     std::shared_ptr<AdaptiveSoftMax> activation,

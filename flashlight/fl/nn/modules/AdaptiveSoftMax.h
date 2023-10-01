@@ -6,6 +6,7 @@
  */
 
 #pragma once
+
 #include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/nn/modules/Container.h"
 

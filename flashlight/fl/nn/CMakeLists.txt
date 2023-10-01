@@ -7,7 +7,10 @@ target_sources(
   ${CMAKE_CURRENT_LIST_DIR}/Utils.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/Activations.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/AdaptiveSoftMax.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/AdaptiveSoftMaxLoss.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/BatchNorm.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/BinaryCrossEntropy.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/CategoricalCrossEntropy.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/Container.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/Conv2D.cpp
   ${CMAKE_CURRENT_LIST_DIR}/DistributedUtils.cpp
@@ -16,8 +19,9 @@ target_sources(
   ${CMAKE_CURRENT_LIST_DIR}/modules/Identity.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/LayerNorm.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/Linear.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/modules/Loss.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/Module.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/MeanSquaredError.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/modules/MeanAbsoluteError.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/Normalize.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/Padding.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/PrecisionCast.cpp
