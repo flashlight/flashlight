@@ -14,9 +14,7 @@
 
 using fl::lib::seq::CriterionScaleMode;
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 int countRepeats(const int* labels, int len) {
   int r = 0;
@@ -98,6 +96,4 @@ fl::Variable applySeq2SeqMask(
   return fl::Variable(output, {input.withoutData()}, gradFunc);
 }
 
-} // namespace speech
-} // namespace pkg
 } // namespace fl

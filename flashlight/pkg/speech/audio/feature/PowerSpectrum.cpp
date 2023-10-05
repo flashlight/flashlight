@@ -15,9 +15,7 @@
 
 #include "flashlight/pkg/speech/audio/feature/SpeechUtils.h"
 
-namespace fl {
-namespace lib {
-namespace audio {
+namespace fl::lib::audio {
 
 std::mutex PowerSpectrum::fftPlanMutex_;
 
@@ -146,6 +144,4 @@ void PowerSpectrum::validatePowSpecParams() const {
 PowerSpectrum::~PowerSpectrum() {
   fftw_destroy_plan(*fftPlan_);
 }
-} // namespace audio
-} // namespace lib
 } // namespace fl

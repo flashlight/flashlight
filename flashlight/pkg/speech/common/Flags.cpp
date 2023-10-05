@@ -14,9 +14,7 @@
 #include <mutex>
 #include <sstream>
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 // Flags that are specific to an executable are marked
 // in the description with the executable usage in square parenthesis,
@@ -742,6 +740,4 @@ void handleDeprecatedFlags() {
     // user set neither flag, noop.
   }
 }
-} // namespace speech
-} // namespace pkg
 } // namespace fl

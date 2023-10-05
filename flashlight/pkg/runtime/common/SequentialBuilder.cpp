@@ -24,11 +24,7 @@ std::shared_ptr<Module> parseLines(
     int& numLinesParsed);
 } // namespace
 
-namespace fl {
-
-namespace pkg {
-
-namespace runtime {
+namespace fl::pkg::runtime {
 
 std::shared_ptr<Sequential> buildSequentialModule(
     const fs::path& archfile,
@@ -95,8 +91,6 @@ fl::Variable forwardSequentialModuleWithPadMask(
   }
   return output.astype(input.type());
 }
-} // namespace runtime
-} // namespace pkg
 } // namespace fl
 
 namespace {
@@ -519,7 +513,7 @@ std::shared_ptr<Module> parseLines(
         if (lineIdx + i + numProjections >= lines.size()) {
           throw std::invalid_argument("Failed parsing Residual block");
         }
-        std::string resLine = lines[lineIdx + i + numProjections];
+        const std::string& resLine = lines[lineIdx + i + numProjections];
         auto resLinePrms = fl::lib::splitOnWhitespace(resLine, true);
 
         if (resLinePrms[0] == "SKIP") {

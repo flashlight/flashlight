@@ -11,9 +11,7 @@
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/fl/tensor/Index.h"
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 Variable maskAttention(const Variable& input, const Variable& sizes) {
   int B = input.dim(2);
@@ -37,6 +35,4 @@ Variable maskAttention(const Variable& input, const Variable& sizes) {
   return Variable(output, {input.withoutData()}, gradFunc);
 }
 
-} // namespace speech
-} // namespace pkg
 } // namespace fl

@@ -19,9 +19,7 @@
 using CriterionUtils = fl::lib::cuda::CriterionUtils<float>;
 using ViterbiPath = fl::lib::cuda::ViterbiPath<float>;
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 Tensor viterbiPath(const Tensor& input, const Tensor& trans) {
   if (input.ndim() != 3) {
@@ -91,6 +89,4 @@ Tensor getTargetSizeArray(const Tensor& target, int maxSize) {
 
   return targetSize;
 }
-} // namespace speech
-} // namespace pkg
 } // namespace fl

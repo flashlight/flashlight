@@ -81,7 +81,7 @@ Variable AdaptiveEmbedding::forward(const Variable& input) {
       embeddings.push_back(tailEmbedding);
     }
   }
-  if (embeddings.size() == 0) {
+  if (embeddings.empty()) {
     throw std::invalid_argument(
         "Invalid input, no positions in the AdaptiveEmbedding layer");
   }

@@ -35,7 +35,7 @@ void Device::addStream(std::shared_ptr<Stream> stream) {
 }
 
 void Device::sync() const {
-  for (auto stream : streams_) {
+  for (const auto& stream : streams_) {
     stream->sync();
   }
 }

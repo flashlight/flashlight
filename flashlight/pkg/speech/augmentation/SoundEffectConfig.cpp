@@ -80,10 +80,7 @@ void serialize(Archive& ar, SoundEffectConfig& conf) {
 
 } // namespace cereal
 
-namespace fl {
-namespace pkg {
-namespace speech {
-namespace sfx {
+namespace fl::pkg::speech::sfx {
 
 void writeSoundEffectConfigFile(
     const fs::path& filename,
@@ -144,7 +141,4 @@ std::shared_ptr<SoundEffect> createSoundEffect(
   return sfxChain;
 }
 
-} // namespace sfx
-} // namespace speech
-} // namespace pkg
 } // namespace fl

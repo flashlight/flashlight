@@ -134,8 +134,9 @@ TEST_F(CachingMemoryManagerTest, OOM) {
   // depending on the drivers, afopencl does not seem to guarantee to send an
   // OOM signal. https://github.com/arrayfire/arrayfire/issues/2650 At the
   // moment, skipping afopencl.
-  if (b == AF_BACKEND_OPENCL)
+  if (b == AF_BACKEND_OPENCL) {
     GTEST_SKIP() << "Can't run test with the ArrayFire OpenCL backend";
+}
   af::array a;
   // N^3 tensor means about 3PB: expected to OOM on today's cuda GPU.
   const unsigned N = 99999;

@@ -10,9 +10,7 @@
 #include <cstddef>
 #include <stdexcept>
 
-namespace fl {
-namespace lib {
-namespace audio {
+namespace fl::lib::audio {
 
 PreEmphasis::PreEmphasis(float alpha, int N)
     : preemCoef_(alpha), windowLength_(N) {
@@ -45,6 +43,4 @@ void PreEmphasis::applyInPlace(std::vector<float>& input) const {
     input[s] *= (1 - preemCoef_);
   }
 }
-} // namespace audio
-} // namespace lib
 } // namespace fl

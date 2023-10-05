@@ -11,9 +11,7 @@
 #include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/pkg/speech/criterion/attention/Defines.h"
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 SoftPretrainWindow::SoftPretrainWindow(double std) : std_(std) {}
 
@@ -74,6 +72,4 @@ Variable SoftPretrainWindow::computeVectorizedWindow(
   return compute(
       targetLen, inputSteps, batchSize, inputSizes, targetSizes, decoderSteps);
 }
-} // namespace speech
-} // namespace pkg
 } // namespace fl

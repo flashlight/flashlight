@@ -12,9 +12,7 @@
 
 #include "flashlight/pkg/runtime/Runtime.h"
 
-namespace fl {
-namespace pkg {
-namespace runtime {
+namespace fl::pkg::runtime {
 
 constexpr size_t kRunFileNameIntWidth = 3;
 
@@ -85,6 +83,4 @@ std::string getCurrentTime() {
   return std::string(buf.data());
 }
 
-} // end namespace runtime
-} // end namespace pkg
 } // end namespace fl

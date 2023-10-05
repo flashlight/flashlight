@@ -9,8 +9,7 @@
 
 #include <stdexcept>
 
-namespace fl {
-namespace detail {
+namespace fl::detail {
 
 bool TensorExtensionRegistrar::registerTensorExtension(
     TensorBackendType backend,
@@ -60,5 +59,4 @@ TensorExtensionRegistrar& TensorExtensionRegistrar::getInstance() {
   return instance;
 }
 
-} // namespace detail
 } // namespace fl

@@ -96,7 +96,7 @@ TEST(Distributed, AllReduceSetAsync) {
   syncDistributed();
 
   float expected_val = size * (size + 1.0);
-  for (auto var : vars) {
+  for (const auto& var : vars) {
     ASSERT_TRUE(fl::all(var.tensor() == expected_val).scalar<char>());
   }
 
@@ -175,7 +175,7 @@ TEST(Distributed, CoalescingReducer) {
   }
 
   float expected_val = size * (size + 1.0);
-  for (auto var : vars) {
+  for (const auto& var : vars) {
     // The reducer scales down by a factor of 1 / size
     auto arr = var.tensor() * (size * 2);
     ASSERT_TRUE(fl::all(arr == expected_val).scalar<char>());

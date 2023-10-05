@@ -241,7 +241,7 @@ TEST(IndexTest, TensorIndex) {
   // Out of range indices
   auto i = fl::arange({10}, 0, fl::dtype::u32);
   auto b = fl::rand({20, 20});
-  auto ref = b;
+  const auto& ref = b;
   ASSERT_EQ(b(i).shape(), b(fl::range(10)).shape());
   ASSERT_TRUE(allClose(b(i), b(fl::range(10))));
 

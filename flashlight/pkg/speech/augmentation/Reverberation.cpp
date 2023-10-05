@@ -11,10 +11,7 @@
 #include <cmath>
 #include <sstream>
 
-namespace fl {
-namespace pkg {
-namespace speech {
-namespace sfx {
+namespace fl::pkg::speech::sfx {
 
 ReverbEcho::ReverbEcho(
     const ReverbEcho::Config& conf,
@@ -85,7 +82,4 @@ std::string ReverbEcho::Config::prettyString() const {
   return ss.str();
 }
 
-} // namespace sfx
-} // namespace speech
-} // namespace pkg
 } // namespace fl

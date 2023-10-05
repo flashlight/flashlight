@@ -16,10 +16,7 @@
 
 #include "flashlight/pkg/speech/augmentation/SoxWrapper.h"
 
-namespace fl {
-namespace pkg {
-namespace speech {
-namespace sfx {
+namespace fl::pkg::speech::sfx {
 
 TimeStretch::TimeStretch(
     const TimeStretch::Config& config,
@@ -56,7 +53,4 @@ std::string TimeStretch::prettyString() const {
   return ss.str();
 };
 
-} // namespace sfx
-} // namespace speech
-} // namespace pkg
 } // namespace fl

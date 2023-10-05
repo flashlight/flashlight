@@ -11,10 +11,7 @@
 #include <cmath>
 #include <sstream>
 
-namespace fl {
-namespace pkg {
-namespace speech {
-namespace sfx {
+namespace fl::pkg::speech::sfx {
 
 RandomNumberGenerator::RandomNumberGenerator(int seed /* = 0 */)
     : randomEngine_(seed), uniformDist_(0, 1), gaussianDist_(0, 1) {}
@@ -67,7 +64,4 @@ genTestSinWave(size_t numSamples, size_t freq, size_t sampleRate, float amplitud
   return output;
 }
 
-} // namespace sfx
-} // namespace speech
-} // namespace pkg
 } // namespace fl

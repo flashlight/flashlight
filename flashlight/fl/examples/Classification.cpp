@@ -44,8 +44,8 @@ int main(int /* unused */, const char** /* unused */) {
   int nepochs = 1000, warmup_epochs = 10;
   model.train();
 
-  Tensor in_ = data;
-  Tensor out_ = label;
+  const Tensor& in_ = data;
+  const Tensor& out_ = label;
   fl::Timer s;
   for (int i = 0; i < nepochs; i++) {
     if (i == warmup_epochs) {

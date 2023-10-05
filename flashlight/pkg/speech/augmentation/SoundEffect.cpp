@@ -11,10 +11,7 @@
 #include <cmath>
 #include <sstream>
 
-namespace fl {
-namespace pkg {
-namespace speech {
-namespace sfx {
+namespace fl::pkg::speech::sfx {
 
 std::string SoundEffectChain::prettyString() const {
   std::stringstream ss;
@@ -93,7 +90,4 @@ void Amplify::apply(std::vector<float>& sound) {
       });
 }
 
-} // namespace sfx
-} // namespace speech
-} // namespace pkg
 } // namespace fl

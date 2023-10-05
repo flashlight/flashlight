@@ -43,7 +43,7 @@ void MemoryBlobDataset::flushData() {
 }
 
 bool MemoryBlobDataset::isEmptyData() const {
-  return (data_.size() == 0);
+  return (data_.empty());
 }
 
 } // namespace fl

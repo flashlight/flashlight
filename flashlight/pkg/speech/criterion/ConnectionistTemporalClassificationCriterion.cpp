@@ -44,9 +44,7 @@ Tensor logSoftmax(const Tensor& input, const int dim) {
 
 } // namespace
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 ConnectionistTemporalClassificationCriterion::
     ConnectionistTemporalClassificationCriterion(
@@ -128,6 +126,4 @@ void ConnectionistTemporalClassificationCriterion::validate(
         ", respectively");
   }
 }
-} // namespace speech
-} // namespace pkg
 } // namespace fl
