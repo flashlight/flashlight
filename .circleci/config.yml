@@ -276,7 +276,7 @@ commands:
       - run:
           name: "Create micromamba environment for oneDNN"
           command: |
-            $MAMBA_EXE create -n onednn -y
+            micromamba create -n onednn -y
             echo "micromamba activate onednn" >> $BASH_ENV
       - run:
           name: "Install oneDNN"
