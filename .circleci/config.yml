@@ -276,8 +276,8 @@ commands:
       - run:
           name: "Create micromamba environment for oneDNN"
           command: |
-            micromamba create -n onednn -y
-            echo "micromamba activate onednn" >> $BASH_ENV
+            /home/circleci/.local/bin/micromamba create -n onednn -y
+            echo "/home/circleci/.local/bin/micromamba activate onednn" >> $BASH_ENV
       - run:
           name: "Install oneDNN"
           command: micromamba install -y -c conda-forge onednn=2.7.2
