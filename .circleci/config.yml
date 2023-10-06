@@ -259,6 +259,10 @@ commands:
                 name: "Install Micromamba"
                 command: |
                   brew install micromamba
+                  echo 'export MAMBA_EXE="/opt/homebrew/bin/micromamba"' >> $BASH_ENV
+                  echo 'export MAMBA_ROOT_PREFIX="~/micromamba"' >> $BASH_ENV
+                  echo '__mamba_setup="$(~/.local/bin/micromamba shell hook --shell bash --prefix ~/micromamba 2> /dev/null)"' >> $BASH_ENV
+                  echo 'eval "$__mamba_setup"' >> $BASH_ENV
       - when:
           condition:
             equal: ["linux-arm", << parameters.platform >>]
@@ -269,7 +273,7 @@ commands:
                   sudo apt update
                   DEBIAN_FRONTEND=noninteractive sudo apt upgrade # needed for curl not to break
                   curl -L micro.mamba.pm/install.sh | bash
-                   echo 'export MAMBA_EXE="~/.local/bin/micromamba"' >> $BASH_ENV
+                  echo 'export MAMBA_EXE="~/.local/bin/micromamba"' >> $BASH_ENV
                   echo 'export MAMBA_ROOT_PREFIX="~/micromamba"' >> $BASH_ENV
                   echo '__mamba_setup="$(~/.local/bin/micromamba shell hook --shell bash --prefix ~/micromamba 2> /dev/null)"' >> $BASH_ENV
                   echo 'eval "$__mamba_setup"' >> $BASH_ENV
