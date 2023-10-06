@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -71,7 +71,7 @@ std::string formatMemory(size_t bytes) {
       bytes == 0 ? 0 : std::floor(std::log(bytes) / std::log(1024.0));
   unitId = std::min(unitId, units.size() - 1);
   std::string bytesStr = std::to_string(bytes / std::pow(1024.0, unitId));
-  bytesStr = bytesStr.substr(0, bytesStr.find(".") + 3);
+  bytesStr = bytesStr.substr(0, bytesStr.find('.') + 3);
   return bytesStr + " " + units[unitId];
 }
 

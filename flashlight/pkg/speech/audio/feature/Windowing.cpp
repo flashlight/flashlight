@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -12,9 +12,7 @@
 #include <numeric>
 #include <stdexcept>
 
-namespace fl {
-namespace lib {
-namespace audio {
+namespace fl::lib::audio {
 
 Windowing::Windowing(int N, WindowType windowtype)
     : windowLength_(N), windowType_(windowtype), coefs_(N) {
@@ -57,6 +55,4 @@ void Windowing::applyInPlace(std::vector<float>& input) const {
     }
   }
 }
-} // namespace audio
-} // namespace lib
 } // namespace fl

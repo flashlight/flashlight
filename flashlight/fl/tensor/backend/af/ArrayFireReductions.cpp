@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -224,17 +224,18 @@ Tensor ArrayFireBackend::var(
     const std::vector<int>& axes,
     const bool bias,
     const bool keepDims) {
+  af_var_bias biasMode = bias ? AF_VARIANCE_SAMPLE : AF_VARIANCE_POPULATION;
   // Use ArrayFire default for one dimension which may be optimized
   auto& arr = toArray(input);
   // Reduce along all axes returning a singleton tensor
   // TODO: modify this to af::var<af::array> to take advantage of the
   // ArrayFire reduce_all kernels once available
   if (isAllAxisReduction(input, axes)) {
-    double out = af::var<double>(toArray(input), bias);
+    double out = af::var<double>(toArray(input), biasMode);
     return toTensor<ArrayFireTensor>(af::constant(out, 1), /* numDims = */ 0);
   } else if (axes.size() == 1) {
     return toTensor<ArrayFireTensor>(
-        detail::condenseIndices(af::var(arr, bias, axes[0]), keepDims),
+        detail::condenseIndices(af::var(arr, biasMode, axes[0]), keepDims),
         getReducedNumDims(input.ndim(), axes.size(), keepDims));
   } else {
     auto meanArr = mean(input, axes, /* keepDims = */ true);
@@ -263,21 +264,21 @@ Tensor ArrayFireBackend::std(
     const Tensor& input,
     const std::vector<int>& axes,
     const bool keepDims) {
-  // TODO: add a bias parameter and `bias ? AF_VARIANCE_SAMPLE :
-  // AF_VARIANCE_POPULATION` when requiring to a minimum ArrayFire version that
-  // has updated variance and stdev functions
+  const bool bias = false; // TODO: make this configurable
+  af_var_bias biasMode = bias ? AF_VARIANCE_SAMPLE : AF_VARIANCE_POPULATION;
   if (isAllAxisReduction(input, axes)) {
     // TODO: update to af::stdev<af::array> once specialization is available
-    double out = af::stdev<double>(toArray(input));
+    double out = af::stdev<double>(toArray(input), biasMode);
     return toTensor<ArrayFireTensor>(af::constant(out, 1), /* numDims = */ 0);
   } else if (axes.size() == 1) {
     // Use arrayfire default for one dimension which may be optimized
     // TODO: update this? stddev is deprecated.
     return toTensor<ArrayFireTensor>(
-        detail::condenseIndices(af::stdev(toArray(input), axes[0]), keepDims),
+        detail::condenseIndices(
+            af::stdev(toArray(input), biasMode, axes[0]), keepDims),
         getReducedNumDims(input.ndim(), axes.size(), keepDims));
   }
-  return this->sqrt(this->var(input, axes, /* bias = */ false, keepDims));
+  return this->sqrt(this->var(input, axes, /* bias = */ bias, keepDims));
 }
 
 Tensor ArrayFireBackend::norm(

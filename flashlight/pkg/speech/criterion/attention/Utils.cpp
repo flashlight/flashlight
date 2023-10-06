@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -11,9 +11,7 @@
 #include "flashlight/fl/flashlight.h"
 #include "flashlight/fl/tensor/Index.h"
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 Variable maskAttention(const Variable& input, const Variable& sizes) {
   int B = input.dim(2);
@@ -37,6 +35,4 @@ Variable maskAttention(const Variable& input, const Variable& sizes) {
   return Variable(output, {input.withoutData()}, gradFunc);
 }
 
-} // namespace speech
-} // namespace pkg
 } // namespace fl

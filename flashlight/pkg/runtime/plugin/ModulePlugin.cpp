@@ -1,16 +1,13 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
- * All rights reserved.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
 #include "flashlight/pkg/runtime/plugin/ModulePlugin.h"
 
-namespace fl {
-namespace pkg {
-namespace runtime {
+namespace fl::pkg::runtime {
 
 ModulePlugin::ModulePlugin(const std::string& name) : fl::Plugin(name) {
   arch_ = getSymbol<w2l_module_plugin_t>("createModule");
@@ -22,6 +19,4 @@ std::shared_ptr<fl::Module> ModulePlugin::arch(
   return std::shared_ptr<fl::Module>(arch_(nFeatures, nClasses));
 }
 
-} // namespace runtime
-} // namespace pkg
 } // namespace fl

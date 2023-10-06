@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -21,9 +21,7 @@ constexpr const size_t kNumCols = 4;
 
 } // namespace
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 ListFileDataset::ListFileDataset(
     const std::string& filename,
     const DataTransformFunction& inFeatFunc /* = nullptr */,
@@ -148,6 +146,4 @@ int64_t ListFileDataset::getTargetSize(const int64_t idx) const {
   return tgtSize;
 }
 
-} // namespace speech
-} // namespace pkg
 } // namespace fl
