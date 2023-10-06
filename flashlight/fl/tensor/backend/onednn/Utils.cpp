@@ -1,8 +1,8 @@
 
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -13,8 +13,7 @@
 
 #include <dnnl_debug.h>
 
-namespace fl {
-namespace detail {
+namespace fl::detail {
 
 namespace {
 
@@ -92,7 +91,7 @@ dnnl::memory::dims shapeToOneDnnStrides(const Shape& shape) {
 }
 
 dnnl::memory::dims flDimsToOneDnnDims(const std::vector<Dim>& flDims) {
-  if (flDims.size() == 0) {
+  if (flDims.empty()) {
     return {1}; // scalar, OneDNN memory returns null handle with {} as dims
   }
   return dnnl::memory::dims(flDims.rbegin(), flDims.rend());
@@ -143,5 +142,4 @@ dnnl::memory::desc oneDnnContiguousMemDescFromShape(
       /* allowEmpty */ true);
 }
 
-} // namespace detail
 } // namespace fl

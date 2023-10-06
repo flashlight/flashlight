@@ -1,15 +1,13 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
 #include "flashlight/app/benchmark/models/AsrTransformer.h"
 
-namespace fl {
-namespace app {
-namespace benchmark {
+namespace fl::app::benchmark {
 
 AsrTransformer::AsrTransformer(int64_t nFeature, int64_t nLabel) {
   double dropout = 0.4;
@@ -66,6 +64,4 @@ std::string AsrTransformer::prettyString() const {
   return ss.str();
 }
 
-} // namespace benchmark
-} // namespace app
 } // namespace fl

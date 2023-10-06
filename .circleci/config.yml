@@ -1,15 +1,10 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
-# All rights reserved.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
 version: 2.1
-
-gpu: &gpu
-  machine:
-    image: ubuntu-2004-cuda-11.4:202110-01
-  resource_class: gpu.nvidia.medium
 
 orbs:
   win: circleci/windows@5.0.0
@@ -17,7 +12,7 @@ orbs:
 executors:
   linux:
     machine:
-      image: ubuntu-2004-cuda-11.4:202110-01
+      image: linux-cuda-11:2023.02.1
     resource_class: gpu.nvidia.medium
   windows:
     machine:
@@ -75,9 +70,9 @@ commands:
             equal: ["linux", << parameters.platform >>]
           steps:
             - run:
-                name: "Add CUDA 11.4 bin directory to PATH"
+                name: "Use CUDA 11.4"
                 command: |
-                  echo 'export PATH="/usr/local/cuda-11.4/bin:${PATH}"' >> "$BASH_ENV"
+                  sudo update-alternatives --set cuda /usr/local/cuda-11.4
       - when:
           condition:
             equal: ["windows", << parameters.platform >>]
@@ -279,7 +274,7 @@ commands:
                 command: |
                   sudo apt update
                   DEBIAN_FRONTEND=noninteractive sudo apt upgrade # needed for curl not to break
-                  curl micro.mamba.pm/install.sh | bash
+                  curl -L micro.mamba.pm/install.sh | bash
                   echo 'export MAMBA_EXE="$HOME/.local/bin/micromamba"' >> $BASH_ENV
                   echo 'export MAMBA_ROOT_PREFIX="$HOME/micromamba"' >> $BASH_ENV
                   echo '__mamba_setup="$($HOME/.local/bin/micromamba shell hook --shell bash --prefix ~/micromamba 2> /dev/null)"' >> $BASH_ENV

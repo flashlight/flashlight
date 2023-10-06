@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -267,7 +267,7 @@ TEST(DatasetTest, FileBlobDataset) {
 
     // check hostTransform
     for (auto& vec : data) {
-      if (vec.size() > 0) {
+      if (!vec.empty()) {
         vec[0] += 1;
       }
     }
@@ -281,7 +281,7 @@ TEST(DatasetTest, FileBlobDataset) {
         });
     check(blob);
     for (auto& vec : data) {
-      if (vec.size() > 0) {
+      if (!vec.empty()) {
         vec[0] -= 1;
       }
     }
@@ -310,12 +310,12 @@ TEST(DatasetTest, FileBlobDataset) {
     int nperworker = data.size() / nworker;
     for (int i = 0; i < nworker; i++) {
       auto device = fl::getDevice();
-      workers.push_back(std::thread([i, blob, nperworker, device, &thdata]() {
+      workers.emplace_back([i, blob, nperworker, device, &thdata]() {
         fl::setDevice(device);
         for (int j = 0; j < nperworker; j++) {
           thdata[i * nperworker + j] = blob->get(i * nperworker + j);
         }
-      }));
+      });
     }
     for (int i = 0; i < nworker; i++) {
       workers[i].join();
@@ -348,12 +348,12 @@ TEST(DatasetTest, FileBlobDataset) {
       int nperworker = data.size() / nworker;
       auto device = fl::getDevice();
       for (int i = 0; i < nworker; i++) {
-        workers.push_back(std::thread([i, blob, nperworker, device, &data]() {
+        workers.emplace_back([i, blob, nperworker, device, &data]() {
           fl::setDevice(device);
           for (int j = 0; j < nperworker; j++) {
             blob->add(data[i * nperworker + j]);
           }
-        }));
+        });
       }
       for (int i = 0; i < nworker; i++) {
         workers[i].join();
@@ -443,7 +443,7 @@ TEST(DatasetTest, MemoryBlobDataset) {
 
     // check hostTransform
     for (auto& vec : data) {
-      if (vec.size() > 0) {
+      if (!vec.empty()) {
         vec[0] += 1;
       }
     }
@@ -466,12 +466,12 @@ TEST(DatasetTest, MemoryBlobDataset) {
     int nperworker = data.size() / nworker;
     for (int i = 0; i < nworker; i++) {
       auto device = fl::getDevice();
-      workers.push_back(std::thread([i, &blob, nperworker, device, &thdata]() {
+      workers.emplace_back([i, &blob, nperworker, device, &thdata]() {
         fl::setDevice(device);
         for (int j = 0; j < nperworker; j++) {
           thdata[i * nperworker + j] = blob.get(i * nperworker + j);
         }
-      }));
+      });
     }
     for (int i = 0; i < nworker; i++) {
       workers[i].join();
@@ -503,12 +503,12 @@ TEST(DatasetTest, MemoryBlobDataset) {
       int nperworker = data.size() / nworker;
       auto device = fl::getDevice();
       for (int i = 0; i < nworker; i++) {
-        workers.push_back(std::thread([i, &wblob, nperworker, device, &data]() {
+        workers.emplace_back([i, &wblob, nperworker, device, &data]() {
           fl::setDevice(device);
           for (int j = 0; j < nperworker; j++) {
             wblob.add(data[i * nperworker + j]);
           }
-        }));
+        });
       }
       for (int i = 0; i < nworker; i++) {
         workers[i].join();

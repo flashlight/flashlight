@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -11,9 +11,7 @@
 #include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/pkg/speech/criterion/attention/Defines.h"
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 SoftPretrainWindow::SoftPretrainWindow(double std) : std_(std) {}
 
@@ -74,6 +72,4 @@ Variable SoftPretrainWindow::computeVectorizedWindow(
   return compute(
       targetLen, inputSteps, batchSize, inputSizes, targetSizes, decoderSteps);
 }
-} // namespace speech
-} // namespace pkg
 } // namespace fl

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -99,7 +99,7 @@ Variable LayerNorm::forward(const Variable& _input) {
   if (!axesContinuous) {
     std::vector<std::pair<int, int>> restoreDims;
     for (size_t i = 0; i < reorderDims.ndim(); ++i) {
-      restoreDims.push_back(std::make_pair(reorderDims[i], i));
+      restoreDims.emplace_back(reorderDims[i], i);
     }
     std::sort(restoreDims.begin(), restoreDims.end());
     Shape restoreDimsShape(std::vector<Dim>(restoreDims.size()));

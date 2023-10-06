@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -31,7 +31,7 @@ std::unique_ptr<TensorAdapterBase> Tensor::releaseAdapter() {
   return std::move(impl_);
 }
 
-Tensor::~Tensor() {}
+Tensor::~Tensor() = default;
 
 Tensor::Tensor(const Tensor& tensor) : impl_(tensor.impl_->clone()) {}
 

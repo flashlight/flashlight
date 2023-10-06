@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -19,9 +19,7 @@ using namespace fl::pkg::runtime;
 using namespace fl::pkg::text;
 using namespace fl::lib;
 
-namespace fl {
-namespace app {
-namespace lm {
+namespace fl::app::lm {
 
 /* ================================ FLAGS ================================ */
 
@@ -913,6 +911,4 @@ std::string Trainer::getProgress() const {
   return oss.str();
 }
 
-} // namespace lm
-} // namespace app
 } // namespace fl

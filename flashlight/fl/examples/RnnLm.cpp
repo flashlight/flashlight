@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -85,7 +85,7 @@ class RnnLm : public Container {
                 hidden_size,
                 2, /* Num layers. */
                 RnnMode::LSTM,
-                0 /* Dropout */)),
+                false /* Dropout */)),
         linear(Linear(hidden_size, vocab_size)) {
     add(embed);
     add(rnn);

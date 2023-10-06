@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -13,8 +13,7 @@
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/backend/af/ArrayFireTensor.h"
 
-namespace fl {
-namespace detail {
+namespace fl::detail {
 
 af::dtype flToAfType(fl::dtype type) {
   static const std::unordered_map<fl::dtype, af::dtype>
@@ -296,5 +295,4 @@ af_border_type flToAfPadType(PadType type) {
   }
 }
 
-} // namespace detail
 } // namespace fl

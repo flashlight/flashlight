@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -9,9 +9,7 @@
 
 #include "flashlight/fl/flashlight.h"
 
-namespace fl {
-namespace pkg {
-namespace runtime {
+namespace fl::pkg::runtime {
 
 void initDistributed(
     int worldRank,
@@ -102,6 +100,4 @@ void allreduceSet(fl::TopKMeter& mtr, Tensor& val) {
   auto valVec = val.toHostVector<int32_t>();
   mtr.set(valVec[0], valVec[1]);
 }
-} // namespace runtime
-} // namespace pkg
 } // namespace fl

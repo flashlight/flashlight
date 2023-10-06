@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -16,10 +16,7 @@
 #include "flashlight/pkg/speech/augmentation/SoundEffectUtil.h"
 #include "flashlight/pkg/speech/data/Sound.h"
 
-namespace fl {
-namespace pkg {
-namespace speech {
-namespace sfx {
+namespace fl::pkg::speech::sfx {
 
 std::string AdditiveNoise::Config::prettyString() const {
   std::stringstream ss;
@@ -97,7 +94,4 @@ void AdditiveNoise::apply(std::vector<float>& signal) {
   }
 }
 
-} // namespace sfx
-} // namespace speech
-} // namespace pkg
 } // namespace fl
