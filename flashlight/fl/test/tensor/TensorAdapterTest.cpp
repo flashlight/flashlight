@@ -8,8 +8,9 @@
 #include <gtest/gtest.h>
 
 #include "flashlight/fl/tensor/DefaultTensorType.h"
-#include "flashlight/fl/tensor/TensorBase.h"
+#include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/Random.h"
+#include "flashlight/fl/tensor/TensorBase.h"
 
 using namespace ::testing;
 using namespace fl;
