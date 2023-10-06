@@ -274,7 +274,7 @@ commands:
       - run:
           name: "Set up micromamba shell"
           command: |
-            echo 'eval "$(/home/circleci/.local/bin/micromamba shell hook --shell=bash)"' >> "$BASH_ENV"
+            echo '$MAMBA_EXE shell hook --shell=bash' >> "$BASH_ENV"
       - run:
           name: "Create micromamba environment for oneDNN"
           command: |
