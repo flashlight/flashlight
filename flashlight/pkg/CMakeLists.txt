@@ -1,9 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
 
-if (MSVC)
-  message(FATAL_ERROR "Building fl packages (pkg) with MSVC not yet supported")
-endif()
-
 set(FL_PKG_DIR ${CMAKE_CURRENT_LIST_DIR})
 
 function(register_package)
@@ -26,6 +22,10 @@ function(register_package)
   )
 
   if(${_option_name})
+    if (MSVC)
+      message(FATAL_ERROR "Building fl packages (pkg) with MSVC not yet supported")
+    endif()
+
     message(STATUS "Building Flashlight ${_pkg_name_lower} package.")
     include(${FL_PKG_DIR}/${_pkg_name_lower}/CMakeLists.txt)
   endif()
