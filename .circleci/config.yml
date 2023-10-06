@@ -261,7 +261,7 @@ commands:
                   brew install micromamba
                   echo 'export MAMBA_EXE="/opt/homebrew/bin/micromamba"' >> $BASH_ENV
                   echo 'export MAMBA_ROOT_PREFIX="~/micromamba"' >> $BASH_ENV
-                  echo '__mamba_setup="$(~/.local/bin/micromamba shell hook --shell bash --prefix ~/micromamba 2> /dev/null)"' >> $BASH_ENV
+                  echo '__mamba_setup="$(/opt/homebrew/bin/micromamba shell hook --shell bash)"' >> $BASH_ENV
                   echo 'eval "$__mamba_setup"' >> $BASH_ENV
       - when:
           condition:
@@ -275,7 +275,7 @@ commands:
                   curl -L micro.mamba.pm/install.sh | bash
                   echo 'export MAMBA_EXE="~/.local/bin/micromamba"' >> $BASH_ENV
                   echo 'export MAMBA_ROOT_PREFIX="~/micromamba"' >> $BASH_ENV
-                  echo '__mamba_setup="$(~/.local/bin/micromamba shell hook --shell bash --prefix ~/micromamba 2> /dev/null)"' >> $BASH_ENV
+                  echo '__mamba_setup="$(~/.local/bin/micromamba shell hook --shell bash)"' >> $BASH_ENV
                   echo 'eval "$__mamba_setup"' >> $BASH_ENV
       - run:
           name: "Create micromamba environment for oneDNN"
