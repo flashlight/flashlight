@@ -55,8 +55,8 @@ enum class StorageType { Dense = 0, CSR = 1, CSC = 2, COO = 3 };
 
 namespace detail {
 
-std::unique_ptr<TensorAdapterBase> releaseAdapter(Tensor&& t);
-std::unique_ptr<TensorAdapterBase> releaseAdapterUnsafe(Tensor& t);
+FL_API std::unique_ptr<TensorAdapterBase> releaseAdapter(Tensor&& t);
+FL_API std::unique_ptr<TensorAdapterBase> releaseAdapterUnsafe(Tensor& t);
 
 } // namespace detail
 
@@ -1480,7 +1480,7 @@ argmax(const Tensor& input, const unsigned axis, const bool keepDims = false);
  * as singleton dimensions rather than collapsing them
  * @return a tensor containing the indices of the max values along each axis
  */
-Tensor
+FL_API Tensor
 argmin(const Tensor& input, const unsigned axis, const bool keepDims = false);
 
 /**

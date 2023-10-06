@@ -13,19 +13,23 @@
 
 // Machinery for symbol visibility
 #if defined(_WIN32) || defined(_MSC_VER)
-
+#if FL_COMPILE_LIBRARY
+// Only annotate if building shared libs/DLLs
 #ifdef FL_DLL
 #define FL_API __declspec(dllexport)
 #else // FL_DLL
 #define FL_API __declspec(dllimport)
 #endif // FL_DLL
-
-#else // defined(_WIN32) || defined(_MSC_VER)
-
+#else // FL_COMPILE_LIBRARY
+#define FL_API
+#endif // FL_COMPILE_LIBRARY
+#define FL_DEPRECATED __dllspec(deprecated(msg))
+#else
+// Non-MSVC compilers
 #define FL_API __attribute__((visibility("default")))
 #define FL_DEPRECATED(msg) __attribute__((deprecated(msg)))
-
 #endif // defined(_WIN32) || defined(_MSC_VER)
+
 
 namespace fl {
 

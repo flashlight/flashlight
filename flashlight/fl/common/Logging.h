@@ -142,7 +142,7 @@ constexpr int DEFAULT_MAX_VERBOSE_FL_LOGGING_LEVEL = 0;
   if (exp)                     \
   fl::VerboseLogging(level, __FILE__, __LINE__)
 
-class Logging {
+class FL_API Logging {
  public:
   Logging(LogLevel level, const char* filename, int lineNumber);
   ~Logging();
@@ -170,7 +170,7 @@ class Logging {
   std::ostream* outputStreamPtr_;
 };
 
-class VerboseLogging {
+class FL_API VerboseLogging {
  public:
   VerboseLogging(int level, const char* filename, int lineNumber);
   ~VerboseLogging();
@@ -200,20 +200,20 @@ class VerboseLogging {
 // Can't use template here since the compiler will try resolve
 // to all kind of other existing function before it considers
 // instantiating a template.
-Logging&& operator<<(Logging&& log, const std::string& s);
-Logging&& operator<<(Logging&& log, const char* s);
-Logging&& operator<<(Logging&& log, const void* s);
-Logging&& operator<<(Logging&& log, char c);
-Logging&& operator<<(Logging&& log, unsigned char u);
-Logging&& operator<<(Logging&& log, int i);
-Logging&& operator<<(Logging&& log, unsigned int u);
-Logging&& operator<<(Logging&& log, long l);
-Logging&& operator<<(Logging&& log, long long l);
-Logging&& operator<<(Logging&& log, unsigned long u);
-Logging&& operator<<(Logging&& log, unsigned long long u);
-Logging&& operator<<(Logging&& log, float f);
-Logging&& operator<<(Logging&& log, double d);
-Logging&& operator<<(Logging&& log, bool b);
+FL_API Logging&& operator<<(Logging&& log, const std::string& s);
+FL_API Logging&& operator<<(Logging&& log, const char* s);
+FL_API Logging&& operator<<(Logging&& log, const void* s);
+FL_API Logging&& operator<<(Logging&& log, char c);
+FL_API Logging&& operator<<(Logging&& log, unsigned char u);
+FL_API Logging&& operator<<(Logging&& log, int i);
+FL_API Logging&& operator<<(Logging&& log, unsigned int u);
+FL_API Logging&& operator<<(Logging&& log, long l);
+FL_API Logging&& operator<<(Logging&& log, long long l);
+FL_API Logging&& operator<<(Logging&& log, unsigned long u);
+FL_API Logging&& operator<<(Logging&& log, unsigned long long u);
+FL_API Logging&& operator<<(Logging&& log, float f);
+FL_API Logging&& operator<<(Logging&& log, double d);
+FL_API Logging&& operator<<(Logging&& log, bool b);
 
 // Catch all designed mostly for <iomanip> stuff.
 template <typename T>
@@ -221,18 +221,18 @@ Logging&& operator<<(Logging&& log, const T& t) {
   return log.print(t);
 }
 
-VerboseLogging&& operator<<(VerboseLogging&& log, const std::string& s);
-VerboseLogging&& operator<<(VerboseLogging&& log, const char* s);
-VerboseLogging&& operator<<(VerboseLogging&& log, const void* s);
-VerboseLogging&& operator<<(VerboseLogging&& log, char c);
-VerboseLogging&& operator<<(VerboseLogging&& log, unsigned char u);
-VerboseLogging&& operator<<(VerboseLogging&& log, int i);
-VerboseLogging&& operator<<(VerboseLogging&& log, unsigned int u);
-VerboseLogging&& operator<<(VerboseLogging&& log, long l);
-VerboseLogging&& operator<<(VerboseLogging&& log, unsigned long u);
-VerboseLogging&& operator<<(VerboseLogging&& log, float f);
-VerboseLogging&& operator<<(VerboseLogging&& log, double d);
-VerboseLogging&& operator<<(VerboseLogging&& log, bool b);
+FL_API VerboseLogging&& operator<<(VerboseLogging&& log, const std::string& s);
+FL_API VerboseLogging&& operator<<(VerboseLogging&& log, const char* s);
+FL_API VerboseLogging&& operator<<(VerboseLogging&& log, const void* s);
+FL_API VerboseLogging&& operator<<(VerboseLogging&& log, char c);
+FL_API VerboseLogging&& operator<<(VerboseLogging&& log, unsigned char u);
+FL_API VerboseLogging&& operator<<(VerboseLogging&& log, int i);
+FL_API VerboseLogging&& operator<<(VerboseLogging&& log, unsigned int u);
+FL_API VerboseLogging&& operator<<(VerboseLogging&& log, long l);
+FL_API VerboseLogging&& operator<<(VerboseLogging&& log, unsigned long u);
+FL_API VerboseLogging&& operator<<(VerboseLogging&& log, float f);
+FL_API VerboseLogging&& operator<<(VerboseLogging&& log, double d);
+FL_API VerboseLogging&& operator<<(VerboseLogging&& log, bool b);
 
 // Catch all designed mostly for <iomanip> stuff.
 template <typename T>

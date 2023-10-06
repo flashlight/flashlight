@@ -25,20 +25,20 @@ namespace cuda {
  *
  * @return the native id of the active CUDA device.
  */
-int getActiveDeviceId();
+FL_API int getActiveDeviceId();
 
 /**
  * Return a mapping from native CUDA device id to available CUDA devices.
  *
  * @return an unordered map from native CUDA device id to CUDA device.
  */
-std::unordered_map<int, const std::unique_ptr<Device>> createCUDADevices();
+FL_API std::unordered_map<int, const std::unique_ptr<Device>> createCUDADevices();
 
 namespace detail {
 
-void check(cudaError_t err, const char* file, int line);
+FL_API void check(cudaError_t err, const char* file, int line);
 
-void check(cudaError_t err, const char* prefix, const char* file, int line);
+FL_API void check(cudaError_t err, const char* prefix, const char* file, int line);
 
 } // namespace detail
 

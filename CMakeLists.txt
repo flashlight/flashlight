@@ -111,10 +111,12 @@ setup_install_headers(${FL_CORE_DIR} ${FL_INSTALL_INC_DIR_HEADER_LOC})
 # backend registration
 target_compile_definitions(flashlight
   PUBLIC
-  FL_DLL
   FL_BACKEND_CPU=$<BOOL:${FL_USE_CPU}>
   FL_BACKEND_CUDA=$<BOOL:${FL_USE_CUDA}>
   FL_BUILD_PROFILING=$<BOOL:${FL_BUILD_PROFILING}>
+  FL_COMPILE_LIBRARY=$<BOOL:${BUILD_SHARED_LIBS}>
+  PRIVATE
+  FL_DLL
   )
 
 if (FL_CODE_COVERAGE)

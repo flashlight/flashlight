@@ -38,7 +38,7 @@ Tensor toTensor(T&&... t) {
  * literally. Calls to their member implementations are dispatched via visiting
  * Tensor or other interfaces.
  */
-class TensorAdapterBase {
+class FL_API TensorAdapterBase {
  public:
   TensorAdapterBase() = default;
   virtual ~TensorAdapterBase() = default;
