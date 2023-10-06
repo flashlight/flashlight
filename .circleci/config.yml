@@ -270,12 +270,10 @@ commands:
                   DEBIAN_FRONTEND=noninteractive sudo apt upgrade # needed for curl not to break
                   curl -L micro.mamba.pm/install.sh | bash
       - run:
-          name: "Set up micromamba shell"
+          name: "Set up micromamba shell, create env, and set up activation"
           command: |
             echo "micromamba shell hook --shell bash" >> $BASH_ENV
-      - run:
-          name: "Create micromamba environment for oneDNN"
-          command: |
+            micromamba shell hook --shell bash
             micromamba create -n onednn -y
             echo "micromamba activate onednn" >> $BASH_ENV
       - run:
