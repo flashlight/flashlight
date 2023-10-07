@@ -315,7 +315,7 @@ TEST(NNSerializationTest, FileSize) {
 
 TEST(NNSerializationTest, VariableTwice) {
   Variable v(Tensor({1000, 1000}), false);
-  const auto& v2 = v; // The array for this variable shouldn't be saved again
+  auto v2 = v; // The array for this variable shouldn't be saved again
 
   const fs::path path = fs::temp_directory_path() / "ContainerWithParams.mdl";
   save(path, v2, v);
