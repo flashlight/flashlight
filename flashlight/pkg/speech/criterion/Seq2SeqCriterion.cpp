@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -16,13 +16,11 @@
 #include "flashlight/pkg/speech/common/Defines.h"
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 namespace detail {
 Seq2SeqState concatState(std::vector<Seq2SeqState>& stateVec) {
-  if (stateVec.size() < 1) {
+  if (stateVec.empty()) {
     throw std::runtime_error("Empty stateVec");
   }
 
@@ -337,7 +335,7 @@ std::vector<int> Seq2SeqCriterion::beamPath(
     const Tensor& inputSizes,
     int beamSize /* = 10 */) {
   std::vector<Seq2SeqCriterion::CandidateHypo> beam;
-  beam.emplace_back(CandidateHypo{});
+  beam.emplace_back();
   auto beamPaths =
       beamSearch(input, inputSizes, beam, beamSize, maxDecoderOutputLen_);
   return beamPaths[0].path;
@@ -706,6 +704,4 @@ EmittingModelUpdateFunc buildSeq2SeqRnnUpdateFunction(
   return emittingModelUpdateFunc;
 }
 
-} // namespace speech
-} // namespace pkg
 } // namespace fl

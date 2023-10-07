@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -241,7 +241,7 @@ TEST(IndexTest, TensorIndex) {
   // Out of range indices
   auto i = fl::arange({10}, 0, fl::dtype::u32);
   auto b = fl::rand({20, 20});
-  auto ref = b;
+  const auto& ref = b;
   ASSERT_EQ(b(i).shape(), b(fl::range(10)).shape());
   ASSERT_TRUE(allClose(b(i), b(fl::range(10))));
 

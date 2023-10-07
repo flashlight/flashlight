@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -46,8 +46,8 @@ int main(int /* unused */, const char** /* unused */) {
   model.train();
   criterion.train();
 
-  Tensor in_ = data;
-  Tensor out_ = label;
+  const Tensor& in_ = data;
+  const Tensor& out_ = label;
   fl::Timer s;
   for (int i = 0; i < nepochs; i++) {
     if (i == warmup_epochs) {

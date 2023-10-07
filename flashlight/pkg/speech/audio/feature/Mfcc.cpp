@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -11,9 +11,7 @@
 
 #include "flashlight/pkg/speech/audio/feature/SpeechUtils.h"
 
-namespace fl {
-namespace lib {
-namespace audio {
+namespace fl::lib::audio {
 
 Mfcc::Mfcc(const FeatureParams& params)
     : Mfsc(params),
@@ -72,6 +70,4 @@ void Mfcc::validateMfccParams() const {
     throw std::invalid_argument("Mfcc: lifterparam must be nonnegative");
   }
 }
-} // namespace audio
-} // namespace lib
 } // namespace fl

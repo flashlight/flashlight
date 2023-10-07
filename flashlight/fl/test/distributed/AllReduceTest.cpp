@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -89,21 +89,21 @@ TEST(Distributed, AllReduceSetAsync) {
   unsigned vSize = (1 << 20);
   std::vector<Variable> vars;
   for (size_t i = 0; i < 5; ++i) {
-    vars.push_back(Variable(fl::full({vSize}, rank + 1, dtype::f32), false));
+    vars.emplace_back(fl::full({vSize}, rank + 1, dtype::f32), false);
   }
 
   allReduceMultiple(vars, 2.0, async, contiguous);
   syncDistributed();
 
   float expected_val = size * (size + 1.0);
-  for (auto var : vars) {
+  for (const auto& var : vars) {
     ASSERT_TRUE(fl::all(var.tensor() == expected_val).scalar<char>());
   }
 
   // Exceed the size of the contiguous buffer without caching, and trigger a
   // contiguous sync with a tensor that is too large
   for (size_t i = 0; i < 25; ++i) {
-    vars.push_back(Variable(fl::full({vSize}, rank, dtype::f32), false));
+    vars.emplace_back(fl::full({vSize}, rank, dtype::f32), false);
   }
   if (size > 1) {
     ASSERT_THROW(
@@ -164,7 +164,7 @@ TEST(Distributed, CoalescingReducer) {
   unsigned vSize = (1 << 20);
   std::vector<Variable> vars;
   for (size_t i = 0; i < 1000; ++i) {
-    vars.push_back(Variable(fl::full({vSize}, rank + 1, dtype::f32), false));
+    vars.emplace_back(fl::full({vSize}, rank + 1, dtype::f32), false);
   }
 
   for (size_t i = 0; i < vars.size(); ++i) {
@@ -175,7 +175,7 @@ TEST(Distributed, CoalescingReducer) {
   }
 
   float expected_val = size * (size + 1.0);
-  for (auto var : vars) {
+  for (const auto& var : vars) {
     // The reducer scales down by a factor of 1 / size
     auto arr = var.tensor() * (size * 2);
     ASSERT_TRUE(fl::all(arr == expected_val).scalar<char>());

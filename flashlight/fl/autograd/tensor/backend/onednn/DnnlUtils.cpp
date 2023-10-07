@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -22,8 +22,7 @@
   #include "flashlight/fl/common/OpenClUtils.h"
 #endif
 
-namespace fl {
-namespace detail {
+namespace fl::detail {
 
 DnnlStream::DnnlStream(dnnl::engine engine) {
 #if FL_BACKEND_OPENCL
@@ -156,5 +155,4 @@ dnnl::algorithm dnnlMapToPoolingMode(const PoolingMode mode) {
   }
 }
 
-} // namespace detail
 } // namespace fl

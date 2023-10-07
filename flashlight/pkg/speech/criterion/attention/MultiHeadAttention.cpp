@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -13,9 +13,7 @@
 #include <cmath>
 #include <stdexcept>
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 MultiHeadContentAttention::MultiHeadContentAttention(
     int dim,
@@ -112,6 +110,4 @@ std::pair<Variable, Variable> MultiHeadContentAttention::forwardBase(
 std::string MultiHeadContentAttention::prettyString() const {
   return "MultiHeadContentAttention";
 }
-} // namespace speech
-} // namespace pkg
 } // namespace fl

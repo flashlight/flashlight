@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -311,7 +311,7 @@ TEST(MemoryFramework, AdapterInstallerDeviceInterfaceTest) {
       EXPECT_CALL(*mockMemoryManager, alloc(/* user lock */ true, 1, _, 1))
           .Times(Exactly(1));
       size_t aSize = 8;
-      void* a = af::alloc(aSize, af::dtype::f32);
+      void* a = af::allocV2(aSize * af::getSizeOf(af::dtype::f32));
       // Allocated memory should properly appear in our internal data structures
       // given correct passage of state
       EXPECT_EQ(memoryManager->lockedPtrToSizeMap.size(), 1);
@@ -354,7 +354,7 @@ TEST(MemoryFramework, AdapterInstallerDeviceInterfaceTest) {
       // unlock with user-locked memory (since we used af::alloc)
       EXPECT_CALL(*mockMemoryManager, unlock(a, /* user lock */ true))
           .Times(Exactly(1));
-      af::free(a);
+      af::freeV2(a);
       // Internal data structures should be updated accordingly to reflect
       // removal of a buffer
       EXPECT_EQ(memoryManager->totalBytes, aSize * sizeof(float) + b.bytes());
@@ -404,9 +404,10 @@ TEST(MemoryFramework, AdapterInstallerDeviceInterfaceTest) {
     EXPECT_CALL(*mockMemoryManager, unlock(_, _)).Times(Exactly(0));
     dim_t cDim = 4;
     size_t pSize = 8;
-    auto c = af::randu({cDim, cDim});
-    void* p = af::alloc(pSize, af::dtype::f32);
-    af::free(p);
+    const af::dtype type = af::dtype::f32;
+    auto c = af::randu({cDim, cDim}, type);
+    void* p = af::allocV2(pSize * af::getSizeOf(type));
+    af::freeV2(p);
   }
   // The custom memory is destroyed; check that the log stream, which is flushed
   // on destruction, contains the correct output
@@ -425,7 +426,7 @@ TEST(MemoryFramework, AdapterInstallerDeviceInterfaceTest) {
       "shutdown"};
   size_t idx = 0;
   for (std::string line; std::getline(logStream, line);) {
-    EXPECT_EQ(line.substr(0, line.find(" ")), expectedLinePrefixes[idx]);
+    EXPECT_EQ(line.substr(0, line.find(' ')), expectedLinePrefixes[idx]);
     idx++;
   }
 
@@ -433,9 +434,10 @@ TEST(MemoryFramework, AdapterInstallerDeviceInterfaceTest) {
   // been destroyed and its function pointers and closures invalidated
   dim_t cDim = 4;
   size_t pSize = 8;
-  auto c = af::randu({cDim, cDim});
-  void* p = af::alloc(pSize, af::dtype::f32);
-  af::free(p);
+  const af::dtype type = af::dtype::f32;
+  auto c = af::randu({cDim, cDim}, type);
+  void* p = af::allocV2(pSize * af::getSizeOf(type));
+  af::freeV2(p);
 }
 
 int main(int argc, char** argv) {

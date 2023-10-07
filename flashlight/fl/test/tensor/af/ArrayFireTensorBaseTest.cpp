@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -343,34 +343,37 @@ TEST(ArrayFireTensorBaseTest, median) {
 }
 
 TEST(ArrayFireTensorBaseTest, var) {
+  const bool bias = false;
+  af_var_bias biasMode = bias ? AF_VARIANCE_SAMPLE : AF_VARIANCE_POPULATION;
   auto a = fl::rand({3, 3});
-  ASSERT_EQ(fl::var(a).scalar<float>(), af::var<float>(toArray(a)));
+  ASSERT_EQ(fl::var(a).scalar<float>(), af::var<float>(toArray(a), biasMode));
   ASSERT_TRUE(allClose(
       toArray(fl::var(a, {0})),
-      detail::condenseIndices(af::var(toArray(a), /* biased = */ false, 0))));
+      detail::condenseIndices(af::var(toArray(a), /* mode = */ biasMode, 0))));
   ASSERT_TRUE(allClose(
       toArray(fl::var(a, {1})),
-      detail::condenseIndices(af::var(toArray(a), /* biased = */ false, 1))));
+      detail::condenseIndices(af::var(toArray(a), /* mode = */ biasMode, 1))));
   // Make sure multidimension matches computing for all
   ASSERT_FLOAT_EQ(
-      toArray(fl::var(a)).scalar<float>(), af::var<float>(toArray(a)));
+      toArray(fl::var(a)).scalar<float>(),
+      af::var<float>(toArray(a), biasMode));
   ASSERT_FLOAT_EQ(
       toArray(fl::var(a, {0, 1}, /* biased = */ true)).scalar<float>(),
-      af::var<float>(toArray(a), /* biased = */ true));
+      af::var<float>(toArray(a), /* mode = */ AF_VARIANCE_SAMPLE));
 }
 
 TEST(ArrayFireTensorBaseTest, std) {
   auto a = fl::rand({3, 3});
   ASSERT_TRUE(allClose(
       toArray(fl::std(a, {0}, /* keepDims = */ true)),
-      af::stdev(toArray(a), 0)));
+      af::stdev(toArray(a), AF_VARIANCE_POPULATION, 0)));
   ASSERT_TRUE(allClose(
       toArray(fl::std(a, {1}, /* keepDims = */ true)),
-      af::stdev(toArray(a), 1)));
+      af::stdev(toArray(a), AF_VARIANCE_POPULATION, 1)));
   // Make sure multidimension matches computing for all
   ASSERT_FLOAT_EQ(
       toArray(fl::std(a, {0, 1})).scalar<float>(),
-      std::sqrt(af::var<float>(toArray(a))));
+      std::sqrt(af::var<float>(toArray(a), AF_VARIANCE_POPULATION)));
 }
 
 TEST(ArrayFireTensorBaseTest, norm) {
