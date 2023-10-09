@@ -1,15 +1,13 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
 #include "flashlight/app/benchmark/models/LmTransformer.h"
 
-namespace fl {
-namespace app {
-namespace benchmark {
+namespace fl::app::benchmark {
 
 LmTransformer::LmTransformer(int64_t nLabel, bool fp16) : fp16_(fp16) {
   // Time x B x 1 x 1
@@ -85,6 +83,4 @@ std::string LmTransformer::prettyString() const {
   return ss.str();
 }
 
-} // namespace benchmark
-} // namespace app
 } // namespace fl

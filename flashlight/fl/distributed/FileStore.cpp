@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -21,9 +21,7 @@ static std::string encodeName(const std::string& name) {
 
 } // namespace
 
-namespace fl {
-
-namespace detail {
+namespace fl::detail {
 
 constexpr std::chrono::milliseconds FileStore::kDefaultTimeout;
 
@@ -112,7 +110,5 @@ fs::path FileStore::tmpPath(const std::string& name) {
 fs::path FileStore::objectPath(const std::string& name) {
   return basePath_ / fs::path(encodeName(name));
 }
-
-} // namespace detail
 
 } // namespace fl

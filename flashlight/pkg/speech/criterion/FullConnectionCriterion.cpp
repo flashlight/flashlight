@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -11,9 +11,7 @@
 
 #include "flashlight/pkg/speech/criterion/CriterionUtils.h"
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 FullConnectionCriterion::FullConnectionCriterion(
     int N,
@@ -35,6 +33,4 @@ std::unique_ptr<Module> FullConnectionCriterion::clone() const {
 std::string FullConnectionCriterion::prettyString() const {
   return "FullConnectionCriterion";
 }
-} // namespace speech
-} // namespace pkg
 } // namespace fl

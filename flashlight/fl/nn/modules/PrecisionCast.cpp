@@ -1,8 +1,7 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
- * All rights reserved.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -17,7 +16,7 @@ PrecisionCast::PrecisionCast(fl::dtype targetType) : targetType_(targetType) {}
 std::vector<Variable> PrecisionCast::forward(
     const std::vector<Variable>& inputs) {
   std::vector<Variable> outputs;
-  for (auto input : inputs) {
+  for (const auto& input : inputs) {
     auto output = input.astype(targetType_);
     outputs.push_back(output);
   }

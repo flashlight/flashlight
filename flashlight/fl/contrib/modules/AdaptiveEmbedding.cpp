@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -65,7 +65,7 @@ Variable AdaptiveEmbedding::forward(const Variable& input) {
     auto headEmbedding =
         embedding(flatInput(headMask), reorder(params_[0], {1, 0}));
     headEmbedding = matmul(params_[1], headEmbedding);
-    indices.push_back(Variable(fl::nonzero(headMask), false));
+    indices.emplace_back(fl::nonzero(headMask), false);
     embeddings.push_back(headEmbedding);
   }
 
@@ -77,11 +77,11 @@ Variable AdaptiveEmbedding::forward(const Variable& input) {
           flatInput(tailMask) - cutoff_[tailIdx - 1],
           reorder(params_[tailIdx * 2], {1, 0}));
       tailEmbedding = matmul(params_[tailIdx * 2 + 1], tailEmbedding);
-      indices.push_back(Variable(fl::nonzero(tailMask), false));
+      indices.emplace_back(fl::nonzero(tailMask), false);
       embeddings.push_back(tailEmbedding);
     }
   }
-  if (embeddings.size() == 0) {
+  if (embeddings.empty()) {
     throw std::invalid_argument(
         "Invalid input, no positions in the AdaptiveEmbedding layer");
   }

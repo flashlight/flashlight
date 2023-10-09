@@ -1,15 +1,13 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
 #include "flashlight/pkg/speech/criterion/ForceAlignmentCriterion.h"
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 ForceAlignmentCriterion::ForceAlignmentCriterion(
     int N,
@@ -31,6 +29,4 @@ std::unique_ptr<Module> ForceAlignmentCriterion::clone() const {
 std::string ForceAlignmentCriterion::prettyString() const {
   return "ForceAlignmentCriterion";
 }
-} // namespace speech
-} // namespace pkg
 } // namespace fl

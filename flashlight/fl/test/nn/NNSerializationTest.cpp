@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -25,7 +25,7 @@ namespace {
 
 class ContainerTestClass : public Sequential {
  public:
-  ContainerTestClass() {}
+  ContainerTestClass() = default;
 
   void addParam(const Variable& param) {
     params_.push_back(param);
@@ -215,7 +215,7 @@ TEST(NNSerializationTest, AdaptiveSoftMaxLoss) {
   auto activation3 = std::make_shared<AdaptiveSoftMax>(5, cutoff);
   auto asml3 = std::make_shared<AdaptiveSoftMaxLoss>(activation3);
   int index = 0;
-  for (auto param : asml->params()) {
+  for (const auto& param : asml->params()) {
     asml3->setParams(param, index);
     index++;
   }

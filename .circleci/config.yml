@@ -1,5 +1,5 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
-# All rights reserved.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
@@ -22,8 +22,6 @@ executors:
   macos-arm:
     macos:
       xcode: 14.2.0
-    environment:
-      HOMEBREW_NO_AUTO_UPDATE: "1"
     resource_class: macos.m1.medium.gen1
   linux-arm:
     machine:
@@ -263,7 +261,7 @@ commands:
                   brew install micromamba
                   echo 'export MAMBA_EXE="/opt/homebrew/bin/micromamba"' >> $BASH_ENV
                   echo 'export MAMBA_ROOT_PREFIX="$HOME/micromamba"' >> $BASH_ENV
-                  echo '__mamba_setup="$(/opt/homebrew/bin/micromamba shell hook --shell bash --prefix ~/micromamba 2> /dev/null)"' >> $BASH_ENV
+                  echo '__mamba_setup="$(/opt/homebrew/bin/micromamba shell hook --shell bash)"' >> $BASH_ENV
                   echo 'eval "$__mamba_setup"' >> $BASH_ENV
       - when:
           condition:
@@ -277,7 +275,7 @@ commands:
                   curl -L micro.mamba.pm/install.sh | bash
                   echo 'export MAMBA_EXE="$HOME/.local/bin/micromamba"' >> $BASH_ENV
                   echo 'export MAMBA_ROOT_PREFIX="$HOME/micromamba"' >> $BASH_ENV
-                  echo '__mamba_setup="$($HOME/.local/bin/micromamba shell hook --shell bash --prefix ~/micromamba 2> /dev/null)"' >> $BASH_ENV
+                  echo '__mamba_setup="$($HOME/.local/bin/micromamba shell hook --shell bash)"' >> $BASH_ENV
                   echo 'eval "$__mamba_setup"' >> $BASH_ENV
       - run:
           name: "Create micromamba environment for oneDNN"

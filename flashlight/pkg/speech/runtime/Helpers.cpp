@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -226,9 +226,9 @@ std::vector<std::pair<std::string, std::string>> parseValidSets(
     // assume the format is tag:filepath
     auto ts = fl::lib::splitOnAnyOf(":", s);
     if (ts.size() == 1) {
-      validTagSets.emplace_back(std::make_pair(s, s));
+      validTagSets.emplace_back(s, s);
     } else {
-      validTagSets.emplace_back(std::make_pair(ts[0], ts[1]));
+      validTagSets.emplace_back(ts[0], ts[1]);
     }
   }
   return validTagSets;
