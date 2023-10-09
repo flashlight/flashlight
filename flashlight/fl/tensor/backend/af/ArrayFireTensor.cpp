@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -152,8 +152,8 @@ af::array& ArrayFireTensor::getHandle() {
 
 std::unique_ptr<TensorAdapterBase> ArrayFireTensor::clone() const {
   af::array arr = getHandle(); // increment internal AF refcount
-  return std::unique_ptr<ArrayFireTensor>(
-      new ArrayFireTensor(std::move(arr), numDims()));
+  return std::make_unique<ArrayFireTensor>(
+      std::move(arr), numDims());
 }
 
 Tensor ArrayFireTensor::copy() {
@@ -409,7 +409,7 @@ af::array ArrayFireTensor::adjustInPlaceOperandDims(const Tensor& operand) {
           "ArrayFireTensor::adjustInPlaceOperandDims "
           "index size was 1 but tensor has greater than 1 dimension.");
     }
-  } else if (indices_ && indices_.value().size() > 0) {
+  } else if (indices_ && !indices_.value().empty()) {
     // All other indexing operations
     const auto& indices = indices_.value();
     const auto& indexTypes = indexTypes_.value();

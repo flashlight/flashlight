@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.  * All rights reserved.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -344,7 +344,7 @@ int main(int argc, char** argv) {
 
   std::unordered_map<std::string, float> lossWeights;
   for (int i = 0; i < numDecoderLayers; i++) {
-    for (auto l : lossWeightsBase) {
+    for (const auto& l : lossWeightsBase) {
       std::string key = l.first + "_" + std::to_string(i);
       lossWeights[key] = l.second;
     }
@@ -504,7 +504,7 @@ int main(int argc, char** argv) {
             criterion.forward(output[1], output[0], targetBoxes, targetClasses);
         // TODO{fl::Tensor} - explore using a scalar Tensor
         auto accumLoss = fl::Variable(fl::full({1}, 0, dataType), true);
-        for (auto losses : loss) {
+        for (const auto& losses : loss) {
           fl::Variable scaled_loss = weightDict[losses.first] * losses.second;
           accumLoss = scaled_loss + accumLoss;
         }
@@ -524,7 +524,7 @@ int main(int argc, char** argv) {
           continue;
         }
 
-        for (auto losses : loss) {
+        for (const auto& losses : loss) {
           fl::Variable scaled_loss = weightDict[losses.first] * losses.second;
           meters[losses.first].add(losses.second.tensor());
           meters[losses.first + "_weighted"].add(scaled_loss.tensor());

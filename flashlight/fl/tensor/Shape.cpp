@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -31,7 +31,7 @@ void Shape::checkDimsOrThrow(const size_t dim) const {
 }
 
 Dim Shape::elements() const {
-  if (dims_.size() == 0) {
+  if (dims_.empty()) {
     return kEmptyShapeNumberOfElements;
   }
   return std::accumulate(dims_.begin(), dims_.end(), 1, std::multiplies<Dim>());
