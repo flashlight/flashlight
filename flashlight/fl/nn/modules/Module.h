@@ -8,6 +8,7 @@
 #pragma once
 
 #include "flashlight/fl/autograd/Variable.h"
+#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/common/Serialization.h"
 
 #include <stdexcept>
@@ -21,7 +22,7 @@ namespace fl {
  * contains a collection of parameters that can be mutated, and will be
  * serialized and deserialized with the module.
  */
-class Module {
+class FL_API Module {
  private:
   /**
    * Serialize the module's parameters.
@@ -137,7 +138,7 @@ class Module {
  * `Variable` with a single `Variable` as output.
  * For example, `Sigmoid` module can be derived from `UnaryModule`.
  */
-class UnaryModule : public Module {
+class FL_API UnaryModule : public Module {
  public:
   UnaryModule();
 
@@ -160,7 +161,7 @@ class UnaryModule : public Module {
  * `Variable`s with a single `Variable` as output.
  * For example, `BinaryCrossEntropy` Loss can be derived from `BinaryModule`.
  */
-class BinaryModule : public Module {
+class FL_API BinaryModule : public Module {
  public:
   BinaryModule();
 

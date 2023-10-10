@@ -16,7 +16,7 @@ namespace fl {
  * This layer takes in an input of shape [`input_size`, *, *, *] and transforms
  * it to an output of shape [`output_size`, *, *, *].
  */
-class Linear : public UnaryModule {
+class FL_API Linear : public UnaryModule {
  private:
   Linear() = default; // Intentionally private
 

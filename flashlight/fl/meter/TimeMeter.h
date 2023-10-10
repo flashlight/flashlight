@@ -9,9 +9,12 @@
 
 #include <chrono>
 
+#include "flashlight/fl/common/Defines.h"
+
 namespace fl {
 
-/** An implementation of timer, which measures the wall clock time.
+/**
+ * An implementation of timer, which measures the wall clock time.
  * Example usage:
  *
  * \code
@@ -22,7 +25,7 @@ namespace fl {
  * double time = meter.value();
  * \endcode
  */
-class TimeMeter {
+class FL_API TimeMeter {
  public:
   /** Constructor of `TimeMeter`. An instance will maintain a timer which is
    * initialized as stopped. The flag `unit` indicates if there is multiple

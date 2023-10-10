@@ -30,7 +30,7 @@ namespace fl {
  *`@param worldRank 0-indexed rank of the current process
  * @param params Additional parameters (if any) needed for initialization
  */
-void distributedInit(
+FL_API void distributedInit(
     DistributedInit initMethod,
     int worldRank,
     int worldSize,
@@ -39,24 +39,24 @@ void distributedInit(
 /**
  * Returns whether the distributed environment has been initialized
  */
-bool isDistributedInit();
+FL_API bool isDistributedInit();
 
 /**
  * Returns the backend used for distributed setup
  */
-DistributedBackend distributedBackend();
+FL_API DistributedBackend distributedBackend();
 
 /**
  * Returns rank of the current process in the communication group (zero-based).
  * Returns 0 if distributed environment is not initialized
  */
-int getWorldRank();
+FL_API int getWorldRank();
 
 /**
  * Returns total process in the communication group
  * Returns 1 if distributed environment is not initialized
  */
-int getWorldSize();
+FL_API int getWorldSize();
 
 /**
  * Synchronizes a the array wrapped by the Variable with allreduce.
@@ -68,7 +68,7 @@ int getWorldSize();
  * ``syncDistributed`` *must* be called in order to ensure the Flashlight CUDA
  * stream waits until ``allReduce`` is complete and uses updated values.
  */
-void allReduce(Variable& var, double scale = 1.0, bool async = false);
+FL_API void allReduce(Variable& var, double scale = 1.0, bool async = false);
 
 /**
  * Synchronizes a single Flashlight array with allreduce.
@@ -80,7 +80,7 @@ void allReduce(Variable& var, double scale = 1.0, bool async = false);
  * and worker streams wait until ``allReduce`` is complete and uses
  * updated values.
  */
-void allReduce(Tensor& arr, bool async = false);
+FL_API void allReduce(Tensor& arr, bool async = false);
 
 /**
  * Synchronizes a the arrays wrapped by a vector of Variables with allreduce.
@@ -95,7 +95,7 @@ void allReduce(Tensor& arr, bool async = false);
  * @param[in] contiguous copy data for each Variable into a contiguous buffer
  * before performing the allReduce operation
  */
-void allReduceMultiple(
+FL_API void allReduceMultiple(
     std::vector<Variable> vars,
     double scale = 1.0,
     bool async = false,
@@ -113,7 +113,7 @@ void allReduceMultiple(
  * @param[in] contiguous copy data for each Variable into a contiguous buffer
  * before performing the allReduce operation
  */
-void allReduceMultiple(
+FL_API void allReduceMultiple(
     std::vector<Tensor*> arrs,
     bool async = false,
     bool contiguous = false);
@@ -128,12 +128,12 @@ void allReduceMultiple(
  * no-op, since no operations will be enqueued on the distributed compute
  * stream.
  */
-void syncDistributed();
+FL_API void syncDistributed();
 
 /**
  * Blocks until all CPU processes have reached this routine.
  */
-void barrier();
+FL_API void barrier();
 
 /** @} */
 

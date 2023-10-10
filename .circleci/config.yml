@@ -401,8 +401,7 @@ commands:
               -DFL_USE_ONEDNN=$([ "<< parameters.backend >>" == "onednn" ] || [ "<< parameters.autograd_backend >>" == "onednn" ] && echo "ON" || echo "OFF") \
               -DFL_USE_NCCL=$(([ "<< parameters.platform >>" == "linux" ] || [ "<< parameters.platform >>" == "windows" ]) && [ "<< parameters.distributed_backend >>" == "nccl" ] && echo "ON" || echo "OFF") \
               -DFL_USE_GLOO=OFF \
-              -DFL_USE_BACKWARD_CPP=ON \
-              -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON
+              -DFL_USE_BACKWARD_CPP=ON
             cmake --build build --parallel << parameters.build_parallelism >>
 
   test-flashlight:

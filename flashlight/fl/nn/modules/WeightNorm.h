@@ -29,7 +29,7 @@ namespace fl {
  * Accelerate Training of Deep Neural Networks](
  * https://arxiv.org/abs/1602.07868)
  */
-class WeightNorm : public Module {
+class FL_API WeightNorm : public Module {
  private:
   WeightNorm() = default;
 

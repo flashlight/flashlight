@@ -10,9 +10,8 @@
 #include <future>
 #include <queue>
 
-#include "flashlight/fl/dataset/Dataset.h"
-
 #include "flashlight/fl/common/threadpool/ThreadPool.h"
+#include "flashlight/fl/dataset/Dataset.h"
 
 namespace fl {
 
@@ -36,7 +35,7 @@ namespace fl {
   }
   \endcode
  */
-class PrefetchDataset : public Dataset {
+class FL_API PrefetchDataset : public Dataset {
  public:
   /**
    * Creates a `PrefetchDataset`.

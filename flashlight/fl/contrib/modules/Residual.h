@@ -51,7 +51,7 @@ namespace fl {
   // ...
   \endcode
  */
-class Residual : public Container {
+class FL_API Residual : public Container {
  private:
   FL_SAVE_LOAD_WITH_BASE(Container, shortcut_, scales_, projectionsIndices_)
 

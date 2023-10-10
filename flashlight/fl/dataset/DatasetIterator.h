@@ -11,16 +11,19 @@
 
 namespace fl {
 namespace detail {
-// class DatasetIterator
-//
-// STL style iterator class to easily iterate over a dataset
-// Example usage:
-//    Tensor tensor = fl::rand({1, 2, 3});
-//    TensorDataset tensords(std::vector<Tensor>{tensor});
-//    for (auto& sample : tensords) {
-//      // do something
-//    }
 
+/**
+ * STL style iterator class to easily iterate over a dataset.
+ *
+ * Example:
+  \ code{.cpp}
+  Tensor tensor = fl::rand({1, 2, 3});
+  TensorDataset tensords(std::vector<Tensor>{tensor});
+  for (auto& sample : tensords) {
+    // do something
+  }
+  \endcode
+ */
 template <typename D, typename F>
 class DatasetIterator {
  protected:
@@ -71,5 +74,6 @@ class DatasetIterator {
     return (idx_ != that.idx_);
   }
 };
+
 } // namespace detail
 } // namespace fl
