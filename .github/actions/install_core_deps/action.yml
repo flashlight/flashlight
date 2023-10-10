@@ -44,7 +44,7 @@ runs:
       uses: mamba-org/setup-micromamba@v1
       with:
         environment-name: flashlight
-        create-args: onednn gxx=11
+        create-args: -c conda-forge onednn gxx=11
       if: inputs.backend == 'oneDNN' || inputs.autograd_backend == 'oneDNN'
     # MPI
     - name: "Install OpenMPI (Linux)"
