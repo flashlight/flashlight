@@ -66,11 +66,11 @@ class Module {
   std::vector<Variable> params() const;
 
   /**
-   * Gets the nunber of parameters of the module.
+   * Gets the nunber of parameter tensors of the module.
    *
-   * @return the number of parameters
+   * @return the number of parameter tensors
    */
-  int numParams() const;
+  int numParamTensors() const;
 
   /**
    * Switches the module to training mode. Changes all parameters so that
@@ -99,7 +99,7 @@ class Module {
    * ``params_.size() - 1``), then an error will be thrown. A new parameter
    * will not be created at a specified index if out of bounds.
    *
-   * @param var the new replacement `Variable`
+   * @param[in] var the new replacement `Variable`
    * @param position The index of the parameter which will be replaced in
    * `params_`
    */

@@ -47,7 +47,31 @@ class Container : public Module {
 
   /**
    * Find orphaned params (i.e. params not in modules contained in the modules_
-   * list).
+   * list). This can be used to preserve the order of orphaned params when
+   * copying/cloning a container. std::unordered_multimap<module_idx, param_idx>
+   * The module_idx is used to identify after which module params should be
+   * serted and the param_idx is used to index the specific param. The following
+   * example demonstrates its usage by ensuring params and modules are inserted
+   * in the same order when making a copy:
+   * \code
+      void copy(const MyContainer& other) {
+        auto orphanParamIdxMap = other.getOrphanedParamsIdxMap();
+        for (int i = -1; i < static_cast<int>(other.modules_.size()); ++i) {
+          if (i >= 0) {
+            add(other.modules_[i]->clone());
+          }
+          auto [paramIter, pEnd] = orphanParamIdxMap.equal_range(i);
+          for (; paramIter != pEnd; ++paramIter) {
+            const auto& param = other.params_[paramIter->second];
+            params_.emplace_back(param.copy());
+          }
+        }
+      }
+     \endcode
+   *
+   * A module_idx of -1 indicates the orphaned params are to be inserted
+   * before the first module
+   *
    * @return A multimap of orphaned params and the module index they appear
    * after
    */
@@ -58,7 +82,7 @@ class Container : public Module {
    * Adds a module to a `Container` by making a copy of the underlying module if
    * an lvalue or moving it if and rvalue
    *
-   * @param module the module to add.
+   * @param[in] module the module to add.
    */
   template <typename T>
   void add(T&& module) {
@@ -74,10 +98,7 @@ class Container : public Module {
    * @param module the module to add.
    */
   template <typename T>
-  void add(std::unique_ptr<T>&& module) {
-    static_assert(
-        !std::is_lvalue_reference_v<T>,
-        "add() can only accept rvalues. Use std::move().");
+  void add(std::unique_ptr<T> module) {
     add(std::shared_ptr<T>(std::move(module)));
   }
 
@@ -92,7 +113,7 @@ class Container : public Module {
     if (!module) {
       throw std::invalid_argument("can't add null Module to Container");
     }
-    for (int i = 0; i < module->numParams(); i++) {
+    for (int i = 0; i < module->numParamTensors(); i++) {
       childParamIdx_[params_.size()] = std::make_tuple(modules_.size(), i);
       params_.push_back(module->param(i));
     }
@@ -152,6 +173,19 @@ class Container : public Module {
  * if the class basically acts as a wrapper around a container such that no
  * custom module ownership is used. Users should implement these methods
  * themselves if any custom ownership is utilised.
+ * The following is an example of custom ownership, where a shared_ptr is used
+ * to share ownership between the base Container class an MyContainer class
+ * such that they need to be manually syncronised when performing a copy.
+ * \code
+    class MyContainer : public Container {
+    public:
+      MyContainer() {
+        lin_ = std::make_shared<Linear>(10, 20);
+        add(lin_);
+      }
+      std::shared_ptr<Linear> lin_;
+    };
+   \endcode
  */
 #define FL_BASIC_CONTAINER_CLONING(ContainerClass)             \
   ContainerClass(const ContainerClass& other) {                \

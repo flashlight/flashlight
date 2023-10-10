@@ -516,6 +516,7 @@ Transformer::Transformer(const Transformer& other) {
   copy(other);
   createLayers();
 }
+
 Transformer& Transformer::operator=(const Transformer& other) {
   clear();
   copy(other);

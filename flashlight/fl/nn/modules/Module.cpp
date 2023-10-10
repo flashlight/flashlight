@@ -66,7 +66,7 @@ std::vector<Variable> Module::params() const {
   return params_;
 }
 
-int Module::numParams() const {
+int Module::numParamTensors() const {
   return static_cast<int>(params_.size());
 }
 
