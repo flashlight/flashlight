@@ -40,13 +40,13 @@ runs:
       if: runner.os == 'Windows' && inputs.backend == 'ArrayFire'
       shell: bash -l {0}
     # oneDNN
-    - name: Install oneDNN 3.1.1 with microconda
+    - name: Install oneDNN with microconda
       uses: mamba-org/provision-with-micromamba@main
       with:
         environment-file: false
         environment-name: flashlight
         channels: conda-forge
-        extra-specs: onednn==3.1.1
+        extra-specs: onednn gxx=11
       if: inputs.backend == 'oneDNN' || inputs.autograd_backend == 'oneDNN'
     # MPI
     - name: "Install OpenMPI (Linux)"

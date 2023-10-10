@@ -11,12 +11,6 @@ else()
   message(STATUS "oneDNN found")
 endif()
 
-# Need to link against OpenMP if DNNL was built with the OpenMP CPU backend
-if ((DNNL_CPU_RUNTIME STREQUAL "OMP" OR DNNL_CPU_THREADING_RUNTIME STREQUAL "OMP") AND NOT APPLE)
-  find_package(OpenMP REQUIRED)
-  target_link_libraries(flashlight PRIVATE OpenMP::OpenMP_CXX)
-endif()
-
 # TODO: conditionally set this to use OPENCL if the detected
 # DNNL is built with OpenCL support
 fl_set_backend_state(ENABLE CPU) # enables FL_USE_CPU
