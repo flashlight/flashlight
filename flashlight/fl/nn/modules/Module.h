@@ -201,37 +201,6 @@ class BinaryModule : public Module {
   FL_SAVE_LOAD_WITH_BASE(Module)
 };
 
-/**
- * Casts the modulePtr to T* and calls the copy constructor to clone the module,
- * returning a smart pointer.
- *
- * @param modulePtr The module pointer to clone
- * @return The new cloned T module pointer
- */
-template <typename T, template <typename, typename> class SmartPtr, typename D>
-std::unique_ptr<T> cloneModulePtr(const SmartPtr<Module, D>& modulePtr) {
-  T* ptrCast = dynamic_cast<T*>(modulePtr.get());
-  if (ptrCast == nullptr) {
-    throw std::bad_cast();
-  }
-  return std::make_unique<T>(*ptrCast);
-}
-
-/**
- * Casts the modulePtr to T* and calls the copy constructor to clone the module
- *
- * @param modulePtr The module pointer to clone
- * @return The new cloned T module
- */
-template <typename T, template <typename, typename> class SmartPtr, typename D>
-T cloneModuleAs(const SmartPtr<Module, D>& modulePtr) {
-  T* ptrCast = dynamic_cast<T*>(modulePtr.get());
-  if (ptrCast == nullptr) {
-    throw std::bad_cast();
-  }
-  return *ptrCast;
-}
-
 } // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::UnaryModule)

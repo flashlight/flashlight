@@ -933,8 +933,6 @@ TEST(ModuleTest, ModuleCloneCopy) {
   // options
   std::unique_ptr<Module> modulePtr = std::make_unique<Linear>(std::move(lin));
   std::unique_ptr<Module> clonedModulePtr = modulePtr->clone();
-  Linear cloned = cloneModuleAs<Linear>(modulePtr);
-  std::unique_ptr<Linear> clonedPtr = cloneModulePtr<Linear>(modulePtr);
 
   // Change the original module param and check the cloned modules have not
   // changed
@@ -944,8 +942,6 @@ TEST(ModuleTest, ModuleCloneCopy) {
 
   ASSERT_TRUE(allClose(
       clonedModulePtr->forward({inVar}).front(), expected_outVar, 1E-7));
-  ASSERT_TRUE(allClose(cloned(inVar), expected_outVar, 1E-7));
-  ASSERT_TRUE(allClose(clonedPtr->forward(inVar), expected_outVar, 1E-7));
 }
 
 TEST(ModuleTest, ContainerCloneCopy) {
@@ -979,13 +975,8 @@ TEST(ModuleTest, ContainerCloneCopy) {
   std::unique_ptr<Module> modulePtr =
       std::make_unique<ContainerTestClass>(std::move(seq));
   std::unique_ptr<Module> clonedModulePtr = modulePtr->clone();
-  ContainerTestClass cloned = cloneModuleAs<ContainerTestClass>(modulePtr);
-  std::unique_ptr<ContainerTestClass> clonedPtr =
-      cloneModulePtr<ContainerTestClass>(modulePtr);
 
   ASSERT_TRUE(allClose(clonedModulePtr->params()[0], modulePtr->params()[0]));
-  ASSERT_TRUE(allClose(cloned.params()[0], modulePtr->params()[0]));
-  ASSERT_TRUE(allClose(clonedPtr->params()[0], modulePtr->params()[0]));
 }
 
 int main(int argc, char** argv) {
