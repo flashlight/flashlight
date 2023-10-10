@@ -41,12 +41,20 @@ runs:
       shell: bash -l {0}
     # oneDNN
     - name: Install oneDNN with microconda
-      uses: mamba-org/provision-with-micromamba@main
+      uses: mamba-org/setup-micromamba@v1
       with:
         environment-file: false
         environment-name: flashlight
         channels: conda-forge
-        extra-specs: onednn gxx=11
+        extra-specs: onednn
+      if: inputs.backend == 'oneDNN' || inputs.autograd_backend == 'oneDNN'
+    - name: oneDNN from conda is built with gcc 11
+      uses: mamba-org/setup-micromamba@v1
+      with:
+        environment-file: false
+        environment-name: flashlight
+        channels: conda-forge
+        extra-specs: gxx=11
       if: inputs.backend == 'oneDNN' || inputs.autograd_backend == 'oneDNN'
     # MPI
     - name: "Install OpenMPI (Linux)"
