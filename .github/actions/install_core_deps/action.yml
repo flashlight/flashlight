@@ -44,7 +44,7 @@ runs:
       uses: mamba-org/setup-micromamba@v1
       with:
         environment-name: flashlight
-        environment-file: flashlight-onednn-env.yml
+        environment-file: .github/actions/install_core_deps/flashlight-onednn-env.yml
         # create-args: -c conda-forge onednn gxx=11
       if: inputs.backend == 'oneDNN' || inputs.autograd_backend == 'oneDNN'
     # MPI
