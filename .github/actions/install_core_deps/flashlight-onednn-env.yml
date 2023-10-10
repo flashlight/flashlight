@@ -1,0 +1,7 @@
+name: flashlight-onednn
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - onednn
+  - gxx=11
