@@ -287,7 +287,7 @@ commands:
           steps:
             - run:
                 name: "Install oneDNN"
-                command: micromamba install -y --file .github/actions/install_core_deps/flashlight-onednn-env-macos.yml
+                command: micromamba create -y --file .github/actions/install_core_deps/flashlight-onednn-env-macos.yml
       - when:
           condition:
             not:
@@ -295,7 +295,7 @@ commands:
           steps:
             - run:
                 name: "Install oneDNN"
-                command: micromamba install -y --file ./github/actions/install_core_deps/flashlight-onednn-env.yml
+                command: micromamba create -y --file ./github/actions/install_core_deps/flashlight-onednn-env.yml
 
   # Primary job for installing all dependencies based on platform,
   # backend, and autograd backend impl
