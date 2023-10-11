@@ -5,3 +5,4 @@ channels:
 dependencies:
   - onednn
   - gxx=11
+  - openmpi-mpicxx
