@@ -46,6 +46,7 @@ runs:
         environment-name: flashlight
         init-shell: bash
         environment-file: .github/actions/install_core_deps/flashlight-onednn-env.yml
+        generate-run-shell: false
         # create-args: -c conda-forge onednn gxx=11
       if: inputs.backend == 'oneDNN' || inputs.autograd_backend == 'oneDNN'
     # MPI
