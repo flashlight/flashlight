@@ -55,13 +55,13 @@ namespace fl {
   *
  */
 
-struct BlobDatasetEntry {
+struct FL_API BlobDatasetEntry {
   fl::dtype type;
   fl::Shape dims;
   int64_t offset;
 };
 
-class BlobDatasetEntryBuffer {
+class FL_API BlobDatasetEntryBuffer {
  private:
   std::vector<int64_t> data_;
   const int nFieldPerEntry_ = 7;
@@ -79,7 +79,7 @@ class BlobDatasetEntryBuffer {
   int64_t bytes() const;
 };
 
-class BlobDataset : public Dataset {
+class FL_API BlobDataset : public Dataset {
  private:
   const int maxNDims_ = BlobDatasetEntryBuffer::maxNDims_;
   BlobDatasetEntryBuffer entries_;

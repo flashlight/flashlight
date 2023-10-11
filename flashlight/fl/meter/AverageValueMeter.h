@@ -9,11 +9,14 @@
 
 #include <vector>
 
+#include "flashlight/fl/common/Defines.h"
+
 namespace fl {
 
 class Tensor;
 
-/** An implementation of average value meter, which measures the mean and
+/**
+ * An implementation of average value meter, which measures the mean and
  * variance of a sequence of values.
  *
  * This meter takes as input a stream of i.i.d data \f$ X = {x_i} \f$ with
@@ -37,7 +40,7 @@ class Tensor;
  * double mean = meter.value()[0];
  * \endcode
  */
-class AverageValueMeter {
+class FL_API AverageValueMeter {
  public:
   /** Constructor of `AverageValueMeter`. */
   AverageValueMeter();

@@ -13,6 +13,7 @@
 #include <memory>
 #include <vector>
 
+#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/dataset/DatasetIterator.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
@@ -27,7 +28,7 @@ namespace fl {
  * A `Dataset` can either own its data directly, or through `shared_ptr`
  * ownership of underlying `Dataset`s.
  */
-class Dataset {
+class FL_API Dataset {
  public:
   /**
    * A bijective mapping of dataset indices \f$[0, n) \to [0, n)\f$.

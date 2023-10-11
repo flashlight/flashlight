@@ -7,8 +7,8 @@
 
 #pragma once
 
+#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/optim/Optimizers.h"
-
 #include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
@@ -28,7 +28,7 @@ namespace fl {
  * Reference for SGD and Momentum:
  * http://cs231n.github.io/neural-networks-3/#sgd
  */
-class SGDOptimizer : public FirstOrderOptimizer {
+class FL_API SGDOptimizer : public FirstOrderOptimizer {
  private:
   FL_SAVE_LOAD_WITH_BASE(
       FirstOrderOptimizer,

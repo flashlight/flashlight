@@ -22,6 +22,10 @@ function(register_app)
   )
 
   if(${_option_name})
+    if (MSVC)
+      message(FATAL_ERROR "Building fl packages (pkg) with MSVC not yet supported")
+    endif()
+
     message(STATUS "Building Flashlight ${_app_name_lower} package.")
     include(${FL_APPS_DIR}/${_app_name_lower}/CMakeLists.txt)
   endif()

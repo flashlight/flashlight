@@ -10,8 +10,12 @@
 #include <cstdint>
 #include <vector>
 
+#include "flashlight/fl/common/Defines.h"
+
 namespace fl {
-/** An implementation of count meter, which measures the total value of each
+
+/**
+ * An implementation of count meter, which measures the total value of each
  * category.
  * Example usage:
  *
@@ -25,7 +29,7 @@ namespace fl {
   std::cout << counts[4];  // prints 5
   \endcode
  */
-class CountMeter {
+class FL_API CountMeter {
  public:
   /** Constructor of `CountMeter`. `num` specifies the total number of
    * categories.

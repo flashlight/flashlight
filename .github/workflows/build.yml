@@ -49,8 +49,7 @@ jobs:
             -DFL_USE_TENSOR_STUB=${{ matrix.backend == 'Stub' && 'ON' || 'OFF'  }} \
             -DFL_USE_NCCL=OFF \
             -DFL_USE_GLOO=${{ matrix.distributed_backend == 'Gloo' && 'ON' || 'OFF'  }} \
-            -DFL_USE_BACKWARD_CPP=ON \
-            -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON
+            -DFL_USE_BACKWARD_CPP=ON
       - name: "Build Flashlight"
         run: |
           cmake --build build --parallel 2

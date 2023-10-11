@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "flashlight/fl/autograd/Variable.h"
+#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/optim/Optimizers.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
@@ -20,7 +21,7 @@ namespace fl {
  * http://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf)
  * and https://arxiv.org/pdf/1308.0850v5.pdf.
  */
-class RMSPropOptimizer : public FirstOrderOptimizer {
+class FL_API RMSPropOptimizer : public FirstOrderOptimizer {
  private:
   FL_SAVE_LOAD_WITH_BASE(
       FirstOrderOptimizer,

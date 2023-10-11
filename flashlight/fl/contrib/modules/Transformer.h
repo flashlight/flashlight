@@ -46,7 +46,7 @@ namespace fl {
  * or for decoder part in the encoder-decoder transformer models)
  * @param preLN apply layer normalization before or after residual connection
  */
-class Transformer : public Container {
+class FL_API Transformer : public Container {
  public:
   Transformer(
       int32_t modelDim,

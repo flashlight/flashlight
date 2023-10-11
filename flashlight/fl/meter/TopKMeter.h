@@ -9,11 +9,14 @@
 #include <cstdint>
 #include <utility>
 
+#include "flashlight/fl/common/Defines.h"
+
 namespace fl {
 
 class Tensor;
 
-/** TopKMeter computes the accuracy of the model outputs predicting the target
+/**
+ * TopKMeter computes the accuracy of the model outputs predicting the target
  * label in the top k predictions.
  *
  * Example usage:
@@ -27,8 +30,7 @@ class Tensor;
  * double top5Accuracy = top5Meter.value();
  * \endcode
  */
-
-class TopKMeter {
+class FL_API TopKMeter {
  public:
   /** Constructor of `TopKMeter`.
    * @param k number of top predictions in order to be considered correct
