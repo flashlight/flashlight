@@ -1,8 +1,8 @@
 name: flashlight-onednn
 channels:
   - conda-forge
-  - anaconda
   - defaults
 dependencies:
   - onednn
-  - gxx=11
+  - gxx=11 [linux]
+  - clangxx=12 [osx]
