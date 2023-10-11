@@ -40,12 +40,18 @@ runs:
       if: runner.os == 'Windows' && inputs.backend == 'ArrayFire'
       shell: bash -el {0}
     # oneDNN
+    - name: Install oneDNN with micromamba (macOS)
+      uses: mamba-org/setup-micromamba@v1
+      with:
+        environment-name: flashlight-onednn-env
+        environment-file: .github/actions/install_core_deps/flashlight-onednn-env-macos.yml
+      if: (inputs.backend == 'oneDNN' || inputs.autograd_backend == 'oneDNN') && runner.os == 'macOS'
     - name: Install oneDNN with micromamba
       uses: mamba-org/setup-micromamba@v1
       with:
         environment-name: flashlight-onednn-env
         environment-file: .github/actions/install_core_deps/flashlight-onednn-env.yml
-      if: inputs.backend == 'oneDNN' || inputs.autograd_backend == 'oneDNN'
+      if: (inputs.backend == 'oneDNN' || inputs.autograd_backend == 'oneDNN') && runner.os != 'macOS'
     # MPI
     - name: "Install OpenMPI (Linux)"
       run: |

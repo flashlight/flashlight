@@ -37,7 +37,6 @@ commands:
       - when:
           condition:
             or:
-              - equal: ["macos", << parameters.platform >>]
               - equal: ["macos-arm", << parameters.platform >>]
           steps:
             - run:
@@ -282,13 +281,21 @@ commands:
           command: |
             micromamba create -n onednn -y
             echo "micromamba activate onednn" >> $BASH_ENV
-      - run:
-          name: "Install oneDNN"
-          command: micromamba install -y -c conda-forge onednn
-      - run:
-          name: "Install gcc 11"
-          # onednn from conda is compiled with gcc 11
-          command: micromamba install -y -c conda-forge gxx=11
+      - when:
+          condition:
+            equal: ["macos-arm", << parameters.platform >>]
+          steps:
+            - run:
+                name: "Install oneDNN"
+                command: micromamba install -y --file .github/actions/install_core_deps/flashlight-onednn-env-macos.yml
+      - when:
+          condition:
+            not:
+              equal: ["macos-arm", << parameters.platform >>]
+          steps:
+            - run:
+                name: "Install oneDNN"
+                command: micromamba install -y --file ./github/actions/install_core_deps/flashlight-onednn-env.yml
 
   # Primary job for installing all dependencies based on platform,
   # backend, and autograd backend impl
