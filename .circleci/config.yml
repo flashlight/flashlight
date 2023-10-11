@@ -279,27 +279,20 @@ commands:
       - run:
           name: "Create micromamba environment for oneDNN"
           command: |
-            micromamba create -n onednn -y
-            echo "micromamba activate onednn" >> $BASH_ENV
+            micromamba create -n flashlight -y
+            echo "micromamba activate flashlight" >> $BASH_ENV
+      - run:
+          name: "Install oneDNN in env"
+          command: micromamba install onednn -c conda-forge -y
       - when:
           condition:
-            and:
+            or:
               - equal: ["linux-arm", << parameters.platform >>]
               - equal: ["linux", << parameters.platform >>]
           steps:
             - run:
-                name: "Install oneDNN (Linux)"
-                command: micromamba create -y --file .github/actions/install_core_deps/flashlight-onednn-env-linux.yml
-      - when:
-          condition:
-            not:
-              or:
-                - equal: ["linux-arm", << parameters.platform >>]
-                - equal: ["linux", << parameters.platform >>]
-          steps:
-            - run:
-                name: "Install oneDNN"
-                command: micromamba create -y --file .github/actions/install_core_deps/flashlight-onednn-env.yml
+                name: "Install compiler toolchains needed with oneDNN"
+                command: micromamba install gxx=11 -c conda-forge -y
 
   # Primary job for installing all dependencies based on platform,
   # backend, and autograd backend impl

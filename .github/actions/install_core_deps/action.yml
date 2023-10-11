@@ -48,7 +48,6 @@ runs:
       if: (inputs.backend == 'oneDNN' || inputs.autograd_backend == 'oneDNN')
     - name: Install compiler toolchains needed with oneDNN
       run: |
-        # install gxx-11 from conda if on Linux
         if [[ "$RUNNER_OS" == "Linux" ]]; then
           micromamba install -y gxx=11 -c conda-forge
         fi

@@ -1,8 +1,0 @@
-name: flashlight-onednn-env
-channels:
-  - conda-forge
-  - defaults
-dependencies:
-  - onednn
-  - gxx=11
-  - openmpi-mpicxx
