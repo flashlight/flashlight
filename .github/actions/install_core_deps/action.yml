@@ -43,7 +43,7 @@ runs:
     - name: Install oneDNN with micromamba
       uses: mamba-org/setup-micromamba@v1
       with:
-        environment-name: flashlight
+        environment-name: flashlight-onednn-env
         environment-file: .github/actions/install_core_deps/flashlight-onednn-env.yml
       if: inputs.backend == 'oneDNN' || inputs.autograd_backend == 'oneDNN'
     # MPI
