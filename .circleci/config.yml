@@ -283,15 +283,19 @@ commands:
             echo "micromamba activate onednn" >> $BASH_ENV
       - when:
           condition:
-            equal: ["macos-arm", << parameters.platform >>]
+            and:
+              - equal: ["linux-arm", << parameters.platform >>]
+              - equal: ["linux", << parameters.platform >>]
           steps:
             - run:
-                name: "Install oneDNN"
-                command: micromamba create -y --file .github/actions/install_core_deps/flashlight-onednn-env-macos.yml
+                name: "Install oneDNN (Linux)"
+                command: micromamba create -y --file .github/actions/install_core_deps/flashlight-onednn-env-linux.yml
       - when:
           condition:
             not:
-              equal: ["macos-arm", << parameters.platform >>]
+              or:
+                - equal: ["linux-arm", << parameters.platform >>]
+                - equal: ["linux", << parameters.platform >>]
           steps:
             - run:
                 name: "Install oneDNN"
