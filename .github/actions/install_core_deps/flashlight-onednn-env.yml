@@ -4,4 +4,4 @@ channels:
   - defaults
 dependencies:
   - onednn
-  - gxx=11
+  - clangxx=12

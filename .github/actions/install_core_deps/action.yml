@@ -44,14 +44,14 @@ runs:
       uses: mamba-org/setup-micromamba@v1
       with:
         environment-name: flashlight-onednn-env
-        environment-file: .github/actions/install_core_deps/flashlight-onednn-env-macos.yml
-      if: (inputs.backend == 'oneDNN' || inputs.autograd_backend == 'oneDNN') && runner.os == 'macOS'
+        environment-file: .github/actions/install_core_deps/flashlight-onednn-env.yml
+      if: (inputs.backend == 'oneDNN' || inputs.autograd_backend == 'oneDNN') && runner.os != 'Linux'
     - name: Install oneDNN with micromamba
       uses: mamba-org/setup-micromamba@v1
       with:
         environment-name: flashlight-onednn-env
-        environment-file: .github/actions/install_core_deps/flashlight-onednn-env.yml
-      if: (inputs.backend == 'oneDNN' || inputs.autograd_backend == 'oneDNN') && runner.os != 'macOS'
+        environment-file: .github/actions/install_core_deps/flashlight-onednn-env-linux.yml
+      if: (inputs.backend == 'oneDNN' || inputs.autograd_backend == 'oneDNN') && runner.os == 'Linux'
     # MPI
     - name: "Install OpenMPI (Linux)"
       run: |
