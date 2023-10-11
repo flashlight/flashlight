@@ -299,7 +299,7 @@ commands:
           steps:
             - run:
                 name: "Install oneDNN"
-                command: micromamba create -y --file ./github/actions/install_core_deps/flashlight-onednn-env.yml
+                command: micromamba create -y --file .github/actions/install_core_deps/flashlight-onednn-env.yml
 
   # Primary job for installing all dependencies based on platform,
   # backend, and autograd backend impl
