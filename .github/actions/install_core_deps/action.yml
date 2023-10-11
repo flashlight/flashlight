@@ -41,12 +41,11 @@ runs:
       shell: bash -el {0}
     # oneDNN
     - name: Install oneDNN with micromamba
-      uses: mamba-org/setup-micromamba@v1
+      uses: mamba-org/setup-micromamba@v1.3.0
       with:
         environment-name: flashlight
         init-shell: bash
         environment-file: .github/actions/install_core_deps/flashlight-onednn-env.yml
-        generate-run-shell: false
         # create-args: -c conda-forge onednn gxx=11
       if: inputs.backend == 'oneDNN' || inputs.autograd_backend == 'oneDNN'
     # MPI
