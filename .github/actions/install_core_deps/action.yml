@@ -46,13 +46,6 @@ runs:
         environment-name: flashlight
         create-args: onednn -c conda-forge
       if: (inputs.backend == 'oneDNN' || inputs.autograd_backend == 'oneDNN')
-    # - name: Install compiler toolchains needed with oneDNN
-    #   run: |
-    #     if [[ "$RUNNER_OS" == "Linux" ]]; then
-    #       micromamba install -y gxx=11 -c conda-forge
-    #     fi
-    #   shell: bash -el {0}
-    #   if: (inputs.backend == 'oneDNN' || inputs.autograd_backend == 'oneDNN')
     # MPI
     - name: "Install OpenMPI (Linux)"
       run: |
