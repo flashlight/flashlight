@@ -22,7 +22,7 @@ runs:
         sudo apt-key adv --fetch-key https://repo.arrayfire.com/GPG-PUB-KEY-ARRAYFIRE-2020.PUB
         echo "deb [arch=amd64] https://repo.arrayfire.com/debian all main" | sudo tee /etc/apt/sources.list.d/arrayfire.list
         sudo apt update
-        sudo apt install arrayfire-cmake=3.8.3-1 arrayfire-headers=3.8.3-1 arrayfire-cpu3-mkl=3.8.3-1 arrayfire-cpu3-dev=3.8.3-1
+        sudo apt install arrayfire-cmake=3.8.1-2 arrayfire-headers=3.8.1-2 arrayfire-cpu3-mkl=3.8.1-2 arrayfire-cpu3-dev=3.8.1-2
       if: runner.os == 'Linux' && inputs.backend == 'ArrayFire'
       shell: bash -el {0}
     - name: "Install ArrayFire (macOS)"
@@ -46,13 +46,13 @@ runs:
         environment-name: flashlight
         create-args: onednn -c conda-forge
       if: (inputs.backend == 'oneDNN' || inputs.autograd_backend == 'oneDNN')
-    - name: Install compiler toolchains needed with oneDNN
-      run: |
-        if [[ "$RUNNER_OS" == "Linux" ]]; then
-          micromamba install -y gxx=11 -c conda-forge
-        fi
-      shell: bash -el {0}
-      if: (inputs.backend == 'oneDNN' || inputs.autograd_backend == 'oneDNN')
+    # - name: Install compiler toolchains needed with oneDNN
+    #   run: |
+    #     if [[ "$RUNNER_OS" == "Linux" ]]; then
+    #       micromamba install -y gxx=11 -c conda-forge
+    #     fi
+    #   shell: bash -el {0}
+    #   if: (inputs.backend == 'oneDNN' || inputs.autograd_backend == 'oneDNN')
     # MPI
     - name: "Install OpenMPI (Linux)"
       run: |
