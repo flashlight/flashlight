@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -44,8 +44,9 @@ void DefaultMemoryManager::cleanDeviceMemoryManager(int device) {
   {
     std::lock_guard<std::mutex> lock(this->memoryMutex);
     // Return if all buffers are locked
-    if (current.totalBuffers == current.lockBuffers)
+    if (current.totalBuffers == current.lockBuffers) {
       return;
+}
     freePtrs.reserve(current.freeMap.size());
 
     for (auto& kv : current.freeMap) {
@@ -110,8 +111,9 @@ void DefaultMemoryManager::shutdown() {
 void DefaultMemoryManager::addMemoryManagement(int device) {
   // If there is a memory manager allocated for this device id, we might
   // as well use it and the buffers allocated for it
-  if (static_cast<size_t>(device) < memory.size())
+  if (static_cast<size_t>(device) < memory.size()) {
     return;
+}
 
   // Assuming, device need not be always the next device Lets resize to
   // current_size + device + 1 +1 is to account for device being 0-based
@@ -209,12 +211,14 @@ void* DefaultMemoryManager::alloc(
 }
 
 size_t DefaultMemoryManager::allocated(void* ptr) {
-  if (!ptr)
+  if (!ptr) {
     return 0;
+}
   MemoryInfo& current = this->getCurrentMemoryInfo();
   locked_iter iter = current.lockedMap.find((void*)ptr);
-  if (iter == current.lockedMap.end())
+  if (iter == current.lockedMap.end()) {
     return 0;
+}
   return (iter->second).bytes;
 }
 
@@ -306,10 +310,11 @@ void DefaultMemoryManager::printInfo(
   for (auto& kv : current.lockedMap) {
     const char* statusMngr = "Yes";
     const char* statusUser = "Unknown";
-    if (kv.second.userLock)
+    if (kv.second.userLock) {
       statusUser = "Yes";
-    else
+    } else {
       statusUser = " No";
+}
 
     const char* unit = "KB";
     double size = (double)(kv.second.bytes) / 1024;

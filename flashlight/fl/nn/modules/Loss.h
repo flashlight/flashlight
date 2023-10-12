@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -26,7 +26,7 @@ class Tensor;
  * for input tensor \f$x\f$ and target tensor \f$y\f$ each of which contain
  \f$n\f$ elements.
  */
-class MeanSquaredError : public BinaryModule {
+class FL_API MeanSquaredError : public BinaryModule {
  public:
   MeanSquaredError() = default;
 
@@ -48,7 +48,7 @@ class MeanSquaredError : public BinaryModule {
  * for input tensor \f$x\f$ and target tensor \f$y\f$ each of which contain
  \f$n\f$ elements.
  */
-class MeanAbsoluteError : public BinaryModule {
+class FL_API MeanAbsoluteError : public BinaryModule {
  public:
   MeanAbsoluteError() = default;
 
@@ -70,7 +70,7 @@ class MeanAbsoluteError : public BinaryModule {
  *
  * Both the inputs and the targets are expected to be between 0 and 1.
  */
-class BinaryCrossEntropy : public BinaryModule {
+class FL_API BinaryCrossEntropy : public BinaryModule {
  public:
   BinaryCrossEntropy() = default;
 
@@ -116,7 +116,7 @@ class BinaryCrossEntropy : public BinaryModule {
  * reshaped to the target dimensions, giving a loss for each example. See
  * `ReduceMode`.
  */
-class CategoricalCrossEntropy : public BinaryModule {
+class FL_API CategoricalCrossEntropy : public BinaryModule {
  private:
   ReduceMode reduction_;
   int ignoreIndex_{-1};
@@ -169,7 +169,7 @@ class CategoricalCrossEntropy : public BinaryModule {
  * low-frequency inputs are approximated with lower rank matrices so as to speed
  * up computation.
  */
-class AdaptiveSoftMaxLoss : public BinaryModule {
+class FL_API AdaptiveSoftMaxLoss : public BinaryModule {
  private:
   FL_SAVE_LOAD_WITH_BASE(
       BinaryModule,

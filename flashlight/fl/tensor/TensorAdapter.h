@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -11,6 +11,7 @@
 #include <memory>
 #include <utility>
 
+#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
@@ -37,7 +38,7 @@ Tensor toTensor(T&&... t) {
  * literally. Calls to their member implementations are dispatched via visiting
  * Tensor or other interfaces.
  */
-class TensorAdapterBase {
+class FL_API TensorAdapterBase {
  public:
   TensorAdapterBase() = default;
   virtual ~TensorAdapterBase() = default;
@@ -267,7 +268,7 @@ namespace detail {
  * An interface with which to construct a tensor. Templated based on used tensor
  * adapters.
  */
-struct TensorCreator {
+struct FL_API TensorCreator {
   virtual ~TensorCreator() = default;
 
   // General tensor ctor
@@ -317,7 +318,7 @@ struct TensorCreatorImpl : public TensorCreator {
  * internal use only - use setDefaultTensorType<T>() to set the type with which
  * to create a default tensor.
  */
-class DefaultTensorType {
+class FL_API DefaultTensorType {
   // The function to use to create a tensor of default type.
   std::unique_ptr<TensorCreator> creationFunc_;
 

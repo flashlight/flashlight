@@ -1,15 +1,15 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
 #pragma once
 
-#include "flashlight/fl/dataset/ResampleDataset.h"
-
 #include <random>
+
+#include "flashlight/fl/dataset/ResampleDataset.h"
 
 namespace fl {
 
@@ -33,7 +33,7 @@ namespace fl {
   std::cout << "second try" << shuffleds.get(0)["x"] << std::endl;
   \endcode
  */
-class ShuffleDataset : public ResampleDataset {
+class FL_API ShuffleDataset : public ResampleDataset {
  public:
   /**
    * Creates a `ShuffleDataset`.

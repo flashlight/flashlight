@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -9,11 +9,14 @@
 
 #include <cstdint>
 
+#include "flashlight/fl/common/Defines.h"
+
 namespace fl {
 
 class Tensor;
 
-/** An implementation of frame error meter, which measures the frame-level or
+/**
+ * An implementation of frame error meter, which measures the frame-level or
  * element-level mismatch between targets and predictions made by the model.
  * Example usage:
  *
@@ -26,7 +29,7 @@ class Tensor;
  * double frameErrorRate = meter.value();
  * \endcode
  */
-class FrameErrorMeter {
+class FL_API FrameErrorMeter {
  public:
   /** Constructor of `FrameErrorMeter`. Flag `accuracy` indicates if the meter
    * computes and returns accuracy or error rate instead. An instance will

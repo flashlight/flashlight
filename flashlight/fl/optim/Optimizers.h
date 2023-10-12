@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "flashlight/fl/autograd/Variable.h"
+#include "flashlight/fl/common/Defines.h"
 
 namespace fl {
 
@@ -25,7 +26,7 @@ namespace fl {
  * optimizer.zeroGrad();
  * \endcode
  */
-class FirstOrderOptimizer {
+class FL_API FirstOrderOptimizer {
  private:
   /**
    * Serialize the module's parameters.

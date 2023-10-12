@@ -1,13 +1,14 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
 #pragma once
 
 #include <memory>
+
 #include "flashlight/fl/dataset/Dataset.h"
 
 namespace fl {
@@ -30,7 +31,7 @@ namespace fl {
   std::cout << allClose(resampleds.get(9)[0], ds->get(0)[0]) << "\n"; // 1
   \endcode
  */
-class ResampleDataset : public Dataset {
+class FL_API ResampleDataset : public Dataset {
  public:
   /**
    * Constructs a ResampleDataset with the identity mapping:

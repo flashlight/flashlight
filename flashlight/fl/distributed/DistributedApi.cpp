@@ -1,35 +1,34 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
 #include "flashlight/fl/distributed/DistributedApi.h"
 
+#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
 
-bool isDistributedInit() {
+FL_API bool isDistributedInit() {
   return detail::DistributedInfo::getInstance().isInitialized_;
 }
 
-DistributedBackend distributedBackend() {
+FL_API DistributedBackend distributedBackend() {
   return detail::DistributedInfo::getInstance().backend_;
 }
 
-void allReduce(
-    Variable& var,
-    double scale /* = 1.0 */,
-    bool async /* = false */) {
+FL_API void
+allReduce(Variable& var, double scale /* = 1.0 */, bool async /* = false */) {
   if (getWorldSize() > 1) {
     allReduce(var.tensor(), async);
   }
   var.tensor() *= scale;
 }
 
-void allReduceMultiple(
+FL_API void allReduceMultiple(
     std::vector<Variable> vars,
     double scale /* = 1.0 */,
     bool async /* = false */,
@@ -47,7 +46,7 @@ void allReduceMultiple(
   }
 }
 
-void barrier() {
+FL_API void barrier() {
   auto tensor = Tensor::fromVector<int>({0});
   allReduce(tensor, false);
 

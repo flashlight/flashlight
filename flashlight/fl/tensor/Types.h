@@ -1,7 +1,7 @@
 /*
  * Copyright (c) Facebook, Inc. 6and its affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -9,6 +9,8 @@
 
 #include <ostream>
 #include <string>
+
+#include "flashlight/fl/common/Defines.h"
 
 namespace fl {
 
@@ -32,12 +34,12 @@ enum class dtype {
  *
  * @param[in] type the input type to query.
  */
-size_t getTypeSize(dtype type);
+FL_API size_t getTypeSize(dtype type);
 
 /**
  * Convert a dtype to its string representation.
  */
-const std::string& dtypeToString(dtype type);
+FL_API const std::string& dtypeToString(dtype type);
 
 /**
  * Converts string to a Flashlight dtype
@@ -46,19 +48,19 @@ const std::string& dtypeToString(dtype type);
  *
  * @return returns the corresponding Flashlight dtype
  */
-fl::dtype stringToDtype(const std::string& string);
+FL_API fl::dtype stringToDtype(const std::string& string);
 
 /**
  * Write a type's string representation to an output stream.
  */
-std::ostream& operator<<(std::ostream& ostr, const dtype& s);
+FL_API std::ostream& operator<<(std::ostream& ostr, const dtype& s);
 
 template <typename T>
 struct dtype_traits;
 
 #define FL_TYPE_TRAIT(BASE_TYPE, DTYPE, CONSTANT_TYPE, STRING_NAME)    \
   template <>                                                          \
-  struct dtype_traits<BASE_TYPE> {                                     \
+  struct FL_API dtype_traits<BASE_TYPE> {                                     \
     static const dtype fl_type = DTYPE; /* corresponding dtype */      \
     static const dtype ctype = CONSTANT_TYPE; /* constant init type */ \
     typedef BASE_TYPE base_type;                                       \

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -26,7 +26,7 @@ namespace fl {
  * Switchboard mild (SM)     40        15        2      70       0.2       2
  * Switchboard strong (SS)   40        27        2      70       0.2       2
  **/
-class SpecAugment : public UnaryModule {
+class FL_API SpecAugment : public UnaryModule {
  public:
   enum class MaskingStrategy {
     ZERO = 0,

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -31,7 +31,7 @@ std::unique_ptr<TensorAdapterBase> Tensor::releaseAdapter() {
   return std::move(impl_);
 }
 
-Tensor::~Tensor() {}
+Tensor::~Tensor() = default;
 
 Tensor::Tensor(const Tensor& tensor) : impl_(tensor.impl_->clone()) {}
 
@@ -145,7 +145,7 @@ TensorBackend& Tensor::backend() const {
 
 #define FL_CREATE_MEMORY_OPS(TYPE)                                          \
   template <>                                                               \
-  TYPE Tensor::scalar() const {                                             \
+  FL_API TYPE Tensor::scalar() const {                                             \
     if (isEmpty()) {                                                        \
       throw std::invalid_argument("Tensor::scalar called on empty tensor"); \
     }                                                                       \
@@ -161,7 +161,7 @@ TensorBackend& Tensor::backend() const {
   }                                                                         \
                                                                             \
   template <>                                                               \
-  TYPE* Tensor::device() const {                                            \
+  FL_API TYPE* Tensor::device() const {                                            \
     if (isEmpty()) {                                                        \
       return nullptr;                                                       \
     }                                                                       \
@@ -172,7 +172,7 @@ TensorBackend& Tensor::backend() const {
   }                                                                         \
                                                                             \
   template <>                                                               \
-  void Tensor::device(TYPE** ptr) const {                                   \
+  FL_API void Tensor::device(TYPE** ptr) const {                                   \
     if (isEmpty()) {                                                        \
       return;                                                               \
     }                                                                       \
@@ -180,7 +180,7 @@ TensorBackend& Tensor::backend() const {
   }                                                                         \
                                                                             \
   template <>                                                               \
-  TYPE* Tensor::host() const {                                              \
+  FL_API TYPE* Tensor::host() const {                                              \
     if (isEmpty()) {                                                        \
       return nullptr;                                                       \
     }                                                                       \
@@ -190,7 +190,7 @@ TensorBackend& Tensor::backend() const {
   }                                                                         \
                                                                             \
   template <>                                                               \
-  void Tensor::host(TYPE* ptr) const {                                      \
+  FL_API void Tensor::host(TYPE* ptr) const {                                      \
     if (!isEmpty()) {                                                       \
       impl_->host(ptr);                                                     \
     }                                                                       \
@@ -209,7 +209,7 @@ FL_CREATE_MEMORY_OPS(short);
 FL_CREATE_MEMORY_OPS(unsigned short);
 // void specializations
 template <>
-void* Tensor::device() const {
+FL_API void* Tensor::device() const {
   if (isEmpty()) {
     return nullptr;
   }
@@ -219,7 +219,7 @@ void* Tensor::device() const {
 }
 
 template <>
-void Tensor::device(void** ptr) const {
+FL_API void Tensor::device(void** ptr) const {
   if (isEmpty()) {
     return;
   }
@@ -227,7 +227,7 @@ void Tensor::device(void** ptr) const {
 }
 
 template <>
-void* Tensor::host() const {
+FL_API void* Tensor::host() const {
   if (isEmpty()) {
     return nullptr;
   }
@@ -237,7 +237,7 @@ void* Tensor::host() const {
 }
 
 template <>
-void Tensor::host(void* ptr) const {
+FL_API void Tensor::host(void* ptr) const {
   impl_->host(ptr);
 }
 #undef FL_CREATE_MEMORY_OPS
@@ -348,11 +348,11 @@ Tensor& Tensor::operator=(const Tensor& other) && {
 /******************** Tensor Creation Functions ********************/
 #define FL_CREATE_FUN_LITERAL_TYPE(TYPE)                         \
   template <>                                                    \
-  Tensor fromScalar(TYPE value, const dtype type) {              \
+  FL_API Tensor fromScalar(TYPE value, const dtype type) {              \
     return defaultTensorBackend().fromScalar(value, type);       \
   }                                                              \
   template <>                                                    \
-  Tensor full(const Shape& dims, TYPE value, const dtype type) { \
+  FL_API Tensor full(const Shape& dims, TYPE value, const dtype type) { \
     return defaultTensorBackend().full(dims, value, type);       \
   }
 FL_CREATE_FUN_LITERAL_TYPE(const double&);
@@ -376,7 +376,7 @@ Tensor identity(const Dim dim, const dtype type) {
 
 #define FL_ARANGE_FUN_DEF(TYPE)                                             \
   template <>                                                               \
-  Tensor arange(TYPE start, TYPE end, TYPE step, const dtype type) {        \
+  FL_API Tensor arange(TYPE start, TYPE end, TYPE step, const dtype type) {        \
     return fl::arange({static_cast<long>((end - start) / step)}, 0, type) * \
         step +                                                              \
         start;                                                              \

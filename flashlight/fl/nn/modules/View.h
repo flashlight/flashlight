@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -24,7 +24,7 @@ namespace fl {
  * shape `(10, 20, 30, 40)` and a `View` with shape `(-1, 0, 100)`, the output
  * tensor will have shape `(120, 20, 100)`.
  */
-class View : public UnaryModule {
+class FL_API View : public UnaryModule {
  private:
   View() = default; // Intentionally private
 

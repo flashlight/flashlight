@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -23,8 +23,8 @@
  *   chunk, (output in .fwt file for each sample).
  */
 
-#include <stdlib.h>
 #include <cmath>
+#include <cstdlib>
 #include <fstream>
 #include <iomanip>
 #include <string>
@@ -241,7 +241,7 @@ int main(int argc, char** argv) {
     float lmScore = 0;
     if (!FLAGS_lm.empty()) {
       // LM score
-      auto inState = lm->start(0);
+      auto inState = lm->start(false);
       for (const auto& word : wordPrediction) {
         auto lmReturn = lm->score(inState, wordDict.getIndex(word));
         inState = lmReturn.first;

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -32,7 +32,7 @@ namespace fl {
   std::cout << allClose(transformds.get(5)[0], -ds->get(5)[0]) << "\n"; // 1
   \endcode
  */
-class TransformDataset : public Dataset {
+class FL_API TransformDataset : public Dataset {
  public:
   /**
    * Creates a `TransformDataset`.

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -19,7 +19,7 @@ namespace fl {
  * over the first and second dimensions of the input. Thus the output will be
  * of shape [\f$X_{out}\f$, \f$Y_{out}\f$, \f$C\f$, \f$N\f$].
  */
-class Pool2D : public UnaryModule {
+class FL_API Pool2D : public UnaryModule {
  private:
   Pool2D() = default; // Intentionally private
 

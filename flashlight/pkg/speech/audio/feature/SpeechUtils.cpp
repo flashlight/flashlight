@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -19,9 +19,7 @@ extern "C" {
 #endif
 }
 
-namespace fl {
-namespace lib {
-namespace audio {
+namespace fl::lib::audio {
 
 std::vector<float> frameSignal(
     const std::vector<float>& input,
@@ -86,6 +84,4 @@ std::vector<float> cblasGemm(
 
   return matC;
 };
-} // namespace audio
-} // namespace lib
 } // namespace fl

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -17,8 +17,7 @@ namespace fl {
  * Convolutions](https://arxiv.org/abs/1904.02619).
  * This [link](https://imgur.com/a/LAdlwZK) shows the diagram of TDSBlock.
  */
-
-class TDSBlock : public Container {
+class FL_API TDSBlock : public Container {
  private:
   TDSBlock() = default;
   FL_SAVE_LOAD_WITH_BASE(Container)

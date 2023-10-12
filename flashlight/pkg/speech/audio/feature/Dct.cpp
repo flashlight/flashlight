@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -13,9 +13,7 @@
 
 #include "flashlight/pkg/speech/audio/feature/SpeechUtils.h"
 
-namespace fl {
-namespace lib {
-namespace audio {
+namespace fl::lib::audio {
 
 Dct::Dct(int numfilters, int numceps)
     : numFilters_(numfilters),
@@ -32,6 +30,4 @@ Dct::Dct(int numfilters, int numceps)
 std::vector<float> Dct::apply(const std::vector<float>& input) const {
   return cblasGemm(input, dctMat_, numCeps_, numFilters_);
 }
-} // namespace audio
-} // namespace lib
 } // namespace fl

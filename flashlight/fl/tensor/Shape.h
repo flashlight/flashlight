@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -12,6 +12,8 @@
 #include <ostream>
 #include <utility>
 #include <vector>
+
+#include "flashlight/fl/common/Defines.h"
 
 namespace fl {
 
@@ -39,7 +41,7 @@ using Dim = long long;
  * Shape is an interface and can be derived from or implemented given specific
  * backing storage or handles.
  */
-class Shape {
+class FL_API Shape {
   // Storage for the dimension values. Defaults to an empty Shape {0}, whereas
   // {} is a scalar shape.
   std::vector<Dim> dims_;
@@ -123,6 +125,6 @@ class Shape {
 /**
  * Write a shape representation to an output stream.
  */
-std::ostream& operator<<(std::ostream& ostr, const Shape& s);
+FL_API std::ostream& operator<<(std::ostream& ostr, const Shape& s);
 
 } // namespace fl

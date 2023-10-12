@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -9,6 +9,7 @@
 
 #include <vector>
 
+#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/distributed/reducers/Reducer.h"
 
 namespace fl {
@@ -24,7 +25,7 @@ class Variable;
  * to guarantee that synchronized values are available after reduction,
  * ``finalize`` must be called before using a given value.
  */
-class CoalescingReducer : public Reducer {
+class FL_API CoalescingReducer : public Reducer {
   /// A scale by which to scale reduced gradients
   double scale_;
   /// Whether or not the distributed synchronization operates in a separate

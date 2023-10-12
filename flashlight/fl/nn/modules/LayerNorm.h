@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -25,7 +25,7 @@ constexpr const int kLnVariableAxisSize = -1;
  * added to the variance to avoid divide-by-zero, and \f$\gamma\f$ and
  * \f$\beta\f$ are learnable parameters for affine transformation.
  */
-class LayerNorm : public UnaryModule {
+class FL_API LayerNorm : public UnaryModule {
  public:
   /**
    * Constructs a LayerNorm module.

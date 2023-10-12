@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -10,8 +10,12 @@
 #include <cstdint>
 #include <vector>
 
+#include "flashlight/fl/common/Defines.h"
+
 namespace fl {
-/** An implementation of count meter, which measures the total value of each
+
+/**
+ * An implementation of count meter, which measures the total value of each
  * category.
  * Example usage:
  *
@@ -25,7 +29,7 @@ namespace fl {
   std::cout << counts[4];  // prints 5
   \endcode
  */
-class CountMeter {
+class FL_API CountMeter {
  public:
   /** Constructor of `CountMeter`. `num` specifies the total number of
    * categories.

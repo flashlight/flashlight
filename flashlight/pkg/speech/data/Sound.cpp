@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -77,9 +77,7 @@ const std::unordered_map<SoundSubFormat, int, EnumClassHash> subformats{
     {SoundSubFormat::VORBIS, SF_FORMAT_VORBIS}};
 } // namespace
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 extern "C" {
 
@@ -401,6 +399,4 @@ template void saveSound(
     int64_t,
     SoundFormat,
     SoundSubFormat);
-} // namespace speech
-} // namespace pkg
 } // namespace fl

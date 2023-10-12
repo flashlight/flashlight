@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -55,8 +55,8 @@ enum class StorageType { Dense = 0, CSR = 1, CSC = 2, COO = 3 };
 
 namespace detail {
 
-std::unique_ptr<TensorAdapterBase> releaseAdapter(Tensor&& t);
-std::unique_ptr<TensorAdapterBase> releaseAdapterUnsafe(Tensor& t);
+FL_API std::unique_ptr<TensorAdapterBase> releaseAdapter(Tensor&& t);
+FL_API std::unique_ptr<TensorAdapterBase> releaseAdapterUnsafe(Tensor& t);
 
 } // namespace detail
 
@@ -74,7 +74,7 @@ std::unique_ptr<TensorAdapterBase> releaseAdapterUnsafe(Tensor& t);
  *
  * \warning This API may break and is not yet stable.
  */
-class Tensor {
+class FL_API Tensor {
   // The tensor adapter for the tensor
   std::unique_ptr<TensorAdapterBase> impl_;
 
@@ -659,7 +659,8 @@ class Tensor {
  * @return a tensor of the specified shape filled with the specified value
  */
 template <typename T>
-Tensor fromScalar(const T& val, const dtype type = dtype_traits<T>::ctype);
+FL_API Tensor
+fromScalar(const T& val, const dtype type = dtype_traits<T>::ctype);
 
 /**
  * Creates a new Tensor with a given Shape and filled with a particular value.
@@ -671,7 +672,7 @@ Tensor fromScalar(const T& val, const dtype type = dtype_traits<T>::ctype);
  * @return a tensor of the specified shape filled with the specified value
  */
 template <typename T>
-Tensor full(
+FL_API Tensor full(
     const Shape& dims,
     const T& val,
     const dtype type = dtype_traits<T>::ctype);
@@ -682,7 +683,7 @@ Tensor full(
  * @param[in] dim the size of the dimension of the matrix (dim x dim)
  * @param[in] type the type of the resulting matrix
  */
-Tensor identity(const Dim dim, const dtype type = dtype::f32);
+FL_API Tensor identity(const Dim dim, const dtype type = dtype::f32);
 
 /**
  * Return evenly-spaced values in a given interval. Generate values in the
@@ -696,7 +697,7 @@ Tensor identity(const Dim dim, const dtype type = dtype::f32);
  * @return a tensor containing the evenly-spaced values
  */
 template <typename T>
-Tensor arange(
+FL_API Tensor arange(
     const T& start,
     const T& end,
     const T& step = 1,
@@ -714,7 +715,7 @@ Tensor arange(
  * @return a tensor with the given shape with the sequence along the given
  * dimension, tiled along other dimensions.
  */
-Tensor
+FL_API Tensor
 arange(const Shape& shape, const Dim seqDim = 0, const dtype type = dtype::f32);
 
 /**
@@ -731,7 +732,7 @@ arange(const Shape& shape, const Dim seqDim = 0, const dtype type = dtype::f32);
  *
  * @return
  */
-Tensor iota(
+FL_API Tensor iota(
     const Shape& dims,
     const Shape& tileDims = {1},
     const dtype type = dtype::f32);
@@ -745,7 +746,7 @@ Tensor iota(
  * @param[in] shape the new shape for the tensor
  * @return the reshaped tensor
  */
-Tensor reshape(const Tensor& tensor, const Shape& shape);
+FL_API Tensor reshape(const Tensor& tensor, const Shape& shape);
 
 /**
  * Permute the axes of a tensor. If no arguments are given, reverses the axes of
@@ -757,7 +758,7 @@ Tensor reshape(const Tensor& tensor, const Shape& shape);
  * argument is not passed, the axes of the input tensor will be reversed.
  * @return the permuted tensor
  */
-Tensor transpose(const Tensor& tensor, const Shape& axes = {});
+FL_API Tensor transpose(const Tensor& tensor, const Shape& axes = {});
 
 /**
  * Repeat the contents of a tensor a given number of times along specified
@@ -768,7 +769,7 @@ Tensor transpose(const Tensor& tensor, const Shape& axes = {});
  * tensor
  * @return the tiled tensor
  */
-Tensor tile(const Tensor& tensor, const Shape& shape);
+FL_API Tensor tile(const Tensor& tensor, const Shape& shape);
 
 /**
  * Join or concatenate tensors together along a particular axis.
@@ -777,7 +778,8 @@ Tensor tile(const Tensor& tensor, const Shape& shape);
  * @param[in] axis the axis along which to concatenate tensors
  * @return a concatenated tensor
  */
-Tensor concatenate(const std::vector<Tensor>& tensors, const unsigned axis = 0);
+FL_API Tensor
+concatenate(const std::vector<Tensor>& tensors, const unsigned axis = 0);
 
 /**
  * Join or concatenate tensors together along a particular axis.
@@ -799,7 +801,7 @@ Tensor concatenate(unsigned axis, const Ts&... args) {
  * @param[in] tensor input tensor
  * @return a tensor containing the indices of the nonzero elements
  */
-Tensor nonzero(const Tensor& tensor);
+FL_API Tensor nonzero(const Tensor& tensor);
 
 /// Padding types for the pad operator.
 enum class PadType {
@@ -821,8 +823,8 @@ enum class PadType {
  *
  * @return the padded tensor
  */
-Tensor pad(
-    const Tensor& input,
+FL_API Tensor
+pad(const Tensor& input,
     const std::vector<std::pair<int, int>>& padWidths,
     const PadType type = PadType::Constant);
 
@@ -833,7 +835,7 @@ Tensor pad(
  * @param[in] tensor the input tensor to negate.
  * @return a tensor with elements negated.
  */
-Tensor negative(const Tensor& tensor);
+FL_API Tensor negative(const Tensor& tensor);
 inline Tensor operator-(const Tensor& tensor) {
   return negative(tensor);
 }
@@ -844,7 +846,7 @@ inline Tensor operator-(const Tensor& tensor) {
  * @param[in] tensor the tensor on which to perform logical not
  * @return a tensor with element-wise logical not of the input
  */
-Tensor logicalNot(const Tensor& tensor);
+FL_API Tensor logicalNot(const Tensor& tensor);
 inline Tensor operator!(const Tensor& tensor) {
   return logicalNot(tensor);
 }
@@ -855,7 +857,7 @@ inline Tensor operator!(const Tensor& tensor) {
  * @param[in] tensor the tensor to exponentiate
  * @return the exponentiated tensor
  */
-Tensor exp(const Tensor& tensor);
+FL_API Tensor exp(const Tensor& tensor);
 
 /**
  * Compute the element-wise natural logarithm of a tensor
@@ -863,7 +865,7 @@ Tensor exp(const Tensor& tensor);
  * @param[in] tensor the tensor on which to compute
  * @return the resulting tensor
  */
-Tensor log(const Tensor& tensor);
+FL_API Tensor log(const Tensor& tensor);
 
 /**
  * Returns the natural logarithm of one plus the input, element-wise.
@@ -871,7 +873,7 @@ Tensor log(const Tensor& tensor);
  * @param[in] tensor the tensor on which to compute
  * @return the resulting tensor
  */
-Tensor log1p(const Tensor& tensor);
+FL_API Tensor log1p(const Tensor& tensor);
 
 /**
  * Returns the element-wise sine of the input.
@@ -879,7 +881,7 @@ Tensor log1p(const Tensor& tensor);
  * @param[in] tensor the tensor on which to compute
  * @return the resulting tensor
  */
-Tensor sin(const Tensor& tensor);
+FL_API Tensor sin(const Tensor& tensor);
 
 /**
  * Returns the element-wise cosine of the input.
@@ -887,7 +889,7 @@ Tensor sin(const Tensor& tensor);
  * @param[in] tensor the tensor on which to compute
  * @return the resulting tensor
  */
-Tensor cos(const Tensor& tensor);
+FL_API Tensor cos(const Tensor& tensor);
 
 /**
  * Returns the element-wise non-negative square root of the input.
@@ -895,7 +897,7 @@ Tensor cos(const Tensor& tensor);
  * @param[in] tensor the tensor on which to compute
  * @return the resulting tensor
  */
-Tensor sqrt(const Tensor& tensor);
+FL_API Tensor sqrt(const Tensor& tensor);
 
 /**
  * Returns the element-wise hyperbolic tangent of the input.
@@ -903,7 +905,7 @@ Tensor sqrt(const Tensor& tensor);
  * @param[in] tensor the tensor on which to compute
  * @return the resulting tensor
  */
-Tensor tanh(const Tensor& tensor);
+FL_API Tensor tanh(const Tensor& tensor);
 
 /**
  * Returns the element-wise floor of the input.
@@ -911,7 +913,7 @@ Tensor tanh(const Tensor& tensor);
  * @param[in] tensor the tensor on which to compute the floor
  * @return the resulting tensor
  */
-Tensor floor(const Tensor& tensor);
+FL_API Tensor floor(const Tensor& tensor);
 
 /**
  * Returns the element-wise ceiling of the input.
@@ -919,7 +921,7 @@ Tensor floor(const Tensor& tensor);
  * @param[in] tensor the tensor on which to compute the ceiling
  * @return the resulting tensor
  */
-Tensor ceil(const Tensor& tensor);
+FL_API Tensor ceil(const Tensor& tensor);
 
 /**
  * Returns the tensor with element-wise rounding to the nearest integer.
@@ -927,7 +929,7 @@ Tensor ceil(const Tensor& tensor);
  * @param[in] tensor the input tensor
  * @return the resulting tensor
  */
-Tensor rint(const Tensor& tensor);
+FL_API Tensor rint(const Tensor& tensor);
 
 /**
  * Returns the element-wise absolute value of the input.
@@ -935,7 +937,7 @@ Tensor rint(const Tensor& tensor);
  * @param[in] tensor the tensor on which to compute
  * @return the resulting tensor
  */
-Tensor absolute(const Tensor& tensor);
+FL_API Tensor absolute(const Tensor& tensor);
 
 // \copydoc absolute
 inline Tensor abs(const Tensor& tensor) {
@@ -949,7 +951,7 @@ inline Tensor abs(const Tensor& tensor) {
  * @param[in] tensor the tensor on which to compute
  * @return the resulting tensor
  */
-Tensor sigmoid(const Tensor& tensor);
+FL_API Tensor sigmoid(const Tensor& tensor);
 
 /**
  * Computes the element-wise error function the input: see
@@ -958,7 +960,7 @@ Tensor sigmoid(const Tensor& tensor);
  * @param[in] tensor the tensor on which to compute
  * @return ther resulting tensor
  */
-Tensor erf(const Tensor& tensor);
+FL_API Tensor erf(const Tensor& tensor);
 
 /**
  * Flip a Tensor along a specified dimension.
@@ -968,7 +970,7 @@ Tensor erf(const Tensor& tensor);
  *
  * @return the resulting flipped tensor
  */
-Tensor flip(const Tensor& tensor, const unsigned dim);
+FL_API Tensor flip(const Tensor& tensor, const unsigned dim);
 
 /**
  * Clip (limit) the values of a tensor. Given some interval of values, set
@@ -986,7 +988,7 @@ Tensor flip(const Tensor& tensor, const unsigned dim);
  * clipping
  * @return a tensor with all values clipped between high and low
  */
-Tensor clip(const Tensor& tensor, const Tensor& low, const Tensor& high);
+FL_API Tensor clip(const Tensor& tensor, const Tensor& low, const Tensor& high);
 
 /**
  * Clip (limit) the values of a tensor. Given some interval of values, set
@@ -1001,7 +1003,7 @@ Tensor clip(const Tensor& tensor, const Tensor& low, const Tensor& high);
  * @param[in] high a scalar to use as the maximum value in clipping
  * @return a tensor with all values clipped between high and low
  */
-Tensor clip(const Tensor& tensor, const Tensor& low, const double& high);
+FL_API Tensor clip(const Tensor& tensor, const Tensor& low, const double& high);
 
 /**
  * Clip (limit) the values of a tensor. Given some interval of values, set
@@ -1016,7 +1018,7 @@ Tensor clip(const Tensor& tensor, const Tensor& low, const double& high);
  * clipping
  * @return a tensor with all values clipped between high and low
  */
-Tensor clip(const Tensor& tensor, const double& low, const Tensor& high);
+FL_API Tensor clip(const Tensor& tensor, const double& low, const Tensor& high);
 
 /**
  * Clip (limit) the values of a tensor. Given some interval of values, set
@@ -1029,7 +1031,7 @@ Tensor clip(const Tensor& tensor, const double& low, const Tensor& high);
  * @param[in] high a scalar to use as the maximum value in clipping
  * @return a tensor with all values clipped between high and low
  */
-Tensor clip(const Tensor& tensor, const double& low, const double& high);
+FL_API Tensor clip(const Tensor& tensor, const double& low, const double& high);
 
 /**
  * Rolls (or shifts) a tensor by a certain amount along a given axis, moving
@@ -1042,7 +1044,7 @@ Tensor clip(const Tensor& tensor, const double& low, const double& high);
  * @return a tensor with values shifted by the given amount in a circular
  * fashion
  */
-Tensor roll(const Tensor& tensor, const int shift, const unsigned axis);
+FL_API Tensor roll(const Tensor& tensor, const int shift, const unsigned axis);
 
 /**
  * Returns a boolean tensor which is true where the input tensor was NaN, and
@@ -1052,7 +1054,7 @@ Tensor roll(const Tensor& tensor, const int shift, const unsigned axis);
  * @return a boolean tensor with true in positions that contained NaN in the
  * input tensor
  */
-Tensor isnan(const Tensor& tensor);
+FL_API Tensor isnan(const Tensor& tensor);
 
 /**
  * Returns a boolean tensor which is true where the input tensor was infinity,
@@ -1062,7 +1064,7 @@ Tensor isnan(const Tensor& tensor);
  * @return a boolean tensor with true in positions that contained Inf in the
  * input tensor
  */
-Tensor isinf(const Tensor& tensor);
+FL_API Tensor isinf(const Tensor& tensor);
 
 /**
  * Returns a tensor that contains -1 if an element is less than 0, 0 if an
@@ -1072,7 +1074,7 @@ Tensor isinf(const Tensor& tensor);
  * @param[in] tensor the input tensor
  * @return a tensor containing element-wise sign values.
  */
-Tensor sign(const Tensor& tensor);
+FL_API Tensor sign(const Tensor& tensor);
 
 /**
  * Returns an upper triangular version of the tensor.
@@ -1085,7 +1087,7 @@ Tensor sign(const Tensor& tensor);
  * @return a copy of the input tensor with elements above the diagonal zeroed
  * out
  */
-Tensor tril(const Tensor& tensor);
+FL_API Tensor tril(const Tensor& tensor);
 
 /**
  * Returns an upper triangular version of the tensor.
@@ -1098,7 +1100,7 @@ Tensor tril(const Tensor& tensor);
  * @return a copy of the input tensor with elements below the diagonal zeroed
  * out
  */
-Tensor triu(const Tensor& tensor);
+FL_API Tensor triu(const Tensor& tensor);
 
 /**
  * Conditionally return elements from one of two tensors based on a condition.
@@ -1114,7 +1116,7 @@ Tensor triu(const Tensor& tensor);
  * @return the resulting tensor that contains elements of x where condition is
  * true and elements of y where condition is false.
  */
-Tensor where(const Tensor& condition, const Tensor& x, const Tensor& y);
+FL_API Tensor where(const Tensor& condition, const Tensor& x, const Tensor& y);
 
 /**
  * Conditionally return elements from a tensor or passed scalar based on a
@@ -1130,7 +1132,7 @@ Tensor where(const Tensor& condition, const Tensor& x, const Tensor& y);
  * @return the resulting tensor that contains elements of x where condition is
  * true and the scalar value y where the condition is false.
  */
-Tensor where(const Tensor& condition, const Tensor& x, const double& y);
+FL_API Tensor where(const Tensor& condition, const Tensor& x, const double& y);
 
 /**
  * Conditionally return elements from a scalar or passed tensor based on a
@@ -1146,7 +1148,7 @@ Tensor where(const Tensor& condition, const Tensor& x, const double& y);
  * @return the resulting tensor that contains elements of x where condition is
  * true and the scalar value y where the condition is false.
  */
-Tensor where(const Tensor& condition, const double& x, const Tensor& y);
+FL_API Tensor where(const Tensor& condition, const double& x, const Tensor& y);
 
 /*!
  * Sorting mode for sorting-related functions.
@@ -1165,7 +1167,7 @@ enum class SortMode { Descending = 0, Ascending = 1 };
  * topk highest values are returned; else the topk lowest values are
  * returned. Defaults to descending.
  */
-void topk(
+FL_API void topk(
     Tensor& values,
     Tensor& indices,
     const Tensor& input,
@@ -1180,7 +1182,7 @@ void topk(
  * @param[in] axis the axis along which to sort
  * @param[in] sortMode the ordering with which to sort. Defaults to ascending
  */
-Tensor sort(
+FL_API Tensor sort(
     const Tensor& input,
     const Dim axis,
     const SortMode sortMode = SortMode::Ascending);
@@ -1194,7 +1196,7 @@ Tensor sort(
  * @param[in] axis the axis along which to sort
  * @param[in] sortMode the ordering with which to sort. Defaults to ascending
  */
-void sort(
+FL_API void sort(
     Tensor& values,
     Tensor& indices,
     const Tensor& input,
@@ -1208,18 +1210,18 @@ void sort(
  * @param[in] axis the axis along which to sort
  * @param[in] sortMode the ordering with which to sort. Defaults to ascending
  */
-Tensor argsort(
+FL_API Tensor argsort(
     const Tensor& input,
     const Dim axis,
     const SortMode sortMode = SortMode::Ascending);
 
 /************************** Binary Operators ***************************/
 // \cond DOXYGEN_DO_NOT_DOCUMENT
-#define FL_BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, TYPE) \
-  Tensor FUNC(TYPE lhs, const Tensor& rhs);            \
-  Tensor FUNC(const Tensor& lhs, TYPE rhs);            \
-  Tensor operator OP(TYPE lhs, const Tensor& rhs);     \
-  Tensor operator OP(const Tensor& lhs, TYPE rhs);
+#define FL_BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, TYPE)    \
+  FL_API Tensor FUNC(TYPE lhs, const Tensor& rhs);        \
+  FL_API Tensor FUNC(const Tensor& lhs, TYPE rhs);        \
+  FL_API Tensor operator OP(TYPE lhs, const Tensor& rhs); \
+  FL_API Tensor operator OP(const Tensor& lhs, TYPE rhs);
 
 #define FL_BINARY_OP_LITERALS_DECL(OP, FUNC)                           \
   FL_BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const bool&);               \
@@ -1236,9 +1238,9 @@ Tensor argsort(
   FL_BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const short&);              \
   FL_BINARY_OP_LITERAL_TYPE_DECL(OP, FUNC, const unsigned short&);
 
-#define FL_BINARY_OP_DECL(OP, FUNC)                         \
-  Tensor FUNC(const Tensor& lhs, const Tensor& rhs);        \
-  Tensor operator OP(const Tensor& lhs, const Tensor& rhs); \
+#define FL_BINARY_OP_DECL(OP, FUNC)                                \
+  FL_API Tensor FUNC(const Tensor& lhs, const Tensor& rhs);        \
+  FL_API Tensor operator OP(const Tensor& lhs, const Tensor& rhs); \
   FL_BINARY_OP_LITERALS_DECL(OP, FUNC);
 
 FL_BINARY_OP_DECL(+, add);
@@ -1274,7 +1276,7 @@ FL_BINARY_OP_DECL(>>, rShift);
  * @param[in] rhs right hand side tensor for the minimum
  * @return a tensor containing the minimum values in each tensor
  */
-Tensor minimum(const Tensor& lhs, const Tensor& rhs);
+FL_API Tensor minimum(const Tensor& lhs, const Tensor& rhs);
 
 /**
  * Returns the element-wise minimum of tensor elements with some scalar.
@@ -1284,7 +1286,7 @@ Tensor minimum(const Tensor& lhs, const Tensor& rhs);
  * @return a tensor containing the minimum values element-wise with the tensor
  * and a scalar.
  */
-Tensor minimum(const Tensor& lhs, const double& rhs);
+FL_API Tensor minimum(const Tensor& lhs, const double& rhs);
 
 /**
  * Returns the element-wise minimum of tensor elements with some scalar.
@@ -1294,7 +1296,7 @@ Tensor minimum(const Tensor& lhs, const double& rhs);
  * @return a tensor containing the minimum values element-wise with the tensor
  * and a scalar.
  */
-Tensor minimum(const double& lhs, const Tensor& rhs);
+FL_API Tensor minimum(const double& lhs, const Tensor& rhs);
 
 /**
  * Returns the element-wise maximum of tensor elements.
@@ -1305,7 +1307,7 @@ Tensor minimum(const double& lhs, const Tensor& rhs);
  * @param[in] rhs right hand side tensor for the minimum
  * @return a tensor containing the maximum values in each tensor
  */
-Tensor maximum(const Tensor& lhs, const Tensor& rhs);
+FL_API Tensor maximum(const Tensor& lhs, const Tensor& rhs);
 
 /**
  * Returns the element-wise maximum of tensor elements with some scalar.
@@ -1315,7 +1317,7 @@ Tensor maximum(const Tensor& lhs, const Tensor& rhs);
  * @return a tensor containing the maximum values element-wise with the tensor
  * and a scalar.
  */
-Tensor maximum(const Tensor& lhs, const double& rhs);
+FL_API Tensor maximum(const Tensor& lhs, const double& rhs);
 
 /**
  * Returns the element-wise maximum of tensor elements with some scalar.
@@ -1325,7 +1327,7 @@ Tensor maximum(const Tensor& lhs, const double& rhs);
  * @return a tensor containing the maximum values element-wise with the tensor
  * and a scalar.
  */
-Tensor maximum(const double& lhs, const Tensor& rhs);
+FL_API Tensor maximum(const double& lhs, const Tensor& rhs);
 
 /**
  * Returns the element-wise exponentiation of tensors; the left hand tensor is
@@ -1335,7 +1337,7 @@ Tensor maximum(const double& lhs, const Tensor& rhs);
  * @param[in] rhs the exponent tensor
  * @return a tensor containing the exponentiated values
  */
-Tensor power(const Tensor& lhs, const Tensor& rhs);
+FL_API Tensor power(const Tensor& lhs, const Tensor& rhs);
 
 /**
  * Returns the element-wise exponentiation of tensors raised to some scalar
@@ -1345,7 +1347,7 @@ Tensor power(const Tensor& lhs, const Tensor& rhs);
  * @param[in] rhs a scalar exponent
  * @return a tensor containing the exponentiated values
  */
-Tensor power(const Tensor& lhs, const double& rhs);
+FL_API Tensor power(const Tensor& lhs, const double& rhs);
 
 /**
  * Returns the element-wise exponentiation of a scalar raised element-wise to
@@ -1355,7 +1357,7 @@ Tensor power(const Tensor& lhs, const double& rhs);
  * @param[in] rhs the tensor containing exponent values
  * @return a tensor containing the exponentiated values
  */
-Tensor power(const double& lhs, const Tensor& rhs);
+FL_API Tensor power(const double& lhs, const Tensor& rhs);
 
 /******************************* BLAS ********************************/
 
@@ -1377,7 +1379,7 @@ enum class MatrixProperty { None = 0, Transpose = 1 };
  *
  * @return an output tensor containing the matrix product.
  */
-Tensor matmul(
+FL_API Tensor matmul(
     const Tensor& lhs,
     const Tensor& rhs,
     MatrixProperty lhsProp = MatrixProperty::None,
@@ -1396,7 +1398,7 @@ Tensor matmul(
  * as singleton dimensions rather than collapsing them
  * @return a tensor containing the max(es)
  */
-Tensor amin(
+FL_API Tensor amin(
     const Tensor& input,
     const std::vector<int>& axes = {},
     const bool keepDims = false);
@@ -1412,7 +1414,7 @@ Tensor amin(
  * as singleton dimensions rather than collapsing them
  * @return a tensor containing the max(es)
  */
-Tensor amax(
+FL_API Tensor amax(
     const Tensor& input,
     const std::vector<int>& axes = {},
     const bool keepDims = false);
@@ -1430,7 +1432,7 @@ Tensor amax(
  * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
  * as singleton dimensions rather than collapsing them
  */
-void min(
+FL_API void min(
     Tensor& values,
     Tensor& indices,
     const Tensor& input,
@@ -1450,7 +1452,7 @@ void min(
  * @param[in] keepDims defaults false. Keeps the dimensions being reduced over
  * as singleton dimensions rather than collapsing them
  */
-void max(
+FL_API void max(
     Tensor& values,
     Tensor& indices,
     const Tensor& input,
@@ -1466,7 +1468,7 @@ void max(
  * as singleton dimensions rather than collapsing them
  * @return a tensor containing the indices of the max values along each axis
  */
-Tensor
+FL_API Tensor
 argmax(const Tensor& input, const unsigned axis, const bool keepDims = false);
 
 /**
@@ -1478,7 +1480,7 @@ argmax(const Tensor& input, const unsigned axis, const bool keepDims = false);
  * as singleton dimensions rather than collapsing them
  * @return a tensor containing the indices of the max values along each axis
  */
-Tensor
+FL_API Tensor
 argmin(const Tensor& input, const unsigned axis, const bool keepDims = false);
 
 /**
@@ -1492,8 +1494,8 @@ argmin(const Tensor& input, const unsigned axis, const bool keepDims = false);
  * as singleton dimensions rather than collapsing them
  * @return a tensor containing the sum(s)
  */
-Tensor sum(
-    const Tensor& input,
+FL_API Tensor
+sum(const Tensor& input,
     const std::vector<int>& axes = {},
     const bool keepDims = false);
 
@@ -1505,7 +1507,7 @@ Tensor sum(
  * @param[in] axis the axis along which to accumulate
  * @return a tensor of the same shape containing the accumulated sum
  */
-Tensor cumsum(const Tensor& input, const unsigned axis);
+FL_API Tensor cumsum(const Tensor& input, const unsigned axis);
 
 /**
  * Mean of tensor over given axes. If axes is left empty, computes the mean
@@ -1518,7 +1520,7 @@ Tensor cumsum(const Tensor& input, const unsigned axis);
  * as singleton dimensions rather than collapsing them
  * @return a tensor containing the mean(s)
  */
-Tensor mean(
+FL_API Tensor mean(
     const Tensor& input,
     const std::vector<int>& axes = {},
     const bool keepDims = false);
@@ -1534,7 +1536,7 @@ Tensor mean(
  * as singleton dimensions rather than collapsing them
  * @return a tensor containing the median(s)
  */
-Tensor median(
+FL_API Tensor median(
     const Tensor& input,
     const std::vector<int>& axes = {},
     const bool keepDims = false);
@@ -1551,8 +1553,8 @@ Tensor median(
  * as singleton dimensions rather than collapsing them
  * @return a tensor containing the variance(s)
  */
-Tensor var(
-    const Tensor& input,
+FL_API Tensor
+var(const Tensor& input,
     const std::vector<int>& axes = {},
     const bool bias = false,
     const bool keepDims = false);
@@ -1568,8 +1570,8 @@ Tensor var(
  * as singleton dimensions rather than collapsing them
  * @return a tensor containing the standard deviation(s)
  */
-Tensor std(
-    const Tensor& input,
+FL_API Tensor
+std(const Tensor& input,
     const std::vector<int>& axes = {},
     const bool keepDims = false);
 
@@ -1584,7 +1586,7 @@ Tensor std(
  * as singleton dimensions rather than collapsing them
  * @return a tensor containing the norm(s)
  */
-Tensor norm(
+FL_API Tensor norm(
     const Tensor& input,
     const std::vector<int>& axes = {},
     double p = 2,
@@ -1603,7 +1605,7 @@ Tensor norm(
  * @return a tensor containing the number of nonzero elements along each axis or
  * over the entire tensor.
  */
-Tensor countNonzero(
+FL_API Tensor countNonzero(
     const Tensor& input,
     const std::vector<int>& axes = {},
     const bool keepDims = false);
@@ -1622,8 +1624,8 @@ Tensor countNonzero(
  * @return a bool tensor containing axis-wise values denoting truthy values
  * along that axis in the input tensor.
  */
-Tensor any(
-    const Tensor& input,
+FL_API Tensor
+any(const Tensor& input,
     const std::vector<int>& axes = {},
     const bool keepDims = false);
 
@@ -1641,8 +1643,8 @@ Tensor any(
  * @return a bool tensor containing axis-wise values with true along
  * axes that contain only true values.
  */
-Tensor all(
-    const Tensor& input,
+FL_API Tensor
+all(const Tensor& input,
     const std::vector<int>& axes = {},
     const bool keepDims = false);
 
@@ -1651,14 +1653,14 @@ Tensor all(
 /**
  * Write a string representation of a tensor to an output stream.
  */
-std::ostream& operator<<(std::ostream& ostr, const Tensor& t);
+FL_API std::ostream& operator<<(std::ostream& ostr, const Tensor& t);
 
 /**
  * Print a string representation of a tensor to standard out.
  *
  * @param[in] tensor the tensor to print
  */
-void print(const Tensor& tensor);
+FL_API void print(const Tensor& tensor);
 
 /**
  * Returns of two tensors are close. Checks:
@@ -1672,7 +1674,7 @@ void print(const Tensor& tensor);
  * @param[in] absTolerance the maximum-allowable distance between the
  * tensors
  */
-bool allClose(
+FL_API bool allClose(
     const fl::Tensor& a,
     const fl::Tensor& b,
     const double absTolerance = 1e-5);
@@ -1680,7 +1682,7 @@ bool allClose(
 /**
  * @return if a Tensor contains any NaN or Inf values.
  */
-bool isInvalidArray(const Tensor& tensor);
+FL_API bool isInvalidArray(const Tensor& tensor);
 
 /**
  * Get a string representation of a tensor backend type.
@@ -1688,7 +1690,7 @@ bool isInvalidArray(const Tensor& tensor);
  * @param[in] type the tensor backend type.
  * @return a string representing the given tensor backend type.
  */
-std::string tensorBackendTypeToString(const TensorBackendType type);
+FL_API std::string tensorBackendTypeToString(const TensorBackendType type);
 
 /**
  * Write a string representation of a tensor backend type to an output stream.
@@ -1697,7 +1699,7 @@ std::string tensorBackendTypeToString(const TensorBackendType type);
  * @param[in] type the tensor backend type.
  * @return the output stream.
  */
-std::ostream& operator<<(std::ostream& os, const TensorBackendType type);
+FL_API std::ostream& operator<<(std::ostream& os, const TensorBackendType type);
 
 /**
  * Convert a tensor from one type to another. Requires moving the input Tensor

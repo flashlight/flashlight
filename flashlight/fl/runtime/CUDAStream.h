@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -17,7 +17,7 @@ namespace fl {
 /**
  * An abstraction for CUDA stream with controlled creation methods.
  */
-class CUDAStream : public StreamTrait<CUDAStream> {
+class FL_API CUDAStream : public StreamTrait<CUDAStream> {
   // the device upon which the underlying native stream was created
   CUDADevice& device_;
   // the underlying native stream
@@ -53,7 +53,9 @@ class CUDAStream : public StreamTrait<CUDAStream> {
    * 2. `device` is the currently active cuda device.
    */
   static std::shared_ptr<CUDAStream> makeSharedAndRegister(
-      CUDADevice& device, cudaStream_t nativeStream, bool managed);
+      CUDADevice& device,
+      cudaStream_t nativeStream,
+      bool managed);
 
   // A fully configurable create, hidden for internal use.
   static std::shared_ptr<CUDAStream> create(int flag, bool managed);
@@ -77,29 +79,30 @@ class CUDAStream : public StreamTrait<CUDAStream> {
    * stream.
    */
   static std::shared_ptr<CUDAStream> wrapUnmanaged(
-      int deviceId, cudaStream_t stream);
+      int deviceId,
+      cudaStream_t stream);
 
-    /**
-     * Create a managed CUDAStream around an internally created native CUDA
-     * stream and automatically register it on the active CUDA device in
-     * DeviceManager.
-     *
-     * @param[in] flag the flag used for creating native CUDA stream.
-     *
-     * @return a shared pointer to the CUDAStream created.
-     */
+  /**
+   * Create a managed CUDAStream around an internally created native CUDA
+   * stream and automatically register it on the active CUDA device in
+   * DeviceManager.
+   *
+   * @param[in] flag the flag used for creating native CUDA stream.
+   *
+   * @return a shared pointer to the CUDAStream created.
+   */
   static std::shared_ptr<CUDAStream> createManaged(
       int flag = cudaStreamDefault);
 
-    /**
-     * Create an unmanaged CUDAStream around an internally created native CUDA
-     * stream and automatically register it on the active CUDA device in
-     * DeviceManager.
-     *
-     * @param[in] flag the flag used for creating native CUDA stream.
-     *
-     * @return a shared pointer to the CUDAStream created.
-     */
+  /**
+   * Create an unmanaged CUDAStream around an internally created native CUDA
+   * stream and automatically register it on the active CUDA device in
+   * DeviceManager.
+   *
+   * @param[in] flag the flag used for creating native CUDA stream.
+   *
+   * @return a shared pointer to the CUDAStream created.
+   */
   static std::shared_ptr<CUDAStream> createUnmanaged(
       int flag = cudaStreamDefault);
 

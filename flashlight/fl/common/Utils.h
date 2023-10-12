@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -17,6 +17,8 @@
 #include <unordered_map>
 #include <utility>
 
+#include "flashlight/fl/common/Defines.h"
+
 namespace fl {
 
 class Tensor;
@@ -25,22 +27,22 @@ class Tensor;
  * @return if fp16 operations are supported with the current flashlight
  * configuration.
  */
-bool f16Supported();
+FL_API bool f16Supported();
 
 // Returns high resolution time formatted as:
 // MMDD HH MM SS UUUUUU
 // 0206 08:42:42.123456
-std::string dateTimeWithMicroSeconds();
+FL_API std::string dateTimeWithMicroSeconds();
 
 // Returns round-up result of integer division.
 // throws invalid_argument exception on zero denominator.
-size_t divRoundUp(size_t numerator, size_t denominator);
+FL_API size_t divRoundUp(size_t numerator, size_t denominator);
 
 // Return a string formmated similar to: 1314127872(1GB+229MB+256KB)
-std::string prettyStringMemorySize(size_t size);
+FL_API std::string prettyStringMemorySize(size_t size);
 
 // Returns a string formatted similar to: 26675644(2m+667k+5644)
-std::string prettyStringCount(size_t count);
+FL_API std::string prettyStringCount(size_t count);
 
 /**
  * Calls `f(args...)` repeatedly, retrying if an exception is thrown.
@@ -83,7 +85,9 @@ typename std::invoke_result<Fn, Args...>::type retryWithBackoff(
 /**
  * Get the value of an environment variable with a default value if not found.
  */
-std::string getEnvVar(const std::string& key, const std::string& dflt = "");
+FL_API std::string getEnvVar(
+    const std::string& key,
+    const std::string& dflt = "");
 
 /** @} */
 

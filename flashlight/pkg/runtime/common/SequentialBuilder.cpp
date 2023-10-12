@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -24,11 +24,7 @@ std::shared_ptr<Module> parseLines(
     int& numLinesParsed);
 } // namespace
 
-namespace fl {
-
-namespace pkg {
-
-namespace runtime {
+namespace fl::pkg::runtime {
 
 std::shared_ptr<Sequential> buildSequentialModule(
     const fs::path& archfile,
@@ -95,8 +91,6 @@ fl::Variable forwardSequentialModuleWithPadMask(
   }
   return output.astype(input.type());
 }
-} // namespace runtime
-} // namespace pkg
 } // namespace fl
 
 namespace {
@@ -162,7 +156,7 @@ std::shared_ptr<Module> parseLines(
     float pDropout = std::stof(params[5]);
     float pLayerdrop = (params.size() >= 7) ? std::stof(params[6]) : 0.0;
     int preLN = (params.size() >= 8) ? std::stoi(params[7]) : 0;
-    bool useFutureMask = (params.size() >= 9) ? std::stoi(params[8]) : 0;
+    bool useFutureMask = (params.size() >= 9) ? std::stoi(params[8]) : false;
     return std::make_shared<Transformer>(
         modelDim,
         modelDim / nHead,
@@ -519,7 +513,7 @@ std::shared_ptr<Module> parseLines(
         if (lineIdx + i + numProjections >= lines.size()) {
           throw std::invalid_argument("Failed parsing Residual block");
         }
-        std::string resLine = lines[lineIdx + i + numProjections];
+        const std::string& resLine = lines[lineIdx + i + numProjections];
         auto resLinePrms = fl::lib::splitOnWhitespace(resLine, true);
 
         if (resLinePrms[0] == "SKIP") {

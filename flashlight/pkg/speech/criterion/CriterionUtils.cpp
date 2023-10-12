@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -14,9 +14,7 @@
 
 using fl::lib::seq::CriterionScaleMode;
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 int countRepeats(const int* labels, int len) {
   int r = 0;
@@ -98,6 +96,4 @@ fl::Variable applySeq2SeqMask(
   return fl::Variable(output, {input.withoutData()}, gradFunc);
 }
 
-} // namespace speech
-} // namespace pkg
 } // namespace fl

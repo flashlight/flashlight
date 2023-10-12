@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
  */
@@ -18,6 +18,8 @@
 #include <type_traits>
 #include <vector>
 
+#include "flashlight/fl/common/Defines.h"
+
 namespace fl {
 
 // Write count into ss in a short hand form that fits in 5 chars. Always writes
@@ -26,7 +28,7 @@ namespace fl {
 // Example:
 // count=1234567  will be written as 1234K
 // count=12345678 will be written as 12M
-void shortFormatCount(std::stringstream& ss, size_t count);
+FL_API void shortFormatCount(std::stringstream& ss, size_t count);
 
 // Write size into ss in a short hand form that fits in 5 chars. Always writes
 // 5 chars into ss using as many leading spaces as required.
@@ -35,7 +37,7 @@ void shortFormatCount(std::stringstream& ss, size_t count);
 // count=16384    (1 << 14) will be written as 16K
 // count=1048576  (1 << 20) will be written as 1024K
 // count=16777216 (1 << 24) will be written as 16M
-void shortFormatMemory(std::stringstream& ss, size_t size);
+FL_API void shortFormatMemory(std::stringstream& ss, size_t size);
 
 using histValFmtFunc = std::function<void(std::stringstream&, size_t)>;
 

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -14,19 +14,20 @@
 #include <unordered_set>
 #include <vector>
 
+#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/runtime/DeviceType.h"
 #include "flashlight/fl/runtime/Stream.h"
 
 namespace fl {
 
 // throw invalid_argument with descriptive message if given types don't match
-void deviceImplTypeCheck(DeviceType expect, DeviceType actual);
+FL_API void deviceImplTypeCheck(DeviceType expect, DeviceType actual);
 
 /**
  * An abstraction that represents framework-level (as opposed to hardware-level)
  * computing device.
  */
-class Device {
+class FL_API Device {
   std::unordered_set<std::shared_ptr<Stream>> streams_;
   // Used to update internal backend state for active device, thereby
   // eliminating the `setActive --> AnyTensorBackendImpl` dependency(s).
@@ -145,7 +146,7 @@ class DeviceTrait : public Device {
 /**
  * A dummy to represent CPU device.
  */
-class X64Device : public DeviceTrait<X64Device> {
+class FL_API X64Device : public DeviceTrait<X64Device> {
  public:
   static constexpr DeviceType type = DeviceType::x64;
 

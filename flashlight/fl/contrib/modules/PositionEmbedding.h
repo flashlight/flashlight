@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -23,7 +23,7 @@ namespace fl {
  * B is the batch size.
  *
  */
-class PositionEmbedding : public Container {
+class FL_API PositionEmbedding : public Container {
  public:
   PositionEmbedding(int32_t layerDim, int32_t maxLen, double dropout = 0);
 

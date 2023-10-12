@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -37,7 +37,7 @@ class ConvBenchmarks;
  * \f[X_{out} = \lceil{\frac{X_{in}}{X_{stride}}}\rceil,
  *  Y_{out} = \lceil{\frac{Y_{in}}{Y_{stride}}}\rceil\f]
  */
-class Conv2D : public UnaryModule {
+class FL_API Conv2D : public UnaryModule {
  private:
   FL_SAVE_LOAD_WITH_BASE(
       UnaryModule,

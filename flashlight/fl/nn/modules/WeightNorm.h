@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -29,7 +29,7 @@ namespace fl {
  * Accelerate Training of Deep Neural Networks](
  * https://arxiv.org/abs/1602.07868)
  */
-class WeightNorm : public Module {
+class FL_API WeightNorm : public Module {
  private:
   WeightNorm() = default;
 

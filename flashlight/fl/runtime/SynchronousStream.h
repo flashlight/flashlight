@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -16,7 +16,7 @@ namespace fl {
  * An abstraction for a synchronous stream. The word "synchronous" describes the
  * relative synchronization strategy, i.e., it merely delegates to `sync`.
  */
-class SynchronousStream : public StreamTrait<SynchronousStream> {
+class FL_API SynchronousStream : public StreamTrait<SynchronousStream> {
  protected:
   X64Device& device_{DeviceManager::getInstance()
                          .getActiveDevice(DeviceType::x64)

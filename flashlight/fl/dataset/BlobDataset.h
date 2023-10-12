@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -55,13 +55,13 @@ namespace fl {
   *
  */
 
-struct BlobDatasetEntry {
+struct FL_API BlobDatasetEntry {
   fl::dtype type;
   fl::Shape dims;
   int64_t offset;
 };
 
-class BlobDatasetEntryBuffer {
+class FL_API BlobDatasetEntryBuffer {
  private:
   std::vector<int64_t> data_;
   const int nFieldPerEntry_ = 7;
@@ -79,7 +79,7 @@ class BlobDatasetEntryBuffer {
   int64_t bytes() const;
 };
 
-class BlobDataset : public Dataset {
+class FL_API BlobDataset : public Dataset {
  private:
   const int maxNDims_ = BlobDatasetEntryBuffer::maxNDims_;
   BlobDatasetEntryBuffer entries_;

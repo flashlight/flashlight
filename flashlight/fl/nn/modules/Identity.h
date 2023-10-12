@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -14,7 +14,7 @@ namespace fl {
 /**
  * Identity returns the inputs at forward.
  */
-class Identity : public Module {
+class FL_API Identity : public Module {
  public:
   Identity() = default;
   virtual std::vector<Variable> forward(
@@ -24,6 +24,7 @@ class Identity : public Module {
  private:
   FL_SAVE_LOAD_WITH_BASE(Module)
 };
+
 } // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::Identity)

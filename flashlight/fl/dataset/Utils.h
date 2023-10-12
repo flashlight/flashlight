@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -26,7 +26,7 @@ namespace fl {
  * @param numPartitions total partitions
  * @param batchSz batchsize to be used
  */
-std::vector<int64_t> partitionByRoundRobin(
+FL_API std::vector<int64_t> partitionByRoundRobin(
     int64_t numSamples,
     int64_t partitionId,
     int64_t numPartitions,
@@ -42,7 +42,7 @@ std::vector<int64_t> partitionByRoundRobin(
  * @param numPartitions total partitions
  * @param maxTokens total number of tokens in the batch
  */
-std::pair<std::vector<int64_t>, std::vector<int64_t>>
+FL_API std::pair<std::vector<int64_t>, std::vector<int64_t>>
 dynamicPartitionByRoundRobin(
     const std::vector<float>& samplesSize,
     int64_t partitionId,
@@ -55,7 +55,7 @@ dynamicPartitionByRoundRobin(
  * @param data data to be batchified
  * @param batchFn function which is applied to make a batch
  */
-Tensor makeBatch(
+FL_API Tensor makeBatch(
     const std::vector<Tensor>& data,
     const Dataset::BatchFunction& batchFn = {});
 
@@ -67,7 +67,7 @@ Tensor makeBatch(
  * @param start start index
  * @param end end index
  */
-std::vector<Tensor> makeBatchFromRange(
+FL_API std::vector<Tensor> makeBatchFromRange(
     std::shared_ptr<const Dataset> dataset,
     std::vector<Dataset::BatchFunction> batchFns,
     int64_t start,

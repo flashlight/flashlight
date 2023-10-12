@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -42,7 +42,7 @@ namespace detail {
  *
  * \ingroup nn_init_utils
  */
-Tensor uniform(
+FL_API Tensor uniform(
     const Shape& shape,
     double min = 0,
     double max = 1,
@@ -64,7 +64,7 @@ Tensor uniform(
  *
  * \ingroup nn_init_utils
  */
-Tensor normal(
+FL_API Tensor normal(
     const Shape& shape,
     double stdv = 1,
     double mean = 0,
@@ -87,7 +87,7 @@ Tensor normal(
  *
  * \ingroup nn_init_utils
  */
-Tensor
+FL_API Tensor
 kaimingUniform(const Shape& shape, int fanIn, fl::dtype type = fl::dtype::f32);
 /**
  * Creates a `Tensor` representing a tensor with given input dimensions
@@ -104,7 +104,7 @@ kaimingUniform(const Shape& shape, int fanIn, fl::dtype type = fl::dtype::f32);
  *
  * \ingroup nn_init_utils
  */
-Tensor
+FL_API Tensor
 kaimingNormal(const Shape& shape, int fanIn, fl::dtype type = fl::dtype::f32);
 
 /**
@@ -124,7 +124,7 @@ kaimingNormal(const Shape& shape, int fanIn, fl::dtype type = fl::dtype::f32);
  *
  * \ingroup nn_init_utils
  */
-Tensor glorotUniform(
+FL_API Tensor glorotUniform(
     const Shape& shape,
     int fanIn,
     int fanOut,
@@ -148,7 +148,7 @@ Tensor glorotUniform(
  *
  * \ingroup nn_init_utils
  */
-Tensor glorotNormal(
+FL_API Tensor glorotNormal(
     const Shape& shape,
     int fanIn,
     int fanOut,
@@ -161,7 +161,7 @@ Tensor glorotNormal(
  * Implementation follows: https://git.io/JYuWA
  *
     Copyright (c) 2014 Indiana University
-    All rights reserved.
+
     Written by Prof. Gary L. Pavlis, Dept. of Geol. Sci.,
             Indiana University, Bloomington, IN
     This software is licensed under the New BSD license:
@@ -195,7 +195,7 @@ Tensor glorotNormal(
     USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
  */
-Tensor erfinv(const Tensor& y);
+FL_API Tensor erfinv(const Tensor& y);
 
 } // namespace detail
 
@@ -208,7 +208,7 @@ Tensor erfinv(const Tensor& y);
  *
  * \ingroup nn_init_utils
  */
-Variable input(const Tensor& arr);
+FL_API Variable input(const Tensor& arr);
 
 /**
  * See `fl::input` above.
@@ -218,7 +218,7 @@ Variable input(const Tensor& arr);
  *
  * \ingroup nn_init_utils
  */
-Variable noGrad(const Tensor& arr);
+FL_API Variable noGrad(const Tensor& arr);
 
 /**
  * Constructs a `Variable` with gradient calculation enabled, from a given array
@@ -228,7 +228,7 @@ Variable noGrad(const Tensor& arr);
  *
  * \ingroup nn_init_utils
  */
-Variable param(const Tensor& arr);
+FL_API Variable param(const Tensor& arr);
 
 /**
  * Creates a `Variable` representing a tensor with dimensions `[inputSize,
@@ -245,7 +245,7 @@ Variable param(const Tensor& arr);
  *
  * \ingroup nn_init_utils
  */
-Variable constant(
+FL_API Variable constant(
     double val,
     int inputSize,
     int outputSize,
@@ -266,7 +266,7 @@ Variable constant(
  *
  * \ingroup nn_init_utils
  */
-Variable constant(
+FL_API Variable constant(
     double val,
     const Shape& shape,
     fl::dtype type = fl::dtype::f32,
@@ -304,7 +304,7 @@ scalar(T val, fl::dtype type = dtype_traits<T>::ctype, bool calcGrad = true) {
  *
  * \ingroup nn_init_utils
  */
-Variable identity(
+FL_API Variable identity(
     int inputSize,
     int outputSize,
     fl::dtype type = fl::dtype::f32,
@@ -323,7 +323,7 @@ Variable identity(
  *
  * \ingroup nn_init_utils
  */
-Variable identity(
+FL_API Variable identity(
     const Shape& shape,
     fl::dtype type = fl::dtype::f32,
     bool calcGrad = true);
@@ -347,7 +347,7 @@ Variable identity(
  *
  * \ingroup nn_init_utils
  */
-Variable uniform(
+FL_API Variable uniform(
     int inputSize,
     int outputSize,
     double min = 0,
@@ -373,7 +373,7 @@ Variable uniform(
  *
  * \ingroup nn_init_utils
  */
-Variable uniform(
+FL_API Variable uniform(
     const Shape& shape,
     double min = 0,
     double max = 1,
@@ -399,7 +399,7 @@ Variable uniform(
  *
  * \ingroup nn_init_utils
  */
-Variable normal(
+FL_API Variable normal(
     int inputSize,
     int outputSize,
     double stdv = 1,
@@ -425,7 +425,7 @@ Variable normal(
  *
  * \ingroup nn_init_utils
  */
-Variable normal(
+FL_API Variable normal(
     const Shape& shape,
     double stdv = 1,
     double mean = 0,
@@ -449,7 +449,7 @@ Variable normal(
  *
  * \ingroup nn_init_utils
  */
-Variable kaimingUniform(
+FL_API Variable kaimingUniform(
     const Shape& shape,
     int fanIn,
     fl::dtype type = fl::dtype::f32,
@@ -472,7 +472,7 @@ Variable kaimingUniform(
  *
  * \ingroup nn_init_utils
  */
-Variable kaimingNormal(
+FL_API Variable kaimingNormal(
     const Shape& shape,
     int fanIn,
     fl::dtype type = fl::dtype::f32,
@@ -497,7 +497,7 @@ Variable kaimingNormal(
  *
  * \ingroup nn_init_utils
  */
-Variable glorotUniform(
+FL_API Variable glorotUniform(
     const Shape& shape,
     int fanIn,
     int fanOut,
@@ -524,7 +524,7 @@ Variable glorotUniform(
  *
  * \ingroup nn_init_utils
  */
-Variable glorotNormal(
+FL_API Variable glorotNormal(
     const Shape& shape,
     int fanIn,
     int fanOut,
@@ -550,7 +550,7 @@ Variable glorotNormal(
  *
  * \ingroup nn_init_utils
  */
-Variable truncNormal(
+FL_API Variable truncNormal(
     const Shape& shape,
     double stdv = 1.,
     double mean = 0.,

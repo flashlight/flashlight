@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -9,9 +9,11 @@
 
 #include <chrono>
 
+#include "flashlight/fl/common/Defines.h"
+
 namespace fl {
 
-class Timer {
+class FL_API Timer {
   std::chrono::time_point<std::chrono::high_resolution_clock> startTime_;
 
  public:

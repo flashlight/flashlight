@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -18,7 +18,7 @@ namespace fl {
  * Adds a padding of value `val` before and after each dimension
  * \f$i\f$ of size specified by the tuple `padi` to the input.
  */
-class Padding : public UnaryModule {
+class FL_API Padding : public UnaryModule {
  private:
   Padding() = default; // intentionally private
 

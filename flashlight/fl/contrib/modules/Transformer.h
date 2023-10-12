@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -46,7 +46,7 @@ namespace fl {
  * or for decoder part in the encoder-decoder transformer models)
  * @param preLN apply layer normalization before or after residual connection
  */
-class Transformer : public Container {
+class FL_API Transformer : public Container {
  public:
   Transformer(
       int32_t modelDim,

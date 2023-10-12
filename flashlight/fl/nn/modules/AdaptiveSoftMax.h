@@ -1,11 +1,12 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
 #pragma once
+
 #include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/nn/modules/Container.h"
 
@@ -25,7 +26,7 @@ namespace fl {
  * low-frequency inputs are approximated with lower rank matrices so as to speed
  * up computation.
  */
-class AdaptiveSoftMax : public UnaryModule {
+class FL_API AdaptiveSoftMax : public UnaryModule {
  private:
   FL_SAVE_LOAD_WITH_BASE(UnaryModule, cutoff_, divValue_)
   std::vector<int> cutoff_;

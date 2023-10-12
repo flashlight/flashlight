@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -11,11 +11,14 @@
 #include <numeric>
 #include <vector>
 
+#include "flashlight/fl/common/Defines.h"
+
 namespace fl {
 
 class Tensor;
 
-/** An implementation of edit distance meter, which measures the edit distance
+/**
+ * An implementation of edit distance meter, which measures the edit distance
  * between targets and predictions made by the model.
  * Example usage:
  *
@@ -28,7 +31,7 @@ class Tensor;
  * double letterErrorRate = meter.value()[0];
  * \endcode
  */
-class EditDistanceMeter {
+class FL_API EditDistanceMeter {
  public:
   /** A structure storing number of different type of errors when computing edit
    * distance. */

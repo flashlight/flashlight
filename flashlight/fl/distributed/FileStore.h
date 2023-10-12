@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/common/Filesystem.h"
 
 namespace fl {
@@ -19,7 +20,7 @@ namespace detail {
 
 // Inspired from
 // https://github.com/facebookincubator/gloo/blob/master/gloo/rendezvous/file_store.h
-class FileStore {
+class FL_API FileStore {
  public:
   static constexpr std::chrono::milliseconds kDefaultTimeout =
       std::chrono::seconds(60 * 2);

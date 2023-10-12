@@ -1,13 +1,14 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
 #pragma once
 
 #include "flashlight/fl/autograd/Variable.h"
+#include "flashlight/fl/common/Defines.h"
 
 namespace fl {
 
@@ -24,7 +25,8 @@ namespace fl {
  * @param absTolerance absolute tolerance allowed
  *
  */
-bool allClose(const Variable& a, const Variable& b, double absTolerance = 1e-5);
+FL_API bool
+allClose(const Variable& a, const Variable& b, double absTolerance = 1e-5);
 
 /** @} */
 

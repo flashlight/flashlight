@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -24,7 +24,7 @@ typedef std::shared_ptr<Module> ModulePtr;
  * A computation unit capable of forward computation that contains a
  * collection of multiple `Module` and their respective parameters.
  */
-class Container : public Module {
+class FL_API Container : public Module {
  private:
   // Keep track of location of submodule parameters in a map
   // from param index -> {module index, module param index}
@@ -138,7 +138,7 @@ class Container : public Module {
        mySequential.params().size()); // true
    \endcode
  */
-class Sequential : public Container {
+class FL_API Sequential : public Container {
  public:
   Sequential();
 

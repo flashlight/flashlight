@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -19,7 +19,7 @@ namespace fl {
  * final shape
  * [`embedding_dim`, \f$B_1\f$, \f$B_2\f$ (optional), \f$B_3\f$ (optional)].
  */
-class AdaptiveEmbedding : public UnaryModule {
+class FL_API AdaptiveEmbedding : public UnaryModule {
  private:
   AdaptiveEmbedding() = default; // Intentionally private
   int embeddingDim_;

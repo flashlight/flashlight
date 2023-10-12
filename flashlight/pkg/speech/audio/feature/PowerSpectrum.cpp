@@ -1,7 +1,7 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
@@ -15,9 +15,7 @@
 
 #include "flashlight/pkg/speech/audio/feature/SpeechUtils.h"
 
-namespace fl {
-namespace lib {
-namespace audio {
+namespace fl::lib::audio {
 
 std::mutex PowerSpectrum::fftPlanMutex_;
 
@@ -146,6 +144,4 @@ void PowerSpectrum::validatePowSpecParams() const {
 PowerSpectrum::~PowerSpectrum() {
   fftw_destroy_plan(*fftPlan_);
 }
-} // namespace audio
-} // namespace lib
 } // namespace fl

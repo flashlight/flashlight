@@ -1,14 +1,14 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
- * This source code is licensed under the MIT-style license found in the
+ * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
 #pragma once
 
+#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/optim/Optimizers.h"
-
 #include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
@@ -17,7 +17,7 @@ namespace fl {
  * through time. Implements the version from
  * https://github.com/pytorch/fairseq/blob/e75cff5f2c1d62f12dc911e0bf420025eb1a4e33/fairseq/optim/nag.py#L43
  */
-class NAGOptimizer : public FirstOrderOptimizer {
+class FL_API NAGOptimizer : public FirstOrderOptimizer {
  private:
   FL_SAVE_LOAD_WITH_BASE(FirstOrderOptimizer, mu_, wd_, velocities_, oldLr_)
 
