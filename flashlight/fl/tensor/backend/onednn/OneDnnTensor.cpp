@@ -312,7 +312,6 @@ bool OneDnnTensor::isContiguous() {
 
 Shape OneDnnTensor::strides() {
   const auto& memoryDesc = this->memoryDesc();
-  const auto& memory = this->memory();
   if (memoryDesc.get_format_kind() != dnnl::memory::format_kind::blocked) {
     // throw std::invalid_argument(
     //     "[OneDnnTensor::strides] Unexpected memory format kind: " +
