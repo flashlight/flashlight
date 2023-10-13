@@ -625,16 +625,20 @@ workflows:
           name: build-flashlight-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>+<< matrix.distributed_backend >>
           matrix:
             parameters:
-              platform: [linux, windows]
+              platform: [linux]
+              # TODO: We can consider adding back the Windows GPU baseline, but for now,
+              # CircleCI GPU images are too old to support CUDA 11, we have to download
+              # it ourselves, and that usually times out and flakes signal.
+              # platform: [linux, windows]
               backend: [arrayfire]
               autograd_backend: [cudnn]
               distributed_backend: ["", nccl]
-            exclude:
-              # No NCCL support on Windows
-              - platform: windows
-                backend: arrayfire
-                autograd_backend: cudnn
-                distributed_backend: nccl
+            # exclude:
+            #   # No NCCL support on Windows
+            #   - platform: windows
+            #     backend: arrayfire
+            #     autograd_backend: cudnn
+            #     distributed_backend: nccl
 
       - test-flashlight-core:
           name: test-flashlight-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>+<< matrix.distributed_backend >>
