@@ -23,7 +23,7 @@ namespace fl {
     \endcode
  * Note this module cannot be serialized.
  */
-class Transform : public UnaryModule {
+class FL_API Transform : public UnaryModule {
  private:
   Transform() = default; // Intentionally private
 

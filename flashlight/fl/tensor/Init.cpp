@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include "flashlight/fl/tensor/Init.h"
+
 #include <mutex>
 
 #include "flashlight/fl/common/Logging.h"

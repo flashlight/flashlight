@@ -33,7 +33,7 @@ namespace fl {
  * @param pDropout dropout probability
  * @param pLayerdrop layer dropout probability
  */
-class Conformer : public Container {
+class FL_API Conformer : public Container {
  public:
   explicit Conformer(
       int32_t modelDim,

@@ -14,7 +14,7 @@ namespace fl {
 /**
  * Identity returns the inputs at forward.
  */
-class Identity : public Module {
+class FL_API Identity : public Module {
  public:
   Identity() = default;
   std::vector<Variable> forward(const std::vector<Variable>& inputs) override;
@@ -24,6 +24,7 @@ class Identity : public Module {
  private:
   FL_SAVE_LOAD_WITH_BASE(Module)
 };
+
 } // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::Identity)

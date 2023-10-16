@@ -54,7 +54,7 @@ struct AutogradPayload;
  * @return a Tensor with shape [\f$X_{out}\f$, \f$Y_{out}\f$, \f$C_{out}\f$,
  * \f$N\f$]]
  */
-Tensor conv2d(
+FL_API Tensor conv2d(
     const Tensor& input,
     const Tensor& weights,
     const int sx = 1,
@@ -101,7 +101,7 @@ Tensor conv2d(
  * @return a Tensor with shape [\f$X_{out}\f$, \f$Y_{out}\f$, \f$C_{out}\f$,
  * \f$N\f$]]
  */
-Tensor conv2d(
+FL_API Tensor conv2d(
     const Tensor& input,
     const Tensor& weights,
     const Tensor& bias,
@@ -130,7 +130,7 @@ Tensor conv2d(
  * - AVG_INCLUDE_PADDING
  * - AVG_EXCLUDE_PADDING
  */
-Tensor pool2d(
+FL_API Tensor pool2d(
     const Tensor& input,
     const int wx,
     const int wy,
@@ -167,7 +167,7 @@ Tensor pool2d(
 * @param epsilon value of \f$\epsilon\f$
 * @return a Tensor with same shape as `input`
 */
-Tensor batchnorm(
+FL_API Tensor batchnorm(
     const Tensor& input,
     const Tensor& weight,
     const Tensor& bias,
@@ -178,7 +178,7 @@ Tensor batchnorm(
     const double momentum,
     const double epsilon);
 
-Tensor batchnorm(
+FL_API Tensor batchnorm(
     Tensor& saveMean,
     Tensor& saveVar,
     const Tensor& input,
@@ -229,7 +229,7 @@ otherwise
 * - `hiddenState`: hidden state for the current time step
 * - `cellState`: cell state for the current time step
 */
-std::tuple<Tensor, Tensor, Tensor> rnn(
+FL_API std::tuple<Tensor, Tensor, Tensor> rnn(
     const Tensor& input,
     const Tensor& hiddenState,
     const Tensor& cellState,
@@ -242,7 +242,7 @@ std::tuple<Tensor, Tensor, Tensor> rnn(
 
 namespace detail {
 
-Tensor conv2d(
+FL_API Tensor conv2d(
     const Tensor& input,
     const Tensor& weights,
     const Tensor& bias,
@@ -255,7 +255,7 @@ Tensor conv2d(
     const int groups,
     std::shared_ptr<detail::AutogradPayload> payload);
 
-Tensor batchnorm(
+FL_API Tensor batchnorm(
     Tensor& saveMean,
     Tensor& saveVar,
     const Tensor& input,
@@ -269,7 +269,7 @@ Tensor batchnorm(
     const double epsilon,
     std::shared_ptr<detail::AutogradPayload> payload);
 
-Tensor pool2d(
+FL_API Tensor pool2d(
     const Tensor& input,
     const int wx,
     const int wy,
@@ -280,7 +280,7 @@ Tensor pool2d(
     const PoolingMode mode,
     std::shared_ptr<detail::AutogradPayload> payload);
 
-std::tuple<Tensor, Tensor, Tensor> rnn(
+FL_API std::tuple<Tensor, Tensor, Tensor> rnn(
     const Tensor& input,
     const Tensor& hiddenState,
     const Tensor& cellState,
@@ -293,7 +293,7 @@ std::tuple<Tensor, Tensor, Tensor> rnn(
     std::shared_ptr<detail::AutogradPayload> payload);
 
 // Returns the gradient with respect to the input
-Tensor conv2dBackwardData(
+FL_API Tensor conv2dBackwardData(
     const Tensor& gradOutput,
     const Tensor& input,
     const Tensor& weight,
@@ -308,7 +308,7 @@ Tensor conv2dBackwardData(
     std::shared_ptr<detail::AutogradPayload> payload);
 
 // Returns the gradient with respect to the filter and bias (if given)
-std::pair<Tensor, Tensor> conv2dBackwardFilterBias(
+FL_API std::pair<Tensor, Tensor> conv2dBackwardFilterBias(
     const Tensor& gradOutput,
     const Tensor& input,
     const Tensor& weights,
@@ -324,7 +324,7 @@ std::pair<Tensor, Tensor> conv2dBackwardFilterBias(
     std::shared_ptr<DynamicBenchmark> biasBench,
     std::shared_ptr<detail::AutogradPayload> payload);
 
-Tensor pool2dBackward(
+FL_API Tensor pool2dBackward(
     const Tensor& gradOutput,
     const Tensor& input,
     const Tensor& poolOutput,
@@ -342,7 +342,7 @@ Tensor pool2dBackward(
 // Why one function for gradient of all of them? Most implementations don't
 // support computing separate gradients. If support for this is added in most
 // places, split out this function.
-std::tuple<Tensor, Tensor, Tensor> batchnormBackward(
+FL_API std::tuple<Tensor, Tensor, Tensor> batchnormBackward(
     const Tensor& gradOutput,
     const Tensor& saveMean,
     const Tensor& saveVar,
@@ -362,7 +362,7 @@ struct RNNGradData {
 // input gradient, hidden state gradient, cell state gradient, weights
 // gradient
 // @param[in] gradData grad output for each comp
-std::tuple<Tensor, Tensor, Tensor, Tensor> rnnBackward(
+FL_API std::tuple<Tensor, Tensor, Tensor, Tensor> rnnBackward(
     const Tensor& input,
     const Tensor& hiddenState,
     const Tensor& cellState,

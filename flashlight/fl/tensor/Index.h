@@ -7,9 +7,10 @@
 
 #pragma once
 
-#include <variant>
 #include <optional>
+#include <variant>
 
+#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
 namespace fl {
@@ -18,7 +19,7 @@ namespace fl {
  * Represents the imaginary index _after_ the last index along an axis of a
  * tensor. We have this special case because the `range::end` is exclusive.
  */
-struct end_t{};
+struct end_t {};
 
 // A static instance of end_t for convenience, e.g., one can use it in
 // `range(0, end)` to index all elements along certain axis.
@@ -35,7 +36,7 @@ static const end_t end = end_t();
  *  |  0 |    1 | ... | N-1 |
  *  -------------------------
  */
-class range {
+class FL_API range {
   using idx = std::variant<end_t, Dim>;
   static constexpr Dim kDefaultStride = 1;
 
@@ -108,7 +109,7 @@ enum class IndexType : int { Tensor = 0, Range = 1, Literal = 2, Span = 3 };
  * - An index literal, which refers to a single subtensor of the tensor being
  *   indexed.
  */
-struct Index {
+struct FL_API Index {
   using IndexVariant = std::variant<Dim, range, Tensor>;
 
  private:

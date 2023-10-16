@@ -23,7 +23,7 @@ namespace fl {
  * B is the batch size.
  *
  */
-class PositionEmbedding : public Module {
+class FL_API PositionEmbedding : public Module {
  public:
   PositionEmbedding(int32_t layerDim, int32_t maxLen, double dropout = 0);
 

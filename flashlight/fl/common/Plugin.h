@@ -9,9 +9,11 @@
 
 #include <string>
 
+#include "flashlight/fl/common/Defines.h"
+
 namespace fl {
 
-class Plugin {
+class FL_API Plugin {
  public:
   explicit Plugin(const std::string& name);
   ~Plugin();

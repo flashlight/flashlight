@@ -59,7 +59,7 @@ namespace fl {
  * //   36.0246
  * \endcode
  */
-class Variable {
+class FL_API Variable {
  public:
   using GradFunc = std::function<
       void(std::vector<Variable>& inputs, const Variable& grad_output)>;

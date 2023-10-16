@@ -6,6 +6,7 @@
  */
 
 #pragma once
+
 #include "flashlight/fl/dataset/Dataset.h"
 #include "flashlight/fl/dataset/Utils.h"
 
@@ -53,7 +54,7 @@ enum class BatchDatasetPolicy {
   std::cout << batchdsDynamic.get(5)[0].shape() << "\n"; // 5 4 10 1
   \endcode
  */
-class BatchDataset : public Dataset {
+class FL_API BatchDataset : public Dataset {
  public:
   /**
    * Creates a `BatchDataset`.

@@ -31,7 +31,7 @@ namespace fl {
  * sinusoidal embedding to it
  *
  */
-class SinusoidalPositionEmbedding : public Module {
+class FL_API SinusoidalPositionEmbedding : public Module {
  public:
   explicit SinusoidalPositionEmbedding(
       int32_t layerDim,

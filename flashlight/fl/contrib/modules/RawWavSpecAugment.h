@@ -30,7 +30,7 @@ namespace fl {
  * audio, e.g. 50 frames for time masking of standard specAug corresponds to
  *8000 frames (in case of 16kHz audio) for time masking with raw wave specaug
  **/
-class RawWavSpecAugment : public UnaryModule {
+class FL_API RawWavSpecAugment : public UnaryModule {
  public:
   enum class MaskingStrategy {
     ZERO = 0,

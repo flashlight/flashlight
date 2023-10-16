@@ -18,7 +18,7 @@ namespace fl {
  * Adds a padding of value `val` before and after each dimension
  * \f$i\f$ of size specified by the tuple `padi` to the input.
  */
-class Padding : public UnaryModule {
+class FL_API Padding : public UnaryModule {
  private:
   Padding() = default; // intentionally private
 
