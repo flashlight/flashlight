@@ -15,9 +15,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-namespace fl {
-namespace pkg {
-namespace vision {
+namespace fl::pkg::vision {
 
 /*
  * Loads a jpeg from filepath fp. Note: It will automatically convert from any
@@ -50,6 +48,4 @@ std::shared_ptr<Dataset> jpegLoader(std::vector<std::string> fps) {
       });
 }
 
-} // namespace vision
-} // namespace pkg
 } // namespace fl

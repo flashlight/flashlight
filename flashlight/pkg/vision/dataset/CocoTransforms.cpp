@@ -7,7 +7,7 @@
 
 #include "flashlight/pkg/vision/dataset/CocoTransforms.h"
 
-#include <assert.h>
+#include <cassert>
 
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/pkg/vision/dataset/BoxUtils.h"
@@ -22,9 +22,7 @@ int randomInt(int min, int max) {
 }
 } // namespace
 
-namespace fl {
-namespace pkg {
-namespace vision {
+namespace fl::pkg::vision {
 
 std::vector<Tensor>
 crop(const std::vector<Tensor>& in, int x, int y, int tw, int th) {
@@ -225,10 +223,10 @@ TransformAllFunction randomSizeCrop(int minSize, int maxSize) {
 };
 
 TransformAllFunction randomResize(std::vector<int> sizes, int maxsize) {
-  assert(sizes.size() > 0);
+  assert(!sizes.empty());
   auto resizeCoco = [sizes, maxsize](std::vector<Tensor> in) {
     assert(in.size() == 6);
-    assert(sizes.size() > 0);
+    assert(!sizes.empty());
     int randomIndex = rand() % sizes.size();
     int size = sizes[randomIndex];
     const Tensor originalImage = in[0];
@@ -250,13 +248,11 @@ TransformAllFunction randomHorizontalFlip(float p) {
 TransformAllFunction compose(std::vector<TransformAllFunction> fns) {
   return [fns](const std::vector<Tensor>& in) {
     std::vector<Tensor> out = in;
-    for (auto fn : fns) {
+    for (const auto& fn : fns) {
       out = fn(out);
     }
     return out;
   };
 }
 
-} // namespace vision
-} // namespace pkg
 } // namespace fl

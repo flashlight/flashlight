@@ -25,9 +25,7 @@ using namespace fl::pkg::runtime;
 using namespace fl::lib;
 using namespace fl::lib::text;
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 PlGenerator::PlGenerator(
     const Dictionary& tokenDict,
@@ -293,6 +291,4 @@ void PlGenerator::logMaster(const std::string& message) const {
   std::cerr << message << std::endl;
 }
 
-} // namespace speech
-} // namespace pkg
 } // namespace fl

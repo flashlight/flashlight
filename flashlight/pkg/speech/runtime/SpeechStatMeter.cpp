@@ -8,9 +8,7 @@
 #include "flashlight/pkg/speech/runtime/SpeechStatMeter.h"
 #include <array>
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 SpeechStatMeter::SpeechStatMeter() {
   reset();
 }
@@ -73,6 +71,4 @@ std::vector<int64_t> SpeechStats::toArray() const {
   arr[5] = numBatches_;
   return arr;
 }
-} // namespace speech
-} // namespace pkg
 } // namespace fl

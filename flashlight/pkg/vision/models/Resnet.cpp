@@ -7,9 +7,7 @@
 
 #include "flashlight/pkg/vision/models/Resnet.h"
 
-namespace fl {
-namespace pkg {
-namespace vision {
+namespace fl::pkg::vision {
 
 namespace {
 
@@ -231,6 +229,4 @@ std::shared_ptr<Sequential> resnet50() {
   return model;
 }
 
-} // namespace vision
-} // namespace pkg
 } // namespace fl
