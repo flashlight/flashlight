@@ -10,6 +10,7 @@
 #include <memory>
 #include <stdexcept>
 #include <unordered_map>
+#include <utility>
 
 #include <cereal/types/tuple.hpp>
 #include <cereal/types/unordered_map.hpp>
@@ -89,7 +90,7 @@ class FL_API Container : public Module {
     static_assert(
         !std::is_lvalue_reference_v<T>,
         "add() can only accept rvalues. Use std::move().");
-    add(std::make_shared<std::decay_t<T>>(std::move(module)));
+    add(std::make_shared<std::decay_t<T>>(std::forward<T>(module)));
   }
 
   /**
