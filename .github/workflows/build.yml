@@ -43,6 +43,7 @@ jobs:
       - name: "Configure Flashlight"
         run: |
           cmake -S . -B build -DBUILD_SHARED_LIBS=ON \
+            -DFL_BUILD_EXAMPLES=ON \
             -DFL_USE_ARRAYFIRE=${{ matrix.backend == 'ArrayFire' && 'ON' || 'OFF'  }} \
             -DFL_ARRAYFIRE_USE_CPU=${{ matrix.backend == 'ArrayFire' && 'ON' || 'OFF'  }} \
             -DFL_USE_ONEDNN=${{ (matrix.backend == 'oneDNN' || matrix.autograd_backend == 'oneDNN') && 'ON' || 'OFF'  }} \
