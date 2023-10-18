@@ -41,9 +41,7 @@ makeMultiheadedAttentionLinear(int inDim, int outDim, int fanOutMult = 1) {
 
 } // namespace
 
-namespace fl {
-namespace pkg {
-namespace vision {
+namespace fl::pkg::vision {
 
 // query [ E X B X L ]
 // values and keys [ E X B X S ]
@@ -598,6 +596,4 @@ std::string Transformer::prettyString() const {
   return ss.str();
 }
 
-} // namespace vision
-} // namespace pkg
 } // namespace fl

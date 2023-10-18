@@ -12,9 +12,7 @@
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/tensor/Random.h"
 
-namespace fl {
-namespace pkg {
-namespace vision {
+namespace fl::pkg::vision {
 
 VisionTransformer::VisionTransformer(
     int32_t modelDim,
@@ -191,6 +189,4 @@ std::shared_ptr<fl::Linear> VisionTransformer::initLinear(
       fl::truncNormal({outDim, inDim}, 0.02),
       fl::constant(0., outDim, 1, fl::dtype::f32));
 }
-} // namespace vision
-} // namespace pkg
 } // namespace fl

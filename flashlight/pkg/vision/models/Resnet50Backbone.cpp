@@ -7,9 +7,7 @@
 
 #include "flashlight/pkg/vision/models/Resnet50Backbone.h"
 
-namespace fl {
-namespace pkg {
-namespace vision {
+namespace fl::pkg::vision {
 
 Resnet50Backbone::Resnet50Backbone() {
   Sequential backbone;
@@ -46,6 +44,4 @@ std::string Resnet50Backbone::prettyString() const {
   return "Resnet50Backbone";
 }
 
-} // namespace vision
-} // namespace pkg
 } // namespace fl

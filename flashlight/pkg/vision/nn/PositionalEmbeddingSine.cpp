@@ -11,9 +11,7 @@
 
 #include "flashlight/fl/tensor/Index.h"
 
-namespace fl {
-namespace pkg {
-namespace vision {
+namespace fl::pkg::vision {
 
 std::string PositionalEmbeddingSine::prettyString() const {
   return "PositionalEmbeddingSine";
@@ -120,6 +118,4 @@ std::vector<Variable> PositionalEmbeddingSine::operator()(
   return forward(input);
 }
 
-} // namespace vision
-} // namespace pkg
 } // namespace fl

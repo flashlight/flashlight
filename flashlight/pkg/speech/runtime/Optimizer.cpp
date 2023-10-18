@@ -9,9 +9,7 @@
 
 #include <glog/logging.h>
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
     const std::vector<std::shared_ptr<fl::Module>>& nets,
@@ -19,7 +17,7 @@ std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
     double lr,
     double momentum,
     double weightdecay) {
-  if (nets.size() == 0) {
+  if (nets.empty()) {
     throw std::invalid_argument(
         "[InitOptimizer]: No network for initializing the optimizer");
   }
@@ -73,6 +71,4 @@ std::shared_ptr<fl::FirstOrderOptimizer> initOptimizer(
 
   return opt;
 }
-} // namespace speech
-} // namespace pkg
 } // namespace fl

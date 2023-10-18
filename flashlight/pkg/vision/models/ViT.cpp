@@ -11,9 +11,7 @@
 
 #include "flashlight/fl/tensor/Index.h"
 
-namespace fl {
-namespace pkg {
-namespace vision {
+namespace fl::pkg::vision {
 
 ViT::ViT(
     const int nLayers,
@@ -145,6 +143,4 @@ std::string ViT::prettyString() const {
   return ss.str();
 }
 
-} // namespace vision
-} // namespace pkg
 } // namespace fl

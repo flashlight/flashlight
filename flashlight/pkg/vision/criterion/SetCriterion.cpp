@@ -7,8 +7,8 @@
 
 #include "flashlight/pkg/vision/criterion/SetCriterion.h"
 
-#include <assert.h>
 #include <algorithm>
+#include <cassert>
 #include <numeric>
 
 #include "flashlight/fl/autograd/autograd.h"
@@ -37,7 +37,7 @@ Shape calcStrides(const Shape& dims) {
 
 Shape calcOutDims(const std::vector<Tensor>& coords) {
   unsigned maxNdim = 0;
-  for (auto coord : coords) {
+  for (const auto& coord : coords) {
     if (coord.ndim() > maxNdim) {
       maxNdim = coord.ndim();
     }
@@ -45,7 +45,7 @@ Shape calcOutDims(const std::vector<Tensor>& coords) {
 
   Shape oDims(std::vector<Dim>(maxNdim, 1));
 
-  for (auto coord : coords) {
+  for (const auto& coord : coords) {
     auto iDims = coord.shape();
     for (int i = 0; i < coord.ndim(); i++) {
       if (iDims[i] > 1 && oDims[i] == 1) {
@@ -131,9 +131,7 @@ fl::Variable index(const fl::Variable& in, std::vector<Tensor> idxs) {
 
 } // namespace
 
-namespace fl {
-namespace pkg {
-namespace vision {
+namespace fl::pkg::vision {
 
 SetCriterion::SetCriterion(
     const int numClasses,
@@ -223,7 +221,7 @@ SetCriterion::LossDict SetCriterion::lossBoxes(
 
   int i = 0;
   std::vector<Variable> permuted;
-  for (auto idx : indices) {
+  for (const auto& idx : indices) {
     auto targetIdxs = idx.first;
     auto reordered = targetBoxes[i](fl::span, targetIdxs);
     if (!reordered.isEmpty()) {
@@ -265,7 +263,7 @@ SetCriterion::LossDict SetCriterion::lossLabels(
       predLogits.type());
 
   int i = 0;
-  for (auto idx : indices) {
+  for (const auto& idx : indices) {
     auto targetIdxs = idx.first;
     auto srcIdxs = idx.second;
     auto reordered = targetClasses[i](targetIdxs);
@@ -301,7 +299,7 @@ std::pair<Tensor, Tensor> SetCriterion::getTgtPermutationIdx(
   auto dims = first.shape();
   auto tgtIdxs = fl::full({1, dims[0], batchSize}, -1);
   int idx = 0;
-  for (auto pair : indices) {
+  for (const auto& pair : indices) {
     batchIdxs(0, 0, 0, idx) = fl::fromScalar(idx);
     tgtIdxs(fl::span, fl::span, idx) = pair.first;
     idx++;
@@ -316,19 +314,17 @@ std::pair<Tensor, Tensor> SetCriterion::getSrcPermutationIdx(
   for (int i = 0; i < indices.size(); i++) {
     auto index = indices[i].second;
     if (!index.isEmpty()) {
-      srcIdxs.emplace_back(Variable(index, false));
+      srcIdxs.emplace_back(index, false);
       auto batchIdx = fl::full(index.shape(), i, fl::dtype::s32);
-      batchIdxs.emplace_back(Variable(batchIdx, false));
+      batchIdxs.emplace_back(batchIdx, false);
     }
   }
   fl::Variable srcIdx, batchIdx;
-  if (srcIdxs.size() > 0) {
+  if (!srcIdxs.empty()) {
     srcIdx = concatenate(srcIdxs, 0);
     batchIdx = concatenate(batchIdxs, 0);
   }
   return {batchIdx.tensor(), srcIdx.tensor()};
 }
 
-} // namespace vision
-} // namespace pkg
 } // namespace fl

@@ -13,9 +13,7 @@
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 GetConvLmScoreFunc buildGetConvLmScoreFunction(
     std::shared_ptr<Module> network) {
@@ -65,6 +63,4 @@ GetConvLmScoreFunc buildGetConvLmScoreFunction(
 
   return getConvLmScoreFunc;
 }
-} // namespace speech
-} // namespace pkg
 } // namespace fl
