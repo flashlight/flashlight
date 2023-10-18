@@ -270,7 +270,7 @@ commands:
             - run:
                 name: "Install Micromamba"
                 command: |
-                  curl -L micro.mamba.pm/install.sh | bash
+                  curl https://raw.githubusercontent.com/mamba-org/micromamba-releases/main/install.sh | bash
                   echo 'export MAMBA_EXE="$HOME/.local/bin/micromamba"' >> $BASH_ENV
                   echo 'export MAMBA_ROOT_PREFIX="$HOME/micromamba"' >> $BASH_ENV
                   echo '__mamba_setup="$($HOME/.local/bin/micromamba shell hook --shell bash)"' >> $BASH_ENV
