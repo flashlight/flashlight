@@ -270,7 +270,9 @@ commands:
             - run:
                 name: "Install Micromamba"
                 command: |
-                  curl https://raw.githubusercontent.com/mamba-org/micromamba-releases/main/install.sh | bash
+                  sudo apt update --ignore-missing
+                  sudo apt install --only-upgrade curl -y --ignore-missing
+                  curl -L micro.mamba.pm/install.sh | bash
                   echo 'export MAMBA_EXE="$HOME/.local/bin/micromamba"' >> $BASH_ENV
                   echo 'export MAMBA_ROOT_PREFIX="$HOME/micromamba"' >> $BASH_ENV
                   echo '__mamba_setup="$($HOME/.local/bin/micromamba shell hook --shell bash)"' >> $BASH_ENV
