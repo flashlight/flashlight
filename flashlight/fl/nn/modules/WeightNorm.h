@@ -8,6 +8,8 @@
 #pragma once
 
 #include <stdexcept>
+#include <type_traits>
+#include <utility>
 
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/nn/Init.h"
@@ -55,7 +57,9 @@ class FL_API WeightNorm : public Module {
    */
   template <class T>
   WeightNorm(T&& module, int dim)
-      : WeightNorm(std::make_shared<std::decay_t<T>>(std::move(module)), dim) {}
+      : WeightNorm(
+            std::make_shared<std::decay_t<T>>(std::forward<T>(module)),
+            dim) {}
 
   /** Construct a WeightNorm layer.
    * @param module Shared pointer to a module to wrap (the module must be one

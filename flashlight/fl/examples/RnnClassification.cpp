@@ -13,6 +13,7 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <ostream>
 #include <random>
 #include <sstream>
@@ -47,7 +48,7 @@ class ClassificationDataset : public Dataset {
   unsigned totalExamples = 0;
 
   // read the folder/lang.txt file and register the examples in the datasets map
-  void read(const fs::path folder, const std::string& lang) {
+  void read(const fs::path& folder, const std::string& lang) {
     auto fp = folder / (lang + ".txt");
     std::cout << "Opening " << fp << std::endl;
     std::ifstream file(fp);
@@ -81,7 +82,7 @@ class ClassificationDataset : public Dataset {
         {1, static_cast<Dim>(d.size())}, d.data(), MemoryLocation::Host);
   }
 
-  explicit ClassificationDataset(const fs::path datasetPath) {
+  explicit ClassificationDataset(const fs::path& datasetPath) {
     // As found in the dataset folder:
     std::vector<std::string> lang = {
         "Arabic",
