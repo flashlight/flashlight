@@ -81,7 +81,7 @@ class ClassificationDataset : public Dataset {
         {1, static_cast<Dim>(d.size())}, d.data(), MemoryLocation::Host);
   }
 
-  ClassificationDataset(const fs::path datasetPath) {
+  explicit ClassificationDataset(const fs::path datasetPath) {
     // As found in the dataset folder:
     std::vector<std::string> lang = {
         "Arabic",
@@ -170,13 +170,21 @@ class RnnClassifier : public Container {
     createLayers();
   }
 
+  // The compiler default generated is made explicit for reference.
+  // Users must be careful to include move and move assignment
+  // constructors where appropriate.
   RnnClassifier(RnnClassifier&& other) = default;
 
   RnnClassifier& operator=(const RnnClassifier& other) {
     clear();
     copy(other);
     createLayers();
+    return *this;
   }
+
+  // The compiler default generated is made explicit for reference.
+  // Users must be careful to include move and move assignment
+  // constructors where appropriate.
   RnnClassifier& operator=(RnnClassifier&& other) = default;
 
   void copy(const RnnClassifier& other) {
@@ -193,7 +201,7 @@ class RnnClassifier : public Container {
   }
 
   std::unique_ptr<Module> clone() const override {
-    throw std::make_unique<RnnClassifier>(*this);
+    return std::make_unique<RnnClassifier>(*this);
   }
 
   std::vector<Variable> forward(const std::vector<Variable>& inputs) override {

@@ -97,13 +97,21 @@ class RnnLm : public Container {
     createLayers();
   }
 
+  // The compiler default generated is made explicit for reference.
+  // Users must be careful to include move and move assignment
+  // constructors where appropriate.
   RnnLm(RnnLm&& other) = default;
 
   RnnLm& operator=(const RnnLm& other) {
     clear();
     copy(other);
     createLayers();
+    return *this;
   }
+
+  // The compiler default generated is made explicit for reference.
+  // Users must be careful to include move and move assignment
+  // constructors where appropriate.
   RnnLm& operator=(RnnLm&& other) = default;
 
   void copy(const RnnLm& other) {

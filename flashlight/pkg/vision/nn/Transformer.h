@@ -200,7 +200,7 @@ class TransformerDecoder : public Container {
 
   std::string prettyString() const override;
 
-  FL_BASIC_CONTAINER_CLONING(TransformerDecoder);
+  FL_BASIC_CONTAINER_CLONING(TransformerDecoder)
 
  private:
   TransformerDecoder() = default;
@@ -220,7 +220,7 @@ class TransformerEncoder : public Container {
 
   std::string prettyString() const override;
 
-  FL_BASIC_CONTAINER_CLONING(TransformerEncoder);
+  FL_BASIC_CONTAINER_CLONING(TransformerEncoder)
 
  private:
   TransformerEncoder() = default;
