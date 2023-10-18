@@ -270,8 +270,6 @@ commands:
             - run:
                 name: "Install Micromamba"
                 command: |
-                  sudo apt update
-                  # DEBIAN_FRONTEND=noninteractive sudo apt upgrade # needed for curl not to break
                   curl -L micro.mamba.pm/install.sh | bash
                   echo 'export MAMBA_EXE="$HOME/.local/bin/micromamba"' >> $BASH_ENV
                   echo 'export MAMBA_ROOT_PREFIX="$HOME/micromamba"' >> $BASH_ENV
