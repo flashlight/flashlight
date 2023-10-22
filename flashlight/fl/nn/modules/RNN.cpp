@@ -32,6 +32,29 @@ RNN::RNN(
   initialize();
 }
 
+RNN::RNN(const RNN& other)
+    : Module(other.copyParams()),
+      inputSize_(other.inputSize_),
+      hiddenSize_(other.hiddenSize_),
+      numLayers_(other.numLayers_),
+      mode_(other.mode_),
+      bidirectional_(other.bidirectional_),
+      dropProb_(other.dropProb_) {
+  train_ = other.train_;
+}
+
+RNN& RNN::operator=(const RNN& other) {
+  params_ = other.copyParams();
+  train_ = other.train_;
+  inputSize_ = other.inputSize_;
+  hiddenSize_ = other.hiddenSize_;
+  numLayers_ = other.numLayers_;
+  mode_ = other.mode_;
+  bidirectional_ = other.bidirectional_;
+  dropProb_ = other.dropProb_;
+  return *this;
+}
+
 void RNN::initialize() {
   int64_t n_params = detail::getNumRnnParams(
       inputSize_, hiddenSize_, numLayers_, mode_, bidirectional_);
@@ -106,6 +129,10 @@ std::tuple<Variable, Variable, Variable> RNN::operator()(
     const Variable& hidden_state,
     const Variable& cell_state) {
   return forward(input, hidden_state, cell_state);
+}
+
+std::unique_ptr<Module> RNN::clone() const {
+  return std::make_unique<RNN>(*this);
 }
 
 std::string RNN::prettyString() const {

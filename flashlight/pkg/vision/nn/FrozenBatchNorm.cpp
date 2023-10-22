@@ -38,6 +38,10 @@ FrozenBatchNorm::FrozenBatchNorm(
   BatchNorm::initialize();
 }
 
+std::unique_ptr<Module> FrozenBatchNorm::clone() const {
+  return std::make_unique<FrozenBatchNorm>(*this);
+}
+
 Variable FrozenBatchNorm::forward(const Variable& input) {
   auto scale = params_[0] / fl::sqrt(runningVar_ + epsilon_);
   auto bias = params_[1] - runningMean_ * scale;

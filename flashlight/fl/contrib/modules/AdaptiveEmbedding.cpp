@@ -93,6 +93,10 @@ Variable AdaptiveEmbedding::forward(const Variable& input) {
   return moddims(result(fl::span, tmpIndices), outShape);
 }
 
+std::unique_ptr<Module> AdaptiveEmbedding::clone() const {
+  return std::make_unique<AdaptiveEmbedding>(*this);
+}
+
 std::string AdaptiveEmbedding::prettyString() const {
   std::ostringstream ss;
   ss << "AdaptiveEmbedding (dim: " << embeddingDim_ << "), (cutoff: ";

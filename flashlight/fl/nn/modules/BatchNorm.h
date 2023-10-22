@@ -113,7 +113,23 @@ class FL_API BatchNorm : public UnaryModule {
       bool affine = true,
       bool trackStats = true);
 
+  /**
+   * Constructs a BatchNorm module from another, performing a copy of the
+   * stats parameters.
+   *
+   * @param other The BatchNorm module to copy from.
+   */
+  BatchNorm(const BatchNorm& other);
+
+  BatchNorm& operator=(const BatchNorm& other);
+
+  BatchNorm(BatchNorm&& other) = default;
+
+  BatchNorm& operator=(BatchNorm&& other) = default;
+
   Variable forward(const Variable& input) override;
+
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 };

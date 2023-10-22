@@ -61,7 +61,7 @@ ResNetBlockFrozenBatchNorm::ResNetBlockFrozenBatchNorm(
     Sequential downsample;
     downsample.add(conv1x1(inC, outC, stride, 1));
     downsample.add(FrozenBatchNorm(2, outC));
-    add(downsample);
+    add(std::move(downsample));
   }
 }
 

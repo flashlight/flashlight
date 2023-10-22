@@ -23,9 +23,17 @@ namespace fl {
  * B is the batch size.
  *
  */
-class FL_API PositionEmbedding : public Container {
+class FL_API PositionEmbedding : public Module {
  public:
   PositionEmbedding(int32_t layerDim, int32_t maxLen, double dropout = 0);
+
+  PositionEmbedding(const PositionEmbedding& other);
+
+  PositionEmbedding& operator=(const PositionEmbedding& other);
+
+  PositionEmbedding(PositionEmbedding&& other) = default;
+
+  PositionEmbedding& operator=(PositionEmbedding&& other) = default;
 
   /**
    * PositionEmbedding::forward(input) expects input[0] to be of
@@ -40,10 +48,12 @@ class FL_API PositionEmbedding : public Container {
 
   std::vector<Variable> operator()(const std::vector<Variable>& input);
 
+  std::unique_ptr<Module> clone() const override;
+
   std::string prettyString() const override;
 
  private:
-  FL_SAVE_LOAD_WITH_BASE(Container, dropout_)
+  FL_SAVE_LOAD_WITH_BASE(Module, dropout_)
 
   double dropout_;
 

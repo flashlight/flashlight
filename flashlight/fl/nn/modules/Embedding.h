@@ -46,7 +46,29 @@ class FL_API Embedding : public UnaryModule {
    */
   explicit Embedding(const Variable& w);
 
+  /**
+   * Constructs an Embedding module from another, performing a copy of the
+   * parameters.
+   *
+   * @param other The Embedding module to copy from.
+   */
+  Embedding(const Embedding& other);
+
+  /**
+   * Constructs an Embedding module from another, performing a copy of the
+   * parameters.
+   *
+   * @param other The Embedding module to copy from.
+   */
+  Embedding& operator=(const Embedding& other);
+
+  Embedding(Embedding&& other) = default;
+
+  Embedding& operator=(Embedding&& other) = default;
+
   Variable forward(const Variable& input) override;
+
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 };

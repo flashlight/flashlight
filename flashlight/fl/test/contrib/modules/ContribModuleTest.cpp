@@ -34,29 +34,30 @@ class ContribModuleTestF16 : public ::testing::Test {
 
 TEST(ContribModuleTest, ResidualFwd) {
   auto conv = Conv2D(30, 50, 9, 7, 2, 3, 3, 2);
-  auto bn = BatchNorm(2, 50, 0.0);
+  // bn is shared between both residual networks
+  auto bn = std::make_shared<BatchNorm>(2, 50, 0.0);
   auto relu = ReLU();
 
   int batchsize = 10;
   auto input = Variable(fl::rand({120, 100, 30, batchsize}), false);
 
   auto outputConv = conv.forward(input);
-  auto outputBn = bn.forward(outputConv);
+  auto outputBn = bn->forward(outputConv);
 
-  auto resModule1 = Residual();
-  resModule1.add(conv);
+  Residual resModule1;
+  resModule1.add(Conv2D(conv)); // explicit copy
   resModule1.add(bn);
-  resModule1.add(relu);
+  resModule1.add(ReLU());
   resModule1.addShortcut(1, 3);
 
   auto output1 = resModule1.forward(input);
   auto output1True = relu.forward(outputBn + outputConv);
   ASSERT_TRUE(allClose(output1, output1True));
 
-  auto resModule2 = Residual();
-  resModule2.add(conv);
+  Residual resModule2;
+  resModule2.add(std::move(conv));
   resModule2.add(bn);
-  resModule2.add(relu);
+  resModule2.add(ReLU());
   resModule2.addShortcut(1, 4);
   resModule2.addShortcut(1, 3);
   resModule2.addShortcut(2, 4);
@@ -92,17 +93,17 @@ TEST(ContribModuleTest, ResidualFwdWithProjection) {
   outputTrue = relu3.forward(outputTrue) + outputTrue;
 
   auto resModule = Residual();
-  resModule.add(linear1);
-  resModule.add(relu1);
-  resModule.add(linear2);
+  resModule.add(std::move(linear1));
+  resModule.add(std::move(relu1));
+  resModule.add(std::move(linear2));
   resModule.addScale(3, linFwdScale);
-  resModule.add(relu2);
+  resModule.add(std::move(relu2));
   resModule.addShortcut(1, 4, projection1);
   resModule.addScale(4, proj1FwdScale);
-  resModule.add(linear3);
+  resModule.add(std::move(linear3));
   resModule.addShortcut(0, 5, projection2);
   resModule.addScale(5, proj2FwdScale);
-  resModule.add(relu3);
+  resModule.add(std::move(relu3));
   resModule.addShortcut(5, 7);
 
   auto outputRes = resModule.forward(input);

@@ -33,6 +33,15 @@ void Module::setParams(const Variable& var, int position) {
   params_[position] = var;
 }
 
+std::vector<Variable> Module::copyParams() const {
+  std::vector<Variable> params;
+  params.reserve(params_.size());
+  for (const auto& param : params_) {
+    params.emplace_back(param.copy());
+  }
+  return params;
+}
+
 void Module::train() {
   train_ = true;
   for (auto& param : params_) {
@@ -55,6 +64,10 @@ void Module::eval() {
 
 std::vector<Variable> Module::params() const {
   return params_;
+}
+
+int Module::numParamTensors() const {
+  return static_cast<int>(params_.size());
 }
 
 std::vector<Variable> Module::operator()(const std::vector<Variable>& input) {

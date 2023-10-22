@@ -139,6 +139,10 @@ void LayerNorm::initialize() {
   }
 }
 
+std::unique_ptr<Module> LayerNorm::clone() const {
+  return std::make_unique<LayerNorm>(*this);
+}
+
 std::string LayerNorm::prettyString() const {
   std::ostringstream ss;
   ss << "LayerNorm";

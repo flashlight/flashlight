@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include "flashlight/pkg/vision/nn/FrozenBatchNorm.h"
-#include "flashlight/pkg/vision/models/ResnetFrozenBatchNorm.h"
 #include "flashlight/fl/nn/modules/Container.h"
+#include "flashlight/pkg/vision/models/ResnetFrozenBatchNorm.h"
+#include "flashlight/pkg/vision/nn/FrozenBatchNorm.h"
 
 namespace fl {
 namespace pkg {
@@ -25,9 +25,9 @@ class Resnet50Backbone : public Container {
 
   std::string prettyString() const override;
 
+  FL_BASIC_CONTAINER_CLONING(Resnet50Backbone)
+
  private:
-  std::shared_ptr<Sequential> backbone_;
-  std::shared_ptr<Sequential> tail_;
   FL_SAVE_LOAD_WITH_BASE(fl::Container)
 };
 

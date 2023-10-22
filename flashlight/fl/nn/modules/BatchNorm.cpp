@@ -44,6 +44,33 @@ BatchNorm::BatchNorm(
   initialize();
 }
 
+BatchNorm::BatchNorm(const BatchNorm& other)
+    : featAxis_(other.featAxis_),
+      featSize_(other.featSize_),
+      numBatchesTracked_(other.numBatchesTracked_),
+      runningMean_(other.runningMean_.copy()),
+      runningVar_(other.runningVar_.copy()),
+      momentum_(other.momentum_),
+      epsilon_(other.epsilon_),
+      affine_(other.affine_),
+      trackStats_(other.trackStats_) {
+  train_ = other.train_;
+}
+
+BatchNorm& BatchNorm::operator=(const BatchNorm& other) {
+  train_ = other.train_;
+  featAxis_ = other.featAxis_;
+  featSize_ = other.featSize_;
+  numBatchesTracked_ = other.numBatchesTracked_;
+  runningMean_ = other.runningMean_.copy();
+  runningVar_ = other.runningVar_.copy();
+  momentum_ = other.momentum_;
+  epsilon_ = other.epsilon_;
+  affine_ = other.affine_;
+  trackStats_ = other.trackStats_;
+  return *this;
+}
+
 Variable BatchNorm::forward(const Variable& input) {
   double avgFactor = 0.0;
 
@@ -81,6 +108,10 @@ void BatchNorm::initialize() {
     auto bs = constant(0.0, {featSize_}, fl::dtype::f32, true);
     params_ = {wt, bs};
   }
+}
+
+std::unique_ptr<Module> BatchNorm::clone() const {
+  return std::make_unique<BatchNorm>(*this);
 }
 
 std::string BatchNorm::prettyString() const {

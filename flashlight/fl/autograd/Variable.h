@@ -115,6 +115,12 @@ class FL_API Variable {
   Tensor& tensor() const;
 
   /**
+   * Creates a copy of this variable, but detached from the computation graph.
+   * @return returns the cloned and detached variable.
+   */
+  Variable copy() const;
+
+  /**
    * Creates a new variable based on the current variable whose type will be
    * adjusted based on the input type.
    *

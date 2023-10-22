@@ -56,6 +56,8 @@ class FL_API TDSBlock : public Container {
 
   std::vector<Variable> forward(const std::vector<Variable>& inputs) override;
   std::string prettyString() const override;
+
+  FL_BASIC_CONTAINER_CLONING(TDSBlock)
 };
 
 } // namespace fl

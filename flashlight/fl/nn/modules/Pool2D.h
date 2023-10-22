@@ -64,6 +64,8 @@ class FL_API Pool2D : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
+  std::unique_ptr<Module> clone() const override;
+
   std::string prettyString() const override;
 };
 

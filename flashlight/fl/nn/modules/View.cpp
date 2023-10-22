@@ -22,6 +22,10 @@ Variable View::forward(const Variable& input) {
   return moddims(input, dims);
 }
 
+std::unique_ptr<Module> View::clone() const {
+  return std::make_unique<View>(*this);
+}
+
 std::string View::prettyString() const {
   std::ostringstream ss;
   ss << "View (" << dims_ << ")";

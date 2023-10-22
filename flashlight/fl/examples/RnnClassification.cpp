@@ -13,6 +13,7 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <ostream>
 #include <random>
 #include <sstream>
@@ -34,7 +35,7 @@ using namespace fl;
 int randi(int mini, int maxi) {
   if (maxi < mini) {
     std::swap(maxi, mini);
-}
+  }
   return rand() % (maxi - mini + 1) + mini;
 }
 
@@ -47,7 +48,7 @@ class ClassificationDataset : public Dataset {
   unsigned totalExamples = 0;
 
   // read the folder/lang.txt file and register the examples in the datasets map
-  void read(const fs::path folder, const std::string& lang) {
+  void read(const fs::path& folder, const std::string& lang) {
     auto fp = folder / (lang + ".txt");
     std::cout << "Opening " << fp << std::endl;
     std::ifstream file(fp);
@@ -62,7 +63,7 @@ class ClassificationDataset : public Dataset {
     while (std::getline(file, line)) {
       if (line.empty()) {
         continue;
-}
+      }
       v.push_back(line);
     }
     totalExamples += v.size();
@@ -81,7 +82,7 @@ class ClassificationDataset : public Dataset {
         {1, static_cast<Dim>(d.size())}, d.data(), MemoryLocation::Host);
   }
 
-  ClassificationDataset(const fs::path datasetPath) {
+  explicit ClassificationDataset(const fs::path& datasetPath) {
     // As found in the dataset folder:
     std::vector<std::string> lang = {
         "Arabic",
@@ -103,10 +104,10 @@ class ClassificationDataset : public Dataset {
         "Irish"};
     for (auto& l : lang) {
       read(datasetPath, l);
-}
+    }
     for (auto& it : Id2Label) {
       std::cout << it.first << ":" << it.second << ", ";
-}
+    }
     std::cout << std::endl;
   }
 
@@ -151,21 +152,57 @@ class RnnClassifier : public Container {
       unsigned vocabSize,
       int hiddenSize = 256,
       unsigned numLayers = 2)
-      : embed_(Embedding(hiddenSize, vocabSize)),
-        rnn_(
-            RNN(hiddenSize,
-                hiddenSize,
-                numLayers,
-                RnnMode::GRU,
-                false /* Dropout */)),
-        linear_(Linear(hiddenSize, numClasses)),
+      : embed_(std::make_shared<Embedding>(hiddenSize, vocabSize)),
+        rnn_(std::make_shared<RNN>(
+            hiddenSize,
+            hiddenSize,
+            numLayers,
+            RnnMode::GRU,
+            0 /* Dropout */)),
+        linear_(std::make_shared<Linear>(hiddenSize, numClasses)),
         logsoftmax_(0) {
     std::cout << "Creating a RNN Classifier with vocab size: " << vocabSize
               << " and num classes: " << numClasses << std::endl;
+    createLayers();
+  }
+
+  RnnClassifier(const RnnClassifier& other) {
+    copy(other);
+    createLayers();
+  }
+
+  // The compiler default generated is made explicit for reference.
+  // Users must be careful to include move and move assignment
+  // constructors where appropriate.
+  RnnClassifier(RnnClassifier&& other) = default;
+
+  RnnClassifier& operator=(const RnnClassifier& other) {
+    clear();
+    copy(other);
+    createLayers();
+    return *this;
+  }
+
+  // The compiler default generated is made explicit for reference.
+  // Users must be careful to include move and move assignment
+  // constructors where appropriate.
+  RnnClassifier& operator=(RnnClassifier&& other) = default;
+
+  void copy(const RnnClassifier& other) {
+    embed_ = std::make_shared<Embedding>(*other.embed_);
+    rnn_ = std::make_shared<RNN>(*other.rnn_);
+    linear_ = std::make_shared<Linear>(*other.linear_);
+    logsoftmax_ = other.logsoftmax_;
+  }
+
+  void createLayers() {
     add(embed_);
     add(rnn_);
     add(linear_);
-    add(logsoftmax_);
+  }
+
+  std::unique_ptr<Module> clone() const override {
+    return std::make_unique<RnnClassifier>(*this);
   }
 
   std::vector<Variable> forward(const std::vector<Variable>& inputs) override {
@@ -177,16 +214,16 @@ class RnnClassifier : public Container {
     const unsigned numChars = input.dim(1);
     Variable ho, co; // hidden and carry output
     // output should be hs x bs x ts : [ 𝑋𝑖𝑛, 𝑁, 𝑇 ]
-    Variable output = embed_(input);
+    Variable output = embed_->forward(input);
     // The input to the RNN is expected to be of shape [ 𝑋𝑖𝑛, 𝑁, 𝑇 ] where 𝑋𝑖𝑛
     // is the hidden size, 𝑁 is the batch size and 𝑇 is the sequence length.
-    std::tie(output, ho, co) = rnn_(output, h, c);
+    std::tie(output, ho, co) = rnn_->forward(output, h, c);
     // The output of the RNN should be of shape [ 𝑋𝑜𝑢𝑡, 𝑁, 𝑇], with 𝑋𝑜𝑢𝑡 to be
     // the hidden_size (unidirectional RNN)
     // Truncate BPTT
     ho.setCalcGrad(false);
     co.setCalcGrad(false);
-    output = linear_(output);
+    output = linear_->forward(output);
     output = logsoftmax_(output);
     output = output(fl::span, fl::span, input.tensor().dim(1) - 1);
     return std::make_tuple(output, ho, co);
@@ -222,9 +259,9 @@ class RnnClassifier : public Container {
   }
 
  private:
-  Embedding embed_;
-  RNN rnn_;
-  Linear linear_;
+  std::shared_ptr<Embedding> embed_;
+  std::shared_ptr<RNN> rnn_;
+  std::shared_ptr<Linear> linear_;
   LogSoftmax logsoftmax_;
 };
 
@@ -301,7 +338,7 @@ int main(int argc, char** argv) {
       unsigned correctPred = ClassificationDataset::Label2Id[p.second];
       if (pred == correctPred) {
         ++numMatch;
-}
+      }
       confusion(correctPred, pred) = confusion(correctPred, pred) + 1;
     }
     confusion = confusion /
@@ -311,7 +348,7 @@ int main(int argc, char** argv) {
       std::cout << ClassificationDataset::Id2Label[i] << ":" << std::fixed
                 << std::setprecision(2) << confusion(i, i).scalar<float>()
                 << " ";
-}
+    }
     std::cout << std::endl;
   }
   // List of names not in the training dataset
