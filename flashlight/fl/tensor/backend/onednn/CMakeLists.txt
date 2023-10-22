@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 # ----------------------------- OneDNN -----------------------------
 
 # Try to find oneDNN
-find_package(DNNL 2.5.2 CONFIG)
+find_package(DNNL CONFIG)
 if (NOT DNNL_FOUND AND FL_USE_ONEDNN)
   message(FATAL_ERROR
     "oneDNN required to build oneDNN backend: oneDNN was not found")
@@ -11,7 +11,7 @@ else()
   message(STATUS "oneDNN found")
 endif()
 
-# TODO: conditionally set this to use OPENCL is the detected
+# TODO: conditionally set this to use OPENCL if the detected
 # DNNL is built with OpenCL support
 fl_set_backend_state(ENABLE CPU) # enables FL_USE_CPU
 

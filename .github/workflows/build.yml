@@ -8,7 +8,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-20.04, windows-2022, macOS-12]
+        os: [ubuntu-22.04, windows-2022, macOS-12]
         backend: [ArrayFire, oneDNN, Stub]
         autograd_backend: [oneDNN]
         distributed_backend: [Stub]
@@ -19,12 +19,12 @@ jobs:
           - os: windows-2022
             distributed_backend: Gloo
         include:
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             backend: oneDNN
             autograd_backend: oneDNN
             distributed_backend: Gloo
           # Configuration using only stubs and no autograd backend
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             backend: Stub
             distributed_backend: Stub
     defaults:
@@ -75,7 +75,7 @@ jobs:
   #   needs: build_core # TODO: this won't work until Github Actions enables specific matrix dependencies
   #   strategy:
   #     matrix:
-  #       os: [ubuntu-20.04, macOS-12]
+  #       os: [ubuntu-22.04, macOS-12]
   #       backend: [ArrayFire]
   #       autograd_backend: [oneDNN]
   #       pkg: [runtime, speech, vision, text]
@@ -113,7 +113,7 @@ jobs:
 
   build_core_wasm:
     name: "Build WebAssembly libraries with Emscripten compilers + Flashlight core + stub backend"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     defaults:
       run:
         shell: bash -l {0}

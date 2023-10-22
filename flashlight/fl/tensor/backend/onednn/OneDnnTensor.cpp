@@ -12,8 +12,8 @@
 #include <cstring>
 #include <memory>
 #include <numeric>
-#include <stdexcept>
 #include <sstream>
+#include <stdexcept>
 
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/Shape.h"
@@ -21,6 +21,7 @@
 #include "flashlight/fl/tensor/backend/onednn/Utils.h"
 
 #include <dnnl_debug.h>
+#include <dnnl_types.h>
 
 #define FL_ONEDNN_TENSOR_UNIMPLEMENTED \
   throw std::invalid_argument(         \
@@ -37,10 +38,7 @@ void copyScalar(void* out, const void* data) {
   *(static_cast<T*>(out)) = *(static_cast<const T*>(data));
 }
 
-bool floatsEqual(
-    const void* lhs,
-    const void* rhs,
-    unsigned numFloats) {
+bool floatsEqual(const void* lhs, const void* rhs, unsigned numFloats) {
   auto lhsFloats = static_cast<const float*>(lhs);
   auto rhsFloats = static_cast<const float*>(rhs);
   // TODO consider adding loop parallelism
@@ -94,9 +92,9 @@ Index canonicalizeIndex(const Index& idx, const Dim axisDim) {
     case detail::IndexType::Literal: {
       auto literal = canonicalizeDim(idx.get<Dim>());
       if (literal > axisDim) {
-      std::ostringstream oss;
-      oss << "[canonicalizeIndexByShape] literal index too large: literal = "
-          << literal << ", axisDim = " << axisDim;
+        std::ostringstream oss;
+        oss << "[canonicalizeIndexByShape] literal index too large: literal = "
+            << literal << ", axisDim = " << axisDim;
         throw std::invalid_argument(oss.str());
       }
       return literal;
@@ -115,8 +113,9 @@ Index canonicalizeIndex(const Index& idx, const Dim axisDim) {
 } // namespace
 
 OneDnnTensor::SharedData::~SharedData() {
-  assert(!isDevicePtrLocked
-   && "Must unlock device pointer before OneDnnTensor destruction.");
+  assert(
+      !isDevicePtrLocked &&
+      "Must unlock device pointer before OneDnnTensor destruction.");
 }
 
 OneDnnTensor::OneDnnTensor(
@@ -135,9 +134,9 @@ void* OneDnnTensor::getOrEvalDataHandle() {
 
 unsigned OneDnnTensor::getSizeInBytes() const {
   // NOTE ideally we should use `dnnl::memory::desc::get_size()`, but for some
-  // reason it returns 0 for submemory with non-zero offset, e.g., `tensor(1:4)`.
-  // See https://github.com/oneapi-src/oneDNN/issues/1429
-  auto type = memoryDesc().data_type();
+  // reason it returns 0 for submemory with non-zero offset, e.g.,
+  // `tensor(1:4)`. See https://github.com/oneapi-src/oneDNN/issues/1429
+  auto type = memoryDesc().get_data_type();
   auto typeSize = dnnl::memory::data_type_size(type);
   auto numElems = shape_.elements();
   return numElems * typeSize;
@@ -157,7 +156,8 @@ OneDnnTensor::OneDnnTensor(
     const Shape& shape,
     fl::dtype type,
     const void* ptr,
-    Location memoryLocation) : shape_(shape) {
+    Location memoryLocation)
+    : shape_(shape) {
   // TODO handle Location::Device once we add CL support
   if (memoryLocation != Location::Host) {
     throw std::invalid_argument(
@@ -189,7 +189,7 @@ std::unique_ptr<TensorAdapterBase> OneDnnTensor::clone() const {
   // TODO copy on write if this is not a view
   auto& srcMem = sharedData_->memory;
   const auto& srcMemDesc = memoryDesc();
-  const auto type = srcMemDesc.data_type();
+  const auto type = srcMemDesc.get_data_type();
   const auto dstMemDesc =
       detail::oneDnnContiguousMemDescFromShape(shape_, type);
   const auto engine = sharedData_->memory.get_engine();
@@ -228,7 +228,7 @@ const Shape& OneDnnTensor::shape() {
 }
 
 fl::dtype OneDnnTensor::type() {
-  return detail::oneDnnToFlType(memoryDesc().data_type());
+  return detail::oneDnnToFlType(memoryDesc().get_data_type());
 }
 
 bool OneDnnTensor::isSparse() {
@@ -250,12 +250,13 @@ void OneDnnTensor::scalar(void* out) {
   // prepare memories
   auto& srcMem = memory();
   const auto& srcMemDesc = memoryDesc();
-  const auto type = srcMemDesc.data_type();
+  const auto type = srcMemDesc.get_data_type();
   // dims are strides are the same for scalar (1s),
   // but reorder requires them to have the same # of dimensions
-  dnnl::memory::dims scalarDims(srcMemDesc.dims().size(), 1);
-  dnnl::memory::dims zeroOffsets(srcMemDesc.dims().size(), 0);
-  const auto srcScalarMemDesc = srcMemDesc.submemory_desc(scalarDims, zeroOffsets);
+  dnnl::memory::dims scalarDims(srcMemDesc.get_dims().size(), 1);
+  dnnl::memory::dims zeroOffsets(srcMemDesc.get_dims().size(), 0);
+  const auto srcScalarMemDesc =
+      srcMemDesc.submemory_desc(scalarDims, zeroOffsets);
   const dnnl::memory::desc dstMemDesc(scalarDims, type, scalarDims);
   auto dstMem = dnnl::memory(dstMemDesc, cpuEngine, out);
 
@@ -310,16 +311,17 @@ bool OneDnnTensor::isContiguous() {
 }
 
 Shape OneDnnTensor::strides() {
-  const auto& memoryDesc = this->memoryDesc().data;
-  if (memoryDesc.format_kind != dnnl_format_kind_t::dnnl_blocked) {
+  const auto& memoryDesc = this->memoryDesc();
+  if (memoryDesc.get_format_kind() != dnnl::memory::format_kind::blocked) {
     throw std::invalid_argument(
         "[OneDnnTensor::strides] Unexpected memory format kind: " +
-        std::string(dnnl_fmt_kind2str(memoryDesc.format_kind)));
+        std::string(dnnl_fmt_kind2str(
+            static_cast<dnnl_format_kind_t>(memoryDesc.get_format_kind()))));
   }
-  const auto& blockingDesc = memoryDesc.format_desc.blocking;
+  const auto& _strides = memoryDesc.get_strides();
   std::vector<Dim> strides; // reverse internal strides to get col-major strides
-  for (int i = memoryDesc.ndims - 1; i >= 0; i--) {
-    strides.push_back(blockingDesc.strides[i]);
+  for (int i = memoryDesc.get_ndims() - 1; i >= 0; i--) {
+    strides.push_back(_strides[i]);
   }
   return Shape(strides);
 }
@@ -338,8 +340,8 @@ Tensor OneDnnTensor::astype(const dtype type) {
   auto dstMem = dnnl::memory(dstMemDesc, engine);
 
   // prepare primitive
-  const auto reorderPrimitiveDesc = dnnl::reorder::primitive_desc(
-      engine, srcMemDesc, engine, dstMemDesc);
+  const auto reorderPrimitiveDesc =
+      dnnl::reorder::primitive_desc(engine, srcMemDesc, engine, dstMemDesc);
   const auto reorderPrimitive = dnnl::reorder(reorderPrimitiveDesc);
 
   // execute primitive
@@ -389,13 +391,14 @@ Tensor OneDnnTensor::index(const std::vector<Index>& indices) {
     throw std::runtime_error("Unexpected IndexType");
   }
   const auto condensedDims =
-    detail::removeIndices(dims, dimsAxesWithLiteralIndex);
+      detail::removeIndices(dims, dimsAxesWithLiteralIndex);
   // recall that scalar has fl::Shape {}, but OneDNN requires at least 1 dim
   const auto subMemDesc = memoryDesc().submemory_desc(dims, offsets);
   const auto resultIsScalar = condensedDims.empty();
   // N.B. these reshapes don't require row-major layout
-  const auto indexedMemDesc =
-    resultIsScalar ? subMemDesc.reshape({1}) : subMemDesc.reshape(condensedDims);
+  const auto indexedMemDesc = resultIsScalar
+      ? subMemDesc.reshape({1})
+      : subMemDesc.reshape(condensedDims);
   const auto indexedShape = detail::oneDnnDimsToShape(condensedDims);
   return toTensor<OneDnnTensor>(sharedData_, indexedShape, indexedMemDesc);
 }
@@ -447,13 +450,11 @@ void printData(std::ostringstream& oss, const char& element) {
 // NOTE no newline at the end
 // RETURN pointer to the element after the last element to be printed.
 template <typename T>
-const T* printData1D(
-    std::ostringstream& oss,
-    const T* elements,
-    const fl::Dim rows) {
+const T*
+printData1D(std::ostringstream& oss, const T* elements, const fl::Dim rows) {
   oss << '[';
   for (auto row = 0; row < rows; row++) {
-    if (row != 0){ // not first/topmost row
+    if (row != 0) { // not first/topmost row
       oss << ' ';
     }
     printData(oss, elements[row]);
@@ -547,7 +548,8 @@ const T* printDataMultiDims(
 template <typename T>
 std::string dataToString(const void* data, const Shape& shape) {
   std::ostringstream oss;
-  printDataMultiDims(oss, static_cast<const T*>(data), shape.get(), shape.ndim());
+  printDataMultiDims(
+      oss, static_cast<const T*>(data), shape.get(), shape.ndim());
   oss << std::endl; // make it easier to read
   return oss.str();
 }
@@ -630,8 +632,7 @@ void OneDnnTensor::assign(const Tensor& tensor) {
   }
 
   if (this->shape() != other.shape()) {
-    throw std::runtime_error(
-        "Cannot update OneDNN tensor to different shape");
+    throw std::runtime_error("Cannot update OneDNN tensor to different shape");
   }
 
   // prepare primitive
@@ -658,8 +659,8 @@ bool OneDnnTensor::equals(OneDnnTensor&& other) {
     return false;
   }
   const auto& thisMemDesc = this->memoryDesc();
-  const auto type = thisMemDesc.data_type();
-  if (type != other.memoryDesc().data_type()) {
+  const auto type = thisMemDesc.get_data_type();
+  if (type != other.memoryDesc().get_data_type()) {
     return false;
   }
   // TODO investigate ways to speed up this on non-CPU platform.
