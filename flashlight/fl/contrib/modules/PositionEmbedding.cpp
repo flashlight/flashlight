@@ -25,6 +25,19 @@ PositionEmbedding::PositionEmbedding(
   params_ = {embeddings};
 }
 
+PositionEmbedding::PositionEmbedding(const PositionEmbedding& other)
+    : Module(other.copyParams()), dropout_(other.dropout_) {
+  train_ = other.train_;
+}
+
+PositionEmbedding& PositionEmbedding::operator=(
+    const PositionEmbedding& other) {
+  params_ = other.copyParams();
+  train_ = other.train_;
+  dropout_ = other.dropout_;
+  return *this;
+}
+
 std::vector<Variable> PositionEmbedding::forward(
     const std::vector<Variable>& input) {
   if (input[0].ndim() != 3) {
@@ -46,6 +59,10 @@ std::vector<Variable> PositionEmbedding::forward(
 std::vector<Variable> PositionEmbedding::operator()(
     const std::vector<Variable>& input) {
   return forward(input);
+}
+
+std::unique_ptr<Module> PositionEmbedding::clone() const {
+  return std::make_unique<PositionEmbedding>(*this);
 }
 
 std::string PositionEmbedding::prettyString() const {

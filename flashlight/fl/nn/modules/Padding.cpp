@@ -18,6 +18,10 @@ Variable Padding::forward(const Variable& input) {
   return padding(input, m_pad, m_val);
 }
 
+std::unique_ptr<Module> Padding::clone() const {
+  return std::make_unique<Padding>(*this);
+}
+
 std::string Padding::prettyString() const {
   std::ostringstream ss;
   ss << "Padding (" << m_val << ", { ";

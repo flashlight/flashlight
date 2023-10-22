@@ -55,6 +55,8 @@ class FL_API SpecAugment : public UnaryModule {
       numTimeMask_,
       maskStrategy_)
 
+  std::unique_ptr<Module> clone() const override;
+
   std::string prettyString() const override;
 
  private:

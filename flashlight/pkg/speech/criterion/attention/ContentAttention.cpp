@@ -14,6 +14,11 @@
 
 namespace fl::pkg::speech {
 
+std::unique_ptr<Module> ContentAttention::clone() const {
+  throw std::runtime_error(
+      "Cloning is unimplemented in Module 'ContentAttention'");
+}
+
 std::pair<Variable, Variable> ContentAttention::forwardBase(
     const Variable& state,
     const Variable& xEncoded,
@@ -59,7 +64,12 @@ NeuralContentAttention::NeuralContentAttention(int dim, int layers /* = 1 */) {
     net.add(ReLU());
   }
   net.add(Linear(dim, 1));
-  add(net);
+  add(std::move(net));
+}
+
+std::unique_ptr<Module> NeuralContentAttention::clone() const {
+  throw std::runtime_error(
+      "Cloning is unimplemented in Module 'NeuralContentAttention'");
 }
 
 std::pair<Variable, Variable> NeuralContentAttention::forwardBase(

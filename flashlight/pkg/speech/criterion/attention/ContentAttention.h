@@ -17,6 +17,8 @@ class ContentAttention : public AttentionBase {
  public:
   ContentAttention(bool keyValue = false) : keyValue_(keyValue) {}
 
+  std::unique_ptr<Module> clone() const override;
+
   std::pair<Variable, Variable> forwardBase(
       const Variable& state,
       const Variable& xEncoded,
@@ -36,6 +38,8 @@ class NeuralContentAttention : public AttentionBase {
  public:
   NeuralContentAttention() {}
   explicit NeuralContentAttention(int dim, int layers = 1);
+
+  std::unique_ptr<Module> clone() const override;
 
   std::pair<Variable, Variable> forwardBase(
       const Variable& state,

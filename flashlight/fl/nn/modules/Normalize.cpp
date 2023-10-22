@@ -21,6 +21,10 @@ Variable Normalize::forward(const Variable& input) {
   return value_ * normalize(input, axes_, p_, eps_);
 }
 
+std::unique_ptr<Module> Normalize::clone() const {
+  return std::make_unique<Normalize>(*this);
+}
+
 std::string Normalize::prettyString() const {
   std::ostringstream ss;
   ss << "Normalize";

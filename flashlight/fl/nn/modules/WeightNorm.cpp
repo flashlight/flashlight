@@ -13,6 +13,21 @@
 
 namespace fl {
 
+WeightNorm::WeightNorm(const WeightNorm& other)
+    : module_(other.module_->clone()),
+      dim_(other.dim_),
+      normDim_(other.normDim_) {
+  initParams();
+}
+
+WeightNorm& WeightNorm::operator=(const WeightNorm& other) {
+  module_ = other.clone();
+  dim_ = other.dim_;
+  normDim_ = other.normDim_;
+  initParams();
+  return *this;
+}
+
 void WeightNorm::transformDims() {
   normDim_.clear();
   int vNumdims = module_->param(0).ndim();
@@ -49,6 +64,21 @@ void WeightNorm::computeWeight() {
   module_->setParams(wt, 0);
 }
 
+void WeightNorm::initParams() {
+  auto moduleParams = module_->params();
+  auto& v = moduleParams.at(0);
+  Variable g(
+      norm(v, normDim_, /* p = */ 2, /* keepDims = */ true).tensor(), true);
+  if (moduleParams.size() == 2) {
+    auto& b = moduleParams[1];
+    params_ = {v, g, b};
+  } else if (moduleParams.size() == 1) {
+    params_ = {v, g};
+  } else {
+    throw std::invalid_argument("WeightNorm only supports Linear and Conv2D");
+  }
+}
+
 void WeightNorm::setParams(const Variable& var, int position) {
   Module::setParams(var, position);
   // it is necessary to copy all params to the parent module
@@ -80,6 +110,10 @@ void WeightNorm::eval() {
   Module::eval();
   module_->eval();
   computeWeight();
+}
+
+std::unique_ptr<Module> WeightNorm::clone() const {
+  return std::make_unique<WeightNorm>(*this);
 }
 
 std::string WeightNorm::prettyString() const {

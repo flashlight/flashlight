@@ -13,6 +13,32 @@ namespace fl {
 
 Container::Container() = default;
 
+void Container::clear() {
+  childParamIdx_.clear();
+  modules_.clear();
+  params_.clear();
+}
+
+std::unordered_multimap<int, int> Container::getOrphanedParamsIdxMap() const {
+  // The previous module index which has params
+  int prevMidx = -1;
+  std::unordered_multimap<int, int> orphanedParamsIdxMap;
+  for (size_t i = 0; i < params_.size();) {
+    auto paramIdx = childParamIdx_.find(i);
+    if (paramIdx != childParamIdx_.end()) {
+      const auto [midx, pidx] = paramIdx->second;
+      prevMidx = midx;
+      const auto& mod = modules_.at(midx);
+      i += mod->params().size();
+    } else {
+      orphanedParamsIdxMap.emplace(prevMidx, i);
+      ++i;
+    }
+  }
+
+  return orphanedParamsIdxMap;
+}
+
 ModulePtr Container::module(int id) const {
   return modules_[id];
 }

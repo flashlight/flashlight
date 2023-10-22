@@ -44,8 +44,14 @@ class FL_API Conformer : public Container {
       int32_t convKernelSize,
       float pDropout,
       float pLayerDropout = 0.);
+  Conformer(const Conformer& other);
+  Conformer(Conformer&& other) = default;
+
+  Conformer& operator=(const Conformer& other);
+  Conformer& operator=(Conformer&& other) = default;
 
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 
  private:
@@ -61,6 +67,8 @@ class FL_API Conformer : public Container {
       norm3_;
   std::shared_ptr<Conv2D> convDepthWise_;
 
+  void copy(const Conformer& other);
+  void createLayers();
   static Variable conformerInitLinear(int32_t inDim, int32_t outDim);
   Variable mhsa(const Variable& input, const Variable& inputPadMask);
   Variable conv(const Variable& input);

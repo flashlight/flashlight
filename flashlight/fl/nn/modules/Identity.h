@@ -17,9 +17,9 @@ namespace fl {
 class FL_API Identity : public Module {
  public:
   Identity() = default;
-  virtual std::vector<Variable> forward(
-      const std::vector<Variable>& inputs) override;
-  virtual std::string prettyString() const override;
+  std::vector<Variable> forward(const std::vector<Variable>& inputs) override;
+  std::unique_ptr<Module> clone() const override;
+  std::string prettyString() const override;
 
  private:
   FL_SAVE_LOAD_WITH_BASE(Module)

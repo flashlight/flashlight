@@ -9,28 +9,28 @@
 
 namespace fl::pkg::vision {
 
-Resnet50Backbone::Resnet50Backbone()
-    : backbone_(std::make_shared<Sequential>()),
-      tail_(std::make_shared<Sequential>()) {
-  backbone_->add(ConvFrozenBatchNormActivation(3, 64, 7, 7, 2, 2));
+Resnet50Backbone::Resnet50Backbone() {
+  Sequential backbone;
+  backbone.add(ConvFrozenBatchNormActivation(3, 64, 7, 7, 2, 2));
   // maxpool -> 112x122x64 -> 56x56x64
-  backbone_->add(Pool2D(3, 3, 2, 2, -1, -1, PoolingMode::MAX));
+  backbone.add(Pool2D(3, 3, 2, 2, -1, -1, PoolingMode::MAX));
   // conv2_x -> 56x56x64 -> 56x56x64
-  backbone_->add(ResNetBottleneckStageFrozenBatchNorm(64, 64, 3, 1));
+  backbone.add(ResNetBottleneckStageFrozenBatchNorm(64, 64, 3, 1));
   // conv3_x -> 56x56x64 -> 28x28x128
-  backbone_->add(ResNetBottleneckStageFrozenBatchNorm(64 * 4, 128, 4, 2));
+  backbone.add(ResNetBottleneckStageFrozenBatchNorm(64 * 4, 128, 4, 2));
   // conv4_x -> 28x28x128 -> 14x14x256
-  backbone_->add(ResNetBottleneckStageFrozenBatchNorm(128 * 4, 256, 6, 2));
+  backbone.add(ResNetBottleneckStageFrozenBatchNorm(128 * 4, 256, 6, 2));
   // conv5_x -> 14x14x256 -> 7x7x256
-  backbone_->add(ResNetBottleneckStageFrozenBatchNorm(256 * 4, 512, 3, 2));
+  backbone.add(ResNetBottleneckStageFrozenBatchNorm(256 * 4, 512, 3, 2));
+  add(std::move(backbone));
 
-  tail_->add(Pool2D(7, 7, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
-  tail_->add(
+  Sequential tail;
+  tail.add(Pool2D(7, 7, 1, 1, 0, 0, fl::PoolingMode::AVG_EXCLUDE_PADDING));
+  tail.add(
       ConvFrozenBatchNormActivation(512 * 4, 1000, 1, 1, 1, 1, false, false));
-  tail_->add(View({1000, -1}));
-  tail_->add(LogSoftmax());
-  add(backbone_);
-  add(tail_);
+  tail.add(View({1000, -1}));
+  tail.add(LogSoftmax());
+  add(std::move(tail));
 }
 
 std::vector<Variable> Resnet50Backbone::forward(
