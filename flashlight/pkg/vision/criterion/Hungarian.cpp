@@ -41,9 +41,7 @@ std::pair<Tensor, Tensor> hungarian(Tensor& cost) {
 }
 } // namespace
 
-namespace fl {
-namespace pkg {
-namespace vision {
+namespace fl::pkg::vision {
 
 HungarianMatcher::HungarianMatcher(
     const float costClass,
@@ -100,6 +98,4 @@ std::vector<std::pair<Tensor, Tensor>> HungarianMatcher::compute(
   return results;
 };
 
-} // namespace vision
-} // namespace pkg
 } // namespace fl

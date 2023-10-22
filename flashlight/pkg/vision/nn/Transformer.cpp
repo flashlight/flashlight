@@ -41,9 +41,7 @@ makeMultiheadedAttentionLinear(int inDim, int outDim, int fanOutMult = 1) {
 
 } // namespace
 
-namespace fl {
-namespace pkg {
-namespace vision {
+namespace fl::pkg::vision {
 
 // query [ E X B X L ]
 // values and keys [ E X B X S ]
@@ -93,10 +91,40 @@ MultiheadAttention::MultiheadAttention(
   wk_ = makeMultiheadedAttentionLinear(modelDim, headDim * numHeads, 3);
   wv_ = makeMultiheadedAttentionLinear(modelDim, headDim * numHeads, 3);
   wf_ = makeMultiheadedAttentionLinear(headDim * numHeads, modelDim);
+  createLayers();
+}
+
+MultiheadAttention::MultiheadAttention(const MultiheadAttention& other) {
+  copy(other);
+  createLayers();
+}
+MultiheadAttention& MultiheadAttention::operator=(
+    const MultiheadAttention& other) {
+  clear();
+  copy(other);
+  createLayers();
+  return *this;
+}
+
+void MultiheadAttention::copy(const MultiheadAttention& other) {
+  train_ = other.train_;
+  pDropout_ = other.pDropout_;
+  numHeads_ = other.numHeads_;
+  wq_ = std::make_shared<Linear>(*other.wq_);
+  wk_ = std::make_shared<Linear>(*other.wk_);
+  wv_ = std::make_shared<Linear>(*other.wv_);
+  wf_ = std::make_shared<Linear>(*other.wf_);
+}
+
+void MultiheadAttention::createLayers() {
   add(wq_);
   add(wk_);
   add(wv_);
   add(wf_);
+}
+
+std::unique_ptr<Module> MultiheadAttention::clone() const {
+  return std::make_unique<MultiheadAttention>(*this);
 }
 
 std::vector<Variable> MultiheadAttention::forward(
@@ -169,6 +197,32 @@ TransformerBaseLayer::TransformerBaseLayer(
           true,
           modelDim)),
       pDropout_(pDropout) {
+  createLayers();
+}
+
+TransformerBaseLayer::TransformerBaseLayer(const TransformerBaseLayer& other) {
+  copy(other);
+  createLayers();
+}
+TransformerBaseLayer& TransformerBaseLayer::operator=(
+    const TransformerBaseLayer& other) {
+  clear();
+  copy(other);
+  createLayers();
+  return *this;
+}
+
+void TransformerBaseLayer::copy(const TransformerBaseLayer& other) {
+  train_ = other.train_;
+  pDropout_ = other.pDropout_;
+  self_attn_ = std::make_shared<MultiheadAttention>(*other.self_attn_);
+  w1_ = std::make_shared<Linear>(*other.w1_);
+  w2_ = std::make_shared<Linear>(*other.w2_);
+  norm1_ = std::make_shared<LayerNorm>(*other.norm1_);
+  norm2_ = std::make_shared<LayerNorm>(*other.norm2_);
+}
+
+void TransformerBaseLayer::createLayers() {
   add(self_attn_);
   add(w1_);
   add(w2_);
@@ -205,6 +259,10 @@ TransformerEncoderLayer::TransformerEncoderLayer(
     int32_t nHeads,
     float pDropout)
     : TransformerBaseLayer(modelDim, mlpDim, nHeads, pDropout){};
+
+std::unique_ptr<Module> TransformerEncoderLayer::clone() const {
+  return std::make_unique<TransformerEncoderLayer>(*this);
+}
 
 std::vector<Variable> TransformerEncoderLayer::forward(
     const std::vector<Variable>& input) {
@@ -264,6 +322,35 @@ TransformerDecoderLayer::TransformerDecoderLayer(
           true,
           modelDim)),
       pDropout_(pDropout) {
+  createLayers();
+}
+
+TransformerDecoderLayer::TransformerDecoderLayer(
+    const TransformerDecoderLayer& other) {
+  copy(other);
+  createLayers();
+}
+TransformerDecoderLayer& TransformerDecoderLayer::operator=(
+    const TransformerDecoderLayer& other) {
+  clear();
+  copy(other);
+  createLayers();
+  return *this;
+}
+
+void TransformerDecoderLayer::copy(const TransformerDecoderLayer& other) {
+  train_ = other.train_;
+  pDropout_ = other.pDropout_;
+  self_attn_ = std::make_shared<MultiheadAttention>(*other.self_attn_);
+  encoder_attn_ = std::make_shared<MultiheadAttention>(*other.encoder_attn_);
+  w1_ = std::make_shared<Linear>(*other.w1_);
+  w2_ = std::make_shared<Linear>(*other.w2_);
+  norm1_ = std::make_shared<LayerNorm>(*other.norm1_);
+  norm2_ = std::make_shared<LayerNorm>(*other.norm2_);
+  norm3_ = std::make_shared<LayerNorm>(*other.norm3_);
+}
+
+void TransformerDecoderLayer::createLayers() {
   add(self_attn_);
   add(encoder_attn_);
   add(w1_);
@@ -271,6 +358,10 @@ TransformerDecoderLayer::TransformerDecoderLayer(
   add(norm1_);
   add(norm2_);
   add(norm3_);
+}
+
+std::unique_ptr<Module> TransformerDecoderLayer::clone() const {
+  return std::make_unique<TransformerDecoderLayer>(*this);
 }
 
 Variable TransformerDecoderLayer::mlp(const Variable& in) {
@@ -416,9 +507,35 @@ Transformer::Transformer(
           numHeads,
           numDecoderLayers,
           pDropout)) {
+  createLayers();
+}
+
+Transformer::Transformer(const Transformer& other) {
+  copy(other);
+  createLayers();
+}
+
+Transformer& Transformer::operator=(const Transformer& other) {
+  clear();
+  copy(other);
+  createLayers();
+  return *this;
+}
+
+void Transformer::copy(const Transformer& other) {
+  train_ = other.train_;
+  encoder_ = std::make_shared<TransformerEncoder>(*other.encoder_);
+  decoder_ = std::make_shared<TransformerDecoder>(*other.decoder_);
+}
+
+void Transformer::createLayers() {
   add(encoder_);
   add(decoder_);
 };
+
+std::unique_ptr<Module> Transformer::clone() const {
+  return std::make_unique<Transformer>(*this);
+}
 
 std::vector<Variable> Transformer::forward(
     Variable src,
@@ -479,6 +596,4 @@ std::string Transformer::prettyString() const {
   return ss.str();
 }
 
-} // namespace vision
-} // namespace pkg
 } // namespace fl

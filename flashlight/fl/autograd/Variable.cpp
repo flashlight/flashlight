@@ -84,6 +84,10 @@ Tensor& Variable::tensor() const {
   return sharedData_->data;
 }
 
+Variable Variable::copy() const {
+  return Variable(sharedData_->data, sharedGrad_->calcGrad);
+}
+
 Variable Variable::astype(fl::dtype newType) const {
   auto output = tensor().astype(newType);
   auto gradFunc = [](std::vector<Variable>& inputs,

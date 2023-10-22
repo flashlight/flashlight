@@ -29,6 +29,13 @@ class VisionTransformer : public Container {
       int32_t nHeads,
       float pDropout,
       float pLayerdrop);
+  VisionTransformer(const VisionTransformer& other);
+  VisionTransformer(VisionTransformer&& other) = default;
+
+  VisionTransformer& operator=(const VisionTransformer& other);
+  VisionTransformer& operator=(VisionTransformer&& other) = default;
+
+  std::unique_ptr<Module> clone() const override;
 
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
   std::string prettyString() const override;
@@ -44,6 +51,9 @@ class VisionTransformer : public Container {
   std::shared_ptr<Linear> wq_, wk_, wv_;
   std::shared_ptr<Linear> wf_;
   std::shared_ptr<LayerNorm> norm1_, norm2_;
+
+  void createLayers();
+  void copy(const VisionTransformer& other);
 
   Variable gelu(const Variable& input);
   Variable mlp(const Variable& input);

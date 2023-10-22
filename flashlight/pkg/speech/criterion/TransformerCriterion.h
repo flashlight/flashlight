@@ -48,6 +48,8 @@ class TransformerCriterion : public SequenceCriterion {
       double pDropout,
       double pLayerDrop);
 
+  std::unique_ptr<Module> clone() const override;
+
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;
 

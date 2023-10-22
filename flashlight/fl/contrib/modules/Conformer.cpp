@@ -92,6 +92,52 @@ Conformer::Conformer(
   if (posEmbContextSize_ > 0) {
     params_.push_back(uniform(2 * posEmbContextSize_ - 1, headDim, -0.1, 0.1));
   }
+  createLayers();
+}
+
+Conformer::Conformer(const Conformer& other) {
+  copy(other);
+  createLayers();
+}
+
+Conformer& Conformer::operator=(const Conformer& other) {
+  clear();
+  copy(other);
+  createLayers();
+  return *this;
+}
+
+void Conformer::copy(const Conformer& other) {
+  train_ = other.train_;
+  nHeads_ = other.nHeads_;
+  posEmbContextSize_ = other.posEmbContextSize_;
+  convKernelSize_ = other.convKernelSize_;
+  pDropout_ = other.pDropout_;
+  pLayerDropout_ = other.pLayerDropout_;
+  w11_ = std::make_shared<Linear>(*other.w11_);
+  w12_ = std::make_shared<Linear>(*other.w12_);
+  w21_ = std::make_shared<Linear>(*other.w21_);
+  w22_ = std::make_shared<Linear>(*other.w22_);
+  wq_ = std::make_shared<Linear>(*other.wq_);
+  wk_ = std::make_shared<Linear>(*other.wk_);
+  wv_ = std::make_shared<Linear>(*other.wv_);
+  wf_ = std::make_shared<Linear>(*other.wf_);
+  conv1_ = std::make_shared<Linear>(*other.conv1_);
+  conv2_ = std::make_shared<Linear>(*other.conv2_);
+  norm1_ = std::make_shared<LayerNorm>(*other.norm1_);
+  norm2_ = std::make_shared<LayerNorm>(*other.norm2_);
+  normMhsa_ = std::make_shared<LayerNorm>(*other.normMhsa_);
+  normConv1_ = std::make_shared<LayerNorm>(*other.normConv1_);
+  normConv2_ = std::make_shared<LayerNorm>(*other.normConv2_);
+  norm3_ = std::make_shared<LayerNorm>(*other.norm3_);
+  convDepthWise_ = std::make_shared<Conv2D>(*other.convDepthWise_);
+  if (posEmbContextSize_ > 0) {
+    const auto& p = other.param(0);
+    params_.emplace_back(p.copy());
+  }
+}
+
+void Conformer::createLayers() {
   // first feed-forward module
   add(w11_);
   add(w12_);
@@ -165,8 +211,8 @@ Variable Conformer::conv(const Variable& _input) {
   float pDropout = train_ ? pDropout_ : 0.0;
   // input C x T x B x 1
   // apply first pointwise conv
-  auto result =
-      gatedlinearunit((*conv1_)(((*normConv1_)(input)).astype(input.type())), 0);
+  auto result = gatedlinearunit(
+      (*conv1_)(((*normConv1_)(input)).astype(input.type())), 0);
   result = reorder(result, {1, 3, 0, 2});
   // T x 1 x C x B
   // apply depthwise separable convolutions
@@ -217,6 +263,10 @@ std::vector<Variable> Conformer::forward(const std::vector<Variable>& input) {
   x = x + f * 0.5 * ffn2;
   x = ((*norm3_)(x)).astype(x.type());
   return {x};
+}
+
+std::unique_ptr<Module> Conformer::clone() const {
+  return std::make_unique<Conformer>(*this);
 }
 
 std::string Conformer::prettyString() const {

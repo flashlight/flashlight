@@ -10,6 +10,7 @@
 #include <memory>
 #include <stdexcept>
 #include <unordered_map>
+#include <utility>
 
 #include <cereal/types/tuple.hpp>
 #include <cereal/types/unordered_map.hpp>
@@ -40,16 +41,66 @@ class FL_API Container : public Module {
 
   Container();
 
+  /**
+   * Removes all modules and parameters from the container.
+   */
+  virtual void clear();
+
+  /**
+   * Find orphaned params (i.e. params not in modules contained in the modules_
+   * list). This can be used to preserve the order of orphaned params when
+   * copying/cloning a container. std::unordered_multimap<module_idx, param_idx>
+   * The module_idx is used to identify after which module params should be
+   * serted and the param_idx is used to index the specific param. The following
+   * example demonstrates its usage by ensuring params and modules are inserted
+   * in the same order when making a copy:
+   * \code
+      void copy(const MyContainer& other) {
+        auto orphanParamIdxMap = other.getOrphanedParamsIdxMap();
+        for (int i = -1; i < static_cast<int>(other.modules_.size()); ++i) {
+          if (i >= 0) {
+            add(other.modules_[i]->clone());
+          }
+          auto [paramIter, pEnd] = orphanParamIdxMap.equal_range(i);
+          for (; paramIter != pEnd; ++paramIter) {
+            const auto& param = other.params_[paramIter->second];
+            params_.emplace_back(param.copy());
+          }
+        }
+      }
+     \endcode
+   *
+   * A module_idx of -1 indicates the orphaned params are to be inserted
+   * before the first module
+   *
+   * @return A multimap of orphaned params and the module index they appear
+   * after
+   */
+  std::unordered_multimap<int, int> getOrphanedParamsIdxMap() const;
+
  public:
   /**
-   * Adds a module to a `Container` by making a copy of the underlying module.
-   * Note that parameters are still shared, due to Variable's copy semantics.
+   * Adds a module to a `Container` by making a copy of the underlying module if
+   * an lvalue or moving it if and rvalue
+   *
+   * @param[in] module the module to add.
+   */
+  template <typename T>
+  void add(T&& module) {
+    static_assert(
+        !std::is_lvalue_reference_v<T>,
+        "add() can only accept rvalues. Use std::move().");
+    add(std::make_shared<std::decay_t<T>>(std::forward<T>(module)));
+  }
+
+  /**
+   * Adds a module to a `Container` by moving it and taking ownership.
    *
    * @param module the module to add.
    */
   template <typename T>
-  void add(const T& module) {
-    add(std::make_shared<T>(module));
+  void add(std::unique_ptr<T> module) {
+    add(std::shared_ptr<T>(std::move(module)));
   }
 
   /**
@@ -63,11 +114,11 @@ class FL_API Container : public Module {
     if (!module) {
       throw std::invalid_argument("can't add null Module to Container");
     }
-    modules_.emplace_back(module);
-    for (int i = 0; i < module->params().size(); i++) {
-      childParamIdx_[params_.size()] = std::make_tuple(modules_.size() - 1, i);
+    for (int i = 0; i < module->numParamTensors(); i++) {
+      childParamIdx_[params_.size()] = std::make_tuple(modules_.size(), i);
       params_.push_back(module->param(i));
     }
+    modules_.emplace_back(std::move(module));
   }
 
   /**
@@ -118,6 +169,47 @@ class FL_API Container : public Module {
 };
 
 /**
+ * Adds a copy constructor, copy assignment operator, move constructor, move
+ * assignment operator and clone method to the class. This should only be used
+ * if the class basically acts as a wrapper around a container such that no
+ * custom module ownership is used. Users should implement these methods
+ * themselves if any custom ownership is utilised.
+ * The following is an example of custom ownership, where a shared_ptr is used
+ * to share ownership between the base Container class an MyContainer class
+ * such that they need to be manually syncronised when performing a copy.
+ * \code
+    class MyContainer : public Container {
+    public:
+      MyContainer() {
+        lin_ = std::make_shared<Linear>(10, 20);
+        add(lin_);
+      }
+      std::shared_ptr<Linear> lin_;
+    };
+   \endcode
+ */
+#define FL_BASIC_CONTAINER_CLONING(ContainerClass)             \
+  ContainerClass(const ContainerClass& other) {                \
+    train_ = other.train_;                                     \
+    for (auto& mod : other.modules_) {                         \
+      add(mod->clone());                                       \
+    }                                                          \
+  }                                                            \
+  ContainerClass& operator=(const ContainerClass& other) {     \
+    train_ = other.train_;                                     \
+    clear();                                                   \
+    for (auto& mod : other.modules_) {                         \
+      add(mod->clone());                                       \
+    }                                                          \
+    return *this;                                              \
+  }                                                            \
+  ContainerClass(ContainerClass&& other) = default;            \
+  ContainerClass& operator=(ContainerClass&& other) = default; \
+  std::unique_ptr<Module> clone() const override {             \
+    return std::make_unique<ContainerClass>(*this);            \
+  }
+
+/**
  * A `Container` representing an ordered sequence of modules, which is capable
  * of forward computation through each of its modules, in order.
  *
@@ -165,6 +257,8 @@ class FL_API Sequential : public Container {
    * @return a string containing the module label
    */
   std::string prettyString() const override;
+
+  FL_BASIC_CONTAINER_CLONING(Sequential)
 
  private:
   FL_SAVE_LOAD_WITH_BASE(Container)

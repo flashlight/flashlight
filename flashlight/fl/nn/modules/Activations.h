@@ -22,6 +22,7 @@ class FL_API Sigmoid : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 
  private:
@@ -38,6 +39,7 @@ class FL_API Log : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 
  private:
@@ -56,6 +58,7 @@ class FL_API Tanh : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 
  private:
@@ -78,6 +81,7 @@ class FL_API HardTanh : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 
  private:
@@ -96,6 +100,7 @@ class FL_API ReLU : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 
  private:
@@ -114,6 +119,7 @@ class FL_API ReLU6 : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 
  private:
@@ -154,6 +160,7 @@ class FL_API LeakyReLU : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 };
 
@@ -203,6 +210,7 @@ class FL_API PReLU : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 };
 
@@ -232,6 +240,7 @@ class FL_API ELU : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 };
 
@@ -264,6 +273,7 @@ class FL_API ThresholdReLU : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 };
 
@@ -293,6 +303,7 @@ class FL_API GatedLinearUnit : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 };
 
@@ -319,6 +330,7 @@ class FL_API LogSoftmax : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 };
 
@@ -341,6 +353,7 @@ class FL_API Swish : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 
  private:

@@ -32,6 +32,8 @@ class FL_API MeanSquaredError : public BinaryModule {
 
   Variable forward(const Variable& inputs, const Variable& targets) override;
 
+  std::unique_ptr<Module> clone() const override;
+
   std::string prettyString() const override;
 
  private:
@@ -53,6 +55,8 @@ class FL_API MeanAbsoluteError : public BinaryModule {
   MeanAbsoluteError() = default;
 
   Variable forward(const Variable& inputs, const Variable& targets) override;
+
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 
@@ -89,6 +93,8 @@ class FL_API BinaryCrossEntropy : public BinaryModule {
       const Variable& inputs,
       const Variable& targets,
       const Variable& weights);
+
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 
@@ -152,6 +158,8 @@ class FL_API CategoricalCrossEntropy : public BinaryModule {
    */
   Variable forward(const Variable& inputs, const Variable& targets) override;
 
+  std::unique_ptr<Module> clone() const override;
+
   std::string prettyString() const override;
 };
 
@@ -213,6 +221,8 @@ class FL_API AdaptiveSoftMaxLoss : public BinaryModule {
   Variable forward(const Variable& inputs, const Variable& targets) override;
 
   void setParams(const Variable& var, int position) override;
+
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 };

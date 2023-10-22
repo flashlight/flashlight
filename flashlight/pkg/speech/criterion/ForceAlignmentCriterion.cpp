@@ -21,6 +21,11 @@ ForceAlignmentCriterion::ForceAlignmentCriterion(
   params_ = {transition};
 }
 
+std::unique_ptr<Module> ForceAlignmentCriterion::clone() const {
+  throw std::runtime_error(
+      "Cloning is unimplemented in Module 'ForceAlignmentCriterion'");
+}
+
 std::string ForceAlignmentCriterion::prettyString() const {
   return "ForceAlignmentCriterion";
 }

@@ -135,6 +135,8 @@ class FL_API Residual : public Container {
   Variable forward(const Variable& input);
 
   std::string prettyString() const override;
+
+  FL_BASIC_CONTAINER_CLONING(Residual)
 };
 
 } // namespace fl

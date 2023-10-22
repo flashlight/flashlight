@@ -53,6 +53,8 @@ class FL_API Module {
    * Constructs a module given its parameters.
    *
    * @param params a vector of `Variable` which will replace `params_`
+   * This changes all parameters so that gradient calculation will be
+   * enabled/disabled for any calls to `forward`.
    */
   explicit Module(const std::vector<Variable>& params);
 
@@ -63,6 +65,13 @@ class FL_API Module {
    * @return the modules parameters as a vector of `Variable`
    */
   std::vector<Variable> params() const;
+
+  /**
+   * Gets the nunber of parameter tensors of the module.
+   *
+   * @return the number of parameter tensors
+   */
+  int numParamTensors() const;
 
   /**
    * Switches the module to training mode. Changes all parameters so that
@@ -91,11 +100,18 @@ class FL_API Module {
    * ``params_.size() - 1``), then an error will be thrown. A new parameter
    * will not be created at a specified index if out of bounds.
    *
-   * @param var the new replacement `Variable`
+   * @param[in] var the new replacement `Variable`
    * @param position The index of the parameter which will be replaced in
    * `params_`
    */
   virtual void setParams(const Variable& var, int position);
+
+  /**
+   * Copies the modules parameters, detaching from the computation graph.
+   *
+   * @return a copy of the modules parameters as a vector of `Variable`
+   */
+  virtual std::vector<Variable> copyParams() const;
 
   /**
    * Clears references to gradient Variables for all parameters in the module.
@@ -122,6 +138,13 @@ class FL_API Module {
    * the forward computation
    */
   std::vector<Variable> operator()(const std::vector<Variable>& inputs);
+
+  /**
+   * Clone the module via deep copy of its parameters and members.
+   *
+   * @return A unique pointer of the cloned module.
+   */
+  virtual std::unique_ptr<Module> clone() const = 0;
 
   /**
    * Generates a stringified representation of the module.
@@ -178,6 +201,7 @@ class FL_API BinaryModule : public Module {
  private:
   FL_SAVE_LOAD_WITH_BASE(Module)
 };
+
 } // namespace fl
 
 CEREAL_REGISTER_TYPE(fl::UnaryModule)

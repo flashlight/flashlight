@@ -104,6 +104,41 @@ Conv2D::Conv2D(
   }
 }
 
+Conv2D::Conv2D(const Conv2D& other)
+    : UnaryModule(other.copyParams()),
+      nIn_(other.nIn_),
+      nOut_(other.nOut_),
+      xFilter_(other.xFilter_),
+      yFilter_(other.yFilter_),
+      xStride_(other.xStride_),
+      yStride_(other.yStride_),
+      xPad_(other.xPad_),
+      yPad_(other.yPad_),
+      xDilation_(other.xDilation_),
+      yDilation_(other.yDilation_),
+      bias_(other.bias_),
+      groups_(other.groups_) {
+  train_ = other.train_;
+}
+
+Conv2D& Conv2D::operator=(const Conv2D& other) {
+  params_ = other.copyParams();
+  train_ = other.train_;
+  nIn_ = other.nIn_;
+  nOut_ = other.nOut_;
+  xFilter_ = other.xFilter_;
+  yFilter_ = other.yFilter_;
+  xStride_ = other.xStride_;
+  yStride_ = other.yStride_;
+  xPad_ = other.xPad_;
+  yPad_ = other.yPad_;
+  xDilation_ = other.xDilation_;
+  yDilation_ = other.yDilation_;
+  bias_ = other.bias_;
+  groups_ = other.groups_;
+  return *this;
+}
+
 Variable Conv2D::forward(const Variable& input) {
   auto px = derivePadding(input.dim(0), xFilter_, xStride_, xPad_, xDilation_);
   auto py = derivePadding(input.dim(1), yFilter_, yStride_, yPad_, yDilation_);
@@ -156,6 +191,10 @@ void Conv2D::initialize() {
   }
 
   benchmarks_ = std::make_shared<detail::ConvBenchmarks>();
+}
+
+std::unique_ptr<Module> Conv2D::clone() const {
+  return std::make_unique<Conv2D>(*this);
 }
 
 std::string Conv2D::prettyString() const {

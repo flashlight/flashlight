@@ -52,6 +52,8 @@ class FL_API AsymmetricConv1D : public fl::Conv2D {
 
   fl::Variable forward(const fl::Variable& input) override;
 
+  std::unique_ptr<Module> clone() const override;
+
   std::string prettyString() const override;
 
  private:

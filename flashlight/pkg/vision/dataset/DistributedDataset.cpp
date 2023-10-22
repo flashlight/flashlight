@@ -7,9 +7,7 @@
 
 #include "flashlight/pkg/vision/dataset/DistributedDataset.h"
 
-namespace fl {
-namespace pkg {
-namespace vision {
+namespace fl::pkg::vision {
 
 DistributedDataset::DistributedDataset(
     std::shared_ptr<Dataset> base,
@@ -49,6 +47,4 @@ int64_t DistributedDataset::size() const {
   return ds_->size();
 }
 
-} // namespace vision
-} // namespace pkg
 } // namespace fl

@@ -176,7 +176,29 @@ class FL_API Conv2D : public UnaryModule {
       int dy = 1,
       int groups = 1);
 
+  /**
+   * Constructs an Conv2D module from another, performing a copy of the
+   * parameters.
+   *
+   * @param other The Conv2D module to copy from.
+   */
+  Conv2D(const Conv2D& other);
+
+  /**
+   * Constructs an Conv2D module from another, performing a copy of the
+   * parameters.
+   *
+   * @param other The Conv2D module to copy from.
+   */
+  Conv2D& operator=(const Conv2D& other);
+
+  Conv2D(Conv2D&& other) = default;
+
+  Conv2D& operator=(Conv2D&& other) = default;
+
   Variable forward(const Variable& input) override;
+
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 

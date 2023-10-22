@@ -58,7 +58,23 @@ class FL_API Linear : public UnaryModule {
    */
   Linear(const Variable& w, const Variable& b);
 
+  /**
+   * Constructs an Linear module from another, performing a deep copy of the
+   * parameters.
+   *
+   * @param other The Linear module to copy from.
+   */
+  Linear(const Linear& other);
+
+  Linear& operator=(const Linear& other);
+
+  Linear(Linear&& other) = default;
+
+  Linear& operator=(Linear&& other) = default;
+
   Variable forward(const Variable& input) override;
+
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 };

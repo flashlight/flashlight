@@ -7,8 +7,8 @@
 
 #include "flashlight/pkg/vision/dataset/Coco.h"
 
-#include <assert.h>
 #include <algorithm>
+#include <cassert>
 #include <map>
 
 #include "flashlight/fl/tensor/Index.h"
@@ -83,9 +83,7 @@ int64_t getImageId(const std::string& fp) {
 
 } // namespace
 
-namespace fl {
-namespace pkg {
-namespace vision {
+namespace fl::pkg::vision {
 
 CocoDataset::CocoDataset(
     const std::string& list_file,
@@ -127,7 +125,7 @@ CocoDataset::CocoDataset(
     }
     data.emplace_back(CocoDataSample{filepath, bboxes, classes});
   }
-  assert(data.size() > 0);
+  assert(!data.empty());
 
   // Now define how to load the data from CocoDataSampoles in arrayfire
   std::shared_ptr<Dataset> ds = std::make_shared<LoaderDataset<CocoDataSample>>(
@@ -206,6 +204,4 @@ CocoData CocoDataset::get(const uint64_t idx) {
   return batched_->get(idx);
 }
 
-} // namespace vision
-} // namespace pkg
 } // namespace fl

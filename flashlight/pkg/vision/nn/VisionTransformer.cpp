@@ -12,9 +12,7 @@
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/tensor/Random.h"
 
-namespace fl {
-namespace pkg {
-namespace vision {
+namespace fl::pkg::vision {
 
 VisionTransformer::VisionTransformer(
     int32_t modelDim,
@@ -45,6 +43,39 @@ VisionTransformer::VisionTransformer(
           1e-6, // eps
           true, // affine
           modelDim)) {
+  createLayers();
+}
+VisionTransformer::VisionTransformer(const VisionTransformer& other) {
+  copy(other);
+  createLayers();
+}
+VisionTransformer& VisionTransformer::operator=(
+    const VisionTransformer& other) {
+  clear();
+  copy(other);
+  createLayers();
+  return *this;
+}
+
+void VisionTransformer::copy(const VisionTransformer& other) {
+  train_ = other.train_;
+  modelDim_ = other.modelDim_;
+  headDim_ = other.headDim_;
+  mlpDim_ = other.mlpDim_;
+  nHeads_ = other.nHeads_;
+  pDropout_ = other.pDropout_;
+  pLayerdrop_ = other.pLayerdrop_;
+  w1_ = std::make_shared<Linear>(*other.w1_);
+  w2_ = std::make_shared<Linear>(*other.w2_);
+  wq_ = std::make_shared<Linear>(*other.wq_);
+  wk_ = std::make_shared<Linear>(*other.wk_);
+  wv_ = std::make_shared<Linear>(*other.wv_);
+  wf_ = std::make_shared<Linear>(*other.wf_);
+  norm1_ = std::make_shared<LayerNorm>(*other.norm1_);
+  norm2_ = std::make_shared<LayerNorm>(*other.norm2_);
+}
+
+void VisionTransformer::createLayers() {
   add(w1_);
   add(w2_);
   add(wq_);
@@ -53,6 +84,11 @@ VisionTransformer::VisionTransformer(
   add(wf_);
   add(norm1_);
   add(norm2_);
+}
+
+std::unique_ptr<Module> VisionTransformer::clone() const {
+  throw std::runtime_error(
+      "Cloning is unimplemented in Module 'VisionTransformer'");
 }
 
 Variable VisionTransformer::gelu(const Variable& input) {
@@ -153,6 +189,4 @@ std::shared_ptr<fl::Linear> VisionTransformer::initLinear(
       fl::truncNormal({outDim, inDim}, 0.02),
       fl::constant(0., outDim, 1, fl::dtype::f32));
 }
-} // namespace vision
-} // namespace pkg
 } // namespace fl

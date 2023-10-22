@@ -26,6 +26,10 @@ Variable Reorder::forward(const Variable& input) {
   return reorder(input, shape_);
 }
 
+std::unique_ptr<Module> Reorder::clone() const {
+  return std::make_unique<Reorder>(*this);
+}
+
 std::string Reorder::prettyString() const {
   std::ostringstream ss;
   ss << "Reorder";

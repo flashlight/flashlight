@@ -7,9 +7,7 @@
 
 #include "flashlight/pkg/speech/runtime/Attention.h"
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 std::shared_ptr<AttentionBase> createAttention() {
   std::shared_ptr<AttentionBase> attention;
@@ -72,6 +70,4 @@ std::shared_ptr<WindowBase> createAttentionWindow() {
   }
   return window;
 }
-} // namespace speech
-} // namespace pkg
 } // namespace fl

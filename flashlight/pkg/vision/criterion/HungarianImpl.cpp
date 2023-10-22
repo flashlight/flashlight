@@ -7,7 +7,7 @@
 
 #include "flashlight/pkg/vision/criterion/HungarianImpl.h"
 
-#include <assert.h>
+#include <cassert>
 #include <limits>
 #include <vector>
 
@@ -313,9 +313,7 @@ void stepSeven(int* marks, int* rowIdxs, int* colIdxs, int M, int N) {
 
 } // namespace
 
-namespace fl {
-namespace lib {
-namespace set {
+namespace fl::lib::set {
 
 void hungarian(float* costs, int* assignments, int M, int N) {
   // Ensure there are more rows than columns
@@ -378,6 +376,4 @@ void hungarian(float* costs, int* rowIdxs, int* colIdxs, int M, int N) {
   stepSeven(marks.data(), rowIdxs, colIdxs, M, N);
 }
 
-} // namespace set
-} // namespace lib
 } // namespace fl

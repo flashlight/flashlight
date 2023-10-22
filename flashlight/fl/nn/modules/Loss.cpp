@@ -30,6 +30,10 @@ Variable MeanSquaredError::forward(
   return res;
 }
 
+std::unique_ptr<Module> MeanSquaredError::clone() const {
+  return std::make_unique<MeanSquaredError>(*this);
+}
+
 std::string MeanSquaredError::prettyString() const {
   return "MeanSquaredError";
 }
@@ -49,6 +53,10 @@ Variable MeanAbsoluteError::forward(
   return mean(flat(fl::abs(df)), {0});
 }
 
+std::unique_ptr<Module> MeanAbsoluteError::clone() const {
+  return std::make_unique<MeanAbsoluteError>(*this);
+}
+
 std::string MeanAbsoluteError::prettyString() const {
   return "MeanAbsoluteError";
 }
@@ -66,6 +74,10 @@ Variable BinaryCrossEntropy::forward(
   return mean(flat(weights * binaryCrossEntropy(inputs, targets)), {0});
 }
 
+std::unique_ptr<Module> BinaryCrossEntropy::clone() const {
+  return std::make_unique<BinaryCrossEntropy>(*this);
+}
+
 std::string BinaryCrossEntropy::prettyString() const {
   return "BinaryCrossEntropy";
 }
@@ -74,6 +86,10 @@ Variable CategoricalCrossEntropy::forward(
     const Variable& inputs,
     const Variable& targets) {
   return categoricalCrossEntropy(inputs, targets, reduction_, ignoreIndex_);
+}
+
+std::unique_ptr<Module> CategoricalCrossEntropy::clone() const {
+  return std::make_unique<CategoricalCrossEntropy>(*this);
 }
 
 std::string CategoricalCrossEntropy::prettyString() const {
@@ -193,6 +209,10 @@ std::shared_ptr<AdaptiveSoftMax> AdaptiveSoftMaxLoss::getActivation() const {
 void AdaptiveSoftMaxLoss::setParams(const Variable& var, int position) {
   Module::setParams(var, position);
   activation_->setParams(var, position);
+}
+
+std::unique_ptr<Module> AdaptiveSoftMaxLoss::clone() const {
+  return std::make_unique<AdaptiveSoftMaxLoss>(*this);
 }
 
 std::string AdaptiveSoftMaxLoss::prettyString() const {

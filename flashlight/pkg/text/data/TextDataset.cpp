@@ -18,9 +18,7 @@ using fl::lib::text::Dictionary;
 using fl::lib::text::PartialFileReader;
 using fl::lib::text::Tokenizer;
 
-namespace fl {
-namespace pkg {
-namespace text {
+namespace fl::pkg::text {
 
 TextDataset::TextDataset(
     const fs::path& dataDirectory,
@@ -175,6 +173,4 @@ void TextDataset::shuffle(uint64_t seed) {
   }
 }
 
-} // namespace text
-} // namespace pkg
 } // namespace fl

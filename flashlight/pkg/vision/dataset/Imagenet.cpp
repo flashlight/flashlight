@@ -26,16 +26,14 @@ std::vector<std::string> fileGlob(const std::string& pattern) {
   glob(pattern.c_str(), GLOB_TILDE, nullptr, &result);
   std::vector<std::string> ret;
   for (unsigned int i = 0; i < result.gl_pathc; ++i) {
-    ret.push_back(std::string(result.gl_pathv[i]));
+    ret.emplace_back(result.gl_pathv[i]);
   }
   globfree(&result);
   return ret;
 }
 
 } // namespace
-namespace fl {
-namespace pkg {
-namespace vision {
+namespace fl::pkg::vision {
 
 std::unordered_map<std::string, uint64_t> getImagenetLabels(
     const fs::path& labelFile) {
@@ -56,7 +54,7 @@ std::unordered_map<std::string, uint64_t> getImagenetLabels(
   }
   for (int i = 0; i < lines.size(); i++) {
     std::string line = lines[i];
-    auto it = line.find(",");
+    auto it = line.find(',');
     if (it != std::string::npos) {
       std::string label = line.substr(0, it);
       labels[label] = i;
@@ -86,8 +84,8 @@ std::shared_ptr<Dataset> imagenetDataset(
 
   // Create labels from filepaths
   auto getLabelIdxs = [&labelMap](const std::string& s) -> uint64_t {
-    std::string parentPath = s.substr(0, s.rfind("/"));
-    std::string label = parentPath.substr(parentPath.rfind("/") + 1);
+    std::string parentPath = s.substr(0, s.rfind('/'));
+    std::string label = parentPath.substr(parentPath.rfind('/') + 1);
     if (labelMap.find(label) != labelMap.end()) {
       return labelMap.at(label);
     } else {
@@ -108,6 +106,4 @@ std::shared_ptr<Dataset> imagenetDataset(
       MergeDataset({imageDataset, labelDataset}));
 }
 
-} // namespace vision
-} // namespace pkg
 } // namespace fl

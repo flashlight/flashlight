@@ -39,9 +39,7 @@ T randomPerturbNegate(T base, T minNoise, T maxNoise) {
 
 } // namespace
 
-namespace fl {
-namespace pkg {
-namespace vision {
+namespace fl::pkg::vision {
 
 Tensor resizeSmallest(const Tensor& in, const int resize) {
   const int w = in.dim(0);
@@ -276,7 +274,7 @@ ImageTransform resizeTransform(const uint64_t resize) {
 ImageTransform compose(std::vector<ImageTransform> transformfns) {
   return [transformfns](const Tensor& in) {
     Tensor out = in;
-    for (auto fn : transformfns) {
+    for (const auto& fn : transformfns) {
       out = fn(out);
     }
     return out;
@@ -503,6 +501,4 @@ ImageTransform randomAugmentationDeitTransform(
   };
 }
 
-} // namespace vision
-} // namespace pkg
 } // namespace fl
