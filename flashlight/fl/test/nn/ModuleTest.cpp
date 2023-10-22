@@ -339,7 +339,7 @@ TEST(ModuleTest, ConvolutionFwd) {
   // test batching
   auto conv = Conv2D(30, 50, 9, 7, 2, 3, 3, 2, 1, 1, true, 1);
   int batchsize = 10;
-  auto input = fl::rand({120, 100, 30, batchsize});
+  auto input = fl::rand({120, 100, 30, batchsize}, fl::dtype::f32);
   auto batchOutVar = conv(Variable(input, false));
 
   for (int i = 0; i < batchsize; ++i) {
