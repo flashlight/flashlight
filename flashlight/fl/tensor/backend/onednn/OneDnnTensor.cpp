@@ -313,9 +313,10 @@ bool OneDnnTensor::isContiguous() {
 Shape OneDnnTensor::strides() {
   const auto& memoryDesc = this->memoryDesc();
   if (memoryDesc.get_format_kind() != dnnl::memory::format_kind::blocked) {
-    // throw std::invalid_argument(
-    //     "[OneDnnTensor::strides] Unexpected memory format kind: " +
-    //     std::string(memoryDesc.get_format_kind()));
+    throw std::invalid_argument(
+        "[OneDnnTensor::strides] Unexpected memory format kind: " +
+        std::string(dnnl_fmt_kind2str(
+            static_cast<dnnl_format_kind_t>(memoryDesc.get_format_kind()))));
   }
   const auto& _strides = memoryDesc.get_strides();
   std::vector<Dim> strides; // reverse internal strides to get col-major strides

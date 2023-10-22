@@ -281,11 +281,7 @@ std::tuple<Tensor, Tensor, Tensor> OneDnnAutogradExtension::batchnormBackward(
   networkBackwards.push_back(*bwdPrim);
   detail::executeNetwork(networkBackwards, bwdArgs);
 
-  return {
-      gradInput, gradWeights, gradBias
-      // gradWeightsDNNL(fl::range(0, nfeatures)), // weights grad
-      // gradWeightsDNNL(fl::range(nfeatures, 2 * nfeatures)) // bias grad
-  };
+  return {gradInput, gradWeights, gradBias};
 };
 
 } // namespace fl
