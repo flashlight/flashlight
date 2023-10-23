@@ -8,6 +8,8 @@
 #pragma once
 
 #include <stdexcept>
+#include <type_traits>
+#include <utility>
 
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/nn/Init.h"
@@ -43,16 +45,21 @@ class FL_API WeightNorm : public Module {
 
   void computeWeight();
 
+  void initParams();
+
   FL_SAVE_LOAD_DECLARE()
 
  public:
   /** Construct a WeightNorm layer.
-   * @param module A module to wrap (must be one of Linear or Conv2D)
+   * @param module A module to wrap (must be one of Linear or Conv2D). Takes
+   * ownership of the module.
    * @param dim The dimension to normalize.
    */
   template <class T>
-  WeightNorm(const T& module, int dim)
-      : WeightNorm(std::make_shared<T>(module), dim) {}
+  WeightNorm(T&& module, int dim)
+      : WeightNorm(
+            std::make_shared<std::decay_t<T>>(std::forward<T>(module)),
+            dim) {}
 
   /** Construct a WeightNorm layer.
    * @param module Shared pointer to a module to wrap (the module must be one
@@ -61,21 +68,29 @@ class FL_API WeightNorm : public Module {
    */
   template <class T>
   WeightNorm(std::shared_ptr<T> module, int dim) : module_(module), dim_(dim) {
-    auto module_params = module_->params();
-
-    auto v = module_params[0];
     transformDims();
-    auto g = Variable(
-        norm(v, normDim_, /* p = */ 2, /* keepDims = */ true).tensor(), true);
-    if (module_params.size() == 2) {
-      auto b = module_params[1];
-      params_ = {v, g, b};
-    } else if (module_params.size() == 1) {
-      params_ = {v, g};
-    } else {
-      throw std::invalid_argument("WeightNorm only supports Linear and Conv2D");
-    }
+    initParams();
   }
+
+  /**
+   * Construct a WeightNorm module from another, performing a deep copy for the
+   * wrapped module.
+   *
+   * @param other The WeightNorm module to copy from.
+   */
+  WeightNorm(const WeightNorm& other);
+
+  /**
+   * Construct a WeightNorm module from another, performing a deep copy for the
+   * wrapped module.
+   *
+   * @param other The WeightNorm module to copy from.
+   */
+  WeightNorm& operator=(const WeightNorm& other);
+
+  WeightNorm(WeightNorm&& other) = default;
+
+  WeightNorm& operator=(WeightNorm&& other) = default;
 
   /**
    * Returns a pointer to the inner `Module` normalized by this `WeightNorm`.
@@ -91,6 +106,8 @@ class FL_API WeightNorm : public Module {
   void setParams(const Variable& var, int position) override;
 
   std::vector<Variable> forward(const std::vector<Variable>& inputs) override;
+
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 };

@@ -42,6 +42,8 @@ class FL_API View : public UnaryModule {
 
   Variable forward(const Variable& input) override;
 
+  std::unique_ptr<Module> clone() const override;
+
   std::string prettyString() const override;
 
   ~View() = default;

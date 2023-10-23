@@ -17,6 +17,8 @@ class SimpleLocationAttention : public AttentionBase {
  public:
   explicit SimpleLocationAttention(int convKernel);
 
+  std::unique_ptr<Module> clone() const override;
+
   std::pair<Variable, Variable> forwardBase(
       const Variable& state,
       const Variable& xEncoded,
@@ -35,6 +37,8 @@ class SimpleLocationAttention : public AttentionBase {
 class LocationAttention : public AttentionBase {
  public:
   LocationAttention(int encDim, int convKernel);
+
+  std::unique_ptr<Module> clone() const override;
 
   std::pair<Variable, Variable> forwardBase(
       const Variable& state,
@@ -58,6 +62,8 @@ class NeuralLocationAttention : public AttentionBase {
       int attnDim,
       int convChannel,
       int convKernel);
+
+  std::unique_ptr<Module> clone() const override;
 
   std::pair<Variable, Variable> forwardBase(
       const Variable& state,

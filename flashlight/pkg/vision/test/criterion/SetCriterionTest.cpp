@@ -22,7 +22,7 @@ std::unordered_map<std::string, float> getLossWeights() {
 
   std::unordered_map<std::string, float> lossWeights;
   for (int i = 0; i < 6; i++) {
-    for (auto l : lossWeightsBase) {
+    for (const auto& l : lossWeightsBase) {
       std::string key = l.first + "_" + std::to_string(i);
       lossWeights[key] = l.second;
     }

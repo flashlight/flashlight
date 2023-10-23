@@ -37,7 +37,6 @@ commands:
       - when:
           condition:
             or:
-              - equal: ["macos", << parameters.platform >>]
               - equal: ["macos-arm", << parameters.platform >>]
           steps:
             - run:
@@ -280,11 +279,20 @@ commands:
       - run:
           name: "Create micromamba environment for oneDNN"
           command: |
-            micromamba create -n onednn -y
-            echo "micromamba activate onednn" >> $BASH_ENV
+            micromamba create -n flashlight -y
+            echo "micromamba activate flashlight" >> $BASH_ENV
       - run:
-          name: "Install oneDNN"
-          command: micromamba install -y -c conda-forge onednn=2.7.2
+          name: "Install oneDNN in env"
+          command: micromamba install onednn -c conda-forge -y
+      - when:
+          condition:
+            or:
+              - equal: ["linux-arm", << parameters.platform >>]
+              - equal: ["linux", << parameters.platform >>]
+          steps:
+            - run:
+                name: "Install compiler toolchains needed with oneDNN"
+                command: micromamba install gxx=11 -c conda-forge -y
 
   # Primary job for installing all dependencies based on platform,
   # backend, and autograd backend impl
@@ -617,16 +625,20 @@ workflows:
           name: build-flashlight-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>+<< matrix.distributed_backend >>
           matrix:
             parameters:
-              platform: [linux, windows]
+              platform: [linux]
+              # TODO: We can consider adding back the Windows GPU baseline, but for now,
+              # CircleCI GPU images are too old to support CUDA 11, we have to download
+              # it ourselves, and that usually times out and flakes signal.
+              # platform: [linux, windows]
               backend: [arrayfire]
               autograd_backend: [cudnn]
               distributed_backend: ["", nccl]
-            exclude:
-              # No NCCL support on Windows
-              - platform: windows
-                backend: arrayfire
-                autograd_backend: cudnn
-                distributed_backend: nccl
+            # exclude:
+            #   # No NCCL support on Windows
+            #   - platform: windows
+            #     backend: arrayfire
+            #     autograd_backend: cudnn
+            #     distributed_backend: nccl
 
       - test-flashlight-core:
           name: test-flashlight-core-<< matrix.platform >>-CUDA-<< matrix.backend >>+<< matrix.autograd_backend >>+<< matrix.distributed_backend >>

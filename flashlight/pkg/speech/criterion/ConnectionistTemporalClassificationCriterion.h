@@ -21,6 +21,8 @@ class ConnectionistTemporalClassificationCriterion : public SequenceCriterion {
       fl::lib::seq::CriterionScaleMode scalemode =
           fl::lib::seq::CriterionScaleMode::NONE);
 
+  std::unique_ptr<Module> clone() const override;
+
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;
 

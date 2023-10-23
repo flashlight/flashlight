@@ -53,13 +53,13 @@ TDSBlock::TDSBlock(
     fc.add(Dropout(dropout));
   }
 
-  add(conv);
+  add(std::move(conv));
   if (lNormIncludeTime) {
     add(LayerNorm(std::vector<int>{0, 1, 2}));
   } else {
     add(LayerNorm(std::vector<int>{1, 2}));
   }
-  add(fc);
+  add(std::move(fc));
   if (lNormIncludeTime) {
     add(LayerNorm(std::vector<int>{0, 1, 2}));
   } else {

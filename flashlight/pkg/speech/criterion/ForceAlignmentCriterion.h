@@ -24,6 +24,8 @@ class ForceAlignmentCriterion : public fl::BinaryModule {
       int N,
       CriterionScaleMode scalemode = CriterionScaleMode::NONE);
 
+  std::unique_ptr<Module> clone() const override;
+
   fl::Variable forward(const fl::Variable& input, const fl::Variable& target)
       override;
 

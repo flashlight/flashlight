@@ -95,6 +95,7 @@ class FL_API AdaptiveSoftMax : public UnaryModule {
   Variable predict(const Variable& inputs) const;
   std::vector<int> getCutoff() const;
 
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 };
 

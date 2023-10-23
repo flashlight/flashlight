@@ -24,10 +24,7 @@ using fl::lib::replaceAll;
 using fl::lib::text::DictionaryMap;
 using fl::lib::text::LexiconMap;
 
-namespace fl {
-
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 template <class T>
 std::vector<std::string> tensorMatrixToStrings(
@@ -233,6 +230,4 @@ std::vector<std::pair<std::string, std::string>> parseValidSets(
   }
   return validTagSets;
 }
-} // namespace speech
-} // namespace pkg
 } // namespace fl

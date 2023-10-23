@@ -65,6 +65,8 @@ class Seq2SeqCriterion : public SequenceCriterion {
       int nAttnRound = 1,
       float dropOut = 0.0);
 
+  std::unique_ptr<Module> clone() const override;
+
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;
 

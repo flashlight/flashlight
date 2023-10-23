@@ -103,6 +103,10 @@ Variable AsymmetricConv1D::forward(const Variable& input) {
   return output;
 }
 
+std::unique_ptr<Module> AsymmetricConv1D::clone() const {
+  return std::make_unique<AsymmetricConv1D>(*this);
+}
+
 std::string AsymmetricConv1D::prettyString() const {
   std::ostringstream ss;
   ss << "AsymmetricConv1D";

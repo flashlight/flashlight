@@ -22,6 +22,12 @@ class PositionalEmbeddingSine : public Container {
       const bool normalize,
       const float scale);
 
+  PositionalEmbeddingSine(const PositionalEmbeddingSine& other);
+  PositionalEmbeddingSine(PositionalEmbeddingSine&& other) = default;
+  PositionalEmbeddingSine& operator=(const PositionalEmbeddingSine& other);
+  PositionalEmbeddingSine& operator=(PositionalEmbeddingSine&& other) = default;
+  std::unique_ptr<Module> clone() const override;
+
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
 
   std::vector<Variable> operator()(const std::vector<Variable>& input);

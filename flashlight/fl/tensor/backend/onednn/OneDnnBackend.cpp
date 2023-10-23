@@ -179,7 +179,7 @@ BinaryOpOutputDesc getBinaryOpOutputDesc(
     std::optional<dnnl::memory::data_type> optDstType) {
   // allow implicit casting
   const auto dstType = optDstType.value_or(detail::getTypeWithLargerRange(
-      lhsMemDesc.data_type(), rhsMemDesc.data_type()));
+      lhsMemDesc.get_data_type(), rhsMemDesc.get_data_type()));
   // some common fast paths
   if (lhsShape == rhsShape) {
     BinaryOpOutputDesc(
@@ -381,7 +381,7 @@ Tensor createScalarTensorForBinop(const Tensor& tensor, INPUT_TYPE val) {
 }
 
 dnnl::memory::desc transposeInnerMatrix(const dnnl::memory::desc& memDesc) {
-  const auto ndims = memDesc.data.ndims;
+  const auto ndims = memDesc.get_ndims();
   if (ndims < 2) {
     std::ostringstream oss;
     oss << "[transposeInnerMatrix] expected ndims to be >= 2, got: " << ndims;
@@ -654,7 +654,7 @@ Tensor OneDnnBackend::reshape(const Tensor& tensor, const Shape& shape) {
   auto& mem = srcTensor.memory();
   const auto& memDesc = srcTensor.memoryDesc();
   const auto reshapedMemDesc =
-      detail::oneDnnContiguousMemDescFromShape(shape, memDesc.data_type());
+      detail::oneDnnContiguousMemDescFromShape(shape, memDesc.get_data_type());
   auto reshapedMem = dnnl::memory(reshapedMemDesc, engine_);
 
   // prepare primitive (use reorder to do a copy)
@@ -721,8 +721,8 @@ Tensor OneDnnBackend::transpose(
   auto& srcTensor = toOneDnnTensor(tensor);
   auto& srcMem = srcTensor.memory();
   const auto& srcMemDesc = srcTensor.memoryDesc();
-  const auto type = srcMemDesc.data_type();
-  const auto srcMemDims = srcMemDesc.dims();
+  const auto type = srcMemDesc.get_data_type();
+  const auto srcMemDims = srcMemDesc.get_dims();
   const auto dstMemDesc =
       detail::oneDnnContiguousMemDescFromShape(newShape, type);
   auto dstMem = dnnl::memory(dstMemDesc, engine_);
@@ -761,7 +761,7 @@ Tensor OneDnnBackend::tile(const Tensor& tensor, const Shape& tileDims) {
 
       // prepare concat primitive
       const dnnl::concat::primitive_desc concatPrimitiveDesc(
-          dimsAxis, tileMemDescs, engine_);
+          engine_, dimsAxis, tileMemDescs);
       const dnnl::concat concatPrimitive(concatPrimitiveDesc);
       const auto newTileMemDesc = concatPrimitiveDesc.dst_desc();
       auto newTiledMem = dnnl::memory(newTileMemDesc, engine_);
@@ -964,15 +964,19 @@ Tensor OneDnnBackend::applyEltwiseOp(
   const auto mem = srcTensor.memory();
   const auto& memDesc = srcTensor.memoryDesc();
   const auto dstMemDesc = detail::oneDnnContiguousMemDescFromShape(
-      tensor.shape(), memDesc.data_type());
+      tensor.shape(), memDesc.get_data_type());
   auto dstMem = dnnl::memory(dstMemDesc, engine_);
 
   // prepare unary primitive
-  const auto unaryDesc = dnnl::eltwise_forward::desc(
-      dnnl::prop_kind::forward_inference, alg, memDesc, alpha, beta);
-  const auto unaryPrimtiveDesc =
-      dnnl::eltwise_forward::primitive_desc(unaryDesc, engine_);
-  const auto unaryPrimitive = dnnl::eltwise_forward(unaryPrimtiveDesc);
+  const auto unaryPrimitiveDesc = dnnl::eltwise_forward::primitive_desc(
+      engine_,
+      dnnl::prop_kind::forward_inference,
+      alg,
+      memDesc,
+      dstMemDesc,
+      alpha,
+      beta);
+  const auto unaryPrimitive = dnnl::eltwise_forward(unaryPrimitiveDesc);
 
   // prepare arguments.
   const std::unordered_map<int, dnnl::memory> args = {
@@ -1134,11 +1138,9 @@ Tensor OneDnnBackend::applyBinop(
   auto dstMem = dnnl::memory(outputDesc.dstMemDesc, engine_);
 
   // prepare primitive
-  const auto binaryDesc =
-      dnnl::binary::desc(alg, lhsMemDesc, rhsMemDesc, outputDesc.dstMemDesc);
-  const auto binaryPrimtiveDesc =
-      dnnl::binary::primitive_desc(binaryDesc, engine_);
-  const auto binaryPrimitive = dnnl::binary(binaryPrimtiveDesc);
+  const auto binaryPrimitiveDesc = dnnl::binary::primitive_desc(
+      engine_, alg, lhsMemDesc, rhsMemDesc, outputDesc.dstMemDesc);
+  const auto binaryPrimitive = dnnl::binary(binaryPrimitiveDesc);
 
   // prepare arguments
   const std::unordered_map<int, dnnl::memory> args = {
@@ -1212,7 +1214,7 @@ Tensor OneDnnBackend::matmul(
 
   // prepare memories
   const auto dstType = detail::getTypeWithLargerRange(
-      lhsMemDesc.data_type(), rhsMemDesc.data_type());
+      lhsMemDesc.get_data_type(), rhsMemDesc.get_data_type());
   const auto dstMemArgDesc =
       detail::oneDnnContiguousMemDescFromShape(dstShape, dstType);
   auto dstMemDesc = dstMemArgDesc;
@@ -1238,10 +1240,8 @@ Tensor OneDnnBackend::matmul(
   auto& weightsMem = lhsMem;
 
   // prepare primitive
-  const auto matmulDesc =
-      dnnl::matmul::desc(srcMemDesc, weightsMemDesc, dstMemArgDesc);
-  const auto matmulPrimitiveDesc =
-      dnnl::matmul::primitive_desc(matmulDesc, engine_);
+  const auto matmulPrimitiveDesc = dnnl::matmul::primitive_desc(
+      engine_, srcMemDesc, weightsMemDesc, dstMemArgDesc);
   const auto matmulPrimitive = dnnl::matmul(matmulPrimitiveDesc);
 
   // prepare arguments.
@@ -1559,21 +1559,19 @@ Tensor OneDnnBackend::applyReductionOp(
   // w/o dim reduction for primitive arg, althought the final memory's dims
   // might get reduced
   auto dstArgMemDesc = detail::oneDnnContiguousMemDescFromShape(
-      dstShape, srcMemDesc.data_type());
+      dstShape, srcMemDesc.get_data_type());
 
   // prepare reduction primitive
-  const auto reductionDesc =
-      dnnl::reduction::desc(alg, srcMemDesc, dstArgMemDesc, 0, 0);
-  const auto reductionPrimtiveDesc =
-      dnnl::reduction::primitive_desc(reductionDesc, engine_);
-  const auto reductionPrimitive = dnnl::reduction(reductionPrimtiveDesc);
+  const auto reductionPrimitiveDesc = dnnl::reduction::primitive_desc(
+      engine_, alg, srcMemDesc, dstArgMemDesc, 0, 0);
+  const auto reductionPrimitive = dnnl::reduction(reductionPrimitiveDesc);
 
   // prepare dst memories
   auto dstMemDesc = dstArgMemDesc;
   if (!keepDims) {
     dstShape = Shape(detail::removeIndices(dstShape.get(), axesToReduce));
     dstMemDesc = detail::oneDnnContiguousMemDescFromShape(
-        dstShape, srcMemDesc.data_type());
+        dstShape, srcMemDesc.get_data_type());
   }
   auto dstMem = dnnl::memory(dstMemDesc, engine_);
 

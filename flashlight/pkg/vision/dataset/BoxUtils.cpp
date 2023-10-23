@@ -7,7 +7,7 @@
 
 #include "flashlight/pkg/vision/dataset/BoxUtils.h"
 
-#include <assert.h>
+#include <cassert>
 #include <stdexcept>
 #include <tuple>
 
@@ -15,9 +15,7 @@
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
-namespace fl {
-namespace pkg {
-namespace vision {
+namespace fl::pkg::vision {
 
 Tensor cxcywh2xyxy(const Tensor& bboxes) {
   auto xc = bboxes(fl::range(0, 1));
@@ -230,6 +228,4 @@ Variable l1Loss(const Variable& input, const Variable& target) {
   return flatten(fl::sum(fl::abs(input - target), {0}), 0, 1);
 }
 
-} // namespace vision
-} // namespace pkg
 } // namespace fl

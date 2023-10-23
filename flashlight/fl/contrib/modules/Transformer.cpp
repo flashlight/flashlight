@@ -56,6 +56,44 @@ Transformer::Transformer(
         uniform(2 * bptt - 1, headDim, -0.1, 0.1, fl::dtype::f32, true));
   }
 
+  createLayers();
+}
+
+Transformer::Transformer(const Transformer& other) {
+  copy(other);
+  createLayers();
+}
+
+Transformer& Transformer::operator=(const Transformer& other) {
+  clear();
+  copy(other);
+  createLayers();
+  return *this;
+}
+
+void Transformer::copy(const Transformer& other) {
+  train_ = other.train_;
+  nHeads_ = other.nHeads_;
+  bptt_ = other.bptt_;
+  pDropout_ = other.pDropout_;
+  pLayerdrop_ = other.pLayerdrop_;
+  useMask_ = other.useMask_;
+  preLN_ = other.preLN_;
+  w1_ = std::make_shared<Linear>(*other.w1_);
+  w2_ = std::make_shared<Linear>(*other.w2_);
+  wq_ = std::make_shared<Linear>(*other.wq_);
+  wk_ = std::make_shared<Linear>(*other.wk_);
+  wv_ = std::make_shared<Linear>(*other.wv_);
+  wf_ = std::make_shared<Linear>(*other.wf_);
+  norm1_ = std::make_shared<LayerNorm>(*other.norm1_);
+  norm2_ = std::make_shared<LayerNorm>(*other.norm2_);
+  if (bptt_ > 0) {
+    const auto& p = other.param(0);
+    params_.emplace_back(p.copy());
+  }
+}
+
+void Transformer::createLayers() {
   add(w1_);
   add(w2_);
   add(wq_);
@@ -94,7 +132,8 @@ Variable Transformer::selfAttention(const std::vector<Variable>& input) {
 
   Variable mask, posEmb;
   if (bptt_ > 0) {
-    posEmb = tile(params_[0].astype(encoderInput.type()), {1, 1, nHeads_ * bsz});
+    posEmb =
+        tile(params_[0].astype(encoderInput.type()), {1, 1, nHeads_ * bsz});
   }
   if (useMask_ && encoderInput.dim(1) > 1) {
     // mask future if we use the previous state (then n is previous time)
@@ -173,6 +212,10 @@ void Transformer::setDropout(float value) {
 
 void Transformer::setLayerDropout(float value) {
   pLayerdrop_ = value;
+}
+
+std::unique_ptr<Module> Transformer::clone() const {
+  return std::make_unique<Transformer>(*this);
 }
 
 std::string Transformer::prettyString() const {

@@ -20,6 +20,10 @@ Variable Transform::forward(const Variable& input) {
   return func_(input);
 }
 
+std::unique_ptr<Module> Transform::clone() const {
+  return std::make_unique<Transform>(*this);
+}
+
 std::string Transform::prettyString() const {
   std::ostringstream ss;
   ss << "Transform ('" << name_ << "')";
