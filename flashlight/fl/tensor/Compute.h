@@ -13,14 +13,10 @@
 #include <unordered_set>
 #include <vector>
 
+#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/runtime/Device.h"
 #include "flashlight/fl/runtime/DeviceType.h"
 #include "flashlight/fl/runtime/Stream.h"
-
-// TODO:fl::Tensor {misc} remove me when not dependent on AF
-namespace af {
-class array;
-}
 
 namespace fl {
 
@@ -33,7 +29,7 @@ class Tensor;
  * The implementation of this function should synchronize any outstanding
  * computation abstractions, blocking accordingly.
  */
-void sync();
+FL_API void sync();
 
 /**
  * Block the calling host thread until all outstanding computation on the device
@@ -42,7 +38,7 @@ void sync();
  * @param[in] deviceId the id of the device with default type on which to block
  * until computation has completed.
  */
-void sync(const int deviceId);
+FL_API void sync(const int deviceId);
 
 /**
  * Block the calling host thread until all outstanding computation has completed
@@ -50,7 +46,7 @@ void sync(const int deviceId);
  *
  * @param[in] types the types of active devices to synchronize.
  */
-void sync(const std::unordered_set<DeviceType>& types);
+FL_API void sync(const std::unordered_set<DeviceType>& types);
 
 /**
  * Block the calling host thread until all outstanding computation has completed
@@ -58,7 +54,7 @@ void sync(const std::unordered_set<DeviceType>& types);
  *
  * @param[in] devices the devices to synchronize.
  */
-void sync(const std::unordered_set<const Device*>& devices);
+FL_API void sync(const std::unordered_set<const Device*>& devices);
 
 /**
  * Synchronize future tasks on given stream w.r.t. current tasks on all unique
@@ -70,7 +66,7 @@ void sync(const std::unordered_set<const Device*>& devices);
  * @param[in] waitOns the tensors whose streams to perform relative
  * synchronization against.
  */
-void relativeSync(
+FL_API void relativeSync(
     const Stream& wait,
     const std::vector<const Tensor*>& waitOns);
 
@@ -84,22 +80,22 @@ void relativeSync(
  * @param[in] waitOns the tensors whose streams to perform relative
  * synchronization against.
  */
-void relativeSync(
+FL_API void relativeSync(
     const Stream& wait,
     const std::vector<Tensor>& waitOns);
 
 /**
- * Synchronize future tasks on the streams of `waits` w.r.t. current task on given
- * stream, i.e., the former can only start after the completion of the latter.
- * NOTE this function may or may not block the calling thread.
+ * Synchronize future tasks on the streams of `waits` w.r.t. current task on
+ * given stream, i.e., the former can only start after the completion of the
+ * latter. NOTE this function may or may not block the calling thread.
  *
  * @param[in] waits the tensors whose streams to perform relative
  * synchronization for.
  * @param[in] waitOn the stream to perform relative synchronization against.
  */
-void relativeSync(
-  const std::vector<Tensor>& waits,
-  const Stream& waitOn);
+FL_API void relativeSync(
+    const std::vector<Tensor>& waits,
+    const Stream& waitOn);
 
 /**
  * Launches computation, [usually] asynchronously, on operations needed to make
@@ -116,7 +112,7 @@ void relativeSync(
  *
  * @param[in] tensor the tensor on which to launch computation.
  */
-void eval(fl::Tensor& tensor);
+FL_API void eval(fl::Tensor& tensor);
 
 /**
  * Returns the device ID of the active device of default type in the current
@@ -130,7 +126,7 @@ void eval(fl::Tensor& tensor);
  *
  * @return the active device ID
  */
-int getDevice();
+FL_API int getDevice();
 
 /**
  * Sets the active device of default type in the current thread. This is backend
@@ -141,7 +137,7 @@ int getDevice();
  *
  * @param[in] deviceId
  */
-void setDevice(const int deviceId);
+FL_API void setDevice(const int deviceId);
 
 /**
  * Gets the number of active devices.
@@ -150,7 +146,7 @@ void setDevice(const int deviceId);
  *
  * @returns the number of active devices usable in Flashlight.
  */
-int getDeviceCount();
+FL_API int getDeviceCount();
 
 namespace detail {
 
@@ -159,7 +155,7 @@ namespace detail {
  * This function may be a noop for backends that do not implement memory
  * managers with configurable logging.
  */
-void getMemMgrInfo(
+FL_API void getMemMgrInfo(
     const char* msg,
     const int deviceId,
     std::ostream* ostream = &std::cout);
@@ -173,7 +169,7 @@ void getMemMgrInfo(
  *
  * @returns the number of active devices usable in Flashlight.
  */
-void setMemMgrLogStream(std::ostream* stream);
+FL_API void setMemMgrLogStream(std::ostream* stream);
 
 /**
  * Sets (or unsets) logging for memory management. This function may be a noop
@@ -184,7 +180,7 @@ void setMemMgrLogStream(std::ostream* stream);
  *
  * @param[in] enabled true to enable logging, false to disable.
  */
-void setMemMgrLoggingEnabled(const bool enabled);
+FL_API void setMemMgrLoggingEnabled(const bool enabled);
 
 /**
  * Configures memory manager log output to flush to the output stream after a
@@ -196,7 +192,7 @@ void setMemMgrLoggingEnabled(const bool enabled);
  * @param[in] interval the number of lines after which to flush the temporary
  * log buffer. Supplied interval must be greater than 1.
  */
-void setMemMgrFlushInterval(const size_t interval);
+FL_API void setMemMgrFlushInterval(const size_t interval);
 
 } // namespace detail
 } // namespace fl

@@ -40,7 +40,7 @@ namespace fl {
  * as input and output. When these are input as the empty Variable they are
  * assumed to be zero.
  */
-class RNN : public Module {
+class FL_API RNN : public Module {
  private:
   RNN() = default; // Intentionally private
 
@@ -83,6 +83,26 @@ class RNN : public Module {
       RnnMode mode,
       bool bidirectional = false,
       float drop_prob = 0.0);
+
+  /**
+   * Constructs an RNN module from another, performing a copy of the
+   * parameters.
+   *
+   * @param other The RNN module to copy from.
+   */
+  RNN(const RNN& other);
+
+  /**
+   * Constructs an RNN module from another, performing a copy of the
+   * parameters.
+   *
+   * @param other The RNN module to copy from.
+   */
+  RNN& operator=(const RNN& other);
+
+  RNN(RNN&& other) = default;
+
+  RNN& operator=(RNN&& other) = default;
 
   std::vector<Variable> forward(const std::vector<Variable>& inputs) override;
 
@@ -138,6 +158,8 @@ class RNN : public Module {
       const Variable& input,
       const Variable& hidden_state,
       const Variable& cell_state);
+
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 };

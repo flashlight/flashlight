@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "flashlight/fl/autograd/Variable.h"
+#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/optim/Optimizers.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 
@@ -20,7 +21,7 @@ namespace fl {
  * [Adam: A Method for Stochastic Optimization](
  *    https://arxiv.org/abs/1412.6980).
  */
-class AdamOptimizer : public FirstOrderOptimizer {
+class FL_API AdamOptimizer : public FirstOrderOptimizer {
  private:
   FL_SAVE_LOAD_WITH_BASE(
       FirstOrderOptimizer,

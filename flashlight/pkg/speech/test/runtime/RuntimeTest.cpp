@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <stdint.h>
+#include <cstdint>
 #include <unordered_map>
 #include <utility>
 
@@ -106,7 +106,7 @@ TEST(RuntimeTest, SpeechStatMeter) {
 }
 
 TEST(RuntimeTest, parseValidSets) {
-  std::string in = "";
+  std::string in;
   auto op = parseValidSets(in);
   ASSERT_EQ(op.size(), 0);
 

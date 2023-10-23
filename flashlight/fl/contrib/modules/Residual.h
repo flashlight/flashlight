@@ -51,7 +51,7 @@ namespace fl {
   // ...
   \endcode
  */
-class Residual : public Container {
+class FL_API Residual : public Container {
  private:
   FL_SAVE_LOAD_WITH_BASE(Container, shortcut_, scales_, projectionsIndices_)
 
@@ -135,6 +135,8 @@ class Residual : public Container {
   Variable forward(const Variable& input);
 
   std::string prettyString() const override;
+
+  FL_BASIC_CONTAINER_CLONING(Residual)
 };
 
 } // namespace fl

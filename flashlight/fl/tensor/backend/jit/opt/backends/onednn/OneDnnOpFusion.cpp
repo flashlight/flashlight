@@ -208,10 +208,6 @@ Node* OneDnnOpFusion::fuseNodes(Node* node, SearchState& state) {
         detail::oneDnnContiguousMemDescFromShape(dstShape, dstType);
     auto dstMem = dnnl::memory(dstMemDesc, engine);
 
-    // prepare part of primitive
-    const dnnl::binary::desc binaryDesc(
-        alg, lhsMemDesc, rhsMemDesc, dstMemDesc);
-
     // prepare part of arguments
     std::unordered_map<int, dnnl::memory> args = {
         {DNNL_ARG_SRC_0, lhsMem},
@@ -232,9 +228,11 @@ Node* OneDnnOpFusion::fuseNodes(Node* node, SearchState& state) {
     // finish building primitive
     dnnl::primitive_attr binaryAttr;
     binaryAttr.set_post_ops(binops);
-    const auto binaryPrimtiveDesc =
-        dnnl::binary::primitive_desc(binaryDesc, binaryAttr, engine);
-    const auto binaryPrimitive = dnnl::binary(binaryPrimtiveDesc);
+
+    // prepare part of primitive
+    const dnnl::binary::primitive_desc binaryPrimitiveDesc(
+        engine, alg, lhsMemDesc, rhsMemDesc, dstMemDesc, binaryAttr);
+    const auto binaryPrimitive = dnnl::binary(binaryPrimitiveDesc);
 
     // execute primitive
     binaryPrimitive.execute(backend.nativeStream(), args);

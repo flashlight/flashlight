@@ -19,7 +19,7 @@ namespace fl {
  * final shape
  * [`embedding_dim`, \f$B_1\f$, \f$B_2\f$ (optional), \f$B_3\f$ (optional)].
  */
-class AdaptiveEmbedding : public UnaryModule {
+class FL_API AdaptiveEmbedding : public UnaryModule {
  private:
   AdaptiveEmbedding() = default; // Intentionally private
   int embeddingDim_;
@@ -51,6 +51,8 @@ class AdaptiveEmbedding : public UnaryModule {
       float divValue = 4);
 
   Variable forward(const Variable& input) override;
+
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 };

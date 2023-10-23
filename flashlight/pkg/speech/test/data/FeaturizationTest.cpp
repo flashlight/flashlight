@@ -276,9 +276,9 @@ TEST(FeaturizationTest, WrdToTarget) {
   lexicon[kUnkToken] = {};
 
   Dictionary dict;
-  for (auto l : lexicon) {
-    for (auto p : l.second) {
-      for (auto c : p) {
+  for (const auto& l : lexicon) {
+    for (const auto& p : l.second) {
+      for (const auto& c : p) {
         if (!dict.contains(c)) {
           dict.addEntry(c);
         }

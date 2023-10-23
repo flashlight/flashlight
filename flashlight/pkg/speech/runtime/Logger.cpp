@@ -20,9 +20,7 @@ using fl::lib::format;
 using fl::pkg::runtime::getCurrentDate;
 using fl::pkg::runtime::getCurrentTime;
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 std::string getLogString(
     TrainMeters& meters,
@@ -154,6 +152,4 @@ void syncMeter(TrainMeters& mtrs) {
   }
 }
 
-} // namespace speech
-} // namespace pkg
 } // namespace fl

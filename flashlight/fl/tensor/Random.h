@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/tensor/Shape.h"
 #include "flashlight/fl/tensor/TensorBase.h"
 #include "flashlight/fl/tensor/Types.h"
@@ -20,7 +21,7 @@ namespace fl {
  *
  * @param[in] seed the seed to use
  */
-void setSeed(const int seed);
+FL_API void setSeed(const int seed);
 
 /**
  * Initialize a tensor with elements sampled from the standard normal
@@ -30,7 +31,7 @@ void setSeed(const int seed);
  * @param[in] type the type of the tensor. Defaults to float
  * @return a tensor with the given dimensions with elements sampled accordingly
  */
-Tensor randn(const Shape& shape, dtype type = dtype::f32);
+FL_API Tensor randn(const Shape& shape, dtype type = dtype::f32);
 
 /**
  * Initialize a tensor with elements sampled uniformly from the interval [0, 1).
@@ -39,6 +40,6 @@ Tensor randn(const Shape& shape, dtype type = dtype::f32);
  * @param[in] type the type of the tensor. Defaults to float
  * @return a tensor with the given dimensions with elements sampled accordingly
  */
-Tensor rand(const Shape& shape, dtype type = dtype::f32);
+FL_API Tensor rand(const Shape& shape, dtype type = dtype::f32);
 
 } // namespace fl

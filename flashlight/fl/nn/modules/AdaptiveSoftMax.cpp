@@ -127,6 +127,10 @@ std::vector<int> AdaptiveSoftMax::getCutoff() const {
   return cutoff_;
 }
 
+std::unique_ptr<Module> AdaptiveSoftMax::clone() const {
+  return std::make_unique<AdaptiveSoftMax>(*this);
+}
+
 std::string AdaptiveSoftMax::prettyString() const {
   std::ostringstream ss;
   ss << "Adaptive Softmax (";

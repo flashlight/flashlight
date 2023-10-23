@@ -9,8 +9,8 @@
 
 #include <cassert>
 
-#include "flashlight/pkg/vision/dataset/BoxUtils.h"
 #include "flashlight/fl/nn/nn.h"
+#include "flashlight/pkg/vision/dataset/BoxUtils.h"
 
 namespace fl {
 namespace pkg {
@@ -31,6 +31,14 @@ class MultiheadAttention : public Container {
       int32_t headDim,
       int32_t numHeads,
       float pDropout = 0.f);
+
+  MultiheadAttention(const MultiheadAttention& other);
+  MultiheadAttention(MultiheadAttention&& other) = default;
+
+  MultiheadAttention& operator=(const MultiheadAttention& other);
+  MultiheadAttention& operator=(MultiheadAttention&& other) = default;
+
+  std::unique_ptr<Module> clone() const override;
 
   // queries [ E, N, L ], where L is target length, N is batch size.
   // keys / values  [ E, N, S ], where S is src length, N is batch size.
@@ -55,6 +63,8 @@ class MultiheadAttention : public Container {
 
  private:
   MultiheadAttention() = default;
+  void createLayers();
+  void copy(const MultiheadAttention& other);
   FL_SAVE_LOAD_WITH_BASE(
       fl::Container,
       pDropout_,
@@ -73,6 +83,12 @@ class TransformerBaseLayer : public Container {
       int32_t nHeads,
       float pDropout);
 
+  TransformerBaseLayer(const TransformerBaseLayer& other);
+  TransformerBaseLayer(TransformerBaseLayer&& other) = default;
+
+  TransformerBaseLayer& operator=(const TransformerBaseLayer& other);
+  TransformerBaseLayer& operator=(TransformerBaseLayer&& other) = default;
+
  protected:
   TransformerBaseLayer() = default;
   std::shared_ptr<MultiheadAttention> self_attn_;
@@ -90,6 +106,8 @@ class TransformerBaseLayer : public Container {
       const Variable& keyPaddingMask = Variable());
 
  private:
+  void createLayers();
+  void copy(const TransformerBaseLayer& other);
   FL_SAVE_LOAD_WITH_BASE(
       fl::Container,
       pDropout_,
@@ -108,6 +126,8 @@ class TransformerEncoderLayer : public TransformerBaseLayer {
       int32_t nHeads,
       float pDropout);
 
+  std::unique_ptr<Module> clone() const override;
+
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
 
   std::string prettyString() const override;
@@ -125,6 +145,14 @@ class TransformerDecoderLayer : public Container {
       int32_t nHeads,
       float pDropout);
 
+  TransformerDecoderLayer(const TransformerDecoderLayer& other);
+  TransformerDecoderLayer(TransformerDecoderLayer&& other) = default;
+
+  TransformerDecoderLayer& operator=(const TransformerDecoderLayer& other);
+  TransformerDecoderLayer& operator=(TransformerDecoderLayer&& other) = default;
+
+  std::unique_ptr<Module> clone() const override;
+
  protected:
   Variable mlp(const Variable& in);
 
@@ -140,6 +168,9 @@ class TransformerDecoderLayer : public Container {
 
  private:
   TransformerDecoderLayer() = default;
+  void createLayers();
+  void copy(const TransformerDecoderLayer& other);
+
   std::shared_ptr<MultiheadAttention> self_attn_, encoder_attn_;
   std::shared_ptr<Linear> w1_, w2_;
   std::shared_ptr<LayerNorm> norm1_, norm2_, norm3_;
@@ -169,6 +200,8 @@ class TransformerDecoder : public Container {
 
   std::string prettyString() const override;
 
+  FL_BASIC_CONTAINER_CLONING(TransformerDecoder)
+
  private:
   TransformerDecoder() = default;
   FL_SAVE_LOAD_WITH_BASE(fl::Container)
@@ -187,6 +220,8 @@ class TransformerEncoder : public Container {
 
   std::string prettyString() const override;
 
+  FL_BASIC_CONTAINER_CLONING(TransformerEncoder)
+
  private:
   TransformerEncoder() = default;
   FL_SAVE_LOAD_WITH_BASE(fl::Container)
@@ -201,6 +236,14 @@ class Transformer : public Container {
       int32_t numDecoderLayers,
       int32_t mlpDim,
       float pDropout);
+
+  Transformer(const Transformer& other);
+  Transformer(Transformer&& other) = default;
+
+  Transformer& operator=(const Transformer& other);
+  Transformer& operator=(Transformer&& other) = default;
+
+  std::unique_ptr<Module> clone() const override;
 
   /*
    * We expect src to be [ W X H X C X B ]
@@ -219,6 +262,8 @@ class Transformer : public Container {
 
  private:
   Transformer() = default;
+  void createLayers();
+  void copy(const Transformer& other);
   std::shared_ptr<TransformerEncoder> encoder_;
   std::shared_ptr<TransformerDecoder> decoder_;
   FL_SAVE_LOAD_WITH_BASE(fl::Container, encoder_, decoder_)

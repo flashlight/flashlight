@@ -9,9 +9,11 @@
 
 #include <chrono>
 
+#include "flashlight/fl/common/Defines.h"
+
 namespace fl {
 
-class Timer {
+class FL_API Timer {
   std::chrono::time_point<std::chrono::high_resolution_clock> startTime_;
 
  public:

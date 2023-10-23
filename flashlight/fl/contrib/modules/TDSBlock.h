@@ -17,8 +17,7 @@ namespace fl {
  * Convolutions](https://arxiv.org/abs/1904.02619).
  * This [link](https://imgur.com/a/LAdlwZK) shows the diagram of TDSBlock.
  */
-
-class TDSBlock : public Container {
+class FL_API TDSBlock : public Container {
  private:
   TDSBlock() = default;
   FL_SAVE_LOAD_WITH_BASE(Container)
@@ -57,6 +56,8 @@ class TDSBlock : public Container {
 
   std::vector<Variable> forward(const std::vector<Variable>& inputs) override;
   std::string prettyString() const override;
+
+  FL_BASIC_CONTAINER_CLONING(TDSBlock)
 };
 
 } // namespace fl

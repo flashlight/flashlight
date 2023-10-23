@@ -13,9 +13,7 @@ using fl::lib::dedup;
 using fl::lib::text::Dictionary;
 using fl::lib::text::splitWrd;
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 std::vector<std::string> tknIdx2Ltr(
     const std::vector<int>& labels,
@@ -36,7 +34,7 @@ std::vector<std::string> tknIdx2Ltr(
     }
   }
 
-  if (result.size() > 0 && !wordSep.empty()) {
+  if (!result.empty() && !wordSep.empty()) {
     if (result.front() == wordSep) {
       result.erase(result.begin());
     }
@@ -52,7 +50,7 @@ std::vector<std::string> tkn2Wrd(
     const std::vector<std::string>& input,
     const std::string& wordSep) {
   std::vector<std::string> words;
-  std::string currentWord = "";
+  std::string currentWord;
   for (auto& tkn : input) {
     if (tkn == wordSep) {
       if (!currentWord.empty()) {
@@ -141,6 +139,4 @@ std::vector<int> validateIdx(std::vector<int> input, int unkIdx) {
 
   return input;
 }
-} // namespace speech
-} // namespace pkg
 } // namespace fl

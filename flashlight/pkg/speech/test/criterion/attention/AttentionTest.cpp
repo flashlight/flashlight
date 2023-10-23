@@ -138,7 +138,7 @@ TEST(AttentionTest, NeuralContentAttention) {
   Variable pad = Variable(Tensor::fromVector(Shape({1, B}), padRaw), false);
 
   std::vector<Variable> padV = {Variable(), pad};
-  for (auto currentPad : padV) {
+  for (const auto& currentPad : padV) {
     Variable alphas, summaries;
     std::tie(alphas, summaries) = attention.forward(
         encodedy, encodedx, Variable{}, Variable{}, currentPad);
@@ -188,7 +188,7 @@ TEST(AttentionTest, MultiHeadContentAttention) {
   Variable pad = Variable(Tensor::fromVector({1, B}, padRaw), false);
 
   std::vector<Variable> padV = {Variable(), pad};
-  for (auto currentPad : padV) {
+  for (const auto& currentPad : padV) {
     for (bool keyValue : {true, false}) {
       for (bool splitInput : {true, false}) {
         MultiHeadContentAttention attention(H, NH, keyValue, splitInput);

@@ -32,10 +32,29 @@ Linear::Linear(const Variable& w, const Variable& b)
   }
 }
 
+Linear::Linear(const Linear& other)
+    : UnaryModule(other.copyParams()),
+      nIn_(other.nIn_),
+      nOut_(other.nOut_),
+      bias_(other.bias_) {
+  train_ = other.train_;
+}
+
+Linear& Linear::operator=(const Linear& other) {
+  params_ = other.copyParams();
+  train_ = other.train_;
+  nIn_ = other.nIn_;
+  nOut_ = other.nOut_;
+  bias_ = other.bias_;
+  return *this;
+}
+
 Variable Linear::forward(const Variable& input) {
   if (bias_) {
     return linear(
-        input, params_[0].astype(input.type()), params_[1].astype(input.type()));
+        input,
+        params_[0].astype(input.type()),
+        params_[1].astype(input.type()));
   }
   return linear(input, params_[0].astype(input.type()));
 }
@@ -52,6 +71,10 @@ void Linear::initialize() {
   } else {
     params_ = {w};
   }
+}
+
+std::unique_ptr<Module> Linear::clone() const {
+  return std::make_unique<Linear>(*this);
 }
 
 std::string Linear::prettyString() const {

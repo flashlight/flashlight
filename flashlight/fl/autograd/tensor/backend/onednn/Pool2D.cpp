@@ -122,17 +122,17 @@ Tensor OneDnnAutogradExtension::pool2d(
 
   // Descriptors
   auto poolingMode = detail::dnnlMapToPoolingMode(mode);
-  auto desc = pooling_forward::desc(
+  payload->poolingFwdPrimDesc = pooling_forward::primitive_desc(
+      dnnlEngine,
       forwardMode,
       poolingMode,
       inputMD,
       outputMD,
       d.strideDims,
       d.windowDims,
+      memory::dims{1, 1}, // dilation -- TODO: add to API
       d.paddingDims,
       d.paddingDims);
-  payload->poolingFwdPrimDesc =
-      pooling_forward::primitive_desc(desc, dnnlEngine);
   auto& primDesc = payload->poolingFwdPrimDesc;
 
   // Network
@@ -212,17 +212,18 @@ Tensor OneDnnAutogradExtension::pool2dBackward(
   // pooling_backward descriptors require an ordering
   auto gradInputMD = gradInputMemInit.getMemory().get_desc();
   auto gradOutputMD = gradOutputMemInit.getMemory().get_desc();
-  auto bwdDesc = pooling_backward::desc(
+  auto bwdPrimitiveDesc = pooling_backward::primitive_desc(
+      dnnlEngineBwd,
       poolingMode,
       gradInputMD,
       gradOutputMD,
       d.strideDims,
       d.windowDims,
+      memory::dims{1, 1}, // dilation - TODO: add to API
       d.paddingDims,
-      d.paddingDims);
-  // Pass forward descriptor as a hint
-  auto bwdPrimDesc = pooling_backward::primitive_desc(
-      bwdDesc, dnnlEngineBwd, payload->poolingFwdPrimDesc);
+      d.paddingDims,
+      payload->poolingFwdPrimDesc // hint
+  );
 
   std::vector<primitive> networkBackward;
   std::vector<std::unordered_map<int, dnnl::memory>> bwdArgs;
@@ -233,7 +234,7 @@ Tensor OneDnnAutogradExtension::pool2dBackward(
       gradOutputMemInit.getMemory(),
       payload->outputMemory.get_desc());
 
-  auto poolBwd = pooling_backward(bwdPrimDesc);
+  auto poolBwd = pooling_backward(bwdPrimitiveDesc);
   std::unordered_map<int, dnnl::memory> bwdPoolingArgs = {
       {DNNL_ARG_DIFF_SRC, gradInputMemInit.getMemory()},
       {DNNL_ARG_DIFF_DST, gradOutputMemory},

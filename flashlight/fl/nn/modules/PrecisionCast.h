@@ -19,7 +19,7 @@ namespace fl {
  * target precision. Precision cast only alters the underlying array and leaves
  * other attributes of the input variable unchanged.
  */
-class PrecisionCast : public Module {
+class FL_API PrecisionCast : public Module {
  private:
   fl::dtype targetType_;
   PrecisionCast() = default;
@@ -46,6 +46,7 @@ class PrecisionCast : public Module {
 
   Variable forward(const Variable& input);
   Variable operator()(const Variable& input);
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 };
 

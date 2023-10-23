@@ -25,7 +25,7 @@ namespace fl {
    std::cout << var.shape() << std::endl;
  * \endcode
  */
-class Reorder : public UnaryModule {
+class FL_API Reorder : public UnaryModule {
  private:
   Reorder() = default;
 
@@ -43,6 +43,8 @@ class Reorder : public UnaryModule {
   explicit Reorder(Shape shape);
 
   Variable forward(const Variable& input) override;
+
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 };

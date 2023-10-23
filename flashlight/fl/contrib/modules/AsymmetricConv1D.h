@@ -20,7 +20,7 @@ namespace fl {
  * convolution, 0 - only past will be used, 1 - only future will be used
  * Note: currently only '0' and SAME padding are supported.
  */
-class AsymmetricConv1D : public fl::Conv2D {
+class FL_API AsymmetricConv1D : public fl::Conv2D {
  public:
   AsymmetricConv1D(
       int nIn,
@@ -51,6 +51,8 @@ class AsymmetricConv1D : public fl::Conv2D {
       int groups = 1);
 
   fl::Variable forward(const fl::Variable& input) override;
+
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 

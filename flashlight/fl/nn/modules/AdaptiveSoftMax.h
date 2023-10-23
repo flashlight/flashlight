@@ -6,6 +6,7 @@
  */
 
 #pragma once
+
 #include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/nn/modules/Container.h"
 
@@ -25,7 +26,7 @@ namespace fl {
  * low-frequency inputs are approximated with lower rank matrices so as to speed
  * up computation.
  */
-class AdaptiveSoftMax : public UnaryModule {
+class FL_API AdaptiveSoftMax : public UnaryModule {
  private:
   FL_SAVE_LOAD_WITH_BASE(UnaryModule, cutoff_, divValue_)
   std::vector<int> cutoff_;
@@ -94,6 +95,7 @@ class AdaptiveSoftMax : public UnaryModule {
   Variable predict(const Variable& inputs) const;
   std::vector<int> getCutoff() const;
 
+  std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;
 };
 

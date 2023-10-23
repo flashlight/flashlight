@@ -59,7 +59,7 @@ namespace fl {
  * //   36.0246
  * \endcode
  */
-class Variable {
+class FL_API Variable {
  public:
   using GradFunc = std::function<
       void(std::vector<Variable>& inputs, const Variable& grad_output)>;
@@ -113,6 +113,12 @@ class Variable {
    * @return a reference to the underlying Flashlight Tensor.
    */
   Tensor& tensor() const;
+
+  /**
+   * Creates a copy of this variable, but detached from the computation graph.
+   * @return returns the cloned and detached variable.
+   */
+  Variable copy() const;
 
   /**
    * Creates a new variable based on the current variable whose type will be

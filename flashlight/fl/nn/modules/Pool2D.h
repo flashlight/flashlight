@@ -19,7 +19,7 @@ namespace fl {
  * over the first and second dimensions of the input. Thus the output will be
  * of shape [\f$X_{out}\f$, \f$Y_{out}\f$, \f$C\f$, \f$N\f$].
  */
-class Pool2D : public UnaryModule {
+class FL_API Pool2D : public UnaryModule {
  private:
   Pool2D() = default; // Intentionally private
 
@@ -63,6 +63,8 @@ class Pool2D : public UnaryModule {
       PoolingMode mode = PoolingMode::MAX);
 
   Variable forward(const Variable& input) override;
+
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 };

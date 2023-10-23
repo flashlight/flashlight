@@ -39,12 +39,12 @@ auto loadData = [](const std::string& filepath) {
 TEST(MfccTest, htkCompareTest) {
   // read wav data
   auto wavinput = loadData(loadPath / "sa1.dat");
-  ASSERT_TRUE(wavinput.size() > 0 && "sa1 frames not loaded properly!");
+  ASSERT_TRUE(!wavinput.empty() && "sa1 frames not loaded properly!");
 
   // read expected output data computed from HTK
   auto htkfeat = loadData(loadPath / "sa1-mfcc.htk");
   // HTK features not read properly!
-  ASSERT_TRUE(htkfeat.size() > 0);
+  ASSERT_TRUE(!htkfeat.empty());
   FeatureParams params;
   params.samplingFreq = 16000;
   params.lowFreqFilterbank = 0;

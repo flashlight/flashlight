@@ -42,9 +42,7 @@ std::shared_ptr<fl::Conv2D> makeConv2D(int inDim, int outDim, int wx, int wy) {
 
 } // namespace
 
-namespace fl {
-namespace pkg {
-namespace vision {
+namespace fl::pkg::vision {
 
 MLP::MLP(
     const int32_t inputDim,
@@ -127,6 +125,10 @@ std::vector<Variable> Detr::forwardTransformer(
   return {outputClasses, outputCoord};
 }
 
+std::unique_ptr<Module> Detr::clone() const {
+  throw std::runtime_error("Cloning is unimplemented in Module 'Detr'");
+}
+
 std::string Detr::prettyString() const {
   std::ostringstream ss;
   ss << "Detection Transformer";
@@ -152,6 +154,4 @@ std::vector<fl::Variable> Detr::backboneParams() {
   return backbone_->params();
 }
 
-} // namespace vision
-} // namespace pkg
 } // namespace fl

@@ -7,11 +7,12 @@
 
 #pragma once
 
+#include "flashlight/fl/common/Defines.h"
 #include "flashlight/fl/nn/modules/Module.h"
 
 namespace fl {
 
-class Normalize : public UnaryModule {
+class FL_API Normalize : public UnaryModule {
  public:
   /**
    * Constructs a Normalize module.
@@ -29,6 +30,8 @@ class Normalize : public UnaryModule {
       double value = 1);
 
   Variable forward(const Variable& input) override;
+
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 

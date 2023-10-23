@@ -18,7 +18,7 @@ namespace fl {
  * Adds a padding of value `val` before and after each dimension
  * \f$i\f$ of size specified by the tuple `padi` to the input.
  */
-class Padding : public UnaryModule {
+class FL_API Padding : public UnaryModule {
  private:
   Padding() = default; // intentionally private
 
@@ -41,6 +41,8 @@ class Padding : public UnaryModule {
   Padding(std::vector<std::pair<int, int>> padding, double val);
 
   Variable forward(const Variable& input) override;
+
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 };

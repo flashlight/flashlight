@@ -23,7 +23,7 @@ namespace fl {
     \endcode
  * Note this module cannot be serialized.
  */
-class Transform : public UnaryModule {
+class FL_API Transform : public UnaryModule {
  private:
   Transform() = default; // Intentionally private
 
@@ -49,6 +49,8 @@ class Transform : public UnaryModule {
       const std::string& name = "");
 
   Variable forward(const Variable& input) override;
+
+  std::unique_ptr<Module> clone() const override;
 
   std::string prettyString() const override;
 };

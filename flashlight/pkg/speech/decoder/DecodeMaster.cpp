@@ -36,9 +36,7 @@ Tensor removePad(const Tensor& arr, int32_t padIdx) {
 
 // TODO threading?
 
-namespace fl {
-namespace pkg {
-namespace speech {
+namespace fl::pkg::speech {
 
 DecodeMaster::DecodeMaster(
     const std::shared_ptr<fl::Module> net,
@@ -201,7 +199,7 @@ std::shared_ptr<fl::Dataset> DecodeMaster::decode(
         decoder.decode(emissionV.data(), emission.dim(1), emission.dim(0));
 
     std::vector<int> tokensV, wordsV;
-    if (results.size() > 0) {
+    if (!results.empty()) {
       tokensV = results[0].tokens;
       wordsV = results[0].words;
     }
@@ -209,9 +207,9 @@ std::shared_ptr<fl::Dataset> DecodeMaster::decode(
         std::remove(tokensV.begin(), tokensV.end(), -1), tokensV.end());
     wordsV.erase(std::remove(wordsV.begin(), wordsV.end(), -1), wordsV.end());
     sample[kDMTokenPredIdx] =
-        (tokensV.size() > 0 ? Tensor::fromVector(tokensV) : Tensor());
+        (!tokensV.empty() ? Tensor::fromVector(tokensV) : Tensor());
     sample[kDMWordPredIdx] =
-        (wordsV.size() > 0 ? Tensor::fromVector(wordsV) : Tensor());
+        (!wordsV.empty() ? Tensor::fromVector(wordsV) : Tensor());
     predDataset->add(sample);
   }
   predDataset->writeIndex();
@@ -356,6 +354,4 @@ std::vector<std::string> WordDecodeMaster::computeStringTarget(
       trainOpt_.wordSep);
 }
 
-} // namespace speech
-} // namespace pkg
 } // namespace fl

@@ -7,10 +7,10 @@
 
 #include "flashlight/fl/contrib/modules/SinusoidalPositionEmbedding.h"
 
-#include <cmath>
-#include <stdexcept>
 #include <algorithm>
+#include <cmath>
 #include <numeric>
+#include <stdexcept>
 
 #include "flashlight/fl/autograd/Functions.h"
 #include "flashlight/fl/nn/Init.h"
@@ -36,6 +36,22 @@ SinusoidalPositionEmbedding::SinusoidalPositionEmbedding(
   // In the forward pass, the even indices of embedding vectors will have the
   // Sine function applied and the odd indices will have the Cosine function
   // applied.
+}
+
+SinusoidalPositionEmbedding::SinusoidalPositionEmbedding(
+    const SinusoidalPositionEmbedding& other)
+    : layerDim_(other.layerDim_),
+      inputScale_(other.inputScale_),
+      scale_(other.scale_.copy()),
+      cosShifts_(other.cosShifts_.copy()) {}
+
+SinusoidalPositionEmbedding& SinusoidalPositionEmbedding::operator=(
+    const SinusoidalPositionEmbedding& other) {
+  layerDim_ = other.layerDim_;
+  inputScale_ = other.inputScale_;
+  scale_ = other.scale_.copy();
+  cosShifts_ = other.cosShifts_.copy();
+  return *this;
 }
 
 std::vector<Variable> SinusoidalPositionEmbedding::forward(
@@ -71,6 +87,10 @@ std::vector<Variable> SinusoidalPositionEmbedding::forward(
 std::vector<Variable> SinusoidalPositionEmbedding::operator()(
     const std::vector<Variable>& input) {
   return forward(input);
+}
+
+std::unique_ptr<Module> SinusoidalPositionEmbedding::clone() const {
+  return std::make_unique<SinusoidalPositionEmbedding>(*this);
 }
 
 std::string SinusoidalPositionEmbedding::prettyString() const {

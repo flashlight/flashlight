@@ -11,9 +11,7 @@
 
 #include "flashlight/fl/tensor/Index.h"
 
-namespace fl {
-namespace pkg {
-namespace vision {
+namespace fl::pkg::vision {
 
 std::string PositionalEmbeddingSine::prettyString() const {
   return "PositionalEmbeddingSine";
@@ -28,6 +26,36 @@ PositionalEmbeddingSine::PositionalEmbeddingSine(
       temperature_(temperature),
       normalize_(normalize),
       scale_(scale){};
+
+PositionalEmbeddingSine::PositionalEmbeddingSine(
+    const PositionalEmbeddingSine& other)
+    : numPosFeats_(other.numPosFeats_),
+      temperature_(other.temperature_),
+      normalize_(other.normalize_),
+      scale_(other.scale_) {
+  train_ = other.train_;
+  for (auto& mod : other.modules_) {
+    add(mod->clone());
+  }
+}
+
+PositionalEmbeddingSine& PositionalEmbeddingSine::operator=(
+    const PositionalEmbeddingSine& other) {
+  train_ = other.train_;
+  numPosFeats_ = other.numPosFeats_;
+  temperature_ = other.temperature_;
+  normalize_ = other.normalize_;
+  scale_ = other.scale_;
+  clear();
+  for (auto& mod : other.modules_) {
+    add(mod->clone());
+  }
+  return *this;
+}
+
+std::unique_ptr<Module> PositionalEmbeddingSine::clone() const {
+  return std::make_unique<PositionalEmbeddingSine>(*this);
+}
 
 std::vector<Variable> PositionalEmbeddingSine::forward(
     const std::vector<Variable>& inputs) {
@@ -90,6 +118,4 @@ std::vector<Variable> PositionalEmbeddingSine::operator()(
   return forward(input);
 }
 
-} // namespace vision
-} // namespace pkg
 } // namespace fl
