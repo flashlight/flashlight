@@ -12,7 +12,8 @@ namespace fl {
 ScalarNode::ScalarNode(
     const Shape& shape,
     const fl::dtype type,
-    const ScalarType scalar)
+    const ScalarType scalar,
+    PrivateHelper)
     : NodeTrait({}, shape), dtype_(type), scalar_(scalar) {}
 
 dtype ScalarNode::dataType() const {

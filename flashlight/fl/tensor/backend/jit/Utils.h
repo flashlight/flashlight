@@ -19,7 +19,7 @@ namespace detail {
 // TODO a similar construct could be made for nodes for pattern matching in
 // graph rewrite and testing.
 struct UseVal {
-  const Node* user;
+  const NodePtr user;
   const unsigned inputIdx;
 };
 
@@ -27,7 +27,7 @@ std::ostream& operator<<(std::ostream& os, const UseVal& useVal);
 
 } // namespace detail
 
-using NodeList = std::vector<Node*>;
+using NodeList = std::vector<NodePtr>;
 using UseValList = std::vector<detail::UseVal>;
 
 /**
@@ -35,7 +35,7 @@ using UseValList = std::vector<detail::UseVal>;
  *
  *   node->uses() == UseValList({{n1, 0}, ...})
  */
-bool operator==(UseList actual, UseValList expect);
+bool operator==(const UseList& actual, const UseValList& expect);
 
 std::ostream& operator<<(std::ostream& os, const Use* useVal);
 

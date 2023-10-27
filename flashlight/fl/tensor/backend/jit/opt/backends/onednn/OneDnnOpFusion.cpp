@@ -19,14 +19,14 @@
 namespace fl {
 
 struct BinopInfo {
-  Node* rhsNode;
+  NodePtr rhsNode;
   BinaryOp op;
 };
 
 struct OneDnnOpFusion::SearchState {
-  SearchState(Node* root, std::vector<BinopInfo> binopInfos)
+  SearchState(NodePtr root, std::vector<BinopInfo> binopInfos)
       : searchRoot(root), accumulatedBinopInfos(binopInfos) {}
-  Node* searchRoot;
+  NodePtr searchRoot;
   // Assume `searchRoot == binop2`
   //
   // x0  x1
@@ -108,30 +108,31 @@ bool isOpFusable(const BinaryOp op) {
   return tryBinopToOneDnnAlg(op).has_value();
 }
 
-bool isNodeFusable(const Node* node) {
+bool isNodeFusable(const NodePtr node) {
   return node->isBinary() && isOpFusable(node->impl<BinaryNode>().op());
 }
 
-bool isFusionProfitable(const Node* node) {
-  // TODO Even if we have > 1 use, it might be possible & profitable to fuse,
+bool isFusionProfitable(const NodePtr node) {
+  // TODO
+  // Even if we have multiple uses, it might be possible & profitable to fuse,
   // i.e., recomputation might be okay, think Halide.
-  return node->uses().size() <= 1;
+  return node->uses().size() + node->externalUses().size() <= 1;
 }
 
-bool shouldNodeBeFused(const Node* node) {
+bool shouldNodeBeFused(const NodePtr node) {
   return isNodeFusable(node) && isFusionProfitable(node);
 }
 
 } // namespace
 
-Node* OneDnnOpFusion::rewriteFrom(Node* node) {
+NodePtr OneDnnOpFusion::rewriteFrom(NodePtr node) {
   SearchState state(node, /* accumulatedBinopInfos = */ {});
   auto fusedNode = searchAndFuse(node, state);
   node->replaceAllUsesWith(fusedNode);
   return fusedNode;
 }
 
-Node* OneDnnOpFusion::searchAndFuse(Node* node, SearchState& state) {
+NodePtr OneDnnOpFusion::searchAndFuse(NodePtr node, SearchState& state) {
   // TODO for now we just skip shared input, need to think more.
   if (visited_.find(node) != visited_.end() || !shouldNodeBeFused(node) ||
       state.accumulatedBinopInfos.size() > kOneDnnMaxNumPostOps) {
@@ -153,7 +154,7 @@ Node* OneDnnOpFusion::searchAndFuse(Node* node, SearchState& state) {
   }
 }
 
-Node* OneDnnOpFusion::fuseNodes(Node* node, SearchState& state) {
+NodePtr OneDnnOpFusion::fuseNodes(NodePtr node, SearchState& state) {
   for (const auto& input : node->inputs()) {
     rewriteFrom(input);
   }
@@ -177,7 +178,7 @@ Node* OneDnnOpFusion::fuseNodes(Node* node, SearchState& state) {
   // becomes
   // inputNodes: { x1, x2, x3 }
   // algs:       { op1, op2 }
-  std::vector<Node*> inputNodes{node};
+  std::vector<NodePtr> inputNodes{node};
   std::vector<dnnl::algorithm> algs;
   for (int i = state.accumulatedBinopInfos.size() - 1; i >= 0; i--) {
     const auto& info = state.accumulatedBinopInfos[i];
@@ -246,7 +247,7 @@ Node* OneDnnOpFusion::fuseNodes(Node* node, SearchState& state) {
       std::move(evalFunc));
 }
 
-Node* OneDnnOpFusion::apply(Node* root) {
+NodePtr OneDnnOpFusion::apply(NodePtr root) {
   auto optimizedRoot = rewriteFrom(root);
   visited_.clear();
   return optimizedRoot;

@@ -16,17 +16,24 @@ class Node;
  * The used Node is always `use.user().inputs().at(use.inputIdx())`
  */
 class Use {
-  Node* const user_;
+  // TODO don't store user as a node reference.
+  // Currently this is a reference instead of `NodePtr` because
+  // 1. We cannot have circular reference with `std::shared_ptr`
+  // 2. To pass in the user, we'll have to somehow convert a `Node* this` to a
+  // `NodePtr` in the `Node` constructor code path.
+  Node& user_;
   const unsigned inputIdx_;
 
-  // intentionally kept private
-  Use(Node* user, unsigned inputIdx);
-
  public:
-  static Use* create(Node* user, unsigned inputIdx);
+  Use(Node& user, unsigned inputIdx);
+  // no copy/move
+  Use(const Use&) = delete;
+  Use& operator=(const Use&) = delete;
+  Use(Use&&) = delete;
+  Use& operator=(Use&&) = delete;
 
   unsigned inputIdx() const;
-  Node* user() const;
+  Node& user() const;
 };
 
 } // namespace fl

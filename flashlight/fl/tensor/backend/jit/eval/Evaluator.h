@@ -24,27 +24,42 @@ namespace fl {
  * out the computation represented by the JIT tree.
  */
 class Evaluator {
+ public:
+  // takes in the evaluated node and execution stats (empty if profiling is
+  // disabled)
+  using PostEvalCallback =
+      std::function<void(NodePtr, std::unordered_map<NodePtr, float>)>;
+  using PostEvalCallbackList = std::list<PostEvalCallback>;
+  using PostEvalCallbackHandle = PostEvalCallbackList::iterator;
+
+ private:
   // backend used for dispatching Tensor ops.
   TensorBackend& backend_;
   // track (conservatively) how many more times the a node's result will be used
-  std::unordered_map<Node*, unsigned> nodeToResultUseCount_{};
+  std::unordered_map<NodePtr, unsigned> nodeToResultUseCount_{};
+  // track time spent on executing a node alone (not its inputs)
+  std::unordered_map<NodePtr, float> nodeToTotTimeMs_{};
+  bool profilerEnabled_{false};
+  PostEvalCallbackList postEvalCallbacks_;
 
-  void evalNode(Node* node);
-  void evalNodeDispatch(Node* node);
+  void evalNode(NodePtr node);
+  void evalNodeDispatch(NodePtr node);
+  // profile execution time of `func` and associate it with `nodePtr`
+  void profile(std::function<void()> func, NodePtr nodePtr);
 
   // evaluate and set result without checking for existing result
   // ASSUME inputs have been evaluated
-  void evalBinaryNode(BinaryNode& node);
-  void evalCustomNode(CustomNode& node);
-  void evalIndexNode(IndexNode& node);
-  void evalIndexedUpdateNode(IndexedUpdateNode& node);
+  void evalBinaryNode(BinaryNodePtr node);
+  void evalCustomNode(CustomNodePtr node);
+  void evalIndexNode(IndexNodePtr node);
+  void evalIndexedUpdateNode(IndexedUpdateNodePtr node);
   // JitTensor in indices becomes the backing tensor
   std::vector<Index> unwrapTensorInIndices(const std::vector<Index>& indices);
-  void evalScalarNode(ScalarNode& node);
+  void evalScalarNode(ScalarNodePtr node);
 
   // helpers that evaluates without setting results
   Tensor evalBinaryOp(BinaryOp op, const Tensor& lhs, const Tensor& rhs);
-  Tensor evalScalar(ScalarNode& node);
+  Tensor evalScalar(ScalarNodePtr node);
 
  public:
   /**
@@ -61,9 +76,20 @@ class Evaluator {
   /**
    * Execute the entire computation tree rooted at `node`.
    * 1. no op if result already set
-   * 2. set result for all intermediate/final tensors evaluated
+   * 2. set result for intermediate nodes if they have external uses
    */
-  void eval(Node* node);
+  void eval(NodePtr node);
+
+  /**
+   * TODO document
+   */
+  void setProfilerState(bool active);
+  bool getProfilerState();
+  const std::unordered_map<NodePtr, float>& getProfilerStats();
+  void clearProfilerStats();
+
+  PostEvalCallbackHandle addPostEvalCallback(PostEvalCallback callback);
+  void removePostEvalCallback(PostEvalCallbackHandle handle);
 };
 
 } // namespace fl

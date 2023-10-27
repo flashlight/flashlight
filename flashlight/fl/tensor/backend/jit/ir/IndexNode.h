@@ -7,10 +7,15 @@
 
 #pragma once
 
+#include <memory>
+
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/backend/jit/ir/Node.h"
 
 namespace fl {
+
+class IndexNode;
+using IndexNodePtr = std::shared_ptr<IndexNode>;
 
 /**
  * A node that represents indexing operation.
@@ -21,15 +26,16 @@ class IndexNode : public NodeTrait<IndexNode> {
   // helps indexing into inputs
   static constexpr unsigned indexedNodeIdx = 0;
 
-  // intentionally kept private to control allocation
-  IndexNode(Node* indexedNode, const std::vector<Index>& indices);
+  // help control allocation while allowing `std::make_shared`
+  struct PrivateHelper{};
 
  public:
   static constexpr NodeType nodeType = NodeType::Index;
+  IndexNode(NodePtr indexedNode, const std::vector<Index>& indices, PrivateHelper);
 
-  static IndexNode* create(Node* indexedNode, const std::vector<Index>& indices);
+  static IndexNodePtr create(NodePtr indexedNode, const std::vector<Index>& indices);
 
-  Node* indexedNode() const;
+  NodePtr indexedNode() const;
   const std::vector<Index>& indices() const;
 };
 

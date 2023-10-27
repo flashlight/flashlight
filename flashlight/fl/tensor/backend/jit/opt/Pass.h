@@ -23,10 +23,9 @@ class Pass {
    * Apply in-place transformation to nodes within the tree.
    *
    * @param[in] node the root node of the JIT tree to be transformed
-   * @return root to the updated tree (caller must take ownership of returned
-   * node if `return != node`)
+   * @return root to the updated tree
    */
-  virtual Node* apply(Node* node) = 0;
+  virtual NodePtr apply(NodePtr node) = 0;
 };
 
 } // namespace fl

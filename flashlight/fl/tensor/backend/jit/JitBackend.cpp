@@ -22,8 +22,8 @@ namespace fl {
 
 namespace {
 
-std::vector<Node*> tensorsToNodes(const std::vector<Tensor>& tensors) {
-  std::vector<Node*> nodes;
+std::vector<NodePtr> tensorsToNodes(const std::vector<Tensor>& tensors) {
+  std::vector<NodePtr> nodes;
   // JitTensor copy is ~free, but whatever
   for (const auto& tensor : tensors) {
     nodes.push_back(toJitTensorBase(tensor).node());
@@ -32,8 +32,8 @@ std::vector<Node*> tensorsToNodes(const std::vector<Tensor>& tensors) {
 }
 
 template <typename... T>
-std::vector<Node*> tensorsToNodes(const T&... tensors) {
-  std::vector<Node*> nodes;
+std::vector<NodePtr> tensorsToNodes(const T&... tensors) {
+  std::vector<NodePtr> nodes;
   // JitTensor copy is ~free, but whatever
   for (const auto& tensor : {&tensors...}) {
     nodes.push_back(toJitTensorBase(*tensor).node());
@@ -42,7 +42,7 @@ std::vector<Node*> tensorsToNodes(const T&... tensors) {
 }
 
 template <>
-std::vector<Node*> tensorsToNodes() {
+std::vector<NodePtr> tensorsToNodes() {
   return {};
 }
 
@@ -56,11 +56,26 @@ const Tensor& materialize(Tensor tensor) {
 
 JitBackend::JitBackend(
     TensorBackend& wrappedBackend,
-    std::function<Tensor(Node*)> jitTensorCreator)
-    : wrappedBackend_(wrappedBackend), jitTensorCreator_(jitTensorCreator) {}
+    std::function<Tensor(NodePtr)> jitTensorCreator)
+    : wrappedBackend_(wrappedBackend),
+      jitTensorCreator_(jitTensorCreator),
+      evaluator_(wrappedBackend),
+      optimizer_(wrappedBackend) {}
 
 TensorBackendType JitBackend::backendType() const {
   return TensorBackendType::Jit;
+}
+
+Evaluator& JitBackend::evaluator() {
+  return evaluator_;
+}
+
+Optimizer& JitBackend::optimizer() {
+  return optimizer_;
+}
+
+TensorBackend& JitBackend::wrappedBackend() {
+  return wrappedBackend_;
 }
 
 /* -------------------------- Compute Functions -------------------------- */

@@ -7,6 +7,8 @@
 
 #include "flashlight/fl/tensor/backend/jit/eval/Evaluator.h"
 
+#include <chrono>
+#include <functional>
 #include <queue>
 
 #include "flashlight/fl/tensor/backend/jit/JitTensorBase.h"
@@ -16,67 +18,98 @@ namespace fl {
 
 namespace {
 
-// Build a map from each node in the tree to its current refcount.
-std::unordered_map<Node*, unsigned> getNodeToRefCountInTree(Node* root) {
-  std::unordered_map<Node*, unsigned> nodeToRefCount;
-  std::queue<Node*> worklist({root}); // nodes to be visited
+// Build a map from each node in the tree to the # of its current uses
+// (including external use).
+std::unordered_map<NodePtr, unsigned> getNodeToUseCountInTree(NodePtr root) {
+  auto getUseCount = [](NodePtr node) {
+    return node->uses().size() + node->externalUses().size();
+  };
+  std::unordered_map<NodePtr, unsigned> nodeToUseCount{
+      {root, getUseCount(root)}};
+  std::queue<NodePtr> worklist({root}); // nodes to be visited
   while (!worklist.empty()) {
-    Node* node = worklist.front();
+    NodePtr node = worklist.front();
     worklist.pop();
-    if (nodeToRefCount.find(node) == nodeToRefCount.end()) {
-      nodeToRefCount.emplace(node, node->getRefCount());
-      for (const auto& input : node->inputs()) {
+    for (const auto& input : node->inputs()) {
+      if (nodeToUseCount.find(input) == nodeToUseCount.end()) {
         worklist.push(input);
+        nodeToUseCount.emplace(input, getUseCount(input));
       }
     }
   }
-  return nodeToRefCount;
+  return nodeToUseCount;
 }
 
 } // namespace
 
 Evaluator::Evaluator(TensorBackend& backend) : backend_(backend) {}
 
-void Evaluator::evalBinaryNode(BinaryNode& node) {
-  const auto& lhs = node.lhs()->getResult().value();
-  const auto& rhs = node.rhs()->getResult().value();
-  node.setResult(evalBinaryOp(node.op(), lhs, rhs));
+void Evaluator::profile(std::function<void()> func, NodePtr nodePtr) {
+  if (!profilerEnabled_) {
+    func();
+    return;
+  }
+  const auto start = std::chrono::high_resolution_clock::now();
+  func();
+  const auto end = std::chrono::high_resolution_clock::now();
+  const auto durNs =
+      std::chrono::duration_cast<std::chrono::duration<float>>(end - start)
+          .count();
+  nodeToTotTimeMs_.insert({nodePtr, durNs * 1000});
 }
 
-void Evaluator::evalCustomNode(CustomNode& node) {
+void Evaluator::evalBinaryNode(BinaryNodePtr node) {
+  std::function<void()> func = [this, node] {
+    const auto& lhs = node->lhs()->getResult().value();
+    const auto& rhs = node->rhs()->getResult().value();
+    node->setResult(evalBinaryOp(node->op(), lhs, rhs));
+  };
+  profile(func, node);
+}
+
+void Evaluator::evalCustomNode(CustomNodePtr node) {
   std::vector<const Tensor*> inputTensors;
-  for (auto& inputNode : node.inputs()) {
+  for (auto& inputNode : node->inputs()) {
     inputTensors.push_back(&inputNode->getResult().value());
   }
-  node.setResult(node.evalFunc()(inputTensors));
+  std::function<void()> func = [node, inputTensors = std::move(inputTensors)] {
+    node->setResult(node->evalFunc()(inputTensors));
+  };
+  profile(func, node);
 }
 
-void Evaluator::evalIndexNode(IndexNode& node) {
-  const auto& indexedTensor = node.indexedNode()->getResult().value();
-  node.setResult(indexedTensor(unwrapTensorInIndices(node.indices())));
+void Evaluator::evalIndexNode(IndexNodePtr node) {
+  std::function<void()> func = [this, node]() {
+    const auto& indexedTensor = node->indexedNode()->getResult().value();
+    node->setResult(indexedTensor(unwrapTensorInIndices(node->indices())));
+  };
+  profile(func, node);
 }
 
-void Evaluator::evalIndexedUpdateNode(IndexedUpdateNode& node) {
+void Evaluator::evalIndexedUpdateNode(IndexedUpdateNodePtr node) {
   // TODO no need to copy if indexedNode has only 1 user here
-  auto indexedTensor = node.indexedNode()->getResult().value().copy();
-  const auto firstUnwrappedIndices =
-      unwrapTensorInIndices(node.indexings().front());
-  const auto& updateDataTensor = node.updateDataNode()->getResult().value();
-  // if we do X = Y, it's a copy instead of update, thus the special case here
-  if (node.indexings().size() == 1) {
-    indexedTensor(firstUnwrappedIndices) = updateDataTensor;
-  } else {
-    auto currIndexResult = indexedTensor(firstUnwrappedIndices);
-    for (unsigned i = 1; i < node.indexings().size() - 1; i++) {
-      const auto unwrappedIndices =
-          unwrapTensorInIndices(node.indexings().at(i));
-      currIndexResult = currIndexResult(unwrappedIndices);
+  std::function<void()> func = [this, node]() {
+    auto indexedTensor = node->indexedNode()->getResult().value().copy();
+    const auto firstUnwrappedIndices =
+        unwrapTensorInIndices(node->indexings().front());
+    const auto& updateDataTensor = node->updateDataNode()->getResult().value();
+    // if we do X = Y, it's a copy instead of update, thus the special case here
+    if (node->indexings().size() == 1) {
+      indexedTensor(firstUnwrappedIndices) = updateDataTensor;
+    } else {
+      auto currIndexResult = indexedTensor(firstUnwrappedIndices);
+      for (unsigned i = 1; i < node->indexings().size() - 1; i++) {
+        const auto unwrappedIndices =
+            unwrapTensorInIndices(node->indexings().at(i));
+        currIndexResult = currIndexResult(unwrappedIndices);
+      }
+      const auto lastUnwrappedIndices =
+          unwrapTensorInIndices(node->indexings().back());
+      currIndexResult(lastUnwrappedIndices) = updateDataTensor;
     }
-    const auto lastUnwrappedIndices =
-        unwrapTensorInIndices(node.indexings().back());
-    currIndexResult(lastUnwrappedIndices) = updateDataTensor;
-  }
-  node.setResult(std::move(indexedTensor));
+    node->setResult(std::move(indexedTensor));
+  };
+  profile(func, node);
 }
 
 std::vector<Index> Evaluator::unwrapTensorInIndices(
@@ -93,8 +126,9 @@ std::vector<Index> Evaluator::unwrapTensorInIndices(
   return unwrappedIndices;
 }
 
-void Evaluator::evalScalarNode(ScalarNode& node) {
-  node.setResult(evalScalar(node));
+void Evaluator::evalScalarNode(ScalarNodePtr node) {
+  std::function<void()> func = [&]() { node->setResult(evalScalar(node)); };
+  profile(func, node);
 }
 
 Tensor
@@ -147,14 +181,14 @@ Evaluator::evalBinaryOp(BinaryOp op, const Tensor& lhs, const Tensor& rhs) {
       "[Evaluator::evalBinaryOp] Unknown binary operation type");
 }
 
-Tensor Evaluator::evalScalar(ScalarNode& node) {
-  const Shape& shape = node.shape();
-  const auto dtype = node.dataType();
+Tensor Evaluator::evalScalar(ScalarNodePtr node) {
+  const Shape& shape = node->shape();
+  const auto dtype = node->dataType();
   switch (dtype) {
     case dtype::f16:
     case dtype::f32:
     case dtype::f64:
-      return backend_.full(shape, node.scalar<double>(), dtype);
+      return backend_.full(shape, node->scalar<double>(), dtype);
     case dtype::b8:
     case dtype::s16:
     case dtype::s32:
@@ -162,32 +196,32 @@ Tensor Evaluator::evalScalar(ScalarNode& node) {
     case dtype::u8:
     case dtype::u16:
     case dtype::u32:
-      return backend_.full(shape, node.scalar<long long>(), dtype);
+      return backend_.full(shape, node->scalar<long long>(), dtype);
     case dtype::u64:
-      return backend_.full(shape, node.scalar<unsigned long long>(), dtype);
+      return backend_.full(shape, node->scalar<unsigned long long>(), dtype);
   }
   throw std::runtime_error("Unknown dtype");
 }
 
-void Evaluator::evalNodeDispatch(Node* node) {
+void Evaluator::evalNodeDispatch(NodePtr node) {
   switch (node->type()) {
     case NodeType::Binary:
-      return evalBinaryNode(node->impl<BinaryNode>());
+      return evalBinaryNode(Node::cast<BinaryNodePtr>(node));
     case NodeType::Custom:
-      return evalCustomNode(node->impl<CustomNode>());
+      return evalCustomNode(Node::cast<CustomNodePtr>(node));
     case NodeType::Index:
-      return evalIndexNode(node->impl<IndexNode>());
+      return evalIndexNode(Node::cast<IndexNodePtr>(node));
     case NodeType::IndexedUpdate:
-      return evalIndexedUpdateNode(node->impl<IndexedUpdateNode>());
+      return evalIndexedUpdateNode(Node::cast<IndexedUpdateNodePtr>(node));
     case NodeType::Scalar:
-      return evalScalarNode(node->impl<ScalarNode>());
+      return evalScalarNode(Node::cast<ScalarNodePtr>(node));
     case NodeType::Value:
       return; // already has a result
   }
   throw std::runtime_error("[Evaluator::evalNodeDispatch] Unknown node type");
 }
 
-void Evaluator::evalNode(Node* node) {
+void Evaluator::evalNode(NodePtr node) {
   if (!node->getResult().has_value()) {
     for (const auto& input : node->inputs()) {
       evalNode(input);
@@ -206,10 +240,39 @@ void Evaluator::evalNode(Node* node) {
   }
 }
 
-void Evaluator::eval(Node* node) {
-  nodeToResultUseCount_ = getNodeToRefCountInTree(node);
+void Evaluator::eval(NodePtr node) {
+  nodeToResultUseCount_ = getNodeToUseCountInTree(node);
   evalNode(node);
+  for (const auto& callback : postEvalCallbacks_) {
+    callback(node, nodeToTotTimeMs_);
+  }
+  nodeToTotTimeMs_.clear();
   nodeToResultUseCount_.clear();
+}
+
+void Evaluator::setProfilerState(bool active) {
+  this->profilerEnabled_ = active;
+}
+
+bool Evaluator::getProfilerState() {
+  return this->profilerEnabled_;
+}
+
+const std::unordered_map<NodePtr, float>& Evaluator::getProfilerStats() {
+  return nodeToTotTimeMs_;
+}
+
+void Evaluator::clearProfilerStats() {
+  nodeToTotTimeMs_.clear();
+}
+
+Evaluator::PostEvalCallbackHandle Evaluator::addPostEvalCallback(
+    PostEvalCallback callback) {
+  return postEvalCallbacks_.insert(postEvalCallbacks_.end(), callback);
+}
+
+void Evaluator::removePostEvalCallback(PostEvalCallbackHandle handle) {
+  postEvalCallbacks_.erase(handle);
 }
 
 } // namespace fl

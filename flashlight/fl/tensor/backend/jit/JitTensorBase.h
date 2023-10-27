@@ -34,22 +34,19 @@ class JitTensorBase : public TensorAdapterBase {
   const Tensor& getTensorOrEvalNode() const;
 
   // convenience method to construct new JitTensor from a data node
-  Tensor fromDataNode(Node* node) const;
+  Tensor fromDataNode(NodePtr node) const;
 
  protected:
   // this allows us to create an instance of derived class
   virtual Tensor fromSharedData(
       std::shared_ptr<SharedData> sharedData) const = 0;
 
-  // let derived class manage the wrapped backend
-  virtual TensorBackend& wrappedBackend() const = 0;
-
-  // allow JitTensor<T> to potentially inject things into Optimizer/Evaluator
-  virtual Optimizer& optimizer() const = 0;
-  virtual Evaluator& evaluator() const = 0;
+  TensorBackend& wrappedBackend() const;
+  Optimizer& optimizer() const;
+  Evaluator& evaluator() const;
 
   // JitTensorBase manages the backend-agnostic JIT node.
-  JitTensorBase(Node* node);
+  JitTensorBase(NodePtr node);
   JitTensorBase(std::shared_ptr<SharedData> sharedData);
 
  public:
@@ -84,7 +81,7 @@ class JitTensorBase : public TensorAdapterBase {
    * Return the node this JIT tensor represents.
    * NOTE `const` w.r.t. the underlying Tensor this represents.
    */
-  Node* node() const;
+  NodePtr node() const;
 
   /**
    * Force evaluation of this tensor's JIT node.

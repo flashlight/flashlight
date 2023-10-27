@@ -85,10 +85,10 @@ Shape inferIndexedShape(const Shape& shape, const std::vector<Index>& indices) {
   return Shape(indexedDims);
 }
 
-std::vector<Node*> getIndexNodeInputs(
-    Node* indexedNode,
+std::vector<NodePtr> getIndexNodeInputs(
+    NodePtr indexedNode,
     const std::vector<Index>& indices) {
-  std::vector<Node*> inputs{indexedNode};
+  std::vector<NodePtr> inputs{indexedNode};
   for (const auto& idx : indices) {
     switch (idx.type()) {
       case detail::IndexType::Tensor: {
@@ -105,19 +105,19 @@ std::vector<Node*> getIndexNodeInputs(
 
 } // namespace
 
-IndexNode* IndexNode::create(
-    Node* indexedNode,
+IndexNodePtr IndexNode::create(
+    NodePtr indexedNode,
     const std::vector<Index>& indices) {
-  return new IndexNode(indexedNode, indices);
+  return std::make_shared<IndexNode>(indexedNode, indices, PrivateHelper{});
 }
 
-IndexNode::IndexNode(Node* indexedNode, const std::vector<Index>& indices)
+IndexNode::IndexNode(NodePtr indexedNode, const std::vector<Index>& indices, PrivateHelper)
     : NodeTrait(
           getIndexNodeInputs(indexedNode, indices),
           inferIndexedShape(indexedNode->shape(), indices)),
       indices_(indices) {}
 
-Node* IndexNode::indexedNode() const {
+NodePtr IndexNode::indexedNode() const {
   return getInput(indexedNodeIdx);
 }
 

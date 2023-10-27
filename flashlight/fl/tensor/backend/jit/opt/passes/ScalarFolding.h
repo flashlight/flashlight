@@ -17,7 +17,7 @@ namespace fl {
  */
 class ScalarFolding : public Pass {
  public:
-  Node* apply(Node* node) override;
+  NodePtr apply(NodePtr node) override;
 };
 
 } // namespace fl

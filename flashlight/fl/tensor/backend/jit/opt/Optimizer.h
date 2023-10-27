@@ -29,10 +29,9 @@ class Optimizer {
    * Apply in-place optimization to nodes within the tree.
    *
    * @param[in] node the root node of the JIT tree to be optimized
-   * @return root to the updated tree (caller must take ownership of returned
-   * node if `return != node`)
+   * @return root to the updated tree
    */
-  Node* optimize(Node* node);
+  NodePtr optimize(NodePtr node);
 };
 
 } // namespace fl

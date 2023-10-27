@@ -13,8 +13,12 @@
 
 #include <functional>
 #include <vector>
+#include <memory>
 
 namespace fl {
+
+class CustomNode;
+using CustomNodePtr = std::shared_ptr<CustomNode>;
 
 /**
  * A node that holds customized evaluation logic for things like
@@ -24,23 +28,25 @@ class CustomNode : public NodeTrait<CustomNode> {
  public:
   using EvalFunc = std::function<Tensor(const std::vector<const Tensor*>&)>;
 
+  // help control allocation while allowing `std::make_shared`
+  struct PrivateHelper{};
+
  private:
   const std::string name_;
   const EvalFunc evalFunc_;
 
-  // intentionally kept private to control allocation
-  CustomNode(
-      std::string&& name,
-      std::vector<Node*>&& inputs,
-      const Shape& shape,
-      EvalFunc&& evalFunc);
-
  public:
   static constexpr NodeType nodeType = NodeType::Custom;
+  CustomNode(
+      std::string&& name,
+      std::vector<NodePtr>&& inputs,
+      const Shape& shape,
+      EvalFunc&& evalFunc,
+      PrivateHelper);
 
-  static CustomNode* create(
+  static CustomNodePtr create(
       std::string&& debugName,
-      std::vector<Node*>&& inputs,
+      std::vector<NodePtr>&& inputs,
       const Shape& shape,
       EvalFunc&& evalFunc);
 

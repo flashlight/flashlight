@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "flashlight/fl/tensor/backend/jit/ir/Node.h"
 
 namespace fl {
@@ -38,6 +40,9 @@ enum class BinaryOp {
   BitXor,
 };
 
+class BinaryNode;
+using BinaryNodePtr = std::shared_ptr<BinaryNode>;
+
 /**
  * A node that represents binary operations.
  */
@@ -48,17 +53,18 @@ class BinaryNode : public NodeTrait<BinaryNode> {
   static constexpr unsigned kLhsIdx = 0;
   static constexpr unsigned kRhsIdx = 1;
 
-  // intentionally kept private to control allocation
-  BinaryNode(Node* lhs, Node* rhs, BinaryOp op, const Shape& shape);
+  // help control allocation while allowing `std::make_shared`
+  struct PrivateHelper{};
 
  public:
   static constexpr NodeType nodeType = NodeType::Binary;
+  BinaryNode(NodePtr lhs, NodePtr rhs, BinaryOp op, const Shape& shape, PrivateHelper);
 
-  static BinaryNode* create(Node* lhs, Node* rhs, BinaryOp op);
+  static BinaryNodePtr create(NodePtr lhs, NodePtr rhs, BinaryOp op);
 
   BinaryOp op() const;
-  Node* lhs() const;
-  Node* rhs() const;
+  NodePtr lhs() const;
+  NodePtr rhs() const;
 };
 
 } // namespace fl

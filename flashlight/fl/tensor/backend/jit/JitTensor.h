@@ -24,33 +24,18 @@ class JitTensor : public JitTensorBase {
     return toTensor<JitTensor>(sharedData);
   }
 
-  TensorBackend& wrappedBackend() const override {
-    static TensorBackend& wrappedBackend = toTensor<T>().backend();
-    return wrappedBackend;
-  }
-
-  Optimizer& optimizer() const override {
-    static Optimizer optimizer(wrappedBackend());
-    return optimizer;
-  }
-
-  Evaluator& evaluator() const override {
-    static Evaluator evaluator(wrappedBackend());
-    return evaluator;
-  }
-
  public:
   // 1 static instance per jitted T.
   // NOTE that it's safe even for multiple translation units:
   // https://stackoverflow.com/questions/19366615/static-member-variable-in-class-template
   JitBackend& backend() const override {
-    auto creator = [](Node* node) { return toTensor<JitTensor>(node); };
-    static JitBackend backend(wrappedBackend(), creator);
+    auto creator = [](NodePtr node) { return toTensor<JitTensor>(node); };
+    static JitBackend backend(T().backend(), creator);
     return backend;
   }
 
   // allow use to create smart pointer of this derived class
-  explicit JitTensor(Node* node) : JitTensorBase(std::move(node)) {}
+  explicit JitTensor(NodePtr node) : JitTensorBase(std::move(node)) {}
   explicit JitTensor(std::shared_ptr<SharedData> sharedData)
       : JitTensorBase(std::move(sharedData)) {}
 

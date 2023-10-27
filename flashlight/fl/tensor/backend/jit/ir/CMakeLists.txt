@@ -6,6 +6,7 @@ target_sources(
   PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/BinaryNode.cpp
   ${CMAKE_CURRENT_LIST_DIR}/CustomNode.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/ExternalUse.cpp
   ${CMAKE_CURRENT_LIST_DIR}/IndexNode.cpp
   ${CMAKE_CURRENT_LIST_DIR}/IndexedUpdateNode.cpp
   ${CMAKE_CURRENT_LIST_DIR}/Node.cpp

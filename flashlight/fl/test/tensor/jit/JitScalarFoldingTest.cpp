@@ -41,15 +41,10 @@ TEST_F(JitScalarFoldingTest, identity) {
   ASSERT_EQ(add, scalarFolder_.apply(add));
   ASSERT_EQ(add->inputs(), NodeList({v1, c2}));
   ASSERT_EQ(add->uses(), UseValList({}));
-  ASSERT_EQ(add->getRefCount(), 0);
   ASSERT_EQ(v1->inputs(), NodeList({}));
   ASSERT_EQ(v1->uses(), UseValList({{add, 0}}));
-  ASSERT_EQ(v1->getRefCount(), 1);
   ASSERT_EQ(c2->inputs(), NodeList({}));
   ASSERT_EQ(c2->uses(), UseValList({{add, 1}}));
-  ASSERT_EQ(c2->getRefCount(), 1);
-  // root node is owned locally (didn't transition to shared ownership)
-  delete add;
 }
 
 TEST_F(JitScalarFoldingTest, binaryNode) {
@@ -67,22 +62,15 @@ TEST_F(JitScalarFoldingTest, binaryNode) {
   //   add           add  res
   ASSERT_EQ(c1->inputs(), NodeList({}));
   ASSERT_EQ(c1->uses(), UseValList({{add, 0}}));
-  ASSERT_EQ(c1->getRefCount(), 1);
   ASSERT_EQ(c2->inputs(), NodeList({}));
   ASSERT_EQ(c2->uses(), UseValList({{add, 1}}));
-  ASSERT_EQ(c2->getRefCount(), 1);
   ASSERT_EQ(add->inputs(), NodeList({c1, c2}));
   ASSERT_EQ(add->uses(), UseValList({}));
-  ASSERT_EQ(add->getRefCount(), 0);
   ASSERT_EQ(res->inputs(), NodeList({}));
   ASSERT_EQ(res->uses(), UseValList({}));
-  ASSERT_EQ(res->getRefCount(), 0);
   ASSERT_EQ(res->impl<ScalarNode>().shape(), shape);
   ASSERT_EQ(res->impl<ScalarNode>().dataType(), dtype);
   ASSERT_EQ(res->impl<ScalarNode>().scalar<int>(), 3);
-  // root nodes are owned locally (didn't transition to shared ownership)
-  delete add;
-  delete res;
 }
 
 TEST_F(JitScalarFoldingTest, sharedInput) {
@@ -101,19 +89,13 @@ TEST_F(JitScalarFoldingTest, sharedInput) {
   //   add           add  res
   ASSERT_EQ(c1->inputs(), NodeList({}));
   ASSERT_EQ(c1->uses(), UseValList({{add, 0}, {add, 1}}));
-  ASSERT_EQ(c1->getRefCount(), 2);
   ASSERT_EQ(add->inputs(), NodeList({c1, c1}));
   ASSERT_EQ(add->uses(), UseValList({}));
-  ASSERT_EQ(add->getRefCount(), 0);
   ASSERT_EQ(res->inputs(), NodeList({}));
   ASSERT_EQ(res->uses(), UseValList({}));
-  ASSERT_EQ(res->getRefCount(), 0);
   ASSERT_EQ(res->impl<ScalarNode>().shape(), shape);
   ASSERT_EQ(res->impl<ScalarNode>().dataType(), dtype);
   ASSERT_EQ(res->impl<ScalarNode>().scalar<int>(), 2);
-  // root nodes are owned locally (didn't transition to shared ownership)
-  delete add;
-  delete res;
 }
 
 TEST_F(JitScalarFoldingTest, multipleUsers) {
@@ -139,34 +121,24 @@ TEST_F(JitScalarFoldingTest, multipleUsers) {
   //   sub   mul        sub   mul    res
   ASSERT_EQ(c1->inputs(), NodeList({}));
   ASSERT_EQ(c1->uses(), UseValList({{sub, 0}}));
-  ASSERT_EQ(c1->getRefCount(), 1);
   ASSERT_EQ(c4->inputs(), NodeList({}));
   ASSERT_EQ(c4->uses(), UseValList({{mul, 1}}));
-  ASSERT_EQ(c4->getRefCount(), 1);
   // intermediate node (add --> c5) is optimized too, and benefits all users
   const auto c5 = sub->inputs().at(1);
   ASSERT_EQ(c5->inputs(), NodeList({}));
   ASSERT_EQ(c5->uses(), UseValList({{sub, 1}, {mul, 0}}));
-  ASSERT_EQ(c5->getRefCount(), 2);
   ASSERT_EQ(c5->impl<ScalarNode>().shape(), shape);
   ASSERT_EQ(c5->impl<ScalarNode>().dataType(), dtype);
   ASSERT_EQ(c5->impl<ScalarNode>().scalar<int>(), 5);
   ASSERT_EQ(sub->inputs(), NodeList({c1, c5}));
   ASSERT_EQ(sub->uses(), UseValList({}));
-  ASSERT_EQ(sub->getRefCount(), 0);
   ASSERT_EQ(mul->inputs(), NodeList({c5, c4}));
   ASSERT_EQ(mul->uses(), UseValList({}));
-  ASSERT_EQ(mul->getRefCount(), 0);
   ASSERT_EQ(res->inputs(), NodeList({}));
   ASSERT_EQ(res->uses(), UseValList({}));
-  ASSERT_EQ(res->getRefCount(), 0);
   ASSERT_EQ(res->impl<ScalarNode>().shape(), shape);
   ASSERT_EQ(res->impl<ScalarNode>().dataType(), dtype);
   ASSERT_EQ(res->impl<ScalarNode>().scalar<int>(), 20);
-  // root nodes are owned locally (didn't transition to shared ownership)
-  delete sub;
-  delete mul;
-  delete res;
 }
 
 TEST_F(JitScalarFoldingTest, nonFoldableRoot) {
@@ -194,16 +166,12 @@ TEST_F(JitScalarFoldingTest, nonFoldableRoot) {
   const auto c2 = custom->inputs().at(0);
   ASSERT_EQ(c2->inputs(), NodeList({}));
   ASSERT_EQ(c2->uses(), UseValList({{custom, 0}}));
-  ASSERT_EQ(c2->getRefCount(), 1);
   ASSERT_EQ(c2->impl<ScalarNode>().shape(), shape);
   ASSERT_EQ(c2->impl<ScalarNode>().dataType(), dtype);
   ASSERT_EQ(c2->impl<ScalarNode>().scalar<int>(), 2);
   ASSERT_EQ(c2->impl<ScalarNode>().scalar<int>(), 2);
   ASSERT_EQ(custom->inputs(), NodeList({c2}));
   ASSERT_EQ(custom->uses(), UseValList({}));
-  ASSERT_EQ(custom->getRefCount(), 0);
-  // root nodes are owned locally (didn't transition to shared ownership)
-  delete custom;
 }
 
 int main(int argc, char** argv) {

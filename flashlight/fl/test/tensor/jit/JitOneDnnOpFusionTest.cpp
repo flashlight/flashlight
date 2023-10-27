@@ -35,10 +35,6 @@ TEST_F(JitOneDnnOpFusionTest, singleScalarNode) {
   ASSERT_EQ(res, c1);
   ASSERT_EQ(c1->inputs(), NodeList({}));
   ASSERT_EQ(c1->uses(), UseValList({}));
-  ASSERT_EQ(c1->getRefCount(), 0);
-  ASSERT_TRUE(c1->isScalar());
-  // root node is owned locally (didn't transition to shared ownership)
-  delete c1;
 }
 
 TEST_F(JitOneDnnOpFusionTest, singleBinaryNode) {
@@ -55,18 +51,10 @@ TEST_F(JitOneDnnOpFusionTest, singleBinaryNode) {
   ASSERT_EQ(res, add);
   ASSERT_EQ(c1->inputs(), NodeList({}));
   ASSERT_EQ(c1->uses(), UseValList({{add, 0}}));
-  ASSERT_EQ(c1->getRefCount(), 1);
-  ASSERT_TRUE(c1->isScalar());
   ASSERT_EQ(c2->inputs(), NodeList({}));
   ASSERT_EQ(c2->uses(), UseValList({{add, 1}}));
-  ASSERT_EQ(c2->getRefCount(), 1);
-  ASSERT_TRUE(c2->isScalar());
   ASSERT_EQ(add->inputs(), NodeList({c1, c2}));
   ASSERT_EQ(add->uses(), UseValList({}));
-  ASSERT_EQ(add->getRefCount(), 0);
-  ASSERT_TRUE(add->isBinary());
-  // root node is owned locally (didn't transition to shared ownership)
-  delete add;
 }
 
 TEST_F(JitOneDnnOpFusionTest, sharedBinaryNode) {
@@ -87,18 +75,10 @@ TEST_F(JitOneDnnOpFusionTest, sharedBinaryNode) {
   ASSERT_EQ(res, add);
   ASSERT_EQ(c1->inputs(), NodeList({}));
   ASSERT_EQ(c1->uses(), UseValList({{sub, 0}, {sub, 1}}));
-  ASSERT_EQ(c1->getRefCount(), 2);
-  ASSERT_TRUE(c1->isScalar());
   ASSERT_EQ(sub->inputs(), NodeList({c1, c1}));
   ASSERT_EQ(sub->uses(), UseValList({{add, 0}, {add, 1}}));
-  ASSERT_EQ(sub->getRefCount(), 2);
-  ASSERT_TRUE(sub->isBinary());
   ASSERT_EQ(add->inputs(), NodeList({sub, sub}));
   ASSERT_EQ(add->uses(), UseValList({}));
-  ASSERT_EQ(add->getRefCount(), 0);
-  ASSERT_TRUE(add->isBinary());
-  // root node is owned locally (didn't transition to shared ownership)
-  delete add;
 }
 
 TEST_F(JitOneDnnOpFusionTest, nonFusableRoot) {
@@ -122,35 +102,28 @@ TEST_F(JitOneDnnOpFusionTest, nonFusableRoot) {
       });
   // c1  c2
   //  \  /
-  //   mul  c3            c1 c2  c3
-  //    \  /               \  |  /
-  //     add      ---->  fusedCustomNode
+  //   mul  c3            c1 c2  c3       ..... (same as before)
+  //    \  /               \  |  /         \ /
+  //     add      ---->  fusedCustomNode   add
   //      |                   |
   //    custom              custom
   ASSERT_EQ(custom, oneDnnFuser_.apply(custom));
   const auto fusedNode = custom->inputs().at(0);
   ASSERT_EQ(c1->inputs(), NodeList({}));
-  ASSERT_EQ(c1->uses(), UseValList({{fusedNode, 0}}));
-  ASSERT_EQ(c1->getRefCount(), 1);
-  ASSERT_TRUE(c1->isScalar());
+  ASSERT_EQ(c1->uses(), UseValList({{mul, 0}, {fusedNode, 0}}));
   ASSERT_EQ(c2->inputs(), NodeList({}));
-  ASSERT_EQ(c2->uses(), UseValList({{fusedNode, 1}}));
-  ASSERT_EQ(c2->getRefCount(), 1);
-  ASSERT_TRUE(c2->isScalar());
+  ASSERT_EQ(c2->uses(), UseValList({{mul, 1}, {fusedNode, 1}}));
   ASSERT_EQ(c3->inputs(), NodeList({}));
-  ASSERT_EQ(c3->uses(), UseValList({{fusedNode, 2}}));
-  ASSERT_EQ(c3->getRefCount(), 1);
-  ASSERT_TRUE(c3->isScalar());
+  ASSERT_EQ(c3->uses(), UseValList({{add, 1}, {fusedNode, 2}}));
+  ASSERT_EQ(mul->inputs(), NodeList({c1, c2}));
+  ASSERT_EQ(mul->uses(), UseValList({{add, 0}}));
+  ASSERT_EQ(add->inputs(), NodeList({mul, c3}));
+  ASSERT_EQ(add->uses(), UseValList({})); // no more use, replaced by fused node
   ASSERT_EQ(fusedNode->inputs(), NodeList({c1, c2, c3}));
   ASSERT_EQ(fusedNode->uses(), UseValList({{custom, 0}}));
-  ASSERT_EQ(fusedNode->getRefCount(), 1);
   ASSERT_TRUE(fusedNode->isCustom());
   ASSERT_EQ(custom->inputs(), NodeList({fusedNode}));
   ASSERT_EQ(custom->uses(), UseValList({}));
-  ASSERT_EQ(custom->getRefCount(), 0);
-  ASSERT_TRUE(custom->isCustom());
-  // root node is owned locally (didn't transition to shared ownership)
-  delete custom;
 }
 
 TEST_F(JitOneDnnOpFusionTest, nestedFusableChains) {
@@ -176,48 +149,41 @@ TEST_F(JitOneDnnOpFusionTest, nestedFusableChains) {
   const auto add = BinaryNode::create(mul, c5, BinaryOp::Add);
   // c2   c3              c2  c3 c4
   //  \  /                 \  |  /
-  //   sub  c4          fusedCustomNode
-  //     \  /                 |
-  //  c1  div     ---->    c1 | c5
-  //   \  /                 \ | /
-  //    mul  c5         fusedCustomRoot
-  //     \  /
-  //      add
+  //   sub  c4          fusedCustomNode --------    ..... (same as before)
+  //     \  /                 |                |     \ /
+  //  c1  div     ---->    c1 | c5         c1  |     div
+  //   \  /                 \ | /           \  /
+  //    mul  c5         fusedCustomRoot      mul  c5
+  //     \  /                                  \  /
+  //      add                                  add
   const auto fusedCustomRoot = oneDnnFuser_.apply(add);
   const auto fusedCustomNode = fusedCustomRoot->inputs().at(1);
-  delete add; // since it's not owned by a tensor, we manually get rid of it
   ASSERT_EQ(c1->inputs(), NodeList({}));
-  ASSERT_EQ(c1->uses(), UseValList({{fusedCustomRoot, 0}}));
-  ASSERT_EQ(c1->getRefCount(), 1);
-  ASSERT_TRUE(c1->isScalar());
+  ASSERT_EQ(c1->uses(), UseValList({{mul, 0}, {fusedCustomRoot, 0}}));
   ASSERT_EQ(c2->inputs(), NodeList({}));
-  ASSERT_EQ(c2->uses(), UseValList({{fusedCustomNode, 0}}));
-  ASSERT_EQ(c2->getRefCount(), 1);
-  ASSERT_TRUE(c2->isScalar());
+  ASSERT_EQ(c2->uses(), UseValList({{sub, 0}, {fusedCustomNode, 0}}));
   ASSERT_EQ(c3->inputs(), NodeList({}));
-  ASSERT_EQ(c3->uses(), UseValList({{fusedCustomNode, 1}}));
-  ASSERT_EQ(c3->getRefCount(), 1);
-  ASSERT_TRUE(c3->isScalar());
+  ASSERT_EQ(c3->uses(), UseValList({{sub, 1}, {fusedCustomNode, 1}}));
   ASSERT_EQ(c4->inputs(), NodeList({}));
-  ASSERT_EQ(c4->uses(), UseValList({{fusedCustomNode, 2}}));
-  ASSERT_EQ(c4->getRefCount(), 1);
-  ASSERT_TRUE(c4->isScalar());
+  ASSERT_EQ(c4->uses(), UseValList({{div, 1}, {fusedCustomNode, 2}}));
   ASSERT_EQ(c5->inputs(), NodeList({}));
-  ASSERT_EQ(c5->uses(), UseValList({{fusedCustomRoot, 2}}));
-  ASSERT_EQ(c5->getRefCount(), 1);
-  ASSERT_TRUE(c5->isScalar());
+  ASSERT_EQ(c5->uses(), UseValList({{add, 1}, {fusedCustomRoot, 2}}));
+  ASSERT_EQ(sub->inputs(), NodeList({c2, c3}));
+  ASSERT_EQ(sub->uses(), UseValList({{div, 0}}));
+  ASSERT_EQ(div->inputs(), NodeList({sub, c4}));
+  ASSERT_EQ(div->uses(), UseValList({})); // no more use, replaced by fused node
+  ASSERT_EQ(mul->inputs(), NodeList({c1, fusedCustomNode}));
+  ASSERT_EQ(mul->uses(), UseValList({{add, 0}}));
+  ASSERT_EQ(add->inputs(), NodeList({mul, c5}));
+  ASSERT_EQ(add->uses(), UseValList({}));
   ASSERT_EQ(fusedCustomNode->inputs(), NodeList({c2, c3, c4}));
-  ASSERT_EQ(fusedCustomNode->uses(), UseValList({{fusedCustomRoot, 1}}));
-  ASSERT_EQ(fusedCustomNode->getRefCount(), 1);
+  ASSERT_EQ(fusedCustomNode->uses(), UseValList({{mul, 1}, {fusedCustomRoot, 1}}));
   ASSERT_EQ(fusedCustomNode->shape(), shape);
   ASSERT_TRUE(fusedCustomNode->isCustom());
   ASSERT_EQ(fusedCustomRoot->inputs(), NodeList({c1, fusedCustomNode, c5}));
   ASSERT_EQ(fusedCustomRoot->uses(), UseValList({}));
-  ASSERT_EQ(fusedCustomRoot->getRefCount(), 0);
   ASSERT_EQ(fusedCustomRoot->shape(), shape);
   ASSERT_TRUE(fusedCustomRoot->isCustom());
-  // root node is owned locally (didn't transition to shared ownership)
-  delete fusedCustomRoot;
 }
 
 int main(int argc, char** argv) {

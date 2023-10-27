@@ -15,6 +15,7 @@
 #include "flashlight/fl/tensor/Shape.h"
 #include "flashlight/fl/tensor/backend/jit/JitTensor.h"
 #include "flashlight/fl/tensor/backend/jit/eval/Evaluator.h"
+#include "flashlight/fl/tensor/backend/jit/ir/ExternalUse.h"
 #include "flashlight/fl/tensor/backend/jit/ir/ValueNode.h"
 
 using namespace fl;
@@ -30,8 +31,6 @@ TEST_F(JitEvaluatorTest, evalValueNode) {
   const auto node = ValueNode::create(tensor.copy());
   evaluator_.eval(node);
   ASSERT_TRUE(allClose(node->getResult().value(), tensor));
-  // node is owned locally (didn't transition to shared ownership)
-  delete node;
 }
 
 TEST_F(JitEvaluatorTest, evalScalarNode) {
@@ -42,8 +41,6 @@ TEST_F(JitEvaluatorTest, evalScalarNode) {
   const auto node = ScalarNode::create(shape, dtype, val);
   evaluator_.eval(node);
   ASSERT_TRUE(allClose(node->getResult().value(), tensor));
-  // node is owned locally (didn't transition to shared ownership)
-  delete node;
 }
 
 TEST_F(JitEvaluatorTest, evalBinaryNode) {
@@ -57,8 +54,6 @@ TEST_F(JitEvaluatorTest, evalBinaryNode) {
   const auto add = BinaryNode::create(c1, c2, BinaryOp::Add);
   evaluator_.eval(add);
   ASSERT_TRUE(allClose(add->getResult().value(), full(shape, 3, dtype)));
-  // root node is owned locally (didn't transition to shared ownership)
-  delete add;
 }
 
 TEST_F(JitEvaluatorTest, evalCustomNode) {
@@ -81,8 +76,6 @@ TEST_F(JitEvaluatorTest, evalCustomNode) {
       });
   evaluator_.eval(custom);
   ASSERT_TRUE(allClose(custom->getResult().value(), full(shape, 9, dtype)));
-  // root node is owned locally (didn't transition to shared ownership)
-  delete custom;
 }
 
 TEST_F(JitEvaluatorTest, evalIndexNodeWithoutTensorIdx) {
@@ -93,8 +86,6 @@ TEST_F(JitEvaluatorTest, evalIndexNodeWithoutTensorIdx) {
   evaluator_.eval(indexNode);
   ASSERT_TRUE(allClose(indexNode->getResult().value(), value(indices)));
   ASSERT_TRUE(allClose(valueNode->getResult().value(), value));
-  // root node is owned locally (didn't transition to shared ownership)
-  delete indexNode;
 }
 
 TEST_F(JitEvaluatorTest, evalIndexNodeWithTensorIdx) {
@@ -118,8 +109,6 @@ TEST_F(JitEvaluatorTest, evalIndexNodeWithTensorIdx) {
   ASSERT_TRUE(allClose(valueNode->getResult().value(), value));
   ASSERT_TRUE(allClose(
       toJitTensorBase(jitTensorIdx).node()->getResult().value(), tensorIdx));
-  // root node is owned locally (didn't transition to shared ownership)
-  delete indexNode;
 }
 
 TEST_F(JitEvaluatorTest, evalIndexedUpdateNodeWithoutTensorIdx) {
@@ -141,8 +130,6 @@ TEST_F(JitEvaluatorTest, evalIndexedUpdateNodeWithoutTensorIdx) {
   ASSERT_TRUE(allClose(indexedUpdateNode->getResult().value(), resultValue));
   ASSERT_TRUE(allClose(indexedValueNode->getResult().value(), indexedValue));
   ASSERT_TRUE(allClose(updateValueNode->getResult().value(), updateValue));
-  // root node is owned locally (didn't transition to shared ownership)
-  delete indexedUpdateNode;
 }
 
 TEST_F(JitEvaluatorTest, evalIndexedUpdateNodeWithTensorIdx) {
@@ -169,8 +156,6 @@ TEST_F(JitEvaluatorTest, evalIndexedUpdateNodeWithTensorIdx) {
   ASSERT_TRUE(allClose(indexedUpdateNode->getResult().value(), resultValue));
   ASSERT_TRUE(allClose(indexedValueNode->getResult().value(), indexedValue));
   ASSERT_TRUE(allClose(updateValueNode->getResult().value(), updateValue));
-  // root node is owned locally (didn't transition to shared ownership)
-  delete indexedUpdateNode;
 }
 
 TEST_F(JitEvaluatorTest, evalSharedInput) {
@@ -185,8 +170,6 @@ TEST_F(JitEvaluatorTest, evalSharedInput) {
   const auto add = BinaryNode::create(c1, c1, BinaryOp::Add);
   evaluator_.eval(add);
   ASSERT_TRUE(allClose(add->getResult().value(), full(shape, 2, dtype)));
-  // root node is owned locally (didn't transition to shared ownership)
-  delete add;
 }
 
 TEST_F(JitEvaluatorTest, evalRetainResults) {
@@ -198,14 +181,11 @@ TEST_F(JitEvaluatorTest, evalRetainResults) {
   const auto c1 = ScalarNode::create(shape, dtype, 1);
   const auto c2 = ScalarNode::create(shape, dtype, 2);
   const auto add = BinaryNode::create(c1, c2, BinaryOp::Add);
-  c1->incRefCount(); // this forces evaluator to retain result
+  ExternalUse u1(c1); // this forces evaluator to keep c1's result
   evaluator_.eval(add);
   ASSERT_TRUE(allClose(c1->getResult().value(), full(shape, 1, dtype)));
-  ASSERT_FALSE(c2->getResult().has_value());
+  ASSERT_FALSE(c2->getResult().has_value()); // result not retained
   ASSERT_TRUE(allClose(add->getResult().value(), full(shape, 3, dtype)));
-  // root node is owned locally (didn't transition to shared ownership)
-  delete add;
-  c1->decRefCount();
 }
 
 int main(int argc, char** argv) {
