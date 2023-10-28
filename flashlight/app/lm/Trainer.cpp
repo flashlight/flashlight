@@ -348,10 +348,10 @@ void Trainer::trainStep() {
   while (true) {
     // 2. Forward
     fwdTimeMeter_.resume();
-    auto output = network_->forward({input, fl::noGrad(inputSizes)}).front();
+    auto output = network_->forward(input, fl::noGrad(inputSizes)).front();
     fl::sync();
     critFwdTimeMeter_.resume();
-    auto loss = criterion_->forward({output, target}).front();
+    auto loss = criterion_->forward(output, target).front();
     fl::sync();
     fwdTimeMeter_.stopAndIncUnit();
     critFwdTimeMeter_.stopAndIncUnit();
@@ -407,8 +407,8 @@ void Trainer::evalStep() {
     fl::Variable input, target;
     std::tie(input, target) = getInputAndTarget(sample);
     Tensor inputSizes = fl::sum(input.tensor() != kPadIdx_, {0});
-    auto output = network_->forward({input, fl::noGrad(inputSizes)}).front();
-    auto loss = criterion_->forward({output, target}).front();
+    auto output = network_->forward(input, fl::noGrad(inputSizes)).front();
+    auto loss = criterion_->forward(output, target).front();
     auto numTokens =
         fl::countNonzero(target.tensor() != kPadIdx_).scalar<unsigned>();
     if (numTokens > 0) {
@@ -911,4 +911,4 @@ std::string Trainer::getProgress() const {
   return oss.str();
 }
 
-} // namespace fl
+} // namespace fl::app::lm

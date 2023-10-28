@@ -494,7 +494,7 @@ int main(int argc, char** argv) {
         fwdBackboneTimeMeter.stopAndIncUnit();
 
         fwdTimeMeter.resume();
-        auto output = detr->forward({input, mask});
+        auto output = detr->forward(input, mask);
         fl::sync();
         fwdTimeMeter.stopAndIncUnit();
 

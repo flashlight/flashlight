@@ -35,11 +35,11 @@ TEST(SerializationTest, VisionTransformer) {
   loaded->eval();
 
   auto input = Variable(fl::rand({hiddenEmbSize, 197, 20}), false);
-  auto output = model->forward({input});
-  auto outputl = loaded->forward({input});
+  auto output = model->forward(input);
+  auto outputl = loaded->forward(input);
 
   ASSERT_TRUE(allParamsClose(*loaded, *model));
-  ASSERT_TRUE(allClose(outputl[0], output[0]));
+  ASSERT_TRUE(allClose(outputl, output));
 }
 
 TEST(SerializationTest, ViT) {
@@ -65,11 +65,11 @@ TEST(SerializationTest, ViT) {
   loaded->eval();
 
   auto input = Variable(fl::rand({224, 224, 3, 20}), false);
-  auto output = model->forward({input});
-  auto outputl = loaded->forward({input});
+  auto output = model->forward(input);
+  auto outputl = loaded->forward(input);
 
   ASSERT_TRUE(allParamsClose(*loaded, *model));
-  ASSERT_TRUE(allClose(outputl[0], output[0]));
+  ASSERT_TRUE(allClose(outputl, output));
 }
 
 int main(int argc, char** argv) {

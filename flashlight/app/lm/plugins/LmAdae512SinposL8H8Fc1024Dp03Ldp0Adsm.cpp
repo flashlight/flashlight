@@ -50,7 +50,7 @@ class LmAdae512SinposL8H8Fc1024Dp03Ldp0Adsm : public fl::Container {
         fl::iota({T, 1}, {1, B}) < fl::tile(inputNotPaddedSize, {T, 1});
     out = frontend_->forward(out);
     for (int trIdx = 0; trIdx < transformers_.size(); trIdx++) {
-      out = transformers_[trIdx]->forward({out, fl::noGrad(padMask)}).front();
+      out = transformers_[trIdx]->forward(out, fl::noGrad(padMask)).front();
     }
     return {out};
   }

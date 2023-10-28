@@ -88,7 +88,7 @@ TEST(ConvLmModuleTest, SerializationGCNN14BAdaptiveSoftmax) {
   model->eval();
   criterion->eval();
   auto input = noGrad(fl::arange({inputlength, batchsize}));
-  auto output = model->forward({input})[0];
+  auto output = model->forward(input);
   auto output_criterion =
       std::dynamic_pointer_cast<AdaptiveSoftMaxLoss>(criterion)
           ->getActivation()
@@ -100,7 +100,7 @@ TEST(ConvLmModuleTest, SerializationGCNN14BAdaptiveSoftmax) {
   std::shared_ptr<BinaryModule> loaded_criterion;
   load(path, loaded_model, loaded_criterion);
 
-  auto outputl = loaded_model->forward({input})[0];
+  auto outputl = loaded_model->forward(input);
   auto outputl_criterion =
       std::dynamic_pointer_cast<AdaptiveSoftMaxLoss>(loaded_criterion)
           ->getActivation()

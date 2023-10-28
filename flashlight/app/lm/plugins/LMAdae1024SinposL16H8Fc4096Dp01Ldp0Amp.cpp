@@ -45,7 +45,7 @@ class LmModel : public fl::Container {
     // Run all transformer forward passes in fp16
     out = out.astype(f16);
     for (int trIdx = 0; trIdx < transformers_.size(); trIdx++) {
-      out = transformers_[trIdx]->forward({out, fl::Variable()}).front();
+      out = transformers_[trIdx]->forward(out, fl::Variable()).front();
     }
 
     // Make sure passing fp32 tensor to criterion.

@@ -50,6 +50,7 @@ class FL_API Conformer : public Container {
   Conformer& operator=(const Conformer& other);
   Conformer& operator=(Conformer&& other) = default;
 
+  using Module::forward; // Enable forward method overload from base Module
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
   std::unique_ptr<Module> clone() const override;
   std::string prettyString() const override;

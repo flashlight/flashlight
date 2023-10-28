@@ -12,10 +12,7 @@
 #include <utility>
 
 #include "flashlight/fl/autograd/Functions.h"
-#include "flashlight/fl/nn/Init.h"
-#include "flashlight/fl/nn/modules/Container.h"
-#include "flashlight/fl/nn/modules/Conv2D.h"
-#include "flashlight/fl/nn/modules/Linear.h"
+#include "flashlight/fl/nn/modules/Module.h"
 
 namespace fl {
 
@@ -105,6 +102,7 @@ class FL_API WeightNorm : public Module {
 
   void setParams(const Variable& var, int position) override;
 
+  using Module::forward; // Enable forward method overload from base Module
   std::vector<Variable> forward(const std::vector<Variable>& inputs) override;
 
   std::unique_ptr<Module> clone() const override;
