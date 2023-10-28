@@ -221,10 +221,7 @@ class FL_API BinaryModule : public Module {
   FL_SAVE_LOAD_WITH_BASE(Module)
 };
 
-template <
-    typename... Args,
-    typename =
-        std::enable_if_t<(std::is_same_v<Variable, std::decay_t<Args>> && ...)>>
+template <typename... Args, typename>
 auto Module::forward(Args&&... inputs) {
   if constexpr (sizeof...(Args) == 1) {
     if (auto unaryModulePtr = dynamic_cast<UnaryModule*>(this)) {
@@ -233,7 +230,7 @@ auto Module::forward(Args&&... inputs) {
     auto output = forward(std::vector<Variable>{std::forward<Args>(inputs)...});
     if (output.size() > 1) {
       throw std::runtime_error(
-          "Forward interface expects 1 output argument. Wrap the input arguments in a vector to avoid using the unary interface.");
+          "Forward interface expects 1 output argument. Wrap the input argument in a vector to avoid using the unary interface.");
     }
     return std::move(output.front());
   } else {
