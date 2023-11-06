@@ -70,7 +70,7 @@ class ThreadPool {
   std::mutex queue_mutex;
   std::condition_variable condition;
   bool stop;
-}; // namespace flclassThreadPool
+} // namespace flclassThreadPool
 
 inline ThreadPool::ThreadPool(
     size_t threads,

@@ -183,4 +183,4 @@ void MemoryManagerAdapter::log(std::string fname, Values... vs) {
   }
 }
 
-}; // namespace fl
+} // namespace fl
