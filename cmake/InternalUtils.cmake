@@ -139,7 +139,7 @@ function(fl_dependent_option)
   set(_frce ${fl_dependent_option_FRCE})
 
   foreach(_dep IN ITEMS ${_deps})
-    if(NOT "${${_dep}}" AND "${_option}" AND "${${_option}}")
+    if(NOT "${${_dep}}" AND DEFINED ${_option} AND "${${_option}}")
       message(FATAL_ERROR "${_dep} Required to build ${_option}")
     endif()
   endforeach()
