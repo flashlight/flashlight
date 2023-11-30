@@ -10,6 +10,7 @@
 #include "flashlight/fl/optim/optim.h"
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/Init.h"
+#include <fmt/core.h>
 #include "flashlight/fl/tensor/Random.h"
 
 using namespace fl;
@@ -77,5 +78,5 @@ int main(int /* unused */, const char** /* unused */) {
   fl::max(max_value, prediction, result.tensor(), 0);
   auto accuracy = mean(prediction == fl::transpose(label, {1, 0}), {0});
   std::cout << "Accuracy: " << accuracy << std::endl;
-  printf("Time/iteration: %.5f msec\n", e * 1000.0 / (nepochs - warmup_epochs));
+  fmt::print("Time/iteration: {:.5f} msec\n", e * 1000.0 / (nepochs - warmup_epochs));
 }

@@ -10,6 +10,7 @@
 #include "flashlight/fl/optim/optim.h"
 #include "flashlight/fl/tensor/Index.h"
 #include "flashlight/fl/tensor/Init.h"
+#include <fmt/core.h>
 #include "flashlight/fl/tensor/Random.h"
 
 using namespace fl;
@@ -92,5 +93,5 @@ int main(int /* unused */, const char** /* unused */) {
   std::cout << "Accuracy: " << accuracy << std::endl;
 
   // time
-  printf("Time/iteration: %.5f msec\n", e * 1000.0 / (nepochs - warmup_epochs));
+  fmt::print("Time/iteration: {:.5f} msec\n", e * 1000.0 / (nepochs - warmup_epochs));
 }
