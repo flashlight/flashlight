@@ -234,12 +234,6 @@ auto Module::forward(Args&&... inputs) {
     }
     return std::move(output.front());
   } else {
-    if constexpr (sizeof...(Args) == 2) {
-      if (auto binaryModulePtr = dynamic_cast<BinaryModule*>(this)) {
-        return std::vector<Variable>{
-            binaryModulePtr->forward(std::forward<Args>(inputs)...)};
-      }
-    }
     return forward(std::vector<Variable>{std::forward<Args>(inputs)...});
   }
 }
