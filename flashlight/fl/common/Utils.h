@@ -29,11 +29,6 @@ class Tensor;
  */
 FL_API bool f16Supported();
 
-// Returns high resolution time formatted as:
-// MMDD HH MM SS UUUUUU
-// 0206 08:42:42.123456
-FL_API std::string dateTimeWithMicroSeconds();
-
 // Returns round-up result of integer division.
 // throws invalid_argument exception on zero denominator.
 FL_API size_t divRoundUp(size_t numerator, size_t denominator);

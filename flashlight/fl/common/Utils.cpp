@@ -26,37 +26,6 @@ bool f16Supported() {
   return defaultTensorBackend().isDataTypeSupported(fl::dtype::f16);
 }
 
-std::string dateTimeWithMicroSeconds() {
-  auto systemTime = std::chrono::system_clock::now();
-  const time_t secondsSinceEpoc =
-      std::chrono::system_clock::to_time_t(systemTime);
-  const struct tm* timeinfo = localtime(&secondsSinceEpoc);
-
-  // Formate date and time to the seconds as:
-  // MMDD HH MM SS
-  // 1231 08:42:42
-  constexpr size_t bufferSize = 50;
-  char buffer[bufferSize];
-  const size_t nWrittenBytes = std::strftime(buffer, 30, "%m%d %T", timeinfo);
-  if (!nWrittenBytes) {
-    return "getTime() failed to format time";
-  }
-
-  const std::chrono::system_clock::time_point timeInSecondsResolution =
-      std::chrono::system_clock::from_time_t(secondsSinceEpoc);
-  const auto usec = std::chrono::duration_cast<std::chrono::microseconds>(
-      systemTime - timeInSecondsResolution);
-
-  // Add msec and usec.
-  std::snprintf(
-      buffer + nWrittenBytes,
-      bufferSize - nWrittenBytes,
-      ".%06" PRId64,
-      static_cast<int64_t>(usec.count()));
-
-  return buffer;
-}
-
 size_t divRoundUp(size_t numerator, size_t denominator) {
   if (!numerator) {
     return 0;
