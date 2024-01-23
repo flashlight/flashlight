@@ -67,7 +67,7 @@ struct dtype_traits;
     static const char* getName() {                                     \
       return STRING_NAME;                                              \
     }                                                                  \
-  };
+  }
 
 FL_TYPE_TRAIT(float, dtype::f32, dtype::f32, "float");
 FL_TYPE_TRAIT(double, dtype::f64, dtype::f32, "double");
