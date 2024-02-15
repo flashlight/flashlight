@@ -305,7 +305,7 @@ void CachingMemoryManager::mallocWithRetry(size_t size, void** ptr) {
   try {
     ++memInfo.stats_.totalNativeMallocs_;
     *ptr = this->deviceInterface->nativeAlloc(size);
-  } catch (std::exception& exUnused) {
+  } catch (std::exception&) {
     try {
       signalMemoryCleanup();
       ++memInfo.stats_.totalNativeMallocs_;
