@@ -188,7 +188,7 @@ void* DefaultMemoryManager::alloc(
       // Perform garbage collection if memory can not be allocated
       try {
         ptr = this->deviceInterface->nativeAlloc(allocBytes);
-      } catch (std::exception& ex) {
+      } catch (std::exception&) {
         // FIXME: assume that the exception is due to out of memory, and don't
         // continue propagating it
         // If out of memory, run garbage collect and try again
