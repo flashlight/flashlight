@@ -465,6 +465,7 @@ std::tuple<Tensor, Tensor, Tensor> OneDnnAutogradExtension::rnn(
       break;
     case RnnMode::TANH:
       activation = dnnl::algorithm::eltwise_tanh;
+      break;
     default:
       break;
   }
