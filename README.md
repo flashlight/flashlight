@@ -307,7 +307,8 @@ Dependencies marked with `†` are installable via `vcpkg`. See the [instruction
   </tr>
 </tbody>
 </table>
-
+*spdlog is required to build packages
+sudo apt install libspdlog-dev
 #### Build Options
 The Flashlight CMake build accepts the following build options (prefixed with `-D` when running CMake from the command line):
 
