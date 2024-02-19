@@ -447,9 +447,8 @@ std::vector<Variable> TransformerDecoder::forward(
 
   std::vector<Variable> intermediate;
   for (int i = 0; i < mods.size() - 1; i++) {
-    output = mods[i]->forward({output, memory, pos, query_pos, mask})[0];
-    intermediate.push_back(
-        moddims(mods.back()->forward({output})[0], {0, 0, 0, 1}));
+    output = mods[i]->forward(output, memory, pos, query_pos, mask)[0];
+    intermediate.push_back(moddims(mods.back()->forward(output), {0, 0, 0, 1}));
   }
   return {concatenate(intermediate, 3)};
 }
@@ -573,8 +572,8 @@ std::vector<Variable> Transformer::forward(
 
   auto tgt = fl::Variable(fl::full(queryEmbed.shape(), 0, src.type()), false);
 
-  auto memory = encoder_->forward({src, mask, posEmbed});
-  auto hs = decoder_->forward({tgt, memory[0], posEmbed, queryEmbed, mask})[0];
+  auto memory = encoder_->forward(src, mask, posEmbed);
+  auto hs = decoder_->forward(tgt, memory[0], posEmbed, queryEmbed, mask)[0];
 
   auto reordered = reorder(hs, {0, 2, 1, 3});
   return {reordered};
@@ -596,4 +595,4 @@ std::string Transformer::prettyString() const {
   return ss.str();
 }
 
-} // namespace fl
+} // namespace fl::pkg::vision
