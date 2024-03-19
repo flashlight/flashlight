@@ -307,7 +307,7 @@ std::ostream& GraphvizPrinter::printRelativeColor(float tottime) {
   const auto b = maxTotTime_;
   const auto res = std::min(255., a * std::pow(tottime - b, 2));
   const auto normalizedIntensity = static_cast<int>(res);
-  std::ios state(NULL);
+  std::ios state(nullptr);
   state.copyfmt(os());
   os() << "#" << std::hex << 255 << std::setfill('0') << std::setw(2)
        << normalizedIntensity << std::setfill('0') << std::setw(2)
