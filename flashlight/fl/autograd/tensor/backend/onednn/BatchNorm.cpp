@@ -26,12 +26,8 @@ constexpr size_t kWIdx = 1;
 constexpr size_t kChannelSizeIdx = 2;
 constexpr size_t kBatchSizeIdx = 3;
 
-// Use memory::format_tag::any for memory formatting even if pool
-// inputs are shaped in a particular way.
-constexpr auto formatAny = dnnl::memory::format_tag::any;
 constexpr auto formatNCHW = dnnl::memory::format_tag::nchw;
 constexpr auto formatX = dnnl::memory::format_tag::x;
-constexpr auto format2d = dnnl::memory::format_tag::nc;
 
 int getNfeatures(const Shape& inputShape, const std::vector<int>& axes) {
   int nfeatures = 1;
