@@ -398,7 +398,7 @@ CpuCTC<ProbT>::cost_and_grad(const ProbT* const activations,
     //per minibatch memory
     size_t per_minibatch_bytes = 0;
 
-    int maxL = *std::max_element(label_lengths, label_lengths + minibatch_);;
+    int maxL = *std::max_element(label_lengths, label_lengths + minibatch_);
     int maxS = 2 * maxL + 1;
 
     //output
