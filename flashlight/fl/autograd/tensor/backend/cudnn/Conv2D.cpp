@@ -296,7 +296,7 @@ Tensor CudnnAutogradExtension::conv2d(
   try {
     wspace =
         Tensor({static_cast<long long>(fwdAlgoBestPerf.memory)}, fl::dtype::b8);
-  } catch (const std::exception& e) {
+  } catch (const std::exception&) {
     fwdAlgoBestPerf.algo = kFwdDefaultAlgo;
     CUDNN_CHECK_ERR(cudnnGetConvolutionForwardWorkspaceSize(
         handle,
@@ -420,7 +420,7 @@ Tensor CudnnAutogradExtension::conv2dBackwardData(
     try {
       ws = Tensor(
           {static_cast<long long>(bwdDataAlgoBestPerf.memory)}, fl::dtype::b8);
-    } catch (const std::exception& e) {
+    } catch (const std::exception&) {
       bwdDataAlgoBestPerf.algo = kBwdDataDefaultAlgo;
       CUDNN_CHECK_ERR(cudnnGetConvolutionBackwardDataWorkspaceSize(
           hndl,
@@ -606,7 +606,7 @@ std::pair<Tensor, Tensor> CudnnAutogradExtension::conv2dBackwardFilterBias(
       ws = Tensor(
           {static_cast<long long>(bwdFilterAlgoBestPerf.memory)},
           fl::dtype::b8);
-    } catch (const std::exception& e) {
+    } catch (const std::exception&) {
       bwdFilterAlgoBestPerf.algo = kBwdFilterDefaultAlgo;
       CUDNN_CHECK_ERR(cudnnGetConvolutionBackwardFilterWorkspaceSize(
           hndl,
