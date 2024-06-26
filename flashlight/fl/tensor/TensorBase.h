@@ -38,7 +38,7 @@ class TensorAdapterBase;
 class TensorBackend;
 
 // See Index.h
-class Index;
+struct Index;
 
 // See runtime/Stream.h
 class Stream;
