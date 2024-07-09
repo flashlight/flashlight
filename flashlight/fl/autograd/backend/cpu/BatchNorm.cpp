@@ -209,7 +209,7 @@ Variable batchnorm(
          {DNNL_ARG_SCALE_SHIFT, weightsDnnlMemInit},
          {DNNL_ARG_DIFF_SRC, gradInputMem.getMemory()},
          {DNNL_ARG_DIFF_DST, gradOutputMem.getMemory()},
-         {DNNL_ARG_DIFF_SCALE_SHIFT, gradWeightsMem.getMemory()}}};
+         {DNNL_ARG_DIFF_SHIFT, gradWeightsMem.getMemory()}}};
     networkBackwards.push_back(*bwdPrim);
     detail::executeNetwork(networkBackwards, bwdArgs);
 
