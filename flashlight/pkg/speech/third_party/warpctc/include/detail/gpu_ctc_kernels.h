@@ -5,7 +5,6 @@
 
 #include "ctc_helper.h"
 
-using namespace mgpu;
 
 template<int NT, int VT, typename T, typename KeyT, typename Op>
 struct CTASegReduce {
