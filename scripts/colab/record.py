@@ -11,12 +11,13 @@ https://hacks.mozilla.org/2014/06/easy-audio-capture-with-the-mediarecorder-api/
 https://air.ghost.io/recording-to-an-audio-file-using-html5-and-js/
 https://stackoverflow.com/a/49019356
 """
+
 from base64 import b64decode
 
 import ffmpeg
 import sox
 from google.colab.output import eval_js
-from IPython.display import HTML, display
+from IPython.display import display, HTML
 
 
 AUDIO_HTML = """
