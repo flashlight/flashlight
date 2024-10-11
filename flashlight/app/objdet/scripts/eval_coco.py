@@ -92,7 +92,6 @@ def main(directory, coco_data):
     files = glob.glob(glob_path)
     assert len(files) > 0
     for f in files:
-
         image_sizes = af.read_array(f, key="imageSizes").to_ndarray()
         image_sizes = np.transpose(image_sizes, (1, 0))
         image_ids = af.read_array(f, key="imageIds").to_ndarray()
