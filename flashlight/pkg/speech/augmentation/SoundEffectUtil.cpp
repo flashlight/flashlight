@@ -9,7 +9,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <sstream>
 
 namespace fl::pkg::speech::sfx {
 

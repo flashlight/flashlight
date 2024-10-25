@@ -10,7 +10,6 @@
 #include "flashlight/fl/tensor/DefaultTensorType.h"
 #include "flashlight/fl/tensor/TensorBackend.h"
 #include "flashlight/pkg/vision/tensor/VisionExtension.h"
-#include "flashlight/pkg/vision/tensor/VisionExtensionBackends.h"
 
 namespace fl {
 

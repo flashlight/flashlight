@@ -10,7 +10,6 @@
 #include <cstddef>
 #include <stdexcept>
 
-#include "flashlight/pkg/speech/audio/feature/SpeechUtils.h"
 
 namespace fl::lib::audio {
 

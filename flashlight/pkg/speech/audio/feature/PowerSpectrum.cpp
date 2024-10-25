@@ -11,7 +11,6 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <unordered_map>
 
 #include "flashlight/pkg/speech/audio/feature/SpeechUtils.h"
 

@@ -11,7 +11,6 @@
 #include "flashlight/pkg/vision/nn/VisionTransformer.h"
 
 #include "flashlight/fl/autograd/autograd.h"
-#include "flashlight/fl/common/Filesystem.h"
 #include "flashlight/fl/tensor/Init.h"
 #include "flashlight/fl/tensor/Random.h"
 
