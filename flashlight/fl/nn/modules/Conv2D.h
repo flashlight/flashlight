@@ -14,7 +14,7 @@
 namespace fl {
 
 namespace detail {
-class ConvBenchmarks;
+struct ConvBenchmarks;
 }
 
 /**

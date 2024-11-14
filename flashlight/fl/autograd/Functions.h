@@ -22,7 +22,7 @@ class Variable;
 
 namespace detail {
 
-class ConvBenchmarks;
+struct ConvBenchmarks;
 
 struct AutogradPayload;
 
