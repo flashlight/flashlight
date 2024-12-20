@@ -188,7 +188,6 @@ Tensor OneDnnAutogradExtension::conv2d(
       input.type());
   auto hasBias = bias.elements() > 0;
 
-  auto dataType = detail::dnnlMapToType(input.type());
   auto formatWeight =
       (groups == 1) ? memory::format_tag::oihw : memory::format_tag::goihw;
   auto& dnnlEngine = detail::DnnlEngine::getInstance().getEngine();
@@ -285,7 +284,6 @@ Tensor OneDnnAutogradExtension::conv2dBackwardData(
     std::shared_ptr<detail::AutogradPayload>) {
   auto gradInput = Tensor(input.shape(), input.type()); // Result
 
-  auto dataType = detail::dnnlMapToType(input.type());
   auto formatWeight =
       (groups == 1) ? memory::format_tag::oihw : memory::format_tag::goihw;
   auto& dnnlEngineBwd = detail::DnnlEngine::getInstance().getEngine();
@@ -393,7 +391,6 @@ std::pair<Tensor, Tensor> OneDnnAutogradExtension::conv2dBackwardFilterBias(
     std::shared_ptr<detail::AutogradPayload>) {
   auto gradWeights = Tensor(weights.shape(), weights.type()); // Result
 
-  auto dataType = detail::dnnlMapToType(input.type());
   auto formatWeight =
       (groups == 1) ? memory::format_tag::oihw : memory::format_tag::goihw;
   auto& dnnlEngineBwd = detail::DnnlEngine::getInstance().getEngine();

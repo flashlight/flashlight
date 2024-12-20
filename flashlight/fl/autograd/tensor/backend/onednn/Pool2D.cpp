@@ -199,7 +199,6 @@ Tensor OneDnnAutogradExtension::pool2dBackward(
 
   DimsData& d = payload->dimsData;
   auto poolingMode = detail::dnnlMapToPoolingMode(mode);
-  auto dataType = detail::dnnlMapToType(input.type());
 
   // Memory
   const detail::DnnlMemoryWrapper gradInputMemInit(

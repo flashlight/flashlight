@@ -129,7 +129,6 @@ Tensor OneDnnAutogradExtension::batchnorm(
     throw std::invalid_argument("axis array should be continuous");
   }
 
-  auto dType = detail::dnnlMapToType(input.type());
   auto& dnnlEngine = detail::DnnlEngine::getInstance().getEngine();
 
   // Prepare combined weights
@@ -217,7 +216,6 @@ std::tuple<Tensor, Tensor, Tensor> OneDnnAutogradExtension::batchnormBackward(
   auto payload =
       std::static_pointer_cast<OneDnnBatchNormPayload>(autogradPayload->data);
 
-  auto dType = detail::dnnlMapToType(input.type());
   auto& dnnlEngine = detail::DnnlEngine::getInstance().getEngine();
 
   auto maxAxis = *std::max_element(axes.begin(), axes.end());
