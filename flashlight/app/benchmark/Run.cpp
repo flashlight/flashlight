@@ -298,7 +298,7 @@ void runAsrTransformer(bool fp16 = false) {
 
   auto criterion =
       [&ctc, &target](const std::vector<fl::Variable>& input) -> fl::Variable {
-    return ctc->forward({input.front(), target}).front();
+    return ctc->forward(input.front(), target).front();
   };
 
   // Test
