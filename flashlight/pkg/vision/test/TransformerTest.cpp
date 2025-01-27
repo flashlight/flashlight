@@ -234,7 +234,6 @@ TEST(Tranformer, Masked) {
   int numEncoderDecoder = 2;
   int mlpDim = 32;
   int numHeads = 8;
-  int hiddenDim = 8;
   fl::pkg::vision::Transformer tr(
       C, numHeads, numEncoderDecoder, numEncoderDecoder, mlpDim, dropout);
 
