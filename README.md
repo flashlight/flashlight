@@ -10,8 +10,6 @@
 
 [![Install CUDA backend with vcpkg](https://img.shields.io/badge/dynamic/json?color=orange&label=get%20%28cuda%29&query=name&url=https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2Fvcpkg%2Fmaster%2Fports%2Fflashlight-cuda%2Fvcpkg.json&prefix=vcpkg%20install%20)](https://vcpkg.info/port/flashlight-cuda)
 [![Install CPU backend with vcpkg](https://img.shields.io/badge/dynamic/json?color=orange&label=get%20%28cpu%29&query=name&url=https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2Fvcpkg%2Fmaster%2Fports%2Fflashlight-cpu%2Fvcpkg.json&prefix=vcpkg%20install%20)](https://vcpkg.info/port/flashlight-cpu)
-
-
 Flashlight is a fast, flexible machine learning library written entirely in C++
 from the Facebook AI Research and the creators of Torch, TensorFlow, Eigen and
 Deep Speech. Its core features include:
