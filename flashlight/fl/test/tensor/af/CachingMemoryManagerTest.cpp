@@ -94,8 +94,8 @@ TEST_F(CachingMemoryManagerTest, IndexedDevice) {
 
   in = in(af::seq(offx, offx + nx / 2 - 1), af::seq(offy, offy + ny / 2 - 1));
 
-  int nxo = (int)in.dims(0);
-  int nyo = (int)in.dims(1);
+  int nxo = static_cast<int>(in.dims(0));
+  int nyo = static_cast<int>(in.dims(1));
 
   void* rawPtr = af::getRawPtr(in);
   void* devPtr = in.device<float>();
