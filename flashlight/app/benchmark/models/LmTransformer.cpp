@@ -11,7 +11,7 @@ namespace fl::app::benchmark {
 
 LmTransformer::LmTransformer(int64_t nLabel, bool fp16) : fp16_(fp16) {
   // Time x B x 1 x 1
-  std::vector<int> cutoffs = {10000, 50000, (int)nLabel};
+  std::vector<int> cutoffs = {10000, 50000, static_cast<int>(nLabel)};
   frontend_ = std::make_shared<fl::Sequential>();
   frontend_->add(std::make_shared<fl::AdaptiveEmbedding>(1024, cutoffs));
   // nFeature x Time x B x 1
