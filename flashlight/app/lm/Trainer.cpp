@@ -667,7 +667,7 @@ std::pair<fl::Variable, fl::Variable> Trainer::getInputAndTarget(
     Tensor inputMasked = sample[0].flatten();
     // set min length of the masked tokens
     int nTotalMask =
-        std::max(int(FLAGS_mask_prob * T), (int)FLAGS_mask_min_length);
+        std::max(int(FLAGS_mask_prob * T), static_cast<int>(FLAGS_mask_min_length));
     // set total mask
     Tensor totalMask = randMatrixSortedIndices < nTotalMask;
     Tensor notMasked = !totalMask;
