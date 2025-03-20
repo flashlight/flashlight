@@ -40,7 +40,7 @@ GetConvLmScoreFunc buildGetConvLmScoreFunction(
           "[ConvLM]: incorrect predictions: batch should be " +
           std::to_string(batchSize) + " but it is " + std::to_string(B));
     }
-    if (batchSize != (int)lastTokenPositions.size()) {
+    if (batchSize != static_cast<int>(lastTokenPositions.size())) {
       throw std::logic_error(
           "[ConvLM]: incorrect postions for accessing: size should be " +
           std::to_string(batchSize) + " but it is " +
