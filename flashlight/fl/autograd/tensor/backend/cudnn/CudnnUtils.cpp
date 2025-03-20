@@ -216,9 +216,9 @@ PoolingDescriptor::PoolingDescriptor(
     int py,
     PoolingMode mode) {
   CUDNN_CHECK_ERR(cudnnCreatePoolingDescriptor(&descriptor));
-  std::array<int, 2> window = {(int)wy, (int)wx};
-  std::array<int, 2> padding = {(int)py, (int)px};
-  std::array<int, 2> stride = {(int)sy, (int)sx};
+  std::array<int, 2> window = {static_cast<int>(wy), static_cast<int>(wx)};
+  std::array<int, 2> padding = {static_cast<int>(py), static_cast<int>(px)};
+  std::array<int, 2> stride = {static_cast<int>(sy), static_cast<int>(sx)};
 
   auto cudnnpoolingmode = cudnnMapToPoolingMode(mode);
   CUDNN_CHECK_ERR(cudnnSetPoolingNdDescriptor(
@@ -354,9 +354,9 @@ ConvDescriptor::ConvDescriptor(
     int groups) {
   CUDNN_CHECK_ERR(cudnnCreateConvolutionDescriptor(&descriptor));
   cudnnDataType_t cudnntype = cudnnMapToType(type);
-  std::array<int, 2> padding = {(int)py, (int)px};
-  std::array<int, 2> stride = {(int)sy, (int)sx};
-  std::array<int, 2> dilation = {(int)dy, (int)dx};
+  std::array<int, 2> padding = {static_cast<int>(py), static_cast<int>(px)};
+  std::array<int, 2> stride = {static_cast<int>(sy), static_cast<int>(sx)};
+  std::array<int, 2> dilation = {static_cast<int>(dy), static_cast<int>(dx)};
 
   CUDNN_CHECK_ERR(cudnnSetConvolutionNdDescriptor(
       descriptor,
