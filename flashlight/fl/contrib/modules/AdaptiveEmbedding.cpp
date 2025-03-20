@@ -24,7 +24,7 @@ AdaptiveEmbedding::AdaptiveEmbedding(
   if (cutoff_.empty()) {
     throw std::invalid_argument("Invalid cutoff for AdaptiveEmbedding");
   }
-  double stdv = std::sqrt(1.0 / (double)embeddingDim_);
+  double stdv = std::sqrt(1.0 / static_cast<double>(embeddingDim_));
   // to be in agreement with the adaptive softmax to simplify
   // tied version of adaptive input and softmax
   auto headEmbedding = fl::normal(cutoff_[0], embeddingDim_, stdv, 0);
@@ -37,7 +37,7 @@ AdaptiveEmbedding::AdaptiveEmbedding(
   for (int tailIdx = 1; tailIdx < cutoff_.size(); tailIdx++) {
     denominator *= divValue_;
     int tailEmbeddingDim = embeddingDim_ / denominator;
-    double stdvTail = std::sqrt(1.0 / (double)tailEmbeddingDim);
+    double stdvTail = std::sqrt(1.0 / static_cast<double>(tailEmbeddingDim));
     // to be in agreement with the adaptive softmax to simplify
     // tied version of adaptive input and softmax
     auto tailEmbedding = fl::normal(
