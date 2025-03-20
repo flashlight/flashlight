@@ -135,7 +135,7 @@ MemoryManagerInstaller::MemoryManagerInstaller(
   auto isUserLockedFn = [](af_memory_manager manager, int* out, void* ptr) {
     MemoryManagerAdapter* m = MemoryManagerInstaller::getImpl(manager);
     m->log("isUserLocked", (std::uintptr_t)ptr);
-    *out = (int)m->isUserLocked(ptr);
+    *out = static_cast<int>(m->isUserLocked(ptr));
     return AF_SUCCESS;
   };
   AF_CHECK(af_memory_manager_set_is_user_locked_fn(itf, isUserLockedFn));
@@ -147,8 +147,8 @@ MemoryManagerInstaller::MemoryManagerInstaller(
       af_memory_manager_set_get_memory_pressure_fn(itf, getMemoryPressureFn));
   auto jitTreeExceedsMemoryPressureFn =
       [](af_memory_manager manager, int* out, size_t bytes) {
-        *out = (int)MemoryManagerInstaller::getImpl(manager)
-                   ->jitTreeExceedsMemoryPressure(bytes);
+        *out = static_cast<int>(MemoryManagerInstaller::getImpl(manager)
+                   ->jitTreeExceedsMemoryPressure(bytes));
         return AF_SUCCESS;
       };
   AF_CHECK(af_memory_manager_set_jit_tree_exceeds_memory_pressure_fn(
