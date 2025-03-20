@@ -324,7 +324,7 @@ int main(int argc, char** argv) {
       lr = 1e-5 +
           0.5 * (FLAGS_train_lr - 1e-5) *
               (std::cos(
-                   ((double)epoch - 1) / ((double)FLAGS_train_epochs) * M_PI) +
+                   (static_cast<double>(epoch) - 1) / (static_cast<double>(FLAGS_train_epochs)) * M_PI) +
                1);
     }
     optWithWeightDecay.setLr(lr);
