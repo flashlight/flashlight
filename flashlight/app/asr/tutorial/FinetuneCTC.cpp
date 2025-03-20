@@ -555,10 +555,10 @@ int main(int argc, char** argv) {
         if (FLAGS_lrcosine) {
           const double pi = std::acos(-1);
           lrScheduleScale =
-              std::cos(((double)curBatch) / ((double)nbatches) * pi / 2.0);
+              std::cos((static_cast<double>(curBatch)) / (static_cast<double>(nbatches)) * pi / 2.0);
         } else {
           lrScheduleScale =
-              std::pow(FLAGS_gamma, (double)curBatch / (double)FLAGS_stepsize);
+              std::pow(FLAGS_gamma, static_cast<double>(curBatch) / static_cast<double>(FLAGS_stepsize));
         }
         netopt->setLr(
             initlr * lrDecayScale * lrScheduleScale *
