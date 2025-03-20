@@ -366,7 +366,7 @@ TEST(DatasetTest, FileBlobDataset) {
       ASSERT_EQ(data.size(), blob->size());
       for (int64_t i = 0; i < data.size(); i++) {
         auto blobSample = blob->get(i);
-        auto idx = (int)blobSample.back().scalar<float>();
+        auto idx = static_cast<int>(blobSample.back().scalar<float>());
         ASSERT_TRUE(idx >= 0 && idx < data.size());
         auto dataSample = data.at(idx);
         ASSERT_EQ(dataSample.size(), blobSample.size());
@@ -519,7 +519,7 @@ TEST(DatasetTest, MemoryBlobDataset) {
       ASSERT_EQ(data.size(), wblob.size());
       for (int64_t i = 0; i < data.size(); i++) {
         auto wblobSample = wblob.get(i);
-        auto idx = (int)wblobSample.back().scalar<float>();
+        auto idx = static_cast<int>(wblobSample.back().scalar<float>());
         ASSERT_TRUE(idx >= 0 && idx < data.size());
         auto dataSample = data.at(idx);
         ASSERT_EQ(dataSample.size(), wblobSample.size());
