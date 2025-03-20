@@ -38,7 +38,7 @@ Embedding& Embedding::operator=(const Embedding& other) {
 }
 
 void Embedding::initialize() {
-  double stdv = std::sqrt(1.0 / (double)embeddingDim_);
+  double stdv = std::sqrt(1.0 / static_cast<double>(embeddingDim_));
   auto embeddings =
       uniform(embeddingDim_, numEmbeddings_, -stdv, stdv, fl::dtype::f32, true);
   params_ = {embeddings};
