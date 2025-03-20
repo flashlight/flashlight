@@ -139,7 +139,7 @@ void DefaultMemoryManager::setMaxMemorySize() {
     size_t memsize = this->deviceInterface->getMaxMemorySize(n);
     memory[n].maxBytes = memsize == 0
         ? ONE_GB
-        : std::max(memsize * 0.75, (double)(memsize - ONE_GB));
+        : std::max(memsize * 0.75, static_cast<double>(memsize - ONE_GB));
   }
 }
 
@@ -317,7 +317,7 @@ void DefaultMemoryManager::printInfo(
 }
 
     const char* unit = "KB";
-    double size = (double)(kv.second.bytes) / 1024;
+    double size = static_cast<double>(kv.second.bytes) / 1024;
     if (size >= 1024) {
       size = size / 1024;
       unit = "MB";
@@ -332,7 +332,7 @@ void DefaultMemoryManager::printInfo(
     const char* statusUser = "No";
 
     const char* unit = "KB";
-    double size = (double)(kv.first) / 1024;
+    double size = static_cast<double>(kv.first) / 1024;
     if (size >= 1024) {
       size = size / 1024;
       unit = "MB";
