@@ -76,7 +76,7 @@ class ClassificationDataset : public Dataset {
   static Tensor lineToTensor(const std::string& line) {
     std::vector<float> d;
     for (char c : line) {
-      d.push_back((float)(c)); // direct cast of char to float
+      d.push_back(static_cast<float>(c)); // direct cast of char to float
     }
     return Tensor::fromBuffer(
         {1, static_cast<Dim>(d.size())}, d.data(), MemoryLocation::Host);
