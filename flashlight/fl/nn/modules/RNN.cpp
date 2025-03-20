@@ -59,7 +59,7 @@ void RNN::initialize() {
   int64_t n_params = detail::getNumRnnParams(
       inputSize_, hiddenSize_, numLayers_, mode_, bidirectional_);
 
-  double stdv = std::sqrt(1.0 / (double)hiddenSize_);
+  double stdv = std::sqrt(1.0 / static_cast<double>(hiddenSize_));
   auto w = uniform({n_params}, -stdv, stdv, fl::dtype::f32, true);
   params_ = {w};
 }
