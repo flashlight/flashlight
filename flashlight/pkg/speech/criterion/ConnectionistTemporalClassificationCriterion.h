@@ -23,6 +23,7 @@ class ConnectionistTemporalClassificationCriterion : public SequenceCriterion {
 
   std::unique_ptr<Module> clone() const override;
 
+  using Module::forward; // Enable forward method overload from base Module
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override;
 

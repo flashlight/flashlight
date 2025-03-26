@@ -196,6 +196,7 @@ class TransformerDecoder : public Container {
       int32_t layers,
       float pDropout);
 
+  using Module::forward; // Enable forward method overload from base Module
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
 
   std::string prettyString() const override;
@@ -216,6 +217,7 @@ class TransformerEncoder : public Container {
       int32_t layers,
       float pDropout);
 
+  using Module::forward; // Enable forward method overload from base Module
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
 
   std::string prettyString() const override;
