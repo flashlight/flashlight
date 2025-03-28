@@ -67,7 +67,7 @@ fl::dtype oneDnnToFlType(const dnnl::memory::data_type type) {
 }
 
 bool isTypeSupportedByOneDnn(const fl::dtype type) {
-  return getFlashlightTypeToOnednnTypeMap().count(type) != 0;
+  return getFlashlightTypeToOnednnTypeMap().contains(type);
 }
 
 std::string oneDnnDataTypeToStr(const dnnl::memory::data_type type) {
