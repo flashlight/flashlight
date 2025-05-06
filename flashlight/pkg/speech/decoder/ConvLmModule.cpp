@@ -29,7 +29,7 @@ GetConvLmScoreFunc buildGetConvLmScoreFunction(
           ") or batch size (" + std::to_string(batchSize) + ").");
     }
     Tensor inputData = Tensor::fromVector({sampleSize, batchSize}, inputs);
-    fl::Variable output = network->forward({fl::input(inputData)})[0];
+    fl::Variable output = network->forward(fl::input(inputData));
 
     if (fl::countNonzero(fl::isnan(output.tensor())).asScalar<int>() != 0) {
       throw std::runtime_error("[ConvLM] Encountered NaNs in propagation");
