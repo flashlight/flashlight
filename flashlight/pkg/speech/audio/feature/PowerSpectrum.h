@@ -17,7 +17,7 @@
 
 // Fwd decl
 class fftw_plan_s;
-typedef fftw_plan_s* fftw_plan;
+using fftw_plan = fftw_plan_s *;
 
 namespace fl {
 namespace lib {
