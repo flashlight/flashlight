@@ -89,7 +89,7 @@ std::vector<const Device*> DeviceManager::getDevicesOfType(
 Device& DeviceManager::getDevice(const DeviceType type, int id) const {
   enforceDeviceTypeAvailable("[DeviceManager::getActiveDevice]", type);
   auto& idToDevice = deviceTypeToInfo_.at(type);
-  if (idToDevice.count(id) == 0) {
+  if (!idToDevice.contains(id)) {
     throw std::runtime_error(
       "[DeviceManager::getDevice] unknown device id");
   }
