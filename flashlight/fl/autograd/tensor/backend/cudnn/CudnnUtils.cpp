@@ -58,7 +58,7 @@ const DeviceHandle& getActiveDeviceHandle() {
     manager.getActiveDevice(fl::DeviceType::CUDA).impl<fl::CUDADevice>();
   int id = cudaDevice.nativeId();
   // lazily initialize cuda stream for cudnn
-  if (handles.count(id) == 0) {
+  if (!handles.contains(id)) {
 #ifdef NO_CUDNN_DESTROY_HANDLE
     // NOTE unmanaged so to avoid CUDA driver shut down prior to stream
     // destruction. This is safe because this object is always part of a global
