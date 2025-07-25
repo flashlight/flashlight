@@ -364,7 +364,7 @@ Shape filterAxes(const Shape& shape, std::vector<int> axesToFilter) {
   std::unordered_set<int> axesToFilterSet(
       axesToFilter.begin(), axesToFilter.end());
   for (int i = 0; i < shape.ndim(); i++) {
-    if (axesToFilterSet.count(i) == 0) {
+    if (!axesToFilterSet.contains(i)) {
       dimsKept.push_back(shape[i]);
     }
   }
