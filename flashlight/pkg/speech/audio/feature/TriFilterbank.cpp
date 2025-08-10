@@ -78,7 +78,6 @@ float TriFilterbank::hertzToWarpedScale(float hz, FrequencyScale freqscale)
       return hz;
     default:
       throw std::invalid_argument("TriFilterbank: unsupported frequency scale");
-      return 0.0;
   }
 }
 
@@ -93,7 +92,6 @@ float TriFilterbank::warpedToHertzScale(float wrp, FrequencyScale freqscale)
       return wrp;
     default:
       throw std::invalid_argument("TriFilterbank: unsupported frequency scale");
-      return 0.0;
   }
 }
 } // namespace fl

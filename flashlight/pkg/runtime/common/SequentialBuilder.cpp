@@ -596,7 +596,6 @@ std::shared_ptr<Module> parseLines(
   }
 
   throw std::invalid_argument("Failed parsing - " + line);
-  return nullptr;
 } // namespace
 
 } // namespace
