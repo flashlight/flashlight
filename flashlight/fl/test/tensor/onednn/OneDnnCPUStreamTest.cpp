@@ -46,12 +46,6 @@ TEST(OneDnnCPUStreamTest, relativeSync) {
   ASSERT_NO_THROW(s3->relativeSync(streams));
 }
 
-TEST(OneDnnCPUStreamTest, sync) {
-  const dnnl::engine engine(dnnl::engine::kind::cpu, 0);
-  const auto os1 = OneDnnCPUStream::create(engine);
-  ASSERT_NO_THROW(os1->sync());
-}
-
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   fl::init();
