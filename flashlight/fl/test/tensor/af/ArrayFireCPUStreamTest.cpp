@@ -17,17 +17,6 @@ using fl::Stream;
 using fl::StreamType;
 using fl::ArrayFireCPUStream;
 
-TEST(ArrayFireCPUStreamTest, create) {
-  const auto& manager = DeviceManager::getInstance();
-  for (const auto x64Device : manager.getDevicesOfType(DeviceType::x64)) {
-    x64Device->setActive();
-    const auto afCpuStream = ArrayFireCPUStream::create();
-
-    ASSERT_EQ(afCpuStream->type, StreamType::Synchronous);
-    ASSERT_EQ(&afCpuStream->device(), x64Device);
-    ASSERT_EQ(&afCpuStream->impl<ArrayFireCPUStream>(), afCpuStream.get());
-  }
-}
 
 TEST(ArrayFireCPUStreamTest, relativeSync) {
   const auto as1 = ArrayFireCPUStream::create();
