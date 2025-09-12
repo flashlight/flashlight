@@ -130,7 +130,7 @@ std::vector<std::string> tknPrediction2Ltr(
 std::vector<int> validateIdx(std::vector<int> input, int unkIdx) {
   int newSize = 0;
   for (int i = 0; i < input.size(); i++) {
-    if (input[i] >= 0 and input[i] != unkIdx) {
+    if (input[i] >= 0 && input[i] != unkIdx) {
       input[newSize] = input[i];
       newSize++;
     }
