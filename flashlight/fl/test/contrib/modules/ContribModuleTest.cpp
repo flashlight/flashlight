@@ -149,8 +149,8 @@ void transformerPadMaskFwd(bool isfp16) {
   padMask(fl::iota({timesteps / 2}) + timesteps / 2, 0) = 0;
   auto noPadMask = fl::full({timesteps, 2}, 1);
 
-  auto output = tr.forward({input, Variable(padMask, false)}).front();
-  auto outputNoPad = tr.forward({input, Variable(noPadMask, false)}).front();
+  auto output = tr.forward(input, Variable(padMask, false)).front();
+  auto outputNoPad = tr.forward(input, Variable(noPadMask, false)).front();
 
   ASSERT_EQ(output.dim(0), c);
   ASSERT_EQ(output.dim(1), timesteps);
@@ -169,7 +169,7 @@ void transformerPadMaskFwd(bool isfp16) {
                                  false)})
                      .front();
   auto output2 =
-      tr.forward({input2, Variable(padMask(fl::span, fl::range(1, 2)), false)})
+      tr.forward(input2, Variable(padMask(fl::span, fl::range(1, 2)), false))
           .front();
   ASSERT_TRUE(allClose(
       output.tensor()(fl::span, fl::span, fl::range(1, 2)), output2.tensor()));
@@ -208,7 +208,7 @@ void transformerFwd(bool isfp16) {
   auto input = Variable(fl::rand({c, timesteps, batchsize}, dtype), false);
 
   fl::Variable padMask;
-  auto output = tr.forward({input, padMask});
+  auto output = tr.forward(input, padMask);
   if (OptimMode::get().getOptimLevel() == OptimLevel::O3) {
     ASSERT_EQ(output[0].type(), input.type());
   } else {
@@ -221,8 +221,8 @@ void transformerFwd(bool isfp16) {
 
   tr.setDropout(0);
   tr.setLayerDropout(0);
-  auto output1 = tr.forward({input, padMask}).front();
-  auto output2 = tr.forward({input, padMask}).front();
+  auto output1 = tr.forward(input, padMask).front();
+  auto output2 = tr.forward(input, padMask).front();
   ASSERT_TRUE(allClose(output1, output2, 1E-7));
 }
 
@@ -247,7 +247,7 @@ void conformerFwd(bool isfp16) {
   auto tr = Conformer(c, c / nheads, c, nheads, timesteps, 33, 0.2, 0.1);
   auto input = Variable(fl::rand({c, timesteps, batchsize}, dtype), false);
 
-  auto output = tr.forward({input, Variable()});
+  auto output = tr.forward(input, Variable());
   if (OptimMode::get().getOptimLevel() == OptimLevel::O3) {
     ASSERT_EQ(output[0].type(), input.type());
   } else {
@@ -279,13 +279,13 @@ void positionEmbeddingFwd(bool isfp16) {
   auto posemb = PositionEmbedding(csz, timesteps, 0.5);
   auto input = Variable(fl::rand({csz, timesteps, batchsize}, dtype), false);
 
-  auto output = posemb.forward({input});
+  auto output = posemb.forward(input);
 
-  ASSERT_EQ(output[0].dim(0), csz);
-  ASSERT_EQ(output[0].dim(1), timesteps);
-  ASSERT_EQ(output[0].dim(2), batchsize);
+  ASSERT_EQ(output.dim(0), csz);
+  ASSERT_EQ(output.dim(1), timesteps);
+  ASSERT_EQ(output.dim(2), batchsize);
 
-  ASSERT_FALSE(allClose(output[0], input));
+  ASSERT_FALSE(allClose(output, input));
 }
 
 TEST(ContribModuleTest, PositionEmbeddingFwd) {
@@ -309,14 +309,14 @@ void sinusoidalPositionEmbeddingFwd(bool isfp16) {
   auto input =
       Variable(fl::rand({csz, timesteps, batchsize, 1}, dtype), false) - 0.5;
 
-  auto output = posemb.forward({input});
+  auto output = posemb.forward(input);
 
-  ASSERT_EQ(output[0].dim(0), csz);
-  ASSERT_EQ(output[0].dim(1), timesteps);
-  ASSERT_EQ(output[0].dim(2), batchsize);
-  auto castOutput = output[0].tensor();
+  ASSERT_EQ(output.dim(0), csz);
+  ASSERT_EQ(output.dim(1), timesteps);
+  ASSERT_EQ(output.dim(2), batchsize);
+  auto castOutput = output.tensor();
   if (isfp16) {
-    castOutput = output[0].astype(fl::dtype::f32).tensor();
+    castOutput = output.astype(fl::dtype::f32).tensor();
   }
   ASSERT_TRUE((fl::amax(castOutput, {0})).scalar<float>() <= 2);
   ASSERT_TRUE((fl::amin(castOutput, {0})).scalar<float>() >= -2);
@@ -356,7 +356,7 @@ void tdsFwd(bool isfp16) {
   auto dtype = isfp16 ? fl::dtype::f16 : fl::dtype::f32;
   auto input = Variable(fl::rand({timesteps, w, c, batchsize}, dtype), false);
 
-  auto output = tds.forward({input})[0];
+  auto output = tds.forward(input);
 
   ASSERT_EQ(output.dim(0), timesteps);
   ASSERT_EQ(output.dim(1), w);
@@ -388,7 +388,7 @@ void streamingTDSFwd(bool isfp16) {
   auto dtype = isfp16 ? fl::dtype::f16 : fl::dtype::f32;
   auto input = Variable(fl::rand({timesteps, w, c, batchsize}, dtype), false);
 
-  auto output = stds.forward({input})[0];
+  auto output = stds.forward(input);
 
   ASSERT_EQ(output.dim(0), timesteps);
   ASSERT_EQ(output.dim(1), w);
