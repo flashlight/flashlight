@@ -35,6 +35,8 @@ class VisionTransformer : public Container {
   VisionTransformer& operator=(const VisionTransformer& other);
   VisionTransformer& operator=(VisionTransformer&& other) = default;
 
+  ~VisionTransformer() override = default;
+
   std::unique_ptr<Module> clone() const override;
 
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
