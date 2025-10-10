@@ -23,8 +23,6 @@ static std::string encodeName(const std::string& name) {
 
 namespace fl::detail {
 
-constexpr std::chrono::milliseconds FileStore::kDefaultTimeout;
-
 void FileStore::set(const std::string& key, const std::vector<char>& data) {
   fs::path tmp = tmpPath(key);
   fs::path path = objectPath(key);
