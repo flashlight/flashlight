@@ -78,8 +78,8 @@ TEST(SerializationTest, Transformer) {
 
   // auto input = Variable(fl::rand({c, timesteps, batchsize, 1}), false);
   auto input = Variable(fl::rand({c, timesteps, batchsize}), false);
-  auto output = model->forward({input, Variable()});
-  auto outputl = loaded->forward({input, Variable()});
+  auto output = model->forward(input, Variable());
+  auto outputl = loaded->forward(input, Variable());
 
   ASSERT_TRUE(allParamsClose(*loaded, *model));
   ASSERT_TRUE(allClose(outputl[0], output[0]));
@@ -104,8 +104,8 @@ TEST(SerializationTest, ConformerSerialization) {
 
   // auto input = Variable(fl::rand({c, timesteps, batchsize, 1}), false);
   auto input = Variable(fl::rand({c, timesteps, batchsize}), false);
-  auto output = model->forward({input, Variable()});
-  auto outputl = loaded->forward({input, Variable()});
+  auto output = model->forward(input, Variable());
+  auto outputl = loaded->forward(input, Variable());
 
   ASSERT_TRUE(allParamsClose(*loaded, *model));
   ASSERT_TRUE(allClose(outputl[0], output[0]));
@@ -124,11 +124,11 @@ TEST(SerializationTest, PositionEmbedding) {
 
   // auto input = Variable(fl::rand({128, 10, 5, 1}), false);
   auto input = Variable(fl::rand({128, 10, 5}), false);
-  auto output = model->forward({input});
-  auto outputl = loaded->forward({input});
+  auto output = model->forward(input);
+  auto outputl = loaded->forward(input);
 
   ASSERT_TRUE(allParamsClose(*loaded, *model));
-  ASSERT_TRUE(allClose(outputl[0], output[0]));
+  ASSERT_TRUE(allClose(outputl, output));
 }
 
 TEST(SerializationTest, SinusoidalPositionEmbedding) {
@@ -143,11 +143,11 @@ TEST(SerializationTest, SinusoidalPositionEmbedding) {
 
   // auto input = Variable(fl::rand({128, 10, 5, 1}), false);
   auto input = Variable(fl::rand({128, 10, 5}), false);
-  auto output = model->forward({input});
-  auto outputl = loaded->forward({input});
+  auto output = model->forward(input);
+  auto outputl = loaded->forward(input);
 
   ASSERT_TRUE(allParamsClose(*loaded, *model));
-  ASSERT_TRUE(allClose(outputl[0], output[0]));
+  ASSERT_TRUE(allClose(outputl, output));
 }
 
 TEST(SerializationTest, AdaptiveEmbedding) {

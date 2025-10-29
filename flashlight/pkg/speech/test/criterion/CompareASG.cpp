@@ -56,7 +56,7 @@ run(const Tensor& input, const Tensor& target, const Tensor& trans) {
 
   AutoSegmentationCriterion crit(N, CriterionScaleMode::TARGET_SZ_SQRT);
   crit.setParams(transVar, 0);
-  auto loss = crit.forward({inputVar, targetVar}).front();
+  auto loss = crit.forward(inputVar, targetVar).front();
   loss.backward();
 
   CriterionOutput result;
