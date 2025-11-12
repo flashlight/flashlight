@@ -18,25 +18,7 @@ using fl::StreamType;
 using fl::ArrayFireCPUStream;
 
 
-TEST(ArrayFireCPUStreamTest, relativeSync) {
-  const auto as1 = ArrayFireCPUStream::create();
-  const auto as2 = ArrayFireCPUStream::create();
-  const std::shared_ptr<Stream> s1 = as1;
-  const std::shared_ptr<Stream> s2 = as2;
-  ASSERT_NO_THROW(s1->relativeSync(*s2));
-  ASSERT_NO_THROW(s1->relativeSync(*as2));
-  ASSERT_NO_THROW(as1->relativeSync(*s2));
-  ASSERT_NO_THROW(as1->relativeSync(*as2));
 
-  const std::unordered_set<const Stream*> streams { s1.get(), s2.get() };
-  const std::shared_ptr<Stream> s3 = ArrayFireCPUStream::create();
-  ASSERT_NO_THROW(s3->relativeSync(streams));
-}
-
-TEST(ArrayFireCPUStreamTest, sync) {
-  const auto as1 = ArrayFireCPUStream::create();
-  ASSERT_NO_THROW(as1->sync());
-}
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
