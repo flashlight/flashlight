@@ -6,6 +6,7 @@
  */
 
 #include <future>
+#include <folly/system/HardwareConcurrency.h>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -40,8 +41,8 @@ TEST(ProducerConsumerQueueTest, SingleThread) {
 
 TEST(ProducerConsumerQueueTest, MultiThreads) {
   const int nElements = 1000, targetSum = 499500;
-  const int nProducer = std::thread::hardware_concurrency() / 2,
-            nConsumer = std::thread::hardware_concurrency() / 2;
+  const int nProducer = folly::hardware_concurrency() / 2,
+            nConsumer = folly::hardware_concurrency() / 2;
   std::vector<int> consumerResults(nConsumer, 0);
 
   ProducerConsumerQueue<int> queue(nElements);
