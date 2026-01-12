@@ -11,7 +11,6 @@ import os
 
 import arrayfire as af
 import numpy as np
-
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 
