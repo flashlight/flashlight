@@ -65,7 +65,7 @@ std::vector<fl::Variable> LmTransformer::forward(
     out = out.astype(fl::dtype::f16);
   }
   for (int trIdx = 0; trIdx < transformers_.size(); trIdx++) {
-    out = transformers_[trIdx]->forward({out, fl::Variable()}).front();
+    out = transformers_[trIdx]->forward(out, fl::Variable()).front();
   }
 
   // Make sure passing fp32 tensor to criterion.
@@ -83,4 +83,4 @@ std::string LmTransformer::prettyString() const {
   return ss.str();
 }
 
-} // namespace fl
+} // namespace fl::app::benchmark

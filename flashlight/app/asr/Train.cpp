@@ -1091,12 +1091,12 @@ int main(int argc, char** argv) {
           auto input = fl::input(batch[kInputIdx]);
           if (FLAGS_saug_start_update >= 0 &&
               curBatch >= FLAGS_saug_start_update) {
-            input = saug->forward({input}).front();
+            input = saug->forward(input);
           }
           fl::Variable output;
           if (usePlugin) {
-            output = ntwrk->forward({input, fl::noGrad(batch[kDurationIdx])})
-                         .front();
+            output =
+                ntwrk->forward(input, fl::noGrad(batch[kDurationIdx])).front();
           } else {
             output = fl::pkg::runtime::forwardSequentialModuleWithPadMask(
                 input, ntwrk, batch[kDurationIdx]);

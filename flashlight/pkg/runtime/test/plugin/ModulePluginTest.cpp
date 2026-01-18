@@ -34,7 +34,7 @@ TEST(ModulePluginTest, ModulePlugin) {
   fl::pkg::runtime::ModulePlugin plugin(libfile);
   auto model = plugin.arch(ninput, noutput);
   auto input = fl::randn({ninput, batchsize}, fl::dtype::f32);
-  auto output = model->forward({noGrad(input)}).front();
+  auto output = model->forward(noGrad(input));
   ASSERT_EQ(output.shape(), Shape({noutput, batchsize}));
 }
 

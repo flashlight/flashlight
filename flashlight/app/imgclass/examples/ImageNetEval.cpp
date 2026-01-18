@@ -110,7 +110,7 @@ int main(int argc, char** argv) {
   model->eval();
   for (auto& example : testDataset) {
     auto inputs = noGrad(example[kImagenetInputIdx]);
-    auto output = model->forward({inputs}).front();
+    auto output = model->forward(inputs);
     auto target = noGrad(example[kImagenetTargetIdx]);
 
     top5Acc.add(output.tensor(), target.tensor());

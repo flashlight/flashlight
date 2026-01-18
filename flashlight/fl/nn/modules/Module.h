@@ -13,6 +13,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 namespace fl {
@@ -130,6 +131,22 @@ class FL_API Module {
       const std::vector<Variable>& inputs) = 0;
 
   /**
+   * Performs forward computation for the module, given some inputs. If a single
+   * input is provided it is assumed the module only returns a single output.
+   *
+   * @param inputs the values to compute forward computation for the
+   * module.
+   * @return Either a `Variable` or vector of `Variable` tensors containing the
+   * result of the forward computation. A `Variable` is returned if only a
+   * single input is provided, otherwise a vector is returned.
+   */
+  template <
+      typename... Args,
+      typename = std::enable_if_t<
+          (std::is_same_v<Variable, std::decay_t<Args>> && ...)>>
+  auto forward(Args&&... inputs);
+
+  /**
    * Overload for forward computation for the module.
    *
    * @param inputs the values to compute forward computation for the
@@ -155,6 +172,8 @@ class FL_API Module {
 
   virtual ~Module() = default;
 };
+
+using ModulePtr = std::shared_ptr<Module>;
 
 /**
  * An extension of `Module` which supports only forward computation on a single
@@ -201,6 +220,23 @@ class FL_API BinaryModule : public Module {
  private:
   FL_SAVE_LOAD_WITH_BASE(Module)
 };
+
+template <typename... Args, typename>
+auto Module::forward(Args&&... inputs) {
+  if constexpr (sizeof...(Args) == 1) {
+    if (auto unaryModulePtr = dynamic_cast<UnaryModule*>(this)) {
+      return unaryModulePtr->forward(std::forward<Args>(inputs)...);
+    }
+    auto output = forward(std::vector<Variable>{std::forward<Args>(inputs)...});
+    if (output.size() > 1) {
+      throw std::runtime_error(
+          "Forward interface expects 1 output argument. Wrap the input argument in a vector to avoid using the unary interface.");
+    }
+    return std::move(output.front());
+  } else {
+    return forward(std::vector<Variable>{std::forward<Args>(inputs)...});
+  }
+}
 
 } // namespace fl
 

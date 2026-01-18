@@ -69,10 +69,10 @@ TDSBlock::TDSBlock(
 
 std::vector<Variable> TDSBlock::forward(const std::vector<Variable>& inputs) {
   auto out = inputs[0];
-  out = module(0)->forward({out})[0].astype(out.type()) + out;
-  out = module(1)->forward({out})[0];
-  out = module(2)->forward({out})[0].astype(out.type()) + out;
-  return module(3)->forward({out});
+  out = module(0)->forward(out).astype(out.type()) + out;
+  out = module(1)->forward(out);
+  out = module(2)->forward(out).astype(out.type()) + out;
+  return {module(3)->forward(out)};
 }
 
 std::string TDSBlock::prettyString() const {

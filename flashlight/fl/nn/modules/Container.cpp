@@ -109,14 +109,11 @@ std::vector<Variable> Sequential::forward(const std::vector<Variable>& input) {
 }
 
 Variable Sequential::forward(const Variable& input) {
-  std::vector<Variable> output = {input};
+  auto output = input;
   for (auto& module : modules_) {
     output = module->forward(output);
   }
-  if (output.size() != 1) {
-    throw std::invalid_argument("Module output size is not 1");
-  }
-  return output.front();
+  return output;
 }
 
 Variable Sequential::operator()(const Variable& input) {

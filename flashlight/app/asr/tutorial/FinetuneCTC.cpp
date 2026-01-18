@@ -434,8 +434,7 @@ int main(int argc, char** argv) {
       auto output = fl::pkg::runtime::forwardSequentialModuleWithPadMask(
           fl::input(batch[kInputIdx]), ntwrk, batch[kDurationIdx]);
       auto loss =
-          crit->forward({output, fl::Variable(batch[kTargetIdx], false)})
-              .front();
+          crit->forward(output, fl::Variable(batch[kTargetIdx], false)).front();
       mtrs.loss.add(loss.tensor());
       evalOutput(output.tensor(), batch[kTargetIdx], mtrs);
     }
@@ -588,14 +587,14 @@ int main(int argc, char** argv) {
           auto input = fl::input(batch[kInputIdx]);
           if (FLAGS_saug_start_update >= 0 &&
               curBatch >= FLAGS_saug_start_update) {
-            input = saug->forward({input}).front();
+            input = saug->forward(input);
           }
           auto output = fl::pkg::runtime::forwardSequentialModuleWithPadMask(
               input, ntwrk, batch[kDurationIdx]);
           fl::sync();
           meters.critfwdtimer.resume();
           auto loss =
-              crit->forward({output, fl::noGrad(batch[kTargetIdx])}).front();
+              crit->forward(output, fl::noGrad(batch[kTargetIdx])).front();
           fl::sync();
           meters.fwdtimer.stopAndIncUnit();
           meters.critfwdtimer.stopAndIncUnit();

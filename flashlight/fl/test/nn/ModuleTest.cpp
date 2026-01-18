@@ -937,11 +937,9 @@ TEST(ModuleTest, ModuleCloneCopy) {
   // Change the original module param and check the cloned modules have not
   // changed
   modulePtr->param(0).tensor() += 1.0F;
-  ASSERT_FALSE(
-      allClose(modulePtr->forward({inVar}).front(), expected_outVar, 1E-7));
+  ASSERT_FALSE(allClose(modulePtr->forward(inVar), expected_outVar, 1E-7));
 
-  ASSERT_TRUE(allClose(
-      clonedModulePtr->forward({inVar}).front(), expected_outVar, 1E-7));
+  ASSERT_TRUE(allClose(clonedModulePtr->forward(inVar), expected_outVar, 1E-7));
 }
 
 TEST(ModuleTest, ContainerCloneCopy) {
