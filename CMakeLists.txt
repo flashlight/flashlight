@@ -48,7 +48,11 @@ else()
       "Plugin functionality likely won't work.")
   endif()
 endif()
-set(FL_BUILD_PLUGIN ${COMPILER_SUPPORTS_RDYNAMIC})
+if (WIN32 OR MSVC)
+  set(FL_BUILD_PLUGIN ON)
+else()
+  set(FL_BUILD_PLUGIN ${COMPILER_SUPPORTS_RDYNAMIC})
+endif()
 
 # ]------ The library target for the Flashlight core
 add_library(flashlight)
