@@ -24,13 +24,7 @@ int main(int argc, const char** argv) {
   }
   fl::init();
 
-  int optim_mode = 0;
-  std::string optimizer_arg = std::string(argv[1]);
-  if (optimizer_arg == "--adam") {
-    optim_mode = 1;
-  } else if (optimizer_arg == "--rmsprop") {
-    optim_mode = 2;
-  }
+  const std::string optimizer_arg = std::string(argv[1]);
 
   const int inputSize = 2;
   const int outputSize = 1;
