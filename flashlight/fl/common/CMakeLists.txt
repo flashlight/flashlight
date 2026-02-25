@@ -13,7 +13,9 @@ target_sources(
 )
 
 if (${FL_BUILD_PLUGIN})
-  target_sources(flashlight PRIVATE ${CMAKE_CURRENT_LIST_DIR}/Plugin.cpp)
+  target_sources(flashlight PRIVATE 
+    ${CMAKE_CURRENT_LIST_DIR}/Plugin.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/WinUtility.cpp)
 else()
   message(WARNING "Compiler doesn't support -rdynamic - not building Plugin")
 endif()
