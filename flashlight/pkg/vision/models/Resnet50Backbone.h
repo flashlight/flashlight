@@ -21,6 +21,7 @@ class Resnet50Backbone : public Container {
  public:
   Resnet50Backbone();
 
+  using Module::forward; // Enable forward method overload from base Module
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
 
   std::string prettyString() const override;

@@ -71,7 +71,7 @@ std::tuple<double, double, double> evalLoop(
   model->eval();
   for (auto& example : dataset) {
     auto inputs = noGrad(example[kImagenetInputIdx]);
-    auto output = model->forward({inputs})[0];
+    auto output = model->forward(inputs);
 
     auto target = noGrad(example[kImagenetTargetIdx]);
 
@@ -232,7 +232,7 @@ int main(int argc, char** argv) {
       auto inputs = noGrad(example[kImagenetInputIdx]);
 
       // Get the activations from the model.
-      auto output = model->forward({inputs})[0];
+      auto output = model->forward(inputs);
 
       // Make a Variable from the target Tensor.
       auto target = noGrad(example[kImagenetTargetIdx]);

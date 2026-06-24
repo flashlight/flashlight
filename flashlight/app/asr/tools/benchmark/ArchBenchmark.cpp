@@ -49,7 +49,7 @@ float run(
     input.zeroGrad();
     fl::Variable output;
     if (usePlugin) {
-      output = network->forward({input, fl::noGrad(duration)}).front();
+      output = network->forward(input, fl::noGrad(duration)).front();
     } else {
       output = fl::pkg::runtime::forwardSequentialModuleWithPadMask(
           input, network, duration);

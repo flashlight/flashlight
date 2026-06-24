@@ -112,7 +112,7 @@ std::vector<Variable> Detr::forwardTransformer(
           input[1].tensor(), {input[0].shape()}, InterpolationMode::Nearest),
       true);
   auto inputProjection = inputProj_->forward(input[0]);
-  auto posEmbed = posEmbed_->forward({mask})[0];
+  auto posEmbed = posEmbed_->forward(mask);
   auto hs = transformer_->forward(
       inputProjection,
       mask.astype(inputProjection.type()),

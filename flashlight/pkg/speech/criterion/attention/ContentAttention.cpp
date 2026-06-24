@@ -88,7 +88,7 @@ std::pair<Variable, Variable> NeuralContentAttention::forwardBase(
   // [hiddendim, targetlen, seqlen, batchsize]
   auto hidden = tileHx + tileHy;
   // [targetlen, seqlen, batchsize]
-  auto nnOut = moddims(module(0)->forward({hidden}).front(), {U, T, B});
+  auto nnOut = moddims(module(0)->forward(hidden), {U, T, B});
   if (!logAttnWeight.isEmpty()) {
     if (logAttnWeight.shape() != nnOut.shape()) {
       throw std::invalid_argument(
@@ -110,4 +110,4 @@ std::pair<Variable, Variable> NeuralContentAttention::forwardBase(
 std::string NeuralContentAttention::prettyString() const {
   return "NeuralContentBasedAttention";
 }
-} // namespace fl
+} // namespace fl::pkg::speech

@@ -243,7 +243,7 @@ TEST(Tranformer, Masked) {
 
   auto mask = fl::full({W, H, 1, B}, 0);
   mask(fl::range(0, maskW), fl::range(0, maskH)) = nonMask;
-  auto nonMaskPos = pos.forward({Variable(nonMask, false)})[0];
+  auto nonMaskPos = pos.forward(Variable(nonMask, false));
 
   std::cout << "--- nonMaskPos " << nonMaskPos.shape() << std::endl;
 
@@ -258,7 +258,7 @@ TEST(Tranformer, Masked) {
   nonMaskedSrc(fl::range(0, maskW), fl::range(0, maskH)) =
       nonMaskInput[0].tensor();
 
-  auto maskPos = pos.forward({fl::Variable(mask, false)})[0];
+  auto maskPos = pos.forward(fl::Variable(mask, false));
 
   std::vector<Variable> maskInput = {
       Variable(nonMaskedSrc, false), // input Projection

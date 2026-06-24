@@ -122,7 +122,7 @@ std::vector<fl::Variable> ViT::forward(
 
   // Transformers
   for (int i = 0; i < nLayers_; ++i) {
-    output = transformers_[i]->forward({output}).front();
+    output = transformers_[i]->forward(output);
   }
 
   // Linear

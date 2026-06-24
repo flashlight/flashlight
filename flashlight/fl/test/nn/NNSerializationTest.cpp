@@ -174,8 +174,7 @@ TEST(NNSerializationTest, WeightNormLinear) {
   ASSERT_TRUE(wlin2);
 
   ASSERT_TRUE(allParamsClose(*wlin2, *wlin));
-  ASSERT_TRUE(
-      allClose(wlin2->forward({in}).front(), wlin->forward({in}).front()));
+  ASSERT_TRUE(allClose(wlin2->forward(in), wlin->forward(in)));
 }
 
 TEST(NNSerializationTest, WeightNormConvSeq) {
@@ -338,7 +337,7 @@ TEST(NNSerializationTest, ContainerBackward) {
   load(path, seq2);
 
   auto in = input(fl::rand({10, 10}));
-  auto output = seq2->forward({in}).front();
+  auto output = seq2->forward(in);
   output.backward();
   for (auto& p : seq2->params()) {
     ASSERT_TRUE(p.isGradAvailable());
@@ -364,7 +363,7 @@ TEST(NNSerializationTest, ContainerWithParams) {
   ASSERT_TRUE(allParamsClose(*seq, *seq2));
 
   auto in = input(fl::rand({10, 10}));
-  ASSERT_TRUE(allClose(seq->forward(in), seq2->forward({in}).front()));
+  ASSERT_TRUE(allClose(seq->forward(in), seq2->forward(in)));
 }
 
 int main(int argc, char** argv) {

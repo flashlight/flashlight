@@ -54,6 +54,7 @@ class FL_API TDSBlock : public Container {
       int rightPadding = -1,
       bool lNormIncludeTime = true);
 
+  using Module::forward; // Enable forward method overload from base Module
   std::vector<Variable> forward(const std::vector<Variable>& inputs) override;
   std::string prettyString() const override;
 

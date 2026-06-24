@@ -37,6 +37,7 @@ class Detr : public Container {
       const int32_t numQueries,
       const bool auxLoss);
 
+  using Module::forward; // Enable forward method overload from base Module
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
   Variable forwardBackbone(const Variable& input);
   std::vector<Variable> forwardTransformer(const std::vector<Variable>& input);

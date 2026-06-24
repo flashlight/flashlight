@@ -84,14 +84,14 @@ fl::Variable forwardSequentialModuleWithPadMask(
     auto tr = std::dynamic_pointer_cast<fl::Transformer>(module);
     auto cfr = std::dynamic_pointer_cast<fl::Conformer>(module);
     if (tr != nullptr || cfr != nullptr) {
-      output = module->forward({output, fl::noGrad(padMask)}).front();
+      output = module->forward(output, fl::noGrad(padMask)).front();
     } else {
-      output = module->forward({output}).front();
+      output = module->forward(output);
     }
   }
   return output.astype(input.type());
 }
-} // namespace fl
+} // namespace fl::pkg::runtime
 
 namespace {
 std::shared_ptr<Module> parseLine(const std::string& line) {

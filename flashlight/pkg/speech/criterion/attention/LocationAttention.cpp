@@ -42,9 +42,8 @@ std::pair<Variable, Variable> SimpleLocationAttention::forwardBase(
   auto innerProd = matmulTN(state, xEncoded);
 
   if (!prevAttn.isEmpty()) {
-    auto addAttn = moddims(
-        module(0)->forward({moddims(prevAttn, {1, T, 1, B})}).front(),
-        {1, T, B});
+    auto addAttn =
+        moddims(module(0)->forward(moddims(prevAttn, {1, T, 1, B})), {1, T, B});
     innerProd = innerProd + addAttn;
   }
 
@@ -101,9 +100,8 @@ std::pair<Variable, Variable> LocationAttention::forwardBase(
   auto innerProd = matmulTN(state, xEncoded);
 
   if (!prevAttn.isEmpty()) {
-    auto addAttn = moddims(
-        module(0)->forward({moddims(prevAttn, {1, T, 1, B})}).front(),
-        {H, T, B});
+    auto addAttn =
+        moddims(module(0)->forward(moddims(prevAttn, {1, T, 1, B})), {H, T, B});
     innerProd = innerProd + matmulTN(state, addAttn);
   }
 
@@ -164,19 +162,18 @@ std::pair<Variable, Variable> NeuralLocationAttention::forwardBase(
   int T = xEncoded.dim(1);
   int B = xEncoded.dim(2);
 
-  auto Hx = module(0)->forward({xEncoded}).front();
-  auto tileHy = tile(module(1)->forward({state}).front(), {1, T, 1});
+  auto Hx = module(0)->forward(xEncoded);
+  auto tileHy = tile(module(1)->forward(state), {1, T, 1});
 
   // [1, seqlen, batchsize]
   auto hidden = Hx + tileHy;
   if (!prevAttn.isEmpty()) {
     auto addAttn = moddims(
-        module(2)->forward({moddims(prevAttn, {1, T, 1, B})}).front(),
-        {-1, T, B});
+        module(2)->forward(moddims(prevAttn, {1, T, 1, B})), {-1, T, B});
     hidden = hidden + addAttn;
   }
-  hidden = module(3)->forward({hidden}).front();
-  auto nnOut = module(4)->forward({hidden}).front();
+  hidden = module(3)->forward(hidden);
+  auto nnOut = module(4)->forward(hidden);
 
   if (!logAttnWeight.isEmpty()) {
     if (logAttnWeight.shape() != nnOut.shape()) {
@@ -199,4 +196,4 @@ std::pair<Variable, Variable> NeuralLocationAttention::forwardBase(
 std::string NeuralLocationAttention::prettyString() const {
   return "NeuralLocationBasedAttention";
 }
-} // namespace fl
+} // namespace fl::pkg::speech

@@ -35,6 +35,7 @@ class FL_API PositionEmbedding : public Module {
 
   PositionEmbedding& operator=(PositionEmbedding&& other) = default;
 
+  using Module::forward; // Enable forward method overload from base Module
   /**
    * PositionEmbedding::forward(input) expects input[0] to be of
    * dimensions C x T x B with C = layerDim and T <= maxLen.

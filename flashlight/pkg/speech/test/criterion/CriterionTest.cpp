@@ -85,7 +85,7 @@ TEST(CriterionTest, CTCEmptyTarget) {
   ASSERT_FALSE(fl::any(fl::isnan(loss.tensor())).asScalar<bool>());
 
   auto funcConvIn = [&](Variable& inp) {
-    return ctc.forward({inp, target}).front();
+    return ctc.forward(inp, target).front();
   };
   jacobianTest(funcConvIn, input);
 }
@@ -123,9 +123,7 @@ TEST(CriterionTest, CTCJacobian) {
   auto tgt = Variable(t.astype(fl::dtype::s32), false);
   auto l = ConnectionistTemporalClassificationCriterion(
       CriterionScaleMode::INPUT_SZ_SQRT);
-  auto funcConvIn = [&](Variable& inp) {
-    return l.forward({inp, tgt}).front();
-  };
+  auto funcConvIn = [&](Variable& inp) { return l.forward(inp, tgt).front(); };
   jacobianTest(funcConvIn, in);
 }
 
@@ -144,7 +142,7 @@ TEST(CriterionTest, Batching) {
     auto l = ConnectionistTemporalClassificationCriterion(
         CriterionScaleMode::TARGET_SZ_SQRT);
     auto funcConvIn = [&](Variable& inp) {
-      return l.forward({inp, tgt}).front();
+      return l.forward(inp, tgt).front();
     };
     jacobianTest(funcConvIn, in);
   }
@@ -161,12 +159,12 @@ TEST(CriterionTest, Batching) {
     auto tgt = Variable(t.astype(fl::dtype::s32), false);
     auto l = ConnectionistTemporalClassificationCriterion(
         CriterionScaleMode::TARGET_SZ);
-    auto output = l.forward({in, tgt}).front();
+    auto output = l.forward(in, tgt).front();
 
     for (int i = 0; i < B; ++i) {
       auto inel = moddims(in(fl::span, fl::span, i), {N, T, 1});
       auto tgtel = moddims(tgt(fl::span, i), {L, 1});
-      auto outputCur = l.forward({inel, tgtel}).front();
+      auto outputCur = l.forward(inel, tgtel).front();
       checkZero(output.tensor()(i) - outputCur.tensor(), 1E-6);
     }
   }
@@ -661,14 +659,14 @@ TEST(CriterionTest, ASGJacobian) {
   auto l = AutoSegmentationCriterion(N, CriterionScaleMode::TARGET_SZ_SQRT);
 
   // Test case for input
-  auto funcIn = [&](Variable& inp) { return l.forward({inp, tgt}).front(); };
+  auto funcIn = [&](Variable& inp) { return l.forward(inp, tgt).front(); };
   jacobianTest(funcIn, in);
 
   // Test case for transition
   auto transition = Variable(fl::rand({N, N}), true);
   auto funcTrans = [&](Variable& transitionP) {
     l.setParams(transitionP, 0);
-    return l.forward({in, tgt}).front();
+    return l.forward(in, tgt).front();
   };
   jacobianTest(funcTrans, transition);
 }
@@ -681,14 +679,14 @@ TEST(CriterionTest, LinSegJacobian) {
   auto l = LinearSegmentationCriterion(N, CriterionScaleMode::TARGET_SZ_SQRT);
 
   // Test case for input
-  auto funcIn = [&](Variable& inp) { return l.forward({inp, tgt}).front(); };
+  auto funcIn = [&](Variable& inp) { return l.forward(inp, tgt).front(); };
   jacobianTest(funcIn, in);
 
   // Test case for transition
   auto transition = Variable(fl::rand({N, N}), true);
   auto funcTrans = [&](Variable& transitionP) {
     l.setParams(transitionP, 0);
-    return l.forward({in, tgt}).front();
+    return l.forward(in, tgt).front();
   };
   jacobianTest(funcTrans, transition);
 }
@@ -705,13 +703,13 @@ TEST(CriterionTest, ASGBatching) {
   }
   auto tgt = Variable(t.astype(fl::dtype::s32), false);
   auto l = AutoSegmentationCriterion(N, CriterionScaleMode::TARGET_SZ);
-  auto output = l.forward({in, tgt}).front();
+  auto output = l.forward(in, tgt).front();
 
   for (int i = 0; i < B; ++i) {
     auto inel = moddims(in(fl::span, fl::span, i), {N, T, 1});
     auto tgtel = moddims(tgt(fl::span, i), {L, 1});
 
-    auto outputCur = l.forward({inel, tgtel}).front();
+    auto outputCur = l.forward(inel, tgtel).front();
     checkZero(output.tensor()(i) - outputCur.tensor(), 1E-6);
   }
 }

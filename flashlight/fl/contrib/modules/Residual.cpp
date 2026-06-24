@@ -93,16 +93,13 @@ Variable Residual::forward(const Variable& input) {
       for (const auto& shortcut : shortcut_[layerIndex]) {
         Variable connectionOut = outputs[shortcut.first];
         if (shortcut.second != -1) {
-          connectionOut = modules_[shortcut.second]
-                              ->forward({outputs[shortcut.first]})
-                              .front();
+          connectionOut =
+              modules_[shortcut.second]->forward(outputs[shortcut.first]);
         }
         output = output + connectionOut.astype(output.type());
       }
     }
-    output = modules_[moduleIndex]
-                 ->forward({applyScale(output, layerIndex)})
-                 .front();
+    output = modules_[moduleIndex]->forward(applyScale(output, layerIndex));
     outputs[layerIndex + 1] = output;
     layerIndex++;
     moduleIndex++;
@@ -111,9 +108,8 @@ Variable Residual::forward(const Variable& input) {
     for (const auto& shortcut : shortcut_[nLayers]) {
       Variable connectionOut = outputs[shortcut.first];
       if (shortcut.second != -1) {
-        connectionOut = modules_[shortcut.second]
-                            ->forward({outputs[shortcut.first]})
-                            .front();
+        connectionOut =
+            modules_[shortcut.second]->forward(outputs[shortcut.first]);
       }
       output = output + connectionOut.astype(output.type());
     }

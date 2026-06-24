@@ -63,6 +63,7 @@ class FL_API Transformer : public Container {
   Transformer(Transformer&& other) = default;
   Transformer& operator=(Transformer&& other) = default;
 
+  using Module::forward; // Enable forward method overload from base Module
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
   void setDropout(float value);
   void setLayerDropout(float value);
