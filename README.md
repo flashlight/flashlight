@@ -8,9 +8,7 @@
 [![Docker Image for CUDA backend](https://img.shields.io/docker/image-size/flml/flashlight/cuda-latest?label=docker%20%28cuda%29&logo=docker)](https://hub.docker.com/r/flml/flashlight/tags?page=1&ordering=last_updated&name=cuda-latest)
 [![Docker Image for CPU backend](https://img.shields.io/docker/image-size/flml/flashlight/cpu-latest?label=docker%20%28cpu%29&logo=docker)](https://hub.docker.com/r/flml/flashlight/tags?page=1&ordering=last_updated&name=cpu-latest)
 
-[![Install CUDA backend with vcpkg](https://img.shields.io/badge/dynamic/json?color=orange&label=get%20%28cuda%29&query=name&url=https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2Fvcpkg%2Fmaster%2Fports%2Fflashlight-cuda%2Fvcpkg.json&prefix=vcpkg%20install%20)](https://vcpkg.info/port/flashlight-cuda)
-[![Install CPU backend with vcpkg](https://img.shields.io/badge/dynamic/json?color=orange&label=get%20%28cpu%29&query=name&url=https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2Fvcpkg%2Fmaster%2Fports%2Fflashlight-cpu%2Fvcpkg.json&prefix=vcpkg%20install%20)](https://vcpkg.info/port/flashlight-cpu)
-
+[![Install with vcpkg](https://img.shields.io/badge/dynamic/json?color=orange&label=get%20%28cuda%29&query=name&url=https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2Fvcpkg%2Fmaster%2Fports%2Fflashlight%2Fvcpkg.json&prefix=vcpkg%20install%20)](https://vcpkg.info/port/flashlight)
 
 Flashlight is a fast, flexible machine learning library written entirely in C++
 from the Facebook AI Research and the creators of Torch, TensorFlow, Eigen and
@@ -128,56 +126,14 @@ Flashlight can be built in one of two ways:
 ### Installing Flashlight with `vcpkg`
 #### Library Installation with `vcpkg`
 
-Flashlight is most-easily built and installed with `vcpkg`. Both the CUDA and CPU backends are supported with `vcpkg`. For either backend, first install [Intel MKL](https://software.intel.com/content/www/us/en/develop/tools/oneapi/base-toolkit/download.html). For the CUDA backend, install [`CUDA` >= 9.2](https://developer.nvidia.com/cuda-downloads), [`cuDNN`](https://docs.nvidia.com/deeplearning/cudnn/install-guide/index.html), and [`NCCL`](https://docs.nvidia.com/deeplearning/nccl/install-guide/index.html). Then, after [installing `vcpkg`](https://github.com/microsoft/vcpkg#getting-started), install the libraries and core with:
+Flashlight is most-easily built and installed with `vcpkg`, which can be used to install the Flashlight core. `vcpkg` will manage and warn if system-level dependencies are missing. After [installing `vcpkg`](https://github.com/microsoft/vcpkg#getting-started), install the libraries and core with:
 ```shell
-./vcpkg/vcpkg install flashlight-cuda # CUDA backend, OR
-./vcpkg/vcpkg install flashlight-cpu  # CPU backend
-```
-To install [Flashlight apps](flashlight/app), check the features available for installation by running `./vcpkg search flashlight-cuda` or `./vcpkg search flashlight-cpu`. Each app is a "feature": for example, `./vcpkg install flashlight-cuda[asr]` installs the ASR app with the CUDA backend.
-
-Below is the currently-supported list of features (for each of [`flashlight-cuda`](https://vcpkg.info/port/flashlight-cuda) and [`flashlight-cpu`](https://vcpkg.info/port/flashlight-cpu)):
-```
-flashlight-{cuda/cpu}[lib]      # Flashlight libraries
-flashlight-{cuda/cpu}[nn]       # Flashlight neural net library
-flashlight-{cuda/cpu}[asr]      # Flashlight speech recognition app
-flashlight-{cuda/cpu}[lm]       # Flashlight language modeling app
-flashlight-{cuda/cpu}[imgclass] # Flashlight image classification app
+./vcpkg/vcpkg install flashlight # ArrayFire by default
 ```
 
-Flashlight [app binaries](flashlight/app) are also built for the selected features and are installed into the `vcpkg` install tree's `tools` directory.
+Flashlight [app binaries](flashlight/app), if installed, are installed into the `vcpkg` install tree's `tools` directory.
 
 [Integrating Flashlight into your own project](#with-a-vcpkg-flashlight-installation) with is simple using `vcpkg`'s [CMake toolchain integration](https://vcpkg.readthedocs.io/en/latest/examples/installing-and-using-packages/#cmake).
-
-#### From-Source Build with `vcpkg`
-
-First, install the dependencies for your backend of choice using `vcpkg` (click to expand the below):
-
-<details><summary>Installing CUDA Backend Dependencies with vcpkg</summary>
-
-To build the Flashlight CUDA backend from source using dependencies installed with `vcpkg`, install [`CUDA` >= 9.2](https://developer.nvidia.com/cuda-downloads), [`cuDNN`](https://docs.nvidia.com/deeplearning/cudnn/install-guide/index.html), [`NCCL`](https://docs.nvidia.com/deeplearning/nccl/install-guide/index.html), and [Intel MKL](https://software.intel.com/content/www/us/en/develop/tools/oneapi/base-toolkit/download.html), then build the rest of the dependencies for the CUDA backend based on which Flashlight features you'd like to build:
-```shell
-./vcpkg install \
-    cuda intel-mkl fftw3 cub kenlm                \ # if building flashlight libraries
-    arrayfire[cuda] cudnn nccl openmpi cereal stb \ # if building the flashlight neural net library
-    gflags glog                                   \ # if building any flashlight apps
-    libsndfile                                    \ # if building the flashlight asr app
-    gtest                                           # optional, if building tests
-```
-</details>
-
-<details><summary>Installing CPU Backend Dependencies with vcpkg</summary>
-
-To build the Flashlight CPU backend from source using dependencies installed with `vcpkg`, install [Intel MKL](https://software.intel.com/content/www/us/en/develop/tools/oneapi/base-toolkit/download.html), then build the rest of the dependencies for the CPU backend based on which Flashlight features you'd like to build:
-```shell
-./vcpkg install \
-    intel-mkl fftw3 kenlm                              \ # for flashlight libraries
-    arrayfire[cpu] gloo[mpi] openmpi onednn cereal stb \ # for the flashlight neural net library
-    gflags glog                                        \ # for the flashlight runtime pkg (any flashlight apps using it)
-    libsndfile                                         \ # for the flashlight speech pkg
-    gtest                                                # optional, for tests
-```
-
-</details>
 
 ##### Build Using the `vcpkg` Toolchain File
 To build Flashlight from source with these dependencies, clone the repository:
@@ -189,10 +145,9 @@ Then, build from source using `vcpkg`'s [CMake toolchain](https://github.com/mic
 ```shell
 cmake .. \
     -DCMAKE_BUILD_TYPE=Release \
-    -DFL_BUILD_ARRAYFIRE=ON \
+    -DFL_USE_ARRAYFIRE=ON \
     -DCMAKE_TOOLCHAIN_FILE=[path to your vcpkg clone]/scripts/buildsystems/vcpkg.cmake
 make -j$(nproc)
-make install -j$(nproc) # only if you want to install Flashlight for external use
 ```
 To build a subset of Flashlight's features, see the [build options](#build-options) below.
 
