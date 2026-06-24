@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.16)
 
+option(FL_USE_ONNX "Build with ONNX support" OFF)
+if (FL_USE_ONNX)
+  include(${CMAKE_CURRENT_LIST_DIR}/onnx/CMakeLists.txt)
+endif()
+
 target_sources(
   flashlight
   PRIVATE
@@ -28,3 +33,4 @@ target_sources(
   ${CMAKE_CURRENT_LIST_DIR}/modules/View.cpp
   ${CMAKE_CURRENT_LIST_DIR}/modules/WeightNorm.cpp
   )
+
