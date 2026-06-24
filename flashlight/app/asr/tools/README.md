@@ -62,3 +62,20 @@ Below are baseline models usable with the tool, although any model/lexicon/token
 | [baseline_dev-other](https://dl.fbaipublicfiles.com/wav2letter/audio_analysis/tds_ctc/model.bin) | LibriSpeech | dev-other | CTC | [Archfile](https://dl.fbaipublicfiles.com/wav2letter/audio_analysis/tds_ctc/arch.txt) | [Lexicon](https://dl.fbaipublicfiles.com/wav2letter/audio_analysis/tds_ctc/dict.lst) | [Tokens](https://dl.fbaipublicfiles.com/wav2letter/audio_analysis/tds_ctc/tokens.lst) |
 
 </details>
+<summary>Model Conversion</summary>
+Sometimes, an ASR model trained  from an `old` commit of `flashlight` can fail on `master` if the serialization semantics has changed. It'll be hard to reload the model and run the job in 'continue' mode or use it in decoder. `fl_asr_model_converter` can be used to get around this problem by converting the old model to new serialization format. This involves two steps:
+
+Step 1:
+From the `old` commit of `flashlight`, build `fl_asr_model_converter` and run
+```
+fl_asr_model_converter old <OLD_MODEL_PATH>;
+```
+
+Step 2:
+From the `new` commit of `flashlight`, build `fl_asr_model_converter` and run
+```
+fl_asr_model_converter new <OLD_MODEL_PATH>;
+```
+
+The converted model can be found at <OLD_MODEL_PATH>.new
+<details>
