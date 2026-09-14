@@ -58,7 +58,7 @@ DeviceManager& DeviceManager::getInstance() {
 }
 
 bool DeviceManager::isDeviceTypeAvailable(const DeviceType type) const {
-  return deviceTypeToInfo_.contains(type);
+  return deviceTypeToInfo_.find(type) != deviceTypeToInfo_.end();
 }
 
 unsigned DeviceManager::getDeviceCount(const DeviceType type) const {
@@ -89,7 +89,7 @@ std::vector<const Device*> DeviceManager::getDevicesOfType(
 Device& DeviceManager::getDevice(const DeviceType type, int id) const {
   enforceDeviceTypeAvailable("[DeviceManager::getActiveDevice]", type);
   auto& idToDevice = deviceTypeToInfo_.at(type);
-  if (!idToDevice.contains(id)) {
+  if (idToDevice.find(id) == idToDevice.end()) {
     throw std::runtime_error(
       "[DeviceManager::getDevice] unknown device id");
   }
