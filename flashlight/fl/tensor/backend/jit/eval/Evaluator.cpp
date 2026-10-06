@@ -31,7 +31,7 @@ std::unordered_map<NodePtr, unsigned> getNodeToUseCountInTree(NodePtr root) {
     NodePtr node = worklist.front();
     worklist.pop();
     for (const auto& input : node->inputs()) {
-      if (nodeToUseCount.find(input) == nodeToUseCount.end()) {
+      if (!nodeToUseCount.contains(input)) {
         worklist.push(input);
         nodeToUseCount.emplace(input, getUseCount(input));
       }
