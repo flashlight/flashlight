@@ -142,7 +142,7 @@ std::string PlGenerator::regeneratePl(
     const std::shared_ptr<fl::Module>& ntwrk,
     const std::shared_ptr<SequenceCriterion> criterion,
     const bool usePlugin /* = false */) const {
-  if (plUpdateMap_.find(curEpoch) == plUpdateMap_.end()) {
+  if (!plUpdateMap_.contains(curEpoch)) {
     return "";
   }
   if (!fullUnsupDs_) {
