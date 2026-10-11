@@ -19,8 +19,6 @@
 
 namespace fl {
 
-typedef std::shared_ptr<Module> ModulePtr;
-
 /**
  * A computation unit capable of forward computation that contains a
  * collection of multiple `Module` and their respective parameters.

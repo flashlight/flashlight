@@ -66,10 +66,9 @@ std::pair<Variable, Variable> MultiHeadContentAttention::forwardBase(
       ? xEncoded(fl::arange(hEncode / 2, hEncode), fl::span, fl::span)
       : xEncoded;
 
-  auto query = splitInput_ ? state : module(0)->forward({state})[0];
-  auto key = splitInput_ ? xEncodedKey : module(1)->forward({xEncodedKey})[0];
-  auto value =
-      splitInput_ ? xEncodedValue : module(2)->forward({xEncodedValue})[0];
+  auto query = splitInput_ ? state : module(0)->forward(state);
+  auto key = splitInput_ ? xEncodedKey : module(1)->forward(xEncodedKey);
+  auto value = splitInput_ ? xEncodedValue : module(2)->forward(xEncodedValue);
 
   query =
       moddims(fl::transpose(query, {1, 0, 2}), {U, hiddenDim, B * numHeads_});
@@ -103,7 +102,7 @@ std::pair<Variable, Variable> MultiHeadContentAttention::forwardBase(
   // [hiddendim * numHeads_, U, B];
   summaries = reorder(moddims(summaries, {U, hState, B}), {1, 0, 2});
 
-  auto out_summaries = modules().back()->forward({summaries}).front();
+  auto out_summaries = modules().back()->forward(summaries);
 
   // [U * numHeads_, T, B]
   attention = moddims(
@@ -115,4 +114,4 @@ std::pair<Variable, Variable> MultiHeadContentAttention::forwardBase(
 std::string MultiHeadContentAttention::prettyString() const {
   return "MultiHeadContentAttention";
 }
-} // namespace fl
+} // namespace fl::pkg::speech

@@ -221,9 +221,8 @@ std::pair<Variable, TS2SState> TransformerCriterion::decodeStep(
                .front();
     } else {
       outState.hidden.push_back(concatenate({inState.hidden[i], hy}, 1));
-      hy = layer(i)
-               ->forward({inState.hidden[i], hy, fl::noGrad(padMask)})
-               .front();
+      hy =
+          layer(i)->forward(inState.hidden[i], hy, fl::noGrad(padMask)).front();
     }
   }
 
@@ -409,4 +408,4 @@ EmittingModelUpdateFunc buildSeq2SeqTransformerUpdateFunction(
 std::string TransformerCriterion::prettyString() const {
   return "TransformerCriterion";
 }
-} // namespace fl
+} // namespace fl::pkg::speech

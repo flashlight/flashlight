@@ -145,7 +145,7 @@ std::tuple<double, double, double> evalLoop(
   model->eval();
   for (auto& example : dataset) {
     auto inputs = noGrad(example[kImagenetInputIdx]);
-    auto output = model->forward({inputs}).front();
+    auto output = model->forward(inputs);
     output = logSoftmax(output, 0).astype(output.type());
 
     auto target = noGrad(example[kImagenetTargetIdx]);
@@ -439,7 +439,7 @@ int main(int argc, char** argv) {
       while (true) {
         // 2. Forward
         fwdTimeMeter.resume();
-        auto output = model->forward({input}).front();
+        auto output = model->forward(input);
         output = logSoftmax(output, 0).astype(output.type());
 
         critFwdTimeMeter.resume();

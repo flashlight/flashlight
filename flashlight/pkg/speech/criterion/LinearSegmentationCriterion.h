@@ -28,6 +28,7 @@ class LinearSegmentationCriterion : public AutoSegmentationCriterion {
         "Cloning is unimplemented in Module 'LinearSegmentationCriterion'");
   }
 
+  using Module::forward; // Enable forward method overload from base Module
   std::vector<fl::Variable> forward(
       const std::vector<fl::Variable>& inputs) override {
     if (inputs.size() != 2) {

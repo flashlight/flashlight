@@ -28,6 +28,7 @@ class PositionalEmbeddingSine : public Container {
   PositionalEmbeddingSine& operator=(PositionalEmbeddingSine&& other) = default;
   std::unique_ptr<Module> clone() const override;
 
+  using Module::forward; // Enable forward method overload from base Module
   std::vector<Variable> forward(const std::vector<Variable>& input) override;
 
   std::vector<Variable> operator()(const std::vector<Variable>& input);

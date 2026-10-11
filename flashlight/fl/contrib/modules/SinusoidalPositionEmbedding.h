@@ -39,6 +39,7 @@ class FL_API SinusoidalPositionEmbedding : public Module {
   SinusoidalPositionEmbedding(const SinusoidalPositionEmbedding& other);
   SinusoidalPositionEmbedding& operator=(
       const SinusoidalPositionEmbedding& other);
+  using Module::forward; // Enable forward method overload from base Module
   /**
    * SinusoidalPositionEmbedding::forward(input) expects input[0] to be of
    * dimensions CxTxBx1 with C = layerDim.

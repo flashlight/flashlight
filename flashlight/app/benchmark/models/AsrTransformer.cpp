@@ -81,9 +81,9 @@ std::vector<fl::Variable> AsrTransformer::forward(
   auto padMask =
       fl::iota({T, 1}, {1, B}) < fl::tile(inputNotPaddedSize, {T, 1});
   out = convFrontend_->forward(out);
-  out = sinpos_->forward({out}).front();
+  out = sinpos_->forward(out);
   for (int trIdx = 0; trIdx < 36; trIdx++) {
-    out = transformers_[trIdx]->forward({out, fl::noGrad(padMask)}).front();
+    out = transformers_[trIdx]->forward(out, fl::noGrad(padMask)).front();
   }
   out = linear_->forward(out);
   return {out.astype(input[0].type())};
@@ -99,4 +99,4 @@ std::string AsrTransformer::prettyString() const {
   return ss.str();
 }
 
-} // namespace fl
+} // namespace fl::app::benchmark
