@@ -126,7 +126,6 @@ static sf_count_t sf_vio_ro_write(
     sf_count_t /* count */,
     void* /* user_data */) {
   throw std::invalid_argument("read-only stream");
-  return 0;
 }
 
 static sf_count_t sf_vio_ro_tell(void* user_data) {
@@ -167,7 +166,6 @@ sf_vio_wo_seek(sf_count_t offset, int whence, void* user_data) {
 static sf_count_t
 sf_vio_wo_read(void* /* ptr */, sf_count_t /* count */, void* /* user_data */) {
   throw std::invalid_argument("write-only stream");
-  return 0;
 }
 
 static sf_count_t
