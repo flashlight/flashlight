@@ -88,7 +88,6 @@ ncclDataType_t getNcclTypeForArray(const Tensor& arr) {
       return ncclInt32;
     case fl::dtype::s64:
       return ncclInt64;
-      break;
     default:
       throw std::runtime_error("unsupported data type for allreduce with NCCL");
   }
